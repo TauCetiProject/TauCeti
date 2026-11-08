@@ -180,14 +180,24 @@ theorem exact_torsionByδ_quotSMulTop_map (hfg : Exact f g) (hf : Injective f)
   SnakeLemma.exact_δ'_left _ _ _ _ _ hfg _ _ hfg _ _ _ _ _ _ _ (exact_toLinearMap_mkQ r M₂) hg hf
     _ (QuotSMulTop.map_comp_mkQ r f) (r • (⊤ : Submodule R M₁)).mkQ_surjective
 
-/-- **Finiteness of `M₁ ⧸ rM₁` along a short exact sequence**: if `M₃[r]` and `M₂ ⧸ rM₂` are finite,
-so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. -/
-theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+/-- **Finiteness of `M₁ ⧸ rM₁` along an exact sequence** `0 → M₁ → M₂ → M₃`: if `M₃[r]` and
+`M₂ ⧸ rM₂` are finite, so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. The map
+`g` need not be surjective: the sequence is read as a short exact sequence ending in the image of
+`g`. -/
+theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f)
     [Finite (torsionBy R M₃ r)] [Finite (QuotSMulTop r M₂)] : Finite (QuotSMulTop r M₁) := by
-  let := Fintype.ofFinite (torsionBy R M₃ r)
+  have hfg' : Exact f g.rangeRestrict := fun x ↦ by
+    simpa [LinearMap.mem_ker, Subtype.ext_iff] using hfg x
+  have : Finite (torsionBy R (LinearMap.range g) r) := Finite.of_injective
+    (fun x : torsionBy R (LinearMap.range g) r ↦ (⟨(x.1 : M₃), by
+      rw [mem_torsionBy_iff, ← Submodule.coe_smul, (mem_torsionBy_iff _ _).1 x.2]
+      rfl⟩ : torsionBy R M₃ r))
+    fun x y h ↦ Subtype.ext (Subtype.ext (by simpa using congrArg Subtype.val h))
+  let := Fintype.ofFinite (torsionBy R (LinearMap.range g) r)
   let := Fintype.ofFinite (QuotSMulTop r M₂)
-  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg hf hg
-  exact (AddGroup.fintypeOfKerLeRange (torsionByδ r hfg hf hg).toAddMonoidHom
+  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg' hf g.surjective_rangeRestrict
+  exact (AddGroup.fintypeOfKerLeRange
+    (torsionByδ r hfg' hf g.surjective_rangeRestrict).toAddMonoidHom
     (QuotSMulTop.map r f).toAddMonoidHom fun x hx ↦ (h x).1 hx).finite
 
 /-- **Injectivity of the connecting map**: when multiplication by `r` is injective on `M₂`, the
