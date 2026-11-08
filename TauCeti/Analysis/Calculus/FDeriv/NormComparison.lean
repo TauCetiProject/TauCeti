@@ -87,8 +87,8 @@ namespace TauCeti
 /-- If `φ` parametrizes points of `ψ` near `u₀` with injective derivative at `u₀`, and `ψ`
 satisfies the height inequality, then the projection `Fin.tail ∘ φ` also has injective derivative
 at `u₀`: tangent vectors to `ψ` satisfy the height inequality as well. -/
-theorem injective_fderiv_tail_comp {n d : ℕ}
-    {ψ : Set (Fin (n + 1) → 𝕜)} {A : ℝ≥0} {φ : (Fin d → 𝕜) → Fin (n + 1) → 𝕜} {u₀ : Fin d → 𝕜}
+theorem injective_fderiv_tail_comp {n : ℕ}
+    {ψ : Set (Fin (n + 1) → 𝕜)} {A : ℝ≥0} {φ : E → Fin (n + 1) → 𝕜} {u₀ : E}
     (hφ : DifferentiableAt 𝕜 φ u₀) (hDφ : Function.Injective (fderiv 𝕜 φ u₀))
     (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w))
     (hφψ : ∀ᶠ u in 𝓝 u₀, φ u ∈ ψ) :
