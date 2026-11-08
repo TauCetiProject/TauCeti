@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.MvPolynomial.Degrees
+public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Roots
@@ -382,6 +383,34 @@ theorem natDegree_minpoly_le_totalDegree [CommSemiring k] {K F : Type*} [Field K
   exact (Polynomial.natDegree_le_natDegree (minpoly.degree_le_of_ne_zero _ y hψ0 hψy)).trans hψdeg
 
 end Algebra
+
+section Infinite
+
+variable {K : Type*} [Field K] [Infinite K]
+
+/-- A nonzero plane polynomial does not vanish at some point whose first coordinate is nonzero
+and whose slope `v 1 / v 0` avoids a given finite set. -/
+theorem exists_eval_ne_zero_and_div_notMem {H : MvPolynomial (Fin 2) K} (hH : H ≠ 0)
+    (s : Finset K) : ∃ v : Fin 2 → K, eval v H ≠ 0 ∧ v 0 ≠ 0 ∧ v 1 / v 0 ∉ s := by
+  classical
+  have hlinear (b : K) : (X 1 - C b * X 0 : MvPolynomial (Fin 2) K) ≠ 0 := by
+    intro hzero
+    have := congrArg (fun q : MvPolynomial (Fin 2) K ↦ q.coeff (Finsupp.single 1 1)) hzero
+    simp [coeff_X, coeff_C_mul, Finsupp.single_left_inj one_ne_zero] at this
+  have hQ : H * X 0 * ∏ b ∈ s, (X 1 - C b * X 0) ≠ 0 :=
+    mul_ne_zero (mul_ne_zero hH (X_ne_zero 0))
+      (Finset.prod_ne_zero_iff.2 fun b _ ↦ hlinear b)
+  obtain ⟨v, hv⟩ : ∃ v, eval v (H * X 0 * ∏ b ∈ s, (X 1 - C b * X 0)) ≠ 0 := by
+    by_contra h
+    apply hQ
+    exact MvPolynomial.funext fun v ↦ by
+      simpa only [map_zero] using (not_exists.mp h v |> not_not.mp)
+  simp only [map_mul, eval_X, map_prod, map_sub, eval_C, mul_ne_zero_iff,
+    Finset.prod_ne_zero_iff] at hv
+  have hv0 : v 0 ≠ 0 := hv.1.2
+  refine ⟨v, hv.1.1, hv0, fun hmem ↦ hv.2 _ hmem (by rw [div_mul_cancel₀ _ hv0, sub_self])⟩
+
+end Infinite
 
 end MvPolynomial
 
