@@ -131,7 +131,8 @@ private theorem condExp_prod_blockAverage_disjointWindow_ae_eq {μ : Measure Ω}
     fun js => hX.condExp_prod_indicator_ae_eq hX_meas (window_selection_strictMono js) hk hB
   have hsum : μ[∑ js, G js | tailProcess X] =ᵐ[μ] fun ω =>
       c * μ[fun ω => ∏ i, (B i).indicator (fun _ => (1 : ℝ)) (X (k i) ω) | tailProcess X] ω := by
-    refine (condExp_finsetSum (fun js _ => integrable_prod_indicator_comp hX_meas _ hB)
+    refine (condExp_finsetSum
+      (fun js _ => integrable_prod_indicator_comp (fun i => (hX_meas _).aemeasurable) hB)
       (tailProcess X)).trans ?_
     filter_upwards [(eventually_all_finset (Finset.univ : Finset (Fin r → Fin (n + 1)))).2
       fun js _ => hterm js] with ω hω
@@ -177,7 +178,7 @@ theorem condExp_blockIndicatorProd_strictMono_tailProcess_ae_eq_prod_directingMe
     intro n
     simp only [hP, prod_blockAverage_disjointWindow_eq_smul_sum Y n]
     exact (integrable_finsetSum' _ fun js _ =>
-      integrable_prod_indicator_comp hX_meas _ hB).smul
+      integrable_prod_indicator_comp (fun i => (hX_meas _).aemeasurable) hB).smul
       (((Fintype.card (Fin r → Fin (n + 1)) : ℝ))⁻¹)
   have hconst : ∀ n, μ[P n | tailProcess X] =ᵐ[μ] μ[Z | tailProcess X] :=
     condExp_prod_blockAverage_disjointWindow_ae_eq hX hX_meas hk hB
