@@ -13,6 +13,8 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -376,18 +378,10 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
     exact hlow w hw_ball ⟨t, ht⟩
   -- Upper bound `‖(t : ℂ) + w‖ ≤ M * (1 + t)` from the triangle inequality on `ball z c`.
   have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) := by
-    have hwz : ‖w - z‖ < c := by simpa [dist_eq_norm] using hw_ball
-    have hw_norm : ‖w‖ ≤ ‖z‖ + c := by
-      calc ‖w‖ = ‖(w - z) + z‖ := by ring_nf
-        _ ≤ ‖w - z‖ + ‖z‖ := norm_add_le _ _
-        _ ≤ c + ‖z‖ := by linarith
-        _ = ‖z‖ + c := add_comm _ _
-    calc ‖(t : ℂ) + w‖ ≤ ‖(t : ℂ)‖ + ‖w‖ := norm_add_le _ _
-      _ = t + ‖w‖ := by rw [Complex.norm_real, Real.norm_of_nonneg ht]
-      _ ≤ t + (‖z‖ + c) := by linarith
-      _ ≤ M * (1 + t) := by
-        have : 0 ≤ (‖z‖ + c) * t := mul_nonneg (by positivity) ht
-        linarith
+    have h := one_add_norm_add_le (t : ℂ) w
+    rw [Complex.norm_real, Real.norm_of_nonneg ht] at h
+    have hw_norm : ‖w‖ ≤ ‖z‖ + c := (norm_lt_of_mem_ball hw_ball).le
+    nlinarith [norm_nonneg w, mul_le_mul_of_nonneg_right hw_norm h1t.le]
   -- Bound the radial factor `‖(t : ℂ) + w‖ ^ s.re` according to the sign of `s.re`.
   have hrpow : ‖(t : ℂ) + w‖ ^ s.re ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
     rcases le_or_gt s.re 0 with hs | hs
@@ -404,15 +398,7 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
           gcongr
           exact le_max_right _ _
   -- Bound the angular factor `1 / exp (arg * s.im) ≤ exp (π * |s.im|)`.
-  have hexp : (Real.exp (((t : ℂ) + w).arg * s.im))⁻¹ ≤ Real.exp (Real.pi * |s.im|) := by
-    rw [← Real.exp_neg]
-    apply Real.exp_le_exp.mpr
-    calc -(((t : ℂ) + w).arg * s.im)
-        ≤ |((t : ℂ) + w).arg * s.im| := neg_le_abs _
-      _ = |((t : ℂ) + w).arg| * |s.im| := abs_mul _ _
-      _ ≤ Real.pi * |s.im| := by
-        gcongr
-        exact Complex.abs_arg_le_pi _
+  have hexp := Complex.inv_exp_arg_mul_le_exp_pi_mul_abs ((t : ℂ) + w) s.im
   calc ‖((t : ℂ) + w) ^ s‖
       ≤ ‖(t : ℂ) + w‖ ^ s.re / Real.exp (((t : ℂ) + w).arg * s.im) :=
         Complex.norm_cpow_le _ _
