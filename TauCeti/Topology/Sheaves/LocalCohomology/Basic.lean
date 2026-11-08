@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Sheaves.Stalks
 public import TauCeti.Topology.Sheaves.SupportedCohomology
 import Mathlib.Topology.Sheaves.LocallySurjective
+import TauCeti.CategoryTheory.Sites.EpiMono
 
 /-!
 # Local cohomology sheaves

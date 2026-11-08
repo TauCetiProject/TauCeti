@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
+import TauCeti.CategoryTheory.Sites.EpiMono
 
 /-!
 # Composition of supported-section functors

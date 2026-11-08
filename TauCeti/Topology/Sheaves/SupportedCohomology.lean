@@ -111,24 +111,6 @@ namespace Sheaf
 
 open Abelian
 
-section Mono
-
-variable {X : TopCat.{u}} {C : Type*} [Category C] {FC : C → C → Type*} {CC : C → Type*}
-  [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
-  [HasWeakSheafify (Opens.grothendieckTopology X) C] [Limits.HasPullbacks C]
-  [Limits.PreservesLimitsOfShape Limits.WalkingCospan (forget C)]
-  {F G : Sheaf (Opens.grothendieckTopology X) C}
-
-/-- A monomorphism of sheaves of a concrete category, whose forgetful functor preserves pullbacks,
-is injective on sections over every open. -/
-theorem injective_app_of_mono (f : F ⟶ G) [Mono f] (W : (Opens X)ᵒᵖ) :
-    Function.Injective (f.hom.app W) := by
-  have : Mono f.hom := inferInstance
-  have : Mono (f.hom.app W) := inferInstance
-  exact ConcreteCategory.injective_of_mono_of_preservesPullback (f.hom.app W)
-
-end Mono
-
 variable {X : TopCat.{u}} (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
 
 noncomputable section
