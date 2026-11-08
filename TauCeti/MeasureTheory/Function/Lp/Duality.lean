@@ -16,6 +16,7 @@ import TauCeti.Analysis.InnerProductSpace.ExtremalRpow
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 import TauCeti.MeasureTheory.Function.Holder
 
@@ -50,8 +51,6 @@ is `∞` outside the almost everywhere strongly measurable functions.
 
 ## Main declarations
 
-* `TauCeti.eLpNorm_le_eLpNorm_rpow`: if `‖u‖ ≤ ‖f‖ ^ r`, then `‖u‖_s ≤ ‖f‖_p ^ r` when
-  `1 / s = r / p`.
 * `TauCeti.enorm_integral_mul_le`: Hölder's inequality `‖∫ u v‖ ≤ ‖u‖_p ‖v‖_q` for an integral.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top`: the duality bound
   for `q < ∞`.
@@ -85,25 +84,6 @@ namespace TauCeti
 variable {α E F : Type*} {mα : MeasurableSpace α} {μ : Measure α}
   [NormedAddCommGroup E] [NormedAddCommGroup F]
 
-/-- If `‖u‖ ≤ ‖f‖ ^ r` almost everywhere with `r ≥ 0`, then `‖u‖_s ≤ ‖f‖_p ^ r` for the exponent
-`1 / s = r / p`. For `r = 0` this reads `‖u‖_∞ ≤ 1`. -/
-theorem eLpNorm_le_eLpNorm_rpow {f : α → E} {u : α → F} {p s : ℝ≥0∞} {r : ℝ} (hr : 0 ≤ r)
-    (hf : AEStronglyMeasurable f μ) (hu : AEStronglyMeasurable u μ)
-    (hs : s⁻¹ = ENNReal.ofReal r * p⁻¹) (hle : ∀ᵐ x ∂μ, ‖u x‖ ≤ ‖f x‖ ^ r) :
-    eLpNorm u s μ ≤ eLpNorm f p μ ^ r := by
-  rcases hr.eq_or_lt with rfl | hr
-  · have hs : s = ∞ := by simpa using hs
-    subst hs
-    rw [ENNReal.rpow_zero, eLpNorm_exponent_top hu]
-    simpa using eLpNormEssSup_le_of_ae_bound (C := 1) (by simpa using hle)
-  · calc eLpNorm u s μ ≤ eLpNorm (fun x => ‖f x‖ ^ r) s μ := eLpNorm_mono_ae_real hu hle
-      _ = eLpNorm f (s * ENNReal.ofReal r) μ ^ r := eLpNorm_norm_rpow f hf hr
-      _ = eLpNorm f p μ ^ r := by
-        congr 2
-        have h0 : ENNReal.ofReal r ≠ 0 := by simpa using hr
-        rw [← inv_inv s, hs, ENNReal.mul_inv (Or.inl h0) (Or.inl ENNReal.ofReal_ne_top), inv_inv,
-          mul_comm, ← mul_assoc, ENNReal.mul_inv_cancel h0 ENNReal.ofReal_ne_top, one_mul]
-
 /-- **Hölder's inequality** for the integral of a product: `‖∫ u v‖ ≤ ‖u‖_p ‖v‖_q` for Hölder
 conjugate exponents `p` and `q`. -/
 theorem enorm_integral_mul_le {𝕜 : Type*} [NonUnitalNormedRing 𝕜] [NormedSpace ℝ 𝕜]
@@ -126,17 +106,6 @@ theorem enorm_integral_inner_le {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGro
         simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm_of_pos (fun a b => ⟪a, b⟫_𝕜) 1
           continuous_inner (ae_of_all _ fun x => by simpa using norm_inner_le_norm (u x) (v x))
           zero_lt_one
-
-/-- If `‖g‖ ≤ ‖f‖ ^ (q - 1)` almost everywhere, then `‖g‖_{q'} ≤ ‖f‖_q ^ (q - 1)` for Hölder
-conjugate exponents `q < ∞` and `q'`. -/
-theorem eLpNorm_le_eLpNorm_rpow_toReal_sub_one {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
-    (hq : q ≠ ∞) {f : α → E} {g : α → F} (hf : AEStronglyMeasurable f μ)
-    (hg : AEStronglyMeasurable g μ) (hle : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖f x‖ ^ (q.toReal - 1)) :
-    eLpNorm g q' μ ≤ eLpNorm f q μ ^ (q.toReal - 1) := by
-  have hr1 : 1 ≤ q.toReal := by simpa using ENNReal.toReal_mono hq hqq.one_le
-  refine eLpNorm_le_eLpNorm_rpow (by linarith) hf hg ?_ hle
-  rw [← ENNReal.HolderConjugate.sub_one_mul_inv q q' hq, ENNReal.ofReal_sub _ zero_le_one,
-    ENNReal.ofReal_toReal hq, ENNReal.ofReal_one]
 
 end TauCeti
 
