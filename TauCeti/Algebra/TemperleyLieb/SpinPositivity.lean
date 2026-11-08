@@ -63,13 +63,13 @@ variable {R : Type*} [CommRing R] [StarRing R] {q : Rˣ} {n : ℕ}
 section Star
 
 /-- For self-adjoint `q`, the cap covector of the spin model has self-adjoint entries. -/
-theorem star_spinCap (hq : IsSelfAdjoint (q : R)) (x y : Bool) :
+@[simp] theorem star_spinCap (hq : IsSelfAdjoint (q : R)) (x y : Bool) :
     star (spinCap q x y) = spinCap q x y := by
   cases x <;> cases y <;> simp [(Ring.inverse_unit q ▸ hq.ringInverse).star_eq]
 
 /-- For self-adjoint `q`, the generator matrices of the spin model are self-adjoint: each is
 `-q` times the matrix `capᵀ cap` on the two strands it caps. -/
-theorem conjTranspose_spinGenerator (hq : IsSelfAdjoint (q : R)) (j k : Fin n) :
+@[simp] theorem conjTranspose_spinGenerator (hq : IsSelfAdjoint (q : R)) (j k : Fin n) :
     (spinGenerator q j k)ᴴ = spinGenerator q j k := by
   ext s t
   rw [conjTranspose_apply, spinGenerator_apply, spinGenerator_apply]
@@ -82,7 +82,7 @@ theorem conjTranspose_spinGenerator (hq : IsSelfAdjoint (q : R)) (j k : Fin n) :
 
 /-- For self-adjoint `q`, the spin representation carries the analytic adjoint of the
 Temperley–Lieb algebra to the conjugate transpose of matrices. -/
-theorem spinRep_star {δ : R} [Fact (IsSelfAdjoint δ)] (hq : IsSelfAdjoint (q : R))
+@[simp] theorem spinRep_star {δ : R} [Fact (IsSelfAdjoint δ)] (hq : IsSelfAdjoint (q : R))
     (hδ : δ = -((q : R) + ((q⁻¹ : Rˣ) : R))) (x : TemperleyLieb R δ n) :
     spinRep q hδ (star x) = (spinRep q hδ x)ᴴ := by
   refine (map_star_iff.mpr fun i ↦ ?_) x
