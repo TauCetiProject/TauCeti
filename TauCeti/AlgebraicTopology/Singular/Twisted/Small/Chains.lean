@@ -99,6 +99,21 @@ lemma smallTwistedChains_mono {κ : Type*} (V : κ → Set X) (r : ι → κ)
   exact ιTwistedChainComplex_mem_smallTwistedChains L V
     ((TopCat.mem_smallSingularSubcomplex_iff X V σ.val).2 ⟨r i, hi.trans (h i)⟩) x
 
+/-- Chains subordinate to a family are sums of chains supported in individual members. -/
+lemma smallTwistedChains_eq_iSup (n : ℕ) :
+    smallTwistedChains L U n = ⨆ i, smallTwistedChains L (fun _ : Unit ↦ U i) n := by
+  apply le_antisymm
+  · simpa only [Submodule.comap_id] using
+      (smallTwistedChains_le_comap L U LinearMap.id
+        (⨆ i, smallTwistedChains L (fun _ : Unit ↦ U i) n) (by
+          intro σ hσ x
+          obtain ⟨i, hi⟩ := (TopCat.mem_smallSingularSubcomplex_iff X U σ).1 hσ
+          exact Submodule.mem_iSup_of_mem i
+            (ιTwistedChainComplex_mem_smallTwistedChains L _
+              ((TopCat.mem_smallSingularSubcomplex_iff X _ σ).2 ⟨(), hi⟩) x)))
+  · exact iSup_le fun i ↦ smallTwistedChains_mono L (fun _ : Unit ↦ U i) U
+      (fun _ ↦ i) (fun _ ↦ Set.Subset.rfl) n
+
 /-- The twisted singular boundary preserves chains subordinate to a family of subsets. -/
 lemma d_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.X (n + 1)}
     (hc : c ∈ smallTwistedChains L U (n + 1)) :
@@ -338,6 +353,15 @@ def smallTwistedChainComplexInclusion
     -- Restriction and submodule inclusion both evaluate in the ambient chain module.
     rfl
 
+/-- A support inclusion preserves the underlying twisted chain. -/
+@[simp]
+lemma coe_smallTwistedChainComplexInclusion_f_apply
+    (h : ∀ n, smallTwistedChains L U n ≤ smallTwistedChains L V n) (n : ℕ)
+    (c : (smallTwistedChainComplex L U).X n) :
+    ((eqToHom (smallTwistedChainComplex_X L V n)).hom
+      (((smallTwistedChainComplexInclusion h).f n).hom c) : L.twistedChainComplex.X n) =
+      ((eqToHom (smallTwistedChainComplex_X L U n)).hom c : L.twistedChainComplex.X n) := (rfl)
+
 /-- After inclusion into ambient chains, a support inclusion is the original inclusion. -/
 @[reassoc (attr := simp)]
 lemma smallTwistedChainComplexInclusion_ι
@@ -348,7 +372,7 @@ lemma smallTwistedChainComplexInclusion_ι
   dsimp only [smallTwistedChainComplexInclusion, HomologicalComplex.comp_f]
   rw [smallTwistedChainComplexι_f, smallTwistedChainComplexι_f]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  rfl
+  rw [← ModuleCat.ofHom_comp, Submodule.subtype_comp_inclusion]
 
 /-- Support inclusions compose as inclusions. -/
 @[reassoc (attr := simp)]
