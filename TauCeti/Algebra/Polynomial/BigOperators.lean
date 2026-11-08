@@ -53,18 +53,20 @@ end Semiring
 
 section MapProd
 
-variable {ι R S : Type*} [CommRing R] [CommRing S] [IsDomain S] (f : R →+* S)
+variable {ι R S : Type*} [CommSemiring R] [CommSemiring S] [NoZeroDivisors S]
+  [Nontrivial S] (f : R →+* S)
 
-/-- Over a domain, the image of a finite product of polynomials is nonzero when the image of each
-factor is nonzero. -/
-theorem prod_map_ne_zero (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
+/-- Over a nontrivial ring without zero divisors, the image of a finite product of polynomials is
+nonzero when the image of each factor is nonzero. -/
+theorem map_prod_ne_zero (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
     (∏ k ∈ s, P k).map f ≠ 0 := by
   rw [Polynomial.map_prod]
   exact Finset.prod_ne_zero_iff.mpr h
 
-/-- Over a domain, the degree of the image of a finite product of polynomials is the sum of the
-degrees of the images of the factors, when each image is nonzero. -/
-theorem natDegree_prod_map (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
+omit [Nontrivial S] in
+/-- Over a ring without zero divisors, the degree of the image of a finite product of polynomials
+is the sum of the degrees of the images of the factors, when each image is nonzero. -/
+theorem natDegree_map_prod (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
     ((∏ k ∈ s, P k).map f).natDegree = ∑ k ∈ s, ((P k).map f).natDegree := by
   rw [Polynomial.map_prod]
   exact natDegree_prod _ _ h

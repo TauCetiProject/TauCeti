@@ -74,15 +74,15 @@ private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x
     RingHom.ext fun q ↦ by rw [MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_id]
   have hp0 : p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a)) ≠ 0 := by
     rw [heval]
-    exact prod_map_ne_zero _ _ _ fun k _ ↦ hfiber k _ hφaS
+    exact map_prod_ne_zero _ _ _ fun k _ ↦ hfiber k _ hφaS
   have hd : ∀ᶠ u in 𝓝 a,
       (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u))).natDegree =
         (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a))).natDegree := by
     filter_upwards [hmem] with u hu
     rw [heval, heval]
-    exact (natDegree_prod_map _ _ _ fun k _ ↦ hfiber k _ hu.2).trans
+    exact (natDegree_map_prod _ _ _ fun k _ ↦ hfiber k _ hu.2).trans
       ((Finset.sum_congr rfl fun k _ ↦ hdegree k _ hu.2 _ hφaS).trans
-        (natDegree_prod_map _ _ _ fun k _ ↦ hfiber k _ hφaS).symm)
+        (natDegree_map_prod _ _ _ fun k _ ↦ hfiber k _ hφaS).symm)
   obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.mp
     (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : p.discr.orderAt (φ a) ≠ ⊤)
   have hm' : ∀ᶠ u in 𝓝 a, p.discr.orderAt (φ u) = (m : ℕ∞) := by
@@ -153,7 +153,7 @@ private lemma exists_delineation_orderAt_prod_eq_ball {a : Fin d → ℝ} {r : �
     (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : p.discr.orderAt (φ a) ≠ ⊤)
   simpa only [hθ u, hθ v] using
     p.orderAt_root_eq_of_orderAt_discr_eq isOpen_ball (convex_ball a r).isPreconnected hφr
-      (fun z hz ↦ prod_map_ne_zero _ _ _ fun k _ ↦ hfiber k _ (hrmem ⟨z, hz⟩))
+      (fun z hz ↦ map_prod_ne_zero _ _ _ fun k _ ↦ hfiber k _ (hrmem ⟨z, hz⟩))
       (fun z hz ↦ (hdiscr _ (hrmem ⟨z, hz⟩) _ hφaS).trans hm.symm) hθcont hroot u.2 v.2
 
 /-- **Chart-local lifting of a non-nullified family.** Let `e` be an analytic chart of `S` around
