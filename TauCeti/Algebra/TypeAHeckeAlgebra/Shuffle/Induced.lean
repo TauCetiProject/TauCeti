@@ -243,30 +243,27 @@ theorem T_mul_shuffleInvWord_of_mem_of_mem {i : Fin (k + l - 1)} {S : ShuffleMas
     (ha : BraidGroup.strand i ∈ S.1) (hb : BraidGroup.strandSucc i ∈ S.1) :
     T q i * shuffleInvWord q S =
       shuffleInvWord q S * T q ⟨i - S.restIndex (BraidGroup.strand i), by omega⟩ := by
-  induction hn : S.length using Nat.strong_induction_on generalizing S i with
-  | _ n ih =>
-  subst hn
-  by_cases hS : S = initial
-  · subst hS
+  induction S using strong_induction_on generalizing i with
+  | base =>
     have hi : (i : ℕ) + 1 < k := by simpa using hb
     rw [shuffleInvWord_initial, one_mul, mul_one]
     congr 1
     ext
     simp only [restIndex_initial, BraidGroup.val_strand]
     omega
-  -- Split off the last step `γ` of a shuffle path to `S`.
-  obtain ⟨γ, hc, hd⟩ := exists_strand_notMem_strandSucc_mem hS
-  have hca : (γ : ℕ) ≠ i := fun h ↦ hc (by convert ha using 2; ext; simp [h])
-  have hcb : (γ : ℕ) ≠ i + 1 := fun h ↦ hc (by convert hb using 2; ext; simp [h])
-  rcases (show (γ : ℕ) + 1 = i ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ by omega) with hγ | hγ
-  · exact T_mul_shuffleInvWord_of_mem_of_mem_of_succ_eq hγ hc ha hb
-      fun S' hS' h₁ h₂ ↦ ih _ hS' h₁ h₂ rfl
-  -- Otherwise `γ` does not move the positions crossed by `T i`.
-  have hlt := length_swap_add_one_of_notMem_of_mem (by simp) hc hd
-  obtain ⟨h₁, h₂, h₃⟩ := swap_strand_strandSucc_of_distant hγ S
-  rw [shuffleInvWord_eq_inv_unitT_mul hc hd,
-    T_mul_inv_unitT_mul hγ.symm (ih _ (by omega) (h₁.2 ha) (h₂.2 hb) rfl)]
-  simp only [h₃]
+  | step S γ hc hd ih =>
+    -- `γ` is the last step of a shuffle path to `S`.
+    have hca : (γ : ℕ) ≠ i := fun h ↦ hc (by convert ha using 2; ext; simp [h])
+    have hcb : (γ : ℕ) ≠ i + 1 := fun h ↦ hc (by convert hb using 2; ext; simp [h])
+    rcases (show (γ : ℕ) + 1 = i ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ by omega) with hγ | hγ
+    · exact T_mul_shuffleInvWord_of_mem_of_mem_of_succ_eq hγ hc ha hb
+        fun S' hS' h₁ h₂ ↦ ih S' hS' h₁ h₂
+    -- Otherwise `γ` does not move the positions crossed by `T i`.
+    have hlt := length_swap_add_one_of_notMem_of_mem (by simp) hc hd
+    obtain ⟨h₁, h₂, h₃⟩ := swap_strand_strandSucc_of_distant hγ S
+    rw [shuffleInvWord_eq_inv_unitT_mul hc hd,
+      T_mul_inv_unitT_mul hγ.symm (ih _ (by omega) (h₁.2 ha) (h₂.2 hb))]
+    simp only [h₃]
 
 open ShuffleMask in
 /-- The braid step of Deodhar's lemma for rest positions: the rest positions `strand i` and
@@ -329,30 +326,27 @@ theorem T_mul_shuffleInvWord_of_notMem_of_notMem {i : Fin (k + l - 1)} {S : Shuf
     T q i * shuffleInvWord q S =
       shuffleInvWord q S * T q ⟨k + S.restIndex (BraidGroup.strand i),
         by have := restIndex_lt_sub_one (by simp [Fin.lt_def]) ha hb; omega⟩ := by
-  induction hn : S.length using Nat.strong_induction_on generalizing S i with
-  | _ n ih =>
-  subst hn
-  by_cases hS : S = initial
-  · subst hS
+  induction S using strong_induction_on generalizing i with
+  | base =>
     have hi : k ≤ (i : ℕ) := by simpa using ha
     rw [shuffleInvWord_initial, one_mul, mul_one]
     congr 1
     ext
     simp only [restIndex_initial, BraidGroup.val_strand]
     omega
-  -- Split off the last step `γ` of a shuffle path to `S`.
-  obtain ⟨γ, hc, hd⟩ := exists_strand_notMem_strandSucc_mem hS
-  have hca : (γ : ℕ) ≠ i := fun h ↦ hb (by convert hd using 2; ext; simp [h])
-  have hcb : (γ : ℕ) + 1 ≠ i := fun h ↦ ha (by convert hd using 2; ext; simp [h])
-  rcases (show (i : ℕ) + 1 = γ ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ by omega) with hγ | hγ
-  · exact T_mul_shuffleInvWord_of_notMem_of_notMem_of_succ_eq hγ hd ha hb
-      fun S' hS' h₁ h₂ ↦ ih _ hS' h₁ h₂ rfl
-  -- Otherwise `γ` does not move the positions crossed by `T i`.
-  have hlt := length_swap_add_one_of_notMem_of_mem (by simp) hc hd
-  obtain ⟨h₁, h₂, h₃⟩ := swap_strand_strandSucc_of_distant hγ S
-  rw [shuffleInvWord_eq_inv_unitT_mul hc hd,
-    T_mul_inv_unitT_mul hγ.symm (ih _ (by omega) (mt h₁.1 ha) (mt h₂.1 hb) rfl)]
-  simp only [h₃]
+  | step S γ hc hd ih =>
+    -- `γ` is the last step of a shuffle path to `S`.
+    have hca : (γ : ℕ) ≠ i := fun h ↦ hb (by convert hd using 2; ext; simp [h])
+    have hcb : (γ : ℕ) + 1 ≠ i := fun h ↦ ha (by convert hd using 2; ext; simp [h])
+    rcases (show (i : ℕ) + 1 = γ ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ by omega) with hγ | hγ
+    · exact T_mul_shuffleInvWord_of_notMem_of_notMem_of_succ_eq hγ hd ha hb
+        fun S' hS' h₁ h₂ ↦ ih S' hS' h₁ h₂
+    -- Otherwise `γ` does not move the positions crossed by `T i`.
+    have hlt := length_swap_add_one_of_notMem_of_mem (by simp) hc hd
+    obtain ⟨h₁, h₂, h₃⟩ := swap_strand_strandSucc_of_distant hγ S
+    rw [shuffleInvWord_eq_inv_unitT_mul hc hd,
+      T_mul_inv_unitT_mul hγ.symm (ih _ (by omega) (mt h₁.1 ha) (mt h₂.1 hb))]
+    simp only [h₃]
 
 section Lift
 
@@ -394,39 +388,42 @@ private theorem shuffleLift_comp_shuffleRep_T {f : U →ₗ[R] N}
   refine LinearMap.pi_ext fun S u ↦ ?_
   simp only [LinearMap.comp_apply]
   by_cases ha : BraidGroup.strand i ∈ S.1 <;> by_cases hb : BraidGroup.strandSucc i ∈ S.1
-  · have hsel' := LinearMap.congr_fun
+  · have hT := LinearMap.congr_fun
+      (congrArg σ (T_mul_shuffleInvWord_of_mem_of_mem (q := q) ha hb)) (f u)
+    have hsel' := LinearMap.congr_fun
       (hsel ⟨i - S.restIndex (BraidGroup.strand i), by omega⟩ (by
       have := ShuffleMask.sub_restIndex_add_two_le (by simp [Fin.lt_def]) ha hb
       simp only [BraidGroup.val_strand] at this
       simp only
       omega)) u
-    rw [LinearMap.comp_apply] at hsel'
-    rw [shuffleRep_T_single_of_mem_of_mem ρ ha hb, map_smul, shuffleLift_single, map_smul,
-      ← mul_apply_eq_comp, ← map_mul, T_mul_shuffleInvWord_of_mem_of_mem ha hb, map_mul,
-      mul_apply_eq_comp, hsel', LinearMap.smul_apply, map_smul, smul_comm]
-  · rw [shuffleRep_T_single_of_mem_of_notMem ρ ha hb, map_sub, map_smul, shuffleLift_single,
+    simp only [map_mul, mul_apply_eq_comp, LinearMap.comp_apply, LinearMap.smul_apply]
+      at hT hsel'
+    simp only [shuffleRep_T_single_of_mem_of_mem ρ ha hb, map_smul, shuffleLift_single, hT,
+      hsel']
+    module
+  · simp only [shuffleRep_T_single_of_mem_of_notMem ρ ha hb, map_sub, map_smul,
       shuffleLift_single, ShuffleMask.length_swap_of_mem_of_notMem (by simp) ha hb,
-      shuffleInvWord_swap ha hb, map_smul, val_inv_unitT, map_mul, map_sub, AlgHom.commutes,
+      shuffleInvWord_swap ha hb, val_inv_unitT, map_mul, map_sub, AlgHom.commutes,
       mul_apply_eq_comp, LinearMap.sub_apply, Module.algebraMap_end_apply, pow_succ]
     module
-  · set S' := S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)
-    have ha' : BraidGroup.strand i ∈ S'.1 := by simpa [S'] using hb
-    have hb' : BraidGroup.strandSucc i ∉ S'.1 := by simpa [S'] using ha
-    have hW : shuffleInvWord q S = ↑(unitT q i)⁻¹ * shuffleInvWord q S' := by
-      rw [← shuffleInvWord_swap ha' hb', ShuffleMask.swap_swap]
-    have hlen : S'.length + 1 = S.length :=
-      ShuffleMask.length_swap_add_one_of_notMem_of_mem (by simp) ha hb
-    rw [shuffleRep_T_single_of_notMem_of_mem ρ ha hb, map_neg, shuffleLift_single,
-      shuffleLift_single, hW, ← hlen, map_smul, ← mul_apply_eq_comp, ← map_mul, ← mul_assoc,
-      ← val_unitT (q := q) i, Units.mul_inv, one_mul, pow_succ]
+  · have hlen := ShuffleMask.length_swap_add_one_of_notMem_of_mem (by simp) ha hb
+    have hT : T q i * shuffleInvWord q S =
+        shuffleInvWord q (S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)) := by
+      rw [shuffleInvWord_eq_inv_unitT_mul ha hb, ← mul_assoc, ← val_unitT (q := q) i,
+        Units.mul_inv, one_mul]
+    have hT' := LinearMap.congr_fun (congrArg σ hT) (f u)
+    simp only [map_mul, mul_apply_eq_comp] at hT'
+    simp only [shuffleRep_T_single_of_notMem_of_mem ρ ha hb, map_neg, map_smul,
+      shuffleLift_single, hT', ← hlen, pow_succ]
     module
-  · have hrest' := LinearMap.congr_fun
+  · have hT := LinearMap.congr_fun
+      (congrArg σ (T_mul_shuffleInvWord_of_notMem_of_notMem (q := q) ha hb)) (f u)
+    have hrest' := LinearMap.congr_fun
       (hrest ⟨S.restIndex (BraidGroup.strand i), ShuffleMask.restIndex_lt_sub_one
         (by simp [Fin.lt_def]) ha hb⟩) u
-    rw [LinearMap.comp_apply, LinearMap.comp_apply] at hrest'
-    rw [shuffleRep_T_single_of_notMem_of_notMem ρ ha hb, shuffleLift_single, shuffleLift_single,
-      map_smul, ← mul_apply_eq_comp, ← map_mul, T_mul_shuffleInvWord_of_notMem_of_notMem ha hb,
-      map_mul, mul_apply_eq_comp, ← hrest']
+    simp only [map_mul, mul_apply_eq_comp, LinearMap.comp_apply] at hT hrest'
+    simp only [shuffleRep_T_single_of_notMem_of_notMem ρ ha hb, map_smul, shuffleLift_single, hT,
+      hrest']
 
 variable {σ} in
 /-- **The shuffle module is induced from `triv_k ⊗ U`.** If `f : U →ₗ[R] N` is compatible with

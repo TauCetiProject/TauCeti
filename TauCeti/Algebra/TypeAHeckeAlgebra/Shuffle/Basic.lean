@@ -371,6 +371,24 @@ theorem length_eq_zero_iff {S : ShuffleMask k l} : S.length = 0 ↔ S = initial 
   have := length_swap_add_one_of_notMem_of_mem hab ha hb
   omega
 
+/-- **Induction on masks along a last shuffle step.** To prove a property of every mask, it is
+enough to prove it for the initial mask, and for each mask `S` with a rest position `strand γ`
+followed by a selected position, assuming it for every mask shorter than `S`. -/
+@[elab_as_elim]
+theorem strong_induction_on {motive : ShuffleMask k l → Prop} (S : ShuffleMask k l)
+    (base : motive initial)
+    (step : ∀ (S : ShuffleMask k l) (γ : Fin (k + l - 1)), BraidGroup.strand γ ∉ S.1 →
+      BraidGroup.strandSucc γ ∈ S.1 → (∀ S' : ShuffleMask k l, S'.length < S.length → motive S') →
+      motive S) :
+    motive S := by
+  induction hn : S.length using Nat.strong_induction_on generalizing S with
+  | _ n ih =>
+  subst hn
+  by_cases hS : S = initial
+  · exact hS ▸ base
+  obtain ⟨γ, hc, hd⟩ := exists_strand_notMem_strandSucc_mem hS
+  exact step S γ hc hd fun S' hS' ↦ ih _ hS' S' rfl
+
 /-- `IsShufflePath w S` says that the word `w` in the generator indices moves the initial mask to
 `S` one step at a time: reading `w` from its last letter to its head, each letter `i` moves a
 selected position `i` forward past the rest position `i + 1`. Every mask is reached
@@ -397,18 +415,12 @@ theorem IsShufflePath.length_eq {w : List (Fin (k + l - 1))} {S : ShuffleMask k 
 
 /-- Every mask is reached by a shuffle path. -/
 theorem exists_isShufflePath (S : ShuffleMask k l) : ∃ w, IsShufflePath w S := by
-  induction hn : S.length generalizing S with
-  | zero => exact ⟨[], length_eq_zero_iff.1 hn ▸ .nil⟩
-  | succ n ih =>
-    obtain ⟨a, b, hab, ha, hb⟩ :=
-      exists_notMem_mem_of_ne_initial (S := S) (by rintro rfl; simp at hn)
-    obtain ⟨w, hw⟩ :=
-      ih (S.swap a b) (by have := length_swap_add_one_of_notMem_of_mem hab ha hb; omega)
-    obtain ⟨i, rfl, rfl⟩ : ∃ i : Fin (k + l - 1),
-        BraidGroup.strand i = a ∧ BraidGroup.strandSucc i = b :=
-      ⟨⟨a, by have := b.isLt; omega⟩, Fin.ext (BraidGroup.val_strand _),
-        Fin.ext ((BraidGroup.val_strandSucc _).trans hab.symm)⟩
-    exact ⟨i :: w, by simpa using hw.cons (i := i) (by simpa using hb) (by simpa using ha)⟩
+  induction S using strong_induction_on with
+  | base => exact ⟨[], .nil⟩
+  | step S γ hc hd ih =>
+    obtain ⟨w, hw⟩ := ih (S.swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ))
+      (by have := length_swap_add_one_of_notMem_of_mem (by simp) hc hd; omega)
+    exact ⟨γ :: w, by simpa using hw.cons (i := γ) (by simpa using hd) (by simpa using hc)⟩
 
 /-- The two ways a word can be a shuffle path: the empty word reaching the initial mask, or a
 letter moving a selected position forward, after a shuffle path to the previous mask. -/
@@ -440,10 +452,10 @@ private theorem exists_isShufflePath_cons_cons {i j : Fin (k + l - 1)} (hij : i 
   have hb' : b ∈ S.1 := by rwa [hS₁, mem_swap, Equiv.swap_apply_right]
   have hc' : c ∉ S.1 := by rwa [hS₂, mem_swap, Equiv.swap_apply_left]
   have hd' : d ∈ S.1 := by rwa [hS₂, mem_swap, Equiv.swap_apply_right]
-  have hbc : (b : ℕ) ≠ c := fun h ↦ hc' (Fin.ext h ▸ hb')
-  have had : (a : ℕ) ≠ d := fun h ↦ ha' (Fin.ext h ▸ hd')
+  have hbc₀ : (b : ℕ) ≠ c := fun h ↦ hc' (Fin.ext h ▸ hb')
+  have had₀ : (a : ℕ) ≠ d := fun h ↦ ha' (Fin.ext h ▸ hd')
   have hval : (i : ℕ) ≠ j := fun h ↦ hij (Fin.ext h)
-  simp only [a, b, c, d, BraidGroup.val_strand, BraidGroup.val_strandSucc] at hbc had
+  simp only [a, b, c, d, BraidGroup.val_strand, BraidGroup.val_strandSucc] at hbc₀ had₀
   have hnd : [a, b, c, d].Nodup := by
     simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, Fin.ext_iff, a, b, c, d,
       BraidGroup.val_strand, BraidGroup.val_strandSucc, List.nodup_nil, or_false,
