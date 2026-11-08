@@ -12,6 +12,7 @@ import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
 import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.Coupling.Shift
 import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Rounding the weights of a finite weighted graph
@@ -132,19 +133,6 @@ section Mismatch
 
 variable {κ : Type*} [MeasurableSpace κ]
 
-/-- **The mismatch set has square-measure at most twice the off-diagonal mass.**  For a probability
-measure `π` on pairs, the set of pairs of pairs with a mismatched coordinate -- the first pair or
-the second pair off the diagonal -- has `π.prod π`-measure at most twice the mass of `π` off the
-diagonal. -/
-private theorem prod_mismatch_le_two_mul (π : Measure (κ × κ)) [IsProbabilityMeasure π] :
-    (π.prod π) (((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
-      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)) ≤ 2 * π (Set.diagonal κ)ᶜ := by
-  calc _ ≤ (π.prod π) ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
-        (π.prod π) ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
-    _ = π (Set.diagonal κ)ᶜ + π (Set.diagonal κ)ᶜ := by
-        rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
-    _ = 2 * π (Set.diagonal κ)ᶜ := (two_mul _).symm
-
 variable [MeasurableSingletonClass κ] [Countable κ] {ν ν' : Measure κ}
 
 /-- The overlaid difference of two weighted graphs with the same edge weights is bounded by the
@@ -223,7 +211,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
           norm_num
         rw [measureReal_def, htwo]
         refine ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hrne) ?_
-        exact (prod_mismatch_le_two_mul π).trans (by gcongr)
+        exact (Measure.prod_self_union_le_two_mul π _).trans (by gcongr)
 
 /-- Moving a weighting `ρ` to one that keeps `min (ρ {k}) (σ {k})` at every vertex but `k₀` costs at
 most twice the mass by which `ρ` exceeds `σ`. -/
