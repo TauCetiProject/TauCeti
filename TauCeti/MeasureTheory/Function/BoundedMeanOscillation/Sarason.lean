@@ -7,10 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import Mathlib.Analysis.Convolution
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Convolution.Basic
 
 /-!
 # Sarason's characterization of vanishing mean oscillation
@@ -35,7 +33,7 @@ estimates for a kernel `ψ`.
   (`TauCeti.bmoSeminorm_sub_convolution_le`). The factor `M μ(B(0, t))` is invariant under the
   rescalings `t⁻ⁿ ψ(·/t)`, so the bound tends to `0` along such a family as `t → 0` exactly when
   `η_f(t)` does.
-* If `ψ` is Lipschitz with compact support and `f` has bounded mean oscillation, then `ψ ⋆ f` is
+* If `ψ` is continuous with compact support and `f` has bounded mean oscillation, then `ψ ⋆ f` is
   uniformly continuous (`TauCeti.MemBMO.uniformContinuous_convolution`): the increments of `ψ ⋆ f`
   only see `f` minus its average on a ball, whose integral the BMO seminorm controls.
 
@@ -51,7 +49,7 @@ bounds the double integral by the mean oscillations of `f` on the balls `B(y, t)
 * `TauCeti.bmoSeminorm_sub_convolution_le`: the distance in BMO from `f` to its mollification is
   controlled by the VMO modulus at the scale of the kernel.
 * `TauCeti.MemBMO.uniformContinuous_convolution`: mollifying a function of bounded mean
-  oscillation by a Lipschitz kernel with compact support gives a uniformly continuous function.
+  oscillation by a continuous kernel with compact support gives a uniformly continuous function.
 * `TauCeti.MemVMO.exists_tendsto_bmoSeminorm_sub` and
   `TauCeti.memVMO_iff_exists_tendsto_bmoSeminorm_sub`: Sarason's theorem.
 
@@ -205,36 +203,6 @@ private theorem lintegral_lintegral_closedBall_enorm_sub_le (hf : StronglyMeasur
 
 /-! ### Mollification -/
 
-/-- Smoothing by a nonnegative kernel of integral one moves `f x` by at most the
-`ψ (x - ·)`-weighted average of `‖f x - f w‖ₑ`. -/
-private theorem enorm_sub_convolution_le [CompleteSpace F] {ψ : E → ℝ} (hψ : Continuous ψ)
-    (hψc : HasCompactSupport ψ) (hψ0 : ∀ x, 0 ≤ ψ x) (hψ1 : ∫ x, ψ x ∂μ = 1)
-    (hf : LocallyIntegrable f μ) (x : E) :
-    ‖f x - (ψ ⋆[lsmul ℝ ℝ, μ] f) x‖ₑ ≤ ∫⁻ w, ENNReal.ofReal (ψ (x - w)) * ‖f x - f w‖ₑ ∂μ := by
-  have hint : Integrable (fun w => ψ (x - w) • f w) μ :=
-    (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf x).integrable_swap
-  have hψint : Integrable (fun w => ψ (x - w)) μ :=
-    (hψ.integrable_of_hasCompactSupport hψc).comp_sub_left x
-  have h1 : ∫ w, ψ (x - w) ∂μ = 1 := by rw [integral_sub_left_eq_self ψ μ x, hψ1]
-  have heq : f x - (ψ ⋆[lsmul ℝ ℝ, μ] f) x = ∫ w, ψ (x - w) • (f x - f w) ∂μ := by
-    simp only [convolution_eq_swap, lsmul_apply, smul_sub]
-    rw [integral_sub (hψint.smul_const (f x)) hint, integral_smul_const, h1, one_smul]
-  rw [heq]
-  refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq (lintegral_congr fun w => ?_))
-  rw [enorm_smul, Real.enorm_of_nonneg (hψ0 _)]
-
-/-- The increments of `ψ ⋆ f` are the `ψ`-weighted averages of the increments of the translates of
-`f`. -/
-private theorem enorm_convolution_sub_convolution_le {ψ : E → ℝ} (hψ : Continuous ψ)
-    (hψc : HasCompactSupport ψ) (hψ0 : ∀ x, 0 ≤ ψ x) (hf : LocallyIntegrable f μ) (x y : E) :
-    ‖(ψ ⋆[lsmul ℝ ℝ, μ] f) x - (ψ ⋆[lsmul ℝ ℝ, μ] f) y‖ₑ ≤
-      ∫⁻ z, ENNReal.ofReal (ψ z) * ‖f (x - z) - f (y - z)‖ₑ ∂μ := by
-  rw [convolution_def, convolution_def,
-    ← integral_sub (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf x)
-      (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf y)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq (lintegral_congr fun z => ?_))
-  simp only [lsmul_apply, ← smul_sub, enorm_smul, Real.enorm_of_nonneg (hψ0 z)]
-
 /-- On a ball of radius at most `r`, the average of `‖g x - g y‖ₑ` over pairs of points, for
 `g = ψ ⋆ f`, is at most `2 η_f(r)`: `g` is an average of translates of `f`. -/
 private theorem setLAverage_setLAverage_enorm_convolution_sub_le {ψ : E → ℝ} (hψ : Continuous ψ)
@@ -258,7 +226,8 @@ private theorem setLAverage_setLAverage_enorm_convolution_sub_le {ψ : E → ℝ
       ≤ ∫⁻ x, ∫⁻ y, ∫⁻ z, K x y z ∂μ ∂ν ∂ν := by
         simp only [setLAverage_eq']
         exact lintegral_mono fun x => lintegral_mono fun y =>
-          enorm_convolution_sub_convolution_le hψ hψc hψ0 hfi x y
+          (enorm_convolution_lsmul_sub_convolution_lsmul_le hψ hψc hfi x y).trans_eq
+            (lintegral_congr fun z => by rw [Real.enorm_of_nonneg (hψ0 z)])
     _ = ∫⁻ z, ENNReal.ofReal (ψ z) * ∫⁻ x, ∫⁻ y, ‖f (x - z) - f (y - z)‖ₑ ∂ν ∂ν ∂μ := by
         have hswap (x : E) : ∫⁻ y, ∫⁻ z, K x y z ∂μ ∂ν = ∫⁻ z, ∫⁻ y, K x y z ∂ν ∂μ :=
           lintegral_lintegral_swap
@@ -310,28 +279,6 @@ private theorem setLAverage_enorm_sub_convolution_sub_setAverage_le_of_le {ψ : 
         (setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hrt) hosc_g)
     _ = 3 * vmoModulus f μ t := by ring
 
-/-- If `0 ≤ ψ ≤ M` has integral one and vanishes off `closedBall 0 t`, then
-`‖f x - (ψ ⋆ f) x‖ₑ` is at most `M` times the integral of `‖f x - f w‖ₑ` over
-`w ∈ closedBall x t`. -/
-private theorem enorm_sub_convolution_le_mul_lintegral {ψ : E → ℝ} (hψ : Continuous ψ)
-    (hψc : HasCompactSupport ψ) (hψ0 : ∀ x, 0 ≤ ψ x)
-    (hψ1 : ∫ x, ψ x ∂μ = 1) {t : ℝ} (hψt : Function.support ψ ⊆ closedBall 0 t) {M : ℝ}
-    (hψM : ∀ x, ψ x ≤ M) (hfi : LocallyIntegrable f μ) (x : E) :
-    ‖f x - (ψ ⋆[lsmul ℝ ℝ, μ] f) x‖ₑ ≤
-      ENNReal.ofReal M * ∫⁻ w in closedBall x t, ‖f x - f w‖ₑ ∂μ := by
-  refine (enorm_sub_convolution_le hψ hψc hψ0 hψ1 hfi x).trans ?_
-  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-    ← lintegral_indicator measurableSet_closedBall]
-  refine lintegral_mono fun w => ?_
-  by_cases hw : w ∈ closedBall x t
-  · rw [indicator_of_mem hw]
-    gcongr
-    exact hψM _
-  · rw [indicator_of_notMem hw]
-    have h0 : ψ (x - w) = 0 := Function.notMem_support.1 fun h => hw <| by
-      simpa [mem_closedBall, dist_eq_norm, norm_sub_rev] using hψt h
-    simp [h0]
-
 /-- On a ball of radius `r ≥ t`, the integral of `‖f - ψ ⋆ f‖ₑ` is at most
 `2 · 4ⁿ M μ(B(0, t)) η_f(t)` times the measure of the ball. -/
 private theorem setLIntegral_enorm_sub_convolution_le {ψ : E → ℝ} (hψ : Continuous ψ)
@@ -357,7 +304,8 @@ private theorem setLIntegral_enorm_sub_convolution_le {ψ : E → ℝ} (hψ : Co
             ENNReal.ofReal_ofNat, ← Measure.addHaar_ball_center μ c r]
   calc ∫⁻ x in ball c r, ‖f x - (ψ ⋆[lsmul ℝ ℝ, μ] f) x‖ₑ ∂μ
       ≤ ∫⁻ x in ball c r, ENNReal.ofReal M * ∫⁻ w in closedBall x t, ‖f x - f w‖ₑ ∂μ ∂μ :=
-        lintegral_mono (enorm_sub_convolution_le_mul_lintegral hψ hψc hψ0 hψ1 hψt hψM hfi)
+        lintegral_mono (enorm_sub_convolution_lsmul_le_mul_lintegral hψ hψc hψ1 hψt
+          (fun x => (Real.norm_of_nonneg (hψ0 x)).trans_le (hψM x)) hfi)
     _ = ENNReal.ofReal M * ∫⁻ x in ball c r, ∫⁻ w in closedBall x t, ‖f x - f w‖ₑ ∂μ ∂μ :=
         lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
     _ ≤ ENNReal.ofReal M *
@@ -432,22 +380,23 @@ theorem bmoSeminorm_sub_convolution_le {ψ : E → ℝ} (hψ : Continuous ψ) (h
 
 /-! ### Uniform continuity of mollifications -/
 
-/-- For a Lipschitz kernel `ψ` vanishing off `closedBall 0 t` and `f` of bounded mean oscillation,
-`ψ ⋆ f` is Lipschitz at scales below `t`, with constant `K μ(B(0, 2t)) ‖f‖_{BMO}`. Subtracting
-the average `m` of `f` on `B(x, 2t)` costs nothing, since `ψ (x - ·)` and `ψ (y - ·)` have the
-same integral. -/
-private theorem edist_convolution_le (hf : MemBMO f μ) {ψ : E → ℝ} {K : ℝ≥0}
-    (hψ : LipschitzWith K ψ) (hψc : HasCompactSupport ψ) {t : ℝ}
-    (hψ0 : ∀ z, t < ‖z‖ → ψ z = 0) {x y : E} (hxy : dist x y < t) :
+/-- For a kernel `ψ` vanishing off `closedBall 0 t`, `f` of bounded mean oscillation and
+`dist x y < t`, if `ψ (x - ·)` and `ψ (y - ·)` differ by at most `η` everywhere, then
+`(ψ ⋆ f) x` and `(ψ ⋆ f) y` differ by at most `η μ(B(0, 2t)) ‖f‖_{BMO}`. Subtracting the average
+`m` of `f` on `B(x, 2t)` costs nothing, since `ψ (x - ·)` and `ψ (y - ·)` have the same
+integral. -/
+private theorem edist_convolution_le (hf : MemBMO f μ) {ψ : E → ℝ} (hψ : Continuous ψ)
+    (hψc : HasCompactSupport ψ) {t : ℝ} (hψ0 : ∀ z, t < ‖z‖ → ψ z = 0) {x y : E}
+    (hxy : dist x y < t) {η : ℝ≥0∞} (hη : ∀ w, ‖ψ (x - w) - ψ (y - w)‖ₑ ≤ η) :
     edist ((ψ ⋆[lsmul ℝ ℝ, μ] f) x) ((ψ ⋆[lsmul ℝ ℝ, μ] f) y) ≤
-      K * μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ * edist x y := by
+      η * μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ := by
   have ht : 0 < t := dist_nonneg.trans_lt hxy
   set m := ⨍ w in ball x (2 * t), f w ∂μ
-  have hψi : Integrable ψ μ := hψ.continuous.integrable_of_hasCompactSupport hψc
+  have hψi : Integrable ψ μ := hψ.integrable_of_hasCompactSupport hψc
   have hix : Integrable (fun w => ψ (x - w) • f w) μ :=
-    (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ.continuous hf.locallyIntegrable x).integrable_swap
+    (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf.locallyIntegrable x).integrable_swap
   have hiy : Integrable (fun w => ψ (y - w) • f w) μ :=
-    (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ.continuous hf.locallyIntegrable y).integrable_swap
+    (hψc.convolutionExists_left (lsmul ℝ ℝ) hψ hf.locallyIntegrable y).integrable_swap
   have hd : Integrable (fun w => ψ (x - w) - ψ (y - w)) μ :=
     (hψi.comp_sub_left x).sub (hψi.comp_sub_left y)
   have heq : (ψ ⋆[lsmul ℝ ℝ, μ] f) x - (ψ ⋆[lsmul ℝ ℝ, μ] f) y =
@@ -463,13 +412,13 @@ private theorem edist_convolution_le (hf : MemBMO f μ) {ψ : E → ℝ} {K : �
   rw [edist_eq_enorm_sub, heq]
   refine (enorm_integral_le_lintegral_enorm _).trans ?_
   calc ∫⁻ w, ‖(ψ (x - w) - ψ (y - w)) • (f w - m)‖ₑ ∂μ
-      ≤ ∫⁻ w, (ball x (2 * t)).indicator (fun w => K * edist x y * ‖f w - m‖ₑ) w ∂μ := by
+      ≤ ∫⁻ w, (ball x (2 * t)).indicator (fun w => η * ‖f w - m‖ₑ) w ∂μ := by
         refine lintegral_mono fun w => ?_
         rw [enorm_smul]
         by_cases hw : w ∈ ball x (2 * t)
-        · rw [indicator_of_mem hw, ← edist_eq_enorm_sub]
+        · rw [indicator_of_mem hw]
           gcongr
-          simpa [edist_sub_right] using hψ.edist_le_mul (x - w) (y - w)
+          exact hη w
         · rw [indicator_of_notMem hw]
           have hxw : 2 * t ≤ ‖x - w‖ := by
             simpa [mem_ball, dist_eq_norm, norm_sub_rev] using hw
@@ -478,22 +427,22 @@ private theorem edist_convolution_le (hf : MemBMO f μ) {ψ : E → ℝ} {K : �
             rw [← dist_eq_norm x y] at h1
             linarith
           simp [hψ0 _ (by linarith : t < ‖x - w‖), hψ0 _ hyw]
-    _ = K * edist x y * (μ (ball x (2 * t)) *
-          ⨍⁻ w in ball x (2 * t), ‖f w - m‖ₑ ∂μ) := by
-        rw [lintegral_indicator measurableSet_ball, lintegral_const_mul' _ _
-          (ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)),
+    _ = η * (μ (ball x (2 * t)) * ⨍⁻ w in ball x (2 * t), ‖f w - m‖ₑ ∂μ) := by
+        have hm : AEMeasurable (fun w => ‖f w - m‖ₑ) (μ.restrict (ball x (2 * t))) :=
+          (hf.locallyIntegrable.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.restrict
+        rw [lintegral_indicator measurableSet_ball, lintegral_const_mul'' _ hm,
           measure_mul_setLAverage _ measure_ball_lt_top.ne]
-    _ ≤ K * edist x y * (μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ) := by
+    _ ≤ η * (μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ) := by
         rw [hball]
         gcongr
         exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ x _
-    _ = K * μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ * edist x y := by ring
+    _ = η * μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ := by ring
 
 /-- **Mollifications of functions of bounded mean oscillation are uniformly continuous.** If `f`
-has bounded mean oscillation and `ψ` is Lipschitz with compact support, then `ψ ⋆ f` is uniformly
+has bounded mean oscillation and `ψ` is continuous with compact support, then `ψ ⋆ f` is uniformly
 continuous. -/
-theorem MemBMO.uniformContinuous_convolution (hf : MemBMO f μ) {ψ : E → ℝ} {K : ℝ≥0}
-    (hψ : LipschitzWith K ψ) (hψc : HasCompactSupport ψ) :
+theorem MemBMO.uniformContinuous_convolution (hf : MemBMO f μ) {ψ : E → ℝ} (hψ : Continuous ψ)
+    (hψc : HasCompactSupport ψ) :
     UniformContinuous (ψ ⋆[lsmul ℝ ℝ, μ] f) := by
   obtain ⟨R, hR⟩ := hψc.isCompact.isBounded.subset_closedBall (0 : E)
   set t := max R 1
@@ -502,20 +451,25 @@ theorem MemBMO.uniformContinuous_convolution (hf : MemBMO f μ) {ψ : E → ℝ}
     image_eq_zero_of_notMem_tsupport fun h => by
       have := mem_closedBall_zero_iff.1 (hR h)
       linarith [le_max_left R 1]
-  set C := (K : ℝ≥0∞) * μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ with hC_def
-  have hC : C ≠ ∞ := ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top
-    measure_ball_lt_top.ne) hf.bmoSeminorm_ne_top
-  refine Metric.uniformContinuous_iff.2 fun ε hε => ⟨min t (ε / (C.toReal + 1)),
-    lt_min ht (div_pos hε (by positivity)), fun {x y} hxy => ?_⟩
-  have h := edist_convolution_le hf hψ hψc hψ0 (hxy.trans_le (min_le_left _ _))
-  rw [← hC_def, edist_dist, edist_dist, ← ENNReal.ofReal_toReal hC,
-    ← ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
-  calc dist ((ψ ⋆[lsmul ℝ ℝ, μ] f) x) ((ψ ⋆[lsmul ℝ ℝ, μ] f) y) ≤ C.toReal * dist x y := h
-    _ ≤ C.toReal * (ε / (C.toReal + 1)) := by
-        gcongr
-        exact hxy.le.trans (min_le_right _ _)
+  set C := μ (ball (0 : E) (2 * t)) * bmoSeminorm f μ with hC_def
+  have hC : C ≠ ∞ := ENNReal.mul_ne_top measure_ball_lt_top.ne hf.bmoSeminorm_ne_top
+  refine Metric.uniformContinuous_iff.2 fun ε hε => ?_
+  set η := ε / (C.toReal + 1)
+  have hη : 0 < η := div_pos hε (by positivity)
+  obtain ⟨δ, hδ, hψδ⟩ :=
+    Metric.uniformContinuous_iff.1 (hψc.uniformContinuous_of_continuous hψ) η hη
+  refine ⟨min t δ, lt_min ht hδ, fun {x y} hxy => ?_⟩
+  have hw (w : E) : ‖ψ (x - w) - ψ (y - w)‖ₑ ≤ ENNReal.ofReal η := by
+    rw [← edist_eq_enorm_sub, edist_dist]
+    refine ENNReal.ofReal_le_ofReal (hψδ ?_).le
+    rw [dist_sub_right]
+    exact hxy.trans_le (min_le_right _ _)
+  have h := edist_convolution_le hf hψ hψc hψ0 (hxy.trans_le (min_le_left _ _)) hw
+  rw [mul_assoc, ← hC_def, edist_dist, ← ENNReal.ofReal_toReal hC,
+    ← ENNReal.ofReal_mul hη.le, ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
+  calc dist ((ψ ⋆[lsmul ℝ ℝ, μ] f) x) ((ψ ⋆[lsmul ℝ ℝ, μ] f) y) ≤ η * C.toReal := h
     _ < ε := by
-        rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+        rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
         nlinarith [ENNReal.toReal_nonneg (a := C)]
 
 /-! ### Sarason's theorem -/
@@ -564,10 +518,8 @@ theorem MemVMO.exists_tendsto_bmoSeminorm_sub (hf : MemVMO f μ) :
     bmoSeminorm_sub_normed_convolution_le (φ k)
       (ContDiffBump.rOut_shrinking_eq_two_mul_rIn one_pos k).le hfi
   refine ⟨fun k => (φ k).normed μ ⋆[lsmul ℝ ℝ, μ] f, fun k => ?_, fun k => ?_, ?_⟩
-  · obtain ⟨K, hK⟩ :=
-      ((φ k).contDiff_normed (μ := μ) (n := 1)).lipschitzWith_of_hasCompactSupport
-        (φ k).hasCompactSupport_normed one_ne_zero
-    exact hf.memBMO.uniformContinuous_convolution hK (φ k).hasCompactSupport_normed
+  · exact hf.memBMO.uniformContinuous_convolution (φ k).continuous_normed
+      (φ k).hasCompactSupport_normed
   · have hg : Continuous ((φ k).normed μ ⋆[lsmul ℝ ℝ, μ] f) :=
       (φ k).hasCompactSupport_normed.continuous_convolution_left (lsmul ℝ ℝ)
         (φ k).continuous_normed hfi
