@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.MarkovChain.FiniteEntrance
 public import TauCeti.Probability.MarkovChain.Reachability
-public import TauCeti.Probability.Kernel.ClosedClass
+public import TauCeti.Probability.Kernel.ClosedClass.Basic
 
 /-!
 # Eventual entrance into a closed communicating class
