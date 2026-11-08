@@ -61,6 +61,8 @@ forcing the integral and real ranks to agree.
   the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
+* `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
+  finite-dimensional space is an integral lattice for its inclusion.
 
 ## Implementation notes
 
@@ -344,6 +346,17 @@ theorem IsIntegralLattice.isZLattice (h : IsIntegralLattice i) :
     IsZLattice ℝ (LinearMap.range i.toIntLinearMap) :=
   haveI := h.discreteTopology
   ⟨by rw [LinearMap.coe_range]; exact h.span_range_eq_top⟩
+
+/-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
+space, is an integral lattice for its inclusion: the space is the real scalar extension of the
+lattice. -/
+theorem isIntegralLattice_subtype_of_isZLattice [FiniteDimensional ℝ V] (L : Submodule ℤ V)
+    [DiscreteTopology L] [IsZLattice ℝ L] : IsIntegralLattice L.subtype.toAddMonoidHom := by
+  have : Module.Free ℤ L := ZLattice.module_free ℝ L
+  have : Module.Finite ℤ L := ZLattice.module_finite ℝ L
+  let b := Module.Free.chooseBasis ℤ L
+  exact isIntegralLattice_of_basis b (b.ofZLatticeBasis ℝ L) fun j ↦
+    (Module.Basis.ofZLatticeBasis_apply ℝ L b j).symm
 
 end Discrete
 
