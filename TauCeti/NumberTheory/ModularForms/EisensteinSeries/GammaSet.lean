@@ -145,7 +145,7 @@ lemma nonempty_gammaSet_of_forall_ne_mul_prime {M p : ℕ} [NeZero M] [NeZero N]
       fin_cases i
       exacts [hpd.trans (Nat.gcd_dvd_left _ _), hpd.trans (Nat.gcd_dvd_right _ _)]
     refine hι (fun i ↦ (((c i).val / p : ℕ) : ZMod M)) (funext fun i ↦ ZMod.val_injective N ?_)
-    refine (ZMod.val_natCast_mul_val hp.pos hNM _).trans ?_
+    refine (ZMod.val_natCast_mul_val hNM _).trans ?_
     rw [ZMod.val_natCast_of_lt, Nat.mul_div_cancel' (hdvd i)]
     exact (Nat.div_lt_iff_lt_mul hp.pos).mpr (hNM ▸ (c i).val_lt)
   have hcop := Nat.Coprime.mul_right hM hpc

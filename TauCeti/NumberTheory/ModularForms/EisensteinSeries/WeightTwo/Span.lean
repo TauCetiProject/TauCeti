@@ -135,7 +135,7 @@ private lemma weightedG2_sub_mem_g2Span {p : ℕ} (hp : p.Prime) (hNM : N = M * 
   -- the residues `p e` modulo `N`
   let ι : (Fin 2 → ZMod M) → (Fin 2 → ZMod N) := fun e i ↦ ((p * (e i).val : ℕ) : ZMod N)
   have hval (e : Fin 2 → ZMod M) (i : Fin 2) : (ι e i).val = p * (e i).val :=
-    ZMod.val_natCast_mul_val hp.pos hNM (e i)
+    ZMod.val_natCast_mul_val hNM (e i)
   have hπι (e : Fin 2 → ZMod M) : π (ι e) = (p : ZMod M) • e := by
     ext i
     simp only [π, ι, Function.comp_apply, Nat.cast_mul, map_mul, map_natCast,
