@@ -66,13 +66,7 @@ theorem continuous_betaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) {V : ℝ 
 theorem measurable_betaGasWeight (n : ℕ) (β : ℝ) {V : ℝ → ℝ}
     (hV : Measurable V) : Measurable (betaGasWeight n β V) := by
   have hrpow : Measurable (fun t : ℝ => |t| ^ β) := by
-    have heq : (fun t : ℝ => |t| ^ β) =
-        fun t => if |t| = 0 then (if β = 0 then 1 else 0)
-          else exp (log |t| * β) := by
-      funext t
-      exact Real.rpow_def_of_nonneg (abs_nonneg t) β
-    rw [heq]
-    exact Measurable.ite (by measurability) measurable_const (by fun_prop)
+    fun_prop
   unfold betaGasWeight
   fun_prop
 
