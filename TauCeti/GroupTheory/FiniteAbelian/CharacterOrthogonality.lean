@@ -132,6 +132,8 @@ theorem sum_units_mul_eq_neg_one (ψ : AddChar F R) (hψ : ψ ≠ 1) (c : Fˣ) :
 
 end AddChar
 
+section Finite
+
 variable {G : Type*} [Finite G] {M : Type*} [CommRing M] [IsDomain M]
 
 /-- The characters of a finite left-cancellative monoid valued in a domain form a `Fintype`.
@@ -188,12 +190,21 @@ theorem sum_inv_mul_monoidHom_apply_eq_ite [DecidableEq G] (σ g : G) :
     fun χ ↦ by rw [map_mul, map_inv, Units.val_mul]
   simp only [key, sum_monoidHom_apply_eq_ite, inv_mul_eq_one, eq_comm]
 
+end CommGroup
+
+end Finite
+
+section Fintype
+
+variable {G : Type*} [Fintype G] [CommGroup G] {M : Type*} [CommRing M] [IsDomain M]
+  [HasEnoughRootsOfUnity M (Monoid.exponent G)]
+
 /-- **Fourier inversion on a finite commutative group.** For a family `u : G → V` in an
 `M`-module, summing `(χ σ)⁻¹` against the transform `∑ g, χ g • u g` over all characters `χ`
 recovers `Nat.card G • u σ`. This is `sum_inv_mul_monoidHom_apply_eq_ite` with coefficients in a
 module: it inverts any expansion of a family of vectors indexed by characters in terms of
 vectors indexed by group elements. -/
-theorem sum_inv_smul_sum_smul [Fintype G] {V : Type*} [AddCommMonoid V] [Module M V]
+theorem CommGroup.sum_inv_smul_sum_smul {V : Type*} [AddCommMonoid V] [Module M V]
     (u : G → V) (σ : G) :
     ∑ χ : G →* Mˣ, (((χ σ)⁻¹ : Mˣ) : M) • ∑ g, ((χ g : Mˣ) : M) • u g =
       (Nat.card G : M) • u σ := by
@@ -203,7 +214,9 @@ theorem sum_inv_smul_sum_smul [Fintype G] {V : Type*} [AddCommMonoid V] [Module 
   simp_rw [← Finset.sum_smul, sum_inv_mul_monoidHom_apply_eq_ite, ite_smul, zero_smul]
   simp
 
-end CommGroup
+end Fintype
+
+variable {G : Type*} [Finite G] {M : Type*} [CommRing M] [IsDomain M]
 
 namespace TauCeti
 
