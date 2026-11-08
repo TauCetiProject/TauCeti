@@ -127,25 +127,26 @@ theorem ofFDRepLinearEquiv_symm_ρ_apply (V : FDRep k G) (g : G) (x : V) :
 
 /-- A representation is isomorphic to the representation attached to its `k[G]`-module, by the
 identity map of the underlying vector space. -/
-def unitIso (V : FDRep k G) : V ≅ (toFDRep k G).obj ((ofFDRep k G).obj V) :=
+def ofFDRepUnitIso (V : FDRep k G) : V ≅ (toFDRep k G).obj ((ofFDRep k G).obj V) :=
   Action.mkIso (ofFDRepLinearEquiv V).symm.toFGModuleCatIso fun g => by
     ext x
     exact ofFDRepLinearEquiv_symm_ρ_apply V g x
 
 /-- The unit isomorphism is the identity of the underlying vector space. -/
 @[simp]
-theorem unitIso_hom_hom_hom_hom_apply (V : FDRep k G) (x : V) :
-    (unitIso V).hom.hom.hom.hom x = (ofFDRepLinearEquiv V).symm x := (rfl)
+theorem ofFDRepUnitIso_hom_hom_hom_hom_apply (V : FDRep k G) (x : V) :
+    (ofFDRepUnitIso V).hom.hom.hom.hom x = (ofFDRepLinearEquiv V).symm x := (rfl)
 
 /-- The inverse unit isomorphism is the identity of the underlying vector space. -/
 @[simp]
-theorem unitIso_inv_hom_hom_hom_apply (V : FDRep k G)
+theorem ofFDRepUnitIso_inv_hom_hom_hom_apply (V : FDRep k G)
     (x : (toFDRep k G).obj ((ofFDRep k G).obj V)) :
-    (unitIso V).inv.hom.hom.hom x = ofFDRepLinearEquiv V x := (rfl)
+    (ofFDRepUnitIso V).inv.hom.hom.hom x = ofFDRepLinearEquiv V x := (rfl)
 
 /-- Naturality of the unit isomorphisms. -/
-theorem unitIso_hom_naturality {V W : FDRep k G} (f : V ⟶ W) :
-    f ≫ (unitIso W).hom = (unitIso V).hom ≫ (toFDRep k G).map ((ofFDRep k G).map f) := by
+theorem ofFDRepUnitIso_hom_naturality {V W : FDRep k G} (f : V ⟶ W) :
+    f ≫ (ofFDRepUnitIso W).hom =
+      (ofFDRepUnitIso V).hom ≫ (toFDRep k G).map ((ofFDRep k G).map f) := by
   ext; rfl
 
 end FDRep
@@ -209,12 +210,12 @@ namespace FDRep
 open TauCeti.FiniteHopfModuleCat (ofFDRep toFDRep fdRepCounitIso fdRepCounitIso_hom_hom_hom_apply)
 
 /-- The triangle identity relating the unit and counit isomorphisms. -/
-theorem ofFDRep_map_unitIso_hom_comp_fdRepCounitIso_hom (V : FDRep k G) :
-    (ofFDRep k G).map (unitIso V).hom ≫ (fdRepCounitIso ((ofFDRep k G).obj V)).hom =
+theorem ofFDRep_map_ofFDRepUnitIso_hom_comp_fdRepCounitIso_hom (V : FDRep k G) :
+    (ofFDRep k G).map (ofFDRepUnitIso V).hom ≫ (fdRepCounitIso ((ofFDRep k G).obj V)).hom =
       𝟙 _ := by
   ext x
   exact fdRepCounitIso_hom_hom_hom_apply ((ofFDRep k G).obj V)
-    (((ofFDRep k G).map (unitIso V).hom).hom.hom x)
+    (((ofFDRep k G).map (ofFDRepUnitIso V).hom).hom.hom x)
 
 end FDRep
 
@@ -231,20 +232,20 @@ functor is `ofFDRep k G` and the inverse is `toFDRep k G`. -/
 @[expose] def equivalenceFDRep : FDRep k G ≌ FiniteHopfModuleCat k k[G] where
   functor := ofFDRep k G
   inverse := toFDRep k G
-  unitIso := NatIso.ofComponents FDRep.unitIso FDRep.unitIso_hom_naturality
+  unitIso := NatIso.ofComponents FDRep.ofFDRepUnitIso FDRep.ofFDRepUnitIso_hom_naturality
   counitIso := NatIso.ofComponents fdRepCounitIso fdRepCounitIso_hom_naturality
-  functor_unitIso_comp := FDRep.ofFDRep_map_unitIso_hom_comp_fdRepCounitIso_hom
+  functor_unitIso_comp := FDRep.ofFDRep_map_ofFDRepUnitIso_hom_comp_fdRepCounitIso_hom
 
-/-- The components of the unit of `equivalenceFDRep` are `FDRep.unitIso`. -/
+/-- The components of the unit of `equivalenceFDRep` are `FDRep.ofFDRepUnitIso`. -/
 @[simp]
 theorem equivalenceFDRep_unitIso_hom_app (V : FDRep k G) :
-    (equivalenceFDRep k G).unitIso.hom.app V = (FDRep.unitIso V).hom := (rfl)
+    (equivalenceFDRep k G).unitIso.hom.app V = (FDRep.ofFDRepUnitIso V).hom := (rfl)
 
 /-- The components of the inverse unit of `equivalenceFDRep` are the inverses of
-`FDRep.unitIso`. -/
+`FDRep.ofFDRepUnitIso`. -/
 @[simp]
 theorem equivalenceFDRep_unitIso_inv_app (V : FDRep k G) :
-    (equivalenceFDRep k G).unitIso.inv.app V = (FDRep.unitIso V).inv := (rfl)
+    (equivalenceFDRep k G).unitIso.inv.app V = (FDRep.ofFDRepUnitIso V).inv := (rfl)
 
 /-- The components of the counit of `equivalenceFDRep` are `fdRepCounitIso`. -/
 @[simp]
