@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
