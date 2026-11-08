@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ModularForms.Integral.Basic
 public import TauCeti.NumberTheory.ModularForms.CuspComplementDescent
 
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
-import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
 /-!
 # Integral forms under restriction and trace
@@ -63,42 +62,6 @@ open scoped MatrixGroups Pointwise
 namespace TauCeti.ModularForm
 
 variable {R : Subring ℂ} {k : ℤ}
-
-section Restrict
-
-variable {Γ' Γ : Subgroup (GL (Fin 2) ℝ)} [Γ'.HasDetOne] [Γ'.IsArithmetic] [Γ.HasDetOne]
-  [Γ.IsArithmetic]
-
-/-- **Integrality at every cusp does not depend on the group.** For arithmetic subgroups
-`Γ' ≤ Γ`, a form on `Γ` has all its cusp expansions in `R` exactly when its restriction to `Γ'`
-does: at each cusp, the expansion for `Γ'` is the expansion for `Γ` in a power of `q`. -/
-theorem restrict_mem_integralAtCusps_iff (h : Γ' ≤ Γ) {f : ModularForm Γ k} :
-    ModularForm.restrict h f ∈ integralAtCusps R Γ' k ↔ f ∈ integralAtCusps R Γ k := by
-  rw [mem_integralAtCusps_iff, mem_integralAtCusps_iff]
-  refine forall_congr' fun γ ↦ ?_
-  -- read both expansions at a common period, the integer cusp width of the conjugate of `Γ'`
-  set Γ'γ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ'
-  have : Γ'γ.IsArithmetic := by
-    simpa [Γ'γ, ← (Rat.castHom ℝ).algebraMap_toAlgebra, map_inv, map_mapGL]
-      using Subgroup.IsArithmetic.conj Γ' (mapGL ℚ γ)⁻¹
-  have hN := TauCeti.Subgroup.integerCuspWidth_mem_strictPeriods (𝒢 := Γ'γ)
-  have hNΓ : (TauCeti.Subgroup.integerCuspWidth Γ'γ : ℝ) ∈
-      (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictPeriods :=
-    Subgroup.mem_strictPeriods_iff.mpr
-      (Subgroup.pointwise_smul_le_pointwise_smul_iff.mpr h (Subgroup.mem_strictPeriods_iff.mp hN))
-  obtain ⟨m', hm', he'⟩ := exists_qExpansion_translate_eq_expand_qExpansionAt
-    (TauCeti.Subgroup.integerCuspWidth_pos (𝒢 := Γ'γ)) hN (ModularForm.restrict h f)
-  obtain ⟨m, hm, he⟩ := exists_qExpansion_translate_eq_expand_qExpansionAt
-    (TauCeti.Subgroup.integerCuspWidth_pos (𝒢 := Γ'γ)) hNΓ f
-  have heq : qExpansion (TauCeti.Subgroup.integerCuspWidth Γ'γ : ℝ)
-      (translate (ModularForm.restrict h f) (mapGL ℝ γ)) =
-        qExpansion (TauCeti.Subgroup.integerCuspWidth Γ'γ : ℝ) (translate f (mapGL ℝ γ)) := by
-    rw [coe_translate, coe_translate, ModularForm.coe_restrict]
-  rw [he', he] at heq
-  rw [← PowerSeries.forall_coeff_expand_mem_iff hm'.ne', heq,
-    PowerSeries.forall_coeff_expand_mem_iff]
-
-end Restrict
 
 variable {N : ℕ} [NeZero N]
 

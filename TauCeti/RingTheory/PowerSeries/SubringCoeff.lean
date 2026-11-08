@@ -76,6 +76,7 @@ theorem coeff_mem_of_coeff_mul_mem {m : ℕ} {F D : S⟦X⟧} (hD : ∀ i < m, c
 /-- **Expansion preserves and reflects coefficients in a subring.** The coefficients of
 `expand p φ`, the power series `φ` with `Xᵖ` substituted for `X`, all lie in a subring `R` if and
 only if those of `φ` do. -/
+@[simp]
 theorem forall_coeff_expand_mem_iff {S : Type*} [CommRing S] {R : Subring S} {p : ℕ}
     (hp : p ≠ 0) {φ : S⟦X⟧} : (∀ n, coeff n (expand p hp φ) ∈ R) ↔ ∀ n, coeff n φ ∈ R := by
   refine ⟨fun h n ↦ by simpa using h (p * n), fun h n ↦ ?_⟩
