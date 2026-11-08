@@ -109,11 +109,15 @@ theorem betaMeasure_map_centered_sq {a : ℝ} (ha : 0 < a) :
 
 /-- A negation-invariant finite real measure whose square has law `Beta(1 / 2, a)` is the
 symmetric Beta law with shape `a`, centered and scaled to `(-1, 1)`. -/
-theorem eq_map_betaMeasure_of_map_sq_of_map_neg {μ : Measure ℝ} [IsFiniteMeasure μ]
+theorem eq_map_betaMeasure_of_map_sq_of_map_neg {μ : Measure ℝ}
     {a : ℝ} (ha : 0 < a) (hsq : μ.map (fun x ↦ x ^ 2) = betaMeasure (1 / 2) a)
     (hneg : μ.map (fun x ↦ -x) = μ) :
     μ = (betaMeasure a a).map (fun x ↦ -1 + 2 * x) := by
   have := isProbabilityMeasureBeta ha ha
+  have : IsFiniteMeasure μ := by
+    have := isProbabilityMeasureBeta (by norm_num : (0 : ℝ) < 1 / 2) ha
+    have : IsFiniteMeasure (μ.map (fun x : ℝ ↦ x ^ 2)) := by rw [hsq]; infer_instance
+    exact Measure.isFiniteMeasure_of_map (μ := μ) (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
   apply Measure.eq_of_map_sq_eq_of_map_neg_eq_self _ _ hneg
   · calc
       _ = ((betaMeasure a a).map (fun x ↦ 1 - x)).map (fun x ↦ -1 + 2 * x) := by
