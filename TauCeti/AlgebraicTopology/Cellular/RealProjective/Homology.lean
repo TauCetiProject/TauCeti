@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 public import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -39,6 +40,8 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring `F`,
   the Betti numbers `dim Hₖ(RPᴺ; F)` are `1` for every `k ≤ N` when `2 = 0` in `F`, and `1` only in
   degree `0` and, for odd `N`, in degree `N` when `2 ≠ 0` in `F`.
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization`: the projectivization
+  `ℙ ℝ (Fin (N + 1) → ℝ)` has the same Betti numbers as `RPᴺ`.
 * `TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_int_of_even`: integrally, `Hₖ(RPᴺ; ℤ)` is
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
@@ -54,6 +57,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Set Topology Topology.RelCWComplex
+open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti.RealProjectiveSpace
 
@@ -305,5 +309,15 @@ theorem finrank_singularHomology_of_two_ne_zero (h2 : (2 : F) ≠ 0) (k : ℕ) :
     grind
 
 end Field
+
+/-- The Betti numbers of the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)` are those of the antipodal
+quotient `RPᴺ` of the sphere, along `TauCeti.RealProjectiveSpace.homeomorphProjectivization`. -/
+theorem finrank_singularHomology_projectivization (A : ModuleCat.{0} R) (k : ℕ) :
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj A).obj
+      (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj A).obj
+      (TopCat.of (RealProjectiveSpace N))) :=
+  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj A).mapIso
+    (TopCat.isoOfHomeo (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm
 
 end TauCeti.RealProjectiveSpace

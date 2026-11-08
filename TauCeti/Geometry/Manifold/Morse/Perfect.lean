@@ -116,17 +116,6 @@ theorem IsPerfectMorse.totalCriticalCount_eq [FiniteDimensional ℝ E] (hf : IsP
   rw [← sum_criticalCount_eq_totalCriticalCount]
   exact Finset.sum_congr rfl fun j _ ↦ hf.criticalCount_eq j
 
-/-- On a compact boundaryless manifold carrying a Morse function, homology is finite-dimensional,
-so its rank in `ℕ∞` is its `finrank`. -/
-private lemma IsMorse.toENat_rank_singularHomology [FiniteDimensional ℝ E] [I.Boundaryless]
-    [IsManifold I ∞ M] [T2Space M] [CompactSpace M] (hf : IsMorse I f) (j : ℕ) :
-    (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of M))).toENat =
-    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of M)) := by
-  have := hf.finite_singularHomology (ModuleCat.of k k) j
-  rw [← finrank_eq_rank, Cardinal.toENat_nat]
-
 /-- **The lacunary principle gives perfect Morse functions.** A Morse function on a compact
 boundaryless manifold, no two of whose critical points have indices differing by one, is perfect
 over every division ring. -/
@@ -137,7 +126,7 @@ theorem IsMorse.isPerfectMorse_of_forall_ne_add_one [FiniteDimensional ℝ E] [I
     IsPerfectMorse I k f where
   isMorse := hf
   criticalCount_eq j := by
-    rw [hf.toENat_rank_singularHomology,
+    rw [hf.toENat_rank_singularHomology (ModuleCat.of k k),
       hf.finrank_singularHomology_eq_of_forall_ne_add_one (ModuleCat.of k k) hind j]
     simpa using (ENat.natCast_toNat (hf.criticalCount_ne_top j)).symm
 
@@ -161,17 +150,6 @@ theorem isPerfectMorse_projectiveMomentFunction_complex (k : Type) [DivisionRing
   simp only [manifoldMorseIndex_projectiveMomentFunction, Complex.finrank_real_complex]
   omega
 
-/-- The Betti numbers of the projectivization `ℙ ℝ (Fin (n + 1) → ℝ)` are those of the antipodal
-quotient `RPⁿ` of the sphere, along `TauCeti.RealProjectiveSpace.homeomorphProjectivization`. -/
-private lemma finrank_singularHomology_projectivization (k : Type) [DivisionRing k] (j : ℕ) :
-    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of (ℙ ℝ (Fin (n + 1) → ℝ)))) =
-    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of (RealProjectiveSpace n))) :=
-  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) j).obj
-    (ModuleCat.of k k)).mapIso (TopCat.isoOfHomeo
-      (RealProjectiveSpace.homeomorphProjectivization n))).toLinearEquiv.finrank_eq.symm
-
 /-- **The moment function on `ℝℙⁿ` is perfect in characteristic two.** For pairwise distinct
 weights, the moment function on real projective space is a perfect Morse function over every
 division ring `k` in which `2 = 0`, such as `ZMod 2`: it has one critical point of each index
@@ -182,8 +160,8 @@ theorem isPerfectMorse_projectiveMomentFunction_real {k : Type} [DivisionRing k]
   isMorse := isMorse_projectiveMomentFunction hw
   criticalCount_eq j := by
     rw [criticalCount_projectiveMomentFunction_real hw,
-      (isMorse_projectiveMomentFunction hw).toENat_rank_singularHomology,
-      finrank_singularHomology_projectivization,
+      (isMorse_projectiveMomentFunction hw).toENat_rank_singularHomology (ModuleCat.of k k),
+      RealProjectiveSpace.finrank_singularHomology_projectivization,
       RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero h2]
     split_ifs <;> simp
 
@@ -197,7 +175,8 @@ theorem not_isPerfectMorse_projectivization_real {k : Type} [DivisionRing k] (h2
   -- Over `k` the Betti numbers of `ℝℙⁿ` add up to at most two, so `f` has two critical points.
   have hle : totalCriticalCount 𝓘(ℝ, Fin n → ℝ) f ≤ 2 := by
     rw [hf.totalCriticalCount_eq, finrank_fin_fun]
-    simp only [hf.isMorse.toENat_rank_singularHomology, finrank_singularHomology_projectivization,
+    simp only [hf.isMorse.toENat_rank_singularHomology (ModuleCat.of k k),
+      RealProjectiveSpace.finrank_singularHomology_projectivization,
       RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero h2]
     refine (Finset.sum_le_sum (g := fun j ↦ ((if j = 0 then 1 else 0) + if j = n then 1 else 0 :
       ℕ∞)) fun j _ ↦ ?_).trans ?_
