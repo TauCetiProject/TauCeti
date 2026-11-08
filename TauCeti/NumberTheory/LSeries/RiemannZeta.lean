@@ -160,8 +160,9 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
     · simp
     · rw [one_mul, ofReal_cpow (zero_le_one.trans ht.le), ofReal_neg, ofReal_add, ofReal_one]
   have hFint : MeasureTheory.IntegrableOn F (Set.Ioi 1) :=
-    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound _
-      LSeries.norm_sum_Icc_neg_one_pow_add_one_le (by simpa using h₀)
+    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (r := 0)
+      (Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by
+        simpa using LSeries.norm_sum_Icc_neg_one_pow_add_one_le (R := ℂ) n⟩) (by simpa using h₀)
   have hgint : MeasureTheory.IntegrableOn g (Set.Ioi 1) := by
     simpa using (hFint.congr_fun hFg measurableSet_Ioi).re
   have hg₀ (t : ℝ) (ht : 0 ≤ t) : 0 ≤ g t := by
