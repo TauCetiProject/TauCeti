@@ -34,8 +34,8 @@ with Euler–Lagrange equation `Δw = h (exp (2w) - 1) / 8 + k`. The reduced vor
 case `h = ‖f‖² / (1 + ‖f‖²)` (`TauCeti.Vortex.backgroundWeight`) and
 `k = (h - 1) / 8 + 2 ‖f'‖² / (1 + ‖f‖²)²` (`TauCeti.Vortex.backgroundSource`). The coefficient `k`
 need not be integrable (for `f z = z`, `h - 1 = -(1 + ‖z‖²)⁻¹`), so `𝒜` is the integral of the
-whole density, not a sum of separately finite terms. The density is integrable, for instance,
-whenever `w` is compactly supported
+whole density, not a sum of separately finite terms. For continuous `h` and `k`, the density is
+integrable, for instance, whenever `w` is a compactly supported `C¹` function
 (`TauCeti.Vortex.integrable_taubesDensity_of_hasCompactSupport`).
 
 The expansion `φ(t + s) = φ(t) + φ'(t) s + exp (2t) φ(s)` gives the exact second-order expansion
@@ -479,8 +479,9 @@ section Vortex
 variable {f : ℂ → ℂ} {w : ℂ → ℝ}
 
 /-- The source `k = (h - 1) / 8 + 2 ‖f'‖² / (1 + ‖f‖²)²` of the reduced vortex equation, written
-as an Euler–Lagrange equation of Taubes's functional. Here `2 ‖f'‖² / (1 + ‖f‖²)² = -Δu₀` for the
-background amplitude `u₀` (`TauCeti.Vortex.laplacian_backgroundAmplitude`). -/
+as an Euler–Lagrange equation of Taubes's functional. When `f` is holomorphic,
+`2 ‖f'‖² / (1 + ‖f‖²)² = -Δu₀` for the background amplitude `u₀`
+(`TauCeti.Vortex.laplacian_backgroundAmplitude`). -/
 def backgroundSource (f : ℂ → ℂ) (z : ℂ) : ℝ :=
   (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2
 
