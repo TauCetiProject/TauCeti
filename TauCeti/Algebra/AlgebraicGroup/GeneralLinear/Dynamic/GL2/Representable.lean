@@ -172,6 +172,13 @@ theorem coe_splitTorusLeviMulEquiv_apply (A : CommAlgCat.{w} R)
         Cocharacter.levi A (dynamicCocharacter (R := R))) :
       WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) =
       diagonalTorusPoints f := by
+  -- The group equivalence `splitTorusLeviMulEquiv` is the component at `A` of the functor
+  -- isomorphism `splitTorusPointsIsoLeviFunctor`, whose codomain is
+  -- `(Cocharacter.leviFunctor l).obj A`, only propositionally equal to `Cocharacter.levi A l`
+  -- (`Cocharacter.leviFunctor_obj`). The `change` exposes this identification as `eqToHom`
+  -- applied to the component; both sides are definitionally the same ambient point, because
+  -- `groupIsoToMulEquiv` and `eqToHom` on these subgroup-valued objects are transparent. Then
+  -- `coe_eqToHom_levi_hom_app_mpr` moves the transport across the cocharacter equality.
   change (((eqToHom (Cocharacter.leviFunctor_obj (dynamicCocharacter (R := R)) A))
       ((splitTorusPointsIsoLeviFunctor (R := R)).hom.app A f) :
       Cocharacter.levi A (dynamicCocharacter (R := R))) :
