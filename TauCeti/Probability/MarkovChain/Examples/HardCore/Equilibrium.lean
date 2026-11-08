@@ -63,6 +63,13 @@ private theorem delete_insert_balance (a : ℝ≥0) (I : State G) (v : V) (hi : 
 
 variable [DecidableRel G.Adj]
 
+omit [Fintype V] in
+/-- Either single-site outcome preserves the configuration away from the selected vertex. -/
+private theorem erase_eq_of_single_site_eq (I J : State G) (v : V)
+    (h : occupy G I v = J ∨ erase G I v = J) : erase G I v = erase G J v := by
+  rcases h with h | h <;>
+    simpa using congrArg (fun K => erase G K v) h
+
 /-- At one vertex, the two heat-bath outcomes satisfy detailed balance. -/
 private theorem single_site_balance (a : ℝ≥0) (I J : State G) (v : V) :
     G.hardCorePMF a I *
