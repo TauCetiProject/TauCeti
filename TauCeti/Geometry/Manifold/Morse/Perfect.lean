@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
-public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -37,7 +36,7 @@ Morse function exists depends on the coefficients, as projective spaces show.
   (`TauCeti.IsMorse.criticalCount_finrank_ne_zero`). For even `N ≥ 2` the top homology
   `H_N(ℝPᴺ; k)` vanishes as soon as `2 ≠ 0` in `k`. So no Morse function on `ℝPᴺ`, for instance
   on `ℝP²`, is perfect over `ℚ`, or over any division ring of characteristic other than `2`
-  (`TauCeti.not_isPerfectMorse_realProjectiveSpace`). On `ℝP²` the moment function with three
+  (`TauCeti.not_isPerfectMorse_projectivization_real`). On `ℝP²` the moment function with three
   distinct weights has three critical points, of indices `0`, `1` and `2`; the Betti numbers are
   `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`.
 
@@ -84,11 +83,6 @@ section Compact
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
   {k : Type u} [DivisionRing k]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] in
-/-- The coefficient module `k`, as an object of `ModuleCat k`, is one-dimensional. -/
-private theorem finrank_moduleCatOf_self : finrank k (ModuleCat.of k k) = 1 :=
-  finrank_self k
-
 /-- On a compact manifold, a perfect Morse function is a Morse function whose number of critical
 points of each index `n` is the dimension of `Hₙ(M; k)`; the finite-dimensionality of homology is
 then automatic. -/
@@ -104,7 +98,7 @@ points of each index as `f`. -/
 theorem IsPerfectMorse.criticalCount_le (hf : IsPerfectMorse I k f) (hg : IsMorse I g) (n : ℕ) :
     criticalCount I f n ≤ criticalCount I g n := by
   have h := hg.finrank_singularHomology_le (ModuleCat.of k k) n
-  rw [finrank_moduleCatOf_self, mul_one] at h
+  rw [ModuleCat.finrank_of_self, mul_one] at h
   rw [hf.criticalCount_eq]
   exact (Nat.cast_le.2 h).trans (ENat.natCast_toNat_le_self _)
 
@@ -124,7 +118,7 @@ theorem IsMorse.isPerfectMorse_of_forall_ne_add_one (hf : IsMorse I f)
     IsPerfectMorse I k f := by
   refine isPerfectMorse_iff.2 ⟨hf, fun n ↦ ?_⟩
   rw [hf.finrank_singularHomology_eq_of_forall_ne_add_one (ModuleCat.of k k) hind n,
-    finrank_moduleCatOf_self, mul_one,
+    ModuleCat.finrank_of_self, mul_one,
     ENat.natCast_toNat_eq_self.2 (hf.criticalCount_ne_top n)]
 
 end Compact
@@ -156,33 +150,22 @@ theorem isPerfectMorse_projectiveMomentFunction_real (hw : Function.Injective w)
     [DivisionRing k] (h2 : (2 : k) = 0) :
     IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k (projectiveMomentFunction ℝ w) := by
   refine isPerfectMorse_iff.2 ⟨isMorse_projectiveMomentFunction hw, fun j ↦ ?_⟩
-  -- Transport the homology of the antipodal quotient of the sphere to `ℙ ℝ (Fin (n + 1) → ℝ)`.
-  have e := ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) j).obj
-    (ModuleCat.of k k)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace n))
-      (Y := TopCat.of (ℙ ℝ (Fin (n + 1) → ℝ))) (RealProjectiveSpace.homeomorphProjectivization n))
-  rw [criticalCount_projectiveMomentFunction_real hw, ← e.toLinearEquiv.finrank_eq,
-    RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero h2 j]
+  rw [criticalCount_projectiveMomentFunction_real hw,
+    RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero h2 j]
   simp
 
 /-- **No perfect Morse function on `ℝPᴺ` outside characteristic two.** For even `N ≥ 2`, no Morse
 function on `ℝPᴺ` is perfect with coefficients in a division ring in which `2 ≠ 0`, such as `ℚ`:
 its maximum is a critical point of index `N`, while `H_N(ℝPᴺ; k) = 0`. In particular `ℝP²`
 admits no perfect Morse function over `ℚ`. -/
-theorem not_isPerfectMorse_realProjectiveSpace (hn : Even n) (hn0 : n ≠ 0) {k : Type}
+theorem not_isPerfectMorse_projectivization_real (hn : Even n) (hn0 : n ≠ 0) {k : Type}
     [DivisionRing k] (h2 : (2 : k) ≠ 0) (f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ) :
     ¬ IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k f := by
   intro hf
-  have hzero : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) n).obj
-      (ModuleCat.of k k)).obj (TopCat.of (ℙ ℝ (Fin (n + 1) → ℝ)))) :=
-    (RealProjectiveSpace.isZero_singularHomology_of_even (N := n) k
-      (isRegular_iff_ne_zero.2 h2).right hn hn0).of_iso
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) n).obj
-        (ModuleCat.of k k)).mapIso
-        (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace n))
-          (RealProjectiveSpace.homeomorphProjectivization n)).symm)
-  have := ModuleCat.isZero_iff_subsingleton.1 hzero
   have h := hf.isMorse.criticalCount_finrank_ne_zero
-  rw [finrank_fin_fun, hf.criticalCount_eq, finrank_zero_of_subsingleton] at h
+  rw [finrank_fin_fun, hf.criticalCount_eq, ModuleCat.finrank_eq_zero_of_isZero
+    (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even k
+      (isRegular_iff_ne_zero.2 h2).right hn hn0)] at h
   exact h rfl
 
 end Projective

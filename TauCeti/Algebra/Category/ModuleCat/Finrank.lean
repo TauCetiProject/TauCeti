@@ -16,8 +16,9 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 
 Vanishing and direct sums of objects of `ModuleCat R` are naturally expressed categorically, as
 `CategoryTheory.Limits.IsZero` and biproducts `M ⊞ N`, while the dimension counts that consume them
-speak of `Module.finrank`. This file supplies the translations between the two: a zero object has
-finrank zero, and finrank is additive on biproducts of finite free modules
+speak of `Module.finrank`. This file supplies the translations between the two: the ring itself
+has finrank one (`ModuleCat.finrank_of_self`), a zero object has finrank zero, and finrank is
+additive on biproducts of finite free modules
 (`ModuleCat.finrank_biprod`, the analogue of `FGModuleCat.finrank_biprod`).
 
 Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
@@ -42,6 +43,11 @@ universe v u
 namespace ModuleCat
 
 variable {R : Type u} [Ring R] [Nontrivial R]
+
+/-- The ring `R`, as an object of `ModuleCat R`, has finrank one. -/
+theorem finrank_of_self (R : Type u) [Ring R] [StrongRankCondition R] :
+    Module.finrank R (ModuleCat.of R R) = 1 :=
+  Module.finrank_self R
 
 /-- A zero object in `ModuleCat R` has finrank zero. -/
 theorem finrank_eq_zero_of_isZero {X : ModuleCat.{v} R} (hX : IsZero X) :

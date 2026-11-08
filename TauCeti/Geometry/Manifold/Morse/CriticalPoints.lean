@@ -777,8 +777,9 @@ at a point of minimum. -/
 theorem criticalCount_zero_ne_zero (hf : ContMDiff I 𝓘(ℝ) 2 f) : criticalCount I f 0 ≠ 0 := by
   obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuous.continuousOn
   have hmin : IsLocalMin f x := hx.isLocalMin Filter.univ_mem
-  rw [criticalCount_def, Ne, encard_eq_zero, ← Ne, ← nonempty_iff_ne_empty]
-  exact ⟨x, hmin.mem_criticalPoints, manifoldMorseIndex_eq_zero_of_isLocalMin (hf x) hmin⟩
+  rw [criticalCount_def]
+  exact encard_ne_zero_of_mem
+    ⟨hmin.mem_criticalPoints, manifoldMorseIndex_eq_zero_of_isLocalMin (hf x) hmin⟩
 
 /-- A Morse function on a nonempty compact boundaryless manifold has a critical point of index
 the dimension of the manifold, at a point of maximum. -/

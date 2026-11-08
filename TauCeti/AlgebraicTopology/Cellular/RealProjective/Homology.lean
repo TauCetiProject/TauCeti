@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 public import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -40,6 +41,10 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero`: over a division ring in
   which `2 = 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero above.
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero` and
+  `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even`: the same
+  statements on the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`, transported along
+  `TauCeti.RealProjectiveSpace.homeomorphProjectivization`.
 
 ## References
 
@@ -52,6 +57,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Set Topology Topology.RelCWComplex
+open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti.RealProjectiveSpace
 
@@ -278,5 +284,30 @@ theorem finrank_singularHomology_of_two_eq_zero {R : Type} [DivisionRing R] (h2 
   · have := ModuleCat.isZero_iff_subsingleton.1
       (isZero_singularHomology_of_lt (N := N) R (Nat.lt_of_not_le hkN))
     exact Module.finrank_zero_of_subsingleton
+
+/-! ### The projectivization carrier -/
+
+/-- **Homology of `ℙ ℝ (Fin (N + 1) → ℝ)` in characteristic two.** If `2 = 0` in the division ring
+`R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
+theorem finrank_singularHomology_projectivization_of_two_eq_zero {R : Type} [DivisionRing R]
+    (h2 : (2 : R) = 0) (k : ℕ) :
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
+      if k ≤ N then 1 else 0 :=
+  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+    (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+      (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm.trans
+    (finrank_singularHomology_of_two_eq_zero h2 k)
+
+/-- If right multiplication by `2` is injective on `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)`
+vanishes for every even `k > 0`. -/
+theorem isZero_singularHomology_projectivization_of_even (h2 : IsRightRegular (2 : R))
+    (hk : Even k) (hk0 : k ≠ 0) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) :=
+  (isZero_singularHomology_of_even (N := N) R h2 hk hk0).of_iso
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+        (homeomorphProjectivization N))).symm
 
 end TauCeti.RealProjectiveSpace
