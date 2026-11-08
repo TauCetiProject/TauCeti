@@ -44,8 +44,9 @@ When the homology is finitely generated, finitely many cycles generate all cycle
 boundaries (`HomologicalComplex.exists_fin_moduleCat_cycles_generating`).
 Cycles are elements of the kernel of the outgoing differential
 (`HomologicalComplex.moduleCatCyclesToKer`), that kernel has a homology class map
-(`HomologicalComplex.moduleCatKerHomologyClass`), and the image of the incoming differential, the
-kernel and the homology form an exact sequence
+(`HomologicalComplex.moduleCatKerHomologyClass`), surjective and compatible with chain maps
+(`HomologicalComplex.homologyMap_moduleCatKerHomologyClass`), and the image of the incoming
+differential, the kernel and the homology form an exact sequence
 (`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
@@ -57,7 +58,8 @@ is exact, the image of the incoming differential, the term and the image of the 
 differential form a short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
-(`HomologicalComplex.Hom.boundaryMap_comp`), and injective where the chain map is; for a
+(`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
+(`HomologicalComplex.Hom.boundaryMap_eq_zero`), and injective where the chain map is; for a
 degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
 exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of chain endomorphisms
 that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
@@ -162,6 +164,12 @@ maps. -/
 theorem Hom.boundaryMap_comp (φ : K ⟶ L) (ψ : L ⟶ M) (i j : ι) :
     (φ ≫ ψ).boundaryMap i j = ψ.boundaryMap i j ∘ₗ φ.boundaryMap i j :=
   LinearMap.ext fun _ ↦ Subtype.ext rfl
+
+/-- If the differential `K.X i ⟶ K.X j` vanishes, the map on its image induced by a chain map is
+zero. -/
+theorem Hom.boundaryMap_eq_zero (φ : K ⟶ L) {i j : ι} (h : K.d i j = 0) :
+    φ.boundaryMap i j = 0 :=
+  LinearMap.ext fun ⟨_, x, hx⟩ ↦ Subtype.ext <| by simp [← hx, h]
 
 /-- A chain map that is injective in degree `j` is injective on the boundaries of degree `j`. -/
 theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
@@ -337,6 +345,24 @@ lemma moduleCatKerHomologyClass_moduleCatCyclesToKer (y : K.cycles n) :
   congr 1
   exact K.moduleCat_iCycles_injective _
     ((K.iCycles_moduleCatCyclesMk _ _ _ _ _).trans (K.coe_moduleCatCyclesToKer n m y))
+
+/-- Every homology class is the class of an element of the kernel of the outgoing differential. -/
+lemma moduleCatKerHomologyClass_surjective :
+    Function.Surjective (K.moduleCatKerHomologyClass hm) := by
+  rw [moduleCatKerHomologyClass]
+  exact K.moduleCatHomologyClass_surjective hm _ _ fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩
+
+variable {K} in
+/-- A chain map `φ` sends the homology class of an element `z` of the kernel of `K.d n m` to the
+homology class of `φ z`. -/
+lemma homologyMap_moduleCatKerHomologyClass {L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L)
+    (z : LinearMap.ker (K.d n m).hom) :
+    homologyMap φ n (K.moduleCatKerHomologyClass hm z) =
+      L.moduleCatKerHomologyClass hm
+        ⟨φ.f n z, φ.d_apply_eq_zero_of_d_apply_eq_zero n m z z.2⟩ := by
+  rw [moduleCatKerHomologyClass, moduleCatKerHomologyClass]
+  exact homologyMap_moduleCatHomologyClass hm _ _ φ _ _
+    ((φ.f n).hom.restrict (φ.d_apply_eq_zero_of_d_apply_eq_zero n m)) (fun _ ↦ rfl) z
 
 /-- The boundaries, the cycles and the homology in degree `n` form an exact sequence: the kernel
 of the homology class map on the kernel of `K.d n m` is the image of the incoming differential. -/
