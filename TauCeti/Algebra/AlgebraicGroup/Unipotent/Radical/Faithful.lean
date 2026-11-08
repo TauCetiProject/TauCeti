@@ -80,8 +80,7 @@ theorem eq_augmentation_of_isNormal_of_forall_isUnipotentPoint_of_isFaithful
     (hu : ∀ g : WithConv (CommHopfAlgCat.quotient H.obj I →ₐ[k] k),
       HopfAlgebra.IsUnipotentPoint g) :
     I = HopfIdeal.augmentation k H := by
-  obtain ⟨_, b, -⟩ := Comodule.isFaithful_def.mp hM
-  have : FiniteDimensional k M := Module.Finite.of_basis b
+  have := hM.finite
   have htrivial :=
     mkQuotient_coact_eq_tmul_one_of_isNormal_of_forall_isUnipotentPoint_of_isCompletelyReducible
       (M := M) hI hu hcr
