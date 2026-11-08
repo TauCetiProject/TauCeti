@@ -209,9 +209,9 @@ omit [CompleteSpace F] in
 /-- For integrable `f`, the regularized convolution integrals `∫ G_{b_k}(x - y) f(y) dy` converge
 at every point `x` to `∫ K_t(x - y) f(y) dy`. -/
 private theorem tendsto_integral_gaussianKernel_smul {t : ℝ} (ht : t ≠ 0)
-    {b : ℕ → ℂ} (hbre : ∀ k, 0 < (b k).re) (hbim : ∀ k, (b k).im = 4 * π ^ 2 * t)
+    {b : ℕ → ℂ} (hbre : ∀ k, 0 ≤ (b k).re) (hbim : ∀ k, (b k).im = 4 * π ^ 2 * t)
     (hb : Tendsto b atTop (𝓝 (((4 * π ^ 2 * t : ℝ) : ℂ) * I)))
-    (f : Lp F 2 (volume : Measure E)) (hf : Integrable f) (x : E) :
+    (f : E → F) (hf : Integrable f) (x : E) :
     Tendsto (fun k ↦ ∫ y, gaussianKernel (b k) (x - y) • f y) atTop
       (𝓝 (∫ y, schrodingerKernel t (x - y) • f y)) := by
   refine tendsto_integral_of_dominated_convergence
@@ -221,10 +221,10 @@ private theorem tendsto_integral_gaussianKernel_smul {t : ℝ} (ht : t ≠ 0)
   · have hc : Continuous fun y ↦ gaussianKernel (b k) (x - y) := by
       unfold gaussianKernel
       fun_prop
-    exact hc.aestronglyMeasurable.smul (Lp.aestronglyMeasurable f)
+    exact hc.aestronglyMeasurable.smul hf.aestronglyMeasurable
   · rw [norm_smul]
     exact mul_le_mul_of_nonneg_right
-      (norm_gaussianKernel_le ht (hbre k).le (hbim k) (x - y)) (norm_nonneg _)
+      (norm_gaussianKernel_le ht (hbre k) (hbim k) (x - y)) (norm_nonneg _)
   · exact ((tendsto_gaussianKernel ht (x - y)).comp hb).smul_const _
 
 /-- **The kernel of the Schrödinger propagator.** For `t ≠ 0` and `f ∈ L²` integrable,
@@ -251,7 +251,7 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
       fun x ↦ ∫ y, gaussianKernel (b k) (x - y) • f y := fun k ↦ by
     filter_upwards [SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ k) f] with x hx
     simp only [hx, σ, SchwartzMap.fourierInv_gaussian, gaussianKernel]
-  have hlim := tendsto_integral_gaussianKernel_smul ht hbre hbim hb f hf
+  have hlim := tendsto_integral_gaussianKernel_smul ht (fun k ↦ (hbre k).le) hbim hb f hf
   obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hL2).exists_seq_tendsto_ae
   filter_upwards [hae, ae_all_iff.2 hconv] with x hx hxc
   refine tendsto_nhds_unique hx ?_
