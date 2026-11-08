@@ -77,29 +77,36 @@ variable {V H M E F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Topolog
 
 include hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
 
-private theorem split_transition_data :
-    DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∧ ψ₀ (ψ₁.symm 0) = 0 ∧
-      ∀ᶠ z in 𝓝 0,
+omit hn hx₀ hψ₀ in
+/-- The transition `ψ₀ ∘ ψ₁⁻¹` is defined on the open set of chart points of `ψ₁` landing in
+`ψ₀.source`, and preserves the signed sum of squared norms there. -/
+private theorem split_transition_domain :
+    IsOpen (ψ₁.target ∩ ψ₁.symm ⁻¹' ψ₀.source) ∧ (0 : E × F) ∈ ψ₁.target ∧ ψ₁.symm 0 = x ∧
+      ∀ z ∈ ψ₁.target ∩ ψ₁.symm ⁻¹' ψ₀.source,
         ‖(ψ₀ (ψ₁.symm z)).1‖ ^ 2 - ‖(ψ₀ (ψ₁.symm z)).2‖ ^ 2 =
           ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2 := by
-  have htarget : (0 : E × F) ∈ ψ₁.target := hψ₁ ▸ ψ₁.map_source hx₁
-  have hinv : ψ₁.symm 0 = x := by
-    rw [← hψ₁]
-    exact ψ₁.left_inv hx₁
-  have hreg₀ := (ψ₀.contMDiffOn.contMDiffAt (ψ₀.open_source.mem_nhds hx₀)).of_le hn
-  have hreg₁ := (ψ₁.symm.contMDiffOn.contMDiffAt (ψ₁.open_target.mem_nhds htarget)).of_le hn
-  have hreg : ContMDiffAt 𝓘(ℝ, E × F) 𝓘(ℝ, E × F) 1
-      (fun z ↦ ψ₀ (ψ₁.symm z)) 0 :=
-    hreg₀.comp_of_eq hreg₁ hinv
-  refine ⟨(contMDiffAt_iff_contDiffAt.mp hreg).differentiableAt one_ne_zero, hinv ▸ hψ₀, ?_⟩
-  have hsource : ∀ᶠ z in 𝓝 0, ψ₁.symm z ∈ ψ₀.source :=
-    hreg₁.continuousAt.preimage_mem_nhds (hinv ▸ ψ₀.open_source.mem_nhds hx₀)
-  filter_upwards [hsource, ψ₁.open_target.mem_nhds htarget] with z hz₀ hz₁
+  refine ⟨ψ₁.symm.contMDiffOn.continuousOn.isOpen_inter_preimage ψ₁.open_target
+    ψ₀.open_source, hψ₁ ▸ ψ₁.map_source hx₁, by rw [← hψ₁]; exact ψ₁.left_inv hx₁, ?_⟩
+  intro z ⟨hz₁, hz₀⟩
   have h₀ := hf₀ _ hz₀
   have h₁ := hf₁ _ (ψ₁.map_target hz₁)
   rw [ψ₁.right_inv hz₁] at h₁
   simp only [PartialDiffeomorph.symm_toPartialEquiv] at h₀ ⊢
   linarith
+
+private theorem split_transition_data :
+    DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∧ ψ₀ (ψ₁.symm 0) = 0 ∧
+      ∀ᶠ z in 𝓝 0,
+        ‖(ψ₀ (ψ₁.symm z)).1‖ ^ 2 - ‖(ψ₀ (ψ₁.symm z)).2‖ ^ 2 =
+          ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2 := by
+  obtain ⟨hU, htarget, hinv, hQ⟩ := ψ₀.split_transition_domain ψ₁ hx₁ hψ₁ hf₀ hf₁
+  have hreg₀ := (ψ₀.contMDiffOn.contMDiffAt (ψ₀.open_source.mem_nhds hx₀)).of_le hn
+  have hreg₁ := (ψ₁.symm.contMDiffOn.contMDiffAt (ψ₁.open_target.mem_nhds htarget)).of_le hn
+  have hreg : ContMDiffAt 𝓘(ℝ, E × F) 𝓘(ℝ, E × F) 1
+      (fun z ↦ ψ₀ (ψ₁.symm z)) 0 :=
+    hreg₀.comp_of_eq hreg₁ hinv
+  refine ⟨(contMDiffAt_iff_contDiffAt.mp hreg).differentiableAt one_ne_zero, hinv ▸ hψ₀,
+    eventually_of_mem (hU.mem_nhds ⟨htarget, by rw [mem_preimage, hinv]; exact hx₀⟩) hQ⟩
 
 /-- The derivative of a transition between two split Morse charts preserves the signed
 sum of squared norms. Only a neighbourhood of the common centre is used. -/
@@ -137,12 +144,7 @@ theorem exists_small_disk_homotopy_polarFactor [CompleteSpace E] :
   obtain ⟨hreg, hzero, -⟩ := ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
   -- The transition is defined on the open set of chart points of `ψ₁` landing in `ψ₀.source`.
   set U := ψ₁.target ∩ ψ₁.symm ⁻¹' ψ₀.source
-  have hU : IsOpen U :=
-    ψ₁.symm.contMDiffOn.continuousOn.isOpen_inter_preimage ψ₁.open_target ψ₀.open_source
-  have htarget : (0 : E × F) ∈ ψ₁.target := hψ₁ ▸ ψ₁.map_source hx₁
-  have hinv : ψ₁.symm 0 = x := by
-    rw [← hψ₁]
-    exact ψ₁.left_inv hx₁
+  obtain ⟨hU, htarget, hinv, hQU⟩ := ψ₀.split_transition_domain ψ₁ hx₁ hψ₁ hf₀ hf₁
   have h0U : (0 : E × F) ∈ U := ⟨htarget, by rw [mem_preimage, hinv]; exact hx₀⟩
   have hc : ContinuousOn (fun w ↦ ψ₀ (ψ₁.symm w)) U :=
     ψ₀.contMDiffOn.continuousOn.comp (ψ₁.symm.contMDiffOn.continuousOn.mono inter_subset_left)
@@ -153,13 +155,7 @@ theorem exists_small_disk_homotopy_polarFactor [CompleteSpace E] :
     have h := hf₀ _ (ψ₀.map_target hz)
     rwa [ψ₀.right_inv hz] at h
   have hQ : ∀ w ∈ U, -‖(ψ₀ (ψ₁.symm w)).1‖ ^ 2 + ‖(ψ₀ (ψ₁.symm w)).2‖ ^ 2 =
-      -‖w.1‖ ^ 2 + ‖w.2‖ ^ 2 := by
-    intro w hw
-    have h₀ := hf₀ _ hw.2
-    have h₁ := hf₁ _ (ψ₁.map_target hw.1)
-    rw [ψ₁.right_inv hw.1] at h₁
-    simp only [PartialDiffeomorph.symm_toPartialEquiv] at h₀ ⊢
-    linarith
+      -‖w.1‖ ^ 2 + ‖w.2‖ ^ 2 := fun w hw ↦ by linarith [hQU w hw]
   have hV : ψ₀.target ∈ 𝓝 (0 : E × F) :=
     ψ₀.open_target.mem_nhds (hψ₀ ▸ ψ₀.map_source hx₀)
   obtain ⟨δ, hδ, hδU, G, hends, hP⟩ :=
