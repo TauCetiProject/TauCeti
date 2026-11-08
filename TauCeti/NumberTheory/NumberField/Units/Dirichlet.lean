@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 
 /-!
@@ -29,6 +30,8 @@ consume — for instance the exact number of unit square classes in
   has unit rank one.
 * `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
   places plus one is the degree.
+* `NumberField.Units.rank_eq_zero_iff_card_infinitePlace_eq_one`: the unit rank is zero exactly
+  when there is a single infinite place, as for `ℚ` and the imaginary quadratic fields.
 * `NumberField.Units.fundSystem_not_mem_torsion`: fundamental units are nontorsion.
 * `NumberField.Units.prod_fundSystem_zpow_mem_torsion_iff`: a product of integral powers of the
   fundamental units is torsion only when all the exponents vanish.
@@ -137,7 +140,33 @@ theorem rank_eq_one_of_finrank_eq_two_of_isReal {F : Type*} [Field F] [NumberFie
 
 namespace Units
 
-variable {K : Type*} [Field K] [NumberField K]
+variable (K : Type*) [Field K] [NumberField K]
+
+/-- A number field has unit rank zero exactly when it has a single infinite place. This covers
+`ℚ` (one real place) and the imaginary quadratic fields (one complex place). -/
+theorem rank_eq_zero_iff_card_infinitePlace_eq_one :
+    rank K = 0 ↔ Fintype.card (InfinitePlace K) = 1 := by
+  have := Fintype.card_pos (α := InfinitePlace K)
+  rw [NumberField.Units.rank]
+  omega
+
+/-- A number field of degree one over `ℚ` (namely `ℚ` itself) has unit rank zero. -/
+theorem rank_eq_zero_of_finrank_eq_one (h : finrank ℚ K = 1) : rank K = 0 := by
+  refine (rank_eq_zero_iff_card_infinitePlace_eq_one K).2 ?_
+  have h₁ := InfinitePlace.card_add_two_mul_card_eq_rank K
+  have h₂ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K
+  omega
+
+/-- An imaginary quadratic field (totally complex of degree two) has unit rank zero. -/
+theorem rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two
+    [IsTotallyComplex K] (h : finrank ℚ K = 2) : rank K = 0 := by
+  refine (rank_eq_zero_iff_card_infinitePlace_eq_one K).2 ?_
+  have h₁ := InfinitePlace.card_add_two_mul_card_eq_rank K
+  have h₂ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K
+  have h₃ := IsTotallyComplex.nrRealPlaces_eq_zero (K := K)
+  omega
+
+variable {K}
 
 /-- No member of a fundamental system is a torsion unit. -/
 theorem fundSystem_not_mem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsion K := by
