@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.Restriction
@@ -687,7 +688,7 @@ private theorem exists_norm_preciseRepresentative_gradient_le (hα : 0 < α) (h�
   set θ : ℝ≥0 := α / 2
   have hθ : 0 < θ := by positivity
   have hθα : (θ : ℝ) = α / 2 := by simp [θ]
-  have hcθ := one_sub_two_rpow_neg_pos (NNReal.coe_pos.2 hθ)
+  have hcθ := Real.one_sub_two_rpow_neg_pos (NNReal.coe_pos.2 hθ)
   set ω' := (√(unitBallVolume n))⁻¹
   have hω'0 : 0 ≤ ω' := inv_nonneg.2 (Real.sqrt_nonneg _)
   refine ⟨δ, 2 ^ (n + 1) / (1 - 2 ^ (-(θ : ℝ))) * ω' * √C₂ + ω', hδ, by positivity, ?_⟩
@@ -851,7 +852,7 @@ private theorem exists_dist_preciseRepresentative_gradient_le_of_small (hα : 0 
     exists_setIntegral_norm_sub_setAverage_sq_le_of_bounded hα1 κ δ c (n := n)
   set ω' := (√(unitBallVolume n))⁻¹
   have hω'0 : 0 ≤ ω' := inv_nonneg.2 (Real.sqrt_nonneg _)
-  have hcα := one_sub_two_rpow_neg_pos (NNReal.coe_pos.2 hα)
+  have hcα := Real.one_sub_two_rpow_neg_pos (NNReal.coe_pos.2 hα)
   refine ⟨δ, 2 * 2 ^ (α : ℝ) * (2 ^ (n + 1) / (1 - 2 ^ (-(α : ℝ))) + ω') * (ω' * √C₅ + 1), hδ,
     by positivity, ?_⟩
   intro Omega u a G lam Lam Ka KG S R M hell hκ haK hGK hu hR hsub hsmall hM1 hM2 x hx y hy

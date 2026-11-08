@@ -63,6 +63,9 @@ For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is eq
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
 with the corresponding integral of `q`-th powers.
 
+For `α > 0`, the ratio `2 ^ (-α)` is less than `1`, so `1 - 2 ^ (-α)` is positive. This is the
+denominator of the sum of a dyadic series of ratio `2 ^ (-α)`.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -86,6 +89,7 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
+* `Real.one_sub_two_rpow_neg_pos`: `0 < 1 - 2 ^ (-α)` for `0 < α`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -205,6 +209,10 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
     (hq : 0 < q) : a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I := by
   rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
     rpow_inv_rpow hI hq.ne']
+
+/-- For `α > 0`, `1 - 2^(-α)` is positive: the dyadic series of ratio `2^(-α)` converges. -/
+theorem one_sub_two_rpow_neg_pos {α : ℝ} (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
+  sub_pos.2 (rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))
 
 end Real
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.DirichletGrowth
 public import TauCeti.Analysis.Sobolev.W1p.Morrey
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
@@ -146,9 +147,7 @@ theorem W1p.exists_dist_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
     ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
   set K₀ : ℝ := 2 * 2 ^ (α : ℝ) * (2 ^ n / (1 - 2 ^ (-(α : ℝ))))
   have hK₀ : 0 < K₀ := by
-    have : (2 : ℝ) ^ (-(α : ℝ)) < 1 :=
-      Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 (NNReal.coe_pos.2 hα))
-    have : 0 < 1 - (2 : ℝ) ^ (-(α : ℝ)) := by linarith
+    have := Real.one_sub_two_rpow_neg_pos (NNReal.coe_pos.2 hα)
     positivity
   refine ⟨K₀ * (2 ^ (n + 1) / ω * ω ^ q), by positivity, ?_⟩
   intro Omega u x y hxy

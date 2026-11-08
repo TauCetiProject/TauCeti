@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Convex.Integral
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -123,10 +124,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {x : E} {M α ρ : ℝ}
 
-/-- For `α > 0`, `1 - 2^(-α)` is positive: the dyadic series of ratio `2^(-α)` converges. -/
-theorem one_sub_two_rpow_neg_pos (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
-  sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))
-
 /-- Comparing the averages over `closedBall y ε ⊆ closedBall x r` for `r ≤ 2 ε` costs at most
 `2ⁿ` times the mean oscillation on `closedBall x r`. -/
 private lemma norm_setAverage_closedBall_sub_le_of_le_two_mul {y : E} {ε r : ℝ} (hε : 0 < ε)
@@ -152,7 +149,7 @@ private lemma norm_setAverage_closedBall_sub_le (hα : 0 < α)
     ‖(⨍ y in closedBall x ε, f y ∂μ) - ⨍ y in closedBall x r, f y ∂μ‖ ≤
       2 ^ finrank ℝ E / (1 - 2 ^ (-α)) * (M * r ^ α) := by
   set C : ℝ := 2 ^ finrank ℝ E / (1 - 2 ^ (-α))
-  have hq := one_sub_two_rpow_neg_pos hα
+  have hq := Real.one_sub_two_rpow_neg_pos hα
   have hC : 2 ^ finrank ℝ E ≤ C :=
     le_div_self (by positivity) hq (sub_le_self _ (Real.rpow_pos_of_pos two_pos _).le)
   have hCq : C * 2 ^ (-α) + 2 ^ finrank ℝ E = C := by
@@ -286,7 +283,7 @@ theorem dist_preciseRepresentative_le_of_setAverage_norm_sub_le {y : E}
       (hoscx _ (by positivity) le_rfl)
   have hCq : 2 ^ α * 2 ^ finrank ℝ E = C * (2 ^ α - 1) := by
     simp only [C]
-    field_simp [(one_sub_two_rpow_neg_pos hα).ne']
+    field_simp [(Real.one_sub_two_rpow_neg_pos hα).ne']
     rw [Real.rpow_neg zero_le_two]
     field_simp
   rw [dist_eq_norm]
@@ -319,7 +316,7 @@ theorem holderWith_preciseRepresentative_of_setAverage_norm_sub_le
       (2 ^ finrank ℝ E / (1 - 2 ^ (-(α : ℝ))))) * M) α (preciseRepresentative μ f) := by
   have hα' : (0 : ℝ) < α := hα
   have hC : (0 : ℝ) ≤ 2 * 2 ^ (α : ℝ) * (2 ^ finrank ℝ E / (1 - 2 ^ (-(α : ℝ)))) :=
-    mul_nonneg (by positivity) (div_nonneg (by positivity) (one_sub_two_rpow_neg_pos hα').le)
+    mul_nonneg (by positivity) (div_nonneg (by positivity) (Real.one_sub_two_rpow_neg_pos hα').le)
   refine holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
   rw [NNReal.coe_mul, Real.coe_toNNReal _ hC, mul_assoc]
   exact dist_preciseRepresentative_le_of_setAverage_norm_sub_le hα'
@@ -444,7 +441,7 @@ theorem dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le {s S : Se
       2 * 2 ^ α * (2 ^ finrank ℝ E / (1 - 2 ^ (-α)) + (√(μ.real (ball (0 : E) 1)))⁻¹) *
         (M + R ^ (-((finrank ℝ E : ℝ) / 2 + α)) * ‖f‖) * dist x y ^ α := by
   obtain ⟨cα, hcαdef⟩ : ∃ cα : ℝ, cα = 2 ^ finrank ℝ E / (1 - 2 ^ (-α)) := ⟨_, rfl⟩
-  have hcα0 : 0 ≤ cα := hcαdef ▸ div_nonneg (by positivity) (one_sub_two_rpow_neg_pos hα).le
+  have hcα0 : 0 ≤ cα := hcαdef ▸ div_nonneg (by positivity) (Real.one_sub_two_rpow_neg_pos hα).le
   obtain ⟨ω', hω'⟩ : ∃ ω', ω' = (√(μ.real (ball (0 : E) 1)))⁻¹ := ⟨_, rfl⟩
   have hω'0 : 0 ≤ ω' := hω' ▸ by positivity
   obtain ⟨a, ha⟩ : ∃ a, a = R ^ (-((finrank ℝ E : ℝ) / 2 + α)) * ‖f‖ := ⟨_, rfl⟩
