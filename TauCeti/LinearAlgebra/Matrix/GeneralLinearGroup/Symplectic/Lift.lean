@@ -47,35 +47,6 @@ noncomputable section
 variable {l : Type*} [DecidableEq l] [Fintype l]
 variable {R : Type u} [CommRing R]
 
-/-- Correcting a matrix `M` with `M * J * Mᵀ - J = E` by `1 + X`, where `E` and `X` have entries in
-a square-zero ideal and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix. -/
-private theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal R))
-    {M E X : Matrix (l ⊕ l) (l ⊕ l) R}
-    (hM : M * Matrix.J l R * M.transpose - Matrix.J l R = E)
-    (hE_mem : ∀ i j, E i j ∈ I) (hX_mem : ∀ i j, X i j ∈ I)
-    (hX : E + X * Matrix.J l R + Matrix.J l R * X.transpose = 0) :
-    (1 + X) * M ∈ Matrix.symplecticGroup l R := by
-  have hXt_mem : ∀ i j, X.transpose i j ∈ I := fun i j => hX_mem j i
-  have hXJ_mem : ∀ i j, (X * Matrix.J l R) i j ∈ I := fun i j => by
-    simpa using Matrix.mul_mul_apply_mem hX_mem 1 (Matrix.J l R) i j
-  have hX_mul_E : X * E = 0 := Matrix.mul_eq_zero_of_sq_eq_bot hI hX_mem hE_mem
-  have hE_mul_Xt : E * X.transpose = 0 := Matrix.mul_eq_zero_of_sq_eq_bot hI hE_mem hXt_mem
-  have hXJ_mul_Xt : X * Matrix.J l R * X.transpose = 0 :=
-    Matrix.mul_eq_zero_of_sq_eq_bot hI hXJ_mem hXt_mem
-  rw [SymplecticGroup.mem_iff]
-  calc
-    (1 + X) * M * Matrix.J l R * ((1 + X) * M).transpose =
-        (1 + X) * (M * Matrix.J l R * M.transpose) * (1 + X.transpose) := by
-          rw [Matrix.transpose_mul, Matrix.transpose_add, Matrix.transpose_one]
-          noncomm_ring
-    _ = (1 + X) * (Matrix.J l R + E) * (1 + X.transpose) := by rw [← hM, add_sub_cancel]
-    _ = Matrix.J l R + (E + X * Matrix.J l R + Matrix.J l R * X.transpose) +
-          X * E + E * X.transpose + X * Matrix.J l R * X.transpose + X * E * X.transpose := by
-        noncomm_ring
-    _ = Matrix.J l R := by
-        rw [hX, hX_mul_E, hE_mul_Xt, hXJ_mul_Xt]
-        simp
-
 /-- Every symplectic matrix modulo a square-zero ideal lifts to a symplectic matrix.
 
 The result is valid over an arbitrary commutative ring, in every characteristic, and for the

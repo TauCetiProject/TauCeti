@@ -8,12 +8,12 @@ module
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
-public import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 -- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
 -- evaluates `det J`, but no statement mentions either.
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Data.Fintype.EquivFin
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -58,6 +58,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
+* `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
+  `1 + X` with `E + X * J + J * Xᵀ = 0` gives a symplectic matrix when `M * J * Mᵀ - J = E`.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
   matrix whose `J`-conjugate is its inverse transpose is symplectic.
@@ -231,6 +233,35 @@ theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
     calc
       E + Y + -Yᵀ = E + (Y - Yᵀ) := by abel
       _ = 0 := by rw [hY_sub, add_neg_cancel]
+
+/-- Correcting a matrix `M` with `M * J * Mᵀ - J = E` by `1 + X`, where `E` and `X` have entries in
+a square-zero ideal and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix. -/
+theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal R))
+    {M E X : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hM : M * J l R * Mᵀ - J l R = E)
+    (hE_mem : ∀ i j, E i j ∈ I) (hX_mem : ∀ i j, X i j ∈ I)
+    (hX : E + X * J l R + J l R * Xᵀ = 0) :
+    (1 + X) * M ∈ symplecticGroup l R := by
+  have hXt_mem : ∀ i j, Xᵀ i j ∈ I := fun i j => hX_mem j i
+  have hXJ_mem : ∀ i j, (X * J l R) i j ∈ I := fun i j => by
+    simpa using mul_mul_apply_mem hX_mem 1 (J l R) i j
+  have hX_mul_E : X * E = 0 := mul_eq_zero_of_sq_eq_bot hI hX_mem hE_mem
+  have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_sq_eq_bot hI hE_mem hXt_mem
+  have hXJ_mul_Xt : X * J l R * Xᵀ = 0 :=
+    mul_eq_zero_of_sq_eq_bot hI hXJ_mem hXt_mem
+  rw [SymplecticGroup.mem_iff]
+  calc
+    (1 + X) * M * J l R * ((1 + X) * M).transpose =
+        (1 + X) * (M * J l R * Mᵀ) * (1 + Xᵀ) := by
+          rw [Matrix.transpose_mul, Matrix.transpose_add, Matrix.transpose_one]
+          noncomm_ring
+    _ = (1 + X) * (J l R + E) * (1 + Xᵀ) := by rw [← hM, add_sub_cancel]
+    _ = J l R + (E + X * J l R + J l R * Xᵀ) +
+          X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ := by
+        noncomm_ring
+    _ = J l R := by
+        rw [hX, hX_mul_E, hE_mul_Xt, hXJ_mul_Xt]
+        simp
 
 end Matrix
 
