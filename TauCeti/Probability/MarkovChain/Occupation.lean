@@ -121,7 +121,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The occupation limit transfers to every realization with the same path law.
 No topology or canonical-space assumption is imposed on the sample space. -/
-theorem ae_tendsto_visitCount_succ_div
+theorem ae_tendsto_visitCount_div_markovChainLaw_dirac
     (hX : HasLaw X (markovChainLaw (Measure.dirac y) κ) P) :
     ∀ᵐ ω ∂P,
       Tendsto (fun n : ℕ => (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n) atTop
@@ -132,7 +132,7 @@ theorem ae_tendsto_visitCount_succ_div
 
 /-- Expected occupation fractions have the same limit. Bounded convergence applies
 also to transient states and recurrent states with infinite mean return time. -/
-theorem tendsto_integral_visitCount_succ_div
+theorem tendsto_integral_visitCount_div_markovChainLaw_dirac
     (hX : HasLaw X (markovChainLaw (Measure.dirac y) κ) P) :
     Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) atTop
       (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
@@ -157,7 +157,7 @@ theorem tendsto_integral_visitCount_succ_div
   simpa only [Function.comp_def, integral_const, probReal_univ, one_smul] using
     tendsto_integral_of_dominated_convergence (fun _ => (1 : ℝ))
       (fun n => ((hm n).comp_aemeasurable hX.aemeasurable).aestronglyMeasurable)
-      (integrable_const 1) hb hX.ae_tendsto_visitCount_succ_div
+      (integrable_const 1) hb hX.ae_tendsto_visitCount_div_markovChainLaw_dirac
 
 end ProbabilityTheory.HasLaw
 

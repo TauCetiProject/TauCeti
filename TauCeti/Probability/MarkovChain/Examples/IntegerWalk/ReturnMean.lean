@@ -101,7 +101,7 @@ theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (hp : (p : ℝ) = 1
     ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
       (ENNReal.inv_ne_top.mpr (ne_zero_of_lt
         (lt_of_lt_of_le zero_lt_one (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x)))))
-  have hLLN := (HasLaw.id (μ := P)).tendsto_integral_visitCount_succ_div
+  have hLLN := (HasLaw.id (μ := P)).tendsto_integral_visitCount_div_markovChainLaw_dirac
   exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
 
 end TauCeti.Probability
