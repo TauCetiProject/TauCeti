@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Taylor
+public import TauCeti.Analysis.Calculus.Taylor.Basic
 public import TauCeti.MeasureTheory.Integral.Pi
 
 /-!
