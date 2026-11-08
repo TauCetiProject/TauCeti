@@ -122,7 +122,7 @@ private theorem exists_ramificationIdx_ne_one (hmem : p ∈ ramifiedPrimes K) :
   by_contra hne
   exact hcon ⟨𝔮, h𝔮, hlo, hne⟩
 
-variable (hK : finrank ℚ K = 2) (hp : p.Prime) (hmem : p ∈ ramifiedPrimes K)
+variable (hK : finrank ℚ K = 2) (hmem : p ∈ ramifiedPrimes K)
   (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
 
 include hK hmem
@@ -205,8 +205,6 @@ theorem map_eq_self_of_mem_ramifiedPrimes (σ : 𝓞 K ≃+* 𝓞 K) :
     ⟨inferInstance, hlo⟩
   rwa [primesOver_eq_singleton_of_mem_ramifiedPrimes hK hmem 𝔭, Set.mem_singleton_iff] at hmemset
 
-include hp
-
 omit hmem in
 /-- **Ramification index `2` characterises the ramified primes of a quadratic field.** For a
 rational prime `p` and a prime `𝔭` of `𝓞 K` above it, `p` ramifies in the quadratic field `K` iff
@@ -214,6 +212,20 @@ rational prime `p` and a prime `𝔭` of `𝓞 K` above it, `p` ramifies in the 
 theorem mem_ramifiedPrimes_iff_ramificationIdx_eq_two :
     p ∈ ramifiedPrimes K ↔ 𝔭.ramificationIdx ℤ = 2 := by
   refine ⟨fun hmem => ramificationIdx_eq_two_of_mem_ramifiedPrimes hK hmem 𝔭, fun he => ?_⟩
+  have hp0 : p ≠ 0 := by
+    rintro rfl
+    have h0 : 𝔭 = ⊥ := Ideal.eq_bot_of_under_eq_bot
+      (by simpa using (Ideal.LiesOver.over (p := (span {((0 : ℕ) : ℤ)} : Ideal ℤ)) (P := 𝔭)).symm)
+    subst h0
+    have := Algebra.isUnramifiedAt_bot (R := ℤ) (S := 𝓞 K)
+    rw [Ideal.ramificationIdx_eq_one] at he
+    omega
+  have hp : p.Prime := by
+    have : (span {(p : ℤ)} : Ideal ℤ).IsPrime := by
+      rw [Ideal.LiesOver.over (p := (span {(p : ℤ)} : Ideal ℤ)) (P := 𝔭)]
+      infer_instance
+    exact Nat.prime_iff_prime_int.mpr
+      ((Ideal.span_singleton_prime (by exact_mod_cast hp0)).mp this)
   refine mem_ramifiedPrimes_iff.mpr ⟨hp, fun hunr => ?_⟩
   have := Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hunr (𝔓 := 𝔭) ‹_›
   omega
