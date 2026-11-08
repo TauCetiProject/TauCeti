@@ -142,10 +142,9 @@ theorem globalInvariants_prod (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenera
   · rw [globalInvariants_discr, GlobalFormInvariants.prod_discr, globalInvariants_discr,
       globalInvariants_discr, formClass_prod, RegularFormClass.discr_add]
   · funext v
-    rw [globalInvariants_finiteHasse, finiteHasse_prod, GlobalFormInvariants.prod_finiteHasse,
-      GlobalFormInvariants.discrAtFinitePlace_def, GlobalFormInvariants.discrAtFinitePlace_def,
-      globalInvariants_discr, globalInvariants_discr, globalInvariants_finiteHasse,
-      globalInvariants_finiteHasse]
+    simp only [globalInvariants_finiteHasse, GlobalFormInvariants.prod_finiteHasse,
+      GlobalFormInvariants.discrAtFinitePlace_def, globalInvariants_discr]
+    exact finiteHasse_prod Q hQ R hR v
   · funext w
     simp
 
@@ -160,14 +159,14 @@ theorem globalInvariants_weightedSumSquares_fin_one (c : Kˣ)
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   refine GlobalFormInvariants.ext ?_ ?_ ?_ ?_
   · simp
-  · rw [globalInvariants_discr, discr_formClass _ h ⟨1, ![c]⟩ (by
-      rw [presentedForm_eq_weightedSumSquares_coe]
-      convert QuadraticMap.Equivalent.refl _ using 3
-      rename_i i
+  · have hw : (fun i => ((![c] i : Kˣ) : K)) = ![(c : K)] := by
+      funext i
       fin_cases i
-      simp), Fin.prod_univ_one]
-    -- Both sides are projections of explicit structures, and `![c] 0` is `c`.
-    rfl
+      rfl
+    rw [globalInvariants_discr]
+    convert discr_formClass_weightedSumSquares ![c] (hw ▸ h) using 3
+    · rw [hw]
+    · simp
   · funext v
     rw [globalInvariants_finiteHasse]
     exact finiteHasse_eq_one_of_finrank_le_one _ h (by simp) v
@@ -182,6 +181,13 @@ namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 
 -- Hilbert's product formula, used for the residual system, is stated for number fields in `Type`.
 variable {K : Type} [Field K] [NumberField K]
+
+/-- Raising the negative index from `m` to `m + 1` multiplies the real Hasse sign `(-1)^C(m, 2)` by
+`(-1)^m`, since `C(m + 1, 2) = C(m, 2) + m`. -/
+private theorem neg_one_pow_succ_choose_two_mul_neg_one_pow (m : ℕ) :
+    (-1 : ℤˣ) ^ (m + 1).choose 2 * (-1) ^ m = (-1) ^ m.choose 2 := by
+  rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm, pow_add, mul_assoc, ← pow_add,
+    Even.neg_one_pow ⟨m, rfl⟩, mul_one]
 
 /-- The system obtained from `I` by removing a line `⟨c⟩`, computed with a representative `δ` of the
 discriminant of `I`: rank `n - 1`, discriminant `δ c`, Hasse signs `s_v(I) · (c, δ c)_v`, and the
@@ -242,19 +248,23 @@ private theorem discrAtRealPlace_residual (hI : I.IsAdmissible) {c δ : Kˣ}
     rw [realNegativeIndex_def] at hq
     obtain ⟨m, hm⟩ : ∃ m, I.rank - I.realPositiveIndex w = m + 1 :=
       ⟨_, (Nat.succ_pred_eq_of_pos hq).symm⟩
+    have hm' : I.rank - 1 - I.realPositiveIndex w = m := by omega
     simp only [hc.not_gt, ↓reduceIte, Nat.sub_zero]
-    rw [show I.rank - 1 - I.realPositiveIndex w = m by omega, hm,
-      (Units.squareClass_eq_squareClass_neg_one_iff_neg (unitAtRealPlace w c)).mpr
+    rw [hm', hm, (Units.squareClass_eq_squareClass_neg_one_iff_neg (unitAtRealPlace w c)).mpr
         (by rwa [unitAtRealPlace_apply]), succ_nsmul]
-    -- `rw` cannot match `add_zero` against the quotient's zero here, so the step is a term.
-    exact (add_assoc _ _ _).trans ((congrArg (_ + ·) (SquareClassGroup.add_self_eq_zero _)).trans
-      (add_zero (m • squareClass (-1 : ℝˣ))))
+    -- The goal's addition and zero are reached from the generic ones only by unfolding instances,
+    -- so `rw [add_assoc, ZModModule.add_self, add_zero]` fails; the step is a typed term.
+    exact (add_assoc _ _ _).trans
+      ((congrArg (_ + ·) (ZModModule.add_self (squareClass (-1 : ℝˣ)))).trans
+        (add_zero (m • squareClass (-1 : ℝˣ))))
   · -- Where `c` is positive, the negative index and the discriminant are unchanged.
     have hp := hpos w hc
+    have hq : I.rank - 1 - (I.realPositiveIndex w - 1) = I.rank - I.realPositiveIndex w := by
+      omega
     simp only [hc, ↓reduceIte]
     rw [(Units.squareClass_eq_zero_iff_pos (unitAtRealPlace w c)).mpr
-      (by rwa [unitAtRealPlace_apply]),
-      show I.rank - 1 - (I.realPositiveIndex w - 1) = I.rank - I.realPositiveIndex w by omega]
+      (by rwa [unitAtRealPlace_apply]), hq]
+    -- As above, `add_zero` must be stated at the explicit square class to match the goal's zero.
     exact add_zero ((I.rank - I.realPositiveIndex w) • squareClass (-1 : ℝˣ))
 
 /-- The real Hasse sign of the residual system differs from that of `I` by the real symbol
@@ -277,8 +287,9 @@ private theorem realHasse_residual (hI : I.IsAdmissible) {c δ : Kˣ} (hδ : squ
     rw [realNegativeIndex_def] at hq
     obtain ⟨m, hm⟩ : ∃ m, I.rank - I.realPositiveIndex w = m + 1 :=
       ⟨_, (Nat.succ_pred_eq_of_pos hq).symm⟩
+    have hm' : I.rank - 1 - I.realPositiveIndex w = m := by omega
     simp only [hc.not_gt, ↓reduceIte, Nat.sub_zero] at hdc ⊢
-    rw [show I.rank - 1 - I.realPositiveIndex w = m by omega, ← squareClass_pow] at hdc
+    rw [hm', ← squareClass_pow] at hdc
     have hsym : hilbertSymbol (unitAtRealPlace w c) (unitAtRealPlace w (δ * c)) = (-1) ^ m := by
       rcases m.even_or_odd with he | ho
       · rw [he.neg_one_pow, squareClass_one, Units.squareClass_eq_zero_iff_pos] at hdc
@@ -287,9 +298,7 @@ private theorem realHasse_residual (hI : I.IsAdmissible) {c δ : Kˣ} (hδ : squ
       · rw [ho.neg_one_pow, Units.squareClass_eq_squareClass_neg_one_iff_neg] at hdc
         rw [ho.neg_one_pow, hilbertSymbol_real_eq_neg_one_iff]
         exact ⟨by rwa [unitAtRealPlace_apply], hdc⟩
-    rw [show I.rank - 1 - I.realPositiveIndex w = m by omega, hm, hsym, Nat.choose_succ_succ',
-      Nat.choose_one_right, pow_add, mul_right_comm, ← pow_add, Even.neg_one_pow ⟨m, rfl⟩,
-      one_mul]
+    rw [hm', hm, hsym, neg_one_pow_succ_choose_two_mul_neg_one_pow]
   · -- At a place where `c` is positive the negative index is unchanged and the symbol is `1`.
     have hp := hpos w hc
     simp only [hc, ↓reduceIte]
@@ -331,12 +340,14 @@ theorem exists_isAdmissible_eq_prod (hI : I.IsAdmissible) (hn : 4 ≤ I.rank) (c
   · -- The product relation, from that of `I` and Hilbert's product formula for `c` and `δ c`.
     have hres : (residual I c δ).finiteHasse = fun v => I.finiteHasse v *
         hilbertSymbol (v.unitAtFinitePlace c) (v.unitAtFinitePlace (δ * c)) := rfl
-    rw [hasseProduct_def, hres,
-      Finset.prod_congr rfl fun w _ => realHasse_residual hI hδ hneg hpos w,
-      finprod_mul_distrib hI.hasFiniteMulSupport_finiteHasse
-        (hasFiniteMulSupport_hilbertSymbol_unitAtFinitePlace c (δ * c)),
-      Finset.prod_mul_distrib, mul_mul_mul_comm, ← hasseProduct_def, hI.hasseProduct_eq_one,
-      one_mul]
+    -- The finite factor splits as that of `I` times the finite symbols `(c, δ c)_v`.
+    rw [hasseProduct_def, hres, finprod_mul_distrib hI.hasFiniteMulSupport_finiteHasse
+      (hasFiniteMulSupport_hilbertSymbol_unitAtFinitePlace c (δ * c))]
+    -- The real factor splits as that of `I` times the real symbols `(c, δ c)_w`.
+    rw [Finset.prod_congr rfl fun w _ => realHasse_residual hI hδ hneg hpos w,
+      Finset.prod_mul_distrib]
+    -- Regroup into the Hasse product of `I`, which is `1`, times Hilbert's product formula.
+    rw [mul_mul_mul_comm, ← hasseProduct_def, hI.hasseProduct_eq_one, one_mul]
     exact hilbertSymbol_productFormula c (δ * c)
 
 /-- **Lines that split off an admissible system.** For an admissible system `I` of rank at least

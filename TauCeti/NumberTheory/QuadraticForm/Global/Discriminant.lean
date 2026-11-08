@@ -18,8 +18,6 @@ global discriminant at every finite place and along every real or complex embedd
 
 Thus the discriminant attached to an actual localized form agrees with the square class obtained
 by applying the corresponding place map to the global invariant.
-On square classes of global units the place maps are computed by the localized units
-`v.unitAtFinitePlace a` and `TauCeti.unitAtRealPlace w a`.
 
 At a real place the real square class of the global discriminant is a sign, and it is determined by
 the signature there: it is `(-1)^q` for the negative index `q = n - p` of the localized form of
@@ -32,24 +30,6 @@ noncomputable section
 open IsDedekindDomain NumberField NumberField.InfinitePlace
 
 universe u v
-
-/-- The image in `K_vˣ/(K_vˣ)²` of the square class of a global unit is the square class of its
-localization. -/
-theorem IsDedekindDomain.HeightOneSpectrum.squareClass_unitAtFinitePlace {K : Type u} [Field K]
-    [NumberField K] (v : HeightOneSpectrum (𝓞 K)) (a : Kˣ) :
-    TauCeti.squareClass (v.unitAtFinitePlace a) =
-      (algebraMap K (v.adicCompletion K)).squareClassMap (TauCeti.squareClass a) := by
-  rw [RingHom.squareClassMap_apply]
-  exact congrArg TauCeti.squareClass (Units.ext (by simp))
-
-/-- The image in `ℝˣ/(ℝˣ)²` of the square class of a global unit under a real place is the square
-class of its image at that place. -/
-theorem TauCeti.squareClass_unitAtRealPlace {K : Type u} [Field K]
-    (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
-    squareClass (unitAtRealPlace w a) =
-      (embedding_of_isReal w.2).squareClassMap (squareClass a) := by
-  rw [RingHom.squareClassMap_apply]
-  exact congrArg squareClass (Units.ext (by simp))
 
 namespace QuadraticForm
 
