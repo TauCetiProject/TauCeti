@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Integrals involving the hyperbolic cosine

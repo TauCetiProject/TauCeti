@@ -462,6 +462,16 @@ theorem closure_map {N N' : S.Firm} (f : N ⟶ N') :
     S.closure.map f = (ihom (ModuleCat.of V S.tilde)).map f.hom :=
   (rfl)
 
+/-- The functor `N ↦ Hom_V(m~, N)` on firm modules is additive. -/
+instance : S.closure.Additive :=
+  inferInstanceAs (Functor.Additive (S.isFirm.ι ⋙
+    (linearCoyoneda V (ModuleCat.{u} V)).obj (Opposite.op (ModuleCat.of V S.tilde))))
+
+/-- The functor `N ↦ Hom_V(m~, N)` on firm modules is `V`-linear. -/
+instance : S.closure.Linear V :=
+  inferInstanceAs (Functor.Linear V (S.isFirm.ι ⋙
+    (linearCoyoneda V (ModuleCat.{u} V)).obj (Opposite.op (ModuleCat.of V S.tilde))))
+
 /-- The functor `firm` is left adjoint to `closure` (Bhatt, Construction 4.1.5): this is the
 tensor-hom adjunction for `m~`, restricted to firm modules. -/
 noncomputable def firmAdj : S.firm ⊣ S.closure :=

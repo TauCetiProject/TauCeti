@@ -17,6 +17,8 @@ scheme-theoretically dominant. For a domain and its fraction field, this is the 
 generic-fibre inclusion.
 Consequently, two morphisms into a separated target agree whenever their restrictions to this
 fibre agree. Neither reducedness nor finite presentation of the source is needed.
+For flat schemes over `ℤ`, schematic dominance after scalar extension to any
+characteristic-zero commutative ring is available as an instance.
 
 This is the density argument used for uniqueness of extensions on flat models over valuation
 rings; see Q. Liu, *Algebraic Geometry and Arithmetic Curves*, §4.3. The construction uses
@@ -64,6 +66,14 @@ theorem ext_of_genericFiberι_eq (hRK : Function.Injective (algebraMap R K))
     f = g := by
   have := isSchemeTheoreticallyDominant_genericFiberι R K hRK toBase
   exact ext_of_isSchemeTheoreticallyDominant (genericFiberι R K toBase) s h hK
+
+/-- Scalar extension of a flat scheme over `ℤ` to a characteristic-zero commutative ring
+is schematically dominant. -/
+instance isSchemeTheoreticallyDominant_genericFiberι_int
+    (K : Type) [CommRing K] [CharZero K] {X : Scheme}
+    (toBase : X ⟶ Spec (.of ℤ)) [Flat toBase] :
+    IsSchemeTheoreticallyDominant (genericFiberι ℤ K toBase) :=
+  isSchemeTheoreticallyDominant_genericFiberι ℤ K Int.cast_injective toBase
 
 /-- Over a Bezout domain `R`, a scheme whose generic fibre is scheme-theoretically dense is flat.
 This is the converse of `TauCeti.isSchemeTheoreticallyDominant_genericFiberι`. -/

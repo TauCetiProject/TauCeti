@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # Realification of matrices is a closed embedding
@@ -106,11 +107,7 @@ theorem isClosedEmbedding_realify_comp_toUnits :
   -- The unitary group is compact, so a continuous injection into a Hausdorff space suffices.
   refine Continuous.isClosedEmbedding ?_
     ((realify_injective).comp Unitary.toUnits_injective)
-  refine (isClosedEmbedding_realify n 𝕜).continuous.comp (Units.continuous_iff.2
-    ⟨continuous_subtype_val, ?_⟩)
-  -- The inverse of the unit of a unitary matrix is its conjugate transpose, again unitary.
-  simp only [Unitary.val_inv_toUnits_apply, UnitaryGroup.inv_val, continuous_fun_star_iff]
-  exact continuous_subtype_val
+  exact (isClosedEmbedding_realify n 𝕜).continuous.comp Unitary.continuous_toUnits
 
 end GeneralLinearGroup
 

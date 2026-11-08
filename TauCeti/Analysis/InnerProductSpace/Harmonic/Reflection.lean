@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
-public import TauCeti.Analysis.Sobolev.Trace.Reflection
+public import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic

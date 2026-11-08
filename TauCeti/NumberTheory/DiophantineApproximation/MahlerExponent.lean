@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Polynomial.Norm
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 import Mathlib.FieldTheory.PrimitiveElement
-import Mathlib.NumberTheory.NumberField.House
+import TauCeti.NumberTheory.NumberField.House
 import TauCeti.Algebra.Polynomial.Homogenize
 import TauCeti.Analysis.Polynomial.L1Norm
 import TauCeti.Analysis.Polynomial.SupNorm.Basic
@@ -133,19 +133,8 @@ theorem IsAlgebraic.exists_pos_le_norm_aeval_mul_supNorm_pow {ξ : ℂ} (hξ : I
     simp
   have hsd : (s : ℝ) ^ d ≤ (s : ℝ) ^ n := pow_le_pow_right₀ hs1 hP
   -- Every conjugate of `γ`, and hence its house, is at most `B H(P)`.
-  have hhouse : house (γ : F) ≤ B * P.supNorm := by
-    obtain ⟨σ, -, hσ⟩ :=
-      Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : F →+* ℂ ↦ ‖φ γ‖₊
-    rw [house_eq_sup', hσ, coe_nnnorm, hγ]
-    calc (s : ℝ) ^ d * ‖aeval (σ g) P‖
-        ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
-          gcongr
-          rw [aeval_def, algebraMap_int_eq, ← eval_map, ← P.supNorm_map (Int.castRingHom ℂ)]
-          exact norm_eval_le_add_one_mul_supNorm_mul (natDegree_map_le.trans hP) _
-      _ ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * R ^ n) := by
-          gcongr
-          exact hR σ
-      _ = B * P.supNorm := by ring
+  have hhouse : house (γ : F) ≤ B * P.supNorm :=
+    house_le_of_norm_embedding_eq hR hs1 hP hγ
   -- Since `γ` is a nonzero algebraic integer, its conjugate `σ₀ γ = s ^ d P(ξ)` is bounded below
   -- in terms of the bound `B H(P)` on its other conjugates.
   have key : 1 ≤ ‖σ₀ γ‖ * house (γ : F) ^ (D - 1) := by
