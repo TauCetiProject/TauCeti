@@ -30,7 +30,9 @@ The lower sublevel `{f ≤ 1/2}` consists of two intervals, one on each side of 
 labelled source fixed, even though the two charts present the same critical point. They differ
 instead by the reflection `r = -id` of the disc, strictly: `α₋ = α₊ ∘ r`. Hence the identity on
 `{f ≤ 1/2}` together with `r` on the disc is a homeomorphism between the two cell attachments,
-relative to the lower sublevel (`TauCeti.morseCellAttachmentIso`). The comparison of cell
+relative to the lower sublevel (`TauCeti.morseCellAttachmentIso`). The characteristic maps
+are strictly related by the same reflection, `χ₋ = χ₊ ∘ r`, so this homeomorphism also
+intertwines the handle-to-cell comparisons into `{f ≤ 3/2}`. The comparison of cell
 attachments in different charts must therefore allow a reparametrization of the disc: the
 attaching map alone is not determined up to homotopy by the critical point.
 
@@ -42,8 +44,10 @@ attaching map alone is not determined up to homotopy by the critical point.
 * `TauCeti.not_homotopic_morseAttachingMap_doubleWellChart_doubleWellNegChart`: `α₊` and `α₋`
   are not homotopic.
 * `TauCeti.morseAttachingMap_doubleWellNegChart`: `α₋ = α₊ ∘ r` for the reflection `r = -id`.
+* `TauCeti.morseCharacteristicMap_doubleWellNegChart`: `χ₋ = χ₊ ∘ r`.
 * `TauCeti.exists_iso_morseCellAttachment_doubleWellNegChart_doubleWellChart`: the two cell
-  attachments are homeomorphic relative to `{f ≤ 1/2}`, by the identity and `r`.
+  attachments are homeomorphic relative to `{f ≤ 1/2}`, by the identity and `r`, compatibly with
+  the handle-to-cell comparisons.
 * `TauCeti.criticalPoints_doubleWell`, `TauCeti.isCompact_doubleWell_preimage_Icc` and
   `TauCeti.criticalPoints_doubleWell_inter_preimage_Icc`: the width `ε = 1/2` is admissible.
 
@@ -316,9 +320,26 @@ theorem morseAttachingMap_doubleWellNegChart :
     coe_morseAttachingMap_doubleWellChart_apply, diskBoundaryNeg_apply_down]
   simp [neg_mul]
 
+/-- The characteristic maps of the two charts differ strictly by the reflection `r = -id` of the
+disc: `χ₋ = χ₊ ∘ r` on `D¹`. -/
+theorem morseCharacteristicMap_doubleWellNegChart :
+    doubleWellNegChart.morseCharacteristicMap le_rfl one_half_pos.le
+        closedBall_subset_doubleWellNegChart_target
+        doubleWell_eq_one_add_sum_doubleWellNegChart =
+      (LinearIsometryEquiv.neg ℝ).diskIso.hom ≫ doubleWellChart.morseCharacteristicMap le_rfl
+        one_half_pos.le closedBall_subset_doubleWellChart_target
+        doubleWell_eq_one_add_sum_doubleWellChart := by
+  ext w
+  rw [ConcreteCategory.comp_apply, OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
+    OpenPartialHomeomorph.coe_morseCharacteristicMap_apply, morseCellMap_doubleWellNegChart,
+    morseCellMap_doubleWellChart, LinearIsometryEquiv.coe_diskIso_hom_apply_down]
+  simp
+
 /-- Since `α₋ = α₊ ∘ r` strictly, the map which is the identity on `{doubleWell ≤ 1/2}` and the
 reflection `r = -id` on the disc is a homeomorphism between the two cell attachments
-`{doubleWell ≤ 1/2} ∪_{α₋} D¹ ≅ {doubleWell ≤ 1/2} ∪_{α₊} D¹`, relative to the lower sublevel. -/
+`{doubleWell ≤ 1/2} ∪_{α₋} D¹ ≅ {doubleWell ≤ 1/2} ∪_{α₊} D¹`, relative to the lower sublevel.
+Since also `χ₋ = χ₊ ∘ r`, it intertwines the handle-to-cell comparisons into
+`{doubleWell ≤ 3/2}`. -/
 theorem exists_iso_morseCellAttachment_doubleWellNegChart_doubleWellChart :
     ∃ Φ : morseCellAttachment (fun _ : Unit ↦ doubleWellNegChart) (fun _ ↦ 1) (fun _ ↦ le_rfl)
         one_half_pos.le (fun _ ↦ closedBall_subset_doubleWellNegChart_target)
@@ -338,7 +359,13 @@ theorem exists_iso_morseCellAttachment_doubleWellNegChart_doubleWellChart :
         (LinearIsometryEquiv.neg ℝ).diskIso.hom ≫
           morseCellAttachmentCell (fun _ : Unit ↦ doubleWellChart) (fun _ ↦ 1) (fun _ ↦ le_rfl)
             one_half_pos.le (fun _ ↦ closedBall_subset_doubleWellChart_target)
-            (fun _ ↦ doubleWell_eq_one_add_sum_doubleWellChart) () := by
+            (fun _ ↦ doubleWell_eq_one_add_sum_doubleWellChart) () ∧
+      Φ.hom ≫ morseCellComparison (fun _ : Unit ↦ doubleWellChart) (fun _ ↦ 1) (fun _ ↦ le_rfl)
+          one_half_pos.le (fun _ ↦ closedBall_subset_doubleWellChart_target)
+          (fun _ ↦ doubleWell_eq_one_add_sum_doubleWellChart) =
+        morseCellComparison (fun _ : Unit ↦ doubleWellNegChart) (fun _ ↦ 1) (fun _ ↦ le_rfl)
+          one_half_pos.le (fun _ ↦ closedBall_subset_doubleWellNegChart_target)
+          (fun _ ↦ doubleWell_eq_one_add_sum_doubleWellNegChart) := by
   have hα : ∀ _ : Unit, doubleWellNegChart.morseAttachingMap le_rfl one_half_pos.le
         closedBall_subset_doubleWellNegChart_target
         doubleWell_eq_one_add_sum_doubleWellNegChart =
@@ -349,7 +376,8 @@ theorem exists_iso_morseCellAttachment_doubleWellNegChart_doubleWellChart :
   exact ⟨morseCellAttachmentIso _ _ _ _ _ _ _ _ _ (fun _ ↦ (LinearIsometryEquiv.neg ℝ).diskIso)
     (fun _ ↦ (LinearIsometryEquiv.neg ℝ).diskBoundaryIso)
     (fun _ ↦ LinearIsometryEquiv.diskBoundaryIso_hom_comp_diskBoundaryInclusion _) hα,
-    by simp, by simp⟩
+    by simp, by simp, morseCellAttachmentIso_hom_comp_morseCellComparison _ _ _ _ _ _ _ _ _ _ _ _ _
+      fun _ ↦ morseCharacteristicMap_doubleWellNegChart⟩
 
 /-! ### Admissibility of the width `ε = 1/2` -/
 
