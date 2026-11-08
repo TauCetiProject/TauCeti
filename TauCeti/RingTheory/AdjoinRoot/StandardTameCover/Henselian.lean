@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
-import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Henselian.Integral
 
 /-!
@@ -44,10 +43,6 @@ theorem standardTameCover_henselianLocalRing [HenselianLocalRing A]
     HenselianLocalRing (standardTameCover A f e) := by
   have := standardTameCover_isLocalRing hf he
   have := (monic_X_pow_sub_C f he).finite_adjoinRoot
-  let B := standardTameCover A f e
-  have : IsLocalHom (algebraMap A B) :=
-    AdjoinRoot.isLocalHom_of_monic_of_degree_pos (monic_X_pow_sub_C f he)
-      (by rw [degree_X_pow_sub_C (Nat.pos_of_ne_zero he)]; exact_mod_cast Nat.pos_of_ne_zero he)
-  exact HenselianLocalRing.of_finite A B
+  exact HenselianLocalRing.of_finite A (standardTameCover A f e)
 
 end TauCeti

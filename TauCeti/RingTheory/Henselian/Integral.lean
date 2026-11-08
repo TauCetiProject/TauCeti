@@ -37,8 +37,8 @@ pairs by their finite algebras, and by their integral algebras.
   monic `f`.
 * `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
   `R`-algebra, then `(S, IS)` is Henselian.
-* `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring,
-  whose structure map is local, is henselian.
+* `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring
+  is henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
   `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral`: `(R, I)` is Henselian
   if and only if reduction modulo `IS` is a bijection on idempotents for every finite, or every
@@ -172,17 +172,16 @@ end Ideal
 
 namespace TauCeti
 
-/-- A finite local algebra over a henselian local ring is henselian when its structure map
-is local. -/
+/-- A finite local algebra over a henselian local ring is henselian. -/
 theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
-    [HenselianLocalRing R] [IsLocalRing S] [Module.Finite R S]
-    [IsLocalHom (algebraMap R S)] : HenselianLocalRing S := by
+    [HenselianLocalRing R] [IsLocalRing S] [Module.Finite R S] : HenselianLocalRing S := by
   let I := (IsLocalRing.maximalIdeal R).map (algebraMap R S)
   have hrad : I.radical = IsLocalRing.maximalIdeal S := by
     obtain ⟨n, hn⟩ := IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
     apply le_antisymm
-    · exact (Ideal.IsPrime.radical_le_iff inferInstance).mpr
-        (IsLocalRing.map_maximalIdeal_le _)
+    · apply (Ideal.IsPrime.radical_le_iff inferInstance).mpr
+      exact Ideal.map_le_iff_le_comap.mpr
+        (Ideal.comap_eq_maximalIdeal_of_isIntegral (IsLocalRing.maximalIdeal S)).ge
     · intro b hb
       exact ⟨n, hn (Ideal.pow_mem_pow hb n)⟩
   have : HenselianRing S I := inferInstance
