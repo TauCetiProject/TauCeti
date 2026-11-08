@@ -124,8 +124,7 @@ private theorem Wkp.mem_wkp0Submodule_top_of_contDiff (hp : p ≠ ⊤)
     (k : ℕ) (u : Wkp mu ⊤ p k) {f : E → ℝ} (hf : ContDiff ℝ ∞ f)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict (⊤ : Opens E)] f) :
     u ∈ wkp0Submodule mu ⊤ p k := by
-  obtain ⟨g, hg, _, hlim⟩ := exists_contDiff_hasCompactSupport_approximation
-    (zero_lt_one.trans_le Fact.out).ne' hp hf k le_top
+  obtain ⟨g, hg, _, hlim⟩ := exists_contDiff_hasCompactSupport_approximation hp hf k le_top
       (memLp_iteratedFDeriv_of_contDiffOn k u (hf.of_le (by simp)).contDiffOn hu)
   let phi : ℕ → 𝓓((⊤ : Opens E), ℝ) := fun j =>
     ⟨g j, (hg j).1, (hg j).2, subset_univ _⟩

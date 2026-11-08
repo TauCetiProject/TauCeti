@@ -34,6 +34,8 @@ product is associative in the form needed for the associativity of the strands a
 * `TauCeti.StrandDiagram.trans`: the composite of two diagrams, first `φ` and then `ψ`.
 * `TauCeti.StrandDiagram.idOn`: the identity diagram on a finite set, with horizontal strands.
 * `TauCeti.StrandDiagram.source`, `TauCeti.StrandDiagram.target`: the starting and ending points.
+* `TauCeti.StrandDiagram.endpoint`, `TauCeti.StrandDiagram.startpoint`: the end point of the
+  strand from a point, and the starting point of the strand to a point.
 * `TauCeti.StrandDiagram.inversions`, `TauCeti.StrandDiagram.inversionCount`: the crossings.
 * `TauCeti.StrandDiagram.Composable`: the target of `φ` is the source of `ψ` and the inversion
   counts add, `inv (φ.trans ψ) = inv φ + inv ψ`; this is when the product of `φ` and `ψ` in the
@@ -95,6 +97,42 @@ theorem toPEquiv_injective : Function.Injective (toPEquiv : StrandDiagram α →
 /-- Every strand of a diagram goes upwards. -/
 theorem le_of_mem (φ : StrandDiagram α) {i j : α} (h : j ∈ φ i) : i ≤ j :=
   φ.le_of_mem' h
+
+/-- Two strands of a diagram with the same end point start at the same point. -/
+theorem eq_of_mem_of_mem (φ : StrandDiagram α) {x y a : α} (hx : a ∈ φ x) (hy : a ∈ φ y) :
+    x = y :=
+  φ.toPEquiv.inj hx hy
+
+/-- Strands of a diagram starting at distinct points end at distinct points. -/
+theorem ne_of_mem_of_mem_of_ne (φ : StrandDiagram α) {x y a b : α} (ha : a ∈ φ x)
+    (hb : b ∈ φ y) (h : x ≠ y) : a ≠ b := by
+  rintro rfl
+  exact h (φ.eq_of_mem_of_mem ha hb)
+
+/-- The end point of the strand of `φ` starting at `x`, and `x` itself when no strand starts
+there. -/
+def endpoint (φ : StrandDiagram α) (x : α) : α :=
+  (φ x).getD x
+
+theorem endpoint_def (φ : StrandDiagram α) (x : α) : φ.endpoint x = (φ x).getD x :=
+  (rfl)
+
+theorem endpoint_eq_of_mem {φ : StrandDiagram α} {x a : α} (h : a ∈ φ x) : φ.endpoint x = a := by
+  rw [Option.mem_def] at h
+  simp [endpoint_def, h]
+
+/-- The starting point of the strand of `φ` ending at `y`, and `y` itself when no strand ends
+there. This inverts `TauCeti.StrandDiagram.endpoint` between the source and the target. -/
+def startpoint (φ : StrandDiagram α) (y : α) : α :=
+  (φ.toPEquiv.symm y).getD y
+
+theorem startpoint_def (φ : StrandDiagram α) (y : α) :
+    φ.startpoint y = (φ.toPEquiv.symm y).getD y :=
+  (rfl)
+
+theorem startpoint_eq_of_mem {φ : StrandDiagram α} {x a : α} (h : a ∈ φ x) :
+    φ.startpoint a = x := by
+  simp [startpoint_def, (PEquiv.eq_some_iff _).2 h]
 
 /-- The composite of two strand diagrams: first `φ`, then `ψ`. In the strands algebra it is the
 concatenation of the diagram of `φ` on the left with that of `ψ` on the right. -/
@@ -188,6 +226,37 @@ theorem target_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = ψ
   obtain ⟨i, hi⟩ := mem_target.1 (h.symm ▸ mem_source.2 ⟨k, hk⟩)
   exact ⟨i, j, hi, hk⟩
 
+theorem endpoint_mem {φ : StrandDiagram α} {x : α} (hx : x ∈ φ.source) : φ.endpoint x ∈ φ x := by
+  obtain ⟨a, ha⟩ := mem_source.1 hx
+  rwa [endpoint_eq_of_mem ha]
+
+theorem endpoint_mem_target {φ : StrandDiagram α} {x : α} (hx : x ∈ φ.source) :
+    φ.endpoint x ∈ φ.target :=
+  mem_target.2 ⟨x, endpoint_mem hx⟩
+
+/-- Strands starting at distinct points of the source end at distinct points. -/
+theorem endpoint_injOn (φ : StrandDiagram α) : Set.InjOn φ.endpoint φ.source :=
+  fun _ hx _ hy h ↦ φ.eq_of_mem_of_mem (endpoint_mem hx) (h ▸ endpoint_mem hy)
+
+theorem mem_startpoint {φ : StrandDiagram α} {y : α} (hy : y ∈ φ.target) :
+    y ∈ φ (φ.startpoint y) := by
+  obtain ⟨x, hx⟩ := mem_target.1 hy
+  rwa [startpoint_eq_of_mem hx]
+
+theorem startpoint_mem_source {φ : StrandDiagram α} {y : α} (hy : y ∈ φ.target) :
+    φ.startpoint y ∈ φ.source :=
+  mem_source.2 ⟨y, mem_startpoint hy⟩
+
+@[simp]
+theorem startpoint_endpoint {φ : StrandDiagram α} {x : α} (hx : x ∈ φ.source) :
+    φ.startpoint (φ.endpoint x) = x :=
+  startpoint_eq_of_mem (endpoint_mem hx)
+
+@[simp]
+theorem endpoint_startpoint {φ : StrandDiagram α} {y : α} (hy : y ∈ φ.target) :
+    φ.endpoint (φ.startpoint y) = y :=
+  endpoint_eq_of_mem (mem_startpoint hy)
+
 theorem idOn_trans_of_eq_source {s : Finset α} {φ : StrandDiagram α} (h : s = φ.source) :
     (idOn s).trans φ = φ := by
   ext i k
@@ -205,12 +274,12 @@ theorem trans_idOn_of_target_eq {s : Finset α} {φ : StrandDiagram α} (h : φ.
   exact h ▸ mem_target.2 ⟨i, hk⟩
 
 /-- The inversions of a strand diagram: the pairs `i < j` of starting points whose strands cross,
-`φ j < φ i`. These are the inversions (`Finset.inversions`) of `φ` on its source. -/
+`φ j < φ i`. These are the inversions (`Finset.inversions`) of the end-point map of `φ` on its
+source. -/
 def inversions (φ : StrandDiagram α) : Finset (α × α) :=
-  φ.source.inversions fun i ↦ (φ i).getD i
+  φ.source.inversions φ.endpoint
 
-theorem inversions_def (φ : StrandDiagram α) :
-    φ.inversions = φ.source.inversions fun i ↦ (φ i).getD i :=
+theorem inversions_def (φ : StrandDiagram α) : φ.inversions = φ.source.inversions φ.endpoint :=
   (rfl)
 
 @[simp]
@@ -219,11 +288,54 @@ theorem mem_inversions {φ : StrandDiagram α} {p : α × α} :
   rw [inversions_def, Finset.mem_inversions, mem_source, mem_source]
   constructor
   · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, hab, h⟩
-    rw [Option.mem_def] at ha hb
-    exact ⟨hab, a, ha, b, hb, by simpa [ha, hb] using h⟩
+    rw [endpoint_eq_of_mem ha, endpoint_eq_of_mem hb] at h
+    exact ⟨hab, a, ha, b, hb, h⟩
   · rintro ⟨hab, a, ha, b, hb, h⟩
-    rw [Option.mem_def] at ha hb
-    exact ⟨⟨a, ha⟩, ⟨b, hb⟩, hab, by simpa [ha, hb] using h⟩
+    exact ⟨⟨a, ha⟩, ⟨b, hb⟩, hab, by rwa [endpoint_eq_of_mem ha, endpoint_eq_of_mem hb]⟩
+
+/-- The strands of a crossing start at starting points of the diagram. -/
+theorem fst_mem_source_of_mem_inversions {φ : StrandDiagram α} {p : α × α}
+    (h : p ∈ φ.inversions) : p.1 ∈ φ.source := by
+  obtain ⟨-, a, ha, -⟩ := mem_inversions.1 h
+  exact mem_source.2 ⟨a, ha⟩
+
+/-- The strands of a crossing start at starting points of the diagram. -/
+theorem snd_mem_source_of_mem_inversions {φ : StrandDiagram α} {p : α × α}
+    (h : p ∈ φ.inversions) : p.2 ∈ φ.source := by
+  obtain ⟨-, -, -, b, hb, -⟩ := mem_inversions.1 h
+  exact mem_source.2 ⟨b, hb⟩
+
+/-- The strands of `φ` starting at `x` and `y`, with end points `a` and `b`, cross exactly when
+`x < y` and `b < a`. -/
+theorem mem_inversions_iff_of_mem {φ : StrandDiagram α} {x y a b : α} (ha : a ∈ φ x)
+    (hb : b ∈ φ y) :
+    (x, y) ∈ φ.inversions ↔ x < y ∧ b < a := by
+  rw [mem_inversions]
+  refine ⟨fun ⟨hxy, a', ha', b', hb', h⟩ ↦ ⟨hxy, ?_⟩, fun ⟨hxy, h⟩ ↦ ⟨hxy, a, ha, b, hb, h⟩⟩
+  rwa [Option.mem_unique ha' ha, Option.mem_unique hb' hb] at h
+
+/-- For distinct `x` and `y`, the sorted pair `(min x y, max x y)` is a crossing exactly when the
+strands from `x` and `y` reverse their order. -/
+theorem min_max_mem_inversions_iff {φ : StrandDiagram α} {x y a b : α} (hxy : x ≠ y)
+    (ha : a ∈ φ x) (hb : b ∈ φ y) : (min x y, max x y) ∈ φ.inversions ↔ (x < y ↔ b < a) := by
+  have hab : a ≠ b := φ.ne_of_mem_of_mem_of_ne ha hb hxy
+  rcases lt_or_gt_of_ne hxy with h | h
+  · simp [min_eq_left h.le, max_eq_right h.le, mem_inversions_iff_of_mem ha hb, h]
+  · simp only [min_eq_right h.le, max_eq_left h.le, mem_inversions_iff_of_mem hb ha, h,
+      true_and, h.not_gt, false_iff, not_lt]
+    exact ⟨fun h' ↦ h'.le, fun h' ↦ lt_of_le_of_ne h' hab⟩
+
+/-- The two strands of a crossing written as a sorted pair start at starting points of the
+diagram. -/
+theorem mem_source_of_min_max_mem_inversions {φ : StrandDiagram α} {x y : α}
+    (h : (min x y, max x y) ∈ φ.inversions) : x ∈ φ.source ∧ y ∈ φ.source := by
+  have h₁ := fst_mem_source_of_mem_inversions h
+  have h₂ := snd_mem_source_of_mem_inversions h
+  rcases le_total x y with hxy | hxy
+  · simp only [min_eq_left hxy, max_eq_right hxy] at h₁ h₂
+    exact ⟨h₁, h₂⟩
+  · simp only [min_eq_right hxy, max_eq_left hxy] at h₁ h₂
+    exact ⟨h₂, h₁⟩
 
 /-- The number of crossings of a strand diagram, written `inv(φ)` by Lipshitz, Ozsváth and
 Thurston. -/
