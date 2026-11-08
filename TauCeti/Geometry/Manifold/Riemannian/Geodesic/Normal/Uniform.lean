@@ -104,7 +104,7 @@ theorem mfderiv_prodMk_proj_riemannianExp_zeroSection_apply (p : M) (u v : Tange
       funext x
       simp [F, zeroSection]
     rw [hfun, mfderiv_prodMk mdifferentiableAt_id mdifferentiableAt_id, mfderiv_id] at h
-    exact h.symm.trans rfl
+    exact h.symm.trans (ContinuousLinearMap.prod_apply _ _ u)
   have h2 : mfderiv I.tangent (I.prod I) F (zeroSection E (TangentSpace I) p)
       ((TauCeti.Bundle.zeroSectionTangentEquiv (I := I) p).symm (0, v)) = (0, v) := by
     rw [TauCeti.Bundle.zeroSectionTangentEquiv_symm_inr]
@@ -118,9 +118,10 @@ theorem mfderiv_prodMk_proj_riemannianExp_zeroSection_apply (p : M) (u v : Tange
     rw [hfun, mfderiv_prodMk mdifferentiableAt_const hexp, mfderiv_const] at h
     have hv := curveVelocity_riemannianExp_smul_zero p v
     rw [← curveVelocityWithin_univ, curveVelocityWithin_apply, mfderivWithin_univ] at hv
-    exact h.symm.trans (Prod.ext rfl hv)
+    exact h.symm.trans ((ContinuousLinearMap.prod_apply _ _ 1).trans
+      (Prod.ext (zero_apply 1) hv))
   rw [h1, h2]
-  exact Prod.ext (add_zero u) rfl
+  exact (Prod.mk_add_mk u 0 u v).trans (congrArg (·, u + v) (add_zero u))
 
 /-- **The variable-base inverse function theorem.** The map `(x, v) ↦ (x, exp_x v)` from the
 tangent bundle to `M × M` is a local diffeomorphism at every zero vector. -/
@@ -139,7 +140,8 @@ theorem isLocalDiffeomorphAt_prodMk_proj_riemannianExp_zeroSection (p : M) :
   obtain ⟨⟨u, v⟩, rfl⟩ := e.symm.surjective w
   rw [mfderiv_prodMk_proj_riemannianExp_zeroSection_apply]
   -- `e.trans A` applied to `e.symm (u, v)` is `A (u, v) = (u, v + u)`.
-  exact (congrArg A (e.apply_symm_apply (u, v))).trans (Prod.ext rfl (add_comm v u))
+  exact (congrArg A (e.apply_symm_apply (u, v))).trans
+    ((ContinuousLinearEquiv.skewProd_apply _ _ _ (u, v)).trans (congrArg (u, ·) (add_comm v u)))
 
 /-- Where `(x, v) ↦ (x, exp_x v)` is a local diffeomorphism, so is its restriction `exp_q` to the
 fibre over `q`: the differential of `exp_q` is the vertical part of an invertible differential. -/
@@ -164,13 +166,17 @@ private theorem isLocalDiffeomorphAt_riemannianExp_of_prodMk {q : M} {v : Tangen
     rw [hfun, mfderiv_prodMk mdifferentiableAt_const hexp, mfderiv_const] at hcomp
     have h0 : mfderiv I.tangent (I.prod I) F (ι v)
         (mfderiv 𝓘(ℝ, TangentSpace I q) I.tangent ι v w) = 0 :=
-      hcomp.symm.trans (Prod.ext rfl hw)
+      hcomp.symm.trans ((ContinuousLinearMap.prod_apply _ _ w).trans
+        ((Prod.ext (zero_apply w) hw).trans Prod.mk_zero_zero))
     obtain ⟨A, hA⟩ := hFinv
     rw [← hA] at h0
     have h1 := A.injective (h0.trans (map_zero A).symm)
     exact injective_mfderiv_totalSpaceMk q v (h1.trans (map_zero _).symm)
+  -- Both tangent spaces are definitionally the model space `E`, so their dimensions agree.
+  have hdim : Module.finrank ℝ (TangentSpace 𝓘(ℝ, TangentSpace I q) v) =
+      Module.finrank ℝ (TangentSpace I (riemannianExp I M q v)) := rfl
   have hbij : Bijective (mfderiv 𝓘(ℝ, TangentSpace I q) I (riemannianExp I M q) v) :=
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank rfl).1 hinj⟩
+    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
   exact isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_riemannianExp q) (isOpen_expDomain q) hv
     BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearEquiv.ofBijective _ hbij).toContinuousLinearEquiv) rfl
