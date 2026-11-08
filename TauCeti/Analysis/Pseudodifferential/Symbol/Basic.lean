@@ -700,26 +700,16 @@ theorem comp_const_id (b : Symbol n W U m') :
   funext p
   simp
 
-/-- The first-order Leibniz rule for a coordinate derivative of a pointwise composition, the case
-`α = [j]` of `ContinuousLinearMap.coordinateDeriv_of_bilinear`. -/
-private theorem coordinateDeriv_singleton_comp {F : CoordinateSpace n → W →L[ℂ] U}
-    {G : CoordinateSpace n → V →L[ℂ] W} (hF : ContDiff ℝ ∞ F) (hG : ContDiff ℝ ∞ G) (j : Fin n)
-    (x : CoordinateSpace n) :
-    coordinateDeriv [j] (fun y => (F y).comp (G y)) x =
-      (coordinateDeriv [j] F x).comp (G x) + (F x).comp (coordinateDeriv [j] G x) := by
-  have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ)
-    |>.coordinateDeriv_of_bilinear (α := [j]) (hF.of_le (by simp)) (hG.of_le (by simp)) x
-  simpa [List.revzip, add_comm] using h
-
 /-- The Leibniz rule for a spatial derivative of a composition. -/
 theorem spatialDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W m) :
     spatialDeriv j (b.comp a) = (spatialDeriv j b).comp a + b.comp (spatialDeriv j a) := by
   ext1
   funext ⟨x, ξ⟩
   simpa only [coefficient_spatialDeriv, coefficient_comp, coefficient_add, Pi.add_apply] using
-    coordinateDeriv_singleton_comp (F := fun y => b.coefficient (y, ξ))
-      (G := fun y => a.coefficient (y, ξ)) (b.contDiff_coefficient.comp (contDiff_prodMk_left ξ))
-      (a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)) j x
+    coordinateDeriv_singleton_clm_comp (f := fun y => b.coefficient (y, ξ))
+      (g := fun y => a.coefficient (y, ξ))
+      ((b.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).of_le (by simp))
+      ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).of_le (by simp)) j x
 
 /-- The Leibniz rule for a frequency derivative of a composition. The orders `m' - 1 + m` and
 `m' + (m - 1)` of the two terms are identified with the order `m' + m - 1` of the left side
@@ -732,9 +722,10 @@ theorem frequencyDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W 
   funext ⟨x, ξ⟩
   simpa only [coefficient_frequencyDeriv, coefficient_comp, coefficient_add, Pi.add_apply,
     coefficient_inclusion] using
-    coordinateDeriv_singleton_comp (F := fun η => b.coefficient (x, η))
-      (G := fun η => a.coefficient (x, η)) (b.contDiff_coefficient.comp (contDiff_prodMk_right x))
-      (a.contDiff_coefficient.comp (contDiff_prodMk_right x)) j ξ
+    coordinateDeriv_singleton_clm_comp (f := fun η => b.coefficient (x, η))
+      (g := fun η => a.coefficient (x, η))
+      ((b.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
+      ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j ξ
 
 /-- The symbol of multiplication by `f` has compact spatial support exactly when `f` has compact
 support. Composing with it is a spatial cutoff: by `HasCompactSpatialSupport.comp_right`, a
