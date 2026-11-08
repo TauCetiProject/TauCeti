@@ -52,15 +52,12 @@ theorem isFinite_map (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
         (inferInstance : f.IsOver (Spec (.of k)))]
       exact isProper hxt'
     exact IsProper.of_comp f (twoChartModel hF hx ↘ Spec (.of k))
-  let 𝒰 : (twoChartModel hF' hx').OpenCover := Scheme.Cover.mkOfCovers Bool
-    (fun b ↦ b.rec (Spec (.of (holomorphyRing {P : Place k F' | x'⁻¹ ∈ P.integers})))
-      (Spec (.of (holomorphyRing {P : Place k F' | x' ∈ P.integers}))))
-    (fun b ↦ match b with | false => ιInfinity hF' hx' | true => ιFinite hF' hx')
-    (fun p ↦ by
-      rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF' hx') p).mpr trivial with
-        ⟨q, rfl⟩ | ⟨q, rfl⟩
-      exacts [⟨true, q, rfl⟩, ⟨false, q, rfl⟩])
-    (fun b ↦ by cases b <;> infer_instance)
+  have := isOpenImmersion_specMap_finiteChartRestriction hF' hx'
+  have := isOpenImmersion_specMap_infinityChartRestriction hF' hx'
+  let 𝒰 := (Scheme.pushoutOpenCover
+    (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x').toRingHom))
+    (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x').toRingHom))).pushforwardIso
+      (isPushout hF' hx').isoPushout.inv
   have hqf : LocallyQuasiFinite f := by
     have hloc : IsZariskiLocalAtSource @LocallyQuasiFinite :=
       @HasRingHomProperty.instIsZariskiLocalAtSource _ RingHom.QuasiFinite
@@ -68,16 +65,21 @@ theorem isFinite_map (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
     apply hloc.of_openCover 𝒰
     intro b
     cases b
-    -- The two Bool cases reduce to the named infinity and finite chart inclusions.
-    · change LocallyQuasiFinite (ιInfinity hF' hx' ≫ f)
-      rw [ιInfinity_map]
-      have : IsFinite (Spec.map (CommRingCat.ofHom (infinityChartMap (k := k) h))) :=
-        isFinite_specMap_infinityChartMap hF' hxt h
-      infer_instance
-    · change LocallyQuasiFinite (ιFinite hF' hx' ≫ f)
+    -- `erw` unfolds the cover's index type to `Bool`. The following `change` resets the
+    -- implicit source from `𝒰.X b` to the chart, so ordinary chart-map rewriting can apply.
+    · erw [Scheme.Cover.pushforwardIso_f, Scheme.pushoutOpenCover_f_false,
+        IsPushout.inl_isoPushout_inv]
+      change LocallyQuasiFinite (ιFinite hF' hx' ≫ f)
       rw [ιFinite_map]
       have : IsFinite (Spec.map (CommRingCat.ofHom (finiteChartMap (k := k) h))) :=
         isFinite_specMap_finiteChartMap hF' hxt h
+      infer_instance
+    · erw [Scheme.Cover.pushforwardIso_f, Scheme.pushoutOpenCover_f_true,
+        IsPushout.inr_isoPushout_inv]
+      change LocallyQuasiFinite (ιInfinity hF' hx' ≫ f)
+      rw [ιInfinity_map]
+      have : IsFinite (Spec.map (CommRingCat.ofHom (infinityChartMap (k := k) h))) :=
+        isFinite_specMap_infinityChartMap hF' hxt h
       infer_instance
   exact IsFinite.of_isProper_of_locallyQuasiFinite f
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
@@ -110,23 +111,11 @@ theorem LocallyOfFiniteType.pushout_desc [LocallyOfFiniteType f] [LocallyOfFinit
 gluing of two finite-type morphisms is finite type, with no condition on the base. -/
 theorem QuasiCompact.pushout_desc [QuasiCompact f] [QuasiCompact g] :
     QuasiCompact (pushout.desc f g h) := by
-  rw [quasiCompact_iff_forall_isAffineOpen]
-  intro V hV
   let 𝒰 := Scheme.pushoutOpenCover i j
   have : Finite 𝒰.I₀ := inferInstanceAs (Finite Bool)
-  have hc : ∀ b, IsCompact ((𝒰.f b ≫ pushout.desc f g h) ⁻¹' (V : Set S)) := by
-    rintro (_ | _)
-    · exact (pushout.inl_desc f g h).symm ▸
-        QuasiCompact.isCompact_preimage (f := f) V V.isOpen hV.isCompact
-    · exact (pushout.inr_desc f g h).symm ▸
-        QuasiCompact.isCompact_preimage (f := g) V V.isOpen hV.isCompact
-  have he : (pushout.desc f g h) ⁻¹' (V : Set S) =
-      ⋃ b, (𝒰.f b) '' ((𝒰.f b ≫ pushout.desc f g h) ⁻¹' (V : Set S)) := by
-    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp,
-      Set.image_preimage_eq_inter_range]
-    rw [← Set.inter_iUnion, 𝒰.iUnion_range, Set.inter_univ]
-  simp only [Scheme.Hom.coe_preimage]
-  rw [he]
-  exact isCompact_iUnion fun b ↦ (hc b).image (𝒰.f b).continuous
+  refine QuasiCompact.of_openCover (pushout.desc f g h) 𝒰 ?_
+  rintro (_ | _)
+  · exact (pushout.inl_desc f g h).symm ▸ (inferInstance : QuasiCompact f)
+  · exact (pushout.inr_desc f g h).symm ▸ (inferInstance : QuasiCompact g)
 
 end AlgebraicGeometry
