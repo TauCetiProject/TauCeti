@@ -447,8 +447,8 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
 
 /-- A differentiable path `u`, in a space where the orthogonal complement of `v` has dimension at
 least three, avoids the antipode of some unit vector `p` orthogonal to `v`: `u s + p ≠ 0` for
-every `s`. The cone `(s, r) ↦ -r • u s` over the antipodal
-path is the image of a plane, so it misses a point of the orthogonal complement. -/
+every `s`. This auxiliary vector supplies an intermediate direction for smoothly rotating a path
+of unit vectors. -/
 theorem exists_forall_add_ne_zero {v : F}
     (hF : 2 < Module.finrank ℝ (ℝ ∙ v)ᗮ) {u : ℝ → F} (hu : Differentiable ℝ u) :
     ∃ p : F, ‖p‖ = 1 ∧ ⟪p, v⟫ = 0 ∧ ∀ s, u s + p ≠ 0 := by
