@@ -62,7 +62,6 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
         ∀ x, e (reverseEven Q x) = star (e x) := by
   let E := Subalgebra.center K (even Q)
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  let _ : IsScalarTower K E (even Q) := Subalgebra.isScalarTower_centerAlgebra
   obtain ⟨B, horth, haniso⟩ := hQ.exists_orthogonal_basis
   let n0 : Fin (finrank K V) := ⟨0, by omega⟩
   let n1 : Fin (finrank K V) := ⟨1, by omega⟩
