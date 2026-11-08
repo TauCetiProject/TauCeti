@@ -16,6 +16,7 @@ import TauCeti.Algebra.MonoidAlgebra.LocalRing
 import TauCeti.Algebra.MonoidAlgebra.MapDomain
 import TauCeti.Algebra.MonoidAlgebra.Trace
 import TauCeti.GroupTheory.OrderOfElement.PPart
+import TauCeti.LinearAlgebra.End.Basic
 import TauCeti.LinearAlgebra.Matrix.FiniteOrder
 import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.LocalRing.Module
@@ -57,6 +58,25 @@ public section
 namespace TauCeti
 
 open _root_.MonoidAlgebra
+
+/-- If the `A[Q]`-module structure on `X` is the `A[G]`-action through `ι`, then the action of
+`single s 1` for `s` commuting with the image of `ι` is `A[Q]`-linear. -/
+private theorem exists_linearMap_apply_eq_single_smul {A : Type*} [CommSemiring A] {Q G : Type*}
+    [Monoid Q] [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (X : Type*)
+    [AddCommMonoid X] [Module (MonoidAlgebra A G) X] [Module (MonoidAlgebra A Q) X]
+    (hact : ∀ (r : MonoidAlgebra A Q) (x : X), r • x = mapDomainAlgHom A A ι r • x) :
+    ∃ S : X →ₗ[MonoidAlgebra A Q] X, ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x :=
+  ⟨{ toFun := fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x
+     map_add' := smul_add _
+     map_smul' := fun r x ↦ by
+       have hc : (single s (1 : A) : MonoidAlgebra A G) * mapDomainAlgHom A A ι r =
+           mapDomainAlgHom A A ι r * single s 1 := by
+         simpa only [mapDomainAlgHom_apply, mapDomainRingHom_apply] using
+           (mapDomain_commute_single (fun c ↦ (hs c).symm)
+             (fun _ ↦ Commute.one_right _) r).symm.eq
+       rw [RingHom.id_apply, hact, hact, ← mul_smul, ← mul_smul]
+       exact congrArg (· • x) hc },
+    fun _ ↦ rfl⟩
 
 variable {A : Type*} [CommRing A] [IsLocalRing A] {p : ℕ} [Fact p.Prime] {G : Type*} [Group G]
   [Finite G] (X : Type*) [AddCommMonoid X] [Module A X] [Module (MonoidAlgebra A G) X]
@@ -104,10 +124,11 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
     TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup hp hQ
   have : Module.Free (MonoidAlgebra A Q) X := Module.free_of_projective_of_isLocalRing
   -- The element `s` commutes with `Q`, so it acts `A[Q]`-linearly.
-  obtain ⟨S, hSapply⟩ := MonoidHom.exists_linearMap_apply_eq_single_smul (A := A) Q.subtype
+  obtain ⟨S, hSapply⟩ := exists_linearMap_apply_eq_single_smul (A := A) Q.subtype
     (by rintro ⟨_, j, rfl⟩; exact hsq.zpow_right j) X fun _ _ ↦ rfl
   have hS : S ^ orderOf s = 1 :=
-    Module.End.pow_eq_one_of_apply_eq_single_smul S hSapply (pow_orderOf_eq_one s)
+    Module.End.pow_eq_one_of_apply_eq_smul S hSapply
+      (by rw [single_pow, one_pow, pow_orderOf_eq_one, one_def])
   -- The element `g = s * q` acts as the scalar `q ∈ A[Q]` times `S`.
   let q' : Q := ⟨q, Subgroup.mem_zpowers q⟩
   have hg' : Representation.ofModule' X (s * q) =
