@@ -137,7 +137,9 @@ theorem pullback_tildeExteriorPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
   apply ModuleCat.exteriorPower.hom_ext
   ext m
   simp only [ModuleCat.AlternatingMap.postcomp_apply]
-  -- Both adjunction transposes evaluate on the associated global section of a wedge.
+  -- Both adjunction transposes evaluate on the associated global section of a wedge; the
+  -- global-section functor and the pushforward retain the underlying functions, so the goal is
+  -- the helper's statement up to unfolding.
   exact pullback_tildeExteriorPowerIso_hom_apply φ n M m
 
 /-- The canonical exterior-power pullback map on an associated sheaf is exactly the forward
