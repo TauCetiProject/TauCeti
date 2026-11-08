@@ -52,6 +52,8 @@ half the period of the orbit, are computed in
 ## Main declarations
 
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_isotropicOscillator`: Hamilton's equations.
+* `TauCeti.isotropicOscillatorVelocity m ν`: the Hamiltonian vector field as a continuous linear
+  map, globally Lipschitz (`TauCeti.lipschitzWith_hamiltonianVectorField_isotropicOscillator`).
 * `TauCeti.isotropicOscillatorEvolution m ν t`: the time-`t` evolution.
 * `TauCeti.hasDerivAt_isotropicOscillatorEvolution`: the evolution solves Hamilton's equations.
 * `TauCeti.eq_isotropicOscillatorEvolution_of_hasDerivAt`: every global integral curve is an orbit
@@ -87,6 +89,17 @@ open scoped InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {m ν : ℝ}
 
+/-- The Hamiltonian vector field `(q, p) ↦ (p / m, -m ν² q)` of the isotropic harmonic oscillator
+of mass `m` and angular frequency `ν`, a continuous linear map
+(`TauCeti.hamiltonianVectorField_isotropicOscillator`). -/
+def isotropicOscillatorVelocity (m ν : ℝ) : (V × V) →L[ℝ] V × V :=
+  (m⁻¹ • ContinuousLinearMap.snd ℝ V V).prod (-((m * ν ^ 2) • ContinuousLinearMap.fst ℝ V V))
+
+@[simp]
+theorem isotropicOscillatorVelocity_apply (m ν : ℝ) (x : V × V) :
+    isotropicOscillatorVelocity m ν x = (m⁻¹ • x.2, -((m * ν ^ 2) • x.1)) :=
+  (rfl)
+
 /-- The time-`t` evolution of the isotropic harmonic oscillator of mass `m` and angular frequency
 `ν`, the linear map
 `(q, p) ↦ (cos (ν t) q + sin (ν t) / (m ν) p, -m ν sin (ν t) q + cos (ν t) p)`. For `m ν ≠ 0` its
@@ -103,6 +116,18 @@ theorem isotropicOscillatorEvolution_apply (m ν t : ℝ) (x : V × V) :
     isotropicOscillatorEvolution m ν t x =
       (Real.cos (ν * t) • x.1 + (Real.sin (ν * t) / (m * ν)) • x.2,
         (-(m * ν * Real.sin (ν * t))) • x.1 + Real.cos (ν * t) • x.2) :=
+  (rfl)
+
+@[simp]
+theorem isotropicOscillatorEvolution_apply_fst (m ν t : ℝ) (x : V × V) :
+    (isotropicOscillatorEvolution m ν t x).1 =
+      Real.cos (ν * t) • x.1 + (Real.sin (ν * t) / (m * ν)) • x.2 :=
+  (rfl)
+
+@[simp]
+theorem isotropicOscillatorEvolution_apply_snd (m ν t : ℝ) (x : V × V) :
+    (isotropicOscillatorEvolution m ν t x).2 =
+      (-(m * ν * Real.sin (ν * t))) • x.1 + Real.cos (ν * t) • x.2 :=
   (rfl)
 
 @[simp]
@@ -129,6 +154,12 @@ theorem isotropicOscillatorEvolution_add (hm : m ≠ 0) (hν : ν ≠ 0) (s t : 
   simp only [isotropicOscillatorEvolution_apply, mul_add, Real.cos_add, Real.sin_add, smul_add,
     smul_smul, Prod.mk.injEq]
   constructor <;> match_scalars <;> field_simp <;> ring
+
+/-- Reversing time inverts the evolution. -/
+@[simp]
+theorem isotropicOscillatorEvolution_neg_apply (hm : m ≠ 0) (hν : ν ≠ 0) (t : ℝ) (x : V × V) :
+    isotropicOscillatorEvolution m ν (-t) (isotropicOscillatorEvolution m ν t x) = x := by
+  rw [← isotropicOscillatorEvolution_add hm hν, neg_add_cancel, isotropicOscillatorEvolution_zero]
 
 /-- The coefficient matrix of the evolution has determinant `cos² (ν t) + sin² (ν t) = 1`. -/
 private theorem det_isotropicOscillatorEvolution (hm : m ≠ 0) (hν : ν ≠ 0) (t : ℝ) :
@@ -268,7 +299,7 @@ point, including the collision set `q = 0`. -/
 theorem stdSymplecticForm_hamiltonianVectorField_isotropicOscillator (m ν : ℝ) (x : V × V) :
     (stdSymplecticForm (V := V)).hamiltonianVectorField
         (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2) x =
-      (m⁻¹ • x.2, -((m * ν ^ 2) • x.1)) := by
+      isotropicOscillatorVelocity m ν x := by
   have hH : HasFDerivAt (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2 : V × V → ℝ)
       ((innerSL ℝ ((m * ν ^ 2) • x.1)).coprod (innerSL ℝ (m⁻¹ • x.2))) x := by
     have h := ((hasFDerivAt_snd (p := x)).norm_sq.mul_const (2 * m)⁻¹).add
@@ -280,6 +311,22 @@ theorem stdSymplecticForm_hamiltonianVectorField_isotropicOscillator (m ν : ℝ
     · simp
       ring
   simpa using stdSymplecticForm_hamiltonianVectorField hH
+
+/-- The Hamiltonian vector field of the isotropic oscillator is the continuous linear map
+`TauCeti.isotropicOscillatorVelocity`. -/
+theorem hamiltonianVectorField_isotropicOscillator (m ν : ℝ) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField
+        (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2) =
+      ⇑(isotropicOscillatorVelocity (V := V) m ν) :=
+  funext fun x ↦ stdSymplecticForm_hamiltonianVectorField_isotropicOscillator m ν x
+
+/-- The Hamiltonian vector field of the isotropic oscillator is globally Lipschitz, being linear. -/
+theorem lipschitzWith_hamiltonianVectorField_isotropicOscillator (m ν : ℝ) :
+    LipschitzWith ‖isotropicOscillatorVelocity (V := V) m ν‖₊
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField
+        (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2)) := by
+  rw [hamiltonianVectorField_isotropicOscillator]
+  exact ContinuousLinearMap.lipschitzWith _
 
 /-- The evolution solves Hamilton's equations of the isotropic oscillator: `t ↦ Φ_t(x)` is an
 integral curve of its Hamiltonian vector field through `x`. -/
@@ -299,7 +346,8 @@ theorem hasDerivAt_isotropicOscillatorEvolution (hm : m ≠ 0) (hν : ν ≠ 0) 
     funext fun s ↦ isotropicOscillatorEvolution_apply m ν s x
   rw [stdSymplecticForm_hamiltonianVectorField_isotropicOscillator, hfun]
   refine HasDerivAt.congr_deriv h ?_
-  simp only [isotropicOscillatorEvolution_apply, Prod.mk.injEq, smul_add, smul_smul]
+  simp only [isotropicOscillatorVelocity_apply, isotropicOscillatorEvolution_apply, Prod.mk.injEq,
+    smul_add, smul_smul]
   constructor <;> match_scalars <;> field_simp
 
 /-- **Uniqueness of the motion.** Every integral curve `γ` of the Hamiltonian vector field of the
@@ -309,21 +357,17 @@ theorem eq_isotropicOscillatorEvolution_of_hasDerivAt (hm : m ≠ 0) (hν : ν �
     (hγ : ∀ t, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
       (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2) (γ t)) t) (t₀ t : ℝ) :
     γ t = isotropicOscillatorEvolution m ν (t - t₀) (γ t₀) := by
-  -- The Hamiltonian vector field is the continuous linear map `(q, p) ↦ (p / m, -m ν² q)`, so it is
-  -- globally Lipschitz and the ODE has unique solutions.
-  set A : (V × V) →L[ℝ] V × V := (m⁻¹ • ContinuousLinearMap.snd ℝ V V).prod
-    (-((m * ν ^ 2) • ContinuousLinearMap.fst ℝ V V))
-  have hA (y : V × V) : (stdSymplecticForm (V := V)).hamiltonianVectorField
-      (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2) y = A y := by
-    rw [stdSymplecticForm_hamiltonianVectorField_isotropicOscillator]
-    simp [A]
+  -- The Hamiltonian vector field is a continuous linear map, so it is globally Lipschitz and the
+  -- ODE has unique solutions.
+  rw [hamiltonianVectorField_isotropicOscillator] at hγ
   have hg (s : ℝ) : HasDerivAt (fun s ↦ isotropicOscillatorEvolution m ν (s - t₀) (γ t₀))
-      (A (isotropicOscillatorEvolution m ν (s - t₀) (γ t₀))) s := by
-    rw [← hA]
+      (isotropicOscillatorVelocity m ν (isotropicOscillatorEvolution m ν (s - t₀) (γ t₀))) s := by
+    rw [← hamiltonianVectorField_isotropicOscillator]
     exact (hasDerivAt_isotropicOscillatorEvolution hm hν (γ t₀) (s - t₀)).comp_sub_const s t₀
-  have h := ODE_solution_unique_univ (v := fun _ ↦ A) (s := fun _ ↦ univ) (t₀ := t₀)
-    (fun _ ↦ A.lipschitzWith.lipschitzOnWith) (fun s ↦ ⟨hA (γ s) ▸ hγ s, mem_univ _⟩)
-    (fun s ↦ ⟨hg s, mem_univ _⟩) (by simp)
+  have h := ODE_solution_unique_univ (v := fun _ ↦ isotropicOscillatorVelocity m ν)
+    (s := fun _ ↦ univ) (t₀ := t₀)
+    (fun _ ↦ (isotropicOscillatorVelocity (V := V) m ν).lipschitzWith.lipschitzOnWith)
+    (fun s ↦ ⟨hγ s, mem_univ _⟩) (fun s ↦ ⟨hg s, mem_univ _⟩) (by simp)
   exact congrFun h t
 
 /-- The Hamiltonian flow of the isotropic oscillator is its explicit evolution. -/
