@@ -15,9 +15,13 @@ import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
 -- `Mathlib.MeasureTheory.Constructions.BorelSpace.Order` is imported privately: it is used only
 -- for `LowerSemicontinuous.measurable`, inside the proof of `TauCeti.measurable_maximalFunction`.
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
--- `Mathlib.MeasureTheory.Covering.Vitali` is imported privately: the covering lemma appears only
--- inside the proof of `TauCeti.mul_measure_le_lintegral_of_forall_exists_ball`.
-import Mathlib.MeasureTheory.Covering.Vitali
+-- `TauCeti.MeasureTheory.Covering.Vitali` is imported privately: its covering estimate
+-- `TauCeti.mul_measure_le_lintegral_of_forall_exists_ball` is used only inside the proofs of the
+-- weak-type inequalities.
+import TauCeti.MeasureTheory.Covering.Vitali
+-- `TauCeti.MeasureTheory.Integral.Lebesgue.Truncation` is imported privately: it supplies
+-- `TauCeti.lintegral_rpow_le_of_forall_le` inside the proof of the vector-valued inequality.
+import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 -- `TauCeti.Analysis.SpecialFunctions.Pow.NNReal` is imported privately: it supplies the
 -- cancellation `ENNReal.rpow_one_sub_le_of_le_mul_rpow` inside the proof of the vector-valued
 -- inequality.
@@ -61,8 +65,9 @@ whole space and the averages defining `M f` collapse to `‖f‖ₑ`.
 
 ## The proof
 
-The weak-type bound is the Vitali covering argument, isolated here as
-`TauCeti.mul_measure_le_lintegral_of_forall_exists_ball` for two measures and specialised as
+The weak-type bound is the Vitali covering argument, isolated as
+`TauCeti.mul_measure_le_lintegral_of_forall_exists_ball` for two measures in
+`TauCeti.MeasureTheory.Covering.Vitali` and specialised here as
 `TauCeti.mul_measure_le_of_forall_exists_ball`: if every point of a set `S` is the centre of a ball
 of radius at most `R` on which `∫⁻ g` is at least `t` times the measure of the ball, then
 `t * μ S ≤ 4 ^ n * ∫⁻ g`. Mathlib's
@@ -120,8 +125,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   almost everywhere.
 * `TauCeti.lowerSemicontinuous_maximalFunction`, `TauCeti.measurable_maximalFunction`: the
   superlevel sets `{x | t < M f x}` are open, so `M f` is Borel measurable.
-* `TauCeti.mul_measure_le_lintegral_of_forall_exists_ball`,
-  `TauCeti.mul_measure_le_of_forall_exists_ball`: the Vitali covering estimate.
+* `TauCeti.mul_measure_le_of_forall_exists_ball`: the Vitali covering estimate for a Haar
+  measure.
 * `TauCeti.mul_measure_lt_maximalFunction_le`, `TauCeti.measure_lt_maximalFunction_le`: the
   **maximal inequality**, in product and in quotient form.
 * `TauCeti.ae_maximalFunction_lt_top`: the maximal function of an `L¹` function is finite almost
@@ -280,54 +285,6 @@ theorem maximalFunction_add_le (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) (x
           (setLAverage_le_maximalFunction μ g x hr)
 
 end Sublinear
-
-section Covering
-
-variable [TopologicalSpace.SeparableSpace X] [OpensMeasurableSpace X] {ν : Measure X}
-
-/-- **The Vitali covering estimate**, for two measures. If every point of `S` is the centre of a
-ball `ball x r` of radius at most `R` such that `t` times the `ν`-measure of the fourfold enlarged
-closed ball `closedBall x (4 * r)` is at most `∫⁻ y in ball x r, g y ∂μ`, then
-`t * ν S ≤ ∫⁻ g ∂μ`.
-
-Mathlib's `Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall` extracts a pairwise
-disjoint subfamily of those balls whose fourfold enlargements still cover `S`, and disjointness
-turns the sum of the integrals over the selected balls into a single integral over their union.
-With `ν = μ` an additive Haar measure this is `TauCeti.mul_measure_le_of_forall_exists_ball`; a
-weight `ν = μ.withDensity w` gives the weighted maximal inequality. -/
-theorem mul_measure_le_lintegral_of_forall_exists_ball {S : Set X} {R : ℝ} {g : X → ℝ≥0∞}
-    (hS : ∀ x ∈ S, ∃ r ∈ Ioc 0 R, t * ν (closedBall x (4 * r)) ≤ ∫⁻ y in ball x r, g y ∂μ) :
-    t * ν S ≤ ∫⁻ y, g y ∂μ := by
-  choose! r hr hle using hS
-  obtain ⟨u, hu, hdisj, hcov⟩ :=
-    Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall S id r R
-      (fun x hx => (hr x hx).2) 4 (by norm_num)
-  simp only [id_eq] at hdisj hcov
-  have hcount : u.Countable :=
-    hdisj.countable_of_nonempty_interior fun x hx =>
-      ⟨x, ball_subset_interior_closedBall (mem_ball_self (hr x (hu hx)).1)⟩
-  have : Countable u := hcount.to_subtype
-  -- The fourfold enlargements of the selected balls cover `S`.
-  have hsub : S ⊆ ⋃ b ∈ u, closedBall b (4 * r b) := fun x hx => by
-    obtain ⟨b, hb, hball⟩ := hcov x hx
-    exact mem_biUnion hb (hball (mem_closedBall_self (hr x hx).1.le))
-  -- The selected balls are pairwise disjoint, so the integrals over them add up to at most `∫⁻ g`.
-  have hdisj' : Pairwise (Function.onFun Disjoint fun b : u => ball (b : X) (r b)) :=
-    fun b b' hbb' =>
-      (hdisj b.2 b'.2 (Subtype.coe_injective.ne hbb')).mono ball_subset_closedBall
-        ball_subset_closedBall
-  calc t * ν S
-      ≤ t * ∑' b : u, ν (closedBall (b : X) (4 * r b)) := by
-        gcongr
-        exact (measure_mono hsub).trans (measure_biUnion_le ν hcount _)
-    _ = ∑' b : u, t * ν (closedBall (b : X) (4 * r b)) := ENNReal.tsum_mul_left.symm
-    _ ≤ ∑' b : u, ∫⁻ y in ball (b : X) (r b), g y ∂μ :=
-        _root_.tsum_le_tsum fun b => hle b (hu b.2)
-    _ = ∫⁻ y in ⋃ b : u, ball (b : X) (r b), g y ∂μ := by
-        rw [lintegral_iUnion (fun b => measurableSet_ball) hdisj']
-    _ ≤ ∫⁻ y, g y ∂μ := setLIntegral_le_lintegral _ _
-
-end Covering
 
 end PseudoMetricSpace
 
@@ -872,54 +829,6 @@ private theorem lintegral_rpow_le_of_le_tsum_maximalFunction_rpow {f : ι → E 
     _ = (cw * cM ^ (1 / s)) ^ q * ∫⁻ x, G x ^ q ∂μ := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ hqs.pos.le, ← ENNReal.rpow_mul,
           one_div_mul_cancel hqs.pos.ne', ENNReal.rpow_one]
-
-/-- Monotone convergence through truncations: if `∫⁻ φ ^ q ≤ C` for every measurable `φ ≤ F` with
-`∫⁻ φ ^ q` finite, then `∫⁻ F ^ q ≤ C`. The truncations `min F N` on the balls of radius `N`
-increase to `F`. -/
-private theorem lintegral_rpow_le_of_forall_le {G : E → ℝ≥0∞} (hG : Measurable G) {q : ℝ}
-    (hq : 0 < q) {C : ℝ≥0∞} (h : ∀ φ : E → ℝ≥0∞, Measurable φ → (∀ x, φ x ≤ G x) →
-      ∫⁻ x, φ x ^ q ∂μ ≠ ∞ → ∫⁻ x, φ x ^ q ∂μ ≤ C) :
-    ∫⁻ x, G x ^ q ∂μ ≤ C := by
-  let φ : ℕ → E → ℝ≥0∞ := fun N => (ball (0 : E) N).indicator fun x => min (G x) N
-  have hφm (N : ℕ) : Measurable (φ N) := (hG.min measurable_const).indicator measurableSet_ball
-  have hφG (N : ℕ) (x : E) : φ N x ≤ G x := indicator_le (fun x _ => min_le_left _ _) x
-  have hφfin (N : ℕ) : ∫⁻ x, φ N x ^ q ∂μ ≠ ∞ := by
-    refine ne_top_of_le_ne_top
-      (b := ∫⁻ x, (ball (0 : E) N).indicator (fun _ => (N : ℝ≥0∞) ^ q) x ∂μ) ?_
-      (lintegral_mono fun x => ?_)
-    · rw [lintegral_indicator_const measurableSet_ball]
-      exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hq.le (by simp))
-        measure_ball_lt_top.ne
-    · by_cases hx : x ∈ ball (0 : E) N
-      · simp only [φ, indicator_of_mem hx]
-        exact ENNReal.rpow_le_rpow (min_le_right _ _) hq.le
-      · simp [φ, indicator_of_notMem hx, ENNReal.zero_rpow_of_pos hq]
-  have hφmono : Monotone φ := fun N N' h x => by
-    by_cases hx : x ∈ ball (0 : E) N
-    · have hx' : x ∈ ball (0 : E) N' := ball_subset_ball (by exact_mod_cast h) hx
-      simp only [φ, indicator_of_mem hx, indicator_of_mem hx']
-      exact min_le_min_left _ (by exact_mod_cast h)
-    · simp [φ, indicator_of_notMem hx]
-  -- The truncations increase to `G` pointwise, hence their `q`-th powers increase to `G ^ q`.
-  have hsup (x : E) : G x ^ q = ⨆ N, φ N x ^ q := by
-    have hGx : G x = ⨆ N, φ N x := by
-      refine le_antisymm (le_of_forall_lt fun c hc => ?_) (iSup_le fun N => hφG N x)
-      obtain ⟨N₁, hN₁⟩ := ENNReal.exists_nat_gt (hc.trans_le le_top).ne
-      obtain ⟨N₂, hN₂⟩ := exists_nat_gt ‖x‖
-      have hx : x ∈ ball (0 : E) (max N₁ N₂ : ℕ) := by
-        rw [mem_ball_zero_iff]
-        exact hN₂.trans_le (by exact_mod_cast le_max_right N₁ N₂)
-      refine lt_iSup_iff.2 ⟨max N₁ N₂, ?_⟩
-      simp only [φ, indicator_of_mem hx]
-      exact lt_min hc (hN₁.trans_le (by exact_mod_cast le_max_left N₁ N₂))
-    rw [hGx]
-    exact Monotone.map_iSup_of_continuousAt ENNReal.continuous_rpow_const.continuousAt
-      (ENNReal.monotone_rpow_of_nonneg hq.le) (by simp [hq])
-  calc ∫⁻ x, G x ^ q ∂μ = ∫⁻ x, ⨆ N, φ N x ^ q ∂μ := by simp_rw [hsup]
-    _ = ⨆ N, ∫⁻ x, φ N x ^ q ∂μ :=
-        lintegral_iSup (fun N => (hφm N).pow_const q) fun N N' h x =>
-          ENNReal.rpow_le_rpow (hφmono h x) hq.le
-    _ ≤ C := iSup_le fun N => h (φ N) (hφm N) (hφG N) (hφfin N)
 
 /-- **The vector-valued maximal inequality of Fefferman and Stein** for `1 < r < p < ∞`: the
 `ℓʳ`-valued maximal function is bounded on `Lᵖ(ℓʳ)`,
