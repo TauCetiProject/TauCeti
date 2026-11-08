@@ -208,27 +208,20 @@ theorem exists_defectExponent_mul_sq_eq_two_mul_natCastValuation (h2 : (2 : K) �
     rw [← defectExponent_eq_top_iff, hd]
     exact WithTop.coe_ne_top
   -- `a` has even valuation: an element of odd valuation is its own defect exponent.
-  obtain ⟨k, hk⟩ : Even (normalizedValuation K a).toAdd := by
+  have ha : Even (normalizedValuation K a).toAdd := by
     by_contra h
     rw [Int.not_even_iff_odd] at h
     rw [defectExponent_of_odd h, WithTop.coe_inj] at hd
     exact (Int.not_even_iff_odd.mpr h) (hd ▸ hev)
-  obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
-  rw [isUniformizer_def] at hϖ
-  have hc : (normalizedValuation K (ϖ ^ (-k))).toAdd = -k := by
-    rw [normalizedValuation_zpow_of_eq_ofAdd_one hϖ, toAdd_ofAdd]
-  have hv : valuation K ((a * (ϖ ^ (-k)) ^ 2 : Kˣ) : K) = 1 := by
-    rw [← normalizedValuation_eq_one_iff, ← toAdd_eq_zero, map_mul, map_pow, toAdd_mul,
-      toAdd_pow, hk, hc, nsmul_eq_mul]
-    push_cast
-    ring
-  have hnsq : ¬IsSquare (a * (ϖ ^ (-k)) ^ 2) := fun h => hsq <| by
-    simpa using h.mul (IsSquare.sq (ϖ ^ (-k))⁻¹)
-  refine ⟨ϖ ^ (-k), hv, ?_⟩
-  -- The unit `a ϖ^{-2k}` has even defect exponent `d - 2k`, so it is not one of the odd ones.
+  obtain ⟨c, hv, hδ⟩ := exists_defectExponent_mul_sq_eq_sub_of_even_valuation hd ha
+  have hnsq : ¬IsSquare (a * c ^ 2) := fun h => hsq <| by
+    simpa using h.mul (IsSquare.sq c⁻¹)
+  refine ⟨c, hv, ?_⟩
+  -- The normalized unit has even defect exponent, so it is not one of the odd ones.
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd h2 hv hnsq with h | ⟨j, -, hj⟩
   · exact h
-  · rw [defectExponent_mul_sq, hd, hc, ← WithTop.coe_add, WithTop.coe_inj] at hj
+  · rw [hδ, WithTop.coe_inj] at hj
+    obtain ⟨k, hk⟩ := ha
     obtain ⟨r, hr⟩ := hev
     omega
 
