@@ -47,7 +47,7 @@ intermediate fields of level `m`.
 * `TauCeti.puiseuxField.mem_fixingSubgroup_restrict_level_iff`: with a primitive `m`-th root of
   unity in `K`, an automorphism of level `m` fixes level `n` exactly when its root of unity `η`
   satisfies `η ^ (m / n) = 1`.
-* `TauCeti.puiseuxField.exists_eq_restrict_level`: with a primitive `m`-th root of unity in `K`,
+* `IntermediateField.exists_eq_restrict_level`: with a primitive `m`-th root of unity in `K`,
   every intermediate field of level `m` is a level `n` with `n ∣ m`.
 -/
 
@@ -122,7 +122,8 @@ theorem mem_fixingSubgroup_restrict_level_iff (h : n ∣ m) (σ : Gal(level K m/
 
 /-- If `K` contains a primitive `m`-th root of unity, then every intermediate field of level `m`
 over `K⸨X⸩` is a level `n` with `n ∣ m`, namely the level of its degree. -/
-theorem exists_eq_restrict_level (E : IntermediateField K⸨X⸩ (level K m)) :
+theorem _root_.IntermediateField.exists_eq_restrict_level
+    (E : IntermediateField K⸨X⸩ (level K m)) :
     ∃ (n : ℕ+) (h : n ∣ m), E = restrict (level_le_level_of_dvd K h) := by
   have : FiniteDimensional K⸨X⸩ (level K m) := (levelPowerBasis K m).finite
   have hdvd : finrank K⸨X⸩ E ∣ m := by
@@ -136,7 +137,7 @@ variable (K m) in
 /-- **Galois correspondence on a level.** If `K` contains a primitive `m`-th root of unity, then
 `n ↦ level n` is an order isomorphism from the divisors `n` of `m`, ordered by divisibility, to the
 intermediate fields of level `m` over `K⸨X⸩`. The inverse sends an intermediate field to its
-degree (`TauCeti.puiseuxField.coe_toPNat_restrictLevelOrderIso_symm`). -/
+degree (`IntermediateField.coe_toPNat_restrictLevelOrderIso_symm`). -/
 noncomputable def restrictLevelOrderIso :
     Set.Iic (⟨m⟩ : RamificationIndex) ≃o IntermediateField K⸨X⸩ (level K m) :=
   OrderIso.ofSurjective
@@ -146,7 +147,7 @@ noncomputable def restrictLevelOrderIso :
         (RamificationIndex.le_iff_dvd.mp b.2)).trans
         (RamificationIndex.le_iff_dvd.symm.trans Subtype.coe_le_coe))
     fun E ↦ by
-      obtain ⟨n, h, rfl⟩ := exists_eq_restrict_level E
+      obtain ⟨n, h, rfl⟩ := E.exists_eq_restrict_level
       exact ⟨⟨⟨n⟩, RamificationIndex.le_iff_dvd.mpr h⟩, rfl⟩
 
 /-- The Galois correspondence on level `m` sends a divisor `n` of `m` to level `n`. -/
@@ -159,7 +160,8 @@ theorem restrictLevelOrderIso_apply (n : Set.Iic (⟨m⟩ : RamificationIndex)) 
 /-- The inverse of the Galois correspondence on level `m` sends an intermediate field to its
 degree over `K⸨X⸩`. -/
 @[simp]
-theorem coe_toPNat_restrictLevelOrderIso_symm (E : IntermediateField K⸨X⸩ (level K m)) :
+theorem _root_.IntermediateField.coe_toPNat_restrictLevelOrderIso_symm
+    (E : IntermediateField K⸨X⸩ (level K m)) :
     (((restrictLevelOrderIso K m).symm E : RamificationIndex).toPNat : ℕ) = finrank K⸨X⸩ E := by
   conv_rhs => rw [← (restrictLevelOrderIso K m).apply_symm_apply E]
   rw [restrictLevelOrderIso_apply]
