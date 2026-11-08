@@ -106,4 +106,21 @@ theorem isBaseChange_baseChangeHom (R A M N : Type*) [CommSemiring R] [CommSemir
   exact (IsBaseChange.linearMapLeftRightHom_comp_apply (TensorProduct.isBaseChange R M A)
     ((TensorProduct.mk R A N) 1) f m).symm
 
+/-- A module that splits off the target of a map whose base change to `κ` is zero has zero base
+change to `κ`. -/
+theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommRing R]
+    [CommRing κ] [Algebra R κ] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    (c : M →ₗ[R] N) (l : N →ₗ[R] M) (hl : l ∘ₗ c = LinearMap.id) (h : c.lTensor κ = 0) :
+    Subsingleton (κ ⊗[R] M) := by
+  have hinjective : Function.Injective (c.lTensor κ) := by
+    intro x y hxy
+    have h := congrArg (l.lTensor κ) hxy
+    simpa only [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hl,
+      LinearMap.lTensor_id, LinearMap.id_apply] using h
+  constructor
+  intro x y
+  apply hinjective
+  rw [h]
+  rfl
+
 end LinearMap

@@ -9,10 +9,11 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Basic
-import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 import TauCeti.Algebra.Algebra.Hom
-import TauCeti.RingTheory.Idempotents.Connected.Spectrum
-import Mathlib.RingTheory.Ideal.IdempotentFG
+import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Connected
+import TauCeti.LinearAlgebra.TensorProduct.Hom
+import TauCeti.RingTheory.Extension.Cotangent.Vanishing
+import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
 /-!
 # Smooth connected closed subgroups with equal tangent spaces
@@ -51,126 +52,8 @@ noncomputable section
 
 namespace HopfIdeal
 
-open TensorProduct
-
 variable {k H K : Type u} [Field k] [CommRing H] [CommRing K]
 variable [HopfAlgebra k H] [HopfAlgebra k K]
-
-/-- The base change to `κ` of the cotangent complex of an extension vanishes when the kernel of the
-extension lies in the square of the kernel of `P.Ring → κ`. -/
-private theorem lTensor_cotangentComplex_eq_zero {R S κ : Type u} [CommRing R] [CommRing S]
-    [CommRing κ] [Algebra R S] [Algebra S κ]
-    (P : Algebra.Extension R S) [Algebra P.Ring κ] [IsScalarTower P.Ring S κ]
-    (h : ∀ x ∈ P.ker, x ∈ RingHom.ker (algebraMap P.Ring κ) ^ 2) :
-    P.cotangentComplex.lTensor κ = 0 := by
-  apply LinearMap.ext
-  intro z
-  induction z using TensorProduct.inductionOn with
-  | add x y hx hy => simp [hx, hy]
-  | tmul a m =>
-    obtain ⟨x, rfl⟩ := Algebra.Extension.Cotangent.mk_surjective (P := P) m
-    have hxsq : (x : P.Ring) ∈ RingHom.ker (algebraMap P.Ring κ) ^ 2 := h x x.property
-    let xg : RingHom.ker (algebraMap P.Ring κ) :=
-      ⟨x, Ideal.pow_le_self two_ne_zero hxsq⟩
-    have hxzero : (RingHom.ker (algebraMap P.Ring κ)).toCotangent xg = 0 :=
-      (Ideal.toCotangent_eq_zero _ xg).2 hxsq
-    have hdx : (1 : κ) ⊗ₜ[P.Ring] KaehlerDifferential.D R P.Ring (x : P.Ring) = 0 := by
-      simpa only [xg, map_zero, KaehlerDifferential.kerCotangentToTensor_toCotangent] using
-        congrArg (KaehlerDifferential.kerCotangentToTensor R P.Ring κ) hxzero
-    rw [LinearMap.lTensor_tmul, P.cotangentComplex_mk]
-    -- `Extension.CotangentSpace` is an abbreviation for this nested tensor product; exposing
-    -- it is necessary to apply the associativity equivalence `cancelBaseChange` below.
-    change a ⊗ₜ[S] (1 ⊗ₜ[P.Ring] KaehlerDifferential.D R P.Ring (x : P.Ring)) = 0
-    apply (AlgebraTensorModule.cancelBaseChange P.Ring S κ κ
-      (KaehlerDifferential R P.Ring)).injective
-    simpa only [map_zero, AlgebraTensorModule.cancelBaseChange_tmul, one_smul,
-      TensorProduct.smul_tmul', smul_eq_mul, mul_one, smul_zero] using
-      congrArg (a • ·) hdx
-
-/-- A finitely presented flat module over a ring with connected spectrum vanishes if its fibre at
-one maximal ideal vanishes, since its rank is locally constant. -/
-private theorem subsingleton_of_subsingleton_fiber {R M : Type u} [CommRing R]
-    [ConnectedSpace (PrimeSpectrum R)] [AddCommGroup M] [Module R M]
-    [Module.FinitePresentation R M] [Module.Flat R M] (p : Ideal R) [p.IsMaximal]
-    (h : Subsingleton (p.Fiber M)) : Subsingleton M := by
-  have hrank_identity : Module.rankAtStalk (R := R) M
-      ⟨p, (inferInstance : p.IsMaximal).isPrime⟩ = 0 := by
-    rw [Module.rankAtStalk_eq]
-    exact Module.finrank_zero_of_subsingleton
-  have hrank : Module.rankAtStalk (R := R) M = 0 := by
-    apply funext
-    intro q
-    simp only [Pi.zero_apply]
-    calc
-      Module.rankAtStalk M q =
-          Module.rankAtStalk M ⟨p, (inferInstance : p.IsMaximal).isPrime⟩ :=
-        IsLocallyConstant.apply_eq_of_preconnectedSpace
-          (Module.isLocallyConstant_rankAtStalk (R := R) (M := M)) _ _
-      _ = 0 := hrank_identity
-  exact (Module.rankAtStalk_eq_zero_iff_subsingleton (R := R) (M := M)).mp hrank
-
-/-- The kernel of an extension is idempotent when the cotangent module of the extension vanishes. -/
-private theorem isIdempotentElem_ker_of_subsingleton_cotangent {R S : Type u} [CommRing R]
-    [CommRing S] [Algebra R S] (P : Algebra.Extension R S) (h : Subsingleton P.Cotangent) :
-    IsIdempotentElem P.ker := by
-  have hcotangentKer : Subsingleton P.ker.Cotangent := by
-    constructor
-    intro x y
-    apply P.cotangentEquivCotangentKer.symm.injective
-    exact Subsingleton.elim _ _
-  exact (Ideal.cotangent_subsingleton_iff (I := P.ker)).mp hcotangentKer
-
-/-- A Hopf ideal of a Noetherian Hopf algebra with connected spectrum that lies in the
-augmentation ideal and is idempotent is zero. -/
-private theorem eq_bot_of_isIdempotentElem_of_le_augmentationIdeal [IsNoetherianRing H]
-    [ConnectedSpace (PrimeSpectrum H)] (I : HopfIdeal k H) (hI : IsIdempotentElem I.toIdeal)
-    (hI_aug : I.toIdeal ≤ Bialgebra.AugmentationIdeal k H) : I = ⊥ := by
-  obtain ⟨e, he, hspan⟩ :=
-    (Ideal.isIdempotentElem_iff_of_fg I.toIdeal I.toIdeal.fg_of_isNoetherianRing).mp hI
-  rcases he.eq_zero_or_eq_one_of_preconnectedSpace with rfl | rfl
-  · apply HopfIdeal.ext
-    intro x
-    rw [← mem_toIdeal, ← mem_toIdeal, bot_toIdeal]
-    simpa using SetLike.ext_iff.mp hspan x
-  · exfalso
-    apply RingHom.ker_ne_top (Bialgebra.counitAlgHom k H).toRingHom
-    apply top_unique
-    intro x _
-    apply hI_aug
-    rw [hspan]
-    simp
-
-/-- Over the residue field at the augmentation ideal of `K`, a Hopf map `f : H → K` has kernel the
-augmentation ideal of `H`. -/
-private theorem ker_algebraMap_residueField_eq_augmentationIdeal [Algebra H K]
-    [(Bialgebra.AugmentationIdeal k K).IsMaximal] (f : H →ₐc[k] K)
-    (hf : algebraMap H K = f.toAlgHom.toRingHom) :
-    RingHom.ker (algebraMap H (Bialgebra.AugmentationIdeal k K).ResidueField) =
-      Bialgebra.AugmentationIdeal k H := by
-  ext x
-  rw [RingHom.mem_ker, IsScalarTower.algebraMap_apply H K, Ideal.algebraMap_residueField_eq_zero,
-    hf]
-  simp only [Bialgebra.AugmentationIdeal, RingHom.mem_ker]
-  constructor
-  · exact fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx
-  · exact fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx
-
-/-- A module that splits off the target of a map whose base change to `κ` is zero has zero base
-change to `κ`. -/
-private theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommRing R]
-    [CommRing κ] [Algebra R κ] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    (c : M →ₗ[R] N) (l : N →ₗ[R] M) (hl : l ∘ₗ c = LinearMap.id) (h : c.lTensor κ = 0) :
-    Subsingleton (κ ⊗[R] M) := by
-  have hinjective : Function.Injective (c.lTensor κ) := by
-    intro x y hxy
-    have h := congrArg (l.lTensor κ) hxy
-    simpa only [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hl,
-      LinearMap.lTensor_id, LinearMap.id_apply] using h
-  constructor
-  intro x y
-  apply hinjective
-  rw [h]
-  rfl
 
 /-- A surjective Hopf map between smooth connected affine groups is injective if its conormal
 space at the identity vanishes.
@@ -203,9 +86,6 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   have hPker : P.ker = (HopfIdeal.ker f).toIdeal := by
     rw [HopfIdeal.ker_toIdeal]
     exact congrArg RingHom.ker hf_algebraMap
-  have hker_aug : (HopfIdeal.ker f).toIdeal ≤ Bialgebra.AugmentationIdeal k H :=
-    (toIdeal_le_toIdeal.mpr (HopfIdeal.le_augmentation k H (HopfIdeal.ker f))).trans_eq
-      (augmentation_toIdeal k H)
   have _ : Module.Finite K P.Cotangent :=
     Algebra.Extension.Cotangent.finite P.ker.fg_of_isNoetherianRing
   obtain ⟨l, hl⟩ := (P.formallySmooth_iff_split_injection).mp
@@ -220,19 +100,21 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   have _ : p.IsMaximal := _root_.AlgHom.ker_isMaximal (Bialgebra.counitAlgHom k K)
   let κ := p.ResidueField
   have hbaseChange_zero : P.cotangentComplex.lTensor κ = 0 := by
-    refine lTensor_cotangentComplex_eq_zero P fun x hx ↦ ?_
+    refine P.lTensor_cotangentComplex_eq_zero fun x hx ↦ ?_
+    -- `P.Ring` is `H` by definition of `P`, and `κ` is the residue field of `K` at the
+    -- augmentation ideal, so the kernel of `P.Ring → κ` is the augmentation ideal of `H`.
     rw [show RingHom.ker (algebraMap P.Ring κ) = Bialgebra.AugmentationIdeal k H from
-      ker_algebraMap_residueField_eq_augmentationIdeal f hf_algebraMap]
+      BialgHom.ker_algebraMap_residueField_eq_augmentationIdeal f hf_algebraMap]
     exact (conormalSubspace_eq_bot_iff_toIdeal_le_sq_augmentationIdeal _).mp
       hconormal (hPker ▸ hx)
   have hfiber : Subsingleton (p.Fiber P.Cotangent) :=
-    subsingleton_tensor_of_lTensor_eq_zero _ l hl hbaseChange_zero
-  have hcotangent : Subsingleton P.Cotangent := subsingleton_of_subsingleton_fiber p hfiber
+    LinearMap.subsingleton_tensor_of_lTensor_eq_zero _ l hl hbaseChange_zero
+  have hcotangent : Subsingleton P.Cotangent := p.subsingleton_of_subsingleton_fiber hfiber
   have hI_idempotent : IsIdempotentElem (HopfIdeal.ker f).toIdeal := by
     rw [← hPker]
-    exact isIdempotentElem_ker_of_subsingleton_cotangent P hcotangent
+    exact P.isIdempotentElem_ker_of_subsingleton_cotangent hcotangent
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
-  exact eq_bot_of_isIdempotentElem_of_le_augmentationIdeal _ hI_idempotent hker_aug
+  exact eq_bot_of_isIdempotentElem _ hI_idempotent
 
 end HopfIdeal
 

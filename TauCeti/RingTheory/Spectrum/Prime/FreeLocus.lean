@@ -322,3 +322,29 @@ theorem flat_localization_of_comap_mem_freeLocus (q : PrimeSpectrum S)
   exact Flat.trans R B _
 
 end PrimeSpectrum
+
+namespace Ideal
+
+/-- A finitely presented flat module over a ring with connected spectrum vanishes if its fibre at
+one maximal ideal vanishes, since its rank is locally constant. -/
+theorem subsingleton_of_subsingleton_fiber {R M : Type*} [CommRing R]
+    [ConnectedSpace (PrimeSpectrum R)] [AddCommGroup M] [Module R M]
+    [Module.FinitePresentation R M] [Module.Flat R M] (p : Ideal R) [p.IsMaximal]
+    (h : Subsingleton (p.Fiber M)) : Subsingleton M := by
+  have hrank_identity : Module.rankAtStalk (R := R) M
+      ⟨p, (inferInstance : p.IsMaximal).isPrime⟩ = 0 := by
+    rw [Module.rankAtStalk_eq]
+    exact Module.finrank_zero_of_subsingleton
+  have hrank : Module.rankAtStalk (R := R) M = 0 := by
+    apply funext
+    intro q
+    simp only [Pi.zero_apply]
+    calc
+      Module.rankAtStalk M q =
+          Module.rankAtStalk M ⟨p, (inferInstance : p.IsMaximal).isPrime⟩ :=
+        IsLocallyConstant.apply_eq_of_preconnectedSpace
+          (Module.isLocallyConstant_rankAtStalk (R := R) (M := M)) _ _
+      _ = 0 := hrank_identity
+  exact (Module.rankAtStalk_eq_zero_iff_subsingleton (R := R) (M := M)).mp hrank
+
+end Ideal
