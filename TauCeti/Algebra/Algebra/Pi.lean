@@ -25,6 +25,9 @@ Mathlib's `AlgHom.eq_piEvalAlgHom` says that every `R`-algebra homomorphism `(ι
 coordinate evaluation `Pi.evalAlgHom R _ s`. Distinct coordinates give distinct evaluations, since
 they disagree on `Pi.single s 1`, so the evaluations enumerate those homomorphisms **without
 repetition**: `Pi.evalAlgHomEquiv` packages that as an equivalence `ι ≃ ((ι → R) →ₐ[R] R)`.
+More generally, `AlgHom.sigmaEquivPi` identifies algebra maps from a finite product into a
+nontrivial semiring without zero divisors with maps from one factor, precomposed with its
+projection.
 
 The injectivity half, `Pi.evalAlgHom_injective`, is what Mathlib does not record, and it is what
 makes the equivalence useful for counting: a split commutative algebra has exactly as many
@@ -63,6 +66,8 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
   entries are all `0` or `1` is induced by a map `κ → ι`.
 * `AlgHom.exists_eq_comp_piEvalAlgHom`: an algebra homomorphism from a finite product of algebras
   into a domain factors through one of the projections.
+* `AlgHom.sigmaEquivPi`: maps from a finite product into a nontrivial semiring without zero divisors
+  are precisely maps from one factor, precomposed with its projection.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
