@@ -18,6 +18,8 @@ import Mathlib.RingTheory.Ideal.AssociatedPrime.Finiteness
 import Mathlib.RingTheory.Ideal.Cotangent
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Nakayama
+import TauCeti.RingTheory.Ideal.Cotangent.Basic
+import TauCeti.RingTheory.Ideal.Cotangent.LinearIndependent
 
 /-!
 # Elements of `𝔪 \ 𝔪²` in a local ring
@@ -246,31 +248,11 @@ theorem mem_maximalIdeal_of_sum_mul_mem_sq {n : ℕ} {x : Fin n → R}
   have hxm (i : Fin n) : x i ∈ maximalIdeal R := hx ▸ subset_span ⟨i, rfl⟩
   -- The classes of the `xᵢ` span the cotangent space, whose dimension is `n`.
   let w : Fin n → maximalIdeal R := fun i ↦ ⟨x i, hxm i⟩
-  let v : Fin n → CotangentSpace R := fun i ↦ (maximalIdeal R).toCotangent (w i)
-  have hw : Submodule.span R (Set.range w) = ⊤ := by
-    refine Submodule.map_injective_of_injective (maximalIdeal R).injective_subtype ?_
-    rw [Submodule.map_span, Submodule.map_top, Submodule.range_subtype, ← Set.range_comp]
-    exact hx
-  have hspan : ⊤ ≤ Submodule.span (ResidueField R) (Set.range v) := by
-    intro y _
-    obtain ⟨m, rfl⟩ := (maximalIdeal R).toCotangent_surjective y
-    have hm := Submodule.apply_mem_span_image_of_mem_span (maximalIdeal R).toCotangent
-      (hw.symm ▸ Submodule.mem_top : m ∈ Submodule.span R (Set.range w))
-    rw [← Set.range_comp'] at hm
-    exact Submodule.span_le_restrictScalars R (ResidueField R) _ hm
-  have hli : LinearIndependent (ResidueField R) v :=
-    linearIndependent_of_top_le_span_of_card_eq_finrank hspan (by
-      rw [Fintype.card_fin, ← hn, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace_of_fg
-        (hx ▸ Submodule.fg_span (Set.finite_range x))])
-  have hsum : ∑ i, residue R (c i) • v i = 0 := by
-    have : ∑ i, residue R (c i) • v i =
-        (maximalIdeal R).toCotangent (∑ i, c i • w i) := by
-      rw [map_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [map_smul, ← ResidueField.algebraMap_eq, algebraMap_smul]
-    rw [this, toCotangent_eq_zero]
-    simpa using hc
-  have := Fintype.linearIndependent_iff.mp hli _ hsum i
-  rwa [residue_eq_zero_iff] at this
+  have hli : LinearIndependent (ResidueField R) fun i ↦ (maximalIdeal R).toCotangent (w i) :=
+    linearIndependent_of_top_le_span_of_card_eq_finrank
+      (Ideal.span_range_toCotangent_eq_top hx).ge (by
+        rw [Fintype.card_fin, ← hn, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace_of_fg
+          (hx ▸ Submodule.fg_span (Set.finite_range x))])
+  exact ((maximalIdeal R).linearIndependent_toCotangent_iff w).mp hli c hc i
 
 end TauCeti.IsLocalRing

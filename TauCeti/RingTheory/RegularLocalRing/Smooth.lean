@@ -113,26 +113,18 @@ theorem formallySmooth_of_isRegularLocalRing [Algebra.EssFiniteType k S] [IsRegu
   let Q := MvPolynomial (Fin n) k
   let q' := q.comap φ
   let P := Localization.AtPrime q'
-  have hunit (y : q'.primeCompl) : IsUnit ((algebraMap T S).comp φ.toRingHom y) :=
-    not_not.mp ((mem_maximalIdeal _).not.mp y.2)
-  let ψ : P →+* S := IsLocalization.lift hunit
+  have hq : q'.primeCompl.map φ.toRingHom = q.primeCompl :=
+    Ideal.map_primeCompl_comap_of_surjective (f := φ.toRingHom) hφ q
+  have : IsLocalization (q'.primeCompl.map φ.toRingHom) S := hq ▸ inferInstance
+  let ψ : P →+* S := IsLocalization.map S φ.toRingHom q'.primeCompl.le_comap_map
   let := ψ.toAlgebra
   have hψ : (algebraMap P S).comp (algebraMap Q P) = (algebraMap T S).comp φ.toRingHom :=
-    IsLocalization.lift_comp hunit
+    IsLocalization.map_comp _
   have : IsScalarTower k P S := .of_algebraMap_eq fun a ↦ by
     simpa [IsScalarTower.algebraMap_apply k Q P] using
       (RingHom.congr_fun hψ (algebraMap k Q a)).symm
-  have hsurj : Function.Surjective (algebraMap P S) := by
-    intro s
-    obtain ⟨⟨t, u⟩, rfl⟩ := IsLocalization.mk'_surjective q.primeCompl s
-    obtain ⟨a, rfl⟩ := hφ t
-    obtain ⟨b, hb⟩ := hφ u
-    have hb' : b ∈ q'.primeCompl := fun h ↦ u.2 (hb ▸ h)
-    refine ⟨IsLocalization.mk' P a ⟨b, hb'⟩, ?_⟩
-    have hc (c : Q) : algebraMap T S (φ c) = algebraMap P S (algebraMap Q P c) :=
-      (RingHom.congr_fun hψ c).symm
-    rw [IsLocalization.eq_mk'_iff_mul_eq, ← hb, hc, hc, ← map_mul,
-      IsLocalization.mk'_spec]
+  have hsurj : Function.Surjective (algebraMap P S) :=
+    IsLocalization.map_surjective_of_surjective _ _ _ hφ
   have : Algebra.FormallySmooth k P := .comp k Q P
   exact formallySmooth_of_isRegularLocalRing_of_surjective hsurj
 

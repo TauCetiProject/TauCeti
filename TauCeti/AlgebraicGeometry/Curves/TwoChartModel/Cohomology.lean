@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Differentials.Canonical
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.FieldTheory.FunctionField.Differential.Equiv
-import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Curve
 
 /-!
 # Sheaf cohomology, Riemann–Roch, Serre duality, and differentials on the two-chart model
