@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.CartanChart
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # The identity slice chart of a closed subgroup
@@ -37,57 +38,6 @@ separate construction installs the induced manifold structure on the subgroup su
 public section
 
 noncomputable section
-
-namespace PartialDiffeomorph
-
-open Set
-open scoped Manifold ContDiff
-
-variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'} {M N : Type*} [TopologicalSpace M]
-  [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N] {n : WithTop ℕ∞}
-
-/-- The open partial homeomorphism of a partial diffeomorphism has its source. -/
-theorem source_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n) :
-    Φ.toOpenPartialHomeomorph.source = Φ.source :=
-  congrArg PartialEquiv.source (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
-
-/-- The open partial homeomorph of a partial diffeomorphism has its target. -/
-theorem target_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n) :
-    Φ.toOpenPartialHomeomorph.target = Φ.target :=
-  congrArg PartialEquiv.target (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
-
-/-- The inverse of the open partial homeomorph of a partial diffeomorphism is the inverse
-function of the partial diffeomorphism. -/
-theorem coe_symm_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n) :
-    ⇑Φ.toOpenPartialHomeomorph.symm = Φ.symm :=
-  rfl
-
-/-- Restricting the open partial homeomorph of a partial diffeomorphism to an open set keeps it
-smooth on its source. -/
-theorem contMDiffOn_restrOpen_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n)
-    {V : Set M} (hV : IsOpen V) :
-    ContMDiffOn I J n (Φ.toOpenPartialHomeomorph.restrOpen V hV)
-      (Φ.toOpenPartialHomeomorph.restrOpen V hV).source := by
-  rw [OpenPartialHomeomorph.coe_restrOpen, OpenPartialHomeomorph.restrOpen_source,
-    Φ.toFun'_toOpenPartialHomeomorph, Φ.source_toOpenPartialHomeomorph]
-  exact Φ.contMDiffOn.mono inter_subset_left
-
-/-- The inverse of the restriction of the open partial homeomorph of a partial diffeomorphism to
-an open set is smooth on the target of the restriction. -/
-theorem contMDiffOn_symm_restrOpen_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n)
-    {V : Set M} (hV : IsOpen V) :
-    ContMDiffOn J I n (Φ.toOpenPartialHomeomorph.restrOpen V hV).symm
-      (Φ.toOpenPartialHomeomorph.restrOpen V hV).target := by
-  have htarget : (Φ.toOpenPartialHomeomorph.restrOpen V hV).target ⊆ Φ.target := by
-    rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
-      ← Φ.target_toOpenPartialHomeomorph]
-    exact inter_subset_left
-  rw [OpenPartialHomeomorph.coe_restrOpen_symm, Φ.coe_symm_toOpenPartialHomeomorph]
-  exact Φ.symm.contMDiffOn.mono htarget
-
-end PartialDiffeomorph
 
 namespace TauCeti.Lie
 
