@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.RingTheory.Polynomial.Resultant.Normalization
 import TauCeti.RingTheory.Polynomial.RootEnumeration
-public import Mathlib.Algebra.Polynomial.Reverse
+public import TauCeti.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Taylor
 
 /-!
@@ -105,36 +105,6 @@ theorem discr_comp_X_add_C (f : R[X]) (a : R) :
       map_comp, Polynomial.map_add, map_X, map_C, hg] at h
     exact h
 
-/-- Reversing a scalar multiple of a product of linear factors with nonzero roots gives the
-scalar times the product of the reciprocal linear factors, up to the sign of each root. -/
-theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r : ι → K) (c : K)
-    (hr0 : ∀ i, r i ≠ 0) :
-    (C c * ∏ i ∈ s, (X - C (r i))).reverse =
-      C (c * ∏ i ∈ s, -r i) * ∏ i ∈ s, (X - C (r i)⁻¹) := by
-  classical
-  have h1 : (1 : K[X]).reverse = 1 := by
-    simpa only [C_1] using reverse_C (1 : K)
-  have hrev (s : Finset ι) :
-      (∏ i ∈ s, (X - C (r i))).reverse = ∏ i ∈ s, (1 - C (r i) * X) := by
-    induction s using Finset.induction with
-    | empty => simpa only [prod_empty] using h1
-    | @insert i s hi ih =>
-      rw [prod_insert hi, prod_insert hi, reverse_mul_of_domain, ih]
-      congr 1
-      rw [sub_eq_add_neg, ← C_neg, reverse_add_C]
-      have hX : (X : K[X]).reverse = 1 := by
-        simpa only [one_mul, h1] using reverse_mul_X (1 : K[X])
-      simp only [hX, natDegree_X, pow_one, C_neg]
-      ring
-  have hlin (i : ι) :
-      1 - C (r i) * X = C (-r i) * (X - C (r i)⁻¹) := by
-    rw [mul_sub, ← C_mul, neg_mul, mul_inv_cancel₀ (hr0 i)]
-    simp [C_neg]
-    ring
-  conv_lhs => rw [reverse_mul_of_domain, reverse_C, hrev]
-  simp only [hlin, prod_mul_distrib, ← map_prod]
-  rw [← mul_assoc, ← C_mul]
-
 private theorem discr_reverse_of_splits {K : Type*} [Field K] {f : K[X]}
     (hf : f.Splits) (h0 : f.coeff 0 ≠ 0) : f.reverse.discr = f.discr := by
   classical
@@ -153,7 +123,7 @@ private theorem discr_reverse_of_splits {K : Type*} [Field K] {f : K[X]}
   have hrevfac : f.reverse =
       C (f.leadingCoeff * ∏ i, -r i) * ∏ i, (X - C (r i)⁻¹) := by
     conv_lhs => rw [hfac]
-    exact reverse_C_mul_prod_X_sub_C univ r _ hr0
+    exact reverse_C_mul_prod_X_sub_C univ r _ fun i _ ↦ hr0 i
   -- Each root occurs in exactly `n - 1` unordered pairs. Squaring removes
   -- the signs introduced by reciprocal differences and reversed leading coefficients.
   have hpair : ∏ i, ∏ j ∈ Ioi i, r i * r j =
