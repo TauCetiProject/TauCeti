@@ -164,35 +164,17 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
         (hX.flow (Flow.levelCrossingTime hX.flow f c₁ x.2.1) x.2.1,
           hX.flow (Flow.levelCrossingTime hX.flow f c₂ x.2.2) x.2.2))
       (hX.morseBrokenTrajectorySet p r) (hX.brokenLevelPairs p r c₁ c₂) := by
-  -- On each component, following the flow from the middle level to a level `c` crossed by every
-  -- trajectory is `Flow.levelSliceHomeomorph`.
-  have hbij {a b : M} (hab : a ≠ b) {c : ℝ} (hc : f b < c ∧ c < f a) :
-      BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c z) z)
-        ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
-        ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = c}) := by
-    set e := Flow.levelSliceHomeomorph hf.continuous.continuousOn
-      (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy)
-      (fun _ hy ↦ (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf hab
-        hy).exists)
-      (fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hc.1
-        hc.2).exists)
-    have he (z) : (e z : M) = hX.flow (Flow.levelCrossingTime hX.flow f c z) z :=
-      Flow.coe_levelSliceHomeomorph ..
-    refine ⟨fun z hz ↦ ?_, fun z hz z' hz' h ↦ ?_, fun w hw ↦ ?_⟩
-    · simpa only [he] using (e ⟨z, hz⟩).2
-    · exact congrArg Subtype.val (e.injective (a₁ := ⟨z, hz⟩) (a₂ := ⟨z', hz'⟩)
-        (Subtype.ext (by simpa only [he] using h)))
-    · exact ⟨e.symm ⟨w, hw⟩, (e.symm ⟨w, hw⟩).2,
-        by simpa only [he] using congrArg Subtype.val (e.apply_symm_apply ⟨w, hw⟩)⟩
   refine ⟨?_, ?_, ?_⟩
   · rintro ⟨q, z₁, z₂⟩ hx
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := (mem_morseBrokenTrajectorySet hX).1 hx
     simp only [mem_morseTrajectorySlice, ← and_assoc] at hz₁ hz₂
     have hq := mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2
     have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hz₁.1 hz₂.1
-    exact ⟨q, hq, hpq, hqr,
-      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hpq) ⟨hcq.2, hc₁⟩).mapsTo hz₁,
-      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hqr) ⟨hc₂, hcq.1⟩).mapsTo hz₂⟩
+    have hb₁ := hX.bijOn_flow_levelCrossingTime_midpoint hf
+      (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hcq.2 hc₁
+    have hb₂ := hX.bijOn_flow_levelCrossingTime_midpoint hf
+      (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂ hcq.1
+    exact ⟨q, hq, hpq, hqr, hb₁.mapsTo hz₁, hb₂.mapsTo hz₂⟩
   · rintro ⟨q, z₁, z₂⟩ hx ⟨q', z₁', z₂'⟩ hx' heq
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := (mem_morseBrokenTrajectorySet hX).1 hx
     obtain ⟨-, -, hz₁', hz₂'⟩ := (mem_morseBrokenTrajectorySet hX).1 hx'
@@ -210,18 +192,22 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
     subst hqq
     have hcq := value_mem_Ioo_of_separating hf hsep (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2)
       hpq hqr hz₁.1 hz₂.1
-    obtain rfl := (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hpq) ⟨hcq.2, hc₁⟩).injOn
-      hz₁ hz₁' heq.1
-    obtain rfl := (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hqr) ⟨hc₂, hcq.1⟩).injOn
-      hz₂ hz₂' heq.2
+    have hb₁ := hX.bijOn_flow_levelCrossingTime_midpoint hf
+      (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hcq.2 hc₁
+    have hb₂ := hX.bijOn_flow_levelCrossingTime_midpoint hf
+      (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂ hcq.1
+    obtain rfl := hb₁.injOn hz₁ hz₁' heq.1
+    obtain rfl := hb₂.injOn hz₂ hz₂' heq.2
     rfl
   · rintro ⟨w₁, w₂⟩ ⟨q, hq, hpq, hqr, hw₁, hw₂⟩
     -- Follow each component of the broken pair back to its middle level.
     have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hw₁.1 hw₂.1
-    obtain ⟨z₁, hz₁, rfl⟩ :=
-      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hpq) ⟨hcq.2, hc₁⟩).surjOn hw₁
-    obtain ⟨z₂, hz₂, rfl⟩ :=
-      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hqr) ⟨hc₂, hcq.1⟩).surjOn hw₂
+    have hb₁ := hX.bijOn_flow_levelCrossingTime_midpoint hf
+      (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hcq.2 hc₁
+    have hb₂ := hX.bijOn_flow_levelCrossingTime_midpoint hf
+      (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂ hcq.1
+    obtain ⟨z₁, hz₁, rfl⟩ := hb₁.surjOn hw₁
+    obtain ⟨z₂, hz₂, rfl⟩ := hb₂.surjOn hw₂
     exact ⟨(⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq⟩, z₁, z₂),
       (mem_morseBrokenTrajectorySet hX).2 ⟨hpq, hqr, (mem_morseTrajectorySlice hX).2
         ⟨hz₁.1.1, hz₁.1.2, hz₁.2⟩, (mem_morseTrajectorySlice hX).2 ⟨hz₂.1.1, hz₂.1.2, hz₂.2⟩⟩,
@@ -236,9 +222,8 @@ theorem ncard_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
       manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
       manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
       f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
-    (hX.brokenLevelPairs p r c₁ c₂).ncard = (hX.morseBrokenTrajectorySet p r).ncard := by
-  have hbij := bijOn_brokenLevelPairs (hX := hX) hf hc₁ hc₂ hsep
-  rw [← hbij.image_eq, hbij.injOn.ncard_image]
+    (hX.brokenLevelPairs p r c₁ c₂).ncard = (hX.morseBrokenTrajectorySet p r).ncard :=
+  (bijOn_brokenLevelPairs hf hc₁ hc₂ hsep).ncard_eq.symm
 
 namespace IsMorseSmale
 
@@ -251,9 +236,9 @@ theorem finite_brokenLevelPairs (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E)
       manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
       manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
       f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
-    (hX.brokenLevelPairs p r c₁ c₂).Finite := by
-  rw [← (bijOn_brokenLevelPairs (hf.contMDiff.mdifferentiable (by simp)) hc₁ hc₂ hsep).image_eq]
-  exact (h.finite_morseBrokenTrajectorySet hf p r).image _
+    (hX.brokenLevelPairs p r c₁ c₂).Finite :=
+  (bijOn_brokenLevelPairs (hf.contMDiff.mdifferentiable (by simp)) hc₁ hc₂
+    hsep).finite_iff_finite.1 (h.finite_morseBrokenTrajectorySet hf p r)
 
 /-- **Limits of unbroken pairs are unbroken or broken.** Let `p` and `r` be critical points with
 `ind p = ind r + 2`, let no critical point lie on the level `c₁`, and let every critical value of

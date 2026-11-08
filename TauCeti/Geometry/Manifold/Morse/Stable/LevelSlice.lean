@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Dynamics.Flow.LevelCrossing
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
-import TauCeti.Dynamics.Flow.LevelCrossing
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
@@ -42,6 +42,8 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
   (the case `c = (f a + f b) / 2`): a trajectory from `a` to `b` crosses the middle level exactly
   once.
+* `TauCeti.IsAdaptedPseudoGradient.bijOn_flow_levelCrossingTime_midpoint`: following the flow
+  from the middle level to any intermediate level is a bijection between the level slices.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
   the time at which an orbit crosses the level of a point `y` of such a trajectory depends
   continuously on the orbit near `y`.
@@ -160,6 +162,22 @@ theorem existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet
   have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hy
   exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy
     (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
+
+/-- **Following the flow from the middle level is a bijection.** Let `a ≠ b` be critical points
+and `f b < c < f a`. Sending a point of the middle slice `W^u(a) ∩ W^s(b) ∩ {f = (f a + f b) / 2}`
+to the point of its trajectory on the level `c` is a bijection onto the slice
+`W^u(a) ∩ W^s(b) ∩ {f = c}`. -/
+theorem bijOn_flow_levelCrossingTime_midpoint (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    (hab : a ≠ b) (hbc : f b < c) (hca : c < f a) :
+    BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c z) z)
+      ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
+      ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = c}) :=
+  Flow.bijOn_levelCrossingTime hf.continuous.continuousOn
+    (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy)
+    (fun _ hy ↦ (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf hab
+      hy).exists)
+    (fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hbc
+      hca).exists)
 
 /-- **Level-crossing times depend continuously on the point.** Let `y` lie on a trajectory from a
 critical point `a` to a different critical point `b`, and let `w` tend to `y`. If the orbit of each
