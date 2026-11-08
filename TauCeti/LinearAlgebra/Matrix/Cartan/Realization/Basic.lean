@@ -471,7 +471,7 @@ theorem isMinimal_map (e : H ≃ₗ[K] H') : (R.map e).IsMinimal ↔ R.IsMinimal
 omit [Fintype I] in
 /-- If the coroots span both realizations, there is a unique linear equivalence preserving
 all simple roots and coroots. Unlike the singular minimal case, the coroots form a basis. -/
-theorem existsUnique_equiv_of_corootSpan_eq_top (S : CartanRealization A H')
+theorem existsUnique_linearEquiv_of_corootSpan_eq_top (S : CartanRealization A H')
     (hR : R.corootSpan = ⊤) (hS : S.corootSpan = ⊤) :
     ∃! e : H ≃ₗ[K] H', R.map e = S := by
   let b := Basis.mk R.coroot_linearIndependent (le_of_eq hR.symm)
@@ -499,10 +499,10 @@ theorem existsUnique_equiv_of_corootSpan_eq_top (S : CartanRealization A H')
 
 /-- Minimal realizations of a nonsingular matrix have a unique root- and coroot-preserving
 isomorphism. Singular matrices need not have uniqueness. -/
-theorem existsUnique_equiv_of_isMinimal [DecidableEq I]
+theorem existsUnique_linearEquiv_of_isMinimal [DecidableEq I]
     (S : CartanRealization A H') (hA : IsUnit A) (hR : R.IsMinimal) (hS : S.IsMinimal) :
     ∃! e : H ≃ₗ[K] H', R.map e = S := by
-  exact R.existsUnique_equiv_of_corootSpan_eq_top S
+  exact R.existsUnique_linearEquiv_of_corootSpan_eq_top S
     ((R.isMinimal_iff_corootSpan_eq_top hA).mp hR)
     ((S.isMinimal_iff_corootSpan_eq_top hA).mp hS)
 
