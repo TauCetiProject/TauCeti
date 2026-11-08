@@ -40,6 +40,8 @@ in `Type`.
 * `TauCeti.homologyPeriodHom_homologyπ`: its value on the class of a cycle `Σ nᵢ σᵢ` is
   `Σ nᵢ ∫_{σᵢ} φ`.
 * `TauCeti.homologyPeriodHom_hurewicz₁`: the period of a loop is the value on its Hurewicz class.
+* `TauCeti.IsPrimitiveOn.eventually_exists_path_pathClassIntegral_eq_sub`: near a point where a
+  closed `1`-form has a primitive `g`, paths from the point integrate the form to the change of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero`: a closed `1`-form whose periods on
   `H₁(M; ℤ)` vanish is exact.
 * `TauCeti.mem_exactForms_one_iff_homologyPeriodHom_eq_zero`: a closed smooth real `1`-form is
@@ -59,7 +61,7 @@ public section
 noncomputable section
 
 open CategoryTheory TauCeti.HurewiczOne TauCeti.TopCat
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -215,6 +217,18 @@ private theorem pathClassIntegral_mk_eq_of_homologyPeriodHom_eq_zero
     ← sub_eq_add_neg] at hl
   exact sub_eq_zero.mp hl.symm
 
+/-- **Paths along a local primitive.** If `g` is a primitive of a closed `C¹` `1`-form `φ` on an
+open set containing `x`, then every point `y` near `x` is joined to `x` by a path along which the
+integral of `φ` is `g y - g x`. -/
+theorem IsPrimitiveOn.eventually_exists_path_pathClassIntegral_eq_sub (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U) {x : M}
+    (hxU : x ∈ U) : ∀ᶠ y in 𝓝 x, ∃ γ : Path x y, pathClassIntegral φ (.mk γ) = g y - g x := by
+  filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := 1)
+    (hgU.isOpen.mem_nhds hxU)] with y ⟨c, hc, hc₀, hc₁, hcU⟩
+  let γ : Path x y :=
+    ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtype_val⟩, hc₀ 0 le_rfl, hc₁ 1 le_rfl⟩
+  exact ⟨γ, pathClassIntegral_mk_eq_sub_of_isPrimitiveOn hφ hclosed hgU γ fun t ↦ hcU t⟩
+
 /-- **Forms with vanishing periods on singular homology are exact.** A closed `C^r` `1`-form
 (`1 ≤ r`) whose periods on `H₁(M; ℤ)` vanish is the exterior derivative of a `C^r` function. -/
 theorem exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero {r : ℕ∞} (hr : 1 ≤ r)
@@ -230,16 +244,13 @@ theorem exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero {r : ℕ∞} (hr : 1 �
   -- Near `x`, `f` differs by a constant from a local primitive `g` of `φ`.
   obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
   refine ⟨g, f x - g x, hg.contMDiffAt, ?_, hgU.mextDeriv_eq x hxU⟩
-  filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := 1)
-    (hgU.isOpen.mem_nhds hxU)] with y ⟨c, hc, hc₀, hc₁, hcU⟩
-  let γ : Path x y :=
-    ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtype_val⟩, hc₀ 0 le_rfl, hc₁ 1 le_rfl⟩
+  filter_upwards [hgU.eventually_exists_path_pathClassIntegral_eq_sub hφ₁ hclosed hxU]
+    with y ⟨γ, hγ⟩
   have hbxy : b y = b x :=
     (congrArg Quotient.out (Quotient.sound (s := pathSetoid M) ⟨γ⟩)).symm
   simp only [f]
   rw [pathClassIntegral_mk_eq_of_homologyPeriodHom_eq_zero h hbxy (hb y).somePath
-      ((hb x).somePath.trans γ), Path.Homotopic.Quotient.mk_trans, pathClassIntegral_trans,
-    pathClassIntegral_mk_eq_sub_of_isPrimitiveOn hφ₁ hclosed hgU γ fun t ↦ hcU t]
+      ((hb x).somePath.trans γ), Path.Homotopic.Quotient.mk_trans, pathClassIntegral_trans, hγ]
   abel
 
 /-- **Periods on singular homology detect exactness.** A closed smooth real `1`-form is exact
