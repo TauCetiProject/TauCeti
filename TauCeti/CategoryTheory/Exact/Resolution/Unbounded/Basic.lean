@@ -172,6 +172,13 @@ theorem map_ι_comp_mapXIso_hom (n : ℕ) :
       (r.mapZIso hF hP (n + 1)).hom ≫ F.map (r.ι n) := by
   simp [mapXIso, mapZIso, map]
 
+/-- The inverse term identifications also respect the admissible kernel maps. -/
+@[reassoc (attr := simp)]
+theorem mapZIso_inv_comp_ι (n : ℕ) :
+    (r.mapZIso hF hP (n + 1)).inv ≫ (r.map hF hP).ι n =
+      F.map (r.ι n) ≫ (r.mapXIso hF hP n).inv := by
+  simp [mapXIso, mapZIso, map]
+
 end Map
 
 end ProjectiveResolution
@@ -195,6 +202,9 @@ noncomputable def projectiveResolution : E.ProjectiveResolution where
   ι_π n := (h.projectivePresentation (h.resolutionSyzygy M n)).zero
   conflation n := (h.projectivePresentation (h.resolutionSyzygy M n)).conflation
   projective n := (h.projectivePresentation (h.resolutionSyzygy M n)).isProjective
+
+/-- The constructed resolution starts at the specified object. -/
+@[simp] theorem projectiveResolution_Z_zero : (h.projectiveResolution M).Z 0 = M := (rfl)
 
 /-- The constructed resolution resolves the specified object. -/
 noncomputable def projectiveResolutionIso : (h.projectiveResolution M).Z 0 ≅ M :=

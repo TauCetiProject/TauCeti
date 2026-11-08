@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Resolution.Unbounded.Basic
+public import TauCeti.CategoryTheory.Exact.Resolution.ConflationRow
 
 /-!
 # The unbounded projective horseshoe lemma
@@ -37,45 +38,32 @@ universe v v' u u'
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C] {E : ExactStructure C} (r₁ r₃ : E.ProjectiveResolution)
 
-/-- A conflation of the prescribed outer syzygies. -/
-private structure Row (n : ℕ) where
-  Z : C
-  v : r₁.Z n ⟶ Z
-  w : Z ⟶ r₃.Z n
-  zero : v ≫ w = 0
-  conflation : E.Conflation (ShortComplex.mk v w zero)
-
-/-- One application of the projective horseshoe, retaining all commuting squares. -/
-private structure Block (n : ℕ) (R : Row r₁ r₃ n) (R' : Row r₁ r₃ (n + 1)) where
-  ι : R'.Z ⟶ r₁.X n ⊞ r₃.X n
-  π : r₁.X n ⊞ r₃.X n ⟶ R.Z
-  zero : ι ≫ π = 0
-  conflation : E.Conflation (ShortComplex.mk ι π zero)
-  inl_π : biprod.inl ≫ π = r₁.π n ≫ R.v
-  π_w : π ≫ R.w = biprod.snd ≫ r₃.π n
-  v_ι : R'.v ≫ ι = r₁.ι n ≫ biprod.inl
-  ι_snd : ι ≫ biprod.snd = R'.w ≫ r₃.ι n
-
-private theorem nonempty_step {n : ℕ} (R : Row r₁ r₃ n) :
-    Nonempty (Σ R' : Row r₁ r₃ (n + 1), Block r₁ r₃ n R R') := by
-  obtain ⟨K, u, a, hua, v, w, hvw, hu, hv, ha₁, ha₃, hu₁, hu₃⟩ :=
-    E.exists_conflation_biprod_of_conflation_of_projective R.conflation
-      (r₁.conflation n) (r₃.conflation n) (r₃.projective n)
-  exact ⟨⟨⟨K, v, w, hvw, hv⟩, ⟨u, a, hua, hu, ha₁, ha₃, hu₁, hu₃⟩⟩⟩
+/-- Specialize the shared projective step to the prescribed outer resolutions. -/
+private abbrev Block (n : ℕ) :=
+  ConflationRow.ProjectiveStep (E := E) (ShortComplex.mk (r₁.ι n) (r₁.π n) (r₁.ι_π n))
+    (ShortComplex.mk (r₃.ι n) (r₃.π n) (r₃.ι_π n))
 
 variable {M : C} (f : r₁.Z 0 ⟶ M) (g : M ⟶ r₃.Z 0) (zero : f ≫ g = 0)
   (hS : E.Conflation (ShortComplex.mk f g zero))
 
-/-- Iterate the syzygy conflations starting from the given conflation. -/
-@[reducible] private noncomputable def row : (n : ℕ) → Row r₁ r₃ n
+/-- Iterate the syzygy conflations starting from the given conflation.
+Reducibility lets the dependent `block` type identify successive choices. At degree zero the
+row is exactly the supplied conflation, so its object and maps reduce to `M`, `f`, and `g`;
+this also justifies the identity `iso` and the augmentation proofs in `horseshoe`. -/
+@[reducible] private noncomputable def row :
+    (n : ℕ) → ConflationRow E (r₁.Z n) (r₃.Z n)
   | 0 => ⟨M, f, g, zero, hS⟩
-  | n + 1 => (nonempty_step r₁ r₃ (row n)).some.1
+  | n + 1 => ((row n).nonempty_projectiveStep
+      (r₁.conflation n) (r₃.conflation n) (r₃.projective n)).some.1
 
 private noncomputable def block (n : ℕ) :
     Block r₁ r₃ n (row r₁ r₃ f g zero hS n) (row r₁ r₃ f g zero hS (n + 1)) :=
-  (nonempty_step r₁ r₃ (row r₁ r₃ f g zero hS n)).some.2
+  ((row r₁ r₃ f g zero hS n).nonempty_projectiveStep
+    (r₁.conflation n) (r₃.conflation n) (r₃.projective n)).some.2
 
-/-- The middle resolution uses the actual biproducts of the prescribed terms. -/
+/-- The middle resolution uses the actual biproducts of the prescribed terms.
+Reducibility keeps these terms and the degree-zero row visible to the dependent chain maps
+and the identity augmentation isomorphism below. -/
 @[reducible] private noncomputable def middle : E.ProjectiveResolution where
   Z n := (row r₁ r₃ f g zero hS n).Z
   X n := r₁.X n ⊞ r₃.X n
@@ -143,12 +131,37 @@ noncomputable def horseshoe : Horseshoe f g where
 namespace Horseshoe
 
 variable {r₁ r₃ f g} (h : Horseshoe f g)
-  {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+
+/-- Each middle term is the biproduct of the prescribed outer terms, via the chosen splitting. -/
+noncomputable def termIsoBiprod (n : ℕ) :
+    h.resolution.X n ≅ r₁.X n ⊞ r₃.X n :=
+  (h.split n).some.isoBinaryBiproduct
+
+/-- The termwise isomorphism sends the horseshoe injection to the left inclusion. -/
+@[reassoc (attr := simp)]
+theorem ι_f_termIsoBiprod_hom (n : ℕ) :
+    h.ι.f n ≫ (h.termIsoBiprod n).hom = biprod.inl := by
+  dsimp [termIsoBiprod, ShortComplex.Splitting.isoBinaryBiproduct]
+  apply biprod.hom_ext
+  · simp only [Category.assoc, biprod.lift_fst, biprod.inl_fst]
+    exact (h.split n).some.f_r
+  · simp only [Category.assoc, biprod.lift_snd, biprod.inl_snd]
+    exact congrArg (fun t => t.f n) h.ι_π
+
+/-- The right projection after the termwise isomorphism is the horseshoe projection. -/
+@[reassoc (attr := simp)]
+theorem termIsoBiprod_hom_snd (n : ℕ) :
+    (h.termIsoBiprod n).hom ≫ biprod.snd = h.π.f n := by
+  simp [termIsoBiprod]
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
   [HasBinaryBiproducts D] {E' : ExactStructure D} {F : C ⥤ D} [F.Additive]
   (hF : E.IsConflationExact E' F) (hP : E.isProjective ≤ E'.isProjective.inverseImage F)
 
 /-- Transport the prescribed horseshoe along a conflation-exact functor preserving projectives.
 In particular the internal shift and its inverse transport a graded horseshoe. -/
+-- Exposure is needed to type the dependent `iso` and chain-map characterizing lemmas below:
+-- their domains involve the transported `resolution` field.
 @[expose]
 noncomputable def map : Horseshoe
     ((r₁.mapZIso hF hP 0).hom ≫ F.map f)
@@ -182,6 +195,10 @@ noncomputable def map : Horseshoe
 
 /-- Transport retains the chosen middle resolution, rather than choosing a new horseshoe. -/
 @[simp] theorem map_resolution : (h.map hF hP).resolution = h.resolution.map hF hP := (rfl)
+
+/-- Transport retains the identification of the resolved middle object. -/
+@[simp] theorem map_iso : (h.map hF hP).iso =
+    h.resolution.mapZIso hF hP 0 ≪≫ F.mapIso h.iso := (rfl)
 
 /-- The transported injection is the image of the original injection. -/
 @[reassoc, simp]

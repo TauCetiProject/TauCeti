@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Resolution.Unbounded.Basic
-public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
+public import TauCeti.CategoryTheory.Abelian.Projective.Resolution
+public import TauCeti.Algebra.Homology.ChainComplex.Exact
 
 /-!
 # Relative projective resolutions in an abelian category
@@ -69,35 +70,23 @@ theorem exact_d_succ_d (n : ℕ) :
       (r.exact_d_π (n + 1))
 
 /-- Exactness of the spliced complex, in the vocabulary of homological complexes. -/
-theorem exactAt_complex_succ (n : ℕ) : r.complex.ExactAt (n + 1) := by
-  rw [HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp)]
-  exact (ShortComplex.exact_iff_of_iso
-    (S₁ := r.complex.sc' (n + 2) (n + 1) n)
-    (S₂ := ShortComplex.mk (r.d (n + 1)) (r.d n) (r.d_comp_d n))
-    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-      (by simpa only [HomologicalComplex.shortComplexFunctor'_obj_f, Iso.refl_hom,
-        Category.id_comp, Category.comp_id] using (r.complex_d (n + 1)).symm)
-      (by simp))).2 (r.exact_d_succ_d n)
+theorem exactAt_complex_succ (n : ℕ) : r.complex.ExactAt (n + 1) :=
+  ChainComplex.exactAt_of_succ r.X r.d r.d_comp_d n (r.exact_d_succ_d n)
 
 /-- A relative projective resolution for the canonical abelian exact structure is a projective
 resolution in Mathlib's sense, with the same spliced complex and augmentation. -/
+-- Exposure identifies the domain of the augmentation in the dependent `π` lemma below.
 @[expose]
-noncomputable def toProjectiveResolution : CategoryTheory.ProjectiveResolution (r.Z 0) where
-  complex := r.complex
-  projective n := r.projective_X n
-  π := r.augmentation
-  quasiIso := ⟨fun n => by
-    cases n with
-    | zero =>
-      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
-      refine (ShortComplex.exact_and_epi_g_iff_of_iso
-        (S₂ := ShortComplex.mk (r.d 0) (r.π 0) (r.d_comp_π 0)) ?_).2
-          ⟨r.exact_d_π 0, r.epi_π 0⟩
-      exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-        (by simpa using (r.complex_d 0).symm) (by simp)
-    | succ n =>
-      rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _)]
-      exact r.exactAt_complex_succ n⟩
+noncomputable def toProjectiveResolution : CategoryTheory.ProjectiveResolution (r.Z 0) :=
+  r.complex.toProjectiveResolution (r.π 0)
+    (by rw [complex_d, d_comp_π]) r.projective_X
+    (by
+      exact (ShortComplex.exact_iff_of_iso
+        (S₁ := ShortComplex.mk (r.complex.d 1 0) (r.π 0) (by rw [complex_d, d_comp_π]))
+        (S₂ := ShortComplex.mk (r.d 0) (r.π 0) (r.d_comp_π 0))
+        (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+          (by simpa using (r.complex_d 0).symm) (by simp))).2 (r.exact_d_π 0))
+    r.exactAt_complex_succ
 
 /-- The abelian realization retains the original spliced complex. -/
 @[simp]
@@ -105,6 +94,11 @@ theorem toProjectiveResolution_complex : r.toProjectiveResolution.complex = r.co
 
 /-- The abelian realization retains the original augmentation. -/
 @[simp]
-theorem toProjectiveResolution_π : r.toProjectiveResolution.π = r.augmentation := (rfl)
+theorem toProjectiveResolution_π : r.toProjectiveResolution.π = r.augmentation := by
+  simp only [toProjectiveResolution, ChainComplex.toProjectiveResolution_π]
+  apply (ChainComplex.toSingle₀Equiv _ _).injective
+  rw [Equiv.apply_symm_apply]
+  apply Subtype.ext
+  exact r.augmentation_f_zero.symm
 
 end TauCeti.ExactStructure.ProjectiveResolution
