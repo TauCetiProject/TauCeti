@@ -111,11 +111,13 @@ private theorem exists_ne_zero_forall_apply_simplexNormal_eq_zero {o₁ o₂ : O
   | none, some l =>
     refine ⟨p l, hp l, fun o h₁ h₂ ↦ ?_⟩
     obtain ⟨m, rfl⟩ := Option.ne_none_iff_exists'.1 h₁
-    simp [p, show m ≠ l by rintro rfl; exact h₂ rfl]
+    have hml : m ≠ l := fun hml ↦ h₂ (congrArg some hml)
+    simp [p, hml]
   | some k, none =>
     refine ⟨p k, hp k, fun o h₁ h₂ ↦ ?_⟩
     obtain ⟨m, rfl⟩ := Option.ne_none_iff_exists'.1 h₂
-    simp [p, show m ≠ k by rintro rfl; exact h₁ rfl]
+    have hmk : m ≠ k := fun hmk ↦ h₁ (congrArg some hmk)
+    simp [p, hmk]
   | some k, some l =>
     have hkl : k ≠ l := fun hkl ↦ h (hkl ▸ rfl)
     refine ⟨p k - p l, fun h ↦ ?_, fun o h₁ h₂ ↦ ?_⟩
@@ -123,8 +125,9 @@ private theorem exists_ne_zero_forall_apply_simplexNormal_eq_zero {o₁ o₂ : O
     cases o with
     | none => simp [p]
     | some m =>
-      simp [p, show m ≠ k by rintro rfl; exact h₁ rfl,
-        show m ≠ l by rintro rfl; exact h₂ rfl]
+      have hmk : m ≠ k := fun hmk ↦ h₁ (congrArg some hmk)
+      have hml : m ≠ l := fun hml ↦ h₂ (congrArg some hml)
+      simp [p, hmk, hml]
 
 /-- The normals other than `simplexNormal κ o` generate `ℤ^κ`. -/
 private theorem span_simplexNormal_compl [Finite κ] (o : Option κ) :
@@ -153,18 +156,24 @@ variable [Fintype κ]
 coordinate vectors. -/
 private theorem apply_compLeft_one (x : StrongDual ℝ (κ → ℝ)) :
     x ((Int.castAddHom ℝ).compLeft κ 1) = ∑ k, x (Pi.single k 1) := by
-  rw [show (Int.castAddHom ℝ).compLeft κ 1 = 1 by ext; simp]
+  have h₁ : (Int.castAddHom ℝ).compLeft κ 1 = 1 := by ext; simp
+  rw [h₁]
   simpa [← Pi.single_apply, Pi.single_comm _ (1 : ℝ)] using
     (x : (κ → ℝ) →ₗ[ℝ] ℝ).pi_apply_eq_sum_univ 1
 
+-- The two characterisations below have `high` priority so that `simp` reaches the coordinate
+-- forms before the general `mem_facetPolyhedron` and `mem_activeSet` unfold their left-hand sides.
+
 /-- **The standard simplex.** The polyhedron cut out by the normals `e k` and `-1` with support
 constants `0` and `-a` is the simplex `{x | 0 ≤ x (e k) for every k, and ∑ k, x (e k) ≤ a}`. -/
+@[simp high]
 theorem mem_facetPolyhedron_simplex_iff {a : ℝ} {x : StrongDual ℝ (κ → ℝ)} :
     x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a) ↔
       (∀ k, 0 ≤ x (Pi.single k 1)) ∧ ∑ k, x (Pi.single k 1) ≤ a := by
   simp [Option.forall, apply_compLeft_one, and_comm]
 
 /-- The slanted facet `∑ k, x (e k) = a` of the simplex. -/
+@[simp high]
 theorem none_mem_activeSet_simplex_iff {a : ℝ} {x : StrongDual ℝ (κ → ℝ)} :
     none ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
       (simplexSupport a) x ↔ ∑ k, x (Pi.single k 1) = a := by
@@ -250,7 +259,7 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
       · rw [hpt]; positivity
       · simp [hpt, mul_div_cancel₀ _ hn.ne']
       · cases o with
-        | none => simp [apply_compLeft_one, hpt, mul_div_cancel₀ _ hn.ne']
+        | none => simp [hpt, mul_div_cancel₀ _ hn.ne']
         | some k => simp [hpt, ha.ne', hn.ne']
     | some k =>
       -- A point with `x (e k) = 0` and all other coordinates equal to `a / (#κ + 1)`.

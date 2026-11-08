@@ -17,10 +17,12 @@ exactly when `v ∘ f` is linearly independent on `s`. This is the linear counte
 
 ## Main results
 
-* `linearIndepOn_image_iff`: linear independence on `f '' s` versus of `v ∘ f` on `s`.
+* `TauCeti.linearIndepOn_image_iff`: linear independence on `f '' s` versus of `v ∘ f` on `s`.
 -/
 
 public section
+
+namespace TauCeti
 
 variable {ι ι' R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
@@ -29,3 +31,5 @@ on `s`, for `f` injective on `s`. -/
 theorem linearIndepOn_image_iff {s : Set ι} {f : ι → ι'} (v : ι' → M) (hf : Set.InjOn f s) :
     LinearIndepOn R v (f '' s) ↔ LinearIndepOn R (v ∘ f) s :=
   ⟨fun h ↦ h.comp_of_image hf, fun h ↦ h.image_of_comp f v⟩
+
+end TauCeti
