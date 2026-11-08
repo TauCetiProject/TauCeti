@@ -50,12 +50,8 @@ theorem IsBorelOverAlgClosed.ringKrullDim_quotient_le {B : HopfIdeal k H}
     [Group.IsSolvable (WithConv ((H ⧸ D.toIdeal) →ₐ[k] k))] :
     ringKrullDim (H ⧸ D.toIdeal) ≤ ringKrullDim (H ⧸ B.toIdeal) := by
   let Q := FiniteTypeCommHopfAlgCat.quotient H D
-  have hQ : geometricallySolvablePointsCommHopfAlgProperty k Q.obj := by
-    rw [geometricallySolvablePointsCommHopfAlgProperty_iff]
-    let φ : AlgebraicClosure k →ₐ[k] k := IsAlgClosed.lift
-    exact Group.isSolvable_of_isSolvable_injective
-      (f := AlgHom.mapValue (R := k) (H := Q) φ)
-      (AlgHom.mapValue_injective (R := k) (H := Q) (φ := φ) φ.injective)
+  have hQ : geometricallySolvablePointsCommHopfAlgProperty k Q.obj :=
+    geometricallySolvablePointsCommHopfAlgProperty_of_isAlgClosed Q.obj
   let R := reduction k Q
   let _ : Algebra.Smooth k (Q ⧸ R.toIdeal) :=
     (smoothCommHopfAlgProperty_iff _).mp
