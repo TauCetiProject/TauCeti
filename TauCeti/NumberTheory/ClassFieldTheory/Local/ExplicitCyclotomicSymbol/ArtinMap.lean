@@ -144,7 +144,7 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
   have hN : N ≠ 0 := Nat.sub_ne_zero_of_lt (Nat.one_lt_pow hf hp.one_lt)
   set m := p ^ n * N
   have : NeZero m := ⟨mul_ne_zero (pow_ne_zero n hp.ne_zero) hN⟩
-  have hpN : p.Coprime N := Nat.coprime_pow_sub_one p f hp.one_lt hf
+  have hpN : p.Coprime N := Nat.coprime_pow_sub_one hp.ne_zero hf
   have hcop : (p ^ n).Coprime N := hpN.pow_left n
   have hdN : N ∣ m := dvd_mul_left N _
   have hdP : p ^ n ∣ m := dvd_mul_right _ N
