@@ -146,7 +146,12 @@ theorem arakelovMulHeight_mul_le (A : Matrix m n K) (B : Matrix n p K) :
   rcases eq_or_ne c 0 with hc | hc
   · rw [hc, arakelovMulHeight_zero]
     exact hbase
-  obtain ⟨hn, ha, hb⟩ := nonempty_and_entries_ne_zero_of_mul A B hc
+  have hAB : A * B ≠ 0 := fun h ↦ hc (funext fun q ↦ by simp [c, h])
+  have hn := nonempty_of_mul_ne_zero hAB
+  have ha : a ≠ 0 := fun h ↦
+    left_ne_zero_of_mul_ne_zero hAB (Matrix.ext fun i j ↦ congrFun h (i, j))
+  have hb : b ≠ 0 := fun h ↦
+    right_ne_zero_of_mul_ne_zero hAB (Matrix.ext fun i j ↦ congrFun h (i, j))
   rw [arakelovMulHeight_eq hc, arakelovMulHeight_eq ha, arakelovMulHeight_eq hb,
     mul_mul_mul_comm]
   apply mul_le_mul

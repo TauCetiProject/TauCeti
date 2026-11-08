@@ -16,15 +16,16 @@ has a positive entry, so multiplying a strictly positive matrix by `A` on the le
 strictly positive. This is the form in which positivity propagates along the powers of a primitive
 matrix.
 
-If the entries of a product of matrices are not all zero, then the inner index type is nonempty and
-the entries of neither factor are all zero.
+If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
+zero.
 
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
   for some `k > 0`, then so is `A ^ m` for every `m ≥ k`.
-* `Matrix.nonempty_and_entries_ne_zero_of_mul`: if the entries of a product are not all zero, the
-  inner index is nonempty and the entries of neither factor are all zero.
+* `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
+  `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
+  is nonempty and neither factor is zero.
 -/
 
 public section
@@ -64,19 +65,20 @@ section NonUnitalNonAssocSemiring
 
 variable {K : Type*} [NonUnitalNonAssocSemiring K] {m n p : Type*} [Fintype n]
 
-/-- If the entries of a matrix product are not all zero, then the inner index type is nonempty and
-the entries of neither factor are all zero. -/
-theorem nonempty_and_entries_ne_zero_of_mul (A : Matrix m n K) (B : Matrix n p K)
-    (hc : (fun q : m × p ↦ (A * B) q.1 q.2) ≠ 0) :
-    Nonempty n ∧ (fun q : m × n ↦ A q.1 q.2) ≠ 0 ∧ (fun q : n × p ↦ B q.1 q.2) ≠ 0 := by
-  refine ⟨?_, fun ha ↦ hc ?_, fun hb ↦ hc ?_⟩
-  · by_contra hn
-    have := not_nonempty_iff.mp hn
-    exact hc (funext fun q ↦ by simp [Matrix.mul_apply])
-  · have hA : A = 0 := Matrix.ext fun i j ↦ congrFun ha (i, j)
-    exact funext fun q ↦ by simp [hA]
-  · have hB : B = 0 := Matrix.ext fun i j ↦ congrFun hb (i, j)
-    exact funext fun q ↦ by simp [hB]
+/-- If a matrix product is nonzero, then the inner index type is nonempty. -/
+theorem nonempty_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : A * B ≠ 0) :
+    Nonempty n := by
+  by_contra hn
+  have := not_nonempty_iff.mp hn
+  exact h (Matrix.ext fun i j ↦ by simp [Matrix.mul_apply])
+
+/-- If a matrix product is nonzero, then its left factor is nonzero. -/
+theorem left_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : A * B ≠ 0) :
+    A ≠ 0 := fun hA ↦ h (by simp [hA])
+
+/-- If a matrix product is nonzero, then its right factor is nonzero. -/
+theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : A * B ≠ 0) :
+    B ≠ 0 := fun hB ↦ h (by simp [hB])
 
 end NonUnitalNonAssocSemiring
 
