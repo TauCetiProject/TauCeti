@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Measure
 
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Convex
 
@@ -92,21 +93,6 @@ theorem Convex.addHaar_pos_iff_affineSpan_eq_top (hs : Convex ℝ s) :
     0 < μ s ↔ affineSpan ℝ s = ⊤ := by
   rw [hs.addHaar_pos_iff_interior_nonempty, hs.interior_nonempty_iff_affineSpan_eq_top]
 
-/-- The real inequality behind the volume bound: if `L / (2 r) < m + 1` then
-`L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/
-private theorem mul_pow_le_two_pow_mul_succ_mul_pow {L r : ℝ} {m n : ℕ} (hr : 0 < r)
-    (hn : 1 ≤ n) (hm : L / (2 * r) < m + 1) :
-    L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
-  have hrn : r ^ n = r * r ^ (n - 1) := by rw [← pow_succ', Nat.sub_add_cancel hn]
-  have h2 : (2 : ℝ) ^ (n + 1) * (r / 2) ^ n = 2 * r ^ n := by
-    rw [div_pow, pow_succ]
-    field_simp
-  rw [div_lt_iff₀ (by positivity)] at hm
-  calc L * r ^ (n - 1) ≤ (m + 1) * (2 * r) * r ^ (n - 1) := by gcongr
-    _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
-      rw [mul_left_comm (2 ^ (n + 1) : ℝ), h2, hrn]
-      ring
-
 /-- **A convex set containing a ball and a point is large.** In a finite-dimensional real normed
 space `E` of dimension `n`, if a convex set `s` contains the ball of radius `r > 0` about `x` and
 the point `y`, then `dist y x * r ^ (n - 1) * μ (ball 0 1) ≤ 2 ^ (n + 1) * μ s` for every
@@ -152,7 +138,7 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
   calc ENNReal.ofReal (L * r ^ (n - 1)) * μ (ball 0 1)
       ≤ ENNReal.ofReal (2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)) * μ (ball 0 1) := by
         gcongr ENNReal.ofReal ?_ * _
-        exact mul_pow_le_two_pow_mul_succ_mul_pow hr finrank_pos hm
+        exact TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow hr finrank_pos hm
     _ = 2 ^ (n + 1) * ∑ j ∈ Finset.range (m + 1), μ (ball (c j) (r / 2)) := by
         simp only [addHaar_ball μ _ (by positivity : 0 ≤ r / 2), Finset.sum_const,
           Finset.card_range, nsmul_eq_mul]
