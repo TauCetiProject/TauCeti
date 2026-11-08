@@ -107,21 +107,25 @@ noncomputable def union : Orientation h.union where
 variable {o₁ o₂ h}
 
 /-- An edge of `G` takes its tail from `o₁`. -/
+@[simp]
 theorem coe_union_tail_of_mem {e : h.union.edgeSet} (he : e.1 ∈ E(G)) :
     ((o₁.union o₂ h).tail e : V) = o₁.tail ⟨e, he⟩ := by
   simp [union, he]
 
 /-- An edge of `G` takes its head from `o₁`. -/
+@[simp]
 theorem coe_union_head_of_mem {e : h.union.edgeSet} (he : e.1 ∈ E(G)) :
     ((o₁.union o₂ h).head e : V) = o₁.head ⟨e, he⟩ := by
   simp [union, he]
 
 /-- An edge of `H` outside `G` takes its tail from `o₂`. -/
+@[simp]
 theorem coe_union_tail_of_notMem {e : h.union.edgeSet} (he : e.1 ∉ E(G)) (he' : e.1 ∈ E(H)) :
     ((o₁.union o₂ h).tail e : V) = o₂.tail ⟨e, he'⟩ := by
   simp [union, he]
 
 /-- An edge of `H` outside `G` takes its head from `o₂`. -/
+@[simp]
 theorem coe_union_head_of_notMem {e : h.union.edgeSet} (he : e.1 ∉ E(G)) (he' : e.1 ∈ E(H)) :
     ((o₁.union o₂ h).head e : V) = o₂.head ⟨e, he'⟩ := by
   simp [union, he]
@@ -130,15 +134,15 @@ theorem coe_union_head_of_notMem {e : h.union.edgeSet} (he : e.1 ∉ E(G)) (he' 
 @[simp]
 theorem restrict_union_left : (o₁.union o₂ h).restrict h.left_le_union = o₁ :=
   ext_of_head fun e ↦ Subtype.ext <| by
-    simp [coe_union_head_of_mem (e := Set.inclusion h.left_le_union.edgeSet_mono e) e.2]
+    simp
 
 /-- Restricting a combined orientation to the second graph recovers the second orientation when
 the two graphs share no edge. -/
+@[simp]
 theorem restrict_union_right (hE : Disjoint E(G) E(H)) :
     (o₁.union o₂ h).restrict h.right_le_union = o₂ :=
   ext_of_head fun e ↦ Subtype.ext <| by
-    simp [coe_union_head_of_notMem (e := Set.inclusion h.right_le_union.edgeSet_mono e)
-      (hE.notMem_of_mem_right e.2) e.2]
+    simp [hE.notMem_of_mem_right e.2]
 
 /-- Every orientation of a compatible union is combined from its two restrictions. -/
 @[simp]
@@ -146,17 +150,18 @@ theorem union_restrict (o : Orientation h.union) :
     (o.restrict h.left_le_union).union (o.restrict h.right_le_union) h = o := by
   refine ext_of_head fun e ↦ Subtype.ext ?_
   by_cases he : e.1 ∈ E(G)
-  · simp [coe_union_head_of_mem he]
-  · simp [coe_union_head_of_notMem he (mem_right_of_notMem_left h he)]
+  · simp [he]
+  · have heH := mem_right_of_notMem_left h he
+    simp [he, heH]
 
 /-- Combining orientations commutes with reversal. -/
 @[simp]
 theorem reverse_union : (o₁.union o₂ h).reverse = o₁.reverse.union o₂.reverse h := by
   refine ext_of_head fun e ↦ Subtype.ext ?_
   by_cases he : e.1 ∈ E(G)
-  · simp [coe_union_head_of_mem he, coe_union_tail_of_mem he]
-  · simp [coe_union_head_of_notMem he (mem_right_of_notMem_left h he),
-      coe_union_tail_of_notMem he (mem_right_of_notMem_left h he)]
+  · simp [he]
+  · have heH := mem_right_of_notMem_left h he
+    simp [he, heH]
 
 variable (h) in
 /-- Orientations of the union of two compatible graphs with disjoint edge sets are pairs of
@@ -299,7 +304,7 @@ theorem indegree_union_right (v : H.vertexSet) (hv : v.1 ∉ V(G)) :
     have hval := congrArg Subtype.val he
     rw [coe_restrict_head, coe_union_head_of_mem heG] at hval
     exact hval ▸ (o₁.head _).2
-  · simp [Subtype.ext_iff, coe_union_head_of_notMem (e := Set.inclusion _ e) heG e.2]
+  · simp [Subtype.ext_iff, heG]
 
 omit [Fintype H.edgeSet] in
 /-- At a vertex of `G` outside `H`, the combined orientation has the outdegree given by `o₁`. -/
