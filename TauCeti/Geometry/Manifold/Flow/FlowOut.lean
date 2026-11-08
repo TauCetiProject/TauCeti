@@ -13,17 +13,17 @@ public import TauCeti.Geometry.Manifold.VectorField.Transverse
 /-!
 # The flow-out of a transverse hypersurface
 
-Let `v` be a smooth complete vector field on a finite-dimensional boundaryless manifold `M`, with
-flow `ψ`, and let `ι : S → M` be a smooth immersion of a boundaryless manifold of one dimension
-less, to which `v` is transverse (`TauCeti.IsTransverseAlong`): `v (ι s)` does not lie in the
-image of the differential of `ι` at `s`. The **flow-out** of `ι` is the map `Φ : ℝ × S → M`,
+Let `v` be a complete `C^n` vector field, `1 ≤ n`, on a finite-dimensional boundaryless manifold
+`M`, with flow `ψ`, and let `ι : S → M` be a `C^n` immersion of a boundaryless manifold of one
+dimension less, to which `v` is transverse (`TauCeti.IsTransverseAlong`): `v (ι s)` does not lie
+in the image of the differential of `ι` at `s`. The **flow-out** of `ι` is the map `Φ : ℝ × S → M`,
 `Φ (t, s) = ψₜ (ι s)`. Its differential at `(t, s)` is
 
 `dΦ (a, w) = dψₜ (a v (ι s) + dι w)`
 
 (`TauCeti.mfderiv_globalFlow_comp_apply`), because the flow carries `v` to itself. Transversality
 makes this injective, and since source and target have the same dimension, it is invertible. By
-the inverse function theorem the flow-out is a local diffeomorphism
+the inverse function theorem the flow-out is a `C^n` local diffeomorphism
 (`TauCeti.isLocalDiffeomorph_globalFlow_comp`).
 
 This is the flow-out theorem in the form needed to identify the end of a Liouville completion with
@@ -82,23 +82,25 @@ theorem mfderiv_globalFlow_comp_apply [IsManifold I 1 M] (hv : ContMDiff I I.tan
   · exact mfderiv_comp_apply (I' := I) p.2
       ((contMDiff_globalFlow_apply hc le_rfl hv p.1).mdifferentiableAt one_ne_zero) hι w
 
-variable [IsManifold I ∞ M] (hv : ContMDiff I I.tangent ∞ (T% v))
-  [IsManifold J ∞ S] [BoundarylessManifold J S]
+variable [BoundarylessManifold J S]
 
-/-- **The flow-out theorem.** Let `v` be a smooth complete vector field on a finite-dimensional
-boundaryless manifold `M`, with flow `ψ`, and let `ι : S → M` be a smooth immersion of a
-boundaryless manifold of one dimension less, with `v` transverse to it: `v (ι s)` is never in the
-image of `dι` at `s`. Then the flow-out `(t, s) ↦ ψₜ (ι s)` is a local diffeomorphism
-`ℝ × S → M`. -/
-theorem isLocalDiffeomorph_globalFlow_comp (hι : ContMDiff J I ∞ ι)
-    (himm : ∀ s, Injective (mfderiv J I ι s))
+/-- **The flow-out theorem.** Let `v` be a complete `C^n` vector field, `1 ≤ n`, on a
+finite-dimensional boundaryless `C^n` manifold `M`, with flow `ψ`, and let `ι : S → M` be a `C^n`
+immersion of a boundaryless `C^n` manifold of one dimension less, with `v` transverse to it:
+`v (ι s)` is never in the image of `dι` at `s`. Then the flow-out `(t, s) ↦ ψₜ (ι s)` is a `C^n`
+local diffeomorphism `ℝ × S → M`. -/
+theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I 1 M]
+    [IsManifold I n M] [IsManifold J n S] (hv : ContMDiff I I.tangent n (T% v))
+    (hι : ContMDiff J I n ι) (himm : ∀ s, Injective (mfderiv J I ι s))
     (htr : IsTransverseAlong J v ι)
     (hdim : finrank ℝ E = finrank ℝ E' + 1) :
-    IsLocalDiffeomorph (𝓘(ℝ).prod J) I ∞
-      (fun p : ℝ × S ↦ globalFlow v (hv.of_le (by simp)) hc p.1 (ι p.2)) := by
-  set ψ := globalFlow v (hv.of_le (by simp)) hc
-  have hΦ : ContMDiff (𝓘(ℝ).prod J) I ∞ (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) :=
-    (contMDiff_globalFlow_uncurry hc le_top hv).comp
+    IsLocalDiffeomorph (𝓘(ℝ).prod J) I n
+      (fun p : ℝ × S ↦ globalFlow v (hv.of_le (by exact_mod_cast hn)) hc p.1 (ι p.2)) := by
+  have hn' : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := (one_pos.trans_le hn').ne'
+  set ψ := globalFlow v (hv.of_le hn') hc
+  have hΦ : ContMDiff (𝓘(ℝ).prod J) I n (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) :=
+    (contMDiff_globalFlow_uncurry hc hn hv).comp
       (contMDiff_fst.prodMk (hι.comp contMDiff_snd))
   rcases isEmpty_or_nonempty S with hS | ⟨⟨s₀⟩⟩
   · exact fun p ↦ isEmptyElim p.2
@@ -106,20 +108,20 @@ theorem isLocalDiffeomorph_globalFlow_comp (hι : ContMDiff J I ∞ ι)
   have : FiniteDimensional ℝ E' := by
     have : FiniteDimensional ℝ (TangentSpace I (ι s₀)) := inferInstanceAs (FiniteDimensional ℝ E)
     exact FiniteDimensional.of_injective (mfderiv J I ι s₀).toLinearMap (himm s₀)
-  refine isLocalDiffeomorph_of_mfderiv_eq hΦ (by simp) fun p ↦ ?_
+  refine isLocalDiffeomorph_of_mfderiv_eq hΦ hn' fun p ↦ ?_
   set L := mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) p
   -- The differential `dψₜ` is injective, since `ψₜ` is a diffeomorphism.
   have hψinj : Injective (mfderiv I I (ψ p.1) (ι p.2)) := by
-    obtain ⟨e, he⟩ := (globalFlowDiffeomorph hc le_top hv p.1).isInvertible_mfderiv
-      (x := ι p.2) (by simp)
+    obtain ⟨e, he⟩ := (globalFlowDiffeomorph hc hn hv p.1).isInvertible_mfderiv
+      (x := ι p.2) hn0
     rw [coe_globalFlowDiffeomorph] at he
     exact he ▸ e.injective
   -- Transversality makes the differential of the flow-out injective.
   have hinj : Injective L := by
     refine (injective_iff_map_eq_zero L).2 fun x hx ↦ ?_
     obtain ⟨a, w⟩ := x
-    have hL := mfderiv_globalFlow_comp_apply hc (hv.of_le (by simp)) p
-      (hι.mdifferentiableAt (by simp)) a w
+    have hL := mfderiv_globalFlow_comp_apply hc (hv.of_le hn') p
+      (hι.mdifferentiableAt hn0) a w
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] at hL
     have h0 : a • v (ι p.2) + mfderiv J I ι p.2 w = 0 :=
       hψinj (hL.symm.trans (hx.trans (map_zero _).symm))

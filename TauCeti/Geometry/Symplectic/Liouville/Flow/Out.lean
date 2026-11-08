@@ -144,7 +144,7 @@ theorem isLocalDiffeomorph_flowOf_comp (h : IsLiouvilleDomain ω α W)
     IsLocalDiffeomorph (𝓘(ℝ).prod J) I (⊤ : ℕ∞) (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) := by
   have hZs := h.contMDiff_of_interior_eq hZ
   rw [flowOf_eq_globalFlow (hZs.of_le (by simp)) hc]
-  exact isLocalDiffeomorph_globalFlow_comp hc hZs hι himm
+  exact isLocalDiffeomorph_globalFlow_comp hc le_top hZs hι himm
     (h.isTransverseAlong hZ (hι.mdifferentiable (by simp)) hιW) hdim
 
 /-- **The symplectization of the boundary embeds along the Liouville flow.** Let `W` be a
