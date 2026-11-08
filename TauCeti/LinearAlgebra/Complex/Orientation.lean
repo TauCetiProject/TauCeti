@@ -33,6 +33,15 @@ product of the canonical orientations of `E` and `F` to that of `F` and `E`.
 This is the linear model for the canonical orientation of a complex manifold, whose chart
 transitions have complex-linear derivatives.
 
+A conjugate-linear equivalence `f : E → F`, such as the quaternionic structure `j` of a
+two-dimensional complex space or charge conjugation on the kernel and cokernel of a complex-linear
+Dirac operator, is real-linear (`LinearEquiv.toRealLinearEquiv`). It does not preserve canonical
+orientations: in the real basis `(b₀, I • b₀, …)` it sends `I • bᵢ` to `-(I • f bᵢ)`, so it
+multiplies the canonical orientation by `(-1) ^ n`, where `n` is the complex dimension. In
+particular the real determinant of a conjugate-linear automorphism has the sign of `(-1) ^ n`.
+Applied separately to the kernel and to the cokernel of a complex-linear map, the two signs
+multiply to `(-1) ^ ind`, where `ind` is its complex index.
+
 The real module structure of `E` is an ambient one compatible with the complex structure
 (`IsScalarTower ℝ ℂ E`), as for a complex normed space or a real space with a complex structure.
 
@@ -41,6 +50,8 @@ The real module structure of `E` is an ambient one compatible with the complex s
 * `Module.Basis.complexToReal`: the real basis `(b i, I • b i)` underlying a complex basis `b`.
 * `TauCeti.complexOrientation`: the canonical real orientation of a complex vector space, indexed
   by `Fin (2 * finrank ℂ E)`.
+* `LinearEquiv.toRealLinearEquiv`: a conjugate-linear equivalence, viewed as a real-linear
+  equivalence.
 
 ## Main results
 
@@ -50,6 +61,10 @@ The real module structure of `E` is an ambient one compatible with the complex s
 * `Module.Basis.complexOrientation_eq`: every complex basis computes the canonical orientation.
 * `LinearEquiv.map_complexOrientation`: complex-linear equivalences transport canonical
   orientations.
+* `LinearEquiv.map_toRealLinearEquiv_complexOrientation`: conjugate-linear equivalences multiply
+  canonical orientations by `(-1) ^ n`, `n` the complex dimension.
+* `LinearEquiv.neg_one_pow_mul_det_toRealLinearEquiv_pos`: the real determinant of a
+  conjugate-linear automorphism has the sign of `(-1) ^ n`.
 * `TauCeti.reindex_complexOrientation_complex`: on `ℂ`, the canonical orientation is
   `Complex.orientation`.
 * `TauCeti.prod_complexOrientation`: the product of the canonical orientations of `E` and `F` is
@@ -199,6 +214,105 @@ theorem map_complexOrientation (f : E ≃ₗ[ℂ] F) :
 theorem map_complexOrientation_self (f : E ≃ₗ[ℂ] E) :
     Orientation.map _ (f.restrictScalars ℝ) (complexOrientation E) = complexOrientation E := by
   simpa using f.map_complexOrientation
+
+end LinearEquiv
+
+/-! ### Conjugate-linear equivalences -/
+
+namespace LinearEquiv
+
+open TauCeti
+
+variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsScalarTower ℝ ℂ E]
+  [AddCommGroup F] [Module ℂ F] [Module ℝ F] [IsScalarTower ℝ ℂ F]
+
+/-- A conjugate-linear equivalence of complex vector spaces is real-linear, since complex
+conjugation fixes the real scalars. -/
+def toRealLinearEquiv (f : E ≃ₛₗ[starRingEnd ℂ] F) : E ≃ₗ[ℝ] F where
+  toFun := f
+  invFun := f.symm
+  map_add' := map_add f
+  map_smul' r x := by
+    rw [RingHom.id_apply, ← algebraMap_smul ℂ r x, map_smulₛₗ, ← algebraMap_smul ℂ r (f x),
+      Complex.coe_algebraMap, Complex.conj_ofReal]
+  left_inv := f.left_inv
+  right_inv := f.right_inv
+
+@[simp]
+theorem coe_toRealLinearEquiv (f : E ≃ₛₗ[starRingEnd ℂ] F) : ⇑f.toRealLinearEquiv = f :=
+  (rfl)
+
+@[simp]
+theorem toRealLinearEquiv_symm (f : E ≃ₛₗ[starRingEnd ℂ] F) :
+    f.toRealLinearEquiv.symm = f.symm.toRealLinearEquiv :=
+  (rfl)
+
+variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ F]
+
+/-- A conjugate-linear equivalence `f : E → F` carries the canonical real orientation of `E` to
+`(-1) ^ n` times that of `F`, where `n` is the complex dimension. In the real basis
+`(b₀, I • b₀, b₁, I • b₁, …)` of `E`, `f` sends `bᵢ` to `f bᵢ` but `I • bᵢ` to `-(I • f bᵢ)`, so it
+reverses one real direction in each complex line. -/
+theorem map_toRealLinearEquiv_complexOrientation (f : E ≃ₛₗ[starRingEnd ℂ] F) :
+    Orientation.map _ f.toRealLinearEquiv (complexOrientation E) =
+      (-1 : ℝˣ) ^ finrank ℂ E •
+        Orientation.reindex ℝ F
+          (finCongr (by rw [← finrank_real_eq_two_mul_finrank_complex,
+            ← finrank_real_eq_two_mul_finrank_complex, f.toRealLinearEquiv.finrank_eq]))
+          (complexOrientation F) := by
+  have hn : finrank ℂ E = finrank ℂ F := by
+    have := f.toRealLinearEquiv.finrank_eq
+    rw [finrank_real_eq_two_mul_finrank_complex, finrank_real_eq_two_mul_finrank_complex] at this
+    omega
+  set b := finBasis ℂ E
+  -- The image `f ∘ b` of a complex basis of `E` is a complex basis of `F`.
+  have hli : LinearIndependent ℂ (f ∘ b) :=
+    b.linearIndependent.map_of_injective_injectiveₛ (starRingEnd ℂ) f.toAddEquiv.toAddMonoidHom
+      (starRingEnd ℂ).injective f.injective fun r x ↦
+        (map_smulₛₗ f _ x).trans (by simp)
+  have hsp : ⊤ ≤ Submodule.span ℂ (Set.range (f ∘ b)) := by
+    rintro y -
+    rw [← f.apply_symm_apply y, ← b.sum_repr (f.symm y), map_sum]
+    exact Submodule.sum_mem _ fun i _ ↦ by
+      rw [map_smulₛₗ]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+  set c : Basis (Fin (finrank ℂ F)) ℂ F := (Basis.mk hli hsp).reindex (finCongr hn)
+  -- One sign for each vector `I • bᵢ` of the real basis.
+  set σ := complexRealIndexEquiv (finrank ℂ E)
+  set w : Fin (2 * finrank ℂ E) → ℝˣ := fun j ↦ if (σ.symm j).2 = 0 then 1 else -1
+  have hw : (∏ j, w j)⁻¹ = (-1 : ℝˣ) ^ finrank ℂ E := by
+    rw [← σ.prod_comp, Fintype.prod_prod_type]
+    simp only [w, Fin.prod_univ_two, Equiv.symm_apply_apply, Fin.isValue, ↓reduceIte,
+      Fin.one_eq_zero_iff, OfNat.ofNat_ne_one, one_mul, Finset.prod_const, Finset.card_univ,
+      Fintype.card_fin]
+    rw [← inv_pow, inv_neg_one]
+  rw [b.complexOrientation_eq, c.complexOrientation_eq, Orientation.map_reindex,
+    ← Basis.orientation_map, ← Basis.orientation_reindex, ← Basis.orientation_reindex,
+    ← Basis.orientation_reindex, ← hw, ← Basis.orientation_unitsSMul]
+  congr 1
+  refine Basis.eq_of_apply_eq fun j ↦ ?_
+  obtain ⟨⟨i, k⟩, rfl⟩ := σ.surjective j
+  fin_cases k <;>
+    simp [w, σ, c, Basis.complexToReal_apply, Basis.unitsSMul_apply, map_smulₛₗ]
+
+/-- A conjugate-linear automorphism multiplies the canonical real orientation by `(-1) ^ n`, where
+`n` is the complex dimension. -/
+@[simp]
+theorem map_toRealLinearEquiv_complexOrientation_self (f : E ≃ₛₗ[starRingEnd ℂ] E) :
+    Orientation.map _ f.toRealLinearEquiv (complexOrientation E) =
+      (-1 : ℝˣ) ^ finrank ℂ E • complexOrientation E := by
+  simpa using f.map_toRealLinearEquiv_complexOrientation
+
+/-- The real determinant of a conjugate-linear automorphism of a complex vector space of complex
+dimension `n` has the sign of `(-1) ^ n`. -/
+theorem neg_one_pow_mul_det_toRealLinearEquiv_pos (f : E ≃ₛₗ[starRingEnd ℂ] E) :
+    0 < (-1) ^ finrank ℂ E * LinearMap.det (f.toRealLinearEquiv : E →ₗ[ℝ] E) := by
+  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
+  have h := (Orientation.map_units_smul_eq_iff_det_mul_pos (complexOrientation E)
+    f.toRealLinearEquiv 1 ((-1) ^ finrank ℂ E)
+    (by rw [Fintype.card_fin, finrank_real_eq_two_mul_finrank_complex])).mp
+    (by rw [one_smul, map_toRealLinearEquiv_complexOrientation_self])
+  simpa using h
 
 end LinearEquiv
 

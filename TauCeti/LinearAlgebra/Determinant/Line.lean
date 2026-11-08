@@ -33,6 +33,15 @@ carried out here. This file sets up the pointwise object:
 * the transport of determinant lines along a commuting square whose horizontal sides are linear
   isomorphisms (`LinearMap.detLineCongr`), which is how a change of trivialization acts.
 
+An automorphism of a free module acts on its determinant line by its determinant
+(`LinearEquiv.detLineCongr_apply_eq_det_smul`). Consequently, if a unit `c` acts by multiplication
+on both the source and the target of `f`, the induced transport of the determinant line of `f` is
+multiplication by `c ^ ind f`, with `ind f = dim (ker f) - dim (coker f)`
+(`LinearMap.detLineCongr_apply_of_forall_eq_smul`). For `c = -1` this is the sign
+`(-1) ^ (dim (ker f) + dim (coker f))` (`LinearMap.detLineCongr_neg_apply`); for instance, complex
+conjugation of a connection acts on its imaginary-valued deformations, and on the determinant line
+of the real deformation operator, by this sign.
+
 ## Main definitions
 
 * `TauCeti.detLine R V`: the top exterior power `⋀[R]^(finrank R V) V`.
@@ -49,10 +58,16 @@ carried out here. This file sets up the pointwise object:
   module.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
+* `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
+  its determinant.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
   finite-dimensional kernel and cokernel has dimension one.
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
+* `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
+  target acts on the determinant line by `c ^ ind f`.
+* `LinearMap.detLineCongr_neg_apply`: negation of source and target acts on the determinant line
+  by `(-1) ^ (dim (ker f) + dim (coker f))`.
 
 ## References
 
@@ -131,6 +146,14 @@ theorem detLineCongr_trans (e : V ≃ₗ[R] W) (e' : W ≃ₗ[R] U) :
 theorem detLineCongr_symm (e : V ≃ₗ[R] W) : (detLineCongr e).symm = detLineCongr e.symm := by
   refine LinearEquiv.ext fun x ↦ ?_
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
+  simp
+
+/-- An automorphism of a free module acts on its determinant line by multiplication by its
+determinant. -/
+theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x : detLine R V) :
+    detLineCongr e x = LinearMap.det (e : V →ₗ[R] V) • x := by
+  refine Subtype.ext ?_
+  rw [coe_detLineCongr, ← exteriorPower.coe_map, LinearMap.map_exteriorPower_finrank_eq_det_smul]
   simp
 
 end LinearEquiv
@@ -309,6 +332,58 @@ theorem finrank_detLine (f : M →ₗ[K] N) [FiniteDimensional K (ker f)]
     [FiniteDimensional K (N ⧸ range f)] : finrank K f.detLine = 1 := by
   rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
     TauCeti.finrank_detLine]
+
+/-- Let `e₁` and `e₂` act on the source and target of `f` as multiplication by the same unit `c`.
+Transport along the commuting square they form multiplies the determinant line of `f` by
+`c ^ ind f`, where `ind f = dim (ker f) - dim (coker f)` is the index of `f`. -/
+theorem detLineCongr_apply_of_forall_eq_smul (f : M →ₗ[K] N) {e₁ : M ≃ₗ[K] M} {e₂ : N ≃ₗ[K] N}
+    (h : f ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) (c : Kˣ) (he₁ : ∀ x, e₁ x = c • x)
+    (he₂ : ∀ y, e₂ y = c • y) (z : f.detLine) :
+    f.detLineCongr e₁ e₂ h z =
+      (c ^ ((finrank K (ker f) : ℤ) - finrank K (N ⧸ range f)) : Kˣ) • z := by
+  set k₁ := e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)
+  set k₂ := Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁.surjective h)
+  -- Both induced automorphisms are multiplication by `c`, so their determinants are powers of `c`.
+  have hk₁ : LinearMap.det (k₁ : ker f →ₗ[K] ker f) = (c : K) ^ finrank K (ker f) := by
+    have : (k₁ : ker f →ₗ[K] ker f) = (c : K) • LinearMap.id :=
+      LinearMap.ext fun x ↦ Subtype.ext (by simp [k₁, he₁, Units.smul_def])
+    rw [this, LinearMap.det_smul, LinearMap.det_id, mul_one]
+  have hk₂ : LinearMap.det (k₂ : N ⧸ range f →ₗ[K] N ⧸ range f) =
+      (c : K) ^ finrank K (N ⧸ range f) := by
+    have : (k₂ : N ⧸ range f →ₗ[K] N ⧸ range f) = (c : K) • LinearMap.id := by
+      refine Submodule.linearMap_qext _ (LinearMap.ext fun y ↦ ?_)
+      simp [k₂, he₂, Units.smul_def]
+    rw [this, LinearMap.det_smul, LinearMap.det_id, mul_one]
+  have hc : ((c ^ ((finrank K (ker f) : ℤ) - finrank K (N ⧸ range f)) : Kˣ) : K) =
+      (c : K) ^ finrank K (ker f) * ((c : K) ^ finrank K (N ⧸ range f))⁻¹ := by
+    rw [zpow_sub, zpow_natCast, zpow_natCast, Units.val_mul, Units.val_inv_eq_inv_val,
+      Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
+  rw [Units.smul_def, hc]
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    -- The dual factor is precomposed with the inverse of multiplication by `det k₂`.
+    have hφ : φ ∘ₗ (LinearEquiv.detLineCongr k₂).symm.toLinearMap =
+        ((c : K) ^ finrank K (N ⧸ range f))⁻¹ • φ := by
+      refine LinearMap.ext fun y ↦ ?_
+      have hy : (LinearEquiv.detLineCongr k₂).symm y =
+          ((c : K) ^ finrank K (N ⧸ range f))⁻¹ • y := by
+        rw [LinearEquiv.symm_apply_eq, LinearEquiv.detLineCongr_apply_eq_det_smul, hk₂,
+          smul_inv_smul₀ (pow_ne_zero _ c.ne_zero)]
+      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, hy, map_smul, LinearMap.smul_apply]
+    rw [detLineCongr_tmul, LinearEquiv.detLineCongr_apply_eq_det_smul, hk₁, hφ,
+      TensorProduct.smul_tmul_smul, TensorProduct.smul_tmul']
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+
+/-- Negation of source and target multiplies the determinant line of `f` by
+`(-1) ^ (dim (ker f) + dim (coker f))`, the sign of the parity of the index of `f`. -/
+theorem detLineCongr_neg_apply (f : M →ₗ[K] N) (z : f.detLine) :
+    f.detLineCongr (LinearEquiv.neg K) (LinearEquiv.neg K) (by ext; simp) z =
+      (-1 : K) ^ (finrank K (ker f) + finrank K (N ⧸ range f)) • z := by
+  have h : ((-1 : Kˣ) ^ ((finrank K (ker f) : ℤ) - finrank K (N ⧸ range f))) =
+      (-1) ^ (finrank K (ker f) + finrank K (N ⧸ range f)) := by
+    rw [zpow_sub, zpow_natCast, zpow_natCast, ← inv_pow, inv_neg_one, ← pow_add]
+  rw [detLineCongr_apply_of_forall_eq_smul f _ (-1) (fun x ↦ by simp) (fun y ↦ by simp), h,
+    Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
 
 end Field
 
