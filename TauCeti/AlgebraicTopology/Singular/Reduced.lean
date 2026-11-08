@@ -118,14 +118,14 @@ lemma singularHomology₀Section_singularHomology₀Iso_hom {X : TopCat.{w}} (x 
       Sigma.ι (fun _ : ZerothHomotopy X ↦ R) (ZerothHomotopy.mk x) := by
   -- `TopCat.singularHomology₀Iso` is stated on `singularHomologyFunctor`, which is by definition
   -- the homology of `TopCat.toSSet`; the statement is restated at that definitional unfolding so
-  -- that the simplicial lemma `TauCeti.SSet.ιHomology₀_homology₀Iso_hom` applies.
+  -- that the simplicial lemma `SSet.ιHomology₀_homology₀Iso_hom` applies.
   change SSet.ιHomology₀ R (TopCat.toSSetObj₀Equiv.symm x) ≫
     ((TopCat.toSSet.obj X).homology₀Iso R ≪≫
       (sigmaConst.obj R).mapIso TopCat.zerothHomotopyEquiv.toIso.symm).hom = _
   simp [sigmaConst]
 
 /-- Morphisms out of zeroth singular homology are determined by their values on the classes of
-points: the singular counterpart of `TauCeti.SSet.homology₀_hom_ext`. -/
+points: the singular counterpart of `SSet.homology₀_hom_ext`. -/
 lemma singularHomology₀_hom_ext {X : TopCat.{w}} {Y : C}
     {f g : ((singularHomologyFunctor C 0).obj R).obj X ⟶ Y}
     (h : ∀ x : X, singularHomology₀Section R x ≫ f = singularHomology₀Section R x ≫ g) :

@@ -12,8 +12,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 
 A `1`-simplex of a simplicial set whose two faces agree is a `1`-cycle of its chain complex, and
 so has a class `TauCeti.SSet.ιHomology₁` in first simplicial homology with coefficients in `R`.
-This is the analogue in degree one of the vertex classes
-`TauCeti.SSet.ιHomology₀` in degree zero.
+This is the analogue in degree one of the vertex classes `SSet.ιHomology₀` in degree zero.
 -/
 
 public section
