@@ -209,7 +209,8 @@ theorem hasDerivAt_fderiv_apply_snd {u : E × 𝕜 → G} {a : E} {t : 𝕜}
       (hasDerivAt_prodMk_right a t)
 
 /-- The derivative along the line `r ↦ p + r • q` of a first derivative `fderiv 𝕜 u · v` is the
-second derivative of `u` in the direction `q`. -/
+second derivative `fderiv 𝕜 (fderiv 𝕜 u) (p + s • q)` applied to `q` and then `v`, i.e. the
+derivative in the direction `q` of `fderiv 𝕜 u · v`. -/
 theorem hasDerivAt_fderiv_apply_line {u : E → G} {p q : E} {s : 𝕜}
     (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (p + s • q)) (v : E) :
     HasDerivAt (fun r ↦ fderiv 𝕜 u (p + r • q) v) (fderiv 𝕜 (fderiv 𝕜 u) (p + s • q) q v) s := by
