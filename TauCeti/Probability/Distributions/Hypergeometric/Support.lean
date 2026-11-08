@@ -40,17 +40,8 @@ theorem support_hypergeometricMeasure (N K n : ℕ) :
       if K ≤ N ∧ n ≤ N then Icc (n - (N - K)) (min K n) else ∅ := by
   split_ifs with h
   · ext k
-    have hmass := hypergeometricMeasure_singleton_ne_zero_iff h.1 h.2 k
-    have hsupport : k ∈ (hypergeometricMeasure N K n).support ↔
-        hypergeometricMeasure N K n {k} ≠ 0 := by
-      rw [Measure.mem_support_iff_forall]
-      constructor
-      · intro hk
-        exact (hk {k} (by simp [nhds_discrete])).ne'
-      · intro hk U hU
-        exact (pos_iff_ne_zero.mpr hk).trans_le
-          (measure_mono (singleton_subset_iff.mpr (mem_nhds_discrete.mp hU)))
-    rw [hsupport, hmass]
+    rw [Measure.mem_support_iff_measure_singleton_ne_zero,
+      hypergeometricMeasure_singleton_ne_zero_iff h.1 h.2]
     simp only [mem_Icc, le_min_iff]
     omega
   · simp [hypergeometricMeasure_eq_zero_of_invalid h]
