@@ -37,9 +37,9 @@ and it commutes with base change along a map `R → S` compatible with `K → L`
   ring `R` with fraction field `K`.
 * `WeierstrassCurve.isIntegral_smul_of_exists_lift`: a change of variables whose `u⁻¹`, `r`, `s`
   and `t` lie in `R` preserves integrality.
-* `WeierstrassCurve.isIntegral_baseChange_smul` and
-  `WeierstrassCurve.integralModel_baseChange_smul`: a change of variables defined over `R` preserves
-  integrality, and acts on the integral model.
+* `WeierstrassCurve.isIntegral_baseChange_smul`, `WeierstrassCurve.isIntegral_baseChange_smul_iff`
+  and `WeierstrassCurve.integralModel_baseChange_smul`: a change of variables defined over `R`
+  preserves integrality in both directions, and acts on the integral model.
 * `WeierstrassCurve.IsIntegral.of_isScalarTower`: integrality passes to a larger ring of the
   tower.
 * `WeierstrassCurve.integralModel_eq_of_baseChange_eq`: the integral model is the equation over
@@ -270,6 +270,19 @@ instance isIntegral_baseChange_smul (R : Type*) [CommRing R] {K : Type*} [Field 
     [Algebra R K] (W : WeierstrassCurve K) [IsIntegral R W] (C : VariableChange R) :
     IsIntegral R (C.baseChange K • W) :=
   ⟨⟨C • W.integralModel R, (baseChange_smul_integralModel R W C).symm⟩⟩
+
+/-- **Integrality is invariant under a change of variables defined over `R`**: such a change is
+invertible over `R`, so `C • W` is integral exactly when `W` is. -/
+@[simp]
+theorem isIntegral_baseChange_smul_iff (R : Type*) [CommRing R] {K : Type*} [Field K]
+    [Algebra R K] (W : WeierstrassCurve K) (C : VariableChange R) :
+    IsIntegral R (C.baseChange K • W) ↔ IsIntegral R W :=
+  ⟨fun _ ↦ by
+    have hinv : C⁻¹.baseChange K = (C.baseChange K)⁻¹ :=
+      map_inv (VariableChange.mapHom (algebraMap R K)) C
+    have := isIntegral_baseChange_smul R (C.baseChange K • W) C⁻¹
+    rwa [hinv, inv_smul_smul] at this,
+   fun _ ↦ inferInstance⟩
 
 /-- **The integral model of `C • W`, for a change of variables `C` defined over `R`, is `C`
 applied to the integral model of `W`.** When `R → K` is injective an integral model is unique,

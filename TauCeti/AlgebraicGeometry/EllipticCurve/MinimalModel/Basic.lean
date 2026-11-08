@@ -351,12 +351,7 @@ directions. -/
 theorem isMinimal_baseChange_smul_iff (W : WeierstrassCurve K) (C : VariableChange R) :
     IsMinimal R (C.baseChange K • W) ↔ IsMinimal R W := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨V, hV⟩ := (inferInstance : IsIntegral R (C.baseChange K • W))
-    have : IsIntegral R W := ⟨C⁻¹ • V, by
-      have hinv : C⁻¹.baseChange K = (C.baseChange K)⁻¹ :=
-        map_inv (VariableChange.mapHom (algebraMap R K)) C
-      rw [WeierstrassCurve.baseChange, ← map_variableChange, ← VariableChange.baseChange, hinv,
-        ← WeierstrassCurve.baseChange, ← hV, inv_smul_smul]⟩
+  · have : IsIntegral R W := (isIntegral_baseChange_smul_iff R W C).mp inferInstance
     exact isMinimal_of_valuation_Δ_eq_of_isMinimal_smul R (C.baseChange K)⁻¹ (inv_smul_smul _ _)
       (valuation_Δ_baseChange_smul R W C).symm
   · exact isMinimal_baseChange_smul R W C
