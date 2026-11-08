@@ -23,6 +23,7 @@ the symbol calculus needs:
 * `FrequencyCutoff.ofContDiffBump`: `1 - f` is a frequency cutoff for a smooth bump `f` with
   `1 ≤ f.rIn` and `f.rOut ≤ 2`, so frequency cutoffs exist whenever `E` has smooth bump functions
   (for instance in every inner product space and every finite-dimensional space);
+* the dilated cutoff `ξ ↦ χ(ξ / t)` vanishes for `‖ξ‖ ≤ t` and equals `1` for `‖ξ‖ ≥ 2 |t|`;
 * every iterated derivative of a cutoff vanishes on the closed unit ball, and every iterated
   derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
   annulus `1 ≤ ‖ξ‖ ≤ 2`;
@@ -101,6 +102,20 @@ theorem le_one (ξ : E) : χ ξ ≤ 1 :=
 theorem norm_le_one (ξ : E) : ‖χ ξ‖ ≤ 1 := by
   rw [Real.norm_of_nonneg (χ.nonneg ξ)]
   exact χ.le_one ξ
+
+/-- The cutoff `ξ ↦ χ(ξ / t)` dilated to the radius `t` vanishes for `‖ξ‖ ≤ t`. -/
+theorem apply_inv_smul_eq_zero_of_norm_le {t : ℝ} {ξ : E} (hξ : ‖ξ‖ ≤ t) : χ (t⁻¹ • ξ) = 0 := by
+  have ht : 0 ≤ t := (norm_nonneg ξ).trans hξ
+  refine χ.apply_eq_zero_of_norm_le_one ?_
+  rw [norm_smul, norm_inv, Real.norm_of_nonneg ht]
+  exact inv_mul_le_one_of_le₀ hξ ht
+
+/-- The cutoff `ξ ↦ χ(ξ / t)` dilated by `t ≠ 0` equals `1` for `‖ξ‖ ≥ 2 |t|`. -/
+theorem apply_inv_smul_eq_one_of_two_mul_abs_le_norm {t : ℝ} (ht : t ≠ 0) {ξ : E}
+    (hξ : 2 * |t| ≤ ‖ξ‖) : χ (t⁻¹ • ξ) = 1 := by
+  refine χ.apply_eq_one_of_two_le_norm ?_
+  rw [norm_smul, norm_inv, Real.norm_eq_abs, le_inv_mul_iff₀ (abs_pos.2 ht), mul_comm]
+  exact hξ
 
 /-- A frequency cutoff vanishes near every point of the open unit ball. -/
 theorem eventuallyEq_zero_of_norm_lt_one {ξ : E} (hξ : ‖ξ‖ < 1) : (χ : E → ℝ) =ᶠ[𝓝 ξ] 0 := by

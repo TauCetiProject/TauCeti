@@ -472,6 +472,17 @@ theorem mixedDeriv_congr_of_eventually {x : CoordinateSpace n}
     rw [show (fun η => a (y, η)) = fun η => b (y, η) from funext hy]
   rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
 
+/-- Mixed derivatives at the frequency `ξ` only depend on the values at frequencies near `ξ`: if
+`a` and `b` agree for all positions at all frequencies near `ξ`, then so do all their mixed
+derivatives at `ξ`. -/
+theorem mixedDeriv_congr_of_eventually_snd {ξ : CoordinateSpace n}
+    (h : ∀ᶠ η in nhds ξ, ∀ y, a (y, η) = b (y, η)) (α β : List (Fin n)) (x : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ :=
+    funext fun y => (Filter.EventuallyEq.coordinateDeriv (h.mono fun η hη => hη y) β).eq_of_nhds
+  rw [mixedDeriv_def, mixedDeriv_def, h']
+
 /-- If `a` vanishes for all frequencies at all positions near `x`, then so do all its mixed
 derivatives at `x`. -/
 theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}

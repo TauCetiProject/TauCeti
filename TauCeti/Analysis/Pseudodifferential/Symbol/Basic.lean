@@ -89,6 +89,19 @@ theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
     0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
 
+/-- On frequencies `‖ξ‖ ≥ t > 0`, the weight `⟨ξ⟩^(m - r)` of order `m ≤ m'` is at most
+`t ^ (m - m') ⟨ξ⟩^(m' - r)`. -/
+theorem rpow_weight_le_rpow_mul_rpow_weight {t : ℝ} (ht : 0 < t) {ξ : CoordinateSpace n}
+    (hξ : t ≤ ‖ξ‖) {m m' : ℝ} (h : m ≤ m') (r : ℝ) :
+    (1 + ‖ξ‖ ^ 2) ^ ((m - r) / 2) ≤ t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - r) / 2) := by
+  rw [show (m - r) / 2 = (m - m') / 2 + (m' - r) / 2 by ring, Real.rpow_add (by positivity)]
+  refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+  calc (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) ≤ (t ^ 2) ^ ((m - m') / 2) :=
+        Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by linarith)
+    _ = t ^ (m - m') := by
+        rw [← Real.rpow_natCast, ← Real.rpow_mul ht.le]
+        ring_nf
+
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
 maps `a` such that on every compact set `K` of positions and for all words `α`, `β` of coordinate
@@ -263,6 +276,11 @@ instance : AddCommGroup (Symbol n V W m) :=
 instance : Module ℂ (Symbol n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
+
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ : Symbol n V W m →+ _) a s
 
 theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     (a + b).IsUniform := by
