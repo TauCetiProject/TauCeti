@@ -66,7 +66,7 @@ conjugates by a partial diffeomorphism `Θ` of normed spaces: if a diffeomorphis
   diffeomorphism of the model space relating the coordinate expressions of two forms in a chart
   gives a partial diffeomorphism of the manifold relating the forms.
 * `TauCeti.exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj`: conjugating a
-  pullback identity of flat two-forms by a partial diffeomorphism.
+  pullback identity of flat `k`-forms by a partial diffeomorphism.
 
 ## References
 
@@ -208,7 +208,8 @@ diffeomorphism from `F` to `E`, and let `Ψ` be a diffeomorphism of `F` which ma
 `Θ ∘ Ψ ∘ Θ⁻¹`, defined on `Θ '' O`, is a `C^r` partial diffeomorphism of `E` which pulls `ω₁` back
 to `ω₀` on its source. -/
 theorem exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj
-    {ω₀ ω₁ : E → E [⋀^Fin 2]→L[ℝ] ℝ} {r : ℕ∞} (hr : 1 ≤ r)
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {ω₀ ω₁ : E → E [⋀^Fin k]→L[ℝ] G}
+    {r : ℕ∞} (hr : 1 ≤ r)
     (Θ : OpenPartialHomeomorph F E) (hΘ : ContDiffOn ℝ r Θ Θ.source)
     (hΘsymm : ContDiffOn ℝ r Θ.symm Θ.target) (Ψ : F ≃ₘ^r⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ F) {O : Set F}
     (hO : IsOpen O) (hOΘ : O ⊆ Θ.source) (hΨO : MapsTo Ψ O Θ.source)
@@ -259,7 +260,7 @@ theorem exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj
     exact (((hd _ (Θ.map_target hxt)).comp x hdsymm).congr_of_eventuallyEq heq.symm).unique
       (hasFDerivAt_id x)
   ext v
-  have h := congrArg (fun A : F [⋀^Fin 2]→L[ℝ] ℝ ↦ A (fun i ↦ fderiv ℝ Θ.symm x (v i)))
+  have h := congrArg (fun A : F [⋀^Fin k]→L[ℝ] G ↦ A (fun i ↦ fderiv ℝ Θ.symm x (v i)))
     (hΨ _ hxO)
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def] at h
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def, hΦd,
