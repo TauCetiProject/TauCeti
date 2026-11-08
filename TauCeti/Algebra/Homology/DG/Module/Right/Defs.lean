@@ -155,19 +155,25 @@ theorem op_map_smul_mem_range_of_map_eq_zero (hM : IsDGRightModule h ℳ dM) (a 
   exact key
 
 /-- The right action of a cycle of the algebra, twisted by the Koszul sign, anticommutes with the
-differential of the module, on a homogeneous element. -/
+differential of the module. -/
 theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (ha : d a = 0)
-    {k : ℤ} {x : M} (hx : x ∈ ℳ k) :
+    (x : M) :
     op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) =
       -dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) := by
-  have hx' : x ∈ (InternalGrading.ofDecomposition ℳ).piece k := by
-    rwa [InternalGrading.ofDecomposition_piece]
-  have hdx : dM x ∈ (InternalGrading.ofDecomposition ℳ).piece (k + 1) := by
-    rw [InternalGrading.ofDecomposition_piece]
-    exact hM.isHomogeneous.map_mem hx
-  rw [InternalGrading.koszulTwist_one_apply_of_mem _ hdx,
-    InternalGrading.koszulTwist_one_apply_of_mem _ hx', hM.leibniz_of_map_eq_zero _ ha, map_smul]
-  simp [Int.negOnePow_succ, smul_comm (op a)]
+  induction x using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous k x =>
+    have hx' : (x : M) ∈ (InternalGrading.ofDecomposition ℳ).piece k := by
+      rw [InternalGrading.ofDecomposition_piece]
+      exact x.2
+    have hdx : dM x ∈ (InternalGrading.ofDecomposition ℳ).piece (k + 1) := by
+      rw [InternalGrading.ofDecomposition_piece]
+      exact hM.isHomogeneous.map_mem x.2
+    rw [InternalGrading.koszulTwist_one_apply_of_mem _ hdx,
+      InternalGrading.koszulTwist_one_apply_of_mem _ hx', hM.leibniz_of_map_eq_zero _ ha,
+      map_smul]
+    simp [Int.negOnePow_succ, smul_comm (op a)]
+  | add x y hx hy => simp [hx, hy, smul_add, add_comm]
 
 end IsDGRightModule
 
