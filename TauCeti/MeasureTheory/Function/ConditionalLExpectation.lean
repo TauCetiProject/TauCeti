@@ -13,7 +13,8 @@ public import Mathlib.MeasureTheory.Function.ConditionalLExpectation
 This file supplies the tower and measurable-multiplier laws for native `condLExp`, and
 Bayes' formula for a measure given by a nonnegative density. The multiplication form does
 not require the density to be strictly positive. The quotient form holds almost everywhere
-for the new measure when it is finite. Observables may have infinite expectation.
+for the new measure when its restriction to the conditioning sigma-algebra is sigma-finite.
+Observables may have infinite expectation.
 
 The density-restriction identity identifies the conditional density on a sub-sigma-algebra.
 It allows weighted integral identities to be used before any integrability or cancellation
@@ -35,13 +36,16 @@ variable {Ω : Type*} {m₀ m m₁ : MeasurableSpace Ω} {P : Measure[m₀] Ω}
   {X Z G : Ω → ℝ≥0∞}
 
 /-- Conditioning successively on a larger and then a smaller sigma-algebra is the same
-as conditioning on the smaller one. Both trimmed measures must be sigma-finite. -/
-theorem condLExp_condLExp_of_le (hm : m ≤ m₀) (hm₁ : m₁ ≤ m₀) (hle : m ≤ m₁)
-    [SigmaFinite (P.trim hm)] [SigmaFinite (P.trim hm₁)] :
+as conditioning on the smaller one. The larger trimmed measure must be sigma-finite. -/
+theorem condLExp_condLExp_of_le (hle : m ≤ m₁) (hm₁ : m₁ ≤ m₀)
+    [SigmaFinite (P.trim hm₁)] :
     P⁻[P⁻[X | m₁] | m] =ᵐ[P] P⁻[X | m] := by
-  refine ae_eq_condLExp hm P X (measurable_condLExp _ _ _) ?_
+  by_cases hP : SigmaFinite (P.trim (hle.trans hm₁))
+  swap; · simp_rw [condLExp_of_not_sigmaFinite (hle.trans hm₁) hP]; rfl
+  refine ae_eq_condLExp (hle.trans hm₁) P X (measurable_condLExp _ _ _) ?_
   intro s hs
-  rw [setLIntegral_condLExp hm P _ hs, setLIntegral_condLExp hm₁ P _ (hle s hs)]
+  rw [setLIntegral_condLExp (hle.trans hm₁) P _ hs,
+    setLIntegral_condLExp hm₁ P _ (hle s hs)]
 
 /-- Restricting a measure with density to a sub-sigma-algebra replaces its density by
 its conditional expectation. No measurability of the original density is needed here. -/
@@ -83,7 +87,7 @@ theorem setLIntegral_mul_condLExp (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
 Neither boundedness nor integrability of the factor is required. -/
 theorem condLExp_mul_of_measurable_left (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
     (hG : Measurable[m] G) (hX : AEMeasurable[m₀] X P) :
-    P⁻[fun ω ↦ G ω * X ω | m] =ᵐ[P] fun ω ↦ G ω * P⁻[X | m] ω := by
+    P⁻[G * X | m] =ᵐ[P] G * P⁻[X | m] := by
   refine (ae_eq_condLExp hm P _ (hG.mul (measurable_condLExp _ _ _)) ?_).symm
   intro s hs
   exact setLIntegral_mul_condLExp hm hX hG hs
@@ -93,14 +97,13 @@ conditional density vanishes, and allows observables of infinite expectation. -/
 theorem condLExp_withDensity_mul (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
     [SigmaFinite ((P.withDensity Z).trim hm)]
     (hZ : AEMeasurable[m₀] Z P) (hX : AEMeasurable[m₀] X (P.withDensity Z)) :
-    (fun ω ↦ P⁻[Z | m] ω * (P.withDensity Z)⁻[X | m] ω)
-      =ᵐ[P] P⁻[fun ω ↦ Z ω * X ω | m] := by
+    P⁻[Z | m] * (P.withDensity Z)⁻[X | m] =ᵐ[P] P⁻[Z * X | m] := by
   refine ae_eq_condLExp hm P _ ((measurable_condLExp _ _ _).mul
     (measurable_condLExp _ _ _)) ?_
   intro s hs
   calc
     _ = ∫⁻ ω in s, (P.withDensity Z)⁻[X | m] ω * Z ω ∂P := by
-      simpa only [mul_comm] using
+      simpa only [Pi.mul_apply, mul_comm] using
         setLIntegral_mul_condLExp hm hZ (measurable_condLExp m (P.withDensity Z) X) hs
     _ = ∫⁻ ω in s, (P.withDensity Z)⁻[X | m] ω ∂P.withDensity Z := by
       rw [setLIntegral_withDensity_eq_lintegral_mul₀ hZ
@@ -119,20 +122,33 @@ theorem condLExp_ne_zero_withDensity (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
   rw [← trim_withDensity_eq_withDensity_condLExp hm] at h
   exact ae_of_ae_trim hm h
 
-/-- Nonnegative Bayes' formula for a finite measure obtained by a density change.
+/-- Nonnegative Bayes' formula for a density change with sigma-finite trimmed measure.
 The quotient identity holds almost everywhere for the new measure, without assuming
 strict positivity of the density. Under equivalence it therefore also holds almost
 everywhere for the base measure. No integrability of the observable is required. -/
 theorem condLExp_withDensity (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
-    [IsFiniteMeasure (P.withDensity Z)]
+    [SigmaFinite ((P.withDensity Z).trim hm)]
     (hZ : AEMeasurable[m₀] Z P) (hX : AEMeasurable[m₀] X (P.withDensity Z)) :
-    (P.withDensity Z)⁻[X | m]
-      =ᵐ[P.withDensity Z] fun ω ↦ P⁻[fun ω ↦ Z ω * X ω | m] ω / P⁻[Z | m] ω := by
-  have hfinite : ∫⁻ ω, Z ω ∂P ≠ ∞ := isFiniteMeasure_withDensity_iff.mp inferInstance
+    (P.withDensity Z)⁻[X | m] =ᵐ[P.withDensity Z] P⁻[Z * X | m] / P⁻[Z | m] := by
+  let Q := (P.withDensity Z).trim hm
+  have htop : ∀ᵐ ω ∂Q, P⁻[Z | m] ω ≠ ∞ := by
+    have hpieces : ∀ n, ∀ᵐ ω ∂Q.restrict (spanningSets Q n), P⁻[Z | m] ω ≠ ∞ := by
+      intro n
+      have hs := measurableSet_spanningSets Q n
+      have hfinite : ∫⁻ ω in spanningSets Q n, P⁻[Z | m] ω ∂P.trim hm ≠ ∞ := by
+        rw [← withDensity_apply _ hs, ← trim_withDensity_eq_withDensity_condLExp hm]
+        exact (measure_spanningSets_lt_top Q n).ne
+      have hQ : Q = (P.trim hm).withDensity P⁻[Z | m] :=
+        trim_withDensity_eq_withDensity_condLExp hm
+      rw (occs := .pos [1]) [hQ]
+      rw [restrict_withDensity hs]
+      exact (withDensity_absolutelyContinuous _ _).ae_le
+        ((ae_lt_top (measurable_condLExp _ _ _) hfinite).mono fun _ h ↦ h.ne)
+    rw [← Measure.restrict_univ (μ := Q), ← iUnion_spanningSets Q]
+    exact (ae_restrict_iUnion_iff _ _).2 hpieces
   filter_upwards [(withDensity_absolutelyContinuous P Z).ae_eq
     (condLExp_withDensity_mul hm hZ hX), condLExp_ne_zero_withDensity hm,
-    (withDensity_absolutelyContinuous P Z).ae_le (condLExp_ne_top (mΩ := m) hfinite)]
-    with ω hmul hzero htop
-  exact (ENNReal.eq_div_iff hzero htop).2 hmul
+    ae_of_ae_trim hm htop] with ω hmul hzero hfinite
+  exact (ENNReal.eq_div_iff hzero hfinite).2 hmul
 
 end TauCeti.MeasureTheory
