@@ -17,7 +17,7 @@ as time followed by initial point.  The domain and value are adapters for
 domain-aware group law records both the value equation and the condition that the composite time
 remains in the interval of existence.
 
-For finite-dimensional model spaces, the existing smooth-dependence theorem for maximal integral
+For complete normed model spaces, the existing smooth-dependence theorem for maximal integral
 curves gives joint openness of the domain and joint smoothness of the flow, so flowing a `C^n`
 family of points for a `C^n` family of times is again `C^n`.  Along a trajectory, a function changes
 at the rate of its derivative in the direction of the vector field.  The escape theorem says that a
@@ -27,8 +27,8 @@ maximal trajectory approaching a finite right endpoint eventually leaves every c
 
 * `TauCeti.flowDomain`: the domain of the maximal flow, in `(time, point)` order.
 * `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`.
-* `TauCeti.isOpen_flowDomain`: openness of the domain in finite dimensions.
-* `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow in finite dimensions.
+* `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
+* `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.flowOf_add`: the domain-aware group law.
@@ -141,18 +141,28 @@ theorem curveVelocity_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I 
       hc.hasMFDerivAt.hasMFDerivWithinAt uniqueDiffWithinAt_univ
 
 omit [CompleteSpace E] in
-/-- In finite dimensions, the domain of the maximal flow is jointly open in time and initial
-point. -/
-theorem isOpen_flowDomain [FiniteDimensional ℝ E] [IsManifold I 1 M]
+/-- A maximal-flow trajectory is differentiable at every time in its domain. -/
+theorem mdifferentiableAt_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    MDifferentiableAt 𝓘(ℝ) I (fun s ↦ flowOf v s x) t := by
+  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
+  exact ((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom).hasMFDerivAt.mdifferentiableAt
+
+/-- On a complete normed model space, the domain of the maximal flow is jointly open in time
+and initial point. -/
+theorem isOpen_flowDomain [IsManifold I 1 M]
     {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     IsOpen (flowDomain v) := by
   simpa only [flowDomain] using
     (isOpen_maximalIntegralCurveFlowDomain hv).preimage continuous_swap
 
-omit [CompleteSpace E] in
-/-- In finite dimensions, a `C^n` vector field has a jointly `C^n` maximal flow on its domain. -/
-theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+/-- On a complete normed model space, a `C^n` vector field has a jointly `C^n` maximal flow on
+its domain. -/
+theorem contMDiffOn_flowOf {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold I 1 M] [IsManifold I n M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     ContMDiffOn (𝓘(ℝ, ℝ).prod I) I n (fun p : ℝ × M ↦ flowOf v p.1 p.2)
@@ -170,10 +180,9 @@ theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
   rw [hfun, hdomain] at h
   exact h
 
-omit [CompleteSpace E] in
-/-- In finite dimensions, flowing a `C^n` family of initial points for a `C^n` family of times is
-`C^n`, wherever the flow is defined. -/
-theorem contMDiffAt_flowOf_comp [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+/-- On a complete normed model space, flowing a `C^n` family of initial points for a `C^n` family
+of times is `C^n`, wherever the flow is defined. -/
+theorem contMDiffAt_flowOf_comp {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold I 1 M] [IsManifold I n M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']

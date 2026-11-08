@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 /-!
 # Zero finitely generated modules
 
-A finitely generated module with subsingleton carrier is a zero object of the category of
-finitely generated modules. This criterion supplies the zero components of finite-projective
-matrix factorizations.
+A finitely generated module is a zero object of the category of finitely generated modules
+exactly when its carrier is subsingleton. The zero object of `FGModuleCat` itself comes from the
+`ContainsZero` instance for `ModuleCat.isFG` in `TauCeti.Algebra.Category.FGModuleCat.Basic`.
 -/
 
 public section
@@ -23,15 +23,10 @@ open CategoryTheory CategoryTheory.Limits
 
 universe v u
 
-/-- A finitely generated module with subsingleton carrier is a zero object. -/
-theorem _root_.FGModuleCat.isZero_of_subsingleton {R : Type u} [Ring R] (M : FGModuleCat.{v} R)
-    (hM : Subsingleton M) : IsZero M := by
-  apply IsZero.of_full_of_faithful_of_isZero (ObjectProperty.ι _)
-  exact ModuleCat.isZero_iff_subsingleton.mpr hM
-
-/-- The zero module gives a zero object among finitely generated modules over any ring. -/
-instance _root_.FGModuleCat.hasZeroObject {R : Type u} [Ring R] :
-    HasZeroObject (FGModuleCat.{v} R) :=
-  (FGModuleCat.isZero_of_subsingleton (FGModuleCat.of R PUnit) inferInstance).hasZeroObject
+/-- A finitely generated module is a zero object exactly when its carrier is subsingleton. -/
+theorem _root_.FGModuleCat.isZero_iff_subsingleton {R : Type u} [Ring R]
+    {M : FGModuleCat.{v} R} : IsZero M ↔ Subsingleton M := by
+  rw [← ModuleCat.isZero_iff_subsingleton]
+  exact ⟨(ObjectProperty.ι _).map_isZero, .of_full_of_faithful_of_isZero (ObjectProperty.ι _) _⟩
 
 end TauCeti

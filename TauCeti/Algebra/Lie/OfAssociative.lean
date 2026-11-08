@@ -126,10 +126,10 @@ theorem leftRegularRep_comp_mulRight (q : L →ₗ⁅R⁆ A) (x : L) (b : A) :
 
 /-- **Left ideals are invariant** under the left-regular representation: the action is by left
 multiplication, which is exactly what a left ideal absorbs. -/
-theorem leftRegularRep_mem_of_mem (q : L →ₗ⁅R⁆ A) (I : Submodule A A) (x : L) {a : A}
+theorem leftRegularRep_mem_of_mem (q : L →ₗ⁅R⁆ A) (I : Ideal A) (x : L) {a : A}
     (ha : a ∈ I) : leftRegularRep q x a ∈ I := by
-  rw [leftRegularRep_apply, ← smul_eq_mul]
-  exact I.smul_mem _ ha
+  rw [leftRegularRep_apply]
+  exact I.mul_mem_left (q x) ha
 
 /-- **The inner derivation action is the left-regular action minus right multiplication.** The two
 `L`-module structures on `A` that `q` produces are therefore genuinely different; only the
