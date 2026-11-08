@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
+public import Mathlib.RingTheory.RingHom.Unramified
+import Mathlib.RingTheory.Unramified.LocalRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -21,7 +23,8 @@ Kummer ring `A[t]/(t ^ n − π)` maps to the Abhyankar model by sending `t` to 
 At every maximal ideal of the model, the maximal ideal of the Kummer ring
 generates the maximal ideal of the localization. Thus its ramification
 index is one. When the residue extension of `B/A` is algebraic separable, so is
-that of each of these localizations over the Kummer ring.
+that of each of these localizations over the Kummer ring. If `A → B` is also essentially
+of finite type, these localizations are formally unramified over the Kummer ring.
 
 This is the Kummer base-change computation in Abhyankar's lemma for discrete
 valuation rings, Stacks Project, Lemma 15.116.4 (Tag 0BRM). The model has already
@@ -126,10 +129,8 @@ theorem isSeparable_abhyankarModelKummerHom
   let := ((algebraMap _ S).comp (abhyankarModelKummerHom (d := d) hπB).toRingHom).toAlgebra
   have : IsLocalHom (algebraMap R S) :=
     isLocalHom_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
-  have : IsScalarTower A R S := .of_algebraMap_eq fun a ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes,
-      ← IsScalarTower.algebraMap_apply A (abhyankarModel ϖ u e d) S]
+  have : IsScalarTower A R S := .of_algHom
+    ((IsScalarTower.toAlgHom A (abhyankarModel ϖ u e d) S).comp (abhyankarModelKummerHom hπB))
   -- Finiteness makes every maximal ideal of the model lie over the closed point of `B`.
   obtain ⟨_, hrank⟩ := abhyankarModel_free ϖ u (Nat.pos_of_ne_zero he₀)
     (Nat.pos_of_ne_zero hd)
@@ -164,6 +165,37 @@ theorem isSeparable_abhyankarModelKummerHom
     isLocalHom_of_comp (algebraMap A R) (algebraMap R S)
   exact Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField R)
     (ResidueField S)
+
+include hπ hϖ hu he hd in
+/-- Each maximal localization of the Abhyankar model is formally unramified over the Kummer
+root ring `A[π^(1/(ed))]` when `A → B` is essentially of finite type with separable residue
+extension. No invertibility of `d` is required. This is the Kummer-base local computation
+in SGA 1, Exposé X, Lemme 3.6 and Stacks, Lemma 15.116.4 (0BRM). -/
+theorem formallyUnramified_abhyankarModelKummerHom
+    [IsLocalHom (algebraMap A B)] [Algebra.EssFiniteType A B]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    ((algebraMap _ (Localization.AtPrime M)).comp
+      (abhyankarModelKummerHom (d := d) hπB).toRingHom).FormallyUnramified := by
+  let R := standardTameCover A π (e * d)
+  let D := abhyankarModel ϖ u e d
+  let S := Localization.AtPrime M
+  have := standardTameCover_isLocalRing ((mem_maximalIdeal π).mpr hπ.not_isUnit)
+    (mul_ne_zero he.neZero_natCast.out hd)
+  let := ((algebraMap _ S).comp (abhyankarModelKummerHom (d := d) hπB).toRingHom).toAlgebra
+  have hmap : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S :=
+    map_maximalIdeal_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
+  have : IsLocalHom (algebraMap R S) :=
+    isLocalHom_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
+  have : Algebra.IsSeparable (ResidueField R) (ResidueField S) :=
+    isSeparable_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
+  have : IsScalarTower A R S := .of_algHom
+    ((IsScalarTower.toAlgHom A D S).comp (abhyankarModelKummerHom hπB))
+  have : Algebra.FiniteType B D := inferInstance
+  have : Algebra.EssFiniteType A D := .comp A B D
+  have : Algebra.EssFiniteType A S := .comp A D S
+  have : Algebra.EssFiniteType R S := .of_comp A R S
+  exact RingHom.formallyUnramified_algebraMap.mpr
+    (Algebra.FormallyUnramified.of_map_maximalIdeal hmap)
 
 end Local
 
