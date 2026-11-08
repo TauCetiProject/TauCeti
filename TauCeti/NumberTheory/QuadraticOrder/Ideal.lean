@@ -103,9 +103,12 @@ theorem exists_rational_axis_generators (D : ℤ) [Fact (¬ IsSquare D)]
       (QuadraticAlgebra.finrank_eq_two (D : ℚ) 0))
   let r₀ := (b 0 : QuadraticAlgebra ℚ (D : ℚ) 0).im
   let r₁ := (b 1 : QuadraticAlgebra ℚ (D : ℚ) 0).im
-  have hrat : r₀ ≠ 0 ∨ r₁ ≠ 0 :=
-    im_ne_zero_or_im_ne_zero_of_span_range_eq_top (fun i ↦ (b i : QuadraticAlgebra ℚ (D : ℚ) 0))
+  have hrat : r₀ ≠ 0 ∨ r₁ ≠ 0 := by
+    obtain ⟨i, hi⟩ := QuadraticAlgebra.exists_im_ne_zero_of_span_range_eq_top
+      (fun i ↦ (b i : QuadraticAlgebra ℚ (D : ℚ) 0))
       (GlobalNumberFields.NumberFieldOrder.span_rat_range_basis hI b)
+    fin_cases i
+    exacts [Or.inl hi, Or.inr hi]
   -- A reduced rational ratio gives a primitive integral relation on imaginary coordinates.
   obtain ⟨u, v, huv, hprim⟩ := Rat.exists_isCoprime_intCast_mul_add_intCast_mul_eq_zero r₀ r₁
   -- Extend that primitive relation to a unimodular change of integral generators.
