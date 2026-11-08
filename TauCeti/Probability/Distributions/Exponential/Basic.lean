@@ -54,6 +54,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
   integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
+* `integrable_exp_mul_centered_expMeasure_iff`, `mgf_centered_expMeasure` — the centered
+  exponential integrability threshold and moment-generating function;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
@@ -320,6 +322,54 @@ theorem mgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
     mgf id (expMeasure r) t = r / (r - t) := by
   rw [expMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
     one_sub_div hr.ne', inv_div]
+
+/-- A centered exponential law has an exponential moment exactly below its rate. -/
+@[simp]
+theorem integrable_exp_mul_centered_expMeasure_iff (hr : 0 < r) (t : ℝ) :
+    Integrable (fun x : ℝ => exp (t * (x - r⁻¹))) (expMeasure r) ↔ t < r := by
+  have hfun : (fun x : ℝ => exp (t * (x - r⁻¹))) =
+      fun x => exp (-(t * r⁻¹)) * exp (t * x) := by
+    funext x
+    rw [← exp_add]
+    congr 1
+    ring
+  rw [hfun, integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (exp_ne_zero _)),
+    integrable_exp_mul_expMeasure_iff hr]
+
+/-- The centered exponential law has no finite exponential moment at its rate. -/
+theorem not_integrable_exp_mul_centered_expMeasure (hr : 0 < r) :
+    ¬ Integrable (fun x : ℝ => exp (r * (x - r⁻¹))) (expMeasure r) := by
+  exact (integrable_exp_mul_centered_expMeasure_iff hr r).not.mpr (lt_irrefl r)
+
+/-- The centered MGF of a positive-rate exponential law, on its integrability domain. -/
+theorem mgf_centered_expMeasure (hr : 0 < r) (ht : t < r) :
+    mgf (fun x : ℝ => x - r⁻¹) (expMeasure r) t =
+      exp (-(t / r)) * (r / (r - t)) := by
+  calc
+    mgf (fun x : ℝ => x - r⁻¹) (expMeasure r) t =
+        mgf id (expMeasure r) t * exp (t * (-r⁻¹)) := by
+      simpa only [sub_eq_add_neg, id_eq] using
+        (mgf_add_const (X := id) (μ := expMeasure r) (t := t) (-r⁻¹))
+    _ = exp (-(t / r)) * (r / (r - t)) := by
+      rw [mgf_id_expMeasure hr ht]
+      simp only [div_eq_mul_inv, mul_neg]
+      ring
+
+/-- The centered standard exponential has an exponential moment exactly below the rate. -/
+@[simp]
+theorem integrable_exp_mul_centered_expMeasure_one_iff (t : ℝ) :
+    Integrable (fun x : ℝ => exp (t * (x - 1))) (expMeasure 1) ↔ t < 1 := by
+  simpa using integrable_exp_mul_centered_expMeasure_iff (r := 1) one_pos t
+
+/-- The centered standard exponential has no finite exponential moment at `t = 1`. -/
+theorem not_integrable_exp_centered_expMeasure_one :
+    ¬ Integrable (fun x : ℝ => exp (x - 1)) (expMeasure 1) := by
+  simpa using not_integrable_exp_mul_centered_expMeasure (r := 1) one_pos
+
+/-- The centered MGF of the standard exponential law, on its integrability domain. -/
+theorem mgf_centered_expMeasure_one {t : ℝ} (ht : t < 1) :
+    mgf (fun x : ℝ => x - 1) (expMeasure 1) t = exp (-t) / (1 - t) := by
+  simpa [div_eq_mul_inv] using mgf_centered_expMeasure (r := 1) one_pos ht
 
 /-- The cumulant-generating function of an exponential law with positive rate. -/
 @[simp]
