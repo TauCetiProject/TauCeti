@@ -86,7 +86,7 @@ private theorem ord_sub_pos_iff_not_ord_add_pos (h2 : (2 : k) ≠ 0) {f : k[X]}
   obtain ⟨hD0, hS0⟩ := mul_ne_zero_iff.mp (hfac ▸ hG0)
   have hy0 : P.ord y = 0 := by
     have h := congrArg P.ord hy
-    rw [ord_pow, ord_algebraMap_eq_of_restrict_eq a hP hf0,
+    rw [ord_pow, ord_algebraMap_eq_of_restrict_eq (irreducible_X_sub_C a) hP hf0,
       multiplicity_eq_zero_of_not_dvd hfa] at h
     push_cast at h
     omega
@@ -102,7 +102,7 @@ private theorem ord_sub_pos_iff_not_ord_add_pos (h2 : (2 : k) ≠ 0) {f : k[X]}
     simpa using h
   have hsum : 0 < P.ord (y - algebraMap k F b) + P.ord (y + algebraMap k F b) := by
     rw [← P.ord_mul hD0 hS0, hfac]
-    exact ord_algebraMap_pos_of_restrict_eq a hP hg0 hg
+    exact ord_algebraMap_pos_of_restrict_eq (irreducible_X_sub_C a) hP hg0 hg
   have hdiff : (y + algebraMap k F b) + -(y - algebraMap k F b) = algebraMap k F (2 * b) := by
     simp only [map_mul, map_ofNat]
     ring
@@ -121,22 +121,6 @@ end Helpers
 section Helpers
 
 variable [FiniteDimensional (RatFunc k) F] [Algebra.IsSeparable (RatFunc k) F]
-
-/-- Away from the branch locus, a place over `x = a` is unramified over `k(x)`: it lies neither
-over infinity nor over a zero of `f`. -/
-private theorem ramificationIdx_eq_one_of_restrict_eq (h2 : (2 : k) ≠ 0) {f : k[X]}
-    (hf : Squarefree f) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
-    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {a : k}
-    (hfa : ¬X - C a ∣ f) {P : Place k F}
-    (hP : P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a)) :
-    ramificationIdx (RatFunc k) P = 1 := by
-  have hle : ¬1 < ramificationIdx (RatFunc k) P := by
-    rw [one_lt_ramificationIdx_iff_of_sq_eq h2 hf hgen hy P, hP]
-    rintro (⟨h, -⟩ | ⟨q, hq, hqf, hqQ⟩)
-    · exact adicOfIrreducible_ne_infty _ h
-    · exact hfa (((adicOfIrreducible_eq_adicOfIrreducible_iff _ hq).mp hqQ).dvd.trans hqf)
-  have := ramificationIdx_pos (RatFunc k) P
-  omega
 
 /-- Away from the branch locus, a point `(a, b)` of `y² = f(x)` has a place over `x = a` at which
 `y - b` vanishes and which is not fixed by the involution `y ↦ -y`. -/
@@ -190,7 +174,7 @@ theorem exists_ord_sub_pos_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Square
   have hfa : ¬X - C a ∣ f := by
     rw [dvd_iff_isRoot, IsRoot, ← hab]
     exact pow_ne_zero 2 hb
-  have he := ramificationIdx_eq_one_of_restrict_eq h2 hf hgen hy hfa hPQ
+  have he := ramificationIdx_eq_one_of_restrict_eq h2 hf hgen hy (irreducible_X_sub_C a) hfa hPQ
   refine ⟨P, hPQ, degree_eq_one_of_smul_ne (finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy)
     (degree_adicOfIrreducible_X_sub_C a) σ hPQ hne, he, ?_, hPD⟩
   have hxa : algebraMap (RatFunc k) F RatFunc.X - algebraMap k F a =
@@ -198,7 +182,7 @@ theorem exists_ord_sub_pos_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Square
     rw [map_sub, map_sub, RatFunc.algebraMap_X, RatFunc.algebraMap_C, ← RatFunc.algebraMap_eq_C,
       ← IsScalarTower.algebraMap_apply]
   rw [hxa]
-  exact ord_algebraMap_pos_of_restrict_eq a hPQ (X_sub_C_ne_zero a) dvd_rfl
+  exact ord_algebraMap_pos_of_restrict_eq (irreducible_X_sub_C a) hPQ (X_sub_C_ne_zero a) dvd_rfl
 
 end Place
 
