@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Order.Partition.Equipartition
+public import TauCeti.Data.Nat.RoundUp
+public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -64,40 +66,6 @@ theorem exists_embedding_prod_fin (P : Finpartition s) {m : ℕ}
   rw [hfst, Subtype.ext_iff]
   exact P.part_eq_iff_mem A.2
 
-/-- Rounding `M` up to a multiple of `q` overshoots by less than `q`. -/
-theorem exists_dvd_between_of_pos {q : ℕ} (hq : 0 < q) (M : ℕ) :
-    ∃ m, q ∣ m ∧ M ≤ m ∧ m < M + q := by
-  refine ⟨q * ((M + q - 1) / q), ⟨_, rfl⟩, ?_, ?_⟩
-  · have hrem := Nat.mod_lt (M + q - 1) hq
-    have hdiv := Nat.mod_add_div (M + q - 1) q
-    omega
-  · have := Nat.mul_div_le (M + q - 1) q
-    omega
-
-/-- The fibers of the first coordinate of `α × Fin m`, for `0 < m`, form a partition of the
-whole rectangle into `Fintype.card α` cells of size `m`. -/
-theorem exists_parts_eq_image_singleton_prod {α : Type*} [Fintype α] [DecidableEq α] {m : ℕ}
-    (hm : 0 < m) :
-    ∃ Q : Finpartition (univ : Finset (α × Fin m)),
-      Q.parts = univ.image (fun A : α ↦ {A} ×ˢ (univ : Finset (Fin m))) ∧
-      (∀ B ∈ Q.parts, #B = m) := by
-  classical
-  let cell (A : α) : Finset (α × Fin m) := {A} ×ˢ univ
-  have hfilter (x : α × Fin m) :
-      {y ∈ (univ : Finset (α × Fin m)) | x.1 = y.1} = cell x.1 := by
-    ext y
-    simp only [mem_filter, mem_univ, true_and, cell, mem_product, mem_singleton,
-      and_true, eq_comm]
-  have hparts : (ofSetoid (Setoid.ker (Prod.fst : α × Fin m → α))).parts =
-      univ.image cell := by
-    simp only [ofSetoid, ofSetSetoid_parts, Setoid.ker_def, hfilter]
-    ext B
-    simp only [mem_image, mem_univ, true_and]
-    exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩, fun ⟨A, hA⟩ ↦ ⟨(A, ⟨0, hm⟩), hA⟩⟩
-  refine ⟨_, hparts, fun B hB ↦ ?_⟩
-  obtain ⟨A, -, rfl⟩ := mem_image.1 (hparts ▸ hB)
-  simp [cell]
-
 /-- **Divisible padding of an equipartition.** A nonempty equipartition admits a cell-preserving
 embedding into a rectangle with common positive cell size `m` divisible by `q`. The fibers
 form an equipartition with exactly as many cells as the original partition, and fewer than
@@ -113,20 +81,24 @@ theorem IsEquipartition.exists_divisible_padding (hP : P.IsEquipartition) (hs : 
       Fintype.card (P.parts × Fin m) < #s + q * #P.parts := by
   classical
   -- Round the largest cell size up to a multiple of `q`.
-  obtain ⟨m, hqm, hmlo, hmhi⟩ := exists_dvd_between_of_pos hq (P.parts.sup card)
+  obtain ⟨m, hqm, hmlo, hmhi⟩ := Nat.exists_dvd_between_of_pos hq (P.parts.sup card)
   have hM : 0 < P.parts.sup card := by
     obtain ⟨A, hA⟩ := P.parts_nonempty hs.ne_empty
     exact (card_pos.2 (P.nonempty_of_mem_parts hA)).trans_le (le_sup hA)
   have hmpos := hM.trans_le hmlo
   obtain ⟨e, he⟩ := P.exists_embedding_prod_fin (m := m)
     (fun A hA ↦ (le_sup hA).trans hmlo)
-  obtain ⟨Q, hparts, hcard⟩ := exists_parts_eq_image_singleton_prod (α := P.parts) hmpos
+  have : Nonempty (Fin m) := ⟨⟨0, hmpos⟩⟩
+  obtain ⟨Q, hparts, hcard⟩ :=
+    TauCeti.exists_parts_eq_image_singleton_prod (α := P.parts) (β := Fin m)
+  simp only [Fintype.card_fin] at hcard
   have hinj : Function.Injective
       (fun A : P.parts ↦ {A} ×ˢ (univ : Finset (Fin m))) := by
     intro A B h
-    have : (A, (⟨0, hmpos⟩ : Fin m)) ∈ {B} ×ˢ (univ : Finset (Fin m)) := by
-      rw [← show {A} ×ˢ (univ : Finset (Fin m)) = {B} ×ˢ univ from h]; simp
-    simpa only [mem_product, mem_singleton, mem_univ, and_true] using this
+    have hmem : (A, (⟨0, hmpos⟩ : Fin m)) ∈ {A} ×ˢ (univ : Finset (Fin m)) := by simp
+    simp only at h
+    rw [h] at hmem
+    simpa only [mem_product, mem_singleton, mem_univ, and_true] using hmem
   refine ⟨m, e, Q, hmpos, hqm, ?_, ?_, hparts, hcard, ?_, ?_⟩
   · intro A B hA hB
     simp only [hcard A hA, hcard B hB]

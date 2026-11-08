@@ -9,6 +9,7 @@ public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.GroupWithZero.Basic
+public import Mathlib.Data.Fintype.Prod
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -56,7 +57,8 @@ of a finite partition of the image `f '' s` to a finite partition of `s`, which 
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
 of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
-inverse equivalence.
+inverse equivalence; and the partition of `α × β` into the fibres of the first coordinate
+(`TauCeti.exists_parts_eq_image_singleton_prod`).
 -/
 
 public section
@@ -992,3 +994,33 @@ theorem exists_comap_eq_iff {Q : Finpartition s} :
 end Comap
 
 end Finpartition
+
+namespace TauCeti
+
+open Finset Finpartition
+
+/-- The fibers of the first coordinate of `α × β`, for `β` nonempty, form a partition of the
+whole product into `Fintype.card α` cells of size `Fintype.card β`. -/
+theorem exists_parts_eq_image_singleton_prod {α β : Type*} [Fintype α] [DecidableEq α]
+    [Fintype β] [DecidableEq β] [Nonempty β] :
+    ∃ Q : Finpartition (univ : Finset (α × β)),
+      Q.parts = univ.image (fun A : α ↦ {A} ×ˢ (univ : Finset β)) ∧
+      (∀ B ∈ Q.parts, #B = Fintype.card β) := by
+  classical
+  let cell (A : α) : Finset (α × β) := {A} ×ˢ univ
+  have hfilter (x : α × β) :
+      {y ∈ (univ : Finset (α × β)) | x.1 = y.1} = cell x.1 := by
+    ext y
+    simp only [mem_filter, mem_univ, true_and, cell, mem_product, mem_singleton,
+      and_true, eq_comm]
+  have hparts : (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts =
+      univ.image cell := by
+    simp only [ofSetoid, ofSetSetoid_parts, Setoid.ker_def, hfilter]
+    ext B
+    simp only [mem_image, mem_univ, true_and]
+    exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩, fun ⟨A, hA⟩ ↦ ⟨(A, Classical.arbitrary β), hA⟩⟩
+  refine ⟨_, hparts, fun B hB ↦ ?_⟩
+  obtain ⟨A, -, rfl⟩ := mem_image.1 (hparts ▸ hB)
+  simp [cell]
+
+end TauCeti
