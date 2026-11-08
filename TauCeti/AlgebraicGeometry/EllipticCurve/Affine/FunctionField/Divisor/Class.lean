@@ -46,6 +46,7 @@ open TauCeti AlgebraicGeometry IsDedekindDomain Polynomial
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
   [IsDedekindDomain W.CoordinateRing]
 
+omit [IsDedekindDomain W.CoordinateRing] in
 /-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
 sets. -/
 theorem setOf_exists_notMem_integers_eq_singleton_infinity :
