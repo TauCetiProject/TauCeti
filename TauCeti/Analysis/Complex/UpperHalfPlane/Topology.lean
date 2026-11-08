@@ -167,7 +167,8 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
     simpa only [hzconj, norm_conj] using h
 
 /-- A conjugation-symmetric continuation agreeing with `ψ` above the real axis tends to zero
-at infinity if `z * ψ z` has a finite limit there within the upper half-plane. -/
+at infinity if `z * ψ z` has a finite limit there within the upper half-plane. The continuation
+`φ` must also be continuous within the upper half-plane at all sufficiently distant real points. -/
 theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
     {φ ψ : ℂ → ℂ} {c : ℂ}
     (h : Tendsto (fun z : ℂ => z * ψ z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 c))
