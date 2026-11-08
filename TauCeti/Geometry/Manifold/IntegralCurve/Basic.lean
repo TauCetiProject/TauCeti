@@ -291,7 +291,7 @@ theorem isMIntegralCurveOn_extChartAt_symm_comp {M : Type*} [TopologicalSpace M]
         (⟨a, 0⟩ : TangentBundle I M)
         (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ :
           TangentBundle I M)).2 = _
-      exact TauCeti.Manifold.TangentBundle.coe_chartAt_snd
+      exact TangentBundle.coe_chartAt_snd
     simpa only [hw_eq] using hderiv r hr
 
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which

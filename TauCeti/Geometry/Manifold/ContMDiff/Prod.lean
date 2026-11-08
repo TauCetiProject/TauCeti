@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
