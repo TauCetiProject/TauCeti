@@ -81,38 +81,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c₀ : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
-omit [DecidableEq ι] in
-/-- If `a'` agrees with `a` on an open `Ω₁ ≤ Ω`, is bounded and continuous, and `u ∈ H¹(Ω)` solves
-the equation with coefficients `a, b, c` and right-hand side `f`, then the restriction of `u`
-to `Ω₁` solves the equation with principal part `a'` and no lower-order terms, with some forcing
-`g ∈ L²(Ω₁)`. -/
-private theorem exists_forcing_restrictL_of_eqOn {Ω₁ : Opens (EuclideanSpace ℝ ι)}
-    {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {M : ℝ} (hΩ₁ : Ω₁ ≤ Omega) (haa' : EqOn a' a Ω₁)
-    (hM : ∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M)
-    (hK : Continuous fun x => matrixBilinearForm (a' x))
-    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
-    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
-    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
-      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
-    ∃ g : Lp ℝ 2 (mu.restrict Ω₁), ∀ v : W1p0 mu Ω₁ 2,
-      energyFormH1 a' 0 0 (W1p.restrictL hΩ₁ u) (v : W1p mu Ω₁ 2) =
-        ∫ x in Ω₁, g x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
-  have hle : mu.restrict Ω₁ ≤ mu.restrict Omega :=
-    Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩ₁) le_rfl
-  have hfU : MemLp f 2 (mu.restrict Ω₁) := (Lp.memLp f).mono_measure hle
-  have hu₁ : ∀ v : W1p0 mu Ω₁ 2, energyFormH1 a' b c (W1p.restrictL hΩ₁ u) (v : W1p mu Ω₁ 2) =
-      ∫ x in Ω₁, hfU.toLp f x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
-    intro v
-    have h := energyFormH1_restrictL_eq_setIntegral hΩ₁ hu v
-    rw [energyFormH1_def] at h ⊢
-    rw [setIntegral_congr_fun Ω₁.isOpen.measurableSet fun x hx => by rw [haa' hx], h]
-    refine integral_congr_ae ?_
-    filter_upwards [hfU.coeFn_toLp] with x hx
-    rw [hx]
-  exact exists_forcing_energyFormH1_principal_eq (memLp_energyIntegrand_of_continuous hM hK Ω₁)
-    (hb.mono_measure hle) (hc.mono_measure hle) hu₁
-
 /-- If `w ∈ H¹₀(H)` is a weak solution on `H` for a Lipschitz field `a'` that is uniformly elliptic
 on `H`, and `H` is invariant under the translations orthogonal to `ν`, then any `u'` on an open
 `Ω' ≤ H` whose gradient is that of `w` on `Ω'` is the first-order part of an element of
