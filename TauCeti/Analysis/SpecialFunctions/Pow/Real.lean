@@ -59,6 +59,10 @@ An exponential upper bound on a nonnegative base passes to its nonnegative real 
 `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
 nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
 
+A positive factor splits off a real power of any real number, including a negative one:
+`(a t) ^ z = a ^ z t ^ z` for `0 < a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
+the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
+
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
 with the corresponding integral of `q`-th powers.
@@ -85,6 +89,7 @@ with the corresponding integral of `q`-th powers.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
@@ -200,6 +205,16 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   refine (rpow_le_rpow hA hAt hc).trans_eq ?_
   rw [← exp_mul]
   ring_nf
+
+/-- `(a t) ^ z = a ^ z t ^ z` for `a > 0` and every real `t`, including `t < 0`, where both sides
+carry the same factor `cos (z π)`. -/
+theorem mul_rpow_of_pos_left {a : ℝ} (ha : 0 < a) (t z : ℝ) :
+    (a * t) ^ z = a ^ z * t ^ z := by
+  rcases le_or_gt 0 t with ht | ht
+  · exact mul_rpow ha.le ht
+  · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
+      log_mul ha.ne' ht.ne, add_mul, exp_add]
+    ring
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
