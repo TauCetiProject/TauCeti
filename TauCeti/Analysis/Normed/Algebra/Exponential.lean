@@ -90,13 +90,14 @@ theorem isBigO_exp_sub_quadratic :
 
 section Normed
 
-variable {𝕂 A : Type*} [RCLike 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A] [NormedAlgebra ℚ A]
+variable {𝕂 A : Type*} [RCLike 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CompleteSpace A]
 
 /-- The exponential is multiplicative on scalar multiples of a fixed element:
 `exp ((s + t) • a) = exp (s • a) * exp (t • a)`. -/
 theorem exp_add_smul (a : A) (s t : 𝕂) :
     exp ((s + t) • a) = exp (s • a) * exp (t • a) := by
+  let +nondep : NormedAlgebra ℚ A := .restrictScalars ℚ 𝕂 A
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
 
 end Normed
