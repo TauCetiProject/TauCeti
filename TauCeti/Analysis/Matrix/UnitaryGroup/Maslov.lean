@@ -105,7 +105,7 @@ theorem spectralAngleSum_diagonal (d : n → ℂ) :
     spectralAngleSum (diagonal d) =
       ∑ i, if d i = 1 then 0 else arg (-d i) / (2 * Real.pi) := by
   rw [spectralAngleSum, charpoly_diagonal, Finset.prod_eq_multiset_prod,
-    show (fun i => X - C (d i)) = (fun a : ℂ => X - C a) ∘ d from rfl, ← Multiset.map_map,
+    ← Function.comp_def (fun a : ℂ => X - C a) d, ← Multiset.map_map,
     roots_multiset_prod_X_sub_C, Multiset.map_map, Finset.sum_eq_multiset_sum]
   simp only [angleOffset, Function.comp_def]
 
@@ -283,7 +283,7 @@ private theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / Rea
     rw [h2φ]
     push_cast
     rw [add_mul, add_mul, Complex.exp_add, Complex.exp_add, Complex.exp_pi_mul_I,
-      show ((⌊x⌋ : ℂ) * (2 * Real.pi)) * Complex.I = ⌊x⌋ * (2 * Real.pi * Complex.I) by ring,
+      mul_assoc (⌊x⌋ : ℂ),
       Complex.exp_int_mul_two_pi_mul_I]
     ring
   rw [hneg, Complex.arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
