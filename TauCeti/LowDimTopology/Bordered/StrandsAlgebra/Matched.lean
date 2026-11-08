@@ -43,6 +43,7 @@ factorizations of a diagram, and the diagrams resolving to it, with those of the
 * `TauCeti.StrandsAlgebra.matchedIdem_mem_matchedSubalgebra`,
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
+* `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
 
 ## References
 
@@ -199,6 +200,16 @@ matching `M`: the sum of the idempotents `I(S)` over the sets `S` of points mapp
 onto `s` by `M`, that is, containing exactly one point over each element of `s`. -/
 def matchedIdem (M : α → β) (s : Finset β) : StrandsAlgebra R α :=
   ∑ S with S.image M = s ∧ #S = #s, idem S
+
+theorem matchedIdem_def (M : α → β) (s : Finset β) :
+    matchedIdem R M s = ∑ S with S.image M = s ∧ #S = #s, idem S :=
+  (rfl)
+
+/-- The idempotents `I(s)` are cycles. -/
+@[simp]
+theorem differential_matchedIdem (M : α → β) (s : Finset β) :
+    differential R α (matchedIdem R M s) = 0 := by
+  simp [matchedIdem_def]
 
 /-- The coefficient of a diagram in `I(s)` is `1` when it is the identity diagram on a set mapped
 bijectively onto `s` by `M`, and `0` otherwise. -/

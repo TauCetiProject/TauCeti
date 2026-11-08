@@ -141,8 +141,8 @@ private theorem le_of_mem_conjSwap (h : φ.CanMoveHorizontal a b) (hy : y ∈ φ
 
 /-- The strand diagram `φ` with a horizontal strand moved between `a` and `b`: if `φ` has a
 horizontal strand at one of `a` and `b` and no strand starts or ends at the other, the horizontal
-strand is moved to the other point, and otherwise `φ` is unchanged. This is the conjugate of `φ` by
-the transposition of `a` and `b`. -/
+strand is moved to the other point, and otherwise `φ` is unchanged. When such a move is possible,
+the result is the conjugate of `φ` by the transposition of `a` and `b`. -/
 def swapHorizontal (φ : StrandDiagram α) (a b : α) : StrandDiagram α :=
   if h : φ.CanMoveHorizontal a b then ⟨φ.conjSwap a b, fun _ _ ↦ le_of_mem_conjSwap h⟩
   else if h' : φ.CanMoveHorizontal b a then ⟨φ.conjSwap b a, fun _ _ ↦ le_of_mem_conjSwap h'⟩
