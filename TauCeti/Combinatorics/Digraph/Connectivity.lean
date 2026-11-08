@@ -142,32 +142,7 @@ theorem isVertexStrong_one_iff : IsVertexStrong D.AdjHom 1 ↔
     Nontrivial V ∧ ∀ v w, ReflTransGen D.Adj v w := by
   rw [TauCeti.isVertexStrong_one, Digraph.isStronglyConnected_iff]
 
-/-- On a finite vertex type, vertex-strong connectivity of a digraph is equivalent to the
-existence of the threshold number of internally vertex-disjoint directed paths between every two
-distinct vertices. -/
-theorem isVertexStrong_iff_exists_paths [Finite V] : IsVertexStrong D.AdjHom k ↔
-    (k : ℕ∞) < ENat.card V ∧ ∀ {s t : V}, s ≠ t →
-      ∃ P : Fin k → ArrowWalk D.AdjHom s t, Function.Injective P ∧
-        (∀ i, (P i).IsPath) ∧ Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) :=
-  TauCeti.isVertexStrong_iff_exists_paths
-
 /-! ### Degree bounds -/
-
-/-- The arrows leaving a vertex of a digraph are equivalent to its adjacent targets. -/
-def outArrowEquiv (D : Digraph V) (v : V) :
-    (Σ w, D.AdjHom v w) ≃ {w : V // D.Adj v w} where
-  toFun a := ⟨a.1, a.2.down⟩
-  invFun w := ⟨w.1, ⟨w.2⟩⟩
-  left_inv _ := (rfl)
-  right_inv _ := (rfl)
-
-/-- The arrows entering a vertex of a digraph are equivalent to its adjacent sources. -/
-def inArrowEquiv (D : Digraph V) (v : V) :
-    (Σ w, D.AdjHom w v) ≃ {w : V // D.Adj w v} where
-  toFun a := ⟨a.1, a.2.down⟩
-  invFun w := ⟨w.1, ⟨w.2⟩⟩
-  left_inv _ := (rfl)
-  right_inv _ := (rfl)
 
 /-- On at least two vertices, the arc connectivity of a finite digraph is at most the number of
 targets adjacent from any specified vertex. -/
@@ -175,7 +150,7 @@ theorem arcConnectivity_le_card_out [Fintype V] [Nontrivial V] [DecidableRel D.A
     arcConnectivity D.AdjHom ≤ #{w | D.Adj v w} := by
   classical
   rw [← Fintype.card_subtype (fun w ↦ D.Adj v w),
-    ← Fintype.card_congr (D.outArrowEquiv v)]
+    ← Fintype.card_congr (Equiv.sigmaPLiftEquivSubtype fun w ↦ D.Adj v w)]
   exact TauCeti.arcConnectivity_le_card_out v
 
 /-- On at least two vertices, the arc connectivity of a finite digraph is at most the number of
@@ -184,7 +159,7 @@ theorem arcConnectivity_le_card_in [Fintype V] [Nontrivial V] [DecidableRel D.Ad
     arcConnectivity D.AdjHom ≤ #{w | D.Adj w v} := by
   classical
   rw [← Fintype.card_subtype (fun w ↦ D.Adj w v),
-    ← Fintype.card_congr (D.inArrowEquiv v)]
+    ← Fintype.card_congr (Equiv.sigmaPLiftEquivSubtype fun w ↦ D.Adj w v)]
   exact TauCeti.arcConnectivity_le_card_in v
 
 end Digraph
