@@ -701,14 +701,14 @@ theorem exists_basis_mem_weightSpace [FiniteDimensional k V] :
 
 /-- **Weight multiplicities count weight basis vectors.** In a basis of weight vectors, the
 dimension of the `g`-weight space is the number of basis vectors of weight `g`. -/
-theorem _root_.Module.Basis.finrank_comoduleWeightSpace_eq_card {ι : Type*} [Finite ι]
+theorem _root_.Module.Basis.finrank_comoduleWeightSpace_eq_card {ι : Type*}
     (b : Basis ι k V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace k G V (wt i)) (g : G) :
     finrank k (weightSpace k G V g) = Nat.card {i // wt i = g} := by
-  have := Fintype.ofFinite ι
-  have := Fintype.ofFinite {i // wt i = g}
-  rw [b.comoduleWeightSpace_eq_span wt hb g, ← Subtype.range_coe_subtype, ← Set.range_comp,
-    finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective),
-    Nat.card_eq_fintype_card]
+  have hli : LinearIndepOn k id (b '' {i | wt i = g}) :=
+    b.linearIndependent.linearIndepOn_id.mono (Set.image_subset_range _ _)
+  rw [b.comoduleWeightSpace_eq_span wt hb g, finrank_span_set_eq_ncard hli,
+    Set.ncard_image_of_injective _ b.injective, ← Nat.card_coe_set_eq]
+  rfl
 
 end WeightBasis
 
