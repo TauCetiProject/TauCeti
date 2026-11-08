@@ -295,6 +295,7 @@ theorem periodicAlexanderValues_trefoil : (trefoil ![1, 2]).periodicAlexanderVal
 
 /-- The generator `x₀` lies one Alexander grading above `x₂`, computed from the bigon `B_z`, which
 contains `z` and not `w`. -/
+@[simp]
 theorem relativeAlexanderGrading_trefoil_zero_two :
     (trefoil ![1, 2]).relativeAlexanderGrading 0 1 (trefoilGenerator _ 0)
       (trefoilGenerator _ 2) = 1 := by
@@ -304,6 +305,7 @@ theorem relativeAlexanderGrading_trefoil_zero_two :
 
 /-- The generator `x₁` lies one Alexander grading below `x₂`, computed from the bigon `B_w`, which
 contains `w` and not `z`. -/
+@[simp]
 theorem relativeAlexanderGrading_trefoil_one_two :
     (trefoil ![1, 2]).relativeAlexanderGrading 0 1 (trefoilGenerator _ 1)
       (trefoilGenerator _ 2) = -1 := by
@@ -339,6 +341,7 @@ theorem maslovIndex_trefoil_single_one :
 
 /-- In the diagram `(Σ, α, β, w)` of `S³`, the generator `x₀` lies one Maslov grading above `x₂`,
 computed from the bigon `B_z`, which avoids `w`. -/
+@[simp]
 theorem relativeGrading_trefoil_zero_two :
     (trefoil fun _ : Unit => 1).relativeGrading 1 () (trefoilGenerator _ 0)
       (trefoilGenerator _ 2) = 1 := by
@@ -348,6 +351,7 @@ theorem relativeGrading_trefoil_zero_two :
 
 /-- In the diagram `(Σ, α, β, w)` of `S³`, the generator `x₁` lies one Maslov grading below `x₂`,
 computed from the bigon `B_w`, which contains `w`. -/
+@[simp]
 theorem relativeGrading_trefoil_one_two :
     (trefoil fun _ : Unit => 1).relativeGrading 1 () (trefoilGenerator _ 1)
       (trefoilGenerator _ 2) = -1 := by
