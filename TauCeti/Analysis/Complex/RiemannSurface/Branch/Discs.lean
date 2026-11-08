@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Topology.OpenPartialHomeomorph.Preimage
+import TauCeti.Logic.Equiv.PartialEquiv
 
 /-!
 # Discs above a branch value
@@ -134,18 +134,19 @@ theorem exists_disjoint_power_charts
   exact ⟨δ, e, r, hδ, (closedBall_subset_ball hδsmall.1).trans hεt,
     fun x ↦ ⟨he x, hxe x, hex x, (hsub x).trans inter_subset_right, hr x, hrpow x, hrsub x,
       hpow x⟩, hedisj,
-    OpenPartialHomeomorph.preimage_eq_iUnion_symm_image
+    PartialEquiv.preimage_eq_iUnion_symm_image (e := fun x ↦ (e x).toPartialEquiv)
       (fun x ↦ ball_subset_closedBall.trans (hrsub x))
       (fun x w hwt ↦ by
-        simp only [hcoord x w hwt, mem_inter_iff, mem_preimage, mem_ball_iff_norm, sub_zero,
-          add_sub_cancel_left, norm_pow, ← hrpow x, (hpow x _ ((e x).map_target hwt)).1, true_and]
+        simp only [OpenPartialHomeomorph.coe_toPartialEquiv_symm, hcoord x w hwt, mem_inter_iff,
+          mem_preimage, mem_ball_iff_norm, sub_zero, add_sub_cancel_left, norm_pow, ← hrpow x,
+          (hpow x _ ((e x).map_target hwt)).1, true_and]
         exact (pow_lt_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).symm)
       fun z hz ↦ hfull ⟨hz.1, ball_subset_closedBall hz.2⟩,
-    OpenPartialHomeomorph.preimage_eq_iUnion_symm_image hrsub
+    PartialEquiv.preimage_eq_iUnion_symm_image (e := fun x ↦ (e x).toPartialEquiv) hrsub
       (fun x w hwt ↦ by
-        simp only [hcoord x w hwt, mem_inter_iff, mem_preimage, mem_closedBall_iff_norm,
-          sub_zero, add_sub_cancel_left, norm_pow, ← hrpow x,
-          (hpow x _ ((e x).map_target hwt)).1, true_and]
+        simp only [OpenPartialHomeomorph.coe_toPartialEquiv_symm, hcoord x w hwt, mem_inter_iff,
+          mem_preimage, mem_closedBall_iff_norm, sub_zero, add_sub_cancel_left, norm_pow,
+          ← hrpow x, (hpow x _ ((e x).map_target hwt)).1, true_and]
         exact (pow_le_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).symm)
       fun z hz ↦ hfull hz⟩
 
