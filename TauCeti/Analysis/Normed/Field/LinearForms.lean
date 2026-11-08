@@ -32,17 +32,17 @@ open Filter Finset Topology
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NormedField 𝕜]
-
 /-- If `‖x‖ ≥ 2 (‖α‖ + 1) ‖y‖`, then `‖x - α y‖ ≥ max(‖x‖, ‖y‖) / 2`. -/
-theorem half_max_norm_le_norm_sub_of_mul_le (α x y : 𝕜)
+theorem half_max_norm_le_norm_sub_of_mul_le {R : Type*} [NormedRing R] (α x y : R)
     (hbig : 2 * (‖α‖ + 1) * ‖y‖ ≤ ‖x‖) : max ‖x‖ ‖y‖ / 2 ≤ ‖x - α * y‖ := by
   have hy₀ := norm_nonneg y
   have hMx : max ‖x‖ ‖y‖ = ‖x‖ := max_eq_left (by nlinarith [norm_nonneg α])
-  have := norm_sub_norm_le x (α * y)
-  rw [norm_mul] at this
+  have h₁ := norm_sub_norm_le x (α * y)
+  have h₂ := norm_mul_le α y
   rw [hMx]
   nlinarith [norm_nonneg α]
+
+variable {𝕜 : Type*} [NormedField 𝕜]
 
 /-- **Cramer's rule bound** for two linear forms `L = a x + b y` and `L' = a' x + b' y` in two
 variables: the determinant `D = a b' - b a'` satisfies

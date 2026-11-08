@@ -72,44 +72,6 @@ open Filter Finset Height Polynomial Real Topology
 
 namespace TauCeti
 
-/-- The case `|x| < 2 (‖α‖ + 1) |y|` of the linear-form bound: if every rational `ξ ≠ α`
-satisfies the rational approximation bound `c₀ H(ξ) ^ (-κ) ≤ ‖ξ - α‖`, then at integers `x`, `y`
-with `|x| < 2 (‖α‖ + 1) |y|`, `x ≠ α y` and `max(|x|, |y|) ≥ 1`, the linear form satisfies
-`‖x - α y‖ ≥ c₀ / (2 (‖α‖ + 1)) max(|x|, |y|) ^ (1 - κ)`. -/
-private lemma mul_max_abs_rpow_le_norm_sub_of_lt {α : ℂ} {κ c₀ : ℝ} (hκ : 0 ≤ κ) (hc₀ : 0 ≤ c₀)
-    (h : ∀ ξ : ℚ, (ξ : ℂ) ≠ α → c₀ * mulHeight₁ ξ ^ (-κ) ≤ ‖(ξ : ℂ) - α‖) {x y : ℤ}
-    (hxy : (x : ℂ) - α * y ≠ 0) (hM : 1 ≤ max |(x : ℝ)| |(y : ℝ)|)
-    (hsmall : |(x : ℝ)| < 2 * (‖α‖ + 1) * |(y : ℝ)|) :
-    c₀ / (2 * (‖α‖ + 1)) * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ ‖(x : ℂ) - α * y‖ := by
-  set A := ‖α‖ + 1
-  have hA : 1 ≤ A := by linarith [norm_nonneg α]
-  set M := max |(x : ℝ)| |(y : ℝ)|
-  have hM₀ : 0 < M := by linarith
-  have hy : y ≠ 0 := by
-    rintro rfl
-    simp only [Int.cast_zero, abs_zero, mul_zero] at hsmall
-    linarith [abs_nonneg (x : ℝ)]
-  have hMy : M ≤ 2 * A * |(y : ℝ)| := max_le hsmall.le (by nlinarith [abs_nonneg (y : ℝ)])
-  set ξ : ℚ := (x : ℚ) / y
-  have hξ : (ξ : ℂ) = x / y := by simp [ξ]
-  have hsub : (x : ℂ) - α * y = y * ((ξ : ℂ) - α) := by
-    rw [hξ]
-    have hyR : (y : ℂ) ≠ 0 := Int.cast_ne_zero.2 hy
-    field_simp
-  have hξα : (ξ : ℂ) ≠ α := fun h ↦ hxy (by rw [hsub, h, sub_self, mul_zero])
-  have hH : mulHeight₁ ξ ≤ M := Rat.mulHeight₁_intCast_div_le x hy
-  have hHκ : M ^ (-κ) ≤ mulHeight₁ ξ ^ (-κ) :=
-    rpow_le_rpow_of_nonpos (mulHeight₁_pos ξ) hH (by linarith)
-  have hMκ : M ^ (1 - κ) = M * M ^ (-κ) := by
-    rw [sub_eq_add_neg, rpow_add hM₀, rpow_one]
-  rw [hsub, norm_mul, Complex.norm_intCast, hMκ]
-  calc c₀ / (2 * A) * (M * M ^ (-κ))
-      ≤ c₀ / (2 * A) * (2 * A * |(y : ℝ)| * M ^ (-κ)) := by gcongr
-    _ = |(y : ℝ)| * (c₀ * M ^ (-κ)) := by field_simp
-    _ ≤ |(y : ℝ)| * ‖(ξ : ℂ) - α‖ := by
-        gcongr
-        exact (mul_le_mul_of_nonneg_left hHκ hc₀).trans (h ξ hξα)
-
 /-- **Roth's theorem for a linear form.** If `α ∈ ℂ` is algebraic and `κ > 2`, then there is
 `c > 0` with `‖x - α y‖ ≥ c max(|x|, |y|) ^ (1 - κ)` for all integers `x`, `y` with `x ≠ α y`. -/
 theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ}
