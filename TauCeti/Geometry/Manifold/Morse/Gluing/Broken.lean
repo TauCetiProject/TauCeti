@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Gluing.BoxCrossing
 public import TauCeti.Geometry.Manifold.Morse.Stable.Gluing
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
-import TauCeti.Dynamics.Flow.LevelCrossing
 
 /-!
 # Gluing at a broken index-two trajectory
@@ -66,66 +65,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [CompactSpace M] [T2Space M] {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
 namespace IsAdaptedPseudoGradient
-
-/-- Orbits through points near a point `y` of a connecting trajectory cross the level of `y` at
-times close to `0`. -/
-private theorem eventually_exists_mem_Icc_apply_flow_eq (hX : IsAdaptedPseudoGradient f X)
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {a b y : M} (hab : a ≠ b)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {δ : ℝ} (hδ : 0 < δ) :
-    ∀ᶠ w in 𝓝 y, ∃ σ ∈ Icc (-δ) δ, f (hX.flow σ w) = f y := by
-  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
-  have hcont : ∀ t, Continuous fun w ↦ f (hX.flow t w) := fun t ↦
-    hf.continuous.comp (hX.contMDiff_flow_apply t).continuous
-  have h₁ : f (hX.flow δ y) < f y := by simpa using hanti hδ
-  have h₂ : f y < f (hX.flow (-δ) y) := by simpa using hanti (neg_lt_zero.2 hδ)
-  filter_upwards [(hcont δ).continuousAt.eventually (gt_mem_nhds h₁),
-    (hcont (-δ)).continuousAt.eventually (lt_mem_nhds h₂)] with w hw₁ hw₂
-  exact intermediate_value_Icc' (by linarith)
-    (hf.continuous.comp (hX.flow.continuous continuous_id continuous_const)).continuousOn
-    ⟨hw₁.le, hw₂.le⟩
-
-/-- **The level point of an orbit depends continuously on the orbit.** Let `y` lie on a trajectory
-between distinct critical points, with `f (flow σ₀ y) = c`. For points `w i` tending to `y` along
-whose orbits `f` strictly decreases, the points where these orbits cross the level `c` tend to
-`flow σ₀ y`. -/
-private theorem tendsto_flow_levelCrossingTime (hX : IsAdaptedPseudoGradient f X)
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {a b y : M} (hab : a ≠ b)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c σ₀ : ℝ}
-    (hσ₀ : f (hX.flow σ₀ y) = c) {ι : Type*} {l : Filter ι} {w : ι → M}
-    (hw : Tendsto w l (𝓝 y)) (hanti : ∀ᶠ i in l, StrictAnti fun t ↦ f (hX.flow t (w i))) :
-    Tendsto (fun i ↦ hX.flow (Flow.levelCrossingTime hX.flow f c (w i)) (w i)) l
-      (𝓝 (hX.flow σ₀ y)) := by
-  set z := hX.flow σ₀ y
-  have hz : z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b :=
-    hX.flow.isInvariant_unstableSet_inter_stableSet a b σ₀ hy
-  have hw' : Tendsto (fun i ↦ hX.flow σ₀ (w i)) l (𝓝 z) :=
-    ((hX.flow.continuous_toFun σ₀).tendsto y).comp hw
-  set τ := fun i ↦ Flow.levelCrossingTime hX.flow f c (w i) - σ₀
-  -- The crossing time of `w i` differs from `σ₀` by a crossing time of `flow σ₀ (w i)` near `0`.
-  have hτ : ∀ δ > 0, ∀ᶠ i in l, τ i ∈ Icc (-δ) δ := fun δ hδ ↦ by
-    filter_upwards [hw'.eventually (eventually_exists_mem_Icc_apply_flow_eq hX hf hab hz hδ),
-      hanti] with i ⟨σ, hσ, hσc⟩ hi
-    rw [hσ₀, ← Flow.map_add] at hσc
-    have := (Flow.eq_levelCrossingTime_iff hi ⟨_, hσc⟩).2 hσc
-    simp only [τ, ← this, add_sub_cancel_right]
-    exact hσ
-  have hτ0 : Tendsto τ l (𝓝 0) := tendsto_order.2
-    ⟨fun r hr ↦ (hτ (-r / 2) (by linarith)).mono fun i hi ↦ by linarith [hi.1],
-      fun r hr ↦ (hτ (r / 2) (by linarith)).mono fun i hi ↦ by linarith [hi.2]⟩
-  have h := (hX.flow.cont'.tendsto (0, z)).comp (hτ0.prodMk_nhds hw')
-  simp only [Function.comp_def, Function.uncurry_apply_pair, Flow.map_zero_apply] at h
-  refine h.congr fun i ↦ ?_
-  rw [← Flow.map_add, sub_add_cancel]
-
-
-omit [CompactSpace M] [T2Space M] in
-/-- Along an orbit on which `f` strictly decreases, the point where the orbit through any of its
-points crosses the level `f (φ s x)` is `φ s x`. -/
-private theorem apply_levelCrossingTime_apply {φ : _root_.Flow ℝ M} {x : M} {s c : ℝ}
-    (hanti : StrictAnti fun t ↦ f (φ t x)) (hs : f (φ s x) = c) (t : ℝ) :
-    φ (Flow.levelCrossingTime φ f c (φ t x)) (φ t x) = φ s x := by
-  rw [Flow.levelCrossingTime_flow hanti ⟨s, hs⟩,
-    ← (Flow.eq_levelCrossingTime_iff hanti ⟨s, hs⟩).2 hs, ← Flow.map_add, sub_add_cancel]
 
 /-- **A Morse box at the middle of a broken trajectory.** For a trajectory from `p` to `q` through
 `a₁` and one from `q` to `r` through `a₂`, there are a Morse chart `φ` at `q` in which `X` is
@@ -414,8 +353,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
       ((hΨc _ hb₂).comp (f := fun s ↦ (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val.2)
         (continuous_snd.comp hc).continuousAt)
   · simp only [hBdef]
-    rw [show inclusion (Icc_subset_Icc_right hr₁r₀) ⟨0, left_mem_Icc.2 hr₁.le⟩ =
-      ⟨0, left_mem_Icc.2 hr₀.le⟩ from rfl, he₀', hΨΦ y₁ hy₁φ, hΨΦ y₂ hy₂φ, hT₁, hT₂]
+    rw [inclusion_mk, he₀', hΨΦ y₁ hy₁φ, hΨΦ y₂ hy₂φ, hT₁, hT₂]
   · obtain ⟨hpz, hflow⟩ := hP _ (hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s) hs).1
     exact ⟨hpz, _, hflow⟩
   · -- Two unbroken pairs whose entrance points lie on one orbit are equal.
@@ -525,7 +463,8 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
       f a₂ < f a := by
     intro s
     by_cases hs : (s : ℝ) = 0
-    · rw [show s = ⟨0, left_mem_Icc.2 hδ.le⟩ from Subtype.ext hs, hB₀]
+    · obtain rfl : s = ⟨0, left_mem_Icc.2 hδ.le⟩ := Subtype.ext hs
+      rw [hB₀]
       exact ⟨⟨q, hpq', hy₁, hfa₁.1⟩, ⟨q, hqr', hy₂, hfa₂.2⟩⟩
     · obtain ⟨hs₁, t, ht⟩ := hBS s hs
       exact ⟨⟨r, hpr', hs₁, by linarith [hfa₁.1, hfa₂.1, hfa₂.2]⟩,
@@ -542,27 +481,27 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
       hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpb hb hfb hfa₁.2
     obtain ⟨σ₂, hσ₂, -⟩ :=
       hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd har ha hfa₂.1 hfa
-    have h₁ := tendsto_flow_levelCrossingTime hX hfd hpb hb hσ₁
+    have h₁ := hX.tendsto_flow_levelCrossingTime hfd hpb hb hσ₁
       ((continuous_fst.comp hBc).tendsto s) (.of_forall fun s' ↦ by
         obtain ⟨⟨b', hpb', hb', -⟩, -⟩ := hB s'
         exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpb' hb')
-    have h₂ := tendsto_flow_levelCrossingTime hX hfd har ha hσ₂
+    have h₂ := hX.tendsto_flow_levelCrossingTime hfd har ha hσ₂
       ((continuous_snd.comp hBc).tendsto s) (.of_forall fun s' ↦ by
         obtain ⟨-, ⟨a', ha'r, ha', -⟩⟩ := hB s'
         exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd ha'r ha')
-    have e₁ := apply_levelCrossingTime_apply
+    have e₁ := Flow.flow_levelCrossingTime_flow
       (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpb hb) hσ₁ 0
-    have e₂ := apply_levelCrossingTime_apply
+    have e₂ := Flow.flow_levelCrossingTime_flow
       (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd har ha) hσ₂ 0
     rw [Flow.map_zero_apply] at e₁ e₂
     rw [← e₁] at h₁
     rw [← e₂] at h₂
     exact h₁.prodMk_nhds h₂
   have hF₀ : F ⟨0, left_mem_Icc.2 hδ.le⟩ = (a₁, a₂) := by
-    have e₁ := apply_levelCrossingTime_apply
+    have e₁ := Flow.flow_levelCrossingTime_flow
       (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpq' ha₁)
       (by rw [Flow.map_zero_apply] : f (hX.flow 0 a₁) = f a₁) T₁
-    have e₂ := apply_levelCrossingTime_apply
+    have e₂ := Flow.flow_levelCrossingTime_flow
       (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hqr' ha₂)
       (by rw [Flow.map_zero_apply] : f (hX.flow 0 a₂) = f a₂) T₂
     rw [Flow.map_zero_apply] at e₁ e₂
@@ -577,9 +516,9 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
       (by linarith [hfa₁.1, hfa₂.1, hfa₂.2]) hfa₁.2
     obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hs₂
       hfa₂.1 (by linarith [hfa₁.1, hfa₁.2, hfa₂.2])
-    have e₁ := apply_levelCrossingTime_apply
+    have e₁ := Flow.flow_levelCrossingTime_flow
       (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hs₁) hσ₁ 0
-    have e₂ := apply_levelCrossingTime_apply
+    have e₂ := Flow.flow_levelCrossingTime_flow
       (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hs₂) hσ₂ 0
     rw [Flow.map_zero_apply] at e₁ e₂
     simp only [hFdef, hSdef, mem_ofPred_eq, e₁, e₂]
@@ -592,10 +531,12 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     by_cases hs : (s : ℝ) = 0
     · by_cases hs' : (s' : ℝ) = 0
       · exact Subtype.ext (hs.trans hs'.symm)
-      · rw [show s = ⟨0, left_mem_Icc.2 hδ.le⟩ from Subtype.ext hs, hF₀] at hss'
+      · obtain rfl : s = ⟨0, left_mem_Icc.2 hδ.le⟩ := Subtype.ext hs
+        rw [hF₀] at hss'
         exact absurd hss'.symm (hne s' hs')
     by_cases hs' : (s' : ℝ) = 0
-    · rw [show s' = ⟨0, left_mem_Icc.2 hδ.le⟩ from Subtype.ext hs', hF₀] at hss'
+    · obtain rfl : s' = ⟨0, left_mem_Icc.2 hδ.le⟩ := Subtype.ext hs'
+      rw [hF₀] at hss'
       exact absurd hss' (hne s hs)
     -- Equal first level points put the first points of `B s` and `B s'` on one orbit.
     refine hBinj s s' hs hs' (Flow.levelCrossingTime hX.flow f (f a₁) (B s).1 -
@@ -612,10 +553,10 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
       obtain ⟨t, ht⟩ := hw.2.2.2
       exact ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hw.1
     -- The points of the trajectories on the levels of the arc's start tend to its start.
-    have hm₁ := tendsto_flow_levelCrossingTime hX hfd hpq' ha₁ (σ₀ := T₁) rfl
+    have hm₁ := hX.tendsto_flow_levelCrossingTime hfd hpq' ha₁ (σ₀ := T₁) rfl
       ((continuous_fst.tendsto _).mono_left nhdsWithin_le_nhds)
       (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr' hw.1)
-    have hm₂ := tendsto_flow_levelCrossingTime hX hfd hqr' ha₂ (σ₀ := T₂) rfl
+    have hm₂ := hX.tendsto_flow_levelCrossingTime hfd hqr' ha₂ (σ₀ := T₂) rfl
       ((continuous_snd.tendsto _).mono_left nhdsWithin_le_nhds)
       (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hfd hpr'
         (hw₂m w hw))
@@ -637,9 +578,9 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
       (Flow.apply_flow_levelCrossingTime ⟨σ₁, hσ₁⟩) (Flow.apply_flow_levelCrossingTime ⟨σ₂, hσ₂⟩)
       ⟨τ₂ + t - τ₁, by rw [← Flow.map_add, sub_add_cancel, Flow.map_add, ht]⟩
     refine ⟨⟨s, s.2.1, hs⟩, ?_⟩
-    have e₁ := apply_levelCrossingTime_apply hanti₁
+    have e₁ := Flow.flow_levelCrossingTime_flow hanti₁
       (by rw [Flow.map_zero_apply]; exact hw1f : f (hX.flow 0 w.1) = f a₁) (t₁ + τ₁)
-    have e₂ := apply_levelCrossingTime_apply hanti₂
+    have e₂ := Flow.flow_levelCrossingTime_flow hanti₂
       (by rw [Flow.map_zero_apply]; exact hw2f : f (hX.flow 0 w.2) = f a₂) (t₂ + τ₂)
     rw [Flow.map_zero_apply, Flow.map_add] at e₁ e₂
     rw [ht₁] at e₁

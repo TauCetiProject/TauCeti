@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Passage
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Orbits near a broken trajectory cross a Morse box once
@@ -60,22 +60,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {f : M → ℝ} {x : M}
 
-/-- The square of the sup norm of a real vector is at most its sum of squares, which is at most the
-number of coordinates times the square of the sup norm. -/
-private theorem sq_norm_le_sum_sq_and_sum_sq_le {ι : Type*} [Fintype ι] (z : ι → ℝ) :
-    ‖z‖ ^ 2 ≤ ∑ i, z i ^ 2 ∧ ∑ i, z i ^ 2 ≤ Fintype.card ι * ‖z‖ ^ 2 := by
-  refine ⟨?_, ?_⟩
-  · rcases isEmpty_or_nonempty ι with hι | hι
-    · rw [Subsingleton.elim z 0, norm_zero, sq, zero_mul]
-      positivity
-    · obtain ⟨i, hi⟩ := (IsGreatest.pi_norm z).1
-      simp only at hi
-      rw [← hi, Real.norm_eq_abs, sq_abs]
-      exact Finset.single_le_sum (fun j _ ↦ sq_nonneg (z j)) (Finset.mem_univ i)
-  · simpa using Finset.sum_le_card_nsmul Finset.univ (fun i ↦ z i ^ 2) (‖z‖ ^ 2) fun i _ ↦ by
-      rw [← sq_abs, ← Real.norm_eq_abs]
-      exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm z i) 2
-
 namespace MorseChart
 
 variable (φ : MorseChart E f x)
@@ -128,8 +112,15 @@ theorem lt_apply_of_norm_fst_eq {ε : ℝ}
     (hsnd : Module.finrank ℝ E * ‖z.snd‖ ^ 2 < ε ^ 2) :
     f x < f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) := by
   rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
-  have h₁ := (sq_norm_le_sum_sq_and_sum_sq_le z.fst).1
-  have h₂ := (sq_norm_le_sum_sq_and_sum_sq_le z.snd).2
+  -- Compare the sup norms of the split coordinates with their `L²` norms.
+  have h₁ : ‖z.fst‖ ^ 2 ≤ ∑ i, z.fst i ^ 2 := by
+    have h := PiLp.dist_ofLp_le (WithLp.toLp 2 z.fst) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have h₂ : ∑ i, z.snd i ^ 2 ≤ Fintype.card {i // ¬φ.weight i = 1} * ‖z.snd‖ ^ 2 := by
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (WithLp.toLp 2 z.snd) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2, mul_pow] using pow_le_pow_left₀ (norm_nonneg _) h 2
   have hcard : (Fintype.card {i // ¬φ.weight i = 1} : ℝ) ≤ Module.finrank ℝ E := by
     exact_mod_cast (Fintype.card_subtype_le _).trans (Fintype.card_fin _).le
   rw [hfst] at h₁
@@ -143,8 +134,15 @@ theorem apply_lt_of_norm_snd_eq {ε : ℝ}
     (hfst : Module.finrank ℝ E * ‖z.fst‖ ^ 2 < ε ^ 2) :
     f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) < f x := by
   rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
-  have h₁ := (sq_norm_le_sum_sq_and_sum_sq_le z.snd).1
-  have h₂ := (sq_norm_le_sum_sq_and_sum_sq_le z.fst).2
+  -- Compare the sup norms of the split coordinates with their `L²` norms.
+  have h₁ : ‖z.snd‖ ^ 2 ≤ ∑ i, z.snd i ^ 2 := by
+    have h := PiLp.dist_ofLp_le (WithLp.toLp 2 z.snd) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have h₂ : ∑ i, z.fst i ^ 2 ≤ Fintype.card {i // φ.weight i = 1} * ‖z.fst‖ ^ 2 := by
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (WithLp.toLp 2 z.fst) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2, mul_pow] using pow_le_pow_left₀ (norm_nonneg _) h 2
   have hcard : (Fintype.card {i // φ.weight i = 1} : ℝ) ≤ Module.finrank ℝ E := by
     exact_mod_cast (Fintype.card_subtype_le _).trans (Fintype.card_fin _).le
   rw [hsnd] at h₁
@@ -156,16 +154,6 @@ namespace IsAdaptedPseudoGradient
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
-
-/-- Bounds on the split hyperbolic orbit on the time interval between `0` and `t`. -/
-private theorem exp_le_of_mem_uIcc {s t : ℝ} (hs : s ∈ uIcc 0 t) :
-    Real.exp s ≤ max 1 (Real.exp t) ∧ Real.exp (-s) ≤ max 1 (Real.exp (-t)) := by
-  rw [mem_uIcc] at hs
-  constructor <;> rcases hs with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · exact le_max_of_le_right (Real.exp_le_exp.2 h₂)
-  · exact le_max_of_le_left (Real.exp_le_one_iff.2 h₂)
-  · exact le_max_of_le_left (Real.exp_le_one_iff.2 (by linarith))
-  · exact le_max_of_le_right (Real.exp_le_exp.2 (by linarith))
 
 /-- **Entering the Morse box.** Let `X` be linear in the Morse chart `φ`, whose coordinate cube of
 radius `2 ε` lies in the chart. Near the entrance face, at a point `w` whose contracting split
@@ -187,7 +175,11 @@ theorem flow_splitEntryTime_of_norm_lt (hX : IsAdaptedPseudoGradient f X) (φ : 
     rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hw]
   conv_lhs => rw [← hwz]
   refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦ ?_
-  obtain ⟨hs₁, hs₂⟩ := exp_le_of_mem_uIcc hs
+  -- Bound `exp s` and `exp (-s)` on the time interval between `0` and `t`.
+  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
+  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
+    (mem_image_of_mem _ hs)).2
+  simp only [comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
   rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
   rcases (norm_nonneg z.fst).eq_or_lt with h0 | h0
   · have : s = 0 := by simpa [splitEntryTime_def, ← h0] using hs
@@ -231,7 +223,11 @@ theorem flow_splitExitTime_of_norm_lt (hX : IsAdaptedPseudoGradient f X) (φ : M
     rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hw]
   conv_lhs => rw [← hwz]
   refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦ ?_
-  obtain ⟨hs₁, hs₂⟩ := exp_le_of_mem_uIcc hs
+  -- Bound `exp s` and `exp (-s)` on the time interval between `0` and `t`.
+  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
+  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
+    (mem_image_of_mem _ hs)).2
+  simp only [comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
   rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
   rcases (norm_nonneg z.snd).eq_or_lt with h0 | h0
   · have : s = 0 := by simpa [splitExitTime_def, ← h0] using hs
