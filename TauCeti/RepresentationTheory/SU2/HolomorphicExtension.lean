@@ -24,6 +24,7 @@ Lie-group structure of units.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension`: the native holomorphic `SL₂(ℂ)` action.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_def`: restriction of the general-linear action.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_apply`: its action in the weight basis.
+* `TauCeti.SU2.toGL_comp_toSL`: the inclusion in `GL₂(ℂ)` factors through `SL₂(ℂ)`.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_comp_toSL`: agreement with the `SU(2)` model.
 * `TauCeti.SU2.contMDiff_symPowerSLHolomorphicExtension`: complex analyticity.
 * `TauCeti.SU2.symPowerModelGL`: the algebraic `GL₂(ℂ)` action in the model's weight basis.
