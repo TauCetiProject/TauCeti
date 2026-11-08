@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
@@ -21,6 +22,8 @@ The dominating function's codomain only needs a topology and an extended norm.
 ## Main declarations
 
 * `TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`: the convergence `eLpNorm (f n - g) q m → 0`.
+* `TauCeti.tendsto_eLpNorm_restrict_Ioo`: for a finite exponent, the `Lᵖ` norm of a function on
+  the unit interval `(t, t + 1)` tends to zero as `t` tends to infinity in either direction.
 -/
 
 public section
@@ -67,5 +70,29 @@ theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace �
     simpa only [lintegral_zero] using hdom
   have h0 : (0 : ℝ≥0∞) ^ (1 / q.toReal) = 0 := ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)
   simpa only [h0] using hlint.ennrpow_const (1 / q.toReal)
+
+/-- For a finite exponent `q`, the `Lᵖ` norm of a function on the unit interval `(t, t + 1)`
+tends to zero as `t` tends to infinity in either direction. -/
+theorem tendsto_eLpNorm_restrict_Ioo {F : Type*} [NormedAddCommGroup F] {μ : Measure ℝ}
+    {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞) {g : ℝ → F} (hg : MemLp g q μ) :
+    Tendsto (fun t ↦ eLpNorm g q (μ.restrict (Set.Ioo t (t + 1)))) (cocompact ℝ) (𝓝 0) := by
+  have : (cocompact ℝ).IsCountablyGenerated := by
+    rw [cocompact_eq_atBot_atTop]
+    infer_instance
+  -- Every point `x` leaves `(t, t + 1)` once `t ∉ [x - 1, x]`.
+  have hout (x : ℝ) : ∀ᶠ t in cocompact ℝ, x ∉ Set.Ioo t (t + 1) :=
+    Filter.mem_of_superset (isCompact_Icc (a := x - 1) (b := x)).compl_mem_cocompact
+      fun t ht hx ↦ ht ⟨by linarith [hx.2], hx.1.le⟩
+  have h := tendsto_eLpNorm_sub_of_ae_tendsto (m := μ) (l := cocompact ℝ) (C := 1) hq0 hq
+    (f := fun t ↦ (Set.Ioo t (t + 1)).indicator g) (g := 0)
+    (Eventually.of_forall fun t ↦ hg.aestronglyMeasurable.indicator measurableSet_Ioo)
+    aestronglyMeasurable_zero hg
+    (Eventually.of_forall fun t ↦ Eventually.of_forall fun x ↦ by
+      rw [Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul]
+      exact enorm_indicator_le_enorm_self _ x)
+    (Eventually.of_forall fun x ↦ tendsto_const_nhds.congr' <|
+      (hout x).mono fun t ht ↦ (Set.indicator_of_notMem ht g).symm)
+  simpa only [sub_zero,
+    eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_Ioo.nullMeasurableSet] using h
 
 end TauCeti

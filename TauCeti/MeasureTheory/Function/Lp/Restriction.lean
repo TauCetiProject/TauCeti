@@ -31,6 +31,8 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 * `Set.setIntegralLp_apply`: the pointwise formula for this map.
 * `MeasureTheory.Lp.integralPositiveLinearMap`: integration against a finite measure as a
   positive linear functional on real `Lᵖ`.
+* `TauCeti.setIntegral_norm_le_toReal_eLpNorm_restrict`: on a set of measure at most one, the
+  integral of the norm is at most the `Lᵖ` norm.
 -/
 
 public section
@@ -179,3 +181,29 @@ theorem integralPositiveLinearMap_apply (φ : Lp ℝ p μ) :
   (Set.setIntegralLp_apply (𝕜 := ℝ) Set.univ (measure_lt_top μ _) φ).trans setIntegral_univ
 
 end MeasureTheory.Lp
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup F] {μ : Measure E} {p : ℝ≥0∞}
+
+/-- On a set of measure at most one, the integral of the norm is at most the `Lᵖ` norm, for
+`1 ≤ p`. -/
+theorem setIntegral_norm_le_toReal_eLpNorm_restrict (hp : 1 ≤ p) {s : Set E} (hs : μ s ≤ 1)
+    {g : E → F} (hg : MemLp g p (μ.restrict s)) :
+    ∫ x in s, ‖g x‖ ∂μ ≤ (eLpNorm g p (μ.restrict s)).toReal := by
+  have hr : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
+    rcases eq_or_ne p ∞ with rfl | hp_top
+    · simp
+    · rw [ENNReal.toReal_one, div_one, sub_nonneg]
+      exact div_le_one_of_le₀ (by simpa using ENNReal.toReal_mono hp_top hp) (by positivity)
+  rw [integral_norm_eq_lintegral_enorm hg.aestronglyMeasurable,
+    ← eLpNorm_one_eq_lintegral_enorm hg.aestronglyMeasurable]
+  refine ENNReal.toReal_mono hg.eLpNorm_ne_top <|
+    (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hg.aestronglyMeasurable).trans ?_
+  refine mul_le_of_le_one_right' (ENNReal.rpow_le_one ?_ hr)
+  rwa [Measure.restrict_apply_univ]
+
+end TauCeti

@@ -8,10 +8,10 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Paths in `W^{1,p}(ℝ, F)` are continuous and vanish at infinity
@@ -116,44 +116,6 @@ private theorem eLpNorm_weakFDeriv_apply_one_le
     fun s ↦ ?_)
   simpa using (weakFDeriv _ u s).le_opNorm 1
 
-/-! ### Local `Lᵖ` norms on unit intervals -/
-
-omit [NormedSpace ℝ F] [CompleteSpace F] in
-/-- On an interval of length one, the integral of the norm is at most the `Lᵖ` norm. -/
-private theorem integral_Ioo_norm_le_eLpNorm {g : ℝ → F} (hg : MemLp g p volume) (t : ℝ) :
-    ∫ s in Ioo t (t + 1), ‖g s‖ ≤ (eLpNorm g p (volume.restrict (Ioo t (t + 1)))).toReal := by
-  have : IsProbabilityMeasure (volume.restrict (Ioo t (t + 1))) :=
-    ⟨by rw [Measure.restrict_apply_univ, Real.volume_Ioo, add_sub_cancel_left, ENNReal.ofReal_one]⟩
-  rw [integral_norm_eq_lintegral_enorm hg.aestronglyMeasurable.restrict,
-    ← eLpNorm_one_eq_lintegral_enorm hg.aestronglyMeasurable.restrict]
-  exact ENNReal.toReal_mono (hg.restrict _).eLpNorm_ne_top
-    (eLpNorm_le_eLpNorm_of_exponent_le Fact.out)
-
-omit [NormedSpace ℝ F] [CompleteSpace F] in
-/-- For `p < ∞`, the `Lᵖ` norm of a function on `(t, t + 1)` tends to zero as `t` tends to
-infinity in either direction. -/
-private theorem tendsto_eLpNorm_restrict_Ioo (hp : p ≠ ∞) {g : ℝ → F} (hg : MemLp g p volume) :
-    Tendsto (fun t ↦ eLpNorm g p (volume.restrict (Ioo t (t + 1)))) (cocompact ℝ) (𝓝 0) := by
-  have : (cocompact ℝ).IsCountablyGenerated := by
-    rw [cocompact_eq_atBot_atTop]
-    infer_instance
-  -- Every point `x` leaves `(t, t + 1)` once `t ∉ [x - 1, x]`.
-  have hout (x : ℝ) : ∀ᶠ t in cocompact ℝ, x ∉ Ioo t (t + 1) :=
-    Filter.mem_of_superset (isCompact_Icc (a := x - 1) (b := x)).compl_mem_cocompact
-      fun t ht hx ↦ ht ⟨by linarith [hx.2], hx.1.le⟩
-  have h := tendsto_eLpNorm_sub_of_ae_tendsto (m := volume) (l := cocompact ℝ) (C := 1)
-    (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hp
-    (f := fun t ↦ (Ioo t (t + 1)).indicator g) (g := 0)
-    (Eventually.of_forall fun t ↦ hg.aestronglyMeasurable.indicator measurableSet_Ioo)
-    aestronglyMeasurable_zero hg
-    (Eventually.of_forall fun t ↦ Eventually.of_forall fun x ↦ by
-      rw [Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul]
-      exact enorm_indicator_le_enorm_self _ x)
-    (Eventually.of_forall fun x ↦ tendsto_const_nhds.congr' <|
-      (hout x).mono fun t ht ↦ (indicator_of_notMem ht g).symm)
-  simpa only [sub_zero,
-    eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_Ioo.nullMeasurableSet] using h
-
 /-! ### The local bound -/
 
 variable {u : WeakDerivStep volume ⊤ p
@@ -168,6 +130,8 @@ private theorem norm_le_eLpNorm_Ioo_of_ae_eq (hv : Continuous v)
   have hx : MemLp ⇑(prev _ u) p volume :=
     (Lp.memLp (prev _ u)).mono_measure volume_restrict_top.ge
   have hd := memLp_weakFDeriv_apply_one u
+  have hI : volume (Ioo t (t + 1)) ≤ 1 := by
+    rw [Real.volume_Ioo, add_sub_cancel_left, ENNReal.ofReal_one]
   have hdI : IntegrableOn (fun s ↦ weakFDeriv _ u s 1) (Ioo t (t + 1)) :=
     ((hd.locallyIntegrable Fact.out).integrableOn_isCompact isCompact_Icc).mono_set
       Ioo_subset_Icc_self
@@ -178,8 +142,9 @@ private theorem norm_le_eLpNorm_Ioo_of_ae_eq (hv : Continuous v)
       ∫ s in Ioo t (t + 1), ‖⇑(prev _ u) s‖ := by
     simp [setAverage_eq]
   rw [havg] at hb
-  exact hb.trans (add_le_add (integral_Ioo_norm_le_eLpNorm hx t)
-    (integral_Ioo_norm_le_eLpNorm hd t))
+  exact hb.trans (add_le_add
+    (setIntegral_norm_le_toReal_eLpNorm_restrict Fact.out hI (hx.restrict _))
+    (setIntegral_norm_le_toReal_eLpNorm_restrict Fact.out hI (hd.restrict _)))
 
 /-- A continuous representative of a path is bounded by `‖u‖_{Lᵖ} + ‖u'‖_{Lᵖ}`. -/
 private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[volume] v)
@@ -202,9 +167,10 @@ private theorem tendsto_cocompact_of_ae_eq (hp : p ≠ ∞) (hv : Continuous v)
   have hd := memLp_weakFDeriv_apply_one u
   rw [tendsto_zero_iff_norm_tendsto_zero]
   refine squeeze_zero (fun t ↦ norm_nonneg _) (norm_le_eLpNorm_Ioo_of_ae_eq hv hae) ?_
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   simpa using ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-    (tendsto_eLpNorm_restrict_Ioo hp hx)).add
-    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (tendsto_eLpNorm_restrict_Ioo hp hd))
+    (tendsto_eLpNorm_restrict_Ioo hp0 hp hx)).add
+    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (tendsto_eLpNorm_restrict_Ioo hp0 hp hd))
 
 /-! ### The embedding into `C₀(ℝ, F)` -/
 
@@ -251,14 +217,6 @@ private theorem prev_ae_eq_toZeroAtInftyₗ (hp : p ≠ ∞)
     ⇑(prev _ u) =ᵐ[volume] toZeroAtInftyₗ hp u :=
   (exists_zeroAtInftyContinuousMap_ae_eq u hp).choose_spec
 
-/-- The sum of the component norms is at most `√2` times the graph norm. -/
-private theorem norm_prev_add_norm_weakFDeriv_le :
-    ‖prev _ u‖ + ‖weakFDeriv _ u‖ ≤ √2 * ‖u‖ := by
-  have hsq := norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq _ u
-  refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
-  rw [mul_pow, Real.sq_sqrt zero_le_two, hsq]
-  nlinarith [sq_nonneg (‖prev _ u‖ - ‖weakFDeriv _ u‖)]
-
 /-- **The Sobolev embedding on the line.** For `1 ≤ p < ∞`, the map sending a path in
 `W^{1,p}(ℝ, F)` to its continuous representative is a bounded linear map into the space
 `C₀(ℝ, F)` of continuous functions vanishing at infinity, of norm at most `√2`
@@ -270,7 +228,7 @@ def toZeroAtInfty (hp : p ≠ ∞) :
   (toZeroAtInftyₗ hp).mkContinuous √2 fun u ↦ by
     rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
     refine ((BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦ ?_).trans
-      norm_prev_add_norm_weakFDeriv_le
+      (norm_prev_add_norm_weakFDeriv_le _ u)
     exact norm_le_of_ae_eq (toZeroAtInftyₗ hp u).continuous (prev_ae_eq_toZeroAtInftyₗ hp u) t
 
 /-- The embedding sends a path to a representative of its value. -/
@@ -330,7 +288,7 @@ theorem norm_toZeroAtInfty_le_sqrt_two_mul_norm (hp : p ≠ ∞)
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ‖toZeroAtInfty hp u‖ ≤ √2 * ‖u‖ :=
-  (norm_toZeroAtInfty_le hp u).trans norm_prev_add_norm_weakFDeriv_le
+  (norm_toZeroAtInfty_le hp u).trans (norm_prev_add_norm_weakFDeriv_le _ u)
 
 /-- The embedding `W^{1,p}(ℝ, F) →L[ℝ] C₀(ℝ, F)` has operator norm at most `√2`. -/
 theorem opNorm_toZeroAtInfty_le (hp : p ≠ ∞) : ‖toZeroAtInfty (F := F) hp‖ ≤ √2 :=
