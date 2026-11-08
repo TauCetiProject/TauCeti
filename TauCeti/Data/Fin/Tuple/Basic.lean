@@ -296,11 +296,13 @@ theorem eq_of_injective_comp_succAbove {n : ℕ} {b : Fin (n + 1) → α} {q : F
   obtain ⟨j, rfl⟩ := exists_succAbove_eq hj
   exact congrArg _ (hq h)
 
-/-- If `b p = b q` for `p ≠ q`, deleting the entry at `p` leaves an injective tuple exactly when
+/-- If `b p = b q`, deleting the entry at `p` leaves an injective tuple exactly when
 deleting the entry at `q` does. -/
 theorem injective_comp_succAbove_of_eq {n : ℕ} {b : Fin (n + 1) → α} {p q : Fin (n + 1)}
-    (hpq : p ≠ q) (h : b p = b q) (hp : Function.Injective (b ∘ p.succAbove)) :
+    (h : b p = b q) (hp : Function.Injective (b ∘ p.succAbove)) :
     Function.Injective (b ∘ q.succAbove) := by
+  obtain rfl | hpq := eq_or_ne p q
+  · exact hp
   intro x y hxy
   have key (z : Fin (n + 1)) (hz : z ≠ q) :
       (if z = p then q else z) ≠ p ∧ b (if z = p then q else z) = b z := by
