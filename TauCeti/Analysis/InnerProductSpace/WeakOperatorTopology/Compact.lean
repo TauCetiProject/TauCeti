@@ -125,8 +125,6 @@ theorem isCompact_closure_image_ofCLM_of_isBounded {s : Set (E →L[𝕜] F)}
     (hs : Bornology.IsBounded s) :
     IsCompact (closure (ofCLM '' s : Set (E →WOT[𝕜] F))) := by
   obtain ⟨r, hr⟩ := hs.subset_closedBall 0
-  have hK := isCompact_image_ofCLM_closedBall (0 : E →L[𝕜] F) r
-  exact hK.of_isClosed_subset isClosed_closure
-    (closure_minimal (Set.image_mono hr) hK.isClosed)
+  exact (isCompact_image_ofCLM_closedBall (0 : E →L[𝕜] F) r).closure_of_subset (Set.image_mono hr)
 
 end ContinuousLinearMapWOT
