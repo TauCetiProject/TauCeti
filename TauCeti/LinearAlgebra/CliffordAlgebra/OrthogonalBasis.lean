@@ -118,7 +118,7 @@ variable {b : Module.Basis I R M}
 
 /-- The generators of a finite set of indices of an orthogonal basis, listed in increasing order,
 are pairwise orthogonal. -/
-private theorem pairwise_isOrtho_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+theorem pairwise_isOrtho_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (s : Finset I) : (s.sort.map b).Pairwise Q.IsOrtho :=
   List.pairwise_map.mpr <| (s.sort_nodup _).imp fun hij ↦
     QuadraticMap.associated_isOrtho.mp (hb hij)
