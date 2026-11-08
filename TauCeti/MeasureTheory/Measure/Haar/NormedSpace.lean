@@ -65,6 +65,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
+* `MeasureTheory.Measure.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball`: the closed ball
+  of radius `c r` has `cⁿ` times the measure of the open ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
   radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
   that of the unit ball.
@@ -300,6 +302,16 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_div_le
   rw [mu.addHaar_real_closedBall x hR, mu.addHaar_real_closedBall y hr.le,
     mul_div_mul_right _ _ hball.ne', div_le_iff₀ (by positivity), ← mul_pow]
   exact pow_le_pow_left₀ hR hRr _
+
+/-- The closed ball of radius `c r`, for `c ≥ 0` and `r > 0`, has `cⁿ` times the real measure of
+the open ball of radius `r` with the same centre, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {c r : ℝ} (hc : 0 ≤ c) (hr : 0 < r) :
+    mu.real (closedBall x (c * r)) = c ^ finrank ℝ E * mu.real (ball x r) := by
+  rw [mu.addHaar_real_closedBall x (by positivity), mu.addHaar_real_ball_of_pos x hr, mul_pow]
+  ring
 
 /-- The shell between the open ball of radius `r > 0` and the concentric closed ball of radius
 `s ≥ r` has real measure `(sⁿ - rⁿ)` times the real measure of the unit ball, where `n` is the

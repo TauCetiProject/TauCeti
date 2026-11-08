@@ -44,9 +44,12 @@ variable {K : Type*} [Field K] {p n : ℕ} [ExpChar K p]
 
 /-- In a field with `q²` elements, `q = p ^ n` a power of the exponential characteristic, every
 `c` with `c ^ q = c` is of the form `b ^ q + b` for exactly `q` elements `b`. -/
-theorem natCard_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
+theorem natCard_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
     (hc : c ^ p ^ n = c) : Nat.card {b : K // b ^ p ^ n + b = c} = p ^ n := by
   classical
+  have : Finite K :=
+    Nat.finite_of_card_ne_zero
+      (by rw [hK]; exact pow_ne_zero 2 (pow_ne_zero n (expChar_pos K p).ne'))
   have := Fintype.ofFinite K
   rw [Nat.card_eq_fintype_card] at hK
   set q := p ^ n with hqdef
