@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Residue fields in a constant field extension
@@ -155,10 +156,22 @@ theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
     rw [IsLocalRing.ResidueField.algebraMap_residue]
     exact congrArg _ (Subtype.ext (by simp [Q]))
   rw [← hg]
-  generalize IsLocalRing.residue Q.integers ⟨_, hgQ⟩ = z at hmem
-  induction hmem using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨c, rfl⟩ := hx
+  refine Submodule.map_mem_span_of_forall_exists
+    (algebraMap Q.ResidueField P'.ResidueField) _ _ ?_ ?_ hmem
+  · -- A coefficient from the residue field of `Q ∩ F` is a coefficient from `F_P`.
+    intro r
+    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
+    have ha : (a : F) ∈ P.integers := by
+      rw [mem_integers_restrict_iff, IsScalarTower.algebraMap_apply F E F', ←
+        mem_integers_restrict_iff L E P', ← mem_integers_restrict_iff k F Q]
+      exact a.2
+    refine ⟨IsLocalRing.residue P.integers ⟨a, ha⟩, ?_⟩
+    rw [IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue,
+      IsLocalRing.ResidueField.algebraMap_residue]
+    refine congrArg _ (Subtype.ext ?_)
+    simp only [Q, P, coe_algebraMap_integers, IsScalarTower.algebraMap_apply F E F']
+  · -- The residue of a constant of `L` is the residue of the same constant in `k'`.
+    rintro _ ⟨c, rfl⟩
     refine Submodule.subset_span ⟨c, ?_⟩
     rw [algebraMap_residueField (R := k'), algebraMap_residueField (R := L),
       IsLocalRing.ResidueField.algebraMap_residue]
@@ -166,24 +179,6 @@ theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
     simpa [Q, coe_algebraMap_constants, coe_algebraMap_integers] using
       (IsScalarTower.algebraMap_apply L k' F' c).symm.trans
         (IsScalarTower.algebraMap_apply L E F' c)
-  | zero => simp
-  | add x y _ _ hx hy => simpa using add_mem hx hy
-  | smul r x _ hx =>
-    -- A coefficient from the residue field of `Q ∩ F` is a coefficient from `F_P`.
-    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
-    have ha : (a : F) ∈ P.integers := by
-      rw [mem_integers_restrict_iff, IsScalarTower.algebraMap_apply F E F', ←
-        mem_integers_restrict_iff L E P', ← mem_integers_restrict_iff k F Q]
-      exact a.2
-    have hr : algebraMap Q.ResidueField P'.ResidueField
-        (algebraMap (Q.restrict k F).ResidueField Q.ResidueField (IsLocalRing.residue _ a)) =
-        algebraMap P.ResidueField P'.ResidueField (IsLocalRing.residue P.integers ⟨a, ha⟩) := by
-      rw [IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue,
-        IsLocalRing.ResidueField.algebraMap_residue]
-      refine congrArg _ (Subtype.ext ?_)
-      simp only [Q, P, coe_algebraMap_integers, IsScalarTower.algebraMap_apply F E F']
-    rw [Algebra.smul_def, map_mul, hr, ← Algebra.smul_def]
-    exact Submodule.smul_mem _ _ hx
 
 /-- **The residue field of a constant field extension is a compositum** (Stichtenoth,
 Theorem 3.6.3(g)): for a separable algebraic constant field extension `F' = F · k'` of `F / k`

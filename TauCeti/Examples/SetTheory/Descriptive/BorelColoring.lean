@@ -9,6 +9,7 @@ import Mathlib.Analysis.Real.Cardinality
 import TauCeti.SetTheory.Descriptive.BorelColoring
 import TauCeti.SetTheory.Descriptive.EZero
 import TauCeti.SetTheory.Descriptive.GSGraph
+import TauCeti.SetTheory.Descriptive.SmallFamily.Basic
 
 /-!
 # Regression examples: countable Borel colorings
@@ -22,6 +23,9 @@ only:
   uncountably many classes;
 * the inequivalence relation of `E₀` has no countable Borel coloring, since `E₀` has continuum
   many classes;
+* for a Borel equivalence relation, the inequivalence relation has a countable Borel coloring
+  exactly when there are countably many classes, and otherwise the family of all assignments
+  `Fin 1 → X` is not small for it, the seed of the `G₀` construction;
 * a relation with a loop has no coloring, and the empty set is independent for it;
 * `G₀` has no measurable coloring by `ℕ`, while `gSGraph {[]}` is colored by the first
   coordinate;
@@ -53,6 +57,21 @@ example : ¬ SetRel.HasCountableBorelColoring {p : ℝ × ℝ | p.1 ≠ p.2} := 
     (by simpa [Setoid.bot_def] using h)
   exact Cardinal.not_countable_real
     (Set.countable_univ_iff.2 Setoid.quotientBotEquiv.symm.injective.countable)
+
+-- For a Borel equivalence relation, whose classes are therefore Borel, the inequivalence relation
+-- has a countable Borel coloring exactly when there are countably many classes.
+example {X : Type*} [MeasurableSpace X] (E : Setoid X)
+    (hE : MeasurableSet {p : X × X | E p.1 p.2}) :
+    SetRel.HasCountableBorelColoring {p : X × X | ¬ E p.1 p.2} ↔ Countable (Quotient E) :=
+  Setoid.hasCountableBorelColoring_not_iff.trans
+    (and_iff_left fun _ ↦ measurable_prodMk_left hE)
+
+-- With uncountably many classes, the family of all one-point assignments is not small for the
+-- inequivalence relation.
+example {X : Type*} [MeasurableSpace X] (E : Setoid X) (hc : ¬ Countable (Quotient E)) :
+    ¬ SetRel.IsSmallFamily {p : X × X | ¬ E p.1 p.2} (Set.univ : Set (Fin 1 → X)) :=
+  SetRel.isSmallFamily_univ_iff.not.2 fun h ↦
+    hc (E.countable_quotient_of_hasCountableBorelColoring_not h)
 
 -- The diagonal relation on `ℕ` has a loop at every point, so it has no coloring, although the
 -- empty set is still independent for it.

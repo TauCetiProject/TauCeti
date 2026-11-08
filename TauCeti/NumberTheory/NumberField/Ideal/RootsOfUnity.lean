@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.MulChar.Basic
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Roots of unity modulo a prime of a ring of integers
@@ -17,7 +19,10 @@ identifies the `n`-th roots of unity of `𝓞 K` with those of the residue field
 particular `N P ≡ 1 (mod n)`.
 
 This is the input needed to define the `n`-th power residue symbol at `P`: an `n`-th root of
-unity of the residue field, such as `x ^ ((N P - 1) / n)`, lifts uniquely to `𝓞 K`.
+unity of the residue field, such as `x ^ ((N P - 1) / n)`, lifts uniquely to `𝓞 K`. Applied to
+all of the units of a finite field `F` with `q` elements mapping to `𝓞 K ⧸ P`, which are
+`(q - 1)`-th roots of unity, it gives the Teichmüller character `ω : F → 𝓞 K` lifting the map to
+the residue field; this is the character whose powers Stickelberger's congruence evaluates.
 
 ## Main results
 
@@ -30,6 +35,9 @@ unity of the residue field, such as `x ^ ((N P - 1) / n)`, lifts uniquely to `�
   of unity of `𝓞 K` and those of `𝓞 K ⧸ P`.
 * `Ideal.pow_absNorm_sub_one_div_mem_rootsOfUnity`: `u ^ ((N P - 1) / n)` is an `n`-th root of
   unity for every unit `u` of `𝓞 K ⧸ P`.
+* `Ideal.exists_mulChar_mk_eq`: a ring homomorphism from a finite field with `q` elements to
+  `𝓞 K ⧸ P` lifts to a multiplicative character with values in `𝓞 K`, the Teichmüller character,
+  when `𝓞 K` contains a primitive `(q - 1)`-th root of unity.
 
 ## References
 
@@ -140,5 +148,40 @@ theorem pow_absNorm_sub_one_div_mem_rootsOfUnity (hP : (absNorm P).Coprime n)
     (u : (𝓞 K ⧸ P)ˣ) : u ^ ((absNorm P - 1) / n) ∈ rootsOfUnity n (𝓞 K ⧸ P) := by
   rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel (dvd_absNorm_sub_one hP),
     pow_absNorm_sub_one_eq_one]
+
+variable (P) in
+/-- **The Teichmüller character.** Let `F` be a finite field with `q` elements and
+`f : F →+* 𝓞 K ⧸ P`. If `𝓞 K` contains a primitive `(q - 1)`-th root of unity, then `f` lifts
+to a multiplicative character `ω` of `F` with values in `𝓞 K`: `ω x ≡ f x (mod P)` for every `x`.
+On `x ≠ 0`, `ω x` is the unique `(q - 1)`-th root of unity of `𝓞 K` reducing to `f x`. -/
+theorem exists_mulChar_mk_eq {F : Type*} [Field F] [Fintype F] (f : F →+* 𝓞 K ⧸ P)
+    [HasEnoughRootsOfUnity (𝓞 K) (Fintype.card F - 1)] :
+    ∃ ω : MulChar F (𝓞 K), ∀ x, Ideal.Quotient.mk P (ω x) = f x := by
+  have : NeZero (Fintype.card F - 1) := ⟨by have := Fintype.one_lt_card (α := F); omega⟩
+  -- `F` and `𝓞 K ⧸ P` have the same characteristic `p`, so `N P` and `q` are powers of `p`, and
+  -- `N P` is prime to `q - 1`.
+  have hP : (absNorm P).Coprime (Fintype.card F - 1) := by
+    let _ := Ideal.Quotient.field P
+    let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
+    have : CharP (𝓞 K ⧸ P) (ringChar F) := (f.charP_iff f.injective _).1 (ringChar.charP F)
+    obtain ⟨a, hp, ha⟩ := FiniteField.card F (ringChar F)
+    obtain ⟨b, -, hb⟩ := FiniteField.card (𝓞 K ⧸ P) (ringChar F)
+    rw [absNorm_eq_natCard, Nat.card_eq_fintype_card, hb, ha]
+    refine Nat.Coprime.pow_left _ (((Nat.coprime_self_sub_right ?_).2
+      (Nat.coprime_one_right _)).coprime_dvd_left (dvd_pow_self _ a.ne_zero))
+    exact Nat.one_le_pow _ _ hp.pos
+  -- Every unit of `F` is a `(q - 1)`-th root of unity, and so is its image under `f`.
+  let φ : Fˣ →* rootsOfUnity (Fintype.card F - 1) (𝓞 K ⧸ P) :=
+    (Units.map f.toMonoidHom).codRestrict _ fun u ↦ by
+      have hu : u ^ (Fintype.card F - 1) = 1 :=
+        Units.ext (by simpa using FiniteField.pow_card_sub_one_eq_one (u : F) u.ne_zero)
+      rw [mem_rootsOfUnity, ← map_pow, hu, map_one]
+  refine ⟨MulChar.ofUnitHom ((rootsOfUnity _ _).subtype.comp
+    ((rootsOfUnityEquivQuot P _ hP).symm.toMonoidHom.comp φ)), fun x ↦ ?_⟩
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [MulChar.map_zero, map_zero, map_zero]
+  lift x to Fˣ using hx.isUnit
+  rw [MulChar.ofUnitHom_coe]
+  simp [φ]
 
 end Ideal

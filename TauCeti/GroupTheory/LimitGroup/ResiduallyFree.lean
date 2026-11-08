@@ -228,7 +228,7 @@ theorem IsResiduallyFree.isMulTorsionFree (h : IsResiduallyFree G) : IsMulTorsio
 theorem IsResiduallyFree.exists_maximalRoot (h : IsResiduallyFree G) {u : G} (hu : u ≠ 1) :
     ∃ (r : G) (k : ℕ), k ≠ 0 ∧ r ^ k = u ∧ ¬IsProperPower r ∧
       ∀ (y : G) (n : ℕ), y ^ n = u → n ≤ k := by
-  refine exists_maximalRoot_of_bddAbove hu ?_
+  refine exists_maximalRoot_of_bddAbove ?_
   obtain ⟨ι, φ, hφ⟩ := h u hu
   classical
   exact ⟨FreeGroup.norm (φ u), fun n ⟨y, hy⟩ =>

@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Norms of averages
@@ -68,9 +69,16 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   average over it is at most the integral of the extended norm over it.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
+* `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
+  set of finite measure, `1 ≤ p < ∞`.
 * `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
   `TauCeti.setLAverage_enorm_add_sub_le`: the mean oscillation is infinite off integrability on a
   set of finite measure, ignores constants and is subadditive.
+* `TauCeti.setLAverage_enorm_sub_setAverage_congr_ae`,
+  `TauCeti.setLAverage_enorm_const_smul_sub_setAverage`: the mean oscillation depends only on the
+  a.e. class of `f` and is homogeneous.
+* `TauCeti.ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero`: on a set of
+  finite measure, a function with zero mean oscillation is a.e. equal to its average there.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
 * `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset`: the average of a nonnegative function
@@ -98,11 +106,16 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
-  `TauCeti.setAverage_comp_preimage_of_map_eq_smul`: integrals and averages under a measurable
-  equivalence that rescales the measure by a constant.
+  `TauCeti.setAverage_comp_preimage_of_map_eq_smul`,
+  `TauCeti.setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul`: integrals, averages
+  and mean oscillations under a measurable equivalence that rescales the measure by a constant.
 * `TauCeti.tendsto_measureReal_inter_of_monotone`, `TauCeti.tendsto_setAverage_inter_of_monotone`:
   along an increasing sequence of sets covering `s`, the measures of and averages over the pieces
   of `s` converge to those over `s`.
+* `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
+  a smaller average.
+* `TauCeti.tendsto_average_add_rpow`: dominated convergence for the averages of
+  `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ≥ 0` tending to `0`.
 -/
 
 public section
@@ -229,6 +242,43 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
           lintegral_add_right _ measurable_const, setLIntegral_const,
           ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, ← setLAverage_eq, two_mul]
 
+/-- The `Lᵖ` deviation of `f` from its average over a set `s` of finite measure is at most twice
+its `Lᵖ` deviation from any constant `c`: `‖f - f_s‖_{Lᵖ(s)} ≤ 2 ‖f - c‖_{Lᵖ(s)}` for
+`1 ≤ p < ∞`. -/
+theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (c : F) :
+    eLpNorm (fun x ↦ f x - ⨍ y in s, f y ∂μ) p (μ.restrict s) ≤
+      2 * eLpNorm (fun x ↦ f x - c) p (μ.restrict s) := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  set N := eLpNorm (fun x ↦ f x - c) p (μ.restrict s)
+  rcases eq_or_ne N ∞ with hN | hN
+  · simp [hN]
+  -- A finite `Lᵖ` deviation from `c` makes `f` integrable on `s`, so `f_s - c` is the average of
+  -- `f - c`, which Hölder's inequality bounds by `N`.
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hg : MemLp (fun x ↦ f x - c) p (μ.restrict s) :=
+    memLp_iff.2 (lt_top_iff_ne_top.2 hN)
+  have hfi : IntegrableOn f s μ :=
+    ((hg.integrable hp).add (integrable_const c)).congr (.of_forall fun x ↦ by simp)
+  have heq : (⨍ y in s, f y ∂μ) - c = ⨍ y in s, (f y - c) ∂μ := by
+    rw [setAverage_fun_sub hfi (integrableOn_const hs), setAverage_const h0 hs]
+  have hcancel : μ s ^ (-(p.toReal)⁻¹) * μ s ^ (1 / p.toReal) = 1 := by
+    rw [← ENNReal.rpow_add _ _ h0 hs, one_div, neg_add_cancel, ENNReal.rpow_zero]
+  calc eLpNorm (fun x ↦ f x - ⨍ y in s, f y ∂μ) p (μ.restrict s)
+      = eLpNorm ((fun x ↦ f x - c) - fun _ ↦ ⨍ y in s, (f y - c) ∂μ) p (μ.restrict s) := by
+        congr 1
+        ext x
+        simp [← heq]
+    _ ≤ N + eLpNorm (fun _ ↦ ⨍ y in s, (f y - c) ∂μ) p (μ.restrict s) := eLpNorm_sub_le hp
+    _ = N + ‖⨍ y in s, (f y - c) ∂μ‖ₑ * μ s ^ (1 / p.toReal) := by
+        rw [eLpNorm_const _ (zero_lt_one.trans_le hp).ne' (by simpa using h0),
+          Measure.restrict_apply_univ]
+    _ ≤ N + μ s ^ (-(p.toReal)⁻¹) * N * μ s ^ (1 / p.toReal) := by
+        gcongr
+        exact enorm_setAverage_le hp hp'
+    _ = 2 * N := by rw [mul_comm _ N, mul_assoc, hcancel, mul_one, two_mul]
+
 omit [NormedSpace ℝ F] [CompleteSpace F] in
 /-- On a set of finite measure, the average of `‖f - b‖ₑ` is infinite for an `f` that is a.e.
 strongly measurable but not integrable there, whatever the constant `b`. -/
@@ -292,6 +342,36 @@ theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f 
           rw [add_sub_add_comm]
           exact enorm_add_le _ _
     _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).enorm _
+
+omit [CompleteSpace F] in
+/-- The mean oscillation of `f` on a set depends only on the a.e. class of `f`. -/
+theorem setLAverage_enorm_sub_setAverage_congr_ae {g : X → F} (h : f =ᵐ[μ] g) (s : Set X) :
+    ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ = ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
+  have hs : f =ᵐ[μ.restrict s] g := ae_restrict_of_ae h
+  rw [average_congr hs]
+  exact laverage_congr (hs.mono fun y hy => by simp only [hy])
+
+omit [CompleteSpace F] in
+/-- The mean oscillation of `k • f` on a set is `‖k‖ₑ` times that of `f`. -/
+theorem setLAverage_enorm_const_smul_sub_setAverage {𝕜 : Type*} [NormedDivisionRing 𝕜]
+    [Module 𝕜 F] [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (s : Set X) :
+    ⨍⁻ y in s, ‖k • f y - ⨍ z in s, k • f z ∂μ‖ₑ ∂μ =
+      ‖k‖ₑ * ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
+  have havg : ⨍ z in s, k • f z ∂μ = k • ⨍ z in s, f z ∂μ := integral_smul k f
+  simp_rw [havg, ← smul_sub, enorm_smul, setLAverage_eq,
+    lintegral_const_mul' _ _ enorm_ne_top, mul_div_assoc]
+
+omit [CompleteSpace F] in
+/-- On a set of finite measure, an a.e. strongly measurable `f` with zero mean oscillation agrees
+a.e. on the set with its average. -/
+theorem ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (hs : μ s ≠ ∞)
+    (h : ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ = 0) :
+    ∀ᵐ y ∂μ.restrict s, f y = ⨍ z in s, f z ∂μ := by
+  rw [setLAverage_eq, ENNReal.div_eq_zero_iff] at h
+  refine h.elim (fun h => ?_) fun h => absurd h hs
+  filter_upwards [(lintegral_eq_zero_iff' (hf.sub aestronglyMeasurable_const).enorm).1 h] with y hy
+  exact sub_eq_zero.1 (enorm_eq_zero.1 hy)
 
 end Oscillation
 
@@ -581,6 +661,16 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
   rw [setAverage_eq, setAverage_eq, setIntegral_comp_preimage_of_map_eq_smul he, hmeas,
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
 
+/-- Mean oscillations are invariant under a measurable equivalence `e` that pushes `μ` forward to
+a positive finite multiple of `ν`: the mean oscillation of `f ∘ e` on `e ⁻¹' s` is that of `f`
+on `s`. -/
+theorem setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν)
+    (ha : a ≠ 0) (ha' : a ≠ ∞) (f : Y → F) (s : Set Y) :
+    ⨍⁻ x in e ⁻¹' s, ‖f (e x) - ⨍ z in e ⁻¹' s, f (e z) ∂μ‖ₑ ∂μ =
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂ν‖ₑ ∂ν := by
+  rw [setAverage_comp_preimage_of_map_eq_smul he ha ha' f s]
+  exact setLAverage_comp_preimage_of_map_eq_smul he ha ha' (fun y => ‖f y - ⨍ z in s, f z ∂ν‖ₑ) s
+
 end ChangeOfVariables
 
 section SMulMeasure
@@ -656,5 +746,58 @@ theorem tendsto_setAverage_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ 
     (fun m n hmn ↦ Set.inter_subset_inter_right s (hV hmn)) (by rwa [hunion])
 
 end Exhaustion
+
+section Rpow
+
+/-- If `f ≥ 0` and `(f + δ)^s` is integrable, with `δ ≥ 0` and `s > 0`, then so is `f^s`, and its
+average is at most that of `(f + δ)^s`. -/
+theorem integrable_and_average_rpow_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f : α → ℝ} {δ s : ℝ} (hs : 0 < s) (hδ : 0 ≤ δ)
+    (hf : AEStronglyMeasurable f μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y)
+    (hint' : Integrable (fun y => (f y + δ) ^ s) μ) :
+    Integrable (fun y => f y ^ s) μ ∧ ⨍ y, f y ^ s ∂μ ≤ ⨍ y, (f y + δ) ^ s ∂μ := by
+  have hle : ∀ᵐ y ∂μ, f y ^ s ≤ (f y + δ) ^ s :=
+    hf0.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hs.le
+  have hint : Integrable (fun y => f y ^ s) μ := by
+    refine hint'.mono' (hf.aemeasurable.pow_const s).aestronglyMeasurable ?_
+    filter_upwards [hf0, hle] with y hy hyle
+    rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
+  refine ⟨hint, ?_⟩
+  rw [average_eq, average_eq]
+  exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
+
+/-- Dominated convergence for the averages of `(f + δ k)^p`, for `f ≥ 0` in `Lᵖ` on a finite
+measure space, `0 < p` and `δ k ≥ 0` tending to `0`: `⨍ (f + δ k)^p → ⨍ f^p`. -/
+theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} {p : ℝ} {δ : ℕ → ℝ} (hp : 0 < p)
+    (hf : MemLp f (ENNReal.ofReal p) μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y)
+    (hδ0 : ∀ k, 0 ≤ δ k) (hδ : Filter.Tendsto δ Filter.atTop (nhds 0)) :
+    Filter.Tendsto (fun k : ℕ => ⨍ y, (f y + δ k) ^ p ∂μ)
+      Filter.atTop (nhds (⨍ y, f y ^ p ∂μ)) := by
+  -- Eventually `0 ≤ δ ≤ 1`, so `(f + δ)^p ≤ (f + 1)^p`, which is integrable since `f ∈ Lᵖ`.
+  have hbound : Integrable (fun y => (f y + 1) ^ p) μ := by
+    have hmem : MemLp (fun y => f y + 1) (ENNReal.ofReal p) μ := hf.add (memLp_const 1)
+    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
+      ENNReal.ofReal_ne_top).congr ?_
+    filter_upwards [hf0] with y hy
+    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg (by linarith)]
+  have hlim : Filter.Tendsto (fun k : ℕ => ∫ y, (f y + δ k) ^ p ∂μ)
+      Filter.atTop (nhds (∫ y, f y ^ p ∂μ)) := by
+    refine tendsto_integral_filter_of_dominated_convergence _
+      (Filter.Eventually.of_forall fun k => ?_) ?_ hbound ?_
+    · exact ((hf.aestronglyMeasurable.aemeasurable.add_const _).pow_const p).aestronglyMeasurable
+    · filter_upwards [hδ.eventually (ge_mem_nhds one_pos)] with k hk
+      filter_upwards [hf0] with y hy
+      have := hδ0 k
+      rw [Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _)]
+      exact Real.rpow_le_rpow (by positivity) (by linarith) hp.le
+    · refine Filter.Eventually.of_forall fun y => ?_
+      have hδ' := (tendsto_const_nhds (x := f y)).add hδ
+      rw [add_zero] at hδ'
+      exact (Real.continuousAt_rpow_const _ p (Or.inr hp.le)).tendsto.comp hδ'
+  simp only [average_eq, smul_eq_mul]
+  exact hlim.const_mul _
+
+end Rpow
 
 end TauCeti

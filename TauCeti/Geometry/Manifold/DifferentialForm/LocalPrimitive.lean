@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.WithTopology
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
@@ -38,6 +39,8 @@ exactness of closed `1`-forms on simply connected manifolds and the period homom
 * `TauCeti.IsPrimitiveOn φ g U`: `g` is a primitive of `φ` on the open set `U`.
 * `TauCeti.IsPrimitiveOn.mpullback`: composing with a differentiable map gives a primitive of the
   pulled back form.
+* `IsLocalDiffeomorphAt.isPrimitiveOn_comp_localInverse`: conversely, a primitive of a form pulled
+  back along a local diffeomorphism descends along its local inverse.
 * `TauCeti.PrimitiveSpace φ`: the space of points and values with the topology of local primitives.
 * `TauCeti.PrimitiveSpace.isCoveringMap_proj`: its projection is a covering map when `φ` is closed.
 * `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq`: near each parameter, a
@@ -73,6 +76,11 @@ structure IsPrimitiveOn (φ : RoughForm I M F 1) (g : M → F) (U : Set M) : Pro
   mextDeriv_eq : ∀ y ∈ U, mextDeriv (RoughForm.ofFunction I g) y = φ y
 
 variable {φ ψ : RoughForm I M F 1} {g h : M → F} {U V : Set M}
+
+/-- A differentiable function whose differential is `φ` is a primitive of `φ` on the whole space. -/
+theorem isPrimitiveOn_univ_of_mextDeriv_eq (hg : MDifferentiable I 𝓘(ℝ, F) g)
+    (h : mextDeriv (RoughForm.ofFunction I g) = φ) : IsPrimitiveOn φ g univ :=
+  ⟨isOpen_univ, hg.mdifferentiableOn, fun y _ ↦ congrFun h y⟩
 
 theorem IsPrimitiveOn.mono (hg : IsPrimitiveOn φ g U) (hV : IsOpen V) (hVU : V ⊆ U) :
     IsPrimitiveOn φ g V :=
@@ -112,18 +120,50 @@ section Pullback
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
 
+/-- Composing a primitive `g` of `θ` on `U` with a map `f` that is differentiable on an open set
+`W` gives a primitive of the pullback of `θ` along `f` on `W ∩ f ⁻¹' U`. -/
+theorem IsPrimitiveOn.mpullback_of_mdifferentiableOn {θ : RoughForm I' M' F 1} {g : M' → F}
+    {U : Set M'} (hg : IsPrimitiveOn θ g U) {f : M → M'} {W : Set M} (hW : IsOpen W)
+    (hf : MDifferentiableOn I I' f W) :
+    IsPrimitiveOn (mpullback I I' f θ) (g ∘ f) (W ∩ f ⁻¹' U) := by
+  have hfx (x : M) (hx : x ∈ W) : MDifferentiableAt I I' f x :=
+    (hf x hx).mdifferentiableAt (hW.mem_nhds hx)
+  have hgf (x : M) (hx : x ∈ f ⁻¹' U) : MDifferentiableAt I' 𝓘(ℝ, F) g (f x) :=
+    (hg.mdifferentiableOn (f x) hx).mdifferentiableAt (hg.isOpen.mem_nhds hx)
+  refine ⟨hf.continuousOn.isOpen_inter_preimage hW hg.isOpen,
+    fun x hx ↦ ((hgf x hx.2).comp x (hfx x hx.1)).mdifferentiableWithinAt, fun x hx ↦ ?_⟩
+  ext v
+  rw [← mpullback_mextDeriv_ofFunction_apply (hfx x hx.1) (hgf x hx.2), mpullback_apply,
+    mpullback_apply, hg.mextDeriv_eq (f x) hx.2]
+
 /-- Composing a primitive `g` of `θ` on `U` with a differentiable map `f` gives a primitive of the
 pullback of `θ` along `f` on the preimage of `U`. -/
 theorem IsPrimitiveOn.mpullback {θ : RoughForm I' M' F 1} {g : M' → F} {U : Set M'}
     (hg : IsPrimitiveOn θ g U) {f : M → M'} (hf : MDifferentiable I I' f) :
     IsPrimitiveOn (mpullback I I' f θ) (g ∘ f) (f ⁻¹' U) := by
-  have hgf (x : M) (hx : x ∈ f ⁻¹' U) : MDifferentiableAt I' 𝓘(ℝ, F) g (f x) :=
-    (hg.mdifferentiableOn (f x) hx).mdifferentiableAt (hg.isOpen.mem_nhds hx)
-  refine ⟨hg.isOpen.preimage hf.continuous,
-    fun x hx ↦ ((hgf x hx).comp x (hf x)).mdifferentiableWithinAt, fun x hx ↦ ?_⟩
-  ext v
-  rw [← mpullback_mextDeriv_ofFunction_apply (hf x) (hgf x hx), mpullback_apply, mpullback_apply,
-    hg.mextDeriv_eq (f x) hx]
+  simpa using hg.mpullback_of_mdifferentiableOn isOpen_univ hf.mdifferentiableOn
+
+/-- **Primitives descend along a local inverse.** If `π` is a `C^n` local diffeomorphism at `x`
+(`n ≠ 0`) and `g` is a primitive of the pullback `π^* θ` on `V`, then `g ∘ s` is a primitive of
+`θ` on `s.source ∩ s ⁻¹' V`, for the local inverse `s` of `π` near `x`. -/
+theorem _root_.IsLocalDiffeomorphAt.isPrimitiveOn_comp_localInverse {n : WithTop ℕ∞}
+    {θ : RoughForm I' M' F 1} {π : M → M'} {x : M} (hπ : IsLocalDiffeomorphAt I I' n π x)
+    (hn : n ≠ 0) {g : M → F} {V : Set M} (hg : IsPrimitiveOn (mpullback I I' π θ) g V) :
+    IsPrimitiveOn θ (g ∘ hπ.localInverse) (hπ.localInverse.source ∩ hπ.localInverse ⁻¹' V) := by
+  set s := hπ.localInverse
+  -- On the open set `s.target`, `π` agrees with the differentiable map `s.symm`.
+  have hπs (y : M) (hy : y ∈ s.target) : MDifferentiableAt I I' π y := by
+    refine ((s.symm.mdifferentiableAt hn hy).congr_of_eventuallyEq ?_)
+    filter_upwards [s.open_target.mem_nhds hy] with w hw
+    conv_lhs => rw [← s.right_inv hw]
+    exact hπ.localInverse_right_inv (s.map_target hw)
+  have hgs := hg.mpullback_of_mdifferentiableOn s.open_source (s.mdifferentiableOn hn)
+  refine ⟨hgs.isOpen, hgs.mdifferentiableOn, fun z hz ↦ ?_⟩
+  -- Near `z`, `π ∘ s` is the identity, so `s^* π^* θ = θ` at `z`.
+  have hid : π ∘ s =ᶠ[𝓝 z] id :=
+    eventuallyEq_of_mem (s.open_source.mem_nhds hz.1) hπ.localInverse_eqOn_right
+  rw [hgs.mextDeriv_eq z hz, ← mpullback_comp_at (s.mdifferentiableAt hn hz.1)
+    (hπs _ (s.map_source hz.1)), hid.mpullback_eq, mpullback_id]
 
 end Pullback
 

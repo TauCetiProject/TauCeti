@@ -16,7 +16,8 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 Pullback by a twice continuously differentiable map commutes with the exterior derivative of a
 continuously differentiable fixed-coefficient form. The pointwise and on-set forms expose the
 local hypotheses needed by later constructions, while the global theorem is the cochain-map law
-used by de Rham cohomology.
+used by de Rham cohomology; in particular pullback preserves closed forms
+(`TauCeti.IsSmoothForm.mextDeriv_mpullback_eq_zero`).
 
 For a map from a subset `s` of a normed space, such as a cylinder `s ×ˢ Icc 0 1` or a simplex,
 the within-set pullback commutes with the flat exterior derivative within `s`
@@ -253,6 +254,13 @@ theorem mpullback_mextDeriv {f : M → M'} (hf : ContMDiff I I' 2 f)
   funext x
   exact mpullback_mextDeriv_at hf.contMDiffAt
     ((isSmoothBundleForm_def 1 φ).mp hφ).contMDiffAt
+
+/-- The pullback of a closed `C¹` form along a `C²` map is closed. -/
+theorem IsSmoothForm.mextDeriv_mpullback_eq_zero {θ : RoughForm I' M' F k}
+    (hθ : IsSmoothForm I' 1 θ) (hclosed : mextDeriv θ = 0) {f : M → M'} (hf : ContMDiff I I' 2 f) :
+    mextDeriv (TauCeti.mpullback I I' f θ) = 0 := by
+  rw [← mpullback_mextDeriv hf ((isSmoothBundleForm_def 1 θ).mpr hθ.contMDiff), hclosed,
+    mpullback_zero]
 
 section ModelSource
 

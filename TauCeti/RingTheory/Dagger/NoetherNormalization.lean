@@ -81,16 +81,16 @@ private theorem exists_finite_map_of_not_injective {σ : Type*} [Finite σ]
   exact ⟨ψ.comp (washnitzerAlgebra.optionC (R := K)),
     finite_comp_optionC_of_isDistinguished hd hu hψ hz⟩
 
-omit [CompleteSpace K] in
 /-- An injective finite map already gives a normalisation, after indexing the variables by
 `Fin`. -/
-private theorem exists_finite_injective_of_injective {σ : Type*} [Finite σ]
-    {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
+private theorem exists_finite_injective_of_injective {R : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] {σ : Type*} [Finite σ]
+    {A : Type*} [CommRing A] [Algebra R A] {π : washnitzerAlgebra σ R →ₐ[R] A}
     (hπ : π.Finite) (hinj : Function.Injective π) :
-    ∃ (n : ℕ) (g : W (Fin n) →ₐ[K] A),
+    ∃ (n : ℕ) (g : washnitzerAlgebra (Fin n) R →ₐ[R] A),
       n ≤ Nat.card σ ∧ Function.Injective g ∧ g.Finite := by
   let := Fintype.ofFinite σ
-  let r := washnitzerAlgebra.renameAlgEquiv (R := K) (Fintype.equivFin σ).symm
+  let r := washnitzerAlgebra.renameAlgEquiv (R := R) (Fintype.equivFin σ).symm
   exact ⟨_, π.comp r.toAlgHom, by simp [Nat.card_eq_fintype_card],
     hinj.comp r.injective, hπ.comp (AlgHom.Finite.of_surjective _ r.surjective)⟩
 

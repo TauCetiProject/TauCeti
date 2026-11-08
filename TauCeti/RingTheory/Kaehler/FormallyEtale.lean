@@ -50,7 +50,7 @@ the common zero locus `T ⧸ (aᵢ)` of such elements is then étale over `R`
 * `TauCeti.bijective_mapBaseChange_of_basis`: `T ⊗[S] Ω[S⁄R] → Ω[T⁄R]` is bijective when it
   carries a basis to a basis;
 * `TauCeti.etale_aeval_of_basis`: a smooth algebra is étale over the polynomial ring on elements
-  whose differentials form a basis of its differentials.
+  whose differentials form a basis of its differentials;
 * `Module.Basis.etale_quotient_span_range`: the common zero locus of such elements is étale over
   the base.
 
@@ -118,15 +118,10 @@ theorem formallyEtale_of_bijective_mapBaseChange [Algebra.FormallySmooth R T]
   refine ⟨subsingleton_of_forall_eq 0 fun x ↦ ?_, subsingleton_of_forall_eq 0 fun x ↦ ?_⟩
   · -- `Ω[T⁄R] → Ω[T⁄S]` is onto, and its kernel is the image of `T ⊗[S] Ω[S⁄R]`, which is all.
     obtain ⟨y, rfl⟩ := map_surjective R S T x
-    have hker := LinearMap.exact_iff.mp (exact_mapBaseChange_map R S T)
-    rw [LinearMap.range_eq_top.mpr h.2] at hker
-    exact LinearMap.mem_ker.mp (hker ▸ Submodule.mem_top)
+    exact (exact_mapBaseChange_map R S T y).mpr (h.2 y)
   · -- `δ` vanishes since `mapBaseChange` is injective, so `x` comes from `H¹(L_{T/R}) = 0`.
-    have hδ : Algebra.H1Cotangent.δ R S T x = 0 := by
-      have hx : Algebra.H1Cotangent.δ R S T x ∈ LinearMap.ker (mapBaseChange R S T) := by
-        rw [LinearMap.exact_iff.mp (Algebra.H1Cotangent.exact_δ_mapBaseChange R S T)]
-        exact LinearMap.mem_range_self _ x
-      exact h.1 (by rw [LinearMap.mem_ker.mp hx, map_zero])
+    have hδ : Algebra.H1Cotangent.δ R S T x = 0 := (map_eq_zero_iff _ h.1).mp <|
+      (Algebra.H1Cotangent.exact_δ_mapBaseChange R S T _).mpr ⟨x, rfl⟩
     obtain ⟨y, rfl⟩ := (Algebra.H1Cotangent.exact_map_δ R S T x).mp hδ
     rw [Subsingleton.elim y 0, map_zero]
 
@@ -204,9 +199,7 @@ theorem etale_quotient_span_range {A W : Type*} [CommRing A] [CommRing W] [Algeb
   have : Algebra.Etale A (W ⧸ J.map (algebraMap R W)) := .comp A (R ⧸ J) _
   -- `(X) W = (x)`.
   refine .of_equiv (Ideal.quotientEquivAlgOfEq A (I := J.map (algebraMap R W)) ?_)
-  rw [Ideal.map_span, ← Set.range_comp]
-  congr 2
-  ext i
-  exact aeval_X x i
+  rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+    map_aeval_idealOfVars]
 
 end Module.Basis

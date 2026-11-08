@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Caccioppoli.LowerOrder
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.DeGiorgi
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
 # Decay of upper level sets of weak subsolutions (De Giorgi)
@@ -85,6 +86,49 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
+/-- One step of De Giorgi's iteration: the De Giorgi isoperimetric inequality between the levels
+`l < l'`, together with the energy bound at `l` and a lower density bound for `{u ≤ l}`, controls
+the square of `|{u ≥ l'}|` by the measure of the strip `u ⁻¹' Ioo l l'`, when
+`M - l = 2 (l' - l)`. -/
+private theorem sq_measureReal_le_of_setIntegral_le
+    {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R M Q θ l l' : ℝ} (hR : 0 < R)
+    (hball : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (hθ : 0 < θ) (hQ : 0 ≤ Q)
+    (hll' : l < l') (hM : M - l = 2 * (l' - l))
+    (hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
+    (hE : ∫ x in ball x₀ R, ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) l u hwl) x‖ ^ 2
+      ∂mu ≤ Q * (M - l) ^ 2 / R ^ 2 * mu.real (ball x₀ R))
+    (hθl : θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ l}) :
+    (mu.restrict (ball x₀ R)).real {x | l' ≤ W1p.value u x} ^ 2 ≤
+      (2 ^ (finrank ℝ (EuclideanSpace ℝ ι) + 2) * √Q / θ) ^ 2 * mu.real (ball x₀ R) *
+        (mu.restrict (ball x₀ R)).real (W1p.value u ⁻¹' Ioo l l') := by
+  set n := finrank ℝ (EuclideanSpace ℝ ι)
+  set V := mu.real (ball x₀ R)
+  have hVeq : V = R ^ n * mu.real (ball 0 1) := mu.addHaar_real_ball_of_pos x₀ hR
+  have hV : 0 < V := by
+    rw [hVeq]
+    exact mul_pos (pow_pos hR n)
+      (ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)
+  have hiso := W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset hR.le hball u hll' hwl
+  rw [show mu.real (ball 0 1) * (2 * R) ^ (n + 1) = 2 ^ (n + 1) * R * V by rw [hVeq]; ring]
+    at hiso
+  rw [hM] at hE
+  have hh : 0 < l' - l := sub_pos.2 hll'
+  set h := l' - l
+  refine le_of_mul_le_mul_right ?_ (by positivity : 0 < θ ^ 2 * h ^ 2 * V ^ 2)
+  calc _ = (h * (mu.restrict (ball x₀ R)).real {x | l' ≤ W1p.value u x} * (θ * V)) ^ 2 := by
+        ring
+    _ ≤ (h * (mu.restrict (ball x₀ R)).real {x | l' ≤ W1p.value u x} *
+          (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ l}) ^ 2 := by gcongr
+    _ ≤ (2 ^ (n + 1) * R * V) ^ 2 *
+          (mu.restrict (ball x₀ R)).real (W1p.value u ⁻¹' Ioo l l') *
+          (Q * (2 * h) ^ 2 / R ^ 2 * V) :=
+        hiso.trans (mul_le_mul_of_nonneg_left hE (mul_nonneg (sq_nonneg _) measureReal_nonneg))
+    _ = _ := by
+        simp only [div_pow, mul_pow, Real.sq_sqrt hQ]
+        field_simp
+        ring
+
+
 /-- **De Giorgi's decay of upper level sets.** Let `u ∈ H¹(Ω)`, let `B(x₀, R) ⊆ Ω` with `R > 0`,
 let `k < M` with `(u - k)⁺ ∈ L²(Ω)`, and let `θ > 0` with
 `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Suppose that for every level `l ∈ [k, M)` the truncation
@@ -120,16 +164,8 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
   have hd : 0 < d := sub_pos.2 hkM
   set lev : ℕ → ℝ := fun j => M - d / 2 ^ j
   set A : ℕ → ℝ := fun j => nu.real {x | lev j ≤ W1p.value u x}
-  set D : ℕ → ℝ := fun j => nu.real {x | lev j < W1p.value u x ∧ W1p.value u x < lev (j + 1)}
-  -- Scaling of the balls: `|B(x₀, ρ)| = ρⁿ μ(B(0, 1))`.
-  have hVeq : V = R ^ n * mu.real (ball 0 1) := mu.addHaar_real_ball_of_pos x₀ hR
-  have hV : 0 < V := by
-    rw [hVeq]
-    exact mul_pos (pow_pos hR n)
-      (ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)
-  have hω : mu.real (ball 0 1) * (2 * R) ^ (n + 1) = 2 ^ (n + 1) * R * V := by
-    rw [hVeq]
-    ring
+  set D : ℕ → ℝ := fun j => nu.real (W1p.value u ⁻¹' Ioo (lev j) (lev (j + 1)))
+  have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos mu x₀ hR).ne' measure_ball_lt_top.ne
   -- The energy bound at the level `k` forces `Q ≥ 0`.
   have hQ : 0 ≤ Q := by
     have h0 := (integral_nonneg fun x => sq_nonneg _).trans (henergy k le_rfl hkM hwLp)
@@ -148,54 +184,24 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
     field_simp
     ring
   -- One step: `A (j + 1)² ≤ K V D j`.
-  have hstep : ∀ j, A (j + 1) ^ 2 ≤ K * V * D j := by
-    intro j
-    have hlt : lev j < lev (j + 1) := by
-      rw [← sub_pos, hlev_succ]
-      positivity
-    have hwj : MemLp (fun x => max (W1p.value u x - lev j) 0) 2 (mu.restrict Omega) :=
-      W1p.memLp_posPartAbove_of_le u (hk_le j) hwLp
-    have hE := henergy (lev j) (hk_le j) (by simp only [lev]; exact sub_lt_self _ (by positivity))
-      hwj
-    rw [show M - lev j = d / 2 ^ j by simp [lev]] at hE
-    have hθj : θ * V ≤ nu.real {x | W1p.value u x ≤ lev j} :=
-      hθk.trans (measureReal_mono fun x (hx : W1p.value u x ≤ k) =>
-        hx.trans (hk_le j))
-    have hiso := W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset hR.le hball u hlt hwj
-    rw [hlev_succ, hω] at hiso
-    have hpos : 0 < θ ^ 2 * (d / 2 ^ j / 2) ^ 2 * V ^ 2 := by positivity
-    refine le_of_mul_le_mul_right ?_ hpos
-    calc A (j + 1) ^ 2 * (θ ^ 2 * (d / 2 ^ j / 2) ^ 2 * V ^ 2)
-        = (d / 2 ^ j / 2 * A (j + 1) * (θ * V)) ^ 2 := by ring
-      _ ≤ (d / 2 ^ j / 2 * A (j + 1) * nu.real {x | W1p.value u x ≤ lev j}) ^ 2 := by gcongr
-      _ ≤ (2 ^ (n + 1) * R * V) ^ 2 * D j * (Q * (d / 2 ^ j) ^ 2 / R ^ 2 * V) :=
-          hiso.trans (mul_le_mul_of_nonneg_left hE (mul_nonneg (sq_nonneg _) measureReal_nonneg))
-      _ = K * V * D j * (θ ^ 2 * (d / 2 ^ j / 2) ^ 2 * V ^ 2) := by
-          simp only [K, div_pow, mul_pow, Real.sq_sqrt hQ]
-          field_simp
-          ring
+  have hstep : ∀ j, A (j + 1) ^ 2 ≤ K * V * D j := fun j => by
+    have hwj := W1p.memLp_posPartAbove_of_le u (hk_le j) hwLp
+    exact sq_measureReal_le_of_setIntegral_le hR hball hθ hQ
+      (by rw [← sub_pos, hlev_succ]; positivity) (by rw [hlev_succ]; simp only [lev]; ring) hwj
+      (henergy _ (hk_le j) (by simp only [lev]; exact sub_lt_self _ (by positivity)) hwj)
+      (hθk.trans (measureReal_mono fun x (hx : W1p.value u x ≤ k) => hx.trans (hk_le j)))
   -- Sum the steps over the pairwise disjoint strips.
-  have hm : Measurable (W1p.value u : EuclideanSpace ℝ ι → ℝ) :=
-    (Lp.stronglyMeasurable _).measurable
+  have hDsum : ∑ j ∈ Finset.range J, D j ≤ V :=
+    (sum_measureReal_le_measureReal_univ
+      (fun j _ => (Lp.stronglyMeasurable _).measurable measurableSet_Ioo)
+      fun i _ j _ hij => (hlev_mono.pairwise_disjoint_on_Ioo_succ hij).preimage _).trans_eq
+      (measureReal_restrict_apply_univ _)
   have hA_anti : ∀ {i j : ℕ}, i ≤ j → A j ≤ A i := fun hij =>
-    measureReal_mono fun x (hx : lev _ ≤ W1p.value u x) =>
-      (hlev_mono hij).trans hx
-  have hDsum : ∑ j ∈ Finset.range J, D j ≤ V := by
-    refine (sum_measureReal_le_measureReal_univ (fun j _ =>
-      (measurableSet_lt measurable_const hm).inter (measurableSet_lt hm measurable_const))
-        ?_).trans_eq (measureReal_restrict_apply_univ _)
-    intro i _ j _ hij
-    rw [Function.onFun, Set.disjoint_left]
-    rintro x ⟨hi1, hi2⟩ ⟨hj1, hj2⟩
-    simp only [mem_ofPred_eq] at hi1 hi2 hj1 hj2
-    rcases lt_or_gt_of_ne hij with hlt | hlt
-    · linarith [hlev_mono (by omega : i + 1 ≤ j)]
-    · linarith [hlev_mono (by omega : j + 1 ≤ i)]
+    measureReal_mono fun x (hx : lev _ ≤ W1p.value u x) => (hlev_mono hij).trans hx
   have hsq : (J : ℝ) * A J ^ 2 ≤ K * V ^ 2 :=
     calc (J : ℝ) * A J ^ 2 = ∑ _ ∈ Finset.range J, A J ^ 2 := by simp
       _ ≤ ∑ j ∈ Finset.range J, A (j + 1) ^ 2 := Finset.sum_le_sum fun j hj =>
-          pow_le_pow_left₀ measureReal_nonneg
-            (hA_anti (Finset.mem_range.1 hj)) 2
+          pow_le_pow_left₀ measureReal_nonneg (hA_anti (Finset.mem_range.1 hj)) 2
       _ ≤ ∑ j ∈ Finset.range J, K * V * D j := Finset.sum_le_sum fun j _ => hstep j
       _ = K * V * ∑ j ∈ Finset.range J, D j := by rw [Finset.mul_sum]
       _ ≤ K * V * V := mul_le_mul_of_nonneg_left hDsum (by positivity)

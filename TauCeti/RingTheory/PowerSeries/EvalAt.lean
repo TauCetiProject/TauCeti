@@ -65,10 +65,14 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le`: a coefficient map
+  bounded by `C` gives an evaluation bound by `C`, even without norm-one identity in the target;
+  `PowerSeries.norm_evalAt_le_gaussNorm_of_norm_algebraMap_le` is the contractive case.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm`: a Gauss-norm bound in any normed algebra.
-* `PowerSeries.evalAt_add_of_summable_norm` and `PowerSeries.evalAt_mul_of_summable_norm`: in a
-  complete normed algebra, evaluation is additive and multiplicative on series whose terms at the
-  point are absolutely summable.
+* `PowerSeries.evalAt_add_of_summable_norm`, `PowerSeries.evalAt_sum_of_summable_norm` and
+  `PowerSeries.evalAt_mul_of_summable_norm`: in a complete normed algebra, evaluation preserves
+  addition, finite sums and multiplication on series whose terms at the point are absolutely
+  summable.
 * `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
   `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
   `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series;
@@ -304,17 +308,60 @@ section Normed
 variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
   {f : R⟦X⟧}
 
+omit [IsBoundedSMul R A] in
+/-- A coefficient map bounded by `C` gives the same bound for evaluation in an
+ultrametric algebra, at every radius where the Gauss norm is defined and bounds the argument.
+Neither a norm-one identity nor completeness nor a bounded scalar action is required.
+For negative `C` the coefficient bound forces the series to be zero. -/
+theorem norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A] {r C : ℝ}
+    (hf : f.HasGaussNorm norm r) (hφ : ∀ a, ‖algebraMap R A a‖ ≤ C * ‖a‖)
+    {b : A} (hb : ‖b‖ ≤ r) : ‖f.evalAt b‖ ≤ C * gaussNorm norm r f := by
+  by_cases hf0 : f = 0
+  · simp [hf0, gaussNorm_zero (R := R) norm r norm_zero]
+  have hC : 0 ≤ C := by
+    by_contra hC
+    apply hf0
+    ext n
+    have h := (norm_nonneg (algebraMap R A (coeff n f))).trans (hφ (coeff n f))
+    have hn : ‖coeff n f‖ = 0 := by nlinarith [norm_nonneg (coeff n f), lt_of_not_ge hC]
+    simpa using norm_eq_zero.mp hn
+  apply IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg hC (gaussNorm_nonneg _ _ _ norm_nonneg))
+  intro n
+  rw [Algebra.smul_def]
+  cases n with
+  | zero =>
+    simpa using (hφ (coeff 0 f)).trans
+      (mul_le_mul_of_nonneg_left (by simpa using le_gaussNorm norm r f hf 0) hC)
+  | succ n =>
+    calc
+      ‖algebraMap R A (coeff (n + 1) f) * b ^ (n + 1)‖ ≤
+          ‖algebraMap R A (coeff (n + 1) f)‖ * ‖b ^ (n + 1)‖ := norm_mul_le _ _
+      _ ≤ C * ‖coeff (n + 1) f‖ * ‖b‖ ^ (n + 1) := by
+        gcongr
+        exacts [hφ _, norm_pow_le' b n.succ_pos]
+      _ ≤ C * (‖coeff (n + 1) f‖ * r ^ (n + 1)) := by
+        rw [mul_assoc]
+        gcongr
+      _ ≤ C * gaussNorm norm r f := mul_le_mul_of_nonneg_left (le_gaussNorm norm r f hf _) hC
+
+omit [IsBoundedSMul R A] in
+/-- Contractive coefficient maps give a contractive evaluation estimate without requiring
+that the target algebra have norm-one identity. The target may be noncommutative. -/
+theorem norm_evalAt_le_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A] {r : ℝ}
+    (hf : f.HasGaussNorm norm r) (hφ : ∀ a, ‖algebraMap R A a‖ ≤ ‖a‖)
+    {b : A} (hb : ‖b‖ ≤ r) : ‖f.evalAt b‖ ≤ gaussNorm norm r f := by
+  simpa only [one_mul] using
+    norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le hf (C := 1) (by simpa using hφ) hb
+
 /-- In an ultrametric normed algebra with `‖1‖ = 1`, the value of a series at a point `b` with
 `‖b‖ ≤ r` is bounded by the Gauss norm of the series at the radius `r`, whenever the latter is
 defined. This needs no convergence: the junk value `0` satisfies the bound too. -/
 theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ}
     (hf : f.HasGaussNorm norm r) {b : A} (hb : ‖b‖ ≤ r) :
     ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (gaussNorm_nonneg _ _ _ norm_nonneg)
-    fun n ↦ (norm_smul_le _ _).trans <|
-      (mul_le_mul_of_nonneg_left ((norm_pow_le b n).trans
-        (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)).trans <|
-      le_gaussNorm _ _ _ hf n
+  norm_evalAt_le_gaussNorm_of_norm_algebraMap_le hf
+    (fun a ↦ by simpa [Algebra.algebraMap_eq_smul_one] using norm_smul_le a (1 : A)) hb
 
 /-- In any normed algebra, the value of a series at a point `b` with `‖b‖ ≤ q * r`, where
 `0 ≤ q < 1`, is bounded by `(‖1‖ + 1) * (1 - q)⁻¹` times the Gauss norm of the series at the radius
@@ -396,6 +443,13 @@ theorem evalAt_add_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b 
   rw [evalAt_def]
   exact HasSum.tsum_eq (by simpa [add_smul] using
     (hasSum_evalAt_of_summable_norm hf).add (hasSum_evalAt_of_summable_norm hg))
+
+/-- Evaluation commutes with finite sums of series whose terms at `b` are absolutely summable. -/
+theorem evalAt_sum_of_summable_norm {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, Summable fun n ↦ ‖coeff n (f i) • b ^ n‖) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  have h := hasSum_sum (fun i hi ↦ hasSum_evalAt_of_summable_norm (hf i hi))
+  simpa only [evalAt_def, map_sum, Finset.sum_smul] using h.tsum_eq
 
 /-- Evaluation at `b` is multiplicative on series whose terms at `b` are absolutely summable: this
 is the Cauchy product formula for absolutely convergent series. -/

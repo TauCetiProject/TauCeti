@@ -114,12 +114,10 @@ instance secondCountableTopology [Countable D.J]
 /-- A glued space with locally compact charts is locally compact. -/
 instance locallyCompactSpace [∀ i, LocallyCompactSpace (D.U i)] :
     LocallyCompactSpace D.toGlueData.glued := by
-  let U : D.J → Set D.toGlueData.glued := fun i ↦ range (D.toGlueData.ι i)
-  have hU (i : D.J) : IsOpen (U i) := (D.ι_isOpenEmbedding i).isOpen_range
-  have hcover : ⋃ i, U i = univ := D.iUnion_range_ι
-  let hCompact : ∀ i : D.J, LocallyCompactSpace (U i) := fun i ↦
-    (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isOpenEmbedding.locallyCompactSpace
-  exact TauCeti.locallyCompactSpace_of_isOpen_cover hU hcover
+  refine TauCeti.locallyCompactSpace_of_forall_exists_mem_nhds fun x ↦ ?_
+  obtain ⟨i, y, rfl⟩ := D.ι_jointly_surjective x
+  exact ⟨range (D.toGlueData.ι i), (D.ι_isOpenEmbedding i).isOpen_range.mem_nhds ⟨y, rfl⟩,
+    (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isOpenEmbedding.locallyCompactSpace⟩
 
 /-! ### Hausdorffness from the boundaries of the overlaps -/
 

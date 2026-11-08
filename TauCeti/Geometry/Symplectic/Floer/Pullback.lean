@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Analysis.Complex.RealChart
 public import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Pulling back Hamiltonian perturbation data along changes of domain coordinates
@@ -49,6 +51,8 @@ domain.
   coordinate changes.
 * `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`: the domain-derivative
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
+* `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
+  holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -77,6 +81,7 @@ domain.
 public section
 
 open Function MeasureTheory Set
+open TauCeti.Complex (realChart realChart_apply fderiv_realChart_apply)
 
 namespace TauCeti
 
@@ -183,6 +188,20 @@ theorem fderiv_perturbationPullback_sub_fderiv_perturbationPullback {φ : ℝ ×
   simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
     stdComplexLineReal_eq, stdComplexLineImag_eq]
   ring
+
+/-! ### Holomorphic changes of coordinates -/
+
+/-- The pullback along a holomorphic map `f` of a datum `P` on `ℂ`, written in the real
+coordinates through its values on `1` and `i`, evaluates `P` at the image point `f w` on the image
+`f'(w) v` of the tangent vector. -/
+theorem perturbationPullback_realChart (P : ℂ → X → ℂ →L[ℝ] ℝ) {f : ℂ → ℂ} {f' : ℂ}
+    {w : ℝ × ℝ} (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) (v : ℝ × ℝ) (x : X) :
+    perturbationPullback (realChart f) (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
+      P (f (Complex.equivRealProdCLM.symm w)) x (f' * Complex.equivRealProdCLM.symm v) := by
+  rw [perturbationPullback_apply, fderiv_realChart_apply hf, realChart_apply,
+    ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply]
+  exact ((P _ x : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I _).symm
 
 end Floer
 

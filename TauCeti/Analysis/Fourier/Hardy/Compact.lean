@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.Hardy.Hankel
-public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
+public import TauCeti.Analysis.Fourier.Hardy.Hankel.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 
 /-!
 # Compact Hankel operators and Toeplitz semicommutators of continuous symbols

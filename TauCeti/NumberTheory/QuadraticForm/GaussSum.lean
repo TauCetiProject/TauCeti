@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Matrix.DotProduct
+import TauCeti.Data.Matrix.ZMod
 import TauCeti.Data.ZMod.MulCastHom.Sum
 import TauCeti.InformationTheory.Coding.CharacterSum
 import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
@@ -181,35 +182,7 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_of_eq_sq_mul (hA : A.IsSymm) {N 
     rw [← Nat.cast_mul, show p * M * (p * M) = N * M by rw [hN]; ring, Nat.cast_mul,
       ZMod.natCast_self, zero_mul]
   -- `2 A` is invertible modulo `p`, and `p * M` kills exactly the classes vanishing modulo `p`.
-  have hcond (x : ι → ZMod N) :
-      (2 * ((p * M : ℕ) : ZMod N)) • (A.map (Int.cast : ℤ → ZMod N) *ᵥ x) = 0 →
-        ((p * M : ℕ) : ZMod N) • x = 0 := by
-    set φ := castHom (Dvd.intro_left (p * M) hpM) (ZMod p)
-    have hker (y : ι → ZMod N) : ((p * M : ℕ) : ZMod N) • y = 0 ↔ φ ∘ y = 0 := by
-      simp only [funext_iff, Pi.smul_apply, smul_eq_mul, Pi.zero_apply, Function.comp_apply,
-        ZMod.natCast_mul_eq_zero_iff p hpM (NeZero.ne (p * M)), φ]
-    have hAp : (A.map (Int.cast : ℤ → ZMod N)).map φ = A.map (Int.cast : ℤ → ZMod p) := by
-      rw [Matrix.map_map]
-      exact congrArg A.map (funext fun j ↦ map_intCast φ j)
-    have hunit : IsUnit (A.map (Int.cast : ℤ → ZMod p)).det := by
-      rw [show (A.map (Int.cast : ℤ → ZMod p)).det = (A.det : ZMod p) from
-        ((Int.castRingHom (ZMod p)).map_det A).symm]
-      obtain ⟨u, v, huv⟩ := hdet
-      refine IsUnit.of_mul_eq_one_right (u : ZMod p) ?_
-      simpa using congrArg (Int.cast : ℤ → ZMod p) huv
-    have h2 : IsUnit (2 : ZMod p) := by
-      simpa using (ZMod.unitOfCoprime 2 (Nat.coprime_two_left.2 hodd)).isUnit
-    intro h
-    rw [mul_comm, mul_smul, hker, ← mulVec_smul] at h
-    rw [hker]
-    have h2x : φ ∘ ((2 : ZMod N) • x) = (2 : ZMod p) • (φ ∘ x) :=
-      funext fun j ↦ by simp [map_ofNat]
-    have h' : A.map (Int.cast : ℤ → ZMod p) *ᵥ ((2 : ZMod p) • (φ ∘ x)) = 0 := by
-      ext i
-      simpa only [Function.comp_apply, Pi.zero_apply, φ.map_mulVec, hAp, h2x] using congrFun h i
-    have h'' := (mulVec_injective_of_isUnit ((isUnit_iff_isUnit_det _).2 hunit))
-      (h'.trans (mulVec_zero _).symm)
-    exact (h2.smul_left_cancel).1 (h''.trans (smul_zero _).symm)
+  have hcond := Matrix.natCast_mul_smul_eq_zero_of_two_smul_mulVec_eq_zero (A := A) hpM hodd hdet
   rw [hA.sum_stdAddChar_eq_sum_ite_smul_eq_zero hc2 hcond,
     ZMod.sum_ite_natCast_smul_eq_zero p hpM]
   -- On the multiples of `p`, the character of `ZMod N` is the character of `ZMod M`.
@@ -276,6 +249,59 @@ theorem sum_stdAddChar_dotProduct_mulVec_mul (A : Matrix ι ι ℤ) {m n : ℕ} 
   field_simp
   linear_combination (-((w ⬝ᵥ A *ᵥ w : ℤ) : ℂ)) * huv'
 
+/-- **The Gauss sum modulo an odd prime power.** Let `A` be a symmetric integer matrix indexed by
+a type with `2k` elements, and `p ^ e` an odd prime power prime to `det A`. With
+`e(t) = exp (2πi t)`, the Gauss sum `∑_{x ∈ (ℤ/p ^ e)^ι} e(xᵀ A x / p ^ e)` equals
+`((-1) ^ k * det A / p ^ e) * (p ^ e) ^ k`, where `(· / ·)` is the Jacobi symbol. This is the
+prime-power case of `Matrix.IsSymm.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym`. -/
+private theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym_of_prime_pow
+    (hA : A.IsSymm) {k : ℕ} (hι : Fintype.card ι = 2 * k) {p : ℕ} (hp : p.Prime) (e : ℕ) :
+    Odd (p ^ e) → IsCoprime A.det ↑(p ^ e) → ∀ [NeZero (p ^ e)],
+      ∑ x : ι → ZMod (p ^ e), stdAddChar (x ⬝ᵥ A.map (Int.cast : ℤ → ZMod (p ^ e)) *ᵥ x) =
+        jacobiSym ((-1) ^ k * A.det) (p ^ e) * ((p ^ e : ℕ) : ℂ) ^ k := by
+  have : Fact p.Prime := ⟨hp⟩
+  -- Induction on the exponent in steps of two: the exponents `0` and `1` directly, then down by
+  -- two with the reduction `IsSymm.sum_stdAddChar_dotProduct_mulVec_of_eq_sq_mul`.
+  induction e using Nat.twoStepInduction with
+  | zero =>
+    rw [pow_zero]
+    intro _ _ _
+    have hx (x : ι → ZMod 1) : x = 0 := Subsingleton.elim x 0
+    simp [hx, jacobiSym.one_right]
+  | one =>
+    rw [pow_one]
+    intro hodd hdet _
+    have hF : ringChar (ZMod p) ≠ 2 := by
+      rw [ZMod.ringChar_zmod_n]
+      rintro rfl
+      exact absurd hodd (by decide)
+    have hdet' : (A.map (Int.cast : ℤ → ZMod p)).det = (A.det : ZMod p) :=
+      ((Int.castRingHom (ZMod p)).map_det A).symm
+    have hne : (A.map (Int.cast : ℤ → ZMod p)).det ≠ 0 := by
+      rw [hdet', Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
+      intro h
+      have hu := hdet.isUnit_of_dvd' h dvd_rfl
+      rw [Int.isUnit_iff_natAbs_eq, Int.natAbs_natCast] at hu
+      exact hp.one_lt.ne' hu
+    rw [(hA.map _).sum_addChar_dotProduct_mulVec_of_card_eq_two_mul hF hne hι
+      (isPrimitive_stdAddChar p), ZMod.card, hdet', ← jacobiSym.legendreSym.to_jacobiSym]
+    simp [legendreSym]
+  | more e ih₀ _ =>
+    intro hodd hdet _
+    have hp0 : p ≠ 0 := hp.ne_zero
+    have : NeZero (p ^ e) := ⟨pow_ne_zero e hp0⟩
+    have hoddp : Odd p := (Nat.odd_pow_iff (by omega)).1 hodd
+    push_cast at hdet
+    have hdetp : IsCoprime A.det p := (IsCoprime.pow_right_iff (by omega)).1 hdet
+    have hgcd' : ((-1) ^ k * A.det).gcd p = 1 :=
+      Int.isCoprime_iff_gcd_eq_one.1 ((isCoprime_one_left.neg_left.pow_left).mul_left hdetp)
+    rw [hA.sum_stdAddChar_dotProduct_mulVec_of_eq_sq_mul (M := p ^ e) (p := p) (by ring) hoddp
+        hdetp,
+      ih₀ hoddp.pow (by exact_mod_cast hdetp.pow_right), hι, jacobiSym.pow_right,
+      jacobiSym.pow_right, pow_add, jacobiSym.sq_one hgcd']
+    push_cast
+    ring
+
 /-- **The Gauss sum of a quadratic form modulo an odd integer.** Let `A` be a symmetric integer
 matrix indexed by a type with `2k` elements, and `a` an odd modulus prime to `det A`. With
 `e(t) = exp (2πi t)`,
@@ -294,47 +320,7 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym (hA : A.IsSymm) {k 
   | zero => intro A _ h0; exact absurd h0 (by decide)
   | prime_pow p e hp =>
     intro A hA
-    have : Fact p.Prime := ⟨hp⟩
-    -- Prime powers: the exponents `0` and `1` directly, then down by two with the reduction lemma.
-    induction e using Nat.twoStepInduction with
-    | zero =>
-      rw [pow_zero]
-      intro _ _ _
-      have hx (x : ι → ZMod 1) : x = 0 := Subsingleton.elim x 0
-      simp [hx, jacobiSym.one_right]
-    | one =>
-      rw [pow_one]
-      intro hodd hdet _
-      have hF : ringChar (ZMod p) ≠ 2 := by
-        rw [ZMod.ringChar_zmod_n]
-        rintro rfl
-        exact absurd hodd (by decide)
-      have hdet' : (A.map (Int.cast : ℤ → ZMod p)).det = (A.det : ZMod p) :=
-        ((Int.castRingHom (ZMod p)).map_det A).symm
-      have hne : (A.map (Int.cast : ℤ → ZMod p)).det ≠ 0 := by
-        rw [hdet', Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
-        intro h
-        have hu := hdet.isUnit_of_dvd' h dvd_rfl
-        rw [Int.isUnit_iff_natAbs_eq, Int.natAbs_natCast] at hu
-        exact hp.one_lt.ne' hu
-      rw [(hA.map _).sum_addChar_dotProduct_mulVec_of_card_eq_two_mul hF hne hι
-        (isPrimitive_stdAddChar p), ZMod.card, hdet', ← jacobiSym.legendreSym.to_jacobiSym]
-      simp [legendreSym]
-    | more e ih₀ _ =>
-      intro hodd hdet _
-      have hp0 : p ≠ 0 := hp.ne_zero
-      have : NeZero (p ^ e) := ⟨pow_ne_zero e hp0⟩
-      have hoddp : Odd p := (Nat.odd_pow_iff (by omega)).1 hodd
-      push_cast at hdet
-      have hdetp : IsCoprime A.det p := (IsCoprime.pow_right_iff (by omega)).1 hdet
-      have hgcd' : ((-1) ^ k * A.det).gcd p = 1 :=
-        Int.isCoprime_iff_gcd_eq_one.1 ((isCoprime_one_left.neg_left.pow_left).mul_left hdetp)
-      rw [hA.sum_stdAddChar_dotProduct_mulVec_of_eq_sq_mul (M := p ^ e) (p := p) (by ring) hoddp
-          hdetp,
-        ih₀ hoddp.pow (by exact_mod_cast hdetp.pow_right), hι, jacobiSym.pow_right,
-        jacobiSym.pow_right, pow_add, jacobiSym.sq_one hgcd']
-      push_cast
-      ring
+    exact hA.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym_of_prime_pow hι hp e
   | coprime a b ha hb hab iha ihb =>
     intro A hA hodd hdet _
     have : NeZero a := ⟨by omega⟩

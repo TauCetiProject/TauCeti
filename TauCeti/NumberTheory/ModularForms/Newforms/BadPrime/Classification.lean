@@ -75,7 +75,7 @@ theorem qExpansion_coeff_prime_sq_of_factorization_eq_one (f : Newform N k) (hp 
     (DirichletCharacter.factorsThrough_div_iff_factorization_conductor_lt hp hpN _).mpr (by omega)
   -- the nebentypus is the pull-back of the lowered character `hfac.χ₀`
   have hcomp : f.χ = hfac.χ₀.toUnitHom.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN)) := by
-    rw [← f.dirichletLift_equivToUnitHom, ← MulChar.toUnitHom_eq]
+    rw [← f.dirichletLift_toUnitHom]
     conv_lhs => rw [hfac.eq_changeLevel]
     rw [DirichletCharacter.changeLevel_toUnitHom]
   -- `p` is prime to `N / p`, so the lowered character and the primitive character agree at `p`
