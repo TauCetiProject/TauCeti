@@ -73,14 +73,15 @@ theorem IsPrimeDiscriminant.isFundamentalDiscr {D : ℤ} (hD : IsPrimeDiscrimina
     exact Int.isFundamentalDiscr_four_mul.mpr ⟨squarefree_evenPrimeDiscriminantRadicand hev,
       (evenPrimeDiscriminantRadicand_mod_four_eq_three_or_two hev).symm⟩
   · exact Int.isFundamentalDiscr_iff_squarefree.mpr (Or.inl
-      ⟨oddPrimeDiscriminant_mod_four_eq_one hodd, squarefree_oddPrimeDiscriminant hp.squarefree⟩)
+      ⟨oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd,
+        squarefree_oddPrimeDiscriminant_iff.mpr hp.squarefree⟩)
 
 /-- A prime discriminant is not a unit: its absolute value is `4`, `8`, or an odd prime. -/
 private theorem IsPrimeDiscriminant.not_isUnit {D : ℤ} (hD : IsPrimeDiscriminant D) :
     ¬ IsUnit D := by
   rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, -, rfl⟩
   · rcases hev with rfl | rfl | rfl <;> simp [Int.isUnit_iff]
-  · exact (prime_oddPrimeDiscriminant hp).not_isUnit
+  · exact (prime_oddPrimeDiscriminant_iff.mpr hp).not_isUnit
 
 /-- A prime discriminant that is not even is `oddPrimeDiscriminant` of its (odd, prime) absolute
 value. -/
@@ -101,7 +102,7 @@ underlying primes is needed. -/
 theorem prod_oddPrimeDiscriminant_mod_four_eq_one (hodd : ∀ i ∈ s, Odd (p i)) :
     (∏ i ∈ s, oddPrimeDiscriminant (p i)) % 4 = 1 := by
   rw [Finset.prod_int_mod,
-    Finset.prod_congr rfl fun i hi => oddPrimeDiscriminant_mod_four_eq_one (hodd i hi)]
+    Finset.prod_congr rfl fun i hi => oddPrimeDiscriminant_mod_four_eq_one_iff.mpr (hodd i hi)]
   simp
 
 /-- A product of odd prime discriminants is odd. -/
@@ -115,10 +116,10 @@ theorem odd_prod_oddPrimeDiscriminant (hodd : ∀ i ∈ s, Odd (p i)) :
 theorem squarefree_prod_oddPrimeDiscriminant (hp : ∀ i ∈ s, (p i).Prime) (hinj : Set.InjOn p s) :
     Squarefree (∏ i ∈ s, oddPrimeDiscriminant (p i)) := by
   refine Finset.squarefree_prod_of_pairwise_isCoprime (fun i hi j hj hij => ?_)
-    fun i hi => squarefree_oddPrimeDiscriminant (hp i hi).squarefree
+    fun i hi => squarefree_oddPrimeDiscriminant_iff.mpr (hp i hi).squarefree
   have hpij : p i ≠ p j := fun h => hij (hinj hi hj h)
   refine (Irreducible.isRelPrime_iff_not_dvd
-    (Prime.irreducible (prime_oddPrimeDiscriminant (hp i hi)))).mpr ?_
+    (Prime.irreducible (prime_oddPrimeDiscriminant_iff.mpr (hp i hi)))).mpr ?_
   simp only [oddPrimeDiscriminant_dvd_iff, dvd_oddPrimeDiscriminant_iff, Int.natCast_dvd_natCast]
   exact fun hdvd => hpij ((Nat.prime_dvd_prime_iff_eq (hp i hi) (hp j hj)).mp hdvd)
 
