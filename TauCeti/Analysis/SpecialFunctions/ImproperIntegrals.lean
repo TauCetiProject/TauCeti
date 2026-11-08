@@ -122,40 +122,41 @@ theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
   exact ((integrable_inv_one_add_sq.comp_div hc).const_mul (c ^ 2)⁻¹).congr
     (Eventually.of_forall hscale)
 
-/-- A remainder `E` that is interval integrable above `1` makes `t ^ (τ - 1) * E t` interval
-integrable on every interval `[a, b]` with `1 ≤ a ≤ b`. -/
-lemma intervalIntegrable_rpow_sub_one_mul {E : ℝ → ℝ} (τ : ℝ)
-    (hE_int : ∀ x, 1 ≤ x → IntervalIntegrable E volume 1 x) {a b : ℝ} (ha : 1 ≤ a)
-    (hab : a ≤ b) : IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume a b := by
-  have hE' : IntervalIntegrable E volume a b := (hE_int b (ha.trans hab)).mono_set <| by
-    rw [uIcc_of_le (ha.trans hab), uIcc_of_le hab]
-    exact Icc_subset_Icc ha le_rfl
-  refine hE'.continuousOn_mul fun t ht ↦ ?_
+/-- A remainder `E` that is interval integrable on `[a, b]` with `0 < a` makes `t ^ (τ - 1) * E t`
+interval integrable on `[a, b]`. -/
+lemma intervalIntegrable_rpow_sub_one_mul {E : ℝ → ℝ} (τ : ℝ) {a b : ℝ}
+    (hE : IntervalIntegrable E volume a b) (ha : 0 < a) (hab : a ≤ b) :
+    IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume a b := by
+  refine hE.continuousOn_mul fun t ht ↦ ?_
   rw [uIcc_of_le hab] at ht
   exact (Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).continuousWithinAt
 
-/-- If `|E t| ≤ c * t` on `[T, x]` with `1 ≤ T`, then `∫ t in T..x, t ^ (τ - 1) * E t` is bounded
-in absolute value by `c * ∫ t in T..x, t ^ τ`, computed explicitly. -/
-lemma abs_integral_rpow_sub_one_mul_le {E : ℝ → ℝ} {τ c T x : ℝ} (hτ : -1 < τ)
-    (hT1 : 1 ≤ T) (hx : T ≤ x)
+/-- If `|E t| ≤ c * t` on `[T, x]` with `0 < T` and `τ ≠ -1`, then
+`∫ t in T..x, t ^ (τ - 1) * E t` is bounded in absolute value by `c * ∫ t in T..x, t ^ τ`,
+computed explicitly. -/
+lemma abs_integral_rpow_sub_one_mul_le {E : ℝ → ℝ} {τ c T x : ℝ} (hτ : τ ≠ -1)
+    (hT : 0 < T) (hx : T ≤ x)
     (hint : IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume T x)
-    (hbound : ∀ t, T ≤ t → |E t| ≤ c * t) :
+    (hbound : ∀ t ∈ Icc T x, |E t| ≤ c * t) :
     |∫ t in T..x, t ^ (τ - 1) * E t| ≤ c * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
+  have h0 : (0 : ℝ) ∉ uIcc T x := by
+    rw [uIcc_of_le hx]
+    exact fun h ↦ hT.not_ge h.1
   calc |∫ t in T..x, t ^ (τ - 1) * E t|
       ≤ ∫ t in T..x, |t ^ (τ - 1) * E t| := intervalIntegral.abs_integral_le_integral_abs hx
     _ ≤ ∫ t in T..x, c * t ^ τ := by
         refine intervalIntegral.integral_mono_on hx hint.abs
-          ((intervalIntegral.intervalIntegrable_rpow' hτ).const_mul c) fun t ht ↦ ?_
+          ((intervalIntegral.intervalIntegrable_rpow (Or.inr h0)).const_mul c) fun t ht ↦ ?_
         have ht0 : 0 < t := by linarith [ht.1]
         rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos ht0 _)]
         calc t ^ (τ - 1) * |E t| ≤ t ^ (τ - 1) * (c * t) := by
               gcongr
-              exact hbound t ht.1
+              exact hbound t ht
           _ = c * t ^ τ := by
               rw [Real.rpow_sub_one ht0.ne']
               field_simp
     _ = c * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
-        rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hτ)]
+        rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inr ⟨hτ, h0⟩)]
 
 /-- **A remainder `o(t)` integrates to `o(x ^ (τ + 1))` against `t ^ (τ - 1)`.** If `E` is
 interval integrable above `1` and `E t = o(t)`, then for every exponent `τ > -1` the weighted
@@ -165,7 +166,10 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
     (fun x : ℝ ↦ ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t) =o[atTop] fun x ↦ x ^ (τ + 1) := by
   have hτ1 : 0 < τ + 1 := by linarith
   have hint {a b : ℝ} (ha : 1 ≤ a) (hab : a ≤ b) :=
-    intervalIntegrable_rpow_sub_one_mul τ hE_int ha hab
+    intervalIntegrable_rpow_sub_one_mul τ
+      ((hE_int b (ha.trans hab)).mono_set <| by
+        rw [uIcc_of_le (ha.trans hab), uIcc_of_le hab]
+        exact Icc_subset_Icc ha le_rfl) (zero_lt_one.trans_le ha) hab
   rw [isLittleO_iff]
   intro ε hε
   -- Beyond a cutoff `T`, `|E t| ≤ ε' t` with `ε' = ε (τ + 1) / 2`.
@@ -185,7 +189,8 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
   have hTpow : 0 ≤ T ^ (τ + 1) := Real.rpow_nonneg (by linarith) _
   rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hxpow,
     ← intervalIntegral.integral_add_adjacent_intervals (hint le_rfl hT1) (hint hT1 hx)]
-  have htail := abs_integral_rpow_sub_one_mul_le hτ hT1 hx (hint hT1 hx) hbound
+  have htail := abs_integral_rpow_sub_one_mul_le hτ.ne' (zero_lt_one.trans_le hT1) hx
+    (hint hT1 hx) fun t ht ↦ hbound t ht.1
   have hM : M ≤ ε / 2 * x ^ (τ + 1) := by
     rw [div_le_iff₀ hε] at hxM
     linarith
