@@ -66,7 +66,7 @@ forms are equivalent.
 
 * `LinearMap.BilinForm.iIsOrtho.toMatrix_eq_diagonal`: the Gram matrix in an orthogonal basis
   is the diagonal matrix of its self-pairings.
-* `LinearMap.BilinForm.IsSymm.equivalent_weightedSumSquares_of_iIsOrtho`: an orthogonal basis
+* `LinearMap.BilinForm.iIsOrtho.equivalent_weightedSumSquares`: an orthogonal basis
   identifies the associated quadratic form with a weighted sum of squares.
 * `LinearMap.BilinForm.det_toMatrix_comp`, `LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det`:
   the Gram determinant under a linear map and under a change of basis.
@@ -147,20 +147,19 @@ theorem iIsOrtho.isUnit_det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoi
     IsUnit (B.toMatrix b).det :=
   hb.det_toMatrix ▸ IsUnit.prod_univ_iff.mpr hbu
 
-/-- The quadratic form of a symmetric bilinear form in an orthogonal basis is isometric to
-the diagonal form of its self-pairings. -/
-theorem IsSymm.equivalent_weightedSumSquares_of_iIsOrtho
+/-- The quadratic form of a bilinear form in an orthogonal basis is isometric to the diagonal
+form of its self-pairings. -/
+theorem iIsOrtho.equivalent_weightedSumSquares
     {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
-    [Invertible (2 : R)] {B : LinearMap.BilinForm R M} (hB : B.IsSymm)
-    (b : Module.Basis ι R M)
+    [Invertible (2 : R)] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
     (hb : B.iIsOrtho b) :
     B.toQuadraticMap.Equivalent
       (QuadraticMap.weightedSumSquares R (fun i ↦ B (b i) (b i))) := by
-  have hassoc : QuadraticMap.associated B.toQuadraticMap = B :=
-    QuadraticMap.associated_left_inverse R hB.eq
   have horth : (QuadraticMap.associated B.toQuadraticMap).IsOrthoᵢ b := by
-    rw [hassoc]
-    exact LinearMap.isOrthoᵢ_def.mpr (iIsOrtho_def.mp hb)
+    refine LinearMap.isOrthoᵢ_def.mpr fun i j hij ↦ ?_
+    rw [QuadraticMap.associated_toQuadraticMap, iIsOrtho_def.mp hb i j hij,
+      iIsOrtho_def.mp hb j i hij.symm]
+    simp
   have heq := QuadraticMap.basisRepr_eq_of_iIsOrtho B.toQuadraticMap b horth
   simp only [BilinMap.toQuadraticMap_apply] at heq
   rw [← heq]
@@ -237,7 +236,7 @@ be a finite basis of the domain of `C` whose Gram matrix times a symmetric matri
 `π ^ (j + 1)`, and suppose that `H` has even diagonal or that `φ` also carries the self-pairings
 modulo `2 * π ^ (j + 1)`. Then in any bases of the same size, the Gram determinants `d` of `B` and
 `d'` of `C` satisfy `c ^ 2 * d = (1 + 2 π t) * d'` for some `c` and `t`. -/
-theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub [Nontrivial R] {N : Type*}
+theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub {N : Type*}
     [AddCommGroup N] [Module R N] {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm)
     {π : R} (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {ι₀ : Type*} [Fintype ι₀] [DecidableEq ι₀]
     (b₀ : Basis ι₀ R N) {j : ℕ} {H : Matrix ι₀ ι₀ R} (hH : C.toMatrix b₀ * H = π ^ j • 1)
@@ -245,6 +244,8 @@ theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub [Nontrivial R] {N : Type
     (hd : (∀ k, 2 ∣ H k k) ∨ ∀ x, 2 * π ^ (j + 1) ∣ C x x - B (φ x) (φ x))
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι R M) (b' : Basis ι R N) :
     ∃ c t : R, c ^ 2 * (B.toMatrix b).det = (1 + 2 * π * t) * (C.toMatrix b').det := by
+  cases subsingleton_or_nontrivial R
+  · exact ⟨0, 0, Subsingleton.elim _ _⟩
   have hπj : π ^ (j + 1) ∈ nonZeroDivisors R := pow_mem hπ (j + 1)
   -- The pullback of `B` along `φ` is `G' - π ^ (j + 1) • E` for a symmetric matrix `E`.
   choose E hE using fun k l ↦ h₁ (b₀ k) (b₀ l)
