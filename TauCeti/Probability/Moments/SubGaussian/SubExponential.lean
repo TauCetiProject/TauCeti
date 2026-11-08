@@ -19,7 +19,7 @@ with parameter `1`.
 ## Main results
 
 * `ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF` compares the two MGF conventions.
-* `hasSubexponentialMGF_fun_id_gaussianReal` treats centered Gaussian laws of any variance.
+* `hasSubexponentialMGF_fun_id_gaussianReal` treats Gaussian laws of any mean and variance.
 -/
 
 public section
@@ -49,14 +49,33 @@ end ProbabilityTheory.HasSubgaussianMGF
 
 namespace TauCeti.Probability
 
-/-- A centered Gaussian satisfies the sub-exponential MGF bound for compatible parameters. -/
-theorem hasSubexponentialMGF_fun_id_gaussianReal {v : ℝ≥0} {K : ℝ}
+/-- A Gaussian satisfies the sub-exponential MGF bound for compatible parameters. -/
+theorem hasSubexponentialMGF_fun_id_gaussianReal {m : ℝ} {v : ℝ≥0} {K : ℝ}
     (hK : 0 < K) (hv : (v : ℝ) / 2 ≤ K ^ 2) :
-    HasSubexponentialMGF (fun x : ℝ ↦ x) K (gaussianReal 0 v) := by
+    HasSubexponentialMGF (fun x : ℝ ↦ x) K (gaussianReal m v) := by
   have hX : HasSubgaussianMGF (fun x : ℝ ↦ x) v (gaussianReal 0 v) := by
     refine ⟨integrable_exp_mul_gaussianReal, ?_⟩
     intro t
     simp [mgf_fun_id_gaussianReal]
-  exact hX.hasSubexponentialMGF hK hv
+  have hcenter : HasSubgaussianMGF (fun x : ℝ ↦ x - m) v (gaussianReal m v) := by
+    have hmap : HasSubgaussianMGF (fun x : ℝ ↦ x) v
+        ((gaussianReal m v).map (fun x ↦ x - m)) := by
+      simpa [gaussianReal_map_sub_const] using hX
+    have h := HasSubgaussianMGF.of_map (μ := gaussianReal m v)
+      (Y := fun x : ℝ ↦ x - m) (by fun_prop) hmap
+    convert h using 1
+    funext x
+    rfl
+  have hi : Integrable (fun x : ℝ ↦ x) (gaussianReal m v) := by
+    convert hcenter.integrable.add (integrable_const m) using 1
+    funext x
+    simp only [Pi.add_apply, sub_add_cancel]
+  refine ⟨hK, hi, ?_, ?_⟩
+  · intro t ht
+    simpa [integral_id_gaussianReal] using hcenter.integrable_exp_mul t
+  · intro t ht
+    have hbound : (v : ℝ) * t ^ 2 / 2 ≤ K ^ 2 * t ^ 2 := by
+      nlinarith [mul_le_mul_of_nonneg_right hv (sq_nonneg t)]
+    simpa [integral_id_gaussianReal] using (hcenter.mgf_le t).trans (exp_le_exp.mpr hbound)
 
 end TauCeti.Probability
