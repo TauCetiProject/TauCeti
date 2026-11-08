@@ -119,10 +119,8 @@ theorem zeroSectionDivisor_pow_le_ker_subst_projModelFormalPoint_iff
             W.projModelFormalPoint).ker ↔ φ (s ^ n) = 0 := by
   rw [← map_ker, le_map_iff_comap_le,
     W.zeroSectionDivisor_pow_comap_subst_projModelFormalPoint hs,
-    ofIdealTop_le_ker_iff, Ideal.map_le_iff_le_comap,
-    Ideal.span_singleton_le_iff_mem, Ideal.mem_comap, RingHom.mem_ker]
-  rw [← RingHom.comp_apply, ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality]
-  exact map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso (.of B)).inv).1
+    Ideal.ofIdealTop_le_ker_Spec_map_iff]
+  simp
 
 /-- An invertible formal parameter change `X ↦ X * v`, with `v` a unit, preserves the ideal
 of every multiple of the zero section. No reducedness assumption on `R` is needed. -/
