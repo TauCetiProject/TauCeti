@@ -39,6 +39,8 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
+* `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
+  difference.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
   supported.
@@ -98,6 +100,16 @@ theorem gradient_const_smul (c : 𝕜) :
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_smulₛₗ, RingHomCompTriple.comp_apply, RingHom.id_apply,
     fderiv_const_smul_field, Pi.smul_apply]
+
+/-- The gradient of the negative of a function is the negative of its gradient. -/
+@[simp]
+theorem gradient_neg : ∇ (-f) x = -∇ f x := by
+  simpa using gradient_const_smul (f := f) (x := x) (-1 : 𝕜)
+
+/-- The gradient is subtractive wherever both terms are differentiable. -/
+theorem gradient_sub (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
+    ∇ (f - g) x = ∇ f x - ∇ g x := by
+  rw [sub_eq_add_neg, gradient_add hf hg.neg, gradient_neg, sub_eq_add_neg]
 
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/
