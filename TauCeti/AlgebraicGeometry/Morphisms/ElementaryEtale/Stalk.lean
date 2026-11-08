@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.ElementaryEtale.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Pointwise
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Stalk
+public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 
 /-!
 # Finite local models of quasi-finite points
