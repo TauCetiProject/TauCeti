@@ -25,8 +25,9 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
   linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
 * `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
   a positive functional is its limit along an approximate unit.
-* `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a complex-linear map
-  of weak-* duals. By `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
+* `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
+  complex-linear map of weak-* duals. By
+  `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
   `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to an affine map of state spaces
   along surjective star homomorphisms and along unital star homomorphisms.
 
@@ -102,20 +103,13 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A
 
 variable [StarOrderedRing A]
 
-/-- A positive linear functional, continuous by `PositiveLinearMap.exists_norm_apply_le`, is a
-state exactly when its norm is one. Simp proves this through
-`PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff`. -/
-theorem _root_.PositiveLinearMap.toWeakDual_mem_stateSpace_iff (ω : A →ₚ[ℂ] ℂ) :
-    StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) ∈ stateSpace A ↔
-      ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 :=
-  (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff
-
 /-- The states of `A` are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, viewed in the
 weak-* dual. -/
 theorem mem_stateSpace_iff_exists_positiveLinearMap :
     φ ∈ stateSpace A ↔ ∃ ω : A →ₚ[ℂ] ℂ, ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 ∧
       StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
-  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ => h ▸ ω.toWeakDual_mem_stateSpace_iff.2 hω⟩
+  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
+    h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
   let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
   have hω : (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = toStrongDual φ := by
     -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `φ` by definition
@@ -141,25 +135,22 @@ variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRi
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
 variable (A) in
-/-- Precomposition of functionals with a star homomorphism `f : A → B`, as a complex-linear map
-`WeakDual ℂ B →ₗ[ℂ] WeakDual ℂ A`. On states it is the pullback of states along `f`, which is
-affine when `f` is surjective or unital. -/
-noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →ₗ[ℂ] WeakDual ℂ A where
+/-- Precomposition of functionals with a star homomorphism `f : A → B`, as a weak-* continuous
+complex-linear map `WeakDual ℂ B →L[ℂ] WeakDual ℂ A`; it is continuous because each evaluation
+`φ ↦ φ (f a)` is. On states it is the pullback of states along `f`, which is affine when `f` is
+surjective or unital. -/
+noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →L[ℂ] WeakDual ℂ A where
   toFun φ := StrongDual.toWeakDual
     ((toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B))
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
+  cont := continuous_of_continuous_eval fun a => eval_continuous (f a)
 
 /-- The pullback of a functional along `f` evaluates as `φ ∘ f`. -/
 @[simp]
 theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
     pullbackFunctional A f φ a = φ (f a) :=
   (rfl)
-
-/-- The pullback along `f` is weak-* continuous: each evaluation `φ ↦ φ (f a)` is. -/
-@[fun_prop]
-theorem continuous_pullbackFunctional (f : F) : Continuous (pullbackFunctional A f) :=
-  continuous_of_continuous_eval fun a => by simpa using eval_continuous (f a)
 
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
