@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Kernel.Composition.CompMap
+public import Mathlib.Probability.Kernel.Invariance
 
 /-!
 # Powers of s-finite, finite and Markov kernels
@@ -71,6 +72,13 @@ theorem comp_pow_eq_pow_comp_of_comp_eq {β : Type*} [MeasurableSpace β]
     -- Use the composition form of powers; the monoid instance does not expose multiplication.
     simp only [Nat.add_comm n 1, pow_add, pow_one]
     rw [← comp_assoc, h, comp_assoc, ih, comp_assoc]
+
+/-- A measure invariant under a kernel is invariant under every natural power of it. -/
+theorem Invariant.pow {κ : Kernel α α} {μ : Measure α} (hκ : κ.Invariant μ) (n : ℕ) :
+    (κ ^ n).Invariant μ := by
+  induction n with
+  | zero => exact Measure.id_comp
+  | succ n ih => exact ih.comp hκ
 
 /-- The `n`-th power of the deterministic kernel of `f` is the deterministic kernel of the
 `n`-th iterate of `f`. -/
