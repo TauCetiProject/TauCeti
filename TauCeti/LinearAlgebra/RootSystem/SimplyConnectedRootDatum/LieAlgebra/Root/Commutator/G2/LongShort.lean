@@ -94,7 +94,6 @@ private theorem long_short_divisibility
     (hα : g2Length α = 1) (hβ : g2Length β = 3)
     (hγ : g2Root γ = g2Root α + g2Root β)
     (hδ : g2Root δ = g2Root α + g2Root γ)
-    (hε : g2Root ε = g2Root α + g2Root δ)
     (hζ : g2Root ζ = g2Root δ + g2Root γ) :
     (2 : ℤ) ∣ G2.structureConstant ht α γ ∧
       (3 : ℤ) ∣ G2.structureConstant ht α δ ∧
@@ -103,11 +102,10 @@ private theorem long_short_divisibility
     (by simpa only [g2SimplyConnectedRootDatum_root] using hγ)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hδ)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hζ)
-  have dvd {p q r : Fin G2.numRoots} (h : g2Root r = g2Root p + g2Root q) :=
-    chainBotCoeff_add_one_dvd_structureConstant (t := G2) (ht := ht)
-      (α := p) (β := q) ⟨r, g2_root_eq_add_of_coordinates h⟩
+  have dvd (p q : Fin G2.numRoots) :=
+    chainBotCoeff_add_one_dvd_structureConstant (t := G2) (ht := ht) (α := p) (β := q)
   simpa only [g2_chainBotCoeff_eq, hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat] using
-    And.intro (dvd hδ) (And.intro (dvd hε) (dvd hζ))
+    And.intro (dvd α γ) (And.intro (dvd α δ) (dvd δ γ))
 
 private theorem long_short_zero_brackets
     (hα : g2Length α = 1) (hβ : g2Length β = 3)
@@ -158,7 +156,7 @@ private theorem long_short_scaled_brackets
       (c • ⁅e α, e γ⁆ = (2 * d) • e δ) ∧
       (d • ⁅e α, e δ⁆ = (3 * a) • e ε) ∧
       ((d * c) • ⁅e δ, e γ⁆ = (3 * b) • e ζ) := by
-  obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hα hβ hγ hδ hε hζ
+  obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hα hβ hγ hδ hζ
   dsimp only
   refine ⟨lie_chevalleySystem_eq_structureConstant_zsmul
     (g2_root_eq_add_of_coordinates hγ), ?_, ?_, ?_⟩

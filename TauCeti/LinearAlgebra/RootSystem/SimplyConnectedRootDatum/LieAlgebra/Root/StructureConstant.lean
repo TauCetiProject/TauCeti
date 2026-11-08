@@ -152,15 +152,6 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast {α β : Fin t.numRoots}
     _ _ _ (LieSubalgebra.isNonZero_coe_root _) (LieSubalgebra.isNonZero_coe_root _)
     (LieSubalgebra.isNonZero_coe_root _) (coe_rootEquiv_eq_add_iff.2 hγ)
 
-/-- The descending root-string length plus one divides the structure constant at a root sum. -/
-theorem chainBotCoeff_add_one_dvd_structureConstant {α β : Fin t.numRoots}
-    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
-      Set.range (t.simplyConnectedRootDatum ht).root) :
-    (((t.simplyConnectedRootDatum ht).chainBotCoeff α β + 1 : ℕ) : ℤ) ∣
-      t.structureConstant ht α β := by
-  rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;>
-    simp only [h, dvd_neg, dvd_refl]
-
 /-- The structure constant of a genuine root sum is nonzero. -/
 theorem structureConstant_ne_zero {α β : Fin t.numRoots}
     (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
@@ -175,6 +166,18 @@ theorem structureConstant_eq_zero {α β : Fin t.numRoots}
     t.structureConstant ht α β = 0 := by
   rw [structureConstant, dite_eq_right_iff]
   exact fun hex => (h hex).elim
+
+/-- For every root pair, the descending root-string length plus one divides the structure
+constant. -/
+theorem chainBotCoeff_add_one_dvd_structureConstant {α β : Fin t.numRoots} :
+    (((t.simplyConnectedRootDatum ht).chainBotCoeff α β + 1 : ℕ) : ℤ) ∣
+      t.structureConstant ht α β := by
+  by_cases h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
+      Set.range (t.simplyConnectedRootDatum ht).root
+  · rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;>
+      simp only [h, dvd_neg, dvd_refl]
+  · rw [structureConstant_eq_zero h]
+    exact dvd_zero _
 
 /-- **Skew-symmetry of the structure constants**: `N_{β,α} = -N_{α,β}`. -/
 theorem structureConstant_skew (α β : Fin t.numRoots) :
