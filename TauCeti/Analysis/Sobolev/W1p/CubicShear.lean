@@ -140,22 +140,23 @@ theorem fderiv_comp_cubicShear_apply_single_zero {f : EuclideanSpace ℝ (Fin 2)
 
 /-- The pointwise form of the growth estimate: for `f` supported in the ball of radius `R` and
 `R ≤ k`, translating by `k` in the first coordinate and pulling back by the cubic shear gives
-`3 (k - R)² |∂_y f| ≤ ‖∇g‖ + ‖∇f‖` at the shifted point, where `g = f ∘ (cubicShear - k e₀)`. -/
+`3 (k - R)² |∂_y f| ≤ ‖∇g‖ + ‖∇f‖` at the shifted point, where `g = f ∘ (cubicShear - k e₀)`.
+Only differentiability of `f` at the shifted point is needed. -/
 private theorem norm_smul_fderiv_single_le {f : EuclideanSpace ℝ (Fin 2) → ℝ}
-    (hf : ContDiff ℝ 1 f) {R k : ℝ} (hR : tsupport f ⊆ Metric.closedBall 0 R) (hk : R ≤ k)
-    (w : EuclideanSpace ℝ (Fin 2)) :
+    {R k : ℝ} (hR : tsupport f ⊆ Metric.closedBall 0 R) (hk : R ≤ k)
+    (w : EuclideanSpace ℝ (Fin 2))
+    (hf : DifferentiableAt ℝ f (cubicShear w - k • EuclideanSpace.single 0 1)) :
     ‖(3 * (k - R) ^ 2) • fderiv ℝ f (cubicShear w - k • EuclideanSpace.single 0 1)
         (EuclideanSpace.single 1 1)‖ ≤
       ‖∇ (fun w => f (cubicShear w - k • EuclideanSpace.single 0 1)) w‖ +
         ‖∇ f (cubicShear w - k • EuclideanSpace.single 0 1)‖ := by
   set c : EuclideanSpace ℝ (Fin 2) := k • EuclideanSpace.single 0 1
   set T : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) := fun w => cubicShear w - c
-  have hfd : Differentiable ℝ f := hf.differentiable one_ne_zero
   set D := fderiv ℝ f (T w) (EuclideanSpace.single 1 1)
   have hchain : fderiv ℝ (fun w => f (T w)) w (EuclideanSpace.single 0 1) =
       fderiv ℝ f (T w) (EuclideanSpace.single 0 1) + 3 * w 0 ^ 2 * D := by
     have h := fderiv_comp_cubicShear_apply_single_zero (f := fun z => f (z - c)) (v := w)
-      ((differentiableAt_comp_sub c).2 (hfd _))
+      ((differentiableAt_comp_sub c).2 hf)
     simp only [fderiv_comp_sub] at h
     exact h
   have hle : ∀ L : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ, ∀ i : Fin 2,
@@ -201,7 +202,7 @@ private theorem ofReal_mul_eLpNorm_fderiv_le {f : EuclideanSpace ℝ (Fin 2) →
   have hD : Continuous fun z => fderiv ℝ f z (EuclideanSpace.single 1 1) :=
     (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
   have hpt : ∀ w, ‖(3 * (k - R) ^ 2) • fderiv ℝ f (T w) (EuclideanSpace.single 1 1)‖ ≤
-      ‖∇ (fun w => f (T w)) w‖ + ‖∇ f (T w)‖ := fun w => norm_smul_fderiv_single_le hf hR hk w
+      ‖∇ (fun w => f (T w)) w‖ + ‖∇ f (T w)‖ := fun w => norm_smul_fderiv_single_le hR hk w (hfd _)
   set G : EuclideanSpace ℝ (Fin 2) → ℝ := fun z => fderiv ℝ f z (EuclideanSpace.single 1 1)
   calc ENNReal.ofReal (3 * (k - R) ^ 2) * eLpNorm G p volume
       = ‖3 * (k - R) ^ 2‖ₑ * eLpNorm (G ∘ T) p volume := by
