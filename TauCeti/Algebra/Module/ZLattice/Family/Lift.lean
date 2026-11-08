@@ -71,6 +71,7 @@ variable [T2Space Y] [LocallyCompactSpace Y] (hcont : ∀ l, Continuous fun y �
   (hinj : ∀ y, Injective (P y))
 include hcont hinj
 
+omit [Module.Free ℤ Λ] in
 /-- **Lifting maps into a family of tori.** A continuous map `σ` from a simply connected,
 locally path-connected space `Z` into the family of tori has a continuous vector lift: a
 continuous `β : Z → E` with `σ z = [p (σ z), β z]`, where `p` is the projection to `Y`. -/
@@ -88,6 +89,7 @@ theorem exists_continuous_lift_torusFamily [SimplyConnectedSpace Z] [LocallyPath
   have hz : Quotient.mk _ (F z) = σ z := congrFun hF z
   rw [← hz, torusFamilyProjection_mk]
 
+omit [Module.Free ℤ Λ] in
 /-- **Uniqueness of lifts up to a period.** Over a preconnected space `Z`, two continuous vector
 lifts `β`, `β'` of the same map into the family of tori, lying over `f`, differ by a single
 period: `β' z = β z + P (f z) l` for one `l : Λ`. -/
@@ -116,6 +118,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCo
   (hP : ∀ l, ContMDiff I 𝓘(𝕜, E) n fun y ↦ P y l)
 include hinj hP
 
+omit [Module.Free ℤ Λ] in
 /-- **Lifts of `C^n` maps are `C^n`.** For a `C^n` family of full lattices, a continuous vector
 lift `β` of a `C^n` map `σ` into the family of tori, `σ z = [f z, β z]`, is `C^n`, because the
 orbit map `Y × E → (Y × E)/Λ` is a `C^n` local diffeomorphism. Over `ℂ`, lifts of holomorphic
@@ -137,6 +140,7 @@ theorem contMDiff_of_torusFamily_mk_eq
       (by rwa [← funext h] at hσ)
   exact contMDiff_snd.comp hfβ
 
+omit [Module.Free ℤ Λ] in
 /-- **`C^n` lifts.** For a `C^n` family of full lattices, a `C^n` map `σ` from a simply
 connected, locally path-connected manifold `Z` into the family of tori has a `C^n` vector lift `β`,
 with `σ z = [p (σ z), β z]`. Over `ℂ`, holomorphic maps have holomorphic lifts. -/
