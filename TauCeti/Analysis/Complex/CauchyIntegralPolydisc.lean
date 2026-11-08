@@ -15,6 +15,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Units
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Basic
 import TauCeti.Topology.Compactness.Normed
 
 /-!
@@ -407,16 +408,6 @@ section Integral
 variable {Y α : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y] [MeasurableSpace α]
   [TopologicalSpace α] [OpensMeasurableSpace α] {μ : Measure α}
   {f : V × Y → E} {φ : α → Y} {g : α → ℂ} {K : Set Y}
-
-/-- A continuous function whose range lies in a compact set is strongly measurable, without any
-countability assumption on the domain. -/
-theorem _root_.Continuous.stronglyMeasurable_of_range_subset_isCompact {X Z : Type*}
-    [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup Z]
-    {u : X → Z} (hu : Continuous u) {s : Set Z} (hs : IsCompact s) (hus : ∀ x, u x ∈ s) :
-    StronglyMeasurable u := by
-  borelize Z
-  refine stronglyMeasurable_iff_measurable_separable.2 ⟨hu.measurable, ?_⟩
-  exact (hs.isSeparable).mono (Set.range_subset_iff.2 hus)
 
 /-- **Differentiation under the integral sign for a jointly analytic integrand.** If `f` is
 jointly analytic at every point of `{p} × K`, with `K` compact, and `φ` is a continuous map with
