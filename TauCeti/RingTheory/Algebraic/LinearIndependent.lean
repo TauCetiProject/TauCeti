@@ -54,6 +54,8 @@ public section
 
 namespace TauCeti
 
+section Ring
+
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
 /-- The powers of a transcendental element are linearly independent over the base ring. -/
@@ -64,9 +66,9 @@ theorem _root_.Transcendental.linearIndependent_pow {x : A} (hx : Transcendental
 
 /-- The first `n` powers of a transcendental element span a submodule of rank `n` over a
 nontrivial commutative ring. -/
-theorem _root_.Transcendental.finrank_span_range_pow {K B : Type*} [CommRing K] [Nontrivial K]
-    [Ring B] [Algebra K B] {x : B} (hx : Transcendental K x) (n : ℕ) :
-    Module.finrank K (Submodule.span K (Set.range fun i : Fin n ↦ x ^ (i : ℕ))) = n :=
+theorem _root_.Transcendental.finrank_span_range_pow [Nontrivial R] {x : A}
+    (hx : Transcendental R x) (n : ℕ) :
+    Module.finrank R (Submodule.span R (Set.range fun i : Fin n ↦ x ^ (i : ℕ))) = n :=
   (finrank_span_eq_card (hx.linearIndependent_pow.comp _ Fin.val_injective)).trans
     (Fintype.card_fin n)
 
@@ -83,9 +85,7 @@ theorem _root_.Transcendental.linearIndepOn_pow_mul_pow {K : Type*} [Field K] [A
   have h := linearIndependent_smul (R := R) hx.linearIndependent_pow (linearIndependent_pow y)
   have hinj : Function.Injective fun p : {p : ℕ × ℕ | p.2 < (minpoly K y).natDegree} ↦
       ((p : ℕ × ℕ).1, (⟨(p : ℕ × ℕ).2, p.2⟩ : Fin (minpoly K y).natDegree)) :=
-    fun p q hpq ↦ by
-      simp only [Prod.mk.injEq, Fin.mk.injEq] at hpq
-      exact Subtype.ext (Prod.ext hpq.1 hpq.2)
+    fun p q hpq ↦ by grind
   rw [← linearIndependent_set_coe_iff]
   convert h.comp _ hinj using 1
   ext p
@@ -113,6 +113,12 @@ theorem _root_.IsAlgebraic.exists_card_le_of_linearIndependent_pow [IsDomain R] 
   exact ((he.smul_of_isRightRegular (w := fun _ ↦ c ^ N) fun _ ↦ hreg).codRestrict M
     hmem).fintype_card_le_finrank
 
+end Ring
+
+section Semiring
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
 /-- A nontrivial relation `∑_{j ≤ m} cⱼ f ^ q ^ j = 0` with `2 ≤ q` and `f ≠ 0` makes `f` a root of
 the nonzero polynomial `∑_{j ≤ m} cⱼ T ^ (q ^ j - 1)`, of degree at most `q ^ m - 1`. -/
 theorem exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero [NoZeroDivisors A]
@@ -132,12 +138,13 @@ theorem exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero [NoZeroDiv
     simpa [Q, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, hinj.eq_iff] using this
   have hQdeg : Q.natDegree ≤ q ^ m - 1 :=
     Polynomial.natDegree_sum_le_of_forall_le _ _ fun j _ ↦
-      (Polynomial.natDegree_monomial_le _).trans <|
-        Nat.sub_le_sub_right (Nat.pow_le_pow_right (by omega : 0 < q) (Nat.lt_succ_iff.mp j.isLt)) 1
+      (Polynomial.natDegree_monomial_le _).trans <| by gcongr; omega
   -- Multiplying `Q(f)` by `f` turns each `cⱼ f ^ (q ^ j - 1)` into `cⱼ f ^ q ^ j`.
   refine ⟨Q, hQ, hQdeg, (mul_eq_zero.mp ?_).resolve_right hf⟩
   rw [← hc, map_sum, Finset.sum_mul]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp [Polynomial.aeval_monomial, ← Algebra.smul_def, ← pow_succ, Nat.sub_add_cancel (hqj j)]
+
+end Semiring
 
 end TauCeti
