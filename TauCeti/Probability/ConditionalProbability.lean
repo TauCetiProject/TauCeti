@@ -184,9 +184,9 @@ theorem _root_.Measurable.cond_preimage_Ico (hμ : Measurable μ)
 
 end MovingIntervals
 
-/-- A function whose norm is bounded on an event `s` is integrable for the conditional
-measure `μ[|s]`. For instance, a point drawn uniformly from a bounded Borel set of a normed space
-has integrable position. -/
+/-- A function whose norm is bounded on an event `s`, measurable or not, is integrable for the
+conditional measure `μ[|s]`. For instance, the position of a point drawn from the conditional
+Lebesgue measure of a bounded set of a normed space is integrable. -/
 theorem integrable_cond_of_norm_le {E : Type*} [NormedAddCommGroup E] {μ : Measure Ω}
     {s : Set Ω} {f : Ω → E} (hf : AEStronglyMeasurable f μ[|s]) {C : ℝ}
     (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : Integrable f μ[|s] := by
@@ -363,7 +363,10 @@ theorem lintegral_div_cond_compl_zero (μ : Measure ℝ≥0) {a : ℝ≥0} (ha :
   simp only [mul_comm, mul_left_comm, mul_assoc]
 
 /-- Mathlib's total variation distance from a probability law conditioned on a positive-mass
-event to the original law is twice the excluded mass. -/
+event `A` to the original law is `2 * (1 - μ.real A)`. The event need not be measurable: `μ A` is
+then the outer measure, and `1 - μ.real A` is the mass of the complement of a measurable hull
+`toMeasurable μ A`, so the distance is twice the excluded mass of that hull (for measurable `A`,
+just twice the mass of `Aᶜ`). -/
 theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
     [IsProbabilityMeasure μ] {A : Set Ω} (hμA : μ A ≠ 0) :
     tvDist (cond μ A) μ = 2 * (1 - μ.real A) := by
