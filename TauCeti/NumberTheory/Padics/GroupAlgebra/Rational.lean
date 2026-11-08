@@ -11,13 +11,13 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective
 import TauCeti.RingTheory.Jacobson.Semiprimary
+import TauCeti.RingTheory.Noetherian.LinearMap
 import TauCeti.RingTheory.Semisimple.Multiplicity
 
 /-!

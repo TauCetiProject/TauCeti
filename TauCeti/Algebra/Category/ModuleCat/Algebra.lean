@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.RingTheory.Finiteness.Defs
 -- Non-public: the finiteness transfer for linear maps is used only inside the proof.
-import TauCeti.Algebra.Module.LinearMap.Finite
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Finitely generated morphism modules over a finite algebra
@@ -24,7 +24,7 @@ the Hom-finiteness that dimension and length counts in the module category of su
 on.
 
 The morphism space is identified with the `A`-linear maps by `ModuleCat.homLinearEquiv`, and
-those embed in maps into a power of the target by `isNoetherian_linearMap_of_finite`.
+those embed in maps into a power of the target by `TauCeti.isNoetherian_linearMap_of_finite`.
 -/
 
 public section

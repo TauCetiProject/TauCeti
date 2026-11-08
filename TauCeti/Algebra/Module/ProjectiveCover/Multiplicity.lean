@@ -9,8 +9,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
-import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.LinearMap
+import TauCeti.RingTheory.Noetherian.LinearMap
 import TauCeti.RingTheory.Semisimple.Schur
 
 /-!

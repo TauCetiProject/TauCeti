@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.HopkinsLevitzki
-import TauCeti.Algebra.Module.LinearMap.Finite
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Endomorphism rings of modules over Artin algebras
