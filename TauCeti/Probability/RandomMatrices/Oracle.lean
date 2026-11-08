@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.SquaredDeviation
-public import Mathlib.Data.Matrix.Basic
 
 /-!
 # Finite-dimensional spectral oracle
@@ -109,37 +107,26 @@ theorem diagonalOracleLoss_eq_oracle_add {ι : Type*} [Fintype ι] [DecidableEq 
     ring
   simp [diagonalOracle, Finset.sum_add_distrib, hsq, add_assoc, add_comm]
 
-/-- The basis-diagonal oracle is the unique minimizer of squared Frobenius loss. -/
-theorem diagonalOracleLoss_unique_minimizer {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {T : Matrix ι ι ℂ} :
-    ∀ d : ι → ℝ, diagonalOracleLoss T (diagonalOracle T) ≤ diagonalOracleLoss T d ∧
-      (diagonalOracleLoss T d = diagonalOracleLoss T (diagonalOracle T) ↔
-        d = diagonalOracle T) := by
-  intro d
-  rw [diagonalOracleLoss_eq_oracle_add d]
-  constructor
-  · exact le_add_of_nonneg_right (Finset.sum_nonneg fun i hi => sq_nonneg _)
-  · rw [add_eq_left]
-    simp only [Finset.sum_sq_eq_zero_iff, Finset.mem_univ, true_implies]
-    constructor
-    · intro h
-      funext i
-      exact sub_eq_zero.mp (h i)
-    · intro h i
-      simp [h]
-
 /-- The diagonal oracle attains no greater loss than any real diagonal estimator. -/
 theorem diagonalOracleLoss_le {ι : Type*} [Fintype ι] [DecidableEq ι]
     (T : Matrix ι ι ℂ) (d : ι → ℝ) :
-    diagonalOracleLoss T (diagonalOracle T) ≤ diagonalOracleLoss T d :=
-  (diagonalOracleLoss_unique_minimizer (T := T) d).1
+    diagonalOracleLoss T (diagonalOracle T) ≤ diagonalOracleLoss T d := by
+  rw [diagonalOracleLoss_eq_oracle_add d]
+  exact le_add_of_nonneg_right (Finset.sum_nonneg fun i hi => sq_nonneg _)
 
 /-- Equality with the oracle loss characterizes the oracle. -/
 theorem diagonalOracleLoss_eq_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
     (T : Matrix ι ι ℂ) (d : ι → ℝ) :
     diagonalOracleLoss T d = diagonalOracleLoss T (diagonalOracle T) ↔
-      d = diagonalOracle T :=
-  (diagonalOracleLoss_unique_minimizer (T := T) d).2
+      d = diagonalOracle T := by
+  rw [diagonalOracleLoss_eq_oracle_add d, add_eq_left]
+  simp only [Finset.sum_sq_eq_zero_iff, Finset.mem_univ, true_implies]
+  constructor
+  · intro h
+    funext i
+    exact sub_eq_zero.mp (h i)
+  · intro h i
+    simp [h]
 
 /-- Loss to an estimator diagonal in a unitary basis is its diagonal loss in that basis. -/
 theorem norm_sub_unitary_diagonal_sq {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -213,6 +200,30 @@ theorem diagonalBlockLoss_def {ι : Type*} (T : Matrix ι ι ℂ) (s : Finset ι
 
 @[simp] theorem diagonalBlockLoss_empty {ι : Type*} (T : Matrix ι ι ℂ) (c : ℝ) :
     diagonalBlockLoss T ∅ c = 0 := by simp [diagonalBlockLoss_def]
+
+/-- Block loss is its minimum plus the squared excess from the block average. -/
+theorem diagonalBlockLoss_eq_average_add {ι : Type*}
+    (T : Matrix ι ι ℂ) (s : Finset ι) (c : ℝ) :
+    diagonalBlockLoss T s c =
+      diagonalBlockLoss T s (diagonalBlockAverage T s) +
+        s.card * (c - diagonalBlockAverage T s) ^ 2 := by
+  simpa only [diagonalBlockLoss_def, diagonalBlockAverage_def] using
+    Finset.sum_sq_sub_mean s (fun i => (T i i).re) c
+
+/-- The block average minimizes block loss, including on an empty block. -/
+theorem diagonalBlockLoss_average_le {ι : Type*}
+    (T : Matrix ι ι ℂ) (s : Finset ι) (c : ℝ) :
+    diagonalBlockLoss T s (diagonalBlockAverage T s) ≤ diagonalBlockLoss T s c := by
+  simpa only [diagonalBlockLoss_def, diagonalBlockAverage_def] using
+    Finset.sum_sq_sub_mean_le s (fun i => (T i i).re) c
+
+/-- For a nonempty block, its average is the unique minimizer of block loss. -/
+theorem diagonalBlockLoss_eq_average_iff {ι : Type*}
+    (T : Matrix ι ι ℂ) (s : Finset ι) (hs : s.Nonempty) (c : ℝ) :
+    diagonalBlockLoss T s c = diagonalBlockLoss T s (diagonalBlockAverage T s) ↔
+      c = diagonalBlockAverage T s := by
+  simpa only [diagonalBlockLoss_def, diagonalBlockAverage_def] using
+    Finset.sum_sq_sub_mean_eq_iff s (fun i => (T i i).re) hs c
 
 end Matrix
 

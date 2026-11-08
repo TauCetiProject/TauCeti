@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
@@ -27,32 +27,31 @@ theorem sum_sq_sub_mean {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) 
       (∑ i ∈ s, (t i - (∑ j ∈ s, t j) / s.card) ^ 2) +
         s.card * (c - (∑ j ∈ s, t j) / s.card) ^ 2 := by
   by_cases hs : s.Nonempty
-  · let a : ℝ := (∑ i ∈ s, t i) / s.card
+  · let w : ℝ := 1 / s.card
     have hcard : (s.card : ℝ) ≠ 0 := by
       exact_mod_cast (Finset.card_ne_zero.mpr hs)
-    have hsum : ∑ i ∈ s, t i = (s.card : ℝ) * a := by
-      dsimp [a]
-      field_simp [hcard]
-    have hsum_centered : ∑ i ∈ s, (t i - a) = 0 := by
-      rw [Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul, hsum]
+    have hw : ∑ i ∈ s, w = 1 := by
+      simp only [Finset.sum_const, nsmul_eq_mul]
+      dsimp [w]
+      field_simp
+    have h := Finset.sum_mul_sub_sq_eq s (w := fun _ => w) hw c t
+    simp only [← Finset.mul_sum] at h
+    have hmean : w * ∑ i ∈ s, t i = (∑ i ∈ s, t i) / s.card := by
+      dsimp [w]
       ring
-    calc
-      (∑ i ∈ s, (t i - c) ^ 2) =
-          ∑ i ∈ s, ((t i - a) ^ 2 + (c - a) ^ 2 - 2 * (t i - a) * (c - a)) := by
-        apply Finset.sum_congr rfl
-        intro i _
-        ring
-      _ = (∑ i ∈ s, (t i - a) ^ 2) + s.card * (c - a) ^ 2 -
-            2 * (∑ i ∈ s, (t i - a)) * (c - a) := by
-        rw [Finset.sum_sub_distrib, Finset.sum_add_distrib, Finset.sum_const,
-          nsmul_eq_mul]
-        have hcross : (∑ i ∈ s, 2 * (t i - a) * (c - a)) =
-            2 * (∑ i ∈ s, (t i - a)) * (c - a) := by
-          simp only [← Finset.sum_mul, ← Finset.mul_sum, mul_assoc]
-        rw [hcross]
-      _ = (∑ i ∈ s, (t i - a) ^ 2) + s.card * (c - a) ^ 2 := by
-        rw [hsum_centered]
-        ring
+    rw [hmean] at h
+    have hreverse (a : ℝ) : (∑ i ∈ s, (a - t i) ^ 2) =
+        ∑ i ∈ s, (t i - a) ^ 2 := by
+      apply Finset.sum_congr rfl
+      intro i _
+      ring
+    rw [hreverse c, hreverse ((∑ i ∈ s, t i) / s.card)] at h
+    have hscale : (s.card : ℝ) * w = 1 := by
+      dsimp [w]
+      field_simp
+    have hscaled := congrArg (fun x : ℝ => (s.card : ℝ) * x) h
+    simp only [mul_add, ← mul_assoc, hscale, one_mul] at hscaled
+    simpa only [add_comm] using hscaled
   · have hempty : s = ∅ := Finset.not_nonempty_iff_eq_empty.mp hs
     subst s
     simp
