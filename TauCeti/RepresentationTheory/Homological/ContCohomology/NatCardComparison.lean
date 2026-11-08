@@ -13,7 +13,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Continuous
 
 For a discrete representation `X : TopRep k G` the explicit groups `H⁰(G, X.V)`, `H¹(G, X.V)` and
 `H²(G, X.V)` are in bijection with the continuous cohomology `continuousCohomology n X` in degrees
-`0`, `1` and `2`, so they have the same cardinality. These cardinality comparisons are what one
+`0`, `1` and `2`, so they have the same cardinality. The bijection in degree `1` needs the action
+of `G` on `X.V` to be continuous, and the one in degree `2` needs in addition `G` to be locally
+compact. These cardinality comparisons are what one
 needs to transport counting arguments about the explicit long exact sequence to the canonical
 cohomology.
 
@@ -22,7 +24,8 @@ cohomology.
 * `TopRep.natCard_H0_eq_natCard_continuousCohomology`,
   `TopRep.natCard_H1_eq_natCard_continuousCohomology`,
   `TopRep.natCard_H2_eq_natCard_continuousCohomology`: the cardinality of the explicit `Hⁿ` of a
-  discrete representation is that of `continuousCohomology n X`, for `n = 0, 1, 2`.
+  discrete representation is that of `continuousCohomology n X`, for `n = 0, 1, 2`; degrees `1`
+  and `2` assume that `G` acts continuously on `X.V`, and degree `2` that `G` is locally compact.
 -/
 
 public section
@@ -45,13 +48,13 @@ theorem TopRep.natCard_H0_eq_natCard_continuousCohomology :
       (ofDiscreteModuleRestrictScalarsIntEquiv X 0)).toEquiv
 
 /-- The explicit `H¹` of the carrier of a discrete representation has the cardinality of the
-continuous cohomology `H¹`. -/
+continuous cohomology `H¹`, when `G` acts continuously on it. -/
 theorem TopRep.natCard_H1_eq_natCard_continuousCohomology [ContinuousSMul G X.V] :
     Nat.card (H1 G X.V) = Nat.card (continuousCohomology 1 X) :=
   Nat.card_congr X.explicitH1AddEquivContinuousCohomologyOfDiscrete.toEquiv
 
 /-- The explicit `H²` of the carrier of a discrete representation has the cardinality of the
-continuous cohomology `H²`. -/
+continuous cohomology `H²`, when `G` acts continuously on it and is locally compact. -/
 theorem TopRep.natCard_H2_eq_natCard_continuousCohomology [ContinuousSMul G X.V]
     [LocallyCompactSpace G] :
     Nat.card (H2 G X.V) = Nat.card (continuousCohomology 2 X) :=
