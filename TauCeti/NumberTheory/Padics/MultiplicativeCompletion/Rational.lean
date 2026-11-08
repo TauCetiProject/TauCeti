@@ -131,8 +131,7 @@ private theorem exists_linearIndependent_padicCompletionUnitsOf_conj :
   have hv (j) : v j ∈ unitFiltration L (absoluteRamificationIndex L p + 1) :=
     (j.2.restrictScalars ℚ_[p]).unitsMap_mem_unitFiltration_iff.mpr (hu j.1)
   have hvlog (j) : NormedSpace.log (v j : L) = c j.1 • (b.smulTower nb) j := by
-    have h := (j.2.restrictScalars ℚ_[p]).map_log_of_mem_unitFiltration_one p
-      (unitFiltration_antitone (Nat.succ_le_succ (Nat.zero_le _)) (hu j.1))
+    have h := (j.2.restrictScalars ℚ_[p]).map_log (u j.1 : L)
     rw [hlog, map_smul, AlgEquiv.restrictScalars_apply, AlgEquiv.restrictScalars_apply,
       map_smul] at h
     rw [Module.Basis.smulTower_apply, IsGalois.normalBasis_apply, h, Units.coe_map]

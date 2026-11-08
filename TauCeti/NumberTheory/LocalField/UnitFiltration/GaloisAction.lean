@@ -29,8 +29,8 @@ passing to successive quotients in ramification theory.
 * `AlgEquiv.coe_smul_unitFiltration`: the restricted action agrees with the action on `Lˣ`.
 * `AlgEquiv.val_coe_smul_unitFiltration`: the restricted action agrees with applying the
   automorphism on `L`.
-* `AlgEquiv.map_log_of_mem_unitFiltration_one`: on a finite extension of `ℚ_[p]`, the logarithm of
-  principal units commutes with every extension automorphism.
+* `AlgEquiv.map_log`: the logarithm commutes with every automorphism of a finite extension of a
+  nonarchimedean local field.
 
 ## References
 
@@ -65,11 +65,13 @@ theorem unitsMap_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ}
   simp only [Units.coe_map, MonoidHom.coe_ofClass]
   rw [σ.valuation_eq, hsub]
 
+omit [Module.Finite K L] in
 /-- Every automorphism of a finite extension of a nonarchimedean local field maps each step of
 the unit filtration onto itself. -/
 @[simp]
 theorem smul_unitFiltration (σ : L ≃ₐ[K] L) (i : ℕ) :
     σ • unitFiltration L i = unitFiltration L i := by
+  have := finite_of_valuativeExtension K L
   ext x
   rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, AlgEquiv.smul_units_def,
     unitsMap_mem_unitFiltration_iff]
@@ -116,19 +118,35 @@ theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFilt
     (((σ • x : unitFiltration L i) : Lˣ) : L) = σ ((x : Lˣ) : L) :=
   (rfl)
 
-/-- **The logarithm is Galois-equivariant.** On a finite extension `L` of `ℚ_[p]`, every
-automorphism of `L/K` commutes with the logarithm of a principal unit: `σ (log u) = log (σ u)`.
-The logarithm series of `u` converges on `U(L,1)`, and `σ` is continuous and maps it termwise to
-the logarithm series of `σ u`. -/
-theorem map_log_of_mem_unitFiltration_one (σ : L ≃ₐ[K] L) (p : ℕ) [Fact p.Prime]
-    [FinitePadicExtension L p] {u : Lˣ} (hu : u ∈ unitFiltration L 1) :
-    σ (NormedSpace.log (u : L)) = NormedSpace.log (σ (u : L)) := by
-  have h := (hasSum_log_of_mem_unitFiltration_one p hu).map σ.toAddMonoidHom
-    σ.continuous_of_valuativeExtension
-  have h' := hasSum_log_of_mem_unitFiltration_one p (σ.unitsMap_mem_unitFiltration_iff.mpr hu)
-  rw [Units.coe_map, MonoidHom.coe_ofClass] at h'
-  refine h.unique (h'.congr_fun fun n ↦ ?_)
-  simp
+/-- **The logarithm is Galois-equivariant.** Every automorphism of a finite extension `L/K` of
+nonarchimedean local fields commutes with the logarithm: `σ (log u) = log (σ u)`. The automorphism
+`σ` is a homeomorphism, so it maps the logarithm series of `u` termwise to that of `σ u` and
+preserves its summability. -/
+theorem map_log (σ : L ≃ₐ[K] L) (u : L) :
+    σ (NormedSpace.log u) = NormedSpace.log (σ u) := by
+  by_cases hQ : Nonempty (Algebra ℚ L)
+  · let _ := hQ.some
+    have key (x : L) :
+        NormedSpace.log x = ∑' n : ℕ, ((-1) ^ (n + 1) / n : ℚ) • (x - 1) ^ n := by
+      exact congrFun (NormedSpace.log_eq_tsum (𝔸 := L) ℚ) x
+    have hterm (n : ℕ) : σ (((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n) =
+        ((-1) ^ (n + 1) / n : ℚ) • (σ u - 1) ^ n := by
+      rw [map_rat_smul, map_pow, map_sub, map_one]
+    have hc := σ.continuous_of_valuativeExtension
+    have hc' := σ.symm.continuous_of_valuativeExtension
+    rw [key, key]
+    by_cases hs : Summable fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n
+    · exact Eq.trans (hs.hasSum.map σ.toAddMonoidHom hc).tsum_eq.symm (tsum_congr hterm)
+    · have hs' : ¬ Summable fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (σ u - 1) ^ n := by
+        intro h
+        refine hs ((h.map σ.symm.toAddMonoidHom hc').congr fun n => ?_)
+        have e : σ.symm (((-1) ^ (n + 1) / n : ℚ) • (σ u - 1) ^ n) =
+            ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n := by
+          rw [map_rat_smul, map_pow, map_sub, map_one, AlgEquiv.symm_apply_apply]
+        exact e
+      rw [tsum_eq_zero_of_not_summable hs, tsum_eq_zero_of_not_summable hs', map_zero]
+  · have : IsEmpty (Algebra ℚ L) := ⟨fun h => hQ ⟨h⟩⟩
+    rw [NormedSpace.log_of_isEmpty_algebra_rat, NormedSpace.log_of_isEmpty_algebra_rat, map_zero]
 
 end AlgEquiv
 
