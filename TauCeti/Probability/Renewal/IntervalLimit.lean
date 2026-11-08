@@ -39,9 +39,27 @@ namespace MeasureTheory.Measure
 
 open TauCeti.Probability
 
-/-- Convergence of reflected interval masses passes through a monotone forcing truncated
-at a finite age. The age cutoff is excluded and age zero is included. No continuity,
-positivity or global integrability of the forcing is required. -/
+/-- Forward interval-mass limits also give the limits of reflected intervals of fixed age. -/
+theorem tendsto_measureReal_Ioc_sub_of_tendsto_measureReal_Ioc
+    (μ : Measure ℝ≥0) {r : ℝ}
+    (hlim : ∀ d : ℝ≥0, Tendsto (fun t : ℝ≥0 => μ.real (Ioc t (t + d))) atTop
+      (𝓝 (r * d))) (a b : ℝ≥0) (hab : a ≤ b) :
+    Tendsto (fun t : ℝ≥0 => μ.real (Ioc (t - b) (t - a))) atTop
+      (𝓝 (r * ((b : ℝ) - a))) := by
+  have ht : Tendsto (fun t : ℝ≥0 => t - b) atTop atTop := by
+    refine tendsto_atTop.2 fun c => ?_
+    filter_upwards [eventually_ge_atTop (c + b)] with t hct
+    exact le_tsub_of_add_le_right hct
+  have he : (fun t : ℝ≥0 => μ.real (Ioc (t - b) (t - a))) =ᶠ[atTop]
+      (fun t => μ.real (Ioc (t - b) (t - b + (b - a)))) := by
+    filter_upwards [eventually_ge_atTop b] with t hbt
+    rw [tsub_add_tsub_cancel hbt hab]
+  simpa only [NNReal.coe_sub hab] using ((hlim (b - a)).comp ht).congr' he.symm
+
+/-- If the forward interval masses `μ.real (Ioc t (t + d))` converge to `r * d` for every
+`d`, with `0 ≤ r`, convolution with a monotone forcing cut off at age `A` converges to
+`r` times its integral on `0..A`. The age cutoff is excluded and age zero is included.
+No continuity, positivity or global integrability of the forcing is required. -/
 theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
     (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] {r : ℝ} (hr : 0 ≤ r)
     (hlim : ∀ d : ℝ≥0, Tendsto (fun t : ℝ≥0 => μ.real (Ioc t (t + d))) atTop
@@ -58,20 +76,6 @@ theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
       exact renewalConv_zero_left μ t
     rw [he]
     simp
-  have hApos : 0 < A := pos_iff_ne_zero.mpr hA
-  -- Translate the interval limit to the reflected age cells used by convolution.
-  have href (a b : ℝ≥0) (hab : a ≤ b) :
-      Tendsto (fun t : ℝ≥0 => μ.real (Ioc (t - b) (t - a))) atTop
-        (𝓝 (r * ((b : ℝ) - a))) := by
-    have ht : Tendsto (fun t : ℝ≥0 => t - b) atTop atTop := by
-      refine tendsto_atTop.2 fun c => ?_
-      filter_upwards [eventually_ge_atTop (c + b)] with t hct
-      exact le_tsub_of_add_le_right hct
-    have he : (fun t : ℝ≥0 => μ.real (Ioc (t - b) (t - a))) =ᶠ[atTop]
-        (fun t => μ.real (Ioc (t - b) (t - b + (b - a)))) := by
-      filter_upwards [eventually_ge_atTop b] with t hbt
-      rw [tsub_add_tsub_cancel hbt hab]
-    simpa only [NNReal.coe_sub hab] using ((hlim (b - a)).comp ht).congr' he.symm
   -- Lower and upper sums share a vanishing, explicitly telescoping gap.
   let δ (n : ℕ) : ℝ≥0 := A / (n + 1)
   let p (n k : ℕ) : ℝ≥0 := δ n * k
@@ -80,38 +84,27 @@ theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
   let U (n : ℕ) : ℝ := r * (δ n : ℝ) *
     ∑ k ∈ Finset.range (n + 1), h (p n k)
   let I : ℝ := r * ∫ x in (0 : ℝ)..A, h x.toNNReal
-  have hd (n : ℕ) : 0 < δ n := div_pos hApos (by positivity)
   have hp (n : ℕ) : Monotone (p n) := fun k l hkl =>
     mul_le_mul_of_nonneg_left (Nat.cast_le.mpr hkl) bot_le
   have hp0 (n : ℕ) : p n 0 = 0 := by simp [p]
   have hpN (n : ℕ) : p n (n + 1) = A := by
     simp [p, δ, Nat.cast_add, Nat.cast_one]
-  have hbracket (n : ℕ) : L n ≤ I ∧ I ≤ U n := by
-    have hend : (δ n : ℝ) * ↑(n + 1) = A := by exact_mod_cast hpN n
-    have hf : AntitoneOn (fun x : ℝ => h x.toNNReal) (Icc 0 ((δ n : ℝ) * ↑(n + 1))) := by
-      rw [hend]
-      intro x hx y hy hxy
-      exact hh (by simpa using Real.toNNReal_le_toNNReal hx.2)
-        (by simpa using Real.toNNReal_le_toNNReal hy.2) (Real.toNNReal_mono hxy)
-    have hb := hf.mul_sum_le_integral_le_mul_sum (by exact_mod_cast hd n) (n + 1)
-    simp only [hend] at hb
-    constructor
-    · simpa [L, I, p, mul_assoc, Real.toNNReal_mul, Real.toNNReal_natCast] using
-        mul_le_mul_of_nonneg_left hb.1 hr
-    · simpa [U, I, p, mul_assoc, Real.toNNReal_mul, Real.toNNReal_natCast] using
-        mul_le_mul_of_nonneg_left hb.2 hr
-  have hgap (n : ℕ) : U n - L n = r * (δ n : ℝ) * (h 0 - h A) := by
-    have hs := Finset.sum_range_sub' (fun k => h (p n k)) (n + 1)
-    simp only [hp0, hpN] at hs
-    dsimp [U, L]
-    rw [← mul_sub, ← Finset.sum_sub_distrib]
-    rw [hs]
-  have herr : Tendsto (fun n => U n - L n) atTop (𝓝 0) := by
-    have hdlim : Tendsto (fun n : ℕ => (δ n : ℝ)) atTop (𝓝 0) := by
-      simpa [δ] using (tendsto_const_nhds (x := (A : ℝ))).div_atTop
-        ((tendsto_natCast_atTop_atTop (R := ℝ)).atTop_add
-          (tendsto_const_nhds (x := (1 : ℝ))))
-    simpa only [hgap, mul_zero, zero_mul] using (hdlim.const_mul r).mul_const (h 0 - h A)
+  have hf : AntitoneOn (fun x : ℝ => h x.toNNReal) (Icc 0 (A : ℝ)) := by
+    intro x hx y hy hxy
+    exact hh (by simpa using Real.toNNReal_le_toNNReal hx.2)
+      (by simpa using Real.toNNReal_le_toNNReal hy.2) (Real.toNNReal_mono hxy)
+  have hd (n : ℕ) : (A : ℝ) / (n + 1) = δ n := by
+    simp only [δ, NNReal.coe_div, NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one]
+  have hsample (n k : ℕ) : h ((δ n : ℝ) * k).toNNReal = h (p n k) := by
+    congr 1
+    simp only [p, Real.toNNReal_mul (δ n).coe_nonneg, Real.toNNReal_coe,
+      Real.toNNReal_natCast]
+  obtain ⟨hbracket, herr⟩ : (∀ n, L n ≤ I ∧ I ≤ U n) ∧
+      Tendsto (fun n => U n - L n) atTop (𝓝 0) := by
+    have hm := hf.uniform_mesh_darboux_bounds A.coe_nonneg hr
+    -- Expose only the mesh lets, then identify the real and nonnegative-real samples.
+    dsimp only at hm
+    simpa only [hd, hsample] using hm
   -- Each finite sum has a limit; the deterministic Darboux bounds hold for all t ≥ A.
   have hbounds (n : ℕ) :
       (∀ᶠ t : ℝ≥0 in atTop,
@@ -137,7 +130,8 @@ theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
       push_cast
       ring
     convert tendsto_finsetSum (Finset.range (n + 1))
-      (fun k _ => (href (p n k) (p n (k + 1)) (hp n (Nat.le_succ k))).const_mul (c k)) using 1
+      (fun k _ => (μ.tendsto_measureReal_Ioc_sub_of_tendsto_measureReal_Ioc hlim
+        (p n k) (p n (k + 1)) (hp n (Nat.le_succ k))).const_mul (c k)) using 1
     simp only [he, Finset.mul_sum, mul_comm, mul_left_comm]
   -- Choose a sufficiently fine mesh, then pass its finite-sum bounds to the time limit.
   apply tendsto_order.2
