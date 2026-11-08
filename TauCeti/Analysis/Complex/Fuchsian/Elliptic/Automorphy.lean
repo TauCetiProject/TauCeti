@@ -50,7 +50,7 @@ the elements of `Γ'` fixing `z`. Precisely:
   nonzero constant after transport by `h` in weight `k`
   (`Subgroup.LinearizingCoordinate.automorphyFrame_discCoordinate_smul`): this is the transition
   function between the trivializations in the charts of `Γ \ ℍ` centred at two points of the same
-  orbit, constant also at an elliptic orbit, where both frames vanish;
+  orbit, constant also at an elliptic orbit, where for `r ≠ 0` both frames vanish;
 * in even weight `k = 2 * j` the frame is compared with the frame `(dw) ^ j` of the `j`-th power
   of the sheaf of differentials, whose weight-`k` function is
   `differentialFrame ψ j τ = (dw / dτ) ^ j`: this is a local section
