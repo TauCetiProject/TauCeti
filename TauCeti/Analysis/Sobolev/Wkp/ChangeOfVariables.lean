@@ -332,6 +332,52 @@ structure IsChangeOfVariables (k : ℕ) (U V : Opens E) (Φ : E → E) (L c : �
   /-- The absolute value of the Jacobian determinant of `Φ` is at least `c` on `U`. -/
   le_abs_det : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ Φ x).det|
 
+/-- **The derivative of the inverse.** If `Φ` is differentiable on `U` and maps it into `V`, and
+`Ψ`, differentiable on `V`, is inverse to `Φ` (`Φ ∘ Ψ = id` on `V`, `Ψ ∘ Φ = id` on `U`), then
+`DΦ(y) ∘ DΨ(Φ y) = id` at every `y ∈ U`. -/
+theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
+    {Ψ : E → E} (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y) = ContinuousLinearMap.id ℝ E := by
+  have hx : Φ y ∈ (V : Set E) := hmaps hy
+  have hcomp : HasFDerivAt (Φ ∘ Ψ) (fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y)) (Φ y) := by
+    have hΦd := ((hΦ y hy).differentiableAt (U.isOpen.mem_nhds hy)).hasFDerivAt
+    rw [← hΨΦ hy] at hΦd
+    have := hΦd.comp (Φ y) ((hΨ _ hx).differentiableAt (V.isOpen.mem_nhds hx)).hasFDerivAt
+    rwa [hΨΦ hy] at this
+  have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
+    Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
+  exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
+
+/-- The Jacobians of a map `Φ`, differentiable on `U` and mapping it into `V`, and of its inverse
+`Ψ`, differentiable on `V`, are reciprocal: `|det DΦ(y)| |det DΨ(Φ y)| = 1` at every `y ∈ U`. -/
+theorem abs_det_mul_abs_det_of_invOn (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
+    {Ψ : E → E} (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    |(fderiv ℝ Φ y).det| * |(fderiv ℝ Ψ (Φ y)).det| = 1 := by
+  have hdet : (fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y)).det =
+      (fderiv ℝ Φ y).det * (fderiv ℝ Ψ (Φ y)).det :=
+    LinearMap.det_comp _ _
+  rw [fderiv_comp_fderiv_eq_id_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy] at hdet
+  rw [← abs_mul, ← hdet, ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id,
+    abs_one]
+
+/-- For a map `Φ` of Euclidean space, differentiable on `U` and mapping it into `V`, with inverse
+`Ψ` differentiable on `V`, the operator of the inverse Jacobian matrix of `Φ` at `y ∈ U` is
+`DΨ(Φ y)`. -/
+theorem toEuclideanCLM_inv_fderiv_of_invOn {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {U V : Opens (EuclideanSpace ℝ ι)} {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn ℝ Ψ V)
+    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : EuclideanSpace ℝ ι}
+    (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
+    Matrix.toEuclideanCLM (𝕜 := ℝ) ((Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ =
+      fderiv ℝ Ψ (Φ y) := by
+  rw [Matrix.inv_eq_right_inv (B := (Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Ψ (Φ y))),
+    StarAlgEquiv.apply_symm_apply]
+  rw [← map_mul, ContinuousLinearMap.mul_def,
+    fderiv_comp_fderiv_eq_id_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy, ← ContinuousLinearMap.one_def,
+    map_one]
+
 namespace IsChangeOfVariables
 
 /-- A change of variables of order `k` is one of every lower order. -/
@@ -375,61 +421,17 @@ theorem image_eq_of_rightInvOn (h : IsChangeOfVariables k U V Φ L c) {Ψ : E �
     (hΨ : MapsTo Ψ V U) (hΦΨ : RightInvOn Ψ Φ V) : Φ '' U = V :=
   h.mapsTo.image_subset.antisymm (hΦΨ.surjOn hΨ)
 
-/-- **The derivative of the inverse.** If `Φ` is a change of variables from `U` into `V` and `Ψ`,
-differentiable on `V`, is inverse to `Φ` (`Φ ∘ Ψ = id` on `V`, `Ψ ∘ Φ = id` on `U`), then
-`DΦ(y) ∘ DΨ(Φ y) = id` at every `y ∈ U`. -/
-theorem fderiv_comp_fderiv_eq_id (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E}
-    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : E}
-    (hy : y ∈ (U : Set E)) :
-    fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y) = ContinuousLinearMap.id ℝ E := by
-  have hx : Φ y ∈ (V : Set E) := h.mapsTo hy
-  have hcomp : HasFDerivAt (Φ ∘ Ψ) (fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y)) (Φ y) := by
-    have hΦd := ((h.differentiableOn y hy).differentiableAt (U.isOpen.mem_nhds hy)).hasFDerivAt
-    rw [← hΨΦ hy] at hΦd
-    have := hΦd.comp (Φ y) ((hΨ _ hx).differentiableAt (V.isOpen.mem_nhds hx)).hasFDerivAt
-    rwa [hΨΦ hy] at this
-  have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
-    Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
-  exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
-
-/-- The Jacobians of a change of variables `Φ` and of its inverse `Ψ` are reciprocal:
-`|det DΦ(y)| |det DΨ(Φ y)| = 1` at every `y ∈ U`. -/
-theorem abs_det_mul_abs_det (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E}
-    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : E}
-    (hy : y ∈ (U : Set E)) :
-    |(fderiv ℝ Φ y).det| * |(fderiv ℝ Ψ (Φ y)).det| = 1 := by
-  have hdet : (fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y)).det =
-      (fderiv ℝ Φ y).det * (fderiv ℝ Ψ (Φ y)).det :=
-    LinearMap.det_comp _ _
-  rw [h.fderiv_comp_fderiv_eq_id hΨ hΦΨ hΨΦ hy] at hdet
-  rw [← abs_mul, ← hdet, ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id,
-    abs_one]
-
 /-- The Jacobian of a change of variables `Φ` whose inverse `Ψ` is a change of variables with
 Jacobian bound `c'` is at most `c'⁻¹`. -/
 theorem abs_det_le_inv (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E} {k' : ℕ} {L' c' : ℝ}
     (hΨ : IsChangeOfVariables k' V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
     {y : E} (hy : y ∈ (U : Set E)) :
     |(fderiv ℝ Φ y).det| ≤ c'⁻¹ := by
-  have hmul := h.abs_det_mul_abs_det hΨ.differentiableOn hΦΨ hΨΦ hy
+  have hmul := abs_det_mul_abs_det_of_invOn h.differentiableOn h.mapsTo hΨ.differentiableOn hΦΨ
+    hΨΦ hy
   rw [le_inv_comm₀ (abs_pos.2 fun h0 => by simp [h0] at hmul) hΨ.pos]
   calc c' ≤ |(fderiv ℝ Ψ (Φ y)).det| := hΨ.le_abs_det _ (h.mapsTo hy)
     _ = |(fderiv ℝ Φ y).det|⁻¹ := eq_inv_of_mul_eq_one_right hmul
-
-/-- For a change of variables `Φ` of Euclidean space from `U` into `V`, with inverse `Ψ`
-differentiable on `V`, the operator of the inverse Jacobian matrix of `Φ` at `y ∈ U` is
-`DΨ(Φ y)`. -/
-theorem toEuclideanCLM_inv_fderiv {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {U V : Opens (EuclideanSpace ℝ ι)} {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    (h : IsChangeOfVariables k U V Φ L c) (hΨ : DifferentiableOn ℝ Ψ V)
-    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : EuclideanSpace ℝ ι}
-    (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
-    Matrix.toEuclideanCLM (𝕜 := ℝ) ((Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ =
-      fderiv ℝ Ψ (Φ y) := by
-  rw [Matrix.inv_eq_right_inv (B := (Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Ψ (Φ y))),
-    StarAlgEquiv.apply_symm_apply]
-  rw [← map_mul, ContinuousLinearMap.mul_def, h.fderiv_comp_fderiv_eq_id hΨ hΦΨ hΨΦ hy,
-    ← ContinuousLinearMap.one_def, map_one]
 
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 

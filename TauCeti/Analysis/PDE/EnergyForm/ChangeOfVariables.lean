@@ -239,10 +239,13 @@ theorem energyFormH1_pullback_compL (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ
   rw [jetField_apply, jetField_apply, jetField_apply, jetField_apply, hv, hgv, hw, hgw,
     hΨΦ hy]
   rw [smul_eq_mul, pullbackPrincipalCoeff_def, pullbackDriftCoeff_def, pullbackDensity_apply,
-    ← hΦ.toEuclideanCLM_inv_fderiv hΨ.differentiableOn hΦΨ hΨΦ hy]
+    ← Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+      hΦΨ hΨΦ hy]
   refine energyIntegrand_pullback ?_ _ _ _ _ _ _ _ _
-  rw [hΦ.toEuclideanCLM_inv_fderiv hΨ.differentiableOn hΦΨ hΨΦ hy,
-    hΦ.fderiv_comp_fderiv_eq_id hΨ.differentiableOn hΦΨ hΨΦ hy]
+  rw [Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+      hΦΨ hΨΦ hy,
+    Wkp.fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ
+      hΨΦ hy]
 
 /-- **Weak solutions under a change of variables.** Let `Φ` be a change of variables of order one
 from `U` onto `V` with inverse `Ψ`, itself a change of variables of order one. If `u ∈ H¹(V)` is a
@@ -273,8 +276,8 @@ theorem energyFormH1_pullback_compL_eq_setIntegral (hΦ : Wkp.IsChangeOfVariable
 
 /-- The bilinear form of the transported principal coefficient at `y ∈ U` is
 `|det DΦ(y)|` times the bilinear form of `a(Φ y)` evaluated at `DΨ(Φ y)ᵀ η` and `DΨ(Φ y)ᵀ ξ`. -/
-theorem matrixBilinearForm_pullbackPrincipalCoeff (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V)
+theorem matrixBilinearForm_pullbackPrincipalCoeff (hΦ : DifferentiableOn ℝ Φ U)
+    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) {y : EuclideanSpace ℝ ι}
     (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) (η ξ : EuclideanSpace ℝ ι) :
     matrixBilinearForm (pullbackPrincipalCoeff Φ a y) η ξ =
@@ -282,15 +285,16 @@ theorem matrixBilinearForm_pullbackPrincipalCoeff (hΦ : Wkp.IsChangeOfVariables
         (ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y)) η)
         (ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y)) ξ) := by
   rw [pullbackPrincipalCoeff_def, matrixBilinearForm_smul_apply,
-    matrixBilinearForm_mul_mul_transpose, hΦ.toEuclideanCLM_inv_fderiv hΨ hΦΨ hΨΦ hy]
+    matrixBilinearForm_mul_mul_transpose,
+    Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
 
 /-- The transported drift at `y ∈ U` is `|det DΦ(y)| DΨ(Φ y) b(Φ y)`. -/
-theorem pullbackDriftCoeff_eq (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
+theorem pullbackDriftCoeff_eq (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
     (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
     {y : EuclideanSpace ℝ ι} (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
     pullbackDriftCoeff Φ b y = |(fderiv ℝ Φ y).det| • fderiv ℝ Ψ (Φ y) (b (Φ y)) := by
-  rw [pullbackDriftCoeff_def, hΦ.toEuclideanCLM_inv_fderiv hΨ hΦΨ hΨΦ hy]
+  rw [pullbackDriftCoeff_def, Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
 
 /-- The lower ellipticity bound of the transported principal coefficient at `y ∈ U`:
 `κ λ / L² ‖ξ‖² ≤ ξᵀ a_Φ(y) ξ`, since `‖ξ‖ ≤ L ‖DΨ(Φ y)ᵀ ξ‖` and `κ ≤ |det DΦ(y)|`. -/
@@ -304,7 +308,8 @@ private theorem pullbackPrincipalCoeff_lower_bound {a : EuclideanSpace ℝ ι �
   -- `ξ = DΦ(y)ᵀ DΨ(Φ y)ᵀ ξ`, because `DΨ(Φ y) ∘ DΦ(y) = id`.
   have hξ : ‖ξ‖ ≤ L * ‖S ξ‖ := by
     have hST : fderiv ℝ Ψ (Φ y) ∘L fderiv ℝ Φ y = ContinuousLinearMap.id ℝ _ := by
-      have h := hΨ.fderiv_comp_fderiv_eq_id hΦ.differentiableOn hΨΦ hΦΨ (hΦ.mapsTo hy)
+      have h := Wkp.fderiv_comp_fderiv_eq_id_of_invOn hΨ.differentiableOn hΨ.mapsTo
+        hΦ.differentiableOn hΨΦ hΦΨ (hΦ.mapsTo hy)
       rwa [hΨΦ hy] at h
     have h : ContinuousLinearMap.adjoint (fderiv ℝ Φ y) (S ξ) = ξ := by
       rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hST,
@@ -316,7 +321,8 @@ private theorem pullbackPrincipalCoeff_lower_bound {a : EuclideanSpace ℝ ι �
         rw [LinearIsometryEquiv.norm_map]
         exact mul_le_mul_of_nonneg_right (hΦ.norm_fderiv_le y hy) (norm_nonneg _)
   rw [← matrixBilinearForm_self,
-    matrixBilinearForm_pullbackPrincipalCoeff hΦ hΨ.differentiableOn hΦΨ hΨΦ a hy,
+    matrixBilinearForm_pullbackPrincipalCoeff hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+      hΦΨ hΨΦ a hy,
     matrixBilinearForm_self]
   have hsq : ‖ξ‖ ^ 2 / L ^ 2 ≤ ‖S ξ‖ ^ 2 := by
     rw [div_le_iff₀ (by positivity)]
@@ -341,8 +347,9 @@ private theorem pullbackPrincipalCoeff_upper_bound {a : EuclideanSpace ℝ ι �
     rw [LinearIsometryEquiv.norm_map]
     exact hΨ.norm_fderiv_le _ (hΦ.mapsTo hy)
   rw [← matrixBilinearForm_apply,
-    matrixBilinearForm_pullbackPrincipalCoeff hΦ hΨ.differentiableOn hΦΨ hΨΦ a hy, abs_mul,
-    abs_abs, matrixBilinearForm_apply]
+    matrixBilinearForm_pullbackPrincipalCoeff hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+      hΦΨ hΨΦ a hy,
+    abs_mul, abs_abs, matrixBilinearForm_apply]
   have hη : ‖S η‖ ≤ L' * ‖η‖ :=
     (S.le_opNorm η).trans (mul_le_mul_of_nonneg_right hS (norm_nonneg _))
   have hξ : ‖S ξ‖ ≤ L' * ‖ξ‖ :=
@@ -375,7 +382,8 @@ theorem UniformlyEllipticOn.pullbackPrincipalCoeff [Nonempty ι]
   obtain ⟨y₀, hy₀⟩ := hU
   have hLL' : 1 ≤ L * L' := by
     have h := ContinuousLinearMap.opNorm_comp_le (fderiv ℝ Φ y₀) (fderiv ℝ Ψ (Φ y₀))
-    rw [hΦ.fderiv_comp_fderiv_eq_id hΨ.differentiableOn hΦΨ hΨΦ hy₀,
+    rw [Wkp.fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+        hΦΨ hΨΦ hy₀,
       ContinuousLinearMap.norm_id] at h
     exact h.trans (mul_le_mul (hΦ.norm_fderiv_le y₀ hy₀) (hΨ.norm_fderiv_le _ (hΦ.mapsTo hy₀))
       (norm_nonneg _) ((norm_nonneg _).trans (hΦ.norm_fderiv_le y₀ hy₀)))
@@ -402,8 +410,8 @@ theorem norm_pullbackDriftCoeff_le (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨΦ : LeftInvOn Ψ Φ U) {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {β : ℝ}
     {y : EuclideanSpace ℝ ι} (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) (hb : ‖b (Φ y)‖ ≤ β) :
     ‖pullbackDriftCoeff Φ b y‖ ≤ L' * β / κ' := by
-  rw [pullbackDriftCoeff_eq hΦ hΨ.differentiableOn hΦΨ hΨΦ b hy, norm_smul, Real.norm_eq_abs,
-    abs_abs]
+  rw [pullbackDriftCoeff_eq hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ hΨΦ b hy,
+    norm_smul, Real.norm_eq_abs, abs_abs]
   have hS := hΨ.norm_fderiv_le _ (hΦ.mapsTo hy)
   have hJ := hΦ.abs_det_le_inv hΨ hΦΨ hΨΦ hy
   have hβ : 0 ≤ β := (norm_nonneg _).trans hb
@@ -451,7 +459,8 @@ theorem memLp_pullbackDriftCoeff (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
         ((measurable_fderiv ℝ Ψ).comp_aemeasurable hΦ.aemeasurable).aestronglyMeasurable)
   refine hbΦ.of_le_mul (c := L' / κ') (hmeas.congr ?_) ?_
   · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with y hy
-    exact (pullbackDriftCoeff_eq hΦ hΨ.differentiableOn hΦΨ hΨΦ b hy).symm
+    exact (pullbackDriftCoeff_eq hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ hΨΦ b
+      hy).symm
   · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with y hy
     rw [Function.comp_apply, div_mul_eq_mul_div]
     exact norm_pullbackDriftCoeff_le hΦ hΨ hΦΨ hΨΦ hy le_rfl
