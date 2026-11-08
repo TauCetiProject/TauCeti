@@ -15,8 +15,8 @@ Vaught's perfect-set conjecture is equivalent to the assertion that every senten
 on `ℕ` are back-and-forth scattered has countably many models on `ℕ` up to isomorphism.
 This is the scattered (or absolute) formulation: scatteredness is equivalent to thinness, and
 Vaught's conjecture says precisely that a thin sentence has countably many models on `ℕ`.
-The passage from all countable models to models on `ℕ` uses the infinitude reduction, so finite
-models have not been silently discarded.
+`VaughtConjecture` counts all countable models, including finite ones, and
+`vaughtConjecture_iff_nat` reduces it to the statement for models on `ℕ`.
 
 On a scattered model class, countability of the isomorphism classes is equivalent to boundedness
 of any isolating rank below `ω₁`. Consequently the conjecture also says that every isolating rank
@@ -38,9 +38,6 @@ the *cardinal* conjecture assumes `ℵ₁ < 𝔠`.
   absolute and strong forms and their distinction from the cardinal form under CH.
 * A. Montalbán, *Computable Structure Theory: Beyond the Arithmetic*, Part 2, Chapter XII,
   §XII.1, for scattered sentences and bounded Scott ranks.
-
-The proofs reuse the existing thinness, infinitude reduction, and isolating-rank counting API;
-no new choice of Scott-rank convention is made here.
 -/
 
 public section
@@ -67,9 +64,9 @@ theorem vaughtConjecture_iff_bfScattered :
       h L φ (isThinOnNatModels_iff.2 hthin).bfScattered_modelsOf
 
 /-- When `ℵ₁ < 𝔠`, the cardinal Vaught conjecture is equivalent to countability of the models
-on `ℕ` of every back-and-forth scattered sentence. This equivalence is only asserted under
-`ℵ₁ < 𝔠`: CH already implies the cardinal conjecture, but does not settle the scattered
-assertion. -/
+on `ℕ` of every back-and-forth scattered sentence. CH implies `CardinalVaughtConjecture`
+(`cardinalVaughtConjecture_of_aleph_one_eq_continuum`), so the equivalence is stated only under
+`ℵ₁ < 𝔠`. -/
 theorem cardinalVaughtConjecture_iff_bfScattered (hc : ℵ₁ < (𝔠 : Cardinal.{0})) :
     CardinalVaughtConjecture ↔ ∀ (L : Language.{0, 0}) [L.IsRelational]
       [Countable (Σ n, L.Relations n)] (φ : L.Sentenceω),
