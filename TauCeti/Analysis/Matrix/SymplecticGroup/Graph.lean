@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov
+public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The graph of a loop of symplectic matrices and its Maslov index
@@ -23,12 +22,12 @@ multiplication by `i`. So in `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` the graph is the
 `Γ(A) = {(conj (φ x), φ (A x)) | x ∈ ℝ^{n ⊕ n}}`
 
 (`TauCeti.GLSymplectic.graphSubspace`, characterized by
-`TauCeti.GLSymplectic.mem_graphSubspace_iff`). It is the image of the real points `ℝ^{n ⊕ n}` of
-`ℂ^{n ⊕ n}` under the complex matrix `TauCeti.GLSymplectic.graphFrame A`, whose columns are the
-images of the real basis vectors. That matrix is invertible when `A` is symplectic
-(`TauCeti.GLSymplectic.isUnit_det_graphFrame`), so the graphs of a loop `γ` of symplectic matrices
-form a loop of maximal totally real subspaces with a continuous frame
-(`TauCeti.GLSymplectic.graphLoop`).
+`TauCeti.GLSymplectic.mem_graphSubspace_iff`). It is the image `Matrix.realImage` of the real
+points `TauCeti.realSubspace` of `ℂ^{n ⊕ n}` under the complex matrix
+`TauCeti.GLSymplectic.graphFrame A`, whose columns are the images of the real basis vectors. That
+matrix is invertible when `A` is symplectic (`TauCeti.GLSymplectic.isUnit_det_graphFrame`), so the
+graphs of a loop `γ` of symplectic matrices form a loop of maximal totally real subspaces with a
+continuous frame (`TauCeti.GLSymplectic.graphLoop`).
 
 The main result is that **the Maslov index of the graph loop is twice the Maslov index of the
 loop**, `μ(Γ ∘ γ) = 2 μ(γ)` (`TauCeti.GLSymplectic.maslovIndex_graphLoop`). Here `μ(γ)` is the
@@ -148,71 +147,75 @@ theorem continuous_graphFrame : Continuous (graphFrame : Matrix (n ⊕ n) (n ⊕
 /-! ### The graph subspace -/
 
 /-- The **graph** of a real matrix `A` on `ℝ^{n ⊕ n}`, as a real subspace of
-`ℂ^{n ⊕ n} = ℂⁿ × ℂⁿ`: the image of the real points under the graph frame, that is, the set of
-`(conj (φ x), φ (A x))` (`TauCeti.GLSymplectic.mem_graphSubspace_iff`). -/
-noncomputable def graphSubspace (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Submodule ℝ (n ⊕ n → ℂ) :=
-  (LinearMap.range (Complex.ofRealAm.toLinearMap.compLeft (n ⊕ n))).map
-    ((Matrix.toLin' (graphFrame A)).restrictScalars ℝ)
+`ℂ^{n ⊕ n} = ℂⁿ × ℂⁿ`: the image `Matrix.realImage` of the real points under the graph frame, that
+is, the set of `(conj (φ x), φ (A x))` (`TauCeti.GLSymplectic.mem_graphSubspace_iff`). -/
+noncomputable def graphSubspace (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    Submodule ℝ (EuclideanSpace ℂ (n ⊕ n)) :=
+  (graphFrame A).realImage
 
 /-- A vector of `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` lies on the graph of `A` exactly when it is
 `(conj (φ x), φ (A x))` for a real vector `x`, where `φ (x, y) = x + i y`. -/
-theorem mem_graphSubspace_iff {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} {w : n ⊕ n → ℂ} :
+theorem mem_graphSubspace_iff {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} {w : EuclideanSpace ℂ (n ⊕ n)} :
     w ∈ graphSubspace A ↔ ∃ x : n ⊕ n → ℝ,
-      Sum.elim (fun i => conj ((x (.inl i) : ℂ) + x (.inr i) * Complex.I))
-        (fun i => ((A *ᵥ x) (.inl i) : ℂ) + (A *ᵥ x) (.inr i) * Complex.I) = w := by
-  simp only [graphSubspace, Submodule.mem_map, LinearMap.mem_range, LinearMap.restrictScalars_apply,
-    Matrix.toLin'_apply]
+      WithLp.toLp 2 (Sum.elim (fun i => conj ((x (.inl i) : ℂ) + x (.inr i) * Complex.I))
+        (fun i => ((A *ᵥ x) (.inl i) : ℂ) + (A *ᵥ x) (.inr i) * Complex.I)) = w := by
+  rw [graphSubspace, mem_realImage]
   constructor
-  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-    exact ⟨x, (graphFrame_mulVec A x).symm⟩
+  · rintro ⟨v, hv, rfl⟩
+    have hv' : WithLp.ofLp v = fun k => ((v k).re : ℂ) :=
+      funext fun k => Complex.ext rfl (by simp [mem_realSubspace.1 hv k])
+    refine ⟨fun k => (v k).re, ?_⟩
+    refine (congrArg (WithLp.toLp 2) (graphFrame_mulVec A fun k => (v k).re).symm).trans ?_
+    rw [toEuclideanCLM_apply, ← hv']
+    rfl
   · rintro ⟨x, rfl⟩
-    exact ⟨_, ⟨x, rfl⟩, graphFrame_mulVec A x⟩
+    refine ⟨WithLp.toLp 2 fun k => (x k : ℂ), mem_realSubspace.2 fun k => by simp, ?_⟩
+    rw [toEuclideanCLM_apply]
+    exact congrArg (WithLp.toLp 2) (graphFrame_mulVec A x)
 
 /-- The graph of a symplectic matrix is maximal totally real. -/
 theorem isMaximalTotallyReal_graphSubspace {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
     (hA : A ∈ symplecticGroup n ℝ) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (n ⊕ n → ℂ) Complex.I).restrictScalars ℝ)
+    IsMaximalTotallyReal
+      ((LinearMap.lsmul ℂ (EuclideanSpace ℂ (n ⊕ n)) Complex.I).restrictScalars ℝ)
       (graphSubspace A) :=
-  letI := invertibleOfIsUnitDet _ (isUnit_det_graphFrame hA)
-  isMaximalTotallyReal_range_compLeft_ofReal.map_linearEquiv (Matrix.toLinearEquiv' _ this)
-
-/-- The graph frame of a symplectic matrix, as a complex-linear automorphism of `ℂ^{n ⊕ n}`. -/
-noncomputable def graphFrameEquiv (A : GLSymplectic n ℝ) : (n ⊕ n → ℂ) ≃L[ℂ] (n ⊕ n → ℂ) :=
-  letI := invertibleOfIsUnitDet _ (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))
-  (Matrix.toLinearEquiv' (graphFrame (A : GL (n ⊕ n) ℝ)) this).toContinuousLinearEquiv
-
-/-- The graph frame automorphism acts as its matrix. -/
-theorem coe_graphFrameEquiv (A : GLSymplectic n ℝ) :
-    ((graphFrameEquiv A).toLinearEquiv : (n ⊕ n → ℂ) →ₗ[ℂ] (n ⊕ n → ℂ)) =
-      Matrix.toLin' (graphFrame (A : GL (n ⊕ n) ℝ)) :=
-  (rfl)
-
-/-- The graph of a symplectic matrix is the image of the real points under its graph frame
-automorphism. -/
-theorem graphSubspace_eq_map (A : GLSymplectic n ℝ) :
-    graphSubspace (A : GL (n ⊕ n) ℝ) =
-      (LinearMap.range (Complex.ofRealAm.toLinearMap.compLeft (n ⊕ n))).map
-        (((graphFrameEquiv A).toLinearEquiv : (n ⊕ n → ℂ) →ₗ[ℂ] (n ⊕ n → ℂ)).restrictScalars ℝ) :=
-  (rfl)
-
-/-- The graph frame automorphism depends continuously on the symplectic matrix. -/
-theorem continuous_graphFrameEquiv :
-    Continuous fun A : GLSymplectic n ℝ =>
-      (graphFrameEquiv A : (n ⊕ n → ℂ) →L[ℂ] (n ⊕ n → ℂ)) := by
-  let e : Matrix (n ⊕ n) (n ⊕ n) ℂ →ₗ[ℂ] ((n ⊕ n → ℂ) →L[ℂ] (n ⊕ n → ℂ)) :=
-    LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ Matrix.toLin'.toLinearMap
-  have he : Continuous e := e.continuous_of_finiteDimensional
-  refine (he.comp (continuous_graphFrame.comp
-    (Units.continuous_val.comp continuous_subtype_val))).congr fun A => ?_
-  ext1 v
-  rfl
-
-/-! ### The graph phase -/
+  isMaximalTotallyReal_realImage (isUnit_det_graphFrame hA).ne_zero
 
 /-- The determinant of the graph frame of a symplectic matrix does not vanish. -/
 theorem det_graphFrame_ne_zero (A : GLSymplectic n ℝ) :
     (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det ≠ 0 :=
   (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2)).ne_zero
+
+/-- The graph frame of a symplectic matrix, as a complex-linear automorphism of `ℂ^{n ⊕ n}`. -/
+noncomputable def graphFrameEquiv (A : GLSymplectic n ℝ) :
+    EuclideanSpace ℂ (n ⊕ n) ≃L[ℂ] EuclideanSpace ℂ (n ⊕ n) :=
+  (graphFrame (A : GL (n ⊕ n) ℝ)).toEuclideanCLE (det_graphFrame_ne_zero A)
+
+/-- The graph frame automorphism acts as its matrix. -/
+@[simp]
+theorem graphFrameEquiv_apply (A : GLSymplectic n ℝ) (v : EuclideanSpace ℂ (n ⊕ n)) :
+    graphFrameEquiv A v = WithLp.toLp 2 (graphFrame (A : GL (n ⊕ n) ℝ) *ᵥ WithLp.ofLp v) := by
+  rw [graphFrameEquiv, toEuclideanCLE_apply]
+  rfl
+
+/-- The graph of a symplectic matrix is the image of the real points under its graph frame
+automorphism. -/
+theorem graphSubspace_eq_map (A : GLSymplectic n ℝ) :
+    graphSubspace (A : GL (n ⊕ n) ℝ) =
+      (realSubspace (n ⊕ n)).map
+        (((graphFrameEquiv A).toLinearEquiv :
+          EuclideanSpace ℂ (n ⊕ n) →ₗ[ℂ] EuclideanSpace ℂ (n ⊕ n)).restrictScalars ℝ) :=
+  realImage_eq_map_toEuclideanCLE (det_graphFrame_ne_zero A)
+
+/-- The graph frame automorphism depends continuously on the symplectic matrix. -/
+theorem continuous_graphFrameEquiv :
+    Continuous fun A : GLSymplectic n ℝ =>
+      (graphFrameEquiv A : EuclideanSpace ℂ (n ⊕ n) →L[ℂ] EuclideanSpace ℂ (n ⊕ n)) := by
+  simp only [graphFrameEquiv, coe_toEuclideanCLE]
+  exact continuous_toEuclideanCLM.comp
+    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val))
+
+/-! ### The graph phase -/
 
 /-- The **graph phase** of a symplectic matrix `A`: the determinant phase `det F / conj (det F)` of
 its graph frame `F`, which is the Maslov phase of the graph of `A` relative to the real points. -/
@@ -230,13 +233,15 @@ theorem coe_graphPhase (A : GLSymplectic n ℝ) :
 /-- **The graph phase is the Maslov phase of the graph** relative to the real points of
 `ℂ^{n ⊕ n}`. -/
 theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
-    (graphPhase A : ℂ) = isMaximalTotallyReal_range_compLeft_ofReal.maslovPhase
+    (graphPhase A : ℂ) = isMaximalTotallyReal_realSubspace.maslovPhase
       (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.2)) := by
-  -- `graphSubspace A` is by definition the image of the real points under the graph frame
+  -- `graphSubspace A` is the image of the real points under the graph frame
   -- (`graphSubspace_eq_map`), so the two maximal-totally-real proofs concern the same subspace.
-  refine Eq.trans ?_ ((isMaximalTotallyReal_range_compLeft_ofReal.maslovPhase_map
-    (graphFrameEquiv A).toLinearEquiv).symm.trans rfl)
-  rw [coe_graphPhase, coe_graphFrameEquiv, LinearMap.det_toLin']
+  rw [IsMaximalTotallyReal.maslovPhase_congr _ _
+      (isMaximalTotallyReal_realSubspace.map_linearEquiv (graphFrameEquiv A).toLinearEquiv)
+      (graphSubspace_eq_map A),
+    isMaximalTotallyReal_realSubspace.maslovPhase_map, coe_graphPhase]
+  simp [graphFrameEquiv]
 
 /-- The graph phase depends continuously on the symplectic matrix. -/
 theorem continuous_graphPhase : Continuous (graphPhase : GLSymplectic n ℝ → Circle) := by
@@ -291,10 +296,10 @@ theorem coe_graphPhase_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup
 /-- The **graph loop** of a loop `γ` of symplectic matrices: the loop `t ↦ Γ(γ t)` of graphs, as a
 loop of maximal totally real subspaces of `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}`, framed by the graph frames. -/
 noncomputable def graphLoop {A : GLSymplectic n ℝ} (γ : Path A A) :
-    TotallyRealLoop (n ⊕ n → ℂ) where
+    TotallyRealLoop (EuclideanSpace ℂ (n ⊕ n)) where
   toFun t := graphSubspace (γ t : GL (n ⊕ n) ℝ)
-  exists_frame := ⟨_, isMaximalTotallyReal_range_compLeft_ofReal, fun t => graphFrameEquiv (γ t),
-    continuous_graphFrameEquiv.comp γ.continuous, fun _ => rfl⟩
+  exists_frame := ⟨_, isMaximalTotallyReal_realSubspace, fun t => graphFrameEquiv (γ t),
+    continuous_graphFrameEquiv.comp γ.continuous, fun t => graphSubspace_eq_map (γ t)⟩
   toFun_zero_eq_toFun_one := by simp
 
 /-- The graph loop at time `t` is the graph of `γ t`. -/
@@ -308,7 +313,7 @@ of symplectic matrices, the loop of graphs `t ↦ Γ(γ t)` in `ℂⁿ × ℂⁿ
 `2 μ(γ)`. -/
 theorem maslovIndex_graphLoop {A : GLSymplectic n ℝ} (γ : Path A A) :
     (graphLoop γ).maslovIndex = 2 * maslovIndex γ := by
-  have hL₀ := isMaximalTotallyReal_range_compLeft_ofReal (ι := n ⊕ n)
+  have hL₀ := isMaximalTotallyReal_realSubspace (n := n ⊕ n)
   -- The Maslov phase of the graph relative to the real points is the graph phase.
   have hphase (t : I) : ((γ.map continuous_graphPhase) t : ℂ) =
       hL₀.maslovPhase ((graphLoop γ).isMaximalTotallyReal t) :=
