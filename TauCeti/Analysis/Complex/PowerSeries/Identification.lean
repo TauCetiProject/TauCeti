@@ -89,7 +89,7 @@ theorem HasFPowerSeriesOnBall.torusIntegral_cauchyCoeff
   have hconv : Tendsto (fun N ↦ ∑ k ∈ Finset.range N, P k) atTop (𝓝 G) :=
     (hf.hasSum_compact ⟨v, hv⟩ hs hbound).tendsto_sum_nat
   -- The Cauchy weight is continuous on the boundary, since every radius is positive.
-  let W : C(K, ℂ) := ⟨_, TauCeti.continuous_inv_prod_sub_pow (c := c) hR m⟩
+  let W : C(K, ℂ) := ⟨_, TauCeti.continuous_inv_prod_sub_pow (c := c) (fun i ↦ (hR i).ne') m⟩
   have hW : Continuous (fun u : C(K, F) ↦ W • u) := by
     exact ContinuousMap.continuous_of_continuous_uncurry _
       ((W.continuous.comp continuous_snd).smul continuous_eval)

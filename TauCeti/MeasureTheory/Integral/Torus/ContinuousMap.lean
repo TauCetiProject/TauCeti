@@ -38,8 +38,8 @@ private theorem integrable_torusBoundary (c : Fin n → ℂ) (R : Fin n → ℝ)
   exact continuous_pi fun i =>
     (((continuous_circleMap (c i) (R i)).comp (continuous_apply i)).subtype_mk _)
 
-/-- The Cauchy weight is continuous on the boundary torus, since every radius is positive. -/
-theorem continuous_inv_prod_sub_pow {c : Fin n → ℂ} {R : Fin n → ℝ} (hR : ∀ i, 0 < R i)
+/-- The Cauchy weight is continuous on the boundary torus, since every radius is nonzero. -/
+theorem continuous_inv_prod_sub_pow {c : Fin n → ℂ} {R : Fin n → ℝ} (hR : ∀ i, R i ≠ 0)
     (m : Fin n → ℕ) :
     Continuous (fun z : (i : Fin n) → sphere (c i) |R i| ↦
       (∏ i, ((z i : ℂ) - c i) ^ (m i + 1))⁻¹) := by
@@ -48,7 +48,7 @@ theorem continuous_inv_prod_sub_pow {c : Fin n → ℂ} {R : Fin n → ℝ} (hR 
   apply Finset.prod_ne_zero_iff.mpr
   intro i _
   apply pow_ne_zero
-  exact sub_ne_zero.mpr (ne_of_mem_sphere (z i).2 (abs_ne_zero.mpr (hR i).ne'))
+  exact sub_ne_zero.mpr (ne_of_mem_sphere (z i).2 (abs_ne_zero.mpr (hR i)))
 
 /-- Torus integration as a continuous complex linear map on continuous boundary functions.
 The radii need not be positive. For an incomplete codomain the integral is zero, following
