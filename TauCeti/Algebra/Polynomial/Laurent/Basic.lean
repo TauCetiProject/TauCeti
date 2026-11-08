@@ -62,7 +62,7 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `TauCeti.mul_laurentEval`: an element commuting with a unit `u` up to a scalar `c` moves past
   evaluation at `u` by rescaling by `c`.
 * `TauCeti.eval₂_C_inv_pow_injective`: in particular `T ↦ T⁻ᵏ` is injective for `k ≠ 0`.
-* `LaurentPolynomial.algHom_apply_C` and `LaurentPolynomial.algHom_apply_T_neg_one`: an algebra
+* `AlgHom.apply_laurentPolynomial_C` and `LaurentPolynomial.algHom_apply_T_neg_one`: an algebra
   map `R[T;T⁻¹] →ₐ[R] R` fixes constants, and an algebra map sending `T 1` to a unit sends
   `T (-1)` to its inverse.
 * `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
@@ -472,7 +472,8 @@ variable {R : Type*} [CommSemiring R]
 /-- An algebra homomorphism from the Laurent polynomials to the coefficient ring sends a constant
 to itself. -/
 @[simp]
-theorem algHom_apply_C (φ : R[T;T⁻¹] →ₐ[R] R) (x : R) : φ (C x) = x := by
+theorem _root_.AlgHom.apply_laurentPolynomial_C (φ : R[T;T⁻¹] →ₐ[R] R) (x : R) :
+    φ (C x) = x := by
   rw [C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply]
 
 variable {A : Type*} [Semiring A] [Algebra R A]

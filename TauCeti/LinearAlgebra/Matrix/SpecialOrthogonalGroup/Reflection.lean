@@ -364,23 +364,23 @@ private theorem exists_laurentPath_reflectionMatrix_mul_of_degenerate [Fintype n
   · intro φ hφ
     have hφ1 : φ (T 1) = 1 := by rw [hφ, Units.val_one]
     have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = v ⬝ᵥ w := by
-      rw [map_mul, map_sub, map_ofNat, hφ1, algHom_apply_C]
+      rw [map_mul, map_sub, map_ofNat, hφ1, AlgHom.apply_laurentPolynomial_C]
       ring
     have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = 0 := by
-      rw [map_mul, map_sub, map_one, hφ1, algHom_apply_C]
+      rw [map_mul, map_sub, map_one, hφ1, AlgHom.apply_laurentPolynomial_C]
       ring
     refine ⟨hY, ?_⟩
-    rw [hX, algHom_apply_C, hbb, hcv]
+    rw [hX, AlgHom.apply_laurentPolynomial_C, hbb, hcv]
     field_simp
   · intro φ hφ
     have hφ2 : φ (T 1) = 2 := by rw [hφ, val_unitOfInvertible]
     have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = 0 := by
       rw [map_mul, map_sub, map_ofNat, hφ2, sub_self, zero_mul]
     have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = v ⬝ᵥ v := by
-      rw [map_mul, map_sub, map_one, hφ2, algHom_apply_C]
+      rw [map_mul, map_sub, map_one, hφ2, AlgHom.apply_laurentPolynomial_C]
       ring
     refine ⟨hX, ?_⟩
-    rw [hY, algHom_apply_C, hdw]
+    rw [hY, AlgHom.apply_laurentPolynomial_C, hdw]
     field_simp
 
 omit [DecidableEq n] in
@@ -432,13 +432,13 @@ private theorem eval_nondegenerate_of_eq_neg_one [NeZero (2 : K)] {a b s : K} (h
       Units.val_inv_eq_inv_val, Units.val_neg, Units.val_one]
     norm_num
   have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 2 * s := by
-    simp only [map_add, map_neg, map_mul, map_sub, algHom_apply_C, hφ]
+    simp only [map_add, map_neg, map_mul, map_sub, AlgHom.apply_laurentPolynomial_C, hφ]
     ring
   have hY : φ (C a + T 1 * C a) = 0 := by
-    simp only [map_add, map_mul, algHom_apply_C, hφ]
+    simp only [map_add, map_mul, AlgHom.apply_laurentPolynomial_C, hφ]
     ring
   have hEv : φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) = (2 * a * (s * s))⁻¹ := by
-    rw [map_mul, algHom_apply_C, hφ2]
+    rw [map_mul, AlgHom.apply_laurentPolynomial_C, hφ2]
     ring
   refine ⟨hY, ?_⟩
   rw [hX, hEv]
@@ -457,16 +457,16 @@ private theorem eval_nondegenerate_of_eq_div [NeZero (2 : K)] {a b s q : K} (ha 
   have hφ2 : φ (T (-1)) = -((b + s) / (b - s)) := by
     rw [algHom_apply_T_neg_one hφ, Units.val_inv_eq_inv_val, hu, ← neg_inv, inv_div]
   have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 0 := by
-    simp only [map_add, map_neg, map_mul, map_sub, algHom_apply_C, hφ1]
+    simp only [map_add, map_neg, map_mul, map_sub, AlgHom.apply_laurentPolynomial_C, hφ1]
     field_simp
     ring
   have hY : φ (C a + T 1 * C a) = a * (2 * s) / (b + s) := by
-    simp only [map_add, map_mul, algHom_apply_C, hφ1]
+    simp only [map_add, map_mul, AlgHom.apply_laurentPolynomial_C, hφ1]
     field_simp
     ring
   have hEv : φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) =
       (b + s) / ((b - s) * (2 * a * (s * s))) := by
-    rw [map_mul, algHom_apply_C, hφ2]
+    rw [map_mul, AlgHom.apply_laurentPolynomial_C, hφ2]
     field_simp
   have hms : b - s = a * q / (b + s) := by
     field_simp
