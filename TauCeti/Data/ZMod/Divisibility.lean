@@ -144,7 +144,8 @@ theorem natCast_natAbs_eq_of_mul_nonneg {m : ℕ} {z w : ℤ} (hzw : 0 ≤ z * w
 
 /-- **A residue is determined by its reductions modulo prime powers.** Two residues modulo `n`
 whose reductions modulo every prime power `p ^ k` dividing `n` agree are equal: the Chinese
-remainder theorem in its uniqueness form, along the prime factorization of `n`. -/
+remainder theorem in its uniqueness form, along the prime factorization of `n`, when `n ≠ 0`.
+For `n = 0`, it says that an integer is determined by its reductions modulo all prime powers. -/
 theorem eq_of_forall_cast_eq_of_prime_pow_dvd {n : ℕ} {x y : ZMod n}
     (h : ∀ p k : ℕ, p.Prime → k ≠ 0 → p ^ k ∣ n → (cast x : ZMod (p ^ k)) = cast y) : x = y := by
   rcases eq_or_ne n 0 with rfl | hn
