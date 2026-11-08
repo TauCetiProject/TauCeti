@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Basic
 public import Mathlib.Data.Finset.Prod
+public import Mathlib.Combinatorics.SimpleGraph.Density
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Rat
 import TauCeti.Data.Finset.Basic
@@ -73,6 +74,15 @@ theorem pairColorDensity_mul_card_of_disjoint [DecidableEq κ] (S : PairColorSys
   classical
   rw [← pairColorDensity_mul_card_support, filter_ne_product_of_disjoint hst, card_product,
     Nat.cast_mul]
+
+/-- On disjoint sets, pair-color density agrees with the density of the relation selecting
+that color. This identifies the distinct-pair and Cartesian-product normalizations. -/
+theorem pairColorDensity_eq_edgeDensity_of_disjoint [DecidableEq κ]
+    (S : PairColorSystem κ V) (c : κ)
+    {s t : Finset V} (hst : Disjoint s t) :
+    pairColorDensity S c s t = Rel.edgeDensity (fun x y ↦ S.colorOfPair x y = some c) s t := by
+  classical
+  simp [pairColorDensity_def, filter_ne_product_of_disjoint hst, Rel.edgeDensity, Rel.interedges]
 
 /-- Pair-color densities are nonnegative. -/
 theorem pairColorDensity_nonneg (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
