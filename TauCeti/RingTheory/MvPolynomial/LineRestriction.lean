@@ -39,8 +39,8 @@ theorem natDegree_eval₂_C_add_C_mul_X_le (p : MvPolynomial σ R) (f : R →+* 
       (by classical exact Finset.sup_mono (support_map_subset f p))
       (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X)
       (n := 1) (fun i ↦ by
-        simpa only [Polynomial.natDegree_C_add] using
-          (Polynomial.natDegree_C_mul_le (v i) Polynomial.X).trans Polynomial.natDegree_X_le)
+        simpa only [add_comm] using
+          (Polynomial.natDegree_linear_le (a := v i) (b := a i)))
 
 /-- At any degree bounding the total degree, an affine line restriction has coefficient equal
 to the homogeneous component evaluated at its direction. The starting point does not enter. -/
@@ -62,16 +62,13 @@ theorem coeff_eval₂_C_add_C_mul_X_of_totalDegree_le (p : MvPolynomial σ R)
       Polynomial.coeff_prod_sum_eq_of_natDegree_le]
     · apply Finset.prod_congr rfl
       intro i hi
-      have hlin : (Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X).natDegree ≤ 1 := by
-        simp only [Polynomial.natDegree_C_add]
-        exact (Polynomial.natDegree_C_mul_le (v i) Polynomial.X).trans Polynomial.natDegree_X_le
-      simpa using (Polynomial.coeff_pow_of_natDegree_le (m := d i) hlin)
+      simpa [add_comm] using (Polynomial.coeff_pow_of_natDegree_le (m := d i)
+        (Polynomial.natDegree_linear_le (a := v i) (b := a i)))
     · intro i hi
       exact Polynomial.natDegree_pow_le.trans (by
-        simpa only [Polynomial.natDegree_C_add, mul_one] using
+        simpa only [add_comm, mul_one] using
           Nat.mul_le_mul_left (d i)
-            ((Polynomial.natDegree_C_mul_le (v i) Polynomial.X).trans
-              Polynomial.natDegree_X_le))
+            (Polynomial.natDegree_linear_le (a := v i) (b := a i)))
   · rw [homogeneousComponent_of_mem (isHomogeneous_monomial _ rfl), ite_eq_right (Ne.symm heq),
       eval₂_zero]
     exact Polynomial.coeff_eq_zero_of_natDegree_lt

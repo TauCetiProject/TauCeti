@@ -13,6 +13,7 @@ import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
 import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -256,13 +257,8 @@ variable [CommSemiring R]
 /-- The homogeneous component in the total degree of a nonzero polynomial is nonzero. -/
 theorem homogeneousComponent_totalDegree_ne_zero (p : MvPolynomial σ R) (hp : p ≠ 0) :
     homogeneousComponent p.totalDegree p ≠ 0 := by
-  classical
-  obtain ⟨d, hd, heq⟩ := p.support.exists_mem_eq_sup (support_nonempty.mpr hp)
-    (fun d ↦ d.degree)
-  intro hzero
-  have hc := congrArg (fun q : MvPolynomial σ R ↦ q.coeff d) hzero
-  have hdeg : d.degree = p.totalDegree := heq.symm
-  simp [coeff_homogeneousComponent, hdeg, mem_support_iff.mp hd] at hc
+  simpa only [weightInitialForm_def, weightedTotalDegree_one, homogeneousComponent] using
+    (weightInitialForm_eq_zero_iff (1 : σ → ℕ) p).not.mpr hp
 
 /-- The degree-one component of a polynomial in finitely many variables is the linear form whose
 coefficient of `X i` is the coefficient of `X i` in the polynomial. -/
