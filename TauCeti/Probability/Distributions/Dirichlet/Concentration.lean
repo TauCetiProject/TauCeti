@@ -95,8 +95,8 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
     rw [integral_mul_const, integral_eval_dirichletMeasure (ha c), p.sum_mul_coe_weights,
       mul_div_cancel_left₀ _ c.2.ne', smul_eq_mul]
   · simp only [ProbabilityMeasure.coe_mk]
-    filter_upwards [ae_pos_dirichletMeasure (ha c), ae_sum_eq_one_dirichletMeasure (ha c)]
-      with x hx0 hx1
+    filter_upwards [ae_pos_dirichletMeasure (a := fun i ↦ (c : ℝ) * (p.weights i : ℝ)),
+      ae_sum_eq_one_dirichletMeasure (a := fun i ↦ (c : ℝ) * (p.weights i : ℝ))] with x hx0 hx1
     exact EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt (fun i ↦ (hx0 i).le) hx1 hK
 
 omit [Nonempty ι] in

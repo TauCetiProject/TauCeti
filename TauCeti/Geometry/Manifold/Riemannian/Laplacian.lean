@@ -299,6 +299,18 @@ theorem contMDiff_laplaceBeltrami {n m k : ℕ∞ω}
   rw [hEq]
   exact hdiv
 
+/-- For a `C¹` Riemannian metric, the Laplace--Beltrami operator of a `C²` function is
+continuous. -/
+theorem continuous_laplaceBeltrami
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    Continuous (laplaceBeltrami I f) :=
+  (contMDiff_laplaceBeltrami (n := 0) (m := 2) (k := 1) (by simp) (by simp)
+    (by simpa using hf)).continuous
+
 section OperatorLaws
 
 variable (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]

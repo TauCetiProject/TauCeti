@@ -54,6 +54,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   product space.
 * `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
   endpoint removed.
+* `TauCeti.image_eq_segment_sdiff_of_forall_eq_add_smul` — a map equal to `c + d x • u` on a set
+  where `d` takes exactly the values in `Ico 0 D` has the half-open segment as its image.
 * `TauCeti.mem_segment_lineMap_of_one_le` — a point `x` lies on the segment from `a` to any point
   `lineMap a x T` with `1 ≤ T`, at or beyond `x` on the ray from `a` through `x`.
 * `TauCeti.exists_lineMap_endpoint` — the overlap of `[0, 1]` with its image under an affine map
@@ -214,6 +216,16 @@ theorem image_add_smul_Ico {x y u : E} {D : 𝕜} (hDpos : 0 < D) (hu : u ≠ 0)
     · nlinarith [ht.2, hDpos]
     · rw [hdir]
       simp only [smul_smul]
+
+/-- **A map running along a nonzero ray is a half-open segment.** If `B x = c + d x • u` on `s` with
+`u ≠ 0`, where `d` maps `s` onto `Ico 0 D` with `0 < D` and `V - c = D • u`, then `B` maps `s` onto
+the segment from `c` to `V` with its endpoint `V` removed. -/
+theorem image_eq_segment_sdiff_of_forall_eq_add_smul {α : Type*} {s : Set α} {B : α → E}
+    {d : α → 𝕜} {D : 𝕜} {c u V : E} (hD : 0 < D) (hu : u ≠ 0) (hdimage : d '' s = Ico 0 D)
+    (hB : ∀ x ∈ s, B x = c + d x • u) (hV : V - c = D • u) :
+    B '' s = segment 𝕜 c V \ {V} := by
+  rw [← image_add_smul_Ico hD hu hV, ← hdimage, image_image]
+  exact image_congr hB
 
 /-- A point `x` lies on the segment from `a` to any point `lineMap a x T` with `1 ≤ T`, that is,
 to any point at or beyond `x` on the ray from `a` through `x`. -/
