@@ -189,7 +189,7 @@ private lemma integrable_integratedLaplaceKernel_zero_one
       (𝓝 (∫⁻ x, ENNReal.ofReal (q x) ∂σ)) := by
     simp_rw [hG_factor]
     exact tendsto_lintegral_ofReal_exp_mul antitone_levyApproximationParameter
-      tendsto_levyApproximationParameter hq_nonneg
+      tendsto_levyApproximationParameter
       (continuous_integratedLaplaceKernel 0 1).aemeasurable
   -- Continuity at zero identifies the limiting integral with `f 1 - f 0`.
   have hε_zero : Tendsto (fun n => f (levyApproximationParameter n)) atTop (𝓝 (f 0)) :=
