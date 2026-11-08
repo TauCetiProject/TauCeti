@@ -103,7 +103,8 @@ private theorem isZero_groupCohomology_res_splittingModule (S : Subgroup G) [Fin
     (groupCohomology.mapShortComplex₁ hX (i := 1) (j := 2) rfl).zero x
   have hzero₃ := fun x ↦ ConcreteCategory.congr_hom
     (groupCohomology.mapShortComplex₃ hX (i := 1) (j := 2) rfl).zero x
-  have hδ : Function.Surjective δ := Rep.surjective_connecting_res_splittingModule A u S hgen hX
+  have hδ : Function.Surjective δ :=
+    Rep.surjective_connecting_res_splittingModule A u S.subtype hgen hX
   have hδbij : Function.Bijective δ :=
     -- `X.X₁` is `res S.subtype A` by definition of `ShortComplex.map`.
     hδ.bijective_of_nat_card_le (by rw [hcardI, ← hcard]; rfl)
