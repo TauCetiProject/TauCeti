@@ -24,7 +24,8 @@ point on any level that the first component crosses.
 
 Here a trajectory is recorded by the pair of its points on two levels `c₁ > c₂`, chosen so that
 every critical point `q` of the intermediate index with `f r < f q < f p` lies strictly between
-them (`TauCeti.IsMorse.exists_separating_levels`). A broken trajectory through
+them (`TauCeti.SeparatesIntermediateLevels`, provided by
+`TauCeti.IsMorse.exists_separating_levels`). A broken trajectory through
 such a `q` is then recorded by the point of its first component on the level `c₁` and the point
 of its second component on the level `c₂`, which determine both components. The pairs of the
 unbroken trajectories form `TauCeti.IsAdaptedPseudoGradient.trajectoryLevelPairs`, those of the
@@ -41,6 +42,9 @@ broken pair is a limit of unbroken pairs, with a neighbourhood homeomorphic to a
 This is not proved here.
 
 ## Main declarations
+
+* `TauCeti.SeparatesIntermediateLevels`: the levels `c₂ < c₁` separate the critical values of
+  the intermediate index between `f r` and `f p`.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
@@ -67,6 +71,31 @@ open Filter Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+section SeparatesIntermediateLevels
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The levels `c₂` and `c₁` separate the critical values of the intermediate index between `p`
+and `r`: every critical point `q` with `ind p = ind q + 1` and `ind q = ind r + 1` whose value
+lies strictly between `f r` and `f p` satisfies `c₂ < f q < c₁`. -/
+def SeparatesIntermediateLevels (I : ModelWithCorners ℝ E H) (f : M → ℝ) (p r : M) (c₁ c₂ : ℝ) :
+    Prop :=
+  ∀ q, mfderiv I 𝓘(ℝ) f q = 0 →
+    manifoldMorseIndex I f p = manifoldMorseIndex I f q + 1 →
+    manifoldMorseIndex I f q = manifoldMorseIndex I f r + 1 →
+    f r < f q → f q < f p → c₂ < f q ∧ f q < c₁
+
+/-- Levels separating every critical value strictly between `f r` and `f p`, as provided by
+`TauCeti.IsMorse.exists_separating_levels`, separate those of the intermediate index. -/
+theorem SeparatesIntermediateLevels.of_forall_mem_criticalPoints {I : ModelWithCorners ℝ E H}
+    {f : M → ℝ} {p r : M} {c₁ c₂ : ℝ}
+    (h : ∀ q ∈ criticalPoints I f, f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
+    SeparatesIntermediateLevels I f p r c₁ c₂ :=
+  fun q hq _ _ ↦ h q (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
+
+end SeparatesIntermediateLevels
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
@@ -133,10 +162,7 @@ variable {hX}
 levels `c₂` and `c₁` separating the critical values of the intermediate index. -/
 private theorem value_mem_Ioo_of_separating (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     {p q r y z : M} {c₁ c₂ : ℝ}
-    (hsep : ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 →
-      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
-      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
-      f r < f q → f q < f p → c₂ < f q ∧ f q < c₁)
+    (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂)
     (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
@@ -149,6 +175,28 @@ private theorem value_mem_Ioo_of_separating (hf : MDifferentiable 𝓘(ℝ, E) �
     (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hz
   exact hsep q hq hpq hqr (hz'.1.trans hz'.2) (hy'.1.trans hy'.2)
 
+/-- Along a broken trajectory from `p` through `q` to `r`, following the flow from the middle levels
+to the levels `c₁` and `c₂` is a bijection between the level slices of each component. -/
+private theorem bijOn_flow_levelCrossingTime_components (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    {p q r y z : M} {c₁ c₂ : ℝ} (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
+    (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂)
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+    (hz : z ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
+    BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c₁ z) z)
+        ((hX.flow.unstableSet p ∩ hX.flow.stableSet q) ∩ {z | f z = (f p + f q) / 2})
+        ((hX.flow.unstableSet p ∩ hX.flow.stableSet q) ∩ {z | f z = c₁}) ∧
+      BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c₂ z) z)
+        ((hX.flow.unstableSet q ∩ hX.flow.stableSet r) ∩ {z | f z = (f q + f r) / 2})
+        ((hX.flow.unstableSet q ∩ hX.flow.stableSet r) ∩ {z | f z = c₂}) := by
+  have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hy hz
+  exact ⟨hX.bijOn_flow_levelCrossingTime_midpoint hf (ne_of_manifoldMorseIndex_eq_add one_pos hpq)
+      hcq.2 hc₁,
+    hX.bijOn_flow_levelCrossingTime_midpoint hf (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂
+      hcq.1⟩
+
 /-- **Broken trajectories correspond to broken pairs.** Let the levels `c₂ > f r` and `c₁ < f p`
 separate the critical values of the intermediate index strictly between `f r` and `f p`. Sending a
 broken trajectory `(q, z₁, z₂)`, recorded by points on the middle levels, to the point of the orbit
@@ -156,10 +204,7 @@ of `z₁` on the level `c₁` and the point of the orbit of `z₂` on the level 
 the broken pairs. -/
 theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p r : M} {c₁ c₂ : ℝ}
     (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
-    (hsep : ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 →
-      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
-      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
-      f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
+    (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
     BijOn (fun x : criticalPoints 𝓘(ℝ, E) f × M × M ↦
         (hX.flow (Flow.levelCrossingTime hX.flow f c₁ x.2.1) x.2.1,
           hX.flow (Flow.levelCrossingTime hX.flow f c₂ x.2.2) x.2.2))
@@ -169,11 +214,8 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := (mem_morseBrokenTrajectorySet hX).1 hx
     simp only [mem_morseTrajectorySlice, ← and_assoc] at hz₁ hz₂
     have hq := mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2
-    have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hz₁.1 hz₂.1
-    have hb₁ := hX.bijOn_flow_levelCrossingTime_midpoint hf
-      (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hcq.2 hc₁
-    have hb₂ := hX.bijOn_flow_levelCrossingTime_midpoint hf
-      (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂ hcq.1
+    obtain ⟨hb₁, hb₂⟩ :=
+      bijOn_flow_levelCrossingTime_components hf hc₁ hc₂ hsep hq hpq hqr hz₁.1 hz₂.1
     exact ⟨q, hq, hpq, hqr, hb₁.mapsTo hz₁, hb₂.mapsTo hz₂⟩
   · rintro ⟨q, z₁, z₂⟩ hx ⟨q', z₁', z₂'⟩ hx' heq
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := (mem_morseBrokenTrajectorySet hX).1 hx
@@ -190,22 +232,15 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
       rw [← heq.1] at h₂
       exact (Flow.disjoint_stableSet (Subtype.coe_ne_coe.2 hqq)).notMem_of_mem_left h₁ h₂
     subst hqq
-    have hcq := value_mem_Ioo_of_separating hf hsep (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2)
-      hpq hqr hz₁.1 hz₂.1
-    have hb₁ := hX.bijOn_flow_levelCrossingTime_midpoint hf
-      (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hcq.2 hc₁
-    have hb₂ := hX.bijOn_flow_levelCrossingTime_midpoint hf
-      (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂ hcq.1
+    obtain ⟨hb₁, hb₂⟩ := bijOn_flow_levelCrossingTime_components hf hc₁ hc₂ hsep
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hpq hqr hz₁.1 hz₂.1
     obtain rfl := hb₁.injOn hz₁ hz₁' heq.1
     obtain rfl := hb₂.injOn hz₂ hz₂' heq.2
     rfl
   · rintro ⟨w₁, w₂⟩ ⟨q, hq, hpq, hqr, hw₁, hw₂⟩
     -- Follow each component of the broken pair back to its middle level.
-    have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hw₁.1 hw₂.1
-    have hb₁ := hX.bijOn_flow_levelCrossingTime_midpoint hf
-      (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hcq.2 hc₁
-    have hb₂ := hX.bijOn_flow_levelCrossingTime_midpoint hf
-      (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂ hcq.1
+    obtain ⟨hb₁, hb₂⟩ :=
+      bijOn_flow_levelCrossingTime_components hf hc₁ hc₂ hsep hq hpq hqr hw₁.1 hw₂.1
     obtain ⟨z₁, hz₁, rfl⟩ := hb₁.surjOn hw₁
     obtain ⟨z₂, hz₂, rfl⟩ := hb₂.surjOn hw₂
     exact ⟨(⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq⟩, z₁, z₂),
@@ -218,10 +253,7 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
 trajectories. -/
 theorem ncard_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p r : M} {c₁ c₂ : ℝ}
     (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
-    (hsep : ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 →
-      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
-      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
-      f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
+    (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
     (hX.brokenLevelPairs p r c₁ c₂).ncard = (hX.morseBrokenTrajectorySet p r).ncard :=
   (bijOn_brokenLevelPairs hf hc₁ hc₂ hsep).ncard_eq.symm
 
@@ -232,10 +264,7 @@ of `TauCeti.IsAdaptedPseudoGradient.bijOn_brokenLevelPairs`, there are finitely 
 between two critical points. -/
 theorem finite_brokenLevelPairs (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     (p r : criticalPoints 𝓘(ℝ, E) f) {c₁ c₂ : ℝ} (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
-    (hsep : ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 →
-      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
-      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
-      f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
+    (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
     (hX.brokenLevelPairs p r c₁ c₂).Finite :=
   (bijOn_brokenLevelPairs (hf.contMDiff.mdifferentiable (by simp)) hc₁ hc₂
     hsep).finite_iff_finite.1 (h.finite_morseBrokenTrajectorySet hf p r)
@@ -250,10 +279,7 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
     {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hreg : ∀ y, f y = c₁ → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
-    (hsep : ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 →
-      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
-      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
-      f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
+    (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
     closure (hX.trajectoryLevelPairs p r c₁ c₂) ⊆
       hX.trajectoryLevelPairs p r c₁ c₂ ∪ hX.brokenLevelPairs p r c₁ c₂ := by
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
