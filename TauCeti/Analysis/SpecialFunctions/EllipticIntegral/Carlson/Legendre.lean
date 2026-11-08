@@ -84,6 +84,58 @@ open Complex (carlsonRF carlsonRD carlsonRG carlsonRJ carlsonRF_def carlsonRD_de
 
 /-! ### The substitution `t = sin² φ / sin² θ - 1` -/
 
+/-- The pointwise identity behind the substitution `t = sin² φ / sin² θ - 1`: the absolute value of
+the derivative times Carlson's integrand at `t = sin² φ / sin² θ - 1`, with the extra factor `H`
+equal to the real `G`, is `2 / sin φ` times the integrand of `F(φ, k)` with the factor `G`. -/
+private theorem abs_deriv_smul_carlson_integrand_eq {φ k θ : ℝ} {H : ℂ} {G : ℝ}
+    (hφ0 : 0 < φ) (hφ : φ ≤ π / 2) (hk : k ^ 2 * sin φ ^ 2 < 1) (hθ0 : 0 < θ) (hθ : θ < φ)
+    (hH : H = G) :
+    |(-(2 * sin φ ^ 2 * cos θ / sin θ ^ 3))| •
+      ((((sin φ ^ 2 / sin θ ^ 2 - 1 : ℝ) : ℂ) + ((cos φ ^ 2 : ℝ) : ℂ)) ^ (-(1 / 2) : ℂ) *
+            (((sin φ ^ 2 / sin θ ^ 2 - 1 : ℝ) : ℂ) + ((1 - k ^ 2 * sin φ ^ 2 : ℝ) : ℂ)) ^
+              (-(1 / 2) : ℂ) *
+          (((sin φ ^ 2 / sin θ ^ 2 - 1 : ℝ) : ℂ) + 1) ^ (-(1 / 2) : ℂ) * H) =
+    ((2 / sin φ * ((1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * G) : ℝ) : ℂ) := by
+  set s := sin φ with hs_def
+  have hs : 0 < s := sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])
+  have hu : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])
+  have hc : 0 < cos θ := cos_pos_of_mem_Ioo ⟨by linarith [pi_pos], by linarith⟩
+  have hus : sin θ < s := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
+  have hku : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
+    sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ0.le hθ.le hφ)
+  -- The three arguments of the square roots are perfect squares up to `1 - k² sin² θ`.
+  have hA : s ^ 2 / sin θ ^ 2 - 1 + cos φ ^ 2 = (s * cos θ / sin θ) ^ 2 := by
+    rw [cos_sq', ← hs_def, div_pow, mul_pow, cos_sq' θ]
+    field_simp
+    ring
+  have hB : s ^ 2 / sin θ ^ 2 - 1 + (1 - k ^ 2 * s ^ 2) =
+      (s / sin θ) ^ 2 * (1 - k ^ 2 * sin θ ^ 2) := by
+    field_simp
+    ring
+  have hC : s ^ 2 / sin θ ^ 2 - 1 + 1 = (s / sin θ) ^ 2 := by ring
+  have hpos : 0 < s / sin θ := div_pos hs hu
+  -- At real arguments the principal powers are real inverse square roots.
+  have ofReal_add_cpow_neg_half {t w : ℝ} (h : 0 < t + w) :
+      ((t : ℂ) + (w : ℂ)) ^ (-(1 / 2) : ℂ) = (((√(t + w))⁻¹ : ℝ) : ℂ) := by
+    rw [sqrt_eq_rpow, ← rpow_neg h.le, ofReal_cpow h.le]
+    push_cast
+    rfl
+  have hAc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := cos φ ^ 2)
+    (by rw [hA]; positivity)
+  have hBc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1 - k ^ 2 * s ^ 2)
+    (by rw [hB]; positivity)
+  have hCc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1)
+    (by rw [hC]; positivity)
+  rw [ofReal_one] at hCc
+  rw [hA, sqrt_sq (by positivity)] at hAc
+  rw [hB, sqrt_mul (sq_nonneg _), sqrt_sq hpos.le] at hBc
+  rw [hC, sqrt_sq hpos.le] at hCc
+  rw [abs_neg, abs_of_pos (by positivity), real_smul, hAc, hBc, hCc, hH,
+    legendreF_integrand_eq_inv_sqrt]
+  have hsq := sqrt_pos.mpr hku
+  norm_cast
+  field_simp
+
 /-- **The substitution `t = sin² φ / sin² θ - 1`.** For `0 < φ ≤ π / 2` and `k² sin² φ < 1`, it
 turns the common factor of Carlson's integrands at `(cos² φ, 1 - k² sin² φ, 1)` into the integrand
 of `F(φ, k)` divided by `sin φ / 2`. A further factor `h t` becomes the real `g θ`, where
@@ -122,43 +174,7 @@ private theorem integral_carlson_eq_integral_legendre {φ k : ℝ} (hφ0 : 0 < �
     intervalIntegral.integral_of_le hφ0.le, integral_Ioc_eq_integral_Ioo, ← integral_const_mul,
     ← integral_complex_ofReal]
   refine setIntegral_congr_fun measurableSet_Ioo fun θ ⟨hθ0, hθ⟩ ↦ ?_
-  have hu : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])
-  have hc : 0 < cos θ := cos_pos_of_mem_Ioo ⟨by linarith [pi_pos], by linarith⟩
-  have hus : sin θ < s := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
-  have hku : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
-    sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ0.le hθ.le hφ)
-  -- The three arguments of the square roots are perfect squares up to `1 - k² sin² θ`.
-  have hA : s ^ 2 / sin θ ^ 2 - 1 + cos φ ^ 2 = (s * cos θ / sin θ) ^ 2 := by
-    rw [cos_sq', ← hs_def, div_pow, mul_pow, cos_sq' θ]
-    field_simp
-    ring
-  have hB : s ^ 2 / sin θ ^ 2 - 1 + (1 - k ^ 2 * s ^ 2) =
-      (s / sin θ) ^ 2 * (1 - k ^ 2 * sin θ ^ 2) := by
-    field_simp
-    ring
-  have hC : s ^ 2 / sin θ ^ 2 - 1 + 1 = (s / sin θ) ^ 2 := by ring
-  have hpos : 0 < s / sin θ := div_pos hs hu
-  -- At real arguments the principal powers are real inverse square roots.
-  have ofReal_add_cpow_neg_half {t w : ℝ} (h : 0 < t + w) :
-      ((t : ℂ) + (w : ℂ)) ^ (-(1 / 2) : ℂ) = (((√(t + w))⁻¹ : ℝ) : ℂ) := by
-    rw [sqrt_eq_rpow, ← rpow_neg h.le, ofReal_cpow h.le]
-    push_cast
-    rfl
-  have hAc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := cos φ ^ 2)
-    (by rw [hA]; positivity)
-  have hBc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1 - k ^ 2 * s ^ 2)
-    (by rw [hB]; positivity)
-  have hCc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1)
-    (by rw [hC]; positivity)
-  rw [ofReal_one] at hCc
-  rw [hA, sqrt_sq (by positivity)] at hAc
-  rw [hB, sqrt_mul (sq_nonneg _), sqrt_sq hpos.le] at hBc
-  rw [hC, sqrt_sq hpos.le] at hCc
-  rw [abs_neg, abs_of_pos (by positivity), real_smul, hAc, hBc, hCc, hg θ ⟨hθ0, hθ⟩,
-    legendreF_integrand_eq_inv_sqrt]
-  have hsq := sqrt_pos.mpr hku
-  norm_cast
-  field_simp
+  exact abs_deriv_smul_carlson_integrand_eq hφ0 hφ hk hθ0 hθ (hg θ ⟨hθ0, hθ⟩)
 
 /-! ### Carlson's integrals at `(cos² φ, 1 - k² sin² φ, 1)` for `0 < φ ≤ π / 2` -/
 

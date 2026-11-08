@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Character
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CharacterImage
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacter
 
 /-!
 # Labute's normal form for the dyadic Demushkin groups of even rank with twisted image
@@ -151,16 +152,13 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
   -- `χ₁` is its canonical character read on `F`.
   have hG₁ : IsDemushkin 2 (presentedProP 2 (Fin n) {e₁ r}) :=
     IsDemushkin.of_equiv 2 hG (presentedProP.congrSingleton e₁ rfl)
-  have hA₁ : (demushkinCharacter hG₁).toMonoidHom.range = (zpowers w).topologicalClosure := by
-    rw [range_demushkinCharacter_of_equiv hG hG₁ (presentedProP.congrSingleton e₁ rfl), hA]
-  set χ₁ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ :=
-    (demushkinCharacter hG₁).comp (presentedProP.mk 2 {e₁ r}) with hχ₁
-  have hχ₁A : ∀ g, χ₁ g ∈ (zpowers w).topologicalClosure := fun g ↦ hA₁ ▸ ⟨_, rfl⟩
+  set χ₁ := demushkinRelatorCharacter hG₁
+  have hA₁ : χ₁.toMonoidHom.range = (zpowers w).topologicalClosure := by
+    rw [range_demushkinRelatorCharacter, range_demushkinCharacter_of_equiv hG hG₁
+      (presentedProP.congrSingleton e₁ rfl), hA]
+  have hχ₁A : ∀ g, χ₁ g ∈ (zpowers w).topologicalClosure := fun g ↦ hA₁ ▸ ⟨g, rfl⟩
   have hkill : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ₁ D →
-      D (e₁ r) = 0 := fun D hDc hD ↦
-    (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
-      (Set.singleton_subset_iff.2 hr₁Φ) _).1 (hasPrescriptionProperty_demushkinCharacter hG₁) D hDc
-      hD _ rfl
+      D (e₁ r) = 0 := fun D hDc hD ↦ demushkinRelatorCharacter_isCrossedHom_eq_zero hG₁ hr₁Φ hDc hD
   -- Step 2: the values of `χ₁` on the generators modulo `4`.
   have hU2 : ∀ j, j ≠ ⟨1, hn1⟩ → χ₁ (of j) ∈ unitsPrincipal 2 2 := fun j hj ↦
     apply_mem_unitsPrincipal_two_of_crossedHom_single_eq_zero hn hn1 hq ⟨e₁ r, hr₁₁⟩ hclass
@@ -177,11 +175,8 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
           · rw [hj]
             exact hu2
           · exact hU2 j hj)
-    have hwA : w ∈ (demushkinCharacter hG₁).toMonoidHom.range :=
-      hA₁ ▸ le_topologicalClosure _ (mem_zpowers w)
-    obtain ⟨y, hy⟩ := hwA
-    obtain ⟨g, rfl⟩ := presentedProP.mk_surjective 2 {e₁ r} y
-    exact hw2 (hle (MonoidHom.mem_range.2 ⟨g, hy⟩))
+    have hwA : w ∈ χ₁.toMonoidHom.range := hA₁ ▸ le_topologicalClosure _ (mem_zpowers w)
+    exact hw2 (hle hwA)
   -- The target value `v = -(1 + 2^f)⁻¹` of `χ` at `x₂`, a generator of `U^[f]`.
   obtain ⟨v, hv⟩ := exists_val_mul_one_add_eq_neg_one (a := (2 : ℤ_[2]) ^ f)
     (dvd_pow_self 2 (by omega))
@@ -250,8 +245,8 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
     exact gradedMk_basisModificationEquiv_symm le_rfl ω ⟨e₁ r, hr₁₁⟩
   -- It lies in `X = ker χ₂`, and every crossed homomorphism for `χ₂` kills it.
   have hχ₂r₂ : χ₂ (e₂.symm (e₁ r)) = 1 := by
-    rw [hχ₂apply, e₂.apply_symm_apply, hχ₁, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      presentedProP.mk_relator _ (Set.mem_singleton _), map_one]
+    rw [hχ₂apply, e₂.apply_symm_apply]
+    exact demushkinRelatorCharacter_mem_ker hG₁
   -- `4 ∣ 2^f` since `f ≥ 2`, so `v = -(1 + 2^f)⁻¹` has infinite order.
   have h4 : (4 : ℤ_[2]) ∣ 2 ^ f := (by norm_num : (4 : ℤ_[2]) ∣ 2 ^ 2).trans (pow_dvd_pow 2 hf)
   have hkerX : exponentSumKer 2 (Fin n) ⟨1, hn1⟩ = χ₂.toMonoidHom.ker :=

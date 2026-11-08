@@ -8,7 +8,11 @@ module
 public import TauCeti.Analysis.Convex.SubgradientImage
 public import TauCeti.Analysis.Convex.Differentiability
 public import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Algebra.BigOperators.Field
+import TauCeti.Algebra.Order.Archimedean.Basic
+import TauCeti.Algebra.Order.BigOperators.Sum.SubSumBound
 import TauCeti.Analysis.Calculus.SecondOrderExpansion
+import TauCeti.Analysis.InnerProductSpace.LinearApproximation
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
@@ -139,6 +143,30 @@ theorem norm_sub_le_norm_add_sub_add_of_mem_subdifferential {x₁ x₂ y₁ y₂
   norm_num at h
   linarith
 
+/-- The increment of `toReal ∘ f` between two points `p₀`, `p₁ = p₀ + a • h` with subgradients
+`y₀`, `y₁` is within `M * a ^ 2 / 2 + B * a` of `a * ⟪h, y⟫ + (s₀ + a / 2) * a * X`, provided the
+subgradients follow the expansion `⟪h, y⟫ + s * X` up to `B`, with `s = s₀` and `s = s₀ + a`
+respectively, and `|X| ≤ M`. -/
+private theorem abs_toReal_sub_toReal_sub_le_of_mem_subdifferential {p₀ p₁ y₀ y₁ y h : E}
+    {a s₀ B M X : ℝ} (ha : 0 ≤ a) (hp : p₁ - p₀ = a • h)
+    (h₀ : y₀ ∈ subdifferential (innerₗ E) f p₀) (h₁ : y₁ ∈ subdifferential (innerₗ E) f p₁)
+    (e₀ : |⟪h, y₀⟫_ℝ - ⟪h, y⟫_ℝ - s₀ * X| ≤ B)
+    (e₁ : |⟪h, y₁⟫_ℝ - ⟪h, y⟫_ℝ - (s₀ + a) * X| ≤ B) (hX : |X| ≤ M) :
+    |(f p₁).toReal - (f p₀).toReal - (a * ⟪h, y⟫_ℝ + (s₀ + a / 2) * a * X)| ≤
+      M * a ^ 2 / 2 + B * a := by
+  have hlow := toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) h₀
+    (ne_top_of_mem_subdifferential _ h₁)
+  have hup := toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) h₁
+    (ne_top_of_mem_subdifferential _ h₀)
+  rw [innerₗ_apply_apply, hp, real_inner_smul_left] at hlow
+  rw [innerₗ_apply_apply, ← neg_sub, hp, inner_neg_left, real_inner_smul_left] at hup
+  have l₀ := mul_le_mul_of_nonneg_left (abs_le.1 e₀).1 ha
+  have u₁ := mul_le_mul_of_nonneg_left (abs_le.1 e₁).2 ha
+  have a₁ := mul_le_mul_of_nonneg_left (abs_le.1 hX).1 (sq_nonneg a)
+  have a₂ := mul_le_mul_of_nonneg_left (abs_le.1 hX).2 (sq_nonneg a)
+  rw [abs_le]
+  constructor <;> nlinarith
+
 /-- **A first-order expansion of the subdifferential gives a second-order expansion of the
 function.** Suppose `f : E → EReal` has subgradients at every point near `x`, and that these
 follow the expansion `y' = y + A (x' - x) + o(‖x' - x‖)` uniformly over the subdifferential at
@@ -165,17 +193,11 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
   refine ⟨r, hr, fun x' hx' => ?_⟩
   set h := x' - x
   set X := ⟪h, A h⟫_ℝ
-  set n : ℕ := ⌈‖A‖ / c⌉₊ + 1
+  obtain ⟨n, hn₀, hAa⟩ := exists_pos_nat_mul_inv_le ‖A‖ hc
   set a : ℝ := (n : ℝ)⁻¹
-  have hn : (0 : ℝ) < n := by positivity
+  have hn : (0 : ℝ) < n := by exact_mod_cast hn₀
   have ha : 0 < a := inv_pos.2 hn
   have hna : (n : ℝ) * a = 1 := mul_inv_cancel₀ hn.ne'
-  have hAa : ‖A‖ * a ≤ c := by
-    have := Nat.le_ceil (‖A‖ / c)
-    rw [div_le_iff₀ hc] at this
-    rw [← le_div_iff₀ ha, div_eq_mul_inv, inv_inv]
-    simp only [n, Nat.cast_add, Nat.cast_one]
-    nlinarith
   set p : ℕ → E := fun k => x + ((k : ℝ) * a) • h
   have hpx : ∀ k ≤ n, ‖p k - x‖ ≤ ‖h‖ := fun k hk => by
     simp only [p, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
@@ -190,63 +212,27 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
     nlinarith [A.le_opNorm h, norm_nonneg h]
   -- Along the segment, `⟪h, Y (p k)⟫` follows the expansion up to `(c / 2) * ‖h‖ ^ 2`.
   have hY' : ∀ k ≤ n, |⟪h, Y (p k)⟫_ℝ - ⟪h, y⟫_ℝ - k * a * X| ≤ c / 2 * ‖h‖ ^ 2 :=
-      fun k hk => by
-    have hb := (hball (hp k hk)).2 _ (hY _ (hp k hk))
-    have hpk : p k - x = ((k : ℝ) * a) • h := by simp only [p, add_sub_cancel_left]
-    have : ⟪h, Y (p k)⟫_ℝ - ⟪h, y⟫_ℝ - k * a * X = ⟪h, Y (p k) - y - A (p k - x)⟫_ℝ := by
-      rw [hpk, map_smul, inner_sub_right, inner_sub_right, real_inner_smul_right]
-    rw [this]
-    refine (abs_real_inner_le_norm _ _).trans ?_
-    calc ‖h‖ * ‖Y (p k) - y - A (p k - x)‖ ≤ ‖h‖ * (c / 2 * ‖h‖) :=
-          mul_le_mul_of_nonneg_left (hb.trans (mul_le_mul_of_nonneg_left (hpx k hk)
-            (by positivity))) (norm_nonneg h)
-      _ = c / 2 * ‖h‖ ^ 2 := by ring
-  -- Each step's increment of `F` is within `‖A‖ ‖h‖² a² / 2 + (c / 2) ‖h‖² a` of that of the
-  -- expansion.
-  have hstep : ∀ k < n, |F (p (k + 1)) - F (p k) - (a * ⟪h, y⟫_ℝ + (k + 1 / 2) * a ^ 2 * X)| ≤
+    fun k hk => abs_inner_sub_inner_sub_mul_le (A := A.toLinearMap) (by positivity)
+      (by simp only [p, add_sub_cancel_left]) (hpx k hk) ((hball (hp k hk)).2 _ (hY _ (hp k hk)))
+  have hstep : ∀ k < n, |F (p (k + 1)) - F (p k) - (a * ⟪h, y⟫_ℝ + (k * a + a / 2) * a * X)| ≤
       ‖A‖ * ‖h‖ ^ 2 * a ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 * a := fun k hk => by
-    have hdiff : p (k + 1) - p k = a • h := by
-      simp only [p, add_sub_add_left_eq_sub, ← sub_smul]
-      congr 1
-      push_cast
-      ring
-    have hk₀ := hY _ (hp k hk.le)
-    have hk₁ := hY _ (hp (k + 1) hk)
-    have hlow := toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) hk₀
-      (ne_top_of_mem_subdifferential _ hk₁)
-    have hup := toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) hk₁
-      (ne_top_of_mem_subdifferential _ hk₀)
-    rw [innerₗ_apply_apply, hdiff, real_inner_smul_left] at hlow
-    rw [innerₗ_apply_apply, ← neg_sub, hdiff, inner_neg_left, real_inner_smul_left] at hup
-    have e₀ := abs_le.1 (hY' k hk.le)
-    have e₁ := abs_le.1 (hY' (k + 1) hk)
-    have hX' := abs_le.1 hX
-    push_cast at e₁
-    have l₀ := mul_le_mul_of_nonneg_left e₀.1 ha.le
-    have u₁ := mul_le_mul_of_nonneg_left e₁.2 ha.le
-    have a₁ := mul_le_mul_of_nonneg_left hX'.1 (sq_nonneg a)
-    have a₂ := mul_le_mul_of_nonneg_left hX'.2 (sq_nonneg a)
-    rw [abs_le]
-    constructor <;> nlinarith
-  -- Sum the steps: the increments of `F` telescope, and those of the expansion add up to
-  -- `⟪h, y⟫ + X / 2` because `n * a = 1`.
-  have htel : ∑ k ∈ Finset.range n, (F (p (k + 1)) - F (p k)) = F x' - F x := by
-    rw [Finset.sum_range_sub (fun k => F (p k))]
-    simp only [p, Nat.cast_zero, zero_mul, zero_smul, add_zero, hna, one_smul, h,
-      add_sub_cancel]
-  have hsum : ∀ m : ℕ, ∑ k ∈ Finset.range m, (a * ⟪h, y⟫_ℝ + (k + 1 / 2) * a ^ 2 * X) =
-      m * a * ⟪h, y⟫_ℝ + m ^ 2 * a ^ 2 * X / 2 := fun m => by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
-  have hbound := (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun k hk =>
-    hstep k (Finset.mem_range.1 hk))
-  rw [Finset.sum_sub_distrib, htel, hsum, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
-    hna, show (n : ℝ) ^ 2 * a ^ 2 = 1 by rw [← mul_pow, hna, one_pow]] at hbound
+    have e₁ := hY' (k + 1) hk
+    rw [Nat.cast_succ, add_mul, one_mul] at e₁
+    refine abs_toReal_sub_toReal_sub_le_of_mem_subdifferential ha.le ?_ (hY _ (hp k hk.le))
+      (hY _ (hp (k + 1) hk)) (hY' k hk.le) e₁ hX
+    simp only [p, add_sub_add_left_eq_sub, ← sub_smul]
+    congr 1
+    push_cast
+    ring
+  have hbound := TauCeti.abs_sub_sub_sum_range_le_of_forall_lt (G := fun k => F (p k)) hstep
+  rw [Finset.sum_range_add_mul_add_div_two, nsmul_eq_mul] at hbound
+  simp only [hna, one_pow, one_mul] at hbound
+  have hpn : F (p n) - F (p 0) = F x' - F x := by
+    simp only [p, Nat.cast_zero, zero_mul, zero_smul, add_zero, hna, one_smul, h, add_sub_cancel]
   have : (n : ℝ) * (‖A‖ * ‖h‖ ^ 2 * a ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 * a) =
       ‖A‖ * a * ‖h‖ ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 := by
     linear_combination (‖A‖ * ‖h‖ ^ 2 * a / 2 + c / 2 * ‖h‖ ^ 2) * hna
-  rw [this, one_mul, one_mul, ← sub_sub] at hbound
+  rw [this, hpn, ← sub_sub] at hbound
   have : ‖A‖ * a * ‖h‖ ^ 2 ≤ c * ‖h‖ ^ 2 := mul_le_mul_of_nonneg_right hAa (sq_nonneg _)
   rw [Real.norm_eq_abs, norm_pow, norm_norm, real_inner_comm h (A h), real_inner_comm h y]
   linarith

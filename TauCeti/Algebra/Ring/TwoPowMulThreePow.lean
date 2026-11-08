@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.Invertible
+public import Mathlib.Algebra.Group.Invertible.Basic
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
 public import Mathlib.Algebra.Ring.Defs
 import Mathlib.Data.Nat.Cast.Commute

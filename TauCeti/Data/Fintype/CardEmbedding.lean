@@ -49,6 +49,8 @@ embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tu
 * `Finset.natCard_embedding_exists_comp_mem_le`: at most
   `(card β).choose m * #T * card V ^ (card β - m)` embeddings send some increasing `m`-tuple
   into `T`.
+* `Finset.card_filter_injective_exists_mem_le`: at most `n * #B * card V ^ (n - 1)` injective
+  `n`-tuples meet a prescribed set `B` of vertices.
 -/
 
 public section
@@ -224,5 +226,35 @@ theorem natCard_embedding_exists_comp_mem_le {β : Type*} [Fintype β] [LinearOr
         (s.1.orderEmbOfFin (mem_powersetCard.1 s.2).2).toEmbedding.natCard_embedding_comp_eq_le x
     _ = (Fintype.card β).choose m * #T * Fintype.card V ^ (Fintype.card β - m) := by
       simp [card_powersetCard, mul_assoc]
+
+/-- Among injective `n`-tuples, at most `n * #B * card V ^ (n - 1)` meet `B` in some
+coordinate. This is the singleton-tuple case of `natCard_embedding_exists_comp_mem_le`, in
+the subtype form used for ordered injective tuples. -/
+theorem card_filter_injective_exists_mem_le [Fintype V] [DecidableEq V] {n : ℕ}
+    (B : Finset V) :
+    #{x : {x : Fin n → V // Injective x} | ∃ i, x.1 i ∈ B} ≤
+      n * #B * Fintype.card V ^ (n - 1) := by
+  classical
+  let T : Finset (Fin 1 → V) := B.image fun v _ ↦ v
+  have hT : #T = #B := card_image_of_injective _ fun a b h ↦ congrFun h 0
+  have hhit (f : Fin n ↪ V) :
+      (∃ g : Fin 1 ↪o Fin n, ⇑f ∘ g ∈ T) ↔ ∃ i, f i ∈ B := by
+    constructor
+    · rintro ⟨g, hg⟩
+      obtain ⟨v, hv, heq⟩ := mem_image.1 hg
+      have hv' : v = f (g 0) := congrFun heq 0
+      exact ⟨g 0, hv' ▸ hv⟩
+    · rintro ⟨i, hi⟩
+      let g : Fin 1 ↪o Fin n := OrderEmbedding.ofStrictMono (fun _ ↦ i) (by
+        intro a b hab
+        exact (lt_irrefl a (Subsingleton.elim b a ▸ hab)).elim)
+      exact ⟨g, mem_image.2 ⟨f i, hi, rfl⟩⟩
+  let e : {x : {x : Fin n → V // Injective x} // ∃ i, x.1 i ∈ B} ≃
+      {f : Fin n ↪ V // ∃ g : Fin 1 ↪o Fin n, ⇑f ∘ g ∈ T} :=
+    (Equiv.subtypeInjectiveEquivEmbedding (Fin n) V).subtypeEquiv fun x ↦
+      (hhit ((Equiv.subtypeInjectiveEquivEmbedding (Fin n) V) x)).symm
+  have h := natCard_embedding_exists_comp_mem_le (β := Fin n) T
+  rw [← Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_subtype] at h
+  simpa only [Fintype.card_fin, Nat.choose_one_right, hT] using h
 
 end Finset

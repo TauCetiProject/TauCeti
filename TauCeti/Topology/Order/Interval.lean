@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Topology.Algebra.Order.Group
+import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
 # Intervals in order topologies
@@ -21,6 +25,8 @@ a left half-line, a right half-line, or the whole space.
 The image of a half-infinite real interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
 when the limit is finite.
+A continuous strictly increasing real function on a compact interval has a continuous inverse on
+its range, extended to the whole line by clamping.
 
 ## Main results
 
@@ -29,6 +35,8 @@ when the limit is finite.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
+* `TauCeti.tendsto_sub_nhdsGT_nhdsWithin_Icc` — the curve `δ ↦ b - δ` tends to `b` within `[a, b]`
+  as `δ → 0⁺`.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
@@ -37,6 +45,8 @@ when the limit is finite.
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
+* `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing real function on
+  `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
 -/
 
 public section
@@ -143,5 +153,48 @@ theorem _root_.ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto
     exact ⟨hdmono.monotoneOn self_mem_Ici hx hxp, hlt⟩
   · exact isPreconnected_Ici.intermediate_value_Ico self_mem_Ici
       (le_principal_iff.mpr (Ici_mem_atTop p)) hdcont hdl
+
+/-- A continuous strictly increasing function `f` on `[a, b]` has a continuous inverse `τ` on its
+range `[c, d]`, extended to all of `ℝ` by being constant outside `[c, d]` (that is, `τ` is the
+inverse composed with the clamp `projIcc c d`, whose value is `max c (min d r)`). -/
+theorem exists_continuous_projIcc_inverse {f : ℝ → ℝ} {a b c d : ℝ} (hab : a ≤ b)
+    (hf : ContinuousOn f (Icc a b)) (hm : StrictMonoOn f (Icc a b)) (hc : f a = c) (hd : f b = d) :
+    ∃ τ : ℝ → ℝ, Continuous τ ∧ (∀ r, τ r ∈ Icc a b) ∧
+      (∀ r, f (τ r) = max c (min d r)) ∧ ∀ s ∈ Icc a b, τ (f s) = s := by
+  have ha : a ∈ Icc a b := left_mem_Icc.2 hab
+  have hb : b ∈ Icc a b := right_mem_Icc.2 hab
+  have hcd : c ≤ d := hc ▸ hd ▸ hm.monotoneOn ha hb hab
+  subst hc hd
+  let g : Icc a b → Icc (f a) (f b) := fun s ↦
+    ⟨f s, hm.monotoneOn ha s.2 s.2.1, hm.monotoneOn s.2 hb s.2.2⟩
+  have hg_cont : Continuous g :=
+    Continuous.subtype_mk (continuousOn_iff_continuous_domRestrict.1 hf) _
+  have hg_bij : Function.Bijective g := by
+    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.2 s'.2 (congrArg Subtype.val h)), fun r ↦ ?_⟩
+    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.2
+    exact ⟨⟨s, hs⟩, Subtype.ext hsr⟩
+  -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective g`,
+  -- and Mathlib states no lemma for its coercion.
+  let F : Icc a b ≃ₜ Icc (f a) (f b) :=
+    hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
+  have hF (s : Icc a b) : (F s : ℝ) = f s := rfl
+  refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
+    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
+    fun r ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [← hF, Homeomorph.apply_symm_apply, coe_projIcc, min_comm]
+  · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
+      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
+    simp only [this, Homeomorph.symm_apply_apply]
+
+/-- The curve `δ ↦ b - δ` tends to `b` within `[a, b]` as `δ → 0⁺`. -/
+theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOrder G]
+    [IsOrderedAddMonoid G] [TopologicalSpace G] [OrderTopology G] {a b : G} (hab : a < b) :
+    Tendsto (fun δ : G ↦ b - δ) (𝓝[>] 0) (𝓝[Icc a b] b) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+  · have : Tendsto (fun δ : G ↦ b - δ) (𝓝 0) (𝓝 (b - 0)) := tendsto_const_nhds.sub tendsto_id
+    rw [sub_zero] at this
+    exact this.mono_left nhdsWithin_le_nhds
+  · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
+    exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
 
 end TauCeti

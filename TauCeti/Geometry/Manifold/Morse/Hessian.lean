@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Analysis.Calculus.SecondDerivative
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
@@ -54,6 +54,8 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas` and
   `TauCeti.manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas`: nondegeneracy and the Morse index
   in an arbitrary chart.
+* `TauCeti.eventually_manifoldMorseIndex_le`: the Morse index is lower semicontinuous on the
+  critical set, read off from `TauCeti.eventually_morseIndex_le` in the preferred chart.
 * `TauCeti.isMorseOn_iff_of_mem_maximalAtlas`: being Morse on a subset of a chart source, read in
   that chart.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff` and
@@ -181,6 +183,15 @@ the tangent space. -/
 theorem IsManifoldNondegenerateCriticalPoint.isInvertible_criticalHessian
     (h : IsManifoldNondegenerateCriticalPoint I f x) : (criticalHessian I f x).IsInvertible :=
   ((isManifoldNondegenerateCriticalPoint_iff I).mp h).isInvertible
+
+/-- On a nonzero model space, the critical Hessian at a nondegenerate critical point is nonzero:
+a critical point with vanishing Hessian is degenerate. -/
+theorem IsManifoldNondegenerateCriticalPoint.criticalHessian_ne_zero [Nontrivial E]
+    (h : IsManifoldNondegenerateCriticalPoint I f x) : criticalHessian I f x ≠ 0 := fun h0 ↦ by
+  have hinv := h.isInvertible_criticalHessian
+  rw [h0, ContinuousLinearMap.isInvertible_zero_iff] at hinv
+  -- `TangentSpace I x` is by definition the model space `E`.
+  exact not_subsingleton E hinv.1
 
 /-- On a finite-dimensional model space, an injective critical Hessian is invertible as a map to
 the dual of the tangent space. -/
@@ -750,6 +761,50 @@ theorem isMorseOn_iff_of_mem_maximalAtlas {s : Set M} (hf : ∀ x ∈ s, ContMDi
       (h (mem_image_of_mem _ hx) ((hcrit hx).1 hx₀))
 
 end Chart
+
+/-- **The critical Hessian in the tangent coordinates of a chart.** Let `x` be a critical point
+of a `C²` function `f` in the source of the preferred chart at `x₀`. On the tangent vectors at `x`
+whose coordinates in the canonical tangent-bundle trivialization at `x₀` are `a` and `b`, the
+critical Hessian is the second derivative at `x` of the coordinate expression of `f` in the
+preferred extended chart at `x₀`, applied to `a` and `b`. -/
+theorem criticalHessian_trivializationAt_symm_apply [IsManifold I 2 M] {x₀ : M}
+    (hx : x ∈ (chartAt H x₀).source) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hcrit : mvfderiv I f x = 0) (a b : E) :
+    criticalHessian I f x ((trivializationAt E (TangentSpace I) x₀).symm x a)
+        ((trivializationAt E (TangentSpace I) x₀).symm x b) =
+      fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x₀).symm)) (extChartAt I x₀ x) a b := by
+  set t := trivializationAt E (TangentSpace I) x₀
+  have hxt : x ∈ t.baseSet := by simpa [t] using hx
+  -- The derivative of the preferred chart at `x₀` undoes the inverse trivialization at `x₀`.
+  have hcoord (c : E) : mvfderiv I (extChartAt I x₀) x (t.symm x c) = c := by
+    have h : t.continuousLinearMapAt ℝ x (t.symm x c) = c := by
+      rw [← Bundle.Trivialization.symmL_apply (R := ℝ) t hxt]
+      exact t.continuousLinearMapAt_symmL hxt c
+    rw [TangentBundle.continuousLinearMapAt_trivializationAt hx] at h
+    rwa [mvfderiv_apply_eq_mfderiv_apply]
+  rw [criticalHessian_apply_eq_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx hf
+    hcrit, ← extChartAt, hcoord, hcoord]
+
+/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless
+finite-dimensional manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
+the Morse index is at least the Morse index at `x`. The point `x` need not be critical, nor
+nondegenerate. -/
+theorem eventually_manifoldMorseIndex_le [FiniteDimensional ℝ E] [IsManifold I 2 M]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → manifoldMorseIndex I f x ≤ manifoldMorseIndex I f y := by
+  -- Both indices are read in the preferred chart at `x`: at `x` by definition, and at nearby
+  -- critical points because there the Morse index may be computed in any chart.
+  set e := chartAt H x
+  have he : e ∈ IsManifold.maximalAtlas I 2 M := IsManifold.chart_mem_maximalAtlas x
+  have hx : x ∈ e.source := mem_chart_source H x
+  have hg := (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).1 hf
+  have hcont : ContinuousAt (e.extend I) x := e.continuousAt_extend hx
+  filter_upwards [hcont.eventually (eventually_morseIndex_le hg),
+    hcont.eventually (hg.eventually (by simp)), e.open_source.mem_nhds hx]
+    with y hidx hreg hy hcrit
+  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hy
+    ((contMDiffAt_iff_contDiffAt_comp_extend_symm he hy).2 hreg) (mem_criticalPoints.1 hcrit)]
+  simpa only [manifoldMorseIndex_def, extChartAt] using hidx
 
 end Boundaryless
 
