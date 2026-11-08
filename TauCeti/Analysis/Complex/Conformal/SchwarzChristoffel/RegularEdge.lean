@@ -33,25 +33,6 @@ namespace TauCeti
 variable {ι : Type*}
 variable [Fintype ι]
 
-/-- At a point of a prevertex-free boundary interval, the continued Schwarz--Christoffel
-integrand times the fixed edge direction does not vanish. -/
-theorem exp_mul_schwarzChristoffelContinuedIntegrand_ne_zero
-    (a e : ι → ℝ) {p q x : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
-    Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
-      schwarzChristoffelContinuedIntegrand a e p x ≠ 0 := by
-  have hapos : ∀ i, e i ≠ 0 → x ≠ a i := by
-    intro i hi hxi
-    exact ha i hi (hxi ▸ hx)
-  have hlo : ∀ i, e i ≠ 0 → a i ≤ p → a i < x :=
-    fun _ _ h => h.trans_lt hx.1
-  have hhi : ∀ i, e i ≠ 0 → p < a i → x < a i := by
-    intro i hi hip
-    have hq : q ≤ a i := le_of_not_gt fun h => ha i hi ⟨hip, h⟩
-    exact hx.2.trans_le hq
-  rw [schwarzChristoffelContinuedIntegrand_ofReal a e hlo hhi]
-  exact mul_ne_zero (Complex.exp_ne_zero _) (by
-    exact_mod_cast (schwarzChristoffelDensity_pos a e hapos).ne')
-
 /-- At a point of a prevertex-free boundary interval, the Schwarz--Christoffel primitive has a
 holomorphic continuation which is injective on a neighbourhood of that point. Its value at the
 point is the canonical boundary value, and its derivative throughout the neighbourhood is the
@@ -81,7 +62,9 @@ theorem exists_injOn_schwarzChristoffelPrimitive_continuation
     hGdiffOn.analyticAt (Metric.isOpen_ball.mem_nhds hxB)
   have hGderiv : deriv G x ≠ 0 := by
     rw [(hGdiff x hxB).deriv]
-    exact exp_mul_schwarzChristoffelContinuedIntegrand_ne_zero a e ha hx
+    exact mul_ne_zero (Complex.exp_ne_zero _)
+      (schwarzChristoffelContinuedIntegrand_ne_zero a e p fun i hi hxi =>
+        ha i hi (Complex.ofReal_injective hxi ▸ hx))
   obtain ⟨W, hW, hWinj⟩ :=
     (exists_injOn_nhds_iff_deriv_ne_zero hGan).mpr hGderiv
   obtain ⟨U, hUW, hUopen, hxU⟩ := mem_nhds_iff.mp (inter_mem hW
