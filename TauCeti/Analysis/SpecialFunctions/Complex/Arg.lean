@@ -33,6 +33,7 @@ from the argument of `-z`.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
+* `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
   from the origin.
@@ -75,6 +76,17 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
     _ = -‖c‖ := by
         rw [h, exp_pi_mul_I]
         ring
+
+/-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
+theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
+    (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (Real.pi * |r|) := by
+  rw [← Real.exp_neg]
+  apply Real.exp_le_exp.mpr
+  calc -(u.arg * r) ≤ |u.arg * r| := neg_le_abs _
+    _ = |u.arg| * |r| := abs_mul _ _
+    _ ≤ Real.pi * |r| := by
+      gcongr
+      exact abs_arg_le_pi _
 
 /-- The argument is smooth on the slit plane, where it is the imaginary part of the principal
 logarithm. -/
