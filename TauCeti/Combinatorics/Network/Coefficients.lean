@@ -249,6 +249,7 @@ theorem map_val (φ : K →+o L) (f : ExcessFlow lo hi b) : (f.map φ).val = f.v
 theorem map_id (f : ExcessFlow lo hi b) : f.map (OrderAddMonoidHom.id K) = f :=
   (rfl)
 
+@[simp]
 theorem map_map {M : Type*} [AddCommGroup M] [Preorder M] (φ : K →+o L) (ψ : L →+o M)
     (f : ExcessFlow lo hi b) : (f.map φ).map ψ = f.map (ψ.comp φ) :=
   (rfl)
@@ -279,6 +280,7 @@ theorem map_val (φ : K →+o L) (f : ExcessIntervalFlow lo hi a b) : (f.map φ)
 theorem map_id (f : ExcessIntervalFlow lo hi a b) : f.map (OrderAddMonoidHom.id K) = f :=
   (rfl)
 
+@[simp]
 theorem map_map {M : Type*} [AddCommGroup M] [Preorder M] (φ : K →+o L) (ψ : L →+o M)
     (f : ExcessIntervalFlow lo hi a b) : (f.map φ).map ψ = f.map (ψ.comp φ) :=
   (rfl)
