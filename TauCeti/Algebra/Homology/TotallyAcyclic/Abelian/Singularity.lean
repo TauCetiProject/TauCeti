@@ -48,7 +48,8 @@ vanishing of `δₘ ≫ f` descend to `δ₁ ≫ f = 0`, which says that `f` fac
   category is fully faithful.
 * `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`: a
   Gorenstein-projective object placed in any degree is isomorphic in the singularity category to a
-  cycle of its complete resolution placed in degree zero, so
+  cycle of its complete resolution placed in degree zero
+  (`TauCeti.SingularityCategory.nonempty_iso_Q_obj_singleFunctor_cycles`), so
   `CategoryTheory.GorensteinProjective.essImage_toSingularityCategory`: it lies in the essential
   image of Chen's functor.
 
@@ -337,62 +338,6 @@ section Shift
 
 open _root_.DerivedCategory
 
-/-- In the singularity category, a short exact sequence `0 ⟶ X ⟶ P ⟶ Y ⟶ 0` with `P` projective
-identifies `Y` with the shift `X[1]`, since the projective object `P` vanishes. -/
-theorem nonempty_iso_Q_obj_shift_of_shortExact {S : ShortComplex C} (hS : S.ShortExact)
-    (hP : Projective S.X₂) :
-    Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj S.X₃) ≅
-      ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj S.X₁))⟦(1 : ℤ)⟧) := by
-  have hT := (Q C).map_distinguished _ hS.boundedSingleTriangle_distinguished
-  have := (Triangle.isZero₂_iff_isIso₃ _ hT).1 (isZero_Q_obj_singleFunctor_obj hP)
-  exact ⟨asIso ((Q C).mapTriangle.obj hS.boundedSingleTriangle).mor₃⟩
-
-variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
-include hP
-
-/-- In the singularity category, the cycles of a totally acyclic complex of projectives placed in
-degree zero satisfy `Zᵐ⁺ᵏ ≅ Zᵐ[k]` for every integer `k`. -/
-theorem nonempty_iso_Q_obj_cycles_shift (k m : ℤ) :
-    Nonempty (((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles m)))⟦k⟧ ≅
-      (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles (m + k)))) := by
-  let L (m : ℤ) := (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles m))
-  have hL (a b : ℤ) (h : a = b) : Nonempty (L a ≅ L b) := by subst h; exact ⟨Iso.refl _⟩
-  -- One step, from the short exact sequence `0 ⟶ Zᵐ ⟶ Pᵐ ⟶ Zᵐ⁺¹ ⟶ 0`.
-  have step (m : ℤ) : Nonempty (L (m + 1) ≅ (L m)⟦(1 : ℤ)⟧) :=
-    nonempty_iso_Q_obj_shift_of_shortExact
-      (P.shortExact_mk_iCycles_toCycles m (m + 1) rfl (hP.acyclic (m + 1))) (hP.projective m)
-  change Nonempty ((L m)⟦k⟧ ≅ L (m + k))
-  induction k using Int.induction_on generalizing m with
-  | zero =>
-    obtain ⟨e⟩ := hL m (m + 0) (add_zero m).symm
-    exact ⟨(shiftFunctorZero _ ℤ).app _ ≪≫ e⟩
-  | succ i ih =>
-    obtain ⟨e⟩ := ih m
-    obtain ⟨e₁⟩ := step (m + i)
-    obtain ⟨e₂⟩ := hL (m + i + 1) (m + (i + 1)) (add_assoc _ _ _)
-    exact ⟨(shiftFunctorAdd _ (i : ℤ) 1).app _ ≪≫ (shiftFunctor _ (1 : ℤ)).mapIso e ≪≫ e₁.symm ≪≫
-      e₂⟩
-  | pred i ih =>
-    obtain ⟨e⟩ := ih m
-    obtain ⟨e₁⟩ := step (m + (-i - 1))
-    obtain ⟨e₂⟩ := hL (m + -(i : ℤ)) (m + (-i - 1) + 1) (by ring)
-    exact ⟨(shiftFunctorAdd' _ (-(i : ℤ)) (-1) (-i - 1) (by ring)).app _ ≪≫
-      (shiftFunctor _ (-1 : ℤ)).mapIso (e ≪≫ e₂ ≪≫ e₁) ≪≫
-      (shiftFunctorCompIsoId _ (1 : ℤ) (-1) (by norm_num)).app _⟩
-
-/-- **The cycles of a complete resolution in every degree**: in the singularity category, the
-cycles `Zᵐ` of a totally acyclic complex of projectives placed in degree `n` are isomorphic to the
-cycles `Zᵐ⁻ⁿ` placed in degree zero. -/
-theorem nonempty_iso_Q_obj_singleFunctor_cycles (n m : ℤ) :
-    Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj (P.cycles m)) ≅
-      (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles (m - n)))) := by
-  obtain ⟨e⟩ := nonempty_iso_Q_obj_cycles_shift hP (-n) m
-  -- The object placed in degree `n` is the object placed in degree zero, shifted by `-n`.
-  exact ⟨(Q C).mapIso (((DerivedCategory.Bounded.singleFunctors C).shiftIso (-n) n 0
-      (by lia)).app (P.cycles m)).symm ≪≫ ((Q C).commShiftIso (-n)).app _ ≪≫ e ≪≫
-    eqToIso (by rw [sub_eq_add_neg])⟩
-
-omit hP in
 /-- **Gorenstein-projective objects in every degree**: in the singularity category, a
 Gorenstein-projective object placed in any degree is isomorphic to a Gorenstein-projective object
 placed in degree zero, namely a cycle of its complete resolution. -/
@@ -402,7 +347,7 @@ theorem exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective {G : C}
       Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj G) ≅
         (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj G')) := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff G).1 hG
-  obtain ⟨e'⟩ := nonempty_iso_Q_obj_singleFunctor_cycles hP n 0
+  obtain ⟨e'⟩ := nonempty_iso_Q_obj_singleFunctor_cycles hP.projective hP.acyclic n 0
   exact ⟨P.cycles (0 - n), hP.isGorensteinProjective_cycles _,
     ⟨(Q C).mapIso ((DerivedCategory.Bounded.singleFunctor C n).mapIso e.symm) ≪≫ e'⟩⟩
 
