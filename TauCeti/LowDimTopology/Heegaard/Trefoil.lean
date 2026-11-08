@@ -7,8 +7,8 @@ module
 
 public import TauCeti.LowDimTopology.Heegaard.AlexanderGrading
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Tactic.FinCases
+import TauCeti.GroupTheory.Perm.Fin
 
 /-!
 # The genus-one doubly pointed Heegaard diagram of the trefoil
@@ -105,15 +105,6 @@ variable {B : Type*}
 private theorem neg_one_fin_three : (-1 : Fin 3) = 2 :=
   rfl
 
-/-- The rotation of `Fin 3` is one cycle on every fibre of a map to `Fin 1`. -/
-private theorem isCycleOn_finRotate_three_fiber (i : Fin 1) :
-    (finRotate 3).IsCycleOn {_p : Fin 3 | (0 : Fin 1) = i} := by
-  convert (isCycle_finRotate (n := 1)).isCycleOn using 1
-  ext p
-  simp only [Set.mem_ofPred_eq, Subsingleton.elim i 0, true_iff]
-  revert p
-  decide
-
 /-- The genus-one doubly pointed Heegaard diagram of the trefoil, with a basepoint `t` in the
 region `b t`. The points `x₀`, `x₁`, `x₂` are indexed by `Fin 3` and follow each other in this
 order along both curves. The regions `0`, `1`, `2` are the disk `R` with eight corners and the
@@ -125,9 +116,13 @@ def trefoil (b : B → Fin 3) : HeegaardRegionSystem 1 (Fin 3) (Fin 3) B where
   alpha _ := 0
   beta _ := 0
   alphaNext := finRotate 3
-  alphaNext_isCycleOn _ := isCycleOn_finRotate_three_fiber _
+  alphaNext_isCycleOn i :=
+    Set.eq_univ_of_forall (s := {_p : Fin 3 | (0 : Fin 1) = i}) (fun _ => Subsingleton.elim _ _) ▸
+      isCycleOn_finRotate 3
   betaNext := finRotate 3
-  betaNext_isCycleOn _ := isCycleOn_finRotate_three_fiber _
+  betaNext_isCycleOn i :=
+    Set.eq_univ_of_forall (s := {_p : Fin 3 | (0 : Fin 1) = i}) (fun _ => Subsingleton.elim _ _) ▸
+      isCycleOn_finRotate 3
   alphaLeft j := if j = 1 then 1 else 0
   alphaRight j := if j = 2 then 2 else 0
   betaLeft j := if j = 2 then 2 else 0
