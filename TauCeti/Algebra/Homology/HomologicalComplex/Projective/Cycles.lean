@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCofiber
 public import TauCeti.Algebra.Homology.Ext.Presentation
+public import TauCeti.CategoryTheory.ObjectProperty.Syzygy
 
 /-!
 # Projective cycles and contractible complexes
@@ -52,6 +53,7 @@ extensions into objects of injective dimension at most `d`; they are `d`-th syzy
   contractible complex with projective terms.
 * `HomologicalComplex.ext_cycles_eq_zero_of_rel` and `CochainComplex.ext_cycles_eq_zero_of_add`:
   dimension shifting for extensions out of the cycles.
+* `CochainComplex.isSyzygy_cycles`: the cycles of an exact range of projectives are syzygies.
 * `CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE`: the cycles of an exact range of
   projectives have no higher extensions into objects of small injective dimension.
 
@@ -132,6 +134,27 @@ theorem HomologicalComplex.exists_projective_contractible_epi_f [EnoughProjectiv
     -- On the summand `G.X j`, the morphism is the projective presentation of `L.X i`.
     refine epi_of_epi_fac (f := homotopyCofiber.inlX (𝟙 G) j i hij) (h := h j i hij) ?_
     simp [hα, h, dite_eq_left hij]
+
+/-- **Cycles of an exact range of projectives are syzygies**: if `K` has projective terms in
+degrees `j, …, j + d - 1` and is exact in degrees `j + 1, …, j + d`, then `Zʲ` is a `d`-th syzygy
+relative to the projective objects, along the short exact sequences `0 ⟶ Zˡ ⟶ Kˡ ⟶ Zˡ⁺¹ ⟶ 0`. -/
+theorem CochainComplex.isSyzygy_cycles {K : CochainComplex C ℤ} (j : ℤ) (d : ℕ)
+    (hproj : ∀ l : ℕ, l < d → Projective (K.X (j + l)))
+    (hexact : ∀ l : ℕ, l < d → K.ExactAt (j + l + 1)) :
+    (isProjective C).IsSyzygy d (K.cycles j) := by
+  induction d generalizing j with
+  | zero => exact ObjectProperty.isSyzygy_zero _ _
+  | succ d ih =>
+    have hj (l : ℕ) : j + 1 + (l : ℤ) = j + ((l + 1 : ℕ) : ℤ) := by push_cast; ring
+    -- The short exact sequence `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0`.
+    refine ((isProjective C).isSyzygy_succ_iff d _).2 ⟨_,
+      K.cyclesShortComplex_shortExact_of_iso rfl (by simpa using hexact 0 (by lia)) (Iso.refl _)
+        (Iso.refl (K.cycles (j + 1))),
+      ⟨Iso.refl _⟩, by simpa using hproj 0 (by lia), ih (j + 1) (fun l hl ↦ ?_) (fun l hl ↦ ?_)⟩
+    · rw [hj]
+      exact hproj (l + 1) (by lia)
+    · rw [hj]
+      exact hexact (l + 1) (by lia)
 
 section Ext
 

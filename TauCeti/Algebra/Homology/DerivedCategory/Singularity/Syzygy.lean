@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
+public import TauCeti.Algebra.Homology.Ext.Syzygy
 public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Cycles
 public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
@@ -32,8 +33,10 @@ The identification of the opcycles with the cycles is
 
 ## Main results
 
-* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj`: every object of the
+* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy`: every object of the
   singularity category is isomorphic to a `d`-th syzygy placed in some degree.
+* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj`: the same, with the syzygy
+  expressed by the vanishing of `Ext` into objects of injective dimension at most `d`.
 
 ## References
 
@@ -55,12 +58,10 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 open _root_.DerivedCategory in
 /-- **Objects of the singularity category are shifted syzygies**: in an abelian category with
 enough projectives, every object of the singularity category is isomorphic to an object `M` of `C`
-placed in some degree, where `M` can be chosen with `Ext^{i+1}(M, Y) = 0` for all objects `Y` of
-injective dimension at most a given `d`. -/
-theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
+placed in some degree, where `M` can be chosen to be a `d`-th syzygy, for any given `d`. -/
+theorem exists_iso_Q_obj_singleFunctor_obj_isSyzygy [EnoughProjectives C]
     (X : _root_.DerivedCategory.Bounded C) (d : ℕ) :
-    ∃ (M : C) (n : ℤ), (∀ (Y : C) [HasInjectiveDimensionLE Y d] (i : ℕ)
-        (e : Ext.{w'} M Y (i + 1)), e = 0) ∧
+    ∃ (M : C) (n : ℤ), (isProjective C).IsSyzygy d M ∧
       Nonempty ((Q C).obj X ≅ (Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj M)) := by
   obtain ⟨K, b, _, hK, ⟨e⟩⟩ :=
     (boundedAboveProjective_iff _).1 (boundedAboveProjective_of_bounded X)
@@ -146,9 +147,20 @@ theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
     (ObjectProperty.fullyFaithfulι _).preimageIso (Triangle.π₃.mapIso φ ≪≫
       _root_.DerivedCategory.Q.mapIso ((HomologicalComplex.single C (.up ℤ) m).mapIso eM) ≪≫
       ((singleFunctorIsoCompQ C m).app (K.cycles (m + 1))).symm)
-  refine ⟨K.cycles (m + 1), m, fun Y _ i e' ↦ ?_,
+  exact ⟨K.cycles (m + 1), m, CochainComplex.isSyzygy_cycles (m + 1) d (fun _ _ ↦ hK _)
+      (fun l hl ↦ K.exactAt_of_isGE a _ (by lia)),
     ⟨(Q C).mapIso eX.symm ≪≫ asIso ((Q C).map T'.mor₂) ≪≫ (Q C).mapIso eS⟩⟩
-  exact CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE d (m + 1)
-    (fun _ _ ↦ hK _) (fun l hl ↦ K.exactAt_of_isGE a _ (by lia)) i e'
+
+/-- **Objects of the singularity category are shifted syzygies**, in terms of `Ext`: every object
+of the singularity category is isomorphic to an object `M` of `C` placed in some degree, where `M`
+can be chosen with `Ext^{i+1}(M, Y) = 0` for all objects `Y` of injective dimension at most a given
+`d`. -/
+theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
+    (X : _root_.DerivedCategory.Bounded C) (d : ℕ) :
+    ∃ (M : C) (n : ℤ), (∀ (Y : C) [HasInjectiveDimensionLE Y d] (i : ℕ)
+        (e : Ext.{w'} M Y (i + 1)), e = 0) ∧
+      Nonempty ((Q C).obj X ≅ (Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj M)) :=
+  have ⟨M, n, hM, e⟩ := exists_iso_Q_obj_singleFunctor_obj_isSyzygy X d
+  ⟨M, n, fun Y _ i e' ↦ hM.ext_eq_zero_of_hasInjectiveDimensionLE (fun _ h ↦ h) Y i e', e⟩
 
 end TauCeti.SingularityCategory
