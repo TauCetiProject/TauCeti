@@ -95,11 +95,13 @@ theorem coefficient_cutoffSymbol_of_two_le_norm
 smoothing symbol: the two cut-off terms agree at all frequencies of norm at least `2`. -/
 theorem isSmoothing_cutoffSymbol_sub_cutoffSymbol
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-    (cutoffSymbol χ a - cutoffSymbol χ' a).IsSmoothing := Symbol.isSmoothing_iff.2 fun _ =>
-  ⟨Symbol.ofBoundedFrequencySupport _ (cutoffSymbol χ a - cutoffSymbol χ' a).contDiff_coefficient
-    2 fun x ξ hξ => by
-      simp [χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ],
-    Symbol.coefficient_ofBoundedFrequencySupport _ _ _ _⟩
+    (cutoffSymbol χ a - cutoffSymbol χ' a).IsSmoothing := by
+  set d := cutoffSymbol χ a - cutoffSymbol χ' a
+  have hR : ∀ x ξ, 2 ≤ ‖ξ‖ → d.coefficient (x, ξ) = 0 := fun x ξ hξ => by
+    simp [d, χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ]
+  rw [← Symbol.ext (Symbol.coefficient_ofBoundedFrequencySupport (m := m) _
+    d.contDiff_coefficient 2 hR)]
+  exact Symbol.isSmoothing_ofBoundedFrequencySupport _ _ 2 hR
 
 /-- A homogeneous symbol of degree `m` whose cut-off term is a symbol of some order `m' < m`
 vanishes. -/
@@ -118,16 +120,14 @@ theorem eq_zero_of_coefficient_eq_cutoffSymbol {m' : ℝ} (hm : m' < m)
     have htξ : 2 ≤ ‖t • ξ‖ := by
       rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
     have h := hbC x rfl (t • ξ)
-    rw [mixedDeriv_nil_nil, hb, coefficient_cutoffSymbol_of_two_le_norm χ a htξ,
-      a.homogeneous x ξ t ht0, norm_smul, Real.norm_of_nonneg (by positivity),
-      List.length_nil, Nat.cast_zero, sub_zero] at h
     have hw := one_add_norm_sq_rpow_le_norm_rpow (by linarith : 1 ≤ ‖t • ξ‖) m'
-    rw [norm_smul, Real.norm_of_nonneg ht0.le, Real.mul_rpow ht0.le hξ0.le] at hw
+    rw [mixedDeriv_nil_nil, hb, coefficient_cutoffSymbol_of_two_le_norm χ a htξ,
+      a.norm_homogeneous x ξ ht0] at h
+    simp only [List.length_nil, Nat.cast_zero, sub_zero, norm_smul, Real.norm_of_nonneg ht0.le,
+      Real.mul_rpow ht0.le hξ0.le] at h hw
     refine le_of_mul_le_mul_left ?_ (Real.rpow_pos_of_pos ht0 m)
     calc t ^ m * ‖a.coefficient (x, ξ)‖
-        ≤ C * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) :=
-          h.trans (mul_le_mul_of_nonneg_left
-            (by rw [norm_smul, Real.norm_of_nonneg ht0.le]; exact hw) hC)
+        ≤ C * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) := h.trans (mul_le_mul_of_nonneg_left hw hC)
       _ = t ^ m * (D * t ^ (m' - m)) := by
           rw [Real.rpow_sub ht0]
           field_simp

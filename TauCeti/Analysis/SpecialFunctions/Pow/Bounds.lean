@@ -389,11 +389,18 @@ theorem one_add_norm_sq_rpow_le_norm_rpow {E : Type*} [SeminormedAddGroup E] {ξ
     (hξ : 1 ≤ ‖ξ‖) (r : ℝ) :
     (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * ‖ξ‖ ^ r := by
   have hs : 0 < ‖ξ‖ := one_pos.trans_le hξ
+  have hb : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  -- Multiply the bound `‖ξ‖ ^ (-r) ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (-r / 2)` by both powers.
   have h := norm_rpow_le_one_add_norm_sq_rpow hξ (-r)
-  rw [abs_neg, Real.rpow_neg hs.le, neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
-    inv_le_comm₀ (Real.rpow_pos_of_pos hs r) (by positivity), inv_div,
-    div_le_iff₀' (by positivity)] at h
-  exact h
+  rw [abs_neg, neg_div] at h
+  calc (1 + ‖ξ‖ ^ 2) ^ (r / 2) = (1 + ‖ξ‖ ^ 2) ^ (r / 2) * ‖ξ‖ ^ (-r) * ‖ξ‖ ^ r := by
+        rw [Real.rpow_neg hs.le]
+        field_simp
+    _ ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) * (2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (-(r / 2))) * ‖ξ‖ ^ r := by
+        gcongr
+    _ = 2 ^ (|r| / 2) * ‖ξ‖ ^ r := by
+        rw [Real.rpow_neg hb.le]
+        field_simp
 
 /-- On a ball, the Japanese bracket power is bounded below: for `‖ξ‖ ≤ R`,
 `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
