@@ -142,9 +142,8 @@ theorem continuous_chartPoint_of_isLocalRing (A : CommAlgCat.{u} k)
     (i : Spec (.of A) ⟶ X) (hi : i ≫ f = Spec.algebraMap k A) :
     Continuous (chartPoint (R := R) f A i hi) := by
   refine continuous_def.2 fun s hs ↦ isOpen_iff_forall_mem_open.2 fun x hx ↦ ?_
-  obtain ⟨B, j, hj, hjOpen, y, hy⟩ :=
+  obtain ⟨B, j, hj, _, y, hy⟩ :=
     exists_mem_range_chartPoint f (chartPoint f A i hi x)
-  have := hjOpen
   refine ⟨chartPoint f A i hi ⁻¹' (chartPoint f B j hj ''
     (chartPoint f B j hj ⁻¹' s)), ?_, ?_, ?_⟩
   · exact Set.preimage_mono (Set.image_preimage_subset _ _)

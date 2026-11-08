@@ -99,8 +99,7 @@ theorem isOpenEmbedding_of_isOpenImmersion (g : X ⟶ Y) (hg : g ≫ fY = fX)
   intro s hs
   refine isOpen_iff_forall_mem_open.2 fun y hy ↦ ?_
   obtain ⟨x, hx, rfl⟩ := hy
-  obtain ⟨A, i, hi, hiOpen, z, rfl⟩ := exists_mem_range_chartPoint fX x
-  have := hiOpen
+  obtain ⟨A, i, hi, _, z, rfl⟩ := exists_mem_range_chartPoint fX x
   let hj : (i ≫ g) ≫ fY = Spec.algebraMap k A := by rw [Category.assoc, hg, hi]
   refine ⟨chartPoint fY A (i ≫ g) hj '' (chartPoint fX A i hi ⁻¹' s), ?_, ?_, ?_⟩
   · rintro _ ⟨a, ha, rfl⟩
