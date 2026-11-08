@@ -40,7 +40,9 @@ by the `a`-th projection of `Y.power α` it is the `a`-th projection of `X.power
 theorem powerMap_π {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) (α : Type)
     [HasProductsOfShape α C] (a : α) :
     powerMap φ α ≫ Y.powerπ a = X.powerπ a ≫ φ :=
-  hom_ext rfl fun x ↦ (Pi.map_π (fun b ↦ φ.φ (x b)) a =≫ _).trans (Category.comp_id _)
+  hom_ext rfl fun x ↦ by
+    simp only [category_comp_φ, powerMap_φ, powerπ_φ]
+    exact (Pi.map_π (fun b ↦ φ.φ (x b)) a =≫ _).trans (Category.comp_id _)
 
 variable [HasFiniteProducts C] {T : C} (hT : IsTerminal T)
 
