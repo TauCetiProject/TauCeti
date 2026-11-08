@@ -15,17 +15,17 @@ The spectral flow of a continuous path `A` of bounded self-adjoint Fredholm oper
 space is the net number of eigenvalues of `A t` that cross `0` from below as `t` runs from `a` to
 `b`. We follow Phillips' definition by finite spectral projections. Near each time `t₀` there is a
 finite spectral cutoff `c` of `A t` for all `t` near `t₀`, and there the spectral count
-`spectralCount (A t) c`, the number of eigenvalues in `[0, c)`, changes exactly by the crossings
+`(A t).spectralCount c`, the number of eigenvalues in `[0, c)`, changes exactly by the crossings
 of `0`. The spectral flow adds up these local changes.
 
 Rather than choosing partitions, we package the local data as a *spectral flow primitive*: an
-integer-valued function `g` such that near every point `g t - spectralCount (A t) c` is constant
+integer-valued function `g` such that near every point `g t - (A t).spectralCount c` is constant
 for some finite spectral cutoff `c` there (`TauCeti.IsSpectralFlowPrimitive`). Two primitives on
 a preconnected set differ by a constant, because the difference of the spectral counts at two
 cutoffs is locally constant (`TauCeti.IsSpectralFlowPrimitive.sub_eq_sub`). On an interval of
 `ℝ`, a continuous family with finite spectral cutoffs (for instance a path of self-adjoint
-Fredholm operators, by `TauCeti.exists_isFiniteSpectralCutoff_of_isFredholm`) has a primitive,
-glued from the local spectral counts (`TauCeti.exists_isSpectralFlowPrimitive_uIcc`). The
+Fredholm operators, by `IsSelfAdjoint.exists_isFiniteSpectralCutoff_of_isFredholm`) has a
+primitive, glued from the local spectral counts (`TauCeti.exists_isSpectralFlowPrimitive_uIcc`). The
 spectral flow from `a` to `b` is then `g b - g a` for any primitive `g` on `[[a, b]]`
 (`TauCeti.spectralFlow`); this is independent of every choice made, which is Phillips' partition
 independence. It is additive under concatenation of paths and changes sign under reversal.
@@ -40,6 +40,8 @@ homotopies; existence is proved for intervals.
 
 ## Main results
 
+* `TauCeti.IsSpectralFlowPrimitive.of_forall_isFiniteSpectralCutoff`: on a set where `c` is a
+  finite spectral cutoff throughout, the spectral count below `c` is a primitive.
 * `TauCeti.IsSpectralFlowPrimitive.sub_eq_sub`: two primitives on a preconnected set differ by a
   constant.
 * `TauCeti.IsSpectralFlowPrimitive.exists_union`: primitives on two closed sets with preconnected
@@ -70,15 +72,27 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 
 /-- A **spectral flow primitive** of a family `A` of operators on a set `s`: an integer-valued
 function `g` such that near every point `x₀` of `s` some `c` is a finite spectral cutoff of the
-operators `A x` and `g x - spectralCount (A x) c` is constant. For a path `A`, the spectral flow
+operators `A x` and `g x - (A x).spectralCount c` is constant. For a path `A`, the spectral flow
 from `a` to `b` is `g b - g a`. -/
 def IsSpectralFlowPrimitive (A : X → E →L[𝕜] E) (s : Set X) (g : X → ℤ) : Prop :=
   ∀ x₀ ∈ s, ∃ c, ∀ᶠ x in 𝓝[s] x₀, IsFiniteSpectralCutoff (A x) c ∧
-    g x - spectralCount (A x) c = g x₀ - spectralCount (A x₀) c
+    g x - (A x).spectralCount c = g x₀ - (A x₀).spectralCount c
+
+theorem isSpectralFlowPrimitive_iff {A : X → E →L[𝕜] E} {s : Set X} {g : X → ℤ} :
+    IsSpectralFlowPrimitive A s g ↔ ∀ x₀ ∈ s, ∃ c, ∀ᶠ x in 𝓝[s] x₀,
+      IsFiniteSpectralCutoff (A x) c ∧
+        g x - (A x).spectralCount c = g x₀ - (A x₀).spectralCount c :=
+  Iff.rfl
 
 namespace IsSpectralFlowPrimitive
 
 variable {A : X → E →L[𝕜] E} {s t : Set X} {g g₁ g₂ : X → ℤ}
+
+/-- If `c` is a finite spectral cutoff of every `A x` with `x ∈ s`, then the spectral count below
+`c` is a spectral flow primitive of `A` on `s`. -/
+theorem of_forall_isFiniteSpectralCutoff {c : ℝ} (hc : ∀ x ∈ s, IsFiniteSpectralCutoff (A x) c) :
+    IsSpectralFlowPrimitive A s fun x ↦ (A x).spectralCount c :=
+  fun _ _ ↦ ⟨c, eventually_nhdsWithin_of_forall fun x hx ↦ ⟨hc x hx, by ring⟩⟩
 
 theorem mono (h : IsSpectralFlowPrimitive A t g) (hst : s ⊆ t) : IsSpectralFlowPrimitive A s g :=
   fun x₀ hx₀ ↦ (h x₀ (hst hx₀)).imp fun _ hc ↦ nhdsWithin_mono x₀ hst hc
@@ -103,11 +117,11 @@ variable [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
 
 /-- **Any finite spectral cutoff computes a primitive locally.** If `g` is a spectral flow
 primitive of `A` on `s` and `c` is a finite spectral cutoff of `A x₀`, then
-`g x - spectralCount (A x) c` is constant near `x₀` in `s`. -/
+`g x - (A x).spectralCount c` is constant near `x₀` in `s`. -/
 theorem eventually_sub_spectralCount_eq (h : IsSpectralFlowPrimitive A s g)
     (hA : ContinuousOn A s) {x₀ : X} (hx₀ : x₀ ∈ s) {c : ℝ}
     (hc : IsFiniteSpectralCutoff (A x₀) c) :
-    ∀ᶠ x in 𝓝[s] x₀, g x - spectralCount (A x) c = g x₀ - spectralCount (A x₀) c := by
+    ∀ᶠ x in 𝓝[s] x₀, g x - (A x).spectralCount c = g x₀ - (A x₀).spectralCount c := by
   obtain ⟨c', hc'⟩ := h x₀ hx₀
   have hcut' := (hc'.self_of_nhdsWithin hx₀).1
   have hT : Tendsto A (𝓝[s] x₀) (𝓝[{T | IsSelfAdjoint T}] (A x₀)) :=
@@ -133,7 +147,7 @@ cutoff at any point `x₀` of `t` computes `g` near `x₀` within `s'`. -/
 private theorem eventually_nhdsWithin_sub_spectralCount_eq {s' : Set X} {g' : X → ℤ}
     (hprim : IsSpectralFlowPrimitive A s' g') (hA : ContinuousOn A s') (hcl : IsClosed s')
     (hgg' : ∀ x ∈ s', g x = g' x) {x₀ : X} {c : ℝ} (hc : IsFiniteSpectralCutoff (A x₀) c) :
-    ∀ᶠ x in 𝓝[s'] x₀, g x - spectralCount (A x) c = g x₀ - spectralCount (A x₀) c := by
+    ∀ᶠ x in 𝓝[s'] x₀, g x - (A x).spectralCount c = g x₀ - (A x₀).spectralCount c := by
   by_cases hx₀ : x₀ ∈ s'
   · filter_upwards [hprim.eventually_sub_spectralCount_eq hA hx₀ hc, self_mem_nhdsWithin]
       with x hx hxs
@@ -201,8 +215,8 @@ theorem exists_isSpectralFlowPrimitive_uIcc {A : ℝ → E →L[𝕜] E} {s : Se
       rw [Real.ball_eq_Ioo]
       exact ordConnected_Ioo.uIcc_subset (by rw [← Real.ball_eq_Ioo]; exact Metric.mem_ball_self hε)
         (by rwa [← Real.ball_eq_Ioo])
-    have hprim : IsSpectralFlowPrimitive A (uIcc x y) fun t ↦ spectralCount (A t) c :=
-      fun _ _ ↦ ⟨c, eventually_nhdsWithin_of_forall fun t ht ↦ ⟨hball (hsub ht), by ring⟩⟩
+    have hprim : IsSpectralFlowPrimitive A (uIcc x y) fun t ↦ (A t).spectralCount c :=
+      .of_forall_isFiniteSpectralCutoff fun t ht ↦ hball (hsub ht)
     exact ⟨⟨_, hprim⟩, ⟨_, uIcc_comm x y ▸ hprim⟩⟩
   · -- Glue along `[[x, y]] ∩ [[y, z]]`, then restrict to `[[x, z]]`.
     obtain ⟨g, hg⟩ := h₁.exists_union h₂
@@ -218,6 +232,13 @@ and then the increment does not depend on it (`TauCeti.IsSpectralFlowPrimitive.s
 Without a primitive, the spectral flow is `0`. -/
 noncomputable def spectralFlow (A : ℝ → E →L[𝕜] E) (a b : ℝ) : ℤ :=
   if h : ∃ g, IsSpectralFlowPrimitive A (uIcc a b) g then h.choose b - h.choose a else 0
+
+omit [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] in
+/-- The spectral flow from a point to itself vanishes. -/
+@[simp]
+theorem spectralFlow_self (A : ℝ → E →L[𝕜] E) (a : ℝ) : spectralFlow A a a = 0 := by
+  unfold spectralFlow
+  split_ifs <;> simp
 
 /-- **The spectral flow is computed by any primitive.** For a family `A` continuous on `[[a, b]]`
 and any spectral flow primitive `g` of `A` on a set containing `[[a, b]]`, the spectral flow from
@@ -271,13 +292,12 @@ theorem spectralFlow_algebraMap_neg_one_one [FiniteDimensional 𝕜 E] :
     exact ⟨cfc_predicate_algebraMap t, two_pos,
       fun h ↦ by linarith [ht.2, mem_singleton_iff.1 (hsp h)],
       fun h ↦ by linarith [ht.1, mem_singleton_iff.1 (hsp h)], inferInstance⟩
-  have hprim : IsSpectralFlowPrimitive A (uIcc (-1) 1) fun t ↦ spectralCount (A t) 2 :=
-    fun _ _ ↦ ⟨2, eventually_nhdsWithin_of_forall fun t ht ↦ ⟨hcut t ht, by ring⟩⟩
   -- Instance search does not find the bounded scalar action of an abstract normed real algebra
   -- structure on the operators, so it is supplied from the normed space structure.
   have := NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := E →L[𝕜] E)
-  rw [hprim.spectralFlow_eq le_rfl (continuous_algebraMap ℝ _).continuousOn, spectralCount_def,
-    spectralCount_def, cfc_algebraMap, cfc_algebraMap]
+  rw [(IsSpectralFlowPrimitive.of_forall_isFiniteSpectralCutoff hcut).spectralFlow_eq le_rfl
+    (continuous_algebraMap ℝ _).continuousOn, ContinuousLinearMap.spectralCount_def,
+    ContinuousLinearMap.spectralCount_def, cfc_algebraMap, cfc_algebraMap]
   rw [indicator_of_mem (by norm_num : (1 : ℝ) ∈ Ico 0 2),
     indicator_of_notMem (by norm_num : (-1 : ℝ) ∉ Ico 0 2), Pi.one_apply, map_one, map_zero]
   rw [ContinuousLinearMap.toLinearMap_one, ContinuousLinearMap.toLinearMap_zero,

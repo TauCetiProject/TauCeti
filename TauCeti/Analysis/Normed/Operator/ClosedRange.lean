@@ -34,6 +34,8 @@ such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
   kernel.
 * `ContinuousLinearMap.tendsto_subseq_of_cauchySeq_comp`: when the kernel is moreover
   finite-dimensional, a bounded sequence whose image is Cauchy has a convergent subsequence.
+* `ContinuousLinearMap.eq_zero_of_norm_le_mul_norm_apply`: an operator `Q` on whose range `T` is
+  bounded below by more than `‖R‖`, with `T ∘ Q = R ∘ Q`, vanishes.
 
 `TauCeti.Analysis.Fredholm.Proper` uses the estimate below to prove
 that a map with Fredholm derivative is proper near a point (Smale, *An infinite dimensional version
@@ -52,6 +54,21 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 variable {X₁ : Submodule 𝕜 E}
+
+/-- If `T` is bounded below by `C⁻¹` on the range of `Q`, that is `‖Q y‖ ≤ C * ‖T (Q y)‖` for
+all `y`, and `T ∘ Q = R ∘ Q` for an operator `R` with `C * ‖R‖ < 1`, then `Q = 0`. -/
+theorem eq_zero_of_norm_le_mul_norm_apply {G : Type*} [SeminormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {T R : E →L[𝕜] F} {Q : G →L[𝕜] E} {C : ℝ}
+    (hle : ∀ y, ‖Q y‖ ≤ C * ‖T (Q y)‖) (hTQ : T ∘L Q = R ∘L Q) (hC : 0 ≤ C)
+    (hCR : C * ‖R‖ < 1) : Q = 0 := by
+  ext y
+  have hTQy : T (Q y) = R (Q y) := congr($hTQ y)
+  have : ‖Q y‖ ≤ C * ‖R‖ * ‖Q y‖ :=
+    calc ‖Q y‖ ≤ C * ‖R (Q y)‖ := hTQy ▸ hle y
+      _ ≤ C * (‖R‖ * ‖Q y‖) := by gcongr; exact R.le_opNorm _
+      _ = _ := by ring
+  have : ‖Q y‖ = 0 := by nlinarith [norm_nonneg (Q y)]
+  simpa using this
 
 variable [CompleteSpace E] [CompleteSpace F]
 

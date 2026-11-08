@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
@@ -20,24 +22,24 @@ Let `T` be a bounded self-adjoint operator on a Hilbert space. A number `c > 0` 
 spectral cutoff* of `T` if neither `c` nor `-c` is a spectral value of `T` and the spectral
 projection `𝟙_(-c, c)(T)` has finite rank. Then the part of the spectrum of `T` in `(-c, c)` is a
 finite set of eigenvalues of finite multiplicity, and the *spectral count*
-`spectralCount T c`, the rank of the spectral projection `𝟙_[0, c)(T)`, is the number of these
+`T.spectralCount c`, the rank of the spectral projection `𝟙_[0, c)(T)`, is the number of these
 eigenvalues in `[0, c)` counted with multiplicity.
 
 These are the local data of spectral flow (Phillips). Along a continuous path of self-adjoint
-operators, the count `spectralCount (A t) c` changes exactly when an eigenvalue crosses `0`, as
+operators, the count `(A t).spectralCount c` changes exactly when an eigenvalue crosses `0`, as
 long as `c` stays a finite spectral cutoff. Two facts make this usable:
 
 * a finite spectral cutoff of `T₀` remains one for every self-adjoint `T` near `T₀`
   (`TauCeti.IsFiniteSpectralCutoff.eventually_isFiniteSpectralCutoff`), and
 * for two finite spectral cutoffs `c₁`, `c₂` of `T₀`, the difference
-  `spectralCount T c₁ - spectralCount T c₂`, which counts the eigenvalues between `c₂` and `c₁`,
+  `T.spectralCount c₁ - T.spectralCount c₂`, which counts the eigenvalues between `c₂` and `c₁`,
   is constant for self-adjoint `T` near `T₀`
   (`TauCeti.IsFiniteSpectralCutoff.eventually_spectralCount_sub_eq`).
 
 Both rest on the continuity of `T ↦ 𝟙_Ω(T)` near a self-adjoint `T₀` whose spectrum avoids the
 frontier of `Ω`, and on the local constancy of the rank of a continuous family of projections.
 Every self-adjoint Fredholm operator has a finite spectral cutoff
-(`TauCeti.exists_isFiniteSpectralCutoff_of_isFredholm`), by its spectral gap at zero.
+(`IsSelfAdjoint.exists_isFiniteSpectralCutoff_of_isFredholm`), by its spectral gap at zero.
 
 The spectral projections are those of the real continuous functional calculus, on a Hilbert space
 over any `RCLike` field for which that calculus is isometric: complex Hilbert spaces, and real
@@ -47,14 +49,15 @@ ones by `ContinuousLinearMap.instIsometricContinuousFunctionalCalculusRealIsSelf
 
 * `TauCeti.IsFiniteSpectralCutoff T c`: `c > 0` is a finite spectral cutoff of the self-adjoint
   operator `T`.
-* `TauCeti.spectralCount T c`: the rank of the spectral projection of `T` onto `[0, c)`.
+* `ContinuousLinearMap.spectralCount T c`: the rank of the spectral projection of `T` onto
+  `[0, c)`.
 
 ## Main results
 
 * `TauCeti.range_cfc_indicator_le_of_subset`: spectral projections are monotone in the set.
-* `TauCeti.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator`: if the spectrum of a
-  self-adjoint `T₀` avoids the frontier of `Ω`, then for self-adjoint `T` near `T₀` the ranges of
-  `𝟙_Ω(T)` and `𝟙_Ω(T₀)` are isomorphic.
+* `IsSelfAdjoint.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator`: if the spectrum
+  of a self-adjoint `T₀` avoids the frontier of `Ω`, then for self-adjoint `T` near `T₀` the
+  ranges of `𝟙_Ω(T)` and `𝟙_Ω(T₀)` are isomorphic.
 * `TauCeti.IsFiniteSpectralCutoff.finite_spectrum_inter_Ioo`: the spectrum in `(-c, c)` is finite.
 * `TauCeti.IsFiniteSpectralCutoff.finiteDimensional_range_cfc_indicator_Ico`: the spectral
   projection onto `[0, c)` has finite rank.
@@ -62,7 +65,7 @@ ones by `ContinuousLinearMap.instIsometricContinuousFunctionalCalculusRealIsSelf
   persist under small self-adjoint perturbations.
 * `TauCeti.IsFiniteSpectralCutoff.eventually_spectralCount_sub_eq`: the difference of the spectral
   counts at two cutoffs is locally constant.
-* `TauCeti.exists_isFiniteSpectralCutoff_of_isFredholm`: self-adjoint Fredholm operators have
+* `IsSelfAdjoint.exists_isFiniteSpectralCutoff_of_isFredholm`: self-adjoint Fredholm operators have
   finite spectral cutoffs.
 
 ## References
@@ -85,8 +88,9 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- **Spectral projections have locally constant rank.** If the spectrum of a self-adjoint
 operator `T₀` avoids the frontier of `Ω`, then for every self-adjoint `T` near `T₀` the ranges of
 the spectral projections `𝟙_Ω(T₀)` and `𝟙_Ω(T)` are isomorphic. -/
-theorem eventually_nonempty_continuousLinearEquiv_range_cfc_indicator {T₀ : E →L[𝕜] E}
-    (hT₀ : IsSelfAdjoint T₀) {Ω : Set ℝ} (hΩ : Disjoint (spectrum ℝ T₀) (frontier Ω)) :
+theorem _root_.IsSelfAdjoint.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator
+    {T₀ : E →L[𝕜] E} (hT₀ : IsSelfAdjoint T₀) {Ω : Set ℝ}
+    (hΩ : Disjoint (spectrum ℝ T₀) (frontier Ω)) :
     ∀ᶠ T in 𝓝[{T | IsSelfAdjoint T}] T₀,
       Nonempty ((cfc (Ω.indicator 1) T₀).range ≃L[𝕜] (cfc (Ω.indicator 1) T).range) := by
   set U : Set (E →L[𝕜] E) := {T | IsSelfAdjoint T ∧ Disjoint (spectrum ℝ T) (frontier Ω)}
@@ -145,10 +149,9 @@ variable {T : E →L[𝕜] E} {c : ℝ}
 
 /-- The spectrum avoids the frontier `{-c, c}` of `(-c, c)`. -/
 theorem disjoint_spectrum_frontier_Ioo (h : IsFiniteSpectralCutoff T c) :
-    Disjoint (spectrum ℝ T) (frontier (Ioo (-c) c)) := by
-  rw [frontier_Ioo (by linarith [h.pos]), disjoint_iff_forall_ne]
-  rintro x hx _ (rfl | rfl) rfl
-  exacts [h.neg_notMem_spectrum hx, h.notMem_spectrum hx]
+    Disjoint (spectrum ℝ T) (frontier (Ioo (-c) c)) :=
+  disjoint_frontier_of_Ioo_subset_of_subset_Icc subset_rfl Ioo_subset_Icc_self
+    h.neg_notMem_spectrum h.notMem_spectrum
 
 /-- The indicator of `(-c, c)` is continuous on the spectrum, so `𝟙_(-c, c)(T)` is a genuine
 spectral projection. -/
@@ -166,7 +169,7 @@ theorem eventually_isFiniteSpectralCutoff (h : IsFiniteSpectralCutoff T c) :
       rcases hx' with rfl | rfl
       exacts [h.notMem_spectrum hx, h.neg_notMem_spectrum hx])
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hsp,
-    eventually_nonempty_continuousLinearEquiv_range_cfc_indicator h.isSelfAdjoint
+    h.isSelfAdjoint.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator
       h.disjoint_spectrum_frontier_Ioo] with T' hT' hsp' ⟨e⟩
   have := h.finiteDimensional_range
   exact ⟨hT', h.pos, fun hc ↦ subset_of_mem_nhdsSet hsp' hc (by simp),
@@ -182,21 +185,6 @@ theorem eventually_of_continuousWithinAt {X : Type*} [TopologicalSpace X] {A : X
     hc.eventually_isFiniteSpectralCutoff
 
 variable [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
-
-omit [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] in
-/-- `T` commutes with its spectral projection onto `(-c, c)`. -/
-private theorem mul_cfc_indicator_Ioo_comm (h : IsFiniteSpectralCutoff T c) :
-    T * cfc ((Ioo (-c) c).indicator 1) T = cfc ((Ioo (-c) c).indicator 1) T * T := by
-  have hT := h.isSelfAdjoint
-  have hχ := h.continuousOn_indicator_Ioo
-  have h1 : T * cfc ((Ioo (-c) c).indicator 1) T =
-      cfc (fun x ↦ x * (Ioo (-c) c).indicator (1 : ℝ → ℝ) x) T := by
-    rw [cfc_mul (fun x ↦ x) _ T continuousOn_id hχ, cfc_id' ℝ T]
-  have h2 : cfc ((Ioo (-c) c).indicator 1) T * T =
-      cfc (fun x ↦ (Ioo (-c) c).indicator (1 : ℝ → ℝ) x * x) T := by
-    rw [cfc_mul _ (fun x ↦ x) T hχ continuousOn_id, cfc_id' ℝ T]
-  rw [h1, h2]
-  simp_rw [mul_comm]
 
 /-- A nonzero spectral value `l ∈ (-c, c)` below a finite spectral cutoff `c` is an eigenvalue of
 `T`, with an eigenvector in the range of `𝟙_(-c, c)(T)`: it is a nonzero spectral value of the
@@ -246,7 +234,8 @@ theorem finite_spectrum_inter_Ioo (h : IsFiniteSpectralCutoff T c) :
   have : FiniteDimensional 𝕜 P.range := h.finiteDimensional_range
   have hinv : ∀ v ∈ P.range, (T : E →ₗ[𝕜] E) v ∈ P.range := by
     rintro _ ⟨v, rfl⟩
-    exact ⟨T v, by simpa [mul_apply_eq_comp] using congr($(h.mul_cfc_indicator_Ioo_comm) v).symm⟩
+    have hcomm := ((Commute.refl T).cfc_real ((Ioo (-c) c).indicator 1)).eq
+    exact ⟨T v, by simpa [mul_apply_eq_comp] using congr($hcomm v)⟩
   set Tv : Module.End 𝕜 P.range := (T : E →ₗ[𝕜] E).restrict hinv
   refine ((Tv.finite_hasEigenvalue.preimage (algebraMap ℝ 𝕜).injective.injOn).insert 0).subset ?_
   rintro l ⟨hl, hlI⟩
@@ -278,10 +267,9 @@ its functional calculus is a genuine spectral projection. -/
 theorem continuousOn_indicator_Ico (h : IsFiniteSpectralCutoff T c) :
     ContinuousOn ((Ico 0 c).indicator (1 : ℝ → ℝ)) (spectrum ℝ T) := by
   obtain ⟨δ, hδ, hδc, hdisj⟩ := h.exists_pos_lt_disjoint_spectrum_Ico
-  have hfr : Disjoint (spectrum ℝ T) (frontier (Ioo (-δ) c)) := by
-    rw [frontier_Ioo (by linarith), disjoint_iff_forall_ne]
-    rintro x hx _ (rfl | rfl) rfl
-    exacts [disjoint_left.1 hdisj hx ⟨le_rfl, by linarith⟩, h.notMem_spectrum hx]
+  have hfr : Disjoint (spectrum ℝ T) (frontier (Ioo (-δ) c)) :=
+    disjoint_frontier_of_Ioo_subset_of_subset_Icc subset_rfl Ioo_subset_Icc_self
+      (fun hx ↦ disjoint_left.1 hdisj hx ⟨le_rfl, by linarith⟩) h.notMem_spectrum
   refine (ContinuousOn.indicator_of_disjoint_frontier (f := (1 : ℝ → ℝ))
     (by exact continuousOn_const) hfr).congr
     fun x hx ↦ ?_
@@ -310,12 +298,12 @@ end IsFiniteSpectralCutoff
 /-- The **spectral count** of `T` below `c`: the rank of the spectral projection `𝟙_[0, c)(T)`.
 When `c` is a finite spectral cutoff of `T` this is the number of eigenvalues of `T` in `[0, c)`,
 counted with multiplicity. -/
-noncomputable def spectralCount (T : E →L[𝕜] E) (c : ℝ) : ℕ :=
+noncomputable def _root_.ContinuousLinearMap.spectralCount (T : E →L[𝕜] E) (c : ℝ) : ℕ :=
   Module.finrank 𝕜 (cfc ((Ico 0 c).indicator 1) T).range
 
 /-- The spectral count is the rank of the spectral projection onto `[0, c)`. -/
-theorem spectralCount_def (T : E →L[𝕜] E) (c : ℝ) :
-    spectralCount T c = Module.finrank 𝕜 (cfc ((Ico 0 c).indicator 1) T).range :=
+theorem _root_.ContinuousLinearMap.spectralCount_def (T : E →L[𝕜] E) (c : ℝ) :
+    T.spectralCount c = Module.finrank 𝕜 (cfc ((Ico 0 c).indicator 1) T).range :=
   (rfl)
 
 namespace IsFiniteSpectralCutoff
@@ -325,18 +313,15 @@ variable [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] {T : E →L[𝕜] E} {c₁ c�
 omit [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] in
 /-- The spectrum avoids the frontier of `[c₂, c₁)` for finite spectral cutoffs `c₁`, `c₂`. -/
 private theorem disjoint_spectrum_frontier_Ico (h₁ : IsFiniteSpectralCutoff T c₁)
-    (h₂ : IsFiniteSpectralCutoff T c₂) : Disjoint (spectrum ℝ T) (frontier (Ico c₂ c₁)) := by
-  rcases lt_or_ge c₂ c₁ with h | h
-  · rw [frontier_Ico h, disjoint_iff_forall_ne]
-    rintro x hx _ (rfl | rfl) rfl
-    exacts [h₂.notMem_spectrum hx, h₁.notMem_spectrum hx]
-  · simp [Ico_eq_empty_of_le h]
+    (h₂ : IsFiniteSpectralCutoff T c₂) : Disjoint (spectrum ℝ T) (frontier (Ico c₂ c₁)) :=
+  disjoint_frontier_of_Ioo_subset_of_subset_Icc Ioo_subset_Ico_self Ico_subset_Icc_self
+    h₂.notMem_spectrum h₁.notMem_spectrum
 
 /-- For finite spectral cutoffs `c₂ ≤ c₁` of `T`, the spectral count below `c₁` is the spectral
 count below `c₂` plus the rank of the spectral projection onto `[c₂, c₁)`. -/
 theorem spectralCount_eq_add (h₁ : IsFiniteSpectralCutoff T c₁) (h₂ : IsFiniteSpectralCutoff T c₂)
-    (h : c₂ ≤ c₁) : spectralCount T c₁ =
-      spectralCount T c₂ + Module.finrank 𝕜 (cfc ((Ico c₂ c₁).indicator 1) T).range := by
+    (h : c₂ ≤ c₁) : T.spectralCount c₁ =
+      T.spectralCount c₂ + Module.finrank 𝕜 (cfc ((Ico c₂ c₁).indicator 1) T).range := by
   have hfr := disjoint_spectrum_frontier_Ico h₁ h₂
   have hQc : ContinuousOn ((Ico c₂ c₁).indicator (1 : ℝ → ℝ)) (spectrum ℝ T) :=
     ContinuousOn.indicator_of_disjoint_frontier (by exact continuousOn_const) hfr
@@ -361,7 +346,7 @@ theorem spectralCount_eq_add (h₁ : IsFiniteSpectralCutoff T c₁) (h₂ : IsFi
     have := h₁.finiteDimensional_range_cfc_indicator_Ico
     exact Submodule.finiteDimensional_of_le <| range_cfc_indicator_le_of_subset
       (Ico_subset_Ico_left h₂.pos.le) h₁.continuousOn_indicator_Ico hQc
-  rw [spectralCount_def, spectralCount_def, hsum,
+  rw [ContinuousLinearMap.spectralCount_def, ContinuousLinearMap.spectralCount_def, hsum,
     ContinuousLinearMap.IsIdempotentElem.range_add hPi hQi hPQ hQP,
     ← Submodule.finrank_sup_add_finrank_inf_eq,
     (ContinuousLinearMap.IsIdempotentElem.disjoint_range hPi hPQ).eq_bot, finrank_bot, add_zero]
@@ -369,11 +354,11 @@ theorem spectralCount_eq_add (h₁ : IsFiniteSpectralCutoff T c₁) (h₂ : IsFi
 private theorem eventually_spectralCount_sub_eq_of_le (h₁ : IsFiniteSpectralCutoff T c₁)
     (h₂ : IsFiniteSpectralCutoff T c₂) (h : c₂ ≤ c₁) :
     ∀ᶠ T' in 𝓝[{T | IsSelfAdjoint T}] T,
-      (spectralCount T' c₁ : ℤ) - spectralCount T' c₂ =
-        (spectralCount T c₁ : ℤ) - spectralCount T c₂ := by
+      (T'.spectralCount c₁ : ℤ) - T'.spectralCount c₂ =
+        (T.spectralCount c₁ : ℤ) - T.spectralCount c₂ := by
   have hfr := disjoint_spectrum_frontier_Ico h₁ h₂
   filter_upwards [h₁.eventually_isFiniteSpectralCutoff, h₂.eventually_isFiniteSpectralCutoff,
-    eventually_nonempty_continuousLinearEquiv_range_cfc_indicator h₁.isSelfAdjoint hfr]
+    h₁.isSelfAdjoint.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator hfr]
     with T' h₁' h₂' ⟨e⟩
   rw [h₁.spectralCount_eq_add h₂ h, h₁'.spectralCount_eq_add h₂' h,
     e.toLinearEquiv.finrank_eq]
@@ -381,13 +366,13 @@ private theorem eventually_spectralCount_sub_eq_of_le (h₁ : IsFiniteSpectralCu
   ring
 
 /-- **The difference of spectral counts is locally constant.** For finite spectral cutoffs `c₁` and
-`c₂` of `T`, the difference `spectralCount T' c₁ - spectralCount T' c₂`, which counts the
+`c₂` of `T`, the difference `T'.spectralCount c₁ - T'.spectralCount c₂`, which counts the
 eigenvalues between the two cutoffs, is the same for every self-adjoint `T'` near `T`. -/
 theorem eventually_spectralCount_sub_eq (h₁ : IsFiniteSpectralCutoff T c₁)
     (h₂ : IsFiniteSpectralCutoff T c₂) :
     ∀ᶠ T' in 𝓝[{T | IsSelfAdjoint T}] T,
-      (spectralCount T' c₁ : ℤ) - spectralCount T' c₂ =
-        (spectralCount T c₁ : ℤ) - spectralCount T c₂ := by
+      (T'.spectralCount c₁ : ℤ) - T'.spectralCount c₂ =
+        (T.spectralCount c₁ : ℤ) - T.spectralCount c₂ := by
   rcases le_total c₂ c₁ with h | h
   · exact eventually_spectralCount_sub_eq_of_le h₁ h₂ h
   · filter_upwards [eventually_spectralCount_sub_eq_of_le h₂ h₁ h] with T' hT'
@@ -398,9 +383,10 @@ end IsFiniteSpectralCutoff
 /-- **Self-adjoint Fredholm operators have finite spectral cutoffs**: by the spectral gap at zero,
 for small `c > 0` the spectral projection onto `(-c, c)` maps into the finite-dimensional
 kernel. -/
-theorem exists_isFiniteSpectralCutoff_of_isFredholm {T : E →L[𝕜] E} (hT : IsSelfAdjoint T)
-    (hF : T.IsFredholm) : ∃ c, IsFiniteSpectralCutoff T c := by
-  obtain ⟨c, hc, hcT, hcT', hle⟩ := hT.exists_pos_range_cfc_indicator_Ioo_le_ker_of_isFredholm hF
+theorem _root_.IsSelfAdjoint.exists_isFiniteSpectralCutoff_of_isFredholm {T : E →L[𝕜] E}
+    (hT : IsSelfAdjoint T) (hF : T.IsFredholm) : ∃ c, IsFiniteSpectralCutoff T c := by
+  obtain ⟨c, hc, hcT, hcT', hle⟩ :=
+    hT.exists_pos_range_cfc_indicator_Ioo_le_ker_of_isClosed_range hF.isClosed_range
   have := hF.finite_ker
   exact ⟨c, hT, hc, hcT, hcT', Submodule.finiteDimensional_of_le hle⟩
 
