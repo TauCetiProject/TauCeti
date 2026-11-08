@@ -32,7 +32,8 @@ functions: a test function on `Ω` becomes the same function on `Ω'`.
 Without the zero-boundary condition, a function still extends by zero when it vanishes near the
 part of `∂Ω` that the extension crosses: if `u ∈ W^{k,p}(Ω)` vanishes almost everywhere off a
 closed set `K` with `V ∩ K ⊆ Ω`, then its extension by zero lies in `W^{k,p}(V)`
-(`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`), whose highest weak derivative is the
+(`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`), which still vanishes off `K`
+(`TauCeti.Wkp.value_ae_eq_zero_of_value_ae_eq_indicator`) and whose highest weak derivative is the
 extension by zero of that of `u` (`TauCeti.Wkp.iteratedGradient_ae_eq_indicator_of_isClosed`).
 Here `Ω` need not lie in `V`, and `K`
 may meet `∂Ω` outside `V`. This is how a function on a domain, cut off near a boundary point,
@@ -262,6 +263,21 @@ theorem Wkp.exists_value_ae_eq_indicator_of_isClosed {V : Opens E} {K : Set E} (
     exact ⟨w, ((hd.indicator_of_isClosed hK hKV hu hd0).congr_ae
       (hLp (Wkp.value (k + 1) u)).coeFn_toLp.symm).congr_ae_deriv hw.symm⟩
 
+/-- An extension by zero vanishes where the original function does: if `u ∈ W^{k,p}(Ω)` vanishes
+almost everywhere on `Ω` off a set `K`, and the value of `w ∈ W^{k,p}(V)` is the extension by zero
+of that of `u`, then `w` vanishes almost everywhere on `V` off `K`. -/
+theorem Wkp.value_ae_eq_zero_of_value_ae_eq_indicator {V : Opens E} {K : Set E} {k : ℕ}
+    {u : Wkp mu Omega p k} {w : Wkp mu V p k}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → Wkp.value k u x = 0)
+    (hw : Wkp.value k w =ᵐ[mu.restrict V] (Omega : Set E).indicator (Wkp.value k u)) :
+    ∀ᵐ x ∂mu.restrict V, x ∉ K → Wkp.value k w x = 0 := by
+  filter_upwards [hw, ae_restrict_of_ae ((ae_restrict_iff' Omega.isOpen.measurableSet).1 hu)]
+    with x h₁ h₂ hxK
+  rw [h₁]
+  by_cases hxΩ : x ∈ (Omega : Set E)
+  · rw [Set.indicator_of_mem hxΩ, h₂ hxΩ hxK]
+  · exact Set.indicator_of_notMem hxΩ _
+
 /-- **Weak derivatives of an extension by zero.** In the situation of
 `TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`, let `w ∈ W^{k+1,p}(V)` have value the
 extension by zero of `u ∈ W^{k+1,p}(Ω)`. Then the highest weak derivative of `w` is the extension by
@@ -288,15 +304,9 @@ theorem Wkp.iteratedGradient_ae_eq_indicator_of_isClosed {V : Opens E} {K : Set 
     rw [hres] at h₁
     exact h₁.symm.trans (Wkp.iteratedGradient_restrictL_ae (inf_le_right : W ≤ Omega) k u)
   -- Off `K`, the value of `w` vanishes, hence so does its highest weak derivative.
-  have hw0 : ∀ᵐ x ∂mu.restrict V, x ∈ Kᶜ → Wkp.value (k + 1) w x = 0 := by
-    filter_upwards [hw, ae_restrict_of_ae ((ae_restrict_iff' Omega.isOpen.measurableSet).1 hu)]
-      with x h₁ h₂ hxK
-    rw [h₁]
-    by_cases hxΩ : x ∈ (Omega : Set E)
-    · rw [Set.indicator_of_mem hxΩ, h₂ hxΩ hxK]
-    · exact Set.indicator_of_notMem hxΩ _
   filter_upwards [ae_restrict_of_ae ((ae_restrict_iff' hWm).1 hW),
-    Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen k w hK.isOpen_compl hw0,
+    Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen k w hK.isOpen_compl
+      (Wkp.value_ae_eq_zero_of_value_ae_eq_indicator hu hw),
     ae_restrict_mem V.isOpen.measurableSet] with x h₁ h₂ hxV
   by_cases hxΩ : x ∈ (Omega : Set E)
   · rw [Set.indicator_of_mem hxΩ, h₁ (Opens.mem_inf.2 ⟨hxV, hxΩ⟩)]

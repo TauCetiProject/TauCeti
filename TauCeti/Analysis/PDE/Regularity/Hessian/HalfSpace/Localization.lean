@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.Wkp.Extension
-import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
+import TauCeti.MeasureTheory.Function.Lp.Trace
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -122,13 +122,7 @@ private theorem exists_norm_iteratedGradient_le_of_inter_eq_normalHalfSpace_inte
     refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hp_top hΩU hK hKU hw0 ?_ ?_
     · simpa only [Wkp.value_firstOrder] using hwK
     · simpa only [Wkp.value_firstOrder] using hW
-  have hWK : ∀ᵐ x ∂volume.restrict (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))),
-      x ∉ K → Wkp.value 2 W x = 0 := by
-    filter_upwards [hW, ae_restrict_of_ae ((ae_restrict_iff' hΩm).1 hwK)] with x h1 h2 hxK
-    rw [h1]
-    by_cases hxΩ : x ∈ (Omega : Set (WithLp 2 (ℝ × E)))
-    · rw [indicator_of_mem hxΩ, h2 hxΩ hxK]
-    · exact indicator_of_notMem hxΩ _
+  have hWK := Wkp.value_ae_eq_zero_of_value_ae_eq_indicator hwK hW
   -- The equation for `W` on `H`, with the extension by zero of `g` on the right.
   have hG : MemLp ((Omega : Set (WithLp 2 (ℝ × E))).indicator g) p
       (volume.restrict (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))) :=
@@ -223,7 +217,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
   have hN0 : 0 ≤ N := hN ▸ Nat.cast_nonneg _
   -- The product `w = ζ u ∈ W^{2,p}(Ω)`, with weak Hessian `ζ D²u + T`.
   obtain ⟨w, hwv⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport 2 hζ hcpt u
-  obtain ⟨T, hD, hTK, hTnorm⟩ :=
+  obtain ⟨T, hD, hTK, hTnorm, hζD⟩ :=
     Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hcpt hM₁ hM₂ hwv
   -- The equation `tr (A ∘ D²(ζ u)) = ζ f + tr (A ∘ T)` on `Ω`.
   obtain ⟨g, hg, hgnorm⟩ := exists_lp_traceCLM_comp_le hA_meas hAΛ T hTK
@@ -255,15 +249,8 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
     exact hfo ▸ v.2
   -- The half-space estimate for `ζ u`, and `ζ D²u = D²(ζ u) - T`.
   have hkey := hCZ a hlam hA₀ hΩU hcpt.isCompact hζU hε hA w FL hw0 hwK hweq
-  have hζH : MemLp (fun x => zeta x • Wkp.iteratedGradient 1 u x) p (volume.restrict Omega) :=
-    (hζ.continuous.memLp_top_of_hasCompactSupport hcpt _).smul (Lp.memLp _)
-  have hHL : hζH.toLp _ = Wkp.iteratedGradient 1 w - T := by
-    refine Lp.ext ?_
-    filter_upwards [hζH.coeFn_toLp, Lp.coeFn_sub (Wkp.iteratedGradient 1 w) T, hD]
-      with x h1 h2 h3
-    rw [h1, h2, Pi.sub_apply, h3, add_sub_cancel_right]
   have hCl : 0 ≤ (C : ℝ) / lam := by positivity
-  rw [← toReal_eLpNorm, ← Lp.norm_toLp _ hζH, hHL]
+  rw [hζD]
   calc ‖Wkp.iteratedGradient 1 w - T‖
       ≤ ‖Wkp.iteratedGradient 1 w‖ + ‖T‖ := norm_sub_le _ _
     _ ≤ C / lam * (lpNorm (fun x => zeta x * f x) p (volume.restrict Omega)

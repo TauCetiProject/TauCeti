@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -52,7 +53,7 @@ The Hessian formula is what localizes a second-order estimate. Writing `L = ∑�
 gives `L(ζ u) = ζ L u + (terms in ∇u and u)`, so an estimate for compactly supported functions,
 applied to `ζ u`, controls `ζ D²u` by `ζ L u` and lower-order norms of `u`. In that form, for `ζ`
 compactly supported with `‖∇ζ‖ ≤ M₁` and `‖D²ζ‖ ≤ M₂`, the remainder is an element `T` of `Lᵖ`
-vanishing off the support of `ζ` with `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ ‖u‖`
+vanishing off the support of `ζ` with `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ ‖u‖`, and `‖ζ D²u‖ = ‖D²w - T‖`
 (`TauCeti.Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul`).
 
 ## References
@@ -199,7 +200,8 @@ theorem norm_iteratedGradient_one_le_of_value_ae_eq_mul {u w : Wkp mu Omega p 2}
 `‖∇ζ‖ ≤ M₁` and `‖D²ζ‖ ≤ M₂`, and let `u, w ∈ W^{2,p}(Ω)` with `w = ζ u` almost everywhere on `Ω`.
 Then `D²w = ζ D²u + T` for some `T ∈ Lᵖ(Ω)` that vanishes off the support of `ζ` and satisfies
 `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ ‖u‖`, where `∇u` is the weak gradient
-`TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`. This is the form in which the
+`TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`; in particular
+`‖ζ D²u‖_{Lᵖ(Ω)} = ‖D²w - T‖`. This is the form in which the
 Leibniz rule `TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul` enters the localization
 of second-order estimates. -/
 theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : ContDiff ℝ ∞ zeta)
@@ -209,7 +211,9 @@ theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : C
     ∃ T : Lp (IteratedGradient E 1) p (mu.restrict Omega),
       (∀ᵐ x ∂mu.restrict Omega, iteratedGradient 1 w x = zeta x • iteratedGradient 1 u x + T x) ∧
       (∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport zeta → T x = 0) ∧
-      ‖T‖ ≤ 2 * M₁ * ‖iteratedGradient 0 (lowerOrder 1 u)‖ + M₂ * ‖value 2 u‖ := by
+      ‖T‖ ≤ 2 * M₁ * ‖iteratedGradient 0 (lowerOrder 1 u)‖ + M₂ * ‖value 2 u‖ ∧
+      lpNorm (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) =
+        ‖iteratedGradient 1 w - T‖ := by
   have hζH : MemLp (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) :=
     (hzeta.continuous.memLp_top_of_hasCompactSupport hcpt (mu.restrict Omega)).smul (Lp.memLp _)
   -- The remainder `∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is the difference `D²w - ζ D²u` in `Lᵖ`.
@@ -221,13 +225,14 @@ theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : C
       iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hw, hζH.coeFn_toLp] with x h1 h2 h3
     rw [h1, Pi.sub_apply, h2, h3]
     simp only [add_assoc, add_sub_cancel_left]
-  refine ⟨iteratedGradient 1 w - hζH.toLp _, ?_, ?_, ?_⟩
+  refine ⟨iteratedGradient 1 w - hζH.toLp _, ?_, ?_, ?_, ?_⟩
   · filter_upwards [Lp.coeFn_sub (iteratedGradient 1 w) (hζH.toLp _), hζH.coeFn_toLp]
       with x h1 h2
     rw [h1, Pi.sub_apply, h2, add_sub_cancel]
   · filter_upwards [hT] with x hx hxK
     rw [hx, leibnizRemainder_eq_zero_of_notMem_tsupport hxK]
   · exact norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hzeta hM₁ hM₂ hζH hw
+  · rw [sub_sub_cancel, Lp.norm_toLp, toReal_eLpNorm]
 
 /-- **Smooth multiplication in `W^{k,p}`.** Let `Ω` have compact closure inside an open set `U`.
 If `ψ` is smooth on `U` and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of

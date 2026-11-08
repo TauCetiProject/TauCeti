@@ -152,11 +152,9 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   -- The cutoff `w = ζ u ∈ W^{2,p}_0(Ω)` and its weak Hessian `ζ D²u + T`, where the Leibniz
   -- remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` vanishes off the support of `ζ`.
   obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hζ hcpt hts 2 u
-  obtain ⟨TL, hD, hTK, hTnorm⟩ :=
+  obtain ⟨TL, hD, hTK, hTnorm, hζD⟩ :=
     Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hcpt hM₁ hM₂ hwv
   have hζ_top := hζ.continuous.memLp_top_of_hasCompactSupport hcpt (volume.restrict Omega)
-  have hζH : MemLp (fun x => zeta x • Wkp.iteratedGradient 1 u x) p (volume.restrict Omega) :=
-    hζ_top.smul (Lp.memLp _)
   -- The forcing term `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` of the equation for `ζ u`.
   have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (TL x))
       (volume.restrict Omega) := by
@@ -207,13 +205,8 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
       exact hx)
   rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, LinearIsometry.norm_map, LinearIsometry.norm_map]
     at hkey
-  have hHL : hζH.toLp _ = Wkp.iteratedGradient 1 w - TL := by
-    refine Lp.ext ?_
-    filter_upwards [hζH.coeFn_toLp, Lp.coeFn_sub (Wkp.iteratedGradient 1 w) TL, hD]
-      with x h1 h2 h3
-    rw [h1, h2, Pi.sub_apply, h3, add_sub_cancel_right]
   have hCl : 0 ≤ (C : ℝ) / lam := by positivity
-  rw [← toReal_eLpNorm, ← Lp.norm_toLp _ hζH, hHL]
+  rw [hζD]
   calc ‖Wkp.iteratedGradient 1 w - TL‖
       ≤ ‖Wkp.iteratedGradient 1 w‖ + ‖TL‖ := norm_sub_le _ _
     _ ≤ C / lam * (lpNorm (fun x => zeta x * f x) p (volume.restrict Omega)
