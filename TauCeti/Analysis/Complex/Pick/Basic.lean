@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Herglotz
-public import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
-import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
 # Pick functions in Cayley coordinates
