@@ -71,11 +71,12 @@ theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
     (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm v = v := rfl
 
 /-- For maps between normed spaces, the vector-valued manifold derivative applied to a tangent
-vector is the Fréchet derivative applied to the same vector. -/
+vector is the Fréchet derivative applied to the same vector. Not `@[simp]`: `mvfderiv_eq_fderiv`
+already rewrites the left-hand side. -/
 theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(𝕜, F) x) :
     mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
-  rfl
+  exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
 
 /-- For a normed vector-space target, evaluating `mvfderiv` agrees with evaluating
 `mfderiv` under the canonical tangent-space identification. -/
