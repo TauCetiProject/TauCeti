@@ -124,12 +124,14 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     (Pker.lipschitzWith.isBounded_image Metric.isBounded_closedBall).isCompact_closure
   have hPN : ∀ x ∈ N, Pker x ∈ Kp := fun x hx => subset_closure ⟨x, hx, rfl⟩
   -- the anti-Lipschitz coordinate on `N`
-  have hind : IsUniformInducing fun x : N => (f (x : E), Pker (x : E)) :=
-    IsUniformInducing.domRestrict_prodMk_of_dist_le (mul_nonneg zero_le_two hC.le) zero_le_two
-      (fun x hx y hy ↦ by
-        simpa only [dist_eq_norm, mul_assoc] using key x hx y hy)
-      happN.lipschitzWith.uniformContinuous
-      (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
+  have hind : IsUniformInducing fun x : N => (f (x : E), Pker (x : E)) := by
+    have hC2 : ((2 * C).toNNReal : ℝ) = 2 * C := Real.coe_toNNReal _ hCpos.le
+    refine (AntilipschitzWith.prodMk_of_dist_le (f := N.domRestrict f) (g := N.domRestrict Pker)
+      (A := (2 * C).toNNReal) (B := 2) fun x y ↦ ?_).isUniformInducing
+      (happN.lipschitzWith.uniformContinuous.prodMk
+        (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val))
+    simpa only [Subtype.dist_eq, Set.domRestrict_apply, dist_eq_norm, hC2, NNReal.coe_ofNat,
+      mul_assoc] using key x x.2 y y.2
   -- total boundedness, then compactness
   have htb : TotallyBounded
       ((Subtype.val : N → E) '' (Subtype.val : N → E) ⁻¹' (f ⁻¹' L)) := by
