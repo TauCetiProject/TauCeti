@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Analysis.Convex.Differentiability
+import TauCeti.Analysis.Calculus.PowerGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
@@ -17,8 +18,8 @@ import TauCeti.Analysis.Calculus.Gradient
 # Gradient Hölder bounds from tangent growth
 
 For a convex real function differentiable at two points, a one-sided power bound above a
-tangent plane controls the change of its gradient. Uniform tangent growth near a compact set
-gives the standard `HolderOnWith` bound for the gradient. A local comparison of the tangent
+tangent plane controls the change of its gradient. Uniform tangent growth and bounded gradients
+on a set give the standard `HolderOnWith` bound for the gradient. A local comparison of the tangent
 errors in the two directions gives this growth by a scalar differential inequality along rays.
 
 The soft-comparison implication follows the tangent-growth argument of Forzani and Maldonado,
@@ -34,22 +35,6 @@ open scoped Gradient ContDiff NNReal RealInnerProductSpace
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-private lemma gradient_le_sub {u : E → ℝ} (hu : ConvexOn ℝ univ u)
-    {x : E} (hd : DifferentiableAt ℝ u x) (y : E) :
-    inner ℝ (gradient u x) (y - x) ≤ u y - u x := by
-  have hepi : Convex ℝ {p : E × ℝ | (u p.1 : EReal) ≤ p.2} := by
-    simpa only [mem_univ, ite_true] using convex_epigraph_ite (Ω := univ) hu
-  have hd' : DifferentiableAt ℝ (fun z ↦ (u z : EReal).toReal) x := by
-    simpa only [EReal.toReal_coe] using hd
-  have hgrad := gradient_toReal_mem_subdifferential hepi (fun z ↦ EReal.coe_ne_bot (u z))
-    (EReal.coe_ne_top (u x)) hd'
-  have hmem : gradient u x ∈ subdifferential (innerₗ E) (fun z ↦ (u z : EReal)) x := by
-    simpa only [EReal.toReal_coe] using hgrad
-  have hs := (mem_subdifferential_coe_iff (innerₗ E) u).1 hmem y
-  simp only [innerₗ_apply_apply] at hs
-  rw [real_inner_comm (gradient u x) (y - x)] at hs
-  linarith only [hs]
 
 /-- A one-sided tangent growth bound for a convex function differentiable at `x` and `y`
 bounds the change of its gradient, with the same power exponent. -/
@@ -92,8 +77,8 @@ theorem norm_gradient_sub_le_of_tangent_growth {u : E → ℝ} (hconv : ConvexOn
       (by linarith)
   -- supporting plane at `y`, supporting plane at `x`, growth at `x`
   have h1 : ⟪gradient u y, w⟫ ≤ u (y + w) - u y := by
-    simpa only [add_sub_cancel_left] using gradient_le_sub hconv hdy (y + w)
-  have h2 := gradient_le_sub hconv hdx y
+    simpa only [add_sub_cancel_left] using hconv.inner_gradient_sub_le hdy (y + w)
+  have h2 := hconv.inner_gradient_sub_le hdx y
   have h3 := hgrowth (y + w) hzr₀
   have hsplit : ⟪gradient u x, y + w - x⟫ = ⟪gradient u x, y - x⟫ + ⟪gradient u x, w⟫ := by
     rw [show y + w - x = (y - x) + w by abel, inner_add_right]
@@ -119,16 +104,16 @@ theorem norm_gradient_sub_le_of_tangent_growth {u : E → ℝ} (hconv : ConvexOn
       _ = r * (2 ^ (1 + (α : ℝ)) * (C : ℝ) * r ^ (α : ℝ)) := by ring
   exact le_of_mul_le_mul_left this hrpos
 
-/-- Uniform tangent growth near a compact set gives a Hölder bound for the gradient. -/
+/-- Uniform tangent growth and bounded gradients on a set give a Hölder bound for the gradient.
+Differentiability is required only at points of that set. -/
 theorem exists_holderOnWith_gradient_of_tangent_growth {u : E → ℝ}
-    (hu : ConvexOn ℝ univ u) (hC1 : ContDiff ℝ 1 u)
-    {K : Set E} (hK : IsCompact K) {C α : ℝ≥0} {r : ℝ} (hr : 0 < r)
+    (hu : ConvexOn ℝ univ u) {K : Set E}
+    (hd : ∀ x ∈ K, DifferentiableAt ℝ u x)
+    (hgrad : Bornology.IsBounded (gradient u '' K)) {C α : ℝ≥0} {r : ℝ} (hr : 0 < r)
     (hgrowth : ∀ x ∈ K, ∀ z, ‖z - x‖ ≤ r →
       u z ≤ u x + inner ℝ (gradient u x) (z - x) + C * ‖z - x‖ ^ (1 + (α : ℝ))) :
     ∃ C' : ℝ≥0, HolderOnWith C' α (gradient u) K := by
-  have hgrad : Continuous (gradient u) :=
-    (hC1.gradient_right (m := 0) (by norm_num)).continuous
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hgrad.continuousOn
+  obtain ⟨M, hM⟩ := hgrad.exists_norm_le
   let B : ℝ≥0 := (max M 0).toNNReal
   let A : ℝ≥0 := (2 ^ (1 + (α : ℝ)) * (C : ℝ)).toNNReal
   let δ : ℝ≥0 := (r / 2).toNNReal
@@ -143,61 +128,14 @@ theorem exists_holderOnWith_gradient_of_tangent_growth {u : E → ℝ}
       exact hxy.le
     simp only [dist_eq_norm, hAcoe]
     simpa only [norm_sub_rev] using
-      norm_gradient_sub_le_of_tangent_growth hu (hC1.differentiable one_ne_zero x)
-        (hC1.differentiable one_ne_zero y) (hgrowth x hx) hnear
+      norm_gradient_sub_le_of_tangent_growth hu (hd x hx) (hd y hy) (hgrowth x hx) hnear
   · intro x hx y hy
     have hb (z : E) (hz : z ∈ K) : ‖gradient u z‖ ≤ B := by
       rw [hBcoe]
-      exact (hM z hz).trans (le_max_left _ _)
+      exact (hM (gradient u z) ⟨z, hz, rfl⟩).trans (le_max_left _ _)
     simpa only [NNReal.coe_mul, NNReal.coe_ofNat] using
       (dist_le_norm_add_norm (gradient u x) (gradient u y)).trans
         (by linarith [hb x hx, hb y hy] : ‖gradient u x‖ + ‖gradient u y‖ ≤ 2 * (B : ℝ))
-
-private theorem monotoneOn_div_rpow_of_mul_le_deriv
-    {F F' : ℝ → ℝ} {q : ℝ}
-    (hF : ∀ t ∈ Ioc (0 : ℝ) 1, HasDerivAt F (F' t) t)
-    (hineq : ∀ t ∈ Ioc (0 : ℝ) 1, q * F t ≤ t * F' t) :
-    MonotoneOn (fun t : ℝ => F t / t ^ q) (Ioc (0 : ℝ) 1) := by
-  let G : ℝ → ℝ := fun t => F t / t ^ q
-  let H : ℝ → ℝ := fun t =>
-    (F' t * t ^ q - F t * (q * t ^ (q - 1))) / (t ^ q) ^ 2
-  have hG : ∀ t ∈ Ioc (0 : ℝ) 1, HasDerivAt G (H t) t := by
-    intro t ht
-    dsimp only [G, H]
-    exact (hF t ht).div
-      (Real.hasDerivAt_rpow_const (Or.inl ht.1.ne'))
-      (Real.rpow_pos_of_pos ht.1 q).ne'
-  have hH : ∀ t ∈ Ioc (0 : ℝ) 1, 0 ≤ H t := by
-    intro t ht
-    have hpow : t ^ q = t * t ^ (q - 1) := by
-      calc
-        t ^ q = t ^ (1 + (q - 1)) := by
-          rw [show (1 : ℝ) + (q - 1) = q by ring]
-        _ = t ^ (1 : ℝ) * t ^ (q - 1) :=
-          Real.rpow_add ht.1 _ _
-        _ = t * t ^ (q - 1) := by rw [Real.rpow_one]
-    have hnum :
-        F' t * t ^ q - F t * (q * t ^ (q - 1)) =
-          t ^ (q - 1) * (t * F' t - q * F t) := by
-      rw [hpow]
-      ring
-    dsimp only [H]
-    rw [hnum]
-    exact div_nonneg
-      (mul_nonneg
-        (Real.rpow_nonneg ht.1.le _)
-        (sub_nonneg.mpr (hineq t ht)))
-      (sq_nonneg _)
-  have hmono : MonotoneOn G (Ioc (0 : ℝ) 1) := by
-    apply monotoneOn_of_deriv_nonneg (convex_Ioc (0 : ℝ) 1)
-    · intro t ht
-      exact (hG t ht).continuousAt.continuousWithinAt
-    · intro t ht
-      exact (hG t (interior_subset ht)).differentiableAt.differentiableWithinAt
-    · intro t ht
-      rw [(hG t (interior_subset ht)).deriv]
-      exact hH t (interior_subset ht)
-  simpa only [G] using hmono
 
 private theorem hasDerivAt_defect_ray
     {u : E → ℝ} (hdiff : Differentiable ℝ u)
@@ -241,12 +179,15 @@ private theorem monotoneOn_ray_quotient_of_soft
       (fun t : ℝ =>
         (u (x + t • v) - u x - inner ℝ (gradient u x) ((x + t • v) - x)) / t ^ (1 + κ⁻¹))
       (Ioc (0 : ℝ) 1) := by
-  refine monotoneOn_div_rpow_of_mul_le_deriv
-    (F' := fun t : ℝ =>
-      ⟪gradient u (x + t • v) - gradient u x, v⟫) ?_ ?_
+  refine monotoneOn_div_rpow_of_mul_le_mul_deriv
+    (f' := fun t : ℝ ↦ ⟪gradient u (x + t • v) - gradient u x, v⟫)
+    (convex_Ioc (0 : ℝ) 1) (fun t ht ↦ ht.1) ?_ ?_ ?_
+  · intro t _
+    exact (hasDerivAt_defect_ray hdiff x v t).continuousAt.continuousWithinAt
   · intro t _
     exact hasDerivAt_defect_ray hdiff x v t
   · intro t ht
+    have ht := interior_subset ht
     have hdist : ‖x + t • v - x‖ ≤ r₀ := by
       rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
         abs_of_pos ht.1]
@@ -393,29 +334,28 @@ private theorem defect_le_of_lipschitz_soft
     _ = ((L : ℝ) + B) * R := by rw [hz]
 
 
-/-- A uniform local comparison between the two tangent errors of a convex `C¹` Lipschitz
-function gives a Hölder gradient on a compact set. -/
+/-- A uniform local comparison between the two tangent errors of a differentiable convex
+Lipschitz function gives a Hölder gradient on any set of allowed centers. -/
 theorem exists_holderOnWith_gradient_of_soft_comparison {u : E → ℝ}
-    (hu : ConvexOn ℝ univ u) (hC1 : ContDiff ℝ 1 u)
-    {L : ℝ≥0} (hLip : LipschitzWith L u) {K : Set E} (hK : IsCompact K)
+    (hu : ConvexOn ℝ univ u) (hd : Differentiable ℝ u)
+    {L : ℝ≥0} (hLip : LipschitzWith L u) {K : Set E}
     {r : ℝ} (hr : 0 < r) {κ : ℝ≥0} (hκ : 1 ≤ κ)
     (hsoft : ∀ x ∈ K, ∀ z, ‖z - x‖ ≤ r →
       u z - u x - inner ℝ (gradient u x) (z - x) ≤
         κ * (u x - u z - inner ℝ (gradient u z) (x - z))) :
     ∃ C : ℝ≥0, HolderOnWith C κ⁻¹ (gradient u) K := by
-  have hd := hC1.differentiable one_ne_zero
-  have hgrad : Continuous (gradient u) :=
-    (hC1.gradient_right (m := 0) (by norm_num)).continuous
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hgrad.continuousOn
-  let Bp : ℝ := max B 0
-  let A : ℝ := (((L : ℝ) + Bp) * r) / r ^ (1 + (κ : ℝ)⁻¹)
-  have hA : 0 ≤ A := by dsimp only [A, Bp]; positivity
-  refine exists_holderOnWith_gradient_of_tangent_growth hu hC1 hK hr
+  have hgrad (x : E) : ‖gradient u x‖ ≤ L := by
+    rw [norm_gradient_eq_norm_fderiv]
+    exact norm_fderiv_le_of_lipschitz ℝ hLip
+  have hbounded : Bornology.IsBounded (gradient u '' K) :=
+    isBounded_iff_forall_norm_le.2 ⟨L, by rintro _ ⟨x, _, rfl⟩; exact hgrad x⟩
+  let A : ℝ := (((L : ℝ) + L) * r) / r ^ (1 + (κ : ℝ)⁻¹)
+  have hA : 0 ≤ A := by dsimp only [A]; positivity
+  refine exists_holderOnWith_gradient_of_tangent_growth hu (fun x _ ↦ hd x) hbounded hr
     (C := A.toNNReal) (α := κ⁻¹) ?_
   intro x hx z hz
-  have hb : ‖gradient u x‖ ≤ Bp := (hB x hx).trans (le_max_left _ _)
   have hκ' : (1 : ℝ) ≤ κ := by exact_mod_cast hκ
-  have hrad := defect_le_of_lipschitz_soft hd hLip hr hκ' hb (hsoft x hx) z hz
+  have hrad := defect_le_of_lipschitz_soft hd hLip hr hκ' (hgrad x) (hsoft x hx) z hz
   have hgrowth :
       u z - u x - inner ℝ (gradient u x) (z - x) ≤ A * ‖z - x‖ ^ (1 + (κ : ℝ)⁻¹) := by
     refine hrad.trans_eq ?_

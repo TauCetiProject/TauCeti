@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Convex.TangentGrowth
 /-!
 # Hölder gradients from contained sections and Monge–Ampère bounds
 
-For a convex `C¹` globally Lipschitz potential, two-sided Aleksandrov measure bounds and a
+For a differentiable convex globally Lipschitz potential, two-sided Aleksandrov measure bounds and a
 common height of bounded sections with closure inside the domain give a Hölder bound for its
 gradient on compact subsets of the allowed centers. The section containment and regularity
 hypotheses are explicit. Engulfing gives a comparison of tangent errors, and the tangent-growth
@@ -69,13 +69,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Two-sided Monge–Ampère bounds and a uniform height of sections compactly contained in the
-open convex domain give a Hölder gradient for a convex `C¹` globally Lipschitz potential. -/
+open convex domain give a Hölder gradient for a differentiable convex globally Lipschitz
+potential. -/
 theorem exists_holderOnWith_gradient_of_mongeAmpereMeasure_bounds
     (μ : Measure E) [μ.IsAddHaarMeasure]
     {Ω U K : Set E} [DecidablePred (· ∈ Ω)]
     (hΩ : IsOpen Ω) (hcΩ : Convex ℝ Ω) (hU : IsOpen U) (hUΩ : U ⊆ Ω)
     (hK : IsCompact K) (hKU : K ⊆ U)
-    {u : E → ℝ} (hu : ConvexOn ℝ univ u) (hC1 : ContDiff ℝ 1 u)
+    {u : E → ℝ} (hu : ConvexOn ℝ univ u) (hd : Differentiable ℝ u)
     {L : ℝ≥0} (hLip : LipschitzWith L u) {H : ℝ} (hH : 0 < H)
     (hsections : ∀ x ∈ U,
       Bornology.IsBounded (convexSection Ω u x (innerₗ E (gradient u x)) H) ∧
@@ -92,21 +93,12 @@ theorem exists_holderOnWith_gradient_of_mongeAmpereMeasure_bounds
     dsimp only [θ]
     exact le_add_of_nonneg_right (by positivity)
   have hθ' : (1 : ℝ) ≤ θ := by exact_mod_cast hθ
-  have hd := hC1.differentiable one_ne_zero
-  have hepi : Convex ℝ {p : E × ℝ | (u p.1 : EReal) ≤ p.2} := by
-    simpa only [mem_univ, ite_true] using convex_epigraph_ite (Ω := univ) hu
   have hsupport (x : E) : ∀ y ∈ Ω,
       u x + ((innerₗ E (gradient u x)) y - (innerₗ E (gradient u x)) x) ≤ u y := by
-    have hd' : DifferentiableAt ℝ (fun z ↦ (u z : EReal).toReal) x := by
-      simpa only [EReal.toReal_coe] using hd x
-    have hg := gradient_toReal_mem_subdifferential hepi (fun z ↦ EReal.coe_ne_bot (u z))
-      (EReal.coe_ne_top (u x)) hd'
-    have hmem : gradient u x ∈ subdifferential (innerₗ E) (fun z ↦ (u z : EReal)) x := by
-      simpa only [EReal.toReal_coe] using hg
     intro y _
-    have hs := (mem_subdifferential_coe_iff (innerₗ E) u).1 hmem y
-    rw [innerₗ_apply_apply, real_inner_comm (gradient u x) (y - x), inner_sub_right] at hs
-    simpa only [innerₗ_apply_apply] using hs
+    have hs := hu.inner_gradient_sub_le (hd x) y
+    rw [← map_sub, innerₗ_apply_apply]
+    linarith only [hs]
   have hgrad (x : E) : ‖gradient u x‖ ≤ L := by
     rw [norm_gradient_eq_norm_fderiv]
     exact norm_fderiv_le_of_lipschitz ℝ hLip
@@ -153,7 +145,7 @@ theorem exists_holderOnWith_gradient_of_mongeAmpereMeasure_bounds
       have hi := heng Ω u z ℓ h lam Lam hΩ (hu.subset (subset_univ _) hcΩ)
         (hsupport z) hloc.1 hloc.2 hlam hlo hhi x hxS m (hsupport x)
       simpa only [θ, NNReal.coe_add, NNReal.coe_one, NNReal.coe_div, NNReal.coe_mul] using hi
-  obtain ⟨B, hB⟩ := exists_holderOnWith_gradient_of_soft_comparison hu hC1 hLip hK hr hθ hsoft
+  obtain ⟨B, hB⟩ := exists_holderOnWith_gradient_of_soft_comparison hu hd hLip hr hθ hsoft
   refine ⟨θ⁻¹, B, inv_pos.2 (lt_of_lt_of_le zero_lt_one hθ), inv_le_one_of_one_le₀ hθ, hB⟩
 
 end TauCeti
