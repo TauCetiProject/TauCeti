@@ -40,7 +40,7 @@ rewrites the right-hand side as a difference of actions of the two loops, in two
 
 For a solution of the Floer equation and almost complex structures tamed by `ω`, the energy
 density is nonnegative
-(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_cylindrical_nonneg`), so for a weakly
+(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`), so for a weakly
 exact form the contractible action of the loops decreases along a Floer cylinder
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction`).
 This monotonicity underlies the action filtration of the Floer complex.
@@ -78,20 +78,7 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
   [IsManifold I (⊤ : ℕ∞) M]
 
-/-! ### Floer cylinders -/
-
 variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {u : ℝ × ℝ → M}
-
-/-- The Floer energy density of a solution of `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the
-cylindrical perturbation `K = H_t dt` is nonnegative when `J` is tamed by `ω` at `u z`. -/
-theorem IsNondegenerate.floerEnergyDensity_cylindrical_nonneg (hω : ω.IsNondegenerate)
-    {z : ℝ × ℝ} {J : AlmostComplexStructure (TangentSpace I (u z))}
-    (hJ : (hω.symplecticFormAt (u z)).Tames J)
-    (hfloer : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
-      J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
-        ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z :=
-  hω.floerEnergyDensity_zero_left_nonneg hJ hfloer
 
 /-! ### The energy identity for cylindrical perturbations -/
 
@@ -200,7 +187,8 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
       contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) := by
   have h := hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub hωe hH hu hper hab hv
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ hω.floerEnergyDensity_cylindrical_nonneg (hJ z hz) (hfloer z hz)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
+      (hfloer z hz)
   linarith
 
 end Energy

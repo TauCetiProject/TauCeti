@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
 # The Floer energy identity for manifold targets
