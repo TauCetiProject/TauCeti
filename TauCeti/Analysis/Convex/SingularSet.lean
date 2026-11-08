@@ -21,7 +21,8 @@ The quantitative step separates the vertical components by `b - a > 0` and bound
 the subgradients by `M`. On such a slice, the height is `2 * M / (b - a)`-Lipschitz. Rational
 separations and natural norm bounds give the countable cover. Mathlib's McShane extension
 `LipschitzOnWith.extend_real` extends the slice heights to all of `E`. Consequently, a measure
-vanishing on every Lipschitz graph sees a unique vertical subgradient component almost everywhere.
+vanishing on every Lipschitz graph sees at most one vertical subgradient component almost
+everywhere.
 
 ## References
 
