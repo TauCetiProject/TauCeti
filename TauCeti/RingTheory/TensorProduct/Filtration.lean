@@ -5,9 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.FiltrationTail
+public import TauCeti.LinearAlgebra.TensorProduct.Filtration.Tail
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
-public import Mathlib.RingTheory.Ideal.Defs
 
 /-!
 # Multiplicative total-degree tensor filtration tails
