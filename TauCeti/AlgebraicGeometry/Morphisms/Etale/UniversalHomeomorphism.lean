@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.LiftingProperties.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
-import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 
 /-!
