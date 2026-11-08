@@ -98,9 +98,14 @@ theorem isSheaf_bigPresheaf_fpqcTopology :
   have hS (J : GrothendieckTopology Scheme.{u}) [J.Subcanonical] :
       Presieve.IsSheaf J (yoneda.obj S) :=
     GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable _
+  -- Default instance search does not match Mathlib's generic source-locality instance here;
+  -- apply that existing instance explicitly rather than declaring a specialized copy for `Flat`.
   have : IsZariskiLocalAtSource @Flat.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.Flat)
   rw [isSheaf_iff_isSheaf_of_type, Over.isSheaf_over_iff_isSheaf_sigmaPresheaf _ (hS _)]
+  -- Rewrite the topology of the sheaf condition on `Scheme`, leaving `fpqcTopology` inside
+  -- `bigPresheaf` unchanged: its module coefficients use the existing big structure sheaf.
+  -- Rewriting those implicit occurrences makes the motive for `bigRingCatSheaf.obj` ill-typed.
   rw (occs := .pos [1]) [fpqcTopology_eq_propQCTopology]
   refine (isSheaf_type_propQCTopology_iff (P := @Flat) _).mpr ⟨?_, fun f hf hs ↦ ?_⟩
   · rw [← Over.isSheaf_over_iff_isSheaf_sigmaPresheaf _ (hS _), ← isSheaf_iff_isSheaf_of_type]
