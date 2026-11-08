@@ -61,11 +61,7 @@ theorem exists_iso_Q_obj_singleFunctor_obj_isSyzygy [EnoughProjectives C]
     (X : _root_.DerivedCategory.Bounded C) (d : ℕ) :
     ∃ (M : C) (n : ℤ), (isProjective C).IsSyzygy d M ∧
       Nonempty ((Q C).obj X ≅ (Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj M)) := by
-  obtain ⟨K, b, _, hK, ⟨e⟩⟩ :=
-    (boundedAboveProjective_iff _).1 (boundedAboveProjective_of_bounded X)
-  obtain ⟨a, ha⟩ := X.property.1
-  have : TStructure.t.IsGE (_root_.DerivedCategory.Bounded.ι.obj X) a := ha
-  have : K.IsGE a := (isGE_Q_obj_iff K a).1 (TStructure.t.isGE_of_iso e.symm a)
+  obtain ⟨K, a, b, _, _, hK, ⟨e⟩⟩ := exists_projective_isGE_isStrictlyLE_of_bounded X
   -- Truncate `K` in a degree `m` such that `K` is exact in degrees `m, …, m + d + 1`.
   obtain ⟨m, hm⟩ : ∃ m : ℤ, m = a - d - 2 := ⟨_, rfl⟩
   have : K.IsGE m := K.isGE_of_ge m a (by lia)

@@ -27,7 +27,8 @@ shape, possibly unbounded in both directions or cyclic.
   in degree `j`. When the cycles of `X₂` in degree `j` have projective dimension `< n`, those of
   `X₁` do as soon as those of `X₃` have projective dimension `< n + 1`. In particular, when the
   cycles of `X₂` are projective, those of `X₁` are syzygies of those of `X₃`, and their projective
-  dimension drops by one.
+  dimension drops by one. Likewise, along an exact range of projectives the projective dimension
+  of the cycles drops by one in each degree.
 * With enough projectives, and when every index is both the source and the target of a relation
   of the shape, every complex receives a degreewise epimorphism from a contractible complex with
   projective terms, the mapping cone of the identity of a complex with zero differential made of
@@ -49,6 +50,8 @@ particular they have no higher extensions into objects of injective dimension at
 * `HomologicalComplex.exists_projective_contractible_epi_f`: when every index is both the source
   and the target of a relation, every complex is the target of a degreewise epimorphism from a
   contractible complex with projective terms.
+* `CochainComplex.hasProjectiveDimensionLT_cycles_of_add`: dimension shifting for the projective
+  dimension of the cycles along an exact range of projectives.
 * `CochainComplex.isSyzygy_cycles`: the cycles of an exact range of projectives are syzygies.
 
 ## References
@@ -59,8 +62,6 @@ particular they have no higher extensions into objects of injective dimension at
 public section
 
 open CategoryTheory Limits Abelian
-
-universe w
 
 variable {C : Type*} [Category* C] {ι : Type*} {c : ComplexShape ι}
 
@@ -129,6 +130,32 @@ theorem HomologicalComplex.exists_projective_contractible_epi_f [EnoughProjectiv
     refine epi_of_epi_fac (f := homotopyCofiber.inlX (𝟙 G) j i hij) (h := h j i hij) ?_
     simp [hα, h, dite_eq_left hij]
 
+/-- **Dimension shifting for the cycles**: if `K` has projective terms in degrees
+`j, …, j + k - 1` and is exact in degrees `j + 1, …, j + k`, then the cycles of `K` in degree `j`
+have projective dimension `< p + 1` whenever those in degree `j + k` have projective dimension
+`< p + 1 + k`, along the short exact sequences `0 ⟶ Zⁱ ⟶ Kⁱ ⟶ Zⁱ⁺¹ ⟶ 0`. -/
+theorem CochainComplex.hasProjectiveDimensionLT_cycles_of_add {K : CochainComplex C ℤ} (j : ℤ)
+    (k : ℕ) (hproj : ∀ l : ℕ, l < k → Projective (K.X (j + l)))
+    (hexact : ∀ l : ℕ, l < k → K.ExactAt (j + l + 1)) (p : ℕ)
+    (h : HasProjectiveDimensionLT (K.cycles (j + k)) (p + 1 + k)) :
+    HasProjectiveDimensionLT (K.cycles j) (p + 1) := by
+  induction k generalizing j p with
+  | zero => simpa using h
+  | succ k ih =>
+    have hj (l : ℕ) : j + 1 + (l : ℤ) = j + ((l + 1 : ℕ) : ℤ) := by push_cast; ring
+    have : Projective (K.X j) := by simpa using hproj 0 (by lia)
+    have hS := K.cyclesShortComplex_shortExact_of_iso (j := j + 1) rfl
+      (by simpa using hexact 0 (by lia)) (Iso.refl _) (Iso.refl _)
+    refine hS.hasProjectiveDimensionLT_X₁ (p + 1)
+      (hasProjectiveDimensionLT_of_ge _ 1 (p + 1) (by lia)) ?_
+    refine ih (j + 1) (fun l hl ↦ ?_) (fun l hl ↦ ?_) (p + 1) ?_
+    · rw [hj]
+      exact hproj (l + 1) (by lia)
+    · rw [hj]
+      exact hexact (l + 1) (by lia)
+    · rw [hj, show p + 1 + 1 + k = p + 1 + (k + 1) by lia]
+      exact h
+
 /-- **Cycles of an exact range of projectives are syzygies**: if `K` has projective terms in
 degrees `j, …, j + d - 1` and is exact in degrees `j + 1, …, j + d`, then `Zʲ` is a `d`-th syzygy
 relative to the projective objects, along the short exact sequences `0 ⟶ Zˡ ⟶ Kˡ ⟶ Zˡ⁺¹ ⟶ 0`. -/
@@ -149,4 +176,3 @@ theorem CochainComplex.isSyzygy_cycles {K : CochainComplex C ℤ} (j : ℤ) (d :
       exact hproj (l + 1) (by lia)
     · rw [hj]
       exact hexact (l + 1) (by lia)
-

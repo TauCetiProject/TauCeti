@@ -142,6 +142,19 @@ theorem torusPointMap_comp [Fintype ν] [DecidableEq κ] (ψ : (κ → ℤ) →�
   refine MonoidHom.ext fun s => funext fun i => ?_
   simp
 
+/-- Precomposition of characters by a permutation acts on torus parameters by its inverse. -/
+@[simp]
+theorem torusPointMap_funCongrLeft [DecidableEq κ] (σ : Equiv.Perm κ) (s : κ → Rˣ) :
+    torusPointMap (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap s =
+      fun i => s (σ.symm i) := by
+  funext i
+  have hprecomp : (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap (Pi.single i 1) =
+      Pi.single i 1 ∘ σ := by
+    funext j
+    simp
+  rw [torusPointMap_apply, hprecomp, ← torusCharacter_mulEquivArrowCongr]
+  simp
+
 /-- `torusPointMap` turns sums of lattice maps into products of point maps. -/
 theorem torusPointMap_add (φ ψ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) :
     torusPointMap (R := R) (φ + ψ) = torusPointMap φ * torusPointMap ψ := by
@@ -246,6 +259,14 @@ theorem isCharacterMap_iff :
     IsCharacterMap T F φ ↔ ∀ s, F (T s) = T (torusPointMap φ s) :=
   Iff.rfl
 
+/-- Raising every torus parameter to the `n`-th power pulls characters back by `n • id`. -/
+theorem IsCharacterMap.of_map_eq_pow {n : ℕ} (h : ∀ s, F (T s) = T (s ^ n)) :
+    IsCharacterMap T F (n • LinearMap.id) := by
+  rw [isCharacterMap_iff]
+  intro s
+  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
+    MonoidHom.id_apply] using h s
+
 /-- A character map as an equation of homomorphisms out of the torus. -/
 theorem isCharacterMap_iff_comp :
     IsCharacterMap T F φ ↔ F.comp T = T.comp (torusPointMap φ) := by
@@ -267,6 +288,17 @@ pulling back along `F`. -/
 theorem IsCharacterMap.comp (hF : IsCharacterMap T F φ) (hF' : IsCharacterMap T F' ψ) :
     IsCharacterMap T (F.comp F') (ψ * φ) := fun s => by
   rw [MonoidHom.comp_apply, hF', hF, torusPointMap_mul, MonoidHom.comp_apply]
+
+/-- The pullback of an iterate is the corresponding power of the character map. -/
+theorem IsCharacterMap.pow {F : Monoid.End G} (hF : IsCharacterMap T F φ) (n : ℕ) :
+    IsCharacterMap T (HPow.hPow (α := Monoid.End G) F n) (φ ^ n) := by
+  -- In `Monoid.End G`, the unit is `MonoidHom.id` and multiplication is `MonoidHom.comp`
+  -- by definition, so the identity and composition lemmas apply directly in both cases.
+  induction n with
+  | zero => exact isCharacterMap_id T
+  | succ n ih =>
+      rw [pow_succ', pow_succ]
+      exact hF.comp ih
 
 /-- **Uniqueness of character maps over an infinite field.** If the torus parametrization is
 injective, an endomorphism has at most one character map. Over a finite field this fails, which
