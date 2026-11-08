@@ -39,7 +39,9 @@ theorem exists_homeomorph_apply_eq (e : V ≃L[𝕜] 𝕜 × F') (ℓ : V →L[�
     ∃ Φ : P ≃ₜ 𝕜 × F', ∀ y, Φ y = (ℓ (y -ᵥ z), (e (y -ᵥ z)).2) := by
   obtain ⟨u, hu⟩ := hℓ
   have key (q : 𝕜 × F') : ℓ (e.symm q) = q.1 * u + ℓ (e.symm (0, q.2)) := by
-    conv_lhs => rw [show q = q.1 • ((1 : 𝕜), (0 : F')) + (0, q.2) by ext <;> simp]
+    have hq : q = q.1 • ((1 : 𝕜), (0 : F')) + (0, q.2) := by ext <;> simp
+    -- rewrite only the left side, since the right side mentions `q.1` and `q.2`
+    conv_lhs => rw [hq]
     simp only [_root_.map_add, _root_.map_smul, smul_eq_mul, hu]
   refine ⟨{ toFun y := (ℓ (y -ᵥ z), (e (y -ᵥ z)).2)
             invFun q := e.symm ((q.1 - ℓ (e.symm (0, q.2))) * ↑u⁻¹, q.2) +ᵥ z
