@@ -21,6 +21,10 @@ Kummer classes of `a` and `b` (`TauCeti.brauerCohomologyEquiv_quaternionClass`).
 `2`-torsion comparison `TauCeti.brauer2EquivH2 K : Br(K)[2] ≃ H²_cont(G_K, 𝔽₂)`, this is the
 classical identity `ι [(a, b)] = (a) ∪ (b)` (`TauCeti.brauer2EquivH2_quaternionClass`).
 
+On square classes, the quaternion symbol is a biadditive pairing
+`Kˣ/(Kˣ)² × Kˣ/(Kˣ)² → Br(K)[2]` (`TauCeti.BrauerGroup.quaternionPairing`), and `ι` carries it to
+the Kummer cup pairing `TauCeti.kummerCup` (`TauCeti.brauer2EquivH2_quaternionPairing`).
+
 If `a` is a square, both sides vanish. Otherwise, choose square roots `α` of `a` and `β` of `b` in
 `Kˢ`, and let `L = K(α)`, a quadratic Galois subextension of `Kˢ`. The computation has three steps.
 
@@ -43,6 +47,10 @@ If `a` is a square, both sides vanish. Otherwise, choose square roots `α` of `a
   `h2MuToUnits K ((a) ∪ (b))`.
 * `TauCeti.brauer2EquivH2_quaternionClass`: the `2`-torsion comparison sends `[(a, b)]` to
   `(a) ∪ (b)`.
+* `TauCeti.BrauerGroup.quaternionPairing`: the quaternion symbol as a biadditive pairing on
+  square classes with values in `Br(K)[2]`.
+* `TauCeti.brauer2EquivH2_quaternionPairing`: the `2`-torsion comparison carries the quaternion
+  pairing to the Kummer cup pairing.
 
 ## References
 
@@ -322,5 +330,53 @@ theorem brauer2EquivH2_quaternionClass (a b : Kˣ) :
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) :=
   h2MuToUnits_injective K (by
     rw [brauer2EquivH2_h2MuToUnits, brauerCohomologyEquiv_quaternionClass])
+
+/-! ### The quaternion pairing on square classes -/
+
+namespace BrauerGroup
+
+variable (K) in
+/-- **The quaternion pairing** `Kˣ/(Kˣ)² × Kˣ/(Kˣ)² → Br(K)[2]`, `([a], [b]) ↦ [(a, b)]`: the
+quaternion symbol as a biadditive map on square classes with values in the `2`-torsion of the
+Brauer group, written additively. -/
+noncomputable def quaternionPairing :
+    SquareClassGroup K →+ SquareClassGroup K →+ Additive (twoTorsion K) :=
+  AddMonoidHom.mk'
+    (fun x ↦ AddMonoidHom.mk'
+      (fun y ↦ Additive.ofMul ⟨quaternionClassOnSquareClasses x y,
+        mem_twoTorsion.2 (quaternionClassOnSquareClasses_sq x y)⟩)
+      fun y z ↦ Additive.toMul.injective <| Subtype.ext <|
+        quaternionClassOnSquareClasses_add_right x y z)
+    fun x y ↦ AddMonoidHom.ext fun z ↦ Additive.toMul.injective <| Subtype.ext <|
+      quaternionClassOnSquareClasses_add_left x y z
+
+/-- The quaternion pairing, read in the Brauer group, is the quaternion symbol on square
+classes. -/
+@[simp]
+theorem coe_toMul_quaternionPairing (x y : SquareClassGroup K) :
+    ((quaternionPairing K x y).toMul : BrauerGroup K) = quaternionClassOnSquareClasses x y :=
+  (rfl)
+
+/-- The quaternion pairing is symmetric. -/
+theorem quaternionPairing_comm (x y : SquareClassGroup K) :
+    quaternionPairing K x y = quaternionPairing K y x :=
+  Additive.toMul.injective <| Subtype.ext <| by
+    simp only [coe_toMul_quaternionPairing, quaternionClassOnSquareClasses_comm x y]
+
+end BrauerGroup
+
+/-- **The quaternion pairing is the Kummer cup pairing.** Under the identification
+`Br(K)[2] ≃ H²_cont(G_K, 𝔽₂)`, the quaternion pairing `([a], [b]) ↦ [(a, b)]` on square classes
+becomes the cup product pairing `([a], [b]) ↦ (a) ∪ (b)` of Kummer classes. -/
+@[simp]
+theorem brauer2EquivH2_quaternionPairing (x y : SquareClassGroup K) :
+    brauer2EquivH2 K (BrauerGroup.quaternionPairing K x y) = kummerCup K x y := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, kummerCup_squareClass_squareClass,
+    ← brauer2EquivH2_quaternionClass]
+  congr 1
+  apply Additive.toMul.injective
+  ext
+  simp only [BrauerGroup.coe_toMul_quaternionPairing,
+    BrauerGroup.quaternionClassOnSquareClasses_squareClass, toMul_ofMul]
 
 end TauCeti

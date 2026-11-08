@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Birational.Irreducible
-public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Normal
+public import TauCeti.AlgebraicGeometry.Morphisms.Integral.Normal
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
 public import TauCeti.AlgebraicGeometry.Restrict
 
@@ -20,7 +20,7 @@ birational to `Y`, so irreducible, hence integral when it is reduced. Over a non
 an isomorphism over a nonempty open where `f` is an isomorphism. Hence `Γ(X, f ⁻¹ V)` embeds into
 the function field of `Y`, the fraction field of `Γ(Y, V)`, as an integral extension of
 `Γ(Y, V)`. When `Γ(Y, V)` is integrally closed, this extension is trivial
-(`AlgebraicGeometry.Scheme.Hom.bijective_app_of_isFinite_of_isIso_app`).
+(`AlgebraicGeometry.Scheme.Hom.bijective_app_of_isIntegralHom_of_isIso_app`).
 
 Reducedness of the source cannot be dropped: over `Y = Spec k[t]`, the finite morphism from
 `Spec k[t, e] ⧸ (e², t e)` is an isomorphism over `D(t)`, whose preimage is dense, but it is not an
@@ -71,6 +71,6 @@ theorem isIso_of_isFinite [IsReduced X] [IsIntegral Y] [IsNormalScheme Y] (f : X
     (isIso_morphismRestrict_iff_isIso_app f (hV.basicOpen g)).mp ‹_›
   have : Nonempty (Y.basicOpen g) := ⟨⟨y, hyg⟩⟩
   rw [isIso_morphismRestrict_iff_isIso_app f hV, ConcreteCategory.isIso_iff_bijective]
-  exact f.bijective_app_of_isFinite_of_isIso_app hV (Y.basicOpen_le g)
+  exact f.bijective_app_of_isIntegralHom_of_isIso_app hV (Y.basicOpen_le g)
 
 end TauCeti.AlgebraicGeometry.IsModification

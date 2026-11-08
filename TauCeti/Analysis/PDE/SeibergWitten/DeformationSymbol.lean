@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!

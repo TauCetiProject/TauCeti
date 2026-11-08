@@ -248,7 +248,7 @@ theorem _root_.ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_d
     _ = -∫ x, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
       simp_rw [← smul_eq_mul, (hqweak _).integral_lineDeriv_smul_eq_neg_integral_smul φ]
       rw [Finset.sum_neg_distrib, ← integral_finsetSum _
-        (fun i _ => integrable_smul_of_locallyIntegrableOn (hqd i) φ)]
+        (fun i _ => φ.integrable_smul (hqd i))]
       simp only [Finset.mul_sum, divMatrixGradient, b, q, smul_eq_mul]
 
 end ClassicalOperator

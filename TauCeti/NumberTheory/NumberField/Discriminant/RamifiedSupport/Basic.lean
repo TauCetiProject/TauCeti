@@ -70,7 +70,7 @@ theorem mem_ramifiedSupport_iff_exists {v : HeightOneSpectrum (𝓞 K)} :
     v ∈ ramifiedSupport K L ↔
       ∃ P : (v.asIdeal).primesOver (𝓞 L), 1 < (P : Ideal (𝓞 L)).ramificationIdx (𝓞 K) := by
   rw [mem_ramifiedSupport]
-  exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx v.ne_bot
+  exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx
 
 variable (K) in
 /-- **Nothing ramifies in the identity extension**: the ramified support of `K / K` is empty. -/
@@ -96,7 +96,7 @@ theorem isUnramifiedAway_ramifiedSupport :
   intro v hv Q _ _
   by_contra hQ
   apply hv
-  rw [mem_ramifiedSupport, TauCeti.dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot]
+  rw [mem_ramifiedSupport, TauCeti.dvd_relDiscr_iff_exists_not_isUnramifiedAt]
   exact ⟨⟨Q, inferInstance, inferInstance⟩, hQ⟩
 
 end TauCeti.NumberField

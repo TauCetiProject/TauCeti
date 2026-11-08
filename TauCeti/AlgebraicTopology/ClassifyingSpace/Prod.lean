@@ -149,7 +149,8 @@ theorem isIso_singularHomologyMap_classifyingSpaceProdMap (k : Type u) [CommRing
       (TopCat.ofHom (classifyingSpaceProdMap G H) :
         TopCat.of (classifyingSpace (G × H)) ⟶
           TopCat.of (classifyingSpace G) ⊗ TopCat.of (classifyingSpace H))) :=
-  (isWeakHomotopyEquivalence_classifyingSpaceProdMap G H).isIso_singularHomologyMap k n
+  (isWeakHomotopyEquivalence_classifyingSpaceProdMap G H).isIso_singularHomologyMap
+    (ModuleCat.of k k) n
 
 section Semisimple
 

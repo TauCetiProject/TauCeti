@@ -122,7 +122,7 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
     field_simp
   have hlim : Tendsto Y atTop (𝓝 0) :=
     tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY (by positivity) hq0 hq1
-      hβ1.le hbq hstart hrecY
+      (by linarith) hbq hstart hrecY
   -- `φ (k₀ + d)` lies below every `φ kⱼ`, and these tend to zero.
   refine le_antisymm (ge_of_tendsto' hlim fun j => ?_) (hφ _ (by linarith))
   have hk₀d : k₀ ≤ k₀ + d := by linarith

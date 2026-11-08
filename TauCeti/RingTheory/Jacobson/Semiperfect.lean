@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Idempotents
@@ -23,10 +22,10 @@ Mathlib packages the neighbouring notion, `IsSemiprimaryRing`: the radical is *n
 radical quotient is semisimple. Nilpotence of the radical makes its elements nil, so idempotents
 lift along `R ↠ R ⧸ Ring.jacobson R` by Mathlib's
 `exists_isIdempotentElem_eq_of_ker_isNilpotent`; a semiprimary ring is therefore semiperfect
-(`TauCeti.IsSemiperfectRing.of_isSemiprimaryRing`), and a ring that is finite-dimensional over a
-division ring acting compatibly with its multiplication — such as a finite-dimensional algebra over
-a field — being an Artinian ring, is semiprimary and hence semiperfect
-(`TauCeti.isSemiperfectRing_of_finiteDimensional`).
+(`TauCeti.IsSemiperfectRing.of_isSemiprimaryRing`). In particular a ring that is finite over an
+Artinian ring acting compatibly with its multiplication — such as a finite-dimensional algebra over
+a field — being itself an Artinian ring, is semiprimary and hence semiperfect
+(`TauCeti.IsSemiperfectRing.of_finite`).
 
 Bass' characterization — `R` is semiperfect exactly when every finitely generated `R`-module has a
 projective cover — is not proved here. The existence half of it over a semiprimary ring, in the
@@ -41,8 +40,8 @@ stronger form that covers *every* module, is
 ## Main results
 
 * `TauCeti.IsSemiperfectRing.of_isSemiprimaryRing`: a semiprimary ring is semiperfect.
-* `TauCeti.isSemiperfectRing_of_finiteDimensional`: a ring finite-dimensional over a division ring,
-  such as a finite-dimensional algebra over a field, is semiperfect.
+* `TauCeti.IsSemiperfectRing.of_finite`: a ring finite over an Artinian ring, such as a
+  finite-dimensional algebra over a field, is semiperfect.
 
 ## References
 
@@ -78,12 +77,12 @@ instance IsSemiperfectRing.of_isSemiprimaryRing [IsSemiprimaryRing R] : IsSemipe
     rw [Ideal.mk_ker] at hx
     exact ⟨n, by simpa [hn] using Ideal.pow_mem_pow hx n⟩
 
-/-- **A ring finite-dimensional over a division ring is semiperfect**, for a division ring `k`
-acting on `A` compatibly with its multiplication; for instance, a finite-dimensional algebra over a
-field is semiperfect. -/
-theorem isSemiperfectRing_of_finiteDimensional (k : Type v) [DivisionRing k] (A : Type u) [Ring A]
-    [Module k A] [IsScalarTower k A A] [FiniteDimensional k A] : IsSemiperfectRing A := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  infer_instance
+/-- **A ring finite over an Artinian ring is semiperfect**, for an Artinian ring `K` acting on `A`
+compatibly with its multiplication; for instance, a finite-dimensional algebra over a field is
+semiperfect. -/
+theorem IsSemiperfectRing.of_finite (K : Type v) [Ring K] [IsArtinianRing K] (A : Type u) [Ring A]
+    [Module K A] [IsScalarTower K A A] [Module.Finite K A] : IsSemiperfectRing A :=
+  have : IsArtinianRing A := .of_finite K A
+  inferInstance
 
 end TauCeti

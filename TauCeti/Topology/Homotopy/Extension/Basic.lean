@@ -37,6 +37,7 @@ with that property to one that extends homotopies with values in a space in any 
   `TauCeti.HasHomotopyExtensionProperty.exists_homotopy_of_restrict`: for a closed subset,
   extension of homotopies with values in a space in an arbitrary universe, in terms of raw maps
   and of Mathlib's bundled homotopies.
+* `IsClopen.hasHomotopyExtensionProperty`: a clopen subset has the homotopy extension property.
 * `TauCeti.HasHomotopyExtensionProperty.isClosed`: in a Hausdorff space the property forces the
   subset to be closed, so the inclusion is a closed cofibration.
 * `TauCeti.HasHomotopyExtensionProperty.image` and
@@ -205,6 +206,24 @@ theorem hasHomotopyExtensionProperty_of_retraction (hA : IsClosed A) {r : C(I ×
     (hr' : ∀ p ∈ cylinderExtensionDomain A, r p = p) :
     HasHomotopyExtensionProperty A :=
   fun f H hH => exists_homotopy_extension_of_retraction hA hr hr' f H hH
+
+/-- A clopen subset has the homotopy extension property: the cylinder retracts onto
+`{0} × X ∪ I × A` by fixing the part over `A` and collapsing the part over the complement of `A`
+to the bottom of the cylinder. -/
+theorem _root_.IsClopen.hasHomotopyExtensionProperty (hA : IsClopen A) :
+    HasHomotopyExtensionProperty A := by
+  classical
+  have hfr : frontier {p : I × X | p.2 ∈ A} = ∅ :=
+    (hA.preimage (f := (Prod.snd : I × X → X)) continuous_snd).frontier_eq
+  have hr : Continuous fun p : I × X => if p.2 ∈ A then p else ((0 : I), p.2) :=
+    Continuous.if (by simp [hfr]) continuous_id (by fun_prop)
+  apply hasHomotopyExtensionProperty_of_retraction hA.isClosed (r := ⟨_, hr⟩)
+  · intro p
+    by_cases h : p.2 ∈ A <;> simp [h, mem_cylinderExtensionDomain_iff]
+  · rintro ⟨t, x⟩ hp
+    obtain rfl | hx : t = 0 ∨ x ∈ A := hp
+    · by_cases h : x ∈ A <;> simp [h]
+    · simp [hx]
 
 /-- Solving the universal homotopy extension problem, the one whose target is the subspace
 `{0} × X ∪ I × A` itself, produces a retraction of the cylinder onto that subspace. -/

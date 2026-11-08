@@ -198,6 +198,13 @@ chart, with the convention `0⁻¹ = 0` at `0` and at `∞`. -/
 theorem inv_invChart (x : OnePoint 𝕜) : (invChart x)⁻¹ = affineChart x := by
   induction x using OnePoint.rec <;> simp
 
+/-- The transition map from the inverted chart to the affine chart is `w ↦ w⁻¹`, on all of `𝕜`:
+both sides send `0` to `0`. -/
+theorem affineChart_comp_invChart_symm :
+    (affineChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∘ invChart.symm = fun w ↦ w⁻¹ := by
+  funext w
+  rw [Function.comp_apply, ← inv_invChart, invChart.right_inv (by simp)]
+
 /-! ### The charted space -/
 
 /-- The projective line `OnePoint 𝕜` as a charted space modelled on `𝕜`: its atlas consists of the

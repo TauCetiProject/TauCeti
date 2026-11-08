@@ -47,32 +47,6 @@ universe w v u t
 variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Field k] [Linear k C]
   [HasExt.{w} C]
 
-private theorem finrank_eq_finrank_range_add_finrank_range_of_exact
-    {U V W : Type*} [AddCommGroup U] [Module k U] [AddCommGroup V] [Module k V]
-    [AddCommGroup W] [Module k W] [FiniteDimensional k V]
-    (f : U →ₗ[k] V) (g : V →ₗ[k] W) (h : Function.Exact f g) :
-    Module.finrank k V = Module.finrank k f.range + Module.finrank k g.range := by
-  have hr := g.finrank_range_add_finrank_ker
-  rw [h.linearMap_ker_eq] at hr
-  omega
-
-private theorem finrank_sub_finrank_sub_finrank_of_exact
-    {A B C D E : Type*} [AddCommGroup A] [Module k A] [AddCommGroup B] [Module k B]
-    [AddCommGroup C] [Module k C] [AddCommGroup D] [Module k D]
-    [AddCommGroup E] [Module k E]
-    [FiniteDimensional k A] [FiniteDimensional k B] [FiniteDimensional k C]
-    (f : A →ₗ[k] B) (g : B →ₗ[k] C) (δ : C →ₗ[k] D) (f' : D →ₗ[k] E)
-    (hfg : Function.Exact f g) (hgδ : Function.Exact g δ)
-    (hδf : Function.Exact δ f') :
-    (Module.finrank k B : ℤ) - Module.finrank k A - Module.finrank k C =
-      -(Module.finrank k f.ker : ℤ) - Module.finrank k f'.ker := by
-  have hB := finrank_eq_finrank_range_add_finrank_range_of_exact f g hfg
-  have hC := finrank_eq_finrank_range_add_finrank_range_of_exact g δ hgδ
-  have hA := f.finrank_range_add_finrank_ker
-  have hker : Module.finrank k f'.ker = Module.finrank k δ.range :=
-    congrArg (fun S : Submodule k D ↦ Module.finrank k S) hδf.linearMap_ker_eq
-  omega
-
 private theorem alternating_finrank_sub_add_sub_correction
     {A B D : ℕ → Type*}
     [∀ n, AddCommGroup (A n)] [∀ n, Module k (A n)]
@@ -102,7 +76,7 @@ private theorem alternating_finrank_sub_add_sub_correction
       let _ := hA N
       let _ := hB N
       let _ := hD N
-      have hd := finrank_sub_finrank_sub_finrank_of_exact (f N) (g N) (δ N) (f (N + 1))
+      have hd := (f N).finrank_sub_finrank_sub_finrank_of_exact (g N) (δ N) (f (N + 1))
         (hfg N) (hgδ N) (hδf N)
       rw [htA, htB, htD]
       calc
@@ -144,14 +118,8 @@ private theorem truncatedExtEuler_shortExact_correction₂ {S : ShortComplex C} 
     (fun n ↦ truncatedExtEuler_succ k X S.X₃ n)
     (Ext.postcomp_mk₀_injective_of_mono X S.f)
     (fun n ↦ exact_postcompOfLinear k hS X n)
-  · intro n
-    have h := Ext.covariant_sequence_exact₃' X hS n (n + 1) rfl
-    rw [ShortComplex.ab_exact_iff_function_exact] at h
-    exact h
-  · intro n
-    have h := Ext.covariant_sequence_exact₁' X hS n (n + 1) rfl
-    rw [ShortComplex.ab_exact_iff_function_exact] at h
-    exact h
+  · exact fun n ↦ exact_postcompOfLinear₃ k hS X n (n + 1) rfl
+  · exact fun n ↦ exact_postcompOfLinear₁ k hS X n (n + 1) rfl
 
 private theorem truncatedExtEuler_shortExact_correction₁ {S : ShortComplex C} (hS : S.ShortExact)
     (Y : C) (h₁ : IsExtFinite.{w} k S.X₁ Y) (h₂ : IsExtFinite.{w} k S.X₂ Y)

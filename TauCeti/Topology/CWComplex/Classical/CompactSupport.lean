@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import Mathlib.Topology.DiscreteSubset
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # Compact supports in relative CW complexes
 
 A compact subset of a relative CW complex meets only finitely many open cells outside the
 base. Consequently it lies in a skeleton of finite dimension, even when the complex is
-infinite-dimensional. The base itself need not be compact or finite-dimensional.
+infinite-dimensional. The base itself need not be compact or finite-dimensional. So the preimages
+of the skeleta under a continuous map into the complex absorb every compact set
+(`TauCeti.exists_subset_preimageSkeleton_of_isCompact`).
 
 These are the compact-support statements used to pass from skeletal homology to homology
 of the whole pair. They do not require local finiteness of the CW structure. The key weak-topology
@@ -110,5 +113,18 @@ theorem exists_subset_skeletonLT_of_isCompact {K : Set X} (hK : IsCompact K) (hK
     refine mem_skeletonLT_iff.2 (Or.inr ⟨m, ?_, i, hxi⟩)
     have hmem : (⟨m, i⟩ : Σ n, cell C n) ∈ hA.toFinset := hA.mem_toFinset.2 ⟨x, hx, hxi⟩
     exact_mod_cast Nat.lt_succ_of_le (Finset.le_sup (f := Sigma.fst) hmem)
+
+/-- **The skeletal filtration absorbs compact sets.** If `f` is continuous with values in the
+complex `C`, every compact subset of `E` lies in the preimage of some skeleton, since its image is
+compact and so lies in a finite skeleton. -/
+lemma exists_subset_preimageSkeleton_of_isCompact {E : Type*} [TopologicalSpace E] {f : E → X}
+    (hf : Continuous f) (hfC : Set.range f ⊆ C) {K : Set E} (hK : IsCompact K) :
+    ∃ q, K ⊆ preimageSkeleton C f q := by
+  obtain ⟨n, hn⟩ := exists_subset_skeletonLT_of_isCompact (hK.image hf)
+    ((Set.image_subset_range f K).trans hfC)
+  refine ⟨n, fun x hx ↦ ?_⟩
+  rw [mem_preimageSkeleton_iff]
+  exact skeletonLT_mono (by exact_mod_cast (by lia : n ≤ ((n : ℤ) + 1).toNat))
+    (hn (Set.mem_image_of_mem f hx))
 
 end TauCeti

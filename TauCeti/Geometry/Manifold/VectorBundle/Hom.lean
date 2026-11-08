@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
@@ -28,7 +28,10 @@ assumption on the target fibres.
 
 The file also records that pulling back a fixed continuous bilinear form on the model fibre
 along a trivialization gives a `C^n` field of bilinear forms over its base set
-(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), and that fibrewise inversion
+(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), conversely that a field of
+bilinear forms which is `C^n` at a point reads in the trivialization at that point as a family of
+bilinear forms on the model fibre which is `C^n` there
+(`TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`), and that fibrewise inversion
 preserves smoothness of a hom-bundle section at every point where the section is invertible
 (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle form of the
 smoothness of inversion of continuous linear maps between Banach spaces. A constant bilinear
@@ -37,7 +40,13 @@ pairing between trivial bundles is a smooth hom-bundle section
 constant on the common frame domains is smooth
 (`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
 
-Interchanging the two inputs of a smooth bilinear bundle map preserves smoothness
+Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
+(`ContMDiff.clm_bundle_comp`). The corresponding native section operation is
+`ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
+
+Negation of a hom-bundle section along any base map preserves its regularity
+(`ContMDiff.clm_bundle_neg`). Interchanging the inputs of a smooth bilinear bundle map preserves
+smoothness
 (`ContMDiffWithinAt.clm_bundle_flip`), without a choice of fibre norms. This permits
 contraction of a smooth tensor in any input slot.
 
@@ -176,6 +185,23 @@ theorem contMDiffOn_trivializationAt_pullbackForm [ContMDiffVectorBundle n F E I
   ext v w
   simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hb]
 
+/-- Conversely, a field `β` of bilinear forms which is `C^n` at `x`, read in the preferred
+trivialization `e` at `x` as `b ↦ β b (e.symm b ·) (e.symm b ·)`, is a family of bilinear forms on
+the model fibre which is `C^n` at `x`. -/
+theorem exists_contMDiffAt_apply_eq_apply_symm {β : (b : B) → E b →L[ℝ] E b →L[ℝ] ℝ} {x : B}
+    (hβ : ContMDiffAt IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun b ↦ E b →L[ℝ] E b →L[ℝ] ℝ) b (β b))
+      x) :
+    ∃ φ : B → F →L[ℝ] F →L[ℝ] ℝ, ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ) n φ x ∧
+      ∀ b ∈ (trivializationAt F E x).baseSet, ∀ u v,
+        φ b u v = β b ((trivializationAt F E x).symm b u) ((trivializationAt F E x).symm b v) := by
+  refine ⟨fun b ↦ ContinuousLinearMap.inCoordinates F E (F →L[ℝ] ℝ)
+    (fun b ↦ E b →L[ℝ] Trivial B ℝ b) x b x b (β b),
+    ((contMDiffAt_hom_bundle _).1 hβ).2, fun b hb u v ↦ ?_⟩
+  rw [inCoordinates_apply_eq₂ (𝕜 := ℝ) (F₃ := ℝ) (E₃ := Trivial B ℝ) hb hb (Set.mem_univ _)]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_coe, id_eq]
+
 end PullbackForm
 
 end TauCeti.Manifold
@@ -218,6 +244,93 @@ theorem contMDiff_hom_bundle_of_inCoordinates_eq_const
 end ConstantCoordinates
 
 end TauCeti
+
+section Composition
+
+variable {𝕜 B M F₁ F₂ F₃ EB HB EM HM : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] [TopologicalSpace HM]
+  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] {V₁ V₂ V₃ : B → Type*}
+  [∀ b, AddCommGroup (V₁ b)] [∀ b, Module 𝕜 (V₁ b)] [∀ b, TopologicalSpace (V₁ b)]
+  [∀ b, AddCommGroup (V₂ b)] [∀ b, Module 𝕜 (V₂ b)] [∀ b, TopologicalSpace (V₂ b)]
+  [∀ b, AddCommGroup (V₃ b)] [∀ b, Module 𝕜 (V₃ b)] [∀ b, TopologicalSpace (V₃ b)]
+  [∀ b, IsTopologicalAddGroup (V₂ b)] [∀ b, ContinuousSMul 𝕜 (V₂ b)]
+  [∀ b, IsTopologicalAddGroup (V₃ b)] [∀ b, ContinuousSMul 𝕜 (V₃ b)]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+  {n : WithTop ℕ∞} {b : M → B}
+  {A : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)} {C : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
+
+/-- Composing two hom-bundle fields along the same base map preserves their regularity. -/
+theorem ContMDiff.clm_bundle_comp
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃) (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (A y)))
+    (hC : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) := by
+  intro x
+  have hAx := (contMDiffAt_hom_bundle _).mp (hA x)
+  have hCx := (contMDiffAt_hom_bundle _).mp (hC x)
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_⟩
+  filter_upwards [hAx.1.continuousAt.preimage_mem_nhds
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+
+/-- Composition of native `Cⁿ` hom-bundle sections. -/
+def ContMDiffSection.clmComp
+    (A : Cₛ^n⟮IB; F₂ →L[𝕜] F₃, fun x ↦ V₂ x →L[𝕜] V₃ x⟯)
+    (C : Cₛ^n⟮IB; F₁ →L[𝕜] F₂, fun x ↦ V₁ x →L[𝕜] V₂ x⟯) :
+    Cₛ^n⟮IB; F₁ →L[𝕜] F₃, fun x ↦ V₁ x →L[𝕜] V₃ x⟯ :=
+  ⟨fun x ↦ (A x).comp (C x), A.contMDiff.clm_bundle_comp C.contMDiff⟩
+
+@[simp]
+theorem ContMDiffSection.clmComp_apply
+    (A : Cₛ^n⟮IB; F₂ →L[𝕜] F₃, fun x ↦ V₂ x →L[𝕜] V₃ x⟯)
+    (C : Cₛ^n⟮IB; F₁ →L[𝕜] F₂, fun x ↦ V₁ x →L[𝕜] V₂ x⟯) (x : B) :
+    A.clmComp C x = (A x).comp (C x) := (rfl)
+
+end Composition
+
+section Neg
+
+variable {𝕜 B M F₁ F₂ : Type*} [NontriviallyNormedField 𝕜]
+  {EB HB EM HM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M]
+  [ChartedSpace HM M] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] {V : B → Type*} {W : B → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, AddCommGroup (W b)] [∀ b, Module 𝕜 (W b)] [∀ b, TopologicalSpace (W b)]
+  [∀ b, IsTopologicalAddGroup (W b)] [∀ b, ContinuousSMul 𝕜 (W b)]
+  [TopologicalSpace (TotalSpace F₁ V)] [FiberBundle F₁ V] [VectorBundle 𝕜 F₁ V]
+  [TopologicalSpace (TotalSpace F₂ W)] [FiberBundle F₂ W] [VectorBundle 𝕜 F₂ W]
+  {n : WithTop ℕ∞} {b : M → B} {A : ∀ y, V (b y) →L[𝕜] W (b y)}
+
+/-- Negating a hom-bundle section along any base map preserves its regularity. -/
+theorem ContMDiff.clm_bundle_neg
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (A y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (-A y)) := by
+  intro x
+  have h := hA x
+  rw [contMDiffAt_hom_bundle] at h ⊢
+  refine ⟨h.1, ?_⟩
+  simpa only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_neg,
+    ContinuousLinearMap.neg_comp] using h.2.neg
+
+end Neg
 
 section Inverse
 

@@ -70,12 +70,12 @@ end comapRegular
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [SymmetricCategory C]
   [HasCoequalizers C]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)]
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)]
   {A : C} [MonObj A] [IsCommMonObj A] {B : C} [MonObj B] [IsCommMonObj B]
   (f : A ⟶ B) [IsMonHom f]
 
 omit [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)] [IsCommMonObj A] in
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)] [IsCommMonObj A] in
 /- The multiplication of `B` identifies the two actions of `A` on `B ⊗ B`. -/
 private lemma mul_tensorπ_condition :
     ((β_ A (comapRegular f).X).inv ≫ γ[A, (comapRegular f).X]) ▷ (comapRegular f).X ≫

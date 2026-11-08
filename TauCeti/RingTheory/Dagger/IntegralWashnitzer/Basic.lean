@@ -414,11 +414,9 @@ theorem mem_intWashnitzerAlgebra_iff_exists_hasSum [Finite σ] {π : K} (hπ0 : 
       · simp
     · refine Finset.sup_le fun t ht ↦ ?_
       have ht' := MvPolynomial.mem_support_iff.1 ht
-      rw [hcoeff] at ht'
-      split_ifs at ht' with hj
-      · rw [← hj]
-        exact (Nat.lt_mul_div_succ t.degree hc).le
-      · exact absurd rfl ht'
+      rw [hcoeff, ite_ne_right_iff] at ht'
+      obtain ⟨rfl, -⟩ := ht'
+      exact (Nat.lt_mul_div_succ t.degree hc).le
     · refine MvPowerSeries.WithPiTopology.hasSum_iff_hasSum_coeff.2 fun t ↦ ?_
       simp only [coeff_C_mul, MvPolynomial.coeff_coe, hcoeff, mul_ite, mul_zero]
       convert hasSum_ite_eq (t.degree / c) (coeff t f) using 1
@@ -437,16 +435,13 @@ theorem mem_intWashnitzerAlgebra_iff_exists_hasSum [Finite σ] {π : K} (hπ0 : 
       IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun j _ ↦ ?_
     rw [norm_mul, norm_pow]
     by_cases h0 : (P j).coeff t = 0
-    · simp only [h0, norm_zero, mul_zero]
-      positivity
+    · simp [h0, pow_nonneg (norm_nonneg π)]
     have hdeg : t.degree ≤ c * (j + 1) :=
       (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.2 h0)).trans (hPdeg j)
     have hj : t.degree / (c + 1) ≤ j :=
       Nat.lt_succ_iff.1 ((Nat.div_lt_iff_lt_mul c.succ_pos).2 (by nlinarith))
-    calc ‖π‖ ^ j * ‖(P j).coeff t‖ ≤ ‖π‖ ^ j * 1 := by gcongr; exact hP1 j t
-      _ ≤ ‖π‖ ^ (t.degree / (c + 1)) := by
-          rw [mul_one]
-          exact pow_le_pow_of_le_one hπ.le hπ1.le hj
+    exact (mul_le_of_le_one_right (by positivity) (hP1 j t)).trans
+      (pow_le_pow_of_le_one hπ.le hπ1.le hj)
 
 /-- **`K⟨X⟩† = K°⟨X⟩†[1/π]`.** For `π ∈ K` with `0 < ‖π‖ < 1`, a series is overconvergent iff
 some power of `π` multiplies it into the integral Monsky–Washnitzer algebra. -/

@@ -106,6 +106,17 @@ theorem mapRingEquiv_trans (τ : L ≃+* M) :
   rw [mapRingEquiv, mapRingEquiv, mapRingEquiv, h,
     IsFractionRing.ringEquivOfRingEquiv_comp (RatFunc K) (RatFunc L) (RatFunc M)]
 
+/-- An algebra map between rational function fields that preserves the given map on constants
+is compatible with the coefficient-field scalar tower. -/
+theorem isScalarTower_of_algebraMap_C {F K : Type*} [Field F] [Field K] [Algebra F K]
+    [Algebra (RatFunc F) (RatFunc K)]
+    (hC : ∀ c : F, algebraMap (RatFunc F) (RatFunc K) (C c) = C (algebraMap F K c)) :
+    IsScalarTower F (RatFunc F) (RatFunc K) := by
+  -- At generic F and K, typeclass synthesis uses coefficient rather than subtype algebras.
+  apply IsScalarTower.of_algebraMap_eq
+  intro c
+  rw [IsScalarTower.algebraMap_apply F K (RatFunc K), algebraMap_eq_C, algebraMap_eq_C, hC]
+
 end TauCeti.RatFunc
 
 namespace TauCeti

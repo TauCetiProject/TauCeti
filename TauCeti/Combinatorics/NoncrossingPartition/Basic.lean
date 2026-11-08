@@ -248,10 +248,11 @@ the part of `P` through `m`, and let `t` be the first position after `M` of the 
 `m`. Then `[m, t)` is a union of parts of `P`: a part of `P` leaving it would cross the part of `P`
 through `m` or the part of `Q` through `m`. -/
 theorem IsNoncrossing.le_and_lt_of_mem_part (hP : P.IsNoncrossing) (hQ : Q.IsNoncrossing)
-    (hPQ : P ≤ Q) {m M t : α} (hm : m ∈ s) (hM : M ∈ P.part m) (hmin : ∀ z ∈ P.part m, m ≤ z)
+    (hPQ : P ≤ Q) {m M t : α} (hM : M ∈ P.part m) (hmin : ∀ z ∈ P.part m, m ≤ z)
     (hmax : ∀ z ∈ P.part m, z ≤ M) (ht : t ∈ Q.part m) (hMt : M < t)
     (htmin : ∀ z ∈ Q.part m, M < z → t ≤ z) {a b : α} (hb : b ∈ P.part a) (hma : m ≤ a)
     (hat : a < t) : m ≤ b ∧ b < t := by
+  have hm : m ∈ s := P.part_nonempty.1 ⟨M, hM⟩
   have has : a ∈ s := P.part_nonempty.1 ⟨b, hb⟩
   have hbs : b ∈ s := P.part_subset a hb
   have hMs : M ∈ s := P.part_subset m hM
@@ -289,10 +290,12 @@ theorem IsNoncrossing.le_and_lt_of_mem_part (hP : P.IsNoncrossing) (hQ : Q.IsNon
 the parts through `p` and `q`: no `u < y < v` with `u` in the part of `p` and `v` in the part of `q`
 can have a position `w` in the part of `y` outside `[u, v]`. -/
 private theorem IsNoncrossing.false_of_lt_of_lt (hP : P.IsNoncrossing) {p q u v y w : α}
-    (hp : p ∈ s) (hq : q ∈ s) (hu : u ∈ P.part p) (hv : v ∈ P.part q) (hy : y ∈ s)
-    (hw : w ∈ P.part y) (hyp : P.part y ≠ P.part p) (hyq : P.part y ≠ P.part q)
-    (hD : ∀ z ∈ P.part y, z < p ∧ z < q ∨ p < z ∧ q < z) (huy : u < y) (hyv : y < v)
-    (hw' : w < u ∨ v < w) : False := by
+    (hu : u ∈ P.part p) (hv : v ∈ P.part q) (hw : w ∈ P.part y) (hyp : P.part y ≠ P.part p)
+    (hyq : P.part y ≠ P.part q) (hD : ∀ z ∈ P.part y, z < p ∧ z < q ∨ p < z ∧ q < z)
+    (huy : u < y) (hyv : y < v) (hw' : w < u ∨ v < w) : False := by
+  have hp : p ∈ s := P.part_nonempty.1 ⟨u, hu⟩
+  have hq : q ∈ s := P.part_nonempty.1 ⟨v, hv⟩
+  have hy : y ∈ s := P.part_nonempty.1 ⟨w, hw⟩
   have hus := P.part_subset p hu
   have hws := P.part_subset y hw
   have hup : P.part u = P.part p := P.part_eq_of_mem (P.part_mem.2 hp) hu
@@ -319,18 +322,18 @@ private theorem IsNoncrossing.false_of_mem_union (hP : P.IsNoncrossing) {i j : �
     (hu : u ∈ P.part i ∪ P.part j) (hv : v ∈ P.part i ∪ P.part j) (hy : y ∈ s)
     (hyM : y ∉ P.part i ∪ P.part j) (hw : w ∈ P.part y) (huy : u < y) (hyv : y < v)
     (hw' : w < u ∨ v < w) : False := by
-  have hpart : ∀ {x}, x ∈ P.part i ∪ P.part j → ∃ p ∈ s, (p = i ∨ p = j) ∧ x ∈ P.part p := by
+  have hpart : ∀ {x}, x ∈ P.part i ∪ P.part j → ∃ p, (p = i ∨ p = j) ∧ x ∈ P.part p := by
     intro x hx
     rcases mem_union.1 hx with hx | hx
-    exacts [⟨i, hi, Or.inl rfl, hx⟩, ⟨j, hj, Or.inr rfl, hx⟩]
-  obtain ⟨p, hps, hp, hup⟩ := hpart hu
-  obtain ⟨q, hqs, hq, hvq⟩ := hpart hv
+    exacts [⟨i, Or.inl rfl, hx⟩, ⟨j, Or.inr rfl, hx⟩]
+  obtain ⟨p, hp, hup⟩ := hpart hu
+  obtain ⟨q, hq, hvq⟩ := hpart hv
   have hne : ∀ {p}, p = i ∨ p = j → P.part y ≠ P.part p := by
     rintro p (rfl | rfl) h
     exacts [hyM (mem_union_left _ ((P.mem_part_iff_part_eq_part hy hi).2 h)),
       hyM (mem_union_right _ ((P.mem_part_iff_part_eq_part hy hj).2 h))]
   -- The part through `y` avoids `i` and `j`, so it lies before `i` or after `j`.
-  refine hP.false_of_lt_of_lt hps hqs hup hvq hy hw (hne hp) (hne hq) (fun z hz => ?_) huy hyv hw'
+  refine hP.false_of_lt_of_lt hup hvq hw (hne hp) (hne hq) (fun z hz => ?_) huy hyv hw'
   have hzy : P.part z = P.part y := P.part_eq_of_mem (P.part_mem.2 hy) hz
   have hzi : z ≠ i := fun h => hne (Or.inl rfl) (hzy.symm.trans (h ▸ rfl))
   have hzj : z ≠ j := fun h => hne (Or.inr rfl) (hzy.symm.trans (h ▸ rfl))

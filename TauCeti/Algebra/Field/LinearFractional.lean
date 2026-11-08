@@ -36,14 +36,15 @@ rotation of the disc coordinate centred there, in
   the quotient `t = (x - θ₀ y) / (x - θ₂ y)`, a linear fractional function of `x / y`, is not
   `1` when `θ₀ ≠ θ₂` and `y ≠ 0`, and the inverse transformation recovers
   `x / y = (θ₀ - t θ₂) / (1 - t)`. These are used in the reduction of Thue equations to unit
-  equations, in `TauCeti/NumberTheory/UnitEquation/Thue.lean`.
+  equations, in `TauCeti/NumberTheory/UnitEquation/Thue/Basic.lean`.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- The Möbius difference formula at a fixed point: if `(a * w + b) / (c * w + d) = w`, then
+/-- The Möbius difference formula at a fixed point: if `w` is fixed, in the cleared form
+`a * w + b = w * (c * w + d)`, and both denominators are nonzero, then
 `(a * t + b) / (c * t + d) - w = (a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d))`. -/
 theorem moebius_sub_of_fixed {𝕜 : Type*} [Field 𝕜] {a b c d w t : 𝕜}
     (hw : a * w + b = w * (c * w + d)) (hj : c * w + d ≠ 0) (hjt : c * t + d ≠ 0) :
@@ -62,15 +63,11 @@ theorem crossRatio_comp_eq_of_sub_eq_div {𝕜 : Type*} [Field 𝕜] {φ d : �
     {p q r s : 𝕜} (hp : p ∈ S) (hq : q ∈ S) (hr : r ∈ S) (hs : s ∈ S) :
     (φ p - φ r) * (φ q - φ s) / ((φ p - φ s) * (φ q - φ r)) =
       (p - r) * (q - s) / ((p - s) * (q - r)) := by
-  have hL : κ ^ 2 / (d p * d q * d r * d s) ≠ 0 :=
-    div_ne_zero (pow_ne_zero 2 hκ)
-      (mul_ne_zero (mul_ne_zero (mul_ne_zero (hd p hp) (hd q hq)) (hd r hr)) (hd s hs))
-  have hnum : κ * (p - r) / (d p * d r) * (κ * (q - s) / (d q * d s)) =
-      (p - r) * (q - s) * (κ ^ 2 / (d p * d q * d r * d s)) := by ring
-  have hden : κ * (p - s) / (d p * d s) * (κ * (q - r) / (d q * d r)) =
-      (p - s) * (q - r) * (κ ^ 2 / (d p * d q * d r * d s)) := by ring
+  have hL : κ ^ 2 / (d p * d q * d r * d s) ≠ 0 := by
+    simp [hκ, hd p hp, hd q hq, hd r hr, hd s hs]
   rw [hφ p hp r hr, hφ q hq s hs, hφ p hp s hs, hφ q hq r hr,
-    hnum, hden, mul_div_mul_right _ _ hL]
+    ← mul_div_mul_right ((p - r) * (q - s)) _ hL]
+  congr 1 <;> ring
 
 /-- **Siegel's identity.** For `θ₁ ≠ θ₀` and `x - θ₂ y ≠ 0` in a field,
 `(θ₁ - θ₂) / (θ₁ - θ₀) · (x - θ₀ y) / (x - θ₂ y) + (θ₂ - θ₀) / (θ₁ - θ₀) · (x - θ₁ y) / (x - θ₂ y)`
@@ -80,16 +77,16 @@ theorem siegel_identity {F : Type*} [Field F] {θ₀ θ₁ θ₂ x y : F} (h : �
     (hxy : x - θ₂ * y ≠ 0) :
     (θ₁ - θ₂) / (θ₁ - θ₀) * ((x - θ₀ * y) / (x - θ₂ * y)) +
       (θ₂ - θ₀) / (θ₁ - θ₀) * ((x - θ₁ * y) / (x - θ₂ * y)) = 1 := by
-  have h' : θ₁ - θ₀ ≠ 0 := sub_ne_zero.2 h
-  field_simp
+  field_simp [sub_ne_zero.2 h]
   ring
 
-/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0` in a commutative ring without zero
-divisors, then `t ≠ 1`. -/
-theorem ne_one_of_mul_sub_mul_eq {R : Type*} [CommRing R] [NoZeroDivisors R] {θ₀ θ₂ x y t : R}
+/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0` in a ring without zero divisors,
+then `t ≠ 1`. -/
+theorem ne_one_of_mul_sub_mul_eq {R : Type*} [Ring R] [NoZeroDivisors R] {θ₀ θ₂ x y t : R}
     (h : θ₀ ≠ θ₂) (hy : y ≠ 0) (ht : t * (x - θ₂ * y) = x - θ₀ * y) : t ≠ 1 := by
   rintro rfl
-  exact mul_ne_zero (sub_ne_zero.2 h) hy (by linear_combination ht)
+  rw [one_mul, sub_right_inj] at ht
+  exact h (mul_right_cancel₀ hy ht).symm
 
 /-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0`, then `x / y = (θ₀ - t θ₂) / (1 - t)`.
 Thus the quotient of two linear factors at `(x, y)` determines the ratio `x / y`. -/

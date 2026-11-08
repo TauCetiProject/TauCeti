@@ -30,6 +30,8 @@ consume — for instance the exact number of unit square classes in
 * `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
   places plus one is the degree.
 * `NumberField.Units.fundSystem_not_mem_torsion`: fundamental units are nontorsion.
+* `NumberField.Units.prod_fundSystem_zpow_mem_torsion_iff`: a product of integral powers of the
+  fundamental units is torsion only when all the exponents vanish.
 -/
 
 public section
@@ -143,6 +145,15 @@ theorem fundSystem_not_mem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsi
   have hzero := dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hi
   rw [logEmbedding_fundSystem] at hzero
   exact (basisUnitLattice K).ne_zero i (Subtype.ext hzero)
+
+/-- A product of integral powers of the fundamental system is a torsion unit only when all the
+exponents vanish: the uniqueness half of `NumberField.Units.exist_unique_eq_mul_prod`. -/
+theorem prod_fundSystem_zpow_mem_torsion_iff {e : Fin (rank K) → ℤ} :
+    ∏ i, fundSystem K i ^ e i ∈ torsion K ↔ e = 0 := by
+  refine ⟨fun he ↦ ?_, fun he ↦ by simp [he, one_mem]⟩
+  obtain ⟨_, -, huniq⟩ := exist_unique_eq_mul_prod K (∏ i, fundSystem K i ^ e i)
+  exact (congrArg Prod.snd ((huniq (⟨_, he⟩, 0) (by simp)).trans
+    (huniq (1, e) (by simp)).symm)).symm
 
 end Units
 

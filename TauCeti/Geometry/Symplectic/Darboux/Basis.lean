@@ -36,7 +36,7 @@ corresponding facts `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J` and
 `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J` about nondegenerate alternating forms.
 Every linear symplectomorphism of `(V, ω)` has determinant `1`
 (`TauCeti.SymplecticForm.IsSymplectomorphism.det_eq_one`), the specialization of
-`TauCeti.BilinForm.IsIsometry.det_eq_one`.
+`TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`.
 
 Darboux bases are carried to Darboux bases by linear symplectomorphisms
 (`TauCeti.SymplecticForm.IsDarbouxBasis.map`), and the concatenation of Darboux bases of `ω₁` and
@@ -192,7 +192,8 @@ theorem IsDarbouxBasis.map {ω' : SymplecticForm W} {e : V ≃ₗ[ℝ] W}
 /-- **Linear symplectomorphisms have determinant one.** -/
 theorem IsSymplectomorphism.det_eq_one [FiniteDimensional ℝ V] {e : V ≃ₗ[ℝ] V}
     (he : IsSymplectomorphism ω ω e) : LinearMap.det (e : V →ₗ[ℝ] V) = 1 :=
-  BilinForm.IsIsometry.det_eq_one ω.isAlt ω.nondegenerate (BilinForm.isIsometry_iff.2 he.apply)
+  BilinForm.IsIsometry.det_eq_one_of_isAlt ω.isAlt ω.nondegenerate
+    (BilinForm.isIsometry_iff.2 he.apply)
 
 /-- **Darboux bases of a direct sum.** The concatenation of a Darboux basis `b` of `ω₁` and a
 Darboux basis `c` of `ω₂`, listing the pairs of `b` before those of `c`, is a Darboux basis of
