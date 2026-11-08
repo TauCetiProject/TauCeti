@@ -48,10 +48,10 @@ and its image under a transposition, so the transfer closure theorem applies.
 
 * `Matrix.mulVec_mem_convexHull_range_comp_perm`: if `M` is doubly stochastic, then `M *ᵥ w` lies
   in the convex hull of the permutation orbit of `w`.
+* `Equiv.Perm.comp_perm_mem_convexHull_range_comp_perm_iff`: the convex hull of a permutation
+  orbit is permutation invariant.
 * `TauCeti.mul_sqrt_sum_sq_sub_le_sum_sub_mul_of_mem_convexHull`: the separated-coordinate
   displacement estimate `(γ / √2) ‖w - c‖ ≤ ⟪w - c, w⟫`.
-* `TauCeti.comp_perm_mem_convexHull_range_comp_perm_iff`: the convex hull of a permutation orbit is
-  permutation invariant.
 * `TauCeti.mem_convexHull_range_comp_perm_iff`,
   `TauCeti.mem_convexHull_range_comp_perm_iff_of_antitone`: Rado's theorem, the convex hull of
   the permutation orbit of a decreasing `w` consists of the tuples majorized by `w`.
@@ -90,6 +90,27 @@ theorem Matrix.mulVec_mem_convexHull_range_comp_perm {M : Matrix ι ι R}
   exact Set.mem_image_of_mem _ hM
 
 end Birkhoff
+
+/-- The convex hull of the permutation orbit of `w` is invariant under permutations of the
+coordinates: `x ∘ τ` lies in it exactly when `x` does. -/
+@[simp]
+theorem Equiv.Perm.comp_perm_mem_convexHull_range_comp_perm_iff {R ι : Type*} [Semiring R]
+    [PartialOrder R] {w x : ι → R} (τ : Equiv.Perm ι) :
+    x ∘ τ ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) ↔
+      x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
+  -- Precomposition with any `τ` maps the convex hull into itself.
+  have key (τ : Equiv.Perm ι) {x : ι → R}
+      (hx : x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ)) :
+      x ∘ τ ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
+    have himage : LinearMap.funLeft R R τ '' Set.range (fun σ : Equiv.Perm ι ↦ w ∘ σ) ⊆
+        Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ := by
+      rintro _ ⟨_, ⟨σ, rfl⟩, rfl⟩
+      exact ⟨σ * τ, rfl⟩
+    refine convexHull_mono himage ?_
+    rw [← LinearMap.image_convexHull]
+    exact ⟨x, hx, rfl⟩
+  refine ⟨fun h ↦ ?_, key τ⟩
+  simpa [Function.comp_assoc] using key τ⁻¹ h
 
 namespace TauCeti
 
@@ -177,28 +198,6 @@ section Majorization
 
 variable {R : Type*} {n : ℕ}
 
-omit [Fintype ι] in
-/-- The convex hull of the permutation orbit of `w` is invariant under permutations of the
-coordinates: `x ∘ τ` lies in it exactly when `x` does. -/
-@[simp]
-theorem comp_perm_mem_convexHull_range_comp_perm_iff [Semiring R] [PartialOrder R] {w x : ι → R}
-    (τ : Equiv.Perm ι) :
-    x ∘ τ ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) ↔
-      x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
-  -- Precomposition with any `τ` maps the convex hull into itself.
-  have key (τ : Equiv.Perm ι) {x : ι → R}
-      (hx : x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ)) :
-      x ∘ τ ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
-    have himage : LinearMap.funLeft R R τ '' Set.range (fun σ : Equiv.Perm ι ↦ w ∘ σ) ⊆
-        Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ := by
-      rintro _ ⟨_, ⟨σ, rfl⟩, rfl⟩
-      exact ⟨σ * τ, rfl⟩
-    refine convexHull_mono himage ?_
-    rw [← LinearMap.image_convexHull]
-    exact ⟨x, hx, rfl⟩
-  refine ⟨fun h ↦ ?_, key τ⟩
-  simpa [Function.comp_assoc] using key τ⁻¹ h
-
 /-- Every point of the convex hull of the permutation orbit of `w` has the total sum of `w`. -/
 theorem sum_eq_of_mem_convexHull_range_comp_perm [Semiring R] [PartialOrder R] {w x : ι → R}
     (hx : x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ)) :
@@ -246,7 +245,7 @@ theorem mem_convexHull_range_comp_perm_iff_of_antitone {w x : Fin n → ℝ} (hw
   refine mem_of_prefixSum_le_of_sum_eq (fun y hy i j δ hδ hδ' ↦ ?_)
     (subset_convexHull ℝ _ ⟨1, rfl⟩) hx hle hsum
   exact (convex_convexHull ℝ _).robinHood_mem hy
-    ((comp_perm_mem_convexHull_range_comp_perm_iff _).2 hy) hδ hδ'
+    ((Equiv.Perm.comp_perm_mem_convexHull_range_comp_perm_iff _).2 hy) hδ hδ'
 
 /-- **Rado's theorem.** For antitone `w`, a tuple `x` lies in the convex hull of the permutation
 orbit of `w` exactly when `x` is majorized by `w`: the prefix sums of the decreasing
@@ -254,7 +253,7 @@ rearrangement of `x` are at most those of `w`, and the total sums agree. -/
 theorem mem_convexHull_range_comp_perm_iff {w x : Fin n → ℝ} (hw : Antitone w) :
     x ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ w ∘ σ) ↔
       (∀ k, prefixSum k (x ∘ Tuple.sortDesc x) ≤ prefixSum k w) ∧ ∑ i, x i = ∑ i, w i := by
-  rw [← comp_perm_mem_convexHull_range_comp_perm_iff (Tuple.sortDesc x),
+  rw [← (Tuple.sortDesc x).comp_perm_mem_convexHull_range_comp_perm_iff,
     mem_convexHull_range_comp_perm_iff_of_antitone hw (Tuple.antitone_sortDesc x)]
   simp only [Function.comp_apply, Equiv.sum_comp]
 
