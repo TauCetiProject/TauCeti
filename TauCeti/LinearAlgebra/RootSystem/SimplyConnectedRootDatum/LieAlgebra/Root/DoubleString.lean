@@ -168,7 +168,7 @@ theorem chevalleyRootSubgroup_mul_of_doubleString
   obtain ⟨had, hbg, _⟩ := doubleString_brackets hγ hδ hbot htop
   have hmul := kostantRootSubgroupPoints_mul_of_lie_lie_eq'
     (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-    (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil)
+    (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
     (lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot) had hbg
     (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
@@ -203,7 +203,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
   obtain ⟨had, hbg, hbd⟩ := doubleString_brackets hγ hδ hbot htop
   have hcomm := commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' (A := A)
     (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-    (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil)
+    (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
     (lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot) had hbg hbd
     (isNilpotent_apply_ι_chevalleySystem ρ hnil α)

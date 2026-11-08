@@ -270,7 +270,7 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long {α β γ δ ε ζ : Fin G2.n
   let hroot := isNilpotent_apply_ι_chevalleySystem ρ hnil
   have hcollection := kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul'
     (G2.chevalleySystem ht) (G2.lieBasis ht).h ρ M
-    (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) hij hik hil hlk
+    (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) hij hik hil hlk
     him hio hjk hlm hko hlo hmo (hroot α) (hroot β) (hroot γ) (hroot δ) (hroot ε) (hroot ζ)
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))

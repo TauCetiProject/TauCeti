@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Weig
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Character
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
 
 /-!
 # Weight spaces of the adjoint representation
@@ -632,3 +633,21 @@ theorem adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv
   exact Submodule.map_eq_bot_iff
 
 end Derivation
+
+namespace TauCeti.CommHopfAlgCat
+
+variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
+  [Algebra.FiniteType k K] {f : H ⟶ K} {M : Type u} [CommGroup M]
+
+/-- The differential of a homomorphism with étale kernel detects adjoint weight vectors.
+Both weights are indexed by the characters of the diagonalizable group in the source. -/
+theorem dualCotangentMap_mem_adjointWeightSpace_iff_of_etaleKernel [Algebra.FiniteType k H]
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal))
+    (π : K →ₐc[k] MonoidAlgebra k M) (α : M)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    Derivation.dualCotangentMap f.hom x ∈ Derivation.adjointWeightSpace (π.comp f.hom) α ↔
+      x ∈ Derivation.adjointWeightSpace π α :=
+  f.hom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective
+    (dualCotangentMap_injective_of_etaleKernel hker) π α x
+
+end TauCeti.CommHopfAlgCat

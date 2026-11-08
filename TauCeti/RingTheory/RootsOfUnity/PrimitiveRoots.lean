@@ -80,15 +80,19 @@ theorem _root_.IsPrimitiveRoot.map_eq_pow {n j : ℕ} [NeZero n] {ζ : R} (hζ :
 under a `ℚ`-algebra automorphism. -/
 theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
     {K : Type*} [Field K] [CharZero K] [Normal ℚ K]
-    {n j : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j) :
+    {n j : ℕ} {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j) :
     ∃ σ : K ≃ₐ[ℚ] K, σ ζ = ζ ^ j := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · obtain rfl : j = 1 := by simpa using hj
+    exact ⟨AlgEquiv.refl, by simp⟩
+  have : NeZero n := ⟨hn.ne'⟩
   have hpow : IsPrimitiveRoot (ζ ^ j) n := hζ.pow_of_coprime j hj.symm
   have hconj : IsConjRoot ℚ (ζ ^ j) ζ := by
     rw [isConjRoot_def,
       (hpow.minpoly_eq_cyclotomic_of_irreducible
-        (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm,
+        (Polynomial.cyclotomic.irreducible_rat hn)).symm,
       (hζ.minpoly_eq_cyclotomic_of_irreducible
-        (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm]
+        (Polynomial.cyclotomic.irreducible_rat hn)).symm]
   exact hconj.exists_algEquiv
 
 /-- A character of a group of order `n` takes values whose `n`-th power is `1`. -/

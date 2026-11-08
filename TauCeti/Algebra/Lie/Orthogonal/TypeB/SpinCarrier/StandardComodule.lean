@@ -267,7 +267,7 @@ theorem isSimpleOrder_of_spinWeights_of_rootSubgroupPoints
     IsSimpleOrder (Subcomodule k H (Fin (dimension n) → k)) :=
   Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights f (basisCharacter n)
     (basisCharacter_injective n) hweights
-    (basisReflection n) (basisReflection_involutive n)
+    (fun j ↦ ⇑(basisReflection n j)) (basisReflection_involutive n)
     (fun N a i ↦ single_basisReflection_mem n k N.toSubmodule (hroot N) a i)
     (Fintype.equivFin (Finset (Fin (n + 1))) ∅) fun a ↦ by
       obtain ⟨l, hl⟩ := DynkinType.exists_typeBSpinReflections_eq (signSet n a)
