@@ -64,17 +64,8 @@ theorem im_toComplex_nonneg (p : ℍ ⊕ OnePoint ℝ) : 0 ≤ (toComplex p).im 
 theorem toComplex_injOn : Set.InjOn toComplex {p | p ≠ .inr ∞} := by
   rintro (z | ξ) hp (w | η) hq h
   · exact congrArg _ (UpperHalfPlane.coe_injective h)
-  · obtain ⟨y, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun hη ↦ hq (congrArg _ hη)
-    have him := congrArg Complex.im h
-    rw [toComplex_inl, toComplex_inr_coe, Complex.ofReal_im] at him
-    exact absurd him z.im_pos.ne'
-  · obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun hξ ↦ hp (congrArg _ hξ)
-    have him := congrArg Complex.im h
-    rw [toComplex_inl, toComplex_inr_coe, Complex.ofReal_im] at him
-    exact absurd him.symm w.im_pos.ne'
-  · obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun hξ ↦ hp (congrArg _ hξ)
-    obtain ⟨y, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun hη ↦ hq (congrArg _ hη)
-    rw [toComplex_inr_coe, toComplex_inr_coe, Complex.ofReal_inj] at h
-    rw [h]
+  · induction η using OnePoint.rec <;> simp_all [Complex.ext_iff, im_ne_zero z]
+  · induction ξ using OnePoint.rec <;> simp_all [Complex.ext_iff, (im_ne_zero w).symm]
+  · induction ξ using OnePoint.rec <;> induction η using OnePoint.rec <;> simp_all
 
 end TauCeti.UpperHalfPlane

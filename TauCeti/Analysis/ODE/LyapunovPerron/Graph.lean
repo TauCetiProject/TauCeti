@@ -97,6 +97,16 @@ theorem lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap (ξ : X) :
   rw [lyapunovPerronGraphMap]
   abel
 
+/-- The Lyapunov--Perron graph map is evaluation at zero of its bounded forward solution,
+minus the stable projection of the parameter. -/
+theorem lyapunovPerronGraphMap_eq_evalCLM_sub :
+    lyapunovPerronGraphMap A P N hs hu hα hN hsmall =
+      fun ξ ↦ BoundedContinuousFunction.evalCLM ℝ 0
+        (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ) - P ξ := by
+  funext ξ
+  rw [BoundedContinuousFunction.evalCLM_apply,
+    lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap, add_sub_cancel_left]
+
 /-- The graph displacement is the value at time `0` of the integral terms of the Lyapunov--Perron
 equation: at time `0` the homogeneous term contributes exactly `P ξ`. -/
 theorem lyapunovPerronGraphMap_eq_lyapunovPerronIntegral (ξ : X) :

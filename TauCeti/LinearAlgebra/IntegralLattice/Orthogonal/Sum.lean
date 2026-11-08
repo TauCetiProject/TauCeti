@@ -16,7 +16,8 @@ import Mathlib.LinearAlgebra.Basis.Prod
 /-!
 # Orthogonal sums of integral lattices
 
-The orthogonal sum has product carrier and block-diagonal form. This file constructs the lattice,
+The orthogonal sum has product carrier and block-diagonal form, the product
+`LinearMap.BilinForm.prod` of the two ambient forms. This file constructs the lattice,
 its canonical carrier maps and product bases, and proves several invariant laws: rank is additive,
 Gram matrices are block diagonal, determinant and discriminant are multiplicative, and evenness
 and nondegeneracy are componentwise. Orthogonal sums are functorial under lattice isometries and
@@ -28,7 +29,6 @@ radicals, and the signature is componentwise additive.
 
 ## Main definitions
 
-* `TauCeti.IntegralLattice.orthogonalSumForm`: the block-diagonal ambient form.
 * `TauCeti.IntegralLattice.orthogonalSum`: the orthogonal sum lattice.
 * `TauCeti.IntegralLattice.orthogonalSumCarrierEquiv`: the carrier-product equivalence.
 * `TauCeti.IntegralLattice.orthogonalSumBasis`: the product of two carrier bases.
@@ -57,28 +57,6 @@ universe u v w x y z
 variable {V : Type u} {W : Type v}
 variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
-/-- The block-diagonal bilinear form on a product, with the two factors orthogonal. -/
-def orthogonalSumForm (L : IntegralLattice V) (M : IntegralLattice W) :
-    LinearMap.BilinForm ℚ (V × W) :=
-  L.form.comp (LinearMap.fst ℚ V W) (LinearMap.fst ℚ V W) +
-    M.form.comp (LinearMap.snd ℚ V W) (LinearMap.snd ℚ V W)
-
-/-- Evaluation of the block-diagonal form is the sum of the component pairings. -/
-@[simp]
-theorem orthogonalSumForm_apply (L : IntegralLattice V) (M : IntegralLattice W)
-    (p q : V × W) :
-    orthogonalSumForm L M p q = L.form p.1 q.1 + M.form p.2 q.2 :=
-  (rfl)
-
-/-- The ambient orthogonal-sum form is the product of the two ambient forms. -/
-theorem orthogonalSumForm_eq_prod (L : IntegralLattice V) (M : IntegralLattice W) :
-    orthogonalSumForm L M = L.form.prod M.form := by
-  apply LinearMap.ext
-  intro x
-  apply LinearMap.ext
-  intro y
-  simp only [orthogonalSumForm_apply, LinearMap.BilinForm.prod_apply]
-
 /-- The product of two full integral carriers is a full integral carrier. -/
 private theorem isLattice_prod (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.carrier.prod M.carrier).IsLattice ℚ := by
@@ -90,17 +68,18 @@ private theorem isLattice_prod (L : IntegralLattice V) (M : IntegralLattice W) :
       Submodule.IsLattice.span_eq_top, Submodule.IsLattice.span_eq_top,
       Submodule.prod_top]
 
-/-- The orthogonal sum of two integral lattices. -/
+/-- The orthogonal sum of two integral lattices: the product carrier with the block-diagonal
+product form. -/
 def orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) : IntegralLattice (V × W) where
   carrier := L.carrier.prod M.carrier
-  form := orthogonalSumForm L M
+  form := L.form.prod M.form
   isLattice := isLattice_prod L M
-  isSymm := ⟨fun p q ↦ by simp only [orthogonalSumForm_apply, L.isSymm.eq, M.isSymm.eq]⟩
+  isSymm := LinearMap.BilinForm.isSymm_prod_iff.mpr ⟨L.isSymm, M.isSymm⟩
   le_dual := by
     intro p hp
     rw [LinearMap.BilinForm.mem_dualSubmodule]
     intro q hq
-    rw [orthogonalSumForm_apply]
+    rw [LinearMap.BilinForm.prod_apply]
     exact Submodule.add_mem _ (L.le_dual hp.1 q.1 hq.1) (M.le_dual hp.2 q.2 hq.2)
 
 @[simp]
@@ -110,16 +89,8 @@ theorem orthogonalSum_carrier (L : IntegralLattice V) (M : IntegralLattice W) :
 
 @[simp]
 theorem orthogonalSum_form (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.orthogonalSum M).form = orthogonalSumForm L M :=
+    (L.orthogonalSum M).form = L.form.prod M.form :=
   (rfl)
-
-/-- The quadratic map of the block-diagonal form is the product of the component quadratic maps. -/
-@[simp]
-theorem orthogonalSumForm_toQuadraticMap (L : IntegralLattice V) (M : IntegralLattice W) :
-    (orthogonalSumForm L M).toQuadraticMap =
-      L.form.toQuadraticMap.prod M.form.toQuadraticMap := by
-  ext p
-  rfl
 
 /-- The carrier of an orthogonal sum is canonically the product of the carrier types. -/
 def orthogonalSumCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W) :
@@ -243,7 +214,7 @@ theorem integralForm_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice 
       L.integralForm (orthogonalSumFst L M p) (orthogonalSumFst L M q) +
         M.integralForm (orthogonalSumSnd L M p) (orthogonalSumSnd L M q) := by
   apply Int.cast_injective (α := ℚ)
-  simp only [Int.cast_add, integralForm_cast, orthogonalSum_form, orthogonalSumForm_apply,
+  simp only [Int.cast_add, integralForm_cast, orthogonalSum_form, LinearMap.BilinForm.prod_apply,
     orthogonalSumFst_apply, orthogonalSumSnd_apply, coe_orthogonalSumCarrierEquiv_fst,
     coe_orthogonalSumCarrierEquiv_snd]
 
@@ -283,7 +254,7 @@ theorem integralNorm_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice 
         M.integralNorm (orthogonalSumSnd L M p) := by
   apply Int.cast_injective (α := ℚ)
   simp only [Int.cast_add, integralNorm_cast, norm_apply, orthogonalSum_form,
-    orthogonalSumForm_apply, orthogonalSumFst_apply, orthogonalSumSnd_apply,
+    LinearMap.BilinForm.prod_apply, orthogonalSumFst_apply, orthogonalSumSnd_apply,
     coe_orthogonalSumCarrierEquiv_fst, coe_orthogonalSumCarrierEquiv_snd]
 
 /-- The rank of an orthogonal sum is the sum of the ranks. -/
@@ -348,36 +319,11 @@ theorem isEven_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W)
     · simpa using (isEven_iff_basis L e).mp hL i
     · simpa using (isEven_iff_basis M f).mp hM j
 
-/-- The block-diagonal form is nondegenerate exactly when both component forms are
-nondegenerate. -/
-@[simp]
-theorem nondegenerate_orthogonalSumForm_iff (L : IntegralLattice V) (M : IntegralLattice W) :
-    (orthogonalSumForm L M).Nondegenerate ↔ L.form.Nondegenerate ∧ M.form.Nondegenerate := by
-  constructor
-  · rintro ⟨hleft, hright⟩
-    constructor
-    · exact ⟨
-        fun a ha ↦ congrArg Prod.fst (hleft (a, 0) fun p ↦ by simpa using ha p.1),
-        fun b hb ↦ congrArg Prod.fst (hright (b, 0) fun p ↦ by simpa using hb p.1)⟩
-    · exact ⟨
-        fun a ha ↦ congrArg Prod.snd (hleft (0, a) fun p ↦ by simpa using ha p.2),
-        fun b hb ↦ congrArg Prod.snd (hright (0, b) fun p ↦ by simpa using hb p.2)⟩
-  · rintro ⟨hL, hM⟩
-    constructor
-    · intro p hp
-      apply Prod.ext
-      · exact hL.1 p.1 fun a ↦ by simpa using hp (a, 0)
-      · exact hM.1 p.2 fun b ↦ by simpa using hp (0, b)
-    · intro q hq
-      apply Prod.ext
-      · exact hL.2 q.1 fun a ↦ by simpa using hq (a, 0)
-      · exact hM.2 q.2 fun b ↦ by simpa using hq (0, b)
-
 /-- The ambient form of an orthogonal sum is nondegenerate exactly when both summand forms are. -/
 theorem nondegenerate_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).form.Nondegenerate ↔
       L.form.Nondegenerate ∧ M.form.Nondegenerate := by
-  rw [orthogonalSum_form, nondegenerate_orthogonalSumForm_iff]
+  rw [orthogonalSum_form, LinearMap.BilinForm.nondegenerate_prod_iff]
 
 /-- The orthogonal sum of two nondegenerate integral lattices is nondegenerate. -/
 instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralLattice W)
@@ -392,8 +338,8 @@ instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralL
 theorem radical_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).radical = L.radical.prod M.radical := by
   rw [← (L.orthogonalSum M).radical_toQuadraticMap, orthogonalSum_form,
-    orthogonalSumForm_toQuadraticMap, QuadraticMap.radical_prod, L.radical_toQuadraticMap,
-    M.radical_toQuadraticMap]
+    LinearMap.BilinForm.toQuadraticMap_prod,
+    QuadraticMap.radical_prod, L.radical_toQuadraticMap, M.radical_toQuadraticMap]
 
 /-- The positive index of an orthogonal sum is the sum of the positive indices. -/
 @[simp]
@@ -401,7 +347,8 @@ theorem sigPos_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).sigPos = L.sigPos + M.sigPos := by
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
-  rw [sigPos, orthogonalSum_form, orthogonalSumForm_toQuadraticMap,
+  rw [sigPos, orthogonalSum_form,
+    LinearMap.BilinForm.toQuadraticMap_prod,
     QuadraticForm.sigPos_prod]
 
 /-- The negative index of an orthogonal sum is the sum of the negative indices. -/
@@ -410,7 +357,8 @@ theorem sigNeg_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).sigNeg = L.sigNeg + M.sigNeg := by
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
-  rw [sigNeg, orthogonalSum_form, orthogonalSumForm_toQuadraticMap,
+  rw [sigNeg, orthogonalSum_form,
+    LinearMap.BilinForm.toQuadraticMap_prod,
     QuadraticForm.sigNeg_prod]
 
 /-- The null index of an orthogonal sum is the sum of the null indices. -/
@@ -452,6 +400,7 @@ def orthogonalSum (f : Isometry L L') (g : Isometry M M') :
     { toLinearEquiv := (f : V ≃ₗ[ℚ] X).prodCongr (g : W ≃ₗ[ℚ] Y)
       map_app' := by
         intro p q
+        simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
         exact congrArg₂ (· + ·) (f.map_app p.1 q.1) (g.map_app p.2 q.2) }
   map_carrier := by
     -- Expose the restricted product linear map to reuse `LinearMap.prodMap_map_prod`.
@@ -557,6 +506,7 @@ def orthogonalSumComm (L : IntegralLattice V) (M : IntegralLattice W) :
     { toLinearEquiv := LinearEquiv.prodComm ℚ V W
       map_app' := by
         intro p q
+        simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
         exact add_comm _ _ }
   map_carrier := by
     ext p
@@ -624,6 +574,7 @@ def orthogonalSumAssoc (L : IntegralLattice V) (M : IntegralLattice W)
     { toLinearEquiv := LinearEquiv.prodAssoc ℚ V W U
       map_app' := by
         intro p q
+        simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
         exact (add_assoc _ _ _).symm }
   map_carrier := by
     ext p

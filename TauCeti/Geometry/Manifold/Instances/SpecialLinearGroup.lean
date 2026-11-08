@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.Det
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 
 /-!

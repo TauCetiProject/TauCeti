@@ -148,24 +148,38 @@ private lemma submatrix_forkedPath_le_affineBCartanMatrix
     · apply h.apply_le_zero_of_ne
       exact fun hEq ↦ hij (congrArg Fin.val (Option.some.inj (he hEq)))
 
-/-- A branch vertex and a directed double edge produce a forbidden affine dominated submatrix. -/
-private lemma false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two [Fintype B]
-    (h : IsFiniteType A) {c near far : B} (hreach : (diagramGraph A).Reachable c near)
-    (hc : (diagramGraph A).degree c = 3) (hnf : (diagramGraph A).Adj near far)
-    (hdist : (diagramGraph A).dist c far = (diagramGraph A).dist c near + 1)
-    (hnfEntry : A near far = -2) : False := by
+omit [DecidableEq B] in
+/-- A forked path ending in an oriented double edge contradicts finite type. -/
+private lemma false_of_forkedPath_of_apply_eq_neg_two
+    (h : IsFiniteType A) {u v x : B} {n : ℕ} {r : (diagramGraph A).Walk u v}
+    (hr : r.IsPath) (hrlen : r.length = n + 2) (hxoff : x ∉ r.support)
+    (hx1 : (diagramGraph A).Adj x (r.getVert 1))
+    (hlast : A (r.getVert (n + 1)) (r.getVert (n + 2)) = -2) : False := by
+  let e := forkedPathEmbedding (A := A) (x := x) (n := n) r
+  have he : Function.Injective e := forkedPathEmbedding_injective hr hrlen hxoff
+  have hle := submatrix_forkedPath_le_affineBCartanMatrix h hr hrlen hxoff hx1 hlast
+  have hsub : IsFiniteType (A.submatrix e e) := h.submatrix he
+  have hzero := hsub.eq_zero_of_forall_mul_sum_apply_mul_nonpos
+      (x := affineBComark n) fun i ↦ by
+    have hrow : ∑ j, ((A.submatrix e e i j : ℤ) : ℚ) * affineBComark n j ≤ 0 := by
+      calc
+        _ ≤ ∑ j, ((affineBCartanMatrix n i j : ℤ) : ℚ) * affineBComark n j := by
+          exact Finset.sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_right
+            (by exact_mod_cast hle i j) (affineBComark_pos n j).le
+        _ = 0 := sum_affineBCartanMatrix_mul_affineBComark_eq_zero n i
+    exact mul_nonpos_of_nonneg_of_nonpos (affineBComark_pos n i).le hrow
+  exact (affineBComark_pos n none).ne' (congrFun hzero none)
+
+/-- At a branch vertex `c` of the diagram, a path `q` from `c` of length `n + 1` extends, by a
+neighbour of `c` off `q`, to a path `r` of length `n + 2`; a further neighbour `x` of `c` is off
+`r` and adjacent to its second vertex, and `q` is the tail of `r`. -/
+private lemma exists_forkedPath_of_degree_eq_three [Fintype B]
+    (h : IsFiniteType A) {c far : B} (hc : (diagramGraph A).degree c = 3)
+    {q : (diagramGraph A).Walk c far} (hq : q.IsPath) {n : ℕ} (hn : q.length = n + 1) :
+    ∃ (x y : B) (r : (diagramGraph A).Walk y far), r.IsPath ∧ r.length = n + 2 ∧ x ∉ r.support ∧
+      (diagramGraph A).Adj x (r.getVert 1) ∧ ∀ k, r.getVert (k + 1) = q.getVert k := by
   let G := diagramGraph A
-  obtain ⟨p, hp, hpdist⟩ := hreach.exists_path_of_dist
-  have hfar : far ∉ p.support := by
-    intro hfarMem
-    have hdistLe := SimpleGraph.dist_le (p.takeUntil far hfarMem)
-    have hlengthLe := p.length_takeUntil_le_length hfarMem
-    rw [hpdist] at hlengthLe
-    omega
-  let q : G.Walk c far := p.concat hnf
-  have hq : q.IsPath := hp.concat hfar hnf
-  have hqpos : 0 < q.length := by simp [q]
-  obtain ⟨n, hn⟩ : ∃ n, q.length = n + 1 := Nat.exists_eq_succ_of_ne_zero hqpos.ne'
+  have hqpos : 0 < q.length := by omega
   have hsndMem : q.snd ∈ G.neighborFinset c :=
     (G.mem_neighborFinset c q.snd).mpr
       (q.adj_snd (SimpleGraph.Walk.not_nil_iff_lt_length.mpr hqpos))
@@ -187,15 +201,36 @@ private lemma false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two [F
     hunusedNeSnd i (h.isAcyclic_diagramGraph.eq_snd_of_adj_start hq (hunusedAdj i) hi)
   let r : G.Walk (unusedVertex 1) far := q.cons (hunusedAdj 1).symm
   have hr : r.IsPath := by simpa only [r] using hq.cons (hunusedOff 1)
-  have hrlen : r.length = n + 2 := by simp [r, hn]
   have hxoff : unusedVertex 0 ∉ r.support := by
     intro hmem
     simp only [r, SimpleGraph.Walk.support_cons, List.mem_cons] at hmem
     rcases hmem with hEq | hmem
     · exact (by decide : (0 : Fin 2) ≠ 1) (hunusedInj hEq)
     · exact hunusedOff 0 hmem
+  have hrlen : r.length = n + 2 := by simp [r, hn]
   have hx1 : G.Adj (unusedVertex 0) (r.getVert 1) := by
     simpa [r] using (hunusedAdj 0).symm
+  exact ⟨unusedVertex 0, unusedVertex 1, r, hr, hrlen, hxoff, hx1, fun k ↦ by simp [r]⟩
+
+/-- A branch vertex and a directed double edge produce a forbidden affine dominated submatrix. -/
+private lemma false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two [Fintype B]
+    (h : IsFiniteType A) {c near far : B} (hreach : (diagramGraph A).Reachable c near)
+    (hc : (diagramGraph A).degree c = 3) (hnf : (diagramGraph A).Adj near far)
+    (hdist : (diagramGraph A).dist c far = (diagramGraph A).dist c near + 1)
+    (hnfEntry : A near far = -2) : False := by
+  let G := diagramGraph A
+  obtain ⟨p, hp, hpdist⟩ := hreach.exists_path_of_dist
+  have hfar : far ∉ p.support := by
+    intro hfarMem
+    have hdistLe := SimpleGraph.dist_le (p.takeUntil far hfarMem)
+    have hlengthLe := p.length_takeUntil_le_length hfarMem
+    rw [hpdist] at hlengthLe
+    omega
+  let q : G.Walk c far := p.concat hnf
+  have hq : q.IsPath := hp.concat hfar hnf
+  have hqpos : 0 < q.length := by simp [q]
+  obtain ⟨n, hn⟩ : ∃ n, q.length = n + 1 := Nat.exists_eq_succ_of_ne_zero hqpos.ne'
+  obtain ⟨x, _, r, hr, hrlen, hxoff, hx1, hget⟩ := exists_forkedPath_of_degree_eq_three h hc hq hn
   have hlast : A (r.getVert (n + 1)) (r.getVert (n + 2)) = -2 := by
     have hpen : q.penultimate = near := by simp [q]
     have hfirst : q.getVert n = near := by
@@ -204,21 +239,9 @@ private lemma false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two [F
         q.getVert n = q.getVert (q.length - 1) := by rw [hindex]
         _ = near := hpen
     have hsecond : q.getVert (n + 1) = far := by rw [← hn, q.getVert_length]
-    simpa only [r, SimpleGraph.Walk.getVert_cons_succ, hfirst, hsecond] using hnfEntry
-  let e := forkedPathEmbedding (A := A) (x := unusedVertex 0) (n := n) r
-  have he : Function.Injective e := forkedPathEmbedding_injective hr hrlen hxoff
-  have hle := submatrix_forkedPath_le_affineBCartanMatrix h hr hrlen hxoff hx1 hlast
-  have hsub : IsFiniteType (A.submatrix e e) := h.submatrix he
-  have hzero := hsub.eq_zero_of_forall_mul_sum_apply_mul_nonpos
-      (x := affineBComark n) fun i ↦ by
-    have hrow : ∑ j, ((A.submatrix e e i j : ℤ) : ℚ) * affineBComark n j ≤ 0 := by
-      calc
-        _ ≤ ∑ j, ((affineBCartanMatrix n i j : ℤ) : ℚ) * affineBComark n j := by
-          exact Finset.sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_right
-            (by exact_mod_cast hle i j) (affineBComark_pos n j).le
-        _ = 0 := sum_affineBCartanMatrix_mul_affineBComark_eq_zero n i
-    exact mul_nonpos_of_nonneg_of_nonpos (affineBComark_pos n i).le hrow
-  exact (affineBComark_pos n none).ne' (congrFun hzero none)
+    rw [hget, hget, hfirst, hsecond]
+    exact hnfEntry
+  exact false_of_forkedPath_of_apply_eq_neg_two h hr hrlen hxoff hx1 hlast
 
 /-- **A finite-type component containing a double edge has maximum degree two.**
 

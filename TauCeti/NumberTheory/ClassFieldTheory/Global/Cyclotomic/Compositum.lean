@@ -47,6 +47,40 @@ open IsDedekindDomain _root_.NumberField _root_.IntermediateField
 variable {ι : Type*} [Finite ι] (p : ι → ℕ) [∀ i, Fact (p i).Prime]
   {K : Type} [Field K] [NumberField K] (E : IntermediateField K (SeparableClosure K))
 
+omit [Finite ι] in
+/-- Let `c` be the product of the `p i`-adic cyclotomic characters. An additive character of the
+Galois group of a normal subextension `E` of the compositum of the `p i`-power cyclotomic towers
+factors, after restriction from the absolute Galois group, through the image of `c`, because the
+kernel of `c` fixes the compositum and hence `E`. -/
+private theorem exists_comp_rangeRestrict_eq_restrictNormalHom [Normal K E]
+    (c : Additive (AbsoluteGaloisGroup K) →+ (∀ i, Additive ℤ_[p i]ˣ))
+    (hc : ∀ (g : AbsoluteGaloisGroup K) (i : ι), c (.ofMul g) i =
+      .ofMul (cyclotomicCharacter (SeparableClosure K) (p i) g.toRingEquiv))
+    (hE : E ≤ ⨆ i, adjoin K {ζ : SeparableClosure K | ∃ n : ℕ, ζ ^ p i ^ n = 1})
+    {M : Type*} [AddCommGroup M] (χ : Additive Gal(E/K) →+ M) :
+    ∃ ψ : c.range →+ M, ∀ g : AbsoluteGaloisGroup K,
+      χ (.ofMul (AlgEquiv.restrictNormalHom E g)) = ψ (c.rangeRestrict (.ofMul g)) := by
+  -- The common kernel fixes each tower, and hence their compositum and `E`.
+  let φ : {φ : Additive (AbsoluteGaloisGroup K) →+ M //
+      c.rangeRestrict.ker ≤ φ.ker} :=
+    ⟨χ.comp (AlgEquiv.restrictNormalHom E).toAdditive, fun g hg ↦ by
+      induction g using Additive.rec with | ofMul g => ?_
+      have hg' : c (.ofMul g) = 0 := by
+        simpa only [AddMonoidHom.ker_rangeRestrict, AddMonoidHom.mem_ker] using hg
+      have hgE : AlgEquiv.restrictNormalHom E g = 1 := by
+        rw [← MonoidHom.mem_ker, E.restrictNormalHom_ker]
+        apply fixingSubgroup_le hE
+        rw [fixingSubgroup_iSup, Subgroup.mem_iInf]
+        intro i
+        apply (mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one (p i)).2
+        have hi := congrFun hg' i
+        exact Additive.ofMul.injective (by
+          simpa only [hc, Pi.zero_apply, ofMul_one] using hi)
+      simp [hgE]⟩
+  exact ⟨c.rangeRestrict.liftOfSurjective c.rangeRestrict_surjective φ, fun g ↦
+    (c.rangeRestrict.liftOfRightInverse_comp_apply _
+      (Function.rightInverse_surjInv c.rangeRestrict_surjective) φ (.ofMul g)).symm⟩
+
 /-- The local Artin symbols of a nonzero global element satisfy reciprocity on every normal
 subextension of a finite compositum of prime-power cyclotomic towers, after applying any
 additive character of its Galois group. -/
@@ -76,29 +110,7 @@ theorem finsum_add_sum_apply_restrictNormalHom_eq_zero_of_le_iSup_adjoin
   have hc (g : AbsoluteGaloisGroup K) (i : ι) :
       c (.ofMul g) i = .ofMul (cyclotomicCharacter (SeparableClosure K) (p i) g.toRingEquiv) :=
     rfl
-  -- The common kernel fixes each tower, and hence their compositum and `E`.
-  let φ : {φ : Additive (AbsoluteGaloisGroup K) →+ M //
-      c.rangeRestrict.ker ≤ φ.ker} :=
-    ⟨χ.comp (AlgEquiv.restrictNormalHom E).toAdditive, fun g hg ↦ by
-      induction g using Additive.rec with | ofMul g => ?_
-      have hg' : c (.ofMul g) = 0 := by
-        simpa only [AddMonoidHom.ker_rangeRestrict, AddMonoidHom.mem_ker] using hg
-      have hgE : AlgEquiv.restrictNormalHom E g = 1 := by
-        rw [← MonoidHom.mem_ker, E.restrictNormalHom_ker]
-        apply fixingSubgroup_le hE
-        rw [fixingSubgroup_iSup, Subgroup.mem_iInf]
-        intro i
-        apply (mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one (p i)).2
-        have hi := congrFun hg' i
-        exact Additive.ofMul.injective (by
-          simpa only [hc, Pi.zero_apply, ofMul_one] using hi)
-      simp [hgE]⟩
-  let ψ : c.range →+ M :=
-    c.rangeRestrict.liftOfSurjective c.rangeRestrict_surjective φ
-  have hψ (g : AbsoluteGaloisGroup K) :
-      χ (.ofMul (AlgEquiv.restrictNormalHom E g)) = ψ (c.rangeRestrict (.ofMul g)) :=
-    (c.rangeRestrict.liftOfRightInverse_comp_apply _
-      (Function.rightInverse_surjInv c.rangeRestrict_surjective) φ (.ofMul g)).symm
+  obtain ⟨ψ, hψ⟩ := exists_comp_rangeRestrict_eq_restrictNormalHom p E c hc hE χ
   have hloc {L : Type} [Field L] [Algebra K L]
       (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
       (σ : Field.absoluteGaloisGroup L) (i : ι) :
@@ -114,13 +126,9 @@ theorem finsum_add_sum_apply_restrictNormalHom_eq_zero_of_le_iSup_adjoin
   have hf' w i := (hloc (τ' w) (σ' w) i).trans (congrArg _ (congrArg _ (hσ' w)))
   have hfin (i : ι) : (Function.mulSupport (f i)).Finite :=
     hasFiniteMulSupport_abelianizedLocalCyclotomicCharacter_artinMap (p i) a
-  let s : Finset (HeightOneSpectrum (𝓞 K)) :=
-    Finset.univ.biUnion fun i ↦ (hfin i).toFinset
-  have hsupport (i : ι) : Function.mulSupport (f i) ⊆ s := by
-    intro v hv
-    simp only [s, Finset.mem_coe, Finset.mem_biUnion, Finset.mem_univ, true_and,
-      Set.Finite.mem_toFinset]
-    exact ⟨i, hv⟩
+  obtain ⟨s, hsupport⟩ :
+      ∃ s : Finset (HeightOneSpectrum (𝓞 K)), ∀ i, Function.mulSupport (f i) ⊆ s :=
+    ⟨(Set.finite_iUnion hfin).toFinset, fun i v hv ↦ by simpa using ⟨i, hv⟩⟩
   -- One finite set contains the support of every coordinate, so also of the character.
   rw [finsum_eq_sum_of_support_subset _ (s := s) fun v hv ↦ by
     by_contra hvs
