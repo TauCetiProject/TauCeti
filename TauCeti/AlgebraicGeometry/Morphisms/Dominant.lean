@@ -44,7 +44,7 @@ the generic point, and a dominant one by its pullback of rational functions.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
   schemes sending the generic point to the generic point is dominant.
 * `AlgebraicGeometry.Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk`: a morphism of irreducible
-  schemes whose action on the generic point is given by a local homomorphism of generic stalks is
+  schemes whose action on the generic point is given by a homomorphism of generic stalks is
   dominant.
 * `AlgebraicGeometry.Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk`: `Spec f^*` followed by
   `Spec K(Y) ⟶ Y` is `Spec K(X) ⟶ X` followed by `f`.
@@ -119,14 +119,14 @@ namespace Scheme.Hom
 
 /-- A morphism `f : X ⟶ Y` of irreducible schemes is dominant when the canonical morphism
 `Spec K(X) ⟶ X` followed by `f` factors as `Spec φ` followed by the canonical morphism
-`Spec K(Y) ⟶ Y`, for a local homomorphism `φ : K(Y) ⟶ K(X)` of generic stalks (function fields
-when `X` and `Y` are integral). The homomorphism `φ` is then the pullback of rational functions
-along `f` (`Scheme.Hom.eq_functionFieldMap_iff`). -/
+`Spec K(Y) ⟶ Y`, for a homomorphism `φ : K(Y) ⟶ K(X)` of generic stalks (function fields
+when `X` and `Y` are integral). The homomorphism `φ` need not be local, since the spectrum of the
+generic stalk of `Y` has a single point, which maps to the generic point. It is then the
+pullback of rational functions along `f` (`Scheme.Hom.eq_functionFieldMap_iff`). -/
 theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField ⟶ X.functionField)
-    [IsLocalHom φ.hom]
     (h : Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y) = X.fromSpecStalk (genericPoint X) ≫ f) :
     IsDominant f := by
-  -- evaluate both sides of `h` at the closed point of `Spec K(X)`, which `Spec φ` fixes
+  -- evaluate both sides of `h` at the closed point of `Spec K(X)`
   refine isDominant_iff_genericPoint_eq.mpr <| calc
     f (genericPoint X)
       = f (X.fromSpecStalk (genericPoint X) (IsLocalRing.closedPoint X.functionField)) :=
@@ -135,8 +135,14 @@ theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField 
         (Scheme.Hom.comp_apply _ _ _).symm
     _ = (Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y)) (IsLocalRing.closedPoint X.functionField) :=
         congrArg (fun g ↦ g (IsLocalRing.closedPoint X.functionField)) h.symm
-    _ = genericPoint Y := (Scheme.Hom.comp_apply _ _ _).trans
-        ((congrArg _ Spec_closedPoint).trans Scheme.fromSpecStalk_closedPoint)
+    -- every point of `Spec K(Y)` maps to a generization of the generic point, hence to it
+    _ = genericPoint Y := by
+      have hmem : (Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y))
+          (IsLocalRing.closedPoint X.functionField) ∈
+          Set.range (Y.fromSpecStalk (genericPoint Y)) :=
+        ⟨_, (Scheme.Hom.comp_apply _ _ _).symm⟩
+      rw [Scheme.range_fromSpecStalk] at hmem
+      exact (hmem.antisymm (genericPoint_specializes _)).eq
 
 /-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
 instance nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y) [IsDominant f]
