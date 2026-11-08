@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.SturmBound
 public import Mathlib.LinearAlgebra.FreeModule.PID
 
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
 /-!
 # Modular forms with integral `q`-expansions at every cusp
@@ -122,13 +123,7 @@ theorem mem_integralAtCusps_iff_qExpansion_coeff_mem {N : ℕ} [NeZero N]
   refine forall_congr' fun γ ↦ ?_
   obtain ⟨m, hm, he⟩ := exists_qExpansion_translate_eq_expand_qExpansionAt
     (Nat.pos_of_ne_zero (NeZero.ne N)) (natCast_mem_strictPeriods_conjAct_of_Gamma_le hΓ γ) f
-  rw [he]
-  refine ⟨fun h n ↦ ?_, fun h n ↦ ?_⟩
-  · rw [PowerSeries.coeff_expand]
-    split_ifs
-    · exact h _
-    · exact R.zero_mem
-  · simpa [PowerSeries.coeff_expand_mul] using h (m * n)
+  rw [he, PowerSeries.forall_coeff_expand_mem_iff]
 
 /-- The integral forms are stable under scaling by elements of `R`. -/
 theorem smul_mem_integralAtCusps {r : ℂ} (hr : r ∈ R) {f : ModularForm Γ k}
