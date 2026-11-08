@@ -17,8 +17,7 @@ The acting group is Mathlib's group of sections of the group tower, and the modu
 limit is the existing `TauCeti.ModuleTower.lim`. Thus this construction applies to
 completed coefficient modules without choosing representatives of quotient classes.
 
-`limAction` is characterized by its projections. Each automorphism preserves and
-reflects every projection kernel, and an element whose group coordinate is the
+`limAction` is characterized by its projections. An element whose group coordinate is the
 identity acts trivially at that order. Equivariant tower maps remain equivariant
 on limits. Faithfulness follows from faithful finite actions when the module-limit
 projections are surjective; this last hypothesis is needed to test the finite actions.
@@ -46,14 +45,13 @@ variable {R : Type u} [Ring R] (F : ModuleTower.{v} R)
 
 private def limActionEnd : (G ⋙ forget GrpCat).sections →* Module.End R F.lim where
   toFun g := F.limLift
-    (fun k => (ρ k (GrpCat.sectionsπMonoidHom G (op k) g)).toLinearMap.comp (F.limπ k))
+    (fun k => (ρ k (g.val (op k))).toLinearMap.comp (F.limπ k))
     (by
       intro k
       ext x
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
       have hg : G.map (homOfLE (Nat.le_succ k)).op (g.val (op (k + 1))) =
           g.val (op k) := g.property (homOfLE (Nat.le_succ k)).op
-      simp only [GrpCat.sectionsπMonoidHom, MonoidHom.coe_mk, OneHom.coe_mk]
       rw [hρ, hg]
       simpa only [limπ_apply] using
         congrArg (ρ k (g.val (op k))) (F.transition_coe_lim_succ x k))
@@ -62,13 +60,17 @@ private def limActionEnd : (G ⋙ forget GrpCat).sections →* Module.End R F.li
     intro x
     apply F.lim_ext
     intro k
-    simp
+    have h_one : (1 : (G ⋙ forget GrpCat).sections).val (op k) = 1 :=
+      (GrpCat.sectionsπMonoidHom G (op k)).map_one
+    simp [h_one]
   map_mul' g g' := by
     apply LinearMap.ext
     intro x
     apply F.lim_ext
     intro k
-    simp
+    have h_mul : (g * g').val (op k) = g.val (op k) * g'.val (op k) :=
+      (GrpCat.sectionsπMonoidHom G (op k)).map_mul g g'
+    simp [h_mul]
 
 /-- Compatible finite-order representations induce a representation on the module limit.
 The source is the group of matching families of the group tower. -/
@@ -80,7 +82,7 @@ def limAction : (G ⋙ forget GrpCat).sections →* (F.lim ≃ₗ[R] F.lim) :=
 @[simp]
 theorem coe_limAction_apply (g : (G ⋙ forget GrpCat).sections) (x : F.lim) (k : ℕ) :
     (F.limAction ρ hρ g x : F.Product) k = ρ k (g.val (op k)) (x.val k) := by
-  simp [limAction, limActionEnd, GrpCat.sectionsπMonoidHom]
+  simp [limAction, limActionEnd]
 
 /-- The projection formula uniquely determines the induced representation. -/
 theorem limAction_unique
@@ -92,12 +94,6 @@ theorem limAction_unique
   apply F.lim_ext
   intro k
   simpa only [limπ_apply, F.coe_limAction_apply] using hσ g x k
-
-/-- A group element invisible at order `k` acts identically at that order. -/
-theorem limπ_limAction_of_eq_one {g : (G ⋙ forget GrpCat).sections} {k : ℕ}
-    (hg : g.val (op k) = 1) (x : F.lim) :
-    F.limπ k (F.limAction ρ hρ g x) = F.limπ k x := by
-  simp [hg]
 
 /-- Faithful finite representations induce a faithful limit representation if every
 module-limit projection is surjective. No surjectivity of group transitions is required. -/
