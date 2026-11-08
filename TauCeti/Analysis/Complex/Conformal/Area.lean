@@ -7,9 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.Analysis.Complex.Determinant
 
 /-!
 # Area and change of variables for a holomorphic map
@@ -45,16 +44,18 @@ The proof is Mathlib's change-of-variables formula
 `MeasureTheory.lintegral_abs_det_fderiv_eq_addHaar_image₀` for an injective differentiable map,
 applied to `f` viewed as a map of the real plane. The only complex-analytic input is the value of
 the Jacobian determinant: the `ℝ`-linear map underlying multiplication by `c : ℂ` has determinant
-`Complex.normSq c = ‖c‖ ^ 2`, which is the private `det_restrictScalars_smulRight_one` below and
-comes from `Algebra.norm_complex_eq` through `LinearMap.det_restrictScalars`. Injectivity is what
-makes the formula an equality rather than the inequality
+`Complex.normSq c = ‖c‖ ^ 2`, which is `ContinuousLinearMap.det_restrictScalars_smulRight_one`.
+Injectivity is what makes the formula an equality rather than the inequality
 `TauCeti.volume_image_le_lintegral_enorm_deriv_sq`, which holds for any holomorphic map because a
 non-injective map covers parts of its image more than once.
 
 The results below are stated for maps of `ℂ`, with hypotheses that `f` is complex differentiable
-at every point of a set `s` (`∀ z ∈ s, DifferentiableAt ℂ f z`) and `Set.InjOn f s`. This is what
-Mathlib's change of variables asks for, and it is implied by the usual complex-analytic setting: if
-`f` is holomorphic on an open set `U` and `s ⊆ U`, then
+at every point of a set `s` (`∀ z ∈ s, DifferentiableAt ℂ f z`) and `Set.InjOn f s`. Mathlib's
+change of variables asks only for a real derivative of `f` within `s` at each point of `s`; the
+pointwise complex differentiability is the input from which the private
+`hasFDerivWithinAt_smulRight_deriv` produces that `HasFDerivWithinAt … s` hypothesis, with the
+derivative in the form whose determinant is computed above. It is implied by the usual
+complex-analytic setting: if `f` is holomorphic on an open set `U` and `s ⊆ U`, then
 `fun z hz => hf.differentiableAt (hUo.mem_nhds (hsU hz))` supplies it. Statements are made for an
 arbitrary `s` rather than a domain of holomorphy, because the length–area argument integrates over
 the sub-annuli `U ∩ {z | ρ₁ < ‖z - ζ‖ < ρ₂}`, not over `U`. Since `deriv f` is measurable for
@@ -101,17 +102,6 @@ open scoped ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable {s : Set ℂ} {f : ℂ → ℂ}
 
-/-- **The Jacobian of a complex dilation-rotation.** Multiplication by `c : ℂ`, read as an
-`ℝ`-linear map of the plane, has determinant `‖c‖ ^ 2`: it is the rotation by `arg c` scaled by
-`‖c‖`, and a dilation of ratio `‖c‖` multiplies area by `‖c‖ ^ 2`.
-
-The map is written as `ContinuousLinearMap.smulRight 1 c` because that is the shape in which
-`HasDerivAt.hasFDerivAt` presents the Fréchet derivative of a function of one complex variable. -/
-private theorem det_restrictScalars_smulRight_one (c : ℂ) :
-    ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ).det = ‖c‖ ^ 2 := by
-  simp [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton, ContinuousLinearMap.det,
-    LinearMap.det_restrictScalars, Algebra.norm_complex_eq, Complex.normSq_eq_norm_sq]
-
 /-- At each point of a set `s` at which `f` is complex differentiable, the `ℝ`-linear derivative of
 `f` relative to `s` is multiplication by `deriv f z`. This is the family of derivatives the
 change-of-variables formula is applied to. -/
@@ -124,7 +114,7 @@ private theorem hasFDerivWithinAt_smulRight_deriv (hf : ∀ z ∈ s, Differentia
 Bochner integrals. -/
 private theorem abs_det_restrictScalars_smulRight_one (c : ℂ) :
     |((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ).det| = ‖c‖ ^ 2 := by
-  rw [det_restrictScalars_smulRight_one, abs_of_nonneg (by positivity)]
+  rw [ContinuousLinearMap.det_restrictScalars_smulRight_one, abs_of_nonneg (by positivity)]
 
 /-- The pointwise area distortion, in the form the change-of-variables formula produces it for
 Lebesgue integrals. -/
