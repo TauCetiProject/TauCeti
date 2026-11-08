@@ -41,8 +41,9 @@ The file also fixes one choice of `ρ` and `L`: `TauCeti.Floer.comparisonCutoff`
 The domain here is a coordinate rectangle with a single neck: this is the model near one neck.
 The curvature and energy bounds hold for data on the product of the domain with a manifold
 carrying a two-form, such as a closed symplectic manifold, with the vector-space statements as the
-case of a constant form. The family on a sphere with three necks and its almost complex structures
-are not treated here.
+case of a constant form. The matching almost complex structures are in
+`TauCeti.Geometry.Symplectic.Floer.ComparisonFamily.AlmostComplex`. The family on a sphere with
+three necks is not treated here.
 
 ## Main definitions
 
@@ -119,6 +120,14 @@ theorem comparisonCutoff_mem_Icc {R : ℝ} (hR : 0 ≤ R) : comparisonCutoff R �
     have h₁ := smoothTransition.le_one (3 * R - 1)
     rw [comparisonCutoff_def]
     constructor <;> nlinarith
+
+/-- The cutoff has absolute value at most `1` for `R ≥ -1`: it is `R` itself on `[-1, 0]`. -/
+theorem abs_comparisonCutoff_le_one {R : ℝ} (hR : -1 ≤ R) : |comparisonCutoff R| ≤ 1 := by
+  rcases le_total 0 R with h | h
+  · obtain ⟨h₀, h₁⟩ := comparisonCutoff_mem_Icc h
+    exact abs_le.2 ⟨by linarith, h₁⟩
+  · rw [comparisonCutoff_of_le (by linarith)]
+    exact abs_le.2 ⟨hR, by linarith⟩
 
 theorem contDiff_comparisonCutoff {n : ℕ∞} : ContDiff ℝ n comparisonCutoff :=
   contDiff_id.add ((contDiff_const.sub contDiff_id).mul

@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Algebra.Equiv
 # Simultaneous universe lifting of algebras and their automorphisms
 
 Lift both the scalar ring and an algebra, using Mathlib's `ULift.algebra'` scalar action.
+If the structure map of an algebra is surjective, so is that of its universe lift.
 The automorphism group of the lifted algebra is identified with the original automorphism
 group by conjugating with the down/up equivalences. This identification allows cocycles
 indexed by algebra automorphisms to be transported to larger universes.
@@ -33,6 +34,12 @@ theorem algebraMap_comp_ringEquiv_symm :
       ((ULift.ringEquiv.symm : A ≃+* ULift.{t₁} A) : A →+* ULift.{t₁} A).comp
         (algebraMap R A) :=
   RingHom.ext fun _ ↦ rfl
+
+/-- If `algebraMap R A` is surjective, then so is the structure map of the lifted algebra
+`ULift A` over the same scalar ring. -/
+theorem algebraMap_surjective (h : Function.Surjective (algebraMap R A)) :
+    Function.Surjective (algebraMap R (ULift.{t} A)) := fun y ↦
+  (h y.down).imp fun _ hr ↦ ULift.down_injective ((ULift.down_algebraMap _).trans hr)
 
 end ULift
 
