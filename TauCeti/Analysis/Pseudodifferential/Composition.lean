@@ -239,8 +239,9 @@ private theorem coordinateDeriv_fst_compIntegrand (hb : b.HasCompactSpatialSuppo
         compIntegrand a (Symbol.spatialDeriv j b) (x, ξ) η := by
   set ζ := ξ + (2 * π) • η
   set B := 𝓕 (fun y ↦ b.coefficient (y, ξ)) η
-  set Ψ : (W →L[ℂ] U) →L[ℝ] (V →L[ℂ] U) :=
-    ((ContinuousLinearMap.compL ℂ V W U).flip B).restrictScalars ℝ
+  set Φ : (W →L[ℂ] U) →L[ℝ] (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] U) :=
+    (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
+  set Ψ : (W →L[ℂ] U) →L[ℝ] (V →L[ℂ] U) := Φ.flip B
   have hA : HasFDerivAt (fun x ↦ a.coefficient (x, ζ))
       (fderiv ℝ (fun x ↦ a.coefficient (x, ζ)) x) x :=
     ((a.contDiff_coefficient_slice ζ).differentiable (by simp) x).hasFDerivAt
@@ -250,12 +251,12 @@ private theorem coordinateDeriv_fst_compIntegrand (hb : b.HasCompactSpatialSuppo
     he.smul (Ψ.hasFDerivAt.comp x hA)
   have hf : (fun x ↦ compIntegrand a b (x, ξ) η) =
       fun x ↦ (𝐞 ⟪η, x⟫ : ℂ) • Ψ (a.coefficient (x, ζ)) :=
-    funext fun x ↦ compIntegrand_eq_bilinear (x, ξ) η
+    funext fun x ↦ by rw [compIntegrand_eq_bilinear, ContinuousLinearMap.flip_apply]
   rw [coordinateDeriv_cons, coordinateDeriv_nil, hf, h.fderiv]
   simp only [compIntegrand, add_apply, smul_apply,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply, Function.comp_apply,
-    innerSL_apply_apply, Ψ, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearMap.flip_apply,
+    innerSL_apply_apply, Ψ, Φ, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
     ContinuousLinearMap.compL_apply, fderiv_coefficient_single, hb.fourier_spatialDeriv_slice,
     ContinuousLinearMap.comp_smul, ContinuousLinearMap.toSpanSingleton_apply]
   congr 1
