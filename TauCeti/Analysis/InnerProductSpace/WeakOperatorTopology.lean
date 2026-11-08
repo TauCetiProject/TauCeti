@@ -12,10 +12,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Slope
 /-!
 # Operator convergence from inner-product entries in finite dimension
 
-For operators between finite-dimensional real inner-product spaces, convergence of every
-inner-product entry implies convergence in operator norm. The proof passes through Mathlib's
-weak operator topology; its linear equivalence with continuous linear maps is continuous
-because the operator space is finite-dimensional.
+For operators from a finite-dimensional real normed space to a finite-dimensional real
+inner-product space, convergence of every inner-product entry implies convergence in operator
+norm. The proof passes through Mathlib's weak operator topology; its linear equivalence with
+continuous linear maps is continuous because the operator space is finite-dimensional.
 -/
 
 public noncomputable section
@@ -25,7 +25,7 @@ open scoped InnerProductSpace Topology
 
 namespace ContinuousLinearMap
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
