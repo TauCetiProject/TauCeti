@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.AlmostInvariant
-public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
+public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 
 /-!
 # Spectral gap of a representation
@@ -15,7 +15,7 @@ A representation has spectral gap when a finite sum of squared orbit displacemen
 squared norms on the orthogonal complement of its invariant vectors. The fixed subspace is
 removed: in particular a trivial representation has spectral gap.
 
-For a unitary group representation the orthogonal complement carries a unitary representation,
+For a unitary monoid representation the orthogonal complement carries a unitary representation,
 `IsUnitary.invariantsOrthogonal`. Spectral gap is equivalent to the absence of almost invariant
 vectors in this representation. Every representation of a finite group has spectral gap.
 These criteria are the representation-theoretic starting point for spectral gap of actions.
@@ -48,12 +48,6 @@ theorem hasSpectralGap_def (ρ : ContRepresentation 𝕜 G V) :
       ∀ v ∈ ρ.invariantsᗮ, ‖v‖ ^ 2 ≤ C * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
   Iff.rfl
 
-end Monoid
-
-section Group
-
-variable [Group G]
-
 namespace IsUnitary
 
 variable {ρ : ContRepresentation 𝕜 G V}
@@ -61,8 +55,11 @@ variable {ρ : ContRepresentation 𝕜 G V}
 /-- The restriction of a unitary representation to the orthogonal complement of its invariant
 vectors. -/
 def invariantsOrthogonal (hρ : ρ.IsUnitary) : ContRepresentation 𝕜 G ρ.invariantsᗮ :=
-  ρ.subrepresentation ρ.invariantsᗮ
-    (fun g _ hv ↦ hρ.apply_mem_orthogonal (fun h _ hw ↦ by simpa only [hw h] using hw) g hv)
+  ρ.subrepresentation ρ.invariantsᗮ (fun g _ hv ↦ by
+    rw [Submodule.mem_orthogonal]
+    intro w hw
+    rw [← hw g, hρ.inner_map_map]
+    exact hv w hw)
 
 /-- The action on the orthogonal complement is the original action on underlying vectors. -/
 @[simp]
@@ -117,6 +114,12 @@ theorem hasSpectralGap_iff_not_hasAlmostInvariantVectors
       ‖v‖ ^ 2 = c⁻¹ * (c * ‖v‖ ^ 2) := by simp [hc.ne']
       _ ≤ c⁻¹ * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
         mul_le_mul_of_nonneg_left hbound (inv_nonneg.mpr hc.le)
+
+end Monoid
+
+section Group
+
+variable [Group G]
 
 /-- Every representation of a finite group has spectral gap, without unitarity or
 completeness assumptions. -/
