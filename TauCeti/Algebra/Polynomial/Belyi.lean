@@ -45,7 +45,7 @@ of the projective line, every finite `S ⊆ ℙ¹(AlgebraicClosure ℚ)` contain
 
 * `TauCeti.belyiPolynomial`: the Belyi polynomial `B_{m,n}` over a field; `B_{1,1}` is
   `4 X (1 - X)` (`TauCeti.belyiPolynomial_one_one`), and in characteristic zero `B_{m,0}` is
-  `X ^ m` for `m ≠ 0` (`TauCeti.belyiPolynomial_zero_right`).
+  `X ^ m` (`TauCeti.belyiPolynomial_zero_right`).
 * `TauCeti.X_mul_one_sub_X_mul_derivative_belyiPolynomial`: the derivative of `B_{m,n}`,
   multiplied by `X (1 - X)`.
 * `TauCeti.rootSet_derivative_belyiPolynomial_subset`: the critical points of `B_{m,n}` lie in
@@ -98,10 +98,9 @@ theorem map_belyiPolynomial {L : Type*} [Field L] (f : K →+* L) (m n : ℕ) :
 theorem belyiPolynomial_one_one : belyiPolynomial K 1 1 = C 4 * X * (1 - X) := by
   norm_num [belyiPolynomial]
 
-/-- In characteristic zero, for `m ≠ 0` the Belyi polynomial `B_{m,0}` is the power map `X ^ m`. -/
-theorem belyiPolynomial_zero_right [CharZero K] {m : ℕ} (hm : m ≠ 0) :
-    belyiPolynomial K m 0 = X ^ m := by
-  simp [belyiPolynomial, hm]
+/-- In characteristic zero, the Belyi polynomial `B_{m,0}` is the power map `X ^ m`. -/
+theorem belyiPolynomial_zero_right [CharZero K] (m : ℕ) : belyiPolynomial K m 0 = X ^ m := by
+  rcases eq_or_ne m 0 with rfl | hm <;> simp [belyiPolynomial, *]
 
 /-- The value of the Belyi polynomial at a point `x`. -/
 theorem eval_belyiPolynomial (m n : ℕ) (x : K) :

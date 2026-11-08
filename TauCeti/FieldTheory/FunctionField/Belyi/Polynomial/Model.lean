@@ -157,9 +157,8 @@ defined over `ℚ`. -/
 theorem isDefinedOver_mk_ofPolynomial_X_pow {n : ℕ} (hq : 0 < (X ^ n : k[X]).natDegree)
     (hcrit : ∀ (L : Type u) [Field L] [Algebra k L], (X ^ n : k[X]).criticalValues L ⊆ {0, 1}) :
     (mk (ofPolynomial (X ^ n) hq hcrit)).IsDefinedOver ℚ := by
-  have hn : n ≠ 0 := by simpa using hq.ne'
   refine isDefinedOver_mk_ofPolynomial (q := X ^ n) (fun L _ _ ↦ ?_) hq hcrit (by simp)
-  rw [← belyiPolynomial_zero_right hn]
+  rw [← belyiPolynomial_zero_right]
   exact criticalValues_belyiPolynomial_subset L n 0
 
 /-- **The Chebyshev map is defined over `ℚ`**: the class of the polynomial Belyi pair
