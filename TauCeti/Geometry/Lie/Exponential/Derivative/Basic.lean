@@ -352,7 +352,7 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zer
 
 section LieExp
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [IsManifold I 1 G] [T2Space G]
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
   [BoundarylessManifold I G]
 
 namespace LeftInvariantDerivation
