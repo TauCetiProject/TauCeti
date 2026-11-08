@@ -235,7 +235,7 @@ theorem generalizedParetoMeasure_zero {s : ℝ} (hs : 0 < s) :
       funext e
       exact generalizedParetoMap_zero s e
     _ = expMeasure s⁻¹ := by
-      simpa only [expMeasure, one_div] using gammaMeasure_map_const_mul one_pos one_pos hs
+      simpa only [expMeasure, one_div] using gammaMeasure_map_const_mul (a := 1) (r := 1) hs
 
 /-- For nonzero shape and positive scale, the generalized Pareto law is the pushforward of a
 rate-one exponential law under `e ↦ s * (exp (ξ * e) - 1) / ξ`. -/
