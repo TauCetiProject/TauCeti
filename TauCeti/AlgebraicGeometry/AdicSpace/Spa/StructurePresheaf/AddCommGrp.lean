@@ -164,10 +164,10 @@ theorem quasiIso_cechAugmentation_prod_iff [HasProducts.{w} AddCommGrpCat.{v}] (
         (presentationLimitAddCommGrpPresheaf P Aplus Y.1)) := by
   rw [quasiIso_cechAugmentation_iff_of_iso _ _ _ (restrIso P Y)]
   -- intersection with `Y` sends products of members into the intersection of their product
-  have hG (m : ℕ) (a : Fin (m + 1) → ι) :
-      Nonempty ((∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))) ⟶
-        (interFunctor Y).obj (∏ᶜ fun j ↦ U (a j))) := by
-    refine ⟨homOfLE (Subtype.mk_le_mk.2 (le_inf (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2 ?_))⟩
+  have (m : ℕ) (a : Fin (m + 1) → ι) :
+      IsIso (piComparison (interFunctor Y) fun j ↦ U (a j)) := by
+    refine (isIso_iff_of_thin _).2
+      ⟨homOfLE (Subtype.mk_le_mk.2 (le_inf (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2 ?_))⟩
     let Z : Set.Iic W :=
       ⟨_, Set.mem_Iic.2 ((∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2.trans Y.2)⟩
     have hπ (j : Fin (m + 1)) : (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).1 ≤
@@ -179,7 +179,7 @@ theorem quasiIso_cechAugmentation_prod_iff [HasProducts.{w} AddCommGrpCat.{v}] (
   -- intersection with `Y` sends `W` to `Y`
   have hGT : IsTerminal ((interFunctor Y).obj ⊤) :=
     isTerminalTop.ofIso (eqToIso (Subtype.ext (inf_eq_left.2 Y.2)).symm)
-  rw [quasiIso_cechAugmentation_op_comp_iff (interFunctor Y) _ _ hG isTerminalTop hGT]
+  rw [quasiIso_cechAugmentation_op_comp_iff (interFunctor Y) _ _ isTerminalTop hGT]
   suffices h : ∀ {T : Set.Iic Y.1} (hT : IsTerminal T), T = ⊤ →
       (QuasiIso (cechAugmentation (fun i ↦ (interFunctor Y).obj (U i)) hT
         (presentationLimitAddCommGrpPresheaf P Aplus Y.1)) ↔
@@ -218,16 +218,14 @@ private noncomputable def locImageFunctor (W : Opens ↥(spa Aplus)) :
         exact Set.image_preimage_subset _ _⟩)
     fun _ _ h ↦ Subtype.mk_le_mk.2 (spaComapLoc_functor_obj_mono P Aplus hP T s S hden h)
 
-/-- The image functor of `j` sends a finite product of opens contained in `j⁻¹(W)` into the image
-of their product: the image of an intersection is the intersection of the images, `j` being
-injective. -/
-private theorem nonempty_pi_locImageFunctor_obj_hom {W : Opens ↥(spa Aplus)} {m : ℕ} :
+/-- The image functor of `j` preserves finite products of opens contained in `j⁻¹(W)`: the image
+of an intersection is the intersection of the images, `j` being injective. -/
+private theorem isIso_piComparison_locImageFunctor {W : Opens ↥(spa Aplus)} {m : ℕ} :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∀ V : Fin (m + 1) → Set.Iic (locOpensComap P Aplus T s S hden W),
-      Nonempty ((∏ᶜ fun j ↦ (locImageFunctor P T s S hden hP W).obj (V j)) ⟶
-        (locImageFunctor P T s S hden hP W).obj (∏ᶜ V)) := by
+      IsIso (piComparison (locImageFunctor P T s S hden hP W) V) := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -243,7 +241,7 @@ private theorem nonempty_pi_locImageFunctor_obj_hom {W : Opens ↥(spa Aplus)} {
     le_iInf fun i ↦ (Pi.π (fun j ↦ G.obj (V j)) i).le
   -- and the image of an intersection is the intersection of the images, `j` being injective
   rw [← hj.functor_obj_iInf] at hZ
-  exact ⟨homOfLE <| Subtype.mk_le_mk.2 <|
+  exact (isIso_iff_of_thin _).2 ⟨homOfLE <| Subtype.mk_le_mk.2 <|
     hZ.trans (spaComapLoc_functor_obj_mono P Aplus hP T s S hden (Subtype.coe_le_coe.2 hV))⟩
 
 /-- Wedhorn's Remark 8.4 at an open `V` of `Spa(A⟨T/s⟩, A_U⁺)`: the component of
@@ -349,8 +347,11 @@ theorem quasiIso_cechAugmentation_iff_locOpensComap [HasProducts.{w} AddCommGrpC
     spaComapLoc_functor_obj_locOpensComap P Aplus hP T s S hden (V.2.trans hWT)
   -- the image functor sends `j⁻¹(W)` to `W`
   have hGT : IsTerminal (G.obj ⊤) := isTerminalTop.ofIso (eqToIso (Subtype.ext (himage ⊤)).symm)
-  rw [quasiIso_cechAugmentation_op_comp_iff G _ _
-    (fun _ _ ↦ nonempty_pi_locImageFunctor_obj_hom P T s S hden hP _) isTerminalTop hGT]
+  have (m : ℕ) (a : Fin (m + 1) → ι) := isIso_piComparison_locImageFunctor P T s S hden hP
+    fun j ↦ (⟨locOpensComap P Aplus T s S hden (U (a j)).1,
+      Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U (a j)).2)⟩ :
+        Set.Iic (locOpensComap P Aplus T s S hden W))
+  rw [quasiIso_cechAugmentation_op_comp_iff G _ _ isTerminalTop hGT]
   -- the images of the pullbacks of the members are the members
   have hU : (fun i ↦ G.obj ⟨locOpensComap P Aplus T s S hden (U i).1,
       Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).2)⟩) = U :=
