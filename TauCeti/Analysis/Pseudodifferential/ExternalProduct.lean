@@ -81,8 +81,8 @@ structure ConicCutoff where
   /-- The underlying function. Use the coercion to a function instead. -/
   toFun : ℝ → ℝ
   contDiff' : ContDiff ℝ ∞ toFun
-  eq_zero_of_le' : ∀ t, t ≤ 1 / 4 → toFun t = 0
-  eq_one_of_le' : ∀ t, 1 / 2 ≤ t → toFun t = 1
+  eq_zero_of_le_one_div_four' : ∀ t, t ≤ 1 / 4 → toFun t = 0
+  eq_one_of_one_div_two_le' : ∀ t, 1 / 2 ≤ t → toFun t = 1
   nonneg' : ∀ t, 0 ≤ toFun t
   le_one' : ∀ t, toFun t ≤ 1
 
@@ -108,15 +108,15 @@ theorem contDiff {n : ℕ∞} : ContDiff ℝ n χ :=
 theorem continuous : Continuous χ :=
   (χ.contDiff (n := 0)).continuous
 
-theorem apply_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) : χ t = 0 :=
-  χ.eq_zero_of_le' t ht
+theorem apply_eq_zero_of_le_one_div_four {t : ℝ} (ht : t ≤ 1 / 4) : χ t = 0 :=
+  χ.eq_zero_of_le_one_div_four' t ht
 
-theorem apply_eq_one_of_le {t : ℝ} (ht : 1 / 2 ≤ t) : χ t = 1 :=
-  χ.eq_one_of_le' t ht
+theorem apply_eq_one_of_one_div_two_le {t : ℝ} (ht : 1 / 2 ≤ t) : χ t = 1 :=
+  χ.eq_one_of_one_div_two_le' t ht
 
 @[simp]
 theorem apply_zero : χ 0 = 0 :=
-  χ.apply_eq_zero_of_le (by norm_num)
+  χ.apply_eq_zero_of_le_one_div_four (by norm_num)
 
 theorem nonneg (t : ℝ) : 0 ≤ χ t :=
   χ.nonneg' t
@@ -129,8 +129,8 @@ def ofSmoothTransition : ConicCutoff where
   toFun t := Real.smoothTransition (4 * t - 1)
   contDiff' :=
     Real.smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
-  eq_zero_of_le' t ht := Real.smoothTransition.zero_of_nonpos (by linarith)
-  eq_one_of_le' t ht := Real.smoothTransition.one_of_one_le (by linarith)
+  eq_zero_of_le_one_div_four' t ht := Real.smoothTransition.zero_of_nonpos (by linarith)
+  eq_one_of_one_div_two_le' t ht := Real.smoothTransition.one_of_one_le (by linarith)
   nonneg' _ := Real.smoothTransition.nonneg _
   le_one' _ := Real.smoothTransition.le_one _
 
@@ -152,9 +152,9 @@ theorem add_le_two_mul {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
   · rw [← hab]
     positivity
   rcases le_total b a with hle | hle
-  · rw [χ.apply_eq_one_of_le (by rw [le_div_iff₀ hab]; linarith)]
+  · rw [χ.apply_eq_one_of_one_div_two_le (by rw [le_div_iff₀ hab]; linarith)]
     nlinarith
-  · rw [χ.apply_eq_one_of_le (t := b / (a + b)) (by rw [le_div_iff₀ hab]; linarith)]
+  · rw [χ.apply_eq_one_of_one_div_two_le (t := b / (a + b)) (by rw [le_div_iff₀ hab]; linarith)]
     nlinarith
 
 /-- Since the cutoff takes values in `[0, 1]`, the weighted sum
@@ -209,7 +209,7 @@ private theorem contDiffOn_conicCutoff_smul {Q P G G' : Type*} [NormedAddCommGro
       hratio.eventually (gt_mem_nhds (by simp [hq0]))
     refine contDiffAt_const (c := (0 : V →L[ℂ] W)).congr_of_eventuallyEq ?_
     filter_upwards [hlt] with q' hq'
-    rw [χ.apply_eq_zero_of_le hq'.le, zero_smul]
+    rw [χ.apply_eq_zero_of_le_one_div_four hq'.le, zero_smul]
   · have hpos : ‖π q‖ ^ 2 + ‖π' q‖ ^ 2 ≠ 0 := by positivity
     have hgq : ContDiffAt ℝ ∞ g (σ q, π q) :=
       hg.contDiffAt ((isOpen_compl_singleton.preimage continuous_snd).mem_nhds hq0)
@@ -248,8 +248,8 @@ theorem coefficient_conicCutoffFst_of_norm_le (χ : ConicCutoff) (a : Homogeneou
   · simp
   have hpos : 0 < ‖ξ‖ ^ 2 + ‖η‖ ^ 2 := by positivity
   have hle : ‖η‖ ^ 2 ≤ ‖ξ‖ ^ 2 := by gcongr
-  rw [coefficient_conicCutoffFst, χ.apply_eq_one_of_le (by rw [le_div_iff₀ hpos]; linarith),
-    one_smul]
+  rw [coefficient_conicCutoffFst,
+    χ.apply_eq_one_of_one_div_two_le (by rw [le_div_iff₀ hpos]; linarith), one_smul]
 
 /-- A homogeneous symbol `b` on the second factor, as a homogeneous symbol on the product cut
 off near the axis `η = 0`: its coefficient at `((x, y), (ξ, η))` is
@@ -283,8 +283,8 @@ theorem coefficient_conicCutoffSnd_of_norm_le (χ : ConicCutoff) (b : Homogeneou
   · simp
   have hpos : 0 < ‖ξ‖ ^ 2 + ‖η‖ ^ 2 := by positivity
   have hle : ‖ξ‖ ^ 2 ≤ ‖η‖ ^ 2 := by gcongr
-  rw [coefficient_conicCutoffSnd, χ.apply_eq_one_of_le (by rw [le_div_iff₀ hpos]; linarith),
-    one_smul]
+  rw [coefficient_conicCutoffSnd,
+    χ.apply_eq_one_of_one_div_two_le (by rw [le_div_iff₀ hpos]; linarith), one_smul]
 
 /-! ### The cut-off external product -/
 
