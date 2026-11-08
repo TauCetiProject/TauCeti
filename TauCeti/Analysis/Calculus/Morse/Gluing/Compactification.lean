@@ -63,29 +63,29 @@ theorem mem_splitGluingPairs {p : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × E
         p.1.fst = g p.1.snd ∧ p.2 = splitPassage ε p.1 ∧ p.2.snd = k p.2.fst :=
   Iff.rfl
 
-/-- If the exhaustive family `w` agrees with `v` on `Icc 0 δ`, then the entrance and exit
+/-- If the exhaustive family `w` agrees with `v` on `Ioc 0 δ`, then the entrance and exit
 pairs built from `v` over `Ioc 0 δ` are exactly the pairs of the split gluing. -/
 theorem image_pairs_eq_splitGluingPairs {δ : ℝ} {v w : ℝ → Eᵤ}
-    (hε : 0 < ε) (hδr : δ ≤ r₀) (hwnorm : ∀ r ∈ Icc 0 r₀, ‖w r‖ = ε)
+    (hε : 0 < ε) (hδr : δ ≤ r₀) (hwnorm : ∀ r ∈ Ioc 0 r₀, ‖w r‖ = ε)
     (himage : {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧ z.fst = g z.snd ∧
         (splitPassage ε z).snd = k (splitPassage ε z).fst} =
       (fun r ↦ WithLp.toLp 2 (g (r • w r), r • w r)) '' Ioc 0 r₀)
-    (heqδ : ∀ r ∈ Icc 0 δ, w r = v r) :
+    (heqδ : ∀ r ∈ Ioc 0 δ, w r = v r) :
     (fun r ↦ (WithLp.toLp 2 (g (r • v r), r • v r),
       WithLp.toLp 2 (r • g (r • v r), v r))) '' Ioc 0 δ = splitGluingPairs ε δ g k := by
   let F : ℝ → WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ) := fun r ↦
     (WithLp.toLp 2 (g (r • v r), r • v r), WithLp.toLp 2 (r • g (r • v r), v r))
-  have hvnorm {r : ℝ} (hr : r ∈ Icc 0 δ) : ‖v r‖ = ε := by
+  have hvnorm {r : ℝ} (hr : r ∈ Ioc 0 δ) : ‖v r‖ = ε := by
     rw [← heqδ r hr]
     exact hwnorm r ⟨hr.1, hr.2.trans hδr⟩
   have hpass {r : ℝ} (hr : r ∈ Ioc 0 δ) :
       (F r).2 = splitPassage ε (F r).1 :=
-    (splitPassage_toLp_smul (g (r • v r)) (hvnorm (Ioc_subset_Icc_self hr)) hε hr.1).symm
+    (splitPassage_toLp_smul (g (r • v r)) (hvnorm hr) hε hr.1).symm
   have hentry {r : ℝ} (hr : r ∈ Ioc 0 δ) :
       (F r).1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
         z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} := by
     rw [himage]
-    exact ⟨r, ⟨hr.1, hr.2.trans hδr⟩, by simp only [F, heqδ r (Ioc_subset_Icc_self hr)]⟩
+    exact ⟨r, ⟨hr.1, hr.2.trans hδr⟩, by simp only [F, heqδ r hr]⟩
   ext p
   rw [mem_splitGluingPairs]
   constructor
@@ -93,7 +93,7 @@ theorem image_pairs_eq_splitGluingPairs {δ : ℝ} {v w : ℝ → Eᵤ}
     have hrentry := hentry hr
     refine ⟨hrentry.1, ?_, hrentry.2.2.1, hpass hr, ?_⟩
     · simp only [WithLp.toLp_snd, norm_smul, Real.norm_of_nonneg hr.1.le,
-        hvnorm (Ioc_subset_Icc_self hr)]
+        hvnorm hr]
       exact mul_le_mul_of_nonneg_right hr.2 hε.le
     · rw [hpass hr]
       exact hrentry.2.2.2
@@ -106,11 +106,11 @@ theorem image_pairs_eq_splitGluingPairs {δ : ℝ} {v w : ℝ → Eᵤ}
     obtain ⟨r, hr, hre⟩ := hentry'
     have hnormr : r * ε = ‖p.1.snd‖ := by
       simpa only [WithLp.toLp_snd, norm_smul, Real.norm_of_nonneg hr.1.le,
-        hwnorm r (Ioc_subset_Icc_self hr)] using congrArg (fun z ↦ ‖z.snd‖) hre
+        hwnorm r hr] using congrArg (fun z ↦ ‖z.snd‖) hre
     have hrδ : r ∈ Ioc 0 δ := ⟨hr.1, (mul_le_mul_iff_left₀ hε).mp
       (by simpa only [mul_comm ε] using hnormr.trans_le hbound)⟩
     have hFe : (F r).1 = p.1 := by
-      simpa only [F, heqδ r (Ioc_subset_Icc_self hrδ)] using hre
+      simpa only [F, heqδ r hrδ] using hre
     refine ⟨r, hrδ, Prod.ext hFe ?_⟩
     rw [hpass hrδ, hFe, ← hexit]
 
@@ -149,7 +149,8 @@ private theorem exists_splitGluingPairs_parametrization [CompleteSpace Eᵤ]
     exact mul_div_cancel_right₀ r hε.ne'
   refine ⟨F, hF, ?_, by simp [F, a, v, hw₀], hnorm⟩
   -- The existing surjectivity theorem for entrance points also captures every exit pair.
-  exact image_pairs_eq_splitGluingPairs (v := w) hε le_rfl hwnorm himage fun _ _ ↦ rfl
+  exact image_pairs_eq_splitGluingPairs (v := w) hε le_rfl
+    (fun r hr ↦ hwnorm r (Ioc_subset_Icc_self hr)) himage fun _ _ ↦ rfl
 
 variable [CompleteSpace Eᵤ]
   (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))

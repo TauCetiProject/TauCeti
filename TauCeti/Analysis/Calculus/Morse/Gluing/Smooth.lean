@@ -194,7 +194,9 @@ theorem exists_contDiffOn_splitGluingPairs
     exact hr.2.trans_lt ((min_le_right r₀ (d / 2)).trans_lt (half_lt_self hd))
   have heqδ {r : ℝ} (hr : r ∈ Icc 0 δ) : w r = v r :=
     hWsub ⟨(hsmall hr).2, ⟨hr.1, hr.2.trans hδr⟩⟩
-  have himageδ := image_pairs_eq_splitGluingPairs hε hδr hwnorm himage (fun _ hr ↦ heqδ hr)
+  have himageδ := image_pairs_eq_splitGluingPairs hε hδr
+    (fun r hr ↦ hwnorm r (Ioc_subset_Icc_self hr)) himage
+    (fun _ hr ↦ heqδ (Ioc_subset_Icc_self hr))
   have hderiv : HasDerivAt (fun r ↦ r • v r) (k 0) 0 := by
     convert (hasDerivAt_id (0 : ℝ)).smul
       ((hUv.contDiffAt (hU.mem_nhds hU₀)).differentiableAt hn).hasDerivAt using 1 <;>
