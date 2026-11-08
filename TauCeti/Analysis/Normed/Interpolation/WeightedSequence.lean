@@ -52,9 +52,10 @@ each coordinate of `a` into the cheaper of the two endpoint spaces gives
 `t ^ (-θ) K(t, a) ≤ ∑ j, 2 ^ (s_θ j) ‖a j‖ φ(t 2 ^ ((s₁ - s₀) j))`, and evaluating `K` on a single
 coordinate gives the reverse inequality termwise. Schur's test
 (`TauCeti.eLpNorm_lintegral_mul_le`) turns the first bound into the upper estimate. The second,
-integrated over the disjoint intervals on which `φ(t 2 ^ ((s₁ - s₀) j))` is comparable to `1`,
-gives the lower estimate. Sequence norms are written as `L^q` seminorms for the counting
-measure; `lp.eLpNorm_count` identifies them with the norm of `lp`.
+integrated over the disjoint intervals on which `φ(t 2 ^ ((s₁ - s₀) j))` is comparable to `1`
+(`TauCeti.ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar`), gives the lower estimate. Sequence
+norms are written as `L^q` seminorms for the counting measure; `lp.eLpNorm_count` identifies them
+with the norm of `lp`.
 
 ## References
 
@@ -150,9 +151,6 @@ private theorem min_rpow_eq (hs : s = (1 - θ) * s₀ + θ * s₁) {t : ℝ} (ht
   rw [h₁, h, phi, ← mul_assoc t, mul_comm t x, mul_assoc x, hmin]
   linear_combination (-(x * min 1 (t * ρ))) * htρ
 
-private theorem norm_ofReal_smul (r : ℝ) (v : A) : ‖(r : 𝕜) • v‖ = |r| * ‖v‖ := by
-  rw [norm_smul, RCLike.norm_ofReal]
-
 /-- **Termwise lower bound.** Restricting a decomposition to the `j`-th coordinate bounds
 `2 ^ (s j) ‖a j‖ φ(t 2 ^ ((s₁ - s₀) j))` by `t ^ (-θ) K(t, a)`. -/
 private theorem mul_phi_le_kFunctional (hs : s = (1 - θ) * s₀ + θ * s₁) {t : ℝ} (ht : 0 < t)
@@ -181,8 +179,8 @@ private theorem mul_phi_le_kFunctional (hs : s = (1 - θ) * s₀ + θ * s₁) {t
         refine mul_le_mul_of_nonneg_left ?_ hm0
         rw [ha, ← RCLike.ofReal_inv, ← RCLike.ofReal_inv]
         refine (norm_add_le _ _).trans_eq ?_
-        rw [norm_ofReal_smul, norm_ofReal_smul, abs_of_pos (inv_pos.2 hw₀),
-          abs_of_pos (inv_pos.2 hw₁)]
+        rw [norm_smul, RCLike.norm_ofReal, norm_smul, RCLike.norm_ofReal,
+          abs_of_pos (inv_pos.2 hw₀), abs_of_pos (inv_pos.2 hw₁)]
     _ = m / 2 ^ (s₀ * j) * ‖x₀ j‖ + m / (t * 2 ^ (s₁ * j)) * t * ‖x₁ j‖ := by
         field_simp
     _ ≤ 1 * ‖x₀‖ + 1 * t * ‖x₁‖ := by
@@ -229,9 +227,9 @@ private theorem exists_decomposition (hs : s = (1 - θ) * s₀ + θ * s₁) {t :
   have hcost (j : ℕ) : ‖f₀ j‖ + t * ‖f₁ j‖ = c j := by
     simp only [f₀, f₁, hc_def]
     split_ifs with h
-    · rw [norm_zero, mul_zero, add_zero, min_eq_left h, norm_ofReal_smul,
+    · rw [norm_zero, mul_zero, add_zero, min_eq_left h, norm_smul, RCLike.norm_ofReal,
         abs_of_pos (by positivity)]
-    · rw [norm_zero, zero_add, min_eq_right (not_le.1 h).le, norm_ofReal_smul,
+    · rw [norm_zero, zero_add, min_eq_right (not_le.1 h).le, norm_smul, RCLike.norm_ofReal,
         abs_of_pos (by positivity), mul_assoc]
   -- both pieces are summable, hence lie in every `ℓ^q` with `1 ≤ q`
   have hf₀ : Summable fun j ↦ ‖f₀ j‖ :=
@@ -259,86 +257,6 @@ private theorem exists_decomposition (hs : s = (1 - θ) * s₀ + θ * s₁) {t :
       _ = _ := by
           rw [← tsum_mul_left]
           exact tsum_congr hc
-
-/-! ### Integration over dyadic intervals -/
-
-/-- The interval `[c 2 ^ x, c 2 ^ (x + |μ|))` has `dt / t`-measure `|μ| log 2`. -/
-private theorem multHaar_Ico_mul_rpow {c : ℝ} (hc : 0 < c) (x μ : ℝ) :
-    multHaar (Ico (c * 2 ^ x) (c * 2 ^ (x + |μ|))) = ENNReal.ofReal (|μ| * Real.log 2) := by
-  rw [multHaar_Ico (by positivity) (mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_exponent_le one_le_two (by simp)) hc.le),
-    Real.log_mul hc.ne' (by positivity), Real.log_mul hc.ne' (by positivity),
-    Real.log_rpow two_pos, Real.log_rpow two_pos]
-  ring_nf
-
-/-- The intervals `[c 2 ^ (μ j), c 2 ^ (μ j + |μ|))` for `j ∈ ℕ` are pairwise disjoint and have
-`dt / t`-measure `|μ| log 2`. So if `g j ≤ f` on the `j`-th interval, then
-`|μ| log 2 ∑ j, g j ≤ ∫ f dt / t`. -/
-private theorem ofReal_mul_tsum_le_lintegral {c μ : ℝ} (hc : 0 < c)
-    {f : ℝ → ℝ≥0∞} {g : ℕ → ℝ≥0∞}
-    (h : ∀ j : ℕ, ∀ r ∈ Ico (c * 2 ^ (μ * j)) (c * 2 ^ (μ * j + |μ|)), g j ≤ f r) :
-    ENNReal.ofReal (|μ| * Real.log 2) * ∑' j, g j ≤ ∫⁻ r, f r ∂multHaar := by
-  set S : ℕ → Set ℝ := fun j ↦ Ico (c * 2 ^ (μ * j)) (c * 2 ^ (μ * j + |μ|))
-  have hS (j : ℕ) : multHaar (S j) = ENNReal.ofReal (|μ| * Real.log 2) :=
-    multHaar_Ico_mul_rpow hc _ μ
-  have hdisj : Pairwise (Function.onFun Disjoint S) := by
-    intro j k hjk
-    have h1 : (1 : ℝ) ≤ |(j : ℝ) - k| := by
-      rcases lt_or_gt_of_ne hjk with h | h
-      · have : (j : ℝ) + 1 ≤ k := by exact_mod_cast h
-        rw [abs_sub_comm, abs_of_pos (by linarith)]
-        linarith
-      · have : (k : ℝ) + 1 ≤ j := by exact_mod_cast h
-        rw [abs_of_pos (by linarith)]
-        linarith
-    have hgap : |μ| ≤ |μ * j - μ * k| := by
-      rw [← mul_sub, abs_mul]
-      exact le_mul_of_one_le_right (abs_nonneg μ) h1
-    simp only [Function.onFun, S, Set.Ico_disjoint_Ico]
-    rcases le_total (μ * j) (μ * k) with hjk' | hjk'
-    · rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hjk')] at hgap
-      exact (min_le_left _ _).trans <| (mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow_of_exponent_le one_le_two (by linarith)) hc.le).trans (le_max_right _ _)
-    · rw [abs_of_nonneg (sub_nonneg.2 hjk')] at hgap
-      exact (min_le_right _ _).trans <| (mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow_of_exponent_le one_le_two (by linarith)) hc.le).trans (le_max_left _ _)
-  calc ENNReal.ofReal (|μ| * Real.log 2) * ∑' j, g j = ∑' j, ∫⁻ _ in S j, g j ∂multHaar := by
-        rw [← ENNReal.tsum_mul_left]
-        exact tsum_congr fun j ↦ by rw [setLIntegral_const, hS, mul_comm]
-    _ ≤ ∑' j, ∫⁻ r in S j, f r ∂multHaar :=
-        tsum_le_tsum fun j ↦ setLIntegral_mono' measurableSet_Ico (h j)
-    _ = ∫⁻ r in ⋃ j, S j, f r ∂multHaar :=
-        (lintegral_iUnion (fun _ ↦ measurableSet_Ico) hdisj f).symm
-    _ ≤ ∫⁻ r, f r ∂multHaar := setLIntegral_le_lintegral _ _
-
-/-- The `L^q` form of `ofReal_mul_tsum_le_lintegral`: if `g j ≤ ‖f‖` on the `j`-th interval, the
-`ℓ^q` norm of `g` is at most `(|μ| log 2) ^ (-1 / q)` times the `L^q(dt / t)` norm of `f`. -/
-private theorem ofReal_rpow_mul_eLpNorm_le {c μ : ℝ} (hc : 0 < c) (hμ : μ ≠ 0) (hq : q ≠ 0)
-    {f : ℝ → ℝ} (hf : AEStronglyMeasurable f multHaar) {g : ℕ → ℝ≥0∞}
-    (h : ∀ j : ℕ, ∀ r ∈ Ico (c * 2 ^ (μ * j)) (c * 2 ^ (μ * j + |μ|)), g j ≤ ‖f r‖ₑ) :
-    ENNReal.ofReal (|μ| * Real.log 2) ^ q.toReal⁻¹ * eLpNorm g q Measure.count ≤
-      eLpNorm f q multHaar := by
-  have hL : 0 < |μ| * Real.log 2 := mul_pos (abs_pos.2 hμ) (Real.log_pos one_lt_two)
-  rcases eq_or_ne q ∞ with rfl | hq_top
-  · -- `q = ∞`: each `g j` is below `‖f‖` on a set of positive measure
-    rw [ENNReal.toReal_top, inv_zero, ENNReal.rpow_zero, one_mul, eLpNorm_count_top,
-      eLpNorm_exponent_top hf]
-    refine iSup_le fun j ↦ ?_
-    by_contra! hlt
-    have hnull := ae_iff.1 (ae_lt_of_essSup_lt hlt)
-    refine (ENNReal.ofReal_pos.2 hL).ne' ?_
-    rw [← multHaar_Ico_mul_rpow hc (μ * j) μ]
-    refine measure_mono_null (fun r hr ↦ ?_) hnull
-    simp only [enorm_eq_self, not_lt]
-    exact h j r hr
-  · -- finite `q`: integrate `g j ^ q ≤ ‖f‖ ^ q` over the intervals
-    have hr : 0 < q.toReal := ENNReal.toReal_pos hq hq_top
-    rw [eLpNorm_count_eq_tsum hq hq_top, eLpNorm_eq_lintegral_rpow_enorm_toReal hq hq_top hf,
-      one_div, ← ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr.le)]
-    refine ENNReal.rpow_le_rpow (ofReal_mul_tsum_le_lintegral hc fun j r hr' ↦ ?_)
-      (inv_nonneg.2 hr.le)
-    simp only [enorm_eq_self]
-    exact ENNReal.rpow_le_rpow (h j r hr') hr.le
 
 /-! ### The row and column integrals of the kernel `φ(t 2 ^ ((s₁ - s₀) j))` -/
 
@@ -380,7 +298,8 @@ private theorem ofReal_mul_tsum_ofReal_phi_le (hθ : 0 ≤ θ) {μ : ℝ} {t : �
     _ ≤ ENNReal.ofReal (2 ^ (θ * |μ|)) * kMethodConst θ 1 := by
         gcongr
         rw [← lintegral_ofReal_phi]
-        refine ofReal_mul_tsum_le_lintegral ht fun j r hr ↦ ENNReal.ofReal_le_ofReal ?_
+        refine ofReal_mul_tsum_le_lintegral_multHaar one_le_two ht fun j r hr ↦
+          ENNReal.ofReal_le_ofReal ?_
         have h2 : (2 : ℝ) ^ (-(θ * |μ|)) = (2 ^ |μ|) ^ (-θ) := by
           rw [← Real.rpow_mul two_pos.le]
           ring_nf
@@ -415,7 +334,7 @@ private theorem summable_phi (hθ : θ ∈ Ioo 0 1) {μ : ℝ} (hμ : μ ≠ 0) 
 
 private theorem norm_weight_smul (s : ℝ) (j : ℕ) (v : A) :
     ‖(((2 : ℝ) ^ (s * j) : ℝ) : 𝕜) • v‖ = (2 : ℝ) ^ (s * j) * ‖v‖ := by
-  rw [norm_ofReal_smul, abs_of_pos (by positivity)]
+  rw [norm_smul, RCLike.norm_ofReal, abs_of_pos (by positivity)]
 
 /-- Finiteness of the weighted `ℓ^q` norm bounds the weighted coordinates. -/
 private theorem rpow_mul_norm_le_toReal (hq : q ≠ 0) {a : ℕ → A}
@@ -504,12 +423,14 @@ theorem ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp (hs : s₀ ≠ s₁) (hθ 
   obtain ⟨r, hr_def⟩ : ∃ r : ℝ, r = 2 ^ (-(θ * |s₁ - s₀|)) := ⟨_, rfl⟩
   have hr : 0 < r := hr_def ▸ by positivity
   -- integrate the termwise bound over the intervals `[2 ^ (-μ j), 2 ^ (-μ j + |μ|))`
-  have key := ofReal_rpow_mul_eLpNorm_le (c := 1) (μ := -(s₁ - s₀)) one_pos
-    (neg_ne_zero.2 (sub_ne_zero.2 hs.symm)) hq (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u)
+  have key := ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar (c := 1) (μ := -(s₁ - s₀))
+    one_lt_two one_pos (neg_ne_zero.2 (sub_ne_zero.2 hs.symm)) hq
+    (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u)
     (g := fun j ↦ ‖((r : ℝ) : 𝕜) • v j‖ₑ) fun j t ht ↦ by
       have ht0 : 0 < t := lt_of_lt_of_le (by positivity) ht.1
-      rw [← ofReal_norm, norm_ofReal_smul, abs_of_pos hr, norm_weight_smul, Real.enorm_of_nonneg
-        (mul_nonneg (Real.rpow_nonneg ht0.le _) (kFunctional_nonneg ht0.le)), hr_def]
+      rw [← ofReal_norm, norm_smul, RCLike.norm_ofReal, abs_of_pos hr, norm_weight_smul,
+        Real.enorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht0.le _) (kFunctional_nonneg ht0.le)),
+        hr_def]
       exact ENNReal.ofReal_le_ofReal (rpow_mul_le_rpow_neg_mul_kFunctional rfl hθ u j ht)
   have hg : eLpNorm (fun j ↦ ‖((r : ℝ) : 𝕜) • v j‖ₑ) q Measure.count =
       ENNReal.ofReal r * eLpNorm v q Measure.count := by
