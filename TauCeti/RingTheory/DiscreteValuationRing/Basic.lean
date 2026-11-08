@@ -55,12 +55,6 @@ namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
 
-/-- Any multiple of the `n`-th power of an element of the maximal ideal lies in the `n`-th power of
-the maximal ideal. -/
-theorem mul_pow_mem_maximalIdeal_pow {R : Type*} [CommRing R] [IsLocalRing R] {ϖ : R}
-    (hϖ : ϖ ∈ maximalIdeal R) (n : ℕ) (c : R) : c * ϖ ^ n ∈ maximalIdeal R ^ n :=
-  (maximalIdeal R ^ n).mul_mem_left c (Ideal.pow_mem_pow hϖ n)
-
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
 theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}
