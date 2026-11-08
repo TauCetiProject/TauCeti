@@ -204,23 +204,18 @@ theorem StronglyContinuousSemigroup.tendsto_realOperator_apply {ι : Type*} {l :
     (hf : Filter.Tendsto f l (𝓝 r)) (hg : Filter.Tendsto g l (𝓝 z)) :
     Filter.Tendsto (fun i => S.realOperator (f i) (g i)) l (𝓝 (S.realOperator r z)) := by
   obtain ⟨omega, M, hb⟩ := S.existsGrowthBound
-  have hM : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hb.one_le
   -- Negative times act as time `0`.
   have hclamp (t : ℝ) : S.realOperator t = S.realOperator (max t 0) := by
     rw [S.realOperator_def, S.realOperator_def]
     congr 1
     simp [Real.toNNReal]
   -- A single operator-norm bound valid for all times eventually visited by `f`.
-  have hbound : ∀ᶠ i in l, ‖S.realOperator (f i)‖ ≤ M * Real.exp (|omega| * (max r 0 + 1)) := by
+  have hbound : ∀ᶠ i in l, ‖S.realOperator (f i)‖ ≤ M * Real.exp (max omega 0 * (max r 0 + 1)) := by
     filter_upwards [hf.eventually_lt_const (lt_of_le_of_lt (le_max_left r 0) (lt_add_one _))]
       with i hi1
     have hi2 : max (f i) 0 < max r 0 + 1 := max_lt hi1 (by linarith [le_max_right r 0])
     rw [hclamp]
-    refine (hb.bound _ (le_max_right _ _)).trans ?_
-    refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) hM.le
-    calc omega * max (f i) 0 ≤ |omega| * max (f i) 0 :=
-          mul_le_mul_of_nonneg_right (le_abs_self omega) (le_max_right _ _)
-      _ ≤ |omega| * (max r 0 + 1) := mul_le_mul_of_nonneg_left hi2.le (abs_nonneg omega)
+    exact hb.norm_le_mul_exp_max_zero_mul_of_le (le_max_right _ _) hi2.le
   -- The time moves: this is strong continuity of the orbit of the fixed vector `z`.
   have h2 : Filter.Tendsto (fun i => S.realOperator (f i) z) l (𝓝 (S.realOperator r z)) :=
     ((S.continuous_realOperator_apply z).tendsto r).comp hf
