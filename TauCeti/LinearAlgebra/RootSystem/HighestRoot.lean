@@ -347,7 +347,7 @@ theorem rootLength_le_rootLength_highestRoot {S : Type*} [CommRing S] [LinearOrd
   have hdom : ∀ k ∈ b.support, 0 ≤ P.pairingIn ℤ β k := fun k hk ↦ by
     by_contra! hneg
     have := hβ (P.reflectionPerm k β) fun j ↦ by simpa using hβT j
-    rw [TauCeti.height_reflectionPerm_of_mem_support P b hk] at this
+    rw [b.height_reflectionPerm_of_mem_support hk] at this
     omega
   obtain ⟨c, hc⟩ := (TauCeti.mem_posRootCone P b).mp (b.root_highestRoot_sub_mem_posRootCone β)
   have hp (i k : ι) : ((P.pairingIn ℤ i k : ℤ) : R) = P.pairing i k := by
