@@ -329,7 +329,7 @@ theorem W1p.gradient_compL_ae (u : W1p mu V p) :
     with x h1 h2 h3
   rw [h1, h2, adjointJet_snd, h3]
 
-/-- `W1p.compL Φ …` has operator norm at most `max 1 L * c ^ (-1/p)`. -/
+/-- Pointwise norm bound: `‖W1p.compL Φ … u‖ ≤ max 1 L * c ^ (-1/p) * ‖u‖`. -/
 theorem W1p.norm_compL_le (u : W1p mu V p) :
     ‖W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u‖ ≤ max 1 L * c⁻¹ ^ (1 / p).toReal * ‖u‖ := by
   have h := norm_pullbackJetL_le (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)

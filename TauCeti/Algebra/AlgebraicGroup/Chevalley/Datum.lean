@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.LinearMap
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.WeightLattice
+import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # Chevalley data and their group schemes
@@ -36,7 +37,12 @@ parametrize is the split torus with character lattice `Λ(D)`, and it is a close
 group scheme (`TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_torus`). Reading the weights
 themselves in `Fin t.rank → ℤ` would instead parametrize the torus by the full weight lattice;
 when `Λ(D)` is a proper sublattice, that map to `GLₙ` has a nontrivial kernel, the diagonalizable
-group with character group `(Fin t.rank → ℤ) / Λ(D)`.
+group with character group `(Fin t.rank → ℤ) / Λ(D)`. It is the torus with character lattice
+`Λ(D)` precomposed with restriction of characters, and together with the root subgroups it
+generates the same group scheme
+(`TauCeti.DynkinType.ChevalleyDatum.groupScheme_eq_kostantToralGroupScheme_weight`). This is how
+explicit carriers built from the full-weight parametrization are identified with the group schemes
+of their Chevalley data.
 
 The nilpotence of the root generators, which the divided-power exponentials need, is not part of
 the data: a root vector raises weights by a nonzero root, so it acts nilpotently on a space spanned
@@ -67,6 +73,11 @@ by finitely many weight vectors
   generators act nilpotently.
 * `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_torus`: the torus is a closed subgroup of
   the group scheme.
+* `TauCeti.DynkinType.ChevalleyDatum.groupScheme_eq_kostantToralGroupScheme_weight` and
+  `TauCeti.DynkinType.ChevalleyDatum.points_eq_kostantToralPointsSubgroup_weight`: the group scheme
+  and its points are those generated with the full-weight parametrization of the torus.
+* `TauCeti.DynkinType.ChevalleyDatum.kostantWeightTorusToToral_weight_comp_eqToHom`: the full-weight
+  parametrization is the torus precomposed with restriction of characters to `Λ(D)`.
 
 ## References
 
@@ -233,6 +244,27 @@ theorem isNilpotent_representation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank)
     D.representation D.isCartanWeightVector_basis D.span_range_basis_eq_top
     (t.lie_lieBasis_h_rootGenerator ht i) (t.rootGeneratorWeight_ne_zero ht i)
 
+section
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance high] Algebra.toModule
+
+/-- The images of the Cartan element and the positive and negative simple root generators
+at a node form an `sl₂` triple in the representation of a Chevalley datum. -/
+theorem isSl2Triple_representation_rootGenerator (i : Fin t.rank) :
+    IsSl2Triple
+      (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
+  exact ((t.lieBasis ht).isSl2Triple_rootGenerator i).map
+    (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+    (fun hzero => ((t.lieBasis ht).isSl2Triple_rootGenerator i).h_ne_zero
+      (D.injective_representation_ι (by simpa using hzero)))
+
+end
+
 /-! ## The group scheme -/
 
 /-- **The group scheme of a Chevalley datum**: the smallest closed subgroup scheme of `GLₙ` over
@@ -361,6 +393,64 @@ coordinate weights span the character lattice. -/
 instance isClosedImmersion_torus : IsClosedImmersion D.torus.hom.hom.left :=
   UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral _ _ _ _ _ _ _ _
     D.span_range_coordinateWeight_eq_top
+
+/-! ## The full-weight parametrization of the torus -/
+
+/-- The weights of a Chevalley datum are the images of its coordinate weights under the linear map
+sending the standard basis of `Fin t.rank → ℤ` to the chosen basis of the weight lattice. -/
+private theorem fintypeLinearCombination_coordinateWeight (j : Fin D.dim) :
+    Fintype.linearCombination ℤ (fun i => (D.weightLatticeBasis i : Fin t.rank → ℤ))
+        (D.coordinateWeight j) = D.weight j := by
+  rw [Fintype.linearCombination_apply, D.sum_coordinateWeight_smul]
+
+/-- The linear map sending the standard basis of `Fin t.rank → ℤ` to the chosen basis of the weight
+lattice is injective. -/
+private theorem injective_fintypeLinearCombination_weightLatticeBasis :
+    Function.Injective
+      (Fintype.linearCombination ℤ fun i => (D.weightLatticeBasis i : Fin t.rank → ℤ)) :=
+  (D.weightLatticeBasis.linearIndependent.map' D.weightLattice.subtype
+    D.weightLattice.ker_subtype).fintypeLinearCombination_injective
+
+/-- **The group scheme of a Chevalley datum is generated by the root subgroups and the full-weight
+parametrization of the torus.** Reading the weights themselves in `Fin t.rank → ℤ` parametrizes the
+torus by the full weight lattice; when `Λ(D)` is a proper sublattice that parametrization has a
+nontrivial kernel, but it generates the same closed subgroup scheme of `GLₙ` as the torus with
+character lattice `Λ(D)`. -/
+theorem groupScheme_eq_kostantToralGroupScheme_weight :
+    D.groupScheme =
+      UniversalEnvelopingAlgebra.kostantToralGroupScheme (t.lieBasis ht).rootGenerator
+        (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis D.weight := by
+  rw [← funext D.fintypeLinearCombination_coordinateWeight,
+    UniversalEnvelopingAlgebra.kostantToralGroupScheme_linearMap _ _ _ _ _ _ _ _
+      D.injective_fintypeLinearCombination_weightLatticeBasis]
+
+/-- **The points of a Chevalley datum are the points of the Kostant toral closure of the full-weight
+parametrization of its torus.** -/
+theorem points_eq_kostantToralPointsSubgroup_weight (A : Type v) [CommRing A] :
+    D.points A =
+      UniversalEnvelopingAlgebra.kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator
+        (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis D.weight A := by
+  rw [← funext D.fintypeLinearCombination_coordinateWeight,
+    UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_linearMap _ _ _ _ _ _ _ _
+      D.injective_fintypeLinearCombination_weightLatticeBasis, points]
+
+/-- **The full-weight parametrization of the torus of a Chevalley datum factors through its
+torus**, by the split-torus morphism dual to the linear map sending the standard basis of
+`Fin t.rank → ℤ` to the chosen basis of the weight lattice, that is, by restriction of characters
+from `Fin t.rank → ℤ` to `Λ(D)`. -/
+theorem kostantWeightTorusToToral_weight_comp_eqToHom :
+    UniversalEnvelopingAlgebra.kostantWeightTorusToToral (t.lieBasis ht).rootGenerator
+        (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis D.weight ≫
+      eqToHom D.groupScheme_eq_kostantToralGroupScheme_weight.symm =
+    SplitTorus.ofLinearMap ℤ
+        (Fintype.linearCombination ℤ fun i => (D.weightLatticeBasis i : Fin t.rank → ℤ)) ≫
+      D.torus :=
+  UniversalEnvelopingAlgebra.kostantWeightTorusToToral_linearMap_of_eq _ _ _ _ _ _ _ _
+    D.injective_fintypeLinearCombination_weightLatticeBasis
+    (funext D.fintypeLinearCombination_coordinateWeight) _
 
 end ChevalleyDatum
 

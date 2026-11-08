@@ -227,22 +227,16 @@ theorem degree_relativeFrobeniusIsogeny : (relativeFrobeniusIsogeny p W).degree 
 end Degree
 
 /-- **The relative Frobenius isogeny has separable degree one**, as pure inseparability
-requires.
-
-**Deliberately not `@[simp]`.** The `isPurelyInseparable_relativeFrobeniusIsogeny` instance
-already lets the `@[simp]` lemma `separableDegree_eq_one_of_isPurelyInseparable` close this goal,
-so tagging it fails `simpNF` with `simp can prove this`; it is stated as the named specialisation
-a consumer quotes, exactly as `separableDegree_frobeniusIsogeny` is for the absolute Frobenius. -/
+requires: `separableDegree_eq_one_of_isPurelyInseparable` specialised along the
+`isPurelyInseparable_relativeFrobeniusIsogeny` instance, exactly as
+`separableDegree_frobeniusIsogeny` is for the absolute Frobenius. -/
+@[simp]
 theorem separableDegree_relativeFrobeniusIsogeny :
     (relativeFrobeniusIsogeny p W).separableDegree = 1 :=
   separableDegree_eq_one_of_isPurelyInseparable (relativeFrobeniusIsogeny p W)
 
-/-- **The relative Frobenius isogeny carries its whole degree `p` in the inseparable part.**
-
-**Deliberately not `@[simp]`.** Its left-hand side is already rewritten to `p` by the `@[simp]`
-pair `inseparableDegree_eq_degree_of_isPurelyInseparable` and `degree_relativeFrobeniusIsogeny`,
-so tagging it fails `simpNF`; it is stated for the same reason as
-`separableDegree_relativeFrobeniusIsogeny` above. -/
+/-- **The relative Frobenius isogeny carries its whole degree `p` in the inseparable part.** -/
+@[simp]
 theorem inseparableDegree_relativeFrobeniusIsogeny :
     (relativeFrobeniusIsogeny p W).inseparableDegree = p := by
   rw [inseparableDegree_eq_degree_of_isPurelyInseparable, degree_relativeFrobeniusIsogeny]

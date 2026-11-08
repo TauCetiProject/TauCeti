@@ -267,6 +267,17 @@ theorem rank_neg {m n R : Type*} [Fintype n] [CommRing R] (A : Matrix m n R) :
     (-A).rank = A.rank := by
   simpa using rank_smul_of_mem_nonZeroDivisors A (isUnit_one (M := R)).neg.mem_nonZeroDivisors
 
+/-- Inverting two invertible matrices preserves the rank of their difference. -/
+theorem rank_inv_sub_inv {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    {P Q : Matrix n n R} (hP : IsUnit P) (hQ : IsUnit Q) :
+    (P⁻¹ - Q⁻¹).rank = (P - Q).rank := by
+  have hdetP := (isUnit_iff_isUnit_det _).mp hP
+  have hdetQ := (isUnit_iff_isUnit_det _).mp hQ
+  rw [inv_sub_inv (iff_of_true hP hQ),
+    rank_mul_eq_left_of_isUnit_det _ _ (isUnit_nonsing_inv_det _ hdetQ),
+    rank_mul_eq_right_of_isUnit_det _ _ (isUnit_nonsing_inv_det _ hdetP),
+    ← neg_sub P Q, rank_neg]
+
 end Conjugation
 
 variable {K : Type*} [Field K] {m n : Type*} [Fintype n]
