@@ -38,6 +38,57 @@ public section
 
 noncomputable section
 
+namespace PartialDiffeomorph
+
+open Set
+open scoped Manifold ContDiff
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
+  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'} {M N : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N] {n : WithTop ℕ∞}
+
+/-- The open partial homeomorphism of a partial diffeomorphism has its source. -/
+theorem source_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n) :
+    Φ.toOpenPartialHomeomorph.source = Φ.source :=
+  congrArg PartialEquiv.source (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
+
+/-- The open partial homeomorph of a partial diffeomorphism has its target. -/
+theorem target_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n) :
+    Φ.toOpenPartialHomeomorph.target = Φ.target :=
+  congrArg PartialEquiv.target (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
+
+/-- The inverse of the open partial homeomorph of a partial diffeomorphism is the inverse
+function of the partial diffeomorphism. -/
+theorem coe_symm_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n) :
+    ⇑Φ.toOpenPartialHomeomorph.symm = Φ.symm :=
+  rfl
+
+/-- Restricting the open partial homeomorph of a partial diffeomorphism to an open set keeps it
+smooth on its source. -/
+theorem contMDiffOn_restrOpen_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n)
+    {V : Set M} (hV : IsOpen V) :
+    ContMDiffOn I J n (Φ.toOpenPartialHomeomorph.restrOpen V hV)
+      (Φ.toOpenPartialHomeomorph.restrOpen V hV).source := by
+  rw [OpenPartialHomeomorph.coe_restrOpen, OpenPartialHomeomorph.restrOpen_source,
+    Φ.toFun'_toOpenPartialHomeomorph, Φ.source_toOpenPartialHomeomorph]
+  exact Φ.contMDiffOn.mono inter_subset_left
+
+/-- The inverse of the restriction of the open partial homeomorph of a partial diffeomorphism to
+an open set is smooth on the target of the restriction. -/
+theorem contMDiffOn_symm_restrOpen_toOpenPartialHomeomorph (Φ : PartialDiffeomorph I J M N n)
+    {V : Set M} (hV : IsOpen V) :
+    ContMDiffOn J I n (Φ.toOpenPartialHomeomorph.restrOpen V hV).symm
+      (Φ.toOpenPartialHomeomorph.restrOpen V hV).target := by
+  have htarget : (Φ.toOpenPartialHomeomorph.restrOpen V hV).target ⊆ Φ.target := by
+    rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
+      ← Φ.target_toOpenPartialHomeomorph]
+    exact inter_subset_left
+  rw [OpenPartialHomeomorph.coe_restrOpen_symm, Φ.coe_symm_toOpenPartialHomeomorph]
+  exact Φ.symm.contMDiffOn.mono htarget
+
+end PartialDiffeomorph
+
 namespace TauCeti.Lie
 
 open Filter Set
@@ -104,28 +155,31 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
   let V : Set G := Φ₀.source ∩ Φ₀ ⁻¹' (Prod.snd ⁻¹' Metric.ball 0 ε)
   have hV : IsOpen V := Φ₀.continuousOn.isOpen_inter_preimage Φ₀.open_source
     (Metric.isOpen_ball.preimage continuous_snd)
+  have hΦ₀_source : Φ₀.source = hf.localInverse.source :=
+    hf.localInverse.source_toOpenPartialHomeomorph
+  have hΦ₀_apply (x : G) : Φ₀ x = hf.localInverse x := by
+    rw [hf.localInverse.toFun'_toOpenPartialHomeomorph]
   have h1 : (1 : G) ∈ Φ₀.source := by
     have h := hf.localInverse_mem_source
     rw [Submodule.lieExpMulLieExp_zero] at h
-    exact h
+    rwa [hΦ₀_source]
   have hzero : Φ₀ 1 = 0 := by
     have h := hf.localInverse_left_inv (x' := 0) hf.localInverse_mem_target
     rw [Submodule.lieExpMulLieExp_zero] at h
-    exact h
-  refine ⟨q, Φ₀.restrOpen V hV, hpq, ⟨h1, h1, ?_⟩, ?_, ?_, ?_⟩
+    rwa [hΦ₀_apply]
+  refine ⟨q, Φ₀.restrOpen V hV, hpq, ⟨h1, h1, ?_⟩, ?_,
+    hf.localInverse.contMDiffOn_restrOpen_toOpenPartialHomeomorph hV,
+    hf.localInverse.contMDiffOn_symm_restrOpen_toOpenPartialHomeomorph hV⟩
   · -- The inverse chart sends `1` to `0`, whose transverse coordinate lies in every positive ball.
-    change Φ₀ 1 ∈ Prod.snd ⁻¹' Metric.ball 0 ε
-    rw [hzero]
+    rw [Set.mem_preimage, hzero]
     exact Metric.mem_ball_self hε
   · refine isSliceChart_restrOpen_of_lieExp_mul_lieExp
       (fun z hz ↦ lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hz) hsep Φ₀ (fun x hx ↦ ?_) hV
       fun x hx ↦ ?_
-    · have h := hf.localInverse_right_inv hx
-      rw [Submodule.lieExpMulLieExp_apply] at h
+    · have h := hf.localInverse_right_inv (hΦ₀_source ▸ hx)
+      rw [Submodule.lieExpMulLieExp_apply, ← hΦ₀_apply] at h
       exact h
     · have h : (Φ₀ x).2 ∈ Metric.ball (0 : q) ε := hx.2.2
       simpa only [Metric.mem_ball, dist_zero_right, Submodule.norm_coe] using h
-  · exact hf.contMDiffOn_localInverse.mono inter_subset_left
-  · exact hf.localInverse.contMDiffOn_invFun.mono inter_subset_left
 
 end TauCeti.Lie
