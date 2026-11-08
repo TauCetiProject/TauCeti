@@ -98,6 +98,16 @@ section Harmonic
 
 variable {μ} {ν : Measure ℝ} {f : C_c(ℝ, ℝ)} {a b : ℝ} {C : ℝ≥0} {B : ℝ≥0∞}
 
+/-- Integrating `‖f (x + z)‖ₑ` first against a measure `ν` whose translated intervals have mass
+at most `B`, then against `μ` over `S`, gives at most `C * B * μ S`. -/
+private theorem lintegral_lintegral_enorm_comp_add_le
+    (hf : ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ (C : ℝ≥0∞)) y)
+    (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (S : Set ℝ≥0) :
+    ∫⁻ x in S, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ ≤ C * B * μ S :=
+  calc ∫⁻ x in S, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ ≤ ∫⁻ _ in S, (C : ℝ≥0∞) * B ∂μ :=
+        lintegral_mono fun x ↦ lintegral_comp_add_le_of_le_indicator hf hν x
+    _ = C * B * μ S := setLIntegral_const S _
+
 /-- The part of `x ↦ f (x + z)` integrated over `S` contributes at most `C * B * μ S` to every
 integral against a measure whose translated intervals have mass at most `B`. -/
 private theorem lintegral_enorm_setIntegral_le [IsFiniteMeasure μ] [SFinite ν]
@@ -108,20 +118,22 @@ private theorem lintegral_enorm_setIntegral_le [IsFiniteMeasure μ] [SFinite ν]
         lintegral_mono fun z ↦ enorm_integral_le_lintegral_enorm _
     _ = ∫⁻ x in S, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ :=
         lintegral_lintegral_swap (by fun_prop)
-    _ ≤ ∫⁻ x in S, C * B ∂μ :=
-        lintegral_mono fun x ↦ lintegral_comp_add_le_of_le_indicator hf hν x
-    _ = C * B * μ S := setLIntegral_const S _
+    _ ≤ C * B * μ S := lintegral_lintegral_enorm_comp_add_le hf hν S
+
+/-- Integrating the translates of `f` over `S` against a finite measure gives a continuous
+function. -/
+private theorem continuous_setIntegral_comp_add [IsFiniteMeasure μ] (f : C_c(ℝ, ℝ))
+    (S : Set ℝ≥0) : Continuous fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ := by
+  obtain ⟨D, hD⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
+  exact continuous_of_dominated (bound := fun _ ↦ D) (fun z ↦ by fun_prop)
+    (fun z ↦ ae_of_all _ fun x ↦ hD _) (integrable_const D) (ae_of_all _ fun x ↦ by fun_prop)
 
 private theorem integrable_setIntegral_comp_add [IsFiniteMeasure μ] [SFinite ν]
     (hf : ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ (C : ℝ≥0∞)) y)
     (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (hB : B ≠ ∞) (S : Set ℝ≥0) :
-    Integrable (fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ) ν := by
-  obtain ⟨D, hD⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
-  have hcont : Continuous fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ :=
-    continuous_of_dominated (bound := fun _ ↦ D) (fun z ↦ by fun_prop)
-      (fun z ↦ ae_of_all _ fun x ↦ hD _) (integrable_const D) (ae_of_all _ fun x ↦ by fun_prop)
-  exact ⟨hcont.aestronglyMeasurable, (lintegral_enorm_setIntegral_le hf hν S).trans_lt
-    (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.coe_lt_top hB.lt_top) (measure_lt_top μ S))⟩
+    Integrable (fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ) ν :=
+  ⟨(continuous_setIntegral_comp_add f S).aestronglyMeasurable,
+    (lintegral_enorm_setIntegral_le hf hν S).trans_lt (by finiteness)⟩
 
 /-- Integrating against `μ ∗ ν` is integrating `z ↦ ∫ f (x + z) dμ(x)` against `ν`. -/
 private theorem integral_map_coe_conv [IsFiniteMeasure μ] [SFinite ν]
@@ -134,12 +146,9 @@ private theorem integral_map_coe_conv [IsFiniteMeasure μ] [SFinite ν]
     calc ∫⁻ y, ∫⁻ z, ‖f (y + z)‖ₑ ∂ν ∂μ.map ((↑) : ℝ≥0 → ℝ)
         ≤ ∫⁻ x, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ :=
           lintegral_map_le _ measurable_coe_nnreal_real.aemeasurable
-      _ ≤ ∫⁻ x, (C : ℝ≥0∞) * B ∂μ :=
-          lintegral_mono fun x ↦ lintegral_comp_add_le_of_le_indicator hf hν x
-      _ < ∞ := by
-          rw [lintegral_const]
-          exact ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.coe_lt_top hB.lt_top)
-            (measure_lt_top μ _)
+      _ ≤ C * B * μ univ := by
+          simpa using lintegral_lintegral_enorm_comp_add_le (μ := μ) hf hν univ
+      _ < ∞ := by finiteness
   rw [Measure.conv_comm, integral_conv hint]
   refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
   dsimp only
@@ -206,11 +215,8 @@ private theorem tendsto_integral_integral_comp_add [IsFiniteMeasure μ] {ι : Ty
   intro ε hε
   obtain ⟨n, hn⟩ := (he.eventually (gt_mem_nhds (by positivity : 0 < ε / 3))).exists
   -- On `[0, n]` the function is a compactly supported test function.
-  obtain ⟨D, hD⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
   let g : C_c(ℝ, ℝ) := ⟨⟨fun z ↦ ∫ x in Iic (n : ℝ≥0), f (x + z) ∂μ,
-    continuous_of_dominated (bound := fun _ ↦ D) (fun z ↦ by fun_prop)
-      (fun z ↦ ae_of_all _ fun x ↦ hD _) (integrable_const D) (ae_of_all _ fun x ↦ by fun_prop)⟩,
-    hasCompactSupport_setIntegral_Iic hf _⟩
+    continuous_setIntegral_comp_add f _⟩, hasCompactSupport_setIntegral_Iic hf _⟩
   filter_upwards [Metric.tendsto_nhds.1 (hlim g) (ε / 3) (by positivity)] with i hi
   simp only [g, CompactlySupportedContinuousMap.coe_mk, ContinuousMap.coe_mk] at hi
   have h1 := dist_integral_setIntegral_Iic_le (μ := μ) hf (hν' i) hB n
