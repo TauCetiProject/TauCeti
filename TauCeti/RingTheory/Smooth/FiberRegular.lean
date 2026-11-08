@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import Mathlib.RingTheory.Smooth.Basic
 import Mathlib.RingTheory.Smooth.Flat
 import TauCeti.Algebra.Regular.SMul
-import TauCeti.RingTheory.Flat.FiberRegular
+import TauCeti.RingTheory.Flat.Fiber.Regular
 import TauCeti.RingTheory.Smooth.NoetherianDescent
 
 /-!
