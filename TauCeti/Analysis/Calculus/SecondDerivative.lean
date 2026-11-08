@@ -41,7 +41,9 @@ second derivative of the outer function evaluated on the images of the different
 one, i.e. the second derivative transforms as a bilinear form. The second derivative of a
 separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` on a product is the block-diagonal map built from the
 second derivatives of the summands, and the second derivative of a separated sum
-`z ↦ ∑ i, φ i (z i)` of functions of one variable on `ι → 𝕜` is diagonal. Finally, the
+`z ↦ ∑ i, φ i (z i)` of functions of one variable on `ι → 𝕜` is diagonal, while the second
+partial derivative of a separated product `z ↦ ∏ i, φ i (z i)` in its `i`-th variable replaces the
+factor `φ i` by its second derivative. Finally, the
 second derivative of a directional derivative
 `y ↦ Dg(y) v` is the third derivative of `g` evaluated at `v`, and differentiating the symmetry
 of the second derivative shows that the third derivative is symmetric in its last two
@@ -73,6 +75,8 @@ Morse-theoretic definitions that use them.
   product is block diagonal.
 * `TauCeti.fderiv_fderiv_sum_comp_eval_apply`: the second derivative of a separated sum of
   functions of one variable is diagonal.
+* `TauCeti.fderiv_fderiv_prod_comp_eval_apply_single_single`: the second partial derivative of a
+  separated product `z ↦ ∏ j, φ j (z j)` in its `i`-th variable replaces `φ i` by `φ i''`.
 * `TauCeti.fderiv_fderiv_fderiv_apply`: the second derivative of a directional derivative of a
   `C³` map is its third derivative.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
@@ -236,6 +240,35 @@ theorem fderiv_fderiv_sum_comp_eval_apply (hφ : ∀ i, ContDiffAt 𝕜 2 (φ i)
   simp [mul_comm, mul_left_comm]
 
 end SumCompEval
+
+section ProdCompEval
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {φ : ι → 𝕜 → 𝕜}
+
+/-- **The second partial derivative of a separated product.** Differentiating
+`z ↦ ∏ j, φ j (z j)` twice in the `i`-th variable replaces the factor `φ i` by its second
+derivative. -/
+theorem fderiv_fderiv_prod_comp_eval_apply_single_single (hφ : ∀ j, ContDiff 𝕜 2 (φ j))
+    (y : ι → 𝕜) (i : ι) :
+    fderiv 𝕜 (fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j))) y (Pi.single i 1) (Pi.single i 1) =
+      ∏ j, Function.update φ i (deriv (deriv (φ i))) j (y j) := by
+  have hP : ContDiff 𝕜 2 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) :=
+    contDiff_prod fun j _ ↦ (hφ j).comp (contDiff_apply 𝕜 (fun _ : ι ↦ 𝕜) j)
+  have hd : ∀ j z, DifferentiableAt 𝕜 (φ j) z := fun j z ↦
+    ((hφ j).differentiable (by norm_num)) z
+  have hpartial : (fun z : ι → 𝕜 ↦ fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) z (Pi.single i 1)) =
+      fun z ↦ ∏ j, Function.update φ i (deriv (φ i)) j (z j) :=
+    funext fun z ↦ fderiv_prod_comp_eval_apply_single (fun j ↦ hd j (z j)) i
+  have hd' : ∀ j, DifferentiableAt 𝕜 (Function.update φ i (deriv (φ i)) j) (y j) := by
+    intro j
+    rcases eq_or_ne j i with rfl | hj
+    · simpa using (hφ j).differentiable_deriv_two (y j)
+    · simpa [Function.update_of_ne hj] using hd j (y j)
+  rw [← fderiv_clm_apply_const_apply ((hP.fderiv_right (m := 1) (by norm_num)).differentiable
+    (by norm_num) y), hpartial, fderiv_prod_comp_eval_apply_single hd' i]
+  simp
+
+end ProdCompEval
 
 /-- The second derivative of the directional derivative `y ↦ Dg(y) v` of a `C³` map `g` is the
 third derivative of `g`, evaluated at `v`. -/
