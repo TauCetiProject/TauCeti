@@ -9,9 +9,7 @@ public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts
 public import TauCeti.Probability.Distributions.Gaussian.Symmetry
 public import TauCeti.Probability.Concentration.EfronStein
 public import TauCeti.MeasureTheory.Integral.Pi
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Pi
-import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Probability.HasLaw
 
@@ -22,13 +20,9 @@ This file proves the Poincaré inequality `Var f(G) ≤ E ‖∇f(G)‖²` for t
 on `ℝ` and on `ι → ℝ` for finite `ι` with the product law, for continuously differentiable
 functions with bounded values and bounded (partial) derivatives.
 
-The one-dimensional proof is Gaussian interpolation. For two independent standard Gaussians `X, Z`
-and `Y_θ = cos θ • X + sin θ • Z` the function `ψ θ = E f(X) f(Y_θ)` runs from `E f²` at `θ = 0` to
-`(E f)²` at `θ = π / 2`, and `ψ' θ = -sin θ • E f'(X) f'(Y_θ)`, by Gaussian integration by parts
-after the reflection `(X, Z) ↦ (Y_θ, sin θ • X - cos θ • Z)`, which preserves the Gaussian product
-law. Since `E f'(X) f'(Y_θ) ≤ E f'²`, the function `ψ θ + E f'² (1 - cos θ)` is monotone on
-`[0, π / 2]`, which gives `Var f ≤ E f'²`. The `n`-dimensional inequality follows by tensorization
-from the Efron–Stein inequality `efronStein`.
+These inequalities control the variance of a function of independent standard Gaussian
+coordinates by its expected squared derivative or gradient, providing a variance bound for
+Gaussian observables in terms of their sensitivity to the coordinates.
 
 ## Main results
 
@@ -54,6 +48,9 @@ namespace TauCeti.Probability
 
 local notation "γ" => gaussianReal 0 1
 
+/- Gaussian interpolation differentiates `E[f(X) f(cos θ * X + sin θ * Z)]`; integration
+by parts and reflection invariance bound its derivative by the derivative energy.
+The multivariate inequality follows by Efron–Stein tensorization. -/
 section Interpolation
 
 variable {f : ℝ → ℝ} {A B : ℝ}
