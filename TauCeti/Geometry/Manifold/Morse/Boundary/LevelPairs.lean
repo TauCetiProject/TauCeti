@@ -45,6 +45,8 @@ This is not proved here.
 
 * `TauCeti.SeparatesIntermediateLevels`: the levels `c₂ < c₁` separate the critical values of
   the intermediate index between `f r` and `f p`.
+* `TauCeti.SeparatesIntermediateLevels.value_mem_Ioo_of_mem_unstableSet_inter_stableSet`: along
+  a broken trajectory from `p` through `q` to `r`, separating levels satisfy `c₂ < f q < c₁`.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
@@ -94,6 +96,17 @@ theorem SeparatesIntermediateLevels.of_forall_mem_criticalPoints {I : ModelWithC
     (h : ∀ q ∈ criticalPoints I f, f r < f q → f q < f p → c₂ < f q ∧ f q < c₁) :
     SeparatesIntermediateLevels I f p r c₁ c₂ :=
   fun q hq _ _ ↦ h q (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
+
+/-- Separating levels bound every critical value of the intermediate index strictly between `f r`
+and `f p`. -/
+theorem SeparatesIntermediateLevels.mem_Ioo {I : ModelWithCorners ℝ E H} {f : M → ℝ}
+    {p q r : M} {c₁ c₂ : ℝ} (h : SeparatesIntermediateLevels I f p r c₁ c₂)
+    (hq : mfderiv I 𝓘(ℝ) f q = 0)
+    (hpq : manifoldMorseIndex I f p = manifoldMorseIndex I f q + 1)
+    (hqr : manifoldMorseIndex I f q = manifoldMorseIndex I f r + 1)
+    (hrq : f r < f q) (hqp : f q < f p) :
+    f q ∈ Ioo c₂ c₁ :=
+  h q hq hpq hqr hrq hqp
 
 end SeparatesIntermediateLevels
 
@@ -160,7 +173,8 @@ variable {hX}
 
 /-- Along a broken trajectory from `p` through `q` to `r`, the critical value `f q` lies between
 levels `c₂` and `c₁` separating the critical values of the intermediate index. -/
-private theorem value_mem_Ioo_of_separating (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem _root_.TauCeti.SeparatesIntermediateLevels.value_mem_Ioo_of_mem_unstableSet_inter_stableSet
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     {p q r y z : M} {c₁ c₂ : ℝ}
     (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂)
     (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
@@ -173,7 +187,7 @@ private theorem value_mem_Ioo_of_separating (hf : MDifferentiable 𝓘(ℝ, E) �
     (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hy
   have hz' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf
     (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hz
-  exact hsep q hq hpq hqr (hz'.1.trans hz'.2) (hy'.1.trans hy'.2)
+  exact hsep.mem_Ioo hq hpq hqr (hz'.1.trans hz'.2) (hy'.1.trans hy'.2)
 
 /-- Along a broken trajectory from `p` through `q` to `r`, following the flow from the middle levels
 to the levels `c₁` and `c₂` is a bijection between the level slices of each component. -/
@@ -191,7 +205,7 @@ private theorem bijOn_flow_levelCrossingTime_components (hf : MDifferentiable �
       BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c₂ z) z)
         ((hX.flow.unstableSet q ∩ hX.flow.stableSet r) ∩ {z | f z = (f q + f r) / 2})
         ((hX.flow.unstableSet q ∩ hX.flow.stableSet r) ∩ {z | f z = c₂}) := by
-  have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hy hz
+  have hcq := hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hf hq hpq hqr hy hz
   exact ⟨hX.bijOn_flow_levelCrossingTime_midpoint hf (ne_of_manifoldMorseIndex_eq_add one_pos hpq)
       hcq.2 hc₁,
     hX.bijOn_flow_levelCrossingTime_midpoint hf (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂
@@ -312,7 +326,7 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
   · -- A limit broken after the level `c₁`: the second points converge on the second component.
     have hqr' := ne_of_manifoldMorseIndex_eq_add one_pos hqr
     obtain ⟨σ, hσ, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hqr' hzq
-      hc₂.1 (value_mem_Ioo_of_separating hfd hsep hq hpq hqr hyq hzq).1
+      hc₂.1 (hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hq hpq hqr hyq hzq).1
     have hlim₂ := hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hfd hqr' hzq hσ
       hzlim (s := fun k ↦ s (n k) - t k)
       fun k ↦ by rw [← Flow.map_add, sub_add_cancel, hsc]
@@ -323,7 +337,7 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
   · -- A limit broken before the level `c₁` would put `f q` both above and below `c₁`.
     have hyq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd
       (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hyq
-    exact absurd (value_mem_Ioo_of_separating hfd hsep hq hpq hqr hzq hyq).2
+    exact absurd (hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hq hpq hqr hzq hyq).2
       (hyc ▸ hyq'.2).not_gt
 
 end IsMorseSmale
