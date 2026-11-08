@@ -97,27 +97,24 @@ theorem isPartialIsometry_star_iff : IsPartialIsometry (star u) ↔ IsPartialIso
 
 end Semigroup
 
-section Monoid
-
-variable [Monoid R] [StarMul R] {u : R}
-
 namespace IsPartialIsometry
 
 /-- An isometry, that is an element with `star u * u = 1`, is a partial isometry. -/
-theorem of_star_mul_self_eq_one (h : star u * u = 1) : IsPartialIsometry u := by
+theorem of_star_mul_self_eq_one [Monoid R] [Star R] {u : R} (h : star u * u = 1) :
+    IsPartialIsometry u := by
   rw [isPartialIsometry_iff, mul_assoc, h, mul_one]
 
 /-- A coisometry, that is an element with `u * star u = 1`, is a partial isometry. -/
-theorem of_mul_star_self_eq_one (h : u * star u = 1) : IsPartialIsometry u := by
+theorem of_mul_star_self_eq_one [MulOneClass R] [Star R] {u : R} (h : u * star u = 1) :
+    IsPartialIsometry u := by
   rw [isPartialIsometry_iff, h, one_mul]
 
 /-- A unitary element is a partial isometry. -/
-theorem of_mem_unitary (hu : u ∈ unitary R) : IsPartialIsometry u :=
+theorem of_mem_unitary [Monoid R] [StarMul R] {u : R} (hu : u ∈ unitary R) :
+    IsPartialIsometry u :=
   of_star_mul_self_eq_one (Unitary.star_mul_self_of_mem hu)
 
 end IsPartialIsometry
-
-end Monoid
 
 /-- The identity is a partial isometry. -/
 protected theorem IsPartialIsometry.one [MulOneClass R] [StarMul R] :
