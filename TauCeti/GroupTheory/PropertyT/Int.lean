@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.PropertyT.Basic
-public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Foelner
+public import TauCeti.GroupTheory.PropertyT.Foelner
 import TauCeti.GroupTheory.Amenable.Int
 
 /-!
@@ -35,20 +34,11 @@ theorem not_relativePropertyT_top_multiplicative_int :
   classical
   -- Lifting the group places its regular Hilbert space in the quantified universe.
   let G := ULift.{u} (Multiplicative ℤ)
-  let : MeasurableSpace G := ⊤
   let e : G ≃* Multiplicative ℤ := MulEquiv.ulift
-  let ρ := (Measure.count : Measure G).leftRegular ℂ ℂ 2
   have hF : TauCeti.HasFoelnerSets G :=
     e.hasFoelnerSets_iff.mpr TauCeti.hasFoelnerSets_multiplicative_int
   intro hT
-  rw [relativePropertyT_def] at hT
-  obtain ⟨v, hv, hfixed⟩ := hT (Lp ℂ 2 (Measure.count : Measure G))
-    (ρ.restrict e.symm.toMonoidHom) (Measure.isUnitary_leftRegular Measure.count |>.restrict _)
-    ((Measure.hasAlmostInvariantVectors_count_leftRegular hF).restrict _)
-  have hmem : v ∈ ρ.invariants := by
-    intro g
-    simpa using hfixed ⟨e g, mem_top _⟩
-  have hinv : ρ.invariants = ⊥ := Measure.invariants_count_leftRegular (by simp)
-  exact hv (by simpa [hinv] using hmem)
+  exact not_relativePropertyT_top_of_hasFoelnerSets hF (by
+    simpa using hT.map e.symm.toMonoidHom)
 
 end Subgroup
