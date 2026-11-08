@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+import TauCeti.Algebra.Module.Torsion.Int
 -- Proof-only: `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
 -- Proof-only: `[n]` is `n • id`, it pulls `ω` back to `n ω`, and `deg (n • f) = n² deg f`
@@ -87,14 +88,9 @@ theorem mul_index_range_nsmul_eq_natCard_torsionBy (hn : n ≠ 0) :
       (n : ℝ) • invariantDifferential W.toAffine := by
     rw [TauCeti.Isogeny.pullbackDifferential_mulByIntIsogeny_invariantDifferential,
       natCast_zsmul, Nat.cast_smul_eq_nsmul]
-  have hker : Nat.card (nsmulAddMonoidHom (α := W.toAffine.Point) n).ker =
-      Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) :=
-    Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
-      rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
-        natCast_zsmul])
   -- `n Ω · [E(ℝ) : n E(ℝ)] = #E(ℝ)[n] · Ω`, and `Ω ≠ 0`
   have h := TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul φ hc
-  rw [hφ, hker, Nat.abs_cast] at h
+  rw [hφ, TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy, Nat.abs_cast] at h
   have h' : (n * (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.index : ℝ) * W.realPeriod =
       Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) * W.realPeriod := by
     linear_combination h
@@ -118,18 +114,13 @@ theorem degree_mul_index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dua
       Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker := by
   have hn : f.degree ≠ 0 := f.degree_eq_zero_iff.not.mpr hf
   have hidx := W₁.mul_index_range_nsmul_eq_natCard_torsionBy hn
-  have hker : Nat.card (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).ker =
-      Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
-    Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
-      rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
-        natCast_zsmul])
   have : Finite (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
     W₁.finite_torsionBy (Int.natCast_ne_zero.mpr hn)
   have hT : Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) ≠ 0 :=
     Nat.card_pos.ne'
   -- `z(f̂) · z(f) = z([n])`, and `z([n]) = 1 / n`
   have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
-  rw [hker] at h
+  rw [TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy] at h
   refine Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hT) ?_
   linear_combination f.degree * h.symm +
     (Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker) * hidx

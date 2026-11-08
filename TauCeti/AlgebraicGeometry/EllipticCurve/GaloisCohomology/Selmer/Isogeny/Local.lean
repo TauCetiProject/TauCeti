@@ -67,7 +67,8 @@ not computed here.
   every finite place, the local factors of `φ` and `φ̂` multiply to `#(O_v ⧸ deg φ · O_v)`.
 * `TauCeti.Isogeny.eventually_natCard_localCondition_selmerStructure_eq`: for almost every finite
   place `v`, `#H¹_φ(K_v) = #E₁(K_v)[φ]`.
-* `TauCeti.Isogeny.abs_mul_realPeriod_mul_natCard_range_kummerMap`: over `ℝ`,
+* `TauCeti.Isogeny.natCard_range_kummerMap` together with
+  `TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul`: over `ℝ`,
   `|c| Ω(E₁) · #H¹_φ(ℝ) = #E₁(ℝ)[φ] · Ω(E₂)`.
 * `TauCeti.Isogeny.degree_mul_natCard_range_kummerMap_mul_natCard_range_kummerMap_dual`: over `ℝ`,
   `deg φ · #H¹_φ(ℝ) · #H¹_φ̂(ℝ) = #E₁(ℝ)[φ] · #E₂(ℝ)[φ̂]`.
@@ -141,21 +142,6 @@ section Real
 
 variable {W₁ W₂ : WeierstrassCurve ℝ} [W₁.IsElliptic] [W₂.IsElliptic]
   (ψ : Isogeny W₁.toAffine W₂.toAffine)
-
-/-- **The local Kummer image at a real place**: for an isogeny `ψ` over `ℝ` with
-`ψ^*ω₂ = c ω₁`, the image `H¹_ψ(ℝ)` of the Kummer map satisfies
-
-`|c| Ω(E₁) · #H¹_ψ(ℝ) = #E₁(ℝ)[ψ] · Ω(E₂)`,
-
-so the local factor `#H¹_ψ(ℝ) / #E₁(ℝ)[ψ]` is the ratio `Ω(E₂) / (|c| Ω(E₁))` of the real
-periods. -/
-theorem abs_mul_realPeriod_mul_natCard_range_kummerMap {c : ℝ}
-    (hc : ψ.pullbackDifferential W₂.toAffine.invariantDifferential =
-      c • W₁.toAffine.invariantDifferential) :
-    |c| * W₁.realPeriod * Nat.card ψ.kummerMap.range =
-      Nat.card (ofIsogeny ψ).pointMapHom.ker * W₂.realPeriod := by
-  rw [natCard_range_kummerMap]
-  exact abs_mul_realPeriod_mul_index_eq_card_ker_mul ψ hc
 
 /-- **The local Kummer images of `ψ` and `ψ̂` at a real place**: for an isogeny `ψ` over `ℝ`,
 
