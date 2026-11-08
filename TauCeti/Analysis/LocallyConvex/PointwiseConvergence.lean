@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
+public import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
 # Continuous functionals for the topology of pointwise convergence
@@ -45,13 +46,10 @@ theorem exists_finset_sum_eq (φ : StrongDual 𝕜 (E →SLₚₜ[σ] F)) :
     rw [smul_apply, NNReal.smul_def, smul_eq_mul]
     gcongr
     exact Seminorm.finset_sup_apply_le (norm_nonneg _) fun x hx ↦ norm_le_pi_norm (Φ T) ⟨x, hx⟩
-  have hker : LinearMap.ker Φ ≤ LinearMap.ker (φ : (E →SLₚₜ[σ] F) →ₗ[𝕜] 𝕜) := fun T hT ↦ by
-    simpa [LinearMap.mem_ker.mp hT] using hbound T
   -- Hence `φ` factors through `Φ`, and the factor extends to `s → F` by Hahn–Banach.
-  let f : Module.Dual 𝕜 (LinearMap.range Φ) :=
-    (LinearMap.ker Φ).liftQ _ hker ∘ₗ Φ.quotKerEquivRange.symm.toLinearMap
-  have hf (T : E →SLₚₜ[σ] F) : f ⟨Φ T, LinearMap.mem_range_self Φ T⟩ = φ T := by
-    simp [f, LinearMap.quotKerEquivRange_symm_apply_image]
+  let f : Module.Dual 𝕜 (LinearMap.range Φ) := (φ : (E →SLₚₜ[σ] F) →ₗ[𝕜] 𝕜).compLeftInverse Φ
+  have hf (T : E →SLₚₜ[σ] F) : f ⟨Φ T, LinearMap.mem_range_self Φ T⟩ = φ T :=
+    LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hbound⟩ T (Φ T) rfl
   obtain ⟨G, hG, -⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm
     (LinearMap.range Φ) f (p := C • normSeminorm 𝕜 (s → F))
     (continuous_norm.const_smul (C : ℝ)) (by
