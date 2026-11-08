@@ -26,10 +26,7 @@ namespace ProbabilityTheory.HasSubgaussianMGF
 theorem integral_eq_zero {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0}
     (hX : HasSubgaussianMGF X c μ) : μ[X] = 0 := by
-  have hset : integrableExpSet X μ = Set.univ := by
-    ext t
-    simp only [Set.mem_univ, iff_true, integrableExpSet]
-    exact hX.integrable_exp_mul t
+  have hset := hX.integrableExpSet_eq_univ
   have hm : 0 ∈ interior (integrableExpSet X μ) := by simp [hset]
   let g : ℝ → ℝ := (fun t ↦ Real.exp ((c : ℝ) * t ^ 2 / 2)) - mgf X μ
   have hmin : IsLocalMin g 0 := by

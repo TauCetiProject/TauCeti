@@ -19,7 +19,7 @@ with parameter `1`.
 ## Main results
 
 * `ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF` compares the two MGF conventions.
-* `hasSubexponentialMGF_standardGaussian` verifies the standard Gaussian example.
+* `hasSubexponentialMGF_fun_id_gaussianReal` treats centered Gaussian laws of any variance.
 -/
 
 public section
@@ -49,15 +49,14 @@ end ProbabilityTheory.HasSubgaussianMGF
 
 namespace TauCeti.Probability
 
-/-- The standard Gaussian satisfies the sub-exponential MGF bound with parameter `1`. -/
-theorem hasSubexponentialMGF_standardGaussian :
-    HasSubexponentialMGF (fun x : ℝ ↦ x) 1 (gaussianReal 0 1) := by
-  have hX : HasSubgaussianMGF (fun x : ℝ ↦ x) 1 (gaussianReal 0 1) := by
+/-- A centered Gaussian satisfies the sub-exponential MGF bound for compatible parameters. -/
+theorem hasSubexponentialMGF_fun_id_gaussianReal {v : ℝ≥0} {K : ℝ}
+    (hK : 0 < K) (hv : (v : ℝ) / 2 ≤ K ^ 2) :
+    HasSubexponentialMGF (fun x : ℝ ↦ x) K (gaussianReal 0 v) := by
+  have hX : HasSubgaussianMGF (fun x : ℝ ↦ x) v (gaussianReal 0 v) := by
     refine ⟨integrable_exp_mul_gaussianReal, ?_⟩
     intro t
     simp [mgf_fun_id_gaussianReal]
-  apply hX.hasSubexponentialMGF
-  · norm_num
-  · norm_num
+  exact hX.hasSubexponentialMGF hK hv
 
 end TauCeti.Probability
