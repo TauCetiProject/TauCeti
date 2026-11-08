@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.Order.Interval.Set.UnorderedInterval
+import TauCeti.Data.ENNReal.Real
 
 /-!
 # Interpolated exponents in `ℝ≥0∞`
@@ -46,17 +47,12 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
     (mul_nonneg hθ.1 ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1,
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
 
-/-- The interpolation weights `1 - θ` and `θ` sum to one in `ℝ≥0∞`. -/
-private theorem ofReal_one_sub_add_ofReal (hθ : θ ∈ Set.Icc (0 : ℝ) 1) :
-    ENNReal.ofReal (1 - θ) + ENNReal.ofReal θ = 1 := by
-  rw [← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel, ENNReal.ofReal_one]
-
 /-- An interpolated exponent lies between the two endpoint exponents. -/
 theorem mem_uIcc_of_inv_eq (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
     (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
     s ∈ Set.uIcc s₀ s₁ := by
   have h1 (x : ℝ≥0∞) : x = ENNReal.ofReal (1 - θ) * x + ENNReal.ofReal θ * x := by
-    rw [← add_mul, ofReal_one_sub_add_ofReal hθ, one_mul]
+    rw [← add_mul, ENNReal.ofReal_sub_add_ofReal hθ.1 hθ.2, ENNReal.ofReal_one, one_mul]
   have hs' : s⁻¹ ∈ Set.uIcc s₀⁻¹ s₁⁻¹ := by
     rw [hs]
     refine ⟨(h1 _).trans_le ?_, le_trans ?_ (h1 _).ge⟩ <;> gcongr <;> simp
@@ -89,7 +85,7 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
   calc 1 = ENNReal.ofReal (1 - θ) * (1 - s₀⁻¹ + s₀⁻¹) + ENNReal.ofReal θ * (1 - s₁⁻¹ + s₁⁻¹) := by
         rw [tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₀),
           tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₁), mul_one, mul_one,
-          ofReal_one_sub_add_ofReal hθ]
+          ENNReal.ofReal_sub_add_ofReal hθ.1 hθ.2, ENNReal.ofReal_one]
     _ = _ := by rw [hs]; ring
 
 end TauCeti
