@@ -46,10 +46,16 @@ coordinate is the composition-product of the prefix law and the transition kerne
 theorem map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite [SFinite μ₀] (n : ℕ) :
     (trajMeasure μ₀ κ).map (frestrictLe n) ⊗ₘ κ n =
       (trajMeasure μ₀ κ).map (fun x ↦ (frestrictLe n x, x (n + 1))) := by
-  rw [Measure.compProd_eq_comp_prod, trajMeasure, Measure.map_comp _ _ (by fun_prop),
-    traj_map_frestrictLe, Measure.comp_assoc, Measure.map_comp _ _ (by fun_prop)]
-  congr with x₀ : 1
-  rw [comp_apply, ← Measure.compProd_eq_comp_prod, map_apply _ (by fun_prop),
-    partialTraj_compProd_eq_map_traj zero_le]
+  have hproj : Measurable (fun x : (k : ℕ) → X k ↦ (frestrictLe n x, x (n + 1))) := by
+    fun_prop
+  -- The prefix identity for a fixed starting point.
+  have hstep : (Kernel.id ×ₖ κ n) ∘ₖ partialTraj κ 0 n =
+      (traj κ 0).map (fun x ↦ (frestrictLe n x, x (n + 1))) := by
+    ext x₀ : 1
+    simpa [comp_apply, ← Measure.compProd_eq_comp_prod, map_apply _ hproj] using
+      partialTraj_compProd_eq_map_traj (κ := κ) (x₀ := x₀) zero_le
+  simp [trajMeasure, Measure.compProd_eq_comp_prod, Measure.map_comp _ _ hproj,
+    Measure.map_comp _ _ (measurable_frestrictLe n), traj_map_frestrictLe, Measure.comp_assoc,
+    hstep]
 
 end ProbabilityTheory.Kernel
