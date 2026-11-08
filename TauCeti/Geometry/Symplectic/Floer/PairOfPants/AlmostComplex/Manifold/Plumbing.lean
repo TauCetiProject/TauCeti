@@ -152,19 +152,12 @@ theorem plumbedAlmostComplex_of_re_endCoord_le (hq : q ≠ inf) (hab : Jb q = Ja
     (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) (hle : (q.endCoord w).re ≤ L - 2) :
     hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs q L w hw =
       hᵦ.pairOfPantsAlmostComplex Jb hJb hJbp hJbs ⟨w, hw.1⟩ := by
-  rw [plumbedAlmostComplex_def]
-  split_ifs with h
-  · have hc : w ≠ q.endCenter :=
-      q.ne_endCenter_of_re_endCoord_ne_zero (by linarith : 0 < (q.endCoord w).re).ne'
-    have hre := re_endCoord_inf_sub_endCenter_div q L hc
-    have hmem := q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw
-    have hpt : (⟨w, hw.1⟩ : ThricePuncturedSphere) =
-        ⟨q.plumbingMap L ((w - q.endCenter) / q.plumbingFactor L),
-          (q.plumbingMap_sub_endCenter_div L w).symm ▸ hw.1⟩ :=
-      Subtype.ext (q.plumbingMap_sub_endCenter_div L w).symm
-    rw [hpt, pairOfPantsAlmostComplex_plumbingMap hₐ hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs hab
-      hmem _ (by linarith) (by rw [endSign_eq_one hq]; linarith)]
-  · rfl
+  ext x v
+  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    almostComplexStructureAt_plumbedAlmostComplex,
+    almostComplexStructureAt_pairOfPantsAlmostComplex,
+    Floer.plumbedAlmostComplex_of_re_endCoord_le _ _ hq (by simp only [hab]) hle]
 
 /-- Outside the width-two collar at the inserted cut, the glued structure pulls back along the
 plumbing map to the structure of the inserted pair of pants. -/
@@ -175,12 +168,12 @@ theorem plumbedAlmostComplex_plumbingMap (hq : q ≠ inf) (hab : Jb q = Ja inf) 
     (h : 2 - L ≤ (inf.endCoord w).re) :
     hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs q L (q.plumbingMap L w) hψ =
       hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas ⟨w, hw⟩ := by
-  rw [plumbedAlmostComplex_def, re_endCoord_plumbingMap q L hw.1]
-  split_ifs with h'
-  · congr 1
-    exact Subtype.ext (plumbingMap_sub_endCenter_div_plumbingFactor q L w)
-  · exact pairOfPantsAlmostComplex_plumbingMap hₐ hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs hab hw
-      hψ.1 (by linarith) (by rw [endSign_eq_one hq]; linarith)
+  ext x v
+  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    almostComplexStructureAt_plumbedAlmostComplex,
+    almostComplexStructureAt_pairOfPantsAlmostComplex,
+    Floer.plumbedAlmostComplex_plumbingMap _ _ hq (by simp only [hab]) hw.1 h]
 
 /-- Deep in the receiving end, the glued structure is the inserted structure in the affine
 plumbing coordinate. This formula holds on an open set independent of the neck length. -/
@@ -190,15 +183,12 @@ theorem plumbedAlmostComplex_eq_inserted (hq : q ≠ inf) (hab : Jb q = Ja inf) 
       hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas
         ⟨(w - q.endCenter) / q.plumbingFactor L,
           q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw⟩ := by
-  have hc : w ≠ q.endCenter :=
-    q.ne_endCenter_of_re_endCoord_ne_zero (by linarith : 0 < (q.endCoord w).re).ne'
-  have hre := re_endCoord_inf_sub_endCenter_div q L hc
-  have hψ := q.plumbingMap_sub_endCenter_div L w
-  have h := plumbedAlmostComplex_plumbingMap hₐ hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs hq hab
-    (L := L) (q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw) (hψ.symm ▸ hw)
-    (by linarith)
-  convert h using 2
-  exact hψ.symm
+  ext x v
+  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    almostComplexStructureAt_plumbedAlmostComplex,
+    almostComplexStructureAt_pairOfPantsAlmostComplex,
+    Floer.plumbedAlmostComplex_eq_inserted _ _ hq (by simp only [hab]) h2]
 
 /-- **Joint smoothness of the plumbed structure.** For neck lengths `L > 4`, the plumbed structure
 is `C^n` jointly in the neck length, the domain point and the target point, along any `C^n`
