@@ -53,6 +53,7 @@ open _root_.MonoidAlgebra
 
 variable {p : ℕ} [Fact p.Prime]
 
+omit [Fact p.Prime] in
 /-- A finite group of `p`-power roots of unity has order `p ^ k`, and a generator: every element
 is a natural power of it. -/
 private theorem exists_generator_pPowerRootsOfUnity (L : Type*) [Field L]
@@ -70,6 +71,7 @@ private theorem exists_generator_pPowerRootsOfUnity (L : Type*) [Field L]
   obtain ⟨j, -, hj⟩ := hprim.eq_pow_of_mem_rootsOfUnity hξ
   exact ⟨j, hj⟩
 
+omit [Fact p.Prime] in
 /-- A field automorphism acts on a finite group of `p`-power roots of unity as a power map, through
 Mathlib's modular cyclotomic character. -/
 private theorem exists_units_map_eq_pow {L : Type*} [Field L] {K : Type*} [Field K] [Algebra K L]
