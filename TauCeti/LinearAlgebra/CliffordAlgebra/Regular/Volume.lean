@@ -69,7 +69,7 @@ theorem parityTwistedRightAction_volumeElement (s : CliffordAlgebra Q) :
   have hb' : (QuadraticMap.associated (-Q)).IsOrthoᵢ b := by
     intro i j hij
     simpa using hb hij
-  have hpair := pairwise_isOrtho_map_sort hb Finset.univ
+  have hpair := hb.pairwise_isOrtho_map_sort Finset.univ
   rw [volumeElement_eq_inv_smul_basis o b, volumeElement_eq_inv_smul_basis o b,
     basis_eq_prod_map_sort hb', basis_eq_prod_map_sort hb, map_smul,
     LinearMap.smul_apply, parityTwistedRightAction_prod_map_ι_of_pairwise_isOrtho Q hpair,
