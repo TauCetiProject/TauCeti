@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Hurewicz
--- Proof-only: primes of `ℕ` are prime in `ℤ`, multiplication series under base change, and
--- evaluation in the dual numbers.
+-- Proof-only: primes of `ℕ` are prime in `ℤ`, and multiplication series under base change.
 import Mathlib.Data.Nat.Prime.Int
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
-import TauCeti.RingTheory.MvPolynomial.DualNumber
 
 /-!
 # The multiplication series of the universal formal group law modulo decomposables
@@ -53,8 +51,8 @@ functor theorem.
 * `TauCeti.LazardRing.coeff_single_hurewicz_coeff_nsmulSeries`: the coefficient of `bₙ` in the
   Hurewicz image of `aₘ` is `k^m - k` if `m = n + 1`, and `0` otherwise.
 * `TauCeti.LazardRing.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
-* `TauCeti.LazardRing.cotangentBasis_repr_toCotangent_coeff_nsmulSeries`: the class of `a_(n+1)`
-  in `I ⧸ I²` is `((k^(n + 1) - k) / d_(n+1)) • xₙ`.
+* `TauCeti.LazardRing.toCotangent_coeff_nsmulSeries`: the class of `a_(n+1)` in `I ⧸ I²` is
+  `((k^(n + 1) - k) / d_(n+1)) • xₙ`.
 * `TauCeti.LazardRing.coeff_nsmulSeries_sub_smul_generator_mem_sq`: the same congruence in `L`.
 * `TauCeti.LazardRing.coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq`:
   `vⱼ ≡ (p^n - 1) • xₙ` modulo `I²`, where `n + 1 = pʲ`.
@@ -103,27 +101,18 @@ theorem coeff_single_hurewicz_coeff_nsmulSeries (k m : ℕ) (n : ℕ+) :
       if m = n + 1 then (k : ℤ) ^ m - k else 0 := by
   -- Evaluate at `bₙ = ε`, `bᵢ = 0` for `i ≠ n`: this reads off the coefficient of `bₙ`, and turns
   -- the Hurewicz image of the universal law into `X + Y` transported along `X + ε X^(n + 1)`.
-  have hmap : formalGroup.map
-      ((MvPolynomial.aeval (Pi.single n (DualNumber.eps : DualNumber ℤ))).toRingHom.comp hurewicz) =
-      FormalCoordinate.ofStrictCoeffs (Pi.single n (DualNumber.eps : DualNumber ℤ)) •
-        FormalGroup.𝔾ₐ := by
-    rw [← FormalGroup.map_comp, map_hurewicz, FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ]
-    simp [Function.comp_def]
   have hval : MvPolynomial.aeval (Pi.single n (DualNumber.eps : DualNumber ℤ))
       (hurewicz (PowerSeries.coeff m (formalGroup.nsmulSeries k))) =
       PowerSeries.coeff m ((FormalCoordinate.ofStrictCoeffs
         (Pi.single n (DualNumber.eps : DualNumber ℤ)) • FormalGroup.𝔾ₐ).nsmulSeries k) := by
-    rw [← hmap, FormalGroup.coeff_nsmulSeries_map, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-      RingHom.coe_coe]
-  have h := MvPolynomial.aeval_single_eps n
-    (hurewicz (PowerSeries.coeff m (formalGroup.nsmulSeries k)))
-  rw [hval, FormalGroup.nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ n DualNumber.eps_mul_eps] at h
-  rw [map_add, PowerSeries.coeff_C_mul_X_pow, PowerSeries.coeff_C_mul, PowerSeries.coeff_X] at h
+    rw [← map_aeval_single_eps_comp_hurewicz, FormalGroup.coeff_nsmulSeries_map,
+      RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   -- The `ε`-components: `ε (k^(n + 1) - k)` in degree `n + 1` against the coefficient of `bₙ`.
-  have h' := congrArg TrivSqZeroExt.snd h
-  simp only [TrivSqZeroExt.snd_add, TrivSqZeroExt.snd_smul, smul_eq_mul, DualNumber.snd_eps,
-    mul_one, TrivSqZeroExt.algebraMap_eq_inl, TrivSqZeroExt.snd_inl, zero_add] at h'
-  rw [← h']
+  rw [← snd_aeval_single_eps_hurewicz, hval,
+    FormalGroup.nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ n DualNumber.eps_mul_eps, map_add,
+    PowerSeries.coeff_C_mul_X_pow, PowerSeries.coeff_C_mul, PowerSeries.coeff_X]
+  simp only [TrivSqZeroExt.snd_add, apply_ite TrivSqZeroExt.snd, TrivSqZeroExt.snd_mul,
+    TrivSqZeroExt.snd_zero, DualNumber.snd_eps]
   split_ifs with hm₁ hm₂ hm₂
   · exact absurd (hm₁.symm.trans hm₂) (by simp)
   · simp
@@ -139,38 +128,18 @@ theorem lazardGcd_dvd_pow_succ_sub (k : ℕ) (n : ℕ+) :
     (PowerSeries.coeff ((n : ℕ) + 1) (formalGroup.nsmulSeries k))
   simpa only [coeff_single_hurewicz_coeff_nsmulSeries, ↓reduceIte] using h
 
-/-- The coefficient of `X^(n + 1)` in `[k](X)`, as an element of the augmentation ideal. -/
-private abbrev coeffNSMul (k : ℕ) (n : ℕ+) : augmentationIdeal :=
-  ⟨PowerSeries.coeff (n + 1) (formalGroup.nsmulSeries k),
-    coeff_nsmulSeries_mem_augmentationIdeal k (by simp)⟩
-
-/-- The `n`-th coordinate of the class of `a_(n+1)` in `I ⧸ I²`, multiplied by `d_(n+1)`, is
-`k^(n + 1) - k`; all other coordinates vanish. -/
-private theorem lazardGcd_mul_cotangentBasis_repr_coeffNSMul (k : ℕ) (n m : ℕ+) :
-    lazardGcd (m + 1) * cotangentBasis.repr (augmentationIdeal.toCotangent (coeffNSMul k n)) m =
-      if m = n then (k : ℤ) ^ ((n : ℕ) + 1) - k else 0 := by
-  rw [← coeff_single_hurewicz m (coeffNSMul k n).2, coeff_single_hurewicz_coeff_nsmulSeries]
-  simp only [add_left_inj, PNat.coe_inj, eq_comm (a := n)]
-
 /-- **The class of `[k](X)` in the indecomposables.** The coefficient `a_(n+1)` of `X^(n + 1)` in
 multiplication by `k` on the universal formal group law has class
 `((k^(n + 1) - k) / d_(n+1)) • xₙ` in `I ⧸ I²`, where the division is exact. -/
-theorem cotangentBasis_repr_toCotangent_coeff_nsmulSeries (k : ℕ) (n : ℕ+) :
-    cotangentBasis.repr (augmentationIdeal.toCotangent
+theorem toCotangent_coeff_nsmulSeries (k : ℕ) (n : ℕ+) :
+    augmentationIdeal.toCotangent
         ⟨PowerSeries.coeff (n + 1) (formalGroup.nsmulSeries k),
-          coeff_nsmulSeries_mem_augmentationIdeal k (by simp)⟩) =
-      single n (((k : ℤ) ^ ((n : ℕ) + 1) - k) / lazardGcd ((n : ℕ) + 1)) := by
-  ext m
-  have h := lazardGcd_mul_cotangentBasis_repr_coeffNSMul k n m
-  have hd : (lazardGcd ((m : ℕ) + 1) : ℤ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (lazardGcd_succ_ne_zero m.ne_zero)
-  by_cases hmn : m = n
-  · subst hmn
-    simp only [↓reduceIte] at h
-    rw [single_eq_same, ← h, Int.mul_ediv_cancel_left _ hd]
-  · simp only [hmn, ↓reduceIte] at h
-    rw [single_eq_of_ne hmn]
-    exact (mul_eq_zero.1 h).resolve_left hd
+          coeff_nsmulSeries_mem_augmentationIdeal k (by simp)⟩ =
+      (((k : ℤ) ^ ((n : ℕ) + 1) - k) / lazardGcd ((n : ℕ) + 1)) • cotangentBasis n := by
+  refine (toCotangent_eq_smul_cotangentBasis_iff_coeff_hurewicz
+    (by simpa using coeff_nsmulSeries_mem_grading k (n + 1)) _ _).2 ?_
+  simp only [coeff_single_hurewicz_coeff_nsmulSeries, ↓reduceIte]
+  rw [Int.ediv_mul_cancel (lazardGcd_dvd_pow_succ_sub k n)]
 
 /-- **`[k](X)` modulo decomposables.** The coefficient of `X^(n + 1)` in multiplication by `k` on
 the universal formal group law is `((k^(n + 1) - k) / d_(n+1)) • xₙ` modulo the square of the
@@ -179,8 +148,9 @@ theorem coeff_nsmulSeries_sub_smul_generator_mem_sq (k : ℕ) (n : ℕ+) :
     PowerSeries.coeff (n + 1) (formalGroup.nsmulSeries k) -
         (((k : ℤ) ^ ((n : ℕ) + 1) - k) / lazardGcd ((n : ℕ) + 1)) • generator n ∈
       augmentationIdeal ^ 2 := by
-  have h := sub_sum_generator_mem_sq (coeffNSMul k n).2
-  rwa [cotangentBasis_repr_toCotangent_coeff_nsmulSeries, sum_single_index (by simp)] at h
+  have h := toCotangent_coeff_nsmulSeries k n
+  rw [cotangentBasis_apply, ← map_zsmul, Ideal.toCotangent_eq] at h
+  simpa using h
 
 variable {p : ℕ} (hp : p.Prime)
 include hp
