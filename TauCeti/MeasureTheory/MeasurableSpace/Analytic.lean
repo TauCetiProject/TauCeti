@@ -9,8 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.GCongr
+import TauCeti.Topology.Instances.NatNat
 
 /-!
 # Analytic sets are universally measurable
@@ -31,7 +31,8 @@ The theorem is classically stated for Polish ambient spaces, but the argument us
 nor separability of the ambient space. An analytic set is by definition empty or a continuous image
 of Baire space, so it carries its own separability. The only topological input on the ambient side
 is that a point lying in the closures of the images of the finite-stage sets is the image of a
-point of the limiting compact product, which an ultrafilter argument proves in any Hausdorff space.
+point of the limiting compact product, which an ultrafilter argument proves in any Hausdorff space
+(`TauCeti.iInter_closure_image_subset_image_Iic`).
 Accordingly the three universal-measurability statements below assume just `T2Space`.
 `analyticSet_setOf_iInf_lt` assumes the standard Borel and second-countability hypotheses of
 Mathlib's measurable-projection theorem `MeasurableSet.analyticSet_image`.
@@ -54,7 +55,8 @@ The proof is adapted from Daniel Lyng's Apache-2.0 Econlib development,
 `Econlib/Math/MeasureTheory/AnalyticNullMeasurable.lean`, commit
 `003655ccf010cdf44c4f67d6675167b54ce0e9df`. The implementation is reorganized so that proof-only
 capacity lemmas are private, while the reusable consequences remain public; the closure lemma is
-reproved by an ultrafilter argument to remove the metrizability assumption.
+reproved by an ultrafilter argument to remove the metrizability assumption, and lives in
+`TauCeti.Topology.Instances.NatNat`.
 
 ## References
 
@@ -89,35 +91,6 @@ theorem analyticSet_setOf_iInf_lt
   convert h.analyticSet_image measurable_snd using 1
   ext y
   simp [iInf_lt_iff]
-
-/-- For continuous `f` on Baire space and coordinate bounds `N`, a point in all the finite-stage
-image closures is already the image of a point satisfying every coordinate bound. -/
-private theorem iInter_closure_image_subset_image_Iic
-    {X : Type*} [TopologicalSpace X] [T2Space X] {f : (ℕ → ℕ) → X} (hf : Continuous f)
-    (N : ℕ → ℕ) :
-    ⋂ n, closure (f '' {β | ∀ k < n, β k ≤ N k}) ⊆ f '' Iic N := by
-  intro x hx
-  -- Points whose first `n` coordinates are bounded and whose images approach `x` form a
-  -- decreasing family of nontrivial filters; refine its infimum to an ultrafilter `𝓤`.
-  set 𝓕 : ℕ → Filter (ℕ → ℕ) := fun n => comap f (𝓝 x) ⊓ 𝓟 {β | ∀ k < n, β k ≤ N k}
-  have hne : (⨅ n, 𝓕 n).NeBot := by
-    refine iInf_neBot_of_directed' (Antitone.directed_ge fun m n hmn => ?_) fun n => ?_
-    · exact inf_le_inf_left _ (principal_mono.2 fun β hβ k hk => hβ k (hk.trans_le hmn))
-    · have := mem_closure_iff_clusterPt.1 (mem_iInter.1 hx n)
-      exact (comap_inf_principal_neBot_of_image_mem this
-        (mem_inf_of_right (mem_principal_self _))).mono
-        (inf_le_inf_right _ (comap_mono inf_le_left))
-  let 𝓤 := Ultrafilter.of (⨅ n, 𝓕 n)
-  have h𝓤 : ∀ n, (𝓤 : Filter (ℕ → ℕ)) ≤ 𝓕 n := fun n => (Ultrafilter.of_le _).trans (iInf_le _ n)
-  -- Each coordinate eventually lies in a finite set, so it converges along `𝓤`.
-  have hcoord : ∀ k, ∃ b ∈ Iic (N k), ↑(𝓤.map fun β => β k) ≤ 𝓝 b := fun k =>
-    (finite_Iic (N k)).isCompact.ultrafilter_le_nhds _ <| le_principal_iff.2 <| mem_map.2 <|
-      mem_of_superset (le_principal_iff.1 ((h𝓤 (k + 1)).trans inf_le_right))
-        fun β hβ => hβ k k.lt_succ_self
-  choose b hb hlim using hcoord
-  have hb_lim : Tendsto id (𝓤 : Filter (ℕ → ℕ)) (𝓝 b) := tendsto_pi_nhds.2 hlim
-  exact ⟨b, hb, tendsto_nhds_unique ((hf.tendsto b).comp hb_lim)
-    (tendsto_iff_comap.2 ((h𝓤 0).trans inf_le_left))⟩
 
 /-- The range of a continuous map from Baire space admits inner compact approximations in outer
 measure. -/
@@ -228,10 +201,7 @@ theorem NullMeasurableSet.of_generateFrom_analyticSet
     {S : Set X} (μ : Measure X) [SFinite μ]
     (hS : MeasurableSet[MeasurableSpace.generateFrom {T : Set X | AnalyticSet T}] S) :
     NullMeasurableSet S μ :=
-  MeasurableSpace.generateFrom_induction {T : Set X | AnalyticSet T}
-    (fun T _ => NullMeasurableSet T μ) (fun _ hT _ => hT.nullMeasurableSet μ)
-    MeasurableSet.empty.nullMeasurableSet (fun _ _ hT => hT.compl)
-    (fun _ _ hT => .iUnion hT) S hS
+  nullMeasurable_generateFrom (f := id) (fun _ (hT : AnalyticSet _) => hT.nullMeasurableSet μ) hS
 
 end MeasureTheory
 
