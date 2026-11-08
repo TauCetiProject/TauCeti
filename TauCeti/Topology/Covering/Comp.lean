@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Basic
+public import TauCeti.Topology.Maps.FiniteSheets
 
 /-!
 # Composites of covering maps
@@ -84,26 +85,6 @@ theorem _root_.IsEvenlyCovered.exists_sheets {f : E → X} {x : X} {I : Type*}
     rintro ⟨_, a, -, rfl⟩
     exact a.2
 
-/-- Finitely many sheets `S i` of `q` over `U ∋ x`, each containing a point `y i` over `x` and
-an open neighbourhood `V i` of it: `U` shrinks to an open `W ∋ x` such that every point of
-`S i` over `W` lies in `V i`, and every point of `W` is lifted into `S i ∩ V i`. -/
-private theorem exists_isOpen_forall_lift_mem {q : Y → X} {x : X} {U : Set X} {I : Type*}
-    [Finite I] (hxU : x ∈ U) (hU : IsOpen U) {S V : I → Set Y} {y : I → Y}
-    (hSo : ∀ i, IsOpen (S i)) (hSi : ∀ i, (S i).InjOn q) (hSim : ∀ i, q '' S i = U)
-    (hSiff : ∀ i, ∀ W ⊆ U, IsOpen W ↔ IsOpen (q ⁻¹' W ∩ S i)) (hV : ∀ i, IsOpen (V i))
-    (hyS : ∀ i, y i ∈ S i) (hyV : ∀ i, y i ∈ V i) (hyx : ∀ i, q (y i) = x) :
-    ∃ W : Set X, IsOpen W ∧ x ∈ W ∧ W ⊆ U ∧ (∀ i, ∀ w ∈ W, ∃ z ∈ S i ∩ V i, q z = w) ∧
-      ∀ i, ∀ z ∈ S i, q z ∈ W → z ∈ V i := by
-  let W := U ∩ ⋂ i, q '' (S i ∩ V i)
-  have hWo : IsOpen W := hU.inter <| isOpen_iInter_of_finite fun i ↦ by
-    rw [hSiff i _ (hSim i ▸ image_mono inter_subset_left),
-      (hSi i).preimage_image_inter inter_subset_left]
-    exact (hSo i).inter (hV i)
-  refine ⟨W, hWo, ⟨hxU, mem_iInter.mpr fun i ↦ ⟨y i, ⟨hyS i, hyV i⟩, hyx i⟩⟩,
-    inter_subset_left, fun i w hw ↦ mem_iInter.mp hw.2 i, fun i z hz hw ↦ ?_⟩
-  obtain ⟨z', ⟨hz'S, hz'V⟩, hz'⟩ := mem_iInter.mp hw.2 i
-  rwa [← hSi i hz'S hz hz']
-
 /-- **Evenly covered points compose along finite fibres.** If `x` is evenly covered by `q` with
 finite fibre `I`, and every point of `Y` over `x` is evenly covered by `p`, then `x` is evenly
 covered by `q ∘ p`. -/
@@ -121,7 +102,7 @@ theorem _root_.IsEvenlyCovered.comp {q : Y → X} {p : E → Y} {x : X} {I : Typ
   choose V hyV hV T hTo hTi hTim hTiff hTd hTV using fun i ↦ (hp (y i) (hyx i)).exists_sheets
   -- Shrink `U` to `W`, over which the lift of `W` to each `S i` lies in `V i`.
   obtain ⟨W, hWo, hxW, hWU, hWsurj, key⟩ :=
-    exists_isOpen_forall_lift_mem hxU hU hSo hSi hSim hSiff hV hyS hyV hyx
+    exists_isOpen_lift_mem_of_finite_sheets hxU hU hSo hSi hSim hSiff hV hyS hyV hyx
   -- The sheets of `q ∘ p` over `W` are indexed by the pairs `(i, j)`.
   let R : (Σ i, p ⁻¹' {y i}) → Set E := fun k ↦ T k.1 k.2 ∩ p ⁻¹' S k.1
   have hexh : (q ∘ p) ⁻¹' W ⊆ ⋃ k, R k := by
