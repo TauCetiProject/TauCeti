@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
-import TauCeti.LinearAlgebra.RootSystem.Lowering
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!

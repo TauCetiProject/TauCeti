@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Basic
 import Mathlib.Data.Int.Interval
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
-import TauCeti.LinearAlgebra.RootSystem.Lowering
 
 /-!
 # The affine Weyl group acts simply transitively on the alcoves

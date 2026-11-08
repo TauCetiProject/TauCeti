@@ -5,21 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
 # Lowering positive roots by simple reflections
 
-This file records how reflection in a root changes the height relative to a root-pairing base:
-reflection in a simple root subtracts the corresponding Cartan integer. When the root index type
-is finite, the coefficient ring is a domain and the pairing is reduced, a positive root that is
-not simple can be lowered by a simple reflection while remaining positive.
+When the root index type is finite, the coefficient ring is a domain and the pairing is reduced,
+a positive root that is not simple can be lowered by a simple reflection while remaining positive
+and strictly decreasing its height relative to a root-pairing base.
 
 ## Main results
 
-* `RootPairing.Base.height_reflectionPerm` computes the height after an arbitrary root reflection.
-* `RootPairing.Base.height_reflectionPerm_lt_iff` characterizes strict height decrease under a
-  simple reflection by positivity of the corresponding Cartan integer.
 * `RootPairing.Base.IsPos.exists_mem_support_height_reflectionPerm_lt` gives the positive-root
   lowering step for a nonsimple positive root.
 
@@ -27,10 +23,10 @@ not simple can be lowered by a simple reflection while remaining positive.
 
 The argument follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
 
-Mathlib already carries out this height computation and lowering step inside the proof of
+Mathlib already carries out this lowering step inside the proof of
 `RootPairing.Base.IsPos.induction_on_reflect`, where it is packaged as a strong induction
-principle rather than exposed. The declarations below state that computation and the resulting
-lowering step in their own right.
+principle rather than exposed. The theorem below states it in its own right, using the height
+computation `RootPairing.Base.height_reflectionPerm_lt_iff`.
 -/
 
 public section
@@ -38,29 +34,7 @@ public section
 namespace RootPairing.Base
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
-  [Module R N] {P : RootPairing ι R M N} (b : P.Base) [CharZero R] [P.IsCrystallographic]
-
-/-- Reflection in the root indexed by `i` changes the height of `j` by the Cartan integer
-`P.pairingIn ℤ j i` times the height of `i`. -/
-lemma height_reflectionPerm (i j : ι) :
-    b.height (P.reflectionPerm i j) = b.height j - P.pairingIn ℤ j i * b.height i := by
-  rw [b.height_add_zsmul (i := j) (j := i) (z := -P.pairingIn ℤ j i)
-    (by rw [root_reflectionPerm, reflection_apply_root' ℤ]; module)]
-  simp [sub_eq_add_neg]
-
-/-- Reflection in a simple root subtracts the corresponding Cartan integer from the height. -/
-@[simp]
-lemma height_reflectionPerm_of_mem_support {i j : ι} (hi : i ∈ b.support) :
-    b.height (P.reflectionPerm i j) = b.height j - P.pairingIn ℤ j i := by
-  rw [height_reflectionPerm, height_one_of_mem_support hi, mul_one]
-
-/-- Reflection in a simple root strictly decreases height exactly when the corresponding Cartan
-integer is positive. -/
-lemma height_reflectionPerm_lt_iff {i j : ι} (hi : i ∈ b.support) :
-    b.height (P.reflectionPerm i j) < b.height j ↔ 0 < P.pairingIn ℤ j i := by
-  simp [hi]
-
-variable {b}
+  [Module R N] {P : RootPairing ι R M N} {b : P.Base} [CharZero R] [P.IsCrystallographic]
 
 /-- A nonsimple positive root admits a simple reflection that remains positive and has strictly
 smaller height. This is the positive-root lowering step used by induction on height. -/
