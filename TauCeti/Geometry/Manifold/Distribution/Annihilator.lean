@@ -110,7 +110,8 @@ theorem IsContMDiffDistribution.exists_local_annihilator
   let A := IsSubbundleFrameOn.trivOperator 𝕜 E X x
   have hA := hX.contMDiffOn_trivOperator x
   obtain ⟨P, a, hP, ha, haA⟩ := ContinuousLinearMap.exists_leftInverse_ne_zero_comp_eq_zero _
-    (hX.isSubbundleFrameOn.injective_trivOperator hxV) hk
+    (hX.isSubbundleFrameOn.injective_trivOperator hxV)
+    (by rw [Module.finrank_pi, Fintype.card_fin]; omega)
   obtain ⟨W, hW, hxW, hWS, hc, hWc⟩ := hA.exists_isOpen_contMDiffOn_sub_comp_inverse_comp
     (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hP ha haA
   refine ⟨W,
