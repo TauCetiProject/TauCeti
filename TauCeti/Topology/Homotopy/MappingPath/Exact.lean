@@ -73,22 +73,12 @@ variable {N : Type*} [Finite N]
 
 /-! ### The homotopy fibre of a map -/
 
-/-- The source projection of a mapping-path fibre, written as a function, is a Hurewicz
-fibration. -/
-private theorem isHurewiczFibration_val_fst {B K : Type u} [TopologicalSpace B]
-    [TopologicalSpace K] (g : C(B, K)) (k : K) :
-    IsHurewiczFibration.{w} fun z : MappingPathFiber g k ↦ z.val.1 := by
-  have h : (fun z : MappingPathFiber g k ↦ z.val.1) = MappingPathFiber.proj g k :=
-    funext fun z ↦ (MappingPathFiber.proj_apply g k z).symm
-  rw [h]
-  exact MappingPathFiber.isHurewiczFibration_proj g k
-
 variable {X Y : _root_.TopCat.{u}} (f : X ⟶ Y) (x : X)
 
 /-- The projection `(z, γ) ↦ z` of the homotopy fibre `MappingPathFiber f (f x)` of `f` over
 `f x`, of the points `z` of `X` with a path from `f z` to `f x`, to `X`. -/
-def homotopyFiberProj : _root_.TopCat.of (MappingPathFiber f.hom (f x)) ⟶ X :=
-  _root_.TopCat.ofHom ⟨fun z ↦ z.val.1, by fun_prop⟩
+@[expose] def homotopyFiberProj : _root_.TopCat.of (MappingPathFiber f.hom (f x)) ⟶ X :=
+  _root_.TopCat.ofHom (MappingPathFiber.proj f.hom (f x))
 
 @[simp]
 theorem homotopyFiberProj_apply (z : MappingPathFiber f.hom (f x)) :
@@ -98,7 +88,7 @@ theorem homotopyFiberProj_apply (z : MappingPathFiber f.hom (f x)) :
 /-- The projection of the homotopy fibre is a Hurewicz fibration. -/
 theorem isHurewiczFibration_homotopyFiberProj :
     IsHurewiczFibration.{w} (homotopyFiberProj f x) :=
-  isHurewiczFibration_val_fst f.hom (f x)
+  MappingPathFiber.isHurewiczFibration_proj f.hom (f x)
 
 /-- The projection of the homotopy fibre is a Serre fibration. -/
 theorem serreFibrations_homotopyFiberProj : serreFibrations (homotopyFiberProj f x) :=
@@ -117,10 +107,10 @@ theorem homotopyFiberBasepoint_val :
 /-- The fixed-end path fibration of `Y` over `f x`, the source projection of
 `MappingPathFiber (ContinuousMap.id Y) (f x)`. -/
 private abbrev pathProj : _root_.TopCat.of (MappingPathFiber (ContinuousMap.id Y) (f x)) ⟶ Y :=
-  _root_.TopCat.ofHom ⟨fun z ↦ z.val.1, by fun_prop⟩
+  _root_.TopCat.ofHom (MappingPathFiber.proj (ContinuousMap.id Y) (f x))
 
 private theorem serreFibrations_pathProj : serreFibrations (pathProj f x) :=
-  IsHurewiczFibration.mem_serreFibrations (isHurewiczFibration_val_fst.{0, u} _ _)
+  (MappingPathFiber.isHurewiczFibration_proj.{0} (ContinuousMap.id Y) (f x)).mem_serreFibrations
 
 /-- The map `(z, γ) ↦ (f z, γ)` from the homotopy fibre of `f` to the paths ending at `f x`. -/
 private abbrev toPath :

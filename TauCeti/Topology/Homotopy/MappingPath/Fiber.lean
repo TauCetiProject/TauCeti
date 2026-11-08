@@ -58,7 +58,7 @@ namespace MappingPathFiber
 variable (f : C(B, K)) (k : K)
 
 /-- The source projection of the mapping-path fibre. -/
-def proj : C(MappingPathFiber f k, B) :=
+@[expose] def proj : C(MappingPathFiber f k, B) :=
   ⟨fun p ↦ p.val.1, by fun_prop⟩
 
 @[simp]

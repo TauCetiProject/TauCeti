@@ -99,23 +99,13 @@ theorem serreFibrations_nConnectedCoverProj :
 `TauCeti.killHomotopyGroups (n + 1) X x` at the image of `x`. -/
 def nConnectedCoverFiberHomeomorph :
     (nConnectedCoverProj n X x).fiber x ≃ₜ
-      Ω (killHomotopyGroups (n + 1) X x) (killHomotopyGroupsIncl (n + 1) X x x) where
-  toFun p := ⟨p.1.val.2, p.1.property.1.trans (congrArg _
-    ((TopCat.homotopyFiberProj_apply _ x p.1).symm.trans (Set.mem_singleton_iff.1 p.2))),
-    p.1.property.2⟩
-  invFun γ := ⟨⟨(x, γ.toContinuousMap), γ.source, γ.target⟩,
-    Set.mem_singleton_iff.2 (TopCat.homotopyFiberProj_apply _ x _)⟩
-  left_inv p := Subtype.ext (Subtype.ext (Prod.ext
-    ((TopCat.homotopyFiberProj_apply _ x p.1).symm.trans (Set.mem_singleton_iff.1 p.2)).symm rfl))
-  right_inv _ := rfl
-  continuous_toFun :=
-    continuous_induced_rng.2 (continuous_subtype_val.comp continuous_subtype_val).snd
-  continuous_invFun := ((continuous_const.prodMk continuous_induced_dom).subtype_mk _).subtype_mk _
+      Ω (killHomotopyGroups (n + 1) X x) (killHomotopyGroupsIncl (n + 1) X x x) :=
+  MappingPathFiber.projFiberHomeomorphPath (killHomotopyGroupsIncl (n + 1) X x).hom _ x
 
 @[simp]
 theorem nConnectedCoverFiberHomeomorph_apply (p : (nConnectedCoverProj n X x).fiber x) (t : I) :
     nConnectedCoverFiberHomeomorph n X x p t = p.1.val.2 t :=
-  (rfl)
+  MappingPathFiber.projFiberHomeomorphPath_apply _ _ x p t
 
 variable [T2Space X]
 
