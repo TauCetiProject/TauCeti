@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
+public import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Faces of the standard simplex
@@ -20,6 +21,9 @@ takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, m
 codimension-two face opposite both: a common point of the two facets comes from that face through
 both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
+
+The cumulative sums `Fin.cumSum x.weights N` of the weights of a point `x` of
+`StdSimplex R (Fin n)` lie between `0` and `1`.
 -/
 
 public section
@@ -201,5 +205,19 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
     rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
+
+/-- The cumulative sums of the weights of a point of a standard simplex on `Fin n` are
+nonnegative. -/
+theorem cumSum_weights_nonneg {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) :
+    0 ≤ Fin.cumSum x.weights N := by
+  rw [Fin.cumSum_def]
+  exact Finset.sum_nonneg fun j _ ↦ x.nonneg j
+
+/-- The cumulative sums of the weights of a point of a standard simplex on `Fin n` are at
+most `1`. -/
+theorem cumSum_weights_le_one {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) :
+    Fin.cumSum x.weights N ≤ 1 := by
+  have := Fin.cumSum_mono x.nonneg (le_max_left N n)
+  rwa [Fin.cumSum_of_le _ (le_max_right _ _), total_of_fintype] at this
 
 end Convexity.StdSimplex

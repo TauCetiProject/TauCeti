@@ -188,27 +188,6 @@ open unitInterval
 
 variable {p : ℕ}
 
-section
-
-variable (s : StdSimplex ℝ (Fin (p + 1)))
-
-private lemma cumSum_nonneg (N : ℕ) : 0 ≤ Fin.cumSum s.weights N := by
-  rw [Fin.cumSum_def]
-  exact Finset.sum_nonneg fun j _ ↦ s.nonneg j
-
-private lemma cumSum_le_one (N : ℕ) : Fin.cumSum s.weights N ≤ 1 := by
-  have := Fin.cumSum_mono s.nonneg (le_max_left N (p + 1))
-  rwa [Fin.cumSum_of_le _ (le_max_right _ _), StdSimplex.total_of_fintype] at this
-
-@[fun_prop]
-private lemma continuous_cumSum {Z : Type*} [TopologicalSpace Z]
-    {f : Z → StdSimplex ℝ (Fin (p + 1))} (hf : Continuous f) (N : ℕ) :
-    Continuous fun z ↦ Fin.cumSum (f z).weights N := by
-  simp only [Fin.cumSum_def]
-  exact continuous_finsetSum _ fun j _ ↦ (StdSimplex.continuous_weights_apply ℝ j).comp hf
-
-end
-
 /-- `min a v` for `b = 0`, and `max a v` for `b = 1`. -/
 private noncomputable def clamp (v : ℝ) (b : Fin 2) (a : ℝ) : ℝ :=
   if b = 0 then min a v else max a v
@@ -437,8 +416,10 @@ private lemma prismMeasure_of_eq {t : I} {b : Fin 2} (ht : (t : ℝ) = (b : ℕ)
   rw [← StdSimplex.weights_inj]
   ext ⟨i, b'⟩
   rw [prismMeasure_weights, prismWeights, ht,
-    clamp_one_sub_of_mem_Icc (cumSum_nonneg _ _) (cumSum_le_one _ _),
-    clamp_one_sub_of_mem_Icc (cumSum_nonneg _ _) (cumSum_le_one _ _), Fin.cumSum_succ]
+    clamp_one_sub_of_mem_Icc (StdSimplex.cumSum_weights_nonneg _ _)
+      (StdSimplex.cumSum_weights_le_one _ _),
+    clamp_one_sub_of_mem_Icc (StdSimplex.cumSum_weights_nonneg _ _)
+      (StdSimplex.cumSum_weights_le_one _ _), Fin.cumSum_succ]
   split_ifs with hb
   · subst hb
     rw [StdSimplex.weights_map_apply_of_injective hinj]
