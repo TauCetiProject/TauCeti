@@ -12,7 +12,7 @@ public import TauCeti.Analysis.ODE.LyapunovPerron.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Normed.Operator.Exponential
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
