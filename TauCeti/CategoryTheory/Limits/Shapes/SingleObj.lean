@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
-public import TauCeti.CategoryTheory.Preadditive.NSMul
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Recognising colimits and limits of shape `SingleObj G`
