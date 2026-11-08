@@ -16,7 +16,7 @@ Mathlib's `AdjoinRoot.map` sends a ring homomorphism `f : R →+* S`, together w
 `q ∣ p.map f`, to a ring homomorphism `AdjoinRoot p →+* AdjoinRoot q`. It records the action on
 `AdjoinRoot.of` and on `AdjoinRoot.root` (`map_of`, `map_root`) but not the action on the class of
 a general polynomial, and says nothing about surjectivity. Both are added here, together with the
-description of the `R`-linear endomorphisms of `AdjoinRoot g`, for `g` monic, that commute with
+description of the `R`-linear endomorphisms of `AdjoinRoot g`, for any `g`, that commute with
 multiplication by the root, and the annihilators of the powers of the root in the truncated
 polynomial ring `R[X]/(X ^ n)`.
 
@@ -44,7 +44,7 @@ polynomial ring `R[X]/(X ^ n)`.
   consumers are the truncated polynomial algebras of
   `TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType` and
   `TauCeti.RepresentationTheory.Quiver.Kronecker.FiniteRepType`, whose endomorphism algebras it
-  pins down, but nothing beyond monicity of the relator enters the proof.
+  pins down. The characterization holds for any relator `g`.
 * `AdjoinRoot.algebraTensorAlgEquiv`: the base change `T ⊗[R] R[X]/(g)` of `AdjoinRoot g` to an
   `R`-algebra `T` is `T[X]/(g)`, with `g` mapped into `T[X]`. Mathlib's `AdjoinRoot.tensorAlgEquiv`
   lands in `AdjoinRoot` over `T ⊗[R] R` instead; this is it followed by `T ⊗[R] R ≃ T`, the form
