@@ -280,8 +280,10 @@ theorem _root_.Subgroup.padicValNat_index_map_mk'_mono (X : Subgroup G) (ℓ : �
     (padicValNat ℓ (X.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) ≤
       padicValNat ℓ (X.map (QuotientGroup.mk' M.toSubgroup)).index := by
   rw [X.index_map_mk'_eq_index_sup N.toSubgroup, X.index_map_mk'_eq_index_sup M.toSubgroup]
+  -- `h` compares open normal subgroups; the explicit arguments read it as an inequality of
+  -- their underlying subgroups.
   refine Subgroup.padicValNat_index_le_of_le
-    (sup_le_sup_left (show M.toSubgroup ≤ N.toSubgroup from h) X) ?_ ℓ
+    (sup_le_sup_left (a := M.toSubgroup) (b := N.toSubgroup) h X) ?_ ℓ
   rw [← X.index_map_mk'_eq_index_sup M.toSubgroup]
   exact Subgroup.index_ne_zero_of_finite
 
