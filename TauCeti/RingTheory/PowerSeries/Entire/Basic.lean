@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.Restricted
 
