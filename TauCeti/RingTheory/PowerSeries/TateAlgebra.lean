@@ -38,7 +38,7 @@ radius the Krull dimension of the restricted series ring is at least `dim R + 1`
 ## Main results
 
 * `TauCeti.PowerSeries.norm_eq_gaussNorm`: the norm of a restricted series is its Gauss norm.
-* `TauCeti.PowerSeries.norm_le_iff`: the norm is bounded by `r ≥ 0` exactly when every weighted
+* `TauCeti.PowerSeries.norm_le_iff`: the norm is bounded by `r` exactly when every weighted
   coefficient norm `‖aₙ‖ cⁿ` is.
 * `TauCeti.PowerSeries.tendsto_trunc_atTop`: polynomial truncations converge in the Gauss norm.
 * `TauCeti.PowerSeries.norm_C`, `TauCeti.PowerSeries.norm_X`: constants keep their norm, and the
@@ -93,13 +93,13 @@ theorem norm_coeff_mul_pow_le (f : PowerSeries.IsRestricted.subring (R := R) c) 
     ‖(f : PowerSeries R).coeff n‖ * c ^ n ≤ ‖f‖ :=
   PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n
 
-/-- The norm of a restricted series is bounded by a nonnegative `r` exactly when every weighted
-coefficient norm `‖aₙ‖ cⁿ` is. -/
-theorem norm_le_iff {f : PowerSeries.IsRestricted.subring (R := R) c} {r : ℝ} (hr : 0 ≤ r) :
+/-- The norm of a restricted series is bounded by `r` exactly when every weighted coefficient norm
+`‖aₙ‖ cⁿ` is. -/
+theorem norm_le_iff {f : PowerSeries.IsRestricted.subring (R := R) c} {r : ℝ} :
     ‖f‖ ≤ r ↔ ∀ n, ‖(f : PowerSeries R).coeff n‖ * c ^ n ≤ r := by
   refine ⟨fun h n ↦ (norm_coeff_mul_pow_le f n).trans h, fun h ↦ ?_⟩
   rw [norm_eq_gaussNorm, PowerSeries.gaussNorm_eq]
-  exact Real.iSup_le h hr
+  exact Real.iSup_le h <| (norm_nonneg _).trans (by simpa using h 0)
 
 /-- A constant series has the norm of its coefficient. -/
 @[simp]
@@ -144,7 +144,7 @@ theorem tendsto_trunc_atTop (f : PowerSeries.IsRestricted.subring (R := R) c) :
       (gt_mem_nhds (half_pos hε)))
   refine ⟨N, fun n hn ↦ ?_⟩
   rw [dist_eq_norm]
-  refine lt_of_le_of_lt ((norm_le_iff (half_pos hε).le).mpr fun m ↦ ?_) (half_lt_self hε)
+  refine lt_of_le_of_lt (norm_le_iff.mpr fun m ↦ ?_) (half_lt_self hε)
   simp only [AddSubgroupClass.coe_sub, map_sub, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
   split_ifs with hm
   · simp only [sub_self, norm_zero, zero_mul]
@@ -245,13 +245,17 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
 variable {c} in
 /-- In the Gauss norm at a radius `c > 0`, the linear polynomial `a + d X` has weighted norm at
 most `M` once both `‖a‖` and `‖d‖ c` do. -/
-theorem norm_polynomialToRestricted_C_add_X_mul_C_mul_le {a d : R} {w M : ℝ} (hw : 0 ≤ w)
+theorem norm_polynomialToRestricted_C_add_X_mul_C_mul_le {a d : R} {w M : ℝ}
     (ha : ‖a‖ * w ≤ M) (hd : ‖d‖ * c * w ≤ M) :
     ‖polynomialToRestricted c (Polynomial.C a + Polynomial.X * Polynomial.C d)‖ * w ≤ M := by
-  have hM : 0 ≤ M := (mul_nonneg (norm_nonneg _) hw).trans ha
-  rcases hw.eq_or_lt with rfl | hw
-  · simpa using hM
-  rw [← le_div_iff₀ hw, norm_le_iff (div_nonneg hM hw.le)]
+  rcases le_or_gt w 0 with hw | hw
+  · have h0 := norm_coeff_mul_pow_le
+      (polynomialToRestricted c (Polynomial.C a + Polynomial.X * Polynomial.C d)) 0
+    simp only [coe_polynomialToRestricted, Polynomial.coeff_coe, pow_zero, mul_one,
+      Polynomial.coeff_add, Polynomial.coeff_C_zero, Polynomial.coeff_X_mul_zero, add_zero] at h0
+    exact (mul_le_mul_of_nonpos_right h0 hw).trans ha
+  have hM : 0 ≤ M := (mul_nonneg (norm_nonneg _) hw.le).trans ha
+  rw [← le_div_iff₀ hw, norm_le_iff]
   intro i
   rw [le_div_iff₀ hw]
   rcases i with _ | _ | i
