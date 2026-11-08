@@ -132,9 +132,7 @@ theorem norm_coord_inclusion_zpow_mul_lt_amiceRadius (m : ℤ) {ψ : WeightSpace
   -- which is congruent to `1` modulo `p ^ (k + j)`.
   have hψu : ψ (padicUnitsGenerator p ^ p ^ j) = 1 := hψ hu
   rw [← norm_apply_padicUnitsGenerator_pow_sub_one_lt_iff, ContinuousMonoidHom.mul_apply, hψu,
-    mul_one, ContinuousMonoidHom.zpow_apply, ← map_zpow, coe_inclusion_apply,
-    padicIntAlgebraMap_apply, ← map_one (algebraMap ℚ_[p] K), ← map_sub, norm_algebraMap',
-    ← PadicInt.coe_one, ← PadicInt.coe_sub, ← PadicInt.norm_def]
+    mul_one, ContinuousMonoidHom.zpow_apply, ← map_zpow, norm_coe_inclusion_apply_sub_one]
   refine (mem_unitsPrincipal_iff_norm.mp hum).trans_lt
     (lt_of_le_of_lt ?_ zpow_neg_padicUnitsDepth_lt_amiceRadius_zero)
   exact zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_le) (by omega)
@@ -145,14 +143,9 @@ theorem norm_coord_eq_amiceRadius (κ : WeightSpace p K) {j : ℕ}
     (h : unitsPrincipal p (padicUnitsDepth p + j + 1) ≤ κ.toMonoidHom.ker)
     (h' : ¬unitsPrincipal p (padicUnitsDepth p + j) ≤ κ.toMonoidHom.ker) :
     ‖κ.coord‖ = amiceRadius p j := by
-  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
-  have hsub : (0 : ℝ) < (p : ℝ) - 1 := sub_pos.mpr (by exact_mod_cast hp.out.one_lt)
-  have hn : p ^ j * (p - 1) ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ hp.out.ne_zero) (Nat.sub_ne_zero_of_lt hp.out.one_lt)
-  -- both sides have `(pʲ (p - 1))`-th power `p⁻¹`
-  rw [← pow_left_inj₀ (norm_nonneg _) (amiceRadius_pos j).le hn, norm_coord_pow κ h h',
-    amiceRadius_pow, Nat.cast_mul, Nat.cast_pow, Nat.cast_sub hp.out.one_le, Nat.cast_one,
-    mul_comm, div_self (mul_ne_zero hsub.ne' (pow_pos hp0 j).ne'), Real.rpow_neg_one]
+  rw [norm_coord_eq_rpow κ h h', amiceRadius_def]
+  push_cast [Nat.cast_sub hp.out.one_le]
+  ring_nf
 
 /-- **The analytic level of a weight of exact conductor `p ^ (k + j + 1)`**, where `q = p ^ k`:
 `‖T_κ‖ < r_i` exactly when `j < i`, so the weight satisfies the analyticity condition at level

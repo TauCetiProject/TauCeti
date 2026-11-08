@@ -204,7 +204,7 @@ section Bound
 variable {R : Type*} [NormedRing R] [Module ℚ_[p] R]
 
 /-- The middle binomial terms: `(1 + t) ^ p - 1 - t ^ p = ∑_{0 < i < p} (p choose i) tⁱ`. -/
-private theorem one_add_pow_prime_sub_one_sub_pow (t : R) :
+theorem one_add_pow_prime_sub_one_sub_pow (t : R) :
     (1 + t) ^ p - 1 - t ^ p = ∑ i ∈ Finset.Ico 1 p, ((p.choose i : ℕ) : ℚ_[p]) • t ^ i := by
   rw [add_comm, (Commute.one_right t).add_pow, Finset.sum_range_succ,
     Finset.sum_range_eq_add_Ico _ hp.out.pos]
@@ -215,7 +215,7 @@ private theorem one_add_pow_prime_sub_one_sub_pow (t : R) :
 variable [IsBoundedSMul ℚ_[p] R]
 
 /-- Each middle binomial term has norm at most `p⁻¹ ‖t‖ⁱ`, since `p` divides `p choose i`. -/
-private theorem norm_choose_smul_pow_le {i : ℕ} (hi : i ∈ Finset.Ico 1 p) (t : R) :
+theorem norm_choose_smul_pow_le {i : ℕ} (hi : i ∈ Finset.Ico 1 p) (t : R) :
     ‖((p.choose i : ℕ) : ℚ_[p]) • t ^ i‖ ≤ (p : ℝ)⁻¹ * ‖t‖ ^ i := by
   rw [Finset.mem_Ico] at hi
   obtain ⟨m, hm⟩ := hp.out.dvd_choose_self (by omega) hi.2
@@ -244,7 +244,7 @@ private theorem norm_one_add_pow_prime_sub_one_lt_of_le {t : R} (ht : ‖t‖ �
     refine (norm_choose_smul_pow_le hi t).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
     exact (pow_le_of_le_one (norm_nonneg t) (ht.trans hr1)
       (by have := (Finset.mem_Ico.mp hi).1; omega)).trans ht
-  rw [show (1 + t) ^ p - 1 = t ^ p + ((1 + t) ^ p - 1 - t ^ p) by abel]
+  rw [← add_sub_cancel (t ^ p) ((1 + t) ^ p - 1)]
   refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt ?_
   exact (max_le hpow hmid).trans_lt (mul_lt_of_lt_one_left hr hp1)
 
@@ -265,13 +265,13 @@ private theorem norm_one_add_pow_prime_sub_one_sub_pow_lt {t : R}
     rw [← amiceRadius_zero_pow_sub_one]
     exact (pow_le_pow_of_le_one hr.le hr1 (by omega)).trans_lt
       (pow_lt_pow_left₀ ht hr.le (by omega))
-  rw [show ‖t‖ ^ p = ‖t‖ ^ (p - i) * ‖t‖ ^ i by rw [← pow_add, Nat.sub_add_cancel hip.le]]
+  rw [← pow_sub_mul_pow ‖t‖ hip.le]
   exact mul_lt_mul_of_pos_right hlt (pow_pos (hr.trans ht) i)
 
 /-- Beyond the radius `r_0`, `‖(1 + t) ^ p - 1‖ ≤ ‖t‖ ^ p`. -/
 private theorem norm_one_add_pow_prime_sub_one_le {t : R} (ht : amiceRadius p 0 < ‖t‖) :
     ‖(1 + t) ^ p - 1‖ ≤ ‖t‖ ^ p := by
-  rw [show (1 + t) ^ p - 1 = t ^ p + ((1 + t) ^ p - 1 - t ^ p) by abel]
+  rw [← add_sub_cancel (t ^ p) ((1 + t) ^ p - 1)]
   exact (IsUltrametricDist.norm_add_le_max _ _).trans
     (max_le (norm_pow_le' t hp.out.pos) (norm_one_add_pow_prime_sub_one_sub_pow_lt ht).le)
 
@@ -311,7 +311,7 @@ private theorem norm_one_add_pow_prime_sub_one_lt_iff {h : ℕ} {t : K} :
   · -- beyond `r_0` the norm of `(1 + t) ^ p - 1` is exactly `‖t‖ ^ p`
     have heq : ‖(1 + t) ^ p - 1‖ = ‖t‖ ^ p := by
       have hlt := norm_one_add_pow_prime_sub_one_sub_pow_lt h0
-      rw [show (1 + t) ^ p - 1 = t ^ p + ((1 + t) ^ p - 1 - t ^ p) by abel,
+      rw [← add_sub_cancel (t ^ p) ((1 + t) ^ p - 1),
         IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [norm_pow]; exact hlt.ne'),
         norm_pow, max_eq_left hlt.le]
     rw [heq, ← amiceRadius_succ_pow] at hs

@@ -386,6 +386,11 @@ theorem coe_inclusion_apply (x : ℤ_[p]ˣ) :
     (inclusion K x : K) = padicIntAlgebraMap p K x :=
   (rfl)
 
+/-- The weight `x ↦ x` preserves the distance of a unit of `ℤ_p` to `1`. -/
+theorem norm_coe_inclusion_apply_sub_one [NormOneClass K] (x : ℤ_[p]ˣ) :
+    ‖(inclusion K x : K) - 1‖ = ‖(x : ℤ_[p]) - 1‖ := by
+  rw [coe_inclusion_apply, ← map_one (padicIntAlgebraMap p K), ← map_sub, norm_padicIntAlgebraMap]
+
 /-- Distinct units of `ℤ_p` give distinct values of the weight `x ↦ x` in a nontrivial `K`. -/
 theorem inclusion_injective [Nontrivial K] : Function.Injective (inclusion (p := p) K) :=
   fun x y hxy ↦ Units.ext <| padicIntAlgebraMap_injective (K := K) <| by
