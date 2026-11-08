@@ -220,7 +220,6 @@ private theorem genLoopEquivOfUnique_trans_homotopic_transport {x : X} (p : Path
   have hp₁ : p₁ = p := by
     ext t
     exact H.map_boundary t (fun _ => 1) ⟨0, Or.inr rfl⟩
-  change (q.trans p).Homotopic (p.trans r)
   have hKcast := hK.pathCast q.source.symm r.target.symm
   have hq : (Path.id.map q.continuous).cast q.source.symm q.target.symm = q := by
     ext t
