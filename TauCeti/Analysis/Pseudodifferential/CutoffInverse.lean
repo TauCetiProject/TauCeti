@@ -245,73 +245,10 @@ private theorem cutoff_smul_eventuallyEq_zero {A : Type*} [NormedAddCommGroup A]
   simp only [Function.comp_apply, Pi.zero_apply] at hq
   simp [hq]
 
-private theorem contDiff_cutoff :
-    ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (R⁻¹ • p.2) :=
-  χ.contDiff.comp (contDiff_snd.const_smul R⁻¹)
-
-/-- If `k = 0` or `‖ξ / R‖ < 2`, then `|R⁻¹|^k ≤ |R⁻¹|^k ⟨2R⟩^k ⟨ξ⟩^(-k)`: below the radius
-`2 |R|` the weight `⟨ξ⟩^(-k)` is bounded below by `⟨2R⟩^(-k)`, and for `R = 0` both sides vanish. -/
-private theorem abs_inv_pow_le_mul_weight {R : ℝ} {k : ℕ} {ξ : CoordinateSpace n}
-    (h : k = 0 ∨ ‖R⁻¹ • ξ‖ < 2) : |R⁻¹| ^ k ≤ |R⁻¹| ^ k *
-      ((1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - k) / 2)) := by
-  rcases eq_or_ne k 0 with hk | hk
-  · simp [hk]
-  rcases eq_or_ne R 0 with hR | hR
-  · simp [hR, zero_pow hk]
-  refine le_mul_of_one_le_right (by positivity) ?_
-  have hlt := h.resolve_left hk
-  rw [norm_smul, norm_inv, Real.norm_eq_abs] at hlt
-  have hξ : ‖ξ‖ < 2 * |R| := by
-    have := (inv_mul_lt_iff₀ (abs_pos.2 hR)).1 hlt
-    linarith
-  have h1 : 1 + ‖ξ‖ ^ 2 ≤ 1 + 4 * R ^ 2 := by
-    nlinarith [norm_nonneg ξ, sq_abs R, abs_nonneg R]
-  have hk0 : ((0 : ℝ) - k) / 2 ≤ 0 := by
-    have := k.cast_nonneg (α := ℝ)
-    linarith
-  calc (1 : ℝ) = (1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) * (1 + 4 * R ^ 2) ^ (((0 : ℝ) - k) / 2) := by
-        rw [← Real.rpow_add (by positivity), show (k : ℝ) / 2 + (0 - k) / 2 = 0 by ring,
-          Real.rpow_zero]
-    _ ≤ _ := mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (by positivity) h1 hk0)
-        (by positivity)
-
-/-- The rescaled cutoff `χ(ξ / R)` satisfies the symbol estimates of order `0`. -/
-private theorem exists_bound_mixedDeriv_cutoff (α β : List (Fin n)) :
-    ∃ C, ∀ x ξ : CoordinateSpace n,
-      ‖mixedDeriv α β (fun p : CoordinateSpace n × CoordinateSpace n => χ (R⁻¹ • p.2)) x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - β.length) / 2) := by
-  rcases eq_or_ne α [] with rfl | hα
-  swap
-  · refine ⟨0, fun x ξ => ?_⟩
-    simp only [mixedDeriv_def]
-    rw [coordinateDeriv_const _ hα]
-    simp
-  obtain ⟨B, hB⟩ := χ.exists_bound_iteratedFDeriv β.length
-  have hval : ∀ x ξ, ‖mixedDeriv [] β (fun p : CoordinateSpace n × CoordinateSpace n =>
-      χ (R⁻¹ • p.2)) x ξ‖ ≤ |R⁻¹| ^ β.length * ‖iteratedFDeriv ℝ β.length χ (R⁻¹ • ξ)‖ := by
-    intro x ξ
-    have hk : ContDiff ℝ β.length χ := χ.contDiff.of_le (by exact_mod_cast le_top)
-    have hk' : ContDiff ℝ β.length fun z => χ (R⁻¹ • z) := hk.comp (contDiff_const_smul R⁻¹)
-    simp only [mixedDeriv_def, coordinateDeriv_nil]
-    refine (norm_coordinateDeriv_le β hk' ξ).trans ?_
-    rw [iteratedFDeriv_comp_const_smul R⁻¹ hk, norm_smul, norm_pow, Real.norm_eq_abs]
-  set k := β.length
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
-  refine ⟨|R⁻¹| ^ k * B * (1 + 4 * R ^ 2) ^ ((k : ℝ) / 2), fun x ξ => (hval x ξ).trans ?_⟩
-  by_cases hz : k ≠ 0 ∧ 2 ≤ ‖R⁻¹ • ξ‖
-  · rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hz.1 hz.2, norm_zero, mul_zero]
-    positivity
-  have key := abs_inv_pow_le_mul_weight ((not_and_or.1 hz).imp not_not.1 not_le.1)
-  calc |R⁻¹| ^ k * ‖iteratedFDeriv ℝ k χ (R⁻¹ • ξ)‖ ≤ |R⁻¹| ^ k * B :=
-        mul_le_mul_of_nonneg_left (hB _) (by positivity)
-    _ ≤ |R⁻¹| ^ k * ((1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) *
-          (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - k) / 2)) * B := mul_le_mul_of_nonneg_right key hB0
-    _ = _ := by ring
-
 private theorem wordBounds_cutoff (S : Set (CoordinateSpace n × CoordinateSpace n)) (k : ℕ) :
     WordBounds S 0 k fun p => χ (R⁻¹ • p.2) :=
-  wordBounds_of_mixedDeriv (contDiff_cutoff χ R) (T := univ)
-    (fun α β => (exists_bound_mixedDeriv_cutoff χ R α β).imp fun _ h x _ ξ => h x ξ)
+  wordBounds_of_mixedDeriv (χ.contDiff_comp_inv_smul_snd R) (T := univ)
+    (fun α β => (χ.exists_bound_mixedDeriv_comp_inv_smul_snd R α β).imp fun _ h x _ ξ => h x ξ)
     (fun _ _ => mem_univ _) k
 
 end Cutoff
@@ -444,7 +381,7 @@ private theorem contDiff_cutoffInverse (a : Symbol n V W m)
       (cutoff_smul_eventuallyEq_zero χ R (fun p => (a.coefficient p).inverse) hp)
   · have hq : (a.coefficient p).IsInvertible :=
       hinv p.1 p.2 (le_norm_of_one_le_norm_inv_smul (not_lt.1 hp))
-    exact (contDiff_cutoff χ R).contDiffAt.smul
+    exact (χ.contDiff_comp_inv_smul_snd R).contDiffAt.smul
       ((contDiffOn_inverse a).contDiffAt ((isOpen_setOf_isInvertible a).mem_nhds hq))
 
 /-- The estimates of the cut-off inverse at the positions of a set `T`, from those of the symbol
@@ -462,7 +399,7 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
   have hSU : {p : CoordinateSpace n × CoordinateSpace n | p.1 ∈ T ∧ R ≤ ‖p.2‖} ⊆
       {p | (a.coefficient p).IsInvertible} := fun p hp => hinv p.1 p.2 hp.2
   have hb := WordBounds.bilinear (ContinuousLinearMap.lsmul ℝ ℝ) (isOpen_setOf_isInvertible a)
-    hSU (contDiff_cutoff χ R).contDiffOn (contDiffOn_inverse a)
+    hSU (χ.contDiff_comp_inv_smul_snd R).contDiffOn (contDiffOn_inverse a)
     (wordBounds_cutoff χ R _ (α.map Sum.inl ++ β.map Sum.inr).length)
     (wordBounds_inverse a ha (fun x _ ξ hξ => hinv x ξ hξ) hC _)
   obtain ⟨C, hC⟩ := hb _ le_rfl
@@ -499,9 +436,9 @@ variable (a : Symbol n V W m) (χ : FrequencyCutoff (CoordinateSpace n)) (R : �
     ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
 
 @[simp]
-theorem coefficient_cutoffInverse (x ξ : CoordinateSpace n) :
-    (a.cutoffInverse χ R hinv hbound).coefficient (x, ξ) =
-      χ (R⁻¹ • ξ) • (a.coefficient (x, ξ)).inverse := (rfl)
+theorem coefficient_cutoffInverse (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.cutoffInverse χ R hinv hbound).coefficient p =
+      χ (R⁻¹ • p.2) • (a.coefficient p).inverse := (rfl)
 
 /-- The symbol composed with its cut-off inverse is the cutoff `χ(ξ / R)` times the identity. -/
 theorem coefficient_comp_coefficient_cutoffInverse (x ξ : CoordinateSpace n) :
