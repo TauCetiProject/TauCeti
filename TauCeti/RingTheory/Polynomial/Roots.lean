@@ -397,16 +397,18 @@ theorem _root_.Polynomial.roots_gcd_derivative_add_dedup (p : K[X]) :
       have hmem : x ∉ p.roots := fun h => hx ((mem_roots hp).mp h)
       rw [hm, zero_min, Multiset.count_dedup, ite_eq_right hmem]
 
-/-- For a split polynomial in characteristic zero, the number of distinct roots of a nonzero
-polynomial is its degree minus the degree of its gcd with its derivative. -/
+/-- For a split polynomial in characteristic zero, the number of distinct entries of `roots` is the
+degree minus the degree of the gcd with the derivative. The zero polynomial has empty `roots` and
+natural degree `0`, so the formula holds for it as well. -/
 theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits
-    {p : K[X]} (hp : p ≠ 0) (hsplit : p.Splits) :
+    {p : K[X]} (hsplit : p.Splits) :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card := by
   by_cases hdeg : p.natDegree = 0
   · have hpC : p = C (p.coeff 0) := eq_C_of_natDegree_eq_zero hdeg
     rw [hdeg, hpC, roots_C]
     simp
-  · have hsplitg : (EuclideanDomain.gcd p p.derivative).Splits :=
+  · have hp : p ≠ 0 := fun h ↦ hdeg (h ▸ natDegree_zero)
+    have hsplitg : (EuclideanDomain.gcd p p.derivative).Splits :=
       hsplit.of_dvd hp (EuclideanDomain.gcd_dvd_left p p.derivative)
     have hcard := congrArg Multiset.card (roots_gcd_derivative_add_dedup p)
     rw [Multiset.card_add] at hcard
@@ -433,24 +435,24 @@ theorem _root_.Polynomial.natDegree_gcd_eq_card_aroots_inter {k : Type*} [Field 
 
 variable [CharZero K]
 
-/-- Over an algebraically closed field of characteristic zero, the number of distinct roots of a
-nonzero polynomial is its degree minus the degree of its gcd with its derivative. -/
+/-- Over an algebraically closed field of characteristic zero, the number of distinct entries of
+`roots` of a polynomial is its degree minus the degree of its gcd with its derivative. The zero
+polynomial has empty `roots` and natural degree `0`, so the formula holds for it as well. -/
 theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
-    {p : K[X]} (hp : p ≠ 0) :
+    {p : K[X]} :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card :=
-  natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hp
-    (IsAlgClosed.splits p)
+  natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits (IsAlgClosed.splits p)
 
-/-- The number of distinct roots of a nonzero polynomial over a field `k` in an algebraically
-closed field `K` of characteristic zero is its degree minus the degree of its gcd with its
-derivative, both taken over `k`. -/
+/-- The number of distinct entries of `aroots` of a polynomial over a field `k` in an
+algebraically closed field `K` of characteristic zero is its degree minus the degree of its gcd
+with its derivative, both taken over `k`. The zero polynomial has empty `aroots` and natural
+degree `0`, so the formula holds for it as well. -/
 theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset
-    {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} (hp : p ≠ 0) :
+    {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree =
       (p.aroots K).toFinset.card := by
-  rw [aroots_def, ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
-    ((Polynomial.map_ne_zero_iff (algebraMap k K).injective).2 hp), derivative_map, gcd_map,
-    natDegree_map, natDegree_map]
+  rw [aroots_def, ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset,
+    derivative_map, gcd_map, natDegree_map, natDegree_map]
 
 end IsAlgClosed
 
