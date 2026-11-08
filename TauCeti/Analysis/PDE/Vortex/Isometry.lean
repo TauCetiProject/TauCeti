@@ -25,8 +25,8 @@ The orientation-preserving isometries of the plane act on plane-vortex fields by
 gauge transformation fixing the framing at infinity, they preserve the affine Sobolev space
 `A_m^k = x_m + H^k` of framed degree-`m` fields (`TauCeti.Vortex.framedFieldSpace`), for every
 natural order `k`. The direction `H^k` is invariant under translations and rotations
-(`translateField_mem_sobolevFields`, `rotateField_mem_sobolevFields`), so the question is
-whether the transformed reference field `x_m` stays in `A_m^k`.
+(`translateField_mem_sobolevFields_natCast`, `rotateField_mem_sobolevFields_natCast`), so the
+question is whether the transformed reference field `x_m` stays in `A_m^k`.
 
 * **Rotations.** The reference field is rotation-equivariant up to the constant line-frame gauge
   `u^(-m)`: `u^(-m) · R_u x_m = x_m` (`gaugeTransform_rotateField_referenceField`). Hence
@@ -44,7 +44,7 @@ whether the transformed reference field `x_m` stays in `A_m^k`.
 
 The gauge `g_a` has bounded derivatives of every order
 (`exists_norm_iteratedFDeriv_translationGauge_le`), so it acts on `H^k`
-(`TauCeti.Vortex.gaugeLinearAction_mem_sobolevFields`).
+(`TauCeti.Vortex.gaugeLinearAction_mem_sobolevFields_natCast`).
 
 ## References
 
@@ -64,7 +64,7 @@ open scoped ContDiff Topology
 /-! ### Invariance of the Sobolev direction -/
 
 /-- Translations preserve the integer-order Sobolev fields. -/
-theorem translateField_mem_sobolevFields (a : ℂ) {k : ℕ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+theorem translateField_mem_sobolevFields_natCast (a : ℂ) {k : ℕ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : y ∈ sobolevFields k) : translateField a y ∈ sobolevFields k :=
   mem_sobolevFields.2 fun i ↦ by
     simpa only [translateField_apply] using
@@ -72,8 +72,9 @@ theorem translateField_mem_sobolevFields (a : ℂ) {k : ℕ} {y : ℂ → Euclid
         (mem_sobolevFields.1 hy i)
 
 /-- Rotations preserve the integer-order Sobolev fields. -/
-theorem rotateField_mem_sobolevFields (u : Circle) {k : ℕ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : y ∈ sobolevFields k) : rotateField u y ∈ sobolevFields k := by
+theorem rotateField_mem_sobolevFields_natCast (u : Circle) {k : ℕ}
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
+    rotateField u y ∈ sobolevFields k := by
   have h (j : Fin 4) : (fun z ↦ y ((u : ℂ) * z) j) ∈ realSobolevFunctions ℂ k 2 := by
     simpa only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       rotation_apply] using
@@ -157,8 +158,8 @@ theorem gaugeTransform_rotateField_mem_framedFieldSpace {f : ContDiffBump (0 : �
   rw [gaugeTransform_rotateField_referenceField, hsub] at h
   rw [h]
   -- The constant gauge has bounded derivatives of every order.
-  refine gaugeLinearAction_mem_sobolevFields contDiff_const (fun n _ ↦ ⟨1, fun z ↦ ?_⟩)
-    (rotateField_mem_sobolevFields u hx)
+  refine gaugeLinearAction_mem_sobolevFields_natCast contDiff_const (fun n _ ↦ ⟨1, fun z ↦ ?_⟩)
+    (rotateField_mem_sobolevFields_natCast u hx)
   rcases n with _ | n
   · simp
   · simp [iteratedFDeriv_const_of_ne n.succ_ne_zero]
@@ -423,9 +424,9 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
       translateField a (x - referenceField f m) := by
     funext z
     simp
-  have h := gaugeLinearAction_mem_sobolevFields hg
+  have h := gaugeLinearAction_mem_sobolevFields_natCast hg
     (fun n _ ↦ exists_norm_iteratedFDeriv_translationGauge_le m a n)
-    (translateField_mem_sobolevFields a hx)
+    (translateField_mem_sobolevFields_natCast a hx)
   rw [← hsub, ← gaugeTransform_sub_gaugeTransform] at h
   simpa only [sub_add_sub_cancel] using add_mem h hD
 

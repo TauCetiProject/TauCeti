@@ -20,7 +20,8 @@ by expanding the equation and gauge action about a nondecaying reference field.
 
 The matrix version allows mixing the connection and section coordinates and permits different
 bounds for each coefficient. In particular a smooth gauge with bounded derivatives through order
-`k` preserves the Sobolev fields under its linear action (`gaugeLinearAction_mem_sobolevFields`).
+`k` preserves the Sobolev fields under its linear action
+(`gaugeLinearAction_mem_sobolevFields_natCast`).
 These results assert membership, not boundedness of a completed operator or smoothness of the
 nonlinear equation map.
 
@@ -95,7 +96,7 @@ theorem smul_mem_sobolevFields_natCast (k : ℕ) {ψ : ℂ → ℝ}
 /-- **Smooth gauges act on Sobolev fields.** A smooth gauge whose derivatives through order `k`
 are bounded preserves the integer-order Sobolev fields under its linear action, which rotates the
 section and fixes the connection. No decay of the gauge is required. -/
-theorem gaugeLinearAction_mem_sobolevFields {k : ℕ} {u : ℂ → Circle}
+theorem gaugeLinearAction_mem_sobolevFields_natCast {k : ℕ} {u : ℂ → Circle}
     (hu : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)))
     (hbound : ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (u z : ℂ)) z‖ ≤ C)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
