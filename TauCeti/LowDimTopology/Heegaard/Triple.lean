@@ -302,39 +302,23 @@ theorem boundary_boundary_alphaGamma_eq_zero (D : Region → ℤ) (p : PointAC) 
       T.gammaArcBoundary (T.gammaBoundary D) (.inr p) = 0 := by
   simpa using (T.crossing_alphaGamma p).sum_eq_zero D
 
-/-- A function on the points of a family of curves is invariant under the successor permutation
-exactly when it is constant along each curve. -/
-private theorem forall_sub_eq_zero_iff_exists {A : Type*} (σ : Equiv.Perm A) (g : A → Fin n)
-    (hσ : ∀ i, σ.IsCycleOn {p | g p = i}) (c : A → ℤ) :
-    (∀ q, c (σ.symm q) - c q = 0) ↔ ∃ a : Fin n → ℤ, ∀ p, c p = a (g p) := by
-  simp only [sub_eq_zero]
-  constructor
-  · intro hc
-    obtain ⟨a, ha⟩ := (Function.factorsThrough_iff _).mp
-      (σ.factorsThrough_of_forall_isCycleOn hσ fun p => by simpa using (hc (σ p)).symm)
-    exact ⟨a, congrFun ha⟩
-  · rintro ⟨a, ha⟩ q
-    have hg : g (σ (σ.symm q)) = g (σ.symm q) := (hσ (g (σ.symm q))).1.mapsTo rfl
-    rw [Equiv.apply_symm_apply] at hg
-    rw [ha, ha, hg]
-
 /-- A `1`-chain on the `α`-arcs is a cycle exactly when it is a combination of whole `α`-curves. -/
 theorem alphaArcBoundary_eq_zero_iff (c : PointAB ⊕ PointAC → ℤ) :
     T.alphaArcBoundary c = 0 ↔
       ∃ a : Fin n → ℤ, ∀ p, c p = a (Sum.elim T.alphaBeta.alpha T.alphaGamma.alpha p) := by
-  simpa [funext_iff] using forall_sub_eq_zero_iff_exists _ _ T.alphaNext_isCycleOn c
+  simpa [funext_iff] using T.alphaNext.forall_comp_symm_sub_eq_zero_iff T.alphaNext_isCycleOn c
 
 /-- A `1`-chain on the `β`-arcs is a cycle exactly when it is a combination of whole `β`-curves. -/
 theorem betaArcBoundary_eq_zero_iff (c : PointAB ⊕ PointBC → ℤ) :
     T.betaArcBoundary c = 0 ↔
       ∃ b : Fin n → ℤ, ∀ p, c p = b (Sum.elim T.alphaBeta.beta T.betaGamma.alpha p) := by
-  simpa [funext_iff] using forall_sub_eq_zero_iff_exists _ _ T.betaNext_isCycleOn c
+  simpa [funext_iff] using T.betaNext.forall_comp_symm_sub_eq_zero_iff T.betaNext_isCycleOn c
 
 /-- A `1`-chain on the `γ`-arcs is a cycle exactly when it is a combination of whole `γ`-curves. -/
 theorem gammaArcBoundary_eq_zero_iff (c : PointBC ⊕ PointAC → ℤ) :
     T.gammaArcBoundary c = 0 ↔
       ∃ k : Fin n → ℤ, ∀ p, c p = k (Sum.elim T.betaGamma.beta T.alphaGamma.beta p) := by
-  simpa [funext_iff] using forall_sub_eq_zero_iff_exists _ _ T.gammaNext_isCycleOn c
+  simpa [funext_iff] using T.gammaNext.forall_comp_symm_sub_eq_zero_iff T.gammaNext_isCycleOn c
 
 end Boundary
 
