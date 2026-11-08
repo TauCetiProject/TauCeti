@@ -192,7 +192,7 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
 /-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
 assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
 theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
-    [PseudoMetricSpace X] [NormedAddCommGroup F]
+    [PseudoMetricSpace X] [SeminormedAddCommGroup F]
     {s : Set X} {f : X → F}
     {L M α : ℝ≥0} (h : LipschitzOnWith L f s) (hb : ∀ x ∈ s, ‖f x‖ ≤ M) (hα : α ≤ 1) :
     HolderOnWith (L + 2 * M) α f s := by
