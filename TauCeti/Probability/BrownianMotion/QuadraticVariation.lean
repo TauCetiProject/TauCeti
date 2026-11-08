@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.Moments.Chebyshev
+import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
@@ -68,18 +70,37 @@ open TauCeti.Probability
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
   {n : ℕ} {t : Fin (n + 1) → ℝ≥0}
 
+/-- The square of every Brownian increment is square integrable, in either time order. -/
+theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
+    MemLp (fun ω ↦ (B s ω - B t ω) ^ 2) 2 P := by
+  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
+    norm_num [Real.holderTriple_iff])
+  have h := (hB.hasLaw_sub s t).memLp (memLp_id_gaussianReal' 4 (by norm_num))
+  simpa only [pow_two, Pi.mul_def, Pi.sub_def] using
+    (h.mul h : MemLp ((B s - B t) * (B s - B t)) 2 P)
+
+/-- The second moment of a Brownian increment is the elapsed time. -/
+theorem integral_sq_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
+    ∫ ω, (B t ω - B s ω) ^ 2 ∂P = (t : ℝ) - s := by
+  have h := (hB.hasLaw_sub_of_le hst).integral_comp
+    (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
+  simpa only [Function.comp_apply, Pi.sub_apply, integral_sq_gaussianReal,
+    zero_pow two_ne_zero, add_zero, NNReal.coe_sub hst] using h
+
+/-- The fourth moment of a Brownian increment is three times the squared elapsed time. -/
+theorem integral_pow_four_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0}
+    (hst : s ≤ t) : ∫ ω, (B t ω - B s ω) ^ 4 ∂P = 3 * ((t : ℝ) - s) ^ 2 := by
+  have hm : ∫ x : ℝ, x ^ 4 ∂gaussianReal 0 (t - s) = 3 * ((t : ℝ) - s) ^ 2 := by
+    simpa [Nat.doubleFactorial, NNReal.coe_sub hst, mul_comm] using
+      TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal 0 (t - s) 2
+  simpa only [Function.comp_apply, Pi.sub_apply] using
+    ((hB.hasLaw_sub_of_le hst).integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)).trans hm
+
 /-- Every Brownian quadratic sum is square integrable, even on an unordered grid. -/
 theorem memLp_quadraticSum (hB : IsPreBrownianReal B P) (t : Fin (n + 1) → ℝ≥0) :
     MemLp (quadraticSum B t) 2 P := by
-  simp only [quadraticSum_def]
-  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
-    norm_num [Real.holderTriple_iff])
-  refine memLp_finsetSum _ fun i _ ↦ ?_
-  have h := (hB.hasLaw_sub (t i.succ) (t i.castSucc)).memLp
-    (memLp_id_gaussianReal' 4 (by norm_num))
-  simpa only [pow_two, Pi.mul_def, Pi.sub_def] using
-    (h.mul h : MemLp ((B (t i.succ) - B (t i.castSucc)) *
-      (B (t i.succ) - B (t i.castSucc))) 2 P)
+  rw [quadraticSum_def]
+  exact memLp_finsetSum _ fun i _ ↦ hB.memLp_sq_sub (t i.succ) (t i.castSucc)
 
 /-- A Brownian quadratic sum has expectation equal to the elapsed time. -/
 theorem integral_quadraticSum (hB : IsPreBrownianReal B P) (ht : Monotone t) :
@@ -89,32 +110,19 @@ theorem integral_quadraticSum (hB : IsPreBrownianReal B P) (ht : Monotone t) :
   · calc
       _ = ∑ i : Fin n, ((t i.succ : ℝ) - t i.castSucc) := by
         refine sum_congr rfl fun i _ ↦ ?_
-        have h := (hB.hasLaw_sub_of_le (ht (Fin.castSucc_le_succ i))).integral_comp
-          (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
-        simpa only [Function.comp_apply, Pi.sub_apply, integral_sq_gaussianReal,
-          zero_pow two_ne_zero, add_zero, NNReal.coe_sub (ht (Fin.castSucc_le_succ i))] using h
-      _ = _ := by
-        rw [sum_sub_distrib]
-        have h₀ := Fin.sum_univ_succ (fun i ↦ (t i : ℝ))
-        have hₙ := Fin.sum_univ_castSucc (fun i ↦ (t i : ℝ))
-        linarith
+        exact hB.integral_sq_sub_of_le (ht (Fin.castSucc_le_succ i))
+      _ = _ := Fin.sum_univ_succ_sub_castSucc (fun i ↦ (t i : ℝ))
   · intro i _
     exact ((hB.hasLaw_sub (t i.succ) (t i.castSucc)).memLp
       (memLp_id_gaussianReal 2)).integrable_sq
 
-/-- Independence of Brownian increments gives the exact variance of the quadratic sum. -/
+/-- On a nondecreasing grid, the variance of a Brownian quadratic sum is twice the sum
+of the squared interval lengths. -/
 theorem variance_quadraticSum (hB : IsPreBrownianReal B P) (ht : Monotone t) :
     Var[quadraticSum B t; P] =
       2 * ∑ i : Fin n, ((t i.succ : ℝ) - t i.castSucc) ^ 2 := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
-    norm_num [Real.holderTriple_iff])
-  have hL (i : Fin n) : MemLp (fun ω ↦ (B (t i.succ) ω - B (t i.castSucc) ω) ^ 2) 2 P := by
-    have h := (hB.hasLaw_sub (t i.succ) (t i.castSucc)).memLp
-      (memLp_id_gaussianReal' 4 (by norm_num))
-    simpa only [pow_two, Pi.mul_def, Pi.sub_def] using (h.mul h :
-      MemLp ((B (t i.succ) - B (t i.castSucc)) *
-        (B (t i.succ) - B (t i.castSucc))) 2 P)
+  have hL (i : Fin n) := hB.memLp_sq_sub (t i.succ) (t i.castSucc)
   have hind := (hB.hasIndepIncrements n t ht).comp (fun (_ : Fin n) (x : ℝ) ↦ x ^ 2) (by fun_prop)
   have hv := IndepFun.variance_sum (s := univ) (fun i _ ↦ hL i)
     (fun i _ j _ hij ↦ hind.indepFun hij)
@@ -124,19 +132,9 @@ theorem variance_quadraticSum (hB : IsPreBrownianReal B P) (ht : Monotone t) :
   rw [heq, mul_sum]
   refine sum_congr rfl fun i _ ↦ ?_
   rw [variance_eq_sub (hL i)]
-  have hlaw := hB.hasLaw_sub_of_le (ht (Fin.castSucc_le_succ i))
-  have h₂ := hlaw.integral_comp (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
-  have h₄ := hlaw.integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)
-  rw [integral_sq_gaussianReal] at h₂
-  have hm := TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal 0
-    (t i.succ - t i.castSucc) 2
-  norm_num at hm
-  rw [hm] at h₄
-  simp only [NNReal.coe_sub (ht (Fin.castSucc_le_succ i)), zero_pow two_ne_zero,
-    add_zero] at h₂ h₄
-  simp only [Function.comp_apply, Pi.sub_apply] at h₂ h₄
   simp only [Pi.pow_def, ← pow_mul, Nat.reduceMul]
-  rw [h₂, h₄]
+  rw [hB.integral_sq_sub_of_le (ht (Fin.castSucc_le_succ i)),
+    hB.integral_pow_four_sub_of_le (ht (Fin.castSucc_le_succ i))]
   ring
 
 /-- The mean squared error of the Brownian quadratic sum is twice the sum of squared
@@ -154,12 +152,7 @@ theorem integral_sq_quadraticSum_sub_le (hB : IsPreBrownianReal B P) (ht : Monot
     ∫ ω, (quadraticSum B t ω - ((t (Fin.last n) : ℝ) - t 0)) ^ 2 ∂P ≤
       2 * ((t (Fin.last n) : ℝ) - t 0) * δ := by
   rw [hB.integral_sq_quadraticSum_sub ht]
-  have hsum : ∑ i : Fin n, ((t i.succ : ℝ) - t i.castSucc) =
-      (t (Fin.last n) : ℝ) - t 0 := by
-    rw [sum_sub_distrib]
-    have h₀ := Fin.sum_univ_succ (fun i ↦ (t i : ℝ))
-    have hₙ := Fin.sum_univ_castSucc (fun i ↦ (t i : ℝ))
-    linarith
+  have hsum := Fin.sum_univ_succ_sub_castSucc (fun i ↦ (t i : ℝ))
   calc
     _ ≤ 2 * ∑ i : Fin n, (((t i.succ : ℝ) - t i.castSucc) * δ) := by
       gcongr with i
@@ -194,18 +187,14 @@ theorem tendstoInMeasure_quadraticSum (hB : IsPreBrownianReal B P)
     (hδ : Filter.Tendsto δ l (𝓝 0)) :
     TendstoInMeasure P (fun k ↦ quadraticSum B (grid k)) l (fun _ ↦ (b : ℝ) - a) := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hvar : Filter.Tendsto (fun k ↦ Var[quadraticSum B (grid k); P]) l (𝓝 0) := by
-    have h := hB.tendsto_integral_sq_quadraticSum_sub ht ha hb hmesh hδ
-    convert h using 1
-    ext k
-    rw [variance_eq_integral (hB.memLp_quadraticSum (grid k)).aemeasurable,
-      hB.integral_quadraticSum (ht k), ha k, hb k]
   refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-  have hlim := ENNReal.continuous_ofReal.continuousAt.tendsto.comp (hvar.div_const (ε ^ 2))
+  have hlim := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
+    ((hB.tendsto_integral_sq_quadraticSum_sub ht ha hb hmesh hδ).div_const (ε ^ 2))
   simp only [zero_div, ENNReal.ofReal_zero, Function.comp_def] at hlim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
     (fun _ ↦ zero_le) fun k ↦ ?_
-  simpa only [Real.norm_eq_abs, hB.integral_quadraticSum (ht k), ha k, hb k] using
-    meas_ge_le_variance_div_sq (hB.memLp_quadraticSum (grid k)) hε
+  simpa only [Pi.sub_apply, Real.norm_eq_abs, sq_abs] using
+    TauCeti.meas_ge_le_integral_norm_sq_div_sq
+      ((hB.memLp_quadraticSum (grid k)).sub (memLp_const ((b : ℝ) - a))).norm.integrable_sq hε
 
 end ProbabilityTheory.IsPreBrownianReal
