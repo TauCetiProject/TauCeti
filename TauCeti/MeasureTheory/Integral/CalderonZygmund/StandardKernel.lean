@@ -179,8 +179,10 @@ theorem setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow {K : X → X → G} {y
                 (A * ENNReal.ofReal
                   (2 ^ n / (1 - 2 ^ (n - (n + δ))) * (2 * t) ^ (n - (n + δ)))) := by
               gcongr
-              exact setLIntegral_ofReal_dist_rpow_neg_le hμ (by positivity) (by linarith)
-                (by positivity)
+              have h2t : 0 < 2 * t := by positivity
+              exact setLIntegral_ofReal_dist_rpow_neg_le
+                (fun r hr ↦ (measure_mono ball_subset_closedBall).trans (hμ r (h2t.trans hr)))
+                (by positivity) (by linarith) h2t
           _ = A * ENNReal.ofReal (C * (2 ^ n / (2 ^ δ - 1))) := by
               rw [mul_left_comm, ← ENNReal.ofReal_mul (by positivity), hr]
           _ = C * A * ENNReal.ofReal (2 ^ n / (2 ^ δ - 1)) := by
