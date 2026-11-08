@@ -431,12 +431,7 @@ theorem free_singularHomology_of_free_reducedSingularHomology (q : ℕ)
     [Module.Free k ((reducedSingularHomologyFunctor M q).obj X)] [Module.Free k M] :
     Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) := by
   cases q with
-  | zero =>
-    rcases isEmpty_or_nonempty X with hX | hX
-    · have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X) :=
-        ModuleCat.isZero_iff_subsingleton.mp (isZero_singularHomologyFunctor_zero_of_isEmpty M X)
-      infer_instance
-    · exact .of_equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
+  | zero => infer_instance
   | succ q => exact .of_equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv
 
 /-- The singular homology of a space with coefficients in a finitely generated module is finitely
