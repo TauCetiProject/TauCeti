@@ -26,6 +26,11 @@ precomposition with a linear isometry equivalence preserves operator norms in ev
   `μ.map e` satisfies the Poincaré inequality with constant `C` iff `μ` does.
 * `MeasureTheory.Measure.poincareInequality_map_add_right_iff`: for `a : E`, `μ.map (· + a)`
   satisfies the Poincaré inequality with constant `C` iff `μ` does.
+
+## References
+
+* The transport interface is adapted from the
+  [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/65810c73f9dd7945fc646ab484cb19d673f5291d/formalization/FunctionalInequalities/Poincare/SmoothTest/Transport.lean).
 -/
 
 public section
@@ -73,6 +78,7 @@ theorem PoincareInequality.map_linearIsometryEquiv (h : PoincareInequality μ C)
 
 /-- The Poincaré inequality with constant `C` is invariant under pushing the measure forward
 along a linear isometry equivalence. -/
+@[simp]
 theorem poincareInequality_map_linearIsometryEquiv_iff (e : E ≃ₗᵢ[ℝ] F) :
     PoincareInequality (μ.map e) C ↔ PoincareInequality μ C := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map_linearIsometryEquiv e⟩
@@ -93,13 +99,15 @@ theorem PoincareInequality.map_add_right (h : PoincareInequality μ C) (a : E) :
     (contDiff_id.add contDiff_const) fun f x ↦ by rw [fderiv_comp_add_right]
 
 /-- The Poincaré inequality with constant `C` is invariant under translating the measure. -/
+@[simp]
 theorem poincareInequality_map_add_right_iff (a : E) :
     PoincareInequality (μ.map (· + a)) C ↔ PoincareInequality μ C := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map_add_right a⟩
-  have := h.map_add_right (-a)
+  have h' := h.map_add_right (-a)
+  have hcancel : ((· + -a) ∘ (· + a) : E → E) = id :=
+    funext fun x ↦ add_neg_cancel_right x a
   rwa [Measure.map_map (measurable_add_const _) (measurable_add_const _),
-    show ((· + -a) ∘ (· + a) : E → E) = id from funext fun x ↦ add_neg_cancel_right x a,
-    Measure.map_id] at this
+    hcancel, Measure.map_id] at h'
 
 end Translation
 
