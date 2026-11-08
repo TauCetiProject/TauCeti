@@ -83,8 +83,10 @@ private theorem fromSpecQuotient_comp_mapPresheafedSpace (hK : IsAdic K) (hL : I
     exact (comap_quotientInclusion φ hφ hK hL hKL q).symm
   · apply NatTrans.ext
     funext U
+    -- The spectrum and formal-spectrum wrappers require `erw` for component transport.
     erw [NatTrans.comp_app, Functor.whiskerRight_app, PresheafedSpace.comp_c_app,
-      PresheafedSpace.comp_c_app, Category.assoc, specQuotientMap_c_app φ hφ hK hL hKL]
+      PresheafedSpace.comp_c_app, Category.assoc]
+    erw [specQuotientMap_c_app φ hφ hK hL hKL]
     exact congrArg (fun η ↦ η.hom.app U)
       (structureSheafMap_comp_toQuotientSheaf φ hφ (IsAdicRing.ideal_spec B).2.1
         (IsAdicRing.ideal_spec A).2.1 hK hL hKL).symm
@@ -172,14 +174,11 @@ theorem map_injective {φ ψ : B →+* A} {hφ : Continuous φ} {hψ : Continuou
 theorem map_id : map (RingHom.id A) continuous_id = 𝟙 (Spf A) := by
   apply LocallyRingedSpace.Hom.ext'
   rw [map_toHom, LocallyRingedSpace.id_toHom]
-  refine PresheafedSpace.Hom.ext _ _ rfl ?_
-  apply NatTrans.ext
-  funext U
-  erw [NatTrans.comp_app, Functor.whiskerRight_app, eqToHom_app, eqToHom_refl,
-    CategoryTheory.Functor.map_id, Category.comp_id, PresheafedSpace.id_c_app,
-    CategoryTheory.Functor.map_id]
-  exact congrArg (fun η ↦ η.hom.app U)
-    (structureSheafMap_id (IsAdicRing.ideal_spec A).2.1)
+  -- `hext` compares the sheaf maps directly, without componentwise transport along the base.
+  refine PresheafedSpace.hext _ _ rfl (heq_of_eq ?_)
+  have h := structureSheafMap_id (IsAdicRing.ideal_spec A).2.1
+  erw [eqToHom_refl] at h
+  exact congrArg (fun η ↦ η.hom) h
 
 variable {C : Type u} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
   [IsAdicRing C] (ψ : C →+* B) (hψ : Continuous ψ)
@@ -189,13 +188,11 @@ variable {C : Type u} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
 theorem map_comp : map (φ.comp ψ) (hφ.comp hψ) = map φ hφ ≫ map ψ hψ := by
   apply LocallyRingedSpace.Hom.ext'
   rw [LocallyRingedSpace.comp_toHom, map_toHom, map_toHom, map_toHom]
-  refine PresheafedSpace.Hom.ext _ _ rfl ?_
-  apply NatTrans.ext
-  funext U
-  erw [NatTrans.comp_app, Functor.whiskerRight_app, eqToHom_app, eqToHom_refl,
-    CategoryTheory.Functor.map_id, Category.comp_id, PresheafedSpace.comp_c_app]
-  exact congrArg (fun η ↦ η.hom.app U)
-    (structureSheafMap_comp φ hφ ψ hψ (IsAdicRing.ideal_spec C).2.1
-      (IsAdicRing.ideal_spec B).2.1 (IsAdicRing.ideal_spec A).2.1).symm
+  -- As for the identity, `hext` avoids transporting every component separately.
+  refine PresheafedSpace.hext _ _ rfl (heq_of_eq ?_)
+  have h := structureSheafMap_comp φ hφ ψ hψ (IsAdicRing.ideal_spec C).2.1
+    (IsAdicRing.ideal_spec B).2.1 (IsAdicRing.ideal_spec A).2.1
+  erw [eqToHom_refl, Category.comp_id] at h
+  exact congrArg (fun η ↦ η.hom) h.symm
 
 end TauCeti.FormalScheme.Spf

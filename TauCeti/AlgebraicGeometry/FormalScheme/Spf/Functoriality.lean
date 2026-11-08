@@ -63,9 +63,10 @@ theorem quotientMap_comp (hH : IsAdic H) (hK : IsAdic K) (hL : IsAdic L)
   erw [eqToHom_refl, Category.comp_id]
   apply Sheaf.hom_ext
   ext U : 2
+  -- `erw` is needed across the sheaf/presheaf pushforward wrappers.
   erw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-    TopCat.Sheaf.pushforward_map, TopCat.Presheaf.pushforward_map_app',
-    quotientMap_hom_app, quotientMap_hom_app, quotientMap_hom_app]
+    TopCat.Sheaf.pushforward_map, TopCat.Presheaf.pushforward_map_app']
+  erw [quotientMap_hom_app, quotientMap_hom_app, quotientMap_hom_app]
   refine CommRingCat.hom_ext <| (StructureSheaf.comap_comp _ _ _ _ _ _ _).symm.trans
     (StructureSheaf.comap_congr ?_ _ _ _ _)
   exact Ideal.Quotient.ringHom_ext (RingHom.ext fun _ ↦ rfl)
@@ -109,13 +110,34 @@ theorem structureSheafMap_comp (hH : IsAdic H) (hK : IsAdic K) (hL : IsAdic L) :
       (TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap ψ hψ))).map
         ((TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap φ hφ))).map
           (quotientProjection hL n)) := rfl
-  erw [hpush, Category.assoc, ← CategoryTheory.Functor.map_comp,
-    structureSheafMap_comp_quotientProjection φ hφ hK hL hK' n hm,
-    CategoryTheory.Functor.map_comp, ← Category.assoc,
-    structureSheafMap_comp_toQuotientSheaf ψ hψ hH hK hH' hK' hk, Category.assoc,
-    quotientMap_comp φ hφ ψ hψ hH' hK' _ hk hm, eqToHom_refl, Category.comp_id,
-    structureSheafMap_comp_quotientProjection (φ.comp ψ) (hφ.comp hψ) hH hL hH' n
-      (fun _ hx ↦ hm (hk hx))]
+  let F := TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap ψ hψ))
+  have hquot := quotientMap_comp φ hφ ψ hψ hH' hK'
+    (is_ideal_adic_pow hL n.succ_pos) hk hm
+  erw [eqToHom_refl, Category.comp_id] at hquot
+  have hcomp := structureSheafMap_comp_quotientProjection (φ.comp ψ) (hφ.comp hψ)
+    hH hL hH' n (fun _ hx ↦ hm (hk hx))
+  erw [hpush] at hcomp
+  erw [hpush, hcomp]
+  -- Project through the intermediate thickening, then use functoriality on the quotients.
+  calc
+    _ = structureSheafMap ψ hψ hH hK ≫ F.map
+        (structureSheafMap φ hφ hK hL ≫
+          (TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom (comap φ hφ))).map
+            (quotientProjection hL n)) := by
+      erw [Category.assoc, ← Functor.map_comp]
+    _ = structureSheafMap ψ hψ hH hK ≫ F.map
+        (toQuotientSheaf hK hK' ≫ quotientMap φ hφ hK' _ hm) := by
+      rw [structureSheafMap_comp_quotientProjection φ hφ hK hL hK' n hm]
+    _ = (structureSheafMap ψ hψ hH hK ≫ F.map (toQuotientSheaf hK hK')) ≫
+        F.map (quotientMap φ hφ hK' _ hm) := by
+      simp only [Functor.map_comp, Category.assoc]
+    _ = (toQuotientSheaf hH hH' ≫ quotientMap ψ hψ hH' hK' hk) ≫
+        F.map (quotientMap φ hφ hK' _ hm) := by
+      rw [structureSheafMap_comp_toQuotientSheaf ψ hψ hH hK hH' hK' hk]
+    _ = _ := by
+      erw [Category.assoc, hquot]
+      -- Composite and iterated pushforwards have the same sections, as in `hpush`.
+      rfl
 
 end TopologicalRings
 
