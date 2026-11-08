@@ -337,9 +337,9 @@ theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1
   exact (quantile_le_iff μ hs0 hs1).mpr (hst.trans (le_cdf_quantile μ ht1))
 
 /-- The mass strictly to the left of the quantile does not exceed the level: every point below
-the quantile has cumulative mass below the level. Together with `le_cdf_quantile` this traps the
-level between the left limit and the value of the cumulative distribution function at the
-quantile. -/
+the quantile has cumulative mass below the level. For `0 < t < 1`, together with
+`le_cdf_quantile` this traps the level between the left limit and the value of the cumulative
+distribution function at the quantile; the mass bound itself holds for every positive level. -/
 theorem measureReal_Iio_quantile_le (μ : Measure ℝ) [IsProbabilityMeasure μ] (h0 : 0 < t) :
     μ.real (Iio (μ.quantile t)) ≤ t := by
   rcases lt_or_ge t 1 with h1 | h1
