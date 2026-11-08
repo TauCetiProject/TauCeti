@@ -275,14 +275,7 @@ private theorem edgePair_insertLetter_old {j : Fin v.length} {p : Fin n}
         (v.closure.edgePair.apply_ne _) hqe, crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inr]
     simpa using incomingSlot_strandSucc ((i, ε) :: v) 0
   -- Every other arc leaving an old crossing keeps its old successor.
-  have hc : ¬((p = strand i ∨ p = strandSucc i) ∧
-      v.nextCrossing p j = (v.crossingsAt p).head (List.ne_nil_of_mem hj)) := by
-    rintro ⟨hpos, hn⟩
-    rcases hpos with rfl | rfl
-    · refine hxp ((crossing_outgoingSlot_eq_closingHalfEdge_iff v hj hp).mpr ⟨rfl, ?_⟩)
-      exact (v.nextCrossing (strand i)).injective (by simpa using hn)
-    · refine hxq ((crossing_outgoingSlot_eq_closingHalfEdge_iff v hj hq).mpr ⟨rfl, ?_⟩)
-      exact (v.nextCrossing (strandSucc i)).injective (by simpa using hn)
+  have hc := v.not_nextCrossing_eq_head_of_ne_closingHalfEdge i hp hq hj hxp hxq
   have hin {y : Fin (4 * v.length)} (hy : v.closure.orientation y = true) :
       x ≠ v.closure.edgePair.val y :=
     v.closure.ne_edgePair_of_orientation_eq (hx.trans hy.symm)

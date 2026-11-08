@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.Data.ZMod.Divisibility
 
@@ -13,8 +14,8 @@ import TauCeti.Data.ZMod.Divisibility
 
 This file adds to Mathlib's `ZMod.χ₄` and `ZMod.χ₈` the facts that `χ₄` is odd and `χ₈` is even,
 in the form used under reflection `b ↦ b'` with `n ∣ b + b'`, together with `χ₄ a ^ 2 = 1` for odd
-`a`, the normalization `a * χ₄ a ≡ 1 (mod 4)` for odd integers, and the description of the
-zeros of `χ₈`.
+`a`, the normalization `a * χ₄ a ≡ 1 (mod 4)` for odd integers, the description of the
+zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd integers.
 
 ## Main statements
 
@@ -23,6 +24,7 @@ zeros of `χ₈`.
   natural numbers `b`, `b'` with `4 ∣ b + b'`, respectively `8 ∣ b + b'`.
 * `ZMod.int_mul_χ₄_modEq_one`: sign-normalizing an odd integer gives `1` modulo `4`.
 * `ZMod.χ₈_intCast_eq_zero_iff`: `χ₈ a = 0` exactly when `a` is even.
+* `ZMod.χ₈_intCast_eq_negOnePow`: `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd `a`.
 -/
 
 public section
@@ -67,5 +69,30 @@ theorem int_mul_χ₄_modEq_one {m : ℤ} (hm : Odd m) : m * χ₄ m ≡ 1 [ZMOD
 theorem χ₈_intCast_eq_zero_iff (a : ℤ) : χ₈ a = 0 ↔ 2 ∣ a := by
   rw [χ₈_int_eq_if_mod_eight, Int.dvd_iff_emod_eq_zero]
   split_ifs <;> simp_all
+
+/-- For odd `a`, `χ₈ a = (-1) ^ ((a² - 1) / 8)`, the classical form of the second supplement to
+quadratic reciprocity. -/
+theorem χ₈_intCast_eq_negOnePow {a : ℤ} (ha : Odd a) :
+    (χ₈ a : ℤ) = ((a ^ 2 - 1) / 8).negOnePow := by
+  -- Write `a = 8 m + r` with `r ∈ {1, 3, 5, 7}` and compute `(a² - 1) / 8` in each case.
+  obtain ⟨m, r, hr0, hr8, rfl⟩ : ∃ m r : ℤ, 0 ≤ r ∧ r < 8 ∧ a = 8 * m + r :=
+    ⟨a / 8, a % 8, Int.emod_nonneg _ (by norm_num), Int.emod_lt_of_pos _ (by norm_num), by omega⟩
+  have hdiv (c : ℤ) (h : (8 * m + r) ^ 2 - 1 = 8 * c) : ((8 * m + r) ^ 2 - 1) / 8 = c := by
+    rw [h, Int.mul_ediv_cancel_left _ (by norm_num)]
+  have hr : r = 1 ∨ r = 3 ∨ r = 5 ∨ r = 7 := by
+    obtain ⟨t, ht⟩ := ha
+    omega
+  rw [χ₈_int_eq_if_mod_eight]
+  rcases hr with rfl | rfl | rfl | rfl
+  · rw [hdiv (8 * m ^ 2 + 2 * m) (by ring), Int.negOnePow_even _ ⟨4 * m ^ 2 + m, by ring⟩]
+    split_ifs <;> first | rfl | omega
+  · rw [hdiv (8 * m ^ 2 + 6 * m + 1) (by ring), Int.negOnePow_odd _ ⟨4 * m ^ 2 + 3 * m, by ring⟩]
+    split_ifs <;> first | rfl | omega
+  · rw [hdiv (8 * m ^ 2 + 10 * m + 3) (by ring),
+      Int.negOnePow_odd _ ⟨4 * m ^ 2 + 5 * m + 1, by ring⟩]
+    split_ifs <;> first | rfl | omega
+  · rw [hdiv (8 * m ^ 2 + 14 * m + 6) (by ring),
+      Int.negOnePow_even _ ⟨4 * m ^ 2 + 7 * m + 3, by ring⟩]
+    split_ifs <;> first | rfl | omega
 
 end ZMod

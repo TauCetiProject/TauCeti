@@ -53,10 +53,8 @@ def IsCollared (f : N → M) : Prop := ∃ c, IsCollar f c
 /-- The identity map on the product is the canonical collar of its zero slice. -/
 theorem isCollar_prodMkLeft :
     IsCollar ((fun x : N => (x, ⟨0, by norm_num⟩)) : N → N × Ico (0 : ℝ) 1)
-      (id : N × Ico (0 : ℝ) 1 → N × Ico (0 : ℝ) 1) := by
-  refine ⟨IsOpenEmbedding.id, ?_⟩
-  intro x
-  rfl
+      (id : N × Ico (0 : ℝ) 1 → N × Ico (0 : ℝ) 1) :=
+  ⟨.id, fun _ => rfl⟩
 
 /-- The canonical product zero slice admits a collar. -/
 theorem isCollared_prodMkLeft :
@@ -75,12 +73,8 @@ include h
 theorem isCollared : IsCollared f := ⟨c, h⟩
 
 /-- The boundary map of a global collar is an embedding. -/
-theorem isEmbedding : IsEmbedding f := by
-  have heq : f = c ∘ fun x : N => (x, ⟨0, by norm_num⟩) := by
-    funext x
-    exact (h.apply_zero x).symm
-  rw [heq]
-  exact h.isOpenEmbedding.isEmbedding.comp (isEmbedding_prodMkLeft _)
+theorem isEmbedding : IsEmbedding f :=
+  funext h.apply_zero ▸ h.isOpenEmbedding.isEmbedding.comp (isEmbedding_prodMkLeft _)
 
 /-- The boundary map of a global collar is injective. -/
 theorem injective : Function.Injective f := h.isEmbedding.injective
@@ -106,57 +100,31 @@ theorem image_prod_singleton_zero :
 
 /-- Pulling back the boundary parameter along an open embedding preserves collar data. -/
 theorem comp_isOpenEmbedding {e : P → N} (he : IsOpenEmbedding e) :
-    IsCollar (f ∘ e) (c ∘ Prod.map e id) := by
-  refine ⟨h.isOpenEmbedding.comp (he.prodMap IsOpenEmbedding.id), ?_⟩
-  intro x
-  simpa [Function.comp_apply] using h.apply_zero (e x)
+    IsCollar (f ∘ e) (c ∘ Prod.map e id) :=
+  ⟨h.isOpenEmbedding.comp (he.prodMap .id), fun x => h.apply_zero (e x)⟩
 
 /-- Reparametrizing the depth coordinate by an open embedding that fixes zero preserves a
 collar. -/
 theorem reparam_isOpenEmbedding {e : Ico (0 : ℝ) 1 → Ico (0 : ℝ) 1}
     (he : IsOpenEmbedding e) (he_zero : e ⟨0, by norm_num⟩ = ⟨0, by norm_num⟩) :
-    IsCollar f (c ∘ Prod.map id e) := by
-  refine ⟨h.isOpenEmbedding.comp (IsOpenEmbedding.id.prodMap he), ?_⟩
-  intro x
-  simpa [Function.comp_apply, he_zero] using h.apply_zero x
+    IsCollar f (c ∘ Prod.map id e) :=
+  ⟨h.isOpenEmbedding.comp (IsOpenEmbedding.id.prodMap he), fun x => by
+    simp [he_zero, h.apply_zero]⟩
 
 /-- Shrinking the depth of a collar by a factor in `(0,1]` preserves collar data. -/
 theorem scale (r : ℝ) (hr : r ∈ Ioc (0 : ℝ) 1) :
     IsCollar f (c ∘ Prod.map id fun t : Ico (0 : ℝ) 1 =>
       ⟨r * t, mul_nonneg hr.1.le t.2.1,
         (mul_le_of_le_one_left t.2.1 hr.2).trans_lt t.2.2⟩) := by
-  let er : Ico (0 : ℝ) 1 ≃ₜ Ico (0 : ℝ) r :=
-    (Homeomorph.mulLeft₀ r hr.1.ne').sets <| by
-      ext x
-      have hx := Set.ext_iff.mp
-        ((OrderIso.mulLeft₀ r hr.1).toOrderEmbedding.preimage_Ico (0 : ℝ) 1) x
-      simpa only [Set.mem_preimage, Homeomorph.coe_mulLeft₀,
-        OrderIso.coe_toOrderEmbedding, OrderIso.mulLeft₀_apply, mul_zero, mul_one] using hx.symm
-  have hsubset : Ico (0 : ℝ) r ⊆ Ico (0 : ℝ) 1 := Set.Ico_subset_Ico_right hr.2
-  have hopen : IsOpen {x : Ico (0 : ℝ) 1 | (x : ℝ) ∈ Ico (0 : ℝ) r} := by
-    have heq : {x : Ico (0 : ℝ) 1 | (x : ℝ) ∈ Ico (0 : ℝ) r} =
-        ((↑) : Ico (0 : ℝ) 1 → ℝ) ⁻¹' Iio r := by
-      ext x
-      simp [x.2.1]
-    rw [heq]
-    exact isOpen_Iio.preimage continuous_subtype_val
-  have he : IsOpenEmbedding (Set.inclusion hsubset ∘ er) :=
-    (IsOpenEmbedding.inclusion hsubset hopen).comp er.isOpenEmbedding
-  have er_coe (x : Ico (0 : ℝ) 1) : (er x : ℝ) = r * x :=
-    congrFun (Homeomorph.coe_mulLeft₀ r hr.1.ne') x
-  have he_zero :
-      (Set.inclusion hsubset ∘ er) ⟨0, by norm_num⟩ = ⟨0, by norm_num⟩ := by
-    apply Subtype.ext
-    simpa only [Function.comp_apply, Set.inclusion_mk, mul_zero] using
-      er_coe ⟨0, by norm_num⟩
-  have he_eq : (Set.inclusion hsubset ∘ er) = fun t : Ico (0 : ℝ) 1 =>
-      ⟨r * t, mul_nonneg hr.1.le t.2.1,
-        (mul_le_of_le_one_left t.2.1 hr.2).trans_lt t.2.2⟩ := by
-    funext t
-    apply Subtype.ext
-    simpa only [Function.comp_apply, Set.inclusion_mk] using er_coe t
-  convert h.reparam_isOpenEmbedding he he_zero using 1
-  exact congrArg (fun e => c ∘ Prod.map id e) he_eq.symm
+  refine h.reparam_isOpenEmbedding ⟨.of_comp (by fun_prop) continuous_subtype_val
+    ((Homeomorph.mulLeft₀ r hr.1.ne').isEmbedding.comp .subtypeVal), ?_⟩ (Subtype.ext (mul_zero r))
+  -- The range of `t ↦ r * t` is the open set of depths below `r`.
+  convert (isOpen_Iio (a := r)).preimage continuous_subtype_val
+  ext y
+  refine ⟨?_, fun hy => ⟨⟨y / r, div_nonneg y.2.1 hr.1.le, (div_lt_one hr.1).2 hy⟩,
+    Subtype.ext (mul_div_cancel₀ _ hr.1.ne')⟩⟩
+  rintro ⟨t, rfl⟩
+  exact mul_lt_of_lt_one_right hr.1 t.2.2
 
 /-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
 theorem comp_homeomorph (e : P ≃ₜ N) :
@@ -165,10 +133,8 @@ theorem comp_homeomorph (e : P ≃ₜ N) :
 
 /-- Open embeddings of the ambient space carry collars to collars. -/
 theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
-    IsCollar (g ∘ f) (g ∘ c) where
-  isOpenEmbedding := hg.comp h.isOpenEmbedding
-  apply_zero x := by
-    simpa only [Function.comp_apply] using congrArg g (h.apply_zero x)
+    IsCollar (g ∘ f) (g ∘ c) :=
+  ⟨hg.comp h.isOpenEmbedding, fun x => congrArg g (h.apply_zero x)⟩
 
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :
@@ -224,7 +190,7 @@ theorem isLocallyCollared_iff : IsLocallyCollared f ↔
 
 /-- A collared map is locally collared: the global collar serves as a local collar everywhere. -/
 theorem IsCollared.isLocallyCollared (h : IsCollared f) : IsLocallyCollared f := by
-  obtain ⟨c, hc⟩ := isCollared_iff.1 h
+  obtain ⟨c, hc⟩ := h
   exact fun x => ⟨univ, isOpen_univ, mem_univ x, _, hc.restrict isOpen_univ,
     fun p hp => congrArg Subtype.val (hc.preimage_range.subset hp).2⟩
 
@@ -236,18 +202,15 @@ theorem IsLocallyCollared.continuous (h : IsLocallyCollared f) : Continuous f :=
 
 namespace IsLocallyCollared
 
-variable {N' : Type*} [TopologicalSpace N']
-
 /-- Precomposing a locally collared map with an open embedding keeps it locally collared. -/
 theorem comp_isOpenEmbedding (h : IsLocallyCollared f) {e : P → N} (he : IsOpenEmbedding e) :
     IsLocallyCollared (f ∘ e) := by
   intro x
   obtain ⟨U, hU, hxU, c, hc, hc0⟩ := h (e x)
-  refine ⟨e ⁻¹' U, hU.preimage he.continuous, hxU, _,
-    hc.comp_isOpenEmbedding (U.restrictPreimage_isOpenEmbedding he), fun p hp => ?_⟩
   -- The image of `f ∘ e` lies in the image of `f`, so the old local collar condition applies.
-  obtain ⟨y, hy⟩ := hp
-  exact hc0 _ ⟨e y, hy⟩
+  exact ⟨e ⁻¹' U, hU.preimage he.continuous, hxU, _,
+    hc.comp_isOpenEmbedding (U.restrictPreimage_isOpenEmbedding he),
+    fun p ⟨y, hy⟩ => hc0 _ ⟨e y, hy⟩⟩
 
 /-- Local collaring is inherited by the restriction to an open subset of the domain. -/
 theorem restrict (h : IsLocallyCollared f) {U : Set N} (hU : IsOpen U) :
@@ -255,7 +218,7 @@ theorem restrict (h : IsLocallyCollared f) {U : Set N} (hU : IsOpen U) :
   h.comp_isOpenEmbedding hU.isOpenEmbedding_subtypeVal
 
 /-- Local collaring is invariant under homeomorphisms of the domain. -/
-theorem comp_homeomorph (h : IsLocallyCollared f) (e : N' ≃ₜ N) :
+theorem comp_homeomorph (h : IsLocallyCollared f) (e : P ≃ₜ N) :
     IsLocallyCollared (f ∘ e) :=
   h.comp_isOpenEmbedding e.isOpenEmbedding
 
@@ -264,10 +227,9 @@ theorem isOpenEmbedding_comp {g : M → P} (h : IsLocallyCollared f) (hg : IsOpe
     IsLocallyCollared (g ∘ f) := by
   intro x
   obtain ⟨U, hU, hxU, c, hc, hc0⟩ := h x
-  refine ⟨U, hU, hxU, g ∘ c, hc.isOpenEmbedding_comp hg, fun p hp => hc0 p ?_⟩
   -- `g` is injective, so `g (c p) = g (f y)` forces `c p = f y`.
-  obtain ⟨y, hy⟩ := hp
-  exact ⟨y, hg.injective hy⟩
+  exact ⟨U, hU, hxU, g ∘ c, hc.isOpenEmbedding_comp hg,
+    fun p ⟨y, hy⟩ => hc0 p ⟨y, hg.injective hy⟩⟩
 
 end IsLocallyCollared
 
