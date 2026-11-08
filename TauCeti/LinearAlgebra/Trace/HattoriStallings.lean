@@ -85,6 +85,19 @@ theorem hattoriStallingsTrace_comp_comm {ι κ : Type*} [Fintype ι] [Fintype κ
   apply (Submodule.Quotient.eq _).mpr
   exact TauCeti.mul_sub_mul_mem_commutatorSubmodule ℤ R _ _
 
+/-- Cyclicity computed in finite free retracts, without finiteness assumptions on the
+modules between which the maps are defined. -/
+theorem hattoriStallingsTrace_retract_comp_comm
+    {F G : Type*} [AddCommGroup F] [Module R F] [AddCommGroup G] [Module R G]
+    {ι κ : Type*} [Fintype ι] [Fintype κ] (b : Basis ι R F) (c : Basis κ R G)
+    (i : M →ₗ[R] F) (r : F →ₗ[R] M) (hr : r ∘ₗ i = .id)
+    (j : N →ₗ[R] G) (s : G →ₗ[R] N) (hs : s ∘ₗ j = .id)
+    (f : M →ₗ[R] N) (g : N →ₗ[R] M) :
+    b.hattoriStallingsTrace (i ∘ₗ (g ∘ₗ f) ∘ₗ r) =
+      c.hattoriStallingsTrace (j ∘ₗ (f ∘ₗ g) ∘ₗ s) := by
+  have h := hattoriStallingsTrace_comp_comm b c (j ∘ₗ f ∘ₗ r) (i ∘ₗ g ∘ₗ s)
+  simpa only [comp_assoc, ← comp_assoc _ j s, hs, id_comp, ← comp_assoc _ i r, hr] using h
+
 /-- The diagonal trace on a finite free retract is independent of the retract and its basis.
 The retraction equations are essential: an arbitrary pair of maps is not retract data. -/
 theorem hattoriStallingsTrace_retract_eq
@@ -94,8 +107,8 @@ theorem hattoriStallingsTrace_retract_eq
     (j : M →ₗ[R] G) (s : G →ₗ[R] M) (hs : s ∘ₗ j = .id) (f : Module.End R M) :
     b.hattoriStallingsTrace (i ∘ₗ f ∘ₗ r) =
       c.hattoriStallingsTrace (j ∘ₗ f ∘ₗ s) := by
-  have h := hattoriStallingsTrace_comp_comm b c (j ∘ₗ f ∘ₗ r) (i ∘ₗ s)
-  simpa only [comp_assoc, ← comp_assoc _ j s, hs, id_comp, ← comp_assoc _ i r, hr] using h
+  simpa only [id_comp, comp_id] using
+    hattoriStallingsTrace_retract_comp_comm b c i r hr j s hs f .id
 
 end Module.Basis
 
@@ -120,16 +133,30 @@ def hattoriStallingsTrace [Module.Finite R M] [Module.Projective R M] :
       map_zero' := by simp
       map_add' := fun f g ↦ by simp [add_comp, comp_add] }
 
+/-- The chosen retract satisfies its retraction equation and computes the canonical trace. -/
+private theorem exists_hattoriStallingsTrace_retract [Module.Finite R M]
+    [Module.Projective R M] :
+    ∃ (n : ℕ) (r : (Fin n → R) →ₗ[R] M) (i : M →ₗ[R] Fin n → R),
+      r ∘ₗ i = .id ∧ ∀ f : Module.End R M,
+        hattoriStallingsTrace R M f =
+          (Pi.basisFun R (Fin n)).hattoriStallingsTrace (i ∘ₗ f ∘ₗ r) := by
+  classical
+  -- Isolate the existential projections used to choose the data in the definition.
+  let h := Module.Finite.exists_comp_eq_id_of_projective R M
+  obtain ⟨-, -, hr⟩ := h.choose_spec.choose_spec.choose_spec
+  refine ⟨h.choose, h.choose_spec.choose, h.choose_spec.choose_spec.choose, hr, ?_⟩
+  intro f
+  -- Evaluation of the additive-hom composite on the same chosen data is definitional.
+  rfl
+
 /-- Compute the Hattori–Stallings trace in any finite free retract, with any finite basis. -/
 theorem hattoriStallingsTrace_eq_of_retract [Module.Finite R M] [Module.Projective R M]
     {F : Type*} [AddCommGroup F] [Module R F] {ι : Type*} [Fintype ι] (b : Basis ι R F)
     (i : M →ₗ[R] F) (r : F →ₗ[R] M) (hr : r ∘ₗ i = .id) (f : Module.End R M) :
     hattoriStallingsTrace R M f = b.hattoriStallingsTrace (i ∘ₗ f ∘ₗ r) := by
-  classical
-  unfold hattoriStallingsTrace
-  exact Basis.hattoriStallingsTrace_retract_eq _ b _ _
-    (Module.Finite.exists_comp_eq_id_of_projective R M).choose_spec.choose_spec.choose_spec.2.2
-    i r hr f
+  obtain ⟨n, s, j, hs, htrace⟩ := exists_hattoriStallingsTrace_retract (R := R) (M := M)
+  rw [htrace]
+  exact Basis.hattoriStallingsTrace_retract_eq (Pi.basisFun R (Fin n)) b j s hs i r hr f
 
 /-- On a finite free module the Hattori–Stallings trace is its diagonal sum in any basis. -/
 theorem hattoriStallingsTrace_eq_of_basis [Module.Finite R M] [Module.Projective R M]
@@ -145,9 +172,8 @@ theorem hattoriStallingsTrace_comp_comm [Module.Finite R M] [Module.Projective R
   obtain ⟨n, s, j, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective R N
   rw [hattoriStallingsTrace_eq_of_retract (Pi.basisFun R (Fin m)) i r hr,
     hattoriStallingsTrace_eq_of_retract (Pi.basisFun R (Fin n)) j s hs]
-  have h := Basis.hattoriStallingsTrace_comp_comm (Pi.basisFun R (Fin m))
-    (Pi.basisFun R (Fin n)) (j ∘ₗ f ∘ₗ r) (i ∘ₗ g ∘ₗ s)
-  simpa only [comp_assoc, ← comp_assoc _ j s, hs, id_comp, ← comp_assoc _ i r, hr] using h
+  exact Basis.hattoriStallingsTrace_retract_comp_comm (Pi.basisFun R (Fin m))
+    (Pi.basisFun R (Fin n)) i r hr j s hs f g
 
 /-- The universal trace is invariant under conjugation. -/
 @[simp]
@@ -225,8 +251,7 @@ theorem hattoriStallingsTrace_eq_projectiveTrace (f : Module.End R M) :
   obtain ⟨n, r, i, -, -, hr⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
   let b := Pi.basisFun R (Fin n)
   have h : projectiveTrace R (Fin n → R) (i ∘ₗ f ∘ₗ r) = projectiveTrace R M f := by
-    have ht := projectiveTrace_cyclic r (i ∘ₗ f)
-    simpa only [comp_assoc, ← comp_assoc _ i r, hr, id_comp] using ht
+    rw [← comp_assoc, projectiveTrace_cyclic r, ← comp_assoc, hr, id_comp]
   rw [hattoriStallingsTrace_eq_of_retract b i r hr, Basis.hattoriStallingsTrace_apply, ← h,
     projectiveTrace_eq_trace, trace_eq_matrix_trace R b]
   simp only [Matrix.trace, Matrix.diag_apply, LinearMap.toMatrix_apply]
