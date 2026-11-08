@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Topology.Algebra.UnitaryGroup
 public import Mathlib.Topology.Connected.PathConnected
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Group.BallSphere
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
-import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import TauCeti.LinearAlgebra.OrthogonalGroup
 
@@ -48,6 +49,12 @@ continuous in the operator-norm topology.
   group is path-connected.
 * `TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq`: two real orthogonal matrices are joined by
   a path of orthogonal matrices exactly when they have the same determinant.
+* `TauCeti.Matrix.continuousOn_reflectionMatrix`: the reflection in a nonzero vector depends
+  continuously on the vector.
+* `TauCeti.sphereRotation`: for unit vectors `b` and `y ≠ -b` of `ℝᴺ`, the reflection in `b`
+  followed by the reflection in `b + y`, a rotation taking `b` to `y`
+  (`TauCeti.sphereRotation_mulVec`) that depends continuously on `y`
+  (`TauCeti.continuousOn_sphereRotation`).
 * `TauCeti.exists_path_linearIsometryEquiv_of_det_eq`: two linear isometries of Euclidean space
   with the same determinant are joined by an operator-norm-continuous path of linear isometries.
 
@@ -118,9 +125,11 @@ private lemma refl_mul_refl_mem {u w : ι → ℝ} (hu : u ≠ 0) (hw : w ≠ 0)
     TauCeti.det_reflectionMatrix (refl_hc hw)]
   norm_num
 
-private lemma continuousOn_refl : ContinuousOn (refl (ι := ι)) {u | u ≠ 0} := by
-  rw [show refl (ι := ι) = fun u ↦ 1 - vecMulVec ((2 / (u ⬝ᵥ u)) • u) u from
-    funext fun u ↦ TauCeti.reflectionMatrix_eq_one_sub_vecMulVec u _]
+/-- The reflection matrix `u ↦ 1 - (2 / (u ⬝ᵥ u)) • vecMulVec u u` in the hyperplane orthogonal to
+`u` depends continuously on the nonzero vector `u`. -/
+theorem continuousOn_reflectionMatrix :
+    ContinuousOn (fun u : ι → ℝ ↦ TauCeti.reflectionMatrix u (2 / (u ⬝ᵥ u))) {u | u ≠ 0} := by
+  simp only [TauCeti.reflectionMatrix_eq_one_sub_vecMulVec]
   have hc : ContinuousOn (fun u : ι → ℝ ↦ (2 / (u ⬝ᵥ u)) • u) {u | u ≠ 0} :=
     (continuousOn_const.div (continuous_id.dotProduct continuous_id).continuousOn
       fun u hu ↦ mt dotProduct_self_eq_zero.1 hu).smul continuousOn_id
@@ -153,7 +162,7 @@ private lemma joined_one_refl_mul_refl {u w : ι → ℝ} (hu : u ≠ 0) (hw : w
     field_simp
     linear_combination hi
   have hcont : Continuous fun t : I ↦ refl ((1 - (t : ℝ)) • w + (t : ℝ) • u) :=
-    continuousOn_refl.comp_continuous (by fun_prop) hσ
+    continuousOn_reflectionMatrix.comp_continuous (by fun_prop) hσ
   refine ⟨{
     toFun := fun t ↦ ⟨refl u * refl ((1 - (σ t : ℝ)) • w + (σ t : ℝ) • u),
       refl_mul_refl_mem hu (hσ (σ t))⟩
@@ -225,7 +234,86 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
 
 end TauCeti.Matrix
 
+/-! ### Rotations taking one unit vector to another -/
+
 namespace TauCeti
+
+section Rotation
+
+open _root_.Matrix Metric
+
+variable {N : ℕ}
+
+/-- The rotation taking a unit vector `b` to a unit vector `y ≠ -b`: the reflection in `b`
+followed by the reflection in `b + y`. For `y = -b` it is defined to be the identity, which does
+not take `b` to `-b`. -/
+noncomputable def sphereRotation (b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+    specialOrthogonalGroup (Fin N) ℝ :=
+  if h : y = -b then 1 else
+    reflectionPair (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))
+      (WithLp.ofLp (b : EuclideanSpace ℝ (Fin N)))
+      (2 / (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
+        WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))) 2
+      (div_mul_cancel₀ _ <| by
+        rw [EuclideanSpace.dotProduct_ofLp_self]
+        exact pow_ne_zero 2 (norm_ne_zero_iff.2 (coe_add_coe_ne_zero h)))
+      (by rw [EuclideanSpace.dotProduct_ofLp_self, norm_eq_of_mem_sphere]; norm_num)
+
+/-- At the antipode `-b`, `sphereRotation b (-b)` is defined to be the identity as a fallback; it
+does not take `b` to `-b`. -/
+@[simp]
+theorem sphereRotation_neg_self (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+    sphereRotation b (-b) = 1 := by
+  simp [sphereRotation]
+
+/-- Away from the antipode of `b`, `sphereRotation b y` is the product of the reflections in
+`b + y` and in `b`. -/
+theorem coe_sphereRotation_of_ne {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
+    (sphereRotation b y : Matrix (Fin N) (Fin N) ℝ) =
+      reflectionMatrix
+          (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))
+          (2 / (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
+            WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))) *
+        reflectionMatrix (WithLp.ofLp (b : EuclideanSpace ℝ (Fin N))) 2 := by
+  simp only [sphereRotation, h, ↓reduceDIte, coe_reflectionPair]
+
+/-- The rotation `sphereRotation b y` takes `b` to `y` when `y ≠ -b`. -/
+theorem sphereRotation_mulVec {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
+    (sphereRotation b y : Matrix (Fin N) (Fin N) ℝ) *ᵥ WithLp.ofLp (b : EuclideanSpace ℝ (Fin N)) =
+      WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)) := by
+  have hunit (x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+      WithLp.ofLp (x : EuclideanSpace ℝ (Fin N)) ⬝ᵥ WithLp.ofLp (x : EuclideanSpace ℝ (Fin N)) =
+        1 := by
+    rw [EuclideanSpace.dotProduct_ofLp_self, norm_eq_of_mem_sphere, one_pow]
+  have hv : WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
+      WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ≠ 0 := by
+    rw [EuclideanSpace.dotProduct_ofLp_self]
+    exact pow_ne_zero 2 (norm_ne_zero_iff.2 (coe_add_coe_ne_zero h))
+  rw [coe_sphereRotation_of_ne h, ← mulVec_mulVec]
+  rw [WithLp.ofLp_add] at hv ⊢
+  exact reflectionMatrix_add_mulVec_reflectionMatrix_mulVec (hunit b) (hunit y) hv
+
+/-- The rotation `sphereRotation b y` depends continuously on `y` away from `-b`. -/
+theorem continuousOn_sphereRotation (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+    ContinuousOn (sphereRotation b) {-b}ᶜ := by
+  rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
+  have hv : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1 ↦
+      WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) := by fun_prop
+  have hR : ContinuousOn (fun y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1 ↦
+      reflectionMatrix
+        (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))
+        (2 / (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
+          WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))))
+      {-b}ᶜ :=
+    TauCeti.Matrix.continuousOn_reflectionMatrix.comp hv.continuousOn fun y hy h0 ↦
+      coe_add_coe_ne_zero hy (by simpa using congrArg (WithLp.toLp 2) h0)
+  have hM := (continuous_id.matrix_mul (continuous_const
+    (y := reflectionMatrix (WithLp.ofLp (b : EuclideanSpace ℝ (Fin N))) 2))).comp_continuousOn hR
+  exact hM.congr fun y hy ↦ coe_sphereRotation_of_ne hy
+
+end Rotation
+
+/-! ### Paths of linear isometries -/
 
 open unitInterval
 
