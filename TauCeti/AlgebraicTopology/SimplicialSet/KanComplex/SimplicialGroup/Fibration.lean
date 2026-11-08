@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.EpiMono
+public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
+public import Mathlib.CategoryTheory.Adjunction.Evaluation
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup.Basic
 
@@ -46,29 +49,64 @@ variable {X Y : SSet.{u}} [∀ n, Group (X.obj n)] [∀ n, Group (Y.obj n)]
 
 include hX hp
 
+-- Literal degreewise kernels keep the correction internal to this proof, without a second
+-- public kernel API. Naturality at one supplies the needed target map law even though no
+-- compatibility of the target operators with multiplication is assumed.
+private def groupKernel : SSet.{u} :=
+  let q (n) : X.obj n →* Y.obj n := MonoidHom.mk' (p.app n) (hp n)
+  let xm {m n} (f : m ⟶ n) : X.obj m →* X.obj n := MonoidHom.mk' (X.map f) (hX f)
+  { obj n := (q n).ker
+    map f := ↾fun x ↦ ⟨X.map f x, by
+      have hp1 n : p.app n 1 = 1 := (q n).map_one
+      have hx1 : X.map f 1 = 1 := (xm f).map_one
+      have hy : Y.map f 1 = 1 := by
+        simpa only [hp1, hx1] using (p.naturality_apply f 1).symm
+      exact (q _).mem_ker.mpr (by
+        have hx : p.app _ x.val = 1 := (q _).mem_ker.mp x.property
+        exact (p.naturality_apply f x.val).trans (by simpa only [hx] using hy))⟩
+    map_id n := by ext x; exact congr_hom (X.map_id n) x.val
+    map_comp f g := by ext x; exact congr_hom (X.map_comp f g) x.val }
+
+private instance groupKernelGroup (n : SimplexCategoryᵒᵖ) :
+    Group ((groupKernel p hX hp).obj n) :=
+  inferInstanceAs (Group (MonoidHom.mk' (p.app n) (hp n)).ker)
+
+private instance groupKernelKanComplex : SSet.KanComplex (groupKernel p hX hp) :=
+  SSet.kanComplex_of_group fun _ _ f x y ↦ Subtype.ext (hX f x.val y.val)
+
+-- Fill the discrepancy in the kernel; this is the only use of Moore's theorem in the lift.
+private lemma exists_horn_correction {n : ℕ} (i : Fin (n + 2))
+    (a : (SSet.horn (n + 1) i : SSet) ⟶ X) (z : Δ[n + 1] ⟶ X)
+    (h : ∀ m t, p.app m (a.app m t) = p.app m (z.app m t.val)) :
+    ∃ c : Δ[n + 1] ⟶ groupKernel p hX hp,
+      ∀ m t, (c.app m t.val).val = a.app m t * (z.app m t.val)⁻¹ := by
+  let q (m) : X.obj m →* Y.obj m := MonoidHom.mk' (p.app m) (hp m)
+  let d : (SSet.horn (n + 1) i : SSet) ⟶ groupKernel p hX hp :=
+    { app m := ↾fun t ↦ ⟨a.app m t * (z.app m t.val)⁻¹, by
+        exact (q m).mem_ker.mpr (by
+          rw [map_mul, map_inv, mul_inv_eq_one]
+          exact h m t)⟩
+      naturality m l f := by
+        ext t
+        dsimp [groupKernel]
+        apply Subtype.ext
+        dsimp only [Subtype.coe_mk]
+        rw [hX f]
+        have hinv (v : X.obj m) : X.map f v⁻¹ = (X.map f v)⁻¹ :=
+          map_inv (MonoidHom.mk' (X.map f) (hX f)) v
+        rw [hinv]
+        simp only [← NatTrans.naturality_apply]
+        -- The horn map restricts the standard-simplex map, so their underlying simplices
+        -- agree definitionally after forgetting horn membership.
+        rfl }
+  obtain ⟨c, hc⟩ := SSet.KanComplex.hornFilling d
+  exact ⟨c, fun m t ↦ (congrArg Subtype.val (congr_hom (NatTrans.congr_app hc m) t)).symm⟩
+
 /-- A degreewise surjective map of simplicial sets with compatible group structures is a Kan
 fibration. Surjectivity is only required in positive degrees, where horn fillers live. -/
 theorem fibration_of_group_of_surjective
     (hs : ∀ n : ℕ, Function.Surjective (p.app (Opposite.op ⦋n + 1⦌))) : Fibration p := by
   let q (n) : X.obj n →* Y.obj n := MonoidHom.mk' (p.app n) (hp n)
-  let xm {m n} (f : m ⟶ n) : X.obj m →* X.obj n := MonoidHom.mk' (X.map f) (hX f)
-  -- Use the literal degreewise kernels so that a discrepancy is an element of the kernel.
-  let K : SSet.{u} :=
-    { obj n := (q n).ker
-      map f := ↾fun x ↦ ⟨X.map f x, by
-        calc
-          p.app _ (X.map f x.val) = Y.map f (p.app _ x.val) :=
-            congr_hom (p.naturality f) x.val
-          _ = Y.map f (p.app _ 1) :=
-            congrArg (Y.map f) (x.property.trans (q _).map_one.symm)
-          _ = p.app _ (X.map f 1) := (congr_hom (p.naturality f) 1).symm
-          _ = p.app _ 1 := congrArg (p.app _) (xm f).map_one
-          _ = 1 := (q _).map_one⟩
-      map_id n := by ext x; exact congr_hom (X.map_id n) x.val
-      map_comp f g := by ext x; exact congr_hom (X.map_comp f g) x.val }
-  let (n : SimplexCategoryᵒᵖ) : Group (K.obj n) := inferInstanceAs (Group ((q n).ker))
-  have : SSet.KanComplex K := SSet.kanComplex_of_group fun _ _ f x y ↦
-    Subtype.ext (hX f x.val y.val)
   rw [SSet.modelCategoryQuillen.fibration_iff]
   intro A B i hi
   simp only [SSet.modelCategoryQuillen.J, MorphismProperty.iSup_iff] at hi
@@ -82,25 +120,11 @@ theorem fibration_of_group_of_surjective
     dsimp only [z]
     rw [Equiv.apply_symm_apply]
     exact hx
-  -- The discrepancy a * z⁻¹ has trivial image, by commutativity of the lifting square.
-  let d : (SSet.horn (n + 1) i : SSet) ⟶ K :=
-    { app m := ↾fun t ↦ ⟨a.app m t * (z.app m t.val)⁻¹, by
-        have h := congr_hom (NatTrans.congr_app sq.w m) t
-        have h' := congr_hom (NatTrans.congr_app hz m) t.val
-        simp only [NatTrans.comp_app, types_comp_apply] at h h'
-        exact (q m).mem_ker.mpr (by
-          rw [map_mul, map_inv, mul_inv_eq_one]
-          exact h.trans h'.symm)⟩
-      naturality m l f := by
-        ext t
-        dsimp [K]
-        rw [hX f]
-        have hinv (v) := (xm f).map_inv v
-        dsimp [xm, MonoidHom.mk'] at hinv
-        rw [hinv]
-        simp only [← NatTrans.naturality_apply]
-        rfl }
-  obtain ⟨c, hc⟩ := SSet.KanComplex.hornFilling d
+  obtain ⟨c, hc⟩ := exists_horn_correction p hX hp i a z (by
+    intro m t
+    have h := congr_hom (NatTrans.congr_app sq.w m) t
+    have h' := congr_hom (NatTrans.congr_app hz m) t.val
+    exact h.trans h'.symm)
   -- Multiplying the kernel filler on the left recovers a on the horn and still maps to b.
   let l : Δ[n + 1] ⟶ _ :=
     { app m := ↾fun t ↦ (c.app m t).val * z.app m t
@@ -112,11 +136,7 @@ theorem fibration_of_group_of_surjective
           (congrArg Subtype.val (NatTrans.naturality_apply c f t)) }
   refine ⟨⟨{ l := l, fac_left := ?_, fac_right := ?_ }⟩⟩
   · ext m t
-    have h := congrArg Subtype.val (congr_hom (NatTrans.congr_app hc m) t)
-    dsimp [d] at h
-    dsimp [l]
-    rw [← h]
-    exact inv_mul_cancel_right _ _
+    exact (congrArg (· * z.app m t.val) (hc m t)).trans (inv_mul_cancel_right _ _)
   · ext m t
     exact (q m).map_mul _ _ |>.trans (by
       rw [(q m).mem_ker.mp (c.app m t).property, one_mul]
@@ -174,6 +194,22 @@ theorem fibration_whiskerRight_forget_moduleCat_of_surjective
   (Functor.whiskerRight p (forget (ModuleCat R))).fibration_of_addGroup_of_surjective
     (fun _ _ f x y ↦ map_add (G.map f).hom x y)
     (fun n x y ↦ map_add (p.app n).hom x y) hs
+
+/-- Epimorphisms of simplicial groups are Kan fibrations after forgetting the group
+structure. -/
+instance fibration_whiskerRight_forget_grpCat_of_epi
+    {G H : SimplicialObject GrpCat.{u}} (p : G ⟶ H) [Epi p] :
+    Fibration (Functor.whiskerRight p (forget GrpCat)) :=
+  p.fibration_whiskerRight_forget_grpCat_of_surjective fun _ ↦
+    (GrpCat.epi_iff_surjective _).1 ((NatTrans.epi_iff_epi_app' GrpCat p).1 inferInstance _)
+
+/-- Epimorphisms of simplicial abelian groups are Kan fibrations after forgetting the
+abelian group structure. -/
+instance fibration_whiskerRight_forget_addCommGrpCat_of_epi
+    {G H : SimplicialObject AddCommGrpCat.{u}} (p : G ⟶ H) [Epi p] :
+    Fibration (Functor.whiskerRight p (forget AddCommGrpCat)) :=
+  p.fibration_whiskerRight_forget_addCommGrpCat_of_surjective fun _ ↦
+    (AddCommGrpCat.epi_iff_surjective _).1 ((NatTrans.epi_iff_epi_app p).1 inferInstance _)
 
 /-- Epimorphisms of simplicial modules are Kan fibrations after forgetting the module
 structure. In particular this applies to cokernel projections. -/
