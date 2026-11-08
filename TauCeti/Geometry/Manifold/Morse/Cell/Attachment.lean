@@ -200,7 +200,8 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
       fun t ↦ c + (-a + t ^ 2 * b) - μ (a + 2 * (t ^ 2 * b)) := by
     filter_upwards [(e.symm.continuous.comp (continuous_const.prodMk (continuous_id.smul
       continuous_const))).continuousAt.preimage_mem_nhds ((ψ i).open_target.mem_nhds hLt)] with t ht
-    simpa [L, e, norm_smul, mul_pow] using (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
+    simpa [L, e, a, b, γ, φ, norm_smul, mul_pow] using
+      (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
   have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
   have hg := ((hq.const_add (-a)).const_add c).sub
     (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
