@@ -18,9 +18,8 @@ separated filtration, with the whole group at degree zero.
 
 The carrier is the preimage of Mathlib's `GrpCat.sectionsSubgroup` under reindexing from
 natural numbers to their opposite category. The categorical comparison uses
-`GrpCat.limitConeIsLimit`. The proof of surjectivity at every order applies
-`CategoryTheory.Limits.Types.surjective_π_app_zero_of_surjective_map` to a tail starting at the
-specified order.
+`GrpCat.limitConeIsLimit`. If every successive transition is surjective, every projection is
+surjective, and quotienting by the degree-`k+1` filtration term recovers the order-`k` group.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f`,
