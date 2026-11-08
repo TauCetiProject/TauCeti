@@ -11,7 +11,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Analytic maps on manifolds, read in charts
