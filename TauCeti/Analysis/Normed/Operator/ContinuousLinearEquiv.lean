@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import TauCeti.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 
 /-!
 # Normalizing continuous linear equivalences
+
+The file also bounds the inverse of a continuous real-linear equivalence from a quadratic lower
+bound on the equivalence itself.
 
 Rescaling a continuous linear equivalence `T` between normed spaces by a nonzero scalar does not
 change `‖T‖ * ‖T⁻¹‖`. Using Mathlib's `rescale_to_shell`, every equivalence from a nonzero space
@@ -50,5 +54,24 @@ theorem exists_norm_le_one_and_norm_symm_le [Nontrivial E] {c : 𝕜} (hc : 1 < 
       _ = _ := by ring
   · rw [hU, hUs, norm_smul, norm_smul, norm_inv]
     field_simp
+
+end ContinuousLinearEquiv
+
+namespace ContinuousLinearEquiv
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F]
+
+/-- A quadratic lower bound `λ ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2` with `0 < λ` on a continuous real-linear
+equivalence `e` bounds its inverse: `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
+theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[ℝ] F) {lam : ℝ} (hlam : 0 < lam)
+    (h : ∀ y, lam * ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2) (x : F) : ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖ := by
+  -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
+  have hx := h (e.symm x)
+  rw [e.apply_symm_apply] at hx
+  rw [← Real.sqrt_inv]
+  refine Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg x) ?_
+  rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
+  exact hx
 
 end ContinuousLinearEquiv
