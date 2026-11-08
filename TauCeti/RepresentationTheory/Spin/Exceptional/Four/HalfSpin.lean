@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.MatrixProd
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
+public import TauCeti.RepresentationTheory.Spin.HalfSpin.Standard
 public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Intertwining
@@ -36,34 +37,6 @@ namespace TauCeti
 open Module CliffordAlgebra
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
-
-/-- The even half-spin subrepresentation is isomorphic to the standard representation of the first
-factor, when the first factor of `f` records the matrices of the even half-spin action in the
-basis `bplus`. -/
-private theorem nonempty_equiv_stdSLRep_fst_of_matrix_eq
-    (P : SpinPolarizationData Q) (hline : P.line = ⊥)
-    (f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K ×
-      Matrix.SpecialLinearGroup (Fin 2) K)
-    (bplus : Basis (Fin 2) K (spinPlus Q P))
-    (hfactor : ∀ g : spinGroup Q, ((f g).1 : Matrix (Fin 2) (Fin 2) K) =
-      LinearMap.toMatrix bplus bplus (spinPlusAction Q P hline (spinGroupToEven Q g))) :
-    Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
-      ((stdSLRep K 2).comp ((MonoidHom.fst _ _).comp f.toMonoidHom))) := by
-  let ep : spinPlus Q P ≃ₗ[K] (spinPlusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
-  refine ⟨Representation.Equiv.ofBasisAction _
-    ((stdSLRep K 2).comp ((MonoidHom.fst _ _).comp f.toMonoidHom)) ep.symm bplus
-    (fun g ↦ spinPlusAction Q P hline (spinGroupToEven Q g)) ?_ ?_⟩
-  · intro g s
-    apply Subtype.ext
-    simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-      (coe_spinPlusAction_spinGroupToEven_apply P hline g (ep.symm s)).symm
-  · intro g s
-    simp only [MonoidHom.comp_apply, MonoidHom.coe_fst, MulEquiv.coe_toMonoidHom,
-      stdSLRep_apply_apply]
-    rw [hfactor g]
-    exact LinearMap.toMatrix_mulVec_repr bplus bplus
-      (spinPlusAction Q P hline (spinGroupToEven Q g)) s
 
 /-- The odd half-spin subrepresentation is isomorphic to the standard representation of the second
 factor, when the second factor of `f` records the matrices of the odd half-spin action in the
@@ -142,8 +115,8 @@ theorem
     rw [he] at h
     exact h
   refine ⟨hline, f, ?_, ?_⟩
-  · exact nonempty_equiv_stdSLRep_fst_of_matrix_eq P hline f bplus
-      fun g ↦ congrArg Prod.fst (hmatrix g)
+  · exact nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline bplus
+      ((MonoidHom.fst _ _).comp f.toMonoidHom) fun g ↦ congrArg Prod.fst (hmatrix g)
   · exact nonempty_equiv_stdSLRep_snd_of_matrix_eq P hline f bminus
       fun g ↦ congrArg Prod.snd (hmatrix g)
 
