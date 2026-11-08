@@ -93,11 +93,16 @@ theorem flowOf_eq_globalFlow : flowOf v = globalFlow v hv hcomplete := by
   funext t x
   rw [flowOf_apply, globalFlow_apply]
 
+omit [CompleteSpace E] in
 /-- For a complete `C¹` vector field, the time-`(-t)` map of the maximal flow inverts the time-`t`
 map. -/
 theorem flowOf_flowOf_neg (t : ℝ) (x : M) : flowOf v t (flowOf v (-t) x) = x := by
-  rw [flowOf_eq_globalFlow hv hcomplete, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
+  rw [flowOf_apply, flowOf_apply,
+    ← maximalIntegralCurve_add hv (hcomplete.mem_maximalIntegralCurveInterval x (-t))
+      (hcomplete.mem_maximalIntegralCurveInterval x (-t + t)),
+    neg_add_cancel, maximalIntegralCurve_zero (hcomplete.mem_maximalIntegralCurveInterval x 0)]
 
+omit [CompleteSpace E] in
 /-- For a complete `C¹` vector field, the time-`t` map of the maximal flow is surjective. -/
 theorem flowOf_surjective (t : ℝ) : Function.Surjective (flowOf v t) :=
   fun x ↦ ⟨flowOf v (-t) x, flowOf_flowOf_neg hv hcomplete t x⟩
