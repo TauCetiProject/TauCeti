@@ -39,9 +39,9 @@ theorem support_hypergeometricMeasure (N K n : ℕ) :
     (hypergeometricMeasure N K n).support =
       if K ≤ N ∧ n ≤ N then Icc (n - (N - K)) (min K n) else ∅ := by
   split_ifs with h
-  · ext k
-    rw [Measure.mem_support_iff_measure_singleton_ne_zero,
-      hypergeometricMeasure_singleton_ne_zero_iff h.1 h.2]
+  · rw [Measure.support_eq_setOf_singleton_ne_zero]
+    ext k
+    rw [mem_ofPred_eq, hypergeometricMeasure_singleton_ne_zero_iff h.1 h.2]
     simp only [mem_Icc, le_min_iff]
     omega
   · simp [hypergeometricMeasure_eq_zero_of_invalid h]
