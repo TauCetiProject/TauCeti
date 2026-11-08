@@ -612,7 +612,7 @@ private lemma tendsto_mul_tsum_rpow_mul_indicator (hμ0 : ∀ j, 0 ≤ μ j) (h�
     have hη : 0 < η := div_pos (by linarith) (by linarith)
     have hLη : L * η < b - L * (1 - a) := by
       rw [mul_div_assoc', div_lt_iff₀ (by linarith)]; nlinarith
-    obtain ⟨Q, hQ, hQint⟩ := exists_polynomial_ge_indicator ha0 ha1.le hη
+    obtain ⟨Q, hQ, hQint⟩ := exists_polynomial_ge_indicator ha1.le hη
     have hlt : L * ∫ u in (0 : ℝ)..1, Q.eval u < b := by nlinarith
     filter_upwards [(tendsto_mul_tsum_rpow_mul_eval hμ0 hsum hζ Q).eventually (gt_mem_nhds hlt),
       self_mem_nhdsWithin] with ε h1 (hε : 0 < ε)

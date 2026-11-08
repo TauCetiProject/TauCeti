@@ -108,9 +108,15 @@ private lemma le_integral_ramp {b w : ℝ} (hw : 0 < w) (hb0 : 0 ≤ b) (hbw : b
 
 /-- A polynomial above the indicator of `[a, 1]` on `[0, 1]`, with integral at most
 `1 - a + η`. -/
-theorem exists_polynomial_ge_indicator {a η : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (hη : 0 < η) :
+theorem exists_polynomial_ge_indicator {a η : ℝ} (ha1 : a ≤ 1) (hη : 0 < η) :
     ∃ Q : ℝ[X], (∀ u ∈ Set.Icc (0 : ℝ) 1, (if a ≤ u then (1 : ℝ) else 0) ≤ Q.eval u) ∧
       ∫ u in (0 : ℝ)..1, Q.eval u ≤ 1 - a + η := by
+  rcases le_or_gt a 0 with ha0 | ha0
+  · refine ⟨C 1, fun u _ ↦ ?_, ?_⟩
+    · rw [eval_C]
+      split_ifs <;> norm_num
+    · simp only [eval_C, intervalIntegral.integral_const, sub_zero, smul_eq_mul, mul_one]
+      linarith
   set w := min (η / 3) a
   have hw : 0 < w := lt_min (by positivity) ha0
   have hwa : w ≤ a := min_le_right _ _
