@@ -176,11 +176,12 @@ Fitting's lemma (`TauCeti.isLocalRing_end_of_indecomposable`), since their endom
 finite-dimensional space (`TauCeti.QuiverRep.finiteDimensional_hom`). -/
 instance isKrullSchmidt_isFinDim :
     IsKrullSchmidt (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :=
-  isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct (IsFinDim.{u, v, w, t} k Q) fun M hM ↦ by
-    obtain ⟨n, P, hP, hPfin, e⟩ := exists_indecomposable_iso_biproduct M hM
-    refine ⟨n, P, fun i ↦ ?_, e⟩
-    have := finiteDimensional_hom (hPfin i) (hPfin i)
-    exact _root_.TauCeti.isLocalRing_end_of_indecomposable (R := k) (hP i)
+  ObjectProperty.isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct
+    (IsFinDim.{u, v, w, t} k Q) fun M hM ↦ by
+      obtain ⟨n, P, hP, hPfin, e⟩ := exists_indecomposable_iso_biproduct M hM
+      refine ⟨n, P, fun i ↦ ?_, e⟩
+      have := finiteDimensional_hom (hPfin i) (hPfin i)
+      exact _root_.TauCeti.isLocalRing_end_of_indecomposable (R := k) (hP i)
 
 end QuiverRep
 

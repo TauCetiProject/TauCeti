@@ -161,12 +161,13 @@ finite length and hence local endomorphism rings by Fitting's lemma
 (`TauCeti.indecomposable_iff_isLocalRing_end`). -/
 instance isKrullSchmidt_isFiniteLength :
     IsKrullSchmidt (ModuleCat.isFiniteLength.{v} A).FullSubcategory :=
-  isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct _ fun X hX ↦ by
-    have := (isFiniteLength_iff_isNoetherian_isArtinian.1 ((X.isFiniteLength_iff).1 hX)).2
-    obtain ⟨n, P, hP, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct X
-    -- Each summand is a retract of `X`, so it has finite length.
-    refine ⟨n, P, fun i ↦ (indecomposable_iff_isLocalRing_end (P i) ?_).1 (hP i), ⟨e⟩⟩
-    exact ((P i).isFiniteLength_iff).1 ((ModuleCat.isFiniteLength A).prop_of_retract
-      ⟨biproduct.ι P i ≫ e.inv, e.hom ≫ biproduct.π P i, by simp⟩ hX)
+  (ModuleCat.isFiniteLength.{v} A).isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct
+    fun X hX ↦ by
+      have := (isFiniteLength_iff_isNoetherian_isArtinian.1 ((X.isFiniteLength_iff).1 hX)).2
+      obtain ⟨n, P, hP, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct X
+      -- Each summand is a retract of `X`, so it has finite length.
+      refine ⟨n, P, fun i ↦ (indecomposable_iff_isLocalRing_end (P i) ?_).1 (hP i), ⟨e⟩⟩
+      exact ((P i).isFiniteLength_iff).1 ((ModuleCat.isFiniteLength A).prop_of_retract
+        ⟨biproduct.ι P i ≫ e.inv, e.hom ≫ biproduct.π P i, by simp⟩ hX)
 
 end TauCeti

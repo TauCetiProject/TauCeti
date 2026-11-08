@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 public import TauCeti.CategoryTheory.Functor.LocalEnd
-public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
 /-!
@@ -22,12 +22,11 @@ Krull-Schmidt category closed under finite biproducts and summands is Krull-Schm
 
 ## Main results
 
-* `CategoryTheory.ObjectProperty.hasFiniteBiproducts_fullSubcategory`: a full subcategory closed
-  under finite products has finite biproducts.
-* `TauCeti.isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct`: the full subcategory is
-  Krull-Schmidt when its objects decompose in `C` into objects with local endomorphism rings.
-* `TauCeti.isKrullSchmidt_fullSubcategory`: a full subcategory of a Krull-Schmidt category closed
-  under finite biproducts and summands is Krull-Schmidt.
+* `CategoryTheory.ObjectProperty.isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct`: the full
+  subcategory is Krull-Schmidt when its objects decompose in `C` into objects with local
+  endomorphism rings.
+* `CategoryTheory.ObjectProperty.isKrullSchmidt_fullSubcategory`: a full subcategory of a
+  Krull-Schmidt category closed under finite biproducts and summands is Krull-Schmidt.
 
 ## References
 
@@ -41,13 +40,9 @@ open CategoryTheory CategoryTheory.Limits
 
 variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C] (P : ObjectProperty C)
 
-/-- A full subcategory of a preadditive category with finite biproducts, closed under finite
-products, has finite biproducts. -/
-instance CategoryTheory.ObjectProperty.hasFiniteBiproducts_fullSubcategory
-    [P.IsClosedUnderFiniteProducts] : HasFiniteBiproducts P.FullSubcategory :=
-  .of_hasFiniteProducts
+namespace CategoryTheory.ObjectProperty
 
-namespace TauCeti
+open TauCeti
 
 /-- **Krull-Schmidt full subcategories.** Let `P` be closed under finite products and retracts. If
 every object of `P` is isomorphic in `C` to a finite biproduct of objects with local endomorphism
@@ -71,7 +66,7 @@ under finite products (equivalently, finite biproducts) and retracts (direct sum
 Krull-Schmidt. -/
 instance isKrullSchmidt_fullSubcategory [IsKrullSchmidt C] [P.IsClosedUnderFiniteProducts]
     [P.IsStableUnderRetracts] : IsKrullSchmidt P.FullSubcategory :=
-  isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct P fun X _ ↦
+  P.isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct fun X _ ↦
     IsKrullSchmidt.exists_iso_biproduct X
 
-end TauCeti
+end CategoryTheory.ObjectProperty

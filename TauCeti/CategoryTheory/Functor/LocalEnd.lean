@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
-public import TauCeti.CategoryTheory.Preadditive.Endomorphism
+public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -102,14 +102,8 @@ theorem nonempty_iso_obj_iff_of_isLocalRing_end [IsLocalRing (End X)] [IsLocalRi
 /-- **A fully faithful additive functor preserves and reflects local endomorphism rings**: it
 identifies the ring `End X` with `End (F.obj X)`. -/
 theorem isLocalRing_end_obj_iff [F.Full] [F.Faithful] (X : C) :
-    IsLocalRing (End (F.obj X)) ↔ IsLocalRing (End X) := by
-  let e : End X ≃+* End (F.obj X) := RingEquiv.ofBijective (F.mapEndRingHom X)
-    ⟨fun f g h ↦ End.ext (F.map_injective (by simpa using congrArg End.asHom h)),
-      F.mapEndRingHom_surjective X⟩
-  constructor <;> intro
-  · have : Nontrivial (End X) := e.toEquiv.nontrivial
-    exact IsLocalRing.of_surjective' e.symm.toRingHom e.symm.surjective
-  · have : Nontrivial (End (F.obj X)) := e.symm.toEquiv.nontrivial
-    exact IsLocalRing.of_surjective' e.toRingHom e.surjective
+    IsLocalRing (End (F.obj X)) ↔ IsLocalRing (End X) :=
+  let e := (FullyFaithful.ofFullyFaithful F).ringEquivEnd X
+  ⟨fun _ ↦ e.symm.isLocalRing, fun _ ↦ e.isLocalRing⟩
 
 end CategoryTheory.Functor
