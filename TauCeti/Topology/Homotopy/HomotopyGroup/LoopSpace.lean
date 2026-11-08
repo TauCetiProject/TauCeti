@@ -52,6 +52,8 @@ concatenation in the matching direction.
   the latter for Mathlib's loop space `Ω X x`.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
   `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space.
+* `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
+  `Ω (Ω X x) (Path.refl x)` are the elements of `π₂(X, x)`.
 
 ## References
 
@@ -528,5 +530,29 @@ theorem forall_subsingleton_homotopyGroup_doubleLoopSpace_iff (x : X) :
   (forall_subsingleton_homotopyGroup_loopSpace_iff (Path.refl x)).trans
     (forall_congr' fun n ↦
       (pathLoopSpaceMulEquiv (X := X) (x := x) n).toEquiv.subsingleton_congr)
+
+/-- **The path components of the double loop space are the second homotopy group.** The
+component of a double loop `γ` is sent to the class of `γ` under the loop-space shift. -/
+noncomputable def zerothHomotopyDoubleLoopSpaceEquiv (x : X) :
+    ZerothHomotopy (Ω (Ω X x) (Path.refl x)) ≃ π_ 2 X x :=
+  zerothHomotopyLoopSpaceEquivFundamentalGroup.trans fundamentalGroupLoopSpaceMulEquiv.toEquiv
+
+/-- The component of a double loop `γ` is the image of its homotopy class under
+`fundamentalGroupLoopSpaceMulEquiv`. -/
+@[simp]
+theorem zerothHomotopyDoubleLoopSpaceEquiv_mk (x : X) (γ : Ω (Ω X x) (Path.refl x)) :
+    zerothHomotopyDoubleLoopSpaceEquiv x (.mk γ) =
+      fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk γ)) :=
+  congrArg fundamentalGroupLoopSpaceMulEquiv (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ)
+
+/-- The component of the constant double loop is the identity of `π₂(X, x)`. -/
+-- `high` priority: `simp` does not reduce the right-hand side of the general `_mk` lemma to `1`.
+@[simp high]
+theorem zerothHomotopyDoubleLoopSpaceEquiv_mk_refl (x : X) :
+    zerothHomotopyDoubleLoopSpaceEquiv x
+        (.mk (Path.refl (Path.refl x) : Ω (Ω X x) (Path.refl x))) = 1 := by
+  rw [zerothHomotopyDoubleLoopSpaceEquiv_mk]
+  -- the class of the constant path is the identity of the fundamental group
+  exact fundamentalGroupLoopSpaceMulEquiv.map_one
 
 end TauCeti
