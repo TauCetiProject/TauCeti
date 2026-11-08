@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Idempotents.Hom
+public import TauCeti.RingTheory.Idempotents.Corner.Local
 public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
-public import TauCeti.RingTheory.Idempotents.Corner.Jacobson
 public import TauCeti.RingTheory.Jacobson.Semiperfect
 
 /-!
@@ -22,9 +21,8 @@ The proof lifts idempotents one at a time, as the definition of semiperfectness 
 not need to lift a whole orthogonal family.
 
 * Write `1 = ē₁ + ⋯ + ēₙ` in `A ⧸ J(A)` with orthogonal primitive idempotents, and lift each `ēᵢ`
-  to an idempotent `eᵢ`. The corner `eᵢAeᵢ` is local: its radical quotient is the corner
-  `ēᵢ(A ⧸ J(A))ēᵢ` (`IsIdempotentElem.cornerQuotientJacobsonEquiv`), which is local by Fitting's
-  lemma, and a ring is local when its radical quotient is, since units lift modulo the radical.
+  to an idempotent `eᵢ`. The corner `eᵢAeᵢ` is local
+  (`IsIdempotentElem.isLocalRing_corner_of_isPrimitiveIdempotent_mk`).
 * The lifts need not be orthogonal, but the sum map `⨁ Aeᵢ ⟶ A` is an isomorphism. It is onto, as
   its image contains `∑ eᵢ`, which is `1` modulo the radical and so a unit. Its kernel `K` is a
   finitely generated direct summand, as `A` is projective, and every element of `K` has components
@@ -33,17 +31,8 @@ not need to lift a whole orthogonal family.
 * The idempotents of the decomposition `A = ⨁ Aeᵢ` are orthogonal, and generate the same left
   ideals, so their images modulo the radical are again primitive and their corners local.
 
-## Main definitions
-
-* `TauCeti.endSpanSingletonRingEquiv`: the endomorphism ring of `Ae` is the opposite of `eAe`.
-
 ## Main results
 
-* `TauCeti.isLocalHom_mk_jacobson`: units lift modulo the Jacobson radical.
-* `TauCeti.IsPrimitiveIdempotent.isLocalRing_corner`: a primitive idempotent of an Artinian and
-  Noetherian ring has a local corner.
-* `TauCeti.isLocalRing_corner_of_isPrimitiveIdempotent_mk`: an idempotent whose image modulo the
-  radical is primitive has a local corner, when the radical quotient is semisimple.
 * `TauCeti.IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corner`: **in a
   semiperfect ring, `1` is a sum of orthogonal idempotents with local corners.**
 
@@ -59,94 +48,11 @@ public section
 
 namespace TauCeti
 
-open MulOpposite
 open scoped DirectSum
 
 universe u
 
 variable {A : Type u} [Ring A]
-
-/-- The endomorphism ring of the left ideal `Ae` is the opposite of the corner `eAe`: an
-endomorphism is right multiplication by its value at `e`. -/
-noncomputable def endSpanSingletonRingEquiv {e : A} (he : IsIdempotentElem e) :
-    Module.End A (Ideal.span {e} : Ideal A) ≃+* he.Cornerᵐᵒᵖ where
-  toFun φ := op ⟨(φ (spanSingletonGenerator e) : A), (Subsemigroup.mem_corner_iff he).2
-    ⟨by simpa using (coe_apply_eq_mul_apply_generator he φ (spanSingletonGenerator e)).symm,
-      by
-        obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp (φ (spanSingletonGenerator e)).2
-        rw [← ha, mul_assoc, he.eq]⟩⟩
-  invFun c :=
-    { toFun y := ⟨(y : A) * (unop c).1, by
-        rw [← IsIdempotentElem.corner_val_mul he (unop c), ← mul_assoc]
-        exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self e)⟩
-      map_add' y z := Subtype.ext (add_mul (y : A) (z : A) _)
-      map_smul' a y := Subtype.ext (mul_assoc a (y : A) _) }
-  left_inv φ := LinearMap.ext fun y ↦ Subtype.ext
-    (coe_apply_eq_mul_apply_generator he φ y).symm
-  -- The value of right multiplication by `c` at the generator `e` is `e c = c`.
-  right_inv c := unop_injective <| Subtype.ext <| by simp; rfl
-  map_mul' φ ψ := by
-    apply unop_injective
-    apply Subtype.ext
-    exact coe_apply_eq_mul_apply_generator he φ (ψ (spanSingletonGenerator e))
-  map_add' _ _ := (rfl)
-
-/-- **Units lift modulo the Jacobson radical**: the quotient map `A → A ⧸ J(A)` is a local
-homomorphism. -/
-instance isLocalHom_mk_jacobson : IsLocalHom (Ideal.Quotient.mk (Ring.jacobson A)) where
-  map_nonunit a ha := by
-    obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (↑ha.unit⁻¹ : A ⧸ Ring.jacobson A)
-    -- `ab ≡ 1` and `ba ≡ 1` modulo the radical, so `ab` and `ba` are units.
-    have hunit {x : A} (hx : Ideal.Quotient.mk (Ring.jacobson A) x = 1) : IsUnit x := by
-      have hmem : x - 1 ∈ Ring.jacobson A := by
-        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hx, map_one, sub_self]
-      simpa using (Ring.mem_jacobson_iff_isUnit_one_add_mul_left.1 hmem) 1
-    obtain ⟨u, hu⟩ := hunit (x := a * b) (by simp [hb])
-    obtain ⟨v, hv⟩ := hunit (x := b * a) (by simp [hb])
-    -- A right inverse `b u⁻¹` and a left inverse `v⁻¹ b` of `a` agree.
-    have hr : a * (b * ↑u⁻¹) = 1 := by rw [← mul_assoc, ← hu, Units.mul_inv]
-    have hl : (↑v⁻¹ * b) * a = 1 := by rw [mul_assoc, ← hv, Units.inv_mul]
-    have hlr : ↑v⁻¹ * b = b * ↑u⁻¹ := by
-      calc ↑v⁻¹ * b = (↑v⁻¹ * b) * (a * (b * ↑u⁻¹)) := by rw [hr, mul_one]
-        _ = ((↑v⁻¹ * b) * a) * (b * ↑u⁻¹) := by simp only [mul_assoc]
-        _ = b * ↑u⁻¹ := by rw [hl, one_mul]
-    exact isUnit_iff_exists.2 ⟨b * ↑u⁻¹, hr, by rw [← hlr, hl]⟩
-
-/-- A ring is local when its opposite ring is, the converse of Mathlib's instance on `Rᵐᵒᵖ`. -/
-theorem isLocalRing_of_isLocalRing_op (R : Type*) [Ring R] [IsLocalRing Rᵐᵒᵖ] : IsLocalRing R :=
-  have : Nontrivial R := unop_injective.nontrivial
-  IsLocalRing.of_surjective' (RingEquiv.opOp R).symm.toRingHom (RingEquiv.opOp R).symm.surjective
-
-/-- The corner `eAe` is local when the endomorphism ring of the left ideal `Ae` is. -/
-theorem isLocalRing_corner_of_isLocalRing_end {e : A} (he : IsIdempotentElem e)
-    [IsLocalRing (Module.End A (Ideal.span {e} : Ideal A))] : IsLocalRing he.Corner :=
-  have : Nontrivial he.Cornerᵐᵒᵖ := (endSpanSingletonRingEquiv he).injective.nontrivial
-  have : IsLocalRing he.Cornerᵐᵒᵖ := IsLocalRing.of_surjective'
-    (endSpanSingletonRingEquiv he).toRingHom (endSpanSingletonRingEquiv he).surjective
-  isLocalRing_of_isLocalRing_op _
-
-/-- **A primitive idempotent of an Artinian and Noetherian ring has a local corner**, by Fitting's
-lemma for the left ideal `Ae`, which has finite length. -/
-theorem IsPrimitiveIdempotent.isLocalRing_corner [IsArtinianRing A] [IsNoetherianRing A] {e : A}
-    (he : IsPrimitiveIdempotent e) : IsLocalRing he.isIdempotentElem.Corner := by
-  have hfin : IsFiniteLength A (Ideal.span {e} : Ideal A) :=
-    isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
-  have := (isPrimitiveIdempotent_iff_isLocalRing_end he.isIdempotentElem hfin).1 he
-  exact isLocalRing_corner_of_isLocalRing_end he.isIdempotentElem
-
-/-- **An idempotent whose image modulo the Jacobson radical is primitive has a local corner**, when
-the radical quotient is semisimple: the radical quotient of the corner `eAe` is the corner of the
-image of `e`, which is local, and a ring is local when its radical quotient is. -/
-theorem isLocalRing_corner_of_isPrimitiveIdempotent_mk [IsSemisimpleRing (A ⧸ Ring.jacobson A)]
-    {e : A} (he : IsIdempotentElem e)
-    (hp : IsPrimitiveIdempotent (Ideal.Quotient.mk (Ring.jacobson A) e)) :
-    IsLocalRing he.Corner := by
-  have : IsLocalRing (he.map (Ideal.Quotient.mk (Ring.jacobson A))).Corner := hp.isLocalRing_corner
-  have : Nontrivial (he.Corner ⧸ Ring.jacobson he.Corner) :=
-    he.cornerQuotientJacobsonEquiv.symm.injective.nontrivial
-  have : IsLocalRing (he.Corner ⧸ Ring.jacobson he.Corner) := IsLocalRing.of_surjective'
-    he.cornerQuotientJacobsonEquiv.symm.toRingHom he.cornerQuotientJacobsonEquiv.symm.surjective
-  exact (Ideal.Quotient.mk (Ring.jacobson he.Corner)).domain_isLocalRing
 
 /-- **In a semiperfect ring, `1` is a sum of orthogonal idempotents with local corners.**
 Primitive idempotents of the semisimple radical quotient are lifted one at a time; the lifts need
@@ -229,7 +135,7 @@ theorem IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_corne
       rw [Ideal.map_span, Set.image_singleton]
     rw [← hmap, DirectSum.span_singleton_idempotent, hmap]
     exact congrArg (fun y ↦ Ideal.span {y}) (hπe i)
-  refine isLocalRing_corner_of_isPrimitiveIdempotent_mk _
+  refine (hf.idem i).isLocalRing_corner_of_isPrimitiveIdempotent_mk
     ((isPrimitiveIdempotent_iff_isIndecomposableModule ((hf.idem i).map π)).2 ?_)
   rw [hspan]
   exact (hprim i).isIndecomposableModule
