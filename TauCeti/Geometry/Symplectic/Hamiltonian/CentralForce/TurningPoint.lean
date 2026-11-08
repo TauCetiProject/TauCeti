@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Radial
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.RadialAction
-import TauCeti.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Function.Jacobian.OneDim
 
 /-!
 # Radial motion between simple turning points
