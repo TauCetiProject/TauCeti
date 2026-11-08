@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.CriticalHessian
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Hessians of squared norms at zeros
@@ -43,12 +42,10 @@ theorem hessian_norm_sq_comp_of_eq_zero
   have hfd := hf.mdifferentiableAt (by norm_num)
   have hcrit : mvfderiv I (fun q ↦ ‖f q‖ ^ 2) p = 0 := by
     ext a
-    rw [show (fun q ↦ ‖f q‖ ^ 2) = (fun z : F ↦ ‖z‖ ^ 2) ∘ f from rfl,
-      mvfderiv_comp_apply_of_differentiableAt
-        ((contDiff_norm_sq ℝ (n := 2)).differentiable (by norm_num)).differentiableAt hfd,
-      fderiv_norm_sq_apply, hzero]
-    simp
-    rfl
+    simpa only [Function.comp_def, fderiv_norm_sq_apply, hzero, map_zero, smul_zero,
+      zero_apply] using
+      mvfderiv_comp_apply_of_differentiableAt (φ := fun z : F ↦ ‖z‖ ^ 2)
+        ((contDiff_norm_sq ℝ (n := 2)).differentiable (by norm_num)).differentiableAt hfd a
   have hs : ContMDiffAt I 𝓘(ℝ) 2 (fun q ↦ ‖f q‖ ^ 2) p :=
     (contDiff_norm_sq ℝ).contDiffAt.contMDiffAt.comp p hf
   rw [hessian_eq_criticalHessian hs hcrit]
@@ -58,6 +55,5 @@ theorem hessian_norm_sq_comp_of_eq_zero
     add_zero] at h
   rw [criticalHessian_def, hfd.mvfderiv_eq_fderiv_comp_extChartAt_symm]
   exact h
-
 
 end TauCeti.Manifold
