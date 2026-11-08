@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Decomposition
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
-import Mathlib.Analysis.Normed.Operator.Banach
+public import TauCeti.Analysis.Normed.Operator.RangePow
 import Mathlib.LinearAlgebra.Eigenspace.Basic
-import TauCeti.LinearAlgebra.End.RangePow
 
 /-!
 # Nilpotent and invertible parts of a compact operator
@@ -23,6 +22,9 @@ the algebra of continuous linear maps, not merely algebraic bijectivity.
 The stable subspaces and bounded coordinate projections are constructed in
 `Compact.Decomposition`. This file supplies the restrictions needed to use that splitting
 as an operator decomposition, including when `μ` is in the resolvent or the space is zero.
+For a previously chosen exponent, use `LinearMap.pow_restrict_ker_pow_eq_zero` and
+`ContinuousLinearMap.isUnit_restrict_range_pow_of_stable` directly; the bundled theorem
+below is a corollary of these compactness-free restriction lemmas.
 
 ## References
 
@@ -60,30 +62,21 @@ theorem exists_stable_ker_range_restrictions_sub_smul (hK : IsCompactOperator K)
   let f : X →ₗ[𝕜] X := A
   let M := LinearMap.ker (f ^ p)
   let N := LinearMap.range (f ^ p)
-  have hcomm (x : X) : (f ^ p) (A x) = A ((f ^ p) x) :=
-    LinearMap.congr_fun (Commute.self_pow f p).eq.symm x
-  have hM : ∀ x ∈ M, A x ∈ M := by
-    intro x hx
-    exact LinearMap.mem_ker.mpr (by rw [hcomm, LinearMap.mem_ker.mp hx, map_zero])
-  have hN : ∀ x ∈ N, A x ∈ N := by
-    rintro x ⟨y, rfl⟩
-    exact ⟨f y, hcomm y⟩
+  have hM : ∀ x ∈ M, A x ∈ M := f.mapsTo_ker_pow p
+  have hN : ∀ x ∈ N, A x ∈ N := f.mapsTo_range_pow p
   have hfin : FiniteDimensional 𝕜 M := by
     have heq : M = Module.End.genEigenspace (K : X →ₗ[𝕜] X) μ p := by
-      rw [Module.End.genEigenspace_nat]
-      rfl
+      simp only [M, f, A, Module.End.genEigenspace_nat,
+        ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_smul,
+        ContinuousLinearMap.toLinearMap_one]
     rw [heq]
     exact hK.finiteDimensional_genEigenspace_nat hμ p
   refine ⟨p, hp, hfin, hc, hM, hN, ?_, ?_⟩
-  · have hs : Function.Semiconj (fun x : M ↦ (x : X)) (A.restrict hM) f :=
-      fun x ↦ ContinuousLinearMap.coe_restrict_apply hM x
-    ext x
-    have hi := hs.iterate_right p x
-    rw [← pow_apply_eq_iterate, ← pow_apply_eq_iterate] at hi
-    exact hi.trans (LinearMap.mem_ker.mp x.property)
-  · have : CompleteSpace N := hc.isClosed'.completeSpace_coe
-    rw [ContinuousLinearMap.isUnit_iff_bijective]
-    exact LinearMap.bijective_restrict_range_pow_of_stable f p
-      (hp (p + 1) (Nat.le_succ p)).1 (hp (p + 1) (Nat.le_succ p)).2 hN
+  · apply ContinuousLinearMap.coe_injective
+    simpa only [ContinuousLinearMap.toLinearMap_pow,
+      ContinuousLinearMap.toLinearMap_restrict, ContinuousLinearMap.toLinearMap_zero] using
+      f.pow_restrict_ker_pow_eq_zero p hM
+  · exact A.isUnit_restrict_range_pow_of_stable p
+      (hp (p + 1) (Nat.le_succ p)).1 (hp (p + 1) (Nat.le_succ p)).2 hc.isClosed' hN
 
 end IsCompactOperator

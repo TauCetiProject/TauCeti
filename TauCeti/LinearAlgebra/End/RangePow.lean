@@ -30,6 +30,30 @@ section AddCommMonoid
 
 variable [Semiring R] [AddCommMonoid M] [Module R M] {f : Module.End R M} {n : ℕ}
 
+/-- An endomorphism preserves the kernel of each of its powers. -/
+theorem mapsTo_ker_pow (f : Module.End R M) (n : ℕ) :
+    Set.MapsTo f (ker (f ^ n)) (ker (f ^ n)) := by
+  intro x hx
+  apply mem_ker.mpr
+  have hcomm : (f ^ n) (f x) = f ((f ^ n) x) :=
+    LinearMap.congr_fun (Commute.self_pow f n).eq.symm x
+  rw [hcomm, mem_ker.mp hx, map_zero]
+
+/-- An endomorphism preserves the range of each of its powers. -/
+theorem mapsTo_range_pow (f : Module.End R M) (n : ℕ) :
+    Set.MapsTo f (range (f ^ n)) (range (f ^ n)) := by
+  rintro x ⟨y, rfl⟩
+  exact ⟨f y, LinearMap.congr_fun (Commute.self_pow f n).eq.symm y⟩
+
+/-- Restricting an endomorphism to the kernel of its `n`th power gives an endomorphism
+annihilated by the same power. -/
+theorem pow_restrict_ker_pow_eq_zero (f : Module.End R M) (n : ℕ)
+    (h : ∀ x ∈ ker (f ^ n), f x ∈ ker (f ^ n) := f.mapsTo_ker_pow n) :
+    (f.restrict h : Module.End R (ker (f ^ n))) ^ n = 0 := by
+  rw [Module.End.pow_restrict n h]
+  ext x
+  exact mem_ker.mp x.property
+
 /-- If the range of `f ^ (n + 1)` equals that of `f ^ n`, the ranges of all higher powers of `f`
 equal it too. -/
 theorem range_pow_add_eq_of_range_pow_succ_eq (h : range (f ^ (n + 1)) = range (f ^ n)) (m : ℕ) :
@@ -75,9 +99,7 @@ no finite-length hypothesis is required once stabilization is known. -/
 theorem bijective_restrict_range_pow_of_stable (f : Module.End R M) (n : ℕ)
     (hk : ker (f ^ (n + 1)) = ker (f ^ n))
     (hr : range (f ^ (n + 1)) = range (f ^ n))
-    (h : ∀ x ∈ range (f ^ n), f x ∈ range (f ^ n) := by
-      rintro x ⟨y, rfl⟩
-      exact ⟨f y, LinearMap.congr_fun (Commute.self_pow f n).eq.symm y⟩) :
+    (h : ∀ x ∈ range (f ^ n), f x ∈ range (f ^ n) := f.mapsTo_range_pow n) :
     Function.Bijective (f.restrict h : range (f ^ n) →ₗ[R] range (f ^ n)) := by
   constructor
   · apply LinearMap.ker_eq_bot.mp
