@@ -124,9 +124,10 @@ theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - c
 
 /-- A point `x` of the closed disc of radius `r`: the conjugate `conj x` is within `3 ‖x - y‖` of
 the inversion `r² / y` of any point `y` outside the disc. -/
-theorem norm_conj_sub_sq_div_le {r : ℝ} (hr : 0 ≤ r) (x y : ℂ)
+theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
     (hx : ‖x‖ ≤ r) (hy : r < ‖y‖) :
     ‖conj x - (r : ℂ)^2/y‖ ≤ 3*‖x - y‖ := by
+  have hr : 0 ≤ r := (norm_nonneg x).trans hx
   have hy0 : 0 < ‖y‖ := hr.trans_lt hy
   have hyne : y ≠ 0 := norm_pos_iff.mp hy0
   have hconj : conj y * y = (‖y‖ : ℂ)^2 := by

@@ -137,10 +137,10 @@ theorem lipschitzWith_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0 ≤ r) 
   · simp only [← map_sub, norm_conj, sub_sub_sub_cancel_right]
     rw [dist_eq_norm]
     nlinarith [norm_nonneg (x - y)]
-  · exact (Complex.norm_conj_sub_sq_div_le hr (x - c) (y - c) hx (not_le.mp hy)).trans_eq
+  · exact (Complex.norm_conj_sub_sq_div_le (x - c) (y - c) hx (not_le.mp hy)).trans_eq
       (by rw [hd])
   · rw [norm_sub_rev]
-    exact (Complex.norm_conj_sub_sq_div_le hr (y - c) (x - c) hy (not_le.mp hx)).trans_eq
+    exact (Complex.norm_conj_sub_sq_div_le (y - c) (x - c) hy (not_le.mp hx)).trans_eq
       (by rw [norm_sub_rev (y - c) (x - c), hd])
   · exact (Complex.norm_sq_div_sub_sq_div_le hr (x - c) (y - c) (not_le.mp hx)
       (not_le.mp hy)).trans (by
