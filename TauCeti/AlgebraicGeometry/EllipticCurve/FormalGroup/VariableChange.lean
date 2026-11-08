@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Inverse
 import Mathlib.Algebra.CharP.Algebra
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
+import TauCeti.RingTheory.FormalGroup.BaseChange
 
 /-!
 # Weierstrass changes of variables on the formal parameter
@@ -358,9 +359,8 @@ theorem formalInvariantDifferentialDenom_mul_derivative_formalCoordinate :
   set N : PowerSeries R := PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * w with hN
   -- the derivative of `d = D⁻¹` is `-D' d²`
   have hd' : derivative d = -derivative D * d ^ 2 := by
-    have h := congrArg derivative hDd
-    rw [Derivation.leibniz, Derivation.map_one_eq_zero, smul_eq_mul, smul_eq_mul] at h
-    linear_combination d * h - derivative d * hDd
+    rw [derivative.leibniz_of_mul_eq_one ((mul_comm d D).trans hDd), smul_eq_mul]
+    ring
   have hφ' : derivative (N * d) =
       (PowerSeries.C (C.u : R) ^ 2 + PowerSeries.C C.r * derivative w) * d -
         N * (-(PowerSeries.C C.s * PowerSeries.C (C.u : R) ^ 2) -
@@ -370,25 +370,31 @@ theorem formalInvariantDifferentialDenom_mul_derivative_formalCoordinate :
       derivative_C, derivative_X, smul_eq_mul]
     ring
   rw [hφ']
+  -- the coefficient relations of `C` in `R`, with the powers of `u⁻¹` cleared
+  have hu (n : ℕ) (x : R) : (C.u : R) ^ n * ((↑C.u⁻¹ : R) ^ n * x) = x := by
+    rw [← mul_assoc, ← mul_pow, Units.mul_inv, one_pow, one_mul]
+  have h₁ : (C.u : R) * (C • W).a₁ = W.a₁ + 2 * C.s := by
+    rw [variableChange_a₁, Units.mul_inv_cancel_left]
+  have h₂ : (C.u : R) ^ 2 * (C • W).a₂ = W.a₂ - C.s * W.a₁ + 3 * C.r - C.s ^ 2 := by
+    rw [variableChange_a₂, hu]
+  have h₃ : (C.u : R) ^ 3 * (C • W).a₃ = W.a₃ + C.r * W.a₁ + 2 * C.t := by
+    rw [variableChange_a₃, hu]
+  have h₄ : (C.u : R) ^ 4 * (C • W).a₄ = W.a₄ - C.s * W.a₃ + 2 * C.r * W.a₂ -
+      (C.t + C.r * C.s) * W.a₁ + 3 * C.r ^ 2 - 2 * C.s * C.t := by
+    rw [variableChange_a₄, hu]
+  have h₆ : (C.u : R) ^ 6 * (C • W).a₆ = W.a₆ + C.r * W.a₄ + C.r ^ 2 * W.a₂ + C.r ^ 3 -
+      C.t * W.a₃ - C.t ^ 2 - C.r * C.t * W.a₁ := by
+    rw [variableChange_a₆, hu]
   -- the identity cleared of `d`, then multiplied by `d²` using `D d = 1`
   have hQ := mul_derivative_eq_of_wEquation (z := (X : PowerSeries R)) (w := w) (w' := derivative w)
     (u := PowerSeries.C (C.u : R)) (r := PowerSeries.C C.r) (s := PowerSeries.C C.s)
     (t := PowerSeries.C C.t) (a₁ := PowerSeries.C W.a₁) (a₂ := PowerSeries.C W.a₂)
     (a₃ := PowerSeries.C W.a₃) (a₄ := PowerSeries.C W.a₄) (a₆ := PowerSeries.C W.a₆)
-    (by rw [← map_mul, variableChange_a₁, ← mul_assoc, Units.mul_inv, one_mul]
-        simp only [map_add, map_mul, map_ofNat])
-    (by rw [← map_pow, ← map_mul, variableChange_a₂, ← mul_assoc, ← mul_pow, Units.mul_inv,
-          one_pow, one_mul]
-        simp only [map_add, map_sub, map_mul, map_pow, map_ofNat])
-    (by rw [← map_pow, ← map_mul, variableChange_a₃, ← mul_assoc, ← mul_pow, Units.mul_inv,
-          one_pow, one_mul]
-        simp only [map_add, map_mul, map_ofNat])
-    (by rw [← map_pow, ← map_mul, variableChange_a₄, ← mul_assoc, ← mul_pow, Units.mul_inv,
-          one_pow, one_mul]
-        simp only [map_add, map_sub, map_mul, map_pow, map_ofNat])
-    (by rw [← map_pow, ← map_mul, variableChange_a₆, ← mul_assoc, ← mul_pow, Units.mul_inv,
-          one_pow, one_mul]
-        simp only [map_add, map_sub, map_mul, map_pow])
+    (by simpa only [map_add, map_mul, map_ofNat] using congrArg PowerSeries.C h₁)
+    (by simpa only [map_add, map_sub, map_mul, map_pow, map_ofNat] using congrArg PowerSeries.C h₂)
+    (by simpa only [map_add, map_mul, map_pow, map_ofNat] using congrArg PowerSeries.C h₃)
+    (by simpa only [map_add, map_sub, map_mul, map_pow, map_ofNat] using congrArg PowerSeries.C h₄)
+    (by simpa only [map_add, map_sub, map_mul, map_pow] using congrArg PowerSeries.C h₆)
     hG (by linear_combination hw) (by linear_combination hw')
   rw [← hD, ← hN] at hQ
   linear_combination d ^ 2 * hQ -
@@ -497,10 +503,7 @@ theorem formalCoordinate_smul_formalGroup :
     have h := (map_formalCoordinate_smul_formalGroup C₀ W₀ ι).trans
       (formalCoordinate_smul_formalGroup_of_rat _ _)
     rw [map_formalGroup] at h
-    refine FormalGroup.ext (MvPowerSeries.ext fun n ↦ IsFractionRing.injective UnivRing
-      (FractionRing UnivRing) ?_)
-    simpa only [FormalGroup.map_toPowerSeries, MvPowerSeries.coeff_map] using
-      congrArg (fun F : FormalGroup _ ↦ MvPowerSeries.coeff n F.toPowerSeries) h
+    exact FormalGroup.map_injective (IsFractionRing.injective UnivRing (FractionRing UnivRing)) h
   let k := ChangeRing.lift (W.specialize, C)
   have hC : C₀.map k = C := ChangeRing.map_lift _
   have hW : W₀.map k = W := by
