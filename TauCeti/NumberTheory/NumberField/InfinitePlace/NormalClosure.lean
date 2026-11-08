@@ -71,12 +71,14 @@ theorem normalClosure [IsUnramifiedAtInfinitePlaces K L] :
     apply isReal_iff.mpr
     apply ComplexEmbedding.isReal_iff.mpr
     ext x
-    -- Membership in `R` is precisely equality with the conjugate value of `φ`.
-    have hx : star (φ (x : M)) = φ (x : M) := hN x.property
+    have hx := hN x.property
+    rw [← mem_toSubfield] at hx
+    dsimp only [R] at hx
+    erw [Subfield.toIntermediateField_toSubfield, RingHom.mem_eqLocusField,
+      ComplexEmbedding.conjugate_coe_eq] at hx
     have hxφ : φ (x : M) = w.embedding x :=
       ComplexEmbedding.lift_algebraMap_apply M w.embedding x
-    rw [hxφ] at hx
-    exact hx
+    simpa only [ComplexEmbedding.conjugate_coe_eq, hxφ] using hx
   · exact .inr (not_isReal_iff_isComplex.mp hw)
 
 /-- An extension is unramified at every infinite place if and only if its normal closure in an
@@ -87,11 +89,9 @@ theorem normalClosure_iff :
       IsUnramifiedAtInfinitePlaces K L := by
   constructor
   · intro h
-    let := h
     have := Algebra.IsAlgebraic.tower_top (K := K) (A := IntermediateField.normalClosure K L M) L
     exact IsUnramifiedAtInfinitePlaces.bot K L (IntermediateField.normalClosure K L M)
   · intro h
-    let := h
     exact normalClosure
 
 end IsUnramifiedAtInfinitePlaces
