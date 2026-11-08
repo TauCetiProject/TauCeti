@@ -89,21 +89,17 @@ theorem IsEquipartition.exists_divisible_padding (hP : P.IsEquipartition) (hs : 
   obtain ⟨e, he⟩ := P.exists_embedding_prod_fin (m := m)
     (fun A hA ↦ (le_sup hA).trans hmlo)
   have : Nonempty (Fin m) := ⟨⟨0, hmpos⟩⟩
-  obtain ⟨Q, hparts, hcard⟩ :=
-    TauCeti.exists_parts_eq_image_singleton_prod (α := P.parts) (β := Fin m)
-  simp only [Fintype.card_fin] at hcard
-  have hinj : Function.Injective
-      (fun A : P.parts ↦ {A} ×ˢ (univ : Finset (Fin m))) := by
-    intro A B h
-    have hmem : (A, (⟨0, hmpos⟩ : Fin m)) ∈ {A} ×ˢ (univ : Finset (Fin m)) := by simp
-    simp only at h
-    rw [h] at hmem
-    simpa only [mem_product, mem_singleton, mem_univ, and_true] using hmem
-  refine ⟨m, e, Q, hmpos, hqm, ?_, ?_, hparts, hcard, ?_, ?_⟩
+  have hparts := Finpartition.ofSetoid_ker_fst_parts (α := P.parts) (β := Fin m)
+  have hcard : ∀ B ∈ (ofSetoid (Setoid.ker (Prod.fst : P.parts × Fin m → P.parts))).parts,
+      #B = m := by
+    intro B hB
+    obtain ⟨A, -, rfl⟩ := mem_image.1 (hparts ▸ hB)
+    simp
+  refine ⟨m, e, _, hmpos, hqm, ?_, ?_, hparts, hcard, ?_, ?_⟩
   · intro A B hA hB
     simp only [hcard A hA, hcard B hB]
     omega
-  · rw [hparts, card_image_of_injective _ hinj, card_univ, Fintype.card_coe]
+  · rw [Finpartition.card_ofSetoid_ker_fst_parts, Fintype.card_coe]
   · intro A x
     simpa only [mem_product, mem_singleton, mem_univ, and_true] using he A x
   · -- Rounding costs at most `q - 1` per cell; equitability costs strictly less than one.
