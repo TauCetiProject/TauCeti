@@ -19,8 +19,10 @@ Fourier-weighted series `∑ a n 𝓕 psi (log (n / x) / 2π) / n` has to conver
 `Re s = 1`, where the coefficients are no longer damped by `n ^ (-(sigma - 1))`. This file removes
 that hypothesis for nonnegative coefficients, which is the only case Wiener--Ikehara is about.
 
-The input is coefficient nonnegativity together with the boundary remainder data on the real
-segment `sigma ∈ (1, 2]`; the growth bound for the partial sums is derived from them, not assumed.
+The inputs are coefficient nonnegativity, the boundary remainder data on the real segment
+`sigma ∈ (1, 2]`, and convergence of the Dirichlet series on that segment (`hsum` below, which
+the boundary data do not supply). The growth bound for the partial sums is derived from these
+inputs, not assumed.
 Nonnegativity turns the boundary data into the one-sided estimate
 `∑ ‖a n‖ / n ^ sigma ≤ B / (sigma - 1)` on `(1, 2]`, and inserting
 `sigma = 1 + 1 / log t` into it bounds `∑_{n ≤ t} ‖a n‖` by a multiple of `t log t`. That is weaker
@@ -38,15 +40,17 @@ asymptotic specializes the half-plane hypotheses it inherits from
 
 ## Main results
 
-* `TauCeti.LSeries.tsum_norm_term_le_of_boundary`: nonnegative coefficients with a boundary
-  remainder continuous on the segment `[1, 2]` have a convergent norm series with
-  `∑ ‖term a sigma n‖ ≤ B / (sigma - 1)` on `(1, 2]`.
+* `TauCeti.LSeries.tsum_norm_term_le_of_boundary`: for nonnegative coefficients with a boundary
+  remainder continuous on the segment `[1, 2]`, the norm series, assumed convergent on `(1, 2]`,
+  satisfies `∑ ‖term a sigma n‖ ≤ B / (sigma - 1)` there.
 * `TauCeti.LSeries.isBigO_sum_Icc_norm_of_boundary`: the resulting `O(t log t)` bound for the
   partial sums.
 * `TauCeti.LSeries.LSeriesSummable_mul_fourier_of_nonneg`: the Fourier weight is small enough for
   that bound to force summability at `s = 1`, at every scale `x > 0`.
 * `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_nonneg`: **the smoothed Wiener--Ikehara
-  asymptotic for nonnegative coefficients**, with no summability hypothesis left.
+  asymptotic for nonnegative coefficients**, with the Fourier-weighted summability hypothesis
+  discharged; besides the boundary data, the convergence of the Dirichlet series for real
+  `sigma > 1` is still assumed.
 
 ## References
 
@@ -70,7 +74,8 @@ bounds the Dirichlet series on `(1, 2]` by `B / (sigma - 1)`: the remainder is b
 compact segment, and the pole term contributes `‖A‖ / (sigma - 1)`.
 
 No analytic continuation is used, only the values of `G` on that segment and the identity
-`G = LSeries a - A / (s - 1)` on its interior. -/
+`G = LSeries a - A / (s - 1)` on its interior, together with the summability hypothesis `hsum` of
+the Dirichlet series on `(1, 2]`, which supplies the `Summable` conjunct of the conclusion. -/
 theorem tsum_norm_term_le_of_boundary (ha : 0 ≤ a)
     (hG : ContinuousOn (fun sigma : ℝ ↦ G (sigma : ℂ)) (Icc 1 2))
     (hG' : ∀ sigma : ℝ, 1 < sigma → sigma ≤ 2 →
@@ -110,7 +115,7 @@ theorem tsum_norm_term_le_of_boundary (ha : 0 ≤ a)
 /-! ### The partial-sum bound -/
 
 /-- **A crude growth bound for the partial sums.** Nonnegative coefficients whose Dirichlet series
-has a boundary remainder continuous on the segment `[1, 2]` satisfy
+converges on `(1, 2]` and has a boundary remainder continuous on the segment `[1, 2]` satisfy
 `∑_{1 ≤ n ≤ t} ‖a n‖ = O(t log t)`.
 
 The proof inserts `sigma = 1 + 1 / log t` into `tsum_norm_term_le_of_boundary`: the truncation
@@ -176,8 +181,9 @@ theorem isBigO_sum_Icc_norm_of_boundary (ha : 0 ≤ a)
 /-! ### The Fourier weight -/
 
 /-- **The Fourier-weighted series converges on the boundary line.** For nonnegative coefficients
-with a boundary remainder continuous on the segment `[1, 2]` and a smooth compactly supported test
-function, the series tested at scale `x > 0` is summable at `s = 1`. This discharges the standing
+whose Dirichlet series converges on `(1, 2]`, with a boundary remainder continuous on the segment
+`[1, 2]`, and a smooth compactly supported test function, the series tested at scale `x > 0` is
+summable at `s = 1`. This discharges the standing
 summability hypothesis of
 `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_contDiff`. -/
 theorem LSeriesSummable_mul_fourier_of_nonneg (ha : 0 ≤ a)
@@ -230,8 +236,10 @@ continuous boundary remainder `G`.
 
 This is `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_contDiff` with its summability
 hypothesis discharged: for nonnegative coefficients the boundary data itself forces the
-Fourier-weighted series to converge at every large scale. The hypotheses are now exactly the
-analytic input of Wiener--Ikehara. -/
+Fourier-weighted series to converge at every large scale. What remains is the analytic input of
+Wiener--Ikehara together with the convergence of the Dirichlet series of `a` for real `sigma > 1`,
+which the boundary data cannot supply: it only constrains `LSeries a`, which is `0` off the
+summability locus. -/
 theorem tendsto_tsum_term_mul_fourier_atTop_of_nonneg (ha : 0 ≤ a)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
