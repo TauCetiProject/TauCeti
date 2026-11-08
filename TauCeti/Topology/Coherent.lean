@@ -43,7 +43,11 @@ namespace Topology.IsCoherentWith
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {S : Set (Set X)}
 
 /-- If the topology of `X` is coherent with a family `S` covering `X`, then the topology of `Y × X`
-is coherent with the sets `univ ×ˢ s` for `s ∈ S`, provided `Y` is locally compact. -/
+is coherent with the sets `univ ×ˢ s` for `s ∈ S`, provided `Y` is locally compact.
+
+The proof adapts that of Mathlib's `Topology.IsQuotientMap.continuous_lift_prod_left` and
+`Topology.IsQuotientMap.continuous_lift_prod_right`, with the quotient map replaced by a coherent
+family. -/
 theorem univ_prod [LocallyCompactSpace Y] (hS : IsCoherentWith S) (hSU : ⋃₀ S = univ) :
     IsCoherentWith ((univ ×ˢ ·) '' S : Set (Set (Y × X))) := by
   refine of_continuous_prop fun f hf => ?_
