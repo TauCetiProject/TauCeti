@@ -150,6 +150,18 @@ theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m :
   simpa only [Set.prod_univ] using
     measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := t) MeasurableSet.univ
 
+/-- The predictable sigma-algebra is contained in the ambient time-product sigma-algebra.
+This inclusion allows time-product measures to be trimmed to predictable sets. -/
+theorem MeasureTheory.Filtration.predictable_le_prod {ι Ω : Type*} {m : MeasurableSpace Ω}
+    [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [MeasurableSpace ι]
+    [OpensMeasurableSpace ι] [OrderClosedTopology ι] (ℱ : Filtration ι m) :
+    ℱ.predictable ≤ (inferInstance : MeasurableSpace ι).prod m := by
+  apply measurableSpace_le_predictable_of_measurableSet
+  · intro A hA
+    exact (measurableSet_singleton _).prod (ℱ.le _ _ hA)
+  · intro i A hA
+    exact measurableSet_Ioi.prod (ℱ.le _ _ hA)
+
 /-- A predictably measurable function, extended by zero outside a measurable set of times,
 defines a strongly predictable process. In particular, the time predicate can impose a
 deterministic maturity cutoff without any continuity assumption at maturity. -/
