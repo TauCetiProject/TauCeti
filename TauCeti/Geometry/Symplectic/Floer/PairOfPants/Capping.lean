@@ -476,8 +476,9 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
     (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) hH)
     (Pi.forall_single_of inf (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
     (Pi.abs_single_le_single inf hB) u
-  rwa [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
-    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+  rw [pairOfPantsPerturbation_single_inf] at h
+  simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
+    Fintype.sum_pi_single'] using h
 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the negative plane perturbation in real coordinates are `C¹` jointly in the
@@ -604,8 +605,8 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
     (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
     (Pi.forall_single_of inf (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHbs q)) hHbs
     (by simp) hL (Pi.abs_single_le_single inf (hBb q)) hBb u
-  rwa [Fintype.sum_eq_single inf fun r hr => by simp [Pi.single_eq_of_ne hr],
-    Pi.single_eq_same] at h
+  simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
+    Fintype.sum_pi_single'] using h
 
 
 /-! ### The positive plane and capping the output -/
@@ -625,8 +626,9 @@ theorem lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le (ω : 
     (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH)
     (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
     (Pi.abs_single_le_single zero hB) u
-  rwa [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
-    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+  rw [pairOfPantsPerturbation_single_zero] at h
+  simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
+    Fintype.sum_pi_single'] using h
 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the positive plane perturbation in real coordinates are `C¹` jointly in the
@@ -817,9 +819,7 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le
     hHa (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) (hHa inf)) hHas
     (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHas inf))
     (by simp) hL hBa (Pi.abs_single_le_single zero (hBa inf)) u
-  have hs : ∑ r, ENNReal.ofReal ((Pi.single zero (Ba inf) : Puncture → ℝ) r) =
-      ENNReal.ofReal (Ba inf) := by
-    rw [Fintype.sum_eq_single zero fun r hr => by simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
-  rwa [hs] at h
+  simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
+    Fintype.sum_pi_single'] using h
 
 end TauCeti.SymplecticForm

@@ -41,7 +41,8 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   (`TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift_inf`);
 * it is `C^n` jointly in the centers, the scales, the domain point and the target point, away
   from the punctures (`TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation`), so it is a smooth
-  family over any smooth path of configurations;
+  family over any smooth path of configurations; for a fixed configuration and a normed target,
+  `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`).
@@ -375,6 +376,36 @@ theorem contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Period
 
 end Smooth
 
+section SmoothProd
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- At points other than its center, the input end datum is `C^n` jointly in the domain point and
+the target point, for a period-one `C^n` Hamiltonian. -/
+theorem contDiffAt_inputEndPerturbation_prod {n : ℕ∞} {H : ℝ → V → ℝ} (hH : Periodic H 1)
+    (hHs : ContDiff ℝ n (uncurry H)) {c a w : ℂ} (ha : a ≠ 0) (hw : w ≠ c) (x : V) :
+    ContDiffAt ℝ n (fun p : ℂ × V => inputEndPerturbation c a H p.1 p.2) (w, x) := by
+  have h := (contMDiffAt_inputEndPerturbation hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) ha hw x).comp (w, x)
+    (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
+  exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt
+
+/-- At points other than the centers, the perturbation datum is `C^n` jointly in the domain point
+and the target point, for period-one `C^n` Hamiltonians and nonzero scales. -/
+theorem contDiffAt_puncturedSpherePerturbation_prod {ι : Type*} [Fintype ι] {n : ℕ∞}
+    {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContDiff ℝ n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContDiff ℝ n (uncurry Hout)) {c a : ι → ℂ} (ha : ∀ i, a i ≠ 0) {w : ℂ}
+    (hw : ∀ i, w ≠ c i) (x : V) :
+    ContDiffAt ℝ n (fun p : ℂ × V => puncturedSpherePerturbation c a H Hout p.1 p.2) (w, x) := by
+  have h := (contMDiffAt_puncturedSpherePerturbation hH
+    (fun i => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha hw x).comp (w, x)
+    (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
+  exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt
+
+end SmoothProd
+
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
@@ -385,17 +416,6 @@ open TauCeti.Complex (realChart realChart_apply contDiff_realChart realChart_inj
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 variable {H : ℝ → V → ℝ} {c a : ℂ}
-
-/-- At points other than its center, the input end datum of a `C¹` Hamiltonian is differentiable
-jointly in the domain and target points. -/
-private theorem differentiableAt_inputEndPerturbation (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0) {w : ℂ} (hw : w ≠ c) (x : V) :
-    DifferentiableAt ℝ (fun p : ℂ × V ↦ inputEndPerturbation c a H p.1 p.2) (w, x) := by
-  have hmfd : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry H) :=
-    contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff
-  have h := (contMDiffAt_inputEndPerturbation (n := 1) hH hmfd ha hw x).comp (w, x)
-    (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
-  exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt.differentiableAt one_ne_zero
 
 variable [FiniteDimensional ℝ V]
 
@@ -422,14 +442,10 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
   have hdiff {w : ℝ × ℝ} (hw : w ∈ S) (y : V) :
       DifferentiableAt ℝ (fun p : ℂ × V ↦ inputEndPerturbation c a H p.1 p.2)
         (Complex.equivRealProdCLM.symm (realChart (c + a * ·) w), y) := by
-    refine differentiableAt_inputEndPerturbation hH hHs ha ?_ y
+    refine (contDiffAt_inputEndPerturbation_prod hH hHs ha ?_ y).differentiableAt one_ne_zero
     rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact fun h => hw (by simpa [ha] using h)
   -- The pullback of the datum along the affine chart is the pair-of-pants datum.
-  have h₁ : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
-    apply Complex.ext <;> simp [stdComplexLineReal_eq]
-  have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
-    apply Complex.ext <;> simp [stdComplexLineImag_eq]
   have hpull (v : ℝ × ℝ) : perturbationPullback (realChart (c + a * ·))
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
@@ -445,7 +461,7 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
     (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I)
     (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) 1)
     (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) Complex.I), hpull, hpull,
-    h₁, hI]
+    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
   rfl
 
 /-- **The integrated curvature of an input end datum.** Let `K` be the input end datum with center
@@ -478,8 +494,8 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
     (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH)
     (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
     (Pi.abs_single_le_single zero hB) (u ∘ realChart (c + a * ·))
-  rw [Fintype.sum_eq_single zero fun r hr => by simp [Pi.single_eq_of_ne hr],
-    Pi.single_eq_same] at hP
+  simp only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
+    Fintype.sum_pi_single'] at hP
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
