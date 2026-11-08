@@ -269,6 +269,10 @@ variable (ω c) in
 def mk (D : RawCap γ) : SphericalCapClass ω c γ :=
   Quotient.mk'' D
 
+/-- The cap class of a raw cap is its class in the orbit quotient. -/
+theorem mk_def (D : RawCap γ) : mk ω c D = Quotient.mk'' D :=
+  (rfl)
+
 theorem mk_surjective : Function.Surjective (mk ω c : RawCap γ → SphericalCapClass ω c γ) :=
   Quotient.mk''_surjective
 
