@@ -117,10 +117,10 @@ theorem inter_preimage_spliceAtMeeting_succ_inter_exists (n : ℕ) (B : Set (ℕ
       B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} ∩
         (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) := by
   rw [inter_right_comm]
-  exact (show EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).2)
-    (B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) from fun ω hω =>
-      spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hω.2)
-    ).inter_preimage_eq C
+  have hEq : EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).2)
+      (B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) := fun ω hω =>
+    spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hω.2)
+  exact hEq.inter_preimage_eq C
 
 /-- Not having met by time `n`, the event that the splice at time `n + 1` lies in `C` is the event
 that the first coordinate at time `n + 1` does. -/
@@ -130,9 +130,10 @@ theorem inter_preimage_spliceAtMeeting_succ_sdiff_exists (n : ℕ) (B : Set (ℕ
       (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) ∩
         (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) := by
   rw [sdiff_eq, inter_right_comm, ← sdiff_eq]
-  exact (show EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).1)
-    (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) from fun ω hω =>
-      spliceAtMeeting_succ_of_forall_ne fun k hk he => hω.2 ⟨k, hk, he⟩).inter_preimage_eq C
+  have hEq : EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).1)
+      (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) := fun ω hω =>
+    spliceAtMeeting_succ_of_forall_ne fun k hk he => hω.2 ⟨k, hk, he⟩
+  exact hEq.inter_preimage_eq C
 
 variable [MeasurableSpace α] [MeasurableEq α]
 
