@@ -62,6 +62,8 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
   `TauCeti.Divisor.dim_le_degree_posPart_add_one`: `L(D)` is finite-dimensional, with
   `ℓ(D) ≤ deg D⁺ + [algebraicClosure k F : k]` and hence `ℓ(D) ≤ deg D⁺ + 1` over an exact
   constant field (Proposition 1.4.9).
+* `TauCeti.exists_mem_riemannRochSpace_notMem_span_pair`: when `ℓ(B) ≥ 3`, `L(B)` contains `x`
+  outside `k ∙ 1` and `z` outside `k ∙ 1 + k ∙ x`.
 * `TauCeti.mem_algebraicClosure_of_mul_mem_riemannRochSpace`: a section `x` of `L(B)` with
   `z * x ∈ L(D)`, for `z` of the exact order `-D.coeff P` on the support of `B`, is algebraic
   over the constants.
@@ -534,6 +536,31 @@ theorem Divisor.dim_mono (hF : IsFunctionField k F) {D E : Divisor k F} (h : D �
     Divisor.dim D ≤ Divisor.dim E := by
   have := finiteDimensional_riemannRochSpace hF E
   exact Submodule.finrank_mono (riemannRochSpace_mono h)
+
+/-- If the Riemann-Roch space of a divisor `B` has dimension at least three, it contains `x`
+outside `k ∙ 1` and `z` outside `k ∙ 1 + k ∙ x`. -/
+theorem exists_mem_riemannRochSpace_notMem_span_pair (hF : IsFunctionField k F)
+    {B : Divisor k F} (hdimB : 3 ≤ Divisor.dim B) :
+    ∃ x ∈ riemannRochSpace B, x ∉ k ∙ (1 : F) ∧
+      ∃ z ∈ riemannRochSpace B, z ∉ Submodule.span k {(1 : F), x} := by
+  have := finiteDimensional_riemannRochSpace hF B
+  rw [Divisor.dim_def] at hdimB
+  obtain ⟨x, hxB, hx1⟩ : ∃ x ∈ riemannRochSpace B, x ∉ k ∙ (1 : F) := by
+    by_contra! h
+    have hle : riemannRochSpace B ≤ k ∙ (1 : F) := fun u hu ↦ h u hu
+    have := Submodule.finrank_mono hle
+    rw [finrank_span_singleton one_ne_zero] at this
+    omega
+  obtain ⟨z, hzB, hzx⟩ : ∃ z ∈ riemannRochSpace B, z ∉ Submodule.span k {(1 : F), x} := by
+    by_contra! h
+    have : FiniteDimensional k (Submodule.span k {(1 : F), x}) :=
+      FiniteDimensional.span_of_finite k (Set.toFinite _)
+    have hle : riemannRochSpace B ≤ Submodule.span k {1, x} := fun u hu ↦ h u hu
+    have := Submodule.finrank_mono hle
+    have hpair := finrank_range_le_card (R := k) ![(1 : F), x]
+    rw [Matrix.range_cons_cons_empty, Fintype.card_fin, Set.finrank] at hpair
+    omega
+  exact ⟨x, hxB, hx1, z, hzB, hzx⟩
 
 /-- **Stichtenoth, Lemma 1.4.8**: enlarging a divisor raises `ℓ` by at most the increase in
 degree.  Stichtenoth states this as `dim (L(E)/L(D)) ≤ deg E - deg D`; the two forms agree

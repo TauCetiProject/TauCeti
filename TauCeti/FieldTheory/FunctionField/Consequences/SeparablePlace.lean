@@ -128,49 +128,6 @@ theorem exists_place_degree_le_finrank_and_isSeparable (hF : IsFunctionField k F
 
 /-! ### Genus zero -/
 
-/-- A nonconstant function `u` in the Riemann-Roch space of an effective divisor `B` of degree two
-is transcendental, has nonzero poles bounded by `B`, and generates a subfield of index at most
-two. -/
-theorem exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_two
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {B : Divisor k F} (hB : 0 ≤ B)
-    (hBdeg : Divisor.degree B = 2) {u : F} (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
-    ∃ hu0 : u ≠ 0, Transcendental k u ∧ Divisor.poles hF (Units.mk0 u hu0) ≤ B ∧
-      Module.finrank k⟮u⟯ F ≤ 2 := by
-  have hut : Transcendental k u := fun halg ↦ by
-    obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex u halg
-    exact hu (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
-  have hu0 : u ≠ 0 := fun h ↦ hut (h ▸ isAlgebraic_zero)
-  have hle := (poles_le_iff_mem_riemannRochSpace hF hB (Units.mk0 u hu0)).mpr huB
-  refine ⟨hu0, hut, hle, ?_⟩
-  have := Divisor.degree_le_of_le hle
-  rw [Divisor.degree_poles hF (Units.mk0 u hu0) hut, hBdeg] at this
-  exact_mod_cast this
-
-/-- If the Riemann-Roch space of a divisor `B` has dimension at least three, it contains `x`
-outside `k ∙ 1` and `z` outside `k ∙ 1 + k ∙ x`. -/
-theorem exists_mem_riemannRochSpace_notMem_span_pair (hF : IsFunctionField k F)
-    {B : Divisor k F} (hdimB : 3 ≤ Divisor.dim B) :
-    ∃ x ∈ riemannRochSpace B, x ∉ k ∙ (1 : F) ∧
-      ∃ z ∈ riemannRochSpace B, z ∉ Submodule.span k {(1 : F), x} := by
-  have := finiteDimensional_riemannRochSpace hF B
-  rw [Divisor.dim_def] at hdimB
-  obtain ⟨x, hxB, hx1⟩ : ∃ x ∈ riemannRochSpace B, x ∉ k ∙ (1 : F) := by
-    by_contra! h
-    have hle : riemannRochSpace B ≤ k ∙ (1 : F) := fun u hu ↦ h u hu
-    have := Submodule.finrank_mono hle
-    rw [finrank_span_singleton one_ne_zero] at this
-    omega
-  obtain ⟨z, hzB, hzx⟩ : ∃ z ∈ riemannRochSpace B, z ∉ Submodule.span k {(1 : F), x} := by
-    by_contra! h
-    have : FiniteDimensional k (Submodule.span k {(1 : F), x}) :=
-      FiniteDimensional.span_of_finite k (Set.toFinite _)
-    have hle : riemannRochSpace B ≤ Submodule.span k {1, x} := fun u hu ↦ h u hu
-    have := Submodule.finrank_mono hle
-    have hpair := finrank_range_le_card (R := k) ![(1 : F), x]
-    rw [Matrix.range_cons_cons_empty, Fintype.card_fin, Set.finrank] at hpair
-    omega
-  exact ⟨x, hxB, hx1, z, hzB, hzx⟩
-
 /-- **A genus-zero function field with exact constant field and a separating element is separable
 over a rational subfield of index at most two.** -/
 theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFunctionField k F)
@@ -181,8 +138,13 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
   -- characteristic two one of `x` and `z` works, for `x, z ∈ L(B)` with `1, x, z` independent.
   obtain ⟨B, hB, hBdeg, hdimB⟩ := exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero hF hex hg
   -- A nonconstant `u ∈ L(B)` is transcendental, with `(u)_∞ ≤ B`, so `[F : k(u)] ≤ 2`.
-  have hindex (u : F) (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :=
-    exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_two hF hex hB hBdeg huB hu
+  have hindex (u : F) (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
+      ∃ hu0 : u ≠ 0, Transcendental k u ∧ Divisor.poles hF (Units.mk0 u hu0) ≤ B ∧
+        Module.finrank k⟮u⟯ F ≤ 2 := by
+    obtain ⟨hu0, hut, hle, hd⟩ :=
+      Divisor.exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_degree hF hex hB huB hu
+    rw [hBdeg] at hd
+    exact ⟨hu0, hut, hle, by exact_mod_cast hd⟩
   obtain ⟨x, hxB, hx1, z, hzB, hzx⟩ := exists_mem_riemannRochSpace_notMem_span_pair hF hdimB
   obtain ⟨hx0, hxt, hxle, hx2⟩ := hindex x hxB hx1
   obtain ⟨-, hzt, -, hz2⟩ := hindex z hzB fun h ↦ hzx (Submodule.span_mono
