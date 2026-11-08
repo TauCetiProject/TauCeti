@@ -157,17 +157,6 @@ theorem hermitianForm_apply_of_lieMap_eq_zero {J : AlmostComplexStructure V}
       inner_apply_left hJ, neg_neg]
   rw [hermitianForm_apply, h, add_self_div_two]
 
-/-- `‖v ∧ J v‖² = ‖v‖⁴` for an orthogonal `J`, since `J v` is orthogonal to `v` and has the same
-norm. -/
-private theorem norm_ιMulti_sq {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
-    (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = ‖v‖ ^ 4 := by
-  have h0 : ⟪v, J v⟫ = 0 := by
-    have := inner_apply_left hJ v v
-    rw [real_inner_comm] at this
-    linarith
-  rw [← real_inner_self_eq_norm_sq, inner_ιMulti_two, hJ, h0, real_inner_self_eq_norm_sq]
-  ring
-
 /-- **The Hermitian part of a form orthogonal to `ω` is bounded by `‖μ‖ / √2`** in dimension
 four: if `⟪ω, μ⟫ = 0`, then `|B(v, v)| ≤ (‖μ‖ / √2) ‖v‖²`. This applies to every anti-self-dual
 `μ` (`inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`), for which the bound is sharp
@@ -185,7 +174,7 @@ theorem abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero [Fact (finra
   have hω : ‖J.kahlerForm‖ ^ 2 = 2 := by
     rw [norm_kahlerForm_sq hJ, (Fact.out : finrank ℝ V = 4)]
     norm_num
-  have hx : ‖x‖ ^ 2 = ‖v‖ ^ 4 := norm_ιMulti_sq hJ v
+  have hx : ‖x‖ ^ 2 = ‖v‖ ^ 4 := norm_ιMulti_apply_sq hJ v
   have hy : ‖y‖ ^ 2 = (√2 * ‖v‖ ^ 2) ^ 2 := by
     simp only [y, norm_sub_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
       Real.norm_eq_abs, abs_two, abs_pow, sq_abs, mul_pow, hxω, hx, hω, Real.sq_sqrt zero_le_two]
@@ -212,14 +201,6 @@ variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
   [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
   (he : e.toBasis.orientation = o)
 include h₀ h₂ he
-
-/-- **The Kähler form is orthogonal to the anti-self-dual forms**: `⟪ω, μ⟫ = 0` when `⋆μ = -μ`,
-since `ω` is self-dual for the complex orientation. -/
-theorem inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
-    (hμ : o.hodgeStar hkl μ = -μ) : ⟪J.kahlerForm, μ⟫ = 0 := by
-  have h := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ J.kahlerForm
-  rw [hodgeStar_kahlerForm h₀ h₂ hkl he, real_inner_comm] at h
-  linarith
 
 /-- **The Hermitian part of a self-dual two-form is a multiple of the metric**: for `⋆η = η`,
 `B(v, w) = (⟪ω, η⟫ / 2) ⟪v, w⟫`. -/
