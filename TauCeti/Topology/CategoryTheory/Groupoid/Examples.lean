@@ -169,24 +169,12 @@ theorem arrowHomeomorph_apply (a : Quiver.Total (Codiscrete X)) :
 theorem arrowHomeomorph_symm_apply (p : X × X) :
     (arrowHomeomorph X).symm p = ⟨⟨p.2⟩, ⟨p.1⟩, default⟩ := (rfl)
 
-/-- Source is the second coordinate of a pair-groupoid arrow. -/
-@[fun_prop]
-theorem continuous_source :
-    Continuous (Quiver.Total.left : Quiver.Total (Codiscrete X) → Codiscrete X) :=
-  (objectHomeomorph X).symm.continuous.comp
-    (continuous_snd.comp (arrowHomeomorph X).continuous)
-
-/-- Target is the first coordinate of a pair-groupoid arrow. -/
-@[fun_prop]
-theorem continuous_target :
-    Continuous (Quiver.Total.right : Quiver.Total (Codiscrete X) → Codiscrete X) :=
-  (objectHomeomorph X).symm.continuous.comp
-    (continuous_fst.comp (arrowHomeomorph X).continuous)
-
 /-- The pair groupoid on any topological space is a topological groupoid. -/
 instance isTopologicalGroupoid : IsTopologicalGroupoid (Codiscrete X) where
-  continuous_source := continuous_source X
-  continuous_target := continuous_target X
+  continuous_source := (objectHomeomorph X).symm.continuous.comp
+    (continuous_snd.comp (arrowHomeomorph X).continuous)
+  continuous_target := (objectHomeomorph X).symm.continuous.comp
+    (continuous_fst.comp (arrowHomeomorph X).continuous)
   continuous_unit := by
     apply (arrowHomeomorph X).isInducing.continuous_iff.mpr
     exact (objectHomeomorph X).continuous.prodMk (objectHomeomorph X).continuous
@@ -196,37 +184,29 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Codiscrete X) where
       (continuous_fst.comp (arrowHomeomorph X).continuous)
   continuous_comp := by
     apply (arrowHomeomorph X).isInducing.continuous_iff.mpr
-    simpa only [Function.comp_def, arrowHomeomorph_apply, objectHomeomorph_apply,
-      Quiver.Total.comp_left, Quiver.Total.comp_right] using
-      ((objectHomeomorph X).continuous.comp
-        ((continuous_target X).comp (continuous_snd.comp continuous_subtype_val))).prodMk
-        ((objectHomeomorph X).continuous.comp
-          ((continuous_source X).comp (continuous_fst.comp continuous_subtype_val)))
+    have h : Continuous (fun p :
+        {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
+          p.1.right = p.2.left} ↦
+        ((arrowHomeomorph X p.1.2).1, (arrowHomeomorph X p.1.1).2)) := by fun_prop
+    simpa only [Function.comp_def, arrowHomeomorph_apply,
+      Quiver.Total.comp_left, Quiver.Total.comp_right] using h
 
 /-- Composable arrows, in categorical order, have coordinates `(z, y, x)` when they run
 from `x` to `y` and then from `y` to `z`. The topology is the inherited subspace topology. -/
 def composablePairsHomeomorph :
     {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
       p.1.right = p.2.left} ≃ₜ X × X × X where
-  toFun p := (p.1.2.right.as, p.1.1.right.as, p.1.1.left.as)
-  invFun p := ⟨(⟨⟨p.2.2⟩, ⟨p.2.1⟩, default⟩, ⟨⟨p.2.1⟩, ⟨p.1⟩, default⟩), rfl⟩
+  toFun p := ((arrowHomeomorph X p.1.2).1,
+    (arrowHomeomorph X p.1.1).1, (arrowHomeomorph X p.1.1).2)
+  invFun p := ⟨((arrowHomeomorph X).symm (p.2.1, p.2.2),
+    (arrowHomeomorph X).symm (p.1, p.2.1)), rfl⟩
   left_inv := by
     rintro ⟨⟨⟨x, y, f⟩, ⟨y', z, g⟩⟩, h⟩
     cases h
     rfl
   right_inv _ := rfl
-  continuous_toFun := by
-    exact ((objectHomeomorph X).continuous.comp
-      ((continuous_target X).comp (continuous_snd.comp continuous_subtype_val))).prodMk
-      (((objectHomeomorph X).continuous.comp
-        ((continuous_target X).comp (continuous_fst.comp continuous_subtype_val))).prodMk
-        ((objectHomeomorph X).continuous.comp
-          ((continuous_source X).comp (continuous_fst.comp continuous_subtype_val))))
-  continuous_invFun := by
-    exact (((arrowHomeomorph X).symm.continuous.comp
-      ((continuous_fst.comp continuous_snd).prodMk (continuous_snd.comp continuous_snd))).prodMk
-      ((arrowHomeomorph X).symm.continuous.comp
-        (continuous_fst.prodMk (continuous_fst.comp continuous_snd)))).subtype_mk _
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
 
 @[simp]
 theorem composablePairsHomeomorph_apply
@@ -302,13 +282,19 @@ theorem composablePairsHomeomorph_symm_apply (p : G × G) :
 
 /-- Categorical composition reverses the order of the two labels. Thus the geometric
 product `gh`, first `h` and then `g`, is the original monoid product `g * h`. -/
--- `arrowHomeomorph_apply` already normalizes the left-hand side in the simp set.
+@[simp high]
 theorem arrowHomeomorph_comp [Monoid G]
     (a b : Quiver.Total (SingleObj G)) (h : a.right = b.left) :
     arrowHomeomorph G (a.comp b h) = arrowHomeomorph G b * arrowHomeomorph G a := by
   cases h
   simp [Quiver.Total.comp_def, arrowHomeomorph_apply, SingleObj.comp_as_mul,
     SingleObj.id_as_one]
+
+/-- Inversion of an arrow inverts its group label. -/
+@[simp high]
+theorem arrowHomeomorph_inverse [Group G] (a : Quiver.Total (SingleObj G)) :
+    arrowHomeomorph G ⟨a.right, a.left, inv a.hom⟩ = (arrowHomeomorph G a)⁻¹ := by
+  simp [SingleObj.inv_as_inv]
 
 end OneObjectGroupoid
 
@@ -326,9 +312,8 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (SingleObj G) where
     rfl
   continuous_inverse := by
     apply (arrowHomeomorph G).isInducing.continuous_iff.mpr
-    convert (arrowHomeomorph G).continuous.inv using 1
-    funext a
-    simp [SingleObj.inv_as_inv]
+    simpa only [Function.comp_def, arrowHomeomorph_inverse, Pi.inv_def] using
+      (arrowHomeomorph G).continuous.inv
   continuous_comp := by
     apply (arrowHomeomorph G).isInducing.continuous_iff.mpr
     convert
