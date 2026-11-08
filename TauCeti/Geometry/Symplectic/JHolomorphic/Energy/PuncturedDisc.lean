@@ -39,27 +39,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
 
-omit [FiniteDimensional ℝ V] in
-/-- Finite energy on a punctured closed disc gives integrability of the squared norm of the
-real-direction derivative of a map that is `C²` there. -/
-private theorem integrableOn_norm_fderiv_one_sq_puncturedClosedDisc {u : ℂ → V} (z₀ : ℂ)
-    {b : ℝ} (hu : ∀ z ∈ {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
-      {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) :
-    IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-  have hDu : ContinuousOn (fderiv ℝ u) {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := fun z hz ↦
-    ((hu z hz).continuousAt_fderiv (by norm_num)).continuousWithinAt
-  have hcont : ContinuousOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2)
-      {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
-    (hDu.clm_apply continuousOn_const).norm.pow 2
-  refine henergy.mono_nonneg
-    (hcont.aestronglyMeasurable (measurableSet_puncturedClosedDisc z₀ b))
-    (ae_of_all _ fun _ ↦ sq_nonneg _) ?_
-  exact ae_of_all _ fun z ↦ by
-    have h := (fderiv ℝ u z).le_opNorm (1 : ℂ)
-    simp only [norm_one, mul_one] at h
-    gcongr
-
 /-- The real-direction energy of a finite-energy, uniformly tamed solution on a punctured
 closed disc is bounded by its outer boundary-loop energy divided by twice the taming constant.
 The map is `C²` near every point of the punctured closed disc, including its outer boundary,
