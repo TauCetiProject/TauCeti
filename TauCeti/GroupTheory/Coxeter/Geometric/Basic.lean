@@ -178,6 +178,14 @@ theorem geometricReflection_apply_single_self (i : B) :
   rw [geometricReflection_apply, geometricForm_single_self]
   module
 
+/-- A simple reflection on the plane of two simple roots, in their specified order. -/
+theorem geometricReflection_apply_pair (i j : B) (a b : ℝ) :
+    M.geometricReflection i (a • Finsupp.single i 1 + b • Finsupp.single j 1) =
+      (2 * cos (π / M i j) * b - a) • Finsupp.single i 1 + b • Finsupp.single j 1 := by
+  simp only [geometricReflection_apply, map_add, map_smul, geometricForm_single_single,
+    diagonal, Nat.cast_one, div_one, cos_pi]
+  module
+
 /-- A vector orthogonal to the `i`-th simple root is fixed by the `i`-th simple reflection. -/
 theorem geometricReflection_apply_of_eq_zero {i : B} {v : B →₀ ℝ}
     (h : M.geometricForm (Finsupp.single i 1) v = 0) : M.geometricReflection i v = v := by
@@ -218,9 +226,8 @@ private theorem geometricReflection_mul_apply (x y : ℝ) :
       ((4 * cos (π / M i i') ^ 2 - 1) * x - 2 * cos (π / M i i') * y) •
           Finsupp.single i (1 : ℝ) +
         (2 * cos (π / M i i') * x - y) • Finsupp.single i' (1 : ℝ) := by
-  simp only [mul_apply_eq_comp, geometricReflection_apply, map_add, map_sub, map_smul,
-    geometricForm_single_single, CoxeterMatrix.diagonal, Nat.cast_one, div_one, Real.cos_pi,
-    M.symmetric i' i]
+  rw [mul_apply_eq_comp, add_comm (x • _), M.geometricReflection_apply_pair i' i,
+    add_comm (_ • Finsupp.single i' 1), M.geometricReflection_apply_pair, M.symmetric i' i]
   module
 
 /-- The composite of the two simple reflections in the other order is its inverse. -/
