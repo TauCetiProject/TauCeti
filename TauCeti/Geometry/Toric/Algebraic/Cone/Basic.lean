@@ -173,10 +173,8 @@ theorem IsLatticeRational.of_isFaceOf (hσ : IsLatticeRational i σ) (hτ : τ.I
     IsLatticeRational i τ := by
   classical
   obtain ⟨s, rfl⟩ := hσ
-  refine ⟨s.filter fun v ↦ i v ∈ τ,
-    (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨τ, hτ⟩ _ rfl).trans ?_⟩
+  refine ⟨s.filter fun v ↦ i v ∈ τ, (hτ.eq_hull_inter_of_eq_hull rfl).trans ?_⟩
   rw [Finset.coe_filter, ← Set.image_inter_preimage]
-  -- The face `⟨τ, hτ⟩` has by definition the same members as `τ`.
   rfl
 
 /-- A face of a toric cone is a toric cone. Since the pairwise intersection of two cones of a fan

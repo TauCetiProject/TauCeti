@@ -135,7 +135,7 @@ theorem finrank_span_face_eq_card_rays_of_isSimplicial (hσ : σ.IsSimplicial) (
   obtain ⟨s, hs, hli, hsσ⟩ := hσ
   have hF : F.toPointedCone.IsSimplicial := by
     refine ⟨s ∩ (F : Set V), hs.inter_of_left _, hli.mono Set.inter_subset_left, ?_⟩
-    exact (F.eq_hull_inter_of_eq_hull s hsσ.symm).symm
+    exact (F.isFaceOf.eq_hull_inter_of_eq_hull hsσ.symm).symm
   obtain ⟨t, ht, hlt, htF⟩ := hF
   let v : t → V := Subtype.val
   have hv : LinearIndependent ℝ v := linearIndependent_subtype_iff.mpr hlt
