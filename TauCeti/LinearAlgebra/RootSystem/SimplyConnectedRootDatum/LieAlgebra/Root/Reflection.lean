@@ -163,12 +163,8 @@ theorem chevalleyWeylElement_conj_chevalleyRootSubgroup (α β : Fin t.numRoots)
   have hw := congrArg (fun z => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ z))
     (t.weylAut_chevalleySystem ht α β)
   simp only [map_zsmul] at hw
-  have hsign : ∀ n, ∀ v ∈ M, Associative.dividedPower n
-      ((t.chevalleyWeylSign ht α β : ℤ) • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β)))) • v ∈ M := by
-    intro n v hv
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil _ n v hv) _
+  have hsign := dividedPower_zsmul_chevalleySystem_smul_mem ρ M hM hnil
+    (t.chevalleyWeylSign ht α β) ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
   exact (baseChangeExp_congr hw M _ hsign u).trans
     (baseChangeExp_zsmul _ M (dividedPower_chevalleySystem_smul_mem ρ M hM hnil _) hsign
       (isNilpotent_apply_ι_chevalleySystem ρ hnil _) u)
