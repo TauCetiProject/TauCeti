@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
@@ -44,7 +45,8 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.inclusion`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` with norm at most `1` for
   `s' ≤ s` and `q ≤ q'`.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
-  `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`.
+  `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`. At the level of the predicate these inclusions
+  are `TemperedDistribution.MemBesov.mono` and `TemperedDistribution.MemBesov.of_lt`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq`: a Schwartz function whose Fourier transform
   is carried by the region where `ψⱼ = 1` lies in every Besov space, with norm `2^{js} ‖u‖_p`;
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq_of_norm_le` is the low-frequency case `j = 0`,
@@ -80,6 +82,17 @@ private theorem two_rpow_mul_two_rpow (x y : ℝ) :
     (((2 : ℝ) ^ x : ℝ) : ℂ) * (((2 : ℝ) ^ y : ℝ) : ℂ) = (((2 : ℝ) ^ (x + y) : ℝ) : ℂ) := by
   rw [Real.rpow_add two_pos, Complex.ofReal_mul]
 
+/-- Multiplying by the Besov weight `2^x` and then by `2^{-x}` is the identity. -/
+private theorem two_rpow_neg_smul_two_rpow_smul {M : Type*} [AddCommMonoid M] [Module ℂ M]
+    (x : ℝ) (v : M) : (((2 : ℝ) ^ (-x) : ℝ) : ℂ) • (((2 : ℝ) ^ x : ℝ) : ℂ) • v = v := by
+  rw [smul_smul, two_rpow_mul_two_rpow, neg_add_cancel, Real.rpow_zero, Complex.ofReal_one,
+    one_smul]
+
+/-- Multiplying by the Besov weight `2^{-x}` and then by `2^x` is the identity. -/
+private theorem two_rpow_smul_two_rpow_neg_smul {M : Type*} [AddCommMonoid M] [Module ℂ M]
+    (x : ℝ) (v : M) : (((2 : ℝ) ^ x : ℝ) : ℂ) • (((2 : ℝ) ^ (-x) : ℝ) : ℂ) • v = v := by
+  simpa only [neg_neg] using two_rpow_neg_smul_two_rpow_smul (-x) v
+
 namespace TemperedDistribution
 
 section MemBesov
@@ -106,11 +119,9 @@ theorem memBesov_iff {u : 𝓢'(E, F)} :
   · rintro ⟨v, hv⟩
     refine ⟨fun j ↦ (((2 : ℝ) ^ (-(s * j)) : ℝ) : ℂ) • v j, fun j ↦ ?_,
       (lp.memℓp v).norm.mono fun j ↦ le_of_eq ?_⟩
-    · rw [← Lp.toTemperedDistributionCLM_apply, map_smul, Lp.toTemperedDistributionCLM_apply, hv,
-        smul_smul, two_rpow_mul_two_rpow, neg_add_cancel, Real.rpow_zero, Complex.ofReal_one,
-        one_smul]
-    · rw [Real.norm_of_nonneg (by positivity), norm_smul, norm_two_rpow, ← mul_assoc,
-        ← Real.rpow_add two_pos, add_neg_cancel, Real.rpow_zero, one_mul]
+    · rw [Lp.toTemperedDistribution_smul, hv, two_rpow_neg_smul_two_rpow_smul]
+    · rw [Real.norm_of_nonneg (by positivity), ← norm_two_rpow, ← norm_smul,
+        two_rpow_smul_two_rpow_neg_smul]
   · rintro ⟨f, hf, hmem⟩
     refine ⟨⟨fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • f j, hmem.mono fun j ↦ le_of_eq ?_⟩,
       fun j ↦ ?_⟩
@@ -118,26 +129,23 @@ theorem memBesov_iff {u : 𝓢'(E, F)} :
     · -- The `j`-th entry of the anonymous `lp` element is `2^{js} • f j` by definition: `lp`
       -- coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
       rw [hf j]
-      exact map_smul (Lp.toTemperedDistributionCLM F volume p) _ (f j)
+      exact Lp.toTemperedDistribution_smul _ (f j)
 
 theorem MemBesov.zero : (0 : 𝓢'(E, F)).MemBesov φ s p q :=
-  ⟨0, fun j ↦ by simp [← Lp.toTemperedDistributionCLM_apply]⟩
+  ⟨0, fun j ↦ by simp⟩
 
 theorem MemBesov.add {u v : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (hv : v.MemBesov φ s p q) :
     (u + v).MemBesov φ s p q := by
   obtain ⟨a, ha⟩ := hu
   obtain ⟨b, hb⟩ := hv
   refine ⟨a + b, fun j ↦ ?_⟩
-  rw [lp.coeFn_add, Pi.add_apply, ← Lp.toTemperedDistributionCLM_apply, map_add,
-    Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply, ha, hb, map_add,
-    smul_add]
+  rw [lp.coeFn_add, Pi.add_apply, Lp.toTemperedDistribution_add, ha, hb, map_add, smul_add]
 
 theorem MemBesov.smul {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : ℂ) :
     (c • u).MemBesov φ s p q := by
   obtain ⟨a, ha⟩ := hu
   refine ⟨c • a, fun j ↦ ?_⟩
-  rw [lp.coeFn_smul, Pi.smul_apply, ← Lp.toTemperedDistributionCLM_apply, map_smul,
-    Lp.toTemperedDistributionCLM_apply, ha, map_smul, smul_comm]
+  rw [lp.coeFn_smul, Pi.smul_apply, Lp.toTemperedDistribution_smul, ha, map_smul, smul_comm]
 
 /-- **Monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s` and `q ≤ q'`. -/
 theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
@@ -147,6 +155,39 @@ theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.Mem
   rw [Real.norm_of_nonneg (by positivity)]
   gcongr
   exact one_le_two
+
+/-- **Strict monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s`, every
+`q` and every `q' ≠ 0`: the weighted blocks for `s'` decay geometrically. -/
+theorem MemBesov.of_lt {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
+    (hs : s' < s) (hq' : q' ≠ 0) : u.MemBesov φ s' p q' := by
+  obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
+  obtain ⟨C, hC⟩ := memℓp_infty_iff.1 (hmem.of_exponent_ge le_top)
+  set r : ℝ := 2 ^ (s' - s)
+  have hr0 : 0 ≤ r := Real.rpow_nonneg zero_le_two _
+  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ⟨0, rfl⟩)
+  have hbound (j : ℕ) : ‖(2 : ℝ) ^ (s' * j) * ‖f j‖‖ ≤ C * r ^ j := by
+    have hj : ‖(2 : ℝ) ^ (s * j) * ‖f j‖‖ ≤ C := hC ⟨j, rfl⟩
+    rw [Real.norm_of_nonneg (by positivity)] at hj ⊢
+    calc (2 : ℝ) ^ (s' * j) * ‖f j‖ = r ^ j * ((2 : ℝ) ^ (s * j) * ‖f j‖) := by
+          rw [← Real.rpow_mul_natCast zero_le_two, ← mul_assoc, ← Real.rpow_add two_pos,
+            ← add_mul, sub_add_cancel]
+      _ ≤ r ^ j * C := mul_le_mul_of_nonneg_left hj (by positivity)
+      _ = C * r ^ j := mul_comm _ _
+  have hgeom (t : ℝ≥0∞) (ht : 0 < t.toReal) :
+      Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s' * j) * ‖f j‖) t := by
+    refine memℓp_gen <| Summable.of_nonneg_of_le (fun j ↦ by positivity) (fun j ↦ ?_)
+      ((summable_geometric_of_lt_one (by positivity)
+        (Real.rpow_lt_one hr0 hr1 ht)).mul_left (C ^ t.toReal))
+    calc ‖(2 : ℝ) ^ (s' * j) * ‖f j‖‖ ^ t.toReal ≤ (C * r ^ j) ^ t.toReal :=
+          Real.rpow_le_rpow (norm_nonneg _) (hbound j) ht.le
+      _ = C ^ t.toReal * (r ^ t.toReal) ^ j := by
+          rw [Real.mul_rpow hC0 (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
+            ← Real.rpow_mul hr0, ← Real.rpow_mul hr0, mul_comm (j : ℝ)]
+  refine memBesov_iff.2 ⟨f, hf, ?_⟩
+  rcases eq_or_ne q' ∞ with rfl | hq'top
+  · exact (hgeom 1 (by simp)).of_exponent_ge le_top
+  · exact hgeom q' (ENNReal.toReal_pos hq' hq'top)
 
 theorem MemBesov.neg {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) : (-u).MemBesov φ s p q := by
   simpa using hu.smul (-1)
@@ -209,26 +250,24 @@ theorem weightedBlocks_injective :
   simp only [← coe_weightedBlocks_apply, h]
 
 instance : Zero (BesovSpace F φ s p q) where
-  zero := ⟨0, 0, fun j ↦ by simp [← Lp.toTemperedDistributionCLM_apply]⟩
+  zero := ⟨0, 0, fun j ↦ by simp⟩
 
 instance : Add (BesovSpace F φ s p q) where
   add u v := ⟨u.toDistr + v.toDistr, u.weightedBlocks + v.weightedBlocks, fun j ↦ by
-    simp [← Lp.toTemperedDistributionCLM_apply, map_add, smul_add,
-      ← u.coe_weightedBlocks_apply, ← v.coe_weightedBlocks_apply]⟩
+    simp [smul_add, ← u.coe_weightedBlocks_apply, ← v.coe_weightedBlocks_apply]⟩
 
 instance : Neg (BesovSpace F φ s p q) where
   neg u := ⟨-u.toDistr, -u.weightedBlocks, fun j ↦ by
-    simp [← Lp.toTemperedDistributionCLM_apply, map_neg, ← u.coe_weightedBlocks_apply]⟩
+    simp [← u.coe_weightedBlocks_apply]⟩
 
 instance : Sub (BesovSpace F φ s p q) where
   sub u v := ⟨u.toDistr - v.toDistr, u.weightedBlocks - v.weightedBlocks, fun j ↦ by
-    simp [← Lp.toTemperedDistributionCLM_apply, map_sub, smul_sub,
-      ← u.coe_weightedBlocks_apply, ← v.coe_weightedBlocks_apply]⟩
+    simp [smul_sub, ← u.coe_weightedBlocks_apply, ← v.coe_weightedBlocks_apply]⟩
 
 instance : SMul ℂ (BesovSpace F φ s p q) where
   smul c u := ⟨c • u.toDistr, c • u.weightedBlocks, fun j ↦ by
-    rw [lp.coeFn_smul, Pi.smul_apply, ← Lp.toTemperedDistributionCLM_apply, map_smul,
-      Lp.toTemperedDistributionCLM_apply, u.coe_weightedBlocks_apply, map_smul, smul_comm]⟩
+    rw [lp.coeFn_smul, Pi.smul_apply, Lp.toTemperedDistribution_smul, u.coe_weightedBlocks_apply,
+      map_smul, smul_comm]⟩
 
 instance : SMul ℕ (BesovSpace F φ s p q) where
   smul n u := (n : ℂ) • u
@@ -311,18 +350,45 @@ def block (u : BesovSpace F φ s p q) (j : ℕ) : Lp F p (volume : Measure E) :=
 @[simp]
 theorem coe_block (u : BesovSpace F φ s p q) (j : ℕ) :
     (u.block j : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j u.toDistr := by
-  rw [block, ← Lp.toTemperedDistributionCLM_apply, map_smul, Lp.toTemperedDistributionCLM_apply,
-    coe_weightedBlocks_apply, smul_smul, two_rpow_mul_two_rpow, neg_add_cancel, Real.rpow_zero,
-    Complex.ofReal_one, one_smul]
+  rw [block, Lp.toTemperedDistribution_smul, coe_weightedBlocks_apply,
+    two_rpow_neg_smul_two_rpow_smul]
 
 theorem weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     u.weightedBlocks j = (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • u.block j := by
-  rw [block, smul_smul, two_rpow_mul_two_rpow, add_neg_cancel, Real.rpow_zero, Complex.ofReal_one,
-    one_smul]
+  rw [block, two_rpow_smul_two_rpow_neg_smul]
 
 theorem norm_weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     ‖u.weightedBlocks j‖ = 2 ^ (s * j) * ‖u.block j‖ := by
   rw [weightedBlocks_apply, norm_smul, norm_two_rpow]
+
+@[simp]
+theorem block_zero (j : ℕ) : (0 : BesovSpace F φ s p q).block j = 0 := by
+  simp [block]
+
+@[simp]
+theorem block_add (u v : BesovSpace F φ s p q) (j : ℕ) :
+    (u + v).block j = u.block j + v.block j := by
+  simp [block, smul_add]
+
+@[simp]
+theorem block_neg (u : BesovSpace F φ s p q) (j : ℕ) : (-u).block j = -u.block j := by
+  simp [block]
+
+@[simp]
+theorem block_sub (u v : BesovSpace F φ s p q) (j : ℕ) :
+    (u - v).block j = u.block j - v.block j := by
+  simp [block, smul_sub]
+
+@[simp]
+theorem block_smul (c : ℂ) (u : BesovSpace F φ s p q) (j : ℕ) :
+    (c • u).block j = c • u.block j := by
+  rw [block, block, weightedBlocks_smul, lp.coeFn_smul, Pi.smul_apply, smul_comm]
+
+/-- Elements of two Besov spaces with the same tempered distribution have the same blocks. -/
+theorem block_eq_of_toDistr_eq {s' : ℝ} {q' : ℝ≥0∞} {u : BesovSpace F φ s p q}
+    {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) (j : ℕ) : u.block j = v.block j :=
+  LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block, h]
 
 /-- A tempered distribution in `B^s_{p,q}`, as an element of the bundled Besov space. -/
 def _root_.TemperedDistribution.MemBesov.toBesovSpace {u : 𝓢'(E, F)}
@@ -379,9 +445,8 @@ private def changeOrder (u : BesovSpace F φ s p q)
     (h : Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j) q') :
     BesovSpace F φ s' p q' :=
   -- The `j`-th entry of `⟨_, h⟩` is the rescaled block by definition, as in `memBesov_iff`.
-  ⟨u.toDistr, ⟨_, h⟩, fun j ↦ (map_smul (Lp.toTemperedDistributionCLM F volume p) _ _).trans <| by
-    rw [Lp.toTemperedDistributionCLM_apply, coe_weightedBlocks_apply, smul_smul,
-      two_rpow_mul_two_rpow, ← add_mul, sub_add_cancel]⟩
+  ⟨u.toDistr, ⟨_, h⟩, fun j ↦ (Lp.toTemperedDistribution_smul _ _).trans <| by
+    rw [coe_weightedBlocks_apply, smul_smul, two_rpow_mul_two_rpow, ← add_mul, sub_add_cancel]⟩
 
 private theorem changeOrder_apply (u : BesovSpace F φ s p q) (h) (j : ℕ) :
     (changeOrder (s' := s') (q' := q') u h).weightedBlocks j =
@@ -465,6 +530,11 @@ def inclusion (hs : s' ≤ s) (hq : q ≤ q') : BesovSpace F φ s p q →L[ℂ] 
 theorem toDistr_inclusion (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) :
     (inclusion F φ p hs hq u).toDistr = u.toDistr := by rfl
 
+@[simp]
+theorem block_inclusion (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) (j : ℕ) :
+    (inclusion F φ p hs hq u).block j = u.block j :=
+  block_eq_of_toDistr_eq (toDistr_inclusion hs hq u) j
+
 theorem norm_inclusion_le (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) :
     ‖inclusion F φ p hs hq u‖ ≤ ‖u‖ :=
   norm_changeOrder_of_le hs hq u
@@ -483,6 +553,11 @@ def inclusionOfLT (hs : s' < s) : BesovSpace F φ s p q →L[ℂ] BesovSpace F �
 @[simp]
 theorem toDistr_inclusionOfLT (hs : s' < s) (u : BesovSpace F φ s p q) :
     (inclusionOfLT F φ p q q' hs u).toDistr = u.toDistr := by rfl
+
+@[simp]
+theorem block_inclusionOfLT (hs : s' < s) (u : BesovSpace F φ s p q) (j : ℕ) :
+    (inclusionOfLT F φ p q q' hs u).block j = u.block j :=
+  block_eq_of_toDistr_eq (toDistr_inclusionOfLT hs u) j
 
 theorem norm_inclusionOfLT_le (hs : s' < s) (u : BesovSpace F φ s p q) :
     ‖inclusionOfLT F φ p q q' hs u‖ ≤ (1 - 2 ^ (s' - s))⁻¹ * ‖u‖ :=
@@ -504,9 +579,8 @@ theorem exists_toDistr_eq_and_norm_eq (j : ℕ) (f : 𝓢(E, F))
   · rw [littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite φ hf]
     split_ifs with hk
     · subst hk
-      rw [lp.single_apply_self, ← Lp.toTemperedDistributionCLM_apply, map_smul,
-        Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistribution_toLp_eq]
-    · rw [lp.single_apply_ne _ _ _ hk, smul_zero, ← Lp.toTemperedDistributionCLM_apply, map_zero]
+      rw [lp.single_apply_self, Lp.toTemperedDistribution_smul, Lp.toTemperedDistribution_toLp_eq]
+    · rw [lp.single_apply_ne _ _ _ hk, smul_zero, Lp.toTemperedDistribution_zero]
   · rw [← norm_weightedBlocks, lp.norm_single (zero_lt_one.trans_le Fact.out), norm_smul,
       norm_two_rpow]
 
