@@ -41,7 +41,7 @@ variable {X X' Y Y' : Scheme.{u}} {f : X ⟶ Y} {f' : X' ⟶ Y'}
   {g : Y' ⟶ Y} {g' : X' ⟶ X} [IsFinite f] [IsFinite f'] [Flat g]
 
 /-- The affine conductor calculation in a cartesian square. -/
-private theorem conductor_ideal_of_isPullback (H : IsPullback g' f' f g)
+private theorem conductor_ideal_eq_map_of_isPullback (H : IsPullback g' f' f g)
     (U : Y.affineOpens) (V : Y'.affineOpens) (hVU : V.1 ≤ g ⁻¹ᵁ U.1) :
     f'.conductor.ideal V = (f.conductor.ideal U).map (g.appLE U V hVU).hom := by
   have hpre : f' ⁻¹ᵁ V.1 = g' ⁻¹ᵁ (f ⁻¹ᵁ U.1) ⊓ f' ⁻¹ᵁ V.1 := by
@@ -74,12 +74,12 @@ private theorem conductor_ideal_of_isPullback (H : IsPullback g' f' f g)
 
 /-- The conductor ideal sheaf of a finite morphism commutes with flat base change.
 The square may be any chosen pullback square. -/
-theorem conductor_of_isPullback (H : IsPullback g' f' f g) :
+theorem conductor_eq_comap_of_isPullback (H : IsPullback g' f' f g) :
     f'.conductor = f.conductor.comap g := by
   refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over _ g fun U V e ↦ ?_
   rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop f'.conductor V.2,
     Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g U.2 V.2 e,
-    conductor_ideal_of_isPullback H U V e]
+    conductor_ideal_eq_map_of_isPullback H U V e]
 
 /-- The conductor of the base change of a finite morphism is the pullback of its
 conductor ideal sheaf along a flat morphism. -/
@@ -87,6 +87,6 @@ conductor ideal sheaf along a flat morphism. -/
 theorem conductor_pullback_snd {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
     [IsFinite f] [Flat g] :
     (Limits.pullback.snd f g).conductor = f.conductor.comap g :=
-  conductor_of_isPullback (IsPullback.of_hasPullback f g)
+  conductor_eq_comap_of_isPullback (IsPullback.of_hasPullback f g)
 
 end AlgebraicGeometry.Scheme.Hom
