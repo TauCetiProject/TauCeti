@@ -23,7 +23,8 @@ transition to the section through `p` is the identity on that section
 (`TauCeti.eventually_flowTransition_zero`), so the transition from the section through `p` to the
 section through `q` is invertible on these sections, with inverse the reverse transition at time
 `-T` (`TauCeti.eventually_flowTransition_neg_flowTransition`,
-`TauCeti.eventually_flowTransition_flowTransition_neg`).
+`TauCeti.eventually_flowTransition_flowTransition_neg`). A transition is also constant along the
+trajectory through its base point (`TauCeti.eventually_flowTransition_flowOf`).
 
 If moreover `p` returns to itself at time `T₀`, then `flowTransition v g T₀ p` is a local return
 branch of the section through `p`, and likewise at `q`. The transition `h` from the section through
@@ -42,6 +43,8 @@ first return to the section.
 
 * `TauCeti.flowHittingTime_add_flowHittingTime_eventuallyEq`: hitting times add.
 * `TauCeti.flowTransition_comp_eventuallyEq`: transitions compose.
+* `TauCeti.eventually_flowTransition_flowOf`: a transition is constant along the trajectory
+  through its base point.
 * `TauCeti.eventually_flowTransition_neg_flowTransition`,
   `TauCeti.eventually_flowTransition_flowTransition_neg`: the reverse transition is the inverse of
   the transition between two sections.
@@ -134,6 +137,28 @@ theorem eventually_flowTransition_zero (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
     (by rwa [h0]) (by rwa [h0]))] with z hz hzg
   have htime : 0 = flowHittingTime v g 0 p z := hz.1 (by rw [flowOf_zero hv, h0, hzg])
   rw [flowTransition_apply, ← htime, flowOf_zero hv]
+
+/-- **A transition is constant along the trajectory through `p`.** For `s` near `0`, the point
+`flowOf v s p` is carried to `flowOf v T p`, its hitting time being `T - s`. -/
+theorem eventually_flowTransition_flowOf (hT : (T, p) ∈ flowDomain v)
+    (hg : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v T p))
+    (hgv : mvfderiv I g (flowOf v T p) (v (flowOf v T p)) ≠ 0) :
+    ∀ᶠ s in 𝓝 (0 : ℝ), flowTransition v g T p (flowOf v s p) = flowOf v T p := by
+  have hγ : Tendsto (fun s ↦ flowOf v s p) (𝓝 0) (𝓝 p) := by
+    simpa only [flowOf_zero hv p] using
+      (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv p)).continuousAt.tendsto
+  have hsub : Tendsto (fun s : ℝ ↦ T - s) (𝓝 0) (𝓝 T) := by
+    simpa only [sub_zero, id_eq] using
+      (tendsto_const_nhds (x := T)).sub (tendsto_id (x := 𝓝 (0 : ℝ)))
+  have hpair : Tendsto (fun s ↦ (T - s, flowOf v s p)) (𝓝 0) (𝓝 (T, p)) := hsub.prodMk_nhds hγ
+  have hzero : Tendsto (fun s : ℝ ↦ (s, p)) (𝓝 0) (𝓝 (0, p)) :=
+    (continuous_id.prodMk continuous_const).tendsto 0
+  filter_upwards [hpair.eventually ((isOpen_flowDomain hv).mem_nhds hT),
+    hzero.eventually ((isOpen_flowDomain hv).mem_nhds (mem_flowDomain_zero hv p)),
+    hpair.eventually (eventually_eq_flowHittingTime_iff hv hT hg hgv)] with s hsT hs hiff
+  have hflow : flowOf v (T - s) (flowOf v s p) = flowOf v T p := by
+    rw [(flowOf_add hv hs hsT).2, add_sub_cancel]
+  rw [flowTransition_apply, ← hiff.1 (by rw [hflow]), hflow]
 
 section Inverse
 

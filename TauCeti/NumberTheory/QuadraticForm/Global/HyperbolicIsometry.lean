@@ -91,7 +91,7 @@ theorem globalInvariants_sumTwoSquaresSubSq :
         realPositiveIndex := fun _ => 2 } := by
   have hQ : sumTwoSquaresSubSq = weightedSumSquares ℚ ![1, ((1 : ℚˣ) : ℚ), -((1 : ℚˣ) : ℚ)] := by
     simp [sumTwoSquaresSubSq_def]
-  rw [← globalInvariants_weightedSumSquares_one_self_neg 1 (hQ ▸ nondegenerate_sumTwoSquaresSubSq)]
+  rw [← globalInvariants_weightedSumSquares_one_self_neg 1]
   congr
 
 /-- The system of local invariants of `⟨1, 2, -2⟩`: it is the same as that of `⟨1, 1, -1⟩`. -/
@@ -103,8 +103,7 @@ theorem globalInvariants_sqAddTwoSqSubTwoSq :
       weightedSumSquares ℚ ![1, ((Units.mk0 2 two_ne_zero : ℚˣ) : ℚ),
         -((Units.mk0 2 two_ne_zero : ℚˣ) : ℚ)] := by
     simp [sqAddTwoSqSubTwoSq_def]
-  rw [← globalInvariants_weightedSumSquares_one_self_neg _
-    (hQ ▸ nondegenerate_sqAddTwoSqSubTwoSq)]
+  rw [← globalInvariants_weightedSumSquares_one_self_neg _]
   congr
 
 end TauCeti.NumberField.QuadraticForm

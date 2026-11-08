@@ -31,10 +31,10 @@ ranks `2n` and `4n`, and none of `n`, `2n`, `4n` being `4` modulo `8` forces `8 
 Once `8 ∣ n`, the factor `(-i)^k` is `1`, so `Θ_L` is invariant under both generators `S` and
 `T` of `SL(2, ℤ)`; with holomorphy and boundedness at `i∞` this makes `Θ_L` a level-one modular
 form, `ZLattice.thetaForm`, built as Mathlib builds `CuspForm.discriminant`. Its `q`-expansion
-coefficients are the representation numbers `r_L(2m)` (`ZLattice.coe_thetaForm` and
-`ZLattice.IsEven.qExpansion_thetaSeries_coeff`), it is nonzero since `Θ_L(i) ≠ 0`, it is
-invariant under linear isometries, and the theta form of an orthogonal direct sum `L ⊕ M` is the
-product of the theta forms of `L` and `M`, in weight `k + k'`.
+coefficients are the representation numbers `r_L(2m)` (`ZLattice.qExpansion_thetaForm_coeff`),
+it is nonzero since `Θ_L(i) ≠ 0`, it is invariant under linear isometries, and the theta form of
+an orthogonal direct sum `L ⊕ M` is the product of the theta forms of `L` and `M`, in weight
+`k + k'`.
 
 Since `4 ∣ k`, the theta series is then a unique combination of the products `E₄ ^ a * Δ ^ b`
 with `4 a + 12 b = k`. Its `q`-expansion coefficients are the representation numbers `r_L(2m)`,
@@ -51,6 +51,8 @@ inside the ring of level-one modular forms.
 
 * `ZLattice.IsEven.eight_dvd_finrank`: the rank of an even unimodular lattice is divisible by `8`.
 * `ZLattice.IsEven.thetaSeries_slash_S`: `Θ_L ∣[k] S = Θ_L` for even unimodular `L`.
+* `ZLattice.qExpansion_thetaForm_coeff`: the `m`-th `q`-expansion coefficient of `Θ_L` is
+  `r_L(2m)`.
 * `ZLattice.thetaForm_ne_zero`: `Θ_L` is a nonzero modular form.
 * `ZLattice.thetaForm_comap`: `Θ_L` is invariant under linear isometries.
 * `ZLattice.thetaForm_orthSum`: `Θ_{L ⊕ M} = Θ_L Θ_M` as modular forms of weight `k + k'`.
@@ -144,6 +146,14 @@ theorem coe_thetaForm (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank ℝ E 
     ⇑(thetaForm hL hU hk) = thetaSeries L :=
   (rfl)
 
+/-- The `q`-expansion coefficients of the theta form are representation numbers: the `m`-th
+coefficient in `q = exp (2 π i τ)` is the number `r_L(2m)` of vectors of `L` of squared
+norm `2m`. -/
+theorem qExpansion_thetaForm_coeff (hL : IsEven L) (hU : IsUnimodular L)
+    (hk : finrank ℝ E = 2 * k) (m : ℕ) :
+    (qExpansion 1 (thetaForm hL hU hk)).coeff m = representationNumber L (2 * m) := by
+  rw [coe_thetaForm, hL.qExpansion_thetaSeries_coeff]
+
 /-- The theta series of an even unimodular lattice is a nonzero modular form. -/
 @[simp]
 theorem thetaForm_ne_zero (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank ℝ E = 2 * k) :
@@ -190,7 +200,8 @@ theorem IsEven.existsUnique_finsupp_thetaSeries_eq_E₄_discriminant (hL : IsEve
   have hq : qExpansion 1 (thetaForm hL hU hk) ∈ (PowerSeries.map (Rat.castHom ℂ)).range :=
     RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦ (representationNumber L (2 * m) : ℚ), by
       ext m
-      simp [hL.qExpansion_thetaSeries_coeff]⟩
+      rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, qExpansion_thetaForm_coeff]
+      simp⟩
   obtain ⟨c, ⟨hc, hfc⟩, huniq⟩ := existsUnique_finsupp_E₄_discriminant_of_qExpansion_mem_range
     (Rat.castHom ℂ) (thetaForm hL hU hk) h4 hq
   refine ⟨c, ⟨fun ab hab ↦ by exact_mod_cast hc ab hab, by simpa using hfc⟩,

@@ -508,14 +508,8 @@ theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v
 /-- Evaluation at a solution agrees with the corresponding coordinate-group homomorphism. -/
 @[simp]
 theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X) :
-    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) := by
-  have htuple : (homEquiv ι S φ : X → H) =
-      (fun x => φ (inr (FreeGroup.of x) : GX G X)) :=
-    funext (homEquiv_apply_coe φ)
-  rw [htuple]
-  exact (DFunLike.congr_fun (GX.eval_eq_comp_mk' φ) w).trans (by
-    rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
-    rfl)
+    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) :=
+  GX.eval_quotientHomEquiv φ w
 
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
@@ -612,12 +606,7 @@ theorem homEquiv_comp_homOfWordMap {Y : Type*} (ι : G →* H)
     (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) :
     ((homEquiv ι (σ ⁻¹' S) (φ.comp (homOfWordMap ι σ S)) : Y → H)) =
       wordMap ι (fun y => σ (inr (FreeGroup.of y))) (homEquiv ι S φ) := by
-  have hφ : evalGHom (homEquiv ι S φ) ((homEquiv ι S φ).property) = φ := by
-    simpa only [homEquiv_symm_apply] using (homEquiv ι S).symm_apply_apply φ
-  simpa only [homOfWordMap, hφ] using
-    (homEquiv_comp_homOfMapsToWordMap ι S (σ ⁻¹' S)
-      (fun y => σ (inr (FreeGroup.of y)))
-      (fun v hv => wordMap_mem_V ι σ S v hv) (homEquiv ι S φ))
+  funext y; simp
 
 end CoordGroup
 

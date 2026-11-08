@@ -56,6 +56,8 @@ supplies them with the general Hille--Yosida growth constant `M`.
 
 public section
 
+open _root_.LinearPMap (yosidaApproximation)
+
 noncomputable section
 
 open Filter MeasureTheory NormedSpace

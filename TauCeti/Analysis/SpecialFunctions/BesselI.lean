@@ -36,7 +36,8 @@ von Mises–Fisher laws.
 * `Real.besselI` — the modified Bessel function of the first kind `I_ν(x)`.
 * `Real.besselI_eq_rpow_mul` — `I_ν(x) = (x / 2) ^ ν * ₀F₁(; ν + 1; (x / 2) ^ 2)` with the real
   power.
-* `Real.hasSum_besselI` — the series `∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))` for `x > 0`.
+* `Real.hasSum_besselI` — the series `∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`, at every real
+  `x`.
 * `Real.hasSum_besselI_natCast` — the series `∑ⱼ (x / 2) ^ (2 j + n) / (j! (j + n)!)` of a natural
   order `n`, at every real `x`.
 * `Real.besselI_pos` — `I_ν(x) > 0` for `ν > -1` and `x > 0`.
@@ -107,33 +108,53 @@ theorem regularizedHGFun_zero_singleton_ofReal_re_eq_rpow_mul_besselI (a : ℝ) 
   rw [besselI_eq_rpow_mul, sub_add_cancel, ← mul_assoc, ← rpow_add hx2]
   simp [harg]
 
-/-- For `x > 0`, `I_ν(x)` is the sum of its power series
-`∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`. -/
-theorem hasSum_besselI (ν : ℝ) {x : ℝ} (hx : 0 < x) :
+/-- `I_ν(0)` is `1` for `ν = 0` and `0` otherwise. -/
+@[simp]
+theorem besselI_zero (ν : ℝ) : besselI ν 0 = if ν = 0 then 1 else 0 := by
+  split_ifs with h
+  · simp [h, besselI_eq_rpow_mul]
+  · simp [besselI_eq_rpow_mul, zero_rpow h]
+
+/-- `I_ν(x)` is the sum of its power series `∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`. For
+`x > 0` this is the classical series. The identity also holds at every real `x` for the totalization
+of `besselI` and of `Real.rpow` fixed in the module docstring. -/
+theorem hasSum_besselI (ν x : ℝ) :
     HasSum (fun j : ℕ => (x / 2) ^ (2 * j + ν) / (j ! * Gamma (j + ν + 1))) (besselI ν x) := by
-  have hx2 : 0 < x / 2 := by positivity
-  have hcast (j : ℕ) : 2 * (j : ℝ) + ν = ((2 * j : ℕ) : ℝ) + ν := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [besselI_zero]
+    split_ifs with hν
+    · subst hν
+      convert hasSum_ite_eq 0 (1 : ℝ) using 1
+      ext j
+      rcases Nat.eq_zero_or_pos j with rfl | hj
+      · simp
+      · simp [hj.ne']
+    · convert hasSum_zero with j
+      rw [zero_div]
+      by_cases h : 2 * (j : ℝ) + ν = 0
+      · have hj : (j : ℝ) + ν + 1 = -((j - 1 : ℕ) : ℝ) := by
+          rcases Nat.eq_zero_or_pos j with rfl | hj
+          · exact absurd (by simpa using h) hν
+          · push_cast [Nat.one_le_iff_ne_zero.mpr hj.ne']; linarith
+        rw [hj, Gamma_neg_nat_eq_zero, mul_zero, div_zero]
+      · rw [zero_rpow h, zero_div]
+  have hx2 : x / 2 ≠ 0 := div_ne_zero hx two_ne_zero
+  have hcast (j : ℕ) : 2 * (j : ℝ) + ν = ν + ((2 * j : ℕ) : ℝ) := by
     push_cast
     ring
   have hadd (j : ℕ) : (j : ℝ) + ν + 1 = ν + 1 + j := by ring
   rw [besselI_eq_rpow_mul]
   convert (Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re (ν + 1) ((x / 2) ^ 2)).mul_left
     ((x / 2) ^ ν) using 2 with j
-  rw [hcast, rpow_add hx2, rpow_natCast, pow_mul, hadd]
+  rw [hcast, rpow_add_natCast hx2, pow_mul, hadd]
   ring
 
 /-- For a natural order `n`, `I_n(x)` is the sum of its power series
 `∑ⱼ (x / 2) ^ (2 j + n) / (j! (j + n)!)` at every real `x`, including `x ≤ 0`. -/
 theorem hasSum_besselI_natCast (n : ℕ) (x : ℝ) :
     HasSum (fun j : ℕ => (x / 2) ^ (2 * j + n) / (j ! * (j + n)!)) (besselI n x) := by
-  have hadd (j : ℕ) : (n : ℝ) + 1 + j = ((j + n : ℕ) : ℝ) + 1 := by
-    push_cast
-    ring
-  rw [besselI_eq_rpow_mul, rpow_natCast]
-  convert (Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re (n + 1) ((x / 2) ^ 2)).mul_left
-    ((x / 2) ^ n) using 2 with j
-  rw [hadd, Gamma_nat_eq_factorial, pow_add, pow_mul]
-  ring
+  simpa only [← Nat.cast_ofNat (R := ℝ) (n := 2), ← Nat.cast_mul, ← Nat.cast_add, rpow_natCast,
+    Gamma_nat_eq_factorial] using hasSum_besselI (n : ℝ) x
 
 /-- `I_ν(x)` is positive for `ν > -1` and `x > 0`. -/
 theorem besselI_pos {ν x : ℝ} (hν : -1 < ν) (hx : 0 < x) : 0 < besselI ν x := by
@@ -142,7 +163,7 @@ theorem besselI_pos {ν x : ℝ} (hν : -1 < ν) (hx : 0 < x) : 0 < besselI ν x
     have := Gamma_pos_of_pos hj
     positivity
   exact hasSum_lt (f := 0) (i := 0) (fun j => (hterm j).le) (hterm 0) hasSum_zero
-    (hasSum_besselI ν hx)
+    (hasSum_besselI ν x)
 
 /-- `I_0(x) ≥ 1` at every real `x`: the power series of `I_0` has nonnegative terms and leading
 term `1`. In particular `I_0` never vanishes. -/
@@ -154,13 +175,6 @@ theorem one_le_besselI_zero_left (x : ℝ) : 1 ≤ besselI 0 x := by
 /-- `I_0(x) > 0` at every real `x`. -/
 theorem besselI_zero_left_pos (x : ℝ) : 0 < besselI 0 x :=
   zero_lt_one.trans_le (one_le_besselI_zero_left x)
-
-/-- `I_ν(0)` is `1` for `ν = 0` and `0` otherwise. -/
-@[simp]
-theorem besselI_zero (ν : ℝ) : besselI ν 0 = if ν = 0 then 1 else 0 := by
-  split_ifs with h
-  · simp [h, besselI_eq_rpow_mul]
-  · simp [besselI_eq_rpow_mul, zero_rpow h]
 
 private theorem continuous_regularizedHGFun_besselI :
     Continuous fun p : ℝ × ℝ =>

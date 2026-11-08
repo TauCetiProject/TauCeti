@@ -60,6 +60,8 @@ AINTLIB `LeanModularForms` project
   at `s • τ`, is `denom s τ ^ k * f τ`.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
+* `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `H₁`-invariant element by `x` depends
+  only on the right coset `H₁ x`, for any slash action.
 * `SlashInvariantFormClass.SL_slash_eq`: a form invariant under the image of `Γ ≤ SL(2, ℤ)`
   is fixed by the slash action of every element of `Γ`.
 * `SlashInvariantForm.slash_action_eqn_of_det_pos`: the transformation law
@@ -171,6 +173,25 @@ lemma slash_zpow_mul_mul_zpow_eq_smul (k : ℤ) (f : ℍ → ℂ) {δ γ : GL (F
 analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet provide. -/
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
+
+namespace SlashAction
+
+/-- **Slashing a `H₁`-invariant element depends only on the right coset.** If `H₁ x = H₁ y`
+then `f ∣[k] x = f ∣[k] y`, because `y = (y x⁻¹) x` with `y x⁻¹ ∈ H₁` and the slash by that
+factor is trivial on `f`.
+
+It is used in `HeckeSlash/Independence.lean` to show that Hecke slash sums do not depend on the
+choice of right-coset representatives. -/
+lemma slash_eq_of_rightCoset_eq {β H A : Type*} [Group H] [AddMonoid A] [SlashAction β H A]
+    {H₁ : Subgroup H} (k : β) {f : A} (hf : ∀ γ ∈ H₁, f ∣[k] γ = f) {x y : H}
+    (h : MulOpposite.op x • (H₁ : Set H) = MulOpposite.op y • (H₁ : Set H)) :
+    f ∣[k] x = f ∣[k] y := by
+  have hγ : y * x⁻¹ ∈ H₁ := (rightCoset_eq_iff H₁).mp h
+  calc f ∣[k] x = (f ∣[k] (y * x⁻¹)) ∣[k] x := by rw [hf _ hγ]
+    _ = f ∣[k] (y * x⁻¹ * x) := (SlashAction.slash_mul k (y * x⁻¹) x f).symm
+    _ = f ∣[k] y := by rw [inv_mul_cancel_right]
+
+end SlashAction
 
 namespace TauCeti.ModularForm
 

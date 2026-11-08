@@ -74,7 +74,7 @@ theorem exists_isSmoothEmbedding_stableSet (hf : MDifferentiable 𝓘(ℝ, E) �
         range ι = hX.flow.stableSet x ∧ ι 0 = x ∧
         ∀ u : L, u ≠ 0 → 0 < hessianQuadraticForm (f ∘ (extChartAt 𝓘(ℝ, E) x).symm)
           (extChartAt 𝓘(ℝ, E) x x) (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) ι 0 u) := by
-  obtain ⟨φ, δ, hemb, hrange, h0, hd⟩ := hX.exists_stableParam hf hx
+  obtain ⟨φ, δ, hemb, hrange, h0, hd, -⟩ := hX.exists_stableParam hf hx
   refine ⟨φ.stableSubspace, φ.finrank_stableSubspace_add_manifoldMorseIndex, _, hemb, hrange,
     h0, fun u hu ↦ ?_⟩
   have hQ := φ.hessianQuadraticForm_extChartAt

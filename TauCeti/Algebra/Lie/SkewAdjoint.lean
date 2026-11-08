@@ -76,6 +76,8 @@ composite is not built here.
 * `TauCeti.LieAlgebra.polarBilin_killingQuadraticForm` and
   `TauCeti.LieAlgebra.polar_killingQuadraticForm`: the polar form of the Killing quadratic
   form is `2 • killingForm`.
+* `TauCeti.LieAlgebra.associated_killingQuadraticForm`: over a ring in which `2` is invertible, the
+  associated bilinear form of the Killing quadratic form is `killingForm`.
 * `TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate`: over a ring in which `2` is invertible,
   the Killing quadratic form of a Killing-semisimple Lie algebra is nondegenerate.
 * `Module.Basis.dualBasis_polarBilin_killingQuadraticForm_apply`: the basis dual for the polar form
@@ -319,10 +321,19 @@ theorem polarBilin_killingQuadraticForm :
 
 /-- The pointwise form of `polarBilin_killingQuadraticForm`: the polar form of the Killing quadratic
 form at `x` and `y` is `2 * κ(x, y)`. -/
+@[simp]
 theorem polar_killingQuadraticForm (x y : L) :
     QuadraticMap.polar (killingQuadraticForm R L) x y = 2 * killingForm R L x y := by
   simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using
     LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm R L) x y
+
+/-- The associated bilinear form of the Killing quadratic form is the Killing form, since the
+Killing form is symmetric. -/
+@[simp]
+theorem associated_killingQuadraticForm [Invertible (2 : R)] :
+    QuadraticMap.associated (killingQuadraticForm R L) = killingForm R L := by
+  rw [killingQuadraticForm]
+  exact QuadraticMap.associated_left_inverse R (LieModule.traceForm_comm R L L)
 
 /-- The Killing quadratic form is nondegenerate for a Killing-semisimple Lie algebra over a ring in
 which `2` is invertible. Both hypotheses are needed: `IsKilling` is nondegeneracy of `κ` itself, and

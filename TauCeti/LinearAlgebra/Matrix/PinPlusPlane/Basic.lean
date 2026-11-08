@@ -472,6 +472,36 @@ section IsDomain
 
 variable {R : Type*} [CommRing R] [IsDomain R] [NeZero (2 : R)]
 
+/-- The entry equations for a `Pin⁺` lift of the identity: from the `e₁`, `e₂` generator
+equations and the orthogonality equations on the entries `a b c d` of a `2 × 2` matrix, the matrix
+is the scalar `a` with `a * a = 1`. -/
+private theorem entries_eq_of_pin_equations {a b c d : R}
+    (e1 : (a * d - b * c) * (a * a - b * b) = 1) (e2 : (a * d - b * c) * (2 * (a * b)) = 0)
+    (e3 : (a * d - b * c) * (a * d + b * c) = 1) (o1 : a * a + c * c = 1)
+    (o2 : a * a + b * b = 1) (o3 : a * c + b * d = 0) (o4 : b * b + d * d = 1)
+    (o5 : a * b + c * d = 0) : b = 0 ∧ c = 0 ∧ d = a ∧ a * a = 1 := by
+  -- The determinant `δ = a d − b c` squares to one, and `δ (a d + b c) = 1`, so `b c = 0`.
+  have hδ : (a * d - b * c) * (a * d - b * c) = 1 := by
+    linear_combination (b * b + d * d) * o1 + o4 - (a * b + c * d) * o5
+  have hδ0 : a * d - b * c ≠ 0 := left_ne_zero_of_mul_eq_one hδ
+  have h20 : (2 : R) ≠ 0 := two_ne_zero
+  have hbc : b * c = 0 := by
+    have : (a * d - b * c) * (2 * (b * c)) = 0 := by linear_combination e3 - hδ
+    simpa [hδ0, h20] using this
+  have hab : a * b = 0 := by simpa [hδ0, h20] using e2
+  have ha : a ≠ 0 := by
+    rintro ha
+    exact hδ0 (by rw [ha, zero_mul, zero_sub, hbc, neg_zero])
+  have hb : b = 0 := (mul_eq_zero.1 hab).resolve_left ha
+  have hc : c = 0 := by
+    rw [hb, zero_mul, add_zero] at o3
+    exact (mul_eq_zero.1 o3).resolve_left ha
+  rw [hb, mul_zero, add_zero] at o2
+  have had : a * d = 1 := by
+    rw [hb, zero_mul, sub_zero, mul_zero, sub_zero, o2, mul_one] at e1
+    exact e1
+  exact ⟨hb, hc, by linear_combination (-d) * o2 + a * had, o2⟩
+
 /-- The `Pin⁺` lifts of the identity are `±1`: of determinant `1` such a lift commutes with `e₁` and
 `e₂` and is a scalar, and of determinant `−1` it would anticommute with both, which no orthogonal
 matrix does when `2 ≠ 0`. -/
@@ -509,29 +539,9 @@ private theorem eq_one_or_eq_neg_one_of_isPinLift_one {z : Matrix (Fin 2) (Fin 2
     simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 1) 1
   have o5 : a * b + c * d = 0 := by
     simpa [Matrix.mul_apply, Fin.sum_univ_two, -mul_eq_zero] using congrFun (congrFun hzz 0) 1
-  -- The determinant `δ = a d − b c` squares to one, and `δ (a d + b c) = 1`, so `b c = 0`.
-  have hδ : (a * d - b * c) * (a * d - b * c) = 1 := by
-    linear_combination (b * b + d * d) * o1 + o4 - (a * b + c * d) * o5
-  have hδ0 : a * d - b * c ≠ 0 := left_ne_zero_of_mul_eq_one hδ
-  have h20 : (2 : R) ≠ 0 := two_ne_zero
-  have hbc : b * c = 0 := by
-    have : (a * d - b * c) * (2 * (b * c)) = 0 := by linear_combination e3 - hδ
-    simpa [hδ0, h20] using this
-  have hab : a * b = 0 := by simpa [hδ0, h20] using e2
-  have ha : a ≠ 0 := by
-    rintro ha
-    exact hδ0 (by rw [ha, zero_mul, zero_sub, hbc, neg_zero])
-  have hb : b = 0 := (mul_eq_zero.1 hab).resolve_left ha
-  have hc : c = 0 := by
-    rw [hb, zero_mul, add_zero] at o3
-    exact (mul_eq_zero.1 o3).resolve_left ha
-  rw [hb, mul_zero, add_zero] at o2
-  have had : a * d = 1 := by
-    rw [hb, zero_mul, sub_zero, mul_zero, sub_zero, o2, mul_one] at e1
-    exact e1
-  have hd : d = a := by linear_combination (-d) * o2 + a * had
+  obtain ⟨hb, hc, hd, ha⟩ := entries_eq_of_pin_equations e1 e2 e3 o1 o2 o3 o4 o5
   rw [hb, hc, hd]
-  rcases mul_self_eq_one_iff.1 o2 with ha1 | ha1 <;> rw [ha1]
+  rcases mul_self_eq_one_iff.1 ha with ha1 | ha1 <;> rw [ha1]
   · exact Or.inl (one_fin_two (α := R)).symm
   · exact Or.inr (by ext i j; fin_cases i <;> fin_cases j <;> simp)
 

@@ -41,6 +41,7 @@ namespace TauCeti.EisensteinSeries
 
 variable {N : ℕ} [NeZero N]
 
+omit [NeZero N] in
 /-- At squarefree level, the corrected weight-two Eisenstein series and the cusp forms are
 complementary in the full modular-form space. This includes `N = 1`, when the Eisenstein span
 and the entire weight-two space are both zero. -/
@@ -48,6 +49,7 @@ theorem isCompl_span_correctedE2AtLevel_cuspFormSubmodule_of_squarefree (hN : Sq
     IsCompl (Submodule.span ℂ (Set.range (correctedE2AtLevel N)))
       (cuspFormSubmodule ((Gamma0 N).map (mapGL ℝ)) 2) := by
   classical
+  have : NeZero N := ⟨hN.ne_zero⟩
   let E := Submodule.span ℂ (Set.range (correctedE2AtLevel N))
   let Q := constantTermsAtDivisors (N := N) (k := 2)
   have hker : LinearMap.ker Q = cuspFormSubmodule ((Gamma0 N).map (mapGL ℝ)) 2 :=
@@ -77,10 +79,11 @@ namespace TauCeti
 /-- At squarefree level, weight-two modular forms have dimension `τ(N) - 1` more than cusp
 forms, where `τ(N)` is the number of positive divisors of `N`. For prime `N`, this difference
 is one, as in `ModularForm.finrank_weight_two_Gamma0_prime`; for `N = 1`, it is zero. -/
-theorem finrank_weight_two_Gamma0_of_squarefree {N : ℕ} [NeZero N] (hN : Squarefree N) :
+theorem finrank_weight_two_Gamma0_of_squarefree {N : ℕ} (hN : Squarefree N) :
     Module.finrank ℂ (ModularForm ((Gamma0 N).map (mapGL ℝ)) 2) =
       Module.finrank ℂ (CuspForm ((Gamma0 N).map (mapGL ℝ)) 2) +
         (N.divisors.card - 1) := by
+  have : NeZero N := ⟨hN.ne_zero⟩
   have hdim := Submodule.finrank_add_eq_of_isCompl
     (TauCeti.EisensteinSeries.isCompl_span_correctedE2AtLevel_cuspFormSubmodule_of_squarefree
       hN).symm

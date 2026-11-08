@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
-import Mathlib.RingTheory.Ideal.AssociatedPrime.Finiteness
+import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -51,8 +51,6 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   and also after multiplication by a power of `b`, already lies in `R`.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_ofList_smul_top_of_sum_eq_zero`: the coefficients of a
   relation `∑ fᵢ mᵢ = 0` among a weakly `M`-regular sequence lie in `(f₁, …, f_r) M`.
-* `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
-  in no associated prime of `M`.
 * `IsLocalRing.exists_isSMulRegular_of_depth_ne_zero`: over a Noetherian local ring, a finite
   module of nonzero depth has a regular element in the maximal ideal.
 * `TauCeti.exists_isWeaklyRegular_of_le_depth_localizedModule`: if `depth M_p ≥ n` at every prime
@@ -217,23 +215,6 @@ end Relations
 
 variable {R : Type u} [CommRing R] [IsNoetherianRing R] {M : Type v} [AddCommGroup M] [Module R M]
   [Module.Finite R M]
-
-/-- **Prime avoidance for regular elements.** An ideal `I` of a Noetherian ring contains an
-element that is regular on a finite module `M` if and only if `I` is contained in no associated
-prime of `M`. -/
-theorem Ideal.exists_mem_isSMulRegular_iff (I : Ideal R) :
-    (∃ a ∈ I, IsSMulRegular M a) ↔ ∀ p ∈ associatedPrimes R M, ¬ I ≤ p := by
-  have hzd := biUnion_associatedPrimes_eq_compl_regular R M
-  refine ⟨fun ⟨a, ha, reg⟩ p hp hle ↦ ?_, fun h ↦ ?_⟩
-  · have hmem : a ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp (hle ha)
-    rw [hzd] at hmem
-    exact hmem reg
-  · by_contra! hreg
-    obtain ⟨p, hp, hle⟩ := (Ideal.subset_union_prime_finite (associatedPrimes.finite R M)
-      (f := id) 0 0 fun _ hp _ _ ↦ hp.isPrime).1 <| by
-        simp_rw [id, hzd]
-        exact hreg
-    exact h p hp hle
 
 /-- Over a Noetherian local ring, a finite module of nonzero depth has a regular element in the
 maximal ideal. -/

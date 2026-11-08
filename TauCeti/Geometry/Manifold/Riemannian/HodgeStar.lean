@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
@@ -20,6 +22,9 @@ On an oriented Riemannian manifold `M` of dimension `m = k + l`, the Hodge star 
 spaces, `Orientation.formHodgeStar`, applied fibrewise sends real `k`-forms to real `l`-forms.
 This is `TauCeti.RoughForm.hodgeStar`. Fibrewise it satisfies `α ∧ ⋆β = ⟨α, β⟩ vol`, with `vol`
 the Riemannian volume form, `⋆⋆ = (-1) ^ (k l)`, and it changes sign with the orientation.
+On functions it is `⋆f = f vol`, with inverse `⋆(f vol) = f`, and on differentials of functions it
+is `⋆df = ι_(grad f) vol`; these identities express the codifferential of `df` through the
+divergence of the gradient.
 
 For a `C^n` metric on a `C^(n+1)` manifold the star preserves `C^n` forms
 (`TauCeti.IsSmoothForm.hodgeStar`), so it restricts to a linear map of smooth forms,
@@ -40,6 +45,9 @@ fixed tuples of model vectors (`TauCeti.contMDiffAt_continuousAlternatingMap_app
 * `TauCeti.RoughForm.wedge_hodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`, and its smooth-form version
   `TauCeti.SmoothForm.inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar`.
 * `TauCeti.RoughForm.hodgeStar_hodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
+* `TauCeti.RoughForm.hodgeStar_ofFunction`, `TauCeti.RoughForm.hodgeStar_smul_riemannianVolumeForm`:
+  `⋆f = f vol` and `⋆(f vol) = f`.
+* `TauCeti.RoughForm.hodgeStar_mextDeriv_ofFunction`: `⋆df = ι_(grad f) vol`.
 * `TauCeti.RoughForm.hodgeStar_hodgeStar_of_even`,
   `TauCeti.RoughForm.alternatingFormInner_hodgeStar_left`: in an even middle degree the star is
   an involution and is pointwise self-adjoint.
@@ -130,6 +138,51 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
   let := o.fact_finrank_tangentSpace x
   rw [hodgeStar_apply, Pi.neg_apply, hodgeStar_apply, Manifold.Orientation.orientationAt_neg,
     Orientation.formHodgeStar_neg_orientation]
+
+/-- The Hodge star of a function is the function times the volume form, `⋆f = f vol`. -/
+@[simp]
+theorem hodgeStar_ofFunction (o : Manifold.Orientation I M (Fin m)) (hm : 0 + m = m)
+    (f : M → ℝ) :
+    hodgeStar o hm (ofFunction I f) = fun x ↦ f x • riemannianVolumeForm o x := by
+  funext x
+  let := o.fact_finrank_tangentSpace x
+  rw [hodgeStar_apply, ofFunction_apply_eq_constOfIsEmpty,
+    Orientation.formHodgeStar_constOfIsEmpty, riemannianVolumeForm_def]
+
+/-- The Hodge star of a function times the volume form is the function, `⋆(f vol) = f`. -/
+@[simp]
+theorem hodgeStar_smul_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
+    (hm : m + 0 = m) (f : M → ℝ) :
+    hodgeStar o hm (fun x ↦ f x • riemannianVolumeForm o x) = ofFunction I f := by
+  funext x
+  let := o.fact_finrank_tangentSpace x
+  rw [hodgeStar_apply, map_smul, riemannianVolumeForm_def,
+    Orientation.formHodgeStar_volumeFormL, ofFunction_apply_eq_constOfIsEmpty]
+  ext v
+  simp
+
+/-- **The Hodge star of a differential**: on an oriented Riemannian manifold of dimension
+`l + 1`, the star of the differential of a function is the contraction of the volume form with the
+gradient, `⋆df = ι_(grad f) vol`. -/
+theorem hodgeStar_mextDeriv_ofFunction (o : Manifold.Orientation I M (Fin (l + 1)))
+    (hl : 1 + l = l + 1) (f : M → ℝ) :
+    hodgeStar o hl (mextDeriv (ofFunction I f)) =
+      (riemannianVolumeForm o).interior (Manifold.mgradient I f) := by
+  funext x
+  let := o.fact_finrank_tangentSpace x
+  -- The differential `df_x = ⟪grad f x, ·⟫` is the form dual to the vector `grad f x`.
+  have hdf : mextDeriv (ofFunction I f) x = alternatingFormEquiv (TangentSpace I x) 1
+      (exteriorPower.ιMulti ℝ 1 ![Manifold.mgradient I f x]) := by
+    ext v
+    rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+      alternatingFormEquiv_ιMulti_apply, Matrix.det_unique, Matrix.of_apply,
+      Fin.default_eq_zero, Matrix.cons_val_zero, Manifold.inner_mgradient]
+  ext w
+  rw [hodgeStar_apply, hdf, Orientation.formHodgeStar_alternatingFormEquiv_ιMulti_apply,
+    interior_apply, riemannianVolumeForm_apply, Fin.append_left_eq_cons]
+  simp only [Function.comp_def, Fin.cast_cast, Fin.cast_eq_self, Matrix.cons_val_zero]
+  -- `Matrix.vecCons`, used by the interior product, is by definition `Fin.cons`.
+  rfl
 
 /-- The Hodge star does not enlarge supports. -/
 theorem tsupport_hodgeStar_subset (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)

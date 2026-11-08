@@ -113,7 +113,7 @@ theorem riemannRochSpace_zsmul_ofPoint_eq_span_pair (hF : IsFunctionField k F)
   · rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
     refine ⟨one_mem_riemannRochSpace_iff.mpr ?_,
       (mem_riemannRochSpace_zsmul_ofPoint_iff hz0).mpr ⟨by omega, hz⟩⟩
-    exact zsmul_nonneg (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
+    exact zsmul_nonneg (WeilDivisor.ofPoint_nonneg P)
       (by omega)
   · rw [hspan, ← Divisor.dim_def]
     omega

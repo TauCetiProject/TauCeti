@@ -144,9 +144,6 @@ noncomputable def baseChange : EllipticCurveGeom T where
   carrier := pullback E.structureMap f
   structureMap := pullback.snd E.structureMap f
   zero := pullbackSection E.structureMap f (f ≫ E.zero) (by simp)
-  zero_comp := pullbackSection_snd _ _ _ _
-  smooth := inferInstance
-  proper := inferInstance
   localModel := (nonempty_pointedWeierstrassAtlas_iff _).mpr (E.isLocallyWeierstrass.baseChange f)
 
 /-- The isomorphism identifying the total space of `E.baseChange f` with the pullback of
