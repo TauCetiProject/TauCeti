@@ -639,7 +639,8 @@ theorem exists_contMDiffMap_eventually_apply_lieExp_eq [FiniteDimensional ℝ E]
   have h1 : (1 : G) ∈ hd.localInverse.source := by
     simpa only [lieExp_zero] using hd.localInverse_mem_source
   obtain ⟨f, hf⟩ := (hφ.contMDiff.comp_contMDiffOn
-    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq hd.localInverse_open_source h1
+    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq
+      (hd.localInverse_open_source.mem_nhds h1)
   refine ⟨f, ?_⟩
   have hexp : Tendsto (lieExp (I := I) (G := G)) (𝓝 0) (𝓝 1) := by
     simpa only [lieExp_zero] using
