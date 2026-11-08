@@ -26,7 +26,9 @@ Inverse right multiplication is written as a left action. Its representative for
 (`TauCeti.toGL_traceFormulaMatrixRight`). On the upper-triangular representatives
 `FixedDetMatrices.reps n`, `n ≠ 0`, of `SL(2, ℤ) \ ℳₙ`, it is read as `TauCeti.repsRightMul`,
 the representative of the coset of `A g⁻¹`; this is injective on the representatives
-(`TauCeti.repsRightMul_injOn`), so it permutes the cosets.
+(`TauCeti.repsRightMul_injOn`), so it permutes the cosets. It preserves the primitive
+representatives `FixedDetMatrices.primitiveReps n` and permutes them
+(`TauCeti.image_repsRightMul_primitiveReps`).
 
 The right and conjugation actions are also `MulAction` instances, of `PSL(2, ℤ)ᵐᵒᵖ` and of
 `ConjAct PSL(2, ℤ)`. With `open scoped RightActions`, `x <• g`, that is `MulOpposite.op g • x`,
@@ -222,6 +224,14 @@ theorem toGL_repsRightMul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatri
         (FixedDetMatrices.toGL hn A * Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹) := by
   rw [repsRightMul_def, FixedDetMatrices.toGL_smul, toGL_traceFormulaMatrixRight]
 
+/-- In `GL(2, ℝ)`, `repsRightMul hn g A` is `A g⁻¹` moved on the left by
+`repsRightMulFactor hn g A`. -/
+theorem toGLReal_repsRightMul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    FixedDetMatrices.toGLReal hn (repsRightMul hn g A) =
+      Matrix.SpecialLinearGroup.mapGL ℝ (repsRightMulFactor hn g A) *
+        (FixedDetMatrices.toGLReal hn A * Matrix.SpecialLinearGroup.mapGL ℝ g⁻¹) := by
+  rw [repsRightMul_def, FixedDetMatrices.toGLReal_smul, toGLReal_traceFormulaMatrixRight]
+
 /-- Right multiplication by `g⁻¹` permutes `SL(2, ℤ) \ ℳₙ`: distinct cosets have distinct right
 translates. -/
 theorem repsRightMul_injOn (hn : n ≠ 0) (g : SL(2, ℤ)) :
@@ -239,6 +249,34 @@ theorem repsRightMul_injOn (hn : n ≠ 0) (g : SL(2, ℤ)) :
         (Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹)⁻¹) hGL
   exact (FixedDetMatrices.eq_of_smul_eq_of_mem_reps hB hA
     (FixedDetMatrices.toGL_injective hn hAB).symm).symm
+
+/-- Right multiplication by `g⁻¹` preserves the primitive representatives. -/
+theorem repsRightMul_mem_primitiveReps (hn : n ≠ 0) (g : SL(2, ℤ)) {A : TraceFormulaMatrix n}
+    (hA : A ∈ FixedDetMatrices.primitiveReps n) :
+    repsRightMul hn g A ∈ FixedDetMatrices.primitiveReps n := by
+  refine FixedDetMatrices.mem_primitiveReps.2 ⟨repsRightMul_mem_reps hn g A, ?_⟩
+  rw [repsRightMul_def, FixedDetMatrices.isPrimitive_smul_iff,
+    isPrimitive_traceFormulaMatrixRight_iff]
+  exact (FixedDetMatrices.mem_primitiveReps.1 hA).2
+
+/-- Right multiplication by `g⁻¹` is injective on the primitive representatives. -/
+theorem repsRightMul_injOn_primitiveReps (hn : n ≠ 0) (g : SL(2, ℤ)) :
+    Set.InjOn (repsRightMul hn g)
+      (FixedDetMatrices.primitiveReps n : Set (TraceFormulaMatrix n)) :=
+  (repsRightMul_injOn hn g).mono fun _ hA ↦ (FixedDetMatrices.mem_primitiveReps.1 hA).1
+
+open scoped Classical in
+/-- Right multiplication by `g⁻¹` permutes the `SL(2, ℤ)`-orbits of primitive matrices: the
+representatives of the right translates of `FixedDetMatrices.primitiveReps n` are again all of
+`FixedDetMatrices.primitiveReps n`. -/
+theorem image_repsRightMul_primitiveReps (hn : n ≠ 0) (g : SL(2, ℤ)) :
+    (FixedDetMatrices.primitiveReps n).image (repsRightMul hn g) =
+      FixedDetMatrices.primitiveReps n := by
+  refine Finset.eq_of_subset_of_card_le ?_
+    (Finset.card_image_of_injOn (repsRightMul_injOn_primitiveReps hn g)).ge
+  intro B hB
+  obtain ⟨A, hA, rfl⟩ := Finset.mem_image.1 hB
+  exact repsRightMul_mem_primitiveReps hn g hA
 
 /-- For `n ≠ 0`, a determinant-`n` matrix and its negative act in the same way on the cusps
 `ℙ¹(ℚ)`. -/

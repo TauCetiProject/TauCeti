@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Complex.UpperHalfPlane.FixedDetMatrices
+public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
@@ -41,7 +42,8 @@ The matrices act on the upper half-plane through `FixedDetMatrices.toGLReal`. Ri
 multiplication on the representatives is the shared `TauCeti.repsRightMul`, and the invariance
 proof follows that of the level-one Hecke operators, `TauCeti.heckeSlashLevelOne_slash_eq` in
 `TauCeti.NumberTheory.ModularForms.LevelOne.Hecke`: the factor of `A` at `γ τ` is the factor at
-`τ` of the representative of `A γ`, and `TauCeti.repsRightMul_injOn` makes this a permutation.
+`τ` of the representative of `A γ`, and `TauCeti.image_repsRightMul_primitiveReps` makes this a
+permutation.
 
 ## Main definitions
 
@@ -55,7 +57,8 @@ proof follows that of the level-one Hecke operators, `TauCeti.heckeSlashLevelOne
 * `TauCeti.ModularForm.roots_cyclicIsogenyPolynomial`: its roots are the values `f(A τ)` over
   the representatives, and `TauCeti.ModularForm.isRoot_cyclicIsogenyPolynomial`: for invariant
   `f`, `f(A τ)` is a root for every primitive `A` of determinant `n`; in particular
-  (`TauCeti.ModularForm.isRoot_cyclicIsogenyPolynomial_natCast_smul`) `f(n τ)` is.
+  (`TauCeti.ModularForm.isRoot_cyclicIsogenyPolynomial_scaleGL_smul`) `f(n τ)` is, where
+  `n τ = TauCeti.scaleGL n • τ`.
 * `TauCeti.ModularForm.mdifferentiable_coeff_cyclicIsogenyPolynomial`: for holomorphic `f` the
   coefficients are holomorphic.
 
@@ -71,47 +74,6 @@ public section
 
 open Matrix Polynomial UpperHalfPlane
 open scoped MatrixGroups Manifold
-
-namespace FixedDetMatrices
-
-variable {n : ℤ}
-
-/-! ### Right multiplication permutes the orbits -/
-
-private theorem repsRightMul_mem_primitiveReps (hn : n ≠ 0) (γ : SL(2, ℤ))
-    {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ primitiveReps n) :
-    TauCeti.repsRightMul hn γ A ∈ primitiveReps n := by
-  refine mem_primitiveReps.2 ⟨TauCeti.repsRightMul_mem_reps hn γ A, ?_⟩
-  rw [TauCeti.repsRightMul_def, isPrimitive_smul_iff,
-    TauCeti.isPrimitive_traceFormulaMatrixRight_iff]
-  exact (mem_primitiveReps.1 hA).2
-
-private theorem toGLReal_repsRightMul_inv_smul (hn : n ≠ 0) (γ : SL(2, ℤ))
-    (A : FixedDetMatrix (Fin 2) ℤ n) (τ : ℍ) :
-    toGLReal hn (TauCeti.repsRightMul hn γ⁻¹ A) • τ =
-      TauCeti.repsRightMulFactor hn γ⁻¹ A • toGLReal hn A • γ • τ := by
-  have hγ : SpecialLinearGroup.mapGL ℝ γ • τ = γ • τ := (MulAction.compHom_smul_def _ _ _).symm
-  rw [TauCeti.repsRightMul_def, toGLReal_smul_smul, TauCeti.toGLReal_traceFormulaMatrixRight,
-    inv_inv, mul_smul, hγ]
-
-/-- Right multiplication is injective on the primitive representatives. -/
-private theorem repsRightMul_injOn_primitiveReps (hn : n ≠ 0) (γ : SL(2, ℤ)) :
-    Set.InjOn (TauCeti.repsRightMul hn γ)
-      (primitiveReps n : Set (FixedDetMatrix (Fin 2) ℤ n)) :=
-  (TauCeti.repsRightMul_injOn hn γ).mono fun _ hA ↦ (mem_primitiveReps.1 hA).1
-
-open scoped Classical in
-/-- Right multiplication by `SL(2, ℤ)` permutes the orbits: the representatives of the right
-translates, `A ∈ primitiveReps n`, are again all of `primitiveReps n`. -/
-private theorem image_repsRightMul (hn : n ≠ 0) (γ : SL(2, ℤ)) :
-    (primitiveReps n).image (TauCeti.repsRightMul hn γ) = primitiveReps n := by
-  refine Finset.eq_of_subset_of_card_le ?_
-    (Finset.card_image_of_injOn (repsRightMul_injOn_primitiveReps hn γ)).ge
-  intro B hB
-  obtain ⟨A, hA, rfl⟩ := Finset.mem_image.1 hB
-  exact repsRightMul_mem_primitiveReps hn γ hA
-
-end FixedDetMatrices
 
 namespace TauCeti.ModularForm
 
@@ -165,15 +127,17 @@ theorem cyclicIsogenyPolynomial_smul {f : ℍ → ℂ} (hf : ∀ (γ : SL(2, ℤ
     cyclicIsogenyPolynomial n f (γ • τ) = cyclicIsogenyPolynomial n f τ := by
   classical
   have hn : (n : ℤ) ≠ 0 := NeZero.ne (n : ℤ)
+  have hSL (g : SL(2, ℤ)) (z : ℍ) : SpecialLinearGroup.mapGL ℝ g • z = g • z :=
+    (MulAction.compHom_smul_def _ _ _).symm
   -- the factor of `A` at `γ τ` is the factor at `τ` of the representative of `A γ`
   have hperm (A : FixedDetMatrix (Fin 2) ℤ n) :
       X - C (f (toGLReal hn A • γ • τ)) =
-        X - C (f (toGLReal hn (TauCeti.repsRightMul hn γ⁻¹ A) • τ)) := by
-    rw [toGLReal_repsRightMul_inv_smul, hf]
+        X - C (f (toGLReal hn (repsRightMul hn γ⁻¹ A) • τ)) := by
+    rw [toGLReal_repsRightMul, inv_inv, mul_smul, mul_smul, hSL, hSL, hf]
   rw [cyclicIsogenyPolynomial_def, cyclicIsogenyPolynomial_def,
     Finset.prod_congr rfl fun A _ ↦ hperm A,
     ← Finset.prod_image (f := fun A ↦ X - C (f (toGLReal hn A • τ)))
-      (repsRightMul_injOn_primitiveReps hn γ⁻¹), image_repsRightMul]
+      (repsRightMul_injOn_primitiveReps hn γ⁻¹), image_repsRightMul_primitiveReps]
 
 /-- For an `SL(2, ℤ)`-invariant `f`, the value `f(A τ)` at **every** primitive integral matrix `A`
 of determinant `n` is a root of the polynomial over the cyclic `n`-isogenies at `τ`. -/
@@ -189,36 +153,22 @@ theorem isRoot_cyclicIsogenyPolynomial {f : ℍ → ℂ}
   rw [toGLReal_smul_smul, hf]
   simp
 
-/-- The diagonal matrix `diag(n, 1)` is a primitive integral matrix of determinant `n`. -/
-private def diagNatOne : FixedDetMatrix (Fin 2) ℤ n :=
-  ⟨!![(n : ℤ), 0; 0, 1], by simp [det_fin_two_of]⟩
-
-omit [NeZero n] in
-private theorem isPrimitive_diagNatOne : IsPrimitive (diagNatOne (n := n)).1 :=
-  isPrimitive_def.2 ⟨(entryAddMonoidHom ℤ 1 1).toIntLinearMap, by simp [diagNatOne]⟩
-
-private theorem toGLReal_diagNatOne_smul (τ : ℍ) :
-    toGLReal (NeZero.ne (n : ℤ)) diagNatOne • τ =
-      (⟨n, Nat.cast_pos.2 (NeZero.pos n)⟩ : {x : ℝ // 0 < x}) • τ := by
-  have hdet : 0 < (toGLReal (NeZero.ne (n : ℤ)) diagNatOne).det.val := by
-    rw [det_toGLReal]
-    exact_mod_cast NeZero.pos n
-  ext
-  rw [coe_smul_of_det_pos hdet, coe_pos_real_smul]
-  -- `num` and `denom` see the matrix through a different `Semiring ℝ` instance path, which `simp`
-  -- does not unify with `toGLReal_apply`; `rw` does
-  simp only [num, denom]
-  rw [toGLReal_apply, toGLReal_apply, toGLReal_apply, toGLReal_apply]
-  simp [diagNatOne, Complex.real_smul]
-
 /-- For an `SL(2, ℤ)`-invariant `f`, the value `f(n τ)` is a root of the polynomial over the
-cyclic `n`-isogenies at `τ`. For `f = j` this is the classical identity `Φ_n(j(n τ), j(τ)) = 0`. -/
-theorem isRoot_cyclicIsogenyPolynomial_natCast_smul {f : ℍ → ℂ}
+cyclic `n`-isogenies at `τ`, where `n τ = TauCeti.scaleGL n • τ` is the action of `diag(n, 1)`.
+For `f = j` this is the classical identity `Φ_n(j(n τ), j(τ)) = 0`. -/
+theorem isRoot_cyclicIsogenyPolynomial_scaleGL_smul {f : ℍ → ℂ}
     (hf : ∀ (γ : SL(2, ℤ)) (τ : ℍ), f (γ • τ) = f τ) (τ : ℍ) :
-    (cyclicIsogenyPolynomial n f τ).IsRoot
-      (f ((⟨n, Nat.cast_pos.2 (NeZero.pos n)⟩ : {x : ℝ // 0 < x}) • τ)) := by
-  rw [← toGLReal_diagNatOne_smul]
-  exact isRoot_cyclicIsogenyPolynomial hf isPrimitive_diagNatOne τ
+    (cyclicIsogenyPolynomial n f τ).IsRoot (f (scaleGL n • τ)) := by
+  -- `diag(n, 1)` is a primitive integral matrix of determinant `n`, acting as `scaleGL n`
+  let D := TraceFormulaMatrix.diagonal (n : ℤ) 1 (mul_one _)
+  have hD : toGLReal (NeZero.ne (n : ℤ)) D = scaleGL n := by
+    refine Units.ext ?_
+    rw [coe_toGLReal, coe_scaleGL]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [D]
+  rw [← hD]
+  exact isRoot_cyclicIsogenyPolynomial hf
+    (isPrimitive_def.2 ⟨(entryAddMonoidHom ℤ 1 1).toIntLinearMap, by simp [D]⟩) τ
 
 /-- **The coefficients of the polynomial over the cyclic `n`-isogenies of a holomorphic function
 are holomorphic.** -/

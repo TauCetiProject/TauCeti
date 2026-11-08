@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Analysis.Polynomial.SymmetricPower
 import TauCeti.Topology.DiscreteSeparation
 
 /-!
@@ -80,21 +82,19 @@ lemma _root_.MvPolynomial.mdifferentiable_aeval_coe {R : Type*} [CommSemiring R]
     · simpa using mdifferentiable_coe
     · simpa using mdifferentiable_const
 
-open Polynomial in
+open _root_.Polynomial in
 /-- The coefficients of `∏ (X - C (aᵢ τ))` are holomorphic functions of `τ` when every `aᵢ` is. -/
 theorem mdifferentiable_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι) {a : ι → ℍ → ℂ}
     (ha : ∀ i ∈ s, MDiff (a i)) (k : ℕ) :
     MDiff fun τ : ℍ ↦ ((∏ i ∈ s, (X - C (a i τ))).coeff k : ℂ) := by
-  classical
-  induction s using Finset.induction_on generalizing k with
-  | empty => simpa [coeff_one] using mdifferentiable_const
-  | insert i s hi ih =>
-    have hs : ∀ j ∈ s, MDiff (a j) := fun j hj ↦ ha j (Finset.mem_insert_of_mem hj)
-    simp only [Finset.prod_insert hi, sub_mul, coeff_sub, coeff_C_mul]
-    refine MDifferentiable.sub ?_ ((ha i (Finset.mem_insert_self i s)).mul (ih hs k))
-    cases k with
-    | zero => simpa using mdifferentiable_const
-    | succ k => simpa only [coeff_X_mul] using ih hs k
+  -- index the roots by `s`: the coefficient is an analytic function of the tuple of roots
+  have hv : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, s → ℂ) fun τ : ℍ ↦ fun i : s ↦ a i τ :=
+    mdifferentiable_pi_space_iff.2 fun i ↦ ha i i.2
+  have hg : Differentiable ℂ fun v : s → ℂ ↦ (∏ i : s, (X - C (v i))).coeff k := fun v ↦
+    (TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C Finset.univ k v).differentiableAt
+  convert Differentiable.comp_mdifferentiable hg hv using 1
+  ext τ
+  rw [Function.comp_apply, Finset.prod_coe_sort s fun i ↦ X - C (a i τ)]
 
 /-- A function holomorphic on `ℍ` composes with `ofComplex` to a function analytic at
 every point of the open upper half-plane. -/
