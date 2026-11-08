@@ -34,6 +34,7 @@ vertex type.
 * `TauCeti.UniformHypergraph.edgeDensity`: the rational edge density.
 * `TauCeti.UniformHypergraph.blockDensity`: the rational density of the edges inside a finite
   block of vertices.
+* `TauCeti.UniformHypergraph.IsHom`: a vertex map sending every edge onto an edge.
 * `SimpleGraph.toUniformHypergraph`: the edges of a simple graph as a `2`-uniform hypergraph.
 
 ## Main results
@@ -46,6 +47,9 @@ vertex type.
 * `TauCeti.UniformHypergraph.blockDensity_nonneg`, `TauCeti.UniformHypergraph.blockDensity_le_one`
   and `TauCeti.UniformHypergraph.blockDensity_univ`: block densities lie in `[0, 1]` and agree
   with the edge density on the whole vertex type.
+* `TauCeti.UniformHypergraph.IsHom.injOn`: homomorphisms are injective on edges.
+* `SimpleGraph.isHom_toUniformHypergraph_iff`: hypergraph homomorphisms between simple graphs are
+  the adjacency-preserving maps.
 
 ## References
 
@@ -251,6 +255,87 @@ theorem blockDensity_univ [Fintype V] (H : UniformHypergraph r V) :
 
 end BlockDensity
 
+/-! ### Homomorphisms -/
+
+section IsHom
+
+variable {U W : Type*} [DecidableEq V]
+
+/-- A vertex map `f : U → V` is a **homomorphism** from `F` to `H` when the image of every edge of
+`F` is an edge of `H`. Both have `r` vertices, so `f` is injective on every edge of `F`
+(`IsHom.injOn`). -/
+def IsHom (F : UniformHypergraph r U) (H : UniformHypergraph r V) (f : U → V) : Prop :=
+  ∀ e ∈ F.edges, e.image f ∈ H.edges
+
+variable {F F' : UniformHypergraph r U} {H H' : UniformHypergraph r V} {f : U → V}
+
+/-- The defining property of a homomorphism. -/
+theorem isHom_iff : F.IsHom H f ↔ ∀ e ∈ F.edges, e.image f ∈ H.edges := Iff.rfl
+
+instance (F : UniformHypergraph r U) (H : UniformHypergraph r V) : DecidablePred (F.IsHom H) :=
+  fun _ ↦ decidable_of_iff' _ isHom_iff
+
+/-- A homomorphism maps every edge onto an edge. -/
+theorem IsHom.image_mem (h : F.IsHom H f) {e : Finset U} (he : e ∈ F.edges) :
+    e.image f ∈ H.edges :=
+  h e he
+
+/-- A homomorphism is injective on every edge: the image of an edge has `r` vertices, as many as
+the edge itself. -/
+theorem IsHom.injOn (h : F.IsHom H f) {e : Finset U} (he : e ∈ F.edges) : Set.InjOn f e := by
+  rw [← card_image_iff, H.edge_card _ (h e he), F.edge_card e he]
+
+/-- A homomorphism into `H` is a homomorphism into every hypergraph with more edges. -/
+theorem IsHom.mono_right (h : F.IsHom H f) (hH : H.edges ⊆ H'.edges) : F.IsHom H' f :=
+  fun e he ↦ hH (h e he)
+
+/-- A homomorphism from `F` is a homomorphism from every hypergraph with fewer edges. -/
+theorem IsHom.mono_left (h : F.IsHom H f) (hF : F'.edges ⊆ F.edges) : F'.IsHom H f :=
+  fun e he ↦ h e (hF he)
+
+/-- The identity is a homomorphism. -/
+theorem isHom_id [DecidableEq U] (F : UniformHypergraph r U) : F.IsHom F id :=
+  fun e he ↦ by rwa [image_id]
+
+/-- Homomorphisms compose. -/
+theorem IsHom.comp [DecidableEq W] {G : UniformHypergraph r W} {g : V → W} (hg : H.IsHom G g)
+    (hf : F.IsHom H f) : F.IsHom G (g ∘ f) :=
+  fun e he ↦ by
+    rw [← image_image]
+    exact hg _ (hf e he)
+
+/-- Every vertex map is a homomorphism out of the empty hypergraph. -/
+@[simp]
+theorem isHom_empty_left : (empty r U).IsHom H f :=
+  fun _ he ↦ by simp at he
+
+/-- A vertex map is a homomorphism into the empty hypergraph exactly when the pattern has no
+edges. -/
+@[simp]
+theorem isHom_empty_right_iff : F.IsHom (empty r V) f ↔ F.edges = ∅ := by
+  simp [isHom_iff, eq_empty_iff_forall_notMem]
+
+/-- A vertex map is a homomorphism into the complete hypergraph exactly when it is injective on
+every edge. -/
+theorem isHom_complete_right_iff [Fintype V] :
+    F.IsHom (complete r V) f ↔ ∀ e ∈ F.edges, Set.InjOn f e := by
+  refine forall₂_congr fun e he ↦ ?_
+  rw [mem_edges_complete, ← F.edge_card e he, card_image_iff]
+
+/-- Every injective vertex map is a homomorphism into the complete hypergraph. -/
+theorem isHom_complete_right_of_injective [Fintype V] (hf : Function.Injective f) :
+    F.IsHom (complete r V) f :=
+  isHom_complete_right_iff.2 fun _ _ ↦ hf.injOn
+
+/-- A homomorphism out of a single edge, the complete `r`-uniform hypergraph on `r` vertices, is
+injective. -/
+theorem injective_of_isHom_complete [Fintype U] (hU : Fintype.card U = r)
+    (h : (complete r U).IsHom H f) : Function.Injective f := by
+  rw [← Set.injOn_univ, ← coe_univ]
+  exact h.injOn (by rw [mem_edges_complete, card_univ, hU])
+
+end IsHom
+
 end UniformHypergraph
 
 /-! ### Simple graphs as `2`-uniform hypergraphs -/
@@ -282,6 +367,20 @@ theorem _root_.SimpleGraph.insert_mem_toUniformHypergraph_edges {u v : V} :
   refine ⟨fun ⟨hadj, hcard⟩ ↦ hadj ?_, fun h ↦ ⟨fun _ ↦ h, card_pair h.ne⟩⟩
   rintro rfl
   simp at hcard
+
+variable {U : Type*} [Fintype U] [DecidableEq U] {F : SimpleGraph U} [DecidableRel F.Adj]
+
+/-- A vertex map is a homomorphism between the `2`-uniform hypergraphs of two simple graphs
+exactly when it maps adjacent vertices to adjacent vertices. -/
+theorem _root_.SimpleGraph.isHom_toUniformHypergraph_iff {f : U → V} :
+    F.toUniformHypergraph.IsHom G.toUniformHypergraph f ↔
+      ∀ a b, F.Adj a b → G.Adj (f a) (f b) := by
+  refine ⟨fun h a b hab ↦ ?_, fun h ↦ UniformHypergraph.isHom_iff.2 fun e he ↦ ?_⟩
+  · have hmem := h.image_mem (SimpleGraph.insert_mem_toUniformHypergraph_edges.2 hab)
+    rwa [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges] at hmem
+  · obtain ⟨a, b, -, rfl⟩ := card_eq_two.1 (F.toUniformHypergraph.edge_card e he)
+    rw [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges]
+    exact h a b (SimpleGraph.insert_mem_toUniformHypergraph_edges.1 he)
 
 end SimpleGraph
 
