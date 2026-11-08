@@ -136,7 +136,7 @@ theorem mul_measure_exists_mem_le_le_setIntegral_of_countable [IsFiniteMeasure �
     fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_left _ ht, h⟩,
     fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_right _ ht, h⟩⟩
   have hUnion : (⋃ F, A F) = {ω | ∃ t ∈ S, (ε : ℝ) ≤ f t ω} := by
-    simpa [A, Set.ofPred_exists, Subtype.exists] using
+    simpa only [A, ← exists_prop, Set.ofPred_exists, iUnion_subtype] using
       (Set.iUnion_eq_iUnion_finset (fun t : S ↦ {ω | (ε : ℝ) ≤ f t ω})).symm
   rw [← hUnion, hdir.measure_iUnion, ENNReal.mul_iSup]
   apply iSup_le
