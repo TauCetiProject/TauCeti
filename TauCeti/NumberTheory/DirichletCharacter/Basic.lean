@@ -58,6 +58,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
   `DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five`.
+* `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
+  combination of symmetrised character sums that vanishes on every pair of units has vanishing
+  coefficients against every pair of character multiplicities.
 
 ## Provenance
 
@@ -326,5 +329,60 @@ value at `-1` of its lift to any multiple level. -/
 theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
   rw [Even, Even, changeLevel_apply_neg_one]
+
+/-- If a combination of the symmetrised character sums `psi i x + phi i x` vanishes against every
+pair of units, then the coefficients of the combination vanish against every pair of
+multiplicities `(if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0`. This extracts the
+`χ ⊗ χ'`-coefficient by orthogonality of the Dirichlet characters. -/
+theorem sum_mul_eq_zero_of_forall_units {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
+    {N : ℕ} [NeZero N] {ι : Type*} {s : Finset ι} [DecidableEq (DirichletCharacter R N)]
+    {psi phi : ι → DirichletCharacter R N} {g : ι → R}
+    (hunits : ∀ x y : (ZMod N)ˣ,
+      ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0)
+    (χ χ' : DirichletCharacter R N) :
+    ∑ i ∈ s, g i * (((if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0) *
+      ((if psi i = χ' then 1 else 0) + if phi i = χ' then 1 else 0)) = 0 := by
+  classical
+  -- The multiplicity `ε i χ` of `χ` in the pair `(psi i, phi i)`.
+  let ε (i : ι) (χ : DirichletCharacter R N) : R :=
+    (if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0
+  -- Orthogonality of the characters: `∑ₓ χ⁻¹(x) ψ(x)` is `#(ZMod N)ˣ` if `ψ = χ` and `0` otherwise.
+  have horth (χ ψ : DirichletCharacter R N) :
+      ∑ x, χ⁻¹ x * ψ x = if ψ = χ then (Fintype.card (ZMod N)ˣ : R) else 0 := by
+    simp_rw [← MulChar.mul_apply]
+    split_ifs with hψ
+    · rw [hψ, inv_mul_cancel, MulChar.sum_one_eq_card_units]
+    · exact MulChar.sum_eq_zero_of_ne_one (inv_mul_eq_one.not.mpr (Ne.symm hψ))
+  have hc : (Fintype.card (ZMod N)ˣ : R) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hε (i : ι) (χ : DirichletCharacter R N) :
+      ∑ x, χ⁻¹ x * (psi i x + phi i x) = Fintype.card (ZMod N)ˣ * ε i χ := by
+    simp only [mul_add, Finset.sum_add_distrib, horth, ε]
+    split_ifs <;> ring
+  -- Summing against `χ⁻¹ ⊗ χ'⁻¹` extracts the coefficient of `χ ⊗ χ'`.
+  have hcoeff (χ χ' : DirichletCharacter R N) : ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 := by
+    have hsum' : ∑ x, ∑ y, χ⁻¹ x * χ'⁻¹ y *
+        ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0 := by
+      refine Finset.sum_eq_zero fun x _ ↦ Finset.sum_eq_zero fun y _ ↦ ?_
+      by_cases hx : IsUnit x
+      · by_cases hy : IsUnit y
+        · simpa using mul_eq_zero_of_right (χ⁻¹ x * χ'⁻¹ y) (hunits hx.unit hy.unit)
+        · simp [MulChar.map_nonunit χ'⁻¹ hy]
+      · simp [MulChar.map_nonunit χ⁻¹ hx]
+    have key : ∑ i ∈ s, g i * ((∑ x, χ⁻¹ x * (psi i x + phi i x)) *
+        ∑ y, χ'⁻¹ y * (psi i y + phi i y)) = 0 := by
+      rw [← hsum']
+      simp_rw [Finset.sum_mul_sum, Finset.mul_sum]
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun x _ ↦ ?_
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+      ring
+    have key' : (Fintype.card (ZMod N)ˣ : R) ^ 2 * ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 := by
+      rw [← key, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [hε, hε]
+      ring
+    exact (mul_eq_zero.mp key').resolve_left (pow_ne_zero 2 hc)
+  exact hcoeff χ χ'
 
 end DirichletCharacter
