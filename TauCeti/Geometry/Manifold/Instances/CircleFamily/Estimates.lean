@@ -85,13 +85,7 @@ theorem norm_iteratedFDeriv_realNormalization_le (hp : ContMDiff 𝓘(ℝ, E) �
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hk
   -- The bound `X` on the last derivative of `p⁻¹`, which dominates the previous one.
   set X : ℝ := ((m + 1) ! : ℝ) ^ 2 * C ^ (m + 1) / ε ^ (m + 1 + 1) with hX
-  have hX₁ : 1 ≤ X := by
-    rw [hX, one_le_div (by positivity)]
-    calc ε ^ (m + 1 + 1) ≤ 1 := pow_le_one₀ hε.le hε₁
-      _ ≤ ((m + 1) ! : ℝ) ^ 2 * C ^ (m + 1) :=
-        one_le_mul_of_one_le_of_one_le
-          (one_le_pow₀ (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)))
-          (one_le_pow₀ hC)
+  have hX₁ : 1 ≤ X := one_le_factorial_sq_mul_pow_div_pow (m + 1) hε hε₁ hC
   have hlast : ‖iteratedFDeriv ℝ (m + 1) (fun x ↦ (p x : ℝ)⁻¹) z.1‖ ≤ X :=
     norm_iteratedFDeriv_inv_comp_le hq hε hε₁ hpz hC hD
   have hprev : ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖ ≤ X := by
@@ -99,21 +93,7 @@ theorem norm_iteratedFDeriv_realNormalization_le (hp : ContMDiff 𝓘(ℝ, E) �
       hε hε₁ hpz hC fun i hi₁ hi ↦ hD i hi₁ (hi.trans (Nat.le_succ m))
     calc ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖
         ≤ ((m + 1 : ℕ) : ℝ) * ((m ! : ℝ) ^ 2 * C ^ m / ε ^ (m + 1)) := by gcongr
-      _ ≤ X := by
-        rw [hX, Nat.factorial_succ]
-        push_cast
-        rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
-        have hε' : ε ^ (m + 1 + 1) ≤ ε ^ (m + 1) := pow_le_pow_of_le_one hε.le hε₁ (by omega)
-        have hC' : C ^ m ≤ C ^ (m + 1) := pow_le_pow_right₀ hC (Nat.le_succ m)
-        have hm : (1 : ℝ) ≤ m + 1 := by linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
-        calc ((m : ℝ) + 1) * ((m ! : ℝ) ^ 2 * C ^ m) * ε ^ (m + 1 + 1)
-            ≤ ((m : ℝ) + 1) * ((m ! : ℝ) ^ 2 * C ^ (m + 1)) * ε ^ (m + 1) := by gcongr
-          _ ≤ (((m : ℝ) + 1) * m !) ^ 2 * C ^ (m + 1) * ε ^ (m + 1) := by
-            have e : (((m : ℝ) + 1) * m !) ^ 2 * C ^ (m + 1) * ε ^ (m + 1) =
-                ((m : ℝ) + 1) * ((m ! : ℝ) ^ 2 * C ^ (m + 1)) * ε ^ (m + 1) * ((m : ℝ) + 1) := by
-              ring
-            rw [e]
-            exact le_mul_of_one_le_right (by positivity) hm
+      _ ≤ X := succ_mul_factorial_sq_mul_pow_div_pow_le m hε hε₁ hC
   refine max_le ((norm_iteratedFDeriv_fst_le_one hk z).trans ?_) ?_
   · calc (1 : ℝ) ≤ X := hX₁
       _ ≤ X * (R + 1) := le_mul_of_one_le_right (by positivity) (by linarith)

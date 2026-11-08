@@ -28,7 +28,9 @@ of its derivatives of order at least two in `c` vanish
 For a real function `p` of class `C^k` with `ε ≤ p x`, `0 < ε ≤ 1` and `‖D^i p x‖ ≤ C` for
 `1 ≤ i ≤ k`, where `1 ≤ C`, Faà di Bruno's bound (Mathlib's `norm_iteratedFDerivWithin_comp_le`,
 applied on the open set where `p` is positive) gives
-`‖D^k (p⁻¹) x‖ ≤ (k!)^2 C^k / ε^(k+1)` (`TauCeti.norm_iteratedFDeriv_inv_comp_le`).
+`‖D^k (p⁻¹) x‖ ≤ (k!)^2 C^k / ε^(k+1)` (`TauCeti.norm_iteratedFDeriv_inv_comp_le`). This bound is
+at least one, and `k + 1` times it is at most the bound of order `k + 1`
+(`TauCeti.one_le_factorial_sq_mul_pow_div_pow`, `TauCeti.succ_mul_factorial_sq_mul_pow_div_pow_le`).
 
 ## References
 
@@ -152,6 +154,36 @@ theorem norm_iteratedFDeriv_inv_comp_le {p : E → ℝ} {k : ℕ} (hp : ContDiff
   rw [iteratedFDerivWithin_of_isOpen k hsopen hxs] at h
   calc ‖iteratedFDeriv ℝ k (fun y ↦ (p y)⁻¹) x‖ ≤ k ! * (k ! / ε ^ (k + 1)) * C ^ k := h
     _ = (k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1) := by ring
+
+/-- The bound `(k!)^2 C^k / ε^(k+1)` of `TauCeti.norm_iteratedFDeriv_inv_comp_le` is at least one
+when `0 < ε ≤ 1` and `1 ≤ C`. -/
+theorem one_le_factorial_sq_mul_pow_div_pow (k : ℕ) {ε C : ℝ} (hε : 0 < ε) (hε₁ : ε ≤ 1)
+    (hC : 1 ≤ C) : 1 ≤ (k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1) := by
+  rw [one_le_div (by positivity)]
+  calc ε ^ (k + 1) ≤ 1 := pow_le_one₀ hε.le hε₁
+    _ ≤ (k ! : ℝ) ^ 2 * C ^ k :=
+      one_le_mul_of_one_le_of_one_le (one_le_pow₀ (by exact_mod_cast k.factorial_pos))
+        (one_le_pow₀ hC)
+
+/-- For `0 < ε ≤ 1` and `1 ≤ C`, `k + 1` times the bound `(k!)^2 C^k / ε^(k+1)` of
+`TauCeti.norm_iteratedFDeriv_inv_comp_le` is at most the bound of order `k + 1`. -/
+theorem succ_mul_factorial_sq_mul_pow_div_pow_le (k : ℕ) {ε C : ℝ} (hε : 0 < ε)
+    (hε₁ : ε ≤ 1) (hC : 1 ≤ C) :
+    ((k + 1 : ℕ) : ℝ) * ((k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1)) ≤
+      ((k + 1) ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1) := by
+  have hk : (1 : ℝ) ≤ (k + 1 : ℕ) := by exact_mod_cast Nat.le_add_left 1 k
+  calc ((k + 1 : ℕ) : ℝ) * ((k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1))
+      ≤ ((k + 1 : ℕ) : ℝ) * ((k ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1)) := by
+        gcongr _ * (_ * ?_ / ?_)
+        · exact pow_le_pow_right₀ hC k.le_succ
+        · exact pow_le_pow_of_le_one hε.le hε₁ (k + 1).le_succ
+    _ ≤ ((k + 1 : ℕ) : ℝ) * ((k + 1 : ℕ) * ((k ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1))) := by
+        gcongr
+        exact le_mul_of_one_le_left (by positivity) hk
+    _ = ((k + 1) ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1) := by
+        rw [Nat.factorial_succ]
+        push_cast
+        ring
 
 end Reciprocal
 
