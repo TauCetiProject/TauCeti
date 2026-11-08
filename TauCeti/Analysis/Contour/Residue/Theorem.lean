@@ -87,7 +87,8 @@ private lemma circleIntegral_const_mul_zpow_sub {c s₀ : ℂ} {R : ℝ} {n : �
       = (if (-1 - n).toNat = 0 then (1 : ℂ) else 0) / ((-1 - n).toNat.factorial : ℂ) := by
     have h1 : AnalyticAt ℂ (fun _ : ℂ ↦ (1 : ℂ)) s₀ := analyticAt_const
     rw [residue_eq_of_eventuallyEq_zpow_smul (by omega : n ≤ -1) h1
-      (Filter.Eventually.of_forall fun z ↦ by simp [smul_eq_mul]), iteratedDeriv_const]
+      (Filter.Eventually.of_forall fun z ↦ by simp [smul_eq_mul]), iteratedDeriv_const,
+      smul_eq_mul, inv_mul_eq_div]
   rw [residue_const_mul a, hresQ]
   rcases eq_or_ne n (-1) with hn1 | hn1
   · subst hn1
