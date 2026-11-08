@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Order.GroupWithZero.Canonical
+import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.NormNum.Basic
@@ -27,8 +28,9 @@ prime.
 * `TauCeti.eq_one_and_forall_eq_one_of_exp_neg_one_le_prod`: in a weighted product of integral
   values that is at least `exp (-1)`, at most one factor differs from `1`, and it has weight `1`.
 * `TauCeti.two_dvd_log_iff`: a value has even logarithm if and only if it is a square.
-* `TauCeti.two_dvd_log_of_prod_eq_sq`: in a weighted product of nonzero values equal to a square,
-  a factor of weight `1` has even logarithm once all the other factors do.
+* `TauCeti.two_dvd_log_of_prod_eq_sq`: in a weighted product of values equal to a square, a
+  factor of weight `1` has even logarithm once all the other factors are nonzero with even
+  logarithm.
 
 ## Provenance
 
@@ -93,21 +95,19 @@ theorem two_dvd_log_iff {x : ℤᵐ⁰} : (2 : ℤ) ∣ log x ↔ ∃ c, x = c ^
   · rw [← exp_log hx, hk, two_mul, exp_add, sq]
   · rw [hc, log_pow, two_nsmul, two_mul]
 
-/-- In a weighted product of nonzero values in `ℤᵐ⁰` equal to a square, a factor of weight `1`
-has even logarithm once all the other factors do. -/
-theorem two_dvd_log_of_prod_eq_sq {x : I → ℤᵐ⁰} {e : I → ℕ} {c : ℤᵐ⁰} (hx : ∀ i ∈ s, x i ≠ 0)
-    {i₀ : I} (hi₀s : i₀ ∈ s) (he : e i₀ = 1) (hev : ∀ i ∈ s, i ≠ i₀ → (2 : ℤ) ∣ log (x i))
-    (hprod : ∏ i ∈ s, x i ^ e i = c ^ 2) : (2 : ℤ) ∣ log (x i₀) := by
+/-- In a weighted product of values in `ℤᵐ⁰` equal to a square, a factor of weight `1` has even
+logarithm once all the other factors are nonzero with even logarithm. -/
+theorem two_dvd_log_of_prod_eq_sq {x : I → ℤᵐ⁰} {e : I → ℕ} {c : ℤᵐ⁰} {i₀ : I}
+    (hx : ∀ i ∈ s, i ≠ i₀ → x i ≠ 0) (hi₀s : i₀ ∈ s) (he : e i₀ = 1)
+    (hev : ∀ i ∈ s, i ≠ i₀ → (2 : ℤ) ∣ log (x i)) (hprod : ∏ i ∈ s, x i ^ e i = c ^ 2) :
+    (2 : ℤ) ∣ log (x i₀) := by
   classical
-  -- the factors away from `i₀` are squares `d i ^ 2`, so their product is a square `D ^ 2`
-  choose! d hd using fun i (hi : i ∈ s.erase i₀) ↦
-    two_dvd_log_iff.mp (hev i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi))
-  set D := ∏ i ∈ s.erase i₀, d i ^ e i
-  have hD : ∏ i ∈ s.erase i₀, x i ^ e i = D ^ 2 := by
-    rw [← Finset.prod_pow]
-    exact Finset.prod_congr rfl fun i hi ↦ by rw [hd i hi, ← pow_mul, ← pow_mul, mul_comm]
+  -- the factors away from `i₀` are squares, so their product is a square `D ^ 2`
+  obtain ⟨D, hD⟩ := (Finset.isSquare_prod (s := s.erase i₀) (fun i ↦ x i ^ e i) fun i hi ↦
+    ((isSquare_iff_exists_sq _).mpr <| two_dvd_log_iff.mp <|
+      hev i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi)).pow _).exists_sq
   have hD0 : D ^ 2 ≠ 0 := hD ▸ Finset.prod_ne_zero_iff.mpr fun i hi ↦
-    pow_ne_zero _ (hx i (Finset.mem_of_mem_erase hi))
+    pow_ne_zero _ (hx i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi))
   rw [← Finset.mul_prod_erase _ _ hi₀s, he, pow_one, hD, ← eq_div_iff hD0, ← div_pow] at hprod
   exact two_dvd_log_iff.mpr ⟨_, hprod⟩
 

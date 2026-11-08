@@ -214,7 +214,7 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
   have hev := two_dvd_log_of_prod_eq_sq (i₀ := i₀) (c := v.valuation K y)
     (x := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1))
     (e := fun i : W.PrimesAboveFactors R v ↦ i.2.1.asIdeal.inertiaDeg R)
-    (fun i _ ↦ (Valuation.ne_zero_iff _).mpr (W.isUnit_algebraMap_sub_root hx i.1).ne_zero)
+    (fun i _ _ ↦ (Valuation.ne_zero_iff _).mpr (W.isUnit_algebraMap_sub_root hx i.1).ne_zero)
     (Finset.mem_univ _) he₀
     (fun i hi₁ hi ↦ by
       rw [hlog]
