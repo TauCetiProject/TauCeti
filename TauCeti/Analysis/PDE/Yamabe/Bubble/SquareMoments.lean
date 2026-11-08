@@ -54,7 +54,8 @@ theorem abs_integral_cutoff_norm_sub_rpow_mul_bubble_sq_sub_le
       (C + 1) * (2 * t / r) ^ (finrank ℝ E - 2) *
         ∫ x, ‖x - b‖ ^ p * bubble r b x ^ 2 ∂μ := by
   have hn : 2 ≤ finrank ℝ E := by
-    exact_mod_cast (show (2 : ℝ) ≤ finrank ℝ E by linarith)
+    have hfinrank_real : (2 : ℝ) ≤ finrank ℝ E := by linarith
+    exact_mod_cast hfinrank_real
   have hC : 0 ≤ C := (norm_nonneg (χ b)).trans (hχC b)
   have hMt := integrable_norm_sub_rpow_mul_bubble_sq μ hp hpn ht b
   have hMr := integrable_norm_sub_rpow_mul_bubble_sq μ hp hpn hr b
@@ -94,7 +95,8 @@ theorem tendsto_integral_mul_norm_sub_rpow_mul_bubble_sq_div
         (2 ^ (finrank ℝ E - 3) *
           beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p - 4) / 2))))) := by
   have hn : 0 < finrank ℝ E := by
-    exact_mod_cast (show (0 : ℝ) < finrank ℝ E by linarith)
+    have hfinrank_real : (0 : ℝ) < finrank ℝ E := by linarith
+    exact_mod_cast hfinrank_real
   let _ := Module.finite_of_finrank_pos (R := ℝ) (M := E) hn
   let J : E → ℝ := fun z ↦ ‖z‖ ^ p * bubble 1 0 z ^ 2
   have hJ : Integrable J μ := by

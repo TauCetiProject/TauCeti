@@ -294,7 +294,8 @@ theorem integrable_norm_sub_rpow_mul_bubble_sq
     (hpn : p < (finrank ℝ E : ℝ) - 4) {t : ℝ} (ht : 0 < t) (b : E) :
     Integrable (fun x ↦ ‖x - b‖ ^ p * bubble t b x ^ 2) μ := by
   have hn : 2 ≤ finrank ℝ E := by
-    exact_mod_cast (show (2 : ℝ) ≤ finrank ℝ E by linarith)
+    have hfinrank_real : (2 : ℝ) ≤ finrank ℝ E := by linarith
+    exact_mod_cast hfinrank_real
   let _ := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega : 0 < finrank ℝ E)
   have hJ := integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq μ hp
     (r := 2 * ((finrank ℝ E : ℝ) - 2)) (by linarith)
@@ -315,7 +316,8 @@ theorem integral_norm_sub_rpow_mul_bubble_sq
         (2 ^ (finrank ℝ E - 3) * t ^ (p + 2) *
           beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p - 4) / 2)) := by
   have hn : 4 < finrank ℝ E := by
-    exact_mod_cast (show (4 : ℝ) < finrank ℝ E by linarith)
+    have hfinrank_real : (4 : ℝ) < finrank ℝ E := by linarith
+    exact_mod_cast hfinrank_real
   let _ := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega : 0 < finrank ℝ E)
   let _ : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   let J : E → ℝ := fun z ↦ ‖z‖ ^ p *
@@ -333,7 +335,8 @@ theorem integral_norm_sub_rpow_mul_bubble_sq
   rw [hscale, integral_congr_ae (.of_forall hpoint), integral_const_mul,
     integral_norm_rpow_mul_rpow_neg_one_add_norm_sq μ hp (by linarith), hexp]
   have htwo : (2 : ℝ) ^ (finrank ℝ E - 2) = 2 * 2 ^ (finrank ℝ E - 3) := by
-    rw [← pow_succ', show finrank ℝ E - 3 + 1 = finrank ℝ E - 2 by omega]
+    have hpower_succ : finrank ℝ E - 3 + 1 = finrank ℝ E - 2 := by omega
+    rw [← pow_succ', hpower_succ]
   rw [htwo]
   ring
 
