@@ -13,10 +13,11 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `c √u` tends to `0` as `u → 0`, and through
-positive values as `u → 0⁺` when `c > 0`, and the cancellation `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`
-used in changes of variables, and that the radial profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k`
-function supported in `(0, ∞)` is `C^k`.
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, `|t / √(1 + t²)| ≤ 1` and
+`√(1 + t²) - 1 ≤ |t|`, that `c √u` tends to `0` as
+`u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
+`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
+`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
 
 ## Main results
 
@@ -25,6 +26,9 @@ function supported in `(0, ∞)` is `C^k`.
 * `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
   `|1 - (√μ)⁻¹| ≤ δ`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
+* `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
+* `Real.abs_div_sqrt_one_add_sq_le_one`: for every real `t`, `|t / √(1 + t²)| ≤ 1`.
+* `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
@@ -115,6 +119,21 @@ theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
   have h₂ := sqrt_le_sqrt_add_sqrt_abs_sub s t
   rw [abs_sub_comm s t] at h₂
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
+/-- For every real `t`, `1 ≤ √(1 + t²)`. -/
+theorem one_le_sqrt_one_add_sq (t : ℝ) : 1 ≤ √(1 + t ^ 2) :=
+  one_le_sqrt.mpr (by nlinarith [sq_nonneg t])
+
+/-- For every real `t`, `|t / √(1 + t²)| ≤ 1`. -/
+theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| ≤ 1 := by
+  have hpos : 0 < √(1 + t ^ 2) := by linarith [one_le_sqrt_one_add_sq t]
+  rw [abs_div, abs_of_pos hpos, div_le_one₀ hpos]
+  exact abs_le_sqrt (by linarith)
+
+/-- The modular `√(1 + t²) - 1` grows at most linearly: `√(1 + t²) - 1 ≤ |t|`. -/
+theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
+  rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
+  nlinarith [abs_nonneg t, sq_abs t]
 
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
