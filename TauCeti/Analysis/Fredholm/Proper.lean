@@ -133,7 +133,9 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     have h := happN.one_sub_mul_norm_sub_le (P := P) hC.le (fun z _ ↦ hest z) hx hy
     rw [hCε] at h
     have hP : ‖Pker x - Pker y‖ = ‖P x - P y‖ := by
-      rw [← Submodule.norm_coe, Submodule.coe_sub]; rfl
+      -- `Pker` coerces back to `P`, since it is `P` with its codomain restricted to `f'.ker`
+      simp only [Pker, ← Submodule.norm_coe, Submodule.coe_sub,
+        ContinuousLinearMap.coe_codRestrict_apply]
     rw [hP]
     linarith
   refine ⟨N, Metric.closedBall_mem_nhds a (by linarith), fun L hL => ?_⟩
