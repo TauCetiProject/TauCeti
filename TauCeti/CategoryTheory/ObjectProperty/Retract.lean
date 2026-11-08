@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Idempotents.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
+public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
 /-!
@@ -21,7 +22,7 @@ endomorphisms.
 
 The zero objects form a property stable under retracts, and stability under retracts is inherited
 by inverse images along functors; in particular, the objects that a functor sends to zero form a
-property stable under retracts.
+property stable under retracts. A property closed under subobjects is stable under retracts.
 
 ## Main results
 
@@ -55,5 +56,11 @@ functors preserve retracts. -/
 instance {C D : Type*} [Category* C] [Category* D] (P : ObjectProperty D)
     [P.IsStableUnderRetracts] (F : C ⥤ D) : (P.inverseImage F).IsStableUnderRetracts where
   of_retract h hY := P.prop_of_retract (h.map F) hY
+
+/-- A property closed under subobjects is stable under retracts, since the inclusion of a retract
+is a monomorphism. -/
+instance (priority := 100) isStableUnderRetracts_of_isClosedUnderSubobjects {C : Type*}
+    [Category* C] (P : ObjectProperty C) [P.IsClosedUnderSubobjects] : P.IsStableUnderRetracts where
+  of_retract h hY := P.prop_of_mono h.i hY
 
 end CategoryTheory.ObjectProperty
