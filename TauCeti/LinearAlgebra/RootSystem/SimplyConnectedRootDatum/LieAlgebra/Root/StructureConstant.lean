@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!
 # The structure constants of the pinned Chevalley system
