@@ -62,6 +62,7 @@ All in the namespace `TauCeti.Yamabe`.
 * `yamabeQuotient_nonneg_of_scalarCurvature_nonneg`: nonnegative scalar curvature gives
   nonnegative quotients, without regularity assumptions on `u`.
 * `yamabeQuotient_smul`: `Q_g(c u) = Q_g(u)` for `c ≠ 0`.
+* `yamabeQuotient_one`: on a compact manifold, `Q_g(1) = (∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`.
 * `hasDerivAt_yamabeQuotient_add_smul`: the first variation of `Q_g`.
 * `forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_eq`: the Euler–Lagrange
   equation `L_g u = λ |u| ^ (pₙ - 2) u` characterizes the critical points of `Q_g`.
@@ -152,6 +153,16 @@ theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} {c : ℝ} (
   rw [Real.mul_rpow (Real.rpow_nonneg (abs_nonneg _) _)
       (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _), hc2,
     mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
+
+/-- On a compact manifold of dimension `n`, the Yamabe quotient of the constant function `1` is
+the volume-normalized total scalar curvature `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. -/
+@[simp]
+theorem yamabeQuotient_one [CompactSpace M] :
+    yamabeQuotient I (fun _ : M ↦ (1 : ℝ)) =
+      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+        ∂riemannianVolume I M) /
+        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
+  simp [yamabeQuotient_def, mgradient_const, riemannianTotalVolume_def]
 
 /-! ### The first variation -/
 
