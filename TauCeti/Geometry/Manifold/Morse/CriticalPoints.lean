@@ -243,6 +243,56 @@ theorem IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints
 
 end Chart
 
+/-- Where the coordinate expression of `f` in the preferred extended chart at `x` is differentiable,
+`x` is a critical point exactly when that expression has zero Fréchet derivative. No boundary
+hypothesis is needed: `range I` is uniquely differentiable, so the derivative within it is the
+Fréchet derivative. -/
+theorem mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt
+    (hg : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)) :
+    x ∈ criticalPoints I f ↔
+      fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  have hf : MDifferentiableAt I 𝓘(ℝ) f x := by
+    rw [mdifferentiableAt_iff]
+    refine ⟨(hg.continuousAt.comp (continuousAt_extChartAt x)).congr
+      (comp_extChartAt_symm_comp_extChartAt_eventuallyEq f x), ?_⟩
+    simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+      Function.id_comp] using hg.differentiableWithinAt
+  have hu : UniqueDiffWithinAt ℝ (range I) (extChartAt I x x) :=
+    I.uniqueDiffOn _ (extChartAt_target_subset_range x (mem_extChartAt_target x))
+  rw [mem_criticalPoints, hf.mvfderiv]
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.id_comp]
+  rw [hg.fderivWithin hu]
+  -- The two sides differ only in reading the zero map on the tangent space or on `E`.
+  exact Iff.rfl
+
+/-- At a critical point, the coordinate expression of `f` in the preferred extended chart has zero
+Fréchet derivative. No boundary hypothesis is needed: where the expression is not differentiable
+the Fréchet derivative is zero by convention. -/
+theorem fderiv_comp_extChartAt_symm_eq_zero_of_mem_criticalPoints (hx : x ∈ criticalPoints I f) :
+    fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  by_cases hg : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
+  · exact (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt hg).1 hx
+  · exact fderiv_zero_of_not_differentiableAt hg
+
+/-- A nondegenerate critical point is a critical point. -/
+theorem IsManifoldNondegenerateCriticalPoint.mem_criticalPoints
+    (h : IsManifoldNondegenerateCriticalPoint I f x) : x ∈ criticalPoints I f :=
+  let h' := (isManifoldNondegenerateCriticalPoint_iff I).1 h
+  (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt
+    (h'.contDiffAt.differentiableAt (by simp))).2 h'.fderiv_eq_zero
+
+/-- Every critical point in `s` of a function which is Morse on `s` is nondegenerate. -/
+theorem IsMorseOn.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+    (h : IsMorseOn I f s) (hs : x ∈ s) (hx : x ∈ criticalPoints I f) :
+    IsManifoldNondegenerateCriticalPoint I f x :=
+  (isMorseOn_iff.1 h).2 x hs (fderiv_comp_extChartAt_symm_eq_zero_of_mem_criticalPoints hx)
+
+/-- Every critical point of a Morse function is nondegenerate. -/
+theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (h : IsMorse I f)
+    (hx : x ∈ criticalPoints I f) : IsManifoldNondegenerateCriticalPoint I f x :=
+  (isMorseOn_univ.2 h).isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (mem_univ x) hx
+
 section Boundaryless
 
 variable [I.Boundaryless]
@@ -262,12 +312,6 @@ theorem mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero :
         (mt mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.2 hf)]
     simp only
 
-/-- A nondegenerate critical point is a critical point. -/
-theorem IsManifoldNondegenerateCriticalPoint.mem_criticalPoints
-    (h : IsManifoldNondegenerateCriticalPoint I f x) : x ∈ criticalPoints I f :=
-  mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero.2
-    ((isManifoldNondegenerateCriticalPoint_iff I).1 h).fderiv_eq_zero
-
 /-- A function is Morse on `s` exactly when it is smooth on `s` and each of its critical points in
 `s` is nondegenerate. -/
 theorem isMorseOn_iff_criticalPoints :
@@ -275,17 +319,6 @@ theorem isMorseOn_iff_criticalPoints :
       ContMDiffOn I 𝓘(ℝ) ∞ f s ∧
         ∀ x ∈ s, x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x := by
   simp only [isMorseOn_iff, mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero]
-
-/-- Every critical point in `s` of a function which is Morse on `s` is nondegenerate. -/
-theorem IsMorseOn.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-    (h : IsMorseOn I f s) (hs : x ∈ s) (hx : x ∈ criticalPoints I f) :
-    IsManifoldNondegenerateCriticalPoint I f x :=
-  (isMorseOn_iff_criticalPoints.1 h).2 x hs hx
-
-/-- Every critical point of a Morse function is nondegenerate. -/
-theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (h : IsMorse I f)
-    (hx : x ∈ criticalPoints I f) : IsManifoldNondegenerateCriticalPoint I f x :=
-  (isMorseOn_univ.2 h).isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (mem_univ x) hx
 
 /-- **Fermat's theorem on a manifold.** A local extremum is a critical point. -/
 theorem _root_.IsLocalExtr.mem_criticalPoints (h : IsLocalExtr f x) : x ∈ criticalPoints I f := by
@@ -342,33 +375,48 @@ theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
     (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
   exact ⟨x, (hglobal.isLocalMin univ_mem).mem_criticalPoints, hx⟩
 
+end Boundaryless
+
 /-! ### Closedness, isolation and finiteness -/
 
 section IsManifold
 
 variable [IsManifold I 1 M]
 
-/-- The critical set of a `C¹` function on a boundaryless manifold is closed. -/
+/-- The critical set of a `C¹` function is closed. -/
 theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (criticalPoints I f) := by
   rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
   intro x hx
   set ψ := extChartAt I x
-  -- In the chart at `x` the derivative of the coordinate expression is continuous, so its
-  -- nonvanishing locus pulls back to an open neighbourhood of `x` free of critical points.
+  -- In the chart at `x` the derivative of the coordinate expression is continuous on the chart
+  -- target, so its nonvanishing locus pulls back to an open neighbourhood of `x` free of critical
+  -- points.
   have hg : ContDiffOn ℝ 1 (f ∘ ψ.symm) ψ.target :=
     (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn
-  have ht : IsOpen ψ.target := isOpen_extChartAt_target x
-  have hcrit : ∀ y ∈ ψ.source, y ∈ criticalPoints I f ↔ fderiv ℝ (f ∘ ψ.symm) (ψ y) = 0 :=
-    fun y hy ↦ mem_criticalPoints_iff_of_mem_extChartAt_source hy
-      ((hg.contDiffAt (ht.mem_nhds (ψ.map_source hy))).differentiableAt one_ne_zero)
-  refine ⟨ψ.source ∩ ψ ⁻¹' (ψ.target ∩ fderiv ℝ (f ∘ ψ.symm) ⁻¹' {0}ᶜ), ?_, ?_, ?_⟩
-  · rintro y ⟨hy, -, hy0⟩ hyc
+  have hcrit : ∀ y ∈ ψ.source,
+      y ∈ criticalPoints I f ↔ fderivWithin ℝ (f ∘ ψ.symm) ψ.target (ψ y) = 0 := by
+    intro y hy
+    have hyt : ψ y ∈ ψ.target := ψ.map_source hy
+    rw [mem_criticalPoints_iff_mfderiv_eq_zero,
+      ← fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin_of_mem hyt)
+        (I.uniqueDiffOn _ (extChartAt_target_subset_range x hyt))
+        ((hg _ hyt).differentiableWithinAt one_ne_zero),
+      (hf.mdifferentiableAt one_ne_zero).fderivWithin_comp_extChartAt_symm x hy]
+    -- The change of tangent coordinates is invertible, so it can be cancelled.
+    have hsurj : ∀ w, tangentCoordChange I x y y (tangentCoordChange I y x y w) = w := fun w ↦ by
+      rw [tangentCoordChange_comp (w := y) ⟨⟨mem_extChartAt_source y, hy⟩,
+        mem_extChartAt_source y⟩, tangentCoordChange_self (mem_extChartAt_source y)]
+    refine ⟨fun h ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun w ↦ ?_⟩
+    · exact congr($h (tangentCoordChange I x y y w))
+    have := congr($h (tangentCoordChange I y x y w))
+    exact ((congrArg (mfderiv I 𝓘(ℝ) f y) (hsurj w).symm).trans this).trans rfl
+  refine ⟨ψ.source ∩ (fun y ↦ fderivWithin ℝ (f ∘ ψ.symm) ψ.target (ψ y)) ⁻¹' {0}ᶜ, ?_, ?_, ?_⟩
+  · rintro y ⟨hy, hy0⟩ hyc
     exact hy0 ((hcrit y hy).1 hyc)
-  · exact (continuousOn_extChartAt x).isOpen_inter_preimage (isOpen_extChartAt_source x)
-      ((hg.continuousOn_fderiv_of_isOpen ht le_rfl).isOpen_inter_preimage ht
-        isOpen_compl_singleton)
-  · exact ⟨mem_extChartAt_source x, mem_extChartAt_target x,
-      fun h0 ↦ hx ((hcrit x (mem_extChartAt_source x)).2 h0)⟩
+  · exact ((hg.continuousOn_fderivWithin (uniqueDiffOn_extChartAt_target x) le_rfl).comp
+      (continuousOn_extChartAt x) fun y hy ↦ ψ.map_source hy).isOpen_inter_preimage
+      (isOpen_extChartAt_source x) isOpen_compl_singleton
+  · exact ⟨mem_extChartAt_source x, fun h0 ↦ hx ((hcrit x (mem_extChartAt_source x)).2 h0)⟩
 
 /-- **A regular value has a collar without critical points above it.** If `f` is `C¹`, `a < b`,
 the band `f⁻¹[a, b]` is compact and `a` is a regular value of `f`, then for some `a' ∈ (a, b]` the
@@ -563,8 +611,6 @@ theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t �
     (htrans _ _ _ _ _ (hcompact' le_rfl (by linarith)) hlow hmid) hup
 
 end IsManifold
-
-end Boundaryless
 
 /-! ### Counting critical points -/
 
@@ -767,8 +813,6 @@ theorem toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalC
   exact (by simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x)) :
     (-1 : ℤ) ^ manifoldMorseIndex I f x ≡ 1 [ZMOD 2]).symm
 
-variable [I.Boundaryless]
-
 /-- **Duality of critical counts.** Replacing a Morse function by its negation exchanges the
 numbers of critical points of index `j` and `dim M - j`. -/
 theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Module.finrank ℝ E) :
@@ -780,10 +824,9 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
 
-/-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a boundaryless manifold of
-dimension `m`, the signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by
-the factor `(-1)ᵐ`, since the critical points of index `i` of `-f` are those of index `m - i`
-of `f`. -/
+/-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a manifold of dimension `m`, the
+signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by the factor `(-1)ᵐ`,
+since the critical points of index `i` of `-f` are those of index `m - i` of `f`. -/
 theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg (hf : IsMorse I f) {n : ℕ}
     (hn : Module.finrank ℝ E ≤ n) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I (-f) i).toNat =
@@ -802,7 +845,7 @@ end FiniteDimensional
 
 section Compact
 
-variable [I.Boundaryless] [IsManifold I 1 M] [CompactSpace M]
+variable [IsManifold I 1 M] [CompactSpace M]
 
 /-- A Morse function on a compact manifold has finitely many critical points. -/
 theorem IsMorse.totalCriticalCount_ne_top (hf : IsMorse I f) : totalCriticalCount I f ≠ ⊤ :=
