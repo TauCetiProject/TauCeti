@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Huber.Away
 public import TauCeti.RingTheory.Huber.Padic.Field
 public import TauCeti.RingTheory.Huber.Pair.Complete
-public import TauCeti.Topology.Algebra.Ring.Subring
 
 /-!
 # Checks for the Tate ring `A₀[1/π]`

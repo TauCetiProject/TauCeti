@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
-public import Mathlib.Topology.Algebra.Nonarchimedean.Bases
 public import TauCeti.RingTheory.Huber.Basic
 
 /-!
@@ -43,8 +40,9 @@ own topology instance; `TauCeti.Huber.hasBasis_nhds_zero_awayTopology` supplies 
 
 * `TauCeti.Huber.isTopologicalRing_awayTopology`, `TauCeti.Huber.nonarchimedeanRing_awayTopology`:
   `awayTopology` is a nonarchimedean ring topology.
-* `TauCeti.Huber.algebraMap_mem_awayNhd_iff`: if `π` is a nonzerodivisor, `πⁿ A₀` restricts to
-  the ideal `(πⁿ)` of `A₀`.
+* `TauCeti.Huber.algebraMap_mem_awayNhd_iff`,
+  `TauCeti.Huber.sModEq_iff_algebraMap_sub_mem_awayNhd`: if `π` is a nonzerodivisor, `πⁿ A₀`
+  restricts to the ideal `(πⁿ)` of `A₀`.
 * `TauCeti.Huber.isOpen_range_algebraMap_of_hasBasis`,
   `TauCeti.Huber.isBounded_range_algebraMap_of_hasBasis`: the image of `A₀` is open and bounded.
 * `TauCeti.Huber.isPseudoUniformizer_algebraMap_of_hasBasis`: `π` is a pseudouniformiser of `A`.
@@ -166,6 +164,14 @@ theorem algebraMap_mem_awayNhd_iff (hπ : π ∈ A₀⁰) {n : ℕ} {a : A₀} :
   obtain ⟨b, hb⟩ := mem_awayNhd.mp ha
   exact ⟨b, (IsLocalization.injective A (Submonoid.powers_le.mpr hπ) hb).symm⟩
 
+/-- If `π` is a nonzerodivisor, `a ≡ b` modulo `(π)ⁿ` in `A₀` exactly when the image of `a - b`
+lies in `πⁿ A₀`. -/
+theorem sModEq_iff_algebraMap_sub_mem_awayNhd (hπ : π ∈ A₀⁰) {n : ℕ} {a b : A₀} :
+    a ≡ b [SMOD (Ideal.span {π} ^ n • ⊤ : Submodule A₀ A₀)] ↔
+      algebraMap A₀ A (a - b) ∈ awayNhd π A n := by
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton, algebraMap_mem_awayNhd_iff hπ]
+
 /-! ### Topologies with basis `πⁿ A₀` -/
 
 section HasBasis
@@ -218,20 +224,20 @@ theorem t2Space_of_hasBasis [IsTopologicalAddGroup A] (hπ : π ∈ A₀⁰)
   have hmem (n : ℕ) : x ∈ awayNhd π A n := hU _ (h.mem_of_mem trivial)
   obtain ⟨a, rfl⟩ := mem_awayNhd.mp (hmem 0)
   refine hx ?_
-  rw [IsHausdorff.haus (I := Ideal.span {π}) inferInstance (π ^ 0 * a) fun n ↦ ?_, map_zero]
-  rw [SModEq.zero, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
-    ← algebraMap_mem_awayNhd_iff (A := A) hπ]
-  exact hmem n
+  rw [IsHausdorff.haus (I := Ideal.span {π}) inferInstance (π ^ 0 * a) fun n ↦
+    (sModEq_iff_algebraMap_sub_mem_awayNhd (A := A) hπ).mpr (by simpa using hmem n), map_zero]
 
 end HasBasis
 
 /-- **`A₀[1/π]` is complete** for the `π`-adic topology when `π` is a nonzerodivisor and `A₀` is
-`π`-adically precomplete. A Cauchy sequence eventually stays in a coset of the image of `A₀`, where
-it is the image of a `π`-adically Cauchy sequence of `A₀`; the image of its limit, translated back,
-is a limit of the sequence. -/
+`π`-adically precomplete. Here `A` carries any uniform structure compatible with its additive group
+whose neighbourhoods of zero have basis `πⁿ A₀`. -/
 theorem completeSpace_of_hasBasis [UniformSpace A] [IsUniformAddGroup A]
     (h : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (awayNhd π A n : Set A)) (hπ : π ∈ A₀⁰)
     [IsPrecomplete (Ideal.span {π}) A₀] : CompleteSpace A := by
+  -- A Cauchy sequence eventually stays in a coset of the image of `A₀`, where it is the image of a
+  -- `π`-adically Cauchy sequence of `A₀`; the image of its limit, translated back, is a limit of
+  -- the sequence.
   have hu := h.uniformity_of_nhds_zero
   have : (𝓤 A).IsCountablyGenerated := hu.isCountablyGenerated
   refine UniformSpace.complete_of_cauchySeq_tendsto fun u hcau ↦ ?_
@@ -249,23 +255,19 @@ theorem completeSpace_of_hasBasis [UniformSpace A] [IsUniformAddGroup A]
   choose f hf using hf
   obtain ⟨L, hL⟩ := IsPrecomplete.prec (I := Ideal.span {π}) inferInstance (f := f)
     fun {i j} hij ↦ by
-      rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
-        Ideal.mem_span_singleton, ← algebraMap_mem_awayNhd_iff (A := A) hπ, map_sub, hf, hf,
+      rw [sModEq_iff_algebraMap_sub_mem_awayNhd (A := A) hπ, map_sub, hf, hf,
         sub_sub_sub_cancel_right]
       exact hsub (hN le_rfl) (hN hij)
   refine ⟨u (N 0) + algebraMap A₀ A L,
     tendsto_sub_nhds_zero_iff.mp (h.tendsto_right_iff.mpr fun i _ ↦ ?_)⟩
   filter_upwards [eventually_ge_atTop (N₀ i)] with n hn
-  have hfL : algebraMap A₀ A (f i - L) ∈ awayNhd π A i := by
-    have := SModEq.sub_mem.mp (hL i)
-    rwa [smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
-      ← algebraMap_mem_awayNhd_iff (A := A) hπ] at this
+  have hfL : algebraMap A₀ A (f i - L) ∈ awayNhd π A i :=
+    (sModEq_iff_algebraMap_sub_mem_awayNhd hπ).mp (hL i)
   have hdecomp : u n - (u (N 0) + algebraMap A₀ A L) =
       (u n - u (N i)) + algebraMap A₀ A (f i - L) := by
     rw [map_sub, hf]
     ring
   rw [hdecomp]
   exact add_mem (hsub hn (hN le_rfl)) hfL
-
 
 end TauCeti.Huber
