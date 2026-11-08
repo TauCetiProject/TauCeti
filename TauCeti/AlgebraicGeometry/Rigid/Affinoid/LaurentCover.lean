@@ -45,27 +45,17 @@ private theorem leIdeal_eq (f : A) :
     laurentFractionIdeal (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A) =
       (laurentCoverLeIdeal A f).map
         (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A) : W(1) →+* T(1)) := by
-  simp only [Nat.add_zero, laurentFractionIdeal_def, Fin.castAdd_zero, Fin.cast_eq_self,
-    Set.range_unique, Fin.default_eq_zero, Fin.isValue, Matrix.range_empty, Submodule.span_empty,
-    bot_le, sup_of_le_left, laurentCoverLeIdeal_def, Ideal.map_span,
-    RingHom.coe_coe, coe_restrictedMvPowerSeriesGaussAlgEquiv,
-    Set.image_singleton, map_sub, restrictedMvPowerSeriesGaussEquiv_weightedC,
-    restrictedMvPowerSeriesGaussEquiv_weightedX]
-  simpa only [neg_sub] using (Ideal.span_singleton_neg
-    (algebraMap A T(1) f - ⟨X 0, isRestricted_X _ 0⟩))
+  simpa [laurentFractionIdeal_def, laurentCoverLeIdeal_def, Ideal.map_span,
+    coe_restrictedMvPowerSeriesGaussAlgEquiv, Set.range_unique, Fin.default_eq_zero, neg_sub] using
+    (Ideal.span_singleton_neg (algebraMap A T(1) f - ⟨X 0, isRestricted_X _ 0⟩))
 
 private theorem geIdeal_eq (f : A) :
     laurentFractionIdeal (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f) =
       (laurentCoverGeIdeal A f).map
         (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A) : W(1) →+* T(1)) := by
-  simp only [Nat.reduceAdd, laurentFractionIdeal_def, Matrix.range_empty, Submodule.span_empty,
-    Fin.natAdd_zero, Fin.cast_eq_self, Set.range_unique, Fin.default_eq_zero, Fin.isValue,
-    bot_le, sup_of_le_right, laurentCoverGeIdeal_def, Ideal.map_span,
-    RingHom.coe_coe, coe_restrictedMvPowerSeriesGaussAlgEquiv,
-    Set.image_singleton, map_sub, map_one, map_mul, restrictedMvPowerSeriesGaussEquiv_weightedC,
-    restrictedMvPowerSeriesGaussEquiv_weightedX]
-  simpa only [neg_sub] using (Ideal.span_singleton_neg
-    (1 - algebraMap A T(1) f * ⟨X 0, isRestricted_X _ 0⟩))
+  simpa [laurentFractionIdeal_def, laurentCoverGeIdeal_def, Ideal.map_span,
+    coe_restrictedMvPowerSeriesGaussAlgEquiv, Set.range_unique, Fin.default_eq_zero, neg_sub] using
+    (Ideal.span_singleton_neg (1 - algebraMap A T(1) f * ⟨X 0, isRestricted_X _ 0⟩))
 
 /-- The Huber quotient presentation of the lower Laurent piece is its native Gauss-normed
 Laurent fraction algebra, compatibly with the ambient algebra. -/
@@ -206,13 +196,7 @@ theorem leToOverlap_mk (f : A) (g : T(1)) :
       (Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A)) g) =
       Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f))
         ⟨rename Fin.castSuccEmb (g : MvPowerSeries (Fin 1) A),
-          by
-            simpa only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedRename,
-              coe_restrictedMvPowerSeriesGaussEquiv_symm] using
-              (restrictedMvPowerSeriesGaussEquiv
-                (weightedRename Fin.castSuccEmb isWeightFamily_one_weight isWeightFamily_one_weight
-                  (fun _ ↦ subset_rfl)
-                  (restrictedMvPowerSeriesGaussEquiv.symm g))).property⟩ := by
+          g.property.rename_of_injective (c := fun _ ↦ 1) Fin.castSuccEmb⟩ := by
   obtain ⟨g, rfl⟩ := (restrictedMvPowerSeriesGaussEquiv (n := 1) (R := A)).surjective g
   rw [← huberLeAlgEquiv_mk, leToOverlap_huberLeAlgEquiv,
     laurentCoverLeToOverlap_mk, huberOverlapAlgEquiv_mk_mk]
@@ -227,13 +211,7 @@ theorem geToOverlap_mk (f : A) (g : T(1)) :
       (Ideal.Quotient.mk (laurentFractionIdeal (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f)) g) =
       Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f))
         ⟨rename (Fin.succEmb 1) (g : MvPowerSeries (Fin 1) A),
-          by
-            simpa only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedRename,
-              coe_restrictedMvPowerSeriesGaussEquiv_symm] using
-              (restrictedMvPowerSeriesGaussEquiv
-                (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight isWeightFamily_one_weight
-                  (fun _ ↦ subset_rfl)
-                  (restrictedMvPowerSeriesGaussEquiv.symm g))).property⟩ := by
+          g.property.rename_of_injective (c := fun _ ↦ 1) (Fin.succEmb 1)⟩ := by
   obtain ⟨g, rfl⟩ := (restrictedMvPowerSeriesGaussEquiv (n := 1) (R := A)).surjective g
   rw [← huberGeAlgEquiv_mk, geToOverlap_huberGeAlgEquiv,
     laurentCoverGeToOverlap_mk, huberOverlapAlgEquiv_mk_mk]
