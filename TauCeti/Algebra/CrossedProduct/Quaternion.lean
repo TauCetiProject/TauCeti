@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.CrossedProduct.BrauerClass
 public import TauCeti.Algebra.CrossedProduct.Quadratic
 public import TauCeti.Algebra.Quaternion.BrauerClass
+import TauCeti.FieldTheory.Galois.SquareRoot
 
 /-!
 # Quaternion algebras as crossed products
@@ -73,23 +74,6 @@ private theorem apply_eq_neg (hα : α ^ 2 = algebraMap K L a)
   · rfl
   · rwa [hρ τ hτ, ← hρ σ hσ]
 
-include h in
-/-- In the situation of `apply_eq_neg`, the characteristic is not `2`: otherwise `-α = α`, so `α`
-would be fixed by the whole automorphism group and lie in `K`. -/
-private theorem two_ne_zero_of_sq_eq (hα : α ^ 2 = algebraMap K L a)
-    (hαK : α ∉ Set.range (algebraMap K L)) : (2 : K) ≠ 0 := by
-  intro h2
-  obtain ⟨σ, hσ, hσ'⟩ := (Nat.card_eq_two_iff' (1 : L ≃ₐ[K] L)).1 h
-  have hneg : -α = α := by
-    rw [neg_eq_iff_add_eq_zero, ← two_mul]
-    have : (2 : L) = 0 := by rw [← map_ofNat (algebraMap K L) 2, h2, map_zero]
-    rw [this, zero_mul]
-  refine hαK ((IsGalois.mem_range_algebraMap_iff_fixed α).2 fun τ ↦ ?_)
-  rcases eq_or_ne τ 1 with rfl | hτ
-  · rfl
-  · rw [hσ' τ hτ]
-    exact (apply_eq_neg h hα hαK hσ).trans hneg
-
 /-- The quaternion basis `i = α`, `j = u_σ` of the crossed product of the quadratic cocycle of
 `b`. -/
 private noncomputable def quadraticQuaternionBasis (hα : α ^ 2 = algebraMap K L a)
@@ -117,7 +101,7 @@ private noncomputable def quadraticQuaternionBasis (hα : α ^ 2 = algebraMap K 
 theorem nonempty_quaternionAlgebra_algEquiv_quadratic
     (hα : α ^ 2 = algebraMap K L a) (hαK : α ∉ Set.range (algebraMap K L)) (b : Kˣ) :
     Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] CrossedProduct (TwoCocycle.quadratic h b)) := by
-  let : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_sq_eq h hα hαK)
+  let : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_sq_eq hα hαK)
   obtain ⟨σ, hσ, -⟩ := (Nat.card_eq_two_iff' (1 : L ≃ₐ[K] L)).1 h
   let f := (quadraticQuaternionBasis h hα hαK b hσ).liftHom
   -- `ℍ[K, a, b]` is simple, so `f` is injective, and both sides have dimension four

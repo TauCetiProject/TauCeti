@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.LinearAlgebra.Dimension.Finrank
@@ -36,6 +37,8 @@ generating a quadratic extension is negated by an automorphism.
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
 * `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root
   `y` generating a quadratic extension `K⟮y⟯ / K`.
+* `TauCeti.two_ne_zero_of_sq_eq`: a square root outside the base field of a finite Galois
+  extension forces `2 ≠ 0` in the base field.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
@@ -83,6 +86,20 @@ theorem exists_algEquiv_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] 
   intro x hx
   obtain rfl := Set.mem_singleton_iff.mp hx
   exact h
+
+/-- A square root outside the base field of a finite Galois extension forces the characteristic
+to differ from `2`: otherwise `-α = α`, so `α` would be fixed by every automorphism, since an
+automorphism sends it to `± α`, and would lie in `K`. -/
+theorem two_ne_zero_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
+    [IsGalois K L] {c : K} {α : L} (hα : α ^ 2 = algebraMap K L c)
+    (hαK : α ∉ Set.range (algebraMap K L)) : (2 : K) ≠ 0 := by
+  intro h2
+  have hneg : -α = α := by
+    rw [neg_eq_iff_add_eq_zero, ← two_mul]
+    have : (2 : L) = 0 := by rw [← map_ofNat (algebraMap K L) 2, h2, map_zero]
+    rw [this, zero_mul]
+  refine hαK ((IsGalois.mem_range_algebraMap_iff_fixed α).2 fun τ ↦ ?_)
+  exact (τ.apply_eq_or_eq_neg_of_sq_eq hα).elim id fun h ↦ h.trans hneg
 
 end TauCeti
 
