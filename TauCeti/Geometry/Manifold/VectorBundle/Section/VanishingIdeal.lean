@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -34,8 +33,6 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 * `TauCeti.mem_smoothVanishingIdeal_smul_top_iff`: a smooth section lies in `I_x Γ(V)` if and
   only if it vanishes at `x`.
 * `ContMDiffSection.ker_evalLinearMap`: the kernel of evaluation at `x` is `I_x Γ(V)`.
-* `ContMDiffSection.evalLinearMap_surjective`: every vector of the fibre is the value of a global
-  smooth section.
 * `TauCeti.smoothSectionFiberEquiv`: the real-linear equivalence `Γ(V) / I_x Γ(V) ≃ V_x` sending
   the class of `s` to `s x`, and `TauCeti.smoothSectionFiberEquiv_smul`, its compatibility with
   multiplication by smooth functions through evaluation at `x`.
@@ -58,7 +55,7 @@ public section
 
 noncomputable section
 
-open Bundle Filter Function
+open Bundle Filter
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
@@ -139,6 +136,7 @@ theorem mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero {x : M} {s : Cₛ^∞
 
 /-- A smooth section of a finite-rank bundle lies in `I_x Γ(V)`, the submodule of finite sums of
 products with smooth functions vanishing at `x`, if and only if it vanishes at `x`. -/
+@[simp]
 theorem mem_smoothVanishingIdeal_smul_top_iff {x : M} {s : Cₛ^∞⟮I; F, V⟯} :
     s ∈ smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯) ↔ s x = 0 :=
   ⟨apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top,
@@ -155,13 +153,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
-
-/-- Evaluation of smooth sections at a point is surjective: every fibre vector is the value of a
-global smooth section. -/
-theorem evalLinearMap_surjective [ContMDiffVectorBundle ∞ F V I] (x : M) :
-    Surjective (evalLinearMap I F ∞ V x) := fun v ↦ by
-  obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F ∞ v
-  exact ⟨⟨s, hs⟩, by simpa using hsx⟩
 
 /-- The kernel of evaluation at `x` on smooth sections of a finite-rank bundle is `I_x Γ(V)`. -/
 theorem ker_evalLinearMap [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] (x : M) :
@@ -193,7 +184,7 @@ def smoothSectionFiberEquiv (x : M) :
   (Submodule.Quotient.restrictScalarsEquiv ℝ _).symm ≪≫ₗ
     Submodule.quotEquivOfEq _ _ (ContMDiffSection.ker_evalLinearMap x).symm ≪≫ₗ
     (ContMDiffSection.evalLinearMap I F ∞ V x).quotKerEquivOfSurjective
-      (ContMDiffSection.evalLinearMap_surjective x)
+      (ContMDiffSection.evalLinearMap_surjective ∞ x)
 
 /-- The equivalence `Γ(V) / I_x Γ(V) ≃ V_x` sends the class of a section to its value at `x`. -/
 @[simp]
@@ -209,6 +200,7 @@ theorem smoothSectionFiberEquiv_symm_apply (x : M) (s : Cₛ^∞⟮I; F, V⟯) :
 
 /-- The equivalence `Γ(V) / I_x Γ(V) ≃ V_x` turns multiplication by a smooth function into
 multiplication by its value at `x`. -/
+@[simp]
 theorem smoothSectionFiberEquiv_smul (x : M) (f : C^∞⟮I, M; ℝ⟯)
     (q : Cₛ^∞⟮I; F, V⟯ ⧸ smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯)) :
     smoothSectionFiberEquiv I F V x (f • q) = f x • smoothSectionFiberEquiv I F V x q := by
