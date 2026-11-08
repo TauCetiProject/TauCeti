@@ -60,14 +60,13 @@ example :
 -- For countable structures, the carrier `ℕ` gives Karp's theorem for `L_{ω₁ω}`.
 example {L : Language} [L.IsRelational] {M N : Type*} [L.Structure M] [L.Structure N]
     [Encodable M] [Encodable N] : PotentialIso (L := L) M N ↔ InfEquivAt (L := L) ℕ M N :=
-  karp_theorem_at (IndexCoding.ofEncodable M) (IndexCoding.ofEncodable N)
+  karp_theorem_at (IndexCoding.ofEncodable N)
 
 -- Empty structures are coded into the empty carrier, at which every conjunction is empty, and
 -- agreement there already gives a potential isomorphism.
 example {L : Language} [L.IsRelational] {M N : Type*} [L.Structure M] [L.Structure N]
     [IsEmpty M] [IsEmpty N] (h : InfEquivAt (L := L) Empty M N) : PotentialIso (L := L) M N :=
-  h.potentialIso (IndexCoding.ofEquiv (Equiv.equivEmpty M))
-    (IndexCoding.ofEquiv (Equiv.equivEmpty N))
+  h.potentialIso (IndexCoding.ofEquiv (Equiv.equivEmpty N))
 
 -- Two empty structures that differ on a nullary relation disagree on the sentence consisting of
 -- that relation, at every carrier in every universe.
