@@ -18,7 +18,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
 Let `f : G ⟶ H` be a homomorphism of group schemes over a scheme `S` whose underlying morphism of
 schemes is finite and flat. Its scheme-theoretic kernel is the base change of `f` along the unit
-section of `H` (`TauCeti.GroupScheme.isPullback_kernel_scheme`), so it is finite and flat over
+section of `H` (`TauCeti.GroupScheme.isPullback_kernel_left`), so it is finite and flat over
 `S`. The **degree** of `f` is the function `GroupScheme.degree f : S → ℕ` whose value at `s` is the
 rank of the kernel at `s`. When `f` is also locally of finite presentation it is locally constant,
 but over a disconnected base it need not be constant. For an isogeny of elliptic curves, a finite,
