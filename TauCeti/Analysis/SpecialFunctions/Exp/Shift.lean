@@ -25,6 +25,8 @@ an initial compact time interval into the constant.
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
   extends to the whole space for a continuous function, with a larger constant.
+* `ContinuousOn.exists_forall_le_mul_exp_Ici_of_eventually_le`: an eventual exponential bound
+  on a closed forward ray extends to the whole ray, with a larger constant.
 -/
 
 public section
@@ -56,7 +58,8 @@ theorem exists_forall_le_mul_exp_of_eventually_le {E : Type*} [NormedAddCommGrou
   · have hb := hM x (mem_closedBall_zero_iff.mpr hx.le)
     rw [Real.norm_eq_abs] at hb
     calc f x = f x * Real.exp (c * ‖x‖) * Real.exp (-(c * ‖x‖)) := by
-          rw [mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+          rw [mul_assoc, ← Real.exp_add]
+          simp
       _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
           mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
 
@@ -76,7 +79,8 @@ theorem _root_.ContinuousOn.exists_forall_le_mul_exp_Ici_of_eventually_le
   · exact (hT t htT).trans (by gcongr; exact (le_max_left K B).trans (le_max_right _ _))
   · have hb : g t * Real.exp (c * t) ≤ B := hB (mem_image_of_mem _ ⟨ht, le_of_not_ge htT⟩)
     calc g t = (g t * Real.exp (c * t)) * Real.exp (-(c * t)) := by
-          rw [mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+          rw [mul_assoc, ← Real.exp_add]
+          simp
       _ ≤ max 1 (max K B) * Real.exp (-(c * t)) := by
           gcongr
           exact hb.trans ((le_max_right K B).trans (le_max_right _ _))

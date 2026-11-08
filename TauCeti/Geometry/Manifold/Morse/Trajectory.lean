@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.ExponentialConvergence
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
-import TauCeti.Geometry.Manifold.IntegralCurve.Forward
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Distance
 
@@ -58,22 +57,16 @@ theorem IsMIntegralCurveOn.exists_tendsto_neg_mgradient
     (hK : IsCompact K) (hmem : MapsTo γ (Ici 0) K)
     (hfin : (criticalPoints I f ∩ K).Finite) :
     ∃ p ∈ criticalPoints I f ∩ K, Tendsto γ atTop (𝓝 p) := by
-  have hshift : IsMIntegralCurveOn (γ ∘ (· + 1)) (-mgradient I f) (Ioi (-1)) :=
-    (hγ.comp_add 1).mono fun t ht ↦ by simp only [mem_ofPred_eq, mem_Ici, mem_Ioi] at *; linarith
-  have heq := hshift.eqOn_maximalIntegralCurve_Ioi (x := γ 1)
-    (contMDiff_neg_mgradient_one hf) (by norm_num) (by simp)
+  have heq := hγ.eqOn_maximalIntegralCurve_Ici
+    (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
   have hmaps : MapsTo (maximalIntegralCurve (-mgradient I f) (γ 1))
       (maximalIntegralCurveInterval (-mgradient I f) (γ 1) ∩ Ici 0) K := by
     intro t ht
-    rw [heq (x := t) (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) ht.2)]
+    rw [heq (x := t) (lt_of_lt_of_le (by norm_num : (0 : ℝ) - 1 < 0) ht.2)]
     exact hmem (by simpa only [comp_apply, mem_Ici] using add_nonneg ht.2 zero_le_one)
   obtain ⟨p, hp, hlim⟩ := exists_tendsto_maximalIntegralCurve_neg_mgradient hK hmaps hf hfin
-  refine ⟨p, hp, ?_⟩
-  have hlim' := hlim.comp (tendsto_atTop_add_const_right atTop (-1 : ℝ) tendsto_id)
-  apply hlim'.congr'
-  filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-  simpa only [comp_apply, id_eq, neg_add_cancel_right] using
-    heq (x := t + -1) (by simp only [mem_Ioi]; linarith)
+  exact ⟨p, hp, (hγ.tendsto_maximalIntegralCurve_iff
+    (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).1 hlim⟩
 
 namespace TauCeti
 
@@ -93,16 +86,9 @@ theorem IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient_of_isProperMa
     (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
     ∃ p ∈ criticalPoints I f, Tendsto γ atTop (𝓝 p) := by
   have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_num)
-  have hshift : IsMIntegralCurveOn (γ ∘ (· + 1)) (-mgradient I f) (Ioi (-1)) :=
-    (hγ.comp_add 1).mono fun t ht ↦ by simp only [mem_ofPred_eq, mem_Ici, mem_Ioi] at *; linarith
-  have heq := hshift.eqOn_maximalIntegralCurve_Ioi (x := γ 1)
-    (contMDiff_neg_mgradient_one hf2) (by norm_num) (by simp)
   obtain ⟨p, hp, hlim⟩ := hf.exists_tendsto_maximalIntegralCurve_neg_mgradient hp hbdd (γ 1)
-  refine ⟨p, hp, ?_⟩
-  apply (hlim.comp (tendsto_atTop_add_const_right atTop (-1 : ℝ) tendsto_id)).congr'
-  filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-  simpa only [comp_apply, id_eq, neg_add_cancel_right] using
-    heq (x := t + -1) (by simp only [mem_Ioi]; linarith)
+  exact ⟨p, hp, (hγ.tendsto_maximalIntegralCurve_iff
+    (contMDiff_neg_mgradient_one hf2) (by norm_num : (0 : ℝ) < 1)).1 hlim⟩
 
 end TauCeti
 
@@ -122,17 +108,13 @@ private theorem eventually_edist_neg_mgradient
     (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0)) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hp : IsManifoldNondegenerateCriticalPoint I f p) (hconv : Tendsto γ atTop (𝓝 p)) :
     ∃ c > 0, ∃ C > 0, ∀ᶠ t in atTop, edist (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
-  have hshift : IsMIntegralCurveOn (γ ∘ (· + 1)) (-mgradient I f) (Ioi (-1)) :=
-    (hγ.comp_add 1).mono fun t ht ↦ by simp only [mem_ofPred_eq, mem_Ici, mem_Ioi] at *; linarith
-  have heq := hshift.eqOn_maximalIntegralCurve_Ioi (x := γ 1)
-    (contMDiff_neg_mgradient_one hf) (by norm_num) (by simp)
+  have heq := hγ.eqOn_maximalIntegralCurve_Ici
+    (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
   have hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) (γ 1) :=
-    fun t ht ↦ hshift.Ioi_subset_maximalIntegralCurveInterval (by norm_num) (by simp)
-      (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) ht)
-  have hlim : Tendsto (maximalIntegralCurve (-mgradient I f) (γ 1)) atTop (𝓝 p) := by
-    apply (hconv.comp (tendsto_atTop_add_const_right atTop (1 : ℝ) tendsto_id)).congr'
-    filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-    exact (heq (x := t) (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) ht)).symm
+    fun t ht ↦ hγ.Ioi_subset_maximalIntegralCurveInterval_of_Ici
+      (by norm_num : (0 : ℝ) < 1) (by simp only [mem_Ioi, mem_Ici] at *; linarith)
+  have hlim := (hγ.tendsto_maximalIntegralCurve_iff
+    (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).2 hconv
   obtain ⟨c, hc, C, hC, hbound⟩ :=
     exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient hp hx hlim hf
   refine ⟨c, hc, C * Real.exp c, by positivity, ?_⟩
