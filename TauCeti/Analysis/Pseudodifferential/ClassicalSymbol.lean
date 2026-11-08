@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import TauCeti.Analysis.Pseudodifferential.CutoffSymbol
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Classical symbols
@@ -23,26 +20,20 @@ complex powers all have classical symbols, and ellipticity is a condition on the
 
 This file develops:
 
-* `HomogeneousSymbol.cutoffSymbol`: the cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of
-  degree `m` is a symbol of order `m`. The estimates at large frequencies come from the iterated
-  derivatives `HomogeneousSymbol.iteratedSpatialDeriv` and
-  `HomogeneousSymbol.iteratedFrequencyDeriv`, which compute the mixed derivatives `∂ₓ^α ∂_ξ^β a`
-  away from the zero frequency and are homogeneous of degree `m - |β|`
-  (`HomogeneousSymbol.coefficient_iteratedSpatialDeriv_iteratedFrequencyDeriv`).
-* `HomogeneousSymbol.eq_zero_of_coefficient_eq`: a homogeneous term of degree `μ` that agrees at
-  large frequencies with a symbol of lower order vanishes.
 * `ClassicalSymbol n V W m`: symbols of order `m` with their homogeneous terms, such that the
   remainders have the right orders for every frequency cutoff. It suffices to check this for a
   single cutoff (`ClassicalSymbol.ofCutoff`), since two cutoffs differ by a function supported
   in a bounded set of frequencies.
 * Uniqueness of the terms: if two classical symbols differ by a symbol of order `m - N`, their
-  first `N` terms agree (`ClassicalSymbol.term_eq_of_exists_coefficient_eq_sub`). Hence a classical
-  symbol is determined by its underlying symbol (`ClassicalSymbol.ext`), and classical symbols of
-  order `m` form a complex vector space.
+  first `N` terms agree (`ClassicalSymbol.term_eq_of_exists_coefficient_eq_sub`, from
+  `HomogeneousSymbol.eq_zero_of_coefficient_toSymbol_eq`). Hence a classical symbol is determined
+  by its underlying symbol (`ClassicalSymbol.ext`), and classical symbols of order `m` form a
+  complex vector space.
 * `ClassicalSymbol.principalSymbol`: the principal symbol, a surjective linear map onto the
   homogeneous symbols of degree `m` (`ClassicalSymbol.principalSymbol_surjective`), whose kernel
   consists of the classical symbols that have order `m - 1`
-  (`ClassicalSymbol.principalSymbol_eq_zero_iff`).
+  (`ClassicalSymbol.principalSymbol_eq_zero_iff`). A right inverse cuts off a homogeneous
+  symbol with `HomogeneousSymbol.toSymbol` (`ClassicalSymbol.ofHomogeneous`).
 
 ## References
 
@@ -61,141 +52,6 @@ open scoped ContDiff Topology
 namespace TauCeti
 
 variable {n : ℕ}
-
-namespace HomogeneousSymbol
-
-variable {X E V W : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
-  [NormedSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {m : ℝ}
-
-/-! ### Iterated coordinate derivatives of homogeneous symbols -/
-
-/-- The iterated frequency derivative `∂_ξ^β a = ∂_{ξ_{j₁}} ⋯ ∂_{ξ_{jₖ}} a` of a homogeneous
-symbol of degree `m` along a word `β = [j₁, …, jₖ]` of coordinate indices; it is homogeneous of
-degree `m - |β|`. -/
-def iteratedFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m) :
-    (β : List (Fin n)) → HomogeneousSymbol X (CoordinateSpace n) V W (m - β.length)
-  | [] => a.castDegree (by simp)
-  | j :: js =>
-    ((a.iteratedFrequencyDeriv js).frequencyDeriv (EuclideanSpace.single j 1)).castDegree
-      (by simp only [List.length_cons, Nat.cast_add, Nat.cast_one]; ring)
-
-/-- At a nonzero frequency, the iterated frequency derivative is the iterated coordinate
-derivative of the coefficient in the frequency. -/
-@[simp]
-theorem coefficient_iteratedFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m)
-    (β : List (Fin n)) (x : X) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
-    (a.iteratedFrequencyDeriv β).coefficient (x, ξ) =
-      coordinateDeriv β (fun η => a.coefficient (x, η)) ξ := by
-  induction β generalizing ξ with
-  | nil => simp [iteratedFrequencyDeriv]
-  | cons j js ih =>
-    have h : (fun η => (a.iteratedFrequencyDeriv js).coefficient (x, η)) =ᶠ[𝓝 ξ]
-        coordinateDeriv js (fun η => a.coefficient (x, η)) := by
-      filter_upwards [isOpen_compl_singleton.mem_nhds hξ] with η hη using ih hη
-    rw [iteratedFrequencyDeriv, coefficient_castDegree, coefficient_frequencyDeriv _ _ hξ,
-      h.fderiv_eq, coordinateDeriv_cons]
-
-/-- The iterated spatial derivative `∂ₓ^α a = ∂_{x_{j₁}} ⋯ ∂_{x_{jₖ}} a` of a homogeneous symbol
-along a word `α = [j₁, …, jₖ]` of coordinate indices; it has the same degree. -/
-def iteratedSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m) :
-    List (Fin n) → HomogeneousSymbol (CoordinateSpace n) E V W m
-  | [] => a
-  | j :: js => (a.iteratedSpatialDeriv js).spatialDeriv (EuclideanSpace.single j 1)
-
-/-- At a nonzero frequency, the iterated spatial derivative is the iterated coordinate derivative
-of the coefficient in the position. -/
-@[simp]
-theorem coefficient_iteratedSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m)
-    (α : List (Fin n)) (x : CoordinateSpace n) {ξ : E} (hξ : ξ ≠ 0) :
-    (a.iteratedSpatialDeriv α).coefficient (x, ξ) =
-      coordinateDeriv α (fun y => a.coefficient (y, ξ)) x := by
-  induction α generalizing x with
-  | nil => simp [iteratedSpatialDeriv]
-  | cons j js ih =>
-    rw [iteratedSpatialDeriv, coefficient_spatialDeriv _ _ hξ, funext ih, coordinateDeriv_cons]
-
-/-- At a nonzero frequency, the iterated derivatives of a homogeneous symbol of degree `m`
-compute the mixed derivatives `∂ₓ^α ∂_ξ^β` of its coefficient; in particular these are
-homogeneous of degree `m - |β|` there. -/
-theorem coefficient_iteratedSpatialDeriv_iteratedFrequencyDeriv
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
-    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
-    ((a.iteratedFrequencyDeriv β).iteratedSpatialDeriv α).coefficient (x, ξ) =
-      mixedDeriv α β a.coefficient x ξ := by
-  rw [coefficient_iteratedSpatialDeriv _ _ _ hξ, mixedDeriv_def]
-  congr 1
-  funext y
-  exact coefficient_iteratedFrequencyDeriv a β y hξ
-
-/-! ### The cut-off term of a homogeneous symbol -/
-
-/-- The mixed derivatives of the cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of degree
-`m` satisfy the symbol estimates of order `m`. -/
-private theorem exists_bound_mixedDeriv_smul_coefficient
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (fun p => χ p.2 • a.coefficient p) x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  set s := m - (β.length : ℝ)
-  -- At bounded frequencies the smooth term is bounded by continuity.
-  obtain ⟨C₁, hC₁, h₁⟩ := (contDiff_zero.2 ((a.contDiff_smul_coefficient χ).mixedDeriv α β
-    ).continuous).exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le hK 2 s
-  -- At large frequencies the term is `a`, whose mixed derivatives are homogeneous of degree `s`.
-  obtain ⟨C₂, hC₂, h₂⟩ :=
-    ((a.iteratedFrequencyDeriv β).iteratedSpatialDeriv α).exists_norm_coefficient_le hK
-  refine ⟨C₁ + 2 ^ (|s| / 2) * C₂, by positivity, fun x hx ξ => ?_⟩
-  have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by positivity
-  rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
-  · have h := h₁ x hx ξ hξ
-    rw [norm_iteratedFDeriv_zero] at h
-    exact h.trans
-      (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (by positivity)) hw)
-  · have heq : (fun p : CoordinateSpace n × CoordinateSpace n => χ p.2 • a.coefficient p)
-        =ᶠ[𝓝 (x, ξ)] a.coefficient := by
-      filter_upwards [(isOpen_lt continuous_const continuous_snd.norm).mem_nhds
-        (show 2 < ‖(x, ξ).2‖ from hξ)] with p hp
-      rw [χ.apply_eq_one_of_two_le_norm hp.le, one_smul]
-    rw [Filter.EventuallyEq.mixedDeriv_eq heq,
-      ← coefficient_iteratedSpatialDeriv_iteratedFrequencyDeriv a α β x
-        (norm_pos_iff.1 (by linarith))]
-    calc _ ≤ C₂ * ‖ξ‖ ^ s := h₂ x hx ξ
-      _ ≤ C₂ * (2 ^ (|s| / 2) * (1 + ‖ξ‖ ^ 2) ^ (s / 2)) :=
-        mul_le_mul_of_nonneg_left (norm_rpow_le_one_add_norm_sq_rpow (by linarith) s) hC₂
-      _ ≤ _ := by nlinarith [mul_nonneg hC₁ hw]
-
-/-- The cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol `a` of degree `m`, for a frequency
-cutoff `χ`, as a symbol of order `m`. -/
-def cutoffSymbol (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) : Symbol n V W m where
-  coefficient p := χ p.2 • a.coefficient p
-  contDiff_coefficient := a.contDiff_smul_coefficient χ
-  exists_bound _ hK α β := a.exists_bound_mixedDeriv_smul_coefficient χ hK α β
-
-@[simp]
-theorem coefficient_cutoffSymbol
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.cutoffSymbol χ).coefficient p = χ p.2 • a.coefficient p :=
-  (rfl)
-
-/-- A homogeneous symbol of degree `μ` that agrees at all large frequencies with a symbol of
-lower order `s < μ` is zero. -/
-theorem eq_zero_of_coefficient_eq {μ s : ℝ} (hs : s < μ)
-    {d : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W μ} {r : Symbol n V W s}
-    {R : ℝ} (h : ∀ x ξ, R ≤ ‖ξ‖ → d.coefficient (x, ξ) = r.coefficient (x, ξ)) : d = 0 := by
-  refine d.eq_zero_of_forall_exists_norm_le fun x => ?_
-  obtain ⟨C, hC, hb⟩ := r.exists_bound {x} isCompact_singleton [] []
-  refine ⟨C * 2 ^ (|s| / 2), max R 1, s, hs, fun ξ hξ => ?_⟩
-  have hb' := hb x rfl ξ
-  simp only [mixedDeriv_nil_nil, List.length_nil, Nat.cast_zero, sub_zero] at hb'
-  rw [h x ξ ((le_max_left _ _).trans hξ), mul_assoc]
-  exact hb'.trans (mul_le_mul_of_nonneg_left
-    (one_add_norm_sq_rpow_le_norm_rpow ((le_max_right _ _).trans hξ) s) hC)
-
-end HomogeneousSymbol
 
 /-! ### Classical symbols -/
 
@@ -271,22 +127,23 @@ theorem term_eq_of_exists_coefficient_eq_sub {a b : ClassicalSymbol n V W m} {N 
   obtain ⟨r, hr⟩ := h
   induction j using Nat.strong_induction_on with
   | _ j ih =>
-    -- At frequencies `‖ξ‖ ≥ 2`, where the cutoff is `1`, the difference of the `j`-th terms is the
-    -- difference of the two symbols minus that of the remainders after `j + 1` terms.
-    obtain ⟨ra, hra⟩ := a.exists_remainder default (j + 1)
-    obtain ⟨rb, hrb⟩ := b.exists_remainder default (j + 1)
+    -- The cut-off difference of the `j`-th terms is the difference of the two symbols minus that
+    -- of the remainders after `j + 1` terms, a symbol of order `m - (j + 1)`.
+    let χ : FrequencyCutoff (CoordinateSpace n) := default
+    obtain ⟨ra, hra⟩ := a.exists_remainder χ (j + 1)
+    obtain ⟨rb, hrb⟩ := b.exists_remainder χ (j + 1)
     have hle : m - (N : ℝ) ≤ m - ((j + 1 : ℕ) : ℝ) := by
       have : ((j + 1 : ℕ) : ℝ) ≤ N := by exact_mod_cast hj
       linarith
-    refine sub_eq_zero.1 (HomogeneousSymbol.eq_zero_of_coefficient_eq
-      (r := Symbol.inclusion hle r - ra + rb) (R := 2) (by push_cast; linarith) fun x ξ hξ => ?_)
-    have hsum : ∑ i ∈ Finset.range j, (a.term i).coefficient (x, ξ) =
-        ∑ i ∈ Finset.range j, (b.term i).coefficient (x, ξ) :=
+    refine sub_eq_zero.1 (HomogeneousSymbol.eq_zero_of_coefficient_toSymbol_eq χ _
+      (by push_cast; linarith) (Symbol.inclusion hle r - ra + rb) (funext fun ⟨x, ξ⟩ => ?_))
+    have hsum : ∑ i ∈ Finset.range j, χ ξ • (a.term i).coefficient (x, ξ) =
+        ∑ i ∈ Finset.range j, χ ξ • (b.term i).coefficient (x, ξ) :=
       Finset.sum_congr rfl fun i hi => by
         rw [ih i (Finset.mem_range.1 hi) ((Finset.mem_range.1 hi).trans hj)]
-    simp only [HomogeneousSymbol.coefficient_sub, Pi.sub_apply, Symbol.coefficient_add,
-      Symbol.coefficient_sub, Symbol.coefficient_inclusion, Pi.add_apply, hr, hra, hrb,
-      FrequencyCutoff.apply_eq_one_of_two_le_norm _ hξ, one_smul, Finset.sum_range_succ, hsum]
+    simp only [HomogeneousSymbol.coefficient_toSymbol, HomogeneousSymbol.coefficient_sub,
+      Pi.sub_apply, smul_sub, Symbol.coefficient_add, Symbol.coefficient_sub,
+      Symbol.coefficient_inclusion, Pi.add_apply, hr, hra, hrb, Finset.sum_range_succ, hsum]
     abel
 
 /-- A classical symbol is determined by its underlying symbol: the homogeneous terms are
@@ -467,16 +324,17 @@ terms vanish. -/
 def ofHomogeneous (χ : FrequencyCutoff (CoordinateSpace n))
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
     ClassicalSymbol n V W m :=
-  ofCutoff (a.cutoffSymbol χ) (fun j => match j with | 0 => a.castDegree (by simp) | _ + 1 => 0) χ
-    fun N => by
+  ofCutoff (HomogeneousSymbol.toSymbol χ a)
+    (fun j => match j with | 0 => a.castDegree (by simp) | _ + 1 => 0) χ fun N => by
       cases N with
-      | zero => exact ⟨Symbol.inclusion (by simp) (a.cutoffSymbol χ), fun x ξ => by simp⟩
+      | zero =>
+        exact ⟨Symbol.inclusion (by simp) (HomogeneousSymbol.toSymbol χ a), fun x ξ => by simp⟩
       | succ N => exact ⟨0, fun x ξ => by simp [Finset.sum_range_succ']⟩
 
 @[simp]
 theorem toSymbol_ofHomogeneous (χ : FrequencyCutoff (CoordinateSpace n))
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-    (ofHomogeneous χ a).toSymbol = a.cutoffSymbol χ :=
+    (ofHomogeneous χ a).toSymbol = HomogeneousSymbol.toSymbol χ a :=
   (rfl)
 
 @[simp]

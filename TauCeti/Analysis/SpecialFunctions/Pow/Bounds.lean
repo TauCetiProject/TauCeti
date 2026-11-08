@@ -108,8 +108,6 @@ function that does not need a derivative.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
 * `TauCeti.norm_rpow_le_one_add_norm_sq_rpow`: `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`
   for `1 ≤ ‖ξ‖`.
-* `TauCeti.one_add_norm_sq_rpow_le_norm_rpow`: `(1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) ‖ξ‖ ^ r`
-  for `1 ≤ ‖ξ‖`.
 * `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
   `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`.
 * `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left` and
@@ -458,17 +456,6 @@ theorem norm_rpow_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E] {ξ
           rw [← mul_assoc, h2r, one_mul]
       _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
           mul_le_mul_of_nonneg_left h2 (by positivity)
-
-/-- Away from the origin, the Japanese bracket power is bounded by a multiple of the power
-`‖ξ‖ ^ r`: for `1 ≤ ‖ξ‖`, `(1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) ‖ξ‖ ^ r`. -/
-theorem one_add_norm_sq_rpow_le_norm_rpow {E : Type*} [SeminormedAddGroup E] {ξ : E}
-    (hξ : 1 ≤ ‖ξ‖) (r : ℝ) :
-    (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * ‖ξ‖ ^ r := by
-  have h := norm_rpow_le_one_add_norm_sq_rpow hξ (-r)
-  rw [abs_neg, neg_div, Real.rpow_neg (norm_nonneg ξ), Real.rpow_neg (by positivity),
-    ← div_eq_mul_inv, inv_le_comm₀ (Real.rpow_pos_of_pos (one_pos.trans_le hξ) r)
-      (by positivity), inv_div, div_le_iff₀' (by positivity)] at h
-  exact h
 
 /-- On a ball, the Japanese bracket power is bounded below: for `‖ξ‖ ≤ R`,
 `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
