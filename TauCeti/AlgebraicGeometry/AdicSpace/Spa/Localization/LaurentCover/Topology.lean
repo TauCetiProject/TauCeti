@@ -71,10 +71,31 @@ theorem isClosedEmbedding_laurentCover :
   let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
   let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
   let _ := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({f, 1} : Finset A) 1 S₁ hden₁
-  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({1} : Finset A) f S₂ hden₂
-  obtain ⟨_, _, _, _, _, _, _⟩ :=
-    locUniformSpace_completion_facts P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := continuousSMul_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₁
+  have _ := isHuberRing_completion_locTopology P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := continuousSMul_completion_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ : (uniformity (Completion S₁)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := continuousSMul_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₂
+  have _ := isHuberRing_completion_locTopology P ({1} : Finset A) f S₂ hden₂
+  have _ := continuousSMul_completion_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ : (uniformity (Completion S₂)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := continuousSMul_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₁₂
+  have _ := isHuberRing_completion_locTopology P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := continuousSMul_completion_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+    hden₁₂
+  have _ : (uniformity (Completion S₁₂)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
   let ρ := RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
     (toCompletionLoc P ({1} : Finset A) f S₂ hden₂)
   let l := Algebra.linearMap A (Completion S₁ × Completion S₂)
@@ -147,10 +168,31 @@ theorem isOpenQuotientMap_laurentCover
   let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
   let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
   let _ := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({f, 1} : Finset A) 1 S₁ hden₁
-  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({1} : Finset A) f S₂ hden₂
-  obtain ⟨_, _, _, _, _, _, _⟩ :=
-    locUniformSpace_completion_facts P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := continuousSMul_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₁
+  have _ := isHuberRing_completion_locTopology P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := continuousSMul_completion_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ : (uniformity (Completion S₁)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := continuousSMul_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₂
+  have _ := isHuberRing_completion_locTopology P ({1} : Finset A) f S₂ hden₂
+  have _ := continuousSMul_completion_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ : (uniformity (Completion S₂)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := continuousSMul_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₁₂
+  have _ := isHuberRing_completion_locTopology P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := continuousSMul_completion_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+    hden₁₂
+  have _ : (uniformity (Completion S₁₂)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
   -- The restriction maps commute with the structure maps, hence are A-linear.
   let r₁ : Completion S₁ →ₐ[A] Completion S₁₂ :=
     { toRingHom := restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁
