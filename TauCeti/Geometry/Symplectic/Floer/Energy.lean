@@ -542,9 +542,9 @@ theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ ×
   have hdu := hu.continuousOn_fderiv_of_isOpen hU le_rfl
   refine (ω.continuousOn_apply_comp
     ((hdu.clm_apply (continuousOn_const (c := stdComplexLineReal))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKs))
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKs))
     ((hdu.clm_apply (continuousOn_const (c := stdComplexLineImag))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKt))).congr
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKt))).congr
     fun z _ ↦ ?_
   simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
@@ -575,8 +575,8 @@ theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {U : Set 
     (((hD Kt hKt).clm_apply continuousOn_const).sub
       ((hD Ks hKs).clm_apply continuousOn_const)).sub
         (ω.continuousOn_apply_comp
-          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKs)
-          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKt))
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu hKs)
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu hKt))
   refine h.congr fun z hz ↦ ?_
   simp only [hamiltonianCurvature_def, poissonBracket_def, hslice Ks hKs hz, hslice Kt hKt hz]
 
