@@ -109,6 +109,7 @@ theorem singularHomologyMap_addRight (R : Type) [Ring R] (n : ℕ) (a : AddCircl
     (PathConnectedSpace.joined 0 a).homotopic_id_addRight, ContinuousMap.singularHomologyMap_id]
 
 /-- The map `θ ↦ n • θ` of a positive-period circle multiplies its circuit class by `n`. -/
+@[simp]
 theorem singularHomologyMap_zsmul_fundamentalClass [Fact (0 < p)] (n : ℤ) :
     ContinuousMap.singularHomologyMap ℤ 1 ⟨fun θ : AddCircle p ↦ n • θ, continuous_zsmul n⟩
       (fundamentalClass p) = n • fundamentalClass p := by

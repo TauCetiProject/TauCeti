@@ -107,20 +107,15 @@ theorem singularHomologyMap_orbitTorus_addCircleProdFundamentalClass
     ContinuousMap.singularHomologyMap ℤ 2
         ⟨orbitTorus φ hx, continuous_orbitTorus hx⟩
         (addCircleProdFundamentalClass 1 d) = orbitTorusHomologyClass hx := by
-  rw [addCircleProdFundamentalClass_def, orbitTorusHomologyClass_def,
-    closedOrbitHomologyClass_def]
-  have h := TopCat.singularHomologyCrossBilinear_naturality ℤ
-    (𝟙 (TopCat.of UnitAddCircle))
-    (TopCat.ofHom ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩) 1 1 2 rfl
-    (AddCircle.fundamentalClass 1) (AddCircle.fundamentalClass d)
   have hmap : (ContinuousMap.id UnitAddCircle).prodMap
       ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩ =
       ⟨orbitTorus φ hx, continuous_orbitTorus hx⟩ := by
     apply ContinuousMap.ext
     intro p
     exact (orbitTorus_apply hx p).symm
-  rw [TopCat.hom_id, TopCat.hom_ofHom, hmap, ContinuousMap.singularHomologyMap_id] at h
-  exact h
+  rw [addCircleProdFundamentalClass_def, ← hmap,
+    TopCat.singularHomologyCrossBilinear_naturality_right, orbitTorusHomologyClass_def,
+    closedOrbitHomologyClass_def]
 
 /-- Repeated traversal multiplies the integral closed-orbit class by `k`. The factorization
 is through the actual reduction map from the circle of length `k * d` to that of length `d`. -/
@@ -203,13 +198,8 @@ theorem singularHomologyMap_prodMap_map_orbitTorusHomologyClass
     ContinuousMap.singularHomologyMap ℤ 2
         ((ContinuousMap.id UnitAddCircle).prodMap ⟨map φ ψ g hg, continuous_map φ ψ g hg hgc⟩)
         (orbitTorusHomologyClass hx) = orbitTorusHomologyClass (hx.map hg) := by
-  have h := TopCat.singularHomologyCrossBilinear_naturality ℤ
-    (𝟙 (TopCat.of UnitAddCircle))
-    (TopCat.ofHom ⟨map φ ψ g hg, continuous_map φ ψ g hg hgc⟩) 1 1 2 rfl
-    (AddCircle.fundamentalClass 1) (closedOrbitHomologyClass hx)
-  rw [TopCat.hom_id, TopCat.hom_ofHom, ContinuousMap.singularHomologyMap_id,
-    singularHomologyMap_map_closedOrbitHomologyClass hgc hg hx] at h
-  rw [orbitTorusHomologyClass_def, h, orbitTorusHomologyClass_def]
+  rw [orbitTorusHomologyClass_def, TopCat.singularHomologyCrossBilinear_naturality_right,
+    singularHomologyMap_map_closedOrbitHomologyClass hgc hg hx, orbitTorusHomologyClass_def]
 
 end Map
 
@@ -239,15 +229,7 @@ theorem singularHomologyMap_iterateMap_closedOrbitHomologyClass [Fact (0 < (d : 
         ((AddCircle.homeomorphAddCircle _ _ hd hkd : C(_, _)).comp
           ⟨fun θ : AddCircle (d : ℝ) ↦ k.sign • θ, continuous_zsmul _⟩) := by
     ext θ
-    induction θ using QuotientAddGroup.induction_on with | H t => ?_
-    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, iterateMap_closedOrbit_coe k hx hx',
-      ← AddCircle.coe_zsmul, AddCircle.homeomorphAddCircle_apply_mk, zsmul_eq_mul, Nat.cast_mul]
-    congr 2
-    have hsign : (k.sign : ℝ) * (k.natAbs : ℝ) = (k : ℝ) := by
-      simpa only [Int.cast_mul, Int.cast_natCast] using
-        congrArg (fun j : ℤ ↦ (j : ℝ)) k.sign_mul_natAbs
-    rw [← hsign]
-    field_simp
+    exact congrFun (iterateMap_comp_closedOrbit k hx hx' hd hkd) θ
   rw [closedOrbitHomologyClass_def, ← ContinuousMap.singularHomologyMap_comp, hcomp,
     ContinuousMap.singularHomologyMap_comp, ContinuousMap.singularHomologyMap_comp,
     AddCircle.singularHomologyMap_zsmul_fundamentalClass, map_zsmul,
@@ -262,13 +244,9 @@ theorem singularHomologyMap_prodMap_iterateMap_orbitTorusHomologyClass [Fact (0 
     ContinuousMap.singularHomologyMap ℤ 2
         ((ContinuousMap.id UnitAddCircle).prodMap ⟨iterateMap φ k, continuous_iterateMap φ k⟩)
         (orbitTorusHomologyClass hx) = k.sign • orbitTorusHomologyClass hx' := by
-  have h := TopCat.singularHomologyCrossBilinear_naturality ℤ
-    (𝟙 (TopCat.of UnitAddCircle))
-    (TopCat.ofHom ⟨iterateMap φ k, continuous_iterateMap φ k⟩) 1 1 2 rfl
-    (AddCircle.fundamentalClass 1) (closedOrbitHomologyClass hx)
-  rw [TopCat.hom_id, TopCat.hom_ofHom, ContinuousMap.singularHomologyMap_id,
-    singularHomologyMap_iterateMap_closedOrbitHomologyClass k hx hx' hk, map_zsmul] at h
-  rw [orbitTorusHomologyClass_def, h, orbitTorusHomologyClass_def]
+  rw [orbitTorusHomologyClass_def, TopCat.singularHomologyCrossBilinear_naturality_right,
+    singularHomologyMap_iterateMap_closedOrbitHomologyClass k hx hx' hk, map_zsmul,
+    orbitTorusHomologyClass_def]
 
 end Iterate
 
