@@ -19,10 +19,12 @@ surjective.
 
 ## Main results
 
-* `surjective_of_isPrecomplete_of_lifts_generators`: the criterion above.
+* `TauCeti.surjective_of_isPrecomplete_of_lifts_generators`: the criterion above.
 -/
 
 public section
+
+namespace TauCeti
 
 /-- **Surjectivity from successive approximation.** Let `ψ : R → B` be an `A`-algebra map, and
 suppose `R` is `IR`-adically precomplete, `B` is `J`-adically separated, and `ψ` carries `IR` onto
@@ -52,3 +54,5 @@ theorem surjective_of_isPrecomplete_of_lifts_generators {A B R : Type*} [CommRin
       p).symm⟩
   obtain ⟨x, hx⟩ := hle hp
   exact ⟨x, by simpa [q, ψA] using hx⟩
+
+end TauCeti
