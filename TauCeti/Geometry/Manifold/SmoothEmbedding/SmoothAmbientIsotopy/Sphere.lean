@@ -137,7 +137,7 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
   -- `hB` reads `e` through the continuous linear map it induces and the point as `(e ∘ γ) t`;
   -- these are `e v` and `e x` by definition.
   change fderiv ℝ (sphereBoost (-y) a) (e x) (e v) = w
-  exact fderiv_sphereBoost_log_apply_eq e hy hv hw hex hxv hev
+  exact e.toLinearIsometry.fderiv_sphereBoost_log_apply_eq hy hv hw hex hxv hev
 
 /-- **Isometries of the same determinant give ambient isotopic embeddings.** Moving a `C^k`
 embedding into the unit sphere `Sⁿ` by two linear isometries of `E` with the same determinant gives
