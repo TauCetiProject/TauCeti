@@ -218,13 +218,13 @@ theorem toAddSubgroup_closure_positiveGenerators {x y z w v s : A}
   have hs := toAddSubgroup_closure_range_dividedPower s
   have hy := Subring.toAddSubgroup_closure_union_range_dividedPower_of_commute
     (s := Set.range (fun n => dividedPower n s)) (x := y)
-    (by rintro _ ⟨n, rfl⟩; exact ⟨s, hys, ⟨n, rfl⟩, fun k => ⟨k, rfl⟩⟩)
+    (by rintro _ ⟨n, rfl⟩; exact hys.dividedPower_right n)
   have hz := Subring.toAddSubgroup_closure_union_range_dividedPower_of_commute
     (s := Set.range (fun n => dividedPower n s) ∪ Set.range (fun n => dividedPower n y)) (x := z)
     (by
       rintro _ (⟨n, rfl⟩ | ⟨n, rfl⟩)
-      · exact ⟨s, hzs, ⟨n, rfl⟩, fun k => Or.inl ⟨k, rfl⟩⟩
-      · exact ⟨y, hyz.symm, ⟨n, rfl⟩, fun k => Or.inr ⟨k, rfl⟩⟩)
+      · exact hzs.dividedPower_right n
+      · exact hyz.symm.dividedPower_right n)
   have hw := toAddSubgroup_closure_adjoin_w hwz hyw hws hzs
   have hv := toAddSubgroup_closure_adjoin_v hyv hys hzv hwv hvs
   have hx := toAddSubgroup_closure_adjoin_x hxy hxz hxw hwz hxv hxs hyz hzs hwv hws hvs
