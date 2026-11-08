@@ -40,14 +40,8 @@ theorem windingNumber_triangleCurve_eq_sum {c p q z : ℂ}
   have havoid : z ∉ triangleCurve c p q '' uIcc 0 3 := by
     simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve] using hz
   have hpv (s t : ℝ) (hs : s ∈ uIcc (0 : ℝ) 3) (ht : t ∈ uIcc (0 : ℝ) 3) :
-      Contour.CauchyPVExistsAt (triangleCurve c p q) s t (fun w ↦ (w - z)⁻¹) z := by
-    have hsub := uIcc_subset_uIcc hs ht
-    have hAC' := hAC.mono hsub
-    have havoid' : z ∉ triangleCurve c p q '' uIcc s t :=
-      fun h ↦ havoid (image_mono hsub h)
-    exact Contour.cauchyPVExistsAt_of_avoidance hAC'.continuousOn
-      (fun v hv he ↦ havoid' ⟨v, hv, he⟩)
-      (hAC'.intervalIntegrable_inv_sub_mul_deriv havoid')
+      Contour.CauchyPVExistsAt (triangleCurve c p q) s t (fun w ↦ (w - z)⁻¹) z :=
+    hAC.cauchyPVExistsAt_inv_sub_of_mem_uIcc hs ht havoid
   have h0 : (0 : ℝ) ∈ uIcc 0 3 := left_mem_uIcc
   have h1 : (1 : ℝ) ∈ uIcc 0 3 := by norm_num [uIcc_of_le]
   have h2 : (2 : ℝ) ∈ uIcc 0 3 := by norm_num [uIcc_of_le]
