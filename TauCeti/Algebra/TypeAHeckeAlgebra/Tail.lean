@@ -66,36 +66,6 @@ theorem toInfinite_strandCycle (n : ℕ) :
       InfiniteTypeAHeckeAlgebra.cosetRep_succ (Nat.zero_le n)]
     simp
 
-/-- Adding an uncrossed first strand: `T i` goes to `T (i + 1)`. -/
-def tailIncl (n : ℕ) : TypeAHeckeAlgebra R q n →ₐ[R] TypeAHeckeAlgebra R q (n + 1) :=
-  lift (fun i ↦ T q ⟨i + 1, by omega⟩)
-    (fun _ ↦ T_mul_self _) (fun h ↦ T_braid (.inl (by simpa using h)))
-    (fun h ↦ (commute_T (.inl (by simpa using h))).eq)
-
-/-- The shifted-tail inclusion sends each generator to its successor. -/
-@[simp]
-theorem tailIncl_T {n : ℕ} (i : Fin (n - 1)) :
-    tailIncl q n (T q i) = T q ⟨i + 1, by omega⟩ := by
-  rw [tailIncl, lift_T]
-
-/-- In positive rank the generator formula uses the usual `Fin.succ` index. -/
-theorem tailIncl_T_succ {n : ℕ} (i : Fin n) :
-    tailIncl q (n + 1) (T q i) = T q i.succ := by
-  rw [tailIncl_T]
-  congr 1
-
-/-- In the infinite algebra, the shifted-tail inclusion is the shift by one strand. -/
-@[simp]
-theorem toInfinite_tailIncl (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
-    toInfinite R q (n + 1) (tailIncl q n x) =
-      InfiniteTypeAHeckeAlgebra.shift R q 1 (toInfinite R q n x) := by
-  have h : (toInfinite R q (n + 1)).comp (tailIncl q n) =
-      (InfiniteTypeAHeckeAlgebra.shift R q 1).comp (toInfinite R q n) := by
-    apply hom_ext
-    intro i
-    simp
-  exact AlgHom.congr_fun h x
-
 /-- The positive cycle intertwines a prefix generator with the corresponding tail generator.
 Here `i` counts crossings from zero. -/
 theorem strandCycle_mul_T {n : ℕ} (i : Fin n) :
@@ -103,9 +73,9 @@ theorem strandCycle_mul_T {n : ℕ} (i : Fin n) :
       T (n := n + 2) q i.succ * (strandCycle q (n + 1) :
         TypeAHeckeAlgebra R q (n + 2)) := by
   apply toInfinite_injective R q (n + 2)
+  have hi : (i : ℕ) + 2 ≤ n + 1 := by omega
   have h := congrArg (InfiniteTypeAHeckeAlgebra.reverse q)
-    (InfiniteTypeAHeckeAlgebra.cosetRep_mul_T_succ (q := q)
-      (Nat.zero_le (i : ℕ)) (show (i : ℕ) + 2 ≤ n + 1 by omega))
+    (InfiniteTypeAHeckeAlgebra.cosetRep_mul_T_succ (q := q) (Nat.zero_le (i : ℕ)) hi)
   simpa using h.symm
 
 /-- Conjugation by the positive cycle word. This is an algebra automorphism of the full stage,
