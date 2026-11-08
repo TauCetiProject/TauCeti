@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # The cut-off inverse of a symbol
@@ -36,12 +37,13 @@ parametrix of an elliptic operator: `b` is the leading term of its symbol.
 
 ## Implementation notes
 
-The derivative estimates rest on the formula `∂(a⁻¹) = -a⁻¹ (∂a) a⁻¹`. Applied repeatedly, it
-writes every derivative of `a⁻¹` as a sum of products of `a⁻¹` with derivatives of `a`. Each
-product has the order `-m - |β|` by the Leibniz rule. The inverse is only smooth on the open set
-where `a` is invertible, so the proof runs an induction on the number of derivatives, using the
-iterated directional derivatives `TauCeti.iteratedFDerivAlong` in `ℝⁿ × ℝⁿ` along arbitrary words
-of position and frequency directions (`TauCeti.mixedDirection`) and their calculus on open sets.
+The derivative estimates rest on the formula `∂(a⁻¹) = -a⁻¹ (∂a) a⁻¹`
+(`DifferentiableAt.fderiv_clm_inverse`). Applied repeatedly, it writes every derivative of `a⁻¹`
+as a sum of products of `a⁻¹` with derivatives of `a`. Each product has the order `-m - |β|` by
+the Leibniz rule. The inverse is only smooth on the open set where `a` is invertible, so the proof
+runs an induction on the number of derivatives, using the iterated directional derivatives
+`TauCeti.iteratedFDerivAlong` in `ℝⁿ × ℝⁿ` along arbitrary words of position and frequency
+directions (`TauCeti.mixedDirection`) and their calculus on open sets.
 For smooth functions these are the mixed derivatives `TauCeti.mixedDeriv` of the symbol estimates
 (`TauCeti.iteratedFDerivAlong_map_mixedDirection`).
 
@@ -233,18 +235,6 @@ private theorem le_norm_of_one_le_norm_inv_smul {R : ℝ} {ξ : CoordinateSpace 
 
 variable (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
 
-/-- Multiplying by the rescaled cutoff `χ(ξ / R)` gives a function vanishing near every point
-with `‖ξ / R‖ < 1`. -/
-private theorem cutoff_smul_eventuallyEq_zero {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-    (f : CoordinateSpace n × CoordinateSpace n → A) {p : CoordinateSpace n × CoordinateSpace n}
-    (hp : ‖R⁻¹ • p.2‖ < 1) : (fun q => χ (R⁻¹ • q.2) • f q) =ᶠ[𝓝 p] 0 := by
-  have hc : Continuous fun q : CoordinateSpace n × CoordinateSpace n => R⁻¹ • q.2 :=
-    continuous_snd.const_smul R⁻¹
-  filter_upwards [(χ.eventuallyEq_zero_of_norm_lt_one hp).comp_tendsto hc.continuousAt]
-    with q hq
-  simp only [Function.comp_apply, Pi.zero_apply] at hq
-  simp [hq]
-
 private theorem wordBounds_cutoff (S : Set (CoordinateSpace n × CoordinateSpace n)) (k : ℕ) :
     WordBounds S 0 k fun p => χ (R⁻¹ • p.2) :=
   wordBounds_of_mixedDeriv (χ.contDiff_comp_inv_smul_snd R) (T := univ)
@@ -272,33 +262,7 @@ private theorem isOpen_setOf_isInvertible (a : Symbol n V W m) :
 
 private theorem contDiffOn_inverse (a : Symbol n V W m) :
     ContDiffOn ℝ ∞ (fun p => (a.coefficient p).inverse) {p | (a.coefficient p).IsInvertible} :=
-  fun p hp => ((hp.contDiffAt_map_inverse (𝕜 := ℂ)).restrict_scalars ℝ |>.comp p
-    a.contDiff_coefficient.contDiffAt).contDiffWithinAt
-
-/-- The derivative of the pointwise inverse: `∂(a⁻¹) = -a⁻¹ (∂a) a⁻¹`. -/
-private theorem fderiv_inverse_apply (a : Symbol n V W m)
-    {q : CoordinateSpace n × CoordinateSpace n}
-    (hq : (a.coefficient q).IsInvertible) (v : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ (fun p => (a.coefficient p).inverse) q v =
-      -((a.coefficient q).inverse.comp ((fderiv ℝ a.coefficient q v).comp
-        (a.coefficient q).inverse)) := by
-  have hU := (isOpen_setOf_isInvertible a).mem_nhds hq
-  have hev : (fun p => compR W V W (a.coefficient p) (a.coefficient p).inverse) =ᶠ[𝓝 q]
-      fun _ => ContinuousLinearMap.id ℂ W := by
-    filter_upwards [hU] with p hp
-    exact hp.self_comp_inverse
-  have h0 := congrArg (fun L => L v) (hev.fderiv_eq (𝕜 := ℝ))
-  rw [(compR W V W).fderiv_of_bilinear (a.contDiff_coefficient.differentiable (by simp) q)
-    (((contDiffOn_inverse a).differentiableOn (by simp)).differentiableAt hU)] at h0
-  have h1 : (a.coefficient q).comp (fderiv ℝ (fun p => (a.coefficient p).inverse) q v) =
-      -((fderiv ℝ a.coefficient q v).comp (a.coefficient q).inverse) :=
-    eq_neg_of_add_eq_zero_left (by simpa using h0)
-  calc fderiv ℝ (fun p => (a.coefficient p).inverse) q v =
-        ((a.coefficient q).inverse.comp (a.coefficient q)).comp
-          (fderiv ℝ (fun p => (a.coefficient p).inverse) q v) := by
-        rw [hq.inverse_comp_self, ContinuousLinearMap.id_comp]
-    _ = _ := by
-        rw [ContinuousLinearMap.comp_assoc, h1, ContinuousLinearMap.comp_neg]
+  a.contDiff_coefficient.contDiffOn.clm_inverse fun _ hp => hp
 
 /-- The pointwise inverse of a symbol of order `m`, at the points of large frequency with position
 in `T`, satisfies the estimates of order `-m` along all words, provided the inverse exists there
@@ -353,7 +317,7 @@ private theorem wordBounds_inverse (a : Symbol n V W m) {T : Set (CoordinateSpac
         refine (Filter.EventuallyEq.iteratedFDerivAlong ?_ _).eq_of_nhds
         filter_upwards [hU.mem_nhds (hSU hp)] with q hq
         simp only [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil]
-        rw [fderiv_inverse_apply a hq]
+        rw [(a.contDiff_coefficient.differentiable (by simp) q).fderiv_clm_inverse hq]
         simp
       have e : -m + (m - letterOrder l + -m) - (freqLetters w).length =
           -m - (freqLetters (w ++ [l])).length := by
@@ -378,11 +342,11 @@ private theorem contDiff_cutoffInverse (a : Symbol n V W m)
   refine contDiff_iff_contDiffAt.2 fun p => ?_
   by_cases hp : ‖R⁻¹ • p.2‖ < 1
   · exact contDiffAt_const.congr_of_eventuallyEq
-      (cutoff_smul_eventuallyEq_zero χ R (fun p => (a.coefficient p).inverse) hp)
+      (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse) hp)
   · have hq : (a.coefficient p).IsInvertible :=
       hinv p.1 p.2 (le_norm_of_one_le_norm_inv_smul (not_lt.1 hp))
     exact (χ.contDiff_comp_inv_smul_snd R).contDiffAt.smul
-      ((contDiffOn_inverse a).contDiffAt ((isOpen_setOf_isInvertible a).mem_nhds hq))
+      (a.contDiff_coefficient.contDiffAt.clm_inverse hq)
 
 /-- The estimates of the cut-off inverse at the positions of a set `T`, from those of the symbol
 and of its inverse there. -/
@@ -406,8 +370,9 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
   refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
   rw [mixedDeriv_eq_iteratedFDerivAlong (contDiff_cutoffInverse a χ R hinv)]
   by_cases hξ : ‖R⁻¹ • ξ‖ < 1
-  · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero (cutoff_smul_eventuallyEq_zero χ R
-      (fun p => (a.coefficient p).inverse) (p := (x, ξ)) hξ), norm_zero]
+  · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero
+      (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse)
+        (p := (x, ξ)) hξ), norm_zero]
     positivity
   · have h := hC (x, ξ) ⟨hx, le_norm_of_one_le_norm_inv_smul (not_lt.1 hξ)⟩
     simp only [ContinuousLinearMap.lsmul_apply, zero_add] at h

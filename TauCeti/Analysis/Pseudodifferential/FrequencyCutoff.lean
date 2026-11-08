@@ -31,7 +31,9 @@ the symbol calculus needs:
 * on a proper space every iterated derivative of a cutoff is bounded, and the difference of two
   cutoffs, as well as `1 - χ`, has compact support;
 * on `ℝⁿ`, the rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on phase space is smooth
-  (`FrequencyCutoff.contDiff_comp_inv_smul_snd`) and satisfies the symbol estimates of order `0`
+  (`FrequencyCutoff.contDiff_comp_inv_smul_snd`), multiplying by it gives a function vanishing
+  near `‖ξ / R‖ < 1` (`FrequencyCutoff.comp_inv_smul_snd_smul_eventuallyEq_zero`), and it
+  satisfies the symbol estimates of order `0`
   (`FrequencyCutoff.exists_bound_mixedDeriv_comp_inv_smul_snd`), for every radius `R`.
 
 ## References
@@ -209,6 +211,19 @@ variable {n : ℕ} (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
 theorem contDiff_comp_inv_smul_snd :
     ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (R⁻¹ • p.2) :=
   χ.contDiff.comp (contDiff_snd.const_smul R⁻¹)
+
+/-- A function on phase space multiplied by the rescaled cutoff `χ(ξ / R)` vanishes near every
+point with `‖ξ / R‖ < 1`. -/
+theorem comp_inv_smul_snd_smul_eventuallyEq_zero {A : Type*} [NormedAddCommGroup A]
+    [NormedSpace ℝ A] (f : CoordinateSpace n × CoordinateSpace n → A)
+    {p : CoordinateSpace n × CoordinateSpace n} (hp : ‖R⁻¹ • p.2‖ < 1) :
+    (fun q => χ (R⁻¹ • q.2) • f q) =ᶠ[𝓝 p] 0 := by
+  have hc : Continuous fun q : CoordinateSpace n × CoordinateSpace n => R⁻¹ • q.2 :=
+    continuous_snd.const_smul R⁻¹
+  filter_upwards [(χ.eventuallyEq_zero_of_norm_lt_one hp).comp_tendsto hc.continuousAt]
+    with q hq
+  simp only [Function.comp_apply, Pi.zero_apply] at hq
+  simp [hq]
 
 /-- If `k = 0` or `‖ξ / R‖ < 2`, then `|R⁻¹|^k ≤ |R⁻¹|^k ⟨2R⟩^k ⟨ξ⟩^(-k)`: below the radius
 `2 |R|` the weight `⟨ξ⟩^(-k)` is bounded below by `⟨2R⟩^(-k)`, and for `R = 0` both sides vanish. -/
