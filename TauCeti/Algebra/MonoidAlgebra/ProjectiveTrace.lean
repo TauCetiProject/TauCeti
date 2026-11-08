@@ -9,14 +9,16 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
-import Mathlib.RingTheory.LocalRing.Module
 import TauCeti.Algebra.Module.Projective.Trans
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 import TauCeti.Algebra.MonoidAlgebra.LocalRing
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 import TauCeti.Algebra.MonoidAlgebra.Trace
 import TauCeti.GroupTheory.OrderOfElement.PPart
 import TauCeti.LinearAlgebra.Matrix.FiniteOrder
 import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.RingTheory.LocalRing.Module
 
 /-!
 # Characters of projective modules vanish at `p`-singular elements
@@ -61,15 +63,6 @@ variable {A : Type*} [CommRing A] [IsLocalRing A] {p : ℕ} [Fact p.Prime] {G : 
   [IsScalarTower A (MonoidAlgebra A G) X] [Module.Finite (MonoidAlgebra A G) X]
   [Module.Projective (MonoidAlgebra A G) X]
 
-/-- A finitely generated projective module over a local ring is free. This is
-`Module.free_of_flat_of_isLocalRing`, once the module carries the additive group structure that
-it asks for. -/
-private theorem free_of_projective_of_isLocalRing {R M : Type*} [CommRing R] [IsLocalRing R]
-    [AddCommMonoid M] [Module R M] [Module.Finite R M] [Module.Projective R M] :
-    Module.Free R M :=
-  let _ := Module.addCommMonoidToAddCommGroup R (M := M)
-  Module.free_of_flat_of_isLocalRing
-
 /-- **Characters of projective modules vanish at `p`-singular elements.** Let `A` be a local ring
 in which the prime `p` is not a unit and `G` a finite group. If `p` divides the order of `g ∈ G`,
 then `g` acts with trace zero on every finitely generated projective `A[G]`-module. -/
@@ -109,7 +102,7 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have : IsLocalRing (MonoidAlgebra A Q) := TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup hp hQ
   have : IsLocalHom (MonoidAlgebra.lift A A Q 1) :=
     TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup hp hQ
-  have : Module.Free (MonoidAlgebra A Q) X := free_of_projective_of_isLocalRing
+  have : Module.Free (MonoidAlgebra A Q) X := Module.free_of_projective_of_isLocalRing
   -- The element `s` commutes with `Q`, so it acts `A[Q]`-linearly.
   obtain ⟨S, hSapply⟩ := MonoidHom.exists_linearMap_apply_eq_single_smul (A := A) Q.subtype
     (by rintro ⟨_, j, rfl⟩; exact hsq.zpow_right j) X fun _ _ ↦ rfl

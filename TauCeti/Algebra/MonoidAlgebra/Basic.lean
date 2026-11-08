@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Ideal.Maps
-public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Basic facts about monoid algebras
@@ -30,6 +29,9 @@ none of the further theory built on it.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
   when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
+* `Module.End.pow_apply_eq_single_pow_smul`, `Module.End.pow_eq_one_of_apply_eq_single_smul`: an
+  endomorphism acting as `single s 1` has `k`-th power acting as `single (s ^ k) 1`, so it
+  satisfies `S ^ k = 1` once `s ^ k = 1`.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
@@ -219,25 +221,6 @@ theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebr
 
 end MonoidAlgebra
 
-namespace MonoidHom
-
-open MonoidAlgebra
-
-/-- If the `A[Q]`-module structure on `X` is the `A[G]`-action through `ι`, then the action of
-`single s 1` for `s` commuting with the image of `ι` is `A[Q]`-linear. -/
-theorem exists_linearMap_apply_eq_single_smul {A : Type*} [CommSemiring A] {Q G : Type*}
-    [Monoid Q] [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (X : Type*)
-    [AddCommMonoid X] [Module (MonoidAlgebra A G) X] [Module (MonoidAlgebra A Q) X]
-    (hact : ∀ (r : MonoidAlgebra A Q) (x : X), r • x = mapDomainAlgHom A A ι r • x) :
-    ∃ S : X →ₗ[MonoidAlgebra A Q] X, ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x :=
-  ⟨{ toFun := fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x
-     map_add' := smul_add _
-     map_smul' := fun r x ↦ by
-       rw [RingHom.id_apply, hact, hact, ← mul_smul, ← mul_smul,
-         mapDomainAlgHom_mul_single_comm ι hs] }, fun _ ↦ rfl⟩
-
-end MonoidHom
-
 namespace Module.End
 
 open MonoidAlgebra
@@ -251,7 +234,7 @@ theorem pow_apply_eq_single_pow_smul {A : Type*} [Semiring A] {G : Type*} [Monoi
   rw [pow_apply_eq_iterate, show ⇑S = fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x from
     funext hS, smul_iterate_apply, single_pow, one_pow]
 
-/-- An endomorphism acting as `single s 1` is killed by `S ^ k - 1` whenever `s ^ k = 1`. -/
+/-- An endomorphism acting as `single s 1` satisfies `S ^ k = 1` whenever `s ^ k = 1`. -/
 theorem pow_eq_one_of_apply_eq_single_smul {A : Type*} [Semiring A] {G : Type*} [Monoid G]
     {R X : Type*} [Semiring R] [AddCommMonoid X] [Module R X] [Module (MonoidAlgebra A G) X]
     {s : G} (S : Module.End R X)
