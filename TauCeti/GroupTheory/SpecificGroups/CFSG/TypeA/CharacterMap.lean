@@ -52,8 +52,7 @@ theorem isCharacterMap_graphAut (d : TypeALieIndex) :
   · rw [graphAut_ofA, GraphTwistedIndex.diagramPerm_A, Equiv.Perm.one_def,
       LinearEquiv.funCongrLeft_id, LinearEquiv.refl_toLinearMap, isCharacterMap_iff]
     intro s
-    rw [torusPointMap_id]
-    rfl
+    rw [torusPointMap_id, MulEquiv.coe_toMonoidHom, MulAut.one_apply, MonoidHom.id_apply]
   · rw [graphAut_ofTwistedA, GraphTwistedIndex.diagramPerm_twistedA]
     -- The constructor's rank is definitionally `rank`; reducing the dependent node type
     -- makes the carrier's nondependent reversal formula applicable.
