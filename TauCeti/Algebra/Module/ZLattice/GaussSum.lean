@@ -350,11 +350,9 @@ theorem gaussSumTwisted_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [
     have hfin : Finite L := Finite.of_equiv _ (Submodule.quotEquivOfEqBot _ h0).toEquiv
     have hL0 : L = ⊥ := by
       refine bot_unique fun x hx ↦ ?_
-      obtain ⟨n, hn, hx0⟩ := (isOfFinAddOrder_of_finite (⟨x, hx⟩ : L)).exists_nsmul_eq_zero
-      have := congrArg Subtype.val hx0
-      rw [AddSubmonoidClass.coe_nsmul, ZeroMemClass.coe_zero] at this
-      rw [← Nat.cast_smul_eq_nsmul ℝ, smul_eq_zero] at this
-      exact this.resolve_left (by exact_mod_cast hn.ne')
+      have : HasUniqueDiv E := .of_isTorsionFree ℝ E
+      have : IsAddTorsionFree L := inferInstanceAs (IsAddTorsionFree L.toAddSubgroup)
+      simpa using congrArg Subtype.val (isOfFinAddOrder_of_finite (⟨x, hx⟩ : L)).eq_zero'
     have hspan : (Submodule.span ℝ (L : Set E)) = ⊤ := IsZLattice.span_top
     rw [hL0] at hspan
     have hm0 : (m : E) = 0 := by
