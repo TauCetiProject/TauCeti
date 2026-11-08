@@ -143,8 +143,8 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
       ‖iteratedFDeriv 𝕜 (i + 1 + 1) (Prod.snd : E × A → A) z‖ *
       ‖iteratedFDeriv 𝕜 (m + 1 - (i + 1 + 1)) (g ∘ Prod.fst : E × A → A) z‖ = 0 :=
     Finset.sum_eq_zero fun i _ ↦ by
-      have h : iteratedFDeriv 𝕜 (i + 1 + 1) (Prod.snd : E × A → A) z = 0 :=
-        (ContinuousLinearMap.snd 𝕜 E A).iteratedFDeriv_add_two i z
+      have h := (ContinuousLinearMap.snd 𝕜 E A).iteratedFDeriv_add_two i z
+      rw [ContinuousLinearMap.coe_snd'] at h
       simp [h]
   have h1 : ‖iteratedFDeriv 𝕜 1 (Prod.snd : E × A → A) z‖ ≤ 1 :=
     norm_iteratedFDeriv_snd_le_one le_rfl z
