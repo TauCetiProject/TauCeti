@@ -11,8 +11,8 @@ import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.SecondOrderExpansion
+import TauCeti.Analysis.Calculus.TaylorIntegral
 
 /-!
 # Uniform quadratic expansion of the exponential metric
@@ -25,7 +25,9 @@ for all input vectors. In particular, for orthonormal `T,Y`,
 
 The curvature coefficient comes from the Jacobi-field calculation in
 `Geodesic.Normal.Jet`. Applying the native second-order Taylor estimate to the
-bilinear-form-valued pullback gives uniformity in the two metric inputs.
+bilinear-form-valued pullback `riemannianExpPullbackMetric` gives uniformity in the two metric
+inputs. Its smoothness at the origin, the vanishing of its first derivative there, and its
+second derivative on a repeated direction are recorded as public lemmas.
 
 ## References
 
@@ -46,103 +48,103 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- The bilinear-form-valued exponential pullback, used to control both inputs uniformly. -/
-private def expMetric (p : M) (v : TangentSpace I p) :
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The dual norm on a tangent space, cached: nested operator-space synthesis otherwise exceeds
+the default instance-search limits. -/
+local instance instNormedAddCommGroupTangentSpaceDual (p : M) :
+    NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) :=
+  inferInstance
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The dual normed-space structure on a tangent space, cached alongside its norm. -/
+local instance instNormedSpaceTangentSpaceDual (p : M) :
+    NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) :=
+  inferInstance
+
+variable (I M) in
+/-- The exponential pullback metric at `p`, as a map from `T_pM` to the fixed space of continuous
+bilinear forms on `T_pM`: `v` is sent to `(w, z) ↦ ⟪d exp_p(v) w, d exp_p(v) z⟫`. -/
+def riemannianExpPullbackMetric (p : M) (v : TangentSpace I p) :
     TangentSpace I p →L[ℝ] TangentSpace I p →L[ℝ] ℝ :=
   let L := mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v
   (ContinuousLinearMap.precomp ℝ L).comp ((innerSL ℝ).comp L)
 
 omit [I.Boundaryless] [T2Space M] in
-private theorem expMetric_apply (p : M) (v w z : TangentSpace I p) :
-    expMetric (I := I) p v w z =
+/-- Evaluating the exponential pullback metric on two vectors. -/
+@[simp]
+theorem riemannianExpPullbackMetric_apply (p : M) (v w z : TangentSpace I p) :
+    riemannianExpPullbackMetric I M p v w z =
       inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w)
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v z) := (rfl)
 
-/-- Smoothness as a map to the fixed space of continuous bilinear forms. -/
-private theorem contDiffAt_expMetric (p : M) :
-    let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-    let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-    ContDiffAt ℝ ∞ (expMetric (I := I) p) 0 := by
-  -- Cache the dual norm to keep nested operator-space synthesis within the default limits.
-  let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
+/-- The exponential pullback metric is smooth at the origin, as a map to the fixed space of
+continuous bilinear forms. -/
+theorem contDiffAt_riemannianExpPullbackMetric (p : M) :
+    ContDiffAt ℝ ∞ (riemannianExpPullbackMetric I M p) 0 := by
   apply contMDiffAt_iff_contDiffAt.mp
   apply contMDiffAt_clm_apply.mpr
   intro w
   apply contMDiffAt_clm_apply.mpr
   intro z
-  rw [funext fun v ↦ expMetric_apply p v w z]
+  rw [funext fun v ↦ riemannianExpPullbackMetric_apply p v w z]
   exact contMDiffAt_iff_contDiffAt.mpr
     (((contMDiffOn_riemannianExp (I := I) p).contDiffOn_inner_mfderiv (m := ∞) (by simp)
       (isOpen_expDomain p) w z).contDiffAt
         ((isOpen_expDomain p).mem_nhds (zero_mem_expDomain p)))
 
 /-- Near the origin, the pullback metric is computed by normal coordinate fields. -/
-private theorem expMetric_eventuallyEq (p : M) {U : Set (TangentSpace I p)}
+private theorem riemannianExpPullbackMetric_eventuallyEq (p : M) {U : Set (TangentSpace I p)}
     (h : IsNormalDomain I M p U) (w z : TangentSpace I p) :
-    (fun v ↦ expMetric (I := I) p v w z) =ᶠ[𝓝 0]
+    (fun v ↦ riemannianExpPullbackMetric I M p v w z) =ᶠ[𝓝 0]
       fun v ↦ inner ℝ (normalCoordinateField I M p U w (riemannianExp I M p v))
         (normalCoordinateField I M p U z (riemannianExp I M p v)) := by
   filter_upwards [h.isOpen.mem_nhds h.zero_mem] with v hv
-  rw [expMetric_apply, h.normalCoordinateField_riemannianExp hv,
+  rw [riemannianExpPullbackMetric_apply, h.normalCoordinateField_riemannianExp hv,
     h.normalCoordinateField_riemannianExp hv]
 
-/-- The differential of the bilinear-form-valued metric vanishes at the origin. -/
-private theorem fderiv_expMetric_zero (p : M) :
-    let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-    let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-    fderiv ℝ (expMetric (I := I) p) 0 = 0 := by
-  let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  have hf := (contDiffAt_expMetric (I := I) p).differentiableAt (by simp)
+/-- The first derivative of the exponential pullback metric vanishes at the origin. -/
+theorem fderiv_riemannianExpPullbackMetric_zero (p : M) :
+    fderiv ℝ (riemannianExpPullbackMetric I M p) 0 = 0 := by
+  have hf := (contDiffAt_riemannianExpPullbackMetric (I := I) p).differentiableAt (by simp)
   ext v w z
   rw [← fderiv_clm_apply_const_apply₂ hf w z v]
   obtain ⟨r, _, h⟩ := exists_isNormalDomain_ball (I := I) p
-  rw [(expMetric_eventuallyEq p h w z).fderiv_eq]
-  have hcoeff := mdifferentiableAt_inner
-    (h.mdifferentiableAt_normalCoordinateField w h.self_mem_image)
-    (h.mdifferentiableAt_normalCoordinateField z h.self_mem_image)
+  rw [(riemannianExpPullbackMetric_eventuallyEq p h w z).fderiv_eq]
   have hc0 : HasMFDerivAt I 𝓘(ℝ)
       (fun q ↦ inner ℝ (normalCoordinateField I M p (Metric.ball 0 r) w q)
-        (normalCoordinateField I M p (Metric.ball 0 r) z q)) p 0 := by
-    rw [← h.mfderiv_inner_normalCoordinateField_self w z]
-    exact hcoeff.hasMFDerivAt
-  have hc0' : HasMFDerivAt I 𝓘(ℝ)
-      (fun q ↦ inner ℝ (normalCoordinateField I M p (Metric.ball 0 r) w q)
         (normalCoordinateField I M p (Metric.ball 0 r) z q)) (riemannianExp I M p 0) 0 := by
-    exact (congrArg (fun q ↦ HasMFDerivAt I 𝓘(ℝ)
-      (fun q' ↦ inner ℝ (normalCoordinateField I M p (Metric.ball 0 r) w q')
-        (normalCoordinateField I M p (Metric.ball 0 r) z q')) q 0)
-      (riemannianExp_zero (I := I) p)).mpr hc0
-  have hzero := hc0'.comp (0 : TangentSpace I p) (hasMFDerivAt_riemannianExp_zero (I := I) p)
+    rw [riemannianExp_zero, ← h.mfderiv_inner_normalCoordinateField_self w z]
+    exact (mdifferentiableAt_inner
+      (h.mdifferentiableAt_normalCoordinateField w h.self_mem_image)
+      (h.mdifferentiableAt_normalCoordinateField z h.self_mem_image)).hasMFDerivAt
+  have hzero := hc0.comp (0 : TangentSpace I p) (hasMFDerivAt_riemannianExp_zero (I := I) p)
   have hzF : HasFDerivAt
       ((fun q ↦ inner ℝ (normalCoordinateField I M p (Metric.ball 0 r) w q)
         (normalCoordinateField I M p (Metric.ball 0 r) z q)) ∘ riemannianExp I M p)
       (0 : TangentSpace I p →L[ℝ] ℝ) 0 := by
+    -- The chain rule gives the derivative `0 ∘L NormedSpace.fromTangentSpace 0`, typed with the
+    -- tangent spaces of the models `𝓘(ℝ, TangentSpace I p)` and `𝓘(ℝ)`; `convert!` unfolds
+    -- these to `TangentSpace I p` and `ℝ` and identifies the composite with the zero map.
     convert! hzero.hasFDerivAt using 1
   simpa only [zero_apply, Function.comp_def] using congrArg (fun L ↦ L v) hzF.fderiv
 
-/-- The second differential on a repeated direction is the radial second derivative. -/
-private theorem fderiv_fderiv_expMetric_apply_self (p : M) (v w z : TangentSpace I p) :
-    let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-    let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-    fderiv ℝ (fderiv ℝ (expMetric (I := I) p)) 0 v v w z =
+/-- The second derivative of the exponential pullback metric at the origin, on a repeated
+direction `v`, is `-(2/3) ⟪R(w,v)v,z⟫`. -/
+theorem fderiv_fderiv_riemannianExpPullbackMetric_apply_self (p : M) (v w z : TangentSpace I p) :
+    fderiv ℝ (fderiv ℝ (riemannianExpPullbackMetric I M p)) 0 v v w z =
       -(2 / 3 : ℝ) * inner ℝ ((leviCivitaConnection I M).curvatureTensor p w v v) z := by
-  let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  dsimp only
-  have hf : ContDiffAt ℝ 3 (expMetric (I := I) p) 0 :=
-    (contDiffAt_expMetric (I := I) p).of_le (by simp)
-  let f := fun u ↦ expMetric (I := I) p u w z
+  have hf : ContDiffAt ℝ 3 (riemannianExpPullbackMetric I M p) 0 :=
+    (contDiffAt_riemannianExpPullbackMetric (I := I) p).of_le (by simp)
+  let f := fun u ↦ riemannianExpPullbackMetric I M p u w z
   have hfn : ContDiffAt ℝ 2 f 0 :=
     ((hf.clm_apply contDiffAt_const).clm_apply contDiffAt_const).of_le (by norm_num)
-  have hsecond := iteratedDeriv_two_comp (f := f)
-    (γ := fun t : ℝ ↦ (0 : TangentSpace I p) + t • v) (t := 0)
-    (by simpa using hfn) (contDiffAt_const.add (contDiffAt_id.smul contDiffAt_const))
-  rw [TauCeti.deriv_const_add_smul, TauCeti.iteratedDeriv_two_const_add_smul] at hsecond
-  simp only [zero_add, zero_smul, Pi.zero_apply, map_zero, add_zero] at hsecond
+  have hsecond := (show ContDiffAt ℝ 2 f (0 + (0 : ℝ) • v) by simpa using hfn)
+    |>.deriv_deriv_comp_add_smul
+  simp only [zero_add, zero_smul] at hsecond
   have heval : (fun u ↦ fderiv ℝ f u v) =ᶠ[𝓝 (0 : TangentSpace I p)]
-      (fun u ↦ fderiv ℝ (expMetric (I := I) p) u v w z) := by
+      (fun u ↦ fderiv ℝ (riemannianExpPullbackMetric I M p) u v w z) := by
     filter_upwards [hf.eventually (by simp)] with u hu
     exact fderiv_clm_apply_const_apply₂ (hu.differentiableAt (by simp)) w z v
   have hdf := (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
@@ -152,25 +154,21 @@ private theorem fderiv_fderiv_expMetric_apply_self (p : M) (v w z : TangentSpace
     fderiv_clm_apply_const_apply₂ hdfv w z v,
     fderiv_clm_apply_const_apply hdf v v] at hcalc
   rw [← hcalc, ← hsecond]
-  simpa only [f, Function.comp_def, expMetric_apply, iteratedDeriv_succ,
-    iteratedDeriv_zero] using deriv_deriv_inner_mfderiv_riemannianExp_zero (I := I) p v w z
+  simpa only [f, riemannianExpPullbackMetric_apply] using
+    deriv_deriv_inner_mfderiv_riemannianExp_zero (I := I) p v w z
 
 /-- Taylor's estimate in operator norm, on a ball in the natural exponential domain. -/
-private theorem exists_expMetric_remainder_bound (p : M) :
-    let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-    let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
+private theorem exists_riemannianExpPullbackMetric_remainder_bound (p : M) :
     ∃ r > 0, ∃ C > 0, Metric.ball (0 : TangentSpace I p) r ⊆ expDomain I M p ∧
       ∀ v ∈ Metric.ball (0 : TangentSpace I p) r,
-        ‖expMetric (I := I) p v - expMetric (I := I) p 0 -
-          (2⁻¹ : ℝ) • fderiv ℝ (fderiv ℝ (expMetric (I := I) p)) 0 v v‖ ≤ C * ‖v‖ ^ 3 := by
-  let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  dsimp only
-  have hf : ContDiffAt ℝ 3 (expMetric (I := I) p) 0 :=
-    (contDiffAt_expMetric (I := I) p).of_le (by simp)
+        ‖riemannianExpPullbackMetric I M p v - riemannianExpPullbackMetric I M p 0 -
+          (2⁻¹ : ℝ) • fderiv ℝ (fderiv ℝ (riemannianExpPullbackMetric I M p)) 0 v v‖ ≤
+            C * ‖v‖ ^ 3 := by
+  have hf : ContDiffAt ℝ 3 (riemannianExpPullbackMetric I M p) 0 :=
+    (contDiffAt_riemannianExpPullbackMetric (I := I) p).of_le (by simp)
   have ht := hf.isBigO_sub_taylor_two
   obtain ⟨C, hC, hb⟩ := Asymptotics.isBigO_iff'.mp ht
-  simp only [sub_zero, fderiv_expMetric_zero, zero_apply,
+  simp only [sub_zero, fderiv_riemannianExpPullbackMetric_zero, zero_apply,
     Real.norm_of_nonneg (pow_nonneg (norm_nonneg _) 3)] at hb
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp
     (hb.and ((isOpen_expDomain (I := I) p).mem_nhds (zero_mem_expDomain p)))
@@ -186,18 +184,16 @@ theorem exists_abs_inner_mfderiv_riemannianExp_sub_le (p : M) :
             (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v z) - inner ℝ w z +
           (1 / 3 : ℝ) * inner ℝ ((leviCivitaConnection I M).curvatureTensor p w v v) z| ≤
             C * ‖v‖ ^ 3 * ‖w‖ * ‖z‖ := by
-  let _ : NormedAddCommGroup (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (TangentSpace I p →L[ℝ] ℝ) := inferInstance
-  obtain ⟨r, hr, C, hC, hdom, hb⟩ := exists_expMetric_remainder_bound (I := I) p
+  obtain ⟨r, hr, C, hC, hdom, hb⟩ := exists_riemannianExpPullbackMetric_remainder_bound (I := I) p
   refine ⟨r, hr, C, hC, hdom, fun v hv w z ↦ ?_⟩
-  let A := expMetric (I := I) p v - expMetric (I := I) p 0 -
-    (2⁻¹ : ℝ) • fderiv ℝ (fderiv ℝ (expMetric (I := I) p)) 0 v v
+  let A := riemannianExpPullbackMetric I M p v - riemannianExpPullbackMetric I M p 0 -
+    (2⁻¹ : ℝ) • fderiv ℝ (fderiv ℝ (riemannianExpPullbackMetric I M p)) 0 v v
   have heval : A w z =
       inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w)
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v z) - inner ℝ w z +
         (1 / 3 : ℝ) * inner ℝ ((leviCivitaConnection I M).curvatureTensor p w v v) z := by
-    simp only [A, sub_apply, smul_apply, smul_eq_mul, expMetric_apply,
-      mfderiv_riemannianExp_apply_zero, fderiv_fderiv_expMetric_apply_self]
+    simp only [A, sub_apply, smul_apply, smul_eq_mul, riemannianExpPullbackMetric_apply,
+      mfderiv_riemannianExp_apply_zero, fderiv_fderiv_riemannianExpPullbackMetric_apply_self]
     rw [riemannianExp_zero]
     ring
   rw [← heval, ← Real.norm_eq_abs]
