@@ -147,15 +147,21 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
     (toPrincipalIdeal_eq_one_iff _).mpr ⟨-1, Units.ext (by simp)⟩
   rw [← neg_one_mul x, map_mul, hneg, one_mul]
 
-/-- **Criterion for invertibility of a fractional ideal.** A nonzero fractional ideal whose
+/-- **Criterion for invertibility of a fractional ideal.** A fractional ideal whose
 `A`-submodule has an `A`-submodule inverse for multiplication, with product the unit submodule,
 is invertible. -/
 theorem isUnit_of_restrictScalars_mul_eq_one {R : Type*} [CommRing R] [IsDomain R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {A : Type*} [CommRing A]
     [Algebra A R] [Algebra A K] [IsScalarTower A R K] {Ifr : FractionalIdeal R⁰ K}
-    (hIfr : Ifr ≠ 0) {t : Submodule A K}
+    {t : Submodule A K}
     (hinv : (Ifr : Submodule R K).restrictScalars A * t = (1 : Submodule R K).restrictScalars A) :
     IsUnit Ifr := by
+  have h1 : (1 : K) ∈ (Ifr : Submodule R K).restrictScalars A * t := by
+    rw [hinv]
+    exact Submodule.mem_one.mpr ⟨1, map_one _⟩
+  have hIfr : Ifr ≠ 0 := by
+    rintro rfl
+    simp at h1
   have hle : t ≤ ((Ifr⁻¹ : FractionalIdeal R⁰ K) : Submodule R K).restrictScalars A := by
     intro x hx
     rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coe, mem_inv_iff hIfr]
@@ -166,9 +172,6 @@ theorem isUnit_of_restrictScalars_mul_eq_one {R : Type*} [CommRing R] [IsDomain 
     rw [hinv, Submodule.restrictScalars_mem] at h
     rw [mul_comm, ← mem_coe, coe_one]
     exact h
-  have h1 : (1 : K) ∈ (Ifr : Submodule R K).restrictScalars A * t := by
-    rw [hinv]
-    exact Submodule.mem_one.mpr ⟨1, map_one _⟩
   have h2 : (1 : K) ∈ ((Ifr * Ifr⁻¹ : FractionalIdeal R⁰ K) : Submodule R K).restrictScalars A := by
     rw [coe_mul, Submodule.restrictScalars_mul]
     exact Submodule.mul_le.mpr (fun m hm n hn => Submodule.mul_mem_mul hm (hle hn)) h1
