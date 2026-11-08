@@ -63,34 +63,18 @@ multiplication. Equivalently, these are the symbols with no negative Fourier coe
 def hardyMultiplierAlgebra : Subalgebra ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) where
   carrier := {a | Set.MapsTo (Lp.multiplicationOperator (E := ℂ) a)
     (hardySubmodule : Set _) (hardySubmodule : Set _)}
-  zero_mem' := by simp [Set.MapsTo, Lp.multiplicationOperator_zero]
   add_mem' ha hb f hf := by
     simpa only [Lp.multiplicationOperator_add, add_apply, SetLike.mem_coe] using
       hardySubmodule.add_mem (ha hf) (hb hf)
-  one_mem' := by
-    have h : Lp.multiplicationOperator (E := ℂ)
-        (1 : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) = ContinuousLinearMap.id ℂ _ := by
-      simpa using
-        (Lp.multiplicationOperator_of_ae_eq_const (E := ℂ) (c := (1 : ℂ))
-          (Lp.coeFn_one (E := ℂ) (μ := AddCircle.haarAddCircle (T := 1))))
-    intro f hf
-    simpa only [h, ContinuousLinearMap.id_apply] using hf
   mul_mem' ha hb f hf := by
     rw [← Lp.multiplicationOperator_comp_multiplicationOperator,
       ContinuousLinearMap.comp_apply]
     exact ha (hb hf)
   algebraMap_mem' c := by
-    have h : Lp.multiplicationOperator (E := ℂ)
-        (algebraMap ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) c) =
-        c • ContinuousLinearMap.id ℂ _ := by
-      apply Lp.multiplicationOperator_of_ae_eq_const
-      filter_upwards [Lp.coeFn_algebraMap (R := ℂ)
-        (μ := AddCircle.haarAddCircle (T := 1)) c]
-        with t ht
-      exact ht.trans (Algebra.algebraMap_self_apply c)
     intro f hf
-    simpa only [h, smul_apply, ContinuousLinearMap.id_apply, SetLike.mem_coe] using
-      hardySubmodule.smul_mem c hf
+    simpa only [Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply,
+      Lp.multiplicationOperator_const, smul_apply, ContinuousLinearMap.id_apply,
+      SetLike.mem_coe] using hardySubmodule.smul_mem c hf
 
 /-- Membership in boundary H∞ is characterized by vanishing negative Fourier coefficients. -/
 @[simp]
@@ -193,22 +177,15 @@ def hardyMultiplierHom : hardyMultiplierAlgebra →ₐ[ℂ] (HardySpace →L[ℂ
   map_zero' := map_zero toeplitz
   map_add' a b := map_add toeplitz a.val b.val
   map_one' := by
-    have h : (1 : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) =
-        Lp.const ∞ AddCircle.haarAddCircle (1 : ℂ) := by
-      ext
-      exact Lp.coeFn_one.trans (Lp.coeFn_const ∞ AddCircle.haarAddCircle 1).symm
-    rw [Subalgebra.coe_one, h, toeplitz_const, one_smul, ContinuousLinearMap.one_def]
+    rw [Subalgebra.coe_one,
+      ← map_one (algebraMap ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))),
+      Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply, toeplitz_const, one_smul,
+      ContinuousLinearMap.one_def]
   map_mul' a b :=
     (toeplitz_comp_of_analytic a b ((mem_hardyMultiplierAlgebra_iff b).mp b.property)).symm
   commutes' c := by
-    have h : algebraMap ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) c =
-        Lp.const ∞ AddCircle.haarAddCircle c := by
-      ext
-      filter_upwards [Lp.coeFn_algebraMap (R := ℂ) c,
-        Lp.coeFn_const ∞ AddCircle.haarAddCircle c] with t ht hc
-      exact ht.trans ((Algebra.algebraMap_self_apply c).trans hc.symm)
-    rw [Subalgebra.coe_algebraMap, h, toeplitz_const,
-      Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.one_def]
+    rw [Subalgebra.coe_algebraMap, Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply,
+      toeplitz_const, Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.one_def]
 
 /-- The multiplier homomorphism acts by the Toeplitz operator of its symbol. -/
 @[simp]
