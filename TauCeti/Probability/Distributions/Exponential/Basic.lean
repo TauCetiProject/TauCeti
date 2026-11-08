@@ -146,9 +146,9 @@ theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Me
 
 /-- Scaling an exponential variable by a positive constant divides its rate by that constant. -/
 @[simp]
-theorem expMeasure_map_const_mul (hr : 0 < r) {c : ℝ} (hc : 0 < c) :
+theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
-  simpa only [expMeasure] using gammaMeasure_map_const_mul one_pos hr hc
+  simpa only [expMeasure] using gammaMeasure_map_const_mul hc
 
 /-- `expMeasure r` presented by its real-valued density, the form in which the shared density
 bridge of `TauCeti/Probability/Density.lean` applies. -/

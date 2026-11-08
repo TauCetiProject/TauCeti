@@ -146,7 +146,7 @@ theorem map_inv_inv_apply_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : �
           Measure.map_id]
       _ = (chiSquaredMeasure (n - p + 1)).map ((S i i)⁻¹ * ·) := by
         rw [chiSquaredMeasure_eq_gammaMeasure hk,
-          gammaMeasure_map_const_mul (by linarith) (by norm_num) (inv_pos.2 hSii)]
+          gammaMeasure_map_const_mul (inv_pos.2 hSii)]
         congr 1
         field_simp
 
