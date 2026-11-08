@@ -70,7 +70,7 @@ theorem kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup
     (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
       (CommAlgCat.of ℤ A)) :
     kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b q =
       Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
         (chevalleyRootSubgroup ρ M hM hnil γ (CommAlgCat.of ℤ A)
@@ -87,7 +87,7 @@ theorem kostantRootSubgroupMatrix_chevalleySystem_mem_toralPoints (A : Type*) [C
     (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
       (CommAlgCat.of ℤ A)) :
     kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b q ∈
       kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         ρ M hM hnil b χ A := by
@@ -102,7 +102,7 @@ theorem kostantToralDefiningIdeal_toIdeal_le_ker_kostantRootSubgroupCoordinateMa
     (kostantToralDefiningIdeal (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
       ρ M hM hnil b χ).toIdeal ≤
     RingHom.ker (kostantRootSubgroupCoordinateMap (t.chevalleySystem ht) (t.lieBasis ht).h
-      ρ M (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+      ρ M (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b).hom.toAlgHom.toRingHom := by
   let A : Type := AdditiveGroup.coordinateHopfAlgebra ℤ
   have htoral := kostantRootSubgroupMatrix_chevalleySystem_mem_toralPoints ρ M hM hnil b χ A γ
@@ -120,7 +120,7 @@ def chevalleyRootSubgroupToralCoordinateMap (γ : Fin t.numRoots) :
           ρ M hM hnil b χ) ⟶ AdditiveGroup.coordinateHopfAlgebra ℤ :=
   CommHopfAlgCat.liftQuotient _
     (kostantRootSubgroupCoordinateMap (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-      (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+      (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b)
     (kostantToralDefiningIdeal_toIdeal_le_ker_kostantRootSubgroupCoordinateMap ρ M hM hnil b χ γ)
 
@@ -131,7 +131,7 @@ theorem mkQuotient_comp_chevalleyRootSubgroupToralCoordinateMap (γ : Fin t.numR
         (kostantToralDefiningIdeal (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
           ρ M hM hnil b χ) ≫ chevalleyRootSubgroupToralCoordinateMap ρ M hM hnil b χ γ =
       kostantRootSubgroupCoordinateMap (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b :=
   CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
 
@@ -159,7 +159,7 @@ theorem chevalleyRootSubgroupToToral_comp_ι (γ : Fin t.numRoots) :
         kostantToralGroupSchemeι (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
           ρ M hM hnil b χ =
       kostantRootSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b := by
   rw [chevalleyRootSubgroupToToral_def, kostantToralGroupSchemeι_def,
     CommHopfAlgCat.quotientSpecι_def, kostantRootSubgroup_def]
@@ -178,14 +178,14 @@ theorem schemePointsMulEquiv_chevalleyRootSubgroupToToral (γ : Fin t.numRoots)
           (kostantToralGroupSchemeι (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
             ρ M hM hnil b χ).hom.hom) =
       kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b
         ((AdditiveGroup.groupSchemePointMulEquiv A).symm p) := by
   have h : (chevalleyRootSubgroupToToral ρ M hM hnil b χ γ).hom.hom ≫
       (kostantToralGroupSchemeι (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         ρ M hM hnil b χ).hom.hom =
       (kostantRootSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) γ
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b).hom.hom :=
     congrArg (fun f => f.hom.hom) (chevalleyRootSubgroupToToral_comp_ι ρ M hM hnil b χ γ)
   rw [h]
@@ -238,7 +238,7 @@ theorem rootSubgroup_def (γ : Fin t.numRoots) :
 theorem rootSubgroup_comp_groupSchemeι (γ : Fin t.numRoots) :
     D.rootSubgroup γ ≫ D.groupSchemeι =
       kostantRootSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent D.representation D.lattice
+        (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
           D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
         (isNilpotent_apply_ι_chevalleySystem D.representation
           D.isNilpotent_representation_rootGenerator γ) D.basis := by

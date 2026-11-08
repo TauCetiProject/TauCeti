@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
-import TauCeti.Algebra.Lie.Sl2.RangeKer
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 
 /-!
 # All-root admissibility of Kostant-stable lattices
@@ -17,11 +17,11 @@ simple-generator Kostant form implies stability under divided powers of every na
 root vector. In particular the full-weight lattice is admissible for the all-root Kostant form,
 not merely for the simple-generator form used to construct it.
 
-The argument combines `DynkinType.chevalleySystem_induction` with
-`UniversalEnvelopingAlgebra.dividedPower_weylAut_smul_mem`: simple Weyl elements and their
-inverses preserve a Kostant-stable subgroup. Nilpotence follows from the represented sl₂
-triples, without requiring a weight decomposition of the module. No equality of the two
-integral subrings of the universal enveloping algebra is asserted.
+All-root stability follows from `DynkinType.kostantForm_chevalleySystem_smul_mem`.
+The required simple-generator nilpotence follows from
+`DynkinType.isNilpotent_representation_rootGenerator`, using the represented sl₂ triples
+without requiring a weight decomposition of the module. No equality of the two integral
+subrings of the universal enveloping algebra is asserted.
 
 ## References
 
@@ -53,14 +53,13 @@ theorem kostantForm_chevalleySystem_apply_mem (M : AddSubgroup V)
       (t.chevalleySystem ht) (t.lieBasis ht).h)
     {v : V} (hv : v ∈ M) :
     representation ℚ (t.lieAlgebra ht) V u v ∈ M := by
-  refine kostantForm_chevalleySystem_apply_mem_of_isNilpotent
-    (representation ℚ (t.lieAlgebra ht) V) M
-    (by simpa only [kostantForm_def, LieAlgebra.Basis.kostantForm_def] using hM) ?_ u hu v hv
-  rintro (i | i)
-  · simpa only [representation_ι] using
-      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_e (K := ℚ) (M := V)
-  · simpa only [representation_ι] using
-      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_f (K := ℚ) (M := V)
+  have hstable : ∀ u ∈ UniversalEnvelopingAlgebra.kostantForm
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h, ∀ v ∈ M,
+      representation ℚ (t.lieAlgebra ht) V u v ∈ M := by
+    simpa only [kostantForm_def, LieAlgebra.Basis.kostantForm_def] using hM
+  exact kostantForm_chevalleySystem_smul_mem
+    (representation ℚ (t.lieAlgebra ht) V) M hstable
+    (t.isNilpotent_representation_rootGenerator ht) u hu v hv
 
 /-- The full-weight lattice is preserved by the all-root Kostant form of the pinned
 Chevalley system. -/

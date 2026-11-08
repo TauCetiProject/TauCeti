@@ -147,12 +147,13 @@ theorem coe_rootSubgroupPoints_reflectionPerm_simpleIndex (i : Fin t.rank) (A : 
 
 /-- **The root subgroups are natural in the ring of points.** Applying a ring homomorphism
 `φ : A →+* B` entrywise to `x_γ(u)` gives `x_γ(φ u)`. -/
+@[simp]
 theorem map_rootSubgroupPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (φ : A →+* B)
     (γ : Fin t.numRoots) (u : Multiplicative A) :
-    Matrix.GeneralLinearGroup.map φ
-        (D.rootSubgroupPoints γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-      (D.rootSubgroupPoints γ B (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) :
-        Matrix.GeneralLinearGroup (Fin D.dim) B) := by
+    (D.pointsPresentation A).map (D.pointsPresentation B) φ (D.rootSubgroupPoints γ A u) =
+      D.rootSubgroupPoints γ B (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
   have hmatrix := Module.Basis.map_toMatrixAlgEquiv_baseChange D.basis φ.toIntAlgHom
     (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
       D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u).val
@@ -188,9 +189,26 @@ theorem weylElement_def (γ : Fin t.numRoots) (A : Type v) [CommRing A] (s : Aˣ
         D.rootSubgroupPoints γ A (Multiplicative.ofAdd (s : A)) :=
   (rfl)
 
+/-- Steinberg's Weyl word is natural in the coefficient ring. -/
+theorem map_weylElement {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (φ : A →+* B) (γ : Fin t.numRoots) (s : Aˣ) :
+    Matrix.GeneralLinearGroup.map φ
+        (D.weylElement γ A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
+      (D.weylElement γ B (Units.map (φ : A →* B) s) :
+        Matrix.GeneralLinearGroup (Fin D.dim) B) := by
+  have h (γ' : Fin t.numRoots) (u : Multiplicative A) :
+      Matrix.GeneralLinearGroup.map φ
+          (D.rootSubgroupPoints γ' A u : Matrix.GeneralLinearGroup (Fin D.dim) A) =
+        (D.rootSubgroupPoints γ' B (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) :
+          Matrix.GeneralLinearGroup (Fin D.dim) B) :=
+    (GeneralLinear.IntegralPointsPresentation.coe_map _ _ φ _).symm.trans
+      (congrArg Subtype.val (D.map_rootSubgroupPoints φ γ' u))
+  simp only [weylElement_def, Subgroup.coe_mul, map_mul, h, Units.coe_map, MonoidHom.coe_ofClass,
+    map_neg, ← map_inv, toAdd_ofAdd]
+
 /-- At a simple root, the Weyl element `n_{αᵢ}(1)` is the Weyl element of the Kostant data, written
 in the weight basis. -/
-private theorem coe_weylElement_simpleIndex_one (i : Fin t.rank) (A : Type v) [CommRing A] :
+theorem coe_weylElement_simpleIndex_one (i : Fin t.rank) (A : Type v) [CommRing A] :
     (D.weylElement (t.simpleIndex ht i) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
         (kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice

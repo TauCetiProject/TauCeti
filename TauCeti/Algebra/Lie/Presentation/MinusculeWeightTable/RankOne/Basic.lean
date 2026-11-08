@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Basic
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
 # Rank-one representations on a minuscule weight basis
@@ -32,6 +32,8 @@ carrier built on the table.
 * `TauCeti.MinusculeWeightTable.sl2BlockMatrix_upper_transvection`,
   `sl2BlockMatrix_lower_transvection`, `sl2BlockMatrix_diagonal`: the values on transvections and
   on diagonal matrices.
+* `TauCeti.MinusculeWeightTable.sl2BlockSL_diag2nUnit`: a unit diagonal acts by the integral
+  weights in the general linear group.
 * `TauCeti.MinusculeWeightTable.sl2BlockSL_injective`: the representation is faithful as soon as
   the node has a weight of coordinate `-1`.
 
@@ -233,5 +235,14 @@ theorem sl2BlockMatrix_diagonal_unit (i : B) (u : Rˣ) :
   congr 1
   funext a
   rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> simp [h]
+
+/-- A determinant-one unit diagonal acts in the general linear group by the integral weights. -/
+@[simp]
+theorem sl2BlockSL_diag2nUnit (i : B) (u : Rˣ) :
+    T.sl2BlockSL i (Matrix.SpecialLinearGroup.diag2nUnit
+      (by decide : (0 : Fin 2) ≠ 1) u) = diagGL (fun a ↦ u ^ T.weight a i) := by
+  apply Units.ext
+  rw [coe_sl2BlockSL, Matrix.SpecialLinearGroup.diag2nUnit_coe,
+    sl2BlockMatrix_diagonal_unit, diagGL_coe]
 
 end TauCeti.MinusculeWeightTable

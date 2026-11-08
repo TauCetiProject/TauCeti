@@ -33,7 +33,9 @@ of Lyapunov stability.
 
 Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
 sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
-compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
+compact (`TauCeti.not_isCompact_inter_preimage_Iic`). A compact sublevel `{f ≤ b}`, on which `f`
+is continuous, lies strictly above some value `a ≤ b`, whose sublevel is then empty
+(`TauCeti.exists_le_forall_lt_of_isCompact_sublevel`).
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
@@ -43,7 +45,12 @@ homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_ap
 of the deformation of sublevels across a band without critical points, where the motion is the
 flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
-topology across the band.
+topology across the band. The band itself, relative to its lower level, is the pair
+`TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
+`TauCeti.bandPairInclusion`; when `f⁻¹[a, b]` is a cobordism between regular levels, this is the
+cobordism relative to its incoming boundary. All sublevels together form the functor
+`TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
+of their inclusions into `X`.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -62,6 +69,8 @@ band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_pr
 public section
 
 open Set
+
+universe u
 
 namespace TauCeti
 
@@ -155,6 +164,20 @@ theorem not_isCompact_inter_preimage_Iic {X β : Type*} [TopologicalSpace X] [T2
       fun x hx ↦ ⟨hx.1, hx.2.le⟩
   exact hp (hK.isClosed.closure_eq ▸ hmem).1
 
+/-- If a sublevel `{f ≤ b}` is compact and `f` is continuous on it, then `f` is bounded below by
+a value `a ≤ b` which it never attains, so the sublevel `{f ≤ a}` is empty. -/
+theorem exists_le_forall_lt_of_isCompact_sublevel {X β : Type*} [TopologicalSpace X]
+    [TopologicalSpace β] [LinearOrder β] [ClosedIicTopology β] [NoMinOrder β] {f : X → β} {b : β}
+    (hcompact : IsCompact {x | f x ≤ b}) (hf : ContinuousOn f {x | f x ≤ b}) :
+    ∃ a ≤ b, ∀ x, a < f x := by
+  have : Nonempty β := ⟨b⟩
+  obtain ⟨m, hm⟩ := hcompact.bddBelow_image hf
+  obtain ⟨a, ha⟩ := exists_lt (min m b)
+  refine ⟨a, (ha.trans_le (min_le_right m b)).le, fun x ↦ ?_⟩
+  rcases le_or_gt (f x) b with hx | hx
+  · exact ha.trans_le ((min_le_left m b).trans (hm (mem_image_of_mem f hx)))
+  · exact (ha.trans_le (min_le_right m b)).trans hx
+
 /-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
 theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
     Monotone fun a : β ↦ {x | f x ≤ a} :=
@@ -169,6 +192,15 @@ def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X �
 theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
     {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
   (rfl)
+
+/-- Including `{f ≤ a}` into `{f ≤ b}` and then into `{f ≤ c}` is the inclusion of `{f ≤ a}` into
+`{f ≤ c}`. -/
+@[simp]
+theorem sublevelInclusion_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b c : β} (hab : a ≤ b) (hbc : b ≤ c) (x : {x | f x ≤ a}) :
+    sublevelInclusion f b c hbc (sublevelInclusion f a b hab x) =
+      sublevelInclusion f a c (hab.trans hbc) x :=
+  Subtype.ext (rfl)
 
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels is the inclusion of sets. -/
 theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
@@ -190,17 +222,64 @@ abbrev sublevelPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] 
     {a b : β} (hab : a ≤ b) : TopPair :=
   TopPair.ofInclusion (X := TopCat.of X) (sublevel_mono f hab)
 
+/-- The band pair `(f⁻¹[a, b], f⁻¹(a))` of a function `f` for `a ≤ b`: the band of values between
+`a` and `b`, relative to its lower level. -/
+abbrev bandPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β) {a b : β}
+    (hab : a ≤ b) : TopPair :=
+  TopPair.ofInclusion (X := TopCat.of X) (preimage_mono (singleton_subset_iff.2 ⟨le_rfl, hab⟩) :
+    f ⁻¹' {a} ⊆ f ⁻¹' Icc a b)
+
+/-- The inclusion `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})` of the band pair into the sublevel
+pair. -/
+def bandPairInclusion {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) : bandPair f hab ⟶ sublevelPair f hab :=
+  TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
+    fun _ hx ↦ (hx : f _ = a).le
+
+/-- On ambient spaces, the inclusion of the band pair into the sublevel pair is the inclusion of
+the band `f⁻¹[a, b]` into the sublevel `{f ≤ b}`. -/
+@[simp]
+theorem bandPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) :
+    TopPair.Hom.fst (bandPairInclusion f hab) =
+      TopCat.ofHom (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2) := by
+  ext x
+  exact TopPair.ofInclusionMap_fst_apply _ _ x
+
+section Functor
+
+open CategoryTheory Limits
+
+variable {X : Type u} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+
+/-- The sublevels `{f ≤ b}` of `f` as a functor from the levels to topological spaces. The map
+for `a ≤ b` is the embedding of the sublevel pair `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`. -/
+@[expose, simps]
+def sublevelFunctor : β ⥤ TopCat.{u} where
+  obj b := TopCat.of {x | f x ≤ b}
+  map h := (sublevelPair f (leOfHom h)).map
+
+/-- The cocone over `TauCeti.sublevelFunctor f` with apex `X`, whose legs are the inclusions of
+the sublevels into `X`. -/
+@[expose, simps]
+def sublevelCocone : Cocone (sublevelFunctor f) where
+  pt := TopCat.of X
+  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+
+end Functor
+
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if
 `f x ≤ b` and `f x - t ≥ a` with `t ≥ 0`, then `f (φ t x) = f x - t`. Moving each point of
-`{f ≤ b}` until it reaches the level `a` is a retraction `r` of `{f ≤ b}` onto `{f ≤ a}`, and moving
-it only part of the way is a homotopy from the inclusion of `r` to the identity fixing `{f ≤ a}`
-pointwise. -/
+`{f ≤ b}` for the time `max (f x - a) 0`, which brings it to the level `a` if `a ≤ f x` and leaves
+it fixed if `f x ≤ a`, is a retraction `r` of `{f ≤ b}` onto `{f ≤ a}`, and moving it only part of
+the way is a homotopy from the inclusion of `r` to the identity fixing `{f ≤ a}` pointwise. -/
 theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace X] {f : X → ℝ}
     (hf : Continuous f) {a b : ℝ} (hab : a ≤ b) (φ : ℝ → X → X)
     (hφ : Continuous (Function.uncurry φ)) (hφ0 : ∀ x, φ 0 x = x)
     (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t) :
     ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}),
+      (∀ x, (r x : X) = φ (max (f x - a) 0) x) ∧
       (∀ x, r (sublevelInclusion f a b hab x) = x) ∧
       Nonempty (ContinuousMap.HomotopyRel
         ((sublevelInclusion f a b hab).comp r)
@@ -226,7 +305,7 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
     ⟨⟨fun x ↦ ⟨φ (τ x.1) x.1, hra x⟩,
       (hφ.comp ((hτ.comp continuous_subtype_val).prodMk continuous_subtype_val)).subtype_mk _⟩,
       fun _ ↦ rfl⟩
-  refine ⟨r, fun x ↦ Subtype.ext ?_, ⟨?_⟩⟩
+  refine ⟨r, hr, fun x ↦ Subtype.ext ?_, ⟨?_⟩⟩
   · simp [hr, hτ0 x.1 x.2, hφ0]
   have hHb : ∀ p : unitInterval × {x | f x ≤ b},
       φ ((1 - (p.1 : ℝ)) * τ p.2.1) p.2.1 ∈ {x | f x ≤ b} := fun p ↦ by
