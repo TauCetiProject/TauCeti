@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.MultiplyLacedRelations
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
 /-!
 # Chevalley commutators along a double root string
@@ -93,11 +94,8 @@ theorem chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
     P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
   have hli' : LinearIndependent ℤ ![P.root β, P.root α] :=
     LinearIndependent.pair_symm_iff.mp hli
-  have hbot' : P.chainBotCoeff β α = 0 := by
-    apply P.chainBotCoeff_eq_zero_iff.mpr
-    right
-    rw [← P.neg_mem_range_root_iff, neg_sub]
-    exact (P.chainBotCoeff_eq_zero_iff.mp hbot).resolve_left (not_not.mpr hli)
+  have hbot' : P.chainBotCoeff β α = 0 :=
+    (P.chainBotCoeff_comm_of_root_add_mem ⟨γ, hγ⟩).symm.trans hbot
   have hne : P.root α ≠ P.root β := by
     intro h
     exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := 1) (by simpa using h)).1

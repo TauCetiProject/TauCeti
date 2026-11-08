@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
 import TauCeti.Algebra.Lie.Sl2.RangeKer
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Conjugate
@@ -116,15 +116,19 @@ theorem kostantForm_chevalleySystem_apply_mem (M : AddSubgroup V)
       (t.chevalleySystem ht) (t.lieBasis ht).h)
     {v : V} (hv : v ∈ M) :
     representation ℚ (t.lieAlgebra ht) V u v ∈ M := by
-  apply kostantForm_apply_mem (t.chevalleySystem ht) (t.lieBasis ht).h
-    (representation ℚ (t.lieAlgebra ht) V) M.toIntSubmodule _ _ u hu hv
-  · intro γ n w hw
-    rw [Associative.map_dividedPower, representation_ι]
-    exact t.dividedPower_chevalleySystem_apply_mem ht M hM γ n hw
-  · intro i n w hw
-    exact hM _ (by
-      rw [kostantForm_def]
-      exact LieAlgebra.Basis.ringChoose_mem_kostantForm _ i n) w hw
+  apply kostantForm_chevalleySystem_apply_mem_of_isNilpotent
+    (representation ℚ (t.lieAlgebra ht) V) M ?_ ?_ u hu v hv
+  · simpa only [kostantForm_def, LieAlgebra.Basis.kostantForm_def] using hM
+  · intro i
+    rcases i with i | i
+    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inl,
+        chevalleySystem_simpleIndex] using
+        (t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i)).isNilpotent_toEnd_e
+          (K := ℚ) (M := V)
+    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inr,
+        chevalleySystem_reflectionPerm_simpleIndex] using
+        (t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i)).isNilpotent_toEnd_f
+          (K := ℚ) (M := V)
 
 /-- The full-weight lattice is preserved by the all-root Kostant form of the pinned
 Chevalley system. -/
