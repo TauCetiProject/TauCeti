@@ -15,7 +15,8 @@ public import TauCeti.Algebra.Homology.GradedCochainComplex
 A chain map `φ : K ⟶ L` of complexes of modules is a quasi-isomorphism in degree `n` exactly when
 every degree-`n` cycle of `L` is the image of a cycle of `K` up to a boundary, and every degree-`n`
 cycle of `K` whose image is a boundary is itself a boundary
-(`HomologicalComplex.moduleCat_quasiIsoAt_iff`). These are surjectivity and injectivity of the
+(`HomologicalComplex.moduleCat_quasiIsoAt_iff`, and `CochainComplex.moduleCat_quasiIsoAt_iff` for
+cochain complexes indexed by `ℤ`). These are surjectivity and injectivity of the
 induced map on homology, written on representatives.
 
 For the cochain complexes `TauCeti.gradedCochainComplex` assembled from graded modules, the two
@@ -28,6 +29,8 @@ quasi-isomorphism can be propagated along a filtration one generator degree at a
 ## Main results
 
 * `HomologicalComplex.moduleCat_quasiIsoAt_iff`: quasi-isomorphisms in one degree, on elements.
+* `CochainComplex.moduleCat_quasiIsoAt_iff`: the same for cochain complexes indexed by `ℤ`, with
+  neighbouring degrees `n - 1` and `n + 1`.
 * `TauCeti.quasiIso_gradedCochainComplexHom_iff`: quasi-isomorphisms of graded cochain complexes
   are the maps whose relative cycles are relative boundaries.
 -/
@@ -96,6 +99,22 @@ theorem moduleCat_quasiIsoAt_iff (φ : K ⟶ L) {n p m : ι} (hp : c.prev n = p)
 
 end HomologicalComplex
 
+namespace CochainComplex
+
+variable {R : Type*} [Ring R]
+
+/-- `HomologicalComplex.moduleCat_quasiIsoAt_iff` for cochain complexes indexed by `ℤ`, where the
+neighbouring degrees of `n` are `n - 1` and `n + 1`. -/
+theorem moduleCat_quasiIsoAt_iff {K L : CochainComplex (ModuleCat R) ℤ} (φ : K ⟶ L) (n : ℤ) :
+    QuasiIsoAt φ n ↔
+      (∀ y : L.X n, L.d n (n + 1) y = 0 →
+        ∃ x : K.X n, K.d n (n + 1) x = 0 ∧ ∃ b : L.X (n - 1), L.d (n - 1) n b = y - φ.f n x) ∧
+      (∀ x : K.X n, K.d n (n + 1) x = 0 → ∀ b : L.X (n - 1), L.d (n - 1) n b = φ.f n x →
+        ∃ a : K.X (n - 1), K.d (n - 1) n a = x) :=
+  HomologicalComplex.moduleCat_quasiIsoAt_iff φ (CochainComplex.prev ℤ n) (CochainComplex.next ℤ n)
+
+end CochainComplex
+
 namespace TauCeti
 
 universe uR uM
@@ -106,17 +125,6 @@ variable {R : Type uR} {M N : Type uM} [Ring R] [AddCommGroup M] [Module R M]
   {hdeg : LinearMap.IsHomogeneous dM ℳ ℳ 1} {hsq : ∀ p (x : ℳ p), dM (dM x) = 0}
   {𝒩 : ℤ → Submodule R N} {dN : N →ₗ[R] N}
   {hdegN : LinearMap.IsHomogeneous dN 𝒩 𝒩 1} {hsqN : ∀ p (x : 𝒩 p), dN (dN x) = 0}
-
-/-- `HomologicalComplex.moduleCat_quasiIsoAt_iff` for cochain complexes indexed by `ℤ`, where the
-neighbouring degrees of `n` are `n - 1` and `n + 1`. -/
-private theorem quasiIsoAt_cochainComplex_iff {K L : CochainComplex (ModuleCat R) ℤ} (φ : K ⟶ L)
-    (n : ℤ) :
-    QuasiIsoAt φ n ↔
-      (∀ y : L.X n, L.d n (n + 1) y = 0 →
-        ∃ x : K.X n, K.d n (n + 1) x = 0 ∧ ∃ b : L.X (n - 1), L.d (n - 1) n b = y - φ.f n x) ∧
-      (∀ x : K.X n, K.d n (n + 1) x = 0 → ∀ b : L.X (n - 1), L.d (n - 1) n b = φ.f n x →
-        ∃ a : K.X (n - 1), K.d (n - 1) n a = x) :=
-  HomologicalComplex.moduleCat_quasiIsoAt_iff φ (CochainComplex.prev ℤ n) (CochainComplex.next ℤ n)
 
 /-- The forward direction of `TauCeti.quasiIso_gradedCochainComplexHom_iff`: a quasi-isomorphism
 makes every relative cycle a relative boundary. -/
@@ -130,7 +138,7 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
   rw [_root_.quasiIso_iff] at hq
   intro n x y hx hy hdx hfx
   -- `x` is a cycle whose image is a boundary, hence a boundary `dM u₀`.
-  obtain ⟨a, ha⟩ := ((quasiIsoAt_cochainComplex_iff _ (n + 1)).1 (hq (n + 1))).2
+  obtain ⟨a, ha⟩ := ((CochainComplex.moduleCat_quasiIsoAt_iff _ (n + 1)).1 (hq (n + 1))).2
     ((gradedCochainComplexXEquiv (n + 1)).symm ⟨x, hx⟩)
     ((gradedCochainComplex_d_eq_zero_iff rfl _).2 (by simpa only [LinearEquiv.apply_symm_apply]
       using hdx))
@@ -147,7 +155,7 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
   -- `y - f u₀` is a cycle, hence `f c + dN v` for a cycle `c`.
   have hyu : y - f u₀ ∈ 𝒩 n := (𝒩 n).sub_mem hy (by simpa using hf.map_mem hu₀)
   have hcyc : dN (y - f u₀) = 0 := by rw [map_sub, hfd, hdu₀, hfx, sub_self]
-  obtain ⟨c, hc, b, hb⟩ := ((quasiIsoAt_cochainComplex_iff _ n).1 (hq n)).1
+  obtain ⟨c, hc, b, hb⟩ := ((CochainComplex.moduleCat_quasiIsoAt_iff _ n).1 (hq n)).1
     ((gradedCochainComplexXEquiv n).symm ⟨y - f u₀, hyu⟩)
     ((gradedCochainComplex_d_eq_zero_iff rfl _).2 (by simpa only [LinearEquiv.apply_symm_apply]
       using hcyc))
@@ -175,7 +183,7 @@ private theorem quasiIso_gradedCochainComplexHom_of_exists_relative_boundary (f 
       (hsqN := hsqN) f hf hcomm) := by
   rw [_root_.quasiIso_iff]
   intro n
-  refine (quasiIsoAt_cochainComplex_iff _ n).2 ⟨fun y hy ↦ ?_, fun x hx b hb ↦ ?_⟩
+  refine (CochainComplex.moduleCat_quasiIsoAt_iff _ n).2 ⟨fun y hy ↦ ?_, fun x hx b hb ↦ ?_⟩
   · -- A cycle `y`: the relative cycle `(0, y)` is a relative boundary `(dM u, f u + dN v)`.
     have hdy : dN (gradedCochainComplexXEquiv n y) = 0 :=
       (gradedCochainComplex_d_eq_zero_iff rfl _).1 hy
