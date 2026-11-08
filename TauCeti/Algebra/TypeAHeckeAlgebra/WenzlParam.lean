@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Tactic.FieldSimp
@@ -281,11 +282,6 @@ section RootOfUnity
 
 open Complex
 open scoped Real
-
-private lemma cos_pi_div_pos {x : ℝ} (hx : 2 < x) : 0 < Real.cos (π / x) := by
-  have hx₀ : 0 < x := by linarith
-  refine Real.cos_pos_of_mem_Ioo ⟨by linarith [div_pos Real.pi_pos hx₀, Real.pi_pos], ?_⟩
-  rwa [div_lt_div_iff_of_pos_left Real.pi_pos hx₀ two_pos]
 
 /-- **The trigonometric form.** At `Q = exp (2 θ i)`,
 `a_k(Q) = sin ((k + 1) θ) / (2 * cos θ * sin (k θ))`, whenever `cos θ ≠ 0` and `sin (k θ) ≠ 0`. -/
