@@ -114,6 +114,30 @@ lemma smallTwistedChains_eq_iSup (n : ℕ) :
   · exact iSup_le fun i ↦ smallTwistedChains_mono L (fun _ : Unit ↦ U i) U
       (fun _ ↦ i) (fun _ ↦ Set.Subset.rfl) n
 
+/-- Chains supported in the intersection are exactly the intersection of the two support
+submodules. -/
+lemma smallTwistedChains_inter (U V : Set X) (n : ℕ) :
+    smallTwistedChains L (fun _ : Unit ↦ U ∩ V) n =
+      smallTwistedChains L (fun _ : Unit ↦ U) n ⊓
+        smallTwistedChains L (fun _ : Unit ↦ V) n := by
+  ext c
+  simp only [Submodule.mem_inf, mem_smallTwistedChains_iff,
+    TopCat.mem_smallSingularSubcomplex_iff, Set.subset_inter_iff, exists_const]
+  constructor
+  · intro h
+    exact ⟨fun σ hσ ↦ h σ (by tauto), fun σ hσ ↦ h σ (by tauto)⟩
+  · rintro ⟨hU, hV⟩ σ hσ
+    by_cases hu : Set.range (X.toSSetObjEquiv _ σ) ⊆ U
+    · exact hV σ (by tauto)
+    · exact hU σ hu
+
+/-- Chains subordinate to a binary family are sums of chains supported in its members. -/
+lemma smallTwistedChains_bool (U V : Set X) (n : ℕ) :
+    smallTwistedChains L (Bool.rec U V) n =
+      smallTwistedChains L (fun _ : Unit ↦ U) n ⊔
+        smallTwistedChains L (fun _ : Unit ↦ V) n := by
+  rw [smallTwistedChains_eq_iSup, iSup_bool_eq, sup_comm]
+
 /-- The twisted singular boundary preserves chains subordinate to a family of subsets. -/
 lemma d_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.X (n + 1)}
     (hc : c ∈ smallTwistedChains L U (n + 1)) :
