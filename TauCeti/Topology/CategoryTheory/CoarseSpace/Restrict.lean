@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.CategoryTheory.CoarseSpace
 public import TauCeti.Topology.CategoryTheory.Nerve.FullSubcategory
-public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # Saturated open restrictions of classifying spaces
@@ -112,7 +111,8 @@ theorem fatClassifyingSpaceRestrictionHomeomorph_apply_val (hP : IsOpen {x | P x
 point of the coarse-map preimage. -/
 -- The classifying-space map also has dependent TopCat carriers.
 @[simp↓]
-theorem fatClassifyingSpaceMap_ι_restrictionHomeomorph_symm (hP : IsOpen {x | P x})
+theorem fatClassifyingSpaceMap_ι_fatClassifyingSpaceRestrictionHomeomorph_symm_apply
+    (hP : IsOpen {x | P x})
     (z : TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
       (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
     TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
