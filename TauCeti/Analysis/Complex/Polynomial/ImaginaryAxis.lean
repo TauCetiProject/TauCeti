@@ -37,39 +37,24 @@ public section
 
 open Polynomial
 
-namespace Polynomial
-
-/-- A root of an irreducible real polynomial `p` is a root of every nonconstant divisor of `p`,
-since the cofactor of such a divisor is a unit. -/
-private theorem aeval_eq_zero_of_dvd_of_irreducible {p q : ℝ[X]} (hp : Irreducible p)
-    (hq : ¬IsUnit q) (hqp : q ∣ p) {w : ℂ} (hw : aeval w p = 0) : aeval w q = 0 := by
-  obtain ⟨r, rfl⟩ := hqp
-  have hr : IsUnit r := (hp.isUnit_or_isUnit rfl).resolve_left hq
-  rw [map_mul] at hw
-  exact (mul_eq_zero.mp hw).resolve_right ((hr.map (aeval w)).ne_zero)
-
-/-- Two real polynomials with no common complex root, not both zero, are coprime. -/
-private theorem isCoprime_of_forall_aeval {p q : ℝ[X]} (h0 : ¬(p = 0 ∧ q = 0))
-    (h : ∀ z : ℂ, aeval z p = 0 → aeval z q ≠ 0) : IsCoprime p q := by
-  refine EuclideanDomain.isCoprime_of_dvd h0 fun d hd hd0 hdp hdq ↦ ?_
-  obtain ⟨z, hz⟩ : ∃ z : ℂ, aeval z d = 0 :=
-    IsAlgClosed.exists_aeval_eq_zero ℂ d fun hdeg ↦ hd (isUnit_iff_degree_eq_zero.mpr hdeg)
-  exact h z (aeval_eq_zero_of_dvd_aeval_eq_zero hdp hz) (aeval_eq_zero_of_dvd_aeval_eq_zero hdq hz)
-
-end Polynomial
-
 /-- **The complex roots of an irreducible real polynomial have the same real part.** Such a
 polynomial is linear with a single real root, or quadratic with a pair of complex conjugate
 roots. -/
 theorem Irreducible.re_eq_of_aeval_eq_zero {p : ℝ[X]} (hp : Irreducible p) {z w : ℂ}
     (hz : aeval z p = 0) (hw : aeval w p = 0) : z.re = w.re := by
+  -- `w` is a root of every nonconstant divisor of `p`, whose cofactor is a unit.
+  have hdvd {q : ℝ[X]} (hq : ¬IsUnit q) (hqp : q ∣ p) : aeval w q = 0 := by
+    obtain ⟨r, rfl⟩ := hqp
+    have hr : IsUnit r := (hp.isUnit_or_isUnit rfl).resolve_left hq
+    rw [map_mul] at hw
+    exact (mul_eq_zero.mp hw).resolve_right ((hr.map (aeval w)).ne_zero)
   by_cases him : z.im = 0
   · -- A real root `a` makes `X - C a` a divisor of `p`, so `w` is a root of `X - C a`.
     have hzr : z = (z.re : ℂ) := Complex.ext rfl (by simp [him])
-    have hdvd : X - C z.re ∣ p := by
+    have hXdvd : X - C z.re ∣ p := by
       rw [dvd_iff_isRoot, IsRoot, ← Complex.ofReal_eq_zero, ← Complex.coe_algebraMap,
         ← aeval_algebraMap_apply_eq_algebraMap_eval, Complex.coe_algebraMap, ← hzr, hz]
-    have := aeval_eq_zero_of_dvd_of_irreducible hp (not_isUnit_X_sub_C _) hdvd hw
+    have := hdvd (not_isUnit_X_sub_C _) hXdvd
     rw [map_sub, aeval_X, aeval_C, Complex.coe_algebraMap, sub_eq_zero] at this
     simp [this]
   · -- A non-real root `z` makes `X² - 2 Re z X + |z|²` a divisor of `p`, whose complex roots are
@@ -82,8 +67,7 @@ theorem Irreducible.re_eq_of_aeval_eq_zero {p : ℝ[X]} (hp : Irreducible p) {z 
       linear_combination w * Complex.add_conj z - Complex.mul_conj' z + w * h2
     have hunit : ¬IsUnit (X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2) : ℝ[X]) := fun hu ↦
       (hu.map (aeval z)).ne_zero (by rw [hQ, sub_self, zero_mul])
-    have := aeval_eq_zero_of_dvd_of_irreducible hp hunit
-      (quadratic_dvd_of_aeval_eq_zero_im_ne_zero p hz him) hw
+    have := hdvd hunit (quadratic_dvd_of_aeval_eq_zero_im_ne_zero p hz him)
     rcases mul_eq_zero.mp ((hQ w).symm.trans this) with h | h
     · rw [sub_eq_zero.mp h]
     · rw [sub_eq_zero.mp h, Complex.conj_re]
@@ -125,10 +109,10 @@ theorem exists_isCoprime_mul_eq_of_re_ne_zero (p : ℝ[X])
       (UniqueFactorizationMonoid.dvd_of_mem_normalizedFactors hqF) hqz)
     exact lt_of_le_of_ne (hzw ▸ hwre) (Ne.symm hz0)
   refine ⟨(F.filter S).prod * (u : ℝ[X]), (F.filter (¬S ·)).prod, ?_, ?_, hs, hu'⟩
-  · refine isCoprime_of_forall_aeval (fun h ↦ ?_) fun z hz hz' ↦ (hs z hz).not_gt (hu' z hz')
-    have h0 := h.2
-    rw [Multiset.prod_eq_zero_iff, Multiset.mem_filter] at h0
-    exact UniqueFactorizationMonoid.zero_notMem_normalizedFactors p h0.1
+  · refine (isCoprime_iff_aeval_ne_zero_of_isAlgClosed ℝ ℂ _ _).2 fun z ↦ ?_
+    by_cases hz : aeval z ((F.filter S).prod * (u : ℝ[X])) = 0
+    · exact .inr fun hz' ↦ (hs z hz).not_gt (hu' z hz')
+    · exact .inl hz
   · rw [mul_right_comm, Multiset.prod_filter_mul_prod_filter_not, hu]
 
 end Polynomial

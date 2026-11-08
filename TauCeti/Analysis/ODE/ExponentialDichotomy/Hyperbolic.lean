@@ -12,8 +12,8 @@ import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+import TauCeti.Algebra.Polynomial.Semiconj
 import TauCeti.Analysis.Normed.Algebra.Exponential
-import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
 import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Analysis.Normed.Operator.Exponential
@@ -68,8 +68,6 @@ bound is the forward bound for `-A`, the projection `1 - P` and the factor `pᵤ
 
 ## Main results
 
-* `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
-  the spectrum of `N` under the exponential.
 * `ContinuousLinearMap.exists_norm_exp_smul_le_of_aeval_eq_zero'` and
   `ContinuousLinearMap.exists_norm_exp_smul_le_of_aeval_eq_zero`: exponential decay of
   `exp (t • T)` for complex and for real operators annihilated by a polynomial with roots in the
@@ -96,32 +94,6 @@ namespace ContinuousLinearMap
 section Complex
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
-
-/-- **Spectral mapping for the exponential in finite dimension.** The spectrum of `exp N` is the
-image of the spectrum of `N` under the exponential. The inclusion `⊇` is Mathlib's
-`spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)` in finite dimension
-(`TauCeti.exists_aeval_eq_exp`), so its spectrum consists of the values `P (μ)` at the eigenvalues
-`μ` of `N`, and an eigenvector for `μ` shows `P (μ) = exp μ`. -/
-theorem spectrum_exp (N : V →L[ℂ] V) : spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
-  have := FiniteDimensional.complete ℂ V
-  refine subset_antisymm (fun z hz ↦ ?_)
-    (Set.image_subset_iff.mpr fun μ hμ ↦ spectrum.exp_mem_exp N hμ)
-  rcases subsingleton_or_nontrivial V with hV | hV
-  · simp [spectrum.of_subsingleton] at hz
-  obtain ⟨P, hP⟩ := TauCeti.exists_aeval_eq_exp (𝕜 := ℂ) N
-  rw [← hP, spectrum.map_polynomial_aeval_of_nonempty _ _ (spectrum.nonempty N)] at hz
-  obtain ⟨μ, hμ, rfl⟩ := hz
-  refine ⟨μ, hμ, ?_⟩
-  rw [ContinuousLinearMap.spectrum_eq, ← Module.End.hasEigenvalue_iff_mem_spectrum] at hμ
-  obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
-  -- `P (N)` acts on the eigenvector `v` by `P (μ)`, and `exp N` by `exp μ`.
-  let φ : (V →L[ℂ] V) →ₐ[ℂ] Module.End ℂ V :=
-    { toLinearMapRingHom with commutes' := fun _ ↦ rfl }
-  have hφ : aeval (N : Module.End ℂ V) P = (aeval N P : V →ₗ[ℂ] V) := aeval_algHom_apply φ N P
-  have h := Module.End.aeval_apply_of_hasEigenvector (p := P) hv
-  rw [hφ, ContinuousLinearMap.coe_coe, hP,
-    exp_apply_of_apply_eq_smul N (Module.End.mem_eigenspace_iff.mp hv.1)] at h
-  exact smul_left_injective ℂ hv.2 h
 
 /-- **Exponential decay for complex operators.** Let `T` be an operator on a finite-dimensional
 complex normed space, annihilated by a polynomial `q` all of whose roots have negative real part,
@@ -257,8 +229,12 @@ private theorem exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero {A P : E →L
     have h1 : B + 1 = P * (A + 1) := by
       rw [hB, mul_add, mul_one, ← hAP.eq]
       abel
-    rw [map_mul, map_add, aeval_X, map_one, h1, ← mul_assoc,
-      TauCeti.aeval_mul_eq_aeval_mul_of_mul_eq hBP hAP p, hp, zero_mul]
+    -- `P` semiconjugates `A` to `B`, so `p(B) P = P p(A) = p(A) P`.
+    have hsc : SemiconjBy P A B := hAP.eq.symm.trans hBP.symm
+    have hpBP : aeval B p * P = aeval A p * P := by
+      rw [aeval_eq_smeval, aeval_eq_smeval, ← (hsc.smeval_right p).eq,
+        (hAP.symm.smeval_right p).eq]
+    rw [map_mul, map_add, aeval_X, map_one, h1, ← mul_assoc, hpBP, hp, zero_mul]
   have hqroots (z : ℂ) (hz : aeval z (p * (X + 1)) = 0) : z.re < 0 := by
     rw [map_mul, map_add, aeval_X, map_one, mul_eq_zero] at hz
     rcases hz with hz | hz
@@ -268,9 +244,10 @@ private theorem exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero {A P : E →L
   obtain ⟨K, α, hK, hα, h⟩ := B.exists_norm_exp_smul_le_of_aeval_eq_zero hq hqroots
   refine ⟨K * (‖P‖ + 1), α, by positivity, hα, fun t ht v ↦ ?_⟩
   let +nondep : NormedAlgebra ℚ (E →L[ℝ] E) := .restrictScalars ℚ ℝ _
-  have hexp : exp (t • A) * P = exp (t • B) * P :=
-    TauCeti.exp_mul_eq_exp_mul_of_mul_eq (by rw [smul_mul_assoc, smul_mul_assoc, hBP])
-      (hBc.smul_left t)
+  have hexp : exp (t • A) * P = exp (t • B) * P := by
+    have hsc : SemiconjBy P (t • B) (t • A) :=
+      (hBc.smul_left t).eq.symm.trans (by rw [smul_mul_assoc, smul_mul_assoc, hBP])
+    rw [← hsc.exp_right.eq, (hBc.smul_left t).exp_left.eq]
   calc ‖exp (t • A) (P v)‖ = ‖exp (t • B) (P v)‖ := by
         rw [← mul_apply_eq_comp, hexp, mul_apply_eq_comp]
     _ ≤ ‖exp (t • B)‖ * ‖P v‖ := le_opNorm _ _
@@ -305,7 +282,7 @@ theorem exists_exponentialDichotomy_of_aeval_eq_zero (A : E →L[ℝ] E) {p : �
         hvanish]
     rw [mul_sub, mul_one, sub_eq_zero] at h0
     exact h0.symm
-  have hAP : Commute A P := TauCeti.commute_aeval A _
+  have hAP : Commute A P := by simpa only [aeval_X] using (Commute.all X (b * pu)).map (aeval A)
   -- The forward bound on the range of `P`, where `pₛ(A)` vanishes.
   obtain ⟨K₁, α₁, hK₁, hα₁, h₁⟩ := exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero hP hAP
     (p := ps) (by rw [hPdef, ← map_mul, show ps * (b * pu) = b * p by rw [← hmul]; ring,
