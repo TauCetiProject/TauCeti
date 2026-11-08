@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Prevertex
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
+import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
@@ -79,30 +80,6 @@ private theorem arg_sub_mem_Icc_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → �
       (Ioo_subset_Icc_self (hsector_open y hy))
   simpa only [htarget.closure_eq, mem_ofPred_eq] using hmem
 
-/-- The straightened coordinate `I * (f - w) ^ (1 / β)` is continuous on the closed upper part. -/
-private theorem continuousOn_I_mul_cpow_inv_sub {Ω : Set ℂ} {f : ℂ → ℂ} {x : ℝ} {w : ℂ}
-    {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2) (hfcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    (hfx : f x = w)
-    (hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0)
-    (hsector_closed : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
-      (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
-    ContinuousOn (fun z => I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-  intro z hz
-  have hbase : 0 ≤ (f z - w).re ∨ (f z - w).im ≠ 0 := by
-    rcases eq_or_ne z (x : ℂ) with rfl | hzx
-    · simp [hfx]
-    · have hslit : f z - w ∈ slitPlane := Complex.mem_slitPlane_iff_arg.mpr
-        ⟨ne_of_lt ((hsector_closed z hz).2.trans_lt (pi_mul_div_two_lt_pi hβ.2)),
-          hq_ne z hz hzx⟩
-      exact (Complex.mem_slitPlane_iff.mp hslit).imp le_of_lt id
-  have hqcont : ContinuousWithinAt (fun y => f y - w)
-      (Ω ∩ {z : ℂ | 0 ≤ z.im}) z := (hfcont z hz).sub continuousWithinAt_const
-  have hpowcont : ContinuousAt (fun q : ℂ => q ^ ((β⁻¹ : ℝ) : ℂ)) (f z - w) :=
-    Complex.continuousAt_cpow_const_of_re_pos hbase (by
-      simpa only [ofReal_re] using inv_pos.mpr hβ.1)
-  exact continuousWithinAt_const.mul
-    (hpowcont.comp_continuousWithinAt (f := fun y => f y - w) hqcont)
-
 /-- A point of the open upper part lies in the closed upper part, and is not the corner. -/
 private theorem mem_closed_and_ne_of_mem_upper {Ω : Set ℂ} {f : ℂ → ℂ} {x : ℝ} {w : ℂ}
     (hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0) {z : ℂ}
@@ -111,45 +88,6 @@ private theorem mem_closed_and_ne_of_mem_upper {Ω : Set ℂ} {f : ℂ → ℂ} 
   have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
     ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
   exact ⟨hzclosed, hq_ne z hzclosed fun h => by simpa [h] using hz.2⟩
-
-/-- The straightened coordinate `I * (f - w) ^ (1 / β)` is holomorphic on the open upper part. -/
-private theorem differentiableOn_I_mul_cpow_inv_sub {Ω : Set ℂ} {f : ℂ → ℂ} {x : ℝ} {w : ℂ}
-    {β : ℝ} (hβ : β < 2) (hfd : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
-    (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
-      (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2))
-    (hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0) :
-    DifferentiableOn ℂ (fun z => I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ))
-      (Ω ∩ {z : ℂ | 0 < z.im}) := fun z hz => by
-  have hslit : f z - w ∈ slitPlane := Complex.mem_slitPlane_iff_arg.mpr
-    ⟨ne_of_lt ((hsector_open z hz).2.trans (pi_mul_div_two_lt_pi hβ)),
-      (mem_closed_and_ne_of_mem_upper hq_ne hz).2⟩
-  exact ((hfd z hz).sub_const w).cpow_const hslit |>.const_mul I
-
-/-- The straightened coordinate `I * (f - w) ^ (1 / β)` maps the open upper part into the upper
-half-plane. -/
-private theorem mapsTo_I_mul_cpow_inv_sub_upper {Ω : Set ℂ} {f : ℂ → ℂ} {x : ℝ} {w : ℂ} {β : ℝ}
-    (hβ : 0 < β)
-    (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
-      (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2))
-    (hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0) :
-    MapsTo (fun z => I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im})
-      {z : ℂ | 0 < z.im} := fun z hz => by
-  have hpos := cpow_inv_re_pos_of_arg_mem_sector hβ
-    (mem_closed_and_ne_of_mem_upper hq_ne hz).2 (hsector_open z hz)
-  simpa only [mem_ofPred_eq, mul_im, I_re, I_im, zero_mul, one_mul, zero_add] using hpos
-
-/-- The straightened coordinate `I * (f - w) ^ (1 / β)` is injective on the closed upper part. -/
-private theorem injOn_I_mul_cpow_inv_sub {Ω : Set ℂ} {f : ℂ → ℂ} {w : ℂ} {β : ℝ}
-    (hfinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    (hrecover : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
-      ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w) :
-    InjOn (fun z => I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 ≤ z.im}) :=
-  fun z hz y hy hzy => by
-  have hroot : (f z - w) ^ ((β⁻¹ : ℝ) : ℂ) = (f y - w) ^ ((β⁻¹ : ℝ) : ℂ) :=
-    mul_left_cancel₀ I_ne_zero hzy
-  have hpow := congrArg (fun q : ℂ => q ^ (β : ℂ)) hroot
-  rw [hrecover z hz, hrecover y hy] at hpow
-  exact hfinj hz hy (sub_left_inj.mp hpow)
 
 /-- **Power-map straightening of a conformal corner.**  Let `f` be continuous and injective on
 the closed upper part of a conjugation-symmetric neighbourhood `Ω`, holomorphic on its open upper
@@ -181,14 +119,23 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
   have hsector_closed := fun z (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) =>
     arg_sub_mem_Icc_of_arg_mem_sector hΩopen hβ hfcont hsector_open hz
   have hrecover : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
-      ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := fun z hz =>
-    cpow_inv_cpow_of_arg_mem_Ioc hβ.1 (Icc_subset_Ioc
-      (by linarith [mul_pos Real.pi_pos hβ.1, pi_mul_div_two_lt_pi hβ.2])
-      (by linarith [mul_pos Real.pi_pos hβ.1, pi_mul_div_two_lt_pi hβ.2]) (hsector_closed z hz))
-  have hgcont := continuousOn_I_mul_cpow_inv_sub hβ hfcont hfx hq_ne hsector_closed
-  have hgd := differentiableOn_I_mul_cpow_inv_sub hβ.2 hfd hsector_open hq_ne
-  have hgupper := mapsTo_I_mul_cpow_inv_sub_upper hβ.1 hsector_open hq_ne
-  have hginj := injOn_I_mul_cpow_inv_sub hfinj hrecover
+      ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := fun z hz => by
+    refine cpow_inv_cpow_of_arg_mem_Ioc hβ.1 (Icc_subset_Ioc ?_ ?_ (hsector_closed z hz)) <;>
+      linarith [mul_pos Real.pi_pos hβ.1, pi_mul_div_two_lt_pi hβ.2]
+  -- The shared straightening of a corner, applied to the translated map `f - w`.
+  obtain ⟨hgcont, hgd, hgupper⟩ := straighten_sector (f := fun z => f z - w) hβ
+    (hfcont.sub continuousOn_const) (hfd.sub_const w)
+    (fun z hz hzim => (mem_closed_and_ne_of_mem_upper hq_ne ⟨hz, hzim⟩).2)
+    (fun z hz hzim => by
+      have := hsector_open z ⟨hz, hzim⟩
+      rw [abs_lt]
+      constructor <;> linarith [this.1, this.2])
+    (fun z hz => by
+      have := hsector_closed z hz
+      rw [abs_le]
+      constructor <;> linarith [this.1, this.2])
+  have hginj := injOn_I_mul_cpow_inv (f := fun z => f z - w)
+    (fun z hz y hy hzy => hfinj hz hy (sub_left_inj.mp hzy)) hrecover
   have hGd := differentiableOn_schwarzReflection_of_symmetric hΩopen hΩconj hgcont hgd hreal
   have hG_eq_g {z : ℂ} (hz : 0 ≤ z.im) : schwarzReflection g z = g z :=
     schwarzReflection_of_im_nonneg (f := g) hz
@@ -199,14 +146,15 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
   let h : ℂ → ℂ := fun z => -I * schwarzReflection g z
   have hhd : DifferentiableOn ℂ h Ω := hGd.const_mul (-I)
   have hhx : h x = 0 := by
-    change -I * schwarzReflection g x = 0
+    dsimp only [h]
     rw [hGx, mul_zero]
   have hdh : deriv h x ≠ 0 := by
-    rw [show h = fun z => -I * schwarzReflection g z from rfl, deriv_const_mul_field]
+    dsimp only [h]
+    rw [deriv_const_mul_field]
     exact mul_ne_zero (neg_ne_zero.mpr I_ne_zero) hGderiv
   have hhroot {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 < z.im}) :
       h z = (f z - w) ^ ((β⁻¹ : ℝ) : ℂ) := by
-    change -I * schwarzReflection g z = _
+    dsimp only [h]
     rw [hG_eq_g hz.2.le]
     simp [g, ← mul_assoc]
   refine ⟨h, hhd, hhx, hdh, fun z hz => ?_, fun z hz => ?_⟩

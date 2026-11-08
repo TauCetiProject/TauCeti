@@ -59,31 +59,28 @@ private theorem abs_arg_le_of_sector {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ}
     · exact (hrays z hz.1 hzero.symm hfz).le
 
 /-- **Straightening a corner.**  For a map `f` into the sector of opening `β * π`, with
-`0 < β < 2`, nonzero on the open upper part and with its nonzero boundary values on the two
-bounding rays, the power coordinate `I * f ^ (1 / β)` is continuous on the closed upper part,
-holomorphic on the open upper part, real on the axis, and carries the open upper part into the
+`0 < β < 2`, nonzero and strictly inside the sector on the open upper part, and in the closed
+sector on the closed upper part, the power coordinate `I * f ^ (1 / β)` is continuous on the
+closed upper part, holomorphic on the open upper part, and carries the open upper part into the
 upper half-plane. -/
-private theorem straighten_sector {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2)
+theorem straighten_sector {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hβ : β ∈ Ioo (0 : ℝ) 2)
     (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
     (hne : ∀ z ∈ Ω, 0 < z.im → f z ≠ 0)
     (hsector : ∀ z ∈ Ω, 0 < z.im → |(f z).arg| < β * Real.pi / 2)
-    (hrays : ∀ z ∈ Ω, z.im = 0 → f z ≠ 0 → |(f z).arg| = β * Real.pi / 2) :
+    (hbound : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, |(f z).arg| ≤ β * Real.pi / 2) :
     ContinuousOn (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 ≤ z.im}) ∧
       DifferentiableOn ℂ (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im}) ∧
-      (∀ z ∈ Ω, z.im = 0 → (I * f z ^ ((β⁻¹ : ℝ) : ℂ)).im = 0) ∧
       MapsTo (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im})
         {z : ℂ | 0 < z.im} := by
-  have hβc : (β : ℂ) ≠ 0 := ofReal_ne_zero.mpr hβ.1.ne'
   have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ.1
   have hangle : β * Real.pi / 2 < Real.pi := by nlinarith [Real.pi_pos, hβ.2]
-  have hbound := abs_arg_le_of_sector hβ.1 hsector hrays
   have hslit : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, f z ≠ 0 → f z ∈ slitPlane := by
     intro z hz hfz
     refine mem_slitPlane_iff_arg.mpr ⟨?_, hfz⟩
     have := (le_abs_self (f z).arg).trans (hbound z hz) |>.trans_lt hangle
     exact this.ne
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   -- The root is continuous even at the vertex and holomorphic away from it.
   · intro z hz
     have hc : ContinuousAt (fun w : ℂ => w ^ ((β⁻¹ : ℝ) : ℂ)) (f z) := by
@@ -96,15 +93,7 @@ private theorem straighten_sector {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (h
   · intro z hz
     have hz0 : 0 < z.im := hz.2
     exact ((hholo z hz).cpow_const (hslit z ⟨hz.1, hz0.le⟩ (hne z hz.1 hz0))).const_mul I
-  -- The two rays become the real axis; the strict sector interior becomes the upper half-plane.
-  · intro z hz hzim
-    by_cases hfz : f z = 0
-    · simp [hfz, hβc]
-    · have heq : |(f z).arg * β⁻¹| = Real.pi / 2 := by
-        rw [abs_mul, abs_of_pos hβinv, hrays z hz hzim hfz]
-        field_simp [hβ.1.ne']
-      simp only [I_mul_im, cpow_ofReal_re]
-      rw [← Real.cos_abs, heq, Real.cos_pi_div_two, mul_zero]
+  -- The strict sector interior becomes the upper half-plane.
   · intro z hz
     have hb : |(f z).arg * β⁻¹| < Real.pi / 2 := by
       rw [← div_eq_mul_inv, abs_div, abs_of_pos hβ.1, div_lt_iff₀ hβ.1]
@@ -113,6 +102,28 @@ private theorem straighten_sector {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (h
     have hpos := mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr (hne z hz.1 hz.2)) β⁻¹)
       (Real.cos_pos_of_mem_Ioo ⟨hl, hu⟩)
     simpa only [mem_ofPred_eq, I_mul_im, cpow_ofReal_re] using hpos
+
+/-- The two bounding rays of the sector become the real axis under the power coordinate
+`I * f ^ (1 / β)`. -/
+private theorem straighten_sector_real {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hβ : 0 < β)
+    (hrays : ∀ z ∈ Ω, z.im = 0 → f z ≠ 0 → |(f z).arg| = β * Real.pi / 2) :
+    ∀ z ∈ Ω, z.im = 0 → (I * f z ^ ((β⁻¹ : ℝ) : ℂ)).im = 0 := by
+  intro z hz hzim
+  by_cases hfz : f z = 0
+  · simp [hfz, ofReal_ne_zero.mpr hβ.ne']
+  · have heq : |(f z).arg * β⁻¹| = Real.pi / 2 := by
+      rw [abs_mul, abs_of_pos (inv_pos.mpr hβ), hrays z hz hzim hfz]
+      field_simp [hβ.ne']
+    simp only [I_mul_im, cpow_ofReal_re]
+    rw [← Real.cos_abs, heq, Real.cos_pi_div_two, mul_zero]
+
+/-- The power coordinate `I * f ^ (1 / β)` is injective on a set where `f` is injective and the
+principal `β`-th root of `f` can be recovered by the `β`-th power. -/
+theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : InjOn f S)
+    (hrecover : ∀ z ∈ S, (f z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z) :
+    InjOn (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) S := fun z hz w hw hzw => by
+  have hp : f z ^ ((β⁻¹ : ℝ) : ℂ) = f w ^ ((β⁻¹ : ℝ) : ℂ) := mul_left_cancel₀ I_ne_zero hzw
+  exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
 
 /-- **Power coordinate at a corner.** Suppose `f` is continuous and injective on the closed
 upper part of a symmetric open set, holomorphic on its open upper part, and takes a real point
@@ -143,18 +154,16 @@ theorem exists_differentiableOn_injOn_cpow_eq_of_sector
     have hzx := hinj ⟨hz, hzim.le⟩ ⟨hx, by simp⟩ (hfz.trans hfx.symm)
     simp [hzx] at hzim
   let g : ℂ → ℂ := fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)
-  obtain ⟨hgcont, hgholo, hgreal, hgupper⟩ := straighten_sector hβ hcont hholo hne hsector hrays
+  obtain ⟨hgcont, hgholo, hgupper⟩ :=
+    straighten_sector hβ hcont hholo hne hsector (abs_arg_le_of_sector hβ.1 hsector hrays)
+  have hgreal := straighten_sector_real hβ.1 hrays
   have hpow : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
       (f z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z := by
     intro z hz
     have harg := abs_le.mp (abs_arg_le_of_sector hβ.1 hsector hrays z hz)
     have hπβ := mul_pos Real.pi_pos hβ.1
     exact cpow_inv_cpow_of_arg_mem_Ioc hβ.1 ⟨by linarith [harg.1], by linarith [harg.2]⟩
-  have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-    intro z hz w hw hzw
-    have hp : f z ^ ((β⁻¹ : ℝ) : ℂ) = f w ^ ((β⁻¹ : ℝ) : ℂ) :=
-      mul_left_cancel₀ I_ne_zero hzw
-    exact hinj hz hw (by rw [← hpow z hz, ← hpow w hw, hp])
+  have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := injOn_I_mul_cpow_inv hinj hpow
   -- Reflect the straightened map, then undo its quarter-turn.
   obtain ⟨F, hd, hi, hF, hconj⟩ :=
     exists_differentiableOn_injOn_eqOn_conj_of_symmetric
@@ -195,7 +204,9 @@ theorem eventually_ne_zero_of_sector {f : ℂ → ℂ} {x r β : ℝ} (hβ : β 
       |(f z).arg| = β * Real.pi / 2) :
     ∀ᶠ z in 𝓝[{z : ℂ | 0 ≤ z.im} \ {(x : ℂ)}] (x : ℂ), f z ≠ 0 := by
   -- the straightened map is real on the diameter, so its zeros there are isolated
-  obtain ⟨hgc, hgd, hgr, hgu⟩ := straighten_sector hβ hcont hholo hne hsector hrays
+  obtain ⟨hgc, hgd, hgu⟩ :=
+    straighten_sector hβ hcont hholo hne hsector (abs_arg_le_of_sector hβ.1 hsector hrays)
+  have hgr := straighten_sector_real hβ.1 hrays
   have hgne : ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → I * f z ^ ((β⁻¹ : ℝ) : ℂ) ≠ 0 := by
     intro z hz hzH h
     have him : 0 < (I * f z ^ ((β⁻¹ : ℝ) : ℂ)).im := hgu ⟨hz, hzH⟩
