@@ -55,7 +55,7 @@ variable {C : Type u} [Category.{v} C] {S : C} (P : (Over S)ᵒᵖ ⥤ Type w)
 
 /-- For `h = h'`, transporting `s ∈ P (T, h')` along the identity of `T`, viewed as a morphism
 `(T, h) ⟶ (T, h')` over `S`, does not change the pair `⟨h', s⟩`. -/
-lemma sigma_mk_map_homMk_id {T : C} {h h' : T ⟶ S} (e : h = h') (s : P.obj (op (mk h'))) :
+private lemma sigma_mk_map_homMk_id {T : C} {h h' : T ⟶ S} (e : h = h') (s : P.obj (op (mk h'))) :
     (⟨h, P.map (homMk (𝟙 T) (by simp [e]) : mk h ⟶ mk h').op s⟩ :
       Σ k : T ⟶ S, P.obj (op (mk k))) = ⟨h', s⟩ := by
   subst e
@@ -64,6 +64,7 @@ lemma sigma_mk_map_homMk_id {T : C} {h h' : T ⟶ S} (e : h = h') (s : P.obj (op
 
 /-- The presheaf `T ↦ Σ (h : T ⟶ S), P (T, h)` on `C` attached to a presheaf of types `P` on
 `Over S`: a morphism `g : T' ⟶ T` sends `⟨h, s⟩` to `⟨g ≫ h, g^* s⟩`. -/
+-- Exposed so that consumers can use sigma pairs and their projections in the object types.
 @[expose, simps obj]
 def sigmaPresheaf : Cᵒᵖ ⥤ Type (max v w) where
   obj T := Σ h : T.unop ⟶ S, P.obj (op (mk h))
@@ -83,8 +84,16 @@ def sigmaPresheaf : Cᵒᵖ ⥤ Type (max v w) where
 
 variable {P}
 
+/-- Restricting a pair along `g` composes its structure morphism with `g.unop` and restricts
+its section along the resulting morphism over `S`. -/
+lemma sigmaPresheaf_map {T T' : Cᵒᵖ} (g : T ⟶ T') (h : T.unop ⟶ S)
+    (s : P.obj (op (mk h))) :
+    (sigmaPresheaf P).map g ⟨h, s⟩ =
+      ⟨g.unop ≫ h, P.map (homMk g.unop rfl : mk (g.unop ≫ h) ⟶ mk h).op s⟩ := (rfl)
+
 /-- Restricting the pair `⟨Y.hom, s⟩` along the underlying morphism of `f : Z ⟶ Y` over `S`
 gives the pair `⟨Z.hom, f^* s⟩`. -/
+@[simp]
 lemma sigmaPresheaf_map_left_mk {Y Z : Over S} (f : Z ⟶ Y) (s : P.obj (op Y)) :
     (sigmaPresheaf P).map f.left.op ⟨Y.hom, s⟩ = ⟨Z.hom, P.map f.op s⟩ := by
   refine (sigma_mk_map_homMk_id P (Over.w f).symm
@@ -92,11 +101,6 @@ lemma sigmaPresheaf_map_left_mk {Y Z : Over S} (f : Z ⟶ Y) (s : P.obj (op Y)) 
   refine congrArg (Sigma.mk _) ?_
   rw [← Functor.map_comp_apply, ← op_comp]
   exact congrArg (fun g ↦ P.map g s) (congrArg Quiver.Hom.op (by ext; simp))
-
-/-- Pairs over the same structure morphism are equal exactly when their elements are. -/
-private lemma sigmaPresheaf_mk_eq_mk_iff {Y : Over S} {s t : P.obj (op Y)} :
-    (⟨Y.hom, s⟩ : (sigmaPresheaf P).obj (op Y.left)) = ⟨Y.hom, t⟩ ↔ s = t :=
-  ⟨fun h ↦ eq_of_heq (Sigma.mk.inj h).2, fun h ↦ h ▸ rfl⟩
 
 /-- **Sheaves on `Over S` give sheaves on `C`.** If `S` is a sheaf for a sieve `R` on `T` and
 `P` is a sheaf for the corresponding sieve on `(T, h)` for every `h : T ⟶ S`, then
@@ -119,21 +123,24 @@ theorem isSheafFor_sigmaPresheaf {T : C} (R : Sieve T)
       fun f hf ↦ sigma_mk_map_homMk_id P ((hfst _ hf).trans (Over.w f)).symm _⟩
   have hzc : z.Compatible := by
     intro Z₁ Z₂ W g₁ g₂ f₁ f₂ h₁ h₂ e
-    refine sigmaPresheaf_mk_eq_mk_iff.mp ?_
+    refine sigma_mk_injective (β := fun k : W.left ⟶ S ↦ P.obj (op (mk k))) ?_
     rw [← sigmaPresheaf_map_left_mk g₁, ← sigmaPresheaf_map_left_mk g₂, hz, hz]
     exact hx g₁.left g₂.left h₁ h₂ (by simpa using congrArg CommaMorphism.left e)
   obtain ⟨t, ht, -⟩ := hP h z hzc
   have hamalg : x.IsAmalgamation ⟨h, t⟩ := by
     intro Z g hg
-    have hg' : ((Sieve.overEquiv (mk h)).symm R).arrows (homMk g rfl : mk (g ≫ h) ⟶ mk h) := hg
+    have hg' : ((Sieve.overEquiv (mk h)).symm R).arrows
+        (homMk g rfl : mk (g ≫ h) ⟶ mk h) :=
+      (Sieve.overEquiv_symm_iff R (homMk g rfl : mk (g ≫ h) ⟶ mk h)).mpr hg
     exact (sigmaPresheaf_map_left_mk (homMk g rfl : mk (g ≫ h) ⟶ mk h) t).trans
-      ((sigmaPresheaf_mk_eq_mk_iff.mpr (ht _ hg')).trans (hz _ hg'))
+      ((congrArg (Sigma.mk (β := fun k : Z ⟶ S ↦ P.obj (op (mk k))) _)
+        (ht _ hg')).trans (hz _ hg'))
   refine ⟨⟨h, t⟩, hamalg, fun ⟨h', t'⟩ ht' ↦ ?_⟩
   -- A second amalgamation `⟨h', t'⟩` has `h' = h`, and then `t'` amalgamates `z`.
   obtain rfl : h = h' := hS.isSeparatedFor.ext fun Z g hg ↦
     ((congrArg Sigma.fst (ht' g hg)).trans (hfst g hg)).symm
   refine congrArg (Sigma.mk _) ((hP h).isSeparatedFor.ext fun Z f hf ↦ ?_)
-  refine sigmaPresheaf_mk_eq_mk_iff.mp ?_
+  refine sigma_mk_injective (β := fun k : Z.left ⟶ S ↦ P.obj (op (mk k))) ?_
   rw [← sigmaPresheaf_map_left_mk, ← sigmaPresheaf_map_left_mk]
   exact (ht' f.left hf).trans (hamalg f.left hf).symm
 
@@ -173,12 +180,14 @@ theorem isSheafFor_of_isSheafFor_sigmaPresheaf {Y : Over S} (R : Sieve Y)
   -- The amalgamation lies over `Y.hom`, since `S` is separated.
   obtain rfl : h = Y.hom := hS.ext fun Z g hg ↦ congrArg Sigma.fst (ht g hg)
   refine ⟨t, fun Z f hf ↦ ?_, fun t' ht' ↦ ?_⟩
-  · refine sigmaPresheaf_mk_eq_mk_iff.mp ?_
+  · refine sigma_mk_injective (β := fun k : Z.left ⟶ S ↦ P.obj (op (mk k))) ?_
     rw [← sigmaPresheaf_map_left_mk, ← hx' f hf]
     exact ht _ (Sieve.image_mem_functorPushforward _ R hf)
-  · refine sigmaPresheaf_mk_eq_mk_iff.mp (huniq ⟨Y.hom, t'⟩ fun Z g hg ↦ ?_)
+  · refine sigma_mk_injective (β := fun k : Y.left ⟶ S ↦ P.obj (op (mk k)))
+      (huniq ⟨Y.hom, t'⟩ fun Z g hg ↦ ?_)
     exact (sigmaPresheaf_map_left_mk (homMk g rfl : mk (g ≫ Y.hom) ⟶ Y) t').trans
-      (sigmaPresheaf_mk_eq_mk_iff.mpr (ht' _ ((Sieve.overEquiv_iff R g).mp hg)))
+      (congrArg (Sigma.mk (β := fun k : Z ⟶ S ↦ P.obj (op (mk k))) _)
+        (ht' _ ((Sieve.overEquiv_iff R g).mp hg)))
 
 /-- **Sheaves on `Over S` are sheaves on `C`.** If `S` is a sheaf for a topology `J` on `C`, then
 a presheaf of types `P` on `Over S` is a sheaf for the induced topology `J.over S` if and only if
