@@ -79,9 +79,9 @@ private theorem subst_subst_left {G : MvPowerSeries (Fin 2) A}
     hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
   have hc : constantCoeff (G.subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1]) = 0 :=
     constantCoeff_subst_eq_zero h01 (fun s ↦ by fin_cases s <;> simp) hG0
-  rw [subst_X_add_X_add_eq hG h01 h01 (by simp) (by simp),
+  rw [subst_X_add_X_add_eq hG (u' := X 0) (v' := X 1) h01 (by simp) (by simp),
     subst_X_add_X_add_eq hG (u := X 0 + X 1) (v := X 2)
-      (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [hc])
+      (u' := X 0 + X 1 + G.subst ![X 0, X 1]) (v' := X 2)
       (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp)
       (fun e ↦ by simpa using coeff_subst_mem_span h01 e) (by simp)]
   ring
@@ -97,9 +97,9 @@ private theorem subst_subst_right {G : MvPowerSeries (Fin 2) A}
     hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
   have hc : constantCoeff (G.subst ![(X 1 : MvPowerSeries (Fin 3) A), X 2]) = 0 :=
     constantCoeff_subst_eq_zero h12 (fun s ↦ by fin_cases s <;> simp) hG0
-  rw [subst_X_add_X_add_eq hG h12 h12 (by simp) (by simp),
+  rw [subst_X_add_X_add_eq hG (u' := X 1) (v' := X 2) h12 (by simp) (by simp),
     subst_X_add_X_add_eq hG (u := X 0) (v := X 1 + X 2)
-      (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [hc])
+      (u' := X 0) (v' := X 1 + X 2 + G.subst ![X 1, X 2])
       (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp)
       (by simp) (fun e ↦ by simpa using coeff_subst_mem_span h12 e)]
   ring
