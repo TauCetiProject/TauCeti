@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.Log
 
 /-!
 # Real part of the complex winding normalization
@@ -31,6 +32,6 @@ theorem re_inv_two_pi_I_mul (w : ℂ) :
 /-- Integer multiples of `2πi` determine their integer. -/
 theorem intCast_mul_two_pi_I_injective :
     Function.Injective fun n : ℤ ↦ (n : ℂ) * (2 * Real.pi * I) := fun _ _ h ↦
-  Int.cast_injective (mul_right_cancel₀ (by simp [Real.pi_ne_zero, I_ne_zero]) h)
+  Int.cast_injective (mul_right_cancel₀ two_pi_I_ne_zero h)
 
 end Complex

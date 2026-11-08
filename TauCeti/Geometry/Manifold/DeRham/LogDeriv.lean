@@ -7,10 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.HomologyPeriod
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
--- Private: the endpoint-ratio identity of winding numbers and the injectivity of integer
--- multiples of `2πi` are used only inside proofs.
+-- Private: the endpoint-ratio identity of winding numbers, the injectivity of integer
+-- multiples of `2πi` and the base points of path components are used only inside proofs.
 import TauCeti.Analysis.Complex.WindingNormalization
 import TauCeti.Analysis.Contour.Winding.EndpointRatio
+import TauCeti.Topology.Connected.PathConnected
 
 /-!
 # Periods of logarithmic derivatives
@@ -351,10 +352,8 @@ private theorem homologyPeriodHom_mlogDeriv_eq_zero_of_eq_exp {u : C^∞⟮I, M;
     funext x
     rw [funext hug]
     exact mlogDeriv_exp ((hg x).mdifferentiableAt (by simp))
-  refine homology_one_addMonoidHom_ext fun c ↦ ?_
-  rw [hdlog, homologyPeriodHom_H₁AddEquivHomology_mk, AddMonoidHom.zero_apply,
-    chainsDesc_pathClassIntegral_mextDeriv hψ, LinearMap.comp_apply, mem_cycles₁_iff.1 c.2,
-    map_zero]
+  rw [hdlog]
+  exact homologyPeriodHom_mextDeriv hψ
 
 /-- A smooth circle-valued map whose `dlog` has vanishing periods is `exp (i f)` for a smooth real
 function `f`. -/
@@ -430,8 +429,7 @@ theorem exists_mlogDeriv_eq_of_homologyPeriodHom_eq_int_mul {r : ℕ∞} (hr : 1
     rw [homologyPeriodHom_loopClass, Path.Homotopic.Quotient.mk_trans,
       Path.Homotopic.Quotient.mk_symm, pathClassIntegral_trans, pathClassIntegral_symm] at hn
     exact exp_eq_exp_iff_exists_int.mpr ⟨n, by rw [← hn]; ring⟩
-  let b (y : M) : M := (Quotient.mk (pathSetoid M) y).out
-  have hb (y : M) : Joined (b y) y := Quotient.mk_out (s := pathSetoid M) y
+  obtain ⟨b, hb, hbj⟩ := exists_pathComponent_representative (X := M)
   set f : M → ℂ := fun y ↦ pathClassIntegral φ (.mk (hb y).somePath)
   -- Near each point `x`, `exp ∘ f` is a constant multiple of `exp g` for a local primitive `g`.
   have hloc (x : M) : ∃ g : M → ℂ, ContMDiff I 𝓘(ℝ, ℂ) r g ∧
@@ -441,10 +439,8 @@ theorem exists_mlogDeriv_eq_of_homologyPeriodHom_eq_int_mul {r : ℕ∞} (hr : 1
     refine ⟨g, hg, ?_, hgU.mextDeriv_eq x hxU⟩
     filter_upwards [hgU.eventually_exists_path_pathClassIntegral_eq_sub hφ₁ hclosed hxU]
       with y ⟨γ, hγ⟩
-    have hbxy : b y = b x :=
-      (congrArg Quotient.out (Quotient.sound (s := pathSetoid M) ⟨γ⟩)).symm
-    rw [hpath hbxy (hb y).somePath ((hb x).somePath.trans γ), Path.Homotopic.Quotient.mk_trans,
-      pathClassIntegral_trans, hγ, ← exp_add]
+    rw [hpath (hbj ⟨γ⟩).symm (hb y).somePath ((hb x).somePath.trans γ),
+      Path.Homotopic.Quotient.mk_trans, pathClassIntegral_trans, hγ, ← exp_add]
     congr 1
     ring
   refine ⟨fun y ↦ exp (f y), fun x ↦ ?_, fun x ↦ exp_ne_zero _, fun x ↦ ⟨b x, hb x, ?_⟩,
@@ -452,10 +448,9 @@ theorem exists_mlogDeriv_eq_of_homologyPeriodHom_eq_int_mul {r : ℕ∞} (hr : 1
   · obtain ⟨g, hg, hfg, -⟩ := hloc x
     exact ((contDiff_const.mul Complex.contDiff_exp).contDiffAt.comp_contMDiffAt (hg x))
       |>.congr_of_eventuallyEq hfg
-  · have hbb : b (b x) = b x := congrArg Quotient.out (Quotient.out_eq _)
-    change exp (f (b x)) = 1
-    rw [hpath hbb _ (Path.refl (b x)), Path.Homotopic.Quotient.mk_refl, pathClassIntegral_refl,
-      exp_zero]
+  · beta_reduce
+    rw [hpath (hbj (hb x)) _ (Path.refl (b x)), Path.Homotopic.Quotient.mk_refl,
+      pathClassIntegral_refl, exp_zero]
   · obtain ⟨g, hg, hfg, hdg⟩ := hloc x
     rw [mlogDeriv_eq_of_eventuallyEq_mul_exp (exp_ne_zero _)
       ((hg.of_le (by exact_mod_cast hr) x).mdifferentiableAt one_ne_zero) hfg, hdg]

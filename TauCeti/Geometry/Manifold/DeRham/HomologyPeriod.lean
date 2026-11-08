@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Period
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
+import TauCeti.Topology.Connected.PathConnected
 
 /-!
 # Periods of closed `1`-forms on the first singular homology group
@@ -40,6 +41,7 @@ in `Type`.
 * `TauCeti.homologyPeriodHom_homologyπ`: its value on the class of a cycle `Σ nᵢ σᵢ` is
   `Σ nᵢ ∫_{σᵢ} φ`.
 * `TauCeti.homologyPeriodHom_hurewicz₁`: the period of a loop is the value on its Hurewicz class.
+* `TauCeti.homologyPeriodHom_mextDeriv`: exact forms have vanishing periods, for any coefficients.
 * `TauCeti.IsPrimitiveOn.eventually_exists_path_pathClassIntegral_eq_sub`: near a point where a
   closed `1`-form has a primitive `g`, paths from the point integrate the form to the change of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero`: a closed `1`-form whose periods on
@@ -195,15 +197,22 @@ theorem chainsDesc_pathClassIntegral_mextDeriv {ψ : RoughForm I M F 0} (hψ : I
 
 /-! ### Periods of de Rham classes on singular homology -/
 
+/-- **Exact forms have vanishing periods on singular homology.** The periods of the exterior
+derivative of a `C²` function vanish. -/
+theorem homologyPeriodHom_mextDeriv {ψ : RoughForm I M F 0} (hψ : IsSmoothForm I 2 ψ) :
+    homologyPeriodHom (mextDeriv ψ) = 0 := by
+  refine homology_one_addMonoidHom_ext fun c ↦ ?_
+  rw [homologyPeriodHom_H₁AddEquivHomology_mk, AddMonoidHom.zero_apply,
+    chainsDesc_pathClassIntegral_mextDeriv hψ, LinearMap.comp_apply, mem_cycles₁_iff.1 c.2,
+    map_zero]
+
 /-- Exact smooth real `1`-forms have vanishing periods on singular homology. -/
 theorem homologyPeriodHom_eq_zero_of_mem_exactForms {φ : SmoothForm I M ℝ 1}
     (hφ : φ ∈ exactForms I M 1) : homologyPeriodHom (φ : RoughForm I M ℝ 1) = 0 := by
   rw [exactForms_succ, LinearMap.mem_range] at hφ
   obtain ⟨ψ, rfl⟩ := hφ
-  refine homology_one_addMonoidHom_ext fun c ↦ ?_
-  rw [homologyPeriodHom_H₁AddEquivHomology_mk, AddMonoidHom.zero_apply, mextDerivₗ_apply,
-    chainsDesc_pathClassIntegral_mextDeriv (ψ.isSmoothForm.of_le (by simp)), LinearMap.comp_apply,
-    mem_cycles₁_iff.1 c.2, map_zero]
+  rw [mextDerivₗ_apply]
+  exact homologyPeriodHom_mextDeriv (ψ.isSmoothForm.of_le (by simp))
 
 /-- Integrals of a form with vanishing periods on singular homology along two paths with the same
 endpoints agree. -/
@@ -236,8 +245,7 @@ theorem exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero {r : ℕ∞} (hr : 1 �
     ∃ ψ : RoughForm I M F 0, IsSmoothForm I r ψ ∧ mextDeriv ψ = φ := by
   have hφ₁ : IsSmoothForm I 1 φ := hφ.of_le (by exact_mod_cast hr)
   -- The primitive is the integral from a base point chosen in each path component.
-  let b (y : M) : M := (Quotient.mk (pathSetoid M) y).out
-  have hb (y : M) : Joined (b y) y := Quotient.mk_out (s := pathSetoid M) y
+  obtain ⟨b, hb, hbj⟩ := exists_pathComponent_representative (X := M)
   set f : M → F := fun y ↦ pathClassIntegral φ (.mk (hb y).somePath)
   refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
     (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
@@ -246,10 +254,8 @@ theorem exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero {r : ℕ∞} (hr : 1 �
   refine ⟨g, f x - g x, hg.contMDiffAt, ?_, hgU.mextDeriv_eq x hxU⟩
   filter_upwards [hgU.eventually_exists_path_pathClassIntegral_eq_sub hφ₁ hclosed hxU]
     with y ⟨γ, hγ⟩
-  have hbxy : b y = b x :=
-    (congrArg Quotient.out (Quotient.sound (s := pathSetoid M) ⟨γ⟩)).symm
   simp only [f]
-  rw [pathClassIntegral_mk_eq_of_homologyPeriodHom_eq_zero h hbxy (hb y).somePath
+  rw [pathClassIntegral_mk_eq_of_homologyPeriodHom_eq_zero h (hbj ⟨γ⟩).symm (hb y).somePath
       ((hb x).somePath.trans γ), Path.Homotopic.Quotient.mk_trans, pathClassIntegral_trans, hγ]
   abel
 
