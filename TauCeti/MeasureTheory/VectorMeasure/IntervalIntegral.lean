@@ -17,6 +17,12 @@ atom of the variation measure. In particular, for an atomless vector measure, in
 The endpoint condition concerns the variation, not just the value of the vector measure on a
 large set: cancellation does not control the integral. These results apply to signed Stieltjes
 measures and to continuous bilinear pairings with vector-valued integrators.
+
+The proof adapts the dominated-convergence argument of Mathlib's
+`intervalIntegral.continuousWithinAt_primitive` in
+`Mathlib.MeasureTheory.Integral.DominatedConvergence` to vector measures on ordered spaces.
+The finite-horizon result is the vector-measure counterpart of
+`intervalIntegral.continuousOn_primitive` and `intervalIntegral.continuousOn_primitive_Icc`.
 -/
 
 public section

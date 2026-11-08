@@ -50,26 +50,32 @@ variable {α F : Type*} [LinearOrder α] [DenselyOrdered α] [TopologicalSpace �
   [MeasurableSpace α] [BorelSpace α] [NormedAddCommGroup F] [CompleteSpace F]
   {g : α → F}
 
-/-- The variation of the Stieltjes vector measure of a continuous BV function has no atoms. -/
-theorem nullSingletonClass_variation_vectorMeasure (hg : BoundedVariationOn g univ)
-    (hcont : Continuous g) : NullSingletonClass hg.vectorMeasure.variation := by
-  constructor
-  intro x
+/-- The variation of a BV function's Stieltjes vector measure has no atom at a point where
+that function is continuous. -/
+theorem variation_vectorMeasure_singleton_eq_zero_of_continuousAt
+    (hg : BoundedVariationOn g univ) {t : α} (hcont : ContinuousAt g t) :
+    hg.vectorMeasure.variation {t} = 0 := by
   rw [hg.variation_vectorMeasure_singleton,
-    hcont.continuousAt.continuousWithinAt.rightLim_eq,
-    hcont.continuousAt.continuousWithinAt.leftLim_eq]
+    hcont.continuousWithinAt.rightLim_eq, hcont.continuousWithinAt.leftLim_eq]
   simp
 
-/-- An L¹ Stieltjes integrand against a continuous BV path has a continuous accumulated integral
-on the whole closed horizon. The integrand need only be integrable on `(a,b]`, and need not be
-continuous or bounded. The pairing can in particular be real scalar multiplication. -/
+/-- The variation of the Stieltjes vector measure of a continuous BV function has no atoms. -/
+theorem nullSingletonClass_variation_vectorMeasure (hg : BoundedVariationOn g univ)
+    (hcont : Continuous g) : NullSingletonClass hg.vectorMeasure.variation :=
+  ⟨fun _ ↦ hg.variation_vectorMeasure_singleton_eq_zero_of_continuousAt hcont.continuousAt⟩
+
+/-- An L¹ Stieltjes integrand against a BV path continuous at every point of `(a,b]` has a
+continuous accumulated integral on the whole closed horizon. Jumps at `a` or outside the horizon
+are allowed. The integrand need only be integrable on `(a,b]`, and need not be continuous or
+bounded. The pairing can in particular be real scalar multiplication. -/
 theorem continuousOn_setIntegral_Ioc_vectorMeasure [NormedSpace ℝ F]
     {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (hg : BoundedVariationOn g univ) (hcont : Continuous g) {f : α → E} {a b : α}
-    (hf : hg.vectorMeasure.IntegrableOn f (Ioc a b)) (B : E →L[ℝ] F →L[ℝ] G) :
+    (hg : BoundedVariationOn g univ) {a b : α} (hcont : ∀ t ∈ Ioc a b, ContinuousAt g t)
+    {f : α → E} (hf : hg.vectorMeasure.IntegrableOn f (Ioc a b))
+    (B : E →L[ℝ] F →L[ℝ] G) :
     ContinuousOn (fun t ↦ ∫ᵛ x in Ioc a t, f x ∂[B; hg.vectorMeasure]) (Icc a b) := by
-  have := hg.nullSingletonClass_variation_vectorMeasure hcont
-  exact hf.continuousOn_setIntegral_Ioc fun t _ ↦ measure_singleton t
+  exact hf.continuousOn_setIntegral_Ioc fun t ht ↦
+    hg.variation_vectorMeasure_singleton_eq_zero_of_continuousAt (hcont t ht)
 
 end BoundedVariationOn
