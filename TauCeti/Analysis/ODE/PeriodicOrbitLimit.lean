@@ -315,7 +315,6 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral [Complet
     simpa using hb.tendsto 0
   obtain ⟨ψ', hψ', x, hxper, hxcont, hux'⟩ :=
     exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
-      (fun n ↦ continuous_slice_of_continuousOn hu.continuousOn (hφa (N + n)))
       (fun n ↦ hper _ (hφa (N + n))) (fun n ↦ huK _ (hφa (N + n))) hρ hmod
   set ψ : ℕ → ℕ := fun n ↦ N + ψ' n
   have hψ : StrictMono ψ := fun m n h ↦ Nat.add_lt_add_left (hψ' h) N

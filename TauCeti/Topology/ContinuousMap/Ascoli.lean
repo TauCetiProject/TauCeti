@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
 
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import Mathlib.Topology.Instances.AddCircle.Defs
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
 
@@ -199,15 +200,40 @@ open Function
 
 /-- **Periodic Arzelà–Ascoli.** A sequence of continuous `1`-periodic loops in a compact set `K`,
 sharing a modulus of continuity `ρ` with `ρ(h) → 0` as `h → 0` on `[0, 1]`, has a subsequence
-converging uniformly on `ℝ` to a continuous `1`-periodic loop. -/
+converging uniformly on `ℝ` to a continuous `1`-periodic loop. Continuity of each loop is not
+assumed: it follows from the modulus and periodicity. -/
 theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [MetricSpace M]
-    {K : Set M} (hK : IsCompact K) {y : ℕ → ℝ → M} (hy : ∀ n, Continuous (y n))
+    {K : Set M} (hK : IsCompact K) {y : ℕ → ℝ → M}
     (hper : ∀ n, Periodic (y n) 1) (hyK : ∀ n t, y n t ∈ K) {ρ : ℝ → ℝ}
     (hρ : Tendsto ρ (𝓝 0) (𝓝 0))
     (hmod : ∀ n, ∀ t₁ ∈ Icc (0 : ℝ) 1, ∀ t₂ ∈ Icc (0 : ℝ) 1, t₁ ≤ t₂ →
       dist (y n t₂) (y n t₁) ≤ ρ (t₂ - t₁)) :
     ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → M, Periodic x 1 ∧ Continuous x ∧
       TendstoUniformly (fun n ↦ y (ψ n)) x atTop := by
+  -- The modulus of continuity makes every loop continuous on `[0, 1]`, hence on `ℝ`.
+  have hdist (n : ℕ) (t₁ t₂ : Icc (0 : ℝ) 1) : dist (y n t₁) (y n t₂) ≤ ρ (dist t₁ t₂) := by
+    rw [Subtype.dist_eq, Real.dist_eq]
+    rcases le_total (t₁ : ℝ) t₂ with h | h
+    · rw [dist_comm, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h)]
+      exact hmod n t₁ t₁.2 t₂ t₂.2 h
+    · rw [abs_of_nonneg (sub_nonneg.2 h)]
+      exact hmod n t₂ t₂.2 t₁ t₁.2 h
+  have hyeq : Equicontinuous fun (n : ℕ) (t : Icc (0 : ℝ) 1) ↦ y n t :=
+    Metric.equicontinuous_of_continuity_modulus ρ hρ _ fun t₁ t₂ n ↦ hdist n t₁ t₂
+  have hy : ∀ n, Continuous (y n) := fun n ↦ by
+    have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+    have hcirc : Continuous (AddCircle.liftIco (1 : ℝ) 0 (y n)) :=
+      AddCircle.liftIco_continuous (by simpa using (hper n 0).symm)
+        (by simpa [zero_add] using continuousOn_iff_continuous_domRestrict.mpr (hyeq.continuous n))
+    convert hcirc.comp (AddCircle.continuous_mk' (1 : ℝ)) using 1
+    funext t
+    have hfract : ((Int.fract t : ℝ) : AddCircle (1 : ℝ)) = t := by
+      have hfloor : ((⌊t⌋ : ℝ) : AddCircle (1 : ℝ)) = 0 :=
+        (AddCircle.coe_eq_zero_iff (1 : ℝ)).mpr ⟨⌊t⌋, by simp⟩
+      rw [← Int.self_sub_floor, AddCircle.coe_sub, hfloor, sub_zero]
+    simp only [Function.comp_apply, QuotientAddGroup.mk'_apply]
+    rw [← hfract, AddCircle.liftIco_zero_coe_apply ⟨Int.fract_nonneg t, Int.fract_lt_one t⟩,
+      (hper n).apply_fract t]
   -- Arzelà–Ascoli on `C([0, 1], M)`.
   let G : ℕ → BoundedContinuousFunction (Icc (0 : ℝ) 1) M := fun n ↦
     BoundedContinuousFunction.mkOfCompact ⟨fun t ↦ y n t, (hy n).comp continuous_subtype_val⟩
@@ -217,12 +243,7 @@ theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [Metri
   have hGeq : Equicontinuous ((↑) : range G → Icc (0 : ℝ) 1 → M) := by
     refine Metric.equicontinuous_of_continuity_modulus ρ hρ _ ?_
     rintro t₁ t₂ ⟨_, n, rfl⟩
-    rw [Subtype.dist_eq, Real.dist_eq]
-    rcases le_total (t₁ : ℝ) t₂ with h | h
-    · rw [dist_comm, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h)]
-      exact hmod n t₁ t₁.2 t₂ t₂.2 h
-    · rw [abs_of_nonneg (sub_nonneg.2 h)]
-      exact hmod n t₂ t₂.2 t₁ t₁.2 h
+    exact hdist n t₁ t₂
   obtain ⟨g, -, ψ, hψ, hlim⟩ :=
     (BoundedContinuousFunction.arzela_ascoli K hK (range G) hGK hGeq).tendsto_subseq
       (fun n ↦ subset_closure (mem_range_self n))
