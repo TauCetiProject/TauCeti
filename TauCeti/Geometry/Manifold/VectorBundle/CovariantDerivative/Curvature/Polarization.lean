@@ -52,8 +52,10 @@ conformal metric on a surface produces a metric of constant curvature.
   of a point of sectional curvature `κ`.
 * `CovariantDerivative.hasSectionalCurvatureAt_scalarCurvature_div_two`: in dimension two the
   sectional curvature is half the scalar curvature.
-* `CovariantDerivative.curvatureTensor_eq_scalarCurvature_div_two_smul`: in dimension two the
-  curvature tensor is `R(w, u)v = (Scal / 2) (⟨u, v⟩ w - ⟨w, v⟩ u)`.
+* `CovariantDerivative.exists_curvatureTensor_eq_smul_inner_sub_of_finrank_eq_two` and
+  `CovariantDerivative.curvatureTensor_eq_scalarCurvature_div_two_smul`: in dimension two a
+  metric-compatible connection has curvature tensor `R(w, u)v = (Scal / 2) (⟨u, v⟩ w - ⟨w, v⟩ u)`,
+  with no torsion hypothesis.
 * `isConstantCurvatureTensor_iff_scalarCurvature_eq_of_finrank_eq_two`, in the namespace
   `Bundle.ContMDiffRiemannianMetric`: a metric on a surface has constant curvature `κ` exactly when
   its scalar curvature is `2 κ`.
@@ -170,20 +172,47 @@ theorem HasSectionalCurvatureAt.ricciTensor_eq
 a metric-compatible torsion-free connection is `n (n - 1) κ` in dimension `n`. -/
 theorem HasSectionalCurvatureAt.scalarCurvature_eq
     {hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov}
-    {x : M} {κ : ℝ} (h : cov.HasSectionalCurvatureAt hcov x κ) (ht : cov.torsion = 0) :
+    {x : M} {κ : ℝ} (h : cov.HasSectionalCurvatureAt hcov x κ) :
     cov.scalarCurvature x = (Module.finrank ℝ (TangentSpace I x) : ℝ) *
-      (Module.finrank ℝ (TangentSpace I x) - 1) * κ :=
-  cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub x κ
-    (h.curvatureTensor_eq_smul_inner_sub ht)
+      (Module.finrank ℝ (TangentSpace I x) - 1) * κ := by
+  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  have hterm (j k : Fin (Module.finrank ℝ (TangentSpace I x))) :
+      ⟪b k, curvature x (b k) (b j) (b j)⟫_ℝ = if k = j then 0 else κ := by
+    split_ifs with hkj
+    · subst hkj
+      simp [cov.curvatureTensor_self]
+    · have horth : Orthonormal ℝ ![b k, b j] := by
+        have := b.orthonormal.comp ![k, j] (by
+          intro a c hac
+          fin_cases a <;> fin_cases c <;> simp_all [eq_comm])
+        convert this using 1
+        ext a
+        fin_cases a <;> rfl
+      rw [real_inner_comm, ← cov.sectionalCurvature_eq_of_orthonormal hcov x _ _ horth]
+      exact h.sectionalCurvature_eq _ _ horth.linearIndependent
+  rw [cov.scalarCurvature_eq_sum_inner_curvatureTensor x b]
+  simp only [hterm, Finset.sum_ite, Finset.sum_const_zero, zero_add, Finset.sum_const, nsmul_eq_mul]
+  have hcard (j : Fin (Module.finrank ℝ (TangentSpace I x))) :
+      ({k | ¬k = j} : Finset (Fin (Module.finrank ℝ (TangentSpace I x)))).card =
+        Module.finrank ℝ (TangentSpace I x) - 1 := by
+    simp [Finset.filter_not, Finset.card_sdiff_of_subset, Finset.filter_eq']
+  simp only [hcard, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ (TangentSpace I x)) with hn | hn
+  · simp [hn]
+  · rw [Nat.cast_sub hn]
+    simp [mul_assoc]
 
 variable (cov) in
-/-- **The Gaussian curvature of a surface is half its scalar curvature.** In dimension two the
-tangent space at `x` is the only tangent two-plane there, and for a metric-compatible connection
-its sectional curvature is `Scal(x) / 2`. -/
-theorem hasSectionalCurvatureAt_scalarCurvature_div_two
+/-- In dimension two the curvature tensor of a metric-compatible connection has the
+constant-curvature form `R(w, u)v = K (⟨u, v⟩ w - ⟨w, v⟩ u)` for some real `K`, the Gaussian
+curvature. Neither torsion-freeness nor the Bianchi identity is needed: in an orthonormal basis,
+antisymmetry in the first two arguments and metric compatibility leave the single number
+`⟨R(e₀, e₁)e₁, e₀⟩`. -/
+theorem exists_curvatureTensor_eq_smul_inner_sub_of_finrank_eq_two
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     {x : M} (hx : Module.finrank ℝ (TangentSpace I x) = 2) :
-    cov.HasSectionalCurvatureAt hcov x (cov.scalarCurvature x / 2) := by
+    ∃ K : ℝ, ∀ w u v : TangentSpace I x,
+      curvature x w u v = K • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) := by
   let e := (stdOrthonormalBasis ℝ (TangentSpace I x)).reindex (finCongr hx)
   set K := ⟪curvature x (e 0) (e 1) (e 1), e 0⟫_ℝ with hK
   have hzero (w : TangentSpace I x) : ⟪curvature x (e 0) (e 1) w, w⟫_ℝ = 0 := by
@@ -197,41 +226,44 @@ theorem hasSectionalCurvatureAt_scalarCurvature_div_two
   have h11 : ⟪e 1, e 1⟫_ℝ = 1 := inner_self_eq_one_of_norm_eq_one (he.1 1)
   have h01 : ⟪e 0, e 1⟫_ℝ = 0 := he.2 (by decide)
   have h10 : ⟪e 1, e 0⟫_ℝ = 0 := he.2 (by decide)
-  -- The scalar curvature is twice the sectional curvature `K` of the orthonormal pair `e 0, e 1`.
-  have hscal : cov.scalarCurvature x = 2 * K := by
-    rw [cov.scalarCurvature_eq_sum_inner_curvatureTensor x e]
-    simp only [Fin.sum_univ_two, cov.curvatureTensor_self, LinearMap.zero_apply, inner_zero_right,
-      cov.curvatureTensor_antisymm x (e 1) (e 0), LinearMap.neg_apply, inner_neg_right]
-    rw [real_inner_comm, hswap, real_inner_comm, ← hK]
-    ring
-  -- Writing `u = a e₀ + b e₁` and `v = c e₀ + d e₁`, both the numerator `⟨R(u, v)v, u⟩` and the
-  -- Gram determinant of `u, v` pick up the factor `(a d - b c)²`.
-  rw [hasSectionalCurvatureAt_iff]
-  intro u v huv
   have hexp (w : TangentSpace I x) : ∃ a b : ℝ, w = a • e 0 + b • e 1 :=
     ⟨_, _, by simpa only [Fin.sum_univ_two] using (e.sum_repr' w).symm⟩
-  obtain ⟨a, b, rfl⟩ := hexp u
-  obtain ⟨c, d, rfl⟩ := hexp v
-  have hdet := Matrix.det_gram_ne_zero_iff_linearIndependent.2 huv
-  rw [sectionalCurvature_apply, div_eq_iff hdet, hscal]
-  rw [Matrix.real_det_gram_fin_two] at hdet ⊢
+  refine ⟨K, fun w u v ↦ ?_⟩
+  refine ext_inner_right ℝ fun z ↦ ?_
+  obtain ⟨a, b, rfl⟩ := hexp w
+  obtain ⟨c, d, rfl⟩ := hexp u
+  obtain ⟨f, g, rfl⟩ := hexp v
+  obtain ⟨p, q, rfl⟩ := hexp z
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, cov.curvatureTensor_self,
     cov.curvatureTensor_antisymm x (e 1) (e 0), LinearMap.neg_apply, smul_zero, zero_add, add_zero,
     smul_neg, inner_add_left, inner_add_right, inner_smul_left, inner_smul_right, inner_neg_left,
-    hzero, hswap, ← hK, h00, h11, h01, h10, RCLike.conj_to_real] at hdet ⊢
+    inner_sub_left, hzero, hswap, ← hK, h00, h11, h01, h10, RCLike.conj_to_real]
   ring
 
 variable (cov) in
 /-- **The curvature tensor of a surface.** In dimension two the curvature tensor of a
-metric-compatible torsion-free connection is determined by the scalar curvature:
+metric-compatible connection is determined by the scalar curvature:
 `R(w, u)v = (Scal / 2) (⟨u, v⟩ w - ⟨w, v⟩ u)`. -/
 theorem curvatureTensor_eq_scalarCurvature_div_two_smul
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    (ht : cov.torsion = 0) {x : M} (hx : Module.finrank ℝ (TangentSpace I x) = 2)
-    (w u v : TangentSpace I x) :
-    curvature x w u v = (cov.scalarCurvature x / 2) • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) :=
-  (cov.hasSectionalCurvatureAt_scalarCurvature_div_two hcov hx).curvatureTensor_eq_smul_inner_sub
-    ht w u v
+    {x : M} (hx : Module.finrank ℝ (TangentSpace I x) = 2) (w u v : TangentSpace I x) :
+    curvature x w u v = (cov.scalarCurvature x / 2) • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) := by
+  obtain ⟨K, hK⟩ := cov.exists_curvatureTensor_eq_smul_inner_sub_of_finrank_eq_two hcov hx
+  have hscal := cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub x K hK
+  rw [hx] at hscal
+  rw [hK, hscal]
+  norm_num
+
+variable (cov) in
+/-- **The Gaussian curvature of a surface is half its scalar curvature.** In dimension two the
+tangent space at `x` is the only tangent two-plane there, and for a metric-compatible connection
+its sectional curvature is `Scal(x) / 2`. -/
+theorem hasSectionalCurvatureAt_scalarCurvature_div_two
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {x : M} (hx : Module.finrank ℝ (TangentSpace I x) = 2) :
+    cov.HasSectionalCurvatureAt hcov x (cov.scalarCurvature x / 2) :=
+  cov.hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub hcov x _
+    (cov.curvatureTensor_eq_scalarCurvature_div_two_smul hcov hx)
 
 end CovariantDerivative
 
@@ -258,8 +290,7 @@ theorem isConstantCurvatureTensor_iff_scalarCurvature_eq_of_finrank_eq_two
       CovariantDerivative.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub _ x κ (h x), hx x]
     norm_num
   · rw [CovariantDerivative.curvatureTensor_eq_scalarCurvature_div_two_smul _
-      (CovariantDerivative.isMetricCompatible_leviCivitaConnection I)
-      (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I) (hx x), ← scalarCurvature_def,
+      (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) (hx x), ← scalarCurvature_def,
       h x, mul_div_cancel_left₀ _ two_ne_zero]
 
 end Bundle.ContMDiffRiemannianMetric
