@@ -51,7 +51,7 @@ theorem reindexLimitMap_π (α : u ⋙ F ⟶ G) [HasLimit F] [HasLimit G] (k : K
   IsLimit.map_π _ _ _ _
 
 /-- When the restricted limit exists, the map factors as restriction followed by `limMap`. -/
-theorem reindexLimitMap_eq (α : u ⋙ F ⟶ G)
+theorem reindexLimitMap_eq_limitPre_comp_limMap (α : u ⋙ F ⟶ G)
     [HasLimit F] [HasLimit G] [HasLimit (u ⋙ F)] :
     α.reindexLimitMap = limit.pre F u ≫ limMap α := by
   apply limit.hom_ext
@@ -60,7 +60,7 @@ theorem reindexLimitMap_eq (α : u ⋙ F ⟶ G)
 
 /-- With unchanged indices, the construction recovers the ordinary map of limits. -/
 @[simp]
-theorem reindexLimitMap_leftUnitor {G' : J ⥤ C} (α : F ⟶ G')
+theorem reindexLimitMap_leftUnitor_hom {G' : J ⥤ C} (α : F ⟶ G')
     [HasLimit F] [HasLimit G'] :
     ((Functor.leftUnitor F).hom ≫ α).reindexLimitMap = limMap α := by
   apply limit.hom_ext
@@ -69,7 +69,7 @@ theorem reindexLimitMap_leftUnitor {G' : J ⥤ C} (α : F ⟶ G')
 
 /-- The identity transformation of a restricted diagram induces the restriction map. -/
 @[simp]
-theorem reindexLimitMap_restriction [HasLimit F] [HasLimit (u ⋙ F)] :
+theorem reindexLimitMap_id_eq_limitPre [HasLimit F] [HasLimit (u ⋙ F)] :
     reindexLimitMap (u := u) (𝟙 (u ⋙ F)) = limit.pre F u := by
   apply limit.hom_ext
   intro k
@@ -78,7 +78,7 @@ theorem reindexLimitMap_restriction [HasLimit F] [HasLimit (u ⋙ F)] :
 /-- An invertible comparison along an initial index functor identifies the limits. -/
 instance isIso_reindexLimitMap (α : u ⋙ F ⟶ G)
     [HasLimit F] [HasLimit G] [u.Initial] [IsIso α] : IsIso α.reindexLimitMap := by
-  rw [reindexLimitMap_eq]
+  rw [reindexLimitMap_eq_limitPre_comp_limMap]
   infer_instance
 
 /-- Unchanged indices and the identity transformation give the identity of the limit. -/
@@ -129,6 +129,7 @@ variable {w : J ⥤ K} (α : u ⋙ F ⟶ G) (β : w ⋙ G ⟶ F)
 
 /-- A composite comparison agreeing with the identity after common restrictions induces the
 identity on the limit. -/
+@[simp]
 theorem reindexLimitMap_comp_eq_id
     (h : ∀ j, ∃ (i : J) (f : i ⟶ u.obj (w.obj j)) (g : i ⟶ j),
       F.map f ≫ α.app (w.obj j) ≫ β.app j = F.map g) :
