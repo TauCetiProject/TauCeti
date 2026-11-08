@@ -42,6 +42,9 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`,
   `TauCeti.Floer.det_fderiv_endChart_pos`: the end chart is injective on the strip, preserves
   orientation and is a local diffeomorphism.
+* `TauCeti.Floer.eq_of_endChart_eq`: more generally, it is injective on any set of points whose
+  angular coordinates differ by less than one period.
+* `TauCeti.Floer.isComplexLinearMap_fderiv_endChart`: the end chart is holomorphic.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
@@ -215,13 +218,37 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
   funext z x
   rw [pairOfPantsEndComponent_def, Complex.equivRealProdCLM_symm_apply, ← Complex.mk_eq_add_mul_I]
 
+/-- Two points of the cylinder of an end whose angular coordinates differ by less than one
+period have the same image under the end chart only if they are equal. -/
+theorem eq_of_endChart_eq {q : Puncture} {a b : ℝ × ℝ} (h : endChart q a = endChart q b)
+    (hab : |a.2 - b.2| < 1) : a = b := by
+  rw [endChart_apply, endChart_apply] at h
+  have h' := Complex.equivRealProdCLM.injective h
+  rw [cylindricalEndLift_eq, cylindricalEndLift_eq, add_right_inj,
+    mul_right_inj' q.endScale_ne_zero, Complex.exp_eq_exp_iff_exists_int] at h'
+  obtain ⟨n, hn⟩ := h'
+  have hπ : -(2 * (π : ℂ)) ≠ 0 := by
+    simp [Real.pi_ne_zero]
+  have hA : Complex.equivRealProdCLM.symm a =
+      Complex.equivRealProdCLM.symm b - n * Complex.I := by
+    refine mul_left_cancel₀ hπ ?_
+    rw [hn]
+    ring_nf
+  have hre : a.1 = b.1 := by simpa using congrArg Complex.re hA
+  have him : a.2 = b.2 - n := by simpa using congrArg Complex.im hA
+  have hn0 : n = 0 := by
+    have h1 : |(n : ℝ)| < 1 := by
+      rw [show (n : ℝ) = b.2 - a.2 by linarith, abs_sub_comm]
+      exact hab
+    exact_mod_cast Int.abs_lt_one_iff.1 (by exact_mod_cast h1)
+  subst hn0
+  exact Prod.ext hre (by simpa using him)
+
 /-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
 period. -/
-theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := by
-  intro a ha b hb hab
-  have h := q.injOn_cylindricalEndLift (by simpa using ha.2) (by simpa using hb.2)
-    (Complex.equivRealProdCLM.injective hab)
-  exact Complex.equivRealProdCLM.symm.injective h
+theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := fun a ha b hb hab ↦
+  eq_of_endChart_eq hab
+    (abs_sub_lt_iff.2 ⟨by linarith [ha.2.2, hb.2.1], by linarith [ha.2.1, hb.2.2]⟩)
 
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/
@@ -233,6 +260,17 @@ theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereRea
   rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
     q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The end charts are holomorphic: their derivatives are complex linear for the standard complex
+structure `(v₁, v₂) ↦ (-v₂, v₁)` of `ℝ × ℝ`. -/
+theorem isComplexLinearMap_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
+      (fderiv ℝ (endChart q) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
+  rw [isComplexLinearMap_iff_apply]
+  intro v
+  simp only [ContinuousLinearMap.coe_coe, fderiv_endChart_apply,
+    AlmostComplexStructure.product_apply]
+  apply Prod.ext <;> simp [Complex.equivRealProdCLM_symm_apply] <;> ring
 
 /-- The strip of an end is measurable. -/
 theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by

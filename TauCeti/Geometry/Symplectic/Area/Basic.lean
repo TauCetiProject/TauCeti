@@ -35,7 +35,8 @@ formula says that the symplectic area of `u` is `a(u(b, ·)) - a(u(a, ·))`
 area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`). Reparametrizing one
 period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its area over `[-π, π]`
-(`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
+(`TauCeti.SymplecticForm.loopArea_comp_sub_mul`), and running a `1`-periodic loop backwards
+negates its loop area (`TauCeti.SymplecticForm.loopArea_comp_neg`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
@@ -175,6 +176,21 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
   rw [loopArea_def]
   simp only [hderiv, hsmul, intervalIntegral.integral_const_mul, hsub, hshift, smul_eq_mul]
   field_simp
+
+/-- **The loop area of a reversed loop.** Running a `1`-periodic loop backwards negates its loop
+area. -/
+theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function.Periodic x 1) :
+    ω.loopArea (fun t ↦ x (-t)) = -ω.loopArea x := by
+  have hd : Function.Periodic (deriv x) 1 := fun t ↦ by
+    rw [← deriv_comp_add_const, show (fun y ↦ x (y + 1)) = x from funext hx]
+  have hper : Function.Periodic (fun t ↦ ω (x t) (deriv x t)) 1 := fun t ↦ by
+    simp only [hx t, hd t]
+  have h := intervalIntegral.integral_comp_neg (a := (0 : ℝ)) (b := 1)
+    (fun t ↦ ω (x t) (deriv x t))
+  have hshift := hper.intervalIntegral_add_eq (-1) 0
+  simp only [neg_zero, show (-1 : ℝ) + 1 = 0 by norm_num, zero_add] at h hshift
+  simp only [loopArea_def, deriv_comp_neg, map_neg, intervalIntegral.integral_neg, h, hshift]
+  ring
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 

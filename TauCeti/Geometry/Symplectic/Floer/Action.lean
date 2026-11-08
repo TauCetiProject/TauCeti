@@ -67,6 +67,9 @@ for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_
 
 ## Main results
 
+* `SymplecticForm.hamiltonianAction_comp_neg`: running a loop backwards and replacing `H` by
+  `t ↦ -H(-t)` negates the action, as when the loops of a Floer cylinder are read in the
+  coordinates `(s, t) ↦ (-s, -t)`.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub`: the energy of a map over
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
@@ -116,6 +119,21 @@ theorem hamiltonianAction_def (ω : SymplecticForm V) (H : ℝ → V → ℝ) (x
 theorem hamiltonianAction_const (ω : SymplecticForm V) (H : ℝ → V → ℝ) (v : V) :
     ω.hamiltonianAction H (fun _ ↦ v) = ∫ t in (0 : ℝ)..1, H t v := by
   simp [hamiltonianAction_def]
+
+/-- **The action of a reversed loop.** Running a `1`-periodic loop backwards and replacing the
+`1`-periodic Hamiltonian `H` by `t ↦ -H(-t)` negates the Hamiltonian action. This is the action of
+the loops of a Floer cylinder read in the coordinates `(s, t) ↦ (-s, -t)`. -/
+theorem hamiltonianAction_comp_neg (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1)
+    {x : ℝ → V} (hx : Periodic x 1) :
+    ω.hamiltonianAction (fun t y ↦ -H (-t) y) (fun t ↦ x (-t)) = -ω.hamiltonianAction H x := by
+  have hper : Periodic (fun t ↦ H t (x t)) 1 := fun t ↦ by
+    simp only [hH t, hx t]
+  have h := intervalIntegral.integral_comp_neg (a := (0 : ℝ)) (b := 1) (fun t ↦ H t (x t))
+  have hshift := hper.intervalIntegral_add_eq (-1) 0
+  simp only [neg_zero, show (-1 : ℝ) + 1 = 0 by norm_num, zero_add] at h hshift
+  rw [hamiltonianAction_def, hamiltonianAction_def, ω.loopArea_comp_neg hx,
+    intervalIntegral.integral_neg, h, hshift]
+  ring
 
 end Action
 
