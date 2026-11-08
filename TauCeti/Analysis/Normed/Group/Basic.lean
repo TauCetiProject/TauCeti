@@ -93,7 +93,7 @@ theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h :
 
 /-- Constants joined by a chain of related indices are uniformly close, if constants at related
 indices are. -/
-theorem exists_enorm_sub_le_mul_of_reflTransGen {X F ι : Type*} [NormedAddCommGroup F]
+theorem exists_enorm_sub_le_mul_of_reflTransGen {X F ι : Type*} [SeminormedAddCommGroup F]
     {R : ι → ι → Prop} {i₀ : ι}
     (P : (X → F) → (ι → F) → ℝ≥0∞ → Prop)
     (hadj : ∀ i j, R i j → ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i‖ₑ ≤ D * G) {j : ι}
