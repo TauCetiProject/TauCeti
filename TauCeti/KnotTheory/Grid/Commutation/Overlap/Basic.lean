@@ -688,14 +688,7 @@ theorem recut_rectangle_branch_data_of_left_eq_left
       E.rectangle.left = finRotate n a ∧ E.rectangle.right = D.rectangle.right ∧
       E.middle = x.swapColumns D.rectangle.left (finRotate n a) ∧
       E.rectangle.bottom = D.rectangle.bottom ∧ E.rectangle.top = D.rectangle.top) := by
-  let E := D.recutLeftEqLeft hcommon hone hrectangle hpentagon
-  -- The theorem's `let E` and this local `E` are definitionally the same recut.
-  change (D.rectangle.right ∈ Grid.cIoo D.rectangle.left (finRotate n a) ∧
-      E.rectangle.left = D.rectangle.left ∧ E.rectangle.right = D.rectangle.right) ∨
-    (finRotate n a ∈ Grid.cIoo D.rectangle.left D.rectangle.right ∧
-      E.rectangle.left = finRotate n a ∧ E.rectangle.right = D.rectangle.right ∧
-      E.middle = x.swapColumns D.rectangle.left (finRotate n a) ∧
-      E.rectangle.bottom = D.rectangle.bottom ∧ E.rectangle.top = D.rectangle.top)
+  intro E
   have hE : E.toRectangleDecomposition = D.recutOfIsEmpty hone hrectangle hpentagon := by
     simpa only [E, D.recutOfIsEmpty_eq_recut] using
       D.recutLeftEqLeft_toRectangleDecomposition hcommon hone hrectangle hpentagon
@@ -738,13 +731,13 @@ theorem recut_rectangle_branch_data_of_left_eq_left
       (D.toRectangleDecomposition_first_isEmpty hrectangle)
       (D.toRectangleDecomposition_second_isEmpty hpentagon)
     rw [← D.recutOfIsEmpty_eq_recut hone hrectangle hpentagon, ← hE] at hrows
-    obtain ⟨hEbottom, hEtop⟩ := hrows
-    simp only [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-      toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_middle] at hEbottom hEtop
-    exact Or.inr ⟨hcol', hEleft, hEright, hEmiddle, hEbottom, hEtop⟩
+    refine Or.inr ⟨hcol', hEleft, hEright, hEmiddle, ?_, ?_⟩
+    · simpa only [GridRectangleBetween.bottom_def, toRectangleDecomposition_first_left,
+        GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
+        GridPentagonRectangleDecomposition.toRectangleDecomposition_middle] using hrows.1
+    · simpa only [GridRectangleBetween.top_def, toRectangleDecomposition_first_right,
+        GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right,
+        GridPentagonRectangleDecomposition.toRectangleDecomposition_middle] using hrows.2
 
 /-- Common setup for the terminal-side branch determination: the pentagon's terminal side
 is the common right side of the forgotten rectangle decomposition. -/
