@@ -32,6 +32,8 @@ characters, `DirichletCharacter.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoull
 
 ## Main results
 
+* `algebraMap_eval_bernoulli_eq_bernoulliFun`: the Bernoulli polynomial at a rational point, in `ℂ`,
+  is `bernoulliFun` at the real point.
 * `ZMod.hasSum_mul_zpow_neg_bernoulli`: the value of `∑_{n ∈ ℤ} Φ(n) n⁻ᵏ`.
 * `ZMod.exists_natCast_mul_tsum_div_mem`: the bounded denominators of these values.
 
@@ -44,6 +46,14 @@ public section
 
 open Complex
 open scoped Real
+
+/-- The Bernoulli polynomial at a rational point, mapped into `ℂ`, is the Bernoulli function at the
+corresponding real point. -/
+theorem algebraMap_eval_bernoulli_eq_bernoulliFun {k : ℕ} (x : ℚ) :
+    algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) = bernoulliFun k (x : ℝ) := by
+  simp only [bernoulliFun, Polynomial.eval_map, ← map_ratCast (algebraMap ℚ ℝ),
+    Polynomial.eval₂_at_apply]
+  norm_cast
 
 namespace ZMod
 
@@ -63,37 +73,21 @@ theorem hasSum_mul_zpow_neg_bernoulli (Φ : ZMod N → ℂ) {k : ℕ} (hk : 2 �
     conv_lhs => rw [← dft.symm_apply_apply Φ]
     rw [invDFT_apply, smul_eq_mul]
     simp only [smul_eq_mul, mul_comm (stdAddChar _)]
-  -- the additive character at `j n` is the Fourier mode `n` at the point `j / N`
-  have hfourier (j : ZMod N) (n : ℤ) :
-      fourier n ((j.val / (N : ℝ) : ℝ) : UnitAddCircle) = stdAddChar (j * (n : ZMod N)) := by
-    rw [fourier_coe_apply, stdAddChar_apply]
-    have h := toCircle_intCast (N := N) (n * j.val)
-    rw [Int.cast_mul, Int.cast_natCast, natCast_zmod_val, mul_comm] at h
-    rw [h]
-    push_cast
-    congr 1
-    ring
-  have hx (j : ZMod N) : (j.val / (N : ℝ) : ℝ) ∈ Set.Icc 0 1 :=
-    ⟨div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _),
-      (div_le_one (Nat.cast_pos.mpr (NeZero.pos N))).mpr (by exact_mod_cast (val_lt j).le)⟩
   -- the Bernoulli function at a rational point is the rational value of the polynomial
   have hB (j : ZMod N) : (bernoulliFun k (j.val / (N : ℝ)) : ℂ) =
       (((Polynomial.bernoulli k).eval ((j.val : ℚ) / N) : ℚ) : ℂ) := by
-    have hcast (x : ℚ) :
-        algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) = bernoulliFun k (x : ℝ) := by
-      simp only [bernoulliFun, Polynomial.eval_map, ← map_ratCast (algebraMap ℚ ℝ),
-        Polynomial.eval₂_at_apply]
-      norm_cast
+    have hcast := algebraMap_eval_bernoulli_eq_bernoulliFun (k := k)
     rw [← eq_ratCast (algebraMap ℚ ℂ), hcast]
     push_cast
     rfl
-  have hs (j : ZMod N) := (hasSum_one_div_pow_mul_fourier_mul_bernoulliFun hk (hx j)).mul_left
-    ((N : ℂ)⁻¹ * 𝓕 Φ j)
+  have hs (j : ZMod N) :=
+    (hasSum_one_div_pow_mul_fourier_mul_bernoulliFun hk (val_div_natCast_mem_Icc j)).mul_left
+      ((N : ℂ)⁻¹ * 𝓕 Φ j)
   convert hasSum_sum (s := Finset.univ) fun j _ ↦ hs j using 1
   · ext n
     rw [hinv n, Finset.mul_sum, Finset.sum_mul]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hfourier, zpow_neg, zpow_natCast, one_div]
+    rw [fourier_val_div_eq_stdAddChar, zpow_neg, zpow_natCast, one_div]
     ring
   · rw [Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
