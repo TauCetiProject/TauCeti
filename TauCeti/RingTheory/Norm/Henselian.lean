@@ -40,18 +40,6 @@ public section
 
 open IsLocalRing Polynomial
 
-/-- In a ring `R` Henselian at an ideal `I`, an element congruent modulo `I` to a unit is a
-unit, since `I` lies in the Jacobson radical. -/
-theorem HenselianRing.isUnit_of_sub_mem {R : Type*} [CommRing R] {I : Ideal R} [HenselianRing R I]
-    {x v : R} (hv : IsUnit v) (hxv : x - v ∈ I) : IsUnit x := by
-  obtain ⟨u, rfl⟩ := hv
-  have h : x = u * (↑u⁻¹ * (x - u) + 1) := by
-    rw [mul_add, mul_one, ← mul_assoc, Units.mul_inv, one_mul, sub_add_cancel]
-  rw [h]
-  refine u.isUnit.mul (Ideal.isUnit_of_sub_one_mem_jacobson _ ?_)
-  rw [add_sub_cancel_right]
-  exact HenselianRing.jac (I.mul_mem_left _ hxv)
-
 namespace TauCeti
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Free R S] [Module.Finite R S]
@@ -92,7 +80,9 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem {I : Ideal R} [HenselianRing R I]
     rw [hQP, coeff_C_mul, Matrix.coeff_charpolyRev_eq_neg_trace]
   -- `N(a)` is a unit: it differs from the unit `v` by an element of `I`, which lies in the
   -- Jacobson radical.
-  obtain ⟨ν, hν⟩ : IsUnit (Algebra.norm R a) := HenselianRing.isUnit_of_sub_mem hv hav
+  let := isLocalHom_of_le_jacobson (HenselianRing.jac (I := I))
+  obtain ⟨ν, hν⟩ : IsUnit (Algebra.norm R a) :=
+    (isUnit_map_iff (Ideal.Quotient.mk I) _).mp (by rw [Ideal.Quotient.eq.mpr hav]; exact hv.map _)
   -- Solve the monic equation `Q(t) = κ v N(a)⁻¹` by Hensel's lemma at the approximate root `0`.
   let f := Q - C (κ * (v * (ν⁻¹ : Rˣ)))
   have hf : f.Monic := (Matrix.charpoly_monic _).sub_of_left <| degree_C_le.trans_lt <| by
