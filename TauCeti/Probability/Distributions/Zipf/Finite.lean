@@ -190,7 +190,7 @@ theorem ae_mem_Icc_finiteZipfMeasure (N : ℕ) (s : ℝ) :
 theorem support_finiteZipfMeasure (N : ℕ) (s : ℝ) :
     (finiteZipfMeasure N s).support = Icc 1 N := by
   ext k
-  simp only [Measure.mem_support_iff_measure_singleton_ne_zero,
+  simp only [Measure.support_eq_setOf_singleton_ne_zero, mem_setOf_eq,
     finiteZipfMeasure_singleton_ne_zero_iff, Finset.mem_Icc, Set.mem_Icc]
 
 /-- Exponent zero recovers the uniform measure on `1, …, N`, including the empty case. -/
