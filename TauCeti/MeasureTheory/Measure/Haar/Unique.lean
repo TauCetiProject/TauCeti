@@ -57,10 +57,8 @@ theorem haar_apply_le_haar_apply_iff {G : Type*} [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [LocallyCompactSpace G] [SecondCountableTopology G]
     [MeasurableSpace G] [BorelSpace G] (μ ν : Measure G) [IsHaarMeasure μ] [IsHaarMeasure ν]
     {s t : Set G} : μ s ≤ μ t ↔ ν s ≤ ν t := by
-  have hc : haarScalarFactor μ ν ≠ 0 := (haarScalarFactor_pos_of_isHaarMeasure μ ν).ne'
   rw [isMulLeftInvariant_eq_smul μ ν]
-  simp only [_root_.smul_apply, ENNReal.smul_def, smul_eq_mul]
-  exact ENNReal.mul_le_mul_iff_right (by exact_mod_cast hc) ENNReal.coe_ne_top
+  simp [ENNReal.mul_le_mul_iff_right, (haarScalarFactor_pos_of_isHaarMeasure μ ν).ne']
 
 end MeasureTheory.Measure
 
