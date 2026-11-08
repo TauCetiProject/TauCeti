@@ -63,7 +63,7 @@ theorem localCyclotomicCharacter_surjective_of_irreducible
         (Units.continuous_val.comp (localCyclotomicCharacter_continuous p K)))
       continuous_const
   have htnonempty (n : ℕ) : (t n).Nonempty := by
-    obtain ⟨σ, hσ⟩ := surjective_modularCyclotomicCharacter_of_irreducible (K := K)
+    obtain ⟨σ, hσ⟩ := modularCyclotomicCharacter_surjective_of_irreducible (K := K)
       (HasEnoughRootsOfUnity.natCard_rootsOfUnity (AlgebraicClosure K) (p ^ n))
       (hirr n) (Units.map (PadicInt.toZModPow n).toMonoidHom u)
     let g : Field.absoluteGaloisGroup K := σ

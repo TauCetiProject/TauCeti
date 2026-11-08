@@ -17,8 +17,8 @@ The absolute Galois group of `ℚ` realizes every unit modulo each positive inte
 every `p`-adic unit for each prime `p`, through its action on roots of unity. Irreducibility
 of cyclotomic polynomials over `ℚ` supplies the finite-level surjectivity; compactness of
 the absolute Galois group supplies a single automorphism realizing all `p`-power levels.
-The `p`-adic statement uses the existing `localCyclotomicCharacter` API, which is defined
-for arbitrary fields despite its name.
+The `p`-adic statements cover both `localCyclotomicCharacter` on the absolute Galois group
+and Mathlib's `cyclotomicCharacter` on ring automorphisms of `AlgebraicClosure ℚ`.
 
 These statements concern the full rational absolute Galois group. They do not assert
 surjectivity over arbitrary number fields, nor simultaneous realization of independently
@@ -39,7 +39,7 @@ theorem surjective_modularCyclotomicCharacter_rat (n : ℕ) [NeZero n] :
     Function.Surjective (fun σ : Field.absoluteGaloisGroup ℚ ↦
       modularCyclotomicCharacter (AlgebraicClosure ℚ)
         (HasEnoughRootsOfUnity.natCard_rootsOfUnity (AlgebraicClosure ℚ) n) σ.toRingEquiv) :=
-  surjective_modularCyclotomicCharacter_of_irreducible (K := ℚ) _
+  modularCyclotomicCharacter_surjective_of_irreducible (K := ℚ) _
     (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))
 
 /-- The `p`-adic cyclotomic character of `G_ℚ` is surjective for every prime `p`, including
@@ -48,5 +48,13 @@ theorem surjective_localCyclotomicCharacter_rat (p : ℕ) [Fact p.Prime] :
     Function.Surjective (localCyclotomicCharacter p ℚ) :=
   localCyclotomicCharacter_surjective_of_irreducible fun n ↦
     Polynomial.cyclotomic.irreducible_rat (pow_pos (Fact.out : p.Prime).pos n)
+
+/-- Mathlib's `p`-adic cyclotomic character on ring automorphisms of `AlgebraicClosure ℚ`
+is surjective for every prime `p`. -/
+theorem surjective_cyclotomicCharacter_rat (p : ℕ) [Fact p.Prime] :
+    Function.Surjective (cyclotomicCharacter (AlgebraicClosure ℚ) p) := by
+  intro u
+  obtain ⟨σ, hσ⟩ := surjective_localCyclotomicCharacter_rat p u
+  exact ⟨σ.toRingEquiv, (localCyclotomicCharacter_apply p ℚ σ).symm.trans hσ⟩
 
 end TauCeti
