@@ -96,6 +96,7 @@ theorem chernCharacterPolynomial_zero_right : chernCharacterPolynomial n 0 = n :
   simp [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial]
 
 /-- **The linear Chern character**: `ch₁ = c₁`. -/
+@[simp]
 theorem chernCharacterPolynomial_one_right : chernCharacterPolynomial (n + 1) 1 = X 0 := by
   simp [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, newtonMvPolynomial_one_right]
 

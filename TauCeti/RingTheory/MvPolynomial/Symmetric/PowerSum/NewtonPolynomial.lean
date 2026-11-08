@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
-import Mathlib.Data.Multiset.Fintype
+import Mathlib.RingTheory.MvPolynomial.Symmetric.Eval
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
@@ -117,17 +117,19 @@ variable {R n k} {S : Type*} [CommSemiring S] [Algebra R S]
 commutative `R`-algebra, `sₖ(e₁(s), …, eₙ(s)) = ∑_{x ∈ s} xᵏ`. -/
 theorem _root_.Multiset.aeval_esymm_newtonMvPolynomial (s : Multiset S) (hs : s.card = n) :
     aeval (fun j : Fin n => s.esymm (j + 1)) (newtonMvPolynomial R n k) = (s.map (· ^ k)).sum := by
-  classical
-  let e : Fin n ≃ s.ToType := Fintype.equivOfCardEq (by simp [hs])
-  have hx : (univ.val.map fun i => (e i : S)) = s := by
-    conv_rhs => rw [← Multiset.map_univ_coe s, ← Multiset.map_univ_val_equiv e, Multiset.map_map]
-    rw [Function.comp_def]
-  have h : (fun j : Fin n => (univ.val.map fun i => (e i : S)).esymm (j + 1)) =
-      fun j : Fin n => aeval (fun i => (e i : S)) (esymm (Fin n) R (j + 1)) := by
-    simp [aeval_esymm_eq_multiset_esymm]
-  rw [← hx, h, ← comp_aeval_apply, TauCeti.aeval_esymm_newtonMvPolynomial, psum, map_sum,
-    Finset.sum_eq_multiset_sum, Multiset.map_map]
-  simp only [Function.comp_def, map_pow, aeval_X]
+  -- Mathlib evaluates symmetric polynomials at a multiset through `esymmAlgEquiv` with the
+  -- cardinality proof `rfl`; generalizing the cardinality identifies the two evaluations.
+  have h : ∀ (m : ℕ) (hm : Fintype.card (Fin n) = m) (p : symmetricSubalgebra (Fin n) R),
+      aeval (fun j : Fin m => s.esymm (j + 1)) ((esymmAlgEquiv (Fin n) R hm).symm p) =
+        symmetricSubalgebra.aevalMultiset (Fin n) R s p := by
+    rintro m rfl p
+    rfl
+  have hp : (⟨psum (Fin n) R k, psum_isSymmetric (Fin n) R k⟩ : symmetricSubalgebra (Fin n) R) =
+      symmetricSubalgebra.sumPolynomial (Fin n) (Polynomial.X ^ k) :=
+    Subtype.ext (by simp [symmetricSubalgebra.coe_sumPolynomial, psum])
+  rw [newtonMvPolynomial, h, hp,
+    symmetricSubalgebra.aevalMultiset_sumPolynomial (by simpa using hs)]
+  simp
 
 end Roots
 
@@ -198,6 +200,7 @@ theorem newtonMvPolynomial_zero_right : newtonMvPolynomial R n 0 = n :=
   (eq_newtonMvPolynomial_iff.2 (by simp [psum_zero])).symm
 
 /-- **The linear Newton polynomial**: `s₁ = e₁`. -/
+@[simp]
 theorem newtonMvPolynomial_one_right : newtonMvPolynomial R (n + 1) 1 = X 0 := by
   refine (eq_newtonMvPolynomial_of_aeval ?_).symm
   rw [Multiset.sum_map_pow_one_eq_esymm, aeval_X, Fin.val_zero]
