@@ -65,8 +65,8 @@ is `gr'(φ) = (ι(φ), [φ])` (`TauCeti.StrandDiagram.grading`).
 * `TauCeti.StrandsAlgebra.mul_mem_gradedPiece`, `TauCeti.StrandsAlgebra.one_mem_gradedPiece_one`
   and `TauCeti.StrandsAlgebra.differential_mem_gradedPiece`: the strands algebra is a
   `G'(n)`-graded differential algebra, its differential having degree `λ⁻¹`.
-* `TauCeti.StrandsAlgebra.iSupIndep_gradedPiece` and `TauCeti.StrandsAlgebra.iSup_gradedPiece`:
-  the graded pieces form a direct sum decomposition of the strands algebra.
+* `TauCeti.StrandsAlgebra.isInternal_gradedPiece`: the strands algebra is the internal direct
+  sum of its graded pieces.
 
 ## References
 
@@ -101,6 +101,7 @@ def H1 : AddSubgroup (α → ℤ) where
 
 variable {α}
 
+@[simp]
 theorem mem_H1 {f : α → ℤ} : f ∈ H1 α ↔ ∑ i, f i = 0 :=
   Iff.rfl
 
@@ -304,18 +305,23 @@ open StrandDiagram
 
 variable (R : Type*) {α : Type*} [CommSemiring R] [LinearOrder α] [Fintype α]
 
-/-- The graded piece of the strands algebra in degree `g` of the grading group: the span of the
-strand diagrams of grading `g`. -/
+/-- The graded piece of the strands algebra in degree `g` of the grading group: the elements
+whose coordinates in the basis of strand diagrams are supported on the diagrams of grading `g`. -/
 def gradedPiece (g : GradingGroup α) : Submodule R (StrandsAlgebra R α) :=
-  Submodule.span R (of '' {φ | φ.grading = g})
+  (Finsupp.supported R R (grading ⁻¹' {g})).comap (basis R α).repr.toLinearMap
 
-omit [Fintype α] in
-private theorem of_eq_basis : (of : StrandDiagram α → StrandsAlgebra R α) = basis R α :=
-  funext fun φ ↦ (basis_apply φ).symm
+/-- The graded piece of degree `g` is the span of the strand diagrams of grading `g`. -/
+theorem gradedPiece_eq_span (g : GradingGroup α) :
+    gradedPiece R g = Submodule.span R (of '' {φ | φ.grading = g}) := by
+  rw [gradedPiece, Submodule.comap_equiv_eq_map_symm, Finsupp.supported_eq_span_single,
+    Submodule.map_span, Set.image_image]
+  simp only [LinearEquiv.coe_coe, Module.Basis.repr_symm_single_one, basis_apply, Set.preimage,
+    Set.mem_singleton_iff]
 
 theorem of_mem_gradedPiece (φ : StrandDiagram α) :
-    (of φ : StrandsAlgebra R α) ∈ gradedPiece R φ.grading :=
-  Submodule.subset_span ⟨φ, rfl, rfl⟩
+    (of φ : StrandsAlgebra R α) ∈ gradedPiece R φ.grading := by
+  rw [gradedPiece, Submodule.mem_comap, LinearEquiv.coe_coe, ← basis_apply, Module.Basis.repr_self]
+  exact Finsupp.single_mem_supported R 1 rfl
 
 variable {R}
 
@@ -323,8 +329,7 @@ variable {R}
 support has grading `g`. -/
 theorem mem_gradedPiece_iff {x : StrandsAlgebra R α} {g : GradingGroup α} :
     x ∈ gradedPiece R g ↔ ∀ φ ∈ ((basis R α).repr x).support, φ.grading = g := by
-  rw [gradedPiece, of_eq_basis, Module.Basis.mem_span_image, Set.subset_def]
-  simp
+  simp [gradedPiece, Finsupp.mem_supported, Set.subset_def]
 
 theorem idem_mem_gradedPiece_one (s : Finset α) :
     (idem s : StrandsAlgebra R α) ∈ gradedPiece R 1 := by
@@ -341,7 +346,7 @@ has degree `g * h`. -/
 theorem mul_mem_gradedPiece {x y : StrandsAlgebra R α} {g h : GradingGroup α}
     (hx : x ∈ gradedPiece R g) (hy : y ∈ gradedPiece R h) : x * y ∈ gradedPiece R (g * h) := by
   have hxy := Submodule.mul_mem_mul hx hy
-  rw [gradedPiece, gradedPiece, Submodule.span_mul_span] at hxy
+  rw [gradedPiece_eq_span, gradedPiece_eq_span, Submodule.span_mul_span] at hxy
   refine Submodule.span_le.2 ?_ hxy
   rintro _ ⟨_, ⟨φ, rfl, rfl⟩, _, ⟨ψ, rfl, rfl⟩, rfl⟩
   simp only [SetLike.mem_coe, of_mul_of]
@@ -355,30 +360,58 @@ degree `λ⁻¹ g`. -/
 theorem differential_mem_gradedPiece {x : StrandsAlgebra R α} {g : GradingGroup α}
     (hx : x ∈ gradedPiece R g) :
     differential R α x ∈ gradedPiece R ((GradingGroup.lambda α)⁻¹ * g) := by
+  rw [gradedPiece_eq_span] at hx
   refine (Submodule.span_le (p := (gradedPiece R _).comap (differential R α))).2 ?_ hx
   rintro _ ⟨φ, rfl, rfl⟩
   rw [SetLike.mem_coe, Submodule.mem_comap, differential_of]
   exact sum_mem fun p hp ↦ grading_resolve hp ▸ of_mem_gradedPiece R _
 
+/-- The graded pieces of the strands algebra span it. -/
+theorem iSup_gradedPiece : ⨆ g : GradingGroup α, gradedPiece R g = ⊤ := by
+  simp only [gradedPiece, Submodule.comap_equiv_eq_map_symm, ← Submodule.map_iSup,
+    ← Finsupp.supported_iUnion, ← Set.preimage_iUnion, Set.iUnion_of_singleton, Set.preimage_univ,
+    Finsupp.supported_univ, Submodule.map_top, LinearEquiv.range]
+
+/-- **The strands algebra is the internal direct sum of its graded pieces.** -/
+theorem isInternal_gradedPiece [DecidableEq (GradingGroup α)] :
+    DirectSum.IsInternal (gradedPiece R : GradingGroup α → _) := by
+  classical
+  refine ⟨fun x y hxy ↦ DirectSum.ext fun g ↦ Subtype.ext ((basis R α).repr.injective ?_),
+    fun x ↦ ?_⟩
+  · -- Restricting to the diagrams of grading `g` recovers the component of degree `g`.
+    have key (z : DirectSum (GradingGroup α) fun h ↦ gradedPiece R h) :
+        (basis R α).repr (z g) = Finsupp.restrictDom R R (grading ⁻¹' {g})
+          ((basis R α).repr (DirectSum.coeAddMonoidHom _ z)) := by
+      induction z using DirectSum.induction_on with
+      | zero => simp
+      | of h w =>
+        have hw : ↑((basis R α).repr w).support ⊆ grading ⁻¹' {h} :=
+          (Finsupp.mem_supported _ _).1 (Submodule.mem_comap.1 w.2)
+        rw [DirectSum.coeAddMonoidHom_of, DirectSum.coe_of_apply, Finsupp.restrictDom_apply]
+        split_ifs with hhg
+        · subst hhg
+          exact ((Finsupp.filter_eq_self_iff _ _).2 fun φ hφ ↦
+            hw (Finsupp.mem_support_iff.2 hφ)).symm
+        · rw [Submodule.coe_zero, map_zero, eq_comm, Finsupp.filter_eq_zero_iff]
+          exact fun φ hφ ↦ Finsupp.notMem_support_iff.1 fun h' ↦ hhg ((hw h').symm.trans hφ)
+      | add z z' hz hz' => simp only [DirectSum.add_apply, Submodule.coe_add, map_add, hz, hz']
+    rw [key, key, hxy]
+  · -- Every element is a finite sum of homogeneous elements, by `iSup_gradedPiece`.
+    have hx : x ∈ ⨆ g, gradedPiece R g := by
+      rw [iSup_gradedPiece]
+      exact Submodule.mem_top
+    induction hx using Submodule.iSup_induction' with
+    | mem g y hy => exact ⟨DirectSum.of _ g ⟨y, hy⟩, DirectSum.coeAddMonoidHom_of _ _ _⟩
+    | zero => exact ⟨0, map_zero _⟩
+    | add y y' _ _ hy hy' =>
+      obtain ⟨z, rfl⟩ := hy
+      obtain ⟨z', rfl⟩ := hy'
+      exact ⟨z + z', map_add _ _ _⟩
+
 /-- The graded pieces of the strands algebra are independent. -/
 theorem iSupIndep_gradedPiece : iSupIndep (gradedPiece R : GradingGroup α → _) := by
-  refine iSupIndep_def.2 fun g ↦ ?_
-  have : ⨆ (h) (_ : h ≠ g), gradedPiece R h =
-      Submodule.span R (of '' {φ : StrandDiagram α | φ.grading ≠ g}) := by
-    simp only [gradedPiece, ← Submodule.span_iUnion, ← Set.image_iUnion]
-    congr 2
-    ext φ
-    simp
-  rw [this, gradedPiece, of_eq_basis]
-  exact (basis R α).linearIndependent.disjoint_span_image (Set.disjoint_left.2 fun _ h₁ h₂ ↦ h₂ h₁)
-
-/-- The graded pieces of the strands algebra span it. With
-`TauCeti.StrandsAlgebra.iSupIndep_gradedPiece`, the strands algebra is their internal direct sum. -/
-theorem iSup_gradedPiece : ⨆ g : GradingGroup α, gradedPiece R g = ⊤ := by
-  simp only [gradedPiece, ← Submodule.span_iUnion, ← Set.image_iUnion, of_eq_basis]
-  rw [show ⋃ g : GradingGroup α, {φ : StrandDiagram α | φ.grading = g} = Set.univ from
-    Set.eq_univ_of_forall fun φ ↦ Set.mem_iUnion.2 ⟨_, rfl⟩, Set.image_univ]
-  exact (basis R α).span_eq
+  classical
+  exact isInternal_gradedPiece.submodule_iSupIndep
 
 end StrandsAlgebra
 
