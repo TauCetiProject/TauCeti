@@ -10,7 +10,6 @@ import TauCeti.Analysis.PDE.Yamabe.LowerBound
 import TauCeti.Geometry.Manifold.ContMDiff.RPow
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
 import TauCeti.MeasureTheory.Integral.AbsRpow
 
 /-!
@@ -45,23 +44,26 @@ time as the `RiemannianBundle` instance of the tangent bundle of `M`.
 
 ## Main results
 
-All in the namespace `TauCeti.Yamabe`.
+In the namespace `TauCeti.Yamabe`:
 
-* `scalarCurvature_rescale_of_conformalLaplacian_eq_mul`: if `L_g u = λ u`, then
-  `Scal_ĝ = λ u ^ (-4 / (n - 2))`; `sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul`:
-  its sign is that of `λ`.
-* `yamabeQuotient_rescale`: the conformal invariance `Q_ĝ(v) = Q_g(u v)` on compactly supported `C²`
-  functions.
 * `sign_yamabeQuotient_of_conformalLaplacian_eq_mul`: an eigenfunction `L_g u = λ u` has `Q_g(u)` of
   the sign of `λ`.
 * `exists_pos_le_yamabeQuotient_of_scalarCurvature_pos`: on a closed manifold of positive scalar
   curvature, `Q_g` is bounded below by a positive constant on nonzero `C¹` functions.
+
+In the namespace `Bundle.ContMDiffRiemannianMetric`, for a smooth metric `g`:
+
 * `yamabeQuotient_nonneg_of_conformalLaplacian_eq_mul` and
   `exists_pos_le_yamabeQuotient_of_conformalLaplacian_eq_mul`: a positive eigenfunction with
   `λ ≥ 0`, respectively `λ > 0`, makes `Q_g` nonnegative, respectively bounded below by a positive
   constant.
 * `sign_sInf_yamabeQuotient_of_conformalLaplacian_eq_mul`: the infimum of `Q_g` over nonzero `C²`
   functions has the sign of `λ`.
+
+The scalar curvature of `ĝ` is computed in
+`Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_conformalLaplacian_eq_mul`, and the
+conformal invariance `Q_ĝ(v) = Q_g(u v)` is
+`Bundle.ContMDiffRiemannianMetric.yamabeQuotient_rescale`.
 
 ## References
 
@@ -79,89 +81,6 @@ noncomputable section
 
 namespace TauCeti.Yamabe
 
-section Rescale
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-
-/-- **Scalar curvature from an eigenfunction of the conformal Laplacian.** In dimension `n ≠ 2`,
-let `u` be a positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point
-where `L_g u = λ u`, the scalar curvature of `ĝ` is `Scal_ĝ = λ u ^ (-4 / (n - 2))`. -/
-theorem scalarCurvature_rescale_of_conformalLaplacian_eq_mul
-    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
-    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
-    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {c : ℝ} {x : M}
-    (h : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      conformalLaplacian I u x) = c * u x) :
-    (g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x =
-      c * u x ^ (-(4 / ((finrank ℝ E : ℝ) - 2))) := by
-  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
-  rw [scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x, h, mul_left_comm,
-    ← Real.rpow_add_one (hu_pos x).ne']
-  congr 2
-  field_simp
-  ring
-
-/-- **The sign of the scalar curvature from an eigenfunction.** In dimension `n ≠ 2`, let `u` be a
-positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point where
-`L_g u = λ u`, the scalar curvature of `ĝ` has the sign of `λ`. -/
-theorem sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul
-    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
-    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
-    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {c : ℝ} {x : M}
-    (h : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      conformalLaplacian I u x) = c * u x) :
-    SignType.sign
-        ((g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x) =
-      SignType.sign c := by
-  rw [scalarCurvature_rescale_of_conformalLaplacian_eq_mul g hn hu_pos h, sign_mul,
-    sign_pos (Real.rpow_pos_of_pos (hu_pos x) _), mul_one]
-
-variable [I.Boundaryless] [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M]
-
-/-- **Conformal invariance of the Yamabe quotient.** In dimension `n ≠ 2`, let `u` be a positive
-function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric on a manifold without boundary.
-Then `Q_ĝ(v) = Q_g(u v)` for every compactly supported `C²` function `v`. -/
-theorem yamabeQuotient_rescale (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
-    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
-    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {v : M → ℝ}
-    (hv : ContMDiff I 𝓘(ℝ) 2 v) (hvc : HasCompactSupport v) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf
-          hf_pos).toRiemannianMetric⟩;
-      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-          (F := E) (V := fun x : M ↦ TangentSpace I x);
-      yamabeQuotient I v) =
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-          (F := E) (V := fun x : M ↦ TangentSpace I x);
-      yamabeQuotient I (u * v)) := by
-  have hnum := integral_energy_rescale g hn hu_pos (hf := hf) (hf_pos := hf_pos) hv hvc
-  have hden := WithMetric.integral_abs_rpow_rescale_rpow (g := g) (fun x ↦ (hu_pos x).le)
-    (hf := hf) (hf_pos := hf_pos) v
-  rw [WithMetric.integral_comp_ofWithMetric _ fun y ↦
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
-        conformalCoefficient (finrank ℝ E) * ‖mgradient I v y‖ ^ 2) +
-        (g.rescale _ hf hf_pos).scalarCurvature y * v y ^ 2,
-    WithMetric.integral_comp_ofWithMetric g fun y ↦
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        conformalCoefficient (finrank ℝ E) * ‖mgradient I (u * v) y‖ ^ 2) +
-        g.scalarCurvature y * (u * v) y ^ 2] at hnum
-  rw [WithMetric.integral_comp_ofWithMetric _ fun y ↦ |v y| ^
-      (2 * (finrank ℝ E : ℝ) / ((finrank ℝ E : ℝ) - 2)),
-    WithMetric.integral_comp_ofWithMetric g fun y ↦ |u y * v y| ^
-      (2 * (finrank ℝ E : ℝ) / ((finrank ℝ E : ℝ) - 2))] at hden
-  simp only [ContMDiffRiemannianMetric.scalarCurvature_def] at hnum
-  simp only [yamabeQuotient_def, criticalExponent_def]
-  exact congrArg₂ _ hnum (congrArg (· ^ _) hden)
-
-end Rescale
-
 section Closed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -172,13 +91,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-omit [I.Boundaryless] [T2Space M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- A nonzero continuous function on a compact Riemannian manifold has positive `L²` norm. -/
-private theorem integral_sq_pos {u : M → ℝ} (hu : Continuous u) (hu0 : u ≠ 0) :
-    0 < ∫ x, u x ^ 2 ∂riemannianVolume I M := by
-  simpa only [Real.rpow_two, sq_abs] using integral_abs_rpow_pos hu hu0 two_pos
-
 /-- **The Yamabe quotient of an eigenfunction.** On a closed manifold of dimension `n > 2`, a
 nonzero `C²` solution `u` of `L_g u = λ u` has a Yamabe quotient `Q_g(u)` of the sign of `λ`. -/
 theorem sign_yamabeQuotient_of_conformalLaplacian_eq_mul (hn : 2 < finrank ℝ E) {u : M → ℝ}
@@ -188,73 +100,16 @@ theorem sign_yamabeQuotient_of_conformalLaplacian_eq_mul (hn : 2 < finrank ℝ E
   have hN : 0 < (∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M) ^
       (2 / criticalExponent (finrank ℝ E)) :=
     Real.rpow_pos_of_pos (integral_abs_rpow_pos hu.continuous hu0 (criticalExponent_pos hn)) _
+  have hu2 : 0 < ∫ x, u x ^ 2 ∂riemannianVolume I M := by
+    simpa only [Real.rpow_two, sq_abs] using integral_abs_rpow_pos hu.continuous hu0 two_pos
   have hpt (x : M) : u x * conformalLaplacian I u x = c * u x ^ 2 := by
     rw [h x]
     ring
   rw [yamabeQuotient_def, ← integral_mul_conformalLaplacian_self hu
     (HasCompactSupport.of_compactSpace u)]
   simp only [hpt, integral_const_mul]
-  rw [div_eq_mul_inv, sign_mul, sign_mul, sign_pos (integral_sq_pos hu.continuous hu0),
-    sign_pos (inv_pos.2 hN), mul_one, mul_one]
-
-omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The Sobolev inequality on a closed manifold of dimension `n > 2`, squared and written with
-integrals: there is a constant `K > 0` with
-`(∫ |u| ^ pₙ dV) ^ (2 / pₙ) ≤ K (∫ |grad u|² dV + ∫ u² dV)` for every `C¹` function `u`. -/
-private theorem exists_integral_abs_rpow_rpow_le (hn : 2 < finrank ℝ E) :
-    ∃ K, 0 < K ∧ ∀ u : M → ℝ, ContMDiff I 𝓘(ℝ) 1 u →
-      (∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M) ^
-          (2 / criticalExponent (finrank ℝ E)) ≤
-        K * (∫ x, ‖mgradient I u x‖ ^ 2 ∂riemannianVolume I M +
-          ∫ x, u x ^ 2 ∂riemannianVolume I M) := by
-  set p := criticalExponent (finrank ℝ E)
-  have hp : 2 < p := two_lt_criticalExponent hn
-  obtain ⟨K, hK⟩ := exists_eLpNorm_le_mul_eLpNorm_mgradient_two_add (I := I) (M := M) hn
-  refine ⟨2 * ((K : ℝ) + 1) ^ 2, by positivity, fun u hu ↦ ?_⟩
-  set A := ∫ x, |u x| ^ p ∂riemannianVolume I M
-  set B := ∫ x, ‖mgradient I u x‖ ^ 2 ∂riemannianVolume I M
-  set D := ∫ x, u x ^ 2 ∂riemannianVolume I M
-  have hA : 0 ≤ A := integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _
-  have hB : 0 ≤ B := integral_nonneg fun _ ↦ sq_nonneg _
-  have hD : 0 ≤ D := integral_nonneg fun _ ↦ sq_nonneg _
-  have hgc : Continuous fun x ↦ ‖mgradient I u x‖ := continuous_norm_mgradient hu
-  -- The Sobolev inequality in real numbers: `A ^ (1 / p) ≤ K (B ^ (1 / 2) + D ^ (1 / 2))`.
-  have hsob : A ^ p⁻¹ ≤ K * (B ^ (2 : ℝ)⁻¹ + D ^ (2 : ℝ)⁻¹) := by
-    have h := hK u hu
-    have hpe : ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2)) = ENNReal.ofReal p := by
-      simp only [p, criticalExponent_def]
-    rw [hpe, MemLp.eLpNorm_eq_integral_rpow_norm (by simp; linarith) ENNReal.ofReal_ne_top
-        (hu.continuous.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)),
-      MemLp.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top
-        (hgc.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)),
-      MemLp.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top
-        (hu.continuous.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)),
-      ← ENNReal.ofReal_add (by positivity) (by positivity), ← ENNReal.ofReal_coe_nnreal,
-      ← ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_le_ofReal_iff (by positivity),
-      ENNReal.toReal_ofReal (by linarith), ENNReal.toReal_ofNat] at h
-    simpa only [Real.norm_eq_abs, norm_norm, Real.rpow_two, sq_abs] using h
-  have hsq (X : ℝ) (hX : 0 ≤ X) (q : ℝ) (hq : q ≠ 0) : (X ^ q⁻¹) ^ 2 = X ^ (2 / q) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hX]
-    congr 1
-    field_simp
-    norm_num
-  -- Squaring, with `(y + z) ^ 2 ≤ 2 (y ^ 2 + z ^ 2)`.
-  have h2 := pow_le_pow_left₀ (by positivity) hsob 2
-  rw [hsq A hA p (by linarith)] at h2
-  have hB2 := hsq B hB 2 two_ne_zero
-  have hD2 := hsq D hD 2 two_ne_zero
-  rw [div_self two_ne_zero, Real.rpow_one] at hB2 hD2
-  set y := B ^ (2 : ℝ)⁻¹
-  set z := D ^ (2 : ℝ)⁻¹
-  calc A ^ (2 / p) ≤ (K * (y + z)) ^ 2 := h2
-    _ ≤ ((K : ℝ) + 1) ^ 2 * (2 * (y ^ 2 + z ^ 2)) := by
-      rw [mul_pow]
-      gcongr
-      · linarith [K.coe_nonneg]
-      · nlinarith [sq_nonneg (y - z)]
-    _ = 2 * ((K : ℝ) + 1) ^ 2 * (B + D) := by
-      rw [hB2, hD2]
-      ring
+  rw [div_eq_mul_inv, sign_mul, sign_mul, sign_pos hu2, sign_pos (inv_pos.2 hN), mul_one,
+    mul_one]
 
 /-- **Positive scalar curvature bounds the Yamabe quotient away from zero.** On a closed manifold
 of dimension `n > 2` with positive scalar curvature, there is a constant `C > 0` such that
@@ -268,7 +123,8 @@ theorem exists_pos_le_yamabeQuotient_of_scalarCurvature_pos (hn : 2 < finrank �
   have hSc : Continuous S :=
     (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
   obtain ⟨s, hs, hsS⟩ := isCompact_univ.exists_forall_le' hSc.continuousOn fun x _ ↦ hS x
-  obtain ⟨K, hK, hKu⟩ := exists_integral_abs_rpow_rpow_le (I := I) (M := M) hn
+  obtain ⟨K, hK, hKu⟩ :=
+    exists_integral_abs_rpow_rpow_le_mul_integral_mgradient_sq_add (I := I) (M := M) hn
   set m := min a s
   have hm : 0 < m := lt_min (conformalCoefficient_pos hn) hs
   refine ⟨m / K, by positivity, fun u hu hu0 ↦ ?_⟩
@@ -293,11 +149,19 @@ theorem exists_pos_le_yamabeQuotient_of_scalarCurvature_pos (hn : 2 < finrank �
     (integral_abs_rpow_pos hu.continuous hu0 (criticalExponent_pos hn)) _)]
   calc m / K * (∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂μ) ^
         (2 / criticalExponent (finrank ℝ E))
-      ≤ m / K * (K * (B + D)) := by gcongr; exact hKu u hu
+      ≤ m / K * (K * (B + D)) := by
+        gcongr
+        simpa only [criticalExponent_def] using hKu u hu
     _ = m * (B + D) := by field_simp
     _ ≤ _ := hnum
 
 end Closed
+
+end TauCeti.Yamabe
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+open TauCeti TauCeti.Yamabe
 
 section Eigenfunction
 
@@ -306,29 +170,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M]
   [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
   (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-
-/-- Dividing by a positive smooth eigenfunction `u` writes `w = u (w / u)`, and the Yamabe quotient
-of `g` at `w` is the Yamabe quotient of `ĝ = u ^ (4 / (n - 2)) g` at `w / u`. -/
-private theorem yamabeQuotient_eq_rescale_inv_mul (hn : finrank ℝ E ≠ 2) {u : M → ℝ}
-    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (hu_pos : ∀ x, 0 < u x) {w : M → ℝ}
-    (hw : ContMDiff I 𝓘(ℝ) 2 w) (hwc : HasCompactSupport w) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-          (F := E) (V := fun x : M ↦ TangentSpace I x);
-      yamabeQuotient I w) =
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2)))
-          (hu.rpow_const_of_ne (fun x ↦ (hu_pos x).ne') _)
-          (fun x ↦ Real.rpow_pos_of_pos (hu_pos x) _)).toRiemannianMetric⟩;
-      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-          (F := E) (V := fun x : M ↦ TangentSpace I x);
-      yamabeQuotient I fun x ↦ (u x)⁻¹ * w x) := by
-  have huv : (u * fun x ↦ (u x)⁻¹ * w x) = w :=
-    funext fun x ↦ mul_inv_cancel_left₀ (hu_pos x).ne' (w x)
-  rw [yamabeQuotient_rescale g hn hu_pos (v := fun x ↦ (u x)⁻¹ * w x)
-    (((hu.of_le (by simp)).inv₀ fun x ↦ (hu_pos x).ne').mul hw) hwc.mul_left, huv]
 
 /-- **A nonnegative eigenvalue gives nonnegative Yamabe quotients.** In dimension `n > 2`, let `u`
 be a positive smooth solution of `L_g u = λ u` with `λ ≥ 0` on a manifold without boundary. Then
@@ -348,8 +189,8 @@ theorem yamabeQuotient_nonneg_of_conformalLaplacian_eq_mul (hn : 2 < finrank ℝ
   have hf_pos (x : M) := Real.rpow_pos_of_pos (hu_pos x) (4 / ((finrank ℝ E : ℝ) - 2))
   -- The scalar curvature of `ĝ` is `λ u ^ (-4 / (n - 2)) ≥ 0`.
   have hS (x : M) := ((g.rescale _ hf hf_pos).scalarCurvature_def x).symm.trans
-    (scalarCurvature_rescale_of_conformalLaplacian_eq_mul g hn2 hu_pos (h x))
-  rw [yamabeQuotient_eq_rescale_inv_mul g hn2 hu hu_pos hw hwc]
+    (g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hn2 hu_pos (h x))
+  rw [g.yamabeQuotient_eq_rescale_inv_mul hn2 hu hu_pos hw hwc]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩
   let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
@@ -378,7 +219,7 @@ theorem exists_pos_le_yamabeQuotient_of_conformalLaplacian_eq_mul (hn : 2 < finr
   have hf_pos (x : M) := Real.rpow_pos_of_pos (hu_pos x) (4 / ((finrank ℝ E : ℝ) - 2))
   -- The scalar curvature of `ĝ` is `λ u ^ (-4 / (n - 2)) > 0`.
   have hS (x : M) := ((g.rescale _ hf hf_pos).scalarCurvature_def x).symm.trans
-    (scalarCurvature_rescale_of_conformalLaplacian_eq_mul g hn2 hu_pos (h x))
+    (g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hn2 hu_pos (h x))
   obtain ⟨C, hC, hCQ⟩ :=
     letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
       ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩
@@ -388,7 +229,7 @@ theorem exists_pos_le_yamabeQuotient_of_conformalLaplacian_eq_mul (hn : 2 < finr
       rw [hS x]
       exact mul_pos hc (Real.rpow_pos_of_pos (hu_pos x) _)
   refine ⟨C, hC, fun w hw hw0 ↦ ?_⟩
-  rw [yamabeQuotient_eq_rescale_inv_mul g hn2 hu hu_pos hw (HasCompactSupport.of_compactSpace w)]
+  rw [g.yamabeQuotient_eq_rescale_inv_mul hn2 hu hu_pos hw (HasCompactSupport.of_compactSpace w)]
   refine hCQ _ ((((hu.of_le (by simp)).inv₀ fun x ↦ (hu_pos x).ne').mul hw).of_le one_le_two)
     fun hv ↦ hw0 (funext fun x ↦ ?_)
   have hx := congrFun hv x
@@ -428,10 +269,10 @@ theorem sign_sInf_yamabeQuotient_of_conformalLaplacian_eq_mul [Nonempty M] (hn :
     rw [sign_zero, sign_eq_zero_iff] at hQu
     refine le_antisymm (hQu ▸ csInf_le hbdd hmem) (le_csInf ⟨_, hmem⟩ ?_)
     rintro _ ⟨w, hw, rfl⟩
-    exact yamabeQuotient_nonneg_of_conformalLaplacian_eq_mul g hn hu hu_pos le_rfl h hw.1
+    exact g.yamabeQuotient_nonneg_of_conformalLaplacian_eq_mul hn hu hu_pos le_rfl h hw.1
       (HasCompactSupport.of_compactSpace w)
   · rw [sign_pos hc, sign_eq_one_iff]
-    obtain ⟨C, hC, hCQ⟩ := exists_pos_le_yamabeQuotient_of_conformalLaplacian_eq_mul g hn hu
+    obtain ⟨C, hC, hCQ⟩ := g.exists_pos_le_yamabeQuotient_of_conformalLaplacian_eq_mul hn hu
       hu_pos hc h
     refine hC.trans_le (le_csInf ⟨_, hmem⟩ ?_)
     rintro _ ⟨w, hw, rfl⟩
@@ -439,4 +280,4 @@ theorem sign_sInf_yamabeQuotient_of_conformalLaplacian_eq_mul [Nonempty M] (hn :
 
 end Eigenfunction
 
-end TauCeti.Yamabe
+end Bundle.ContMDiffRiemannianMetric

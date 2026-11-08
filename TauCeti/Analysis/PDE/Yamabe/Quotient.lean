@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.Energy
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Geometry.Manifold.ContMDiff.RPow
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
 import TauCeti.MeasureTheory.Integral.AbsRpow
 
 /-!
@@ -70,6 +72,12 @@ All in the namespace `TauCeti.Yamabe`.
 * `yamabeQuotient_eq_of_conformalLaplacian_eq`: a solution of the Euler–Lagrange equation has
   `Q_g(u) = λ N(u) ^ (1 - 2 / pₙ)`, and
   `yamabeQuotient_eq_of_conformalLaplacian_eq_of_integral_eq_one`: `Q_g(u) = λ` at unit norm.
+
+In the namespace `Bundle.ContMDiffRiemannianMetric`:
+
+* `yamabeQuotient_rescale`: the conformal invariance `Q_ĝ(v) = Q_g(u v)` on compactly supported
+  `C²` functions, for `ĝ = u ^ (4 / (n - 2)) g`.
+* `yamabeQuotient_eq_rescale_inv_mul`: for a positive smooth `u`, `Q_g(w) = Q_ĝ(w / u)`.
 
 ## References
 
@@ -425,3 +433,79 @@ theorem forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_
 end FirstVariation
 
 end TauCeti.Yamabe
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+open TauCeti TauCeti.Yamabe
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
+  (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+
+/-- **Conformal invariance of the Yamabe quotient.** In dimension `n ≠ 2`, let `u` be a positive
+function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric on a manifold without boundary.
+Then `Q_ĝ(v) = Q_g(u v)` for every compactly supported `C²` function `v`. -/
+theorem yamabeQuotient_rescale (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {v : M → ℝ}
+    (hv : ContMDiff I 𝓘(ℝ) 2 v) (hvc : HasCompactSupport v) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf
+          hf_pos).toRiemannianMetric⟩;
+      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+          (F := E) (V := fun x : M ↦ TangentSpace I x);
+      yamabeQuotient I v) =
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+          (F := E) (V := fun x : M ↦ TangentSpace I x);
+      yamabeQuotient I (u * v)) := by
+  have hnum := integral_energy_rescale g hn hu_pos (hf := hf) (hf_pos := hf_pos) hv hvc
+  have hden := WithMetric.integral_abs_rpow_rescale_rpow (g := g) (fun x ↦ (hu_pos x).le)
+    (hf := hf) (hf_pos := hf_pos) v
+  rw [WithMetric.integral_comp_ofWithMetric _ fun y ↦
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
+        conformalCoefficient (finrank ℝ E) * ‖mgradient I v y‖ ^ 2) +
+        (g.rescale _ hf hf_pos).scalarCurvature y * v y ^ 2,
+    WithMetric.integral_comp_ofWithMetric g fun y ↦
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        conformalCoefficient (finrank ℝ E) * ‖mgradient I (u * v) y‖ ^ 2) +
+        g.scalarCurvature y * (u * v) y ^ 2] at hnum
+  rw [WithMetric.integral_comp_ofWithMetric _ fun y ↦ |v y| ^
+      (2 * (finrank ℝ E : ℝ) / ((finrank ℝ E : ℝ) - 2)),
+    WithMetric.integral_comp_ofWithMetric g fun y ↦ |u y * v y| ^
+      (2 * (finrank ℝ E : ℝ) / ((finrank ℝ E : ℝ) - 2))] at hden
+  simp only [ContMDiffRiemannianMetric.scalarCurvature_def] at hnum
+  simp only [yamabeQuotient_def, criticalExponent_def]
+  exact congrArg₂ _ hnum (congrArg (· ^ _) hden)
+
+/-- **The Yamabe quotient after dividing by a positive function.** In dimension `n ≠ 2`, let `u`
+be a positive smooth function on a manifold without boundary. Writing `w = u (w / u)`, the Yamabe
+quotient of `g` at a compactly supported `C²` function `w` is the Yamabe quotient of
+`ĝ = u ^ (4 / (n - 2)) g` at `w / u`. -/
+theorem yamabeQuotient_eq_rescale_inv_mul (hn : finrank ℝ E ≠ 2) {u : M → ℝ}
+    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (hu_pos : ∀ x, 0 < u x) {w : M → ℝ}
+    (hw : ContMDiff I 𝓘(ℝ) 2 w) (hwc : HasCompactSupport w) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+          (F := E) (V := fun x : M ↦ TangentSpace I x);
+      yamabeQuotient I w) =
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2)))
+          (hu.rpow_const_of_ne (fun x ↦ (hu_pos x).ne') _)
+          (fun x ↦ Real.rpow_pos_of_pos (hu_pos x) _)).toRiemannianMetric⟩;
+      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+          (F := E) (V := fun x : M ↦ TangentSpace I x);
+      yamabeQuotient I fun x ↦ (u x)⁻¹ * w x) := by
+  have huv : (u * fun x ↦ (u x)⁻¹ * w x) = w :=
+    funext fun x ↦ mul_inv_cancel_left₀ (hu_pos x).ne' (w x)
+  rw [g.yamabeQuotient_rescale hn hu_pos (v := fun x ↦ (u x)⁻¹ * w x)
+    (((hu.of_le (by simp)).inv₀ fun x ↦ (hu_pos x).ne').mul hw) hwc.mul_left, huv]
+
+end Bundle.ContMDiffRiemannianMetric
