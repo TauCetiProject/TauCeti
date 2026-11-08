@@ -76,8 +76,6 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
-* `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a function constant on `(-∞, a]` and on `[b, ∞)` has
-  zero derivative outside `(a, b)`.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
@@ -469,25 +467,6 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   · exact (hC t ⟨ht, htm⟩).trans (le_max_left _ _)
   · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
     exact (hK t htm.le).trans (le_max_right _ _)
-
-/-- A function that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing derivative outside
-`(a, b)`, with no regularity assumption. At a point of either closed ray the derivative, if it
-exists, equals the derivative along that ray, which is zero; where it does not exist the junk
-value is zero. -/
-theorem deriv_eq_zero_of_not_mem_Ioo {μ : ℝ → ℝ} {a b c : ℝ}
-    (hlow : ∀ r ≤ a, μ r = μ a) (hhigh : ∀ r, b ≤ r → μ r = c) :
-    ∀ r ∉ Ioo a b, deriv μ r = 0 := by
-  intro r hr
-  by_cases hd : DifferentiableAt ℝ μ r
-  swap
-  · exact deriv_zero_of_not_differentiableAt hd
-  rcases not_and_or.1 (by simpa only [mem_Ioo] using hr) with h | h
-  · have hr' : r ≤ a := not_lt.1 h
-    exact (uniqueDiffOn_Iic a r hr').eq_deriv _ hd.hasDerivAt.hasDerivWithinAt
-      ((hasDerivWithinAt_const r (Iic a) (μ a)).congr (fun x hx ↦ hlow x hx) (hlow r hr'))
-  · have hr' : b ≤ r := not_lt.1 h
-    exact (uniqueDiffOn_Ici b r hr').eq_deriv _ hd.hasDerivAt.hasDerivWithinAt
-      ((hasDerivWithinAt_const r (Ici b) c).congr (fun x hx ↦ hhigh x hx) (hhigh r hr'))
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is

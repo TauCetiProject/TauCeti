@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
+import TauCeti.Analysis.Calculus.Deriv.Const
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
