@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -242,32 +242,12 @@ private theorem contMDiff_exteriorOneBilin
 private theorem contMDiff_exteriorOneValue
     (A : ContMDiffSection I (E →L[ℝ] F) ∞ (fun x ↦ TangentSpace I x →L[ℝ] V x)) :
     ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F) x (exteriorOneValue cov A x)) := by
-  intro x
-  rw [contMDiffAt_continuousAlternatingMap_bundle]
-  refine ⟨contMDiffAt_id, TauCeti.contMDiffAt_continuousAlternatingMap_apply.2 fun v ↦ ?_⟩
-  let e := trivializationAt E (TangentSpace I : M → Type _) x
-  have he : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  have hs (i : Fin 2) : CMDiffAt ∞ (T% (fun y ↦ e.symm y (v i))) x := by
-    rw [contMDiffAt_section]
-    refine (contMDiffAt_const (c := v i)).congr_of_eventuallyEq ?_
-    filter_upwards [e.open_baseSet.mem_nhds he] with y hy
-    exact congr(Prod.snd $(e.apply_mk_symm hy (v i)))
-  have h := ((contMDiff_exteriorOneBilin cov A x).clm_bundle_apply (hs 0)).clm_bundle_apply
-    (hs 1)
-  have hc := (contMDiffAt_totalSpace.1 h).2
-  refine hc.congr_of_eventuallyEq ?_
-  let e' := trivializationAt F V x
-  have he' : x ∈ e'.baseSet := mem_baseSet_trivializationAt F V x
-  filter_upwards [e.open_baseSet.mem_nhds he, e'.open_baseSet.mem_nhds he'] with y hy hy'
-  simp only [ContinuousAlternatingMap.inCoordinates,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    exteriorOneValue, AlternatingMap.coe_toContinuousAlternatingMap,
-    LinearMap.IsAlt.toAlternatingMap_apply,
-    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, Function.comp_apply]
-  rw [Trivialization.symmL_apply _ hy, Trivialization.symmL_apply _ hy]
-  exact e'.continuousLinearMapAt_apply_of_mem ℝ hy' _
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F) x (exteriorOneValue cov A x)) :=
+  fun x ↦ contMDiffAt_continuousAlternatingMap_bundle_of_bilinear
+    (contMDiff_exteriorOneBilin cov A x) fun _ _ ↦ by
+      simp only [exteriorOneValue, AlternatingMap.coe_toContinuousAlternatingMap,
+        LinearMap.IsAlt.toAlternatingMap_apply,
+        ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- The exterior covariant derivative of smooth bundle-valued one-forms, as a real
 linear map to smooth bundle-valued two-forms. Its normalization has no factor of two. -/
