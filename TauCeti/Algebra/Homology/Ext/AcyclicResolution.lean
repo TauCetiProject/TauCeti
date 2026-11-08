@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
@@ -73,6 +72,37 @@ public section
 open CategoryTheory Limits Abelian
 
 universe t w v u
+
+namespace CategoryTheory.Functor.CorepresentableBy
+
+/-! ### Corepresentations of additive functors to `Ab`
+
+For an additive functor `G : C ⥤ Ab` corepresented by `P`, the bijection `(P ⟶ X) ≃ G(X)` of the
+corepresentation is additive. -/
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {G : C ⥤ AddCommGrpCat.{t}} [G.Additive]
+  {P : C} (R : (G ⋙ forget AddCommGrpCat).CorepresentableBy P)
+
+/-- The corepresentation of an additive functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
+lemma homEquiv_zero {X : C} : R.homEquiv (0 : P ⟶ X) = (0 : G.obj X) := by
+  rw [R.homEquiv_eq, Functor.comp_map, G.map_zero]
+  rfl
+
+/-- The inverse of the corepresentation of an additive functor `G : C ⥤ Ab` sends zero to the zero
+morphism. -/
+lemma homEquiv_symm_zero {X : C} : R.homEquiv.symm (0 : G.obj X) = 0 :=
+  R.homEquiv.symm_apply_eq.2 R.homEquiv_zero.symm
+
+/-- The inverse of the corepresentation `(P ⟶ X) ≃ G(X)` of an additive functor `G : C ⥤ Ab` is
+additive. -/
+lemma homEquiv_symm_add {X : C} (x y : G.obj X) :
+    R.homEquiv.symm (x + y) = R.homEquiv.symm x + R.homEquiv.symm y := by
+  have h (z : G.obj X) : G.map (R.homEquiv.symm z) (R.homEquiv (𝟙 P)) = z :=
+    (R.homEquiv_eq _).symm.trans (R.homEquiv.apply_symm_apply z)
+  rw [R.homEquiv.symm_apply_eq, R.homEquiv_eq, Functor.comp_map, G.map_add]
+  exact (congrArg₂ (· + ·) (h x) (h y)).symm
+
+end CategoryTheory.Functor.CorepresentableBy
 
 namespace CochainComplex
 
@@ -316,24 +346,6 @@ variable (G : C ⥤ AddCommGrpCat.{t}) [G.Additive]
   (R : (G ⋙ forget AddCommGrpCat).CorepresentableBy P)
 
 omit [HasExt C] in
-/-- The inverse of the bijection `(P ⟶ X) ≃ G(X)` of the corepresentation is additive. -/
-private lemma homEquiv_symm_add {X : C} (x y : G.obj X) :
-    R.homEquiv.symm (x + y) = R.homEquiv.symm x + R.homEquiv.symm y := by
-  have h (z : G.obj X) : G.map (R.homEquiv.symm z) (R.homEquiv (𝟙 P)) = z :=
-    (R.homEquiv_eq _).symm.trans (R.homEquiv.apply_symm_apply z)
-  rw [R.homEquiv.symm_apply_eq, R.homEquiv_eq, Functor.comp_map, G.map_add]
-  exact (congrArg₂ (· + ·) (h x) (h y)).symm
-
-omit [HasExt C] in
-private lemma homEquiv_zero {X : C} : R.homEquiv (0 : P ⟶ X) = 0 := by
-  rw [R.homEquiv_eq, Functor.comp_map, G.map_zero]
-  rfl
-
-omit [HasExt C] in
-private lemma homEquiv_symm_zero {X : C} : R.homEquiv.symm (0 : G.obj X) = 0 :=
-  R.homEquiv.symm_apply_eq.2 (homEquiv_zero G R).symm
-
-omit [HasExt C] in
 include R in
 /-- A cycle of `G(K)` corresponds under the corepresentation to a cocycle of `Hom(P, K)`. -/
 private lemma homEquiv_symm_iCycles_comp_d (n : ℕ)
@@ -349,9 +361,9 @@ private noncomputable def cyclesExtClass (n : ℕ) :
   toFun c := K.extMk ι hι hι' hK (R.homEquiv.symm (((G.mapHomologicalComplex _).obj K).iCycles n c))
     (homEquiv_symm_iCycles_comp_d G R n c)
   map_zero' := by
-    simp only [map_zero, homEquiv_symm_zero G R, extMk_zero]
+    simp only [map_zero, R.homEquiv_symm_zero, extMk_zero]
   map_add' c c' := by
-    simp only [map_add, homEquiv_symm_add G R]
+    simp only [map_add, R.homEquiv_symm_add]
     exact K.extMk_add ι hι hι' hK _ _ (homEquiv_symm_iCycles_comp_d G R n c)
       (homEquiv_symm_iCycles_comp_d G R n c')
 
@@ -381,9 +393,14 @@ private lemma surjective_cyclesExtClass (n : ℕ) :
   -- the cocycle `f` of `Hom(P, K)` is a cycle of `G(K)`
   refine ⟨(((G.mapHomologicalComplex _).obj K).sc n).abCyclesIso.inv ⟨R.homEquiv f, ?_⟩,
     cyclesExtClass_eq_extMk ι hι hι' hK G R _ f hf (ShortComplex.abCyclesIso_inv_apply_iCycles _ _)⟩
-  change G.map (K.d n ((ComplexShape.up ℕ).next n)) (R.homEquiv f) = 0
-  rw [CochainComplex.next ℕ n]
-  exact (R.homEquiv_comp _ f).symm.trans (by rw [hf, homEquiv_zero]; rfl)
+  have hd : G.map (K.d n ((ComplexShape.up ℕ).next n)) (R.homEquiv f) = 0 := by
+    rw [CochainComplex.next]
+    exact (R.homEquiv_comp _ f).symm.trans (by rw [hf, R.homEquiv_zero])
+  -- The differential `(sc n).g` of `G(K)` is `G(dⁿ)` on `G(Kⁿ)` by the definitions of
+  -- `HomologicalComplex.sc` and `Functor.mapHomologicalComplex`. The goal states membership of
+  -- `R.homEquiv f : G(Kⁿ)` in its kernel only up to this unfolding, so it is not rewritable with
+  -- `HomologicalComplex.shortComplexFunctor_obj_g`, and `exact` checks the identification.
+  exact AddMonoidHom.mem_ker.2 hd
 
 include hP in
 /-- A cycle of `G(K)` has zero class in `Extⁿ(P, F)` exactly when it is a boundary. -/
@@ -398,9 +415,8 @@ private lemma cyclesExtClass_eq_zero_iff (n : ℕ)
   | zero =>
     have hπ := (AddCommGrpCat.mono_iff_injective
       (((G.mapHomologicalComplex _).obj K).homologyπ 0)).1 inferInstance
-    rw [extMk_zero_eq_zero_iff, ← homEquiv_symm_zero G R, R.homEquiv.symm.injective.eq_iff,
-      ← map_zero (((G.mapHomologicalComplex _).obj K).iCycles 0).hom, hi.eq_iff,
-      ← map_zero (((G.mapHomologicalComplex _).obj K).homologyπ 0).hom, hπ.eq_iff]
+    simp only [extMk_zero_eq_zero_iff, Equiv.symm_apply_eq, R.homEquiv_zero,
+      (injective_iff_map_eq_zero' _).1 hi, (injective_iff_map_eq_zero' _).1 hπ]
   | succ k =>
     have hex : ((G.mapHomologicalComplex _).obj K).homologyπ (k + 1) c = 0 ↔
         ∃ y, ((G.mapHomologicalComplex _).obj K).toCycles k (k + 1) y = c :=
