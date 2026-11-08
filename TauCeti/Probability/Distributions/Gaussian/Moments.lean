@@ -158,6 +158,14 @@ theorem integral_sq_gaussianReal (m : ℝ) (v : ℝ≥0) :
   simp only [id_eq, Pi.pow_apply, integral_id_gaussianReal] at h
   linarith
 
+/-- The fourth centered moment of a real Gaussian distribution is three times its
+squared variance. -/
+theorem integral_sub_pow_four_gaussianReal (m : ℝ) (v : ℝ≥0) :
+    ∫ x, (x - m) ^ 4 ∂gaussianReal m v = 3 * (v : ℝ) ^ 2 := by
+  have hfour : (2 * 2 - 1 : ℕ)‼ = 3 := by norm_num [Nat.doubleFactorial]
+  simpa only [hfour, Nat.reduceMul, Nat.cast_ofNat, mul_comm] using
+    integral_sub_pow_two_mul_gaussianReal m v 2
+
 /-- Every odd centered moment of a real Gaussian distribution vanishes. -/
 @[simp]
 theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
