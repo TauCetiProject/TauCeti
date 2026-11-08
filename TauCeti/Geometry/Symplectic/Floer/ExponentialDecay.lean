@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -57,8 +58,6 @@ not treated here.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.hamiltonianAction_sub_hamiltonianAction_eq_integral`: the expansion of
-  the action at an orbit, without linear term.
 * `TauCeti.SymplecticForm.exists_forall_norm_sub_le_mul_integral_of_nondegenerate`: a loop near a
   nondegenerate orbit is uniformly within a constant times the `L¹` norm of its defect.
 * `TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_of_nondegenerate`: the action
@@ -89,102 +88,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V}
 
-/-- **Second-order Taylor bound for a Hamiltonian.** If the Hamiltonian vector field of a
-differentiable function `G` satisfies `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on the closed ball of
-radius `r` about `y₀`, then `|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` for
-`‖y - y₀‖ ≤ r`, where `‖ω‖` is the operator norm of the form. -/
-theorem abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le {G : V → ℝ}
-    (hG : Differentiable ℝ G) {y₀ y : V} {L r : ℝ} (hL : 0 ≤ L)
-    (hX : ∀ z ∈ closedBall y₀ r,
-      ‖ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀‖ ≤ L * ‖z - y₀‖)
-    (hy : ‖y - y₀‖ ≤ r) :
-    |G y - G y₀ - fderiv ℝ G y₀ (y - y₀)| ≤
-      ‖ω.toBilinForm.toContinuousBilinearMap‖ * L * ‖y - y₀‖ ^ 2 := by
-  set B := ‖ω.toBilinForm.toContinuousBilinearMap‖
-  -- On the ball of radius `‖y - y₀‖`, `dG(z) - dG(y₀) = ω(X_G(z) - X_G(y₀), ·)` is small.
-  have hball (z : V) (hz : z ∈ closedBall y₀ ‖y - y₀‖) :
-      ‖fderiv ℝ G z - fderiv ℝ G y₀‖ ≤ B * L * ‖y - y₀‖ := by
-    have hz' : ‖z - y₀‖ ≤ ‖y - y₀‖ := by simpa [dist_eq_norm] using hz
-    have hXz := (hX z (mem_closedBall.2 (by rw [dist_eq_norm]; exact hz'.trans hy))).trans
-      (mul_le_mul_of_nonneg_left hz' hL)
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-    rw [sub_apply, ← ω.apply_hamiltonianVectorField, ← ω.apply_hamiltonianVectorField,
-      Real.norm_eq_abs]
-    have h := ω.abs_apply_le_opNorm_mul_norm_mul_norm
-      (ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀) v
-    simp only [map_sub, LinearMap.sub_apply] at h
-    calc _ ≤ B * ‖ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀‖ * ‖v‖ := h
-      _ ≤ B * (L * ‖y - y₀‖) * ‖v‖ := by gcongr
-      _ = _ := by ring
-  have hmv := (convex_closedBall y₀ ‖y - y₀‖).norm_image_sub_le_of_norm_fderiv_le'
-    (fun z _ ↦ hG z) hball (mem_closedBall_self (norm_nonneg _))
-    (show y ∈ closedBall y₀ ‖y - y₀‖ by simp [dist_eq_norm])
-  rw [Real.norm_eq_abs] at hmv
-  exact hmv.trans_eq (by ring)
-
-/-- **The action near a critical loop.** Let `x` be an orbit of the Hamiltonian vector field of a
-`C¹` Hamiltonian `H` with `x 1 = x 0`, and let `γ` be a loop with continuous derivative `γ'` and
-`γ 1 = γ 0`. Since `x` is a critical point of the action, the action difference has no term linear
-in `ξ = γ - x`:
-`A_H(γ) - A_H(x) = ∫₀¹ (½ ω(ξ, ξ') + H_t(γ) - H_t(x) - dH_t(x) ξ) dt`. -/
-theorem hamiltonianAction_sub_hamiltonianAction_eq_integral (hH : ContDiff ℝ 1 (uncurry H))
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hx1 : x 1 = x 0)
-    {γ γ' : ℝ → V} (hγ' : Continuous γ') (hγ : ∀ t, HasDerivAt γ (γ' t) t) (hγ1 : γ 1 = γ 0) :
-    ω.hamiltonianAction H γ - ω.hamiltonianAction H x =
-      ∫ t in (0 : ℝ)..1, ((1 / 2 : ℝ) *
-        ω (γ t - x t) (γ' t - ω.hamiltonianVectorField (H t) (x t)) +
-        (H t (γ t) - H t (x t) - fderiv ℝ (H t) (x t) (γ t - x t))) := by
-  set X : ℝ → V → V := fun t ↦ ω.hamiltonianVectorField (H t)
-  set ξ : ℝ → V := fun t ↦ γ t - x t with hξdef
-  set ξ' : ℝ → V := fun t ↦ γ' t - X t (x t) with hξ'def
-  simp only [← ω.apply_hamiltonianVectorField]
-  have hXc : Continuous (uncurry X) :=
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
-  have hγc : Continuous γ := continuous_iff_continuousAt.2 fun t ↦ (hγ t).continuousAt
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  have hXcomp {p : ℝ → V} (hp : Continuous p) : Continuous fun t ↦ X t (p t) :=
-    hXc.comp (continuous_id.prodMk hp)
-  have hHcomp {p : ℝ → V} (hp : Continuous p) : Continuous fun t ↦ H t (p t) :=
-    hH.continuous.comp (continuous_id.prodMk hp)
-  have hξc : Continuous ξ := hγc.sub hxc
-  have hξ'c : Continuous ξ' := hγ'.sub (hXcomp hxc)
-  -- The derivative of `ω(x, ξ)` integrates to zero over a period.
-  have i₆ : IntervalIntegrable (fun t ↦ ω (X t (x t)) (ξ t) + ω (x t) (ξ' t)) volume 0 1 :=
-    ((ω.continuous_apply_comp (hXcomp hxc) hξc).add
-      (ω.continuous_apply_comp hxc hξ'c)).intervalIntegrable _ _
-  have hφ : ∫ t in (0 : ℝ)..1, (ω (X t (x t)) (ξ t) + ω (x t) (ξ' t)) = 0 := by
-    rw [integral_eq_sub_of_hasDerivAt (f := fun t ↦ ω (x t) (ξ t))
-      (fun t _ ↦ ω.hasDerivAt_apply_comp (hx t) ((hγ t).sub (hx t))) i₆]
-    simp [hξdef, hγ1, hx1]
-  -- Pointwise, the action density differs from the claimed integrand by half that derivative.
-  have hpt (t : ℝ) : (1 / 2 : ℝ) * ω (γ t) (γ' t) + H t (γ t) -
-      ((1 / 2 : ℝ) * ω (x t) (X t (x t)) + H t (x t)) =
-      ((1 / 2 : ℝ) * ω (ξ t) (ξ' t) + (H t (γ t) - H t (x t) - ω (X t (x t)) (ξ t))) +
-        (1 / 2 : ℝ) * (ω (X t (x t)) (ξ t) + ω (x t) (ξ' t)) := by
-    have hγt : γ t = x t + ξ t := by simp [hξdef]
-    have hγ't : γ' t = X t (x t) + ξ' t := by simp [hξ'def]
-    have hskew : ω (ξ t) (X t (x t)) = -ω (X t (x t)) (ξ t) := (ω.neg_eq _ _).symm
-    simp only [hγt, hγ't, map_add, LinearMap.add_apply] at hskew ⊢
-    linear_combination (1 / 2 : ℝ) * hskew
-  have hdγ : deriv γ = γ' := funext fun t ↦ (hγ t).deriv
-  have hdx : deriv x = fun t ↦ X t (x t) := funext fun t ↦ (hx t).deriv
-  have i₁ := (ω.continuous_apply_comp hγc hγ').intervalIntegrable (μ := volume) 0 1
-  have i₂ := (hHcomp hγc).intervalIntegrable (μ := volume) 0 1
-  have i₃ := (ω.continuous_apply_comp hxc (hXcomp hxc)).intervalIntegrable (μ := volume) 0 1
-  have i₄ := (hHcomp hxc).intervalIntegrable (μ := volume) 0 1
-  have i₅ : IntervalIntegrable (fun t ↦ (1 / 2 : ℝ) * ω (ξ t) (ξ' t) +
-      (H t (γ t) - H t (x t) - ω (X t (x t)) (ξ t))) volume 0 1 :=
-    ((continuous_const.mul (ω.continuous_apply_comp hξc hξ'c)).add
-      (((hHcomp hγc).sub (hHcomp hxc)).sub
-        (ω.continuous_apply_comp (hXcomp hxc) hξc))).intervalIntegrable _ _
-  have h := integral_congr (μ := volume) (a := 0) (b := 1) fun t _ ↦ hpt t
-  rw [integral_sub ((i₁.const_mul _).add i₂) ((i₃.const_mul _).add i₄), integral_add i₅
-    (i₆.const_mul _), integral_add (i₁.const_mul _) i₂, integral_add (i₃.const_mul _) i₄,
-    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_const_mul, hφ] at h
-  rw [hamiltonianAction_def, hamiltonianAction_def, loopArea_def, loopArea_def, hdγ, hdx]
-  linear_combination h
-
 /-- **Loops near a nondegenerate orbit.** Let `H` be a `C²` Hamiltonian and let `x` be an orbit of
 its Hamiltonian vector field with `x 1 = x 0`, nondegenerate in the sense that the propagator `Ψ`
 of the linearized equation `ζ' = dX_{H_t}(x(t)) ζ` has no nonzero fixed vector at time `1`. Then
@@ -214,7 +117,8 @@ theorem exists_forall_norm_sub_le_mul_integral_of_nondegenerate (hH : ContDiff �
   -- The linearization error `r` is at most `ε₁ ‖ξ‖`, small enough to be absorbed.
   set ε₁ : ℝ := 1 / (2 * (C₀ + 1))
   have hC₀ε₁ : C₀ * ε₁ ≤ 1 / 2 := by
-    rw [show C₀ * ε₁ = C₀ / (2 * (C₀ + 1)) by ring, div_le_iff₀ (by positivity)]
+    have hε₁ : C₀ * ε₁ = C₀ / (2 * (C₀ + 1)) := by ring
+    rw [hε₁, div_le_iff₀ (by positivity)]
     linarith
   obtain ⟨δ, hδ, hlin⟩ := IsCompact.exists_pos_forall_norm_sub_sub_fderiv_le
     (isCompact_Icc (a := (0 : ℝ)) (b := 1)) hXc hxc.continuousOn (ε := ε₁) (by positivity)
@@ -322,7 +226,7 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
     exact (norm_add_le _ _).trans (add_le_add le_rfl ((hXlip t ht _ (hδ₂x t ht)).trans
       (mul_le_mul_of_nonneg_left (hξm t ht) (by positivity))))
   have hRb (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : |R t| ≤ B * (|L| + 1) * m ^ 2 := by
-    have h := abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le (ω := ω)
+    have h := ω.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le
       (fun y ↦ (hH.comp (contDiff_const.prodMk contDiff_id)).differentiable (by norm_num) y)
       (by positivity) (fun z hz ↦ hXlip t ht z (by simpa [dist_eq_norm] using hz)) (hδ₂x t ht)
     calc |R t| ≤ B * (|L| + 1) * ‖ξ t‖ ^ 2 := h
@@ -355,23 +259,17 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
             intervalIntegral.integral_const_mul, intervalIntegral.integral_const, sub_zero,
             one_smul]
   -- The `L¹` norm of the defect is at most its `L²` norm.
+  have hN0 : 0 ≤ N := integral_nonneg zero_le_one fun _ _ ↦ norm_nonneg _
   have hN2 : N ^ 2 ≤ ∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2 := by
-    have h := integral_nonneg (μ := volume) zero_le_one fun t (_ : t ∈ Icc (0 : ℝ) 1) ↦
-      sq_nonneg (‖η t‖ - N)
-    have hc : ∫ t in (0 : ℝ)..1, (‖η t‖ - N) ^ 2 =
-        (∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2) - 2 * N * N + N ^ 2 := by
-      simp only [sub_sq]
-      rw [intervalIntegral.integral_add, intervalIntegral.integral_sub,
-        intervalIntegral.integral_mul_const, intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_const, sub_zero, one_smul]
-      all_goals exact Continuous.intervalIntegrable (by fun_prop) _ _
-    rw [hc] at h
-    nlinarith
-  rw [hamiltonianAction_sub_hamiltonianAction_eq_integral (hH.of_le (by norm_num)) hx hx1 hγ' hγ
+    have h := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg (η t))
+      ((hηc.norm.pow 2).intervalIntegrable _ _)
+    rw [sub_zero, Real.sqrt_one, one_mul] at h
+    calc N ^ 2 ≤ √(∫ t in (0 : ℝ)..1, ‖η t‖ ^ 2) ^ 2 := by gcongr
+      _ = _ := Real.sq_sqrt (integral_nonneg zero_le_one fun _ _ ↦ by positivity)
+  rw [ω.hamiltonianAction_sub_hamiltonianAction_eq_integral (hH.of_le (by norm_num)) hx hx1 hγ' hγ
     hγ1]
   calc _ ≤ (1 / 2 : ℝ) * B * m * N + (3 / 2 : ℝ) * B * (|L| + 1) * m ^ 2 := hint
     _ ≤ (1 / 2 : ℝ) * B * (C₀ * N) * N + (3 / 2 : ℝ) * B * (|L| + 1) * (C₀ * N) ^ 2 := by
-        have hN0 : 0 ≤ N := integral_nonneg zero_le_one fun _ _ ↦ norm_nonneg _
         gcongr
     _ = (B * C₀ / 2 + 3 / 2 * B * (|L| + 1) * C₀ ^ 2) * N ^ 2 := by ring
     _ ≤ _ := mul_le_mul_of_nonneg_left hN2 (by positivity)
