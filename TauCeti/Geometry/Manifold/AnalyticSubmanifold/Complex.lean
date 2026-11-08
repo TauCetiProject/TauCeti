@@ -111,7 +111,7 @@ locus under the real linear equivalence `(e_ℂ.restrictScalars ℝ).symm.trans 
 private theorem image_inter_setOf_star_eq_image_inter
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedSpace ℝ E] [IsScalarTower ℝ ℂ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n m : ℕ} {s : Set M}
+    {M : Type*} [TopologicalSpace M] {n m : ℕ} {s : Set M}
     (e_ℂ : E ≃L[ℂ] Fin n → ℂ) (e_ℝ : E ≃L[ℝ] Fin m → ℝ) (φ : OpenPartialHomeomorph M H)
     {W : Set M}
     (hWs : ∀ y ∈ W, y ∈ s ↔ star (e_ℂ (φ.extend I y)) = e_ℂ (φ.extend I y)) :
