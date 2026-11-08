@@ -90,6 +90,15 @@ theorem samplePopulation_def (σ : Measure (ι → κ)) (ρ : Measure (κ → α
     samplePopulation σ ρ = (σ.prod ρ).map fun p i => p.2 (p.1 i) :=
   Measure.mapₗ_mk_apply_of_aemeasurable measurable_reindexPopulation.aemeasurable
 
+/-- Sampling a deterministic population is the pushforward of the selection law by reading
+that population at the selected indices. -/
+@[simp]
+theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ → α) :
+    samplePopulation σ (Measure.dirac x) = σ.map (fun k i => x (k i)) := by
+  rw [samplePopulation_def, Measure.prod_dirac,
+    Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
+  rfl
+
 /-- Sampling a finite population law along a finite selection law gives a finite law. -/
 instance isFiniteMeasure_samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α))
     [IsFiniteMeasure σ] [IsFiniteMeasure ρ] :
