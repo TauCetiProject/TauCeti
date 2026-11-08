@@ -141,29 +141,6 @@ private theorem tendsto_ftaylorSeriesWithin_restrict_extChartAt [IsManifold I n 
   simpa only [ftaylorSeriesWithin, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp, Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using h
 
-/-- Convergence of the Taylor coefficients of the chart transition
-`extChartAt y ∘ (extChartAt x).symm` along the constant family, jointly with the point. -/
-private theorem tendsto_ftaylorSeriesWithin_extChartAt_comp_symm [IsManifold I n M]
-    [LocallyCompactSpace E] {P : Type*} {l : Filter P} (x y : M) {z : E}
-    (hz : z ∈ (extChartAt I x).target) (hys : (extChartAt I x).symm z ∈ (extChartAt I y).source)
-    (m : ℕ) (hm : m ≤ n) (k : ℕ) (hk : k ≤ m) :
-    Tendsto (fun q : P × E ↦ ftaylorSeriesWithin 𝕜
-      (extChartAt I y ∘ (extChartAt I x).symm) (extChartAt I x).target q.2 k)
-      (l ×ˢ 𝓝[(extChartAt I x).target] z)
-      (𝓝 (ftaylorSeriesWithin 𝕜 (extChartAt I y ∘ (extChartAt I x).symm)
-        (extChartAt I x).target z k)) := by
-  have hidcoe : ((ContMDiffMap.id : C^n⟮I, M; I, M⟯) : M → M) = _root_.id := rfl
-  have hc : Tendsto (fun q : P × E ↦
-      ((ContMDiffMap.id : C^n⟮I, M; I, M⟯), q.2))
-      (l ×ˢ 𝓝[(extChartAt I x).target] z)
-      (𝓝 ContMDiffMap.id ×ˢ 𝓝[(extChartAt I x).target] z) :=
-    tendsto_const_nhds.prodMk tendsto_snd
-  have h := (tendsto_iteratedFDerivWithin_extChartAt
-    (f₀ := (ContMDiffMap.id : C^n⟮I, M; I, M⟯)) hz hys
-    ((Nat.cast_le.mpr hk).trans hm)).comp hc
-  simpa only [ftaylorSeriesWithin, hidcoe, Function.id_comp, Function.comp_def,
-    Prod.map_fst, Prod.map_snd, id_eq] using h
-
 /-- Convergence of an open restriction controls every ambient chart derivative near a point in
 that open set, jointly with the source point. No regularity of the parameter is required. -/
 theorem tendsto_iteratedFDerivWithin_of_restrict [IsManifold I n M] [LocallyCompactSpace E]
@@ -191,7 +168,8 @@ theorem tendsto_iteratedFDerivWithin_of_restrict [IsManifold I n M] [LocallyComp
   have hjg := fun k hk ↦
     tendsto_ftaylorSeriesWithin_restrict_extChartAt U hg x y hv hτ m hm k hk
   have hjp := fun k hk ↦
-    tendsto_ftaylorSeriesWithin_extChartAt_comp_symm (P := P) (l := l) x y hz hys m hm k hk
+    tendsto_ftaylorSeriesWithin_extChartAt_comp_symm (P := P) (l := l) x y hz hys (k := k)
+      ((Nat.cast_le.mpr hk).trans hm)
   have hφ := continuousOn_extChartAt_symm (I := I) x z hz
   have hU : ∀ᶠ q : P × E in l ×ˢ 𝓝[(extChartAt I x).target] z,
       (extChartAt I x).symm q.2 ∈ U :=
