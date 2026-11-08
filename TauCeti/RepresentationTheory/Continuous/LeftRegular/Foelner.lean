@@ -43,11 +43,10 @@ theorem _root_.Finset.norm_count_leftRegular_sub_indicatorConstLp (F : Finset G)
     ext x
     simp only [Set.mem_preimage, Finset.mem_coe]
     rw [← Finset.mul_mem_smul_finset_iff g, mul_inv_cancel_left]
-  rw [leftRegular_apply, Lp.indicatorConstLp_compMeasurePreserving, ← dist_eq_norm_sub,
-    dist_indicatorConstLp_eq_norm, norm_indicatorConstLp (by simp) (by simp)]
-  rw [hpre, ← Finset.coe_symmDiff]
-  simp only [measureReal_def, count_apply_finset]
-  simp [Real.sqrt_eq_rpow]
+  rw [leftRegular_apply, Lp.indicatorConstLp_compMeasurePreserving]
+  simp [← dist_eq_norm_sub, dist_indicatorConstLp_eq_norm,
+    norm_indicatorConstLp (p := 2) (by simp) (by simp), hpre, ← Finset.coe_symmDiff,
+    measureReal_def, Real.sqrt_eq_rpow, -Finset.coe_smul_finset]
 
 omit [DecidableEq G] in
 /-- Følner sets produce almost invariant unit vectors in the counting-measure regular
