@@ -65,16 +65,16 @@ example :
     t ≠ 0 ∧ t ^ 2 = 0 := by
   intro
   dsimp only
-  have h := ConcreteCategory.congr_hom (discreteIsoSpec_inv_globalSections (ZMod 4)) 2
-  -- Evaluate the composite ring map before rewriting its value.
-  erw [CommRingCat.comp_apply] at h
+  have h := (CommRingCat.comp_apply
+    (globalSectionsIso (IsAdicRing.ideal_spec (ZMod 4)).2.1).inv
+    ((discreteIsoSpec (ZMod 4)).inv.c.app (op ⊤)) (2 : ZMod 4)).symm.trans
+      (ConcreteCategory.congr_hom (discreteIsoSpec_inv_globalSections (ZMod 4)) 2)
   have hn : (toSpecΓ (CommRingCat.of (ZMod 4))) 2 ≠ 0 := by
     intro hz
     have hi := (ConcreteCategory.bijective_of_isIso (toSpecΓ (CommRingCat.of (ZMod 4)))).injective
     exact (by decide : (2 : ZMod 4) ≠ 0) (hi (hz.trans (map_zero _).symm))
-  -- The bundled morphism and structure-sheaf evaluation give the same section ring.
-  erw [h]
-  refine ⟨hn, ?_⟩
+  refine ⟨fun hz ↦ hn (h.symm.trans hz), ?_⟩
+  refine (congrArg (· ^ 2) h).trans ?_
   rw [← map_pow]
   exact (congrArg (toSpecΓ (CommRingCat.of (ZMod 4))) (by decide : (2 : ZMod 4) ^ 2 = 0)).trans
     (map_zero _)

@@ -121,6 +121,22 @@ theorem fromSpecQuotient_globalSections (hJ : IsAdic J) :
   -- identification. Use the component description before composing with their comparison.
   exact (congrArg (· ≫ (quotientSheafGlobalSectionsIso hJ).hom) h).trans (by simp)
 
+/-- The quotient inclusion sends global coefficients to their classes, viewed as ordinary
+spectrum sections. -/
+@[reassoc]
+theorem globalSectionsIso_inv_comp_fromSpecQuotient (hJ : IsAdic J) :
+    have := (IsAdicRing.ideal_spec A).2.2
+    (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv ≫
+        LocallyRingedSpace.Γ.map (fromSpecQuotient hJ).op =
+      CommRingCat.ofHom (Ideal.Quotient.mk J) ≫ toSpecΓ (CommRingCat.of (A ⧸ J)) := by
+  intro
+  have h := globalSectionsIso_inv_comp_toQuotientSheaf (IsAdicRing.ideal_spec A).2.1 hJ
+  rw [quotientSheafGlobalSectionsIso_inv] at h
+  -- The bundled Spec uses sections over the pullback of the top open. These are the
+  -- quotient-sheaf global sections, but rewriting the component alone is ill-typed.
+  -- Isolate this definitional identification at the public global-sections boundary.
+  convert h using 1; rfl
+
 -- This comparison isolates the transport of the bundled Spec sheaf map along the
 -- equality of the quotient inclusions. The inclusion `i` is the restriction supplied
 -- by presheafed-space extensionality in the naturality proof below.
@@ -173,17 +189,18 @@ instance fromSpecQuotient_mono (hJ : IsAdic J) : Mono (fromSpecQuotient hJ) := b
 /-- The zero-ideal quotient inclusion is an isomorphism whenever zero defines the topology. -/
 instance fromSpecQuotient_bot_isIso (h0 : IsAdic (⊥ : Ideal A)) :
     IsIso (fromSpecQuotient h0) := by
-  have : IsIso (fromSpecQuotient h0).base :=
+  have hbase : IsIso (fromSpecQuotient h0).base :=
     (TopCat.isIso_iff_isHomeomorph _).mpr (fromSpecQuotient_isHomeomorph h0)
-  have : IsIso (fromSpecQuotient h0).c := by
-    -- The sheaf component has the same map, with the bundled spectrum's presheaf as target.
-    convert (sheafToPresheaf _ _).map_isIso
-      (toQuotientSheaf (IsAdicRing.ideal_spec A).2.1 h0) using 1; rfl
-  have : IsIso (C := PresheafedSpace CommRingCat) (fromSpecQuotient h0).toHom :=
-    PresheafedSpace.isIso_of_components _
-  -- The composite forgetful functor's map is the underlying presheafed-space morphism.
+  rw [fromSpecQuotient_base] at hbase
+  have hc : IsIso (toQuotientSheaf (IsAdicRing.ideal_spec A).2.1 h0).hom :=
+    (sheafToPresheaf _ _).map_isIso (toQuotientSheaf (IsAdicRing.ideal_spec A).2.1 h0)
+  have hpresheaf : IsIso (C := PresheafedSpace CommRingCat) (fromSpecQuotient h0).toHom := by
+    rw [fromSpecQuotient_toHom]
+    exact @PresheafedSpace.isIso_of_components _ _ _ _ _ hbase hc
   have : IsIso ((LocallyRingedSpace.forgetToSheafedSpace ⋙
-      SheafedSpace.forgetToPresheafedSpace).map (fromSpecQuotient h0)) := ‹_›
+      SheafedSpace.forgetToPresheafedSpace).map (fromSpecQuotient h0)) := by
+    rw [Functor.comp_map]
+    exact hpresheaf
   exact isIso_of_reflects_iso _
     (LocallyRingedSpace.forgetToSheafedSpace ⋙ SheafedSpace.forgetToPresheafedSpace)
 
@@ -194,18 +211,16 @@ theorem fromSpecQuotient_isIso_iff (hJ : IsAdic J) :
     IsIso (fromSpecQuotient hJ) ↔ J = ⊥ := by
   constructor
   · intro h
-    have hsections : IsIso ((fromSpecQuotient hJ).c.app (op ⊤)) :=
+    have hsections : IsIso (LocallyRingedSpace.Γ.map (fromSpecQuotient hJ).op) :=
       LocallyRingedSpace.Γ.map_isIso (fromSpecQuotient hJ).op
     have := (IsAdicRing.ideal_spec A).2.2
-    have : IsIso (CommRingCat.ofHom (Ideal.Quotient.mk J)) := by
-      have heq := fromSpecQuotient_globalSections hJ
-      have hglobal := (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).isIso_inv
-      have hquotient := (quotientSheafGlobalSectionsIso hJ).isIso_hom
-      have hi := IsIso.comp_isIso' hglobal hsections
-      have hi' := IsIso.comp_isIso' hi hquotient
-      -- The intermediate objects are the bundled and unbundled rings of global sections.
-      erw [Category.assoc, heq] at hi'
-      exact hi'
+    have : IsIso (CommRingCat.ofHom (Ideal.Quotient.mk J) ≫
+        toSpecΓ (CommRingCat.of (A ⧸ J))) := by
+      rw [← globalSectionsIso_inv_comp_fromSpecQuotient hJ]
+      exact IsIso.comp_isIso' (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).isIso_inv
+        hsections
+    have : IsIso (CommRingCat.ofHom (Ideal.Quotient.mk J)) :=
+      IsIso.of_isIso_comp_right _ (toSpecΓ (CommRingCat.of (A ⧸ J)))
     have hinj := (ConcreteCategory.bijective_of_isIso
       (CommRingCat.ofHom (Ideal.Quotient.mk J))).injective
     simpa using (RingHom.injective_iff_ker_eq_bot (Ideal.Quotient.mk J)).mp hinj

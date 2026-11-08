@@ -58,15 +58,14 @@ theorem discreteIsoSpec_inv :
 theorem discreteIsoSpec_inv_base_apply (q : PrimeSpectrum A) :
     Subtype.val ((discreteIsoSpec A).inv.base q : carrier A) = q := by
   calc
-    _ = PrimeSpectrum.comap (Ideal.Quotient.mk (⊥ : Ideal A))
-        (PrimeSpectrum.comap (RingEquiv.quotientBot A).toRingHom q) := by
+    _ = Subtype.val ((fromSpecQuotient (is_bot_adic_iff.mpr inferInstance)).base
+        (PrimeSpectrum.comap (RingEquiv.quotientBot A).toRingHom q) : carrier A) := by
       rw [discreteIsoSpec_inv]
-      erw [LocallyRingedSpace.comp_base, TopCat.comp_app, fromSpecQuotient_base,
-        quotientInclusion_apply]
-      -- Compute the composite on points through the bundled spectrum and quotient inclusion.
-      convert coe_homeomorphSpecQuotient_symm_apply
-        (is_bot_adic_iff.mpr inferInstance : IsAdic (⊥ : Ideal A))
-        (PrimeSpectrum.comap (RingEquiv.quotientBot A).toRingHom q) using 1; rfl
+      rfl
+    _ = PrimeSpectrum.comap (Ideal.Quotient.mk (⊥ : Ideal A))
+        (PrimeSpectrum.comap (RingEquiv.quotientBot A).toRingHom q) :=
+      (congrArg Subtype.val (fromSpecQuotient_points _ _)).trans
+        (coe_homeomorphSpecQuotient_symm_apply _ _)
     _ = q := by
       ext a
       simp [Ideal.mem_comap]
@@ -76,9 +75,8 @@ theorem discreteIsoSpec_inv_base_apply (q : PrimeSpectrum A) :
 theorem discreteIsoSpec_hom_base_apply (p : carrier A) :
     (discreteIsoSpec A).hom.base p = (p : PrimeSpectrum A) := by
   have h := discreteIsoSpec_inv_base_apply A ((discreteIsoSpec A).hom.base p)
-  -- The base maps have the bundled locally ringed spaces as their source and target.
-  erw [LocallyRingedSpace.iso_hom_base_inv_base_apply] at h
-  exact h.symm
+  have hinv := LocallyRingedSpace.iso_hom_base_inv_base_apply (discreteIsoSpec A) p
+  exact h.symm.trans (congrArg Subtype.val hinv)
 
 /-- The discrete comparison preserves global coefficients: the inverse induces the usual
 map `A → Γ(Spec A)` on global sections. -/
@@ -90,18 +88,6 @@ theorem discreteIsoSpec_inv_globalSections :
   intro
   rw [← LocallyRingedSpace.Γ_map_op]
   let h0 : IsAdic (⊥ : Ideal A) := is_bot_adic_iff.mpr inferInstance
-  have h := congrArg (· ≫ (quotientSheafGlobalSectionsIso h0).inv)
-    (fromSpecQuotient_globalSections h0)
-  -- Reassociate through the bundled global-section ring before cancelling the quotient iso.
-  erw [Category.assoc, Category.assoc, Iso.hom_inv_id, Category.comp_id,
-    quotientSheafGlobalSectionsIso_inv] at h
-  have h' : (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv ≫
-      LocallyRingedSpace.Γ.map (fromSpecQuotient h0).op =
-      CommRingCat.ofHom (Ideal.Quotient.mk (⊥ : Ideal A)) ≫
-        toSpecΓ (CommRingCat.of (A ⧸ (⊥ : Ideal A))) := by
-    -- Quotient global sections are ordinary spectrum sections; their inverse comparison is
-    -- the coefficient map, as is `toSpecΓ`.
-    convert h using 1; rfl
   let e := CommRingCat.ofHom (RingEquiv.quotientBot A).toRingHom
   let t := LocallyRingedSpace.Γ.map (Spec.toLocallyRingedSpace.map e.op).op
   calc
@@ -110,7 +96,9 @@ theorem discreteIsoSpec_inv_globalSections :
       rw [discreteIsoSpec_inv, op_comp, Functor.map_comp]
       exact (Category.assoc _ _ _).symm
     _ = (CommRingCat.ofHom (Ideal.Quotient.mk (⊥ : Ideal A)) ≫
-        toSpecΓ (CommRingCat.of (A ⧸ (⊥ : Ideal A)))) ≫ t := congrArg (· ≫ t) h'
+        toSpecΓ (CommRingCat.of (A ⧸ (⊥ : Ideal A)))) ≫ t := by
+      rw [globalSectionsIso_inv_comp_fromSpecQuotient]
+      rfl
     _ = CommRingCat.ofHom (Ideal.Quotient.mk (⊥ : Ideal A)) ≫
         (e ≫ toSpecΓ (CommRingCat.of A)) := by
       rw [Category.assoc, ← Spec_Γ_naturality e]
