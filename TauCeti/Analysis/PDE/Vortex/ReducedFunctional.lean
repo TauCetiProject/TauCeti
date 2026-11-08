@@ -92,11 +92,6 @@ theorem reducedFunctional_def (P : Polynomial ℂ) (w : ℂ → ℝ) :
 
 /-! ### Pointwise estimates -/
 
-/-- The potential `exp (2t) - 1 - 2t` is nonnegative. -/
-private theorem exp_two_mul_sub_one_sub_two_mul_nonneg (t : ℝ) :
-    0 ≤ Real.exp (2 * t) - 1 - 2 * t := by
-  linarith [Real.add_one_le_exp (2 * t)]
-
 /-- The elementary algebra behind the bound on `∫ w²`: if `W ≤ 64 k M + k² S` and
 `k² ≤ β (1 + M)`, then `W² ≤ (8192 β + 2 β² S²) (1 + M)³`. -/
 private theorem sq_le_mul_one_add_pow_three {W k M S β : ℝ} (hW : 0 ≤ W) (hM : 0 ≤ M)
@@ -148,7 +143,8 @@ private theorem integrable_potential {w : ℂ → ℝ} (hw : Continuous w)
 /-- The potential integral `∫ h (exp (2w) - 1 - 2w)` is nonnegative. -/
 private theorem integral_potential_nonneg (w : ℂ → ℝ) :
     0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-  integral_nonneg fun z ↦ mul_nonneg (by positivity) (exp_two_mul_sub_one_sub_two_mul_nonneg _)
+  integral_nonneg fun z ↦
+    mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
 
 /-- The energy `∫ ‖Dw‖² / 2 + (1 / 16) ∫ h (exp (2w) - 1 - 2w)` is nonnegative. -/
 private theorem energy_nonneg (w : ℂ → ℝ) :
@@ -171,7 +167,7 @@ private theorem setIntegral_compl_closedBall_le {R : ℝ}
       (hws.mono fun z hz h0 ↦ hz (by simp [h0]))
   have hpot (z : ℂ) :
       0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-    mul_nonneg (by positivity) (exp_two_mul_sub_one_sub_two_mul_nonneg _)
+    mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
   rw [← integral_const_mul]
   calc ∫ z in (closedBall (0 : ℂ) R)ᶜ, (√(1 + w z ^ 2) - 1)
       ≤ ∫ z in (closedBall (0 : ℂ) R)ᶜ, 2 * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
@@ -183,7 +179,7 @@ private theorem setIntegral_compl_closedBall_le {R : ℝ}
           rw [div_le_div_iff₀ (by norm_num) (by positivity)]
           nlinarith
         have := Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul (w z)
-        have := exp_two_mul_sub_one_sub_two_mul_nonneg (w z)
+        have := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (w z)
         nlinarith
     _ ≤ ∫ z, 2 * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
           (Real.exp (2 * w z) - 1 - 2 * w z)) :=

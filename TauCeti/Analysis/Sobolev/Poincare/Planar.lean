@@ -65,11 +65,8 @@ open scoped ENNReal
 /-- The smooth function `r(t) = t / √(1 + √(1 + t²))`, whose square is `√(1 + t²) - 1`. -/
 private def modularRoot (t : ℝ) : ℝ := t / √(1 + √(1 + t ^ 2))
 
-private theorem one_le_sqrt_one_add_sq (t : ℝ) : 1 ≤ √(1 + t ^ 2) :=
-  Real.one_le_sqrt.mpr (by nlinarith [sq_nonneg t])
-
 private theorem modularRoot_sq (t : ℝ) : modularRoot t ^ 2 = √(1 + t ^ 2) - 1 := by
-  have h1 := one_le_sqrt_one_add_sq t
+  have h1 := Real.one_le_sqrt_one_add_sq t
   have hs : √(1 + t ^ 2) ^ 2 = 1 + t ^ 2 := Real.sq_sqrt (by positivity)
   rw [modularRoot, div_pow, Real.sq_sqrt (by linarith), div_eq_iff (by linarith)]
   nlinarith
@@ -103,11 +100,6 @@ private theorem hasDerivAt_modularRoot_pow_three (t : ℝ) :
   simp only [Nat.cast_ofNat]
   rw [← heq]
   ring
-
-private theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| ≤ 1 := by
-  have hpos : 0 < √(1 + t ^ 2) := by linarith [one_le_sqrt_one_add_sq t]
-  rw [abs_div, abs_of_pos hpos, div_le_one₀ hpos]
-  exact Real.abs_le_sqrt (by linarith)
 
 /-- Composition with `r` preserves continuity and compact support. -/
 private theorem continuous_hasCompactSupport_modularRoot_comp {X : Type*} [TopologicalSpace X]
@@ -174,7 +166,7 @@ private theorem integral_modularRoot_pow_three_sq_le (hE : finrank ℝ E = 2) {w
         ((hw.differentiable one_ne_zero) x).hasFDerivAt
     rw [h.fderiv, norm_smul, Real.norm_eq_abs, abs_mul, abs_mul,
       abs_of_pos (by norm_num : (0 : ℝ) < 3 / 2)]
-    have h1 := abs_div_sqrt_one_add_sq_le_one (w x)
+    have h1 := Real.abs_div_sqrt_one_add_sq_le_one (w x)
     calc 3 / 2 * |modularRoot (w x)| * |w x / √(1 + w x ^ 2)| * ‖fderiv ℝ w x‖ ≤
           3 / 2 * |modularRoot (w x)| * 1 * ‖fderiv ℝ w x‖ := by gcongr
       _ = 3 / 2 * (|modularRoot (w x)| * ‖fderiv ℝ w x‖) := by ring
@@ -322,7 +314,7 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
   have hk : 0 ≤ 2 + 3 / 2 * √(lintegralPowLePowLIntegralFDerivConst μ 2 : ℝ) *
       √(∫ x, ‖fderiv ℝ w x‖ ^ 2 ∂μ) := by positivity
   have hQ : 0 ≤ ∫ x in sᶜ, (√(1 + w x ^ 2) - 1) ∂μ :=
-    integral_nonneg fun x ↦ sub_nonneg.mpr (one_le_sqrt_one_add_sq (w x))
+    integral_nonneg fun x ↦ sub_nonneg.mpr (Real.one_le_sqrt_one_add_sq (w x))
   have hW := (integral_sq_le_mul_integral_modular μ hE hw hws).trans
     (mul_le_mul_of_nonneg_left hsplit hk)
   exact le_two_mul_add_sq_mul_of_le_mul_add hk hQ measureReal_nonneg hW hZ

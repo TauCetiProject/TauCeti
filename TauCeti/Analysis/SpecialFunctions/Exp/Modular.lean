@@ -22,11 +22,21 @@ linearly, as does the modular. This file records the comparison
 potential into a bound on a quantity comparable to `min (t², |t|)`. It is the pointwise input to
 coercivity estimates for functionals with this potential, such as Taubes's functional for planar
 vortices.
+
+## Main results
+
+* `Real.exp_two_mul_sub_one_sub_two_mul_nonneg`: for every real `t`, `0 ≤ exp (2t) - 1 - 2t`.
+* `Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul`: for every real `t`,
+  `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
 -/
 
 public section
 
 namespace Real
+
+/-- The potential `exp (2t) - 1 - 2t` is nonnegative. -/
+theorem exp_two_mul_sub_one_sub_two_mul_nonneg (t : ℝ) : 0 ≤ exp (2 * t) - 1 - 2 * t := by
+  linarith [add_one_le_exp (2 * t)]
 
 /-- The potential `exp (2t) - 1 - 2t` dominates the modular `√(1 + t²) - 1`. -/
 theorem sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul (t : ℝ) :
