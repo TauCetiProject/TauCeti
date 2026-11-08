@@ -477,7 +477,8 @@ theorem iteratedDeriv_pgf_zero (ν : Measure ℕ) [IsFiniteMeasure ν] (n : ℕ)
   rw [hcoeff, mul_comm]
 
 /-- Evaluating at the origin the probability-generating function of a measure on `ℕ` gives
-the mass of `{0}`.  For a finite measure this is the `n = 0` case of `iteratedDeriv_pgf_zero`,
+the real-valued mass `ν.real {0}`; if `ν {0} = ∞` both sides are `0`, as `ν.real` sends infinite
+mass to zero.  For a finite measure this is the `n = 0` case of `iteratedDeriv_pgf_zero`,
 which `simp` normalises away from `iteratedDeriv`. -/
 @[simp]
 theorem pgf_zero (ν : Measure ℕ) : pgf id ν 0 = ν.real {0} := by
