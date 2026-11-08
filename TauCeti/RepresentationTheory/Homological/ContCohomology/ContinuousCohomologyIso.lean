@@ -237,9 +237,9 @@ end Cocycle
 section Transport
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
+variable [IsTopologicalAddGroup M] in
 /-- **Layer 3, transport of the compatible-pair pullback in degree zero.** The comparison carries
 the explicit pullback `TauCeti.ContCohomology.explicitMap0` along a compatible pair to Mathlib's
 `ContinuousCohomology.map` along the same pair. The two transports below are its instances at the
@@ -283,6 +283,7 @@ theorem explicitH0Iso_res (S : Subgroup G) (x : H0 G M) :
   exact explicitH0Iso_map G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
     (fun _ _ => rfl) x
 
+variable [IsTopologicalAddGroup M] in
 /-- **Layer 3, transport of coefficient maps in degree zero.** The comparison carries the explicit
 coefficient map to the canonical one attached to the same equivariant homomorphism; the canonical
 coefficient morphism is the compatible pair at the identity, by
