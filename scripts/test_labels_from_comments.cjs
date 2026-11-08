@@ -1,11 +1,11 @@
 // Exercise the actual inline workflow scripts with a mocked GitHub API.
-// Run: node --test .github/scripts/test-labels-from-comments.cjs
+// Run: node --test scripts/test_labels_from_comments.cjs
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 const { test } = require('node:test');
 
-const workflow = readFileSync(resolve(__dirname, '../workflows/labels-from-comments.yml'), 'utf8');
+const workflow = readFileSync(resolve(__dirname, '../.github/workflows/labels-from-comments.yml'), 'utf8');
 const scripts = [...workflow.matchAll(/^          script: \|\n((?:            .*\n|\n)+)/gm)]
   .map(match => match[1].replace(/^            /gm, ''));
 assert.equal(scripts.length, 2);
@@ -62,6 +62,7 @@ test('last instruction wins independently for each label', async () => {
 
 test('prose, quoted labels, case differences, and code remain inert', async () => {
   assert.deepEqual(await commands([
+    // Mathlib's regression case: a bot directive ending in a label is not a command.
     'please add enhancement', '!downstream-check enhancement', '> enhancement', '`enhancement`', 'ENHANCEMENT',
     '- enhancement', 'help  wanted', 'enhancement, documentation', '$(touch /tmp/label-injection)',
     '${{ secrets.APP_PRIVATE_KEY }}', 'process.exit(1)',

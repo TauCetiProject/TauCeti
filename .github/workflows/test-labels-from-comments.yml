@@ -5,13 +5,13 @@ on:
     paths:
       - .github/workflows/labels-from-comments.yml
       - .github/workflows/test-labels-from-comments.yml
-      - .github/scripts/test-labels-from-comments.cjs
+      - scripts/test_labels_from_comments.cjs
   push:
     branches: [main]
     paths:
       - .github/workflows/labels-from-comments.yml
       - .github/workflows/test-labels-from-comments.yml
-      - .github/scripts/test-labels-from-comments.cjs
+      - scripts/test_labels_from_comments.cjs
 
 permissions:
   contents: read
@@ -24,4 +24,4 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: node --test .github/scripts/test-labels-from-comments.cjs
+      - run: node --test scripts/test_labels_from_comments.cjs
