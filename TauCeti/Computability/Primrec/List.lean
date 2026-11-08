@@ -17,7 +17,9 @@ cyclic reductions of trivial free-group words.
 
 Searching a list for its first element passing a test, `List.find?`, is primitive recursive.
 Over `List.range n` this is the bounded least-witness search of finite-stage constructions,
-returning `none` when no number below `n` passes the test.
+returning `none` when no number below `n` passes the test. A relation searched over all numbers
+up to the length of a primitive-recursively computed list stays primitive recursive
+(`PrimrecRel.exists_le_length`).
 -/
 
 public section
@@ -42,6 +44,19 @@ theorem list_find? {β : Type*} [Primcodable β] {f : α → List β} {p : α �
     List.find?_eq_getElem?_findIdx.symm
 
 end Primrec
+
+namespace PrimrecRel
+
+/-- A relation searched over all `n ≤ (f b).length`, for `f` primitive recursive, stays
+primitive recursive. -/
+theorem exists_le_length {β γ : Type*} [Primcodable β] [Primcodable γ]
+    {f : β → List γ} {R : ℕ → β → Prop} (hR : PrimrecRel R) (hf : Primrec f) :
+    PrimrecPred fun b => ∃ n ≤ (f b).length, R n b :=
+  (hR.exists_mem_list.comp
+    (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp hf)))
+    Primrec.id).of_eq fun _ => by simp only [List.mem_range, Nat.lt_succ_iff, id_eq]
+
+end PrimrecRel
 
 namespace List
 
