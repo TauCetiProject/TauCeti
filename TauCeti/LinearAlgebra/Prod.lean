@@ -38,6 +38,7 @@ quadratic forms with the subgroup preserving both summands.
   basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
+* `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -125,6 +126,17 @@ theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (
 end CommRing
 
 end LinearEquiv
+
+namespace LinearMap
+
+/-- The graph of a linear map `f : M → M₂` has the dimension of `M`. -/
+theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
+    [Module R M₂] (f : M →ₗ[R] M₂) : Module.finrank R (graph f) = Module.finrank R M := by
+  rw [graph_eq_range_prod, finrank_range_of_inj]
+  intro x y h
+  exact congr(($h).1)
+
+end LinearMap
 
 namespace Module.Basis
 

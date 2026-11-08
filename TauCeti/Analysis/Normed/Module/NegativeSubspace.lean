@@ -8,12 +8,14 @@ module
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.Topology.Instances.Sign
+public import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Graph coordinates for negative subspaces
 
 For the normalized quadratic form `Q(u,v) = -‖u‖² + ‖v‖²`, strict negativity at every
-nonzero vector of a subspace is equivalent to `‖v‖ < ‖u‖`. Such a subspace projects
+nonzero vector of a subspace is equivalent to `‖v‖ < ‖u‖`; such a subspace is called
+*split-negative* (`Submodule.IsSplitNegative`). It projects
 injectively to the first factor. When its dimension equals that of the first factor,
 it is the graph of a unique continuous linear map `A` with `‖A‖ < 1`.
 
@@ -24,7 +26,7 @@ to a real normed first factor and a real seminormed second factor; only in inner
 spaces is `Q` a quadratic form. Only the first factor needs to be finite dimensional.
 
 The main result is
-`Submodule.existsUnique_eq_graph_iff_finrank_eq_and_norm_snd_lt`. The preceding dimension
+`Submodule.existsUnique_eq_graph_iff_finrank_eq_and_isSplitNegative`. The preceding dimension
 bound and the final maximality theorem explain why subspaces of this dimension are
 maximal among negative subspaces. The statements include a zero-dimensional first factor.
 In these graph coordinates the space of maximal negative subspaces is the open unit ball of
@@ -62,24 +64,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [SeminormedAddCommGroup F] [NormedSpace ℝ F]
 
 namespace ContinuousLinearMap
-
-/-- A graph is strictly negative for `-‖u‖² + ‖v‖²` exactly when its operator has norm
-strictly less than one. Finite-dimensionality is essential for the reverse implication. -/
-theorem opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt [FiniteDimensional ℝ E]
-    (A : E →L[ℝ] F) :
-    ‖A‖ < 1 ↔ ∀ z ∈ A.toLinearMap.graph, z ≠ 0 → ‖z.2‖ < ‖z.1‖ := by
-  rw [A.opNorm_lt_iff zero_lt_one]
-  constructor
-  · intro h z hz hne
-    have hzA := (LinearMap.mem_graph_iff _ _).mp hz
-    have hfst : z.1 ≠ 0 := by
-      intro hzero
-      apply hne
-      exact Prod.ext hzero (by simpa [hzero] using hzA)
-    simpa only [hzA, ContinuousLinearMap.coe_coe, one_mul] using h z.1 hfst
-  · intro h u hu
-    have hne : (u, A u) ≠ (0 : E × F) := fun hz ↦ hu (congrArg Prod.fst hz)
-    simpa only [one_mul] using h (u, A u) (by simp) hne
 
 /-- A frame whose nonzero values lie strictly inside the negative cone has injective negative
 block. No finite-dimensionality is needed, and the frame may be defined on any space. -/
@@ -188,55 +172,115 @@ end ContinuousLinearMap
 
 namespace Submodule
 
-/-- A subspace lying strictly inside the negative cone projects injectively to the negative
-factor. No finite-dimensionality is needed for this implication. -/
-theorem injective_fst_of_norm_snd_lt (W : Submodule ℝ (E × F))
-    (hW : ∀ z ∈ W, z ≠ 0 → ‖z.2‖ < ‖z.1‖) :
+variable {W W' : Submodule ℝ (E × F)}
+
+/-- A submodule `W` of `E × F` is *split-negative* if the split indefinite form
+`Q(u, v) = -‖u‖² + ‖v‖²` is negative on every nonzero vector of `W`: `‖v‖ < ‖u‖` for every
+nonzero `(u, v) ∈ W`. -/
+def IsSplitNegative (W : Submodule ℝ (E × F)) : Prop :=
+  ∀ w ∈ W, w ≠ 0 → ‖w.2‖ < ‖w.1‖
+
+theorem isSplitNegative_iff : W.IsSplitNegative ↔ ∀ w ∈ W, w ≠ 0 → ‖w.2‖ < ‖w.1‖ :=
+  Iff.rfl
+
+@[simp]
+theorem isSplitNegative_bot : (⊥ : Submodule ℝ (E × F)).IsSplitNegative := by
+  intro w hw hw0
+  exact absurd ((mem_bot ℝ).1 hw) hw0
+
+/-- A submodule of a split-negative subspace is split-negative. -/
+theorem IsSplitNegative.mono (hW : W.IsSplitNegative) (h : W' ≤ W) : W'.IsSplitNegative :=
+  fun w hw ↦ hW w (h hw)
+
+/-- A nonzero vector of a split-negative subspace has nonzero first component. -/
+theorem IsSplitNegative.fst_ne_zero (hW : W.IsSplitNegative) {w : E × F} (hw : w ∈ W)
+    (hw0 : w ≠ 0) : w.1 ≠ 0 := by
+  intro h
+  have := hW w hw hw0
+  rw [h, norm_zero] at this
+  exact (norm_nonneg _).not_gt this
+
+/-- A split-negative subspace meets the positive factor `0 × F` only in `0`. -/
+theorem IsSplitNegative.disjoint_ker_fst (hW : W.IsSplitNegative) :
+    Disjoint W (LinearMap.ker (LinearMap.fst ℝ E F)) := by
+  rw [disjoint_def]
+  intro w hw hw'
+  by_contra hw0
+  exact hW.fst_ne_zero hw hw0 hw'
+
+/-- The graph of a linear map `T : E → F` is split-negative exactly when `T` strictly decreases
+the norm of every nonzero vector. -/
+theorem isSplitNegative_graph_iff (T : E →ₗ[ℝ] F) :
+    (LinearMap.graph T).IsSplitNegative ↔ ∀ u, u ≠ 0 → ‖T u‖ < ‖u‖ := by
+  refine ⟨fun h u hu ↦ h (u, T u) rfl fun h0 ↦ hu congr(($h0).1), fun h w hw hw0 ↦ ?_⟩
+  rw [LinearMap.mem_graph_iff] at hw
+  rw [hw]
+  refine h _ fun h1 ↦ hw0 (Prod.ext h1 ?_)
+  rw [hw, h1, map_zero, Prod.snd_zero]
+
+/-- A split-negative subspace projects injectively to the negative factor. No
+finite-dimensionality is needed for this implication. -/
+theorem IsSplitNegative.injective_fst (hW : W.IsSplitNegative) :
     Injective ((LinearMap.fst ℝ E F).comp W.subtype) :=
   W.subtypeL.injective_fst_comp_of_norm_snd_lt fun z hz ↦
     hW z z.property (by simpa using hz)
 
-variable [FiniteDimensional ℝ E]
+end Submodule
 
-/-- Every subspace strictly inside the negative cone is finite dimensional, even if the
-positive factor is infinite dimensional. -/
-theorem finiteDimensional_of_norm_snd_lt (W : Submodule ℝ (E × F))
-    (hW : ∀ z ∈ W, z ≠ 0 → ‖z.2‖ < ‖z.1‖) : FiniteDimensional ℝ W :=
-  FiniteDimensional.of_injective _ (W.injective_fst_of_norm_snd_lt hW)
+namespace ContinuousLinearMap
 
-/-- The dimension of a negative subspace is at most that of the negative factor. -/
-theorem finrank_le_of_norm_snd_lt (W : Submodule ℝ (E × F))
-    (hW : ∀ z ∈ W, z ≠ 0 → ‖z.2‖ < ‖z.1‖) :
+/-- A graph is strictly negative for `-‖u‖² + ‖v‖²` exactly when its operator has norm
+strictly less than one. Finite-dimensionality is essential for the reverse implication. -/
+theorem opNorm_lt_one_iff_isSplitNegative_graph [FiniteDimensional ℝ E] (A : E →L[ℝ] F) :
+    ‖A‖ < 1 ↔ A.toLinearMap.graph.IsSplitNegative := by
+  rw [A.opNorm_lt_iff zero_lt_one, Submodule.isSplitNegative_graph_iff]
+  simp only [ContinuousLinearMap.coe_coe, one_mul]
+
+/-- The range of a frame whose nonzero values lie strictly inside the negative cone is
+split-negative. -/
+theorem isSplitNegative_range_of_norm_snd_lt {V : Type*} [TopologicalSpace V] [AddCommGroup V]
+    [Module ℝ V] (L : V →L[ℝ] E × F) (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) :
+    (LinearMap.range (L : V →ₗ[ℝ] E × F)).IsSplitNegative := by
+  rintro _ ⟨u, rfl⟩ hu
+  exact hL u fun h ↦ hu (by simp [h])
+
+end ContinuousLinearMap
+
+namespace Submodule
+
+variable [FiniteDimensional ℝ E] {W V : Submodule ℝ (E × F)}
+
+/-- Every split-negative subspace is finite dimensional, even if the positive factor is
+infinite dimensional. -/
+theorem IsSplitNegative.finiteDimensional (hW : W.IsSplitNegative) : FiniteDimensional ℝ W :=
+  FiniteDimensional.of_injective _ hW.injective_fst
+
+/-- The dimension of a split-negative subspace is at most that of the negative factor. -/
+theorem IsSplitNegative.finrank_le (hW : W.IsSplitNegative) :
     Module.finrank ℝ W ≤ Module.finrank ℝ E :=
-  LinearMap.finrank_le_finrank_of_injective (W.injective_fst_of_norm_snd_lt hW)
+  LinearMap.finrank_le_finrank_of_injective hW.injective_fst
 
-/-- A negative subspace of full negative dimension is the graph of a strict contraction. -/
-theorem exists_eq_graph_of_finrank_eq_of_norm_snd_lt (W : Submodule ℝ (E × F))
-    (hdim : Module.finrank ℝ W = Module.finrank ℝ E)
-    (hW : ∀ z ∈ W, z ≠ 0 → ‖z.2‖ < ‖z.1‖) :
+/-- A split-negative subspace of full negative dimension is the graph of a strict contraction. -/
+theorem IsSplitNegative.exists_eq_graph_of_finrank_eq (hW : W.IsSplitNegative)
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ E) :
     ∃ A : E →L[ℝ] F, ‖A‖ < 1 ∧ W = A.toLinearMap.graph := by
-  have := W.finiteDimensional_of_norm_snd_lt hW
-  have hinj := W.injective_fst_of_norm_snd_lt hW
+  have := hW.finiteDimensional
+  have hinj := hW.injective_fst
   have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp hinj
   obtain ⟨A, hA⟩ := W.exists_eq_graph ⟨hinj, hsurj⟩
   refine ⟨A.toContinuousLinearMap, ?_, hA⟩
-  exact A.toContinuousLinearMap.opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt.mpr (hA ▸ hW)
+  exact A.toContinuousLinearMap.opNorm_lt_one_iff_isSplitNegative_graph.mpr (hA ▸ hW)
 
-/-- The full-dimensional negative subspaces are exactly the graphs of unique operators in the
-open operator-norm unit ball. This is the global graph-coordinate classification. -/
-theorem existsUnique_eq_graph_iff_finrank_eq_and_norm_snd_lt (W : Submodule ℝ (E × F)) :
+/-- The full-dimensional split-negative subspaces are exactly the graphs of unique operators in
+the open operator-norm unit ball. This is the global graph-coordinate classification. -/
+theorem existsUnique_eq_graph_iff_finrank_eq_and_isSplitNegative (W : Submodule ℝ (E × F)) :
     (∃! A : E →L[ℝ] F, ‖A‖ < 1 ∧ W = A.toLinearMap.graph) ↔
-      Module.finrank ℝ W = Module.finrank ℝ E ∧
-        ∀ z ∈ W, z ≠ 0 → ‖z.2‖ < ‖z.1‖ := by
+      Module.finrank ℝ W = Module.finrank ℝ E ∧ W.IsSplitNegative := by
   constructor
   · rintro ⟨A, ⟨hA, rfl⟩, -⟩
-    refine ⟨?_, A.opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt.mp hA⟩
-    rw [LinearMap.graph_eq_range_prod]
-    apply LinearMap.finrank_range_of_inj
-    intro u v huv
-    exact congrArg Prod.fst huv
+    exact ⟨LinearMap.finrank_graph _, A.opNorm_lt_one_iff_isSplitNegative_graph.mp hA⟩
   · rintro ⟨hdim, hW⟩
-    obtain ⟨A, hA, hgraph⟩ := W.exists_eq_graph_of_finrank_eq_of_norm_snd_lt hdim hW
+    obtain ⟨A, hA, hgraph⟩ := hW.exists_eq_graph_of_finrank_eq hdim
     refine ⟨A, ⟨hA, hgraph⟩, fun B hB ↦ ?_⟩
     ext u
     have hu : (u, B u) ∈ A.toLinearMap.graph := by
@@ -244,13 +288,13 @@ theorem existsUnique_eq_graph_iff_finrank_eq_and_norm_snd_lt (W : Submodule ℝ 
       simp
     exact (LinearMap.mem_graph_iff _ _).mp hu
 
-/-- A full-dimensional negative subspace cannot be enlarged while remaining negative. -/
-theorem eq_of_le_of_finrank_eq_of_norm_snd_lt (W V : Submodule ℝ (E × F))
-    (hWV : W ≤ V) (hdim : Module.finrank ℝ W = Module.finrank ℝ E)
-    (hV : ∀ z ∈ V, z ≠ 0 → ‖z.2‖ < ‖z.1‖) : W = V := by
-  have := V.finiteDimensional_of_norm_snd_lt hV
+/-- A full-dimensional subspace of a split-negative subspace is all of it: a full-dimensional
+split-negative subspace cannot be enlarged while remaining split-negative. -/
+theorem IsSplitNegative.eq_of_le_of_finrank_eq (hV : V.IsSplitNegative) (hWV : W ≤ V)
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ E) : W = V := by
+  have := hV.finiteDimensional
   apply Submodule.eq_of_le_of_finrank_le hWV
   rw [hdim]
-  exact V.finrank_le_of_norm_snd_lt hV
+  exact hV.finrank_le
 
 end Submodule

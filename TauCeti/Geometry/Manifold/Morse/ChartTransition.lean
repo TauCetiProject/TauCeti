@@ -132,11 +132,10 @@ theorem existsUnique_range_fderiv_transition_inl_eq_graph [FiniteDimensional ℝ
   set L := (fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0).comp (ContinuousLinearMap.inl ℝ E F)
   have hneg (u : E) (hu : u ≠ 0) : ‖(L u).2‖ < ‖(L u).1‖ := by
     simpa [L] using ψ₀.norm_snd_fderiv_transition_lt ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁ hu
-  refine (Submodule.existsUnique_eq_graph_iff_finrank_eq_and_norm_snd_lt _).2 ⟨?_, ?_⟩
-  · refine LinearMap.finrank_range_of_inj fun u v huv ↦ L.injective_fst_comp_of_norm_snd_lt hneg ?_
-    simpa using congrArg Prod.fst huv
-  · rintro z ⟨u, rfl⟩ hz
-    exact hneg u fun hu ↦ hz (by simp [hu])
+  refine (Submodule.existsUnique_eq_graph_iff_finrank_eq_and_isSplitNegative _).2
+    ⟨?_, L.isSplitNegative_range_of_norm_snd_lt hneg⟩
+  refine LinearMap.finrank_range_of_inj fun u v huv ↦ L.injective_fst_comp_of_norm_snd_lt hneg ?_
+  simpa using congrArg Prod.fst huv
 
 /-- **Orientation comparison of Morse charts.** Let `h` be the polar factor of the negative block
 `A_uu = fst ∘ A ∘ inl` of the derivative `A` of the transition between two split Morse charts:
