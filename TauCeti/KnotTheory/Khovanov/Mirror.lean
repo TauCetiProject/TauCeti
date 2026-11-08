@@ -161,20 +161,6 @@ private lemma resolutionCubeι_eqToHom {k k' : ℤ} (hk : k = k') (T : Finset (F
   subst hk
   rfl
 
-/-- The projection of a normalized term onto a state is the projection of the cube term. -/
-private lemma khovanovComplexπ_eq {i : ℤ}
-    (T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount}) :
-    D.khovanovComplexπ hD R j T = eqToHom (D.khovanovComplex_X hD R j i) ≫
-      (D.toPDCode.resolutionCube hD R
-        (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ T := by
-  refine D.khovanovComplex_hom_ext hD R j fun T' ↦ ?_
-  by_cases h : T' = T
-  · subst h
-    rw [khovanovComplexι_π_self]
-    simp [khovanovComplexι_def]
-  · rw [khovanovComplexι_π_of_ne _ _ _ _ h]
-    simp [khovanovComplexι_def, Functor.cubeComplexι_π_of_ne _ h]
-
 /-- In cochain degree `i`, the mirror isomorphism sends an element `x` of the state `S` of the
 mirror to the cochain of degree `i` on the projection onto the complementary state `Sᶜ` of `D`
 followed by the Frobenius pairing with `x`, times `(-1)^(i n) * Finset.dualCubeSign S n₋(D)`. The
@@ -229,7 +215,7 @@ theorem khovanovComplexMirrorIso_hom_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
   simp only [Iso.trans_hom, HomologicalComplex.comp_f, khovanovComplexShiftIso_hom_f,
     Functor.mapIso_hom, shiftFunctor_map_f', eqToIso.hom, HomologicalComplex.eqToHom_f,
     Linear.units_smul_comp, Category.assoc, eqToHom_trans_assoc]
-  rw [khovanovComplexπ_eq]
+  rw [khovanovComplexπ_def]
   simp only [Units.smul_def, smul_smul, Units.val_mul]
   -- The normalization signs of the two shifts combine to `(-1)^(i n)`.
   have hs : (i * D.mirror.negativeCrossingCount).negOnePow *

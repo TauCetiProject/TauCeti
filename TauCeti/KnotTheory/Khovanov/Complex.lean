@@ -173,6 +173,15 @@ def khovanovComplexπ {i : ℤ}
     (D.toPDCode.resolutionCube hD R
       (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ S
 
+/-- The projection onto a state vertex is the projection of the signed cube term of height
+`i + n₋`, which is the normalized term in degree `i`. -/
+theorem khovanovComplexπ_def {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    D.khovanovComplexπ hD R j S =
+      eqToHom (D.khovanovComplex_X hD R j i) ≫
+        (D.toPDCode.resolutionCube hD R
+          (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ S := (rfl)
+
 /-- Inclusion followed by projection is the identity on a state summand. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexι_π_self {i : ℤ}
