@@ -169,6 +169,33 @@ lemma index_range_nsmulAddMonoidHom (e : M ≃+ N) (n : ℕ) :
 
 end AddEquiv
 
+namespace MulEquiv
+
+variable {G H : Type*} [CommGroup G] [CommGroup H]
+
+/-- A multiplicative equivalence maps the kernel of the `n`-th power map on `G` onto that on `H`.
+This is the multiplicative form of `AddEquiv.map_ker_nsmulAddMonoidHom`. -/
+lemma map_ker_powMonoidHom (e : G ≃* H) (n : ℕ) :
+    ((powMonoidHom n : G →* G).ker).map e.toMonoidHom = (powMonoidHom n : H →* H).ker := by
+  ext x
+  rw [Subgroup.mem_map_equiv]
+  simp only [MonoidHom.mem_ker, powMonoidHom_apply]
+  rw [← map_pow, EmbeddingLike.map_eq_one_iff]
+
+/-- The number of `n`-th roots of unity is invariant under multiplicative equivalence: the
+kernels of the `n`-th power maps on `G` and `H` have the same cardinality. -/
+theorem card_ker_powMonoidHom (e : G ≃* H) (n : ℕ) :
+    Nat.card (powMonoidHom n : G →* G).ker = Nat.card (powMonoidHom n : H →* H).ker := by
+  rw [← e.map_ker_powMonoidHom n]
+  exact Nat.card_congr (Subgroup.equivMapOfInjective _ e.toMonoidHom e.injective).toEquiv
+
+/-- The index of the `n`-th powers is invariant under multiplicative equivalence. -/
+theorem index_range_powMonoidHom (e : G ≃* H) (n : ℕ) :
+    (powMonoidHom n : G →* G).range.index = (powMonoidHom n : H →* H).range.index := by
+  rw [← e.map_range_powMonoidHom n, Subgroup.index_map_equiv]
+
+end MulEquiv
+
 namespace AddSubgroup
 
 open Module in
@@ -252,6 +279,23 @@ theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n
   have := AddSubgroup.index_range_nsmul_of_fg (Additive G) n
   rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
     index_toAddSubgroup] at this
+
+/-- The index of the `n`-th powers in a product is the product of the indices. -/
+@[simp]
+theorem index_range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
+    (powMonoidHom n : A × B →* A × B).range.index =
+      (powMonoidHom n : A →* A).range.index * (powMonoidHom n : B →* B).range.index := by
+  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
+    ext x <;> simp
+  rw [this, MonoidHom.range_prodMap, index_prod]
+
+/-- The `n`-torsion of a product has cardinality the product of the cardinalities. -/
+theorem card_ker_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
+    Nat.card (powMonoidHom n : A × B →* A × B).ker =
+      Nat.card (powMonoidHom n : A →* A).ker * Nat.card (powMonoidHom n : B →* B).ker := by
+  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
+    ext x <;> simp
+  rw [this, MonoidHom.ker_prodMap, Nat.card_congr (prodEquiv _ _).toEquiv, Nat.card_prod]
 
 end Subgroup
 
