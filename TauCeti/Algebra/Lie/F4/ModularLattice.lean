@@ -207,6 +207,8 @@ theorem f4IntegralCoroot_eq_sum_simple (β : Fin 48) :
     coe_f4IntegralSimpleCoroot, (F4.lieBasis valid_F4).coroot_eq_h',
     ← (F4.lieBasis valid_F4).cartanBasis_apply, LieAlgebra.Basis.coe_cartanBasis]
   convert h using 1
+  -- The remaining sums differ only in the root and rank index casts: `f4RootIndex β`
+  -- and `Fin.cast rank_F4 i` are definitionally `β` and `i` for type F₄.
   congr 1
 
 /-- Reduction modulo two preserves the pinned simple-coroot coordinate expansion. -/

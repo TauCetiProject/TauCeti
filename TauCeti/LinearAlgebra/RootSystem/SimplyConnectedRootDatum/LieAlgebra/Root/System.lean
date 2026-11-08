@@ -176,7 +176,8 @@ theorem coroot_rootEquiv_eq_sum (α : Fin t.numRoots) :
   rw [map_sum] at hexp
   simp only [map_smul, hsimple, coroot_rationalRootSystem] at hexp
   rw [hcoroot] at hexp
-  simpa [rootSystem_coroot_apply, coe_cartanBasis, Int.cast_smul_eq_zsmul ℚ] using
+  simpa only [rootSystem_coroot_apply, Int.cast_smul_eq_zsmul ℚ,
+    AddSubmonoidClass.coe_finsetSum, SetLike.val_smul_of_tower, coe_cartanBasis] using
     congrArg Subtype.val hexp
 
 /-- **The enumerated roots are the roots of the pinned root datum.** Root number `α` takes the
