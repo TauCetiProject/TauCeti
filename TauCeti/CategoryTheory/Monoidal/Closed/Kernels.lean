@@ -12,7 +12,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 /-!
 # Internal Hom and cokernel presentations
 
-In a braided closed category with a zero object, internal Hom in its first variable takes a
+In a braided closed category with zero morphisms, internal Hom in its first variable takes a
 cokernel presentation to a kernel. In particular, a finite free presentation of a module
 sheaf expresses its internal Hom as a kernel between internal Homs from finite free sheaves.
 
@@ -22,21 +22,33 @@ The construction uses Mathlib's preservation of limits by
 
 public section
 
-open CategoryTheory Limits MonoidalClosed Opposite
+open CategoryTheory Limits MonoidalCategory MonoidalClosed Opposite
 
 namespace TauCeti
 
 noncomputable section
 
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
+variable {C : Type*} [Category* C] [HasZeroMorphisms C]
   [MonoidalCategory C] [BraidedCategory C] [MonoidalClosed C]
   {A B M : C} (f : A ⟶ B) (g : B ⟶ M) (w : f ≫ g = 0)
   (h : IsColimit (CokernelCofork.ofπ g w)) (N : C)
 
+/-- Internal Hom into a fixed object preserves zero morphisms in its first variable. In a
+braided closed category, tensoring with an object on either side is a left adjoint and so
+preserves zero morphisms; uncurrying reduces the claim to this. -/
+instance preservesZeroMorphisms_internalHom_flip_obj :
+    (internalHom.flip.obj N).PreservesZeroMorphisms where
+  map_zero X Y := by
+    change (pre (0 : Y.unop ⟶ X.unop)).app N = 0
+    refine uncurry_injective ?_
+    rw [uncurry_pre, uncurry_eq]
+    change (tensorRight _).map 0 ≫ _ = (tensorLeft _).map 0 ≫ _
+    rw [Functor.map_zero, Functor.map_zero, zero_comp, zero_comp]
+
+include w in
 /-- Precomposition reverses a zero composite into a zero composite of internal Hom maps. -/
 @[reassoc (attr := simp)]
-theorem pre_app_comp_pre_app_eq_zero (w : f ≫ g = 0) (N : C) :
-    (pre g).app N ≫ (pre f).app N = 0 := by
+theorem pre_app_comp_pre_app_eq_zero : (pre g).app N ≫ (pre f).app N = 0 := by
   rw [← NatTrans.comp_app, ← pre_map, w]
   exact (internalHom.flip.obj N).map_zero _ _
 
@@ -44,9 +56,8 @@ theorem pre_app_comp_pre_app_eq_zero (w : f ≫ g = 0) (N : C) :
 No projectivity or finiteness condition is needed. -/
 def isLimitKernelForkPreOfIsColimit :
     IsLimit (KernelFork.ofι ((pre g).app N)
-      (f := (pre f).app N) (pre_app_comp_pre_app_eq_zero f g w N)) := by
-  let F := internalHom.flip.obj N
-  exact KernelFork.mapIsLimit _ (CokernelCofork.IsColimit.ofπOp g w h) F
+      (f := (pre f).app N) (pre_app_comp_pre_app_eq_zero f g w N)) :=
+  KernelFork.mapIsLimit _ (CokernelCofork.IsColimit.ofπOp g w h) (internalHom.flip.obj N)
 
 /-- The internal Hom from the cokernel term of a presentation is canonically the kernel of
 precomposition with its relation map. -/
