@@ -69,7 +69,9 @@ public section
 open Filter Set Module
 open scoped Topology
 
-variable {𝕂 : Type*} [RCLike 𝕂]
+section NontriviallyNormedField
+
+variable {𝕂 : Type*} [NontriviallyNormedField 𝕂]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
 
@@ -94,6 +96,12 @@ theorem HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq
     exact hv
   rw [hker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hv'
   exact hv'
+
+end NontriviallyNormedField
+
+variable {𝕂 : Type*} [RCLike 𝕂]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
 
 /-- The first chart of the constant rank theorem is tangent to the identity: if `T` is a
 pseudo-inverse of the derivative `L` of `f` at `a`, then `x ↦ T (f x - f a) + (1 - T ∘ L) (x - a)`
