@@ -89,6 +89,16 @@ def difference (c c' : RightConnection (E := E) D) : E →ₗ[Aᵐᵒᵖ] E wher
 theorem difference_apply (c c' : RightConnection (E := E) D) (x : E) :
     difference c c' x = c x - c' x := (rfl)
 
+@[simp]
+theorem difference_self (c : RightConnection (E := E) D) : difference c c = 0 := by
+  ext x
+  simp
+
+theorem difference_neg (c c' : RightConnection (E := E) D) :
+    -difference c c' = difference c' c := by
+  ext x
+  simp
+
 /-- The induced derivative on right-module endomorphisms, given by `[c,T]`. -/
 def derivativeEnd (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) :
     E →ₗ[Aᵐᵒᵖ] E where
@@ -105,6 +115,30 @@ def derivativeEnd (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) 
 theorem derivativeEnd_apply (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) (x : E) :
     derivativeEnd c T x = c (T x) - T (c x) := (rfl)
 
+theorem derivativeEnd_add (c : RightConnection (E := E) D) (T S : E →ₗ[Aᵐᵒᵖ] E) :
+    derivativeEnd c (T + S) = derivativeEnd c T + derivativeEnd c S := by
+  ext x
+  simp only [derivativeEnd_apply, LinearMap.add_apply, map_add]
+  abel
+
+theorem derivativeEnd_sub (c : RightConnection (E := E) D) (T S : E →ₗ[Aᵐᵒᵖ] E) :
+    derivativeEnd c (T - S) = derivativeEnd c T - derivativeEnd c S := by
+  ext x
+  simp only [derivativeEnd_apply, LinearMap.sub_apply, map_sub]
+  abel
+
+@[simp]
+theorem derivativeEnd_one (c : RightConnection (E := E) D) : derivativeEnd c 1 = 0 := by
+  ext x
+  simp
+
+/-- The induced derivative satisfies the Leibniz rule for composition of endomorphisms. -/
+theorem derivativeEnd_mul (c : RightConnection (E := E) D) (T S : E →ₗ[Aᵐᵒᵖ] E) :
+    derivativeEnd c (T * S) = derivativeEnd c T * S + T * derivativeEnd c S := by
+  ext x
+  simp only [derivativeEnd_apply, mul_apply_eq_comp, LinearMap.add_apply, map_sub]
+  abel
+
 variable [IsScalarTower k Aᵐᵒᵖ E]
 
 /-- Adding a right-module endomorphism to a connection gives a connection along the same
@@ -120,6 +154,16 @@ def addEnd (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) :
 @[simp]
 theorem addEnd_apply (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) (x : E) :
     addEnd c T x = c x + T x := (rfl)
+
+@[simp]
+theorem addEnd_zero (c : RightConnection (E := E) D) : addEnd c 0 = c := by
+  ext x
+  simp
+
+theorem addEnd_addEnd (c : RightConnection (E := E) D) (T S : E →ₗ[Aᵐᵒᵖ] E) :
+    addEnd (addEnd c T) S = addEnd c (T + S) := by
+  ext x
+  simp only [addEnd_apply, LinearMap.add_apply, add_assoc]
 
 /-- Every connection is obtained from any other by adding its difference. -/
 @[simp]
@@ -155,6 +199,15 @@ theorem curvature_apply (c₁ : RightConnection (E := E) D₁)
     (c₂ : RightConnection (E := E) D₂)
     (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (x : E) :
     curvature c₁ c₂ hD x = c₁ (c₂ x) - c₂ (c₁ x) := (rfl)
+
+omit [IsScalarTower k Aᵐᵒᵖ E] in
+/-- Swapping the connections negates their curvature. -/
+theorem curvature_swap (c₁ : RightConnection (E := E) D₁)
+    (c₂ : RightConnection (E := E) D₂)
+    (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) :
+    curvature c₂ c₁ hD.symm = -curvature c₁ c₂ hD := by
+  ext x
+  simp
 
 /-- The coordinate connection on a coordinate product differentiates each coordinate.
 For finite `ι`, this is a connection on a free right module. -/
