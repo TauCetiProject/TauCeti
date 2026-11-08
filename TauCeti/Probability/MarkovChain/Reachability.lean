@@ -28,14 +28,16 @@ namespace ProbabilityTheory.Kernel
 
 variable {S : Type*} [MeasurableSpace S] [Countable S] [MeasurableSingletonClass S]
 
+private theorem measurableSet_forall_reaches (κ : Kernel S S) :
+    MeasurableSet {w : ℕ → S | ∀ m n, m ≤ n → κ.Reaches (w m) (w n)} := by
+  simp only [ofPred_forall]
+  measurability
+
 /-- Almost every chain path respects reachability between all ordered pairs of times.
 No finiteness or normalization of the initial measure is required. -/
 theorem ae_forall_reaches_markovChainLaw (κ : Kernel S S) [IsMarkovKernel κ]
     (ν : Measure S) :
     ∀ᵐ w ∂markovChainLaw ν κ, ∀ m n, m ≤ n → κ.Reaches (w m) (w n) := by
-  have hmeas : MeasurableSet {w : ℕ → S | ∀ m n, m ≤ n → κ.Reaches (w m) (w n)} := by
-    simp only [ofPred_forall]
-    measurability
   have hdirac (x : S) : ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ,
       ∀ m n, m ≤ n → κ.Reaches (w m) (w n) := by
     have hstep : ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ,
@@ -54,7 +56,7 @@ theorem ae_forall_reaches_markovChainLaw (κ : Kernel S S) [IsMarkovKernel κ]
     | base => exact Reaches.refl _
     | succ n _ ih => exact ih.trans (hw n)
   rw [Measure.markovChainLaw_eq_comp]
-  exact Measure.ae_comp_of_ae_ae hmeas (ae_of_all _ fun x => by
+  exact Measure.ae_comp_of_ae_ae (κ.measurableSet_forall_reaches) (ae_of_all _ fun x => by
     simpa only [markovChainKernel_apply] using hdirac x)
 
 end ProbabilityTheory.Kernel
@@ -70,10 +72,7 @@ countable-state chain, not just on the canonical path space. -/
 theorem ae_forall_reaches_markovChainLaw
     (h : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ) :
     ∀ᵐ ω ∂μ, ∀ m n, m ≤ n → κ.Reaches (X m ω) (X n ω) := by
-  have hm : MeasurableSet {w : ℕ → S | ∀ m n, m ≤ n → κ.Reaches (w m) (w n)} := by
-    simp only [ofPred_forall]
-    measurability
-  exact (h.ae_iff (measurableSet_setOfPred.1 hm)).2
+  exact (h.ae_iff (measurableSet_setOfPred.1 (κ.measurableSet_forall_reaches))).2
     (κ.ae_forall_reaches_markovChainLaw ν)
 
 end ProbabilityTheory.HasLaw
