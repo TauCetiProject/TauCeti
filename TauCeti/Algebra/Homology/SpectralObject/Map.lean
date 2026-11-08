@@ -129,7 +129,10 @@ lemma shortComplexMap_shortComplexMapOfHom (α : mk₃ f₁ f₂ f₃ ⟶ mk₃ 
       shortComplexMapOfHom φ f₁' f₂' f₃' n₀ n₁ n₂ hn₁ hn₂ =
       shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
         Y.shortComplexMap f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ := by
-  ext <;> exact (φ.hom _).naturality _
+  ext <;> simp only [ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
+    shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃, shortComplexMapOfHom_τ₁,
+    shortComplexMapOfHom_τ₂, shortComplexMapOfHom_τ₃] <;>
+    exact (φ.hom _).naturality _
 
 /-- The maps `EMap` commute with the functoriality maps `X.map` in the indices. -/
 @[reassoc]
