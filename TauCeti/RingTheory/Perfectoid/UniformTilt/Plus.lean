@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Teichmuller
 public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Basic
 
@@ -21,7 +20,9 @@ The coordinates are additive modulo `p` on `B♭⁺`: `(x + y)⁽ⁱ⁾ - x⁽�
 (`TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem_of_forall_mem`). Consequently, for an ideal
 `I` of `B⁺` such that `B⁺` is `I`-adically complete and `B⁺ ⧸ I` has characteristic `p` (for
 instance an ideal of definition containing `p`), reducing every coordinate modulo `I` is a ring
-isomorphism `B♭⁺ ≃+* lim_{x ↦ x ^ p} B⁺ ⧸ I` onto the perfection of `B⁺ ⧸ I`. Its multiplicative
+isomorphism `B♭⁺ ≃+* lim_{x ↦ x ^ p} B⁺ ⧸ I` onto the perfection of `B⁺ ⧸ I`. If the topology
+of `B⁺` is `I`-adic, this is a homeomorphism for the inverse-limit topology with discrete
+quotient factors (`isHomeomorph_plusEquiv`). Its multiplicative
 part is Mathlib's `Perfection.quotientMulEquiv`, whose inverse is built from the Teichmüller map;
 the ring structure on the target is the coordinatewise one of Mathlib's `Perfection`. So the ring
 structure of the tilt, defined through limits, is identified on `B♭⁺` with an algebraically defined
@@ -45,6 +46,7 @@ one; for `I = (p)` the target is Mathlib's `PreTilt B⁺ p = Perfection (ModP B�
 * `TauCeti.Perfectoid.uniformTilt.coeff_plusEquiv`: `plusEquiv` reduces every coordinate modulo `I`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_zero_plusEquiv_symm`: the zeroth coordinate of the inverse
   is the Teichmüller map `Perfection (B⁺ ⧸ I) p → B⁺`.
+* `TauCeti.Perfectoid.uniformTilt.isHomeomorph_plusEquiv`: the topological inverse-limit comparison.
 
 ## References
 
@@ -235,5 +237,19 @@ theorem coeff_zero_plusEquiv_symm (y : Perfection (Bplus ⧸ I) p) :
     coeff p B 0 ((plusEquiv h I).symm y : uniformTilt p B) = Perfection.teichmuller₀ p I y := by
   rw [plusEquiv_symm_apply, coeff_plusMulEquiv_symm,
     Perfection.coeff_zero_symm_quotientMulEquiv]
+
+/-- Reduction identifies the integral tilt homeomorphically with the inverse limit of the
+discrete quotients, whenever the topology on the ring of integral elements is `I`-adic. -/
+theorem isHomeomorph_plusEquiv (hI : IsAdic I) :
+    IsHomeomorph (plusEquiv h I : plusSubring p h → Perfection (Bplus ⧸ I) p) := by
+  have hm : IsHomeomorph (plusMulEquiv h : plusSubring p h → Perfection Bplus p) := by
+    refine (plusMulEquiv h).toEquiv.isHomeomorph_iff.mpr ⟨?_, ?_⟩
+    · refine Perfection.continuous_iff.mpr fun n ↦ ?_
+      exact ((continuous_coeff n).comp continuous_subtype_val).subtype_mk _
+    · refine Continuous.subtype_mk (continuous_iff.mpr fun n ↦ ?_) _
+      exact (continuous_subtype_val.comp (Perfection.continuous_coeffMonoidHom n)).congr
+        fun y ↦ (coeff_plusMulEquiv_symm h y n).symm
+  -- The underlying map of `plusEquiv` is the composite of the multiplicative equivalences.
+  exact (Perfection.isHomeomorph_quotientMulEquiv hI).comp hm
 
 end TauCeti.Perfectoid.uniformTilt
