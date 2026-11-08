@@ -257,18 +257,14 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integ
   -- Pass to the completion `F̂`, where Bochner integrals are not junk.
   set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
   have hL (y : F) : ‖L y‖ = ‖y‖ := UniformSpace.Completion.norm_coe y
-  have hu' : HarmonicOnNhd (L ∘ u) s := fun y hy ↦ by
-    have h := hu y hy
-    refine ⟨(L.contDiff.contDiffAt (x := u y)).comp y h.1, ?_⟩
-    filter_upwards [h.1.laplacian_CLM_comp_left_nhds (l := L), h.2] with a ha₁ ha₂
-    simp [ha₁, ha₂]
+  have hu' : HarmonicOnNhd (L ∘ u) s := hu.comp_CLM L
   have hmean := (hu'.mono hx).setIntegral_ball_eq (μ := μ)
+  simp only [Function.comp_apply] at hmean
   have hbound : μ.real (ball (0 : E) ρ) * ‖u x‖ ≤ ∫ z in s, ‖u z‖ ∂μ := by
     calc
       _ = ‖∫ z in ball x ρ, L (u z) ∂μ‖ := by
-        rw [show ∫ z in ball x ρ, L (u z) ∂μ = _ from hmean, norm_smul,
-          Real.norm_of_nonneg measureReal_nonneg, Measure.addHaar_real_ball_center μ x ρ,
-          Function.comp_apply, hL]
+        rw [hmean, norm_smul, Real.norm_of_nonneg measureReal_nonneg,
+          Measure.addHaar_real_ball_center μ x ρ, hL]
       _ ≤ ∫ z in ball x ρ, ‖L (u z)‖ ∂μ := norm_integral_le_integral_norm _
       _ = ∫ z in ball x ρ, ‖u z‖ ∂μ := by simp only [hL]
       _ ≤ ∫ z in s, ‖u z‖ ∂μ := setIntegral_mono_set hi.norm
