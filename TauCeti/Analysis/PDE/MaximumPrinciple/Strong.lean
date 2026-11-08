@@ -77,31 +77,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ} {u : W1p mu Omega 2} {M : ℝ}
 
-omit [DecidableEq ι] in
-/-- If a function in `L²` of a ball is almost everywhere nonnegative and the average of its `p`-th
-power over the ball vanishes (`0 < p ≤ 2`), then it vanishes almost everywhere on the ball. -/
-private theorem ae_eq_zero_of_setAverage_rpow_eq_zero {p ρ : ℝ} {y : EuclideanSpace ℝ ι}
-    {g : EuclideanSpace ℝ ι → ℝ} (hp : 0 < p) (hp2 : p ≤ 2) (hρ : 0 < ρ)
-    (hg : MemLp g 2 (mu.restrict (ball y ρ)))
-    (hg0 : ∀ᵐ x ∂mu.restrict (ball y ρ), 0 ≤ g x)
-    (havg : ⨍ x in ball y ρ, g x ^ p ∂mu = 0) :
-    ∀ᵐ x ∂mu.restrict (ball y ρ), g x = 0 := by
-  have : IsFiniteMeasure (mu.restrict (ball y ρ)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hint : IntegrableOn (fun x => g x ^ p) (ball y ρ) mu := by
-    have hmem : MemLp g (ENNReal.ofReal p) (mu.restrict (ball y ρ)) :=
-      hg.mono_exponent ((ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2))
-    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
-      ENNReal.ofReal_ne_top).congr ?_
-    filter_upwards [hg0] with x hx
-    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg hx]
-  rw [setAverage_eq, smul_eq_mul, mul_eq_zero, inv_eq_zero] at havg
-  have hzero := (integral_eq_zero_iff_of_nonneg_ae
-    (hg0.mono fun x hx => Real.rpow_nonneg hx _) hint).1
-    (havg.resolve_left (measureReal_ball_pos mu y hρ).ne')
-  filter_upwards [hzero, hg0] with x h1 h2
-  exact (Real.rpow_eq_zero h2 hp.ne').1 h1
-
 /-- The local step of the strong maximum principle. If `u ≤ M` is a weak subsolution on `Ω`,
 `B(y, 8√n r) ⊆ Ω`, and `u` exceeds `M - ε` on a subset of `B(y, r)` of positive measure for every
 `ε > 0`, then `u = M` almost everywhere on `B(y, r)`. -/
@@ -162,7 +137,9 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
       _ = 0 + ε := by field_simp; ring
   have havg : ⨍ x in ball y (2 * r), W1p.value w x ^ p₀ ∂mu = 0 :=
     (Real.rpow_eq_zero hA0 (inv_ne_zero hp₀.ne')).1 (hA.antisymm (Real.rpow_nonneg hA0 _))
-  have hzero := ae_eq_zero_of_setAverage_rpow_eq_zero hp₀ hp₀2 (by linarith)
+  have hzero := ae_eq_zero_of_setAverage_rpow_eq_zero hp₀
+    ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
+    (measure_ball_pos mu y (by linarith)).ne' measure_ball_lt_top.ne
     ((Lp.memLp _).mono_measure (Measure.restrict_mono h2U le_rfl)) hw02 havg
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hr2 hzero,
     ae_restrict_of_ae_restrict_of_subset (hr2.trans h2U) hwv] with x h1 h2
