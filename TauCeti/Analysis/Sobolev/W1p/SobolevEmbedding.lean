@@ -246,7 +246,7 @@ open MeasureTheory Metric Set TopologicalSpace Module
 open scoped ENNReal NNReal Gradient Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {q s : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
 
@@ -275,7 +275,7 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
       eLpNorm_mono_measure _ (Measure.restrict_mono_set μ hVU)
     _ ≤ A * ‖W1p.gradient (T u).1‖ₑ := by
       exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
-        ENNReal.coe_ne_top hUf (by exact_mod_cast hqs)
+        hUf (by exact_mod_cast hqs)
         (by simp) hgap (T u).2
     _ ≤ A * ‖T u‖ₑ := by
       gcongr
@@ -284,7 +284,7 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     _ ≤ A * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
     _ = _ := (mul_assoc _ _ _).symm
 
-omit [Nontrivial E] [FiniteDimensional ℝ E] in
+omit [FiniteDimensional ℝ E] in
 /-- Package a uniform value estimate as a bounded linear inclusion into `L^r`. -/
 private theorem W1p.exists_valueLpCLM_of_bound {r : ℝ≥0∞} [Fact (1 ≤ r)] {V : Set E}
     (hVΩ : V ⊆ Ω) (hbound : ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
@@ -324,7 +324,6 @@ theorem W1p.exists_sobolevEmbeddingL_of_subcritical_gain [Fact (1 ≤ (s : ℝ�
   W1p.exists_valueLpCLM_of_bound (subset_closure.trans hVΩ)
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain hqs hgap hVc hVΩ)
 
-omit [Nontrivial E] in
 /-- The supercritical interior inclusion into `L^∞` is bounded and preserves the Sobolev value. -/
 theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
     (hq : (finrank ℝ E : ℝ≥0) < q) {V : Set E}

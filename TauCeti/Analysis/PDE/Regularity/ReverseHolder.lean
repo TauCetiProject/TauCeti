@@ -382,7 +382,7 @@ private theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset [Nonemp
       eLpNorm (W1p.value v) q (mu.restrict U) ≤ S * ‖W1p.gradient v‖ₑ := fun v hv => by
     rw [← ENNReal.ofReal_coe_nnreal (p := S), hSK]
     have := W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball (mu := mu)
-      ENNReal.ofNat_ne_top hR TopologicalSpace.Opens.coe_mk hq2 (δ := δ)
+      hR TopologicalSpace.Opens.coe_mk hq2 (δ := δ)
       (by rw [ENNReal.toReal_ofNat, hq]; simp only [δ]; field_simp)
       (by rwa [finrank_euclideanSpace]) hv
     rwa [finrank_euclideanSpace] at this

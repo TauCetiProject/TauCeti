@@ -67,7 +67,7 @@ namespace TauCeti
 section CompactSupport
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [Nontrivial E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω : Set E}
 
 /-- **The Sobolev inequality on sets of finite measure, for compactly supported functions.** Let
@@ -83,6 +83,15 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
       ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ * μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
         ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ)) *
         μ Ω ^ ((finrank ℝ E : ℝ)⁻¹ - δ) * eLpNorm (fderiv ℝ u) p μ := by
+  have hδ0 : 0 ≤ δ := by
+    rw [← hδ, sub_nonneg]
+    exact inv_anti₀ (by positivity) (by exact_mod_cast hpq)
+  have hfin : 0 < finrank ℝ E := by
+    refine Nat.pos_of_ne_zero fun h0 => ?_
+    rw [h0] at hδn
+    simp at hδn
+    linarith
+  have : Nontrivial E := Module.finrank_pos_iff.1 hfin
   set n := finrank ℝ E
   set ω := μ.real (ball (0 : E) 1)
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
@@ -143,8 +152,8 @@ measure, then every `u ∈ W^{1,p}_0(Ω)` lies in `L^q(Ω)`, with
 `‖u‖_{L^q} ≤ n⁻¹ ω ^ (-1/n) ((1 - δ) / (1/n - δ)) ^ (1 - δ) μ(Ω) ^ (1/n - δ) ‖∇u‖_{Lᵖ}`.
 
 No regularity of `Ω` is assumed. -/
-theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivial E]
-    (hp : p ≠ ∞) (hOmega : mu Omega ≠ ∞) {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ}
+theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
+    (hOmega : mu Omega ≠ ∞) {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ}
     (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ) (hδn : δ < (finrank ℝ E : ℝ)⁻¹)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
@@ -152,6 +161,7 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
         ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ)) *
         mu Omega ^ ((finrank ℝ E : ℝ)⁻¹ - δ) * ‖W1p.gradient u‖ₑ := by
   have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+  have hp : p ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hpq
   have hpp : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p := ENNReal.coe_toNNReal hp
   set C : ℝ≥0∞ := ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ *
     mu.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
@@ -177,7 +187,7 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
 The power `R ^ (1 - n δ)` is the one dictated by scaling, so the remaining constant depends only
 on `n`, `δ` and the normalization of `μ`. -/
 theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial E]
-    (hp : p ≠ ∞) {x₀ : E} {R : ℝ} (hR : 0 < R) (hOmega : (Omega : Set E) = ball x₀ R)
+    {x₀ : E} {R : ℝ} (hR : 0 < R) (hOmega : (Omega : Set E) = ball x₀ R)
     {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ)
     (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
@@ -196,7 +206,7 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial 
   have hmeas : mu Omega = ENNReal.ofReal (R ^ n * ω) := by
     rw [hOmega, Measure.addHaar_ball_of_pos mu x₀ hR, ← ofReal_measureReal measure_ball_lt_top.ne,
       ← ENNReal.ofReal_mul (by positivity)]
-  refine (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hp
+  refine (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
     (hmeas ▸ ENNReal.ofReal_ne_top) hpq hδ hδn hu).trans_eq ?_
   rw [hmeas, ENNReal.ofReal_rpow_of_nonneg (by positivity) he,
     ← ENNReal.ofReal_mul (mul_nonneg (by positivity) (Real.rpow_nonneg (div_nonneg h1δ he) _))]
@@ -248,7 +258,7 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top 
     (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega)
   refine ⟨q, hpq, C.toNNReal, fun u hu ↦ ?_⟩
   rw [ENNReal.coe_toNNReal hC]
-  exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hp hOmega hpq.le
+  exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega hpq.le
     (by rw [hq, inv_inv]; ring) hδn hu
 
 end W1p0
@@ -303,7 +313,7 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
     ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
       (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega), fun v =>
       W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-        ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
+        hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
         hτn v.2⟩
   have hmemt : ∀ v : W1p0 mu Omega 2, MemLp (W1p.value (v : W1p mu Omega 2)) t ν := fun v =>
     (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top enorm_lt_top)

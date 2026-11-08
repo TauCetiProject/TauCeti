@@ -734,7 +734,7 @@ private theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_
     fun v hv => by
       rw [← ENNReal.ofReal_coe_nnreal (p := S), hS]
       have := W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball (mu := mu)
-        ENNReal.ofNat_ne_top hR hΩ hq2.le (δ := δ)
+        hR hΩ hq2.le (δ := δ)
         (by rw [ENNReal.toReal_ofNat, hq, inv_inv]; ring) (by rwa [finrank_euclideanSpace]) hv
       rwa [finrank_euclideanSpace] at this
   have hbound := hmain (k := k) (NNReal.coe_pos.1 (by rw [hS]; positivity)) hA hB hsob hcacc

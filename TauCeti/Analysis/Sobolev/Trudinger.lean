@@ -417,7 +417,7 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient (hp : p = finra
   have hn0 : (n : ℝ) ≠ 0 := by positivity
   have hq0 : (0 : ℝ) < q := lt_of_lt_of_le (by positivity) (by exact_mod_cast hq : (n : ℝ) ≤ q)
   have h := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
-    (hp ▸ ENNReal.natCast_ne_top n) hOmega (by rw [hp]; exact_mod_cast hq)
+    hOmega (by rw [hp]; exact_mod_cast hq)
     (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by simp [hp]) (by linarith [inv_pos.2 hq0]) hu
   -- At `p = n`, `δ = 1/n - 1/q`, so `1/n - δ = 1/q` and `(1 - δ) / (1/n - δ) = q (1 - 1/n) + 1`.
   have hbase : (1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) / ((n : ℝ)⁻¹ - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) =
