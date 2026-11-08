@@ -16,6 +16,9 @@ residue is the residue of a base-field element. Their difference is algebraic an
 less than one, so it must vanish. Thus the existence of a rational place certifies exactness of
 the constant field, including for composita with a completely split rational place.
 
+Conversely, a place of a finite extension over a larger constant field forces that field to be
+algebraic over the base.
+
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
@@ -43,5 +46,33 @@ theorem isIntegrallyClosedIn_of_degree_eq_one (P : Place k F) (hP : P.degree = 1
       (mem_algebraicClosure_iff.mpr hx) ((algebraicClosure k F).algebraMap_mem c)
   rw [P.valuation_eq_one_of_isAlgebraic halg hne] at hc
   exact lt_irrefl _ hc
+
+universe u u' v v'
+
+/-- If a finite extension `F'` of a function field `F / k` has a place over `k'`, then it is a
+function field over `k'`: the existence of a place forces `k'` to be algebraic over `k`. -/
+theorem isFunctionField_of_place {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
+    [Field k] [Field k'] [Field F] [Field F'] [Algebra k k'] [Algebra k F] [Algebra k' F']
+    [Algebra F F'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+    [FiniteDimensional F F'] (hF : IsFunctionField k F) (P' : Place k' F') :
+    IsFunctionField k' F' := by
+  have hFk : IsFunctionField k F' := hF.finite_extension
+  have hnot : ¬ Algebra.IsAlgebraic k' F' := fun h ↦ by
+    obtain ⟨t, ht⟩ := P'.ord_surjective 1
+    exact P'.transcendental_of_ord_ne_zero (by rw [ht]; norm_num) (h.isAlgebraic t)
+  have hadd := _root_.lift_trdeg_add_eq k k' F'
+  rw [hFk.trdeg_eq_one, Cardinal.lift_one] at hadd
+  have hb : 1 ≤ Cardinal.lift.{u', v'} (Algebra.trdeg k' F') := by
+    rw [Cardinal.one_le_iff_ne_zero, Ne, Cardinal.lift_eq_zero, trdeg_eq_zero_iff]
+    exact hnot
+  have ha : Algebra.trdeg k k' = 0 := by
+    by_contra ha
+    have ha' : 1 ≤ Cardinal.lift.{v', u'} (Algebra.trdeg k k') := by
+      rwa [Cardinal.one_le_iff_ne_zero, Ne, Cardinal.lift_eq_zero]
+    have := add_le_add ha' hb
+    rw [hadd] at this
+    norm_num at this
+  have : Algebra.IsAlgebraic k k' := trdeg_eq_zero_iff.1 ha
+  exact hFk.of_isAlgebraic (k' := k')
 
 end TauCeti.Place
