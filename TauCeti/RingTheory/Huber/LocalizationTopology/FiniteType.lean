@@ -535,18 +535,15 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
   have hWB : IsWeightFamily WB := hW'.append isWeightFamily_one_weight
   have hπA : π.toRingHom.comp (algebraMap A D) = f.toRingHom := by
     rw [← Pair.Hom.toRingHom_weightedCompletionHom, ← Pair.Hom.toRingHom_comp, hπf]
-  have hmap : ∀ i, π.toRingHom '' WD i = WB i := fun i ↦ Fin.addCases
-    (fun j ↦ by
-      simp only [WD, WB, Fin.append_left, Set.image_image]
-      exact Set.image_congr fun a _ ↦ RingHom.congr_fun hπA a)
-    (fun j ↦ by simp [WD, WB]) i
+  have hmap : ∀ i, π.toRingHom '' WD i = WB i :=
+    image_append_algebraMap_weights W π.toRingHom (RingHom.congr_fun hπA)
   let β := weightedMapCompletion π.continuous_toRingHom hWD hWB fun i ↦ (hmap i).subset
   have hβ : IsOpenQuotientMap β := hπ.isOpenQuotientMap.weightedMapCompletion hWD hWB hmap
   let Z : Fin (k + (1 + m)) → Set A := Fin.append R (Fin.append W fun _ ↦ ({1} : Set A))
   have hZ : IsWeightFamily Z := hR.append (hW.append isWeightFamily_one_weight)
   have hRZ : ∀ i, Z (Fin.castAdd (1 + m) i) = R i := fun i ↦ by simp [Z]
-  have hZW : ∀ j, algebraMap A D '' Z (Fin.natAdd k j) = WD j := fun j ↦
-    Fin.addCases (fun i ↦ by simp [Z, WD]) (fun i ↦ by simp [Z, WD]) j
+  have hZW : ∀ j, algebraMap A D '' Z (Fin.natAdd k j) = WD j :=
+    image_algebraMap_append_append_weights R W
   let e := U.iterateSplitHom hR hWD hZ hRZ hZW
   have heX (j : Fin (1 + m)) :
       e.toRingHom (weightedX Z hZ (Fin.natAdd k j) : weightedRestrictedSubring Z hZ) =

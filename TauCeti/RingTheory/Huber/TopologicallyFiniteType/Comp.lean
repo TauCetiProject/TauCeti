@@ -142,36 +142,13 @@ private theorem exists_finite_weights_isWeightedVarPowerBounded [IsHuberRing A] 
       exact hG i ha
   exact ⟨V, hVfin, hV, hφV, hVy⟩
 
-omit [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [NonarchimedeanRing B] in
-/-- The image under a presentation map `π` of the weights `algebraMap A D '' V i`, followed by
-trivial weights, is the corresponding weight family of `φ '' V i`. -/
-private theorem image_append_algebraMap_weights {D : Type*} [CommRing D] [Algebra A D]
-    {m n : ℕ} (V : Fin m → Set A) (π : D →+* B) (hπφ : ∀ a, π (algebraMap A D a) = φ a)
-    (i : Fin (m + n)) :
-    π '' (Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D))) i =
-      Fin.append (fun i ↦ φ '' V i) (fun _ ↦ ({1} : Set B)) i :=
-  Fin.addCases
-    (fun j ↦ by
-      simp only [Fin.append_left, Set.image_image]
-      exact Set.image_congr fun a _ ↦ hπφ a)
-    (fun j ↦ by simp) i
-
 omit [TopologicalSpace A] [IsTopologicalRing A] in
-/-- Appending finite weight sets to the trivial weights keeps them finite. -/
+/-- Appending `T`, `V` and the trivial weights keeps all weight sets finite. -/
 private theorem finite_append_append_weights {k m n : ℕ} {T : Fin k → Set A} {V : Fin m → Set A}
     (hT : ∀ i, (T i).Finite) (hV : ∀ i, (V i).Finite) :
     ∀ i, (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A)) i).Finite := fun i ↦
   Fin.addCases (fun j ↦ by simpa using hT j)
     (fun j ↦ Fin.addCases (fun l ↦ by simpa using hV l) (fun _ ↦ by simp) j) i
-
-omit [TopologicalSpace A] [IsTopologicalRing A] in
-/-- The image of the third block of weights in `Â⟨X⟩_T⟨Y⟩` under `A → Â⟨X⟩_T` is the second
-block of weights, followed by the trivial weights. -/
-private theorem image_algebraMap_append_append_weights {D : Type*} [CommRing D] [Algebra A D]
-    {k m n : ℕ} (T : Fin k → Set A) (V : Fin m → Set A) (j : Fin (m + n)) :
-    algebraMap A D '' (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A))) (Fin.natAdd k j) =
-      Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D)) j :=
-  Fin.addCases (fun i ↦ by simp) (fun i ↦ by simp) j
 
 /-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
 type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
