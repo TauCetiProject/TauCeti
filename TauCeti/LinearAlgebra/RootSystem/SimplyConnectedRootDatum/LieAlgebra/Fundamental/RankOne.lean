@@ -42,6 +42,7 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-- A rational linear combination of the two vectors in the fundamental rank-one string lies
 in the fundamental lattice exactly when both coefficients are integers. -/
+@[simp]
 theorem smul_add_smul_lie_fundamentalModuleGenerator_mem_fundamentalLattice_iff
     (i : Fin t.rank) (q r : ℚ) :
     q • t.fundamentalModuleGenerator ht i +
