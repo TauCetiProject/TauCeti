@@ -13,9 +13,10 @@ import Mathlib.Algebra.Module.LinearMap.Rat
 # Polynomial flows of locally nilpotent derivations
 
 Evaluating the Taylor expansion of a locally nilpotent derivation at a scalar gives an
-algebra endomorphism. These endomorphisms satisfy the additive parameter law, and hence
-are automorphisms, with inverse given by the negative parameter. No uniform nilpotence
-bound on the coordinate ring is required.
+algebra endomorphism. Over a commutative semiring of parameters, these endomorphisms satisfy
+the additive parameter law. Over a commutative ring of parameters, which has negative parameters,
+they are therefore automorphisms, with inverse given by the negative parameter. No uniform
+nilpotence bound on the coordinate ring is required.
 
 For invariant vector fields on affine groups this is the coordinate-ring flow used to
 construct algebraic one-parameter subgroups.
