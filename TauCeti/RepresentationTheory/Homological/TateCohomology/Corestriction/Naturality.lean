@@ -34,22 +34,6 @@ variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 attribute [local instance] Subgroup.fintypeOfFinite Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- A commuting square is carried to a commuting square by conjugating with isomorphisms, and the
-conjugation can be read back: if `a' ≫ d' = c' ≫ b'` after transport along `i, j, l, m`, then
-`a ≫ d = c ≫ b`. -/
-theorem _root_.CategoryTheory.comp_eq_comp_of_iso_conj {J : Type*} [Category J]
-    {A B C' D A' B' C'' D' : J}
-    (a : A ⟶ B) (b : C' ⟶ D) (c : A ⟶ C') (d : B ⟶ D)
-    (i : A ≅ A') (j : B ≅ B') (l : C' ≅ C'') (m : D ≅ D')
-    (a' : A' ⟶ B') (b' : C'' ⟶ D') (c' : A' ⟶ C'') (d' : B' ⟶ D')
-    (ha : a ≫ j.hom = i.hom ≫ a') (hb : b ≫ m.hom = l.hom ≫ b')
-    (hc : c ≫ l.hom = i.hom ≫ c') (hd : d ≫ m.hom = j.hom ≫ d')
-    (hs : a' ≫ d' = c' ≫ b') : a ≫ d = c ≫ b := by
-  rw [← cancel_mono m.hom]
-  simp only [Category.assoc, hd, hb]
-  simp only [← Category.assoc, ha, hc]
-  simp only [Category.assoc, hs]
-
 /-- Naturality of Tate corestriction in degree `0`. -/
 private theorem cor_natural_zero {M N : Rep k G} (f : M ⟶ N) (H : Subgroup G) :
     (tateCohomologyFunctor 0).map (Rep.resMap H.subtype f) ≫ cor N H 0 =
@@ -92,12 +76,12 @@ private theorem cor_natural_pos {M N : Rep k G} (f : M ⟶ N) (H : Subgroup G) (
     NatTrans.naturality
       (self := (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom)
       (Rep.resMap H.subtype f)
-  exact CategoryTheory.comp_eq_comp_of_iso_conj _ _ _ _
-    ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app _)
-    ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app _)
-    ((_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app _)
-    ((_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app _)
-    _ _ _ _ hH hG (cor_pos_comp_isoGroupCohomology_hom M H n)
+  exact CategoryTheory.cube_lemma_of_mono
+    ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app _).hom
+    ((_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).app _).hom
+    ((_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app _).hom
+    ((_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app _).hom
+    _ _ _ _ _ _ _ _ hH hG (cor_pos_comp_isoGroupCohomology_hom M H n)
     (cor_pos_comp_isoGroupCohomology_hom N H n)
     (groupCohomology.map_comp_corestriction H f (n + 1))
 
