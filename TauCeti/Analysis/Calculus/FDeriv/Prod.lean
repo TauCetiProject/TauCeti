@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.TangentCone.Prod
 
 /-!
 # Derivative lemmas on products
@@ -52,8 +53,11 @@ variable vanishes everywhere is constant along every horizontal line.
   derivative along the first factor.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
-* `TauCeti.hasDerivAt_slice_right`: the partial derivative of a function in a scalar second
-  variable is its derivative applied to `(0, 1)`.
+* `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
+  a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
+  `(0, 1)`.
+* `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
+  applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
@@ -217,6 +221,18 @@ theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
     HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
   (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
 
+/-- Where `u` is differentiable, its partial derivative in the first variable is its derivative
+applied to `(1, 0)`. -/
+theorem hasDerivAt_slice_left {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 u (s, b)) :
+    HasDerivAt (fun s ↦ u (s, b)) (fderiv 𝕜 u (s, b) (1, 0)) s :=
+  hu.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
+
+/-- Where `u` is differentiable, its derivative applied to `(1, 0)` is its partial derivative in
+the first variable. -/
+theorem fderiv_apply_mk_one_zero {z : 𝕜 × F} (hu : DifferentiableAt 𝕜 u z) :
+    fderiv 𝕜 u z (1, 0) = deriv (fun s ↦ u (s, z.2)) z.1 :=
+  (hasDerivAt_slice_left (s := z.1) (b := z.2) hu).deriv.symm
+
 /-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(1, 0)`. -/
 theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (s, b))
@@ -251,9 +267,57 @@ theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGr
     (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0) (s : ℝ) (b : F) :
     u (s, b) = u (0, b) := by
   have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
-    simpa [h, Function.comp_def] using
-      (hu _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
+    simpa [h] using hasDerivAt_slice_left (hu (s, b))
   exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
+
+section FstClmApplySnd
+
+open Set
+
+variable {X Y V W : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y]
+  [NormedSpace 𝕜 Y] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
+  [NormedSpace 𝕜 W]
+
+/-- The derivative within `s ×ˢ univ` of `a ↦ (F a.1, C a.1 a.2)` at `(a₀, v)`, evaluated at
+`(h, w)`, for `F : X → Y` and `C : X → V →L[𝕜] W` differentiable within `s` at `a₀`, is
+`(DF h, DC h v + C a₀ w)`. -/
+theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set X} {a₀ : X} {F : X → Y}
+    {C : X → V →L[𝕜] W} (hF : DifferentiableWithinAt 𝕜 F s a₀)
+    (hC : DifferentiableWithinAt 𝕜 C s a₀) (hs : UniqueDiffWithinAt 𝕜 s a₀) {v : V} (h : X)
+    (w : V) :
+    (fderivWithin 𝕜 (fun a : X × V ↦ (F a.1, C a.1 a.2)) (s ×ˢ univ) (a₀, v)) (h, w) =
+      (fderivWithin 𝕜 F s a₀ h, fderivWithin 𝕜 C s a₀ h v + C a₀ w) := by
+  have hmaps : MapsTo (Prod.fst : X × V → X) (s ×ˢ univ) s := fun _ hx ↦ hx.1
+  have huniq : UniqueDiffWithinAt 𝕜 (s ×ˢ univ) (a₀, v) :=
+    hs.prod uniqueDiffWithinAt_univ
+  -- The calculus lemmas below are stated for explicit compositions with the two projections.
+  -- The `change` steps only eta-expand those compositions and their derivatives.
+  have hFp : DifferentiableWithinAt 𝕜 (fun a : X × V ↦ F a.1) (s ×ˢ univ) (a₀, v) := by
+    change DifferentiableWithinAt 𝕜 (F ∘ Prod.fst) (s ×ˢ univ) (a₀, v)
+    exact hF.comp (a₀, v) differentiableWithinAt_fst hmaps
+  have hCp : DifferentiableWithinAt 𝕜 (fun a : X × V ↦ C a.1) (s ×ˢ univ) (a₀, v) := by
+    change DifferentiableWithinAt 𝕜 (C ∘ Prod.fst) (s ×ˢ univ) (a₀, v)
+    exact hC.comp (a₀, v) differentiableWithinAt_fst hmaps
+  have hAp : DifferentiableWithinAt 𝕜 (fun a : X × V ↦ C a.1 a.2) (s ×ˢ univ) (a₀, v) :=
+    hCp.clm_apply differentiableWithinAt_snd
+  have hFp_eq := fderivWithin_comp (a₀, v) hF differentiableWithinAt_fst hmaps huniq
+  change fderivWithin 𝕜 (fun a : X × V ↦ F a.1) (s ×ˢ univ) (a₀, v) = _ at hFp_eq
+  have hCp_eq := fderivWithin_comp (a₀, v) hC differentiableWithinAt_fst hmaps huniq
+  change fderivWithin 𝕜 (fun a : X × V ↦ C a.1) (s ×ˢ univ) (a₀, v) = _ at hCp_eq
+  have hAp_eq := fderivWithin_clm_apply huniq hCp differentiableWithinAt_snd
+  change fderivWithin 𝕜 (fun a : X × V ↦ C a.1 a.2) (s ×ˢ univ) (a₀, v) = _ at hAp_eq
+  have hfst_app : (fderivWithin 𝕜 (Prod.fst : X × V → X) (s ×ˢ univ) (a₀, v)) (h, w) = h := by
+    rw [fderivWithin_fst huniq]
+    rfl
+  have hsnd_app : (fderivWithin 𝕜 (Prod.snd : X × V → V) (s ×ˢ univ) (a₀, v)) (h, w) = w := by
+    rw [fderivWithin_snd huniq]
+    rfl
+  rw [hFp.fderivWithin_prodMk hAp huniq, ContinuousLinearMap.prod_apply, hFp_eq,
+    hAp_eq, hCp_eq]
+  simp only [ContinuousLinearMap.comp_apply, add_apply, ContinuousLinearMap.flip_apply]
+  rw [hfst_app, hsnd_app, add_comm]
+
+end FstClmApplySnd
 
 end TauCeti
 

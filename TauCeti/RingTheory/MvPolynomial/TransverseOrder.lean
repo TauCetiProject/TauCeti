@@ -82,6 +82,20 @@ theorem map_aeval_finCons_C_add_C_mul_X [CommSemiring R] {S : Type*} [CommSemiri
   ext i : 1
   cases i using Fin.cases <;> simp
 
+/-- Mapping the coefficients along an injective ring homomorphism commutes with taking the order
+of a transverse plane slice at a point of the root-coordinate line. -/
+theorem orderAt_map_aeval_finCons_C_add_C_mul_X [CommSemiring R] {S : Type*} [CommSemiring S]
+    {φ : R →+* S} (hφ : Function.Injective φ) (p : MvPolynomial (Fin (n + 1)) R)
+    (a v : Fin n → R) (t : R) :
+    (aeval (Fin.cons (X 1) (fun j ↦ C (φ (a j)) + C (φ (v j)) * X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) S) (map φ p)).orderAt ![0, φ t] =
+      (aeval (Fin.cons (X 1) (fun j ↦ C (a j) + C (v j) * X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) R) p).orderAt ![0, t] := by
+  have hpt : ![0, φ t] = fun i ↦ φ (![0, t] i) := by
+    ext i
+    fin_cases i <;> simp
+  rw [← map_aeval_finCons_C_add_C_mul_X φ p a v, hpt, orderAt_map hφ]
+
 /-- Centering a transverse plane slice at the root coordinate `t` turns its order at `![0, t]`
 into the order at the origin of the slice with `X 1` shifted by `t`. -/
 theorem orderAt_aeval_finCons_C_add_X [CommSemiring R]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Positive rank-two geometric roots
@@ -49,6 +50,11 @@ polynomial `U_(n-1)` at `cos(π / M i j)`. At an infinite entry it is `n`. -/
 def dihedralCoeff (i j : I) (n : ℕ) : ℝ :=
   (U ℝ ((n : ℤ) - 1)).eval (cos (π / M i j))
 
+/-- The rank-two coefficient sequence is symmetric in its two indices. -/
+theorem dihedralCoeff_comm (i j : I) : M.dihedralCoeff j i = M.dihedralCoeff i j := by
+  funext n
+  simp only [dihedralCoeff, M.symmetric j i]
+
 @[simp]
 theorem dihedralCoeff_zero (i j : I) : M.dihedralCoeff i j 0 = 0 := by
   simp [dihedralCoeff]
@@ -75,10 +81,8 @@ theorem dihedralCoeff_of_eq_zero {i j : I} (hm : M i j = 0) (n : ℕ) :
 /-- For a finite off-diagonal Coxeter entry the coefficients are sine quotients. -/
 theorem dihedralCoeff_eq_sin_div {i j : I} (hm : 2 ≤ M i j) (n : ℕ) :
     M.dihedralCoeff i j n = sin (n * (π / M i j)) / sin (π / M i j) := by
-  have hpos : 0 < π / (M i j : ℝ) := by positivity
-  have hlt : π / (M i j : ℝ) < π :=
-    div_lt_self pi_pos (by exact_mod_cast (show 1 < M i j by omega))
-  apply (eq_div_iff (ne_of_gt (sin_pos_of_pos_of_lt_pi hpos hlt))).2
+  apply (eq_div_iff
+    (TauCeti.sin_pi_div_pos (by exact_mod_cast (show 1 < M i j by omega))).ne').2
   simp [dihedralCoeff]
 
 /-- The coefficient is nonnegative up to and including the finite braid length,
@@ -101,16 +105,7 @@ theorem dihedralCoeff_nonneg (i j : I) {n : ℕ} (hn : n ≤ M i j ∨ M i j = 0
       (n : ℝ) * (π / M i j) ≤ (M i j : ℝ) * (π / M i j) :=
         mul_le_mul_of_nonneg_right h (by positivity)
       _ = π := mul_div_cancel₀ π (Nat.cast_ne_zero.mpr hm)
-  · apply sin_nonneg_of_nonneg_of_le_pi (by positivity)
-    exact (div_le_self pi_pos.le (by exact_mod_cast (show 1 ≤ M i j by omega)))
-
-/-- A simple reflection on the plane of two simple roots, in their specified order. -/
-theorem geometricReflection_apply_pair (i j : I) (a b : ℝ) :
-    M.geometricReflection i (a • Finsupp.single i 1 + b • Finsupp.single j 1) =
-      (2 * cos (π / M i j) * b - a) • Finsupp.single i 1 + b • Finsupp.single j 1 := by
-  simp only [geometricReflection_apply, map_add, map_smul, geometricForm_single_single,
-    diagonal, Nat.cast_one, div_one, cos_pi]
-  module
+  · exact (TauCeti.sin_pi_div_pos (by exact_mod_cast (show 1 < M i j by omega))).le
 
 end CoxeterMatrix
 

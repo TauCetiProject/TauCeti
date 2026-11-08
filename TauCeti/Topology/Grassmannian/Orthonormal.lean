@@ -46,6 +46,8 @@ is the definition `TauCeti.finiteOrthonormalFrame.unitaryMulAction` rather than 
 for `r = N` the two actions would be actions of the same group; over `ℝ` it restricts to the
 special orthogonal group (`TauCeti.finiteOrthonormalFrame.specialOrthogonalMulAction`). The
 standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`.
+A real orthonormal one-frame is the same as a unit vector
+(`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`).
 
 The comparison of the frame-quotient description of Grassmannians with orthonormal frames follows
 J. Milnor and J. Stasheff, *Characteristic Classes*, §5.
@@ -297,6 +299,33 @@ of all frames. -/
       fun j ↦ WithLp.toLp 2 (f.1 j) :=
     gramSchmidt_of_orthogonal 𝕜 fun _ _ hij ↦ f.2.2 hij
   simp [finiteFullRankFrame.coe_orthonormalize, gramSchmidtNormed, hgs, f.2.1 i]
+
+/-- An orthonormal one-frame of `ℝ^N` is the same as a unit vector of `EuclideanSpace ℝ (Fin N)`. -/
+def sphereHomeomorph (N : ℕ) :
+    finiteOrthonormalFrame ℝ 1 N ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1 where
+  toFun f := ⟨WithLp.toLp 2 (f.1 0), by simpa using f.2.1 0⟩
+  invFun y := ⟨fun _ ↦ WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)), by
+    rw [orthonormal_iff_ite]
+    intro i j
+    rw [Subsingleton.elim i j]
+    simp [norm_eq_of_mem_sphere]⟩
+  left_inv f := Subtype.ext <| funext fun i ↦ by rw [Subsingleton.elim i 0]
+  right_inv y := rfl
+  continuous_toFun := Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp
+    ((continuous_apply 0).comp continuous_subtype_val)) _
+  continuous_invFun := Continuous.subtype_mk (continuous_pi fun _ ↦
+    (PiLp.continuous_ofLp 2 _).comp continuous_subtype_val) _
+
+@[simp]
+theorem coe_sphereHomeomorph_apply {N : ℕ} (f : finiteOrthonormalFrame ℝ 1 N) :
+    (sphereHomeomorph N f : EuclideanSpace ℝ (Fin N)) = WithLp.toLp 2 (f.1 0) :=
+  (rfl)
+
+@[simp]
+theorem coe_sphereHomeomorph_symm_apply {N : ℕ} (y : Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
+    (i : Fin 1) :
+    ((sphereHomeomorph N).symm y).1 i = WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)) :=
+  (rfl)
 
 end finiteOrthonormalFrame
 

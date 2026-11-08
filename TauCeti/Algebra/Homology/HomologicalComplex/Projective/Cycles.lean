@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCofiber
+public import TauCeti.Algebra.Homology.Ext.Presentation
 
 /-!
 # Projective cycles and contractible complexes
@@ -143,9 +144,8 @@ theorem HomologicalComplex.ext_cycles_eq_zero_of_rel {K : HomologicalComplex C c
     (hjj' : c.Rel j j') [Projective (K.X j)] (hj' : K.ExactAt j') (n : ℕ)
     (h : ∀ e : Ext.{w} (K.cycles j') Y (n + 2), e = 0) (e : Ext.{w} (K.cycles j) Y (n + 1)) :
     e = 0 := by
-  have hS := K.cyclesShortComplex_shortExact_of_iso hjj' hj' (Iso.refl _) (Iso.refl _)
-  obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₁ hS Y e (n₁ := n + 2) (by lia) (h _)
-  rw [Ext.eq_zero_of_projective x, Ext.comp_zero]
+  exact (K.cyclesShortComplex_shortExact_of_iso hjj' hj' (Iso.refl _)
+    (Iso.refl _)).ext_X₁_eq_zero_of_ext_X₃_eq_zero h e
 
 /-- **Dimension shifting along the cycles**: if `K` has projective terms in degrees
 `j, …, j + k - 1` and is exact in degrees `j + 1, …, j + k`, then `Ext^{n+1}(Zʲ, Y)` vanishes

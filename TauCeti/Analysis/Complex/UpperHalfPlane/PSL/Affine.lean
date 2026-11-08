@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
+import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 
 /-!
@@ -20,6 +21,10 @@ records its action, the action of its inverse, and its derivative.
 
 Conversely, every element of `PSL(2, ℝ)` fixing the ideal point `∞` acts on `ℍ` as an affine map
 `z ↦ μ * z + c` with `μ > 0` (`TauCeti.UpperHalfPlane.exists_coe_smul_eq_mul_add_of_smul_infty`).
+For `μ ≠ 1` its powers act by `z ↦ x₀ + μ ^ k * (z - x₀)` with `x₀ = c / (1 - μ)`
+(`TauCeti.UpperHalfPlane.coe_pow_smul_eq_of_coe_smul_eq`). For `0 < μ < 1`, the `k`-th power sends
+the point at real part `u` and height `μ⁻¹ ^ k` to a point converging to the point at height `1`
+above the fixed point `x₀` (`TauCeti.UpperHalfPlane.tendsto_pow_smul_of_coe_smul_eq`).
 -/
 
 public section
@@ -67,6 +72,49 @@ theorem exists_coe_smul_eq_mul_add_of_smul_infty {g : PSL(2, ℝ)}
   rw [div_eq_iff h11]
   push_cast
   linear_combination -(A 0 0 * (z : ℂ) + A 0 1) * hdetC
+
+/-- **Powers of an affine element.** If `h ∈ PSL(2, ℝ)` acts on `ℍ` as `z ↦ μ * z + c` with
+`μ ≠ 1`, then `h ^ k` acts as `z ↦ x₀ + μ ^ k * (z - x₀)`, where `x₀ = c / (1 - μ)` is the fixed
+point of `z ↦ μ * z + c` on `ℝ`. -/
+theorem coe_pow_smul_eq_of_coe_smul_eq {h : PSL(2, ℝ)} {μ c : ℝ} (hμ : μ ≠ 1)
+    (hz : ∀ z : ℍ, ((h • z : ℍ) : ℂ) = μ * z + c) (k : ℕ) (z : ℍ) :
+    ((h ^ k • z : ℍ) : ℂ) =
+      ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) * (z - ((c / (1 - μ) : ℝ) : ℂ)) := by
+  have hx₀ : μ * (c / (1 - μ)) + c = c / (1 - μ) := by
+    field_simp [sub_ne_zero.2 hμ.symm]
+    ring
+  generalize c / (1 - μ) = x₀ at hx₀ ⊢
+  have hx₀' : (μ : ℂ) * x₀ + c = x₀ := by exact_mod_cast hx₀
+  induction k generalizing z with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', mul_smul, hz, ih]
+    push_cast
+    linear_combination hx₀'
+
+/-- **Powers of a contracting affine element.** If `h ∈ PSL(2, ℝ)` acts on `ℍ` as `z ↦ μ * z + c`
+with `0 < μ < 1`, then the images of points at real part `u` and height `μ⁻¹ ^ k` under `h ^ k`
+tend to the point at height `1` over the fixed point `c / (1 - μ)`. -/
+theorem tendsto_pow_smul_of_coe_smul_eq {h : PSL(2, ℝ)} {μ c : ℝ} (hμ₀ : 0 < μ) (hμ₁ : μ < 1)
+    (hz : ∀ z : ℍ, ((h • z : ℍ) : ℂ) = μ * z + c) (u : ℝ) (w : ℕ → ℍ)
+    (hw : ∀ k, (w k : ℂ) = u + ((μ⁻¹ ^ k : ℝ) : ℂ) * Complex.I) (z₀ : ℍ)
+    (hz₀ : (z₀ : ℂ) = ((c / (1 - μ) : ℝ) : ℂ) + Complex.I) :
+    Filter.Tendsto (fun k : ℕ ↦ h ^ k • w k) Filter.atTop (nhds z₀) := by
+  rw [UpperHalfPlane.isEmbedding_coe.tendsto_nhds_iff, Function.comp_def, hz₀]
+  have hμk : Filter.Tendsto (fun k : ℕ ↦ ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) *
+      (u - ((c / (1 - μ) : ℝ) : ℂ)) + Complex.I) Filter.atTop
+      (nhds (((c / (1 - μ) : ℝ) : ℂ) + ((0 : ℝ) : ℂ) * (u - ((c / (1 - μ) : ℝ) : ℂ)) +
+        Complex.I)) :=
+    (((Complex.continuous_ofReal.tendsto 0).comp
+      (tendsto_pow_atTop_nhds_zero_of_lt_one hμ₀.le hμ₁)).mul_const _ |>.const_add _).add_const _
+  convert hμk using 2 with k
+  · rw [coe_pow_smul_eq_of_coe_smul_eq hμ₁.ne hz, hw]
+    have : (μ : ℂ) ^ k * ((μ⁻¹ ^ k : ℝ) : ℂ) = 1 := by
+      have : μ ^ k * μ⁻¹ ^ k = 1 := by rw [← mul_pow, mul_inv_cancel₀ hμ₀.ne', one_pow]
+      exact_mod_cast this
+    push_cast at this ⊢
+    linear_combination Complex.I * this
+  · simp
 
 end TauCeti.UpperHalfPlane
 
