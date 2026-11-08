@@ -34,8 +34,9 @@ The proof works with the group homology of `A`, through the identification
 `ℤ[1/m] = Localization.Away m`, and it is the directed union of its finitely generated
 `ℤ[1/m]`-submodules. Group homology commutes with such unions
 (`TauCeti.groupHomology.isZero_groupHomology_of_directed`), so it suffices to treat a finitely
-generated `ℤ[1/m]`-module `M`. Since `ℤ[1/m]` is a principal ideal domain
-(`Localization.isPrincipalIdealRing`), `M` splits as the product of its torsion submodule and a
+generated `ℤ[1/m]`-module `M`. (The case `m = 0` is separate: multiplication by zero is bijective
+only on the zero group.) For `m ≠ 0`, `ℤ[1/m]` is a principal ideal domain
+(`Localization.isPrincipalIdealRing`), so `M` splits as the product of its torsion submodule and a
 free module `ℤ[1/m]ʳ`, and over the semisimple ring `k` the Künneth theorem shows that a product of
 `k`-acyclic groups is `k`-acyclic (`TauCeti.subsingleton_groupHomology_prod`). The two factors are
 `k`-acyclic:
@@ -126,7 +127,8 @@ private theorem subsingleton_groupHomology_of_finite (hm : m ≠ 0) (hmk : (m : 
       (∀ x : T, IsUnit (addOrderOf x : k)) ∧
         Nonempty (M ≃+ T × (Fin r → Localization.Away m)) := by
     let T := Submodule.torsion (Localization.Away m) M
-    -- the quotient by `T` is free, so the projection onto it splits
+    -- the quotient by `T` is free, so the projection onto it splits; this splitting is adapted
+    -- from the proof of Mathlib's `Module.equiv_free_prod_directSum`
     obtain ⟨r, b⟩ := Module.basisOfFiniteTypeTorsionFree' (R := Localization.Away m) (M := M ⧸ T)
     obtain ⟨f, hf⟩ := Module.projective_lifting_property _ LinearMap.id T.mkQ_surjective
     refine ⟨T, inferInstance, r, fun x ↦ ?_, ⟨((lequivProdOfRightSplitExact T.injective_subtype
