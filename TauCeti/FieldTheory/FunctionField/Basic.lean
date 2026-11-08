@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.FunctionField
 public import TauCeti.FieldTheory.IntermediateField.FieldRange
 public import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 import Mathlib.FieldTheory.RatFunc.IntermediateField
 import Mathlib.RingTheory.Adjoin.Polynomial.Bivariate

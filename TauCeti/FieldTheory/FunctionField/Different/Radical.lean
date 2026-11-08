@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Radical
 import TauCeti.FieldTheory.FunctionField.Different.Tower
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # The different of a radical extension `y ^ n = u`
