@@ -126,8 +126,7 @@ theorem fullContractL_smul_direction (j : ℕ) (a : ℝ) (h : E) :
       simp
   | succ j ih =>
       ext G
-      simp [ih, pow_succ]
-      ring
+      simp [ih, pow_succ, mul_assoc, mul_comm]
 
 @[simp]
 theorem fullContractL_zero_direction (j : ℕ) :
@@ -161,24 +160,23 @@ end InnerProductSpace
 -- The gradient and Hessian of the real function x ↦ x² give different degrees in the direction.
 -- The numerical calculations below evaluate the contraction recursions directly.
 example (x : ℝ) : fullContractL 0 (3 : ℝ) (2 * x) = 6 * x := by
-  simp [RCLike.inner_apply]; ring
+  simp only [fullContractL_zero, innerSL_apply_apply, RCLike.inner_apply, conj_trivial]
+  ring
 
 example (x : ℝ) : fullContractL 0 (6 : ℝ) (2 * x) = 12 * x := by
-  simp [RCLike.inner_apply]; ring
+  simp only [fullContractL_zero, innerSL_apply_apply, RCLike.inner_apply, conj_trivial]
+  ring
 
 example : contractL 0 1 (3 : ℝ) ((2 : ℝ) • ContinuousLinearMap.id ℝ ℝ) = 6 := by
-  calc
-    _ = (2 : ℝ) * 3 := (rfl)
-    _ = 6 := by norm_num
+  rw [contractL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
+  norm_num
 
 example : fullContractL 1 (3 : ℝ) ((2 : ℝ) • ContinuousLinearMap.id ℝ ℝ) = 18 := by
-  calc
-    _ = ((2 : ℝ) * 3) * 3 := (rfl)
-    _ = 18 := by norm_num
+  rw [fullContractL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
+  norm_num [RCLike.inner_apply]
 
 example : fullContractL 1 (6 : ℝ) ((2 : ℝ) • ContinuousLinearMap.id ℝ ℝ) = 72 := by
-  calc
-    _ = ((2 : ℝ) * 6) * 6 := (rfl)
-    _ = 72 := by norm_num
+  rw [fullContractL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
+  norm_num [RCLike.inner_apply]
 
 end TauCeti.IteratedGradient
