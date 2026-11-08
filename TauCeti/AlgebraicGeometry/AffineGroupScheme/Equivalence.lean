@@ -93,21 +93,14 @@ Hopf spectra. -/
 theorem objectProperty_inverseImage_commHopfAlgCatOpEquiv
     (R : Type u) [CommRing R]
     (P : ObjectProperty (AffineGroupSchemeCat (CommRingCat.of R)))
-    [P.IsClosedUnderIsomorphisms] (Q : ObjectProperty (CommHopfAlgCat.{u} R))
+    (Q : ObjectProperty (CommHopfAlgCat.{u} R))
     (h : ∀ H, P ⟨(hopfSpec (CommRingCat.of R)).obj (op H), by
       rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
       infer_instance⟩ ↔ Q H) :
     P.inverseImage
         (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor = Q.op := by
   ext H
-  let G : AffineGroupSchemeCat (CommRingCat.of R) :=
-    ⟨(hopfSpec (CommRingCat.of R)).obj H, by
-      rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
-      infer_instance⟩
-  let e : (commHopfAlgCatOpEquivAffineGroupSchemeCat
-      (CommRingCat.of R)).functor.obj H ≅ G :=
-    commHopfAlgCatOpEquivAffineGroupSchemeCat.functorObjIso R H
   rw [ObjectProperty.prop_inverseImage_iff, ObjectProperty.op_iff]
-  exact (P.prop_iff_of_iso e).trans (h H.unop)
+  exact h H.unop
 
 end TauCeti
