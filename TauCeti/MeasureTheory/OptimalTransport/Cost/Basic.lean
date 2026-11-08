@@ -137,10 +137,10 @@ theorem transportCost_eq_top_of_not_exists_isCoupling (h : ¬ ∃ π, IsCoupling
     (c : X × Y → ℝ≥0∞) : transportCost c μ ν = ⊤ :=
   eq_top_iff.2 <| le_transportCost fun π hπ ↦ absurd ⟨π, hπ⟩ h
 
-/-- A finite measure and a measure of a different total mass have transport cost `∞`. -/
-theorem transportCost_eq_top_of_measure_univ_ne [IsFiniteMeasure μ] (h : μ univ ≠ ν univ)
+/-- Measures of different total mass have transport cost `∞`. -/
+theorem transportCost_eq_top_of_measure_univ_ne (h : μ univ ≠ ν univ)
     (c : X × Y → ℝ≥0∞) : transportCost c μ ν = ⊤ :=
-  transportCost_eq_top_of_not_exists_isCoupling (fun hex ↦ h (exists_isCoupling_iff.1 hex)) c
+  transportCost_eq_top_of_not_exists_isCoupling (fun ⟨_, hπ⟩ ↦ h hπ.measure_univ_eq) c
 
 /-- A finite transport cost is witnessed by a coupling. The converse fails: a coupling of
 infinite cost leaves the transport cost `∞`, which is why this is not stated as an
@@ -366,15 +366,16 @@ protected theorem IsOptimalCoupling.const_mul (h : IsOptimalCoupling c π μ ν)
   exact mul_le_mul_of_nonneg_left (h.lintegral_le hσ) (by positivity)
 
 /-- Every coupling out of a Dirac measure is optimal, because there is only one. -/
-theorem IsCoupling.isOptimalCoupling_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c)
+theorem IsCoupling.isOptimalCoupling_dirac_left (hc : Measurable c)
     {x : X} (hπ : IsCoupling π (Measure.dirac x) ν) :
     IsOptimalCoupling c π (Measure.dirac x) ν where
   toIsCoupling := hπ
   lintegral_eq := by
+    have := hπ.isProbabilityMeasure_right
     rw [hπ.eq_map_prodMk, lintegral_map hc measurable_prodMk_left, transportCost_dirac_left hc]
 
 /-- Every coupling into a Dirac measure is optimal, because there is only one. -/
-theorem IsCoupling.isOptimalCoupling_dirac_right [IsProbabilityMeasure μ] (hc : Measurable c)
+theorem IsCoupling.isOptimalCoupling_dirac_right (hc : Measurable c)
     {y : Y} (hπ : IsCoupling π μ (Measure.dirac y)) :
     IsOptimalCoupling c π μ (Measure.dirac y) := by
   have hπ' : IsOptimalCoupling (fun z : Y × X ↦ c z.swap) (π.map Prod.swap)
