@@ -59,7 +59,6 @@ surface, and in the affine coordinate the transformation of `!![a, b; c, d]` has
   and `PSL(2, ℂ)` act on the Riemann sphere by smooth maps of the underlying real surface.
 * `OnePoint.mfderiv_smul_coe_apply`: the derivative of a Möbius transformation in the affine
   coordinate.
-* `Matrix.GeneralLinearGroup.dense_setOf_add_ne_zero`: the points not sent to `∞` are dense.
 
 ## References
 
@@ -134,21 +133,6 @@ end OnePoint
 namespace Matrix.GeneralLinearGroup
 
 open OnePoint
-
-/-- The points of `𝕜` that the Möbius transformation of `g = !![a, b; c, d]` does not send to `∞`
-are dense: the only one it does send to `∞` is `-d / c`. -/
-theorem dense_setOf_add_ne_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] (g : GL (Fin 2) 𝕜) :
-    Dense {z : 𝕜 | g 1 0 * z + g 1 1 ≠ 0} := by
-  refine (dense_compl_singleton (-(g 1 1 / g 1 0))).mono fun z hz hz' ↦
-    mem_compl_singleton_iff.1 hz ?_
-  have hc : g 1 0 ≠ 0 := by
-    rintro hc
-    rw [hc, zero_mul, zero_add] at hz'
-    apply g.det_ne_zero
-    rw [det_fin_two, hc, hz']
-    ring
-  field_simp
-  linear_combination hz'
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
