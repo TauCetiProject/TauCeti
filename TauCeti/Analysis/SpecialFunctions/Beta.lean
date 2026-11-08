@@ -996,6 +996,7 @@ theorem beta_one_right (ha : 0 < a) : beta a 1 = 1 / a := by
   field_simp
 
 /-- Euler's beta function at first parameter `1`. -/
+@[simp]
 theorem beta_one_left (ha : 0 < a) : beta 1 a = 1 / a := by
   rw [beta_comm, beta_one_right ha]
 
