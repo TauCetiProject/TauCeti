@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Disk.RadialPush
+public import TauCeti.AlgebraicTopology.Disk.Annulus
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
@@ -108,51 +108,40 @@ private theorem coe_diskRadial_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.dow
   rw [diskRadial, TopCat.coe_diskRadialPush_one_of_norm_le _ hw]
   norm_num
 
-private theorem norm_diskRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
-    ‖(diskRadial w).down.1‖ = 1 :=
-  TopCat.norm_diskRadialPush_one (by norm_num) hw
-
-private theorem diskRadial_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
-    diskRadial (TopCat.diskBoundaryInclusion k s) = TopCat.diskBoundaryInclusion k s :=
-  TopCat.diskRadialPush_diskBoundaryInclusion (by norm_num) (by norm_num) 1 s
-
-/-- The point `x / ‖x‖` of the boundary sphere, for a point `x` of the disc with `1/2 ≤ ‖x‖`. -/
-private def diskRadialSphere (w : {w : TopCat.disk.{u} k // 1 / 2 ≤ ‖w.down.1‖}) :
-    TopCat.diskBoundary.{u} k :=
-  ULift.up ⟨(diskRadial w.1).down.1, mem_sphere_zero_iff_norm.2 (norm_diskRadial_of_le_norm w.2)⟩
-
-private theorem continuous_diskRadialSphere : Continuous (diskRadialSphere.{u} (k := k)) :=
-  continuous_uliftUp.comp ((continuous_subtype_val.comp (continuous_uliftDown.comp
-    (continuous_diskRadial.comp continuous_subtype_val))).subtype_mk _)
-
-private theorem diskBoundaryInclusion_diskRadialSphere
-    (w : {w : TopCat.disk.{u} k // 1 / 2 ≤ ‖w.down.1‖}) :
-    TopCat.diskBoundaryInclusion k (diskRadialSphere w) = diskRadial w.1 :=
-  ULift.ext (Subtype.ext (TopCat.coe_diskBoundaryInclusion_apply_down k _))
+/-- The point `2 • (1/2) • θ = θ` of the boundary sphere, for `θ` on the boundary sphere. -/
+private theorem diskRadial_half_smul (θ : TopCat.diskBoundary.{u} k)
+    (hθ : (1 / 2 : ℝ) • θ.down.1 ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) 1) :
+    diskRadial (ULift.up ⟨(1 / 2 : ℝ) • θ.down.1, hθ⟩) = TopCat.diskBoundaryInclusion k θ := by
+  have hθ' : ‖(1 / 2 : ℝ) • θ.down.1‖ ≤ 1 / 2 :=
+    mem_closedBall_zero_iff.1 (TopCat.smul_diskBoundary_mem_closedBall (by norm_num) θ)
+  refine ULift.ext (Subtype.ext ?_)
+  rw [coe_diskRadial_of_norm_le (w := ULift.up ⟨(1 / 2 : ℝ) • θ.down.1, hθ⟩) hθ', smul_smul,
+    show (2 : ℝ) * (1 / 2) = 1 by norm_num, one_smul]
+  exact (TopCat.coe_diskBoundaryInclusion_apply_down _ _).symm
 
 /-- The time part `x ↦ 2 - 2‖x‖`, clamped to `[0, 1]`, of the map from the disc to the cylinder:
-it is `1` on the disc of radius `1/2` and `0` on the boundary sphere. -/
+the reversed radial parameter of the annulus `1/2 ≤ ‖x‖`. It is `1` on the disc of radius `1/2`
+and `0` on the boundary sphere. -/
 private def diskTime (w : TopCat.disk.{u} k) : I :=
-  projIcc 0 1 zero_le_one (2 - 2 * ‖w.down.1‖)
+  σ (TopCat.annulusParam (1 / 2) w)
 
 private theorem continuous_diskTime : Continuous (diskTime.{u} (k := k)) :=
-  continuous_projIcc.comp (continuous_const.sub (continuous_const.mul
-    (continuous_norm.comp (continuous_subtype_val.comp continuous_uliftDown))))
+  continuous_symm.comp TopCat.continuous_annulusParam
 
 private theorem diskTime_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ 1 / 2) :
-    diskTime w = 1 :=
-  projIcc_of_right_le _ (by linarith)
+    diskTime w = 1 := by
+  rw [diskTime, TopCat.annulusParam_of_norm_le (by norm_num) hw, symm_zero]
 
 private theorem coe_diskTime_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
     (diskTime w : ℝ) = 2 - 2 * ‖w.down.1‖ := by
-  have hw₁ : ‖w.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.2
-  rw [diskTime, coe_projIcc, min_eq_right (by linarith), max_eq_right (by linarith)]
+  have h := TopCat.add_one_sub_mul_annulusParam (by norm_num : (1 / 2 : ℝ) ≤ 1) hw
+  rw [diskTime, coe_symm_eq]
+  linarith
 
 private theorem diskTime_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
     diskTime (TopCat.diskBoundaryInclusion k s) = 0 := by
-  have hs : ‖(TopCat.diskBoundaryInclusion k s).down.1‖ = 1 :=
-    (mem_range_diskBoundaryInclusion_iff _).1 (mem_range_self s)
-  exact projIcc_of_le_left _ (by rw [hs]; norm_num)
+  rw [diskTime, TopCat.annulusParam_of_norm_eq_one (by norm_num)
+    (TopCat.norm_diskBoundaryInclusion s), symm_one]
 
 /-- The straight-line homotopy in the cylinder `I × D^k` from `x ↦ (diskTime x, diskRadial x)` at
 time `0` to `x ↦ (0, x)` at time `1`. Its disc coordinate is the radial push
@@ -205,85 +194,70 @@ variable (φ₀ φ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin 
   (hK : ∀ i t (s : TopCat.diskBoundary.{u} (k i)),
     f (K i (t, TopCat.diskBoundaryInclusion (k i) s)) ≤ c - ε)
 
-/-- The reattachment map on the disc of the chart index `i`. -/
-private def morseCellReattachmentFun (i : ι) (w : TopCat.disk.{u} (k i)) :
-    morseCellAttachment φ₀ k hk hε hball₀ hf₀ :=
-  if hw : 1 / 2 ≤ ‖w.down.1‖ then
-    morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
-      ⟨K i (diskTime w, TopCat.diskBoundaryInclusion (k i) (diskRadialSphere ⟨w, hw⟩)),
-        hK i _ (diskRadialSphere ⟨w, hw⟩)⟩
-  else morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i (diskRadial w))
-
-include hh in
-/-- On the seam `‖x‖ = 1/2` the two pieces of the reattachment map agree. -/
-private theorem morseCellReattachmentFun_of_norm_eq (i : ι) {w : TopCat.disk.{u} (k i)}
-    (hw : 1 / 2 = ‖w.down.1‖) :
-    morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w =
-      morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i (diskRadial w)) := by
-  obtain ⟨s, hs⟩ := hh i ⟨diskRadialSphere ⟨w, hw.le⟩, rfl⟩
-  rw [diskBoundaryInclusion_diskRadialSphere] at hs
-  -- At the seam `K i (1, ·) = χ₀ i ∘ h i`, and `h i` lands on the boundary sphere.
-  have hseam : (⟨K i (diskTime w, TopCat.diskBoundaryInclusion (k i) (diskRadialSphere ⟨w, hw.le⟩)),
-      hK i _ _⟩ : {x | f x ≤ c - ε}) = (φ₀ i).morseAttachingMap (hk i) hε (hball₀ i) (hf₀ i) s := by
-    refine Subtype.ext ?_
-    simp only [diskBoundaryInclusion_diskRadialSphere, diskTime_of_norm_le hw.ge,
-      ContinuousMap.Homotopy.apply_one, TopCat.hom_comp, ContinuousMap.comp_apply, ← hs]
-    exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
-      (hball₀ i) (hf₀ i) (hk i) hε s
-  rw [morseCellReattachmentFun, dite_eq_left hw.le, hseam, ← hs, ← ConcreteCategory.comp_apply,
-    morseAttachingMap_comp_morseCellAttachmentIncl, ConcreteCategory.comp_apply]
-
-include hh in
-private theorem continuous_morseCellReattachmentFun (i : ι) :
-    Continuous (morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i) := by
-  set F := morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i
-  have hinner : Continuous fun w : TopCat.disk.{u} (k i) ↦
-      morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i (diskRadial w)) :=
-    (morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i).hom.continuous.comp
-      ((h i).hom.continuous.comp continuous_diskRadial)
-  have houter : ContinuousOn F {w | 1 / 2 ≤ ‖w.down.1‖} := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    have hF : domRestrict {w | 1 / 2 ≤ ‖w.down.1‖} F = fun w ↦
-        morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
-          ⟨K i (diskTime w.1, TopCat.diskBoundaryInclusion (k i) (diskRadialSphere w)),
-            hK i _ (diskRadialSphere w)⟩ :=
-      funext fun w ↦ dite_eq_left w.2
-    let g : C({w : TopCat.disk.{u} (k i) // 1 / 2 ≤ ‖w.down.1‖}, TopCat.of {x | f x ≤ c - ε}) :=
-      ⟨fun w ↦ ⟨K i (diskTime w.1, TopCat.diskBoundaryInclusion (k i) (diskRadialSphere w)),
-          hK i _ (diskRadialSphere w)⟩,
-        (continuous_subtype_val.comp ((K i).continuous.comp
-          ((continuous_diskTime.comp continuous_subtype_val).prodMk
+/-- The reattachment map on the disc of the chart index `i`: the map `x ↦ h i (2x)` into the cell
+of `i` on the disc of radius `1/2`, glued to `K i` read in the annulus coordinates of the annulus
+`1/2 ≤ ‖x‖`. The pieces agree on the seam `‖x‖ = 1/2` because `K i (1, ·) = χ₀ i ∘ h i` and `h i`
+preserves the boundary sphere. -/
+private def morseCellReattachmentFun (i : ι) :
+    C(TopCat.disk.{u} (k i), morseCellAttachment φ₀ k hk hε hball₀ hf₀) :=
+  (TopCat.discGlue (P := Unit) (by norm_num : (0 : ℝ) < 1 / 2)
+    ⟨fun p ↦ morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i
+        (h i (diskRadial (ULift.up ⟨p.2.1, closedBall_subset_closedBall (by norm_num) p.2.2⟩))),
+      (morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i).hom.continuous.comp
+        ((h i).hom.continuous.comp (continuous_diskRadial.comp (continuous_uliftUp.comp
+          ((continuous_subtype_val.comp continuous_snd).subtype_mk _))))⟩
+    ⟨fun p ↦ morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
+        ⟨K i (σ p.2.1, TopCat.diskBoundaryInclusion (k i) p.2.2), hK i _ p.2.2⟩,
+      (morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀).hom.continuous.comp
+        ((continuous_subtype_val.comp ((K i).continuous.comp
+          ((continuous_symm.comp (continuous_fst.comp continuous_snd)).prodMk
             ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.comp
-              continuous_diskRadialSphere)))).subtype_mk _⟩
-    rw [hF]
-    exact (morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀).hom.continuous.comp g.continuous
-  have hF : F = fun w ↦ if 1 / 2 ≤ ‖w.down.1‖ then F w else
+              (continuous_snd.comp continuous_snd))))).subtype_mk _)⟩
+    fun _ θ ↦ by
+      simp only [ContinuousMap.coe_mk, symm_zero, diskRadial_half_smul]
+      obtain ⟨s, hs⟩ := hh i ⟨θ, rfl⟩
+      -- At the seam `K i (1, ·) = χ₀ i ∘ h i`, and `h i` lands on the boundary sphere.
+      have hseam : (⟨K i (1, TopCat.diskBoundaryInclusion (k i) θ), hK i _ θ⟩ :
+          {x | f x ≤ c - ε}) = (φ₀ i).morseAttachingMap (hk i) hε (hball₀ i) (hf₀ i) s := by
+        refine Subtype.ext ?_
+        simp only [ContinuousMap.Homotopy.apply_one, TopCat.hom_comp, ContinuousMap.comp_apply,
+          ← hs]
+        exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
+          (hball₀ i) (hf₀ i) (hk i) hε s
+      rw [hseam, ← hs, ← ConcreteCategory.comp_apply,
+        morseAttachingMap_comp_morseCellAttachmentIncl, ConcreteCategory.comp_apply]).curry ()
+
+private theorem morseCellReattachmentFun_of_norm_le (i : ι) {w : TopCat.disk.{u} (k i)}
+    (hw : ‖w.down.1‖ ≤ 1 / 2) :
+    morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i w =
       morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i (diskRadial w)) := by
-    funext w
-    split_ifs with hw
-    · rfl
-    · exact dite_eq_right hw
-  rw [hF]
-  exact continuous_if_le continuous_const
-    (continuous_norm.comp (continuous_subtype_val.comp continuous_uliftDown)) houter
-    hinner.continuousOn fun w hw ↦
-      morseCellReattachmentFun_of_norm_eq φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i hw
+  rw [morseCellReattachmentFun, ContinuousMap.curry_apply,
+    TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw]
+  rfl
+
+private theorem morseCellReattachmentFun_of_le_norm (i : ι) {w : TopCat.disk.{u} (k i)}
+    (hw : 1 / 2 ≤ ‖w.down.1‖) :
+    morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i w =
+      morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
+        ⟨K i (diskTime w, TopCat.diskBoundaryInclusion (k i)
+          (TopCat.annulusDir (by norm_num) ⟨w, hw⟩)), hK i _ _⟩ := by
+  rw [morseCellReattachmentFun, ContinuousMap.curry_apply,
+    TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw]
+  rfl
 
 /-- On the boundary sphere of the disc of `i`, the reattachment map is the attaching map `α₁ i`. -/
 private theorem morseCellReattachmentFun_diskBoundaryInclusion (i : ι)
     (s : TopCat.diskBoundary.{u} (k i)) :
-    morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i
+    morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i
         (TopCat.diskBoundaryInclusion (k i) s) =
       morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
         ((φ₁ i).morseAttachingMap (hk i) hε (hball₁ i) (hf₁ i) s) := by
-  have hs : ‖(TopCat.diskBoundaryInclusion (k i) s).down.1‖ = 1 :=
-    (mem_range_diskBoundaryInclusion_iff _).1 (mem_range_self s)
-  have hw : 1 / 2 ≤ ‖(TopCat.diskBoundaryInclusion (k i) s).down.1‖ := by rw [hs]; norm_num
-  have hsph : diskRadialSphere ⟨TopCat.diskBoundaryInclusion (k i) s, hw⟩ = s :=
-    ULift.ext (Subtype.ext (congrArg (fun w ↦ w.down.1) (diskRadial_diskBoundaryInclusion s)))
-  rw [morseCellReattachmentFun, dite_eq_left hw]
+  have hw : 1 / 2 ≤ ‖(TopCat.diskBoundaryInclusion (k i) s).down.1‖ := by
+    rw [TopCat.norm_diskBoundaryInclusion]; norm_num
+  rw [morseCellReattachmentFun_of_le_norm (hw := hw)]
   refine congrArg _ (Subtype.ext ?_)
-  simp only [hsph, diskTime_diskBoundaryInclusion, ContinuousMap.Homotopy.apply_zero]
+  simp only [TopCat.annulusDir_diskBoundaryInclusion, diskTime_diskBoundaryInclusion,
+    ContinuousMap.Homotopy.apply_zero]
   exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
     (hball₁ i) (hf₁ i) (hk i) hε s
 
@@ -296,12 +270,12 @@ the point `h i (2x)` of the disc of `i` when `‖x‖ ≤ 1/2`, and to the point
 def morseCellReattachment : morseCellAttachment φ₁ k hk hε hball₁ hf₁ ⟶
     morseCellAttachment φ₀ k hk hε hball₀ hf₀ :=
   morseCellAttachmentDesc φ₁ k hk hε hball₁ hf₁ (morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀)
-    (fun i ↦ TopCat.ofHom ⟨_, continuous_morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
-      hf₁ h hh K hK i⟩)
+    (fun i ↦ TopCat.ofHom
+      (morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i))
     fun i ↦ by
       ext s
-      exact (morseCellReattachmentFun_diskBoundaryInclusion φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K
-        hK i s).symm
+      exact (morseCellReattachmentFun_diskBoundaryInclusion φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh
+        K hK i s).symm
 
 /-- The reattachment map is the identity on the lower sublevel. -/
 @[reassoc (attr := simp)]
@@ -322,7 +296,7 @@ theorem morseCellReattachment_morseCellAttachmentIncl (x : {x | f x ≤ c - ε})
 private theorem morseCellReattachment_morseCellAttachmentCell (i : ι) (w : TopCat.disk.{u} (k i)) :
     morseCellReattachment φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK
         (morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) =
-      morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w := by
+      morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i w := by
   exact ConcreteCategory.congr_hom (morseCellAttachmentCell_desc _ _ _ _ _ _ _ _ _ i) w
 
 /-- On the disc of radius `1/2` of the cell of `i`, the reattachment map is `x ↦ h i (2x)`, read in
@@ -332,13 +306,8 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_norm_le (i : ι)
     morseCellReattachment φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK
         (morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) =
       morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i v) := by
-  rw [morseCellReattachment_morseCellAttachmentCell]
-  obtain hw' | hw' := hw.eq_or_lt
-  · rw [morseCellReattachmentFun_of_norm_eq φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i
-      hw'.symm]
-    exact congrArg _ (congrArg _ (ULift.ext (Subtype.ext (hv ▸ coe_diskRadial_of_norm_le hw))))
-  · rw [morseCellReattachmentFun, dite_eq_right hw'.not_ge]
-    exact congrArg _ (congrArg _ (ULift.ext (Subtype.ext (hv ▸ coe_diskRadial_of_norm_le hw))))
+  rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentFun_of_norm_le (hw := hw)]
+  exact congrArg _ (congrArg _ (ULift.ext (Subtype.ext (hv ▸ coe_diskRadial_of_norm_le hw))))
 
 /-- Outside the disc of radius `1/2` of the cell of `i`, the reattachment map is
 `x ↦ K i (2 - 2‖x‖, x/‖x‖)`, read in the lower sublevel. -/
@@ -351,11 +320,10 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_le_norm (i : ι)
       morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀
         ⟨K i (t, TopCat.diskBoundaryInclusion (k i) s), hK i t s⟩ := by
   have ht' : diskTime w = t := Subtype.ext ((coe_diskTime_of_le_norm hw).trans ht.symm)
-  have hs' : diskRadialSphere ⟨w, hw⟩ = s :=
-    ULift.ext (Subtype.ext ((TopCat.coe_diskRadialPush_one_of_le_norm (by norm_num) hw).trans
-      hs.symm))
+  have hs' : TopCat.annulusDir (by norm_num) ⟨w, hw⟩ = s :=
+    ULift.ext (Subtype.ext ((TopCat.coe_annulusDir _ _).trans hs.symm))
   subst ht' hs'
-  rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentFun, dite_eq_left hw]
+  rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentFun_of_le_norm (hw := hw)]
 
 /-- On the cell of `i`, the reattachment map followed by the handle-to-cell comparison `Φ₀` is
 `K i` read along the map `x ↦ (diskTime x, diskRadial x)` from the disc to the cylinder. -/
@@ -367,11 +335,11 @@ private theorem coe_morseCellComparison_morseCellReattachment_morseCellAttachmen
       K i (diskTime w, diskRadial w) := by
   rw [morseCellReattachment_morseCellAttachmentCell]
   by_cases hw : 1 / 2 ≤ ‖w.down.1‖
-  · rw [morseCellReattachmentFun, dite_eq_left hw,
+  · rw [morseCellReattachmentFun_of_le_norm (hw := hw),
       coe_morseCellComparison_morseCellAttachmentIncl]
     exact congrArg (fun v ↦ (K i (diskTime w, v) : M))
-      (diskBoundaryInclusion_diskRadialSphere ⟨w, hw⟩)
-  · rw [morseCellReattachmentFun, dite_eq_right hw,
+      (TopCat.diskBoundaryInclusion_annulusDir _ ⟨w, hw⟩)
+  · rw [morseCellReattachmentFun_of_norm_le (hw := (not_le.1 hw).le),
       coe_morseCellComparison_morseCellAttachmentCell, diskTime_of_norm_le (not_le.1 hw).le,
       ContinuousMap.Homotopy.apply_one, TopCat.hom_comp, ContinuousMap.comp_apply]
     exact (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₀ i) (hf₀ i) (hk i) hε
