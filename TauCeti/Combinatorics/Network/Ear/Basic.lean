@@ -140,13 +140,17 @@ namespace Ear
 variable {S : N.Subnetwork}
 
 /-- Transport an ear when its base subnetwork is replaced by an equal one. -/
-@[expose]
 def copy {T : N.Subnetwork} (P : Ear S) (h : S = T) : Ear T :=
   h ▸ P
 
+/-- Transporting an ear along an equality of base subnetworks leaves it unchanged. -/
+theorem copy_heq {T : N.Subnetwork} (P : Ear S) (h : S = T) : HEq (P.copy h) P := by
+  subst h
+  rfl
+
 @[simp]
 theorem copy_rfl (P : Ear S) : P.copy rfl = P :=
-  rfl
+  eq_of_heq (P.copy_heq rfl)
 
 /-- The subnetwork consisting of the vertices and arrows traversed by an ear. -/
 def toSubnetwork : Ear S → N.Subnetwork
@@ -294,6 +298,7 @@ theorem copy_stage {U : N.Subnetwork} (D : EarDecomposition T) (h : T = U) :
   rfl
 
 /-- Reindexing the final subnetwork does not change the displayed ears. -/
+@[simp]
 theorem copy_ear {U : N.Subnetwork} (D : EarDecomposition T) (h : T = U) :
     HEq (D.copy h).ear D.ear := by
   subst h
@@ -376,7 +381,10 @@ theorem stage_induction (D : EarDecomposition T) (P : N.Subnetwork → Prop)
 
 /-! ### Appending an ear -/
 
-/-- Append one ear to the end of a directed ear decomposition. -/
+/-- Append one ear to the end of a directed ear decomposition.
+
+This follows the undirected constructors `TauCeti.SimpleGraph.EarDecomposition.snoc` and
+`TauCeti.Graph.EarDecomposition.snoc`. -/
 @[expose]
 def snoc (D : EarDecomposition T) (P : Ear T) : EarDecomposition P.adjoin where
   length := D.length + 1
@@ -421,16 +429,18 @@ theorem snoc_stage_castSucc (D : EarDecomposition T) (P : Ear T)
   simp [snoc]
 
 /-- The old ears are unchanged when a new ear is appended. -/
+@[simp]
 theorem snoc_ear_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
     HEq ((D.snoc P).ear i.castSucc) (D.ear i) := by
-  simp only [snoc, Fin.lastCases_castSucc, Ear.copy]
-  apply eqRec_heq
+  simp only [snoc, Fin.lastCases_castSucc]
+  exact Ear.copy_heq _ _
 
 /-- The last ear of an appended decomposition is the appended ear. -/
+@[simp]
 theorem snoc_ear_last (D : EarDecomposition T) (P : Ear T) :
     HEq ((D.snoc P).ear (Fin.last D.length)) P := by
-  simp only [snoc, Fin.lastCases_last, Ear.copy]
-  apply eqRec_heq
+  simp only [snoc, Fin.lastCases_last]
+  exact Ear.copy_heq _ _
 
 /-- The first `k` ears, as an ear decomposition of the `k`-th stage. -/
 @[expose]
