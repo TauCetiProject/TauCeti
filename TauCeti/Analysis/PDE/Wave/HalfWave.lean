@@ -57,7 +57,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 variable (F) in
 /-- The **half-wave propagator** `W₊(t) = exp(itD)` on `L²(E, F)`, `D = √(-Δ)`: the Fourier
 multiplier with symbol `exp(2πi t ‖ξ‖)`. -/
-def halfWavePropagator (t : ℝ) :
+abbrev halfWavePropagator (t : ℝ) :
     Lp F 2 (volume : Measure E) →L[ℂ] Lp F 2 (volume : Measure E) :=
   phasePropagator F sqrtNegLaplacianSymbol t
 

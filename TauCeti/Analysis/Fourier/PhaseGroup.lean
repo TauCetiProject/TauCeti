@@ -32,7 +32,8 @@ unitary group:
 * `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`;
 * each operator commutes with every `L²` Fourier multiplier.
 
-Reversing the phase reverses time: `exp(it(-ω)(D)) = exp(i(-t)ω(D))`.
+Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
+(`TauCeti.phasePropagator_neg`).
 
 ## Main declarations
 
@@ -98,8 +99,8 @@ theorem star_phaseSymbol (t : ℝ) (ξ : E) :
   push_cast
   ring
 
-/-- Reversing the phase reverses time. -/
-theorem phaseSymbol_neg (t : ℝ) (ξ : E) : phaseSymbol (-ω) t ξ = phaseSymbol ω (-t) ξ := by
+/-- Reversing time reverses the phase. -/
+theorem phaseSymbol_neg (t : ℝ) (ξ : E) : phaseSymbol ω (-t) ξ = phaseSymbol (-ω) t ξ := by
   simp [phaseSymbol_apply]
 
 /-- The phase symbol is jointly continuous in time and frequency. -/
@@ -191,13 +192,13 @@ theorem phasePropagator_apply_phasePropagator_neg_apply (t : ℝ)
     phasePropagator F ω t (phasePropagator F ω (-t) f) = f := by
   simpa using phasePropagator_neg_apply_phasePropagator_apply ω (-t) f
 
-/-- Reversing the phase reverses time: `exp(it(-ω)(D)) = exp(i(-t)ω(D))`. -/
-theorem phasePropagator_neg (t : ℝ) : phasePropagator F (-ω) t = phasePropagator F ω (-t) := by
+/-- Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`. -/
+theorem phasePropagator_neg (t : ℝ) : phasePropagator F ω (-t) = phasePropagator F (-ω) t := by
   rw [phasePropagator_def, phasePropagator_def]
   congr 1
   apply Lp.ext
-  filter_upwards [(memLp_phaseSymbol (-ω) t).coeFn_toLp,
-    (memLp_phaseSymbol ω (-t)).coeFn_toLp] with ξ h₁ h₂
+  filter_upwards [(memLp_phaseSymbol ω (-t)).coeFn_toLp,
+    (memLp_phaseSymbol (-ω) t).coeFn_toLp] with ξ h₁ h₂
   rw [h₁, h₂, phaseSymbol_neg]
 
 /-- `exp(itω(D))` has operator norm at most one. -/

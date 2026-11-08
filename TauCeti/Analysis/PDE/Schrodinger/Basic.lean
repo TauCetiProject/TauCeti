@@ -50,7 +50,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 variable (F) in
 /-- The **Schrödinger propagator** `S(t) = exp(itΔ)` on `L²(E, F)`: the Fourier multiplier with
 symbol `exp(-4π² i t ‖ξ‖²)`. -/
-def schrodingerPropagator (t : ℝ) :
+abbrev schrodingerPropagator (t : ℝ) :
     Lp F 2 (volume : Measure E) →L[ℂ] Lp F 2 (volume : Measure E) :=
   phasePropagator F laplacianSymbol t
 
