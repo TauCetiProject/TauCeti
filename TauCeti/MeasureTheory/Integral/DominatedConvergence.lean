@@ -216,4 +216,4 @@ theorem TendstoUniformlyOn.tendsto_intervalIntegral_comp {ι β E : Type*} [Unif
   exact (isCompact_uIcc.image_of_continuousOn
     (continuousOn_id.prodMk (h.continuousOn hF.frequently)))
     |>.comp_tendstoUniformlyOn (g := uncurry g) (fun _ _ ↦ hg.continuousAt)
-      ((tendstoUniformlyOn_const id l _).prodMk_same h)
+      ((TauCeti.tendstoUniformlyOn_const id l _).prodMk_same h)
