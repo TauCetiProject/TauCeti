@@ -283,6 +283,11 @@ theorem principalChar_one_eq_one_add_coord (κ : WeightSpace p R) :
     κ.principalChar 1 = 1 + κ.coord := by
   rw [principalChar_one, coord_def, add_sub_cancel]
 
+/-- The values of a weight at the powers of `γ = exp q` are the powers of `1 + T_κ`. -/
+theorem apply_padicUnitsGenerator_pow (κ : WeightSpace p R) (n : ℕ) :
+    (κ (padicUnitsGenerator p ^ n) : R) = (1 + κ.coord) ^ n := by
+  rw [map_pow, Units.val_pow_eq_pow_val, coord_def, add_sub_cancel]
+
 /-- The coordinate of a weight vanishes exactly when the weight is trivial on `1 + qℤ_p`, that is,
 when its conductor divides `q`. -/
 theorem coord_eq_zero_iff [T2Space R] (κ : WeightSpace p R) :

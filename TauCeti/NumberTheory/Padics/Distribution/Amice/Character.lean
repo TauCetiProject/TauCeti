@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.AddChar
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Mahler
+import Mathlib.Data.Nat.Choose.Dvd
 
 /-!
 # Analyticity of the additive characters of `ℤ_p`
@@ -41,6 +42,12 @@ function is analytic on the discs of level `h` exactly when its Mahler coefficie
 `⌊n / pʰ⌋!` tend to zero (`TauCeti.AnalyticStage.mem_range_eval_iff`), and for `χ_t` these
 quotients are the Amice coordinates `tⁿ / ⌊n / pʰ⌋!`.
 
+The condition `‖t‖ < r_h` can be read on the value `χ_t(pʰ) = (1 + t) ^ (pʰ)`: for a multiplicative
+ultrametric norm, `‖t‖ < r_h` exactly when `‖(1 + t) ^ (pʰ) - 1‖ < r_0 = p ^ (-1 / (p - 1))`, the
+radius of convergence of the `p`-adic exponential (`TauCeti.norm_one_add_pow_sub_one_lt_iff`). One
+step `t ↦ (1 + t) ^ p - 1` compares `r_{h+1}` with `r_h = r_{h+1} ^ p`: inside `r_0` the binomial
+term `p t` keeps `(1 + t) ^ p - 1` inside `r_0`, while beyond `r_0` the term `tᵖ` dominates.
+
 ## Main definitions
 
 * `TauCeti.amiceCharCoeff p h t n`: the Amice coordinate `tⁿ / ⌊n / pʰ⌋!` of `χ_t` at level `h`.
@@ -62,6 +69,9 @@ quotients are the Amice coordinates `tⁿ / ⌊n / pʰ⌋!`.
   on the discs of level `h` exactly when `‖t‖ < r_h`.
 * `TauCeti.AnalyticStage.exists_eval_eq_addChar`: every continuous character of `ℤ_p` with values
   in a complete normed field over `ℚ_p` is analytic at some level.
+* `TauCeti.norm_one_add_pow_sub_one_lt_iff`: for a multiplicative norm, `‖t‖ < r_h` exactly when
+  `‖(1 + t) ^ (pʰ) - 1‖ < r_0`; `TauCeti.norm_one_add_pow_sub_one_lt_of_norm_lt` is the sufficient
+  direction for a submultiplicative norm.
 
 ## References
 
@@ -184,6 +194,143 @@ theorem not_tendsto_amiceCharCoeff_one_and_tendsto_amiceCharCoeff_two [Module �
   norm_num
 
 end NormMulClass
+
+/-! ### The radius `r_h` read through `(1 + t) ^ (p ^ h)` -/
+
+section OneAddPow
+
+section Bound
+
+variable {R : Type*} [NormedRing R] [Module ℚ_[p] R]
+
+/-- The middle binomial terms: `(1 + t) ^ p - 1 - t ^ p = ∑_{0 < i < p} (p choose i) tⁱ`. -/
+private theorem one_add_pow_prime_sub_one_sub_pow (t : R) :
+    (1 + t) ^ p - 1 - t ^ p = ∑ i ∈ Finset.Ico 1 p, ((p.choose i : ℕ) : ℚ_[p]) • t ^ i := by
+  rw [add_comm, (Commute.one_right t).add_pow, Finset.sum_range_succ,
+    Finset.sum_range_eq_add_Ico _ hp.out.pos]
+  simp only [one_pow, mul_one, pow_zero, Nat.choose_zero_right, Nat.choose_self, Nat.cast_one,
+    Nat.cast_smul_eq_nsmul, nsmul_eq_mul, Nat.cast_comm]
+  abel
+
+variable [IsBoundedSMul ℚ_[p] R]
+
+/-- Each middle binomial term has norm at most `p⁻¹ ‖t‖ⁱ`, since `p` divides `p choose i`. -/
+private theorem norm_choose_smul_pow_le {i : ℕ} (hi : i ∈ Finset.Ico 1 p) (t : R) :
+    ‖((p.choose i : ℕ) : ℚ_[p]) • t ^ i‖ ≤ (p : ℝ)⁻¹ * ‖t‖ ^ i := by
+  rw [Finset.mem_Ico] at hi
+  obtain ⟨m, hm⟩ := hp.out.dvd_choose_self (by omega) hi.2
+  have hnorm : ‖((p.choose i : ℕ) : ℚ_[p])‖ ≤ (p : ℝ)⁻¹ := by
+    rw [hm, Nat.cast_mul, norm_mul, Padic.norm_p]
+    exact mul_le_of_le_one_right (by positivity) (by simpa using Padic.norm_int_le_one m)
+  exact (norm_smul_le _ _).trans
+    (mul_le_mul hnorm (norm_pow_le' t hi.1) (norm_nonneg _) (by positivity))
+
+variable [IsUltrametricDist R]
+
+/-- Inside the radius `r_0`, raising `1 + t` to the power `p` stays inside it:
+`‖(1 + t) ^ p - 1‖ < r_0` when `‖t‖ ≤ r_0`. -/
+private theorem norm_one_add_pow_prime_sub_one_lt_of_le {t : R} (ht : ‖t‖ ≤ amiceRadius p 0) :
+    ‖(1 + t) ^ p - 1‖ < amiceRadius p 0 := by
+  have hr := amiceRadius_pos (p := p) 0
+  have hr1 := (amiceRadius_lt_one (p := p) 0).le
+  have hp1 : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.out.one_lt)
+  -- `‖tᵖ‖ ≤ r_0 ^ p = p⁻¹ r_0` and every middle term has norm at most `p⁻¹ ‖t‖ ≤ p⁻¹ r_0`.
+  have hpow : ‖t ^ p‖ ≤ (p : ℝ)⁻¹ * amiceRadius p 0 := by
+    rw [← amiceRadius_zero_pow_sub_one, pow_sub_one_mul hp.out.ne_zero]
+    exact (norm_pow_le' t hp.out.pos).trans (pow_le_pow_left₀ (norm_nonneg t) ht p)
+  have hmid : ‖(1 + t) ^ p - 1 - t ^ p‖ ≤ (p : ℝ)⁻¹ * amiceRadius p 0 := by
+    rw [one_add_pow_prime_sub_one_sub_pow]
+    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun i hi ↦ ?_
+    refine (norm_choose_smul_pow_le hi t).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+    exact (pow_le_of_le_one (norm_nonneg t) (ht.trans hr1)
+      (by have := (Finset.mem_Ico.mp hi).1; omega)).trans ht
+  rw [show (1 + t) ^ p - 1 = t ^ p + ((1 + t) ^ p - 1 - t ^ p) by abel]
+  refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt ?_
+  exact (max_le hpow hmid).trans_lt (mul_lt_of_lt_one_left hr hp1)
+
+/-- Beyond the radius `r_0`, the term `tᵖ` dominates the middle binomial terms:
+`‖(1 + t) ^ p - 1 - tᵖ‖ < ‖t‖ ^ p`. -/
+private theorem norm_one_add_pow_prime_sub_one_sub_pow_lt {t : R}
+    (ht : amiceRadius p 0 < ‖t‖) : ‖(1 + t) ^ p - 1 - t ^ p‖ < ‖t‖ ^ p := by
+  have hr := amiceRadius_pos (p := p) 0
+  have hr1 := (amiceRadius_lt_one (p := p) 0).le
+  rw [one_add_pow_prime_sub_one_sub_pow]
+  obtain ⟨i, hi, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty
+    ⟨1, Finset.mem_Ico.mpr ⟨le_rfl, hp.out.one_lt⟩⟩
+    fun i ↦ ((p.choose i : ℕ) : ℚ_[p]) • t ^ i
+  refine hle.trans_lt ((norm_choose_smul_pow_le hi t).trans_lt ?_)
+  obtain ⟨hi1, hip⟩ := Finset.mem_Ico.mp hi
+  -- `p⁻¹ = r_0 ^ (p - 1) ≤ r_0 ^ (p - i) < ‖t‖ ^ (p - i)`
+  have hlt : (p : ℝ)⁻¹ < ‖t‖ ^ (p - i) := by
+    rw [← amiceRadius_zero_pow_sub_one]
+    exact (pow_le_pow_of_le_one hr.le hr1 (by omega)).trans_lt
+      (pow_lt_pow_left₀ ht hr.le (by omega))
+  rw [show ‖t‖ ^ p = ‖t‖ ^ (p - i) * ‖t‖ ^ i by rw [← pow_add, Nat.sub_add_cancel hip.le]]
+  exact mul_lt_mul_of_pos_right hlt (pow_pos (hr.trans ht) i)
+
+/-- Beyond the radius `r_0`, `‖(1 + t) ^ p - 1‖ ≤ ‖t‖ ^ p`. -/
+private theorem norm_one_add_pow_prime_sub_one_le {t : R} (ht : amiceRadius p 0 < ‖t‖) :
+    ‖(1 + t) ^ p - 1‖ ≤ ‖t‖ ^ p := by
+  rw [show (1 + t) ^ p - 1 = t ^ p + ((1 + t) ^ p - 1 - t ^ p) by abel]
+  exact (IsUltrametricDist.norm_add_le_max _ _).trans
+    (max_le (norm_pow_le' t hp.out.pos) (norm_one_add_pow_prime_sub_one_sub_pow_lt ht).le)
+
+/-- One step of the radius comparison: `‖t‖ < r_{h+1}` implies `‖(1 + t) ^ p - 1‖ < r_h`. -/
+private theorem norm_one_add_pow_prime_sub_one_lt {h : ℕ} {t : R}
+    (ht : ‖t‖ < amiceRadius p (h + 1)) : ‖(1 + t) ^ p - 1‖ < amiceRadius p h := by
+  rcases le_or_gt ‖t‖ (amiceRadius p 0) with h0 | h0
+  · exact (norm_one_add_pow_prime_sub_one_lt_of_le h0).trans_le
+      (strictMono_amiceRadius.monotone (Nat.zero_le h))
+  · rw [← amiceRadius_succ_pow]
+    exact (norm_one_add_pow_prime_sub_one_le h0).trans_lt
+      (pow_lt_pow_left₀ ht (norm_nonneg t) hp.out.ne_zero)
+
+/-- **The radius `r_h` through `(1 + t) ^ (p ^ h)`, sufficient direction.** In an ultrametric
+normed ring with bounded `ℚ_p`-action, `‖t‖ < r_h` implies `‖(1 + t) ^ (p ^ h) - 1‖ < r_0`, where
+`r_0 = p ^ (-1 / (p - 1))` is the radius of convergence of the `p`-adic exponential. -/
+theorem norm_one_add_pow_sub_one_lt_of_norm_lt {h : ℕ} {t : R} (ht : ‖t‖ < amiceRadius p h) :
+    ‖(1 + t) ^ p ^ h - 1‖ < amiceRadius p 0 := by
+  induction h generalizing t with
+  | zero => simpa using ht
+  | succ h ih =>
+    rw [pow_succ', pow_mul, ← add_sub_cancel 1 ((1 + t) ^ p)]
+    exact ih (norm_one_add_pow_prime_sub_one_lt ht)
+
+end Bound
+
+variable {K : Type*} [NormedRing K] [NormMulClass K] [NormOneClass K] [Module ℚ_[p] K]
+  [NormSMulClass ℚ_[p] K] [IsUltrametricDist K]
+
+/-- One step of the radius comparison for a multiplicative norm:
+`‖(1 + t) ^ p - 1‖ < r_h` exactly when `‖t‖ < r_{h+1}`. -/
+private theorem norm_one_add_pow_prime_sub_one_lt_iff {h : ℕ} {t : K} :
+    ‖(1 + t) ^ p - 1‖ < amiceRadius p h ↔ ‖t‖ < amiceRadius p (h + 1) := by
+  refine ⟨fun hs ↦ ?_, norm_one_add_pow_prime_sub_one_lt⟩
+  rcases le_or_gt ‖t‖ (amiceRadius p 0) with h0 | h0
+  · exact h0.trans_lt (strictMono_amiceRadius (Nat.succ_pos h))
+  · -- beyond `r_0` the norm of `(1 + t) ^ p - 1` is exactly `‖t‖ ^ p`
+    have heq : ‖(1 + t) ^ p - 1‖ = ‖t‖ ^ p := by
+      have hlt := norm_one_add_pow_prime_sub_one_sub_pow_lt h0
+      rw [show (1 + t) ^ p - 1 = t ^ p + ((1 + t) ^ p - 1 - t ^ p) by abel,
+        IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [norm_pow]; exact hlt.ne'),
+        norm_pow, max_eq_left hlt.le]
+    rw [heq, ← amiceRadius_succ_pow] at hs
+    exact lt_of_pow_lt_pow_left₀ p (amiceRadius_pos _).le hs
+
+/-- **The radius `r_h` through `(1 + t) ^ (p ^ h)`.** For a multiplicative ultrametric norm,
+`‖t‖ < r_h = p ^ (-1 / ((p - 1) pʰ))` exactly when `‖(1 + t) ^ (p ^ h) - 1‖ < r_0`, where
+`r_0 = p ^ (-1 / (p - 1))` is the radius of convergence of the `p`-adic exponential. Thus the
+analyticity criterion `TauCeti.AnalyticStage.exists_eval_eq_addChar_iff` for `χ_t` at level `h`
+says equivalently that `χ_t(pʰ) - 1` lies in the disc of convergence of the exponential. -/
+theorem norm_one_add_pow_sub_one_lt_iff {h : ℕ} {t : K} :
+    ‖(1 + t) ^ p ^ h - 1‖ < amiceRadius p 0 ↔ ‖t‖ < amiceRadius p h := by
+  induction h generalizing t with
+  | zero => simp
+  | succ h ih =>
+    rw [pow_succ', pow_mul, ← add_sub_cancel 1 ((1 + t) ^ p), ih,
+      norm_one_add_pow_prime_sub_one_lt_iff]
+
+end OneAddPow
 
 /-! ### The expansion of a character on the discs of level `h` -/
 
