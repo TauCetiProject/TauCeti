@@ -70,29 +70,6 @@ open scoped ENNReal SchwartzMap
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
-/-- The norm of the Besov weight `2^x`, viewed as a complex scalar. -/
-private theorem norm_two_rpow (x : ℝ) : ‖(((2 : ℝ) ^ x : ℝ) : ℂ)‖ = 2 ^ x := by
-  rw [Complex.norm_real, Real.norm_of_nonneg (Real.rpow_nonneg zero_le_two x)]
-
-private theorem two_rpow_ne_zero (x : ℝ) : (((2 : ℝ) ^ x : ℝ) : ℂ) ≠ 0 :=
-  Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos two_pos x).ne'
-
-/-- The complex Besov weights multiply as `2^x 2^y = 2^{x + y}`. -/
-private theorem two_rpow_mul_two_rpow (x y : ℝ) :
-    (((2 : ℝ) ^ x : ℝ) : ℂ) * (((2 : ℝ) ^ y : ℝ) : ℂ) = (((2 : ℝ) ^ (x + y) : ℝ) : ℂ) := by
-  rw [Real.rpow_add two_pos, Complex.ofReal_mul]
-
-/-- Multiplying by the Besov weight `2^x` and then by `2^{-x}` is the identity. -/
-private theorem two_rpow_neg_smul_two_rpow_smul {M : Type*} [AddCommMonoid M] [Module ℂ M]
-    (x : ℝ) (v : M) : (((2 : ℝ) ^ (-x) : ℝ) : ℂ) • (((2 : ℝ) ^ x : ℝ) : ℂ) • v = v := by
-  rw [smul_smul, two_rpow_mul_two_rpow, neg_add_cancel, Real.rpow_zero, Complex.ofReal_one,
-    one_smul]
-
-/-- Multiplying by the Besov weight `2^{-x}` and then by `2^x` is the identity. -/
-private theorem two_rpow_smul_two_rpow_neg_smul {M : Type*} [AddCommMonoid M] [Module ℂ M]
-    (x : ℝ) (v : M) : (((2 : ℝ) ^ x : ℝ) : ℂ) • (((2 : ℝ) ^ (-x) : ℝ) : ℂ) • v = v := by
-  simpa only [neg_neg] using two_rpow_neg_smul_two_rpow_smul (-x) v
-
 namespace TemperedDistribution
 
 section MemBesov
@@ -117,15 +94,16 @@ theorem memBesov_iff {u : 𝓢'(E, F)} :
         Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖f j‖) q := by
   constructor
   · rintro ⟨v, hv⟩
-    refine ⟨fun j ↦ (((2 : ℝ) ^ (-(s * j)) : ℝ) : ℂ) • v j, fun j ↦ ?_,
+    refine ⟨fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • v j, fun j ↦ ?_,
       (lp.memℓp v).norm.mono fun j ↦ le_of_eq ?_⟩
-    · rw [Lp.toTemperedDistribution_smul, hv, two_rpow_neg_smul_two_rpow_smul]
-    · rw [Real.norm_of_nonneg (by positivity), ← norm_two_rpow, ← norm_smul,
-        two_rpow_smul_two_rpow_neg_smul]
+    · rw [Lp.toTemperedDistribution_smul, hv,
+        inv_smul_smul₀ (Complex.ofReal_ne_zero.2 (by positivity))]
+    · rw [Real.norm_of_nonneg (by positivity), norm_smul, norm_inv,
+        Complex.norm_of_nonneg (by positivity), mul_inv_cancel_left₀ (by positivity)]
   · rintro ⟨f, hf, hmem⟩
     refine ⟨⟨fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • f j, hmem.mono fun j ↦ le_of_eq ?_⟩,
       fun j ↦ ?_⟩
-    · rw [norm_smul, norm_two_rpow]
+    · rw [norm_smul, Complex.norm_of_nonneg (by positivity)]
     · -- The `j`-th entry of the anonymous `lp` element is `2^{js} • f j` by definition: `lp`
       -- coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
       rw [hf j]
@@ -246,7 +224,7 @@ theorem weightedBlocks_injective :
   intro u v h
   ext1
   refine eq_of_forall_littlewoodPaleyBlock_eq φ fun j ↦ smul_right_injective _
-    (two_rpow_ne_zero (s * j)) ?_
+    (Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos two_pos (s * j)).ne') ?_
   simp only [← coe_weightedBlocks_apply, h]
 
 instance : Zero (BesovSpace F φ s p q) where
@@ -344,22 +322,22 @@ theorem weightedBlocksₗ_apply (u : BesovSpace F φ s p q) :
 
 /-- The Littlewood–Paley block `Δⱼ u` of an element of a Besov space, as an `Lᵖ` function. -/
 def block (u : BesovSpace F φ s p q) (j : ℕ) : Lp F p (volume : Measure E) :=
-  (((2 : ℝ) ^ (-(s * j)) : ℝ) : ℂ) • u.weightedBlocks j
+  (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • u.weightedBlocks j
 
 /-- The `Lᵖ` function `u.block j` is the Littlewood–Paley block `Δⱼ u`. -/
 @[simp]
 theorem coe_block (u : BesovSpace F φ s p q) (j : ℕ) :
     (u.block j : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j u.toDistr := by
   rw [block, Lp.toTemperedDistribution_smul, coe_weightedBlocks_apply,
-    two_rpow_neg_smul_two_rpow_smul]
+    inv_smul_smul₀ (Complex.ofReal_ne_zero.2 (by positivity))]
 
 theorem weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     u.weightedBlocks j = (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • u.block j := by
-  rw [block, two_rpow_smul_two_rpow_neg_smul]
+  rw [block, smul_inv_smul₀ (Complex.ofReal_ne_zero.2 (by positivity))]
 
 theorem norm_weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     ‖u.weightedBlocks j‖ = 2 ^ (s * j) * ‖u.block j‖ := by
-  rw [weightedBlocks_apply, norm_smul, norm_two_rpow]
+  rw [weightedBlocks_apply, norm_smul, Complex.norm_of_nonneg (by positivity)]
 
 @[simp]
 theorem block_zero (j : ℕ) : (0 : BesovSpace F φ s p q).block j = 0 := by
@@ -446,23 +424,23 @@ private def changeOrder (u : BesovSpace F φ s p q)
     BesovSpace F φ s' p q' :=
   -- The `j`-th entry of `⟨_, h⟩` is the rescaled block by definition, as in `memBesov_iff`.
   ⟨u.toDistr, ⟨_, h⟩, fun j ↦ (Lp.toTemperedDistribution_smul _ _).trans <| by
-    rw [coe_weightedBlocks_apply, smul_smul, two_rpow_mul_two_rpow, ← add_mul, sub_add_cancel]⟩
+    rw [coe_weightedBlocks_apply, smul_smul, ← Complex.ofReal_mul, ← Real.rpow_add two_pos,
+      ← add_mul, sub_add_cancel]⟩
 
 private theorem changeOrder_apply (u : BesovSpace F φ s p q) (h) (j : ℕ) :
     (changeOrder (s' := s') (q' := q') u h).weightedBlocks j =
       (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j := (rfl)
 
-omit [CompleteSpace F] in
-/-- For `s' ≤ s` the rescaling factor `2^{(s' - s) j}` is at most `1`. -/
-private theorem norm_two_rpow_smul_le (hs : s' ≤ s) (j : ℕ) (x : Lp F p (volume : Measure E)) :
-    ‖(((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • x‖ ≤ ‖x‖ := by
-  rw [norm_smul, norm_two_rpow]
+/-- For `s' ≤ s` the rescaling factor `2^{(s' - s) j}` does not increase the weighted blocks. -/
+private theorem norm_changeOrder_apply_le_of_le (hs : s' ≤ s) (u : BesovSpace F φ s p q) (j : ℕ) :
+    ‖(((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j‖ ≤ ‖u.weightedBlocks j‖ := by
+  rw [norm_smul, Complex.norm_of_nonneg (by positivity)]
   exact mul_le_of_le_one_left (norm_nonneg _) <| Real.rpow_le_one_of_one_le_of_nonpos one_le_two
     (mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 hs) j.cast_nonneg)
 
 private theorem memℓp_changeOrder_of_le (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) :
     Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j) q' :=
-  ((lp.memℓp u.weightedBlocks).of_exponent_ge hq).mono' fun j ↦ norm_two_rpow_smul_le hs j _
+  ((lp.memℓp u.weightedBlocks).of_exponent_ge hq).mono' (norm_changeOrder_apply_le_of_le hs u)
 
 variable [Fact (1 ≤ q)] [Fact (1 ≤ q')]
 
@@ -473,31 +451,30 @@ private theorem norm_changeOrder_of_le (hs : s' ≤ s) (hq : q ≤ q') (u : Beso
     ⟨u.weightedBlocks, (lp.memℓp u.weightedBlocks).of_exponent_ge hq⟩
   calc _ ≤ ‖w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
           rw [changeOrder_apply]
-          exact norm_two_rpow_smul_le hs j _
+          exact norm_changeOrder_apply_le_of_le hs u j
     _ ≤ _ := lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq fun _ ↦ rfl
 
 private theorem norm_changeOrder_apply_le (u : BesovSpace F φ s p q) (j : ℕ) :
     ‖(((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j‖ ≤
       ‖u‖ * ((2 : ℝ) ^ (s' - s)) ^ j := by
-  rw [norm_smul, norm_two_rpow, Real.rpow_mul_natCast zero_le_two, mul_comm]
+  rw [norm_smul, Complex.norm_of_nonneg (by positivity), Real.rpow_mul_natCast zero_le_two,
+    mul_comm]
   exact mul_le_mul_of_nonneg_right
     ((lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j).trans_eq
       (norm_weightedBlocks u)) (by positivity)
-
-private theorem two_rpow_sub_lt_one (hs : s' < s) : (2 : ℝ) ^ (s' - s) < 1 :=
-  Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)
 
 private theorem memℓp_changeOrder_of_lt (hs : s' < s) (u : BesovSpace F φ s p q) :
     Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j) q' := by
   refine Memℓp.of_exponent_ge (q := 1) ?_ Fact.out
   refine Memℓp.mono (memℓp_gen ?_) (norm_changeOrder_apply_le u)
   simpa [abs_of_nonneg (norm_nonneg u), abs_of_pos (Real.rpow_pos_of_pos two_pos (s' - s))] using
-    (summable_geometric_of_lt_one (by positivity) (two_rpow_sub_lt_one hs)).mul_left ‖u‖
+    (summable_geometric_of_lt_one (by positivity)
+      (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs))).mul_left ‖u‖
 
 private theorem norm_changeOrder_of_lt (hs : s' < s) (u : BesovSpace F φ s p q) :
     ‖changeOrder u (memℓp_changeOrder_of_lt (q' := q') hs u)‖ ≤
       (1 - 2 ^ (s' - s))⁻¹ * ‖u‖ := by
-  have hr := two_rpow_sub_lt_one hs
+  have hr : (2 : ℝ) ^ (s' - s) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)
   have hC : 0 ≤ (1 - (2 : ℝ) ^ (s' - s))⁻¹ * ‖u‖ :=
     mul_nonneg (inv_nonneg.2 (sub_nonneg.2 hr.le)) (norm_nonneg u)
   rw [← norm_weightedBlocks]
@@ -582,7 +559,7 @@ theorem exists_toDistr_eq_and_norm_eq (j : ℕ) (f : 𝓢(E, F))
       rw [lp.single_apply_self, Lp.toTemperedDistribution_smul, Lp.toTemperedDistribution_toLp_eq]
     · rw [lp.single_apply_ne _ _ _ hk, smul_zero, Lp.toTemperedDistribution_zero]
   · rw [← norm_weightedBlocks, lp.norm_single (zero_lt_one.trans_le Fact.out), norm_smul,
-      norm_two_rpow]
+      Complex.norm_of_nonneg (by positivity)]
 
 /-- **Low frequencies.** A Schwartz function whose Fourier transform vanishes outside the ball of
 radius `φ.rIn`, where `φ = 1`, lies in every Besov space `B^s_{p,q}` with norm `‖f‖_p`,
