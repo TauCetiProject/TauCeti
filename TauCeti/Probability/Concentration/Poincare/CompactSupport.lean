@@ -12,10 +12,11 @@ import TauCeti.Probability.Moments.Variance
 /-!
 # Compactly supported tests for the Poincaré inequality
 
-For a probability measure on a finite-dimensional real normed space, it is enough to check
+For a finite measure on a finite-dimensional real normed space, it is enough to check
 the smooth-test Poincaré inequality on compactly supported smooth functions. The existing
 Sobolev cutoff approximation converges in both variance and derivative energy. The measure may be
-singular, and the criterion holds for every real constant.
+singular, and the criterion holds for every real constant. As in the canonical inequality,
+variance is centered by the unnormalized integral.
 
 This permits a Poincaré estimate proved for bounded functions with bounded derivatives to
 apply to the canonical square-integrable, finite-energy test class.
@@ -37,9 +38,10 @@ namespace MeasureTheory.Measure
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
-  {μ : Measure E} [IsProbabilityMeasure μ] {C : ℝ}
+  {μ : Measure E} [IsFiniteMeasure μ] {C : ℝ}
 
-/-- The smooth-test Poincaré inequality can be checked on compactly supported smooth functions. -/
+/-- On a finite measure space, the smooth-test Poincaré inequality can be checked on compactly
+supported smooth functions. -/
 theorem poincareInequality_iff_forall_hasCompactSupport :
     PoincareInequality μ C ↔
       ∀ f : E → ℝ, ContDiff ℝ ∞ f → HasCompactSupport f →
