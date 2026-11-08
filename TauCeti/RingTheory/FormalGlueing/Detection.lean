@@ -47,12 +47,8 @@ include hG
 open of the complement. No finiteness assumption on the module is needed. -/
 theorem eq_zero_of_one_tmul_eq_zero_of_localized (m : M) (hS : (1 : S) ⊗ₜ[R] m = 0)
     (hloc : ∀ g ∈ G, LocalizedModule.mkLinearMap (.powers g) M m = 0) : m = 0 := by
-  have hm : m ∈ (Ideal.span (G : Set R)).primaryComponent M := by
-    refine (Ideal.mem_primaryComponent_span_iff G).mpr fun g hg ↦ ?_
-    obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_zero_iff (.powers g)
-      (LocalizedModule.mkLinearMap (.powers g) M)).mp (hloc g hg)
-    obtain ⟨n, hn⟩ := s.2
-    exact ⟨n, by simpa only [Submonoid.smul_def, ← hn] using hs⟩
+  have hm : m ∈ (Ideal.span (G : Set R)).primaryComponent M :=
+    (Ideal.mem_primaryComponent_span_iff_localized G).mpr hloc
   have hfg : (Ideal.span (G : Set R)).FG := ⟨G, rfl⟩
   let e := primaryComponentEquivTensorProduct (M := M) hG hfg
   have he : e ⟨m, hm⟩ = 0 := Subtype.ext <|

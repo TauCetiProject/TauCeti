@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.FiveLemma
+import Mathlib.Algebra.FiveLemma
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.LinearAlgebra.Prod
 
