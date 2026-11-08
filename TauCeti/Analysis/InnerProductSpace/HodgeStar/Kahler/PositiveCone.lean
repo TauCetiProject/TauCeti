@@ -39,7 +39,7 @@ basis `e` with `J e₀ = e₁` and `J e₂ = e₃`), write `c = ⟪ω, F⟫ / 2`
 anti-self-dual part of `F`. The anti-self-dual forms are of type `(1,1)`, and the self-dual
 `(1,1)`-forms are the multiples of `ω`. So `F` is of type `(1,1)` exactly when its
 *anti-`J`-invariant part* `F - F⁻ - c ω` vanishes, and positive exactly when moreover
-`‖F⁻‖ / √2 ≤ c`, that is when the least eigenvalue `λ₋ = c - ‖F⁻‖ / √2` of the Hermitian form of
+`‖F⁻‖ ≤ √2 c`, that is when the least eigenvalue `λ₋ = c - ‖F⁻‖ / √2` of the Hermitian form of
 `F` (`TauCeti.AlmostComplexStructure.isLeast_inner_ιMulti_image_sphere`) is nonnegative. In
 these coordinates the positive cone is a circular cone of half-angle `π / 4` around `ω` in
 `ℝ ω ⊕ Λ⁻`. It is self-dual there: positive forms pair nonnegatively. The distance of an
@@ -66,9 +66,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `forall_inner_ιMulti_apply_eq_iff`: for orthogonal `J`, `F` is `J`-invariant iff `D_J F = 0`.
 * `kahlerForm_mem_positiveCone`: `ω` is a positive `(1,1)`-form.
 * `inner_kahlerForm_nonneg_of_mem_positiveCone`: positive forms pair nonnegatively with `ω`.
-* `lieMap_eq_zero_of_hodgeStar_eq_neg`: anti-self-dual forms are of type `(1,1)`.
 * `lieMap_eq_zero_iff`: `F` is of type `(1,1)` iff `F - F⁻ = c ω`.
-* `forall_inner_ιMulti_nonneg_iff`: `F(v, J v) ≥ 0` for all `v` iff `‖F⁻‖ / √2 ≤ c`.
 * `mem_positiveCone_iff`: the description of the positive cone in `ℝ ω ⊕ Λ⁻`.
 * `norm_le_inner_kahlerForm_of_mem_positiveCone`: `‖P‖ ≤ ⟪ω, P⟫` on the positive cone.
 * `inner_nonneg_of_mem_positiveCone`: positive forms pair nonnegatively with each other.
@@ -182,29 +180,6 @@ variable {J : AlmostComplexStructure V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) =
 
 include h₀ h₂
 
-/-- **Anti-self-dual forms are of type `(1,1)`** for the complex orientation: `D_J μ = 0` when
-`⋆μ = -μ`. -/
-theorem lieMap_eq_zero_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ) :
-    lieMap 2 J.toLinearMap μ = 0 := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  -- `D_J` kills every `x - ⋆x`, by a computation on wedges in the unitary frame.
-  have key : lieMap 2 J.toLinearMap ∘ₗ (LinearMap.id - (o.hodgeStar hkl).toLinearMap) = 0 := by
-    refine linearMap_ext_inner_ιMulti_two fun a b u w ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,
-      LinearEquiv.coe_coe, LinearMap.zero_apply, inner_zero_left]
-    rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
-    simp only [inner_sub_left, inner_add_right, o.inner_hodgeStar_ιMulti_two hkl,
-      inner_ιMulti_two, o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four]
-    simp only [e.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four, Basis.toMatrix_apply,
-      OrthonormalBasis.coe_toBasis_repr_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
-      repr_apply h₀ h₂]
-    ring
-  have h := LinearMap.congr_fun key μ
-  simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe,
-    hμ, sub_neg_eq_add, LinearMap.zero_apply, ← two_smul ℝ μ, map_smul] at h
-  exact (smul_eq_zero.1 h).resolve_left two_ne_zero
-
 /-- **The `(1,1)`-forms in dimension four**: with `F⁻ = μ` the anti-self-dual part of `F`, the
 form `F` is `J`-invariant iff its self-dual part is `F - F⁻ = ⟪ω, F⟫ / 2 · ω`, that is iff its
 anti-`J`-invariant part `F - F⁻ - ⟪ω, F⟫ / 2 · ω` vanishes. -/
@@ -212,7 +187,7 @@ theorem lieMap_eq_zero_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ
     (hF : o.hodgeStar hkl (F - μ) = F - μ) :
     lieMap 2 J.toLinearMap F = 0 ↔ F - μ = (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have hDμ := lieMap_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
+  have hDμ := lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ
   have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
   constructor
   · intro hDF
@@ -224,35 +199,20 @@ theorem lieMap_eq_zero_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ
     rw [show F = μ + (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm by rw [← h]; abel, map_add,
       map_smul, hDμ, lieMap_kahlerForm hJ, smul_zero, add_zero]
 
-/-- **Positivity of the Hermitian form**: with `F⁻ = μ` the anti-self-dual part of `F`, the form
-`F(v, J v)` is nonnegative for every `v` iff `‖F⁻‖ / √2 ≤ ⟪ω, F⟫ / 2`, that is iff the least
-eigenvalue of the Hermitian form of `F` is nonnegative. -/
-theorem forall_inner_ιMulti_nonneg_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ)
-    (hF : o.hodgeStar hkl (F - μ) = F - μ) :
-    (∀ v, 0 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫) ↔ ‖μ‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 := by
-  constructor
-  · intro h
-    obtain ⟨v, hv, hμv⟩ := exists_inner_ιMulti_eq_neg_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
-    have := h v
-    rw [inner_ιMulti_eq_mul_add_inner_ιMulti hkl he h₀ h₂ hμ hF, hμv, hv] at this
-    linarith
-  · intro h v
-    have h' := abs_inner_ιMulti_sub_le hkl he h₀ h₂ hμ hF v
-    nlinarith [neg_abs_le (⟪F, ιMulti ℝ 2 ![v, J v]⟫ - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2),
-      sq_nonneg ‖v‖]
-
 /-- **The positive cone in dimension four**: with `F⁻ = μ` the anti-self-dual part of `F`, the
-form `F` is a positive `(1,1)`-form iff `F - F⁻ = c ω` and `‖F⁻‖ / √2 ≤ c`, where
-`c = ⟪ω, F⟫ / 2`. So the positive cone is the circular cone `{c ω + μ | ‖μ‖ ≤ √2 c}` in
+form `F` is a positive `(1,1)`-form iff `F - F⁻ = c ω` and `‖F⁻‖ ≤ √2 c`, where
+`c = ⟪ω, F⟫ / 2`, that is iff `F` is `J`-invariant and the least eigenvalue `c - ‖F⁻‖ / √2` of its
+Hermitian form is nonnegative. So the positive cone is the circular cone `{c ω + μ | ‖μ‖ ≤ √2 c}` in
 `ℝ ω ⊕ Λ⁻`. -/
 theorem mem_positiveCone_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ)
     (hF : o.hodgeStar hkl (F - μ) = F - μ) :
     F ∈ J.positiveCone ↔ F - μ = (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm ∧
-      ‖μ‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 := by
+      ‖μ‖ ≤ √2 * (⟪J.kahlerForm, F⟫ / 2) := by
+  have h := forall_le_inner_ιMulti_iff hkl he h₀ h₂ hμ hF (K := 0)
+  simp only [neg_zero, zero_mul, add_zero] at h
   rw [mem_positiveCone,
     forall_inner_ιMulti_apply_eq_iff (inner_apply_apply_of_orthonormalBasis h₀ h₂),
-    lieMap_eq_zero_iff hkl he h₀ h₂ hμ hF,
-    forall_inner_ιMulti_nonneg_iff hkl he h₀ h₂ hμ hF]
+    lieMap_eq_zero_iff hkl he h₀ h₂ hμ hF, h]
 
 /-- The squared norm of a form split along the orthogonal summands `(ℝ ω)ᗮ ∩ Λ⁺`, `ℝ ω` and
 `Λ⁻`. -/
@@ -293,11 +253,9 @@ theorem norm_le_inner_kahlerForm_of_mem_positiveCone {F : ⋀[ℝ]^2 V} (hF : F 
   set c := ⟪J.kahlerForm, F⟫ / 2
   have hn := norm_add_smul_kahlerForm_add_sq hkl he h₀ h₂ (A := 0) (by simp) (by simp) hμ c
   rw [zero_add, ← h1, sub_add_cancel, norm_zero] at hn
-  have hμc : ‖μ‖ ≤ √2 * c := by
-    rwa [div_le_iff₀ (by positivity), mul_comm] at h2
-  have hc : 0 ≤ c := (div_nonneg (norm_nonneg μ) (by positivity)).trans h2
+  have hc : 0 ≤ c := (mul_nonneg_iff_of_pos_left (by positivity)).1 ((norm_nonneg μ).trans h2)
   have hsq : ‖μ‖ ^ 2 ≤ 2 * c ^ 2 := by
-    calc ‖μ‖ ^ 2 ≤ (√2 * c) ^ 2 := pow_le_pow_left₀ (norm_nonneg μ) hμc 2
+    calc ‖μ‖ ^ 2 ≤ (√2 * c) ^ 2 := pow_le_pow_left₀ (norm_nonneg μ) h2 2
       _ = 2 * c ^ 2 := by rw [mul_pow, Real.sq_sqrt zero_le_two]
   have : ‖F‖ ^ 2 ≤ (2 * c) ^ 2 := by nlinarith
   calc ‖F‖ ≤ 2 * c := (pow_le_pow_iff_left₀ (norm_nonneg F) (by linarith) two_ne_zero).1 this
@@ -326,13 +284,10 @@ theorem inner_nonneg_of_mem_positiveCone {F G : ⋀[ℝ]^2 V} (hF : F ∈ J.posi
     simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right, hω,
       hων, hμω]
     ring
-  have hs : (0 : ℝ) < √2 := by positivity
-  have hμa : ‖μ‖ ≤ √2 * a := by rwa [div_le_iff₀ hs, mul_comm] at hF2
-  have hνb : ‖ν‖ ≤ √2 * b := by rwa [div_le_iff₀ hs, mul_comm] at hG2
   have hss : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   have hprod : ‖μ‖ * ‖ν‖ ≤ 2 * a * b := by
     calc ‖μ‖ * ‖ν‖ ≤ (√2 * a) * (√2 * b) :=
-          mul_le_mul hμa hνb (norm_nonneg ν) ((norm_nonneg μ).trans hμa)
+          mul_le_mul hF2 hG2 (norm_nonneg ν) ((norm_nonneg μ).trans hF2)
       _ = 2 * a * b := by rw [mul_mul_mul_comm, hss, mul_assoc]
   rw [hFG]
   linarith [neg_abs_le ⟪μ, ν⟫, abs_real_inner_le_norm μ ν]
@@ -351,7 +306,7 @@ theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} 
   set G := ν + (c - ε) • J.kahlerForm
   have hG : G ∈ J.positiveCone := by
     refine ⟨(forall_inner_ιMulti_apply_eq_iff hJ).2 (by
-      rw [map_add, map_smul, lieMap_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hν,
+      rw [map_add, map_smul, lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hν,
         lieMap_kahlerForm hJ, smul_zero, add_zero]), fun v ↦ ?_⟩
     have h := hΩ v
     rw [inner_ιMulti_eq_mul_add_inner_ιMulti hkl he h₀ h₂ hν hΩν, ← hc] at h
@@ -447,8 +402,8 @@ theorem infDist_positiveCone {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -
     refine (mem_positiveCone_iff hkl he h₀ h₂ hνG ?_).2 ⟨?_, ?_⟩
     · rw [add_sub_cancel_right, map_smul, hodgeStar_kahlerForm h₀ h₂ hkl he]
     · rw [add_sub_cancel_right, hinner]
-    · rw [hinner, hnormG, hr's]
-      linarith [show c' = (u + w) / 2 from rfl]
+    · rw [hinner, hnormG]
+      exact mul_le_mul_of_nonneg_left (by linarith [show c' = (u + w) / 2 from rfl]) hs.le
   -- In the rotated coordinates the distance to a point `d ω + ν` of the cone is at least the
   -- negative parts of `c ∓ r / √2`, since `d ∓ ‖ν‖ / √2 ≥ 0`.
   have hrot (d r'' : ℝ) : 2 * (c - d) ^ 2 + (r - r'') ^ 2 =
@@ -483,7 +438,7 @@ theorem infDist_positiveCone {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -
       rw [← sq_abs]
       exact pow_le_pow_left₀ (abs_nonneg _) (abs_norm_sub_norm_le μ ν) 2
     have key := hrot d ‖ν‖
-    have hu' : 0 ≤ d - ‖ν‖ / √2 := by linarith
+    have hu' : 0 ≤ d - ‖ν‖ / √2 := by rw [sub_nonneg, div_le_iff₀' hs]; exact h2
     have hw' : 0 ≤ d + ‖ν‖ / √2 := by linarith [div_nonneg (norm_nonneg ν) hs.le]
     linarith [hmin (c - r / √2) _ hu', hmin (c + r / √2) _ hw']
 
