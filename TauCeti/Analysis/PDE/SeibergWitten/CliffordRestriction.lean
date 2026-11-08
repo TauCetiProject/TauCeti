@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Trace.Free
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
--- Private: the trace of a restriction is used only inside a proof.
+-- Private: the trace of a restriction and the orthogonality criterion for `Q` are used only
+-- inside proofs.
 import Mathlib.LinearAlgebra.PID
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Clifford map from self-dual two-forms to trace-free endomorphisms of `W⁺`
@@ -167,11 +169,8 @@ theorem coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero {a b : V} (h : �
     (ψ : positiveHalfSpinors o ρ) :
     (cliffordRestriction o ρ (exteriorPower.ιMulti ℝ 2 ![a, b]) ψ : W) =
       Complex.I • ρ (ι Q a * ι Q b) ψ := by
-  have hab : Q.IsOrtho a b := by
-    rw [QuadraticMap.IsOrtho, hQ, hQ, hQ, norm_add_sq_real, h]
-    ring
   rw [coe_cliffordRestriction_apply, bivectorExterior_apply_ιMulti,
-    bivector_eq_ι_mul_ι_of_isOrtho Q hab]
+    bivector_eq_ι_mul_ι_of_isOrtho Q ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h)]
 
 /-- **The Clifford relation of `C`**: `C(iα) C(iβ) + C(iβ) C(iα) = 2 (⟪α, β⟫ + ⟪⋆α, β⟫)`. -/
 theorem cliffordRestriction_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[ℝ]^2 V) :
