@@ -22,9 +22,10 @@ among all smooth maps covering `F`. In particular, no arbitrary translation in `
 Homogeneity need not be assumed in the uniqueness theorem; it follows from the formula.
 Contactness and finite dimensionality are unnecessary for these form identities.
 
-The form-preservation calculation extends
-`TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization` to an arbitrary map
-covering `F`.
+The uniqueness theorem uses
+`TauCeti.SmoothForm.mpullback_symplectization_apply_of_snd_eq` in
+`TauCeti/Geometry/Contact/Symplectization/Basic.lean`, which computes the pullback of `eᵗ β`
+along any smooth map covering `F` with `F*β = f α`.
 
 ## References
 
