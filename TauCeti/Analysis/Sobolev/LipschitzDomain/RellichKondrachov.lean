@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
-import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.Data.ENNReal.InterpolatedExponent
 
 /-!
 # Rellich–Kondrachov on bounded Lipschitz domains
@@ -97,50 +97,6 @@ theorem W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith (hp 
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hp hΩ hb) hconn
     hb.measure_lt_top.ne hS hS0
 
-/-- For finite exponents `1 ≤ p ≤ q` and `1 ≤ n` with `1/p - 1/q < 1/n`, there are a finite
-`s ≥ 1` with `1/p - 1/s < 1/n` and `0 ≤ θ < 1` with `1/q = (1 - θ)/p + θ/s`. -/
-private theorem exists_interpolation_exponent {p q n : ℝ≥0∞} (hp₁ : 1 ≤ p) (hp : p ≠ ∞)
-    (hq₁ : 1 ≤ q) (hq : q ≠ ∞) (hn₁ : 1 ≤ n) (hn : n ≠ ∞) (hpq : p ≤ q)
-    (h : p⁻¹ < q⁻¹ + n⁻¹) :
-    ∃ s : ℝ≥0∞, ∃ θ : ℝ, 1 ≤ s ∧ s ≠ ∞ ∧ p⁻¹ < s⁻¹ + n⁻¹ ∧ 0 ≤ θ ∧ θ < 1 ∧
-      q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * s⁻¹ := by
-  -- Work with the reciprocals `a = 1/p`, `b = 1/q`, `ν = 1/n`.
-  have hinv {r : ℝ≥0∞} (hr : 1 ≤ r) (hr' : r ≠ ∞) : r⁻¹ = ENNReal.ofReal r.toReal⁻¹ := by
-    rw [ENNReal.ofReal_inv_of_pos (ENNReal.toReal_pos (zero_lt_one.trans_le hr).ne' hr'),
-      ENNReal.ofReal_toReal hr']
-  rw [hinv hp₁ hp, hinv hq₁ hq, hinv hn₁ hn] at h ⊢
-  set a := p.toReal⁻¹
-  set b := q.toReal⁻¹
-  set ν := n.toReal⁻¹
-  have hb0 : 0 < b := inv_pos.2 (ENNReal.toReal_pos (zero_lt_one.trans_le hq₁).ne' hq)
-  have hb1 : b ≤ 1 := inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hq hq₁)
-  have hν0 : 0 ≤ ν := inv_nonneg.2 ENNReal.toReal_nonneg
-  have hba : b ≤ a := inv_anti₀ (ENNReal.toReal_pos (zero_lt_one.trans_le hp₁).ne' hp)
-    (ENNReal.toReal_mono hq hpq)
-  rw [← ENNReal.ofReal_add hb0.le hν0,
-    ENNReal.ofReal_lt_ofReal_iff (add_pos_of_pos_of_nonneg hb0 hν0)] at h
-  -- The reciprocal `c = 1/s` lies strictly between `max (a - ν) 0` and `b`.
-  set c := (b + max (a - ν) 0) / 2
-  have hmb : max (a - ν) 0 < b := max_lt (by linarith) hb0
-  have hc0 : 0 < c := by have := le_max_right (a - ν) 0; simp only [c]; linarith
-  have hcb : c < b := by simp only [c]; linarith
-  have hac : a < c + ν := by have := le_max_left (a - ν) 0; simp only [c]; linarith
-  have hs : (ENNReal.ofReal c⁻¹)⁻¹ = ENNReal.ofReal c := by
-    rw [← ENNReal.ofReal_inv_of_pos (inv_pos.2 hc0), inv_inv]
-  have hac' : 0 < a - c := by linarith
-  have hθ0 : 0 ≤ (a - b) / (a - c) := div_nonneg (by linarith) hac'.le
-  have hθ1 : (a - b) / (a - c) < 1 := (div_lt_one hac').2 (by linarith)
-  have hθ : (a - b) / (a - c) * (a - c) = a - b := div_mul_cancel₀ _ hac'.ne'
-  refine ⟨ENNReal.ofReal c⁻¹, (a - b) / (a - c),
-    ENNReal.one_le_ofReal.2 ((one_le_inv₀ hc0).2 (by linarith)), ENNReal.ofReal_ne_top, ?_,
-    hθ0, hθ1, ?_⟩
-  · rwa [hs, ← ENNReal.ofReal_add hc0.le hν0,
-      ENNReal.ofReal_lt_ofReal_iff (add_pos_of_pos_of_nonneg hc0 hν0)]
-  · rw [hs, ← ENNReal.ofReal_mul (by linarith), ← ENNReal.ofReal_mul hθ0,
-      ← ENNReal.ofReal_add (mul_nonneg (by linarith) (by linarith)) (mul_nonneg hθ0 hc0.le)]
-    congr 1
-    linear_combination hθ
-
 /-- **Rellich–Kondrachov for subcritical target exponents.** Let `Ω ⊆ ℝ × E` be a bounded
 Lipschitz domain of dimension `n`, let `1 ≤ p < ∞`, and let `1 ≤ q < ∞` with `1/p - 1/q < 1/n`.
 Then the inclusion `W^{1,p}(Ω) → L^q(Ω)` is a compact operator. For `p < n` the condition says
@@ -168,9 +124,9 @@ theorem W1p.exists_isCompactOperator_of_isLipschitzDomainWith (hp : p ≠ ∞) {
     exact hK.of_forall_ae_eq_of_le hqp hS₀
   -- For `p ≤ q`, interpolate between `Lᵖ(Ω)` and `L^s(Ω)` for a finite `s > q` in the
   -- subcritical range.
-  obtain ⟨s, θ, hs₁, hs, hps, hθ0, hθ1, hrel⟩ := exists_interpolation_exponent Fact.out hp
-    Fact.out hq (by exact_mod_cast Module.finrank_pos (R := ℝ) (M := WithLp 2 (ℝ × E)))
-    (ENNReal.natCast_ne_top _) hpq' hpq
+  obtain ⟨s, θ, hs₁, hs, hps, hθ0, hθ1, hrel⟩ := exists_inv_eq_of_inv_lt_inv_add Fact.out hq
+    (ENNReal.inv_ne_top.2 (by exact_mod_cast (Module.finrank_pos (R := ℝ)
+      (M := WithLp 2 (ℝ × E))).ne')) hpq' hpq
   have : Fact (1 ≤ s) := ⟨hs₁⟩
   obtain ⟨T, hT⟩ := W1p.exists_lpEmbeddingL_of_eLpNorm_value_le subset_rfl
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith hs hps hΩ hb)
