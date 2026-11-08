@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.Order.Interval.Set.UnorderedInterval
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Linarith
 
 /-!
 # Interpolated exponents in `ℝ≥0∞`
@@ -34,8 +32,6 @@ open scoped ENNReal
 
 namespace TauCeti
 
-open ENNReal
-
 variable {s₀ s₁ s : ℝ≥0∞} {θ : ℝ}
 
 /-- An interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁` is the reciprocal of a real number in
@@ -51,49 +47,29 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
 
 /-- An interpolated exponent lies between the two endpoint exponents. -/
-theorem mem_uIcc_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+theorem mem_uIcc_of_inv_eq (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
     (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
     s ∈ Set.uIcc s₀ s₁ := by
-  rw [Set.mem_uIcc]
-  have e := inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs
-  have e₀ : s₀⁻¹ = ENNReal.ofReal (s₀⁻¹).toReal :=
-    (ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hs₀)).symm
-  have e₁ : s₁⁻¹ = ENNReal.ofReal (s₁⁻¹).toReal :=
-    (ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hs₁)).symm
-  have hθ0 := hθ.1
-  have hθ1 := hθ.2
-  rcases le_total (s₀⁻¹).toReal (s₁⁻¹).toReal with h | h
-  · right
-    constructor
-    · rw [← ENNReal.inv_le_inv, e]
-      exact (ENNReal.ofReal_le_ofReal (by nlinarith)).trans_eq e₁.symm
-    · rw [← ENNReal.inv_le_inv, e]
-      exact e₀.le.trans (ENNReal.ofReal_le_ofReal (by nlinarith))
-  · left
-    constructor
-    · rw [← ENNReal.inv_le_inv, e]
-      exact (ENNReal.ofReal_le_ofReal (by nlinarith)).trans_eq e₀.symm
-    · rw [← ENNReal.inv_le_inv, e]
-      exact e₁.le.trans (ENNReal.ofReal_le_ofReal (by nlinarith))
+  have h1 (x : ℝ≥0∞) : x = ENNReal.ofReal (1 - θ) * x + ENNReal.ofReal θ * x := by
+    rw [← add_mul, ← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
+  have hs' : s⁻¹ ∈ Set.uIcc s₀⁻¹ s₁⁻¹ := by
+    rw [hs]
+    refine ⟨(h1 _).trans_le ?_, le_trans ?_ (h1 _).ge⟩ <;> gcongr <;> simp
+  simpa using ENNReal.inv_strictAnti.antitone.mapsTo_uIcc hs'
 
 /-- For `0 < θ < 1`, an interpolated exponent is infinite exactly when both endpoint exponents
 are. -/
 theorem eq_top_iff_of_inv_eq (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
     (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
     s = ∞ ↔ s₀ = ∞ ∧ s₁ = ∞ := by
-  have hθ0 : ENNReal.ofReal θ ≠ 0 := by simpa using hθ.1
-  have hθ1 : ENNReal.ofReal (1 - θ) ≠ 0 := by simpa using hθ.2
-  rw [← ENNReal.inv_eq_zero, hs, add_eq_zero, mul_eq_zero, mul_eq_zero, ENNReal.inv_eq_zero,
-    ENNReal.inv_eq_zero]
-  simp [hθ0, hθ1]
+  rw [← ENNReal.inv_eq_zero, hs]
+  simp [hθ.1.not_ge, hθ.2.not_ge]
 
 /-- Interpolating between exponents in `[1, ∞]` gives an exponent in `[1, ∞]`. -/
 theorem one_le_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁) (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
-    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) : 1 ≤ s := by
-  rcases Set.mem_uIcc.1 (mem_uIcc_of_inv_eq (zero_lt_one.trans_le hs₀).ne'
-    (zero_lt_one.trans_le hs₁).ne' hθ hs) with ⟨h, -⟩ | ⟨h, -⟩
-  · exact hs₀.trans h
-  · exact hs₁.trans h
+    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) : 1 ≤ s :=
+  (le_inf hs₀ hs₁).trans (mem_uIcc_of_inv_eq hθ hs).1
 
 /-- Conjugate exponents interpolate in the same way as the exponents themselves. -/
 theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
@@ -101,27 +77,13 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
     (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
     s.conjExponent⁻¹ =
       ENNReal.ofReal (1 - θ) * s₀.conjExponent⁻¹ + ENNReal.ofReal θ * s₁.conjExponent⁻¹ := by
-  have hs₀0 : s₀ ≠ 0 := (zero_lt_one.trans_le hs₀).ne'
-  have hs₁0 : s₁ ≠ 0 := (zero_lt_one.trans_le hs₁).ne'
-  have e := inv_eq_ofReal_of_inv_eq hs₀0 hs₁0 hθ hs
-  set r₀ := (s₀⁻¹).toReal
-  set r₁ := (s₁⁻¹).toReal
-  have hr₀ : r₀ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one
-    (by simpa using ENNReal.inv_le_one.2 hs₀)
-  have hr₁ : r₁ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one
-    (by simpa using ENNReal.inv_le_one.2 hs₁)
-  have hθ0 := hθ.1
-  have hθ1 := hθ.2
-  have conj : ∀ {t : ℝ≥0∞}, 1 ≤ t → t⁻¹ ≠ ∞ →
-      t.conjExponent⁻¹ = ENNReal.ofReal (1 - (t⁻¹).toReal) := fun {t} ht ht' => by
-    have := ENNReal.HolderConjugate.conjExponent ht
-    rw [← ENNReal.HolderConjugate.one_sub_inv t t.conjExponent, ENNReal.ofReal_sub _
-      ENNReal.toReal_nonneg, ENNReal.ofReal_one, ENNReal.ofReal_toReal ht']
-  rw [conj (one_le_of_inv_eq hs₀ hs₁ hθ hs) (by rw [e]; exact ENNReal.ofReal_ne_top), e,
-    conj hs₀ (ENNReal.inv_ne_top.2 hs₀0), conj hs₁ (ENNReal.inv_ne_top.2 hs₁0),
-    ENNReal.toReal_ofReal (by positivity), ← ENNReal.ofReal_mul (sub_nonneg.2 hθ1),
-    ← ENNReal.ofReal_mul hθ0, ← ENNReal.ofReal_add (by nlinarith) (by nlinarith)]
-  congr 1
-  ring
+  have hs1 := one_le_of_inv_eq hs₀ hs₁ hθ hs
+  rw [← (ENNReal.HolderConjugate.conjExponent hs1).one_sub_inv,
+    ← (ENNReal.HolderConjugate.conjExponent hs₀).one_sub_inv,
+    ← (ENNReal.HolderConjugate.conjExponent hs₁).one_sub_inv]
+  refine ENNReal.sub_eq_of_eq_add (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hs1).ne') ?_
+  rw [hs, add_add_add_comm, ← mul_add, ← mul_add, tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₀),
+    tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₁), mul_one, mul_one,
+    ← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel, ENNReal.ofReal_one]
 
 end TauCeti
