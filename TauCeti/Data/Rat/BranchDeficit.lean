@@ -7,7 +7,7 @@ module
 
 -- `TauCeti.one_div_forty_two_le_hyperbolic_triangle_deficit` is the extremal case of the bound
 -- below.
-public import TauCeti.Data.Rat.HurwitzTriangle
+public import TauCeti.Algebra.Order.Field.HurwitzTriangle
 -- `Multiset.sum` over the branch indices occurs in the statements below, and the ordered field
 -- structure of `ℚ` it sums in is what the estimates are read in.
 public import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
@@ -38,8 +38,8 @@ each branch point contributes between `1/2` and `1`, so genus at least two leave
 genus one at least `1/2`, while genus zero needs more than two branch points, and with four or more
 of them a positive deficit is at least `1/6`. Only genus-zero data with exactly three branch points
 comes closer, and there the deficit `1 - 1/a - 1/b - 1/c` is the hyperbolic triple bound of
-`TauCeti/Data/Rat/HurwitzTriangle.lean`, whose values do drop below `1/6` — `(2, 3, 8)` gives
-`1/24` — down to `1/42`.
+`TauCeti/Algebra/Order/Field/HurwitzTriangle.lean`, whose values do drop below `1/6` —
+`(2, 3, 8)` gives `1/24` — down to `1/42`.
 
 ## Main results
 
