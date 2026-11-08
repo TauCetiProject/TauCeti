@@ -318,13 +318,21 @@ compact Riemann surfaces with connected targets, both constant near no point, th
 fibres of `f` over the points of the fibre of `g` over `z`, and the local multiplicities
 multiply. -/
 theorem degree_comp_of_forall_not_eventuallyConst [IsManifold 𝓘(ℂ) 1 Z] [CompactSpace X]
-    [T2Space X] [CompactSpace Y] [T2Space Y] [PreconnectedSpace Y] [T2Space Z]
+    [T2Space X] [T2Space Y] [PreconnectedSpace Y] [T2Space Z]
     [PreconnectedSpace Z] (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
     (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) (hg : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) g)
     (hneg : ∀ y, ¬ EventuallyConst g (𝓝 y)) : degree (g ∘ f) = degree g * degree f := by
   classical
   rcases isEmpty_or_nonempty Z with hZ | ⟨⟨z⟩⟩
   · simp [degree_def]
+  rcases isEmpty_or_nonempty X with hX | hX
+  · have h₁ : degree f = 0 := Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
+      simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty])
+    have h₂ : degree (g ∘ f) = 0 := Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
+      simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty])
+    rw [h₁, h₂, mul_zero]
+  have := Function.Surjective.compactSpace hf.continuous
+    (surjective_of_forall_not_eventuallyConst hf hne)
   have hgf : ∀ x, ¬ EventuallyConst (g ∘ f) (𝓝 x) := fun x ↦
     not_eventuallyConst_comp (.of_forall fun w ↦ hf w) (hne x) (hneg (f x))
   have hT : (g ⁻¹' {z}).Finite := finite_preimage_singleton hg hneg z
@@ -465,8 +473,8 @@ theorem localMultiplicity_comp [IsManifold 𝓘(ℂ) 1 Z]
     (.of_forall fun y ↦ f.holomorphic y)
 
 /-- **Multiplicativity of the degree** for finite holomorphic maps `f : X → Y` and `g : Y → Z`
-with `X` and `Y` compact and `Y` and `Z` connected. -/
-theorem degree_comp [IsManifold 𝓘(ℂ) 1 Z] [CompactSpace Y] [T2Space Z] [PreconnectedSpace Z]
+with `X` compact and `Y` and `Z` connected. -/
+theorem degree_comp [IsManifold 𝓘(ℂ) 1 Z] [T2Space Z] [PreconnectedSpace Z]
     (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     degree (g.comp f) = degree g * degree f :=
   degree_comp_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst g.holomorphic
