@@ -406,8 +406,9 @@ private theorem continuousWithinAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ 
   have hre : 0 < (1 / 2 : ℂ).re := by simp
   have hcont : ContinuousOn (carlsonRGPrimitive x y z) (Ici 0) := by
     rw [hfun]
-    exact ((((continuousOn_const.mul (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos
-      hre)).add hxt).mul (TauCeti.continuousOn_ofReal_add_cpow_Ici hy _)).mul
+    exact ((((continuousOn_const.mul
+      (TauCeti.continuous_ofReal_add_cpow_of_re_pos hre).continuousOn).add hxt).mul
+      (TauCeti.continuousOn_ofReal_add_cpow_Ici hy _)).mul
       (TauCeti.continuousOn_ofReal_add_cpow_Ici hz _)).neg
   exact hcont 0 self_mem_Ici
 

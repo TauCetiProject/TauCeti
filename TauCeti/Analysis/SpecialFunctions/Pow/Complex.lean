@@ -77,13 +77,13 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   pointwise lower bounds comparing `‖((t : ℂ) + w) ^ s‖` with `(1 + t) ^ s.re` for `w` near
   `z ∈ slitPlane`, `t ≥ 0`, and arbitrary `s : ℂ`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
-  `TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
-  `(0, ∞)` and `[0, ∞)`.
+  `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
+  `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half` -- multiplying
   `w ^ (-1/2)` by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
-* `Complex.continuousWithinAt_neg_two_cpow_half_mul_inv`,
+* `Complex.continuousAt_neg_two_cpow_half_mul_inv`,
   `Complex.hasDerivAt_neg_two_cpow_half_mul_inv`,
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`, for `x ∈ slitPlane ∪ {0}` and `y ≠ 0`
@@ -444,31 +444,20 @@ theorem continuousOn_ofReal_add_cpow_Ici {x : ℂ} (hx : x ∈ slitPlane) (s : �
     (ofReal_add_mem_slitPlane hx ht)).continuousWithinAt
 
 /-- For any `x` and a complex exponent `s` with `0 < s.re`, the principal power `(t + x) ^ s` is
-continuous in the real variable `t ≥ 0`. -/
-theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} {s : ℂ} (hs : 0 < s.re) :
-    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun t _ => by
-  by_cases hmem : 0 ≤ ((t : ℂ) + x).re ∨ ((t : ℂ) + x).im ≠ 0
-  · exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
-      (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
-  -- Otherwise `t + x` is a negative real, and nearby `(u + x) ^ s` is `(-(u + x)) ^ s` times a
-  -- constant, whose base lies in the slit plane.
-  rw [not_or, not_le, not_not] at hmem
-  have him : x.im = 0 := by simpa using hmem.2
-  have hlt : t + x.re < 0 := by simpa using hmem.1
-  have heq : (fun u : ℝ => (((-(u + x.re) : ℝ) : ℂ) ^ s) * exp (Real.pi * I * s)) =ᶠ[𝓝 t]
-      fun u : ℝ => ((u : ℂ) + x) ^ s := by
-    filter_upwards [(isOpen_lt (f := fun u : ℝ => u + x.re) (by fun_prop)
-      continuous_const).mem_nhds hlt] with u hu
-    have hux : (u : ℂ) + x = ((u + x.re : ℝ) : ℂ) := Complex.ext (by simp) (by simp [him])
-    rw [hux, Complex.ofReal_cpow_of_nonpos (x := u + x.re) hu.le]
-    push_cast
-    rfl
-  have hg : ContinuousAt
-      (fun u : ℝ => (((-(u + x.re) : ℝ) : ℂ) ^ s) * exp (Real.pi * I * s)) t :=
-    (ContinuousAt.cpow
-      (by fun_prop : Continuous fun u : ℝ => (((-(u + x.re) : ℝ) : ℂ))).continuousAt
-      continuousAt_const (Complex.ofReal_mem_slitPlane.2 (by linarith))).mul continuousAt_const
-  exact (hg.congr heq).continuousWithinAt
+continuous in the real variable `t`. -/
+theorem continuous_ofReal_add_cpow_of_re_pos {x : ℂ} {s : ℂ} (hs : 0 < s.re) :
+    Continuous (fun t : ℝ => ((t : ℂ) + x) ^ s) := by
+  by_cases him : x.im = 0
+  · -- `t + x` is the real number `t + x.re`, and real-base powers are continuous.
+    have hx : x = (x.re : ℂ) := Complex.ext (by simp) (by simp [him])
+    have h := (Complex.continuous_ofReal_cpow_const hs).comp
+      (continuous_id.add (continuous_const (y := x.re)))
+    convert h using 2 with t
+    rw [hx]
+    simp
+  · refine continuous_iff_continuousAt.2 fun t => ?_
+    exact ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
+      (Complex.continuousAt_cpow_const_of_re_pos (Or.inr (by simpa using him)) hs) (by fun_prop)
 
 end TauCeti
 
@@ -503,17 +492,16 @@ theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
   simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
   exact (tendsto_rpow_neg_atTop hs).comp hnorm
 
-/-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0` from the right, even when
+/-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0`, even when
 `x = 0` (as `re (1/2) > 0`). -/
-theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ} (hy : y ≠ 0) :
-    ContinuousWithinAt
-      (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) (Set.Ici 0) 0 := by
+theorem continuousAt_neg_two_cpow_half_mul_inv {x y : ℂ} (hy : y ≠ 0) :
+    ContinuousAt
+      (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) 0 := by
   have hc2 : ContinuousAt (fun t : ℝ => ((t : ℂ) + y)⁻¹) 0 :=
     (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + y).continuousAt.inv₀
       (by rwa [ofReal_zero, zero_add])
-  exact (continuousWithinAt_const.mul
-    (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos (by norm_num) 0 Set.self_mem_Ici)).mul
-    hc2.continuousWithinAt
+  exact (continuousAt_const.mul
+    (TauCeti.continuous_ofReal_add_cpow_of_re_pos (by norm_num)).continuousAt).mul hc2
 
 /-- The derivative of `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` on `(0, ∞)`:
 `(t + x)^(-1/2) (t + y)⁻¹ - 2 (y - x) (t + x)^(-1/2) (t + y)^(-1/2) (t + y)^(-1/2) (t + y)⁻¹`.
