@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Differential
+public import TauCeti.RingTheory.Kaehler.Polynomial
 public import TauCeti.RingTheory.Polynomial.CyclicInvariants.Basic
 
 /-!
