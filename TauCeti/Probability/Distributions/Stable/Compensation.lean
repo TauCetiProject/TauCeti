@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Stable.SmallJump.Basic
 public import TauCeti.Probability.Distributions.Stable.Exponent
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -73,19 +74,9 @@ cutoff decreases to zero. -/
 theorem tendsto_integral_sin_stableLevyMeasure_nhds (halpha : alpha ∈ Ioo 0 1)
     (hbeta : |beta| ≤ 1) :
     Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure alpha beta)
-      (𝓝[>] 0) (𝓝 (∫ x, sin x ∂stableLevyMeasure alpha beta)) := by
-  have hset (ε : ℝ) : MeasurableSet {x : ℝ | ε < |x|} :=
-    measurableSet_lt measurable_const continuous_abs.measurable
-  simp_rw [← integral_indicator (hset _)]
-  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖sin x‖)
-    (.of_forall fun ε ↦ continuous_sin.aestronglyMeasurable.indicator (hset ε))
-    (.of_forall fun ε ↦ ae_of_all _ fun x ↦ norm_indicator_le_norm_self _ _)
-    (integrable_sin_stableLevyMeasure halpha hbeta).norm (ae_of_all _ fun x ↦ ?_)
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [indicator_apply]
-  · refine tendsto_const_nhds.congr' ?_
-    filter_upwards [Ioo_mem_nhdsGT (abs_pos.2 hx)] with ε hε
-    rw [indicator_of_mem hε.2]
+      (𝓝[>] 0) (𝓝 (∫ x, sin x ∂stableLevyMeasure alpha beta)) :=
+  (TauCeti.tendsto_integral_abs_gt (integrable_sin_stableLevyMeasure halpha hbeta)
+    Real.sin_zero).mono_left nhdsWithin_le_nhds
 
 /-- For `0 < alpha < 1`, sine compensation against the stable Levy measure is the amount
 subtracted from the standardized `S0` location to obtain the `S1` location. -/
