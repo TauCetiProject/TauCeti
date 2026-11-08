@@ -111,6 +111,13 @@ theorem mem_plusSubring_iff_coeff_zero {h : IsRingOfIntegralElements Bplus}
   rw [zero_add] at hn
   rwa [hn]
 
+/-- Inclusion of rings of integral elements induces inclusion of their integral tilts. -/
+theorem plusSubring_mono {Cplus : Subring B} (hB : IsRingOfIntegralElements Bplus)
+    (hC : IsRingOfIntegralElements Cplus) (hBC : Bplus ≤ Cplus) :
+    plusSubring p hB ≤ plusSubring p hC :=
+  fun _ hx ↦ mem_plusSubring_iff_coeff_zero.mpr
+    (hBC (mem_plusSubring_iff_coeff_zero.mp hx))
+
 /-- The integral tilt is an open subring: membership is tested on the zeroth coordinate. -/
 theorem isOpen_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) :
     IsOpen (plusSubring p h : Set (uniformTilt p B)) := by
@@ -141,6 +148,12 @@ theorem isBounded_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements 
     rw [map_mul]
     exact hTV n (Set.mul_mem_mul (Set.mem_iInter₂.mp hx n hn)
       (h.le_powerBoundedSubring (mem_plusSubring_iff.mp hy n)))
+
+/-- The integral tilt is contained in the power-bounded subring of the tilt. -/
+theorem plusSubring_le_powerBoundedSubring [NonarchimedeanAddGroup (uniformTilt p B)]
+    (h : IsRingOfIntegralElements Bplus) :
+    plusSubring p h ≤ powerBoundedSubring (uniformTilt p B) :=
+  fun _ hx ↦ mem_powerBoundedSubring.mpr ((isBounded_plusSubring h).isPowerBounded_of_mem hx)
 
 variable (p) in
 /-- The *sharp map* `x ↦ x♯ = x⁽⁰⁾` of the integral tilt, as a multiplicative map `B♭⁺ → B⁺`. It
