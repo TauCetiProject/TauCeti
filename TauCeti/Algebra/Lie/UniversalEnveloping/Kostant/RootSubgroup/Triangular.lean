@@ -26,8 +26,6 @@ subgroup in the Chevalley--Demazure construction.
 
 * `TauCeti.UniversalEnvelopingAlgebra.repr_integralDividedPower_eq_zero_of_not_lt`: positive
   divided powers have no coordinate on or below their source basis vector.
-* `TauCeti.UniversalEnvelopingAlgebra.toMatrix_integralDividedPower_apply_eq_zero_of_le`: the
-  matrix of a positive divided power is strictly upper triangular.
 * `TauCeti.UniversalEnvelopingAlgebra.isUpperUnitriangular_kostantRootSubgroupMatrix`: a positive
   root-subgroup point has an upper-unitriangular matrix over every commutative ring.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupUpperUnitriangular`: the root-subgroup
@@ -68,8 +66,9 @@ include e hM in
 source. The order hypothesis says precisely that a nonzero positive root shift of weights must
 move from `s` to an index `r < s`.
 
-This statement includes both the entries below the diagonal and the diagonal entries of every
-positive-degree divided power. -/
+Through `LinearMap.toMatrix_apply`, this is strict upper triangularity of the matrix of every
+positive-degree divided power: it covers both the entries below the diagonal and the diagonal
+entries. -/
 theorem repr_integralDividedPower_eq_zero_of_not_lt
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
     (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
@@ -84,24 +83,6 @@ theorem repr_integralDividedPower_eq_zero_of_not_lt
   · rw [coe_integralDividedPower_apply]
     exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
   · exact fun heq ↦ hrs (horder hn heq)
-
-include e hM in
-/-- Every positive divided power of a positive root operator is strictly upper triangular in an
-ordered weight basis: its matrix entries vanish on and below the diagonal. -/
-theorem toMatrix_integralDividedPower_apply_eq_zero_of_le
-    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
-    (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
-    (horder : ∀ {r s : η} {n : ℕ}, 0 < n → wt r = wt s + n • α → r < s)
-    {n : ℕ} (hn : 0 < n) :
-    ∀ r s, s ≤ r → LinearMap.toMatrix b b
-        (integralDividedPower
-          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
-          (fun _ hv ↦ dividedPower_apply_mem_of_kostantForm_apply_mem
-            e h ρ hM i n hv)) r s = 0 := by
-  intro r s hsr
-  rw [LinearMap.toMatrix_apply]
-  exact repr_integralDividedPower_eq_zero_of_not_lt e h ρ M hM b wt hwt hα horder
-    (not_lt_of_ge hsr) hn
 
 /-! ## Positive root-subgroup matrices -/
 
