@@ -28,7 +28,8 @@ strand there are no generators and the algebra is `R`
 The elementary braids map to the generators, giving a homomorphism from the braid group on `n`
 strands to the units (`TauCeti.TypeAHeckeAlgebra.braidHom`) whose image spans the algebra. Adding
 an uncrossed last strand gives the tower map `TauCeti.TypeAHeckeAlgebra.strandIncl`, `T i ↦ T i`,
-compatible with the strand inclusions of the braid groups. The parameters `q` and `-q` give
+compatible with the strand inclusions of the braid groups. Adding an uncrossed first strand gives
+`TauCeti.TypeAHeckeAlgebra.tailIncl`, `T i ↦ T (i + 1)`. The parameters `q` and `-q` give
 isomorphic algebras by the sign twist `T i ↦ -T i` (`TauCeti.TypeAHeckeAlgebra.negEquiv`).
 
 The finite presentation maps onto the stage of the first `n` strands of the infinite type-A Hecke
@@ -334,6 +335,30 @@ theorem braidHom_strandIncl (b : BraidGroup (n + 1)) :
 
 end StrandIncl
 
+section TailIncl
+
+variable (q)
+
+/-- Adding an uncrossed first strand: `T i` goes to `T (i + 1)`. -/
+def tailIncl (n : ℕ) : TypeAHeckeAlgebra R q n →ₐ[R] TypeAHeckeAlgebra R q (n + 1) :=
+  lift (fun i ↦ T q ⟨i + 1, by omega⟩)
+    (fun _ ↦ T_mul_self _) (fun h ↦ T_braid (.inl (by simpa using h)))
+    (fun h ↦ (commute_T (.inl (by simpa using h))).eq)
+
+/-- The shifted-tail inclusion sends each generator to its successor. -/
+@[simp]
+theorem tailIncl_T {n : ℕ} (i : Fin (n - 1)) :
+    tailIncl q n (T q i) = T q ⟨i + 1, by omega⟩ := by
+  rw [tailIncl, lift_T]
+
+/-- In positive rank the generator formula uses the usual `Fin.succ` index. -/
+theorem tailIncl_T_succ {n : ℕ} (i : Fin n) :
+    tailIncl q (n + 1) (T q i) = T q i.succ := by
+  rw [tailIncl_T]
+  congr 1
+
+end TailIncl
+
 section Infinite
 
 variable (R q n) in
@@ -371,6 +396,19 @@ theorem toInfinite_strandIncl (x : TypeAHeckeAlgebra R q n) :
   have h : (toInfinite R q (n + 1)).comp (strandIncl R q n) = toInfinite R q n :=
     hom_ext fun i ↦ by simp
   exact DFunLike.congr_fun h x
+
+variable (q) in
+/-- In the infinite algebra, the shifted-tail inclusion is the shift by one strand. -/
+@[simp]
+theorem toInfinite_tailIncl (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
+    toInfinite R q (n + 1) (tailIncl q n x) =
+      InfiniteTypeAHeckeAlgebra.shift R q 1 (toInfinite R q n x) := by
+  have h : (toInfinite R q (n + 1)).comp (tailIncl q n) =
+      (InfiniteTypeAHeckeAlgebra.shift R q 1).comp (toInfinite R q n) := by
+    apply hom_ext
+    intro i
+    simp
+  exact AlgHom.congr_fun h x
 
 /-- The map to the infinite type-A Hecke algebra intertwines the two braid homomorphisms. -/
 @[simp]
