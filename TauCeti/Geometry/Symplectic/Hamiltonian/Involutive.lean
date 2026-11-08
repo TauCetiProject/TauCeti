@@ -17,9 +17,10 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 Let `σ` be a nondegenerate two-form on a manifold `M` modelled on a finite-dimensional space `E`,
 and let `F : M → (ι → ℝ)` be a finite family of functions `F_i = F (·) i`. This file relates
 the kernel of the derivative `dF_x` to the Hamiltonian vector fields `X_{F_i}`, with the conventions
-`ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`. Interpreting `ker dF_x` as the tangent
-space of a common level requires regularity and a compatible level-submanifold structure, or a
-parametrization satisfying the hypotheses described below:
+`ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`, so that `σ_x(X_{F_i}, v) = (dF_x v)_i`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.eval₂_hamiltonianVectorField_eq_mfderiv_apply`).
+Interpreting `ker dF_x` as the tangent space of a common level requires regularity and a compatible
+level-submanifold structure, or a parametrization satisfying the hypotheses described below:
 
 * the symplectic complement of `ker dF_x` is the span of the vectors `X_{F_i}(x)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.orthogonal_ker_mfderiv`), at every point where `F` is
@@ -81,6 +82,16 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
 
 include hσ
+
+/-- The Hamiltonian vector `X_{F_i}(x)` pairs with `v` to the `i`-th component of `dF_x v`:
+`σ_x(X_{F_i}, v) = (dF_x v)_i`. -/
+theorem eval₂_hamiltonianVectorField_eq_mfderiv_apply
+    (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) (i : ι) (v : TangentSpace I x) :
+    SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField (F · i) x) v =
+      mfderiv I 𝓘(ℝ, ι → ℝ) F x v i := by
+  rw [hσ.eval₂_hamiltonianVectorField, mvfderiv_apply hF i]
+  simp only [ContinuousLinearMap.comp_apply, mvfderiv_apply_eq_mfderiv_apply]
+  rfl
 
 /-! ### The symplectic complement of the derivative kernel -/
 
