@@ -50,10 +50,10 @@ vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
 * `Matrix.det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero`: a determinant formula
   for replacing the last column of `M - 1` by a linear combination of the last columns of `M`
   and `1`.
-* `Matrix.submatrix_castSucc_mulVec_eq`: a right null vector with unit last coordinate lets the
-  corner submatrix reproduce the first `n` coordinates of `A *ᵥ x`.
-* `Matrix.mulVec_last_eq`: a left null vector with unit last coordinate recovers the last
-  coordinate of `A *ᵥ x` from the others.
+* `Matrix.submatrix_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
+  coordinate lets the corner submatrix reproduce the first `n` coordinates of `A *ᵥ x`.
+* `Matrix.mulVec_last_eq_of_vecMul_eq_zero`: a left null vector with unit last coordinate
+  recovers the last coordinate of `A *ᵥ x` from the others.
 * `Matrix.det_submatrix_castSucc_conj`: the corner minor of `N * A * N⁻¹` equals that of `A`,
   when `A` is annihilated by `u` on the right and by `w` on the left and `N` fixes both.
 -/
@@ -407,12 +407,12 @@ theorem det_submatrix_castSucc_conj (A N : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
 
 /-- The right null vector eliminates the last generator of the image: the principal minor `B` of `A`
 sends the reduced coordinates of `x` to the first `n` coordinates of `A *ᵥ x`. -/
-theorem submatrix_castSucc_mulVec_eq (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+theorem submatrix_castSucc_mulVec_eq_of_mulVec_eq_zero (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     {u : Fin (n + 1) → R} (hu : A *ᵥ u = 0) (huunit : IsUnit (u (Fin.last n)))
     (x : Fin (n + 1) → R) :
     (A.submatrix Fin.castSucc Fin.castSucc) *ᵥ (fun i => x i.castSucc -
       u i.castSucc * ((huunit.unit⁻¹ : Rˣ) : R) * x (Fin.last n)) =
-        LinearMap.funLeft R R Fin.castSucc (A *ᵥ x) := by
+        fun i => (A *ᵥ x) i.castSucc := by
   have huinv : ((huunit.unit⁻¹ : Rˣ) : R) * u (Fin.last n) = 1 := by
     simpa only [huunit.unit_spec] using Units.inv_mul huunit.unit
   have hcol (i : Fin (n + 1)) :
@@ -425,7 +425,7 @@ theorem submatrix_castSucc_mulVec_eq (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
           rw [mul_left_comm, huinv, mul_one]
       _ = _ := by linear_combination ((huunit.unit⁻¹ : Rˣ) : R) * h
   ext i
-  simp only [LinearMap.funLeft_apply, mulVec, dotProduct, submatrix_apply,
+  simp only [mulVec, dotProduct, submatrix_apply,
     Fin.sum_univ_castSucc, hcol, mul_sub, Finset.sum_sub_distrib]
   simp only [sub_eq_add_neg, neg_mul, Finset.mul_sum, Finset.sum_mul,
     ← Finset.sum_neg_distrib]
@@ -433,7 +433,7 @@ theorem submatrix_castSucc_mulVec_eq (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
   exact Finset.sum_congr rfl fun _ _ => by ring
 
 /-- The left null vector recovers the last coordinate of every image vector from the others. -/
-theorem mulVec_last_eq (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+theorem mulVec_last_eq_of_vecMul_eq_zero (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     {w : Fin (n + 1) → R} (hw : w ᵥ* A = 0) (hwunit : IsUnit (w (Fin.last n)))
     (x : Fin (n + 1) → R) :
     (A *ᵥ x) (Fin.last n) =
