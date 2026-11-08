@@ -139,6 +139,7 @@ theorem residue_of_not_meromorphicAt {f : ℂ → E} {z₀ : ℂ} (h : ¬ Meromo
   exact fun h' ↦ absurd h'.2.1 h
 
 /-- If `E` is not complete, the residue of any `f : ℂ → E` is `0` by definition. -/
+@[simp]
 theorem residue_of_not_completeSpace (hE : ¬ CompleteSpace E) (f : ℂ → E) (z₀ : ℂ) :
     residue f z₀ = 0 := by
   rw [residue, dite_eq_right]
