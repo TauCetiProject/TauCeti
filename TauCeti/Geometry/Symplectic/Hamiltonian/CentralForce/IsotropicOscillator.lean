@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.ODE.ExistUnique
@@ -29,7 +30,9 @@ For `m ν ≠ 0` they are solved by the linear evolution
 satisfies the flow law, preserves the standard symplectic form, the energy and the squared angular
 momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`, and is the only solution: every integral curve of the
 Hamiltonian vector field defined for all times is an orbit of it
-(`TauCeti.eq_isotropicOscillatorEvolution_of_hasDerivAt`).
+(`TauCeti.eq_isotropicOscillatorEvolution_of_hasDerivAt`). In finite dimension it is therefore the
+generic Hamiltonian flow `TauCeti.SymplecticForm.hamiltonianFlow`
+(`TauCeti.hamiltonianFlow_isotropicOscillator`).
 
 This describes all orbits of the isotropic oscillator. They are closed and bounded:
 
@@ -53,6 +56,7 @@ half the period of the orbit, are computed in
 * `TauCeti.hasDerivAt_isotropicOscillatorEvolution`: the evolution solves Hamilton's equations.
 * `TauCeti.eq_isotropicOscillatorEvolution_of_hasDerivAt`: every global integral curve is an orbit
   of the evolution.
+* `TauCeti.hamiltonianFlow_isotropicOscillator`: the evolution is the Hamiltonian flow.
 * `TauCeti.isotropicOscillatorEvolution_add`: the flow law.
 * `TauCeti.stdSymplecticForm_isotropicOscillatorEvolution`: the evolution is symplectic.
 * `TauCeti.centralForceHamiltonian_isotropicOscillatorEvolution`,
@@ -321,5 +325,17 @@ theorem eq_isotropicOscillatorEvolution_of_hasDerivAt (hm : m ≠ 0) (hν : ν �
     (fun _ ↦ A.lipschitzWith.lipschitzOnWith) (fun s ↦ ⟨hA (γ s) ▸ hγ s, mem_univ _⟩)
     (fun s ↦ ⟨hg s, mem_univ _⟩) (by simp)
   exact congrFun h t
+
+/-- The Hamiltonian flow of the isotropic oscillator is its explicit evolution. -/
+theorem hamiltonianFlow_isotropicOscillator (hm : m ≠ 0) (hν : ν ≠ 0) {K : NNReal}
+    (hX : LipschitzWith K ((stdSymplecticForm (V := V)).hamiltonianVectorField
+      (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2)))
+    (t : ℝ) (x : V × V) :
+    (stdSymplecticForm (V := V)).hamiltonianFlow
+        (centralForceHamiltonian m fun r ↦ m * ν ^ 2 * r ^ 2 / 2) hX t x =
+      isotropicOscillatorEvolution m ν t x := by
+  have h := eq_flowOfLipschitz hX (γ := fun s ↦ isotropicOscillatorEvolution m ν s x)
+    (hasDerivAt_isotropicOscillatorEvolution hm hν x) t
+  simpa [SymplecticForm.hamiltonianFlow_eq] using h.symm
 
 end TauCeti
