@@ -12,7 +12,6 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # The weak chain rule for measure-preserving Lipschitz changes of variables
@@ -123,32 +122,6 @@ private theorem hasWeakFDerivOn_comp_of_tendsto [OpensMeasurableSpace E] {W : Op
           lintegral_mul_const' _ _ ENNReal.ofReal_ne_top
       _ ≤ _ := mul_le_mul_left ((setLIntegral_le_lintegral _ _).trans <|
           (hΦ.lintegral_comp' (hGm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one) _
-
-omit [ν.IsAddHaarMeasure] in
-/-- **The cutoff of a weakly differentiable pair.** If `u` has weak derivative `D` on the open
-set `V` and `K ⊆ V` is compact, there is an open neighbourhood `O ⊆ V` of `K`, containing the
-`δ`-balls around the points of `K`, on which `u` and `D` are integrable, so that their zero
-extensions from `O` are `L¹`, and the zero extension of `u` has compact support. -/
-private theorem HasWeakFDerivOn.exists_open_memLp_indicator {V : Opens E'} {u : E' → F}
-    {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) {K : Set E'} (hK : IsCompact K)
-    (hKV : K ⊆ V) :
-    ∃ δ > 0, ∃ O : Opens E', K ⊆ O ∧ (O : Set E') ⊆ V ∧ (∀ x ∈ K, ball x δ ⊆ O) ∧
-      MemLp u 1 (ν.restrict O) ∧ MemLp D 1 (ν.restrict O) ∧
-      MemLp ((O : Set E').indicator u) 1 ν ∧ MemLp ((O : Set E').indicator D) 1 ν ∧
-      HasCompactSupport ((O : Set E').indicator u) := by
-  obtain ⟨δ, hδ, hδV⟩ := hK.exists_cthickening_subset_open V.isOpen hKV
-  obtain ⟨O, hO⟩ : ∃ O : Opens E', (O : Set E') = thickening δ K := ⟨⟨_, isOpen_thickening⟩, rfl⟩
-  have hOV : (O : Set E') ⊆ cthickening δ K := hO ▸ thickening_subset_cthickening δ K
-  have hu : MemLp u 1 (ν.restrict O) := memLp_one_iff_integrable.2 <|
-    (h.locallyIntegrableOn.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
-  have hD : MemLp D 1 (ν.restrict O) := memLp_one_iff_integrable.2 <|
-    (h.locallyIntegrableOn_deriv.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
-  exact ⟨δ, hδ, O, hO ▸ self_subset_thickening hδ K, hOV.trans hδV,
-    fun x hx => hO ▸ ball_subset_thickening hx δ, hu, hD,
-    (memLp_indicator_iff_restrict (f := u) O.isOpen.measurableSet.nullMeasurableSet).2 hu,
-    (memLp_indicator_iff_restrict (f := D) O.isOpen.measurableSet.nullMeasurableSet).2 hD,
-    HasCompactSupport.intro' hK.cthickening isClosed_cthickening fun y hy =>
-      indicator_of_notMem (fun hyO => hy (hOV hyO)) u⟩
 
 /-- **Mollifying the pieces of the chain rule.** Let `u` have weak derivative `D` on `V`, let `Φ`
 be locally Lipschitz on `W` and Lipschitz on `W`, mapping `W` into a compact `K ⊆ V`, and let `O`
