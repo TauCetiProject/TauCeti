@@ -100,8 +100,8 @@ theorem projectivePlaneHeight_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
   (rfl)
 
 /-- The homogeneous coordinates `(u₀ / √2, u₁, √(1 - u₀² / 2 - u₁²))` of the inverse of the top
-chart `TauCeti.projectivePlaneTopChart` are nonzero everywhere, since the last one vanishes only
-when `(u₀, u₁) ≠ 0`. -/
+chart `TauCeti.projectivePlaneTopChart` are nonzero everywhere: if the first two vanish then
+`u = 0` and the last one is `√1 = 1`. -/
 theorem projectivePlaneTopChart_symm_coords_ne_zero (u : EuclideanSpace ℝ (Fin 2)) :
     ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))] ≠ 0 := by
   intro h
@@ -226,6 +226,11 @@ def projectivePlaneTopChart :
   continuousOn_toFun := continuous_topChartPlane.comp_continuousOn (continuousOn_affineChart 2)
   continuousOn_invFun := (continuous_mk (by fun_prop) _).continuousOn
 
+/-- By definition, the top chart is `topChartPlane` read in the affine chart `z ≠ 0`. -/
+private theorem projectivePlaneTopChart_apply (y : ℙ ℝ (Fin 3 → ℝ)) :
+    projectivePlaneTopChart y = topChartPlane (affineChart 2 y) :=
+  (rfl)
+
 @[simp]
 theorem projectivePlaneTopChart_source : projectivePlaneTopChart.source = affineOpen 2 :=
   (rfl)
@@ -240,8 +245,7 @@ theorem projectivePlaneTopChart_target :
 theorem projectivePlaneTopChart_apply_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     projectivePlaneTopChart (mk ℝ v hv) = (√(1 + (v 0 / v 2) ^ 2 + (v 1 / v 2) ^ 2))⁻¹ •
       !₂[√2 * (v 0 / v 2), v 1 / v 2] := by
-  rw [← affineChart_two_mk_zero v hv, ← affineChart_two_mk_one v hv]
-  rfl
+  rw [projectivePlaneTopChart_apply, topChartPlane, affineChart_two_mk_zero, affineChart_two_mk_one]
 
 /-- The inverse of the top chart in homogeneous coordinates:
 `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
@@ -264,11 +268,10 @@ theorem projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source {y : ℙ 
       (if j.val < 2 then -1 else 1) * projectivePlaneTopChart y j ^ 2 := by
   induction y using ind with | h v hv =>
   rw [projectivePlaneTopChart_source, mk_mem_affineOpen_iff] at hy
-  have hcoe : ∀ y, projectivePlaneTopChart y = topChartPlane (affineChart 2 y) := fun _ ↦ rfl
   have key := topChartPlane_normSq (affineChart 2 (mk ℝ v hv))
   rw [affineChart_two_mk_zero, affineChart_two_mk_one] at key
   simp only [Fin.sum_univ_two, Fin.val_zero, Fin.val_one, Nat.ofNat_pos, ↓reduceIte,
-    Nat.one_lt_ofNat, hcoe, neg_one_mul, projectivePlaneHeight_mk]
+    Nat.one_lt_ofNat, projectivePlaneTopChart_apply, neg_one_mul, projectivePlaneHeight_mk]
   rw [← neg_add, ← sub_eq_add_neg, key]
   have hs : 0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by positivity
   field_simp
@@ -479,15 +482,11 @@ private theorem dropLast_addLast (w : Fin 2 → ℝ) : dropLast (addLast w) = w 
   ext i
   fin_cases i <;> rfl
 
-/-- A nonzero vector has a positive sum of squares. -/
-private theorem sum_sq_pos_of_ne_zero {n : ℕ} {v : Fin n → ℝ} (hv : v ≠ 0) :
-    0 < ∑ i, v i ^ 2 := by
-  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-  exact Finset.sum_pos' (fun j _ ↦ sq_nonneg (v j)) ⟨i, Finset.mem_univ i, sq_pos_of_ne_zero hi⟩
-
 private theorem sum_sq_pos {v : Fin 3 → ℝ} (hv : v ≠ 0) :
     0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
-  simpa [Fin.sum_univ_three] using sum_sq_pos_of_ne_zero hv
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+  simpa [Fin.sum_univ_three] using
+    Finset.sum_pos' (fun j _ ↦ sq_nonneg (v j)) ⟨i, Finset.mem_univ i, sq_pos_of_ne_zero hi⟩
 
 /-- A point lies below the maximum value `2` exactly when it is off the maximum `[0 : 0 : 1]`,
 that is, when its first two homogeneous coordinates do not both vanish. -/
@@ -613,7 +612,9 @@ private theorem projectivePlaneHeight_map_addLast_le_one (x : ℙ ℝ (Fin 2 →
     projectivePlaneHeight (map addLast addLast_injective x) ≤ 1 := by
   induction x using ind with | h w hw =>
   have hs : 0 < w 0 ^ 2 + w 1 ^ 2 := by
-    simpa [Fin.sum_univ_two] using sum_sq_pos_of_ne_zero hw
+    obtain ⟨i, hi⟩ := Function.ne_iff.1 hw
+    simpa [Fin.sum_univ_two] using
+      Finset.sum_pos' (fun j _ ↦ sq_nonneg (w j)) ⟨i, Finset.mem_univ i, sq_pos_of_ne_zero hi⟩
   rw [map_mk, projectivePlaneHeight_mk]
   simp only [addLast_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons]
@@ -873,8 +874,8 @@ theorem degree_projectivePlaneAttachingMap (hε : 0 < ε) (hε1 : ε < 1) :
       (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)).continuous) =
       2 := by
   refine Circle.degree_eq_two_of_forall _ (a := (√2)⁻¹) (by positivity) fun t ↦ ?_
-  rw [Path.map_coe, Path.map_coe, Function.comp_apply, Function.comp_apply,
-    coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
+  simp only [Path.map_coe, Function.comp_apply]
+  rw [coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
     diskBoundaryTwoLoop_apply_zero, diskBoundaryTwoLoop_apply_one]
 
 /-- The value of the circle map on the attaching map of the reflected chart, read off from the
@@ -906,10 +907,8 @@ theorem degree_projectivePlaneAttachingMapReflect (hε : 0 < ε) (hε1 : ε < 1)
         (by linarith)).continuous).inv fun t ↦ ?_, Circle.degree_inv,
     degree_projectivePlaneAttachingMap hε hε1]
   refine Circle.coe_injective ?_
-  rw [Path.inv_apply, Circle.coe_inv_eq_conj, Path.map_coe, Path.map_coe, Path.map_coe,
-    Path.map_coe, Function.comp_apply, Function.comp_apply, Function.comp_apply,
-    Function.comp_apply,
-    coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMapReflect hε hε1,
+  simp only [Path.inv_apply, Path.map_coe, Function.comp_apply, Circle.coe_inv_eq_conj]
+  rw [coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMapReflect hε hε1,
     coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1]
   simp only [map_div₀, map_pow, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I, neg_sq]
   push_cast
@@ -991,9 +990,10 @@ theorem not_homotopic_projectivePlaneAttachingMap_reflect (hε : 0 < ε) (hε1 :
   · rw [degree_projectivePlaneAttachingMap hε hε1,
       degree_projectivePlaneAttachingMapReflect hε hε1] at h
     norm_num at h
-  · simp [F, e]
-  · simp [F, e]
-  · simp [F, e]
+  all_goals simp only [F, ContinuousMap.comp_apply, ContinuousMap.prodMap_apply,
+    ContinuousMap.coe_id, Path.coe_toContinuousMap, Prod.map_apply, id_eq, Path.source, Path.target,
+    ContinuousMap.Homotopy.coe_toContinuousMap, ContinuousMap.Homotopy.apply_zero,
+    ContinuousMap.Homotopy.apply_one, Path.map_coe, Function.comp_apply]
 
 end FundamentalGroup
 

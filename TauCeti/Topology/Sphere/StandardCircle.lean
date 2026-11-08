@@ -170,6 +170,27 @@ theorem circleLoop_surjective : Function.Surjective circleLoop := by
 def diskBoundaryTwoBase : TopCat.diskBoundary.{0} 2 :=
   ⟨EuclideanSpace.sphereHomeomorphCircle.symm 1⟩
 
+/-- The point `TauCeti.diskBoundaryTwoBase` is the point `1` of `Circle`. -/
+theorem diskBoundaryTwoBase_down :
+    diskBoundaryTwoBase.down = EuclideanSpace.sphereHomeomorphCircle.symm 1 :=
+  (rfl)
+
+/-- The first coordinate of `TauCeti.diskBoundaryTwoBase` is `1`. -/
+@[simp]
+theorem diskBoundaryTwoBase_apply_zero :
+    (diskBoundaryTwoBase.down : EuclideanSpace ℝ (Fin 2)) 0 = 1 := by
+  rw [diskBoundaryTwoBase_down, EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply,
+    Circle.coe_one, Complex.orthonormalBasisOneI_repr_apply]
+  exact Complex.one_re
+
+/-- The second coordinate of `TauCeti.diskBoundaryTwoBase` is `0`. -/
+@[simp]
+theorem diskBoundaryTwoBase_apply_one :
+    (diskBoundaryTwoBase.down : EuclideanSpace ℝ (Fin 2)) 1 = 0 := by
+  rw [diskBoundaryTwoBase_down, EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply,
+    Circle.coe_one, Complex.orthonormalBasisOneI_repr_apply]
+  exact Complex.one_im
+
 /-- The counterclockwise loop `t ↦ (cos 2πt, sin 2πt)` of the boundary circle `∂D²`, based at
 `(1, 0)`: the loop `t ↦ exp(2πit)` of `Circle` carried to `∂D²` by
 `TauCeti.EuclideanSpace.sphereHomeomorphCircle`. -/
