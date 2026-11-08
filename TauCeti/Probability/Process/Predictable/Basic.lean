@@ -66,20 +66,14 @@ theorem measurableSet_of_mem_predictableRectangles {R : Set (ι × Ω)}
   · exact measurableSet_predictable_singleton_bot_prod hA
   · exact measurableSet_predictable_Ioc_prod s t hA
 
-private lemma disjoint_singleton_bot_prod_Ioc_prod (A B : Set Ω) (s t : ι) :
-    Disjoint ({⊥} ×ˢ A) (Ioc s t ×ˢ B) := by
-  apply disjoint_left.2
-  rintro p ⟨hp, _⟩ ⟨hq, _⟩
-  exact (not_lt_of_ge (bot_le : (⊥ : ι) ≤ s)) (by simpa only [mem_singleton_iff.mp hp] using hq.1)
-
 /-- Elementary predictable rectangles are closed under nonempty intersections. -/
 theorem isPiSystem_predictableRectangles : IsPiSystem ℱ.predictableRectangles := by
   rintro R (⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
     Q (⟨B, hB, rfl⟩ | ⟨u, v, B, hB, rfl⟩) hne
   · simpa only [prod_inter_prod, inter_self] using
       ℱ.singleton_bot_prod_mem_predictableRectangles (hA.inter hB)
-  · exact False.elim (hne.not_disjoint (disjoint_singleton_bot_prod_Ioc_prod A B u v))
-  · exact False.elim (hne.not_disjoint (disjoint_singleton_bot_prod_Ioc_prod B A s t).symm)
+  · exact False.elim (hne.not_disjoint (by simp [Set.disjoint_prod]))
+  · exact False.elim (hne.not_disjoint (by simp [Set.disjoint_prod]))
   · simpa only [prod_inter_prod, Ioc_inter_Ioc] using
       ℱ.Ioc_prod_mem_predictableRectangles (max s u) (min t v)
         ((ℱ.mono (le_max_left _ _) _ hA).inter (ℱ.mono (le_max_right _ _) _ hB))
@@ -97,21 +91,18 @@ theorem measure_ne_top_of_mem_predictableRectangles
 
 variable [(atTop : Filter ι).IsCountablyGenerated]
 
-private lemma exists_cofinal_seq : ∃ u : ℕ → ι, ∀ x, ∃ n, x ≤ u n := by
-  obtain ⟨u, -, hu⟩ := exists_seq_monotone_tendsto_atTop_atTop ι
-  exact ⟨u, fun x ↦ (exists_le_of_tendsto_atTop hu 0 x).imp fun _ h ↦ h.2⟩
-
 /-- Bounded-time elementary rectangles generate the native predictable sigma-algebra. -/
 theorem generateFrom_predictableRectangles :
     MeasurableSpace.generateFrom ℱ.predictableRectangles = ℱ.predictable := by
-  obtain ⟨u, hu⟩ := exists_cofinal_seq (ι := ι)
+  obtain ⟨u, hu⟩ := exists_seq_tendsto (atTop : Filter ι)
   apply le_antisymm
   · exact MeasurableSpace.generateFrom_le fun R hR ↦
       ℱ.measurableSet_of_mem_predictableRectangles hR
   · refine measurableSpace_le_predictable_of_measurableSet (fun A hA ↦ ?_) (fun s A hA ↦ ?_)
     · exact MeasurableSpace.measurableSet_generateFrom
         (ℱ.singleton_bot_prod_mem_predictableRectangles hA)
-    · rw [← iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ hu x), iUnion_prod_const]
+    · rw [← iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ (tendsto_atTop.1 hu x).exists),
+        iUnion_prod_const]
       exact MeasurableSet.iUnion fun n ↦ MeasurableSpace.measurableSet_generateFrom
         (ℱ.Ioc_prod_mem_predictableRectangles s (u n) hA)
 
@@ -119,14 +110,14 @@ theorem generateFrom_predictableRectangles :
 The initial slice is included separately from the positive-time intervals. -/
 theorem exists_predictableRectangles_cover :
     ∃ s : Option ℕ → Set (ι × Ω), (∀ n, s n ∈ ℱ.predictableRectangles) ∧ ⋃ n, s n = univ := by
-  obtain ⟨u, hu⟩ := exists_cofinal_seq (ι := ι)
+  obtain ⟨u, hu⟩ := exists_seq_tendsto (atTop : Filter ι)
   refine ⟨fun n ↦ n.elim ({⊥} ×ˢ univ) (fun k ↦ Ioc ⊥ (u k) ×ˢ univ), ?_, ?_⟩
   · rintro (_ | n)
     · exact ℱ.singleton_bot_prod_mem_predictableRectangles MeasurableSet.univ
     · exact ℱ.Ioc_prod_mem_predictableRectangles _ _ MeasurableSet.univ
   · rw [iUnion_option]
     simp only [Option.elim_none, Option.elim_some, ← iUnion_prod_const]
-    rw [iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ hu x), ← union_prod]
+    rw [iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ (tendsto_atTop.1 hu x).exists), ← union_prod]
     simp only [← Iic_bot, Iic_union_Ioi, univ_prod_univ]
 
 end MeasureTheory.Filtration
