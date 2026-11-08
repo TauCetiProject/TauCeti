@@ -361,11 +361,9 @@ theorem coe_quotientHomEquivInvariants_apply (f : Rep.ofMulAction k G (G ⧸ H) 
   have h := indTrivialIso_hom_hom_apply_mk k H 1 1
   rw [inv_one] at h
   rw [quotientHomEquivInvariants, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    Rep.coe_trivialHomEquivInvariants_apply, Linear.homCongr_symm_apply, Iso.refl_inv,
-    Category.comp_id, Rep.indResHomEquiv_apply, Rep.hom_ofHom,
-    Representation.IntertwiningMap.coe_mk, LinearMap.comp_apply, Rep.hom_comp,
-    Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.comp_apply]
-  exact congrArg f.hom h
+    Rep.coe_trivialHomEquivInvariants_apply]
+  -- Keep `h` unevaluated: `simp` unfolds `Representation.IndV.mk` in both `h` and the goal.
+  simpa [Linear.homCongr_symm_apply, -indTrivialIso_hom_hom_apply_mk] using congrArg f.hom h
 
 /-- The morphism `k[G ⧸ H] ⟶ Y` attached to an `H`-invariant vector `y` sends the coset `⟦x⟧` to
 `Y.ρ x y`. -/

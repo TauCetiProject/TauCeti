@@ -54,8 +54,8 @@ constructions behind `TauCeti.quotientHomEquivInvariants` (`Rep.indResHomEquiv` 
 
 * T. Sunada, *Riemannian coverings and isospectral manifolds*, Ann. of Math. **121** (1985),
   169–186.
-* P. Bérard, *Transplantation et isospectralité. I*, Math. Ann. **292** (1992), 547–559,
-  Theorem 17.
+* P. Bérard, *Transplantation et isospectralité I*, Séminaire de Théorie spectrale et
+  géométrie **9** (1990–1991), §II, Theorem 17, p. 159.
 -/
 
 public section
