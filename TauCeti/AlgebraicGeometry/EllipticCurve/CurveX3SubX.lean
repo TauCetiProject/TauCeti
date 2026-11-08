@@ -11,9 +11,10 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 # The curve `y² = x³ - x`
 
 The Weierstrass curve `y² = x³ - x` has discriminant `64`, so it is an elliptic curve over every
-field of characteristic other than two. Its points of order dividing two are the point at infinity
-`O` and the three points `T₀ = (0, 0)`, `T₁ = (1, 0)` and `T₋₁ = (-1, 0)` on the line `y = 0`, all
-rational over the base field.
+field of characteristic other than two. Over a commutative ring in which `2 ≠ 0` and which has no
+zero divisors, its points of order dividing two are the point at infinity `O` and the three points
+`T₀ = (0, 0)`, `T₁ = (1, 0)` and `T₋₁ = (-1, 0)` on the line `y = 0`, all defined over the base
+ring.
 
 ## Main definitions
 
@@ -92,80 +93,83 @@ theorem equation_iff {R : Type*} [CommRing R] (x y : R) :
   simp only [curve_a₁, curve_a₂, curve_a₃, curve_a₄, curve_a₆]
   constructor <;> intro h <;> linear_combination h
 
-variable (K : Type*) [Field K]
-
 /-- Away from characteristic two, `y² = x³ - x` is an elliptic curve: its discriminant
 `64 = 2⁶` is a unit. -/
-instance [NeZero (2 : K)] : (curve K).IsElliptic := by
+instance (K : Type*) [Field K] [NeZero (2 : K)] : (curve K).IsElliptic := by
   rw [isElliptic_iff, Δ_curve]
   convert (Ne.isUnit (NeZero.ne (2 : K))).pow 6 using 1
   norm_num
 
+section Points
+
+variable (R : Type*) [CommRing R]
+
 /-- The point `T₀ = (0, 0)` of `y² = x³ - x`. It is a nonsingular point in every characteristic,
 including two. -/
-def pointZero : (curve K).toAffine.Point :=
-  .some 0 0 (Affine.nonsingular_zero.mpr ⟨curve_a₆ K, .inr (by simp)⟩)
+def pointZero [Nontrivial R] : (curve R).toAffine.Point :=
+  .some 0 0 (Affine.nonsingular_zero.mpr ⟨curve_a₆ R, .inr (by simp)⟩)
 
-variable {K} in
+/-- The point `T₁ = (1, 0)` of `y² = x³ - x`, nonsingular away from characteristic two. -/
+def pointOne [NeZero (2 : R)] : (curve R).toAffine.Point :=
+  .some 1 0 <| (Affine.nonsingular_iff' 1 0).mpr
+    ⟨(equation_iff 1 0).mpr (by ring), .inl (by norm_num [two_ne_zero])⟩
+
+/-- The point `T₋₁ = (-1, 0)` of `y² = x³ - x`, nonsingular away from characteristic two. -/
+def pointNegOne [NeZero (2 : R)] : (curve R).toAffine.Point :=
+  .some (-1) 0 <| (Affine.nonsingular_iff' (-1) 0).mpr
+    ⟨(equation_iff (-1) 0).mpr (by ring), .inl (by norm_num [two_ne_zero])⟩
+
+variable {R}
+
 /-- `T₀` is not the point at infinity. -/
 @[simp]
-theorem pointZero_ne_zero : pointZero K ≠ 0 := by
-  simp [pointZero, Affine.Point.zero_def]
-
-variable [NeZero (2 : K)]
-
-/-- The point `T₁ = (1, 0)` of `y² = x³ - x`. -/
-def pointOne : (curve K).toAffine.Point :=
-  .mk ((equation_iff 1 0).mpr (by ring))
-
-/-- The point `T₋₁ = (-1, 0)` of `y² = x³ - x`. -/
-def pointNegOne : (curve K).toAffine.Point :=
-  .mk ((equation_iff (-1) 0).mpr (by ring))
-
-variable {K}
+theorem pointZero_ne_zero [Nontrivial R] : pointZero R ≠ 0 :=
+  Affine.Point.some_ne_zero _
 
 /-- `T₁` is not the point at infinity. -/
 @[simp]
-theorem pointOne_ne_zero : pointOne K ≠ 0 := by
-  simp [pointOne, Affine.Point.mk, Affine.Point.zero_def]
+theorem pointOne_ne_zero [NeZero (2 : R)] : pointOne R ≠ 0 :=
+  Affine.Point.some_ne_zero _
 
 /-- `T₋₁` is not the point at infinity. -/
 @[simp]
-theorem pointNegOne_ne_zero : pointNegOne K ≠ 0 := by
-  simp [pointNegOne, Affine.Point.mk, Affine.Point.zero_def]
-
-/-- `T₀ ≠ T₁`. -/
-@[simp]
-theorem pointZero_ne_pointOne : pointZero K ≠ pointOne K := by
-  simp [pointZero, pointOne, Affine.Point.mk]
-
-/-- `T₀ ≠ T₋₁`. -/
-@[simp]
-theorem pointZero_ne_pointNegOne : pointZero K ≠ pointNegOne K := by
-  simp [pointZero, pointNegOne, Affine.Point.mk]
+theorem pointNegOne_ne_zero [NeZero (2 : R)] : pointNegOne R ≠ 0 :=
+  Affine.Point.some_ne_zero _
 
 /-- `T₁ ≠ T₋₁`, since `1 ≠ -1` away from characteristic two. -/
 @[simp]
-theorem pointOne_ne_pointNegOne : pointOne K ≠ pointNegOne K := by
-  have h1 : (1 : K) ≠ -1 := fun h ↦ NeZero.ne (2 : K) (by linear_combination h)
-  simp [pointOne, pointNegOne, Affine.Point.mk, h1]
+theorem pointOne_ne_pointNegOne [NeZero (2 : R)] : pointOne R ≠ pointNegOne R := by
+  have h1 : (1 : R) ≠ -1 := fun h ↦ NeZero.ne (2 : R) (by linear_combination h)
+  simp [pointOne, pointNegOne, h1]
+
+variable [Nontrivial R] [NeZero (2 : R)]
+
+/-- `T₀ ≠ T₁`. -/
+@[simp]
+theorem pointZero_ne_pointOne : pointZero R ≠ pointOne R := by
+  simp [pointZero, pointOne]
+
+/-- `T₀ ≠ T₋₁`. -/
+@[simp]
+theorem pointZero_ne_pointNegOne : pointZero R ≠ pointNegOne R := by
+  simp [pointZero, pointNegOne]
 
 /-- **The points of order dividing two on `y² = x³ - x`** are the point at infinity and the three
 points `(0, 0)`, `(1, 0)` and `(-1, 0)` on the line `y = 0`. -/
 @[simp]
-theorem neg_eq_self_iff (T : (curve K).toAffine.Point) :
-    -T = T ↔ T = 0 ∨ T = pointZero K ∨ T = pointOne K ∨ T = pointNegOne K := by
+theorem neg_eq_self_iff [NoZeroDivisors R] (T : (curve R).toAffine.Point) :
+    -T = T ↔ T = 0 ∨ T = pointZero R ∨ T = pointOne R ∨ T = pointNegOne R := by
   cases T with
   | zero => exact ⟨fun _ ↦ Or.inl rfl, fun _ ↦ rfl⟩
   | some x y h =>
     simp only [Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY, pointZero, pointOne,
-      pointNegOne, Affine.Point.mk, curve_a₁, curve_a₃, reduceCtorEq, false_or, true_and]
+      pointNegOne, curve_a₁, curve_a₃, reduceCtorEq, false_or, true_and]
     constructor
     · intro hy
       -- `-y = y` forces `y = 0`, and then `x` is a root of `x³ - x = x (x - 1) (x + 1)`.
       have hy0 : y = 0 := by
-        have : (2 : K) * y = 0 := by linear_combination -hy
-        simpa [NeZero.ne (2 : K)] using this
+        have : (2 : R) * y = 0 := by linear_combination -hy
+        simpa [NeZero.ne (2 : R)] using this
       subst hy0
       have hx := (equation_iff x 0).mp h.1
       have hroots : x * ((x - 1) * (x + 1)) = 0 := by linear_combination -hx
@@ -175,5 +179,7 @@ theorem neg_eq_self_iff (T : (curve K).toAffine.Point) :
       · exact Or.inr (Or.inl ⟨by linear_combination hx, rfl⟩)
       · exact Or.inr (Or.inr ⟨by linear_combination hx, rfl⟩)
     · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;> ring
+
+end Points
 
 end TauCeti.CurveX3SubX
