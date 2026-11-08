@@ -71,6 +71,36 @@ theorem subsingleton_inter_of_disjoint_direction
   exact Submodule.disjoint_def.mp hST _
     (S.vsub_mem_direction hx.1 hy.1) (T.vsub_mem_direction hx.2 hy.2)
 
+section Ring
+
+variable {k V P : Type*} [Ring k] [AddCommGroup V] [Module k V] [AddTorsor V P]
+
+/-- If the edge vectors `p j.succ -ᵥ p 0` of a finite family of points remain linearly
+independent modulo the direction of `S`, then the affine span of the points meets `S` in at most
+one point. -/
+theorem subsingleton_affineSpan_range_inter (S : AffineSubspace k P) {n : ℕ}
+    {p : Fin (n + 1) → P}
+    (hp : LinearIndependent k (S.direction.mkQ ∘ fun j : Fin n => p j.succ -ᵥ p 0)) :
+    ((affineSpan k (Set.range p) : Set P) ∩ S).Subsingleton := by
+  intro x hx y hy
+  have hxy : x -ᵥ y ∈ Submodule.span k (Set.range fun j : Fin n => p j.succ -ᵥ p 0) := by
+    have hmem := (affineSpan k (Set.range p)).vsub_mem_direction hx.1 hy.1
+    rw [direction_affineSpan, vectorSpan_range_eq_span_range_vsub_right_ne k p 0] at hmem
+    convert hmem using 2
+    ext w
+    constructor
+    · rintro ⟨j, rfl⟩
+      exact ⟨⟨j.succ, Fin.succ_ne_zero j⟩, rfl⟩
+    · rintro ⟨⟨l, hl⟩, rfl⟩
+      obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.mpr hl
+      exact ⟨j, rfl⟩
+  apply vsub_eq_zero_iff_eq.mp
+  refine Submodule.disjoint_def.mp (Submodule.range_ker_disjoint hp) _ hxy ?_
+  rw [Submodule.ker_mkQ]
+  exact S.vsub_mem_direction hx.2 hy.2
+
+end Ring
+
 variable {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
   [AddTorsor V P]
 
@@ -103,29 +133,5 @@ theorem subsingleton_preimage_lineMap (S : AffineSubspace k P) {x y : P}
   rw [AffineMap.lineMap_apply, AffineMap.lineMap_apply,
     vadd_vsub_vadd_cancel_right, ← sub_smul] at hd
   exact h ((S.direction.smul_mem_iff (sub_ne_zero.mpr hst)).mp hd)
-
-/-- If the edge vectors `p j.succ -ᵥ p 0` of a finite family of points remain linearly
-independent modulo the direction of `S`, then the affine span of the points meets `S` in at most
-one point. -/
-theorem subsingleton_affineSpan_range_inter (S : AffineSubspace k P) {n : ℕ}
-    {p : Fin (n + 1) → P}
-    (hp : LinearIndependent k (S.direction.mkQ ∘ fun j : Fin n => p j.succ -ᵥ p 0)) :
-    ((affineSpan k (Set.range p) : Set P) ∩ S).Subsingleton := by
-  intro x hx y hy
-  have hxy : x -ᵥ y ∈ Submodule.span k (Set.range fun j : Fin n => p j.succ -ᵥ p 0) := by
-    have hmem := (affineSpan k (Set.range p)).vsub_mem_direction hx.1 hy.1
-    rw [direction_affineSpan, vectorSpan_range_eq_span_range_vsub_right_ne k p 0] at hmem
-    convert hmem using 2
-    ext w
-    constructor
-    · rintro ⟨j, rfl⟩
-      exact ⟨⟨j.succ, Fin.succ_ne_zero j⟩, rfl⟩
-    · rintro ⟨⟨l, hl⟩, rfl⟩
-      obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.mpr hl
-      exact ⟨j, rfl⟩
-  apply vsub_eq_zero_iff_eq.mp
-  refine Submodule.disjoint_def.mp (Submodule.range_ker_disjoint hp) _ hxy ?_
-  rw [Submodule.ker_mkQ]
-  exact S.vsub_mem_direction hx.2 hy.2
 
 end AffineSubspace
