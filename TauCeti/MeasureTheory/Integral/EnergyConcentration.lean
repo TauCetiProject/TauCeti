@@ -46,9 +46,10 @@ curves, the mean-value inequality supplies the energy concentration hypothesis, 
 `Z` are the concentration points at which further bubbling analysis is required.
 
 Conversely, energy concentration forces blow-up, with no equation involved. A ball of measure
-below `δ / c` carrying energy at least `δ` contains a point where the density exceeds `c`, so if
-energy `δ > 0` concentrates at a null point `z`, then along a subsequence there are points
-`y k → z` at which the densities tend to infinity
+below `δ / c` carrying energy at least `δ` contains a point where the density exceeds `c`
+(`TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`), so if energy `δ > 0` concentrates at a
+null point `z`, then along a subsequence there are points `y k → z` at which the densities tend
+to infinity
 (`TauCeti.exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball`). The same
 holds for functions `g k` controlling the densities, such as the norms `‖du_k‖` of the
 differentials of maps with energy densities `‖∂ₛu_k‖²`. These blow-up sequences are the input
@@ -64,6 +65,8 @@ which the `g k` are unbounded (`TauCeti.coe_eq_setOf_forall_exists_lt_of_concent
   measure of small balls from concentrating energy loses arbitrarily little of it.
 * `TauCeti.exists_strictMono_finset_forall_le_of_concentration`: when energy concentrates at
   blow-up points, a subsequence is bounded on compact sets off finitely many concentration points.
+* `TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`: a set of measure below `δ / c` carrying
+  energy at least `δ` contains a point where the density exceeds `c`.
 * `TauCeti.exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball`: energy
   concentration at a null point gives a subsequence blowing up at points converging to it.
 * `TauCeti.coe_eq_setOf_forall_exists_lt_of_concentration`: a finite set of concentration
@@ -84,6 +87,38 @@ namespace TauCeti
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} {Ω : Set X} {δ E : ℝ}
+
+/-- The balls about a point `z`, one of which has finite measure, have measures tending to the
+measure of `{z}` as the radius decreases to `0`. -/
+theorem tendsto_measure_ball_nhdsGT_zero {z : X} (hfin : ∃ R > 0, μ (ball z R) ≠ ⊤) :
+    Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 (μ {z})) := by
+  simpa [thickening_singleton] using
+    tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+
+/-- **Large energy on a small set forces a large density.** If a set `S` of measure less than
+`δ / c`, with `c > 0`, carries energy `∫_S f ≥ δ`, then `f` exceeds `c` at some point of `S`. No
+integrability, measurability or sign condition on `f` is needed. -/
+theorem exists_lt_of_measure_lt_of_le_setIntegral {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {f : α → ℝ} {S : Set α} {c : ℝ} (hc : 0 < c)
+    (hS : ν S < ENNReal.ofReal (δ / c)) (hδS : δ ≤ ∫ y in S, f y ∂ν) : ∃ y ∈ S, c < f y := by
+  have hδ : 0 < δ := (div_pos_iff_of_pos_right hc).1 (ENNReal.ofReal_pos.1 (pos_of_gt hS))
+  have hint : IntegrableOn f S ν := by
+    by_contra h
+    rw [integral_undef h] at hδS
+    linarith
+  have hν0 : ν S ≠ 0 := fun h ↦ by
+    rw [setIntegral_measure_zero _ h] at hδS
+    linarith
+  have hνS : ν S ≠ ⊤ := (hS.trans ENNReal.ofReal_lt_top).ne
+  obtain ⟨y, hy, hle⟩ := exists_setAverage_le hν0 hνS hint
+  have hpos : 0 < ν.real S := ENNReal.toReal_pos hν0 hνS
+  have hlt : ν.real S * c < δ := by
+    rw [← lt_div_iff₀ hc]
+    exact ENNReal.toReal_lt_of_lt_ofReal hS
+  rw [setAverage_eq, smul_eq_mul, inv_mul_eq_div] at hle
+  refine ⟨y, hy, lt_of_lt_of_le ?_ hle⟩
+  rw [lt_div_iff₀ hpos]
+  linarith
 
 /-- **Counting energy concentration points.** Let `e i ≥ 0` be densities on a measurable set `Ω`
 with `∫_Ω e i ≤ E`, and let `Z` be a finite set of points at which energy at least `δ`
@@ -123,8 +158,7 @@ theorem eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball {�
     (hconc : ∀ ρ > 0, ∀ᶠ i in l, δ ≤ μ.real (ball z ρ ∩ Ω) + ∫ y in ball z ρ ∩ Ω, e i y ∂μ) :
     ∀ᶠ i in l, δ' ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ := by
   have hlim : Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 0) := by
-    simpa [thickening_singleton, hz] using
-      tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+    simpa [hz] using tendsto_measure_ball_nhdsGT_zero hfin
   obtain ⟨ρ, hρμ, hρ⟩ := ((hlim.eventually (gt_mem_nhds
     (ENNReal.ofReal_pos.2 (sub_pos.2 hδ')))).and (Ioo_mem_nhdsGT hε)).exists
   have hρvol : μ.real (ball z ρ ∩ Ω) < δ - δ' :=
@@ -212,30 +246,8 @@ theorem exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball
     (hconc : ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, e n y ∂μ) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ y : ℕ → X, (∀ k, y k ∈ Ω) ∧ Tendsto y atTop (𝓝 z) ∧
       Tendsto (fun k ↦ g (φ k) (y k)) atTop atTop := by
-  -- A set of measure less than `δ / c` carrying energy at least `δ` contains a point where the
-  -- density exceeds `c`, since the density is somewhere at least its average.
-  have hpt : ∀ ⦃c : ℝ⦄, 0 < c → ∀ ⦃S : Set X⦄, μ S < ENNReal.ofReal (δ / c) → ∀ n,
-      δ ≤ ∫ y in S, e n y ∂μ → ∃ y ∈ S, c < e n y := by
-    intro c hc S hS n hn
-    have hint : IntegrableOn (e n) S μ := by
-      by_contra h
-      rw [integral_undef h] at hn
-      linarith
-    have hμ0 : μ S ≠ 0 := fun h ↦ by
-      rw [setIntegral_measure_zero _ h] at hn
-      linarith
-    obtain ⟨y, hy, hle⟩ := exists_setAverage_le hμ0 (hS.trans ENNReal.ofReal_lt_top).ne hint
-    have hpos : 0 < μ.real S := ENNReal.toReal_pos hμ0 (hS.trans ENNReal.ofReal_lt_top).ne
-    have hlt : μ.real S * c < δ := by
-      rw [← lt_div_iff₀ hc]
-      exact ENNReal.toReal_lt_of_lt_ofReal hS
-    rw [setAverage_eq, smul_eq_mul, inv_mul_eq_div] at hle
-    refine ⟨y, hy, lt_of_lt_of_le ?_ hle⟩
-    rw [lt_div_iff₀ hpos]
-    linarith
   have hlim : Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 0) := by
-    simpa [thickening_singleton, hz] using
-      tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+    simpa [hz] using tendsto_measure_ball_nhdsGT_zero hfin
   -- For each `k`, the density bound `M k` matching the control bound `k`, and a radius
   -- `ε k < 1 / (k + 1)` whose ball has measure below `δ / (|M k| + 1)`.
   choose M hM using fun k : ℕ ↦ hge k
@@ -246,7 +258,8 @@ theorem exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball
   -- Eventually the ball of radius `ε k` contains a point where `g n` exceeds `k`.
   have hev : ∀ k, ∀ᶠ n in atTop, ∃ y ∈ ball z (ε k) ∩ Ω, (k : ℝ) < g n y := fun k ↦ by
     filter_upwards [hconc (ε k) (hε k).1] with n hn
-    obtain ⟨y, hy, hlt⟩ := hpt (hc k) ((measure_mono inter_subset_left).trans_lt (hεμ k)) n hn
+    obtain ⟨y, hy, hlt⟩ := exists_lt_of_measure_lt_of_le_setIntegral (hc k)
+      ((measure_mono inter_subset_left).trans_lt (hεμ k)) hn
     refine ⟨y, hy, lt_of_not_ge fun hgy ↦ ?_⟩
     linarith [hM k n y hy.2 hgy, le_abs_self (M k)]
   obtain ⟨φ, hφ, hφP⟩ := extraction_forall_of_eventually hev
