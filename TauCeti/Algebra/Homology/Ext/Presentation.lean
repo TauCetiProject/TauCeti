@@ -30,7 +30,9 @@ transfer vanishing between `Ext^{n+1}(P₁, Y)` and `Ext^{n+2}(M, Y)`
 (`CategoryTheory.ShortComplex.ShortExact.ext_X₃_eq_zero_of_ext_X₁_eq_zero` and
 `CategoryTheory.ShortComplex.ShortExact.ext_X₁_eq_zero_of_ext_X₃_eq_zero`), and
 iterating them along a chain of short exact sequences gives
-`TauCeti.ext_X₃_eq_zero_of_forall_exists_f_comp_eq`.
+`TauCeti.ext_X₃_eq_zero_of_forall_exists_f_comp_eq`. When `P₁` is projective too, all of
+`Ext^*(M, Y)` vanishes exactly when restriction `Hom(P₀, Y) → Hom(P₁, Y)` is bijective
+(`CategoryTheory.ShortComplex.ShortExact.forall_subsingleton_ext_X₃_iff_bijective`).
 
 ## References
 
@@ -215,6 +217,38 @@ then `Ext^{n+1}(S.X₁, Y) = 0` as soon as `Ext^{n+2}(S.X₃, Y) = 0`. -/
 theorem ext_X₁_eq_zero_of_ext_X₃_eq_zero (hS : S.ShortExact) [Projective S.X₂] {Y : C} {n : ℕ}
     (h : ∀ e : Ext.{w} S.X₃ Y (n + 2), e = 0) (x : Ext.{w} S.X₁ Y (n + 1)) : x = 0 :=
   (TauCeti.precomp_extClass_bijective hS Y n).1 (by rw [h (Ext.precomp _ _ _ x), map_zero])
+
+/-- **`Ext` out of an object with a projective resolution of length one.** Let `S` be short
+exact with `S.X₁` and `S.X₂` projective. Then every `Extⁿ(S.X₃, Y)` vanishes exactly when
+restriction along `S.f` is a bijection `Hom(S.X₂, Y) → Hom(S.X₁, Y)`: its kernel is
+`Hom(S.X₃, Y)`, its cokernel is `Ext¹(S.X₃, Y)`, and `Ext^{n+2}(S.X₃, Y) = 0`. -/
+theorem forall_subsingleton_ext_X₃_iff_bijective (hS : S.ShortExact) [Projective S.X₁]
+    [Projective S.X₂] (Y : C) :
+    (∀ n, Subsingleton (Ext.{w} S.X₃ Y n)) ↔ Function.Bijective fun φ : S.X₂ ⟶ Y ↦ S.f ≫ φ := by
+  have := hS.epi_g
+  have h₀ : Subsingleton (Ext.{w} S.X₃ Y 0) ↔ Function.Injective fun φ : S.X₂ ⟶ Y ↦ S.f ≫ φ := by
+    rw [Ext.homEquiv₀.subsingleton_congr]
+    refine ⟨fun _ φ₁ φ₂ h ↦ ?_, fun h ↦ ⟨fun ψ₁ ψ₂ ↦ ?_⟩⟩
+    · obtain ⟨ψ, hψ⟩ := Limits.CokernelCofork.IsColimit.desc' hS.gIsCokernel (φ₁ - φ₂)
+        (by simpa [Preadditive.comp_sub, sub_eq_zero] using h)
+      rw [← sub_eq_zero, ← hψ, Subsingleton.elim (α := S.X₃ ⟶ Y) ψ 0, Limits.comp_zero]
+    · rw [← cancel_epi S.g]
+      exact h (by simp only [S.zero_assoc, Limits.zero_comp])
+  have h₁ : Subsingleton (Ext.{w} S.X₃ Y 1) ↔ Function.Surjective fun φ : S.X₂ ⟶ Y ↦ S.f ≫ φ := by
+    have hcomm : (Ext.mk₀ S.f).precomp Y (add_zero 0) ∘ Ext.mk₀ =
+        Ext.mk₀ ∘ fun φ : S.X₂ ⟶ Y ↦ S.f ≫ φ :=
+      funext fun φ ↦ Ext.mk₀_comp_mk₀ S.f φ
+    rw [Ext.one_subsingleton_iff_of_projective Y S hS ‹_›,
+      ← Function.Surjective.of_comp_iff _ (Ext.mk₀_bijective _ _).surjective, hcomm,
+      Function.Surjective.of_comp_iff' (Ext.mk₀_bijective _ _)]
+  refine ⟨fun h ↦ ⟨h₀.1 (h 0), h₁.1 (h 1)⟩, fun ⟨hi, hs⟩ n ↦ ?_⟩
+  match n with
+  | 0 => exact h₀.2 hi
+  | 1 => exact h₁.2 hs
+  | n + 2 =>
+    exact ⟨fun x y ↦ by
+      rw [hS.ext_X₃_eq_zero_of_ext_X₁_eq_zero Ext.eq_zero_of_projective x,
+        hS.ext_X₃_eq_zero_of_ext_X₁_eq_zero Ext.eq_zero_of_projective y]⟩
 
 end CategoryTheory.ShortComplex.ShortExact
 
