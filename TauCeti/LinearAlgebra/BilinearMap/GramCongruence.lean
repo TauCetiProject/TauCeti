@@ -174,7 +174,7 @@ end BasisChange
 
 section Determinant
 
-variable {S M ι ι' : Type*} [CommRing S] [AddCommGroup M] [Module ℤ M]
+variable {S M ι ι' : Type*} [CommRing S] [AddCommGroup M]
 
 /-- **Over `ℤ`, the determinant of the matrix is basis-independent**, and independent of the index
 type too. An integral change-of-basis matrix has determinant `±1`, so the congruence of
