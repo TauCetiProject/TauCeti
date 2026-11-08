@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
@@ -90,20 +91,8 @@ theorem exists_martingale_of_cauchySeq_Lp [IsFiniteMeasure μ] {p : ℝ≥0∞} 
       exact (hYm t).coeFn_toLp.trans (hmeas t).ae_eq_mk.symm
     rw [heq]
     exact hg t
-  refine ⟨Y, martingale_of_tendsto_eLpNorm_one hX hY (fun t => ?_), fun t => ⟨hYm t, hlim t⟩⟩
-  have hexp : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
-    by_cases hpt : p = ∞
-    · simp [hpt]
-    · have := ENNReal.toReal_mono hpt hp.out
-      simp only [ENNReal.toReal_one, div_one] at *
-      exact sub_nonneg.mpr (by simpa using one_div_le_one_div_of_le zero_lt_one this)
-  have hfinite : μ Set.univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal) ≠ ∞ :=
-    (ENNReal.rpow_lt_top_of_nonneg hexp (measure_lt_top μ Set.univ).ne).ne
-  have hbound := ENNReal.Tendsto.mul_const (hlim t) (Or.inr hfinite)
-  rw [zero_mul] at hbound
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound
-    (fun _ => zero_le) (fun n =>
-      eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp.out
-        ((hmem n t).aestronglyMeasurable.sub (hYm t).aestronglyMeasurable))
+  exact ⟨Y, martingale_of_tendsto_eLpNorm_one hX hY (fun t =>
+    TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp.out (hlim t)),
+    fun t => ⟨hYm t, hlim t⟩⟩
 
 end MeasureTheory
