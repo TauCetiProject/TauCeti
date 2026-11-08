@@ -139,6 +139,12 @@ theorem fourierMultiplierCLM_add :
   ext1 f
   simp [fourierMultiplierCLM_apply, Lp.smul_add]
 
+/-- The multiplier of a finite sum of symbols is the sum of the multipliers. -/
+theorem fourierMultiplierCLM_sum {ι : Type*} (s : Finset ι)
+    (m : ι → Lp ℂ ∞ (volume : Measure E)) :
+    fourierMultiplierCLM F (∑ i ∈ s, m i) = ∑ i ∈ s, fourierMultiplierCLM F (m i) :=
+  map_sum (AddMonoidHom.mk' (fourierMultiplierCLM F) fourierMultiplierCLM_add) m s
+
 theorem fourierMultiplierCLM_smul (c : ℂ) :
     fourierMultiplierCLM F (c • m) = c • fourierMultiplierCLM F m := by
   ext1 f
@@ -246,15 +252,6 @@ private theorem coeFn_fourierMultiplierCLM_toLp_toLp (σ : 𝓢(E, ℂ)) (φ : �
   rw [h]
   filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.fourierMultiplierCLM F σ φ) 2] with x hx
   rw [hx, SchwartzMap.fourierMultiplierCLM_apply_eq_integral]
-
-/-- The convolution integral of an `L²` function against the inverse Fourier transform of a
-Schwartz function converges absolutely at every point. -/
-theorem _root_.SchwartzMap.integrable_fourierInv_sub_smul {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℂ G] (σ : 𝓢(E, ℂ)) (u : Lp G 2 (volume : Measure E)) (x : E) :
-    Integrable (fun y ↦ 𝓕⁻ σ (x - y) • u y) := by
-  have hK : MemLp (fun y ↦ 𝓕⁻ σ (x - y)) 2 volume :=
-    ((𝓕⁻ σ).memLp 2 volume).comp_measurePreserving (volume.measurePreserving_sub_left x)
-  exact memLp_one_iff_integrable.1 (hK.smul (Lp.memLp u))
 
 /-- The `L²` multiplier with a Schwartz symbol `σ` is convolution with the Schwartz kernel
 `𝓕⁻ σ`: for every `f ∈ L²`, `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for almost every `x`. The

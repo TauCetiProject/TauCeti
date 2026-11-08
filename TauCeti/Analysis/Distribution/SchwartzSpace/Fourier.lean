@@ -163,6 +163,7 @@ theorem norm_fourierInv_iterate_lineDerivOp_sq (σ : 𝓢(E, F)) (m : E) (N : �
 
 /-- The inverse Fourier transform of a Schwartz function commutes with postcomposition by a
 continuous complex-linear map: `𝓕⁻ (L ∘ f) = L ∘ 𝓕⁻ f`. -/
+@[simp]
 theorem fourierInv_postcompCLM_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
     [CompleteSpace F] [CompleteSpace G] (L : F →L[ℂ] G) (f : 𝓢(E, F)) (x : E) :
     𝓕⁻ (postcompCLM L f) x = L (𝓕⁻ f x) := by
