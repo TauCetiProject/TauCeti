@@ -69,9 +69,11 @@ theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ}
     simpa only [sub_zero] using hform
   have hcompat (i : Fin d) : e (σ i) = e i ∧
       ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), w (σ i) p = conj (w i (τ p.1, conj p.2)) :=
-    AnalyticAt.laurent_eq_of_conj_of_fixed (hw (σ i)) (hw0 (σ i)) (hw i) (hw0 i) hτ hτ0
-      (hform'.mono fun p hp ↦ ⟨hp.1 (σ i), fun h ↦ hp.2 h (σ i)⟩)
-      (hform'.mono fun p hp ↦ ⟨hp.1 i, fun h ↦ hp.2 h i⟩)
+    AnalyticAt.laurent_eq_of_conj_of_forms ((hw (σ i)).restrictScalars (𝕜 := ℝ)) (hw0 (σ i))
+      (by simpa only [hτ0] using (hw i).restrictScalars (𝕜 := ℝ))
+      (by simpa only [hτ0] using hw0 i) hτ
+      (hform'.mono fun p hp ↦ fun h ↦ hp.2 h (σ i))
+      (by rw [hτ0]; exact hform'.mono fun p hp ↦ fun h ↦ hp.2 h i)
       (by filter_upwards [hσ] with p hp hp0; exact hp hp0 i)
   have hall : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),
       ∀ i, w (σ i) p = conj (w i (τ p.1, conj p.2)) := by

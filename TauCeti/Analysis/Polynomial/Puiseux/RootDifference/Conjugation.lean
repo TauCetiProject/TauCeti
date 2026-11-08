@@ -81,10 +81,14 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
         ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),
           w₀ (σ i) (σ j) hσij p =
             conj (w₀ i j hij (T p)) := by
-    refine AnalyticAt.laurent_eq_of_conj_of_fixed (hw (σ i) (σ j) hσij)
-      (hw0 (σ i) (σ j) hσij) (hw i j hij) (hw0 i j hij) hτ hτ0
-      (by simpa only [sub_zero] using hform (σ i) (σ j) hσij)
-      (by simpa only [sub_zero] using hform i j hij) ?_
+    have hform₁ := hform (σ i) (σ j) hσij
+    have hform₂ := hform i j hij
+    refine AnalyticAt.laurent_eq_of_conj_of_forms
+      ((hw (σ i) (σ j) hσij).restrictScalars (𝕜 := ℝ)) (hw0 (σ i) (σ j) hσij)
+      (by simpa only [hτ0] using (hw i j hij).restrictScalars (𝕜 := ℝ))
+      (by simpa only [hτ0] using hw0 i j hij) hτ
+      (by simpa only [sub_zero] using hform₁.mono fun p hp ↦ hp.2)
+      (by rw [hτ0]; simpa only [sub_zero] using hform₂.mono fun p hp ↦ hp.2) ?_
     filter_upwards [hσ] with p hsigma hp0
     rw [hsigma hp0 i, hsigma hp0 j]
     exact (map_sub (starRingEnd ℂ) (r i (T p)) (r j (T p))).symm
