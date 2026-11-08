@@ -202,6 +202,19 @@ section General
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- Splitting an integral at a height: if `F ≤ c'` wherever `f ≤ c`, the integral of `F` over `B`
+is at most the part of `F` where `f > c`, plus `c'` times the measure of `B`. -/
+private theorem setLIntegral_le_indicator_add {μ : Measure α} (B : Set α) {f F : α → ℝ≥0∞}
+    {c c' : ℝ≥0∞} (hF : ∀ x, f x ≤ c → F x ≤ c') :
+    ∫⁻ x in B, F x ∂μ ≤ ∫⁻ x in B, {x | c < f x}.indicator F x ∂μ + c' * μ B := by
+  rw [← setLIntegral_const, ← lintegral_add_right _ measurable_const]
+  refine lintegral_mono fun x => ?_
+  by_cases hx : c < f x
+  · rw [indicator_of_mem hx]
+    exact le_self_add
+  · rw [indicator_of_notMem hx, zero_add]
+    exact hF x (not_lt.1 hx)
+
 /-- **The estimate on a stopping set.** Let `q > 1` and let `B'` have finite measure. Suppose the
 average of `g ^ q` over a set `B` is at least `t ^ q`, its average over `B'` is at most `t ^ q`,
 and the reverse Hölder inequality holds from `B` to `B'`. If `b ε + ε ^ q ≤ 1 / 2`, the measure of
@@ -226,24 +239,10 @@ private theorem measure_mul_rpow_le_of_le_setLAverage {μ : Measure α} {q : ℝ
           rw [ENNReal.rpow_one]
           gcongr
   -- Split `g` and `h ^ q` at the height `ε t`.
-  have hgsplit : ∫⁻ x in B', g x ∂μ ≤
-      ∫⁻ x in B', {x | ε * t < g x}.indicator g x ∂μ + ε * t * μ B' := by
-    rw [← setLIntegral_const, ← lintegral_add_right _ measurable_const]
-    refine lintegral_mono fun x => ?_
-    by_cases hx : ε * t < g x
-    · rw [indicator_of_mem hx]
-      exact le_self_add
-    · rw [indicator_of_notMem hx, zero_add]
-      exact not_lt.1 hx
-  have hhsplit : ∫⁻ x in B', h x ^ q ∂μ ≤
-      ∫⁻ x in B', {x | ε * t < h x}.indicator (fun x => h x ^ q) x ∂μ + ε ^ q * t ^ q * μ B' := by
-    rw [← setLIntegral_const, ← lintegral_add_right _ measurable_const]
-    refine lintegral_mono fun x => ?_
-    by_cases hx : ε * t < h x
-    · rw [indicator_of_mem hx]
-      exact le_self_add
-    · rw [indicator_of_notMem hx, zero_add, ← ENNReal.mul_rpow_of_nonneg _ _ hq0.le]
-      exact ENNReal.rpow_le_rpow (not_lt.1 hx) hq0.le
+  have hgsplit := setLIntegral_le_indicator_add (μ := μ) B' fun x (hx : g x ≤ ε * t) => hx
+  have hhsplit := setLIntegral_le_indicator_add (μ := μ) B' (F := fun x => h x ^ q)
+    fun x (hx : h x ≤ ε * t) => (ENNReal.rpow_le_rpow hx hq0.le).trans_eq
+      (ENNReal.mul_rpow_of_nonneg _ _ hq0.le)
   set G := ∫⁻ x in B', {x | ε * t < g x}.indicator g x ∂μ
   set H := ∫⁻ x in B', {x | ε * t < h x}.indicator (fun x => h x ^ q) x ∂μ
   set Y := μ B' * t ^ q with hYdef
@@ -296,14 +295,13 @@ private theorem exists_gehring_constants {q : ℝ} (hq : 1 < q) (b : ℝ≥0) (d
     rw [he, ← div_eq_mul_inv, div_le_iff₀ (by positivity)]
     linarith
   have heq : e ^ q ≤ e := by simpa using Real.rpow_le_rpow_of_exponent_ge he0 he1 hq.le
-  have hhalf : (2 : ℝ≥0∞)⁻¹ = ENNReal.ofReal 2⁻¹ := by
-    rw [ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
-  have hinv : (ENNReal.ofReal e)⁻¹ = ENNReal.ofReal e⁻¹ := (ENNReal.ofReal_inv_of_pos he0).symm
+  -- Both inequalities are proved for real numbers and transferred with `ENNReal.ofReal_le_ofReal`;
+  -- one `simp` pass then pushes `ENNReal.ofReal` through the arithmetic.
   refine ⟨ENNReal.ofReal e, by simpa using he0, ENNReal.ofReal_le_one.2 he1, ?_, ?_⟩
-  · rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul hb,
-      ENNReal.ofReal_rpow_of_nonneg he0.le hq0.le, ← ENNReal.ofReal_add (by positivity)
-      (by positivity), hhalf]
-    exact ENNReal.ofReal_le_ofReal (by linarith)
+  · have h := ENNReal.ofReal_le_ofReal (show (b : ℝ) * e + e ^ q ≤ 2⁻¹ by linarith)
+    simpa (disch := positivity) only [ENNReal.ofReal_add, ENNReal.ofReal_mul,
+      ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_rpow_of_pos, ENNReal.ofReal_inv_of_pos,
+      ENNReal.ofReal_ofNat] using h
   set D : ℝ := 4 ^ d with hD
   have hD0 : 0 < D := by positivity
   have heq0 : 0 < e ^ q := Real.rpow_pos_of_pos he0 q
@@ -331,11 +329,10 @@ private theorem exists_gehring_constants {q : ℝ} (hq : 1 < q) (b : ℝ≥0) (d
       _ ≤ 2⁻¹ := by
         rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]
         nlinarith
-  rw [hhalf, hinv, ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 he0.le) hp.le,
-    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul hb,
-    ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_ofNat 2,
-    ← ENNReal.ofReal_mul (by norm_num), ← ENNReal.ofReal_mul (by positivity)]
-  exact ENNReal.ofReal_le_ofReal (by simpa [mul_assoc] using hreal)
+  have h := ENNReal.ofReal_le_ofReal hreal
+  simp (disch := positivity) only [ENNReal.ofReal_mul, ENNReal.ofReal_coe_nnreal,
+    ← ENNReal.ofReal_rpow_of_pos, ENNReal.ofReal_inv_of_pos, ENNReal.ofReal_ofNat] at h
+  simpa only [mul_assoc] using h
 
 /-- `t₀ ^ δ` for the threshold `t₀ = ((16 R / u) ^ d a) ^ (1 / q)` of Gehring's lemma, written as a
 power of the gap `u`. -/
@@ -587,7 +584,7 @@ private theorem setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ�
       ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), ν {x | ENNReal.ofReal t < g x} * w t := by
     rw [← Measure.lintegral_min_rpow_eq ν hg.aemeasurable k hδ,
       lintegral_withDensity_eq_lintegral_mul _ hGm ((hg.min measurable_const).pow_const _)]
-    rfl
+    simp only [Pi.mul_apply, G]
   rw [hlhs]
   calc ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), ν {x | ENNReal.ofReal t < g x} * w t
       ≤ ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), (A t * w t +
@@ -681,15 +678,10 @@ private theorem toReal_setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε
           ε⁻¹ ^ (q + δ - 1) * Φ s + ε⁻¹ ^ δ * Ih) := by gcongr
       _ = _ := by ring
   -- Pass to real numbers; `rpow_inv_rpow_eq` writes `t₀ ^ δ` as a power of `s - r`.
-  have hfin1 : ENNReal.ofReal ((X ^ q⁻¹) ^ δ) * Ig ≠ ∞ :=
-    ENNReal.mul_ne_top ENNReal.ofReal_ne_top hIg
-  have hfin2 : θE * Φ s ≠ ∞ := ENNReal.mul_ne_top hθtop hΦs
-  have := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨hfin1, hfin2⟩, hKhtop⟩)
-    hle
-  rw [ENNReal.toReal_add (ENNReal.add_ne_top.2 ⟨hfin1, hfin2⟩) hKhtop,
-    ENNReal.toReal_add hfin1 hfin2,
-    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
-    rpow_inv_rpow_eq hR.le ENNReal.toReal_nonneg hu] at this
+  have := ENNReal.toReal_mono (by finiteness) hle
+  simp (disch := first | finiteness | positivity) only [ENNReal.toReal_add, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal] at this ⊢
+  rw [rpow_inv_rpow_eq hR.le ENNReal.toReal_nonneg hu] at this
   linarith
 
 /-- **From the absorbed estimate to averages.** Suppose the integral of `g ^ (q + δ)` over
@@ -748,10 +740,9 @@ private theorem setLAverage_rpow_add_le_of_setLIntegral_le {q δ : ℝ} (hq : 0 
   set P := a ^ ((q + δ) / q)
   have hP0 : 0 ≤ P := by positivity
   -- Reduce to an inequality between real numbers.
-  rw [setLAverage_eq, hav, havh, ENNReal.ofReal_rpow_of_nonneg ha (by positivity),
-    ← ENNReal.ofReal_add hP0 (by positivity), ← ENNReal.ofReal_mul hC,
-    ENNReal.div_le_iff hm0 hmtop, ← ENNReal.ofReal_toReal hmtop,
-    ← ENNReal.ofReal_mul (by positivity)]
+  rw [setLAverage_eq, hav, havh, ENNReal.div_le_iff hm0 hmtop, ← ENNReal.ofReal_toReal hmtop]
+  simp (disch := positivity) only [ENNReal.ofReal_rpow_of_nonneg, ← ENNReal.ofReal_add,
+    ← ENNReal.ofReal_mul]
   refine hJ.trans (ENNReal.ofReal_le_ofReal ?_)
   rw [hIgr]
   have hrhs : C * (P + Ihr / (2 ^ d * mr)) * mr =
