@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Star.Unitary
 
 /-!
-# The unitary subgroup of the units is closed, and compact exactly when `unitary M` is
+# The unitary subgroup of units
 
 Mathlib's `isClosed_unitary` says that the unitary elements of a topological star monoid `M` are
 a closed subset of `M`.  This file transfers that to the group of units: `unitarySubgroup Mˣ`,
@@ -24,6 +24,10 @@ of `unitary M` under `Unitary.toUnits`, which is continuous into `Mˣ` because t
 is continuous; this needs only `ContinuousStar M`, and no `T1Space` or `ContinuousMul`.  The
 converse holds because `unitary M` is the image of the subgroup under the continuous `Units.val`.
 
+The canonical equivalence between `unitarySubgroup Mˣ` and `unitary M` is a homeomorphism.
+It needs only `ContinuousStar M` beyond a topological star monoid, with no separation or
+continuity-of-multiplication assumption.
+
 This is the closedness hypothesis that the Lie algebra of a closed subgroup of `Mˣ` is computed
 from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 
@@ -34,7 +38,6 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 * `TauCeti.unitarySubgroupUnitsHomeomorph`: the unitary subgroup of the units is homeomorphic
   to the unitary elements; `TauCeti.unitarySubgroupUnitsHomeomorph_apply` and
   `TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply` identify its maps.
-
 * `Unitary.continuous_toUnits`: the unitary-to-units homomorphism is continuous.
 * `TauCeti.mem_unitary_units_iff`: a unit is unitary exactly when its underlying element is.
 * `TauCeti.isClosed_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is closed.
