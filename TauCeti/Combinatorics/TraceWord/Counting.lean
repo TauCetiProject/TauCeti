@@ -70,7 +70,7 @@ theorem card_image_range_le_card_nonloop_edges_add_one (w : ℕ → α) (n : ℕ
       omega
 
 /-- A cyclic word visits at most one more vertex than its number of distinct nonloop edges. -/
-theorem card_image_le_card_nonloop_traceWord_edges_add_one {k : ℕ} (w : Fin k → α) :
+theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k → α) :
     #(univ.image w) ≤
       #(({i | w i ≠ w (finRotate k i)} : Finset (Fin k)).image
         fun i => s(w i, w (finRotate k i))) + 1 := by
@@ -106,29 +106,40 @@ theorem card_image_le_card_nonloop_traceWord_edges_add_one {k : ℕ} (w : Fin k 
     rw [hvertices] at h
     exact h.trans (Nat.add_le_add_right (card_le_card hedges) 1)
 
+private theorem two_le_card_cyclic_edge_fiber_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
+    (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i)))
+    (e : Sym2 α) (he : e ∈ univ.image fun i => s(w i, w (finRotate k i))) :
+    2 ≤ #{i | s(w i, w (finRotate k i)) = e} := by
+  obtain ⟨i, -, rfl⟩ := mem_image.mp he
+  obtain ⟨j, hji, hj⟩ := h i
+  exact one_lt_card.mpr ⟨i, by simp, j, mem_filter.mpr ⟨mem_univ _, hj⟩, hji.symm⟩
+
+/-- A cyclic word with no singleton edge has at most half as many distinct unordered edges
+as steps. Loops count as edges. -/
+theorem two_mul_card_cyclic_edges_le_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
+    (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
+    2 * #(univ.image fun i => s(w i, w (finRotate k i))) ≤ k := by
+  simpa only [card_univ, Fintype.card_fin] using
+    mul_card_image_le_card (univ : Finset (Fin k)) 2
+      (two_le_card_cyclic_edge_fiber_of_no_singleton_edge w h)
+
 /-- A word of length `k` with no singleton edge visits at most `k / 2 + 1` vertices.
 Edges are unordered, and loops count as edges. -/
-theorem card_image_traceWord_le_half_add_one {k : ℕ} (w : Fin k → α)
+theorem card_image_le_half_add_one_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
     #(univ.image w) ≤ k / 2 + 1 := by
-  have hfiber (e : Sym2 α) (he : e ∈ univ.image fun i => s(w i, w (finRotate k i))) :
-      2 ≤ #{i | s(w i, w (finRotate k i)) = e} := by
-    obtain ⟨i, -, rfl⟩ := mem_image.mp he
-    obtain ⟨j, hji, hj⟩ := h i
-    exact one_lt_card.mpr ⟨i, by simp, j, mem_filter.mpr ⟨mem_univ _, hj⟩, hji.symm⟩
-  have hcount := mul_card_image_le_card (univ : Finset (Fin k)) 2 hfiber
-  have hvertices := card_image_le_card_nonloop_traceWord_edges_add_one w
+  have hcount := two_mul_card_cyclic_edges_le_of_no_singleton_edge w h
+  have hvertices := card_image_le_card_nonloop_cyclic_edges_add_one w
   have hsub :
       (({i | w i ≠ w (finRotate k i)} : Finset (Fin k)).image fun i => s(w i, w (finRotate k i))) ⊆
         (univ.image fun i => s(w i, w (finRotate k i))) := image_subset_image (filter_subset _ _)
   have := card_le_card hsub
-  simp only [card_univ, Fintype.card_fin] at hcount
   omega
 
 /-- In a word of length `2 * m` with no singleton edge and `m + 1` visited vertices,
 there are no loops and every unordered edge is traversed exactly twice. These are necessary
 conditions for a word to contribute at leading order in the moment method. -/
-theorem ne_and_card_edge_fiber_eq_two_of_card_image_traceWord_eq {m : ℕ}
+theorem ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq {m : ℕ}
     (w : Fin (2 * m) → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
     (hv : #(univ.image w) = m + 1) :
@@ -137,17 +148,13 @@ theorem ne_and_card_edge_fiber_eq_two_of_card_image_traceWord_eq {m : ℕ}
   let e : Fin (2 * m) → Sym2 α := fun i => s(w i, w (finRotate (2 * m) i))
   let E := univ.image e
   let N := ({i | w i ≠ w (finRotate (2 * m) i)} : Finset (Fin (2 * m))).image e
-  have hfiber (a : Sym2 α) (ha : a ∈ E) : 2 ≤ #{i | e i = a} := by
-    obtain ⟨i, -, rfl⟩ := mem_image.mp ha
-    obtain ⟨j, hji, hj⟩ := h i
-    exact one_lt_card.mpr ⟨i, by simp, j, mem_filter.mpr ⟨mem_univ _, hj⟩, hji.symm⟩
+  have hfiber := two_le_card_cyclic_edge_fiber_of_no_singleton_edge w h
   have hsub : N ⊆ E := image_subset_image (filter_subset _ _)
-  have hvertices := card_image_le_card_nonloop_traceWord_edges_add_one w
-  have hcount := mul_card_image_le_card (univ : Finset (Fin (2 * m))) 2 hfiber
+  have hvertices := card_image_le_card_nonloop_cyclic_edges_add_one w
+  have hcount := two_mul_card_cyclic_edges_le_of_no_singleton_edge w h
   have hcard : #E = m ∧ #N = m := by
     have := card_le_card hsub
-    have hE : 2 * #E ≤ 2 * m := by
-      simpa only [E, card_univ, Fintype.card_fin] using hcount
+    have hE : 2 * #E ≤ 2 * m := hcount
     have hN : m + 1 ≤ #N + 1 := by
       simpa only [N, e, hv] using hvertices
     omega
