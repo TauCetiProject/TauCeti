@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Classical derivatives of smooth Sobolev representatives
@@ -302,6 +303,17 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
             (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2))) hu).symm).congr_ae_deriv
           (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
       exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
+
+/-- **A `Cᵏ` function is a Sobolev function on compactly contained subdomains.** If `f` is `Cᵏ` on
+an open set `U` and `Ω` lies in a compact subset `K` of `U`, then `f` represents an element of
+`W^{k,p}(Ω)`: its derivatives through order `k` are continuous on `K`, hence bounded on `Ω`. -/
+theorem Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (k : ℕ) {f : E → ℝ} {U K : Set E}
+    (hU : IsOpen U) (hf : ContDiffOn ℝ k f U) (hK : IsCompact K) (hΩK : (Omega : Set E) ⊆ K)
+    (hKU : K ⊆ U) :
+    ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f :=
+  exists_value_ae_eq_of_contDiffOn k (hf.mono (hΩK.trans hKU)) fun i hi =>
+    ((ContinuousOn.continuousOn_iteratedFDeriv hf hU (by exact_mod_cast hi)).mono
+      hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p
 
 end Sobolev
 
