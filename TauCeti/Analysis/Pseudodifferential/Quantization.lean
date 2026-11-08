@@ -11,7 +11,9 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
+import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
@@ -39,6 +41,12 @@ on the input or on the position variable of the coefficient:
 `∂_h (Op(a) u) = Op(a) (∂_h u) + Op(∂ₓ a · h) u`. This needs the same growth bound for the
 position derivative `∂ₓ a`. Position derivatives of a symbol `a ∈ S^m` are again symbols of
 order `m` (`TauCeti.Symbol.spatialDeriv`), so iterating this rule shows that `Op(a) u` is smooth.
+
+Dually, multiplying `Op(a) u` by a linear function falls either on the input or on the frequency
+variable of the coefficient: `⟪x, v⟫ Op(a) u (x) = Op(a) (⟪·, v⟫ u) (x) + i Op(∂_{ξ, v} a) u (x)`.
+This is an integration by parts in the frequency, since multiplication by `⟪x, v⟫` is a frequency
+derivative of the phase `exp(2πi ⟪ζ, x⟫)`, and multiplication of the input by `⟪·, v⟫` is a
+frequency derivative of its Fourier transform.
 
 ## Main results
 
@@ -74,6 +82,10 @@ order `m` (`TauCeti.Symbol.spatialDeriv`), so iterating this rule shows that `Op
   `TauCeti.Symbol.contDiff_quantizeSchwartzValue`: for a symbol `a ∈ S^m`, the same rule
   `∂_j (Op(a) u) = Op(a) (∂_j u) + Op(∂_{x_j} a) u` for coordinate derivatives, and smoothness
   of `Op(a) u`.
+* `TauCeti.inner_smul_quantizeSchwartzValue` and
+  `TauCeti.Symbol.ofLp_smul_quantizeSchwartzValue`: `⟪x, v⟫ Op(a) u (x) = Op(a) (⟪·, v⟫ u) (x) +
+  i Op(∂_{ξ, v} a) u (x)` for a coefficient that is `C¹` in the frequency with polynomial growth
+  at `x`, and `x_j Op(a) u = Op(a) (x_j u) + i Op(∂_{ξ_j} a) u` for a symbol.
 
 ## References
 
@@ -515,6 +527,128 @@ theorem fderiv_quantizeSchwartzValue_apply (ha : ContDiff ℝ 1 a)
 
 end Deriv
 
+section Weight
+
+/-! ### Multiplication by a linear function -/
+
+variable {a : E × E → V →L[ℂ] W} {x : E} {C C' m m' : ℝ}
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The line derivative in the direction `v` of the phase `ζ ↦ 𝐞 ⟪ζ, x⟫` is
+`2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫`. This is Mathlib's derivative of `ζ ↦ 𝐞 (-L x ζ)` with `L = -innerSL ℝ`. -/
+private lemma hasLineDerivAt_fourierChar_inner (x v ζ : E) :
+    HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ)) ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫) ζ v := by
+  convert (hasFDerivAt_fourierChar_neg_bilinear_right (-innerSL ℝ) x ζ).hasLineDerivAt v
+    using 1 <;> simp [innerSL_apply_apply ℝ, real_inner_comm x]
+  ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The line derivative in the direction `v` of the frequency-side integrand
+`ζ ↦ a(x, 2πζ) (f ζ)`. -/
+private lemma hasLineDerivAt_apply (ha : ContDiff ℝ 1 fun ξ ↦ a (x, ξ)) (f : 𝓢(E, V)) (v ζ : E) :
+    HasLineDerivAt ℝ (fun ζ ↦ a (x, (2 * π) • ζ) (f ζ))
+      ((2 * π) • fderiv ℝ (fun ξ ↦ a (x, ξ)) ((2 * π) • ζ) v (f ζ) +
+        a (x, (2 * π) • ζ) (∂_{v} f ζ)) ζ v := by
+  have hA : HasFDerivAt (fun ζ : E ↦ a (x, (2 * π) • ζ))
+      ((fderiv ℝ (fun ξ ↦ a (x, ξ)) ((2 * π) • ζ)).comp ((2 * π) • ContinuousLinearMap.id ℝ E))
+      ζ :=
+    ((ha.differentiable one_ne_zero _).hasFDerivAt).comp ζ
+      ((hasFDerivAt_id ζ).const_smul (2 * π))
+  have hf : HasFDerivAt (fun ζ ↦ f ζ) (fderiv ℝ f ζ) ζ :=
+    (f.differentiableAt).hasFDerivAt
+  have hA' := ((ContinuousLinearMap.restrictScalarsL ℂ V W ℝ ℝ).hasFDerivAt).comp ζ hA
+  convert (hA'.clm_apply hf).hasLineDerivAt v using 1
+  · simp
+  · simp [SchwartzMap.lineDerivOp_apply_eq_fderiv, add_comm]
+
+/-- The integration by parts behind `inner_smul_quantizeSchwartzValue`, before dividing by
+`-2πi`. -/
+private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun ξ ↦ a (x, ξ))
+    (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (v : E)
+    (hC' : ∀ ξ, ‖fderiv ℝ (fun η ↦ a (x, η)) ξ v‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (u : 𝓢(E, V)) :
+    (2 * π : ℂ) • quantizeSchwartzValue (fun p ↦ fderiv ℝ (fun η ↦ a (p.1, η)) p.2 v) u x +
+      (-(2 * π * Complex.I)) • quantizeSchwartzValue a (SchwartzMap.smulLeftCLM V (⟪·, v⟫) u) x =
+      -((2 * π * Complex.I * ⟪v, x⟫) • quantizeSchwartzValue a u x) := by
+  set a' : E × E → V →L[ℂ] W := fun p ↦ fderiv ℝ (fun η ↦ a (p.1, η)) p.2 v
+  have hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)) := ha.continuous.aestronglyMeasurable
+  have hmeas' : AEStronglyMeasurable (fun ξ ↦ a' (x, ξ)) :=
+    ((ha.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable
+  have hint := integrable_quantizeSchwartzValue_integrand hmeas hC (𝓕 u)
+  have hint₁ := integrable_quantizeSchwartzValue_integrand (a := a') hmeas' hC' (𝓕 u)
+  have hint₂ := integrable_quantizeSchwartzValue_integrand hmeas hC (∂_{v} (𝓕 u))
+  -- integrate by parts in the frequency, moving the derivative from the phase to the rest
+  have hibp := integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable
+    (μ := volume) (B := ContinuousLinearMap.lsmul ℝ ℂ (E := W))
+    (f := fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ)) (f' := fun ζ ↦ (2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫)
+    (g := fun ζ ↦ a (x, (2 * π) • ζ) (𝓕 u ζ))
+    (g' := fun ζ ↦ (2 * π) • a' (x, (2 * π) • ζ) (𝓕 u ζ) +
+      a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ))
+    ((hint.smul (2 * π * Complex.I * ⟪v, x⟫ : ℂ)).congr (ae_of_all _ fun ζ ↦ by
+      simp [Circle.smul_def, mul_smul]))
+    (((hint₁.smul (2 * π)).add hint₂).congr (ae_of_all _ fun ζ ↦ by
+      simp [Circle.smul_def, smul_add, smul_comm (2 * π)]))
+    (hint.congr (ae_of_all _ fun ζ ↦ by simp [Circle.smul_def]))
+    (fun ζ _ ↦ hasLineDerivAt_fourierChar_inner x v ζ)
+    (fun ζ _ ↦ hasLineDerivAt_apply ha (𝓕 u) v ζ)
+  have h₁ : ∫ ζ, ContinuousLinearMap.lsmul ℝ ℂ (𝐞 ⟪ζ, x⟫ : ℂ)
+      ((2 * π) • a' (x, (2 * π) • ζ) (𝓕 u ζ) + a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ)) =
+      (2 * π : ℂ) • (∫ ζ, 𝐞 ⟪ζ, x⟫ • a' (x, (2 * π) • ζ) (𝓕 u ζ)) +
+        ∫ ζ, 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ) := by
+    calc _ = ∫ ζ, (2 * π : ℂ) • (𝐞 ⟪ζ, x⟫ • a' (x, (2 * π) • ζ) (𝓕 u ζ)) +
+          𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ) :=
+          integral_congr_ae (ae_of_all _ fun ζ ↦ by
+            simp [Circle.smul_def, smul_add, smul_comm (2 * π : ℂ), ← Complex.coe_smul])
+      _ = _ := by
+        have hint₁' : Integrable fun ζ ↦ (2 * π : ℂ) • (𝐞 ⟪ζ, x⟫ • a' (x, (2 * π) • ζ) (𝓕 u ζ)) :=
+          hint₁.smul _
+        rw [integral_add hint₁' hint₂, integral_smul]
+  have h₂ : ∫ ζ, ContinuousLinearMap.lsmul ℝ ℂ ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫)
+      (a (x, (2 * π) • ζ) (𝓕 u ζ)) =
+      (2 * π * Complex.I * ⟪v, x⟫) • ∫ ζ, 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 u ζ) := by
+    rw [← integral_smul]
+    exact integral_congr_ae (ae_of_all _ fun ζ ↦ by simp [Circle.smul_def, mul_smul])
+  rw [h₁, h₂] at hibp
+  rw [← quantizeSchwartzValue_smul_right (-(2 * π * Complex.I) : ℂ), quantizeSchwartzValue_def,
+    quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← SchwartzMap.lineDerivOp_fourier_eq]
+  exact hibp
+
+/-- **Multiplication by a linear function.** If `ξ ↦ a(x, ξ)` is `C¹`, and it and its frequency
+derivative in the direction `v` have polynomial growth, then
+
+`⟪x, v⟫ Op(a) u (x) = Op(a) (⟪·, v⟫ u) (x) + i Op(∂_{ξ, v} a) u (x)`,
+
+where `∂_{ξ, v} a (x, ξ) = D_ξ a (x, ξ) v` is the derivative of the coefficient in the frequency.
+This is an integration by parts in the frequency: `⟪x, v⟫ exp(2πi ⟪ζ, x⟫)` is a multiple of the
+derivative of the phase in the direction `v`, and multiplication of the input by `⟪·, v⟫`
+corresponds to the derivative of its Fourier transform in the direction `v`. -/
+theorem inner_smul_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun ξ ↦ a (x, ξ))
+    (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (v : E)
+    (hC' : ∀ ξ, ‖fderiv ℝ (fun η ↦ a (x, η)) ξ v‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (u : 𝓢(E, V)) :
+    ⟪x, v⟫ • quantizeSchwartzValue a u x =
+      quantizeSchwartzValue a (SchwartzMap.smulLeftCLM V (⟪·, v⟫) u) x +
+        Complex.I • quantizeSchwartzValue (fun p ↦ fderiv ℝ (fun η ↦ a (p.1, η)) p.2 v) u x := by
+  have key := integral_by_parts_quantizeSchwartzValue ha hC v hC' u
+  set a' : E × E → V →L[ℂ] W := fun p ↦ fderiv ℝ (fun η ↦ a (p.1, η)) p.2 v
+  -- divide `key` by `-2πi`
+  have h2πI : (2 * π * Complex.I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+  have hII : 2 * π * Complex.I * Complex.I = -(2 * π : ℂ) := by
+    rw [mul_assoc, Complex.I_mul_I]
+    ring
+  refine smul_right_injective W h2πI ?_
+  beta_reduce
+  calc (2 * π * Complex.I) • ⟪x, v⟫ • quantizeSchwartzValue a u x =
+        (2 * π * Complex.I * ⟪v, x⟫) • quantizeSchwartzValue a u x := by
+        rw [real_inner_comm, ← Complex.coe_smul, smul_smul]
+    _ = (2 * π * Complex.I) • quantizeSchwartzValue a (SchwartzMap.smulLeftCLM V (⟪·, v⟫) u) x +
+        (2 * π * Complex.I * Complex.I) • quantizeSchwartzValue a' u x := by
+        rw [hII]
+        linear_combination (norm := module) key
+    _ = _ := by rw [smul_add, smul_smul]
+
+end Weight
+
 namespace Symbol
 
 /-! ### Smoothness of the quantization of a symbol -/
@@ -539,6 +673,29 @@ theorem coordinateDeriv_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
     (fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ h ↦ h.2)
     a.exists_bound_fderiv_coefficient, Pi.add_apply]
   simp only [fderiv_coefficient_single]
+
+/-- **Multiplication by a coordinate function.** For a symbol `a`, the coordinate function `x_j`
+times `Op(a) u` is `Op(a) (x_j u) + i Op(∂_{ξ_j} a) u`. -/
+theorem ofLp_smul_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    x j • quantizeSchwartzValue a.coefficient u x =
+      quantizeSchwartzValue a.coefficient
+          (SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ y j) u) x +
+        Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient u x := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
+  obtain ⟨C', -, hC'⟩ := (frequencyDeriv j a).exists_bound_coefficient {x} isCompact_singleton
+  have hcoef : (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      fderiv ℝ (fun η ↦ a.coefficient (p.1, η)) p.2 (EuclideanSpace.single j 1)) =
+        (frequencyDeriv j a).coefficient := by
+    funext p
+    rw [← Prod.mk.eta (p := p), coefficient_frequencyDeriv, coordinateDeriv_cons,
+      coordinateDeriv_nil]
+  have h := inner_smul_quantizeSchwartzValue (a := a.coefficient) (x := x)
+    ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
+    (fun ξ ↦ hC x rfl ξ) (EuclideanSpace.single j 1)
+    (fun ξ ↦ (congrFun hcoef (x, ξ)).symm ▸ hC' x rfl ξ) u
+  rw [hcoef] at h
+  simpa [EuclideanSpace.inner_single_right] using h
 
 /-- **Smoothness.** The quantization `Op(a) u` of a Schwartz function by a symbol is smooth. -/
 theorem contDiff_quantizeSchwartzValue (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) :
