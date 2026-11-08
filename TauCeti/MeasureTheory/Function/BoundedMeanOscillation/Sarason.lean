@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Normed.Affine.AddTorsor.Basic
 import TauCeti.Analysis.Convolution.Basic
 
 /-!
@@ -90,27 +91,6 @@ private theorem lintegral_lintegral_ball_enorm_sub_le (y : E) (t : ℝ) :
     _ = μ (ball (0 : E) t) ^ 2 * (2 * vmoModulus f μ t) := by
         rw [Measure.addHaar_ball_center μ y t, ← mul_assoc, sq]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For `y` within `t / 2` of the midpoint of `x ∈ B(c, r)` and `w ∈ closedBall x t`, both `x`
-and `w` lie in `B(y, t)`, and `y ∈ B(c, r + t)`. -/
-private theorem dist_lt_of_mem_ball_midpoint {c x w y : E} {r t : ℝ} (hx : x ∈ ball c r)
-    (hw : w ∈ closedBall x t) (hy : y ∈ ball (midpoint ℝ x w) (t / 2)) :
-    dist y c < r + t ∧ dist x y < t ∧ dist w y < t := by
-  have hxw : dist w x ≤ t := hw
-  have hxm : dist x (midpoint ℝ x w) ≤ t / 2 := by
-    rw [dist_left_midpoint, Real.norm_ofNat, dist_comm]
-    linarith
-  have hwm : dist w (midpoint ℝ x w) ≤ t / 2 := by
-    rw [dist_right_midpoint, Real.norm_ofNat, dist_comm]
-    linarith
-  have hym : dist y (midpoint ℝ x w) < t / 2 := hy
-  have hxc : dist x c < r := hx
-  refine ⟨?_, ?_, ?_⟩
-  · linarith [dist_triangle y (midpoint ℝ x w) c, dist_triangle (midpoint ℝ x w) x c,
-      dist_comm (midpoint ℝ x w) x]
-  · linarith [dist_triangle x (midpoint ℝ x w) y, dist_comm (midpoint ℝ x w) y]
-  · linarith [dist_triangle w (midpoint ℝ x w) y, dist_comm (midpoint ℝ x w) y]
-
 /-- The integrand of the averaging argument below: `‖f x - f w‖ₑ` when `y ∈ B(c, r + t)` and
 `x, w ∈ B(y, t)`, and `0` otherwise. -/
 private noncomputable def nearPairIntegrand (f : E → F) (c : E) (r t : ℝ) (y x w : E) : ℝ≥0∞ :=
@@ -154,7 +134,15 @@ private theorem mul_enorm_sub_le_lintegral_nearPairIntegrand {c x w : E} {r t : 
       fun y => nearPairIntegrand f c r t y x w := by
     intro y
     by_cases hy : y ∈ ball (midpoint ℝ x w) (t / 2)
-    · simp [nearPairIntegrand, indicator_of_mem hy, dist_lt_of_mem_ball_midpoint hx hw hy]
+    · have hwx : dist w x ≤ t := hw
+      have hxc : dist x c < r := hx
+      have hyx := mem_ball.1 (ball_midpoint_subset_ball_left x w (t / 2) hy)
+      have hyw := mem_ball.1 (ball_midpoint_subset_ball_right x w (t / 2) hy)
+      rw [Real.norm_ofNat] at hyx hyw
+      have hyxw : dist y c < r + t ∧ dist x y < t ∧ dist w y < t := by
+        refine ⟨?_, ?_, ?_⟩ <;>
+          linarith [dist_triangle y x c, dist_comm x y, dist_comm w y, dist_comm w x]
+      simp [nearPairIntegrand, indicator_of_mem hy, hyxw]
     · simp [indicator_of_notMem hy]
   have h := lintegral_mono (μ := μ) hle
   rwa [lintegral_indicator_const measurableSet_ball, Measure.addHaar_ball_center, mul_comm] at h
