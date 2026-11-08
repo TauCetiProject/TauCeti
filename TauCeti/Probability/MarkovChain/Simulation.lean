@@ -147,8 +147,7 @@ theorem hasLaw_randomizedChain {g : ξ → α} {f : α → ξ → α}
         simp only [comp_apply, X, W, F, Fin.val_last, randomizedChain_succ]
       _ = (P.map W) ⊗ₘ η :=
         (indepFun_randomizedChain_prefix hg hf hU hindep n).map_prodMk_eq_compProd_of_map
-          hW (hU (n + 1)) (hlaw (n + 1)) η F (by fun_prop)
-          (fun w => hf_map (w (Fin.last n)))
+          hW (hlaw (n + 1)) η F (by fun_prop) (fun w => hf_map (w (Fin.last n)))
       _ = _ := by
         rw [Measure.map_map (by fun_prop) hX]
         rfl
