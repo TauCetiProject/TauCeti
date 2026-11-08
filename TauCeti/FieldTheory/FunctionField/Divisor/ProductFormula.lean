@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.AffineModel.Place
 public import TauCeti.AlgebraicGeometry.WeilDivisor.PicZeroQuotient
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
+import TauCeti.Data.Nat.MulSucc
 
 /-!
 # The product formula for algebraic function fields
@@ -152,15 +153,6 @@ private theorem degree_poles_le_finrank_adjoin (hF : IsFunctionField k F) {x : F
     IntermediateField.adjoin_simple_inv] at hdegree_le
   exact hdegree_le
 
-/-- A numerical consequence of the growth inequality: if `m * (n + 1) ≤ n * d + n` for
-`n = e + q`, then `m ≤ d`. -/
-private theorem le_of_mul_succ_le_mul_add {m d e q : ℕ}
-    (h : m * (e + q + 1) ≤ (e + q) * d + e + q) : m ≤ d := by
-  by_contra hnot
-  have hgt : d + 1 ≤ m := Nat.lt_of_not_ge hnot
-  have hmul := Nat.mul_le_mul_right (e + q + 1) hgt
-  nlinarith
-
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/
 private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F}
@@ -208,7 +200,8 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
         simpa only [E, q, nsmul_eq_mul] using hupp
       _ = (n : ℤ) * d + e + q := by rw [← hd, ← he]
   have hle : Module.finrank k⟮x⟯ F ≤ d := by
-    refine le_of_mul_succ_le_mul_add (e := e) (q := q) ?_
+    refine Nat.le_of_mul_succ_le_mul_add (n := e + q) ?_
+    rw [← add_assoc]
     exact_mod_cast hineq
   have hdegree_ge : (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree B := by
     rw [← hd]
