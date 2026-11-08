@@ -80,6 +80,7 @@ with the corresponding integral of `q`-th powers.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
+* `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
@@ -205,6 +206,26 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
     (hq : 0 < q) : a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I := by
   rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
     rpow_inv_rpow hI hq.ne']
+
+/-- The limit of the ratio `D ^ n / (n ω (D ^ n - ρ ^ n))` as `D → ∞` is `(n ω)⁻¹`, for every real
+`ρ` and `n ≠ 0`. -/
+theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (ρ : ℝ) :
+    Tendsto (fun D : ℝ => D ^ n / (n * ω * (D ^ n - ρ ^ n))) atTop (𝓝 ((n * ω)⁻¹)) := by
+  have h₁ : Tendsto (fun D : ℝ => (ρ / D) ^ n) atTop (𝓝 0) := by
+    have h := ((tendsto_const_nhds (x := ρ)).div_atTop tendsto_id).pow n
+    rwa [zero_pow hn0] at h
+  have h₂ := (tendsto_const_nhds (x := (n * ω)⁻¹)).mul
+    ((tendsto_const_nhds (x := (1 : ℝ)).sub h₁).inv₀ (by norm_num))
+  rw [sub_zero, inv_one, mul_one] at h₂
+  refine h₂.congr' ?_
+  filter_upwards [eventually_gt_atTop |ρ|] with D hD
+  have hD0 : 0 < D := (abs_nonneg ρ).trans_lt hD
+  have hDρ : D ^ n - ρ ^ n ≠ 0 := by
+    have : ρ ^ n < D ^ n :=
+      (le_abs_self _).trans_lt (by rw [abs_pow]; exact pow_lt_pow_left₀ hD (abs_nonneg ρ) hn0)
+    exact (sub_pos.2 this).ne'
+  rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
+  field_simp
 
 end Real
 
