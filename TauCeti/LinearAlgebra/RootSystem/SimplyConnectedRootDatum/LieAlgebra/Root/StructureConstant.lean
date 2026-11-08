@@ -49,6 +49,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.
 * `TauCeti.DynkinType.structureConstant_reflectionPerm_self_reflectionPerm_self`:
   `N_{-α,-β} = -N_{α,β}`.
+* `TauCeti.DynkinType.two_dvd_structureConstant_mul_structureConstant`: `N_{α,β} N_{α,α+β}` is
+  even when `2α + β` is a root.
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_zero`: `⁅e_α, e_β⁆ = 0` when `α + β` is neither a
   root nor zero.
 
@@ -217,6 +219,30 @@ theorem structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero {α β : Fin t.
   have hbot := (RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
     (t.simplyConnectedRootDatum ht) hsum horth).1
   simpa [hbot] using structureConstant_eq_natCast_or_eq_neg_natCast hsum
+
+/-- **Integrality of the second divided power.** If `γ = α + β` and `δ = α + γ` are roots, then
+`N_{α,β} N_{α,γ}` is even: up to sign it is `(r + 1) (r + 2)` for `r` the largest integer with
+`β - r α` a root. Hence `(ad e_α)² e_β / 2 = (N_{α,β} N_{α,γ} / 2) e_δ` has an integral
+coefficient. -/
+theorem two_dvd_structureConstant_mul_structureConstant {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ) :
+    (2 : ℤ) ∣ t.structureConstant ht α β * t.structureConstant ht α γ := by
+  have := t.isReduced_simplyConnectedRootDatum ht
+  let P := t.simplyConnectedRootDatum ht
+  have hbot : P.chainBotCoeff α γ = P.chainBotCoeff α β + 1 :=
+    P.chainBotCoeff_of_add (P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩)
+      (hγ.trans (add_comm _ _))
+  have heven : (2 : ℤ) ∣ ((P.chainBotCoeff α β + 1 : ℕ) : ℤ) *
+      ((P.chainBotCoeff α β + 1 + 1 : ℕ) : ℤ) := by
+    exact_mod_cast (Nat.even_mul_succ_self (P.chainBotCoeff α β + 1)).two_dvd
+  have hαβ := structureConstant_eq_natCast_or_eq_neg_natCast (ht := ht) ⟨γ, hγ⟩
+  have hαγ := structureConstant_eq_natCast_or_eq_neg_natCast (ht := ht) ⟨δ, hδ⟩
+  rw [hbot] at hαγ
+  rcases hαβ with h₁ | h₁ <;> rcases hαγ with h₂ | h₂ <;>
+    simpa only [h₁, h₂, neg_mul, mul_neg, neg_neg, dvd_neg] using heven
 
 /-- **Brackets at non-roots vanish.** If `α + β` is neither a root of the pinned datum nor zero,
 then `⁅e_α, e_β⁆ = 0`. -/
