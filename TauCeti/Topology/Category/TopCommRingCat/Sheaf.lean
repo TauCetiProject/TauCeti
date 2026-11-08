@@ -31,7 +31,7 @@ functor reflects limits.
 * `TauCeti.TopCommRingCat.isInducing_restrictionMap_ofArrows_iff`: for a generated sieve, it is
   enough to test the topology against the generating restriction maps.
 * `TauCeti.TopCommRingCat.isSheafFor_of_isSheafFor_forget`: the sheaf condition for a single
-  sieve, tested against every topological commutative ring.
+  presieve, tested against every topological commutative ring.
 * `TauCeti.TopCommRingCat.isSheaf_of_isSheaf_forget`: the sheaf property for a Grothendieck
   topology.
 * `TauCeti.TopCommRingCat.isSeparatedFor_forget_iff`: the underlying presheaf of sets is separated
@@ -119,13 +119,14 @@ private theorem exists_isAmalgamation_of_isSheafFor_forget {X : C} {R : Presieve
 
 /-- The presheaf of sets underlying a presheaf `F` of topological commutative rings is separated
 for a presieve `R` if and only if, for every topological commutative ring `E`, the presheaf
-`F ⋙ coyoneda.obj (op E)` of morphisms out of `E` is separated for `R`. For the forward direction,
-elements of `F(X)` are tested against the discrete polynomial ring in one variable. -/
+`F ⋙ coyoneda.obj (op E)` of morphisms out of `E` is separated for `R`. -/
 theorem isSeparatedFor_forget_iff {X : C} {R : Presieve X} :
     Presieve.IsSeparatedFor (F ⋙ forget _root_.TopCommRingCat) R ↔
       ∀ E : _root_.TopCommRingCat.{v}, Presieve.IsSeparatedFor (F ⋙ coyoneda.obj (op E)) R := by
   refine ⟨fun h _ _ _ _ h₁ h₂ ↦ ConcreteCategory.ext_apply fun e ↦ h.ext fun _ f hf ↦
     ConcreteCategory.congr_hom ((h₁ f hf).trans (h₂ f hf).symm) e, fun h ↦ ?_⟩
+  -- For the reverse direction, elements of `F(X)` are tested against the discrete polynomial ring
+  -- in one variable.
   let _ : TopologicalSpace (MvPolynomial PUnit.{v + 1} ℤ) := ⊥
   have : DiscreteTopology (MvPolynomial PUnit.{v + 1} ℤ) := ⟨rfl⟩
   -- `ev x` sends the variable to `x`
@@ -147,26 +148,26 @@ theorem isSeparatedFor_forget_iff {X : C} {R : Presieve X} :
     rw [hev₁, MvPolynomial.eval₂Hom_X']
   rw [← hX x, ← hX y, hxy]
 
-/-- **The sheaf condition for one sieve.** Let `S` be a sieve on `X` for which the presheaf of
-sets underlying `F` satisfies the sheaf condition, and such that the map sending `x ∈ F(X)` to
-its restrictions along the arrows `Y ⟶ X` of `S` is inducing for the product topology. Then, for
+/-- **The sheaf condition for one presieve.** Let `R` be a presieve on `X` for which the presheaf
+of sets underlying `F` satisfies the sheaf condition, and such that the map sending `x ∈ F(X)` to
+its restrictions along the arrows `Y ⟶ X` of `R` is inducing for the product topology. Then, for
 every topological commutative ring `E`, the presheaf `F ⋙ coyoneda.obj (op E)` of morphisms out
-of `E` satisfies the sheaf condition for `S`. See `isSheaf_of_isSheaf_forget` for the sheaf
+of `E` satisfies the sheaf condition for `R`. See `isSheaf_of_isSheaf_forget` for the sheaf
 property over a Grothendieck topology. -/
-theorem isSheafFor_of_isSheafFor_forget {X : C} (S : Sieve X)
-    (hS : Presieve.IsSheafFor (F ⋙ forget _root_.TopCommRingCat) S.arrows)
+theorem isSheafFor_of_isSheafFor_forget {X : C} (R : Presieve X)
+    (hR : Presieve.IsSheafFor (F ⋙ forget _root_.TopCommRingCat) R)
     (hind : Topology.IsInducing
-      fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // S f }) ↦ (F.map g.2.1.op).1 x)
+      fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // R f }) ↦ (F.map g.2.1.op).1 x)
     (E : _root_.TopCommRingCat.{v}) :
-    Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) S.arrows :=
-  ((isSeparatedFor_forget_iff F).mp hS.isSeparatedFor E).isSheafFor
-    (exists_isAmalgamation_of_isSheafFor_forget F hS hind)
+    Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) R :=
+  ((isSeparatedFor_forget_iff F).mp hR.isSeparatedFor E).isSheafFor
+    (exists_isAmalgamation_of_isSheafFor_forget F hR hind)
 
 /-- **Sheaves of topological rings carry the product topology.** Let `R` be a presieve on `X`
 such that every `F ⋙ coyoneda.obj (op E)` satisfies the sheaf condition for `R`. Then the map
 sending `x ∈ F(X)` to its restrictions along the arrows `Y ⟶ X` of `R` is inducing for the product
-topology. For a sieve, this is the converse of `isSheafFor_of_isSheafFor_forget`, for the
-topological half of the sheaf condition. -/
+topology. This is the converse of `isSheafFor_of_isSheafFor_forget`, for the topological half of
+the sheaf condition. -/
 theorem isInducing_restrictionMap_of_isSheafFor {X : C} (R : Presieve X)
     (h : ∀ E : _root_.TopCommRingCat.{v}, Presieve.IsSheafFor (F ⋙ coyoneda.obj (op E)) R) :
     Topology.IsInducing
@@ -205,7 +206,7 @@ theorem isInducing_restrictionMap_of_isSheafFor {X : C} (R : Presieve X)
 /-- **Sheaves from sheaves of sets.** A presheaf `F` of topological commutative rings on a site
 `(C, J)` is a sheaf once its underlying presheaf of sets is a sheaf and, for every covering sieve
 `S` on `X`, the map sending `x ∈ F(X)` to its restrictions along the arrows `Y ⟶ X` of `S` is
-inducing for the product topology. The single-sieve form is `isSheafFor_of_isSheafFor_forget`.
+inducing for the product topology. The single-presieve form is `isSheafFor_of_isSheafFor_forget`.
 Compare `CategoryTheory.Presheaf.isSheaf_iff_isSheaf_forget`, which covers forgetful functors that
 preserve limits and reflect isomorphisms; here the inducing hypothesis `hind` supplies the
 topological half of the sheaf condition. -/
@@ -214,6 +215,6 @@ theorem isSheaf_of_isSheaf_forget (J : GrothendieckTopology C)
     (hind : ∀ ⦃X : C⦄ (S : Sieve X), S ∈ J X →
       Topology.IsInducing fun (x : F.obj (op X)) (g : (Y : C) × { f : Y ⟶ X // S f }) ↦
         (F.map g.2.1.op).1 x) : Presheaf.IsSheaf J F := fun E _ S hS ↦
-  isSheafFor_of_isSheafFor_forget F S (hF.isSheafFor S hS) (hind S hS) E
+  isSheafFor_of_isSheafFor_forget F S.arrows (hF.isSheafFor S hS) (hind S hS) E
 
 end TauCeti.TopCommRingCat
