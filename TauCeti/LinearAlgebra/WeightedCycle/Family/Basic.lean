@@ -38,7 +38,7 @@ theorem equivFun_comp_eq_piMap_comp [Finite J] (b : Module.Basis ι A V)
     (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩)) :
     ((b.reindex e.symm).equivFun.trans
       (LinearEquiv.piCurry A fun j (_ : Fin (n j + 1)) ↦ A)).toLinearMap ∘ₗ f =
-      (LinearMap.piMap fun j ↦ linearMap (a j)) ∘ₗ
+      (LinearMap.piMap fun j ↦ TauCeti.WeightedCycle.linearMap (a j)) ∘ₗ
         ((b.reindex e.symm).equivFun.trans
           (LinearEquiv.piCurry A fun j (_ : Fin (n j + 1)) ↦ A)).toLinearMap := by
   classical
@@ -65,11 +65,11 @@ theorem equivFun_comp_eq_piMap_comp [Finite J] (b : Module.Basis ι A V)
 noncomputable def fixedFamilyEquiv [Finite J] (b : Module.Basis ι A V)
     (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩)) :
-    f.fixedSubmodule ≃ₗ[A] ∀ j, (linearMap (a j) (M := A)).fixedSubmodule :=
+    f.fixedSubmodule ≃ₗ[A] ∀ j, (TauCeti.WeightedCycle.linearMap (a j) (M := A)).fixedSubmodule :=
   (((b.reindex e.symm).equivFun.trans
     (LinearEquiv.piCurry A fun j (_ : Fin (n j + 1)) ↦ A)).fixedSubmoduleCongr
       (equivFun_comp_eq_piMap_comp b e a f h)).trans
-    (LinearMap.fixedSubmodulePiEquiv fun j ↦ linearMap (a j))
+    (LinearMap.fixedSubmodulePiEquiv fun j ↦ TauCeti.WeightedCycle.linearMap (a j))
 
 /-- Each fixed tuple records the corresponding coefficients in the original basis. -/
 @[simp]
@@ -85,7 +85,8 @@ theorem fixedFamilyEquiv_apply [Finite J] (b : Module.Basis ι A V)
 theorem fixedFamilyEquiv_symm_repr [Finite J] (b : Module.Basis ι A V)
     (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩))
-    (w : ∀ j, (linearMap (a j) (M := A)).fixedSubmodule) (j : J) (i : Fin (n j + 1)) :
+    (w : ∀ j, (TauCeti.WeightedCycle.linearMap (a j) (M := A)).fixedSubmodule)
+    (j : J) (i : Fin (n j + 1)) :
     b.repr ((fixedFamilyEquiv b e a f h).symm w).val (e ⟨j, i⟩) = (w j).val i := by
   simpa only [LinearEquiv.apply_symm_apply] using
     (fixedFamilyEquiv_apply b e a f h ((fixedFamilyEquiv b e a f h).symm w) j i).symm
@@ -94,7 +95,7 @@ theorem fixedFamilyEquiv_symm_repr [Finite J] (b : Module.Basis ι A V)
 theorem fixedFamilyEquiv_symm_apply [Fintype J] (b : Module.Basis ι A V)
     (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩))
-    (w : ∀ j, (linearMap (a j) (M := A)).fixedSubmodule) :
+    (w : ∀ j, (TauCeti.WeightedCycle.linearMap (a j) (M := A)).fixedSubmodule) :
     ((fixedFamilyEquiv b e a f h).symm w).val =
       ∑ j, ∑ i, (w j).val i • b (e ⟨j, i⟩) := by
   simp [fixedFamilyEquiv, Module.Basis.equivFun_symm_apply, Fintype.sum_sigma, Sigma.uncurry]

@@ -65,21 +65,26 @@ pseudouniformiser.
   map `m~ → m` is bijective.
 * `TauCeti.Almost.BasicSetup.isAlmostIso_subtype`: the inclusion `m → V` is an almost
   isomorphism.
-* `TauCeti.Almost.BasicSetup.IsAlmostIso.lTensor_bijective`: `m~ ⊗[V] −` turns an almost
-  isomorphism into a bijection.
+* `TauCeti.Almost.BasicSetup.isAlmostIso_iff_lTensor_bijective`: almost isomorphisms are exactly
+  the maps that become bijective after tensoring with `m~`.
+* `TauCeti.Almost.BasicSetup.IsAlmostIso.lTensor` and
+  `TauCeti.Almost.BasicSetup.IsAlmostIso.rTensor`: almost isomorphisms are stable under tensoring
+  with any module.
 * `TauCeti.Almost.BasicSetup.flat_tilde_map`: `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat, so basic setups
   base change (the isomorphism is `Ideal.baseChangeTensorSelfEquiv`, valid for every idempotent
   ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
   `m` makes the setup classical.
 * `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
-  condition (B).
+  condition (B); `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.exists_le_span_singleton`: under
+  condition (A), every finitely generated ideal inside `m` lies in a principal ideal `(z)` with
+  `z ∈ m`.
 * `Submodule.mulMap_top_top_bijective`: the multiplication map `R ⊗[R] R → R` is bijective; it
   makes `(V, V)` a basic setup.
 
 ## References
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.1:
-  (2.1.1), Example 2.1.2, (2.1.3), Remark 2.1.4(i), (ii), (2.1.6) and Claim 2.1.10.
+  (2.1.1), Example 2.1.2, (2.1.3), Remark 2.1.4(i), (ii), (2.1.6) and Claim 2.1.10; §2.2, (2.2.5).
 * P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §4.
 * B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1.
 -/
@@ -288,6 +293,27 @@ theorem isAlmostZero_quotient : S.IsAlmostZero (V ⧸ S.ideal) :=
   (Module.isTorsionBySet_quotient_iff _ _).mpr fun _ _ hε ↦ S.ideal.mul_mem_right _ hε
 
 variable {S} in
+/-- An almost zero module is killed by every ideal contained in `m`. -/
+theorem IsAlmostZero.smul_top_eq_bot {M : Type*} [AddCommGroup M] [Module V M]
+    (h : S.IsAlmostZero M) {I : Ideal V} (hI : I ≤ S.ideal) : I • (⊤ : Submodule V M) = ⊥ :=
+  Submodule.le_annihilator_iff.mp <| by
+    rw [Submodule.annihilator_top]
+    exact hI.trans (isAlmostZero_iff_le_annihilator.mp h)
+
+variable {S} in
+/-- An almost zero submodule is killed by every ideal contained in `m`. -/
+theorem IsAlmostZero.smul_eq_bot {M : Type*} [AddCommGroup M] [Module V M] {p : Submodule V M}
+    (h : S.IsAlmostZero p) {I : Ideal V} (hI : I ≤ S.ideal) : I • p = ⊥ :=
+  Submodule.le_annihilator_iff.mp (hI.trans (isAlmostZero_iff_le_annihilator.mp h))
+
+variable {S} in
+/-- If `M ⧸ p` is almost zero, then every ideal contained in `m` multiplies `M` into `p`. -/
+theorem IsAlmostZero.smul_top_le {M : Type*} [AddCommGroup M] [Module V M] {p : Submodule V M}
+    (h : S.IsAlmostZero (M ⧸ p)) {I : Ideal V} (hI : I ≤ S.ideal) :
+    I • (⊤ : Submodule V M) ≤ p :=
+  Submodule.smul_le.mpr fun _ hε x _ ↦ (Module.isTorsionBySet_quotient_iff _ _).mp h x _ (hI hε)
+
+variable {S} in
 /-- A module that embeds into an almost zero module is almost zero; in particular, so is every
 submodule of an almost zero module. -/
 theorem IsAlmostZero.of_injective {M N : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N]
@@ -426,6 +452,50 @@ theorem IsAlmostIso.lTensor_bijective {f : M →ₗ[V] N} (hf : S.IsAlmostIso f)
     rw [Subsingleton.elim z 0, map_zero]
   · exact (lTensor_exact S.tilde f.exact_map_mkQ_range (Submodule.mkQ_surjective _) y).mp
       (Subsingleton.elim _ _)
+
+/-- **A linear map is an almost isomorphism iff it becomes bijective after tensoring with `m~`.** -/
+theorem isAlmostIso_iff_lTensor_bijective {f : M →ₗ[V] N} :
+    S.IsAlmostIso f ↔ Function.Bijective (f.lTensor S.tilde) := by
+  refine ⟨IsAlmostIso.lTensor_bijective, fun hf ↦ ?_⟩
+  -- `m~ ⊗[V] −` preserves injective maps (as `m~` is flat) and surjective maps, and it kills
+  -- only almost zero modules.
+  rw [isAlmostIso_iff, S.isAlmostZero_iff_subsingleton_tilde_tensor,
+    S.isAlmostZero_iff_subsingleton_tilde_tensor]
+  refine ⟨⟨fun x y ↦ ?_⟩, ⟨fun x y ↦ ?_⟩⟩
+  · have hinj := hf.1.comp (Module.Flat.lTensor_preserves_injective_linearMap
+      (M := S.tilde) _ (LinearMap.ker f).injective_subtype)
+    rw [← LinearMap.coe_comp, ← LinearMap.lTensor_comp, LinearMap.comp_ker_subtype,
+      LinearMap.lTensor_zero] at hinj
+    exact hinj rfl
+  · have hsurj := (LinearMap.lTensor_surjective S.tilde
+      (LinearMap.range f).mkQ_surjective).comp hf.2
+    rw [← LinearMap.coe_comp, ← LinearMap.lTensor_comp, LinearMap.range_mkQ_comp,
+      LinearMap.lTensor_zero] at hsurj
+    obtain ⟨x, rfl⟩ := hsurj x
+    obtain ⟨y, rfl⟩ := hsurj y
+    rfl
+
+variable {S} in
+/-- **Almost isomorphisms are stable under `P ⊗[V] −`** (Gabber–Ramero (2.2.5)). -/
+theorem IsAlmostIso.lTensor {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) (P : Type*) [AddCommGroup P]
+    [Module V P] : S.IsAlmostIso (f.lTensor P) := by
+  have : (f.lTensor P).lTensor S.tilde = (TensorProduct.leftComm V P S.tilde N).toLinearMap ∘ₗ
+      (f.lTensor S.tilde).lTensor P ∘ₗ (TensorProduct.leftComm V S.tilde P M).toLinearMap := by
+    ext; simp
+  rw [isAlmostIso_iff_lTensor_bijective, this, LinearMap.coe_comp, LinearMap.coe_comp]
+  refine (LinearEquiv.bijective _).comp (Function.Bijective.comp ?_ (LinearEquiv.bijective _))
+  exact ((LinearEquiv.ofBijective _ hf.lTensor_bijective).lTensor P).bijective
+
+variable {S} in
+/-- **Almost isomorphisms are stable under `− ⊗[V] P`** (Gabber–Ramero (2.2.5)). -/
+theorem IsAlmostIso.rTensor {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) (P : Type*) [AddCommGroup P]
+    [Module V P] : S.IsAlmostIso (f.rTensor P) := by
+  have : (f.rTensor P).lTensor S.tilde = (TensorProduct.assoc V S.tilde N P).toLinearMap ∘ₗ
+      (f.lTensor S.tilde).rTensor P ∘ₗ (TensorProduct.assoc V S.tilde M P).symm.toLinearMap := by
+    ext; simp
+  rw [isAlmostIso_iff_lTensor_bijective, this, LinearMap.coe_comp, LinearMap.coe_comp]
+  refine (LinearEquiv.bijective _).comp (Function.Bijective.comp ?_ (LinearEquiv.bijective _))
+  exact ((LinearEquiv.ofBijective _ hf.lTensor_bijective).rTensor P).bijective
 
 end IsAlmostIso
 
@@ -594,6 +664,23 @@ theorem IsFilteredPrincipal.exists_pow_dvd (h : S.IsFilteredPrincipal) :
       obtain ⟨z, hz, hzz₁, hzz₂⟩ := h z₁ hz₁ z₂ hz₂
       exact ⟨z, hz, dvd_add ((pow_dvd_pow_of_dvd hzz₁ _).trans hz₁x)
         ((pow_dvd_pow_of_dvd hzz₂ _).trans hz₂y)⟩
+
+/-- Under condition (A), a finitely generated ideal contained in `m` lies in the principal ideal
+of a single element of `m`. -/
+theorem IsFilteredPrincipal.exists_le_span_singleton (h : S.IsFilteredPrincipal) {K : Ideal V}
+    (hK : K.FG) (hKm : K ≤ S.ideal) : ∃ z ∈ S.ideal, K ≤ Ideal.span {z} := by
+  classical
+  obtain ⟨s, rfl⟩ := hK
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, S.ideal.zero_mem, by simp⟩
+  | insert x s _ ih =>
+    rw [Finset.coe_insert, Ideal.span_insert] at hKm ⊢
+    obtain ⟨z', hz', hsz'⟩ := ih (le_sup_right.trans hKm)
+    obtain ⟨z, hz, hzx, hzz'⟩ :=
+      h x (hKm (Submodule.mem_sup_left (Ideal.mem_span_singleton_self x))) z' hz'
+    refine ⟨z, hz, sup_le ?_ (hsz'.trans ?_)⟩ <;>
+      rw [Ideal.span_singleton_le_span_singleton]
+    exacts [hzx, hzz']
 
 /-- Condition (A) implies condition (B) for the idempotent ideal of a basic setup
 (Gabber–Ramero (2.1.6)): an element of `m = m ^ k` is divisible by `z ^ k` for some `z ∈ m`. -/

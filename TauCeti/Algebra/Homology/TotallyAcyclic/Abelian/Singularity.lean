@@ -71,19 +71,12 @@ section Cycles
 variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
 include hP
 
-omit [HasDerivedCategory C] in
-/-- `HomologicalComplex.cyclesShortComplex_shortExact` with the short complex of cycles written out,
-via `HomologicalComplex.cyclesShortComplex_def`, so that its terms are the cycles themselves. -/
-private lemma shortExact_mk_cycles (m m' : ℤ) (hm : m + 1 = m') :
-    (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact :=
-  P.cyclesShortComplex_def m m' ▸ P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
-
 /-- The triangle `Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ Zᵐ[1]` of the short exact sequence of cycles, with its vertices
 placed in degree `m` by `singleFunctor C m`: the triangle `triangleOfSES` transported along
 `singleFunctorIsoCompQ`. -/
 private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
     Triangle (DerivedCategory C) :=
-  let T := triangleOfSES ((shortExact_mk_cycles hP m m' hm).map_of_exact
+  let T := triangleOfSES ((P.shortExact_mk_iCycles_toCycles m m' hm (hP.acyclic m')).map_of_exact
     (CochainComplex.singleFunctor C m))
   let e := singleFunctorIsoCompQ C m
   Triangle.mk ((e.app (P.cycles m)).hom ≫ T.mor₁ ≫ (e.app (P.X m)).inv)
@@ -93,7 +86,8 @@ private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
 private lemma cyclesSESTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
     cyclesSESTriangle hP m m' hm ∈ distTriang _ :=
   distinguished_mk_of_iso (triangleOfSES_distinguished
-    ((shortExact_mk_cycles hP m m' hm).map_of_exact (CochainComplex.singleFunctor C m)))
+    ((P.shortExact_mk_iCycles_toCycles m m' hm (hP.acyclic m')).map_of_exact
+      (CochainComplex.singleFunctor C m)))
     ((singleFunctorIsoCompQ C m).app (P.cycles m)).symm
     ((singleFunctorIsoCompQ C m).app (P.X m)).symm
     ((singleFunctorIsoCompQ C m).app (P.cycles m')).symm

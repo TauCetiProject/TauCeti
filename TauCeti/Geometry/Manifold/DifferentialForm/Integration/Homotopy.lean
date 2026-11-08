@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
@@ -47,7 +50,12 @@ within a homotopy class.
 
 This is the two-dimensional analogue of the line integral `TauCeti.pathIntegral`: it integrates
 along an arbitrary map of the plane, without the integrability conditions of the integral of a top
-form over the rectangle manifold.
+form over the rectangle manifold. Like the line integral, it is additive over adjacent rectangles
+(`TauCeti.rectangleIntegral_add_adjacent`) and invariant under `C¹` reparametrization
+(`TauCeti.rectangleIntegral_comp_prodMap`, in the first coordinate), and the two are related by
+Stokes' formula: the integral of an exact form `dα` over a map of a rectangle is the signed sum of
+the line integrals of `α` along the images of the four edges
+(`TauCeti.rectangleIntegral_mextDeriv`).
 
 The proof pulls `φ` back to the flat form `ψ = Φ^* φ` on `(ℝ × ℝ) × ℝ`, which is closed because
 pullback commutes with the exterior derivative, and expresses the integral over each face of the
@@ -62,10 +70,16 @@ operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold wit
 
 ## Main results
 
+* `TauCeti.IsSmoothForm.setIntegral_eq_rectangleIntegral`: for a continuous form and a `C¹` map,
+  the integral is the integral of `φ_{u(z)}(∂_s u, ∂_t u)` over the rectangle (Fubini).
 * `TauCeti.rectangleIntegral_mpullback`: naturality under pullback of forms.
 * `TauCeti.rectangleIntegral_congr`: the integral only depends on the map on the closed rectangle.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
+* `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
+* `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate.
+* `TauCeti.rectangleIntegral_mextDeriv`: Stokes' formula for the integral of an exact form, in
+  terms of line integrals along the edges.
 * `TauCeti.rectangleIntegral_sub_rectangleIntegral_eq_sides`: Stokes' formula for a homotopy of
   maps of a rectangle, for a closed form.
 * `TauCeti.rectangleIntegral_eq_of_homotopy`: homotopy invariance of the integral of a closed form
@@ -118,6 +132,22 @@ theorem rectangleIntegral_eq (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a 
   congr 1
   funext i
   fin_cases i <;> rfl
+
+/-- For a continuous form `φ` and a `C¹` map `u`, the integral over `u` on a rectangle is, by
+Fubini, the integral of `φ_{u(z)}(∂_s u, ∂_t u)` over the rectangle. -/
+theorem IsSmoothForm.setIntegral_eq_rectangleIntegral [IsManifold I 1 M] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ × ℝ} (hab : a ≤ b) :
+    ∫ z in Icc a b, φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] = rectangleIntegral φ u a b := by
+  have hint := (hφ.continuous_apply_mfderiv hu (1, 0) (0, 1)).continuousOn.integrableOn_compact
+    (μ := volume) (isCompact_Icc (a := a) (b := b))
+  -- Fubini, on the rectangle written as a product of intervals.
+  rw [Icc_prod_eq, Measure.volume_eq_prod] at hint ⊢
+  rw [setIntegral_prod _ hint, rectangleIntegral_eq, intervalIntegral.integral_of_le hab.1,
+    ← integral_Icc_eq_integral_Ioc]
+  refine setIntegral_congr_fun measurableSet_Icc fun s _ ↦ ?_
+  rw [intervalIntegral.integral_of_le hab.2, ← integral_Icc_eq_integral_Ioc]
 
 /-- The integral is natural under pullback of forms. -/
 theorem rectangleIntegral_mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -246,6 +276,65 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
       (fun _ ↦ rfl) rfl (i := 1) rfl
   simp [rectangleIntegral_def, h]
 
+section Continuous
+
+variable [IsManifold I 1 M]
+
+/-- For a continuous form and a `C¹` map of the plane, the inner integral defining
+`TauCeti.rectangleIntegral` is a continuous function of the first coordinate. -/
+private theorem continuous_integral_mpullback_apply {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (c d : ℝ) :
+    Continuous fun s ↦ ∫ t in c..d, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)] := by
+  have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
+  have hG : Continuous fun z ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ z ![(1, 0), (0, 1)] :=
+    (ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) F ![(1, 0), (0, 1)]).continuous.comp h.continuous
+  exact intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by exact hG) c d
+
+/-- Integrals over adjacent rectangles `[a.1, b] × [a.2, c.2]` and `[b, c.1] × [a.2, c.2]` add
+up, for a continuous form and a `C¹` map of the plane. -/
+theorem rectangleIntegral_add_adjacent {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a : ℝ × ℝ) (b : ℝ) (c : ℝ × ℝ) :
+    rectangleIntegral φ u a (b, c.2) + rectangleIntegral φ u (b, a.2) c =
+      rectangleIntegral φ u a c := by
+  have h := continuous_integral_mpullback_apply hφ hu a.2 c.2
+  exact intervalIntegral.integral_add_adjacent_intervals (h.intervalIntegrable _ _)
+    (h.intervalIntegrable _ _)
+
+/-- **Reparametrization invariance in the first coordinate.** For a continuous form `φ`, a `C¹`
+map `u` of the plane and a `C¹` change of parameter `σ`, the integral over
+`(s, t) ↦ u (σ s, t)` is the integral over `u` on the rectangle between the image corners. The
+change of parameter need not be monotone. -/
+theorem rectangleIntegral_comp_prodMap {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {σ σ' : ℝ → ℝ} {a b : ℝ × ℝ}
+    (hσ : ∀ s ∈ [[a.1, b.1]], HasDerivAt σ (σ' s) s) (hσ' : ContinuousOn σ' [[a.1, b.1]]) :
+    rectangleIntegral φ (u ∘ Prod.map σ id) a b =
+      rectangleIntegral φ u (σ a.1, a.2) (σ b.1, b.2) := by
+  rw [rectangleIntegral_def, rectangleIntegral_def,
+    ← intervalIntegral.integral_deriv_smul_comp hσ hσ'
+      (continuous_integral_mpullback_apply hφ hu a.2 b.2)]
+  refine intervalIntegral.integral_congr fun s hs ↦ ?_
+  rw [Function.comp_apply, ← intervalIntegral.integral_smul]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  -- The derivative of `Prod.map σ id` sends the coordinate vectors to `(σ' s, 0)` and `(0, 1)`.
+  let A : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
+    (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (σ' s)).prodMap (ContinuousLinearMap.id ℝ ℝ)
+  have hL : HasFDerivAt (Prod.map σ id) A (s, t) :=
+    (hσ s hs).hasFDerivAt.prodMap (s, t) (hasFDerivAt_id t)
+  have hv : (A ∘ ![(1, 0), (0, 1)]) =
+      Function.update ![((1 : ℝ), (0 : ℝ)), (0, 1)] 0 (σ' s • ((1 : ℝ), (0 : ℝ))) := by
+    funext i
+    fin_cases i <;> simp [A]
+  rw [mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero)]
+  -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
+  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
+  refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
+    (congrArg _ hv)).trans ((ψ (σ s, t)).map_update_smul _ _ _ _)).trans ?_
+  congr 2
+  funext i
+  fin_cases i <;> rfl
+
+end Continuous
+
 /-- A side face of a homotopy, over `[y₀, y₁] × [0, 1]`, has zero integral when its edge stays
 fixed, or remains a constant path at `y`, during the homotopy. -/
 private theorem rectangleIntegral_side_eq_zero (φ : RoughForm I M F 2) {Φ : (ℝ × ℝ) × ℝ → M}
@@ -343,5 +432,40 @@ theorem rectangleIntegral_eq_of_homotopy {φ : RoughForm I M F 2} (hφ : IsSmoot
     rectangleIntegral_congr fun p hp ↦ hper p.1 hp.1 p.2 ((uIcc_of_le zero_le_one).subset hp.2)
   rw [rectangleIntegral_side_eq_zero φ ha, rectangleIntegral_side_eq_zero φ hb, hper'] at h
   simpa [sub_eq_zero] using h
+
+omit [CompleteSpace F] in
+/-- **Stokes' formula for the integral over a map of a rectangle.** For a `C¹` one-form `α` and a
+`C²` map `u`, the integral of `dα` over `u` on the rectangle with corners `a` and `b` is the
+signed sum of the line integrals of `α` along the images of its four edges: the right and bottom
+edges count positively, the left and top edges negatively. -/
+theorem rectangleIntegral_mextDeriv {α : RoughForm I M F 1} (hα : IsSmoothForm I 1 α)
+    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) (a b : ℝ × ℝ) :
+    rectangleIntegral (mextDeriv α) u a b =
+      (pathIntegral α (fun t ↦ u (b.1, t)) a.2 b.2 -
+        pathIntegral α (fun t ↦ u (a.1, t)) a.2 b.2) -
+      (pathIntegral α (fun s ↦ u (s, b.2)) a.1 b.1 -
+        pathIntegral α (fun s ↦ u (s, a.2)) a.1 b.1) := by
+  -- The flat one-form `ψ = u^* α` on the plane, whose exterior derivative is `u^* dα`.
+  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u α
+  have hψ : ContDiff ℝ 1 ψ :=
+    isSmoothForm_modelSpace_iff.mp (hα.mpullback (by simpa [one_add_one_eq_two] using hu))
+  have hdψ (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I u (mextDeriv α) z = extDeriv ψ z := by
+    rw [← mextDeriv_eq_extDeriv,
+      mpullback_mextDeriv hu ((isSmoothBundleForm_def _ _).mpr hα.contMDiff)]
+  -- Each edge is a composite `u ∘ L` with `L` affine, and its line integral is the integral of
+  -- `ψ` on the image under `dL` of the unit vector.
+  have hedge {L : ℝ → ℝ × ℝ} {A : ℝ →L[ℝ] ℝ × ℝ} (hL : ∀ r, HasFDerivAt L A r) (c d : ℝ) :
+      pathIntegral α (u ∘ L) c d = ∫ r in c..d, ψ (L r) fun _ ↦ A 1 := by
+    rw [pathIntegral_eq_integral_mpullback]
+    refine intervalIntegral.integral_congr fun r _ ↦ ?_
+    rw [mpullback_comp_apply_of_hasFDerivAt (hL r) ((hu _).mdifferentiableAt two_ne_zero)]
+    exact ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _
+  have hv (x : ℝ) := hedge (L := fun t ↦ (x, t)) (hasFDerivAt_prodMk_right x)
+  have hh (y : ℝ) := hedge (L := fun s ↦ (s, y)) (fun s ↦ hasFDerivAt_prodMk_left s y)
+  simp only [Function.comp_def, ContinuousLinearMap.inl_apply,
+    ContinuousLinearMap.inr_apply] at hv hh
+  rw [hv, hv, hh, hh, rectangleIntegral_def]
+  simp only [hdψ]
+  exact integral2_extDeriv fun z _ ↦ hψ.contDiffAt
 
 end TauCeti

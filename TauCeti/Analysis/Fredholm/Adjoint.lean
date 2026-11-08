@@ -35,6 +35,8 @@ surjective, which removes the closure from Mathlib's general identity
   its adjoint does.
 * `ContinuousLinearMap.IsFredholm.adjoint`: the adjoint of a Fredholm operator is Fredholm.
 * `ContinuousLinearMap.index_adjoint`: taking the adjoint negates the Fredholm index.
+* `ContinuousLinearMap.IsFredholm.isInvertible_of_index_eq_zero`: a Fredholm operator of index
+  zero is invertible as soon as it or its adjoint has trivial kernel.
 
 The argument and index convention follow McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -289,6 +291,27 @@ theorem _root_.ContinuousLinearMap.index_adjoint (T : E →L[𝕜] F)
       (ContinuousLinearMap.cokerAdjointEquivKer T hT.isClosed_range).toLinearEquiv]
   omega
 
+/-- A Fredholm operator of index zero between Hilbert spaces is invertible as soon as the operator
+or its adjoint has trivial kernel. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.isInvertible_of_index_eq_zero {T : E →L[𝕜] F}
+    (hT : ContinuousLinearMap.IsFredholm T) (h0 : ContinuousLinearMap.index T = 0)
+    (hker : LinearMap.ker (T : E →ₗ[𝕜] F) = ⊥ ∨ LinearMap.ker (T† : F →ₗ[𝕜] E) = ⊥) :
+    T.IsInvertible := by
+  have := hT.finite_coker
+  -- In either case the cokernel `F ⧸ range T` has dimension zero.
+  have hcoker : finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) = 0 := by
+    rcases hker with hker | hker
+    · have hindex := ContinuousLinearMap.index_eq_finrank_sub T
+      rw [hker, finrank_bot] at hindex
+      omega
+    · rw [LinearEquiv.finrank_eq
+        (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv, hker,
+        finrank_bot]
+  have hrange : LinearMap.range (T : E →ₗ[𝕜] F) = ⊤ :=
+    Submodule.Quotient.subsingleton_iff.mp (finrank_zero_iff.mp hcoker)
+  exact ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.mpr ⟨hT,
+    T.bijective_of_surjective_of_index_eq_zero hT.finite_ker (LinearMap.range_eq_top.mp hrange)
+      h0⟩
 
 end HilbertCodomain
 

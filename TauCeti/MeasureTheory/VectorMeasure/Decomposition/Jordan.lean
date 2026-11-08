@@ -17,7 +17,7 @@ largest excess `ν A - μ A` over measurable events `A`. For two finite measures
 mass the two parts have equal mass.
 
 These masses compute Mathlib's total variation distance `etvDist μ ν` through measurable events;
-see `TauCeti.MeasureTheory.Measure.TotalVariation`.
+see `TauCeti.MeasureTheory.Measure.TotalVariation.Basic`.
 
 ## Main declarations
 

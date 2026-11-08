@@ -37,7 +37,7 @@ name: Nightly verification
 
 on:
   schedule:
-  - cron: "25 15 * * *"   # daily, offset from stuck-alerts (:50), merge-sweep (:40), housekeeping (:20)
+  - cron: "25 15 * * *"   # daily, offset from stuck-alerts (:50) and housekeeping (:20)
   workflow_dispatch: {}
 
 permissions:
@@ -102,10 +102,10 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
           project-directory: fresh
 
       - name: Resolve the commit under test
@@ -242,10 +242,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
           project-directory: fresh
 
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances

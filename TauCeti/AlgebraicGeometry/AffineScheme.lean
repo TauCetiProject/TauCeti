@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
+public import Mathlib.RingTheory.Ideal.Pointwise
 import TauCeti.RingTheory.Localization.Tower
 
 /-!
@@ -45,6 +46,20 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
   morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
   `R → Γ(X, U)` it induces.
+* `AlgebraicGeometry.IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map`: for affine opens
+  `V ≤ U`, restriction induces an open immersion `Spec Γ(X, V) ⟶ Spec Γ(X, U)`.
+* `AlgebraicGeometry.IsAffineOpen.exists_SpecMap_comp_fromSpec_eq`: a morphism `Spec R ⟶ X` with
+  image in an affine open `U` is the spectrum of a ring map `Γ(X, U) ⟶ R` followed by
+  `Spec Γ(X, U) ⟶ X`.
+* `AlgebraicGeometry.Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE`: on an open `U` of `X`, the
+  morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
+* `AlgebraicGeometry.Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE`: the map `Γ(B, V) ⟶ Γ(U, T)`
+  induced by the structure morphism of an open subscheme `U` of `Z` over an affine open `V` of `B`
+  is `k.appLE` followed by restriction to `T`.
+* `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
+  affine opens of `S'` lying over affine opens of `S` form a basis.
+* `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
+  `Γ(X, ⊤)` at the point `σ g x` is the translate by `g` of the prime ideal at `x`.
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
@@ -59,6 +74,12 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`: over an affine base,
   base change along `j : T ⟶ S` is a bijection on morphisms `Y ⟶ Y'` into an affine `Y'` when
   `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism.
+* `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `S` is
+  recovered from its sections over an open `W` of `Spec S`, the sections of a scheme identified
+  with `W` over `Spec R` are `S`, compatibly with the maps from `R`.
+* `TauCeti.AlgebraicGeometry.exists_affine_pair_comp_eq`: for a morphism `f : T' ⟶ T` of affine
+  `S`-schemes, the affine `S`-scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T', 𝒪))` carries two maps to
+  `T'` that agree after composing with `f` and induce the two tensor factor inclusions.
 -/
 
 public section
@@ -84,6 +105,82 @@ theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.
     hU.fromSpec ≫ f = Spec.map ((Scheme.ΓSpecIso R).inv ≫ f.appLE ⊤ U le_top) := by
   rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
+
+/-- Pointwise form of `AlgebraicGeometry.IsAffineOpen.map_fromSpec`: for affine opens `V ≤ U`,
+the point of `Spec Γ(X, U)` induced by restriction from a point `p` of `Spec Γ(X, V)` is the
+same point of `X` as `p`. -/
+theorem IsAffineOpen.map_fromSpec_apply {X : Scheme.{u}} {U V : X.Opens} (hU : IsAffineOpen U)
+    (hV : IsAffineOpen V) (f : Opposite.op U ⟶ Opposite.op V) (p : Spec Γ(X, V)) :
+    hU.fromSpec (Spec.map (X.presheaf.map f) p) = hV.fromSpec p := by
+  rw [← Scheme.Hom.comp_apply, IsAffineOpen.map_fromSpec]
+
+/-- For affine opens `V ≤ U`, restriction of sections induces an open immersion
+`Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
+theorem IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map {X : Scheme.{u}} {U V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (f : Opposite.op U ⟶ Opposite.op V) :
+    IsOpenImmersion (Spec.map (X.presheaf.map f)) := by
+  have : IsOpenImmersion (Spec.map (X.presheaf.map f) ≫ hU.fromSpec) := by
+    rw [IsAffineOpen.map_fromSpec _ hV]
+    infer_instance
+  exact IsOpenImmersion.of_comp _ hU.fromSpec
+
+/-- A morphism `f : Spec R ⟶ X` whose image lies in an affine open `U` of `X` is the spectrum of a
+ring map `Γ(X, U) ⟶ R` followed by `Spec Γ(X, U) ⟶ X`. -/
+theorem IsAffineOpen.exists_SpecMap_comp_fromSpec_eq {X : Scheme.{u}} {R : CommRingCat.{u}}
+    (f : Spec R ⟶ X) {U : X.Opens} (hU : IsAffineOpen U) (hf : Set.range f ⊆ U) :
+    ∃ φ : Γ(X, U) ⟶ R, Spec.map φ ≫ hU.fromSpec = f := by
+  have hle : (⊤ : (Spec R).Opens) ≤ f ⁻¹ᵁ U := fun x _ ↦ hf ⟨x, rfl⟩
+  refine ⟨f.appLE U ⊤ hle ≫ (Scheme.ΓSpecIso R).hom, ?_⟩
+  rw [Spec.map_comp_assoc, IsAffineOpen.SpecMap_appLE_fromSpec f hU (isAffineOpen_top _) hle,
+    IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp_assoc, Iso.inv_hom_id,
+    Spec.map_id, Category.id_comp]
+
+/-- For an open `U` of `X`, the map `Γ(X, U) ≅ Γ(Spec Γ(X, U), ⊤) ⟶ Γ(U, T)` induced on the
+sections over an open `T` of `U` by the canonical morphism `U ⟶ Spec Γ(X, U)` is restriction of
+functions from `U` to `T`. -/
+theorem Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE {X : Scheme.{u}} (U : X.Opens)
+    (T : U.toScheme.Opens) :
+    (Scheme.ΓSpecIso Γ(X, U)).inv ≫ U.toSpecΓ.appLE ⊤ T le_top = U.ι.appLE U T (by simp) := by
+  rw [← Scheme.Hom.appLE_map U.toSpecΓ le_top (homOfLE (le_top : T ≤ ⊤)).op,
+    ← Scheme.Hom.appLE_map U.ι (by simp) (homOfLE (le_top : T ≤ ⊤)).op, ← Category.assoc]
+  congr 1
+  have h₁ : U.toSpecΓ.appLE ⊤ ⊤ le_top = U.toSpecΓ.appTop := Scheme.Hom.appLE_eq_app _
+  have h₂ : U.ι.appLE U ⊤ (by simp) = U.topIso.inv := by
+    rw [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_inv]
+    -- Both sides restrict along the equality `U.ι ''ᵁ ⊤ = U`; morphisms of opens are unique.
+    rfl
+  rw [h₁, h₂, Scheme.Opens.toSpecΓ_appTop, Iso.inv_hom_id_assoc]
+
+/-- The map `Γ(B, V) ⟶ Γ(U, T)` induced by the structure morphism `U ⟶ Spec Γ(B, V)` of an open
+subscheme `U` of `Z` over the affine open `V` of `B` is `k.appLE` followed by restriction to `T`. -/
+lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : Z ⟶ B) {V : B.Opens}
+    (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens) :
+    (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (k.resLE V U e ≫ hV.isoSpec.hom).appLE ⊤ T le_top =
+      k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
+  calc (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (k.resLE V U e ≫ hV.isoSpec.hom).appLE ⊤ T le_top
+      _ = (Scheme.ΓSpecIso Γ(B, V)).inv ≫
+          (U.toSpecΓ ≫ Spec.map (k.appLE V U e)).appLE ⊤ T (by simp) := by
+        simp only [IsAffineOpen.isoSpec_hom, ← Scheme.Opens.toSpecΓ_SpecMap_appLE]
+      _ = (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (Spec.map (k.appLE V U e)).appTop ≫
+          U.toSpecΓ.appLE ⊤ T (by simp) :=
+        congrArg _ (Scheme.Hom.comp_appLE _ _ _ _ _)
+      _ = k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
+        rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
+          Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
+
+/-- For a morphism `g : S' ⟶ S`, the affine opens of `S'` contained in the preimage of an affine
+open of `S` form a basis of the topology of `S'`. -/
+theorem Scheme.Hom.isBasis_range_affineOpens_le_preimage {S S' : Scheme.{u}} (g : S' ⟶ S) :
+    TopologicalSpace.Opens.IsBasis (Set.range fun i :
+      {p : S'.affineOpens × S.affineOpens // (p.1 : S'.Opens) ≤ g ⁻¹ᵁ p.2} ↦
+        (i.1.1 : S'.Opens)) := by
+  refine TopologicalSpace.Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
+    S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (g x)) isOpen_univ
+  obtain ⟨_, ⟨U', hU', rfl⟩, hxU', hU'U⟩ :=
+    S'.isBasis_affineOpens.exists_subset_of_mem_open (⟨hx, hxV⟩ : x ∈ U ⊓ g ⁻¹ᵁ V)
+      (U ⊓ g ⁻¹ᵁ V).isOpen
+  exact ⟨U', ⟨⟨(⟨U', hU'⟩, ⟨V, hV⟩), fun y hy ↦ (hU'U hy).2⟩, rfl⟩, hxU', fun y hy ↦ (hU'U hy).1⟩
 
 /-- **Fixed points of an endomorphism of an affine scheme.** For an endomorphism `f` of an affine
 scheme `X`, the elements `f^*(a) - a` of `Γ(X, ⊤)` generate the unit ideal if and only if `f` fixes
@@ -148,6 +245,22 @@ theorem Scheme.globalSectionsMulSemiringAction_smul_def {X : Scheme.{u}} {G : Ty
     letI := Scheme.globalSectionsMulSemiringAction σ
     g • a = (σ g⁻¹).asIso.hom.appTop a :=
   (rfl)
+
+open Pointwise in
+/-- For the action of `G` on global functions by `g • a = (σ g⁻¹)^*(a)`, the point of
+`Spec Γ(X, ⊤)` under `σ g x` has prime ideal the translate by `g` of that of `x`: a function
+vanishes at `σ g x` exactly when its translate by `g⁻¹` vanishes at `x`. -/
+theorem Scheme.toSpecΓ_apply_asIdeal_eq_smul {X : Scheme.{u}} {G : Type*} [Group G]
+    (σ : G →* Aut X) (g : G) (x : X) :
+    letI := Scheme.globalSectionsMulSemiringAction σ
+    (X.toSpecΓ ((σ g).asIso.hom x)).asIdeal = g • (X.toSpecΓ x).asIdeal := by
+  let _ := Scheme.globalSectionsMulSemiringAction σ
+  have h := congr($(Scheme.toSpecΓ_naturality (σ g).asIso.hom) x)
+  rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply] at h
+  ext a
+  have hc := PrimeSpectrum.comap_asIdeal (σ g).asIso.hom.appTop.hom (X.toSpecΓ x)
+  rw [h, Spec.map_apply, hc, Ideal.mem_comap, Ideal.mem_pointwise_smul_iff_inv_smul_mem,
+    Scheme.globalSectionsMulSemiringAction_smul_def, inv_inv]
 
 /-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
 from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an
@@ -238,5 +351,60 @@ theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine 
   apply Limits.pullback.hom_ext
   · exact (hmap _).trans hψ
   · exact (Limits.pullback.lift_snd _ _ _).trans hw.symm
+
+/-- Let `f : R ⟶ S` be a ring map and `W` an open of `Spec S` from which `S` is recovered: the
+restriction `Γ(Spec S, ⊤) → Γ(W, ⊤)` is bijective. If a scheme `X` over `Spec R` is identified
+with `W` over `Spec R`, then the map `R → Γ(X, ⊤)` induced by `X ⟶ Spec R` is `f` followed by
+an isomorphism. -/
+theorem Spec.exists_isIso_appTop_eq_comp_of_bijective {R S : CommRingCat.{u}} (f : R ⟶ S)
+    {X : Scheme.{u}} (p : X ⟶ Spec R) (W : (Spec S).Opens)
+    (hW : Function.Bijective W.ι.appTop) (e : X ≅ W.toScheme)
+    (he : e.hom ≫ W.ι ≫ Spec.map f = p) :
+    ∃ σ : S ⟶ Γ(X, ⊤), IsIso σ ∧ (Scheme.ΓSpecIso R).inv ≫ p.appTop = f ≫ σ := by
+  have : IsIso W.ι.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr hW
+  have : IsIso e.hom.appTop := Scheme.Γ.map_isIso e.hom.op
+  refine ⟨(Scheme.ΓSpecIso S).inv ≫ W.ι.appTop ≫ e.hom.appTop, inferInstance, ?_⟩
+  simp only [← he, Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_inv_naturality_assoc]
+
+open TensorProduct in
+/-- For a morphism `f : T' ⟶ T` of affine `S`-schemes, the scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)]
+Γ(T', 𝒪))` is an affine `S`-scheme with two maps `g₁`, `g₂` to `T'` that agree after composing
+with `f`. Under the identification `κ` of its global sections with the tensor product, they induce
+the two inclusions of the factors. -/
+theorem exists_affine_pair_comp_eq {S : Scheme.{u}} {T T' : Over S} (f : T' ⟶ T) [IsAffine T.left]
+    [IsAffine T'.left] :
+    letI := f.left.appTop.hom.toAlgebra
+    ∃ (Z : Over S) (_ : IsAffine Z.left) (g₁ g₂ : Z ⟶ T')
+      (κ : Γ(Z.left, ⊤) →+* Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ(T'.left, ⊤)),
+      g₁ ≫ f = g₂ ≫ f ∧ (∀ a, κ (g₁.left.appTop a) = a ⊗ₜ 1) ∧
+        ∀ a, κ (g₂.left.appTop a) = 1 ⊗ₜ a := by
+  algebraize [f.left.appTop.hom]
+  let A := Γ(T.left, ⊤)
+  let A' := Γ(T'.left, ⊤)
+  -- The test scheme `Z = Spec (A' ⊗[A] A')` over `S`, with the two maps `g₁`, `g₂ : Z ⟶ T'`
+  -- induced by the inclusions `χ₁`, `χ₂` of the two factors.
+  let B := CommRingCat.of (A' ⊗[A] A')
+  let χ₁ : A' ⟶ B := CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom
+  let χ₂ : A' ⟶ B := CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom
+  have hχ : f.left.appTop ≫ χ₁ = f.left.appTop ≫ χ₂ := by
+    ext a
+    exact (Algebra.TensorProduct.algebraMap_apply (R := A) (A := A') (B := A') a).symm.trans
+      (Algebra.TensorProduct.algebraMap_apply' a)
+  let ι (χ : A' ⟶ B) : Spec B ⟶ T'.left := Spec.map χ ≫ T'.left.isoSpec.inv
+  have hι : ι χ₁ ≫ f.left = ι χ₂ ≫ f.left := by
+    simp only [ι, Category.assoc, ← Scheme.isoSpec_inv_naturality, ← Spec.map_comp_assoc, hχ]
+  let κ := (Scheme.ΓSpecIso B).hom.hom
+  have hκ (χ : A' ⟶ B) (a : A') : κ ((ι χ).appTop a) = χ a := by
+    have h : (ι χ).appTop ≫ (Scheme.ΓSpecIso B).hom = χ := by
+      rw [Scheme.Hom.comp_appTop, Scheme.isoSpec_inv_appTop, Category.assoc,
+        Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+    exact congr(($h).hom a)
+  let Z : Over S := Over.mk (ι χ₁ ≫ T'.hom)
+  have : IsAffine Z.left := inferInstanceAs (IsAffine (Spec B))
+  let g₁ : Z ⟶ T' := Over.homMk (ι χ₁)
+  let g₂ : Z ⟶ T' := Over.homMk (ι χ₂) (by
+    dsimp only [Z, Over.mk_hom]
+    rw [← Over.w f, reassoc_of% hι])
+  exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
 
 end TauCeti.AlgebraicGeometry

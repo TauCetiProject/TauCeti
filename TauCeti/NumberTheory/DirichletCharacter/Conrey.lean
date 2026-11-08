@@ -260,7 +260,7 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
       exact Subsingleton.elim _ _
     · -- Pair `m` with `-1` and with `5`, whose coordinates are `(1, 0)` and `(0, 1)`.
       have h1 := DFunLike.congr_fun h (-1)
-      have h5 := DFunLike.congr_fun h (ZMod.unitsTwoPowFive e)
+      have h5 := DFunLike.congr_fun h (ZMod.unitFive (n := e + 2))
       simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_neg_one, toAdd_ofAdd,
         ofAdd_zero, map_one, mul_one, MonoidHom.one_apply] at h1
       simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_five, toAdd_ofAdd, ofAdd_zero,

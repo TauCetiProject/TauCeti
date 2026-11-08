@@ -33,9 +33,8 @@ by the image of `N` (`Module.Grassmannian.ker_baseChangeMkQ`), and on that image
 values `f (ω_A(x, y))` (`LinearMap.BilinForm.baseChange_rTensor_rTensor`).
 
 Since their formation commutes with base change, these ideals are compatible with restriction
-between affine opens of the Grassmannian scheme. This is the input for gluing them into the
-isotropic Grassmannian, a closed subscheme of the Grassmannian scheme, in the same way as
-`Module.Grassmannian.hopfIdealLocus` is glued into the closed subscheme of Hopf ideals.
+between affine opens of the Grassmannian scheme, and they glue into the isotropic Grassmannian, a
+closed subscheme of the Grassmannian scheme (`Module.Grassmannian.schemeIsotropicLocus`).
 
 ## Main definitions
 

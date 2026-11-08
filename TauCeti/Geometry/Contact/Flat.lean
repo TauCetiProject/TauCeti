@@ -130,8 +130,8 @@ theorem contactFlat_apply_eq_iff {x : M} {v : TangentSpace I x} :
   have h := (isContactForm_def.1 hα x).add_smulRight_apply_eq_self_iff
     (isAlt_bilinFormAt _ x) (r := v)
   simp only [LinearMap.ext_iff, LinearMap.add_apply, LinearMap.smulRight_apply,
-    LinearMap.smul_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
-    degreeOneEquiv_coe_apply, LinearMap.zero_apply, smul_eq_mul] at h
+    LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
+    LinearMap.zero_apply, smul_eq_mul] at h
   rw [ContinuousLinearMap.ext_iff]
   simpa using h
 
@@ -142,8 +142,8 @@ theorem isInvertible_contactFlat [FiniteDimensional ℝ E] (x : M) :
   ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
     (isContactForm_def.1 hα x).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v fun w ↦ by
       rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
-        LinearMap.smul_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
-        degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, smul_eq_mul]
+        LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
+        degreeOneEquiv_coe_apply, smul_eq_mul]
       exact (contactFlat_apply α x v w).symm.trans (hv w)
 
 /-- The Reeb vector field of a contact form is the image of `α` under the inverse contact flat

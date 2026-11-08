@@ -52,6 +52,8 @@ of an associative algebra, such as `gl n`, is evaluated.
 * `LieHom.ad_apply_eq_leftRegularRep_sub_mulRight`: the inner derivation action is the difference
   of the left-regular action and right multiplication.
 * `LieAlgebra.ad_comp_ad`: `ad x ∘ ad y` expanded into left and right multiplications.
+* `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
+  when their bracket vanishes.
 
 ## References
 
@@ -124,10 +126,10 @@ theorem leftRegularRep_comp_mulRight (q : L →ₗ⁅R⁆ A) (x : L) (b : A) :
 
 /-- **Left ideals are invariant** under the left-regular representation: the action is by left
 multiplication, which is exactly what a left ideal absorbs. -/
-theorem leftRegularRep_mem_of_mem (q : L →ₗ⁅R⁆ A) (I : Submodule A A) (x : L) {a : A}
+theorem leftRegularRep_mem_of_mem (q : L →ₗ⁅R⁆ A) (I : Ideal A) (x : L) {a : A}
     (ha : a ∈ I) : leftRegularRep q x a ∈ I := by
-  rw [leftRegularRep_apply, ← smul_eq_mul]
-  exact I.smul_mem _ ha
+  rw [leftRegularRep_apply]
+  exact I.mul_mem_left (q x) ha
 
 /-- **The inner derivation action is the left-regular action minus right multiplication.** The two
 `L`-module structures on `A` that `q` produces are therefore genuinely different; only the
@@ -156,3 +158,16 @@ theorem ad_comp_ad (x y : A) :
   noncomm_ring
 
 end LieAlgebra
+
+namespace LieSubalgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {R : Type u} {A : Type w} [CommRing R] [Ring A] [Algebra R A]
+
+/-- Two elements of a Lie subalgebra of an associative algebra commute in the algebra exactly when
+their bracket vanishes. -/
+theorem commute_coe_iff {K : LieSubalgebra R A} {x y : K} : Commute (x : A) y ↔ ⁅x, y⁆ = 0 := by
+  rw [commute_iff_lie_eq, ← coe_bracket, ZeroMemClass.coe_eq_zero]
+
+end LieSubalgebra

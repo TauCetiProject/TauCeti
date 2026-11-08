@@ -63,7 +63,7 @@ roadmaps and undergo review for coherence, reuse, and compatibility with Mathlib
 
 Review of implementation PRs is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
 
-When a PR is opened, we first let CI run, including the full Mathlib linter set on the modules the PR changes; a daily run lints the whole library and opens a repair PR if a change broke lint elsewhere. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
+When a PR is opened, CI normally checks changed modules: the full Mathlib environment-linter set, docstrings, suppression checks, and source style. This initial check is the PR preflight. Dot-notation checks reuse content-addressed parsing context while computing findings afresh. Batch builds, dependency bumps, and uncertain scope use staging checks: changed-module environment lint plus downstream unused-argument checks, and library-wide docstring, suppression, source-style, and dot-notation checks. The `full-lint` label and the daily sweep run every environment linter across the library; the daily sweep opens a repair PR if a change broke lint elsewhere. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
 
 PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 
@@ -196,8 +196,16 @@ the live documentation describes.
 ```bash
 lake exe cache get                 # Mathlib's oleans
 bash scripts/lake-cache-get.sh .   # Tau Ceti's own oleans
-lake build
+lake build --iofail
+lake test
+lake lint
 ```
+
+`lake test` runs the inexpensive local axiom checks on changed modules and the module-system
+check. `lake lint` runs source guards, source style, shim checks and changed-module environment
+and documentation lint. They calculate scope offline from local Git history, including edits
+and new files. Full transitive axiom and declaration-ownership audits remain in staging CI.
+Use `--iofail` explicitly: it rejects informational output as PR/staging builds do.
 
 Both fetches matter, and they come from different places. `lake exe cache get` is Mathlib's own
 cache and covers only Mathlib. Tau Ceti's oleans live in a separate public cache that

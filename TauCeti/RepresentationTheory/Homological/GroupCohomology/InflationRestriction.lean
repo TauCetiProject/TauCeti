@@ -162,7 +162,8 @@ theorem natCard_groupCohomology_succ_dvd_mul (n : ℕ)
   -- the middle term of an exact sequence of modules, counted through its underlying groups
   have key (T : ShortComplex (ModuleCat k)) (hT : T.Exact) :
       Nat.card T.X₂ ∣ Nat.card T.X₁ * Nat.card T.X₃ :=
-    AddMonoidHom.card_dvd_card_mul_card_of_exact T.f.hom.toAddMonoidHom T.g.hom.toAddMonoidHom <| by
+    AddMonoidHom.card_dvd_card_mul_card_of_ker_le_range T.f.hom.toAddMonoidHom
+      T.g.hom.toAddMonoidHom <| ge_of_eq <| by
       rw [← LinearMap.range_toAddSubgroup, ← LinearMap.ker_toAddSubgroup, hT.moduleCat_range_eq_ker]
   exact key _ (HInfRes_exact A n hA)
 

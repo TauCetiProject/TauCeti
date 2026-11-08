@@ -10,6 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.MeasureTheory.Covering.Besicovitch
 
 /-!
@@ -41,17 +42,22 @@ proves their basic properties.
   `∫ u div φ dμ = -∫ ⟪φ, σ_u⟫ d|Du|`
   (`TauCeti.integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity`).
 * A point of the reduced boundary forces `s` to have locally finite perimeter in `Ω`
-  (`TauCeti.locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary`), so otherwise
-  `∂*s` is empty (`TauCeti.reducedBoundary_eq_empty_of_not`).
+  (`TauCeti.locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary`), and in
+  particular to be null-measurable on `Ω`
+  (`TauCeti.nullMeasurableSet_restrict_of_mem_reducedBoundary`), so otherwise `∂*s` is empty
+  (`TauCeti.reducedBoundary_eq_empty_of_not`).
 * Every point of the reduced boundary lies in the support of `|Dχ_s|`
-  (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and hence, when `μ` is an additive
-  Haar measure, in the topological frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
+  (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`). Hence `s` has nonzero perimeter and
+  positive measure in every small ball around it (`TauCeti.perimeter_ball_ne_zero`,
+  `TauCeti.measure_inter_ball_pos`), and, when `μ` is an additive Haar measure, the point lies in
+  the topological frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
 * The outer normal concentrates at `ν_s x` in mean at every point `x` of the reduced boundary:
   `⨍_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| → 0`
   (`TauCeti.tendsto_setLIntegral_enorm_outerNormal_sub_div`). The averages of the unit vectors
   `ν_s` tend to the unit vector `ν_s x`, and for unit vectors `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)`.
 * The reduced boundary and the outer normal only depend on `s` almost everywhere on `Ω`
-  (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`). When `μ` is an additive
+  (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`); in particular
+  `∂*(s ∩ Ω) = ∂*s` (`TauCeti.reducedBoundary_inter_opens`). When `μ` is an additive
   Haar measure, the complement has the same reduced boundary with the opposite normal
   (`TauCeti.reducedBoundary_compl`, `TauCeti.outerNormal_compl`).
 
@@ -170,12 +176,47 @@ theorem reducedBoundary_eq_empty_of_not (h : ¬(LocallyIntegrableOn (s.indicator
   eq_empty_of_forall_notMem fun _ hx =>
     h (locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx)
 
+/-- A point of the reduced boundary forces `s` to be null-measurable on `Ω`. -/
+theorem nullMeasurableSet_restrict_of_mem_reducedBoundary (hx : x ∈ reducedBoundary μ Ω s) :
+    NullMeasurableSet s (μ.restrict Ω) :=
+  (aemeasurable_indicator_const_iff (1 : ℝ)).1
+    (locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary
+      hx).1.aestronglyMeasurable.aemeasurable
+
+/-- A point of the reduced boundary of `s` in `Ω` forces `s ∩ Ω` to be null-measurable. -/
+theorem nullMeasurableSet_inter_of_mem_reducedBoundary (hx : x ∈ reducedBoundary μ Ω s) :
+    NullMeasurableSet (s ∩ Ω) μ :=
+  (nullMeasurableSet_restrict Ω.isOpen.measurableSet.nullMeasurableSet).1
+    (nullMeasurableSet_restrict_of_mem_reducedBoundary hx)
+
+/-- At a point of the reduced boundary, the perimeter of `s` in every ball around the point that
+lies in `Ω` is nonzero. -/
+theorem perimeter_ball_ne_zero (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r)
+    (hrΩ : ball x r ⊆ Ω) : perimeter μ ⟨ball x r, isOpen_ball⟩ s ≠ 0 := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  intro hP
+  have hU := variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩) hrΩ
+  rw [Opens.coe_mk, ← perimeter_def, hP] at hU
+  exact variationMeasure_preimage_closedBall_ne_zero hx (half_pos hr)
+    (measure_mono_null (preimage_mono (closedBall_subset_ball (half_lt_self hr))) hU)
+
+/-- At a point of the reduced boundary, `s` charges every ball around the point. -/
+theorem measure_inter_ball_pos (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r) :
+    0 < μ (s ∩ ball x r) := by
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  set ρ := min r ε
+  refine (measure_mono (inter_subset_inter_right s (ball_subset_ball (min_le_left r ε)))).trans_lt'
+    (pos_iff_ne_zero.2 fun h0 => perimeter_ball_ne_zero hx (lt_min hr hε)
+      ((ball_subset_ball (min_le_right r ε)).trans hεΩ) ?_)
+  -- Otherwise `s` is null in `ball x ρ`, so its perimeter there vanishes.
+  rw [perimeter_congr_ae (t := ∅), perimeter_empty]
+  rw [Opens.coe_mk, ae_eq_empty, Measure.restrict_apply' measurableSet_ball, h0]
+
 /-- **The reduced boundary lies in the topological frontier.** Near a point outside the frontier
 of `s`, the indicator of `s` is constant, so the perimeter measure vanishes there. -/
 theorem reducedBoundary_subset_frontier [μ.IsAddHaarMeasure] :
     reducedBoundary μ Ω s ⊆ frontier s := by
   intro x hx
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   by_contra hxf
   -- A ball around `x` inside `Ω` lies in `s` or in its complement.
   obtain ⟨V, hV, hVs⟩ : ∃ V ∈ 𝓝 x, V ⊆ s ∨ V ⊆ sᶜ := by
@@ -185,19 +226,14 @@ theorem reducedBoundary_subset_frontier [μ.IsAddHaarMeasure] :
         Or.inr (compl_subset_compl.2 subset_closure)⟩
     · exact ⟨_, isOpen_interior.mem_nhds h, Or.inl interior_subset⟩
   obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 (inter_mem hV (Ω.isOpen.mem_nhds hx.1))
-  have hP : perimeter μ ⟨ball x r, isOpen_ball⟩ s = 0 := by
-    rcases hVs with h | h
-    · rw [perimeter_congr_ae (t := univ), perimeter_univ]
-      filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
-      simp [h (hrV hy).1]
-    · rw [perimeter_congr_ae (t := ∅), perimeter_empty]
-      filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
-      simpa using h (hrV hy).1
-  have hU := variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => (hrV hy).2
-  rw [Opens.coe_mk, ← perimeter_def, hP] at hU
-  exact variationMeasure_preimage_closedBall_ne_zero hx (half_pos hr)
-    (measure_mono_null (preimage_mono (closedBall_subset_ball (half_lt_self hr))) hU)
+  refine perimeter_ball_ne_zero hx hr (fun y hy => (hrV hy).2) ?_
+  rcases hVs with h | h
+  · rw [perimeter_congr_ae (t := univ), perimeter_univ]
+    filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
+    simp [h (hrV hy).1]
+  · rw [perimeter_congr_ae (t := ∅), perimeter_empty]
+    filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
+    simpa using h (hrV hy).1
 
 /-- At `|Dχ_s|`-almost every point the polar density has norm one and is the limit of its averages
 over shrinking closed balls. -/
@@ -308,12 +344,7 @@ theorem eventually_setIntegral_norm_outerNormal_sub_le
       ≤ ∫ y in S, ((η + 2 / η) - 2 / η * ⟪ν, n y⟫) ∂lam := by
         refine setIntegral_mono_on_ae (hn.sub hν').norm ((hc _).sub (hin.const_mul _)) hSm ?_
         filter_upwards [hn1] with y hy _
-        -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)` and `‖a - ν‖ ≤ η + ‖a - ν‖² / η`.
-        have h := norm_sub_sq_real (n y) ν
-        rw [hy, hν, real_inner_comm] at h
-        rw [show η + 2 / η - 2 / η * ⟪ν, n y⟫ = (η * η + ‖n y - ν‖ ^ 2) / η by
-          field_simp; linarith, le_div_iff₀ hη]
-        nlinarith [sq_nonneg (‖n y - ν‖ - η), norm_nonneg (n y - ν)]
+        exact norm_sub_le_add_div_sub_inner hy hν hη
     _ = lam.real S * ((η + 2 / η) - 2 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫) := by
         rw [integral_sub (hc _) (hin.const_mul _), integral_const_mul, integral_inner hn,
           setIntegral_const, ← measure_smul_setAverage _ hSfin, inner_smul_right, smul_eq_mul]
@@ -370,6 +401,13 @@ theorem reducedBoundary_congr_ae (h : s =ᵐ[μ.restrict Ω] t) :
     reducedBoundary μ Ω s = reducedBoundary μ Ω t := by
   ext x
   simp only [mem_reducedBoundary, setAverage_polarDensity_congr_ae h]
+
+/-- Intersecting `s` with `Ω` does not change its reduced boundary in `Ω`. -/
+@[simp]
+theorem reducedBoundary_inter_opens : reducedBoundary μ Ω (s ∩ Ω) = reducedBoundary μ Ω s := by
+  refine reducedBoundary_congr_ae ?_
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with y hy
+  exact propext ⟨fun h => h.1, fun h => ⟨h, hy⟩⟩
 
 /-- **Locality of the outer normal.** If `s = t` almost everywhere on `Ω`, they have the same
 outer normal. -/

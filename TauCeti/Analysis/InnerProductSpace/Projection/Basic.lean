@@ -20,7 +20,9 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
 same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
-`dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one.
+`dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one. A nonzero
+vector followed by a linearly independent family in its orthogonal complement is linearly
+independent.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -60,6 +62,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
+* `LinearIndependent.finCons_orthogonal_span_singleton`: a nonzero vector `p` followed by a
+  linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
+* `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
+  finite dimension has a unit vector orthogonal to its range.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -333,6 +339,45 @@ theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 
   exact hb hab
 
 end TauCeti
+
+namespace LinearIndependent
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {m : ℕ}
+
+/-- A nonzero vector followed by a linearly independent family in its orthogonal complement is
+linearly independent. -/
+theorem finCons_orthogonal_span_singleton {p : E} (hp : p ≠ 0) {w : Fin m → E}
+    (hw : LinearIndependent 𝕜 w) (hwp : ∀ i, w i ∈ (𝕜 ∙ p)ᗮ) :
+    LinearIndependent 𝕜 (Fin.cons p w) := by
+  refine linearIndependent_finCons.2 ⟨hw, fun h ↦ hp ?_⟩
+  have hle : Submodule.span 𝕜 (Set.range w) ≤ (𝕜 ∙ p)ᗮ :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 hwp)
+  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
+
+end LinearIndependent
+
+namespace LinearIsometry
+
+open scoped InnerProductSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F]
+
+/-- A linear isometry into a finite-dimensional space of larger dimension has a unit vector
+orthogonal to its range. -/
+theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E) [FiniteDimensional ℝ E]
+    (h : Module.finrank ℝ F < Module.finrank ℝ E) :
+    ∃ v : Metric.sphere (0 : E) 1, ∀ x, ⟪(v : E), ι x⟫_ℝ = 0 := by
+  have hW : LinearMap.range ι.toLinearMap ≠ ⊤ := fun hW ↦ by
+    have := LinearMap.finrank_range_of_inj ι.injective
+    rw [hW, finrank_top] at this
+    omega
+  obtain ⟨w, hw, hw0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (Submodule.orthogonal_eq_bot_iff.not.2 hW)
+  refine ⟨⟨‖w‖⁻¹ • w, by simp [norm_smul, norm_ne_zero_iff.2 hw0]⟩, fun x ↦ ?_⟩
+  rw [inner_smul_left, (Submodule.mem_orthogonal' _ w).1 hw (ι x) ⟨x, rfl⟩, mul_zero]
+
+end LinearIsometry
 
 namespace LinearMap
 

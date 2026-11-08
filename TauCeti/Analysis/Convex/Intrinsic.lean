@@ -34,10 +34,16 @@ If `s` has the same affine span as `t` and contains the part of `t` in an open s
 intrinsic interior points of `t` in `U` are intrinsic interior points of `s`
 (`TauCeti.intrinsicInterior_inter_subset_of_affineSpan_eq`). From an intrinsic interior point,
 every small move along the affine span stays in the set
-(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). The intrinsic frontier of a closed
-set consists of its points outside its intrinsic interior (`IsClosed.sdiff_intrinsicInterior`).
-These are the tools for computing intrinsic interiors and frontiers of concrete cells, such as the
-bands of `TauCeti/Analysis/Convex/RegionBetween.lean`.
+(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). Consequently an affine function
+which is nonnegative on a set and vanishes at one of its intrinsic interior points vanishes on the
+whole set (`TauCeti.eq_zero_of_nonneg_of_mem_intrinsicInterior`). In particular, an inequality
+`a ≤ b` between affine functions on `s`, which persists on the convex hull of `s`
+(`TauCeti.le_of_forall_le_of_mem_convexHull`), is strict on the intrinsic interior of that hull
+unless `a = b` on all of it (`TauCeti.eq_of_le_of_mem_intrinsicInterior`). The intrinsic
+frontier of a closed set consists of its points outside its intrinsic interior
+(`IsClosed.sdiff_intrinsicInterior`). These are the tools for computing intrinsic interiors and
+frontiers of concrete cells, such as the bands of `TauCeti/Analysis/Convex/RegionBetween.lean`,
+and the cells of a hyperplane arrangement.
 
 Read in the ambient space, `x` is an intrinsic interior point of `s` when it lies in the affine
 span of `s` and the points of that span near `x` lie in `s`
@@ -250,6 +256,20 @@ end Cells
 
 end FiniteDimensional
 
+section Convex
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- An inequality between two affine functions on a set persists on its convex hull. -/
+theorem le_of_forall_le_of_mem_convexHull {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
+    (h : ∀ x ∈ s, a x ≤ b x) {x : E} (hx : x ∈ convexHull ℝ s) : a x ≤ b x := by
+  have hc : Convex ℝ {y | a y ≤ b y} := by
+    convert (convex_Ici (0 : ℝ)).affine_preimage (b - a) using 1
+    ext y
+    simp [sub_nonneg]
+  exact convexHull_min (fun y hy ↦ h y hy) hc hx
+
+end Convex
 
 open Bornology Metric Topology
 open scoped Pointwise
@@ -347,6 +367,34 @@ theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicIn
   have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
   simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
+
+/-- An affine function which is nonnegative on a set `C` and vanishes at an intrinsic interior
+point `c` of `C` vanishes on all of `C`. -/
+theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg : ∀ y ∈ C, 0 ≤ g y)
+    (hc : c ∈ intrinsicInterior ℝ C) (hgc : g c = 0) {y : E} (hy : y ∈ C) : g y = 0 := by
+  -- Push `c` slightly away from `y` inside `C`; there `g` takes the value `-ε * g y`.
+  have hv : c - y ∈ (affineSpan ℝ C).direction := by
+    rw [direction_affineSpan]
+    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hc) hy
+  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hc hv).filter_mono
+    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
+  have hgε : g (c + ε • (c - y)) = g c + ε * (g c - g y) := by
+    rw [add_comm c, ← vadd_eq_add, AffineMap.map_vadd, map_smul, ← vsub_eq_sub,
+      AffineMap.linear_apply_vsub, vadd_eq_add, smul_eq_mul, vsub_eq_sub, add_comm]
+  have h := hg _ hε
+  rw [hgε, hgc] at h
+  nlinarith [hg y hy, mem_Ioi.1 hεpos]
+
+/-- If `a ≤ b` on `s` for two affine functions, with equality at an intrinsic interior point of
+the convex hull of `s`, then `a = b` on the whole convex hull. -/
+theorem eq_of_le_of_mem_intrinsicInterior {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
+    (h : ∀ x ∈ s, a x ≤ b x) {x y : E} (hx : x ∈ intrinsicInterior ℝ (convexHull ℝ s))
+    (hxe : a x = b x) (hy : y ∈ convexHull ℝ s) : a y = b y := by
+  have := eq_zero_of_nonneg_of_mem_intrinsicInterior (g := b - a)
+    (fun z hz ↦ by simpa [sub_nonneg] using le_of_forall_le_of_mem_convexHull h hz) hx
+    (by simp [hxe]) hy
+  rw [AffineMap.coe_sub, Pi.sub_apply, sub_eq_zero] at this
+  exact this.symm
 
 /-- A subset `u` of a convex set `s` meeting the intrinsic interior of `s` has its intrinsic
 interior inside that of `s`. -/

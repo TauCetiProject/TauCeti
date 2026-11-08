@@ -5,25 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Group.Quotient
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Sum
 import TauCeti.Analysis.Normed.Module.StrictGenerators
 
 /-!
-# Strict generators of submodules of finite free modules over Tate algebras
+# Closed submodules and strict generators over Tate algebras
 
 Let `T = K⟨X₁/c₁, …, Xₙ/cₙ⟩` be a Tate algebra over a complete nonarchimedean field `K`, at
 arbitrary positive radii, and give the finite free module `T^ι` the maximum of the Gauss norms of
-the coordinates. Every submodule `N ≤ T^ι` has a finite set `F` of nonzero elements generating it
-*strictly*: each `y ∈ N` is a combination `∑ x ∈ F, a x • x` with `‖a x‖ * ‖x‖ ≤ ‖y‖`
-(`Submodule.exists_finset_eq_sum_smul_isRestricted_subring`). At unit polyradius the generators
-can be taken of norm one, with coefficients of norm at most `‖y‖`
-(`Submodule.exists_finset_norm_eq_one_isRestricted_subring`). These are the module forms of
-`Ideal.exists_finset_eq_sum_mul_isRestricted_subring` and
-`Ideal.exists_finset_norm_eq_one_isRestricted_subring`. As for ideals, the general statement
-(`TauCeti.MvPowerSeries.exists_finset_eq_sum_smul_isRestricted_subring_of_division`) holds over a
-complete commutative ring with a multiplicative ultrametric norm and a compatible Euclidean
-degree.
+the coordinates. Every submodule `N ≤ T^ι`:
+
+* has a finite set `F` of nonzero elements generating it *strictly*, so that each `y ∈ N` is a
+  combination `∑ x ∈ F, a x • x` with `‖a x‖ * ‖x‖ ≤ ‖y‖`
+  (`Submodule.exists_finset_eq_sum_smul_isRestricted_subring`), normalisable to norm one at unit
+  polyradius (`Submodule.exists_finset_norm_eq_one_isRestricted_subring`);
+* is closed in `T^ι` (`Submodule.isClosed_pi_isRestricted_subring`), making
+  `(ι → T) ⧸ N` a complete ultrametric normed group under its quotient norm;
+* is *strictly closed*: every coset of `N` has a vector of least norm
+  (`Submodule.exists_norm_sub_le_isRestricted_subring`), equivalently every class in `(ι → T) ⧸ N`
+  has a representative attaining its quotient norm
+  (`Submodule.exists_mk_eq_and_norm_eq_isRestricted_subring`);
+* at unit polyradius, induces quotient norms valued in `‖K‖`
+  (`Submodule.exists_norm_eq_norm_quotient_isRestricted_subring`).
+
+As for ideals, the strict-generator, closedness, and least-norm-representative statements hold over
+any complete commutative ring with a multiplicative ultrametric norm and a compatible Euclidean
+degree (`exists_finset_eq_sum_smul_isRestricted_subring_of_division`,
+`isClosed_submodule_pi_isRestricted_subring_of_division`,
+`exists_norm_sub_le_pi_isRestricted_subring_of_division`).
 
 ## Proof
 
@@ -32,15 +43,17 @@ variables `Y_i`, `i ∈ ι`, at radius one, consider the ideal `J` of series `z`
 term whose linear part `∑ᵢ zᵢ Yᵢ` has coefficient vector `(zᵢ)ᵢ ∈ N`. Since `z` has no constant
 term, the linear part of `a * z` is the constant term of `a` times that of `z`, so `J` is an
 ideal. Identifying series over `T` in `Y` with restricted series in the variables `X` and `Y`
-(`TauCeti.MvPowerSeries.restrictedSumEquiv`), the ideal `J` has strict generators `g`. For
-`y ∈ N`, write `∑ᵢ yᵢ Yᵢ = ∑ a g * g` strictly and compare linear parts:
-`y = ∑ (a g)(0) • lin(g)`. Taking coefficients does not increase Gauss norms, and the Gauss norm of
-`∑ᵢ yᵢ Yᵢ` is at most `‖y‖`, so the linear parts of the `g` generate `N` strictly.
+(`TauCeti.MvPowerSeries.restrictedSumEquiv`), `J` has strict generators `g` and least-norm coset
+adjustments. Taking linear parts neither increases Gauss norms nor alters membership in `N`: strict
+generators of `J` project to strict generators of `N`, giving completeness and closedness via
+`Submodule.isClosed_of_exists_finset_eq_sum_smul`, while a least-norm adjustment of `∑ᵢ xᵢ Yᵢ`
+modulo `J` projects to a least-norm adjustment of `x` modulo `N`.
 
 ## References
 
 * S. Bosch, *Lectures on Formal and Rigid Geometry*, §1.3, for strict generating systems of
   submodules of `T^m`.
+* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§5.2.7 and 6.1.1.
 -/
 
 public section
@@ -111,6 +124,11 @@ private theorem norm_linearForm_le (x : ι → T) : ‖linearForm x‖ ≤ ‖x�
   IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg x) fun i _ ↦ by
     simpa using norm_le_pi_norm x i
 
+private theorem linearForm_sub (x y : ι → T) :
+    linearForm (x - y) = linearForm x - linearForm y := by
+  apply Subtype.ext
+  simp [linearForm, map_sub, Finset.sum_sub_distrib]
+
 private theorem linearForm_mem_linearIdeal {N : Submodule T (ι → T)} {x : ι → T} (hx : x ∈ N) :
     linearForm x ∈ linearIdeal N :=
   ⟨constantCoeff_linearForm x, (linearCoeff_linearForm x).symm ▸ hx⟩
@@ -177,6 +195,49 @@ theorem exists_finset_eq_sum_smul_isRestricted_subring_of_division [NormMulClass
             (norm_nonneg _)
       _ ≤ ‖y‖ := (hale g hgG).trans hey
 
+omit [Fintype ι] in
+/-- **Submodules of finite free modules over restricted power series are closed.** Under the
+hypotheses of `exists_finset_eq_sum_smul_isRestricted_subring_of_division`, every submodule `N` of
+`ι → T` (for finite `ι`) has a finite strict generating system in the maximum Gauss norm and is
+therefore complete and closed. -/
+theorem isClosed_submodule_pi_isRestricted_subring_of_division [Finite ι] [NormMulClass R]
+    [CompleteSpace R] [Finite σ] (deg : R → ℕ)
+    (hdeg : ∀ x y : R, ‖x - y‖ < ‖x‖ → deg y = deg x)
+    (hdiv : ∀ x y : R, x ≠ 0 → ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ deg w < deg x))
+    (N : Submodule T (ι → T)) :
+    IsClosed (N : Set (ι → T)) := by
+  let _ := Fintype.ofFinite ι
+  exact N.isClosed_of_exists_finset_eq_sum_smul
+    (exists_finset_eq_sum_smul_isRestricted_subring_of_division deg hdeg hdiv N)
+
+/-- **Least-norm coset representatives for submodules of finite free modules over restricted power
+series.** Under the hypotheses of `exists_finset_eq_sum_smul_isRestricted_subring_of_division`,
+every submodule `N` of `ι → T` is strictly closed: for every `x : ι → T`, there is `y ∈ N`
+minimising `‖x - y‖` over `N`. -/
+theorem exists_norm_sub_le_pi_isRestricted_subring_of_division [NormMulClass R]
+    [CompleteSpace R] [Finite σ] (deg : R → ℕ)
+    (hdeg : ∀ x y : R, ‖x - y‖ < ‖x‖ → deg y = deg x)
+    (hdiv : ∀ x y : R, x ≠ 0 → ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ deg w < deg x))
+    (N : Submodule T (ι → T)) (x : ι → T) :
+    ∃ y ∈ N, ∀ y' ∈ N, ‖x - y‖ ≤ ‖x - y'‖ := by
+  let e := restrictedSumEquiv (R := R) (c := fun _ : ι ↦ (1 : ℝ)) (d := c)
+  obtain ⟨g, hg, hgle⟩ := exists_norm_sub_le_isRestricted_subring_of_division deg hdeg hdiv
+    ((linearIdeal N).comap e) (e.symm (linearForm x))
+  refine ⟨linearCoeff (e g), hg.2, fun y' hy' ↦ ?_⟩
+  have hxy : x - linearCoeff (e g) = linearCoeff (e (e.symm (linearForm x) - g)) := by
+    rw [map_sub, RingEquiv.apply_symm_apply, map_sub, linearCoeff_linearForm]
+  have hg' : e.symm (linearForm y') ∈ (linearIdeal N).comap e := by
+    rw [Ideal.mem_comap, RingEquiv.apply_symm_apply]
+    exact linearForm_mem_linearIdeal hy'
+  calc ‖x - linearCoeff (e g)‖
+      ≤ ‖e (e.symm (linearForm x) - g)‖ := hxy ▸ norm_linearCoeff_le _
+    _ = ‖e.symm (linearForm x) - g‖ := norm_restrictedSumEquiv _
+    _ ≤ ‖e.symm (linearForm x) - e.symm (linearForm y')‖ := hgle _ hg'
+    _ = ‖linearForm (x - y')‖ := by
+        rw [← norm_restrictedSumEquiv (c := fun _ : ι ↦ (1 : ℝ)) (d := c), map_sub,
+          RingEquiv.apply_symm_apply, RingEquiv.apply_symm_apply, ← linearForm_sub]
+    _ ≤ ‖x - y'‖ := norm_linearForm_le (x - y')
+
 section Field
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
@@ -194,6 +255,16 @@ theorem _root_.Submodule.exists_finset_eq_sum_smul_isRestricted_subring
   exists_finset_eq_sum_smul_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
     (fun x y hx ↦ ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩)
     N
+
+omit [Fintype ι] in
+/-- Every submodule of a finite free module `ι → K⟨X/c⟩` over a finite-variable Tate algebra over a
+complete nonarchimedean field is closed for the product (equivalently maximum Gauss-norm)
+topology. -/
+instance _root_.Submodule.isClosed_pi_isRestricted_subring [Finite ι]
+    (N : Submodule (IsRestricted.subring (R := K) c) (ι → IsRestricted.subring (R := K) c)) :
+    IsClosed (N : Set (ι → IsRestricted.subring (R := K) c)) := by
+  let _ := Fintype.ofFinite ι
+  exact N.isClosed_of_exists_finset_eq_sum_smul N.exists_finset_eq_sum_smul_isRestricted_subring
 
 /-- **Strict generators of norm one.** Over a complete nonarchimedean field `K`, every submodule
 `N` of the finite free module `ι → K⟨X⟩` over the Tate algebra at unit polyradius in finitely many
@@ -217,6 +288,51 @@ theorem _root_.Submodule.exists_finset_norm_eq_one_isRestricted_subring
     rw [← norm_pos_iff, hi]
     exact norm_pos_iff.mpr hx)
   exact ⟨u, hu, hux.trans hi⟩
+
+/-- **Strict closedness of submodules of finite free modules over Tate algebras.** Over a complete
+nonarchimedean field `K`, in finitely many variables and at arbitrary positive radii `c`, every
+submodule `N` of `ι → K⟨X/c⟩` is strictly closed: for every `x`, there is `y ∈ N` minimising
+`‖x - y‖` over `N`. -/
+theorem _root_.Submodule.exists_norm_sub_le_isRestricted_subring
+    (N : Submodule (IsRestricted.subring (R := K) c) (ι → IsRestricted.subring (R := K) c))
+    (x : ι → IsRestricted.subring (R := K) c) :
+    ∃ y ∈ N, ∀ y' ∈ N, ‖x - y‖ ≤ ‖x - y'‖ :=
+  exists_norm_sub_le_pi_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
+    (fun x y hx ↦ ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩)
+    N x
+
+/-- **Least-norm coset adjustment for submodules of finite free modules over Tate algebras.** For
+every vector `x : ι → K⟨X/c⟩` and submodule `N`, some `y ∈ N` makes `‖x - y‖` equal to the quotient
+norm of `x` modulo `N`. -/
+theorem _root_.Submodule.exists_norm_sub_eq_norm_mk_isRestricted_subring
+    (N : Submodule (IsRestricted.subring (R := K) c) (ι → IsRestricted.subring (R := K) c))
+    (x : ι → IsRestricted.subring (R := K) c) :
+    ∃ y ∈ N,
+      ‖x - y‖ = ‖(Submodule.Quotient.mk x : (ι → IsRestricted.subring (R := K) c) ⧸ N)‖ := by
+  obtain ⟨y, hy, hle⟩ := N.exists_norm_sub_le_isRestricted_subring x
+  exact ⟨y, hy, (Submodule.Quotient.norm_sub_eq_norm_mk_iff hy).mpr hle⟩
+
+/-- **Exact quotient-norm representatives for submodules of finite free modules over Tate
+algebras.** Every class in `(ι → K⟨X/c⟩) ⧸ N` is represented by a vector of the same norm. -/
+theorem _root_.Submodule.exists_mk_eq_and_norm_eq_isRestricted_subring
+    (N : Submodule (IsRestricted.subring (R := K) c) (ι → IsRestricted.subring (R := K) c))
+    (q : (ι → IsRestricted.subring (R := K) c) ⧸ N) :
+    ∃ x : ι → IsRestricted.subring (R := K) c, Submodule.Quotient.mk x = q ∧ ‖x‖ = ‖q‖ :=
+  Submodule.Quotient.exists_mk_eq_and_norm_eq_iff.mpr N.exists_norm_sub_le_isRestricted_subring q
+
+/-- **Values of the quotient Gauss norm on `(ι → K⟨X⟩) ⧸ N` at unit polyradius.** Every class in
+`(ι → K⟨X⟩) ⧸ N` has quotient norm equal to the norm of a scalar in `K`. -/
+theorem _root_.Submodule.exists_norm_eq_norm_quotient_isRestricted_subring
+    (N : Submodule (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))
+      (ι → IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))
+    (q : (ι → IsRestricted.subring (R := K) (fun _ : σ ↦ 1)) ⧸ N) :
+    ∃ a : K, ‖a‖ = ‖q‖ := by
+  obtain ⟨x, -, hxq⟩ := N.exists_mk_eq_and_norm_eq_isRestricted_subring q
+  rcases isEmpty_or_nonempty ι with _ | _
+  · exact ⟨0, by simp [← hxq, Subsingleton.elim x 0]⟩
+  · obtain ⟨i, hi : ‖x i‖ = ‖x‖⟩ := (IsGreatest.pi_norm x).1
+    obtain ⟨t, ht⟩ := exists_norm_coeff_eq_norm (x i)
+    exact ⟨coeff t (x i : MvPowerSeries σ K), (ht.trans hi).trans hxq⟩
 
 end Field
 

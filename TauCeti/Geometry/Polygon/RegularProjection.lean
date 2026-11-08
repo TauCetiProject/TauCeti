@@ -52,6 +52,8 @@ along `d` is (`Polygon.isRegularProjection_map_projAlong_iff`).
   the polygon.
 * `Polygon.isRegularProjection_rotate_iff`: regularity is unchanged by cyclically relabelling the
   vertices.
+* `Polygon.isRegularProjection_reverse_iff`: regularity is unchanged by reversing the order of the
+  vertices.
 * `Polygon.not_isRegularProjection_edge`: projecting along a nondegenerate edge is not regular.
 * `Polygon.isRegularProjection_map_iff`, `Polygon.isRegularProjection_map_projAlong_iff`: regular
   projections of the image of a polygon under an injective affine map.
@@ -173,6 +175,27 @@ theorem isRegularProjection_rotate_iff {π : P → Q} :
   · rw [hb] at hx
     rw [rotate_apply] at hxi ⊢
     exact hπ.eq_vertex_of_apply_eq _ hx hxi
+
+variable [IsOrderedRing R] in
+/-- A projection regular for `poly` is regular for its reversal `poly.reverse`: the two have the
+same boundary and the same vertices. -/
+theorem IsRegularProjection.reverse {π : P → Q} (hπ : poly.IsRegularProjection R π) :
+    poly.reverse.IsRegularProjection R π := by
+  have hb := boundary_reverse (R := R) poly
+  refine ⟨fun x y z hx hy hz ↦ ?_, fun i x hx hxi ↦ ?_⟩
+  · rw [hb] at hx hy hz
+    exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz
+  · rw [hb] at hx
+    rw [reverse_apply] at hxi ⊢
+    exact hπ.eq_vertex_of_apply_eq _ hx hxi
+
+variable [IsOrderedRing R] in
+/-- A projection is regular for the reversal `poly.reverse` exactly when it is regular for
+`poly`. -/
+@[simp]
+theorem isRegularProjection_reverse_iff {π : P → Q} :
+    poly.reverse.IsRegularProjection R π ↔ poly.IsRegularProjection R π :=
+  ⟨fun hπ ↦ by simpa using hπ.reverse, IsRegularProjection.reverse⟩
 
 variable [ZeroLEOneClass R]
 

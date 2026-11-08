@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Elementary diffeomorphisms of a normed space
@@ -21,6 +21,10 @@ provides only the `C^∞` one.
 For a nonzero scalar `a`, the affine map `x ↦ a • x + b` is a diffeomorphism of `E`, of any
 smoothness, with inverse `y ↦ a⁻¹ • (y - b)` (`Diffeomorph.smulAdd`). On the real line these are
 the affine changes of time `t ↦ a * t + b`.
+
+A diffeomorphism between normed spaces of nonzero smoothness is differentiable
+(`Diffeomorph.differentiable`), and its Fréchet derivative composed with that of its inverse
+is the identity (`Diffeomorph.fderiv_apply_fderiv_symm_apply`).
 -/
 
 public section
@@ -31,6 +35,22 @@ namespace Diffeomorph
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A diffeomorphism between normed spaces of nonzero smoothness is differentiable. -/
+protected theorem differentiable (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) :
+    Differentiable 𝕜 h :=
+  (h.mdifferentiable hn).differentiable
+
+/-- The derivatives of a normed-space diffeomorphism and its inverse compose to the identity. -/
+@[simp]
+theorem fderiv_apply_fderiv_symm_apply (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0)
+    (x v : F) : fderiv 𝕜 h (h.symm x) (fderiv 𝕜 h.symm x v) = v := by
+  have hid := h.mfderiv_apply_mfderiv_symm_apply hn (h.symm x) v
+  rw [mfderiv_eq_fderiv, mfderiv_eq_fderiv] at hid
+  -- Reduce the canonical tangent-space identifications, which act as the identity.
+  change fderiv 𝕜 h (h.symm x) (fderiv 𝕜 h.symm (h (h.symm x)) v) = v at hid
+  simpa only [h.apply_symm_apply] using hid
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse

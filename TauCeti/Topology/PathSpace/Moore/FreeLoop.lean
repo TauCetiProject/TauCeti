@@ -27,11 +27,13 @@ constant loop, and the constant loops `X → 𝓛₀X` are again a closed embedd
 
 ## Main definitions
 
-* `TauCeti.MooreFreeLoopSpace X`: the free Moore loops `𝓛X`, with `basepoint` and `length`.
-* `TauCeti.MooreFreeLoopSpace.const x`: the constant loop at `x` of length zero.
+* `TauCeti.MooreFreeLoopSpace X`: the free Moore loops `𝓛X`, with `basepoint` (`basepointMap`) and
+  `length`.
+* `TauCeti.MooreFreeLoopSpace.const x` (`constMap`): the constant loop at `x` of length zero.
 * `TauCeti.MooreLoopSpace.toFreeLoop`: a based Moore loop as a free loop.
-* `TauCeti.MooreFreeLoopSpace.contractibleLoops X`: the contractible free loops `𝓛₀X`, and
-  `TauCeti.MooreFreeLoopSpace.constContractible x`, the constant loop at `x` as a point of `𝓛₀X`.
+* `TauCeti.MooreFreeLoopSpace.contractibleLoops X`: the contractible free loops `𝓛₀X`, with
+  `basepointContractible` and `TauCeti.MooreFreeLoopSpace.constContractible x`
+  (`constContractibleMap`), the constant loop at `x` as a point of `𝓛₀X`.
 
 ## Main results
 
@@ -106,6 +108,15 @@ theorem target_toMoorePath (γ : MooreFreeLoopSpace X) : γ.toMoorePath.target =
 theorem continuous_basepoint : Continuous (basepoint : MooreFreeLoopSpace X → X) :=
   MoorePath.continuous_source.comp continuous_toMoorePath
 
+variable (X) in
+/-- Basepoint evaluation `𝓛X → X`, bundled as a continuous map. -/
+def basepointMap : C(MooreFreeLoopSpace X, X) :=
+  ⟨basepoint, continuous_basepoint⟩
+
+@[simp]
+theorem basepointMap_apply (γ : MooreFreeLoopSpace X) : basepointMap X γ = γ.basepoint :=
+  (rfl)
+
 /-- The length of a free loop. -/
 def length (γ : MooreFreeLoopSpace X) : ℝ≥0 :=
   γ.toMoorePath.length
@@ -139,6 +150,15 @@ theorem length_const (x : X) : (const x).length = 0 :=
 @[fun_prop]
 protected theorem continuous_const : Continuous (const : X → MooreFreeLoopSpace X) :=
   isEmbedding_toMoorePath.continuous_iff.2 MoorePath.continuous_refl
+
+variable (X) in
+/-- The constant free Moore loops of duration zero, bundled as a continuous section `X → 𝓛X`. -/
+def constMap : C(X, MooreFreeLoopSpace X) :=
+  ⟨const, MooreFreeLoopSpace.continuous_const⟩
+
+@[simp]
+theorem constMap_apply (x : X) : constMap X x = const x :=
+  (rfl)
 
 /-- A free loop of length zero is the constant loop at its base point. -/
 theorem eq_const_of_length_eq_zero {γ : MooreFreeLoopSpace X} (h : γ.length = 0) :
@@ -296,6 +316,26 @@ theorem isClosedEmbedding_constContractible :
   isClosed_range := by
     rw [constContractible, Set.range_codRestrict]
     exact isClosedEmbedding_const.isClosed_range.preimage continuous_subtype_val
+
+variable (X) in
+/-- Basepoint evaluation `𝓛₀X → X` on contractible free Moore loops. -/
+def basepointContractible : C(contractibleLoops X, X) :=
+  (basepointMap X).comp (ContinuousMap.subtypeVal (contractibleLoops X))
+
+@[simp]
+theorem basepointContractible_apply (γ : contractibleLoops X) :
+    basepointContractible X γ = γ.1.basepoint :=
+  (rfl)
+
+variable (X) in
+/-- Constant contractible free Moore loops, bundled as a continuous section `X → 𝓛₀X`. -/
+def constContractibleMap : C(X, contractibleLoops X) :=
+  ⟨constContractible, continuous_constContractible⟩
+
+@[simp]
+theorem constContractibleMap_apply (x : X) :
+    constContractibleMap X x = constContractible x :=
+  (rfl)
 
 end MooreFreeLoopSpace
 

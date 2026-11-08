@@ -21,6 +21,7 @@ public import TauCeti.Topology.KrullDimension.Local
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.KrullDimension.Regular
+import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Fiber
 
@@ -317,40 +318,23 @@ theorem topologicalKrullDim_inter_eq_of_finiteType {A : Type*} [CommRing A] [Alg
     topologicalKrullDim ↥(Z ∩ U) = topologicalKrullDim Z := by
   refine le_antisymm (IsEmbedding.inclusion Set.inter_subset_left).isInducing.topologicalKrullDim_le
     ?_
-  -- `Z` is the zero locus of a prime `p`, so it is `Spec (A ⧸ p)`; and `Z ∩ U` contains the basic
-  -- open set of some `g ∉ p`, which is `Spec (A ⧸ p)[1/g']` for the image `g'` of `g`.
+  -- `Z` is the zero locus of a prime `p`, so it has the dimension of `A ⧸ p`; and `Z ∩ U` contains
+  -- `Z ∩ D(g)` for some `g ∉ p`, which contains a copy of `Spec (A ⧸ p)[1/g']` for the image `g'`
+  -- of `g`, of the same dimension.
   set p := vanishingIdeal Z
   have := isIrreducible_iff_vanishingIdeal_isPrime.mp hZ
   have hZp : zeroLocus p = Z := by rw [zeroLocus_vanishingIdeal_eq_closure, hZc.closure_eq]
   obtain ⟨x, hxZ, hxU⟩ := hZU
   obtain ⟨_, ⟨g, rfl⟩, hxg, hgU⟩ :=
     isTopologicalBasis_basic_opens.exists_subset_of_mem_open hxU hU
-  set g' := Ideal.Quotient.mk p g
-  have hg : g' ≠ 0 := by
-    rw [Ne, Ideal.Quotient.eq_zero_iff_mem]
-    exact fun h ↦ hxg ((hZp ▸ hxZ : x ∈ zeroLocus p) h)
-  let i := comap (Ideal.Quotient.mk p)
-  have hi : IsClosedEmbedding i :=
-    isClosedEmbedding_comap_of_surjective _ _ Ideal.Quotient.mk_surjective
-  have hrange : Set.range i = Z := by
-    rw [range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker, hZp]
-  let j := comap (algebraMap (A ⧸ p) (Localization.Away g'))
-  have hj : IsOpenEmbedding j := localization_away_isOpenEmbedding _ g'
-  have hsub (y : PrimeSpectrum (Localization.Away g')) : i (j y) ∈ Z ∩ U := by
-    refine ⟨hrange ▸ ⟨_, rfl⟩, hgU ?_⟩
-    have hy : j y ∈ (basicOpen g' : Set (PrimeSpectrum (A ⧸ p))) :=
-      localization_away_comap_range (Localization.Away g') g' ▸ ⟨y, rfl⟩
-    rw [SetLike.mem_coe, mem_basicOpen] at hy ⊢
-    simpa [i, comap_asIdeal] using hy
-  calc topologicalKrullDim Z = topologicalKrullDim (PrimeSpectrum (A ⧸ p)) :=
-        ((hi.isEmbedding.toHomeomorph).trans (Homeomorph.setCongr hrange)).symm.isHomeomorph
-          |>.topologicalKrullDim_eq
-    _ = topologicalKrullDim (PrimeSpectrum (Localization.Away g')) := by
-        rw [PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
-          PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
-          ringKrullDim_localization_away k hg (Localization.Away g')]
+  have hg : Ideal.Quotient.mk p g ≠ 0 := fun h ↦
+    hxg ((hZp ▸ hxZ : x ∈ zeroLocus p) (Ideal.Quotient.eq_zero_iff_mem.mp h))
+  calc topologicalKrullDim Z = ringKrullDim (A ⧸ p) := by
+        rw [← Ideal.topologicalKrullDim_zeroLocus, hZp]
+    _ = ringKrullDim (Localization.Away (Ideal.Quotient.mk p g)) :=
+        (ringKrullDim_localization_away k hg _).symm
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
-        ((hi.isEmbedding.comp hj.isEmbedding).isInducing.codRestrict hsub).topologicalKrullDim_le
+        p.ringKrullDim_localization_away_quotient_le g (Set.inter_subset_inter hZp.le hgU)
 
 
 variable (k) in
@@ -391,6 +375,15 @@ private theorem ringKrullDim_quotient_add_one_of_height_eq_one {A : Type*} [Comm
     (mem_nonZeroDivisors_of_ne_zero hf0) hMR (hQM hfQ)
 
 variable (k) in
+/-- In a finitely generated domain of Krull dimension `n + 1` over a field, quotienting by a prime
+of height one gives Krull dimension `n`. -/
+private theorem ringKrullDim_quotient_eq_of_height_eq_one {A : Type*} [CommRing A] [IsDomain A]
+    [Algebra k A] [Algebra.FiniteType k A] (P : Ideal A) [P.IsPrime] (hP : P.height = 1) {n : ℕ}
+    (hn : ringKrullDim A = (n + 1 : ℕ)) : ringKrullDim (A ⧸ P) = n := by
+  have h := ringKrullDim_quotient_add_one_of_height_eq_one k P hP
+  rwa [hn, Nat.cast_succ, ENat.WithBot.add_one_cancel] at h
+
+variable (k) in
 /-- The dimension formula `ht p + dim (A ⧸ p) = dim A` for a finitely generated domain `A` over a
 field. -/
 private theorem height_add_ringKrullDim_quotient_of_isDomain {A : Type*} [CommRing A]
@@ -408,25 +401,14 @@ private theorem height_add_ringKrullDim_quotient_of_isDomain {A : Type*} [CommRi
     rcases eq_or_ne p ⊥ with rfl | hp
     · simp [ringKrullDim_eq_of_ringEquiv (RingEquiv.quotientBot A)]
     have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
-    obtain ⟨a, hap, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hp
-    obtain ⟨P, hP, hPp⟩ :=
-      Ideal.exists_minimalPrimes_le ((Ideal.span_singleton_le_iff_mem p).mpr hap)
-    have := hP.1.1
-    have hP0 : P ≠ ⊥ := fun h ↦ ha (by simpa [h] using hP.1.2)
-    have hP1 : P.height = 1 := le_antisymm
-      (Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ P hP)
-      (Order.one_le_iff_pos.mpr (pos_iff_ne_zero.mpr (Ideal.height_eq_zero_iff_eq_bot.not.mpr hP0)))
-    have hdimP : ringKrullDim (A ⧸ P) = n := by
-      have hdim := ringKrullDim_quotient_add_one_of_height_eq_one k P hP1
-      rw [hn, ringKrullDim_eq_toNat_trdeg k (A ⧸ P)] at hdim
-      rw [ringKrullDim_eq_toNat_trdeg k (A ⧸ P),
-        Nat.add_right_cancel (by exact_mod_cast hdim : (Algebra.trdeg k (A ⧸ P)).toNat + 1 = n + 1)]
+    obtain ⟨P, hPp, _, hP1⟩ := p.exists_le_isPrime_height_eq_one hp
+    have hdimP := ringKrullDim_quotient_eq_of_height_eq_one k P hP1 hn
     have : (p.map (Ideal.Quotient.mk P)).IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hPp
     have hIH := ih (p.map (Ideal.Quotient.mk P)) hdimP
     rw [ringKrullDim_eq_of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE hPp), hdimP] at hIH
     have hht := Ideal.height_map_quotientMk_add_one_le hPp fun m hm hle ↦ by
       rw [IsDomain.minimalPrimes_eq_singleton_bot, Set.mem_singleton_iff] at hm
-      exact hP0 (le_bot_iff.mp (hm ▸ hle))
+      exact P.ne_bot_of_height_eq_one hP1 (le_bot_iff.mp (hm ▸ hle))
     calc ringKrullDim A = n + 1 := by rw [hn]; norm_cast
       _ ≤ (p.map (Ideal.Quotient.mk P)).height + ringKrullDim (A ⧸ p) + 1 := by gcongr
       _ = ((p.map (Ideal.Quotient.mk P)).height + 1 : ℕ∞) + ringKrullDim (A ⧸ p) := by

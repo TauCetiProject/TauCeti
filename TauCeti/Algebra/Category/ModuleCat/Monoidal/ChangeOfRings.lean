@@ -34,10 +34,7 @@ variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
 
 /-- Restriction of scalars between module categories preserves the symmetric braiding. -/
 instance restrictScalarsLaxBraided : (_root_.ModuleCat.restrictScalars f).LaxBraided where
-  braided M N := by
-    apply _root_.ModuleCat.MonoidalCategory.tensor_ext
-    intro (m : M) (n : N)
-    erw [_root_.ModuleCat.restrictScalars_μ_tmul]
+  braided _ _ := _root_.ModuleCat.MonoidalCategory.tensor_ext fun _ _ ↦ rfl
 
 end
 
@@ -78,16 +75,18 @@ theorem extendScalarsCompTensorLeftIso_hom_app_tmul (M : ModuleCat.{u} P) (X : M
     (Hom.hom : ((restrictScalars f).obj (M ⊗ (extendScalars f).obj X) ⟶
         (restrictScalars f).obj M ⊗ X) → _) ((extendScalarsCompTensorLeftIso f M).hom.app X)
         (TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m (s ⊗ₜ[A, f] x)) =
-      TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) (s • m) x := by
-  unfold extendScalarsCompTensorLeftIso tensorExtendScalarsLinearEquiv
-  rfl
+      TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) (s • m) x :=
+  (rfl)
 
 /-- The inverse of `extendScalarsCompTensorLeftIso` sends `m ⊗ x` to `m ⊗ (1 ⊗ x)`. -/
+@[simp]
 theorem extendScalarsCompTensorLeftIso_inv_app_tmul (M : ModuleCat.{u} P) (X : ModuleCat.{u} A)
     (m : (restrictScalars f).obj M) (x : X) :
-    ((extendScalarsCompTensorLeftIso f M).inv.app X).hom (m ⊗ₜ x) =
-      TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m ((1 : P) ⊗ₜ[A, f] x) := by
-  unfold extendScalarsCompTensorLeftIso tensorExtendScalarsLinearEquiv
-  rfl
+    (Hom.hom : ((restrictScalars f).obj M ⊗ X ⟶
+        (restrictScalars f).obj (M ⊗ (extendScalars f).obj X)) → _)
+        ((extendScalarsCompTensorLeftIso f M).inv.app X)
+        (TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) m x) =
+      TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m ((1 : P) ⊗ₜ[A, f] x) :=
+  (rfl)
 
 end ModuleCat

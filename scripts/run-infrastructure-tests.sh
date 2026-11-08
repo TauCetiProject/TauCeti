@@ -22,9 +22,9 @@ python3 scripts/pr_status/test_zulip.py
 python3 scripts/pr_status/test_conflicts.py
 python3 scripts/test_structure_nudge.py
 python3 scripts/test_workflow_pins.py
+python3 scripts/test_pages_data_refresh.py
 python3 scripts/test_control_batch_workflows.py
 python3 scripts/test_control_batch_budget.py
-python3 scripts/test_control_batch_merge.py
 python3 scripts/test_queue_release.py
 python3 scripts/test_pick_runner.py
 python3 scripts/test_fleet_runner.py
@@ -32,6 +32,7 @@ python3 scripts/test_bwrap_pin.py
 python3 scripts/test_bump_manifest.py
 python3 scripts/test_bump_latest.py
 python3 scripts/test_lint_scope.py
+python3 scripts/test_ci_preflight_policy.py
 python3 scripts/test_bors_scope_approval.py
 python3 scripts/test_bors_staging_identity.py
 python3 scripts/test_bors_train_identity.py
@@ -39,12 +40,16 @@ python3 scripts/test_build_lint_driver.py
 python3 scripts/test_lint_env_locations.py
 python3 scripts/test_elan_pin.py
 python3 scripts/test_dependency_warm.py
+python3 scripts/test_dependency_prefill.py
 python3 scripts/test_toolchain_install_retry.py
 python3 scripts/test_duplicate_audit_workflow.py
 python3 scripts/test_ci_host_resources.py
+python3 scripts/test_ci_live_progress.py
 python3 scripts/test_web_pins.py
 python3 scripts/test_attest_pr_config.py
 python3 scripts/test_prepare_pr_integration.py
+python3 scripts/test_ci_checkout_workflow.py
+python3 scripts/test_ci_checkout.py
 python3 scripts/test_profile_workflow.py
 python3 scripts/test_lake_cache_probe.py
 python3 scripts/test_lake_cache_get.py

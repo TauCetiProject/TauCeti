@@ -90,8 +90,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Set Filter Manifold Topology
-open scoped Manifold ContDiff
+open Set Filter _root_.Manifold Topology
+open scoped _root_.Manifold ContDiff
 
 namespace SmoothEmbedding
 
@@ -437,13 +437,12 @@ private theorem isSmoothEmbedding_collaredTrace [FiniteDimensional ℝ E']
   have hS : ContMDiff (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n S :=
     e'.contMDiff.comp ((contMDiff_fst.prodMk hG).comp e.contMDiff)
   have hemb : IsSmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n S := by
-    refine ⟨isImmersion_iff_forall_isImmersionAt.mpr fun p => ?_,
+    refine ⟨hS.isImmersion_of_injective_mfderiv hn fun p => ?_,
       e'.toHomeomorph.isEmbedding.comp (hT.isEmbedding.comp e.toHomeomorph.isEmbedding)⟩
     have hdiff := ((e'.isLocalDiffeomorph _).isDiffImmersionAt hn0).comp
       ((hT.isImmersion.isDiffImmersionAt hn0 (e p)).comp
         ((e.isLocalDiffeomorph _).isDiffImmersionAt hn0))
-    exact (hS.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ p) hn).mpr
-      hdiff.mfderiv_injective
+    exact hdiff.mfderiv_injective
   simpa only [S, G, e, e', _root_.Diffeomorph.coe_prodComm, Function.comp_def, Prod.swap]
     using hemb
 

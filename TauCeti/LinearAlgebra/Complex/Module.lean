@@ -19,6 +19,9 @@ This decomposition applies to any real module structure compatible with the comp
 
 For a real-linear map `L` into a complex module, its defect from complex linearity
 `e ↦ L e + I • L (I * e)` is conjugate-linear and is therefore determined by its value at `1`.
+A real-linear map vanishing at `I` is unchanged by conjugating its argument
+(`LinearMap.apply_conj_of_apply_I_eq_zero`), and a real-bilinear map vanishing at `(1, I)` and
+`(I, 1)` is unchanged by conjugating both arguments.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
@@ -27,6 +30,9 @@ linear (`LinearMap.complexOfMapISmul`).
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
 at `I` (`Units.conj_complexAlgHom_apply`).
+
+The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 -/
 
 public section
@@ -60,6 +66,25 @@ theorem conj_smul_apply_one_add_I_smul_apply_I {F : Type*} [AddCommGroup F] [Mod
   · ring
   · linear_combination -(e.im : ℂ) * I_sq
 
+/-- A real-linear map out of the complex plane that vanishes at `I` is unchanged by conjugating
+its argument. -/
+theorem apply_conj_of_apply_I_eq_zero {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) (hL : L I = 0) (z : ℂ) : L (conj z) = L z := by
+  rw [L.apply_eq_re_smul_one_add_im_smul_I (conj z), L.apply_eq_re_smul_one_add_im_smul_I z, hL]
+  simp
+
+/-- A real-bilinear map on the complex plane with `B 1 I = B I 1 = 0` is unchanged by
+conjugating both arguments. -/
+theorem apply_conj_apply_conj_of_apply_one_I_eq_zero_of_apply_I_one_eq_zero {F : Type*}
+    [AddCommGroup F] [Module ℝ F] (B : ℂ →ₗ[ℝ] ℂ →ₗ[ℝ] F) (h₁ : B 1 I = 0) (h₂ : B I 1 = 0)
+    (v e : ℂ) : B (conj v) (conj e) = B v e := by
+  rw [B.apply_eq_re_smul_one_add_im_smul_I (conj v), B.apply_eq_re_smul_one_add_im_smul_I v]
+  simp only [LinearMap.add_apply, LinearMap.smul_apply]
+  rw [(B 1).apply_eq_re_smul_one_add_im_smul_I (conj e),
+    (B I).apply_eq_re_smul_one_add_im_smul_I (conj e), (B 1).apply_eq_re_smul_one_add_im_smul_I e,
+    (B I).apply_eq_re_smul_one_add_im_smul_I e, h₁, h₂]
+  simp
+
 end LinearMap
 
 namespace Complex
@@ -80,6 +105,18 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
       ((LinearMap.toSpanSingleton ℂ V v).restrictScalars ℝ) z).symm
 
 end Complex
+
+namespace TauCeti
+
+open scoped ComplexStarModule in
+/-- The real part `(a + a*) / 2` is `a` plus half the skew difference `a* - a`. -/
+theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A]
+    [StarAddMonoid A] [StarModule ℂ A] (a : A) :
+    (ℜ a : A) = a + (2 : ℝ)⁻¹ • (star a - a) := by
+  rw [realPart_apply_coe]
+  module
+
+end TauCeti
 
 section ComplexOfMapISmul
 

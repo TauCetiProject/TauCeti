@@ -78,6 +78,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   length for a finite module `M` when the radical of `I` is the maximal ideal.
 * `Ideal.length_localizedModule_quotient_eq_one`: for a prime `𝔭`, the localization of `A ⧸ 𝔭`
   at `𝔭` has length one over `A_𝔭`, being its residue field.
+* `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
+  over a noetherian local ring.
 * `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
   homomorphism preserves length.
 * `LinearEquiv.length_localizedModule_comap`: for a ring isomorphism `σ : A → B` and a
@@ -389,6 +391,18 @@ theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
     isArtinianRing_iff_isNilpotent_maximalIdeal (A ⧸ I) |>.mpr hnil
   exact ⟨inferInstance,
     isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
+
+/-- Every quotient of a noetherian local ring by a power of its maximal ideal has finite length:
+for `n ≠ 0` the power `𝔪 ⁿ` is maximal-primary, and for `n = 0` the quotient is zero. -/
+theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
+    IsFiniteLength A (A ⧸ maximalIdeal A ^ n) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · have : Subsingleton (A ⧸ maximalIdeal A ^ 0) := by
+      rw [pow_zero, Ideal.one_eq_top]
+      infer_instance
+    exact .of_subsingleton
+  · exact isFiniteLength_quotient_of_radical_eq_maximalIdeal _ <| by
+      rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
 
 /-- **A finite module modulo a maximal-primary ideal has finite length.** Let `(A, 𝔪)` be a
 noetherian local ring, `I` an ideal whose radical is `𝔪` and `M` a finite `A`-module. Then
