@@ -125,7 +125,7 @@ theorem comap_subtype (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ
   -- A sum of pieces traces on the complexification of `U` in the sum of the traces of those
   -- pieces; this is `iSup₂_inf_rationalToComplexSubmodule`.
   refine
-    { iSupIndep := TauCeti.iSupIndep_comap_subtype h.iSupIndep
+    { iSupIndep := h.iSupIndep.comap_subtype
       rationalToComplexSubmodule_eq_iSup := fun k ↦ ?_
       F_eq_iSup := fun p ↦ ?_
       map_latticeConj_le := map_latticeConj_comap_subtype_le h hU }
