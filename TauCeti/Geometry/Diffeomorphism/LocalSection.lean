@@ -133,7 +133,8 @@ private theorem norm_list_sum_smul_le (l : List (ℝ × E)) :
     exact mul_le_mul_of_nonneg_left (by linarith) (abs_nonneg _)
 
 /-- A composite of cut-off coordinate motions near `x` is translation in the chart by the sum of
-their displacements, as long as the motions stay in the ball where `ρ = 1`. -/
+their displacements `tᵢ • vᵢ`, whenever `‖c - extChartAt I x x‖ + ∑ |tᵢ| * (‖vᵢ‖ + 1) < ρ.rIn` (so
+the motions stay in the inner ball of `ρ`). -/
 private theorem list_prod_bumpFlow_extChartAt_symm (l : List (ℝ × E)) {c : E}
     (hc : ‖c - extChartAt I x x‖ + (l.map fun p ↦ |p.1| * (‖p.2‖ + 1)).sum < ρ.rIn) :
     (l.map fun p ↦ bumpFlow hm hmn hρ p.2 p.1).prod ((extChartAt I x).symm c) =

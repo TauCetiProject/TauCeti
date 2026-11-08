@@ -249,8 +249,8 @@ theorem isMIntegralCurveOn_bumpChartField
 
 /-- Near the centre of `ρ`, the maximal integral curve of the cut-off field `bumpChartField x ρ v`
 through `(extChartAt I x).symm c` is the straight line `t ↦ (extChartAt I x).symm (c + t • v)` in
-the chart, for every time `t` at which the segment from `c` to `c + t • v` stays in the inner ball
-of `ρ`. -/
+the chart, for every time `t` with `‖c - extChartAt I x x‖ + |t| * ‖v‖ < ρ.rIn` (so the segment
+from `c` to `c + t • v` stays in the inner ball of `ρ`). -/
 theorem maximalIntegralCurve_bumpChartField_extChartAt_symm [T2Space M]
     [BoundarylessManifold I M] {n : ℕ∞ω} {m : ℕ∞} [IsManifold I n M] (hm : 1 ≤ m)
     (hmn : (m : ℕ∞ω) + 1 ≤ n)
