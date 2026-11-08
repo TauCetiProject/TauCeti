@@ -522,7 +522,7 @@ private theorem eLpNorm_le_of_ne_top_or_sigmaFinite
   have hT₁ : MemLp (T f) q₁ ν :=
     memLp_iff.2 ((h₁ f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf₁.eLpNorm_lt_top))
   have hTq : MemLp (T f) q ν := by
-    rcases Set.mem_uIcc.1 (mem_uIcc_of_inv_eq hq₀0 hq₁0 hθ' hq) with ⟨h₁', h₂'⟩ | ⟨h₁', h₂'⟩
+    rcases Set.mem_uIcc.1 (mem_uIcc_of_inv_eq hθ' hq) with ⟨h₁', h₂'⟩ | ⟨h₁', h₂'⟩
     · exact hT₀.of_le_of_le hT₁ hq₀0 h₁' h₂'
     · exact hT₁.of_le_of_le hT₀ hq₁0 h₁' h₂'
   -- Duality reduces the bound to the bilinear estimate.
