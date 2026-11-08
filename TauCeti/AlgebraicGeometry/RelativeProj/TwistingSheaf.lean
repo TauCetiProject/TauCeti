@@ -7,9 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.Gluing
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Functor
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Localization
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 public import TauCeti.AlgebraicGeometry.RelativeProj.Basic
 
 /-!
@@ -48,6 +50,7 @@ elements `f` of degree one cover `Proj (⨁ n, Γ(Aₙ, U))` and trivialize its 
 * `CategoryTheory.CommMon.bijective_twistingSheafMap_app_restrictGradedSections`: the map of
   twisting sheaves along a transition map of the charts of the relative `Proj` is bijective on
   sections over the locus where `f` is invertible.
+* `CategoryTheory.CommMon.isQuasicoherent_relativeProjTwistingSheaf`: `𝒪(n)` is quasi-coherent.
 * `CategoryTheory.CommMon.isInvertible_relativeProjTwistingSheaf_of_iSup_eq_top`: `𝒪(n)` is
   invertible when the degree-one standard opens cover every chart.
 * `CategoryTheory.CommMon.isInvertible_relativeProjTwistingSheaf`: `𝒪(n)` is invertible when `A`
@@ -158,6 +161,23 @@ theorem _root_.CategoryTheory.CommMon.restrictRelativeProjTwistingSheafIso_hom (
     (A.restrictRelativeProjTwistingSheafIso n U).hom =
       (A.relativeProjTwistingSheafGlueData n).restrictGluedHom U :=
   ModulesGlueData.restrictGluedIso_hom _ _ U
+
+/-- **The twisting sheaves of a relative `Proj` are quasi-coherent**: their restrictions to the
+charts are the twisting sheaves of the charts, which are quasi-coherent. -/
+instance _root_.CategoryTheory.CommMon.isQuasicoherent_relativeProjTwistingSheaf (n : ℤ) :
+    (A.relativeProjTwistingSheaf n).IsQuasicoherent := by
+  refine AlgebraicGeometry.isQuasicoherent_of_isQuasicoherent_restrict _
+    (fun U : X.AffineZariskiSite ↦ (A.relativeProjCover.f U).opensRange)
+    A.relativeProjCover.iSup_opensRange fun U ↦ ?_
+  let f := A.relativeProjCover.f U
+  have : ((A.relativeProjTwistingSheaf n).restrict f).IsQuasicoherent :=
+    (SheafOfModules.isQuasicoherent (A.relativeProjCover.X U).ringCatSheaf).prop_of_iso
+      (A.restrictRelativeProjTwistingSheafIso n U).symm (Proj.isQuasicoherent_twistingSheaf _ n)
+  -- the open subscheme `f.opensRange` is the chart, through `f.isoOpensRange`
+  exact (SheafOfModules.isQuasicoherent f.opensRange.toScheme.ringCatSheaf).prop_of_iso
+    ((Scheme.Modules.restrictFunctorComp f.isoOpensRange.inv f).symm.app _ ≪≫
+      (Scheme.Modules.restrictFunctorCongr f.isoOpensRange_inv_comp).app _)
+    (Scheme.Modules.isQuasicoherent_restrictFunctor f.isoOpensRange.inv _)
 
 /-- **The twisting sheaves of a relative `Proj` are invertible** when, over every affine open `U`
 of `X`, the standard opens `D₊(f)` of the elements `f` of degree one cover the chart
