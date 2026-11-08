@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Ear.EdgeConnected
-
-import TauCeti.Combinatorics.Graph.Connectivity.Walk.Decomposition
+public import TauCeti.Combinatorics.Graph.Connectivity.Ear.Basic
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 
 /-!
 # Extending a subgraph by an ear
@@ -114,13 +113,13 @@ theorem IsLink.exists_ear_of_mem_notMem {e : β} {x y : α} (h : G.IsLink e x y)
     rw [Ear.toWalk_open]
     simp
 
-/-- Every proper connected subgraph of a `2`-edge-connected graph can be strictly enlarged by
-adjoining one open or closed ear.  This is the extension engine for constructing an ear
-decomposition; it does not require finiteness. -/
-theorem Connected.exists_ear_of_lt (hH : H.Connected) (hHG : H < G)
+/-- Every proper subgraph with a nonempty vertex set of a `2`-edge-connected graph can be strictly
+enlarged by adjoining one open or closed ear.  This is the extension engine for constructing an
+ear decomposition; it does not require finiteness. -/
+theorem Set.Nonempty.exists_ear_of_lt (hH : V(H).Nonempty) (hHG : H < G)
     (hG : G.IsEdgeConnected 2) : ∃ ear : G.Ear H, H < ear.add := by
   classical
-  have hV : V(G).Nonempty := hH.nonempty.mono hHG.le.vertexSet_mono
+  have hV : V(G).Nonempty := hH.mono hHG.le.vertexSet_mono
   have hG' := (isEdgeConnected_two_iff_connected_and_forall_not_isBridge hV).1 hG
   by_cases hvertices : V(G) ⊆ V(H)
   · have hedge : ∃ e, e ∈ E(G) ∧ e ∉ E(H) := by
@@ -161,7 +160,7 @@ theorem Connected.exists_ear_of_lt (hH : H.Connected) (hHG : H < G)
       rw [Ear.toWalk_open]
       simp
   · obtain ⟨y, hyG, hyH⟩ := Set.not_subset.1 hvertices
-    obtain ⟨x, hxH⟩ := hH.nonempty
+    obtain ⟨x, hxH⟩ := hH
     obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp
       (hG'.1.reachable (hHG.le.vertexSet_mono hxH) hyG)
     obtain ⟨e, a, b, -, hab, haH, hbH⟩ :=
