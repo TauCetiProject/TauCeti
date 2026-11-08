@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 import Mathlib.Probability.Independence.Integration
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
-import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -42,7 +42,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {B : ℝ≥0 → Ω → ℝ}
 
 /-- The mean-squared increment of the square of Brownian motion. -/
-theorem integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
+theorem integral_sq_sub_sq_sq_eval (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
     (∫ ω, (B t ω ^ 2 - B s ω ^ 2) ^ 2 ∂P) =
       4 * (s : ℝ) * ((t : ℝ) - s) + 3 * ((t : ℝ) - s) ^ 2 := by
   have := hB.isGaussianProcess.isProbabilityMeasure
@@ -51,10 +51,10 @@ theorem integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hs
   have hind : IndepFun (B s) D P :=
     hB.hasIndepIncrements.indepFun_eval_sub zero_le hst hB.eval_zero_ae_eq_zero
   have hint (X : Ω → ℝ) (v : ℝ≥0) (hX : HasLaw X (gaussianReal 0 v) P) (k : ℕ) :
-      Integrable (fun ω ↦ X ω ^ k) P := by
-    apply (integrable_norm_iff (hX.aemeasurable.pow_const k).aestronglyMeasurable).1
-    simpa only [norm_pow] using
-      (hX.hasGaussianLaw.memLp (p := (k : ℝ≥0∞)) (by simp)).integrable_norm_pow'
+      Integrable (fun ω ↦ X ω ^ k) P :=
+    hX.integrable_fun_comp (TauCeti.integrable_pow_gaussianReal 0 v k)
+  -- Expand using D = B_t - B_s into 4B_s²D² + 4B_sD³ + D⁴.
+  -- Independence computes the three moments below; integrability permits recombination.
   have h22 : IndepFun (fun ω ↦ B s ω ^ 2) (fun ω ↦ D ω ^ 2) P := by
     simpa only [Function.comp_def] using
       hind.comp (φ := fun x : ℝ ↦ x ^ 2) (ψ := fun x : ℝ ↦ x ^ 2)
@@ -96,11 +96,12 @@ theorem integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hs
   ring
 
 /-- The expected square-energy error on one cell of a left-step approximation to `B²`.
-The time integral is over real calendar time; `toNNReal` is immaterial on this interval. -/
-theorem integral_integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P)
+It equals `(t-s)(t²-s²) = 2s(t-s)² + (t-s)³`. The time integral is over real
+calendar time; `toNNReal` is immaterial on this interval. -/
+theorem integral_integral_sq_sub_sq_sq_eval (hB : IsPreBrownianReal B P)
     {s t : ℝ≥0} (hst : s ≤ t) :
     (∫ u in (s : ℝ)..t, ∫ ω, (B u.toNNReal ω ^ 2 - B s ω ^ 2) ^ 2 ∂P) =
-      2 * (s : ℝ) * ((t : ℝ) - s) ^ 2 + ((t : ℝ) - s) ^ 3 := by
+      ((t : ℝ) - s) * ((t : ℝ) ^ 2 - (s : ℝ) ^ 2) := by
   calc
     _ = ∫ u in (s : ℝ)..t, 4 * (s : ℝ) * (u - s) + 3 * (u - s) ^ 2 := by
       apply intervalIntegral.integral_congr
@@ -111,7 +112,7 @@ theorem integral_integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P)
         exact_mod_cast (show (s : ℝ) ≤ (u.toNNReal : ℝ) by
           rw [Real.coe_toNNReal _ hu0]
           exact hu.1)
-      simpa only [Real.coe_toNNReal _ hu0] using hB.integral_sq_sub_sq_eval hsu
+      simpa only [Real.coe_toNNReal _ hu0] using hB.integral_sq_sub_sq_sq_eval hsu
     _ = _ := by
       have hd (u : ℝ) : HasDerivAt
           (fun v : ℝ ↦ 2 * (s : ℝ) * (v - s) ^ 2 + (v - s) ^ 3)
@@ -130,7 +131,7 @@ theorem integral_integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P)
 
 /-- A mesh bound for the expected square-energy error of the left-step approximation to `B²`.
 Repeated grid points and an empty grid are allowed. The grid need only be monotone up to `n`. -/
-theorem sum_integral_integral_sq_sub_sq_eval_le (hB : IsPreBrownianReal B P)
+theorem sum_integral_integral_sq_sub_sq_sq_eval_le (hB : IsPreBrownianReal B P)
     {τ : ℕ → ℝ≥0} {n : ℕ} {T δ : ℝ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hT : (τ n : ℝ) ≤ T) (hδ0 : 0 ≤ δ)
     (hδ : ∀ i < n, (τ (i + 1) : ℝ) - τ i ≤ δ) :
@@ -142,13 +143,10 @@ theorem sum_integral_integral_sq_sub_sq_eval_le (hB : IsPreBrownianReal B P)
       apply sum_le_sum
       intro i hi
       have hs := hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)
-      rw [hB.integral_integral_sq_sub_sq_eval hs]
+      rw [hB.integral_integral_sq_sub_sq_sq_eval hs]
       have hdiff : 0 ≤ (τ (i + 1) : ℝ) ^ 2 - (τ i : ℝ) ^ 2 := by
         nlinarith [NNReal.coe_le_coe.mpr hs, (τ i).coe_nonneg]
-      calc
-        _ = ((τ (i + 1) : ℝ) - τ i) *
-            ((τ (i + 1) : ℝ) ^ 2 - (τ i : ℝ) ^ 2) := by ring
-        _ ≤ _ := mul_le_mul_of_nonneg_right (hδ i (mem_range.mp hi)) hdiff
+      exact mul_le_mul_of_nonneg_right (hδ i (mem_range.mp hi)) hdiff
     _ = δ * ((τ n : ℝ) ^ 2 - (τ 0 : ℝ) ^ 2) := by
       rw [← mul_sum, sum_range_sub (fun i ↦ (τ i : ℝ) ^ 2)]
     _ ≤ _ := by
@@ -157,13 +155,15 @@ theorem sum_integral_integral_sq_sub_sq_eval_le (hB : IsPreBrownianReal B P)
         nlinarith [sq_nonneg (τ 0 : ℝ)]) hδ0]
 
 /-- On the equal `n`-cell grid of `[0,T]`, the time-integrated mean-squared error of the
-left-step approximation to `B²` is exactly `T³/n`. -/
-theorem sum_integral_integral_sq_sub_sq_eval_uniform (hB : IsPreBrownianReal B P)
-    (T : ℝ≥0) {n : ℕ} (hn : n ≠ 0) :
+left-step approximation to `B²` is exactly `T³/n`. For `n = 0`, both sides vanish. -/
+theorem sum_integral_integral_sq_sub_sq_sq_eval_uniform (hB : IsPreBrownianReal B P)
+    (T : ℝ≥0) {n : ℕ} :
     (∑ i ∈ range n, ∫ u in (((i : ℝ≥0) * T / n : ℝ≥0) : ℝ)..
         ((((i + 1 : ℕ) : ℝ≥0) * T / n : ℝ≥0) : ℝ),
       ∫ ω, (B u.toNNReal ω ^ 2 - B ((i : ℝ≥0) * T / n) ω ^ 2) ^ 2 ∂P) =
       (T : ℝ) ^ 3 / n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
   let τ (i : ℕ) : ℝ≥0 := i * T / n
   have hstep (i : ℕ) : τ i ≤ τ (i + 1) := by
     dsimp [τ]
@@ -173,7 +173,7 @@ theorem sum_integral_integral_sq_sub_sq_eval_uniform (hB : IsPreBrownianReal B P
       (∫ u in (τ i : ℝ)..τ (i + 1),
         ∫ ω, (B u.toNNReal ω ^ 2 - B (τ i) ω ^ 2) ^ 2 ∂P) =
       ((T : ℝ) / n) * ((τ (i + 1) : ℝ) ^ 2 - (τ i : ℝ) ^ 2) := by
-    rw [hB.integral_integral_sq_sub_sq_eval (hstep i)]
+    rw [hB.integral_integral_sq_sub_sq_sq_eval (hstep i)]
     dsimp [τ]
     push_cast
     ring
@@ -191,7 +191,7 @@ theorem sum_integral_integral_sq_sub_sq_eval_uniform (hB : IsPreBrownianReal B P
 
 /-- Left-step approximations of `B²` converge in time-integrated mean square along any
 family of deterministic grids whose mesh tends to zero on a fixed bounded horizon. -/
-theorem tendsto_sum_integral_integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P)
+theorem tendsto_sum_integral_integral_sq_sub_sq_sq_eval (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {τ : ι → ℕ → ℝ≥0} {n : ι → ℕ} {δ : ι → ℝ} {T : ℝ}
     (hτ : ∀ a, MonotoneOn (τ a) (Set.Iic (n a))) (hT : ∀ a, (τ a (n a) : ℝ) ≤ T)
     (hδ0 : ∀ a, 0 ≤ δ a) (hδ : ∀ a, ∀ i < n a, (τ a (i + 1) : ℝ) - τ a i ≤ δ a)
@@ -199,7 +199,7 @@ theorem tendsto_sum_integral_integral_sq_sub_sq_eval (hB : IsPreBrownianReal B P
     Filter.Tendsto (fun a ↦ ∑ i ∈ range (n a), ∫ u in (τ a i : ℝ)..τ a (i + 1),
       ∫ ω, (B u.toNNReal ω ^ 2 - B (τ a i) ω ^ 2) ^ 2 ∂P) l (nhds 0) := by
   apply squeeze_zero (fun a ↦ ?_)
-    (fun a ↦ hB.sum_integral_integral_sq_sub_sq_eval_le (hτ a) (hT a) (hδ0 a) (hδ a))
+    (fun a ↦ hB.sum_integral_integral_sq_sub_sq_sq_eval_le (hτ a) (hT a) (hδ0 a) (hδ a))
   · simpa using Filter.Tendsto.const_mul (T ^ 2) hlim
   · apply sum_nonneg
     intro i hi
