@@ -86,27 +86,39 @@ theorem continuous_toL2 (hB : IsPreBrownianReal B P) : Continuous hB.toL2 := by
   ext s
   rw [← hB.norm_toL2_sub_sq, Real.sqrt_sq (norm_nonneg _)]
 
+/-- Brownian evaluation extended to real time by truncation at zero is continuous in `L²`. -/
+theorem continuous_toL2_toNNReal (hB : IsPreBrownianReal B P) :
+    Continuous (fun u : ℝ => hB.toL2 u.toNNReal) :=
+  hB.continuous_toL2.comp continuous_real_toNNReal
+
 /-- The left-rectangle error on one interval, as an ordinary time integral in `L²`.
 Real time is mapped to nonnegative time; only intervals with nonnegative endpoints are used. -/
-def timeIntegralError (hB : IsPreBrownianReal B P) (a b : ℝ≥0) : Lp ℝ 2 P :=
+def leftRiemannError (hB : IsPreBrownianReal B P) (a b : ℝ≥0) : Lp ℝ 2 P :=
   ∫ u in (a : ℝ)..b, hB.toL2 a - hB.toL2 u.toNNReal
 
 omit [IsProbabilityMeasure P] in
 /-- A zero-length cell has zero quadrature error. -/
 @[simp]
-theorem timeIntegralError_self (hB : IsPreBrownianReal B P) (a : ℝ≥0) :
-    hB.timeIntegralError a a = 0 := by
-  simp [timeIntegralError]
+theorem leftRiemannError_self (hB : IsPreBrownianReal B P) (a : ℝ≥0) :
+    hB.leftRiemannError a a = 0 := by
+  simp [leftRiemannError]
 
 /-- The error is the left rectangle minus the mean-square time integral. -/
-theorem timeIntegralError_eq (hB : IsPreBrownianReal B P) (a b : ℝ≥0) :
-    hB.timeIntegralError a b = ((b : ℝ) - a) • hB.toL2 a -
+theorem leftRiemannError_eq (hB : IsPreBrownianReal B P) (a b : ℝ≥0) :
+    hB.leftRiemannError a b = ((b : ℝ) - a) • hB.toL2 a -
       ∫ u in (a : ℝ)..b, hB.toL2 u.toNNReal := by
-  have hc : Continuous (fun u : ℝ => hB.toL2 u.toNNReal) :=
-    hB.continuous_toL2.comp continuous_real_toNNReal
-  rw [timeIntegralError, intervalIntegral.integral_sub
-    (continuous_const.intervalIntegrable _ _) (hc.intervalIntegrable _ _),
+  rw [leftRiemannError, intervalIntegral.integral_sub
+    (continuous_const.intervalIntegrable _ _) (hB.continuous_toL2_toNNReal.intervalIntegrable _ _),
     intervalIntegral.integral_const]
+
+/-- Taking an inner product commutes with the mean-square left-rectangle error integral. -/
+theorem inner_leftRiemannError_right (hB : IsPreBrownianReal B P)
+    (y : Lp ℝ 2 P) (a b : ℝ≥0) :
+    ⟪y, hB.leftRiemannError a b⟫_ℝ =
+      ∫ u in (a : ℝ)..b, ⟪y, hB.toL2 a - hB.toL2 u.toNNReal⟫_ℝ := by
+  simpa only [leftRiemannError, innerSL_apply_apply, Pi.sub_apply] using
+    ((innerSL ℝ y).intervalIntegral_comp_comm
+      ((continuous_const.sub hB.continuous_toL2_toNNReal).intervalIntegrable _ _)).symm
 
 private theorem inner_sub_toL2 (hB : IsPreBrownianReal B P) (a : ℝ≥0)
     {u v : ℝ} (hu : (a : ℝ) ≤ u) (hv : (a : ℝ) ≤ v) :
@@ -117,16 +129,28 @@ private theorem inner_sub_toL2 (hB : IsPreBrownianReal B P) (a : ℝ≥0)
     Real.coe_toNNReal _ (le_trans a.coe_nonneg hv), min_eq_right hu, min_eq_left hv]
   ring
 
+private theorem inner_sub_toL2_eq_zero (hB : IsPreBrownianReal B P)
+    {a c : ℝ≥0} {u v : ℝ} (hau : (a : ℝ) ≤ u) (huc : u ≤ c) (hcv : (c : ℝ) ≤ v) :
+    ⟪hB.toL2 a - hB.toL2 u.toNNReal, hB.toL2 c - hB.toL2 v.toNNReal⟫_ℝ = 0 := by
+  have hac := hau.trans huc
+  have huv := huc.trans hcv
+  simp only [inner_sub_left, inner_sub_right, inner_toL2, NNReal.coe_min,
+    Real.coe_toNNReal _ (a.coe_nonneg.trans hau),
+    Real.coe_toNNReal _ (c.coe_nonneg.trans hcv),
+    min_eq_left hac, min_eq_left (hau.trans huv), min_eq_left huc, min_eq_left huv]
+  ring
+
 private theorem integral_inner_sub_toL2 (hB : IsPreBrownianReal B P)
     {a b : ℝ≥0} (hab : a ≤ b) (u : ℝ) (hu : u ∈ Icc (a : ℝ) b) :
     (∫ v in (a : ℝ)..b,
       ⟪hB.toL2 a - hB.toL2 u.toNNReal, hB.toL2 a - hB.toL2 v.toNNReal⟫_ℝ) =
         (u ^ 2 - (a : ℝ) ^ 2) / 2 + (b - u) * u - (b - a) * a := by
+  have hab' : (a : ℝ) ≤ b := by exact_mod_cast hab
   have hcont : Continuous (fun v : ℝ => min u v - a) := by fun_prop
   rw [intervalIntegral.integral_congr (fun v hv =>
     hB.inner_sub_toL2 a hu.1 (by
       have hv' : v ∈ Icc (a : ℝ) b := by
-        simpa only [uIcc_of_le (show (a : ℝ) ≤ b from hab)] using hv
+        simpa only [uIcc_of_le hab'] using hv
       exact hv'.1))]
   rw [← intervalIntegral.integral_add_adjacent_intervals
     (hcont.intervalIntegrable (a : ℝ) u) (hcont.intervalIntegrable u b)]
@@ -149,118 +173,104 @@ private theorem integral_inner_sub_toL2 (hB : IsPreBrownianReal B P)
   ring
 
 /-- Squared mean-square error of one Brownian left rectangle. -/
-theorem norm_timeIntegralError_sq (hB : IsPreBrownianReal B P) {a b : ℝ≥0} (hab : a ≤ b) :
-    ‖hB.timeIntegralError a b‖ ^ 2 = ((b : ℝ) - a) ^ 3 / 3 := by
-  let X : ℝ → Lp ℝ 2 P := fun u => hB.toL2 a - hB.toL2 u.toNNReal
-  have hX : Continuous X := continuous_const.sub
-    (hB.continuous_toL2.comp continuous_real_toNNReal)
-  have hint (y : Lp ℝ 2 P) :
-      ⟪y, ∫ u in (a : ℝ)..b, X u⟫_ℝ = ∫ u in (a : ℝ)..b, ⟪y, X u⟫_ℝ := by
-    simpa only [innerSL_apply_apply] using
-      ((innerSL ℝ y).intervalIntegral_comp_comm (hX.intervalIntegrable _ _)).symm
-  have hexpand : ‖hB.timeIntegralError a b‖ ^ 2 =
-      ∫ u in (a : ℝ)..b, ∫ v in (a : ℝ)..b, ⟪X u, X v⟫_ℝ := by
-    rw [← real_inner_self_eq_norm_sq, timeIntegralError, hint]
+theorem norm_leftRiemannError_sq (hB : IsPreBrownianReal B P) {a b : ℝ≥0} (hab : a ≤ b) :
+    ‖hB.leftRiemannError a b‖ ^ 2 = ((b : ℝ) - a) ^ 3 / 3 := by
+  have hab' : (a : ℝ) ≤ b := by exact_mod_cast hab
+  have hexpand : ‖hB.leftRiemannError a b‖ ^ 2 =
+      ∫ u in (a : ℝ)..b, ∫ v in (a : ℝ)..b,
+        ⟪hB.toL2 a - hB.toL2 u.toNNReal, hB.toL2 a - hB.toL2 v.toNNReal⟫_ℝ := by
+    rw [← real_inner_self_eq_norm_sq, hB.inner_leftRiemannError_right]
     congr 1
     ext u
-    rw [real_inner_comm, hint]
+    rw [real_inner_comm, hB.inner_leftRiemannError_right]
   rw [hexpand]
   rw [intervalIntegral.integral_congr (fun u hu =>
     hB.integral_inner_sub_toL2 hab u
-      (by simpa only [uIcc_of_le (show (a : ℝ) ≤ b from hab)] using hu))]
+      (by simpa only [uIcc_of_le hab'] using hu))]
   have hpoly : (∫ u in (a : ℝ)..b,
       (u ^ 2 - (a : ℝ) ^ 2) / 2 + (b - u) * u - (b - a) * a) =
       (- (b : ℝ) ^ 3 / 6 + b * b ^ 2 / 2 + (a ^ 2 / 2 - b * a) * b) -
       (- (a : ℝ) ^ 3 / 6 + b * a ^ 2 / 2 + (a ^ 2 / 2 - b * a) * a) := by
-    apply intervalIntegral.integral_eq_sub_of_hasDerivAt
-      (f := fun u : ℝ => -u ^ 3 / 6 + b * u ^ 2 / 2 + (a ^ 2 / 2 - b * a) * u)
-    · intro u _
-      convert (((((hasDerivAt_pow 3 u).neg.div_const 6).add
-        (((hasDerivAt_pow 2 u).const_mul (b : ℝ)).div_const 2)).add
-        ((hasDerivAt_id u).const_mul ((a : ℝ) ^ 2 / 2 - (b : ℝ) * a)))) using 1
-      · ext x
-        simp only [Pi.add_apply, Pi.neg_apply, id_eq]
-      · ring
-    · exact Continuous.intervalIntegrable (by fun_prop) _ _
+    trans ∫ u in (a : ℝ)..b, -(u ^ 2) / 2 + b * u + (a ^ 2 / 2 - b * a)
+    · apply intervalIntegral.integral_congr
+      intro u _
+      ring
+    rw [intervalIntegral.integral_add
+      (Continuous.intervalIntegrable (by fun_prop) _ _)
+      (continuous_const.intervalIntegrable _ _),
+      intervalIntegral.integral_add
+        (Continuous.intervalIntegrable (by fun_prop) _ _)
+        (Continuous.intervalIntegrable (by fun_prop) _ _),
+      intervalIntegral.integral_div, intervalIntegral.integral_neg,
+      integral_pow, intervalIntegral.integral_const_mul,
+      integral_id, intervalIntegral.integral_const]
+    simp only [smul_eq_mul]
+    ring
   rw [hpoly]
   ring
 
 /-- Brownian left-rectangle errors on disjoint intervals are orthogonal in `L²`. -/
-theorem inner_timeIntegralError_eq_zero (hB : IsPreBrownianReal B P)
+theorem inner_leftRiemannError_eq_zero (hB : IsPreBrownianReal B P)
     {a b c d : ℝ≥0} (hab : a ≤ b) (hbc : b ≤ c) (hcd : c ≤ d) :
-    ⟪hB.timeIntegralError a b, hB.timeIntegralError c d⟫_ℝ = 0 := by
-  have hc : Continuous (fun u : ℝ => hB.toL2 u.toNNReal) :=
-    hB.continuous_toL2.comp continuous_real_toNNReal
-  have hcont (s : ℝ≥0) : Continuous (fun u : ℝ => hB.toL2 s - hB.toL2 u.toNNReal) :=
-    continuous_const.sub hc
-  have hint (y : Lp ℝ 2 P) (s t : ℝ≥0) :
-      ⟪y, hB.timeIntegralError s t⟫_ℝ =
-        ∫ u in (s : ℝ)..t, ⟪y, hB.toL2 s - hB.toL2 u.toNNReal⟫_ℝ := by
-    simpa only [timeIntegralError, innerSL_apply_apply] using
-      ((innerSL ℝ y).intervalIntegral_comp_comm
-        ((hcont s).intervalIntegrable (s : ℝ) t)).symm
-  rw [real_inner_comm, hint]
+    ⟪hB.leftRiemannError a b, hB.leftRiemannError c d⟫_ℝ = 0 := by
+  have hab' : (a : ℝ) ≤ b := by exact_mod_cast hab
+  have hbc' : (b : ℝ) ≤ c := by exact_mod_cast hbc
+  have hcd' : (c : ℝ) ≤ d := by exact_mod_cast hcd
+  rw [real_inner_comm, hB.inner_leftRiemannError_right]
   trans ∫ _ in (a : ℝ)..b, (0 : ℝ)
   · apply intervalIntegral.integral_congr
     intro u hu
     have hu' : u ∈ Icc (a : ℝ) b := by
-      simpa only [uIcc_of_le (show (a : ℝ) ≤ b from hab)] using hu
+      simpa only [uIcc_of_le hab'] using hu
     dsimp only
-    rw [real_inner_comm, hint]
+    rw [real_inner_comm, hB.inner_leftRiemannError_right]
     trans ∫ _ in (c : ℝ)..d, (0 : ℝ)
     · apply intervalIntegral.integral_congr
       intro v hv
       have hv' : v ∈ Icc (c : ℝ) d := by
-        simpa only [uIcc_of_le (show (c : ℝ) ≤ d from hcd)] using hv
-      have huv : u ≤ v := hu'.2.trans ((show (b : ℝ) ≤ c from hbc).trans hv'.1)
-      simp only [inner_sub_left, inner_sub_right, inner_toL2, NNReal.coe_min,
-        Real.coe_toNNReal _ (a.coe_nonneg.trans hu'.1),
-        Real.coe_toNNReal _ (c.coe_nonneg.trans hv'.1),
-        min_eq_left (show (a : ℝ) ≤ c from hab.trans hbc),
-        min_eq_left (hu'.1.trans huv),
-        min_eq_left (hu'.2.trans (show (b : ℝ) ≤ c from hbc)), min_eq_left huv]
-      ring
+        simpa only [uIcc_of_le hcd'] using hv
+      exact hB.inner_sub_toL2_eq_zero hu'.1 (hu'.2.trans hbc') hv'.1
     · simp
   · simp
 
 /-- Summed local errors equal the left quadrature sum minus the time integral on the full grid.
 No ordering assumption is needed for this telescoping identity. -/
-theorem sum_timeIntegralError_eq (hB : IsPreBrownianReal B P) (t : ℕ → ℝ≥0) (n : ℕ) :
-    ∑ i ∈ Finset.range n, hB.timeIntegralError (t i) (t (i + 1)) =
+theorem sum_leftRiemannError_eq (hB : IsPreBrownianReal B P) (t : ℕ → ℝ≥0) (n : ℕ) :
+    ∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1)) =
       (∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) • hB.toL2 (t i)) -
         ∫ u in (t 0 : ℝ)..t n, hB.toL2 u.toNNReal := by
-  simp_rw [timeIntegralError_eq]
+  simp_rw [leftRiemannError_eq]
   rw [Finset.sum_sub_distrib, intervalIntegral.sum_integral_adjacent_intervals]
   intro i _
-  exact (hB.continuous_toL2.comp continuous_real_toNNReal).intervalIntegrable _ _
+  exact hB.continuous_toL2_toNNReal.intervalIntegrable _ _
 
 /-- The exact squared `L²` error of Brownian left-rectangle quadrature on a nondecreasing grid.
 Repeated dates and the empty grid are allowed. -/
-theorem norm_sum_timeIntegralError_sq (hB : IsPreBrownianReal B P)
+theorem norm_sum_leftRiemannError_sq (hB : IsPreBrownianReal B P)
     (t : ℕ → ℝ≥0) (ht : Monotone t) (n : ℕ) :
-    ‖∑ i ∈ Finset.range n, hB.timeIntegralError (t i) (t (i + 1))‖ ^ 2 =
+    ‖∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1))‖ ^ 2 =
       (∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) ^ 3) / 3 := by
   rw [← real_inner_self_eq_norm_sq, sum_inner, Finset.sum_div]
   apply Finset.sum_congr rfl
   intro i hi
   rw [inner_sum, Finset.sum_eq_single i]
-  · rw [real_inner_self_eq_norm_sq, hB.norm_timeIntegralError_sq (ht (Nat.le_succ i))]
+  · rw [real_inner_self_eq_norm_sq, hB.norm_leftRiemannError_sq (ht (Nat.le_succ i))]
   · intro j _ hji
     rcases lt_or_gt_of_ne hji with hij | hij
     · rw [real_inner_comm]
-      exact hB.inner_timeIntegralError_eq_zero (ht (Nat.le_succ j))
+      exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ j))
         (ht (by omega)) (ht (Nat.le_succ i))
-    · exact hB.inner_timeIntegralError_eq_zero (ht (Nat.le_succ i))
+    · exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ i))
         (ht (by omega)) (ht (Nat.le_succ j))
   · exact fun h => (h hi).elim
 
 /-- The squared quadrature error is bounded by elapsed time times mesh squared, divided by three. -/
-theorem norm_sum_timeIntegralError_sq_le (hB : IsPreBrownianReal B P)
+theorem norm_sum_leftRiemannError_sq_le (hB : IsPreBrownianReal B P)
     (t : ℕ → ℝ≥0) (ht : Monotone t) (n : ℕ) {δ : ℝ}
     (hδ : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
-    ‖∑ i ∈ Finset.range n, hB.timeIntegralError (t i) (t (i + 1))‖ ^ 2 ≤
+    ‖∑ i ∈ Finset.range n, hB.leftRiemannError (t i) (t (i + 1))‖ ^ 2 ≤
       ((t n : ℝ) - t 0) * δ ^ 2 / 3 := by
-  rw [hB.norm_sum_timeIntegralError_sq t ht n]
+  rw [hB.norm_sum_leftRiemannError_sq t ht n]
   gcongr
   calc
     ∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) ^ 3 ≤
@@ -277,16 +287,19 @@ theorem norm_sum_timeIntegralError_sq_le (hB : IsPreBrownianReal B P)
     _ = ((t n : ℝ) - t 0) * δ ^ 2 := by
       rw [← Finset.sum_mul, Finset.sum_range_sub (fun i => (t i : ℝ))]
 
-/-- On the equal grid with `n > 0` cells, the exact squared quadrature error is `T³/(3n²)`. -/
-theorem norm_sum_timeIntegralError_sq_equidistant (hB : IsPreBrownianReal B P)
-    (T : ℝ≥0) {n : ℕ} (hn : 0 < n) :
-    ‖∑ i ∈ Finset.range n, hB.timeIntegralError ((i : ℝ≥0) * T / n)
+/-- On the equal grid with `n` cells, the exact squared quadrature error is `T³/(3n²)`.
+For `n = 0` both sides are zero, using division by zero in the formula. -/
+theorem norm_sum_leftRiemannError_sq_equidistant (hB : IsPreBrownianReal B P)
+    (T : ℝ≥0) (n : ℕ) :
+    ‖∑ i ∈ Finset.range n, hB.leftRiemannError ((i : ℝ≥0) * T / n)
       (((i + 1 : ℕ) : ℝ≥0) * T / n)‖ ^ 2 = (T : ℝ) ^ 3 / (3 * (n : ℝ) ^ 2) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
   have ht : Monotone (fun i : ℕ => (i : ℝ≥0) * T / n) := by
     intro i j hij
     dsimp only
     gcongr
-  rw [hB.norm_sum_timeIntegralError_sq _ ht n]
+  rw [hB.norm_sum_leftRiemannError_sq _ ht n]
   have hstep (i : ℕ) :
       ((((i + 1 : ℕ) : ℝ≥0) * T / n : ℝ≥0) : ℝ) -
         (((i : ℝ≥0) * T / n : ℝ≥0) : ℝ) = (T : ℝ) / n := by
@@ -300,23 +313,23 @@ theorem norm_sum_timeIntegralError_sq_equidistant (hB : IsPreBrownianReal B P)
 
 /-- Brownian left-rectangle quadrature converges in native `L²` along every bounded-horizon
 vanishing-mesh family, without nestedness or a fixed number of cells. -/
-theorem tendsto_sum_timeIntegralError_zero (hB : IsPreBrownianReal B P)
+theorem tendsto_sum_leftRiemannError_zero (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {t : ι → ℕ → ℝ≥0} {n : ι → ℕ} {δ : ι → ℝ}
     (ht : ∀ k, Monotone (t k)) {T : ℝ≥0} (hT : ∀ k, t k (n k) ≤ T)
     (hδ : ∀ k i, i < n k → (t k (i + 1) : ℝ) - t k i ≤ δ k)
     (hlim : Tendsto δ l (𝓝 0)) :
     Tendsto (fun k => ∑ i ∈ Finset.range (n k),
-      hB.timeIntegralError (t k i) (t k (i + 1))) l (𝓝 0) := by
+      hB.leftRiemannError (t k i) (t k (i + 1))) l (𝓝 0) := by
   apply tendsto_zero_iff_norm_tendsto_zero.mpr
   have hbound k :
-      ‖∑ i ∈ Finset.range (n k), hB.timeIntegralError (t k i) (t k (i + 1))‖ ^ 2 ≤
+      ‖∑ i ∈ Finset.range (n k), hB.leftRiemannError (t k i) (t k (i + 1))‖ ^ 2 ≤
         (T : ℝ) * (δ k) ^ 2 / 3 := by
     have hspan : (t k (n k) : ℝ) - t k 0 ≤ T :=
       (sub_le_self _ (t k 0).coe_nonneg).trans (hT k)
-    exact (hB.norm_sum_timeIntegralError_sq_le (t k) (ht k) (n k) (hδ k)).trans
+    exact (hB.norm_sum_leftRiemannError_sq_le (t k) (ht k) (n k) (hδ k)).trans
       (by gcongr)
   have hs : Tendsto (fun k =>
-      ‖∑ i ∈ Finset.range (n k), hB.timeIntegralError (t k i) (t k (i + 1))‖ ^ 2)
+      ‖∑ i ∈ Finset.range (n k), hB.leftRiemannError (t k i) (t k (i + 1))‖ ^ 2)
       l (𝓝 0) :=
     squeeze_zero (fun _ => sq_nonneg _) hbound (by
       simpa only [zero_pow (by decide : 2 ≠ 0), mul_zero, div_mul_eq_mul_div] using
