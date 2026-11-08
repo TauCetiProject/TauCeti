@@ -96,13 +96,16 @@ theorem IsMetricCompatible.differentiableWithinAt_apply (h : g.IsMetricCompatibl
 /-- The product rule along a curve for a covariant derivative compatible with a nondegenerate
 metric, as an identity for `derivWithin`. -/
 theorem IsMetricCompatible.derivWithin_apply_alongCurveWithin (h : g.IsMetricCompatible cov)
-    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
     derivWithin (fun r ↦ g (γ r) (V r) (W r)) s t =
       g (γ t) (alongCurveWithin cov γ V s t) (W t) +
-        g (γ t) (V t) (alongCurveWithin cov γ W s t) :=
-  (h.hasDerivWithinAt_apply_alongCurveWithin hγ hV hW).derivWithin hu
+        g (γ t) (V t) (alongCurveWithin cov γ W s t) := by
+  by_cases hu : UniqueDiffWithinAt ℝ s t
+  · exact (h.hasDerivWithinAt_apply_alongCurveWithin hγ hV hW).derivWithin hu
+  · simp [derivWithin_zero_of_not_uniqueDiffWithinAt hu,
+      alongCurveWithin_of_not_uniqueDiffWithinAt cov γ _ hu]
 
 /-- The product rule along a curve for a covariant derivative compatible with a nondegenerate
 metric, with unrestricted derivatives: `(d/dt) g(V, W) = g(D V / dt, W) + g(V, D W / dt)`. -/
@@ -137,11 +140,11 @@ theorem IsMetricCompatible.deriv_apply_alongCurve (h : g.IsMetricCompatible cov)
   (h.hasDerivAt_apply_alongCurve hγ hV hW).deriv
 
 /-- **Parallel transport preserves a compatible nondegenerate metric.** On a preconnected
-parameter set `s` with unique derivatives, two tangent fields along a differentiable curve that
+parameter set `s`, two tangent fields along a differentiable curve that
 have differentiable coordinate readings and are parallel, `D V / dt = D W / dt = 0` on `s`, have
 the same pairing `g(V, W)` at every two parameters of `s`. -/
 theorem IsMetricCompatible.apply_eq_of_alongCurveWithin_eq_zero (h : g.IsMetricCompatible cov)
-    (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s) (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s)
+    (hconn : IsPreconnected s) (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s)
     (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
@@ -151,10 +154,10 @@ theorem IsMetricCompatible.apply_eq_of_alongCurveWithin_eq_zero (h : g.IsMetricC
       HasDerivWithinAt (fun r ↦ g (γ r) (V r) (W r)) 0 s t := by
     simpa only [hV₀ t ht, hW₀ t ht, map_zero, zero_apply, add_zero] using
       h.hasDerivWithinAt_apply_alongCurveWithin (hγ t ht) (hV t ht) (hW t ht)
-  refine hconn.ordConnected.convex.is_const_of_fderivWithin_eq_zero
-    (𝕜 := ℝ) (f := fun r ↦ g (γ r) (V r) (W r))
-    (fun t ht ↦ (hderiv t ht).differentiableWithinAt) (fun t ht ↦ ?_) ha hb
-  simpa using (hderiv t ht).hasFDerivWithinAt.fderivWithin (hs t ht)
+  have h := hconn.ordConnected.convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f' := fun _ ↦ 0) (C := 0) hderiv (fun _ _ ↦ by simp) ha hb
+  simp only [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
+  exact h.symm
 
 /-- **Geodesics of a compatible connection have constant `g(γ', γ')`.** On a preconnected
 parameter set `s` with unique derivatives, a `C²` curve whose covariant acceleration vanishes on
@@ -174,7 +177,7 @@ theorem IsMetricCompatible.apply_curveVelocityWithin_self_eq_of_accelerationWith
   have hpar (t : ℝ) (ht : t ∈ s) :
       alongCurveWithin cov γ (curveVelocityWithin I γ s) s t = 0 := by
     rw [← accelerationWithin_def, hacc t ht]
-  exact h.apply_eq_of_alongCurveWithin_eq_zero hs hconn
+  exact h.apply_eq_of_alongCurveWithin_eq_zero hconn
     (hγ.mdifferentiableOn (by norm_num)) hcoord hcoord hpar hpar ha hb
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetric
