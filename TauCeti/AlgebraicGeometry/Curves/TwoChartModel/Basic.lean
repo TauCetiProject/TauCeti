@@ -7,9 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
+public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Localization
-
-import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 
 /-!
 # The scheme of a function field glued from two affine charts
@@ -44,6 +43,7 @@ two charts, and that for transcendental `x` its function field is `F` as a `k`-a
   along `Spec 𝒪_{x, x⁻¹}`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.ιFinite` and
   `TauCeti.AlgebraicGeometry.twoChartModel.ιInfinity`: the open immersions of the two charts.
+* `TauCeti.AlgebraicGeometry.twoChartModel.chartCover`: the open cover by these two charts.
 * the instance `(twoChartModel hF hx).Over (Spec k)`, given on each chart by the inclusion of the
   constants.
 * `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv`: for `x` transcendental over `k`,
@@ -186,6 +186,36 @@ theorem isPushout :
   have := isOpenImmersion_specMap_infinityChartRestriction hF hx
   exact IsPushout.of_hasPushout _ _
 
+/-- The open cover by the finite chart at `false` and the chart at infinity at `true`. -/
+-- Keep the index and chart objects reducible so rewriting chart maps also identifies their
+-- implicit source schemes, without unfolding the transported pushout cover in consumers.
+@[expose, implicit_reducible]
+noncomputable def chartCover : (twoChartModel hF hx).OpenCover :=
+  haveI := isOpenImmersion_specMap_finiteChartRestriction hF hx
+  haveI := isOpenImmersion_specMap_infinityChartRestriction hF hx
+  let 𝒰 := (Scheme.pushoutOpenCover
+    (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
+    (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))).pushforwardIso
+      (isPushout hF hx).isoPushout.inv
+  { 𝒰 with
+    I₀ := Bool
+    X := fun b ↦ if b then Spec (.of (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers}))
+      else Spec (.of (holomorphyRing {P : Place k F | x ∈ P.integers})) }
+
+/-- The first member of the chart cover is the finite chart inclusion. -/
+@[simp]
+theorem chartCover_f_false : (chartCover hF hx).f false = ιFinite hF hx := by
+  -- Extended rewriting identifies the transported cover's index with `Bool`.
+  erw [Scheme.Cover.pushforwardIso_f, Scheme.pushoutOpenCover_f_false,
+    IsPushout.inl_isoPushout_inv]
+
+/-- The second member of the chart cover is the chart inclusion at infinity. -/
+@[simp]
+theorem chartCover_f_true : (chartCover hF hx).f true = ιInfinity hF hx := by
+  -- Extended rewriting identifies the transported cover's index with `Bool`.
+  erw [Scheme.Cover.pushforwardIso_f, Scheme.pushoutOpenCover_f_true,
+    IsPushout.inr_isoPushout_inv]
+
 /-- The two charts agree on their overlap. -/
 @[reassoc]
 theorem condition :
@@ -222,23 +252,7 @@ theorem isPullback :
       (ιFinite hF hx) (ιInfinity hF hx) := by
   have := isOpenImmersion_specMap_finiteChartRestriction hF hx
   have := isOpenImmersion_specMap_infinityChartRestriction hF hx
-  refine IsOpenImmersion.isPullback _ _ _ _ (condition hF hx).symm (le_antisymm ?_ ?_)
-  · rintro q ⟨p, hp⟩
-    -- `ιFinite` and `ιInfinity` are the colimit inclusions of the two legs of the span, and a
-    -- point of both legs comes from the apex, the overlap.
-    let D := span
-      (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
-      (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))
-    have hp' : colimit.ι D WalkingSpan.left p = colimit.ι D WalkingSpan.right q := hp
-    obtain ⟨j, fp, fq, z, rfl, rfl⟩ := (Scheme.IsLocallyDirected.ι_eq_ι_iff _).mp hp'
-    rcases j with _ | _ | _
-    · cases fq
-      exact ⟨z, rfl⟩
-    · cases fq
-    · cases fp
-  · rintro _ ⟨p, rfl⟩
-    exact ⟨Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) p, by
-      rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, condition]⟩
+  exact Scheme.isPullback_pushout_of_isOpenImmersion _ _
 
 instance : IsReduced (twoChartModel hF hx) := by
   -- Every stalk is a stalk of one of the two charts, which are spectra of domains.
