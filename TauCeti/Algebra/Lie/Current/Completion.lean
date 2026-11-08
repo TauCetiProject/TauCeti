@@ -496,22 +496,19 @@ variable (e : CentralQuotient R (centralElement (twoCocycleOfBilinear R L Ψ hΨ
     e.symm (envelopingι (twoCocycleOfBilinear R L Φ hΦ hΦs) a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
 
 /-- The extension of `e` is the extension `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the
-underlying algebra morphism of `e`. The continuity hypothesis `hg` is an argument, so this is
-stated for `rw` rather than `simp`. -/
-theorem completedEnvelopingEquiv_toAlgHom
-    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      (e : UΨ →ₐ[R] UΦ) (envelopingι cΨ b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
+underlying algebra morphism of `e`. -/
+theorem completedEnvelopingEquiv_toAlgHom :
     (completedEnvelopingEquiv e he he' : CompletedEnveloping Ψ hΨ hΨs b →ₐ[R]
-      CompletedEnveloping Φ hΦ hΦs a) = completedEnvelopingMap (e : UΨ →ₐ[R] UΦ) hg :=
+      CompletedEnveloping Φ hΦ hΦs a) =
+      completedEnvelopingMap (e : UΨ →ₐ[R] UΦ) (by simpa using he) :=
   AlgHom.ext fun _ ↦ rfl
 
 /-- The inverse of the extension of `e` is the extension
 `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the underlying algebra morphism of `e⁻¹`. -/
-theorem completedEnvelopingEquiv_symm_toAlgHom
-    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
-      (e.symm : UΦ →ₐ[R] UΨ) (envelopingι cΦ a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n) :
+theorem completedEnvelopingEquiv_symm_toAlgHom :
     ((completedEnvelopingEquiv e he he').symm : CompletedEnveloping Φ hΦ hΦs a →ₐ[R]
-      CompletedEnveloping Ψ hΨ hΨs b) = completedEnvelopingMap (e.symm : UΦ →ₐ[R] UΨ) hg :=
+      CompletedEnveloping Ψ hΨ hΨs b) =
+      completedEnvelopingMap (e.symm : UΦ →ₐ[R] UΨ) (by simpa using he') :=
   AlgHom.ext fun _ ↦ rfl
 
 /-- The extension of `e` to the completions extends `e`. -/
