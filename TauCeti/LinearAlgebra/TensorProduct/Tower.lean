@@ -72,7 +72,7 @@ theorem TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange {R : Type*} (A :
 
 /-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
 sign: `r ⊗ m = 1 ⊗ r • m`. -/
-theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [AddCommGroup M]
+theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [AddCommMonoid M]
     [Module R M] {B : Subring R} {r : R} (hr : r ∈ B) (m : M) :
     r ⊗ₜ[B] m = (1 : R) ⊗ₜ (r • m) := by
   simpa [Subring.smul_def] using smul_tmul (⟨r, hr⟩ : B) (1 : R) m

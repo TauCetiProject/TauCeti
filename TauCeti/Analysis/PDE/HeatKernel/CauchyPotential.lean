@@ -11,8 +11,10 @@ public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.FDeriv.Extend
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -501,80 +503,35 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   have hneg : ∀ r ≤ 0, u r = g x := fun r hr => heatCauchyPotential_of_nonpos g hr x
   have hrate : ∀ r, 0 ≤ r → ‖u r - g x‖ ≤ H * Mα * r ^ β := fun r hr =>
     norm_heatCauchyPotential_sub_le hg hgc hr x
-  -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
-  have hbound : ∀ r, 0 < r → ‖Δ (heatCauchyPotential g r) x‖ ≤ C₂ * H * r ^ (β - 1) :=
-    fun r hr => hC₂ hgc.aestronglyMeasurable (ae_of_all _ hM) hg hr x
-  -- The far-from-`a` regime uses `|a| ≤ 2 |b - a|` and `|a|^β = |a| |a|^(β - 1)`.
-  have hpow : ∀ {d : ℝ}, 0 < d → d ^ β = d * d ^ (β - 1) := fun {d} hd => by
-    rw [rpow_sub_one hd.ne']
-    field_simp
+  have hK : 0 ≤ H * Mα := by positivity
   rcases lt_or_gt_of_ne ha with ha | ha
-  · -- For `a < 0` the potential equals `g x` at `a`, and at `b > 0` it is within
-    -- `H M_α b^β ≤ H M_α (b - a) (-a)^(β - 1)` of it.
-    rw [hneg a ha.le, abs_of_neg ha]
+  · rw [abs_of_neg ha]
     have hd : 0 < -a := neg_pos.2 ha
-    have hC : 0 ≤ 2 * C₂ + 4 * Mα := by positivity
-    rcases le_or_gt b 0 with hb | hb
-    · rw [hneg b hb, sub_self, norm_zero]
-      exact mul_nonneg (by positivity) (rpow_nonneg hd.le _)
-    have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) := by
-      rw [abs_of_pos (by linarith : 0 < b - a)]
-      rcases le_total b (-a) with hba | hba
-      · calc b ^ β ≤ (-a) ^ β := rpow_le_rpow hb.le hba hβ₀
-          _ = -a * (-a) ^ (β - 1) := hpow hd
-          _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
-      · calc b ^ β = b * b ^ (β - 1) := hpow hb
-          _ ≤ b * (-a) ^ (β - 1) :=
-            mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos hd hba hβ₁) hb.le
-          _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
-    calc ‖u b - g x‖ ≤ H * Mα * b ^ β := hrate b hb.le
-      _ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) := by gcongr
-      _ ≤ (2 * C₂ + 4 * Mα) * H * |b - a| * (-a) ^ (β - 1) := by
-        have : Mα ≤ 2 * C₂ + 4 * Mα := by nlinarith
-        calc H * Mα * (|b - a| * (-a) ^ (β - 1)) = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by
-              ring
-          _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by gcongr
-          _ = _ := by ring
+    have hX : 0 ≤ H * (|b - a| * (-a) ^ (β - 1)) := by positivity
+    calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
+          norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hK hneg hrate ha b
+      _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
+      _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by
+        gcongr
+        nlinarith
+      _ = _ := by ring
   rw [abs_of_pos ha]
   have hX : 0 ≤ H * (|b - a| * a ^ (β - 1)) := by positivity
   rcases le_or_gt (a / 2) b with hb | hb
-  · -- Near `a`, the mean value theorem on `[a / 2, ∞)`, where the derivative is
-    -- `O(H (a / 2)^(β - 1)) = O(H a^(β - 1))`.
-    have ha2 : 0 < a / 2 := half_pos ha
-    have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
-      (f' := fun r => Δ (heatCauchyPotential g r) x) (C := C₂ * H * (a / 2) ^ (β - 1))
-      (fun r hr => (hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
-        hgc.aestronglyMeasurable (ae_of_all _ hM) (ha2.trans_le hr) x).hasDerivWithinAt)
-      (fun r hr => (hbound r (ha2.trans_le hr)).trans
-        (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 hr hβ₁) (by positivity)))
-      (convex_Ici _) (x := a) (y := b) (mem_Ici.2 (by linarith)) (mem_Ici.2 hb)
-    have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
-      rw [div_rpow ha.le zero_le_two, div_eq_mul_inv, ← rpow_neg zero_le_two, neg_sub, mul_comm]
-      gcongr
-      calc (2 : ℝ) ^ (1 - β) ≤ 2 ^ (1 : ℝ) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
-        _ = 2 := rpow_one 2
-    rw [Real.norm_eq_abs] at hmv
-    calc ‖u b - u a‖ ≤ C₂ * H * (a / 2) ^ (β - 1) * |b - a| := hmv
-      _ ≤ C₂ * H * (2 * a ^ (β - 1)) * |b - a| := by gcongr
+  · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
+    have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt (u := u)
+      (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁ (by positivity)
+      (fun r hr => hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
+        hgc.aestronglyMeasurable (ae_of_all _ hM) hr x)
+      (fun r hr => hC₂ hgc.aestronglyMeasurable (ae_of_all _ hM) hg hr x) ha hb
+    calc ‖u b - u a‖ ≤ 2 * (C₂ * H) * (|b - a| * a ^ (β - 1)) := this
       _ = 2 * C₂ * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
         gcongr
         linarith
       _ = _ := by ring
-  · -- Far from `a`, both values are within `H M_α a^β` of `g x`, and `a ≤ 2 |b - a|`.
-    have h1 : ‖u b - g x‖ ≤ H * Mα * a ^ β := by
-      rcases le_or_gt b 0 with hb0 | hb0
-      · rw [hneg b hb0, sub_self, norm_zero]
-        positivity
-      · exact (hrate b hb0.le).trans (by gcongr; linarith)
-    have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) := by
-      rw [hpow ha, abs_of_neg (by linarith : b - a < 0)]
-      have : 0 ≤ a ^ (β - 1) := by positivity
-      nlinarith
-    calc ‖u b - u a‖ = ‖(u b - g x) - (u a - g x)‖ := by rw [sub_sub_sub_cancel_right]
-      _ ≤ ‖u b - g x‖ + ‖u a - g x‖ := norm_sub_le _ _
-      _ ≤ 2 * Mα * (H * a ^ β) := by linarith [hrate a ha.le]
-      _ ≤ 2 * Mα * (H * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
+  · calc ‖u b - u a‖ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
+          norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half hβ₀ hK hneg hrate ha hb
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
         gcongr

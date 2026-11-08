@@ -19,7 +19,8 @@ This file records Galois consequences of the fundamental identity for primes in 
 extensions of domains. First, in a Galois extension the number of primes above a prime ideal is
 maximal exactly when the common ramification index and inertia degree are both `1`, and, by
 orbit–stabilizer alone, exactly when the decomposition group of one (equivalently, every) prime
-above it is trivial; neither criterion needs separability of the residue extensions. Second, the
+above it is trivial; neither criterion needs separability of the residue extensions. The same
+orbit–stabilizer count shows that every decomposition group has order `e * f`. Second, the
 cardinality of the inertia subgroup of a prime `P` upstairs is the ramification index of `P`
 itself over the base, rather than the `Ideal.ramificationIdxIn` of the prime below it.
 
@@ -56,6 +57,10 @@ transitivity.
   a subgroup exactly when they all lie in its normal core.
 * `Ideal.stabilizer_eq_bot_iff_ramificationIdxIn_eq_one_and_inertiaDegIn_eq_one`: a decomposition
   group is trivial exactly when `e = f = 1`.
+* `Ideal.card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn`: the decomposition group of any
+  prime has order `e * f`, without a residue-separability hypothesis.
+* `Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg`: the same formula in terms of the
+  ramification index and inertia degree of the upstairs ideal.
 * `Ideal.card_inertia_eq_ramificationIdx`: the un-`In` form of the inertia count.
 * `Ideal.isUnramifiedAt_pointwise_smul_iff`: unramifiedness is invariant under translation by
   an algebra automorphism.
@@ -162,6 +167,37 @@ theorem stabilizer_eq_bot_iff_ramificationIdxIn_eq_one_and_inertiaDegIn_eq_one {
     MulAction.stabilizer G Q = ⊥ ↔ P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
   rw [← ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot G P Q,
     ncard_primesOver_eq_natCard_iff_of_isGaloisGroup G P]
+
+section DecompositionGroup
+
+open MulAction
+
+variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
+  [MulSemiringAction G S] [IsGaloisGroup G R S] [Finite G]
+  [IsDomain R] [IsDomain S] [Module.Finite R S] [Module.Flat R S]
+
+include G
+
+/-- The order of the decomposition group is `e * f`, without a separability hypothesis on the
+residue extension and for an arbitrary prime `P`. -/
+theorem card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (p : Ideal R) [p.IsPrime]
+    (P : Ideal S) [P.LiesOver p] [P.IsPrime] :
+    Nat.card (stabilizer G P) = p.ramificationIdxIn S * p.inertiaDegIn S := by
+  have horbit : (p.primesOver S).ncard * Nat.card (stabilizer G P) = Nat.card G := by
+    rw [← Algebra.IsInvariant.orbit_eq_primesOver R S G p P, ← index_stabilizer,
+      Subgroup.index_mul_card]
+  exact mul_left_cancel₀ (left_ne_zero_of_mul (horbit.trans_ne Nat.card_pos.ne'))
+    (horbit.trans (ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn p S G).symm)
+
+/-- The order of the decomposition group is the product of the ramification index and inertia
+degree of the upstairs ideal. -/
+theorem card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (P : Ideal S) [P.IsPrime] :
+    Nat.card (stabilizer G P) = P.ramificationIdx R * P.inertiaDeg R := by
+  rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G,
+    ← inertiaDegIn_eq_inertiaDeg (P.under R) P G]
+  exact card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) (P.under R) P
+
+end DecompositionGroup
 
 /-- The cardinality of the inertia subgroup of `P` is the ramification index of `P` over `R`.
 This is `Ideal.card_inertia_eq_ramificationIdxIn` stated with the ramification index of `P`
