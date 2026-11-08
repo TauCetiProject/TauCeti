@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Symplectic.Darboux.Relative
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
+import TauCeti.Geometry.Symplectic.Darboux.Basic
 
 /-!
 # The relative Darboux theorem along an immersion
@@ -66,84 +66,6 @@ variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
 
 omit [FiniteDimensional ℝ E] in
-/-- A nondegenerate two-form pulled back by a continuous linear equivalence is nondegenerate. -/
-private theorem nondegenerate_compContinuousLinearMap {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (e : F ≃L[ℝ] E) {a : E [⋀^Fin 2]→L[ℝ] ℝ}
-    (hnd : ∀ v, (∀ w, a ![v, w] = 0) → v = 0) :
-    ∀ v, (∀ w, a.compContinuousLinearMap (e : F →L[ℝ] E) ![v, w] = 0) → v = 0 := fun v hv ↦ by
-  have hval (u w : F) : a.compContinuousLinearMap (e : F →L[ℝ] E) ![u, w] = a ![e u, e w] := by
-    rw [ContinuousAlternatingMap.compContinuousLinearMap_apply]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
-  refine e.injective ((hnd (e v) fun w ↦ ?_).trans e.map_zero.symm)
-  simpa [hval] using hv (e.symm w)
-
-omit [FiniteDimensional ℝ E] in
-/-- **Conjugating a pullback identity by a coordinate change.** Let `Θ` be a `C^r` partial
-diffeomorphism from `F` to `E`, and let `Ψ` be a diffeomorphism of `F` which maps an open set
-`O ⊆ Θ.source` into `Θ.source` and pulls `Θ^* ω₁` back to `Θ^* ω₀` on `O`. Then the conjugate
-`Θ ∘ Ψ ∘ Θ⁻¹`, defined on `Θ '' O`, is a `C^r` partial diffeomorphism of `E` which pulls `ω₁` back
-to `ω₀` on its source. -/
-private theorem exists_partialDiffeomorph_conj {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {ω₀ ω₁ : E → E [⋀^Fin 2]→L[ℝ] ℝ} {r : ℕ∞} (hr : 1 ≤ r)
-    (Θ : OpenPartialHomeomorph F E) (hΘ : ContDiffOn ℝ r Θ Θ.source)
-    (hΘsymm : ContDiffOn ℝ r Θ.symm Θ.target) (Ψ : F ≃ₘ^r⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ F) {O : Set F}
-    (hO : IsOpen O) (hOΘ : O ⊆ Θ.source) (hΨO : MapsTo Ψ O Θ.source)
-    (hΨ : ∀ z ∈ O,
-      ((ω₁ (Θ (Ψ z))).compContinuousLinearMap (fderiv ℝ Θ (Ψ z))).compContinuousLinearMap
-        (fderiv ℝ Ψ z) = (ω₀ (Θ z)).compContinuousLinearMap (fderiv ℝ Θ z)) :
-    ∃ Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E r,
-      (∀ z ∈ O, Θ z ∈ Φ.source ∧ Φ (Θ z) = Θ (Ψ z)) ∧
-      ∀ x ∈ Φ.source, (ω₁ (Φ x)).compContinuousLinearMap (fderiv ℝ Φ x) = ω₀ x := by
-  have hr0 : (r : WithTop ℕ∞) ≠ 0 := (lt_of_lt_of_le zero_lt_one (by exact_mod_cast hr)).ne'
-  let Θd : PartialDiffeomorph 𝓘(ℝ, F) 𝓘(ℝ, E) F E r :=
-    PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘ hΘsymm
-  let Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E r :=
-    (Θd.restrOpen O hO).symm.trans (Ψ.toPartialDiffeomorph.trans Θd)
-  have hΦeq : Φ.toPartialEquiv = ((Θ.toPartialEquiv.restr O).symm).trans
-      (Ψ.toEquiv.toPartialEquiv.trans Θ.toPartialEquiv) := by
-    simp only [Φ, Θd, PartialDiffeomorph.trans_toPartialEquiv,
-      PartialDiffeomorph.symm_toPartialEquiv, OpenPartialHomeomorph.trans_toPartialEquiv,
-      PartialDiffeomorph.restrOpen_toPartialEquiv, Diffeomorph.toPartialDiffeomorph_toPartialEquiv,
-      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-      PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
-  have hΦ (x : E) : Φ x = Θ (Ψ (Θ.symm x)) := by rw [hΦeq]; rfl
-  have hΦsrc (x : E) : x ∈ Φ.source ↔
-      x ∈ Θ.target ∧ Θ.symm x ∈ O ∧ Ψ (Θ.symm x) ∈ Θ.source := by
-    rw [hΦeq]
-    simp [and_assoc]
-  refine ⟨Φ, fun z hz ↦ ?_, fun x hx ↦ ?_⟩
-  · have hzΘ : Θ.symm (Θ z) = z := Θ.left_inv (hOΘ hz)
-    rw [hΦsrc, hΦ, hzΘ]
-    exact ⟨⟨Θ.map_source (hOΘ hz), hz, hΨO hz⟩, rfl⟩
-  obtain ⟨hxt, hxO, hΨx⟩ := (hΦsrc x).1 hx
-  have hd (w : F) (hw : w ∈ Θ.source) : HasFDerivAt Θ (fderiv ℝ Θ w) w :=
-    ((hΘ.contDiffAt (Θ.open_source.mem_nhds hw)).differentiableAt hr0).hasFDerivAt
-  have hdsymm : HasFDerivAt Θ.symm (fderiv ℝ Θ.symm x) x :=
-    ((hΘsymm.contDiffAt (Θ.open_target.mem_nhds hxt)).differentiableAt hr0).hasFDerivAt
-  have hdΨ : HasFDerivAt Ψ (fderiv ℝ Ψ (Θ.symm x)) (Θ.symm x) :=
-    ((contMDiff_iff_contDiff.1 Ψ.contMDiff).differentiable hr0 _).hasFDerivAt
-  -- The chain rule for `Φ = Θ ∘ Ψ ∘ Θ⁻¹`, and `dΘ ∘ dΘ⁻¹ = id` since `Θ ∘ Θ⁻¹ = id` near `x`.
-  have hΦd : fderiv ℝ Φ x = (fderiv ℝ Θ (Ψ (Θ.symm x))).comp
-      ((fderiv ℝ Ψ (Θ.symm x)).comp (fderiv ℝ Θ.symm x)) := by
-    rw [show (Φ : E → E) = Θ ∘ Ψ ∘ Θ.symm from funext hΦ]
-    exact ((hd _ hΨx).comp x (hdΨ.comp x hdsymm)).fderiv
-  have hid : (fderiv ℝ Θ (Θ.symm x)).comp (fderiv ℝ Θ.symm x) = ContinuousLinearMap.id ℝ E := by
-    have heq : Θ ∘ Θ.symm =ᶠ[𝓝 x] id :=
-      eventually_of_mem (Θ.open_target.mem_nhds hxt) fun w hw ↦ Θ.right_inv hw
-    exact (((hd _ (Θ.map_target hxt)).comp x hdsymm).congr_of_eventuallyEq heq.symm).unique
-      (hasFDerivAt_id x)
-  ext v
-  have h := congrArg (fun A : F [⋀^Fin 2]→L[ℝ] ℝ ↦ A (fun i ↦ fderiv ℝ Θ.symm x (v i)))
-    (hΨ _ hxO)
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def] at h
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def, hΦd,
-    ContinuousLinearMap.comp_apply, hΦ]
-  rw [h, Θ.right_inv hxt]
-  exact congrArg (ω₀ x) (funext fun i ↦ DFunLike.congr_fun hid (v i))
-
-omit [FiniteDimensional ℝ E] in
 /-- **The relative Darboux theorem through a straightening chart.** Let `Θ` be a partial
 diffeomorphism of class `C^(r + 1)` from `E' × N` to `E`, defined at `(y₀, 0)`, with derivative
 `e` there, and mapping into an open set `W`. Let `ω₀`, `ω₁` be closed `C^r` two-forms on `W`,
@@ -190,7 +112,7 @@ private theorem exists_partialDiffeomorph_fix_image_zeroSection {N : Type*}
     simpa [pb, Function.comp_def] using congrArg (· v) (htan q hq)
   have hndpb (η : E → E [⋀^Fin 2]→L[ℝ] ℝ) (hnd : ∀ v, (∀ w, η (Θ (y₀, 0)) ![v, w] = 0) → v = 0) :
       ∀ v, (∀ w, pb η (y₀, 0) ![v, w] = 0) → v = 0 := by
-    simpa only [pb, ← he] using nondegenerate_compContinuousLinearMap e hnd
+    simpa only [pb, ← he] using (η (Θ (y₀, 0))).nondegenerate_compContinuousLinearEquiv e hnd
   -- The adapted theorem gives `Ψ`; restrict to an open neighbourhood `O` of `(y₀, 0)` on which
   -- its pullback identity holds and which it maps into `Θ.source`, and conjugate back by `Θ`.
   obtain ⟨Ψ, hfix, hΨ⟩ :=
@@ -205,8 +127,9 @@ private theorem exists_partialDiffeomorph_fix_image_zeroSection {N : Type*}
         exact Θ.open_source.mem_nhds hy₀))) hΨ
   obtain ⟨O, hOsub, hOo, hy₀O⟩ := mem_nhds_iff.1 hOmem
   obtain ⟨Φ, hΦO, hΦ⟩ :=
-    exists_partialDiffeomorph_conj hr Θ (hΘ.of_le le_self_add) (hΘsymm.of_le le_self_add) Ψ
-      hOo (fun z hz ↦ (hOsub hz).1.1) (fun z hz ↦ (hOsub hz).1.2) fun z hz ↦ (hOsub hz).2
+    exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj hr Θ
+      (hΘ.of_le le_self_add) (hΘsymm.of_le le_self_add) Ψ hOo (fun z hz ↦ (hOsub hz).1.1)
+      (fun z hz ↦ (hOsub hz).1.2) fun z hz ↦ (hOsub hz).2
   refine ⟨Φ, (hΦO _ hy₀O).1, ?_, hΦ⟩
   have hc : Tendsto (fun y : E' ↦ ((y, 0) : E' × N)) (𝓝 y₀) (𝓝 (y₀, 0)) :=
     (continuous_id.prodMk continuous_const).tendsto y₀

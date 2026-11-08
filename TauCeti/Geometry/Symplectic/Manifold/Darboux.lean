@@ -171,8 +171,9 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
     exact (hform.isNondegenerate.symplecticFormAt_apply x₀ u' w').trans
       ((SmoothBundleForm.eval₂_apply form x₀ u' w').trans
         (congrArg (fun A : E [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![u, w]) hηy₀.symm))
-  have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 := fun v hv ↦
-    form₀.separatingLeft v fun w ↦ (hform₀_apply v w).trans (hv w)
+  have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 :=
+    form.inChartAt_extChartAt_self_nondegenerate
+      (hform.isNondegenerate.nondegenerate_bilinFormAt x₀)
   -- Apply the flat Moser–Darboux theorem to `η` on `W` around `y₀`.
   obtain ⟨ψ, hψy₀, hev⟩ :=
     exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq (r := (⊤ : ℕ∞)) le_top
