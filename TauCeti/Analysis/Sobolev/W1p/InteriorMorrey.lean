@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.W1p.Morrey
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -219,6 +221,45 @@ theorem W1p.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
       exact (closedBall_subset_closedBall (by linarith)).trans hsub)
   exact ((hK.continuousOn (ENNReal.toNNReal_one_sub_div_pos hp)).continuousAt
     (closedBall_mem_nhds x hε5)).continuousWithinAt
+
+/-- The continuous precise representative of a `W^{1,∞}(Ω)` function is bounded
+pointwise on `Ω` by the essential supremum of its value. -/
+theorem W1p.norm_preciseRepresentative_le {Omega : Opens E} (u : W1p mu Omega ∞)
+    {x : E} (hx : x ∈ Omega) :
+    ‖preciseRepresentative mu (W1p.value u) x‖ ≤ ‖W1p.value u‖ := by
+  let ν := mu.comap (Subtype.val : Omega → E)
+  let : ν.IsOpenPosMeasure :=
+    Measure.IsOpenPosMeasure.comap mu Omega.isOpen.isOpenEmbedding_subtypeVal
+  have hc :=
+    (W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u).domRestrict
+  have hae : ∀ᵐ y ∂mu.restrict Omega,
+      ‖preciseRepresentative mu (W1p.value u) y‖ ≤ ‖W1p.value u‖ := by
+    filter_upwards [W1p.ae_eq_preciseRepresentative u,
+      Lp.ae_norm_le_norm_top (W1p.value u)] with y hy hb
+    rwa [hy] at hb
+  exact ((Continuous.ae_le_iff_le ν hc.norm continuous_const).1
+    ((ae_restrict_iff_subtype Omega.isOpen.measurableSet).1 hae)) ⟨x, hx⟩
+
+/-- **The endpoint local Morrey estimate.** A `W^{1,∞}(Ω)` precise representative satisfies
+an interior Lipschitz estimate with constant `C ‖∇u‖`, where `C > 0` depends only on the
+space and Haar measure. The estimate applies whenever the closed ball of radius twice the
+distance of the two points lies in `Ω`. -/
+theorem W1p.exists_dist_preciseRepresentative_le_top :
+    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens E} (u : W1p mu Omega ∞) {x y : E},
+      closedBall x (2 * dist x y) ⊆ (Omega : Set E) →
+        dist (preciseRepresentative mu (W1p.value u) x)
+            (preciseRepresentative mu (W1p.value u) y) ≤
+          C * ‖W1p.gradient u‖ * dist x y := by
+  obtain ⟨C, hC, hdist⟩ := W1p.exists_dist_preciseRepresentative_le
+    (mu := mu) (ENNReal.natCast_lt_top (finrank ℝ E))
+  refine ⟨C, hC, fun {Omega} u x y hxy => ?_⟩
+  have h := hdist u hxy
+  simp only [ENNReal.div_top, tsub_zero, ENNReal.toNNReal_one, NNReal.coe_one,
+    Real.rpow_one] at h
+  refine h.trans ?_
+  gcongr
+  exact (W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hxy)
+    subset_rfl).trans_eq (Lp.norm_def _).symm
 
 /-- **Morrey's embedding on compact subsets.** If `n < p ≤ ∞`, where `n` is the dimension, the
 precise representative of any `u ∈ W^{1,p}(Ω)` is Hölder continuous with exponent `1 - n / p` on
