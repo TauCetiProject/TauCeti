@@ -48,6 +48,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
 * `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
+* `TauCeti.exponent_pi_rootsOfUnity_cast_ne_zero`: in a field, the exponent of a finite product
+  of groups `μ_{n i}` is nonzero as soon as each `n i` is.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
@@ -162,6 +164,23 @@ theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n 
   have : NeZero n := ⟨hn⟩
   rw [← IsCyclic.exponent_eq_card]
   exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
+
+/-- The exponent of the product of the groups of `n i`-th roots of unity is nonzero in a field `K`
+when each `n i` is. -/
+theorem exponent_pi_rootsOfUnity_cast_ne_zero {K ι : Type*} [Field K] [Finite ι]
+    (n : ι → ℕ) (hncast : ∀ i, (n i : K) ≠ 0) :
+    (Monoid.exponent (∀ i, rootsOfUnity (n i) K) : K) ≠ 0 := by
+  have := Fintype.ofFinite ι
+  have hprodcast : ((∏ i, n i : ℕ) : K) ≠ 0 := by
+    simpa using Finset.prod_ne_zero_iff.mpr (fun i _ ↦ hncast i)
+  have hexp : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
+    rw [Monoid.exponent_pi]
+    refine Finset.lcm_dvd fun i _ ↦ dvd_trans ?_ (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
+    exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
+  obtain ⟨d, hd⟩ := hexp
+  intro h
+  apply hprodcast
+  simp [hd, h]
 
 /-- In a commutative ring in which `2 ≠ 0`, the negative of a primitive `n`-th root of unity of
 odd order `n` is a primitive `2n`-th root of unity. -/
