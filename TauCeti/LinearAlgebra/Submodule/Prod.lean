@@ -65,7 +65,7 @@ theorem iSup_prod_submodule {R M N : Type*} {ι : Sort*} [Semiring R]
 
 /-- A family of componentwise products of submodules is independent exactly when both families
 of factors are independent. -/
-theorem iSupIndep_prod_iff {R M N : Type*} {ι : Sort*} [Semiring R]
+@[simp] theorem iSupIndep_prod_iff {R M N : Type*} {ι : Sort*} [Semiring R]
     [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
     {P : ι → Submodule R M} {Q : ι → Submodule R N} :
     iSupIndep (fun i ↦ (P i).prod (Q i)) ↔ iSupIndep P ∧ iSupIndep Q := by
