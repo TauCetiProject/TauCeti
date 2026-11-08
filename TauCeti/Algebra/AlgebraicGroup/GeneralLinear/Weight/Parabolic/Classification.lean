@@ -13,7 +13,6 @@ import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Parabolic.Geo
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 import all TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
-import all TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.TitsSystem
 
 /-!
 # Classification of standard general-linear parabolic ideals
@@ -31,16 +30,10 @@ embedding of their defining ideals are supplied by
 That embedding gives uniqueness of the label. Reducedness of the input quotient is
 essential in positive characteristic.
 
-This proves the unique-block-weight theorem of FlagVarieties, Layer 1.1, using the
-definition in `TauCetiRoadmap/FlagVarieties/Suggested.lean`.
-
 ## Main declarations
 
 All declarations below are in the `TauCeti.GeneralLinear` namespace.
 
-* `weightParabolicSimple_standardWeight` and
-  `simpleRep_mem_weightParabolicSimple_standardWeight_iff`: comparison with the simple
-  reflections indexed by `glTitsSystemSimpleRep`.
 * `exists_unique_standardWeight_eq`: every reduced defining Hopf ideal contained in the
   upper-triangular ideal is the weight-parabolic ideal of a unique standard block weight.
 
@@ -53,42 +46,6 @@ All declarations below are in the `TauCeti.GeneralLinear` namespace.
 public section
 
 namespace TauCeti.GeneralLinear
-
-noncomputable section
-
-variable {n : ℕ} (k : Type*) [Field k] [Nontrivial kˣ]
-
-/-- The selected simple reflections are those represented by the adjacent indices in `J`. -/
-theorem weightParabolicSimple_standardWeight (J : Finset (Fin n)) :
-    weightParabolicSimple k (standardWeight J) =
-      {s : (glTitsSystem k n).simple | ∃ i ∈ J, (s : (glTitsSystem k n).WeylGroup) =
-        QuotientGroup.mk (glTitsSystemSimpleRep k n i)} := by
-  ext s
-  simp only [weightParabolicSimple, Set.mem_ofPred_eq, standardWeight_castSucc_eq_succ_iff]
-
-/-- Under the standard adjacent-transposition indexing, the `i`-th simple reflection is
-selected exactly when `i ∈ J`. -/
-theorem simpleRep_mem_weightParabolicSimple_standardWeight_iff (J : Finset (Fin n)) (i : Fin n) :
-    (⟨QuotientGroup.mk (glTitsSystemSimpleRep k n i),
-      by rw [glTitsSystem_simple]; exact ⟨i, rfl⟩⟩ : (glTitsSystem k n).simple) ∈
-      weightParabolicSimple k (standardWeight J) ↔ i ∈ J := by
-  constructor
-  · intro h
-    have hcell := (mem_weightParabolicSimple_iff k (standardWeight J)
-      (standardWeight_antitone J) _).mp h
-    have hrep : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
-        (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) := by
-      rw [TitsSystem.bruhatCell_mk]
-      exact DoubleCoset.mem_doubleCoset_self _ _ _
-    have hm : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
-        weightParabolicPoints k (standardWeight J) k := hcell hrep
-    rw [coe_glTitsSystemSimpleRep, permutationGL_swap_mem_weightParabolicPoints_iff,
-      standardWeight_castSucc_eq_succ_iff] at hm
-    exact hm
-  · intro hi
-    exact ⟨i, (standardWeight_castSucc_eq_succ_iff J i).mpr hi, rfl⟩
-
-end
 
 noncomputable section
 
@@ -126,8 +83,7 @@ theorem exists_unique_standardWeight_eq {k : Type u} [Field k] [IsAlgClosed k] (
     ext s
     constructor
     · rintro ⟨i, hi, hs⟩
-      change (glTitsSystem k n).bruhatCell s.val ⊆ P
-      rw [hs]
+      simp only [Set.mem_ofPred_eq, hs]
       exact (Finset.mem_filter.mp hi).2
     · intro hs
       have hsimple := s.property
