@@ -193,16 +193,14 @@ theorem StronglyContinuousSemigroup.existsGrowthBound_ge
 /-! ## Joint strong continuity -/
 
 /-- **Joint strong continuity**: if `f i → r` and `g i → z`, then `S (f i) (g i) → S r z`. Times
-before `0` act as the identity, so no sign hypothesis is needed.
-
-A C₀-semigroup is strongly, not uniformly, continuous, so this does not follow from continuity
-of `u ↦ S.realOperator u` alone; the proof combines strong continuity at `r` with the uniform
-operator bound supplied by a growth bound, applied to the nonnegative parts `max (f i) 0` of the
-times. -/
+before `0` act as the identity, so no sign hypothesis is needed. -/
 theorem StronglyContinuousSemigroup.tendsto_realOperator_apply {ι : Type*} {l : Filter ι}
     (S : StronglyContinuousSemigroup X) {f : ι → ℝ} {g : ι → X} {r : ℝ} {z : X}
     (hf : Filter.Tendsto f l (𝓝 r)) (hg : Filter.Tendsto g l (𝓝 z)) :
     Filter.Tendsto (fun i => S.realOperator (f i) (g i)) l (𝓝 (S.realOperator r z)) := by
+  -- A C₀-semigroup is strongly, not uniformly, continuous, so this does not follow from continuity
+  -- of `u ↦ S.realOperator u` alone: combine strong continuity at `r` with the uniform operator
+  -- bound supplied by a growth bound, applied to the nonnegative parts `max (f i) 0` of the times.
   obtain ⟨omega, M, hb⟩ := S.existsGrowthBound
   -- Negative times act as time `0`.
   have hclamp (t : ℝ) : S.realOperator t = S.realOperator (max t 0) := by
