@@ -174,6 +174,7 @@ theorem nonempty_homotopyWith_inl_comp_polarFactor (L : E →L[ℝ] E × F)
       prop' := fun t u ↦ by
         dsimp only [ContinuousMap.coe_mk]
         refine ⟨?_, L.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hL (hσ t) u⟩
+        rw [Prod.norm_mk, Prod.norm_def (L u)]
         refine max_le_max le_rfl ?_
         rw [norm_smul, Real.norm_eq_abs]
         exact mul_le_of_le_one_left (norm_nonneg _) (hσ t) }
