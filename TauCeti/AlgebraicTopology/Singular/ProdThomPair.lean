@@ -189,8 +189,10 @@ private lemma isZero_singularHomology_halfCompl {W : Submodule ℝ F} {φ : F �
 
 /-- The data of one step of the computation: a subspace `W'` containing `W` with one more
 dimension, together with a functional `φ` cutting out `W` in `W'` and a vector `v ∈ W'` with
-`φ v = 1`. -/
-private structure Step (W : Submodule ℝ F) where
+`φ v = 1`. The same steps compute the relative homology of a Serre fibration over a convex
+neighbourhood of `0` modulo the complement of the fibre over `0`
+(`TauCeti.AlgebraicTopology.Singular.Fibration.Disk`). -/
+structure Step (W : Submodule ℝ F) where
   /-- The larger subspace. -/
   W' : Submodule ℝ F
   /-- The functional cutting out `W` inside `W'`. -/
@@ -205,7 +207,7 @@ private structure Step (W : Submodule ℝ F) where
   finrank_eq : finrank ℝ W' = finrank ℝ W + 1
 
 /-- Every proper subspace admits a step. -/
-private lemma nonempty_step [FiniteDimensional ℝ F] {W : Submodule ℝ F} (hW : W ≠ ⊤) :
+lemma nonempty_step [FiniteDimensional ℝ F] {W : Submodule ℝ F} (hW : W ≠ ⊤) :
     Nonempty (Step W) := by
   obtain ⟨v, hv⟩ : ∃ v, v ∉ W := by
     by_contra! h
@@ -224,28 +226,48 @@ private lemma nonempty_step [FiniteDimensional ℝ F] {W : Submodule ℝ F} (hW 
     simpa [ha] using hy
   · exact Submodule.finrank_sup_span_singleton hv
 
+namespace Step
+
+variable {W : Submodule ℝ F} (s : Step W)
+
+/-- The complements of the two closed half-subspaces `{x ∈ W' | ±φ x ≤ 0}` of a step cover the
+complement of `W`. -/
+lemma compl_union_compl :
+    {x | x ∈ s.W' ∧ s.φ x ≤ 0}ᶜ ∪ {x | x ∈ s.W' ∧ (-s.φ) x ≤ 0}ᶜ = (W : Set F)ᶜ := by
+  ext x
+  simp only [Set.mem_union, Set.mem_compl_iff, Set.mem_ofPred_eq, LinearMap.neg_apply, neg_nonpos,
+    SetLike.mem_coe]
+  constructor
+  · rintro (h | h) hx <;> exact h ⟨s.le hx, by simp [s.apply_eq_zero _ hx]⟩
+  · intro hx
+    by_contra! h
+    exact hx (s.mem_of_apply_eq_zero _ h.1.1 (le_antisymm h.1.2 h.2.2))
+
+/-- The complements of the two closed half-subspaces `{x ∈ W' | ±φ x ≤ 0}` of a step intersect in
+the complement of `W'`. -/
+lemma compl_inter_compl :
+    {x | x ∈ s.W' ∧ s.φ x ≤ 0}ᶜ ∩ {x | x ∈ s.W' ∧ (-s.φ) x ≤ 0}ᶜ = (s.W' : Set F)ᶜ := by
+  ext x
+  simp only [Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_ofPred_eq, LinearMap.neg_apply,
+    neg_nonpos, SetLike.mem_coe]
+  constructor
+  · rintro ⟨h₁, h₂⟩ hx
+    rcases le_total (s.φ x) 0 with h | h
+    exacts [h₁ ⟨hx, h⟩, h₂ ⟨hx, h⟩]
+  · intro hx
+    exact ⟨fun h ↦ hx h.1, fun h ↦ hx h.1⟩
+
+end Step
+
 variable (B) {W : Submodule ℝ F}
 
 private lemma halfCompl_union (s : Step W) :
-    halfCompl B s.W' s.φ ∪ halfCompl B s.W' (-s.φ) = {p | p.2 ∉ W} := by
-  ext p
-  simp only [halfCompl, Set.mem_union, Set.mem_ofPred_eq, LinearMap.neg_apply, neg_nonpos]
-  constructor
-  · rintro (h | h) hp <;> exact h ⟨s.le hp, by simp [s.apply_eq_zero _ hp]⟩
-  · intro hp
-    by_contra! h
-    exact hp (s.mem_of_apply_eq_zero _ h.1.1 (le_antisymm h.1.2 h.2.2))
+    halfCompl B s.W' s.φ ∪ halfCompl B s.W' (-s.φ) = {p | p.2 ∉ W} :=
+  Set.ext fun p ↦ Set.ext_iff.1 s.compl_union_compl p.2
 
 private lemma halfCompl_inter (s : Step W) :
-    halfCompl B s.W' s.φ ∩ halfCompl B s.W' (-s.φ) = {p | p.2 ∉ s.W'} := by
-  ext p
-  simp only [halfCompl, Set.mem_inter_iff, Set.mem_ofPred_eq, LinearMap.neg_apply, neg_nonpos]
-  constructor
-  · rintro ⟨h₁, h₂⟩ hp
-    rcases le_total (s.φ p.2) 0 with h | h
-    exacts [h₁ ⟨hp, h⟩, h₂ ⟨hp, h⟩]
-  · intro hp
-    exact ⟨fun h ↦ hp h.1, fun h ↦ hp h.1⟩
+    halfCompl B s.W' s.φ ∩ halfCompl B s.W' (-s.φ) = {p | p.2 ∉ s.W'} :=
+  Set.ext fun p ↦ Set.ext_iff.1 s.compl_inter_compl p.2
 
 /-- The identification of `(B × F, B × (F ∖ W))` with the pair modulo the union of the two
 half-subspace complements of a step. -/
@@ -293,7 +315,7 @@ private lemma isZero_singularHomology_zero (s : Step W) :
     (asIso (TopPair.singularHomologyMap (unionIso B s).hom R 0))
 
 /-- A chosen step from a proper subspace. -/
-private def step (W : Submodule ℝ F) (hW : W ≠ ⊤) : Step W :=
+noncomputable def step (W : Submodule ℝ F) (hW : W ≠ ⊤) : Step W :=
   (nonempty_step hW).some
 
 /-- `Hₙ(B × F, B × (F ∖ W)) = 0` below the codimension of `W`. -/
