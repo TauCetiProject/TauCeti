@@ -1,0 +1,27 @@
+name: Test labels from comments
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/labels-from-comments.yml
+      - .github/workflows/test-labels-from-comments.yml
+      - .github/scripts/test-labels-from-comments.cjs
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/labels-from-comments.yml
+      - .github/workflows/test-labels-from-comments.yml
+      - .github/scripts/test-labels-from-comments.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: node --test .github/scripts/test-labels-from-comments.cjs
