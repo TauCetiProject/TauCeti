@@ -36,12 +36,13 @@ theorem structureConstant_G2_eq_three_or_eq_neg_three {α β γ : Fin G2.numRoot
     (hadd : (G2.simplyConnectedRootDatum ht).root γ =
       (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β) :
     G2.structureConstant ht α β = 3 ∨ G2.structureConstant ht α β = -3 := by
-  have hc := g2_chainBotCoeff_eq_two_of_short_add_short_eq_long α β γ hα hβ hγ
-    (by
-      simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2, add_comm]
-        using hadd)
+  have hc : (G2.simplyConnectedRootDatum ht).chainBotCoeff α β = 2 := by
+    rw [simplyConnectedRootDatum_G2]
+    apply g2_chainBotCoeff_eq_two_of_short_add_short_eq_long α β γ hα hβ hγ
+    rw [simplyConnectedRootDatum_G2] at hadd
+    exact hadd.trans (add_comm _ _)
   have h := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht) ⟨γ, hadd⟩
-  simp +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2, hc] at h
+  rw [hc] at h
   norm_num at h
   exact h
 

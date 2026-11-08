@@ -39,7 +39,7 @@ successive divided brackets used by straightening.
   and a short root is short.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_two_of_short_add_short_eq_long`: two short roots whose sum
   is long have bottom root-string coefficient two.
-* `TauCeti.DynkinType.g2_root_add_not_mem_range_of_add_eq_long`: a long root sum has no
+* `TauCeti.DynkinType.g2_root_add_notMem_range_of_add_eq_long`: a long root sum has no
   higher roots.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long`:
   the four-term string starting at a long root in a short-root direction.
@@ -132,7 +132,7 @@ theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
 
 /-- If the sum of two `G₂` roots is long, adding either summand to that sum does not give a
 root. This is the absence of higher roots in the corresponding class-two root string. -/
-theorem g2_root_add_not_mem_range_of_add_eq_long (i j k : Fin 12)
+theorem g2_root_add_notMem_range_of_add_eq_long (i j k : Fin 12)
     (hk : g2Length k = 3)
     (hadd : g2SimplyConnectedRootDatum.root k =
       g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :

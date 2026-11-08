@@ -39,6 +39,15 @@ noncomputable section
 
 variable {ht : G2.Valid}
 
+private theorem g2_root_add_notMem_range_of_long_sum {α β γ : Fin G2.numRoots}
+    (hγ : g2Length γ = 3)
+    (hadd : (G2.simplyConnectedRootDatum ht).root γ =
+      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β) :
+    (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root γ ∉
+      Set.range (G2.simplyConnectedRootDatum ht).root := by
+  rw [simplyConnectedRootDatum_G2] at hadd ⊢
+  exact g2_root_add_notMem_range_of_add_eq_long α β γ hγ hadd
+
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (G2.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
 variable (M : AddSubgroup V)
@@ -63,15 +72,10 @@ theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G
         (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v))) := by
   apply commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
     (lie_chevalleySystem_eq_structureConstant_zsmul hadd)
-  · apply lie_chevalleySystem_eq_zero_of_add_eq hadd
-    simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
-      g2_root_add_not_mem_range_of_add_eq_long α β γ hγ
-        (by simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using hadd)
-  · apply lie_chevalleySystem_eq_zero_of_add_eq (hadd.trans (add_comm _ _))
-    simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
-      g2_root_add_not_mem_range_of_add_eq_long β α γ hγ
-        (by simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
-          hadd.trans (add_comm _ _))
+  · exact lie_chevalleySystem_eq_zero_of_add_eq hadd
+      (g2_root_add_notMem_range_of_long_sum hγ hadd)
+  · exact lie_chevalleySystem_eq_zero_of_add_eq (hadd.trans (add_comm _ _))
+      (g2_root_add_notMem_range_of_long_sum hγ (hadd.trans (add_comm _ _)))
 
 /-- Short `G₂` root subgroups whose sum is long commute in characteristic three. -/
 theorem commute_chevalleyRootSubgroup_G2_of_short_add_short_eq_long {α β γ : Fin G2.numRoots}
