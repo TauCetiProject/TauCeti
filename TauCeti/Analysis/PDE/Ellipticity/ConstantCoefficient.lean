@@ -16,7 +16,6 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Ellipticity.Basic
-import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Constant-coefficient elliptic operators as the Laplacian in linear coordinates
