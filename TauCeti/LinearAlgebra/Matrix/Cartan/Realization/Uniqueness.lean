@@ -16,10 +16,10 @@ root to the corresponding simple root. This is the uniqueness half of Kac's Prop
 
 The isomorphism is obtained from a more general embedding statement. A *compatible* linear map
 from one realization to another is one carrying coroots to coroots and pulling roots back to roots.
-Such maps exist from every realization to every finite-dimensional one
+Such maps exist between any two realizations of the same matrix
 (`CartanRealization.exists_linearMap_coroot_root`), and every compatible map out of a minimal
 realization is injective (`CartanRealization.IsMinimal.injective_of_coroot_root`). Thus a minimal
-realization embeds into every finite-dimensional realization of the same matrix, and between two
+realization embeds into every realization of the same matrix, and between two
 minimal realizations a compatible map is an isomorphism
 (`CartanRealization.IsMinimal.exists_map_eq`). Conversely every transport of a minimal realization
 is minimal, so the minimal realizations of a matrix form a single isomorphism class
@@ -44,9 +44,10 @@ variable {I K H H' : Type*} [Fintype I] [Field K] [AddCommGroup H] [Module K H]
   (S : CartanRealization A H')
 
 omit [Fintype I] in
-/-- Every realization admits a compatible linear map to any finite-dimensional realization of the
-same matrix: coroots go to coroots and roots pull back to roots. -/
-theorem exists_linearMap_coroot_root [Finite I] [FiniteDimensional K H'] :
+/-- Every realization admits a compatible linear map to any realization of the same matrix:
+coroots go to coroots and roots pull back to roots. Neither ambient space need be
+finite-dimensional. -/
+theorem exists_linearMap_coroot_root [Finite I] :
     ∃ f : H →ₗ[K] H', (∀ i, f (R.coroot i) = S.coroot i) ∧
       ∀ i h, S.root i (f h) = R.root i h := by
   let := Fintype.ofFinite I
@@ -88,10 +89,9 @@ theorem IsMinimal.injective_of_coroot_root (hR : R.IsMinimal) {f : H →ₗ[K] H
   rw [hcm] at hx
   rw [S.corootMap_injective (hx.trans (map_zero S.corootMap).symm), map_zero]
 
-/-- A minimal realization embeds into every finite-dimensional realization of the same matrix,
-compatibly with the coroots and the roots. -/
-theorem IsMinimal.exists_injective_linearMap (hR : R.IsMinimal) (S : CartanRealization A H')
-    [FiniteDimensional K H'] :
+/-- A minimal realization embeds into every realization of the same matrix, compatibly with the
+coroots and the roots. -/
+theorem IsMinimal.exists_injective_linearMap (hR : R.IsMinimal) (S : CartanRealization A H') :
     ∃ f : H →ₗ[K] H', Function.Injective f ∧ (∀ i, f (R.coroot i) = S.coroot i) ∧
       ∀ i h, S.root i (f h) = R.root i h := by
   obtain ⟨f, hc, hr⟩ := R.exists_linearMap_coroot_root S
@@ -104,10 +104,8 @@ theorem IsMinimal.exists_map_eq (hR : R.IsMinimal) (hS : S.IsMinimal) :
   have := hR.finiteDimensional
   have := hS.finiteDimensional
   obtain ⟨f, hf, hc, hr⟩ := hR.exists_injective_linearMap S
-  have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (hR.finrank_eq.trans hS.finrank_eq.symm)).mp hf
-  let e := LinearEquiv.ofBijective f ⟨hf, hsurj⟩
-  have he (h : H) : e h = f h := LinearEquiv.ofBijective_apply _ h
+  let e := f.linearEquivOfInjective hf (hR.finrank_eq.trans hS.finrank_eq.symm)
+  have he (h : H) : e h = f h := LinearMap.linearEquivOfInjective_apply _ _ h
   refine ⟨e, ext _ (fun i => by rw [map_coroot, he, hc]) fun i => LinearMap.ext fun h => ?_⟩
   rw [map_root_apply, ← hr, ← he, e.apply_symm_apply]
 
