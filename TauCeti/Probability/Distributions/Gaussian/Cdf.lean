@@ -317,9 +317,12 @@ theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
 
 /-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
 mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
-its right end. -/
-theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0) (hs : m ≤ s)
-    (ht : 0 ≤ t) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
+its right end (for `t < 0` the left side is nonpositive and the bound is trivial). -/
+theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0)
+    (hs : m ≤ s) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
+  rcases lt_or_ge t 0 with ht | ht
+  · exact (mul_nonpos_of_nonpos_of_nonneg ht.le (gaussianPDFReal_nonneg m v _)).trans
+      measureReal_nonneg
   rcases eq_or_ne v 0 with rfl | hv
   · rw [gaussianPDFReal_zero_var, Pi.zero_apply, mul_zero]
     exact measureReal_nonneg
