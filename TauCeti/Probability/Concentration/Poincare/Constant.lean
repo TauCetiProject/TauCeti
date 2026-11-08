@@ -59,6 +59,27 @@ theorem poincareConstant_lt_iff {μ : Measure E} {r : ℝ≥0∞} :
   rw [poincareConstant, iInf_lt_iff]
   exact ⟨fun ⟨C, hC⟩ ↦ ⟨C.1, C.2, hC⟩, fun ⟨C, hC, hr⟩ ↦ ⟨⟨C, hC⟩, hr⟩⟩
 
+/-- A finite upper bound on the optimal constant is itself a valid Poincaré constant. -/
+theorem poincareConstant_le_iff {μ : Measure E} {C : ℝ≥0} :
+    poincareConstant μ ≤ (C : ℝ≥0∞) ↔ PoincareInequality μ C := by
+  refine ⟨fun h ↦ ?_, PoincareInequality.poincareConstant_le⟩
+  rw [PoincareInequality_def]
+  intro f hf hfL hdf
+  have hbound : Set.Ioi (C : ℝ) ⊆
+      {D : ℝ | variance f μ ≤ D * ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ} := by
+    intro D hCD
+    let D' : ℝ≥0 := ⟨D, C.coe_nonneg.trans hCD.le⟩
+    have hCD' : (C : ℝ≥0∞) < (D' : ℝ≥0∞) :=
+      ENNReal.coe_lt_coe.mpr hCD
+    obtain ⟨B, hB, hBD⟩ := poincareConstant_lt_iff.mp (h.trans_lt hCD')
+    exact (hB.apply f hf hfL hdf).trans
+      (mul_le_mul_of_nonneg_right (ENNReal.coe_lt_coe.mp hBD).le
+        (integral_nonneg fun x ↦ sq_nonneg ‖fderiv ℝ f x‖))
+  have hclosed : IsClosed
+      {D : ℝ | variance f μ ≤ D * ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ} :=
+    isClosed_le continuous_const (continuous_id.mul continuous_const)
+  exact closure_minimal hbound hclosed (by simp)
+
 /-- The optimal Poincaré constant is infinite exactly when no finite nonnegative constant works. -/
 theorem poincareConstant_eq_top_iff {μ : Measure E} :
     poincareConstant μ = ⊤ ↔ ∀ C : ℝ≥0, ¬ PoincareInequality μ C := by
@@ -77,51 +98,6 @@ variable {ι : Type*} [Fintype ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)]
   [∀ i, MeasurableSpace (E i)]
   [∀ i, BorelSpace (E i)] [∀ i, SecondCountableTopology (E i)]
-
-/-- Every marginal of a finite `PiLp 2` product inherits its Poincaré inequality. -/
-theorem PoincareInequality.of_piLp {μ : ∀ i, Measure (E i)}
-    [∀ i, IsProbabilityMeasure (μ i)] {C : ℝ}
-    (h : PoincareInequality ((Measure.pi μ).map (WithLp.toLp 2)) C) (i : ι) :
-    PoincareInequality (μ i) C := by
-  classical
-  let ρ := (Measure.pi μ).map (WithLp.toLp 2)
-  let q := (PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i)
-  have hm : MeasurePreserving q ρ (μ i) := by
-    refine ⟨q.continuous.measurable, ?_⟩
-    change ((Measure.pi μ).map (WithLp.toLp 2)).map q = μ i
-    rw [Measure.map_map q.continuous.measurable (WithLp.measurable_toLp 2 _)]
-    exact (measurePreserving_eval μ i).map_eq
-  rw [PoincareInequality_def]
-  intro f hf hfL hdf
-  have hn (x : PiLp 2 E) :
-      ‖fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x‖ = ‖fderiv ℝ f (q x)‖ := by
-    have hderiv : fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x =
-        (fderiv ℝ f (q x)).comp q := by
-      simpa only [Function.comp_def] using
-        ((hf.differentiable (by simp) (q x)).hasFDerivAt.comp x q.hasFDerivAt).fderiv
-    rw [hderiv]
-    apply le_antisymm
-    · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (fderiv ℝ f (q x))) fun y ↦ ?_
-      exact ((fderiv ℝ f (q x)).le_opNorm (q y)).trans
-        (mul_le_mul_of_nonneg_left (PiLp.norm_apply_le y i) (norm_nonneg _))
-    · refine ContinuousLinearMap.opNorm_le_bound _
-        (norm_nonneg ((fderiv ℝ f (q x)).comp q)) fun y ↦ ?_
-      have hle := ((fderiv ℝ f (q x)).comp q).le_opNorm (PiLp.single 2 i y)
-      simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply,
-        PiLp.ofLp_single, Pi.single_eq_same, PiLp.norm_single] using hle
-  have hd : MemLp (fun x : PiLp 2 E ↦ ‖fderiv ℝ (fun y ↦ f (q y)) x‖) 2 ρ := by
-    simp only [hn]
-    exact hdf.comp_measurePreserving hm
-  have hv := h.apply (fun x ↦ f (q x)) (hf.comp q.contDiff)
-    (hfL.comp_measurePreserving hm) hd
-  rw [hm.variance_fun_comp hfL.aemeasurable] at hv
-  have he : (∫ x, ‖fderiv ℝ (fun y ↦ f (q y)) x‖ ^ 2 ∂ρ) =
-      ∫ y, ‖fderiv ℝ f y‖ ^ 2 ∂μ i := by
-    simp only [hn]
-    have hint : AEStronglyMeasurable (fun y ↦ ‖fderiv ℝ f y‖ ^ 2) (ρ.map q) :=
-      hm.map_eq.symm ▸ hdf.integrable_sq.aestronglyMeasurable
-    rw [← hm.map_eq, integral_map hm.measurable.aemeasurable hint]
-  rwa [he] at hv
 
 /-- Each factor's optimal Poincaré constant is bounded by the product constant. -/
 theorem poincareConstant_le_piLp (μ : ∀ i, Measure (E i))
