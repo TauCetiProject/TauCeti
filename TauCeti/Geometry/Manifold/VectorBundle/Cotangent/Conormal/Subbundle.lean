@@ -430,7 +430,7 @@ private theorem isConormalFrameOn_chartConormalFrame [IsManifold I 1 M] [IsManif
         (trivializationAt E (TangentSpace I) (i q₀)).symmL_continuousLinearMapAt hqM]
     simp only [chartConormalFrame, ContinuousLinearMap.comp_apply, zero_apply, hu,
       (trivializationAt E (TangentSpace I) (i q₀)).continuousLinearMapAt_symmL hqM,
-      ContinuousLinearMap.quotientRangeCoordinate_apply_left (hB q hq), map_zero]
+      ContinuousLinearMap.quotientRangeCoordinate_apply_left, map_zero]
   have hX_lin {q : Q} (hq : q ∈ U) :
       LinearIndependent 𝕜 (chartConormalFrame (J := J) (I := I) i q₀ B · q) := by
     have hqM : i q ∈ (trivializationAt E (TangentSpace I) (i q₀)).baseSet := by
