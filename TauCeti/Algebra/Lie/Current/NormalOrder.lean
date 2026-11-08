@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Current.Completion
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
 
+import Mathlib.Order.SuccPred.Int
+
 /-!
 # Normally ordered modes in the completed enveloping algebra
 
@@ -37,6 +39,17 @@ to `p` changes the sum by the finitely many commutators `[xₘ, y_{n-m}]` with `
 which normally ordered products are compared after shifting mode indices, as in the computation of
 commutators of currents with quadratic Sugawara modes.
 
+The commutator of a current generator `z_k` with `:x y:_n` is again a combination of normally
+ordered modes, current generators and a central term
+(`TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`):
+
+`[z_k, :x y:_n] = :⁅z, x⁆ y:_{n+k} + :x ⁅z, y⁆:_{n+k} + k ⁅⁅z, x⁆, y⁆_{n+k}
+  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`.
+
+The term `k ⁅⁅z, x⁆, y⁆_{n+k}` and the last central term come from moving the cut of the normal
+ordering of `:⁅z, x⁆ y:` from `k` back to `0`. This is the formula from which the commutators of
+currents with the quadratic Segal--Sugawara modes are computed.
+
 The modes `:x y:_n` are bilinear in `x` and `y`, and the completed level comparison
 `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv`, which is the identity on currents, carries
 the modes of `Û(ĝ_Ψ)` at central value `1` to those of `Û(ĝ_Φ)` at central value `k` when
@@ -59,6 +72,8 @@ the modes of `Û(ĝ_Ψ)` at central value `1` to those of `Û(ĝ_Φ)` at central
 * `TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`: its action on a smooth vector is a finite
   sum.
 * `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
+* `TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`: the commutator of
+  a current with a normally ordered mode.
 
 ## References
 
@@ -257,6 +272,151 @@ theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
   exact ((hasSum_normalOrderedMode n x y).add (hs _ _)).sub (hs _ _)
 
 end NormalOrder
+
+/-! ### Commutators with currents -/
+
+section Commutator
+
+variable {Φ : LinearMap.BilinForm R L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : R}
+
+local notation "UK" => CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a
+
+/-- The current generator of the mode `x ⊗ tᵐ`. -/
+local notation "ι[" x ", " m "]" =>
+  envelopingι (twoCocycleOfBilinear R L Φ hΦ hΦs) a (HahnSeries.single m (1 : R) ⊗ₜ[R] x)
+
+local notation "toC" => toCompletedEnveloping Φ hΦ hΦs a
+
+/-- The commutator of `z_k` with the summand of index `m` of `:x y:_n` is the summand of index
+`m + k` of `:⁅z, x⁆ y:_{n+k}` ordered at the cut `k`, plus the summand of index `m` of
+`:x ⁅z, y⁆:_{n+k}`, plus the two central terms of the commutators `[z_k, xₘ]` and
+`[z_k, y_{n-m}]`. -/
+private theorem envelopingι_mul_normalOrderedSummand_sub_mul (z x y : L) (k n m : ℤ) :
+    ι[z, k] * normalOrderedSummand Φ hΦ hΦs a 0 n m x y -
+        normalOrderedSummand Φ hΦ hΦs a 0 n m x y * ι[z, k] =
+      normalOrderedSummand Φ hΦ hΦs a k (n + k) (m + k) ⁅z, x⁆ y +
+        normalOrderedSummand Φ hΦ hΦs a 0 (n + k) m x ⁅z, y⁆ +
+        algebraMap R UK (if k + m = 0 then a * m * Φ z x else 0) * ι[y, n - m] +
+        algebraMap R UK (if k + (n - m) = 0 then a * (n - m : ℤ) * Φ z y else 0) * ι[x, m] := by
+  -- The Leibniz rule for commutators with a product.
+  have hL (u v w : UK) : u * (v * w) - v * w * u = (u * v - v * u) * w + v * (u * w - w * u) := by
+    simp only [mul_sub, sub_mul, mul_assoc]
+    abel
+  have hy : n + k - (m + k) = n - m := by ring
+  have hx : k + m = m + k := add_comm k m
+  have hz : k + (n - m) = n + k - m := by ring
+  simp only [normalOrderedSummand_apply, hy]
+  by_cases hm : m < 0
+  · rw [ite_eq_left hm, ite_eq_left (by omega : m + k < k), ite_eq_left hm, hL,
+      envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
+    simp only [mul_add, add_mul, Algebra.commutes]
+    abel
+  · rw [ite_eq_right hm, ite_eq_right (by omega : ¬ m + k < k), ite_eq_right hm, hL,
+      envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
+    simp only [mul_add, add_mul, Algebra.commutes]
+    abel
+
+/-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
+`k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
+private theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
+    ∑ j ∈ Finset.Ico 0 k, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
+        ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
+      (k : R) • ι[⁅x, y⁆, n] -
+        algebraMap R UK (if n = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ x y else 0) := by
+  -- Each commutator is `⁅x, y⁆_n` plus `-j` times the central term `a Φ(x, y)` at `n = 0`.
+  have hj (j : ℤ) : ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j] =
+      ι[⁅x, y⁆, n] + (-j) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
+    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel]
+    split_ifs with hn
+    · rw [hn, zero_sub, ← map_zsmul, zsmul_eq_mul, Int.cast_neg]
+      ring_nf
+    · simp
+  simp only [hj, Finset.sum_add_distrib, Finset.sum_const, ← Finset.sum_smul]
+  -- Counted with sign, the window between `0` and `k` has `k` indices, summing to `k (k - 1) / 2`.
+  have h2 : 2 * (∑ j ∈ Finset.Ico 0 k, j - ∑ j ∈ Finset.Ico k 0, j) = k * (k - 1) := by
+    induction k using Int.induction_on with
+    | zero => simp
+    | succ i ih =>
+      have hi : (0 : ℤ) ≤ i := by positivity
+      rw [← Finset.insert_Ico_right_eq_Ico_add_one hi, Finset.sum_insert (by simp),
+        Finset.Ico_eq_empty_of_le (by omega : (0 : ℤ) ≤ i + 1)]
+      rw [Finset.Ico_eq_empty_of_le hi] at ih
+      simp only [Finset.sum_empty, sub_zero] at ih ⊢
+      linear_combination ih
+    | pred i ih =>
+      have hi : -(i : ℤ) ≤ 0 := by omega
+      rw [← Finset.insert_Ico_left_eq_Ico_sub_one hi, Finset.sum_insert (by simp),
+        Finset.Ico_eq_empty_of_le (by omega : -(i : ℤ) - 1 ≤ 0)]
+      rw [Finset.Ico_eq_empty_of_le hi] at ih
+      simp only [Finset.sum_empty, zero_sub] at ih ⊢
+      linear_combination ih
+  have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
+    simp only [Int.card_Ico]
+    omega
+  have hs : ∑ j ∈ Finset.Ico 0 k, -j - ∑ j ∈ Finset.Ico k 0, -j = -(k * (k - 1) / 2) := by
+    rw [Finset.sum_neg_distrib, Finset.sum_neg_distrib,
+      ← Int.eq_ediv_of_mul_eq_right two_ne_zero h2]
+    ring
+  have hw : algebraMap R UK (if n = 0 then ((k * (k - 1) / 2 : ℤ) : R) * a * Φ x y else 0) =
+      (k * (k - 1) / 2) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
+    split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
+  have key (c₀ c₁ s₀ s₁ M : ℤ) (v w : UK) (hc : c₀ - c₁ = k) (hs : s₀ - s₁ = -M) :
+      c₀ • v + s₀ • w - (c₁ • v + s₁ • w) = k • v - M • w := by
+    rw [← hc, show M = -(s₀ - s₁) by omega]
+    simp only [sub_smul, neg_smul]
+    abel
+  rw [hw, Int.cast_smul_eq_zsmul, ← natCast_zsmul, ← natCast_zsmul]
+  exact key _ _ _ _ _ _ _ hc hs
+
+/-- **The commutator of a current with a normally ordered mode.** In `Û`, for the current
+generator `z_k` of the mode `z ⊗ tᵏ`,
+
+`[z_k, :x y:_n] = :⁅z, x⁆ y:_{n+k} + :x ⁅z, y⁆:_{n+k} + k ⁅⁅z, x⁆, y⁆_{n+k}
+  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`.
+
+Here `Φ` has Mathlib's positive-residue convention, so that
+`[xₘ, yₙ] = ⁅x, y⁆_{m+n} - a m δ_{m+n, 0} Φ(x, y)`; for the affine level form `κ` take `Φ = -κ`. -/
+theorem toCompletedEnveloping_mul_normalOrderedMode_sub_mul (z x y : L) (k n : ℤ) :
+    toC ι[z, k] * normalOrderedMode Φ hΦ hΦs a n x y -
+        normalOrderedMode Φ hΦ hΦs a n x y * toC ι[z, k] =
+      normalOrderedMode Φ hΦ hΦs a (n + k) ⁅z, x⁆ y +
+        normalOrderedMode Φ hΦ hΦs a (n + k) x ⁅z, y⁆ +
+        (k : R) • toC ι[⁅⁅z, x⁆, y⁆, n + k] -
+        (k * a * Φ z x) • toC ι[y, n + k] - (k * a * Φ z y) • toC ι[x, n + k] -
+        algebraMap R (CompletedEnveloping Φ hΦ hΦs a)
+          (if n + k = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ ⁅z, x⁆ y else 0) := by
+  -- The commutator is the sum of the commutators of `z_k` with the summands of `:x y:_n`.
+  have h₁ := ((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) n x y).mul_left
+    (toC ι[z, k])).sub ((hasSum_normalOrderedMode n x y).mul_right (toC ι[z, k]))
+  simp only [← map_mul, ← map_sub, envelopingι_mul_normalOrderedSummand_sub_mul, map_add] at h₁
+  -- Sum the four families of `envelopingι_mul_normalOrderedSummand_sub_mul` separately.
+  have hA := (Equiv.addRight k).hasSum_iff.2
+    (summable_normalOrderedSummand Φ hΦ hΦs a k (n + k) ⁅z, x⁆ y).hasSum
+  have hB := hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) (n + k) x ⁅z, y⁆
+  have hC : HasSum (fun m ↦ toC (algebraMap R UK (if k + m = 0 then a * m * Φ z x else 0) *
+      ι[y, n - m])) (-((k * a * Φ z x) • toC ι[y, n + k])) := by
+    convert hasSum_single (-k) fun m hm ↦ ?_ using 1
+    · rw [ite_eq_left (add_neg_cancel k), sub_neg_eq_add, ← Algebra.smul_def, map_smul,
+        ← neg_smul]
+      congr 1
+      push_cast
+      ring
+    · simp [show k + m ≠ 0 by omega]
+  have hD : HasSum (fun m ↦ toC (algebraMap R UK
+      (if k + (n - m) = 0 then a * (n - m : ℤ) * Φ z y else 0) * ι[x, m]))
+      (-((k * a * Φ z y) • toC ι[x, n + k])) := by
+    convert hasSum_single (n + k) fun m hm ↦ ?_ using 1
+    · rw [ite_eq_left (by ring), ← Algebra.smul_def, map_smul, ← neg_smul]
+      congr 1
+      push_cast
+      ring
+    · simp [show k + (n - m) ≠ 0 by omega]
+  -- Moving the cut of the first family from `k` back to `0` produces the remaining terms.
+  rw [h₁.unique (((hA.add hB).add hC).add hD), tsum_normalOrderedSummand,
+    sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul, map_sub, map_smul, AlgHom.commutes]
+  abel
+
+end Commutator
 
 /-! ### The completed level comparison -/
 

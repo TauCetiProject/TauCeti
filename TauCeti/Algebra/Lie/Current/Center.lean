@@ -28,7 +28,9 @@ This file develops the properties of this completed center which precede any cen
   topologically generate `Û`, since they generate `U` as an algebra and the image of `U` is dense
   (`TauCeti.CurrentAlgebra.topologicalClosure_adjoin_range_envelopingι`). Hence an element of `Û`
   is central as soon as it commutes with the images of all currents
-  (`TauCeti.CurrentAlgebra.mem_center_iff_forall_commute`).
+  (`TauCeti.CurrentAlgebra.mem_center_iff_forall_commute`), and already as soon as it commutes with
+  the images of the modes `x ⊗ tᵐ` (`TauCeti.CurrentAlgebra.mem_center_iff_forall_commute_single`),
+  since every current is the limit of its truncations.
 * **The action on smooth modules.** On a module `M` over `U` which is smooth for the left ideals
   `I_n`, every point of `Û` acts by the extension `TauCeti.ModuleTower.limSmul` of the action of
   `U`. A central element acts by an endomorphism of `U`-modules which commutes with the action of
@@ -51,6 +53,8 @@ At `a = 1` and `Φ = -κ` this is the center `Z(Û_κ)` of the completed envelop
   topologically generate `Û`.
 * `TauCeti.CurrentAlgebra.mem_center_iff_forall_commute`: centrality is detected on the current
   generators.
+* `TauCeti.CurrentAlgebra.mem_center_iff_forall_commute_single`: centrality is detected on the
+  current modes.
 * `TauCeti.CurrentAlgebra.limSmul_smul_of_mem_center`,
   `TauCeti.CurrentAlgebra.limSmul_centerToModuleEnd`: central elements act on smooth modules by
   `U`-linear endomorphisms commuting with the action of `Û`.
@@ -131,6 +135,37 @@ theorem mem_center_iff_forall_commute {z : Û} :
   rw [Subalgebra.mem_center_iff_forall_commute_of_topologicalClosure_adjoin_eq_top
     (topologicalClosure_adjoin_range_envelopingι Φ hΦ hΦs a), Set.forall_mem_range]
   simp only [Function.comp_apply]
+
+/-- **Centrality in the completed enveloping algebra is detected on the current modes**: an element
+of `Û` is central exactly when it commutes with the images of the modes `x ⊗ tᵐ`. -/
+theorem mem_center_iff_forall_commute_single {z : Û} :
+    z ∈ Subalgebra.center R Û ↔ ∀ (m : ℤ) (x : L),
+      Commute (toCompletedEnveloping Φ hΦ hΦs a
+        (envelopingι c a (HahnSeries.single m (1 : R) ⊗ₜ[R] x))) z := by
+  rw [mem_center_iff_forall_commute]
+  refine ⟨fun h m x ↦ h _, fun h u ↦ ?_⟩
+  -- Polynomial currents are finite sums of modes.
+  have hpoly (p : LieAlgebra.loopAlgebra R ℤ L) :
+      Commute (toCompletedEnveloping Φ hΦ hΦs a (envelopingι c a (ofLoop R L p))) z := by
+    obtain ⟨v, rfl⟩ := (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).symm.surjective p
+    induction v using Finsupp.induction_linear with
+    | zero => simp
+    | add v w hv hw => simpa only [map_add] using hv.add_left hw
+    | single m x =>
+      rw [LieAlgebra.LoopAlgebra.toFinsupp_symm_single, ofLoop_tmul,
+        LaurentPolynomial.toLaurentSeries_single]
+      exact h m x
+  -- A formal current is the limit of its truncations, and commuting with `z` is a closed condition.
+  refine (isClosed_eq (f := (· * z)) (g := (z * ·)) (continuous_id.mul continuous_const)
+    (continuous_const.mul continuous_id)).mem_of_tendsto (b := Filter.atTop)
+    (f := fun N : ℕ ↦ toCompletedEnveloping Φ hΦ hΦs a (envelopingι c a (ofLoop R L
+      (trunc R L N u)))) ?_ (Filter.Eventually.of_forall fun N ↦ (hpoly _).eq)
+  rw [← tendsto_sub_nhds_zero_iff,
+    (hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a).tendsto_right_iff]
+  refine fun N _ ↦ Filter.eventually_atTop.2 ⟨N, fun M hM ↦ ?_⟩
+  rw [← map_sub, ← map_sub, SetLike.mem_coe, toCompletedEnveloping_mem_completedOrderLeftIdeal_iff]
+  exact orderLeftIdeal_natCast_antitone Φ hΦ hΦs a hM
+    (envelopingι_mem_orderLeftIdeal (ofLoop_trunc_sub_mem_orderSubmodule R L M u))
 
 /-! ### The action on smooth modules -/
 

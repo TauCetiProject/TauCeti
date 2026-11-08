@@ -19,7 +19,8 @@ its dual hold for every nondegenerate bilinear form; they live in
 `TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` and apply to the Killing-dual basis directly. This
 file adds the facts that use the Lie structure: the trace of `ad x` vanishes along a basis and its
 Killing dual, and the canonical contraction is invariant under the adjoint action, because the
-Killing form is.
+Killing form is. Consequently the bracket of `∑ᵢ xᵢ ⊗ yᵢ` vanishes, and the Casimir operator
+`z ↦ ∑ᵢ ⁅⁅z, xᵢ⁆, yᵢ⁆` of the adjoint representation is the identity.
 
 ## Main definitions
 
@@ -31,6 +32,8 @@ Killing form is.
   and its Killing dual, vanishes.
 * `TauCeti.sum_apply_lie_killingDualBasis_add_eq_zero`: the canonical contraction is invariant under
   the adjoint action.
+* `TauCeti.sum_lie_killingDualBasis_eq_zero`: `∑ᵢ ⁅xᵢ, yᵢ⁆ = 0`.
+* `TauCeti.sum_lie_lie_killingDualBasis`: the adjoint Casimir operator is the identity.
 -/
 
 public section
@@ -81,5 +84,31 @@ theorem sum_apply_lie_killingDualBasis_add_eq_zero {W : Type w} [AddCommGroup W]
   have h := f.sum_apply_dualBasis_of_isAdjointPair (IsKilling.killingForm_nondegenerate K L) b hpq
   simp only [LinearMap.neg_apply, ad_apply, map_neg, Finset.sum_neg_distrib] at h
   rw [← h, add_neg_cancel]
+
+/-- **The bracket of `∑ᵢ xᵢ ⊗ yᵢ` vanishes**: `∑ᵢ ⁅xᵢ, yᵢ⁆ = 0` for a basis `x` and its Killing
+dual `y`. -/
+theorem sum_lie_killingDualBasis_eq_zero {ι : Type*} [DecidableEq ι] [Fintype ι]
+    (b : Module.Basis ι K L) :
+    ∑ i, ⁅b i, killingDualBasis b i⁆ = 0 := by
+  -- Paired with any `w`, the sum is the trace of `ad w`, which vanishes.
+  refine (IsKilling.killingForm_nondegenerate K L).2 _ fun w ↦ ?_
+  simp only [map_sum, ← LieModule.traceForm_apply_lie_apply]
+  exact sum_killingForm_lie_killingDualBasis_eq_zero b w
+
+/-- **The Casimir operator of the adjoint representation is the identity**:
+`∑ᵢ ⁅⁅z, xᵢ⁆, yᵢ⁆ = z` for a basis `x` and its Killing dual `y`. -/
+theorem sum_lie_lie_killingDualBasis {ι : Type*} [DecidableEq ι] [Fintype ι]
+    (b : Module.Basis ι K L) (z : L) :
+    ∑ i, ⁅⁅z, b i⁆, killingDualBasis b i⁆ = z := by
+  have := b.finiteDimensional_of_finite
+  rw [← sub_eq_zero]
+  -- Paired with any `w`, the left side is the trace of `ad w ∘ ad z`, that is `κ(w, z)`.
+  refine (IsKilling.killingForm_nondegenerate K L).2 _ fun w ↦ ?_
+  have htrace := LinearMap.BilinForm.sum_apply_dualBasis_eq_trace
+    (IsKilling.killingForm_nondegenerate K L) b (ad K L w ∘ₗ ad K L z)
+  simp only [LinearMap.comp_apply, ad_apply, ← killingForm_apply_apply] at htrace
+  rw [map_sub, map_sum, ← htrace, sub_eq_zero]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← LieModule.traceForm_apply_lie_apply, LieModule.traceForm_comm]
 
 end TauCeti
