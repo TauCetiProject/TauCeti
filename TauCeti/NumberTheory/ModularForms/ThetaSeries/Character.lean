@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.GaussSum
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Character
 
 /-!
 # The character of a lattice theta series
@@ -22,8 +22,9 @@ an even unimodular lattice. The unit-homomorphism used for modular forms with ch
 `MulChar.equivToUnitHom (hL.thetaCharacter hE)`.
 
 The evaluated Gauss-sum transformation law is expressed in terms of this character at the
-lower-right matrix entry, for matrices with positive lower-left and positive odd upper-left
-entries. This identifies the arithmetic scalar needed for the general theta transformation law.
+lower-right matrix entry, for matrices in `Γ₀(level L)` with positive lower-left and positive odd
+upper-left entries. This identifies the arithmetic scalar needed for the general theta
+transformation law.
 
 ## References
 
@@ -83,7 +84,6 @@ theorem thetaCharacter_isQuadratic (hL : IsEven L) (hE : Even (finrank ℝ E)) :
   · exact Or.inl ((DirichletCharacter.apply_eq_zero_iff _ b).mpr hb)
 
 /-- The parity of the theta character agrees with the weight `k = rank L / 2`. -/
-@[simp]
 theorem thetaCharacter_neg_one (hL : IsEven L) (hE : Even (finrank ℝ E)) {k : ℕ}
     (hk : finrank ℝ E = 2 * k) : hL.thetaCharacter hE (-1) = (-1) ^ k := by
   have h := hL.thetaCharacter_intCast hE (a := -1) isCoprime_one_left.neg_left
@@ -107,8 +107,9 @@ theorem thetaCharacter_eq_one_of_isUnimodular (hL : IsEven L) (hE : Even (finran
   rw [hL.signedDiscr_eq_one_of_isUnimodular hU]
   exact IsSquare.one
 
-/-- For a matrix with positive lower-left and positive odd upper-left entries, the theta
-transformation scalar is the theta character evaluated at the lower-right entry. -/
+/-- For a matrix in `Γ₀(level L)` with positive lower-left and positive odd upper-left entries,
+the theta transformation scalar is the theta character evaluated at the lower-right entry.
+The subgroup condition means that the level divides the lower-left entry. -/
 theorem thetaSeries_slash_eq_thetaCharacter_smul_of_pos_odd
     [MeasurableSpace E] [BorelSpace E] (hL : IsEven L) (hE : Even (finrank ℝ E)) {k : ℕ}
     (hk : finrank ℝ E = 2 * k) (A : SL(2, ℤ)) {a c : ℕ} [NeZero c]
@@ -121,16 +122,10 @@ theorem thetaSeries_slash_eq_thetaCharacter_smul_of_pos_odd
   have haN : IsCoprime (a : ℤ) (level L) := by
     rw [← ha]
     exact isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hunit)
-  have hprod : hL.thetaCharacter hE (A 0 0 : ℤ) *
-      hL.thetaCharacter hE (A 1 1 : ℤ) = 1 := by
-    rw [← map_mul, CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hA,
-      map_one]
-  have hinv := congrArg (fun χ : DirichletCharacter ℂ (level L) ↦ χ (A 0 0 : ℤ))
-    (hL.thetaCharacter_isQuadratic hE).inv
-  rw [MulChar.inv_apply_eq_inv'] at hinv
   have hchar : hL.thetaCharacter hE (a : ℤ) = hL.thetaCharacter hE (A 1 1 : ℤ) := by
     rw [← ha]
-    exact hinv.symm.trans (inv_eq_of_mul_eq_one_right hprod)
+    exact
+      ((hL.thetaCharacter_isQuadratic hE).apply_one_one_eq_apply_zero_zero_of_mem_Gamma0 hA).symm
   rw [hL.thetaSeries_slash_eq_jacobiSym_smul hk A ha hc haodd hN,
     ← signedDiscr_of_finrank_eq L hk, ← hchar, hL.thetaCharacter_intCast hE haN,
     TauCeti.kroneckerSym_eq_jacobiSym _ haodd]
