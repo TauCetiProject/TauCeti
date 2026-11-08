@@ -108,11 +108,16 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
 
 /-- Splitting a weighted geometric mean through positive normalizers `a` and `b`:
 `A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ)`. -/
-theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (ha : 0 < a)
-    (hb : 0 < b) :
+theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0 < b) :
     A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ) := by
-  rw [mul_mul_mul_comm, ← mul_rpow (div_nonneg hA ha.le) ha.le,
-    ← mul_rpow (div_nonneg hB hb.le) hb.le, div_mul_cancel₀ A ha.ne', div_mul_cancel₀ B hb.ne']
+  have key (x c z : ℝ) (hc : 0 < c) : (x * c) ^ z = x ^ z * c ^ z := by
+    rcases le_or_gt 0 x with hx | hx
+    · exact mul_rpow hx hc.le
+    · rw [rpow_def_of_neg hx, rpow_def_of_neg (mul_neg_of_neg_of_pos hx hc), rpow_def_of_pos hc,
+        log_mul hx.ne hc.ne', add_mul, exp_add]
+      ring
+  rw [mul_mul_mul_comm, ← key _ _ _ ha, ← key _ _ _ hb, div_mul_cancel₀ A ha.ne',
+    div_mul_cancel₀ B hb.ne']
 
 /-- **Normalized weighted AM-GM.** For positive normalizers `a` and `b`, the weighted geometric
 mean of `A` and `B` is at most the weighted arithmetic mean of `A / a` and `B / b` times the
@@ -120,7 +125,7 @@ weighted geometric mean of `a` and `b`. -/
 theorem geom_mean_le_arith_mean2_weighted_div_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B)
     (ha : 0 < a) (hb : 0 < b) (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
     A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ) := by
-  rw [rpow_one_sub_mul_rpow_eq_div_mul hA hB ha hb]
+  rw [rpow_one_sub_mul_rpow_eq_div_mul ha hb]
   exact mul_le_mul_of_nonneg_right (geom_mean_le_arith_mean2_weighted (by linarith) hθ₀
     (div_nonneg hA ha.le) (div_nonneg hB hb.le) (by ring))
     (mul_nonneg (rpow_nonneg ha.le _) (rpow_nonneg hb.le _))
@@ -130,7 +135,7 @@ theorem geom_mean_le_arith_mean2_weighted_div_mul {A B a b θ : ℝ} (hA : 0 ≤
 theorem geom_mean_lt_arith_mean2_weighted_div_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B)
     (ha : 0 < a) (hb : 0 < b) (hθ₀ : 0 < θ) (hθ₁ : θ < 1) (hne : A / a ≠ B / b) :
     A ^ (1 - θ) * B ^ θ < ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ) := by
-  rw [rpow_one_sub_mul_rpow_eq_div_mul hA hB ha hb]
+  rw [rpow_one_sub_mul_rpow_eq_div_mul ha hb]
   exact mul_lt_mul_of_pos_right ((geom_mean_lt_arith_mean2_weighted_iff_of_pos
     (by linarith) hθ₀ (div_nonneg hA ha.le) (div_nonneg hB hb.le) (by ring)).2 hne)
     (mul_pos (rpow_pos_of_pos ha _) (rpow_pos_of_pos hb _))
