@@ -26,11 +26,12 @@ complement of the zero section:
   `v ↦ v / ‖v‖` (`TauCeti.sphereBundleHomotopyEquiv`).
 
 In both cases the homotopy is the straight line from the identity to the retraction, which only
-rescales each vector by a positive factor. Neither map is a homotopy equivalence of pairs, since a
-continuous retraction of `E` onto `D(E)` cannot carry all of `E₀` into `S(E)`. Comparing the long
-exact sequences of the two pairs instead, the inclusion of pairs `(D(E), S(E)) ⟶ (E, E₀)`
-(`TauCeti.discSpherePairMap`) induces isomorphisms on relative singular cohomology with arbitrary
-coefficients in every degree (`TauCeti.isIso_singularCohomologyMap_discSpherePairMap`).
+rescales each vector by a positive factor. In general they do not combine into a homotopy
+equivalence of pairs: when some fibre is nonzero, a continuous retraction of `E` onto `D(E)`
+cannot carry all of `E₀` into `S(E)`. Comparing the long exact sequences of the two pairs
+instead, the inclusion of pairs `(D(E), S(E)) ⟶ (E, E₀)` (`TauCeti.discSpherePairMap`) induces
+isomorphisms on relative singular cohomology with arbitrary coefficients in every degree
+(`TauCeti.isIso_singularCohomologyMap_discSpherePairMap`).
 
 So Thom classes may be read on the disc-sphere pair `(D(E), S(E))`, and the cohomology of the
 deleted total space `E₀` in the long exact sequence of the Thom pair is that of the sphere bundle,
@@ -115,13 +116,6 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [N
   (E : B → Type w) [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
 
-/-- The straight-line homotopy `t ↦ (1 - t + t c) • v` between a vector and its rescaling by `c` is
-continuous when the time, the factor and the vector depend continuously on a parameter. -/
-private theorem continuous_radialHomotopy {X : Type*} [TopologicalSpace X] {τ c : X → ℝ}
-    {φ : X → TotalSpace F E} (hτ : Continuous τ) (hc : Continuous c) (hφ : Continuous φ) :
-    Continuous fun x ↦ TotalSpace.mk' F (φ x).proj ((1 - τ x + τ x * c x) • (φ x).2) :=
-  Continuous.smul_totalSpace ((continuous_const.sub hτ).add (hτ.mul hc)) hφ
-
 /-- The radial retraction `v ↦ v / max 1 ‖v‖` of the total space onto the disc bundle. -/
 private def discRetraction (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     C(TotalSpace F E, discBundle F E) where
@@ -146,10 +140,12 @@ def discBundleHomotopyEquiv (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.
     · simp [discRetraction, max_eq_left (mem_discBundle.1 hx)]
   right_inv := ⟨ContinuousMap.Homotopy.symm
     { toFun := fun p ↦ TotalSpace.mk' F p.2.proj ((1 - p.1 + p.1 * (max 1 ‖p.2.2‖)⁻¹) • p.2.2)
-      continuous_toFun := continuous_radialHomotopy F E
-        (continuous_subtype_val.comp continuous_fst)
-        ((continuous_const.max (hnorm.comp continuous_snd)).inv₀
-          fun _ ↦ (lt_max_of_lt_left one_pos).ne') continuous_snd
+      continuous_toFun := by
+        have ht : Continuous fun p : I × TotalSpace F E ↦ (p.1 : ℝ) :=
+          continuous_subtype_val.comp continuous_fst
+        exact Continuous.smul_totalSpace ((continuous_const.sub ht).add (ht.mul
+          ((continuous_const.max (hnorm.comp continuous_snd)).inv₀
+            fun _ ↦ (lt_max_of_lt_left one_pos).ne'))) continuous_snd
       map_zero_left := fun v ↦ by simp
       map_one_left := fun v ↦ by simp [discRetraction] }⟩
 
@@ -173,9 +169,11 @@ def sphereBundleHomotopyEquiv (hnorm : Continuous fun v : TotalSpace F E ↦ ‖
   ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction
     (sphereBundle_subset_zeroSectionCompl F E)
     (fun p ↦ TotalSpace.mk' F p.2.1.proj ((1 - p.1 + p.1 * ‖p.2.1.2‖⁻¹) • p.2.1.2))
-    (continuous_radialHomotopy F E (continuous_subtype_val.comp continuous_fst)
+    (have ht : Continuous fun p : I × zeroSectionCompl F E ↦ (p.1 : ℝ) :=
+      continuous_subtype_val.comp continuous_fst
+    Continuous.smul_totalSpace ((continuous_const.sub ht).add (ht.mul
       ((hnorm.comp (continuous_subtype_val.comp continuous_snd)).inv₀
-        fun p ↦ norm_ne_zero_iff.2 (mem_zeroSectionCompl.1 p.2.2))
+        fun p ↦ norm_ne_zero_iff.2 (mem_zeroSectionCompl.1 p.2.2))))
       (continuous_subtype_val.comp continuous_snd))
     (fun p ↦ have hp := mem_zeroSectionCompl.1 p.2.2
       mem_zeroSectionCompl.2 <|
