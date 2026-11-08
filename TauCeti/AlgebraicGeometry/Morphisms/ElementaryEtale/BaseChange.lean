@@ -57,7 +57,8 @@ theorem Scheme.Hom.exists_finite_open_baseChange {X S U U' : Scheme.{u}}
       ∀ w : W.toScheme, (W.ι ≫ pullback.snd f (ψ ≫ φ)) w = u' → w = v' := by
   let g := V.ι ≫ pullback.snd f φ
   -- The pullback of `V` is an open in the new fibre product by pullback pasting.
-  obtain ⟨j, hj, hjfst, hjsnd⟩ := Scheme.Pullback.exists_isOpenImmersion_pullback_opens f φ V ψ
+  obtain ⟨j, hj, hjfst, hjsnd⟩ :=
+    Scheme.Pullback.exists_isOpenImmersion_pullback_of_isOpenImmersion f φ V.ι ψ
   obtain ⟨z, hzv, hzu⟩ := Scheme.Pullback.exists_preimage_pullback (f := g) (g := ψ)
     v u' (hv.trans hu'.symm)
   have : IsIso (ψ.residueFieldMap (pullback.snd g ψ z)) := hzu ▸ inferInstance
