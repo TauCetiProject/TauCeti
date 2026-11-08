@@ -100,14 +100,8 @@ theorem continuousWithinAt_Iio_measure_Iic (μ : Measure α) [NullSingletonClass
     rw [← comap_coe_Iio_nhdsLT a]
     infer_instance
   have hUnion : (⋃ x : Iio a, Iic (x : α)) = Iio a := by
-    ext y
-    simp only [mem_iUnion, mem_Iic, mem_Iio]
-    constructor
-    · rintro ⟨x, hx⟩
-      exact hx.trans_lt x.property
-    · intro hy
-      obtain ⟨x, hyx, hxa⟩ := exists_between hy
-      exact ⟨⟨x, hxa⟩, hyx.le⟩
+    rw [iUnion_coe_set]
+    exact isLUB_Iio.biUnion_Iic_eq_Iio (lt_irrefl a)
   have h := tendsto_measure_iUnion_atTop (μ := μ)
     (s := fun x : Iio a ↦ Iic (x : α)) (fun _ _ h ↦ Iic_subset_Iic.mpr h)
   rw [hUnion, measure_congr Iio_ae_eq_Iic] at h
