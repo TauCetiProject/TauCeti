@@ -67,10 +67,12 @@ theorem commute_chevalleyRootSubgroup_of_add_notMem {α β : Fin t.numRoots}
     (A : CommAlgCat ℤ) (u v : Multiplicative A) :
     Commute (chevalleyRootSubgroup ρ M hM hnil α A u)
       (chevalleyRootSubgroup ρ M hM hnil β A v) := by
-  rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
-    chevalleyRootSubgroup_eq_kostantRootSubgroupParam]
-  exact commute_kostantRootSubgroupParam _ _ ρ M _ _ _
-    (lie_chevalleySystem_eq_zero h h₀) A u v
+  simpa only [kostantRootSubgroupParam_chevalleySystem ρ M hM hnil] using
+    commute_kostantRootSubgroupParam _ _ ρ M
+      (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+      (lie_chevalleySystem_eq_zero h h₀) A u v
 
 /-- **The simply-laced Chevalley commutator formula.** At every root sum `γ = α + β`,
 `⁅x_α(u), x_β(v)⁆ = x_γ(N_{α,β}uv)`. The structure constant and both vanishing higher brackets

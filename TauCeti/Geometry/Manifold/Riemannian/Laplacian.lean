@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -299,6 +300,18 @@ theorem contMDiff_laplaceBeltrami {n m k : ℕ∞ω}
   rw [hEq]
   exact hdiv
 
+/-- For a `C¹` Riemannian metric, the Laplace--Beltrami operator of a `C²` function is
+continuous. -/
+theorem continuous_laplaceBeltrami
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    Continuous (laplaceBeltrami I f) :=
+  (contMDiff_laplaceBeltrami (n := 0) (m := 2) (k := 1) (by simp) (by simp)
+    (by simpa using hf)).continuous
+
 section OperatorLaws
 
 variable (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -429,7 +442,7 @@ theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     hessian I (c • f) x v w = c * hessian I f x v w := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_smul c (hf.mdifferentiable (by simp)),
+  simp only [hessian, mgradient_smul,
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
       (mdifferentiable_mgradient (I := I) hf x),
     smul_apply, real_inner_smul_left]
@@ -501,7 +514,7 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
+  simp only [laplaceBeltrami, mgradient_smul]
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
 
@@ -649,6 +662,22 @@ theorem laplaceBeltrami_sq_le_finrank_mul_sum_hessian_sq
   refine hcs.trans (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _))
   exact Finset.sum_le_sum fun i _ ↦ Finset.single_le_sum
     (f := fun j ↦ hessian I f x (b i) (b j) ^ 2) (fun j _ ↦ sq_nonneg _) (Finset.mem_univ i)
+
+/-- If the Hessian of `f` at `x` is `c` times the metric, then `Δ f x = n c`, where `n` is the
+dimension. -/
+theorem laplaceBeltrami_eq_finrank_mul_of_hessian_eq_mul_inner
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M} {c : ℝ}
+    (h : ∀ v w : TangentSpace I x, hessian I f x v w = c * inner ℝ v w) :
+    laplaceBeltrami I f x = Module.finrank ℝ E * c := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [laplaceBeltrami_eq_sum_hessian I f x b]
+  simp only [h, ← Finset.mul_sum]
+  rw [b.sum_inner_self, Fintype.card_fin, finrank_tangentSpace]
+  ring
 
 /-! ### Linear coordinates -/
 

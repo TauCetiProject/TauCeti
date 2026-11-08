@@ -133,17 +133,7 @@ theorem ContDiff.setIntegral_norm_fderiv_le {w : E → ℝ} (hw : ContDiff ℝ 1
     · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_mem hx, hψ x hx, neg_neg]
     · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_notMem hx]
       simp
-  -- The clamped function agrees with `η 1_F` off `S`, and differs from it by at most `η` on `S`.
-  have hpt (x : E) : ‖D x * (η * F.indicator 1 x - v x)‖ ≤ η * S.indicator (fun x => |D x|) x := by
-    have hcl := abs_mul_indicator_sub_max_min_le (w := w) hη.le x
-    rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-    by_cases hxS : x ∈ S
-    · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_mem hxS, mul_comm η (|D x|)]
-      exact mul_le_mul_of_nonneg_left hcl (abs_nonneg _)
-    · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_notMem hxS, mul_zero]
-      exact (mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _) hcl)
+  have hpt (x : E) := norm_mul_sub_clamp_le_indicator (w := w) hη.le (D x) x
   have hbdd (f : E → ℝ) (hf : Measurable f) (c : ℝ) (hfc : ∀ x, ‖f x‖ ≤ c) :
       Integrable fun x => D x * f x :=
     hD.mul_bdd hf.aestronglyMeasurable (.of_forall hfc)
