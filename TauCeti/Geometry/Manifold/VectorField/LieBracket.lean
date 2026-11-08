@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -231,7 +232,7 @@ namespace VectorField
 omit [CompleteSpace E] in
 /-- At the centre of the preferred chart, the Lie bracket of the inverse-chart pullbacks of two
 vector fields is their manifold Lie bracket. -/
-theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
+theorem lieBracketWithin_mpullbackWithin_extChartAt_symm
     (V W : ∀ y : M, TangentSpace I y) (s : Set M) (x : M) :
     lieBracketWithin 𝕜 (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I))
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm W (Set.range I))
@@ -239,9 +240,9 @@ theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
         mlieBracketWithin I V W s x := by
   -- The chart derivative at its centre is the identity of `E`; `TangentSpace I x` is not
   -- syntactically `E`, so the identification is made on the inverse before evaluating it.
-  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E :=
-    (congrArg (fun f : E →L[𝕜] E ↦ f.inverse) (mfderiv_extChartAt_self (I := I) (x := x))).trans
-      ContinuousLinearMap.inverse_id
+  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E := by
+    rw [TauCeti.mfderiv_extChartAt_eq_id]
+    exact ContinuousLinearMap.inverse_id
   rw [mlieBracketWithin_apply]
   exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
 
