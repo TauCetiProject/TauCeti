@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.Order.Filter.Extr
 
 /-!
 # Positive-semidefinite bilinear forms
@@ -16,7 +17,8 @@ bilinear forms. It converts `IsPosSemidef` into diagonal nonnegativity, the form
 quadratic-form signature criteria and other pointwise positivity arguments. Over an ordered ring,
 it also bounds the value of a positive-semidefinite form on a sum of `k` vectors by `k` times the
 sum of their values, the inequality `‖x₁ + ⋯ + xₖ‖² ≤ k (‖x₁‖² + ⋯ + ‖xₖ‖²)` of inner product
-spaces.
+spaces. Over an ordered field, a positive-semidefinite form satisfies the Dirichlet principle: the
+solutions of `B(u, ·) = ℓ` are the minimizers of `v ↦ B(v, v) / 2 - ℓ v`.
 
 ## Main results
 
@@ -27,7 +29,18 @@ spaces.
   of their values.
 * `LinearMap.BilinForm.apply_sq_le_mul_of_apply_le_apply`: Cauchy-Schwarz against a majorant, for
   a symmetric form with nonnegative diagonal.
+* `LinearMap.BilinForm.IsPosSemidef.forall_apply_eq_iff_isMinOn`: the **Dirichlet principle**. Over
+  an ordered field, `u` solves `B(u, v) = ℓ v` for every `v` exactly when it minimizes the quadratic
+  functional `v ↦ B(v, v) / 2 - ℓ v`. This is the variational form of the weak formulation of a
+  symmetric elliptic problem.
+
+## References
+
+* H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Corollary
+  5.8 (the minimization characterization in the Lax--Milgram theorem for symmetric forms).
 -/
+
+open Set
 
 public section
 
@@ -87,5 +100,47 @@ theorem apply_sq_le_mul_of_apply_le_apply {K V : Type*} [CommRing K] [LinearOrde
     (mul_le_mul_of_nonneg_right hbound (hnonneg v))
 
 end OrderedRing
+
+section OrderedField
+
+variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [AddCommGroup M]
+  [Module K M]
+
+/-- **The Dirichlet principle.** For a positive-semidefinite bilinear form `B` and a linear
+functional `ℓ` over an ordered field, `u` satisfies `B(u, v) = ℓ v` for every `v` exactly when
+it minimizes the quadratic functional `v ↦ B(v, v) / 2 - ℓ v`. -/
+theorem IsPosSemidef.forall_apply_eq_iff_isMinOn {B : LinearMap.BilinForm K M}
+    (hB : B.IsPosSemidef) (ℓ : Module.Dual K M) (u : M) :
+    (∀ v, B u v = ℓ v) ↔ IsMinOn (fun v => B v v / 2 - ℓ v) univ u := by
+  -- Along the line `u + t • v` the functional exceeds its value at `u` by
+  -- `t (B(u, v) - ℓ v) + t² B(v, v) / 2`.
+  have hline (t : K) (v : M) : B (u + t • v) (u + t • v) / 2 - ℓ (u + t • v) =
+      B u u / 2 - ℓ u + t * (B u v - ℓ v) + t ^ 2 * (B v v / 2) := by
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+      hB.isSymm.eq v u]
+    ring
+  rw [isMinOn_univ_iff]
+  constructor
+  · intro h x
+    have hx := hline 1 (x - u)
+    rw [one_smul, add_sub_cancel] at hx
+    linarith [h (x - u), hB.isNonneg.nonneg (x - u)]
+  · intro h v
+    -- The excess is nonnegative along the whole line, so its linear coefficient `A` vanishes:
+    -- at `t = -A / (B(v, v) + 1)` it equals `-A² (B(v, v) + 2) / (2 (B(v, v) + 1)²)`.
+    set A := B u v - ℓ v
+    have hQ := hB.isNonneg.nonneg v
+    have hs : 0 < B v v + 1 := by linarith
+    have ht := h (u + (-A / (B v v + 1)) • v)
+    rw [hline] at ht
+    have hA : A ^ 2 * (B v v + 2) ≤ 0 := by
+      have h₂ : 0 ≤ -A / (B v v + 1) * A + (-A / (B v v + 1)) ^ 2 * (B v v / 2) := by linarith
+      rw [div_pow, ← sub_nonneg] at h₂
+      field_simp at h₂
+      nlinarith
+    exact sub_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp
+      (le_antisymm (by nlinarith [sq_nonneg A]) (sq_nonneg A)))
+
+end OrderedField
 
 end LinearMap.BilinForm
