@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Sharpness
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Index
 import TauCeti.NumberTheory.LocalField.QuadraticForm.OddValuation
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
 
@@ -76,27 +77,17 @@ theorem unitFiltration_le_quadraticNormSubgroup_iff (h2 : (2 : K) ≠ 0)
   · simp only [he, true_or, iff_true]
     intro b hb
     have hb0 := (unitFiltration_antitone (Nat.zero_le n)) hb
-    have hv : (normalizedValuation K b).toAdd = 0 := by
-      rw [(normalizedValuation_eq_one_iff b).mpr ((mem_unitFiltration_zero b).mp hb0)]
-      rfl
-    apply (hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a b).mp
-    apply (hilbertSymbol_eq_one_iff a b).mpr
-    exact ((unramified_class_iff_even_defectExponent h2 hd).mpr he b).mpr
-      (by simp [hv])
+    have hv : (normalizedValuation K b).toAdd = 0 :=
+      toAdd_eq_zero.mpr ((normalizedValuation_eq_one_iff b).mpr
+        ((mem_unitFiltration_zero b).mp hb0))
+    exact (mem_quadraticNormSubgroup_iff_even_of_unramified_class
+      ((unramified_class_iff_even_defectExponent h2 hd).mpr he) b).mpr (by simp [hv])
   simp only [he, false_or]
   rcases Int.even_or_odd (normalizedValuation K a).toAdd with hv | hv
-  · obtain ⟨k, hk⟩ := hv
-    obtain ⟨c, hc⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd (-k))
+  · obtain ⟨c, hbunit, hbd⟩ := exists_defectExponent_mul_sq_eq_sub_of_even_valuation hd hv
     let b := a * c ^ 2
-    have hbval : (normalizedValuation K b).toAdd = 0 := by
-      simp only [b, map_mul, map_pow, toAdd_mul, toAdd_pow, hc, toAdd_ofAdd, nsmul_eq_mul]
-      omega
-    have hbunit : valuation K (b : K) = 1 :=
-      (normalizedValuation_eq_one_iff b).mp (toAdd_eq_zero.mp hbval)
-    have hbd : defectExponent b = ((d - (normalizedValuation K a).toAdd : ℤ) : WithTop ℤ) := by
-      rw [defectExponent_mul_sq, hd, hc, toAdd_ofAdd, ← WithTop.coe_add]
-      congr 1
-      omega
+    have hbval : (normalizedValuation K b).toAdd = 0 :=
+      toAdd_eq_zero.mpr ((normalizedValuation_eq_one_iff b).mpr hbunit)
     have hr : 0 ≤ d - (normalizedValuation K a).toAdd := by
       have h := toAdd_normalizedValuation_le_defectExponent b
       rw [hbval, hbd, WithTop.coe_le_coe] at h
@@ -106,7 +97,7 @@ theorem unitFiltration_le_quadraticNormSubgroup_iff (h2 : (2 : K) ≠ 0)
       simpa only [Int.toNat_of_nonneg hr] using hbd
     have hodd : Odd (d - (normalizedValuation K a).toAdd).toNat := by
       rw [← Int.odd_natCast, Int.toNat_of_nonneg hr]
-      exact (Int.not_even_iff_odd.mp he).sub_even ⟨k, hk⟩
+      exact (Int.not_even_iff_odd.mp he).sub_even hv
     have h := unitFiltration_le_quadraticNormSubgroup_iff_of_odd_defectExponent
       h2 hbunit hdn hodd (n := n)
     simpa only [b, Units.val_mul, Units.val_pow_eq_pow_val,
