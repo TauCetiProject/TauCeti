@@ -44,7 +44,9 @@ When the multiplicities are those of a multiset `D`, it is the zero divisor of `
 (`TauCeti.HasZeroDivisor f D`). A function has at most one zero divisor
 (`TauCeti.HasZeroDivisor.unique`), its points are the zeros of `f`, multiplication by a continuous
 nowhere-vanishing function does not change it, and under the degree-`m` end framing it has
-degree `m` (`TauCeti.HasZeroDivisor.card_eq`).
+degree `m` (`TauCeti.HasZeroDivisor.card_eq`). Precomposing `f` with a translation or a nonzero
+scaling moves the divisor accordingly (`TauCeti.HasZeroDivisor.comp_add`,
+`TauCeti.HasZeroDivisor.comp_const_mul`).
 -/
 
 public section
@@ -335,6 +337,33 @@ theorem of_eq_mul (hD : HasZeroDivisor f D) {u : ℂ → ℂ} (hu : Continuous u
   refine ⟨fun w ↦ u w * v w, hu.continuousAt.mul hv, mul_ne_zero (hu₀ z) hv₀, ?_⟩
   filter_upwards [hfv] with w hw
   rw [hg, hw]
+  ring
+
+/-- **Translation law.** Precomposing with `w ↦ w + a` moves the zero divisor by `-a`. -/
+theorem comp_add (hD : HasZeroDivisor f D) (a : ℂ) :
+    HasZeroDivisor (fun w ↦ f (w + a)) (D.map (· - a)) := fun z ↦ by
+  obtain ⟨v, hv, hv₀, hfv⟩ := hD (z + a)
+  have hcount : (D.map (· - a)).count z = D.count (z + a) := by
+    simpa using Multiset.count_map_eq_count' (· - a) D sub_left_injective (z + a)
+  have ht : Tendsto (· + a) (𝓝 z) (𝓝 (z + a)) := (continuous_id.add continuous_const).tendsto z
+  refine ⟨fun w ↦ v (w + a),
+    hv.comp_of_eq (continuous_id.add continuous_const).continuousAt rfl, hv₀, ?_⟩
+  filter_upwards [ht.eventually hfv] with w hw
+  rw [hw, hcount, add_sub_add_right_eq_sub]
+
+/-- **Scaling law.** Precomposing with `w ↦ c w`, `c ≠ 0`, scales the zero divisor by `c⁻¹`. -/
+theorem comp_const_mul (hD : HasZeroDivisor f D) {c : ℂ} (hc : c ≠ 0) :
+    HasZeroDivisor (fun w ↦ f (c * w)) (D.map (c⁻¹ * ·)) := fun z ↦ by
+  obtain ⟨v, hv, hv₀, hfv⟩ := hD (c * z)
+  have hcount : (D.map (c⁻¹ * ·)).count z = D.count (c * z) := by
+    simpa [inv_mul_cancel_left₀ hc] using
+      Multiset.count_map_eq_count' (c⁻¹ * ·) D (mul_right_injective₀ (inv_ne_zero hc)) (c * z)
+  have ht : Tendsto (c * ·) (𝓝 z) (𝓝 (c * z)) := (continuous_const.mul continuous_id).tendsto z
+  refine ⟨fun w ↦ c ^ D.count (c * z) * v (c * w),
+    continuousAt_const.mul (hv.comp_of_eq (continuous_const.mul continuous_id).continuousAt rfl),
+    mul_ne_zero (pow_ne_zero _ hc) hv₀, ?_⟩
+  filter_upwards [ht.eventually hfv] with w hw
+  rw [hw, hcount, ← mul_sub, mul_pow]
   ring
 
 end HasZeroDivisor

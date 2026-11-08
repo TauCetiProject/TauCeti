@@ -99,34 +99,15 @@ theorem card_eq (hD : HasZeroDivisor x D) {m : ℕ}
 
 /-- **Translation law.** The pullback by `z ↦ z + a` moves the zero divisor by `-a`. -/
 theorem translateField (hD : HasZeroDivisor x D) (a : ℂ) :
-    HasZeroDivisor (Vortex.translateField a x) (D.map (· - a)) := fun z ↦ by
-  obtain ⟨v, hv, hv₀, hfv⟩ := hD (z + a)
-  have hcount : (D.map (· - a)).count z = D.count (z + a) := by
-    simpa using Multiset.count_map_eq_count' (· - a) D (sub_left_injective) (z + a)
-  have ht : Tendsto (· + a) (𝓝 z) (𝓝 (z + a)) := (continuous_id.add continuous_const).tendsto z
-  refine ⟨fun w ↦ v (w + a),
-    hv.comp_of_eq (continuous_id.add continuous_const).continuousAt rfl, hv₀, ?_⟩
-  filter_upwards [ht.eventually hfv] with w hw
-  rw [sectionValue_translateField, hw, hcount, add_sub_add_right_eq_sub]
+    HasZeroDivisor (Vortex.translateField a x) (D.map (· - a)) := by
+  rw [hasZeroDivisor_iff, funext (sectionValue_translateField a x)]
+  exact TauCeti.HasZeroDivisor.comp_add hD a
 
 /-- **Rotation law.** The pullback by `z ↦ u z` rotates the zero divisor by `u⁻¹`. -/
 theorem rotateField (hD : HasZeroDivisor x D) (u : Circle) :
-    HasZeroDivisor (Vortex.rotateField u x) (D.map ((u : ℂ)⁻¹ * ·)) := fun z ↦ by
-  have hu : (u : ℂ) ≠ 0 := Circle.coe_ne_zero u
-  obtain ⟨v, hv, hv₀, hfv⟩ := hD (u * z)
-  have hcount : (D.map ((u : ℂ)⁻¹ * ·)).count z = D.count (u * z) := by
-    simpa [inv_mul_cancel_left₀ hu] using
-      Multiset.count_map_eq_count' ((u : ℂ)⁻¹ * ·) D (mul_right_injective₀ (inv_ne_zero hu))
-        (u * z)
-  have ht : Tendsto ((u : ℂ) * ·) (𝓝 z) (𝓝 (u * z)) :=
-    (continuous_const.mul continuous_id).tendsto z
-  refine ⟨fun w ↦ (u : ℂ) ^ D.count (u * z) * v (u * w),
-    continuousAt_const.mul
-      (hv.comp_of_eq (continuous_const.mul continuous_id).continuousAt rfl),
-    mul_ne_zero (pow_ne_zero _ hu) hv₀, ?_⟩
-  filter_upwards [ht.eventually hfv] with w hw
-  rw [sectionValue_rotateField, hw, hcount, ← mul_sub, mul_pow]
-  ring
+    HasZeroDivisor (Vortex.rotateField u x) (D.map ((u : ℂ)⁻¹ * ·)) := by
+  rw [hasZeroDivisor_iff, funext (sectionValue_rotateField u x)]
+  exact TauCeti.HasZeroDivisor.comp_const_mul hD (Circle.coe_ne_zero u)
 
 end HasZeroDivisor
 
