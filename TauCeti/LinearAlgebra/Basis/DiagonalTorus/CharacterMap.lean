@@ -87,6 +87,12 @@ namespace TauCeti
 
 variable {ι κ ν R : Type*} [CommRing R]
 
+/-- Evaluating a character on a one-parameter subgroup pairs its exponents with those of the
+subgroup. -/
+theorem torusCharacter_zpow [Fintype κ] (a : Rˣ) (f μ : κ → ℤ) :
+    torusCharacter (fun j => a ^ f j) μ = a ^ ∑ j, f j * μ j := by
+  simp only [torusCharacter_def, ← _root_.zpow_mul, Finset.prod_zpow_eq_zpow_sum]
+
 /-! ## The map on torus points dual to a map of character lattices -/
 
 section TorusPointMap
