@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Picard
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
+public import TauCeti.RingTheory.FractionalIdeal.Operations
 public import TauCeti.RingTheory.Ideal.Conductor
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
@@ -201,40 +202,6 @@ private theorem restrictScalars_coeIdeal_sup_conductor {I : Ideal O.toRingOfInte
       (mem_coeIdeal_map_toRingOfIntegersEquiv.mpr ⟨_, I.mul_mem_left a' hu, rfl⟩) ?_
     exact (FractionalIdeal.mem_coeIdeal (𝓞 K)⁰).mpr ⟨_, O.conductor.mul_mem_left _ hc, rfl⟩
 
-/-- **Criterion for invertibility of a fractional ideal of an order.** A nonzero fractional ideal
-whose `ℤ`-submodule has a `ℤ`-submodule inverse for multiplication, with product the unit
-submodule, is invertible. -/
-private theorem isUnit_of_restrictScalars_mul_eq_one
-    {Ifr : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} (hIfr : Ifr ≠ 0)
-    {t : Submodule ℤ K}
-    (hinv : (Ifr : Submodule O.toSubalgebra K).restrictScalars ℤ * t =
-      (1 : Submodule O.toSubalgebra K).restrictScalars ℤ) :
-    IsUnit Ifr := by
-  have hle : t ≤ ((Ifr⁻¹ : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
-      Submodule O.toSubalgebra K).restrictScalars ℤ := by
-    intro x hx
-    rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coe,
-      FractionalIdeal.mem_inv_iff hIfr]
-    intro y hy
-    have h := Submodule.mul_mem_mul
-      ((Submodule.restrictScalars_mem ℤ _ _).mpr (FractionalIdeal.mem_coe.mpr hy) :
-        y ∈ (Ifr : Submodule O.toSubalgebra K).restrictScalars ℤ) hx
-    rw [hinv, Submodule.restrictScalars_mem] at h
-    rw [mul_comm, ← FractionalIdeal.mem_coe, FractionalIdeal.coe_one]
-    exact h
-  have h1 : (1 : K) ∈ (Ifr : Submodule O.toSubalgebra K).restrictScalars ℤ * t := by
-    rw [hinv]
-    exact Submodule.mem_one.mpr ⟨1, map_one _⟩
-  have h2 : (1 : K) ∈ ((Ifr * Ifr⁻¹ : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
-      Submodule O.toSubalgebra K).restrictScalars ℤ := by
-    rw [FractionalIdeal.coe_mul, Submodule.restrictScalars_mul]
-    exact Submodule.mul_le.mpr (fun m hm n hn => Submodule.mul_mem_mul hm (hle hn)) h1
-  refine (FractionalIdeal.mul_inv_cancel_iff_isUnit K).mp (le_antisymm
-    FractionalIdeal.mul_one_div_le_one ?_)
-  rw [← FractionalIdeal.coe_le_coe, FractionalIdeal.coe_one, Submodule.one_le,
-    ← Submodule.restrictScalars_mem ℤ]
-  exact h2
-
 /-- **Ideals coprime to the conductor are invertible.** A nonzero ideal of an order coprime to
 its conductor is an invertible fractional ideal of the order. -/
 theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOfIntegers}
@@ -273,7 +240,7 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
       _ = one := hif
   have hIfr : Ifr ≠ 0 := FractionalIdeal.coeIdeal_ne_zero.mpr <|
     (Ideal.map_eq_bot_iff_of_injective O.toRingOfIntegersEquiv.injective).not.mpr hI.1
-  exact isUnit_of_restrictScalars_mul_eq_one hIfr hinv
+  exact FractionalIdeal.isUnit_of_restrictScalars_mul_eq_one (A := ℤ) hIfr hinv
 
 variable (O)
 
