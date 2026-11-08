@@ -145,24 +145,6 @@ private theorem exists_toIntervalLocalization_mul_pow_eq {a b : ℕ} (ha : a ≠
         = v (algebraMap O K c) * (ρ₂ ^ i * ρ₁ ^ (a - i)) := by
           field_simp
       _ ≤ v (algebraMap O K c) := mul_le_of_le_one_right (by positivity) hle
-/-- The Gauss valuation at radius `ρ` of the numerator `y` of the fraction `y / (p [ϖ]) ^ m` is
-the norm of the fraction at radius `ρ`, times `(ρ v(ϖ)) ^ m`. -/
-private theorem gaussValuation_eq_mul_gaussValuationAway_mk' {m : ℕ}
-    {s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)}
-    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s) {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) (y : 𝕎 O) :
-    (gaussValuation p hv ρ hρ.2 y : ℝ) =
-      gaussValuationAway p hv hϖ ρ hρ B₀ (IsLocalization.mk' B₀ y s) *
-        (ρ ^ m * v (algebraMap O K ϖ) ^ m) := by
-  have := hv.isDomain
-  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) :=
-    NNReal.coe_pos.mpr (hv.valuation_pos_iff_ne_zero.mpr hϖ)
-  have hρ0 : (0 : ℝ) < ρ := hρ.1
-  rw [gaussValuationAway_mk', ← hm]
-  simp only [map_pow, map_mul, gaussValuation_p, gaussValuation_teichmuller, NNReal.coe_mul,
-    NNReal.coe_inv, NNReal.coe_pow]
-  field_simp
-  ring
-
 /-- If `y = ∑_{i ≤ m} [yᵢ] pⁱ + p ^ (m + 1) h` and each Teichmüller term of `y / (p [ϖ]) ^ m` is
 `e i z₀ ^ j i`, with remainder `p h / [ϖ] ^ m = eh`, then `y / (p [ϖ]) ^ m` is the corresponding
 sum. -/
@@ -194,7 +176,7 @@ private theorem mk'_eq_sum_add {z₀ : B₀} {y : 𝕎 O} {m : ℕ}
       ← map_natCast (algebraMap (𝕎 O) B₀) p, ← map_mul, ← heh]
     ring
 
-/-- A Teichmüller term `[yᵢ] pⁱ` of `y` gives a coefficient `e` with `λ_{ρ₁}(e) ρ₁ ^ a` at most the
+/-- A Teichmüller term `[yᵢ] pⁱ` of `y` gives a coefficient `e` with `λ_{ρ₂}(e) ρ₁ ^ a` at most the
 norm of `y / (p [ϖ]) ^ m`, as soon as `e` satisfies the bound from
 `TauCeti.WittVector.IntervalLocalization.exists_toIntervalLocalization_mul_pow_eq`. -/
 private theorem norm_mul_pow_le_norm_mk' {a m i : ℕ}
@@ -215,7 +197,7 @@ private theorem norm_mul_pow_le_norm_mk' {a m i : ℕ}
       gaussValuationAway p hv hϖ ρ₁ hρ₁ B₀ (IsLocalization.mk' B₀ y s) *
         (ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m) := by
     refine le_of_mul_le_mul_right (hyi.trans_eq ?_) (pow_pos hρ₁0 i)
-    rw [gaussValuation_eq_mul_gaussValuationAway_mk' p hv hϖ hϖ' hρ₁ hρ₂ hm hρ₁, hpow]
+    rw [gaussValuation_eq_mul_gaussValuationAway_mk' B₀ hv hϖ hm hρ₁, hpow]
     ring
   have hD : (0 : ℝ) < ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m := by positivity
   refine le_of_mul_le_mul_right ((heb).trans (hvy.trans ?_)) hD
@@ -247,7 +229,7 @@ private theorem norm_mk'_mul_pow_le_norm_mk' {a m : ℕ}
   have hrem' : (ρ₂ : ℝ) ^ m * gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) * h) ≤
       gaussValuationAway p hv hϖ ρ₂ hρ₂ B₀ (IsLocalization.mk' B₀ y s) *
         (ρ₂ ^ m * v (algebraMap O K ϖ) ^ m) := by
-    rw [← gaussValuation_eq_mul_gaussValuationAway_mk' p hv hϖ hϖ' hρ₁ hρ₂ hm hρ₂]
+    rw [← gaussValuation_eq_mul_gaussValuationAway_mk' B₀ hv hϖ hm hρ₂]
     simpa [pow_succ, mul_assoc, gaussValuation_p] using (NNReal.coe_le_coe.mpr hrem)
   have hnorm : ‖IsLocalization.mk' A₀ ((p : 𝕎 O) * h)
         (⟨teichmuller p ϖ ^ m, m, rfl⟩ : Submonoid.powers (teichmuller p ϖ))‖ =
