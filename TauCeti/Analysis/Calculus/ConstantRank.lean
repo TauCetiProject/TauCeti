@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import TauCeti.Analysis.Calculus.FDeriv.Dimension
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # The constant rank theorem
