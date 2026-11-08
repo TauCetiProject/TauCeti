@@ -181,7 +181,7 @@ theorem mfderiv_flowOf_hamiltonianVectorField_liouvilleRadialCoordinate
     filter_upwards [hopen.mem_nhds ⟨hx, by rwa [mem_preimage, ← hψ]⟩] with y hy
     rw [comp_apply, Pi.smul_apply, smul_eq_mul, ← hψ]
     exact h.liouvilleRadialCoordinate_flowOf_of_notMem hZ hy.1 (by rw [hψ]; exact hy.2)
-  have hnat := (h.isNondegenerate.smul _ hes).mfderiv_hamiltonianVectorField_comp h.isNondegenerate
+  have hnat := (h.isNondegenerate.smul _ hes).mfderiv_hamiltonianVectorField_comp
     ψ.contMDiff hpull ((ψ.isInvertible_mfderiv (by simp) (x := x)).surjective)
     ((h.contMDiffAt_liouvilleRadialCoordinate hZ (by rwa [← hψ])).mdifferentiableAt (by simp))
   rw [hloc.hamiltonianVectorField_eq,

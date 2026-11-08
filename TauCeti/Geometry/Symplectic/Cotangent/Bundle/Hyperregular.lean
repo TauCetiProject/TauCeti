@@ -234,7 +234,6 @@ theorem mfderiv_legendreMap_hamiltonianVectorField (v : TangentBundle I M) :
         (legendreMap L v) := by
   have hωL := h.isRegularLagrangian.isSymplectic_cartanTwoForm hL
   have := hωL.isNondegenerate.mfderiv_hamiltonianVectorField_comp
-    (CotangentBundle.isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate
     (contMDiff_legendreMap hL le_rfl) (mpullback_legendreMap_symplecticForm hL)
     ((h.isRegularLagrangian.isLocalDiffeomorph_legendreMap hL).isInvertible_mfderiv
       (by simp) v).surjective
@@ -261,7 +260,7 @@ theorem isMIntegralCurve_legendreMap_comp_iff {γ : ℝ → TangentBundle I M} :
     -- Pull back along the inverse Legendre diffeomorphism, which carries `H` to `E_L`.
     have hE : lagrangianEnergy L ∘ Φ.symm = h.hamiltonian :=
       (h.hamiltonian_eq_comp_symm hL).symm
-    have := hω.isNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField hωL.isNondegenerate
+    have := hω.isNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField
       Φ.symm.contMDiff (SmoothForm.mpullback_symm_eq_of_mpullback_eq hΦ)
       (fun t ↦ (Φ.symm.isInvertible_mfderiv (by simp)).surjective)
       (fun t ↦ ((contMDiff_lagrangianEnergy (m := ∞) hL le_rfl) _).mdifferentiableAt
@@ -271,7 +270,7 @@ theorem isMIntegralCurve_legendreMap_comp_iff {γ : ℝ → TangentBundle I M} :
       funext fun t ↦ h.legendreDiffeomorph_symm_apply_legendreMap hL (γ t)
     rwa [hid] at this
   · intro hγ
-    exact hωL.isNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField hω.isNondegenerate
+    exact hωL.isNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField
       (contMDiff_legendreMap hL le_rfl) (mpullback_legendreMap_symplecticForm hL)
       (fun t ↦ ((h.isRegularLagrangian.isLocalDiffeomorph_legendreMap hL).isInvertible_mfderiv
         (by simp) _).surjective)

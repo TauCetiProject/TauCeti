@@ -78,7 +78,7 @@ theorem IsFirstIntegral.apply_maximalIntegralCurve (hg : σ.IsFirstIntegral f g)
   have hv := hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp)
     (by rwa [one_add_one_eq_two])
   have h0 := zero_mem_maximalIntegralCurveInterval (x := x) hv.contMDiffAt
-  rw [hg.apply_eq_of_isMIntegralCurveOn hσ isOpen_maximalIntegralCurveInterval
+  rw [hg.apply_eq_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval
     isPreconnected_maximalIntegralCurveInterval (isMIntegralCurveOn_maximalIntegralCurve hv)
     (fun _ _ ↦ hg' _) h0 ht, maximalIntegralCurve_zero h0]
 

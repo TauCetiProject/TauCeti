@@ -278,7 +278,7 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
   · rintro T γ hT hT1 hγ hper ⟨g, hg, hgγ⟩ t
     -- The curve `ψ⁻¹ ∘ γ` is a contractible periodic orbit of `F` in `W`, so it is constant.
     have hγ' : IsMIntegralCurve (ψ.symm ∘ γ) (σ.hamiltonianVectorField F) :=
-      hσ₂.isMIntegralCurve_comp_hamiltonianVectorField hσ ψ.symm.contMDiff
+      hσ₂.isMIntegralCurve_comp_hamiltonianVectorField ψ.symm.contMDiff
         (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
         (fun _ ↦ (ψ.symm.isInvertible_mfderiv (by simp)).surjective)
         (fun _ ↦ (hF.contMDiff _).mdifferentiableAt (by simp)) hγ

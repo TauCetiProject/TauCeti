@@ -135,7 +135,7 @@ theorem IsNondegenerate.apply_globalFlow_hamiltonianVectorField (h : σ.IsNondeg
   have hγ := isMIntegralCurve_iff_isMIntegralCurveOn.2
     (((isMIntegralCurve_globalFlow hv hc x).isMIntegralCurveOn Set.univ).map_of_mfderiv_eq
       (fun _ _ ↦ (hφ _).mdifferentiableAt (by simp)) fun s _ ↦ by
-        simpa only [hgφ] using h.mfderiv_hamiltonianVectorField_comp h hφ hφσ (hφd _) (hg (φ _)))
+        simpa only [hgφ] using h.mfderiv_hamiltonianVectorField_comp hφ hφσ (hφd _) (hg (φ _)))
   simpa only [comp_apply, Flow.map_zero_apply] using
     (globalFlow_eq_of_isMIntegralCurve hv hc hγ t).symm
 

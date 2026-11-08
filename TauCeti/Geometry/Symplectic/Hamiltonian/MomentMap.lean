@@ -257,7 +257,7 @@ theorem hamiltonianVectorField_eq (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegen
 theorem poissonBracket_eq_mvfderiv (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (f : M → ℝ)
     (Z : 𝔤) (x : M) :
     σ.poissonBracket f (fun y ↦ μ y Z) x = mvfderiv I f x (a Z x) := by
-  rw [hσ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_eq hσ]
+  rw [σ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_eq hσ]
 
 /-- The Poisson bracket `{μ_Z, f}` is minus the derivative of `f` along the generated vector field
 `Z_M`. -/

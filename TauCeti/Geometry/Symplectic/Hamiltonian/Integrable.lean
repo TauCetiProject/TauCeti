@@ -85,7 +85,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 /-- A function `g` is a **first integral** of the Hamiltonian `f` when the Poisson bracket
 `{g, f}` vanishes everywhere. For a nondegenerate form on a finite-dimensional manifold this says
 that `g` is stationary along the Hamiltonian vector field of `f`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isFirstIntegral_iff_mvfderiv`), so that `g` is constant
+(`TauCeti.SmoothTwoForm.isFirstIntegral_iff_mvfderiv`), so that `g` is constant
 along every integral curve of the Hamiltonian vector field of `f` on which `g` is differentiable
 (`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurveOn`). -/
 def IsFirstIntegral (σ : SmoothTwoForm I M) (f g : M → ℝ) : Prop :=
@@ -131,11 +131,13 @@ section Nondegenerate
 variable [FiniteDimensional ℝ E] (hσ : σ.IsNondegenerate)
 include hσ
 
+omit [FiniteDimensional ℝ E] hσ in
 /-- A first integral of `f` is a function stationary along the Hamiltonian vector field of `f`. -/
-theorem IsNondegenerate.isFirstIntegral_iff_mvfderiv :
+theorem isFirstIntegral_iff_mvfderiv :
     σ.IsFirstIntegral f g ↔ ∀ x, mvfderiv I g x (σ.hamiltonianVectorField f x) = 0 := by
-  simp only [isFirstIntegral_iff, hσ.poissonBracket_eq_mvfderiv]
+  simp only [isFirstIntegral_iff, σ.poissonBracket_eq_mvfderiv]
 
+omit [FiniteDimensional ℝ E] hσ in
 /-- **Conservation of first integrals.** A first integral `g` of `f`, differentiable along an
 integral curve of the Hamiltonian vector field of `f` on an open interval of times (or any open
 preconnected set of times), is constant along that curve. -/
@@ -145,8 +147,9 @@ theorem IsFirstIntegral.apply_eq_of_isMIntegralCurveOn (hg : σ.IsFirstIntegral 
     (hgγ : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) g (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     g (γ t) = g (γ t₀) :=
   hγ.apply_eq_of_mvfderiv_apply_eq_zero hs hs' hgγ
-    (fun u _ ↦ hσ.isFirstIntegral_iff_mvfderiv.1 hg (γ u)) ht₀ ht
+    (fun u _ ↦ isFirstIntegral_iff_mvfderiv.1 hg (γ u)) ht₀ ht
 
+omit [FiniteDimensional ℝ E] hσ in
 /-- **Conservation of first integrals** along a global integral curve: a first integral of `f`,
 differentiable along an integral curve of the Hamiltonian vector field of `f`, is constant along
 that curve. -/
@@ -154,7 +157,7 @@ theorem IsFirstIntegral.apply_eq_of_isMIntegralCurve (hg : σ.IsFirstIntegral f 
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField f))
     (hgγ : ∀ t, MDifferentiableAt I 𝓘(ℝ) g (γ t)) (s t : ℝ) :
     g (γ t) = g (γ s) :=
-  hg.apply_eq_of_isMIntegralCurveOn hσ isOpen_univ isPreconnected_univ (hγ.isMIntegralCurveOn _)
+  hg.apply_eq_of_isMIntegralCurveOn isOpen_univ isPreconnected_univ (hγ.isMIntegralCurveOn _)
     (fun t _ ↦ hgγ t) (Set.mem_univ s) (Set.mem_univ t)
 
 end Nondegenerate
@@ -213,7 +216,7 @@ theorem ker_mfderiv_le_ker_iff (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
   rw [hσ.ker_mfderiv_eq_span_hamiltonianVectorField hx (h.poissonBracket_eq_zero · · x)
     h.two_mul_card_eq_finrank, Submodule.span_le, Set.range_subset_iff]
   simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    hσ.poissonBracket_eq_neg_mvfderiv, neg_eq_zero]
+    σ.poissonBracket_eq_neg_mvfderiv, neg_eq_zero]
 
 /-- A Hamiltonian `f` of which every integral `F_i` is a first integral has, at each regular
 point `x`, a differential vanishing on the kernel of `dF_x`. -/
@@ -288,7 +291,7 @@ theorem comp_isLocalDiffeomorph [Nonempty M] (h : σ₂.IsIntegrableSystem G)
     have hG (l : ι) : MDifferentiableAt I₂ 𝓘(ℝ) (G · l) (φ x) :=
       (((ContinuousLinearMap.proj l : (ι → ℝ) →L[ℝ] ℝ).contMDiff.comp h.contMDiff)
         (φ x)).mdifferentiableAt (by simp)
-    exact (hσ.poissonBracket_comp hσ₂ hφ.contMDiff hφσ (hinv x).surjective (hG i) (hG j)).trans
+    exact (hσ.poissonBracket_comp hφ.contMDiff hφσ (hinv x).surjective (hG i) (hG j)).trans
       (h.poissonBracket_eq_zero i j (φ x))
   dense_setOf_isRegularPoint := by
     -- A point is regular for `G ∘ φ` exactly when its image is regular for `G`.

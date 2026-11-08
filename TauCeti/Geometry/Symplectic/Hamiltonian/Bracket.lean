@@ -202,13 +202,13 @@ theorem poissonBracket_poissonBracket (hσ : σ.IsClosed) {k : M → ℝ} (hf : 
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
   -- `{f, k}` and `{f, g}` are the derivatives of `f` along `X_k` and `X_g`.
   have hfk : σ.poissonBracket f k = fun y ↦ mvfderiv I f y (σ.hamiltonianVectorField k y) :=
-    funext (h.poissonBracket_eq_mvfderiv f k)
+    funext (σ.poissonBracket_eq_mvfderiv f k)
   have hfg : σ.poissonBracket f g = fun y ↦ mvfderiv I f y (σ.hamiltonianVectorField g y) :=
-    funext (h.poissonBracket_eq_mvfderiv f g)
-  rw [h.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_poissonBracket hσ hg hk, Pi.neg_apply,
+    funext (σ.poissonBracket_eq_mvfderiv f g)
+  rw [σ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_poissonBracket hσ hg hk, Pi.neg_apply,
     map_neg, mvfderiv_mlieBracket (hf x) (by simp) (h.mdifferentiable_hamiltonianVectorField hg x)
-      (h.mdifferentiable_hamiltonianVectorField hk x), h.poissonBracket_eq_mvfderiv,
-    h.poissonBracket_eq_mvfderiv, ← hfk, ← hfg]
+      (h.mdifferentiable_hamiltonianVectorField hk x), σ.poissonBracket_eq_mvfderiv,
+    σ.poissonBracket_eq_mvfderiv, ← hfk, ← hfg]
   ring
 
 /-- **The Jacobi identity for the Poisson bracket.** For a nondegenerate closed form on a

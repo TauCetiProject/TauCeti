@@ -377,7 +377,7 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
           (fun y ↦ centralForceEnergyMomentum b m U y k) ∘ Subtype.val := rfl
     rw [hcomp, hcomp,
       ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
-        (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
+        contMDiff_subtype_val rfl
         (isRegularPoint_iff.1 (hval x)) (hdiff x i) (hdiff x j),
       SymplecticForm.poissonBracket_constSmooth]
     have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)

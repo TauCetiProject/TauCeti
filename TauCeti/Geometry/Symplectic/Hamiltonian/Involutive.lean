@@ -139,7 +139,7 @@ theorem poissonBracket_eq_zero_of_ker_le (hF : MDifferentiableAt I 𝓘(ℝ, ι 
       SymplecticForm.mem_orthogonal_iff'.2 fun v hv ↦ by
         rw [symplecticFormAt_apply, hσ.eval₂_hamiltonianVectorField]
         exact hk hv
-  rw [hσ.poissonBracket_eq_mvfderiv]
+  rw [σ.poissonBracket_eq_mvfderiv]
   exact hg hXk
 
 /-! ### Independent functions -/
