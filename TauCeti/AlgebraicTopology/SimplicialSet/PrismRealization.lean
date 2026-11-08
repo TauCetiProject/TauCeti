@@ -439,6 +439,7 @@ private lemma prism_of_eq {t : I} {b : Fin 2} (ht : (t : ℝ) = (b : ℕ)) (ι :
   exact prism_eq _ _ (by rw [hι, prismMeasure_of_eq ht])
 
 /-- The bottom face `t = 0` of the triangulation of the prism is the bottom inclusion `ι₀`. -/
+@[simp]
 lemma prism_zero (s : StdSimplex ℝ (Fin (p + 1))) :
     prism.{u} p (s, 0) = toTop.map ι₀ (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s) :=
   prism_of_eq (b := 0) (by simp) _
@@ -446,6 +447,7 @@ lemma prism_zero (s : StdSimplex ℝ (Fin (p + 1))) :
       (prodStdSimplex.objEquiv_apply_snd _ i)) s
 
 /-- The top face `t = 1` of the triangulation of the prism is the top inclusion `ι₁`. -/
+@[simp]
 lemma prism_one (s : StdSimplex ℝ (Fin (p + 1))) :
     prism.{u} p (s, 1) = toTop.map ι₁ (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s) :=
   prism_of_eq (b := 1) (by simp) _
