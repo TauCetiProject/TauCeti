@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Analysis.InnerProductSpace.Hemisphere
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Real.SmallRadius
 import TauCeti.Geometry.Manifold.Morse.Deformation
 import TauCeti.Geometry.Manifold.Morse.Sublevel
 
@@ -57,25 +59,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
   {f : M → ℝ}
 
-/-- Two positive radii and a positive gap admit a common smaller positive radius whose double
-square fits in the gap. -/
-theorem exists_pos_lt_lt_two_mul_sq_lt {R₀ R₁ d : ℝ} (hR₀ : 0 < R₀) (hR₁ : 0 < R₁) (hd : 0 < d) :
-    ∃ r, (r < R₀ ∧ r < R₁ ∧ 2 * r ^ 2 < d) ∧ 0 < r :=
-  (((gt_mem_nhds hR₀).and ((gt_mem_nhds hR₁).and
-    ((by fun_prop : Continuous fun r : ℝ ↦ 2 * r ^ 2).tendsto 0 |>.eventually_lt_const
-      (by simpa using hd)))).filter_mono nhdsWithin_le_nhds |>.and
-    self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ))
-
-/-- The closed ball of radius `r > 0` is homeomorphic to the unit closed ball by a rescaling that
-carries the boundary sphere onto the boundary sphere. -/
-theorem exists_homeomorph_closedBall_one_norm_eq {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {r : ℝ} (hr : 0 < r) :
-    ∃ S : closedBall (0 : V) r ≃ₜ closedBall (0 : V) 1,
-      ∀ v : closedBall (0 : V) r, ‖(S v : V)‖ = 1 ↔ ‖(v : V)‖ = r := by
-  refine ⟨(Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr.ne')).subtype fun v ↦ by
-    simp [norm_smul, abs_of_pos hr, inv_mul_le_iff₀ hr], fun v ↦ ?_⟩
-  simp [norm_smul, abs_of_pos hr, inv_mul_eq_one₀ hr.ne', eq_comm]
-
 /-- Reeb's theorem when the minimum and the maximum differ: `M` is the union of a small disc
 around the maximum and the sublevel below it, which the descending flow identifies with a small
 disc around the minimum. -/
@@ -99,7 +82,7 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
       (.of_forall fun y ↦ hf.contMDiff y) (isClosed_le continuous_const hfc).isCompact
       hfc.continuousOn (a := f x₀) hlt hmax
   obtain ⟨r, ⟨hrR₀, hrR₁, hr2⟩, hr⟩ :=
-    exists_pos_lt_lt_two_mul_sq_lt hR₀ hR₁ (sub_pos.2 hlt)
+    TauCeti.exists_pos_lt_lt_two_mul_sq_lt hR₀ hR₁ (sub_pos.2 hlt)
   have hr2' : 0 < r ^ 2 := by positivity
   -- The band between the two discs contains no critical point.
   have hreg (x : M) (ha : f x₀ + r ^ 2 ≤ f x) (hb : f x ≤ f x₁ - r ^ 2) :
