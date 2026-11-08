@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.MarkovChain.EntranceLimits
-public import TauCeti.Probability.MarkovChain.MeanReturn
+public import TauCeti.Probability.MarkovChain.ReturnGaps
 public import TauCeti.Probability.Process.ReturnGapRenewal
 public import TauCeti.Probability.Renewal.StrongLaw
 
