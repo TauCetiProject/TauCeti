@@ -44,23 +44,39 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0}
 
-/-- The convolution of an integrable function with a stable density exists, for valid shape
-`α ∈ (0, 2]`, skewness in `[-1, 1]` and positive scale. -/
-lemma convolutionExists_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
-    {s₂ : ℝ≥0} (hs₂ : 0 < s₂) {f : ℝ → ℝ} (hf : Integrable f) (m₂ : ℝ) :
-    ConvolutionExists f (stablePDFReal α β₂ s₂ m₂) (mul ℝ ℝ) volume :=
-  convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) hf
-    (continuous_stablePDFReal α β₂ s₂ m₂).aestronglyMeasurable
-    (.of_forall (norm_stablePDFReal_le hα hβ₂ hs₂ m₂))
+/-- A stable density either has valid shape `α ∈ (0, 2]`, skewness in `[-1, 1]` and positive
+scale, or it vanishes. -/
+private lemma valid_or_stablePDFReal_eq_zero (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
+    (α ∈ Ioc 0 2 ∧ |β| ≤ 1 ∧ 0 < s) ∨ stablePDFReal α β s m = 0 := by
+  by_cases hα : α ∈ Ioc 0 2
+  · by_cases hβ : |β| ≤ 1
+    · rcases eq_zero_or_pos s with rfl | hs
+      · exact Or.inr (funext (stablePDFReal_zero_scale α β m))
+      · exact Or.inl ⟨hα, hβ, hs⟩
+    · exact Or.inr (funext (stablePDFReal_of_invalid (Or.inr (Or.inr (not_le.1 hβ))) s m))
+  · refine Or.inr (funext (stablePDFReal_of_invalid ?_ s m))
+    rw [mem_Ioc, not_and_or, not_lt, not_le] at hα
+    exact hα.imp id Or.inl
 
-/-- The convolution of an integrable function with a stable density is continuous, for valid shape
-`α ∈ (0, 2]`, skewness in `[-1, 1]` and positive scale. -/
-lemma continuous_convolution_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
-    {s₂ : ℝ≥0} (hs₂ : 0 < s₂) {f : ℝ → ℝ} (hf : Integrable f) (m₂ : ℝ) :
-    Continuous (f ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂) :=
-  BddAbove.continuous_convolution_right_of_integrable (mul ℝ ℝ)
-    ⟨Real.Gamma α⁻¹ / (Real.pi * α * s₂), forall_mem_range.2 (norm_stablePDFReal_le hα hβ₂ hs₂ m₂)⟩
-    hf (continuous_stablePDFReal α β₂ s₂ m₂)
+/-- The convolution of an integrable function with a stable density exists. -/
+lemma convolutionExists_stablePDFReal {f : ℝ → ℝ} (hf : Integrable f) (α β : ℝ) (s : ℝ≥0)
+    (m : ℝ) : ConvolutionExists f (stablePDFReal α β s m) (mul ℝ ℝ) volume := by
+  rcases valid_or_stablePDFReal_eq_zero α β s m with ⟨hα, hβ, hs⟩ | h
+  · exact convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) hf
+      (continuous_stablePDFReal α β s m).aestronglyMeasurable
+      (.of_forall (norm_stablePDFReal_le hα hβ hs m))
+  · intro x
+    simp [h, ConvolutionExistsAt]
+
+/-- The convolution of an integrable function with a stable density is continuous. -/
+lemma continuous_convolution_stablePDFReal {f : ℝ → ℝ} (hf : Integrable f) (α β : ℝ) (s : ℝ≥0)
+    (m : ℝ) : Continuous (f ⋆[mul ℝ ℝ] stablePDFReal α β s m) := by
+  rcases valid_or_stablePDFReal_eq_zero α β s m with ⟨hα, hβ, hs⟩ | h
+  · exact BddAbove.continuous_convolution_right_of_integrable (mul ℝ ℝ)
+      ⟨Real.Gamma α⁻¹ / (Real.pi * α * s), forall_mem_range.2 (norm_stablePDFReal_le hα hβ hs m)⟩
+      hf (continuous_stablePDFReal α β s m)
+  · rw [h, convolution_zero]
+    exact continuous_const
 
 /-- The pointwise convolution factorization of two stable densities of a common shape.
 
@@ -87,9 +103,9 @@ theorem stablePDFReal_convolution_stablePDFReal_of_eq (hα : α ∈ Ioc 0 2) {β
     fun x ↦ stablePDFReal_nonneg α β₁ s₁ m₁ x
   have hg0 : 0 ≤ stablePDFReal α β₂ s₂ m₂ :=
     fun x ↦ stablePDFReal_nonneg α β₂ s₂ m₂ x
-  have hconv := convolutionExists_stablePDFReal hα hβ₂ hs₂ (integrable_stablePDFReal α β₁ s₁ m₁) m₂
-  have hconvcont := continuous_convolution_stablePDFReal hα hβ₂ hs₂
-    (integrable_stablePDFReal α β₁ s₁ m₁) m₂
+  have hconv := convolutionExists_stablePDFReal (integrable_stablePDFReal α β₁ s₁ m₁) α β₂ s₂ m₂
+  have hconvcont := continuous_convolution_stablePDFReal
+    (integrable_stablePDFReal α β₁ s₁ m₁) α β₂ s₂ m₂
   have hmeasure :
       volume.withDensity (fun x ↦ ENNReal.ofReal (stablePDFReal α β₁ s₁ m₁ x)) ∗
           volume.withDensity (fun x ↦ ENNReal.ofReal (stablePDFReal α β₂ s₂ m₂ x)) =
