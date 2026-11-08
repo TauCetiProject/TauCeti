@@ -211,8 +211,9 @@ theorem _root_.AlgHom.frobeniusAlgHom_comm {K L Ω : Type*} [Field K] [Fintype K
 /-- **The `q`-power map exchanges the two roots of a monic quadratic over `K` without a root in
 `K`.** If `t ^ 2 + b * t + c` has no root in the field `K` with `q` elements, then every root `α`
 of it in an extension `L` of `K` satisfies `α ^ q = -b - α`, the other root. -/
-theorem pow_card_eq_neg_sub_of_not_exists_root {K L : Type*} [Field K] [Fintype K] [Field L]
-    [Algebra K L] {b c : K} (hno : ¬ ∃ t : K, t ^ 2 + b * t + c = 0) {α : L}
+theorem pow_card_eq_neg_sub_of_not_exists_root {K L : Type*} [Field K] [Fintype K]
+    [CommRing L] [IsDomain L] [Algebra K L] {b c : K}
+    (hno : ¬ ∃ t : K, t ^ 2 + b * t + c = 0) {α : L}
     (hα : α ^ 2 + algebraMap K L b * α + algebraMap K L c = 0) :
     α ^ Fintype.card K = -algebraMap K L b - α := by
   -- `α` does not come from `K`, since the quadratic has no root there
