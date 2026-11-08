@@ -232,10 +232,11 @@ theorem continuous_affineChart_symm (i : Fin (n + 1)) :
 
 variable [ContinuousMul K] [ContinuousInv₀ K] [T1Space K]
 
+omit [T1Space K] in
 /-- The standard affine chart of projective space is continuous on its domain. -/
 theorem continuousOn_affineChart (i : Fin (n + 1)) :
     ContinuousOn (affineChart (K := K) i) (affineOpen i) := by
-  refine (isOpen_affineOpen i).continuousOn_iff.2 fun x hx ↦ ?_
+  refine fun x hx ↦ ContinuousAt.continuousWithinAt ?_
   obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective x
   rw [mk'_eq_mk, mk_mem_affineOpen_iff] at hx
   -- Composed with the quotient map, the chart is a family of ratios of coordinates.
