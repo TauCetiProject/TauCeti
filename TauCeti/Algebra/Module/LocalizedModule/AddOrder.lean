@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.RingTheory.Localization.Away.Basic
-import Mathlib.Data.Int.GCD
+import Mathlib.RingTheory.Coprime.Lemmas
 
 /-!
 # Additive orders in modules over `ℤ[1/m]`
@@ -65,14 +65,11 @@ theorem isUnit_addOrderOf_of_smul_eq_zero {k : Type*} [CommRing k] {m : ℤ} (hm
       (fun _ _ h ↦ hn.smul_left_cancel.1 h) x
   rw [Nat.cast_smul_eq_nsmul, addOrderOf_nsmul' x (Int.natAbs_ne_zero.2 hm),
     Nat.div_eq_self] at hord
-  have hcop : (addOrderOf x).gcd m.natAbs = 1 := hord.resolve_left hd
-  -- by Bézout, the order of `x` is invertible modulo `m`
-  have hnk : ((m.natAbs : ℤ) : k) = 0 := by
+  have hcop : (addOrderOf x).Coprime m.natAbs := hord.resolve_left hd
+  -- `|m|` vanishes in `k`, so the order of `x`, being coprime to it, is a unit of `k`
+  have hnk : (m.natAbs : k) = 0 := by
     obtain ⟨c, hc⟩ := Int.dvd_natAbs.2 (dvd_refl m)
-    rw [hc, Int.cast_mul, hmk, zero_mul]
-  have h := congrArg (Int.cast : ℤ → k) (Nat.gcd_eq_gcd_ab (addOrderOf x) m.natAbs)
-  rw [hcop, Int.cast_add, Int.cast_mul, Int.cast_mul, hnk, zero_mul, add_zero, Nat.cast_one,
-    Int.cast_one, Int.cast_natCast] at h
-  exact IsUnit.of_mul_eq_one _ h.symm
+    rw [← Int.cast_natCast, hc, Int.cast_mul, hmk, zero_mul]
+  simpa [hnk, isCoprime_zero_right] using hcop.cast (R := k)
 
 end TauCeti

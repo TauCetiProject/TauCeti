@@ -45,7 +45,7 @@ free module `ℤ[1/m]ʳ`, and over the semisimple ring `k` the Künneth theorem 
 * every element of a torsion `ℤ[1/m]`-module has finite additive order prime to `m`
   (`TauCeti.isUnit_addOrderOf_of_smul_eq_zero`), which is a unit of `k`, and an abelian group
   whose element orders are units of `k` is `k`-acyclic
-  (`TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf`).
+  (`TauCeti.subsingleton_groupHomology_of_forall_isUnit_addOrderOf`).
 
 The groups and the coefficient ring live in `Type`, as in the computation of the homology of
 `ℤ[1/m]` that this file consumes.
@@ -74,16 +74,6 @@ namespace TauCeti
 
 variable (k : Type) [CommRing k] {m : ℤ}
 
-/-- An abelian group whose element orders are units of `k` is `k`-acyclic: this is
-`TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf`, read in
-group homology. -/
-private theorem subsingleton_groupHomology_of_forall_isUnit_addOrderOf {G : Type}
-    [AddCommGroup G] (h : ∀ x : G, IsUnit (addOrderOf x : k)) (n : ℕ) :
-    Subsingleton (groupHomology (Rep.trivial k (Multiplicative G) k) (n + 1)) :=
-  have := subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf k h n
-  (classifyingSpaceSingularHomologyIsoGroupHomology k _ (n + 1)).symm.toLinearEquiv.toEquiv
-    |>.subsingleton
-
 /-- `ℤ[1/m]` is `k`-acyclic when `m = 0` in `k`, in the form used for products. -/
 private theorem subsingleton_groupHomology_localizationAway (hm : m ≠ 0) (hmk : (m : k) = 0)
     (n : ℕ) :
@@ -108,9 +98,7 @@ private theorem subsingleton_groupHomology_pi_localizationAway (hm : m ≠ 0) (h
   induction r generalizing n with
   | zero =>
     -- the zero module is the trivial group
-    refine subsingleton_groupHomology_of_forall_isUnit_addOrderOf k (fun x ↦ ?_) n
-    rw [Subsingleton.elim x 0, addOrderOf_zero, Nat.cast_one]
-    exact isUnit_one
+    exact ModuleCat.isZero_iff_subsingleton.1 (isZero_groupHomology_succ_of_subsingleton _ n)
   | succ r ih =>
     let e : Multiplicative (Fin (r + 1) → Localization.Away m) ≃*
         Multiplicative (Localization.Away m) × Multiplicative (Fin r → Localization.Away m) :=
@@ -169,9 +157,8 @@ theorem subsingleton_groupHomology_of_bijective_zsmul (hmk : (m : k) = 0) {A : T
   let _ : Module (Localization.Away m) A := hA.localizationAwayModule
   rcases eq_or_ne m 0 with rfl | hm
   · -- multiplication by zero is bijective only on the zero group
-    refine subsingleton_groupHomology_of_forall_isUnit_addOrderOf k (fun x ↦ ?_) n
-    rw [hA.1 (show (0 : ℤ) • x = (0 : ℤ) • 0 by simp), addOrderOf_zero, Nat.cast_one]
-    exact isUnit_one
+    have : Subsingleton A := ⟨fun x y ↦ hA.1 (by simp)⟩
+    exact ModuleCat.isZero_iff_subsingleton.1 (isZero_groupHomology_succ_of_subsingleton _ n)
   let S : Finset A → Subgroup (Multiplicative A) := fun s ↦
     AddSubgroup.toSubgroup (Submodule.span (Localization.Away m) (s : Set A)).toAddSubgroup
   have hS : Directed (· ≤ ·) S := fun s t ↦
