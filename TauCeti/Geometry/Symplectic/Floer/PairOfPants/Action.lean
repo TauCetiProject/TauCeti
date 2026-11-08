@@ -831,8 +831,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
   -- Split `S_R` along the circle `±s = c`; the outer part is a cylindrical part of the end `q`,
   -- where the energy of `v` is the change of action.
   have hTm : MeasurableSet T := measurableSet_preimage_truncation R
-  have hAm : MeasurableSet A :=
-    hTm.inter (measurableSet_le ((measurable_re_endCoord q).const_mul _) measurable_const)
+  have hAm : MeasurableSet A := measurableSet_preimage_truncation_inter q R c
   have hTAB : T = A ∪ (T ∩ {z | c < σ z}) := by
     rw [← inter_union_distrib_left, ← ofPred_or]
     simp only [le_or_gt, ofPred_true, inter_univ]

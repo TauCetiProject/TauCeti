@@ -308,6 +308,14 @@ theorem measurableSet_preimage_truncation (R : ℝ) :
   (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
     (isCompact_truncation R)).isClosed.measurableSet
 
+/-- The part `±s ≤ c` of the end `q` of the truncation `S_R` is measurable in the real
+coordinates. -/
+theorem measurableSet_preimage_truncation_inter (q : Puncture) (R c : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+      {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c}) :=
+  (measurableSet_preimage_truncation R).inter
+    (measurableSet_le ((measurable_re_endCoord q).const_mul _) measurable_const)
+
 /-- The end charts preserve orientation. -/
 theorem det_fderiv_endChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :
     0 ≤ (fderiv ℝ (endChart q) ζ).det := by

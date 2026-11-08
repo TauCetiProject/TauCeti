@@ -40,6 +40,9 @@ input loops plus that constant.
 
 * `TauCeti.Floer.preimage_plumbedTruncation`: in the real coordinates, the truncation `Σ_R` is
   the union of its receiving part and the image of its inserted part under the plumbing chart.
+* `TauCeti.Floer.isCompact_preimage_plumbedTruncation`,
+  `TauCeti.Floer.measurableSet_preimage_plumbedTruncation`: in the real coordinates, the
+  truncation `Σ_R` is compact and measurable.
 * `TauCeti.SymplecticForm.integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction`:
   the energy identity on the truncation `Σ_R` of the plumbed sphere, for a symplectic vector space
   target.
@@ -101,6 +104,17 @@ theorem preimage_plumbedTruncation (hq : q ≠ inf) (L R : ℝ) :
     · exact Or.inl h
     · refine Or.inr ⟨Complex.equivRealProdCLM.symm w, hw, ?_⟩
       rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The truncation `Σ_R` of the plumbed sphere is compact in the real coordinates. -/
+theorem isCompact_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_plumbedTruncation q L R)
+
+/-- The truncation `Σ_R` of the plumbed sphere is measurable in the real coordinates. -/
+theorem measurableSet_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
+  (isCompact_preimage_plumbedTruncation q L R).isClosed.measurableSet
 
 end TauCeti.Floer
 
@@ -175,8 +189,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_receiving (ω : 
   set A : Set (ℝ × ℝ) := Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
     {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2} with hA
   have hAm : MeasurableSet A :=
-    (measurableSet_preimage_truncation R).inter
-      (measurableSet_le ((measurable_re_endCoord q).const_mul _) measurable_const)
+    measurableSet_preimage_truncation_inter q R _
   have hAre {z : ℝ × ℝ} (hz : z ∈ A) :
       (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2 := by
     have h : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2 := hz.2
@@ -245,8 +258,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
   set B : Set (ℝ × ℝ) := Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
     {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2} with hB
   have hBm : MeasurableSet B :=
-    (measurableSet_preimage_truncation R).inter
-      (measurableSet_le ((measurable_re_endCoord inf).const_mul _) measurable_const)
+    measurableSet_preimage_truncation_inter inf R _
   have hB0 {w : ℝ × ℝ} (hw : w ∈ B) : Complex.equivRealProdCLM.symm w ≠ 0 :=
     (mem_truncation.1 hw.1).1
   have hBre {w : ℝ × ℝ} (hw : w ∈ B) :
@@ -397,9 +409,7 @@ theorem integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction
   have hS₄o : IsOpen S₄ := isOpen_plumbedSphereReal q L
   have hPS₄ : Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R ⊆ S₄ := fun z hz ↦
     plumbedTruncation_subset hq (by linarith) R hz
-  have hPc : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_plumbedTruncation q L R)
+  have hPc := isCompact_preimage_plumbedTruncation q L R
   have hK (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
       (S₄ ×ˢ univ) := fun p hp ↦
@@ -413,9 +423,7 @@ theorem integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction
   have hψBm : MeasurableSet (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹'
       truncation R ∩
         {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2})) :=
-    measurable_image_of_fderivWithin
-      ((measurableSet_preimage_truncation R).inter
-        (measurableSet_le ((measurable_re_endCoord inf).const_mul _) measurable_const))
+    measurable_image_of_fderivWithin (measurableSet_preimage_truncation_inter inf R _)
       (fun w _ ↦ ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero
         w).hasFDerivAt.hasFDerivWithinAt) (injective_realChart_plumbingMap q L).injOn
   have hsplit (f : ℝ × ℝ → ℝ)
@@ -498,10 +506,8 @@ theorem hamiltonianAction_le_sum_add_sum_add_sum_add_sum (ω : SymplecticForm V)
             (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I)))))) +
         (∑ r, Ba r + ∑ r, Bb r) := by
   -- The energy over `Σ_R` is nonnegative.
-  have hPm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) :=
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_plumbedTruncation q L R)).isClosed.measurableSet
-  have hE := setIntegral_nonneg (μ := volume) hPm fun z hz ↦
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_plumbedTruncation q L R)
+    fun z hz ↦
     ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have h := (abs_le.1 (abs_integral_floerEnergyDensity_plumbedPerturbation_sub_sum_le ω hq hHa
     hHb hHas hHbs hab hL hBa hBb hR hu)).2

@@ -74,9 +74,6 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
   `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation`: for a vector space target, `L > 4` and
   period-one `C¹` Hamiltonians, the glued datum is `C¹` jointly in the domain and target points,
   also in the real coordinates.
-* `TauCeti.ThricePuncturedSphere.Puncture.contDiff_realChart_plumbingMap`,
-  `TauCeti.ThricePuncturedSphere.Puncture.injective_realChart_plumbingMap`: the plumbing map is a
-  smooth injection in the real coordinates.
 
 ## References
 
@@ -138,24 +135,6 @@ private theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab
   exact plumbedPerturbation_plumbingMap hq hab hw' h'.le x v
 
 end TauCeti.Floer
-
-namespace TauCeti.ThricePuncturedSphere.Puncture
-
-/-- The plumbing map is smooth in the real coordinates. -/
-theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
-  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
-    funext (plumbingMap_apply q L)
-  exact contDiff_realChart (by rw [hψ]; fun_prop)
-
-/-- The plumbing map is injective in the real coordinates. -/
-theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
-    Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
-  rw [realChart_apply, realChart_apply] at h
-  exact Complex.equivRealProdCLM.symm.injective
-    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
-
-end TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.SmoothTwoForm
 

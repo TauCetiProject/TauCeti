@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.RealChart
 
 /-!
 # Plumbing two thrice-punctured spheres along a neck
@@ -54,6 +55,9 @@ maps on the plumbed sphere is computed.
   `ℂ ∖ {0, 1, ψ_{q,L}(1)}`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_image_inter`: the two pieces overlap
   exactly in the image of the neck `-L < Re z < 0`.
+* `TauCeti.ThricePuncturedSphere.Puncture.contDiff_realChart_plumbingMap`,
+  `TauCeti.ThricePuncturedSphere.Puncture.injective_realChart_plumbingMap`: the plumbing map is a
+  smooth injection in the real coordinates.
 * `TauCeti.ThricePuncturedSphere.Puncture.mem_plumbedTruncation_iff`: membership in the
   truncation `Σ_R`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
@@ -71,6 +75,7 @@ maps on the plumbed sphere is computed.
 public noncomputable section
 
 open Set Real
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 
 namespace TauCeti.ThricePuncturedSphere.Puncture
 
@@ -131,6 +136,20 @@ theorem plumbingMap_zero (q : Puncture) (L : ℝ) : q.plumbingMap L 0 = q.endCen
 
 theorem plumbingMap_injective (q : Puncture) (L : ℝ) : Function.Injective (q.plumbingMap L) :=
   fun _ _ h => mul_left_cancel₀ (q.plumbingFactor_ne_zero L) (add_left_cancel h)
+
+/-- The plumbing map is smooth in the real coordinates. -/
+theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
+  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
+    funext (plumbingMap_apply q L)
+  exact contDiff_realChart (by rw [hψ]; fun_prop)
+
+/-- The plumbing map is injective in the real coordinates. -/
+theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
+    Function.Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
+  rw [realChart_apply, realChart_apply] at h
+  exact Complex.equivRealProdCLM.symm.injective
+    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
 
 /-- The plumbing map is affine with derivative the plumbing factor. -/
 theorem hasDerivAt_plumbingMap (q : Puncture) (L : ℝ) (w : ℂ) :
