@@ -114,7 +114,6 @@ theorem cofreeLift_mem_homCochains {p : ℤ}
       homCochains MM NN p := by
   let W := TensorWords.grading (AA.grading.shift 1)
   let V := TensorWords.grading (BB.grading.shift 1)
-  let Y := W.tensorProduct (MM.grading.shift 1)
   let τ := W.koszulTwist p
   let δ := Comodule.leftCoactRTensor (TensorWords R B)
     (Comodule.leftCofreeCoact R (TensorWords R A) M)
@@ -143,21 +142,14 @@ theorem cofreeLift_mem_homCochains {p : ℤ}
       rw [LinearMap.isHomogeneous_def]
       intro q x hx
       simpa only [add_zero] using W.koszulTwist_mem_piece hx p
-    have hR : LinearMap.IsHomogeneous
-        (Comodule.cofreeCoact R (TensorWords R B) (TensorWords R A ⊗[R] M))
-        (Y.tensorProduct V).piece ((Y.tensorProduct V).tensorProduct V).piece 0 := by
-      rw [Comodule.cofreeCoact_def, LinearMap.lTensor_def,
-        TensorWords.comul_eq_deconcatenation]
-      simpa only [zero_add] using (InternalGrading.isHomogeneous_assoc_symm Y V V).comp
-        ((LinearMap.isHomogeneous_id Y.piece).tensorProduct
-          (TensorWords.isHomogeneous_deconcatenation (BB.grading.shift 1)))
+    have hR := isHomogeneous_rightCoact AA BB MM.grading
     have hδ := isHomogeneous_leftCoact AA BB MM.grading
-    simp only [barGrading_def] at hδ
+    simp only [barGrading_def] at hR hδ
     have h := (((hτh.tensorProduct hφ).comp hδ).tensorProduct
       (LinearMap.isHomogeneous_id V.piece)).comp hR
     simpa only [Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact,
       Comodule.cofreeCoact_def, LinearMap.rTensor_def, barGrading_def, zero_add, add_zero,
-      W, V, Y, τ, L, δ] using h
+      W, V, τ, L, δ] using h
 
 namespace homCochains
 
@@ -200,15 +192,8 @@ theorem taylor_def (F : homCochains MM NN p) :
 /-- A cochain's Taylor map has the same degree in the suspended target grading. -/
 theorem isHomogeneous_taylor (F : homCochains MM NN p) :
     LinearMap.IsHomogeneous (taylor F) (barGrading AA BB MM.grading).piece
-      (NN.grading.shift 1).piece p := by
-  have hbar := isHomogeneous F
-  simp only [barGrading_def] at hbar ⊢
-  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
-  simpa only [LinearMap.comp_assoc, add_zero] using
-    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
-      (NN.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
-        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (NN.grading.shift 1))
-        (BB.grading.shift 1))).comp hbar
+      (NN.grading.shift 1).piece p :=
+  isHomogeneous_taylorProj_comp (isHomogeneous F)
 
 /-- The signed left extension and right cofree lift recover a cochain from its Taylor map. -/
 theorem eq_cofreeLift (F : homCochains MM NN p) :

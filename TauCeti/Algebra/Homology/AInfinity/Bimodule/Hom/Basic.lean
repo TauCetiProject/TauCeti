@@ -99,15 +99,8 @@ theorem barDifferential_barMap (f : AInfinityBimoduleHom MM NN)
 /-- The Taylor map of a bimodule morphism preserves suspended degree. -/
 theorem isHomogeneous_taylor (f : AInfinityBimoduleHom MM NN) :
     LinearMap.IsHomogeneous f.taylor (barGrading AA BB MM.grading).piece
-      (NN.grading.shift 1).piece 0 := by
-  have hbar := f.isHomogeneous_barMap
-  simp only [barGrading_def] at hbar ⊢
-  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
-  simpa only [LinearMap.comp_assoc, add_zero] using
-    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
-      (NN.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
-        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (NN.grading.shift 1))
-        (BB.grading.shift 1))).comp hbar
+      (NN.grading.shift 1).piece 0 :=
+  isHomogeneous_taylorProj_comp f.isHomogeneous_barMap
 
 /-- The bar map is recovered by extending the Taylor map to the cofree bicomodule. -/
 theorem barMap_eq_bicofreeLift (f : AInfinityBimoduleHom MM NN) :
@@ -221,17 +214,9 @@ theorem isHomogeneous_bicofreeLift
   simp only [barGrading_def] at hφ ⊢
   let W := TensorWords.grading (AA.grading.shift 1)
   let V := TensorWords.grading (BB.grading.shift 1)
-  let Y := W.tensorProduct (MM.grading.shift 1)
   have hL := isHomogeneous_leftCoact AA BB MM.grading
-  simp only [barGrading_def] at hL
-  have hR : LinearMap.IsHomogeneous (Comodule.cofreeCoact R (TensorWords R B)
-      (TensorWords R A ⊗[R] M)) (Y.tensorProduct V).piece
-      ((Y.tensorProduct V).tensorProduct V).piece 0 := by
-    rw [Comodule.cofreeCoact_def, LinearMap.lTensor_def,
-      TensorWords.comul_eq_deconcatenation]
-    simpa only [zero_add] using (InternalGrading.isHomogeneous_assoc_symm Y V V).comp
-      ((LinearMap.isHomogeneous_id Y.piece).tensorProduct
-        (TensorWords.isHomogeneous_deconcatenation (BB.grading.shift 1)))
+  have hR := isHomogeneous_rightCoact AA BB MM.grading
+  simp only [barGrading_def] at hL hR
   have h := ((((LinearMap.isHomogeneous_id W.piece).tensorProduct hφ).comp hL).tensorProduct
     (LinearMap.isHomogeneous_id V.piece)).comp hR
   simpa only [Comodule.bicofreeLift_toLinearMap, LinearMap.lTensor_def,
