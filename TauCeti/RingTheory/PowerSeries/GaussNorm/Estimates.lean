@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.PowerSeries.GaussNorm
 /-!
 # Estimates for the Gauss norm of restricted series
 
-Elementary bounds on the Gauss norm of power series over a normed ring: the Gauss norm of a
+Elementary bounds on the Gauss norm of power series over a (semi)normed ring: the Gauss norm of a
 product of series with a bounded first factor, the ultrametric bound for a difference, and the
 approximation of a restricted series by a truncation leaving a small tail.
 
@@ -28,11 +28,11 @@ public section
 
 namespace TauCeti.PowerSeries
 
-variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
+variable {c : ℝ}
 
 section Ultrametric
 
-variable [IsUltrametricDist R]
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
 
 /-- The Gauss norm of a product of series with Gauss norm is bounded by a bound on the first factor
 times the Gauss norm of the second. -/
@@ -56,6 +56,10 @@ theorem gaussNorm_sub_le_of_le (hc : 0 ≤ c) {a b : PowerSeries R} (ha : a.HasG
   exact (MvPowerSeries.gaussNorm_neg norm (fun _ ↦ c) (fun x ↦ norm_neg x) b).trans_le hb'
 
 end Ultrametric
+
+section Trunc
+
+variable {R : Type*} [NormedRing R] {f : PowerSeries R}
 
 /-- Some truncation of a restricted series `f` has Gauss norm at most `‖f‖` and leaves a tail of
 Gauss norm at most `θ * ‖f‖`. -/
@@ -93,5 +97,7 @@ theorem exists_gaussNorm_trunc_sub_le (hf : f.IsRestricted c) {θ : ℝ} (hθ : 
     · rw [sub_zero]
       exact hN m (by omega)
   exact ⟨N, hFn, hsmall⟩
+
+end Trunc
 
 end TauCeti.PowerSeries

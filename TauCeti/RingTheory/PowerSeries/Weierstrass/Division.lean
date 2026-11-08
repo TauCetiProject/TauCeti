@@ -343,9 +343,9 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
         - (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)) * (Qp : PowerSeries R) := by
     rw [hdivPS]; ring
   rw [hdefect]
-  refine gaussNorm_sub_le_of_le hc.le (hasGaussNorm_of_isRestricted hsmallr)
+  refine gaussNorm_sub_le_of_le (R := R) hc.le (hasGaussNorm_of_isRestricted hsmallr)
     (hasGaussNorm_of_isRestricted (htailr.mul hQr)) hsmall ?_
-  refine (gaussNorm_mul_le_of_le hc.le (hasGaussNorm_of_isRestricted htailr)
+  refine (gaussNorm_mul_le_of_le (R := R) hc.le (hasGaussNorm_of_isRestricted htailr)
     (hasGaussNorm_of_isRestricted hQr) hθg).trans ?_
   rw [mul_assoc]
   exact mul_le_mul_of_nonneg_left ((le_max_left _ _).trans hmax) hθ.le
