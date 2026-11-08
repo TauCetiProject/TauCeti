@@ -131,7 +131,7 @@ theorem tendsto_rpow_mul_conv_real_Ioi_of_tendsto {α C D : ℝ} (hα : 0 < α)
           μ.real univ * (x ^ α * ν.real (Ioi ((1 - δ) * x))) +
           (x ^ α * μ.real (Ioi (δ * x))) * ν.real (Ioi (δ * x)))
         atTop (𝓝 ((1 - δ) ^ (-α) * (C * ν.real univ + μ.real univ * D))) := by
-    have htail := (hν.rpow_mul_comp_const_mul hδ).of_rpow_mul hα
+    have htail := (hν.rpow_mul_comp_const_mul hδ).tendsto_zero_of_rpow_mul hα
     convert (((hμ.rpow_mul_comp_const_mul (by linarith : 0 < 1 - δ)).mul_const (ν.real univ)).add
       ((hν.rpow_mul_comp_const_mul (by linarith : 0 < 1 - δ)).const_mul (μ.real univ))).add
       ((hμ.rpow_mul_comp_const_mul hδ).mul htail) using 2
@@ -206,6 +206,24 @@ theorem tendsto_rpow_mul_convolutionPower_real_Ioi {μ : Measure ℝ} [IsProbabi
   | succ n ih =>
     simpa only [convolutionPower_succ, probReal_univ, mul_one, one_mul,
       Nat.cast_add_one, add_mul] using tendsto_rpow_mul_conv_real_Ioi_of_tendsto hα ih hμ
+
+/-- A finite power-law right-tail limit of nonnegative exponent gives a uniform bound over all
+positive thresholds for a finite real measure. -/
+theorem exists_rpow_mul_real_Ioi_le (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {α C : ℝ} (hα : 0 ≤ α)
+    (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C)) :
+    ∃ K : ℝ, ∀ x : ℝ, 0 < x → x ^ α * μ.real (Ioi x) ≤ K := by
+  obtain ⟨T, hT⟩ := eventually_atTop.1 (hμ.eventually (eventually_lt_nhds (lt_add_one C)))
+  refine ⟨max (C + 1) ((max T 1) ^ α * μ.real univ), fun x hx ↦ ?_⟩
+  by_cases hxT : T ≤ x
+  · exact (hT x hxT).le.trans (le_max_left _ _)
+  · calc
+      _ ≤ x ^ α * μ.real univ := mul_le_mul_of_nonneg_left
+        (measureReal_mono (subset_univ _)) (Real.rpow_nonneg hx.le α)
+      _ ≤ (max T 1) ^ α * μ.real univ := mul_le_mul_of_nonneg_right
+        (Real.rpow_le_rpow hx.le ((le_of_not_ge hxT).trans (le_max_left _ _)) hα)
+        measureReal_nonneg
+      _ ≤ _ := le_max_right _ _
 
 /-- A uniform normalized tail bound for a probability law gives a polynomial bound of order
 `α + 1` for its convolution powers, including the empty convolution. -/

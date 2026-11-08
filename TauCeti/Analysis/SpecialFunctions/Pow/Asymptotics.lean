@@ -46,7 +46,7 @@ theorem Filter.Tendsto.rpow_mul_comp_const_mul {f : ℝ → ℝ} {α C c : ℝ}
   field_simp [(rpow_pos_of_pos hc α).ne']
 
 /-- A real function with a finite power-law limit of positive exponent tends to zero. -/
-theorem Filter.Tendsto.of_rpow_mul {f : ℝ → ℝ} {α C : ℝ}
+theorem Filter.Tendsto.tendsto_zero_of_rpow_mul {f : ℝ → ℝ} {α C : ℝ}
     (h : Tendsto (fun x : ℝ ↦ x ^ α * f x) atTop (𝓝 C)) (hα : 0 < α) :
     Tendsto f atTop (𝓝 0) := by
   have hlim := h.mul (tendsto_rpow_neg_atTop hα)
