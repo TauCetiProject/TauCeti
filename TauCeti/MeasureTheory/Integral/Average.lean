@@ -128,6 +128,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   has vanishing average over a set of finite positive measure vanishes almost everywhere there.
 * `TauCeti.tendsto_average_add_rpow`: dominated convergence for the averages of
   `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ≥ 0` tending to `0`.
+* `TauCeti.enorm_sub_setAverage_eq_zero_of_subsingleton`: the deviation from the mean vanishes on a
+  subsingleton domain.
 -/
 
 public section
@@ -902,5 +904,19 @@ theorem _root_.ContinuousLinearMap.average_apply {H : X → E →L[𝕜] F} (hH 
   rw [average_eq, average_eq, smul_apply, ContinuousLinearMap.integral_apply hH]
 
 end ContinuousLinearMap
+
+section Subsingleton
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F] {u : X → F} {S : Set X}
+
+/-- On a subsingleton domain a function is constant, so its deviation from its mean over any set
+`S` of finite positive measure vanishes. -/
+theorem enorm_sub_setAverage_eq_zero_of_subsingleton [Subsingleton X] (x : X)
+    (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ∞) : ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := by
+  have hu : u = fun _ => u x := funext fun y => congrArg u (Subsingleton.elim y x)
+  rw [hu, setAverage_const hS₀ hS_top, sub_self, enorm_zero]
+
+end Subsingleton
 
 end TauCeti
