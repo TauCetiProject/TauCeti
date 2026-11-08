@@ -71,7 +71,7 @@ theorem exact_d_succ_d (n : ℕ) :
 
 /-- Exactness of the spliced complex, in the vocabulary of homological complexes. -/
 theorem exactAt_complex_succ (n : ℕ) : r.complex.ExactAt (n + 1) :=
-  ChainComplex.exactAt_of_succ r.X r.d r.d_comp_d n (r.exact_d_succ_d n)
+  ChainComplex.of_exactAt_succ r.X r.d r.d_comp_d n (r.exact_d_succ_d n)
 
 /-- A relative projective resolution for the canonical abelian exact structure is a projective
 resolution in Mathlib's sense, with the same spliced complex and augmentation. -/
@@ -79,7 +79,7 @@ resolution in Mathlib's sense, with the same spliced complex and augmentation. -
 @[expose]
 noncomputable def toProjectiveResolution : CategoryTheory.ProjectiveResolution (r.Z 0) :=
   r.complex.toProjectiveResolution (r.π 0) r.complex_d_one_zero_comp_π r.projective_X
-    (ChainComplex.exact_of_d_zero r.X r.d r.d_comp_d (r.π 0) (r.d_comp_π 0)
+    (ChainComplex.of_exact_d_one_zero r.X r.d r.d_comp_d (r.π 0) (r.d_comp_π 0)
       (r.exact_d_π 0))
     r.exactAt_complex_succ
 

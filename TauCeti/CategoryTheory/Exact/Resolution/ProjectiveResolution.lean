@@ -110,7 +110,7 @@ theorem exact_d_succ_d {X : C} (r : (ExactStructure.abelian C).FiniteResolution 
 degree, in the vocabulary of homological complexes. -/
 theorem exactAt_toChainComplex_succ {X : C} (r : (ExactStructure.abelian C).FiniteResolution P X)
     (n : ℕ) : r.toChainComplex.ExactAt (n + 1) :=
-  ChainComplex.exactAt_of_succ r.term r.d r.d_comp_d n (r.exact_d_succ_d n)
+  ChainComplex.of_exactAt_succ r.term r.d r.d_comp_d n (r.exact_d_succ_d n)
 
 /-- The augmentation kills the first differential of the complex of a finite resolution. -/
 private theorem toChainComplex_d_one_zero_comp_aug {X : C}
@@ -133,7 +133,7 @@ noncomputable def toProjectiveResolution {X : C}
       by_cases hn : n ≤ r.length
       · exact hP _ (r.prop_term_of_le_length hn)
       · exact (r.isZero_term_of_length_lt (not_le.mp hn)).projective)
-    (ChainComplex.exact_of_d_zero r.term r.d r.d_comp_d r.aug r.d_comp_aug
+    (ChainComplex.of_exact_d_one_zero r.term r.d r.d_comp_d r.aug r.d_comp_aug
       r.exact_d_zero_aug)
     r.exactAt_toChainComplex_succ
 

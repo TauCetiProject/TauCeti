@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 # Exactness of a chain complex assembled from consecutive differentials
 
 Translate exactness of consecutive pairs of specified differentials to `ExactAt` for
-`ChainComplex.of`. This is shared by the finite and unbounded exact-category resolution APIs.
+`ChainComplex.of`.
 -/
 
 public section
@@ -27,7 +27,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
 
 /-- Exactness of the specified differentials gives exactness in positive degrees of the
 chain complex assembled by `ChainComplex.of`. -/
-theorem exactAt_of_succ (X : ℕ → C) (d : ∀ n, X (n + 1) ⟶ X n)
+theorem of_exactAt_succ (X : ℕ → C) (d : ∀ n, X (n + 1) ⟶ X n)
     (zero : ∀ n, d (n + 1) ≫ d n = 0) (n : ℕ)
     (h : (ShortComplex.mk (d (n + 1)) (d n) (zero n)).Exact) :
     (ChainComplex.of X d zero).ExactAt (n + 1) := by
@@ -42,7 +42,7 @@ theorem exactAt_of_succ (X : ℕ → C) (d : ∀ n, X (n + 1) ⟶ X n)
 
 /-- Exactness of the specified augmentation pair gives exactness at the augmentation of
 `ChainComplex.of`. -/
-theorem exact_of_d_zero (X : ℕ → C) (d : ∀ n, X (n + 1) ⟶ X n)
+theorem of_exact_d_one_zero (X : ℕ → C) (d : ∀ n, X (n + 1) ⟶ X n)
     (zero : ∀ n, d (n + 1) ≫ d n = 0) {Y : C} (ε : X 0 ⟶ Y)
     (hε : d 0 ≫ ε = 0) {hε' : (ChainComplex.of X d zero).d 1 0 ≫ ε = 0}
     (h : (ShortComplex.mk (d 0) ε hε).Exact) :

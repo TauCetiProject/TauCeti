@@ -90,10 +90,10 @@ noncomputable def toProjectiveResolution : ProjectiveResolution M := by
       let := r.projective n
       exact inferInstanceAs (Projective (r.termObj n)))
     ((GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π)
-    (ChainComplex.exact_of_d_zero r.termObj r.differential r.differential_comp_differential
+    (ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
       r.augmentation r.differential_zero_comp_augmentation
       (GradedModuleCat.exact_iff.mpr r.exact_d_π))
-    (fun n => ChainComplex.exactAt_of_succ r.termObj r.differential
+    (fun n => ChainComplex.of_exactAt_succ r.termObj r.differential
       r.differential_comp_differential n (GradedModuleCat.exact_iff.mpr (r.exact_d_d n)))
 
 /-- The terms of the categorical resolution are the original graded modules. -/

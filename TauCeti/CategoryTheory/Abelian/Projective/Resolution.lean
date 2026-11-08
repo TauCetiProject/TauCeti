@@ -35,9 +35,9 @@ open CategoryTheory CategoryTheory.Limits
 variable {C : Type*} [Category* C] [Abelian C] {X : C}
 
 /-- An augmented complex of projectives, exact in positive degrees and at its epimorphic
-augmentation, is a projective resolution.
-The body is exposed so the augmentation's domain in `toProjectiveResolution_π` is the
-supplied complex. -/
+augmentation, is a projective resolution. -/
+-- The body is exposed so the augmentation's domain in `toProjectiveResolution_π` is the
+-- supplied complex.
 @[expose]
 def toProjectiveResolution (K : ChainComplex C ℕ) (ε : K.X 0 ⟶ X) (hε : K.d 1 0 ≫ ε = 0)
     (hP : ∀ n, Projective (K.X n)) [Epi ε]
