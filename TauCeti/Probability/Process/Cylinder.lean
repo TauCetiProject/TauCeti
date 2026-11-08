@@ -28,6 +28,8 @@ to the existing rectangle/`blockLaw` interface, while `blockCylinder_eq_iInter` 
 intersection form, which is what a proof meeting the cylinder with another event wants.
 `blockIndicatorProd_eq_indicator` identifies the product with the cylinder indicator, and
 `integrable_blockIndicatorProd` records integrability under a finite measure.
+`toReal_measure_inter_blockCylinder_eq_setIntegral_blockIndicatorProd` expresses the mass of the
+intersection of a set with a cylinder as the integral of the indicator product over the set.
 
 Adapted from `cameronfreer/exchangeability` (`PathSpace/CylinderHelpers.lean`,
 `DeFinetti/ViaMartingale/IndicatorAlgebra.lean`, pin
@@ -225,6 +227,18 @@ theorem integral_blockIndicatorProd {μ : Measure Ω} {X : ℕ → Ω → α} {m
     integral_indicator₀ (nullMeasurableSet_blockCylinder hX hC), setIntegral_const,
     blockLaw_blockCylinder X hX hC]
   simp [Measure.real]
+
+/-- The mass of the intersection of a set with a block cylinder is the integral over the set of the
+indicator product of the selected coordinates:
+`(μ (A ∩ blockCylinder X k C)).toReal = ∫ ω in A, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ`. -/
+theorem toReal_measure_inter_blockCylinder_eq_setIntegral_blockIndicatorProd {μ : Measure Ω}
+    {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α}
+    (A : Set Ω) (hX : ∀ i, AEMeasurable (X (k i)) μ) (hC : ∀ i, MeasurableSet (C i)) :
+    (μ (A ∩ blockCylinder X k C)).toReal = ∫ ω in A, blockIndicatorProd X k C ω ∂μ := by
+  have hX' : ∀ i, AEMeasurable (X (k i)) (μ.restrict A) := fun i =>
+    (hX i).mono_measure Measure.restrict_le_self
+  rw [integral_blockIndicatorProd hX' hC, blockLaw_blockCylinder X hX' hC,
+    Measure.restrict_apply₀ (nullMeasurableSet_blockCylinder hX' hC), Set.inter_comm]
 
 end Probability
 
