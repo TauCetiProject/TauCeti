@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.Grp.Adjunctions
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 public import Mathlib.CategoryTheory.Abelian.Projective.Basic
 public import Mathlib.CategoryTheory.Sites.Adjunction
-public import Mathlib.CategoryTheory.Sites.EpiMono
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import TauCeti.CategoryTheory.Sites.EpiMono

@@ -13,9 +13,9 @@ public import Mathlib.CategoryTheory.Sites.EpiMono
 For a concrete category `A`, the functor `sheafCompose J (forget A) : Sheaf J A ⥤ Sheaf J (Type w)`
 preserves epimorphisms (`CategoryTheory.Sheaf.preservesEpimorphisms_sheafCompose_forget`) and
 reflects them, so a morphism of `A`-valued sheaves is an epimorphism if and only if its underlying
-morphism of sheaves of types is (`CategoryTheory.Sheaf.epi_sheafCompose_forget_map_iff`): in both
-categories the epimorphisms are the locally surjective morphisms, and local surjectivity of an
-`A`-valued presheaf map is a condition on its underlying map of presheaves of types
+morphism of sheaves of types is (`CategoryTheory.Functor.epi_map_iff_epi`): in both categories the
+epimorphisms are the locally surjective morphisms, and local surjectivity of an `A`-valued presheaf
+map is a condition on its underlying map of presheaves of types
 (`CategoryTheory.Presheaf.isLocallySurjective_iff_whisker_forget`).
 
 This generalizes Mathlib's `PreservesEpimorphisms` instance for `LightCondensed.forget` in
@@ -52,13 +52,6 @@ instance preservesEpimorphisms_sheafCompose_forget :
     have : IsLocallySurjective ((sheafCompose J (forget A)).map φ) :=
       (Presheaf.isLocallySurjective_iff_whisker_forget J φ.hom).1 this
     exact epi_of_isLocallySurjective' _
-
-/-- A morphism of `A`-valued sheaves is an epimorphism if and only if its underlying morphism of
-sheaves of types is: both conditions say that the morphism is locally surjective. -/
-theorem epi_sheafCompose_forget_map_iff {F G : Sheaf J A} (φ : F ⟶ G) :
-    Epi ((sheafCompose J (forget A)).map φ) ↔ Epi φ :=
-  ⟨fun _ ↦ (sheafCompose J (forget A)).epi_of_epi_map ‹_›,
-    fun _ ↦ (sheafCompose J (forget A)).map_epi φ⟩
 
 end CategoryTheory.Sheaf
 
