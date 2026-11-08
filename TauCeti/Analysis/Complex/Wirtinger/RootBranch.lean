@@ -88,8 +88,7 @@ private theorem mem_of_pow_add_sum_eq_zero {S : Multiset ℂ} {v : ℂ} {m : ℕ
     (hS : Multiset.card S = m) {c : ℕ → ℂ} (hc : ∀ j ∈ Icc 1 m, c j = S.esymm j)
     (h : v ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * c j * v ^ (m - j) = 0) : v ∈ S := by
   rw [pow_add_sum_eq_prod hS hc] at h
-  obtain ⟨w, hw, hw0⟩ := Multiset.mem_map.1 (Multiset.prod_eq_zero_iff.1 h)
-  rwa [sub_eq_zero.1 hw0]
+  exact Multiset.prod_map_sub_eq_zero_iff.1 h
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
@@ -145,22 +144,36 @@ theorem prod_map_sub_smul_conjWirtingerDeriv_add_add_eq_sum {m : ℕ} {b : ℕ �
       conjWirtingerDeriv_fun_mul (f := fun _ ↦ (-1) ^ j) (differentiableAt_const _) (hb j hj),
       (differentiableAt_const _).conjWirtingerDeriv_eq_zero, ← hsign]
     module
-  rw [sum_congr rfl hmul, sum_sub_distrib, ← sum_smul, ← add_sub_assoc, ← add_smul,
-    sub_eq_zero] at hzero
+  rw [sum_congr rfl hmul, sum_sub_distrib, ← sum_smul] at hzero
   -- The coefficient of `\bar∂ v` is `P_x'(v(x)) = ∏_{w ∈ R ∖ v(x)} (v(x) - w)`.
-  have hP' : (m * v x ^ (m - 1) +
-      ∑ j ∈ Icc 1 m, (-1) ^ j * b j x * ((m - j : ℕ) * v x ^ (m - j - 1))) =
-        ((R.erase (v x)).map fun w ↦ v x - w).prod :=
-    mul_pow_add_sum_eq_prod_erase hR hbR hvR
+  have hdv : ((R.erase (v x)).map fun w ↦ v x - w).prod • conjWirtingerDeriv v x =
+      ∑ j ∈ Icc 1 m, ((-1) ^ (j - 1) * v x ^ (m - j)) • conjWirtingerDeriv (b j) x := by
+    rw [← mul_pow_add_sum_eq_prod_erase hR hbR hvR]
+    linear_combination (norm := module) hzero
   -- The coefficients of `ν` and `μ` are `v(x) P_x'(v(x))` and `\bar v(x) P_x'(v(x))`.
   have hν : ∑ j ∈ Icc 1 m, (-1) ^ (j - 1) * v x ^ (m - j) * (j * b j x) =
       v x * ((R.erase (v x)).map fun w ↦ v x - w).prod := by
     rw [← Multiset.sum_mul_esymm_eq_mul_prod_map_sub_erase hR hvR]
     exact sum_congr rfl fun j hj ↦ by rw [hbR j hj]
-  rw [hP'] at hzero
   simp only [smul_add, sum_add_distrib, smul_smul, ← sum_smul]
-  rw [← hzero, hν, Multiset.sum_mul_sum_map_mul_esymm_erase hR hvR conj]
+  rw [← hdv, hν, Multiset.sum_mul_sum_map_mul_esymm_erase hR hvR conj]
   module
+
+/-- Under the hypotheses of `TauCeti.prod_map_sub_smul_conjWirtingerDeriv_add_add_eq_sum`, if
+`P_x'(v(x)) = ∏_{w ∈ R ∖ v(x)} (v(x) - w)` is nonzero and the remainders `r_j` all vanish, then
+`\bar∂ v(x) + v(x) ν + \bar v(x) μ = 0`. -/
+private theorem conjWirtingerDeriv_add_add_eq_zero_of_prod_ne_zero {m : ℕ} {b : ℕ → V → ℂ}
+    {v : V → ℂ} {x : V} (hb : ∀ j ∈ Icc 1 m, DifferentiableAt ℝ (b j) x)
+    (hv : DifferentiableAt ℝ v x)
+    (hroot : ∀ᶠ y in 𝓝 x, v y ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * b j y * v y ^ (m - j) = 0)
+    {R : Multiset ℂ} (hR : Multiset.card R = m) (hbR : ∀ j ∈ Icc 1 m, b j x = R.esymm j)
+    (hne : ((R.erase (v x)).map fun w ↦ v x - w).prod ≠ 0) (ν μ : V →L⋆[ℂ] ℂ)
+    (heq : ∀ j ∈ Icc 1 m, conjWirtingerDeriv (b j) x + (j * b j x) • ν +
+      (R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum • μ = 0) :
+    conjWirtingerDeriv v x + v x • ν + conj (v x) • μ = 0 := by
+  have h := prod_map_sub_smul_conjWirtingerDeriv_add_add_eq_sum hb hv hroot hR hbR ν μ
+  rw [sum_congr rfl fun j hj ↦ by rw [heq j hj, smul_zero], sum_const_zero] at h
+  exact (smul_eq_zero.1 h).resolve_left hne
 
 /-- **Simple root branches solve `D_C`.** Under the hypotheses of
 `TauCeti.prod_map_sub_smul_conjWirtingerDeriv_add_add_eq_sum`, if `v(x)` is a simple root of
@@ -173,10 +186,9 @@ theorem conjWirtingerDeriv_add_add_eq_zero_of_root {m : ℕ} {b : ℕ → V → 
     (hvR : R.count (v x) = 1) (ν μ : V →L⋆[ℂ] ℂ)
     (heq : ∀ j ∈ Icc 1 m, conjWirtingerDeriv (b j) x + (j * b j x) • ν +
       (R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum • μ = 0) :
-    conjWirtingerDeriv v x + v x • ν + conj (v x) • μ = 0 := by
-  have h := prod_map_sub_smul_conjWirtingerDeriv_add_add_eq_sum hb hv hroot hR hbR ν μ
-  rw [sum_congr rfl fun j hj ↦ by rw [heq j hj, smul_zero], sum_const_zero] at h
-  exact (smul_eq_zero.1 h).resolve_left (Multiset.prod_map_sub_erase_ne_zero hvR)
+    conjWirtingerDeriv v x + v x • ν + conj (v x) • μ = 0 :=
+  conjWirtingerDeriv_add_add_eq_zero_of_prod_ne_zero hb hv hroot hR hbR
+    (Multiset.prod_map_sub_erase_ne_zero hvR) ν μ heq
 
 /-- **Root branches through a simple root.** Let `V` be complete, let `b₁, …, b_m : V → ℂ` be `Cⁿ`
 at `x`, `n ≠ 0`, with `b_j(x) = e_j(R)` for a multiset `R` of `m` points, and let `v₀` be a simple
@@ -284,12 +296,9 @@ theorem exists_root_branch_conjWirtingerDeriv_add_add_eq_zero [CompleteSpace V]
     ((hvc.of_le h1).eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
   filter_upwards [hR, heq, hroot, hroot.eventually_nhds, hGc.eventually_ne hGx, hbd, hvd] with
     y ⟨hcard, hbR⟩ hy hry hry' hGy hby hvy
-  -- At `y`, `P_y'(v(y)) • D_C v(y)` is a combination of the vanishing remainders.
+  -- At `y`, `P_y'(v(y)) ≠ 0` and the remainders vanish.
   have hmem : v y ∈ R y := mem_of_pow_add_sum_eq_zero hcard hbR hry
-  have hne : (((R y).erase (v y)).map fun w ↦ v y - w).prod ≠ 0 :=
-    hGprod y hcard hbR hmem ▸ hGy
-  have h := prod_map_sub_smul_conjWirtingerDeriv_add_add_eq_sum hby hvy hry' hcard hbR (ν y) (μ y)
-  rw [sum_congr rfl fun j hj ↦ by rw [hy j hj, smul_zero], sum_const_zero] at h
-  exact (smul_eq_zero.1 h).resolve_left hne
+  exact conjWirtingerDeriv_add_add_eq_zero_of_prod_ne_zero hby hvy hry' hcard hbR
+    (hGprod y hcard hbR hmem ▸ hGy) (ν y) (μ y) hy
 
 end TauCeti

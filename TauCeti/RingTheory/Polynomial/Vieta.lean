@@ -39,6 +39,8 @@ of the coefficients of `P` with the weights `(-1)^(j-1) v^(m-j)` through `P'(v)`
 first-order equations for the coefficients of `P` become equations for its simple roots.
 
 * `Multiset.prod_map_sub_eq_pow_add_sum_esymm`: `∏_{w ∈ s} (v - w) = vᵐ + ∑ (-1)ʲ e_j(s) v^(m-j)`.
+* `Multiset.prod_map_sub_eq_zero_iff`: over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly
+  when `v ∈ s`.
 * `Multiset.prod_map_sub_erase_eq_sum_esymm`: the derivative at a root,
   `∏_{w ∈ s ∖ v} (v - w) = m v^(m-1) + ∑ (-1)ʲ (m - j) e_j(s) v^(m-j-1)`.
 * `Multiset.prod_map_sub_erase_ne_zero`: it is nonzero at a simple root of a multiset over a
@@ -111,6 +113,10 @@ theorem prod_map_sub_eq_pow_add_sum_esymm (hs : card s = m) (v : R) :
       v ^ m + ∑ j ∈ Finset.Icc 1 m, (-1) ^ j * s.esymm j * v ^ (m - j) := by
   rw [prod_map_sub_eq_sum_esymm, hs, Finset.sum_range_succ', sum_Icc_one_eq_sum_range]
   simp [add_comm]
+
+/-- Over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly when `v ∈ s`. -/
+theorem prod_map_sub_eq_zero_iff [IsDomain R] : (s.map fun w ↦ v - w).prod = 0 ↔ v ∈ s := by
+  simp [prod_eq_zero_iff, sub_eq_zero]
 
 variable [DecidableEq R]
 
