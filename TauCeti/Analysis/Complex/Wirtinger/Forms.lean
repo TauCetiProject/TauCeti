@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The operator `bar∂` on `(0,q)`-forms in coordinates
@@ -145,21 +146,6 @@ theorem contDiffAt_delBarCoeff {u : Finset ι → (ι → ℂ) → F} {I : Finse
   rw [delBarCoeff_eq_fun]
   exact ContDiffAt.sum fun j hj ↦ ((hu j hj).conjWirtingerDeriv_apply hmn _).const_smul _
 
-omit [Fintype ι] in
-/-- The sign identity behind `bar∂ bar∂ = 0`: for `i < j` in `I`, moving `d(conj z_j)` and then
-`d(conj z_i)` into place costs the opposite sign to doing so in the other order. -/
-private theorem neg_one_pow_mul_neg_one_pow_of_lt {I : Finset ι} {i j : ι} (hi : i ∈ I)
-    (hij : i < j) :
-    (-1 : ℂ) ^ #{x ∈ I | x < j} * (-1) ^ #{x ∈ I.erase j | x < i} =
-      -((-1 : ℂ) ^ #{x ∈ I | x < i} * (-1) ^ #{x ∈ I.erase i | x < j}) := by
-  have h₁ : #{x ∈ I.erase i | x < j} + 1 = #{x ∈ I | x < j} := by
-    rw [Finset.filter_erase, Finset.card_erase_add_one (Finset.mem_filter.2 ⟨hi, hij⟩)]
-  have h₂ : {x ∈ I.erase j | x < i} = {x ∈ I | x < i} := by
-    rw [Finset.filter_erase, Finset.erase_eq_of_notMem fun h ↦
-      (Finset.mem_filter.1 h).2.not_gt hij]
-  rw [← h₁, h₂, pow_succ]
-  ring
-
 /-- For a form with `C²` coefficients, the conjugate Wirtinger derivative of a coefficient of
 `bar∂ u` is the alternating sum of the second conjugate Wirtinger derivatives of the
 coefficients of `u`. -/
@@ -204,10 +190,8 @@ theorem delBarCoeff_delBarCoeff {u : Finset ι → (ι → ℂ) → F} {I : Fins
       rw [Finset.erase_right_comm, conjWirtingerDeriv_conjWirtingerDeriv_comm (hu _
         (((I.erase j).erase_subset i).trans (I.erase_subset j)))]
     have hs : (-1 : ℂ) ^ #{x ∈ I | x < i} * (-1) ^ #{x ∈ I.erase i | x < j} =
-        -((-1 : ℂ) ^ #{x ∈ I | x < j} * (-1) ^ #{x ∈ I.erase j | x < i}) := by
-      rcases hij.lt_or_gt with h | h
-      · rw [neg_one_pow_mul_neg_one_pow_of_lt hi h, neg_neg]
-      · exact neg_one_pow_mul_neg_one_pow_of_lt hj h
+        -((-1 : ℂ) ^ #{x ∈ I | x < j} * (-1) ^ #{x ∈ I.erase j | x < i}) :=
+      Finset.neg_one_pow_card_filter_lt_mul_erase hi hj hij
     simp only [hD]
     rw [hc, hs, neg_smul]
   have hswap : ∑ j ∈ I, ∑ i ∈ I.erase j, D j i = -∑ j ∈ I, ∑ i ∈ I.erase j, D j i := calc

@@ -364,8 +364,8 @@ private theorem delBarCoeff_ite_subset_eq {q : ℕ} {k : ι} {S : Finset ι}
         rw [Finset.card_erase_of_mem hk, hI]
         omega
       simp only [hsub, ite_true]
-      rw [hvk _ hsub hcard, Finset.insert_erase hk, hfilt, smul_smul, ← mul_pow, neg_one_mul,
-        neg_neg, one_pow, one_smul]
+      rw [hvk _ hsub hcard, Finset.insert_erase hk, hfilt]
+      simp [smul_smul, ← mul_pow]
     · intro j _ hjk
       have hsub : ¬I.erase j ⊆ S := fun h ↦ hkS (h (Finset.mem_erase.2 ⟨Ne.symm hjk, hk⟩))
       simp [hsub]
@@ -380,6 +380,41 @@ private theorem delBarCoeff_ite_subset_eq {q : ℕ} {k : ι} {S : Finset ι}
     · simp [hsub]
 
 variable [CompleteSpace F]
+
+/-- Solve the conjugate `k`-derivative equation for a coefficient indexed by a `q`-element subset
+of `S` of a closed form, preserving holomorphy outside `insert k S`. -/
+private theorem exists_contDiffOn_delBarCoeff_insert_step {q : ℕ} {U : ι → Set ℂ}
+    (hU : ∀ i, IsOpen (U i)) {f : Finset ι → (ι → ℂ) → F}
+    (hf : ∀ I, #I = q + 1 → ContDiffOn ℝ ∞ (f I) (univ.pi U))
+    (hclosed : ∀ z ∈ univ.pi U, ∀ I, #I = q + 2 → delBarCoeff f I z = 0)
+    {k : ι} {S : Finset ι} (hkS : k ∉ S)
+    (hS : ∀ I, #I = q + 1 → ¬I ⊆ insert k S → ∀ z ∈ univ.pi U, f I z = 0)
+    {W : ι → Set ℂ} (hWc : IsCompact (closure (W k)))
+    (hWU : ∀ i, closure (W i) ⊆ U i) (J : Finset ι) :
+    ∃ v : (ι → ℂ) → F, ContDiffOn ℝ ∞ v (univ.pi U) ∧
+      (∀ z ∈ univ.pi U, ∀ j ∉ insert k S, conjWirtingerDeriv v z (Pi.single j 1) = 0) ∧
+      (J ⊆ S → #J = q → ∀ z ∈ univ.pi W, conjWirtingerDeriv v z (Pi.single k 1) =
+        (-1 : ℂ) ^ #{i ∈ J | i < k} • f (insert k J) z) := by
+  have hpi : IsOpen (univ.pi U) := isOpen_set_pi finite_univ fun i _ ↦ hU i
+  have hWsub : univ.pi W ⊆ univ.pi U :=
+    pi_mono fun i _ ↦ subset_closure.trans (hWU i)
+  by_cases hJ : J ⊆ S ∧ #J = q
+  · have hcard : #(insert k J) = q + 1 := by
+      rw [Finset.card_insert_of_notMem fun h ↦ hkS (hJ.1 h), hJ.2]
+    have hT : k ∉ (insert k S)ᶜ := by simp
+    obtain ⟨v, hv, hvT, hvk⟩ :=
+      exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi le_top hU hT
+        hWc (hWU k) (g := (-1 : ℂ) ^ #{i ∈ J | i < k} • f (insert k J))
+        ((hf _ hcard).const_smul _)
+        fun z hz j hj ↦ by
+          rw [conjWirtingerDeriv_const_smul
+            (((hf _ hcard).contDiffAt (hpi.mem_nhds hz)).differentiableAt (by simp)),
+            _root_.smul_apply,
+            conjWirtingerDeriv_insert_eq_zero_of_delBarCoeff_eq_zero hpi hclosed hkS hS
+              hJ.1 hJ.2 hz (Finset.mem_compl.1 hj), smul_zero]
+    refine ⟨v, hv, fun z hz j hj ↦ hvT z hz j (Finset.mem_compl.2 hj), fun _ _ z hz ↦ ?_⟩
+    exact hvk.self_of_nhdsSet (z k) (subset_closure (hz k (mem_univ k))) z (hWsub hz) rfl
+  · exact ⟨0, contDiffOn_const, fun z _ j _ ↦ by simp, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ hJ⟩
 
 /-- The induction behind `TauCeti.exists_contDiffAt_delBarCoeff_eventually_eq_of_pi`, on the
 finite set `S` of coordinates `j` such that `d(conj z_j)` may occur in the form. -/
@@ -410,30 +445,9 @@ private theorem exists_contDiffAt_delBarCoeff_eventually_eq_of_pi_of_eq_zero (q 
     have hWpi : IsOpen (univ.pi W) := isOpen_set_pi finite_univ fun i _ ↦ hWo i
     have hWsub : univ.pi W ⊆ univ.pi U :=
       pi_mono fun i _ ↦ subset_closure.trans (hWU i)
-    -- For `J ⊆ S` with `q` elements, solve `∂v_J/∂(conj z_k) = ± f_{insert k J}`, keeping
-    -- holomorphy in the coordinates outside `insert k S`.
-    have hv (J : Finset ι) : ∃ v : (ι → ℂ) → F, ContDiffOn ℝ ∞ v (univ.pi U) ∧
-        (∀ z ∈ univ.pi U, ∀ j ∉ insert k S, conjWirtingerDeriv v z (Pi.single j 1) = 0) ∧
-        (J ⊆ S → #J = q → ∀ z ∈ univ.pi W, conjWirtingerDeriv v z (Pi.single k 1) =
-          (-1 : ℂ) ^ #{i ∈ J | i < k} • f (insert k J) z) := by
-      by_cases hJ : J ⊆ S ∧ #J = q
-      · have hcard : #(insert k J) = q + 1 := by
-          rw [Finset.card_insert_of_notMem fun h ↦ hkS (hJ.1 h), hJ.2]
-        have hT : k ∉ (insert k S)ᶜ := by simp
-        obtain ⟨v, hv, hvT, hvk⟩ :=
-          exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi le_top hU hT
-            (hWc k) (hWU k) (g := (-1 : ℂ) ^ #{i ∈ J | i < k} • f (insert k J))
-            ((hf _ hcard).const_smul _)
-            fun z hz j hj ↦ by
-              rw [conjWirtingerDeriv_const_smul
-                (((hf _ hcard).contDiffAt (hpi.mem_nhds hz)).differentiableAt (by simp)),
-                _root_.smul_apply,
-                conjWirtingerDeriv_insert_eq_zero_of_delBarCoeff_eq_zero hpi hclosed hkS hS
-                  hJ.1 hJ.2 hz (Finset.mem_compl.1 hj), smul_zero]
-        refine ⟨v, hv, fun z hz j hj ↦ hvT z hz j (Finset.mem_compl.2 hj), fun _ _ z hz ↦ ?_⟩
-        exact hvk.self_of_nhdsSet (z k) (subset_closure (hz k (mem_univ k))) z (hWsub hz) rfl
-      · exact ⟨0, contDiffOn_const, fun z _ j _ ↦ by simp, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ hJ⟩
-    choose v hvs hvT hvk using hv
+    -- Solve each coefficient equation, keeping holomorphy outside `insert k S`.
+    choose v hvs hvT hvk using
+      exists_contDiffOn_delBarCoeff_insert_step hU hf hclosed hkS hS (hWc k) hWU
     -- The `(0,q)`-form `γ` keeps the coefficients of `v` indexed by subsets of `S`.
     set γ : Finset ι → (ι → ℂ) → F := fun J ↦ if J ⊆ S then v J else 0 with hγ
     have hγa {z : ι → ℂ} (hz : z ∈ univ.pi U) (J : Finset ι) : ContDiffAt ℝ ∞ (γ J) z := by
