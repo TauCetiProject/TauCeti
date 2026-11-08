@@ -29,7 +29,7 @@ is an immersion at `(t₁, …, tₙ)` in every chart of `Sym α n`, and its tan
 *maximal totally real* subspace of the complex coordinate space: it meets its image under
 multiplication by `i` only in `0`, and spans with it. When `γᵢ` locally parametrizes the `i`-th
 attaching curve `αᵢ` of a Heegaard diagram, `Γ` locally parametrizes the torus `T_α = α₁ × ⋯ × αₙ`
-(`TauCeti.Sym.pi`, `TauCeti.Sym.ofFn_mem_pi`), whose points are always such tuples of distinct
+(`Sym.pi`, `Sym.ofFn_mem_pi`), whose points are always such tuples of distinct
 points because attaching curves are pairwise disjoint. Thus, after supplying those local
 parametrizations, the result gives the tangent-space criterion needed for the tori in the
 holomorphic-disk boundary conditions of Ozsváth–Szabó. Their embedded, closed-torus result is

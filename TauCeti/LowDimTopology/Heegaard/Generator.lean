@@ -13,7 +13,7 @@ public import TauCeti.Data.Sym.Pi
 The generators of a pointed Heegaard diagram choose one intersection point on each `α`-curve
 and each `β`-curve. This file records incidence data by assigning each intersection point its
 `α`- and `β`-curve labels. A generator is the matching datum in the domain of
-`TauCeti.Sym.matchingTuple`, specialized through `TauCeti.Sym.piInterEquiv` to the two label
+`Sym.matchingTuple`, specialized through `Sym.piInterEquiv` to the two label
 fibers: a permutation of the curve indices and an intersection point in each paired fiber.
 
 The curve count `n` is independent of surface genus. For a multi-pointed diagram of genus `g`
