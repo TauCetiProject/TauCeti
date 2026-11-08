@@ -54,6 +54,9 @@ available, along epimorphisms out of representable functors
 * `TauCeti.isRepresentableProjectiveCover_iff`: the radical criterion for right minimality.
 * `TauCeti.IsRepresentableProjectiveCover.isIso_of_comp_eq`: rigidity, and
   `TauCeti.IsRepresentableProjectiveCover.exists_iso` the uniqueness of projective covers.
+* `TauCeti.IsRepresentableProjectiveCover.comp_isIso` and
+  `TauCeti.IsRepresentableProjectiveCover.preadditiveYoneda_map_comp`: transport of projective
+  covers along isomorphisms of targets and of sources.
 * `TauCeti.IsRepresentableProjectiveCover.exists_comp_eq_and_isSplitEpi`: a projective cover is a
   retract of every epimorphism from a representable functor.
 * `TauCeti.MorphismIdeal.isRepresentableProjectiveCover_preadditiveYonedaMap_quotientFunctor_iff`:
@@ -162,6 +165,20 @@ theorem comp_isIso (hp : IsRepresentableProjectiveCover p) (e : F ⟶ G) [IsIso 
   isIso_of_preadditiveYoneda_map_comp_eq φ hφ :=
     hp.isIso_of_preadditiveYoneda_map_comp_eq φ (by simpa using hφ =≫ inv e)
 
+/-- Precomposing a projective cover with `(-, e)` for an isomorphism `e` of sources gives a
+projective cover. -/
+theorem preadditiveYoneda_map_comp (hp : IsRepresentableProjectiveCover p) {P' : C}
+    (e : P' ≅ P) : IsRepresentableProjectiveCover (preadditiveYoneda.map e.hom ≫ p) where
+  epi := by have := hp.epi; infer_instance
+  isIso_of_preadditiveYoneda_map_comp_eq φ hφ := by
+    have : IsIso (e.inv ≫ φ ≫ e.hom) := hp.isIso_of_preadditiveYoneda_map_comp_eq _ (by
+      rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc, hφ,
+        ← Category.assoc, ← Functor.map_comp, Iso.inv_hom_id, preadditiveYoneda.map_id,
+        Category.id_comp])
+    have hφe : φ = e.hom ≫ (e.inv ≫ φ ≫ e.hom) ≫ e.inv := by simp
+    rw [hφe]
+    infer_instance
+
 end IsRepresentableProjectiveCover
 
 /-- An epimorphism out of the representable functor of a zero object is a projective cover. In
@@ -217,7 +234,9 @@ theorem simple_comp_preadditiveYoneda_obj_quotientFunctor_jacobsonRadicalIdeal (
   · -- `S_X` is nonzero: the class of `𝟙 X` survives, as `𝟙 X` is not radical.
     have h1 : 𝟙 (Q.op ⋙ preadditiveYoneda.obj (Q.obj X)) = 0 :=
       (IsIso.inv_hom_id f).symm.trans ((congrArg (inv f ≫ ·) h0).trans comp_zero)
-    have h2 : Q.map (𝟙 X) = 0 := congrArg (fun α ↦ α.app (op X) (Q.map (𝟙 X))) h1
+    have h2 : Q.map (𝟙 X) = 0 := by
+      rw [← preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff, preadditiveYoneda.map_id,
+        Category.id_comp, ← Category.comp_id (preadditiveYonedaMap Q X), h1, comp_zero]
     exact mem_jacobsonRadical_iff_not_isIso.1 ((hrad _).1 h2) inferInstance
   · -- A nonzero subfunctor contains the class of a nonradical, hence split, epimorphism
     -- `h : Z ⟶ X`, hence the class of `𝟙 X`, which generates `S_X`.
@@ -229,14 +248,16 @@ theorem simple_comp_preadditiveYoneda_obj_quotientFunctor_jacobsonRadicalIdeal (
       by_contra hse
       exact hy (hh ▸ (hrad h).2 (mem_jacobsonRadical_iff_not_isSplitEpi.2 hse))
     have hX : f.app (op X) (H.map (section_ h).op y) = Q.map (𝟙 X) := by
-      rw [NatTrans.naturality_apply, ← hh]
-      exact (Q.map_comp _ h).symm.trans (by rw [Quiver.Hom.unop_op, IsSplitEpi.id])
+      rw [NatTrans.naturality_apply, ← hh, Functor.comp_map, Functor.op_map]
+      refine (preadditiveYoneda_obj_map_apply _ _).trans ?_
+      rw [Quiver.Hom.unop_op, Quiver.Hom.unop_op, ← Q.map_comp, IsSplitEpi.id]
     have (W : Cᵒᵖ) : Epi (f.app W) := by
       refine (AddCommGrpCat.epi_iff_surjective _).2 fun x ↦ ?_
       obtain ⟨k, rfl⟩ := Q.map_surjective x
       refine ⟨H.map k.op (H.map (section_ h).op y), ?_⟩
-      rw [NatTrans.naturality_apply, hX]
-      exact (Q.map_comp _ (𝟙 X)).symm.trans (by rw [Quiver.Hom.unop_op, Category.comp_id])
+      rw [NatTrans.naturality_apply, hX, Functor.comp_map, Functor.op_map]
+      refine (preadditiveYoneda_obj_map_apply _ _).trans ?_
+      rw [Quiver.Hom.unop_op, Quiver.Hom.unop_op, ← Q.map_comp, Category.comp_id]
     have : Epi f := NatTrans.epi_of_epi_app f
     exact isIso_of_mono_of_epi f
 
@@ -251,7 +272,7 @@ variable [HasFiniteBiproducts C]
 /-- An epimorphism onto `F` out of the representable functor of a biproduct of objects with
 local endomorphism rings that is not a projective cover can be replaced by one out of a
 biproduct with one summand fewer. -/
-private theorem exists_epi_of_not_isRepresentableProjectiveCover {J : Type} [Finite J]
+private theorem exists_epi_of_not_isRepresentableProjectiveCover {J : Type*} [Finite J]
     (P : J → C) (hP : ∀ j, IsLocalRing (End (P j))) (p : preadditiveYoneda.obj (⨁ P) ⟶ F) [Epi p]
     (hp : ¬ IsRepresentableProjectiveCover p) :
     ∃ j : J, Epi (preadditiveYoneda.map (biproduct.fromSubtype P (· ≠ j)) ≫ p) := by
@@ -295,7 +316,7 @@ private theorem exists_epi_of_not_isRepresentableProjectiveCover {J : Type} [Fin
 /-- An epimorphism onto `F` out of the representable functor of a finite biproduct of objects
 with local endomorphism rings can be shrunk to a projective cover of `F`. -/
 private theorem exists_isRepresentableProjectiveCover_of_biproduct (n : ℕ) :
-    ∀ {J : Type} [Fintype J] (P : J → C), Fintype.card J = n → (∀ j, IsLocalRing (End (P j))) →
+    ∀ {J : Type*} [Fintype J] (P : J → C), Fintype.card J = n → (∀ j, IsLocalRing (End (P j))) →
       ∀ (p : preadditiveYoneda.obj (⨁ P) ⟶ F), Epi p →
         ∃ (Q : C) (q : preadditiveYoneda.obj Q ⟶ F), IsRepresentableProjectiveCover q := by
   induction n using Nat.strong_induction_on with
@@ -310,7 +331,7 @@ private theorem exists_isRepresentableProjectiveCover_of_biproduct (n : ℕ) :
 
 /-- A quotient of the representable functor `(-, P₁ ⊞ ⋯ ⊞ Pₙ)` of a finite biproduct of objects
 with local endomorphism rings has a projective cover. -/
-theorem exists_isRepresentableProjectiveCover_of_epi_biproduct {J : Type} [Finite J] (P : J → C)
+theorem exists_isRepresentableProjectiveCover_of_epi_biproduct {J : Type*} [Finite J] (P : J → C)
     (hP : ∀ j, IsLocalRing (End (P j))) (p : preadditiveYoneda.obj (⨁ P) ⟶ F) [Epi p] :
     ∃ (Q : C) (q : preadditiveYoneda.obj Q ⟶ F), IsRepresentableProjectiveCover q := by
   have := Fintype.ofFinite J
