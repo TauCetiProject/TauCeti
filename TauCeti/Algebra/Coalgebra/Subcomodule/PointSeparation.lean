@@ -63,23 +63,6 @@ variable [Algebra.FiniteType k C] [IsReduced C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
 variable [Field K] [Algebra k K] [IsAlgClosed K]
 
-omit [Algebra.FiniteType k C] [IsReduced C] [IsAlgClosed K] in
-/-- Pointwise stability makes every matrix coefficient through the quotient by `N` vanish at
-each geometric point, for elements of `N`. -/
-private theorem apply_matrixCoefficient_comp_mkQ_eq_zero (N : Submodule k M)
-    (g : C →ₐ[k] K) {m : M}
-    (hg : Comodule.endOfPoint M g (1 ⊗ₜ[k] m) ∈ N.baseChange K) (φ : (M ⧸ N) →ₗ[k] k) :
-    g (Comodule.matrixCoefficient (R := k) (C := C) (φ.comp N.mkQ) m) = 0 := by
-  have hyq : N.mkQ.baseChange K (Comodule.endOfPoint M g (1 ⊗ₜ[k] m)) = 0 := by
-    rw [LinearMap.baseChange_eq_lTensor, ← LinearMap.mem_ker, lTensor_mkQ]
-    obtain ⟨y, hy⟩ := hg
-    exact ⟨y, by rw [← LinearMap.baseChange_eq_lTensor]; exact hy⟩
-  have heval := congrArg
-    (fun t ↦ TauCeti.Module.Dual.baseChangeEvaluation
-      (R := k) (M := M ⧸ N) (A := K) (1 ⊗ₜ[k] φ) t) hyq
-  rw [map_zero, Module.Dual.baseChangeEvaluation_one_tmul_baseChange] at heval
-  simpa only [Comodule.baseChangeEvaluation_endOfPoint_tmul, one_mul] using heval
-
 /-- If every geometric point preserves the scalar extension of a submodule, the coaction of
 each element of that submodule belongs to its tensor product with the coefficient coalgebra.
 
@@ -97,7 +80,7 @@ theorem coact_mem_range_of_forall_endOfPoint_tmul_mem_baseChange
   apply TauCeti.eq_of_forall_algHom_apply_eq (k := k) (K := K)
   intro g
   rw [map_zero]
-  exact apply_matrixCoefficient_comp_mkQ_eq_zero N g (hN g hm) ψ
+  exact N.apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange g (hN g hm) ψ
 
 end Submodule
 
