@@ -42,7 +42,7 @@ The regular-sequence transfer lemmas for linear maps live in
   ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)), by the bound
   `RingTheory.Sequence.IsRegular.length_le_supportDim` from
   `TauCeti.RingTheory.KrullDimension.Regular`.
-* `IsLocalRing.maximalIdeal_ne_bot_of_depth_ne_zero`: a Noetherian local ring of positive depth
+* `IsLocalRing.maximalIdeal_ne_bot_of_depth_ne_zero`: a local ring of positive depth
   is not a field.
 * `Ideal.depth_min_snd_trd_add_one_le_fst_of_exact`,
   `Ideal.depth_min_snd_fst_sub_one_le_trd_of_exact`, and
@@ -341,14 +341,25 @@ theorem depth_le_supportDim [IsNoetherianRing R] [Module.Finite R M] [Nontrivial
   rintro _ ⟨rs, reg, -, rfl⟩
   exact WithBot.coe_le_coe.1 (hd ▸ reg.length_le_supportDim)
 
-/-- A Noetherian local ring of positive depth is not a field: its maximal ideal is nonzero. -/
+/-- The depth of a module over a local ring is zero exactly when there is a nonzero linear map to
+it from the residue field `R ⧸ 𝔪`. This is Mathlib's
+`ModuleCat.depth_eq_zero_iff_nontrivial_linearMap` with the universe-adjusting `Shrink` in the
+definition of `IsLocalRing.depth` removed. -/
+theorem depth_eq_zero_iff_nontrivial_linearMap :
+    depth (ModuleCat.of R M) = 0 ↔ Nontrivial (R ⧸ maximalIdeal R →ₗ[R] M) := by
+  rw [depth, Ideal.depth, ModuleCat.depth_eq_zero_iff_nontrivial_linearMap]
+  exact ((Shrink.linearEquiv R (R ⧸ maximalIdeal R)).arrowCongr
+    (LinearEquiv.refl R M)).nontrivial_congr
+
+/-- A local ring of positive depth is not a field: its maximal ideal is nonzero. No Noetherian
+hypothesis is needed. -/
 theorem maximalIdeal_ne_bot_of_depth_ne_zero {R : Type u} [CommRing R] [IsLocalRing R]
-    [IsNoetherianRing R] (h : depth (ModuleCat.of R R) ≠ 0) : maximalIdeal R ≠ ⊥ := by
+    (h : depth (ModuleCat.of R R) ≠ 0) : maximalIdeal R ≠ ⊥ := by
   intro hbot
-  have hle := depth_le_supportDim (R := R) (M := R)
-  rw [Module.supportDim_self_eq_ringKrullDim,
-    ringKrullDim_eq_zero_of_isField (isField_iff_maximalIdeal_eq.2 hbot)] at hle
-  exact h (by exact_mod_cast hle.antisymm (WithBot.coe_le_coe.2 zero_le))
+  refine h (depth_eq_zero_iff_nontrivial_linearMap.2
+    ⟨⟨(Submodule.quotEquivOfEqBot _ hbot).toLinearMap, 0, fun h0 ↦ ?_⟩⟩)
+  have := LinearMap.congr_fun h0 (Submodule.Quotient.mk 1)
+  simp at this
 
 /-- Dividing a module `M` by an `M`-regular element `x` lowers the depth by at most one. No
 finiteness or Noetherian hypothesis is needed. -/
@@ -457,16 +468,6 @@ theorem depth_le_ringKrullDim_quotient_of_isAssociatedPrime [IsNoetherianRing R]
   refine sSup_le ?_
   rintro _ ⟨rs, reg, -, rfl⟩
   exact WithBot.coe_le_coe.1 (hd ▸ length_le_ringKrullDim_quotient_of_isRegular reg hp)
-
-/-- The depth of a module over a local ring is zero exactly when there is a nonzero linear map to
-it from the residue field `R ⧸ 𝔪`. This is Mathlib's
-`ModuleCat.depth_eq_zero_iff_nontrivial_linearMap` with the universe-adjusting `Shrink` in the
-definition of `IsLocalRing.depth` removed. -/
-theorem depth_eq_zero_iff_nontrivial_linearMap :
-    depth (ModuleCat.of R M) = 0 ↔ Nontrivial (R ⧸ maximalIdeal R →ₗ[R] M) := by
-  rw [depth, Ideal.depth, ModuleCat.depth_eq_zero_iff_nontrivial_linearMap]
-  exact ((Shrink.linearEquiv R (R ⧸ maximalIdeal R)).arrowCongr
-    (LinearEquiv.refl R M)).nontrivial_congr
 
 /-- The depth of a module over a Noetherian local ring is zero exactly when the maximal ideal is
 an associated prime of the module, that is, when some nonzero element is killed by the maximal
