@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
--- Proof-only: the action of `Aut(F / k(x))` on places, and the fundamental inequality.
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+-- Proof-only: the action of `Aut(F / k(x))` on places.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 import TauCeti.FieldTheory.FunctionField.Place.Extension.RatFunc
 -- Proof-only: the involution `y ↦ -y` of `F / k(x)`.
@@ -193,7 +192,7 @@ theorem exists_ord_sub_pos_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Square
     exact pow_ne_zero 2 hb
   have he := ramificationIdx_eq_one_of_restrict_eq h2 hf hgen hy hfa hPQ
   refine ⟨P, hPQ, degree_eq_one_of_smul_ne (finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy)
-    (degree_adicOfIrreducible_X_sub_C a) σ hPQ he hne, he, ?_, hPD⟩
+    (degree_adicOfIrreducible_X_sub_C a) σ hPQ hne, he, ?_, hPD⟩
   have hxa : algebraMap (RatFunc k) F RatFunc.X - algebraMap k F a =
       algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) (X - C a)) := by
     rw [map_sub, map_sub, RatFunc.algebraMap_X, RatFunc.algebraMap_C, ← RatFunc.algebraMap_eq_C,

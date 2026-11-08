@@ -294,17 +294,19 @@ section Quadratic
 
 variable [FiniteDimensional F F']
 
-/-- A place of a quadratic extension `F' / F` over a place `Q` of degree one which is unramified
-and not fixed by an automorphism of `F' / F` has degree one: it and its conjugate are two places
-over `Q`. -/
+/-- A place of a quadratic extension `F' / F` over a place `Q` of degree one which is not fixed by
+an automorphism of `F' / F` has degree one: it and its conjugate are two places over `Q`, so by the
+fundamental inequality each has ramification index and relative degree one. -/
 theorem degree_eq_one_of_smul_ne (hrank : Module.finrank F F' = 2) {Q : Place k F}
     (hQ : Q.degree = 1) (σ : F' ≃ₐ[F] F') {P : Place k F'} (hP : P.restrict k F = Q)
-    (he : ramificationIdx F P = 1) (hne : σ • P ≠ P) : P.degree = 1 := by
+    (hne : σ • P ≠ P) : P.degree = 1 := by
   classical
   have hsum := sum_ramificationIdx_mul_relativeDegree_le_finrank k F Q {P, σ • P}
     (by simp [hP])
-  rw [Finset.sum_pair hne.symm, ramificationIdx_smul, relativeDegree_smul, he, hrank] at hsum
-  have := one_le_relativeDegree k F P
+  rw [Finset.sum_pair hne.symm, ramificationIdx_smul, relativeDegree_smul, hrank] at hsum
+  have he := ramificationIdx_pos (F := F) P
+  have hf := one_le_relativeDegree k F P
+  have : relativeDegree k F P ≤ 1 := by nlinarith
   rw [degree_eq_degree_restrict_mul_relativeDegree k F P, hP, hQ]
   omega
 
