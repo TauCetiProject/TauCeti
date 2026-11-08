@@ -171,9 +171,8 @@ private theorem dist_integral_setIntegral_Iic_le [IsFiniteMeasure μ] [SFinite �
   rw [integral_add (integrable_setIntegral_comp_add hf hν hB _)
     (integrable_setIntegral_comp_add hf hν hB _), dist_eq_norm, add_sub_cancel_left,
     ← toReal_enorm]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top hB)
-    (measure_ne_top μ _)) ((enorm_integral_le_lintegral_enorm _).trans
-      (lintegral_enorm_setIntegral_le hf hν _))
+  exact ENNReal.toReal_mono (by finiteness) ((enorm_integral_le_lintegral_enorm _).trans
+    (lintegral_enorm_setIntegral_le hf hν _))
 
 /-- Restricted to `[0, n]`, the function `z ↦ ∫ f (x + z) dμ(x)` is compactly supported. -/
 private theorem hasCompactSupport_setIntegral_Iic
@@ -181,9 +180,8 @@ private theorem hasCompactSupport_setIntegral_Iic
     HasCompactSupport fun z : ℝ ↦ ∫ x in Iic n, f (x + z) ∂μ := by
   refine HasCompactSupport.intro (isCompact_Icc (a := a - n) (b := b)) fun z hz ↦
     setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ ?_
-  have hxz : (x : ℝ) + z ∉ Icc a b := fun h ↦
+  exact CompactlySupportedContinuousMap.eq_zero_of_enorm_le_indicator hf fun h ↦
     hz ⟨by linarith [h.1, NNReal.coe_le_coe.mpr hx], by linarith [h.2, x.coe_nonneg]⟩
-  simpa [indicator_of_notMem hxz] using hf (x + z)
 
 /-- If the integrals of compactly supported test functions converge along a family of measures
 whose translated intervals have uniformly bounded mass, then so do the integrals of
@@ -207,8 +205,7 @@ private theorem tendsto_integral_integral_comp_add [IsFiniteMeasure μ] {ι : Ty
       ⟨0, measure_ne_top μ _⟩
     rwa [hinter, measure_empty] at this
   have he : Tendsto e atTop (𝓝 0) := by
-    have := ENNReal.Tendsto.const_mul (a := (C : ℝ≥0∞) * B) hμn
-      (Or.inr (ENNReal.mul_ne_top ENNReal.coe_ne_top hB))
+    have := ENNReal.Tendsto.const_mul (a := (C : ℝ≥0∞) * B) hμn (Or.inr (by finiteness))
     rw [mul_zero] at this
     exact (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp this
   rw [Metric.tendsto_nhds]
@@ -288,8 +285,8 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
   -- The convolution `μ ∗ η` is locally finite, since `η` has uniformly bounded interval masses.
   have : IsLocallyFiniteMeasure (μ.map ((↑) : ℝ≥0 → ℝ) ∗ η) :=
     isLocallyFiniteMeasure_conv_of_measure_Icc_le two_pos (fun c ↦ by
-      simpa [show (2 : ℝ≥0) + 2 = 4 by norm_num] using
-        measure_Icc_le_of_tendsto_integral hμ hη c (c + 2))
+      have := measure_Icc_le_of_tendsto_integral hμ hη c (c + 2)
+      rwa [show c + 2 - c + 2 = (4 : ℝ) by ring] at this)
       (μ.renewalMeasure_Iic_lt_top hμ (4 : ℝ).toNNReal).ne
   refine ext_of_integral_eq_on_compactlySupported fun f ↦ ?_
   obtain ⟨C, a, b, hf⟩ := f.exists_enorm_le_indicator
@@ -314,8 +311,8 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
   have hlim : Tendsto (fun i ↦ f (-t i)) l (𝓝 0) := by
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [ht.eventually (eventually_gt_atTop (-a))] with i hi
-    have hti : -t i ∉ Icc a b := fun h ↦ by linarith [h.1]
-    exact (by simpa [indicator_of_notMem hti] using hf (-t i) : f (-t i) = 0).symm
+    exact (CompactlySupportedContinuousMap.eq_zero_of_enorm_le_indicator hf
+      fun h ↦ by linarith [h.1]).symm
   have h1 : Tendsto (fun i ↦ ∫ z, ∫ x, f (x + z) ∂μ
       ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) l (𝓝 (∫ x, f x ∂η)) := by
     have := (hη f).sub hlim

@@ -20,7 +20,8 @@ The forgetful map from compactly supported to continuous functions preserves
 addition and constant scalar multiplication whenever those operations are defined.
 
 On a linearly ordered domain, a compactly supported continuous function is dominated by a
-constant multiple of the indicator of a closed interval.
+constant multiple of the indicator of a closed interval, and such a domination forces it to vanish
+off that interval.
 -/
 
 public section
@@ -84,5 +85,12 @@ theorem exists_enorm_le_indicator (f : C_c(X, E)) :
   · simp [image_eq_zero_of_notMem_tsupport hy]
 
 end Order
+
+/-- A function dominated by a multiple of the indicator of `Icc a b` vanishes off `Icc a b`. -/
+theorem eq_zero_of_enorm_le_indicator [Preorder X] {E : Type*} [NormedAddGroup E]
+    {f : C_c(X, E)} {C : ℝ≥0} {a b x : X}
+    (hf : ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ (C : ℝ≥0∞)) y) (hx : x ∉ Icc a b) :
+    f x = 0 := by
+  simpa [indicator_of_notMem hx] using hf x
 
 end CompactlySupportedContinuousMap
