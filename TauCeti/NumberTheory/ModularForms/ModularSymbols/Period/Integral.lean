@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
-import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
 import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
