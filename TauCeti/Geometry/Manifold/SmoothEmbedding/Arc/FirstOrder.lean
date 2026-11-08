@@ -7,16 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
-import TauCeti.Analysis.InnerProductSpace.Reflection
-import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
-import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Manifold.Diffeomorph.Sphere
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.Geometry.Manifold.TimeShear
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Making a concordance standard to first order along an arc
