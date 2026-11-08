@@ -73,33 +73,6 @@ universe u
 
 variable {R H X : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H] [CommGroup X]
 
-/-- The first and second components of the dual-number tangent point of a derivation `d` are the
-counit and `d`. -/
-private theorem fst_snd_comp_tangentPoint {B : Type*} [CommRing B] [Algebra R B]
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-    (fstHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).toLinearMap ∘ₗ
-        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
-      (1 : WithConv (H →ₗ[R] Bialgebra.CounitAlgebra R H B)).ofConv ∧
-    (sndHom (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).restrictScalars R ∘ₗ
-        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
-      (toConv (↑d : H →ₗ[R] Bialgebra.CounitAlgebra R H B)).ofConv := by
-  refine ⟨?_, ?_⟩ <;> ext x
-  · exact fst_apply_of_mem_tangentKer
-      (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).2 x
-  · exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
-
-/-- The first and second components of the inclusion of a point `g` into the dual-number points
-are `g` and `0`. -/
-private theorem fst_snd_comp_mapValue_inlAlgHom {B : Type*} [CommRing B] [Algebra R B]
-    (g : WithConv (H →ₐ[R] Bialgebra.CounitAlgebra R H B)) :
-    (fstHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).toLinearMap ∘ₗ
-        (AlgHom.mapValue (H := H) (inlAlgHom R (Bialgebra.CounitAlgebra R H B)
-          (Bialgebra.CounitAlgebra R H B)) g).ofConv.toLinearMap = g.ofConv.toLinearMap ∧
-    (sndHom (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).restrictScalars R ∘ₗ
-        (AlgHom.mapValue (H := H) (inlAlgHom R (Bialgebra.CounitAlgebra R H B)
-          (Bialgebra.CounitAlgebra R H B)) g).ofConv.toLinearMap = 0 := by
-  refine ⟨?_, ?_⟩ <;> ext x <;> simp [AlgHom.mapValue_apply]
-
 /-- Conjugating a point by the dual-number tangent point of a tangent vector: the infinitesimal
 coefficient of the conjugate is the convolution commutator of the tangent vector with the point.
 This mirrors `Derivation.snd_conjugate_tangentPoint`, which conjugates the tangent point by the
@@ -122,11 +95,18 @@ private theorem snd_tangentPoint_conjugate {B : Type*} [CommRing B] [Algebra R B
     (Bialgebra.CounitAlgebra R H B)).restrictScalars R
   let D := toConv (↑d : H →ₗ[R] Bialgebra.CounitAlgebra R H B)
   let G := toConv g.ofConv.toLinearMap
-  obtain ⟨hqF, hqS⟩ := fst_snd_comp_mapValue_inlAlgHom g
-  obtain ⟨hpF, hpS⟩ := fst_snd_comp_tangentPoint d
+  have hqF := fstHom_comp_mapValue_inlAlgHom (R := R) (A := H) (B := B) g
+  have hqS := sndHom_comp_mapValue_inlAlgHom (R := R) (A := H) (B := B) g
+  have hpF := fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+    (Multiplicative.ofAdd d)
+  have hpS := sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+    (Multiplicative.ofAdd d)
   have hpinv : p⁻¹ = (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd (-d))).val := by
     rw [ofAdd_neg, map_inv, Subgroup.coe_inv]
-  obtain ⟨hpinvF, hpinvS⟩ := fst_snd_comp_tangentPoint (-d)
+  have hpinvF := fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+    (Multiplicative.ofAdd (-d))
+  have hpinvS := sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+    (Multiplicative.ofAdd (-d))
   rw [← hpinv] at hpinvF hpinvS
   replace hpinvS : S ∘ₗ (p⁻¹).ofConv.toLinearMap = -D.ofConv := hpinvS
   -- Negation passes through convolution; `mul_neg` does not apply because the convolution ring

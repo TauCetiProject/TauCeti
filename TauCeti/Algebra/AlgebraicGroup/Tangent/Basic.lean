@@ -607,6 +607,42 @@ lemma derivationMulEquivTangentKer_apply_snd
   simp [derivationMulEquivTangentKer,
     derivationToTrivSqZeroExtEquivLift_apply_snd]
 
+/-- The first component of the dual-number tangent point of a derivation is the counit. -/
+lemma fstHom_comp_derivationMulEquivTangentKer
+    (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
+    (fstHom R (CounitAlgebra R A B) (CounitAlgebra R A B)).toLinearMap ∘ₗ
+        (derivationMulEquivTangentKer R A B d).val.ofConv.toLinearMap =
+      (1 : WithConv (A →ₗ[R] CounitAlgebra R A B)).ofConv := by
+  ext x
+  exact fst_apply_of_mem_tangentKer (derivationMulEquivTangentKer R A B d).2 x
+
+/-- The second component of the dual-number tangent point of a derivation is the derivation. -/
+lemma sndHom_comp_derivationMulEquivTangentKer
+    (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
+    (sndHom (CounitAlgebra R A B) (CounitAlgebra R A B)).restrictScalars R ∘ₗ
+        (derivationMulEquivTangentKer R A B d).val.ofConv.toLinearMap =
+      (toConv (↑d.toAdd : A →ₗ[R] CounitAlgebra R A B)).ofConv := by
+  ext x
+  exact derivationMulEquivTangentKer_apply_snd d x
+
+/-- The first component of the inclusion of a point `g` into the dual-number points is `g`. -/
+lemma fstHom_comp_mapValue_inlAlgHom
+    (g : WithConv (A →ₐ[R] CounitAlgebra R A B)) :
+    (fstHom R (CounitAlgebra R A B) (CounitAlgebra R A B)).toLinearMap ∘ₗ
+        (AlgHom.mapValue (H := A) (inlAlgHom R (CounitAlgebra R A B)
+          (CounitAlgebra R A B)) g).ofConv.toLinearMap = g.ofConv.toLinearMap := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+/-- The second component of the inclusion of a point into the dual-number points is `0`. -/
+lemma sndHom_comp_mapValue_inlAlgHom
+    (g : WithConv (A →ₐ[R] CounitAlgebra R A B)) :
+    (sndHom (CounitAlgebra R A B) (CounitAlgebra R A B)).restrictScalars R ∘ₗ
+        (AlgHom.mapValue (H := A) (inlAlgHom R (CounitAlgebra R A B)
+          (CounitAlgebra R A B)) g).ofConv.toLinearMap = 0 := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
 @[simp]
 lemma derivationMulEquivTangentKer_symm_apply
     (ψ : tangentKer R A B) (a : A) :
