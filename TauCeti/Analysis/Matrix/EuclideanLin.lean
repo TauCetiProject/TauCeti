@@ -136,12 +136,19 @@ theorem exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner (A : Matrix ι 
 omit [Fintype κ] [DecidableEq κ] in
 /-- The rank of a matrix is the dimension of the range of the linear map it induces on Euclidean
 space. -/
-theorem rank_eq_finrank_range_toEuclideanLin [Finite κ] (A : Matrix κ ι 𝕜) :
+theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
     A.rank = Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) := by
-  have : Fintype κ := Fintype.ofFinite κ
-  rw [toEuclideanLin_eq_toLin_orthonormal]
-  exact A.rank_eq_finrank_range_toLin (EuclideanSpace.basisFun κ 𝕜).toBasis
-    (EuclideanSpace.basisFun ι 𝕜).toBasis
+  have h : LinearMap.range (toEuclideanLin A) =
+      (LinearMap.range A.mulVecLin).map (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap := by
+    ext y
+    simp only [LinearMap.mem_range, Submodule.mem_map]
+    refine ⟨fun ⟨x, hx⟩ ↦ ⟨WithLp.ofLp y, ⟨WithLp.ofLp x, ?_⟩, rfl⟩,
+      fun ⟨_, ⟨x, hx⟩, hy⟩ ↦ ⟨WithLp.toLp 2 x, ?_⟩⟩
+    · simpa using congrArg WithLp.ofLp hx
+    · ext
+      simp [toEuclideanLin, ← hy, ← hx]
+  rw [h, LinearEquiv.finrank_map_eq]
+  rfl
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
