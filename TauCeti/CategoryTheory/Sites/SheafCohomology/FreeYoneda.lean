@@ -140,6 +140,13 @@ def freeYonedaSheafCorepresentableBy (U : C) :
   homEquiv := (freeYonedaSheafSectionsEquiv J U _).toEquiv
   homEquiv_comp g f := freeYonedaSheafSectionsEquiv_naturality_right J f g
 
+/-- The bijection of `freeYonedaSheafCorepresentableBy` is `freeYonedaSheafSectionsEquiv`. -/
+lemma freeYonedaSheafCorepresentableBy_homEquiv (U : C)
+    {F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}}
+    (f : (freeYonedaSheafFunctor J).obj U ⟶ F) :
+    (freeYonedaSheafCorepresentableBy J U).homEquiv f = freeYonedaSheafSectionsEquiv J U F f :=
+  (rfl)
+
 /-- The equivalence `freeYonedaSheafSectionsEquiv` is natural in the object of the site:
 precomposing with the map induced by `i : U ⟶ V` is restricting sections along `i`. -/
 lemma freeYonedaSheafSectionsEquiv_naturality_left {U V : C} (i : U ⟶ V)
