@@ -77,7 +77,7 @@ and `h` is as smooth as `f` and `g`.
 * `HasStrictFDerivAt.exists_isSliceChart_preimage_zero`: near a point where a `C^n` map has
   surjective derivative with complemented kernel, a `C^n` ambient chart flattens its zero set onto
   that kernel.
-* `TauCeti.exists_parametrization_of_hasStrictFDerivAt`: the regular level set `g = 0` of a `C^r`
+* `ContDiffAt.exists_parametrization_of_hasStrictFDerivAt`: the regular level set `g = 0` of a `C^r`
   function with surjective strict derivative is locally parametrized by a `C^r` map from `ker g'`.
 * `ContDiffAt.exists_eventuallyEq_comp_of_ker_fderiv_le`: near such a point, a `C^n` function
   whose derivative vanishes on the kernel of the derivative of `f` is `h ∘ f` for a function `h`
@@ -564,7 +564,7 @@ theorem exists_eventuallyEq_comp_of_ker_fderiv_le (hf : ContDiffAt 𝕜 n f a)
 
 end ContDiffAt
 
-namespace TauCeti
+namespace ContDiffAt
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   {a : E} {r : ℕ∞ω}
@@ -629,6 +629,6 @@ theorem exists_parametrization_of_hasStrictFDerivAt {g : E → 𝕜} {g' : E →
     exact ⟨φ.rightFun x, hxV, hx⟩
   exact ⟨θ, hθa, hθ, hθg, hcover⟩
 
-end TauCeti
+end ContDiffAt
 
 end
