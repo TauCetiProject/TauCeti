@@ -102,6 +102,11 @@ noncomputable def pushoutOpenCover {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶
       exacts [⟨false, x, rfl⟩, ⟨true, y, rfl⟩])
     (fun b ↦ by cases b <;> infer_instance)
 
+/-- The two-piece pushout cover has a finite index type. -/
+instance {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] : Finite (pushoutOpenCover i j).I₀ :=
+  inferInstanceAs (Finite Bool)
+
 /-- The first chart of the pushout cover is its left inclusion. -/
 @[simp]
 theorem pushoutOpenCover_f_false {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)

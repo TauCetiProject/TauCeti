@@ -112,7 +112,6 @@ gluing of two finite-type morphisms is finite type, with no condition on the bas
 theorem QuasiCompact.pushout_desc [QuasiCompact f] [QuasiCompact g] :
     QuasiCompact (pushout.desc f g h) := by
   let 𝒰 := Scheme.pushoutOpenCover i j
-  have : Finite 𝒰.I₀ := inferInstanceAs (Finite Bool)
   refine QuasiCompact.of_openCover (pushout.desc f g h) 𝒰 ?_
   rintro (_ | _)
   · exact (pushout.inl_desc f g h).symm ▸ (inferInstance : QuasiCompact f)

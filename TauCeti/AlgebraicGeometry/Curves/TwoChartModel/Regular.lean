@@ -11,8 +11,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
--- Proof-only: the chart cover, regularity of local rings, and codimension bounds.
-import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
+-- Proof-only: regularity of local rings and codimension bounds.
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.Topology.KrullDimension.Basic
 
@@ -83,30 +82,12 @@ theorem locallyOfFiniteType (hxt : Transcendental k x) :
   -- Instance search does not find that `LocallyOfFiniteType` is local at the source, so the
   -- instance coming from its ring-hom property is supplied by hand.
   have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @LocallyOfFiniteType)
-  have := isOpenImmersion_specMap_finiteChartRestriction hF hx
-  have := isOpenImmersion_specMap_infinityChartRestriction hF hx
-  let 𝒰 := (Scheme.pushoutOpenCover
-    (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
-    (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))).pushforwardIso
-      (isPushout hF hx).isoPushout.inv
-  -- Transport avoids unfolding the abstract model and charts. `erw` below unfolds the cover's
-  -- index type to `Bool`, which ordinary rewriting does not see.
-  have hfalse : 𝒰.f false ≫ (twoChartModel hF hx ↘ Spec (.of k)) =
-      Spec.map (CommRingCat.ofHom
-        (algebraMap k (holomorphyRing {P : Place k F | x ∈ P.integers}))) := by
-    erw [Scheme.Cover.pushforwardIso_f, Scheme.pushoutOpenCover_f_false,
-      IsPushout.inl_isoPushout_inv, ιFinite_over]
-  have htrue : 𝒰.f true ≫ (twoChartModel hF hx ↘ Spec (.of k)) =
-      Spec.map (CommRingCat.ofHom
-        (algebraMap k (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers}))) := by
-    erw [Scheme.Cover.pushforwardIso_f, Scheme.pushoutOpenCover_f_true,
-      IsPushout.inr_isoPushout_inv, ιInfinity_over]
-  refine IsZariskiLocalAtSource.of_openCover 𝒰 fun b ↦ ?_
+  refine IsZariskiLocalAtSource.of_openCover (chartCover hF hx) fun b ↦ ?_
   cases b
-  · rw [hfalse]
+  · rw [chartCover_f_false, ιFinite_over]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
       (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF hxt))
-  · rw [htrue]
+  · rw [chartCover_f_true, ιInfinity_over]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
       (RingHom.finiteType_algebraMap.mpr
         (finiteType_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)))
