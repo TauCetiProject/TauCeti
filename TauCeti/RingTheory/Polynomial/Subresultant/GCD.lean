@@ -156,13 +156,8 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   generalize hB : ofFn (n - d) (fun k => v (Fin.natAdd (m - d) k)) = B at hwin
   have hAdeg : A.degree < (m - d : ℕ) := hA ▸ ofFn_degree_lt _
   have hBdeg : B.degree < (n - d : ℕ) := hB ▸ ofFn_degree_lt _
-  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
-    rcases eq_or_ne q 0 with rfl | hq0
-    · rw [mul_zero, zero_add]
-      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm.le).trans_le
-        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
-    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm.le hn hdm
-        (hd ▸ (natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
+  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) :=
+    degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm.le hn hAdeg hBdeg
   have hdeg : (A * q + B * p).degree < d := by
     rw [degree_lt_iff_coeff_zero]
     intro e he
