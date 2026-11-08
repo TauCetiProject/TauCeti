@@ -6,7 +6,7 @@ pinned setup action before invoking scripts. Local Python callers need `tauceti-
 shell entrypoints resolve the same immutable version through uvx. To prepare all helpers locally:
 
 ```sh
-uv tool install git+https://github.com/TauCetiProject/TauCetiTools@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+uv tool install git+https://github.com/TauCetiProject/TauCetiTools@fddd772584e81a08d56ea573169f37411f01a201
 tauceti-tools materialize scripts --conf tauceti.toml --policy-dir scripts
 ```
 
@@ -39,3 +39,7 @@ authorize a green build status.
 For local finalizer commands and tests, materialize the helpers using the
 `tools-ref` pinned by `finalize-merge-group-build` in `.github/workflows/pr-build.yml`.
 The main CI build/test job uses its own Tools pin and matching regression tests.
+
+Local `lake test`, `lake lint` and Worker verification use the same shared local checkers.
+The ordinary build/audit workflows and checkout launchers select the same Tools release.
+Separately operated stack-policy and publication tooling retain their existing pins.

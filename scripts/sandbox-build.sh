@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 # Implementation is pinned in tauceti.toml; CI materializes it from TauCetiTools.
-exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@8bad7a00af97c00c90a9777c195618c857dbf91c tauceti-tools script sandbox-build.sh "$@"
+exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@fddd772584e81a08d56ea573169f37411f01a201 tauceti-tools script sandbox-build.sh "$@"
