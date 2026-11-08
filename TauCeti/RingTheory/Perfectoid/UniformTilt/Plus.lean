@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Basic
-public import TauCeti.Topology.Algebra.Perfection
 
 /-!
 # The integral tilt of a complete uniform Tate ring
@@ -241,8 +240,7 @@ theorem coeff_zero_plusEquiv_symm (y : Perfection (Bplus ⧸ I) p) :
 
 /-- Reduction identifies the integral tilt homeomorphically with the inverse limit of the
 discrete quotients, whenever the topology on the ring of integral elements is `I`-adic. -/
-theorem isHomeomorph_plusEquiv [TopologicalSpace (Bplus ⧸ I)]
-    [DiscreteTopology (Bplus ⧸ I)] (hI : IsAdic I) :
+theorem isHomeomorph_plusEquiv (hI : IsAdic I) :
     IsHomeomorph (plusEquiv h I : plusSubring p h → Perfection (Bplus ⧸ I) p) := by
   have hm : IsHomeomorph (plusMulEquiv h : plusSubring p h → Perfection Bplus p) := by
     refine (plusMulEquiv h).toEquiv.isHomeomorph_iff.mpr ⟨?_, ?_⟩

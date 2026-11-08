@@ -75,12 +75,12 @@ local instance :
     IsAdicComplete (Ideal.span {(p : powerBoundedSubring ℂ_[p])}) (powerBoundedSubring ℂ_[p]) :=
   IsUniform.isAdicComplete_span_singleton _ (isPseudoUniformizer_natCast_padicComplex p)
 
-/-- Give the residue factors the discrete topology, not the inverse limit itself. -/
-local instance : TopologicalSpace
-    (powerBoundedSubring ℂ_[p] ⧸ Ideal.span {(p : powerBoundedSubring ℂ_[p])}) := ⊥
-
-local instance : DiscreteTopology
-    (powerBoundedSubring ℂ_[p] ⧸ Ideal.span {(p : powerBoundedSubring ℂ_[p])}) := ⟨rfl⟩
+-- The canonical quotient topology on the residue factors is already discrete.
+example : DiscreteTopology
+    (powerBoundedSubring ℂ_[p] ⧸ Ideal.span {(p : powerBoundedSubring ℂ_[p])}) :=
+  ((powerBoundedSubring ℂ_[p]).isAdic_span_singleton_of_isOpen_of_isBounded
+    (isOpen_powerBoundedSubring _) IsUniform.isBounded_powerBoundedSubring
+    (isPseudoUniformizer_natCast_padicComplex p) (natCast_mem _ p)).discreteTopology_quotient
 
 example : IsTopologicalRing (Perfection
     (powerBoundedSubring ℂ_[p] ⧸ Ideal.span {(p : powerBoundedSubring ℂ_[p])}) p) :=

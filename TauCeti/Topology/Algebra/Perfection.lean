@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Teichmuller
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.RingTheory.Teichmuller
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # The inverse-limit topology on perfection
 
 The multiplicative perfection has the subspace topology from its coordinates. For an
-`I`-adically complete topological ring, reduction modulo `I` identifies its multiplicative
-perfection homeomorphically with the perfection of the discrete quotient, provided that
-quotient has characteristic `p`. The inverse is continuous because its zeroth coordinate,
+`I`-adically complete ring whose topology is `I`-adic, reduction modulo `I` identifies its
+multiplicative perfection homeomorphically with the perfection of the discrete quotient, provided
+that quotient has characteristic `p`. The inverse is continuous because its zeroth coordinate,
 the Teichmüller map, is determined modulo `I ^ (n + 1)` by the `n`-th coordinate.
 
 This is the topological comparison used to identify integral tilts with inverse limits of
@@ -48,17 +48,16 @@ theorem isEmbedding_val [TopologicalSpace M] :
     Topology.IsEmbedding (Subtype.val : Perfection M p → ℕ → M) :=
   .subtypeVal
 
-/-- Continuity into perfection is equivalent to continuity of every coordinate. -/
-theorem continuous_iff [TopologicalSpace M] {X : Type*} [TopologicalSpace X]
-    {f : X → Perfection M p} :
-    Continuous f ↔ ∀ n, Continuous (fun x ↦ (f x).val n) :=
-  isEmbedding_val.isInducing.continuous_iff.trans continuous_pi_iff
-
 end Topology
 
 section CommMonoid
 
 variable [CommMonoid M] [TopologicalSpace M]
+
+/-- Continuity into perfection is equivalent to continuity of every coordinate. -/
+theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → Perfection M p} :
+    Continuous f ↔ ∀ n, Continuous (fun x ↦ coeffMonoidHom M p n (f x)) :=
+  isEmbedding_val.isInducing.continuous_iff.trans continuous_pi_iff
 
 /-- Each coordinate of multiplicative perfection is continuous. -/
 @[continuity, fun_prop]
@@ -72,6 +71,22 @@ theorem continuous_pthRootMonoidHom : Continuous (pthRootMonoidHom M p) :=
 
 end CommMonoid
 
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] [TopologicalSpace R] [Fact p.Prime] [CharP R p]
+
+/-- Each ring coordinate of perfection is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_coeff (n : ℕ) : Continuous (coeff R p n) :=
+  continuous_coeffMonoidHom n
+
+/-- The ring homomorphism shifting the root sequence is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_pthRoot : Continuous (pthRoot R p) :=
+  continuous_pthRootMonoidHom
+
+end CommSemiring
+
 /-- The coordinatewise ring operations on a characteristic-`p` perfection are continuous. -/
 instance instIsTopologicalRing {R : Type*} [CommRing R] [TopologicalSpace R]
     [IsTopologicalRing R] [Fact p.Prime] [CharP R p] :
@@ -82,15 +97,15 @@ section Adic
 
 variable {R : Type*} [CommRing R] [TopologicalSpace R]
   [Fact p.Prime] {I : Ideal R} [CharP (R ⧸ I) p] [IsAdicComplete I R]
-  [TopologicalSpace (R ⧸ I)] [DiscreteTopology (R ⧸ I)]
 
 /-- The Teichmüller map from the perfection of the discrete residue ring is continuous
 for the adic topology on the target. -/
 theorem continuous_teichmuller₀ (hI : IsAdic I) : Continuous (teichmuller₀ p I) := by
+  have := hI.discreteTopology_quotient
   refine continuous_iff_continuousAt.mpr fun x ↦
     (hI.hasBasis_nhds _).tendsto_right_iff.mpr fun n _ ↦ ?_
   have he : ∀ᶠ y in 𝓝 x, coeff (R ⧸ I) p n y = coeff (R ⧸ I) p n x :=
-    (continuous_coeffMonoidHom (M := R ⧸ I) (p := p) n).continuousAt
+    (continuous_coeff (R := R ⧸ I) (p := p) n).continuousAt
       ((isOpen_discrete ({coeff (R ⧸ I) p n x} : Set (R ⧸ I))).mem_nhds (by simp))
   filter_upwards [he] with y hy
   have hx := teichmuller₀_sModEq (p := p) (I := I)
@@ -101,42 +116,18 @@ theorem continuous_teichmuller₀ (hI : IsAdic I) : Continuous (teichmuller₀ p
   exact SModEq.sub_mem.mp <|
     (hy'.trans hx.symm).mono (Ideal.pow_le_pow_right (Nat.le_succ n))
 
-/-- Reduction is a homeomorphism on multiplicative perfections of an adically complete ring.
-The quotient factors carry the discrete topology, and the target the inverse-limit topology. -/
+/-- If the topology of `R` is `I`-adic, `R` is `I`-adically complete, and `R ⧸ I` has
+characteristic `p`, reduction is a homeomorphism on multiplicative perfections.
+The quotient topology on the factors is discrete; perfections carry the inverse-limit topology. -/
 theorem isHomeomorph_quotientMulEquiv (hI : IsAdic I) :
     IsHomeomorph (quotientMulEquiv p I : Perfection R p → Perfection (R ⧸ I) p) := by
-  have hmk : Continuous (Ideal.Quotient.mk I) := by
-    refine continuous_iff_continuousAt.mpr fun x ↦ ?_
-    rw [ContinuousAt, nhds_discrete (R ⧸ I), tendsto_pure]
-    filter_upwards [(hI.hasBasis_nhds x).mem_of_mem (i := 1) trivial] with y hy
-    obtain ⟨z, hz, rfl⟩ := hy
-    simpa using ((Ideal.Quotient.mk_eq_mk_iff_sub_mem _ _).mpr (by simpa using hz) :
-      Ideal.Quotient.mk I (x + z) = Ideal.Quotient.mk I x)
+  have hmk : Continuous (Ideal.Quotient.mk I) := continuous_quot_mk
   have hf : Continuous (quotientMulEquiv p I : Perfection R p → Perfection (R ⧸ I) p) :=
     continuous_iff.mpr fun n ↦ hmk.comp (continuous_coeffMonoidHom n)
-  have hg : Continuous ((quotientMulEquiv p I).symm : Perfection (R ⧸ I) p → Perfection R p) := by
-    refine continuous_iff.mpr fun n ↦ ?_
-    -- The inverse's n-th coordinate is Teichmüller after shifting n times.
-    have he : ∀ x : Perfection (R ⧸ I) p,
-        coeffMonoidHom R p n ((quotientMulEquiv p I).symm x) =
-          teichmuller₀ p I ((pthRootMonoidHom (R ⧸ I) p)^[n] x) := by
-      intro x
-      have hs : Function.Semiconj (quotientMulEquiv p I).symm
-          (pthRootMonoidHom (R ⧸ I) p) (pthRootMonoidHom R p) := by
-        intro y
-        apply (quotientMulEquiv p I).injective
-        -- Reduction commutes definitionally with shifting the sequence.
-        have hfwd (z : Perfection R p) :
-            quotientMulEquiv p I (pthRootMonoidHom R p z) =
-              pthRootMonoidHom (R ⧸ I) p (quotientMulEquiv p I z) := rfl
-        rw [hfwd, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
-      have hc := coeffMonoidHom_iterate_symm_powMulEquiv
-        ((quotientMulEquiv p I).symm x) 0 n
-      rw [Nat.zero_add, ← coe_pthRootMonoidHom_eq_powMulEquiv_symm,
-        ← hs.iterate_right n x, coeff_zero_symm_quotientMulEquiv] at hc
-      exact hc.symm
-    exact ((continuous_teichmuller₀ hI).comp (continuous_pthRootMonoidHom.iterate n)).congr
-      fun x ↦ (he x).symm
+  have hg : Continuous ((quotientMulEquiv p I).symm : Perfection (R ⧸ I) p → Perfection R p) :=
+    continuous_iff.mpr fun n ↦ by
+      simpa only [coeffMonoidHom_symm_quotientMulEquiv, Function.comp_def] using
+        (continuous_teichmuller₀ hI).comp (continuous_pthRootMonoidHom.iterate n)
   exact ((quotientMulEquiv p I).toEquiv.isHomeomorph_iff).mpr ⟨hf, hg⟩
 
 end Adic
