@@ -30,7 +30,7 @@ namespace SimpleGraph
 
 variable {V : Type*}
 
-/-- Adding binary gauges corresponds to symmetric difference of their cuts. -/
+/-- The complete-graph cut of `S ∆ T` is the symmetric difference of the cuts of `S` and `T`. -/
 theorem top_between_symmDiff (S T : Set V) :
     (⊤ : SimpleGraph V).between (S ∆ T) (S ∆ T)ᶜ =
       (⊤ : SimpleGraph V).between S Sᶜ ∆ (⊤ : SimpleGraph V).between T Tᶜ := by
@@ -38,6 +38,14 @@ theorem top_between_symmDiff (S T : Set V) :
   simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
     Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
+
+/-- Restricting a graph to pairs between two sets is intersection with the corresponding
+restriction of the complete graph. -/
+theorem between_eq_inf_top_between (G : SimpleGraph V) (s t : Set V) :
+    G.between s t = G ⊓ (⊤ : SimpleGraph V).between s t := by
+  ext u v
+  simp only [between_adj, inf_adj, top_adj]
+  exact and_congr_right fun h ↦ (and_iff_right h.ne).symm
 
 section Finite
 
@@ -53,15 +61,20 @@ theorem isCutMinimal_iff (G : SimpleGraph V) [DecidableRel G.Adj] :
     G.IsCutMinimal ↔
       ∀ (S : Set V) [DecidablePred (· ∈ S)], (G.between S Sᶜ).edgeFinset.card ≤
         ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeFinset.card := by
-  simp only [IsCutMinimal]
+  have hcut (S : Set V) [DecidablePred (· ∈ S)] :
+      (G.between S Sᶜ).edgeSet.encard ≤
+          ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeSet.encard ↔
+        (G.between S Sᶜ).edgeFinset.card ≤
+          ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeFinset.card := by
+    rw [← coe_edgeFinset, ← coe_edgeFinset, Set.encard_coe_eq_coe_finsetCard,
+      Set.encard_coe_eq_coe_finsetCard, Nat.cast_le]
   constructor
   · intro h S _
-    simpa only [Set.encard_eq_coe_toFinset_card, edgeFinset, Set.toFinset_card,
-      Set.fintypeCard_eq_ncard, Nat.cast_le] using h S
+    exact (hcut S).mp (h S)
   · intro h S
+    -- The definition quantifies over all sets, without a decidability assumption.
     classical
-    simpa only [Set.encard_eq_coe_toFinset_card, edgeFinset, Set.toFinset_card,
-      Set.fintypeCard_eq_ncard, Nat.cast_le] using h S
+    exact (hcut S).mpr (h S)
 
 /-- Cut-minimality says that at most half of each cut consists of edges. -/
 theorem isCutMinimal_iff_two_mul_card_inter_le (G : SimpleGraph V) [DecidableRel G.Adj] :
@@ -73,12 +86,10 @@ theorem isCutMinimal_iff_two_mul_card_inter_le (G : SimpleGraph V) [DecidableRel
   intro S
   apply forall_congr'
   intro _
-  have hbetween : G.between S Sᶜ = G ⊓ (⊤ : SimpleGraph V).between S Sᶜ := by
-    ext u v
-    simp only [between_adj, inf_adj, top_adj]
-    exact and_congr_right fun h ↦ (and_iff_right h.ne).symm
+  -- Lift the graph equality to finsets since the adjacency instances depend on the graph.
   have hfin : (G.between S Sᶜ).edgeFinset =
-      (G ⊓ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := edgeFinset_inj.mpr hbetween
+      (G ⊓ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset :=
+    edgeFinset_inj.mpr (between_eq_inf_top_between G S Sᶜ)
   rw [hfin, edgeFinset_inf, edgeFinset_sdiff]
   have h := Finset.card_sdiff_add_card_inter
     ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset G.edgeFinset
