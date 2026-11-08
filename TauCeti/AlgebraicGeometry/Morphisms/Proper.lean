@@ -19,8 +19,10 @@ the description of finite morphisms of affine schemes
 For example, the affine line `Spec R[t] ⟶ Spec R` over a nonzero ring is not proper, since
 `R[t]` is not a finite `R`-module.
 
-A morphism of `S`-schemes from a proper `S`-scheme to a separated one is quasi-compact
-(`AlgebraicGeometry.quasiCompact_left_of_isProper`).
+A morphism of `S`-schemes whose source has quasi-compact structure map and whose target has
+quasi-separated structure map is quasi-compact
+(`AlgebraicGeometry.quasiCompact_left_of_quasiCompact_hom`); in particular this applies from a
+proper `S`-scheme to a separated one.
 -/
 
 public section
@@ -39,14 +41,13 @@ lemma IsProper.SpecMap_iff {R S : CommRingCat.{u}} (f : R ⟶ S) :
   rw [← IsFinite.SpecMap_iff, IsFinite.iff_isProper_and_isAffineHom,
     and_iff_left (by infer_instance)]
 
-/-- A morphism of `S`-schemes from a proper `S`-scheme to a separated one has quasi-compact
-underlying map. -/
-theorem quasiCompact_left_of_isProper {S : Scheme.{u}} {T U : Over S} (f : T ⟶ U)
-    [IsProper T.hom] [IsSeparated U.hom] : QuasiCompact f.left := by
-  have : IsProper (f.left ≫ U.hom) := by
+/-- A morphism of `S`-schemes from a scheme with quasi-compact structure map to one with
+quasi-separated structure map has quasi-compact underlying map. -/
+theorem quasiCompact_left_of_quasiCompact_hom {S : Scheme.{u}} {T U : Over S} (f : T ⟶ U)
+    [QuasiCompact T.hom] [QuasiSeparated U.hom] : QuasiCompact f.left := by
+  have : QuasiCompact (f.left ≫ U.hom) := by
     rw [Over.w f]
     infer_instance
-  have := IsProper.of_comp f.left U.hom
-  infer_instance
+  exact QuasiCompact.of_comp f.left U.hom
 
 end AlgebraicGeometry
