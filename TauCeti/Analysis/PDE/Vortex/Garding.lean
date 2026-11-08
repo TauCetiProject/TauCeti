@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 
 /-!
@@ -34,12 +36,13 @@ zeroth-order potential (`TauCeti.Vortex.gaugeFixedPotential`) is
 
 with `κ = ∂₁ A₂ - ∂₂ A₁` the curvature coefficient `TauCeti.Vortex.curvature`. Pointwise,
 `|L_x y|²` differs from the integrand on the right by two Jacobian determinants, of `(b₁, b₂)`
-and of `(q, p)`, and by the divergence of a current bilinear in `x` and `y`; both integrate to
-zero. The curvature and `∂_a α` enter when derivatives of `y` are moved onto the field. At the
-vacuum the identity reduces to `‖L₀ y‖² = ‖∇y‖² + ‖y‖² / 4`
-(`TauCeti.Vortex.integral_norm_sq_vacuumOperator`). Unlike the energy identity
-`TauCeti.Vortex.integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`, it does not assume the
-vortex equation on the support of the variation.
+and of `(q, p)`, and by the divergence of a current linear in `x` and quadratic in `y`; both
+integrate to zero. The curvature and `∂_a α` enter when derivatives of `y` are moved onto the
+field. At the vacuum the identity reduces to `‖L₀ y‖² = ‖∇y‖² + ‖y‖² / 4`
+(`TauCeti.Vortex.integral_norm_sq_vacuumOperator`). It does not assume the vortex equation; where
+the vortex equation holds the potential simplifies
+(`TauCeti.Vortex.gaugeFixedPotential_eq_of_equation_eq_zero`), which gives the energy identity
+`TauCeti.Vortex.integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`.
 
 At a vortex `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the potential is
 `|φ|² |b|² + ((12 |φ|² - 1) / 8) |ψ|²` up to a cross term bounded by `|∇₁ α| |y|²`. When
@@ -49,7 +52,7 @@ For every `a < 1 / 4` this gives a Gårding inequality with a compact remainder
 
 `∫ (|∇b|² + |∇_a ψ|²) + a ∫ |y|² ≤ ∫ |L_x y|² + K ∫_{|z| ≤ R} |y|²`.
 
-For variations vanishing on the disc of radius `R` it recovers the exterior bound
+For variations vanishing on the disc of radius `R` it gives the exterior bound
 `TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`, and in addition it
 controls the covariant gradient of the variation. Combined with the compactness of `H¹ → L²` on
 the disc, an estimate of this form gives finite-dimensionality of the kernel and closedness of
@@ -146,14 +149,12 @@ private theorem gaugeFixedPotential_eq {z : ℂ} (hx : DifferentiableAt ℝ x z)
               fderiv ℝ (fun w ↦ x w 3) z I + x z 1 * x z 2) +
             v 3 * (fderiv ℝ (fun w ↦ x w 3) z 1 + x z 0 * x z 2 -
               fderiv ℝ (fun w ↦ x w 2) z I + x z 1 * x z 3))) := by
-  have hp : DifferentiableAt ℝ (fun w ↦ x w 2) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) 2).differentiableAt.comp z hx :)
-  have hq : DifferentiableAt ℝ (fun w ↦ x w 3) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) 3).differentiableAt.comp z hx :)
-  have h1r := re_covariantDerivative hp hq 1
-  have h1i := im_covariantDerivative hp hq 1
-  have hIr := re_covariantDerivative hp hq I
-  have hIi := im_covariantDerivative hp hq I
+  have hp := (differentiableAt_piLp 2).1 hx 2
+  have hq := (differentiableAt_piLp 2).1 hx 3
+  have h1r := covariantDerivative_re hp hq 1
+  have h1i := covariantDerivative_im hp hq 1
+  have hIr := covariantDerivative_re hp hq I
+  have hIi := covariantDerivative_im hp hq I
   simp only [one_re, one_im, I_re, I_im] at h1r h1i hIr hIi
   rw [gaugeFixedPotential_def, curvature_apply, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   simp only [mul_im, mul_re, sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
@@ -162,8 +163,8 @@ private theorem gaugeFixedPotential_eq {z : ℂ} (hx : DifferentiableAt ℝ x z)
 
 /-- The remainder in the pointwise Weitzenböck identity: twice the sum of the Jacobian
 determinants of `(b₁, b₂)` and of `(q, p)`, plus the divergence `∂₁ W₁ + ∂₂ W₂` of a current that
-is bilinear in the field and the variation. It integrates to zero against compactly supported
-variations (`integral_weitzenbockRemainder`). -/
+is linear in the field and quadratic in the variation. It integrates to zero against compactly
+supported variations (`integral_weitzenbockRemainder`). -/
 private def weitzenbockRemainder (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   2 * (fderiv ℝ (fun w ↦ y w 0) z 1 * fderiv ℝ (fun w ↦ y w 1) z I -
       fderiv ℝ (fun w ↦ y w 1) z 1 * fderiv ℝ (fun w ↦ y w 0) z I +
@@ -180,10 +181,8 @@ private theorem norm_sq_gaugeFixedOperator_eq {z : ℂ} (hx : DifferentiableAt �
     (hy : DifferentiableAt ℝ y z) :
     ‖gaugeFixedOperator x y z‖ ^ 2 = gaugeFixedGradientDensity x y z +
       gaugeFixedPotential x z (y z) + weitzenbockRemainder x y z := by
-  have hxi (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ x w i) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hx :)
-  have hyi (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hy :)
+  have hxi := (differentiableAt_piLp 2).1 hx
+  have hyi := (differentiableAt_piLp 2).1 hy
   rw [gaugeFixedPotential_eq hx, gaugeFixedGradientDensity_def, weitzenbockRemainder,
     EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   simp (disch := fun_prop) [fderiv_fun_mul, fderiv_fun_add, fderiv_fun_sub, fderiv_fun_pow]
@@ -204,68 +203,46 @@ private theorem jacobianForm_isAlt : jacobianForm.IsAlt := fun u ↦ by
   simp only [jacobianForm, LinearMap.mk₂_apply]
   ring
 
-/-- A real function on the plane that vanishes off the topological support of a compactly
-supported variation has compact support. -/
-private theorem hasCompactSupport_of_notMem_tsupport (hyc : HasCompactSupport y) {f : ℂ → ℝ}
-    (hf : ∀ z, z ∉ tsupport y → f z = 0) : HasCompactSupport f :=
-  hyc.mono' fun z hz ↦ by_contra fun h ↦ hz (hf z h)
-
-/-- Off the topological support of a variation its partial derivatives vanish. -/
-private theorem fderiv_apply_eq_zero_of_notMem_tsupport {z : ℂ} (hz : z ∉ tsupport y)
-    (i : Fin 4) (v : ℂ) : fderiv ℝ (fun w ↦ y w i) z v = 0 := by
-  have h : (fun w ↦ y w i) =ᶠ[𝓝 z] fun _ ↦ 0 :=
-    (notMem_tsupport_iff_eventuallyEq.mp hz).mono fun w hw ↦ by simp [hw]
-  simp [h.fderiv_eq]
-
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
 /-- The potential along a compactly supported `C¹` variation is integrable. -/
-private theorem integrable_gaugeFixedPotential (hx : ContDiff ℝ 1 x) (hy : ContDiff ℝ 1 y)
+theorem integrable_gaugeFixedPotential (hx : ContDiff ℝ 1 x) (hy : ContDiff ℝ 1 y)
     (hyc : HasCompactSupport y) : Integrable (fun z ↦ gaugeFixedPotential x z (y z)) μ := by
-  have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx :)
-  have hcx (i : Fin 4) : Continuous fun w ↦ x w i := (hxi i).continuous
-  have hcy (i : Fin 4) : Continuous fun w ↦ y w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).continuous.comp hy.continuous :)
+  have hxi := (contDiff_piLp 2).1 hx
+  have := hx.continuous
+  have := hy.continuous
   have hdx (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
     ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   rw [funext fun z ↦ gaugeFixedPotential_eq (hx.differentiable one_ne_zero z) (y z)]
   refine Continuous.integrable_of_hasCompactSupport (by fun_prop)
-    (hasCompactSupport_of_notMem_tsupport hyc fun z hz ↦ ?_)
+    (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
   simp [image_eq_zero_of_notMem_tsupport hz]
 
 /-- The covariant gradient density of a compactly supported `C¹` variation is integrable. -/
-private theorem integrable_gaugeFixedGradientDensity (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+theorem integrable_gaugeFixedGradientDensity (hx : Continuous x) (hy : ContDiff ℝ 1 y)
     (hyc : HasCompactSupport y) : Integrable (gaugeFixedGradientDensity x y) μ := by
-  have hcx (i : Fin 4) : Continuous fun w ↦ x w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).continuous.comp hx :)
-  have hcy (i : Fin 4) : Continuous fun w ↦ y w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).continuous.comp hy.continuous :)
+  have := hy.continuous
   have hdy (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
-    ((((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy).continuous_fderiv
-      one_ne_zero).clm_apply continuous_const :)
+    (((contDiff_piLp 2).1 hy i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   refine Continuous.integrable_of_hasCompactSupport ?_
-    (hasCompactSupport_of_notMem_tsupport hyc fun z hz ↦ ?_)
+    (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
   · simp only [funext (gaugeFixedGradientDensity_def x y)]
     fun_prop
-  · simp [gaugeFixedGradientDensity_def, fderiv_apply_eq_zero_of_notMem_tsupport hz,
-      image_eq_zero_of_notMem_tsupport hz]
+  · simp [gaugeFixedGradientDensity_def, fderiv_component_apply (hy.differentiable one_ne_zero z),
+      fderiv_of_notMem_tsupport ℝ hz, image_eq_zero_of_notMem_tsupport hz]
 
 /-- The Jacobian form of the two partial derivatives of a compactly supported `C¹` variation is
 integrable. -/
 private theorem integrable_jacobianForm_fderiv (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y) :
     Integrable (fun z ↦ jacobianForm (fderiv ℝ y z 1) (fderiv ℝ y z I)) μ := by
-  have hdi (z : ℂ) (i : Fin 4) (v : ℂ) : fderiv ℝ (fun w ↦ y w i) z v = fderiv ℝ y z v i :=
-    congrArg (· v) ((EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp z
-      (hy.differentiable one_ne_zero z).hasFDerivAt).fderiv
+  have hdi (z : ℂ) := fderiv_component_apply (hy.differentiable one_ne_zero z)
   have hdy (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
-    ((((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy).continuous_fderiv
-      one_ne_zero).clm_apply continuous_const :)
+    (((contDiff_piLp 2).1 hy i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   refine Continuous.integrable_of_hasCompactSupport ?_
-    (hasCompactSupport_of_notMem_tsupport hyc fun z hz ↦ ?_)
+    (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
   · simp only [jacobianForm, LinearMap.mk₂_apply, ← hdi]
     fun_prop
-  · simp [jacobianForm, ← hdi, fderiv_apply_eq_zero_of_notMem_tsupport hz]
+  · simp [jacobianForm, fderiv_of_notMem_tsupport ℝ hz]
 
 /-- The remainder of the pointwise Weitzenböck identity is integrable and integrates to zero:
 the Jacobian determinants by `integral_bilinForm_fderiv_apply_eq_zero_of_isAlt`, the divergence
@@ -274,15 +251,11 @@ private theorem integral_weitzenbockRemainder (hx : ContDiff ℝ 1 x) (hy : Cont
     (hyc : HasCompactSupport y) :
     Integrable (weitzenbockRemainder x y) μ ∧ ∫ z, weitzenbockRemainder x y z ∂μ = 0 := by
   have hy₁ : ContDiff ℝ 1 y := hy.of_le (by norm_num)
-  have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx :)
-  have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy₁ :)
+  have hxi := (contDiff_piLp 2).1 hx
+  have hyi := (contDiff_piLp 2).1 hy₁
   have hy0 {z : ℂ} (hz : z ∉ tsupport y) (i : Fin 4) : y z i = 0 := by
     simp [image_eq_zero_of_notMem_tsupport hz]
-  have hdi (z : ℂ) (i : Fin 4) (v : ℂ) : fderiv ℝ (fun w ↦ y w i) z v = fderiv ℝ y z v i :=
-    congrArg (· v) ((EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp z
-      (hy₁.differentiable one_ne_zero z).hasFDerivAt).fderiv
+  have hdi (z : ℂ) := fderiv_component_apply (hy₁.differentiable one_ne_zero z)
   set J : ℂ → ℝ := fun z ↦ 2 * jacobianForm (fderiv ℝ y z 1) (fderiv ℝ y z I) with hJ
   set W₁ : ℂ → ℝ := fun w ↦ 2 * y w 0 * (x w 2 * y w 3 - x w 3 * y w 2) -
       2 * y w 1 * (x w 2 * y w 2 + x w 3 * y w 3) - x w 1 * (y w 2 ^ 2 + y w 3 ^ 2) with hW₁
@@ -308,9 +281,9 @@ private theorem integral_weitzenbockRemainder (hx : ContDiff ℝ 1 x) (hy : Cont
     have := hxi; have := hyi
     fun_prop
   have hW₁c : HasCompactSupport W₁ :=
-    hasCompactSupport_of_notMem_tsupport hyc fun z hz ↦ by simp [hW₁, hy0 hz]
+    hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ by simp [hW₁, hy0 hz]
   have hW₂c : HasCompactSupport W₂ :=
-    hasCompactSupport_of_notMem_tsupport hyc fun z hz ↦ by simp [hW₂, hy0 hz]
+    hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ by simp [hW₂, hy0 hz]
   have h₁ : Integrable (fun z ↦ J z + fderiv ℝ W₁ z 1) μ := hJi.add (hint W₁ hW₁d hW₁c 1)
   rw [hR]
   refine ⟨h₁.add (hint W₂ hW₂d hW₂c I), ?_⟩
@@ -375,47 +348,44 @@ private def vortexMass (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ 
   min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) -
     ‖covariantDerivative x z 1‖
 
+/-- At a point where the vortex equation holds, `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the
+potential is `|φ|² |b|² + (3 |φ|² / 2 - 1 / 8) |ψ|²` plus a coupling through `∇₁ α` alone. -/
+theorem gaugeFixedPotential_eq_of_equation_eq_zero {z : ℂ} (hx : DifferentiableAt ℝ x z)
+    (hsol : equation x z = 0) (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedPotential x z v =
+      (x z 2 ^ 2 + x z 3 ^ 2) * (v 0 ^ 2 + v 1 ^ 2) +
+        (3 * (x z 2 ^ 2 + x z 3 ^ 2) / 2 - 1 / 8) * (v 2 ^ 2 + v 3 ^ 2) +
+        2 * ((covariantDerivative x z 1).im * (v 0 * v 2 + v 1 * v 3) +
+          (covariantDerivative x z 1).re * (v 1 * v 2 - v 0 * v 3)) := by
+  have hcurv := curvature_eq_of_equation_eq_zero hsol
+  have he1 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 1) hsol
+  have he2 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 2) hsol
+  simp only [equation_apply_one, equation_apply_two, PiLp.zero_apply] at he1 he2
+  have hp := (differentiableAt_piLp 2).1 hx 2
+  have hq := (differentiableAt_piLp 2).1 hx 3
+  have hcr := covariantDerivative_re hp hq 1
+  have hci := covariantDerivative_im hp hq 1
+  simp only [one_re, one_im, mul_one, mul_zero, add_zero] at hcr hci
+  rw [gaugeFixedPotential_eq hx, hcr, hci]
+  -- By the holomorphicity rows, the cross term only involves `∇₁ α`.
+  linear_combination (v 2 ^ 2 + v 3 ^ 2) * hcurv + 2 * (v 0 * v 3 - v 1 * v 2) * he1 -
+    2 * (v 0 * v 2 + v 1 * v 3) * he2
+
 /-- At a point where the vortex equation holds, the potential is bounded below by
 `min (|φ|², (12 |φ|² - 1) / 8) - |∇₁ α|` times `|v|²`. -/
 private theorem vortexMass_mul_norm_sq_le_gaugeFixedPotential {z : ℂ}
     (hx : DifferentiableAt ℝ x z) (hsol : equation x z = 0) (v : EuclideanSpace ℝ (Fin 4)) :
     vortexMass x z * ‖v‖ ^ 2 ≤ gaugeFixedPotential x z v := by
-  have hcurv := curvature_eq_of_equation_eq_zero hsol
-  have he1 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 1) hsol
-  have he2 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 2) hsol
-  simp only [equation_apply_one, equation_apply_two, PiLp.zero_apply] at he1 he2
-  have hp : DifferentiableAt ℝ (fun w ↦ x w 2) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) 2).differentiableAt.comp z hx :)
-  have hq : DifferentiableAt ℝ (fun w ↦ x w 3) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) 3).differentiableAt.comp z hx :)
-  have hcr := re_covariantDerivative hp hq 1
-  have hci := im_covariantDerivative hp hq 1
-  simp only [one_re, one_im, mul_one, mul_zero, add_zero] at hcr hci
   have hn : ‖covariantDerivative x z 1‖ ^ 2 =
       (covariantDerivative x z 1).re ^ 2 + (covariantDerivative x z 1).im ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_apply]
     ring
-  rw [vortexMass, gaugeFixedPotential_eq hx, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-  -- By the holomorphicity rows, the cross term only involves `∇₁ α`.
+  rw [vortexMass, gaugeFixedPotential_eq_of_equation_eq_zero hx hsol,
+    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   convert min_sub_mul_le_potential (norm_nonneg _) hn using 1
-  rw [hcr, hci]
-  linear_combination (v 2 ^ 2 + v 3 ^ 2) * hcurv + 2 * (v 0 * v 3 - v 1 * v 2) * he1 -
-    2 * (v 0 * v 2 + v 1 * v 3) * he2
+  ring
 
 /-! ### The Gårding inequality at a vortex -/
-
-/-- The covariant derivative `∇₁ α` of the section of a `C¹` field is continuous. -/
-private theorem continuous_covariantDerivative_one (hx : ContDiff ℝ 1 x) :
-    Continuous fun z ↦ covariantDerivative x z 1 := by
-  have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx :)
-  have hcx (i : Fin 4) : Continuous fun w ↦ x w i := (hxi i).continuous
-  have hdx (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
-    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
-  simp only [covariantDerivative_apply, sectionValue_apply,
-    fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
-      ((hxi 3).differentiable one_ne_zero _)]
-  fun_prop
 
 /-- When `|α| → 1` and `∇₁ α → 0`, the coefficient `vortexMass` exceeds any `a < 1 / 4` off a
 closed disc, on which it is bounded below. -/
@@ -425,10 +395,9 @@ private theorem exists_lt_vortexMass (hx : ContDiff ℝ 1 x)
     {a : ℝ} (ha : a < 1 / 4) :
     ∃ R > 0, ∃ b : ℝ, ∀ z, (z ∈ closedBall 0 R → b ≤ vortexMass x z) ∧
       (z ∉ closedBall 0 R → a < vortexMass x z) := by
-  have hxi (i : Fin 4) : Continuous fun w ↦ x w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).continuous.comp hx.continuous :)
+  have := hx.continuous
   have hmc : Continuous (vortexMass x) := by
-    have := continuous_covariantDerivative_one hx
+    have := continuous_covariantDerivative hx 1
     unfold vortexMass
     fun_prop
   have hs : Tendsto (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) (cocompact ℂ) (𝓝 (1 / 4)) := by

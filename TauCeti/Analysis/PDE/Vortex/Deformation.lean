@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -134,6 +136,15 @@ private theorem sectionValue_eq_ofRealCLM (x : ℂ → EuclideanSpace ℝ (Fin 4
   funext w
   simp only [sectionValue_apply, Function.comp_apply, ofRealCLM_apply]
 
+/-- The partial derivatives of a real coordinate of a field differentiable at `z` are the
+coordinates of the partial derivatives of the field. -/
+theorem fderiv_component_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) (i : Fin 4) (v : ℂ) :
+    fderiv ℝ (fun w ↦ x w i) z v = fderiv ℝ x z v i := by
+  rw [(hasFDerivWithinAt_univ.1 ((hasFDerivWithinAt_piLp 2).1
+    hx.hasFDerivAt.hasFDerivWithinAt i)).fderiv]
+  rfl
+
 /-- The squared modulus `|α|² = 4 (p² + q²)` is as regular as the real coordinates of the
 section. -/
 theorem contDiff_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop ℕ∞}
@@ -219,7 +230,7 @@ theorem covariantDerivative_one_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z :
 
 /-- The real part of the covariant derivative in the real field coordinates:
 `Re ∇_v α = 2 (∂_v p - b(v) q)`. -/
-theorem re_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+theorem covariantDerivative_re {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (v : ℂ) :
     (covariantDerivative x z v).re =
@@ -229,13 +240,26 @@ theorem re_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ
 
 /-- The imaginary part of the covariant derivative in the real field coordinates:
 `Im ∇_v α = 2 (∂_v q + b(v) p)`. -/
-theorem im_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+theorem covariantDerivative_im {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (v : ℂ) :
     (covariantDerivative x z v).im =
       2 * (fderiv ℝ (fun w ↦ x w 3) z v + (x z 0 * v.re + x z 1 * v.im) * x z 2) := by
   simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply]
   ring
+
+/-- The covariant derivative of the section of a `C¹` field in a fixed direction is
+continuous. -/
+theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
+    (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
+  have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hdx (i : Fin 4) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
+    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have := hx.continuous
+  simp only [covariantDerivative_apply, sectionValue_apply,
+    fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
+      ((hxi 3).differentiable one_ne_zero _)]
+  fun_prop
 
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
