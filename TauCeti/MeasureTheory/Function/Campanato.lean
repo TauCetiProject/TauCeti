@@ -48,16 +48,19 @@ almost everywhere on `Ω` by Lebesgue's differentiation theorem for the locally 
 
 For exponents `p ≥ 1` and `λ`, the **Campanato seminorm** of `f` on `Ω` is
 
-`[f]_{p,λ} = sup_{x ∈ Ω, r > 0} r^(-λ) ∫_{B(x, r) ∩ Ω} ‖f - f_{x,r}‖^p`
+`[f]_{p,λ} = (sup_{x ∈ Ω, r > 0} r^(-λ) ∫_{B(x, r) ∩ Ω} ‖f - f_{x,r}‖^p)^(1/p)`,
 
-(`TauCeti.MeasureTheory.campanatoSeminorm`), and the Campanato space `𝓛^{p,λ}(Ω)` consists of the
-functions for which it is finite. On a null-measurable set with the measure density property a
+and the Campanato space `𝓛^{p,λ}(Ω)` consists of the functions for which it is finite. Following
+Giaquinta–Martinazzi, who state their estimates for `[f]_{p,λ}^p`, the declaration
+`TauCeti.MeasureTheory.campanatoSeminorm` is the `p`-th power `[f]_{p,λ}^p`, the supremum itself,
+without the `p`-th root. It is `p`-homogeneous rather than homogeneous, and its finiteness is
+membership in the Campanato space. On a null-measurable set with the measure density property a
 locally integrable function lies in `𝓛^{p,n + p α}(Ω)` exactly when it agrees almost everywhere on
 `Ω` with a function that is `α`-Hölder continuous on `Ω`
 (`TauCeti.MeasureTheory.exists_holderOnWith_ae_eq_iff_campanatoSeminorm_ne_top`), with explicit
-bounds between the two seminorms in both directions. For `λ = n` the Campanato space is the space
-of functions of bounded mean oscillation, which contains unbounded functions; the
-characterization needs `λ > n`, that is `α > 0`.
+bounds between the Hölder constant and `[f]_{p,λ}^p` in both directions. For `λ = n` the
+Campanato space is the space of functions of bounded mean oscillation, which contains unbounded
+functions; the characterization needs `λ > n`, that is `α > 0`.
 
 ## The argument
 
@@ -69,7 +72,7 @@ Summing over dyadic radii shows that the averages `f_{x,r}` converge as `r → 0
 `‖f_{x,r} - f*(x)‖ ≤ 2ⁿ / (c (1 - 2^(-α))) · M r^α`, and comparing the averages over
 `closedBall y d ⊆ closedBall x (2 d)`, `d = dist x y`, then gives the Hölder bound. For the
 Campanato seminorm, Hölder's inequality bounds the mean oscillation on `B(x, r) ∩ Ω` by
-`((μ(B(x, r) ∩ Ω))⁻¹ [f]_{p,λ} r^λ)^(1/p)`, and the measure density property bounds the measure
+`((μ(B(x, r) ∩ Ω))⁻¹ [f]_{p,λ}^p r^λ)^(1/p)`, and the measure density property bounds the measure
 below by `c μ(B(0, 1)) rⁿ`.
 
 ## Main declarations
@@ -78,6 +81,9 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 
 * `setAverage_norm_sub_setAverage_le_of_holderOnWith`: the mean oscillation of an `α`-Hölder
   function on a ball of radius `r` is at most a multiple of `r^α`.
+* `ae_norm_sub_setAverage_le_of_holderOnWith`: on a set `Ω` where `f` is `α`-Hölder, `f` lies
+  almost everywhere on a ball centred in `Ω` within a multiple of `r^α` of its average over the
+  ball, both for the restriction of the measure to `Ω`.
 * `tendsto_setAverage_closedBall_restrict_preciseRepresentative_of_setAverage_norm_sub_le`,
   `tendsto_setAverage_closedBall_preciseRepresentative_of_setAverage_norm_sub_le`: mean
   oscillation decaying like `r^α` at `x` makes the averages converge at `x`, on a domain with the
@@ -94,7 +100,7 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `exists_holderWith_ae_eq_iff_forall_setAverage_norm_sub_le`: a locally integrable function
   agrees almost everywhere with an `α`-Hölder function if and only if its mean oscillation on
   balls of radius `r` is `O(r^α)`.
-* `campanatoSeminorm`: the Campanato seminorm `[f]_{p,λ}` on a set.
+* `campanatoSeminorm`: the `p`-th power `[f]_{p,λ}^p` of the Campanato seminorm on a set.
 * `campanatoSeminorm_le_of_holderOnWith`: Hölder functions lie in the Campanato space.
 * `setAverage_norm_sub_le_of_campanatoSeminorm_le`: the Campanato seminorm bounds the mean
   oscillation on a domain with the measure density property.
@@ -125,7 +131,7 @@ section Holder
 
 variable {X F : Type*} [MetricSpace X] [MeasurableSpace X] [ProperSpace X]
   [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {x : X}
+  [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {Ω : Set X} {x : X}
 
 /-- **The mean oscillation of a Hölder function.** If `f` is `α`-Hölder continuous on
 `closedBall x r` with constant `K`, `α > 0`, and this ball has positive measure, then the mean
@@ -157,6 +163,45 @@ theorem setAverage_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : 
   · filter_upwards [self_mem_ae_restrict measurableSet_closedBall] with y hy using hpt y hy
   · exact (hcont.sub continuousOn_const).norm.integrableOn_compact (isCompact_closedBall _ _)
 
+/-- **The oscillation of a Hölder function about its average on a domain.** If `f` is `α`-Hölder
+continuous on a null-measurable set `Ω` with constant `K`, then almost everywhere on
+`closedBall x r`, `x ∈ Ω`, for `μ.restrict Ω`, the function `f` lies within `K (2 r)^α` of its
+average over that ball. -/
+theorem ae_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : ℝ}
+    (hΩ : NullMeasurableSet Ω μ) (hf : HolderOnWith K α f Ω)
+    (hfm : AEStronglyMeasurable f (μ.restrict Ω)) (hx : x ∈ Ω) (hr : 0 < r) :
+    ∀ᵐ y ∂(μ.restrict Ω).restrict (closedBall x r),
+      ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ ≤ K * (2 * r) ^ (α : ℝ) := by
+  -- Almost every point of `closedBall x r` for `μ.restrict Ω` lies in `Ω`.
+  have hmem : ∀ᵐ y ∂(μ.restrict Ω).restrict (closedBall x r), y ∈ closedBall x r ∩ Ω := by
+    rw [Measure.restrict_restrict measurableSet_closedBall]
+    exact ae_restrict_mem₀ (measurableSet_closedBall.nullMeasurableSet.inter hΩ)
+  -- Any two values of `f` on `closedBall x r ∩ Ω` are at distance at most `K (2 r)^α`.
+  have hdist : ∀ y ∈ closedBall x r ∩ Ω, ∀ z ∈ closedBall x r ∩ Ω,
+      dist (f z) (f y) ≤ K * (2 * r) ^ (α : ℝ) := by
+    intro y hy z hz
+    have hzy : dist z y ≤ 2 * r :=
+      calc dist z y ≤ dist z x + dist y x := dist_triangle_right _ _ _
+        _ ≤ 2 * r := by linarith [mem_closedBall.1 hz.1, mem_closedBall.1 hy.1]
+    exact (hf.dist_le hz.2 hy.2).trans
+      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg hzy α.2) K.2)
+  rcases eq_or_ne (μ.restrict Ω (closedBall x r)) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  have hfin : μ.restrict Ω (closedBall x r) ≠ ⊤ :=
+    ((Measure.restrict_apply_le _ _).trans_lt measure_closedBall_lt_top).ne
+  have hint : IntegrableOn f (closedBall x r) (μ.restrict Ω) := by
+    refine Measure.integrableOn_of_bounded (M := ‖f x‖ + K * (2 * r) ^ (α : ℝ)) hfin hfm ?_
+    filter_upwards [hmem] with z hz
+    have := hdist x ⟨mem_closedBall_self hr.le, hx⟩ z hz
+    rw [dist_eq_norm] at this
+    linarith [norm_le_insert' (f z) (f x)]
+  -- The average lies in every closed ball of radius `K (2 r)^α` about a value of `f`.
+  filter_upwards [hmem] with y hy
+  rw [← dist_eq_norm, dist_comm]
+  refine mem_closedBall.1 <| (convex_closedBall _ _).set_average_mem isClosed_closedBall h0 hfin
+    ?_ hint
+  filter_upwards [hmem] with z hz using hdist y hy z hz
+
 end Holder
 
 /-! ### Campanato's theorem on a set with the measure density property -/
@@ -172,39 +217,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 private lemma one_sub_two_rpow_neg_pos (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
   sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- A closed ball in which `Ω` has density at least `c > 0` charges `μ.restrict Ω`. -/
-private lemma measure_restrict_closedBall_ne_zero {y : E} {ε : ℝ} (hc : 0 < c) (hε : 0 < ε)
-    (hd : (c : ℝ≥0∞) * μ (closedBall y ε) ≤ μ (closedBall y ε ∩ Ω)) :
-    μ.restrict Ω (closedBall y ε) ≠ 0 := by
-  rw [Measure.restrict_apply measurableSet_closedBall]
-  exact ((ENNReal.mul_pos (by exact_mod_cast hc.ne') (measure_closedBall_pos μ y hε).ne').trans_le
-    hd).ne'
-
-/-- If `Ω` has density at least `c > 0` in `closedBall y ε`, then for `r ≤ 2 ε` the closed ball of
-radius `r` has at most `2ⁿ / c` times the `μ.restrict Ω`-measure of `closedBall y ε`. -/
-private lemma measureReal_restrict_closedBall_div_le {y : E} {ε r : ℝ} (hc : 0 < c)
-    (hε : 0 < ε) (hr : 0 ≤ r) (hrε : r ≤ 2 * ε)
-    (hd : (c : ℝ≥0∞) * μ (closedBall y ε) ≤ μ (closedBall y ε ∩ Ω)) :
-    (μ.restrict Ω).real (closedBall x r) / (μ.restrict Ω).real (closedBall y ε) ≤
-      2 ^ finrank ℝ E / c := by
-  have hy : 0 < μ.real (closedBall y ε) :=
-    ENNReal.toReal_pos (measure_closedBall_pos μ y hε).ne' measure_closedBall_lt_top.ne
-  have hden : c * μ.real (closedBall y ε) ≤ (μ.restrict Ω).real (closedBall y ε) := by
-    rw [measureReal_restrict_apply measurableSet_closedBall, measureReal_def, measureReal_def,
-      ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono
-      ((measure_mono inter_subset_left).trans_lt measure_closedBall_lt_top).ne hd
-  have hnum : (μ.restrict Ω).real (closedBall x r) ≤ μ.real (closedBall x r) :=
-    ENNReal.toReal_mono measure_closedBall_lt_top.ne (Measure.restrict_apply_le _ _)
-  calc (μ.restrict Ω).real (closedBall x r) / (μ.restrict Ω).real (closedBall y ε)
-      ≤ μ.real (closedBall x r) / (c * μ.real (closedBall y ε)) :=
-        div_le_div₀ measureReal_nonneg hnum (mul_pos (NNReal.coe_pos.2 hc) hy) hden
-    _ = μ.real (closedBall x r) / μ.real (closedBall y ε) / c := by rw [mul_comm, div_div]
-    _ ≤ 2 ^ finrank ℝ E / c := by
-        gcongr
-        exact μ.addHaar_real_closedBall_div_le x y hε hr hrε
-
 /-- Comparing the averages over `closedBall y ε ⊆ closedBall x r` for `r ≤ 2 ε` costs at most
 `2ⁿ / c` times the mean oscillation on `closedBall x r`, all with respect to `μ.restrict Ω`, if
 `Ω` has density at least `c` in `closedBall y ε`. -/
@@ -217,9 +229,9 @@ private lemma norm_setAverage_closedBall_sub_le_of_le_two_mul {y : E} {ε r : �
     ‖(⨍ z in closedBall y ε, f z ∂μ.restrict Ω) - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ ≤
       2 ^ finrank ℝ E / c * (M * r ^ α) := by
   have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.1 (hsub (mem_closedBall_self hε.le)))
-  exact (norm_setAverage_sub_le_of_subset hsub (measure_restrict_closedBall_ne_zero hc hε hd)
+  exact (norm_setAverage_sub_le_of_subset hsub (μ.restrict_closedBall_ne_zero_of_mul_le hc hε hd)
     ((Measure.restrict_apply_le _ _).trans_lt measure_closedBall_lt_top).ne hf _).trans <|
-    mul_le_mul (measureReal_restrict_closedBall_div_le hc hε hr hrε hd) hosc
+    mul_le_mul (μ.addHaar_real_restrict_closedBall_div_le x y hc hε hr hrε hd) hosc
       (average_nonneg fun _ ↦ norm_nonneg _) (by positivity)
 
 /-- **Telescoping over dyadic radii.** If `Ω` has density at least `c > 0` in `closedBall x r` and
@@ -571,17 +583,27 @@ variable {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [NormedAddCommG
   [NormedSpace ℝ F] {μ : Measure X} {Ω : Set X} {p lam : ℝ} {f g : X → F} {x : X} {r : ℝ}
 
 variable (μ Ω p lam f) in
-/-- The **Campanato seminorm** of `f` on `Ω` with exponents `p` and `λ`: the supremum, over the
-points `x ∈ Ω` and the radii `r > 0`, of
+/-- The `p`-th power `[f]_{p,λ}^p` of the **Campanato seminorm** of `f` on `Ω` with exponents `p`
+and `λ`: the supremum, over the points `x ∈ Ω` and the radii `r > 0`, of
 
 `r^(-λ) ∫_{B(x, r) ∩ Ω} ‖f - f_{x,r}‖^p`, where `f_{x,r} = ⨍_{B(x, r) ∩ Ω} f`
 
 and `B(x, r)` is the closed ball, both the integral and the average being taken for
-`μ.restrict Ω`. The **Campanato space** `𝓛^{p,λ}(Ω)` consists of the functions for which it is
-finite. -/
+`μ.restrict Ω`. Following Giaquinta–Martinazzi, no `p`-th root is taken, so for `p > 0` this
+quantity scales by `|a|^p`, not `|a|`, when `f` is multiplied by `a`; the Campanato seminorm
+itself is its `p`-th root. The **Campanato space** `𝓛^{p,λ}(Ω)` consists of the functions for
+which it is finite. -/
 def campanatoSeminorm : ℝ≥0∞ :=
   ⨆ x ∈ Ω, ⨆ (r : ℝ) (_ : 0 < r), ENNReal.ofReal (r ^ (-lam)) *
     ∫⁻ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ₑ ^ p ∂μ.restrict Ω
+
+/-- The defining formula of `campanatoSeminorm`, the supremum of the rescaled `p`-th power mean
+oscillations over the points of `Ω` and the positive radii. -/
+theorem campanatoSeminorm_def :
+    campanatoSeminorm μ Ω p lam f = ⨆ x ∈ Ω, ⨆ (r : ℝ) (_ : 0 < r), ENNReal.ofReal (r ^ (-lam)) *
+      ∫⁻ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ₑ ^ p
+        ∂μ.restrict Ω := by
+  simp only [campanatoSeminorm]
 
 /-- The Campanato seminorm is at most `C` exactly when each of the quantities of which it is the
 supremum is. -/
@@ -610,6 +632,16 @@ theorem campanatoSeminorm_congr_ae (h : f =ᵐ[μ.restrict Ω] g) :
   filter_upwards [h] with y hy
   rw [hy]
 
+/-- The Campanato seminorm on the empty set vanishes. -/
+@[simp]
+theorem campanatoSeminorm_empty : campanatoSeminorm μ ∅ p lam f = 0 := by
+  simp [campanatoSeminorm]
+
+/-- For `p > 0`, the Campanato seminorm of the zero function vanishes. -/
+@[simp]
+theorem campanatoSeminorm_zero (hp : 0 < p) : campanatoSeminorm μ Ω p lam (0 : X → F) = 0 := by
+  simp [campanatoSeminorm, ENNReal.zero_rpow_of_pos hp]
+
 end Seminorm
 
 section Characterization
@@ -618,44 +650,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {Ω : Set E} {c : ℝ≥0}
   {p : ℝ} {x : E}
-
-/-- If `f` is `α`-Hölder continuous on a null-measurable set `Ω` with constant `K`, then almost
-everywhere on `closedBall x r`, `x ∈ Ω`, for `μ.restrict Ω`, the function `f` lies within
-`K (2 r)^α` of its average over that ball. -/
-private lemma ae_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : ℝ}
-    (hΩ : NullMeasurableSet Ω μ) (hf : HolderOnWith K α f Ω)
-    (hfm : AEStronglyMeasurable f (μ.restrict Ω)) (hx : x ∈ Ω) (hr : 0 < r) :
-    ∀ᵐ y ∂(μ.restrict Ω).restrict (closedBall x r),
-      ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ ≤ K * (2 * r) ^ (α : ℝ) := by
-  -- Almost every point of `closedBall x r` for `μ.restrict Ω` lies in `Ω`.
-  have hmem : ∀ᵐ y ∂(μ.restrict Ω).restrict (closedBall x r), y ∈ closedBall x r ∩ Ω := by
-    rw [Measure.restrict_restrict measurableSet_closedBall]
-    exact ae_restrict_mem₀ (measurableSet_closedBall.nullMeasurableSet.inter hΩ)
-  -- Any two values of `f` on `closedBall x r ∩ Ω` are at distance at most `K (2 r)^α`.
-  have hdist : ∀ y ∈ closedBall x r ∩ Ω, ∀ z ∈ closedBall x r ∩ Ω,
-      dist (f z) (f y) ≤ K * (2 * r) ^ (α : ℝ) := by
-    intro y hy z hz
-    have hzy : dist z y ≤ 2 * r :=
-      calc dist z y ≤ dist z x + dist y x := dist_triangle_right _ _ _
-        _ ≤ 2 * r := by linarith [mem_closedBall.1 hz.1, mem_closedBall.1 hy.1]
-    exact (hf.dist_le hz.2 hy.2).trans
-      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg hzy α.2) K.2)
-  rcases eq_or_ne (μ.restrict Ω (closedBall x r)) 0 with h0 | h0
-  · simp [Measure.restrict_eq_zero.2 h0]
-  have hfin : μ.restrict Ω (closedBall x r) ≠ ⊤ :=
-    ((Measure.restrict_apply_le _ _).trans_lt measure_closedBall_lt_top).ne
-  have hint : IntegrableOn f (closedBall x r) (μ.restrict Ω) := by
-    refine Measure.integrableOn_of_bounded (M := ‖f x‖ + K * (2 * r) ^ (α : ℝ)) hfin hfm ?_
-    filter_upwards [hmem] with z hz
-    have := hdist x ⟨mem_closedBall_self hr.le, hx⟩ z hz
-    rw [dist_eq_norm] at this
-    linarith [norm_le_insert' (f z) (f x)]
-  -- The average lies in every closed ball of radius `K (2 r)^α` about a value of `f`.
-  filter_upwards [hmem] with y hy
-  rw [← dist_eq_norm, dist_comm]
-  refine mem_closedBall.1 <| (convex_closedBall _ _).set_average_mem isClosed_closedBall h0 hfin
-    ?_ hint
-  filter_upwards [hmem] with z hz using hdist y hy z hz
 
 /-- The exponent bookkeeping behind `λ = n + p α`:
 `r^(-(n + p α)) (K (2 r)^α)^p rⁿ = (2^α K)^p` for `r > 0`. -/
@@ -674,8 +668,9 @@ private lemma rpow_neg_add_mul_mul_rpow_mul_pow_eq {n : ℕ} {K α : ℝ≥0} {r
     _ = (2 ^ (α : ℝ) * K) ^ p := by rw [hexp, Real.rpow_zero, mul_one]
 
 /-- **Hölder functions lie in the Campanato space.** If `f` is `α`-Hölder continuous on a
-null-measurable set `Ω` with constant `K`, then for `p ≥ 0` its Campanato seminorm with exponents
-`p` and `λ = n + p α` is at most `(2^α K)^p μ(B(0, 1))`, where `n` is the dimension. -/
+null-measurable set `Ω` with constant `K`, then for `p ≥ 0` the `p`-th power `[f]_{p,λ}^p` of its
+Campanato seminorm with exponents `p` and `λ = n + p α` is at most `(2^α K)^p μ(B(0, 1))`, where
+`n` is the dimension. -/
 theorem campanatoSeminorm_le_of_holderOnWith {K α : ℝ≥0} (hp : 0 ≤ p)
     (hΩ : NullMeasurableSet Ω μ) (hf : HolderOnWith K α f Ω)
     (hfm : AEStronglyMeasurable f (μ.restrict Ω)) :
@@ -706,23 +701,12 @@ theorem campanatoSeminorm_le_of_holderOnWith {K α : ℝ≥0} (hp : 0 ≤ p)
           ENNReal.ofReal_mul (by positivity)]
         ring
 
-/-- If `Ω` has density at least `c` in `closedBall x r`, then the `μ.restrict Ω`-measure of the
-ball is at least `c rⁿ μ(B(0, 1))`, where `n` is the dimension. -/
-private lemma ofReal_mul_rpow_mul_le_measure_restrict_closedBall {r : ℝ} (hr : 0 < r)
-    (hd : (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω)) :
-    ENNReal.ofReal (c * r ^ (finrank ℝ E : ℝ) * μ.real (closedBall 0 1)) ≤
-      μ.restrict Ω (closedBall x r) := by
-  rw [Measure.restrict_apply measurableSet_closedBall]
-  refine le_trans (le_of_eq ?_) hd
-  rw [μ.addHaar_closedBall' x hr.le, ← Real.rpow_natCast, ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, mul_assoc, measureReal_def,
-    ENNReal.ofReal_toReal measure_closedBall_lt_top.ne]
-
 omit [CompleteSpace F] in
 /-- **The Campanato seminorm bounds the mean oscillation.** If `Ω` has density at least `c > 0` in
-`closedBall x r`, `x ∈ Ω`, and the Campanato seminorm of `f` with exponents `p ≥ 1` and
-`λ = n + p α` is at most `M`, then the mean oscillation of `f` on `closedBall x r` for
-`μ.restrict Ω` is at most `(M / (c μ(B(0, 1))))^(1/p) r^α`, where `n` is the dimension. -/
+`closedBall x r`, `x ∈ Ω`, and the `p`-th power `[f]_{p,λ}^p` of the Campanato seminorm of `f`
+with exponents `p ≥ 1` and `λ = n + p α` is at most `M`, then the mean oscillation of `f` on
+`closedBall x r` for `μ.restrict Ω` is at most `(M / (c μ(B(0, 1))))^(1/p) r^α`, where `n` is the
+dimension. -/
 theorem setAverage_norm_sub_le_of_campanatoSeminorm_le {M : ℝ≥0} {α r : ℝ} (hp : 1 ≤ p)
     (hc : 0 < c) (hM : campanatoSeminorm μ Ω p (finrank ℝ E + p * α) f ≤ M) (hx : x ∈ Ω)
     (hr : 0 < r) (hd : (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω)) :
@@ -758,7 +742,7 @@ theorem setAverage_norm_sub_le_of_campanatoSeminorm_le {M : ℝ≥0} {α r : ℝ
       _ ≤ ENNReal.ofReal (r ^ (n + p * α)) * M := by gcongr
   -- The density of `Ω` bounds the measure of the ball from below.
   have h₃ : ENNReal.ofReal (c * r ^ n * ω) ≤ μ.restrict Ω (closedBall x r) :=
-    ofReal_mul_rpow_mul_le_measure_restrict_closedBall hr hd
+    μ.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall x hr hd
   have hpos : (0 : ℝ) < c * r ^ n * ω := by positivity
   have h₄ : A ^ p ≤ (c * r ^ n * ω)⁻¹ * (r ^ (n + p * α) * M) := by
     have hX : ENNReal.ofReal ((c * r ^ n * ω)⁻¹ * (r ^ (n + p * α) * M)) =
