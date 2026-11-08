@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Segment
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
+import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 
 /-!
 # Perpendicular bisectors and distance half-planes
@@ -53,24 +54,22 @@ theorem perpBisector_def (p q : ℍ) :
   (rfl)
 
 /-- In the imaginary-axis coordinates `w = (geodesicBetween p q)⁻¹ • z`, the difference of the
-hyperbolic cosines of the distances from `z` to `p` and `q` is explicit in `w`, with sign that of
-`exp (-(dist p q / 2)) ^ 2 * ‖w‖ ^ 2 - 1`. -/
+hyperbolic cosines of the distances from `z` to `p` and `q` is explicit in `w`: it equals
+`(exp (dist p q) - 1) * (exp (-(dist p q / 2)) ^ 2 * ‖w‖ ^ 2 - 1) / (2 * w.im)`, so for `p ≠ q`
+its sign is that of `exp (-(dist p q / 2)) ^ 2 * ‖w‖ ^ 2 - 1`. -/
 private theorem cosh_dist_sub_cosh_dist_eq_of_inv_smul (p q z : ℍ) :
     Real.cosh (dist z p) - Real.cosh (dist z q) =
       (Real.exp (dist p q) - 1) * (Real.exp (-(dist p q / 2)) ^ 2 *
         Complex.normSq (((geodesicBetween p q)⁻¹ • z : ℍ) : ℂ) - 1) /
           (2 * ((geodesicBetween p q)⁻¹ • z : ℍ).im) := by
-  have h0 : (geodesicBetween p q)⁻¹ • p = UpperHalfPlane.I := by
-    rw [inv_smul_eq_iff, ← geodesicLine_zero, geodesicLine_geodesicBetween_zero]
-  have h1 : (geodesicBetween p q)⁻¹ • q = geodesicLine 1 (dist p q) := by
-    rw [inv_smul_eq_iff, smul_geodesicLine, mul_one, geodesicLine_geodesicBetween_dist]
   -- The inverse half-distance dilation scales squared norms by `exp (-d)`.
   have ha : Real.exp (-(dist p q / 2)) ^ 2 * Real.exp (dist p q) = 1 := by
     rw [sq, ← Real.exp_add, ← Real.exp_add]
     have hd : -(dist p q / 2) + -(dist p q / 2) + dist p q = 0 := by ring
     rw [hd, Real.exp_zero]
-  rw [← dist_smul (geodesicBetween p q)⁻¹ z p, ← dist_smul (geodesicBetween p q)⁻¹ z q, h0, h1,
-    cosh_dist', cosh_dist', geodesicLine_one_apply]
+  rw [← dist_smul (geodesicBetween p q)⁻¹ z p, ← dist_smul (geodesicBetween p q)⁻¹ z q,
+    inv_geodesicBetween_smul_left p q, inv_geodesicBetween_smul_right p q, cosh_dist',
+    cosh_dist', geodesicLine_one_apply]
   simp only [UpperHalfPlane.I_re, UpperHalfPlane.I_im, UpperHalfPlane.mk_re,
     UpperHalfPlane.mk_im, sub_zero, one_pow, mul_one]
   simp only [Complex.normSq_apply, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
