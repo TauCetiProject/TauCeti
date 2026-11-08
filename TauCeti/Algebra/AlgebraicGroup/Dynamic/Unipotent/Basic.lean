@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.ClosedSubgroup
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Laurent
 
 /-!
 # Unipotence of the dynamic unipotent subgroup
@@ -64,31 +65,6 @@ private theorem charpoly_conjugate {B : Type w} [CommRing B] [Algebra R B]
     ext z
     simp [LinearEquiv.conj_apply, Comodule.pointsAction_toLinearMap]
   rw [hEnd, LinearEquiv.charpoly_conj]
-
-/-- If a polynomial matrix specialises to the identity at zero and has the same characteristic
-polynomial over the Laurent polynomials as a constant matrix, the constant matrix has the
-characteristic polynomial of the identity. -/
-private theorem charpoly_eq_charpoly_one_of_map_toLaurent {n : Type*} [Fintype n] [DecidableEq n]
-    (P : Matrix n n (Polynomial A)) (G : Matrix n n A)
-    (hzero : P.map (Polynomial.evalRingHom (0 : A)) = 1)
-    (hLaurent : (P.map Polynomial.toLaurent).charpoly = (G.map LaurentPolynomial.C).charpoly) :
-    G.charpoly = (1 : Matrix n n A).charpoly := by
-  have hpoly : P.charpoly = G.charpoly.map Polynomial.C := by
-    apply Polynomial.map_injective _ Polynomial.toLaurent_injective
-    calc
-      P.charpoly.map Polynomial.toLaurent =
-          G.charpoly.map LaurentPolynomial.C := by
-        simpa only [Matrix.charpoly_map] using hLaurent
-      _ = (G.charpoly.map Polynomial.C).map Polynomial.toLaurent := by
-        ext n
-        simp
-  have hzeroCharpoly := congrArg Matrix.charpoly hzero
-  rw [Matrix.charpoly_map, hpoly, Polynomial.map_map] at hzeroCharpoly
-  calc
-    G.charpoly = G.charpoly.map ((Polynomial.evalRingHom (0 : A)).comp Polynomial.C) := by
-      ext n
-      simp
-    _ = (1 : Matrix n n A).charpoly := hzeroCharpoly
 
 /-- Over the Laurent polynomials, the coefficient matrix of the extension of the conjugate of `g`
 has the same characteristic polynomial as that of the constant matrix of `g`. -/
@@ -150,7 +126,8 @@ theorem isUnipotentPoint_of_mem_unipotent
       _ = 1 := by
         rw [← Comodule.toMatrix_endOfPoint b]
         simp
-  have hGCharpoly := charpoly_eq_charpoly_one_of_map_toLaurent (C.map E.ofConv) (C.map g.ofConv)
+  have hGCharpoly := Matrix.charpoly_eq_charpoly_one_of_map_toLaurent (C.map E.ofConv)
+    (C.map g.ofConv)
     hzeroMatrix (charpoly_map_toLaurent_extend_coefficientMatrix l hgP M)
   have hEndCharpoly :
       (Comodule.endOfPoint M g.ofConv).charpoly =
