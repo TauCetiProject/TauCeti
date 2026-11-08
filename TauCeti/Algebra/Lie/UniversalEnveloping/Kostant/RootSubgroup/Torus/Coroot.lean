@@ -99,6 +99,25 @@ section Coroot
 variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 variable [Fintype κ] [DecidableEq κ]
 
+/-- Conjugation by the coroot value rescales its raising root parameter by the square:
+`h_c(s) xᵢ(r) h_c(s)⁻¹ = xᵢ(s² r)`, over every value ring. -/
+theorem kostantCoordinateCocharacter_conj_kostantRootSubgroupParam
+    (hwt : ∀ q, IsCartanWeightVector h ρ (wt q) ((b q : M) : V))
+    {i j : ι} {c : κ} {α : κ → ℤ}
+    (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hα : ∀ q, ⁅h q, e i⁆ = (α q : ℚ) • e i) (A : CommAlgCat.{w} ℤ) (s : Aˣ) (r : A) :
+    kostantCoordinateCocharacter M b wt A c s *
+        kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd r) *
+        (kostantCoordinateCocharacter M b wt A c s)⁻¹ =
+      kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd ((s : A) ^ 2 * r)) := by
+  rw [kostantCoordinateCocharacter_apply,
+    kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hα hi A,
+    torusCharacter_mulSingle, rootWeight_apply_coroot_eq_two e h ρ hT (hα c)]
+  simp
+
 /-- The rank-one identity at a square parameter `v²`, where it is the conjugate of the Weyl
 representative by the coroot value `h_c(v)`. -/
 private theorem kostantRootSubgroupParam_mul_mul_eq_of_sq

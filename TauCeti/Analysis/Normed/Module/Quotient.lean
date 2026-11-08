@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
@@ -18,7 +19,9 @@ operator norm. Equivalently, precomposition with the quotient projection preserv
 norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
 part of the duality between a quotient and the annihilator of its defining submodule.
 The quotient projection is moreover a metric quotient map: it has norm at most one and lifts
-every vector of norm less than `r` to a vector of norm less than `r`.
+every vector of norm less than `r` to a vector of norm less than `r`. A closed-subspace quotient
+has a chosen bounded nonlinear right inverse with public bound constant two
+(`Submodule.quotientRightInverse`, `Submodule.quotientRightInverse_nnnorm`).
 
 The quotient module also inherits a contractive action of a possibly noncommutative
 seminormed ring. In particular, this applies to quotients of a normed ring by left ideals.
@@ -114,3 +117,30 @@ instance isBoundedSMul (S : Submodule R E) : IsBoundedSMul R (E ⧸ S) :=
       exact (div_le_iff₀' hrpos).mpr (hy ▸ hbound y)
 
 end Submodule.Quotient
+
+public section
+
+namespace Submodule
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The quotient norm gives a right inverse of bound `2` for a closed-subspace quotient. -/
+noncomputable def quotientRightInverse (W : Submodule 𝕜 F) [IsClosed (W : Set F)] :
+    W.mkQL.NonlinearRightInverse := by
+  classical
+  have h (z : F ⧸ W) : ∃ x : F, W.mkQL x = z ∧ ‖x‖ ≤ 2 * ‖z‖ := by
+    by_cases hz : z = 0
+    · exact ⟨0, by simp [hz]⟩
+    · obtain ⟨x, hx, hxn⟩ := Submodule.Quotient.norm_mk_lt z (norm_pos_iff.2 hz)
+      exact ⟨x, hx, by linarith⟩
+  choose lift hlift using h
+  exact ⟨lift, 2, fun z ↦ (hlift z).2, fun z ↦ (hlift z).1⟩
+
+/-- The chosen quotient lift has the public uniform bound constant two. -/
+@[simp]
+theorem quotientRightInverse_nnnorm (W : Submodule 𝕜 F) [IsClosed (W : Set F)] :
+    W.quotientRightInverse.nnnorm = 2 := by
+  simp only [quotientRightInverse]
+
+end Submodule

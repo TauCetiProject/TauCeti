@@ -16,9 +16,15 @@ Let `f : α → β` be almost everywhere measurable for `μ`. If `μ.map f ≤ C
 extended norm. For a normed vector space codomain, `C < ⊤`, and `1 ≤ p`, this estimate gives
 boundedness of precomposition from `Lᵖ(ν)` to `Lᵖ(μ)`, with norm at most `C ^ (1/p)`.
 
+For `p = ∞` no bound on the pushforward is needed: precomposition with a quasi-measure-preserving
+map, such as the projection `Prod.fst` from a product of σ-finite measures, preserves `L^∞`
+(`MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`).
+
 ## Main declarations
 
 * `MeasureTheory.eLpNorm_comp_le_of_map_le_smul`: the `eLpNorm` bound for precomposition.
+* `MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`: precomposition with a
+  quasi-measure-preserving map preserves `L^∞`.
 -/
 
 public section
@@ -47,5 +53,14 @@ theorem eLpNorm_comp_le_of_map_le_smul {C : ℝ≥0∞} (hf : AEMeasurable f μ)
     ENNReal.mul_top (ENNReal.rpow_pos_of_nonneg (pos_iff_ne_zero.mpr hC)
       ENNReal.toReal_nonneg).ne']
   exact le_top
+
+/-- **Precomposition preserves `L^∞`.** If `g ∈ L^∞(ν)` and `f` is quasi-measure-preserving
+from `μ` to `ν`, then `g ∘ f ∈ L^∞(μ)`. -/
+theorem MemLp.comp_quasiMeasurePreserving_top (hg : MemLp g ∞ ν)
+    (hf : QuasiMeasurePreserving f μ ν) : MemLp (g ∘ f) ∞ μ := by
+  have hgm := hg.aestronglyMeasurable
+  rw [memLp_iff, eLpNorm_exponent_top hgm] at hg
+  rw [memLp_iff, eLpNorm_exponent_top (hgm.comp_quasiMeasurePreserving hf)]
+  exact (eLpNormEssSup_le_of_ae_enorm_bound (hf.ae ae_le_eLpNormEssSup)).trans_lt hg
 
 end MeasureTheory

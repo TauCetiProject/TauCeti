@@ -142,6 +142,27 @@ theorem mixedInner_self_eq_sum (x : mixedSpace K) :
     -- The subtype equivalence preserves the place; subtype eta identifies its complex coordinate.
     rfl
 
+variable {K} in
+open NumberField.InfinitePlace in
+/-- Nonzero vectors of a discrete lattice have uniformly positive squared Euclidean length
+in the mixed embedding. The assertion also applies to the zero lattice. -/
+theorem exists_pos_le_mixedInner (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] :
+    ∃ δ > 0, ∀ x : L, x ≠ 0 → δ ≤ mixedInner K x x := by
+  classical
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (isOpen_discrete ({0} : Set L)) 0 (by simp)
+  refine ⟨ε ^ 2, sq_pos_of_pos hε, fun x hx ↦ ?_⟩
+  have hεx : ε ≤ ‖x‖ := le_of_not_gt fun h ↦ hx <| by
+    have := hball (by simpa using h)
+    simpa using this
+  obtain ⟨w, _, hw⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty
+    (fun w ↦ normAtPlace w (x : mixedSpace K))
+  have hnorm : ‖x‖ = normAtPlace w (x : mixedSpace K) := by
+    rw [← Submodule.norm_coe, norm_eq_sup'_normAtPlace, hw]
+  rw [mixedInner_self_eq_sum]
+  exact (pow_le_pow_left₀ hε.le (hεx.trans_eq hnorm) 2).trans
+    (Finset.single_le_sum (fun v _ ↦ sq_nonneg (normAtPlace v (x : mixedSpace K)))
+      (Finset.mem_univ w))
+
 open scoped Classical in
 /-- **The Euclidean model carries `mixedInner`**: Mathlib's continuous linear equivalence
 `euclidean.toMixed` carries the inner product of `euclidean.mixedSpace K` to `mixedInner`. -/

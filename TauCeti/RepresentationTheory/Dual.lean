@@ -47,6 +47,7 @@ Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and w
   pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`; by
   `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
   fixing `ker ℓ` pointwise.
+* `Representation.dual_comp`: restricting along a group homomorphism commutes with taking duals.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
   when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
   faithful exactly when the representation is.
@@ -83,6 +84,14 @@ theorem generalLinearEquiv_dual_asGroupHom_symm
   simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     asGroupHom_apply, dual_apply, inv_inv, Module.Dual.transpose_apply,
     LinearEquiv.dualMap_apply, LinearMap.comp_apply]
+
+/-- The dual of a representation restricted along `f` is the restriction of the dual along `f`. -/
+@[simp]
+theorem dual_comp {R G H V : Type*} [CommSemiring R] [Group G] [Group H] [AddCommMonoid V]
+    [Module R V] (ρ : Representation R G V) (f : H →* G) :
+    dual (ρ.comp f) = ρ.dual.comp f := by
+  ext
+  simp
 
 section Field
 

@@ -277,8 +277,7 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
   /- Step 5: integrals over `M` of functions supported in `tsupport u` are computed in the ball,
   and integrals over `E` of functions of `Ψ y` are integrals over `F`, scaled by `t ^ n / ρ p`. -/
   have hu1 : ContMDiff I 𝓘(ℝ) 1 u := hu.of_le (by simp)
-  have hgradsq : Continuous fun x ↦ ‖mgradient I u x‖ ^ 2 := by
-    simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hu1 hu1
+  have hgradsq : Continuous fun x ↦ ‖mgradient I u x‖ ^ 2 := continuous_norm_sq_mgradient hu1
   have hsupp_tsupp {f : M → ℝ} (hf : ∀ x ∉ tsupport u, f x = 0) :
       Function.support f ⊆ φ.source ∩ φ ⁻¹' ball (φ p) R := fun x hx ↦
     hK'W x (htsupp (by_contra fun h ↦ hx (hf x h)))

@@ -43,6 +43,9 @@ relating the compatibility of the cup product with connecting maps in its two va
   `TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁`,
   `TauCeti.TateCohomology.isZero_X₁_of_isZero_X₃_of_isZero_X₂`: two-out-of-three for the
   vanishing of Tate cohomology along a short exact sequence.
+* `TauCeti.TateCohomology.isIso_map_τ₁_of_isIso_δ`: a morphism of short exact sequences inducing
+  isomorphisms on the third terms in degree `n` and on the connecting maps induces an isomorphism
+  on the first terms in degree `n + 1`.
 * `TauCeti.TateCohomology.δ_comp_δ_eq_neg`: the connecting maps of a `3 × 3` diagram of
   representations with short exact rows and columns anticommute.
 -/
@@ -179,5 +182,20 @@ theorem δ_comp_δ_eq_neg (D : ShortComplex (ShortComplex (Rep k G)))
   rw [e₃, e₁', e₃', e₁]
   exact HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg D' hh₁ hh₂ hh₃ hh₁' hh₂' hh₃'
     n (n + 1) (n + 1 + 1) rfl rfl
+
+/-- **Isomorphisms transported along connecting maps.** For a morphism `Φ : A ⟶ B` of short exact
+sequences of representations whose connecting maps in degree `n` are isomorphisms and which
+induces an isomorphism on the third terms in degree `n`, the induced map on the first terms is an
+isomorphism in degree `n + 1`. -/
+theorem isIso_map_τ₁_of_isIso_δ {A B : ShortComplex (Rep k G)} (hA : A.ShortExact)
+    (hB : B.ShortExact) (Φ : A ⟶ B) (n : ℤ) [IsIso (_root_.TateCohomology.δ hA n)]
+    [IsIso (_root_.TateCohomology.δ hB n)] [IsIso ((tateCohomologyFunctor n).map Φ.τ₃)] :
+    IsIso ((tateCohomologyFunctor (n + 1)).map Φ.τ₁) := by
+  -- Naturality of the connecting maps reads `δ_A ≫ Φ.τ₁_* = Φ.τ₃_* ≫ δ_B`.
+  have e := _root_.TateCohomology.δ_naturality hA hB Φ n
+  have : IsIso (_root_.TateCohomology.δ hA n ≫ (tateCohomologyFunctor (n + 1)).map Φ.τ₁) := by
+    rw [e]
+    infer_instance
+  exact IsIso.of_isIso_comp_left (_root_.TateCohomology.δ hA n) _
 
 end TauCeti.TateCohomology
