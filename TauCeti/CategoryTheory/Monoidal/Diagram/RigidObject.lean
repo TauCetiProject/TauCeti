@@ -223,6 +223,26 @@ def ofMonoidal : CategoryTheory.FreeMonoidalCategory α → RigidObject α
 @[simp] theorem ofMonoidal_tensor (X Y : CategoryTheory.FreeMonoidalCategory α) :
     ofMonoidal (X ⊗ Y) = (ofMonoidal X).tensor (ofMonoidal Y) := by rfl
 
+/-- The inclusion of monoidal object expressions preserves their raw syntax faithfully. -/
+theorem ofMonoidal_injective : Function.Injective (ofMonoidal (α := α)) := by
+  intro X Y h
+  induction X generalizing Y with
+  | of a => cases Y <;> simp_all [ofMonoidal]
+  | unit => cases Y <;> simp_all [ofMonoidal]
+  | tensor X Z ihX ihZ =>
+    cases Y with
+    | of a => cases h
+    | unit => cases h
+    | tensor Y W =>
+      exact congrArg₂ CategoryTheory.FreeMonoidalCategory.tensor
+        (ihX (tensor.inj h).1) (ihZ (tensor.inj h).2)
+
+/-- Every letter in the normalization of a monoidal object has dual level zero. -/
+theorem normalize_ofMonoidal (X : CategoryTheory.FreeMonoidalCategory α) :
+    ∀ p ∈ normalize (ofMonoidal X), p.2 = 0 := by
+  induction X <;> simp_all [ofMonoidal]
+  aesop
+
 /-- An atom at an integer level, expressed using only the two formal dual constructors. -/
 def atLevel (a : α) : ℤ → RigidObject α
   | .ofNat n => rightDual^[n] (.of a)
