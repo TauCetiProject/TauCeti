@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.EmpiricalMeasure
+public import TauCeti.Probability.Process.EmpiricalMeasure.Basic
 public import TauCeti.Probability.DeFinetti.Theorem
 -- Non-public: conditional weak convergence is used only to prove the endpoint below; this module
 -- does not re-export the `ConditionallyIIDWith.*` convergence API.
