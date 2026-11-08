@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Subdifferential
-public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.MeasureTheory.Measure.Basic
 
 /-!
