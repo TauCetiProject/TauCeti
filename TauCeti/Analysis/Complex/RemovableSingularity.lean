@@ -35,6 +35,8 @@ it, are shown to be analytic across it.
   hyperplane.**
 * `TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton`: uniqueness of the extension, for continuous
   functions.
+* `TauCeti.eqOn_conj_extension`: compatibility of continuous extensions with complex conjugation
+  of the punctured coordinate, carried through the exceptional hyperplane by continuity.
 
 ## References
 
@@ -47,7 +49,7 @@ it, are shown to be analytic across it.
 
 public section
 
-open Complex Filter Function Metric Real Set Topology
+open Complex ComplexConjugate Filter Function Metric Real Set Topology
 
 namespace TauCeti
 
@@ -60,6 +62,28 @@ theorem eqOn_prod_of_eqOn_prod_diff_singleton {X Y : Type*} [TopologicalSpace X]
   refine h.of_subset_closure h₁ h₂ (prod_mono subset_rfl sdiff_subset) ?_
   rw [closure_prod_eq, sdiff_eq]
   exact prod_mono subset_closure ((dense_compl_singleton c).open_subset_closure_inter hs)
+
+/-- Conjugation compatibility of the pole-removed extensions: if continuous functions `g i` on
+`U × ball 0 R'` agree off the hyperplane `z = 0` with the monomial `z ^ (n * a)` times branches
+`r i` that satisfy it, then the `g i` satisfy it on the full product, by continuity through the
+exceptional hyperplane. The removed pole is a real monomial, so scaling commutes with
+conjugation. -/
+lemma eqOn_conj_extension {E ι : Type*} [TopologicalSpace E] {U : Set E} {n a : ℕ} {R' : ℝ}
+    {τ : E → E} {g r : ι → E × ℂ → ℂ} {σ : ι → ι}
+    (hgc : ∀ i, ContinuousOn (g i) (U ×ˢ ball 0 R'))
+    (hge : ∀ i, EqOn (g i) (fun b ↦ b.2 ^ (n * a) * r i b) (U ×ˢ (ball 0 R' \ {0})))
+    (hσ : ∀ i b, b ∈ U ×ˢ (ball 0 R' \ {0}) → r (σ i) b = conj (r i (τ b.1, conj b.2)))
+    (hκ : ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R'))
+    (hκT : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') (U ×ˢ ball 0 R'))
+    (i : ι) :
+    EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2))) (U ×ˢ ball 0 R') := by
+  have hκS : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 R' \ {0}))
+      (U ×ˢ (ball 0 R' \ {0})) := fun b hb ↦
+    ⟨(hκT ⟨hb.1, hb.2.1⟩).1, (hκT ⟨hb.1, hb.2.1⟩).2, by simpa using hb.2.2⟩
+  refine eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball (hgc (σ i))
+    (Complex.continuous_conj.comp_continuousOn ((hgc i).comp hκ hκT)) ?_
+  intro b hb
+  simp only [hge (σ i) hb, hge i (hκS hb), hσ i b hb, map_mul, map_pow, Complex.conj_conj]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V × ℂ → E} {U : Set V} {s : Set ℂ}
