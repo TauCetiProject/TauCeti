@@ -31,50 +31,21 @@ public section
 
 namespace TauCeti
 
-/-- A step of nonnegative length whose direction `x` lies in `[θ, θ + π]` does not lower the
-height. -/
-private lemma sub_nonneg_of_step_of_le_add_pi {D x θ : ℝ}
-    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ ≤ x) (h₂ : x ≤ θ + Real.pi) : 0 ≤ D := by
-  obtain ⟨d, hd, rfl⟩ := h
-  exact mul_nonneg hd (Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith))
-
-/-- A step of nonnegative length whose direction `x ∈ (-2π, θ - π]` does not lower the height,
-for `θ ≤ 0`. -/
-private lemma sub_nonneg_of_step_of_le_sub_pi {D x θ : ℝ}
-    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (hx : -2 * Real.pi < x) (hθ : θ ≤ 0)
-    (h₂ : x ≤ θ - Real.pi) : 0 ≤ D := by
-  obtain ⟨d, hd, rfl⟩ := h
-  rw [← Real.sin_add_two_pi]
-  exact mul_nonneg hd (Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith))
-
-/-- A step of nonnegative length whose direction `x` lies in `[θ - π, θ]` does not raise the
-height. -/
-private lemma sub_nonpos_of_step_of_sub_pi_le {D x θ : ℝ}
-    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ - Real.pi ≤ x) (h₂ : x ≤ θ) : D ≤ 0 := by
-  obtain ⟨d, hd, rfl⟩ := h
-  exact mul_nonpos_of_nonneg_of_nonpos hd
-    (Real.sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith))
-
-/-- A step of nonnegative length whose direction `x ≤ 0` is at least `θ + π`, for `-2π < θ`,
-does not raise the height. -/
-private lemma sub_nonpos_of_step_of_add_pi_le {D x θ : ℝ}
-    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (hx : x ≤ 0) (hθ : -2 * Real.pi < θ)
-    (h₁ : θ + Real.pi ≤ x) : D ≤ 0 := by
-  obtain ⟨d, hd, rfl⟩ := h
-  exact mul_nonpos_of_nonneg_of_nonpos hd
-    (sin_nonpos_of_pi_le_of_le_two_pi (by linarith) (by linarith))
-
-/-- The height at vertex `k + 1`, for `i ≤ k < n`, is nonnegative: either every side from `i` to
-`k + 1` turns by at most `π`, so the height rises, or one follows the boundary on through the
-closing side back to `i`, so the height only falls and returns to zero. -/
+/-- **The height at vertex `k + 1` is nonnegative**, for `i ≤ k < n`, when the directions `φ` turn
+monotonically through `(-2π, 0]` with `φ n = 0`, every step `l < n` raises the height by
+`d * sin (φ l - φ i)` with `d ≥ 0`, and the height is normalized by `H i = 0`. The closing steps
+through `Hinf` are assumed, in case `φ i ≤ -π`, not to raise the height: `Hinf - H n ≤ 0` and
+`H 0 - Hinf ≤ 0`. -/
 private lemma height_succ_nonneg {n i k : ℕ} (hi : i < n) (hik : i ≤ k) (hkn : k < n)
     {H φ : ℕ → ℝ} {Hinf : ℝ} (hmono : ∀ l m, l ≤ m → m ≤ n → φ l ≤ φ m)
     (hlow : ∀ l ≤ n, -2 * Real.pi < φ l) (hlast : φ n = 0)
     (hstep : ∀ l < n, ∃ d, 0 ≤ d ∧ H (l + 1) - H l = d * Real.sin (φ l - φ i))
     (hHi : H i = 0) (hclose : φ i ≤ -Real.pi → Hinf - H n ≤ 0 ∧ H 0 - Hinf ≤ 0) :
     0 ≤ H (k + 1) := by
+  -- Either every side from `i` to `k + 1` turns by at most `π`, so the height rises, or one
+  -- follows the boundary on through the closing side back to `i`, so it only falls to zero.
   by_cases hshort : φ k ≤ φ i + Real.pi
-  · have htel := Finset.sum_Ico_sub H (show i ≤ k + 1 by omega)
+  · have htel := Finset.sum_Ico_sub H (Nat.le_succ_of_le hik)
     rw [hHi, sub_zero] at htel
     rw [← htel]
     refine Finset.sum_nonneg fun l hl ↦ ?_
@@ -98,9 +69,10 @@ private lemma height_succ_nonneg {n i k : ℕ} (hi : i < n) (hik : i ≤ k) (hkn
     rw [Finset.sum_Ico_sub H (Nat.zero_le i), hHi] at h₂
     linarith [hclose hθπ.le]
 
-/-- The height at vertex `k ≤ i` is nonnegative: either every side from `k` up to `i` turns back
-by at most `π`, so the height falls to zero, or one reaches `k` from `i` the other way round, so
-the height only rises. -/
+/-- **The height at vertex `k ≤ i` is nonnegative**, when the directions `φ` turn monotonically
+through `(-2π, 0]` with `φ n = 0`, every step `l < n` raises the height by `d * sin (φ l - φ i)`
+with `d ≥ 0`, and the height is normalized by `H i = 0`. The closing steps through `Hinf` are
+assumed, in case `-π ≤ φ i`, not to lower the height: `0 ≤ Hinf - H n` and `0 ≤ H 0 - Hinf`. -/
 private lemma height_nonneg_of_le {n i k : ℕ} (hi : i < n) (hki : k ≤ i)
     {H φ : ℕ → ℝ} {Hinf : ℝ} (hmono : ∀ l m, l ≤ m → m ≤ n → φ l ≤ φ m)
     (hlow : ∀ l ≤ n, -2 * Real.pi < φ l) (hlast : φ n = 0)
@@ -108,6 +80,8 @@ private lemma height_nonneg_of_le {n i k : ℕ} (hi : i < n) (hki : k ≤ i)
     (hHi : H i = 0) (hclose : -Real.pi ≤ φ i → 0 ≤ Hinf - H n ∧ 0 ≤ H 0 - Hinf) :
     0 ≤ H k := by
   have hk : k ≤ n := by omega
+  -- Either every side from `k` up to `i` turns back by at most `π`, so the height falls to zero,
+  -- or one reaches `k` from `i` the other way round, so the height only rises.
   by_cases hshort : φ i - Real.pi ≤ φ k
   · have h : ∑ l ∈ Finset.Ico k i, (H (l + 1) - H l) ≤ 0 :=
       Finset.sum_nonpos fun l hl ↦ by
