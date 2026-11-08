@@ -43,6 +43,9 @@ The main results are:
   at a point is a continuous linear function of the symbol;
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
+* `TauCeti.Symbol.exists_coefficient_eq_tsum`: a series of symbols of a fixed order whose terms
+  vanish on balls of radii tending to infinity, and whose seminorms are summable, sums pointwise
+  to a symbol of the same order. Near every frequency the series is a finite sum.
 * `TauCeti.Symbol.seminorm_comp_le`: the Leibniz estimate bounding the seminorms of a composition
   `b ∘ a` by sums of products of seminorms of `b` and `a`;
 * `TauCeti.Symbol.continuous_comp`: composition of symbols is jointly continuous, so the
@@ -259,6 +262,57 @@ theorem isUniform_iff_bddAbove_seminorm {a : Symbol n V W m} :
     exact (rpow_weight_pos ξ _).le
 
 end Seminorm
+
+section Summation
+
+open Filter Topology
+
+/-- A series of symbols `cⱼ` of order `m` sums pointwise to a symbol of order `m` if `cⱼ` vanishes
+for `‖ξ‖ < tⱼ` with `tⱼ → ∞`, and every seminorm `p_{K,α,β}(cⱼ)` is summable. Near every
+frequency the series is a finite sum. -/
+theorem exists_coefficient_eq_tsum (c : ℕ → Symbol n V W m) {t : ℕ → ℝ}
+    (ht : Tendsto t atTop atTop) (hc : ∀ j x ξ, ‖ξ‖ < t j → (c j).coefficient (x, ξ) = 0)
+    (hsum : ∀ K α β, Summable fun j => Symbol.seminorm K α β (c j)) :
+    ∃ b : Symbol n V W m, ∀ p, b.coefficient p = ∑' j, (c j).coefficient p := by
+  -- On the frequencies `‖ξ‖ < R` the series is a finite sum.
+  have hfin : ∀ R, ∃ J, ∀ x ξ, ‖ξ‖ < R →
+      ∑' j, (c j).coefficient (x, ξ) = (∑ j ∈ Finset.range J, c j).coefficient (x, ξ) := by
+    intro R
+    obtain ⟨J, hJ⟩ := eventually_atTop.1 (ht.eventually_ge_atTop R)
+    refine ⟨J, fun x ξ hξ => ?_⟩
+    rw [coefficient_sum, Finset.sum_apply]
+    exact tsum_eq_sum fun j hj =>
+      hc j x ξ (hξ.trans_le (hJ j (by simpa using hj)))
+  -- Near `p₀` the sum agrees with a finite sum of symbols.
+  have hloc : ∀ p₀ : CoordinateSpace n × CoordinateSpace n, ∃ J,
+      (fun p => ∑' j, (c j).coefficient p) =ᶠ[𝓝 p₀]
+        (∑ j ∈ Finset.range J, c j).coefficient := by
+    intro p₀
+    obtain ⟨J, hJ⟩ := hfin (‖p₀.2‖ + 1)
+    refine ⟨J, ?_⟩
+    filter_upwards [(isOpen_lt (continuous_norm.comp continuous_snd) continuous_const).mem_nhds
+      (show ‖p₀.2‖ < ‖p₀.2‖ + 1 by linarith)] with p hp
+    exact hJ p.1 p.2 hp
+  refine ⟨⟨fun p => ∑' j, (c j).coefficient p, contDiff_iff_contDiffAt.2 fun p₀ => ?_,
+    fun K hK α β => ?_⟩, fun p => rfl⟩
+  · obtain ⟨J, hJ⟩ := hloc p₀
+    exact (∑ j ∈ Finset.range J, c j).contDiff_coefficient.contDiffAt.congr_of_eventuallyEq hJ
+  · refine ⟨∑' j, Symbol.seminorm ⟨K, hK⟩ α β (c j), tsum_nonneg fun _ => apply_nonneg _ _,
+      fun x hx ξ => ?_⟩
+    obtain ⟨J, hJ⟩ := hfin (‖ξ‖ + 1)
+    have hd : mixedDeriv α β (fun p => ∑' j, (c j).coefficient p) x ξ =
+        mixedDeriv α β (∑ j ∈ Finset.range J, c j).coefficient x ξ := by
+      refine mixedDeriv_congr_of_eventually_snd ?_ α β x
+      filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds
+        (show ‖ξ‖ < ‖ξ‖ + 1 by linarith)] with η hη y
+      exact hJ y η hη
+    rw [hd]
+    refine (le_seminorm ⟨K, hK⟩ α β _ hx ξ).trans (mul_le_mul_of_nonneg_right ?_
+      (rpow_weight_pos ξ _).le)
+    exact (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
+      ((hsum ⟨K, hK⟩ α β).sum_le_tsum _ fun _ _ => apply_nonneg _ _)
+
+end Summation
 
 section Topology
 
