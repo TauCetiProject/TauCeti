@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.TopCat.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplexOne
+public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.One
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 
 import TauCeti.Algebra.BigOperators.Fin
-import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex
+import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
