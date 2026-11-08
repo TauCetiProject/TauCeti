@@ -264,6 +264,8 @@ public instance (priority := 100) Path.Homotopic.Quotient.discreteTopology
 
 /-! ### Null-homotopy of continuous families of loops -/
 
+namespace TauCeti
+
 /-- In a locally path-connected space, let `γ y` be a loop at `a y` depending continuously on a
 parameter `y`, and suppose the space is semilocally simply connected along `γ y₀`. Then for `y`
 near `y₀` the loop `γ y` is null-homotopic exactly when `γ y₀` is. -/
@@ -316,5 +318,7 @@ public theorem isClopen_setOf_homotopic_refl [SemilocallySimplyConnectedSpace X]
   refine ⟨isOpen_compl_iff.mp <| isOpen_iff_mem_nhds.mpr fun y₀ hy₀ ↦ ?_,
     isOpen_iff_mem_nhds.mpr fun y₀ hy₀ ↦ (h y₀).mono fun y hy ↦ hy.mpr hy₀⟩
   exact (h y₀).mono fun y hy hy' ↦ hy₀ (hy.mp hy')
+
+end TauCeti
 
 end
