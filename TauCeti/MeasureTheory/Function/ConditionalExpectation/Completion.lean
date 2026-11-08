@@ -27,6 +27,13 @@ public section
 
 open MeasureTheory Filter
 
+/- Carrier convention for the completion proofs below: Mathlib defines
+NullMeasurableSpace Ω μ to be the type synonym Ω, and its instMeasurableSpace is
+exactly eventuallyMeasurableSpace m₀ (ae μ). Thus μ.completion can be used as an
+@Measure Ω (eventuallyMeasurableSpace m₀ (ae μ)) without a cast or a measure map.
+The explicit ambient-space arguments below use this definitional identification;
+they do not identify the original measurable space m₀ with its completion. -/
+
 namespace MeasureTheory.Measure
 
 variable {Ω : Type*} {m m₀ : MeasurableSpace Ω}
@@ -83,7 +90,7 @@ theorem condExp_eventuallyMeasurableSpace_completion (hm : m ≤ m₀)
       eventuallyMeasurableSpace m₀ (ae μ) := by
     rintro s ⟨t, ht, hst⟩
     exact ⟨t, hm t ht, hst⟩
-  -- Keep the original carrier explicit when trimming the completed measure.
+  -- Use the carrier/instance identification above, retaining the completed σ-algebra.
   let ν : @Measure Ω (eventuallyMeasurableSpace m₀ (ae μ)) := μ.completion
   have : SigmaFinite (ν.trim (hm.trans le_eventuallyMeasurableSpace)) :=
     (μ.trim_completion hm).symm ▸ inferInstance

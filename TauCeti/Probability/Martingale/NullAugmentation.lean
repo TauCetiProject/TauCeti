@@ -48,7 +48,10 @@ theorem Filtration.condExp_nullAugment_completion (ℱ : Filtration ι mΩ) (s :
     [SigmaFinite (P.trim (ℱ.le s))] {f : Ω → E} (hf : AEStronglyMeasurable f P) :
     @condExp (NullMeasurableSpace Ω P) E (ℱ.nullAugment P s) _ _ _ P.completion f
       =ᵐ[P.completion] @condExp Ω E (ℱ s) mΩ _ _ P f := by
-  -- Specify the original ambient space on the right, rather than infer it from the carrier tag.
+  -- NullMeasurableSpace Ω P is definitionally Ω, with measurable-space instance
+  -- eventuallyMeasurableSpace mΩ (ae P), exactly the ambient space of nullAugment.
+  -- This identifies the left side with the completion lemma's left side, not with
+  -- conditional expectation under mΩ. The a.e. filter is transported by ae_completion.
   rw [Filtration.nullAugment_apply, P.ae_completion]
   exact condExp_eventuallyMeasurableSpace_completion (μ := P) (ℱ.le s) hf
 
@@ -58,6 +61,9 @@ variable {ℱ : Filtration ι mΩ} {X : ι → Ω → E} [SigmaFiniteFiltration 
 theorem Martingale.nullAugment (hX : Martingale X ℱ P) :
     @Martingale (NullMeasurableSpace Ω P) E ι _ _ _ _
       (fun t (ω : NullMeasurableSpace Ω P) => X t ω) (ℱ.nullAugment P) P.completion := by
+  -- The carrier tag changes only the ambient measurable-space instance, not X t.
+  -- Strong measurability names its σ-algebra explicitly, so mono transports it
+  -- along le_nullAugment without any additional carrier map.
   refine ⟨fun t => (hX.stronglyMeasurable t).mono (ℱ.le_nullAugment P t), ?_⟩
   intro s t hst
   refine (ℱ.condExp_nullAugment_completion s (hX.integrable t).aestronglyMeasurable).trans ?_
@@ -72,6 +78,8 @@ theorem StronglyAdapted.martingale_nullAugment_iff (hX : StronglyAdapted ℱ X) 
     @Martingale (NullMeasurableSpace Ω P) E ι _ _ _ _
       (fun t (ω : NullMeasurableSpace Ω P) => X t ω) (ℱ.nullAugment P) P.completion ↔
       Martingale X ℱ P := by
+  -- Keep the original adaptation hX: no descent of strong measurability from the
+  -- augmented σ-algebra is used. As above, the carrier tag leaves X unchanged.
   refine ⟨fun h => ⟨hX, fun s t hst => ?_⟩, Martingale.nullAugment⟩
   have hce := ℱ.condExp_nullAugment_completion (P := P) s
     ((hX t).mono (ℱ.le t)).aestronglyMeasurable
@@ -97,7 +105,14 @@ theorem martingale_nullAugment (hX : Locally (fun Y => Martingale Y ℱ P) ℱ X
       (fun Y => Martingale Y (ℱ.nullAugment P) P.completion) (ℱ.nullAugment P)
       (fun t (ω : NullMeasurableSpace Ω P) => X t ω) P.completion := by
   obtain ⟨τ, hτ, hM⟩ := hX
-  refine ⟨τ, ⟨⟨fun n t => ?_, hτ.tendsto_top⟩, hτ.mono⟩, fun n => (hM n).nullAugment⟩
-  exact ℱ.le_nullAugment P t _ (hτ.isStoppingTime n t)
+  -- The carrier tag is definitionally Ω: τ and its stopping events are unchanged.
+  -- Neither stoppedProcess nor the positive-time indicator uses an ambient measurable
+  -- space, so lifting their inputs gives definitionally the same pointwise process.
+  -- Only event measurability changes via le_nullAugment; transport the a.e. localizer
+  -- properties separately using ae_completion.
+  refine ⟨τ, ⟨⟨fun n t => ?_, ?_⟩, ?_⟩, fun n => (hM n).nullAugment⟩
+  · exact ℱ.le_nullAugment P t _ (hτ.isStoppingTime n t)
+  · exact P.ae_completion.symm ▸ hτ.tendsto_top
+  · exact P.ae_completion.symm ▸ hτ.mono
 
 end ProbabilityTheory.Locally
