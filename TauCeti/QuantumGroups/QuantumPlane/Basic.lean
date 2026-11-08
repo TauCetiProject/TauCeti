@@ -120,6 +120,7 @@ theorem basis_mul_basis (j k a b : ℕ) :
   simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
 
 /-- The constant monomial is the unit. -/
+@[simp]
 theorem basis_zero_zero : basis q (0, 0) = 1 := by
   rw [basis_apply, pow_zero, pow_zero, one_mul]
 

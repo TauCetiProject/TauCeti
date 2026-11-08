@@ -355,7 +355,7 @@ theorem smul_one_eq_counit_smul (u : UqSl2 q) :
   | algebraMap c => rw [algebraMap_smul, Bialgebra.counit_algebraMap, Algebra.smul_def]
   | generator g =>
     rw [← basis_zero_zero]
-    cases g <;> simp
+    cases g <;> simp [-basis_zero_zero]
   | mul u v hu hv => rw [mul_smul, hv, smul_comm, hu, smul_smul, Bialgebra.counit_mul, mul_comm]
   | add u v hu hv => rw [add_smul, hu, hv, map_add, add_smul]
 
@@ -395,10 +395,12 @@ theorem e_smul_x : e q • x q = 0 := by
   simp [x_eq_basis]
 
 /-- `E y = x`, when `[1]_q = 1`. -/
+@[simp]
 theorem e_smul_y (hq : q - q⁻¹ ≠ 0) : e q • y q = x q := by
   simp [y_eq_basis, x_eq_basis, hq]
 
 /-- `F x = y`, when `[1]_q = 1`. -/
+@[simp]
 theorem f_smul_x (hq : q - q⁻¹ ≠ 0) : f q • x q = y q := by
   simp [y_eq_basis, x_eq_basis, hq]
 
