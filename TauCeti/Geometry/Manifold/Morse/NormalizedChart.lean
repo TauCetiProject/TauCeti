@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 public import TauCeti.Geometry.Manifold.Morse.ModelTransport
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Normalized Morse charts
@@ -301,38 +302,6 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart
   norm_num [Fin.val_cast]
   ring
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] in
-/-- Pulling a coordinate axis of a partial diffeomorphism `ψ` with `ψ x = 0` back through the
-inverse chart gives a curve through `x`, smooth near the parameter `0`, which at every parameter
-near `0` lies in the chart source and maps to the point of the axis with that coordinate. -/
-private lemma exists_curve_single_axis
-    (ψ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M
-      (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∞)
-    (hxψ : x ∈ ψ.source) (hψx : ψ x = 0) (i : Fin (Module.finrank ℝ E)) :
-    ∃ γ : ℝ → M, (∀ᶠ t in 𝓝 0, ContMDiffAt 𝓘(ℝ) I ∞ γ t) ∧ γ 0 = x ∧
-      ∀ᶠ t in 𝓝 0, γ t ∈ ψ.source ∧ ψ (γ t) = EuclideanSpace.single i t := by
-  have haxis : ContDiff ℝ ∞ fun t : ℝ ↦ EuclideanSpace.single i t := by
-    rw [contDiff_piLp]
-    intro j
-    simp only [PiLp.single_apply]
-    split_ifs <;> fun_prop
-  have haxis0 : EuclideanSpace.single i (0 : ℝ) =
-      (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) := by simp
-  have hzero : (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∈ ψ.target := by
-    simpa only [hψx] using ψ.map_source hxψ
-  -- Openness of the chart target makes the inverse-chart curve valid near zero.
-  have hTarget : ∀ᶠ t in 𝓝 0, EuclideanSpace.single i t ∈ ψ.target := by
-    apply haxis.continuous.continuousAt
-    simpa only [haxis0] using ψ.open_target.mem_nhds hzero
-  refine ⟨fun t ↦ ψ.toOpenPartialHomeomorph.symm (EuclideanSpace.single i t),
-    hTarget.mono fun t ht ↦ ?_, ?_, hTarget.mono fun t ht ↦ ⟨ψ.map_target ht, ψ.right_inv ht⟩⟩
-  · -- The inverse chart is smooth on its open target.
-    exact (ψ.contMDiffOn_invFun.contMDiffAt (ψ.open_target.mem_nhds ht)).comp t
-      haxis.contMDiff.contMDiffAt
-  · simp only [haxis0]
-    rw [← hψx]
-    exact ψ.left_inv hxψ
-
 /-- At a nondegenerate critical point whose Morse index is neither `0` nor `dim M`, there are two
 curves through the critical point, smooth near the parameter `0`, along which the function is
 strictly below, respectively strictly above, its critical value at every sufficiently small nonzero
@@ -349,8 +318,8 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
   -- Pull back the first (negative) and last (positive) coordinate axes through the inverse chart.
   let i0 : Fin (Module.finrank ℝ E) := ⟨0, hpos.trans hlt⟩
   let i1 : Fin (Module.finrank ℝ E) := ⟨Module.finrank ℝ E - 1, by omega⟩
-  obtain ⟨γneg, hsmoothNeg, hneg0, hneg⟩ := exists_curve_single_axis ψ hxψ hψx i0
-  obtain ⟨γpos, hsmoothPos, hpos0, hpos'⟩ := exists_curve_single_axis ψ hxψ hψx i1
+  obtain ⟨γneg, hsmoothNeg, hneg0, hneg⟩ := ψ.exists_curve_single_axis hxψ hψx i0
+  obtain ⟨γpos, hsmoothPos, hpos0, hpos'⟩ := ψ.exists_curve_single_axis hxψ hψx i1
   refine ⟨γneg, γpos, hsmoothNeg, hneg0, hsmoothPos, hpos0, ?_⟩
   filter_upwards [hneg.filter_mono nhdsWithin_le_nhds, hpos'.filter_mono nhdsWithin_le_nhds,
     self_mem_nhdsWithin] with t ⟨hsourceNeg, hrightNeg⟩
