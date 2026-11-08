@@ -48,6 +48,10 @@ def vertexCapacity : Fin 3 → ℚ
   | 1 => 1 / 2
   | _ => 0
 
+@[simp]
+theorem vertexCapacity_apply (v : Fin 3) : vertexCapacity v = if v = 1 then 1 / 2 else 0 := by
+  fin_cases v <;> simp [vertexCapacity]
+
 private def sourceMiddlePath : ArrowWalk Hom 0 1 :=
   (ArrowWalk.nil 0).cons Hom.sourceMiddle
 
@@ -93,9 +97,18 @@ noncomputable def flow : Flow capacity 0 2 where
   excessAt_sink_nonneg := by
     norm_num [capacity, excessAt_add, excessAt_walkAssignment]
 
+@[simp]
+theorem flow_toFun : flow.toFun = capacity :=
+  (rfl)
+
 /-- The arrow part of the displayed separator, consisting of the direct source--sink arrow. -/
 def separatorArrows : Finset (Σ v w, Hom v w) :=
   {⟨0, 2, Hom.sourceSink⟩}
+
+@[simp]
+theorem mem_separatorArrows {a : Σ v w, Hom v w} :
+    a ∈ separatorArrows ↔ a = ⟨0, 2, Hom.sourceSink⟩ :=
+  mem_singleton
 
 /-- The intermediate vertex together with the direct arrow meets every source--sink walk. -/
 theorem isMixedSeparator :
@@ -130,8 +143,7 @@ theorem flow_respectsVertexCapacity : flow.RespectsVertexCapacity vertexCapacity
   intro v hv₀ hv₂
   fin_cases v
   · exact (hv₀ rfl).elim
-  · change arrowSum capacity univ {1} ≤ vertexCapacity 1
-    rw [capacity, arrowSum_add, arrowSum_add,
+  · rw [flow_toFun, capacity, arrowSum_add, arrowSum_add,
       arrowSum_walkAssignment_univ_singleton,
       arrowSum_walkAssignment_univ_singleton,
       arrowSum_walkAssignment_univ_singleton]
