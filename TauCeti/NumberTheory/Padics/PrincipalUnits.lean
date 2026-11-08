@@ -342,8 +342,9 @@ theorem relIndex_unitsPrincipal {f : ℕ} (hf : 0 < f) (k : ℕ) :
   exact mul_right_cancel₀ (Nat.mul_ne_zero (pow_pos hp.out.pos _).ne'
     (Nat.sub_ne_zero_of_lt hp.out.one_lt)) h
 
-/-- At `p = 2`, two elements of exact level `f` are congruent modulo `U^(f+1)`: the quotient
-`U^(f) / U^(f+1)` has order `2` (for `f = 0` there is no element of exact level `0`). -/
+/-- At `p = 2`, two elements of exact level `f` are congruent modulo `U^(f+1)`: for `f ≥ 1` the
+quotient `U^(f) / U^(f+1)` has order `2`; for `f = 0` the hypotheses are unsatisfiable, since
+`U^(1) = ⊤`. -/
 theorem inv_mul_mem_unitsPrincipal_two_succ {f : ℕ} {u x : ℤ_[2]ˣ}
     (hu : u ∈ unitsPrincipal 2 f) (hu' : u ∉ unitsPrincipal 2 (f + 1))
     (hx : x ∈ unitsPrincipal 2 f) (hx' : x ∉ unitsPrincipal 2 (f + 1)) :
