@@ -46,13 +46,17 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
     (mul_nonneg hθ.1 ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1,
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
 
+/-- The interpolation weights `1 - θ` and `θ` sum to one in `ℝ≥0∞`. -/
+private theorem ofReal_one_sub_add_ofReal (hθ : θ ∈ Set.Icc (0 : ℝ) 1) :
+    ENNReal.ofReal (1 - θ) + ENNReal.ofReal θ = 1 := by
+  rw [← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel, ENNReal.ofReal_one]
+
 /-- An interpolated exponent lies between the two endpoint exponents. -/
 theorem mem_uIcc_of_inv_eq (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
     (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
     s ∈ Set.uIcc s₀ s₁ := by
   have h1 (x : ℝ≥0∞) : x = ENNReal.ofReal (1 - θ) * x + ENNReal.ofReal θ * x := by
-    rw [← add_mul, ← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel,
-      ENNReal.ofReal_one, one_mul]
+    rw [← add_mul, ofReal_one_sub_add_ofReal hθ, one_mul]
   have hs' : s⁻¹ ∈ Set.uIcc s₀⁻¹ s₁⁻¹ := by
     rw [hs]
     refine ⟨(h1 _).trans_le ?_, le_trans ?_ (h1 _).ge⟩ <;> gcongr <;> simp
@@ -82,8 +86,10 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
     ← (ENNReal.HolderConjugate.conjExponent hs₀).one_sub_inv,
     ← (ENNReal.HolderConjugate.conjExponent hs₁).one_sub_inv]
   refine ENNReal.sub_eq_of_eq_add (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hs1).ne') ?_
-  rw [hs, add_add_add_comm, ← mul_add, ← mul_add, tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₀),
-    tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₁), mul_one, mul_one,
-    ← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel, ENNReal.ofReal_one]
+  calc 1 = ENNReal.ofReal (1 - θ) * (1 - s₀⁻¹ + s₀⁻¹) + ENNReal.ofReal θ * (1 - s₁⁻¹ + s₁⁻¹) := by
+        rw [tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₀),
+          tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₁), mul_one, mul_one,
+          ofReal_one_sub_add_ofReal hθ]
+    _ = _ := by rw [hs]; ring
 
 end TauCeti
