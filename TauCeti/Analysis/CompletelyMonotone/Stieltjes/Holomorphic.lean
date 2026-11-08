@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The holomorphic extension of a Stieltjes function
@@ -209,12 +210,6 @@ plane, `a / z + b + ∫ x, (z + x)⁻¹ ∂μ` is zero exactly when `a`, `b` and
 theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
     stieltjesExtension μ a b z = 0 ↔ a = 0 ∧ b = 0 ∧ μ = 0 := by
   refine ⟨fun h => ?_, fun ⟨ha, hb, hμ0⟩ => by simp [stieltjesExtension, ha, hb, hμ0]⟩
-  -- A measure against which an integrable, everywhere positive function has integral zero is zero.
-  have measure_eq_zero {g : ℝ≥0 → ℝ} (hg : ∀ x, 0 < g x) (hgi : Integrable g μ)
-      (h0 : ∫ x, g x ∂μ = 0) : μ = 0 := by
-    have hsupp : Function.support g = univ := eq_univ_of_forall fun x => (hg x).ne'
-    have := (integral_pos_iff_support_of_nonneg (fun x => (hg x).le) hgi).not.mp h0.not_gt
-    rwa [hsupp, not_lt, nonpos_iff_eq_zero, Measure.measure_univ_eq_zero] at this
   suffices ha : a = 0 ∧ μ = 0 by
     obtain ⟨ha, hμ0⟩ := ha
     simpa [stieltjesExtension, ha, hμ0] using h
@@ -236,7 +231,8 @@ theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz
     have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
     have hat : 0 ≤ (a : ℝ) / t := by positivity
     have hb' := b.coe_nonneg
-    refine ⟨?_, measure_eq_zero hpos (integrable_inv_add hμ ht) (by linarith)⟩
+    refine ⟨?_, MeasureTheory.measure_eq_zero_of_integral_eq_zero_of_ae_pos
+      (Eventually.of_forall hpos) (integrable_inv_add hμ ht) (by linarith)⟩
     have : (a : ℝ) / t = 0 := by linarith
     rw [div_eq_zero_iff, or_iff_left ht.ne'] at this
     exact_mod_cast this
@@ -257,7 +253,8 @@ theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz
     rw [im_stieltjesExtension hμ hz, zero_im, mul_eq_zero, neg_eq_zero, or_iff_right him] at h0
     have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
     have ha : 0 ≤ (a : ℝ) / normSq z := div_nonneg a.coe_nonneg (normSq_nonneg z)
-    refine ⟨?_, measure_eq_zero hpos hint (by linarith)⟩
+    refine ⟨?_, MeasureTheory.measure_eq_zero_of_integral_eq_zero_of_ae_pos
+      (Eventually.of_forall hpos) hint (by linarith)⟩
     have : (a : ℝ) / normSq z = 0 := by linarith
     rw [div_eq_zero_iff, or_iff_left hz0] at this
     exact_mod_cast this

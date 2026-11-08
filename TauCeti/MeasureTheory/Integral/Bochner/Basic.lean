@@ -580,6 +580,15 @@ theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero {Ω : Type*} [mΩ : Measura
   · simpa [hmean] using integral_mono_ae (integrable_const a) hX (hbound.mono fun ω h => h.1)
   · simpa [hmean] using integral_mono_ae hX (integrable_const b) (hbound.mono fun ω h => h.2)
 
+/-- A measure against which an integrable, almost everywhere positive function has integral zero
+is zero. -/
+theorem measure_eq_zero_of_integral_eq_zero_of_ae_pos {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {g : α → ℝ} (hg : ∀ᵐ x ∂ν, 0 < g x) (hgi : Integrable g ν)
+    (h0 : ∫ x, g x ∂ν = 0) : ν = 0 := by
+  have h1 := (integral_eq_zero_iff_of_nonneg_ae (hg.mono fun x hx => hx.le) hgi).1 h0
+  rw [← ae_eq_bot]
+  exact Filter.eventually_false_iff_eq_bot.1 ((h1.and hg).mono fun x hx => hx.2.ne' hx.1)
+
 end MeasureTheory
 
 end TauCeti
