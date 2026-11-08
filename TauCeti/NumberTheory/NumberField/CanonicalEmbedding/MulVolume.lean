@@ -30,9 +30,9 @@ mixed space leaves the volume of every set unchanged.
   the places;
 * `NumberField.mixedEmbedding.abs_algebraNorm`: the absolute value of that norm is
   `mixedEmbedding.norm c`;
-* `NumberField.mixedEmbedding.abs_det_changeOfVariables`: the real determinant of the
-  `mixedSpace K`-linear change of variables `z ↦ ∑ i, z i • b i` of `ι → mixedSpace K`, for any
-  family `b` of vectors of `ι → K`, is `|N (det b)|`;
+* `NumberField.mixedEmbedding.abs_det_changeOfVariables`: the absolute value of the real
+  determinant of the `mixedSpace K`-linear change of variables `z ↦ ∑ i, z i • b i` of
+  `ι → mixedSpace K`, for any family `b` of vectors of `ι → K`, is `|N (det b)|`;
 * `NumberField.mixedEmbedding.volume_image_mul_left`: multiplication by `c` scales volume by
   `mixedEmbedding.norm c`;
 * `NumberField.mixedEmbedding.integral_comp_mul_left`: the corresponding change of variables
@@ -118,8 +118,8 @@ instance : SMulInvariantMeasure (𝓞 K)ˣ (mixedSpace K) volume :=
   ⟨fun u s _ ↦ by rw [Set.preimage_smul, h]⟩
 
 open scoped Classical in
-/-- The real determinant of the change of variables `z ↦ ∑ i, z i • b i` of `ι → mixedSpace K` is
-the algebra norm of `det b`, up to sign. -/
+/-- The absolute value of the real determinant of the change of variables `z ↦ ∑ i, z i • b i` of
+`ι → mixedSpace K` is the absolute value of the algebra norm of `det b`. -/
 theorem abs_det_changeOfVariables {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : ι → ι → K) :
     |LinearMap.det
