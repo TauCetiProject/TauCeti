@@ -80,6 +80,8 @@ reduction needs.
 * `TauCeti.Toric.IsDelzant.weightRotation_neg_eq_self_iff`: the kernel torus acts freely on `Z`.
 * `TauCeti.Toric.IsDelzant.surjective_fderiv_delzantMomentMap_comp`: `0` is a regular value of the
   moment map of the kernel torus.
+* `TauCeti.Toric.index_fderiv_delzantMomentMap_comp`: when the real normals span `V`, the
+  derivative of the moment map of the kernel torus has index `d + n`.
 * `TauCeti.Toric.IsDelzant.isManifold_delzantLevel`: `Z` is a smooth manifold of dimension `d + n`.
 * `TauCeti.Toric.IsDelzant.contMDiff_coe_delzantLevel`: the inclusion of `Z` into `ℂ^ι` is smooth.
 
@@ -310,6 +312,22 @@ theorem isCompact_delzantLevel [FiniteDimensional ℝ V]
   rw [mem_closedBall_zero_iff, Prod.norm_def]
   exact max_le (hnorm x hx _ (mem_insert _ _)) (hnorm x hx _ (mem_insert_of_mem _ rfl))
 
+/-- The derivative of the moment map `z ↦ μ(z)|_𝔫` of the kernel torus has index `d + n`, where
+`d` is the number of facets and `n = dim V`, as soon as the real normals span `V`. -/
+theorem index_fderiv_delzantMomentMap_comp
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ContinuousLinearMap.index (𝕜 := ℝ) (fderiv ℝ (fun y ↦ (delzantMomentMap c y).comp
+      (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL) x) =
+        (Fintype.card ι + finrank ℝ V : ℕ) := by
+  have h := LinearMap.finrank_range_add_finrank_ker
+    (Fintype.linearCombination ℝ fun j ↦ i (u j))
+  rw [LinearMap.range_eq_top.2 hβ, finrank_top, finrank_fintype_fun_eq_card] at h
+  rw [ContinuousLinearMap.index_eq_of_finiteDimensional, finrank_prod, finrank_euclideanSpace,
+    ← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]
+  push_cast
+  omega
+
 /-! ### Delzant polytopes -/
 
 namespace IsDelzant
@@ -413,16 +431,13 @@ theorem surjective_fderiv_delzantMomentMap_comp {x : EuclideanSpace ℝ ι × Eu
 
 include hi in
 /-- The derivative of the moment map `z ↦ μ(z)|_𝔫` of the kernel torus has index `d + n`, where
-`d` is the number of facets and `n = dim V`. -/
+`d` is the number of facets and `n = dim V`, for a Delzant polytope. -/
 theorem index_fderiv_delzantMomentMap_comp (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     ContinuousLinearMap.index (𝕜 := ℝ) (fderiv ℝ (fun y ↦ (delzantMomentMap c y).comp
       (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL) x) =
-        (Fintype.card ι + finrank ℝ V : ℕ) := by
-  have h := hΔ.finrank_ker_linearCombination_real_add_finrank hi
-  rw [ContinuousLinearMap.index_eq_of_finiteDimensional, finrank_prod, finrank_euclideanSpace,
-    ← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]
-  push_cast
-  omega
+        (Fintype.card ι + finrank ℝ V : ℕ) :=
+  Toric.index_fderiv_delzantMomentMap_comp
+    (surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination) x
 
 include hi in
 /-- The atlas of the level `Z`, by the implicit-function charts of the regular level set of the
