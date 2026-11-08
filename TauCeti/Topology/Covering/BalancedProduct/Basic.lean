@@ -100,18 +100,30 @@ in the second. -/
 theorem mk_smul_left (g : G) (e : E) (a : A) : mk G (g • e) a = mk G e (g⁻¹ • a) :=
   Quotient.sound ⟨g, by simp⟩
 
+/-- Two pairs have the same class in the balanced product exactly when one is a translate of the
+other under the diagonal action. -/
+theorem mk_eq_mk_iff {e e' : E} {a a' : A} :
+    mk G e a = mk G e' a' ↔ ∃ g : G, g • e' = e ∧ g • a' = a := by
+  simp [Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Prod.ext_iff]
+
+/-- Two points of a set `U` whose `G`-translates are pairwise disjoint have the same class in the
+balanced product only when they, and their labels, agree. -/
+private theorem eq_and_eq_of_mk_eq {U : Set E}
+    (hdisj : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) {u u' : E} {a a' : A} (hu : u ∈ U)
+    (hu' : u' ∈ U) (hEq : mk G u a = mk G u' a') : u = u' ∧ a = a' := by
+  obtain ⟨g, hgu, hga⟩ := mk_eq_mk_iff.mp hEq
+  rw [hdisj g ⟨u, ⟨u', hu', hgu⟩, hu⟩, one_smul] at hga hgu
+  exact ⟨hgu.symm, hga.symm⟩
+
 /-! ### The regular label action -/
 
 /-- The balanced product with the left regular action of `G` recovers `E`.
 The class of `(e, g)` is sent to `g⁻¹ • e`. -/
 def equivSelf : BalancedProduct G E G ≃ E where
   toFun := Quotient.lift (fun p : E × G => p.2⁻¹ • p.1) fun _ _ ⟨g, hg⟩ => by
-    rw [← hg]
-    simp [mul_smul]
+    simp [← hg, mul_smul]
   invFun e := mk G e 1
-  left_inv z := by
-    induction z using Quotient.inductionOn with
-    | h p => simp
+  left_inv z := Quotient.inductionOn z fun _ => by simp
   right_inv e := by simp
 
 /-- On representatives, the regular-action comparison applies the inverse label to the
@@ -164,10 +176,8 @@ variable {B C : Type*} [MulAction G B] [MulAction G C]
 coordinate fixed. -/
 def mapRight (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) :
     BalancedProduct G E A → BalancedProduct G E B :=
-  Quotient.map' (Prod.map id f) fun _ _ ⟨g, hg⟩ => by
-    refine ⟨g, ?_⟩
-    rw [← hg]
-    exact Prod.ext rfl (hf g _).symm
+  Quotient.map' (Prod.map id f) fun _ _ ⟨g, hg⟩ =>
+    ⟨g, by rw [← hg]; exact Prod.ext rfl (hf g _).symm⟩
 
 @[simp]
 theorem mapRight_mk (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) (e : E) (a : A) :
@@ -175,19 +185,15 @@ theorem mapRight_mk (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) 
   (rfl)
 
 @[simp]
-theorem mapRight_id : mapRight (G := G) (E := E) (id : A → A) (fun _ _ => rfl) = id := by
-  funext z
-  induction z using Quotient.inductionOn with
-  | h p => rfl
+theorem mapRight_id : mapRight (G := G) (E := E) (id : A → A) (fun _ _ => rfl) = id :=
+  funext fun z => Quotient.inductionOn z fun _ => rfl
 
 @[simp]
 theorem mapRight_comp (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a)
     (k : B → C) (hk : ∀ (g : G) b, k (g • b) = g • k b) :
     mapRight (G := G) (E := E) (k ∘ f) (fun g a => by simp only [Function.comp_apply, hf, hk]) =
-      mapRight k hk ∘ mapRight f hf := by
-  funext z
-  induction z using Quotient.inductionOn with
-  | h p => rfl
+      mapRight k hk ∘ mapRight f hf :=
+  funext fun z => Quotient.inductionOn z fun _ => rfl
 
 /-- The map induced by a continuous equivariant label map is continuous. -/
 theorem continuous_mapRight [TopologicalSpace E] [TopologicalSpace A] [TopologicalSpace B]
@@ -211,10 +217,7 @@ variable (hq : ∀ (g : G) (e : E), q (g • e) = q e)
 variable (A) in
 /-- A `G`-invariant map `q : E → X` descends to the balanced product. -/
 def proj : BalancedProduct G E A → X :=
-  Quotient.lift (fun p => q p.1) fun _ _ h => by
-    obtain ⟨g, hg⟩ := h
-    rw [← hg]
-    exact hq g _
+  Quotient.lift (fun p => q p.1) fun _ _ ⟨g, hg⟩ => hg ▸ hq g _
 
 variable (A) in
 @[simp]
@@ -225,9 +228,8 @@ theorem proj_mk (e : E) (a : A) : proj A hq (mk G e a) = q e :=
 @[simp]
 theorem proj_mapRight {B : Type*} [MulAction G B] (f : A → B)
     (hf : ∀ (g : G) a, f (g • a) = g • f a) (z : BalancedProduct G E A) :
-    proj B hq (mapRight f hf z) = proj A hq z := by
-  induction z using Quotient.inductionOn with
-  | h p => rfl
+    proj B hq (mapRight f hf z) = proj A hq z :=
+  Quotient.inductionOn z fun _ => rfl
 
 section Covering
 
@@ -255,18 +257,6 @@ theorem isQuotientCoveringMap_mk [ContinuousConstSMul G A]
   exact ⟨z.1, ⟨w.1, hw.1, congrArg Prod.fst hwz⟩, hz.1⟩
 
 variable [DiscreteTopology A]
-
-omit [TopologicalSpace E] [TopologicalSpace A] [DiscreteTopology A] in
-/-- Two points of a set `U` whose `G`-translates are pairwise disjoint have the same class in the
-balanced product only when they, and their labels, agree. -/
-private theorem eq_and_eq_of_mk_eq {U : Set E}
-    (hdisj : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) {u u' : E} {a a' : A} (hu : u ∈ U)
-    (hu' : u' ∈ U) (hEq : mk G u a = mk G u' a') : u = u' ∧ a = a' := by
-  obtain ⟨g, hg⟩ := Quotient.eq''.mp hEq
-  have hg1 : g • (u', a') = (u, a) := hg
-  have hgu : g • u' = u := congrArg Prod.fst hg1
-  rw [hdisj g ⟨u, ⟨u', hu', hgu⟩, hu⟩, one_smul] at hg1
-  exact ⟨(Prod.ext_iff.mp hg1).1.symm, (Prod.ext_iff.mp hg1).2.symm⟩
 
 omit [DiscreteTopology A] in
 /-- Openness inside the base set `q '' U` is detected on any single sheet `U ×ˢ {a}`. -/
@@ -302,7 +292,6 @@ private theorem isEvenlyCovered_of_smul_disjoint [Nonempty A] (hqc : IsQuotientC
     (heU : e ∈ U) :
     IsEvenlyCovered (proj A hq) (q e) (proj A hq ⁻¹' {q e}) := by
   let _ : ContinuousConstSMul G A := ⟨fun _ => continuous_of_discreteTopology⟩
-  have hcsG : ContinuousConstSMul G E := hqc.toContinuousConstSMul
   have ht := isQuotientCoveringMap_mk A hqc
   have hrc : Continuous (proj A hq) := continuous_proj A hq hqc.continuous
   have hVo : IsOpen (q '' U) := hqc.isOpenQuotientMap.isOpenMap _ hUo
@@ -312,8 +301,6 @@ private theorem isEvenlyCovered_of_smul_disjoint [Nonempty A] (hqc : IsQuotientC
     ht.isOpenQuotientMap.isOpenMap _ (hUo.prod (isOpen_discrete _))
   have hmemS : ∀ (a : A) (z : BalancedProduct G E A), z ∈ S a ↔ ∃ u ∈ U, mk G u a = z :=
     fun a z => by simp only [S, Set.prod_singleton, Set.image_image, Set.mem_image, mk]
-  have hkey : ∀ {u u' : E} {a a' : A}, u ∈ U → u' ∈ U → mk G u a = mk G u' a' →
-      u = u' ∧ a = a' := eq_and_eq_of_mk_eq hdisj
   have : Nonempty (X → BalancedProduct G E A) := ⟨fun _ => mk G e (Classical.arbitrary A)⟩
   refine IsEvenlyCovered.to_isEvenlyCovered_preimage
     (IsEvenlyCovered.of_trivialization (f := proj A hq)
@@ -327,10 +314,8 @@ private theorem isEvenlyCovered_of_smul_disjoint [Nonempty A] (hqc : IsQuotientC
     obtain ⟨u, hu, rfl⟩ := (hmemS a z).mp hz
     obtain ⟨u', hu', rfl⟩ := (hmemS a z').mp hz'
     rw [proj_mk, proj_mk] at hzz'
-    obtain ⟨m, hm⟩ := hqc.apply_eq_iff_mem_orbit.mp hzz'
-    have hm1 : m • u' = u := hm
-    rw [hdisj m ⟨u, ⟨u', hu', hm1⟩, hu⟩, one_smul] at hm1
-    rw [hm1]
+    obtain ⟨m, hm⟩ := MulAction.mem_orbit_iff.mp (hqc.apply_eq_iff_mem_orbit.mp hzz')
+    rw [← hm, hdisj m ⟨u, ⟨u', hu', hm⟩, hu⟩, one_smul]
   · -- Each sheet surjects onto the base set.
     rintro a v ⟨u, hu, rfl⟩
     exact ⟨mk G u a, (hmemS a _).mpr ⟨u, hu, rfl⟩, proj_mk A hq u a⟩
@@ -339,7 +324,7 @@ private theorem isEvenlyCovered_of_smul_disjoint [Nonempty A] (hqc : IsQuotientC
     refine Set.disjoint_left.mpr fun z hz hz' => hne ?_
     obtain ⟨u, hu, rfl⟩ := (hmemS a z).mp hz
     obtain ⟨u', hu', hEq⟩ := (hmemS a' _).mp hz'
-    exact (hkey hu' hu hEq).2.symm
+    exact (eq_and_eq_of_mk_eq hdisj hu' hu hEq).2.symm
   · -- The sheets exhaust the preimage of the base set.
     intro z hz
     obtain ⟨⟨w, b⟩, rfl⟩ := ht.surjective z
@@ -360,17 +345,14 @@ theorem isCoveringMap_proj (hqc : IsQuotientCoveringMap q G) : IsCoveringMap (pr
   let _ : ContinuousConstSMul G A := ⟨fun _ => continuous_of_discreteTopology⟩
   cases isEmpty_or_nonempty A with
   | inl _ =>
-    have : IsEmpty (BalancedProduct G E A) := ⟨fun z => by
-      obtain ⟨p, -⟩ := (isQuotientCoveringMap_mk A hqc).surjective z
-      exact isEmptyElim p.2⟩
     exact IsCoveringMap.of_isEmpty _
   | inr _ =>
     intro x
     obtain ⟨e, rfl⟩ := hqc.surjective x
     obtain ⟨U, hU, hdisj⟩ := hqc.disjoint e
-    refine isEvenlyCovered_of_smul_disjoint A hq hqc isOpen_interior (fun g hg => hdisj g ?_)
+    exact isEvenlyCovered_of_smul_disjoint A hq hqc isOpen_interior
+      (fun g hg => hdisj g (hg.mono (by grw [interior_subset])))
       (mem_interior_iff_mem_nhds.mpr hU)
-    exact hg.mono (Set.inter_subset_inter (Set.image_mono interior_subset) interior_subset)
 
 end Covering
 
@@ -389,20 +371,13 @@ noncomputable def fiberEquiv [IsCancelSMul G E]
   · rw [Set.mem_preimage, Set.mem_singleton_iff, proj_mk]
     exact e.2
   · intro a a' hEq
-    obtain ⟨g, hg⟩ := Quotient.eq''.mp (congrArg Subtype.val hEq)
-    have hg1 : g • ((e : E), a') = ((e : E), a) := hg
-    rw [IsCancelSMul.eq_one_of_smul (congrArg Prod.fst hg1), one_smul] at hg1
-    exact (Prod.ext_iff.mp hg1).2.symm
+    obtain ⟨g, hg, rfl⟩ := mk_eq_mk_iff.mp (congrArg Subtype.val hEq)
+    rw [IsCancelSMul.eq_one_of_smul hg, one_smul]
   · rintro ⟨z, hz⟩
     obtain ⟨⟨w, b⟩, rfl⟩ := Quotient.mk''_surjective z
     rw [Set.mem_preimage, Set.mem_singleton_iff, proj_mk] at hz
-    obtain ⟨g, hg⟩ := hfiber (hz.trans e.2.symm)
-    have hge : g • (e : E) = w := hg
-    refine ⟨g⁻¹ • b, Subtype.ext ?_⟩
-    -- `fiberEquiv_apply_coe` is only available after this `Equiv.ofBijective` construction.
-    -- Here `change` exposes its defining map after `Subtype.ext` removes the fibre wrapper.
-    change mk G (e : E) (g⁻¹ • b) = mk G w b
-    rw [← mk_smul_left g (e : E) b, hge]
+    obtain ⟨g, hge⟩ := MulAction.mem_orbit_iff.mp (hfiber (hz.trans e.2.symm))
+    exact ⟨g⁻¹ • b, Subtype.ext <| by dsimp only; rw [← mk_smul_left, hge]⟩
 
 variable (A) in
 /-- The fibre bijection of the balanced product sends `a` to the class of `(e, a)`. -/
