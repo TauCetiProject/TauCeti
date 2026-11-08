@@ -36,6 +36,8 @@ image of `fromBlocksOne ℝ 1 n` without reindexing.
 ## Main definitions
 
 * `TauCeti.specialOrthogonalSphereMap`: the evaluation map `SO(1 + n) → Sⁿ`, `A ↦ A e₀`.
+* `TauCeti.specialOrthogonalSphereFiberHomeomorph`: `SO(n)` is homeomorphic to the fibre of
+  `A ↦ A e₀` over `e₀`, through `B ↦ diag(1, B)`.
 
 ## Main results
 
@@ -120,6 +122,42 @@ theorem surjective_specialOrthogonalSphereMap [NeZero n] :
   (finiteOrthonormalFrame.sphereHomeomorph (1 + n)).surjective.comp
     (finiteOrthonormalFrame.specialOrthogonal_unitaryMap_standard_surjective
       (Nat.lt_add_of_pos_right (Nat.pos_of_neZero n)))
+
+/-! ### The fibre over `e₀` -/
+
+variable (n) in
+/-- The fibre of `A ↦ A e₀` over `e₀` is `SO(n)`: the block embedding `B ↦ diag(1, B)` is a
+homeomorphism of `SO(n)` onto the special orthogonal matrices fixing `e₀`. -/
+def specialOrthogonalSphereFiberHomeomorph :
+    specialOrthogonalGroup (Fin n) ℝ ≃ₜ
+      specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1} :=
+  (finiteOrthonormalFrame.specialOrthogonalStabilizerHomeomorph 1 n).trans
+    (Homeomorph.setCongr <| by
+      ext A
+      rw [← finiteOrthonormalFrame.range_fromBlocksOne_eq_specialOrthogonalStabilizer,
+        SetLike.mem_coe, mem_preimage, mem_singleton_iff,
+        specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff])
+
+@[simp]
+theorem coe_specialOrthogonalSphereFiberHomeomorph_apply (B : specialOrthogonalGroup (Fin n) ℝ) :
+    (specialOrthogonalSphereFiberHomeomorph n B : specialOrthogonalGroup (Fin (1 + n)) ℝ) =
+      SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n B :=
+  finiteOrthonormalFrame.coe_specialOrthogonalStabilizerHomeomorph_apply n B
+
+/-- A special orthogonal matrix fixing `e₀` is the block matrix `diag(1, B)` of its image `B` in
+`SO(n)`. -/
+@[simp]
+theorem fromBlocksOne_specialOrthogonalSphereFiberHomeomorph_symm_apply
+    (A : specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1}) :
+    SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n ((specialOrthogonalSphereFiberHomeomorph n).symm A) =
+      A := by
+  rw [← coe_specialOrthogonalSphereFiberHomeomorph_apply, Homeomorph.apply_symm_apply]
+
+/-- The identity of `SO(n)` corresponds to the identity of `SO(1 + n)` in the fibre. -/
+@[simp]
+theorem specialOrthogonalSphereFiberHomeomorph_one :
+    specialOrthogonalSphereFiberHomeomorph n 1 = ⟨1, rfl⟩ :=
+  Subtype.ext (by simp)
 
 /-! ### Local triviality -/
 
