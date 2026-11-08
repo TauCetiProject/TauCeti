@@ -282,6 +282,12 @@ theorem example' : True := trivial
         self.assertNotIn("--changed", step)
         self.assertIn("steps.import_headers.outcome", text)
         self.assertIn("import header preflight failed", text)
+        # The parser driver runs under /usr/bin/bwrap even on a clean runner.
+        # Install and verify that sandbox before invoking the preflight.
+        install = text.index("      - name: Install bubblewrap")
+        self_test = text.index("refusing to run candidate code", install)
+        self.assertLess(install, start)
+        self.assertLess(self_test, start)
         self.assertLess(start, text.index("      - name: Fetch Mathlib"))
         self.assertLess(start, text.index("      - name: Build exact candidate"))
         ci = (workflows / "ci.yml").read_text()
