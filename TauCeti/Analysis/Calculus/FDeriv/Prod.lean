@@ -46,6 +46,8 @@ every horizontal line.
 * `TauCeti.hasDerivAt_fderiv_apply_line`: the derivative of a first derivative along a line.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
   derivative in its real first variable is constant along horizontal lines.
+* `TauCeti.eq_zero_of_fderiv_fst_eq_zero_of_tendsto`: such a function which decays as `s → +∞`
+  along each horizontal line vanishes.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
@@ -331,6 +333,20 @@ theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set X} {a₀ : X} {F : X → 
   rw [hfst_app, hsnd_app, add_comm]
 
 end FstClmApplySnd
+
+/-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
+everywhere and which tends to `0` as `s → +∞` along each horizontal line vanishes identically. -/
+theorem eq_zero_of_fderiv_fst_eq_zero_of_tendsto {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G}
+    (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0)
+    (hdecay : ∀ t, Filter.Tendsto (fun r ↦ u (r, t)) Filter.atTop (nhds 0)) :
+    u = 0 := by
+  funext ⟨s, t⟩
+  have hc := apply_eq_apply_zero_of_fderiv_fst_eq_zero hu h
+  have hlim := hdecay t
+  simp only [hc] at hlim
+  rw [Pi.zero_apply, hc s t]
+  exact tendsto_nhds_unique tendsto_const_nhds hlim
 
 end TauCeti
 
