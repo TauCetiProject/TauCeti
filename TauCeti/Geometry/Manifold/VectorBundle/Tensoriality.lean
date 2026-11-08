@@ -51,8 +51,8 @@ theorem map_sum_eq_of_contMDiff_additive
     (hadd : ∀ {s s' : Π x : M, W x}, CMDiff n (T% s) → CMDiff n (T% s') →
       Φ (s + s') = Φ s + Φ s')
     {ι : Type*} (q : Finset ι) (u v : ι → Π x : M, W x)
-    (hu : ∀ i, CMDiff n (T% (u i))) (hv : ∀ i, CMDiff n (T% (v i)))
-    (huv : ∀ i, Φ (u i) = Φ (v i)) :
+    (hu : ∀ i ∈ q, CMDiff n (T% (u i))) (hv : ∀ i ∈ q, CMDiff n (T% (v i)))
+    (huv : ∀ i ∈ q, Φ (u i) = Φ (v i)) :
     CMDiff n (T% (∑ i ∈ q, u i)) ∧ CMDiff n (T% (∑ i ∈ q, v i)) ∧
       Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
   classical
@@ -62,8 +62,13 @@ theorem map_sum_eq_of_contMDiff_additive
       exact ⟨contMDiff_zeroSection 𝕜 W, contMDiff_zeroSection 𝕜 W⟩
   | @insert i q hi ih =>
       simp only [Finset.sum_insert hi]
-      refine ⟨(hu i).add_section ih.1, (hv i).add_section ih.2.1, ?_⟩
-      rw [hadd (hu i) ih.1, hadd (hv i) ih.2.1, huv i, ih.2.2]
+      have hmem (j) (hj : j ∈ q) : j ∈ insert i q := Finset.mem_insert_of_mem hj
+      have ih := ih (fun j hj ↦ hu j (hmem j hj)) (fun j hj ↦ hv j (hmem j hj))
+        (fun j hj ↦ huv j (hmem j hj))
+      have hui := hu i (Finset.mem_insert_self i q)
+      have hvi := hv i (Finset.mem_insert_self i q)
+      refine ⟨hui.add_section ih.1, hvi.add_section ih.2.1, ?_⟩
+      rw [hadd hui ih.1, hadd hvi ih.2.1, huv i (Finset.mem_insert_self i q), ih.2.2]
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -133,9 +138,9 @@ theorem eq_of_contMDiff_tensorial
   dsimp only [expansion]
   refine (map_sum_eq_of_contMDiff_additive Φ hadd Finset.univ (fun i ↦ coeff' s i • frame' i)
     (fun i ↦ coeff' s' i • frame' i)
-    (fun i ↦ (hcoeff' s hs i).smul_section (hframe i))
-    (fun i ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_).2.2
-  intro i
+    (fun i _ ↦ (hcoeff' s hs i).smul_section (hframe i))
+    (fun i _ ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_).2.2
+  intro i _
   rw [hsmul (hcoeff' s hs i) (hframe i), hsmul (hcoeff' s' hs' i) (hframe i)]
   congr 1
   simp only [coeff', ρ.eq_one, one_mul]
