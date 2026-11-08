@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 public import TauCeti.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.L2Space

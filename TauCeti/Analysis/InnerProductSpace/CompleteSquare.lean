@@ -40,6 +40,8 @@ Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the qu
 * `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
   vector as a polynomial.
 * `TauCeti.norm_add_smul_sub_sq`: the squared distance along a line as a quadratic polynomial.
+* `TauCeti.norm_sub_le_add_div_sub_inner`: for unit vectors `a` and `ν`, the distance `‖a - ν‖`
+  is bounded by `η + 2 / η - 2 / η * ⟪ν, a⟫` for every `η > 0`.
 * `Finset.sum_mul_norm_sub_sq_eq` and `Finset.sum_mul_edist_sq_eq`: for finitely many points
   `x i` and weights `w i` summing to `1`, the weighted sum of the squared distances from `y` is
   the squared distance from `y` to the weighted mean `m = ∑ i, w i • x i` plus the weighted sum
@@ -117,6 +119,20 @@ theorem edist_smul_add_smul_sq_add {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) (x
     ← ENNReal.ofReal_add (mul_nonneg h₁ (by positivity)) (mul_nonneg h₀ (by positivity))]
   congr 1
   linarith
+
+/-- For unit vectors `a` and `ν` and `η > 0`, `‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫`. The distance
+between two unit vectors is thus bounded by a constant plus a multiple of the deficit
+`1 - ⟪ν, a⟫` of their inner product. -/
+theorem norm_sub_le_add_div_sub_inner {a ν : F} {η : ℝ} (ha : ‖a‖ = 1) (hν : ‖ν‖ = 1)
+    (hη : 0 < η) : ‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫ := by
+  -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)` and `‖a - ν‖ ≤ η + ‖a - ν‖² / η`.
+  have h := norm_sub_sq_real a ν
+  rw [ha, hν, real_inner_comm] at h
+  have heq : η + 2 / η - 2 / η * ⟪ν, a⟫ = (η * η + ‖a - ν‖ ^ 2) / η := by
+    field_simp
+    linarith
+  rw [heq, le_div_iff₀ hη]
+  nlinarith [sq_nonneg (‖a - ν‖ - η), norm_nonneg (a - ν)]
 
 end TauCeti
 

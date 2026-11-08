@@ -47,12 +47,18 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.hasDerivAt_dysonSeries`: the series solves `Γ' t = Γ t * p t`.
 * `TauCeti.eq_mul_dysonSeries`: every solution of this equation is `f 0 * Γ t`.
 * `TauCeti.dysonSeries_mem_unitary`: for skew-adjoint `p` the series is unitary.
+* `TauCeti.continuous_parametric_dysonSeries`: the series of a jointly continuous family of paths
+  depends continuously on the parameter, jointly with the time.
 * `TauCeti.dysonSeriesLeft`: the Dyson series in the opposite algebra, solving
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`).
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
+* `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
+  the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
+* `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
+  `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 
 ## References
 
@@ -67,7 +73,7 @@ public section
 noncomputable section
 
 open Set intervalIntegral
-open scoped Nat Interval
+open scoped Nat Interval Topology
 
 namespace TauCeti
 
@@ -101,6 +107,18 @@ theorem continuous_dysonTerm (hp : Continuous p) (n : ℕ) : Continuous (dysonTe
   | succ n ih =>
     rw [funext (dysonTerm_succ p n)]
     exact continuous_primitive (fun _ _ => (ih.mul hp).intervalIntegrable _ _) 0
+
+/-- The iterated integrals of a jointly continuous family of paths are jointly continuous in the
+parameter and the time. -/
+theorem continuous_parametric_dysonTerm {X : Type*} [TopologicalSpace X] {p : X → ℝ → B}
+    (hp : Continuous (Function.uncurry p)) (n : ℕ) :
+    Continuous fun q : X × ℝ => dysonTerm (p q.1) n q.2 := by
+  induction n with
+  | zero => simpa using continuous_const
+  | succ n ih =>
+    simp_rw [dysonTerm_succ]
+    exact intervalIntegral.continuous_parametric_primitive_of_continuous
+      (f := fun x s => dysonTerm (p x) n s * p x s) (ih.mul hp)
 
 /-- The factorial bound on the iterated integrals: if `‖p s‖ ≤ C` for `|s| ≤ R`, then
 `‖dysonTerm p n t‖ ≤ ‖1‖ * (C * |t|) ^ n / n!` for `|t| ≤ R`. -/
@@ -230,6 +248,36 @@ theorem hasDerivAt_dysonSeries (hp : Continuous p) (t : ℝ) :
 theorem continuous_dysonSeries (hp : Continuous p) : Continuous (dysonSeries p) :=
   continuous_iff_continuousAt.2 fun t => (hasDerivAt_dysonSeries hp t).continuousAt
 
+/-- **Continuous dependence on parameters.** The Dyson series of a jointly continuous family of
+paths is jointly continuous in the parameter and the time. -/
+theorem continuous_parametric_dysonSeries {X : Type*} [TopologicalSpace X] {p : X → ℝ → B}
+    (hp : Continuous (Function.uncurry p)) :
+    Continuous fun q : X × ℝ => dysonSeries (p q.1) q.2 := by
+  -- Near `(x₀, t₀)` the paths are bounded uniformly in the parameter on a compact time
+  -- interval, so the factorial bound makes the series converge uniformly there.
+  refine continuous_iff_continuousAt.2 fun ⟨x₀, t₀⟩ => ?_
+  set R := |t₀| + 1
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    ((hp.comp (Continuous.prodMk_right x₀)).continuousOn (s := Icc (-R) R))
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0 ⟨by simp only [R]; linarith [abs_nonneg t₀],
+    by simp only [R]; linarith [abs_nonneg t₀]⟩)
+  -- By the tube lemma, the bound `C + 1` holds for all parameters near `x₀`.
+  have hev : ∀ᶠ x in 𝓝 x₀, ∀ s ∈ Icc (-R) R, ‖p x s‖ ≤ C + 1 :=
+    isCompact_Icc.eventually_forall_of_forall_eventually fun s hs =>
+      ((hp.norm.tendsto (x₀, s)).eventually (eventually_lt_nhds (lt_add_one _))).mono
+        fun z hz => hz.le.trans (by simpa using hC s hs)
+  have hN : {x | ∀ s ∈ Icc (-R) R, ‖p x s‖ ≤ C + 1} ×ˢ {t : ℝ | |t| < R} ∈ 𝓝 (x₀, t₀) :=
+    prod_mem_nhds hev ((isOpen_lt continuous_abs continuous_const).mem_nhds (by simp [R]))
+  have hu := (Real.summable_pow_div_factorial ((C + 1) * R)).mul_left ‖(1 : B)‖
+  refine (continuousOn_tsum (fun n => (continuous_parametric_dysonTerm hp n).continuousOn) hu
+    (fun n q hq => ?_)).continuousAt hN
+  have hbound : ∀ s, |s| ≤ R → ‖p q.1 s‖ ≤ C + 1 := fun s hs => hq.1 s (abs_le.1 hs)
+  have hq₂ : |q.2| ≤ R := le_of_lt hq.2
+  calc ‖dysonTerm (p q.1) n q.2‖ ≤ ‖(1 : B)‖ * ((C + 1) * |q.2|) ^ n / n ! :=
+        norm_dysonTerm_le hbound n hq₂
+    _ ≤ ‖(1 : B)‖ * ((C + 1) * R) ^ n / n ! := by gcongr
+    _ = ‖(1 : B)‖ * (((C + 1) * R) ^ n / n !) := mul_div_assoc _ _ _
+
 /-- Every solution of `f' t = f t * p t` is `f 0 * dysonSeries p t`. -/
 theorem eq_mul_dysonSeries (hp : Continuous p) {f : ℝ → B}
     (hf : ∀ t, HasDerivAt f (f t * p t) t) (t : ℝ) : f t = f 0 * dysonSeries p t := by
@@ -287,6 +335,14 @@ theorem hasDerivAt_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
 theorem continuous_dysonSeriesLeft (hp : Continuous p) : Continuous (dysonSeriesLeft p) :=
   continuous_iff_continuousAt.2 fun t => (hasDerivAt_dysonSeriesLeft hp t).continuousAt
 
+/-- The left Dyson series of a jointly continuous family of paths is jointly continuous in the
+parameter and the time. -/
+theorem continuous_parametric_dysonSeriesLeft {X : Type*} [TopologicalSpace X] {p : X → ℝ → B}
+    (hp : Continuous (Function.uncurry p)) :
+    Continuous fun q : X × ℝ => dysonSeriesLeft (p q.1) q.2 :=
+  MulOpposite.continuous_unop.comp <| continuous_parametric_dysonSeries
+    (p := fun x s => MulOpposite.op (p x s)) (MulOpposite.continuous_op.comp hp)
+
 /-- Every solution of `f' t = p t * f t` is `dysonSeriesLeft p t * f 0`. -/
 theorem eq_dysonSeriesLeft_mul (hp : Continuous p) {f : ℝ → B}
     (hf : ∀ t, HasDerivAt f (p t * f t) t) (t : ℝ) : f t = dysonSeriesLeft p t * f 0 := by
@@ -302,6 +358,42 @@ theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
     dysonSeriesLeft p (t + d) = dysonSeriesLeft p t * dysonSeriesLeft p d := by
   simpa using eq_dysonSeriesLeft_mul hp (f := fun t => dysonSeriesLeft p (t + d))
     (fun t => by simpa [hper t] using (hasDerivAt_dysonSeriesLeft hp (t + d)).comp_add_const t d) t
+
+/-- The Dyson series of `-p` is a left inverse of the left Dyson series of `p`:
+`dysonSeries (-p) t * dysonSeriesLeft p t = 1`. -/
+theorem dysonSeries_neg_mul_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
+    dysonSeries (-p) t * dysonSeriesLeft p t = 1 := by
+  -- The product has derivative `Φ (-p) Ψ + Φ p Ψ = 0`.
+  have hd (s : ℝ) : HasDerivAt (fun s => dysonSeries (-p) s * dysonSeriesLeft p s) 0 s :=
+    ((hasDerivAt_dysonSeries hp.neg s).mul (hasDerivAt_dysonSeriesLeft hp s)).congr_deriv (by
+      simp only [Pi.neg_apply, mul_neg, neg_mul, mul_assoc, neg_add_cancel])
+  have hconst := is_const_of_deriv_eq_zero (fun s => (hd s).differentiableAt)
+    fun s => (hd s).deriv
+  exact (hconst t 0).trans (by simp)
+
+/-- The Dyson series of `-p` is a right inverse of the left Dyson series of `p`:
+`dysonSeriesLeft p t * dysonSeries (-p) t = 1`. -/
+theorem dysonSeriesLeft_mul_dysonSeries_neg (hp : Continuous p) (t : ℝ) :
+    dysonSeriesLeft p t * dysonSeries (-p) t = 1 := by
+  -- The product solves `X' = p X - X p`, as does the constant `1`.
+  let L : ℝ → B →L[ℝ] B := fun s =>
+    ContinuousLinearMap.mul ℝ B (p s) - (ContinuousLinearMap.mul ℝ B).flip (p s)
+  have hL : Continuous L :=
+    ((ContinuousLinearMap.mul ℝ B).continuous.comp hp).sub
+      ((ContinuousLinearMap.mul ℝ B).flip.continuous.comp hp)
+  have h : (fun s => dysonSeriesLeft p s * dysonSeries (-p) s) = fun _ => 1 := by
+    refine hL.eq_of_hasDerivAt_clm_apply (fun s => ?_) (fun s => ?_) (t₀ := 0) (by simp)
+    · exact ((hasDerivAt_dysonSeriesLeft hp s).mul (hasDerivAt_dysonSeries hp.neg s)).congr_deriv
+        (by simp only [L, sub_apply, ContinuousLinearMap.flip_apply,
+          ContinuousLinearMap.mul_apply', Pi.neg_apply, mul_neg]; noncomm_ring)
+    · exact (hasDerivAt_const s (1 : B)).congr_deriv (by simp [L])
+  exact congrFun h t
+
+/-- The left Dyson series of a continuous path takes invertible values, with inverse the Dyson
+series of `-p`. -/
+theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeriesLeft p t) :=
+  ⟨⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩,
+    rfl⟩
 
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
@@ -336,6 +428,37 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     (t : ℝ) :
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
+
+/-- **Variation of constants.** For continuous `M` and `f`, the map
+`w t = Ψ t (x + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
+`Ψ(s)⁻¹ = dysonSeries (-M) s`, solves the inhomogeneous equation `w' t = M t (w t) + f t`. -/
+theorem hasDerivAt_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {f : ℝ → X} (hf : Continuous f) (x : X) (t : ℝ) :
+    HasDerivAt (fun t => dysonSeriesLeft M t (x + ∫ s in 0..t, dysonSeries (-M) s (f s)))
+      (M t (dysonSeriesLeft M t (x + ∫ s in 0..t, dysonSeries (-M) s (f s))) + f t) t := by
+  have hy : HasDerivAt (fun t => x + ∫ s in 0..t, dysonSeries (-M) s (f s))
+      (dysonSeries (-M) t (f t)) t :=
+    (((continuous_dysonSeries hM.neg).clm_apply hf).integral_hasStrictDerivAt 0 t).hasDerivAt
+      |>.const_add x
+  refine ((hasDerivAt_dysonSeriesLeft hM t).clm_apply hy).congr_deriv ?_
+  rw [← mul_apply_eq_comp, dysonSeriesLeft_mul_dysonSeries_neg hM, one_apply_eq_self,
+    mul_apply_eq_comp]
+
+/-- **Variation of constants.** Every solution of `w' t = M t (w t) + f t`, for continuous `M`
+and `f`, is `w t = Ψ t (w 0 + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
+`Ψ(s)⁻¹ = dysonSeries (-M) s`. -/
+theorem eq_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {f : ℝ → X} (hf : Continuous f) {w : ℝ → X} (hw : ∀ t, HasDerivAt w (M t (w t) + f t) t)
+    (t : ℝ) : w t = dysonSeriesLeft M t (w 0 + ∫ s in 0..t, dysonSeries (-M) s (f s)) := by
+  set v : ℝ → X := fun t => dysonSeriesLeft M t (w 0 + ∫ s in 0..t, dysonSeries (-M) s (f s))
+  -- The difference of two solutions solves the homogeneous equation and vanishes at `0`.
+  have hd (t : ℝ) : HasDerivAt (fun t => w t - v t) (M t (w t - v t)) t :=
+    ((hw t).sub (hasDerivAt_dysonSeriesLeft_apply_add_integral hM hf (w 0) t)).congr_deriv
+      (by rw [map_sub]; abel)
+  have h0 := eq_dysonSeriesLeft_apply hM hd t
+  simp only [v, dysonSeriesLeft_zero, intervalIntegral.integral_same, add_zero,
+    one_apply_eq_self, sub_self, map_zero] at h0
+  exact sub_eq_zero.1 h0
 
 end Left
 

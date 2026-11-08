@@ -341,29 +341,22 @@ theorem restrictNormal_mem_lowerRamificationGroup_one
     {σ : Gal(AlgebraicClosure K/K)} (hσ : σ ∈ wildInertiaSubgroup K) :
     AlgEquiv.restrictNormal σ L ∈ lowerRamificationGroup K L 1 := by
   set p := ringChar 𝓀[K]
-  have hp : p.Prime := CharP.char_is_prime 𝓀[K] p
   have : CharP 𝓀[L] p := charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
   have hσI := wildInertiaSubgroup_le_inertiaSubgroup K hσ
-  set τ := AlgEquiv.restrictNormal σ L with hτ_def
+  set τ := AlgEquiv.restrictNormal σ L
   have hτ0 := restrictNormal_mem_lowerRamificationGroup_zero L hσI
   rw [lowerRamificationGroup_def] at hτ0 ⊢
   -- Write `v_L(π₀) = v_L(ϖ) ^ (p ^ k * m)` with `p ∤ m`, and let `β` be an `m`-th root of `π₀`,
   -- fixed by `σ`. In a finite normal extension `M` containing `L` and `β`, the restriction of `σ`
   -- lies in `G_0`, and `v(β) = v(ϖ) ^ (p ^ k)`, so `(σ ϖ / ϖ) ^ (p ^ k) ≡ 1`; this places the
   -- restriction to `L` in `G_1`.
-  -- Uniformizers `π₀` of `K` and `ϖ` of `L`, with `π₀ = u ϖ ^ (p ^ k * m)` in `L`, `p ∤ m`.
+  -- Uniformizers `π₀` of `K` and `ϖ` of `L`, with `e(L/K) = p ^ k * m`, `p ∤ m`.
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   obtain ⟨π₀, hπ₀⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hπne : algebraMap 𝒪[K] 𝒪[L] π₀ ≠ 0 := by
-    rw [Ne, map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective 𝒪[K] 𝒪[L])]
-    exact hπ₀.ne_zero
-  obtain ⟨E, u, hE⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hπne hϖ
-  have hE0 : E ≠ 0 := by
-    rintro rfl
-    rw [pow_zero, mul_one] at hE
-    exact hπ₀.not_isUnit (IsUnit.of_map (algebraMap 𝒪[K] 𝒪[L]) _ (hE ▸ u.isUnit))
-  obtain ⟨k, m, hm, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hE0 p hp.ne_one
-  have hm0 : m ≠ 0 := right_ne_zero_of_mul hE0
+  have he := (ramificationIndex_pos (K := K) (L := L)).ne'
+  obtain ⟨k, m, hm, hkm⟩ := Nat.exists_eq_pow_mul_and_not_dvd he p
+    (CharP.char_is_prime 𝓀[K] p).ne_one
+  have hm0 : m ≠ 0 := right_ne_zero_of_mul (hkm ▸ he)
   -- An `m`-th root `β` of `π₀` in `K^{alg}`, fixed by `σ`.
   have hπ₀K : (π₀ : K) ≠ 0 := fun h ↦ hπ₀.ne_zero (Subtype.ext h)
   obtain ⟨β, hβ⟩ := IsAlgClosed.exists_pow_nat_eq
@@ -371,11 +364,7 @@ theorem restrictNormal_mem_lowerRamificationGroup_one
   have hσβ : σ β = β := (mem_wildInertiaSubgroup_iff_pow_eq.1 hσ) m hm (Units.mk0 _ hπ₀K) β hβ
   -- A finite normal extension `M` of `K` containing `L` and `β`, with its local-field structure.
   set F : IntermediateField K (AlgebraicClosure K) := L ⊔ K⟮β⟯
-  have : FiniteDimensional K K⟮β⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral β)
-  have : FiniteDimensional K F := IntermediateField.finiteDimensional_sup _ _
-  set M : IntermediateField K (AlgebraicClosure K) := normalClosure K F (AlgebraicClosure K)
-  have : FiniteDimensional K M := normalClosure.is_finiteDimensional K F _
-  have : Normal K M := normalClosure.normal K F _
+  set M := normalClosure K F (AlgebraicClosure K)
   have hLM : L ≤ M := le_sup_left.trans F.le_normalClosure
   have hβM : β ∈ M := F.le_normalClosure ((le_sup_right : K⟮β⟯ ≤ F) (mem_adjoin_simple_self K β))
   let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) M
@@ -388,35 +377,31 @@ theorem restrictNormal_mem_lowerRamificationGroup_one
   have : ValuativeExtension L M := ι.valuativeExtension
   have hτM := restrictNormal_mem_lowerRamificationGroup_zero M hσI
   rw [lowerRamificationGroup_def] at hτM
-  -- Valuations of elements of `L` are read in `M` through the map of value groups `f`.
-  set f := ValuativeExtension.mapValueGroupWithZero L M
-  have hf (y : L) : valuation M (algebraMap L M y) = f (valuation L y) :=
-    (ValuativeExtension.mapValueGroupWithZero_valuation y).symm
-  set a : M := algebraMap L M (ϖ : L)
   set b : M := ⟨β, hβM⟩
   have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  have hπL : valuation L (algebraMap K L (π₀ : K)) = valuation L (ϖ : L) ^ (p ^ k * m) := by
-    have hu : valuation L ((u : 𝒪[L]) : L) = 1 :=
-      (Valuation.integer.integers (valuation L)).valuation_unit u
-    rw [← coe_algebraMap_integerRing, hE]
-    simp [hu]
-  have hbm : b ^ m = algebraMap L M (algebraMap K L (π₀ : K)) := by
-    rw [← IsScalarTower.algebraMap_apply]
-    exact Subtype.ext hβ
   -- `v(β) = v(ϖ) ^ (p ^ k)` in `M`, since the value group is torsion-free.
-  have hab : valuation M b = valuation M a ^ p ^ k := by
+  have hab : valuation M b = valuation M (algebraMap L M ϖ) ^ p ^ k := by
     refine (pow_left_inj hm0).mp ?_
-    rw [← map_pow, hbm, hf, hπL, map_pow, ← hf, ← pow_mul]
-  have hσb : AlgEquiv.restrictNormal σ M • b = b :=
-    Subtype.ext (by rw [AlgEquiv.smul_def, AlgEquiv.restrictNormal_apply, hσβ])
-  have hratio : AlgEquiv.restrictNormal σ M • a / a = algebraMap L M (τ • (ϖ : L) / ϖ) := by
-    rw [map_div₀]
-    congr 1
-    exact Subtype.ext (by
-      rw [AlgEquiv.smul_def, AlgEquiv.restrictNormal_apply, AlgEquiv.smul_def, hτ_def]
-      exact (AlgEquiv.restrictNormal_apply L σ ϖ).symm)
+    -- `Subtype.ext` applies since both sides coerce to `algebraMap K (AlgebraicClosure K) π₀`
+    have hbm : b ^ m = algebraMap K M π₀ := Subtype.ext hβ
+    -- the valuation of `M` on the image of `z : L` is the image of the valuation of `z`
+    have hf (z : L) : valuation M (algebraMap L M z) =
+        ValuativeExtension.mapValueGroupWithZero L M (valuation L z) :=
+      (ValuativeExtension.mapValueGroupWithZero_valuation z).symm
+    have hπL : valuation L (algebraMap K L π₀) = valuation L ϖ ^ (p ^ k * m) := by
+      rw [valuation_algebraMap_irreducible hπ₀ hϖ, hkm]
+    rw [← map_pow, hbm, IsScalarTower.algebraMap_apply K L M, hf, hπL, map_pow, ← hf, ← pow_mul]
+  have hσb : AlgEquiv.restrictNormal σ M • b = b := by
+    rw [AlgEquiv.smul_def]
+    exact Subtype.ext ((AlgEquiv.restrictNormal_apply M σ b).trans hσβ)
+  have hσa : AlgEquiv.restrictNormal σ M • algebraMap L M ϖ = algebraMap L M (τ • (ϖ : L)) := by
+    rw [AlgEquiv.smul_def, AlgEquiv.smul_def]
+    exact Subtype.ext ((AlgEquiv.restrictNormal_apply M σ _).trans
+      (AlgEquiv.restrictNormal_apply L σ ϖ).symm)
   have hlt := valuation_smul_div_pow_sub_one_lt_one hτM ((_root_.map_ne_zero _).2 hϖ0) hab hσb
-  rw [hratio, ← map_pow, ← map_one (algebraMap L M), ← map_sub, hf, ← map_one f] at hlt
+  rw [hσa, ← map_div₀, ← map_pow, ← map_one (algebraMap L M), ← map_sub,
+    ← ValuativeExtension.mapValueGroupWithZero_valuation,
+    ← map_one (ValuativeExtension.mapValueGroupWithZero L M)] at hlt
   exact mem_ramificationGroup_one_of_valuation_pow_sub_one_lt_one hϖ hτ0 p k
     ((ValuativeExtension.mapValueGroupWithZero_strictMono (A := L) (B := M)).lt_iff_lt.1 hlt)
 
@@ -439,13 +424,8 @@ theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerR
     rw [finiteGaloisLowerRamificationGroup_def]
     exact restrictNormal_mem_lowerRamificationGroup_one L.toIntermediateField hσ
   · refine mem_wildInertiaSubgroup_iff_pow_eq.2 fun m hm a x hx ↦ ?_
-    have hm0 : m ≠ 0 := by
-      rintro rfl
-      exact hm (dvd_zero _)
-    have hx0 : x ≠ 0 := by
-      rintro rfl
-      rw [zero_pow hm0] at hx
-      exact (_root_.map_ne_zero _).2 a.ne_zero hx.symm
+    have hm0 : m ≠ 0 := fun h ↦ hm (h ▸ dvd_zero _)
+    have hx0 : x ≠ 0 := fun h ↦ (_root_.map_ne_zero _).2 a.ne_zero (by rw [← hx, h, zero_pow hm0])
     -- Use the finite splitting field of the separable polynomial `X^m - a`.
     let f : K[X] := X ^ m - C (a : K)
     have hsep : f.Separable := separable_X_pow_sub_C _
@@ -462,14 +442,11 @@ theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerR
     let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
     have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) L
     have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L
-    have hchar : ringChar 𝓀[L] = ringChar 𝓀[K] :=
-      have : CharP 𝓀[L] (ringChar 𝓀[K]) :=
-        charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
-      ringChar.eq 𝓀[L] _
+    have hmL : IsUnit (m : 𝒪[L]) := by
+      simpa using (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hm).map (algebraMap 𝒪[K] 𝒪[L])
     have hG1 := h E
-    rw [finiteGaloisLowerRamificationGroup_def] at hG1
-    rw [lowerRamificationGroup_def] at hG1
-    set τ := AlgEquiv.restrictNormal σ L with hτ_def
+    rw [finiteGaloisLowerRamificationGroup_def, lowerRamificationGroup_def] at hG1
+    set τ := AlgEquiv.restrictNormal σ L
     -- The ratio `z = τ x / x` is a principal unit of `L` and an `m`-th root of unity, so `z = 1`.
     set y : L := ⟨x, hxL⟩
     have hy0 : y ≠ 0 := fun h ↦ hx0 (congrArg Subtype.val h)
@@ -481,15 +458,11 @@ theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerR
       refine Units.ext ?_
       rw [Units.val_pow_eq_pow_val, Units.val_mk0, div_pow, ← smul_pow', hym, AlgEquiv.smul_def,
         AlgEquiv.commutes, div_self ((_root_.map_ne_zero _).2 a.ne_zero), Units.val_one]
-    have hmL : ¬ ringChar 𝓀[L] ∣ m := hchar ▸ hm
     have hz : z = 1 := Subgroup.disjoint_def.1
-      (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit
-        (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hmL)) hzm hz1
-    have hτy : τ • y = y := by
-      have := congrArg Units.val hz
-      rwa [Units.val_mk0, Units.val_one, div_eq_one_iff_eq hy0] at this
-    have := congrArg Subtype.val hτy
-    rwa [AlgEquiv.smul_def, hτ_def, AlgEquiv.restrictNormal_apply] at this
+      (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hmL) hzm hz1
+    have hτy : τ • y = y := (div_eq_one_iff_eq hy0).1 (congrArg Units.val hz)
+    rw [AlgEquiv.smul_def] at hτy
+    exact (AlgEquiv.restrictNormal_apply L σ y).symm.trans (congrArg Subtype.val hτy)
 
 variable {K} in
 /-- **Wild inertia is the inverse limit of the finite-level `G_1`.** An automorphism `σ` of

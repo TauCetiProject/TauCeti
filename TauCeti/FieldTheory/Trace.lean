@@ -63,7 +63,7 @@ theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] 
       · exact hx (minpoly.natDegree_eq_one_iff.mp hh)
     omega
   have heq : minpoly F x = X ^ 2 - C r :=
-    minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hx2 hdeg2
+    minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq two_ne_zero hx2 hdeg2
   rw [trace_eq_finrank_mul_minpoly_nextCoeff, heq]
   have hnc : (X ^ 2 - C r : F[X]).nextCoeff = 0 := by
     rw [Polynomial.nextCoeff_of_natDegree_pos

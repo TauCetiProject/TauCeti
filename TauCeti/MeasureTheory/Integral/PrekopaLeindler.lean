@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Analysis.Convex.LogConcave
 -- Proof-only: weighted AM-GM, the minimum below a geometric mean, the layer-cake formula in
 -- `ℝ≥0∞` and one-dimensional Brunn–Minkowski.
-import Mathlib.Analysis.MeanInequalities
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Real
@@ -301,11 +301,8 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
   have hKtop : K ≠ ∞ := ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg h1θ.le hF)
     (ENNReal.rpow_ne_top_of_nonneg hθ₀.le hG)
   have hscale (a b : ℝ≥0∞) :
-      (F⁻¹ * a) ^ (1 - θ) * (G⁻¹ * b) ^ θ = K⁻¹ * (a ^ (1 - θ) * b ^ θ) := by
-    rw [ENNReal.mul_rpow_of_nonneg _ _ h1θ.le, ENNReal.mul_rpow_of_nonneg _ _ hθ₀.le,
-      ENNReal.inv_rpow, ENNReal.inv_rpow, ENNReal.mul_inv (.inr (ENNReal.rpow_ne_top_of_nonneg
-      hθ₀.le hG)) (.inl (ENNReal.rpow_ne_top_of_nonneg h1θ.le hF))]
-    ring
+      (F⁻¹ * a) ^ (1 - θ) * (G⁻¹ * b) ^ θ = K⁻¹ * (a ^ (1 - θ) * b ^ θ) :=
+    ENNReal.inv_mul_rpow_mul_inv_mul_rpow h1θ.le hθ₀.le hF hG a b
   have hsup : ⨆ x, F⁻¹ * f x = ⨆ y, G⁻¹ * g y := by
     rw [← ENNReal.mul_iSup, ← ENNReal.mul_iSup, ENNReal.inv_mul_cancel hF0 hF,
       ENNReal.inv_mul_cancel hG0 hG]
@@ -316,12 +313,9 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
       gcongr
       exact hfgh x y
   rw [lintegral_const_mul _ hf, lintegral_const_mul _ hg, lintegral_const_mul _ hh] at key
-  have hamgm := ENNReal.geom_mean_le_arith_mean2_weighted (Real.toNNReal (1 - θ))
-    (Real.toNNReal θ) (F⁻¹ * ∫⁻ x, f x) (G⁻¹ * ∫⁻ y, g y) (by
-      rw [← Real.toNNReal_add h1θ.le hθ₀.le, sub_add_cancel, Real.toNNReal_one])
-  rw [Real.coe_toNNReal _ h1θ.le, Real.coe_toNNReal _ hθ₀.le, hscale] at hamgm
-  rw [← ENNReal.mul_le_mul_iff_right (ENNReal.inv_ne_zero.2 hKtop) (ENNReal.inv_ne_top.2 hK0)]
-  exact hamgm.trans key
+  rw [← ENNReal.mul_le_mul_iff_right (ENNReal.inv_ne_zero.2 hKtop) (ENNReal.inv_ne_top.2 hK0),
+    ← hscale]
+  exact (ENNReal.geom_mean_le_arith_mean2_weighted_ofReal hθ₀.le hθ₁.le _ _).trans key
 
 /-- The **Prékopa–Leindler inequality** on `ℝ`: Lebesgue measure has the Prékopa–Leindler
 property at every weight `0 ≤ θ ≤ 1`. -/
@@ -414,13 +408,9 @@ theorem LogConcave.setLIntegral_prod_right
     (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {f : E × F → ℝ≥0∞}
     (hf : Measurable f) (hlc : LogConcave f) {s : Set F} (hs : MeasurableSet s)
     (hsc : Convex ℝ s) :
-    LogConcave fun x ↦ ∫⁻ y in s, f (x, y) ∂ν := by
-  have h := (hlc.mul ((hsc.linear_preimage (LinearMap.snd ℝ E F)).logConcave_indicator 1)
-    ).lintegral_prod_right hν (hf.mul (measurable_const.indicator (hs.preimage measurable_snd)))
-  convert h using 2 with x
-  rw [← lintegral_indicator hs]
-  congr 1 with y
-  by_cases hy : y ∈ s <;> simp [hy]
+    LogConcave fun x ↦ ∫⁻ y in s, f (x, y) ∂ν :=
+  hlc.lintegral_prod_right
+    (fun _ h0 h1 ↦ Measure.HasPrekopaLeindler.restrict (hν h0 h1) h0 h1 hs hsc) hf
 
 /-- **Brunn's principle, in log-concave form.** For a measurable convex set `s ⊆ E × F` and a
 measure `ν` with the Prékopa–Leindler property at every weight, the measure of the slices,

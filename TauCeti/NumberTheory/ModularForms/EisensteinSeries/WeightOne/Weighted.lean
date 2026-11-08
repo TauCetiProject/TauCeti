@@ -13,6 +13,8 @@ public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.Basic.Complex.Basic
+import TauCeti.Data.Nat.Cast.Order.Field
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
@@ -421,23 +423,6 @@ private lemma cotConst_nonneg (M : ℕ) : 0 ≤ cotConst M := by
   have : 0 ≤ π * (1 / (M : ℝ)) := by positivity
   linarith
 
-/-- `π cot (π u)` is within `cotConst M e^(-2π r)` of `-π i` when `1 / M ≤ Im u` and `r ≤ Im u`. -/
-private lemma norm_cot_add_le {M : ℕ} (hM : 0 < M) {u : ℂ} {r : ℝ} (hu : 1 / (M : ℝ) ≤ u.im)
-    (hr : r ≤ u.im) :
-    ‖π * cot (π * u) + π * Complex.I‖ ≤ cotConst M * Real.exp (-2 * π * r) := by
-  refine (norm_pi_mul_cot_pi_mul_add_pi_mul_I_le (by positivity) hu).trans
-    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (cotConst_nonneg M))
-  nlinarith [Real.pi_pos]
-
-/-- `π cot (π u)` is within `cotConst M e^(-2π r)` of `π i` when `1 / M ≤ -Im u` and
-`r ≤ -Im u`. -/
-private lemma norm_cot_sub_le {M : ℕ} (hM : 0 < M) {u : ℂ} {r : ℝ} (hu : 1 / (M : ℝ) ≤ -u.im)
-    (hr : r ≤ -u.im) :
-    ‖π * cot (π * u) - π * Complex.I‖ ≤ cotConst M * Real.exp (-2 * π * r) := by
-  refine (norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le (by positivity) hu).trans
-    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (cotConst_nonneg M))
-  nlinarith [Real.pi_pos]
-
 /-- The bounds for the cotangent rows at `(b₀ z + b₁) / M`: a summable majorant independent of
 `z` on `1 ≤ Im z`. -/
 private def rowBound (M b₁ : ℕ) (m : ℤ) : ℝ :=
@@ -453,74 +438,64 @@ private lemma summable_rowBound (M b₁ : ℕ) : Summable (rowBound M b₁) :=
   (summable_exp_neg_two_pi_mul_abs_sub_one.mul_left _).add
     (summable_of_ne_finset_zero (s := {0}) fun m hm ↦ by simp_all)
 
-/-- **The cotangent rows at a division point are bounded** on `1 ≤ Im z`: for
-`x = (b₀ z + b₁) / M` with `b₀ < M` and `m ≠ 0`, the imaginary parts of `x - m z` and of `m z`
-have opposite signs and absolute values at least `max (1 / M) (|m| - 1)`, so the two cotangents
-approach `± π i` with opposite signs. -/
-private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : ℍ} (hz : 1 ≤ z.im) :
+/-- The cotangent row `m = 0` at a division point is bounded: it is `π cot (π x)`, which is
+bounded by `cotConst M + π` if `b₀ ≠ 0` and is the constant `π cot (π b₁ / M)` if `b₀ = 0`. -/
+private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hM : 0 < M) {z : ℍ} (hz : 1 ≤ z.im) :
+    ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) 0 z‖ ≤ rowBound M b₁ 0 := by
+  have hM' : (0 : ℝ) < M := by exact_mod_cast hM
+  simp only [cotRow, Int.cast_zero, zero_mul, sub_zero, mul_zero, cot_zero, add_zero, rowBound,
+    ↓reduceIte]
+  refine le_add_of_nonneg_of_le (by positivity [cotConst_nonneg M]) ?_
+  rcases Nat.eq_zero_or_pos b₀ with hb₀ | hb₀
+  · simp only [hb₀, CharP.cast_eq_zero, zero_mul, zero_add]
+    exact le_add_of_nonneg_left (by positivity [cotConst_nonneg M])
+  have hx : 1 / (M : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M).im := by
+    have h : ((b₀ * (z : ℂ) + b₁) / M - ((0 : ℤ) : ℂ) * z).im =
+        ((b₀ : ℝ) / M - ((0 : ℤ) : ℝ)) * z.im := by
+      exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M 0 z
+    simp only [Int.cast_zero, zero_mul, sub_zero] at h
+    rw [h]
+    have : 1 / (M : ℝ) ≤ b₀ / M := by
+      gcongr
+      exact_mod_cast hb₀
+    nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ b₀ / M) (sub_nonneg.2 hz)]
+  exact (norm_pi_mul_cot_pi_mul_le (div_pos one_pos hM') hx).trans
+    (le_add_of_nonneg_right (norm_nonneg _))
+
+/-- **The cotangent rows `m ≠ 0` at a division point are bounded** on `1 ≤ Im z`: for
+`x = (b₀ z + b₁) / M` with `b₀ < M`, the imaginary parts of `x - m z` and of `m z` have opposite
+signs and absolute values at least `max (1 / M) (|m| - 1)`, so the two cotangents approach
+`± π i` with opposite signs. -/
+private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m : ℤ} (hm : m ≠ 0)
+    {z : ℍ} (hz : 1 ≤ z.im) :
     ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) m z‖ ≤ rowBound M b₁ m := by
   have hM : 0 < M := by omega
   have hM' : (0 : ℝ) < M := by exact_mod_cast hM
-  have hK := cotConst_nonneg M
-  have hpi : ‖(π * Complex.I : ℂ)‖ = π := by simp [abs_of_pos Real.pi_pos]
   -- the imaginary part of `x - m z` is `(b₀ / M - m) Im z`, with `b₀ / M ≤ 1 - 1 / M`
-  have hc1 : (b₀ : ℝ) / M ≤ 1 - 1 / M := by
-    rw [le_sub_iff_add_le, ← add_div, div_le_one hM']
-    exact_mod_cast hb
-  have him : ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * z.im := by
-    simp only [Complex.sub_im, Complex.div_natCast_im, Complex.add_im, Complex.mul_im,
-      Complex.natCast_re, Complex.natCast_im, Complex.intCast_re, Complex.intCast_im,
-      UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, zero_mul, add_zero]
-    ring
+  have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
+  have him : ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * (z : ℂ).im := by
+    exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M m z
   set c : ℝ := b₀ / M
   have hc0 : 0 ≤ c := by positivity
   have him' : ((m : ℂ) * z).im = m * z.im := by simp
   have hM1 : 1 / (M : ℝ) ≤ 1 := div_le_one_of_le₀ (by exact_mod_cast hM) hM'.le
-  rcases lt_trichotomy m 0 with hm | rfl | hm
+  have hrow : cotRow ((b₀ * (z : ℂ) + b₁) / M) m z =
+      π * cot (π * ((b₀ * (z : ℂ) + b₁) / M - m * z)) + π * cot (π * (m * z)) := by
+    simp only [cotRow]
+  simp only [rowBound, hm, ↓reduceIte, add_zero]
+  rcases hm.lt_or_gt with hm | hm
   · -- `m < 0`: `x - m z` lies in the upper and `m z` in the lower half-plane
     have hm1 : (m : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hm
     have habs : |(m : ℝ)| = -m := abs_of_neg (by exact_mod_cast hm)
     have h₁ : -(m : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       nlinarith
     have h₂ : -(m : ℝ) ≤ -((m : ℂ) * z).im := by
       rw [him']
       nlinarith
-    have hrow : cotRow ((b₀ * (z : ℂ) + b₁) / M) m z =
-        (π * cot (π * ((b₀ * (z : ℂ) + b₁) / M - m * z)) + π * Complex.I) +
-          (π * cot (π * (m * z)) - π * Complex.I) := by
-      simp only [cotRow]
-      ring
-    simp only [hrow, rowBound, hm.ne, ↓reduceIte, add_zero, habs, two_mul, add_mul]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · exact norm_cot_add_le hM (hM1.trans (by linarith)) (by linarith)
-    · exact norm_cot_sub_le hM (hM1.trans (by linarith)) (by linarith)
-  · -- `m = 0`: the cotangent at `x` itself
-    simp only [cotRow, Int.cast_zero, zero_mul, sub_zero, mul_zero, cot_zero, add_zero,
-      rowBound, ↓reduceIte]
-    refine le_add_of_nonneg_of_le (by positivity) ?_
-    rcases Nat.eq_zero_or_pos b₀ with hb₀ | hb₀
-    · simp only [hb₀, CharP.cast_eq_zero, zero_mul, zero_add]
-      exact le_add_of_nonneg_left (by positivity)
-    have hx : 1 / (M : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M).im := by
-      have h := him
-      simp only [Int.cast_zero, zero_mul, sub_zero] at h
-      rw [h]
-      have : 1 / (M : ℝ) ≤ c := by
-        simp only [c]
-        gcongr
-        exact_mod_cast hb₀
-      nlinarith
-    set x := (b₀ * (z : ℂ) + b₁) / M
-    calc ‖π * cot (π * x)‖ ≤ ‖π * cot (π * x) + π * Complex.I‖ + ‖(π * Complex.I : ℂ)‖ := by
-          simpa using norm_sub_le (π * cot (π * x) + π * Complex.I) (π * Complex.I)
-      _ ≤ cotConst M * Real.exp (-2 * π * 0) + π := by
-          rw [hpi]
-          gcongr
-          exact norm_cot_add_le hM hx ((div_pos one_pos hM').le.trans hx)
-      _ ≤ _ := by
-          simp only [mul_zero, Real.exp_zero, mul_one]
-          exact le_add_of_nonneg_right (norm_nonneg _)
+    rw [hrow, habs]
+    exact norm_pi_mul_cot_pi_mul_add_pi_mul_cot_pi_mul_le (div_pos one_pos hM')
+      (hM1.trans (by linarith)) (by linarith) (hM1.trans (by linarith)) (by linarith)
   · -- `m > 0`: `x - m z` lies in the lower and `m z` in the upper half-plane
     have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
     have habs : |(m : ℝ)| = m := abs_of_pos (by exact_mod_cast hm)
@@ -528,23 +503,24 @@ private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : 
     have hmc' : (m : ℝ) - c ≤ (m - c) * z.im :=
       le_mul_of_one_le_right ((div_pos one_pos hM').le.trans hmc) hz
     have h₁ : 1 / (M : ℝ) ≤ -((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       linarith
     have h₁' : (m : ℝ) - 1 ≤ -((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       linarith [div_pos one_pos hM']
     have h₂ : (m : ℝ) ≤ ((m : ℂ) * z).im := by
       rw [him']
       nlinarith
-    have hrow : cotRow ((b₀ * (z : ℂ) + b₁) / M) m z =
-        (π * cot (π * ((b₀ * (z : ℂ) + b₁) / M - m * z)) - π * Complex.I) +
-          (π * cot (π * (m * z)) + π * Complex.I) := by
-      simp only [cotRow]
-      ring
-    simp only [hrow, rowBound, hm.ne', ↓reduceIte, add_zero, habs, two_mul, add_mul]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · exact norm_cot_sub_le hM h₁ h₁'
-    · exact norm_cot_add_le hM (hM1.trans (by linarith)) (by linarith)
+    rw [hrow, add_comm, habs]
+    exact norm_pi_mul_cot_pi_mul_add_pi_mul_cot_pi_mul_le (div_pos one_pos hM')
+      (hM1.trans (by linarith)) (by linarith) h₁ h₁'
+
+/-- **The cotangent rows at a division point are bounded** on `1 ≤ Im z`. -/
+private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : ℍ} (hz : 1 ≤ z.im) :
+    ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) m z‖ ≤ rowBound M b₁ m := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · exact norm_cotRow_zero_le (by omega) hz
+  · exact norm_cotRow_le_of_ne_zero hb hm hz
 
 /-- The summable majorant of the rows of the corrected division values on `1 ≤ Im z`. -/
 private def zetaBound (N b₁ : ℕ) (m : ℤ) : ℝ :=
@@ -628,16 +604,10 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
       (𝓝 (if m = 0 then (if b₀ = 0 then π * cot (π * (b₁ / M)) else -(π * Complex.I))
         else 0)) := by
   have hM' : (0 : ℝ) < M := by exact_mod_cast (Nat.zero_le _).trans_lt hb
-  -- the imaginary part of `x - m z` is `(b₀ / M - m) Im z`, with `b₀ / M ≤ 1 - 1 / M`
-  have hc1 : (b₀ : ℝ) / M ≤ 1 - 1 / M := by
-    rw [le_sub_iff_add_le, ← add_div, div_le_one hM']
-    exact_mod_cast hb
+  have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
   have him (m : ℤ) (z : ℍ) :
-      ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * z.im := by
-    simp only [Complex.sub_im, Complex.div_natCast_im, Complex.add_im, Complex.mul_im,
-      Complex.natCast_re, Complex.natCast_im, Complex.intCast_re, Complex.intCast_im,
-      UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, zero_mul, add_zero]
-    ring
+      ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * (z : ℂ).im := by
+    exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M m z
   have hc0 : (0 : ℝ) ≤ b₀ / M := by positivity
   have hM1 : 0 < 1 / (M : ℝ) := div_pos one_pos hM'
   rcases lt_trichotomy m 0 with hm | rfl | hm
@@ -645,7 +615,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have hm1 : (m : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hm
     have h₁ := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M - m * z) one_pos fun z ↦ by
-        rw [him]
+        rw [him, UpperHalfPlane.coe_im]
         nlinarith [z.im_pos]
     have h₂ := tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty (w := fun z : ℍ ↦ (m : ℂ) * z)
       one_pos fun z ↦ by
@@ -664,7 +634,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M) (c := 1 / M) hM1 fun z ↦ by
         have h := him 0 z
         simp only [Int.cast_zero, zero_mul, sub_zero] at h
-        rw [h]
+        rw [h, UpperHalfPlane.coe_im]
         have : 1 / (M : ℝ) ≤ b₀ / M := by
           gcongr
           exact_mod_cast Nat.one_le_iff_ne_zero.mpr hb₀
@@ -674,7 +644,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
     have h₁ := tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M - m * z) hM1 fun z ↦ by
-        rw [him]
+        rw [him, UpperHalfPlane.coe_im]
         nlinarith [z.im_pos]
     have h₂ := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty (w := fun z : ℍ ↦ (m : ℂ) * z)
       one_pos fun z ↦ by

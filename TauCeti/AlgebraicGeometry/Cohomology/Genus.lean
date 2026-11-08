@@ -33,6 +33,8 @@ proper schemes is a separate prerequisite.
   defining formula `AlgebraicGeometry.Scheme.genus_def`;
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_trivial_eq_one_of_surjective`:
   `dim_k H⁰(X, 𝒪_X) = 1` when all global functions are constants;
+* `TauCeti.AlgebraicGeometry.eulerCharBelow_trivial_eq_one_sub_genus_of_surjective`:
+  `χ(𝒪_X) = 1 - g` when all global functions are constants;
 * `TauCeti.AlgebraicGeometry.eulerCharBelow_trivial_eq_one_sub_genus`: for an integral scheme
   universally closed over `k` with a `k`-rational point, `χ(𝒪_X) = 1 - g`.
 
@@ -105,20 +107,30 @@ theorem finrank_cohomology_zero_trivial_eq_one_of_surjective [Nonempty X]
     _ = Scheme.Modules.baseRingToGlobalSections k X c := by rw [smul_eq_mul, mul_one]
     Scheme.Modules.baseRingToGlobalSections k X c = w := hc
 
-/-- **The Euler characteristic of the structure sheaf.** On an integral scheme universally closed
-over a field `k` with a `k`-rational point, `χ(𝒪_X) = 1 - g`, where `χ` is the degree-`2`
-truncation `dim H⁰ - dim H¹` and `g` is the genus. -/
+/-- **The Euler characteristic of the structure sheaf.** On a nonempty scheme over a field `k` all
+of whose global functions are constants, `χ(𝒪_X) = 1 - g`, where `χ` is the degree-`2` truncation
+`dim H⁰ - dim H¹` and `g` is the genus. -/
+theorem eulerCharBelow_trivial_eq_one_sub_genus_of_surjective [Nonempty X]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+    (hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X)) :
+    Scheme.Modules.eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 = 1 - X.genus k := by
+  rw [Scheme.Modules.eulerCharBelow_two, finrank_cohomology_zero_trivial_eq_one_of_surjective k hφ,
+    Scheme.genus_def, Nat.cast_one]
+
+/-- On an integral scheme universally closed over a field `k` with a `k`-rational point,
+`χ(𝒪_X) = 1 - g`: the global functions are the constants
+(`eulerCharBelow_trivial_eq_one_sub_genus_of_surjective`). -/
 theorem eulerCharBelow_trivial_eq_one_sub_genus [IsIntegral X]
     [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
     [UniversallyClosed (X ↘ Spec (.of k))]
     {s : Spec (.of k) ⟶ X}
     (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k))) :
-    Scheme.Modules.eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 = 1 - X.genus k := by
-  rw [Scheme.Modules.eulerCharBelow_two, finrank_cohomology_zero_trivial_eq_one_of_surjective k (by
-      rw [funext (Scheme.Modules.baseRingToGlobalSections_apply k X)]
-      exact (appTop_bijective_of_section hs).2.comp
-        (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective),
-    Scheme.genus_def, Nat.cast_one]
+    Scheme.Modules.eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 = 1 - X.genus k :=
+  have : Nonempty X := ⟨s (Classical.arbitrary (Spec (.of k)))⟩
+  eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k (by
+    rw [funext (Scheme.Modules.baseRingToGlobalSections_apply k X)]
+    exact (appTop_bijective_of_section hs).2.comp
+      (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective)
 
 end
 
