@@ -88,6 +88,7 @@ circle about `p` at the angular speed `G'` of its squared radius
 def radialHamiltonian (G : ℝ → ℝ) (p w : ℂ) : ℝ :=
   -G (‖w - p‖ ^ 2) / 2
 
+@[simp]
 theorem radialHamiltonian_apply (G : ℝ → ℝ) (p w : ℂ) :
     radialHamiltonian G p w = -G (‖w - p‖ ^ 2) / 2 := (rfl)
 
@@ -159,6 +160,7 @@ theorem hamiltonianFlow_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNRea
   exact h.symm
 
 /-- The centre is a fixed point of every time map. -/
+@[simp]
 theorem hamiltonianFlow_radialHamiltonian_center {G : ℝ → ℝ} {p : ℂ} {K : NNReal}
     (hX : LipschitzWith K
       (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)))
@@ -239,7 +241,7 @@ theorem exists_lipschitzWith_hamiltonianVectorField_radialHamiltonian {G : ℝ �
     (hG : ContDiff ℝ 2 G) {R : ℝ} (hR : ∀ s, R ≤ s → G s = 0) (p : ℂ) :
     ∃ K, LipschitzWith K
       (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)) :=
-  stdComplexSymplecticForm.exists_lipschitzWith_hamiltonianVectorField _
+  stdComplexSymplecticForm.exists_lipschitzWith_hamiltonianVectorField
     (contDiff_radialHamiltonian hG p) (hasCompactSupport_radialHamiltonian hR p)
 
 end TauCeti

@@ -27,7 +27,7 @@ return map of its orbit. The return map of the perturbed map `φ ∘ ψ` is then
 `φ` composed with the derivative of `ψ` at `p`
 (`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). This is how a perturbation supported in a small
 neighbourhood of one point of a periodic orbit, for instance a Hamiltonian twist, changes the
-linearized return map of that orbit, and only of that orbit.
+linearized return map of that orbit.
 -/
 
 public section
