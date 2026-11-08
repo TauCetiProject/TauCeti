@@ -64,19 +64,19 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V]
 
 /-- A unitary representation has spectral gap exactly when the representation on the orthogonal
 complement of its fixed vectors has no almost invariant vectors. -/
-theorem hasSpectralGap_iff_not_invariantComplement_hasAlmostInvariantVectors
+theorem hasSpectralGap_iff_not_invariantsOrthogonal_hasAlmostInvariantVectors
     (ρ : ContRepresentation 𝕜 G V) (hρ : ρ.IsUnitary) :
-    ρ.HasSpectralGap ↔ ¬ hρ.invariantComplement.HasAlmostInvariantVectors := by
+    ρ.HasSpectralGap ↔ ¬ hρ.invariantsOrthogonal.HasAlmostInvariantVectors := by
   rw [not_hasAlmostInvariantVectors_iff_exists_norm_sq_le]
   constructor
   · rintro ⟨F, C, hC, hbound⟩
     refine ⟨F, C, hC, fun v ↦ ?_⟩
     simpa only [← Submodule.norm_coe, Submodule.coe_sub,
-      IsUnitary.coe_invariantComplement_apply] using hbound v v.property
+      IsUnitary.coe_invariantsOrthogonal_apply] using hbound v v.property
   · rintro ⟨F, C, hC, hbound⟩
     refine ⟨F, C, hC, fun v hv ↦ ?_⟩
     simpa only [← Submodule.norm_coe, Submodule.coe_sub,
-      IsUnitary.coe_invariantComplement_apply] using hbound ⟨v, hv⟩
+      IsUnitary.coe_invariantsOrthogonal_apply] using hbound ⟨v, hv⟩
 
 /-- Every representation of a finite group has spectral gap, without unitarity or completeness. -/
 theorem hasSpectralGap_of_finite [Finite G] (ρ : ContRepresentation 𝕜 G V) :

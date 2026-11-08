@@ -26,7 +26,7 @@ complemented.
 
 ## Main definitions
 
-* `ContRepresentation.IsUnitary.invariantComplement`: the restricted representation on the
+* `ContRepresentation.IsUnitary.invariantsOrthogonal`: the restricted representation on the
   orthogonal complement of the fixed vectors; it is unitary and has no nonzero fixed vectors.
 * `ContRepresentation.IsUnitary.orthogonalSubrepresentation`: the orthogonal complement of
   a subrepresentation of a unitary representation, as a subrepresentation.
@@ -104,23 +104,23 @@ theorem apply_mem_orthogonal (hπ : IsUnitary π) (hW : ∀ g, ∀ v ∈ W, π g
 
 /-- The restriction of a unitary representation to the orthogonal complement of its fixed vectors.
 This is the representation on which absence of almost invariant vectors detects spectral gap. -/
-def invariantComplement (hρ : π.IsUnitary) : ContRepresentation 𝕜 G π.invariantsᗮ :=
+def invariantsOrthogonal (hρ : π.IsUnitary) : ContRepresentation 𝕜 G π.invariantsᗮ :=
   π.subrepresentation _ (hρ.apply_mem_orthogonal (fun g v hv ↦ by simpa [hv g] using hv))
 
-/-- The action on the invariant complement agrees with the ambient action. -/
+/-- The action on the orthogonal complement of the fixed vectors agrees with the ambient action. -/
 @[simp]
-theorem coe_invariantComplement_apply (hρ : π.IsUnitary) (g : G) (v : π.invariantsᗮ) :
-    (hρ.invariantComplement g v : V) = π g (v : V) :=
+theorem coe_invariantsOrthogonal_apply (hρ : π.IsUnitary) (g : G) (v : π.invariantsᗮ) :
+    (hρ.invariantsOrthogonal g v : V) = π g (v : V) :=
   coe_subrepresentation_apply g v
 
-/-- The invariant complement remains unitary. -/
-theorem isUnitary_invariantComplement (hρ : π.IsUnitary) : hρ.invariantComplement.IsUnitary :=
+/-- The orthogonal complement of the fixed vectors remains unitary. -/
+theorem isUnitary_invariantsOrthogonal (hρ : π.IsUnitary) : hρ.invariantsOrthogonal.IsUnitary :=
   hρ.subrepresentation _
 
-/-- The invariant complement has no nonzero fixed vectors. -/
+/-- The orthogonal complement of the fixed vectors has no nonzero fixed vectors. -/
 @[simp]
-theorem invariants_invariantComplement (hρ : π.IsUnitary) :
-    hρ.invariantComplement.invariants = ⊥ := by
+theorem invariants_invariantsOrthogonal (hρ : π.IsUnitary) :
+    hρ.invariantsOrthogonal.invariants = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro v hv
   have hfixed : (v : V) ∈ π.invariants :=
