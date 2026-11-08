@@ -68,6 +68,8 @@ trivial torsor `G ⟶ Spec R`.
   Galois map is injective, the coinvariants are exactly the image of `B`.
 * `TauCeti.ComoduleAlgebra.existsUnique_comp_eq`: under the same hypotheses, every invariant
   algebra map into `A` factors uniquely through `B`.
+* `TauCeti.ComoduleAlgebra.surjective_galoisMap_of_surjective_galoisMap`: if the Galois map over
+  `B` is surjective, so is the Galois map over the base ring.
 * `TauCeti.ComoduleAlgebra.galoisMap_self_bijective`: the regular comodule algebra of a
   commutative Hopf algebra has bijective Galois map.
 
@@ -235,6 +237,12 @@ variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Semiring H]
   [Bialgebra R H] [CommSemiring A] [Algebra R A] [ComoduleAlgebra R H A]
   (B : Type x) [CommSemiring B] [Algebra R B] [Algebra B A] [IsScalarTower R B A]
 
+/-- The coinvariants act on `A` by coinvariants, so that they are a base for the Galois map
+`TauCeti.ComoduleAlgebra.galoisMap`. -/
+theorem algebraMap_coinvariants_mem (c : coinvariants R H A) :
+    algebraMap (coinvariants R H A) A c ∈ coinvariants R H A :=
+  c.2
+
 /-- The coaction, regarded as a `B`-algebra homomorphism when `B` acts on `A` by coinvariants. -/
 noncomputable def coactAlgHomOver (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A) :
     A →ₐ[B] A ⊗[R] H where
@@ -277,6 +285,22 @@ theorem galoisMap_comp_includeRight (hB : ∀ b : B, algebraMap B A b ∈ coinva
         ((Algebra.TensorProduct.includeRight : A →ₐ[B] A ⊗[B] A).restrictScalars R) =
       coactAlgHom R H A :=
   AlgHom.ext fun a ↦ by simp [← Algebra.TensorProduct.one_def]
+
+/-- If the Galois map over an algebra `B` acting by coinvariants is surjective, so is the Galois map
+`A ⊗[R] A → A ⊗[R] H` over the base ring, through which it factors: the action of `Spec H` on
+the total space of a torsor is free. -/
+theorem surjective_galoisMap_of_surjective_galoisMap
+    (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A)
+    (h : Function.Surjective (galoisMap B hB)) :
+    Function.Surjective (galoisMap R fun r ↦ (coinvariants R H A).algebraMap_mem r) := by
+  intro w
+  obtain ⟨v, rfl⟩ := h w
+  induction v using TensorProduct.inductionOn with
+  | tmul a a' => exact ⟨a ⊗ₜ a', by rw [galoisMap_tmul, galoisMap_tmul]⟩
+  | add v v' hv hv' =>
+    obtain ⟨u, hu⟩ := hv
+    obtain ⟨u', hu'⟩ := hv'
+    exact ⟨u + u', by simp [hu, hu']⟩
 
 end Galois
 
