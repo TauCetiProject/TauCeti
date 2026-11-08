@@ -246,12 +246,7 @@ theorem unitFiltration_sup_zpowers_inf_unitFiltration_zero
     rw [← MonoidHom.mem_ker, ker_normalizedValuation]
     exact hx0
   rw [map_mul, hu0, one_mul, map_zpow] at hx0'
-  have h2 := congrArg Multiplicative.toAdd hx0'
-  simp only [toAdd_zpow, toAdd_one, smul_eq_mul] at h2
-  have hk : k = 0 := by
-    rcases mul_eq_zero.1 h2 with h | h
-    · exact h
-    · exact absurd (by simpa using h) hϖ
+  have hk : k = 0 := (IsMulTorsionFree.zpow_eq_one_iff_right hϖ).mp hx0'
   simpa [hk] using hu
 
 /-- For `ϖ` of nonzero valuation (for instance a uniformizer), a step `U(K,j)` lies in
