@@ -20,9 +20,9 @@ the argument of their quotient is the difference of their arguments. It also rec
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
-the slit plane, and although it jumps across the negative real axis, a smooth `2π`-periodic function
-of the argument is smooth on the whole punctured plane: near the negative real axis it is computed
-from the argument of `-z`.
+the slit plane, where its derivative is the imaginary part of that of the logarithm, and although it
+jumps across the negative real axis, a smooth `2π`-periodic function of the argument is smooth on
+the whole punctured plane: near the negative real axis it is computed from the argument of `-z`.
 
 ## Main results
 
@@ -34,6 +34,8 @@ from the argument of `-z`.
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
+  imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
   from the origin.
 -/
@@ -84,6 +86,17 @@ theorem contDiffAt_arg {z : ℂ} (hz : z ∈ slitPlane) {n : WithTop ℕ∞} : C
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ (log_im w).symm)
 
 end Complex
+
+/-- If `f` has complex derivative `f'` at `z` and `f z` lies in the slit plane, then the argument
+`w ↦ arg (f w)` has real derivative `v ↦ Im (v * f' / f z)` at `z`, the imaginary part of the
+derivative of `log ∘ f`. -/
+theorem HasDerivAt.hasFDerivAt_arg {f : ℂ → ℂ} {f' z : ℂ} (hf : HasDerivAt f f' z)
+    (hz : f z ∈ Complex.slitPlane) :
+    HasFDerivAt (fun w ↦ Complex.arg (f w))
+      (Complex.imCLM ∘L
+        ((ContinuousLinearMap.toSpanSingleton ℂ (f' / f z)).restrictScalars ℝ)) z := by
+  simpa only [Function.comp_def, Complex.imCLM_apply, Complex.log_im] using
+    Complex.imCLM.hasFDerivAt.comp z ((hf.clog hz).hasFDerivAt.restrictScalars ℝ)
 
 /-- A `2π`-periodic function of the argument of a nonzero complex number `z` may be computed from
 the argument of `-z`, which differs from that of `z` by `π` modulo `2π`. -/

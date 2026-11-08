@@ -12,6 +12,9 @@ import Mathlib.Analysis.Complex.Isometry
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
 
 /-!
@@ -40,8 +43,8 @@ whether the transformed reference field `x_m` stays in `A_m^k`.
   (`gaugeTransform_translationGauge_translateField_mem_framedFieldSpace`).
 
 The gauge `g_a` has bounded derivatives of every order
-(`exists_norm_iteratedFDeriv_translationGauge_le`), and smooth gauges with bounded derivatives
-through order `k` act on `H^k` (`gaugeLinearAction_mem_sobolevFields`).
+(`exists_norm_iteratedFDeriv_translationGauge_le`), so it acts on `H^k`
+(`TauCeti.Vortex.gaugeLinearAction_mem_sobolevFields`).
 
 ## References
 
@@ -92,46 +95,6 @@ theorem rotateField_mem_sobolevFields (u : Circle) {k : ℕ} {y : ℂ → Euclid
   · convert h 3 using 1
     ext z
     simp
-
-/-- **Smooth gauges act on Sobolev fields.** A smooth gauge whose derivatives through order `k`
-are bounded preserves the integer-order Sobolev fields under its linear action, which rotates the
-section and fixes the connection. No decay of the gauge is required. -/
-theorem gaugeLinearAction_mem_sobolevFields {k : ℕ} {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)))
-    (hbound : ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (u z : ℂ)) z‖ ≤ C)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
-    gaugeLinearAction u y ∈ sobolevFields k := by
-  have hc (i : Fin 4) := mem_sobolevFields.1 hy i
-  have h0 : (fun _ : ℂ ↦ (0 : ℝ)) ∈ realSobolevFunctions ℂ k 2 := zero_mem _
-  -- The linear action is `P y + Re u • Q y + Im u • R y` with constant `P`, `Q`, `R`.
-  have hP : (fun z ↦ !₂[y z 0, y z 1, 0, 0]) ∈ sobolevFields k := by
-    refine mem_sobolevFields.2 fun i ↦ ?_
-    fin_cases i
-    exacts [hc 0, hc 1, h0, h0]
-  have hQ : (fun z ↦ !₂[0, 0, y z 2, y z 3]) ∈ sobolevFields k := by
-    refine mem_sobolevFields.2 fun i ↦ ?_
-    fin_cases i
-    exacts [h0, h0, hc 2, hc 3]
-  have hR : (fun z ↦ !₂[0, 0, -y z 3, y z 2]) ∈ sobolevFields k := by
-    refine mem_sobolevFields.2 fun i ↦ ?_
-    fin_cases i
-    exacts [h0, h0, neg_mem (hc 3), hc 2]
-  -- A single bound for the derivatives through order `k` of `Re u` and of `Im u`.
-  choose! C hC using hbound
-  have hL (L : ℂ →L[ℝ] ℝ) : ∃ M ≥ 0, ∀ n ≤ k, ∀ z,
-      ‖iteratedFDeriv ℝ n (fun z ↦ L (u z : ℂ)) z‖ ≤ M := by
-    refine ⟨‖L‖ * ∑ n ∈ Finset.range (k + 1), |C n|, by positivity, fun n hn z ↦ ?_⟩
-    refine (L.norm_iteratedFDeriv_comp_left hu.contDiffAt (by exact_mod_cast le_top)).trans ?_
-    gcongr
-    exact (hC n hn z).trans ((le_abs_self _).trans (Finset.single_le_sum
-      (f := fun n ↦ |C n|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (Nat.lt_succ_of_le hn))))
-  obtain ⟨Mr, hMr, hre⟩ := hL reCLM
-  obtain ⟨Mi, hMi, him⟩ := hL imCLM
-  convert add_mem (add_mem hP
-    (smul_mem_sobolevFields_natCast k (reCLM.contDiff.comp hu) hMr hre hQ))
-    (smul_mem_sobolevFields_natCast k (imCLM.contDiff.comp hu) hMi him hR) using 1
-  ext z i
-  fin_cases i <;> simp [gaugeLinearAction_apply] <;> ring
 
 /-! ### Rotations and the line frame -/
 
@@ -212,18 +175,6 @@ one where `‖z‖² ≥ ‖a‖² + 2`. Outside a disc it carries `((z + a) / �
 def translationGauge (m : ℕ) (a z : ℂ) : Circle :=
   Circle.exp (translationPhase m a z)
 
-/-- If `‖a‖ < ‖z‖`, then `1 + a / z` lies in the slit plane. -/
-private theorem one_add_div_mem_slitPlane {a z : ℂ} (h : ‖a‖ < ‖z‖) :
-    1 + a / z ∈ slitPlane :=
-  mem_slitPlane_of_norm_lt_one <| by
-    rw [norm_div, div_lt_one ((norm_nonneg a).trans_lt h)]
-    exact h
-
-/-- A bound `‖a‖² + c ≤ ‖z‖²` with `c > 0` gives `‖a‖ < ‖z‖`. -/
-private theorem norm_lt_of_sq_add_le {a z : ℂ} {c : ℝ} (hc : 0 < c) (h : ‖a‖ ^ 2 + c ≤ ‖z‖ ^ 2) :
-    ‖a‖ < ‖z‖ :=
-  lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
-
 /-- The phase of the translation gauge is smooth. -/
 private theorem contDiff_translationPhase (m : ℕ) (a : ℂ) :
     ContDiff ℝ ∞ (translationPhase m a) := by
@@ -241,10 +192,10 @@ private theorem contDiff_translationPhase (m : ℕ) (a : ℂ) :
       have hw : ‖w‖ ^ 2 < ‖a‖ ^ 2 + 1 := hw
       linarith
     simp [translationPhase, Real.smoothTransition.zero_of_nonpos hw']
-  · have hza := norm_lt_of_sq_add_le one_pos hz
+  · have hza : ‖a‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
     have hz0 : z ≠ 0 := norm_pos_iff.1 ((norm_nonneg a).trans_lt hza)
     have hlog : ContDiffAt ℂ ∞ (fun w : ℂ ↦ log (1 + a / w)) z :=
-      (contDiffAt_log (one_add_div_mem_slitPlane hza)).comp z
+      (contDiffAt_log (TauCeti.one_add_div_mem_slitPlane hza)).comp z
         (contDiffAt_const.add (contDiffAt_const.div contDiffAt_id hz0))
     have harg : ContDiffAt ℝ ∞ (fun w : ℂ ↦ arg (1 + a / w)) z := by
       simpa only [Function.comp_def, imCLM_apply, log_im] using
@@ -303,53 +254,25 @@ carries the translated winding phase `((z + a) / ‖z + a‖) ^ m` to the windin
 `(z / ‖z‖) ^ m`. -/
 theorem coe_translationGauge_mul_pow {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2 ≤ ‖z‖ ^ 2) :
     (translationGauge m a z : ℂ) * ((z + a) / ‖z + a‖) ^ m = (z / ‖z‖) ^ m := by
-  have hza := norm_lt_of_sq_add_le two_pos hz
+  have hza : ‖a‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
   have hz0 : z ≠ 0 := norm_pos_iff.1 ((norm_nonneg a).trans_lt hza)
-  have hza0 : z + a ≠ 0 := by
-    intro h
-    rw [add_eq_zero_iff_eq_neg.1 h, norm_neg] at hza
-    exact lt_irrefl _ hza
+  have hza0 : z + a ≠ 0 := TauCeti.add_ne_zero_of_norm_lt hza
   have hn : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz0)
   have hna : (‖z + a‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hza0)
-  set w := 1 + a / z with hw
-  have hw' : w = (z + a) / z := by
-    rw [hw]
-    field_simp
-  have hw0 : w ≠ 0 := by
-    rw [hw']
-    exact div_ne_zero hza0 hz0
-  -- `exp (i arg w) = w / ‖w‖`.
-  have hexp : exp (arg w * I) = w / ‖w‖ := by
-    rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hw0)), mul_comm,
+  have hw : 1 + a / z = (z + a) / z := by field_simp
+  -- `exp (i arg w) = w / ‖w‖` for `w = 1 + a / z = (z + a) / z`.
+  have hexp : exp (arg (1 + a / z) * I) = (z + a) / z / ‖(z + a) / z‖ := by
+    rw [hw, eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 (div_ne_zero hza0 hz0))), mul_comm,
       norm_mul_exp_arg_mul_I]
-  have hnorm : (‖w‖ : ℂ) = ‖z + a‖ / ‖z‖ := by
-    rw [hw', norm_div, ofReal_div]
-  rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ofReal_neg, ofReal_mul,
-    ofReal_natCast, neg_mul, exp_neg, mul_assoc, exp_nat_mul, hexp, hnorm, hw', ← inv_pow,
-    ← mul_pow]
+  -- The gauge is `exp (-i m arg w) = (exp (i arg w) ^ m)⁻¹`.
+  have hg : (translationGauge m a z : ℂ) = (exp (arg (1 + a / z) * I) ^ m)⁻¹ := by
+    rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ← exp_nat_mul, ← exp_neg]
+    congr 1
+    push_cast
+    ring
+  rw [hg, hexp, ← inv_pow, ← mul_pow, norm_div, ofReal_div]
   congr 1
   field_simp
-
-/-- The derivative of `w ↦ arg (1 + a / w)` at a point `z` with `‖a‖ < ‖z‖`, applied to `v`, is
-`Im (v / (z + a)) - Im (v / z)`, that is `dθ_(z + a) - dθ_z`. -/
-private theorem hasFDerivAt_arg_one_add_div {a z : ℂ} (h : ‖a‖ < ‖z‖) :
-    HasFDerivAt (fun w : ℂ ↦ arg (1 + a / w))
-      (imCLM ∘L ((ContinuousLinearMap.toSpanSingleton ℂ (1 / (z + a) - 1 / z)).restrictScalars
-        ℝ)) z := by
-  have hz0 : z ≠ 0 := norm_pos_iff.1 ((norm_nonneg a).trans_lt h)
-  have hza0 : z + a ≠ 0 := by
-    intro h'
-    rw [add_eq_zero_iff_eq_neg.1 h', norm_neg] at h
-    exact lt_irrefl _ h
-  have hd : HasDerivAt (fun w : ℂ ↦ 1 + a / w) (a * -(z ^ 2)⁻¹) z := by
-    simpa only [div_eq_mul_inv] using ((hasDerivAt_inv hz0).const_mul a).const_add 1
-  have hlog := hd.clog (one_add_div_mem_slitPlane h)
-  have hval : a * -(z ^ 2)⁻¹ / (1 + a / z) = 1 / (z + a) - 1 / z := by
-    field_simp
-    ring
-  rw [hval] at hlog
-  simpa only [Function.comp_def, imCLM_apply, log_im] using
-    imCLM.hasFDerivAt.comp z (hlog.hasFDerivAt.restrictScalars ℝ)
 
 /-- **The logarithmic derivative of the translation gauge.** Where `‖z‖² > ‖a‖² + 2`, the real
 one-form `Im (g⁻¹ dg)` of the translation gauge is `m (dθ_z - dθ_(z + a))`, where
@@ -357,14 +280,23 @@ one-form `Im (g⁻¹ dg)` of the translation gauge is `m (dθ_z - dθ_(z + a))`,
 theorem gaugeForm_translationGauge_apply {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2 < ‖z‖ ^ 2)
     (v : ℂ) :
     gaugeForm (translationGauge m a) z v = m * ((v / z).im - (v / (z + a)).im) := by
-  have hza := norm_lt_of_sq_add_le two_pos hz.le
+  have hza : ‖a‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
+  have hz0 : z ≠ 0 := norm_pos_iff.1 ((norm_nonneg a).trans_lt hza)
+  have hza0 : z + a ≠ 0 := TauCeti.add_ne_zero_of_norm_lt hza
+  -- `w ↦ arg (1 + a / w)` has derivative `v ↦ Im (v / (z + a)) - Im (v / z)` at `z`.
+  have hd : HasDerivAt (fun w : ℂ ↦ 1 + a / w) (a * -(z ^ 2)⁻¹) z := by
+    simpa only [div_eq_mul_inv] using ((hasDerivAt_inv hz0).const_mul a).const_add 1
+  have harg := hd.hasFDerivAt_arg (TauCeti.one_add_div_mem_slitPlane hza)
+  have hval : a * -(z ^ 2)⁻¹ / (1 + a / z) = 1 / (z + a) - 1 / z := by
+    field_simp
+    ring
+  rw [hval] at harg
   have hopen : IsOpen {w : ℂ | ‖a‖ ^ 2 + 2 < ‖w‖ ^ 2} :=
     isOpen_lt continuous_const (by fun_prop)
   have heq : translationPhase m a =ᶠ[𝓝 z] fun w ↦ -(m * arg (1 + a / w)) := by
     filter_upwards [hopen.mem_nhds hz] with w hw
     exact translationPhase_eq hw.le
-  have hderiv := ((hasFDerivAt_arg_one_add_div hza).const_mul (m : ℝ)).neg.congr_of_eventuallyEq
-    heq
+  have hderiv := (harg.const_mul (m : ℝ)).neg.congr_of_eventuallyEq heq
   have hg : translationGauge m a = fun w ↦ Circle.exp (translationPhase m a w) := rfl
   rw [hg, gaugeForm_exp ((contDiff_translationPhase m a).differentiable (by simp) z),
     hderiv.fderiv]
@@ -469,11 +401,13 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
     gaugeTransform (translationGauge m a) (translateField a x) ∈ framedFieldSpace f m k := by
   rw [mem_framedFieldSpace] at hx ⊢
   have hg := ((mem_framedGaugeGroup _).1 (translationGauge_mem_framedGaugeGroup m a)).1
-  have htr : translateField a (referenceField f m) = fun z ↦ referenceField f m (z + a) :=
-    funext fun z ↦ translateField_apply a _ z
-  have hD := mem_sobolevFields_of_hasCompactSupport
-    ((contDiff_gaugeTransform hg (htr ▸ (contDiff_referenceField f m).comp
-      (contDiff_id.add contDiff_const))).sub (contDiff_referenceField f m))
+  have htr : ContDiff ℝ ∞ (translateField a (referenceField f m)) := by
+    rw [show translateField a (referenceField f m) = fun z ↦ referenceField f m (z + a) from
+      funext fun z ↦ translateField_apply a _ z]
+    exact (contDiff_referenceField f m).comp (contDiff_id.add contDiff_const)
+  have hD : gaugeTransform (translationGauge m a) (translateField a (referenceField f m)) -
+      referenceField f m ∈ sobolevFields k := mem_sobolevFields_of_hasCompactSupport
+    ((contDiff_gaugeTransform hg htr).sub (contDiff_referenceField f m))
     (hasCompactSupport_gaugeTransform_translationGauge_translateField_sub f m a) k
   have hsub : translateField a x - translateField a (referenceField f m) =
       translateField a (x - referenceField f m) := by
@@ -483,8 +417,6 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
     (fun n _ ↦ exists_norm_iteratedFDeriv_translationGauge_le m a n)
     (translateField_mem_sobolevFields a hx)
   rw [← hsub, ← gaugeTransform_sub_gaugeTransform] at h
-  have hD' : gaugeTransform (translationGauge m a) (translateField a (referenceField f m)) -
-      referenceField f m ∈ sobolevFields k := hD
-  simpa only [sub_add_sub_cancel] using add_mem h hD'
+  simpa only [sub_add_sub_cancel] using add_mem h hD
 
 end TauCeti.Vortex
