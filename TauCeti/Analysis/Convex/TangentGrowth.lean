@@ -16,10 +16,10 @@ import TauCeti.Analysis.Calculus.Gradient
 /-!
 # Gradient Hölder bounds from tangent growth
 
-For a differentiable convex real function, a one-sided power bound above a tangent plane
-controls the change of its gradient. Uniform tangent growth near a compact set gives the
-standard `HolderOnWith` bound for the gradient. A local comparison of the tangent errors in
-the two directions gives this growth by a scalar differential inequality along rays.
+For a convex real function differentiable at two points, a one-sided power bound above a
+tangent plane controls the change of its gradient. Uniform tangent growth near a compact set
+gives the standard `HolderOnWith` bound for the gradient. A local comparison of the tangent
+errors in the two directions gives this growth by a scalar differential inequality along rays.
 
 The soft-comparison implication follows the tangent-growth argument of Forzani and Maldonado,
 Nonlinear Analysis 57 (2004), 815–829, Theorem 7. The proof is adapted from the
@@ -36,12 +36,12 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 private lemma gradient_le_sub {u : E → ℝ} (hu : ConvexOn ℝ univ u)
-    (hd : Differentiable ℝ u) (x y : E) :
+    {x : E} (hd : DifferentiableAt ℝ u x) (y : E) :
     inner ℝ (gradient u x) (y - x) ≤ u y - u x := by
   have hepi : Convex ℝ {p : E × ℝ | (u p.1 : EReal) ≤ p.2} := by
     simpa only [mem_univ, ite_true] using convex_epigraph_ite (Ω := univ) hu
   have hd' : DifferentiableAt ℝ (fun z ↦ (u z : EReal).toReal) x := by
-    simpa only [EReal.toReal_coe] using hd x
+    simpa only [EReal.toReal_coe] using hd
   have hgrad := gradient_toReal_mem_subdifferential hepi (fun z ↦ EReal.coe_ne_bot (u z))
     (EReal.coe_ne_top (u x)) hd'
   have hmem : gradient u x ∈ subdifferential (innerₗ E) (fun z ↦ (u z : EReal)) x := by
@@ -51,13 +51,14 @@ private lemma gradient_le_sub {u : E → ℝ} (hu : ConvexOn ℝ univ u)
   rw [real_inner_comm (gradient u x) (y - x)] at hs
   linarith only [hs]
 
-/-- A one-sided tangent growth bound for a differentiable convex function bounds the change
-of its gradient, with the same power exponent. -/
+/-- A one-sided tangent growth bound for a convex function differentiable at `x` and `y`
+bounds the change of its gradient, with the same power exponent. -/
 theorem norm_gradient_sub_le_of_tangent_growth {u : E → ℝ} (hconv : ConvexOn ℝ univ u)
-    (hdiff : Differentiable ℝ u) {x : E} {C α : ℝ≥0} {r₀ : ℝ}
+    {x y : E} (hdx : DifferentiableAt ℝ u x) (hdy : DifferentiableAt ℝ u y)
+    {C α : ℝ≥0} {r₀ : ℝ}
     (hgrowth : ∀ z, ‖z - x‖ ≤ r₀ →
       u z ≤ u x + inner ℝ (gradient u x) (z - x) + C * ‖z - x‖ ^ (1 + (α : ℝ)))
-    {y : E} (hy : ‖y - x‖ ≤ r₀ / 2) :
+    (hy : ‖y - x‖ ≤ r₀ / 2) :
     ‖gradient u y - gradient u x‖ ≤ 2 ^ (1 + (α : ℝ)) * C * ‖y - x‖ ^ (α : ℝ) := by
   have hC := C.coe_nonneg
   have hα := α.coe_nonneg
@@ -91,8 +92,8 @@ theorem norm_gradient_sub_le_of_tangent_growth {u : E → ℝ} (hconv : ConvexOn
       (by linarith)
   -- supporting plane at `y`, supporting plane at `x`, growth at `x`
   have h1 : ⟪gradient u y, w⟫ ≤ u (y + w) - u y := by
-    simpa only [add_sub_cancel_left] using gradient_le_sub hconv hdiff y (y + w)
-  have h2 := gradient_le_sub hconv hdiff x y
+    simpa only [add_sub_cancel_left] using gradient_le_sub hconv hdy (y + w)
+  have h2 := gradient_le_sub hconv hdx y
   have h3 := hgrowth (y + w) hzr₀
   have hsplit : ⟪gradient u x, y + w - x⟫ = ⟪gradient u x, y - x⟫ + ⟪gradient u x, w⟫ := by
     rw [show y + w - x = (y - x) + w by abel, inner_add_right]
@@ -142,8 +143,8 @@ theorem exists_holderOnWith_gradient_of_tangent_growth {u : E → ℝ}
       exact hxy.le
     simp only [dist_eq_norm, hAcoe]
     simpa only [norm_sub_rev] using
-      norm_gradient_sub_le_of_tangent_growth hu (hC1.differentiable one_ne_zero)
-        (hgrowth x hx) hnear
+      norm_gradient_sub_le_of_tangent_growth hu (hC1.differentiable one_ne_zero x)
+        (hC1.differentiable one_ne_zero y) (hgrowth x hx) hnear
   · intro x hx y hy
     have hb (z : E) (hz : z ∈ K) : ‖gradient u z‖ ≤ B := by
       rw [hBcoe]
