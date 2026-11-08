@@ -88,7 +88,7 @@ theorem
     exact ⟨_, rfl⟩
   have hneg : -χ (presentedProPGen 2 2 _ 1) ∈ unitsPrincipal 2 2 :=
     (neg_mem_unitsPrincipal_iff_of_val_mul_one_add_eq_neg_one hv).2 (by norm_num; exact hα)
-  rcases (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).1 hmem with hOne | hNeg
+  rcases Subgroup.mem_zpowers_neg_one_iff.1 hmem with hOne | hNeg
   · exact False.elim (notMem_unitsPrincipal_two_of_neg_mem le_rfl hneg
       (hOne ▸ one_mem _))
   · rw [hNeg, Units.val_neg, Units.val_one] at hv

@@ -107,7 +107,7 @@ theorem mem_unitsPlusMinus_iff {f : ℕ} {u : ℤ_[2]ˣ} :
   constructor
   · intro h
     obtain ⟨y, hy, z, hz, rfl⟩ := Subgroup.mem_sup.mp h
-    rcases (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hz with rfl | rfl
+    rcases Subgroup.mem_zpowers_neg_one_iff.mp hz with rfl | rfl
     · exact Or.inl (by rwa [mul_one])
     · exact Or.inr (by rwa [mul_neg_one, neg_neg])
   · rintro (h | h)
@@ -156,7 +156,7 @@ theorem unitsPlusMinus_two : unitsPlusMinus 2 = ⊤ :=
 theorem disjoint_unitsPrincipal_zpowers_neg_one {f : ℕ} (hf : 2 ≤ f) :
     Disjoint (unitsPrincipal 2 f) (Subgroup.zpowers (-1 : ℤ_[2]ˣ)) := by
   refine Subgroup.disjoint_def.mpr fun hx hx' ↦ ?_
-  rcases (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx' with rfl | rfl
+  rcases Subgroup.mem_zpowers_neg_one_iff.mp hx' with rfl | rfl
   · rfl
   · exact absurd (neg_one_mem_unitsPrincipal_two_iff.mp hx) (by omega)
 
@@ -166,7 +166,7 @@ theorem isClosed_zpowers_neg_one :
   apply Set.Finite.isClosed
   refine ((Set.finite_singleton (-1 : ℤ_[2]ˣ)).insert 1).subset fun x hx ↦ ?_
   simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
-    (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx
+    Subgroup.mem_zpowers_neg_one_iff.mp hx
 
 /-! ### Indices and levels of `V^(f)` -/
 
