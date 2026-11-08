@@ -72,6 +72,9 @@ argument principle above all — into a statement about how often an image curve
 * the `_of_le` forms of the slit-plane and upper comparisons — the ordered-interval versions
   callers usually have: `a ≤ b`, hypotheses read on `Set.Icc a b` and `Set.Ioo a b` rather than
   through `min` and `max`, and integrability derived from a continuous derivative.
+* `TauCeti.Contour.integral_index_eq_log_sub_log` — the winding-integral integrand
+  `(γ t - s)⁻¹ * deriv γ t` of a curve agreeing with a slit-plane comparison curve integrates to a
+  difference of principal logarithms.
 * `TauCeti.Contour.integral_deriv_div_eq_log_sub_log` — the slit-plane logarithmic-derivative FTC in
   general `f' / f` form.
 * `TauCeti.Contour.integral_deriv_div_sub_eq_log` — its contour specialization to
@@ -449,5 +452,25 @@ theorem intervalIntegrable_deriv_div_and_integral_deriv_div_eq_log_sub_log_of_im
 
 end BoundaryTolerant
 
+/-- **Slit-plane evaluation of an index integral.** If `γ` agrees on the open interval and at both
+endpoints with a comparison curve `h` whose difference `h · - s` stays in `Complex.slitPlane`, the
+index integral of `γ` about `s` telescopes through the principal branch of the logarithm.
+
+The comparison shape is what makes this usable at a corner: a piecewise curve need not be
+differentiable at a junction, but it may agree with a smooth piece on each side of it. -/
+theorem integral_index_eq_log_sub_log {γ h : ℝ → ℂ} {a b : ℝ} {s : ℂ} (hab : a ≤ b)
+    (hcont : ContinuousOn h (Icc a b)) (hdiff : ∀ t ∈ Ioo a b, DifferentiableAt ℝ h t)
+    (hderiv : ContinuousOn (deriv h) (Icc a b))
+    (hslit : ∀ t ∈ Icc a b, h t - s ∈ slitPlane)
+    (heq : EqOn γ h (Ioo a b)) (ha : γ a = h a) (hb : γ b = h b) :
+    (∫ t in a..b, (γ t - s)⁻¹ * deriv γ t)
+      = Complex.log (γ b - s) - Complex.log (γ a - s) := by
+  have hd : (deriv fun t => h t - s) = deriv h := funext fun t => deriv_sub_const s
+  have hkey :=
+    intervalIntegrable_deriv_div_and_integral_deriv_div_eq_log_sub_log_of_mem_slitPlane_of_le
+      (g := fun t => γ t - s) (h := fun t => h t - s) hab (hcont.sub continuousOn_const)
+      (fun t ht => (hdiff t ht).sub_const s) (by rw [hd]; exact hderiv) hslit
+      (fun t ht => by simp only [heq ht]) (by simp only [ha]) (by simp only [hb])
+  simpa only [deriv_sub_const, div_eq_inv_mul] using hkey.2
 
 end TauCeti.Contour

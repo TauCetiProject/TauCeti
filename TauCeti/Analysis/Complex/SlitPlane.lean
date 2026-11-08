@@ -39,6 +39,7 @@ is a principal logarithm.
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
+* `TauCeti.sub_mem_slitPlane_of_im_le_zero`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
@@ -53,6 +54,14 @@ open Complex
 open scoped NNReal
 
 namespace TauCeti
+
+/-- Differences `z - s` with `z` in the closed lower half-plane lie in the slit plane when `s` lies
+strictly above the real axis. -/
+theorem sub_mem_slitPlane_of_im_le_zero {s z : ℂ} (him : 0 < s.im) (hz : z.im ≤ 0) :
+    z - s ∈ slitPlane :=
+  Or.inr (by
+    simp only [Complex.sub_im, ne_eq, sub_eq_zero]
+    exact fun h ↦ absurd (h ▸ hz) (not_le.mpr him))
 
 /-- The quotient under the proximity inequality lies in the slit plane. -/
 theorem div_sub_mem_slitPlane_of_dist_lt_dist
