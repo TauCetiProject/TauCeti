@@ -15,9 +15,10 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 Let `V` be a vector bundle over `B` and `b : X → B` a map. A family `s x ∈ V (b x)` is a section
 of `V` along `b`, and its total-space map is `x ↦ ⟨b x, s x⟩`. Fibrewise sums of `C^n` sections
 along the same map are `C^n` (`ContMDiff.add_sectionAlong`); for `b = id` this is Mathlib's
-`ContMDiff.add_section`. Finite sums follow (`ContMDiff.sum_sectionAlong`); smoothness of the
-base map is assumed so that the empty sum, the zero section along `b`, is covered. The general
-form applies to maps defined on the total space itself, which are sections along the projection.
+`ContMDiff.add_section`. Finite sums follow (`ContMDiff.sum_sectionAlong`, generalising Mathlib's
+`ContMDiff.sum_section` for `b = id`); smoothness of the base map is assumed so that the empty
+sum, the zero section along `b`, is covered. The general form applies to maps defined on the
+total space itself, which are sections along the projection.
 Differences of differentiable sections along a common base map are differentiable as well
 (`MDifferentiableWithinAt.sub_sectionAlong`).
 

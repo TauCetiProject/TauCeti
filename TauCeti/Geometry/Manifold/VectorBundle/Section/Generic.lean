@@ -68,22 +68,12 @@ theorem contMDiff_affineFamily (s₀ : ContMDiffSection I F ∞ V)
     (s : ι → ContMDiffSection I F ∞ V) :
     ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) (I.prod 𝓘(ℝ, F)) ∞
       (fun z : M × (ι → ℝ) ↦ (⟨z.1, affineFamily s₀ s z.2 z.1⟩ : TotalSpace F V)) := by
-  classical
-  have hs (t : Finset ι) :
-      ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) (I.prod 𝓘(ℝ, F)) ∞
-        (fun z : M × (ι → ℝ) ↦ (⟨z.1, ∑ i ∈ t, z.2 i • s i z.1⟩ : TotalSpace F V)) := by
-    induction t using Finset.induction_on with
-    | empty =>
-      simpa only [Finset.sum_empty, Function.comp_def, zeroSection] using
-        (contMDiff_zeroSection ℝ V).comp contMDiff_fst
-    | @insert i t hi ih =>
-      have ha : ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, ℝ) ∞
-          (fun z : M × (ι → ℝ) ↦ z.2 i) :=
-        (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).contDiff.contMDiff.comp contMDiff_snd
-      have hb := ha.smul_totalSpace ((s i).contMDiff.comp contMDiff_fst)
-      simpa only [Finset.sum_insert hi, Function.comp_def] using hb.add_sectionAlong ih
+  have hs := ContMDiff.sum_sectionAlong Finset.univ (fun i (z : M × (ι → ℝ)) ↦ z.2 i • s i z.1)
+    contMDiff_fst fun i _ ↦
+      ((ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).contDiff.contMDiff.comp
+        contMDiff_snd).smul_totalSpace ((s i).contMDiff.comp contMDiff_fst)
   simpa only [affineFamily_apply, Function.comp_def] using
-    (s₀.contMDiff.comp contMDiff_fst).add_sectionAlong (hs Finset.univ)
+    (s₀.contMDiff.comp contMDiff_fst).add_sectionAlong hs
 
 /-- A fiberwise spanning family makes the total intrinsic linearization of the actual affine
 perturbation surjective. The conclusion even holds away from the zero section. -/
