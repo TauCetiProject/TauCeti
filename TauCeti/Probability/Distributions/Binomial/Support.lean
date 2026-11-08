@@ -18,7 +18,9 @@ one it is `{n}`. These descriptions also cover zero trials.
 For a cast law, the support is the image of this finite set of counts. In particular, its real
 support is a finite set of integers, rather than the interval between its extreme points.
 We also characterize positive singleton masses, including both parameter boundaries.
+-/
 
+/-
 The proofs use Mathlib's binomial singleton formula and the support theorem for continuous
 pushforwards; no additional definition of the distribution is introduced.
 -/
