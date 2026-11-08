@@ -210,6 +210,7 @@ section FinFour
 
 open exteriorPower
 
+omit [FiniteDimensional ℝ E] in
 /-- A wedge of two vectors in the basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` induced by an orthonormal
 basis `b` indexed by `Fin 4`. -/
 theorem ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (u w : E) :
@@ -220,6 +221,7 @@ theorem ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (u w : E) :
       (b.repr u 1 * b.repr w 2 - b.repr u 2 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 2] +
       (b.repr u 1 * b.repr w 3 - b.repr u 3 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 3] +
       (b.repr u 2 * b.repr w 3 - b.repr u 3 * b.repr w 2) • ιMulti ℝ 2 ![b 2, b 3] := by
+  have := Module.Finite.of_basis b.toBasis
   refine ext_inner_ιMulti_two fun a c ↦ ?_
   simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
   simp only [b.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four]
@@ -340,12 +342,22 @@ theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
   rw [real_inner_comm w, real_inner_comm _ F, twoVectorContraction_apply]
   simpa using (LinearMap.congr_fun key F).symm
 
+omit [FiniteDimensional ℝ V] in
 /-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
 theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
     ⟪twoVectorContraction F u, u⟫ = 0 := by
-  rw [inner_twoVectorContraction_apply,
-    (ιMulti ℝ 2).map_eq_zero_of_eq ![u, u] (i := 0) (j := 1) rfl (by decide), inner_zero_right]
+  have key : innerₗ V u ∘ₗ ExteriorAlgebra.ιInv ∘ₗ contractLeft (Q := (0 : QuadraticForm ℝ V))
+      (innerₗ V u) ∘ₗ (⋀[ℝ]^2 V).subtype = 0 := by
+    refine exteriorPower.linearMap_ext ?_
+    ext v
+    simp [ExteriorAlgebra.ιMulti_apply,
+      contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _,
+      inner_sub_right, real_inner_smul_right, Matrix.vecTail]
+    ring
+  rw [real_inner_comm, twoVectorContraction_apply]
+  simpa using LinearMap.congr_fun key F
 
+omit [FiniteDimensional ℝ V] in
 /-- **The contraction by a two-vector is skew-adjoint**: `⟪u ⌟ F, w⟫ = -⟪u, w ⌟ F⟫`. -/
 theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
     ⟪twoVectorContraction F u, w⟫ = -⟪u, twoVectorContraction F w⟫ := by
