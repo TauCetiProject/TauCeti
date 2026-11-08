@@ -123,7 +123,6 @@ theorem not_integrable_exp_mul_id_generalizedGammaMeasure_of_lt_one
       rw [integrable_rpow_generalizedGammaMeasure_iff ha hs, mul_div_cancel_right₀ _ hc]
       linarith
     exact not_integrable_exp_mul_of_not_integrable_rpow (-a * c)
-      measurable_id.aemeasurable
       ((ae_pos_generalizedGammaMeasure a c s).mono fun _ hx ↦ hx.le) hq hmom ht
   · exact not_integrable_exp_mul_id_generalizedGammaMeasure_of_pos_lt_one
       ha hcpos hc1 hs ht
