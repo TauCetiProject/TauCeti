@@ -16,7 +16,7 @@ Restricting a partition intersects its cells with the retained vertex set and di
 intersections. If every cell survives, intersection gives a bijection between the old and new
 cells. For an equipartition, deleting fewer vertices than the floor mean cell size guarantees
 this survival. More quantitatively, deleting at most an `η`-fraction of the floor mean size,
-with `0 ≤ η < 1`, leaves at least a `1 - η` fraction of every cell.
+with `η < 1`, leaves at least a `1 - η` fraction of every cell.
 
 These statements provide cell matchings and retention estimates when auxiliary vertices are
 removed from a divisible padded host. They do not assert that the restricted partition is
@@ -86,16 +86,24 @@ theorem IsEquipartition.card_parts_restrict_eq (hP : P.IsEquipartition) (ht : t 
     (fun A hA ↦ hsmall.trans_le (hP.average_le_card_part hA))
   simpa only [Fintype.card_coe] using (Fintype.card_congr e).symm
 
-/-- Deleting at most an `η`-fraction of the floor mean cell size of a nonempty equipartition,
-where `0 ≤ η < 1`, retains at least a `1 - η` fraction of each cell and preserves the cell
+/-- Deleting at most an `η`-fraction of the floor mean cell size of an equipartition,
+where `η < 1`, retains at least a `1 - η` fraction of each cell and preserves the cell
 index set. The matching explicitly identifies every new cell as the trace of its old cell. -/
 theorem IsEquipartition.exists_partsEquiv_restrict (hP : P.IsEquipartition)
-    (hs : s.Nonempty) (ht : t ⊆ s) {η : ℝ} (hη₀ : 0 ≤ η) (hη₁ : η < 1)
+    (ht : t ⊆ s) {η : ℝ} (hη₁ : η < 1)
     (hloss : (#(s \ t) : ℝ) ≤ η * (#s / #P.parts : ℕ)) :
     ∃ e : P.parts ≃ (P.restrict ht).parts, ∀ A,
       (e A).val = A.val ∩ t ∧ (1 - η) * (#A.val : ℝ) ≤ #(e A).val := by
+  rcases s.eq_empty_or_nonempty with hs | hs
+  · have hparts : P.parts = ∅ := P.parts_eq_empty_iff.2 hs
+    obtain ⟨e, _⟩ := P.exists_partsEquiv_restrict ht (by simp [hparts])
+    exact ⟨e, fun A ↦ False.elim (by simpa [hparts] using A.property)⟩
   have havg : 0 < #s / #P.parts :=
     Nat.div_pos (P.card_parts_le_card) (card_pos.2 (P.parts_nonempty hs.ne_empty))
+  have hη₀ : 0 ≤ η := by
+    have hpos : (0 : ℝ) < (#s / #P.parts : ℕ) := by exact_mod_cast havg
+    have hnonneg : (0 : ℝ) ≤ #(s \ t) := Nat.cast_nonneg _
+    nlinarith
   have hsmall : #(s \ t) < #s / #P.parts := by
     have hpos : (0 : ℝ) < (#s / #P.parts : ℕ) := by exact_mod_cast havg
     have : (#(s \ t) : ℝ) < (#s / #P.parts : ℕ) := by nlinarith
