@@ -91,10 +91,20 @@ private theorem isGreatest_cotrace_ratFuncWeilDifferential
         (mt (Place.restrict_ratFunc_eq_infty_iff hX _).mp hQ)]
     simp
 
-/-- The cotrace of `η` is normalised at `P'_∞`. After `Tr_{k'/k}`, the local components of
-`Cotr η` over `P_∞` add up to `η_{P_∞} ∘ Tr`, and `P'_∞` is alone over `P_∞`; evaluating at
-`α X⁻¹` gives `Tr (α c) = -Tr α` for every `α`, where `c` is the value to compute, and the trace
-form is nondegenerate. -/
+omit [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')] in
+/-- The trace form of a finite separable extension `k' / k` is nondegenerate: if
+`Tr (α c) = -Tr α` for every `α`, then `c = -1`. -/
+private theorem eq_neg_one_of_trace_mul_eq_neg
+    {c : k'} (htr : ∀ α : k', Algebra.trace k k' (α * c) = -Algebra.trace k k' α) : c = -1 := by
+  by_contra hne
+  obtain ⟨β, hβ⟩ := Algebra.trace_surjective k k' 1
+  have h1 := htr (β / (c + 1))
+  rw [div_mul_eq_mul_div, eq_neg_iff_add_eq_zero, ← map_add, ← add_div, ← mul_add_one,
+    mul_div_assoc, div_self (by rwa [Ne, add_eq_zero_iff_eq_neg]), mul_one, hβ] at h1
+  exact one_ne_zero h1
+
+/-- The cotrace of `η` is normalised at `P'_∞`: its local component at the place at infinity of
+`k'(X)`, evaluated at `X⁻¹`, equals `-1`. -/
 private theorem repartitionDualComponent_cotrace_ratFuncWeilDifferential
     [FiniteDimensional (RatFunc k) (RatFunc k')] [Algebra.IsSeparable (RatFunc k) (RatFunc k')]
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X)
@@ -111,6 +121,8 @@ private theorem repartitionDualComponent_cotrace_ratFuncWeilDifferential
       (IsFunctionField.ratFunc k') ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩ :
       Module.Dual k' ↥(repartitionSpace k' (RatFunc k')))
     (Place.infty k') (RatFunc.X : RatFunc k')⁻¹
+  -- After `Tr_{k'/k}`, the local components of `Cotr η` over `P_∞` add up to `η_{P_∞} ∘ Tr`, and
+  -- `P'_∞` is alone over `P_∞`; evaluating at `α X⁻¹` gives `Tr (α c) = -Tr α` for every `α`.
   have htr (α : k') : Algebra.trace k k' (α * c) = -Algebra.trace k k' α := by
     have hsum := trace_finsum_repartitionDualComponent_weilDifferentialCotrace
       (IsFunctionField.ratFunc k) (IsFunctionField.ratFunc k')
@@ -125,12 +137,7 @@ private theorem repartitionDualComponent_cotrace_ratFuncWeilDifferential
       trace_algebraMap_of_constantCompositum_eq_top isIntegrallyClosedIn_ratFunc h,
       smul_eq_mul, ← Algebra.commutes, ← Algebra.smul_def, map_smul,
       repartitionDualComponent_ratFuncWeilDifferential_inv_X, smul_eq_mul, mul_neg_one]
-  by_contra hne
-  obtain ⟨β, hβ⟩ := Algebra.trace_surjective k k' 1
-  have h1 := htr (β / (c + 1))
-  rw [div_mul_eq_mul_div, eq_neg_iff_add_eq_zero, ← map_add, ← add_div, ← mul_add_one,
-    mul_div_assoc, div_self (by rwa [Ne, add_eq_zero_iff_eq_neg]), mul_one, hβ] at h1
-  exact one_ne_zero h1
+  exact eq_neg_one_of_trace_mul_eq_neg htr
 
 /-- **The cotrace of `η` under a constant field extension is `η`**: for a finite separable
 extension `k' / k`, the cotrace from `k(X)` to `k'(X)` carries the canonical Weil differential `η`
@@ -163,38 +170,6 @@ section ConstantExtension
 variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-/-- If `y` is transcendental over `k` and over `k'`, the algebra structures of `k(X)` and
-`k'(X)` on `F'` and of `k(X)` on `k'(X)` that let `X` act as `y` form a scalar tower. -/
-private theorem isScalarTower_ratFunc_ratFunc_of_transcendental {y : F'}
-    (hy : Transcendental k y) (hy' : Transcendental k' y)
-    (hX : Transcendental k (RatFunc.X : RatFunc k')) :
-    letI := ratFuncAlgebraOfTranscendental hy
-    letI := ratFuncAlgebraOfTranscendental hy'
-    letI := ratFuncAlgebraOfTranscendental hX
-    IsScalarTower (RatFunc k) (RatFunc k') F' := by
-  let _ := ratFuncAlgebraOfTranscendental hy
-  let _ := ratFuncAlgebraOfTranscendental hy'
-  let _ := ratFuncAlgebraOfTranscendental hX
-  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hy
-  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hy'
-  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hX
-  have hXX := algebraMap_ratFuncAlgebraOfTranscendental_X hX
-  refine .of_algebraMap_eq fun r ↦ ?_
-  -- Both ring maps `k(X) → F'` are determined by their values on `k[X]`.
-  refine RingHom.congr_fun (IsLocalization.ringHom_ext (nonZeroDivisors (Polynomial k))
-    (j := algebraMap (RatFunc k) F')
-    (k := (algebraMap (RatFunc k') F').comp (algebraMap (RatFunc k) (RatFunc k')))
-    (Polynomial.ringHom_ext (fun c ↦ ?_) ?_)) r
-  · rw [RingHom.comp_apply, RingHom.comp_apply, RingHom.comp_apply, RatFunc.algebraMap_C,
-      ← RatFunc.algebraMap_eq_C, ← IsScalarTower.algebraMap_apply k (RatFunc k) F',
-      ← IsScalarTower.algebraMap_apply k (RatFunc k) (RatFunc k'),
-      IsScalarTower.algebraMap_apply k k' (RatFunc k'),
-      ← IsScalarTower.algebraMap_apply k' (RatFunc k') F',
-      ← IsScalarTower.algebraMap_apply k k' F']
-  · simp only [RingHom.comp_apply, RatFunc.algebraMap_X]
-    rw [hXX, algebraMap_ratFuncAlgebraOfTranscendental_X,
-      algebraMap_ratFuncAlgebraOfTranscendental_X]
 
 /-- **`dx` is stable under constant field extension**: for a finite separable constant field
 extension `F' = F · k'` and a separating element `x` of `F / k`, whose image in `F'` is separating
