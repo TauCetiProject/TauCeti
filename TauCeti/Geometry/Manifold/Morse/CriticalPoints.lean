@@ -77,6 +77,8 @@ polynomial in the Morse inequalities.
   sublevel sets of proper functions bounded below.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
+* `TauCeti.IsMorse.exists_separating_levels`: on a compact manifold, levels just below `f p` and
+  just above `f r` separate the critical values strictly between them.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
@@ -440,6 +442,33 @@ theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :
     (criticalPoints I f).Finite := by
   simpa using hf.finite_criticalPoints_inter isCompact_univ
+
+/-- **Separating levels exist.** For a Morse function on a compact manifold and points `p` and
+`r`, there are levels `c₂` above `f r` and `c₁` below `f p` such that every critical value
+strictly between `f r` and `f p` lies strictly between `c₂` and `c₁`, and no critical point lies on
+the level `c₁`. -/
+theorem IsMorse.exists_separating_levels [CompactSpace M] (hf : IsMorse I f) (p r : M) :
+    ∃ c₁ c₂ : ℝ, c₁ < f p ∧ f r < c₂ ∧ (∀ y ∈ criticalPoints I f, f y ≠ c₁) ∧
+      ∀ q ∈ criticalPoints I f, f r < f q → f q < f p → c₂ < f q ∧ f q < c₁ := by
+  have hcrit := hf.finite_criticalPoints
+  -- Levels close enough to `f p` from below, and to `f r` from above, separate the finitely many
+  -- critical values.
+  have h₁ : ∀ᶠ c in 𝓝[<] (f p), c < f p ∧ ∀ q ∈ criticalPoints I f, f q < f p → f q < c :=
+    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
+      fun q _ ↦ by
+        by_cases hq : f q < f p
+        · filter_upwards [Ioo_mem_nhdsLT hq] with c hc _ using hc.1
+        · exact Eventually.of_forall fun _ h ↦ absurd h hq
+  have h₂ : ∀ᶠ c in 𝓝[>] (f r), f r < c ∧ ∀ q ∈ criticalPoints I f, f r < f q → c < f q :=
+    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
+      fun q _ ↦ by
+        by_cases hq : f r < f q
+        · filter_upwards [Ioo_mem_nhdsGT hq] with c hc _ using hc.2
+        · exact Eventually.of_forall fun _ h ↦ absurd h hq
+  obtain ⟨c₁, hc₁p, hc₁⟩ := h₁.exists
+  obtain ⟨c₂, hc₂r, hc₂⟩ := h₂.exists
+  exact ⟨c₁, c₂, hc₁p, hc₂r, fun y hy hyc ↦ (hc₁ y hy (hyc ▸ hc₁p)).ne hyc,
+    fun q hq hrq hqp ↦ ⟨hc₂ q hq hrq, hc₁ q hq hqp⟩⟩
 
 /-- A proper Morse function bounded below has finitely many critical points in each sublevel
 set. -/
