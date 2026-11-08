@@ -19,7 +19,11 @@ Each generator squares to zero (`rootIntMatrix_mul_self_eq_zero`), so its root s
 integral spin weights differ by the signed simple root of its generator. Double-bracket Serre
 relations between the rational generators transport to these integral matrices. The bracket of
 opposite integral root matrices is the diagonal matrix of the basis spin weights' simple-coroot
-coordinates.
+coordinates. Writing `E` and `F` for the positive and negative matrices at a numbered node,
+these matrices satisfy the endpoint relations `EFE = E` and `FEF = F`; `EF` and `FE` are the
+diagonal projections onto simple-coroot weights `1` and `-1`, respectively. Consequently, over
+any commutative ring, the numbered simple-coroot value of the weight torus at a unit `u` is
+`1 + (u - 1)EF + (u⁻¹ - 1)FE`, with the integral matrices mapped to that ring.
 
 ## References
 
