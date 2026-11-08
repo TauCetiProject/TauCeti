@@ -66,6 +66,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `NormMulClass` from its coefficient ring.
 * `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
   coefficient ring are dense.
+* `MvPowerSeries.IsRestricted.rename_of_injective`: renaming along an embedding preserves
+  restrictedness at the reindexed polyradii.
 * `MvPowerSeries.isRestricted_renameEquiv_iff`: renaming the variables along an equivalence
   reindexes the polyradii, and `MvPowerSeries.IsRestricted.renameAlgEquiv` is the resulting
   algebra isomorphism of restricted-series subrings; `MvPowerSeries.IsRestricted.renameAlgEquivOfEq`
@@ -656,6 +658,24 @@ end NormedCommRing
 section Rename
 
 variable {σ τ R : Type*} [NormedCommRing R]
+
+/-- Renaming along an embedding preserves restrictedness at the reindexed polyradii.
+The polyradii outside the image of the embedding are arbitrary. -/
+theorem IsRestricted.rename_of_injective (e : σ ↪ τ) {c : τ → ℝ}
+    {f : MvPowerSeries σ R} (hf : IsRestricted (c ∘ e) f) :
+    IsRestricted c (rename e f) := by
+  intro s hs
+  refine eventually_cofinite.mpr <|
+    ((eventually_cofinite.mp (hf.eventually hs)).image (Finsupp.embDomain e)).subset ?_
+  intro t ht
+  obtain ⟨u, rfl⟩ : t ∈ Set.range (Finsupp.embDomain e) := by
+    by_contra h
+    have hzero := coeff_rename_eq_zero e f
+      (by rwa [← funext (Finsupp.embDomain_eq_mapDomain e)])
+    exact ht (by simpa [hzero] using mem_of_mem_nhds hs)
+  refine ⟨u, ?_, rfl⟩
+  intro hu
+  exact ht (by simpa [Finsupp.prod_embDomain, Function.comp_def] using hu)
 
 /-- **Restrictedness is invariant under renaming the variables.** Renaming along an equivalence
 `e : σ ≃ τ` gives a series restricted at the polyradii `c` exactly when the original series is
