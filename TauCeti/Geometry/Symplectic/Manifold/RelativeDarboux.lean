@@ -29,8 +29,8 @@ The **point-germ relative Darboux theorem**
 (`TauCeti.SmoothTwoForm.exists_partialDiffeomorph_fix_immersion_mpullback_eq`) gives a smooth
 partial diffeomorphism `Φ` of `M`, defined near `i p`, which fixes `i q` for every `q` near `p` and
 pulls `σ₁` back to `σ₀` on its source. So `σ₀` and `σ₁` have symplectomorphic germs at `i p`, by a
-germ fixing the image of `Q` near `i p`. Away from the image of `Q` the two forms are unrelated,
-and nothing is assumed about `Q` away from `p`.
+germ fixing the image of a sufficiently small neighbourhood of `p`. Away from the image of `Q` the
+two forms are unrelated, and nothing is assumed about `Q` away from `p`.
 
 The proof reads everything in the preferred charts at `p` and at `i p`. The forms become flat
 closed forms on the interior of the chart target of `M`, `i` becomes a smooth map between model

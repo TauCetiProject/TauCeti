@@ -41,8 +41,8 @@ surjective smooth local diffeomorphism the descended form of a smooth form is sm
 A pullback identity between coordinate expressions in a chart is carried to the manifold by
 conjugating with the chart
 (`TauCeti.RoughForm.exists_partialDiffeomorph_mpullback_eq_of_inChartAt`). Its flat counterpart
-conjugates by a partial diffeomorphism `Θ` of normed spaces: if a diffeomorphism `Ψ` pulls
-`Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω₁` back to `ω₀`
+conjugates by a partial diffeomorphism `Θ` of normed spaces: if a partial diffeomorphism `Ψ`
+pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω₁` back to `ω₀`
 (`TauCeti.exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj`).
 
 ## Main results
@@ -203,16 +203,17 @@ theorem IsLocalDiffeomorph.isClosed_mpullback_iff [IsManifold I 2 M] [IsManifold
 namespace TauCeti
 
 /-- **Conjugating a pullback identity by a coordinate change.** Let `Θ` be a `C^r` partial
-diffeomorphism from `F` to `E`, and let `Ψ` be a diffeomorphism of `F` which maps an open set
-`O ⊆ Θ.source` into `Θ.source` and pulls `Θ^* ω₁` back to `Θ^* ω₀` on `O`. Then the conjugate
-`Θ ∘ Ψ ∘ Θ⁻¹`, defined on `Θ '' O`, is a `C^r` partial diffeomorphism of `E` which pulls `ω₁` back
-to `ω₀` on its source. -/
+diffeomorphism from `F` to `E`, and let `Ψ` be a `C^r` partial diffeomorphism of `F` whose
+source contains an open set `O ⊆ Θ.source`, which maps `O` into `Θ.source` and pulls `Θ^* ω₁`
+back to `Θ^* ω₀` on `O`. Then the conjugate `Θ ∘ Ψ ∘ Θ⁻¹`, defined on `Θ '' O`, is a `C^r`
+partial diffeomorphism of `E` which pulls `ω₁` back to `ω₀` on its source. -/
 theorem exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {ω₀ ω₁ : E → E [⋀^Fin k]→L[ℝ] G}
     {r : ℕ∞} (hr : 1 ≤ r)
     (Θ : OpenPartialHomeomorph F E) (hΘ : ContDiffOn ℝ r Θ Θ.source)
-    (hΘsymm : ContDiffOn ℝ r Θ.symm Θ.target) (Ψ : F ≃ₘ^r⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ F) {O : Set F}
-    (hO : IsOpen O) (hOΘ : O ⊆ Θ.source) (hΨO : MapsTo Ψ O Θ.source)
+    (hΘsymm : ContDiffOn ℝ r Θ.symm Θ.target) (Ψ : PartialDiffeomorph 𝓘(ℝ, F) 𝓘(ℝ, F) F F r)
+    {O : Set F} (hO : IsOpen O) (hOΘ : O ⊆ Θ.source) (hOΨ : O ⊆ Ψ.source)
+    (hΨO : MapsTo Ψ O Θ.source)
     (hΨ : ∀ z ∈ O,
       ((ω₁ (Θ (Ψ z))).compContinuousLinearMap (fderiv ℝ Θ (Ψ z))).compContinuousLinearMap
         (fderiv ℝ Ψ z) = (ω₀ (Θ z)).compContinuousLinearMap (fderiv ℝ Θ z)) :
@@ -223,32 +224,32 @@ theorem exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj
   let Θd : PartialDiffeomorph 𝓘(ℝ, F) 𝓘(ℝ, E) F E r :=
     PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘ hΘsymm
   let Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E r :=
-    (Θd.restrOpen O hO).symm.trans (Ψ.toPartialDiffeomorph.trans Θd)
+    (Θd.restrOpen O hO).symm.trans (Ψ.trans Θd)
   have hΦeq : Φ.toPartialEquiv = ((Θ.toPartialEquiv.restr O).symm).trans
-      (Ψ.toEquiv.toPartialEquiv.trans Θ.toPartialEquiv) := by
+      (Ψ.toPartialEquiv.trans Θ.toPartialEquiv) := by
     simp only [Φ, Θd, PartialDiffeomorph.trans_toPartialEquiv,
       PartialDiffeomorph.symm_toPartialEquiv, OpenPartialHomeomorph.trans_toPartialEquiv,
-      PartialDiffeomorph.restrOpen_toPartialEquiv, Diffeomorph.toPartialDiffeomorph_toPartialEquiv,
+      PartialDiffeomorph.restrOpen_toPartialEquiv,
       PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
       PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
   have hΦ (x : E) : Φ x = Θ (Ψ (Θ.symm x)) := by
     rw [hΦeq]
     simp
   have hΦsrc (x : E) : x ∈ Φ.source ↔
-      x ∈ Θ.target ∧ Θ.symm x ∈ O ∧ Ψ (Θ.symm x) ∈ Θ.source := by
+      x ∈ Θ.target ∧ Θ.symm x ∈ O ∧ Θ.symm x ∈ Ψ.source ∧ Ψ (Θ.symm x) ∈ Θ.source := by
     rw [hΦeq]
     simp [and_assoc]
   refine ⟨Φ, fun z hz ↦ ?_, fun x hx ↦ ?_⟩
   · have hzΘ : Θ.symm (Θ z) = z := Θ.left_inv (hOΘ hz)
     rw [hΦsrc, hΦ, hzΘ]
-    exact ⟨⟨Θ.map_source (hOΘ hz), hz, hΨO hz⟩, rfl⟩
-  obtain ⟨hxt, hxO, hΨx⟩ := (hΦsrc x).1 hx
+    exact ⟨⟨Θ.map_source (hOΘ hz), hz, hOΨ hz, hΨO hz⟩, rfl⟩
+  obtain ⟨hxt, hxO, hxΨ, hΨx⟩ := (hΦsrc x).1 hx
   have hd (w : F) (hw : w ∈ Θ.source) : HasFDerivAt Θ (fderiv ℝ Θ w) w :=
     ((hΘ.contDiffAt (Θ.open_source.mem_nhds hw)).differentiableAt hr0).hasFDerivAt
   have hdsymm : HasFDerivAt Θ.symm (fderiv ℝ Θ.symm x) x :=
     ((hΘsymm.contDiffAt (Θ.open_target.mem_nhds hxt)).differentiableAt hr0).hasFDerivAt
   have hdΨ : HasFDerivAt Ψ (fderiv ℝ Ψ (Θ.symm x)) (Θ.symm x) :=
-    ((contMDiff_iff_contDiff.1 Ψ.contMDiff).differentiable hr0 _).hasFDerivAt
+    (mdifferentiableAt_iff_differentiableAt.1 (Ψ.mdifferentiableAt hr0 hxΨ)).hasFDerivAt
   -- The chain rule for `Φ = Θ ∘ Ψ ∘ Θ⁻¹`, and `dΘ ∘ dΘ⁻¹ = id` since `Θ ∘ Θ⁻¹ = id` near `x`.
   have hΦd : fderiv ℝ Φ x = (fderiv ℝ Θ (Ψ (Θ.symm x))).comp
       ((fderiv ℝ Ψ (Θ.symm x)).comp (fderiv ℝ Θ.symm x)) := by

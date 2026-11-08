@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 
 /-!
@@ -126,15 +127,17 @@ private theorem exists_partialDiffeomorph_fix_image_zeroSection {N : Type*}
         rw [hfix.self_of_nhds]
         exact Θ.open_source.mem_nhds hy₀))) hΨ
   obtain ⟨O, hOsub, hOo, hy₀O⟩ := mem_nhds_iff.1 hOmem
+  have hΨc : (Ψ.toPartialDiffeomorph : E' × N → E' × N) = Ψ := funext fun _ ↦ by simp
   obtain ⟨Φ, hΦO, hΦ⟩ :=
     exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj hr Θ
-      (hΘ.of_le le_self_add) (hΘsymm.of_le le_self_add) Ψ hOo (fun z hz ↦ (hOsub hz).1.1)
-      (fun z hz ↦ (hOsub hz).1.2) fun z hz ↦ (hOsub hz).2
+      (hΘ.of_le le_self_add) (hΘsymm.of_le le_self_add) Ψ.toPartialDiffeomorph hOo
+      (fun z hz ↦ (hOsub hz).1.1) (fun _ _ ↦ by simp)
+      (by rw [hΨc]; exact fun z hz ↦ (hOsub hz).1.2) (by rw [hΨc]; exact fun z hz ↦ (hOsub hz).2)
   refine ⟨Φ, (hΦO _ hy₀O).1, ?_, hΦ⟩
   have hc : Tendsto (fun y : E' ↦ ((y, 0) : E' × N)) (𝓝 y₀) (𝓝 (y₀, 0)) :=
     (continuous_id.prodMk continuous_const).tendsto y₀
   filter_upwards [hc.eventually (hOo.mem_nhds hy₀O), hfix] with y hyO hy
-  rw [(hΦO _ hyO).2, hy]
+  rw [(hΦO _ hyO).2, hΨc, hy]
 
 /-- **The relative Darboux theorem along an immersion.** Let `g : E' → E` be of class `C^(r + 1)`
 near `y₀` with injective derivative at `y₀`, and let `ω₀`, `ω₁` be closed `C^r` two-forms (`r ≥ 1`)
