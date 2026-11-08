@@ -45,7 +45,8 @@ exactly when its principal idele is an idele norm from `L`. Read placewise throu
 global norm exactly when it is a norm from the local étale algebra `K_v ⊗_K L` at every finite
 and every infinite place (`isGlobalNorm_iff_isLocalNormEverywhere`). The cyclic hypothesis cannot
 be dropped: in `ℚ(√13, √17)/ℚ`, whose Galois group is `(ℤ/2)²`, the number `25` is a local norm
-everywhere but not a global norm.
+everywhere but not a global norm (`TauCeti.ClassFieldTheory.isLocalNormEverywhere_twentyFive` and
+`TauCeti.ClassFieldTheory.twentyFive_notMem_normGroup`).
 
 ## Main results
 
