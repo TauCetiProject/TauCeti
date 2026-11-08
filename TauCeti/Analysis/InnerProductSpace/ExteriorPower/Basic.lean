@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -273,7 +275,7 @@ end OrthonormalBasis
 
 namespace TauCeti
 
-open exteriorPower
+open _root_.exteriorPower
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -346,16 +348,17 @@ omit [FiniteDimensional ℝ V] in
 /-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
 theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
     ⟪twoVectorContraction F u, u⟫ = 0 := by
-  have key : innerₗ V u ∘ₗ ExteriorAlgebra.ιInv ∘ₗ contractLeft (Q := (0 : QuadraticForm ℝ V))
-      (innerₗ V u) ∘ₗ (⋀[ℝ]^2 V).subtype = 0 := by
-    refine exteriorPower.linearMap_ext ?_
-    ext v
-    simp [ExteriorAlgebra.ιMulti_apply,
-      contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _,
-      inner_sub_right, real_inner_smul_right, Matrix.vecTail]
-    ring
-  rw [real_inner_comm, twoVectorContraction_apply]
-  simpa using LinearMap.congr_fun key F
+  -- The contraction `u ⌟ F` is a one-form, the image of the vector `a`, and contracting by `u`
+  -- twice gives zero.
+  set a := twoVectorContraction F u with ha
+  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) := by
+    rw [ha, twoVectorContraction_apply]
+    exact ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+      (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.2)
+  have h0 := contractLeft_contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)
+  rw [← hιa, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
+  rw [real_inner_comm]
+  exact h0
 
 omit [FiniteDimensional ℝ V] in
 /-- **The contraction by a two-vector is skew-adjoint**: `⟪u ⌟ F, w⟫ = -⟪u, w ⌟ F⟫`. -/
