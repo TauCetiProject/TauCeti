@@ -29,6 +29,8 @@ bounds.
   its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
+  convergence of the integral of the squared norm.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
@@ -97,7 +99,8 @@ end TauCeti
 
 namespace MeasureTheory
 
-open scoped ENNReal
+open Filter
+open scoped ENNReal Topology
 
 /-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
 theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
@@ -175,6 +178,22 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- L² convergence implies convergence of the integral of the squared norm, for any measure
+and any normed additive group of values. -/
+theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup F] {μ : Measure α} {f : α → F}
+    {g : ι → α → F} {l : Filter ι} (hf : MemLp f 2 μ) (hg : ∀ i, MemLp (g i) 2 μ)
+    (ht : Tendsto (fun i ↦ eLpNorm (g i - f) 2 μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫ x, ‖g i x‖ ^ 2 ∂μ) l (𝓝 (∫ x, ‖f x‖ ^ 2 ∂μ)) := by
+  have hLp : Tendsto (fun i ↦ (hg i).toLp (g i)) l (𝓝 (hf.toLp f)) := by
+    rw [tendsto_iff_edist_tendsto_0]
+    simpa only [Lp.edist_toLp_toLp] using ht
+  have hnorm (u : α → F) (hu : MemLp u 2 μ) :
+      ‖hu.toLp u‖ ^ 2 = ∫ x, ‖u x‖ ^ 2 ∂μ := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    exact integral_congr_ae (hu.coeFn_toLp.fun_comp fun y ↦ ‖y‖ ^ 2)
+  simpa only [hnorm] using hLp.norm.pow 2
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/
