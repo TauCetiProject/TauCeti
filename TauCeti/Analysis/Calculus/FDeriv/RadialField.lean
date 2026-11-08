@@ -22,10 +22,14 @@ squared radius `R ^ 2`, then the field and this derivative are bounded in norm
 
 public section
 
+namespace TauCeti
+
 /-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
 theorem hasFDerivAt_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     (x₀ x : E) : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
   simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
+
+end TauCeti
 
 /-- The Fréchet derivative of the radial field `y ↦ c (‖y - x₀‖ ^ 2) • (y - x₀)`, for `c` with
 derivative `c'` at `‖x - x₀‖ ^ 2`. -/
@@ -35,7 +39,7 @@ theorem _root_.HasDerivAt.hasFDerivAt_smul_sub_norm_sq {E : Type*} [NormedAddCom
     HasFDerivAt (fun y => c (‖y - x₀‖ ^ 2) • (y - x₀))
       (c (‖x - x₀‖ ^ 2) • ContinuousLinearMap.id ℝ E +
         (c' • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)) x := by
-  exact (hcd.comp_hasFDerivAt x (hasFDerivAt_norm_sq_sub x₀ x)).smul
+  exact (hcd.comp_hasFDerivAt x (TauCeti.hasFDerivAt_norm_sq_sub x₀ x)).smul
     ((hasFDerivAt_id x).sub_const x₀)
 
 namespace TauCeti
