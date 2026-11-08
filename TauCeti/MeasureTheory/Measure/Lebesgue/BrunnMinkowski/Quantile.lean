@@ -272,7 +272,7 @@ theorem _root_.Convex.hasDerivAt_quantile_map_inner_cond (hs : Convex ℝ s)
 /-- The quantile function of the height law of a bounded Borel set of positive volume is
 integrable on the levels `Ioo 0 1`. -/
 theorem integrableOn_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s)
-    (hsm : MeasurableSet s) (hs0 : volume s ≠ 0) :
+    (hs0 : volume s ≠ 0) :
     IntegrableOn ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile (Ioo 0 1) := by
   set ν := (volume[|s]).map fun x ↦ ⟪e, x⟫
   have := cond_isProbabilityMeasure_of_finite hs0 hsb.measure_lt_top.ne
@@ -280,14 +280,14 @@ theorem integrableOn_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded 
   obtain ⟨C, hC⟩ := hsb.exists_norm_le
   have hν : Integrable id ν :=
     (integrable_map_measure aestronglyMeasurable_id hm.aemeasurable).2
-      ((integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC).const_inner e)
+      ((integrable_cond_of_norm_le aestronglyMeasurable_id hC).const_inner e)
   exact (integrableOn_quantile_iff ν).2 hν
 
 /-- **The mean height.** The average over the levels `Ioo 0 1` of the quantile function of the
 height `⟪e, x⟫` of a point `x` drawn uniformly from a bounded Borel set `s` of positive volume is
 the height of the centroid `∫ x, x ∂(volume[|s])` of `s`. -/
 theorem setIntegral_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s)
-    (hsm : MeasurableSet s) (hs0 : volume s ≠ 0) :
+    (hs0 : volume s ≠ 0) :
     ∫ τ in Ioo 0 1, ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ =
       ⟪e, ∫ x, x ∂(volume[|s])⟫ := by
   set ν := (volume[|s]).map fun x ↦ ⟪e, x⟫
@@ -297,6 +297,6 @@ theorem setIntegral_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s
   calc ∫ τ in Ioo 0 1, ν.quantile τ = ∫ y, y ∂ν := setIntegral_quantile_eq_integral ν
     _ = ∫ x, ⟪e, x⟫ ∂(volume[|s]) := integral_map hm.aemeasurable aestronglyMeasurable_id
     _ = ⟪e, ∫ x, x ∂(volume[|s])⟫ := integral_inner
-          (integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC) e
+          (integrable_cond_of_norm_le aestronglyMeasurable_id hC) e
 
 end TauCeti
