@@ -60,6 +60,53 @@ private theorem isWeightedVarPowerBounded_weightedX_of_mem_plus
   simpa only [algebraMap_completion_weightedRestrictedSubring_apply, ← Completion.coe_mul]
     using (S.weighted hT).completion.isRingOfIntegralElements.isPowerBounded_of_mem (hVX i a ha)
 
+/-- A continuous ring homomorphism from the completed weighted power series with the extra
+unweighted variables `Xⱼ ↦ tⱼ Xᵢ` to the completed power series for `T`, which is compatible with
+the coefficients and sends the variables as prescribed, is a morphism of pairs, provided the new
+weights `V` satisfy that `a Xᵢ` lies in the target plus ring for `a ∈ V i`. -/
+theorem exists_hom_toRingHom_eq_of_weightedX {m : ℕ} {idx : Fin m → Fin k} {t : Fin m → A}
+    (hT : IsWeightFamily T) (htT : ∀ j, t j ∈ T (idx j)) (hV : IsWeightFamily V)
+    (hVX : ∀ i, ∀ a ∈ V i,
+      ((weightedC T hT a * weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) ∈ (S.weighted hT).completion.plus)
+    (θ : Completion (weightedRestrictedSubring (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
+      (hV.append isWeightFamily_one_weight)) →+* Completion (weightedRestrictedSubring T hT))
+    (hθc : Continuous θ)
+    (hθA : θ.comp (algebraMap A _) = algebraMap A (Completion (weightedRestrictedSubring T hT)))
+    (hθX : ∀ i, θ (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.castAdd m i) :
+        weightedRestrictedSubring _ _) =
+      ((weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)))
+    (hθY : ∀ j, θ (weightedX _ (hV.append isWeightFamily_one_weight) (Fin.natAdd k j) :
+        weightedRestrictedSubring _ _) =
+      ((weightedC T hT (t j) * weightedX T hT (idx j) : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT))) :
+    ∃ θ' : Hom (S.weighted (hV.append (isWeightFamily_one_weight (k := m)))).completion
+      (S.weighted hT).completion, θ'.toRingHom = θ := by
+  have hθC (a : A) : θ ((weightedC (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
+      (hV.append isWeightFamily_one_weight) a : weightedRestrictedSubring _ _) :
+        Completion (weightedRestrictedSubring _ _)) =
+        ((weightedC T hT a : weightedRestrictedSubring T hT) : Completion _) := by
+    simpa only [RingHom.comp_apply, algebraMap_completion_weightedRestrictedSubring_apply]
+      using RingHom.congr_fun hθA a
+  -- The first block uses the new plus-ring hypothesis; the second lifts the old generators.
+  exact ⟨{ toRingHom := θ
+           continuous_toRingHom := hθc
+           map_mem_plus := S.weighted_completion_plus_le_comap _ _ hθc
+             (fun a ha ↦ by
+               rw [hθC]
+               exact S.weightedC_mem_weighted_completion_plus hT ha)
+             (by
+               intro l
+               refine Fin.addCases (fun i a ha ↦ ?_) (fun j a ha ↦ ?_) l
+               · rw [Fin.append_left] at ha
+                 rw [Completion.coe_mul, map_mul, hθC, hθX, ← Completion.coe_mul]
+                 exact hVX i a ha
+               · rw [Fin.append_right, Set.mem_singleton_iff] at ha
+                 subst a
+                 simpa only [map_one, one_mul, hθY] using
+                   S.weightedC_mul_weightedX_mem_weighted_completion_plus hT (htT j)) }, rfl⟩
+
 /-- A completed weighted Huber pair is a quotient of a partly unweighted pair, with any finite
 new weights whose weighted variables lie in the original plus ring. The additional unweighted
 variables lift all the old weighted variables, so the target plus ring is the integral closure
@@ -78,38 +125,22 @@ theorem exists_isQuotientMapping_weightedCompletionHom_append
   obtain ⟨m, idx, t, htT, ht, θ, hθ, hθA, hθX, hθY⟩ :=
     exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append hT hTfin hV
       (S.isWeightedVarPowerBounded_weightedX_of_mem_plus hT hVfin hVX)
-  have hθC (a : A) : θ ((weightedC (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
+  obtain ⟨θ', rfl⟩ := exists_hom_toRingHom_eq_of_weightedX S hT htT hV hVX θ hθ.continuous hθA
+    hθX hθY
+  have hθC (a : A) : θ'.toRingHom ((weightedC (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
       (hV.append isWeightFamily_one_weight) a : weightedRestrictedSubring _ _) :
         Completion (weightedRestrictedSubring _ _)) =
         ((weightedC T hT a : weightedRestrictedSubring T hT) : Completion _) := by
     simpa only [RingHom.comp_apply, algebraMap_completion_weightedRestrictedSubring_apply]
       using RingHom.congr_fun hθA a
-  -- The first block uses the new plus-ring hypothesis; the second lifts the old generators.
-  let θ' : Hom (S.weighted (hV.append (isWeightFamily_one_weight (k := m)))).completion
-      (S.weighted hT).completion :=
-    { toRingHom := θ
-      continuous_toRingHom := hθ.continuous
-      map_mem_plus := S.weighted_completion_plus_le_comap _ _ hθ.continuous
-        (fun a ha ↦ by
-          rw [hθC]
-          exact S.weightedC_mem_weighted_completion_plus hT ha)
-        (by
-          intro l
-          refine Fin.addCases (fun i a ha ↦ ?_) (fun j a ha ↦ ?_) l
-          · rw [Fin.append_left] at ha
-            rw [Completion.coe_mul, map_mul, hθC, hθX, ← Completion.coe_mul]
-            exact hVX i a ha
-          · rw [Fin.append_right, Set.mem_singleton_iff] at ha
-            subst a
-            simpa only [map_one, one_mul, hθY] using
-              S.weightedC_mul_weightedX_mem_weighted_completion_plus hT (htT j)) }
   -- Constants and old weighted variables lift from the source plus ring, hence are integral
   -- over its image. The closed integral closure then contains the entire target plus ring.
   have hint : ∀ x ∈ (S.weighted (hV.append (isWeightFamily_one_weight (k := m)))).completion.plus,
-      IsIntegral ((S.weighted (hV.append isWeightFamily_one_weight)).completion.plus.map θ)
-        (θ x) := fun x hx ↦
-    isIntegral_algebraMap (R := (S.weighted _).completion.plus.map θ)
-      (x := ⟨θ x, Subring.mem_map.mpr ⟨x, hx, rfl⟩⟩)
+      IsIntegral
+        ((S.weighted (hV.append isWeightFamily_one_weight)).completion.plus.map θ'.toRingHom)
+        (θ'.toRingHom x) := fun x hx ↦
+    isIntegral_algebraMap (R := (S.weighted _).completion.plus.map θ'.toRingHom)
+      (x := ⟨θ'.toRingHom x, Subring.mem_map.mpr ⟨x, hx, rfl⟩⟩)
   refine ⟨m, θ', Hom.isQuotientMapping_of_isIntegral_weighted θ' hθ (fun a ha ↦ ?_)
     (fun i a ha ↦ ?_), Hom.ext ?_⟩
   · rw [← hθC]
@@ -128,20 +159,18 @@ theorem exists_isQuotientMapping_weightedCompletionHom_append
 variable {S} {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   {U : Pair B}
 
-/-- When a morphism of Huber pairs carries open ideals to ideals generating open ideals, the
-weights in a partly unweighted presentation over its target can be chosen as images of finite
-weight sets in its source. In particular, this applies to a morphism topologically of finite
-type. The presentation is a quotient mapping of pairs over the target coefficient pair. -/
-theorem exists_isQuotientMapping_weightedCompletionHom_image_append
-    (f : Hom S U)
+/-- When a morphism of Huber pairs `f` carries open ideals to ideals generating open ideals,
+every weight family `T` over the target admits finite weights `V` over the source, generating an
+open ideal, such that `f(V)` generates an open ideal and `f a Xᵢ` lies in the plus ring of the
+completed weighted power series for `T` whenever `a ∈ V i`. -/
+theorem exists_finset_weights_image_mem_plus (f : Hom S U)
     (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map f.toRingHom : Set B))
-    {T : Fin k → Set B} (hT : IsWeightFamily T) (hTfin : ∀ i, (T i).Finite) :
+    {T : Fin k → Set B} (hT : IsWeightFamily T) :
     ∃ (V : Fin k → Finset A) (_ : IsWeightFamily (fun i ↦ (V i : Set A)))
-      (hW : IsWeightFamily (fun i ↦ f.toRingHom '' (V i : Set A)))
-      (m : ℕ) (θ : Hom (U.weighted (hW.append (isWeightFamily_one_weight (k := m)))).completion
-        (U.weighted hT).completion), θ.IsQuotientMapping ∧
-          θ.comp (U.weightedCompletionHom (hW.append isWeightFamily_one_weight)) =
-            U.weightedCompletionHom hT := by
+      (_ : IsWeightFamily (fun i ↦ f.toRingHom '' (V i : Set A))),
+      ∀ i, ∀ a ∈ V i, ((weightedC T hT (f.toRingHom a) * weightedX T hT i :
+        weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) ∈
+          (U.weighted hT).completion.plus := by
   classical
   -- Openness of the plus ring supplies small coefficients for each original variable.
   have hsmall (i : Fin k) :
@@ -163,10 +192,28 @@ theorem exists_isQuotientMapping_weightedCompletionHom_image_append
     intro i
     rw [← Ideal.map_span]
     exact hopen (hVopen i)
+  exact ⟨V, hVweight, hW, fun i a ha ↦ hV i ha⟩
+
+/-- When a morphism of Huber pairs carries open ideals to ideals generating open ideals, the
+weights in a partly unweighted presentation over its target can be chosen as images of finite
+weight sets in its source. In particular, this applies to a morphism topologically of finite
+type. The presentation is a quotient mapping of pairs over the target coefficient pair. -/
+theorem exists_isQuotientMapping_weightedCompletionHom_image_append
+    (f : Hom S U)
+    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map f.toRingHom : Set B))
+    {T : Fin k → Set B} (hT : IsWeightFamily T) (hTfin : ∀ i, (T i).Finite) :
+    ∃ (V : Fin k → Finset A) (_ : IsWeightFamily (fun i ↦ (V i : Set A)))
+      (hW : IsWeightFamily (fun i ↦ f.toRingHom '' (V i : Set A)))
+      (m : ℕ) (θ : Hom (U.weighted (hW.append (isWeightFamily_one_weight (k := m)))).completion
+        (U.weighted hT).completion), θ.IsQuotientMapping ∧
+          θ.comp (U.weightedCompletionHom (hW.append isWeightFamily_one_weight)) =
+            U.weightedCompletionHom hT := by
+  classical
+  obtain ⟨V, hVweight, hW, hV⟩ := exists_finset_weights_image_mem_plus f hopen hT
   obtain ⟨m, θ, hθ, hθA⟩ := U.exists_isQuotientMapping_weightedCompletionHom_append hT hTfin hW
     (fun i ↦ (V i).finite_toSet.image _) (by
       rintro i _ ⟨a, ha, rfl⟩
-      exact hV i ha)
+      exact hV i a ha)
   exact ⟨V, hVweight, hW, m, θ, hθ, hθA⟩
 
 end TauCeti.Huber.Pair
