@@ -13,7 +13,7 @@ import TauCeti.Analysis.Polynomial.Monic.RootBound
 /-!
 # Bounds on Newton coefficients and on the roots of the Newton polynomial
 
-Let `M : ℕ → K` be a sequence in `ℝ` or `ℂ` with `‖M k‖ ≤ V Rᵏ` for every `k ≥ 1`, as for the
+Let `M : ℕ → K` be a sequence in `ℝ` or `ℂ` with `‖M k‖ ≤ V Rᵏ` for `k ≥ 1`, as for the
 moments `M k = ∫ wᵏ dσ` of a signed measure `σ` of total variation at most `V` carried by the
 closed disc of radius `R`. This file bounds the Newton coefficients `b_j` of `M`
 (`TauCeti.newtonCoeff`) and the roots of the Newton polynomial
@@ -22,6 +22,9 @@ closed disc of radius `R`. This file bounds the Newton coefficients `b_j` of `M`
 * `‖b_j‖ ≤ ((V + 1) R)ʲ` (`TauCeti.norm_newtonCoeff_le`);
 * every root `z` of `P` satisfies `‖z‖ ≤ 2 (V + 1) R`
   (`TauCeti.norm_le_of_mem_roots_newtonPolynomial`).
+
+Only finitely many moments enter: the bound on `b_j` uses `1 ≤ k ≤ j`, the bound on the roots
+uses `1 ≤ k ≤ m`.
 
 Both bounds are homogeneous in `R`, as they must be: rescaling the points by `t` multiplies `M k`
 by `tᵏ` and `b_j` by `tʲ`. They hold whatever the sequence is, before `P` is known to
@@ -44,10 +47,10 @@ namespace TauCeti
 
 variable {K : Type*} [RCLike K]
 
-/-- **Newton coefficients of a bounded sequence.** If `‖M k‖ ≤ V Rᵏ` for every `k ≥ 1`, with
-`V, R ≥ 0`, then the Newton coefficients of `M` satisfy `‖b_j‖ ≤ ((V + 1) R)ʲ`. -/
-theorem norm_newtonCoeff_le {M : ℕ → K} {V R : ℝ} (hV : 0 ≤ V) (hR : 0 ≤ R)
-    (hM : ∀ k ≠ 0, ‖M k‖ ≤ V * R ^ k) (j : ℕ) : ‖newtonCoeff M j‖ ≤ ((V + 1) * R) ^ j := by
+/-- **Newton coefficients of a bounded sequence.** If `‖M k‖ ≤ V Rᵏ` for every `1 ≤ k ≤ j`, with
+`V, R ≥ 0`, then the `j`-th Newton coefficient of `M` satisfies `‖b_j‖ ≤ ((V + 1) R)ʲ`. -/
+theorem norm_newtonCoeff_le {M : ℕ → K} {V R : ℝ} (hV : 0 ≤ V) (hR : 0 ≤ R) {j : ℕ}
+    (hM : ∀ k ≠ 0, k ≤ j → ‖M k‖ ≤ V * R ^ k) : ‖newtonCoeff M j‖ ≤ ((V + 1) * R) ^ j := by
   induction j using Nat.strong_induction_on with
   | _ j ih =>
   rcases eq_or_ne j 0 with rfl | hj
@@ -66,7 +69,7 @@ theorem norm_newtonCoeff_le {M : ℕ → K} {V R : ℝ} (hV : 0 ≤ V) (hR : 0 �
     simp only [norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
     calc ‖newtonCoeff M i‖ * ‖M (j - i)‖ ≤ ((V + 1) * R) ^ i * (V * R ^ (j - i)) := by
           gcongr
-          exacts [ih i hi, hM _ (by omega)]
+          exacts [ih i hi fun k hk hki => hM k hk (hki.trans hi.le), hM _ (by omega) (by omega)]
       _ = R ^ j * ((V + 1) ^ i * (V + 1 - 1)) := by
         rw [mul_pow, ← pow_sub_mul_pow R hi.le]
         ring
@@ -80,16 +83,17 @@ theorem norm_newtonCoeff_le {M : ℕ → K} {V R : ℝ} (hV : 0 ≤ V) (hR : 0 �
       linarith
 
 /-- **Roots of the Newton polynomial of a bounded sequence.** If `‖M k‖ ≤ V Rᵏ` for every
-`k ≥ 1`, with `V, R ≥ 0`, then every root `z` of the Newton polynomial
+`1 ≤ k ≤ m`, with `V, R ≥ 0`, then every root `z` of the Newton polynomial
 `Xᵐ - b₁ Xᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ` of `M` satisfies `‖z‖ ≤ 2 (V + 1) R`. -/
 theorem norm_le_of_mem_roots_newtonPolynomial {M : ℕ → K} {V R : ℝ} (hV : 0 ≤ V) (hR : 0 ≤ R)
-    (hM : ∀ k ≠ 0, ‖M k‖ ≤ V * R ^ k) {m : ℕ} {z : K} (hz : z ∈ (newtonPolynomial M m).roots) :
+    {m : ℕ} (hM : ∀ k ≠ 0, k ≤ m → ‖M k‖ ≤ V * R ^ k) {z : K}
+    (hz : z ∈ (newtonPolynomial M m).roots) :
     ‖z‖ ≤ 2 * ((V + 1) * R) := by
   refine IsRoot.norm_le_two_mul (monic_newtonPolynomial M m) (fun i hi => ?_)
     (isRoot_of_mem_roots hz)
   rw [natDegree_newtonPolynomial] at hi ⊢
   have h := coeff_newtonPolynomial_sub M (Nat.sub_le m i)
   rw [Nat.sub_sub_self hi.le] at h
-  simpa [h] using norm_newtonCoeff_le hV hR hM (m - i)
+  simpa [h] using norm_newtonCoeff_le hV hR fun k hk hki => hM k hk (hki.trans (Nat.sub_le m i))
 
 end TauCeti
