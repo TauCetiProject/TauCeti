@@ -122,16 +122,17 @@ end MeasureTheory
 
 namespace TauCeti
 
-variable {Ω ι : Type*} [LinearOrder ι] [OrderBot ι] [MeasurableSpace ι]
+variable {Ω ι : Type*} [LinearOrder ι] [Nonempty ι] [MeasurableSpace ι]
   [TopologicalSpace ι] [OrderClosedTopology ι] [OpensMeasurableSpace ι]
 
 /-- Cutting a nonnegative integrand off at a random time stops its cumulative lower
-integral. This identity is pathwise, requires no measurability of the random time or
-integrand, and remains valid for infinite energies and infinite random times. -/
+integral from any fixed left endpoint. This identity is pathwise, requires no measurability
+of the random time or integrand, and remains valid for infinite energies and infinite
+random times. -/
 theorem setLIntegral_ite_le_eq_stoppedProcess (f : ι → Ω → ℝ≥0∞)
-    (τ : Ω → WithTop ι) (μ : Measure ι) (t : ι) (ω : Ω) :
-    (∫⁻ s in Ioc ⊥ t, if (s : WithTop ι) ≤ τ ω then f s ω else 0 ∂μ) =
-      stoppedProcess (fun u ω ↦ ∫⁻ s in Ioc ⊥ u, f s ω ∂μ) τ t ω := by
+    (τ : Ω → WithTop ι) (μ : Measure ι) (a t : ι) (ω : Ω) :
+    (∫⁻ s in Ioc a t, if (s : WithTop ι) ≤ τ ω then f s ω else 0 ∂μ) =
+      stoppedProcess (fun u ω ↦ ∫⁻ s in Ioc a u, f s ω ∂μ) τ t ω := by
   classical
   by_cases ht : (t : WithTop ι) ≤ τ ω
   · rw [stoppedProcess_eq_of_le ht]
