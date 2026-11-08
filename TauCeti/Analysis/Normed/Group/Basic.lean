@@ -77,8 +77,8 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
 
-/-- A continuous function `ℝ → F` into a normed group with limits at `±∞` is bounded. -/
-theorem exists_forall_norm_le_of_tendsto {F : Type*} [NormedAddCommGroup F] {A : ℝ → F}
+/-- A continuous function `ℝ → F` into a seminormed group with limits at `±∞` is bounded. -/
+theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
     {Aminus Aplus : F} (hA : Continuous A) (hbot : Tendsto A atBot (𝓝 Aminus))
     (htop : Tendsto A atTop (𝓝 Aplus)) : ∃ M, ∀ s, ‖A s‖ ≤ M := by
   obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.mp
