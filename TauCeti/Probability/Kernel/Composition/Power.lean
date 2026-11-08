@@ -85,23 +85,31 @@ theorem deterministic_pow {f : α → α} (hf : Measurable f) (n : ℕ) :
     rw [pow_add, pow_one, ih, deterministic_comp_deterministic]
     simp_rw [Function.iterate_succ]
 
-/-- **Chapman–Kolmogorov lower bound.** The `m + n`-step mass of a measurable set `s` is at least
-the mass of the paths that sit at the intermediate state `y` at time `m`. -/
+/-- **Chapman–Kolmogorov lower bound.** The `m + n`-step mass of a set `s` is at least the mass of
+the paths that sit at the intermediate state `y` at time `m`. -/
 theorem pow_apply_singleton_mul_le_pow_add_apply (κ : Kernel α α) (m n : ℕ) (x y : α)
-    {s : Set α} (hs : MeasurableSet s) :
+    {s : Set α} :
     (κ ^ m) x {y} * (κ ^ n) y s ≤ (κ ^ (m + n)) x s := by
-  rw [pow_add_apply_eq_lintegral _ _ _ _ hs, mul_comm,
-    ← lintegral_singleton' ((κ ^ n).measurable_coe hs)]
-  exact setLIntegral_le_lintegral _ _
+  have hts : (κ ^ (m + n)) x (toMeasurable ((κ ^ (m + n)) x) s) = (κ ^ (m + n)) x s :=
+    measure_toMeasurable s
+  have ht := measurableSet_toMeasurable ((κ ^ (m + n)) x) s
+  calc (κ ^ m) x {y} * (κ ^ n) y s
+      ≤ (κ ^ m) x {y} * (κ ^ n) y (toMeasurable ((κ ^ (m + n)) x) s) :=
+        mul_le_mul_right (measure_mono (subset_toMeasurable _ s)) _
+    _ ≤ (κ ^ (m + n)) x (toMeasurable ((κ ^ (m + n)) x) s) := by
+        rw [pow_add_apply_eq_lintegral _ _ _ _ ht, mul_comm,
+          ← lintegral_singleton' ((κ ^ n).measurable_coe ht)]
+        exact setLIntegral_le_lintegral _ _
+    _ = (κ ^ (m + n)) x s := hts
 
 /-- Positive multi-step masses compose: if `x` reaches `y` with positive probability in `m` steps
 and `y` reaches `s` with positive probability in `n` steps, then `x` reaches `s` with positive
 probability in `m + n` steps. -/
 theorem pow_add_apply_pos {κ : Kernel α α} {m n : ℕ} {x y : α} {s : Set α}
-    (hs : MeasurableSet s) (hxy : 0 < (κ ^ m) x {y}) (hy : 0 < (κ ^ n) y s) :
+    (hxy : 0 < (κ ^ m) x {y}) (hy : 0 < (κ ^ n) y s) :
     0 < (κ ^ (m + n)) x s :=
   (ENNReal.mul_pos hxy.ne' hy.ne').trans_le
-    (pow_apply_singleton_mul_le_pow_add_apply κ m n x y hs)
+    (pow_apply_singleton_mul_le_pow_add_apply κ m n x y)
 
 end Kernel
 
