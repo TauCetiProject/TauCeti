@@ -721,6 +721,16 @@ section KoszulTwistMul
 
 variable {R : Type u} {A : Type v} [Ring R]
 
+/-- Without any compatibility between the `R`-action and the product, the scalars `±1` still
+commute with multiplication, because `(-1) • a` is the additive inverse of `a`. -/
+private theorem intUnits_smul_mul_smul [NonUnitalNonAssocSemiring A] [Module R A]
+    (u v : ℤˣ) (a b : A) :
+    (((u : ℤ) : R) • a) * (((v : ℤ) : R) • b) = (((u * v : ℤˣ) : ℤ) : R) • (a * b) := by
+  let : AddCommGroup A := Module.addCommMonoidToAddCommGroup R
+  let : NonUnitalNonAssocRing A := { ‹NonUnitalNonAssocSemiring A›, this with }
+  rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or v with rfl | rfl <;>
+    simp
+
 /-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
 so the signs `(-1) ^ (q |a|)` multiply. -/
 theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R A]
@@ -728,24 +738,6 @@ theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R 
     [DirectSum.Decomposition 𝒜] (q : ℤ) (a b : A) :
     (ofDecomposition 𝒜).koszulTwist q (a * b) =
       (ofDecomposition 𝒜).koszulTwist q a * (ofDecomposition 𝒜).koszulTwist q b := by
-  -- Without any compatibility between the `R`-action and the product, a sign still commutes with
-  -- multiplication, because `(-1) • a` is the additive inverse of `a`.
-  have neg_one_aux : ∀ x y z : A, x + z = 0 → y + z = 0 → x = y := fun x y z hx hy ↦ by
-    calc x = x + (y + z) := by rw [hy, add_zero]
-      _ = y + (x + z) := by abel
-      _ = y := by rw [hx, add_zero]
-  have neg_one_add : ∀ a : A, (-1 : R) • a + a = 0 := fun a ↦
-    calc (-1 : R) • a + a = (-1 : R) • a + (1 : R) • a := by rw [one_smul]
-      _ = 0 := by rw [← add_smul]; simp
-  have neg_one_smul_mul : ∀ a b : A, ((-1 : R) • a) * b = (-1 : R) • (a * b) := fun a b ↦
-    neg_one_aux _ _ (a * b) (by rw [← add_mul, neg_one_add, zero_mul]) (neg_one_add _)
-  have mul_neg_one_smul : ∀ a b : A, a * ((-1 : R) • b) = (-1 : R) • (a * b) := fun a b ↦
-    neg_one_aux _ _ (a * b) (by rw [← mul_add, neg_one_add, mul_zero]) (neg_one_add _)
-  have sign_mul : ∀ (u v : ℤˣ) (a b : A),
-      (((u : ℤ) : R) • a) * (((v : ℤ) : R) • b) = (((u * v : ℤˣ) : ℤ) : R) • (a * b) := by
-    intro u v a b
-    rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or v with rfl | rfl <;>
-      simp [neg_one_smul_mul, mul_neg_one_smul, smul_smul]
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | add a a' ha ha' => rw [add_mul, map_add, ha, ha', map_add, add_mul]
@@ -758,7 +750,7 @@ theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R 
       obtain ⟨b, hbq⟩ := b
       rw [koszulTwist_ofDecomposition_apply_of_mem _ (SetLike.GradedMul.mul_mem hap hbq),
         koszulTwist_ofDecomposition_apply_of_mem _ hap,
-        koszulTwist_ofDecomposition_apply_of_mem _ hbq, sign_mul, mul_add,
+        koszulTwist_ofDecomposition_apply_of_mem _ hbq, intUnits_smul_mul_smul, mul_add,
         Int.negOnePow_add]
 
 /-- The Koszul twist of a graded algebra fixes the unit, which has degree zero. -/
