@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Functor
 public import Mathlib.CategoryTheory.MorphismProperty.Factorization
-public import Mathlib.CategoryTheory.Limits.Shapes.RegularMono
 
 /-!
 # Admissible morphisms in exact categories
@@ -45,17 +44,27 @@ namespace ConflationClass
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {E : ConflationClass C}
 
-/-- A deflation is a regular epimorphism, since it is a cokernel. -/
-theorem IsDeflation.isRegularEpi {X Y : C} {p : X ⟶ Y} (hp : E.IsDeflation p) :
-    IsRegularEpi p := by
-  obtain ⟨K, k, h, hc⟩ := (E.isDeflation_iff p).1 hp
-  exact ⟨⟨Cofork.IsColimit.regularEpi (E.isKernelCokernelPair _ hc).gIsCokernel⟩⟩
-
-/-- An inflation is a regular monomorphism, since it is a kernel. -/
-theorem IsInflation.isRegularMono {X Y : C} {i : X ⟶ Y} (hi : E.IsInflation i) :
-    IsRegularMono i := by
-  obtain ⟨Q, q, h, hc⟩ := (E.isInflation_iff i).1 hi
-  exact ⟨⟨Fork.IsLimit.regularMono (E.isKernelCokernelPair _ hc).fIsKernel⟩⟩
+/-- Two admissible factorizations of the same map have a unique compatible intermediate
+isomorphism. In particular, admissibility supplies an image object independent of the chosen
+factorization. -/
+theorem existsUnique_admissibleFactorization_iso {X Y I J : C}
+    {p : X ⟶ I} {i : I ⟶ Y} {q : X ⟶ J} {j : J ⟶ Y}
+    (hp : E.IsDeflation p) (hi : E.IsInflation i)
+    (hq : E.IsDeflation q) (hj : E.IsInflation j) (h : p ≫ i = q ≫ j) :
+    ∃! e : I ≅ J, p ≫ e.hom = q ∧ e.hom ≫ j = i := by
+  have : Mono i := hi.mono
+  have : Mono j := hj.mono
+  have : IsRegularEpi p := hp.isRegularEpi
+  have : IsRegularEpi q := hq.isRegularEpi
+  let F : StrongEpiMonoFactorisation (p ≫ i) := { I := I, e := p, m := i }
+  let G : StrongEpiMonoFactorisation (p ≫ i) := { I := J, e := q, m := j, fac := h.symm }
+  let e := IsImage.isoExt F.toMonoIsImage G.toMonoIsImage
+  refine ⟨e, ⟨IsImage.e_isoExt_hom F.toMonoIsImage G.toMonoIsImage,
+    IsImage.isoExt_hom_m F.toMonoIsImage G.toMonoIsImage⟩, ?_⟩
+  rintro e' ⟨he', -⟩
+  apply Iso.ext
+  exact (cancel_epi p).1
+    (he'.trans (IsImage.e_isoExt_hom F.toMonoIsImage G.toMonoIsImage).symm)
 
 end ConflationClass
 
@@ -132,19 +141,12 @@ theorem isAdmissible_zero (X Y : C) : E.IsAdmissible (0 : X ⟶ Y) := by
 @[simp]
 theorem op_isAdmissible_iff {X Y : Cᵒᵖ} (f : X ⟶ Y) :
     E.op.IsAdmissible f ↔ E.IsAdmissible f.unop := by
-  constructor
-  · intro hf
-    obtain ⟨I, p, i, hp, hi, h⟩ := (E.op.isAdmissible_iff f).1 hf
-    exact (E.isAdmissible_iff _).2 ⟨I.unop, i.unop, p.unop,
-      (E.op_isInflation_iff i).1 hi, (E.op_isDeflation_iff p).1 hp,
-      by simpa using congrArg Quiver.Hom.unop h⟩
-  · intro hf
-    obtain ⟨I, p, i, hp, hi, h⟩ := (E.isAdmissible_iff _).1 hf
-    exact (E.op.isAdmissible_iff _).2 ⟨Opposite.op I, i.op, p.op,
-      (E.op_isDeflation_iff i.op).2 hi, (E.op_isInflation_iff p.op).2 hp,
-      by simpa using congrArg Quiver.Hom.op h⟩
+  unfold IsAdmissible admissibles
+  rw [E.op_deflations, E.op_inflations]
+  exact ⟨Nonempty.map (fun h => h.unop), Nonempty.map (fun h => h.op)⟩
 
 /-- Among monomorphisms, the admissible morphisms are exactly the inflations. -/
+@[simp]
 theorem isAdmissible_iff_isInflation {X Y : C} (f : X ⟶ Y) [Mono f] :
     E.IsAdmissible f ↔ E.IsInflation f := by
   refine ⟨?_, isAdmissible_of_isInflation⟩
@@ -158,31 +160,11 @@ theorem isAdmissible_iff_isInflation {X Y : C} (f : X ⟶ Y) [Mono f] :
   exact MorphismProperty.RespectsIso.precomp E.inflations p i hi
 
 /-- Among epimorphisms, the admissible morphisms are exactly the deflations. -/
+@[simp]
 theorem isAdmissible_iff_isDeflation {X Y : C} (f : X ⟶ Y) [Epi f] :
     E.IsAdmissible f ↔ E.IsDeflation f := by
-  simpa using (E.op.isAdmissible_iff_isInflation f.op)
-
-/-- Two admissible factorizations of the same map have a unique compatible intermediate
-isomorphism. In particular, admissibility supplies an image object independent of the chosen
-factorization. -/
-theorem existsUnique_admissibleFactorization_iso {X Y I J : C}
-    {p : X ⟶ I} {i : I ⟶ Y} {q : X ⟶ J} {j : J ⟶ Y}
-    (hp : E.IsDeflation p) (hi : E.IsInflation i)
-    (hq : E.IsDeflation q) (hj : E.IsInflation j) (h : p ≫ i = q ≫ j) :
-    ∃! e : I ≅ J, p ≫ e.hom = q ∧ e.hom ≫ j = i := by
-  have : Mono i := hi.mono
-  have : Mono j := hj.mono
-  have : IsRegularEpi p := hp.isRegularEpi
-  have : IsRegularEpi q := hq.isRegularEpi
-  let F : StrongEpiMonoFactorisation (p ≫ i) := { I := I, e := p, m := i }
-  let G : StrongEpiMonoFactorisation (p ≫ i) := { I := J, e := q, m := j, fac := h.symm }
-  let e := IsImage.isoExt F.toMonoIsImage G.toMonoIsImage
-  refine ⟨e, ⟨IsImage.e_isoExt_hom F.toMonoIsImage G.toMonoIsImage,
-    IsImage.isoExt_hom_m F.toMonoIsImage G.toMonoIsImage⟩, ?_⟩
-  rintro e' ⟨he', -⟩
-  apply Iso.ext
-  exact (cancel_epi p).1
-    (he'.trans (IsImage.e_isoExt_hom F.toMonoIsImage G.toMonoIsImage).symm)
+  simpa only [op_isAdmissible_iff, op_isInflation_iff, Quiver.Hom.unop_op] using
+    (E.op.isAdmissible_iff_isInflation f.op)
 
 section Functor
 
