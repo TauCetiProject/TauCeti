@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Multinomial.Measurability
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.StdSimplex
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.HasLaw
 public import TauCeti.Probability.Cdf
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Probability.Distributions.Multinomial.Transforms
@@ -208,6 +209,12 @@ theorem map_piSingle_categoricalMeasure (p : StdSimplex NNReal I) :
   · intro j _ hji
     simp [hji]
   · simp
+
+/-- The one-hot encoding of a categorical outcome has the one-trial multinomial law. -/
+theorem hasLaw_piSingle_categoricalMeasure (p : StdSimplex NNReal I) :
+    HasLaw (fun i : I ↦ Pi.single i (1 : ℕ))
+      (multinomialMeasure 1 p) (categoricalMeasure p) :=
+  ⟨(measurable_of_countable _).aemeasurable, map_piSingle_categoricalMeasure p⟩
 
 end Multinomial
 

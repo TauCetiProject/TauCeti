@@ -85,10 +85,8 @@ theorem iIndepFun.hasLaw_card_filter_multinomialMeasure {X : J → Ω → ι}
   have := hind.isProbabilityMeasure
   let := isProbabilityMeasure_multinomialMeasure 1 p
   let Y (j : J) (ω : Ω) : ι → ℕ := Pi.single (X j ω) 1
-  have hsingle : HasLaw (fun i : ι => Pi.single i (1 : ℕ))
-      (multinomialMeasure 1 p) (categoricalMeasure p) :=
-    ⟨(measurable_of_countable _).aemeasurable, map_piSingle_categoricalMeasure p⟩
-  have hY (j : J) : HasLaw (Y j) (multinomialMeasure 1 p) P := hsingle.comp (hX j)
+  have hY (j : J) : HasLaw (Y j) (multinomialMeasure 1 p) P :=
+    (hasLaw_piSingle_categoricalMeasure p).comp (hX j)
   have hsum := (hind.comp (fun _ i => Pi.single i (1 : ℕ))
     (fun _ => measurable_of_countable _)).hasLaw_finset_sum_convolutionPower hY s
   rw [convolutionPower_multinomialMeasure_one] at hsum
@@ -107,10 +105,8 @@ theorem iIndepFun.hasLaw_card_filter_bind_multinomialMeasure
       (ρ.bind fun n => multinomialMeasure n p) P := by
   classical
   let Y (j : ℕ) (ω : Ω) : ι → ℕ := Pi.single (X j ω) 1
-  have hsingle : HasLaw (fun i : ι => Pi.single i (1 : ℕ))
-      (multinomialMeasure 1 p) (categoricalMeasure p) :=
-    ⟨(measurable_of_countable _).aemeasurable, map_piSingle_categoricalMeasure p⟩
-  have hY (j : ℕ) : HasLaw (Y j) (multinomialMeasure 1 p) P := hsingle.comp (hX j)
+  have hY (j : ℕ) : HasLaw (Y j) (multinomialMeasure 1 p) P :=
+    (hasLaw_piSingle_categoricalMeasure p).comp (hX j)
   have hNY : IndepFun N (fun ω j => Y j ω) P :=
     hNX.comp measurable_id (measurable_pi_iff.2 fun j =>
       (measurable_of_countable (fun i : ι => Pi.single i (1 : ℕ))).comp
