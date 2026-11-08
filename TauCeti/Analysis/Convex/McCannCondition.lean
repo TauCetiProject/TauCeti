@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import TauCeti.Analysis.Convex.RecessionConstant
+public import TauCeti.Analysis.Convex.Recession.Constant
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.SpecificFunctions.Pow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity

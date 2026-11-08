@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Order.Module
-public import TauCeti.Analysis.Convex.Recession
+public import TauCeti.Analysis.Convex.Recession.Basic
 
 /-!
 # Carrier-defined homogenization
