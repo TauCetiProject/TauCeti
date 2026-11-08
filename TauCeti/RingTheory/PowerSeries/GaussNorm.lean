@@ -689,12 +689,12 @@ theorem isDistinguished_of_norm_coeff_sub_lt {a : R} (ha : ‖a‖ * c ^ s = f.g
     (hs : ‖f.coeff s - a‖ * c ^ s < f.gaussNorm norm c)
     (hm : ∀ m, s < m → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) :
     IsDistinguished c s f := by
-  have hcs : 0 ≤ c ^ s := by
+  have hcs : 0 ≤ c ^ s := by -- else `c ^ (s + 1) > 0`, but `ha` gives Gauss norm `≤ 0`
     refine le_of_not_gt fun h ↦ ?_
     have hc : c < 0 := not_le.mp fun hc ↦ h.not_ge (pow_nonneg hc s)
-    have := mul_nonneg (norm_nonneg (f.coeff (s + 1)))
-      (pow_succ c s ▸ mul_nonneg_of_nonpos_of_nonpos h.le hc.le)
-    linarith [hm (s + 1) s.lt_succ_self, mul_nonpos_of_nonneg_of_nonpos (norm_nonneg a) h.le]
+    have h1 : 0 ≤ c ^ (s + 1) := by rw [pow_succ]; exact mul_nonneg_of_nonpos_of_nonpos h.le hc.le
+    linarith [hm (s + 1) s.lt_succ_self, mul_nonpos_of_nonneg_of_nonpos (norm_nonneg a) h.le,
+      mul_nonneg (norm_nonneg (f.coeff (s + 1))) h1]
   have hlt : ‖f.coeff s - a‖ < ‖a‖ := lt_of_mul_lt_mul_right (ha ▸ hs) hcs
   refine ⟨?_, hm⟩
   rw [← ha, ← sub_add_cancel (f.coeff s) a,
