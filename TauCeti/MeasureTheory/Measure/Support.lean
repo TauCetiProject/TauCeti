@@ -73,13 +73,12 @@ theorem support_pi {ι : Type*} [Fintype ι] {α : ι → Type*}
 pushforward, even if the map is discontinuous elsewhere. -/
 theorem mem_support_map_of_continuousAt {X Y : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y] [MeasurableSpace Y]
-    [OpensMeasurableSpace Y] {μ : Measure X} {f : X → Y} {x : X}
+    {μ : Measure X} {f : X → Y} {x : X}
     (hf : AEMeasurable f μ) (hfx : ContinuousAt f x) (hx : x ∈ μ.support) :
     f x ∈ (μ.map f).support := by
-  rw [support_eq_forall_isOpen]
-  intro U hxU hU
-  rw [Measure.map_apply_of_aemeasurable hf hU.measurableSet]
-  exact (mem_support_iff_forall x).mp hx _ (hfx (hU.mem_nhds hxU))
+  rw [mem_support_iff_forall]
+  intro U hU
+  exact ((mem_support_iff_forall x).mp hx _ (hfx hU)).trans_le (Measure.le_map_apply hf U)
 
 /-- Multiplying a measure by a nonzero `ℝ≥0∞` scalar preserves its topological support. -/
 theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
