@@ -116,12 +116,19 @@ theorem chartPoint_val (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (chartPoint f A i hi x).val = Spec.map (CommRingCat.ofHom x.toRingHom) ≫ i :=
   (rfl)
 
+/-- A chart point is the image of the corresponding affine-scheme point under the chart. -/
+theorem chartPoint_eq_map_comp_homEquivAlgHom_symm (A : CommAlgCat.{u} k)
+    (i : Spec (.of A) ⟶ X) (hi : i ≫ f = Spec.algebraMap k A) :
+    chartPoint (R := R) f A i hi = map i hi ∘ Spec.homEquivAlgHom.symm := by
+  funext x
+  apply Subtype.ext
+  simp only [Function.comp_apply, map_val, Spec.homEquivAlgHom_symm_apply_val, chartPoint_val]
+
 /-- An affine chart is injective on points. -/
 theorem chartPoint_injective (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (hi : i ≫ f = Spec.algebraMap k A) [Mono i] :
     Function.Injective (chartPoint (R := R) f A i hi) := by
-  -- The chart is definitionally the point map composed with the native affine equivalence.
-  change Function.Injective (map i hi ∘ Spec.homEquivAlgHom.symm)
+  rw [chartPoint_eq_map_comp_homEquivAlgHom_symm]
   exact (map_injective i hi).comp Spec.homEquivAlgHom.symm.injective
 
 /-- A scheme-valued point comes from an affine open chart exactly when its underlying
@@ -129,9 +136,7 @@ morphism has image in that chart. This criterion does not require a local coeffi
 theorem mem_range_chartPoint_iff (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (hi : i ≫ f = Spec.algebraMap k A) [IsOpenImmersion i] (x : Points (R := R) f) :
     x ∈ Set.range (chartPoint f A i hi) ↔ Set.range x.val ⊆ Set.range i := by
-  -- Expose the defining composite so surjectivity of the affine equivalence removes it.
-  change x ∈ Set.range (map i hi ∘ Spec.homEquivAlgHom.symm) ↔ _
-  rw [EquivLike.range_comp, mem_range_map_iff]
+  rw [chartPoint_eq_map_comp_homEquivAlgHom_symm, EquivLike.range_comp, mem_range_map_iff]
 
 /-- Over a local ring, membership in the points of an affine open chart can be tested
 at the closed point of the source spectrum. -/
@@ -139,9 +144,8 @@ theorem mem_range_chartPoint_iff_closedPoint [IsLocalRing R]
     (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (hi : i ≫ f = Spec.algebraMap k A) [IsOpenImmersion i] (x : Points (R := R) f) :
     x ∈ Set.range (chartPoint f A i hi) ↔ x.val (IsLocalRing.closedPoint R) ∈ i.opensRange := by
-  -- Expose the defining composite so surjectivity of the affine equivalence removes it.
-  change x ∈ Set.range (map i hi ∘ Spec.homEquivAlgHom.symm) ↔ _
-  rw [EquivLike.range_comp, mem_range_map_iff_closedPoint]
+  rw [chartPoint_eq_map_comp_homEquivAlgHom_symm, EquivLike.range_comp,
+    mem_range_map_iff_closedPoint]
 
 /-- Every point over a local ring factors through an affine open chart over the base.
 In particular the affine chart point spaces cover the entire space of scheme-valued points. -/
