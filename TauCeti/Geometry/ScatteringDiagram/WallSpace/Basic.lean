@@ -87,6 +87,11 @@ structure DirectedWallSpaces (ρ : Γ →+ Λ) (ℒ : Γ → Submodule R L) wher
   bracket_mem : ∀ {n n' m m' x y}, x ∈ wall n m → y ∈ wall n' m' →
     ⁅x, y⁆ ∈ wall (n + n') (wallBracketNormal ρ n n' m m')
 
+attribute [simp] DirectedWallSpaces.zero_normal DirectedWallSpaces.nontangent
+
+-- Remove integral scalars before negative scalar multiplication normalizes to negation.
+attribute [simp↓] DirectedWallSpaces.rescale
+
 namespace DirectedWallSpaces
 
 variable {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L} (H : DirectedWallSpaces ρ ℒ)
