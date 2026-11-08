@@ -315,8 +315,9 @@ theorem intervalIntegrable_sum_Icc_sub_mul (c : ℕ → ℝ) (κ : ℝ) {x : ℝ
   exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
 
 /-- The Abel-summation identity `sum_Icc_rpow_mul_eq`, with the partial sums `S t` split as
-`(S t - κ t) + κ t` inside the integral and everything divided by `x ^ (τ + 1)`. -/
-theorem sum_Icc_rpow_mul_eq_div_add_integral_sub_mul {c : ℕ → ℝ} {κ τ : ℝ} (hτ : -1 < τ)
+`(S t - κ t) + κ t` inside the integral and everything divided by `x ^ (τ + 1)`. It holds for
+every exponent `τ ≠ -1`. -/
+theorem sum_Icc_rpow_mul_eq_div_add_integral_sub_mul {c : ℕ → ℝ} {κ τ : ℝ} (hτ : τ ≠ -1)
     {x : ℝ} (hx : 1 ≤ x) :
     x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n -
         τ * ((∫ t in (1 : ℝ)..x, t ^ (τ - 1) *
@@ -326,18 +327,21 @@ theorem sum_Icc_rpow_mul_eq_div_add_integral_sub_mul {c : ℕ → ℝ} {κ τ : 
   have hE_int := intervalIntegrable_sum_Icc_sub_mul c κ hx
   set S : ℝ → ℝ := fun t ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n
   set E : ℝ → ℝ := fun t ↦ S t - κ * t with hE
-  have hτ1 : 0 < τ + 1 := by linarith
+  have hτ1 : τ + 1 ≠ 0 := fun h ↦ hτ (by linarith)
   have hx0 : 0 < x := by linarith
+  have h0 : (0 : ℝ) ∉ uIcc 1 x := by
+    rw [uIcc_of_le hx]
+    exact fun h ↦ by linarith [h.1]
   have hcont : ContinuousOn (fun t : ℝ ↦ t ^ (τ - 1)) (uIcc 1 x) := fun t ht ↦ by
     rw [uIcc_of_le hx] at ht
     exact (Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).continuousWithinAt
   have hsplit : ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * S t =
       (∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t) + κ * ((x ^ (τ + 1) - 1) / (τ + 1)) := by
     have hκ : ∫ t in (1 : ℝ)..x, t ^ τ = (x ^ (τ + 1) - 1) / (τ + 1) := by
-      rw [integral_rpow (Or.inl hτ), Real.one_rpow]
+      rw [integral_rpow (Or.inr ⟨hτ, h0⟩), Real.one_rpow]
     rw [← hκ, ← intervalIntegral.integral_const_mul,
       ← intervalIntegral.integral_add (hE_int.continuousOn_mul hcont)
-        ((intervalIntegral.intervalIntegrable_rpow' hτ).const_mul κ)]
+        ((intervalIntegral.intervalIntegrable_rpow (Or.inr h0)).const_mul κ)]
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [uIcc_of_le hx] at ht
     have ht0 : 0 < t := by linarith [ht.1]
@@ -372,6 +376,6 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
   rw [hval] at hlim
   refine hlim.congr' ?_
   filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
-  exact sum_Icc_rpow_mul_eq_div_add_integral_sub_mul hτ hx
+  exact sum_Icc_rpow_mul_eq_div_add_integral_sub_mul hτ.ne' hx
 
 end TauCeti
