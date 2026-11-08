@@ -70,10 +70,17 @@ theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd [SeminormedAddCommGroup
         rw [WithLp.idemFst_apply, WithLp.idemSnd_apply, WithLp.norm_toLp_fst,
           WithLp.norm_toLp_snd]
 
-/-- The `ℓ^p` norm of a pair is monotone and positively homogeneous in the norms of its
-components: a componentwise bound `c * ‖x.i‖ ≤ d * ‖y.i‖` with `0 ≤ c, d` gives
-`c * ‖x‖ ≤ d * ‖y‖`. -/
-theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddGroup α]
+/-- The `ℓ^p` norm of a pair is nonnegative, in any seminormed additive groups. -/
+private theorem prod_norm_nonneg' [SeminormedAddGroup α] [SeminormedAddGroup β]
+    (x : WithLp p (α × β)) : 0 ≤ ‖x‖ := by
+  rcases p.dichotomy with rfl | hp
+  · rw [WithLp.prod_norm_eq_sup]
+    exact le_sup_of_le_left (norm_nonneg _)
+  · rw [WithLp.prod_norm_eq_add (zero_lt_one.trans_le hp)]
+    positivity
+
+/-- The case `0 ≤ c, d` of `WithLp.prod_mul_norm_le_mul_norm`. -/
+private theorem prod_mul_norm_le_mul_norm_of_nonneg {γ δ : Type*} [SeminormedAddGroup α]
     [SeminormedAddGroup β] [SeminormedAddGroup γ] [SeminormedAddGroup δ] {c d : ℝ} (hc : 0 ≤ c)
     (hd : 0 ≤ d) {x : WithLp p (α × β)} {y : WithLp p (γ × δ)} (h₁ : c * ‖x.fst‖ ≤ d * ‖y.fst‖)
     (h₂ : c * ‖x.snd‖ ≤ d * ‖y.snd‖) :
@@ -93,6 +100,35 @@ theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddGr
   rw [WithLp.prod_norm_eq_add hp₀, WithLp.prod_norm_eq_add hp₀, key hc (norm_nonneg _)
     (norm_nonneg _), key hd (norm_nonneg _) (norm_nonneg _)]
   gcongr
+
+/-- The `ℓ^p` norm of a pair is monotone and positively homogeneous in the norms of its
+components: a componentwise bound `c * ‖x.i‖ ≤ d * ‖y.i‖` gives `c * ‖x‖ ≤ d * ‖y‖`. -/
+theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddGroup α]
+    [SeminormedAddGroup β] [SeminormedAddGroup γ] [SeminormedAddGroup δ] {c d : ℝ}
+    {x : WithLp p (α × β)} {y : WithLp p (γ × δ)} (h₁ : c * ‖x.fst‖ ≤ d * ‖y.fst‖)
+    (h₂ : c * ‖x.snd‖ ≤ d * ‖y.snd‖) :
+    c * ‖x‖ ≤ d * ‖y‖ := by
+  rcases le_or_gt 0 d with hd | hd
+  · rcases le_or_gt 0 c with hc | hc
+    · exact prod_mul_norm_le_mul_norm_of_nonneg hc hd h₁ h₂
+    · exact (mul_nonpos_of_nonpos_of_nonneg hc.le (prod_norm_nonneg' x)).trans
+        (mul_nonneg hd (prod_norm_nonneg' y))
+  · -- the bounds force `y = 0`, so both sides vanish when `0 ≤ c`
+    rcases le_or_gt 0 c with hc | hc
+    · have hy₁ : 1 * ‖y.fst‖ ≤ 0 * ‖x.fst‖ := by
+        nlinarith [mul_nonneg hc (norm_nonneg x.fst), norm_nonneg y.fst]
+      have hy₂ : 1 * ‖y.snd‖ ≤ 0 * ‖x.snd‖ := by
+        nlinarith [mul_nonneg hc (norm_nonneg x.snd), norm_nonneg y.snd]
+      have hx₁ : c * ‖x.fst‖ ≤ 0 * ‖y.fst‖ := by
+        nlinarith [mul_nonneg (neg_nonneg.mpr hd.le) (norm_nonneg y.fst)]
+      have hx₂ : c * ‖x.snd‖ ≤ 0 * ‖y.snd‖ := by
+        nlinarith [mul_nonneg (neg_nonneg.mpr hd.le) (norm_nonneg y.snd)]
+      have hy := prod_mul_norm_le_mul_norm_of_nonneg zero_le_one le_rfl hy₁ hy₂
+      have hx := prod_mul_norm_le_mul_norm_of_nonneg hc le_rfl hx₁ hx₂
+      nlinarith
+    · have := prod_mul_norm_le_mul_norm_of_nonneg (neg_nonneg.mpr hd.le) (neg_nonneg.mpr hc.le)
+        (x := y) (y := x) (by linarith) (by linarith)
+      linarith
 
 section Real
 
@@ -238,7 +274,7 @@ theorem norm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     ‖f.withLpProdMap p g‖ = max ‖f‖ ‖g‖ := by
   refine le_antisymm (opNorm_le_bound _ (by positivity) fun x ↦ ?_) (max_le ?_ ?_)
   · rw [← one_mul ‖_‖]
-    refine WithLp.prod_mul_norm_le_mul_norm zero_le_one (by positivity) ?_ ?_ <;>
+    refine WithLp.prod_mul_norm_le_mul_norm ?_ ?_ <;>
       rw [withLpProdMap_apply, one_mul]
     · exact (f.le_opNorm _).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
     · exact (g.le_opNorm _).trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))
