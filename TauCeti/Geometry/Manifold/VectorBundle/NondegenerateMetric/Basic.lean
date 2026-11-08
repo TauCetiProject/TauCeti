@@ -309,7 +309,7 @@ theorem chartMetric_extChartAt_apply_basis {ι : Type*} (b : Module.Basis ι ℝ
       g y ((trivializationAt E (TangentSpace I) x₀).localFrame b i y)
         ((trivializationAt E (TangentSpace I) x₀).localFrame b j y) := by
   have hbase : y ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hy
-  simp only [g.chartMetric_extChartAt_apply hy, ← symmL_basis_eq_localFrame b hbase,
+  simp only [g.chartMetric_extChartAt_apply hy, ← symmL_basis_eq_localFrame b,
     Trivialization.symmL_apply _ hbase]
 
 /-- The chart metric is symmetric at every point of the chart target. -/

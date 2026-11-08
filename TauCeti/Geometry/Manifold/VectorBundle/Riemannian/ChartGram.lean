@@ -133,10 +133,7 @@ no membership hypothesis is needed. -/
 theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
     chartLocalFrame (I := I) α i x =
       (trivializationAt E (TangentSpace I) α).symmL ℝ x (Module.finBasis ℝ E i) := by
-  by_cases hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet
-  · rw [chartLocalFrame_def, TauCeti.Manifold.symmL_basis_eq_localFrame _ hx]
-  · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
-      Trivialization.symmL_apply_of_notMem _ hx]
+  rw [chartLocalFrame_def, TauCeti.Manifold.symmL_basis_eq_localFrame]
 
 /-- On a boundaryless manifold, the derivative of a function along the chart-local frame at `α` is
 the partial derivative, along the corresponding basis vector of the model space, of the function

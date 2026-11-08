@@ -187,7 +187,7 @@ private theorem localFrame_eq_constantField {ι : Type*} (b : Module.Basis ι �
     -- Sol's inherited global chart has the whole model space as its source.
     change toProd q ∈ (trivializationAt P (TangentSpace J) (toProd p)).baseSet
     simp [TangentBundle.trivializationAt_baseSet, chartAt_self_eq]
-  rw [← TauCeti.Manifold.symmL_basis_eq_localFrame b hq i]
+  rw [← TauCeti.Manifold.symmL_basis_eq_localFrame b i]
   -- In the model-space atlas the inverse fibre trivialization is the identity.
   change (trivializationAt P (TangentSpace J) (toProd p)).symmL ℝ (toProd q) (b i) =
     constantField (b i) q

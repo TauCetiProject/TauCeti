@@ -80,7 +80,7 @@ theorem eqOn_localFrame_trivializationAt_mpullbackWithin (b : Basis ι 𝕜 E) (
         (fun _ ↦ b i : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source)
       (extChartAt I x₀).source := fun y hy ↦ by
   rw [← eqOn_symm_trivializationAt_mpullbackWithin x₀ (b i) hy,
-    ← symmL_basis_eq_localFrame b (by simpa using hy) i,
+    ← symmL_basis_eq_localFrame b i,
     Bundle.Trivialization.symmL_apply _ (by simpa using hy)]
 
 /-- **The chart reads the coordinate frame as the basis.**  At a point of the source of the chart

@@ -95,12 +95,14 @@ theorem localFrameCoeff_basisAt [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : �
 end
 
 /-- The continuous inverse of a trivialization transports a model-fibre basis vector to the
-corresponding local-frame vector. -/
-theorem symmL_basis_eq_localFrame (hx : x ∈ e.baseSet) (i : ι) :
-    e.symmL 𝕜 x (b i) = e.localFrame b i x := by
-  rw [e.symmL_apply hx]
-  simp [Bundle.Trivialization.localFrame_apply_of_mem_baseSet,
-    Bundle.Trivialization.basisAt, hx]
+corresponding local-frame vector. Both sides vanish off the base set of `e`, so no membership
+hypothesis is needed. -/
+theorem symmL_basis_eq_localFrame (i : ι) : e.symmL 𝕜 x (b i) = e.localFrame b i x := by
+  by_cases hx : x ∈ e.baseSet
+  · rw [e.symmL_apply hx]
+    simp [Bundle.Trivialization.localFrame_apply_of_mem_baseSet,
+      Bundle.Trivialization.basisAt, hx]
+  · rw [e.symmL_apply_of_notMem hx, Bundle.Trivialization.localFrame_apply_of_notMem _ _ hx]
 
 /-- The basis of a fibre given by a trivialization is the continuous inverse of the
 trivialization applied to the model-fibre basis. -/
@@ -112,7 +114,7 @@ theorem basisAt_apply (hx : x ∈ e.baseSet) (i : ι) : e.basisAt b hx i = e.sym
 vector. -/
 theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
-  rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
+  rw [← symmL_basis_eq_localFrame b i, e.continuousLinearMapAt_symmL hx]
 
 /-- A vector of the fibre over a point of the base set of a trivialization `e` is the sum of the
 local-frame vectors weighted by the coordinates of its reading in `e`. -/
@@ -123,7 +125,7 @@ theorem _root_.Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame [F
     v = e.symmL 𝕜 x (e.continuousLinearMapAt 𝕜 x v) := (e.symmL_continuousLinearMapAt hx v).symm
     _ = e.symmL 𝕜 x (∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • b i) := by
       rw [b.sum_repr]
-    _ = _ := by simp only [map_sum, map_smul, symmL_basis_eq_localFrame b hx]
+    _ = _ := by simp only [map_sum, map_smul, symmL_basis_eq_localFrame b]
 
 /-- The section with constant coordinates `v` in a trivialization `e` is `C^n` on the base set of
 `e`. -/
@@ -184,7 +186,7 @@ theorem contMDiffOn_hom_of_localFrame {f : N → M} {u : Set N} (hf : ContMDiffO
   have key {y : N} (hy : y ∈ u) (j : ι) :
       (eh ⟨f y, A y⟩).2 (b j) = (e' ⟨f y, A y (e.localFrame b j (f y))⟩).2 := by
     simp [heh, Bundle.Trivialization.continuousLinearMap_apply,
-      symmL_basis_eq_localFrame b (hu hy).1,
+      symmL_basis_eq_localFrame b,
       Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e' (hu hy).2]
   have hcoord (j : ι) : ContMDiffOn J 𝓘(𝕜, F') n (fun y ↦ (eh ⟨f y, A y⟩).2 (b j)) u := by
     refine ContMDiffOn.congr ?_ fun y hy ↦ key hy j

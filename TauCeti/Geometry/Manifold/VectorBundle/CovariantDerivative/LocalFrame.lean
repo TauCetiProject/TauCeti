@@ -175,8 +175,7 @@ model-valued map `g` that has derivative `A` at `x`, then its flat frame derivat
 `e.symmL x ∘ A`. -/
 theorem frameCovariantDerivative_eq_symmL_comp {g : M → F}
     {A : TangentSpace I x →L[𝕜] F} (hg : HasMFDerivAt I 𝓘(𝕜, F) g x A)
-    (hcoeff : ∀ i, (fun z ↦ e.localFrameCoeff I b i z (σ z)) =ᶠ[𝓝 x] fun z ↦ b.coord i (g z))
-    (hx : x ∈ e.baseSet) :
+    (hcoeff : ∀ i, (fun z ↦ e.localFrameCoeff I b i z (σ z)) =ᶠ[𝓝 x] fun z ↦ b.coord i (g z)) :
     frameCovariantDerivative I b e σ x = (e.symmL 𝕜 x).comp A := by
   ext v
   rw [frameCovariantDerivative_apply]
@@ -196,7 +195,7 @@ theorem frameCovariantDerivative_eq_symmL_comp {g : M → F}
   have h1 : e.symmL 𝕜 x (A v) = e.symmL 𝕜 x (∑ i, b.coord i (A v) • b i) := by
     simp [Basis.sum_repr, Basis.coord_apply]
   rw [ContinuousLinearMap.comp_apply, h1, map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, symmL_basis_eq_localFrame b hx i]
+  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, symmL_basis_eq_localFrame b i]
 
 /-- The section `z ↦ e.symmL z v` has constant coefficients in the frame of `e`, so its flat frame
 derivative at a point of the base set vanishes. -/
@@ -206,7 +205,7 @@ theorem frameCovariantDerivative_symmL_const (hx : x ∈ e.baseSet) (v : F) :
   have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ v) x
       (0 : TangentSpace I x →L[𝕜] F) := hasMFDerivAt_const _ _
   have h := frameCovariantDerivative_eq_symmL_comp (I := I) (b := b) (e := e)
-    (σ := fun z ↦ e.symmL 𝕜 z v) hconst (fun i ↦ ?_) hx
+    (σ := fun z ↦ e.symmL 𝕜 z v) hconst (fun i ↦ ?_)
   · rw [h, ContinuousLinearMap.comp_zero]
   · filter_upwards [e.open_baseSet.mem_nhds hx] with z hz
     rw [e.localFrameCoeff_eq_coeff (b := b) (s := fun z ↦ e.symmL 𝕜 z v) hz,
@@ -328,7 +327,7 @@ theorem covariantDerivative_symm_eq_christoffelForm
         (by simp [e.apply_mk_symm hy])
   have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ v) x
       (0 : TangentSpace I x →L[𝕜] F) := hasMFDerivAt_const _ _
-  rw [frameCovariantDerivative_eq_symmL_comp b hconst hcoeff hx, ContinuousLinearMap.comp_zero]
+  rw [frameCovariantDerivative_eq_symmL_comp b hconst hcoeff, ContinuousLinearMap.comp_zero]
 
 /-! ### Regularity of the flat covariant derivative of a local frame -/
 
@@ -486,7 +485,7 @@ theorem covariantDerivative_symm_comp_apply_symm [Fintype ι]
     filter_upwards [hread, e.open_baseSet.mem_nhds hx] with y hy hyb
     rw [e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y (g y)) hyb, hy,
       Basis.coord_apply]
-  rw [frameCovariantDerivative_eq_symmL_comp b hg.hasMFDerivAt hcoeff hx]
+  rw [frameCovariantDerivative_eq_symmL_comp b hg.hasMFDerivAt hcoeff]
   exact e.symmL_apply (R := 𝕜) hx _
 
 /-- The Christoffel symbols of a `C^n` covariant derivative are `C^n` on the base set of the
@@ -533,8 +532,8 @@ theorem christoffelMap_apply_basis [Fintype ι]
     christoffelMap b hcov x (b j) (b i) =
       ∑ k, christoffelSymbol I b e cov i j k x • b k := by
   classical
-  rw [christoffelMap_apply b hcov hx, symmL_basis_eq_localFrame b hx j,
-    symmL_basis_eq_localFrame b hx i,
+  rw [christoffelMap_apply b hcov hx, symmL_basis_eq_localFrame b j,
+    symmL_basis_eq_localFrame b i,
     christoffelForm_localFrame_apply b hcov hx i j]
   rw [map_sum]
   exact Finset.sum_congr rfl fun k _ ↦ by

@@ -70,7 +70,7 @@ private theorem frameCovariantDerivative_symmL_coordChange
       (e₀.symmL 𝕜 x).comp (mvfderiv I (fun z ↦ tangentCoordChange I x x₀ z V) x) := by
   have hgA : MDifferentiableAt I 𝓘(𝕜, E) (fun z ↦ tangentCoordChange I x x₀ z V) x :=
     MDifferentiableAt.clm_apply hcmd mdifferentiableAt_const
-  refine frameCovariantDerivative_eq_symmL_comp b hgA.hasMFDerivAt (fun i ↦ ?_) hx₀
+  refine frameCovariantDerivative_eq_symmL_comp b hgA.hasMFDerivAt (fun i ↦ ?_)
   filter_upwards [e₀.open_baseSet.mem_nhds hx₀, e₁.open_baseSet.mem_nhds hx₁] with z hz₀ hz₁
   rw [e₀.localFrameCoeff_eq_coeff (b := b) (s := fun z ↦ e₁.symmL 𝕜 z (V : E)) hz₀,
     ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e₀ hz₀,
