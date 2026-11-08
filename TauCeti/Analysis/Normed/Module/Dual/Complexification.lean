@@ -111,10 +111,14 @@ def strongDualEquiv : Complexification (StrongDual ℝ X) ≃L[ℂ]
         apply ContinuousLinearMap.coe_injective
         apply ext_ofReal
         intro x
-        have hzero : ofReal (0 : X) = 0 := (ofRealLI_apply (0 : X)).symm.trans (map_zero _)
-        simp [dualExtension_apply, dualRestriction, hzero, mul_comm Complex.I,
-          Complex.re_add_im] }
+        simp [dualExtension_apply, dualRestriction, mul_comm Complex.I, Complex.re_add_im] }
+    -- The inverse of the displayed linear equivalence is definitionally `dualRestriction`.
     2 1 dualExtension_norm_le (fun f ↦ by simpa using dualRestriction_norm_le f)
+
+private theorem strongDualEquiv_symm_apply (f : StrongDual ℂ (Complexification X)) :
+    (strongDualEquiv X).symm f = dualRestriction f :=
+  -- Adding continuity preserves the specified inverse function `dualRestriction`.
+  rfl
 
 /-- Evaluation of the dual comparison on arbitrary complexified vectors. -/
 @[simp]
@@ -128,15 +132,13 @@ theorem strongDualEquiv_apply (z : Complexification (StrongDual ℝ X))
 @[simp]
 theorem strongDualEquiv_symm_apply_re (f : StrongDual ℂ (Complexification X)) (x : X) :
     ((strongDualEquiv X).symm f).re x = (f (ofReal x)).re := by
-  simp [strongDualEquiv, LinearEquiv.toContinuousLinearEquivOfBounds,
-    ContinuousLinearEquiv.symm, dualRestriction]
+  simp [strongDualEquiv_symm_apply, dualRestriction]
 
 /-- The imaginary coordinate of the inverse dual comparison is imaginary-part restriction. -/
 @[simp]
 theorem strongDualEquiv_symm_apply_im (f : StrongDual ℂ (Complexification X)) (x : X) :
     ((strongDualEquiv X).symm f).im x = (f (ofReal x)).im := by
-  simp [strongDualEquiv, LinearEquiv.toContinuousLinearEquivOfBounds,
-    ContinuousLinearEquiv.symm, dualRestriction]
+  simp [strongDualEquiv_symm_apply, dualRestriction]
 
 /-- The dual comparison increases norms by at most a factor of two. -/
 theorem norm_strongDualEquiv_apply_le (z : Complexification (StrongDual ℝ X)) :
@@ -145,8 +147,9 @@ theorem norm_strongDualEquiv_apply_le (z : Complexification (StrongDual ℝ X)) 
 
 /-- The inverse dual comparison is contractive for the Taylor norm. -/
 theorem norm_strongDualEquiv_symm_apply_le (f : StrongDual ℂ (Complexification X)) :
-    ‖(strongDualEquiv X).symm f‖ ≤ ‖f‖ :=
-  dualRestriction_norm_le f
+    ‖(strongDualEquiv X).symm f‖ ≤ ‖f‖ := by
+  rw [strongDualEquiv_symm_apply]
+  exact dualRestriction_norm_le f
 
 /-- The operator norm of the dual comparison is at most two. -/
 theorem norm_strongDualEquiv_le : ‖(strongDualEquiv X).toContinuousLinearMap‖ ≤ 2 :=
