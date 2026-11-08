@@ -419,10 +419,12 @@ theorem IsUpperUnitriangular.pow {T p : Type*} [Semiring T] [Fintype p] [LinearO
   | zero => exact isUpperUnitriangular_one
   | succ k ih => rw [pow_succ]; exact ih.mul hM
 
-/-- The inverse of an invertible upper-unitriangular matrix is upper unitriangular. -/
+/-- The inverse of an upper-unitriangular matrix is upper unitriangular. -/
 theorem IsUpperUnitriangular.inv {T p : Type*} [CommRing T] [Fintype p] [LinearOrder p]
-    {M : Matrix p p T} [Invertible M] (hM : M.IsUpperUnitriangular) :
+    {M : Matrix p p T} (hM : M.IsUpperUnitriangular) :
     M⁻¹.IsUpperUnitriangular := by
+  -- The determinant is `1`, so `M` is invertible.
+  have := ((Matrix.isUnit_iff_isUnit_det M).2 hM.isUnit_det).invertible
   refine ⟨blockTriangular_inv_of_blockTriangular hM.1, fun i ↦ ?_⟩
   exact inv_apply_diag_of_isUpperTriangular hM.1 (hM.2 i)
 
