@@ -35,6 +35,8 @@ homeomorphically onto the open `n`-cells (`TauCeti.iUnionOpenCellHomeomorph`), i
 ## Main definitions and results
 
 * `TauCeti.sigmaDiskPair ι n`: the pair `∐ᵢ (Dⁿ, Sⁿ⁻¹)`.
+* `TauCeti.sigmaRadialHomotopy ι n`: the radial deformation of `∐ᵢ Dⁿ`, which fixes the boundary
+  spheres and pushes the shells `2⁻¹ ≤ ‖y‖ ≤ 1` onto them.
 * `TauCeti.characteristicPairMap C n`: the characteristic maps of the `n`-cells, as a map of pairs
   `∐ⱼ (Dⁿ, Sⁿ⁻¹) ⟶ (Xⁿ, Xⁿ⁻¹)`.
 * `TauCeti.isIso_singularHomologyMap_characteristicPairMap`: it induces isomorphisms on relative
@@ -90,8 +92,8 @@ private lemma radialPush_mem_closedBall (t : I) (y : closedBall (0 : Fin n → �
   mem_closedBall_zero_iff.2 <|
     norm_radialPush_le_one (by norm_num) t (mem_closedBall_zero_iff.1 y.2)
 
-/-- The radial deformation `TauCeti.radialPush 2⁻¹`, applied in every disk. -/
-private def sigmaRadialPush :
+/-- The radial deformation `TauCeti.radialPush 2⁻¹`, applied in every disk of `∐ᵢ Dⁿ`. -/
+def sigmaRadialPush :
     C(I × (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1), Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) where
   toFun q := ⟨q.2.1, radialPush 2⁻¹ q.1 q.2.2, radialPush_mem_closedBall n q.1 q.2.2⟩
   continuous_toFun := by
@@ -107,15 +109,29 @@ private def sigmaRadialPush :
 
 /-- The radial deformation of the disks, from the identity to the map pushing the shells onto the
 boundary spheres. -/
-private def sigmaRadialHomotopy :
+def sigmaRadialHomotopy :
     (ContinuousMap.id _).Homotopy ((sigmaRadialPush ι n).curry 1) where
   toContinuousMap := sigmaRadialPush ι n
   map_zero_left _ := Sigma.ext rfl (heq_of_eq (Subtype.ext (radialPush_zero _ _)))
   map_one_left _ := rfl
 
-private lemma coe_sigmaRadialHomotopy_apply (t : I) (p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :
+/-- In every disk, `TauCeti.sigmaRadialHomotopy` is the radial deformation
+`TauCeti.radialPush 2⁻¹`. -/
+lemma coe_sigmaRadialHomotopy_apply (t : I) (p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :
     ((sigmaRadialHomotopy ι n (t, p)).2 : Fin n → ℝ) = radialPush 2⁻¹ t (p.2 : Fin n → ℝ) :=
   (rfl)
+
+/-- `TauCeti.sigmaRadialHomotopy` keeps every point in its disk. -/
+@[simp]
+lemma sigmaRadialHomotopy_apply_fst (t : I) (p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :
+    (sigmaRadialHomotopy ι n (t, p)).1 = p.1 :=
+  (rfl)
+
+/-- `TauCeti.sigmaRadialHomotopy` fixes the boundary spheres of the disks. -/
+lemma sigmaRadialHomotopy_apply_of_norm_eq_one (t : I) {p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1}
+    (hp : ‖(p.2 : Fin n → ℝ)‖ = 1) : sigmaRadialHomotopy ι n (t, p) = p :=
+  Sigma.ext rfl (heq_of_eq (Subtype.ext
+    (radialPush_of_norm_eq_one (by norm_num) (by norm_num) _ hp)))
 
 private lemma mapsTo_sphere_shell :
     MapsTo (𝟙 (TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1)))
