@@ -1165,12 +1165,22 @@ theorem tangentCoordChange_sumInr (x y z : M') :
   ext w
   simp [ChartedSpace.sum_chartAt_inr, Sum.inr_injective.extend_apply]
 
-/-- Over the domain of the chart at `x`, the inverse of the canonical tangent-bundle trivialization
-of `M ⊕ M'` at a point `x` of `M` is the inverse trivialization of `M` at `x`. -/
-theorem symmL_trivializationAt_sumInl {x z : M} (hz : z ∈ (chartAt H x).source) :
+/-- The inverse of the canonical tangent-bundle trivialization of `M ⊕ M'` at a point `x` of `M`
+is the inverse trivialization of `M` at `x`. Both sides vanish outside the domain of the chart
+at `x`. -/
+theorem symmL_trivializationAt_sumInl {x z : M} :
     (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).symmL 𝕜 (Sum.inl z) =
       (trivializationAt E (TangentSpace I : M → Type _) x).symmL 𝕜 z := by
   have : Nonempty H := nonempty_of_chartedSpace x
+  by_cases hz : z ∈ (chartAt H x).source
+  swap
+  · have h₁ : (Sum.inl z : M ⊕ M') ∉
+        (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).baseSet := by
+      simpa [ChartedSpace.sum_chartAt_inl] using hz
+    have h₂ : z ∉ (trivializationAt E (TangentSpace I : M → Type _) x).baseSet := by
+      simpa using hz
+    exact DFunLike.ext _ _ fun u ↦ (Trivialization.symmL_apply_of_notMem _ h₁ u).trans
+      (Trivialization.symmL_apply_of_notMem _ h₂ u).symm
   rw [TangentBundle.symmL_trivializationAt_eq_core
       (by simpa [ChartedSpace.sum_chartAt_inl] using hz),
     TangentBundle.symmL_trivializationAt_eq_core hz]

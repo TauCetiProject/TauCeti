@@ -85,7 +85,7 @@ def sumTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ Tange
             (trivializationAt E (TangentSpace I : M → Type _) x).symm z u := by
         rw [← Trivialization.symmL_apply (R := ℝ) _ hz',
           ← Trivialization.symmL_apply (R := ℝ) _ hzM]
-        exact DFunLike.congr_fun (TauCeti.Manifold.symmL_trivializationAt_sumInl hz) u
+        exact DFunLike.congr_fun (TauCeti.Manifold.symmL_trivializationAt_sumInl) u
       ext v w
       refine (inCoordinates_apply_eq₂ hz' hz' (by simp)).trans
         (Eq.trans ?_ (inCoordinates_apply_eq₂ hzM hzM (by simp)).symm)
