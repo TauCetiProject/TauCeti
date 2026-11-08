@@ -220,8 +220,8 @@ theorem order_pullback {ω : OneForm Y} {f : X → Y} {x : X}
     have hgsub : AnalyticAt ℂ (fun z ↦ g z - g (chartAt ℂ x x)) (chartAt ℂ x x) :=
       hg.sub analyticAt_const
     rw [hgsub.meromorphicOrderAt_eq]
-    simp only [g, comp_apply, analyticOrderAt_chartAt_comp_comp_chartAt_symm_sub hf hnc,
-      ENat.map_natCast]
+    simp only [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x),
+      ← natCast_localMultiplicity hf hnc, ENat.map_natCast]
   have hgnc := not_eventuallyConst_chartAt_comp_comp_chartAt_symm hf hnc
   have hω' := meromorphicAt_coeff_chartRepresentative hω
   have hderiv : _root_.meromorphicOrderAt (deriv g) (chartAt ℂ x x) =
@@ -234,9 +234,8 @@ theorem order_pullback {ω : OneForm Y} {f : X → Y} {x : X}
     ((coeff_pullback_eventuallyEq ω hf).filter_mono nhdsWithin_le_nhds),
     _root_.meromorphicOrderAt_mul (hω'.comp_analyticAt hg) hg.deriv.meromorphicAt,
     hω'.meromorphicOrderAt_comp hg hgnc, hderiv]
-  simp only [comp_apply, analyticOrderAt_chartAt_comp_comp_chartAt_symm_sub hf hnc,
-    ENat.map_natCast, WithTop.coe_natCast, order_def]
-  simp only [(chartAt ℂ x).left_inv (mem_chart_source ℂ x)]
+  simp only [comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x),
+    ← natCast_localMultiplicity hf hnc, ENat.map_natCast, WithTop.coe_natCast, order_def]
 
 section Compact
 

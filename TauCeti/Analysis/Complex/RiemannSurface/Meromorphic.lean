@@ -212,9 +212,9 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
         hφ.self_of_nhds.continuousAt).filter_mono nhdsWithin_le_nhds),
     hF'.meromorphicOrderAt_comp (g := fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
       (analyticAt_chartAt_comp_comp_chartAt_symm hφ) hnc']
-  simp only [analyticOrderAt_chartAt_comp_comp_chartAt_symm_sub hφ hnc,
+  simp only [(chartAt ℂ x).left_inv hcx, ← natCast_localMultiplicity hφ hnc,
     ENat.map_natCast, WithTop.coe_natCast]
-  simp only [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx]
+  simp only [meromorphicOrderAt]
 
 end IsManifold
 
