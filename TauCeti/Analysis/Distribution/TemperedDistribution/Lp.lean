@@ -87,6 +87,20 @@ public section
 
 noncomputable section
 
+/-- A measure of temperate growth is finite on compact sets: `(1 + ‖x‖) ^ (-n)` is integrable and
+bounded below by a positive constant on any bounded set. -/
+theorem MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] (μ : Measure E)
+    [h : μ.HasTemperateGrowth] : IsFiniteMeasureOnCompacts μ := by
+  obtain ⟨n, hn⟩ := h.exists_integrable
+  refine ⟨fun K hK => ?_⟩
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall (0 : E)
+  have hε : 0 < (1 + max R 0) ^ (-(n : ℝ)) := by positivity
+  refine lt_of_le_of_lt (measure_mono fun x hx => ?_) (hn.measure_norm_ge_lt_top hε)
+  have hx' : ‖x‖ ≤ max R 0 := by simpa using (hR hx).trans (le_max_left R 0)
+  rw [Set.mem_ofPred_eq, Real.norm_of_nonneg (by positivity)]
+  exact Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by simp)
+
 namespace MeasureTheory.Lp
 
 open SchwartzMap
@@ -102,10 +116,11 @@ variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 /-- An `Lᵖ` function is almost everywhere equal to any locally integrable function with the same
 pairings against Schwartz functions. The two functions need not lie in the same `Lᵖ` space. -/
 theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTemperateGrowth]
-    [IsLocallyFiniteMeasure μ] {p : ENNReal} [hp : Fact (1 ≤ p)] (u : Lp F p μ) {g : E → F}
+    {p : ENNReal} [hp : Fact (1 ≤ p)] (u : Lp F p μ) {g : E → F}
     (hg : LocallyIntegrable g μ)
     (h : ∀ φ : 𝓢(E, ℂ), (u : 𝓢'(E, F)) φ = ∫ x, φ x • g x ∂μ) :
     u =ᵐ[μ] g := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   refine ae_eq_of_integral_contDiff_smul_eq ((Lp.memLp u).locallyIntegrable hp.out) hg
     fun ψ hψ hψc => ?_
   -- A smooth compactly supported real function is a complex Schwartz function.
@@ -240,11 +255,12 @@ The function `g` is the value at `f` of the bounded extension of `φ ↦ M φ` f
 Schwartz functions to `Lᵖ`; it agrees with `T f` because both sides are continuous in `f` with
 values in the Hausdorff space of tempered distributions. -/
 theorem exists_apply_eq_toTemperedDistribution_and_norm_le {μ : Measure E}
-    [μ.HasTemperateGrowth] [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    [μ.HasTemperateGrowth] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp : p ≠ ∞) (T : Lp F p μ →L[ℂ] 𝓢'(E, F)) (M : 𝓢(E, F) →L[ℂ] 𝓢(E, F)) {C : ℝ}
     (hT : ∀ φ : 𝓢(E, F), T (φ.toLp p μ) = ((M φ).toLp p μ : 𝓢'(E, F)))
     (hM : ∀ φ : 𝓢(E, F), ‖(M φ).toLp p μ‖ ≤ C * ‖φ.toLp p μ‖) (f : Lp F p μ) :
     ∃ g : Lp F p μ, T f = g ∧ ‖g‖ ≤ C * ‖f‖ := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   set e : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := (SchwartzMap.toLpCLM ℂ F p μ).toLinearMap
   have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := μ) hp
   set S : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := e ∘ₗ M.toLinearMap
