@@ -32,9 +32,8 @@ contact parameter is the height difference divided by the normal velocity.
 * `LinearMap.eq_div_of_apply_add_smul_eq`: the contact parameter of a transverse line with a
   level hyperplane.
 
-These supply the finite-crossing step for affine segments in the ScatteringDiagrams roadmap,
-§1.2 (generic paths): a segment whose direction is outside the affine direction of a wall meets
-the wall in at most one point.
+In particular, a segment whose direction is outside the affine direction of a wall meets the
+wall in at most one point.
 
 ## Attribution
 
