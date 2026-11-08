@@ -88,8 +88,8 @@ projections and inclusions of one extension and the inclusions and projections o
 * `TauCeti.DGTwistedObject.extension_dgHom_ext`: morphisms out of an extension are determined by
   their composites with the two inclusions.
 * `TauCeti.DGTwistedObject.dgDifferential_neg_dgComp_extensionFst_extensionInr` and
-  `TauCeti.DGTwistedObject.isZero_of_extension`: an extension along an invertible morphism is
-  contractible.
+  `TauCeti.DGTwistedObject.isZero_extension_of_dgComp_eq_dgId`: an extension along an invertible
+  morphism is contractible.
 * `TauCeti.DGTwistedObject.isZero_of_isEmpty`: a twisted object with no summands is a zero object
   of the homotopy category; in particular the homotopy category has a zero object.
 * `TauCeti.DGTwistedObject.extensionHomOfHomotopy_zero`: the zero morphism induces the identity.
@@ -562,7 +562,7 @@ theorem dgComp_extensionInr_extensionSnd :
 
 /-- **An extension is the direct sum of `P` and `Q` as a graded object**: the projections
 followed by the inclusions sum to the identity. -/
-theorem dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr :
+theorem extension_total :
     dgComp R (extensionFst R hg) (extensionInl R hg) (add_zero 0) +
       dgComp R (extensionSnd R hg) (extensionInr R hg) (add_zero 0) = dgId R _ :=
   dgHom_ext' fun a b ↦ by
@@ -588,7 +588,7 @@ theorem extension_dgHom_ext {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : �
       dgComp R (extensionInr R hg) f' (zero_add n)) :
     f = f' := by
   rw [← dgId_dgComp R f, ← dgId_dgComp R f',
-    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg, add_dgComp,
+    ← extension_total R hg, add_dgComp,
     add_dgComp, dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
     dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
     dgComp_assoc R _ _ f' (add_zero 0) (zero_add n) (by omega),
@@ -664,13 +664,13 @@ theorem dgDifferential_neg_dgComp_extensionFst_extensionInr
     dgDifferential_extensionInr, dgDifferential_eq_zero_of_dgComp_eq_dgId R hg _ hgg' hg'g]
   simp only [dgComp_zero, smul_zero, add_zero, neg_dgComp, Int.negOnePow_neg, Int.negOnePow_one,
     Units.neg_smul, one_smul, hsnd, hfst]
-  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  rw [← extension_total R hg]
   abel
 
 /-- **An extension along an invertible morphism is contractible**: if the closed degree-one
 morphism `g : Q ⟶ P` has an inverse of degree `-1`, then the extension of `Q` by `P` along `g` is
 a zero object of the homotopy category. -/
-theorem isZero_of_extension (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
+theorem isZero_extension_of_dgComp_eq_dgId (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
     (hg'g : dgComp R g' g (neg_add_cancel 1) = dgId R P) :
     Limits.IsZero (DGHomotopyCategory.of R (extension P Q g hg)) :=
   (DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries R _).mpr
@@ -727,7 +727,7 @@ theorem extensionHomOfHomotopy_def (k : DGHom R 0 Q P) :
 theorem extensionHomOfHomotopy_zero :
     extensionHomOfHomotopy R hg hg 0 = dgId R (extension P Q g hg) := by
   rw [extensionHomOfHomotopy_def, zero_dgComp, dgComp_zero, add_zero,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+    extension_total]
 
 /-- **The morphism of extensions induced by a homotopy is closed**: if `d k = g - g'`, then the
 differential of `TauCeti.DGTwistedObject.extensionHomOfHomotopy` vanishes. -/
@@ -790,7 +790,7 @@ theorem dgComp_extensionHomOfHomotopy_neg (k : DGHom R 0 Q P) :
     dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc,
     dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc, dgComp_zero,
     add_zero]
-  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  rw [← extension_total R hg]
   abel
 
 variable {hg hg'} in
@@ -885,7 +885,7 @@ theorem extensionMap_def (φ : DGHom R 0 Q Q') :
 @[simp↓]
 theorem extensionMap_dgId : extensionMap R hg hg (dgId R Q) = dgId R (extension P Q g hg) := by
   rw [extensionMap_def, dgId_dgComp,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+    extension_total]
 
 /-- **The morphism of extensions induced by a closed morphism compatible with the gluing morphisms
 is closed**: if `φ : Q ⟶ Q'` is closed and `φ` followed by `g'` is `g`, then the differential of
@@ -1190,7 +1190,7 @@ theorem dgComp_mapExtensionHom_mapExtensionInv :
     dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
     dgComp_extensionInl_mapExtensionInv, dgComp_extensionInr_mapExtensionInv,
     ← dgMap_dgComp, ← dgMap_dgComp, ← map_add,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr,
+    extension_total,
     dgMap_dgId]
 
 /-- The inverse comparison followed by the comparison is the identity of the extension of the
