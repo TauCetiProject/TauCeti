@@ -89,7 +89,7 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
   have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
     (hψ.continuous.pow 2).aestronglyMeasurable
   have hgrad2 : AEStronglyMeasurable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) :=
-    ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable
+    ((ContDiff.continuous_gradient hψ (by simp)).norm.pow 2).aestronglyMeasurable
   have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
     (W1p.integrable_norm_gradient_sq w).bdd_mul hψ2 (c := M ^ 2) (Filter.Eventually.of_forall
       fun x => by
@@ -145,7 +145,7 @@ theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
   have hleft : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2)
       (mu.restrict Omega) :=
     (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul
-      ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := G ^ 2)
+      ((ContDiff.continuous_gradient hψ (by simp)).norm.pow 2).aestronglyMeasurable (c := G ^ 2)
       (Filter.Eventually.of_forall fun x => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
         exact pow_le_pow_left₀ (norm_nonneg _) (hG x) 2)

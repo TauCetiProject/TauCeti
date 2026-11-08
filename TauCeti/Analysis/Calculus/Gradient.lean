@@ -40,10 +40,12 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
-  supported.
+  supported; `HasCompactSupport.mono_of_forall_gradient`: so is any function vanishing where both
+  the function and its gradient vanish.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
-  function is `Cᵐ`; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
+  function is `Cᵐ`, and `ContDiff.continuous_gradient`: that of a `Cⁿ` function with `n ≠ 0` is
+  continuous; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
   `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
   `ContDiffAt.continuousAt_fderiv_gradient` and
   `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
@@ -106,6 +108,14 @@ derivative (`HasCompactSupport.fderiv`). -/
 theorem _root_.HasCompactSupport.gradient (hf : HasCompactSupport f) : HasCompactSupport (∇ f) :=
   hf.mono' fun _ hx ↦ by_contra fun h ↦ hx (gradient_of_notMem_tsupport h)
 
+/-- A function vanishing wherever both `f` and its gradient vanish is compactly supported if `f`
+is. -/
+theorem _root_.HasCompactSupport.mono_of_forall_gradient {M : Type*} [Zero M] {g : F → M}
+    (hf : HasCompactSupport f) (hg : ∀ x, f x = 0 → ∇ f x = 0 → g x = 0) :
+    HasCompactSupport g :=
+  hf.mono' fun y hy ↦ by_contra fun h ↦
+    hy (hg y (image_eq_zero_of_notMem_tsupport h) (gradient_of_notMem_tsupport h))
+
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
 differentiable. -/
@@ -123,6 +133,13 @@ theorem _root_.ContDiff.gradient_right {E : Type*} [NormedAddCommGroup E] [Inner
     [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) (hmn : m + 1 ≤ n) :
     ContDiff ℝ m (∇ f) :=
   (toDual ℝ E).symm.contDiff.comp (hf.fderiv_right hmn)
+
+/-- Over `ℝ`, the gradient of a `Cⁿ` function with `n ≠ 0` is continuous, as is its Fréchet
+derivative (`ContDiff.continuous_fderiv`). -/
+theorem _root_.ContDiff.continuous_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f)
+    (hn : n ≠ 0) : Continuous (∇ f) :=
+  (toDual ℝ E).symm.continuous.comp (hf.continuous_fderiv hn)
 
 /-- Over `ℝ`, the gradient of a compactly supported `C¹` function is in `Lᵖ(μ)` for every
 measure `μ` finite on compact sets, being continuous with compact support. -/
