@@ -55,9 +55,10 @@ theorem norm_cauchyPowerSeries_le_of_bound {f : ℂ → E} {c : ℂ} {R M : ℝ}
 /-- The homogeneous terms of the Cauchy expansion are bounded geometrically on a smaller
 closed disc. The constant in the bound is independent of the evaluation point. -/
 theorem norm_cauchyPowerSeries_apply_le_of_bound {f : ℂ → E} {c w : ℂ} {R r M : ℝ}
-    (hR : 0 < R) (hr : 0 ≤ r)
+    (hR : 0 < R)
     (hf : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) (hw : w ∈ closedBall c r) (n : ℕ) :
     ‖cauchyPowerSeries f c R n (fun _ ↦ w - c)‖ ≤ M * (r / R) ^ n := by
+  have hr : 0 ≤ r := Metric.nonneg_of_mem_closedBall hw
   calc
     ‖cauchyPowerSeries f c R n (fun _ ↦ w - c)‖ ≤
         ‖cauchyPowerSeries f c R n‖ * r ^ n :=
@@ -72,27 +73,30 @@ theorem norm_cauchyPowerSeries_apply_le_of_bound {f : ℂ → E} {c w : ℂ} {R 
 /-- Geometric error bound for the Cauchy expansion on a smaller closed disc. A bound on
 the integration circle gives a common error bound for every point of the smaller disc. -/
 theorem norm_cauchyPowerSeries_partialSum_sub_integral_le {f : ℂ → E} {c : ℂ} {R r M : ℝ}
-    (hr : 0 ≤ r) (hrR : r < R) (hf : CircleIntegrable f c R)
+    (hrR : r < R) (hf : CircleIntegrable f c R)
     (hb : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) {w : ℂ} (hw : w ∈ closedBall c r) (N : ℕ) :
     ‖(∑ n ∈ Finset.range N, cauchyPowerSeries f c R n (fun _ ↦ w - c)) -
       (2 * π * I : ℂ)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • f z‖ ≤
         M * (r / R) ^ N / (1 - r / R) := by
-  have hR : 0 < R := hr.trans_lt hrR
+  have hR : 0 < R := (Metric.nonneg_of_mem_closedBall hw).trans_lt hrR
   apply norm_sub_le_of_geometric_bound_of_hasSum ((div_lt_one hR).2 hrR)
-    (fun n ↦ norm_cauchyPowerSeries_apply_le_of_bound hR hr hb hw n)
+    (fun n ↦ norm_cauchyPowerSeries_apply_le_of_bound hR hb hw n)
   simpa using hasSum_cauchyPowerSeries_integral (w := w - c) hf
     (by simpa only [dist_eq_norm] using (mem_closedBall.1 hw).trans_lt hrR)
 
 /-- Cauchy expansions converge uniformly in both the parameter and the point on every
 smaller closed disc, whenever the functions have a common bound on the integration circle. -/
 theorem tendstoUniformlyOn_cauchyPowerSeries {P : Type*} {S : Set P}
-    {f : P → ℂ → E} {c : ℂ} {R r M : ℝ} (hr : 0 ≤ r) (hrR : r < R)
+    {f : P → ℂ → E} {c : ℂ} {R r M : ℝ} (hrR : r < R)
     (hf : ∀ x ∈ S, CircleIntegrable (f x) c R)
     (hb : ∀ x ∈ S, ∀ z ∈ sphere c R, ‖f x z‖ ≤ M) :
     TendstoUniformlyOn
       (fun N b ↦ ∑ n ∈ Finset.range N, cauchyPowerSeries (f b.1) c R n (fun _ ↦ b.2 - c))
       (fun b ↦ (2 * π * I : ℂ)⁻¹ • ∮ z in C(c, R), (z - b.2)⁻¹ • f b.1 z)
       atTop (S ×ˢ closedBall c r) := by
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [Metric.closedBall_eq_empty.2 hr, Set.prod_empty]
+    exact tendstoUniformlyOn_empty
   have hR : 0 < R := hr.trans_lt hrR
   have ht : Tendsto (fun N : ℕ ↦ M * (r / R) ^ N / (1 - r / R)) atTop (𝓝 0) := by
     simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one (div_nonneg hr hR.le)
@@ -100,22 +104,25 @@ theorem tendstoUniformlyOn_cauchyPowerSeries {P : Type*} {S : Set P}
   refine Metric.tendstoUniformlyOn_iff.2 fun ε hε ↦ ?_
   filter_upwards [(tendsto_order.1 ht).2 ε hε] with N hN b hb'
   rw [dist_eq_norm, norm_sub_rev]
-  exact (norm_cauchyPowerSeries_partialSum_sub_integral_le hr hrR
+  exact (norm_cauchyPowerSeries_partialSum_sub_integral_le hrR
     (hf b.1 hb'.1) (hb b.1 hb'.1) hb'.2 N).trans_lt hN
 
 /-- Joint continuity on a compact parameter set times the integration circle supplies uniform
 convergence of its Cauchy expansions on every smaller closed disc. -/
 theorem _root_.IsCompact.tendstoUniformlyOn_cauchyPowerSeries {P : Type*} [TopologicalSpace P]
     {S : Set P} (hS : IsCompact S) {f : P × ℂ → E} {c : ℂ} {R r : ℝ}
-    (hr : 0 ≤ r) (hrR : r < R) (hf : ContinuousOn f (S ×ˢ sphere c R)) :
+    (hrR : r < R) (hf : ContinuousOn f (S ×ˢ sphere c R)) :
     TendstoUniformlyOn
       (fun N b ↦ ∑ n ∈ Finset.range N,
         cauchyPowerSeries (fun z ↦ f (b.1, z)) c R n (fun _ ↦ b.2 - c))
       (fun b ↦ (2 * π * I : ℂ)⁻¹ • ∮ z in C(c, R), (z - b.2)⁻¹ • f (b.1, z))
       atTop (S ×ˢ closedBall c r) := by
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [Metric.closedBall_eq_empty.2 hr, Set.prod_empty]
+    exact tendstoUniformlyOn_empty
   obtain ⟨M, hM⟩ := (hS.prod (isCompact_sphere c R)).exists_bound_of_continuousOn hf
   refine TauCeti.tendstoUniformlyOn_cauchyPowerSeries
-    (f := fun x z ↦ f (x, z)) hr hrR (M := M) ?_ ?_
+    (f := fun x z ↦ f (x, z)) hrR (M := M) ?_ ?_
   · intro x hx
     exact (hf.comp (continuous_const.prodMk continuous_id).continuousOn
       (fun z hz ↦ ⟨hx, hz⟩)).circleIntegrable (hr.trans_lt hrR).le
@@ -149,12 +156,12 @@ omit [FiniteDimensional ℂ V] in
 on compact parameter sets times smaller closed discs. -/
 theorem _root_.IsCompact.tendstoUniformlyOn_cauchyPowerSeries_of_analyticOnNhd
     {S : Set V} (hS : IsCompact S) {f : V × ℂ → E} {c : ℂ} {R r : ℝ}
-    (hr : 0 ≤ r) (hrR : r < R) (hf : AnalyticOnNhd ℂ f (S ×ˢ closedBall c R)) :
+    (hrR : r < R) (hf : AnalyticOnNhd ℂ f (S ×ˢ closedBall c R)) :
     TendstoUniformlyOn
       (fun N b ↦ ∑ n ∈ Finset.range N,
         cauchyPowerSeries (fun z ↦ f (b.1, z)) c R n (fun _ ↦ b.2 - c))
       f atTop (S ×ˢ closedBall c r) := by
-  refine (hS.tendstoUniformlyOn_cauchyPowerSeries hr hrR
+  refine (hS.tendstoUniformlyOn_cauchyPowerSeries hrR
     (hf.continuousOn.mono (prod_mono subset_rfl sphere_subset_closedBall))).congr_right ?_
   intro b hb
   have hd : DifferentiableOn ℂ (fun z ↦ f (b.1, z)) (closedBall c R) := by
