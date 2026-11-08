@@ -45,15 +45,6 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
 
 ## Main results
 
-* `TauCeti.Huber.isBounded_image_completion_coe_of_isBounded` and
-  `TauCeti.Huber.isPowerBounded_completion_coe_of_isPowerBounded`: boundedness and
-  power-boundedness transfer from `A` to its completion along the canonical map. Both hold for any
-  uniform topological ring.
-* `TauCeti.Huber.isBounded_of_isBounded_image_completion_coe` and
-  `TauCeti.Huber.isPowerBounded_of_isPowerBounded_completion_coe`: the converses, which come back
-  down to `A` because the completion map is inducing.
-* `TauCeti.Huber.isPowerBounded_completion_coe_iff`: the two power-bounded directions together —
-  Wedhorn's Lemma 7.47(1) at the level of elements, that `A⁰` is the preimage of `Â⁰`.
 * `TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero_completion`: the closures of the images of
   the powers `Iⁿ` are a neighbourhood basis of zero in `Â`; `mem_nhds_completion_iff` and
   `exists_coe_sub_mem_completionIdealImage` are its forms at an arbitrary point of `Â`.
@@ -527,86 +518,6 @@ theorem isOpen_map_coeRingHom [IsHuberRing A] {J : Ideal A} (hJ : IsOpen (J : Se
     (H₂ := (J.map (Completion.coeRingHom : A →+* Completion A)).toAddSubgroup)
     (P.completionIdealImage_le_of_image_subset n fun a ha ↦ Ideal.mem_map_of_mem _ (hn ha))
     (P.isOpen_completionIdealImage n)
-
-/-- **The image of a bounded subset of `A` is bounded in `Â`.**
-
-The closure argument follows AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, branch
-`dev/adic-spaces` at `37bbdaeb9`), `projects/AdicSpaces/Adic spaces/LocalizationTopology.lean:545`,
-where it is stated for the rational-localisation completion. No proof was copied. -/
-theorem isBounded_image_completion_coe_of_isBounded {X : Set A}
-    (hX : IsBounded X) : IsBounded (((↑) : A → Completion A) '' X) := by
-  rw [isBounded_iff]
-  intro U hU
-  -- shrink `U` to a closed neighbourhood `C` of `0`, so that closures stay inside `U`
-  obtain ⟨C, hC, hCc, hCU⟩ := exists_mem_nhds_isClosed_subset hU
-  have hcoe0 : ((0 : A) : Completion A) = 0 := Completion.coe_zero
-  obtain ⟨V, hV, hVX⟩ := isBounded_iff.mp hX (((↑) : A → Completion A) ⁻¹' C)
-    (Completion.continuous_coe A |>.continuousAt.preimage_mem_nhds (by rwa [hcoe0]))
-  have hV' := Completion.isDenseInducing_coe.closure_image_mem_nhds hV
-  rw [hcoe0] at hV'
-  refine ⟨_, hV', Set.Subset.trans ?_ hCU⟩
-  rintro _ ⟨y, hy, _, ⟨x, hxX, rfl⟩, rfl⟩
-  -- `· * ↑x` is continuous and carries the image of `V` into the closed set `C`, so it carries
-  -- the closure of the image of `V` into `C`.
-  have hcont : Continuous (fun u : Completion A ↦ u * (x : Completion A)) :=
-    continuous_id.mul continuous_const
-  have hmaps : ((↑) : A → Completion A) '' V ⊆
-      (fun u : Completion A ↦ u * (x : Completion A)) ⁻¹' C := by
-    rintro _ ⟨a, ha, rfl⟩
-    rw [Set.mem_preimage, ← Completion.coe_mul]
-    exact hVX (Set.mul_mem_mul ha hxX)
-  exact closure_minimal hmaps (hCc.preimage hcont) hy
-
-/-- **The converse of `isBounded_image_completion_coe_of_isBounded`.** A set whose image in `Â` is
-bounded was already bounded in `A`. -/
-theorem isBounded_of_isBounded_image_completion_coe {X : Set A}
-    (hX : IsBounded (((↑) : A → Completion A) '' X)) : IsBounded X := by
-  rw [isBounded_iff]
-  intro U hU
-  -- the completion map is inducing, so `U` contains the preimage of a neighbourhood of `0` in `Â`
-  rw [Completion.isDenseInducing_coe.toIsInducing.nhds_eq_comap, Filter.mem_comap] at hU
-  obtain ⟨U', hU', hU'U⟩ := hU
-  rw [Completion.coe_zero] at hU'
-  obtain ⟨V', hV', hV'X⟩ := isBounded_iff.mp hX U' hU'
-  refine ⟨((↑) : A → Completion A) ⁻¹' V',
-    Completion.continuous_coe A |>.continuousAt.preimage_mem_nhds hV', ?_⟩
-  rintro _ ⟨v, hv, x, hx, rfl⟩
-  exact hU'U (by
-    rw [Set.mem_preimage, Completion.coe_mul]
-    exact hV'X (Set.mul_mem_mul hv ⟨x, hx, rfl⟩))
-
-/-- **A power-bounded element of `A` stays power-bounded in `Â`.** -/
-theorem isPowerBounded_completion_coe_of_isPowerBounded {a : A}
-    (ha : IsPowerBounded a) : IsPowerBounded ((a : Completion A)) := by
-  -- the coercion is `⇑Completion.coeRingHom`, so it commutes with powers; stated once here
-  have hcoe : ∀ k : ℕ, ((a : Completion A)) ^ k = ((a ^ k : A) : Completion A) :=
-    fun k ↦ (map_pow Completion.coeRingHom a k).symm
-  have h : Set.range (((a : Completion A)) ^ · : ℕ → Completion A)
-      = ((↑) : A → Completion A) '' Set.range (a ^ · : ℕ → A) := by
-    simpa only [hcoe] using Set.range_comp' (((↑) : A → Completion A)) (a ^ · : ℕ → A)
-  rw [isPowerBounded_iff, h]
-  exact isBounded_image_completion_coe_of_isBounded (isPowerBounded_iff.mp ha)
-
-/-- **The converse of `isPowerBounded_completion_coe_of_isPowerBounded`.** An element of `A` whose
-image in `Â` is power-bounded was already power-bounded. -/
-theorem isPowerBounded_of_isPowerBounded_completion_coe {a : A}
-    (ha : IsPowerBounded ((a : Completion A))) : IsPowerBounded a := by
-  have hcoe : ∀ k : ℕ, ((a : Completion A)) ^ k = ((a ^ k : A) : Completion A) :=
-    fun k ↦ (map_pow Completion.coeRingHom a k).symm
-  have h : Set.range (((a : Completion A)) ^ · : ℕ → Completion A)
-      = ((↑) : A → Completion A) '' Set.range (a ^ · : ℕ → A) := by
-    simpa only [hcoe] using Set.range_comp' (((↑) : A → Completion A)) (a ^ · : ℕ → A)
-  rw [isPowerBounded_iff] at ha ⊢
-  rw [h] at ha
-  exact isBounded_of_isBounded_image_completion_coe ha
-
-/-- **Wedhorn Lemma 7.47(1), at the level of elements: `A⁰` is the preimage of `Â⁰`.** An element of
-`A` is power-bounded exactly when its image in the completion is. -/
-@[simp]
-theorem isPowerBounded_completion_coe_iff {a : A} :
-    IsPowerBounded ((a : Completion A)) ↔ IsPowerBounded a :=
-  ⟨isPowerBounded_of_isPowerBounded_completion_coe,
-    isPowerBounded_completion_coe_of_isPowerBounded⟩
 
 /-- Wedhorn Remark 6.8: the completion of a Huber ring is a Huber ring. -/
 instance IsHuberRing.completion [IsHuberRing A] : IsHuberRing (Completion A) :=
