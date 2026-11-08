@@ -327,7 +327,8 @@ theorem exists_continuousLinearEquiv_cylinder [CompleteSpace F] :
       (v := fun v ↦ v.2)
       ((hΦc v₀.proj).comp (Pullback.continuous_proj F E _).continuousAt)
       (Pullback.continuous_lift F E _).continuousAt (Pullback.continuous_proj F E _).continuousAt
-  · exact ContinuousAt.clm_apply_of_inCoordinates
+  · simp only [Pullback.lift_mk]
+    exact ContinuousAt.clm_apply_of_inCoordinates
       (b₁ := TotalSpace.proj) (b₂ := fun v : TotalSpace F E ↦ (v.proj.1, (0 : I)))
       (ϕ := fun v ↦ ((Φ v.proj).symm : E v.proj →L[𝕜] E (v.proj.1, 0))) (v := fun v ↦ v.2)
       ((hΦi v₀.proj).comp (FiberBundle.continuous_proj F E).continuousAt) continuousAt_id
@@ -372,18 +373,27 @@ private theorem exists_continuousLinearEquiv_pullback_of_eq (G : C(X × I, Y)) {
       Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
         Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
           Pullback.continuous_lift F E _⟩⟩
-    exact (Pullback.continuous_lift F E (G : X × I → Y)).comp (hΦ₁.comp hι)
+    have h := (Pullback.continuous_lift F E (G : X × I → Y)).comp (hΦ₁.comp hι)
+    -- The fibre of `(fun q ↦ (q.1, 0)) *ᵖ (G *ᵖ E)` over `(x, 1)` is `E (G (x, 0))` by definition
+    -- of pullback fibres, so both sides lift the same vectors.
+    simp only [comp_def, Pullback.lift_mk] at h ⊢
+    exact h
   · have hι : Continuous fun v : TotalSpace F ((fun x ↦ G (x, 1)) *ᵖ E) ↦
         (TotalSpace.mk' F (E := (G : X × I → Y) *ᵖ E) (v.proj, 1) v.2) :=
       Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
         Pullback.continuous_lift F E _⟩
-    exact (Pullback.continuous_lift F E (G : X × I → Y)).comp
+    have h := (Pullback.continuous_lift F E (G : X × I → Y)).comp
       ((Pullback.continuous_lift F ((G : X × I → Y) *ᵖ E) _).comp (hΦ₂.comp hι))
+    -- The fibre of `(fun q ↦ (q.1, 0)) *ᵖ (G *ᵖ E)` over `(x, 1)` is `E (G (x, 0))` by definition
+    -- of pullback fibres, so both sides lift the same vectors.
+    simp only [comp_def, Pullback.lift_mk] at h ⊢
+    exact h
 
-/-- **Homotopy invariance of vector bundles.** Over a paracompact Hausdorff space `X`, the
-pullbacks of a vector bundle `E` along homotopic maps `f₀ f₁ : C(X, Y)` are isomorphic: there are
-fibrewise continuous linear equivalences `E (f₀ x) ≃L[𝕜] E (f₁ x)`, continuous on total spaces
-together with their inverses. -/
+/-- **Homotopy invariance of vector bundles.** Over a paracompact R₁ space `X`, for instance a
+paracompact Hausdorff space, the pullbacks of a vector bundle `E` along homotopic maps
+`f₀ f₁ : C(X, Y)` are isomorphic: there are fibrewise continuous linear equivalences
+`E (f₀ x) ≃L[𝕜] E (f₁ x)`, continuous on total spaces together with their inverses. Here `𝕜` is a
+normed `ℝ`-algebra, such as `ℝ` or `ℂ`, and the model fibre `F` may be any Banach space. -/
 theorem _root_.ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback {f₀ f₁ : C(X, Y)}
     (h : f₀.Homotopic f₁) :
     ∃ Φ : ∀ x, E (f₀ x) ≃L[𝕜] E (f₁ x),
