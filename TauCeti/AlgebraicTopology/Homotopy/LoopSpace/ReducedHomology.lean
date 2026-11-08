@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
 
 /-!
@@ -40,10 +40,11 @@ This file proves the degree-zero item. Both the fixed-interval double loop space
 are treated. The statements with integer coefficients take `X : Type`, so that `ℤ`-modules live in
 the universe of the space.
 
+The path components of `Ω²X` and `ΩᴹΩᴹX` are identified with the elements of `π₂(X, x)` by
+`TauCeti.zerothHomotopyDoubleLoopSpaceEquiv` and `TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`.
+
 ## Main definitions
 
-* `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`, `TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`:
-  the path components of `Ω²X` and `ΩᴹΩᴹX` are the elements of `π₂(X, x)`.
 * `TauCeti.doubleLoopSpaceReducedHomology₀Iso`, `TauCeti.MooreLoopSpace.doubleReducedHomology₀Iso`:
   `H~₀(Ω²X; R) ≅ ∐_{a ∈ π₂(X, x), a ≠ 1} R`.
 
@@ -71,65 +72,6 @@ open scoped Topology Topology.Homotopy
 namespace TauCeti
 
 universe w v u
-
-/-! ### Path components of double loop spaces -/
-
-section Components
-
-variable {X : Type w} [TopologicalSpace X]
-
-/-- **The path components of the double loop space are the second homotopy group.** The
-component of a double loop `γ` is sent to the class of `γ` under the loop-space shift. -/
-def zerothHomotopyDoubleLoopSpaceEquiv (x : X) :
-    ZerothHomotopy (Ω (Ω X x) (Path.refl x)) ≃ π_ 2 X x :=
-  zerothHomotopyLoopSpaceEquivFundamentalGroup.trans
-    (pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0)).toEquiv
-
-/-- The component of a double loop `γ` is the image of its homotopy class under the loop-space
-shift. -/
-theorem zerothHomotopyDoubleLoopSpaceEquiv_mk (x : X) (γ : Ω (Ω X x) (Path.refl x)) :
-    zerothHomotopyDoubleLoopSpaceEquiv x (.mk γ) =
-      pathLoopSpaceMulEquiv 0
-        (pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ))) :=
-  congrArg (pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0))
-    (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ)
-
-/-- The component of the constant double loop is the identity of `π₂(X, x)`. -/
-@[simp]
-theorem zerothHomotopyDoubleLoopSpaceEquiv_mk_refl (x : X) :
-    zerothHomotopyDoubleLoopSpaceEquiv x
-        (.mk (Path.refl (Path.refl x) : Ω (Ω X x) (Path.refl x))) = 1 := by
-  rw [zerothHomotopyDoubleLoopSpaceEquiv_mk]
-  -- the class of the constant path is the identity of the fundamental group
-  exact (pi1MulEquivFundamentalGroup.symm.trans
-    (pathLoopSpaceMulEquiv (X := X) (x := x) 0)).map_one
-
-namespace MooreLoopSpace
-
-/-- **The path components of the double Moore loop space are the second homotopy group.** -/
-def zerothHomotopyDoubleEquiv (x : X) :
-    ZerothHomotopy (MooreLoopSpace (MooreLoopSpace X x) 1) ≃ π_ 2 X x :=
-  (zerothHomotopyEquivFundamentalGroup (1 : MooreLoopSpace X x)).trans
-    (pi1MulEquivFundamentalGroup.symm.trans (homotopyGroupMulEquiv x 0)).toEquiv
-
-/-- The component of a double Moore loop `γ` is the image of its class in the fundamental group
-of `ΩᴹX` under the Moore loop-space shift. -/
-theorem zerothHomotopyDoubleEquiv_mk (x : X) (γ : MooreLoopSpace (MooreLoopSpace X x) 1) :
-    zerothHomotopyDoubleEquiv x (.mk γ) =
-      homotopyGroupMulEquiv x 0 (pi1MulEquivFundamentalGroup.symm (fundamentalGroupHom 1 γ)) :=
-  congrArg (pi1MulEquivFundamentalGroup.symm.trans (homotopyGroupMulEquiv x 0))
-    (zerothHomotopyEquivFundamentalGroup_mk γ)
-
-/-- The component of the constant double Moore loop is the identity of `π₂(X, x)`. -/
-@[simp]
-theorem zerothHomotopyDoubleEquiv_mk_one (x : X) :
-    zerothHomotopyDoubleEquiv x (.mk 1) = 1 := by
-  rw [zerothHomotopyDoubleEquiv_mk, (fundamentalGroupHom (1 : MooreLoopSpace X x)).map_one]
-  exact (pi1MulEquivFundamentalGroup.symm.trans (homotopyGroupMulEquiv x 0)).map_one
-
-end MooreLoopSpace
-
-end Components
 
 /-! ### Reduced zeroth homology -/
 
@@ -197,16 +139,6 @@ section Integral
 
 variable {X : Type} [TopologicalSpace X]
 
-/-- A nontrivial element of the index type gives an injective map from `ℤ` into the reduced
-zeroth homology, through a coproduct inclusion. -/
-private theorem exists_injective_of_iso {Y : TopCat.{0}} {ι : Type} {i₀ : ι}
-    (e : (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj Y ≅
-      ∐ fun _ : {i : ι // i ≠ i₀} ↦ ModuleCat.of ℤ ℤ) (i : ι) (hi : i ≠ i₀) :
-    ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj Y,
-      Function.Injective f := by
-  let g := Sigma.ι (fun _ : {i : ι // i ≠ i₀} ↦ ModuleCat.of ℤ ℤ) ⟨i, hi⟩ ≫ e.inv
-  exact ⟨g.hom.toAddMonoidHom, (ModuleCat.mono_iff_injective g).1 inferInstance⟩
-
 /-- **Proposition 5.11 of Barraud--Damian--Humilière--Oancea, case `k = 2`.** If `π₂(X, x)` is
 nontrivial, the reduced zeroth integral homology of the double loop space, the kernel of
 `H₀(Ω²X; ℤ) → H₀(pt; ℤ)`, contains an infinite cyclic subgroup. -/
@@ -214,8 +146,9 @@ theorem exists_injective_doubleLoopSpaceReducedHomology₀ (x : X) [Nontrivial (
     ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
         (TopCat.of (Ω (Ω X x) (Path.refl x))),
       Function.Injective f :=
-  have ⟨a, ha⟩ := exists_ne (1 : π_ 2 X x)
-  exists_injective_of_iso (doubleLoopSpaceReducedHomology₀Iso _ x) a ha
+  have := nonempty_subtype.2 (exists_ne (1 : π_ 2 X x))
+  have ⟨f, hf⟩ := ModuleCat.exists_injective_of_iso_sigma (doubleLoopSpaceReducedHomology₀Iso _ x)
+  ⟨f.toAddMonoidHom, hf⟩
 
 namespace MooreLoopSpace
 
@@ -226,8 +159,9 @@ theorem exists_injective_doubleReducedHomology₀ (x : X) [Nontrivial (π_ 2 X x
     ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1)),
       Function.Injective f :=
-  have ⟨a, ha⟩ := exists_ne (1 : π_ 2 X x)
-  exists_injective_of_iso (doubleReducedHomology₀Iso _ x) a ha
+  have := nonempty_subtype.2 (exists_ne (1 : π_ 2 X x))
+  have ⟨f, hf⟩ := ModuleCat.exists_injective_of_iso_sigma (doubleReducedHomology₀Iso _ x)
+  ⟨f.toAddMonoidHom, hf⟩
 
 end MooreLoopSpace
 

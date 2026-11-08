@@ -53,7 +53,9 @@ basis, so its sign depends on the orientation of that basis.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
-* `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H~₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`.
+* `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H~₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`,
+  with generator `[γ] - [1]` at the integer class of `γ`
+  (`TauCeti.MooreLoopSpace.ι_doubleReducedHomology₀SphereIso_inv_ι`).
 
 ## References
 
@@ -222,6 +224,27 @@ def MooreLoopSpace.doubleReducedHomology₀SphereIso {C : Type*} [Category C]
   reducedSingularHomology₀IsoOfEquiv R
     (Y := TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) 1
     (zerothHomotopyDoubleSphereEquiv b x) (zerothHomotopyDoubleSphereEquiv_mk_one b x)
+
+/-- The generator of `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso` at the integer
+`π₂(S²) ≅ ℤ` assigns to the class of a double Moore loop `γ` is `[γ] - [1]`. -/
+@[reassoc]
+theorem MooreLoopSpace.ι_doubleReducedHomology₀SphereIso_inv_ι {C : Type*} [Category C]
+    [HasCoproducts.{0} C] [Preadditive C] [CategoryWithHomology C] [HasKernels C] (R : C)
+    (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1)
+    (γ : MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)
+    (h : homotopyGroupSphereAddEquiv (n := 0) b x
+      (Additive.ofMul (zerothHomotopyDoubleEquiv x (.mk γ))) ≠ 0) :
+    Sigma.ι (fun _ : {k : ℤ // k ≠ 0} ↦ R) ⟨_, h⟩ ≫
+        (doubleReducedHomology₀SphereIso R b x).inv ≫
+          (reducedSingularHomologyι R 0).app
+            (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) =
+      singularHomology₀Section R
+          (X := TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) γ -
+        singularHomology₀Section R
+          (X := TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) 1 :=
+  ι_reducedSingularHomology₀IsoOfEquiv_inv_ι R
+    (Y := TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) 1 γ
+    (zerothHomotopyDoubleSphereEquiv b x) (zerothHomotopyDoubleSphereEquiv_mk_one b x) h
 
 /-- **The reduced zeroth homology of `ΩᴹΩᴹS²` contains `ℤ`.** For the unit sphere `S²` of a real
 inner product space of dimension three, the kernel of the augmentation

@@ -51,6 +51,8 @@ concatenation in the matching direction.
   the latter for Mathlib's loop space `Ω X x`.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
   `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space.
+* `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
+  `Ω (Ω X x) (Path.refl x)` are the elements of `π₂(X, x)`.
 
 ## References
 
@@ -497,5 +499,31 @@ theorem forall_subsingleton_homotopyGroup_doubleLoopSpace_iff (x : X) :
   (forall_subsingleton_homotopyGroup_loopSpace_iff (Path.refl x)).trans
     (forall_congr' fun n ↦
       (pathLoopSpaceMulEquiv (X := X) (x := x) n).toEquiv.subsingleton_congr)
+
+/-- **The path components of the double loop space are the second homotopy group.** The
+component of a double loop `γ` is sent to the class of `γ` under the loop-space shift. -/
+noncomputable def zerothHomotopyDoubleLoopSpaceEquiv (x : X) :
+    ZerothHomotopy (Ω (Ω X x) (Path.refl x)) ≃ π_ 2 X x :=
+  zerothHomotopyLoopSpaceEquivFundamentalGroup.trans
+    (pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0)).toEquiv
+
+/-- The component of a double loop `γ` is the image of its homotopy class under the loop-space
+shift. -/
+theorem zerothHomotopyDoubleLoopSpaceEquiv_mk (x : X) (γ : Ω (Ω X x) (Path.refl x)) :
+    zerothHomotopyDoubleLoopSpaceEquiv x (.mk γ) =
+      pathLoopSpaceMulEquiv 0
+        (pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ))) :=
+  congrArg (pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0))
+    (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ)
+
+/-- The component of the constant double loop is the identity of `π₂(X, x)`. -/
+@[simp]
+theorem zerothHomotopyDoubleLoopSpaceEquiv_mk_refl (x : X) :
+    zerothHomotopyDoubleLoopSpaceEquiv x
+        (.mk (Path.refl (Path.refl x) : Ω (Ω X x) (Path.refl x))) = 1 := by
+  rw [zerothHomotopyDoubleLoopSpaceEquiv_mk]
+  -- the class of the constant path is the identity of the fundamental group
+  exact (pi1MulEquivFundamentalGroup.symm.trans
+    (pathLoopSpaceMulEquiv (X := X) (x := x) 0)).map_one
 
 end TauCeti
