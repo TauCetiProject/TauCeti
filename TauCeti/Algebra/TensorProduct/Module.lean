@@ -27,9 +27,10 @@ A ground-linear map equivariant for the two factor inclusions is linear over the
 tensor-product algebra. `linearMapOfFactors` packages this criterion, so constructions
 with commuting outer actions can reuse the same extension of linearity.
 
-`BialgebraModule.tensorPairAction` assembles the actions on two modules into an action of
-`H ⊗[R] H`, using Mathlib's `Algebra.lsmul`, `Algebra.TensorProduct.map`, and
-`Module.endTensorEndAlgHom`. This construction requires only an algebra, without a coproduct.
+`BialgebraModule.tensorPairAction` assembles the actions of `A` on `M` and of `B` on `N` into
+an action of `A ⊗[R] B` on `M ⊗[R] N`, using Mathlib's `Algebra.lsmul`,
+`Algebra.TensorProduct.map`, and `Module.endTensorEndAlgHom`. This construction requires only
+algebras, without a coproduct.
 -/
 
 public section
@@ -107,8 +108,7 @@ def linearMapOfFactors (f : M →ₗ[k] N)
   toFun := f
   map_add' := f.map_add
   map_smul' c m := by
-    -- Remove the identity ring homomorphism in the linear-map structure field.
-    change f (c • m) = c • f m
+    rw [RingHom.id_apply]
     induction c using TensorProduct.inductionOn with
     | tmul a b =>
       have h : a ⊗ₜ[k] b = (a ⊗ₜ[k] (1 : B)) * ((1 : A) ⊗ₜ[k] b) := by
@@ -133,36 +133,37 @@ end TauCeti.Algebra.TensorProduct
 
 namespace TauCeti.BialgebraModule
 
-variable (R H M N : Type*) [CommSemiring R]
+variable (R : Type*) {A B : Type*} (M N : Type*) [CommSemiring R]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 section PairAction
 
-variable [Semiring H] [Algebra R H]
-variable [Module H M] [IsScalarTower R H M] [Module H N] [IsScalarTower R H N]
+variable [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+variable [Module A M] [IsScalarTower R A M] [Module B N] [IsScalarTower R B N]
 
-/-- The two factor actions assembled into an action of `H ⊗[R] H`. -/
-noncomputable def tensorPairAction : H ⊗[R] H →ₐ[R] Module.End R (M ⊗[R] N) :=
+/-- The action of `A` on `M` and the action of `B` on `N` assembled into an action of
+`A ⊗[R] B` on `M ⊗[R] N`. -/
+noncomputable def tensorPairAction : A ⊗[R] B →ₐ[R] Module.End R (M ⊗[R] N) :=
   (Module.endTensorEndAlgHom (R := R) (S := R) (A := R)).comp
     (Algebra.TensorProduct.map (Algebra.lsmul R R M) (Algebra.lsmul R R N))
 
 /-- A pure tensor of algebra elements acts on the two factors separately. -/
-@[simp] theorem tensorPairAction_tmul (a b : H) (m : M) (n : N) :
-    tensorPairAction R H M N (a ⊗ₜ[R] b) (m ⊗ₜ[R] n) =
+@[simp] theorem tensorPairAction_tmul (a : A) (b : B) (m : M) (n : N) :
+    tensorPairAction R M N (a ⊗ₜ[R] b) (m ⊗ₜ[R] n) =
       (a • m) ⊗ₜ[R] (b • n) := (rfl)
 
 variable {M' N' : Type*}
-variable [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
-variable [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
+variable [AddCommMonoid M'] [Module R M'] [Module A M'] [IsScalarTower R A M']
+variable [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
 
 variable {M N} in
 /-- Tensor products of intertwiners commute with the separate factor actions. -/
-theorem tensorPairAction_natural (f : M →ₗ[H] M') (g : N →ₗ[H] N')
-    (t : H ⊗[R] H) (x : M ⊗[R] N) :
+theorem tensorPairAction_natural (f : M →ₗ[A] M') (g : N →ₗ[B] N')
+    (t : A ⊗[R] B) (x : M ⊗[R] N) :
     TensorProduct.map (f.restrictScalars R) (g.restrictScalars R)
-        (tensorPairAction R H M N t x) =
-      tensorPairAction R H M' N' t
-        (TensorProduct.map (f.restrictScalars R) (g.restrictScalars R) x) := by
+        (tensorPairAction R M N t x) =
+      tensorPairAction R M' N'
+        t (TensorProduct.map (f.restrictScalars R) (g.restrictScalars R) x) := by
   induction t using TensorProduct.inductionOn with
   | add t u ht hu => simp [ht, hu]
   | tmul a b =>
