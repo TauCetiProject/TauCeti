@@ -1,5 +1,5 @@
 name: pr-build
-run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
+run-name: ${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'self-tested' && !(contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name)) && format('Ignored label event {0}', github.run_id) || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
 # Builds a deterministic integration of immutable PR head H with main B captured once
 # by the existing dispatch. Scope, review and approval remain bound to raw H and its
@@ -22,7 +22,7 @@ run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action 
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   # The merge queue tests a batch (one or more PRs combined onto current main) before it lands. We
   # build the COMBINED merge-group commit exactly as GitHub synthesized it and post the `build`
   # status on it so the queue's required check is satisfied. A combined diff that reaches outside
@@ -50,7 +50,7 @@ concurrency:
   # Bors batch IDs identify one base branch. Incomplete dispatch identities use
   # the run ID so they cannot displace another candidate.
   group: >-
-    pr-build-${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
+    pr-build-${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'self-tested' && !(contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name)) && format('irrelevant-label-{0}', github.run_id) || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
       github.event.client_payload.batch_id && github.event.client_payload.head_sha &&
       github.event.client_payload.base_sha && github.event.client_payload.base_ref &&
       format('bors-staging-{0}-{1}-{2}-{3}-{4}', github.repository_id, github.event.client_payload.batch_id,
@@ -73,15 +73,24 @@ jobs:
   # The existing picker applies class-specific preferences and shared build caps.
   # Merge groups and manual PR requests without an immutable head use cloud pools.
   pick-runner:
+    if: >-
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+      github.event.label.name == 'self-tested' || (contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name))
     uses: ./.github/workflows/pick-runner.yml
     with:
+      pr-number: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.number || github.event_name == 'workflow_dispatch' && fromJSON(inputs.pr) || 0 }}
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
       fleet-pr: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') }}
       pr-head: ${{ github.event.pull_request.head.sha || github.event.client_payload.head_sha || '' }}
     permissions:
+      issues: write
+      statuses: write
+      pull-requests: read
       actions: read
       contents: read  # immutable fleet selector checkout
     secrets:
+      SELF_TESTED_APP_ID: ${{ secrets.APP_ID }}
+      SELF_TESTED_APP_KEY: ${{ secrets.APP_PRIVATE_KEY }}
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
       TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
 
@@ -95,7 +104,7 @@ jobs:
       actions: read
       id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && needs.pick-runner.result != 'skipped' && needs.pick-runner.outputs.skip-pr-build != 'true' }}
     # Exact fleet labels bind placement to one machine and guest. A failed picker
     # or failed-jobs-only rerun queues on GitHub: stale picker output must never
     # send another attempt to an ephemeral guest that has already retired.
@@ -164,14 +173,14 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
+          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@76688a6c293967d60ed0c33a154104f6e8313984
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@cc55ea7cbd272d688189c09230497d6a9f9ff101
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1337,7 +1346,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@76688a6c293967d60ed0c33a154104f6e8313984
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@cc55ea7cbd272d688189c09230497d6a9f9ff101
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1701,14 +1710,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d288926c619a7247c92a1000d44ff9157220ff54
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d288926c619a7247c92a1000d44ff9157220ff54
+          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d288926c619a7247c92a1000d44ff9157220ff54
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@cc55ea7cbd272d688189c09230497d6a9f9ff101
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
