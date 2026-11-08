@@ -23,7 +23,7 @@ and hence uses the corresponding dual coefficient system.
 Continuous maps pull these cochains back to the pullback coefficient system
 (`cochainsPullback` and `cochainComplexPullback`), by evaluation on image simplices.
 Their functoriality laws and the induced maps on cohomology are developed in
-`Cohomology/Twisted/Pullback`.
+`Cohomology/Twisted/Direct/Pullback`.
 
 The construction follows Hatcher, *Algebraic Topology*, Section 3.H. Its transport identities
 come from `Singular/Twisted/Basic`; the differential and its square-zero proof use Mathlib's
@@ -458,13 +458,7 @@ def cochainsPullback : cochains L ⟶ cochains ((pullback f.hom).obj L) where
         (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ))) =
       L.map ((FundamentalGroupoid.map f.hom).map (inv (vertexTransport α.op σ)))
         (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ)))
-    have ht : (FundamentalGroupoid.map f.hom).map (vertexTransport α.op σ) =
-        vertexTransport α.op ((TopCat.toSSet.map f).app _ σ) := by
-      convert map_pathTransport f σ (toTopInitialVertex n)
-        (toTop.map α (toTopInitialVertex m)) using 1
-      simp only [vertexTransport_def]
-      rfl
-    have hi := congrArg (fun γ ↦ L.map (inv γ)) ht
+    have hi := congrArg (fun γ ↦ L.map (inv γ)) (map_vertexTransport f α.op σ)
     rw [← Functor.map_inv] at hi
     exact congrArg (fun φ ↦ φ
       (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ)))) hi.symm

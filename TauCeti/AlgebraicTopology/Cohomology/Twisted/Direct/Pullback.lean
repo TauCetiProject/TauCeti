@@ -55,6 +55,7 @@ lemma cochainsPullback_coefficient_naturality {K : LocalCoefficientSystem.{u, v,
   simp only [NatTrans.comp_app, ModuleCat.comp_apply]
   rw [cochainsPullback_eval, cochainsCoefficientMap_eval, cochainsCoefficientMap_eval,
     cochainsPullback_eval]
+  -- A pullback fibre and its coefficient map are definitionally those at the image vertex.
   rfl
 
 /-- Pullback along the identity is the canonical identification of coefficient systems. -/
@@ -70,6 +71,7 @@ lemma cochainsPullback_id (L : LocalCoefficientSystem.{u, v, w} R X) :
   intro σ
   rw [cochainsPullback_eval, cochainsCoefficientMap_eval]
   simp only [pullbackIdIso_inv_app_app]
+  -- The identity simplex map and the identity on its fibre act definitionally as identities.
   rfl
 
 /-- Pullback along a composite is successive pullback, with its canonical coefficient
@@ -89,6 +91,7 @@ lemma cochainsPullback_comp (g : Y ⟶ Z) (L : LocalCoefficientSystem.{u, v, w} 
   simp only [Functor.comp_obj]
   rw [cochainsCoefficientMap_eval, pullbackCompIso_hom_app_app]
   rw [cochainsPullback_eval f, cochainsPullback_eval g, cochainsPullback_eval (f ≫ g)]
+  -- Composite simplex maps and pullback fibres agree definitionally; the fibre map is identity.
   rfl
 
 /-- Pullback of cochain complexes is natural in the local coefficient system. -/
@@ -97,31 +100,16 @@ lemma cochainComplexPullback_coefficient_naturality
     {K : LocalCoefficientSystem.{u, v, w} R Y} (η : L ⟶ K) :
     cochainComplexCoefficientMap η ≫ cochainComplexPullback f K =
       cochainComplexPullback f L ≫ cochainComplexCoefficientMap ((pullback f.hom).map η) := by
-  apply HomologicalComplex.hom_ext
-  intro n
-  apply ConcreteCategory.hom_ext
-  intro c
-  apply cochainComplex_ext
-  intro σ
-  simp only [HomologicalComplex.comp_f, ModuleCat.comp_apply]
-  rw [cochainComplexPullback_eval, cochainComplexCoefficientMap_eval,
-    cochainComplexCoefficientMap_eval, cochainComplexPullback_eval]
-  rfl
+  simp only [cochainComplexPullback_eq, cochainComplexCoefficientMap_eq, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc,
+    cochainsPullback_coefficient_naturality]
 
 /-- Pullback of cochain complexes along the identity is the canonical coefficient map. -/
 @[simp]
 lemma cochainComplexPullback_id (L : LocalCoefficientSystem.{u, v, w} R X) :
     cochainComplexPullback (𝟙 X) L =
       cochainComplexCoefficientMap ((pullbackIdIso (R := R) X).inv.app L) := by
-  apply HomologicalComplex.hom_ext
-  intro n
-  apply ConcreteCategory.hom_ext
-  intro c
-  apply cochainComplex_ext
-  intro σ
-  rw [cochainComplexPullback_eval, cochainComplexCoefficientMap_eval]
-  simp only [pullbackIdIso_inv_app_app]
-  rfl
+  simp only [cochainComplexPullback_eq, cochainComplexCoefficientMap_eq, cochainsPullback_id]
 
 /-- Pullback of cochain complexes respects composition. -/
 @[reassoc]
@@ -129,18 +117,9 @@ lemma cochainComplexPullback_comp (g : Y ⟶ Z) (L : LocalCoefficientSystem.{u, 
     cochainComplexPullback (f ≫ g) L ≫
         cochainComplexCoefficientMap ((pullbackCompIso f.hom g.hom).hom.app L) =
       cochainComplexPullback g L ≫ cochainComplexPullback f ((pullback g.hom).obj L) := by
-  apply HomologicalComplex.hom_ext
-  intro n
-  apply ConcreteCategory.hom_ext
-  intro c
-  apply cochainComplex_ext
-  intro σ
-  simp only [HomologicalComplex.comp_f, ModuleCat.comp_apply]
-  simp only [Functor.comp_obj]
-  rw [cochainComplexCoefficientMap_eval, pullbackCompIso_hom_app_app]
-  rw [cochainComplexPullback_eval f, cochainComplexPullback_eval g,
-    cochainComplexPullback_eval (f ≫ g)]
-  rfl
+  simp only [cochainComplexPullback_eq, cochainComplexCoefficientMap_eq, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc,
+    cochainsPullback_comp]
 
 /-- Pullback on singular cohomology with values in a local system. -/
 def cohomologyPullback (n : ℕ) : cohomology L n ⟶ cohomology ((pullback f.hom).obj L) n :=
