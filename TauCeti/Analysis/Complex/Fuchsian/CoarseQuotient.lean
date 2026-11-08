@@ -159,7 +159,7 @@ theorem mdifferentiableAt_comp_quotientMk_smul {E' : Type*} [NormedAddCommGroup 
   have heq : (F ∘ Quotient.mk (orbitRel Γ ℍ)) =
       (F ∘ Quotient.mk (orbitRel Γ ℍ)) ∘ (fun τ : ℍ ↦ g⁻¹ • τ) := by
     funext τ
-    exact congrArg F (Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g⁻¹))).symm
+    simp only [Function.comp_apply, orbitRel.Quotient.quotient_smul_eq]
   rw [heq]
   refine MDifferentiableAt.comp (g • z) ?_
     ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g⁻¹).mdifferentiable (by simp) (g • z))
