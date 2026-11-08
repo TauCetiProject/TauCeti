@@ -270,6 +270,16 @@ section FiniteDimensional
 def IsMinimal (_R : CartanRealization A H) : Prop :=
   FiniteDimensional K H ∧ finrank K H = 2 * Fintype.card I - A.rank
 
+/-- A minimal realization is finite-dimensional. -/
+theorem IsMinimal.finiteDimensional {R : CartanRealization A H} (hR : R.IsMinimal) :
+    FiniteDimensional K H :=
+  hR.1
+
+/-- A minimal realization has dimension twice the number of nodes minus the matrix rank. -/
+theorem IsMinimal.finrank_eq {R : CartanRealization A H} (hR : R.IsMinimal) :
+    finrank K H = 2 * Fintype.card I - A.rank :=
+  hR.2
+
 variable [FiniteDimensional K H]
 
 omit [Fintype I] in
