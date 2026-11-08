@@ -152,7 +152,7 @@ theorem isNoetherianRing_iff_forall_isClosed :
 section ModuleFinite
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A]
-  [(𝓤 A).IsCountablyGenerated] [T0Space A] [NonarchimedeanRing A] [IsTateRing A]
+  [T0Space A] [NonarchimedeanRing A] [IsTateRing A]
   [IsNoetherianRing A]
   {M : Type*} [AddCommGroup M] [Module A M] [Module.Finite A M] [TopologicalSpace M]
   [IsModuleTopology A M]
@@ -178,6 +178,7 @@ theorem IsTateRing.exists_presentation_isStrictMap_isOpenMap :
     ∃ (n m : ℕ) (u : (Fin n → A) →ₗ[A] (Fin m → A)) (p : (Fin m → A) →ₗ[A] M),
       Continuous u ∧ Continuous p ∧ Function.Surjective p ∧ Function.Exact u p ∧
         Topology.IsStrictMap u ∧ IsOpenMap p := by
+  have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have := Module.finitePresentation_of_finite A M
   have := IsModuleTopology.toContinuousAdd A M
   obtain ⟨m, n, p, u, hsurj, hexact⟩ := Module.FinitePresentation.exists_fin' A M
