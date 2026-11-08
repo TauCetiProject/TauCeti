@@ -88,7 +88,7 @@ noncomputable def shiftedModuleComplexAct {a : A} (ha : a ∈ 𝒜 0) (hda : d a
       LinearMap.neg_apply, map_neg, Submodule.coe_neg]
     rw [shiftedModuleComplexXEquiv_shiftedModuleComplexActX, shiftedModuleComplexXEquiv_d,
       shiftedModuleComplexXEquiv_d, shiftedModuleComplexXEquiv_shiftedModuleComplexActX]
-    exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) i α).2).symm
+    exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) i α).1).symm
 
 /-- The components of `shiftedModuleComplexAct` are the linear maps `shiftedModuleComplexActX`. -/
 @[simp]
@@ -159,7 +159,7 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
   have hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n' (n' + 1)).hom
       ((shiftedModuleComplexXEquiv hM q n').symm ⟨_, hmem⟩) = 0 := by
     rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, hβ]
-    have h := hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) n α).2
+    have h := hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) n α).1
     rw [(shiftedModuleComplexXEquiv_d_eq_zero_iff hM (q + 1) n α).1 hα, map_zero,
       smul_zero] at h
     exact neg_eq_zero.1 h.symm
