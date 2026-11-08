@@ -42,7 +42,8 @@ theorem units_map_quotient_factor_surjective {I J : Ideal R} (h : J ≤ I) (hJ :
   let s := (UniqueFactorizationMonoid.factors J).toFinset.filter fun P => ¬I ≤ P
   let B : Ideal R := ∏ P ∈ s, P
   have hmax (P : Ideal R) (hP : P ∈ UniqueFactorizationMonoid.factors J) : P.IsMaximal :=
-    Ideal.isMaximal_of_mem_factors hP
+    Ideal.isMaximal_of_mem_normalizedFactors
+      (by simpa only [UniqueFactorizationMonoid.factors_eq_normalizedFactors] using hP)
   have hIB : I ⊔ B = ⊤ := by
     apply Ideal.sup_prod_eq_top
     intro P hP
