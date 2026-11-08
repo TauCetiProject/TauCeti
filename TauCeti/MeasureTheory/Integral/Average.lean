@@ -88,6 +88,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 * `TauCeti.enorm_setAverage_sub_le_setLAverage`: on a set of finite positive measure, the average
   differs from a constant `c` by at most the average of `‖f - c‖ₑ`, with no integrability
   assumption.
+* `TauCeti.setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage`,
+  `TauCeti.setLAverage_setLAverage_enorm_sub_le`: the mean oscillation of `f` on `s` and the
+  average of `‖f x - f y‖ₑ` over pairs of points of `s` agree up to a factor `2`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add` and
@@ -459,6 +462,46 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
   exact ENNReal.toReal_mono
     (ENNReal.mul_ne_top (ENNReal.div_ne_top ht hs) (setLAverage_lt_top hfc.2.ne).ne)
     (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst).1 c)
+
+/-- The mean oscillation of `f` on `s` is at most the average of `‖f x - f y‖ₑ` over pairs of
+points of `s`. No integrability is assumed. -/
+theorem setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage
+    (hf : AEStronglyMeasurable f (μ.restrict s)) :
+    ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ ≤ ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ⊤ with htop | htop
+  · simp [setLAverage_eq, htop]
+  refine setLAverage_mono_ae s (ae_of_all _ fun x => ?_)
+  dsimp only
+  rw [enorm_sub_rev, laverage_congr (ae_of_all _ fun y => enorm_sub_rev (f x) (f y))]
+  exact enorm_setAverage_sub_le_setLAverage hf h0 htop (f x)
+
+omit [CompleteSpace F] in
+/-- The average of `‖f x - f y‖ₑ` over pairs of points of `s` is at most twice the mean
+oscillation of `f` on `s`. -/
+theorem setLAverage_setLAverage_enorm_sub_le :
+    ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ ≤ 2 * ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ := by
+  set m := ⨍ y in s, f y ∂μ
+  set A := ⨍⁻ x in s, ‖f x - m‖ₑ ∂μ with hA
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ⊤ with htop | htop
+  · simp [setLAverage_eq, htop]
+  have hadd (c : ℝ≥0∞) : ⨍⁻ x in s, (c + ‖f x - m‖ₑ) ∂μ = c + A := by
+    rw [setLAverage_eq, lintegral_add_left' aemeasurable_const, setLIntegral_const,
+      ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, hA, setLAverage_eq]
+  calc ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ
+      ≤ ⨍⁻ x in s, (‖f x - m‖ₑ + A) ∂μ := by
+        refine setLAverage_mono_ae s (ae_of_all _ fun x => ?_)
+        dsimp only
+        rw [← hadd]
+        refine setLAverage_mono_ae s (ae_of_all _ fun y => ?_)
+        dsimp only
+        rw [← sub_sub_sub_cancel_right (f x) (f y) m]
+        exact enorm_sub_le
+    _ = A + A := by simp_rw [add_comm _ A, hadd]
+    _ = 2 * A := (two_mul A).symm
 
 /-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
 most four times its square mean oscillation about any constant `c`:
