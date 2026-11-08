@@ -18,9 +18,10 @@ versions are provided.
 This uses `MeasureTheory.Measure.absolutelyContinuous_isHaarMeasure` for the pushforward,
 which is again a Haar measure.
 
-A finite Haar measure lives on a compact group, where every left-invariant measure is a multiple
-of it (`MeasureTheory.Measure.isMulInvariant_eq_smul_of_compactSpace`). Hence it is determined by
-its total mass, and it is also right-invariant and inversion-invariant.
+A finite Haar measure lives on a compact group, where every finite left-invariant measure is a
+multiple of it (`MeasureTheory.Measure.isMulInvariant_eq_smul_of_compactSpace`). Hence it is
+determined by its total mass among left-invariant measures, and it is also right-invariant and
+inversion-invariant.
 
 ## Main results
 
