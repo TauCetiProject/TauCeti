@@ -221,10 +221,10 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_wronskian (hV : IsJacobiFieldOn I γ V 
         inner ℝ (V r) (alongCurveWithin (leviCivitaConnection I M) γ W s r)) 0 s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := hV.isGeodesicCurveOn.mdifferentiableOn t ht
-  have h₁ := hm.hasDerivWithinAt_inner_alongCurveWithin (hV.uniqueDiffOn t ht) hγ
+  have h₁ := hm.hasDerivWithinAt_inner_alongCurveWithin hγ
     (hV.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
     (hW.differentiableWithinAt_sectionCoord ht)
-  have h₂ := hm.hasDerivWithinAt_inner_alongCurveWithin (hV.uniqueDiffOn t ht) hγ
+  have h₂ := hm.hasDerivWithinAt_inner_alongCurveWithin hγ
     (hV.differentiableWithinAt_sectionCoord ht)
     (hW.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
   have hcurv : inner ℝ
