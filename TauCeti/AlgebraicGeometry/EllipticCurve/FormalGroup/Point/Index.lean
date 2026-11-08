@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Filtration
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Local
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
 
 /-!
 # Indices of the formal filtration in the local point group
@@ -53,7 +52,7 @@ local notation "R_u" =>
   Valuation.valuationSubring
     (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
 
-local instance isLinearTopology_index : IsLinearTopology O_u O_u :=
+local instance : IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
 
 private local instance fact_isAdic_index : Fact (IsAdic m_u) :=
@@ -121,30 +120,6 @@ theorem relIndex_formalPointFiltration {j : ℕ} (hj : j ≠ 0) (k : ℕ) :
     TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add]
 
 open scoped Classical in
-/-- The reduction exact sequence computes the index of `E₁` in the whole point group. This
-holds for any integral equation, including one with bad or nonminimal reduction. -/
-theorem index_kerReduction :
-    (C.kerReduction u).index =
-      Nat.card ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point *
-        ((C.baseChange F_u).toAffine.nonsingularReduction Valued.v).index := by
-  have : IsIntegral O_u (C.baseChange F_u) := ⟨C, rfl⟩
-  have : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
-  let W := (C.baseChange F_u).toAffine
-  have hle : C.kerReduction u ≤ W.nonsingularReduction Valued.v := by
-    intro P hP
-    rw [Affine.mem_nonsingularReduction_iff, C.mem_kerReduction_iff u |>.mp hP,
-      Projective.nonsingularLift_iff]
-    exact Projective.nonsingular_zero
-  have hker : (C.kerReduction u).addSubgroupOf (W.nonsingularReduction Valued.v) =
-      (W.nonsingularReductionHom Valued.v).ker := by
-    ext P
-    rw [AddSubgroup.mem_addSubgroupOf, Affine.mem_ker_nonsingularReductionHom_iff,
-      C.mem_kerReduction_iff u, Affine.Point.reduction_eq_zero_iff]
-  rw [← AddSubgroup.relIndex_mul_index hle, AddSubgroup.relIndex, hker,
-    AddSubgroup.index_ker, AddMonoidHom.range_eq_top.mpr
-      (Affine.nonsingularReductionHom_surjective Valued.v), AddSubgroup.card_top]
-
-open scoped Classical in
 /-- Each step beyond `E₁` contributes one residue-field factor to the index. -/
 theorem index_formalPointFiltration_eq_mul_index_kerReduction (k : ℕ) :
     (C.formalPointFiltration u (k + 1)).index =
@@ -167,7 +142,7 @@ theorem index_formalPointFiltration (k : ℕ) :
 open scoped Classical in
 /-- On a minimal equation the component-group factor in the formal-level index is the
 local Tamagawa number. -/
-theorem index_formalPointFiltration_eq_tamagawaNumber [IsMinimal O_u (C.baseChange F_u)]
+theorem index_formalPointFiltration_eq_mul_tamagawaNumber [IsMinimal O_u (C.baseChange F_u)]
     (k : ℕ) :
     (C.formalPointFiltration u (k + 1)).index =
       Nat.card (ResidueField O_u) ^ k *
