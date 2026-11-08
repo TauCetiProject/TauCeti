@@ -15,6 +15,10 @@ import Mathlib.Topology.Instances.Real.Lemmas
 For a continuous injection on a compact set, a uniform lower distance bound for nearby pairs
 extends to all pairs. Away from the diagonal, compactness and injectivity supply the missing
 positive lower bound. This lets local differential estimates give quantitative embeddings.
+
+We also show that a map `x ↦ (f x, g x)` is antilipschitz, and uniformly inducing when `f` and
+`g` are uniformly continuous, on a set where `dist x y` is bounded by a combination of
+`dist (f x) (f y)` and `dist (g x) (g y)`.
 -/
 
 public section
@@ -65,3 +69,38 @@ theorem exists_antilipschitzWith_of_locally
       ((le_div_iff₀ (hδ.trans_le (le_of_not_gt hxy))).mp h)
 
 end IsCompact
+
+namespace AntilipschitzWith
+
+/-- If distances in `X` are controlled on a set `N` by the distances of the images under `f` and
+`g`, then `x ↦ (f x, g x)` is antilipschitz on `N`, with constant `A + B`. -/
+theorem domRestrict_prodMk_of_dist_le {X Y Z : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] [PseudoMetricSpace Z] {N : Set X} {f : X → Y} {g : X → Z} {A B : ℝ}
+    (hA : 0 ≤ A) (hB : 0 ≤ B)
+    (h : ∀ x ∈ N, ∀ y ∈ N, dist x y ≤ A * dist (f x) (f y) + B * dist (g x) (g y)) :
+    AntilipschitzWith (.mk (A + B) (add_nonneg hA hB)) fun x : N => (f (x : X), g (x : X)) := by
+  refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
+  have hf : dist (f (x : X)) (f (y : X)) ≤ dist (f (x : X), g (x : X)) (f (y : X), g (y : X)) :=
+    le_max_left _ _
+  have hg : dist (g (x : X)) (g (y : X)) ≤ dist (f (x : X), g (x : X)) (f (y : X), g (y : X)) :=
+    le_max_right _ _
+  rw [Subtype.dist_eq, NNReal.coe_mk]
+  nlinarith [h (x : X) x.2 (y : X) y.2, mul_le_mul_of_nonneg_left hf hA,
+    mul_le_mul_of_nonneg_left hg hB]
+
+end AntilipschitzWith
+
+namespace IsUniformInducing
+
+/-- If distances in `X` are controlled on a set `N` by the distances of the images under `f` and
+`g`, and `f` and `g` are uniformly continuous on `N`, then `x ↦ (f x, g x)` is a uniform inducing
+map on `N`. -/
+theorem domRestrict_prodMk_of_dist_le {X Y Z : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] [PseudoMetricSpace Z] {N : Set X} {f : X → Y} {g : X → Z} {A B : ℝ}
+    (hA : 0 ≤ A) (hB : 0 ≤ B)
+    (h : ∀ x ∈ N, ∀ y ∈ N, dist x y ≤ A * dist (f x) (f y) + B * dist (g x) (g y))
+    (hf : UniformContinuous (N.domRestrict f)) (hg : UniformContinuous (N.domRestrict g)) :
+    IsUniformInducing fun x : N => (f (x : X), g (x : X)) :=
+  (AntilipschitzWith.domRestrict_prodMk_of_dist_le hA hB h).isUniformInducing (hf.prodMk hg)
+
+end IsUniformInducing

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 public import TauCeti.Analysis.Normed.Operator.ClosedRange
+import TauCeti.Topology.MetricSpace.Antilipschitz
 
 /-!
 # A map with upper semi-Fredholm derivative is proper near the point
@@ -69,28 +70,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpac
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 variable {f : E → F} {f' : E →L[𝕜] F} {a : E}
 
-omit [CompleteSpace E] [CompleteSpace F] [ProperSpace 𝕜] [NormedSpace 𝕜 F] in
-/-- On a set `N` where `‖x - y‖` is controlled by `‖f x - f y‖` and `‖Q x - Q y‖`, the map
-`x ↦ (f x, Q x)` into `F × K` is a uniform inducing map, when `f` is uniformly continuous on `N`
-and `Q` is a continuous linear map into a normed space `K`. -/
-private theorem isUniformInducing_restrict_prodMk {N : Set E} {K : Type*} [NormedAddCommGroup K]
-    [NormedSpace 𝕜 K] {C : ℝ} (hC : 0 ≤ C) (hfu : UniformContinuous (N.domRestrict f))
-    (Q : E →L[𝕜] K)
-    (key : ∀ x ∈ N, ∀ y ∈ N, ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖Q x - Q y‖) :
-    IsUniformInducing fun x : N => (f (x : E), Q (x : E)) := by
-  set Θ : N → F × K := fun x => (f (x : E), Q (x : E))
-  have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
-    refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
-    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
-      simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
-    have hQ : ‖Q (x : E) - Q (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
-      simpa only [Prod.snd_sub, Θ] using norm_snd_le (Θ x - Θ y)
-    have hfC := mul_le_mul_of_nonneg_left hf hC
-    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
-    nlinarith [key (x : E) x.2 (y : E) y.2]
-  exact hanti.isUniformInducing <| hfu.prodMk
-    (Q.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
-
 /-- **Local properness of a map with upper semi-Fredholm derivative.** If `f` is strictly
 differentiable at `a` and its derivative there has closed range and finite-dimensional
 complemented kernel, then `f` is proper on a neighbourhood `N` of `a`: the part of the preimage of
@@ -145,8 +124,12 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     (Pker.lipschitzWith.isBounded_image Metric.isBounded_closedBall).isCompact_closure
   have hPN : ∀ x ∈ N, Pker x ∈ Kp := fun x hx => subset_closure ⟨x, hx, rfl⟩
   -- the anti-Lipschitz coordinate on `N`
-  have hind := isUniformInducing_restrict_prodMk hC.le
-    happN.lipschitzWith.uniformContinuous Pker key
+  have hind : IsUniformInducing fun x : N => (f (x : E), Pker (x : E)) :=
+    IsUniformInducing.domRestrict_prodMk_of_dist_le (mul_nonneg zero_le_two hC.le) zero_le_two
+      (fun x hx y hy ↦ by
+        simpa only [dist_eq_norm, mul_assoc] using key x hx y hy)
+      happN.lipschitzWith.uniformContinuous
+      (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
   -- total boundedness, then compactness
   have htb : TotallyBounded
       ((Subtype.val : N → E) '' (Subtype.val : N → E) ⁻¹' (f ⁻¹' L)) := by
