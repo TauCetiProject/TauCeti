@@ -14,7 +14,6 @@ import TauCeti.Topology.CWComplex.Classical.CellularApproximation
 import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 import TauCeti.Topology.Homotopy.Extension.CWComplex
 import TauCeti.Topology.Homotopy.Extension.Pushout
-import TauCeti.Topology.Homotopy.Sigma
 
 /-!
 # CW models of cell attachments
@@ -31,17 +30,17 @@ of the disks (`TauCeti.sigmaDiskAdjunctionCWComplex_map_inr`). The image of `W` 
 made of the cells of `W` (`TauCeti.sigmaDiskAdjunctionSubcomplex`).
 
 Every map of a sphere into a CW complex can be moved into the required skeleton by a homotopy
-(`TauCeti.exists_homotopic_mapsTo_skeletonLT_diskBoundary`), by cellular approximation for the
-CW structure of the sphere with one `0`-cell and one top cell. Since attaching along homotopic
+(`ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary`), by cellular approximation for
+the CW structure of the sphere with one `0`-cell and one top cell. Since attaching along homotopic
 maps, or to homotopy equivalent spaces, does not change the homotopy type, this gives CW models of
 cell attachments: if `h : W ≃ₕ Z` is a homotopy equivalence from a CW complex to a space `Z`, and
 `a i : ∂Dⁿⁱ → Z` are attaching maps, then there are attaching maps `b i` into the skeleta of `W`,
 with `h ∘ b i` homotopic to `a i`, and a homotopy equivalence `W ∪_b ⨆ᵢ Dⁿⁱ ≃ₕ Z ∪_a ⨆ᵢ Dⁿⁱ`
-which is `h` on `W` (`TauCeti.exists_homotopyEquiv_sigmaDiskAdjunction`). So the attachment
-`Z ∪_a ⨆ᵢ Dⁿⁱ` has a CW model whose cells are the cells of the given model of `Z`, with their
-characteristic maps, and one new `n i`-cell for each `i`. Iterating this is how a space built by
-successive cell attachments, such as the sublevels of a Morse function across their critical
-levels, receives a CW model.
+which is `h` on `W` (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunction`). So
+the attachment `Z ∪_a ⨆ᵢ Dⁿⁱ` has a CW model whose cells are the cells of the given model of `Z`,
+with their characteristic maps, and one new `n i`-cell for each `i`. Iterating this is how a space
+built by successive cell attachments, such as the sublevels of a Morse function across their
+critical levels, receives a CW model.
 
 The CW structure is the composite (`TauCeti.relCWComplexTrans`) of the relative CW structure of the
 attachment over `W` (`TauCeti.relativeCWPushout`) with the CW structure of `W`, carried to the
@@ -60,9 +59,10 @@ homotopy `h ∘ b ≃ a` (`CategoryTheory.IsPushout.exists_homotopicRel_id_of_ho
 
 ## Main results
 
-* `TauCeti.exists_homotopic_mapsTo_skeletonLT_diskBoundary`: a map of `∂Dᵐ` into a CW complex is
-  homotopic to a map into `skeletonLT W m`.
-* `TauCeti.exists_homotopyEquiv_sigmaDiskAdjunction`: **CW models of cell attachments.**
+* `ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary`: a map of `∂Dᵐ` into a CW
+  complex is homotopic to a map into `skeletonLT W m`.
+* `ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunction`: **CW models of cell
+  attachments.**
 
 ## References
 
@@ -89,7 +89,7 @@ variable {W : Type u} [TopologicalSpace W] [T2Space W] [CWComplex (univ : Set W)
 /-- **Cellular approximation of a map of a sphere.** Every map of the boundary sphere `∂Dᵐ` of the
 `m`-disk into a CW complex `W` is homotopic to a map into the skeleton `skeletonLT W m`, the union
 of the cells of `W` of dimension less than `m`. -/
-theorem exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
+theorem _root_.ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
     (f : C(TopCat.diskBoundary.{u} m, W)) :
     ∃ g : C(TopCat.diskBoundary.{u} m, W), f.Homotopic g ∧
       ∀ x, g x ∈ (skeletonLT (univ : Set W) m : Set W) := by
@@ -330,30 +330,14 @@ theorem sigmaDiskAdjunctionSubcomplex_I (m : ℕ) :
 
 variable {n} {Z : Type u} [TopologicalSpace Z]
 
-/-- The inclusion of the boundary spheres into the disjoint union of disks is an embedding whose
-image has the homotopy extension property. -/
-private theorem isEmbedding_relCWBaseInclusion_sigmaDisk :
-    letI := sigmaDiskRelCWComplex n
-    IsEmbedding (relCWBaseInclusion
-      (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))) ∧
-    HasHomotopyExtensionProperty (range (relCWBaseInclusion
-      (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))))) := by
-  let := sigmaDiskRelCWComplex n
-  refine ⟨IsEmbedding.inclusion base_subset_complex, ?_⟩
-  have hr : range (relCWBaseInclusion (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))) =
-      Subtype.val ⁻¹' (univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) :=
-    range_inclusion base_subset_complex
-  rw [hr]
-  exact hasHomotopyExtensionProperty_base
-
 /-- **CW models of cell attachments.** Let `h : W ≃ₕ Z` be a homotopy equivalence from a CW complex
 `W` to a space `Z`, and let `a i : ∂Dⁿⁱ → Z` be attaching maps of disks. Then there are attaching
 maps `b i : ∂Dⁿⁱ → W` into the skeleta `skeletonLT W (n i)`, with `h ∘ b i` homotopic to `a i`, and
 a homotopy equivalence `W ∪_b ⨆ᵢ Dⁿⁱ ≃ₕ Z ∪_a ⨆ᵢ Dⁿⁱ` which is `h` on `W`. By the first property
 `W ∪_b ⨆ᵢ Dⁿⁱ` is a CW complex whose cells are those of `W` and one new `n i`-cell for each `i`
 (`TauCeti.sigmaDiskAdjunctionCWComplex`). -/
-theorem exists_homotopyEquiv_sigmaDiskAdjunction (h : W ≃ₕ Z)
-    (a : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)) :
+theorem _root_.ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunction
+    (h : W ≃ₕ Z) (a : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)) :
     letI := sigmaDiskRelCWComplex n
     ∃ (b : ∀ i, C(TopCat.diskBoundary.{u} (n i), W)),
       (∀ i x, b i x ∈ (skeletonLT (univ : Set W) (n i) : Set W)) ∧
@@ -372,12 +356,13 @@ theorem exists_homotopyEquiv_sigmaDiskAdjunction (h : W ≃ₕ Z)
   set C := univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))
   -- Move the attaching maps `h⁻¹ ∘ a i` into the skeleta of `W`.
   choose b hgb hb using fun i ↦
-    exists_homotopic_mapsTo_skeletonLT_diskBoundary (h.invFun.comp (a i))
+    (h.invFun.comp (a i)).exists_homotopic_mapsTo_skeletonLT_diskBoundary
   have hhb (i : ι) : (h.toFun.comp (b i)).Homotopic (a i) :=
     ((ContinuousMap.Homotopic.refl h.toFun).comp (hgb i)).symm.trans
       (h.right_inv.comp (ContinuousMap.Homotopic.refl (a i)))
   refine ⟨b, hb, hhb, ?_⟩
-  obtain ⟨hi, hA⟩ := isEmbedding_relCWBaseInclusion_sigmaDisk (n := n)
+  have hi := isEmbedding_relCWBaseInclusion C
+  have hA := hasHomotopyExtensionProperty_range_relCWBaseInclusion C
   let i₀ := relCWBaseInclusion C
   let ab := TopCat.ofHom (sigmaDiskAttachingMap b)
   let f := TopCat.ofHom h.toFun
@@ -396,7 +381,7 @@ theorem exists_homotopyEquiv_sigmaDiskAdjunction (h : W ≃ₕ Z)
   -- the boundary spheres.
   have hK : (ab ≫ f).hom.Homotopic (TopCat.ofHom (sigmaDiskAttachingMap a)).hom := by
     rw [TopCat.hom_comp, TopCat.hom_ofHom, TopCat.hom_ofHom, TopCat.hom_ofHom,
-      ← sigmaDiskAttachingMap_comp]
+      ← ContinuousMap.sigmaDiskAttachingMap_comp]
     exact homotopic_sigmaDiskAttachingMap hhb
   obtain ⟨φ, ψ, hφ, -, hφψ, hψφ⟩ := hP'.exists_homotopicRel_id_of_homotopy
     (IsPushout.of_hasPushout i₀ (TopCat.ofHom (sigmaDiskAttachingMap a))) hi hA hK.some

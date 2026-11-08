@@ -329,8 +329,8 @@ theorem sigmaDiskAttachingMap_apply (a : ∀ i, C(TopCat.diskBoundary.{u} (n i),
   simp [sigmaDiskAttachingMap]
 
 /-- Following the attaching maps `a i` by a map `f` follows their combined attaching map by `f`. -/
-theorem sigmaDiskAttachingMap_comp {Z' : Type*} [TopologicalSpace Z'] (f : C(Z, Z'))
-    (a : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)) :
+theorem _root_.ContinuousMap.sigmaDiskAttachingMap_comp {Z' : Type*} [TopologicalSpace Z']
+    (f : C(Z, Z')) (a : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)) :
     sigmaDiskAttachingMap (fun i ↦ f.comp (a i)) = f.comp (sigmaDiskAttachingMap a) :=
   (rfl)
 
