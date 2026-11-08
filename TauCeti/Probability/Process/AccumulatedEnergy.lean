@@ -17,12 +17,11 @@ filtration. Under an atomless time measure its extended-valued paths are left-co
 hence predictable. Neither local finiteness of the integral nor usual conditions on the
 filtration are required.
 
-For a predictable real process `H`, this makes the set where its accumulated square energy
-is finite predictable. Cutting `H` off on the complement therefore preserves predictability,
-and changes no values up to a horizon with finite square energy. The lower integral retains
-infinite energy instead of the fallback zero of a nonintegrable Bochner integral. This is the
-measurability step needed before constructing energy-level stopping times; no continuity of
-the repaired energy clock or stochastic-integral construction is asserted here.
+For a predictable process `H` valued in a normed additive commutative group, this makes the
+set where its accumulated square energy is finite predictable. Cutting `H` off on the complement
+therefore preserves predictability, and changes no values up to a horizon with finite square
+energy. The lower integral retains infinite energy instead of the fallback zero of a
+nonintegrable Bochner integral.
 
 The results allow any s-finite atomless time measure; for Brownian integration use
 Lebesgue measure pulled back from `ℝ` to `ℝ≥0`. The closed initial segment can be replaced
@@ -43,18 +42,18 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-variable {Ω : Type*}
+variable {Ω E : Type*} [NormedAddCommGroup E]
 
 /-- Square energy accumulated up to time `t`, retaining infinite energy as an extended value.
 Under an atomless time measure the time-zero contribution vanishes. -/
-def accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) : ℝ≥0∞ :=
+def accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (t : ℝ≥0) (ω : Ω) : ℝ≥0∞ :=
   ∫⁻ s in Iic t, ‖H s ω‖ₑ ^ 2 ∂μ
 
-theorem accumulatedEnergy_def (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → ℝ) :
+theorem accumulatedEnergy_def (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) :
     accumulatedEnergy μ H = fun t ω ↦ ∫⁻ s in Iic t, ‖H s ω‖ₑ ^ 2 ∂μ := (rfl)
 
 /-- Accumulated square energy is nondecreasing on every path. -/
-theorem monotone_accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → ℝ) (ω : Ω) :
+theorem monotone_accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (ω : Ω) :
     Monotone (fun t ↦ accumulatedEnergy μ H t ω) := by
   intro s t hst
   exact lintegral_mono_set (Iic_subset_Iic.mpr hst)
@@ -62,7 +61,7 @@ theorem monotone_accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω �
 /-- Accumulated energy has left-continuous extended-valued paths for an atomless time
 measure, whether or not those paths remain finite. -/
 theorem isLeftContinuous_accumulatedEnergy (μ : Measure ℝ≥0) [NullSingletonClass μ]
-    (H : ℝ≥0 → Ω → ℝ) (ω : Ω) :
+    (H : ℝ≥0 → Ω → E) (ω : Ω) :
     IsLeftContinuous (fun t ↦ accumulatedEnergy μ H t ω) := by
   simpa only [accumulatedEnergy_def] using
     isLeftContinuous_setLIntegral_Iic μ (fun s ↦ ‖H s ω‖ₑ ^ 2)
@@ -70,35 +69,35 @@ theorem isLeftContinuous_accumulatedEnergy (μ : Measure ℝ≥0) [NullSingleton
 /-- Accumulated energy starts at zero for an atomless time measure. -/
 @[simp]
 theorem accumulatedEnergy_zero (μ : Measure ℝ≥0) [NullSingletonClass μ]
-    (H : ℝ≥0 → Ω → ℝ) (ω : Ω) : accumulatedEnergy μ H 0 ω = 0 := by
+    (H : ℝ≥0 → Ω → E) (ω : Ω) : accumulatedEnergy μ H 0 ω = 0 := by
   have hI : Iic (0 : ℝ≥0) = {0} := by ext s; simp
   simp [accumulatedEnergy_def, hI]
 
 /-- A process cut off when its accumulated square energy is infinite. This is a predictable
 cutoff for a predictable input and an s-finite atomless time measure. -/
-def finiteEnergyCutoff (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) : ℝ :=
+def finiteEnergyCutoff (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (t : ℝ≥0) (ω : Ω) : E :=
   if accumulatedEnergy μ H t ω < ∞ then H t ω else 0
 
-theorem finiteEnergyCutoff_def (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → ℝ) :
+theorem finiteEnergyCutoff_def (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) :
     finiteEnergyCutoff μ H = fun t ω ↦
       if accumulatedEnergy μ H t ω < ∞ then H t ω else 0 := (rfl)
 
 /-- The cutoff does not change a value with finite accumulated energy. -/
 @[simp]
-theorem finiteEnergyCutoff_of_lt_top {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → ℝ}
+theorem finiteEnergyCutoff_of_lt_top {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → E}
     {t : ℝ≥0} {ω : Ω} (h : accumulatedEnergy μ H t ω < ∞) :
     finiteEnergyCutoff μ H t ω = H t ω := by
   simp [finiteEnergyCutoff_def, h]
 
 /-- The cutoff vanishes at an infinite accumulated energy. -/
 @[simp]
-theorem finiteEnergyCutoff_of_eq_top {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → ℝ}
+theorem finiteEnergyCutoff_of_eq_top {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → E}
     {t : ℝ≥0} {ω : Ω} (h : accumulatedEnergy μ H t ω = ∞) :
     finiteEnergyCutoff μ H t ω = 0 := by
   simp [finiteEnergyCutoff_def, h]
 
 /-- A finite terminal energy leaves the entire path unchanged up to that horizon. -/
-theorem finiteEnergyCutoff_eqOn {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → ℝ} {T : ℝ≥0} {ω : Ω}
+theorem finiteEnergyCutoff_eqOn {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → E} {T : ℝ≥0} {ω : Ω}
     (hT : accumulatedEnergy μ H T ω < ∞) :
     EqOn (fun t ↦ finiteEnergyCutoff μ H t ω) (fun t ↦ H t ω) (Iic T) :=
   fun _ ht ↦ finiteEnergyCutoff_of_lt_top ((monotone_accumulatedEnergy μ H ω ht).trans_lt hT)
@@ -107,24 +106,28 @@ end MeasureTheory.Measure
 
 namespace MeasureTheory.IsProgressive
 
-variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
-  {F : ℝ≥0 → Ω → ℝ≥0∞}
+variable {Ω : Type*} {m : MeasurableSpace Ω}
 
 /-- The cumulative lower integral of a progressive nonnegative process is adapted to the
 original filtration. Infinite values are permitted and no sample measure is needed. -/
-theorem adapted_setLIntegral_Iic (hF : IsProgressive ℱ F) (μ : Measure ℝ≥0) [SFinite μ] :
+theorem adapted_setLIntegral_Iic {ι : Type*} [LinearOrder ι] [TopologicalSpace ι]
+    [OrderClosedTopology ι] [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
+    {ℱ : Filtration ι m} {F : ι → Ω → ℝ≥0∞} (hF : IsProgressive ℱ F)
+    (μ : Measure ι) [SFinite μ] :
     Adapted ℱ (fun t ω ↦ ∫⁻ s in Iic t, F s ω ∂μ) := by
   intro t
   let : MeasurableSpace Ω := ℱ t
   -- Capping time at the horizon extends the progressive restriction measurably to all times.
-  have hg : Measurable[(_ : MeasurableSpace ℝ≥0).prod (ℱ t)]
-      (fun p : ℝ≥0 × Ω ↦ F (min p.1 t) p.2) :=
+  have hg : Measurable[(_ : MeasurableSpace ι).prod (ℱ t)]
+      (fun p : ι × Ω ↦ F (min p.1 t) p.2) :=
     (hF t).comp (((measurable_fst.min measurable_const).subtype_mk
-      (h := fun p : ℝ≥0 × Ω ↦ min_le_right p.1 t)).prodMk measurable_snd)
+      (h := fun p : ι × Ω ↦ min_le_right p.1 t)).prodMk measurable_snd)
   convert hg.lintegral_prod_left' (μ := μ.restrict (Iic t)) using 1
   ext ω
   exact setLIntegral_congr_fun measurableSet_Iic fun s hs ↦
-    congrArg (fun u ↦ F u ω) (min_eq_left (α := ℝ≥0) hs).symm
+    congrArg (fun u ↦ F u ω) (min_eq_left (α := ι) hs).symm
+
+variable {ℱ : Filtration ℝ≥0 m} {F : ℝ≥0 → Ω → ℝ≥0∞}
 
 /-- Accumulated nonnegative mass is predictable under an atomless time measure, even on
 paths where it becomes infinite. -/
@@ -140,11 +143,11 @@ namespace MeasureTheory.IsStronglyPredictable
 
 open Measure
 
-variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
-  {H : ℝ≥0 → Ω → ℝ}
+variable {Ω E : Type*} [NormedAddCommGroup E] {m : MeasurableSpace Ω}
+  {ℱ : Filtration ℝ≥0 m} {H : ℝ≥0 → Ω → E}
   (μ : Measure ℝ≥0) [SFinite μ] [NullSingletonClass μ]
 
-/-- The accumulated square energy of a predictable real process is itself predictable as
+/-- The accumulated square energy of a predictable normed-group-valued process is predictable as
 an extended-nonnegative-valued process. No finite-energy hypothesis is imposed. -/
 theorem accumulatedEnergy (hH : IsStronglyPredictable ℱ H) :
     IsStronglyPredictable ℱ (μ.accumulatedEnergy H) := by

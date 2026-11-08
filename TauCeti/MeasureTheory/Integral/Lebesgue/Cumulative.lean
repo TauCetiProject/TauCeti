@@ -37,15 +37,8 @@ theorem isLeftContinuous_setLIntegral_Iio (μ : Measure ι) (f : ι → ℝ≥0�
   by_cases ht : ∃ a, a < t
   · obtain ⟨a, ha⟩ := ht
     obtain ⟨u, hu, hut, hlim⟩ := exists_seq_strictMono_tendsto' ha
-    have hcover : (⋃ n, Iio (u n)) = Iio t := by
-      ext s
-      simp only [mem_iUnion, mem_Iio]
-      constructor
-      · rintro ⟨n, hn⟩
-        exact hn.trans (hut n).2
-      · intro hs
-        obtain ⟨n, hn⟩ := ((hlim.eventually (Ioi_mem_nhds hs)).exists)
-        exact ⟨n, hn⟩
+    have hcover : (⋃ n, Iio (u n)) = Iio t :=
+      (isLUB_of_tendsto_atTop hu.monotone hlim).iUnion_Iio_eq
     have hsup : (∫⁻ s in Iio t, f s ∂μ) = ⨆ n, ∫⁻ s in Iio (u n), f s ∂μ := by
       rw [← hcover, setLIntegral_iUnion_of_directed f]
       exact (monotone_Iio.comp hu.monotone).directed_le
@@ -60,10 +53,8 @@ theorem isLeftContinuous_setLIntegral_Iio (μ : Measure ι) (f : ι → ℝ≥0�
     · intro b hb
       filter_upwards [self_mem_nhdsWithin] with s hs
       exact (lintegral_mono_set (Iio_subset_Iio hs.le)).trans_lt hb
-  · have he : Iio t = (∅ : Set ι) := by
-      ext s
-      simp only [mem_Iio, mem_empty_iff_false, iff_false]
-      exact fun hs ↦ ht ⟨s, hs⟩
+  · have he : Iio t = (∅ : Set ι) :=
+      Set.Iio_eq_empty_iff.2 fun s _ ↦ le_of_not_gt fun hs ↦ ht ⟨s, hs⟩
     simp [he, ContinuousWithinAt]
 
 /-- For an atomless measure, the lower integral over a closed initial segment is
