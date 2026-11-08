@@ -27,7 +27,8 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
 * `Matrix.realImage`: the image `M ℝⁿ` of `ℝⁿ` under a complex matrix `M`, maximal totally real
   for invertible `M` (`Matrix.isMaximalTotallyReal_realImage`).
 * `Matrix.realImage_mul_map_ofReal`, `Matrix.exists_eq_mul_map_ofReal`: `M ℝⁿ` determines an
-  invertible `M` up to right multiplication by an invertible real matrix.
+  invertible `M` up to right multiplication by an invertible real matrix; in particular a nonzero
+  real scalar does not change it (`Matrix.realImage_smul`).
 * `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
   that real matrix is orthogonal.
 * `Matrix.GeneralLinearGroup.realImage_ofEuclideanCLE`: the image of `ℝⁿ` under the matrix of a
@@ -158,6 +159,14 @@ theorem realImage_map_ofReal {N : Matrix n n ℝ} (hN : IsUnit N) :
 theorem realImage_mul_map_ofReal (M : Matrix n n ℂ) {N : Matrix n n ℝ} (hN : IsUnit N) :
     (M * N.map ((↑) : ℝ → ℂ)).realImage = M.realImage := by
   rw [realImage_mul, realImage_map_ofReal hN, realImage]
+
+/-- Multiplying by a nonzero real scalar does not change `M ℝⁿ`. -/
+@[simp]
+theorem realImage_smul (M : Matrix n n ℂ) {r : ℝ} (hr : r ≠ 0) :
+    (r • M).realImage = M.realImage := by
+  have h : r • M = M * (r • (1 : Matrix n n ℝ)).map ((↑) : ℝ → ℂ) := by
+    rw [Matrix.map_smul _ _ (by simp), Matrix.map_one _ (by simp) (by simp), mul_smul_comm, mul_one]
+  rw [h, realImage_mul_map_ofReal _ ((isUnit_iff_isUnit_det _).2 (by simp [hr]))]
 
 /-- Two invertible complex matrices with the same image of `ℝⁿ` differ by a real matrix on the
 right. -/
