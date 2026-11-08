@@ -55,7 +55,8 @@ private theorem completionModule_smul (a : Completion A) (x : Completion M) :
     letI := P.completionModule (M := M)
     a • x = Completion.ofTensorProduct A M (a • P.ofTensorProductEquiv.symm x) := by
   calc
-    _ = P.ofTensorProductEquiv (a • P.ofTensorProductEquiv.symm x) := rfl
+    _ = P.ofTensorProductEquiv (a • P.ofTensorProductEquiv.symm x) :=
+      Equiv.smul_def _ a x
     _ = _ := P.ofTensorProductEquiv_apply _
 
 /-- A completed scalar acting on an original module element is the image of a pure tensor. -/
@@ -75,8 +76,9 @@ theorem completionModule_coe_smul (a : A) (x : Completion M) :
   let := P.completionModule (M := M)
   rw [completionModule_smul]
   have ht : (a : Completion A) • P.ofTensorProductEquiv.symm x =
-      a • P.ofTensorProductEquiv.symm x :=
-    IsScalarTower.algebraMap_smul (A := Completion A) a _
+      a • P.ofTensorProductEquiv.symm x := by
+    simpa only [Completion.algebraMap_def, Algebra.algebraMap_self_apply] using
+      IsScalarTower.algebraMap_smul (A := Completion A) a (P.ofTensorProductEquiv.symm x)
   rw [ht, map_smul]
   simpa only [ofTensorProductEquiv_apply] using
     congrArg (a • ·) (P.ofTensorProductEquiv.apply_symm_apply x)
@@ -89,11 +91,10 @@ theorem isScalarTower_completionModule :
 
 section Topology
 
--- Use the natural topology on the scalar extension, rather than choosing any extra topology
--- on the completion itself.
-/-- The natural completed-ring module topology on the scalar extension. -/
-local instance tensorModuleTopology : TopologicalSpace (Completion A ⊗[A] M) :=
-  moduleTopology (Completion A) (Completion A ⊗[A] M)
+section Comparison
+
+variable [TopologicalSpace (Completion A ⊗[A] M)]
+  [IsModuleTopology (Completion A) (Completion A ⊗[A] M)]
 
 /-- The upgraded comparison is a homeomorphism for the natural completed-scalar topology. -/
 noncomputable def completionTensorHomeomorph :
@@ -105,9 +106,8 @@ noncomputable def completionTensorHomeomorph :
   have hhome : IsHomeomorph (P.ofTensorProductEquiv (M := M)) := by
     rw [hmap]
     exact P.isHomeomorph_ofTensorProduct
-  exact { (P.ofTensorProductEquiv.symm.toAddEquiv.linearEquiv (Completion A)).symm with
-    continuous_toFun := hhome.continuous
-    continuous_invFun := P.ofTensorProductEquiv.toEquiv.continuous_symm_iff.mpr hhome.isOpenMap }
+  exact ContinuousLinearEquiv.ofIsHomeomorph
+    (P.ofTensorProductEquiv.symm.toAddEquiv.linearEquiv (Completion A)).symm hhome
 
 /-- The linear homeomorphism is the canonical base-change map. -/
 @[simp]
@@ -123,11 +123,14 @@ theorem completionTensorHomeomorph_symm_coe (m : M) :
     P.completionTensorHomeomorph.symm (m : Completion M) = 1 ⊗ₜ m :=
   P.ofTensorProductEquiv_symm_coe m
 
+end Comparison
+
 /-- Scalar multiplication by the completed ring is jointly continuous. -/
 theorem continuousSMul_completionModule :
     letI := P.completionModule (M := M)
     ContinuousSMul (Completion A) (Completion M) := by
   let := P.completionModule (M := M)
+  let := moduleTopology (Completion A) (Completion A ⊗[A] M)
   let e := P.completionTensorHomeomorph (M := M)
   refine ⟨?_⟩
   have h := e.continuous.comp
@@ -153,6 +156,7 @@ theorem isModuleTopology_completionModule :
     letI := P.completionModule (M := M)
     IsModuleTopology (Completion A) (Completion M) := by
   let := P.completionModule (M := M)
+  let := moduleTopology (Completion A) (Completion A ⊗[A] M)
   exact IsModuleTopology.iso P.completionTensorHomeomorph
 
 end Topology

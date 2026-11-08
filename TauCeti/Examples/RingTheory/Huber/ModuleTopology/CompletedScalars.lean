@@ -34,9 +34,8 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
   [UniformContinuousConstSMul A M]
   (P : PairOfDefinition A) [IsNoetherianRing P.ringOfDefinition]
 
-/-- The natural topology used in the completed-scalar comparison checks. -/
-local instance completedScalarsTestTopology : TopologicalSpace (Completion A ⊗[A] M) :=
-  moduleTopology (Completion A) (Completion A ⊗[A] M)
+variable [TopologicalSpace (Completion A ⊗[A] M)]
+  [IsModuleTopology (Completion A) (Completion A ⊗[A] M)]
 
 -- Both scalar rings act compatibly on the entire completion, not just its dense submodule.
 example (a : A) (b : Completion A) (x : Completion M) :
