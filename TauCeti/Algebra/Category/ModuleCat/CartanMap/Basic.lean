@@ -153,12 +153,18 @@ theorem finiteProjectiveModules_le_finiteModules :
     finiteProjectiveModules R ≤ ModuleCat.isFG R := fun _ h =>
   (ModuleCat.isFG_iff _).mpr (finiteProjectiveModules_iff.mp h).1
 
-instance : (finiteProjectiveModules R).IsClosedUnderIsomorphisms where
-  of_iso {M N} e h := by
-    have : Module.Finite R M := (finiteProjectiveModules_iff.mp h).1
-    have : Module.Projective R M := (finiteProjectiveModules_iff.mp h).2
+/-- A direct summand of a finitely generated projective module is finitely generated and
+projective. In particular the finitely generated projective modules are closed under
+isomorphisms. -/
+instance : (finiteProjectiveModules R).IsStableUnderRetracts where
+  of_retract {M N} h hN := by
+    have : Module.Finite R N := (finiteProjectiveModules_iff.mp hN).1
+    have : Module.Projective R N := (finiteProjectiveModules_iff.mp hN).2
+    have hs : h.r.hom ∘ₗ h.i.hom = LinearMap.id := by
+      rw [← ModuleCat.hom_comp, h.retract, ModuleCat.hom_id]
     exact finiteProjectiveModules_iff.mpr
-      ⟨Module.Finite.equiv e.toLinearEquiv, Module.Projective.of_equiv e.toLinearEquiv⟩
+      ⟨Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, congr($hs x)⟩,
+        Module.Projective.of_split h.i.hom h.r.hom hs⟩
 
 instance : (finiteProjectiveModules R).ContainsZero where
   exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
