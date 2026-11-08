@@ -32,9 +32,10 @@ continuous linear maps `T : E → F` with `‖T‖ < 1`
 (`Submodule.maximal_isSplitNegative_iff_exists_eq_graph`), and `T ↦ graph T` is a bijection from
 the open unit ball of `E →L[ℝ] F` onto the set of maximal split-negative subspaces
 (`TauCeti.splitNegativeGraphEquiv`). These are the graph coordinates on the space of maximal
-negative subspaces of `Q`. Topologized through them (`TauCeti.splitNegativeGraphTopology`), that
-space is homeomorphic to the open unit ball (`TauCeti.splitNegativeGraphHomeomorph`), a convex
-set, hence contractible (`TauCeti.contractibleSpace_maximal_isSplitNegative`).
+negative subspaces of `Q`. Topologized through them (`TauCeti.splitNegativeGraphTopology`, an
+instance scoped as `TauCeti.SplitNegativeGraph`), that space is homeomorphic to the open unit ball
+(`TauCeti.splitNegativeGraphHomeomorph`), a convex set, hence contractible
+(`TauCeti.contractibleSpace_maximal_isSplitNegative`).
 
 In graph coordinates every maximal split-negative subspace `W` is identified with `E` by the
 projection to the first factor (`Submodule.splitNegativeFstEquiv`), whose inverse is
@@ -150,14 +151,18 @@ theorem coe_splitNegativeFstEquiv (hW : Maximal IsSplitNegative W) :
   ext
   simp
 
+@[simp]
+theorem fst_splitNegativeFstEquiv_symm_apply (hW : Maximal IsSplitNegative W) (u : E) :
+    ((splitNegativeFstEquiv hW).symm u : E × F).1 = u := by
+  rw [← splitNegativeFstEquiv_apply hW, LinearEquiv.apply_symm_apply]
+
 /-- If a maximal split-negative subspace is the graph of `T`, the inverse of its projection to
 the negative factor is `u ↦ (u, T u)`. -/
 theorem coe_splitNegativeFstEquiv_symm_apply (hW : Maximal IsSplitNegative W) {T : E →ₗ[ℝ] F}
     (hT : W = LinearMap.graph T) (u : E) :
     ((splitNegativeFstEquiv hW).symm u : E × F) = (u, T u) := by
   set w := (splitNegativeFstEquiv hW).symm u
-  have h1 : (w : E × F).1 = u := by
-    rw [← splitNegativeFstEquiv_apply hW, LinearEquiv.apply_symm_apply]
+  have h1 : (w : E × F).1 = u := fst_splitNegativeFstEquiv_symm_apply hW u
   have h2 : (w : E × F).2 = T (w : E × F).1 := (LinearMap.mem_graph_iff _ _).1 (hT ▸ w.2)
   exact Prod.ext h1 (h2.trans (h1 ▸ rfl))
 
@@ -223,10 +228,15 @@ variable (E F)
 
 /-- The graph-coordinate topology on the maximal split-negative subspaces of `E × F`: the
 topology induced from the open unit ball of `E →L[ℝ] F` by the inverse of
-`TauCeti.splitNegativeGraphEquiv`. -/
-noncomputable instance splitNegativeGraphTopology :
+`TauCeti.splitNegativeGraphEquiv`. The instance is scoped as `TauCeti.SplitNegativeGraph`. -/
+@[instance_reducible]
+noncomputable def splitNegativeGraphTopology :
     TopologicalSpace {W : Submodule ℝ (E × F) // Maximal IsSplitNegative W} :=
   TopologicalSpace.induced (splitNegativeGraphEquiv E F).symm inferInstance
+
+scoped[TauCeti.SplitNegativeGraph] attribute [instance] TauCeti.splitNegativeGraphTopology
+
+open scoped TauCeti.SplitNegativeGraph
 
 /-- Graph coordinates as a homeomorphism from the open unit ball of `E →L[ℝ] F` onto the maximal
 split-negative subspaces of `E × F`, with the graph-coordinate topology. -/
@@ -243,11 +253,14 @@ theorem coe_splitNegativeGraphHomeomorph :
 /-- **Contractibility of the space of maximal negative subspaces.** In graph coordinates, the
 space of maximal split-negative subspaces of `E × F` is contractible: it is homeomorphic to the
 open unit ball of `E →L[ℝ] F`, a convex set. -/
-instance contractibleSpace_maximal_isSplitNegative :
+theorem contractibleSpace_maximal_isSplitNegative :
     ContractibleSpace {W : Submodule ℝ (E × F) // Maximal IsSplitNegative W} :=
   haveI : ContractibleSpace (Metric.ball (0 : E →L[ℝ] F) 1) :=
     (convex_ball _ _).contractibleSpace ⟨0, Metric.mem_ball_self one_pos⟩
   (splitNegativeGraphHomeomorph E F).symm.contractibleSpace
+
+scoped[TauCeti.SplitNegativeGraph] attribute [instance]
+  TauCeti.contractibleSpace_maximal_isSplitNegative
 
 end TauCeti
 
