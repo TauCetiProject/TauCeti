@@ -704,11 +704,7 @@ theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
           (edgewiseSubdivisionRealizationMap K k y).1‖ := by
   have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => by
     obtain ⟨F, hFg, hF⟩ := hf σ
-    have hcoord : Continuous fun x : StandardSimplex σ.1 => fun a : σ.1 => x.1 a :=
-      continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
-    refine (hF.continuousOn.comp_continuous hcoord fun x => ?_).congr hFg
-    rw [← Finset.range_standardSimplex_coordinates]
-    exact mem_range_self x
+    exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
   set N : ℝ := (Fintype.card ι : ℝ)
   have hN : 0 ≤ N := Nat.cast_nonneg _
   filter_upwards [eventually_ne_atTop 0,

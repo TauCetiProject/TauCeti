@@ -126,11 +126,7 @@ theorem of_le (h : IsSimplexImmersion I n g) (hmn : m ≤ n) : IsSimplexImmersio
 /-- An immersion of a simplex is continuous. -/
 theorem continuous (h : IsSimplexImmersion I n g) : Continuous g := by
   obtain ⟨F, hFg, hF, -⟩ := h
-  have hcoord : Continuous fun x : StandardSimplex σ => fun a : σ => x.1 a :=
-    continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
-  refine (hF.continuousOn.comp_continuous hcoord fun x => ?_).congr hFg
-  rw [← Finset.range_standardSimplex_coordinates]
-  exact mem_range_self x
+  exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
 
 /-- Post-composing an immersion of a simplex with a map that is `Cⁿ` within a set containing its
 image, and has an injective derivative within that set at every point of the image, gives an
