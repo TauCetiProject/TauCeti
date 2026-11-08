@@ -42,14 +42,8 @@ theorem isCharacterMap_graphAutomorphismPoints (A : Type v) [CommRing A] :
     IsCharacterMap (weightTorusPoints A) (graphAutomorphismPoints A).toMonoidHom
       (LinearEquiv.funCongrLeft ℤ ℤ graphPermE6).toLinearMap := by
   refine isCharacterMap_iff.mpr fun s => ?_
-  rw [MulEquiv.coe_toMonoidHom, graphAutomorphismPoints_weightTorusPoints]
-  congr 1
-  funext i
-  have hsingle : (LinearMap.funLeft ℤ ℤ graphPermE6) (Pi.single i 1) =
-      Pi.single (graphPermE6.symm i) 1 :=
-    Pi.single_comp_equiv graphPermE6 i 1
-  rw [torusPointMap_apply, LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
-    hsingle, torusCharacter_single, zpow_one, graphPermE6_symm]
+  rw [MulEquiv.coe_toMonoidHom, graphAutomorphismPoints_weightTorusPoints,
+    torusPointMap_funCongrLeft, graphPermE6_symm]
 
 /-- The `p ^ k`-power Frobenius pulls characters back by multiplication by `p ^ k`. -/
 theorem isCharacterMap_frobenius (p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p] :

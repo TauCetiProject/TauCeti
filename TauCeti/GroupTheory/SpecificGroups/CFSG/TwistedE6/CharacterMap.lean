@@ -64,25 +64,25 @@ theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 
 /-- Frobenius pulls characters back by multiplication by the recorded field order. -/
 theorem isCharacterMap_frobenius :
-    IsCharacterMap d.weightTorus d.frobenius ((d.1.fieldOrder : ℕ) • 1) :=
-  isCharacterMap_iff.mpr fun s => by
-    rw [frobenius_weightTorus, torusPointMap_nsmul, torusPointMap_one,
-      MonoidHom.pow_apply, MonoidHom.id_apply]
+    IsCharacterMap d.weightTorus d.frobenius ((d.1.fieldOrder : ℕ) • 1) := by
+  -- On the constructor form, `finCongr` reindexing is definitionally the identity.
+  obtain ⟨q, rfl⟩ := d.exists_eq_of
+  refine isCharacterMap_iff.mpr fun s => ?_
+  rw [frobenius_def, weightTorus_apply, weightTorus_apply,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+  exact (E6DoubledMinuscule.isCharacterMap_frobenius _ _ _).map_apply s
 
 /-- The graph factor has the inverse native datum graph action as character pullback. -/
 theorem isCharacterMap_graphAut :
     IsCharacterMap d.weightTorus d.graphAut.toMonoidHom
       d.toGraphTwistedIndex.datumGraphAut⁻¹.toHom.weightMap := by
+  -- The constructor form identifies both the rank reindexing and diagram permutation.
+  obtain ⟨q, rfl⟩ := d.exists_eq_of
   refine isCharacterMap_iff.mpr fun s => ?_
-  rw [MulEquiv.coe_toMonoidHom, graphAut_weightTorus,
-    GraphTwistedIndex.datumGraphAut_def, DynkinType.diagramAut_inv_weightMap]
-  congr 1
-  funext i
-  have hsingle : (LinearMap.funLeft ℤ ℤ d.toGraphTwistedIndex.diagramPerm) (Pi.single i 1) =
-      Pi.single (d.toGraphTwistedIndex.diagramPerm.symm i) 1 :=
-    Pi.single_comp_equiv d.toGraphTwistedIndex.diagramPerm i 1
-  rw [torusPointMap_apply, LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
-    hsingle, torusCharacter_single, zpow_one]
+  rw [graphAut_def, weightTorus_apply, weightTorus_apply,
+    GraphTwistedIndex.datumGraphAut_def, DynkinType.diagramAut_inv_weightMap,
+    GraphTwistedIndex.diagramPerm_twistedE6]
+  exact (E6DoubledMinuscule.isCharacterMap_graphAutomorphismPoints _).map_apply s
 
 /-- The represented Steinberg map pulls characters back by the uniform native datum map. -/
 theorem isCharacterMap_steinberg :
