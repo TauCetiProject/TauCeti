@@ -86,7 +86,7 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
         ⟨by simp [w, u], by simpa [w, u] using huv.le⟩)
   set z₀ : ℍ := ⟨x₀ + Complex.I, by simp⟩
   have hlim : Tendsto (fun k ↦ (g * S ^ k * g⁻¹) • w k) atTop (𝓝 z₀) := by
-    simpa only [conj_pow] using tendsto_pow_smul_of_coe_smul_eq hμ₀ hμ₁ hSz u w
+    simpa only [conj_pow] using tendsto_pow_smul_of_coe_smul_eq hμ₁ hSz u w
       (fun k ↦ by simp [w, ht]) z₀ (by simp [z₀, x₀])
   -- the powers `S ^ k` are pairwise distinct, as `g S^k g⁻¹` moves `i` to height `μ ^ k`
   have him (k : ℕ) : ((g * S ^ k * g⁻¹) • UpperHalfPlane.I).im = μ ^ k := by
