@@ -202,6 +202,51 @@ theorem homEquiv_apply_symm_homEquiv (e : N ≃ₙ N') (x y : W) (a : N'.Hom x y
   rw [@Quiver.homOfEq_eq_iff V ⟨N.Hom⟩] at h
   simp [h, homEquiv_homOfEq, inverseHomEquiv_apply]
 
+/-- The equivalence of all arrow identities, including their endpoints. -/
+def totalHomEquiv (e : N ≃ₙ N') : (Σ x y, N.Hom x y) ≃ (Σ x y, N'.Hom x y) :=
+  Equiv.sigmaCongr e.vertexEquiv fun x ↦ Equiv.sigmaCongr e.vertexEquiv (e.homEquiv x)
+
+/-- Total arrow transport applies the vertex and arrow equivalences together. -/
+@[simp]
+theorem totalHomEquiv_apply (e : N ≃ₙ N') (a : Σ x y, N.Hom x y) :
+    e.totalHomEquiv a = ⟨e.vertexEquiv a.1, e.vertexEquiv a.2.1, e.homEquiv _ _ a.2.2⟩ :=
+  (rfl)
+
+/-- Inverting a network isomorphism inverts its total arrow equivalence. -/
+@[simp]
+theorem totalHomEquiv_symm (e : N ≃ₙ N') : e.symm.totalHomEquiv = e.totalHomEquiv.symm := by
+  apply Equiv.ext
+  rintro ⟨x, y, a⟩
+  apply e.totalHomEquiv.injective
+  rw [Equiv.apply_symm_apply]
+  have ha := e.homEquiv_apply_symm_homEquiv x y a
+  rw [@Quiver.homOfEq_eq_iff W ⟨N'.Hom⟩] at ha
+  simp only [totalHomEquiv_apply]
+  rw [ha]
+  have transport {x' y' : W} (hx : x' = x) (hy : y' = y) :
+      (⟨x', y', @Quiver.homOfEq W ⟨N'.Hom⟩ x y x' y' a hx.symm hy.symm⟩ :
+        Σ x y, N'.Hom x y) = ⟨x, y, a⟩ := by
+    cases hx
+    cases hy
+    rfl
+  exact transport (e.vertexEquiv_apply_symm_vertexEquiv x)
+    (e.vertexEquiv_apply_symm_vertexEquiv y)
+
+/-- Identity transport fixes all arrow identities. -/
+@[simp]
+theorem totalHomEquiv_refl (N : Network K V) : (refl N).totalHomEquiv = Equiv.refl _ := by
+  apply Equiv.ext
+  rintro ⟨x, y, a⟩
+  rfl
+
+/-- Total arrow transport commutes with composition. -/
+@[simp]
+theorem totalHomEquiv_trans (e : N ≃ₙ N') (f : N' ≃ₙ N'') :
+    (e.trans f).totalHomEquiv = e.totalHomEquiv.trans f.totalHomEquiv := by
+  apply Equiv.ext
+  rintro ⟨x, y, a⟩
+  rfl
+
 /-- Transport assignments along a bounded-network isomorphism. -/
 def assignmentEquiv (e : N ≃ₙ N') (R : Type w') : N.Assignment R ≃ N'.Assignment R :=
   e.vertexEquiv.piCongr fun x ↦

@@ -338,6 +338,10 @@ theorem mem_arrowSet_restrictVertices {S : N.Subnetwork} {W : Set V}
 def deleteVerts (S : N.Subnetwork) (X : Set V) : N.Subnetwork :=
   S.restrictVertices Xᶜ
 
+/-- Vertex deletion is restriction to the complementary vertex set. -/
+theorem deleteVerts_eq_restrictVertices (S : N.Subnetwork) (X : Set V) :
+    S.deleteVerts X = S.restrictVertices Xᶜ := (rfl)
+
 @[simp]
 theorem vertexSet_deleteVerts (S : N.Subnetwork) (X : Set V) :
     (S.deleteVerts X).vertexSet = S.vertexSet \ X := by
