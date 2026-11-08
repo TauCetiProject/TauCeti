@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Topology.MetricSpace.CoboundedImage
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -68,14 +69,10 @@ private theorem im_model (ζ : ℂ) : (model ζ).im = ζ.re * ζ.im - ζ.arg + R
 `re ζ = 1`, the model has imaginary part at least `π`, strictly more off the axis. -/
 private theorem im_model_ge {ζ : ℂ} (him : 0 ≤ ζ.im) (hre : 1 ≤ ζ.re) (hζ : 2 ≤ ‖ζ‖) :
     Real.pi + (1 - Real.pi / 4) * ζ.im ≤ (model ζ).im := by
-  -- Jordan's inequality `2 / π * arg ζ ≤ sin (arg ζ) = im ζ / ‖ζ‖`.
-  have hJ := Real.mul_le_sin (arg_nonneg_iff.mpr him)
-    (abs_le.mp (abs_arg_le_pi_div_two_iff.mpr (zero_le_one.trans hre))).2
-  rw [sin_arg] at hJ
-  have harg : ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) := by
-    have := Real.pi_pos
-    calc ζ.arg = Real.pi / 2 * (2 / Real.pi * ζ.arg) := by field_simp
-      _ ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) := by gcongr
+  -- Jordan's inequality `arg ζ ≤ π / 2 * sin (arg ζ)`, with `sin (arg ζ) = im ζ / ‖ζ‖`.
+  have harg : ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) :=
+    le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr him)
+      (abs_le.mp (abs_arg_le_pi_div_two_iff.mpr (zero_le_one.trans hre))).2 (sin_arg ζ)
   have : ζ.im / ‖ζ‖ ≤ ζ.im / 2 := div_le_div_of_nonneg_left him two_pos hζ
   have := Real.pi_pos
   rw [im_model]
@@ -85,17 +82,13 @@ private theorem im_model_ge {ζ : ℂ} (him : 0 ≤ ζ.im) (hre : 1 ≤ ζ.re) (
 axis. -/
 private theorem im_model_le {ζ : ℂ} (him : 0 ≤ ζ.im) (hre : ζ.re ≤ -1) (hζ : 2 ≤ ‖ζ‖) :
     (model ζ).im ≤ -((1 - Real.pi / 4) * ζ.im) := by
-  -- Jordan's inequality for `π - arg ζ ∈ [0, π / 2]`, whose sine is `im ζ / ‖ζ‖`.
   have harg : Real.pi / 2 < ζ.arg := by
     have h := mt abs_arg_le_pi_div_two_iff.mp (not_le.mpr (by linarith : ζ.re < 0))
     rwa [not_le, abs_of_nonneg (arg_nonneg_iff.mpr him)] at h
-  have hJ := Real.mul_le_sin (by linarith [arg_le_pi ζ] : 0 ≤ Real.pi - ζ.arg)
-    (by linarith : Real.pi - ζ.arg ≤ Real.pi / 2)
-  rw [Real.sin_pi_sub, sin_arg] at hJ
-  have harg' : Real.pi - ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) := by
-    have := Real.pi_pos
-    calc Real.pi - ζ.arg = Real.pi / 2 * (2 / Real.pi * (Real.pi - ζ.arg)) := by field_simp
-      _ ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) := by gcongr
+  -- Jordan's inequality for `π - arg ζ ∈ [0, π / 2]`, whose sine is `im ζ / ‖ζ‖`.
+  have harg' : Real.pi - ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) :=
+    le_pi_div_two_mul_of_sin_eq (by linarith [arg_le_pi ζ]) (by linarith)
+      (by rw [Real.sin_pi_sub, sin_arg])
   have : ζ.im / ‖ζ‖ ≤ ζ.im / 2 := div_le_div_of_nonneg_left him two_pos hζ
   have := Real.pi_pos
   rw [im_model]

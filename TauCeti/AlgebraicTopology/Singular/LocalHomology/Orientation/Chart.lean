@@ -97,7 +97,7 @@ end Sphere
 
 section Chart
 
-variable {M E : Type w} [TopologicalSpace M] [T2Space M]
+variable {M E : Type w} [TopologicalSpace M] [T1Space M]
   [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The top-degree local homology isomorphism selected by an orientation of the chart model. -/
@@ -162,7 +162,7 @@ end Chart
 
 section Integral
 
-variable {M E : Type w} [TopologicalSpace M] [T2Space M]
+variable {M E : Type w} [TopologicalSpace M] [T1Space M]
   [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The local orientation selected by an oriented chart. -/
@@ -192,7 +192,7 @@ end Integral
 section Manifold
 
 variable {M E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace M] [T2Space M] [ChartedSpace E M]
+  [FiniteDimensional ℝ E] [TopologicalSpace M] [T1Space M] [ChartedSpace E M]
   [IsManifold 𝓘(ℝ, E) 1 M]
 
 /-- The local homology orientation at a point selected by an orientation of a boundaryless

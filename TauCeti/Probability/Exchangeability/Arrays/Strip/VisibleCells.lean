@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Strip.Independence
+import TauCeti.MeasureTheory.MeasurableSpace.Restrict
 import TauCeti.Probability.Independence.Conditional
 
 /-!
@@ -79,25 +80,19 @@ theorem SeparatelyExchangeable.iCondIndepFun_visibleCells
       (MeasurableSpace.comap C.domRestrict inferInstance)
       (MeasurableSpace.comap Cᶜ.domRestrict inferInstance) hm' ρ := by
     exact (condIndepFun_iff_condIndep m' hm' C.domRestrict Cᶜ.domRestrict ρ).1 hlocal
-  have hcoord (D : Set (ℕ × ℕ)) (r : D) :
-      MeasurableSpace.comap (fun x : ℕ × ℕ → α => x r.1) inferInstance ≤
-        MeasurableSpace.comap D.domRestrict inferInstance := by
-    let F : (D → α) → α := fun y => y r
-    have hF : Measurable F := measurable_pi_apply _
-    have heq : (fun x : ℕ × ℕ → α => x r.1) = F ∘ D.domRestrict := by
-      funext x
-      simp only [Function.comp_apply, F, Set.domRestrict_apply]
-    rw [heq, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono hF.comap_le
   have hleft : m p ≤ MeasurableSpace.comap C.domRestrict inferInstance := by
-    simpa only [m] using hcoord C ⟨p.1, by simp [hC]⟩
+    simpa only [m] using
+      TauCeti.MeasureTheory.comap_apply_le_comap_domRestrict (π := fun _ : ℕ × ℕ => α) C
+        (a := p.1) (by simp [hC])
   have hright : (⨆ q : {q : V // q ≠ p}, m q.1) ≤
       MeasurableSpace.comap Cᶜ.domRestrict inferInstance := by
     refine iSup_le fun q => ?_
     have hq : q.1.1 ∈ Cᶜ := by
       simp only [hC, Set.mem_compl_iff, Set.mem_singleton_iff]
       exact fun heq => q.2 (Subtype.ext heq)
-    simpa only [m] using hcoord Cᶜ ⟨q.1.1, hq⟩
+    simpa only [m] using
+      TauCeti.MeasureTheory.comap_apply_le_comap_domRestrict (π := fun _ : ℕ × ℕ => α) Cᶜ
+        (a := q.1.1) hq
   exact condIndep_of_condIndep_of_le_right
     (condIndep_of_condIndep_of_le_left hbase hleft) hright
 
