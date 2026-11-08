@@ -110,6 +110,12 @@ lemma coe_diskBoundaryInclusion_apply_down (n : ℕ) (s : TopCat.diskBoundary.{u
         EuclideanSpace ℝ (Fin n)) :=
   rfl
 
+/-- A point of the boundary sphere has norm `1` in the disk. -/
+@[simp]
+theorem norm_diskBoundaryInclusion {n : ℕ} (s : TopCat.diskBoundary.{u} n) :
+    ‖(TopCat.diskBoundaryInclusion n s).down.1‖ = 1 :=
+  mem_sphere_zero_iff_norm.1 s.down.2
+
 end TauCeti.TopCat
 
 namespace TopCat.Hom
