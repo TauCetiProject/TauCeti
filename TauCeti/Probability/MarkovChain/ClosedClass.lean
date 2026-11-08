@@ -59,7 +59,7 @@ theorem ae_exists_forall_mem_isClosedSet_communicatingClass (κ : Kernel S S)
       κ.IsClosedSet (κ.communicatingClass (w n)) ∧
         ∀ m, n ≤ m → w m ∈ κ.communicatingClass (w n) := by
   filter_upwards [κ.ae_hittingAfter_isClosedSet_communicatingClass_ne_top ν,
-    κ.ae_forall_reaches_markovChainLaw ν] with w hhit hreach
+    κ.ae_forall_reaches ν] with w hhit hreach
   have hex : ∃ n, κ.IsClosedSet (κ.communicatingClass (w n)) := by
     simpa only [ne_eq, hittingAfter_eq_top_iff, zero_le, forall_const, mem_ofPred_eq,
       not_forall, not_not] using hhit

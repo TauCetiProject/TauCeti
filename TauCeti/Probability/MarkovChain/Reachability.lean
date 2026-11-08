@@ -35,7 +35,7 @@ private theorem measurableSet_forall_reaches (κ : Kernel S S) :
 
 /-- Almost every chain path respects reachability between all ordered pairs of times.
 No finiteness or normalization of the initial measure is required. -/
-theorem ae_forall_reaches_markovChainLaw (κ : Kernel S S) [IsMarkovKernel κ]
+theorem ae_forall_reaches (κ : Kernel S S) [IsMarkovKernel κ]
     (ν : Measure S) :
     ∀ᵐ w ∂markovChainLaw ν κ, ∀ m n, m ≤ n → κ.Reaches (w m) (w n) := by
   have hdirac (x : S) : ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ,
@@ -69,10 +69,10 @@ variable {S Ω : Type*} [MeasurableSpace S] [Countable S] [MeasurableSingletonCl
 
 /-- Reachability along all pairs of observation times holds in every realization of a
 countable-state chain, not just on the canonical path space. -/
-theorem ae_forall_reaches_markovChainLaw
+theorem ae_forall_reaches
     (h : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ) :
     ∀ᵐ ω ∂μ, ∀ m n, m ≤ n → κ.Reaches (X m ω) (X n ω) := by
   exact (h.ae_iff (measurableSet_setOfPred.1 (κ.measurableSet_forall_reaches))).2
-    (κ.ae_forall_reaches_markovChainLaw ν)
+    (κ.ae_forall_reaches ν)
 
 end ProbabilityTheory.HasLaw
