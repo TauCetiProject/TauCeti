@@ -178,8 +178,8 @@ private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
       exact (h₁.trans h₂).le
   refine ⟨h₁₂, hp, fun g ↦ ?_⟩
   rw [← himage, integral_image_eq_integral_abs_deriv_smul_of_ne_zero (convex_Ioo t₁ t₂)
-    (fun t htI ↦ (hasDerivAt_fst_of_hasDerivAt_effectivePotential (hγ t (hIoo htI))
-      (hr t (hIoo htI)) (hU t (hIoo htI))).hasDerivWithinAt)
+    (fun t htI ↦ (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential
+      (hγ t (hIoo htI)) (hr t (hIoo htI)) (hU t (hIoo htI))).hasDerivWithinAt)
     (fun t htI ↦ div_ne_zero (hp t htI).2 hm.ne') g]
   simp only [smul_eq_mul, abs_div, abs_of_pos hm]
 

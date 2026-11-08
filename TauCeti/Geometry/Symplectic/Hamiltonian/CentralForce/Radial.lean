@@ -78,8 +78,8 @@ Two consequences describe the qualitative radial motion:
 * `stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential_eq_zero_iff`:
   the equilibria of the reduced system are the critical points of the effective potential.
 * `TauCeti.centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt`,
-  `TauCeti.hasDerivAt_fst_of_hasDerivAt_effectivePotential`: along the reduced motion the energy
-  `H_ℓ` is conserved and `r' = p_r / m`.
+  `TauCeti.hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential`: along the
+  reduced motion the energy `H_ℓ` is conserved and `r' = p_r / m`.
 * `TauCeti.forall_hasDerivAt_circularMotion_iff`: circular motions solve Hamilton's equations
   exactly at the critical points of the effective potential.
 
@@ -383,8 +383,8 @@ theorem centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt {m ℓ : ℝ
 /-- **The radial velocity.** Along an integral curve of the reduced Hamiltonian vector field in
 the half-line `r > 0`, with `U` differentiable at the radius, the radius has derivative
 `r' = p_r / m`. -/
-theorem hasDerivAt_fst_of_hasDerivAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ}
-    {γ : ℝ → ℝ × ℝ} {t : ℝ}
+theorem hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential {m ℓ : ℝ}
+    {U : ℝ → ℝ} {γ : ℝ → ℝ × ℝ} {t : ℝ}
     (hγ : HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
       (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
     (hr : 0 < (γ t).1) (hU : DifferentiableAt ℝ U (γ t).1) :
