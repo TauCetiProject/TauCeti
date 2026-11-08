@@ -159,7 +159,7 @@ private theorem bundledCoordinateBaseChangeAlgEquiv_tmul
 /-- Two `K`-algebra maps out of the base-changed coordinate Hopf algebra of `GLₙ` are equal if
 they agree on the pure tensors of localized generic entries. -/
 theorem coordinateHopfAlgebra_baseChange_algHom_ext
-    {C : Type*} [CommRing C] [Algebra K C]
+    {C : Type*} [Semiring C] [Algebra K C]
     {f g : K ⊗[R] coordinateHopfAlgebra R n →ₐ[K] C}
     (h : ∀ i j, f (1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
@@ -168,11 +168,9 @@ theorem coordinateHopfAlgebra_baseChange_algHom_ext
     f = g := by
   let _ : Algebra R C := Algebra.compHom C (algebraMap R K)
   have : IsScalarTower R K C := IsScalarTower.of_algebraMap_eq' rfl
-  apply (Algebra.TensorProduct.liftEquivRight R K _ _).symm.injective
-  apply coordinateHopfAlgebra_algHom_ext R n
-  intro i j
-  simpa only [Algebra.TensorProduct.liftEquivRight_symm_apply, AlgHom.comp_apply,
-    AlgHom.coe_restrictScalars', Algebra.TensorProduct.includeRight_apply] using h i j
+  refine Algebra.TensorProduct.ext_ring (coordinateHopfAlgebra_algHom_ext R n fun i j ↦ ?_)
+  simpa only [AlgHom.comp_apply, AlgHom.coe_restrictScalars',
+    Algebra.TensorProduct.includeRight_apply] using h i j
 
 -- `CommHopfAlgCat.baseChange H` abbreviates `CommHopfAlgCat.of K (K ⊗[R] H)`, so its
 -- stored counit and comultiplication are definitionally Mathlib's tensor-product bialgebra
