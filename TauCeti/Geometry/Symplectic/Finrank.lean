@@ -123,18 +123,9 @@ theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal
     {J : AlmostComplexStructure V} {L : Submodule ℝ V}
     (hL : IsMaximalTotallyReal J.toLinearMap L) :
     Module.finrank ℝ L = J.complexFinrank := by
+  have h := hL.two_mul_finrank_eq (J.injective.comp L.subtype_injective)
   have h' := J.finrank_real_eq_two_mul_complexFinrank
-  by_cases hV : Module.Finite ℝ V
-  · have h := hL.two_mul_finrank_eq (J.injective.comp L.subtype_injective)
-    omega
-  · have hL0 : Module.finrank ℝ L = 0 := by
-      by_contra hne
-      have : Module.Finite ℝ L := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero hne)
-      have : Module.Finite ℝ (L ⊔ L.map J.toLinearMap : Submodule ℝ V) := inferInstance
-      rw [hL.isCompl.sup_eq_top] at this
-      exact hV (Module.Finite.equiv (Submodule.topEquiv (R := ℝ) (M := V)))
-    rw [Module.finrank_of_not_finite hV] at h'
-    omega
+  omega
 
 /-- An odd-dimensional real module admits no almost complex structure. -/
 theorem isEmpty_of_odd_finrank (h : Odd (Module.finrank ℝ V)) :
