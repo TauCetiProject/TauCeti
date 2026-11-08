@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Analysis.Calculus.SecondDerivative
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable

@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -164,6 +164,18 @@ theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
   exact y.property
 
 
+/-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
+in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
+tangent-bundle charts completely. -/
+@[simp, mfld_simps]
+theorem coe_chartAt_snd [IsManifold I 1 M] {p q : TangentBundle I M} :
+    (chartAt (ModelProd H E) q p).2 =
+      tangentCoordChange I p.1 q.1 p.1 p.2 := by
+  -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
+  -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
+  rw [TangentBundle.chartAt]
+  rfl
+
 end TangentBundle
 
 namespace TauCeti.Manifold
@@ -288,28 +300,6 @@ theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x)
 end Extend
 
 section TangentChart
-
-section TangentBundleChart
-
-variable [IsManifold I 1 M]
-
-namespace TangentBundle
-
-/-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
-in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
-tangent-bundle charts completely. -/
-@[simp, mfld_simps]
-theorem coe_chartAt_snd {p q : TangentBundle I M} :
-    (chartAt (ModelProd H E) q p).2 =
-      tangentCoordChange I p.1 q.1 p.1 p.2 := by
-  -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
-  -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
-  rw [TangentBundle.chartAt]
-  rfl
-
-end TangentBundle
-
-end TangentBundleChart
 
 /-- The tangent coordinate change between the charts at `x` and `y` is `C^n` on the overlap of
 the two chart sources, read in the chart at `x`.  This is Mathlib's
@@ -752,10 +742,16 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
     {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'} {x : U}
-    (hf : MDifferentiableAt I I' f x) (hA : MDifferentiableAt I I' A x)
+    (hf : MDifferentiableAt I I' f x)
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
     tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
       mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
+  have hA : MDifferentiableAt I I' A x := by
+    have h1 : MDifferentiableAt I I' (Subtype.val ∘ f) x :=
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp x hf
+    rw [hcomp] at h1
+    exact ((differentiableWithinAt_localInvariantProp (I := I)
+      (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).2 h1
   have h := mfderiv_comp_apply x
     (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
   rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
@@ -768,7 +764,7 @@ model vector space. -/
 theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
     (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
   have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
-    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) mdifferentiableAt_id rfl v
+    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) rfl v
   rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
   exact h'
 

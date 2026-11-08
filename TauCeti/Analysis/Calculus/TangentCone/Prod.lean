@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Calculus.TangentCone.Prod
 
 /-!
 # Tangent cones of products
@@ -23,6 +24,8 @@ point of a product of manifolds with corners is read.
 
 * `TauCeti.tangentConeAt_prod_subset`: the tangent cone of a product lies in the product of the
   tangent cones.
+* `TauCeti.prod_span_tangentConeAt_le`: conversely, the span of the tangent cone of a product
+  contains the product of the spans of the tangent cones.
 * `Convex.posTangentConeAt_prod`: for convex sets the positive tangent cone of the product is the
   product of the positive tangent cones.
 -/
@@ -47,6 +50,17 @@ theorem tangentConeAt_prod_subset {R E F : Type*} [AddCommGroup E] [SMul R E]
   · simpa [Function.comp_def] using (continuous_fst.tendsto _).comp hcd
   · simpa [Function.comp_def] using (continuous_snd.tendsto _).comp hd₀
   · simpa [Function.comp_def] using (continuous_snd.tendsto _).comp hcd
+
+/-- The span of the tangent cone of a product of sets contains the product of the spans of the
+tangent cones of the factors, at a point in the closure of each factor. -/
+theorem prod_span_tangentConeAt_le {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {s : Set E} {t : Set F} {x : E} {y : F} (hx : x ∈ closure s) (hy : y ∈ closure t) :
+    (Submodule.span 𝕜 (tangentConeAt 𝕜 s x)).prod (Submodule.span 𝕜 (tangentConeAt 𝕜 t y)) ≤
+      Submodule.span 𝕜 (tangentConeAt 𝕜 (s ×ˢ t) (x, y)) := by
+  rw [← LinearMap.span_inl_union_inr]
+  exact Submodule.span_mono
+    (union_subset (subset_tangentConeAt_prod_left hy) (subset_tangentConeAt_prod_right hx))
 
 end TauCeti
 

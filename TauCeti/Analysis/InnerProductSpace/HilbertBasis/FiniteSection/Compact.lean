@@ -58,7 +58,7 @@ theorem tendsto_compact_comp_finiteReflection_comp_compact (b : HilbertBasis ℕ
   have hbound (n : ℕ) : ‖K ∘L b.finiteReflection n‖ ≤ ‖K‖ :=
     (K.opNorm_comp_le _).trans_eq (by simp)
   simpa only [ContinuousLinearMap.comp_assoc] using
-    ContinuousLinearMap.tendsto_comp_zero_of_isCompactOperator (norm_nonneg K) hbound
+    ContinuousLinearMap.tendsto_comp_zero_of_isCompactOperator hbound
       (fun x ↦ b.tendsto_compact_comp_finiteReflection_apply K hK x) L hL
 
 /-- Reflected compact compressions converge strongly to zero. The equalities

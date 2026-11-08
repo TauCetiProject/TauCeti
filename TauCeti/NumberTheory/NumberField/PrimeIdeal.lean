@@ -222,6 +222,77 @@ theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
   rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P,
     Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
 
+/-- **Primes above distinct rational primes are distinct.** The finsets of primes of `𝓞 K` lying
+over two distinct rational primes are disjoint, since a prime lies over exactly one of them. -/
+theorem disjoint_primesOverFinset_natCast {q₁ q₂ : ℕ} (h₁ : q₁.Prime) (h₂ : q₂.Prime)
+    (hne : q₁ ≠ q₂) :
+    Disjoint (IsDedekindDomain.primesOverFinset (span {(q₁ : ℤ)}) (𝓞 K))
+      (IsDedekindDomain.primesOverFinset (span {(q₂ : ℤ)}) (𝓞 K)) := by
+  have := Fact.mk h₁
+  have := Fact.mk h₂
+  have hq₁ : (span {(q₁ : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using h₁.ne_zero
+  have hq₂ : (span {(q₂ : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using h₂.ne_zero
+  refine Finset.disjoint_left.2 fun P hP₁ hP₂ => ?_
+  have hunder₁ := ((IsDedekindDomain.mem_primesOverFinset_iff hq₁ (𝓞 K)).mp hP₁).2.over
+  have hunder₂ := ((IsDedekindDomain.mem_primesOverFinset_iff hq₂ (𝓞 K)).mp hP₂).2.over
+  have hassoc : Associated (q₁ : ℤ) (q₂ : ℤ) :=
+    Ideal.span_singleton_eq_span_singleton.1 (hunder₁.trans hunder₂.symm)
+  exact hne (by simpa using Int.associated_iff_natAbs.1 hassoc)
+
+/-- A prime of `𝓞 K` belongs to the union of the sets of primes above the members of `T` iff it is
+prime and lies over `(q)` for some `q ∈ T`. -/
+theorem mem_biUnion_primesOverFinset_iff {T : Finset ℕ} (hT : ∀ q ∈ T, q.Prime)
+    {P : Ideal (𝓞 K)} :
+    P ∈ T.biUnion (fun q => IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K)) ↔
+      ∃ q ∈ T, P.IsPrime ∧ P.LiesOver (span {(q : ℤ)}) := by
+  classical
+  rw [Finset.mem_biUnion]
+  have hq0 : ∀ q ∈ T, (span {(q : ℤ)} : Ideal ℤ) ≠ ⊥ := fun q hq => by
+    simpa [Ideal.span_singleton_eq_bot] using (hT q hq).ne_zero
+  refine ⟨fun ⟨q, hq, hP⟩ => ⟨q, hq, ?_⟩, fun ⟨q, hq, hP⟩ => ⟨q, hq, ?_⟩⟩
+  · have := Fact.mk (hT q hq)
+    exact (IsDedekindDomain.mem_primesOverFinset_iff (hq0 q hq) (𝓞 K)).mp hP
+  · have := Fact.mk (hT q hq)
+    exact (IsDedekindDomain.mem_primesOverFinset_iff (hq0 q hq) (𝓞 K)).mpr hP
+
+/-- **The primes above a finite set of rational primes count by the sum.** The union over `q ∈ T`
+of the primes of `𝓞 K` above `q` has as many members as the sum of the numbers of primes above
+the individual `q`. -/
+theorem card_biUnion_primesOverFinset {T : Finset ℕ} (hT : ∀ q ∈ T, q.Prime) :
+    (T.biUnion (fun q => IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K))).card
+      = ∑ q ∈ T, ((span {(q : ℤ)}).primesOver (𝓞 K)).ncard := by
+  classical
+  rw [Finset.card_biUnion (fun q₁ hq₁ q₂ hq₂ h =>
+    disjoint_primesOverFinset_natCast (hT q₁ hq₁) (hT q₂ hq₂) h)]
+  refine Finset.sum_congr rfl fun q hq => ?_
+  have := Fact.mk (hT q hq)
+  have hq0 : (span {(q : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using (hT q hq).ne_zero
+  rw [← IsDedekindDomain.coe_primesOverFinset hq0 (𝓞 K), Set.ncard_coe_finset]
+
+/-- **A squarefree product of unramified rational primes is the product of the primes above
+them.** If every prime of `𝓞 K` above a member of the finite set `T` of rational primes is
+unramified, then the product of the members of `T` generates the product of all the primes above
+them. -/
+theorem prod_biUnion_primesOverFinset_eq_span_prod {T : Finset ℕ} (hT : ∀ q ∈ T, q.Prime)
+    (hun : ∀ q ∈ T, ∀ P : Ideal (𝓞 K), ∀ [P.IsPrime] [P.LiesOver (span {(q : ℤ)})],
+      Algebra.IsUnramifiedAt (𝓞 ℚ) P) :
+    ∏ P ∈ T.biUnion (fun q => IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K)), P
+      = span {((∏ q ∈ T, q : ℕ) : 𝓞 K)} := by
+  classical
+  rw [Finset.prod_biUnion (fun q₁ hq₁ q₂ hq₂ h =>
+    disjoint_primesOverFinset_natCast (hT q₁ hq₁) (hT q₂ hq₂) h)]
+  have hfactor : ∀ q ∈ T,
+      ∏ P ∈ IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K), P = span {(q : 𝓞 K)} :=
+    fun q hq => by
+      have := Fact.mk (hT q hq)
+      exact (span_natCast_eq_prod_primesOverFinset (hun q hq)).symm
+  rw [Finset.prod_congr rfl hfactor, Ideal.prod_span_singleton]
+  push_cast
+  rfl
+
 /-- **When a rational prime stays prime.** If `p 𝓞 K` is the product of the primes above the
 rational prime `p` raised to a common power `e`, then `p 𝓞 K` is prime iff a single prime lies
 above `p` and `e = 1`. -/

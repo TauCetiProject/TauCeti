@@ -9,6 +9,9 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
+public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.Logic.Equiv.Option
 
 /-!
 # Labelled finite Galois sets
@@ -22,6 +25,15 @@ is the orbit size. In particular, a nonempty labelled action is transitive exact
 the fixed field of a point stabilizer has degree `n`. These results use Mathlib's infinite
 Galois correspondence and orbit–stabilizer theorem. The conversion from continuous finite
 actions uses `TauCeti.isOpen_ker_toPermHom`.
+
+Conversely, an open subgroup `H` of index `n` and a labelling `Fin n ≃ G ⧸ H` of its cosets
+give a transitive Galois set (`TauCeti.GaloisSet.ofQuotient`). For a subextension `L` of degree
+`n` and a label `i`, the transitive Galois sets in which `i` has stabilizer fixed field `L` are
+the labellings sending `i` to the trivial coset of the fixing subgroup of `L`, so there are
+`(n - 1)!` of them (`TauCeti.GaloisSet.natCard_isTransitive_fixedField_stabilizer_eq`). Summing
+over `L`, any weight of the fixed field of `i`, summed over transitive Galois sets of size `n`, is
+`(n - 1)!` times its sum over the subextensions of degree `n`
+(`TauCeti.GaloisSet.tsum_isTransitive`).
 
 Only a field structure on `K` is needed here; valuations enter when assigning discriminant
 weights to these actions.
@@ -148,6 +160,13 @@ def IsTransitive (ρ : GaloisSet K n) : Prop :=
   letI := ρ.mulAction
   MulAction.IsPretransitive (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin n)
 
+/-- Transitivity of a labelled Galois set is pretransitivity of its associated action. -/
+theorem isTransitive_def (ρ : GaloisSet K n) :
+    ρ.IsTransitive ↔
+      letI := ρ.mulAction
+      MulAction.IsPretransitive (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin n) :=
+  Iff.rfl
+
 /-- Transitivity means that some group element takes any chosen label to any other label. -/
 theorem isTransitive_iff (ρ : GaloisSet K n) :
     ρ.IsTransitive ↔ ∀ i j : Fin n,
@@ -209,6 +228,162 @@ theorem fixedField_stabilizer_trivial (i : Fin n) :
     ext σ
     simp [MulAction.mem_stabilizer_iff]
   rw [hstab, InfiniteGalois.fixedField_bot]
+
+/-! ### Transitive Galois sets from open subgroups -/
+
+/-- The labelled Galois set given by the coset action on `G ⧸ H` for an open subgroup `H`,
+transported to `Fin n` along a labelling `e` of the cosets. -/
+def ofQuotient (H : Subgroup (SeparableClosure K ≃ₐ[K] SeparableClosure K))
+    (hH : IsOpen (H : Set (SeparableClosure K ≃ₐ[K] SeparableClosure K)))
+    (e : Fin n ≃ (SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H) : GaloisSet K n :=
+  ⟨e.symm.permCongrHom.toMonoidHom.comp (MulAction.toPermHom _ _), by
+    have : DiscreteTopology ((SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H) :=
+      QuotientGroup.discreteTopology hH
+    have : Finite ((SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H) := Finite.of_equiv _ e
+    refine Subgroup.isOpen_mono (fun σ hσ ↦ ?_)
+      (isOpen_ker_toPermHom (SeparableClosure K ≃ₐ[K] SeparableClosure K)
+        ((SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H))
+    rw [MonoidHom.mem_ker] at hσ ⊢
+    rw [MonoidHom.comp_apply, hσ, map_one]⟩
+
+section ofQuotient
+
+variable {H : Subgroup (SeparableClosure K ≃ₐ[K] SeparableClosure K)}
+  (hH : IsOpen (H : Set (SeparableClosure K ≃ₐ[K] SeparableClosure K)))
+
+/-- The permutation of a label is the coset action transported along the labelling. -/
+@[simp]
+theorem ofQuotient_val_apply (e : Fin n ≃ (SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H)
+    (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (i : Fin n) :
+    (ofQuotient H hH e).val σ i = e.symm (σ • e i) :=
+  (rfl)
+
+/-- A labelled coset space is transitive. -/
+theorem isTransitive_ofQuotient (e : Fin n ≃ (SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H) :
+    (ofQuotient H hH e).IsTransitive := by
+  rw [isTransitive_iff]
+  intro i j
+  obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq (SeparableClosure K ≃ₐ[K] SeparableClosure K)
+    (e i) (e j)
+  exact ⟨σ, by rw [ofQuotient_val_apply, hσ, Equiv.symm_apply_apply]⟩
+
+/-- The label of the trivial coset has stabilizer `H`. -/
+theorem stabilizer_ofQuotient (e : Fin n ≃ (SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H)
+    {i : Fin n} (hi : e i = ((1 : SeparableClosure K ≃ₐ[K] SeparableClosure K) : _ ⧸ H)) :
+    letI := (ofQuotient H hH e).mulAction
+    MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i = H := by
+  let := (ofQuotient H hH e).mulAction
+  ext σ
+  rw [MulAction.mem_stabilizer_iff, smul_def, ofQuotient_val_apply, Equiv.symm_apply_eq, hi,
+    ← MulAction.mem_stabilizer_iff, MulAction.stabilizer_quotient]
+
+include hH in
+/-- For an open subgroup `H` with `n` cosets, exactly `(n - 1)!` labelled Galois sets of size `n`
+are transitive with stabilizer `H` at a given label `i`: they are the labellings of the cosets
+sending `i` to the trivial coset. -/
+theorem natCard_isTransitive_stabilizer_eq
+    (hn : Nat.card ((SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H) = n) (i : Fin n) :
+    Nat.card {ρ : GaloisSet K n // ρ.IsTransitive ∧
+      letI := ρ.mulAction
+      MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i = H} =
+      (n - 1).factorial := by
+  let F : {e : Fin n ≃ (SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸ H //
+      e i = ((1 : SeparableClosure K ≃ₐ[K] SeparableClosure K) : _ ⧸ H)} →
+      {ρ : GaloisSet K n // ρ.IsTransitive ∧
+        letI := ρ.mulAction
+        MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i = H} :=
+    fun e ↦ ⟨ofQuotient H hH e.1, isTransitive_ofQuotient hH e.1, stabilizer_ofQuotient hH e.1 e.2⟩
+  have hF : Function.Bijective F := by
+    constructor
+    · -- Both labellings send `i` to the trivial coset, so the coset `σ H` labelled `j` by the
+      -- first is `σ • i = j` for the second as well.
+      intro e₁ e₂ h
+      refine Subtype.ext (Equiv.ext fun j ↦ ?_)
+      obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (e₁.1 j)
+      have h' : e₁.1.symm (σ • e₁.1 i) = e₂.1.symm (σ • e₂.1 i) :=
+        congrArg (fun ρ : {ρ : GaloisSet K n // _} ↦ ρ.1.val σ i) h
+      rw [e₁.2, e₂.2, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one, hσ,
+        Equiv.symm_apply_apply, Equiv.eq_symm_apply] at h'
+      exact h'.symm
+    · -- A transitive action is labelled by the orbit map of `i` on the cosets of its stabilizer.
+      rintro ⟨ρ, hρ, hstab⟩
+      let := ρ.mulAction
+      have : MulAction.IsPretransitive (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin n) := hρ
+      subst hstab
+      let e : (SeparableClosure K ≃ₐ[K] SeparableClosure K) ⧸
+          MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i ≃ Fin n :=
+        Equiv.ofBijective (MulAction.ofQuotientStabilizer _ i)
+          ⟨MulAction.injective_ofQuotientStabilizer _ i, fun j ↦
+            let ⟨σ, hσ⟩ :=
+              MulAction.exists_smul_eq (SeparableClosure K ≃ₐ[K] SeparableClosure K) i j
+            ⟨σ, hσ⟩⟩
+      refine ⟨⟨e.symm, (e.symm_apply_eq).2
+        (one_smul (SeparableClosure K ≃ₐ[K] SeparableClosure K) i).symm⟩,
+        Subtype.ext (ext fun σ j ↦ ?_)⟩
+      -- `e` is `Equiv.ofBijective` of the orbit map, which commutes with the action.
+      change MulAction.ofQuotientStabilizer _ i (σ • e.symm j) = ρ.val σ j
+      rw [MulAction.ofQuotientStabilizer_smul, ← smul_def]
+      exact congrArg (σ • ·) (e.apply_symm_apply j)
+  rw [← Nat.card_eq_of_bijective F hF,
+    Nat.card_subtype_equiv_apply_eq ((Nat.card_fin n).trans hn.symm), Nat.card_fin]
+
+end ofQuotient
+
+/-- For a subextension `L` of degree `n`, exactly `(n - 1)!` labelled Galois sets of size `n` are
+transitive with `L` as the fixed field of the stabilizer of a given label. -/
+theorem natCard_isTransitive_fixedField_stabilizer_eq
+    (L : IntermediateField K (SeparableClosure K)) (hL : Module.finrank K L = n) (i : Fin n) :
+    Nat.card {ρ : GaloisSet K n // ρ.IsTransitive ∧
+      letI := ρ.mulAction
+      IntermediateField.fixedField
+        (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i) = L} =
+      (n - 1).factorial := by
+  have : FiniteDimensional K L := Module.finite_of_finrank_pos (hL ▸ i.pos)
+  rw [← natCard_isTransitive_stabilizer_eq L.fixingSubgroup_isOpen
+    (by rw [← Subgroup.index, ← IntermediateField.finrank_eq_fixingSubgroup_index, hL]) i]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun ρ ↦ and_congr_right fun _ ↦ ?_)
+  let := ρ.mulAction
+  constructor
+  · rintro h
+    rw [← h, ρ.fixingSubgroup_fixedField_stabilizer]
+  · rintro h
+    rw [h, InfiniteGalois.fixedField_fixingSubgroup]
+
+open scoped ENNReal in
+/-- **Transitive Galois sets and subextensions.** Summed over the transitive labelled Galois sets
+of size `n`, any weight `g` of the fixed field of the stabilizer of a label `i` is `(n - 1)!`
+times the sum of `g` over the subextensions of `SeparableClosure K` of degree `n`: each such
+subextension is the fixed field for exactly `(n - 1)!` of them. -/
+theorem tsum_isTransitive (i : Fin n) (g : IntermediateField K (SeparableClosure K) → ℝ≥0∞) :
+    ∑' ρ : {ρ : GaloisSet K n // ρ.IsTransitive},
+        (letI := ρ.1.mulAction
+        g (IntermediateField.fixedField
+          (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i))) =
+      ((n - 1).factorial : ℝ≥0∞) *
+        ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = n}, g L.1 := by
+  let Φ : {ρ : GaloisSet K n // ρ.IsTransitive} →
+      {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = n} := fun ρ ↦
+    letI := ρ.1.mulAction
+    ⟨IntermediateField.fixedField
+      (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i),
+      ρ.1.finrank_fixedField_stabilizer_of_isTransitive ρ.2 i⟩
+  rw [← tsum_fiberwise _ Φ, ← ENNReal.tsum_mul_left]
+  refine tsum_congr fun L ↦ ?_
+  have hfib : ∀ ρ : Φ ⁻¹' {L}, (letI := ρ.1.1.mulAction
+      g (IntermediateField.fixedField
+        (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i))) = g L.1 :=
+    fun ρ ↦ congrArg (fun L : {L : IntermediateField K (SeparableClosure K) //
+      Module.finrank K L = n} ↦ g L.1) ρ.2
+  rw [tsum_congr hfib, ENNReal.tsum_const]
+  have hcard : Nat.card (Φ ⁻¹' {L}) = (n - 1).factorial := by
+    rw [← natCard_isTransitive_fixedField_stabilizer_eq L.1 L.2 i]
+    exact Nat.card_congr
+      { toFun := fun ρ ↦ ⟨ρ.1.1, ρ.1.2, congrArg Subtype.val ρ.2⟩
+        invFun := fun ρ ↦ ⟨⟨ρ.1, ρ.2.1⟩, Subtype.ext ρ.2.2⟩
+        left_inv := fun _ ↦ rfl
+        right_inv := fun _ ↦ rfl }
+  have : Finite (Φ ⁻¹' {L}) := Nat.finite_of_card_ne_zero (hcard ▸ (n - 1).factorial_ne_zero)
+  rw [ENat.card_eq_coe_natCard, hcard, ENat.toENNReal_coe]
 
 end GaloisSet
 
