@@ -22,8 +22,8 @@ deformation never raises `f`, so the same holds inside every larger sublevel `M_
 `M_a → M_c` is a closed cofibration
 (`TauCeti.hasHomotopyExtensionProperty_range_sublevelInclusion`).
 
-A compact band above a regular value `a` begins with a collar without critical points
-(`TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints`), so both statements hold
+A compact band above a regular value `a` begins with a compact collar without critical points
+(`TauCeti.exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero`), so both statements hold
 at every regular value `a` with a compact band above it
 (`TauCeti.hasHomotopyExtensionProperty_sublevel_of_isRegularValue` and
 `TauCeti.hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue`). For a proper
@@ -84,26 +84,14 @@ theorem hasHomotopyExtensionProperty_range_sublevelInclusion (hf : ContMDiff I �
   exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_apply_eq_sub hf.continuous hab φ
     φ.cont' φ.map_zero_apply hφ hac
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- Above a regular value `a` with a compact band `f⁻¹[a, b]`, some band `f⁻¹[a, b']` with
-`a < b' ≤ b` is compact and contains no critical point. -/
-private theorem exists_regular_band_of_isRegularValue (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a < b)
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) :
-    ∃ b', a < b' ∧ IsCompact (f ⁻¹' Icc a b') ∧
-      ∀ x, a ≤ f x → f x ≤ b' → mfderiv I 𝓘(ℝ) f x ≠ 0 := by
-  obtain ⟨b', ⟨hab', hb'⟩, h⟩ :=
-    exists_mem_Ioc_forall_notMem_criticalPoints (hf.of_le (by simp)) hab hcompact ha
-  exact ⟨b', hab', hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
-    (preimage_mono (Icc_subset_Icc le_rfl hb')), fun x hxa hxb h0 ↦
-      h x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h0) ⟨hxa, hxb⟩⟩
-
 /-- **A sublevel at a regular value is a closed cofibration.** If `a` is a regular value of a
 smooth function `f` and the band `f⁻¹[a, b]`, where `a < b`, is compact, then the sublevel
 `{f ≤ a}` has the homotopy extension property in `M`. -/
 theorem hasHomotopyExtensionProperty_sublevel_of_isRegularValue (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     (hab : a < b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) :
     HasHomotopyExtensionProperty {x | f x ≤ a} := by
-  obtain ⟨b', hab', hcompact', hreg⟩ := exists_regular_band_of_isRegularValue hf hab hcompact ha
+  obtain ⟨b', ⟨hab', -⟩, hcompact', hreg⟩ :=
+    exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero (hf.of_le (by simp)) hab hcompact ha
   exact hasHomotopyExtensionProperty_sublevel hf hab' hcompact' hreg
 
 /-- **The inclusion of a sublevel at a regular value into a larger sublevel is a closed
@@ -114,7 +102,8 @@ theorem hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hac : a ≤ c) :
     HasHomotopyExtensionProperty (range (sublevelInclusion f a c hac)) := by
-  obtain ⟨b', hab', hcompact', hreg⟩ := exists_regular_band_of_isRegularValue hf hab hcompact ha
+  obtain ⟨b', ⟨hab', -⟩, hcompact', hreg⟩ :=
+    exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero (hf.of_le (by simp)) hab hcompact ha
   exact hasHomotopyExtensionProperty_range_sublevelInclusion hf hab' hcompact' hreg hac
 
 end TauCeti
