@@ -251,6 +251,15 @@ theorem coe_stabilizerGenerator (f : α → G) (b : Q) (r : Q → G)
     (hr : ∀ q, (r q)⁻¹ • b = q) (e : Q × α) :
     (stabilizerGenerator f b r hr e : G) = generator (actionPerm f) f r e := (rfl)
 
+/-- Lifting stabilizer generators and then coercing agrees with lifting their ambient values. -/
+@[simp]
+theorem coe_lift_stabilizerGenerator (f : α → G) (b : Q) (r : Q → G)
+    (hr : ∀ q, (r q)⁻¹ • b = q) (v : FreeGroup (Q × α)) :
+    (FreeGroup.lift (stabilizerGenerator f b r hr) v : G) =
+      FreeGroup.lift (generator (actionPerm f) f r) v :=
+  FreeGroup.lift_unique ((MulAction.stabilizer G b).subtype.comp
+    (FreeGroup.lift (stabilizerGenerator f b r hr))) (by intro e; simp)
+
 /-- A word fixing the base point rewrites to a word in its stabilizer generators denoting
 exactly the same element. This is an explicit word dictionary, not only a generation assertion. -/
 theorem coe_lift_stabilizerGenerator_rewrite (f : α → G) (b : Q) (r : Q → G)
@@ -262,12 +271,8 @@ theorem coe_lift_stabilizerGenerator_rewrite (f : α → G) (b : Q) (r : Q → G
   have hend : trace (actionPerm f) b w = b := by
     rw [trace_actionPerm]
     exact MulAction.mem_stabilizer_iff.mp ((MulAction.stabilizer G b).inv_mem hw)
-  calc
-    _ = FreeGroup.lift (generator (actionPerm f) f r)
-        (FreeGroup.mk (rewrite (actionPerm f) b w)) :=
-      FreeGroup.lift_unique ((MulAction.stabilizer G b).subtype.comp
-        (FreeGroup.lift (stabilizerGenerator f b r hr))) (by intro e; simp)
-    _ = _ := by rw [lift_rewrite, hend, hb]; simp
+  rw [coe_lift_stabilizerGenerator, lift_rewrite, hend, hb]
+  simp
 
 end Action
 

@@ -12,8 +12,9 @@ public import TauCeti.GroupTheory.PresentedGroup
 # Presentations of stabilizers by signed Schreier rewriting
 
 For a group given by signed relator words, choose a transitive action and representative words
-whose inverses carry a base point to every state. The stabilizer has generators indexed by
-positive edges. Its relators are the rewrites of the original relators at every state, together
+whose inverses carry a base point to every state and whose base-point representative evaluates
+to one. The stabilizer has generators indexed by positive edges. Its relators are the rewrites
+of the original relators at every state, together
 with the rewrites of the representative words at the base point.
 
 `TauCeti.Schreier.stabilizerEquiv` identifies this presentation with the actual stabilizer.
@@ -66,13 +67,7 @@ include hr hb in
 private theorem rewritten_relators_sound (v : FreeGroup (Q × α)) (hv : v ∈ R) :
     FreeGroup.lift (stabilizerGenerator f b (fun q => ev (FreeGroup.mk (r q))) hr) v = 1 := by
   apply Subtype.ext
-  have hc : (FreeGroup.lift
-      (stabilizerGenerator f b (fun q => ev (FreeGroup.mk (r q))) hr) v : G) =
-      FreeGroup.lift (generator σ f (fun q => ev (FreeGroup.mk (r q)))) v :=
-    FreeGroup.lift_unique ((MulAction.stabilizer G b).subtype.comp
-      (FreeGroup.lift (stabilizerGenerator f b (fun q => ev (FreeGroup.mk (r q))) hr)))
-      (by intro e; simp)
-  rw [hc]
+  rw [coe_lift_stabilizerGenerator]
   rcases hv with ⟨q, w, hw, rfl⟩ | ⟨q, rfl⟩
   · exact lift_rewrite_eq_one f _ q w (by
       simpa only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk] using
@@ -98,13 +93,7 @@ theorem stabilizerHom_rewrite (w : PresentationWord α)
     stabilizerHom W b r hr hb (PresentedGroup.mk R (FreeGroup.mk (rewrite σ b w))) =
       ⟨ev (FreeGroup.mk w), hw⟩ := by
   apply Subtype.ext
-  have hh : (stabilizerHom W b r hr hb).comp (PresentedGroup.mk R) =
-      FreeGroup.lift (stabilizerGenerator f b (fun q => ev (FreeGroup.mk (r q))) hr) := by
-    apply FreeGroup.ext_hom
-    intro e
-    simpa only [MonoidHom.comp_apply, FreeGroup.lift_apply_of, PresentedGroup.of] using
-      stabilizerHom_of W b r hr hb e
-  rw [← MonoidHom.comp_apply, hh]
+  rw [stabilizerHom, PresentedGroup.toGroup_mk]
   have hw' : FreeGroup.lift f (FreeGroup.mk w) ∈ MulAction.stabilizer G b := by
     simpa only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk] using hw
   rw [coe_lift_stabilizerGenerator_rewrite f b _ hr hb w hw']
@@ -145,12 +134,7 @@ private theorem sourcePerm_of (a : α) :
 private theorem sourcePerm_word (q : Q) (h : K) (w : PresentationWord α) :
     (sourcePerm W b r (ev (FreeGroup.mk w)))⁻¹ (q, h) =
       (trace σ q w, h * PresentedGroup.mk R (FreeGroup.mk (rewrite σ q w))) := by
-  have hc : (sourcePerm W b r).comp ev =
-      FreeGroup.lift (fun a => (pathPerm σ (PresentedGroup.of : Q × α → K) a)⁻¹) := by
-    apply FreeGroup.ext_hom
-    intro a
-    exact sourcePerm_of W b r a
-  rw [← MonoidHom.comp_apply, hc, lift_pathPerm]
+  rw [sourcePerm, PresentedGroup.toGroup_mk, lift_pathPerm]
   simp only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk]
 
 include hr in
@@ -197,17 +181,17 @@ theorem stabilizerHom_injective : Function.Injective (stabilizerHom W b r hr hb)
   simpa using congrArg Prod.snd (hx.symm.trans hy)
 
 /-- **Reidemeister--Schreier presentation theorem.** Rewriting the defining relations at
-every state and killing representative-word rewrites presents the actual point stabilizer.
+every state and killing representative-word rewrites presents the actual point stabilizer,
+provided inverse representatives reach every state and the base representative evaluates to one.
 All generators, including redundant edges, retain their specified word dictionary. -/
 noncomputable def stabilizerEquiv : K ≃* MulAction.stabilizer G b :=
   MulEquiv.ofBijective (stabilizerHom W b r hr hb)
     ⟨stabilizerHom_injective W b r hr hb, stabilizerHom_surjective W b r hr hb⟩
 
+/-- The presentation equivalence has the canonical stabilizer homomorphism as its forward map. -/
 @[simp]
-theorem stabilizerEquiv_of (e : Q × α) :
-    stabilizerEquiv W b r hr hb (PresentedGroup.of e) =
-      stabilizerGenerator f b (fun q => ev (FreeGroup.mk (r q))) hr e :=
-  stabilizerHom_of W b r hr hb e
+theorem stabilizerEquiv_apply (x : K) :
+    stabilizerEquiv W b r hr hb x = stabilizerHom W b r hr hb x := (rfl)
 
 /-- The inverse word dictionary of the Schreier presentation equivalence. -/
 @[simp]
