@@ -121,6 +121,10 @@ def markovWeight : Bool → R
 /-- The cap vanishes on parallel spins. -/
 @[simp] theorem spinCap_self (x : Bool) : spinCap q x x = 0 := by cases x <;> rfl
 
+/-- The cup vector is the cap covector scaled by `-q`. -/
+theorem spinCup_eq_neg_mul_spinCap (x y : Bool) : spinCup q x y = -(q : R) * spinCap q x y := by
+  cases x <;> cases y <;> simp
+
 @[simp] theorem markovWeight_true : markovWeight q true = -(q : R) := (rfl)
 
 @[simp] theorem markovWeight_false : markovWeight q false = -((q⁻¹ : Rˣ) : R) := (rfl)
