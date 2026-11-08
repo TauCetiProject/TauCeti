@@ -324,11 +324,6 @@ private lemma homEquiv_symm_add {X : C} (x y : G.obj X) :
   rw [R.homEquiv.symm_apply_eq, R.homEquiv_eq, Functor.comp_map, G.map_add]
   exact (congrArg₂ (· + ·) (h x) (h y)).symm
 
-omit [Abelian C] [HasExt C] [G.Additive] in
-private lemma homEquiv_comp_apply {X Y : C} (f : P ⟶ X) (g : X ⟶ Y) :
-    R.homEquiv (f ≫ g) = G.map g (R.homEquiv f) :=
-  R.homEquiv_comp g f
-
 omit [HasExt C] in
 private lemma homEquiv_zero {X : C} : R.homEquiv (0 : P ⟶ X) = 0 := by
   rw [R.homEquiv_eq, Functor.comp_map, G.map_zero]
@@ -383,13 +378,12 @@ private lemma surjective_cyclesExtClass (n : ℕ) :
     Function.Surjective (cyclesExtClass ι hι hι' hK G R (P := P) n) := by
   intro α
   obtain ⟨f, hf, rfl⟩ := K.extMk_surjective ι hι hι' hK hP α
-  -- the cocycle `f` of `Hom(P, K)` is a cycle `c` of `G(K)`, as `Zⁿ(G(K))` is the kernel of `d`
-  obtain ⟨c, hc⟩ := (ShortComplex.ab_exact_iff (ShortComplex.mk _ _
-    (((G.mapHomologicalComplex _).obj K).iCycles_d n (n + 1)))).1
-      (ShortComplex.exact_of_f_is_kernel _
-        (((G.mapHomologicalComplex _).obj K).cyclesIsKernel n (n + 1) (by simp))) (R.homEquiv f)
-      ((homEquiv_comp_apply G R f _).symm.trans (by rw [hf, homEquiv_zero]; rfl))
-  exact ⟨c, cyclesExtClass_eq_extMk ι hι hι' hK G R c f hf hc⟩
+  -- the cocycle `f` of `Hom(P, K)` is a cycle of `G(K)`
+  refine ⟨(((G.mapHomologicalComplex _).obj K).sc n).abCyclesIso.inv ⟨R.homEquiv f, ?_⟩,
+    cyclesExtClass_eq_extMk ι hι hι' hK G R _ f hf (ShortComplex.abCyclesIso_inv_apply_iCycles _ _)⟩
+  change G.map (K.d n ((ComplexShape.up ℕ).next n)) (R.homEquiv f) = 0
+  rw [CochainComplex.next ℕ n]
+  exact (R.homEquiv_comp _ f).symm.trans (by rw [hf, homEquiv_zero]; rfl)
 
 include hP in
 /-- A cycle of `G(K)` has zero class in `Extⁿ(P, F)` exactly when it is a boundary. -/
@@ -416,9 +410,11 @@ private lemma cyclesExtClass_eq_zero_iff (n : ℕ)
             (((G.mapHomologicalComplex _).obj K).homologyIsCokernel k (k + 1) (by simp))) c
     rw [K.extMk_succ_eq_zero_iff ι hι hι' hK hP, hex]
     refine ⟨fun ⟨g, hg⟩ ↦ ⟨R.homEquiv g, hi ?_⟩, fun ⟨y, hy⟩ ↦ ⟨R.homEquiv.symm y, ?_⟩⟩
-    · rw [iCycles_toCycles_apply, ← homEquiv_comp_apply, hg, Equiv.apply_symm_apply]
-    · rw [Equiv.eq_symm_apply, homEquiv_comp_apply, Equiv.apply_symm_apply, ← hy,
+    · rw [iCycles_toCycles_apply]
+      exact (R.homEquiv_comp _ g).symm.trans (by rw [hg, Equiv.apply_symm_apply])
+    · rw [Equiv.eq_symm_apply, R.homEquiv_comp, Equiv.apply_symm_apply, ← hy,
         iCycles_toCycles_apply]
+      rfl
 
 /-- The map `Extⁿ(P, F) →+ Hⁿ(G(K))` sending the class of a cycle to its cohomology class. -/
 private noncomputable def extToHomology (n : ℕ) :
