@@ -128,13 +128,12 @@ private theorem norm_minusculeDual_reflection (i : Fin 7) (a : Fin 56) :
     typeE₇RootLattice.form (typeE₇MinusculeDual (e7MinusculeReflection i a))
         (typeE₇MinusculeDual (e7MinusculeReflection i a)) =
       typeE₇RootLattice.form (typeE₇MinusculeDual a) (typeE₇MinusculeDual a) := by
-  have hii : (CartanMatrix.E 7) i i = 2 := by revert i; decide
   rw [typeE₇MinusculeDual_reflection]
   simp only [LinearMap.BilinForm.sub_left, LinearMap.BilinForm.sub_right,
     LinearMap.BilinForm.smul_left, LinearMap.BilinForm.smul_right,
     form_typeE₇MinusculeDual_simpleRoot,
     typeE₇RootLattice.isSymm.eq (typeE₇SimpleRoot i) (typeE₇MinusculeDual a),
-    form_typeE₇SimpleRoot_typeE₇SimpleRoot, hii]
+    form_typeE₇SimpleRoot_typeE₇SimpleRoot, CartanMatrix.E_diag]
   ring
 
 private theorem mk_minusculeDual_reflection (i : Fin 7) (a : Fin 56) :
@@ -186,16 +185,6 @@ theorem exists_typeE₇MinusculeDual_eq_neg (a : Fin 56) :
     simp only [typeE₇DualWeightEquiv_minusculeDual, map_neg, hb])⟩
 
 /-! ## Exhaustiveness of the minimal vectors -/
-
--- Twice the inverse Cartan matrix, used only to make the finite exhaustion executable.
-private def e7TwiceInverse : Matrix (Fin 7) (Fin 7) ℤ := !![
-  4, 4, 6, 8, 6, 4, 2;
-  4, 7, 8, 12, 9, 6, 3;
-  6, 8, 12, 16, 12, 8, 4;
-  8, 12, 16, 24, 18, 12, 6;
-  6, 9, 12, 18, 15, 10, 5;
-  4, 6, 8, 12, 10, 8, 4;
-  2, 3, 4, 6, 5, 4, 3]
 
 private def e7Coordinates (w : Fin 7 → ℤ) (j : Fin 7) : ℚ :=
   (∑ i, (e7TwiceInverse j i : ℚ) * w i) / 2
@@ -251,17 +240,9 @@ private theorem two_mul_norm_eq (x : typeE₇RootLattice.dualCarrier) :
   rw [e7Coordinates]
   ring
 
-private theorem bounded_weights_exhaustion : ∀ w : Fin 7 → Fin 3,
-    (∑ i, (∑ j, e7TwiceInverse i j * ((w j : ℤ) - 1)) * ((w i : ℤ) - 1)) = 3 →
-      ∃ a, e7MinusculeWeight a = fun j ↦ (w j : ℤ) - 1 := by
-  unfold e7TwiceInverse
-  simp only [Fin.forall_fin_succ_pi, Fin.forall_fin_zero_pi]
-  decide +kernel
-
 private theorem minuscule_pairing_bounds (x : typeE₇RootLattice.dualCarrier)
     (hx : typeE₇RootLattice.form x x = 3 / 2) (i : Fin 7) :
     -1 ≤ typeE₇DualWeightEquiv x i ∧ typeE₇DualWeightEquiv x i ≤ 1 := by
-  have hii : (CartanMatrix.E 7) i i = 2 := by revert i; decide
   have hm := isPosDef_typeE₇RootLattice.nonneg
     ((x : Fin 7 → ℚ) - typeE₇SimpleRoot i)
   have hp := isPosDef_typeE₇RootLattice.nonneg
@@ -270,7 +251,7 @@ private theorem minuscule_pairing_bounds (x : typeE₇RootLattice.dualCarrier)
     LinearMap.BilinForm.sub_left, LinearMap.BilinForm.sub_right,
     LinearMap.BilinForm.add_left, LinearMap.BilinForm.add_right,
     typeE₇RootLattice.isSymm.eq (typeE₇SimpleRoot i) x,
-    form_typeE₇SimpleRoot_typeE₇SimpleRoot, hii, hx,
+    form_typeE₇SimpleRoot_typeE₇SimpleRoot, CartanMatrix.E_diag, hx,
     ← typeE₇DualWeightEquiv_apply] at hm hp
   have h : (-2 : ℚ) < typeE₇DualWeightEquiv x i ∧
       (typeE₇DualWeightEquiv x i : ℚ) < 2 := by constructor <;> linarith
@@ -284,23 +265,15 @@ theorem form_self_eq_three_halves_iff_mem_range_typeE₇MinusculeDual
     typeE₇RootLattice.form x x = 3 / 2 ↔ x ∈ Set.range typeE₇MinusculeDual := by
   constructor
   · intro hx
-    let w : Fin 7 → Fin 3 := fun i ↦
-      ⟨(typeE₇DualWeightEquiv x i + 1).toNat, by
-        have := minuscule_pairing_bounds x hx i
-        omega⟩
-    have hw : (fun i ↦ (w i : ℤ) - 1) = typeE₇DualWeightEquiv x := by
-      funext i
-      have := minuscule_pairing_bounds x hx i
-      simp only [w]
-      omega
     have hn : (∑ i, (∑ j, e7TwiceInverse i j * typeE₇DualWeightEquiv x j) *
         typeE₇DualWeightEquiv x i : ℤ) = 3 := by
       have h := two_mul_norm_eq x
       rw [hx, show (2 : ℚ) * (3 / 2) = 3 by norm_num] at h
       exact_mod_cast h.symm
-    obtain ⟨a, ha⟩ := bounded_weights_exhaustion w (by simpa only [← hw] using hn)
+    obtain ⟨a, ha⟩ := mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three
+      (typeE₇DualWeightEquiv x) (minuscule_pairing_bounds x hx) hn
     refine ⟨a, typeE₇DualWeightEquiv.injective ?_⟩
-    rw [typeE₇DualWeightEquiv_minusculeDual, ha, hw]
+    rw [typeE₇DualWeightEquiv_minusculeDual, ha]
   · rintro ⟨a, rfl⟩
     exact form_typeE₇MinusculeDual_self a
 
