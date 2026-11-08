@@ -350,6 +350,16 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
     filter_upwards [hev] with n hn
     simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
 
+/-- `x + (1 - smoothTransition x)` is at least `x`. -/
+theorem le_add_one_sub (x : ℝ) : x ≤ x + (1 - smoothTransition x) := by
+  linarith [le_one x]
+
+/-- `x + (1 - smoothTransition x)` is nonzero for `x ≥ 0`. -/
+theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition x) ≠ 0 := by
+  rcases hx.eq_or_lt with h | h
+  · simp [← h]
+  · exact (h.trans_le (le_add_one_sub x)).ne'
+
 end Real.smoothTransition
 
 /-- The chain rule for the smooth transition function `ψ`: if `f` has derivative `f'` at `x`,
