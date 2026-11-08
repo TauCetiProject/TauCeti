@@ -41,32 +41,6 @@ variable {G : Type*}
 
 section
 
-variable [SMul G ℍ]
-
-/-- Finitely many distance inequalities `dist z p ≤ dist z (g • p)` define the same set as finitely
-many closed geodesic half-planes: the elements fixing the centre `p` impose no condition, and for
-the others the inequality is the closure of the half-plane left of the perpendicular bisector. -/
-theorem _root_.UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane
-    (p : ℍ) (s : Finset G) :
-    ∃ s' : Finset G, (∀ g ∈ s', p ≠ g • p) ∧
-      ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} =
-        ⋂ g ∈ s', closure (leftHalfPlane (perpBisector p (g • p))) := by
-  classical
-  refine ⟨s.filter (fun g ↦ p ≠ g • p), fun g hg ↦ (Finset.mem_filter.mp hg).2, ?_⟩
-  ext z
-  simp only [mem_iInter, Finset.mem_filter]
-  constructor
-  · intro hz g hg
-    exact (mem_closure_leftHalfPlane_perpBisector_iff hg.2 z).mpr (hz g hg.1)
-  · intro hz g hg
-    by_cases hgp : p = g • p
-    · simp [← hgp]
-    · exact (mem_closure_leftHalfPlane_perpBisector_iff hgp z).mp (hz g ⟨hg, hgp⟩)
-
-end
-
-section
-
 variable [SMul G ℍ] [ProperlyDiscontinuousSMul G ℍ]
 
 /-- A bounded hyperbolic Dirichlet domain is globally cut out by finitely many perpendicular
