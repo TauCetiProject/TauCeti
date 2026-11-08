@@ -275,13 +275,25 @@ theorem realizationHomeomorph_symm_apply
     (hfg : f.comp g = id L.toPreAbstractSimplicialComplex) (x : Realization L) :
     (f.realizationHomeomorph g hgf hfg).symm x = g.realizationMap x := (rfl)
 
+/-- The realization of a simplicial map with a simplicial inverse is surjective. -/
+theorem realizationMap_surjective
+    (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (g : SimplicialMap L.toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex)
+    (hgf : g.comp f = id K.toPreAbstractSimplicialComplex)
+    (hfg : f.comp g = id L.toPreAbstractSimplicialComplex) :
+    Function.Surjective f.realizationMap := by
+  simpa only [Function.Surjective, realizationHomeomorph_apply] using
+    (f.realizationHomeomorph g hgf hfg).surjective
+
 end PreAbstractSimplicialComplex.SimplicialMap
 
 namespace TauCeti.PreAbstractSimplicialComplex.SimplicialMap
 
 open _root_.AbstractSimplicialComplex
 
-/-- Realization carries the support of a point to the vertex image of its support. -/
+/-- Realization carries the support of a point to the vertex image of its support. It fires
+before `realizationMap_val` rewrites the realization to a `Finsupp.mapDomain`. -/
+@[simp↓]
 theorem support_realizationMap {α β : Type*} [DecidableEq β]
     {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β}
     (f : _root_.PreAbstractSimplicialComplex.SimplicialMap
@@ -289,36 +301,26 @@ theorem support_realizationMap {α β : Type*} [DecidableEq β]
     (x : Realization K) :
     (f.realizationMap x).1.support = x.1.support.image f := by
   rw [_root_.PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val]
-  refine Finsupp.mapDomain_support.antisymm fun b hb ↦ ?_
-  obtain ⟨a, ha, rfl⟩ := Finset.mem_image.1 hb
-  rw [Finsupp.mem_support_iff, Finsupp.mapDomain_apply_eq_sum]
-  exact (Finset.sum_pos' (fun i _ ↦ Realization.nonneg K x i)
-    ⟨a, by simp [ha], Realization.pos_of_mem_support K x ha⟩).ne'
+  exact Finsupp.support_mapDomain_of_nonneg (fun i ↦ Realization.nonneg K x i) f
 
-/-- A simplicial map with a right inverse transports sets defined by support predicates whenever
-those predicates correspond under the vertex map. -/
-theorem image_realizationMap_ofPred_support {α β : Type*} [DecidableEq α] [DecidableEq β]
+/-- A simplicial map whose realization is surjective transports sets defined by support predicates
+whenever those predicates correspond under the vertex map. -/
+theorem image_realizationMap_ofPred_support {α β : Type*} [DecidableEq β]
     {K : AbstractSimplicialComplex α} {L : AbstractSimplicialComplex β}
     (f : _root_.PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (g : _root_.PreAbstractSimplicialComplex.SimplicialMap
-      L.toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex)
-    (hfg : f.comp g = _root_.PreAbstractSimplicialComplex.SimplicialMap.id
-      L.toPreAbstractSimplicialComplex)
+    (hf : Function.Surjective f.realizationMap)
     {P : Finset α → Prop} {Q : Finset β → Prop}
     (hPQ : ∀ s, P s ↔ Q (s.image f)) :
     f.realizationMap '' {x | P x.1.support} = {y | Q y.1.support} := by
-  have hfg' : ∀ y, f.realizationMap (g.realizationMap y) = y := fun y ↦ by
-    rw [← ContinuousMap.comp_apply,
-      ← _root_.PreAbstractSimplicialComplex.SimplicialMap.realizationMap_comp, hfg,
-      _root_.PreAbstractSimplicialComplex.SimplicialMap.realizationMap_id]
-    rfl
   ext y
-  refine ⟨?_, fun hy ↦ ⟨g.realizationMap y, ?_, hfg' y⟩⟩
-  · rintro ⟨x, hx, rfl⟩
-    simpa only [Set.mem_ofPred_eq, support_realizationMap, ← hPQ] using hx
-  · simp only [Set.mem_ofPred_eq, hPQ, support_realizationMap, Finset.image_image]
-    convert hy using 3
-    simp [← _root_.PreAbstractSimplicialComplex.SimplicialMap.coe_comp, hfg]
+  obtain ⟨x, rfl⟩ := hf y
+  simp only [Set.mem_ofPred_eq, support_realizationMap, ← hPQ]
+  refine ⟨?_, fun h ↦ ⟨x, h, rfl⟩⟩
+  rintro ⟨x', hx', hxx'⟩
+  have himg : x.1.support.image f = x'.1.support.image f := by
+    rw [← support_realizationMap, ← support_realizationMap, hxx']
+  rw [hPQ, himg, ← hPQ]
+  exact hx'
 
 end TauCeti.PreAbstractSimplicialComplex.SimplicialMap
