@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.MeasureTheory.Function.Lusin
 public import TauCeti.Topology.Semicontinuity.Approximation
 
 /-!
@@ -156,31 +157,11 @@ uniformity is what lets the exceptional set be ignored along a convergent family
 supplies such closed sets whenever the members of `S` share a fixed image under a map through which
 `Φ` factors, as the squares of the couplings of two fixed marginals do. -/
 
-/-- A lower semicontinuous function of a map that is continuous on closed sets of arbitrarily
-large mass is almost-everywhere measurable: the map is continuous on countably many closed sets
-whose union is a measure-one set, and on each of them the composite is lower semicontinuous. -/
-theorem aemeasurable_comp_of_forall_exists_isClosed_continuousOn
-    {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞} {Φ : Ω → W} {μ : Measure Ω}
-    (hh : LowerSemicontinuous h)
-    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ μ Cᶜ ≤ ε) :
-    AEMeasurable (fun x ↦ h (Φ x)) μ := by
-  choose C hC hΦC hμC using fun n : ℕ ↦ hΦ (n : ℝ≥0∞)⁻¹ (by simp)
-  have hmeas : ∀ n, AEMeasurable (fun x ↦ h (Φ x)) (μ.restrict (C n)) := fun n ↦
-    aemeasurable_restrict_of_measurable_subtype (hC n).measurableSet
-      (hh.comp (hΦC n).domRestrict).measurable
-  have hnull : μ (⋃ n, C n)ᶜ = 0 := by
-    by_contra hne
-    obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hne
-    exact hn.not_ge ((measure_mono (compl_subset_compl.2 (subset_iUnion C n))).trans (hμC n))
-  rw [← Measure.restrict_eq_self_of_ae_mem (s := ⋃ n, C n) (measure_eq_zero_iff_ae_notMem.1 hnull
-    |>.mono fun x hx ↦ not_not.1 hx)]
-  exact aemeasurable_iUnion_iff.2 hmeas
-
 /-- **Lower semicontinuity under a uniform Lusin condition.** Let `h : W → ℝ≥0∞` be lower
 semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of finite measures on `Ω` such that for
 every `ε > 0` some closed set `C`, on which `Φ` is continuous, has complement of mass at most `ε`
-for every member of `S`, then `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak
-topology. -/
+for every member of `S`. Then `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the
+weak topology. -/
 theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
     {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
     {Φ : Ω → W} {S : Set (FiniteMeasure Ω)} (hh : LowerSemicontinuous h)
@@ -240,8 +221,8 @@ theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
 /-- **Lower semicontinuity under a uniform Lusin condition.** Let `h : W → ℝ≥0∞` be lower
 semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of probability measures on `Ω` such that for
 every `ε > 0` some closed set `C`, on which `Φ` is continuous, has complement of mass at most `ε`
-for every member of `S`, then `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak
-topology. -/
+for every member of `S`. Then `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the
+weak topology. -/
 theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
     {Φ : Ω → W} {S : Set (ProbabilityMeasure Ω)} (hh : LowerSemicontinuous h)
     (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 →
