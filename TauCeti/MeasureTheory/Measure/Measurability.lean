@@ -183,28 +183,15 @@ theorem measurable_integral_continuousMap_Icc_of_measurable_integral_pow {α : T
         ‖p.toContinuousMapOn (Set.Icc l u) - g‖ < 1 / (n + 1) := fun n =>
       exists_polynomial_near_continuousMap l u g (1 / (n + 1)) (by positivity)
     choose q hq using happrox
-    have hbound : ∀ (n : ℕ) (x : ↥(Set.Icc l u)),
-        ‖(q n).eval ((x : ℝ)) - g x‖ ≤ 1 / ((n : ℝ) + 1) := by
-      intro n x
-      have hx := ContinuousMap.norm_coe_le_norm
-        ((q n).toContinuousMapOn (Set.Icc l u) - g) x
-      simpa using hx.trans (hq n).le
     refine measurable_of_tendsto_metrizable
       (f := fun n a => ∫ x, (q n).eval ((x : ℝ)) ∂(ν a)) (fun n => hpoly (q n)) ?_
     rw [tendsto_pi_nhds]
     intro a
-    have hgint : Integrable (fun x => g x) (ν a) := g.continuous.integrable_of_compactSpace
-    have hqint : ∀ n, Integrable (fun x : ↥(Set.Icc l u) => (q n).eval ((x : ℝ))) (ν a) :=
-      fun n => ((q n).continuous.comp continuous_subtype_val).integrable_of_compactSpace
-    have key : ∀ n : ℕ, ‖(∫ x, (q n).eval ((x : ℝ)) ∂(ν a)) - ∫ x, g x ∂(ν a)‖
-        ≤ (1 / ((n : ℝ) + 1)) * (ν a).real Set.univ := by
-      intro n
-      rw [← integral_sub (hqint n) hgint]
-      exact norm_integral_le_of_norm_le_const
-        (Filter.Eventually.of_forall fun x => hbound n x)
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun n => norm_nonneg _) key ?_
-    simpa using tendsto_one_div_add_atTop_nhds_zero_nat.mul_const ((ν a).real Set.univ)
+    have hconv : Tendsto (fun n => (q n).toContinuousMapOn (Set.Icc l u)) atTop (nhds g) := by
+      rw [tendsto_iff_norm_sub_tendsto_zero]
+      exact squeeze_zero (fun n => norm_nonneg _) (fun n => (hq n).le)
+        tendsto_one_div_add_atTop_nhds_zero_nat
+    exact ((TauCeti.continuous_integral_continuousMap (μ := ν a)).tendsto g).comp hconv
   exact hcont g
 
 /-- A family of finite measures on a Borel space in which closed sets are approximated from above
