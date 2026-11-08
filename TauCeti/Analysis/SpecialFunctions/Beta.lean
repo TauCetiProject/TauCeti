@@ -41,8 +41,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 ## Main results
 
-* `TauCeti.continuous_integral_rpow_mul_one_sub_rpow_mul` — the beta kernel integral against a
-  bounded continuous function is continuous in the two positive shapes;
+* `BoundedContinuousFunction.continuous_integral_rpow_mul_one_sub_rpow_mul` — the beta kernel
+  integral against a bounded continuous function is continuous in the two positive shapes;
 * `ProbabilityTheory.continuous_one_div_beta` — `1 / Β(a, b)` is continuous in the two positive
   shapes;
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
@@ -963,7 +963,13 @@ theorem integral_mul_inv_add_sub_inv_add_div_one_add_sq {a : ℝ} (ha : 0 < a) :
 
 end SecondIntegral
 
-open scoped BoundedContinuousFunction Topology in
+end TauCeti
+
+namespace BoundedContinuousFunction
+
+open Filter MeasureTheory Set
+open scoped Topology
+
 /-- Halving the shapes gives a locally uniform integrable bound at both endpoints, so the
 unnormalized beta kernel integral against a bounded continuous function is continuous in the
 shape parameters. -/
@@ -1011,7 +1017,7 @@ theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
       ((Real.continuous_const_rpow (sub_pos.mpr hx.2).ne').comp
         (hb.sub continuous_const))).mul continuous_const).continuousAt
 
-end TauCeti
+end BoundedContinuousFunction
 
 namespace ProbabilityTheory
 

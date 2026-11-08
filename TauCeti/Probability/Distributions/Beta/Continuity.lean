@@ -42,6 +42,6 @@ theorem continuous_betaMeasure :
   simp only [ProbabilityMeasure.coe_mk,
     fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ integral_betaMeasure_eq_one_div_beta_smul p.1.2 p.2.2 f,
     smul_eq_mul]
-  exact continuous_one_div_beta.mul (TauCeti.continuous_integral_rpow_mul_one_sub_rpow_mul f)
+  exact continuous_one_div_beta.mul (f.continuous_integral_rpow_mul_one_sub_rpow_mul)
 
 end TauCeti.Probability
