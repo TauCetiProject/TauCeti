@@ -74,11 +74,6 @@ namespace TauCeti.Finance
 
 variable {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ} {C₁ C₂ : ℝ → ℝ → ℝ} {T Λ R A : ℝ}
 
-/-- The derivative of a `C²` function is differentiable. -/
-private theorem differentiableAt_deriv_of_contDiffAt_two {f : ℝ → ℝ} {x : ℝ}
-    (hf : ContDiffAt ℝ 2 f x) : DifferentiableAt ℝ (deriv f) x :=
-  (hf.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
-
 /-- In weighted log-spot coordinates and reversed time, `Cᵢ(e^y, T - τ) / (1 + e^y)` is
 continuous on `0 ≤ τ ≤ T`. -/
 private theorem continuousOn_reversed_div_one_add_exp {C : ℝ → ℝ → ℝ}
@@ -191,11 +186,11 @@ theorem le_of_pde_le_of_terminal_le
       have hc₁ := hcd₁ (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)
       have h₁ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
         (hc₁.eventually_differentiableAt (by norm_num))
-        (differentiableAt_deriv_of_contDiffAt_two hc₁)
+        hc₁.differentiableAt_deriv_two
       have hc₂ := hcd₂ (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)
       have h₂ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
         (hc₂.eventually_differentiableAt (by norm_num))
-        (differentiableAt_deriv_of_contDiffAt_two hc₂)
+        hc₂.differentiableAt_deriv_two
       have h := div_le_div_of_nonneg_right
         (hpde (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)) (hψ y).le
       linear_combination h + h₂ - h₁)
