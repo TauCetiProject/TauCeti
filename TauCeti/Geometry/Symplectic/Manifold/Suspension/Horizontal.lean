@@ -8,8 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
-public import TauCeti.Geometry.Symplectic.Manifold.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
+
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 
 /-!
 # Horizontal tangent planes and the vertical energy density of a symplectic suspension

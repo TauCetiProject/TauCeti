@@ -11,7 +11,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
-public import TauCeti.Geometry.Symplectic.Manifold.Orientation
+
+import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 
 /-!
 # Pairings of two-forms with pseudoholomorphic curves are bounded by area
