@@ -165,10 +165,15 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
   have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
   have hex₂ : IsIntegrallyClosedIn k F₂ :=
     (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
-  -- An effective divisor `B` of degree `g(F₂)` supported on `T`, and at every rational
-  -- place `Q` of `F₂` a function `w Q ∈ L(B + Q)` with a pole at `Q`.
-  obtain ⟨B, w, hB0, hBdeg, hBQ, hwL, hwpole⟩ :=
-    Divisor.exists_degree_eq_genus_and_functions_ord_neg hF₂ hex₂ hT hcard
+  -- A nonspecial effective divisor `B` of degree `g(F₂)` supported on `T`.
+  obtain ⟨B, hB0, hBT, hBdeg, hBdim, -⟩ :=
+    Divisor.exists_degree_eq_genus_dim_eq_one hF₂ hex₂ hT hcard
+  have hBQ : ∀ Q, Q ∉ T → B.coeff Q = 0 := fun Q hQ ↦ by
+    by_contra h
+    exact hQ (hBT (WeilDivisor.mem_support_iff.mpr h))
+  -- At every rational place `Q` of `F₂`, a function `w Q ∈ L(B + Q)` with a pole at `Q`.
+  choose! w hwL hwpole using fun (Q : Place k F₂) (hQ : Q.degree = 1) ↦
+    Divisor.exists_mem_riemannRochSpace_add_ofPoint_ord_neg hF₂ hB0 hBdeg hBdim hQ
   -- The places of `F` over `P₁`, one of which is singled out.
   set S := (Place.finite_setOf_restrict_eq (k' := k) (F' := F) k F₁ P₁).toFinset with hSdef
   have hS : ∀ P, P ∈ S ↔ P.restrict k F₁ = P₁ := fun P ↦ Set.Finite.mem_toFinset _
@@ -314,8 +319,10 @@ private theorem genus_le_of_forall_degree_eq_one (hF : IsFunctionField k F)
   set S := {P : Place k F | P.restrict k F₁ = P₁}
   have hSfin : S.Finite := Place.finite_setOf_restrict_eq (k' := k) (F' := F) k F₁ P₁
   have hRinj : Set.InjOn R s := fun a ha a' ha' h ↦ hdist a ha a' ha' (by rw [h])
-  obtain ⟨himg, hScard⟩ : R '' s = S ∧ S.ncard = Module.finrank F₁ F :=
-    Place.image_eq_setOf_restrict_eq_and_ncard_eq (k' := k) (F' := F) k F₁ R hR hRinj hsdeg
+  have himg : R '' s = S :=
+    Place.image_eq_setOf_restrict_eq (k' := k) (F' := F) k F₁ R hR hRinj hsdeg
+  have hScard : S.ncard = Module.finrank F₁ F := by
+    rw [← himg, hRinj.ncard_image, Set.ncard_coe_finset, hsdeg]
   have hsplitc : P₁.IsSplitCompletely (k' := k) (F' := F) :=
     (Place.isSplitCompletely_def P₁).mpr hScard
   have hinj : Set.InjOn (fun P : Place k F ↦ P.restrict k F₂) S := by
@@ -437,34 +444,6 @@ private theorem map_eq_minpoly_and_separable_of_constantCompositum_eq_top {k' F'
     rw [Polynomial.map_map, hcomp, ← Polynomial.map_map]
     exact hsep.map
 
-/-- If the residue fields of the places in a finite set `TQ` of places of `F₂` embed into the
-constant field extension `k'`, then the constant field extension `F₂ · k'` has at least `|TQ|`
-rational places. -/
-private theorem card_le_encard_setOf_degree_eq_one_of_embeddings {k' F' : Type*} [Field k']
-    [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Normal k k']
-    [Algebra.IsSeparable k k']
-    [Algebra F₂ F'] [IsScalarTower k F₂ F'] [Algebra k' (constantCompositum F₂ k' F')]
-    [IsScalarTower k k' (constantCompositum F₂ k' F')]
-    [FiniteDimensional F₂ (constantCompositum F₂ k' F')] (hF₂ : IsFunctionField k F₂)
-    (hex₂ : IsIntegrallyClosedIn k F₂)
-    (hcc₂ : constantCompositum F₂ k' (constantCompositum F₂ k' F') = ⊤)
-    (hF₂' : IsFunctionField k' (constantCompositum F₂ k' F'))
-    {TQ : Finset (Place k F₂)} (hembQ : ∀ Q ∈ TQ, Nonempty (Q.ResidueField →ₐ[k] k')) :
-    (TQ.card : ℕ∞) ≤ {Q' : Place k' (constantCompositum F₂ k' F') | Q'.degree = 1}.encard := by
-  have hsurj := Place.restrict_surjective_of_finiteDimensional (k' := k')
-    (F' := constantCompositum F₂ k' F') hF₂ hF₂'
-  choose Q' hQ' using fun Q : Place k F₂ ↦ hsurj Q
-  simp only at hQ'
-  have hdegQ (Q₀ : Place k' (constantCompositum F₂ k' F')) (hQ₀ : Q₀.restrict k F₂ ∈ TQ) :
-      Q₀.degree = 1 := by
-    obtain ⟨φQ⟩ := hembQ _ hQ₀
-    exact Place.degree_eq_one_of_constantCompositum_eq_top hF₂ hex₂ hcc₂ Q₀ φQ
-  have hinj : Set.InjOn Q' TQ := fun Q _ Q₂ _ hQ ↦ by rw [← hQ' Q, ← hQ' Q₂, hQ]
-  rw [← Set.encard_coe_eq_coe_finsetCard, ← hinj.encard_image]
-  refine Set.encard_le_encard ?_
-  rintro _ ⟨Q, hQ, rfl⟩
-  exact hdegQ (Q' Q) (by rw [hQ' Q]; exact hQ)
-
 /-- Castelnuovo's inequality after a constant field extension. Let `F' = F · k'` for a finite Galois
 extension `k' / k`, let `P₁` be a place of `F₁` at which a primitive element `y = ∑ cᵢ zᵢ` of
 `F / F₁` has separable reduction, with `cᵢ ∈ F₁` regular at `P₁` and `zᵢ ∈ F₂` regular above `P₁`.
@@ -514,7 +493,7 @@ private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k']
   have : IsScalarTower k k' F₂' := isScalarTower_base_constantCompositum k F₂ k' F'
   -- The composita `F₁ · k'` and `F₂ · k'` inside `F'` have the genera and degrees of `F₁`, `F₂`.
   obtain ⟨-, hF₁', _, _, hn₁, hg₁⟩ := constantCompositum_subfield (F₁ := F₁) hF hex h
-  obtain ⟨hcc₂, hF₂', _, _, hn₂, hg₂⟩ := constantCompositum_subfield (F₁ := F₂) hF hex h
+  obtain ⟨hcc₂, -, _, _, hn₂, hg₂⟩ := constantCompositum_subfield (F₁ := F₂) hF hex h
   -- A place `P₁'` of `F₁ · k'` over `P₁`; every place of `F'` above it is rational.
   obtain ⟨P₁', rfl⟩ :=
     Place.restrict_surjective_of_finiteDimensional (F' := F₁') hF.of_isAlgebraic_top hF₁' P₁
@@ -535,7 +514,8 @@ private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k']
   have hrat : ((genus k' F₂' + Module.finrank F₁' F' : ℕ) : ℕ∞) ≤
       {Q' : Place k' F₂' | Q'.degree = 1}.encard := by
     rw [hg₂, hn₁, ← hTQ]
-    exact card_le_encard_setOf_degree_eq_one_of_embeddings hF₂ hex₂ hcc₂ hF₂' hembQ
+    exact
+      Place.card_le_encard_setOf_degree_eq_one_of_constantCompositum_eq_top hF₂ hex₂ hcc₂ hembQ
   have key := genus_le_of_forall_degree_eq_one (hF.of_constantCompositum_eq_top h)
     (hex.of_constantCompositum_eq_top h) hdeg'
     (adjoin_simple_eq_top_of_constantCompositum_eq_top h hy) hmin' hsep'

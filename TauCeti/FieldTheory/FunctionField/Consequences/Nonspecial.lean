@@ -29,9 +29,6 @@ arbitrary exact constant field.
 * `TauCeti.Divisor.exists_mem_riemannRochSpace_add_ofPoint_ord_neg`: for an effective `B` with
   `deg B = g` and `ℓ(B) = 1`, and a rational place `Q`, some function of `L(B + Q)` has a pole
   at `Q`.
-* `TauCeti.Divisor.exists_degree_eq_genus_and_functions_ord_neg`: both combined, an effective
-  `B` of degree `g` supported on a prescribed set of rational places, with a pole function
-  `w Q ∈ L(B + Q)` for every rational place `Q`.
 
 ## References
 
@@ -132,25 +129,6 @@ theorem exists_mem_riemannRochSpace_add_ofPoint_ord_neg (hF : IsFunctionField k 
   have := WeilDivisor.coeff_le_coeff hB Q
   rw [WeilDivisor.coeff_zero] at this
   omega
-
-/-- For a function field with exact constants, an effective divisor `B` of degree `g`
-supported on a set `T` of at least `g` rational places, and for every rational place `Q` a function
-of `L(B + Q)` with a pole at `Q`. -/
-theorem exists_degree_eq_genus_and_functions_ord_neg (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {T : Set (Place k F)} (hT : ∀ Q ∈ T, Q.degree = 1)
-    (hcard : (genus k F : ℕ∞) ≤ T.encard) :
-    ∃ (B : Divisor k F) (w : Place k F → F), 0 ≤ B ∧ Divisor.degree B = genus k F ∧
-      (∀ Q, Q ∉ T → B.coeff Q = 0) ∧
-      (∀ Q : Place k F, Q.degree = 1 → w Q ∈ riemannRochSpace (B + WeilDivisor.ofPoint Q)) ∧
-      ∀ Q : Place k F, Q.degree = 1 → Q.ord (w Q) < 0 := by
-  obtain ⟨B, hB0, hBT, hBdeg, hBdim, -⟩ :=
-    exists_degree_eq_genus_dim_eq_one hF hex hT hcard
-  have hBQ : ∀ Q, Q ∉ T → B.coeff Q = 0 := fun Q hQ ↦ by
-    by_contra h
-    exact hQ (hBT (WeilDivisor.mem_support_iff.mpr h))
-  choose! w hwL hwpole using fun (Q : Place k F) (hQ : Q.degree = 1) ↦
-    exists_mem_riemannRochSpace_add_ofPoint_ord_neg hF hB0 hBdeg hBdim hQ
-  exact ⟨B, w, hB0, hBdeg, hBQ, hwL, hwpole⟩
 
 end Divisor
 
