@@ -20,9 +20,10 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 # Endomorphisms of finite order
 
 An endomorphism `f` with `f ^ n = 1` is annihilated by `X ^ n - 1`. Two consequences are recorded
-here: every eigenvalue of `f`, and so every root of its characteristic polynomial, is an `n`-th
-root of unity (over any integral domain), and if `n` is invertible in the coefficient field then
-`f` is semisimple, because `X ^ n - 1` is then squarefree.
+here: every eigenvalue of `f` is an `n`-th root of unity when the module is torsion-free over an
+integral domain, and so is every root of its characteristic polynomial when the module is moreover
+finite and free; and if `n` is invertible in the coefficient field then `f` is semisimple, because
+`X ^ n - 1` is then squarefree.
 
 The roots of unity are algebraic integers, so as soon as the characteristic polynomial splits the
 trace, being the sum of those roots, is one too. Splitting is not a real hypothesis: base change to
@@ -47,9 +48,11 @@ on endomorphisms.
 
 ## Main results
 
-* `Module.End.pow_eq_one_of_hasEigenvalue`, `Module.End.pow_eq_one_of_isRoot_charpoly`: over an
-  integral domain, the eigenvalues of an endomorphism of finite order `n`, and the roots of its
-  characteristic polynomial, are `n`-th roots of unity.
+* `Module.End.pow_eq_one_of_hasEigenvalue`: for a torsion-free module over an integral domain, the
+  eigenvalues of an endomorphism of finite order `n` are `n`-th roots of unity.
+* `Module.End.pow_eq_one_of_isRoot_charpoly`: for a finite free module over an integral domain, the
+  roots of the characteristic polynomial of an endomorphism of finite order `n` are `n`-th roots of
+  unity.
 * `Module.End.isSemisimple_of_pow_eq_one`: an endomorphism of finite order `n`, with `n`
   invertible in the field, is semisimple.
 * `Module.End.isIntegral_trace_of_pow_eq_one`: over any field, the trace of an endomorphism of
