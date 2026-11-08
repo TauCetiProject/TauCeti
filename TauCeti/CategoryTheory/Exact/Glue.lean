@@ -27,7 +27,6 @@ acyclic complexes acyclic.
 
 ## Main results
 
-* `TauCeti.ExactStructure.isDeflation_of_isIso`: an isomorphism is a deflation.
 * `TauCeti.ExactStructure.conflation_shortComplex'_of_isPullback_of_isPushout`: gluing a pullback
   along a deflation with a pushout along an inflation.
 
@@ -47,12 +46,6 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   (E : ExactStructure C)
-
-/-- An isomorphism is a deflation. -/
-theorem isDeflation_of_isIso {X Y : C} (p : X ⟶ Y) [IsIso p] : E.IsDeflation p :=
-  E.isDeflation_g (E.conflation_of_splitting
-    (ShortComplex.Splitting.ofIsZeroOfIsIso (S := ShortComplex.mk (0 : 0 ⟶ X) p zero_comp)
-      (isZero_zero C) (inferInstanceAs (IsIso p))))
 
 /-- **Gluing a pullback with a pushout** (Bühler, Corollary 3.6). In a commutative diagram
 ```
@@ -74,7 +67,7 @@ theorem conflation_shortComplex'_of_isPullback_of_isPushout {A B C' A' B' C'' : 
     have h : (-𝟙 A') ≫ f' = -f' := by simp
     have : IsIso (-𝟙 A') := ⟨⟨-𝟙 A', by simp, by simp⟩⟩
     rw [← h]
-    exact E.isDeflation_comp _ _ (E.isDeflation_of_isIso _) hf'
+    exact E.isDeflation_comp _ _ (E.deflations.of_isIso _) hf'
   have hfac : biprod.map (𝟙 C') (-f') ≫ biprod.desc c g' = biprod.desc c (-(f' ≫ g')) := by
     apply biprod.hom_ext' <;> simp
   have hdef : E.IsDeflation (biprod.desc c (-(f' ≫ g'))) := by
