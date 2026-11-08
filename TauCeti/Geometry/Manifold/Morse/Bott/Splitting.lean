@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 public import TauCeti.Geometry.Manifold.Morse.Bott.Index
-public import Mathlib.Topology.VectorBundle.Riemannian
+public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
 # The positive and negative normal spaces of a Morse–Bott critical submanifold
@@ -105,26 +105,22 @@ theorem positiveNormalSpace_def :
       (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Ioi 0) :=
   (rfl)
 
-omit [I.Boundaryless] [IsManifold I 2 M] h in
-private theorem isSymm_toBilinForm_inner : (g.inner s).toBilinForm.IsSymm :=
-  LinearMap.BilinForm.isSymm_def.mpr (g.symm s)
-
 /-- **The normal spaces are orthogonal for the metric.** -/
 theorem inner_eq_zero_of_mem_negativeNormalSpace (hv : v ∈ h.negativeNormalSpace hn g s)
     (hw : w ∈ h.positiveNormalSpace hn g s) : g.inner s v w = 0 :=
   (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace
-    (isSymm_toBilinForm_inner hn g) (h.isSymm_normalHessian hn s) Iio_disjoint_Ioi_same hv hw).1
+    (g.isSymm_toBilinForm_inner s) (h.isSymm_normalHessian hn s) Iio_disjoint_Ioi_same hv hw).1
 
 /-- **The normal spaces are orthogonal for the normal Hessian.** -/
 theorem normalHessian_eq_zero_of_mem_negativeNormalSpace (hv : v ∈ h.negativeNormalSpace hn g s)
     (hw : w ∈ h.positiveNormalSpace hn g s) : h.normalHessian hn s v w = 0 :=
   (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace
-    (isSymm_toBilinForm_inner hn g) (h.isSymm_normalHessian hn s) Iio_disjoint_Ioi_same hv hw).2
+    (g.isSymm_toBilinForm_inner s) (h.isSymm_normalHessian hn s) Iio_disjoint_Ioi_same hv hw).2
 
 /-- The negative and positive normal spaces meet only in `0`. -/
 theorem disjoint_negativeNormalSpace_positiveNormalSpace :
     Disjoint (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g s) :=
-  LinearMap.BilinForm.disjoint_relativeSpectralSubspace (isSymm_toBilinForm_inner hn g) (g.pos s)
+  LinearMap.BilinForm.disjoint_relativeSpectralSubspace (g.isSymm_toBilinForm_inner s) (g.pos s)
     (h.isSymm_normalHessian hn s) Iio_disjoint_Ioi_same
 
 variable [FiniteDimensional ℝ E]
@@ -133,13 +129,13 @@ variable [FiniteDimensional ℝ E]
 theorem normalHessian_apply_self_neg_of_mem_negativeNormalSpace
     (hv : v ∈ h.negativeNormalSpace hn g s) (hv0 : v ≠ 0) : h.normalHessian hn s v v < 0 :=
   LinearMap.BilinForm.apply_self_neg_of_mem_relativeSpectralSubspace_Iio
-    (isSymm_toBilinForm_inner hn g) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
+    (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
 
 /-- **The normal Hessian is positive definite on the positive normal space.** -/
 theorem normalHessian_apply_self_pos_of_mem_positiveNormalSpace
     (hv : v ∈ h.positiveNormalSpace hn g s) (hv0 : v ≠ 0) : 0 < h.normalHessian hn s v v :=
   LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi
-    (isSymm_toBilinForm_inner hn g) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
+    (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
 
 end IsCriticalSubmanifold
 
@@ -154,7 +150,7 @@ fibre metric are complementary. -/
 theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
     IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g s) :=
   LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
-    (IsCriticalSubmanifold.isSymm_toBilinForm_inner hn g) (g.pos s)
+    (g.isSymm_toBilinForm_inner s) (g.pos s)
     (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
@@ -162,7 +158,7 @@ theorem finrank_negativeNormalSpace (s : S) :
     Module.finrank ℝ (h.negativeNormalSpace hn g s) = manifoldMorseIndex I f (i s) := by
   rw [IsCriticalSubmanifold.negativeNormalSpace_def,
     LinearMap.BilinForm.finrank_relativeSpectralSubspace_Iio
-      (IsCriticalSubmanifold.isSymm_toBilinForm_inner hn g) (g.pos s)
+      (g.isSymm_toBilinForm_inner s) (g.pos s)
       (h.isSymm_normalHessian hn s),
     h.sigNeg_normalHessian hn s]
 
@@ -172,7 +168,7 @@ theorem finrank_positiveNormalSpace (s : S) :
     Module.finrank ℝ (h.positiveNormalSpace hn g s) = manifoldMorseIndex I (-f) (i s) := by
   rw [IsCriticalSubmanifold.positiveNormalSpace_def,
     LinearMap.BilinForm.finrank_relativeSpectralSubspace_Ioi
-      (IsCriticalSubmanifold.isSymm_toBilinForm_inner hn g) (g.pos s)
+      (g.isSymm_toBilinForm_inner s) (g.pos s)
       (h.isSymm_normalHessian hn s),
     h.sigPos_normalHessian hn s]
 
