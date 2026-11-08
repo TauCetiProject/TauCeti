@@ -102,18 +102,26 @@ end IsMIntegralCurve
 namespace IsMIntegralCurveOn
 
 /-- **Constancy along an integral curve.** If `f` is differentiable along an integral curve `γ` of
-`v` on an open preconnected set of times `s`, such as an open interval, and `df(v) = 0` along `γ`
-on `s`, then `f` is constant along `γ` on `s`. -/
+`v` on a preconnected set of times `s`, such as an interval, and `df(v) = 0` along `γ` on `s`, then
+`f` is constant along `γ` on `s`. -/
 theorem apply_eq_of_mvfderiv_apply_eq_zero {s : Set ℝ} (hγ : IsMIntegralCurveOn γ v s)
-    (hs : IsOpen s) (hs' : IsPreconnected s) (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t))
+    (hs' : IsPreconnected s) (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t))
     (hvf : ∀ t ∈ s, mvfderiv I f (γ t) (v (γ t)) = 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     f (γ t) = f (γ t₀) := by
-  have hd (u : ℝ) (hu : u ∈ s) : HasDerivAt (f ∘ γ) 0 u := by
-    simpa only [hvf u hu] using
-      TauCeti.Manifold.hasDerivAt_comp_curve (hf u hu) ((hγ u hu).hasMFDerivAt (hs.mem_nhds hu))
-  exact hs.is_const_of_deriv_eq_zero hs'
-    (fun u hu ↦ (hd u hu).differentiableAt.differentiableWithinAt) (fun u hu ↦ (hd u hu).deriv)
-    ht ht₀
+  -- On each compact interval inside `s` the derivative within the interval vanishes.
+  have key {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hab : a ≤ b) : f (γ b) = f (γ a) := by
+    have hsub : Icc a b ⊆ s := hs'.Icc_subset ha hb
+    have hd (u : ℝ) (hu : u ∈ Icc a b) : HasDerivWithinAt (f ∘ γ) 0 (Icc a b) u := by
+      simpa only [hvf u (hsub hu)] using
+        (TauCeti.Manifold.hasDerivWithinAt_comp_curve (hf u (hsub hu)) (hγ u (hsub hu))).mono hsub
+    rcases hab.eq_or_lt with rfl | hlt
+    · rfl
+    exact constant_of_derivWithin_zero (fun u hu ↦ (hd u hu).differentiableWithinAt)
+      (fun x hx ↦ (hd x (Ico_subset_Icc_self hx)).derivWithin
+        (uniqueDiffOn_Icc hlt x (Ico_subset_Icc_self hx))) b ⟨hab, le_rfl⟩
+  rcases le_total t₀ t with h | h
+  · exact key ht₀ ht h
+  · exact (key ht ht₀ h).symm
 
 variable {s : Set ℝ} {c a b : ℝ}
 
