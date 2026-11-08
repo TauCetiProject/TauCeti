@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
 import Mathlib.Analysis.Complex.LocallyUniformLimit
@@ -21,7 +22,8 @@ analytic at every point of the open upper half-plane, and a locally uniform limi
 functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the Möbius action of
 a positive-determinant real matrix, the biholomorphism `UpperHalfPlane.mdifferentiable_smul`
 exhibits. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
-are holomorphic.
+are holomorphic, and so are the coefficients of a product `∏ (X - aᵢ(τ))` of linear factors
+whose roots `aᵢ` are holomorphic.
 
 ## Main declarations
 
@@ -30,6 +32,8 @@ are holomorphic.
 * `TauCeti.UpperHalfPlane.analyticAt_comp_ofComplex`.
 * `MvPolynomial.mdifferentiable_aeval_coe` — `z ↦ P(z, 1)` is holomorphic for a polynomial `P`
   in two variables.
+* `TauCeti.UpperHalfPlane.mdifferentiable_coeff_prod_X_sub_C` — the coefficients of
+  `∏ (X - aᵢ(τ))` are holomorphic when every `aᵢ` is.
 * `TauCeti.UpperHalfPlane.mdifferentiable_comp_smul_iff` — `τ ↦ f (g • τ)` is holomorphic
   exactly when `f` is, for `g : GL (Fin 2) ℝ` of positive determinant.
 * `TauCeti.UpperHalfPlane.not_accPt_zeros_comp_ofComplex` and
@@ -75,6 +79,22 @@ lemma _root_.MvPolynomial.mdifferentiable_aeval_coe {R : Type*} [CommSemiring R]
     fin_cases i
     · simpa using mdifferentiable_coe
     · simpa using mdifferentiable_const
+
+open Polynomial in
+/-- The coefficients of `∏ (X - C (aᵢ τ))` are holomorphic functions of `τ` when every `aᵢ` is. -/
+theorem mdifferentiable_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι) {a : ι → ℍ → ℂ}
+    (ha : ∀ i ∈ s, MDiff (a i)) (k : ℕ) :
+    MDiff fun τ : ℍ ↦ ((∏ i ∈ s, (X - C (a i τ))).coeff k : ℂ) := by
+  classical
+  induction s using Finset.induction_on generalizing k with
+  | empty => simpa [coeff_one] using mdifferentiable_const
+  | insert i s hi ih =>
+    have hs : ∀ j ∈ s, MDiff (a j) := fun j hj ↦ ha j (Finset.mem_insert_of_mem hj)
+    simp only [Finset.prod_insert hi, sub_mul, coeff_sub, coeff_C_mul]
+    refine MDifferentiable.sub ?_ ((ha i (Finset.mem_insert_self i s)).mul (ih hs k))
+    cases k with
+    | zero => simpa using mdifferentiable_const
+    | succ k => simpa only [coeff_X_mul] using ih hs k
 
 /-- A function holomorphic on `ℍ` composes with `ofComplex` to a function analytic at
 every point of the open upper half-plane. -/

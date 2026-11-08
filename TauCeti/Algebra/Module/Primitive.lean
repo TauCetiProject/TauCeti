@@ -121,31 +121,6 @@ theorem isPrimitive (b : Module.Basis ι ℤ M) (j : ι) : TauCeti.IsPrimitive (
 
 end Module.Basis
 
-namespace Units
-
-/-- Primitivity in a ring is invariant under left multiplication by a unit. For integral
-matrices this is invariance of the content under left multiplication by `GL(n, ℤ)`. -/
-@[simp]
-theorem isPrimitive_units_mul_iff {R : Type*} [Ring R] (u : Rˣ) {v : R} :
-    TauCeti.IsPrimitive (↑u * v) ↔ TauCeti.IsPrimitive v := by
-  constructor
-  · rintro ⟨f, hf⟩
-    exact ⟨f.comp (AddMonoidHom.mulLeft (u : R)).toIntLinearMap, by simpa using hf⟩
-  · rintro ⟨f, hf⟩
-    exact ⟨f.comp (AddMonoidHom.mulLeft (↑u⁻¹ : R)).toIntLinearMap, by simpa using hf⟩
-
-/-- Primitivity in a ring is invariant under right multiplication by a unit. -/
-@[simp]
-theorem isPrimitive_mul_units_iff {R : Type*} [Ring R] (u : Rˣ) {v : R} :
-    TauCeti.IsPrimitive (v * ↑u) ↔ TauCeti.IsPrimitive v := by
-  constructor
-  · rintro ⟨f, hf⟩
-    exact ⟨f.comp (AddMonoidHom.mulRight (u : R)).toIntLinearMap, by simpa using hf⟩
-  · rintro ⟨f, hf⟩
-    exact ⟨f.comp (AddMonoidHom.mulRight (↑u⁻¹ : R)).toIntLinearMap, by simpa using hf⟩
-
-end Units
-
 namespace LinearEquiv
 
 variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
@@ -163,6 +138,23 @@ theorem isPrimitive_iff (φ : M ≃ₗ[ℤ] N) {v : M} :
     exact ⟨f.comp (φ.symm : N →+ M).toIntLinearMap, by simpa using hf⟩
 
 end LinearEquiv
+
+namespace Units
+
+/-- Primitivity in a ring is invariant under left multiplication by a unit. For integral
+matrices this is invariance of the content under left multiplication by `GL(n, ℤ)`. -/
+@[simp]
+theorem isPrimitive_units_mul_iff {R : Type*} [Ring R] (u : Rˣ) {v : R} :
+    TauCeti.IsPrimitive (↑u * v) ↔ TauCeti.IsPrimitive v :=
+  (u.mulLeftLinearEquiv ℤ R).isPrimitive_iff
+
+/-- Primitivity in a ring is invariant under right multiplication by a unit. -/
+@[simp]
+theorem isPrimitive_mul_units_iff {R : Type*} [Ring R] (u : Rˣ) {v : R} :
+    TauCeti.IsPrimitive (v * ↑u) ↔ TauCeti.IsPrimitive v :=
+  (u.mulRightLinearEquiv ℤ).isPrimitive_iff
+
+end Units
 
 namespace TauCeti
 

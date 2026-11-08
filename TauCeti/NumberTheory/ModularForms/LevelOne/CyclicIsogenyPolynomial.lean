@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Roots
-public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
+public import TauCeti.Analysis.Complex.UpperHalfPlane.FixedDetMatrices
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 
 /-!
 # The polynomial of an `SL(2, ℤ)`-invariant function over the cyclic `n`-isogenies
@@ -36,7 +37,11 @@ these are the inputs to the `q`-expansion argument that makes `Φ_n` a polynomia
 integer coefficients, and the root property at a fixed point `A τ = τ` of a primitive matrix is
 what makes the value of `j` at an imaginary quadratic point an algebraic integer.
 
-The matrices act on the upper half-plane through `FixedDetMatrices.toGLReal`.
+The matrices act on the upper half-plane through `FixedDetMatrices.toGLReal`. Right
+multiplication on the representatives is the shared `TauCeti.repsRightMul`, and the invariance
+proof follows that of the level-one Hecke operators, `TauCeti.heckeSlashLevelOne_slash_eq` in
+`TauCeti.NumberTheory.ModularForms.LevelOne.Hecke`: the factor of `A` at `γ τ` is the factor at
+`τ` of the representative of `A γ`, and `TauCeti.repsRightMul_injOn` makes this a permutation.
 
 ## Main definitions
 
@@ -45,8 +50,6 @@ The matrices act on the upper half-plane through `FixedDetMatrices.toGLReal`.
 
 ## Main results
 
-* `FixedDetMatrices.toGLReal_smul_smul`, `FixedDetMatrices.mdifferentiable_toGLReal_smul`: the
-  action of `g • A` is that of `A` followed by `g`, and for `0 < n` it is holomorphic.
 * `TauCeti.ModularForm.cyclicIsogenyPolynomial_smul`: for `SL(2, ℤ)`-invariant `f`, the
   polynomial takes the same value at `γ τ` as at `τ`.
 * `TauCeti.ModularForm.roots_cyclicIsogenyPolynomial`: its roots are the values `f(A τ)` over
@@ -73,115 +76,46 @@ namespace FixedDetMatrices
 
 variable {n : ℤ}
 
-/-! ### Integral matrices acting on the upper half-plane -/
-
-/-- Inverse right multiplication by `g ∈ SL(2, ℤ)` becomes right multiplication by the image of
-`g⁻¹` in `GL(2, ℝ)`. -/
-theorem toGLReal_traceFormulaMatrixRight (hn : n ≠ 0) (g : SL(2, ℤ))
-    (A : FixedDetMatrix (Fin 2) ℤ n) :
-    toGLReal hn (TauCeti.traceFormulaMatrixRight g A) =
-      toGLReal hn A * SpecialLinearGroup.mapGL ℝ g⁻¹ := by
-  rw [toGLReal_eq_map_toGL, TauCeti.toGL_traceFormulaMatrixRight, map_mul,
-    SpecialLinearGroup.map_mapGL, toGLReal_eq_map_toGL]
-
-/-- The action of `g • A` on the upper half-plane is that of `A` followed by that of `g`. -/
-theorem toGLReal_smul_smul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : FixedDetMatrix (Fin 2) ℤ n)
-    (τ : ℍ) : toGLReal hn (g • A) • τ = g • toGLReal hn A • τ := by
-  rw [toGLReal_smul, mul_smul]
-  exact (MulAction.compHom_smul_def _ _ _).symm
-
-/-- For `0 < n`, the action of an integral matrix of determinant `n` on the upper half-plane is
-holomorphic. -/
-theorem mdifferentiable_toGLReal_smul (hn : 0 < n) (A : FixedDetMatrix (Fin 2) ℤ n) :
-    MDiff fun τ : ℍ ↦ toGLReal hn.ne' A • τ :=
-  mdifferentiable_smul (by rw [det_toGLReal]; exact_mod_cast hn)
-
 /-! ### Right multiplication permutes the orbits -/
 
-/-- Inverse right multiplication by `SL(2, ℤ)` preserves and reflects primitivity. -/
-theorem isPrimitive_traceFormulaMatrixRight_iff (g : SL(2, ℤ)) (A : FixedDetMatrix (Fin 2) ℤ n) :
-    TauCeti.IsPrimitive (TauCeti.traceFormulaMatrixRight g A).1 ↔ TauCeti.IsPrimitive A.1 := by
-  rw [TauCeti.val_traceFormulaMatrixRight, ← SpecialLinearGroup.coe_GL_coe_matrix,
-    Units.isPrimitive_mul_units_iff]
-
-/-- A matrix of `SL(2, ℤ)` moving the right translate `A γ` back into `reps n`. -/
-private noncomputable def rightMulFactor (hn : n ≠ 0) (γ : SL(2, ℤ))
-    (A : FixedDetMatrix (Fin 2) ℤ n) : SL(2, ℤ) :=
-  (exists_smul_mem_reps hn (TauCeti.traceFormulaMatrixRight γ⁻¹ A)).choose
-
-/-- The representative in `reps n` of the right translate `A γ`. -/
-private noncomputable def rightMul (hn : n ≠ 0) (γ : SL(2, ℤ))
-    (A : FixedDetMatrix (Fin 2) ℤ n) : FixedDetMatrix (Fin 2) ℤ n :=
-  rightMulFactor hn γ A • TauCeti.traceFormulaMatrixRight γ⁻¹ A
-
-private theorem rightMul_mem_primitiveReps (hn : n ≠ 0) (γ : SL(2, ℤ))
+private theorem repsRightMul_mem_primitiveReps (hn : n ≠ 0) (γ : SL(2, ℤ))
     {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ primitiveReps n) :
-    rightMul hn γ A ∈ primitiveReps n := by
-  refine mem_primitiveReps.2
-    ⟨(exists_smul_mem_reps hn (TauCeti.traceFormulaMatrixRight γ⁻¹ A)).choose_spec, ?_⟩
-  rw [rightMul, isPrimitive_smul_iff, isPrimitive_traceFormulaMatrixRight_iff]
+    TauCeti.repsRightMul hn γ A ∈ primitiveReps n := by
+  refine mem_primitiveReps.2 ⟨TauCeti.repsRightMul_mem_reps hn γ A, ?_⟩
+  rw [TauCeti.repsRightMul_def, isPrimitive_smul_iff,
+    TauCeti.isPrimitive_traceFormulaMatrixRight_iff]
   exact (mem_primitiveReps.1 hA).2
 
-private theorem toGL_rightMul (hn : n ≠ 0) (γ : SL(2, ℤ)) (A : FixedDetMatrix (Fin 2) ℤ n) :
-    toGL hn (rightMul hn γ A) =
-      SpecialLinearGroup.mapGL ℚ (rightMulFactor hn γ A) *
-        (toGL hn A * SpecialLinearGroup.mapGL ℚ γ) := by
-  rw [rightMul, toGL_smul, TauCeti.toGL_traceFormulaMatrixRight, inv_inv]
-
-private theorem toGLReal_rightMul_smul (hn : n ≠ 0) (γ : SL(2, ℤ))
+private theorem toGLReal_repsRightMul_inv_smul (hn : n ≠ 0) (γ : SL(2, ℤ))
     (A : FixedDetMatrix (Fin 2) ℤ n) (τ : ℍ) :
-    toGLReal hn (rightMul hn γ A) • τ = rightMulFactor hn γ A • toGLReal hn A • γ • τ := by
+    toGLReal hn (TauCeti.repsRightMul hn γ⁻¹ A) • τ =
+      TauCeti.repsRightMulFactor hn γ⁻¹ A • toGLReal hn A • γ • τ := by
   have hγ : SpecialLinearGroup.mapGL ℝ γ • τ = γ • τ := (MulAction.compHom_smul_def _ _ _).symm
-  rw [rightMul, toGLReal_smul_smul, toGLReal_traceFormulaMatrixRight, inv_inv, mul_smul, hγ]
+  rw [TauCeti.repsRightMul_def, toGLReal_smul_smul, TauCeti.toGLReal_traceFormulaMatrixRight,
+    inv_inv, mul_smul, hγ]
 
-/-- Right multiplication by `γ` is injective on the representatives. -/
-private theorem rightMul_injOn (hn : n ≠ 0) (γ : SL(2, ℤ)) :
-    Set.InjOn (rightMul hn γ) (primitiveReps n : Set (FixedDetMatrix (Fin 2) ℤ n)) := by
-  intro A hA B hB h
-  have hGL := congrArg (toGL hn) h
-  simp only [toGL_rightMul] at hGL
-  -- cancel `γ` on the right and move the left factors across: `A = g • B` for some `g`
-  have hAB : toGL hn A =
-      toGL hn (((rightMulFactor hn γ A)⁻¹ * rightMulFactor hn γ B) • B) := by
-    rw [toGL_smul, map_mul, map_inv]
-    simpa [mul_assoc] using
-      congrArg (fun x ↦ (SpecialLinearGroup.mapGL ℚ (rightMulFactor hn γ A))⁻¹ * x *
-        (SpecialLinearGroup.mapGL ℚ γ)⁻¹) hGL
-  exact (eq_of_smul_eq_of_mem_reps (mem_primitiveReps.1 hB).1 (mem_primitiveReps.1 hA).1
-    (toGL_injective hn hAB).symm).symm
+/-- Right multiplication is injective on the primitive representatives. -/
+private theorem repsRightMul_injOn_primitiveReps (hn : n ≠ 0) (γ : SL(2, ℤ)) :
+    Set.InjOn (TauCeti.repsRightMul hn γ)
+      (primitiveReps n : Set (FixedDetMatrix (Fin 2) ℤ n)) :=
+  (TauCeti.repsRightMul_injOn hn γ).mono fun _ hA ↦ (mem_primitiveReps.1 hA).1
 
 open scoped Classical in
-/-- Right multiplication by `γ ∈ SL(2, ℤ)` permutes the orbits: the representatives of the right
-translates `A γ`, `A ∈ primitiveReps n`, are again all of `primitiveReps n`. -/
-private theorem image_rightMul (hn : n ≠ 0) (γ : SL(2, ℤ)) :
-    (primitiveReps n).image (rightMul hn γ) = primitiveReps n := by
-  refine Finset.eq_of_subset_of_card_le ?_ (Finset.card_image_of_injOn (rightMul_injOn hn γ)).ge
+/-- Right multiplication by `SL(2, ℤ)` permutes the orbits: the representatives of the right
+translates, `A ∈ primitiveReps n`, are again all of `primitiveReps n`. -/
+private theorem image_repsRightMul (hn : n ≠ 0) (γ : SL(2, ℤ)) :
+    (primitiveReps n).image (TauCeti.repsRightMul hn γ) = primitiveReps n := by
+  refine Finset.eq_of_subset_of_card_le ?_
+    (Finset.card_image_of_injOn (repsRightMul_injOn_primitiveReps hn γ)).ge
   intro B hB
   obtain ⟨A, hA, rfl⟩ := Finset.mem_image.1 hB
-  exact rightMul_mem_primitiveReps hn γ hA
+  exact repsRightMul_mem_primitiveReps hn γ hA
 
 end FixedDetMatrices
 
 namespace TauCeti.ModularForm
 
 open FixedDetMatrices
-
-/-! ### Holomorphic coefficients -/
-
-/-- The coefficients of `∏ (X - C (aᵢ τ))` are holomorphic functions of `τ` when every `aᵢ` is. -/
-theorem mdifferentiable_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι) {a : ι → ℍ → ℂ}
-    (ha : ∀ i ∈ s, MDiff (a i)) (k : ℕ) :
-    MDiff fun τ : ℍ ↦ ((∏ i ∈ s, (X - C (a i τ))).coeff k : ℂ) := by
-  classical
-  induction s using Finset.induction_on generalizing k with
-  | empty => simpa [coeff_one] using mdifferentiable_const
-  | insert i s hi ih =>
-    have hs : ∀ j ∈ s, MDiff (a j) := fun j hj ↦ ha j (Finset.mem_insert_of_mem hj)
-    simp only [Finset.prod_insert hi, sub_mul, coeff_sub, coeff_C_mul]
-    refine MDifferentiable.sub ?_ ((ha i (Finset.mem_insert_self i s)).mul (ih hs k))
-    cases k with
-    | zero => simpa using mdifferentiable_const
-    | succ k => simpa only [coeff_X_mul] using ih hs k
 
 /-! ### The polynomial over the cyclic `n`-isogenies -/
 
@@ -192,6 +126,12 @@ primitive upper-triangular representatives `(a b; 0 d)` of determinant `n`. For 
 the classical modular polynomial `Φ_n(X, j(τ))`. -/
 noncomputable def cyclicIsogenyPolynomial (f : ℍ → ℂ) (τ : ℍ) : ℂ[X] :=
   ∏ A ∈ primitiveReps (n : ℤ), (X - C (f (toGLReal (NeZero.ne (n : ℤ)) A • τ)))
+
+/-- The defining equation of `cyclicIsogenyPolynomial`: the product of the linear factors
+`X - f(A τ)` over the primitive representatives `A`. -/
+theorem cyclicIsogenyPolynomial_def (f : ℍ → ℂ) (τ : ℍ) :
+    cyclicIsogenyPolynomial n f τ =
+      ∏ A ∈ primitiveReps (n : ℤ), (X - C (f (toGLReal (NeZero.ne (n : ℤ)) A • τ))) := (rfl)
 
 variable {n}
 
@@ -216,7 +156,7 @@ theorem roots_cyclicIsogenyPolynomial (f : ℍ → ℂ) (τ : ℍ) :
   have h := roots_multiset_prod_X_sub_C ((primitiveReps (n : ℤ)).val.map
     fun A ↦ f (toGLReal (NeZero.ne (n : ℤ)) A • τ))
   rw [Multiset.map_map] at h
-  rwa [cyclicIsogenyPolynomial, Finset.prod_eq_multiset_prod]
+  rwa [cyclicIsogenyPolynomial_def, Finset.prod_eq_multiset_prod]
 
 /-- **The polynomial over the cyclic `n`-isogenies of an `SL(2, ℤ)`-invariant function is
 `SL(2, ℤ)`-invariant**: it takes the same value at `γ τ` as at `τ`. -/
@@ -227,11 +167,13 @@ theorem cyclicIsogenyPolynomial_smul {f : ℍ → ℂ} (hf : ∀ (γ : SL(2, ℤ
   have hn : (n : ℤ) ≠ 0 := NeZero.ne (n : ℤ)
   -- the factor of `A` at `γ τ` is the factor at `τ` of the representative of `A γ`
   have hperm (A : FixedDetMatrix (Fin 2) ℤ n) :
-      X - C (f (toGLReal hn A • γ • τ)) = X - C (f (toGLReal hn (rightMul hn γ A) • τ)) := by
-    rw [toGLReal_rightMul_smul, hf]
-  rw [cyclicIsogenyPolynomial, cyclicIsogenyPolynomial, Finset.prod_congr rfl fun A _ ↦ hperm A,
+      X - C (f (toGLReal hn A • γ • τ)) =
+        X - C (f (toGLReal hn (TauCeti.repsRightMul hn γ⁻¹ A) • τ)) := by
+    rw [toGLReal_repsRightMul_inv_smul, hf]
+  rw [cyclicIsogenyPolynomial_def, cyclicIsogenyPolynomial_def,
+    Finset.prod_congr rfl fun A _ ↦ hperm A,
     ← Finset.prod_image (f := fun A ↦ X - C (f (toGLReal hn A • τ)))
-      (rightMul_injOn hn γ), image_rightMul]
+      (repsRightMul_injOn_primitiveReps hn γ⁻¹), image_repsRightMul]
 
 /-- For an `SL(2, ℤ)`-invariant `f`, the value `f(A τ)` at **every** primitive integral matrix `A`
 of determinant `n` is a root of the polynomial over the cyclic `n`-isogenies at `τ`. -/
@@ -242,7 +184,7 @@ theorem isRoot_cyclicIsogenyPolynomial {f : ℍ → ℂ}
       (f (toGLReal (NeZero.ne (n : ℤ)) A • τ)) := by
   have hn : (n : ℤ) ≠ 0 := NeZero.ne (n : ℤ)
   obtain ⟨g, hg⟩ := exists_smul_mem_primitiveReps hn hA
-  rw [IsRoot, cyclicIsogenyPolynomial, eval_prod]
+  rw [IsRoot, cyclicIsogenyPolynomial_def, eval_prod]
   refine Finset.prod_eq_zero hg ?_
   rw [toGLReal_smul_smul, hf]
   simp
@@ -282,7 +224,8 @@ theorem isRoot_cyclicIsogenyPolynomial_natCast_smul {f : ℍ → ℂ}
 are holomorphic.** -/
 theorem mdifferentiable_coeff_cyclicIsogenyPolynomial {f : ℍ → ℂ} (hf : MDiff f) (k : ℕ) :
     MDiff fun τ : ℍ ↦ (cyclicIsogenyPolynomial n f τ).coeff k :=
-  mdifferentiable_coeff_prod_X_sub_C (a := fun A τ ↦ f (toGLReal _ A • τ)) _
+  TauCeti.UpperHalfPlane.mdifferentiable_coeff_prod_X_sub_C
+    (a := fun A τ ↦ f (toGLReal _ A • τ)) _
     (fun A _ ↦ MDifferentiable.comp hf
       (mdifferentiable_toGLReal_smul (Int.natCast_pos.2 (NeZero.pos n)) A)) k
 
