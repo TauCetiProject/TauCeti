@@ -9,6 +9,7 @@ public import TauCeti.ModelTheory.Counting.BoundedRank
 public import TauCeti.ModelTheory.Counting.EquivalenceRelation
 public import TauCeti.ModelTheory.Scott.EquivalenceRelation
 import TauCeti.Data.Set.Infinite
+import TauCeti.Data.Setoid.Nat
 
 /-!
 # Countably many equivalence relations with infinite classes
@@ -180,24 +181,10 @@ theorem countable_quotient_isoSetoidOn_nat_infiniteClassesSentence :
   rw [hr q.out, hr q'.out]
   exact (isoSetoid_fromRel_iff_enatCard_eq (hinf _) (hinf _)).2 h
 
-/-- Congruence modulo `k + 1` on `ℕ` has infinite classes. -/
-theorem infinite_setOf_ker_ofNat (k x : ℕ) :
-    {x' | Setoid.ker (Fin.ofNat (k + 1)) x x'}.Infinite := by
-  refine Set.infinite_of_injective_forall_mem (f := fun t : ℕ => x + (k + 1) * t)
-    (fun a b h => by simpa using h) fun t => ?_
-  simp [Setoid.ker_def, Fin.ext_iff]
-
-/-- Congruence modulo `k + 1` on `ℕ` has `k + 1` classes. -/
-theorem enatCard_quotient_ker_ofNat (k : ℕ) :
-    ENat.card (Quotient (Setoid.ker (Fin.ofNat (k + 1)))) = k + 1 := by
-  rw [ENat.card_congr (Setoid.quotientKerEquivOfSurjective (Fin.ofNat (k + 1))
-    fun j => ⟨j, Fin.ofNat_val_eq_self j⟩)]
-  simp
-
 private theorem fromRel_ker_ofNat_mem_modelsOf (k : ℕ) :
     (fromRel (Setoid.ker (Fin.ofNat (k + 1)))).toRelationalConfiguration ∈
       modelsOf infiniteClassesSentence :=
-  mem_modelsOf_infiniteClassesSentence_iff.2 ⟨_, rfl, infinite_setOf_ker_ofNat k⟩
+  mem_modelsOf_infiniteClassesSentence_iff.2 ⟨_, rfl, Setoid.infinite_setOf_ker_finOfNat k⟩
 
 /-- The models of `infiniteClassesSentence` on `ℕ` have infinitely many isomorphism classes: for
 each `k`, the relation with `k + 1` infinite classes gives one. -/
@@ -205,9 +192,9 @@ theorem infinite_quotient_isoSetoidOn_nat_infiniteClassesSentence :
     Infinite (Quotient (isoSetoidOn ℕ infiniteClassesSentence)) := by
   refine Infinite.of_injective (fun k : ℕ => (⟦⟨_, fromRel_ker_ofNat_mem_modelsOf k⟩⟧ :
     Quotient (isoSetoidOn ℕ infiniteClassesSentence))) fun k k' h => ?_
-  have hiso := (isoSetoid_fromRel_iff_enatCard_eq (infinite_setOf_ker_ofNat k)
-    (infinite_setOf_ker_ofNat k')).1 (isoSetoidOn_apply.1 (Quotient.exact h))
-  rw [enatCard_quotient_ker_ofNat, enatCard_quotient_ker_ofNat] at hiso
+  have hiso := (isoSetoid_fromRel_iff_enatCard_eq (Setoid.infinite_setOf_ker_finOfNat k)
+    (Setoid.infinite_setOf_ker_finOfNat k')).1 (isoSetoidOn_apply.1 (Quotient.exact h))
+  rw [Setoid.enatCard_quotient_ker_finOfNat, Setoid.enatCard_quotient_ker_finOfNat] at hiso
   have : k + 1 = k' + 1 := by exact_mod_cast hiso
   omega
 
