@@ -45,20 +45,6 @@ universe u v w
 
 variable {K : Type w} {V : Type u} [LE K] {N : Network K V}
 
-namespace Subnetwork
-
-/-- A singleton subnetwork with no arrows is strongly connected. -/
-theorem isStronglyConnected_singleton (x : V) :
-    @Quiver.IsStronglyConnected ↥(N.singletonSubnetwork x).vertexSet
-      ⟨(N.singletonSubnetwork x).Hom⟩ := by
-  rw [isStronglyConnected_iff]
-  intro a ha b hb
-  simp only [vertexSet_singleton, Set.mem_singleton_iff] at ha hb
-  subst a b
-  exact .refl _ _
-
-end Subnetwork
-
 namespace Ear
 
 variable {S : N.Subnetwork}
@@ -74,33 +60,17 @@ theorem exists_reachable_from_vertexSet (P : Ear S) {x : V} (hx : x ∈ P.adjoin
     | «open» P =>
         rw [Ear.toSubnetwork_open] at hx
         have hx' : x ∈ P.walk.vertices := by simpa using hx
-        obtain ⟨p, q, hpq⟩ :=
-          @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ P.walk x hx'
-        -- The Mathlib splitter exposes both pieces under its local quiver instance.
-        change ArrowWalk N.Hom P.source x at p
-        change ArrowWalk N.Hom x P.target at q
-        have hp : p.toSubnetwork ≤ P.walk.toSubnetwork := by
-          rw [hpq]
-          exact p.toSubnetwork_comp_left_le q
         have hP : P.walk.toSubnetwork ≤ (Ear.open P).adjoin := by
           simpa only [Ear.toSubnetwork_open] using (Ear.open P).toSubnetwork_le_adjoin
         exact ⟨P.source, P.source_mem,
-          p.reachable_toSubnetwork.mono (hp.trans hP)⟩
+          (P.walk.reachable_of_mem_vertices hx').1.mono hP⟩
     | closed P =>
         rw [Ear.toSubnetwork_closed] at hx
         have hx' : x ∈ P.walk.vertices := by simpa using hx
-        obtain ⟨p, q, hpq⟩ :=
-          @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ P.walk x hx'
-        -- The Mathlib splitter exposes both pieces under its local quiver instance.
-        change ArrowWalk N.Hom P.base x at p
-        change ArrowWalk N.Hom x P.base at q
-        have hp : p.toSubnetwork ≤ P.walk.toSubnetwork := by
-          rw [hpq]
-          exact p.toSubnetwork_comp_left_le q
         have hP : P.walk.toSubnetwork ≤ (Ear.closed P).adjoin := by
           simpa only [Ear.toSubnetwork_closed] using (Ear.closed P).toSubnetwork_le_adjoin
         exact ⟨P.base, P.base_mem,
-          p.reachable_toSubnetwork.mono (hp.trans hP)⟩
+          (P.walk.reachable_of_mem_vertices hx').1.mono hP⟩
 
 /-- Every vertex obtained by adjoining an ear can reach some vertex of the old subnetwork. -/
 theorem exists_reachable_to_vertexSet (P : Ear S) {x : V} (hx : x ∈ P.adjoin.vertexSet) :
@@ -112,33 +82,17 @@ theorem exists_reachable_to_vertexSet (P : Ear S) {x : V} (hx : x ∈ P.adjoin.v
     | «open» P =>
         rw [Ear.toSubnetwork_open] at hx
         have hx' : x ∈ P.walk.vertices := by simpa using hx
-        obtain ⟨p, q, hpq⟩ :=
-          @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ P.walk x hx'
-        -- The Mathlib splitter exposes both pieces under its local quiver instance.
-        change ArrowWalk N.Hom P.source x at p
-        change ArrowWalk N.Hom x P.target at q
-        have hq : q.toSubnetwork ≤ P.walk.toSubnetwork := by
-          rw [hpq]
-          exact p.toSubnetwork_comp_right_le q
         have hP : P.walk.toSubnetwork ≤ (Ear.open P).adjoin := by
           simpa only [Ear.toSubnetwork_open] using (Ear.open P).toSubnetwork_le_adjoin
         exact ⟨P.target, P.target_mem,
-          q.reachable_toSubnetwork.mono (hq.trans hP)⟩
+          (P.walk.reachable_of_mem_vertices hx').2.mono hP⟩
     | closed P =>
         rw [Ear.toSubnetwork_closed] at hx
         have hx' : x ∈ P.walk.vertices := by simpa using hx
-        obtain ⟨p, q, hpq⟩ :=
-          @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ P.walk x hx'
-        -- The Mathlib splitter exposes both pieces under its local quiver instance.
-        change ArrowWalk N.Hom P.base x at p
-        change ArrowWalk N.Hom x P.base at q
-        have hq : q.toSubnetwork ≤ P.walk.toSubnetwork := by
-          rw [hpq]
-          exact p.toSubnetwork_comp_right_le q
         have hP : P.walk.toSubnetwork ≤ (Ear.closed P).adjoin := by
           simpa only [Ear.toSubnetwork_closed] using (Ear.closed P).toSubnetwork_le_adjoin
         exact ⟨P.base, P.base_mem,
-          q.reachable_toSubnetwork.mono (hq.trans hP)⟩
+          (P.walk.reachable_of_mem_vertices hx').2.mono hP⟩
 
 /-- Adjoining a directed open or closed ear to a strongly connected subnetwork preserves strong
 connectivity. -/
