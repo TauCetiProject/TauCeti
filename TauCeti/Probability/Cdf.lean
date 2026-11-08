@@ -37,6 +37,10 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.measure_Ioo_eq_zero_of_cdf_eq` shows that an open interval on which the
   cdf is constant is null;
+* `MeasureTheory.Measure.measure_plateau_eq_zero` and
+  `MeasureTheory.Measure.ae_not_of_lt_of_cdf_eq` show that the part of a plateau of the cdf lying
+  to the right of a point is null, so almost no mass lies on the plateau of a level above that
+  point;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
 * `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
@@ -301,6 +305,54 @@ theorem measure_Ioo_eq_zero_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure �
     leftLim_eq_of_tendsto <| tendsto_const_nhds.congr'
       (Filter.eventually_of_mem (Ioo_mem_nhdsLT hyb) fun z hz ↦ (h z hz).symm)
   rw [← measure_cdf ν, StieltjesFunction.measure_Ioo, hlim, sub_self, ENNReal.ofReal_zero]
+
+/-- The part of the plateau of `cdf ν` that lies strictly to the right of a point `y` whose level
+`cdf ν y` is still below `1` is null: the atom of a real law sits at the *left* end of its plateau
+and never strictly inside one. -/
+theorem measure_plateau_eq_zero {ν : Measure ℝ} [IsProbabilityMeasure ν] {y : ℝ}
+    (hy : cdf ν y < 1) : ν {z | y < z ∧ cdf ν y = cdf ν z} = 0 := by
+  -- `S` is the plateau of `cdf ν` at the level `cdf ν y`, cut off at `y`.
+  set S : Set ℝ := {z | y < z ∧ cdf ν y = cdf ν z} with hSdef
+  -- `cdf ν` rises to `1 > cdf ν y`, so it eventually leaves the level `cdf ν y` for good, and no
+  -- plateau point can lie above the bound that this produces.
+  have hbdd : BddAbove S := by
+    obtain ⟨M, hM⟩ :=
+      eventually_atTop.mp ((tendsto_cdf_atTop ν).eventually (eventually_gt_nhds hy))
+    refine ⟨M, fun z hz ↦ le_of_not_gt fun hzM ↦ ?_⟩
+    exact absurd (hM z (le_of_lt hzM)) (not_lt_of_ge hz.2.symm.le)
+  by_cases hSne : S.Nonempty
+  swap
+  · rw [not_nonempty_iff_eq_empty.mp hSne, measure_empty]
+  -- Let `b` be the top point of the plateau: `S ⊆ (y, b]`, and the cumulative function is still
+  -- `cdf ν y` at every point of `(y, b)`.
+  set b : ℝ := sSup S with hbdef
+  have hle : ∀ z : ℝ, z ∈ S → z ≤ b := fun z hz ↦ le_csSup hbdd hz
+  have hstab : ∀ z : ℝ, y < z → z < b → cdf ν z = cdf ν y := by
+    intro z hz1 hz2
+    obtain ⟨w, hw, hzw⟩ := exists_lt_of_lt_csSup (s := S) (b := z) hSne (hbdef ▸ hz2)
+    exact le_antisymm ((monotone_cdf ν hzw.le).trans (le_of_eq ((hSdef ▸ hw).2).symm))
+      (monotone_cdf ν hz1.le)
+  by_cases hb : cdf ν b = cdf ν y
+  · -- The top point has the level of `y`, so `(y, b]` has the null increment `cdf ν b - cdf ν y`.
+    refine measure_mono_null (t := Ioc y b) (fun z hz ↦ ⟨hz.1, hle z hz⟩) ?_
+    rw [← measure_cdf ν, StieltjesFunction.measure_Ioc, hb, sub_self, ENNReal.ofReal_zero]
+  · -- Otherwise `b` is no plateau point, so `S ⊆ (y, b)`, where the cumulative function is
+    -- constant.
+    refine measure_mono_null (t := Ioo y b) (fun z hz ↦ ⟨hz.1, lt_of_le_of_ne (hle z hz) ?_⟩) ?_
+    · rintro rfl
+      exact hb (hz.2.symm)
+    · exact measure_Ioo_eq_zero_of_cdf_eq ν fun z hz ↦ hstab z hz.1 hz.2
+
+/-- Above any point `y`, almost no mass lies on the plateau of `cdf ν` at the level `cdf ν y`. -/
+theorem ae_not_of_lt_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure ν] (y : ℝ) :
+    ∀ᶠ x in ae ν, ¬ (y < x ∧ cdf ν y = cdf ν x) := by
+  refine ae_iff.mpr ?_
+  rcases (cdf_le_one ν y).lt_or_eq with hy | hy
+  · simpa using measure_plateau_eq_zero hy
+  · -- A point of level `1` has no mass above it.
+    refine measure_mono_null (t := Ioi y) (fun z hz ↦ (not_not.mp hz).1) ?_
+    rw [← compl_Iic, prob_compl_eq_zero_iff measurableSet_Iic, ← ofReal_cdf ν y, hy]
+    simp
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/
