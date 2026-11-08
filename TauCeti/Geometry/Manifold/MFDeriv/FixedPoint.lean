@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
-import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.Order.Interval.Finset.Nat
@@ -55,12 +54,14 @@ The differential `df_x` at a fixed point `x` maps `T_x M` to `T_{f x} M`; transp
 along `f x = x` makes it an endomorphism of `T_x M`, the **fixed-point derivative**
 `TauCeti.fixedPointDerivative`. Over `ℝ`, on a manifold without boundary, the sign of
 `det (1 - df_x)` is the local contribution of a nondegenerate fixed point to the Lefschetz
-fixed-point formula; at a boundary fixed point this identification can fail. The fixed-point
-derivative of `f^[n]` at `x` is the `n`-th power of that of `f`
-(`TauCeti.fixedPointDerivative_iterate`). In finite dimensions `x` is a nondegenerate fixed point
-exactly when `det (1 - df_x) ≠ 0` (`TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`). Read in
-the extended chart at any point `x'` whose chart contains `x`, the derivative of `f` at the fixed
-point is `df_x` conjugated by the derivative of the transition map
+fixed-point formula; at a boundary fixed point this identification can fail. When `f` is
+differentiable at `x`, the fixed-point derivative of `f^[n]` at `x` is the `n`-th power of that of
+`f` (`TauCeti.fixedPointDerivative_iterate`), and in finite dimensions `x` is a nondegenerate fixed
+point exactly when `det (1 - df_x) ≠ 0` (`TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`).
+Without differentiability `mfderiv` is zero, so then `det (1 - df_x) = 1` although `x` is not
+nondegenerate.
+Read in the extended chart at any point `x'` whose chart contains `x`, the derivative of `f` at the
+fixed point is `df_x` conjugated by the derivative of the transition map
 (`MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm`), so `det (1 - df_x)` can be
 computed in any chart, also on manifolds with boundary or corners
 (`TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`).
@@ -93,10 +94,10 @@ computed in any chart, also on manifolds with boundary or corners
   `N` excludes every `ε` with `ε ^ j = 1` as an eigenvalue of the return map of the `m`-fold cover
   of an orbit of period `k` when `k * m * j ≤ N`. For `j = 2`, nondegeneracy up to period `2 * N`
   excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
-* `TauCeti.fixedPointDerivative_iterate`: the fixed-point derivative of `f^[n]` is the `n`-th power
-  of that of `f`.
-* `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point is
-  nondegenerate exactly when `det (1 - df_x) ≠ 0`.
+* `TauCeti.fixedPointDerivative_iterate`: at a fixed point where `f` is differentiable, the
+  fixed-point derivative of `f^[n]` is the `n`-th power of that of `f`.
+* `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
+  which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
   point can be computed in any chart.
 
@@ -467,11 +468,15 @@ theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 
   have hD : HasMFDerivAt I I f x D := hf.hasMFDerivAt
   set T := tangentCoordChange I x x' x
   set T' := tangentCoordChange I x' x x
-  -- The derivative `T'` of the transition map from the chart at `x'` to the chart at `x` is a right
-  -- inverse of the derivative `T` of the transition map back.
-  have hT : (T : E →ₗ[𝕜] E) ∘ₗ (T' : E →ₗ[𝕜] E) = LinearMap.id := LinearMap.ext fun v ↦
+  -- The derivatives `T` and `T'` of the transition maps between the charts at `x` and `x'` are
+  -- mutually inverse, so they form a linear equivalence `e`.
+  have hTT' : (T : E →ₗ[𝕜] E) ∘ₗ (T' : E →ₗ[𝕜] E) = LinearMap.id := LinearMap.ext fun v ↦
     (tangentCoordChange_comp ⟨⟨hx', mem_extChartAt_source x⟩, hx'⟩).trans
       (tangentCoordChange_self hx')
+  have hT'T : (T' : E →ₗ[𝕜] E) ∘ₗ (T : E →ₗ[𝕜] E) = LinearMap.id := LinearMap.ext fun v ↦
+    (tangentCoordChange_comp ⟨⟨mem_extChartAt_source x, hx'⟩, mem_extChartAt_source x⟩).trans
+      (tangentCoordChange_self (mem_extChartAt_source x))
+  let e : E ≃ₗ[𝕜] E := .ofLinearMap _ _ hTT' hT'T
   -- In the chart at `x'`, the derivative of `f` at `x` is `T ∘ D ∘ T'`.
   have hchart : fderivWithin 𝕜 (extChartAt I x' ∘ f ∘ (extChartAt I x').symm) (range I)
       (extChartAt I x' x) = T ∘L D ∘L T' := by
@@ -479,12 +484,12 @@ theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 
     rw [hf.fderivWithin_extChartAt_comp_extChartAt_symm hx' (by rwa [hx]), hT₀]
     -- `D` is `mfderiv I I f x` by definition.
     rfl
+  -- So `1 - T ∘ D ∘ T'` is the conjugate of `1 - D` by `e`.
   have hconj : LinearMap.id - ((T ∘L D ∘L T' : E →L[𝕜] E) : E →ₗ[𝕜] E) =
-      (T : E →ₗ[𝕜] E) ∘ₗ (LinearMap.id - (D : E →ₗ[𝕜] E)) ∘ₗ (T' : E →ₗ[𝕜] E) := by
-    rw [LinearMap.sub_comp, LinearMap.comp_sub, LinearMap.id_comp, hT,
-      ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp]
-  rw [hchart, hconj, LinearMap.det_comp, LinearMap.det_comp, mul_left_comm, ← LinearMap.det_comp,
-    hT, LinearMap.det_id, mul_one, hD.fixedPointDerivative_eq]
+      (e : E →ₗ[𝕜] E) ∘ₗ (LinearMap.id - (D : E →ₗ[𝕜] E)) ∘ₗ (e.symm : E →ₗ[𝕜] E) := by
+    ext v
+    simpa [e] using congr(($hTT'.symm) v)
+  rw [hchart, hconj, LinearMap.det_conj, hD.fixedPointDerivative_eq]
   -- Both sides are `det (1 - D)`, computed on `E` and on `T_x M`, which is `E` by definition.
   rfl
 
