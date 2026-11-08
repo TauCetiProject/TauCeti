@@ -10,7 +10,7 @@ public import Mathlib.Algebra.GCDMonoid.Nat
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 
-import Mathlib.Tactic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Symmetrizable generalized Cartan matrices
