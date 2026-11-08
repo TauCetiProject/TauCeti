@@ -169,7 +169,7 @@ theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
 
-/-- The section `y₂ + i y₃` of a field of `sobolevFields s` is square integrable. -/
+/-- The section `2 (y₂ + i y₃)` of a field of `sobolevFields s` is square integrable. -/
 theorem memLp_sectionValue_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : y ∈ sobolevFields s) : MemLp (sectionValue y) 2 volume := by
   have h₂ := memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy 2)
