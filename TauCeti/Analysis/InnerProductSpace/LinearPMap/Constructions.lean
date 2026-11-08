@@ -169,17 +169,27 @@ theorem unitaryConj_apply_map (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
   congr 1
   exact congrArg A (Subtype.ext (U.symm_apply_apply (y : H)))
 
+/-- The domain of a unitary conjugate of a densely defined operator is dense: `U` is a surjective
+isometry, so it carries a dense set to a dense set. -/
+private theorem dense_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
+    (hdenseA : Dense (A.domain : Set H)) : Dense ((unitaryConj U A).domain : Set H') := by
+  have himg : (U : H ≃ₗᵢ[𝕜] H') '' (A.domain : Set H) ⊆ ((unitaryConj U A).domain : Set H') := by
+    rintro _ ⟨w, hw, rfl⟩
+    simpa only [SetLike.mem_coe] using (map_mem_unitaryConj_domain U A ⟨w, hw⟩)
+  exact Dense.mono himg ((U.toHomeomorph.isDenseEmbedding).dense_image.mpr hdenseA)
+
 section UnitaryConjSelfAdjoint
 
 variable [CompleteSpace H] [CompleteSpace H']
 
-/-- If `A` is self-adjoint and the domain of `unitaryConj U A` is dense, then the adjoint of
-`unitaryConj U A` has no larger domain than `unitaryConj U A`. -/
-theorem mem_unitaryConj_domain_of_mem_adjoint_domain {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜] H}
-    (hA : IsSelfAdjoint A) (hdenseB : Dense ((unitaryConj U A).domain : Set H')) {y : H'}
+/-- If `A` is self-adjoint, then the adjoint of `unitaryConj U A` has no larger domain than
+`unitaryConj U A`. -/
+private theorem mem_unitaryConj_domain_of_mem_adjoint_domain {U : H ≃ₗᵢ[𝕜] H'}
+    {A : H →ₗ.[𝕜] H} (hA : IsSelfAdjoint A) {y : H'}
     (hy : y ∈ (_root_.LinearPMap.adjoint (unitaryConj U A)).domain) :
     y ∈ (unitaryConj U A).domain := by
   set B := unitaryConj U A with hB
+  have hdenseB : Dense (B.domain : Set H') := dense_unitaryConj_domain U A hA.dense_domain
   have hform := _root_.LinearPMap.adjoint_isFormalAdjoint (T := B) hdenseB ⟨y, hy⟩
   rw [hB, mem_unitaryConj_domain_iff]
   have hwit : ∀ u : A.domain,
@@ -207,12 +217,7 @@ theorem isSelfAdjoint_unitaryConj {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜
     simpa only [hB] using (unitaryConj_apply U A x)
   have hdenseA : Dense (A.domain : Set H) := hA.dense_domain
   have hsymA : A.IsFormalAdjoint A := hA.isFormalAdjoint
-  -- `U` is a surjective isometry, so it carries a dense set to a dense set
-  have hdenseB : Dense (B.domain : Set H') := by
-    have himg : (U : H ≃ₗᵢ[𝕜] H') '' (A.domain : Set H) ⊆ (B.domain : Set H') := by
-      rintro _ ⟨w, hw, rfl⟩
-      simpa only [hB, SetLike.mem_coe] using (map_mem_unitaryConj_domain U A ⟨w, hw⟩)
-    exact Dense.mono himg ((U.toHomeomorph.isDenseEmbedding).dense_image.mpr hdenseA)
+  have hdenseB : Dense (B.domain : Set H') := dense_unitaryConj_domain U A hdenseA
   -- symmetry of `B`
   have hsymB : B.IsFormalAdjoint B := by
     intro x y
@@ -234,7 +239,7 @@ theorem isSelfAdjoint_unitaryConj {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜
           rw [U.apply_symm_apply, hB_apply y hy]
   -- the adjoint domain of `B` sits inside `B`'s domain
   have hsub : ∀ y : H', y ∈ (_root_.LinearPMap.adjoint B).domain → y ∈ B.domain := fun y hy ↦
-    mem_unitaryConj_domain_of_mem_adjoint_domain hA hdenseB hy
+    mem_unitaryConj_domain_of_mem_adjoint_domain hA hy
   have hle : B ≤ _root_.LinearPMap.adjoint B :=
     _root_.LinearPMap.IsFormalAdjoint.le_adjoint (T := B) (S := B) hdenseB hsymB
   have hdomeq : B.domain = (_root_.LinearPMap.adjoint B).domain :=
