@@ -50,30 +50,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
-/-- The additive uniformity compatible with the existing compact derivative frame topology.
-It is supplied explicitly because the frame system is a parameter. -/
-@[instance_reducible]
-def frameUniformSpace : UniformSpace Cₛ^n⟮I; F, V⟯ :=
-  let _ := frameTopology (I := I) (n := n) e U hU
-  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
-  IsTopologicalAddGroup.rightUniformSpace _
-
-/-- The frame uniformity retains the original compact derivative topology on sections. -/
-@[simp]
-theorem frameUniformSpace_toTopologicalSpace :
-    (frameUniformSpace (I := I) (n := n) e U hU).toTopologicalSpace =
-      frameTopology (I := I) (n := n) e U hU :=
-  (rfl)
-
-/-- The frame uniformity makes sections a uniform additive group. -/
-theorem isUniformAddGroup_frameUniformSpace :
-    let _ := frameUniformSpace (I := I) (n := n) e U hU
-    IsUniformAddGroup Cₛ^n⟮I; F, V⟯ := by
-  let _ := frameTopology (I := I) (n := n) e U hU
-  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
-  let _ := frameUniformSpace (I := I) (n := n) e U hU
-  exact isUniformAddGroup_of_addCommGroup
-
 variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [I.Boundaryless]
   [CompleteSpace F] [hn : ENat.LEInfty n]
 
