@@ -54,8 +54,8 @@ open _root_.MonoidAlgebra
 variable {p : ℕ} [Fact p.Prime]
 
 omit [Fact p.Prime] in
-/-- A finite group of `p`-power roots of unity has order `p ^ k`, and a generator: every element
-is a natural power of it. -/
+/-- A finite group of `p`-power roots of unity has a primitive generator of its order: every
+element is a natural power of it. -/
 private theorem exists_generator_pPowerRootsOfUnity (L : Type*) [Field L]
     (h : Finite (pPowerRootsOfUnity p L)) :
     ∃ ζ ∈ pPowerRootsOfUnity p L, IsPrimitiveRoot ζ (localRootOfUnityOrder p L h) ∧
