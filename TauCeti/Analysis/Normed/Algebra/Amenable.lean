@@ -36,6 +36,8 @@ bounded approximate diagonals.
 * `TauCeti.IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction`: if `A` has a bounded
   approximate diagonal, every bounded derivation of `A` into the dual of a bounded bimodule is
   inner.
+* `TauCeti.isAmenable_def` and `TauCeti.IsAmenable.exists_eq_dualAction_sub_dualAction`: the
+  characteristic property of amenability, and its use on a given bounded derivation.
 * `TauCeti.isAmenable_iff_forall_subsingleton_hochschildBimoduleCohomology_one`: amenability is
   the vanishing of `H¹(A, E*)` for all Banach bimodules `E`.
 * `TauCeti.IsApproximateDiagonal.isAmenable`: a Banach algebra with a bounded approximate
@@ -242,6 +244,30 @@ theorem isAmenable_iff_forall_subsingleton_hochschildBimoduleCohomology_one :
       (h E L R hL hR hLR)
 
 variable {𝕜 A}
+
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
+/-- The characteristic property of amenability: for every Banach `A`-bimodule `E` in the universe
+of `A`, every bounded derivation `D : A → E*` is inner. -/
+theorem isAmenable_def : IsAmenable 𝕜 A ↔
+    ∀ (E : Type u) [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+      (L R : A →L[𝕜] E →L[𝕜] E), (∀ a b x, L (a * b) x = L a (L b x)) →
+        (∀ a b x, R (a * b) x = R b (R a x)) → (∀ a b x, L a (R b x) = R b (L a x)) →
+        ∀ D : A →L[𝕜] StrongDual 𝕜 E,
+          (∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) →
+            ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ :=
+  Iff.rfl
+
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
+/-- In an amenable normed algebra `A`, every bounded derivation `D` of `A` into the dual `E*` of a
+Banach `A`-bimodule `E` in the universe of `A` is inner: `D a = a · φ - φ · a` for some
+`φ ∈ E*`, where `E*` has left action `dualAction R` and right action `dualAction L`. -/
+theorem IsAmenable.exists_eq_dualAction_sub_dualAction (h : IsAmenable 𝕜 A) {E : Type u}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] {L R : A →L[𝕜] E →L[𝕜] E}
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
+    ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ :=
+  h E L R hL hR hLR D hD
 
 /-- A Banach algebra with a bounded approximate diagonal is amenable. -/
 theorem IsApproximateDiagonal.isAmenable [ProperSpace 𝕜] [CompleteSpace A]
