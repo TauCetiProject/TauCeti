@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
+public import Mathlib.Combinatorics.Quiver.Path.Decomposition
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
 public import Mathlib.Data.List.Chain
@@ -343,6 +344,22 @@ theorem IsPath.target_notMem_vertices_of_cons {s t x : V} {p : ArrowWalk Q s t} 
   rw [isPath_def, vertices_cons, List.concat_eq_append, List.nodup_append] at hp
   exact fun hx ↦ hp.2.2 x hx x (List.mem_singleton_self x) rfl
 
+/-- The source of an arrow traversed by a path is not the path's target. -/
+theorem IsPath.source_ne_target_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s t}
+    (hp : p.IsPath) {e : Q x y} (he : ⟨x, y, e⟩ ∈ p.arrows) : x ≠ t := by
+  cases p with
+  | nil => simp at he
+  | @cons z _ p e' =>
+    -- The path recursor exposes the final arrow through its local quiver instance.
+    change Q z t at e'
+    intro hxt
+    apply hp.target_notMem_vertices_of_cons
+    rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at he
+    rcases he with he | he
+    · exact hxt ▸ source_mem_vertices_of_mem_arrows (Q := Q) p he
+    · obtain ⟨rfl, -⟩ := Sigma.mk.inj_iff.1 he
+      exact hxt ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p
+
 /-- A path from `s` to `t` that traverses an arrow `e` from `s` to `t` consists of `e` alone. -/
 theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) {e : Q s t}
     (he : ⟨s, t, e⟩ ∈ p.arrows) : p = (nil s).cons e := by
@@ -363,6 +380,14 @@ theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsP
       | cons q' e'' =>
         exact absurd (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ q')
           hp.of_cons.target_notMem_vertices_of_cons
+
+/-- A walk from a vertex in `C` to a vertex outside `C` traverses an arrow leaving `C`. -/
+theorem exists_mem_arrows_source_mem_target_notMem {C : Set V} {s t : V}
+    (p : ArrowWalk Q s t) (hs : s ∈ C) (ht : t ∉ C) :
+    ∃ x y, ∃ e : Q x y, ⟨x, y, e⟩ ∈ p.arrows ∧ x ∈ C ∧ y ∉ C := by
+  obtain ⟨x, hx, y, hy, e, p₁, p₂, rfl⟩ :=
+    @Quiver.Path.exists_mem_notMem_hom_path_path_of_notMem_mem V ⟨Q⟩ s t p C hs ht
+  exact ⟨x, y, e, by simp [arrows_comp, Quiver.Hom.toPath], hx, hy⟩
 
 /-- A walk that traverses a specified arrow splits into the part before that arrow, the arrow
 itself, and the part after it. -/
