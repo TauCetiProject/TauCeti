@@ -88,13 +88,6 @@ theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
   congrFun (image_eq_preimage_of_inverse (f := fun z : 𝕜 => (z - q)⁻¹)
     (g := fun w : 𝕜 => q + w⁻¹) (fun _ => by simp) fun _ => by simp) S
 
-/-- Inversion `w ↦ w⁻¹` is a bijection from `s` onto `t` as soon as it exchanges membership in `s`
-and in `t`: it is an involution. -/
-theorem bijOn_inv_of_forall_mem_iff {s t : Set 𝕜} (h : ∀ w, w ∈ s ↔ w⁻¹ ∈ t) :
-    BijOn (fun w : 𝕜 => w⁻¹) s t :=
-  ⟨fun w hw => (h w).1 hw, inv_injective.injOn,
-    fun y hy => ⟨y⁻¹, (h _).2 (by rwa [inv_inv]), inv_inv y⟩⟩
-
 end DivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
@@ -105,7 +98,7 @@ section UnitBall
 punctured closed unit ball. -/
 theorem bijOn_inv_compl_ball_one :
     BijOn (fun w : 𝕜 => w⁻¹) (ball 0 1)ᶜ (closedBall 0 1 \ {0}) :=
-  bijOn_inv_of_forall_mem_iff fun w => by
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
     rcases eq_or_ne w 0 with rfl | hw
     · simp
     · simp [hw, inv_le_one₀ (norm_pos_iff.mpr hw)]
@@ -114,14 +107,14 @@ theorem bijOn_inv_compl_ball_one :
 the punctured open unit ball. -/
 theorem bijOn_inv_compl_closedBall_one :
     BijOn (fun w : 𝕜 => w⁻¹) (closedBall 0 1)ᶜ (ball 0 1 \ {0}) :=
-  bijOn_inv_of_forall_mem_iff fun w => by
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
     rcases eq_or_ne w 0 with rfl | hw
     · simp
     · simp [hw, inv_lt_one₀ (norm_pos_iff.mpr hw)]
 
 /-- Inversion is a bijection of the unit sphere. -/
 theorem bijOn_inv_sphere_one : BijOn (fun w : 𝕜 => w⁻¹) (sphere 0 1) (sphere 0 1) :=
-  bijOn_inv_of_forall_mem_iff fun w => by simp
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by simp
 
 end UnitBall
 
