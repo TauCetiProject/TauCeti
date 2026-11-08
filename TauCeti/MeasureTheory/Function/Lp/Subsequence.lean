@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.MeasureTheory.Function.Gluing
+import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
 # Subsequences converging in `Lᵖ` on compact subsets
@@ -43,24 +44,6 @@ variable {X : Type*} [MeasurableSpace X] {μ : Measure X} {F : Type*} [Topologic
   [T2Space X] [LocallyCompactSpace X] [SecondCountableTopology X] [OpensMeasurableSpace X]
   [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Set X} {u : ℕ → X → F}
 
-omit [MeasurableSpace X] [T2Space X] [OpensMeasurableSpace X] in
-/-- An open subset `Ω` of a second-countable locally compact space has a monotone sequence of
-compact subsets of `Ω` such that every compact subset of `Ω` lies in one of them. -/
-theorem exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
-    (hΩ : IsOpen Ω) :
-    ∃ L : ℕ → Set X, (∀ m, IsCompact (L m)) ∧ (∀ m, L m ⊆ Ω) ∧ Monotone L ∧
-      ∀ K, IsCompact K → K ⊆ Ω → ∃ m, K ⊆ L m := by
-  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let Kx : CompactExhaustion Ω := CompactExhaustion.choice Ω
-  refine ⟨fun m => (↑) '' Kx m, fun m => (Kx.isCompact m).image continuous_subtype_val,
-    fun m => ?_, fun m m' h => image_mono (Kx.subset h), fun K hK hKΩ => ?_⟩
-  · rintro _ ⟨x, -, rfl⟩
-    exact x.2
-  · have hK' : IsCompact (((↑) : Ω → X) ⁻¹' K) :=
-      Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-    obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
-    exact ⟨m, fun x hx => ⟨⟨x, hKΩ hx⟩, hm hx, rfl⟩⟩
-
 omit [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X] [SecondCountableTopology X]
   [OpensMeasurableSpace X] in
 /-- If `w j` converges to `f` in `Lᵖ(A)` and to `g` in `Lᵖ(B)` along a nontrivial filter, where
@@ -96,7 +79,7 @@ theorem exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure (hΩ : IsOpen Ω)
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ K, IsCompact K → K ⊆ Ω →
         Tendsto (fun j => eLpNorm (u (φ j) - v) p (μ.restrict K)) atTop (𝓝 0) := by
   obtain ⟨L, hLc, hLΩ, hLmono, hLsup⟩ :=
-    exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset hΩ
+    hΩ.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
   have hLm (m : ℕ) : MeasurableSet (L m) := (hLc m).isClosed.measurableSet
   -- A single subsequence converges in every `Lᵖ(L m)`, by sequential compactness of the
   -- product of the compact sets given by `hcpt`.
