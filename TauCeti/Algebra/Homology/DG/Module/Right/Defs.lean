@@ -160,20 +160,13 @@ theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (
     (x : M) :
     op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) =
       -dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) := by
-  induction x using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | @homogeneous k x =>
-    have hx' : (x : M) ∈ (InternalGrading.ofDecomposition ℳ).piece k := by
-      rw [InternalGrading.ofDecomposition_piece]
-      exact x.2
-    have hdx : dM x ∈ (InternalGrading.ofDecomposition ℳ).piece (k + 1) := by
-      rw [InternalGrading.ofDecomposition_piece]
-      exact hM.isHomogeneous.map_mem x.2
-    rw [InternalGrading.koszulTwist_one_apply_of_mem _ hdx,
-      InternalGrading.koszulTwist_one_apply_of_mem _ hx', hM.leibniz_of_map_eq_zero _ ha,
-      map_smul]
-    simp [Int.negOnePow_succ, smul_comm (op a)]
-  | add x y hx hy => simp [hx, hy, smul_add, add_comm]
+  have hhom : LinearMap.IsHomogeneous dM (InternalGrading.ofDecomposition ℳ).piece
+      (InternalGrading.ofDecomposition ℳ).piece 1 :=
+    LinearMap.isHomogeneous_def.mpr fun p y hy ↦ by
+      rw [InternalGrading.ofDecomposition_piece] at hy ⊢
+      exact hM.isHomogeneous.map_mem hy
+  rw [hhom.koszulTwist_apply 1 x, hM.leibniz_of_map_eq_zero _ ha]
+  simp
 
 end IsDGRightModule
 
