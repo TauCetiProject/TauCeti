@@ -63,14 +63,10 @@ private theorem exists_openStar_chart_of_simplexModel
       (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _
     continuous_invFun := ((e₀.symm.continuous.comp
       (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _ }
-  have hg : Topology.IsOpenEmbedding fun x : openStarRealization K v => (e x).1 :=
-    isOpen_interior.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding
-  obtain ⟨c, hcs, hc⟩ := OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding
-    (K.isOpen_openStarRealization v) hg
+  obtain ⟨c, hcs, hct, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
+    (K.isOpen_openStarRealization v) isOpen_interior e
     (e.symm ⟨_, (nonempty_interior_coordinateSimplex (Fin m)).some_mem⟩)
-  refine ⟨c, hcs, ?_, fun x ↦ hc x⟩
-  rw [← c.image_source_eq_target, hcs, image_eq_range, funext hc, ← Function.comp_def,
-    range_comp, e.surjective.range_eq, image_univ, Subtype.range_coe]
+  exact ⟨c, hcs, hct, fun x ↦ hc x⟩
 
 /-- A spherical vertex link gives a PL chart on the entire open star, with target the
 interior of a full-dimensional simplex. The vertex maps to the barycentre. The ambient

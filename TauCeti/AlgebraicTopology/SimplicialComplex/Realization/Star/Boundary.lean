@@ -101,16 +101,12 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_halfBall
   obtain ⟨e, he⟩ := h.exists_homeomorph_openStar_halfBall
   have hU : IsOpen {z : EuclideanHalfSpace (n + 1) | ‖z.1‖ < 1} :=
     isOpen_lt continuous_subtype_val.norm continuous_const
-  have hg : IsOpenEmbedding fun x : openStarRealization K v => (e x).1 :=
-    hU.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding
-  obtain ⟨c, hs, hc⟩ := OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding
-    (K.isOpen_openStarRealization v) hg ⟨vertex K v, by simp [mem_openStarRealization]⟩
+  obtain ⟨c, hs, ht, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
+    (K.isOpen_openStarRealization v) hU e ⟨vertex K v, by simp [mem_openStarRealization]⟩
   have hradius (x : openStarRealization K v) : ‖(c x.1).1‖ = 1 - x.1.1 v := by
     rw [hc x]
     exact he x
-  refine ⟨c, hs, ?_, ?_, hradius⟩
-  · rw [← c.image_source_eq_target, hs, image_eq_range, funext hc, ← Function.comp_def,
-      range_comp, e.surjective.range_eq, image_univ, Subtype.range_coe]
+  refine ⟨c, hs, ht, ?_, hradius⟩
   · apply Subtype.ext
     apply norm_eq_zero.mp
     simpa using hradius ⟨vertex K v, by simp [mem_openStarRealization]⟩
