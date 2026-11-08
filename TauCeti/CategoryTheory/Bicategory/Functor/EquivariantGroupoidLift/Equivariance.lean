@@ -144,15 +144,6 @@ private lemma actInverseIso_hom_app_comp_transportId_comp_map_counit {p : Γ}
     (N.toLift.fiberEquivalence p).counitIso.inv_hom_id_app x
   erw [hi, (act actions p a).map_id, Category.comp_id]
 
-/-- Naturality of the identity-action comparison, transported along `g`. -/
-private lemma transport_map_actId_naturality {p q : Γ} (g : p ⟶ q) {y x : fiber actions p}
-    (ε : y ⟶ x) :
-    (N.transport g).map ((act actions p (𝟙 _)).map ε) ≫
-      (N.transport g).map ((actId actions p).hom.app x) =
-    (N.transport g).map ((actId actions p).hom.app y) ≫ (N.transport g).map ε := by
-  rw [← Functor.map_comp, (actId actions p).hom.naturality, Functor.map_comp]
-  rfl
-
 /-- The canonical comparison with reconstructed transport commutes with every prescribed
 action, including its chosen commuting isomorphism. -/
 @[reassoc]
@@ -189,7 +180,9 @@ lemma toLiftTransportIso_hom_app_comp_transportCommIso {p q : Γ} (g : p ⟶ q)
         ((N.transport g).obj ((act actions p (𝟙 _)).obj y)))) ≫
       (act actions q a).map ((N.transport g).map ((act actions p (𝟙 _)).map ε) ≫
         (N.transport g).map ((actId actions p).hom.app x))
-  rw [N.transport_map_actId_naturality g ε]
+  have hnat := (Functor.whiskerRight (actId actions p).hom (N.transport g)).naturality ε
+  simp only [Functor.comp_map, Functor.id_map, Functor.whiskerRight_app] at hnat
+  rw [hnat]
   simp only [Functor.map_comp, Category.assoc]
   -- Remove the unit transports from the two factorizations of the joint arrow.
   have hk : κ ≫ (N.transportId q).hom.app ((act actions q a).obj
