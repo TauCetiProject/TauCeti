@@ -116,6 +116,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   of `s` converge to those over `s`.
 * `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
   a smaller average.
+* `TauCeti.ae_eq_zero_of_setAverage_rpow_eq_zero`: a nonnegative `Lᵠ` function whose `p`-th power
+  has vanishing average over a set of finite positive measure vanishes almost everywhere there.
 * `TauCeti.tendsto_average_add_rpow`: dominated convergence for the averages of
   `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ≥ 0` tending to `0`.
 -/
@@ -799,6 +801,26 @@ theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
       exact (Real.continuousAt_rpow_const _ p (Or.inr hp.le)).tendsto.comp hδ'
   simp only [average_eq, smul_eq_mul]
   exact hlim.const_mul _
+
+/-- If a nonnegative function in `Lᵠ` of a set of finite positive measure has vanishing average of
+its `p`-th power, for `0 < p ≤ q`, then it vanishes almost everywhere on the set. -/
+theorem ae_eq_zero_of_setAverage_rpow_eq_zero {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {s : Set α} {p : ℝ} {q : ℝ≥0∞} {g : α → ℝ} (hp : 0 < p)
+    (hpq : ENNReal.ofReal p ≤ q) (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
+    (hg : MemLp g q (μ.restrict s)) (hg0 : ∀ᵐ x ∂μ.restrict s, 0 ≤ g x)
+    (havg : ⨍ x in s, g x ^ p ∂μ = 0) : ∀ᵐ x ∂μ.restrict s, g x = 0 := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hint : IntegrableOn (fun x => g x ^ p) s μ := by
+    refine ((hg.mono_exponent hpq).integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
+      ENNReal.ofReal_ne_top).congr ?_
+    filter_upwards [hg0] with x hx
+    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg hx]
+  rw [setAverage_eq, smul_eq_mul, mul_eq_zero, inv_eq_zero] at havg
+  have hzero := (integral_eq_zero_iff_of_nonneg_ae
+    (hg0.mono fun x hx => Real.rpow_nonneg hx _) hint).1
+    (havg.resolve_left (ENNReal.toReal_pos hs0 hs).ne')
+  filter_upwards [hzero, hg0] with x h1 h2
+  exact (Real.rpow_eq_zero h2 hp.ne').1 h1
 
 end Rpow
 
