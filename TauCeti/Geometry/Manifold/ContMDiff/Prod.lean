@@ -93,7 +93,7 @@ theorem exists_isOpen_prod_contMDiffOn [IsManifold I' n (X × Y)] [IsManifold J 
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by
 conjugating with the extended chart. -/
-theorem contMDiffAt_extChartAt_symm_comp_flow [I'.Boundaryless] [IsManifold I' n M] (a : M)
+theorem contMDiffAt_extChartAt_symm_comp_flow [I'.Boundaryless] (a : M)
     {φ : E' → 𝕜 → E'} (hφ : ContDiffAt 𝕜 n (fun p : E' × 𝕜 ↦ φ p.1 p.2) (extChartAt I' a a, 0))
     (hφ0 : φ (extChartAt I' a a) 0 = extChartAt I' a a) :
     ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) I' n
