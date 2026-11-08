@@ -156,6 +156,13 @@ theorem image_algebraMap_append_append_weights {A D : Type*} [CommRing A] [CommR
       Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D)) j :=
   Fin.addCases (fun i ↦ by simp) (fun i ↦ by simp) j
 
+/-- Appending `T`, `V` and the trivial weights keeps all weight sets finite. -/
+theorem finite_append_append_weights {A : Type*} [One A] {k m n : ℕ} {T : Fin k → Set A}
+    {V : Fin m → Set A} (hT : ∀ i, (T i).Finite) (hV : ∀ i, (V i).Finite) :
+    ∀ i, (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A)) i).Finite := fun i ↦
+  Fin.addCases (fun j ↦ by simpa using hT j)
+    (fun j ↦ Fin.addCases (fun l ↦ by simpa using hV l) (fun _ ↦ by simp) j) i
+
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   {B : Type*} [CommRing B] [TopologicalSpace B]
 

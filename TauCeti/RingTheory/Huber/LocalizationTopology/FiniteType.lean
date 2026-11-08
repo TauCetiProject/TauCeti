@@ -637,10 +637,8 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
       simpa only [l, htj] using hσX j
     exact Subring.mem_map.mpr ⟨_, hmem, hval⟩
   refine Pair.Hom.isTopologicallyFiniteType_iff.mpr
-    ⟨k + (1 + m), Z, fun i ↦ Fin.addCases (fun j ↦ by simpa [Z] using hRfin j)
-      (fun j ↦ Fin.addCases (fun l ↦ by simpa only [Z, Fin.append_right, Fin.append_left]
-        using (G l).finite_toSet)
-        (fun _ ↦ by simp [Z]) j) i, hZ, σ, hσquot, ?_⟩
+    ⟨k + (1 + m), Z, finite_append_append_weights hRfin fun l ↦ (G l).finite_toSet, hZ, σ,
+      hσquot, ?_⟩
   apply Pair.Hom.ext
   ext a
   have hιA : ι.toRingHom (algebraMap A D a) = algebraMap A _ a := by

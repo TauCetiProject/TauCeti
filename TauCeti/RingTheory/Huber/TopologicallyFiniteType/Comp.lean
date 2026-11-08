@@ -142,14 +142,6 @@ private theorem exists_finite_weights_isWeightedVarPowerBounded [IsHuberRing A] 
       exact hG i ha
   exact ⟨V, hVfin, hV, hφV, hVy⟩
 
-omit [TopologicalSpace A] [IsTopologicalRing A] in
-/-- Appending `T`, `V` and the trivial weights keeps all weight sets finite. -/
-private theorem finite_append_append_weights {k m n : ℕ} {T : Fin k → Set A} {V : Fin m → Set A}
-    (hT : ∀ i, (T i).Finite) (hV : ∀ i, (V i).Finite) :
-    ∀ i, (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A)) i).Finite := fun i ↦
-  Fin.addCases (fun j ↦ by simpa using hT j)
-    (fun j ↦ Fin.addCases (fun l ↦ by simpa using hV l) (fun _ ↦ by simp) j) i
-
 /-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
 type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
 theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
