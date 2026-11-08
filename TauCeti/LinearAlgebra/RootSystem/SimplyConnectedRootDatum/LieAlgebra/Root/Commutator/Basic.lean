@@ -222,11 +222,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
     simpa only [one_zsmul] using zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ hcαγ
   -- Divided-power stability of the root vectors and of their integral multiples.
   have hdp := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (z : ℤ) (i : Fin t.numRoots) (n : ℕ) :
-      ∀ w ∈ M, Associative.dividedPower n (z • E i) • w ∈ M := by
-    intro w hw
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hdp i n w hw) _
+  have hscaled := dividedPower_zsmul_chevalleySystem_smul_mem ρ M hM hnil
   have hn := isNilpotent_apply_ι_chevalleySystem ρ hnil
   have hprod :
       chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *

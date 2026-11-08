@@ -56,9 +56,10 @@ nilpotently.
 
 ## Main results
 
-* `TauCeti.DynkinType.isNilpotent_apply_ι_chevalleySystem` and
-  `TauCeti.DynkinType.dividedPower_chevalleySystem_smul_mem`: every root vector acts nilpotently,
-  with divided powers preserving the lattice.
+* `TauCeti.DynkinType.isNilpotent_apply_ι_chevalleySystem`,
+  `TauCeti.DynkinType.dividedPower_chevalleySystem_smul_mem` and
+  `TauCeti.DynkinType.dividedPower_zsmul_chevalleySystem_smul_mem`: every root vector acts
+  nilpotently, with divided powers of its integer multiples preserving the lattice.
 * `TauCeti.DynkinType.chevalleyRootSubgroup_simpleIndex` and
   `TauCeti.DynkinType.chevalleyRootSubgroup_reflectionPerm_simpleIndex`: at `±αᵢ` these are the
   simple root subgroups of the Kostant data.
@@ -140,6 +141,16 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)]
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
 
+include hM hnil in
+/-- Integer multiples of every root vector also act on a Kostant-stable lattice with integral
+divided powers: `(z • ρ(e_γ))ⁿ / n! = zⁿ • ρ(e_γ)ⁿ / n!` preserves `M`. -/
+theorem dividedPower_zsmul_chevalleySystem_smul_mem (z : ℤ) (γ : Fin t.numRoots) (n : ℕ) :
+    ∀ v ∈ M, Associative.dividedPower n
+      (z • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • v ∈ M := by
+  intro v hv
+  rw [Associative.dividedPower_zsmul, smul_assoc]
+  exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n v hv) _
+
 /-! ## The root subgroups -/
 
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
@@ -185,11 +196,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numR
   have hxz := commute_of_lie_eq_zero ρ hαγ
   have hyz := commute_of_lie_eq_zero ρ hβγ
   have hdp := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (n : ℕ) (z : V) (hz : z ∈ M) :
-      Associative.dividedPower n
-        (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • z ∈ M := by
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hdp γ n z hz) _
+  have hscaled := dividedPower_zsmul_chevalleySystem_smul_mem ρ M hM hnil c γ
   have hprod :
       chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
