@@ -198,6 +198,7 @@ theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ 
     pow_one]
 
 /-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it. -/
+@[simp]
 theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
   rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 
