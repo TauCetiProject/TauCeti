@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.NumberTheory.LSeries.Dirichlet
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
@@ -50,6 +51,8 @@ two abscissae is named.
   `σ_c ≤ σ_a ≤ σ_c + 1`.
 * `TauCeti.LSeries.abscissaOfConv_lt_abscissaOfAbsConv_neg_one_pow`: the two abscissae are
   different for the alternating coefficients.
+* `TauCeti.LSeries.norm_sum_Icc_neg_one_pow_add_one_le`: the partial sums of the alternating
+  coefficients `(-1) ^ (k + 1)` have norm at most `1`.
 * `TauCeti.LSeries.abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg`: for nonnegative coefficients
   they are equal, ordinary convergence at a real point being absolute there
   (`TauCeti.lSeriesConverges_iff_lSeriesSummable_of_nonneg`).
@@ -298,19 +301,19 @@ end LSeries
 
 namespace LSeries
 
+/-- The partial sums `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating coefficients have norm at
+most `1`, being `0` or `1` by `Finset.sum_Icc_neg_one_pow_add_one`. -/
+theorem norm_sum_Icc_neg_one_pow_add_one_le {R : Type*} [SeminormedRing R] [NormOneClass R]
+    (n : ℕ) : ‖∑ k ∈ Icc 1 n, (-1 : R) ^ (k + 1)‖ ≤ 1 := by
+  rw [Finset.sum_Icc_neg_one_pow_add_one]
+  split_ifs <;> simp
+
 /-- The alternating coefficients have bounded partial sums, so their Dirichlet series converges
 for `Re s > 0`. -/
 theorem abscissaOfConv_neg_one_pow_le_zero :
     abscissaOfConv (fun n ↦ (-1 : ℂ) ^ n) ≤ 0 := by
-  have hsum : ∀ n : ℕ, ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ k‖ ≤ 1 := by
-    intro n
-    have h : ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ k = (∑ k ∈ range (n + 1), (-1 : ℂ) ^ k) - 1 := by
-      rw [Nat.range_succ_eq_Icc_zero,
-        ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le n),
-        Finset.sum_insert (by simp)]
-      simp
-    rw [h, neg_one_geom_sum]
-    split_ifs <;> simp
+  have hsum (n : ℕ) : ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ k‖ ≤ 1 := by
+    simpa [pow_succ, sum_neg_distrib] using norm_sum_Icc_neg_one_pow_add_one_le (R := ℂ) n
   have h := abscissaOfConv_le_of_sum_isBigO (f := fun n ↦ (-1 : ℂ) ^ n) (r := 0)
     (Asymptotics.IsBigO.of_bound 1 (.of_forall fun n ↦ by simpa using hsum n))
   exact_mod_cast h

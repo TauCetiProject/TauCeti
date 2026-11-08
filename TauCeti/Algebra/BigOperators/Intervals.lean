@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.Group.Nat.Even
 public import Mathlib.Data.Int.Interval
+import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Abel
 
 /-!
@@ -18,7 +20,8 @@ A sum `∑ k ∈ Ico m (n + 1), f k` whose summands split as `f m = β m`, `f n 
 associative ring, a constant summed over the `n - 2` indices `1 ≤ k < n - 1` is `(n - 2)` times it.
 For a symmetric integer interval `[-N, N]`, adding the middle term `F 0` to
 `∑ i ∈ Icc (-(N : ℤ)) N, F i` splits the sum into the nonnegative half `∑ j ∈ range (N + 1), F j`
-and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`.
+and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, the partial sums
+`∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
 
 ## Main results
 
@@ -27,6 +30,8 @@ and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
 * `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(N : ℤ)) N, F i) + F 0` equals the sum of `F j`
   and `F (-(j : ℤ))` over `j ∈ range (N + 1)`.
+* `Finset.sum_Icc_neg_one_pow_add_one`: `∑ k ∈ Icc 1 n, (-1) ^ (k + 1)` is `0` for even `n` and
+  `1` for odd `n`.
 -/
 
 public section
@@ -85,5 +90,13 @@ theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (
   rw [hunion, hinter, sum_singleton] at hkey
   rw [hkey, hs, ht, sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
     sum_image (fun _ _ _ _ h ↦ by omega)]
+
+/-- The partial sums `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are
+`0` for even `n` and `1` for odd `n`; this is Mathlib's `neg_one_geom_sum` with the index shifted
+by one. -/
+theorem sum_Icc_neg_one_pow_add_one {R : Type*} [Ring R] (n : ℕ) :
+    ∑ k ∈ Icc 1 n, (-1 : R) ^ (k + 1) = if Even n then 0 else 1 := by
+  rw [← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, add_tsub_cancel_right, ← neg_one_geom_sum]
+  simp [pow_add]
 
 end Finset
