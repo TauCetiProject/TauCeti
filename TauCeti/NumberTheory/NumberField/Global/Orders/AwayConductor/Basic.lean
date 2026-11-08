@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 public import TauCeti.RingTheory.Ideal.Conductor
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
-import TauCeti.RingTheory.Ideal.Quotient.Artinian
+import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 
 /-!
 # Ideals of an order away from its conductor
