@@ -57,16 +57,19 @@ theorem tendsto_measureReal_Ioc_sub_of_tendsto_measureReal_Ioc
   simpa only [NNReal.coe_sub hab] using ((hlim (b - a)).comp ht).congr' he.symm
 
 /-- If the forward interval masses `μ.real (Ioc t (t + d))` converge to `r * d` for every
-`d`, with `0 ≤ r`, convolution with a monotone forcing cut off at age `A` converges to
+`d`, convolution with a monotone forcing cut off at age `A` converges to
 `r` times its integral on `0..A`. The age cutoff is excluded and age zero is included.
 No continuity, positivity or global integrability of the forcing is required. -/
 theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
-    (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] {r : ℝ} (hr : 0 ≤ r)
+    (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] {r : ℝ}
     (hlim : ∀ d : ℝ≥0, Tendsto (fun t : ℝ≥0 => μ.real (Ioc t (t + d))) atTop
       (𝓝 (r * d)))
     {h : ℝ≥0 → ℝ} (A : ℝ≥0) (hh : AntitoneOn h (Iic A)) :
     Tendsto (renewalConv ((Iio A).indicator h) μ) atTop
       (𝓝 (r * ∫ x in (0 : ℝ)..A, h x.toNNReal)) := by
+  have hr : 0 ≤ r := by
+    simpa only [NNReal.coe_one, mul_one] using
+      ge_of_tendsto' (hlim 1) (fun _ => measureReal_nonneg)
   by_cases hA : A = 0
   · subst A
     have he : renewalConv ((Iio (0 : ℝ≥0)).indicator h) μ = fun _ => 0 := by
@@ -158,7 +161,7 @@ The nonlattice hypothesis and the identification of `r` must be supplied by the 
 theorem; neither is assumed implicitly. Zero increments and infinite increment mean are allowed. -/
 theorem tendsto_renewalConv_of_tendsto_measureReal_Ioc
     (μ : Measure ℝ≥0) [IsProbabilityMeasure μ] (hμ : μ {0} < 1)
-    {r : ℝ} (hr : 0 ≤ r)
+    {r : ℝ}
     (hlim : ∀ d : ℝ≥0,
       Tendsto (fun t : ℝ≥0 => μ.renewalMeasure.real (Ioc t (t + d))) atTop (𝓝 (r * d)))
     {h : ℝ≥0 → ℝ} (hh : Antitone h) (h₀ : ∀ x, 0 ≤ h x)
@@ -199,7 +202,7 @@ theorem tendsto_renewalConv_of_tendsto_measureReal_Ioc
     simpa [Real.dist_eq] using hN t
   apply hunif.tendsto_of_eventually_tendsto
     (Eventually.of_forall fun N =>
-      μ.renewalMeasure.tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc hr hlim
+      μ.renewalMeasure.tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc hlim
         (N : ℝ≥0) (hh.antitoneOn _))
   exact (intervalIntegral_tendsto_integral_Ioi 0 hint
     (tendsto_natCast_atTop_atTop (R := ℝ))).const_mul r
@@ -209,7 +212,7 @@ the term it contributes is the forcing itself, which vanishes at infinity. Genui
 zero-increment clusters remain in the integrating measure. -/
 theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     (μ : Measure ℝ≥0) [IsProbabilityMeasure μ] (hμ : μ {0} < 1)
-    {r : ℝ} (hr : 0 ≤ r)
+    {r : ℝ}
     (hlim : ∀ d : ℝ≥0,
       Tendsto (fun t : ℝ≥0 => μ.renewalMeasure.real (Ioc t (t + d))) atTop (𝓝 (r * d)))
     {h : ℝ≥0 → ℝ} (hh : Antitone h) (h₀ : ∀ x, 0 ≤ h x)
@@ -235,6 +238,6 @@ theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     linarith
   rw [funext he]
   simpa only [sub_zero] using
-    (μ.tendsto_renewalConv_of_tendsto_measureReal_Ioc hμ hr hlim hh h₀ hint).sub hhlim
+    (μ.tendsto_renewalConv_of_tendsto_measureReal_Ioc hμ hlim hh h₀ hint).sub hhlim
 
 end MeasureTheory.Measure
