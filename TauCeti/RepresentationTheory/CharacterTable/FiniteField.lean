@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.FiniteField
-public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.Algebra.MonoidAlgebra.Trace
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
+public import TauCeti.RingTheory.Artinian.Subalgebra
 
 /-!
 # A finite field containing the roots of unity splits the centre of the group algebra
