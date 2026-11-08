@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
-import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 import TauCeti.CategoryTheory.Groupoid.SingleObj
 
 /-!
