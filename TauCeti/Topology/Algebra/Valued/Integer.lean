@@ -35,6 +35,8 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
 * `Valued.instIsLinearTopologyInteger`: the integer ring of a valued ring has a linear topology.
 * `Valued.instCompleteSpaceInteger`: the integer ring of a complete valued ring is complete.
 * `Valued.integer.mem_maximalIdeal_iff`: the maximal ideal of `𝒪[K]` is the open unit ball.
+* `Valued.integer.residue_eq_residue_iff_norm_sub_lt_one`: elements of `𝒪[K]` have the same
+  residue exactly when their difference has norm less than `1`.
 * `Valued.integer.exists_mem_maximalIdeal_coe_ne_zero`: the maximal ideal of `𝒪[K]` contains a
   nonzero element.
 * `Valued.integer.smul_def`: on a `K`-module, `𝒪[K]` acts through the inclusion `𝒪[K] → K`.
@@ -97,6 +99,20 @@ theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
   rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
     (Valued.integer.norm_le_one x).lt_iff_ne]
+
+/-- An element of the valuation ring of a nonarchimedean field has residue zero exactly when its
+norm is less than `1`. -/
+theorem Valued.integer.residue_eq_zero_iff_norm_lt_one {x : Valued.integer K} :
+    residue (Valued.integer K) x = 0 ↔ ‖(x : K)‖ < 1 := by
+  rw [IsLocalRing.residue_eq_zero_iff, Valued.integer.mem_maximalIdeal_iff,
+    AddSubgroupClass.coe_norm]
+
+/-- Two elements of the valuation ring of a nonarchimedean field have the same residue exactly
+when their difference has norm less than `1`. -/
+theorem Valued.integer.residue_eq_residue_iff_norm_sub_lt_one {x y : Valued.integer K} :
+    residue (Valued.integer K) x = residue (Valued.integer K) y ↔ ‖(x : K) - y‖ < 1 := by
+  rw [← sub_eq_zero, ← map_sub, Valued.integer.residue_eq_zero_iff_norm_lt_one,
+    AddSubgroupClass.coe_sub]
 
 /-- The maximal ideal of the valuation ring of a nontrivially normed nonarchimedean field
 contains a nonzero element. -/

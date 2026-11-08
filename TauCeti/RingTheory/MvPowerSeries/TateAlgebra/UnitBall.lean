@@ -413,9 +413,8 @@ theorem residue_restrictedEval₂ (f : Tₖ°)
   -- So `f(x)` and `q(x)` have the same residue, since `‖(f - P)(x)‖ ≤ ‖f - P‖ < 1`.
   have hres : residue 𝒪[L] ⟨_, h⟩ =
       residue 𝒪[L] (MvPolynomial.eval₂ (φ.integerRestrict hφ) x q) := by
-    rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff, Valued.integer.mem_maximalIdeal_iff,
-      AddSubgroupClass.coe_norm, AddSubgroupClass.coe_sub, ← hP, ← map_sub,
-      ← AddSubgroupClass.coe_sub]
+    refine Valued.integer.residue_eq_residue_iff_norm_sub_lt_one.mpr ?_
+    rw [← hP, ← map_sub, ← AddSubgroupClass.coe_sub]
     exact (norm_restrictedEval₂_le _ _ _ _ _).trans_lt hfP
   rw [hres, hred, MvPolynomial.eval₂_map, ResidueField.map_comp_residue,
     MvPolynomial.eval₂_comp_left, Function.comp_def]
@@ -427,7 +426,7 @@ theorem norm_restrictedEval₂_lt_one_iff (f : Tₖ°) :
       (f : Tₖ)‖ < 1 ↔ (restrictedReduction f).eval₂ (ResidueField.map (φ.integerRestrict hφ))
         (fun i ↦ residue 𝒪[L] (x i)) = 0 := by
   rw [← residue_restrictedEval₂ φ hφ x f (restrictedEval₂_mem_integer φ hφ x f),
-    residue_eq_zero_iff, Valued.integer.mem_maximalIdeal_iff, AddSubgroupClass.coe_norm]
+    Valued.integer.residue_eq_zero_iff_norm_lt_one]
 
 end Eval
 
