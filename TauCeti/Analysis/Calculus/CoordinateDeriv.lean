@@ -52,6 +52,8 @@ symbol calculus.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
+* `ContinuousLinearMap.apply_eq_sum_single`, `ContinuousLinearMap.opNorm_le_of_apply_eq_sum`:
+  a continuous linear map on `ℝⁿ` (or on `ℝⁿ × ℝⁿ`) in terms of its values on the standard basis.
 * `TauCeti.fderiv_apply_eq_sum_coordinateDeriv`: the derivative of a function of a position and a
   frequency in terms of its first-order coordinate derivatives in the two variables.
 -/
@@ -608,10 +610,36 @@ section Prod
 /-! ### Derivatives of functions of a position and a frequency -/
 
 /-- A continuous linear map on `ℝⁿ` is determined by its values on the standard basis. -/
-private theorem clm_apply_eq_sum (L : CoordinateSpace n →L[ℝ] A) (h : CoordinateSpace n) :
-    L h = ∑ j, h j • L (EuclideanSpace.single j 1) := by
+theorem _root_.ContinuousLinearMap.apply_eq_sum_single (L : CoordinateSpace n →L[ℝ] A)
+    (h : CoordinateSpace n) : L h = ∑ j, h j • L (EuclideanSpace.single j 1) := by
   conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
   simp
+
+/-- A combination `∑ j, h j • X j` has norm at most `‖h‖ ∑ j, ‖X j‖`. -/
+theorem CoordinateSpace.norm_sum_smul_le (h : CoordinateSpace n) (X : Fin n → A) :
+    ‖∑ j, h j • X j‖ ≤ ‖h‖ * ∑ j, ‖X j‖ := by
+  rw [Finset.mul_sum]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [norm_smul]
+  gcongr
+  exact PiLp.norm_apply_le h j
+
+/-- A continuous linear map on `ℝⁿ × ℝⁿ` given by coordinates has norm at most the sum of the
+norms of its values on the standard basis. -/
+theorem _root_.ContinuousLinearMap.opNorm_le_of_apply_eq_sum
+    (L : CoordinateSpace n × CoordinateSpace n →L[ℝ] A) (X Ξ : Fin n → A)
+    (hL : ∀ v, L v = ∑ j, v.1 j • X j + ∑ j, v.2 j • Ξ j) :
+    ‖L‖ ≤ ∑ j, ‖X j‖ + ∑ j, ‖Ξ j‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [hL]
+  calc _ ≤ ‖v.1‖ * ∑ j, ‖X j‖ + ‖v.2‖ * ∑ j, ‖Ξ j‖ :=
+        (norm_add_le _ _).trans (add_le_add (CoordinateSpace.norm_sum_smul_le _ _)
+          (CoordinateSpace.norm_sum_smul_le _ _))
+    _ ≤ ‖v‖ * ∑ j, ‖X j‖ + ‖v‖ * ∑ j, ‖Ξ j‖ := by
+        gcongr
+        · exact norm_fst_le v
+        · exact norm_snd_le v
+    _ = _ := by ring
 
 /-- The derivative of a function of a position and a frequency, differentiable at `p`, in the
 direction `v` is the sum of its coordinate derivatives in the position and in the frequency,
@@ -632,8 +660,8 @@ theorem fderiv_apply_eq_sum_coordinateDeriv
     ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply]
   conv_lhs => rw [hv, map_add]
   congr 1
-  · simpa using clm_apply_eq_sum ((fderiv ℝ f p).comp (ContinuousLinearMap.inl ℝ _ _)) v.1
-  · simpa using clm_apply_eq_sum ((fderiv ℝ f p).comp (ContinuousLinearMap.inr ℝ _ _)) v.2
+  · simpa using ((fderiv ℝ f p).comp (ContinuousLinearMap.inl ℝ _ _)).apply_eq_sum_single v.1
+  · simpa using ((fderiv ℝ f p).comp (ContinuousLinearMap.inr ℝ _ _)).apply_eq_sum_single v.2
 
 /-- A coordinate derivative in the position of a function differentiable at `p` is its derivative
 in the direction `(e_j, 0)`. -/

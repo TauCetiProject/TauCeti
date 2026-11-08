@@ -297,6 +297,16 @@ theorem HasCompactSpatialSupport.smul {a : Symbol n V W m} (ha : a.HasCompactSpa
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
 
+theorem HasCompactSpatialSupport.neg {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) :
+    (-a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
+
+theorem HasCompactSpatialSupport.sub {a b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
 end Module
 
 section Inclusion

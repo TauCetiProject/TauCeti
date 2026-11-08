@@ -5,46 +5,47 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Convolution
-import Mathlib.Analysis.Calculus.FDeriv.Partial
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The composition symbol of two symbols
 
 Let `a` be a symbol of order `m'` with values in `W →L[ℂ] U` and `b` a symbol of order `m` with
-values in `V →L[ℂ] W` that vanishes for positions outside a compact set. The composition of their
-left quantizations is again a left quantization, of the **composition symbol**
+values in `V →L[ℂ] W` that vanishes for positions outside a compact set. Their **composition
+symbol** is
 
 `(a # b)(x, ξ) = ∫ exp(2πi ⟪η, x⟫) a(x, ξ + 2πη) ∘ b̂(η, ξ) dη`,
 
 where `b̂(η, ξ)` is the Fourier transform (with Mathlib's phase `exp(-2πi ⟪y, η⟫)`) of the
-position slice `y ↦ b(y, ξ)`. This file shows that `a # b` is a symbol of order `m' + m` and that
-it quantizes to the composition. The composition symbol is the starting point of the symbol
-calculus of composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic expansion
+position slice `y ↦ b(y, ξ)`. This file shows that `a # b` is a symbol of order `m' + m`, and that
+its quantization `Op(a # b) u` equals the Fourier integral defining `Op(a)`, evaluated on the
+function `Op(b) u`. The composition symbol is the starting point of the symbol calculus of
+composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic expansion
 `∑_α (1 / α!) ∂_ξ^α a D_x^α b`, whose leading term is the pointwise composition `Symbol.comp`.
 
 ## Main results
 
-* `TauCeti.Symbol.compose`: the composition symbol `a # b`, a symbol of order `m' + m`, with its
-  defining formula `TauCeti.Symbol.coefficient_compose`.
-* `TauCeti.Symbol.quantizeSchwartzValue_compose`: **composition of quantizations**. For a Schwartz
+* `TauCeti.Symbol.sharp`: the composition symbol `a # b`, a symbol of order `m' + m`, with its
+  defining formula `TauCeti.Symbol.coefficient_sharp`.
+* `TauCeti.Symbol.quantizeSchwartzValue_sharp`: **composition of quantizations**. For a Schwartz
   function `u`, `Op(a # b) u (x) = ∫ exp(2πi ⟪ζ, x⟫) a(x, 2πζ) (𝓕 (Op(b) u) ζ) dζ`, the Fourier
   integral defining `Op(a)` applied to the function `Op(b) u`.
-* `TauCeti.Symbol.spatialDeriv_compose`, `TauCeti.Symbol.coefficient_frequencyDeriv_compose`: the
+* `TauCeti.Symbol.spatialDeriv_sharp`, `TauCeti.Symbol.coefficient_frequencyDeriv_sharp`: the
   Leibniz rules `∂(a # b) = (∂a) # b + a # (∂b)` for position and frequency derivatives.
-* Facts about the Fourier transform `b̂(η, ξ)` of the position slices of a symbol with compact
-  spatial support: rapid decay `‖b̂(η, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)` for every `r`
-  (`HasCompactSpatialSupport.exists_norm_fourier_slice_le`), differentiability in `ξ` with the
-  Fourier transform of `∂_ξ b` as derivative (`HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
-  `HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
-  `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)` (`HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
+* `TauCeti.Symbol.sharp_add`, `TauCeti.Symbol.add_sharp`, `TauCeti.Symbol.sharp_smul`,
+  `TauCeti.Symbol.smul_sharp` and their companions: `a # b` is bilinear and compatible with the
+  inclusions of symbol classes (`TauCeti.Symbol.inclusion_sharp`,
+  `TauCeti.Symbol.sharp_inclusion`).
+* `TauCeti.Symbol.IsSmoothing.sharp_right`, `TauCeti.Symbol.IsSmoothing.sharp_left`: the
+  smoothing symbols form an ideal for `#`.
+
+The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
+`(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
 
 ## Proof outline
 
@@ -72,7 +73,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform
-open scoped ContDiff RealInnerProductSpace SchwartzMap LineDeriv
+open scoped ContDiff RealInnerProductSpace SchwartzMap
 
 namespace TauCeti
 
@@ -80,268 +81,6 @@ namespace Symbol
 
 variable {n : ℕ} {m m' : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
-
-
-
-section FourierGeneric
-
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {g : E × E → F} {K : Set E}
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The derivatives in the second variable of a smooth `g` vanishing for first variables outside a
-compact set `K` are bounded on `E × closedBall ξ₀ 1` by a multiple of the indicator of `K`. -/
-private theorem exists_norm_fderiv_snd_le_indicator (hg : ContDiff ℝ ∞ g) (hK : IsCompact K)
-    (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) (ξ₀ : E) :
-    ∃ B, ∀ y, ∀ ξ ∈ Metric.closedBall ξ₀ 1,
-      ‖fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ‖ ≤ K.indicator (fun _ ↦ B) y := by
-  have hD : Continuous fun q : E × E ↦ fderiv ℝ (fun ξ ↦ g (q.1, ξ)) q.2 :=
-    (ContDiff.fderiv (f := fun (q : E × E) ξ ↦ g (q.1, ξ))
-      (hg.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (n := 0) (by simp)).continuous
-  obtain ⟨B, hB⟩ := (hK.prod (isCompact_closedBall ξ₀ 1)).exists_bound_of_continuousOn
-    hD.continuousOn
-  refine ⟨B, fun y ξ hξ ↦ ?_⟩
-  by_cases hy : y ∈ K
-  · rw [Set.indicator_of_mem hy]
-    exact hB (y, ξ) ⟨hy, hξ⟩
-  · have h0 : (fun ξ ↦ g (y, ξ)) = fun _ ↦ 0 := funext (hKg y hy)
-    rw [Set.indicator_of_notMem hy, h0]
-    simp
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem continuous_fourierChar_neg_inner (η : E) :
-    Continuous fun y : E ↦ (𝐞 (-⟪y, η⟫) : ℂ) :=
-  continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
-
-private theorem integrable_fourierChar_smul_fderiv (hg : ContDiff ℝ ∞ g) (hK : IsCompact K)
-    (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) (η ξ : E) :
-    Integrable fun y ↦ (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ := by
-  obtain ⟨B, hB⟩ := exists_norm_fderiv_snd_le_indicator hg hK hKg ξ
-  exact ((integrable_indicator_iff hK.measurableSet).2
-    (integrableOn_const (C := B) hK.measure_lt_top.ne)).mono'
-    ((continuous_fourierChar_neg_inner η).smul (ContDiff.fderiv
-      (f := fun (y : E) ξ ↦ g (y, ξ)) hg contDiff_const (n := 0) (by simp)).continuous
-      ).aestronglyMeasurable
-    (.of_forall fun y ↦ by
-      rw [norm_smul, Circle.norm_coe, one_mul]
-      exact hB y ξ (Metric.mem_closedBall_self zero_le_one))
-
-/-- Differentiation in the second variable under the Fourier integral in the first variable, for
-a smooth `g` vanishing for first variables outside a compact set. -/
-private theorem hasFDerivAt_integral_fourierChar_smul (hg : ContDiff ℝ ∞ g) (hK : IsCompact K)
-    (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) (η ξ₀ : E) :
-    HasFDerivAt (fun ξ ↦ ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ))
-      (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ₀) ξ₀ := by
-  obtain ⟨B, hB⟩ := exists_norm_fderiv_snd_le_indicator hg hK hKg ξ₀
-  have he := continuous_fourierChar_neg_inner η
-  have hslice (ξ : E) : Continuous fun y ↦ g (y, ξ) :=
-    hg.continuous.comp (continuous_id.prodMk continuous_const)
-  refine hasFDerivAt_integral_of_dominated_of_fderiv_le
-    (F' := fun ξ y ↦ (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ)
-    (bound := K.indicator fun _ ↦ B)
-    (Metric.ball_mem_nhds ξ₀ one_pos)
-    (.of_forall fun ξ ↦ (he.smul (hslice ξ)).aestronglyMeasurable)
-    ((he.smul (hslice ξ₀)).integrable_of_hasCompactSupport
-      (HasCompactSupport.intro hK fun y hy ↦ by simp [hKg y hy]))
-    (integrable_fourierChar_smul_fderiv hg hK hKg η ξ₀).aestronglyMeasurable
-    (.of_forall fun y ξ hξ ↦ ?_)
-    ((integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne))
-    (.of_forall fun y ξ _ ↦ ?_)
-  · rw [norm_smul, Circle.norm_coe, one_mul]
-    exact hB y ξ (Metric.ball_subset_closedBall hξ)
-  · exact (((hg.comp (contDiff_prodMk_right y)).differentiable (by simp) ξ).hasFDerivAt).const_smul
-      ((𝐞 (-⟪y, η⟫) : ℂ))
-
-private theorem integral_fourierChar_smul_fderiv_apply (hg : ContDiff ℝ ∞ g) (hK : IsCompact K)
-    (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) (η ξ v : E) :
-    (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ) v =
-      ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ v := by
-  rw [ContinuousLinearMap.integral_apply (integrable_fourierChar_smul_fderiv hg hK hKg η ξ)]
-  rfl
-
-/-- The Fourier integral in the first variable of a continuous `g` vanishing for first variables
-outside a compact set is jointly continuous in the dual variable and the second variable. -/
-private theorem continuous_integral_fourierChar_smul (hg : Continuous g) (hK : IsCompact K)
-    (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) :
-    Continuous fun q : E × E ↦ ∫ y, (𝐞 (-⟪y, q.1⟫) : ℂ) • g (y, q.2) := by
-  refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
-  obtain ⟨B, hB⟩ := (hK.prod (isCompact_closedBall q₀.2 1)).exists_bound_of_continuousOn
-    hg.continuousOn
-  have he : Continuous fun q : E × E ↦ (𝐞 (-⟪q.1, q.2⟫) : ℂ) :=
-    continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
-  refine continuousAt_of_dominated (bound := K.indicator fun _ ↦ B)
-    (.of_forall fun q ↦ ((he.comp (continuous_id.prodMk continuous_const)).smul
-      (hg.comp (continuous_id.prodMk continuous_const))).aestronglyMeasurable) ?_
-    ((integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne))
-    (.of_forall fun y ↦ ((he.comp (continuous_const.prodMk continuous_fst)).smul
-      (hg.comp (continuous_const.prodMk continuous_snd))).continuousAt)
-  filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
-    (Metric.closedBall_mem_nhds q₀.2 one_pos)] with q hq
-  refine .of_forall fun y ↦ ?_
-  rw [norm_smul, Circle.norm_coe, one_mul]
-  by_cases hy : y ∈ K
-  · rw [Set.indicator_of_mem hy]
-    exact hB (y, q.2) ⟨hy, hq⟩
-  · rw [Set.indicator_of_notMem hy, hKg y hy, norm_zero]
-
-end FourierGeneric
-
-/-! ### The Fourier transform of a symbol in the position -/
-
-section FourierSlice
-
-variable {b : Symbol n V W m}
-
-/-- The position slice `y ↦ b(y, ξ)` of a symbol with compact spatial support, as a Schwartz
-function. -/
-private def sliceSchwartz (hb : b.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
-    𝓢(CoordinateSpace n, V →L[ℂ] W) :=
-  (hb.hasCompactSupport_slice ξ).toSchwartzMap (b.contDiff_coefficient_slice ξ)
-
-private theorem coe_sliceSchwartz (hb : b.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
-    ⇑(sliceSchwartz hb ξ) = fun y ↦ b.coefficient (y, ξ) :=
-  funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-
-private theorem fourier_sliceSchwartz (hb : b.HasCompactSpatialSupport) (ξ η : CoordinateSpace n) :
-    𝓕 (sliceSchwartz hb ξ) η = 𝓕 (fun y ↦ b.coefficient (y, ξ)) η := by
-  rw [SchwartzMap.fourier_coe, coe_sliceSchwartz]
-
-/-- The Fourier transform in the position of the spatial derivative `∂_{x_j} b` is
-`2πi ηⱼ b̂(η, ξ)`. -/
-theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice (hb : b.HasCompactSpatialSupport)
-    (j : Fin n) (η ξ : CoordinateSpace n) :
-    𝓕 (fun y ↦ (Symbol.spatialDeriv j b).coefficient (y, ξ)) η =
-      ((2 * π * Complex.I) * ⟪η, EuclideanSpace.single j (1 : ℝ)⟫) •
-        𝓕 (fun y ↦ b.coefficient (y, ξ)) η := by
-  have hd : ⇑(∂_{EuclideanSpace.single j (1 : ℝ)} (sliceSchwartz hb ξ) :
-      𝓢(CoordinateSpace n, V →L[ℂ] W)) = fun y ↦ (Symbol.spatialDeriv j b).coefficient (y, ξ) := by
-    funext y
-    rw [SchwartzMap.lineDerivOp_apply, (sliceSchwartz hb ξ).differentiableAt.lineDeriv_eq_fderiv,
-      coe_sliceSchwartz, fderiv_coefficient_single]
-  rw [← hd, ← SchwartzMap.fourier_coe, SchwartzMap.fourier_lineDerivOp_apply,
-    fourier_sliceSchwartz]
-
-/-- **Differentiation in the frequency.** The Fourier transform `b̂(η, ξ)` of the position slice
-of a symbol with compact spatial support is differentiable in `ξ`, with the Fourier transform of
-the frequency derivative as derivative. -/
-theorem HasCompactSpatialSupport.hasFDerivAt_fourier_slice (hb : b.HasCompactSpatialSupport)
-    (η ξ₀ : CoordinateSpace n) :
-    HasFDerivAt (fun ξ ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η)
-      (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ b.coefficient (y, ξ)) ξ₀) ξ₀ := by
-  obtain ⟨K, hK, hKb⟩ := hasCompactSpatialSupport_iff.mp hb
-  have hF : (fun ξ ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η) =
-      fun ξ ↦ ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • b.coefficient (y, ξ) := by
-    funext ξ
-    simp only [Real.fourier_eq, Circle.smul_def]
-  rw [hF]
-  exact hasFDerivAt_integral_fourierChar_smul b.contDiff_coefficient hK hKb η ξ₀
-
-/-- The coordinate derivative `∂_{ξ_j} b̂(η, ξ)` is the Fourier transform of the position slice of
-the frequency derivative `∂_{ξ_j} b`. -/
-theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (hb : b.HasCompactSpatialSupport)
-    (j : Fin n) (η ξ : CoordinateSpace n) :
-    coordinateDeriv [j] (fun ξ ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η) ξ =
-      𝓕 (fun y ↦ (Symbol.frequencyDeriv j b).coefficient (y, ξ)) η := by
-  obtain ⟨K, hK, hKb⟩ := hasCompactSpatialSupport_iff.mp hb
-  rw [coordinateDeriv_cons, coordinateDeriv_nil, (hb.hasFDerivAt_fourier_slice η ξ).fderiv,
-    integral_fourierChar_smul_fderiv_apply b.contDiff_coefficient hK hKb η ξ, Real.fourier_eq]
-  simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
-    coordinateDeriv_nil]
-
-/-- **Rapid decay.** For every `r`, the Fourier transform of the position slice satisfies
-`‖b̂(η, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
-theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (hb : b.HasCompactSpatialSupport)
-    (r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
-      ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨C, hC0, hC⟩ := hb.exists_one_add_norm_pow_mul_norm_fourier_le ⌈r⌉₊
-  refine ⟨C, hC0, fun η ξ ↦ ?_⟩
-  have h1 : 0 < 1 + ‖η‖ := by positivity
-  -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
-  have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ := by
-    calc (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖ ^ 2) ^ ((⌈r⌉₊ : ℝ) / 2) :=
-          Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖η‖])
-            (by linarith [Nat.le_ceil r])
-      _ ≤ ((1 + ‖η‖) ^ 2) ^ ((⌈r⌉₊ : ℝ) / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg η]) (by positivity)
-      _ = (1 + ‖η‖) ^ ⌈r⌉₊ := by
-          rw [← Real.rpow_natCast (1 + ‖η‖) 2, ← Real.rpow_mul h1.le, ← Real.rpow_natCast]
-          congr 1
-          push_cast
-          ring
-  have hpos : 0 < (1 + ‖η‖ ^ 2) ^ (r / 2) := by positivity
-  rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
-    le_div_iff₀ hpos]
-  calc ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ * (1 + ‖η‖ ^ 2) ^ (r / 2)
-      ≤ ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ * (1 + ‖η‖) ^ ⌈r⌉₊ := by gcongr
-    _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by rw [mul_comm]; exact hC η ξ
-
-end FourierSlice
-
-section ProdDeriv
-
-/-! The following helpers are stated for an arbitrary real normed space `A`: instantiated at a
-space of complex-linear maps, the instances on `E →L[ℝ] A` are then those of `A`, which keeps
-elaboration of the CLM-valued derivatives below predictable. -/
-
-variable {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-
-/-- A combination `∑ j, h j • X j` has norm at most `‖h‖ ∑ j, ‖X j‖`. -/
-private theorem norm_sum_smul_le (h : CoordinateSpace n) (X : Fin n → A) :
-    ‖∑ j, h j • X j‖ ≤ ‖h‖ * ∑ j, ‖X j‖ := by
-  rw [Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
-  rw [norm_smul]
-  gcongr
-  exact PiLp.norm_apply_le h j
-
-/-- A continuous linear map on `ℝⁿ × ℝⁿ` given by coordinates has norm at most the sum of the
-norms of its values on the standard basis. -/
-private theorem opNorm_le_of_apply_eq_sum (L : CoordinateSpace n × CoordinateSpace n →L[ℝ] A)
-    (X Ξ : Fin n → A) (hL : ∀ v, L v = ∑ j, v.1 j • X j + ∑ j, v.2 j • Ξ j) :
-    ‖L‖ ≤ ∑ j, ‖X j‖ + ∑ j, ‖Ξ j‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  rw [hL]
-  calc _ ≤ ‖v.1‖ * ∑ j, ‖X j‖ + ‖v.2‖ * ∑ j, ‖Ξ j‖ :=
-        (norm_add_le _ _).trans (add_le_add (norm_sum_smul_le _ _) (norm_sum_smul_le _ _))
-    _ ≤ ‖v‖ * ∑ j, ‖X j‖ + ‖v‖ * ∑ j, ‖Ξ j‖ := by
-        gcongr
-        · exact norm_fst_le v
-        · exact norm_snd_le v
-    _ = _ := by ring
-
-/-- Differentiation under the integral sign over `ℝⁿ`, for an integrand whose derivative is
-dominated near `p₀` by an integrable function and continuous in the integration variable along
-each direction. -/
-private theorem hasFDerivAt_integral_apply {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [FiniteDimensional ℝ P] {F : P → CoordinateSpace n → A} {p₀ : P} {g : CoordinateSpace n → ℝ}
-    (hint : ∀ p, Integrable (F p)) (hdiff : ∀ η p, DifferentiableAt ℝ (F · η) p)
-    (hcont : ∀ v, Continuous fun η ↦ fderiv ℝ (F · η) p₀ v) (hg : Integrable g)
-    (hbound : ∀ p ∈ Metric.ball p₀ 1, ∀ η, ‖fderiv ℝ (F · η) p‖ ≤ g η) :
-    DifferentiableAt ℝ (fun p ↦ ∫ η, F p η) p₀ ∧
-      ∀ v, fderiv ℝ (fun p ↦ ∫ η, F p η) p₀ v = ∫ η, fderiv ℝ (F · η) p₀ v := by
-  have hmeas : AEStronglyMeasurable (fun η ↦ fderiv ℝ (F · η) p₀) :=
-    (continuous_clm_apply.2 hcont).aestronglyMeasurable
-  have hint' : Integrable fun η ↦ fderiv ℝ (F · η) p₀ :=
-    hg.mono' hmeas (.of_forall (hbound p₀ (Metric.mem_ball_self one_pos)))
-  have h := hasFDerivAt_integral_of_dominated_of_fderiv_le
-    (F' := fun p η ↦ fderiv ℝ (F · η) p) (Metric.ball_mem_nhds p₀ one_pos)
-    (.of_forall fun p ↦ (hint p).aestronglyMeasurable) (hint p₀) hmeas
-    (.of_forall fun η p hp ↦ hbound p hp η) hg
-    (.of_forall fun η p _ ↦ (hdiff η p).hasFDerivAt)
-  refine ⟨h.differentiableAt, fun v ↦ ?_⟩
-  rw [h.fderiv, ContinuousLinearMap.integral_apply hint']
-
-/-- A differentiable function on a finite-dimensional space all of whose directional derivatives
-are `C^k` is `C^(k+1)`. -/
-private theorem contDiff_succ_of_fderiv_apply {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [FiniteDimensional ℝ P] {f : P → A} {k : ℕ} (hf : Differentiable ℝ f)
-    (hk : ∀ v, ContDiff ℝ k fun p ↦ fderiv ℝ f p v) : ContDiff ℝ (k + 1 : ℕ) f := by
-  rw [Nat.cast_succ, contDiff_succ_iff_fderiv]
-  exact ⟨hf, by simp, contDiff_clm_apply_iff.2 hk⟩
-
-end ProdDeriv
 
 /-! ### The integrand of the composition symbol -/
 
@@ -408,12 +147,11 @@ private theorem continuous_compIntegrand (hb : b.HasCompactSpatialSupport) :
     a.contDiff_coefficient.continuous.comp (by fun_prop)
   have hB : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, q.1.2)) q.2 := by
-    obtain ⟨K, hK, hKb⟩ := hasCompactSpatialSupport_iff.mp hb
-    have h := (continuous_integral_fourierChar_smul b.contDiff_coefficient.continuous hK hKb).comp
+    have h := hb.continuous_fourier_slice.comp
       (continuous_snd.prodMk (continuous_snd.comp continuous_fst) :
         Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
           (q.2, q.1.2))
-    simpa only [Function.comp_def, Real.fourier_eq, Circle.smul_def] using h
+    simpa only [Function.comp_def] using h
   exact he.smul (ha.clm_comp hB)
 
 /-- The weight `⟨η⟩ ^ (-(n + 1))` is integrable on `ℝⁿ`. -/
@@ -430,6 +168,24 @@ private theorem integrable_compIntegrand (hb : b.HasCompactSpatialSupport)
       (continuous_const.prodMk continuous_id)).aestronglyMeasurable
     (.of_forall fun η ↦ hC p.1 rfl p.2 η)
 
+/-- The integrand is dominated, for `p` in a neighbourhood of `p₀`, by a multiple of the
+integrable weight `⟨η⟩ ^ (-(n + 1))`. -/
+private theorem exists_norm_compIntegrand_le_weight (hb : b.HasCompactSpatialSupport)
+    (p₀ : CoordinateSpace n × CoordinateSpace n) :
+    ∃ C, 0 ≤ C ∧ ∀ p : CoordinateSpace n × CoordinateSpace n, p.1 ∈ Metric.closedBall p₀.1 1 →
+      p.2 ∈ Metric.closedBall p₀.2 1 → ∀ η,
+        ‖compIntegrand a b p η‖ ≤ C * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_compIntegrand_le (a := a) hb
+    (isCompact_closedBall p₀.1 1) ((n : ℝ) + 1)
+  have hw : Continuous fun ξ : CoordinateSpace n ↦ (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
+    (continuous_const.add (continuous_norm.pow 2)).rpow_const fun ξ ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
+  obtain ⟨M, hM⟩ := (isCompact_closedBall p₀.2 1).exists_bound_of_continuousOn hw.continuousOn
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM p₀.2 (Metric.mem_closedBall_self zero_le_one))
+  refine ⟨C * M, mul_nonneg hC0 hM0, fun p hp₁ hp₂ η ↦ (hC p.1 hp₁ p.2 η).trans ?_⟩
+  have hMp := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans (hM p.2 hp₂))
+  gcongr
+
 variable (a b) in
 /-- The coefficient `∫ exp(2πi ⟪η, x⟫) a(x, ξ + 2πη) ∘ b̂(η, ξ) dη` of the composition symbol. -/
 private def compCoeff (p : CoordinateSpace n × CoordinateSpace n) : V →L[ℂ] U :=
@@ -438,14 +194,9 @@ private def compCoeff (p : CoordinateSpace n × CoordinateSpace n) : V →L[ℂ]
 private theorem continuous_compCoeff (hb : b.HasCompactSpatialSupport) :
     Continuous (compCoeff a b) := by
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  obtain ⟨C, hC0, hC⟩ := exists_norm_compIntegrand_le (a := a) hb
-    (isCompact_closedBall p₀.1 1) ((n : ℝ) + 1)
-  have hw : Continuous fun ξ : CoordinateSpace n ↦ (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
-    (continuous_const.add (continuous_norm.pow 2)).rpow_const fun ξ ↦
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  obtain ⟨M, hM⟩ := (isCompact_closedBall p₀.2 1).exists_bound_of_continuousOn hw.continuousOn
+  obtain ⟨C, -, hC⟩ := exists_norm_compIntegrand_le_weight (a := a) hb p₀
   refine continuousAt_of_dominated
-    (bound := fun η ↦ C * M * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2))
+    (bound := fun η ↦ C * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2))
     (.of_forall fun p ↦ (integrable_compIntegrand hb p).aestronglyMeasurable) ?_
     (integrable_weight.const_mul _)
     (.of_forall fun η ↦ ((continuous_compIntegrand hb).comp
@@ -454,9 +205,7 @@ private theorem continuous_compCoeff (hb : b.HasCompactSpatialSupport) :
       (Metric.closedBall_mem_nhds p₀.1 one_pos),
     continuous_snd.continuousAt.preimage_mem_nhds (Metric.closedBall_mem_nhds p₀.2 one_pos)]
     with p hp₁ hp₂
-  refine .of_forall fun η ↦ (hC p.1 hp₁ p.2 η).trans ?_
-  have hMp := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans (hM p.2 hp₂))
-  gcongr
+  exact .of_forall (hC p hp₁ hp₂)
 
 /-- **Growth of the composition coefficient.** `‖c(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)` uniformly for
 positions in a compact set. -/
@@ -491,7 +240,10 @@ private theorem coordinateDeriv_fst_compIntegrand (hb : b.HasCompactSpatialSuppo
   have h : HasFDerivAt (fun x ↦ (𝐞 ⟪η, x⟫ : ℂ) • Ψ (a.coefficient (x, ζ))) _ x :=
     he.smul (Ψ.hasFDerivAt.comp x hA)
   have hf : (fun x ↦ compIntegrand a b (x, ξ) η) =
-      fun x ↦ (𝐞 ⟪η, x⟫ : ℂ) • Ψ (a.coefficient (x, ζ)) := rfl
+      fun x ↦ (𝐞 ⟪η, x⟫ : ℂ) • Ψ (a.coefficient (x, ζ)) := by
+    funext x
+    simp only [compIntegrand, Ψ, ContinuousLinearMap.coe_restrictScalars',
+      ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, ζ, B]
   rw [coordinateDeriv_cons, coordinateDeriv_nil, hf, h.fderiv]
   simp only [compIntegrand, add_apply, smul_apply,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply, Function.comp_apply,
@@ -526,7 +278,10 @@ private theorem coordinateDeriv_snd_compIntegrand (hb : b.HasCompactSpatialSuppo
       Φ (a.coefficient (x, ξ + c)) (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)) _ ξ :=
     (hasFDerivAt_const (𝐞 ⟪η, x⟫ : ℂ) ξ).smul (Φ.hasFDerivAt_of_bilinear hA hB)
   have hf : (fun ξ ↦ compIntegrand a b (x, ξ) η) = fun ξ ↦ (𝐞 ⟪η, x⟫ : ℂ) •
-      Φ (a.coefficient (x, ξ + c)) (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) := rfl
+      Φ (a.coefficient (x, ξ + c)) (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) := by
+    funext ξ
+    simp only [compIntegrand, Φ, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+      ContinuousLinearMap.compL_apply, c]
   have hBj : (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ b.coefficient (y, ξ)) ξ)
       (EuclideanSpace.single j 1) =
         𝓕 (fun y ↦ (Symbol.frequencyDeriv j b).coefficient (y, ξ)) η := by
@@ -564,25 +319,14 @@ private theorem differentiableAt_compIntegrand (hb : b.HasCompactSpatialSupport)
       (𝐞 ⟪η, p.1⟫ : ℂ) • Φ (a.coefficient (p.1, p.2 + (2 * π) • η))
         (𝓕 (fun y ↦ b.coefficient (y, p.2)) η)) p :=
     he.smul ((Φ.differentiableAt.comp p hA).clm_apply hB)
+  have hf : (fun p ↦ compIntegrand a b p η) = fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (𝐞 ⟪η, p.1⟫ : ℂ) • Φ (a.coefficient (p.1, p.2 + (2 * π) • η))
+        (𝓕 (fun y ↦ b.coefficient (y, p.2)) η) := by
+    funext p
+    simp only [compIntegrand, Φ, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+      ContinuousLinearMap.compL_apply]
+  rw [hf]
   exact h
-
-/-- The integrand is dominated, for `p` in a neighbourhood of `p₀`, by a multiple of the
-integrable weight `⟨η⟩ ^ (-(n + 1))`. -/
-private theorem exists_norm_compIntegrand_le_weight (hb : b.HasCompactSpatialSupport)
-    (p₀ : CoordinateSpace n × CoordinateSpace n) :
-    ∃ C, 0 ≤ C ∧ ∀ p : CoordinateSpace n × CoordinateSpace n, p.1 ∈ Metric.closedBall p₀.1 1 →
-      p.2 ∈ Metric.closedBall p₀.2 1 → ∀ η,
-        ‖compIntegrand a b p η‖ ≤ C * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_compIntegrand_le (a := a) hb
-    (isCompact_closedBall p₀.1 1) ((n : ℝ) + 1)
-  have hw : Continuous fun ξ : CoordinateSpace n ↦ (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
-    (continuous_const.add (continuous_norm.pow 2)).rpow_const fun ξ ↦
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  obtain ⟨M, hM⟩ := (isCompact_closedBall p₀.2 1).exists_bound_of_continuousOn hw.continuousOn
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM p₀.2 (Metric.mem_closedBall_self zero_le_one))
-  refine ⟨C * M, mul_nonneg hC0 hM0, fun p hp₁ hp₂ η ↦ (hC p.1 hp₁ p.2 η).trans ?_⟩
-  have hMp := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans (hM p.2 hp₂))
-  gcongr
 
 private theorem fderiv_compIntegrand_apply (hb : b.HasCompactSpatialSupport)
     (η : CoordinateSpace n) (p v : CoordinateSpace n × CoordinateSpace n) :
@@ -630,7 +374,8 @@ private theorem exists_norm_fderiv_compIntegrand_le (hb : b.HasCompactSpatialSup
   choose C₄ hC₄0 hC₄ using fun j ↦
     exists_norm_compIntegrand_le_weight (a := a) (hb.frequencyDeriv j) p₀
   refine ⟨∑ j, (C₁ j + C₂ j) + ∑ j, (C₃ j + C₄ j), fun p hp₁ hp₂ η ↦ ?_⟩
-  refine (opNorm_le_of_apply_eq_sum _ _ _ (fderiv_compIntegrand_apply hb η p)).trans ?_
+  refine ((fderiv ℝ (fun p ↦ compIntegrand a b p η) p).opNorm_le_of_apply_eq_sum _ _
+    (fderiv_compIntegrand_apply hb η p)).trans ?_
   rw [add_mul, Finset.sum_mul, Finset.sum_mul]
   gcongr with j
   · exact (norm_add_le _ _).trans
@@ -645,7 +390,7 @@ private theorem hasFDerivAt_compCoeff (hb : b.HasCompactSpatialSupport)
     DifferentiableAt ℝ (compCoeff a b) p₀ ∧ ∀ v, fderiv ℝ (compCoeff a b) p₀ v =
       ∫ η, fderiv ℝ (fun p ↦ compIntegrand a b p η) p₀ v := by
   obtain ⟨D, hD⟩ := exists_norm_fderiv_compIntegrand_le (a := a) hb p₀
-  refine hasFDerivAt_integral_apply (F := fun p η ↦ compIntegrand a b p η)
+  refine differentiableAt_integral_and_fderiv_apply (F := fun p η ↦ compIntegrand a b p η)
     (integrable_compIntegrand hb) (fun η p ↦ differentiableAt_compIntegrand hb η p)
     (continuous_fderiv_compIntegrand_apply hb p₀) (integrable_weight.const_mul D)
     fun p hp η ↦ hD p ?_ ?_ η
@@ -714,7 +459,9 @@ private theorem contDiff_compCoeff (hb : b.HasCompactSpatialSupport) :
   induction k generalizing m m' with
   | zero => exact contDiff_zero.2 (continuous_compCoeff hb)
   | succ k ih =>
-    refine contDiff_succ_of_fderiv_apply (fun p ↦ (hasFDerivAt_compCoeff hb p).1) fun v ↦ ?_
+    rw [Nat.cast_succ]
+    refine contDiff_succ_iff_fderiv_apply.2
+      ⟨fun p ↦ (hasFDerivAt_compCoeff hb p).1, by simp, fun v ↦ ?_⟩
     simp only [fderiv_compCoeff_apply hb]
     exact (ContDiff.sum fun j _ ↦ ((ih (a := Symbol.spatialDeriv j a) hb).add
         (ih (a := a) (hb.spatialDeriv j))).const_smul _).add
@@ -784,7 +531,7 @@ end Integrand
 
 /-! ### The composition symbol -/
 
-section Compose
+section Sharp
 
 variable {a : Symbol n W U m'} {b : Symbol n V W m}
 
@@ -794,24 +541,25 @@ with compact spatial support, a symbol of order `m' + m`:
 
 `(a # b)(x, ξ) = ∫ exp(2πi ⟪η, x⟫) a(x, ξ + 2πη) ∘ b̂(η, ξ) dη`,
 
-where `b̂(η, ξ)` is the Fourier transform of the position slice `y ↦ b(y, ξ)`. Its quantization is
-the composition of the quantizations of `a` and `b` (`quantizeSchwartzValue_compose`). It differs
-from the pointwise composition `Symbol.comp`, which is only its leading term. -/
-def compose (hb : b.HasCompactSpatialSupport) : Symbol n V U (m' + m) where
+where `b̂(η, ξ)` is the Fourier transform of the position slice `y ↦ b(y, ξ)`. Its quantization
+`Op(a # b) u` is the Fourier integral defining `Op(a)`, evaluated on the function `Op(b) u`
+(`quantizeSchwartzValue_sharp`). It differs from the pointwise composition `Symbol.comp`, which
+is only its leading term. -/
+def sharp (hb : b.HasCompactSpatialSupport) : Symbol n V U (m' + m) where
   coefficient := compCoeff a b
   contDiff_coefficient := contDiff_compCoeff hb
   exists_bound K hK α β := exists_bound_compCoeff _ a b hb α β rfl K hK
 
 @[simp]
-theorem coefficient_compose (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
-    (a.compose b hb).coefficient (x, ξ) = ∫ η, (𝐞 ⟪η, x⟫ : ℂ) •
+theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
+    (a.sharp b hb).coefficient (x, ξ) = ∫ η, (𝐞 ⟪η, x⟫ : ℂ) •
       (a.coefficient (x, ξ + (2 * π) • η)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) :=
   (rfl)
 
 /-- **Leibniz rule in the position** for the composition symbol. -/
-theorem spatialDeriv_compose (hb : b.HasCompactSpatialSupport) (j : Fin n) :
-    Symbol.spatialDeriv j (a.compose b hb) =
-      (Symbol.spatialDeriv j a).compose b hb + a.compose (Symbol.spatialDeriv j b)
+theorem spatialDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n) :
+    Symbol.spatialDeriv j (a.sharp b hb) =
+      (Symbol.spatialDeriv j a).sharp b hb + a.sharp (Symbol.spatialDeriv j b)
         (hb.spatialDeriv j) := by
   ext1
   funext ⟨x, ξ⟩
@@ -819,15 +567,138 @@ theorem spatialDeriv_compose (hb : b.HasCompactSpatialSupport) (j : Fin n) :
   exact coordinateDeriv_fst_compCoeff (a := a) hb j x ξ
 
 /-- **Leibniz rule in the frequency** for the composition symbol. -/
-theorem coefficient_frequencyDeriv_compose (hb : b.HasCompactSpatialSupport) (j : Fin n)
+theorem coefficient_frequencyDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n)
     (x ξ : CoordinateSpace n) :
-    (Symbol.frequencyDeriv j (a.compose b hb)).coefficient (x, ξ) =
-      ((Symbol.frequencyDeriv j a).compose b hb).coefficient (x, ξ) +
-        (a.compose (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j)).coefficient (x, ξ) := by
+    (Symbol.frequencyDeriv j (a.sharp b hb)).coefficient (x, ξ) =
+      ((Symbol.frequencyDeriv j a).sharp b hb).coefficient (x, ξ) +
+        (a.sharp (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j)).coefficient (x, ξ) := by
   rw [coefficient_frequencyDeriv]
   exact coordinateDeriv_snd_compCoeff (a := a) hb j x ξ
 
-end Compose
+/-! ### Bilinearity, inclusions and the smoothing ideal -/
+
+/-- The coefficient of `a # b` is the composition coefficient of `a` and `b`. -/
+private theorem coefficient_sharp_eq_compCoeff (hb : b.HasCompactSpatialSupport) :
+    (a.sharp b hb).coefficient = compCoeff a b :=
+  (rfl)
+
+/-- The composition coefficient depends only on the coefficients of the two symbols. -/
+private theorem compCoeff_congr {m₁ m₂ k₁ k₂ : ℝ} {a₁ : Symbol n W U m₁} {a₂ : Symbol n W U m₂}
+    {b₁ : Symbol n V W k₁} {b₂ : Symbol n V W k₂} (ha : a₁.coefficient = a₂.coefficient)
+    (hb : b₁.coefficient = b₂.coefficient) : compCoeff a₁ b₁ = compCoeff a₂ b₂ := by
+  funext p
+  simp only [compCoeff, compIntegrand, ha, hb]
+
+/-- A symbol whose coefficient is that of a symbol with compact spatial support has compact
+spatial support. -/
+private theorem HasCompactSpatialSupport.of_coefficient_eq {k : ℝ} {b' : Symbol n V W k}
+    (hb : b.HasCompactSpatialSupport) (h : b'.coefficient = b.coefficient) :
+    b'.HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKb⟩ := hasCompactSpatialSupport_iff.mp hb
+  exact hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ by rw [h]; exact hKb x hx ξ⟩
+
+theorem add_sharp (a₁ a₂ : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
+    (a₁ + a₂).sharp b hb = a₁.sharp b hb + a₂.sharp b hb := by
+  ext1
+  funext p
+  rw [coefficient_add, Pi.add_apply, coefficient_sharp_eq_compCoeff,
+    coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, compCoeff,
+    ← integral_add (integrable_compIntegrand hb p) (integrable_compIntegrand hb p)]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [compIntegrand, coefficient_add, Pi.add_apply, ContinuousLinearMap.add_comp, smul_add]
+
+theorem sharp_add (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
+    (hb₁ : b₁.HasCompactSpatialSupport) (hb₂ : b₂.HasCompactSpatialSupport) :
+    a.sharp (b₁ + b₂) (hb₁.add hb₂) = a.sharp b₁ hb₁ + a.sharp b₂ hb₂ := by
+  ext1
+  funext p
+  rw [coefficient_add, Pi.add_apply, coefficient_sharp_eq_compCoeff,
+    coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, compCoeff,
+    ← integral_add (integrable_compIntegrand hb₁ p) (integrable_compIntegrand hb₂ p)]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [compIntegrand, hb₁.fourier_slice_add hb₂, ContinuousLinearMap.comp_add, smul_add]
+
+theorem smul_sharp (c : ℂ) (a : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
+    (c • a).sharp b hb = c • a.sharp b hb := by
+  ext1
+  funext p
+  rw [coefficient_smul, Pi.smul_apply, coefficient_sharp_eq_compCoeff,
+    coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [compIntegrand, coefficient_smul, Pi.smul_apply, ContinuousLinearMap.smul_comp,
+    smul_comm c]
+
+theorem sharp_smul (a : Symbol n W U m') (hb : b.HasCompactSpatialSupport) (c : ℂ) :
+    a.sharp (c • b) (hb.smul c) = c • a.sharp b hb := by
+  ext1
+  funext p
+  rw [coefficient_smul, Pi.smul_apply, coefficient_sharp_eq_compCoeff,
+    coefficient_sharp_eq_compCoeff, compCoeff, compCoeff, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [compIntegrand, hb.fourier_slice_smul, ContinuousLinearMap.comp_smul, smul_comm c]
+
+@[simp]
+theorem zero_sharp (hb : b.HasCompactSpatialSupport) : (0 : Symbol n W U m').sharp b hb = 0 := by
+  simpa using smul_sharp (0 : ℂ) (0 : Symbol n W U m') hb
+
+@[simp]
+theorem sharp_zero (a : Symbol n W U m') :
+    a.sharp (0 : Symbol n V W m) hasCompactSpatialSupport_zero = 0 := by
+  simpa using sharp_smul a (hasCompactSpatialSupport_zero (m := m) (V := V)) 0
+
+theorem neg_sharp (a : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
+    (-a).sharp b hb = -a.sharp b hb := by
+  simpa using smul_sharp (-1 : ℂ) a hb
+
+theorem sharp_neg (a : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
+    a.sharp (-b) hb.neg = -a.sharp b hb := by
+  simpa using sharp_smul a hb (-1)
+
+theorem sub_sharp (a₁ a₂ : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
+    (a₁ - a₂).sharp b hb = a₁.sharp b hb - a₂.sharp b hb := by
+  rw [sub_eq_add_neg, add_sharp, neg_sharp, ← sub_eq_add_neg]
+
+theorem sharp_sub (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
+    (hb₁ : b₁.HasCompactSpatialSupport) (hb₂ : b₂.HasCompactSpatialSupport) :
+    a.sharp (b₁ - b₂) (hb₁.sub hb₂) = a.sharp b₁ hb₁ - a.sharp b₂ hb₂ := by
+  calc a.sharp (b₁ - b₂) (hb₁.sub hb₂) = a.sharp (b₁ + -b₂) (hb₁.add hb₂.neg) := by
+        simp only [sub_eq_add_neg]
+    _ = a.sharp b₁ hb₁ - a.sharp b₂ hb₂ := by
+        rw [sharp_add a hb₁ hb₂.neg, sharp_neg, ← sub_eq_add_neg]
+
+theorem inclusion_sharp {m'' : ℝ} (h : m' ≤ m'') (a : Symbol n W U m')
+    (hb : b.HasCompactSpatialSupport) :
+    (inclusion h a).sharp b hb = inclusion (by linarith) (a.sharp b hb) := by
+  ext1
+  rw [coefficient_inclusion, coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff]
+  exact compCoeff_congr (coefficient_inclusion h a) rfl
+
+theorem sharp_inclusion {m'' : ℝ} (h : m ≤ m'') (a : Symbol n W U m')
+    (hb : b.HasCompactSpatialSupport) :
+    a.sharp (inclusion h b) (hb.inclusion h) = inclusion (by linarith) (a.sharp b hb) := by
+  ext1
+  rw [coefficient_inclusion, coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff]
+  exact compCoeff_congr rfl (coefficient_inclusion h b)
+
+/-- Smoothing symbols form a right ideal for `#`: a smoothing symbol composed on the right with any
+symbol with compact spatial support is smoothing. -/
+theorem IsSmoothing.sharp_right (ha : a.IsSmoothing) (b : Symbol n V W m)
+    (hb : b.HasCompactSpatialSupport) : (a.sharp b hb).IsSmoothing := isSmoothing_iff.2 fun m'' ↦ by
+  obtain ⟨a', ha'⟩ := isSmoothing_iff.1 ha (m'' - m)
+  refine ⟨Symbol.inclusion (by linarith) (a'.sharp b hb), ?_⟩
+  rw [coefficient_inclusion, coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff]
+  exact compCoeff_congr ha' rfl
+
+/-- Smoothing symbols form a left ideal for `#`: any symbol composed on the right with a smoothing
+symbol with compact spatial support is smoothing. -/
+theorem IsSmoothing.sharp_left (hbs : b.IsSmoothing) (a : Symbol n W U m')
+    (hb : b.HasCompactSpatialSupport) : (a.sharp b hb).IsSmoothing := isSmoothing_iff.2 fun m'' ↦ by
+  obtain ⟨b', hb'⟩ := isSmoothing_iff.1 hbs (m'' - m')
+  refine ⟨Symbol.inclusion (by linarith) (a.sharp b' (hb.of_coefficient_eq hb')), ?_⟩
+  rw [coefficient_inclusion, coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff]
+  exact compCoeff_congr rfl hb'
+
+end Sharp
 
 /-! ### The composition of the quantizations -/
 
@@ -837,88 +708,58 @@ variable {a : Symbol n W U m'} {b : Symbol n V W m}
 
 /-- The double integrand of `Op(a) (Op(b) u)`, after inserting the Fourier transform of `Op(b) u`
 from `HasCompactSpatialSupport.fourier_quantizeSchwartzValue`, is integrable in both frequencies:
-it is dominated by a convolution-type product `h(ζ) k(ζ' - ζ)` of integrable functions. -/
+up to a phase it is `compIntegrand a b (x, 2πζ) (ζ' - ζ)` applied to `𝓕 u ζ`, so it is dominated
+by a convolution-type product `h(ζ) k(ζ' - ζ)` of integrable functions. -/
 private theorem integrable_composeIntegrand (hb : b.HasCompactSpatialSupport)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ 𝐞 ⟪q.1, x⟫ •
       a.coefficient (x, (2 * π) • q.1)
         (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2) (𝓕 u q.2)))
       (volume.prod volume) := by
-  obtain ⟨K, hK, hKb⟩ := hasCompactSpatialSupport_iff.mp hb
-  obtain ⟨Ca, hCa0, hCa⟩ := a.exists_bound_coefficient {x} isCompact_singleton
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (|m'| + n + 1)
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  set h : CoordinateSpace n → ℝ := fun ζ ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m' + m) / 2) * ‖𝓕 u ζ‖
-  set k : CoordinateSpace n → ℝ := fun η ↦ (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
-  have hh : Integrable h := (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m' + m)
-  have hk : Integrable k := integrable_weight
+  obtain ⟨C, -, hC⟩ := exists_norm_compIntegrand_le (a := a) hb (isCompact_singleton (x := x))
+    ((n : ℝ) + 1)
+  have hh : Integrable fun ζ : CoordinateSpace n ↦
+      (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m' + m) / 2) * ‖𝓕 u ζ‖ :=
+    (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m' + m)
   have hB : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2) := by
-    have hq : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
-        (q.1 - q.2, (2 * π) • q.2) := by fun_prop
-    have h :=
-      (continuous_integral_fourierChar_smul b.contDiff_coefficient.continuous hK hKb).comp hq
-    simpa only [Function.comp_def, Real.fourier_eq, Circle.smul_def] using h
+    have h := hb.continuous_fourier_slice.comp (by fun_prop :
+      Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (q.1 - q.2, (2 * π) • q.2))
+    simpa only [Function.comp_def] using h
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ 𝐞 ⟪q.1, x⟫ •
       a.coefficient (x, (2 * π) • q.1)
         (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2) (𝓕 u q.2)) :=
     (Real.continuous_fourierChar.comp (by fun_prop)).smul
       (((a.contDiff_coefficient.continuous.comp (by fun_prop)).clm_apply
         (hB.clm_apply ((𝓕 u).continuous.comp continuous_snd))))
-  refine ((hh.convolution_integrand (ContinuousLinearMap.mul ℝ ℝ) hk).const_mul
-    (Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb)).mono' hcont.aestronglyMeasurable
-    (.of_forall fun q ↦ ?_)
-  set ζ' := q.1
-  set ζ := q.2
-  have hpeetre := one_add_norm_add_sq_rpow_le_mul m' ((2 * π) • ζ) ((2 * π) • (ζ' - ζ))
-  rw [← smul_add, add_sub_cancel] at hpeetre
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul h2π |m'| (x := (2 * π) • (ζ' - ζ))
-    (y := ζ' - ζ) (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
-  rw [abs_abs] at hscale
-  have hbound := hCb (ζ' - ζ) ((2 * π) • ζ)
-  have hw : (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m' / 2) * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) =
-      (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m' + m) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
-  have hv : (1 + ‖ζ' - ζ‖ ^ 2) ^ (|m'| / 2) * (1 + ‖ζ' - ζ‖ ^ 2) ^ (-(|m'| + n + 1) / 2) =
-      (1 + ‖ζ' - ζ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
-  rw [Circle.norm_smul]
-  calc ‖a.coefficient (x, (2 * π) • ζ')
-        (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) (𝓕 u ζ))‖
-      ≤ ‖a.coefficient (x, (2 * π) • ζ')‖ *
-          (‖𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ)‖ * ‖𝓕 u ζ‖) :=
-        ((a.coefficient _).le_opNorm _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
-    _ ≤ (Ca * (2 ^ (|m'| / 2) * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m' / 2) *
-          ((2 * π) ^ |m'| * (1 + ‖ζ' - ζ‖ ^ 2) ^ (|m'| / 2)))) *
-        ((Cb * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * (1 + ‖ζ' - ζ‖ ^ 2) ^ (-(|m'| + n + 1) / 2)) *
-          ‖𝓕 u ζ‖) := by
-        gcongr
-        · refine (hCa x rfl _).trans ?_
-          gcongr
-          exact hpeetre.trans (by gcongr)
-    _ = Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb *
-          (((1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m' / 2) * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2)) * ‖𝓕 u ζ‖ *
-          ((1 + ‖ζ' - ζ‖ ^ 2) ^ (|m'| / 2) * (1 + ‖ζ' - ζ‖ ^ 2) ^ (-(|m'| + n + 1) / 2))) := by
-        ring
-    _ = _ := by
-        rw [hw, hv]
-        simp [h, k, ζ, ζ']
+  refine ((hh.convolution_integrand (ContinuousLinearMap.mul ℝ ℝ) integrable_weight).const_mul
+    C).mono' hcont.aestronglyMeasurable (.of_forall fun q ↦ ?_)
+  have hξ : (2 * π) • q.2 + (2 * π) • (q.1 - q.2) = (2 * π) • q.1 := by
+    rw [← smul_add, add_sub_cancel]
+  have h := hC x rfl ((2 * π) • q.2) (q.1 - q.2)
+  rw [compIntegrand, norm_smul, Circle.norm_coe, one_mul, hξ] at h
+  rw [Circle.norm_smul, ContinuousLinearMap.mul_apply']
+  calc ‖a.coefficient (x, (2 * π) • q.1)
+        (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2) (𝓕 u q.2))‖
+      ≤ ‖(a.coefficient (x, (2 * π) • q.1)).comp
+          (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2))‖ * ‖𝓕 u q.2‖ :=
+        ((a.coefficient (x, (2 * π) • q.1)).comp
+          (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2))).le_opNorm (𝓕 u q.2)
+    _ ≤ C * (1 + ‖(2 * π) • q.2‖ ^ 2) ^ ((m' + m) / 2) *
+          (1 + ‖q.1 - q.2‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * ‖𝓕 u q.2‖ := by gcongr
+    _ = _ := by ring
 
 /-- For fixed `ζ'`, the inner integrand `ζ ↦ b̂(ζ' - ζ, 2πζ) (𝓕 u ζ)` of `𝓕 (Op(b) u) ζ'` is
 integrable. -/
 private theorem integrable_fourier_slice_apply (hb : b.HasCompactSpatialSupport)
     (u : 𝓢(CoordinateSpace n, V)) (ζ' : CoordinateSpace n) :
     Integrable fun ζ ↦ 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) (𝓕 u ζ) := by
-  obtain ⟨K, hK, hKb⟩ := hasCompactSpatialSupport_iff.mp hb
   obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le 0
   have hB : Continuous fun ζ : CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) := by
-    have hq : Continuous fun ζ : CoordinateSpace n ↦ (ζ' - ζ, (2 * π) • ζ) := by fun_prop
-    have h :=
-      (continuous_integral_fourierChar_smul b.contDiff_coefficient.continuous hK hKb).comp hq
-    simpa only [Function.comp_def, Real.fourier_eq, Circle.smul_def] using h
+    have h := hb.continuous_fourier_slice.comp (by fun_prop :
+      Continuous fun ζ : CoordinateSpace n ↦ (ζ' - ζ, (2 * π) • ζ))
+    simpa only [Function.comp_def] using h
   refine (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m).const_mul Cb).mono'
     (hB.clm_apply (𝓕 u).continuous).aestronglyMeasurable (.of_forall fun ζ ↦ ?_)
   refine ((ContinuousLinearMap.le_opNorm _ _).trans ?_)
@@ -928,13 +769,14 @@ private theorem integrable_fourier_slice_apply (hb : b.HasCompactSpatialSupport)
     _ = _ := by ring
 
 /-- **Composition of quantizations.** For a symbol `b` with compact spatial support, the
-quantization of the composition symbol `a # b` is the quantization of `a` applied to `Op(b) u`:
-`Op(a # b) u (x) = ∫ exp(2πi ⟪ζ, x⟫) a(x, 2πζ) (𝓕 (Op(b) u) ζ) dζ`, which is the defining Fourier
-integral of `quantizeSchwartzValue` with the input `Op(b) u` in place of a Schwartz function. -/
-theorem quantizeSchwartzValue_compose [CompleteSpace W] [CompleteSpace U]
+quantization of the composition symbol `a # b` is
+`Op(a # b) u (x) = ∫ exp(2πi ⟪ζ, x⟫) a(x, 2πζ) (𝓕 (Op(b) u) ζ) dζ`: the defining Fourier
+integral of `quantizeSchwartzValue a.coefficient`, evaluated on the function `Op(b) u` in place of
+a Schwartz function. -/
+theorem quantizeSchwartzValue_sharp [CompleteSpace W] [CompleteSpace U]
     (hb : b.HasCompactSpatialSupport)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (a.compose b hb).coefficient u x =
+    quantizeSchwartzValue (a.sharp b hb).coefficient u x =
       ∫ ζ, 𝐞 ⟪ζ, x⟫ •
         a.coefficient (x, (2 * π) • ζ) (𝓕 (quantizeSchwartzValue b.coefficient u) ζ) := by
   set F : CoordinateSpace n → CoordinateSpace n → U := fun ζ' ζ ↦ 𝐞 ⟪ζ', x⟫ •
@@ -954,9 +796,9 @@ theorem quantizeSchwartzValue_compose [CompleteSpace W] [CompleteSpace U]
   refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
   beta_reduce
   rw [← integral_add_right_eq_self (fun ζ' ↦ F ζ' ζ) ζ]
-  have hc : (a.compose b hb).coefficient (x, (2 * π) • ζ) = compCoeff a b (x, (2 * π) • ζ) := rfl
-  rw [hc, compCoeff, ContinuousLinearMap.integral_apply (integrable_compIntegrand hb _),
-    Circle.smul_def, ← integral_smul]
+  rw [coefficient_sharp_eq_compCoeff, compCoeff,
+    ContinuousLinearMap.integral_apply (integrable_compIntegrand hb _), Circle.smul_def,
+    ← integral_smul]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
   simp only [hFdef, compIntegrand, add_sub_cancel_right, smul_add, smul_apply,
     ContinuousLinearMap.comp_apply, Circle.smul_def, smul_smul, inner_add_left,

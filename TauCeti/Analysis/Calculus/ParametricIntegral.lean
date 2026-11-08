@@ -47,6 +47,12 @@ if `F` is `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives, the integr
 (`Convex.contDiffOn_integral_smul_of_contDiffOn`), with derivative within `s` the integral of the
 partial derivatives within `s` (`Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn`). This
 is the regularity of the Poincaré homotopy operator on a closed half-ball.
+
+Finally, for a finite-dimensional parameter, an integral over a second-countable space is
+differentiable when the derivative of the integrand is dominated near the base point by an
+integrable function and continuous in the integration variable along each direction, with the
+derivative in each direction computed under the integral
+(`TauCeti.differentiableAt_integral_and_fderiv_apply`).
 -/
 
 public section
@@ -520,5 +526,36 @@ theorem _root_.Convex.contDiffOn_integral_smul_of_contDiffOn {G : Type v} [Norme
 end Convex
 
 end CompactParameter
+
+section Dominated
+
+variable {α P A : Type*} [MeasurableSpace α] [TopologicalSpace α] [OpensMeasurableSpace α]
+  [SecondCountableTopology α] {μ : Measure α} [NormedAddCommGroup P] [NormedSpace ℝ P]
+  [FiniteDimensional ℝ P] [NormedAddCommGroup A] [NormedSpace ℝ A]
+
+/-- **Differentiation under the integral sign** for an integrand `F p η` whose derivative in the
+finite-dimensional parameter `p` is dominated on the unit ball around `p₀` by an integrable
+function and is continuous in the integration variable along each direction. The integral is
+differentiable at `p₀`, and its derivative in a direction `v` is the integral of the derivatives of
+the integrand in the direction `v`. -/
+theorem differentiableAt_integral_and_fderiv_apply {F : P → α → A} {p₀ : P} {g : α → ℝ}
+    (hint : ∀ p, Integrable (F p) μ) (hdiff : ∀ η p, DifferentiableAt ℝ (F · η) p)
+    (hcont : ∀ v, Continuous fun η ↦ fderiv ℝ (F · η) p₀ v) (hg : Integrable g μ)
+    (hbound : ∀ p ∈ Metric.ball p₀ 1, ∀ η, ‖fderiv ℝ (F · η) p‖ ≤ g η) :
+    DifferentiableAt ℝ (fun p ↦ ∫ η, F p η ∂μ) p₀ ∧
+      ∀ v, fderiv ℝ (fun p ↦ ∫ η, F p η ∂μ) p₀ v = ∫ η, fderiv ℝ (F · η) p₀ v ∂μ := by
+  have hmeas : AEStronglyMeasurable (fun η ↦ fderiv ℝ (F · η) p₀) μ :=
+    (continuous_clm_apply.2 hcont).aestronglyMeasurable
+  have hint' : Integrable (fun η ↦ fderiv ℝ (F · η) p₀) μ :=
+    hg.mono' hmeas (.of_forall (hbound p₀ (Metric.mem_ball_self one_pos)))
+  have h := hasFDerivAt_integral_of_dominated_of_fderiv_le
+    (F' := fun p η ↦ fderiv ℝ (F · η) p) (Metric.ball_mem_nhds p₀ one_pos)
+    (.of_forall fun p ↦ (hint p).aestronglyMeasurable) (hint p₀) hmeas
+    (.of_forall fun η p hp ↦ hbound p hp η) hg
+    (.of_forall fun η p _ ↦ (hdiff η p).hasFDerivAt)
+  refine ⟨h.differentiableAt, fun v ↦ ?_⟩
+  rw [h.fderiv, ContinuousLinearMap.integral_apply hint']
+
+end Dominated
 
 end TauCeti
