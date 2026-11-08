@@ -84,8 +84,7 @@ theorem completionModule_coe_smul (a : A) (x : Completion M) :
     (a : Completion A) • x = a • x := by
   let := P.completionModule (M := M)
   have := P.isScalarTower_completionModule (M := M)
-  rw [← smul_one_smul (Completion A) a x, Algebra.smul_def, mul_one,
-    Completion.algebraMap_def, Algebra.algebraMap_self_apply]
+  simpa [Completion.algebraMap_def] using algebraMap_smul (Completion A) a x
 
 /-- The transported linear equivalence has the canonical base-change map as its inverse. -/
 private theorem completionModule_linearEquiv_symm_apply (t : Completion A ⊗[A] M) :
@@ -93,9 +92,8 @@ private theorem completionModule_linearEquiv_symm_apply (t : Completion A ⊗[A]
     (P.ofTensorProductEquiv.symm.toAddEquiv.linearEquiv (Completion A)).symm t =
       Completion.ofTensorProduct A M t := by
   let := P.completionModule (M := M)
-  rw [AddEquiv.linearEquiv_symm_apply, AddEquiv.symm_apply_eq,
-    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
-    ← P.ofTensorProductEquiv_apply, LinearEquiv.symm_apply_apply]
+  rw [AddEquiv.linearEquiv_symm_apply]
+  simp [ofTensorProductEquiv_apply]
 
 section Topology
 
@@ -136,8 +134,10 @@ theorem completionTensorHomeomorph_symm_coe (m : M) :
     letI := P.completionModule (M := M)
     P.completionTensorHomeomorph.symm (m : Completion M) = 1 ⊗ₜ m := by
   let := P.completionModule (M := M)
-  rw [ContinuousLinearEquiv.symm_apply_eq, completionTensorHomeomorph_apply,
-    ← Completion.coe_one, Completion.ofTensorProduct_coe_tmul, one_smul]
+  apply (ContinuousLinearEquiv.symm_apply_eq _).2
+  rw [← P.ofTensorProductEquiv_symm_coe m]
+  simpa only [completionTensorHomeomorph_apply, ← P.ofTensorProductEquiv_apply] using
+    (P.ofTensorProductEquiv.apply_symm_apply (m : Completion M)).symm
 
 end Comparison
 
