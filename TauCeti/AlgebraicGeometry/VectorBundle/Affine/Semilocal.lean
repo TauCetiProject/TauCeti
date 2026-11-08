@@ -29,6 +29,8 @@ triviality of line bundles on discrete schemes
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.finite_maximalSpectrum_of_isFinite`: the ring of global functions of
+  a scheme finite over a field has finitely many maximal ideals;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.nonempty_iso_free_of_finite_maximalSpectrum`:
   over a semilocal ring `R`, a finite locally free sheaf of constant rank `n` on `Spec R` is free on
   `n` generators;
@@ -55,6 +57,17 @@ open _root_.AlgebraicGeometry
 universe u
 
 noncomputable section
+
+/-- The ring of global functions of a scheme finite over a field `k` is a finite-dimensional
+`k`-algebra, hence Artinian, and so has finitely many maximal ideals. -/
+theorem finite_maximalSpectrum_of_isFinite (k : Type u) [Field k] {X : Scheme.{u}}
+    [X.Over (Spec (.of k))] [IsFinite (X ↘ Spec (.of k))] :
+    Finite (MaximalSpectrum Γ(X, ⊤)) := by
+  let _ : Algebra k Γ(X, ⊤) :=
+    ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop).hom.toAlgebra
+  have : Module.Finite k Γ(X, ⊤) := (X ↘ Spec (.of k)).moduleFinite_appTop rfl
+  have : IsArtinianRing Γ(X, ⊤) := .of_finite k Γ(X, ⊤)
+  infer_instance
 
 namespace FiniteLocallyFreeSheaf
 
@@ -107,10 +120,7 @@ ring of global functions of `X` is a finite-dimensional `k`-algebra, hence semil
 theorem nonempty_iso_free_of_isFinite (k : Type u) [Field k] [X.Over (Spec (.of k))]
     [IsFinite (X ↘ Spec (.of k))] (E : FixedRank X r) : Nonempty (E ≅ free X r) := by
   have : IsAffine X := isAffine_of_isAffineHom (X ↘ Spec (.of k))
-  let _ : Algebra k Γ(X, ⊤) :=
-    ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop).hom.toAlgebra
-  have : Module.Finite k Γ(X, ⊤) := (X ↘ Spec (.of k)).moduleFinite_appTop rfl
-  have : IsArtinianRing Γ(X, ⊤) := .of_finite k Γ(X, ⊤)
+  have := finite_maximalSpectrum_of_isFinite (X := X) k
   exact nonempty_iso_free_of_isAffine E
 
 end FixedRank

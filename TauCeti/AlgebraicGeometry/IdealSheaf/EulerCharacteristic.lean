@@ -11,9 +11,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorSequence
-public import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
-public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Semilocal
-public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
+public import TauCeti.AlgebraicGeometry.VectorBundle.TensorPushforward
 
 /-!
 # The Euler characteristic of an ideal sheaf
@@ -31,7 +29,8 @@ scheme `D` give
 More generally, for a vector bundle `E` of constant rank `r` on `X`, tensoring the sequence with
 `E` gives `0 ⟶ E ⊗ I ⟶ E ⟶ E ⊗ ι_* 𝒪_D ⟶ 0`. By the projection formula the last term is the
 direct image of the pullback of `E` to `D`, a vector bundle of rank `r` on a scheme finite over `k`
-and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`). So `E ⊗ I` has
+and hence free, so it is `(ι_* 𝒪_D)^{⊕ r}`
+(`FiniteLocallyFreeSheaf.FixedRank.nonempty_tensor_pushforward_iso_biproduct`). So `E ⊗ I` has
 finite-dimensional `H⁰` and `H¹` exactly when `E` does
 (`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff`), and then
 
@@ -63,6 +62,8 @@ universe u
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 noncomputable section
+
+attribute [local instance] Abelian.hasFiniteBiproducts
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] (I : X.IdealSheafData)
 
@@ -120,73 +121,20 @@ section Tensor
 
 variable {r : ℕ} (E : FiniteLocallyFreeSheaf.FixedRank X r)
 
-/-- The direct image `ι_* 𝒪_{V(I)}^r` of the free sheaf of rank `r` on the closed subscheme
-`V(I)`. -/
-private abbrev freePushforward (r : ℕ) : X.Modules :=
-  (Scheme.Modules.pushforward I.subschemeι).obj
-    (FiniteLocallyFreeSheaf.FixedRank.free I.subscheme r).obj.obj
-
 include k in
-/-- On the closed subscheme `V(I)`, finite over `k`, every vector bundle of constant rank `r` is
-trivial (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`); so tensoring
-`ι_* 𝒪_{V(I)}` with a vector bundle `E` of rank `r` on `X`, which by the projection formula is the
-direct image of the pullback of `E` to `V(I)`, gives `ι_* 𝒪_{V(I)}^r`. -/
+/-- The closed subscheme `V(I)`, finite over `k`, is affine with finitely many maximal ideals; so
+tensoring `ι_* 𝒪_{V(I)}` with a vector bundle `E` of rank `r` on `X` gives `r` copies of it
+(`FiniteLocallyFreeSheaf.FixedRank.nonempty_tensor_pushforward_iso_biproduct`). -/
 private lemma nonempty_tensor_pushforward_iso :
     Nonempty (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
-        (SheafOfModules.unit I.subscheme.ringCatSheaf) ≅ freePushforward I r) := by
+        (SheafOfModules.unit I.subscheme.ringCatSheaf) ≅
+      ⨁ fun _ : Fin r ↦ (Scheme.Modules.pushforward I.subschemeι).obj
+        (SheafOfModules.unit I.subscheme.ringCatSheaf)) := by
   let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
     inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
-  obtain ⟨e⟩ := FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite k
-    ((FiniteLocallyFreeSheaf.FixedRank.pullback I.subschemeι).obj E)
-  -- The projection formula is stated for the monoidal unit of `V(I).Modules`.
-  have hu : 𝟙_ I.subscheme.Modules = SheafOfModules.unit I.subscheme.ringCatSheaf :=
-    TauCeti.SheafOfModules.tensorUnit_eq I.subscheme.sheaf
-  rw [← hu]
-  exact ⟨FiniteLocallyFreeSheaf.tensorPushforwardUnitIso I.subschemeι E.obj ≪≫
-    (Scheme.Modules.pushforward I.subschemeι).mapIso
-      (eqToIso (congrArg (·.obj)
-          (FiniteLocallyFreeSheaf.FixedRank.pullback_obj_obj I.subschemeι E).symm) ≪≫
-        (Scheme.Modules.isFiniteLocallyFree _).ι.mapIso
-          ((FiniteLocallyFreeSheaf.isConstantRank _ r).ι.mapIso e))⟩
-
-/-- `H⁰` of `ι_* 𝒪_{V(I)}^r` is finite-dimensional. -/
-private lemma finiteDimensional_cohomology_zero_freePushforward :
-    FiniteDimensional k (Cohomology (freePushforward I r) 0) := by
-  let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
-  have : HasBiproduct (C := I.subscheme.Modules) fun _ : ULift.{u} (Fin r) ↦ M :=
-    HasBiproduct.of_hasCoproduct _
-  have : Module.Finite k (Cohomology M 0) :=
-    (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k M 0).mp
-      (finiteDimensional_cohomology_zero_pushforward k I)
-  -- `𝒪_{V(I)}^r` is the biproduct of `r` copies of `𝒪_{V(I)}`.
-  let e : (⨁ fun _ : ULift.{u} (Fin r) ↦ M) ≅
-      (FiniteLocallyFreeSheaf.FixedRank.free I.subscheme r).obj.obj :=
-    TauCeti.SheafOfModules.biproductIsoFree (R := I.subscheme.sheaf) _ ≪≫
-      eqToIso (by rw [FiniteLocallyFreeSheaf.FixedRank.free_obj, FiniteLocallyFreeSheaf.free_obj])
-  refine (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k _ 0).mpr ?_
-  exact Module.Finite.equiv ((cohomologyBiproductLinearEquiv k (fun _ ↦ M) 0).symm ≪≫ₗ
-    cohomologyBaseLinearEquivOfIso k e 0)
-
-include k in
-/-- `H¹` of `ι_* 𝒪_{V(I)}^r` vanishes, the closed subscheme being affine. -/
-private lemma subsingleton_cohomology_one_freePushforward :
-    Subsingleton (Cohomology (freePushforward I r) 1) := by
-  let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
-    inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
-  let M := (FiniteLocallyFreeSheaf.FixedRank.free I.subscheme r).obj.obj
-  have := subsingleton_cohomology_succ_of_isAffineHom (I.subscheme ↘ Spec (.of k)) M 0
-  exact (cohomologyPushforwardIso I.subschemeι M 1).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
-
-/-- The truncated Euler characteristic of `ι_* 𝒪_{V(I)}^r` is `r` times the rank of the closed
-subscheme `V(I)` over `k`. -/
-private lemma eulerCharBelow_freePushforward (s : Spec (.of k)) :
-    eulerCharBelow k X (freePushforward I r) 2 =
-      r * (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
-  let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
-  rw [← eulerCharBelow_pushforward k I s, Scheme.Hom.eulerCharBelow_pushforward,
-    Scheme.Hom.eulerCharBelow_pushforward I.subschemeι k M,
-    FiniteLocallyFreeSheaf.FixedRank.free_obj, FiniteLocallyFreeSheaf.free_obj,
-    eulerCharBelow_free, Fintype.card_ulift, Fintype.card_fin]
+  have : IsAffine I.subscheme := isAffine_of_isAffineHom (I.subscheme ↘ Spec (.of k))
+  have := finite_maximalSpectrum_of_isFinite (X := I.subscheme) k
+  exact FiniteLocallyFreeSheaf.FixedRank.nonempty_tensor_pushforward_iso_biproduct _ E _
 
 /-- The right unitor `E ⊗ 𝒪_X ≅ E`, with `𝒪_X` written as the structure sheaf
 `SheafOfModules.unit X.ringCatSheaf` appearing in the exact sequence of `V(I)` rather than as the
@@ -211,20 +159,23 @@ private lemma finiteDimensional_cohomology_tensorSequence_X₂_iff (i : ℕ) :
       FiniteDimensional k (Cohomology E.obj.obj i) :=
   finiteDimensional_cohomology_congr k (tensorUnitIso E) i
 
-/-- `H⁰` of the last term `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r` is finite-dimensional. -/
+/-- `H⁰` of the last term `E ⊗ ι_* 𝒪_{V(I)}`, which is `r` copies of `ι_* 𝒪_{V(I)}`, is
+finite-dimensional. -/
 private lemma finiteDimensional_cohomology_zero_tensorSequence_X₃ :
     FiniteDimensional k (Cohomology (tensorSequence I E).X₃ 0) := by
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
-  exact (finiteDimensional_cohomology_congr k e₃ 0).mpr
-    (finiteDimensional_cohomology_zero_freePushforward k I)
+  have := finiteDimensional_cohomology_zero_pushforward k I
+  exact Module.Finite.equiv ((cohomologyBaseLinearEquivOfIso k e₃ 0).trans
+    (cohomologyBiproductLinearEquiv k _ 0)).symm
 
 include k in
-/-- `H¹` of the last term `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r` vanishes. -/
+/-- `H¹` of the last term `E ⊗ ι_* 𝒪_{V(I)}`, which is `r` copies of `ι_* 𝒪_{V(I)}`, vanishes. -/
 private lemma subsingleton_cohomology_one_tensorSequence_X₃ :
     Subsingleton (Cohomology (tensorSequence I E).X₃ 1) := by
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
-  have := subsingleton_cohomology_one_freePushforward k I (r := r)
-  exact (cohomologyBaseLinearEquivOfIso k e₃ 1).subsingleton
+  have := subsingleton_cohomology_one_pushforward k I
+  exact ((cohomologyBaseLinearEquivOfIso k e₃ 1).trans
+    (cohomologyBiproductLinearEquiv k _ 1)).subsingleton
 
 variable {k E} in
 /-- **Twisting by an ideal sheaf preserves finiteness of cohomology.** If `I ⊆ 𝒪_X` cuts out a
@@ -278,9 +229,9 @@ theorem eulerCharBelow_tensor_sheaf [FiniteDimensional k (Cohomology E.obj.obj 0
         (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 :=
     eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1 h₁ h₂ hδ
   -- The terms of the sequence are `E ⊗ I`, `E ⊗ 𝒪_X ≅ E` and
-  -- `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r`.
+  -- `E ⊗ ι_* 𝒪_{V(I)} ≅ (ι_* 𝒪_{V(I)})^{⊕ r}`.
   rw [eulerCharBelow_congr k (tensorUnitIso E) 2, eulerCharBelow_congr k e₃ 2,
-    eulerCharBelow_freePushforward k I s] at h
+    eulerCharBelow_biproduct_const, Fintype.card_fin, eulerCharBelow_pushforward k I s] at h
   exact eq_sub_of_add_eq h.symm
 
 end Tensor

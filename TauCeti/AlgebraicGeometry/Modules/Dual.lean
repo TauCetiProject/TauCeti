@@ -8,6 +8,9 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Dualizable
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
 public import TauCeti.AlgebraicGeometry.Modules.InternalHom.GlobalSections
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
+public import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
 # Duality for sheaves of modules on a scheme
@@ -26,7 +29,9 @@ by `TauCeti.exactPairingOfIsIsoDualTensorIhom`.
   comparison of a locally free `𝒪_X`-module of finite type is an isomorphism;
 * `AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv`: for such a module `M`, linear functionals
   `𝓗om(M, 𝒪_X) ⟶ 𝒪_X` on the dual are global sections `𝒪_X ⟶ M`, a section corresponding to
-  evaluation at it.
+  evaluation at it;
+* `AlgebraicGeometry.Scheme.Modules.shortExact_map_tensorLeft`: tensoring with such a module
+  preserves short exact sequences.
 -/
 
 public section
@@ -137,6 +142,19 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_comp_globalSect
     (Scheme.Modules.dualHomUnitEquiv_pre_comp φ (Scheme.Modules.globalSectionsSmul M c))
 
 end DualHomUnitEquiv
+
+/-- **Tensoring with a locally free module of finite type is exact.** For a locally free
+`𝒪_X`-module `E` of finite type, `E ⊗ -` carries short exact sequences of `𝒪_X`-modules to short
+exact sequences: it is right adjoint to tensoring with the dual `𝓗om(E, 𝒪_X)`, so it preserves
+limits as well as colimits. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.shortExact_map_tensorLeft {X : Scheme.{u}}
+    (E : X.Modules) [E.IsLocallyFree] [E.IsFiniteType] {S : ShortComplex X.Modules}
+    (hS : S.ShortExact) : (S.map (tensorLeft E)).ShortExact := by
+  let : ExactPairing ((ihom E).obj (𝟙_ X.Modules)) E := exactPairingOfIsIsoDualTensorIhom
+  let : ExactPairing E ((ihom E).obj (𝟙_ X.Modules)) := BraidedCategory.exactPairing_swap _ _
+  have : Limits.PreservesLimits (tensorLeft E) :=
+    (tensorLeftAdjunction E ((ihom E).obj (𝟙_ X.Modules))).rightAdjoint_preservesLimits
+  exact hS.map_of_exact (tensorLeft E)
 
 end
 
