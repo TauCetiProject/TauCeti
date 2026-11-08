@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -389,10 +390,7 @@ theorem continuous_legendreE (k : ℝ) : Continuous (legendreE · k) :=
 theorem strictMono_legendreE {k : ℝ} (hk : k ^ 2 ≤ 1) : StrictMono (legendreE · k) := by
   intro a b hab
   -- The integrand is positive wherever `cos θ ≠ 0`, which holds off a countable set.
-  have hZ : {θ : ℝ | cos θ = 0}.Countable := by
-    refine (countable_range fun n : ℤ ↦ (2 * n + 1) * π / 2).mono fun θ hθ ↦ ?_
-    obtain ⟨n, hn⟩ := cos_eq_zero_iff.1 hθ
-    exact ⟨n, hn.symm⟩
+  have hZ := countable_setOf_cos_eq 0
   have hne : volume (Ioo a b \ {θ : ℝ | cos θ = 0}) ≠ 0 := by
     rw [measure_sdiff_null (hZ.measure_zero volume)]
     exact ((Measure.measure_Ioo_pos _).2 hab).ne'
