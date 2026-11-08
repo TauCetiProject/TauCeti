@@ -44,7 +44,7 @@ induction over the skeleta of the domain using the homotopy extension property.
 To push a map off a `k`-cell, read the open cell, which is open in `Xᵏ`, as a chart through the
 inverse of its characteristic map (`TauCeti.openCellChart`).
 `ContinuousMap.exists_homotopyRel_notMem_range` homotopes the map off one point `p` of the open
-cell, and, the image being compact, off a small ball around `p`. The radial deformation of the
+cell, and, the image being compact, off a neighbourhood of `p`. The radial deformation of the
 closed unit ball away from `p` onto the unit sphere (`Convex.exists_homotopyRel_frontier`), read
 through the characteristic map (`TauCeti.cellDeformation`), is a homotopy of `Xᵏ` that is
 supported in the open cell and ends by pushing the rest of the cell onto its
@@ -91,16 +91,18 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
     (by rwa [Module.finrank_fin_fun]) φ one_pos hφt.ge
   rw [openCellChart_symm_image_ball] at H₁
   rw [hφs] at hg₁
-  -- The image of `g₁` is compact, so `g₁` misses `φ.symm (ball p ε)` for some `ε > 0`.
+  -- The image of `g₁` is compact, so the points of the open ball that `φ.symm` sends off the
+  -- image of `g₁` form an open neighbourhood `U` of `p`.
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
-  have hU : IsOpen (φ.target ∩ φ.symm ⁻¹' (range g₁)ᶜ) :=
+  set U := φ.target ∩ φ.symm ⁻¹' (range g₁)ᶜ
+  have hU : IsOpen U :=
     φ.continuousOn_symm.isOpen_inter_preimage φ.open_target
       (isCompact_range g₁.continuous).isClosed.isOpen_compl
-  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU p ⟨hφt ▸ hp, hpg₁⟩
   -- Then push the closed unit ball radially away from `p` onto the sphere.
-  obtain ⟨ψ, Ψ, hΨs, hΨε⟩ := (convex_closedBall (0 : Fin k → ℝ) 1).exists_homotopyRel_frontier
-    isClosed_closedBall isBounded_closedBall (by rwa [interior_closedBall _ one_ne_zero]) hε
-  rw [frontier_closedBall _ one_ne_zero] at hΨε
+  obtain ⟨ψ, Ψ, hΨs, hΨU⟩ := (convex_closedBall (0 : Fin k → ℝ) 1).exists_homotopyRel_frontier
+    isClosed_closedBall (NormedSpace.isVonNBounded_closedBall ℝ _ 1)
+    (by rwa [interior_closedBall _ one_ne_zero]) (hU.mem_nhds ⟨hφt ▸ hp, hpg₁⟩)
+  rw [frontier_closedBall _ one_ne_zero] at hΨU
   obtain ⟨g₂, hg₂, hg₂j, -⟩ := exists_homotopicRel_openCell j Ψ
     (fun t y hy ↦ mem_closedBall_zero_iff.1 (hΨs t y (mem_closedBall_zero_iff.2 hy))) g₁
     (S := {x | (f x : X) ∈ openCell k j}ᶜ) fun x hx ↦ (H₁.fst_eq_snd hx) ▸ hx
@@ -111,17 +113,14 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
   have hvf : incl.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
   rw [hvf] at h
   refine ⟨incl.comp g₂, h, fun x hx ↦ ?_⟩
-  -- A point sent into the open cell is sent by `g₁` into the open cell, but outside
-  -- `φ.symm (ball p ε)`, so the radial push sends it to the frontier.
+  -- A point sent into the open cell is sent by `g₁` into the open cell, at a chart point
+  -- outside `U`, so the radial push sends it to the frontier.
   have hx₁ : (g₁ x : X) ∈ openCell k j := hg₁ x hx
-  have hy := map_symm_mem_ball k hx₁
-  have hyε : ε ≤ dist ((map k j).symm (g₁ x)) p := by
-    by_contra! h
-    refine (hεU (mem_ball.2 h)).2 ⟨x, ?_⟩
+  have hyU : (map k j).symm (g₁ x) ∉ U := fun h ↦ h.2 ⟨x, by
     rw [← openCellChart_apply]
-    exact (φ.left_inv (hφs ▸ hx₁)).symm
+    exact (φ.left_inv (hφs ▸ hx₁)).symm⟩
   rw [ContinuousMap.comp_apply, ContinuousMap.coe_mk, hg₂j x hx₁]
-  exact ⟨_, hΨε _ (ball_subset_closedBall hy) hyε, rfl⟩
+  exact ⟨_, hΨU _ hyU, rfl⟩
 
 /-- **Compressing a map of a low-dimensional compactum into the next lower skeleton.** Let `K` be
 a compact subset of a real normed space of dimension less than `k`. Every map `f : K → C` landing
