@@ -14,6 +14,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Algebra.Order.Archimedean.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
 import TauCeti.Geometry.Convex.Cone.Face.Finite
+import Mathlib.Analysis.Normed.Module.HahnBanach
 
 /-!
 # Faces cut out by nonnegative linear functionals
@@ -44,7 +45,7 @@ the chart of `σ` away from the monomial of `m`. Finite generation cannot be dro
 
 Every face of a finitely generated cone is exposed by a nonnegative linear functional,
 including cones with lineality and the full face. The construction uses Tucker’s theorem over
-an arbitrary linearly ordered field. Over finite-dimensional real normed spaces it gives
+an arbitrary linearly ordered field. Over real normed spaces it gives
 Mathlib’s continuous-functional `IsExposed` predicate; conversely, any nonempty exposed subset
 of a real cone is a cone face.
 
@@ -236,7 +237,7 @@ end PointedCone.IsFaceOf
 
 namespace IsExposed
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [AddCommGroup V] [TopologicalSpace V] [Module ℝ V]
   {C : PointedCone ℝ V} {S : Set V}
 
 /-- Every nonempty exposed subset of a pointed cone is the carrier of a cone face.
@@ -273,29 +274,37 @@ end IsExposed
 namespace PointedCone.IsFaceOf
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [FiniteDimensional ℝ V] {C F : PointedCone ℝ V}
+  {C F : PointedCone ℝ V}
 
-/-- Over a finite-dimensional real normed space, every face of a finitely
-generated cone is exposed in Mathlib's continuous-functional sense. -/
+/-- Every face of a finitely generated cone in a real normed space is exposed
+in Mathlib's continuous-functional sense. Finite generation provides continuity
+on the span of the generators, and Hahn–Banach extends the exposing functional. -/
 theorem isExposed_of_fg (hF : F.IsFaceOf C) (hC : C.FG) :
     IsExposed ℝ (C : Set V) (F : Set V) := by
   intro _
   obtain ⟨f, hf, hzero⟩ := hF.exists_nonneg_linear_zero_iff hC
-  let l : V →L[ℝ] ℝ := ⟨-f, (-f).continuous_of_finiteDimensional⟩
+  obtain ⟨s, hs⟩ := hC
+  let P : Submodule ℝ V := Submodule.span ℝ (s : Set V)
+  have hP : P.FG := Submodule.fg_span s.finite_toSet
+  let : FiniteDimensional ℝ P := (Submodule.fg_iff_finiteDimensional P).mp hP
+  have hCP : C ≤ P.restrictScalars (Nonneg ℝ) := by
+    rw [← hs]
+    exact Submodule.span_le.mpr fun x hx => Submodule.subset_span hx
+  let lP : P →L[ℝ] ℝ :=
+    ⟨(-f).domRestrict P, ((-f).domRestrict P).continuous_of_finiteDimensional⟩
+  obtain ⟨l, hl, _⟩ := exists_extension_norm_eq P lP
+  have hlC (x : V) (hx : x ∈ C) : l x = -f x := hl ⟨x, hCP hx⟩
   refine ⟨l, ?_⟩
   ext x
   constructor
   · intro hxF
     refine ⟨hF.le hxF, fun y hy => ?_⟩
-    have hxzero := (hzero x (hF.le hxF)).mpr hxF
-    simp only [l, ContinuousLinearMap.coe_mk', LinearMap.neg_apply]
-    rw [hxzero, neg_zero]
+    rw [hlC y hy, hlC x (hF.le hxF), (hzero x (hF.le hxF)).mpr hxF, neg_zero]
     exact neg_nonpos.mpr (hf y hy)
   · rintro ⟨hxC, hmax⟩
     have hmaxzero := hmax 0 C.zero_mem
     have hlx : 0 ≤ -f x := by
-      simpa only [l, ContinuousLinearMap.coe_mk', LinearMap.neg_apply, map_zero, neg_zero]
-        using hmaxzero
+      simpa only [map_zero, hlC x hxC] using hmaxzero
     exact (hzero x hxC).mp (le_antisymm (neg_nonneg.mp hlx) (hf x hxC))
 
 end PointedCone.IsFaceOf
