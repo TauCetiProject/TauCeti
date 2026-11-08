@@ -545,6 +545,7 @@ theorem cechComplexMapHomotopy_hom_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
 /-- **Compatibility of the homotopy with a further refinement of the source.** For a morphism of
 families `χ : W ⟶ U`, the homotopy between the maps induced by `χ ≫ φ` and `χ ≫ ψ` is the homotopy
 between the maps induced by `φ` and `ψ`, followed by the map induced by `χ`. -/
+@[simp]
 theorem cechComplexMapHomotopy_precomp_hom {ι' : Type w} {W : ι' → C}
     (χ : FormalCoproduct.mk _ W ⟶ FormalCoproduct.mk _ U)
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (i j : ℕ) :
@@ -563,6 +564,7 @@ theorem cechComplexMapHomotopy_precomp_hom {ι' : Type w} {W : ι' → C}
 /-- **Compatibility of the homotopy with a further refinement of the target.** For a morphism of
 families `ω : V ⟶ V'`, the homotopy between the maps induced by `φ ≫ ω` and `ψ ≫ ω` is the map
 induced by `ω` followed by the homotopy between the maps induced by `φ` and `ψ`. -/
+@[simp]
 theorem cechComplexMapHomotopy_postcomp_hom {κ' : Type w} {V' : κ' → C}
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
     (ω : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ V') (i j : ℕ) :
