@@ -40,8 +40,8 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   `TauCeti.norm_fderiv_toLp_prodMk_apply_sq`: the derivative of `w ↦ (f w, g w)` dominates
   those of `f` and `g`, and in the Euclidean product its value on `v` has squared length
   `‖df v‖² + ‖dg v‖²`.
-* `HasFDerivAt.normalGraphEmbedding`: the derivative of a graph parametrization is the graph of
-  the derivative.
+* `HasFDerivWithinAt.normalGraphEmbedding`, `HasFDerivAt.normalGraphEmbedding`: the derivative
+  of a graph parametrization is the graph of the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
   parametrization at a differentiability point.
 * `DifferentiableAt.injective_fderiv_normalGraphEmbedding`: that derivative is injective.
@@ -133,21 +133,28 @@ section NormalGraph
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The derivative of a graph parametrization is the graph of the derivative. -/
-theorem _root_.HasFDerivAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ} {x : V}
-    (hφ : HasFDerivAt φ φ' x) :
-    HasFDerivAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL x := by
+/-- Within a parameter set, the derivative of a graph parametrization is the graph of the
+within-derivative. -/
+theorem _root_.HasFDerivWithinAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ}
+    {s : Set V} {x : V} (hφ : HasFDerivWithinAt φ φ' s x) :
+    HasFDerivWithinAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL s x := by
   have h : TauCeti.normalGraphEmbedding φ =
       (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm ∘ fun y ↦ (φ y, y) :=
     funext fun y ↦ (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ y)
       (normalGraphEmbedding_snd φ y)
   rw [h]
   refine (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm :
-    (ℝ × V) →L[ℝ] WithLp 2 (ℝ × V)).hasFDerivAt.comp x
-      (hφ.prodMk (hasFDerivAt_id x))).congr_fderiv ?_
+    (ℝ × V) →L[ℝ] WithLp 2 (ℝ × V)).hasFDerivAt.comp_hasFDerivWithinAt x
+      (hφ.prodMk (hasFDerivWithinAt_id x s))).congr_fderiv ?_
   ext v
   simpa using (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ' v).symm
     (normalGraphEmbedding_snd φ' v).symm
+
+/-- The derivative of a graph parametrization is the graph of the derivative. -/
+theorem _root_.HasFDerivAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ} {x : V}
+    (hφ : HasFDerivAt φ φ' x) :
+    HasFDerivAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL x :=
+  hasFDerivWithinAt_univ.mp (hφ.hasFDerivWithinAt.normalGraphEmbedding (s := Set.univ))
 
 /-- At a differentiability point, the Fréchet derivative of a graph parametrization is the
 continuous linear graph of the derivative. -/

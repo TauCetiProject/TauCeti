@@ -23,6 +23,7 @@ set. The plane is explicitly the range of `A.normalGraphL`, where `A` is the der
 graphing function. `HasFDerivAt.tangentConeAt_normalGraphEmbedding_image` identifies it with
 the classical tangent cone over a neighborhood of the parameter. This is a comparison of cone
 conditions, not a density-one theorem or a uniqueness theorem for approximate tangent planes.
+The cone condition also holds for differentiability within an arbitrary parameter set.
 
 All surface measures here use the normalized convention `μHE[k]`.
 
@@ -36,17 +37,16 @@ public section
 open Filter Metric MeasureTheory Set
 open scoped ENNReal Topology
 
-namespace HasFDerivAt
+namespace HasFDerivWithinAt
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {φ : E → ℝ} {A : E →L[ℝ] ℝ} {x : E}
 
-/-- The classical tangent plane of a differentiable normal graph satisfies the approximate
-tangent-plane cone condition at every differentiability point. The parameter set is arbitrary;
-no surface-measure finiteness or measurability hypothesis is needed. This includes dimension
-zero. -/
+/-- Differentiability within a parameter set makes the normal graph satisfy the cone condition
+about the range of the derivative's linear graph. No surface-measure finiteness, measurability,
+or membership of the base point in the parameter set is needed. This includes dimension zero. -/
 theorem tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div
-    (hφ : HasFDerivAt φ A x) (s : Set E) {ε : ℝ} (hε : 0 < ε) :
+    {s : Set E} (hφ : HasFDerivWithinAt φ A s x) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun r =>
       μHE[Module.finrank ℝ E]
         {z ∈ TauCeti.normalGraphEmbedding φ '' s ∩
@@ -56,12 +56,12 @@ theorem tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div
               (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E)))} /
         volume (closedBall (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) r))
       (𝓝[>] 0) (𝓝 0) := by
-  have hi : AntilipschitzWith 1
-      (univ.domRestrict (TauCeti.normalGraphEmbedding φ)) := fun y z =>
-    TauCeti.antilipschitzWith_normalGraphEmbedding φ y z
+  -- Inserting the base point preserves relative differentiability and lets the inverse bound
+  -- compare every parameter with the base point, even when the latter is not in the set.
+  have hi := (TauCeti.antilipschitzWith_normalGraphEmbedding φ).domRestrict (insert x s)
   obtain ⟨δ, hδ, hcone⟩ :=
-    hφ.normalGraphEmbedding.hasFDerivWithinAt.exists_pos_forall_infDist_range_le
-      (mem_univ x) hi hε
+    hφ.insert.normalGraphEmbedding.exists_pos_forall_infDist_range_le
+      (mem_insert x s) hi hε
   apply tendsto_const_nhds.congr'
   filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hδ)] with r hr
   have hempty :
@@ -72,8 +72,26 @@ theorem tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div
             (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E)))} = ∅ := by
     apply eq_empty_of_forall_notMem
     intro z hz
-    exact (not_lt_of_ge (hcone z (image_mono (subset_univ s) hz.1.1)
+    exact (not_lt_of_ge (hcone z (image_mono (subset_insert x s) hz.1.1)
       ((mem_closedBall.mp hz.1.2).trans_lt hr))) hz.2
   rw [hempty, measure_empty, ENNReal.zero_div]
 
-end HasFDerivAt
+end HasFDerivWithinAt
+
+/-- The classical tangent plane of a differentiable normal graph satisfies the approximate
+tangent-plane cone condition. The parameter set is arbitrary, with no surface-measure
+finiteness or measurability hypothesis. This includes dimension zero. -/
+theorem HasFDerivAt.tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {φ : E → ℝ} {A : E →L[ℝ] ℝ} {x : E}
+    (hφ : HasFDerivAt φ A x) (s : Set E) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun r =>
+      μHE[Module.finrank ℝ E]
+        {z ∈ TauCeti.normalGraphEmbedding φ '' s ∩
+            closedBall (TauCeti.normalGraphEmbedding φ x) r |
+          ε * dist z (TauCeti.normalGraphEmbedding φ x) <
+            infDist (z - TauCeti.normalGraphEmbedding φ x)
+              (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E)))} /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) r))
+      (𝓝[>] 0) (𝓝 0) :=
+  hφ.hasFDerivWithinAt.tendsto_euclideanHausdorffMeasure_normalGraphEmbedding_outside_cone_div hε

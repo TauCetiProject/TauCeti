@@ -12,9 +12,11 @@ public import TauCeti.Analysis.Calculus.FDeriv.WithLp
 # Tangent spaces of normal graphs
 
 At a differentiability point of a real function, the tangent cone to its normal graph is
-exactly the linear graph of its derivative. The same holds for the graph over any neighborhood
-of the parameter. Thus the cone is already a linear space, and its span has the dimension of
-the parameter space. No continuous derivative is needed.
+exactly the linear graph of its derivative. More generally, relative differentiability
+transports the tangent cone of any parameter set by the linear graph of the derivative.
+For a neighborhood of the parameter this image is the full linear graph. Thus the cone is
+already a linear space, and its span has the dimension of the parameter space. No continuous
+derivative is needed.
 
 The parametrization is `TauCeti.normalGraphEmbedding` in the Euclidean product
 `WithLp 2 (ℝ × E)`. Its Jacobian is computed in `Analysis.Calculus.FDeriv.WithLp`; the results
@@ -26,10 +28,20 @@ public section
 open Set Filter
 open scoped Topology
 
-namespace HasFDerivAt
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {φ : E → ℝ} {A : E →L[ℝ] ℝ} {x : E} {s : Set E}
+
+/-- Relative differentiability transports the tangent cone of the parameter set to the
+normal graph by the linear graph of the derivative. -/
+theorem HasFDerivWithinAt.tangentConeAt_normalGraphEmbedding_image
+    (hφ : HasFDerivWithinAt φ A s x) :
+    tangentConeAt ℝ (TauCeti.normalGraphEmbedding φ '' s) (TauCeti.normalGraphEmbedding φ x) =
+      A.normalGraphL '' tangentConeAt ℝ s x :=
+  (hφ.normalGraphEmbedding.image_tangentConeAt_of_leftInverse
+    (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt.hasFDerivWithinAt
+    (TauCeti.normalGraphEmbedding_snd φ)).symm
+
+namespace HasFDerivAt
 
 /-- The tangent cone of a differentiable normal graph, restricted to a neighborhood of the
 parameter, is the range of the linear graph of the derivative. This holds in arbitrary real
@@ -37,11 +49,9 @@ normed spaces, without a continuous derivative hypothesis. -/
 theorem tangentConeAt_normalGraphEmbedding_image (hφ : HasFDerivAt φ A x) (hs : s ∈ 𝓝 x) :
     tangentConeAt ℝ (TauCeti.normalGraphEmbedding φ '' s) (TauCeti.normalGraphEmbedding φ x) =
       (LinearMap.range A.normalGraphL.toLinearMap : Set (WithLp 2 (ℝ × E))) := by
-  have h := hφ.normalGraphEmbedding.hasFDerivWithinAt.image_tangentConeAt_of_leftInverse
-    (s := s) (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt.hasFDerivWithinAt
-    (TauCeti.normalGraphEmbedding_snd φ)
-  rw [tangentConeAt_of_mem_nhds hs, image_univ] at h
-  simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using h.symm
+  rw [hφ.hasFDerivWithinAt.tangentConeAt_normalGraphEmbedding_image,
+    tangentConeAt_of_mem_nhds hs, image_univ]
+  simp only [LinearMap.coe_range, ContinuousLinearMap.coe_coe]
 
 /-- The classical tangent space of a differentiable normal graph is the range of the
 differential of its parametrization. -/
