@@ -50,20 +50,6 @@ variable {R : Type u} [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
   [U.FiniteIndex] [CompactSpace U]
   {A B : SmoothDiscreteTopRep.{u, v, max v w} R U} (f : A ⟶ B)
 
-/-- On carriers, the induced morphism of tensor-induced total resolutions applies the total
-resolution map in each tensor factor. -/
-private theorem resolutionMap_apply (x : ⨂[R] _ : G ⧸ U, A.obj.gradedResolutionModule) :
-    ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom x =
-      PiTensorProduct.map (fun _ ↦
-        TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom) x := by
-  have hg : (smoothGradedResolutionFunctor.map f).hom.hom.toLinearMap =
-      TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom := by
-    rw [smoothGradedResolutionFunctor_map]
-    exact LinearMap.ext (TopRep.gradedResolutionTopRepMap_apply f.hom)
-  exact (smoothTensorInductionFunctor_map_hom_hom_apply R G U hU s
-    (smoothGradedResolutionFunctor.map f) x).trans
-      (congrArg (fun g ↦ PiTensorProduct.map (fun _ : G ⧸ U ↦ g) x) hg)
-
 variable [Fintype (G ⧸ U)]
 
 /-- The coefficient map on tensor-induced total resolutions preserves total degree. -/
@@ -77,7 +63,9 @@ theorem isHomogeneous_smoothTensorInducedGradedResolutionFunctor_map :
     (fun _ ↦ TopRep.isHomogeneous_gradedResolutionMap (ContinuousMonoidHom.id U) f.hom)
   rw [Finset.sum_const_zero] at h
   exact TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦
-    (congrArg (· ∈ _) (resolutionMap_apply U hU s f x)).mpr (h.map_mem hx)
+    (congrArg (· ∈ _)
+      (smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply U hU s f x)).mpr
+        (h.map_mem hx)
 
 /-- The coefficient map on tensor-induced total resolutions commutes with the differentials. -/
 @[reassoc]
@@ -101,25 +89,15 @@ theorem smoothTensorInducedGradedResolutionFunctor_map_differential :
     (smoothTensorInducedGradedResolutionDifferential U hU s B).hom.hom
       (((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom x)
   -- The sealed tensor-induction carriers prevent rewriting the map evaluation in place.
-  refine (resolutionMap_apply U hU s f _).trans ?_
+  refine (smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply U hU s f _).trans ?_
   refine (congrArg (PiTensorProduct.map fun _ : G ⧸ U ↦
     TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom)
     (smoothTensorInducedGradedResolutionDifferential_apply U hU s A x)).trans ?_
   refine (LinearMap.congr_fun (PiTensorProduct.slotSum_comp_map _ fun _ ↦ hd) x).symm.trans ?_
   refine (congrArg (PiTensorProduct.slotSum (G ⧸ U)
     (fun _ ↦ B.obj.gradedResolutionDifferential))
-    (resolutionMap_apply U hU s f x).symm).trans ?_
+    (smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply U hU s f x).symm).trans ?_
   exact (smoothTensorInducedGradedResolutionDifferential_apply U hU s B _).symm
-
-omit [Fintype (G ⧸ U)] in
-/-- The coefficient map carries the diagonal tensor to the diagonal tensor of the mapped
-cocycle. -/
-private theorem resolutionMap_tprod_const (z : A.obj.gradedResolutionModule) :
-    ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom
-        (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z) =
-      PiTensorProduct.tprod R fun _ : G ⧸ U ↦
-        TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom z :=
-  (resolutionMap_apply U hU s f _).trans (PiTensorProduct.map_tprod _ _)
 
 /-- The coefficient map carries the tensor-induced augmentation to the augmentation of the
 mapped coefficients. -/
@@ -163,18 +141,10 @@ theorem coeffMap_smoothTensorInducedDiagonalClass
         (smoothTensorInducedDiagonalClass.{u, v, w} U hU s A hA z hz hinv hdz) =
       smoothTensorInducedDiagonalClass.{u, v, w} U hU s B hB
         (TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom z)
-        (by
-          have h := (TopRep.isHomogeneous_gradedResolutionMap
-            (ContinuousMonoidHom.id U) f.hom).map_mem hz
-          simpa only [add_zero] using h)
-        (fun a ↦ (TopRep.gradedResolutionMap_equivariant
-          (ContinuousMonoidHom.id U) f.hom a z).symm.trans
-            (congrArg (TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom) (hinv a)))
-        (by
-          exact (TopRep.gradedResolutionMap_differential
-            (ContinuousMonoidHom.id U) f.hom z).symm.trans
-              ((congrArg (TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom)
-                hdz).trans (map_zero _))) := by
+        (TopRep.gradedResolutionMap_mem_piece (ContinuousMonoidHom.id U) f.hom hz)
+        (TopRep.gradedResolutionMap_invariant (ContinuousMonoidHom.id U) f.hom hinv)
+        (TopRep.gradedResolutionMap_differential_eq_zero
+          (ContinuousMonoidHom.id U) f.hom hdz) := by
   let : LinearOrder (G ⧸ U) := LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U)).injective
   have : LocallyCompactSpace G :=
     (isCompact_iff_compactSpace.2 ‹CompactSpace U›).locallyCompactSpace_of_mem_nhds_of_group
@@ -193,6 +163,7 @@ theorem coeffMap_smoothTensorInducedDiagonalClass
       (smoothTensorInducedGradedResolutionFunctor_map_differential U hU s f))
     (resolutionMap_augmentation U hU s f hA hB) _ _ _).trans ?_
   congr 1
-  exact resolutionMap_tprod_const U hU s f z
+  exact smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply_tprod U hU s f
+    (fun _ ↦ z)
 
 end Subgroup
