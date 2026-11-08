@@ -99,6 +99,7 @@ public theorem coe_inv_frickeGL :
 `GL (Fin 2) K`. This is the identity behind the centrality of `W²` and the scalar the normalized
 Fricke operator divides out; the scalar form is the one that mathlib's `glScalar_smul` and
 `ModularForm.slash_scalar` consume. -/
+@[simp]
 public theorem frickeGL_sq :
     frickeGL K N ^ 2 =
       Matrix.GeneralLinearGroup.scalar (Fin 2)
