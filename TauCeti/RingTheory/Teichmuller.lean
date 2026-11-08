@@ -22,21 +22,25 @@ namespace Perfection
 variable {p : ℕ} {R : Type*} [CommRing R] [Fact p.Prime] {I : Ideal R}
   [CharP (R ⧸ I) p] [IsAdicComplete I R]
 
+/-- Reduction on perfection commutes with shifting the root sequence. -/
+@[simp]
+theorem quotientMulEquiv_symm_powMulEquiv (z : Perfection R p) :
+    quotientMulEquiv p I ((powMulEquiv (Perfection R p) p).symm z) =
+      (powMulEquiv (Perfection (R ⧸ I) p) p).symm (quotientMulEquiv p I z) := by
+  apply Perfection.ext
+  intro n
+  simp only [← coeffMonoidHom_eq_coeff, coeffMonoidHom_symm_powMulEquiv,
+    coeff_quotientMulEquiv]
+  exact (coeff_quotientMulEquiv z (n + 1)).symm
+
 /-- The inverse of reduction on perfection commutes with shifting the root sequence. -/
 theorem semiconj_symm_quotientMulEquiv_pthRootMonoidHom :
     Function.Semiconj (quotientMulEquiv p I).symm
       (pthRootMonoidHom (R ⧸ I) p) (pthRootMonoidHom R p) := by
   intro y
   apply (quotientMulEquiv p I).injective
-  have hfwd (z : Perfection R p) :
-      quotientMulEquiv p I (pthRootMonoidHom R p z) =
-        pthRootMonoidHom (R ⧸ I) p (quotientMulEquiv p I z) := by
-    apply Perfection.ext
-    intro n
-    simp only [coeff_quotientMulEquiv, coeffMonoidHom_pthRootMonoidHom,
-      pthRootMonoidHom_eq_pthRoot, coe_pthRoot_eq_symm_frobeniusEquiv,
-      coeff_symm_frobeniusEquiv]
-  rw [hfwd, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+  simp only [coe_pthRootMonoidHom_eq_powMulEquiv_symm,
+    quotientMulEquiv_symm_powMulEquiv, MulEquiv.apply_symm_apply]
 
 /-- The `n`-th coordinate of inverse reduction is Teichmüller after `n` shifts. -/
 @[simp]
