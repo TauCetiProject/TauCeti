@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 
 /-!
@@ -154,35 +155,11 @@ private theorem stronglyMeasurable_mihlinKernel (σ : 𝓢(V, ℂ)) :
     StronglyMeasurable (Function.uncurry (mihlinKernel (F := F) σ)) :=
   ((lsmul ℝ ℂ).continuous.comp ((𝓕⁻ σ).continuous.comp continuous_sub)).stronglyMeasurable
 
-/-- Hörmander's condition for `𝓕⁻ σ` in the translation-invariant form gives it for the kernel
-`mihlinKernel σ` in the two-variable form of the Calderón–Zygmund theorems. -/
-private theorem setLIntegral_enorm_mihlinKernel_sub_le (σ : 𝓢(V, ℂ)) {B : ℝ}
-    (hB : ∀ h, ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖𝓕⁻ σ (x - h) - 𝓕⁻ σ x‖ ≤ B) (y y' : V) :
-    ∫⁻ x in {x | 2 * dist y y' < dist x y'},
-      ‖mihlinKernel (F := F) σ x y - mihlinKernel σ x y'‖ₑ ≤ ENNReal.ofReal B := by
-  set h := y - y'
-  have hS : MeasurableSet {z : V | 2 * ‖h‖ < ‖z‖} :=
-    measurableSet_lt measurable_const measurable_norm
-  have hS' : MeasurableSet {x : V | 2 * dist y y' < dist x y'} :=
-    measurableSet_lt measurable_const (measurable_id.dist measurable_const)
-  have hint : Integrable (fun z ↦ 𝓕⁻ σ (z - h) - 𝓕⁻ σ z) :=
-    ((𝓕⁻ σ).integrable.comp_sub_right h).sub (𝓕⁻ σ).integrable
-  calc ∫⁻ x in {x | 2 * dist y y' < dist x y'},
-        ‖mihlinKernel (F := F) σ x y - mihlinKernel σ x y'‖ₑ
-      ≤ ∫⁻ x, {z : V | 2 * ‖h‖ < ‖z‖}.indicator
-          (fun z ↦ ‖𝓕⁻ σ (z - h) - 𝓕⁻ σ z‖ₑ) (x - y') := by
-        rw [← lintegral_indicator hS']
-        refine lintegral_mono fun x ↦ ?_
-        simp only [Set.indicator, Set.mem_ofPred_eq, dist_eq_norm, h]
-        split_ifs
-        · rw [mihlinKernel, mihlinKernel, ← map_sub, sub_sub_sub_cancel_right]
-          exact enorm_le_iff_norm_le.2 ((opNorm_lsmul_apply_le _).trans_eq (by abel_nf))
-        · exact le_rfl
-    _ = ∫⁻ z in {z | 2 * ‖h‖ < ‖z‖}, ‖𝓕⁻ σ (z - h) - 𝓕⁻ σ z‖ₑ := by
-        rw [lintegral_sub_right_eq_self, lintegral_indicator hS]
-    _ = ENNReal.ofReal (∫ z in {z | 2 * ‖h‖ < ‖z‖}, ‖𝓕⁻ σ (z - h) - 𝓕⁻ σ z‖) :=
-        (ofReal_integral_norm_eq_lintegral_enorm hint.integrableOn).symm
-    _ ≤ ENNReal.ofReal B := ENNReal.ofReal_le_ofReal (hB h)
+/-- The differences of `mihlinKernel σ` are dominated by those of `𝓕⁻ σ`. -/
+private theorem norm_mihlinKernel_sub_le (σ : 𝓢(V, ℂ)) (x y y' : V) :
+    ‖mihlinKernel (F := F) σ x y - mihlinKernel σ x y'‖ ≤ ‖𝓕⁻ σ (x - y) - 𝓕⁻ σ (x - y')‖ := by
+  rw [mihlinKernel, mihlinKernel, ← map_sub]
+  exact opNorm_lsmul_apply_le _
 
 variable [CompleteSpace F]
 
@@ -242,21 +219,19 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_mihlinTrunc_le [Nontrivial V
   set T := (Lp.fourierMultiplierCLM F (σ.toLp ∞ (volume : Measure V))).restrictScalars ℝ
   have hT : adjoint T =
       (Lp.fourierMultiplierCLM F (σ'.toLp ∞ (volume : Measure V))).restrictScalars ℝ := by
-    -- The real inner product of `L²` is the real part of the complex one.
-    have hre : ∀ f g : Lp F 2 (volume : Measure V), inner ℝ f g = Complex.re (inner ℂ f g) :=
-      fun f g ↦ by
-        rw [L2.inner_def, L2.inner_def]
-        exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
     refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-    rw [hre, hre, coe_restrictScalars', coe_restrictScalars', ← star_toLp_mihlinTrunc hm hm',
+    rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
+      coe_restrictScalars', ← star_toLp_mihlinTrunc hm hm',
       ← Lp.adjoint_fourierMultiplierCLM, adjoint_inner_left]
   have hTn : ‖T‖ₑ ≤ 1 := by
     rw [← ofReal_norm, norm_restrictScalars, ← ENNReal.ofReal_one]
     exact ENNReal.ofReal_le_ofReal
       ((Lp.norm_fourierMultiplierCLM_le _).trans (norm_toLp_mihlinTrunc_le hm hm0 n))
   refine hC T (mihlinKernel σ) (mihlinKernel σ') hTn (stronglyMeasurable_mihlinKernel σ)
-    (stronglyMeasurable_mihlinKernel σ') (setLIntegral_enorm_mihlinKernel_sub_le σ (hB hm hmA n))
-    (setLIntegral_enorm_mihlinKernel_sub_le σ' (hB hm' hmA' n))
+    (stronglyMeasurable_mihlinKernel σ') (setLIntegral_enorm_sub_le_of_norm_sub_le (𝓕⁻ σ).integrable
+      (norm_mihlinKernel_sub_le σ) (hB hm hmA n))
+    (setLIntegral_enorm_sub_le_of_norm_sub_le (𝓕⁻ σ').integrable
+      (norm_mihlinKernel_sub_le σ') (hB hm' hmA' n))
     (fun g _ _ _ ↦ (ae_fourierMultiplierCLM_eq_integral_mihlinKernel σ g).mono fun _ hx _ ↦ hx)
     (fun g _ _ _ ↦ hT ▸ (ae_fourierMultiplierCLM_eq_integral_mihlinKernel σ' g).mono
       fun _ hx _ ↦ hx) f
