@@ -569,6 +569,25 @@ theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
 theorem truncation_mono : Monotone truncation := fun _ _ hRR' _ hw =>
   ⟨hw.1, hw.2.1, fun q => (hw.2.2 q).trans hRR'⟩
 
+/-- The poles `0` and `1` lie outside every truncation. -/
+theorem notMem_truncation_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) (R : ℝ) :
+    c ∉ truncation R := fun h => by
+  obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
+  rcases hc with rfl | rfl
+  exacts [h₀ rfl, h₁ rfl]
+
+/-- Near a pole `c ∈ {0, 1}` and a cutoff `R₀`, the points lie outside the truncations `S_R`,
+locally uniformly in the cutoff `R`. -/
+theorem eventually_notMem_truncation {c : ℂ} (hc : c = 0 ∨ c = 1) (R₀ : ℝ) :
+    ∀ᶠ p : ℂ × ℝ in 𝓝 (c, R₀), p.1 ∉ truncation p.2 := by
+  have hR : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, R₀), p.2 < R₀ + 1 :=
+    continuous_snd.continuousAt.eventually (gt_mem_nhds (lt_add_one R₀))
+  have hw : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, R₀), p.1 ∉ truncation (R₀ + 1) :=
+    continuous_fst.continuousAt.eventually ((isCompact_truncation _).isClosed.isOpen_compl.mem_nhds
+      (notMem_truncation_of_eq_zero_or_eq_one hc _))
+  filter_upwards [hR, hw] with p hpR hpw h
+  exact hpw (truncation_mono hpR.le h)
+
 /-- The truncations exhaust the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
 theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by
   ext w

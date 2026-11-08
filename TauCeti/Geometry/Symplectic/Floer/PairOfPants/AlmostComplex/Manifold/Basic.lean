@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Basic
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleySum
 
 /-!
 # Pair-of-pants almost complex data on a manifold
@@ -17,11 +17,10 @@ thrice-punctured sphere. Compatible end data give compatible structures. On each
 far cylindrical tail the structure is exactly the prescribed end structure; off the cutoff
 regions it is the base structure.
 
-The construction applies the linear pair-of-pants construction in each tangent fiber.
-Smoothness is checked in tangent trivializations, where conjugation preserves the Cayley
-formula and its inverse, using the same conjugation method as
-`TauCeti.SmoothTwoForm.Compatible.cayleyPath`. Thus no global trivialization or constant
-target two-form is assumed.
+The construction applies the linear pair-of-pants construction in each tangent fiber. Its Cayley
+coordinate is a weighted sum of the Cayley coordinates of the end structures, so smoothness follows
+from `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_mul_one_add_cayleySum`, which is checked in
+tangent trivializations. Thus no global trivialization or constant target two-form is assumed.
 Neither closedness of the two-form nor compactness of the target is needed. The resulting
 family is jointly smooth in the domain and target variables as a section of the tangent
 endomorphism bundle along the target projection. This is extension of coefficient data, not
@@ -58,72 +57,27 @@ private def pantsEnd (w : ℂ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace
       (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x)
       (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) w ()).toLinearMap
 
-/-- The continuous Cayley coordinate of the fiberwise construction. -/
-private def pantsCayley (J₀ : SmoothAlmostComplexStructure I M) (w : ℂ) (x : M) :
-    TangentSpace I x →L[ℝ] TangentSpace I x :=
-  ∑ q, smoothTransition (q.endSign * (q.endCoord w).re - 1) •
-    cayleyFormula (J₀.toEndomorphism x) ((J q (q.endCoord w).im).toEndomorphism x)
+/-- The weights of the end structures in the Cayley coordinate of the fiberwise construction. -/
+private def pantsWeight (w : ℂ) (q : Puncture) : ℝ :=
+  smoothTransition (q.endSign * (q.endCoord w).re - 1)
 
 private theorem pantsCayley_toLinearMap (w : ℂ) (x : M) :
-    (pantsCayley J J₀ w x).toLinearMap =
+    (J₀.cayleySum (pantsWeight w) (fun q => J q (q.endCoord w).im) x).toLinearMap =
       (J₀.almostComplexStructureAt x).cayley
         (Floer.pairOfPantsAlmostComplex (V := TangentSpace I x) (h₀.compatibleAt x)
           (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x)
           (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) w ()) := by
-  let : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
-  let : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
-  rw [Floer.cayley_pairOfPantsAlmostComplex, pantsCayley]
-  simp only [ContinuousLinearMap.toLinearMap_sum, ContinuousLinearMap.toLinearMap_smul]
-  congr 1
-  funext q
-  congr 1
-  have h := (h₀.compatibleAt x).tames.toContinuousLinearMap_cayley
-    (h₀.isNondegenerate.tames_iff.mp (hJ q (q.endCoord w).im) x)
-    (J₀.almostComplexStructureAt_toLinearMap x).symm
-    ((J q (q.endCoord w).im).almostComplexStructureAt_toLinearMap x).symm
-  exact (congrArg ContinuousLinearMap.toLinearMap h).symm
-
-include hJ in
-private theorem pantsCayley_mem (w : ℂ) (x : M) :
-    (pantsCayley J J₀ w x).toLinearMap ∈
-      (h₀.isNondegenerate.symplecticFormAt x).cayleyBall (J₀.almostComplexStructureAt x) := by
-  rw [pantsCayley_toLinearMap h₀ J hJ]
-  exact (h₀.compatibleAt x).cayley_mem_cayleyBall
-    (Floer.tames_pairOfPantsAlmostComplex (h₀.compatibleAt x) w ())
-
-include h₀ hJ in
-private theorem isUnit_one_sub_pantsCayley (w : ℂ) (x : M) :
-    IsUnit (1 - pantsCayley J J₀ w x) := by
-  let : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
-  let : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
-  exact SymplecticForm.isUnit_one_sub_of_toLinearMap_mem_cayleyBall
-    (pantsCayley_mem h₀ J hJ w x)
+  rw [h₀.cayleySum_toLinearMap _ (K := fun q => J q (q.endCoord w).im) (fun q => hJ q _),
+    Floer.cayley_pairOfPantsAlmostComplex]
+  rfl
 
 private theorem pantsEnd_eq (w : ℂ) (x : M) :
-    pantsEnd h₀ J hJ w x = J₀.toEndomorphism x * (1 + pantsCayley J J₀ w x) *
-      Ring.inverse (1 - pantsCayley J J₀ w x) := by
-  let : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
-  let : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
-  have hc := pantsCayley_mem h₀ J hJ w x
-  have h := (h₀.compatibleAt x).cayleyEquiv_symm_apply_toContinuousLinearMap
-    (V := TangentSpace I x) (pantsCayley J J₀ w x) hc
-  let P := Floer.pairOfPantsAlmostComplex (V := TangentSpace I x) (h₀.compatibleAt x)
-    (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x)
-    (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) w ()
-  have hp : (h₀.isNondegenerate.symplecticFormAt x).Tames P :=
-    Floer.tames_pairOfPantsAlmostComplex (h₀.compatibleAt x) w ()
-  have heq : (h₀.compatibleAt x).cayleyEquiv.symm ⟨_, hc⟩ = ⟨P, hp⟩ := by
-    apply ((h₀.compatibleAt x).cayleyEquiv.symm_apply_eq).mpr
-    apply Subtype.ext
-    rw [SymplecticForm.Compatible.cayleyEquiv_apply_coe]
-    exact pantsCayley_toLinearMap h₀ J hJ w x
-  rw [heq] at h
-  have hbase : LinearMap.toContinuousLinearMap (J₀.almostComplexStructureAt x).toLinearMap =
-      J₀.toEndomorphism x :=
-    ContinuousLinearMap.coe_injective (J₀.almostComplexStructureAt_toLinearMap x)
-  exact h.trans (congrArg
-    (fun A : TangentSpace I x →L[ℝ] TangentSpace I x =>
-      A * (1 + pantsCayley J J₀ w x) * Ring.inverse (1 - pantsCayley J J₀ w x)) hbase)
+    pantsEnd h₀ J hJ w x = J₀.toEndomorphism x *
+      (1 + J₀.cayleySum (pantsWeight w) (fun q => J q (q.endCoord w).im) x) *
+      Ring.inverse (1 - J₀.cayleySum (pantsWeight w) (fun q => J q (q.endCoord w).im) x) :=
+  h₀.toContinuousLinearMap_eq_of_cayley_eq
+    (Floer.tames_pairOfPantsAlmostComplex (h₀.compatibleAt x) w ())
+    (pantsCayley_toLinearMap h₀ J hJ w x)
 
 variable (hJp : ∀ q, Function.Periodic (J q) 1)
   (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
@@ -132,76 +86,27 @@ variable (hJp : ∀ q, Function.Periodic (J q) 1)
       p.2 ((J q p.1).toEndomorphism p.2)))
 
 include hJp hJs in
-omit [FiniteDimensional ℝ E] in
-/-- In a fixed tangent trivialization at `x`, an end family is smooth at the base point. -/
-private theorem contMDiffAt_inCoordinates_end (q : Puncture) (w : ThricePuncturedSphere)
-    (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞)
-      (fun p : ℂ × M => ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I)
-        x p.2 x p.2 ((J q (q.endCoord p.1).im).toEndomorphism p.2)) ((w : ℂ), x) := by
-  have hp : Function.Periodic (fun t y => TotalSpace.mk' (E →L[ℝ] E)
-      (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-      y ((J q t).toEndomorphism y)) 1 := fun t => by simp only [hJp q t]
-  exact ((contMDiffAt_hom_bundle _).mp
-    (q.contMDiffAt_comp_im_endCoord hp (hJs q) (ne_endCenter w.2 q) x)).2
-
-include hJp hJs in
 private theorem contMDiffAt_pantsEnd (w : ThricePuncturedSphere) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
       (fun p : ℂ × M => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
         p.2 (pantsEnd h₀ J hJ p.1 p.2)) ((w : ℂ), x) := by
-  let : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
-  let : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_snd, ?_⟩
-  let e := trivializationAt E (TangentSpace I) x
-  let coord := fun (y : M) (A : TangentSpace I y →L[ℝ] TangentSpace I y) =>
-    ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x y x y A
-  have hconj {y : M} (hy : y ∈ e.baseSet) (A : TangentSpace I y →L[ℝ] TangentSpace I y) :
-      coord y A = (e.continuousLinearEquivAt ℝ y hy).conjContinuousAlgEquiv A := by
-    simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hy hy,
-      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  let A := fun p : ℂ × M => coord p.2 (J₀.toEndomorphism p.2)
-  let B := fun q (p : ℂ × M) => coord p.2 ((J q (q.endCoord p.1).im).toEndomorphism p.2)
-  have hJ₀ : ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞)
-      (fun y => coord y (J₀.toEndomorphism y)) x :=
-    ((contMDiffAt_hom_bundle _).mp (J₀.toEndomorphism.contMDiff x)).2
-  have hA : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞) A ((w : ℂ), x) :=
-    hJ₀.comp (f := Prod.snd) ((w : ℂ), x) contMDiffAt_snd
-  have hB (q : Puncture) := contMDiffAt_inCoordinates_end J hJp hJs q w x
-  let C := fun p : ℂ × M => ∑ q, smoothTransition (q.endSign * (q.endCoord p.1).re - 1) •
-    cayleyFormula (A p) (B q p)
-  -- In a fixed tangent trivialization, both Cayley denominators are units at the base point.
-  have hC : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞) C ((w : ℂ), x) := by
-    refine contMDiffAt_finsetSum fun q _ => ?_
-    have hu : IsUnit (1 - A ((w : ℂ), x) * B q ((w : ℂ), x)) := by
-      dsimp only [A, B]
-      rw [hconj hx, hconj hx, ← map_mul,
-        ← map_one (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv, ← map_sub]
-      exact ((h₀.compatibleAt x).tames.isUnit_one_sub_mul_of_toLinearMap
-        (h₀.isNondegenerate.tames_iff.mp (hJ q _) x)
-        (J₀.almostComplexStructureAt_toLinearMap x).symm
-        ((J q _).almostComplexStructureAt_toLinearMap x).symm).map _
-    exact (Floer.contMDiffAt_smoothTransition_endCoord q 1 (ne_endCenter w.2 q) x).smul
-      (SymplecticForm.contMDiffAt_cayleyFormula_of_isUnit hA (hB q) hu)
-  have hcoordC {p : ℂ × M} (hp : p.2 ∈ e.baseSet) :
-      coord p.2 (pantsCayley J J₀ p.1 p.2) = C p := by
-    simp only [pantsCayley, hconj hp, map_sum, map_smul, map_cayleyFormula, C, A, B]
-  have hu : IsUnit (1 - C ((w : ℂ), x)) := by
-    rw [← hcoordC hx, hconj hx,
-      ← map_one (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv, ← map_sub]
-    exact (isUnit_one_sub_pantsCayley h₀ J hJ w x).map _
-  have hresult := SymplecticForm.contMDiffAt_mul_one_add_ringInverse hA hC hu
-  -- Conjugation commutes with the inverse Cayley expression on a neighborhood of `x`.
-  refine hresult.congr_of_eventuallyEq ?_
-  filter_upwards [(e.open_baseSet.preimage continuous_snd).mem_nhds hx] with p hp
-  -- The hom-bundle smoothness criterion reads this fiber value in the fixed trivialization.
-  change coord p.2 (pantsEnd h₀ J hJ p.1 p.2) = _
-  rw [pantsEnd_eq h₀ J hJ, hconj hp, map_mul, map_mul, map_add, map_one,
-    map_ringInverse, map_sub, map_one]
-  simp only [← hconj hp, hcoordC hp, A]
+  have hS := ne_endCenter w.2
+  refine (h₀.contMDiffAt_mul_one_add_cayleySum (c := fun q (w : ℂ) => pantsWeight w q)
+    (K := fun q (w : ℂ) => J q (q.endCoord w).im) (fun q => hJ q _) (fun q => ?_) (fun q => ?_)
+    ?_).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p => ?_)
+  · exact (smoothTransition.contDiff.contDiffAt.comp _
+      ((contDiffAt_const.mul (q.contDiffAt_re_endCoord (hS q))).sub contDiffAt_const)).contMDiffAt
+  · -- Each end family, read at the angular coordinate of its end, is smooth off the end center.
+    exact q.contMDiffAt_comp_im_endCoord
+      (f := fun t y => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x) y ((J q t).toEndomorphism y))
+      (fun t => by simp only [hJp q t]) (hJs q) (hS q) x
+  · exact h₀.isUnit_one_sub_of_toLinearMap_eq_cayley
+      (Floer.tames_pairOfPantsAlmostComplex (h₀.compatibleAt x) w ())
+      (pantsCayley_toLinearMap h₀ J hJ w x)
+  · dsimp only
+    rw [pantsEnd_eq h₀ J hJ]
 
 /-- Extend three jointly smooth period-one tame end families to the tangent bundle over the
 pair of pants, relative to a compatible base structure. -/
@@ -260,17 +165,13 @@ theorem cayley_pairOfPantsAlmostComplex (w : ThricePuncturedSphere) (x : M) :
 theorem pairOfPantsAlmostComplex_cylindricalEndLift (w : ThricePuncturedSphere)
     {q : Puncture} {z : ℂ} (hw : (w : ℂ) = q.cylindricalEndLift z)
     (hz : 2 ≤ q.endSign * z.re) :
-    h₀.pairOfPantsAlmostComplex J hJ hJp hJs w = J q z.im := by
-  ext x v
-  have hp : Function.Periodic
-      (fun t (_ : Unit) => (J q t).almostComplexStructureAt x) 1 := fun t => by
-    simp only [hJp q t]
-  have heq : (h₀.pairOfPantsAlmostComplex J hJ hJp hJs w).almostComplexStructureAt x =
-      (J q z.im).almostComplexStructureAt x := by
+    h₀.pairOfPantsAlmostComplex J hJ hJp hJs w = J q z.im :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    have hp : Function.Periodic
+        (fun t (_ : Unit) => (J q t).almostComplexStructureAt x) 1 := fun t => by
+      simp only [hJp q t]
     rw [almostComplexStructureAt_pairOfPantsAlmostComplex, hw]
     exact Floer.pairOfPantsAlmostComplex_cylindricalEndLift (h₀.compatibleAt x) hp hz ()
-  simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using
-    congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) heq
 
 /-- Where all the end cutoffs vanish, the extension is the base structure. -/
 theorem pairOfPantsAlmostComplex_eq_base_of_forall_le_one (w : ThricePuncturedSphere)
@@ -278,16 +179,12 @@ theorem pairOfPantsAlmostComplex_eq_base_of_forall_le_one (w : ThricePuncturedSp
     h₀.pairOfPantsAlmostComplex J hJ hJp hJs w = J₀ := by
   have hc (q : Puncture) : smoothTransition (q.endSign * (q.endCoord w).re - 1) = 0 :=
     smoothTransition.zero_of_nonpos (sub_nonpos.mpr (hw q))
-  ext x v
-  have heq : (h₀.pairOfPantsAlmostComplex J hJ hJp hJs w).almostComplexStructureAt x =
-      J₀.almostComplexStructureAt x := by
-    apply (h₀.compatibleAt x).eq_of_cayley_eq
-      (h₀.isNondegenerate.tames_iff.mp (tames_pairOfPantsAlmostComplex h₀ J hJ hJp hJs w) x)
-      (h₀.compatibleAt x).tames
-    rw [cayley_pairOfPantsAlmostComplex, AlmostComplexStructure.cayley_self]
-    simp only [hc, zero_smul, Finset.sum_const_zero]
-  simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using
-    congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) heq
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
+  apply (h₀.compatibleAt x).eq_of_cayley_eq
+    (h₀.isNondegenerate.tames_iff.mp (tames_pairOfPantsAlmostComplex h₀ J hJ hJp hJs w) x)
+    (h₀.compatibleAt x).tames
+  rw [cayley_pairOfPantsAlmostComplex, AlmostComplexStructure.cayley_self]
+  simp only [hc, zero_smul, Finset.sum_const_zero]
 
 /-- The domain-dependent structures are jointly `C^n` along any `C^n` family of domain and
 target points. The domain family must avoid the two deleted points. This formulation also

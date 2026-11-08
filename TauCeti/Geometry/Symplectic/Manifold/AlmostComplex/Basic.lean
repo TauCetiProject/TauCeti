@@ -116,6 +116,16 @@ lemma almostComplexStructureAt_toLinearMap (J : SmoothAlmostComplexStructure I M
     (J.almostComplexStructureAt x).toLinearMap = (J.toEndomorphism x).toLinearMap :=
   (rfl)
 
+/-- On a finite-dimensional model, the continuous endomorphism of the pointwise structure is the
+value of the smooth endomorphism section. -/
+-- This is not a `simp` lemma: `simp` already rewrites the left-hand side through
+-- `almostComplexStructureAt_toLinearMap`.
+lemma toContinuousLinearMap_almostComplexStructureAt [FiniteDimensional ℝ E]
+    (J : SmoothAlmostComplexStructure I M) (x : M) :
+    LinearMap.toContinuousLinearMap (J.almostComplexStructureAt x).toLinearMap =
+      J.toEndomorphism x :=
+  ContinuousLinearMap.coe_injective (J.almostComplexStructureAt_toLinearMap x)
+
 /-- Evaluating the pointwise almost complex structure agrees with evaluating the smooth one. -/
 -- This is not a `simp` lemma: `simp` already rewrites the left-hand side through
 -- `almostComplexStructureAt_toLinearMap`.
