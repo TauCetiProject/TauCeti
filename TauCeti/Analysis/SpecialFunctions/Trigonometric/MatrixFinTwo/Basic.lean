@@ -32,6 +32,7 @@ triangle group in `PSL(2, ℝ)`.
 ## Main results
 
 * `Matrix.sin_smul_pow_fin_two`: the powers of a determinant-one matrix of trace `2 cos θ`.
+* `Matrix.trace_pow_eq_two_mul_cos_fin_two`: the traces `2 cos (n θ)` of those powers.
 * `Matrix.pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div`: a determinant-one real matrix of trace
   `2 cos (π / k)`, with `2 ≤ k`, has `k`-th power `-1`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq`: if
@@ -39,7 +40,8 @@ triangle group in `PSL(2, ℝ)`.
 * `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
   `rotation_zero`, `rotation_add` and `rotation_inv` make the family a one-parameter subgroup,
   `continuous_rotation` a continuous one, and `pslMk_rotation_pi_div_two` identifies the class of
-  the quarter turn in `PSL(2, ℝ)` with `TauCeti.pslS`.
+  the quarter turn in `PSL(2, ℝ)` with `TauCeti.pslS`, and `trace_rotation_mul` gives the trace
+  `trace A cos θ + (A₁₀ - A₀₁) sin θ` of `rotation θ * A`.
 * `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix
   (`conjRotation_zero_right` identifies the unconjugated case with `rotation`), with its trace
   `trace_conjRotation`, the trace `trace_conjRotation_mul_conjRotation` of a product, and the
@@ -89,6 +91,25 @@ theorem sin_smul_pow_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} {θ : ℝ} (hdet :
     ring_nf at e₁ e₂ ⊢
     rw [e₁, e₂]
     module
+
+/-- The traces of the powers of a real `2 × 2` matrix of determinant one and trace `2 cos θ` are
+`trace (A ^ n) = 2 cos (n θ)`. -/
+theorem trace_pow_eq_two_mul_cos_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} (hdet : A.det = 1)
+    {θ : ℝ} (htr : A.trace = 2 * cos θ) (n : ℕ) : (A ^ n).trace = 2 * cos (n * θ) := by
+  -- Two-step induction on the trace recurrence `t (n + 2) = t 1 t (n + 1) - t n`, matched by
+  -- `cos ((m + 2) θ) + cos (m θ) = 2 cos θ cos ((m + 1) θ)`.
+  suffices ∀ m : ℕ, (A ^ m).trace = 2 * cos (m * θ) ∧
+      (A ^ (m + 1)).trace = 2 * cos ((m + 1 : ℕ) * θ) from (this n).1
+  intro m
+  induction m with
+  | zero => simp [htr]
+  | succ m ih =>
+    refine ⟨ih.2, ?_⟩
+    rw [trace_pow_add_two_fin_two, hdet, htr, ih.1, ih.2, one_mul]
+    have h₁ : ((m + 1 + 1 : ℕ) : ℝ) * θ = (m + 1 : ℕ) * θ + θ := by push_cast; ring
+    have h₂ : (m : ℝ) * θ = (m + 1 : ℕ) * θ - θ := by push_cast; ring
+    rw [h₁, h₂, cos_add, cos_sub]
+    ring
 
 /-- A real `2 × 2` matrix of determinant one and trace `2 cos (π / k)`, with `2 ≤ k`, has `k`-th
 power `-1`. Its image in `PSL(2, ℝ)` has order dividing `k`. -/
@@ -178,6 +199,16 @@ theorem pslMk_rotation_pi_div_two : (↑(rotation (π / 2)) : PSL(2, ℝ)) = Tau
     fin_cases i <;> fin_cases j <;> simp [map_apply_coe, ModularGroup.coe_S]
   rw [h, ProjectiveSpecialLinearGroup.mk_neg, TauCeti.pslS_def, psl2zToPSL2R_mk,
     sl2zToPSL2R_apply]
+
+/-- The trace of the product of `rotation θ` with a `2 × 2` matrix `A`:
+`trace (R(θ) A) = trace A cos θ + (A₁₀ - A₀₁) sin θ`. -/
+theorem trace_rotation_mul (θ : ℝ) (A : Matrix (Fin 2) (Fin 2) ℝ) :
+    ((rotation θ : Matrix (Fin 2) (Fin 2) ℝ) * A).trace =
+      A.trace * cos θ + (A 1 0 - A 0 1) * sin θ := by
+  rw [coe_rotation, trace_fin_two, trace_fin_two, Matrix.mul_apply, Matrix.mul_apply]
+  simp only [Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
+    cons_val_fin_one, empty_val']
+  ring
 
 /-- The matrix `!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ]` of `SL(2, ℝ)`: the rotation
 `rotation θ = !![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/

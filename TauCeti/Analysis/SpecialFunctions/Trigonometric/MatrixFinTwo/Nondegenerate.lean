@@ -51,7 +51,6 @@ the matrices of `SL(2, ℝ)` with all positive powers nondegenerate form a dense
   `trace A = 2 cos (2π j / k)` for an integer `j`.
 * `Matrix.exists_det_one_sub_pow_eq_zero_iff_fin_two`: some positive power of `A` has eigenvalue
   `1` exactly when `trace A = 2 cos (2π q)` for a rational `q`.
-* `Matrix.SpecialLinearGroup.trace_rotation_mul`: the trace of `R(θ) A`.
 * `Matrix.SpecialLinearGroup.dense_setOf_forall_det_one_sub_pow_rotation_mul_ne_zero`: the
   rotation angles making every positive iterate of `R(θ) A` nondegenerate are dense.
 * `Matrix.SpecialLinearGroup.dense_setOf_forall_det_one_sub_pow_ne_zero` and
@@ -77,25 +76,6 @@ open scoped MatrixGroups
 namespace Matrix
 
 variable {A : Matrix (Fin 2) (Fin 2) ℝ}
-
-/-- The traces of the powers of a real `2 × 2` matrix of determinant one and trace `2 cos θ` are
-`trace (A ^ n) = 2 cos (n θ)`. -/
-theorem trace_pow_eq_two_mul_cos_fin_two (hdet : A.det = 1) {θ : ℝ} (htr : A.trace = 2 * cos θ)
-    (n : ℕ) : (A ^ n).trace = 2 * cos (n * θ) := by
-  -- Two-step induction on the trace recurrence `t (n + 2) = t 1 t (n + 1) - t n`, matched by
-  -- `cos ((m + 2) θ) + cos (m θ) = 2 cos θ cos ((m + 1) θ)`.
-  suffices ∀ m : ℕ, (A ^ m).trace = 2 * cos (m * θ) ∧
-      (A ^ (m + 1)).trace = 2 * cos ((m + 1 : ℕ) * θ) from (this n).1
-  intro m
-  induction m with
-  | zero => simp [htr]
-  | succ m ih =>
-    refine ⟨ih.2, ?_⟩
-    rw [trace_pow_add_two_fin_two, hdet, htr, ih.1, ih.2, one_mul]
-    have h₁ : ((m + 1 + 1 : ℕ) : ℝ) * θ = (m + 1 : ℕ) * θ + θ := by push_cast; ring
-    have h₂ : (m : ℝ) * θ = (m + 1 : ℕ) * θ - θ := by push_cast; ring
-    rw [h₁, h₂, cos_add, cos_sub]
-    ring
 
 /-- For a real `2 × 2` matrix `A` of determinant one and trace `2 cos θ`,
 `det (1 - A ^ n) = 2 - 2 cos (n θ)`. -/
@@ -147,16 +127,6 @@ theorem exists_det_one_sub_pow_eq_zero_iff_fin_two (hdet : A.det = 1) :
     rw [hq, Rat.cast_def, mul_div_assoc]
 
 namespace SpecialLinearGroup
-
-/-- The trace of the product of `rotation θ` with a `2 × 2` matrix `A`:
-`trace (R(θ) A) = trace A cos θ + (A₁₀ - A₀₁) sin θ`. -/
-theorem trace_rotation_mul (θ : ℝ) (A : Matrix (Fin 2) (Fin 2) ℝ) :
-    ((rotation θ : Matrix (Fin 2) (Fin 2) ℝ) * A).trace =
-      A.trace * cos θ + (A 1 0 - A 0 1) * sin θ := by
-  rw [coe_rotation, trace_fin_two, trace_fin_two, Matrix.mul_apply, Matrix.mul_apply]
-  simp only [Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
-    cons_val_fin_one, empty_val']
-  ring
 
 /-- For a real `2 × 2` matrix of determinant one, the coefficients `trace A` and `A₁₀ - A₀₁` of
 `trace (R(θ) A)` in `cos θ` and `sin θ` do not both vanish: otherwise `A` would be symmetric and
