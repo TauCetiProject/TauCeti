@@ -78,8 +78,6 @@ averages under positive finite scaling.
   on every ball for a locally integrable function with bounded BMO seminorm.
 * `TauCeti.exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le`: Moser's crossover
   estimate for real functions of bounded mean oscillation on Euclidean balls.
-* `TauCeti.setAverage_rpow_mul_setAverage_rpow_neg_le`: a bound `C μ(B)²` on the product of the
-  integrals of `g ^ p` and `g ^ (-p)` over `B` is a bound `C` on the product of their averages.
 
 ## References
 
@@ -1155,39 +1153,5 @@ theorem exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le :
         rw [ENNReal.coe_pow, mul_pow]
 
 end EuclideanBall
-
-/-- **From a John–Nirenberg bound to averages.** If `g` is almost everywhere positive on `B` and
-`∫_B g^p · ∫_B g^{-p} ≤ C μ(B)²`, then `⨍_B g^p · ⨍_B g^{-p} ≤ C`. -/
-theorem setAverage_rpow_mul_setAverage_rpow_neg_le {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {B : Set α} {g : α → ℝ} {p : ℝ} {C : ℝ≥0}
-    (hpos : ∀ᵐ x ∂μ.restrict B, 0 < g x) (hmeas : AEMeasurable g (μ.restrict B))
-    (h : (∫⁻ x in B, ENNReal.ofReal (g x ^ p) ∂μ) *
-        ∫⁻ x in B, ENNReal.ofReal (g x ^ (-p)) ∂μ ≤ C * μ B ^ 2) :
-    (⨍ x in B, g x ^ p ∂μ) * (⨍ x in B, g x ^ (-p) ∂μ) ≤ C := by
-  have hrpow (q : ℝ) : ⨍ x in B, g x ^ q ∂μ =
-      (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (g x ^ q) ∂μ).toReal := by
-    rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae
-      (hpos.mono fun x hx => Real.rpow_nonneg hx.le q) (hmeas.pow_const q).aestronglyMeasurable]
-  by_cases hB : μ B = 0 ∨ μ B = ⊤
-  · have hB0 : μ.real B = 0 := by
-      rcases hB with hB | hB <;> simp [measureReal_def, hB]
-    rw [hrpow, hrpow, hB0]
-    simp
-  have hB0 : μ B ≠ 0 := fun h0 => hB (Or.inl h0)
-  have hBt : μ B ≠ ⊤ := fun ht => hB (Or.inr ht)
-  have hBpos : 0 < μ.real B := ENNReal.toReal_pos hB0 hBt
-  rw [hrpow, hrpow]
-  calc (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (g x ^ p) ∂μ).toReal *
-        ((μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (g x ^ (-p)) ∂μ).toReal)
-      = (μ.real B)⁻¹ ^ 2 * ((∫⁻ x in B, ENNReal.ofReal (g x ^ p) ∂μ) *
-          ∫⁻ x in B, ENNReal.ofReal (g x ^ (-p)) ∂μ).toReal := by
-        rw [ENNReal.toReal_mul]
-        ring
-    _ ≤ (μ.real B)⁻¹ ^ 2 * ((C : ℝ≥0∞) * μ B ^ 2).toReal := by
-        gcongr
-        exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top hBt)
-    _ = C := by
-        rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.coe_toReal, ← measureReal_def]
-        field_simp
 
 end TauCeti

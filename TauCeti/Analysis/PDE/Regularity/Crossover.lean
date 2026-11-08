@@ -78,19 +78,6 @@ private lemma abs_mul_le_of_le_div_mul {A C₀ lam Lam p : ℝ} (hA : 0 < A) (hC
           (by positivity)
     _ = A := by rw [mul_one, mul_one]
 
-omit [DecidableEq ι] in
-/-- The logarithm of a Sobolev function bounded below by a positive constant is integrable on
-every subset of `Ω` of finite measure. -/
-private lemma integrableOn_log_value (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
-    {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {ε : ℝ} (hε : 0 < ε)
-    (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
-    {S : Set (EuclideanSpace ℝ ι)} (hS : S ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (hSt : mu S ≠ ⊤) :
-    IntegrableOn (fun x => Real.log (W1p.value u x)) S mu := by
-  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_log (by simp) hε hεu
-  have : IsFiniteMeasure (mu.restrict S) := isFiniteMeasure_restrict.2 hSt
-  exact (((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure
-    (Measure.restrict_mono hS le_rfl)).integrable one_le_two
-
 /-- **Moser's crossover estimate.** There are constants `c > 0` and `K`, depending only on the
 dimension `n ≥ 1`, with the following property. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
@@ -146,7 +133,8 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
         (ball_subset_ball_iff hρ).1 hsub])).trans hball'
     exact (setLAverage_enorm_eq_ofReal_setAverage_norm
       (g := fun x => f x - ⨍ z in ball y ρ, f z ∂mu)
-      ((integrableOn_log_value mu hε hεu ((ball_subset_ball (by linarith : ρ ≤ 2 * ρ)).trans h2)
+      ((W1p.integrableOn_log_value (by simp) hε hεu
+        ((ball_subset_ball (by linarith : ρ ≤ 2 * ρ)).trans h2)
         measure_ball_lt_top.ne).sub (integrableOn_const measure_ball_lt_top.ne))).trans_le
       (ENNReal.ofReal_le_ofReal
         (by simpa only [Real.norm_eq_abs] using hC₀' mu h ha hu hε hεu hρ h2))
@@ -154,11 +142,11 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
   have hσ : |p| * M ≤ A := by
     rw [hMc]
     exact abs_mul_le_of_le_div_mul hA hC₀ hlam h.upper_nonneg hp
+  have hJ := hJN (W1p.integrableOn_log_value (by simp) hε hεu
+    ((ball_subset_ball (by linarith)).trans hball') measure_ball_lt_top.ne) hM hσ
+  rw [hRr] at hJ
   have hBΩ : ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (ball_subset_ball (by linarith)).trans hball'
-  have hJ := hJN (integrableOn_log_value mu hε hεu ((ball_subset_ball (by linarith)).trans hball')
-    measure_ball_lt_top.ne) hM hσ
-  rw [hRr] at hJ
   have hpos : ∀ᵐ x ∂mu.restrict (ball x₀ r), 0 < W1p.value u x :=
     (ae_restrict_of_ae_restrict_of_subset hBΩ hεu).mono fun x hx => hε.trans_le hx
   have hexp (q : ℝ) : ∫⁻ x in ball x₀ r, ENNReal.ofReal (W1p.value u x ^ q) ∂mu =
@@ -166,8 +154,13 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
     lintegral_congr_ae (hpos.mono fun x hx => by
       simp only [f]
       rw [Real.rpow_def_of_pos hx, mul_comm])
-  refine setAverage_rpow_mul_setAverage_rpow_neg_le hpos
-    (((Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hBΩ le_rfl)).aemeasurable) ?_
+  have hmeas : AEStronglyMeasurable (fun x => W1p.value u x) (mu.restrict (ball x₀ r)) :=
+    (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hBΩ le_rfl)
+  refine setAverage_mul_setAverage_le_of_setLIntegral_mul_le
+    (hpos.mono fun x hx => Real.rpow_nonneg hx.le p)
+    (hpos.mono fun x hx => Real.rpow_nonneg hx.le (-p))
+    (hmeas.aemeasurable.pow_const p).aestronglyMeasurable
+    (hmeas.aemeasurable.pow_const (-p)).aestronglyMeasurable ?_
   rw [hexp p, hexp (-p)]
   simpa only [neg_mul] using hJ
 
