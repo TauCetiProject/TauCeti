@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Order.PartialSups
 import Mathlib.Order.SuccPred.Nat
 import Mathlib.MeasureTheory.Function.LpOrder
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 /-!
 # Doob's L² maximal inequality
@@ -28,7 +27,10 @@ layer-cake argument.
 ## References
 
 * I. Karatzas, S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  Chapter 1, Theorem 3.8 (Doob's inequalities).
+  Chapter 1, Theorem 3.8 (Doob's inequalities), for the statement.
+* B. Acciaio, M. Beiglböck, F. Penkner, W. Schachermayer, J. Temme,
+  *A trajectorial interpretation of Doob's martingale inequalities*,
+  Ann. Appl. Probab. 23(4) (2013), 1494–1505, for the pathwise proof method.
 -/
 
 public section
@@ -39,7 +41,9 @@ open scoped NNReal ENNReal
 namespace TauCeti
 
 /-- The pathwise maximal inequality underlying Doob's L² bound. The sum is the gain from
-holding the running maximum over each following increment. No sign assumption is needed. -/
+holding the running maximum over each following increment. This is the trajectorial method of
+Acciaio–Beiglböck–Penkner–Schachermayer–Temme, *A trajectorial interpretation of Doob's
+martingale inequalities* (2013). No sign assumption is needed here. -/
 theorem sq_partialSups_le_four_mul_sq_sub_sum (x : ℕ → ℝ) (n : ℕ) :
     partialSups x n ^ 2 ≤ 4 * x n ^ 2 -
       4 * ∑ k ∈ range n, partialSups x k * (x (k + 1) - x k) := by
@@ -48,7 +52,9 @@ theorem sq_partialSups_le_four_mul_sq_sub_sum (x : ℕ → ℝ) (n : ℕ) :
     induction n with
     | zero => simp only [partialSups_zero, range_zero, sum_empty]; nlinarith [sq_nonneg (x 0)]
     | succ n ih =>
-      rw [sum_range_succ, ← Order.succ_eq_add_one n, partialSups_succ, Order.succ_eq_add_one]
+      have hmax := partialSups_succ x n
+      simp only [Order.succ_eq_add_one] at hmax
+      rw [sum_range_succ, hmax]
       rcases le_total (x (n + 1)) (partialSups x n) with hle | hle
       · rw [sup_eq_left.mpr hle]
         nlinarith
@@ -69,26 +75,17 @@ theorem Submartingale.integral_sq_partialSups_le (hf : Submartingale f ℱ μ)
     (hpos : ∀ k, 0 ≤ᵐ[μ] f k) (n : ℕ) (hn : MemLp (f n) 2 μ) :
     ∫ ω, (partialSups f n ω) ^ 2 ∂μ ≤ 4 * ∫ ω, (f n ω) ^ 2 ∂μ := by
   -- Terminal square integrability controls all earlier values and their finite maxima.
-  have hL2 (k : ℕ) (hk : k ≤ n) : MemLp (f k) 2 μ := by
-    apply (MemLp.condExp (m := ℱ k) (by norm_num : (1 : ℝ≥0∞) ≤ 2) hn).mono'
-      ((hf.stronglyAdapted k).mono (ℱ.le k)).aestronglyMeasurable
-    filter_upwards [hpos k, hf.ae_le_condExp hk] with ω hp hω
-    simpa only [Real.norm_eq_abs, abs_of_nonneg hp] using hω
+  have hL2 (k : ℕ) (hk : k ≤ n) : MemLp (f k) 2 μ :=
+    hf.memLp_of_le hk (hpos k) (by norm_num) hn
   have hM (k : ℕ) (hk : k ≤ n) : MemLp (partialSups f k) 2 μ := by
-    induction k with
-    | zero => simpa only [partialSups_zero] using hL2 0 hk
-    | succ k ih =>
-      rw [← Order.succ_eq_add_one k, partialSups_succ, Order.succ_eq_add_one]
-      exact (ih (by omega)).sup (hL2 _ hk)
+    rw [partialSups_apply]
+    exact Finset.sup'_induction _ _ (p := fun g => MemLp g 2 μ)
+      (fun _ hf _ hg => hf.sup hg) (fun j hj => hL2 j ((mem_Iic.mp hj).trans hk))
   have hMa (k : ℕ) : StronglyMeasurable[ℱ k] (partialSups f k) := by
-    induction k with
-    | zero => simpa only [partialSups_zero] using hf.stronglyAdapted 0
-    | succ k ih =>
-      rw [← Order.succ_eq_add_one k, partialSups_succ, Order.succ_eq_add_one]
-      have hprev : StronglyMeasurable[ℱ (k + 1)] (partialSups f k) :=
-        ih.mono (ℱ.mono (Nat.le_succ k))
-      let : MeasurableSpace Ω := ℱ (k + 1)
-      exact hprev.sup (hf.stronglyAdapted (k + 1))
+    let : MeasurableSpace Ω := ℱ k
+    rw [partialSups_apply]
+    exact Finset.sup'_induction _ _ (fun _ hf _ hg => hf.sup hg)
+      (fun j hj => (hf.stronglyAdapted j).mono (ℱ.mono (mem_Iic.mp hj)))
   have hG (k : ℕ) (hk : k < n) :
       Integrable (fun ω => partialSups f k ω * (f (k + 1) ω - f k ω)) μ :=
     (hM k (by omega)).integrable_mul ((hL2 _ (by omega)).sub (hL2 _ (by omega)))
