@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Topology.Connected.Clopen
 
