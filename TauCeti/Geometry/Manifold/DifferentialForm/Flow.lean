@@ -52,7 +52,9 @@ reduces to its flat counterpart `TauCeti.hasDerivAt_compContinuousLinearMap_fder
 reduction holds for every jointly `C²` family of maps `ψᵤ` which is the identity near `y` at a
 time `t` and moves the points near `y` with the velocity of a vector field `V` at time `t`: then
 `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y` (`TauCeti.hasDerivAt_mpullback_of_eq_id`). Time-dependent
-flows are the other instance (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent`).
+flows (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent`) and smooth isotopies with
+their Eulerian velocity fields (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.Eulerian`) are
+further instances.
 
 ## Main results
 
