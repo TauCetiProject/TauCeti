@@ -30,6 +30,9 @@ public noncomputable section
 open Matrix Manifold
 open scoped ContDiff Manifold Matrix.Norms.Operator
 
+-- Use the normed scalar instance's seminormed parent consistently in native matrix models.
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 namespace Matrix.GeneralLinearGroup

@@ -35,6 +35,9 @@ public noncomputable section
 open Matrix Manifold
 open scoped ContDiff Manifold Matrix.Norms.Operator
 
+-- Use the normed scalar instance's seminormed parent consistently in native matrix models.
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 namespace TauCeti.Lie
@@ -44,9 +47,8 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 local notation "AM" => LieSubalgebra.toSubmodule (lieSubalgebraOfSubgroup
   (I := 𝓘(ℝ, Matrix n n ℝ)) (posDiagonalSubgroup n ℝ))
 
--- The closedness instance uses entrywise matrix topology; the native Lie charts use the
--- operator-norm topology. Instance search cannot cross these presentations, while checking
--- the named proof against an explicit expected `IsClosed` type permits that conversion.
+-- Rewrite the operator-norm matrix topology to the entrywise topology before applying
+-- the closedness theorem for the positive diagonal matrices.
 /-- The native closed-subgroup data of the positive real diagonal group. -/
 def posDiagonalEmbeddedLieSubgroupData :
     EmbeddedLieSubgroupData 𝓘(ℝ, Matrix n n ℝ) (posDiagonalSubgroup n ℝ)
@@ -54,7 +56,7 @@ def posDiagonalEmbeddedLieSubgroupData :
       (posDiagonalSubgroup n ℝ)).toSubmodule :=
   EmbeddedLieSubgroupData.ofIsClosed (I := 𝓘(ℝ, Matrix n n ℝ))
     (G := GL n ℝ) (K := posDiagonalSubgroup n ℝ)
-    (show IsClosed (posDiagonalSubgroup n ℝ : Set (GL n ℝ)) from
+    ((Matrix.linftyOpTopologicalSpace_eq n n ℝ).symm ▸
       isClosed_posDiagonalSubgroup n ℝ)
 
 variable (n) in

@@ -36,6 +36,9 @@ public noncomputable section
 open Matrix Manifold
 open scoped ContDiff Manifold Matrix.Norms.Operator
 
+-- Use the normed scalar instance's seminormed parent consistently in native matrix models.
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 namespace TauCeti.Lie
@@ -45,9 +48,8 @@ variable {n 𝕜 : Type*} [Fintype n] [LinearOrder n] [RCLike 𝕜]
 local notation "NM" => LieSubalgebra.toSubmodule (lieSubalgebraOfSubgroup
   (I := 𝓘(ℝ, Matrix n n 𝕜)) (upperUnitriangularGroup n 𝕜))
 
--- The closedness instance uses entrywise matrix topology; the native Lie charts use the
--- operator-norm topology. Instance search cannot cross these presentations, while checking
--- the named proof against an explicit expected `IsClosed` type permits that conversion.
+-- Rewrite the operator-norm matrix topology to the entrywise topology before applying
+-- the closedness theorem for the upper-unitriangular matrices.
 /-- The native closed-subgroup data of the upper-unitriangular group. -/
 def upperUnitriangularEmbeddedLieSubgroupData :
     EmbeddedLieSubgroupData 𝓘(ℝ, Matrix n n 𝕜) (upperUnitriangularGroup n 𝕜)
@@ -55,7 +57,7 @@ def upperUnitriangularEmbeddedLieSubgroupData :
       (upperUnitriangularGroup n 𝕜)).toSubmodule :=
   EmbeddedLieSubgroupData.ofIsClosed (I := 𝓘(ℝ, Matrix n n 𝕜))
     (G := GL n 𝕜) (K := upperUnitriangularGroup n 𝕜)
-    (show IsClosed (upperUnitriangularGroup n 𝕜 : Set (GL n 𝕜)) from
+    ((Matrix.linftyOpTopologicalSpace_eq n n 𝕜).symm ▸
       isClosed_upperUnitriangularGroup n 𝕜)
 
 variable (n 𝕜) in

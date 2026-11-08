@@ -31,8 +31,9 @@ no holomorphic dependence of the complex unitary factor is asserted.
 
 The factors carry the closed-subgroup smooth structures, modelled on their Lie subalgebras
 in the ambient real general linear groups. Their inclusions are smooth embeddings. Matrices
-use the operator norm and `Matrix.linftyOpTopologicalSpace`; select the corresponding local
-instances when using the native matrix Lie groups.
+use the operator norm and `Matrix.linftyOpTopologicalSpace`. Select the local instance
+`NormedAddCommGroup.toSeminormedAddCommGroup` before that topology instance when using
+these native matrix Lie groups.
 
 ## Main declarations
 
@@ -51,6 +52,9 @@ public section
 
 open Matrix InnerProductSpace Module Manifold Set Topology
 open scoped ComplexOrder ContDiff Manifold Matrix.Norms.Operator
+
+-- Use the normed scalar instance's seminormed parent consistently in native matrix models.
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
 
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
@@ -104,7 +108,7 @@ private lemma coe_remainder (g : GL (Fin n) 𝕜) :
       (EuclideanSpace.basisFun (Fin n) 𝕜).toBasis.toMatrix_mul_toMatrix
         (frame g).toBasis (cols g)
   rw [Units.val_mul, ← hmul, ← coe_q]
-  rw [← Matrix.mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, Matrix.one_mul]
+  simp [← Matrix.mul_assoc]
 
 private lemma remainder_triangular (g : GL (Fin n) 𝕜) :
     ((((q g)⁻¹ * g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜)).IsUpperTriangular := by
@@ -114,7 +118,8 @@ private lemma remainder_triangular (g : GL (Fin n) 𝕜) :
 private lemma remainder_diag (g : GL (Fin n) 𝕜) (j : Fin n) :
     (((q g)⁻¹ * g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) j j =
       (‖gramSchmidt 𝕜 (cols g) j‖ : 𝕜) := by
-  rw [coe_remainder, Basis.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
+  rw [coe_remainder]
+  simp only [Basis.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
     OrthonormalBasis.repr_apply_apply, frame_apply, inner_gramSchmidtNormed_eq_norm]
 
 private lemma q_member (g : GL (Fin n) 𝕜) : q g ∈ unitarySubgroup (GL (Fin n) 𝕜) := by

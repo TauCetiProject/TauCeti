@@ -128,6 +128,9 @@ section Matrix
 
 -- Select the matrix topology underlying the operator norm used for the general linear Lie group,
 -- together with continuity of the conjugate transpose for it.
+-- Use the normed scalar instance's seminormed parent consistently in native matrix models.
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
