@@ -107,6 +107,39 @@ theorem integral_def (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
   intro i _
   simp [dates, positions, i.isLt, Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.succ]
 
+/-- On a trading interval the represented process equals its height. -/
+theorem toProcess_of_mem_Ioc (i : Fin K.n) {t : ℝ≥0}
+    (ht : t ∈ Set.Ioc (K.grid i.castSucc) (K.grid i.succ)) (ω : Ω) :
+    K.toProcess t ω = K.height i ω := by
+  have ht' : t ∈ Set.Ioc (K.dates i) (K.dates (i + 1)) := by
+    simpa [dates, Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.succ] using ht
+  simpa [toProcess, positions, i.isLt] using
+    Finance.simpleHolding_of_mem_Ioc (a := K.positions)
+      (K.monotone_dates.monotoneOn _) i.isLt ht' ω
+
+/-- Outside the interval from the first to the last grid point the process vanishes. -/
+@[simp]
+theorem toProcess_of_notMem_Ioc {t : ℝ≥0}
+    (ht : t ∉ Set.Ioc (K.grid 0) (K.grid (Fin.last K.n))) (ω : Ω) :
+    K.toProcess t ω = 0 := by
+  apply Finance.simpleHolding_of_notMem_Ioc (K.monotone_dates.monotoneOn _)
+  simpa [dates, Fin.last] using ht
+
+/-- The elementary integral vanishes up to and including the first grid point. -/
+@[simp]
+theorem integral_of_le {t : ℝ≥0} (ht : t ≤ K.grid 0)
+    (X : ℝ≥0 → Ω → ℝ) (ω : Ω) : K.integral X t ω = 0 := by
+  apply Finance.simpleGains_of_le (K.monotone_dates.monotoneOn _)
+  simpa [dates] using ht
+
+/-- After the last grid point the elementary integral stays at its terminal value. -/
+theorem integral_of_ge {t : ℝ≥0} (ht : K.grid (Fin.last K.n) ≤ t)
+    (X : ℝ≥0 → Ω → ℝ) (ω : Ω) :
+    K.integral X t ω = K.integral X (K.grid (Fin.last K.n)) ω := by
+  have ht' : K.dates K.n ≤ t := by simpa [dates, Fin.last] using ht
+  simpa [integral, dates, Fin.last] using
+    Finance.simpleGains_of_ge (a := K.positions) (K.monotone_dates.monotoneOn _) ht' X ω
+
 /-- Elementary integrands are strongly predictable on the original filtration. -/
 theorem isStronglyPredictable : IsStronglyPredictable ℱ K.toProcess :=
   Finance.isStronglyPredictable_simpleHolding K.measurable_positions
@@ -122,15 +155,15 @@ theorem exists_bound_toProcess : ∃ C : ℝ, ∀ t ω, |K.toProcess t ω| ≤ C
   · simp [ht]
 
 /-- The holding is zero at the initial time, which belongs to no trading interval. -/
-@[simp]
+@[simp high]
 theorem toProcess_zero (ω : Ω) : K.toProcess 0 ω = 0 := by
   rw [K.toProcess_def]
   exact sum_eq_zero fun i _ ↦ Set.indicator_of_notMem (by simp) _
 
 /-- Every elementary integral starts at zero, even for a nonzero initial integrator. -/
-@[simp]
+@[simp high]
 theorem integral_zero (X : ℝ≥0 → Ω → ℝ) (ω : Ω) : K.integral X 0 ω = 0 := by
-  simp [K.integral_def]
+  exact K.integral_of_le zero_le X ω
 
 /-- Elementary integration against a continuous path has a continuous path. -/
 theorem continuous_integral {X : ℝ≥0 → Ω → ℝ} {ω : Ω}
@@ -206,21 +239,31 @@ instance : SMul ℝ (ElementaryIntegrand ℱ) where
         exact ⟨|c| * C, fun ω ↦ by
           simpa [abs_mul] using mul_le_mul_of_nonneg_left (hC ω) (abs_nonneg c)⟩ }
 
+private theorem n_smul (c : ℝ) : (c • K).n = K.n := rfl
+
+private theorem dates_smul (c : ℝ) : (c • K).dates = K.dates := rfl
+
+private theorem positions_smul (c : ℝ) : (c • K).positions = c • K.positions := by
+  ext j ω
+  by_cases hj : j < K.n
+  · simp only [positions, HSMul.hSMul, SMul.smul, hj, dite_true]
+    rfl
+  · simp only [positions, HSMul.hSMul, SMul.smul, hj, dite_false]
+    exact (mul_zero c).symm
+
 /-- Scaling the presentation scales its represented process. -/
 @[simp]
 theorem toProcess_smul (c : ℝ) (t : ℝ≥0) (ω : Ω) :
     (c • K).toProcess t ω = c * K.toProcess t ω := by
-  simp only [toProcess_def, mul_sum]
-  apply sum_congr rfl
-  intro i _
-  by_cases ht : t ∈ Set.Ioc (K.grid i.castSucc) (K.grid i.succ) <;>
-    simp [ht, HSMul.hSMul, SMul.smul]
+  simpa only [toProcess, n_smul, dates_smul, positions_smul] using
+    Finance.simpleHolding_smul K.dates K.n c K.positions t ω
 
 /-- Elementary integration commutes with scaling the positions. -/
 @[simp]
 theorem integral_smul (c : ℝ) (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
     (c • K).integral X t ω = c * K.integral X t ω := by
-  simp [integral_def, HSMul.hSMul, SMul.smul, mul_sum, mul_assoc]
+  simpa only [integral, n_smul, dates_smul, positions_smul] using
+    Finance.simpleGains_smul K.dates K.n c K.positions X t ω
 
 /-- A one-interval elementary integrand. The height is selected at `s`, not at `t`. -/
 def single (s t : ℝ≥0) (hst : s ≤ t) (a : Ω → ℝ)
