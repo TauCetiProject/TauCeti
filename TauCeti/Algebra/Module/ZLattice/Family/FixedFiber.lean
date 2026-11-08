@@ -220,18 +220,19 @@ theorem coe_torusFamilyFixedFiberQuotientHomeomorph
       hcont hact x).1 =
       torusFamilyFixedFiberQuotientMap R hone hmul P ρ hP b hb hbone hbmul y hy x := (rfl)
 
-/-- The inverse identification recovers the original orbit in the fixed fibre. -/
+/-- The inverse identification maps any point of the image to its preimage in the fibre quotient. -/
 @[simp]
-theorem torusFamilyFixedFiberQuotientHomeomorph_symm_apply
-    (x : letI := torusFamilyFixedFiberMulAction R hone hmul P ρ hP b hb hbone hbmul y hy
-      MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E)) :
-    (torusFamilyFixedFiberQuotientHomeomorph R hone hmul P ρ hP b hb hbone hbmul y hy
-      hcont hact).symm
-        ⟨torusFamilyFixedFiberQuotientMap R hone hmul P ρ hP b hb hbone hbmul y hy x,
-          (range_torusFamilyFixedFiberQuotientMap R hone hmul P ρ hP b hb hbone hbmul y hy) ▸
-            Set.mem_range_self x⟩ = x :=
-  (torusFamilyFixedFiberQuotientHomeomorph R hone hmul P ρ hP b hb hbone hbmul y hy
-    hcont hact).symm_apply_apply x
+theorem torusFamilyFixedFiberQuotientMap_homeomorph_symm_apply
+    (z : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+      Quotient.mk (MulAction.orbitRel Γ _) '' {z | torusFamilyProjection P z = y}) :
+    torusFamilyFixedFiberQuotientMap R hone hmul P ρ hP b hb hbone hbmul y hy
+      ((torusFamilyFixedFiberQuotientHomeomorph R hone hmul P ρ hP b hb hbone hbmul y hy
+        hcont hact).symm z) = z.1 := by
+  simpa only [coe_torusFamilyFixedFiberQuotientHomeomorph] using
+    congrArg Subtype.val
+      ((torusFamilyFixedFiberQuotientHomeomorph R hone hmul P ρ hP b hb hbone hbmul y hy
+        hcont hact).apply_symm_apply z)
 
 end Topology
 

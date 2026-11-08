@@ -33,7 +33,8 @@ quotient manifold is read off from a compact fundamental domain upstairs.
   the pullback of a family `V` over the orbit space is continuous, as a map into the total space,
   exactly when the section upstairs is.
 * `MulActionHom.isEmbedding_orbitRelQuotientMap`: an equivariant embedding descends to an
-  embedding of orbit spaces when the acting-group map is surjective.
+  embedding of orbit spaces when the acting-group map is surjective and the target action is by
+  homeomorphisms.
 * `SubMulAction.isOpenEmbedding_orbitRelQuotientMap`: for an open slice `S` for a subgroup `H`, an
   `H`-invariant open set moved into itself only by elements of `H`, the map `S / H → X / G` of
   orbit spaces is an open embedding. For `H = ⊥` this recovers
