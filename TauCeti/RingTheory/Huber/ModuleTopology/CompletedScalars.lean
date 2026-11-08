@@ -54,6 +54,9 @@ noncomputable def completionModule : Module (Completion A) (Completion M) :=
 private theorem completionModule_smul (a : Completion A) (x : Completion M) :
     letI := P.completionModule (M := M)
     a • x = Completion.ofTensorProduct A M (a • P.ofTensorProductEquiv.symm x) := by
+  -- `AddEquiv.module` extends the transported `distribMulAction`, whose scalar action
+  -- is `Equiv.smul`. Thus `Equiv.smul_def` computes this action along the inverse
+  -- comparison, with its inverse equal to the forward comparison.
   calc
     _ = P.ofTensorProductEquiv (a • P.ofTensorProductEquiv.symm x) :=
       Equiv.smul_def _ a x
@@ -101,9 +104,15 @@ noncomputable def completionTensorHomeomorph :
     letI := P.completionModule (M := M)
     Completion A ⊗[A] M ≃L[Completion A] Completion M := by
   letI := P.completionModule (M := M)
-  have hmap : (P.ofTensorProductEquiv (M := M) : _ → _) = Completion.ofTensorProduct A M :=
-    funext (P.ofTensorProductEquiv_apply (M := M))
-  have hhome : IsHomeomorph (P.ofTensorProductEquiv (M := M)) := by
+  have hmap :
+      ((P.ofTensorProductEquiv.symm.toAddEquiv.linearEquiv (Completion A)).symm : _ → _) =
+        Completion.ofTensorProduct A M := by
+    ext t
+    rw [AddEquiv.linearEquiv_symm_apply (R := Completion A)]
+    -- Taking `toAddEquiv` preserves the forward and inverse functions definitionally.
+    exact P.ofTensorProductEquiv_apply t
+  have hhome : IsHomeomorph
+      ((P.ofTensorProductEquiv (M := M)).symm.toAddEquiv.linearEquiv (Completion A)).symm := by
     rw [hmap]
     exact P.isHomeomorph_ofTensorProduct
   exact ContinuousLinearEquiv.ofIsHomeomorph
@@ -113,30 +122,39 @@ noncomputable def completionTensorHomeomorph :
 @[simp]
 theorem completionTensorHomeomorph_apply (t : Completion A ⊗[A] M) :
     letI := P.completionModule (M := M)
-    P.completionTensorHomeomorph t = Completion.ofTensorProduct A M t :=
-  P.ofTensorProductEquiv_apply t
+    P.completionTensorHomeomorph t = Completion.ofTensorProduct A M t := by
+  let := P.completionModule (M := M)
+  rw [completionTensorHomeomorph, ContinuousLinearEquiv.coe_ofIsHomeomorph,
+    AddEquiv.linearEquiv_symm_apply (R := Completion A)]
+  -- Taking `toAddEquiv` preserves the forward and inverse functions definitionally.
+  exact P.ofTensorProductEquiv_apply t
 
 /-- The inverse homeomorphism sends the dense image of `m` to `1 ⊗ m`. -/
 @[simp]
 theorem completionTensorHomeomorph_symm_coe (m : M) :
     letI := P.completionModule (M := M)
-    P.completionTensorHomeomorph.symm (m : Completion M) = 1 ⊗ₜ m :=
-  P.ofTensorProductEquiv_symm_coe m
+    P.completionTensorHomeomorph.symm (m : Completion M) = 1 ⊗ₜ m := by
+  let := P.completionModule (M := M)
+  rw [ContinuousLinearEquiv.symm_apply_eq, completionTensorHomeomorph_apply,
+    ← Completion.coe_one, Completion.ofTensorProduct_coe_tmul, one_smul]
 
 end Comparison
+
+/-- The topology on the completed module is its natural topology over the completed ring. -/
+theorem isModuleTopology_completionModule :
+    letI := P.completionModule (M := M)
+    IsModuleTopology (Completion A) (Completion M) := by
+  let := P.completionModule (M := M)
+  let := moduleTopology (Completion A) (Completion A ⊗[A] M)
+  exact IsModuleTopology.iso P.completionTensorHomeomorph
 
 /-- Scalar multiplication by the completed ring is jointly continuous. -/
 theorem continuousSMul_completionModule :
     letI := P.completionModule (M := M)
     ContinuousSMul (Completion A) (Completion M) := by
   let := P.completionModule (M := M)
-  let := moduleTopology (Completion A) (Completion A ⊗[A] M)
-  let e := P.completionTensorHomeomorph (M := M)
-  refine ⟨?_⟩
-  have h := e.continuous.comp
-    ((continuous_fst : Continuous (Prod.fst : Completion A × Completion M → Completion A)).smul
-      (e.symm.continuous.comp continuous_snd))
-  simpa only [Function.comp_def, Pi.smul_apply', map_smul, e.apply_symm_apply] using h
+  have := P.isModuleTopology_completionModule (M := M)
+  exact IsModuleTopology.toContinuousSMul _ _
 
 /-- Any jointly continuous operation agreeing with scalar multiplication on the dense
 original ring and module equals the completed scalar action. -/
@@ -150,14 +168,6 @@ theorem eq_completionModule_smul (μ : Completion A → Completion M → Complet
   have := P.continuousSMul_completionModule (M := M)
   exact Completion.induction_on₂ a x (isClosed_eq hμ continuous_smul)
     fun b m ↦ (hcoe b m).trans (by rw [completionModule_coe_smul, ← Completion.coe_smul])
-
-/-- The topology on the completed module is its natural topology over the completed ring. -/
-theorem isModuleTopology_completionModule :
-    letI := P.completionModule (M := M)
-    IsModuleTopology (Completion A) (Completion M) := by
-  let := P.completionModule (M := M)
-  let := moduleTopology (Completion A) (Completion A ⊗[A] M)
-  exact IsModuleTopology.iso P.completionTensorHomeomorph
 
 end Topology
 
