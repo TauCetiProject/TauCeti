@@ -110,9 +110,8 @@ private theorem exists_nativeStructure :
   have hphi : (fun u : unitary R ↦ (φ u : Rˣ)) = Unitary.toUnits := by
     funext u
     simp only [φ, Homeomorph.coe_pullbackDiffeomorph, e,
-      TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply]
-    apply Units.ext
-    exact (val_unitarySubgroupUnitsEquiv_symm_apply_coe u).trans (val_toUnits_apply u).symm
+      TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply,
+      TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
   have hinc : ContMDiff 𝓘(ℝ, 𝔩) 𝓘(ℝ, R) ∞
       (Unitary.toUnits : unitary R → Rˣ) :=
     (d.contMDiff_subtypeVal.comp φ.contMDiff).congr fun u ↦ (congrFun hphi u).symm

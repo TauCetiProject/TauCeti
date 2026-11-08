@@ -29,6 +29,8 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 
 ## Main results
 
+* `TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply` identifies the inverse equivalence
+  with `Unitary.toUnits` after coercing to units.
 * `TauCeti.unitarySubgroupUnitsHomeomorph`: the unitary subgroup of the units is homeomorphic
   to the unitary elements; `TauCeti.unitarySubgroupUnitsHomeomorph_apply` and
   `TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply` identify its maps.
@@ -58,6 +60,14 @@ end Unitary
 
 namespace TauCeti
 
+/-- The inverse unitary equivalence, viewed in the units, is the canonical unitary inclusion. -/
+@[simp]
+theorem coe_unitarySubgroupUnitsEquiv_symm_apply {M : Type*} [Monoid M] [StarMul M]
+    (u : unitary M) : (unitarySubgroupUnitsEquiv.symm u : Mˣ) = Unitary.toUnits u := by
+  apply Units.ext
+  exact (val_unitarySubgroupUnitsEquiv_symm_apply_coe u).trans
+    (Unitary.val_toUnits_apply u).symm
+
 /-- The unitary subgroup of the units is homeomorphic to the unitary elements of the monoid. -/
 def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [TopologicalSpace M]
     [ContinuousStar M] : unitarySubgroup Mˣ ≃ₜ unitary M := by
@@ -67,13 +77,8 @@ def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [Topologic
       (Units.continuous_val.comp (continuous_subtype_val (X := Mˣ)))
   have hc' : Continuous (unitarySubgroupUnitsEquiv.symm : unitary M → unitarySubgroup Mˣ) := by
     apply continuous_induced_rng.mpr
-    have h : (fun u : unitary M ↦ (unitarySubgroupUnitsEquiv.symm u : Mˣ)) =
-        Unitary.toUnits := by
-      funext u
-      apply Units.ext
-      exact (val_unitarySubgroupUnitsEquiv_symm_apply_coe u).trans
-        (Unitary.val_toUnits_apply u).symm
-    simpa only [Function.comp_def, h] using (Unitary.continuous_toUnits (M := M))
+    simpa only [Function.comp_def, coe_unitarySubgroupUnitsEquiv_symm_apply] using
+      (Unitary.continuous_toUnits (M := M))
   exact
     { toEquiv := unitarySubgroupUnitsEquiv.toEquiv
       continuous_toFun := hc
