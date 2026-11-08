@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 
@@ -24,7 +25,9 @@ and `∞` to `v`. This file shows that `σ` is a real-analytic diffeomorphism
 `OnePoint.diffeomorphSphere v ι` from the Riemann sphere `OnePoint ℂ`, regarded as a real surface
 through its holomorphic charts, onto the unit sphere `S²` with Mathlib's stereographic atlas. In
 the inverted coordinate `w = 1 / z` it reads `w ↦ (1 + |w|²)⁻¹ (2 ι (conj w) + (1 - |w|²) v)`, which
-is inverse stereographic projection from `-v`; this is how smoothness at `∞` is checked.
+is inverse stereographic projection from `-v`; this is how smoothness at `∞` is checked. The
+underlying homeomorphism is Mathlib's `onePointHyperplaneHomeoUnitSphere`, transported along
+`z ↦ 2 ι z` by `Homeomorph.onePointCongr`.
 
 The main result compares the two natural metrics on the sphere. The round metric of `S²`
 (`TauCeti.sphereRoundMetric`, induced from `E`) pulls back along `σ` to `4π` times the
@@ -114,20 +117,27 @@ private theorem invExpr_inv {z : ℂ} (hz : z ≠ 0) : invExpr v ι z⁻¹ = aff
 
 /-! ### The map and its inverse -/
 
-/-- The map from the Riemann sphere to the unit sphere: `∞ ↦ v` and `z ↦ σ⁻¹ (2 ι z)`. -/
-private def toSphere (x : OnePoint ℂ) : sphere (0 : E) 1 :=
-  x.elim v fun z ↦ stereoInvFun (norm_eq_of_mem_sphere v) ((2 : ℝ) • ι z)
+variable [Fact (finrank ℝ E = 2 + 1)]
 
-open scoped Classical in
-/-- Stereographic projection from `v`, read through `ι` and rescaled by `1 / 2`, with `v ↦ ∞`. -/
-private def ofSphere (p : sphere (0 : E) 1) : OnePoint ℂ :=
-  if p = v then ∞ else ((ι.symm ((2 : ℝ)⁻¹ • stereoToFun (v : E) p) : ℂ) : OnePoint ℂ)
+/-- The homeomorphism from the Riemann sphere to the unit sphere: Mathlib's inverse stereographic
+projection `onePointHyperplaneHomeoUnitSphere` from `v`, read on `vᗮ` through `z ↦ 2 ι z`. -/
+private def toSphere : OnePoint ℂ ≃ₜ sphere (0 : E) 1 :=
+  haveI : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
+  ((Homeomorph.smulOfNeZero (2 : ℝ) two_ne_zero).trans ι.toHomeomorph).onePointCongr.trans
+    (onePointHyperplaneHomeoUnitSphere (norm_eq_of_mem_sphere v))
 
-private theorem coe_toSphere_coe (z : ℂ) : (toSphere v ι z : E) = affineExpr v ι z :=
-  (rfl)
+private theorem coe_toSphere_coe (z : ℂ) : (toSphere v ι z : E) = affineExpr v ι z := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
+  rw [toSphere, Homeomorph.trans_apply, Homeomorph.onePointCongr_apply, map_some,
+    coe_onePointHyperplaneHomeoUnitSphere_coe, Homeomorph.trans_apply,
+    Homeomorph.smulOfNeZero_apply, LinearIsometryEquiv.coe_toHomeomorph, map_smul,
+    Submodule.coe_smul, affineExpr, stereoInvFunAux_apply]
+  simp only [norm_smul, Submodule.norm_coe]
 
-private theorem toSphere_infty : toSphere v ι ∞ = v :=
-  (rfl)
+private theorem toSphere_infty : toSphere v ι ∞ = v := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
+  ext
+  simp [toSphere]
 
 private theorem coe_toSphere_eq_invExpr {x : OnePoint ℂ} (hx : x ≠ ((0 : ℂ) : OnePoint ℂ)) :
     (toSphere v ι x : E) = invExpr v ι (invChart x) := by
@@ -137,29 +147,26 @@ private theorem coe_toSphere_eq_invExpr {x : OnePoint ℂ} (hx : x ≠ ((0 : ℂ
     have hz : z ≠ 0 := fun h ↦ hx (by rw [h])
     rw [coe_toSphere_coe, invChart_coe, invExpr_inv v ι hz]
 
-private theorem toSphere_coe_ne (z : ℂ) : toSphere v ι z ≠ v :=
-  stereoInvFun_ne_north_pole (norm_eq_of_mem_sphere v) _
+private theorem toSphere_symm_self : (toSphere v ι).symm v = (∞ : OnePoint ℂ) :=
+  (toSphere v ι).symm_apply_eq.2 (toSphere_infty v ι).symm
 
-private theorem ofSphere_toSphere (x : OnePoint ℂ) : ofSphere v ι (toSphere v ι x) = x := by
-  induction x using OnePoint.rec with
-  | infty => simp [ofSphere, toSphere_infty]
-  | coe z =>
-    rw [ofSphere, ite_eq_right (toSphere_coe_ne v ι z), toSphere, elim_some,
-      stereo_right_inv, inv_smul_smul₀ two_ne_zero, LinearIsometryEquiv.symm_apply_apply]
-
-private theorem toSphere_ofSphere (p : sphere (0 : E) 1) : toSphere v ι (ofSphere v ι p) = p := by
-  by_cases hp : p = v
-  · rw [ofSphere, ite_eq_left hp, toSphere_infty, hp]
-  · rw [ofSphere, ite_eq_right hp, toSphere, elim_some, LinearIsometryEquiv.apply_symm_apply,
-      smul_inv_smul₀ two_ne_zero, stereo_left_inv]
-    exact fun h ↦ hp (Subtype.ext h)
+/-- Away from `v`, the inverse is stereographic projection from `v`, read through `ι` and rescaled
+by `1 / 2`. -/
+private theorem toSphere_symm_eq_stereoToFun {p : sphere (0 : E) 1} (hp : p ≠ v) :
+    (toSphere v ι).symm p = ((ι.symm ((2 : ℝ)⁻¹ • stereoToFun (v : E) p) : ℂ) : OnePoint ℂ) := by
+  refine (toSphere v ι).symm_apply_eq.2 (Subtype.ext ?_)
+  rw [coe_toSphere_coe, affineExpr, LinearIsometryEquiv.apply_symm_apply, Submodule.coe_smul,
+    smul_inv_smul₀ two_ne_zero]
+  exact (congrArg Subtype.val
+    (stereo_left_inv (norm_eq_of_mem_sphere v) fun h ↦ hp (Subtype.ext h))).symm
 
 /-- In the affine coordinate, stereographic projection from `v` reads `(1 - ⟪v, p⟫)⁻¹ ι⁻¹ (P p)`,
 where `P` is the orthogonal projection onto `vᗮ`. -/
-private theorem ofSphere_of_ne {p : sphere (0 : E) 1} (hp : p ≠ v) :
-    ofSphere v ι p = (((1 - ⟪(v : E), p⟫_ℝ)⁻¹ •
+private theorem toSphere_symm_eq_of_ne {p : sphere (0 : E) 1} (hp : p ≠ v) :
+    (toSphere v ι).symm p = (((1 - ⟪(v : E), p⟫_ℝ)⁻¹ •
       ι.symm ((ℝ ∙ (v : E))ᗮ.orthogonalProjectionOnto p) : ℂ) : OnePoint ℂ) := by
-  rw [ofSphere, ite_eq_right hp, stereoToFun_apply, smul_smul, LinearIsometryEquiv.map_smul]
+  rw [toSphere_symm_eq_stereoToFun v ι hp, stereoToFun_apply, smul_smul,
+    LinearIsometryEquiv.map_smul]
   congr 3
   simp only [innerSL_apply_apply]
   field_simp
@@ -170,12 +177,12 @@ private def invCoord (x : E) : ℂ :=
   (1 + ⟪(v : E), x⟫_ℝ)⁻¹ • conj (ι.symm ((ℝ ∙ (v : E))ᗮ.orthogonalProjectionOnto x))
 
 /-- Near `v`, the inverse map is the inverse of the inverted chart applied to `invCoord`. -/
-private theorem ofSphere_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p ≠ -v) :
-    ofSphere v ι p = invChart.symm (invCoord v ι p) := by
+private theorem toSphere_symm_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p ≠ -v) :
+    (toSphere v ι).symm p = invChart.symm (invCoord v ι p) := by
   have hv : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
   by_cases hpv : p = v
   · subst hpv
-    simp [ofSphere, invCoord,
+    simp [toSphere_symm_self, invCoord,
       Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
   set t : ℝ := ⟪(v : E), p⟫_ℝ
   set y := (ℝ ∙ (v : E))ᗮ.orthogonalProjectionOnto p
@@ -214,7 +221,8 @@ private theorem ofSphere_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p ≠ -v)
           linear_combination ((1 - (t : ℂ))⁻¹ * (1 + (t : ℂ))⁻¹) * hmul
       _ = 1 := by rw [hreal, Complex.ofReal_one]
   have hne : invCoord v ι p ≠ 0 := right_ne_zero_of_mul_eq_one hprod
-  rw [ofSphere_of_ne v ι hpv, invChart_symm_of_ne_zero hne, eq_inv_of_mul_eq_one_left hprod]
+  rw [toSphere_symm_eq_of_ne v ι hpv, invChart_symm_of_ne_zero hne,
+    eq_inv_of_mul_eq_one_left hprod]
 
 /-! ### Smoothness -/
 
@@ -244,12 +252,10 @@ private theorem contMDiff_coe_toSphere :
     filter_upwards [isOpen_compl_singleton.mem_nhds (infty_ne_coe 0)] with y hy
     simp [coe_toSphere_eq_invExpr v ι hy]
 
-variable [Fact (finrank ℝ E = 2 + 1)]
-
 private theorem contMDiff_toSphere : ContMDiff 𝓘(ℝ, ℂ) (𝓡 2) ω (toSphere v ι) :=
   (contMDiff_coe_toSphere v ι).codRestrict_sphere fun x ↦ (toSphere v ι x).2
 
-private theorem contMDiff_ofSphere : ContMDiff (𝓡 2) 𝓘(ℝ, ℂ) ω (ofSphere v ι) := by
+private theorem contMDiff_toSphere_symm : ContMDiff (𝓡 2) 𝓘(ℝ, ℂ) ω (toSphere v ι).symm := by
   have hv : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
   intro p
   by_cases hp : p = v
@@ -266,7 +272,7 @@ private theorem contMDiff_ofSphere : ContMDiff (𝓡 2) 𝓘(ℝ, ℂ) ω (ofSph
     refine ((contMDiff_invChart_symm_real _).comp p (hW.comp_contMDiffAt
       contMDiff_coe_sphere.contMDiffAt)).congr_of_eventuallyEq ?_
     filter_upwards [isOpen_compl_singleton.mem_nhds hne] with q hq
-    exact ofSphere_eq_invChart_symm p ι hq
+    exact toSphere_symm_eq_invChart_symm p ι hq
   · -- Away from `v`, read the map through the inclusion `ℂ → OnePoint ℂ`.
     have hp' : innerSL ℝ (v : E) p ≠ 1 := by
       rw [innerSL_apply_apply]
@@ -281,25 +287,24 @@ private theorem contMDiff_ofSphere : ContMDiff (𝓡 2) 𝓘(ℝ, ℂ) ω (ofSph
     refine ((contMDiff_coe_real _).comp p (hZ.comp_contMDiffAt
       contMDiff_coe_sphere.contMDiffAt)).congr_of_eventuallyEq ?_
     filter_upwards [isOpen_compl_singleton.mem_nhds hp] with q hq
-    simp [ofSphere, ite_eq_right (show q ≠ v from hq)]
+    simp [toSphere_symm_eq_stereoToFun v ι (show q ≠ v from hq)]
 
 /-! ### The diffeomorphism -/
 
 /-- **The Riemann sphere is diffeomorphic to the unit sphere.** Inverse stereographic projection
 from `v`, read on the plane `vᗮ` through `z ↦ 2 ι z`, is a real-analytic diffeomorphism from the
 Riemann sphere `OnePoint ℂ` onto the unit sphere of the three-dimensional space `E`, sending `∞` to
-`v` and `z` to `(1 + |z|²)⁻¹ (2 ι z + (|z|² - 1) v)`. -/
+`v` and `z` to `(1 + |z|²)⁻¹ (2 ι z + (|z|² - 1) v)`. Its underlying homeomorphism is
+`onePointHyperplaneHomeoUnitSphere`, transported along `z ↦ 2 ι z` by `Homeomorph.onePointCongr`.
+-/
 def diffeomorphSphere : OnePoint ℂ ≃ₘ^ω⟮𝓘(ℝ, ℂ), 𝓡 2⟯ sphere (0 : E) 1 where
-  toFun := toSphere v ι
-  invFun := ofSphere v ι
-  left_inv := ofSphere_toSphere v ι
-  right_inv := toSphere_ofSphere v ι
+  toEquiv := (toSphere v ι).toEquiv
   contMDiff_toFun := contMDiff_toSphere v ι
-  contMDiff_invFun := contMDiff_ofSphere v ι
+  contMDiff_invFun := contMDiff_toSphere_symm v ι
 
 @[simp]
 theorem diffeomorphSphere_infty : diffeomorphSphere v ι ∞ = v :=
-  (rfl)
+  toSphere_infty v ι
 
 /-- A finite point `z` goes to `(1 + |z|²)⁻¹ (2 ι z + (|z|² - 1) v)`. -/
 @[simp]
@@ -330,11 +335,10 @@ theorem diffeomorphSphere_symm_neg : (diffeomorphSphere v ι).symm (-v) = ((0 : 
 theorem diffeomorphSphere_symm_apply_of_ne {p : sphere (0 : E) 1} (hp : p ≠ v) :
     (diffeomorphSphere v ι).symm p = (((1 - ⟪(v : E), p⟫_ℝ)⁻¹ •
       ι.symm ((ℝ ∙ (v : E))ᗮ.orthogonalProjectionOnto p) : ℂ) : OnePoint ℂ) :=
-  ofSphere_of_ne v ι hp
+  toSphere_symm_eq_of_ne v ι hp
 
 /-! ### The round metric is `4π` times the Fubini–Study metric -/
 
-omit [Fact (finrank ℝ E = 2 + 1)] in
 /-- The differential of `σ`, read in `E`, is the derivative of its expression in the preferred
 chart: `affineExpr` at a finite point and `invExpr` at `∞`. -/
 private theorem mfderiv_coe_toSphere (x : OnePoint ℂ) :
@@ -358,30 +362,6 @@ private theorem mfderiv_coe_toSphere (x : OnePoint ℂ) :
     · simp only [chartAt_infty, elim_infty, Function.comp_apply, invChart_symm_of_ne_zero hw]
       rw [coe_toSphere_eq_invExpr v ι (by simpa using inv_ne_zero hw), invChart_coe, inv_inv]
 
-omit [Fact (finrank ℝ E = 2 + 1)] in
-/-- The conformal factor of inverse stereographic projection from a unit vector `u`, read through
-`w ↦ 2 J w` for a linear isometry `J` of `ℂ` into `uᗮ`:
-`⟪dσ a, dσ b⟫ = 4 (1 + |z|²)⁻² Re (conj a * b)` at `z`. -/
-private theorem inner_fderiv_stereoInvFunAux_two_smul {u : E} (hu : ‖u‖ = 1) (J : ℂ →ₗᵢ[ℝ] E)
-    (hJ : ∀ c, J c ∈ (ℝ ∙ u)ᗮ) (z a b : ℂ) :
-    ⟪fderiv ℝ (fun w ↦ stereoInvFunAux u ((2 : ℝ) • J w)) z a,
-      fderiv ℝ (fun w ↦ stereoInvFunAux u ((2 : ℝ) • J w)) z b⟫_ℝ =
-      4 * ((1 + ‖z‖ ^ 2) ^ 2)⁻¹ * (conj a * b).re := by
-  set L : ℂ →L[ℝ] E := (2 : ℝ) • J.toContinuousLinearMap
-  have hL (c : ℂ) : L c ∈ (ℝ ∙ u)ᗮ := Submodule.smul_mem _ _ (hJ c)
-  have hd : HasFDerivAt (fun w ↦ stereoInvFunAux u ((2 : ℝ) • J w))
-      ((fderiv ℝ (stereoInvFunAux u) (L z)).comp L) z :=
-    ((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp z
-      L.hasFDerivAt
-  rw [hd.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    inner_fderiv_stereoInvFunAux hu (hL z) (hL a) (hL b)]
-  simp only [L, _root_.smul_apply, LinearIsometry.coe_toContinuousLinearMap, norm_smul,
-    LinearIsometry.norm_map, Real.norm_eq_abs, abs_two, real_inner_smul_left,
-    real_inner_smul_right, LinearIsometry.inner_map_map, Complex.inner, mul_comm b]
-  field_simp
-  ring
-
-omit [Fact (finrank ℝ E = 2 + 1)] in
 /-- The conformal factor of `σ` in a chart: for the chart coordinate `c` of `x`,
 `⟪dσ a, dσ b⟫ = 4 (1 + |c|²)⁻² Re (conj a * b)`. -/
 private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
@@ -395,18 +375,22 @@ private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
     DFunLike.congr_fun (mfderiv_coe_toSphere v ι x) c
   rw [e, e]
   clear e
+  -- The conformal factor `(2 / (1 + |c|²))²` times `⟪a, b⟫ = Re (conj a * b)`.
+  have h4 (r : ℝ) : (2 / (1 + r)) ^ 2 * ⟪a, b⟫_ℝ = 4 * ((1 + r) ^ 2)⁻¹ * (conj a * b).re := by
+    rw [Complex.inner, mul_comm b, div_pow]
+    ring
   induction x using OnePoint.rec with
   | coe z =>
     -- `affineExpr` is inverse stereographic projection from `v` read through `2 ι`.
     simp only [elim_some, chartAt_coe, affineChart_coe]
-    exact inner_fderiv_stereoInvFunAux_two_smul hv
-      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp ι.toLinearIsometry) (fun c ↦ (ι c).2) z a b
+    exact (inner_fderiv_stereoInvFunAux_two_smul hv
+      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp ι.toLinearIsometry) (fun c ↦ (ι c).2) z a b).trans (h4 _)
   | infty =>
     -- `invExpr` is inverse stereographic projection from `-v` read through `2 ι ∘ conj`.
     simp only [elim_infty, chartAt_infty, invChart_infty]
-    refine inner_fderiv_stereoInvFunAux_two_smul (by rwa [norm_neg])
+    refine (inner_fderiv_stereoInvFunAux_two_smul (by rwa [norm_neg])
       ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp (ι.toLinearIsometry.comp Complex.conjLIE.toLinearIsometry))
-      (fun c ↦ ?_) 0 a b
+      (fun c ↦ ?_) 0 a b).trans (h4 _)
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_neg_left, neg_eq_zero,
       ← Submodule.mem_orthogonal_singleton_iff_inner_right]
     exact (ι _).2
