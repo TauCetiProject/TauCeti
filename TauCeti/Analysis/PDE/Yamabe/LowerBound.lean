@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.Quotient
 import TauCeti.MeasureTheory.Integral.AbsRpow
+import TauCeti.Geometry.Manifold.Riemannian.Sobolev
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
 /-!
@@ -21,9 +22,14 @@ scalar curvature. Hölder's inequality with conjugate exponents `n / 2` and `n /
 controls the negative potential energy by the critical norm of `u`; the Dirichlet term is
 nonnegative. In particular, the quotients of nonzero smooth functions are bounded below.
 
+If moreover `M` has no boundary and `Scal_g > 0` everywhere, then `Scal_g` is bounded below by a
+positive constant, and the Sobolev inequality `‖u‖_{pₙ} ≤ K (‖grad u‖₂ + ‖u‖₂)` for the critical
+exponent `pₙ = 2 n / (n - 2)` bounds `Q_g` on nonzero `C¹` functions below by a positive constant
+(`exists_pos_le_yamabeQuotient_of_scalarCurvature_pos`).
+
 These are bounds for the differentiable-function quotient, not a construction of its weak
 domain or a claim that its infimum is attained. Neither orientation nor absence of boundary
-is needed for the estimate: it uses no integration by parts.
+is needed for the general estimate: it uses no integration by parts.
 
 ## References
 
@@ -139,5 +145,50 @@ theorem bddBelow_image_yamabeQuotient (hn : 2 < finrank ℝ E) :
     ((finrank ℝ E : ℝ) / 2) ∂riemannianVolume I M) ^ (2 / (finrank ℝ E : ℝ)), ?_⟩
   rintro _ ⟨u, hu, rfl⟩
   exact neg_integral_scalarCurvature_negPart_rpow_le_yamabeQuotient hn hu.1
+
+/-- **Positive scalar curvature bounds the Yamabe quotient away from zero.** On a closed manifold
+of dimension `n > 2` with positive scalar curvature, there is a constant `C > 0` such that
+`C ≤ Q_g(u)` for every nonzero `C¹` function `u`. -/
+theorem exists_pos_le_yamabeQuotient_of_scalarCurvature_pos [I.Boundaryless]
+    (hn : 2 < finrank ℝ E)
+    (hS : ∀ x, 0 < (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
+    ∃ C, 0 < C ∧ ∀ u : M → ℝ, ContMDiff I 𝓘(ℝ) 1 u → u ≠ 0 → C ≤ yamabeQuotient I u := by
+  set S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
+  set μ := riemannianVolume I M
+  set a := conformalCoefficient (finrank ℝ E)
+  have hSc : Continuous S :=
+    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+  obtain ⟨s, hs, hsS⟩ := isCompact_univ.exists_forall_le' hSc.continuousOn fun x _ ↦ hS x
+  obtain ⟨K, hK, hKu⟩ :=
+    exists_integral_abs_rpow_rpow_le_mul_integral_mgradient_sq_add (I := I) (M := M) hn
+  set m := min a s
+  have hm : 0 < m := lt_min (conformalCoefficient_pos hn) hs
+  refine ⟨m / K, by positivity, fun u hu hu0 ↦ ?_⟩
+  set B := ∫ x, ‖mgradient I u x‖ ^ 2 ∂μ
+  set D := ∫ x, u x ^ 2 ∂μ
+  have hgc : Continuous fun x ↦ ‖mgradient I u x‖ := continuous_norm_mgradient hu
+  -- Since `m ≤ aₙ` and `m ≤ Scal_g`, the numerator of `Q_g(u)` is at least `m (B + D)`.
+  have hnum : m * (B + D) ≤ ∫ x, (a * ‖mgradient I u x‖ ^ 2 + S x * u x ^ 2) ∂μ := by
+    have hint {f : M → ℝ} (hf : Continuous f) : Integrable f μ :=
+      hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
+    rw [mul_add, ← integral_const_mul, ← integral_const_mul,
+      ← integral_add (hint (f := fun x ↦ m * ‖mgradient I u x‖ ^ 2)
+        (continuous_const.mul (hgc.pow 2)))
+        (hint (f := fun x ↦ m * u x ^ 2) (continuous_const.mul (hu.continuous.pow 2)))]
+    refine integral_mono (hint ((continuous_const.mul (hgc.pow 2)).add
+      (continuous_const.mul (hu.continuous.pow 2))))
+      (hint ((continuous_const.mul (hgc.pow 2)).add (hSc.mul (hu.continuous.pow 2)))) fun x ↦ ?_
+    exact add_le_add (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _))
+      (mul_le_mul_of_nonneg_right ((min_le_right _ _).trans (hsS x (Set.mem_univ x)))
+        (sq_nonneg _))
+  rw [yamabeQuotient_def, le_div_iff₀ (Real.rpow_pos_of_pos
+    (integral_abs_rpow_pos hu.continuous hu0 (criticalExponent_pos hn)) _)]
+  calc m / K * (∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂μ) ^
+        (2 / criticalExponent (finrank ℝ E))
+      ≤ m / K * (K * (B + D)) := by
+        gcongr
+        simpa only [criticalExponent_def] using hKu u hu
+    _ = m * (B + D) := by field_simp
+    _ ≤ _ := hnum
 
 end TauCeti.Yamabe

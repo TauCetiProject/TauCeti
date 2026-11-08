@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.Quotient
 import TauCeti.Analysis.PDE.Yamabe.LowerBound
 import TauCeti.Geometry.Manifold.ContMDiff.RPow
-import TauCeti.Geometry.Manifold.Riemannian.Sobolev
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Integral.AbsRpow
 
@@ -48,8 +47,6 @@ In the namespace `TauCeti.Yamabe`:
 
 * `sign_yamabeQuotient_of_conformalLaplacian_eq_mul`: an eigenfunction `L_g u = λ u` has `Q_g(u)` of
   the sign of `λ`.
-* `exists_pos_le_yamabeQuotient_of_scalarCurvature_pos`: on a closed manifold of positive scalar
-  curvature, `Q_g` is bounded below by a positive constant on nonzero `C¹` functions.
 
 In the namespace `Bundle.ContMDiffRiemannianMetric`, for a smooth metric `g`:
 
@@ -63,7 +60,8 @@ In the namespace `Bundle.ContMDiffRiemannianMetric`, for a smooth metric `g`:
 The scalar curvature of `ĝ` is computed in
 `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_conformalLaplacian_eq_mul`, and the
 conformal invariance `Q_ĝ(v) = Q_g(u v)` is
-`Bundle.ContMDiffRiemannianMetric.yamabeQuotient_rescale`.
+`Bundle.ContMDiffRiemannianMetric.yamabeQuotient_rescale`. The positive lower bound on `Q_g` for
+positive scalar curvature is `TauCeti.Yamabe.exists_pos_le_yamabeQuotient_of_scalarCurvature_pos`.
 
 ## References
 
@@ -110,50 +108,6 @@ theorem sign_yamabeQuotient_of_conformalLaplacian_eq_mul (hn : 2 < finrank ℝ E
   simp only [hpt, integral_const_mul]
   rw [div_eq_mul_inv, sign_mul, sign_mul, sign_pos hu2, sign_pos (inv_pos.2 hN), mul_one,
     mul_one]
-
-/-- **Positive scalar curvature bounds the Yamabe quotient away from zero.** On a closed manifold
-of dimension `n > 2` with positive scalar curvature, there is a constant `C > 0` such that
-`C ≤ Q_g(u)` for every nonzero `C¹` function `u`. -/
-theorem exists_pos_le_yamabeQuotient_of_scalarCurvature_pos (hn : 2 < finrank ℝ E)
-    (hS : ∀ x, 0 < (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
-    ∃ C, 0 < C ∧ ∀ u : M → ℝ, ContMDiff I 𝓘(ℝ) 1 u → u ≠ 0 → C ≤ yamabeQuotient I u := by
-  set S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
-  set μ := riemannianVolume I M
-  set a := conformalCoefficient (finrank ℝ E)
-  have hSc : Continuous S :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
-  obtain ⟨s, hs, hsS⟩ := isCompact_univ.exists_forall_le' hSc.continuousOn fun x _ ↦ hS x
-  obtain ⟨K, hK, hKu⟩ :=
-    exists_integral_abs_rpow_rpow_le_mul_integral_mgradient_sq_add (I := I) (M := M) hn
-  set m := min a s
-  have hm : 0 < m := lt_min (conformalCoefficient_pos hn) hs
-  refine ⟨m / K, by positivity, fun u hu hu0 ↦ ?_⟩
-  set B := ∫ x, ‖mgradient I u x‖ ^ 2 ∂μ
-  set D := ∫ x, u x ^ 2 ∂μ
-  have hgc : Continuous fun x ↦ ‖mgradient I u x‖ := continuous_norm_mgradient hu
-  -- Since `m ≤ aₙ` and `m ≤ Scal_g`, the numerator of `Q_g(u)` is at least `m (B + D)`.
-  have hnum : m * (B + D) ≤ ∫ x, (a * ‖mgradient I u x‖ ^ 2 + S x * u x ^ 2) ∂μ := by
-    have hint {f : M → ℝ} (hf : Continuous f) : Integrable f μ :=
-      hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
-    rw [mul_add, ← integral_const_mul, ← integral_const_mul,
-      ← integral_add (hint (f := fun x ↦ m * ‖mgradient I u x‖ ^ 2)
-        (continuous_const.mul (hgc.pow 2)))
-        (hint (f := fun x ↦ m * u x ^ 2) (continuous_const.mul (hu.continuous.pow 2)))]
-    refine integral_mono (hint ((continuous_const.mul (hgc.pow 2)).add
-      (continuous_const.mul (hu.continuous.pow 2))))
-      (hint ((continuous_const.mul (hgc.pow 2)).add (hSc.mul (hu.continuous.pow 2)))) fun x ↦ ?_
-    exact add_le_add (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _))
-      (mul_le_mul_of_nonneg_right ((min_le_right _ _).trans (hsS x (Set.mem_univ x)))
-        (sq_nonneg _))
-  rw [yamabeQuotient_def, le_div_iff₀ (Real.rpow_pos_of_pos
-    (integral_abs_rpow_pos hu.continuous hu0 (criticalExponent_pos hn)) _)]
-  calc m / K * (∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂μ) ^
-        (2 / criticalExponent (finrank ℝ E))
-      ≤ m / K * (K * (B + D)) := by
-        gcongr
-        simpa only [criticalExponent_def] using hKu u hu
-    _ = m * (B + D) := by field_simp
-    _ ≤ _ := hnum
 
 end Closed
 
