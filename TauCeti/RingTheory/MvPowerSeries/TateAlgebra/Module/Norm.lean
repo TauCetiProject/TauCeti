@@ -272,10 +272,8 @@ theorem uniformContinuous_coeff (t : σ →₀ ℕ) :
 /-- Complete coefficient groups give complete restricted families for the Gauss norm. -/
 instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
-  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ (A k : (σ →₀ ℕ) → E) t :=
-    (uniformContinuous_coeff t).comp_cauchySeq hA
   obtain ⟨a, hres, hunif⟩ := exists_weighted_coefficient_limit
-    (fun k ↦ (A k : (σ →₀ ℕ) → E)) hcoeff
+    (fun k ↦ (A k : (σ →₀ ℕ) → E))
     (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.2)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε

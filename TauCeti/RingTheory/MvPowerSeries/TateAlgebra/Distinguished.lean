@@ -332,14 +332,14 @@ private theorem exists_isDistinguished_of_triangularDegree_dominant [Finite σ] 
   have hcore := norm_coeff_restrictedTriangularEquiv_sub_le hα f ν hε0 hν
   -- Past degree `s` every coefficient has norm at most `ε`.
   have hbeyond (m : ℕ) (hm : s < m) : ‖PowerSeries.coeff m (G : PowerSeries Tate)‖ ≤ ε := by
-    rw [norm_le_iff hε0]
+    rw [norm_le_iff]
     intro t
     have h := hcore t hm.le
     rw [ite_eq_right fun h ↦ hm.ne' h.1, sub_zero, ← hcoeffG] at h
     simpa using h
   -- In degree `s` the coefficient is within `ε` of the constant `a`.
   have hat : ‖PowerSeries.coeff s (G : PowerSeries Tate) - algebraMap R Tate a‖ ≤ ε := by
-    rw [norm_le_iff hε0]
+    rw [norm_le_iff]
     intro t
     have h := hcore t le_rfl
     rw [← hcoeffG] at h

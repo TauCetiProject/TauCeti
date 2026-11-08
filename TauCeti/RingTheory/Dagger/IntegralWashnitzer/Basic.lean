@@ -193,7 +193,7 @@ theorem mem_intWashnitzerAlgebra_iff_of_isEmpty [IsEmpty σ] {f : MvPowerSeries 
 Gauss norm is at most one. -/
 theorem mem_intWashnitzerAlgebra_iff_norm_le_one {f : washnitzerAlgebra σ R} :
     (f : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R ↔ ‖f‖ ≤ 1 := by
-  rw [mem_intWashnitzerAlgebra_iff, washnitzerAlgebra.norm_le_iff zero_le_one]
+  rw [mem_intWashnitzerAlgebra_iff, washnitzerAlgebra.norm_le_iff]
   exact and_iff_right f.2
 
 namespace intWashnitzerAlgebra

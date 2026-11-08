@@ -178,7 +178,7 @@ instance [NormOneClass R] : NormOneClass (HasGaussNorm.subring R R₀) where
 instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
   obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit (R₀ ^ ·)
-    (fun k n ↦ coeff n (F k : R⟦X⟧)) (fun n ↦ (uniformContinuous_coeff n).comp_cauchySeq hF) (by
+    (fun k n ↦ coeff n (F k : R⟦X⟧)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
       refine ⟨N, fun k hk l hl n ↦ ?_⟩

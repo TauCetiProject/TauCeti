@@ -184,7 +184,7 @@ theorem continuous_restrictedMvPowerSeriesGaussEquiv :
   let U := IsUltrametricDist.ball_openAddSubgroup R (half_pos hε)
   filter_upwards [(hasBasis_nhds_zero_weightedTopology
     (k := n) (A := R) isWeightFamily_one_weight).mem_of_mem (i := U) trivial] with f hf
-  refine lt_of_le_of_lt ((MvPowerSeries.norm_le_iff (half_pos hε).le).mpr ?_)
+  refine lt_of_le_of_lt (MvPowerSeries.norm_le_iff.mpr ?_)
     (half_lt_self hε)
   intro ν
   have h := mem_weightedNhd.mp hf ν
@@ -388,7 +388,7 @@ theorem continuous_weightedRestrictedGaussAlgEquiv :
   let U := IsUltrametricDist.ball_openAddSubgroup R (half_pos hε)
   filter_upwards [(hasBasis_nhds_zero_weightedTopology (isWeightFamily_units u)).mem_of_mem
     (i := U) trivial] with f hf
-  refine lt_of_le_of_lt ((MvPowerSeries.norm_le_iff (half_pos hε).le).mpr fun ν ↦ ?_)
+  refine lt_of_le_of_lt (MvPowerSeries.norm_le_iff.mpr fun ν ↦ ?_)
     (half_lt_self hε)
   have h := (mem_weightedNhd_units_iff u).mp hf ν
   rw [coe_weightedRestrictedGaussAlgEquiv,

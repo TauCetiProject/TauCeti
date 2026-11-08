@@ -154,7 +154,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
       simpa [a, coeff_zero_eq_constantCoeff_apply] using norm_coeff_mul_prod_le f 0
   -- Restrictedness bounds the nonconstant weighted coefficients uniformly below `‖a‖`.
   obtain ⟨ε, hε0, hεf, hε⟩ := exists_norm_coeff_mul_prod_gap f hf0
-  refine isNormMulUnit_of_norm_sub_C_lt h0 (lt_of_le_of_lt ((norm_le_iff hε0).mpr fun t ↦ ?_)
+  refine isNormMulUnit_of_norm_sub_C_lt h0 (lt_of_le_of_lt (norm_le_iff.mpr fun t ↦ ?_)
     (hfa ▸ hεf))
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_C]
   split_ifs with ht
