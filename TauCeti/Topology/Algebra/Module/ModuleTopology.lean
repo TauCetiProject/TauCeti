@@ -52,6 +52,22 @@ public section
 
 namespace IsModuleTopology
 
+/-- In a continuous scalar tower, the module topology over the smaller scalar semiring is
+also the module topology over the larger scalar semiring, provided the larger scalar action
+is continuous for the given topology. No finiteness assumption is needed. -/
+theorem of_restrictScalars {R S M : Type*} [Semiring R] [Semiring S]
+    [TopologicalSpace R] [TopologicalSpace S] [SMul R S] [ContinuousSMul R S]
+    [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+    [TopologicalSpace M] [IsModuleTopology R M] [ContinuousSMul S M] :
+    IsModuleTopology S M := by
+  have := IsModuleTopology.toContinuousAdd R M
+  refine ⟨le_antisymm ?_ (moduleTopology_le S M)⟩
+  rw [eq_moduleTopology R M]
+  let := moduleTopology S M
+  have := IsModuleTopology.toContinuousAdd S M
+  have : ContinuousSMul R M := IsScalarTower.continuousSMul S
+  exact moduleTopology_le R M
+
 /-- Restricting scalars along a finite algebra with its natural topology preserves the module
 topology, even for modules that are not finitely generated. -/
 theorem restrictScalars (R S M : Type*) [CommRing R] [Ring S] [Algebra R S]

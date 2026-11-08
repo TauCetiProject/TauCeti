@@ -356,7 +356,7 @@ theorem coeff_tateFormalX_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
   simp only [coeff_coeff_tateFormalX, map_sum, ← map_natCast (C (R := R)), coeff_C_mul,
     map_add, map_sub, ← map_ofNat (C (R := R)) 2, coeff_X_pow, mul_add, mul_sub, mul_ite,
     mul_one, mul_zero, Finset.sum_add_distrib, Finset.sum_sub_distrib]
-  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub hN]
+  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub]
   rcases lt_trichotomy a N with h | rfl | h
   · rw [Nat.dist_eq_sub_of_le h.le, min_eq_left h.le]
     simp only [h.ne, h, not_lt_of_gt h, false_and, true_and, ite_false,
@@ -375,7 +375,7 @@ private theorem coeff_two_mul_tateFormalY_add_of_ne_zero {N : ℕ} (hN : N ≠ 0
   simp only [coeff_coeff_two_mul_tateFormalY_add, map_sum, ← map_natCast (C (R := ℚ)),
     ← map_pow, coeff_C_mul, map_sub, coeff_X_pow, mul_sub, mul_ite, mul_one, mul_zero,
     Finset.sum_sub_distrib]
-  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub hN]
+  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub]
   rcases lt_trichotomy a N with h | rfl | h
   · rw [Nat.dist_eq_sub_of_le h.le, min_eq_left h.le]
     simp only [h.ne, h, not_lt_of_gt h, false_and, true_and, ite_false, zero_sub]
@@ -395,7 +395,7 @@ theorem coeff_tateFormalY_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
   simp only [coeff_coeff_tateFormalY, map_sum, ← map_natCast (C (R := R)), coeff_C_mul,
     map_add, map_sub, coeff_X_pow, mul_ite, mul_one, mul_zero, Finset.sum_add_distrib,
     Finset.sum_sub_distrib]
-  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub hN]
+  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub]
   rcases lt_trichotomy a N with h | rfl | h
   · rw [Nat.dist_eq_sub_of_le h.le, min_eq_left h.le]
     simp only [h.ne, h, not_lt_of_gt h, false_and, true_and, ite_false,

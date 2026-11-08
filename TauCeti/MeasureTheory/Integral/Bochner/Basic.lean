@@ -43,6 +43,10 @@ for set and probability integrals.
   function's integral by the integral of its pointwise positive part.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
   integral one) total extended mass one.
+* `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
+  integrands sum, almost everywhere, to at most a third integrable function.
+* `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
+  function with that of its pointwise minimum or maximum with another integrable function.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
@@ -53,6 +57,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
+  `[a, b]` has `a ≤ 0 ≤ b`.
 * `setIntegral_norm_add_sq_le` integrates the pointwise bound
   `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
 * `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
@@ -361,6 +367,18 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
   · rw [integral_undef hf]
     simp
 
+/-- The integral of the pointwise minimum of two integrable functions is at most the integral of
+the first one. -/
+theorem integral_min_le_left {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, min (f x) (g x) ∂μ ≤ ∫ x, f x ∂μ :=
+  integral_mono (hf.inf hg) hf fun _ ↦ min_le_left _ _
+
+/-- The integral of the first of two integrable functions is at most the integral of their
+pointwise maximum. -/
+theorem integral_le_integral_max {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, f x ∂μ ≤ ∫ x, max (f x) (g x) ∂μ :=
+  integral_mono hf (hf.sup hg) fun _ ↦ le_max_left _ _
+
 /-- A probability density `ρ`, almost everywhere nonnegative with `∫ ρ = 1`, has total extended
 mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
 theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
@@ -368,6 +386,21 @@ theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure 
     ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
     ENNReal.ofReal_one]
+
+/-- Positive parts of integrals add up under an almost-everywhere bound: for integrable `F`, `G`,
+`N` with `0 ≤ F ≤ N` and `F + G ≤ N` almost everywhere, the positive parts of `∫ F` and `∫ G` sum
+to at most the positive part of `∫ N`. The function `G` may take negative values, in which case
+`∫ G` may be negative and its positive part is `0`. -/
+theorem ofReal_integral_add_ofReal_integral_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {F G N : Ω → ℝ} (hF : Integrable F μ) (hG : Integrable G μ) (hN : Integrable N μ)
+    (hF0 : 0 ≤ᵐ[μ] F) (hFN : F ≤ᵐ[μ] N) (hFG : ∀ᵐ x ∂μ, F x + G x ≤ N x) :
+    ENNReal.ofReal (∫ x, F x ∂μ) + ENNReal.ofReal (∫ x, G x ∂μ) ≤
+      ENNReal.ofReal (∫ x, N x ∂μ) := by
+  rcases le_total 0 (∫ x, G x ∂μ) with hG0 | hG0
+  · rw [← ENNReal.ofReal_add (integral_nonneg_of_ae hF0) hG0, ← integral_add hF hG]
+    exact ENNReal.ofReal_le_ofReal (integral_mono_ae (hF.add hG) hN hFG)
+  · rw [ENNReal.ofReal_of_nonpos hG0, add_zero]
+    exact ENNReal.ofReal_le_ofReal (integral_mono_ae hF hN hFN)
 
 /-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
 `ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor
@@ -513,6 +546,15 @@ theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Typ
   refine measure_mono_null (fun w hw ↦ ?_) (ae_iff.1 hae)
   have hw' : p.eval w ≠ 0 := fun h0 ↦ hw (by simp [mem_roots hp, h0])
   simpa using hw'
+
+/-- A mean zero random variable with values in `[a, b]` has `a ≤ 0 ≤ b`. -/
+theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero {Ω : Type*} [mΩ : MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ}
+    {a b : ℝ} (hX : Integrable X μ) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
+    (hmean : ∫ ω, X ω ∂μ = 0) : a ≤ 0 ∧ 0 ≤ b := by
+  constructor
+  · simpa [hmean] using integral_mono_ae (integrable_const a) hX (hbound.mono fun ω h => h.1)
+  · simpa [hmean] using integral_mono_ae hX (integrable_const b) (hbound.mono fun ω h => h.2)
 
 end MeasureTheory
 

@@ -260,7 +260,8 @@ representative `x_i(1) x_{-i}(-1) x_i(1)` at the node. -/
 theorem coe_rankOnePoints_modularGroup_S :
     (rankOnePoints K i ((ModularGroup.S : SL(2, ℤ)) : SL(2, K)) : GL (Fin 56) K) =
       (TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7)) (TauCeti.serreH ℚ (CartanMatrix.E 7))
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix)
         rep lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
         latticeBasis e7MinusculeWeight (.inl i) (.inr i) K : GL (Fin 56) K)⁻¹ := by
   rw [rankOnePoints_modularGroup_S, ← Subgroup.coe_inv,
