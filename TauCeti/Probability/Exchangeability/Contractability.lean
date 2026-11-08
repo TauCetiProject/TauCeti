@@ -189,25 +189,32 @@ theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω
     map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) n]
   exact hX n (fun i : Fin n ↦ φ i.val) (hφ.comp Fin.val_strictMono)
 
+/-- A process whose path law is invariant under every strictly increasing time-reindexing
+`ℕ → ℕ` is contractable. No finiteness of the base measure is needed. -/
+theorem contractable_of_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX_meas : ∀ i, AEMeasurable (X i) μ)
+    (hX : ∀ φ : ℕ → ℕ, StrictMono φ →
+      (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X) :
+    Contractable μ X := by
+  intro m k hk
+  obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
+  have hmap := congrArg (fun ν : Measure (ℕ → α) ↦ ν.map (prefixProj α m)) (hX φ hφ)
+  rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
+    map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
+  have hidx : (fun i : Fin m ↦ φ i.val) = k := by
+    funext i
+    exact hφ_eq i
+  simpa [hidx] using hmap
+
 /-- Contractability is equivalent to invariance of the path law under every strictly increasing
 time-reindexing `ℕ → ℕ`. This is the path-law form of spreadability/contractability. -/
 theorem contractable_iff_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
     [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     Contractable μ X ↔
       ∀ φ : ℕ → ℕ, StrictMono φ →
-        (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X := by
-  constructor
-  · intro hX φ hφ
-    exact (hX.measurePreserving_reindex hX_meas hφ).map_eq
-  · intro hX m k hk
-    obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
-    have hmap := congrArg (fun ν : Measure (ℕ → α) ↦ ν.map (prefixProj α m)) (hX φ hφ)
-    rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
-      map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
-    have hidx : (fun i : Fin m ↦ φ i.val) = k := by
-      funext i
-      exact hφ_eq i
-    simpa [hidx] using hmap
+        (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X :=
+  ⟨fun hX _ hφ ↦ (hX.measurePreserving_reindex hX_meas hφ).map_eq,
+    contractable_of_forall_map_reindex_pathLaw hX_meas⟩
 
 /-- Contractability is equivalent to preservation of the path law by every strictly increasing
 time-reindexing `ℕ → ℕ`. -/
