@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Pi
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # The Morse lemma on a smooth manifold
@@ -39,6 +40,11 @@ stable and unstable manifolds are then studied.
   the model.
 * `TauCeti.MorseChart.max_norm_fst_norm_snd_splitCoord`: the sup norm of the coordinates is the
   larger of the norms of the two factors of the split coordinates.
+* `TauCeti.MorseChart.apply_toChart_symm_coord_symm_splitCoord_symm`: the Morse normal form in
+  split coordinates.
+* `TauCeti.MorseChart.lt_apply_of_norm_fst_eq`, `TauCeti.MorseChart.apply_lt_of_norm_snd_eq`: `f`
+  is above `f x` where the contracting split coordinate dominates and below `f x` where the
+  expanding one dominates.
 * `TauCeti.MorseChart.finrank_snd_splitCoord` and
   `TauCeti.MorseChart.finrank_fst_splitCoord_add_manifoldMorseIndex`: the expanding factor of the
   split coordinates has dimension the Morse index, and the contracting factor the complementary
@@ -224,6 +230,93 @@ theorem finrank_fst_splitCoord_add_manifoldMorseIndex :
   have := Fintype.card_subtype_le fun i ↦ φ.weight i = 1
   rw [Fintype.card_fin] at this
   omega
+
+section SplitBox
+
+/-- **The Morse normal form in split coordinates.** At the point with split coordinates `(u, v)`,
+`f = f x + (Σᵢ uᵢ² - Σⱼ vⱼ²) / 2`. -/
+theorem apply_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) =
+      f x + 2⁻¹ * (∑ i, z.fst i ^ 2 - ∑ i, z.snd i ^ 2) := by
+  rw [φ.eq_quadratic _ (φ.toChart.map_target hz), φ.toChart.right_inv hz,
+    LinearEquiv.apply_symm_apply,
+    ← Fintype.sum_subtype_add_sum_subtype (fun i ↦ φ.weight i = 1), sub_eq_add_neg,
+    ← Finset.sum_neg_distrib]
+  congr 2
+  congr 1
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [i.2]
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [(φ.weight_eq_neg_one_or_eq_one i).resolve_right i.2]
+    norm_num
+
+variable {φ}
+
+/-- On the box, the split coordinates read a point of the chart. -/
+theorem coord_symm_splitCoord_symm_mem_target_of_norm_le {ε : ℝ}
+    (hε : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hfst : ‖z.fst‖ ≤ ε) (hsnd : ‖z.snd‖ ≤ ε) :
+    φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target :=
+  hε _ <| by
+    rw [← φ.max_norm_fst_norm_snd_splitCoord, LinearEquiv.apply_symm_apply]
+    exact max_le hfst hsnd
+
+variable (φ) in
+/-- The point with given split coordinates determines them. -/
+theorem injOn_toChart_symm_coord_symm_splitCoord_symm :
+    InjOn (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)))
+      {z | φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target} := fun z hz z' hz' h ↦
+  φ.splitCoord.symm.injective (φ.coord.symm.injective
+    (φ.toChart.symm.injOn (by simpa using hz) (by simpa using hz') h))
+
+/-- **Above the critical value on the entrance face.** At a point of the chart whose contracting
+split coordinate has norm `ε` and whose expanding one is small, `f` exceeds `f x`. -/
+theorem lt_apply_of_norm_fst_eq {ε : ℝ}
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) (hfst : ‖z.fst‖ = ε)
+    (hsnd : Module.finrank ℝ E * ‖z.snd‖ ^ 2 < ε ^ 2) :
+    f x < f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) := by
+  rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
+  -- Compare the sup norms of the split coordinates with their `L²` norms.
+  have h₁ : ‖z.fst‖ ^ 2 ≤ ∑ i, z.fst i ^ 2 := by
+    have h := PiLp.dist_ofLp_le (WithLp.toLp 2 z.fst) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have h₂ : ∑ i, z.snd i ^ 2 ≤ Fintype.card {i // ¬φ.weight i = 1} * ‖z.snd‖ ^ 2 := by
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (WithLp.toLp 2 z.snd) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2, mul_pow] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have hcard : (Fintype.card {i // ¬φ.weight i = 1} : ℝ) ≤ Module.finrank ℝ E := by
+    exact_mod_cast (Fintype.card_subtype_le _).trans (Fintype.card_fin _).le
+  rw [hfst] at h₁
+  nlinarith [mul_le_mul_of_nonneg_right hcard (sq_nonneg ‖z.snd‖)]
+
+/-- **Below the critical value on the exit face.** At a point of the chart whose expanding split
+coordinate has norm `ε` and whose contracting one is small, `f` is less than `f x`. -/
+theorem apply_lt_of_norm_snd_eq {ε : ℝ}
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) (hsnd : ‖z.snd‖ = ε)
+    (hfst : Module.finrank ℝ E * ‖z.fst‖ ^ 2 < ε ^ 2) :
+    f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) < f x := by
+  rw [φ.apply_toChart_symm_coord_symm_splitCoord_symm hz]
+  -- Compare the sup norms of the split coordinates with their `L²` norms.
+  have h₁ : ‖z.snd‖ ^ 2 ≤ ∑ i, z.snd i ^ 2 := by
+    have h := PiLp.dist_ofLp_le (WithLp.toLp 2 z.snd) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have h₂ : ∑ i, z.fst i ^ 2 ≤ Fintype.card {i // φ.weight i = 1} * ‖z.fst‖ ^ 2 := by
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (WithLp.toLp 2 z.fst) 0
+    rw [dist_zero_right, WithLp.ofLp_toLp, WithLp.ofLp_zero, dist_zero_right] at h
+    simpa [PiLp.norm_sq_eq_of_L2, mul_pow] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have hcard : (Fintype.card {i // φ.weight i = 1} : ℝ) ≤ Module.finrank ℝ E := by
+    exact_mod_cast (Fintype.card_subtype_le _).trans (Fintype.card_fin _).le
+  rw [hsnd] at h₁
+  nlinarith [mul_le_mul_of_nonneg_right hcard (sq_nonneg ‖z.fst‖)]
+
+end SplitBox
 
 variable [FiniteDimensional ℝ E]
 
