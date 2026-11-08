@@ -40,39 +40,43 @@ theorem LocallyBoundedVariationOn.exists_continuousOn_monotoneOn_sub_monotoneOn
   obtain ⟨p, q, hp, hq, heq, hvar⟩ := hf.exists_monotoneOn_sub_monotoneOn'
   have hv : ContinuousOn (variationOnFromTo f s a) s :=
     fun x hx ↦ (hf.continuousWithinAt_variationOnFromTo_iff ha hx).mpr (hc x hx)
-  refine ⟨p, q, ?_, ?_, hp, hq, heq, hvar⟩
-  · apply ((((hv.add hc).add (continuousOn_const (c := p a))).add
+  have hpc : ContinuousOn p s := by
+    apply ((((hv.add hc).add (continuousOn_const (c := p a))).add
         (continuousOn_const (c := q a))).div_const 2).congr
     intro y hy
     have hvy := hvar a ha y hy
     have hfy : f y = p y - q y := congrFun heq y
     simp only [Pi.add_apply]
     linarith
-  · apply ((((hv.sub hc).add (continuousOn_const (c := p a))).add
-        (continuousOn_const (c := q a))).div_const 2).congr
-    intro y hy
-    have hvy := hvar a ha y hy
-    have hfy : f y = p y - q y := congrFun heq y
-    simp only [Pi.add_apply, Pi.sub_apply]
-    linarith
+  refine ⟨p, q, hpc, ?_, hp, hq, heq, hvar⟩
+  apply (hpc.sub hc).congr
+  intro y _
+  have hfy : f y = p y - q y := congrFun heq y
+  simp only [Pi.sub_apply]
+  linarith
 
 namespace TauCeti
 
-/-- On an ordered topological domain, continuous locally bounded-variation real functions are
-exactly differences of continuous nondecreasing functions. In particular, on `ℝ` local bounded
-variation is the two-sided condition on every compact interval. -/
-theorem continuous_locallyBoundedVariationOn_iff
-    {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α] {f : α → ℝ} :
-    (Continuous f ∧ LocallyBoundedVariationOn f univ) ↔
-      ∃ p q : α → ℝ, Continuous p ∧ Continuous q ∧ Monotone p ∧ Monotone q ∧ f = p - q := by
+/-- On a subset of an ordered topological domain, continuous locally bounded-variation real
+functions are exactly differences of continuous nondecreasing functions on that subset.
+In particular, on all of `ℝ` local bounded variation is the two-sided condition on every
+compact interval. -/
+theorem continuousOn_and_locallyBoundedVariationOn_iff
+    {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    {f : α → ℝ} {s : Set α} :
+    (ContinuousOn f s ∧ LocallyBoundedVariationOn f s) ↔
+      ∃ p q : α → ℝ, ContinuousOn p s ∧ ContinuousOn q s ∧
+        MonotoneOn p s ∧ MonotoneOn q s ∧ EqOn f (p - q) s := by
   constructor
   · rintro ⟨hc, hf⟩
     obtain ⟨p, q, hp, hq, hpm, hqm, heq, _⟩ :=
-      hf.exists_continuousOn_monotoneOn_sub_monotoneOn hc.continuousOn
-    exact ⟨p, q, continuousOn_univ.mp hp, continuousOn_univ.mp hq,
-      monotoneOn_univ.mp hpm, monotoneOn_univ.mp hqm, heq⟩
-  · rintro ⟨p, q, hp, hq, hpm, hqm, rfl⟩
-    exact ⟨hp.sub hq, ((hpm.monotoneOn _).locallyBoundedVariationOn).sub
-      (hqm.monotoneOn _).locallyBoundedVariationOn⟩
+      hf.exists_continuousOn_monotoneOn_sub_monotoneOn hc
+    exact ⟨p, q, hp, hq, hpm, hqm, fun y _ ↦ congrFun heq y⟩
+  · rintro ⟨p, q, hp, hq, hpm, hqm, heq⟩
+    refine ⟨(hp.sub hq).congr heq, ?_⟩
+    intro a b ha hb
+    change eVariationOn f (s ∩ Icc a b) ≠ ⊤
+    rw [eVariationOn.congr (heq.mono inter_subset_left)]
+    exact (hpm.locallyBoundedVariationOn.sub hqm.locallyBoundedVariationOn) a b ha hb
 
 end TauCeti
