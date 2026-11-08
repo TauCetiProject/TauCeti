@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerP
 import Mathlib.NumberTheory.NumberField.Cyclotomic.PID
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -207,12 +208,6 @@ private theorem norm_dvd_sq_of_dvd_intCast {A : ℤ} {ρ : 𝓞 K} (h : ρ ∣ (
   rwa [← eq_intCast (algebraMap ℤ (𝓞 K)), Algebra.norm_algebraMap,
     finrank_ringOfIntegers_three] at h'
 
-omit [IsCyclotomicExtension {3} ℚ K] in
-/-- An element `π` of `𝓞 K` divides its own norm. -/
-private theorem dvd_natAbs_norm (π : 𝓞 K) : π ∣ ((Algebra.norm ℤ π).natAbs : 𝓞 K) := by
-  rw [← absNorm_span_singleton, ← mem_span_singleton]
-  exact absNorm_mem _
-
 /-- Splitting off a prime factor: a primary element `ρ * β * u` of `𝓞 K` dividing a rational
 integer `A` prime to `3` and to the primary prime `π`. If cubic reciprocity between `π` and the
 primary associates of `β` dividing `A` holds, it holds between `π` and `ρ * β * u`. -/
@@ -244,7 +239,7 @@ private theorem cubic_reciprocity_mul_step {π : 𝓞 K} (hπ : IsPrimaryEisenst
   have hρ'A : ρ * w ∣ (A : 𝓞 K) := (dvd_mul_right _ δ).trans hγA
   -- `ρ'` and `π` have different norms, since otherwise `π ∣ N(π) = N(ρ') ∣ A ^ 2`.
   have hN : Algebra.norm ℤ π ≠ Algebra.norm ℤ (ρ * w) := fun h ↦ hπA <|
-    hp.dvd_of_dvd_pow (n := 2) <| (dvd_natAbs_norm π).trans <| by
+    hp.dvd_of_dvd_pow (n := 2) <| (NumberField.RingOfIntegers.dvd_natAbs_norm π).trans <| by
       rw [← Int.cast_natCast, ← Int.cast_pow]
       exact Int.cast_dvd_cast _ _ (Int.natAbs_dvd.mpr (h ▸ norm_dvd_sq_of_dvd_intCast hρ'A))
   have hδ0 : δ ≠ 0 := by
