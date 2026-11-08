@@ -53,13 +53,17 @@ private theorem minorsIdeal_range_eq_minorsIdeal_range_submatrix_castSucc
   have hupper : range A.mulVecLin ≤ (range B.mulVecLin).map P := by
     rintro _ ⟨x, rfl⟩
     refine ⟨π (A *ᵥ x), ?_, ?_⟩
-    · exact ⟨_, submatrix_castSucc_mulVec_eq_of_mulVec_eq_zero A hu huunit x⟩
+    · refine ⟨fun i => x i.castSucc -
+        u i.castSucc * ((huunit.unit⁻¹ : Rˣ) : R) * x (Fin.last n), ?_⟩
+      ext i
+      exact congrFun (submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero A hu huunit x) i.castSucc
     · ext i
       refine Fin.lastCases ?_ (fun j => ?_) i
       · simpa only [P, π, LinearMap.pi_apply, Fin.lastCases_last, LinearMap.neg_apply,
           LinearMap.smul_apply, LinearMap.sum_apply, LinearMap.proj_apply,
           LinearMap.funLeft_apply, smul_eq_mul, Matrix.mulVecLin_apply] using
-            (mulVec_last_eq_of_vecMul_eq_zero A hw hwunit x).symm
+            (apply_last_eq_of_dotProduct_eq_zero (v := A *ᵥ x)
+              (by rw [dotProduct_mulVec, hw, zero_dotProduct]) hwunit).symm
       · simp [P, π]
   have hlower : range B.mulVecLin ≤ (range A.mulVecLin).map π := by
     rintro _ ⟨x, rfl⟩
