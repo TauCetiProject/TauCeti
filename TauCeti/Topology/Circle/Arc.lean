@@ -177,11 +177,12 @@ Mathlib parametrizes the two arcs that two distinct points `z` and `w` determine
 `Circle.path z w` and `Circle.path w z`. The open arcs are the images of `Set.Ioo 0 1`; each is the
 complement of the opposite closed arc (`Circle.compl_range_path`). -/
 
-/-- An open arc of the circle is path connected: it is the image of the real interval `Ioo 0 1`
-under `Path.extend`, which reparametrizes `Circle.path u v` by all of `ℝ` and so lets the
-path-connectedness be read off the convexity of `Ioo 0 1`. -/
+/-- The open arc `Circle.path u v '' Ioo 0 1` of the circle is path connected. -/
 theorem _root_.Circle.isPathConnected_path_image_Ioo (u v : Circle) :
     IsPathConnected (Circle.path u v '' Ioo 0 1) := by
+  -- The arc is the image of the real interval `Ioo 0 1` under `Path.extend`, which
+  -- reparametrizes `Circle.path u v` by all of `ℝ`, so it inherits path-connectedness from
+  -- the convex set `Ioo 0 1`.
   have hproj : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo 0 1 = Ioo 0 1 := by
     ext t
     simp only [mem_image, mem_Ioo]
@@ -199,10 +200,10 @@ theorem _root_.Circle.isPathConnected_path_image_Ioo (u v : Circle) :
   exact himg ▸ ((convex_Ioo (0 : ℝ) 1).isPathConnected (by simp)).image'
     (Path.continuous_extend _).continuousOn
 
-/-- The open arc from `z` to a different point `w` of the circle is open: it is the complement of
-the opposite closed arc by `Circle.compl_range_path`, and the range of a path is compact. -/
+/-- The open arc from `z` to a different point `w` of the circle is an open set. -/
 theorem _root_.Circle.isOpen_path_image_Ioo {z w : Circle} (hzw : z ≠ w) :
     IsOpen (Circle.path z w '' Ioo 0 1) := by
+  -- The open arc is the complement of the opposite closed arc, which is compact.
   rw [← Circle.compl_range_path hzw.symm]
   exact (isCompact_range (Circle.path w z).continuous).isClosed.isOpen_compl
 
@@ -212,11 +213,12 @@ theorem _root_.Circle.disjoint_path_image_Ioo {z w : Circle} (hzw : z ≠ w) :
   rw [← Circle.compl_range_path hzw.symm]
   exact disjoint_compl_left_iff_subset.mpr (image_subset_range _ _)
 
-/-- The two open arcs between two distinct points `z` and `w` of the circle cover the complement
-of `{z, w}`, since the two closed arcs meet exactly in `{z, w}`
-(`Circle.range_path_inter_range_path`). -/
+/-- The complement of two distinct points `z` and `w` of the circle is the union of the two open
+arcs between them. -/
 theorem _root_.Circle.path_image_Ioo_union {z w : Circle} (hzw : z ≠ w) :
     Circle.path z w '' Ioo 0 1 ∪ Circle.path w z '' Ioo 0 1 = ({z, w} : Set Circle)ᶜ := by
+  -- Each open arc is the complement of the opposite closed arc, and the two closed arcs meet
+  -- exactly in `{z, w}`.
   rw [← Circle.compl_range_path hzw.symm, ← Circle.compl_range_path hzw, ← compl_inter,
     Circle.range_path_inter_range_path hzw.symm, pair_comm w z]
 
