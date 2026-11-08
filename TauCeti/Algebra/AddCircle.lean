@@ -283,22 +283,30 @@ theorem natCard_torsionBy (hn : 0 < n) : Nat.card ((AddCircle p)[(n : ℤ)]) = n
   rw [torsionBy_eq_zmultiples p (Nat.cast_ne_zero.mpr hn.ne'), Nat.card_zmultiples,
     addOrderOf_period_div_of_ne_zero p hn]
 
-/-- The torsion subgroups of `AddCircle p` are ordered by divisibility. -/
-theorem torsionBy_le_torsionBy_iff (hm : 0 < m) (hn : 0 < n) :
+/-- The torsion subgroups of `AddCircle p` are ordered by divisibility; the `0`-torsion is the
+whole group, which is the top element of the divisibility order. -/
+theorem torsionBy_le_torsionBy_iff :
     (AddCircle p)[(m : ℤ)] ≤ (AddCircle p)[(n : ℤ)] ↔ m ∣ n := by
   refine ⟨fun h ↦ ?_, fun hd u hu ↦ ?_⟩
-  · have := addOrderOf_dvd_of_mem_zmultiples
-      ((torsionBy_eq_zmultiples p (Nat.cast_ne_zero.mpr hn.ne')) ▸
-        h (coe_period_div_mem_torsionBy p))
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · exact dvd_zero m
+    have hn' : (n : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+    rcases Nat.eq_zero_or_pos m with rfl | hm
+    · have hmem := h (x := ((p / (n + 1 : ℕ) : 𝕜) : AddCircle p))
+        (by simp)
+      have := addOrderOf_dvd_of_nsmul_eq_zero (torsionBy.nsmul_iff.mp hmem)
+      rw [addOrderOf_period_div_of_ne_zero p n.succ_pos] at this
+      exact absurd (Nat.le_of_dvd hn this) (by omega)
+    have := addOrderOf_dvd_of_mem_zmultiples
+      ((torsionBy_eq_zmultiples p hn') ▸ h (coe_period_div_mem_torsionBy p))
     rwa [addOrderOf_period_div_of_ne_zero p hm, addOrderOf_period_div_of_ne_zero p hn] at this
   · exact Submodule.torsionBy_le_torsionBy_of_dvd (M := AddCircle p) _ _
       (Int.natCast_dvd_natCast.mpr hd) hu
 
-/-- Distinct positive orders give distinct torsion subgroups of `AddCircle p`. -/
-theorem torsionBy_inj (hm : 0 < m) (hn : 0 < n) :
-    (AddCircle p)[(m : ℤ)] = (AddCircle p)[(n : ℤ)] ↔ m = n := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
-  rw [← natCard_torsionBy p hm, ← natCard_torsionBy p hn, h]
+/-- Distinct orders give distinct torsion subgroups of `AddCircle p`. -/
+theorem torsionBy_inj : (AddCircle p)[(m : ℤ)] = (AddCircle p)[(n : ℤ)] ↔ m = n := by
+  rw [le_antisymm_iff, torsionBy_le_torsionBy_iff, torsionBy_le_torsionBy_iff]
+  exact ⟨fun h ↦ Nat.dvd_antisymm h.1 h.2, fun h ↦ h ▸ ⟨dvd_rfl, dvd_rfl⟩⟩
 
 end ExactOrder
 
