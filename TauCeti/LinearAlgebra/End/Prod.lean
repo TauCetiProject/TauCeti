@@ -16,6 +16,8 @@ import TauCeti.RingTheory.SimpleModule.Basic
 This file proves that nilpotence and semisimplicity are preserved by componentwise products of
 endomorphisms, and describes the endomorphisms commuting with a componentwise product `f × g`
 when `f` and `g` have coprime minimal polynomials: they are themselves componentwise products.
+Since the minimal polynomial of `f × g` divides the product of those of `f` and `g`, this
+coprimality passes to iterated products.
 
 ## Main declarations
 
@@ -24,6 +26,8 @@ when `f` and `g` have coprime minimal polynomials: they are themselves component
 * `Module.End.commute_prodMap_iff_of_isCoprime`: if `f` and `g` have coprime minimal polynomials,
   the endomorphisms commuting with `f × g` are the products `a × b` with `a` commuting with `f`
   and `b` commuting with `g`.
+* `Module.End.isCoprime_minpoly_prodMap`: a polynomial coprime to the minimal polynomials of `f`
+  and `g` is coprime to the minimal polynomial of `f × g`.
 -/
 
 public section
@@ -139,6 +143,22 @@ theorem _root_.Module.End.commute_prodMap_iff_of_isCoprime {f : Module.End K V}
     rw [Commute, SemiconjBy, LinearMap.prodMap_mul, LinearMap.prodMap_mul, ha.eq, hb.eq]
 
 end CommRing
+
+section Field
+
+variable {K : Type u} {V : Type v} {W : Type w}
+variable [Field K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- If the minimal polynomials of `f` and `g` are both coprime to `p`, so is the minimal polynomial
+of `f × g`, since it divides the product of the two. This supplies the coprimality hypothesis of
+`Module.End.commute_prodMap_iff_of_isCoprime` for iterated products. -/
+theorem _root_.Module.End.isCoprime_minpoly_prodMap {f : Module.End K V} {g : Module.End K W}
+    {p : K[X]} (hf : IsCoprime (minpoly K f) p) (hg : IsCoprime (minpoly K g) p) :
+    IsCoprime (minpoly K (f.prodMap g)) p :=
+  (hf.mul_left hg).of_isCoprime_of_dvd_left <| minpoly.dvd K _ <| by
+    simp [Module.End.aeval_prodMap]
+
+end Field
 
 end
 

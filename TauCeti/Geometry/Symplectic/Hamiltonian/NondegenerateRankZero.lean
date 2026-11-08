@@ -11,8 +11,10 @@ import Mathlib.Algebra.Lie.AdjointAction.Basic
 import Mathlib.FieldTheory.Separable
 import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Subalgebra.Engel
+import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.LinearAlgebra.End.Prod
+import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
 # Nondegenerate rank-zero points of integrable systems
@@ -160,6 +162,22 @@ theorem isNondegenerateQuadraticFamily_of_engel_le
 
 section TwoDim
 
+/-- On a symplectic plane, the Hamiltonian endomorphism of a nondegenerate quadratic form squares
+to a nonzero homothety. -/
+theorem exists_hamiltonianEnd_mul_self_eq_smul_one (hV : finrank ℝ V = 2) {Q : QuadraticForm ℝ V}
+    (hQ : Q.Nondegenerate) :
+    ∃ c : ℝ, c ≠ 0 ∧ ω.hamiltonianEnd Q * ω.hamiltonianEnd Q = c • 1 := by
+  obtain ⟨c, hc⟩ := exists_mul_self_eq_smul_one hV (ω.hamiltonianEndEquiv Q)
+  refine ⟨c, fun hc0 ↦ ?_, by simpa using hc⟩
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  have hinj : Function.Injective (ω.hamiltonianEnd Q) := by
+    rw [← LinearMap.ker_eq_bot, ker_hamiltonianEnd,
+      ← QuadraticMap.nondegenerate_iff_radical_eq_bot]
+    exact hQ
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  refine hv ((hinj.comp hinj) ?_)
+  simpa [hc0] using LinearMap.congr_fun hc v
+
 /-- **Rank-zero nondegeneracy in dimension two.** On a two-dimensional symplectic vector space, a
 single quadratic form is a nondegenerate family exactly when it is nondegenerate as a quadratic
 form. Such forms are the elliptic (definite) and hyperbolic (indefinite) ones. -/
@@ -184,15 +202,13 @@ theorem isNondegenerateQuadraticFamily_const_iff [Nonempty ι] (hV : finrank ℝ
       rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, hc] at this
       simpa [hc0] using this
   · intro hinj
-    have hc0 : c ≠ 0 := by
-      rintro rfl
-      obtain ⟨v, hv⟩ := exists_ne (0 : V)
-      refine hv ((hinj.comp hinj) ?_)
-      simp only [Function.comp_apply, ← mul_apply_eq_comp, hc, zero_smul, map_zero,
-        LinearMap.zero_apply]
+    obtain ⟨c', hc0, hc'⟩ := exists_hamiltonianEnd_mul_self_eq_smul_one (ω := ω) hV (by
+      rwa [QuadraticMap.nondegenerate_iff_radical_eq_bot, ← ker_hamiltonianEnd ω,
+        LinearMap.ker_eq_bot, ← hAQ])
+    rw [← hAQ] at hc'
     have : IsLieAbelian (lieSpan ℝ (skewAdjointLieSubalgebra ω.toBilinForm) {A}) := by simp
     exact ⟨inferInstance,
-      normalizer_eq_self_of_engel_le _ _ (engel_le_lieSpan_singleton hV hc0 hc)⟩
+      normalizer_eq_self_of_engel_le _ _ (engel_le_lieSpan_singleton hV hc0 hc')⟩
 
 end TwoDim
 
@@ -264,26 +280,20 @@ theorem mem_span_sumElim_prod_of_quadraticPoissonBracket_eq_zero {P₁ : Quadrat
   obtain ⟨R₁, R₂, rfl, rfl, rfl⟩ := exists_eq_prod_of_hamiltonianEnd_eq_prodMap hab
   have h₁ := hPQ₁ R₁ (ω₁.quadraticPoissonBracket_eq_zero_iff.2 ha)
   have h₂ := hPQ₂ R₂ (ω₂.quadraticPoissonBracket_eq_zero_iff.2 hb)
-  let L₁ : QuadraticForm ℝ V₁ →ₗ[ℝ] QuadraticForm ℝ (V₁ × V₂) :=
-    { toFun R := R.prod 0
-      map_add' _ _ := by ext; simp
-      map_smul' _ _ := by ext; simp }
-  let L₂ : QuadraticForm ℝ V₂ →ₗ[ℝ] QuadraticForm ℝ (V₁ × V₂) :=
-    { toFun R := (0 : QuadraticForm ℝ V₁).prod R
-      map_add' _ _ := by ext; simp
-      map_smul' _ _ := by ext; simp }
-  have hsum : R₁.prod R₂ = L₁ R₁ + L₂ R₂ := by
-    ext
-    simp [L₁, L₂]
-  have h₁' := Submodule.mem_map_of_mem (f := L₁) h₁
-  have h₂' := Submodule.mem_map_of_mem (f := L₂) h₂
+  -- Split `R₁ ⊕ R₂` as `(R₁ ⊕ 0) + (0 ⊕ R₂)` using linearity of the orthogonal product.
+  let L := QuadraticMap.prodLinear ℝ V₁ V₂ ℝ
+  have hsum : R₁.prod R₂ = (L ∘ₗ LinearMap.inl ℝ _ _) R₁ + (L ∘ₗ LinearMap.inr ℝ _ _) R₂ := by
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, ← map_add]
+    simp [L]
+  have h₁' := Submodule.mem_map_of_mem (f := L ∘ₗ LinearMap.inl ℝ _ _) h₁
+  have h₂' := Submodule.mem_map_of_mem (f := L ∘ₗ LinearMap.inr ℝ _ _) h₂
   rw [Submodule.map_span] at h₁' h₂'
   rw [hsum]
   refine add_mem (Submodule.span_mono ?_ h₁') (Submodule.span_mono ?_ h₂')
   · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    exact ⟨Sum.inl i, rfl⟩
+    exact ⟨Sum.inl i, by simp [L]⟩
   · rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
-    exact ⟨Sum.inr j, rfl⟩
+    exact ⟨Sum.inr j, by simp [L]⟩
 
 /-- **Direct sums of nondegenerate families.** Let `Q₁` and `Q₂` be families of pairwise
 Poisson-commuting quadratic forms on `V₁` and `V₂`. Suppose that `Pₖ` has semisimple Hamiltonian
@@ -313,21 +323,6 @@ end Prod
 section Plane
 
 variable {Q : QuadraticForm ℝ V}
-
-/-- On a symplectic plane, the Hamiltonian endomorphism of a nondegenerate quadratic form squares
-to a nonzero homothety. -/
-theorem exists_hamiltonianEnd_mul_self_eq_smul_one (hV : finrank ℝ V = 2) (hQ : Q.Nondegenerate) :
-    ∃ c : ℝ, c ≠ 0 ∧ ω.hamiltonianEnd Q * ω.hamiltonianEnd Q = c • 1 := by
-  obtain ⟨c, hc⟩ := exists_mul_self_eq_smul_one hV (ω.hamiltonianEndEquiv Q)
-  refine ⟨c, fun hc0 ↦ ?_, by simpa using hc⟩
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  have hinj : Function.Injective (ω.hamiltonianEnd Q) := by
-    rw [← LinearMap.ker_eq_bot, ker_hamiltonianEnd,
-      ← QuadraticMap.nondegenerate_iff_radical_eq_bot]
-    exact hQ
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  refine hv ((hinj.comp hinj) ?_)
-  simpa [hc0] using LinearMap.congr_fun hc v
 
 /-- On a symplectic plane, a nondegenerate quadratic form has semisimple Hamiltonian
 endomorphism. -/
@@ -383,16 +378,8 @@ theorem isNondegenerateQuadraticFamily_prod_of_finrank_eq_two (hV₁ : finrank �
     rw [map_smul, smul_mul_smul_comm, hc₂, smul_smul, sq]
   have hcop : IsCoprime (minpoly ℝ (ω₁.hamiltonianEnd Q₁))
       (minpoly ℝ (ω₂.hamiltonianEnd (s • Q₂))) := by
-    -- `X² - c₁ = (X² - s² c₂) + (s² c₂ - c₁)` differs from `X² - s² c₂` by a unit.
-    have hX : IsCoprime (Polynomial.X ^ 2 - Polynomial.C c₁)
-        (Polynomial.X ^ 2 - Polynomial.C (s ^ 2 * c₂)) := by
-      have hu : IsUnit (Polynomial.C (s ^ 2 * c₂ - c₁)) :=
-        Polynomial.isUnit_C.2 (sub_ne_zero.2 hs.symm).isUnit
-      convert ((isCoprime_mul_unit_left_left hu 1 _).2 isCoprime_one_left).add_mul_left_left 1
-        using 1
-      rw [map_sub]
-      ring
-    refine (hX.of_isCoprime_of_dvd_left
+    refine ((Polynomial.isCoprime_sub_C_of_isUnit_sub (Polynomial.X ^ 2)
+      (sub_ne_zero.2 hs).isUnit).of_isCoprime_of_dvd_left
       (minpoly.dvd _ _ ?_)).of_isCoprime_of_dvd_right (minpoly.dvd _ _ ?_)
     · simp [sq, hc₁, Algebra.algebraMap_eq_smul_one]
     · rw [map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C, sq, hsc₂,
