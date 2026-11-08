@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
+import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
@@ -165,7 +166,8 @@ whenever `p ∣ d i`. (It fixes `r i` whenever `p ∤ d i`, by
 theorem apply_eq_neg_of_mem_inertia_of_ne_one {τ : K ≃ₐ[ℚ] K}
     (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K)) (hτ1 : τ ≠ 1) {i : ι} (hi : (p : ℤ) ∣ d i) :
     τ (r i) = -r i := by
-  have hri : r i ≠ 0 := ne_zero_of_sq_eq_intCast (hr i) fun h0 => hd i (h0 ▸ dvd_zero _)
+  have hri : r i ≠ 0 :=
+    ne_zero_of_pow_eq_intCast two_ne_zero (hr i) fun h0 => hd i (h0 ▸ dvd_zero _)
   refine (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq τ (hr i)).resolve_left fun hfix => hτ1 ?_
   -- If `τ` fixes `r i`, it fixes every generator, so it is the identity.
   refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
@@ -346,7 +348,7 @@ theorem isArithFrobAt_mem_inertia_iff [Finite ι] (hr : ∀ i, r i ^ 2 = algebra
   · rintro ⟨hres, hsym⟩
     -- `σ` fixes the roots prime to `p` and acts by the sign `σ (r i) = ± r i` on the others.
     rw [mem_inertia_iff hr htop hodd Q hsf hi]
-    have hri : r i ≠ 0 := ne_zero_of_sq_eq_intCast (hr i) (hsf i).ne_zero
+    have hri : r i ≠ 0 := ne_zero_of_pow_eq_intCast two_ne_zero (hr i) (hsf i).ne_zero
     have hsame {k : ι} (hk : (p : ℤ) ∣ d k) : σ (r i) * σ (r k) = r i * r k :=
       (hpair hi hk).mpr (hsym i k hi hk)
     have hsq : σ (r i) ^ 2 = r i ^ 2 := by

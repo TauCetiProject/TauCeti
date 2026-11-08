@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Concentration.PoincareLogSobolev
+public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.SubGaussian
