@@ -248,8 +248,8 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
       (Subtype.ext (eq_of_mem_intrinsicInterior p.1.1.2 q.1.1.2 hxp.1 hxq.1)) ?_)
     funext i
     exact (hxp.2 i).symm.trans (hxq.2 i)
-  have hfr := TauCeti.intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior
-    (fun p => (hPc p).isClosed) fun p x hx => hcell p.1.1.2 hx.1 hx.2
+  have hfr := fun p => TauCeti.intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior p
+    (hPc p).isClosed fun x hx => hcell p.1.1.2 hx.1 hx.2
   obtain ⟨M, hMs, hMP, hMface, -⟩ := exists_subdivision P hPc hPv
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some)
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some_mem) (locallyFinite_of_finite P) hdisj hfr
