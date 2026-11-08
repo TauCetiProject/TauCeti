@@ -44,7 +44,8 @@ theorem one_add_abs_pow_le_two_pow_mul (x : ℝ) (k : ℕ) :
       have heven : |x| ^ (2 * k) = x ^ (2 * k : ℕ) := by
         rw [← abs_pow]
         exact abs_of_nonneg hxeven
-      exact hpowle.trans (heven ▸ le_add_of_nonneg_left (by norm_num))
+      rw [heven] at hpowle
+      exact hpowle.trans (le_add_of_nonneg_left (by norm_num))
   calc
     (1 + |x|) ^ k ≤ (2 * max 1 |x|) ^ k := hsumPow
     _ = 2 ^ k * max 1 |x| ^ k := by rw [mul_pow]

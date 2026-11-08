@@ -26,19 +26,15 @@ open MeasureTheory Real
 
 namespace TauCeti.Probability
 
-/-- The unordered pairs of distinct indices in `Fin n`, represented in increasing order. -/
-private def gaussianBetaGasPairs (n : ℕ) : Finset (Fin n × Fin n) :=
-  Finset.univ.filter fun p => p.1 < p.2
-
 private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
     (x : Fin n → ℝ) :
     gaussianBetaGasWeight n β x ≤
-      ∏ i : Fin n, ((1 + |x i|) ^ (2 * (β * ((gaussianBetaGasPairs n).card : ℝ))) *
+      ∏ i : Fin n, ((1 + |x i|) ^ (β * ((betaGasPairs n).card : ℝ)) *
         exp (-(β * (n : ℝ) / 4) * x i ^ 2)) := by
   classical
-  let pairs := gaussianBetaGasPairs n
+  let pairs := betaGasPairs n
   let a : ℝ := β * (n : ℝ) / 4
-  let p : ℝ := 2 * (β * (pairs.card : ℝ))
+  let p : ℝ := β * (pairs.card : ℝ)
   let q : ℝ := ∏ i : Fin n, (1 + |x i|)
   have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ q ^ p :=
     Finset.prod_abs_sub_rpow_le_prod_one_add_abs_rpow hβ.le x pairs
@@ -54,7 +50,6 @@ private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
   have hpoint : gaussianBetaGasWeight n β x ≤
       ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
     rw [gaussianBetaGasWeight_def]
-    rw [show (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2) = pairs from rfl]
     rw [hexp]
     calc
       _ ≤ (∏ i : Fin n, exp (-a * x i ^ 2)) * q ^ p := by
@@ -74,9 +69,9 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
   by_cases hn : n = 0
   · subst n
     simp
-  · let pairs := gaussianBetaGasPairs n
+  · let pairs := betaGasPairs n
     let a : ℝ := β * (n : ℝ) / 4
-    let p : ℝ := 2 * (β * (pairs.card : ℝ))
+    let p : ℝ := β * (pairs.card : ℝ)
     have ha : 0 < a := by
       dsimp [a]
       positivity

@@ -28,16 +28,25 @@ open MeasureTheory Real
 
 namespace TauCeti.Probability
 
+/-- Distinct particle indices represented in increasing order. -/
+def betaGasPairs (n : ℕ) : Finset (Fin n × Fin n) :=
+  Finset.univ.filter fun p => p.1 < p.2
+
+/-- Membership in the ordered-pair index set. -/
+@[simp] theorem mem_betaGasPairs (n : ℕ) (p : Fin n × Fin n) :
+    p ∈ betaGasPairs n ↔ p.1 < p.2 := by
+  simp [betaGasPairs]
+
 /-- The unnormalized beta-gas weight for a potential `V`. -/
 def betaGasWeight (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) : ℝ :=
   exp (-(β * (n : ℝ) / 2) * ∑ i, V (x i)) *
-    ∏ p ∈ (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2), |x p.1 - x p.2| ^ β
+    ∏ p ∈ betaGasPairs n, |x p.1 - x p.2| ^ β
 
 /-- The defining formula for the beta-gas weight. -/
 theorem betaGasWeight_def (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) :
     betaGasWeight n β V x =
       exp (-(β * (n : ℝ) / 2) * ∑ i, V (x i)) *
-        ∏ p ∈ (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2),
+        ∏ p ∈ betaGasPairs n,
           |x p.1 - x p.2| ^ β := (rfl)
 
 /-- The beta-gas weight is nonnegative. -/
@@ -53,7 +62,7 @@ theorem betaGasWeight_pos (n : ℕ) (β : ℝ) (V : ℝ → ℝ) {x : Fin n → 
   apply mul_pos (exp_pos _)
   apply Finset.prod_pos
   intro z hz
-  have hne : z.1 ≠ z.2 := ne_of_lt (Finset.mem_filter.mp hz).2
+  have hne : z.1 ≠ z.2 := ne_of_lt ((mem_betaGasPairs n z).mp hz)
   exact Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero.mpr (fun h => hne (hx h)))) β
 
 /-- A continuous potential gives a continuous weight when `β` is nonnegative. -/
@@ -188,7 +197,7 @@ theorem gaussianBetaGasWeight_eq_betaGasWeight (n : ℕ) (β : ℝ) :
 theorem gaussianBetaGasWeight_def (n : ℕ) (β : ℝ) (x : Fin n → ℝ) :
     gaussianBetaGasWeight n β x =
       exp (-(β * (n : ℝ) / 4) * ∑ i, x i ^ 2) *
-        ∏ p ∈ (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2),
+        ∏ p ∈ betaGasPairs n,
           |x p.1 - x p.2| ^ β := by
   unfold gaussianBetaGasWeight betaGasWeight
   rw [← Finset.sum_div]
