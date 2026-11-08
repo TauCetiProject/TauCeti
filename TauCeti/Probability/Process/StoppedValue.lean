@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.MeasureTheory.Function.Piecewise
+public import TauCeti.Data.Set.Countable
 
 /-!
 # Measurability of stopped values at countable-range times
@@ -142,11 +143,22 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
     exact ht
   have hm (i : R) : MeasurableSet[hτ.measurableSpace] (s i) :=
     hτ.measurableSet_eq_of_countable_range' hc i.val
-  convert @IndexedPartition.stronglyMeasurable_piecewise R Ω E hτ.measurableSpace s
-    (fun i ↦ (s i).indicator (X i.val)) inferInstance hs hm inferInstance hind using 1
+  let : MeasurableSpace Ω := hτ.measurableSpace
+  convert hs.stronglyMeasurable_piecewise hm hind using 1
   ext ω
   rw [IndexedPartition.piecewise_apply, Set.indicator_of_mem (hs.mem_index ω)]
   exact stoppedValue_of_eq (hs.mem_index ω)
+
+/-- An adapted process evaluated at a bounded, countable-range stopping time is strongly
+measurable for the stopping sigma algebra, without any path regularity assumption. -/
+theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const
+    {E : Type*} [TopologicalSpace E] [Zero E] [LinearOrder ι]
+    {ℱ : Filtration ι m} {X : ι → Ω → E} (hX : StronglyAdapted ℱ X)
+    (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable) {T : ι}
+    (hb : ∀ ω, τ ω ≤ T) :
+    StronglyMeasurable[hτ.measurableSpace] (stoppedValue X τ) :=
+  hX.stronglyMeasurable_stoppedValue_of_countable_range hτ hc
+    (fun ω ↦ ne_top_of_le_ne_top WithTop.coe_ne_top (hb ω))
 
 /-- Stopping a strongly adapted process at a countable-range stopping time preserves literal
 strong adaptation on a raw filtration, with no path regularity or finiteness assumption on
@@ -158,11 +170,9 @@ theorem StronglyAdapted.stoppedProcess_of_countable_range
     StronglyAdapted ℱ (MeasureTheory.stoppedProcess X τ) := by
   rw [stoppedProcess_eq_stoppedValue]
   intro t
-  have hct : (Set.range (fun ω ↦ min (t : WithTop ι) (τ ω))).Countable := by
-    simpa only [Set.range_comp'] using hc.image (min (t : WithTop ι))
-  exact (hX.stronglyMeasurable_stoppedValue_of_countable_range
-    ((isStoppingTime_const ℱ t).min hτ) hct
-    (fun ω ↦ ne_top_of_le_ne_top (by simp) (min_le_left _ _))).mono
+  have hct := ((Set.countable_singleton (t : WithTop ι)).mono Set.range_const_subset).range_min hc
+  exact (hX.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const
+    ((isStoppingTime_const ℱ t).min hτ) hct (fun _ ↦ min_le_left _ _)).mono
       (((isStoppingTime_const ℱ t).min hτ).measurableSpace_le_of_le_const
         (fun _ ↦ min_le_left _ _))
 
