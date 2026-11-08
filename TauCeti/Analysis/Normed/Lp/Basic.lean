@@ -14,7 +14,8 @@ public import Mathlib.LinearAlgebra.StdBasis
 
 The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
-the sum of the norms of the coordinates (`lp.hasSum_norm_one`). The scalar
+the sum of the norms of the coordinates (`lp.hasSum_norm_one`); for `1 ≤ p` it bounds the
+`ℓ^p` norm (`lp.norm_le_tsum_norm`). The scalar
 coordinate vectors are linearly independent, and vectors in their span vanish outside the
 corresponding indices. These algebraic facts hold over normed rings at every exponent. In `ℓ²`,
 the squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of
@@ -41,6 +42,31 @@ theorem evalCLM_apply [Fact (1 ≤ p)] (i : ι) (x : lp E p) : evalCLM 𝕜 E p 
 /-- The ℓ¹ norm is the sum of the norms of the coordinates. -/
 theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := by
   simpa using lp.hasSum_norm (p := 1) (by simp) y
+
+/-- For `1 ≤ p`, the `ℓ^p` norm of a sequence is at most its `ℓ¹` norm. -/
+theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
+    (hf : Summable fun i ↦ ‖f i‖) : ‖f‖ ≤ ∑' i, ‖f i‖ := by
+  have hC : 0 ≤ ∑' i, ‖f i‖ := tsum_nonneg fun i ↦ norm_nonneg _
+  have hle (i : ι) : ‖f i‖ ≤ ∑' i, ‖f i‖ := hf.le_tsum i fun j _ ↦ norm_nonneg _
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · exact lp.norm_le_of_forall_le hC hle
+  have hp1 : 1 ≤ p.toReal := by
+    simpa using ENNReal.toReal_mono hp_top (Fact.out : 1 ≤ p)
+  refine lp.norm_le_of_forall_sum_le (by linarith) hC fun s ↦ ?_
+  -- `x ^ p ≤ x * C ^ (p - 1)` for `0 ≤ x ≤ C`, and the `x` sum to at most `C`
+  calc ∑ i ∈ s, ‖f i‖ ^ p.toReal ≤ ∑ i ∈ s, ‖f i‖ * (∑' i, ‖f i‖) ^ (p.toReal - 1) := by
+        refine Finset.sum_le_sum fun i _ ↦ ?_
+        calc ‖f i‖ ^ p.toReal = ‖f i‖ * ‖f i‖ ^ (p.toReal - 1) := by
+              rw [← Real.rpow_one_add' (norm_nonneg _) (by linarith), add_sub_cancel]
+          _ ≤ ‖f i‖ * (∑' i, ‖f i‖) ^ (p.toReal - 1) := by
+              gcongr
+              exact hle i
+    _ = (∑ i ∈ s, ‖f i‖) * (∑' i, ‖f i‖) ^ (p.toReal - 1) := (Finset.sum_mul ..).symm
+    _ ≤ (∑' i, ‖f i‖) * (∑' i, ‖f i‖) ^ (p.toReal - 1) := by
+        gcongr
+        exact hf.sum_le_tsum s fun i _ ↦ norm_nonneg _
+    _ = (∑' i, ‖f i‖) ^ p.toReal := by
+        rw [← Real.rpow_one_add' hC (by linarith), add_sub_cancel]
 
 section Single
 
