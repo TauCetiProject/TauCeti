@@ -83,6 +83,8 @@ use.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
+* `IsCompact.exists_pos_forall_mul_norm_sq_le_compRight`: the same for the forms `b(·, B ·)` with
+  `B` in a compact set of endomorphisms, which gives uniform tameness constants.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -399,6 +401,22 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
+
+/-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
+space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms
+such that `b v (B v)` is positive for every `B ∈ T` and every nonzero `v`. Then one positive
+constant `c` gives `c ‖v‖² ≤ b v (B v)` for every `B ∈ T` and every `v`. For a symplectic form
+`b`, these are uniform tameness constants over a compact set of tamed structures. -/
+theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le_compRight
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {T : Set (E →L[ℝ] E)} (hT : IsCompact T) (b : E →L[ℝ] E →L[ℝ] ℝ)
+    (hpos : ∀ B ∈ T, ∀ v, v ≠ 0 → 0 < b v (B v)) :
+    ∃ c > 0, ∀ B ∈ T, ∀ v, c * ‖v‖ ^ 2 ≤ b v (B v) :=
+  -- The forms `b(·, B ·)` depend continuously on `B`.
+  hT.exists_pos_forall_mul_norm_sq_le
+    (b := fun B ↦ ((ContinuousLinearMap.compL ℝ E E ℝ).flip B).comp b)
+    ((ContinuousLinearMap.compL ℝ E E ℝ).flip.continuous.clm_comp continuous_const).continuousOn
+    hpos
 
 /-- On a finite-dimensional real normed space, a continuous bilinear form positive on
 nonzero diagonal vectors has a bounded unit sublevel set. Symmetry is not needed. -/
