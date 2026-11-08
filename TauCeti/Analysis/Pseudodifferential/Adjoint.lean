@@ -9,8 +9,11 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.Normed.Affine.MazurUlam
 import TauCeti.Analysis.Fourier.Decay
+import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The adjoint of a quantization with compact spatial support
@@ -111,94 +114,6 @@ private theorem HasCompactSpatialSupport.continuous_fourier_slice
     exact ((Real.continuous_fourierChar.comp (continuous_const.inner hg).neg).smul
       (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk hh))).continuousAt
 
-/-- **Differentiation of a Fourier transform in a parameter.** If `f(x, ξ)` is `C¹` and vanishes
-for `x` outside a compact set, the Fourier transform of `x ↦ f(x, ξ)` at `θ` is differentiable in
-`ξ`, with derivative the Fourier transform of the partial derivative in `ξ`. -/
-private theorem hasFDerivAt_fourier_slice {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {f : CoordinateSpace n × CoordinateSpace n → E} (hf : ContDiff ℝ 1 f)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (hfK : ∀ x ∉ K, ∀ ξ, f (x, ξ) = 0)
-    (θ ξ₀ : CoordinateSpace n) :
-    HasFDerivAt (fun ξ ↦ 𝓕 (fun x ↦ f (x, ξ)) θ)
-      (𝓕 (fun x ↦ (fderiv ℝ f (x, ξ₀)).comp (ContinuousLinearMap.inr ℝ _ _)) θ) ξ₀ := by
-  have hcont : Continuous fun q ↦ fderiv ℝ f q := hf.continuous_fderiv one_ne_zero
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall ξ₀ 1)).exists_bound_of_continuousOn
-    hcont.continuousOn
-  -- Outside `K` the partial derivatives vanish as well.
-  have hfK' : ∀ x ∉ K, ∀ ξ, fderiv ℝ f (x, ξ) = 0 := fun x hx ξ ↦ by
-    have hzero : f =ᶠ[nhds (x, ξ)] fun _ ↦ 0 :=
-      Filter.eventually_of_mem ((hK.isClosed.isOpen_compl.prod isOpen_univ).mem_nhds
-        ⟨hx, Set.mem_univ _⟩) fun q hq ↦ hfK q.1 hq.1 q.2
-    rw [hzero.fderiv_eq, fderiv_const_apply]
-  simp only [Real.fourier_eq, Circle.smul_def]
-  refine hasFDerivAt_integral_of_dominated_of_fderiv_le (𝕜 := ℝ) (s := Metric.ball ξ₀ 1)
-    (F := fun ξ x ↦ (𝐞 (-⟪x, θ⟫) : ℂ) • f (x, ξ))
-    (F' := fun ξ x ↦ (𝐞 (-⟪x, θ⟫) : ℂ) • (fderiv ℝ f (x, ξ)).comp (ContinuousLinearMap.inr ℝ _ _))
-    (bound := K.indicator fun _ ↦ C) (Metric.ball_mem_nhds ξ₀ one_pos) ?_ ?_ ?_ ?_ ?_ ?_
-  · exact .of_forall fun ξ ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).subtype_val.smul
-      (hf.continuous.comp (by fun_prop))).aestronglyMeasurable
-  · exact ((Real.continuous_fourierChar.comp (by fun_prop)).subtype_val.smul
-      (hf.continuous.comp (by fun_prop))).integrable_of_hasCompactSupport
-        (HasCompactSupport.intro hK fun x hx ↦ by simp [hfK x hx])
-  · exact ((Real.continuous_fourierChar.comp (by fun_prop)).subtype_val.smul
-      ((hcont.comp (by fun_prop)).clm_comp continuous_const)).aestronglyMeasurable
-  · refine .of_forall fun x ξ hξ ↦ ?_
-    by_cases hx : x ∈ K
-    · rw [Set.indicator_of_mem hx, norm_smul, Circle.norm_coe, one_mul]
-      refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-      refine (mul_le_of_le_one_right (norm_nonneg _)
-        (ContinuousLinearMap.norm_inr_le_one _ _ _)).trans ?_
-      exact hC (x, ξ) ⟨hx, Metric.ball_subset_closedBall hξ⟩
-    · simp [Set.indicator_of_notMem hx, hfK' x hx]
-  · exact (integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne)
-  · refine .of_forall fun x ξ _ ↦ ?_
-    exact ((hf.differentiable one_ne_zero (x, ξ)).hasFDerivAt.comp ξ
-      (hasFDerivAt_prodMk_right x ξ)).const_smul _
-
-/-- `hasFDerivAt_fourier_slice` with the derivative written in coordinates: its value on the
-coordinate vector `e_j` is the Fourier transform of `x ↦ ∂_{ξ_j} f(x, ξ₀)`. -/
-private theorem hasFDerivAt_fourier_slice_sum {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {f : CoordinateSpace n × CoordinateSpace n → E} (hf : ContDiff ℝ 1 f)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (hfK : ∀ x ∉ K, ∀ ξ, f (x, ξ) = 0)
-    (θ ξ₀ : CoordinateSpace n) :
-    HasFDerivAt (fun ξ ↦ 𝓕 (fun x ↦ f (x, ξ)) θ)
-      (∑ j, (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin n) j).smulRight
-        (𝓕 (fun x ↦ fderiv ℝ f (x, ξ₀) (0, EuclideanSpace.single j 1)) θ)) ξ₀ := by
-  refine (hasFDerivAt_fourier_slice hf hK hfK θ ξ₀).congr_fderiv
-    (ContinuousLinearMap.ext fun h ↦ ?_)
-  have hcont : Continuous fun q ↦ fderiv ℝ f q := hf.continuous_fderiv one_ne_zero
-  have hzero : ∀ x ∉ K, fderiv ℝ f (x, ξ₀) = 0 := fun x hx ↦ by
-    have hz : f =ᶠ[nhds (x, ξ₀)] fun _ ↦ 0 :=
-      Filter.eventually_of_mem ((hK.isClosed.isOpen_compl.prod isOpen_univ).mem_nhds
-        ⟨hx, Set.mem_univ _⟩) fun q hq ↦ hfK q.1 hq.1 q.2
-    rw [hz.fderiv_eq, fderiv_const_apply]
-  have hint : Integrable fun x ↦ (fderiv ℝ f (x, ξ₀)).comp (ContinuousLinearMap.inr ℝ _ _) :=
-    ((hcont.comp (by fun_prop)).clm_comp continuous_const).integrable_of_hasCompactSupport
-      (HasCompactSupport.intro hK fun x hx ↦ by simp [hzero x hx])
-  have hpt : ∀ x, fderiv ℝ f (x, ξ₀) (0, h) =
-      ∑ j, h j • fderiv ℝ f (x, ξ₀) (0, EuclideanSpace.single j 1) := fun x ↦ by
-    conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
-    have hsum : ((0 : CoordinateSpace n), ∑ i, h i • EuclideanSpace.single i (1 : ℝ)) =
-        ∑ i, h i • ((0 : CoordinateSpace n), EuclideanSpace.single i (1 : ℝ)) :=
-      Prod.ext (by simp [Prod.fst_sum]) (by simp [Prod.snd_sum])
-    simp only [EuclideanSpace.basisFun_apply, EuclideanSpace.basisFun_repr]
-    rw [hsum, map_sum]
-    simp only [map_smul]
-  have hj : ∀ j, Integrable fun x ↦ (𝐞 (-⟪x, θ⟫) : ℂ) •
-      (h j • fderiv ℝ f (x, ξ₀) (0, EuclideanSpace.single j 1)) := fun j ↦
-    ((Real.continuous_fourierChar.comp (by fun_prop)).subtype_val.smul
-      (((hcont.comp (by fun_prop)).clm_apply continuous_const).const_smul
-        _)).integrable_of_hasCompactSupport
-          (HasCompactSupport.intro hK fun x hx ↦ by simp [hzero x hx])
-  rw [Real.fourier_continuousLinearMap_apply hint]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply, hpt,
-    sum_apply, ContinuousLinearMap.smulRight_apply, Real.fourier_eq,
-    Circle.smul_def, Finset.smul_sum]
-  rw [integral_finsetSum _ fun j _ ↦ hj j]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [← integral_smul]
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  exact smul_comm _ _ _
-
 /-- The Fourier transform of a position slice of `∂_{x_j} a` is `2πi θ_j` times that of `a`. -/
 private theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice
     (ha : a.HasCompactSpatialSupport) (j : Fin n) (θ ξ : CoordinateSpace n) :
@@ -208,8 +123,13 @@ private theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice
       fun x ↦ fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) := by
     funext x
     rw [← fderiv_coefficient_single]
-  rw [hslice, fourier_fderiv_apply ((a.contDiff_coefficient_slice ξ).of_le (by simp))
-    (ha.hasCompactSupport_slice ξ), EuclideanSpace.inner_single_right, one_mul, conj_trivial]
+  have hf : ContDiff ℝ 1 fun y ↦ a.coefficient (y, ξ) :=
+    (a.contDiff_coefficient_slice ξ).of_le (by simp)
+  rw [hslice, fourier_fderiv_apply (hf.continuous.integrable_of_hasCompactSupport
+    (ha.hasCompactSupport_slice ξ)) (hf.differentiable one_ne_zero)
+    ((hf.continuous_fderiv one_ne_zero).integrable_of_hasCompactSupport
+      ((ha.hasCompactSupport_slice ξ).fderiv (𝕜 := ℝ))),
+    EuclideanSpace.inner_single_right, one_mul, conj_trivial]
 
 /-- The decay of `â(θ, ξ - 2πθ)`: for a symbol of order `m` with compact spatial support,
 `‖â(θ, ξ - 2πθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, which is integrable in `θ`. The decay of `â`
@@ -478,21 +398,6 @@ private theorem HasCompactSpatialSupport.integrable_leftCoeff_integrand
     (ha.continuous_leftCoeff_integrand p).aestronglyMeasurable
     (.of_forall fun θ ↦ by rw [norm_smul, Circle.norm_coe, one_mul])
 
-/-- On the ball of radius one around `ξ₀`, the weight `⟨ξ⟩ ^ s` is at most `2 ^ |s| ⟨ξ₀⟩ ^ s`. -/
-private theorem one_add_norm_sq_rpow_le_of_mem_ball {ξ ξ₀ : CoordinateSpace n}
-    (hξ : ξ ∈ Metric.ball ξ₀ 1) (s : ℝ) :
-    (1 + ‖ξ‖ ^ 2) ^ (s / 2) ≤ 2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2) := by
-  have hd : ‖ξ - ξ₀‖ < 1 := by rwa [← dist_eq_norm]
-  have hb : (1 + ‖ξ - ξ₀‖ ^ 2) ^ (|s| / 2) ≤ 2 ^ (|s| / 2) :=
-    Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg (ξ - ξ₀)]) (by positivity)
-  calc (1 + ‖ξ‖ ^ 2) ^ (s / 2)
-      ≤ 2 ^ (|s| / 2) * (1 + ‖ξ - ξ₀‖ ^ 2) ^ (|s| / 2) * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2) :=
-        one_add_norm_sq_rpow_le_mul_sub s ξ ξ₀
-    _ ≤ 2 ^ (|s| / 2) * 2 ^ (|s| / 2) * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2) := by gcongr
-    _ = 2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2) := by
-        rw [← Real.rpow_add two_pos]
-        ring_nf
-
 /-- **The derivative of `A`.** The coefficient `A(y, ξ)` of a symbol with compact spatial support
 is differentiable, with partial derivatives the coefficients of `∂_{x_j} a` and `∂_{ξ_j} a`. -/
 private theorem HasCompactSpatialSupport.hasFDerivAt_leftCoeff
@@ -508,62 +413,43 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_leftCoeff
     Cξ j * (2 ^ |m - 1| * (1 + ‖p₀.2‖ ^ 2) ^ ((m - 1) / 2)))
   have hterm : ∀ j, Cx j * (2 ^ |m| * (1 + ‖p₀.2‖ ^ 2) ^ (m / 2)) ≤ D ∧
       Cξ j * (2 ^ |m - 1| * (1 + ‖p₀.2‖ ^ 2) ^ ((m - 1) / 2)) ≤ D := fun j ↦ by
-    have hnn : ∀ i, 0 ≤ Cx i * (2 ^ |m| * (1 + ‖p₀.2‖ ^ 2) ^ (m / 2)) +
-        Cξ i * (2 ^ |m - 1| * (1 + ‖p₀.2‖ ^ 2) ^ ((m - 1) / 2)) := fun i ↦ by
+    have hnn : ∀ i, 0 ≤ Cx i * (2 ^ |m| * (1 + ‖p₀.2‖ ^ 2) ^ (m / 2)) ∧
+        0 ≤ Cξ i * (2 ^ |m - 1| * (1 + ‖p₀.2‖ ^ 2) ^ ((m - 1) / 2)) := fun i ↦ by
       have := hCx0 i
       have := hCξ0 i
-      positivity
-    have hle := Finset.single_le_sum (fun i _ ↦ hnn i) (Finset.mem_univ j)
-    constructor <;> refine le_trans ?_ hle
-    · have := hCξ0 j
-      exact le_add_of_nonneg_right (by positivity)
-    · have := hCx0 j
-      exact le_add_of_nonneg_left (by positivity)
+      constructor <;> positivity
+    have hle := Finset.single_le_sum (fun i _ ↦ add_nonneg (hnn i).1 (hnn i).2)
+      (Finset.mem_univ j)
+    exact ⟨(le_add_of_nonneg_right (hnn j).2).trans hle,
+      (le_add_of_nonneg_left (hnn j).1).trans hle⟩
+  -- Within distance one of `p₀.2`, a bound `C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ s` gives the bound
+  -- `C 2 ^ |s| ⟨p₀.2⟩ ^ s (1 + ‖θ‖) ^ (-(n + 1))`.
+  have hball : ∀ {x C s : ℝ} {θ ξ : CoordinateSpace n}, ξ ∈ Metric.ball p₀.2 1 → 0 ≤ C →
+      x ≤ C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (s / 2)) →
+      x ≤ C * (2 ^ |s| * (1 + ‖p₀.2‖ ^ 2) ^ (s / 2)) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
+    fun {x C s θ ξ} hξ hC hx ↦ hx.trans <| by
+      have hw := one_add_norm_sq_rpow_le_of_norm_sub_le_one
+        (dist_eq_norm ξ p₀.2 ▸ (Metric.mem_ball.1 hξ).le) s
+      calc C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (s / 2))
+          ≤ C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (2 ^ |s| * (1 + ‖p₀.2‖ ^ 2) ^ (s / 2))) := by
+            gcongr
+        _ = _ := by ring
   -- Apply the abstract differentiation lemma to `â` and the Fourier slices of the derivatives.
   refine hasFDerivAt_integral_fourierChar_smul_shift
     (S := fun θ ζ ↦ 𝓕 (fun x ↦ a.coefficient (x, ζ)) θ)
     (A := fun j θ ζ ↦ 𝓕 (fun x ↦ (Symbol.spatialDeriv j a).coefficient (x, ζ)) θ)
     (B := fun j θ ζ ↦ 𝓕 (fun x ↦ (Symbol.frequencyDeriv j a).coefficient (x, ζ)) θ)
-    (fun j θ ζ ↦ ha.fourier_spatialDeriv_slice j θ ζ) (fun θ ζ ↦ ?_)
+    (fun j θ ζ ↦ ha.fourier_spatialDeriv_slice j θ ζ)
+    (fun θ ζ ↦ by
+      simpa only [coefficient_frequencyDeriv] using
+        hasFDerivAt_fourier_slice ((a.contDiff_coefficient).of_le (by simp)) hK hKa θ ζ)
     (fun ξ ↦ ha.continuous_fourier_slice continuous_id (by fun_prop))
     (fun j ξ ↦ (ha.spatialDeriv j).continuous_fourier_slice continuous_id (by fun_prop))
     (fun j ξ ↦ (ha.frequencyDeriv j).continuous_fourier_slice continuous_id (by fun_prop))
     (fun ξ ↦ ha.integrable_fourier_slice_sub ξ)
     (integrable_one_add_norm_rpow_neg.const_mul D) p₀ (fun θ ξ hξ j ↦ ⟨?_, ?_⟩)
-  · have h := hasFDerivAt_fourier_slice_sum ((a.contDiff_coefficient).of_le (by simp)) hK hKa θ ζ
-    convert h using 4 with j
-    funext x
-    have hx : HasFDerivAt (fun η ↦ a.coefficient (x, η))
-        ((fderiv ℝ a.coefficient (x, ζ)).comp (.inr ℝ _ _)) ζ :=
-      (a.contDiff_coefficient.differentiable (by simp) (x, ζ)).hasFDerivAt.comp ζ
-        (hasFDerivAt_prodMk_right x ζ)
-    rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil, hx.fderiv,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply]
-  · have h0 := hCx0 j
-    calc _ ≤ Cx j * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := hCx j θ ξ
-      _ ≤ Cx j * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) *
-            (2 ^ |m| * (1 + ‖p₀.2‖ ^ 2) ^ (m / 2))) := by
-          gcongr
-          exact one_add_norm_sq_rpow_le_of_mem_ball hξ _
-      _ = (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (Cx j * (2 ^ |m| * (1 + ‖p₀.2‖ ^ 2) ^ (m / 2))) := by
-          ring
-      _ ≤ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * D := by
-          gcongr
-          exact (hterm j).1
-      _ = D * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := mul_comm _ _
-  · have h0 := hCξ0 j
-    calc _ ≤ Cξ j * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2)) := hCξ j θ ξ
-      _ ≤ Cξ j * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) *
-            (2 ^ |(m - 1)| * (1 + ‖p₀.2‖ ^ 2) ^ ((m - 1) / 2))) := by
-          gcongr
-          exact one_add_norm_sq_rpow_le_of_mem_ball hξ _
-      _ = (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) *
-            (Cξ j * (2 ^ |(m - 1)| * (1 + ‖p₀.2‖ ^ 2) ^ ((m - 1) / 2))) := by
-          ring
-      _ ≤ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * D := by
-          gcongr
-          exact (hterm j).2
-      _ = D * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := mul_comm _ _
+  · exact (hball hξ (hCx0 j) (hCx j θ ξ)).trans (by gcongr; exact (hterm j).1)
+  · exact (hball hξ (hCξ0 j) (hCξ j θ ξ)).trans (by gcongr; exact (hterm j).2)
 
 /-- The coefficient `A(y, ξ)` of a symbol with compact spatial support is smooth. -/
 private theorem HasCompactSpatialSupport.contDiff_leftCoeff :
@@ -684,19 +570,16 @@ section Adjoint
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
 
-/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map. -/
+/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map: the conjugate-linear isometry
+`ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam theorem. -/
 private def adjointCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V) :=
-  LinearMap.mkContinuous
-    { toFun := fun T ↦ ContinuousLinearMap.adjoint T
-      map_add' := map_add _
-      map_smul' := fun r T ↦ by
-        rw [← Complex.coe_smul, LinearIsometryEquiv.map_smulₛₗ, Complex.conj_ofReal,
-          Complex.coe_smul, RingHom.id_apply] }
-    1 fun T ↦ by simp
+  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
+    (ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv
+    (map_zero ContinuousLinearMap.adjoint)).toContinuousLinearEquiv
 
 private theorem adjointCLM_apply (T : V →L[ℂ] W) :
-    adjointCLM T = ContinuousLinearMap.adjoint T := by
-  simp [adjointCLM]
+    adjointCLM T = ContinuousLinearMap.adjoint T :=
+  rfl
 
 /-- **The adjoint symbol.** For a symbol `a` of order `m` with compact spatial support, the symbol
 `a*(y, ξ) = (∫ exp(2πi ⟪θ, y⟫) â(θ, ξ - 2πθ) dθ)†` of order `m`, where `â(θ, ξ)` is the Fourier
@@ -787,10 +670,7 @@ private theorem HasCompactSpatialSupport.inner_quantizeSchwartzValue_adjoint
   dsimp only at hint ⊢
   rw [Circle.smul_def, inner_smul_right, coefficient_adjoint,
     ContinuousLinearMap.adjoint_inner_right, ContinuousLinearMap.integral_apply hint]
-  have key := (innerSLFlip ℂ (𝓕 v η)).integral_comp_commSL (by simp)
-    (hint.apply_continuousLinearMap (u y))
-  simp only [innerSLFlip_apply_apply] at key
-  rw [← key, ← integral_const_mul]
+  rw [← integral_inner_left (hint.apply_continuousLinearMap (u y)), ← integral_const_mul]
   refine integral_congr_ae (.of_forall fun θ ↦ ?_)
   simp only [smul_apply, inner_smul_left, adjointIntegrand, ← mul_assoc,
     ← Circle.coe_inv_eq_conj, ← Circle.coe_mul, ← AddChar.map_neg_eq_inv, ← AddChar.map_add_eq_mul,
@@ -853,9 +733,8 @@ private theorem integral_adjointIntegrand (u : 𝓢(CoordinateSpace n, V))
   have hfu : 𝓕 u (η - θ) = ∫ y, (𝐞 (-⟪y, η - θ⟫) : ℂ) • u y := by
     rw [SchwartzMap.fourier_coe, Real.fourier_eq]
     simp only [Circle.smul_def]
-  have key := (innerSLFlip ℂ (𝓕 v η)).integral_comp_commSL (by simp) (B.integrable_comp hu)
-  simp only [innerSLFlip_apply_apply] at key
-  rw [hfu, ← ContinuousLinearMap.integral_comp_comm B hu, ← key]
+  rw [hfu, ← ContinuousLinearMap.integral_comp_comm B hu,
+    ← integral_inner_left (B.integrable_comp hu)]
   refine integral_congr_ae (.of_forall fun y ↦ ?_)
   simp only [adjointIntegrand]
   rw [map_smul, inner_smul_left, ← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv, neg_neg,
@@ -896,9 +775,8 @@ private theorem HasCompactSpatialSupport.integral_inner_quantizeSchwartzValue_eq
             exact h.trans (by gcongr)
         _ = C * (2 * π) ^ |m| * ((1 + ‖ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) := by ring
   dsimp only
-  have key := (innerSLFlip ℂ (𝓕 v η)).integral_comp_commSL (by simp) hint
-  simp only [innerSLFlip_apply_apply] at key
-  rw [SchwartzMap.fourier_coe, hU, ha.fourier_quantizeSchwartzValue u η, ← key]
+  rw [SchwartzMap.fourier_coe, hU, ha.fourier_quantizeSchwartzValue u η,
+    ← integral_inner_left hint]
 
 /-- **The adjoint of a quantization.** For a symbol `a` of order `m` with compact spatial support,
 with values in operators between complex Hilbert spaces, the quantization of the adjoint symbol

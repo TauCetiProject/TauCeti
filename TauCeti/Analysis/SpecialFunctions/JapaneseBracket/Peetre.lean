@@ -37,6 +37,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x + y⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x⟩ ^ s ⟨y⟩ ^ |s|`.
 * `TauCeti.one_add_norm_sq_rpow_le_mul_sub`: the equivalent form
   `⟨x⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x - y⟩ ^ |s| ⟨y⟩ ^ s`.
+* `TauCeti.one_add_norm_sq_rpow_le_of_norm_sub_le_one`: for `‖x - y‖ ≤ 1`,
+  `⟨x⟩ ^ s ≤ 2 ^ |s| ⟨y⟩ ^ s`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`: rescaling by `c ≥ 1` changes the weight
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
@@ -108,6 +110,22 @@ theorem one_add_norm_sq_rpow_le_mul_sub [SeminormedAddCommGroup E] (s : ℝ) (x 
   have h := one_add_norm_add_sq_rpow_le_mul s y (x - y)
   rw [add_sub_cancel] at h
   linarith
+
+omit [SeminormedAddGroup E] in
+/-- Within distance one of `y`, the weight `⟨x⟩ ^ s` is at most `2 ^ |s| ⟨y⟩ ^ s`, for every real
+`s`. -/
+theorem one_add_norm_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] {x y : E}
+    (h : ‖x - y‖ ≤ 1) (s : ℝ) :
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ 2 ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
+  have hb : (1 + ‖x - y‖ ^ 2) ^ (|s| / 2) ≤ 2 ^ (|s| / 2) :=
+    Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg (x - y)]) (by positivity)
+  calc (1 + ‖x‖ ^ 2) ^ (s / 2)
+      ≤ 2 ^ (|s| / 2) * (1 + ‖x - y‖ ^ 2) ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (s / 2) :=
+        one_add_norm_sq_rpow_le_mul_sub s x y
+    _ ≤ 2 ^ (|s| / 2) * 2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (s / 2) := by gcongr
+    _ = 2 ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
+        rw [← Real.rpow_add two_pos]
+        ring_nf
 
 omit [SeminormedAddGroup E] in
 /-- Rescaling by a factor `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`: if

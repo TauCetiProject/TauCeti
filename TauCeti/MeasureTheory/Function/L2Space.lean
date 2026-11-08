@@ -16,10 +16,13 @@ this file gives the form for functions satisfying `MemLp f 2 μ`, which is how s
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
 For counting measure, singleton-supported vectors separate L² functions.
+The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
+`integral_inner` with the integrand in the left slot.
 -/
 
 public section
 
+open MeasureTheory
 open scoped InnerProductSpace
 
 namespace MeasureTheory
@@ -57,3 +60,13 @@ theorem Lp.eq_zero_of_inner_indicatorConstLp_singleton [MeasurableSingletonClass
   exact Lp.ext (hf'.trans (Lp.coeFn_zero E 2 Measure.count).symm)
 
 end MeasureTheory
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedSpace ℝ E]
+
+/-- Integration commutes with the inner product against a fixed vector in the right slot:
+`∫ ⟪f x, c⟫ = ⟪∫ f, c⟫`. This is `integral_inner` with the integrand in the left slot. -/
+theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
+    ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
+  simpa only [innerSLFlip_apply_apply] using
+    (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
