@@ -62,8 +62,8 @@ This compares a map to a model agreeing with it to first order before splicing t
 
 ## Invariance along a direction
 
-Over `ℝ` or `ℂ`, a map whose derivative kills a vector `v` at every point `z + t • v` with
-`‖t‖ ≤ 1` takes the same value at `z` and `z + v`
+Over `ℝ` or `ℂ`, a map whose derivative kills a vector `v` at every point `z + t • v` of the
+segment from `z` to `z + v` (`t` real, `0 ≤ t ≤ 1`) takes the same value at `z` and `z + v`
 (`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`). Unlike Mathlib's
 `Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
 vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
@@ -219,24 +219,32 @@ section Direction
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕂 G]
 
-/-- If `g` is differentiable at every point `z + t • v` with `‖t‖ ≤ 1` and its derivative kills `v`
-there, then `g` takes the same value at `z` and at `z + v`. -/
+/-- If `g` is differentiable at every point `z + t • v` of the segment from `z` to `z + v`, for
+real `0 ≤ t ≤ 1`, and its derivative kills `v` there, then `g` takes the same value at `z` and at
+`z + v`. -/
 theorem apply_add_eq_of_fderiv_apply_eq_zero {g : F → G} {z v : F}
-    (hg : ∀ t : 𝕂, ‖t‖ ≤ 1 → DifferentiableAt 𝕂 g (z + t • v))
-    (hv : ∀ t : 𝕂, ‖t‖ ≤ 1 → fderiv 𝕂 g (z + t • v) v = 0) : g (z + v) = g z := by
-  -- The restriction of `g` to the line through `z` in direction `v` has zero derivative on the
-  -- closed unit disc, which is convex and contains `0` and `1`.
-  have hq : ∀ t ∈ Metric.closedBall (0 : 𝕂) 1, HasFDerivWithinAt (fun t : 𝕂 ↦ g (z + t • v))
+    (hg : ∀ t ∈ Set.Icc (0 : ℝ) 1, DifferentiableAt 𝕂 g (z + (t : 𝕂) • v))
+    (hv : ∀ t ∈ Set.Icc (0 : ℝ) 1, fderiv 𝕂 g (z + (t : 𝕂) • v) v = 0) : g (z + v) = g z := by
+  -- The points of the real segment from `0` to `1` in `𝕂` are the real numbers in `[0, 1]`.
+  have hs : ∀ t ∈ segment ℝ (0 : 𝕂) 1, ∃ r ∈ Set.Icc (0 : ℝ) 1, (r : 𝕂) = t := by
+    rintro _ ⟨a, b, ha, hb, hab, rfl⟩
+    refine ⟨b, ⟨hb, ?_⟩, by simp [RCLike.real_smul_eq_coe_mul]⟩
+    linarith
+  -- The restriction of `g` to the line through `z` in direction `v` has zero derivative on this
+  -- segment, which is convex and contains `0` and `1`.
+  have hq : ∀ t ∈ segment ℝ (0 : 𝕂) 1, HasFDerivWithinAt (fun t : 𝕂 ↦ g (z + t • v))
       ((fderiv 𝕂 g (z + t • v)).comp ((ContinuousLinearMap.id 𝕂 𝕂).smulRight v))
-      (Metric.closedBall 0 1) t := fun t ht ↦
-    ((hg t (by simpa using ht)).hasFDerivAt.comp t
-      ((hasFDerivAt_id t).smul_const v |>.const_add z)).hasFDerivWithinAt
-  have h := (convex_closedBall (0 : 𝕂) 1).norm_image_sub_le_of_norm_hasFDerivWithin_le hq
+      (segment ℝ (0 : 𝕂) 1) t := fun t ht ↦ by
+    obtain ⟨r, hr, rfl⟩ := hs t ht
+    exact ((hg r hr).hasFDerivAt.comp (r : 𝕂)
+      ((hasFDerivAt_id _).smul_const v |>.const_add z)).hasFDerivWithinAt
+  have h := (convex_segment (0 : 𝕂) 1).norm_image_sub_le_of_norm_hasFDerivWithin_le hq
     (C := 0) (fun t ht ↦ by
+      obtain ⟨r, hr, rfl⟩ := hs t ht
       rw [norm_le_zero_iff]
       ext
-      simp [hv t (by simpa using ht)])
-    (Metric.mem_closedBall_self zero_le_one) (show (1 : 𝕂) ∈ Metric.closedBall 0 1 by simp)
+      simp [hv r hr])
+    (left_mem_segment ℝ (0 : 𝕂) 1) (right_mem_segment ℝ (0 : 𝕂) 1)
   simpa [sub_eq_zero] using h
 
 /-- Let `π` be a continuous projection of `F`. If `g` is differentiable on the ball of radius `r`
@@ -250,12 +258,13 @@ theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F
     rw [map_sub, sub_eq_zero]
     exact congr($hπ z).symm
   -- The segment from `π z` to `z` stays in the ball.
-  have hball (t : 𝕂) (ht : ‖t‖ ≤ 1) : π z + t • (z - π z) ∈ Metric.ball (0 : F) r := by
+  have hball (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+      π z + (t : 𝕂) • (z - π z) ∈ Metric.ball (0 : F) r := by
     rw [mem_ball_zero_iff]
     refine (norm_add_le _ _).trans_lt (lt_of_le_of_lt ?_ hz)
-    rw [norm_smul]
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
     gcongr
-    exact mul_le_of_le_one_left (norm_nonneg _) ht
+    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
   have h := apply_add_eq_of_fderiv_apply_eq_zero (z := π z) (v := z - π z)
     (fun t ht ↦ hg.differentiableAt (Metric.isOpen_ball.mem_nhds (hball t ht)))
     (fun t ht ↦ hker _ (hball t ht) _ hπz)
