@@ -50,18 +50,10 @@ instance isClosed_posDiagonalSubgroup :
       exact ⟨fun i j hij ↦ by rw [hd, diagonal_apply_ne _ hij],
         fun i ↦ (apply_diag_pos_of_mem_posDiagonalSubgroup hg i).le⟩
     · rintro ⟨hd, hpos⟩
-      have hg : (g : Matrix ι ι 𝕜) = diagonal (diag (g : Matrix ι ι 𝕜)) := by
-        ext i j
-        by_cases hij : i = j
-        · subst j
-          simp
-        · rw [hd i j hij, diagonal_apply_ne _ hij]
-      have hn : (∏ i, (g : Matrix ι ι 𝕜) i i) ≠ 0 := by
-        have hdet := ((isUnit_iff_isUnit_det _).mp g.isUnit).ne_zero
-        rw [hg, det_diagonal] at hdet
-        exact hdet
+      have hdiag : (g : Matrix ι ι 𝕜).IsDiag := hd
       exact mem_posDiagonalSubgroup_iff.mpr ⟨_, fun i ↦
-        (hpos i).lt_of_ne ((Finset.prod_ne_zero_iff.mp hn) i (Finset.mem_univ i)).symm, hg⟩
+        (hpos i).lt_of_ne (isUnit_apply_of_isDiag hdiag i).ne_zero.symm,
+        hdiag.diagonal_diag.symm⟩
   rw [heq]
   refine IsClosed.inter ?_ ?_
   · simp only [Set.ofPred_forall]
