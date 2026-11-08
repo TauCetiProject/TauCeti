@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.ConjClasses.Prod
+public import TauCeti.Algebra.Group.Conj.Prod
 public import TauCeti.RepresentationTheory.Tensor.External
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.FDRep.Basic
