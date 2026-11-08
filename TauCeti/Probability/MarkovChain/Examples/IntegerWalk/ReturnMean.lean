@@ -19,9 +19,9 @@ from recurrence, so it can be combined with the return-series criterion to class
 the walk as null recurrent.
 
 Central binomial probabilities tend to zero. Their Cesàro means therefore vanish,
-whereas the recurrent-state occupation law identifies their limit with the reciprocal
-extended mean return time. A finite mean would imply almost-sure return and a positive
-reciprocal, giving a contradiction. No invariant-probability characterization is needed.
+whereas the occupation law identifies their limit with the reciprocal extended mean
+return time. A finite mean would give a positive reciprocal, a contradiction.
+No invariant-probability characterization is needed.
 
 ## References
 
@@ -92,41 +92,16 @@ private theorem tendsto_integerWalk_integral_visitCount_div (p : unitInterval)
 
 /-- The extended mean first positive return of the symmetric integer walk is infinite.
 The first return starts at one, and a missing return contributes infinity. -/
-theorem lintegral_integerWalk_hittingAfter_eq_top (p : unitInterval) (hp : (p : ℝ) = 1 / 2)
-    (x : ℤ) :
-    (∫⁻ ω, (hittingAfter (fun n ω => ω n) {x} 1 ω).recTopCoe ⊤
-      (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac x) (integerWalk p)) = ∞ := by
+theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (hp : (p : ℝ) = 1 / 2)
+    (x : ℤ) : (integerWalk p).meanReturnTime x = ∞ := by
   classical
   let P := markovChainLaw (Measure.dirac x) (integerWalk p)
-  let τ := hittingAfter (fun n (ω : ℕ → ℤ) => ω n) {x} 1
-  let f (ω : ℕ → ℤ) : ℝ≥0∞ := (τ ω).recTopCoe ⊤ (fun n => (n : ℝ≥0∞))
-  have hτ : Measurable τ :=
-    (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-      (f := Filtration.piLE (X := fun _ : ℕ => ℤ)) (measurableSet_singleton x)).measurable'
-  have hf : Measurable f :=
-    (measurable_of_countable (fun t : WithTop ℕ =>
-      @WithTop.recTopCoe ℕ (fun _ => ℝ≥0∞) ⊤ (fun n => (n : ℝ≥0∞)) t)).comp hτ
-  have hone (ω : ℕ → ℤ) : 1 ≤ f ω := by
-    have h : (1 : WithTop ℕ) ≤ τ ω := le_hittingAfter ω
-    cases ht : τ ω with
-    | top => simp [f, ht]
-    | coe n =>
-      rw [ht] at h
-      have hn : 1 ≤ n := WithTop.coe_le_coe.mp (by simpa using h)
-      simpa only [f, ht, WithTop.recTopCoe_coe, Nat.cast_one] using
-        (Nat.cast_le (α := ℝ≥0∞)).2 hn
   by_contra hfinite
-  have hreturn : P {ω | τ ω ≠ ⊤} = 1 := by
-    have hae := ae_lt_top hf hfinite
-    have hne : ∀ᵐ ω ∂P, τ ω ≠ ⊤ := hae.mono fun ω hω ht => by
-      simp [f, ht] at hω
-    exact (mem_ae_iff_prob_eq_one ((measurableSet_singleton ⊤).preimage hτ).compl).1 hne
-  have hpos : 0 < (∫⁻ ω, f ω ∂P)⁻¹.toReal := by
-    have hm : 1 ≤ ∫⁻ ω, f ω ∂P := by
-      simpa using (lintegral_mono (μ := P) hone)
-    exact ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
-      (ENNReal.inv_ne_top.mpr (ne_zero_of_lt (lt_of_lt_of_le zero_lt_one hm)))
-  have hLLN := (HasLaw.id (μ := P)).tendsto_integral_visitCount_div_of_return_eq_one hreturn
+  have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
+    ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
+      (ENNReal.inv_ne_top.mpr (ne_zero_of_lt
+        (lt_of_lt_of_le zero_lt_one (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x)))))
+  have hLLN := (HasLaw.id (μ := P)).tendsto_integral_visitCount_div_markovChainLaw_dirac
   exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
 
 end TauCeti.Probability
@@ -142,17 +117,16 @@ theorem lintegral_integerWalk_hittingAfter_eq_top
     {p : unitInterval} {x : ℤ}
     (hX : HasLaw X (markovChainLaw (Measure.dirac x) (integerWalk p)) P)
     (hp : (p : ℝ) = 1 / 2) :
-    (∫⁻ ω, (hittingAfter (fun n ω => X ω n) {x} 1 ω).recTopCoe ⊤
-      (fun n => (n : ℝ≥0∞)) ∂P) = ∞ := by
+    (∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => X ω n) {x} 1 ω) ∂P) = ∞ := by
   have hτ : Measurable (hittingAfter (fun n (ω : ℕ → ℤ) => ω n) {x} 1) :=
     (Filtration.adapted_piLE.isStoppingTime_hittingAfter
       (f := Filtration.piLE (X := fun _ : ℕ => ℤ)) (measurableSet_singleton x)).measurable'
-  have hm := (measurable_of_countable (fun t : WithTop ℕ =>
-    @WithTop.recTopCoe ℕ (fun _ => ℝ≥0∞) ⊤ (fun n => (n : ℝ≥0∞)) t)).comp hτ
+  have hm := (measurable_of_countable (fun t : WithTop ℕ => ENat.toENNReal t)).comp hτ
   -- Entrance times depend only on the coordinate path; evaluation after composition
   -- therefore identifies the integrand with the canonical path functional.
   convert (hX.lintegral_comp hm.aemeasurable).trans
-    (TauCeti.Probability.lintegral_integerWalk_hittingAfter_eq_top p hp x) using 1
+    (by simpa only [Kernel.meanReturnTime_def, Function.comp_def] using
+      integerWalk_meanReturnTime_eq_top p hp x) using 1
   apply lintegral_congr
   intro ω
   simp only [Function.comp_apply, hittingAfter_def]
