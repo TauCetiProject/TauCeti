@@ -156,25 +156,47 @@ uniformity is what lets the exceptional set be ignored along a convergent family
 supplies such closed sets whenever the members of `S` share a fixed image under a map through which
 `Φ` factors, as the squares of the couplings of two fixed marginals do. -/
 
+/-- A lower semicontinuous function of a map that is continuous on closed sets of arbitrarily
+large mass is almost-everywhere measurable: the map is continuous on countably many closed sets
+whose union is a measure-one set, and on each of them the composite is lower semicontinuous. -/
+theorem aemeasurable_comp_of_forall_exists_isClosed_continuousOn
+    {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞} {Φ : Ω → W} {μ : Measure Ω}
+    (hh : LowerSemicontinuous h)
+    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ μ Cᶜ ≤ ε) :
+    AEMeasurable (fun x ↦ h (Φ x)) μ := by
+  choose C hC hΦC hμC using fun n : ℕ ↦ hΦ (n : ℝ≥0∞)⁻¹ (by simp)
+  have hmeas : ∀ n, AEMeasurable (fun x ↦ h (Φ x)) (μ.restrict (C n)) := fun n ↦
+    aemeasurable_restrict_of_measurable_subtype (hC n).measurableSet
+      (hh.comp (hΦC n).domRestrict).measurable
+  have hnull : μ (⋃ n, C n)ᶜ = 0 := by
+    by_contra hne
+    obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hne
+    exact hn.not_ge ((measure_mono (compl_subset_compl.2 (subset_iUnion C n))).trans (hμC n))
+  rw [← Measure.restrict_eq_self_of_ae_mem (s := ⋃ n, C n) (measure_eq_zero_iff_ae_notMem.1 hnull
+    |>.mono fun x hx ↦ not_not.1 hx)]
+  exact aemeasurable_iUnion_iff.2 hmeas
+
 /-- **Lower semicontinuity under a uniform Lusin condition.** Let `h : W → ℝ≥0∞` be lower
 semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of finite measures on `Ω` such that for
 every `ε > 0` some closed set `C`, on which `Φ` is continuous, has complement of mass at most `ε`
-for every member of `S`. If `h ∘ Φ` is almost-everywhere measurable for each member of `S`, then
-`μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak topology. -/
+for every member of `S`, then `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak
+topology. -/
 theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
     {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
     {Φ : Ω → W} {S : Set (FiniteMeasure Ω)} (hh : LowerSemicontinuous h)
     (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 →
-      ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ ∀ μ ∈ S, (μ : Measure Ω) Cᶜ ≤ ε)
-    (hm : ∀ μ ∈ S, AEMeasurable (fun x ↦ h (Φ x)) (μ : Measure Ω)) :
+      ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ ∀ μ ∈ S, (μ : Measure Ω) Cᶜ ≤ ε) :
     LowerSemicontinuousOn (fun μ : FiniteMeasure Ω ↦ ∫⁻ x, h (Φ x) ∂(μ : Measure Ω)) S := by
   classical
   intro μ₀ hμ₀ c hc
   beta_reduce at hc ⊢
+  have hm₀ : AEMeasurable (fun x ↦ h (Φ x)) (μ₀ : Measure Ω) :=
+    aemeasurable_comp_of_forall_exists_isClosed_continuousOn hh fun ε hε ↦
+      (hΦ ε hε).imp fun C hC ↦ ⟨hC.1, hC.2.1, hC.2.2 μ₀ hμ₀⟩
   -- Truncate `h ∘ Φ` at a finite height `M` without losing the strict inequality at `μ₀`.
   have hsup : ∫⁻ x, h (Φ x) ∂(μ₀ : Measure Ω) =
       ⨆ n : ℕ, ∫⁻ x, min (h (Φ x)) n ∂(μ₀ : Measure Ω) := by
-    rw [← lintegral_iSup' (fun n ↦ (hm μ₀ hμ₀).min aemeasurable_const)
+    rw [← lintegral_iSup' (fun n ↦ hm₀.min aemeasurable_const)
       (.of_forall fun x m n hmn ↦ min_le_min_left _ (Nat.cast_le.mpr hmn))]
     refine lintegral_congr fun x ↦ ?_
     rw [← inf_iSup_eq, ENNReal.iSup_natCast, inf_top_eq]
@@ -218,16 +240,15 @@ theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
 /-- **Lower semicontinuity under a uniform Lusin condition.** Let `h : W → ℝ≥0∞` be lower
 semicontinuous, `Φ : Ω → W` arbitrary, and `S` a set of probability measures on `Ω` such that for
 every `ε > 0` some closed set `C`, on which `Φ` is continuous, has complement of mass at most `ε`
-for every member of `S`. If `h ∘ Φ` is almost-everywhere measurable for each member of `S`, then
-`μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak topology. -/
+for every member of `S`, then `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on `S` for the weak
+topology. -/
 theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h : W → ℝ≥0∞}
     {Φ : Ω → W} {S : Set (ProbabilityMeasure Ω)} (hh : LowerSemicontinuous h)
     (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 →
-      ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ ∀ μ ∈ S, (μ : Measure Ω) Cᶜ ≤ ε)
-    (hm : ∀ μ ∈ S, AEMeasurable (fun x ↦ h (Φ x)) (μ : Measure Ω)) :
+      ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ ∀ μ ∈ S, (μ : Measure Ω) Cᶜ ≤ ε) :
     LowerSemicontinuousOn (fun μ : ProbabilityMeasure Ω ↦ ∫⁻ x, h (Φ x) ∂(μ : Measure Ω)) S := by
   have hfinite := lowerSemicontinuousOn_lintegral_comp_finiteMeasure
-    (Φ := Φ) (S := ProbabilityMeasure.toFiniteMeasure '' S) hh ?_ ?_
+    (Φ := Φ) (S := ProbabilityMeasure.toFiniteMeasure '' S) hh ?_
   · simpa only [Function.comp_def,
       ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using
       hfinite.comp ProbabilityMeasure.toFiniteMeasure_continuous.continuousOn
@@ -237,8 +258,6 @@ theorem lowerSemicontinuousOn_lintegral_comp {W : Type*} [TopologicalSpace W] {h
     refine ⟨C, hC, hΦC, ?_⟩
     rintro ν ⟨μ, hμ, rfl⟩
     simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using hCS μ hμ
-  · rintro ν ⟨μ, hμ, rfl⟩
-    simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using hm μ hμ
 
 end Lusin
 
