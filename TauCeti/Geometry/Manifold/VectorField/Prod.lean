@@ -212,6 +212,7 @@ theorem mlieBracket_prodVectorField (hX₁ : MDifferentiableAt I I.tangent (T% X
 
 /-- Horizontal and vertical lifts of vector fields on a product manifold commute at every point
 where the two fields are differentiable. -/
+@[simp]
 theorem mlieBracket_prodVectorField_horizontal_vertical
     {X : Π x : M, TangentSpace I x} {V : Π y : N, TangentSpace J y}
     (hX : MDifferentiableAt I I.tangent (T% X) p.1)
