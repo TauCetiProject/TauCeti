@@ -71,7 +71,7 @@ generates the model as a normal subgroup: `a` is the product of two explicit con
 * `TauCeti.Sporadic.card_M11`: the model has `7920` elements.
 * `TauCeti.Sporadic.M11.stabilizerChain_four_eq_bot`: the points `0, 1, 2, 3` form a base.
 * `TauCeti.Sporadic.M11.isPretransitive`: the model acts transitively on the `11` points.
-* `TauCeti.Sporadic.M11.normalClosure_mul_eq_top`: `a * b` generates the model as a normal
+* `TauCeti.Sporadic.M11.normalClosure_a_mul_b_eq_top`: `a * b` generates the model as a normal
   subgroup.
 * `TauCeti.Sporadic.isSimpleGroup_M11`: the model is simple.
 
@@ -429,15 +429,18 @@ instance isPretransitive : MulAction.IsPretransitive M11 (Fin 11) := by
   refine ⟨⟨(a * b) ^ (k : ℕ), pow_mem (mul_mem a_mem b_mem) _⟩, ?_⟩
   rwa [Subgroup.mk_smul, Equiv.Perm.smul_def, ← aTable_eq, ← bTable_eq]
 
-/-- The ATLAS generator `a` is a product of two conjugates of `(a * b)⁻¹`. -/
-private theorem a_eq_mul_conj :
-    a = b⁻¹ * a * b⁻¹ * a * b * a * (a * b)⁻¹ * (b⁻¹ * a * b⁻¹ * a * b * a)⁻¹ *
-      (b⁻¹ * a * b⁻¹ * a * b * a * b⁻¹ * (a * b)⁻¹ * (b⁻¹ * a * b⁻¹ * a * b * a * b⁻¹)⁻¹) := by
+/-- The ATLAS generator `a` is a product of two conjugates of `(a * b)⁻¹` in the model. -/
+private theorem a_eq_mul_conj : ∃ c₁ c₂ : M11, (⟨a, a_mem⟩ : M11) =
+    c₁ * ⟨a * b, mul_mem a_mem b_mem⟩⁻¹ * c₁⁻¹ * (c₂ * ⟨a * b, mul_mem a_mem b_mem⟩⁻¹ * c₂⁻¹) := by
+  refine ⟨⟨b, b_mem⟩⁻¹ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩⁻¹ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩ * ⟨a, a_mem⟩,
+    ⟨b, b_mem⟩⁻¹ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩⁻¹ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩⁻¹,
+    Subtype.ext ?_⟩
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv]
   rw [← aTable_eq, ← bTable_eq]
   decide +kernel
 
 /-- The element `a * b` of order `11` generates the model as a normal subgroup. -/
-theorem normalClosure_mul_eq_top :
+theorem normalClosure_a_mul_b_eq_top :
     Subgroup.normalClosure {(⟨a * b, mul_mem a_mem b_mem⟩ : M11)} = ⊤ := by
   set N := Subgroup.normalClosure {(⟨a * b, mul_mem a_mem b_mem⟩ : M11)}
   have hr : (⟨a * b, mul_mem a_mem b_mem⟩ : M11) ∈ N := Subgroup.subset_normalClosure rfl
@@ -445,23 +448,16 @@ theorem normalClosure_mul_eq_top :
     Subgroup.normalClosure_normal.conj_mem _ (inv_mem hr) c
   -- Both ATLAS generators lie in `N`: `a` by `a_eq_mul_conj`, and then `b = a⁻¹ * (a * b)`.
   have ha : (⟨a, a_mem⟩ : M11) ∈ N := by
-    have hc := mul_mem (hconj (⟨b, b_mem⟩⁻¹ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩⁻¹ * ⟨a, a_mem⟩ *
-      ⟨b, b_mem⟩ * ⟨a, a_mem⟩)) (hconj (⟨b, b_mem⟩⁻¹ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩⁻¹ *
-        ⟨a, a_mem⟩ * ⟨b, b_mem⟩ * ⟨a, a_mem⟩ * ⟨b, b_mem⟩⁻¹))
-    convert hc using 1
-    exact Subtype.ext (by simpa using a_eq_mul_conj)
+    obtain ⟨c₁, c₂, h⟩ := a_eq_mul_conj
+    exact h ▸ mul_mem (hconj c₁) (hconj c₂)
   have hb : (⟨b, b_mem⟩ : M11) ∈ N := by
     convert mul_mem (inv_mem ha) hr using 1
     exact Subtype.ext (by simp)
-  -- Since `a` and `b` generate `M11`, every element of `M11` lies in `N`.
-  have hle : M11 ≤ N.map M11.subtype := fun x hx ↦ by
-    refine (Subgroup.closure_le _).mpr ?_ (M11_def ▸ hx)
-    rw [Set.insert_subset_iff, Set.singleton_subset_iff]
-    exact ⟨⟨_, ha, rfl⟩, ⟨_, hb, rfl⟩⟩
-  refine eq_top_iff.mpr fun x _ ↦ ?_
-  obtain ⟨y, hy, hyx⟩ := hle x.2
-  obtain rfl : y = x := Subtype.ext hyx
-  exact hy
+  -- Since `a` and `b` generate `M11`, so do their copies in the subtype.
+  refine eq_top_iff.mpr ((Subgroup.closure_closure_coe_preimage (k := {a, b})).ge.trans
+    ((Subgroup.closure_le N).mpr ?_))
+  rintro ⟨x, hx⟩ (rfl | rfl : x = a ∨ x = b)
+  exacts [ha, hb]
 
 end M11
 
@@ -472,6 +468,6 @@ instance isSimpleGroup_M11 : IsSimpleGroup M11 :=
     (by
       rw [Nat.card_eq_fintype_card, Fintype.card_fin]
       exact orderOf_dvd_iff_pow_eq_one.mp (by simp [Subgroup.orderOf_mk, M11.orderOf_a_mul_b]))
-    M11.normalClosure_mul_eq_top
+    M11.normalClosure_a_mul_b_eq_top
 
 end TauCeti.Sporadic
