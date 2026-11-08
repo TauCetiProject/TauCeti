@@ -57,12 +57,16 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+
+section OnceDifferentiable
+
+variable [IsManifold I 1 M]
 
 /-- A bundle-valued one-form is differentiable exactly when the corresponding section
 of the bundle of continuous linear maps is differentiable. -/
@@ -190,6 +194,8 @@ theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
   rw [isSmoothForm_def, ← isSmoothBundleForm_def]
   exact isSmoothBundleForm_ofSubsingleton_iff
 
+end OnceDifferentiable
+
 /-- **The differential of a `C^(n+1)` function is a `C^n` covector field**: `x ↦ df_x` is a `C^n`
 section of the bundle of linear maps `TangentSpace I x →L[ℝ] F`, which is the cotangent bundle
 when `F = ℝ`. -/
@@ -205,6 +211,10 @@ theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 2 M] {n :
   rw [hd, isSmoothForm_def, ← isSmoothBundleForm_def]
   exact isSmoothBundleForm_mextDeriv _
     ((isSmoothBundleForm_def _ _).mpr (isSmoothForm_ofFunction_iff.mpr hf).contMDiff) le_rfl
+
+section OnceDifferentiable
+
+variable [IsManifold I 1 M]
 
 /-- **The differential of a jointly `C^(n+1)` family is jointly `C^n`.** For a family of functions
 `f : N → M → F` which is jointly `C^(n+1)` on `N × M`, the differentials `(p, x) ↦ d(f p)_x` form a
@@ -290,5 +300,7 @@ theorem degreeOneEquiv_symm_apply_apply
   (rfl)
 
 end SmoothForm
+
+end OnceDifferentiable
 
 end TauCeti
