@@ -102,9 +102,10 @@ theorem mem_unitConormal {z : TotalSpace (Fin k → ℝ) fun q ↦ conormalSpace
   Iff.rfl
 
 variable (J I k i) in
-/-- The inclusion of the unit conormal bundle of `i` into the unit cosphere bundle `S*M`. -/
-def unitConormalInclusion (z : unitConormal J I k i) : cosphereBundle I M :=
-  ⟨conormalInclusion (Fin k → ℝ) J I i z, z.2⟩
+/-- The inclusion of the unit conormal bundle of `i` into the unit cosphere bundle `S*M`: the
+restriction of the inclusion of the conormal spaces to the preimage of `S*M`. -/
+def unitConormalInclusion : unitConormal J I k i → cosphereBundle I M :=
+  (cosphereBundle I M).restrictPreimage (conormalInclusion (Fin k → ℝ) J I i)
 
 @[simp]
 theorem coe_unitConormalInclusion (z : unitConormal J I k i) :
@@ -117,20 +118,14 @@ conormal to `i`, that is, `N*Q ∩ S*M`. -/
 @[simp]
 theorem range_unitConormalInclusion :
     range (unitConormalInclusion J I k i) =
-      {z : cosphereBundle I M | (z : CotangentBundle I M) ∈ conormal J I i} := by
-  ext z
-  refine ⟨?_, fun hz ↦ ?_⟩
-  · rintro ⟨w, rfl⟩
-    rw [mem_ofPred_eq, coe_unitConormalInclusion, ← range_conormalInclusion (Fin k → ℝ)]
-    exact mem_range_self _
-  · rw [mem_ofPred_eq, ← range_conormalInclusion (Fin k → ℝ)] at hz
-    obtain ⟨w, hw⟩ := hz
-    exact ⟨⟨w, mem_unitConormal.2 (hw ▸ z.2)⟩, Subtype.ext hw⟩
+      {z : cosphereBundle I M | (z : CotangentBundle I M) ∈ conormal J I i} :=
+  -- The preimage `Subtype.val ⁻¹' N*Q` is `{z | ↑z ∈ N*Q}` by definition.
+  (range_restrictPreimage _ _).trans (by rw [range_conormalInclusion]; rfl)
 
 /-- For an injective map `i`, the inclusion of the unit conormal bundle into `S*M` is injective. -/
 theorem unitConormalInclusion_injective (hi : Injective i) :
-    Injective (unitConormalInclusion J I k i) := fun _ _ h ↦
-  Subtype.ext (conormalInclusion_injective (Fin k → ℝ) hi (congrArg Subtype.val h))
+    Injective (unitConormalInclusion J I k i) :=
+  restrictPreimage_injective _ (conormalInclusion_injective (Fin k → ℝ) hi)
 
 end Definitions
 
