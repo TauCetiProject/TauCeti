@@ -42,9 +42,10 @@ forms back along a linear map commutes with the wedge
 read for the pullbacks along a linear map of the vectors.
 
 This is the pointwise linear algebra of the interpolation step in Gromov's recognition of the
-standard symplectic structures on `ℝ⁴` and on `S² × S²`: for a map whose differential carries
-the two coordinate planes to positive symplectic planes of `ω`, the forms
-`(1 - t) ω₀ + t F^* ω` are symplectic, and Moser's argument applies to them.
+standard symplectic structures on `ℝ⁴` and on `S² × S²`: for an orientation-preserving map `F`
+whose differential carries the two coordinate planes to positive symplectic planes of `ω`, so
+that also `(F^* ω)² > 0`, the forms `(1 - t) ω₀ + t F^* ω` are symplectic, and Moser's argument
+applies to them.
 
 ## Main results
 
