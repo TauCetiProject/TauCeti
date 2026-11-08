@@ -430,28 +430,13 @@ the double cover of the sphere branched over `0` and `1` only. -/
 theorem blockQuotient_torusTriple
     (e : orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) ≃ Fin 2) :
     torusTriple.blockQuotient {0, 2} e = ofTwo (swap 0 1) (swap 0 1) := by
-  have hperm : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
-  have hB : ({0, 2} : Set (Fin 4)) ∈ orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) :=
-    mem_orbit_self _
+  -- The rotation, which is both generating component, moves the translate `{0, 2}`.
   have hrot : finRotate 4 '' ({0, 2} : Set (Fin 4)) ≠ {0, 2} := by
     rw [Set.image_pair]
     intro h
     have : (1 : Fin 4) ∈ ({0, 2} : Set (Fin 4)) := h ▸ by simp [finRotate_apply]
     simp at this
-  -- Both generating components move the translate `{0, 2}`, so neither is the identity of
-  -- `Perm (Fin 2)`.
-  have hne (σ : Perm (Fin 2))
-      (hσ : (e.symm (σ (e ⟨_, hB⟩)) : Set (Fin 4)) = finRotate 4 '' {0, 2}) : σ ≠ 1 := by
-    rintro rfl
-    simp only [Perm.one_apply, symm_apply_apply] at hσ
-    exact hrot hσ.symm
-  refine ext_of_two ?_ ?_
-  · rw [ofTwo_σ0]
-    refine hperm _ (hne _ ?_)
-    rw [coe_symm_blockQuotient_σ0, symm_apply_apply, torusTriple_σ0]
-  · rw [ofTwo_σ1]
-    refine hperm _ (hne _ ?_)
-    rw [coe_symm_blockQuotient_σ1, symm_apply_apply, torusTriple_σ1]
+  exact blockQuotient_eq_ofTwo_swap _ _ e hrot hrot
 
 /-! ### A triple with symmetric monodromy -/
 
