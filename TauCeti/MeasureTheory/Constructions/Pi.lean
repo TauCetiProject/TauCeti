@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Independence.Basic
+import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 
 /-!
 # Coordinate projections of finite product measures
@@ -251,14 +252,6 @@ theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFi
   exact ((measurePreserving_piUnique fun i : {i : ι // i = i₀} => μ i).prod
     (MeasurePreserving.id (Measure.pi fun j : {i : ι // i ≠ i₀} => μ j))).comp
     (measurePreserving_piEquivPiSubtypeProd μ (· = i₀))
-
-omit [Fintype ι] in
-/-- The measurable equivalence `MeasurableEquiv.piFinsetUnion` has the same underlying function as
-`Equiv.piFinsetUnion`; both glue a pair of assignments on disjoint finsets into one on their
-union. -/
-theorem _root_.MeasurableEquiv.coe_piFinsetUnion {s t : Finset ι}
-    (h : Disjoint s t) :
-    ⇑(MeasurableEquiv.piFinsetUnion α h) = Equiv.piFinsetUnion α h := rfl
 
 omit [Fintype ι] in
 /-- Recombining the glued pair `(u, v)` on the coordinates `{a, b}` with the remaining coordinates

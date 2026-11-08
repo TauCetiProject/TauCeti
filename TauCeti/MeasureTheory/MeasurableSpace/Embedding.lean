@@ -17,10 +17,14 @@ measurable.
 The two inclusions into a disjoint union are measurable embeddings, so pushing a measure forward
 along them preserves the measure of every set, measurable or not.
 
+The measurable equivalence `MeasurableEquiv.piFinsetUnion` has `Equiv.piFinsetUnion` as its
+underlying function, so Mathlib's componentwise lemmas for the bare equivalence apply to it.
+
 ## Main results
 
 * `MeasurableEmbedding.of_injective_of_countable`
 * `MeasurableEmbedding.inl` and `MeasurableEmbedding.inr`
+* `MeasurableEquiv.coe_piFinsetUnion`
 -/
 
 public section
@@ -49,3 +53,11 @@ theorem MeasurableEmbedding.inr {α β : Type*} [MeasurableSpace α] [Measurable
   injective := Sum.inr_injective
   measurable := measurable_inr
   measurableSet_image' _ hs := hs.inr_image
+
+/-- The measurable equivalence `MeasurableEquiv.piFinsetUnion` has the same underlying function as
+`Equiv.piFinsetUnion`; both glue a pair of assignments on disjoint finsets into one on their
+union. -/
+@[simp]
+theorem MeasurableEquiv.coe_piFinsetUnion {ι : Type*} [DecidableEq ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] {s t : Finset ι} (h : Disjoint s t) :
+    ⇑(MeasurableEquiv.piFinsetUnion α h) = Equiv.piFinsetUnion α h := rfl
