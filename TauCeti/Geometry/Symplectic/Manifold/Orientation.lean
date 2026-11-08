@@ -257,14 +257,12 @@ theorem apply_nonneg_of_eval₂_nonneg (α : SmoothTwoForm I M) {c : M}
   have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := by
     rw [coe_basisOfLinearIndependentOfCardEqFinrank,
       SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-  -- A top form on the plane is its value on the frame `b₀` times `det_{b₀}`.
-  have hα' : α.1 c b = α.1 c b₀ * b₀.det b := by
-    simpa using congrArg (fun f ↦ f b) ((α.1 c).toAlternatingMap.eq_smul_basis_det b₀)
-  rw [hα']
-  refine mul_nonneg ?_ ((b₀.orientation_eq_iff_det_pos b).1 ?_).le
+  -- A top form on the plane is `det_{b₀}` times its value on the frame `b₀`.
+  rw [ContinuousAlternatingMap.apply_eq_det_mul (α.1 c) b₀ b]
+  refine mul_nonneg ((b₀.orientation_eq_iff_det_pos b).1 ?_).le ?_
+  · rw [hb, ho b₀ (by rw [hb₀]; simp)]
   · rw [hb₀, ← SmoothBundleForm.eval₂_apply]
     exact hα _
-  · rw [hb, ho b₀ (by rw [hb₀]; simp)]
 
 end AlmostComplex
 
