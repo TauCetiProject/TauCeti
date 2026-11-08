@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Galois
 import Mathlib.RingTheory.Finiteness.Quotient
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Separable and inseparable residue degrees in Hilbert theory
@@ -28,10 +29,6 @@ specialize to the familiar identities `|I| = e` and `|D| = e * f`.
   equal to the separable residue degree.
 * `Ideal.card_stabilizer_eq_card_inertia_mul_finSepDegree`: the decomposition group has order
   `|I| * fₛ`.
-* `Ideal.card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn`: the decomposition group has
-  order `e * f` without a residue-separability hypothesis.
-* `Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg`: the same formula in terms of the
-  ramification index and inertia degree of the upstairs ideal.
 * `Ideal.card_inertia_eq_ramificationIdxIn_mul_finInsepDegree`: the inertia group has order
   `e * fᵢ`.
 * `Ideal.card_inertia_eq_ramificationIdx_mul_finInsepDegree`: the same formula in terms of the
@@ -98,27 +95,6 @@ theorem card_stabilizer_eq_card_inertia_mul_finSepDegree (p : Ideal R) [p.IsMaxi
 
 variable [IsDomain R] [IsDomain S] [Module.Finite R S] [Module.Flat R S]
 
-/-- The order of the decomposition group is `e * f`, without a separability hypothesis on the
-residue extension. -/
-theorem card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (p : Ideal R) [p.IsMaximal]
-    (P : Ideal S) [P.LiesOver p] [P.IsMaximal] :
-    Nat.card (stabilizer G P) = p.ramificationIdxIn S * p.inertiaDegIn S := by
-  have horbit : (p.primesOver S).ncard * Nat.card (stabilizer G P) = Nat.card G := by
-    rw [← IsInvariant.orbit_eq_primesOver R S G p P, ← Nat.card_coe_set_eq]
-    simpa only [Nat.card_prod] using
-      Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup G P)
-  have hfund := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn p S G
-  exact mul_right_injective₀ (left_ne_zero_of_mul (horbit.trans_ne Nat.card_pos.ne'))
-    (by simpa only [mul_comm] using horbit.trans hfund.symm)
-
-/-- The order of the decomposition group is the product of the ramification index and inertia
-degree of the upstairs ideal. -/
-theorem card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (P : Ideal S) [P.IsMaximal] :
-    Nat.card (stabilizer G P) = P.ramificationIdx R * P.inertiaDeg R := by
-  rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G,
-    ← inertiaDegIn_eq_inertiaDeg (P.under R) P G]
-  exact card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) (P.under R) P
-
 /-- Over an imperfect residue field, the inertia group has order `e * fᵢ`, where `fᵢ` is the
 inseparable residue degree. -/
 theorem card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (p : Ideal R) [p.IsMaximal]
@@ -128,17 +104,8 @@ theorem card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (p : Ideal R) [p.Is
   have hcard := card_stabilizer_eq_card_inertia_mul_finSepDegree (G := G) p P
   rw [card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) p P,
     inertiaDegIn_eq_inertiaDeg p P G, inertiaDeg_eq_of_isMaximal p P,
-    ← Field.finSepDegree_mul_finInsepDegree] at hcard
-  refine Nat.eq_of_mul_eq_mul_right
-    (NeZero.pos (Field.finSepDegree (R ⧸ p) (S ⧸ P))) ?_
-  calc
-    Nat.card (P.inertia G) * Field.finSepDegree (R ⧸ p) (S ⧸ P) =
-        p.ramificationIdxIn S *
-          (Field.finSepDegree (R ⧸ p) (S ⧸ P) *
-            Field.finInsepDegree (R ⧸ p) (S ⧸ P)) := hcard.symm
-    _ = (p.ramificationIdxIn S * Field.finInsepDegree (R ⧸ p) (S ⧸ P)) *
-          Field.finSepDegree (R ⧸ p) (S ⧸ P) := by
-      simp only [mul_assoc, mul_left_comm, mul_comm]
+    ← Field.finSepDegree_mul_finInsepDegree, mul_left_comm, mul_comm (Nat.card _)] at hcard
+  exact (mul_left_cancel₀ (NeZero.ne _) hcard).symm
 
 /-- Over an imperfect residue field, the inertia group has order `e * fᵢ`, stated using the
 ramification index of the upstairs ideal. -/
@@ -155,11 +122,8 @@ theorem card_inertia_eq_ramificationIdxIn_of_isSeparable (p : Ideal R) [p.IsMaxi
     (P : Ideal S) [P.LiesOver p] [P.IsMaximal]
     [Algebra.IsSeparable (R ⧸ p) (S ⧸ P)] :
     Nat.card (P.inertia G) = p.ramificationIdxIn S := by
-  have hfi : Field.finInsepDegree (R ⧸ p) (S ⧸ P) = 1 :=
-    (isSeparable_iff_finInsepDegree_eq_one (F := R ⧸ p) (K := S ⧸ P)).mp
-      inferInstance
   rw [card_inertia_eq_ramificationIdxIn_mul_finInsepDegree (G := G) p P,
-    hfi, mul_one]
+    (isSeparable_iff_finInsepDegree_eq_one _ _).mp ‹_›, mul_one]
 
 /-- If the residue extension is separable, the inertia group has order equal to the ramification
 index of the upstairs ideal. -/

@@ -231,7 +231,7 @@ private theorem geometricReflection_mul_mul_geometricReflection_mul :
     one_mul, M.geometricReflection_mul_self i]
 
 /-- A vector orthogonal to both simple roots is fixed by every power of the rotation. -/
-private theorem pow_apply_eq_self {v : B →₀ ℝ}
+private theorem pow_geometricReflection_mul_apply_eq_self {v : B →₀ ℝ}
     (h : M.geometricForm (Finsupp.single i 1) v = 0)
     (h' : M.geometricForm (Finsupp.single i' 1) v = 0) (k : ℕ) :
     ((M.geometricReflection i * M.geometricReflection i') ^ k) v = v := by
@@ -267,9 +267,7 @@ private theorem pow_geometricReflection_mul_apply_single
             cos (π / M i i') * (sin (2 * k * (π / M i i')) / sin (π / M i i'))) •
           Finsupp.single i (1 : ℝ) +
         (sin (2 * k * (π / M i i')) / sin (π / M i i')) • Finsupp.single i' (1 : ℝ) := by
-  have hsc : sin (π / M i i') ^ 2 = 1 - cos (π / M i i') ^ 2 := by
-    have := Real.sin_sq_add_cos_sq (π / M i i')
-    linarith
+  have hsc := Real.sin_sq (π / M i i')
   induction k with
   | zero => simp
   | succ k ih =>
@@ -295,22 +293,12 @@ private theorem pow_geometricReflection_mul_apply_single_right
     (hs : sin (π / M i i') ≠ 0) (hm : (M i i' : ℝ) ≠ 0) :
     ((M.geometricReflection i * M.geometricReflection i') ^ M i i') (Finsupp.single i' 1) =
       Finsupp.single i' (1 : ℝ) := by
-  have h1 := M.geometricReflection_mul_mul_geometricReflection_mul i i'
-  have h2 := M.geometricReflection_mul_mul_geometricReflection_mul i' i
-  have hcomm : Commute (M.geometricReflection i * M.geometricReflection i')
-      (M.geometricReflection i' * M.geometricReflection i) := h1.trans h2.symm
   have hsym : M i' i = M i i' := M.symmetric i' i
   have hswap := M.pow_geometricReflection_mul_apply_single_left i' i (by rwa [hsym]) (by rwa [hsym])
   rw [hsym] at hswap
-  have hinv : (M.geometricReflection i * M.geometricReflection i') ^ M i i' *
-      (M.geometricReflection i' * M.geometricReflection i) ^ M i i' = 1 := by
-    rw [← hcomm.mul_pow, h1, one_pow]
-  calc ((M.geometricReflection i * M.geometricReflection i') ^ M i i') (Finsupp.single i' 1)
-      = ((M.geometricReflection i * M.geometricReflection i') ^ M i i')
-          (((M.geometricReflection i' * M.geometricReflection i) ^ M i i') (Finsupp.single i' 1)) :=
-        by rw [hswap]
-    _ = Finsupp.single i' (1 : ℝ) := by
-        rw [← mul_apply_eq_comp, hinv, one_apply_eq_self]
+  have hinv := LinearMap.congr_fun (pow_mul_pow_eq_one (M i i')
+    (M.geometricReflection_mul_mul_geometricReflection_mul i i')) (Finsupp.single i' 1)
+  rwa [mul_apply_eq_comp, hswap, one_apply_eq_self] at hinv
 
 /-- **The braid relation in the geometric representation**, for a finite Coxeter-matrix entry at
 least two: the rotation through `2 π / M i i'` has order dividing `M i i'`. The plane spanned by
@@ -322,50 +310,32 @@ private theorem geometricReflection_mul_pow_eq_one (hm : 2 ≤ M i i') :
   have hs : sin (π / M i i') ≠ 0 :=
     (TauCeti.sin_pi_div_pos (by exact_mod_cast hm : (1 : ℝ) < M i i')).ne'
   have hden : (1 : ℝ) - cos (π / M i i') ^ 2 ≠ 0 := by
-    have hsq := Real.sin_sq_add_cos_sq (π / (M i i' : ℝ))
-    have : sin (π / (M i i' : ℝ)) ^ 2 ≠ 0 := pow_ne_zero 2 hs
-    intro hcon
-    apply this
-    linarith
+    rw [← Real.sin_sq]
+    exact pow_ne_zero 2 hs
   refine LinearMap.ext fun v ↦ ?_
   rw [one_apply_eq_self]
+  -- split `v` into a vector of the plane of the two simple roots and one orthogonal to both
   obtain ⟨x, y, hx, hy⟩ :
       ∃ x y : ℝ,
         M.geometricForm (Finsupp.single i 1)
-            (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ)) =
-          M.geometricForm (Finsupp.single i 1) v ∧
+            (v - (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ))) = 0 ∧
         M.geometricForm (Finsupp.single i' 1)
-            (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ)) =
-          M.geometricForm (Finsupp.single i' 1) v := by
+            (v - (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ))) = 0 := by
     refine ⟨(M.geometricForm (Finsupp.single i 1) v +
         cos (π / M i i') * M.geometricForm (Finsupp.single i' 1) v) /
           (1 - cos (π / M i i') ^ 2),
       (M.geometricForm (Finsupp.single i' 1) v +
         cos (π / M i i') * M.geometricForm (Finsupp.single i 1) v) /
           (1 - cos (π / M i i') ^ 2), ?_, ?_⟩ <;>
-    · simp only [map_add, map_smul, smul_eq_mul, geometricForm_single_single,
+    · simp only [map_sub, map_add, map_smul, smul_eq_mul, geometricForm_single_single,
         CoxeterMatrix.diagonal, Nat.cast_one, div_one, Real.cos_pi, M.symmetric i' i]
       field_simp
       ring
-  have h1 : M.geometricForm (Finsupp.single i 1)
-      (v - (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ))) = 0 := by
-    rw [map_sub, hx, sub_self]
-  have h2 : M.geometricForm (Finsupp.single i' 1)
-      (v - (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ))) = 0 := by
-    rw [map_sub, hy, sub_self]
-  have hfix := M.pow_apply_eq_self i i' h1 h2 (M i i')
-  have hplane : ((M.geometricReflection i * M.geometricReflection i') ^ M i i')
-      (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ)) =
-      x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ) := by
-    rw [map_add, map_smul, map_smul,
-      M.pow_geometricReflection_mul_apply_single_left i i' hs hm0,
-      M.pow_geometricReflection_mul_apply_single_right i i' hs hm0]
-  calc ((M.geometricReflection i * M.geometricReflection i') ^ M i i') v
-      = ((M.geometricReflection i * M.geometricReflection i') ^ M i i')
-          ((v - (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ))) +
-            (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ))) := by
-        rw [sub_add_cancel]
-    _ = v := by rw [map_add, hfix, hplane, sub_add_cancel]
+  -- the orthogonal part is fixed by every power, the planar part by the `M i i'`-th one
+  rw [← sub_add_cancel v (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ)),
+    map_add, M.pow_geometricReflection_mul_apply_eq_self i i' hx hy, map_add, map_smul, map_smul,
+    M.pow_geometricReflection_mul_apply_single_left i i' hs hm0,
+    M.pow_geometricReflection_mul_apply_single_right i i' hs hm0]
 
 /-- **The parabolic rotation formula.** When `M i i' = 0`, read as `∞`, the plane spanned by the
 two simple roots carries a degenerate form and the rotation is a shear: it moves the first simple
@@ -452,9 +422,9 @@ The Coxeter relations hold, but for three different reasons. At `i = i'` the ent
 relation says that a reflection is an involution. For `i ≠ i'` with `M i i'` nonzero, hence at least
 two (an off-diagonal entry is never `1`), the plane spanned by the two simple roots is Euclidean and
 the two reflections compose to the rotation through `2 π / M i i'`, whose `M i i'`-th power is the
-identity. For `i ≠ i'` with
-`M i i' = 0`, read as `∞`, that plane is instead degenerate and the composite is a shear, of
-infinite order; there the relation to be checked is the vacuous `(σᵢ σᵢ')^0 = 1`. -/
+identity. For `i ≠ i'` with `M i i' = 0`, read as `∞`, that plane is instead degenerate and the
+composite is a shear, of infinite order; there the relation to be checked is the vacuous
+`(σᵢ σᵢ')^0 = 1`. -/
 noncomputable def geometricRepresentation : Representation ℝ W (B →₀ ℝ) :=
   cs.lift ⟨M.geometricReflection, M.isLiftable_geometricReflection⟩
 
@@ -469,24 +439,17 @@ theorem geometricRepresentation_simple (i : B) :
 theorem geometricForm_geometricRepresentation (w : W) (u v : B →₀ ℝ) :
     M.geometricForm (cs.geometricRepresentation w u) (cs.geometricRepresentation w v) =
       M.geometricForm u v := by
-  suffices h : ∀ w : W, ∀ u v : B →₀ ℝ,
-      M.geometricForm (cs.geometricRepresentation w u) (cs.geometricRepresentation w v) =
-        M.geometricForm u v from h w u v
-  intro w
-  induction w using cs.simple_induction with
-  | simple i =>
-    intro u v
-    rw [cs.geometricRepresentation_simple, M.geometricForm_geometricReflection]
-  | one => intro u v; simp
-  | mul w w' hw hw' =>
-    intro u v
-    rw [map_mul, mul_apply_eq_comp, mul_apply_eq_comp, hw, hw']
+  induction w using cs.simple_induction generalizing u v with
+  | simple i => rw [cs.geometricRepresentation_simple, M.geometricForm_geometricReflection]
+  | one => simp
+  | mul w w' hw hw' => rw [map_mul, mul_apply_eq_comp, mul_apply_eq_comp, hw, hw']
 
 /-- **The exact relation satisfied by two simple reflections**: the product of two simple
 reflections is killed by an exponent exactly when that exponent is a multiple of the
 corresponding entry of the Coxeter matrix. One half of this is the defining relation
-`CoxeterSystem.simple_mul_simple_pow`; the other half is Tits' theorem on the geometric
-representation. -/
+`CoxeterSystem.simple_mul_simple_pow`; the other half comes from the geometric
+representation, in which the product acts on the plane of the two simple roots with exactly this
+order. -/
 theorem simple_mul_simple_pow_eq_one_iff (i i' : B) (n : ℕ) :
     (cs.simple i * cs.simple i') ^ n = 1 ↔ M i i' ∣ n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
@@ -499,7 +462,7 @@ theorem simple_mul_simple_pow_eq_one_iff (i i' : B) (n : ℕ) :
 
 /-- **The entries of the Coxeter matrix are the exact orders of the products of pairs of simple
 reflections.** The defining relations give only the divisibility
-`orderOf (s i * s i') ∣ M i i'`; the reverse divisibility is Tits' theorem on the geometric
+`orderOf (s i * s i') ∣ M i i'`; the reverse divisibility comes from the geometric
 representation. An entry `M i i' = 0`, read as `∞`, says that the product has infinite order. -/
 theorem orderOf_simple_mul_simple (i i' : B) :
     orderOf (cs.simple i * cs.simple i') = M i i' :=
@@ -507,29 +470,19 @@ theorem orderOf_simple_mul_simple (i i' : B) :
     ((cs.simple_mul_simple_pow_eq_one_iff i i' _).1 (pow_orderOf_eq_one _))
 
 /-- **The simple reflections are pairwise distinct.** -/
-theorem simple_injective : Function.Injective cs.simple := by
-  intro i i' h
-  by_contra hne
-  have hdvd : M i i' ∣ 1 := by
-    refine (cs.simple_mul_simple_pow_eq_one_iff i i' 1).1 ?_
-    rw [pow_one, ← h, cs.simple_mul_simple_self]
-  exact M.off_diagonal i i' hne (Nat.dvd_one.mp hdvd)
+theorem simple_injective : Function.Injective cs.simple := fun i i' h ↦
+  by_contra fun hne ↦ M.off_diagonal i i' hne <| by
+    rw [← cs.orderOf_simple_mul_simple, h, cs.simple_mul_simple_self, orderOf_one]
 
 /-- **A simple reflection is not the identity**: it negates its own simple root. -/
-theorem simple_ne_one (i : B) : cs.simple i ≠ 1 := by
-  intro h
-  have hrep : M.geometricReflection i = 1 := by
-    rw [← cs.geometricRepresentation_simple i, h, map_one]
+theorem simple_ne_one (i : B) : cs.simple i ≠ 1 := fun h ↦ by
   have hneg := M.geometricReflection_apply_single_self i
-  rw [hrep, one_apply_eq_self] at hneg
-  have : (Finsupp.single i (1 : ℝ)) i = 0 := by
-    have := congrArg (fun f : B →₀ ℝ ↦ f i) hneg
-    simp only [Finsupp.neg_apply, Finsupp.single_eq_same] at this
-    linarith
-  simp at this
+  rw [← cs.geometricRepresentation_simple, h, map_one, one_apply_eq_self] at hneg
+  have := DFunLike.congr_fun hneg i
+  norm_num at this
 
 /-- **Each simple reflection has order exactly two.** -/
 theorem orderOf_simple (i : B) : orderOf (cs.simple i) = 2 :=
-  orderOf_eq_prime (by rw [pow_two, cs.simple_mul_simple_self]) (cs.simple_ne_one i)
+  orderOf_eq_prime (cs.simple_sq i) (cs.simple_ne_one i)
 
 end CoxeterSystem

@@ -193,7 +193,7 @@ variable (p G)
 discrete `p`-primary torsion `M`. -/
 @[simp] theorem cohomologicalDimensionAt_le_iff (n : ℕ) :
     cohomologicalDimensionAt.{v} p G ≤ n ↔ CohomologicalDimensionLE.{v} p G n :=
-  leastENatBound_le_iff (fun _ _ hmn h ↦ h.mono hmn) n
+  leastENatBound_le_iff_of_monotone (fun _ _ hmn h ↦ h.mono hmn) n
 
 /-- **The first value of `p`-cohomological dimension.** One has `cd_p G = 0` exactly when
 `Hⁱ(G, M)` vanishes in every positive degree `i` for every discrete `p`-primary torsion
@@ -209,7 +209,7 @@ discrete `p`-primary torsion `M`. -/
 `Hⁱ(G, M)` vanishes above `n` for every discrete `M`. -/
 @[simp] theorem strictCohomologicalDimensionAt_le_iff (n : ℕ) :
     strictCohomologicalDimensionAt.{v} p G ≤ n ↔ StrictCohomologicalDimensionLE.{v} p G n :=
-  leastENatBound_le_iff (fun _ _ hmn h ↦ h.mono hmn) n
+  leastENatBound_le_iff_of_monotone (fun _ _ hmn h ↦ h.mono hmn) n
 
 /-- The `p`-cohomological dimension is infinite exactly when the ordinary vanishing predicate
 holds at no `n`. -/

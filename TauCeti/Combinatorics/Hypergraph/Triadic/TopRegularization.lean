@@ -89,16 +89,7 @@ theorem exists_refinement_polyadEnergy_add_le [Fintype κ] [Fintype κ₂] (S : 
       (∀ c, π (T.pairColors.rev c) = S.pairColors.rev (π c)) ∧
       η ^ 3 * ((∑ P : Polyad3 S with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ)) /
           (Fintype.card V).descFactorial 3) + H.polyadEnergy S ≤ H.polyadEnergy T := by
-  -- Choose `r` subpolyads witnessing the irregularity of each irregular polyad.
-  have hw (P : Polyad3 S) : ∃ Q : Fin r → Subpolyad3 P, ¬H.IsTopRegularOverPolyad P η r →
-      ∃ c, η * #P.support ≤ #(Subpolyad3.unionSupport Q) ∧
-        η < |(H.relDensityOn c (Subpolyad3.unionSupport Q) : ℝ) - H.relativeDensity c P| := by
-    by_cases hP : H.IsTopRegularOverPolyad P η r
-    · exact ⟨fun _ ↦ Subpolyad3.ofSubcells P ∅ ∅ ∅, fun h ↦ (h hP).elim⟩
-    · simp only [isTopRegularOverPolyad_iff, not_forall, not_le] at hP
-      obtain ⟨c, Q, hQ, hdev⟩ := hP
-      exact ⟨Q, fun _ ↦ ⟨c, hQ, hdev⟩⟩
-  choose Q hQ using hw
+  obtain ⟨Q, hQ⟩ := H.exists_subpolyads_witnessing_irregularity r S
   -- Resolve all witnesses by one bounded refinement, then rename its palette to `Fin m`.
   obtain ⟨κ', _, T, π, hcard, hV, hπ, hrev, hA⟩ :=
     S.exists_bounded_refinement_subpolyads (fun i : Polyad3 S × Fin r ↦ i.1) fun i ↦ Q i.1 i.2
@@ -131,8 +122,8 @@ theorem exists_refinement_polyadEnergy_add_le [Fintype κ] [Fintype κ₂] (S : 
         η ≤ |(H.relDensityOn c (Subpolyad3.unionSupport (Q P)) : ℝ) - H.relativeDensity c P| := by
     by_cases hP : H.IsTopRegularOverPolyad P η r
     · exact ⟨Classical.arbitrary κ, fun h ↦ (h hP).elim⟩
-    · obtain ⟨c, hsize, hdev⟩ := hQ P hP
-      exact ⟨c, fun _ ↦ ⟨hsize, hdev.le⟩⟩
+    · obtain ⟨c, h⟩ := hQ P hP
+      exact ⟨c, fun _ ↦ h⟩
   choose c hc using hc
   have hgain := H.polyadEnergy_increment_of_witnesses hT'S
     (univ.filter fun P ↦ ¬H.IsTopRegularOverPolyad P η r) c
