@@ -324,19 +324,12 @@ theorem sectionsAlg_obj (hdim : 2 ≤ ringKrullDim A)
   (rfl)
 
 /-- The `A`-algebra homomorphism `Γ(W, 𝒪_W) ⟶ Γ(V, 𝒪_V)` of rings of sections induced by a
-morphism `f : V ⟶ W` of finite étale covers of the punctured spectrum. -/
+morphism `f : V ⟶ W` of finite étale covers of the punctured spectrum, given by Mathlib's
+algebra-valued global sections functor `algΓ`. -/
 def sectionsAlgMap (hdim : 2 ≤ ringKrullDim A)
     {V W : FiniteEtaleScheme (puncturedSpectrum A).toScheme} (f : V ⟶ W) :
     sectionsAlg hdim W ⟶ sectionsAlg hdim V :=
-  ObjectProperty.homMk <| CommAlgCat.ofHom (X := (sectionsAlg hdim W).obj)
-    (Y := (sectionsAlg hdim V).obj)
-    { f.hom.left.appTop.hom with
-      commutes' a := by
-        have h : (Scheme.ΓSpecIso (.of A)).inv ≫ (W.obj.hom ≫ (puncturedSpectrum A).ι).appTop ≫
-            f.hom.left.appTop =
-              (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop := by
-          rw [← Scheme.Hom.comp_appTop, Over.w_assoc]
-        exact congr($h a) }
+  ObjectProperty.homMk ((algΓ (.of A)).map ((Over.map (puncturedSpectrum A).ι).map f.hom)).unop
 
 /-- `sectionsAlgMap hdim f` is restriction of sections along `f`. -/
 @[simp]
