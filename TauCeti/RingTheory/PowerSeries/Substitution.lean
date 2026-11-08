@@ -455,12 +455,14 @@ theorem homogeneousComponent_subst_right_eq_C_mul_X_pow {f : S⟦X⟧} {φ : R�
     rw [← order_eq_order]
     calc ((n + 1 : ℕ) : ℕ∞) ≤ (n : ℕ∞) * 2 := by exact_mod_cast (by omega : n + 1 ≤ n * 2)
       _ ≤ _ := mul_le_mul' hn h₂
+  have hCs : (C (constantCoeff φ)).subst f =
+      MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
+    rw [← coe_substAlgHom hS, ← MvPowerSeries.algebraMap_apply]
+    exact (substAlgHom hS).commutes (constantCoeff φ)
   have hsplit : φ.subst f = (φ - X - C (constantCoeff φ)).subst f + f.subst X +
       MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
-    conv_lhs => rw [show φ = (φ - X - C (constantCoeff φ)) + X + C (constantCoeff φ) by ring]
-    rw [subst_add hS, subst_add hS, subst_X hS, X_subst]
-    rw [← coe_substAlgHom hS, ← MvPowerSeries.algebraMap_apply]
-    exact congrArg _ ((substAlgHom hS).commutes (constantCoeff φ))
+    rw [subst_sub hS, subst_sub hS, subst_X hS, X_subst, hCs]
+    ring
   have hC : MvPowerSeries.homogeneousComponent n
       (MvPowerSeries.C (algebraMap R S (constantCoeff φ)) : MvPowerSeries Unit S) = 0 := by
     refine MvPowerSeries.ext fun d ↦ ?_
