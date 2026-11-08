@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
 public import TauCeti.MeasureTheory.Function.Campanato
-import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
