@@ -53,15 +53,15 @@ omit [CompleteSpace P] in
 private theorem eventually_isNondegenerateCriticalPoint_graph
     {G : P × E → E →L[ℝ] ℝ} {ψ : P → E}
     (hGF : G = fun q ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2)
-    (hF : ContDiffAt ℝ 3 F (p, ψ p)) (hψ : ContinuousAt ψ p)
+    (hF : ContDiffAt ℝ 2 F (p, ψ p)) (hψ : ContinuousAt ψ p)
     (hinv : ((fderiv ℝ G (p, ψ p)).comp (ContinuousLinearMap.inr ℝ P E)).IsInvertible)
     (hcrit : ∀ᶠ q in 𝓝 p, G (q, ψ q) = 0) :
     ∀ᶠ q in 𝓝 p, IsNondegenerateCriticalPoint (fun y ↦ F (q, y)) (ψ q) := by
   subst hGF
-  have hG : ContDiffAt ℝ 2 (fun q : P × E ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2) (p, ψ p) :=
+  have hG : ContDiffAt ℝ 1 (fun q : P × E ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2) (p, ψ p) :=
     hF.fderiv_slice (by norm_num)
   filter_upwards [hcrit,
-    ((hG.of_le one_le_two).continuousAt_fderiv_comp_inr hψ).eventually hinv.eventually_nhds,
+    (hG.continuousAt_fderiv_comp_inr hψ).eventually hinv.eventually_nhds,
     hF.eventually_contDiffAt_graph hψ, hG.eventually_contDiffAt_graph hψ] with
     q hqcrit hqinv hFq hGq
   refine ⟨?_, hqcrit, ?_⟩
@@ -73,11 +73,11 @@ omit [CompleteSpace P] in
 /-- Near the base point, the Morse index of the continued critical points is constant. -/
 private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ : P → E}
     (hGF : G = fun q ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2)
-    (h : IsNondegenerateCriticalPoint (fun y ↦ F (p, y)) x) (hF : ContDiffAt ℝ 3 F (p, ψ p))
+    (h : IsNondegenerateCriticalPoint (fun y ↦ F (p, y)) x) (hF : ContDiffAt ℝ 2 F (p, ψ p))
     (hψp : ψ p = x) (hψ : ContinuousAt ψ p) :
     ∀ᶠ q in 𝓝 p,
       morseIndex (fun y ↦ F (q, y)) (ψ q) = morseIndex (fun y ↦ F (p, y)) x := by
-  have hG : ContDiffAt ℝ 2 G (p, ψ p) := by
+  have hG : ContDiffAt ℝ 1 G (p, ψ p) := by
     rw [hGF]
     exact hF.fderiv_slice (by norm_num)
   have hGhess (q : P) (hd : DifferentiableAt ℝ G (q, ψ q)) :
@@ -102,13 +102,13 @@ private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ
     apply LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
     rw [hGhess p (hG.differentiableAt (by norm_num)), hψp]
     exact h.separatingLeft
-  have hmorseIndex (q : P) (hGq : ContDiffAt ℝ 2 G (q, ψ q)) :
+  have hmorseIndex (q : P) (hGq : ContDiffAt ℝ 1 G (q, ψ q)) :
       morseIndex (fun y ↦ F (q, y)) (ψ q) =
         sigNeg ((fderiv ℝ G (q, ψ q)).comp
           (ContinuousLinearMap.inr ℝ P E)).toBilinForm.toQuadraticMap := by
     rw [morseIndex_def, hessianQuadraticForm_def, hGhess q (hGq.differentiableAt (by norm_num))]
   filter_upwards [ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt hsymm
-    ((hG.of_le one_le_two).continuousAt_fderiv_comp_inr hψ) hnd, hGAlong] with q hq hGq
+    (hG.continuousAt_fderiv_comp_inr hψ) hnd, hGAlong] with q hq hGq
   rw [hmorseIndex q hGq, hq, ← hmorseIndex p hG, hψp]
 
 /-- **Continuation of a nondegenerate critical point.**
@@ -145,6 +145,7 @@ theorem exists_contDiffAt_criticalPoint_continuation
   have hψp : ψ p = x := hG.implicitFunction_apply_self (by norm_num) hinv
   have hψ : ContDiffAt ℝ 2 ψ p := hG.contDiffAt_implicitFunction (by norm_num) hinv
   have hFbase : ContDiffAt ℝ 3 F (p, ψ p) := by simpa only [hψp] using hF
+  have hF2 : ContDiffAt ℝ 2 F (p, ψ p) := hFbase.of_le (by norm_num)
   have hcrit : ∀ᶠ q in 𝓝 p, G (q, ψ q) = 0 := by
     simpa only [hbase] using hG.eventually_apply_implicitFunction (by norm_num) hinv
   have hunique : ∀ᶠ q in 𝓝 (p, x), G q = 0 ↔ ψ q.1 = q.2 := by
@@ -161,8 +162,8 @@ theorem exists_contDiffAt_criticalPoint_continuation
       hfamilyAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero
         (hψ.differentiableAt (by norm_num)) hcritical
   refine ⟨ψ, hψp, hψ,
-    eventually_isNondegenerateCriticalPoint_graph rfl hFbase hψ.continuousAt hinv' hcrit,
-    eventually_morseIndex_graph rfl h hFbase hψp hψ.continuousAt, ?_,
+    eventually_isNondegenerateCriticalPoint_graph rfl hF2 hψ.continuousAt hinv' hcrit,
+    eventually_morseIndex_graph rfl h hF2 hψp hψ.continuousAt, ?_,
     (hFbase.of_le (by norm_num)).comp p (contDiffAt_id.prodMk hψ), hvalueDeriv⟩
   simpa only [G] using hunique
 
