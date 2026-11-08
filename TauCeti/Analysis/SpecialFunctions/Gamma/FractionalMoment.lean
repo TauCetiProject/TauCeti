@@ -69,8 +69,13 @@ theorem Gamma_mul_sin_pi_div_two {q : ℝ} (hq : 0 < q) :
     _ = 2 ^ (q - 1) * Gamma ((q + 1) / 2) *
         ((Gamma (1 - q / 2))⁻¹ * (√π)⁻¹) := by ring
 
-/-- The Gamma coefficient identity obtained from `Gamma_mul_sin_pi_div_two` and the Gamma
-recurrence. -/
+/-- The fractional-moment Gamma coefficient identity
+
+`2 Γ(q+1) sin(πq/2) / (πq) = 2^q Γ((q+1)/2) / (√π Γ(1-q/2))`
+
+for `0 < q`. It converts the coefficient produced by the power-weighted cosine integral into the
+Gamma factor of the conventional formula for the absolute moments `E[|X|^q]` of symmetric stable
+laws. -/
 theorem two_mul_Gamma_add_one_mul_sin_pi_div_two_div {q : ℝ} (hq : 0 < q) :
     2 * Gamma (q + 1) * sin (π * q / 2) / (π * q) =
       2 ^ q * Gamma ((q + 1) / 2) / (√π * Gamma (1 - q / 2)) := by
