@@ -83,8 +83,7 @@ theorem isProbabilityMeasure_stableSmallJumpRemainderMeasure {α β ε r : ℝ} 
       (stableLevyMeasure_abs_gt_ne_top (α := α) (β := β) hε) (measure_mono fun _ hx ↦ hx.1))
   have hprob := isProbabilityMeasure_compoundPoissonMeasure_cond (ν.restrict band)
   let _ : IsProbabilityMeasure (compoundPoissonMeasure (ν band).toNNReal (cond ν band)) := by
-    simpa only [Measure.restrict_apply_univ, ProbabilityTheory.cond,
-      Measure.restrict_univ] using hprob
+    rwa [Measure.restrict_apply_univ, cond_univ_restrict] at hprob
   rw [stableSmallJumpRemainderMeasure_def]
   infer_instance
 

@@ -48,7 +48,7 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hr : 0 < r) :
     ∃! μ : ProbabilityMeasure ℝ,
       (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0 := by
-  -- Keep every lower cutoff below `r`, so even the initial finite-band laws are probabilities.
+  -- Keep every lower cutoff positive and below `r`, so the finite splitting identity applies.
   let ε (n : ℕ) := min r ((2 : ℝ)⁻¹ ^ n)
   have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
   let μ (n : ℕ) : ProbabilityMeasure ℝ :=
