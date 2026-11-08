@@ -100,10 +100,8 @@ theorem homEquiv_comp_semilinearMap_apply (σ : B ≃ₐ[A] B) (φ : C →+* D)
       Algebra.TensorProduct.rTensor T (σ.symm : B →ₐ[A] B) (homEquiv A B D T g (φ c)) := by
   rw [homEquiv_comp, AlgHom.comp_apply, homEquiv_semilinearMap_apply, homEquiv_apply,
     AlgHom.comp_apply]
-  -- `B ⊗[A] g` and `σ⁻¹ ⊗ T` act on different tensor factors, so both composites are `σ⁻¹ ⊗ g`.
-  exact (DFunLike.congr_fun (Algebra.TensorProduct.map_comp (AlgHom.id A B) (σ.symm : B →ₐ[A] B)
-    g (AlgHom.id A _)) _).symm.trans (DFunLike.congr_fun
-      (Algebra.TensorProduct.map_comp (σ.symm : B →ₐ[A] B) (AlgHom.id A B) (AlgHom.id A T) g) _)
+  -- `B ⊗[A] g` and `σ⁻¹ ⊗ T` act on different tensor factors, so they commute.
+  exact LinearMap.lTensor_rTensor_comm (σ.symm : B →ₐ[A] B).toLinearMap g.toLinearMap _
 
 /-- For `σ = id`, the semilinear functoriality of the Weil restriction is the usual functoriality
 `WeilRestriction.map` in `B`-algebra homomorphisms. -/
