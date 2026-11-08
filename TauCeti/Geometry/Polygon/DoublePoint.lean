@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Polygon.RegularProjection
 public import TauCeti.Geometry.Polygon.Simple
 import TauCeti.Analysis.Convex.Segment
+import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Double points of regular projections of polygons
@@ -347,13 +348,6 @@ private theorem IsRegularProjection.edgePath_eq_of_eq_at_two
     poly.edgePath R i (h t) = poly.edgePath R j t := by
   let f : R →ᵃ[R] P := (poly.edgePath R i).comp (lineMap (h 0) (h 1))
   let g : R →ᵃ[R] P := poly.edgePath R j
-  have eq_at {f g : R →ᵃ[R] P} {a b c : R} (hab : a ≠ b)
-      (ha : f a = g a) (hb : f b = g b) : f c = g c := by
-    have hc : c = lineMap a b ((c - a) / (b - a)) := by
-      rw [lineMap_apply_ring']
-      field_simp [sub_ne_zero.mpr hab.symm]
-      ring
-    rw [hc, f.apply_lineMap, g.apply_lineMap, ha, hb]
   have h₁' : f u₁ = g u₁ := by
     dsimp only [f, g, AffineMap.coe_comp, Function.comp_apply]
     rw [← hh u₁]
@@ -365,7 +359,8 @@ private theorem IsRegularProjection.edgePath_eq_of_eq_at_two
   have hft : f t = poly.edgePath R i (h t) := by
     dsimp [f]
     rw [← hh t]
-  exact hft.symm.trans ((eq_at hu₁₂ h₁' h₂').trans rfl)
+  have hfg : f = g := AffineMap.eq_of_eq_at_two_points hu₁₂ h₁' h₂'
+  exact hft.symm.trans ((AffineMap.congr_fun hfg t).trans rfl)
 
 end AffineReparam
 
