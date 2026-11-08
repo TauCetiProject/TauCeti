@@ -25,7 +25,7 @@ resolvent bound `‖R_A(z)‖ ≤ |Im z|⁻¹` and the Ward identity
 of the resolvent lie in the upper half-plane when `z` does. These deterministic facts drive the
 resolvent method for global spectral laws of random matrices: the bound keeps the resolvent and
 its entries under control in the upper half-plane, and the Ward identity converts sums of squared
-entries back into diagonal entries. The first resolvent identity is Mathlib's
+entries back into diagonal entries. The resolvent identities specialize Mathlib's
 `Matrix.inv_sub_inv`.
 
 ## Main results
@@ -63,6 +63,32 @@ noncomputable section
 
 open Unitary
 open scoped ComplexConjugate
+
+namespace Matrix
+
+variable {α n : Type*} [CommRing α] [Fintype n] [DecidableEq n]
+  {A B : Matrix n n α} {z w : α}
+
+/-- The first resolvent identity for matrices with simultaneously invertible resolvents. -/
+theorem inv_sub_smul_one_sub_inv_sub_smul_one
+    (h : IsUnit (A - z • 1) ↔ IsUnit (B - w • 1)) :
+    (A - z • 1)⁻¹ - (B - w • 1)⁻¹ =
+      (A - z • 1)⁻¹ * ((B - A) + (z - w) • 1) * (B - w • 1)⁻¹ := by
+  have h' := Matrix.inv_sub_inv (A := A - z • 1) (B := B - w • 1) h
+  convert h' using 1
+  congr 2
+  rw [sub_smul]
+  abel
+
+/-- The first resolvent identity for a change of spectral parameter. -/
+theorem inv_sub_smul_one_sub_inv_sub_smul_one_eq
+    (h : IsUnit (A - z • 1) ↔ IsUnit (A - w • 1)) :
+    (A - z • 1)⁻¹ - (A - w • 1)⁻¹ =
+      (z - w) • ((A - z • 1)⁻¹ * (A - w • 1)⁻¹) := by
+  simpa [Matrix.mul_smul, Matrix.smul_mul] using
+    (inv_sub_smul_one_sub_inv_sub_smul_one (A := A) (B := A) (z := z) (w := w) h)
+
+end Matrix
 
 namespace Matrix.IsHermitian
 
@@ -138,6 +164,25 @@ theorem isUnit_sub_smul_one_of_im_ne_zero {z : 𝕜} (hz : RCLike.im z ≠ 0) :
     IsUnit (A - z • 1) := by
   simpa [Algebra.algebraMap_eq_smul_one] using
     (spectrum.notMem_iff.1 (hA.notMem_spectrum_of_im_ne_zero hz)).neg
+
+/-- The first resolvent identity for two Hermitian matrices and two non-real parameters. -/
+theorem inv_sub_smul_one_sub_inv_sub_smul_one
+    {B : Matrix n n 𝕜} (hB : B.IsHermitian) {z w : 𝕜}
+    (hz : RCLike.im z ≠ 0) (hw : RCLike.im w ≠ 0) :
+    (A - z • 1)⁻¹ - (B - w • 1)⁻¹ =
+      (A - z • 1)⁻¹ * ((B - A) + (z - w) • 1) * (B - w • 1)⁻¹ :=
+  Matrix.inv_sub_smul_one_sub_inv_sub_smul_one
+    (iff_of_true (hA.isUnit_sub_smul_one_of_im_ne_zero hz)
+      (hB.isUnit_sub_smul_one_of_im_ne_zero hw))
+
+/-- The first resolvent identity for a change of spectral parameter. -/
+theorem inv_sub_smul_one_sub_inv_sub_smul_one_eq {z w : 𝕜}
+    (hz : RCLike.im z ≠ 0) (hw : RCLike.im w ≠ 0) :
+    (A - z • 1)⁻¹ - (A - w • 1)⁻¹ =
+      (z - w) • ((A - z • 1)⁻¹ * (A - w • 1)⁻¹) :=
+  Matrix.inv_sub_smul_one_sub_inv_sub_smul_one_eq
+    (iff_of_true (hA.isUnit_sub_smul_one_of_im_ne_zero hz)
+      (hA.isUnit_sub_smul_one_of_im_ne_zero hw))
 
 open scoped Matrix.Norms.L2Operator in
 /-- **Resolvent bound.** For a Hermitian matrix and a non-real `z`, the Euclidean operator norm of
