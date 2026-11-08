@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
+public import Mathlib.Analysis.Normed.Module.Basic
 
 /-!
 # Rapid decay in conic neighbourhoods
@@ -19,7 +19,7 @@ Take `Γ'` to be the cone over a small ball about `ξ`.
 
 This is the geometric input to the localization of rapid decay in cones. If `F` grows at most
 polynomially and decays rapidly on `Γ`, and the coefficients `a i` decay rapidly in `‖v i‖`, then
-the superposition `∑ i, a i F (η - v i)` decays rapidly on `Γ'`: the shifts with
+the superposition `∑ i, a i • F (η - v i)` decays rapidly on `Γ'`: the shifts with
 `‖v i‖ ≤ c ‖η‖` evaluate `F` at points of `Γ` of size comparable to `‖η‖`, and the remaining
 shifts have `‖v i‖` comparable to `‖η‖`, where the decay of the coefficients wins. Applied to the
 Fourier coefficients of a smooth function, this shows that rapid decay of a localized Fourier
@@ -94,16 +94,18 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E]
 
 /-- **Rapid decay of a discrete convolution on a smaller cone.** A superposition
-`∑ i, a i F (η - v i)` of translates of a function `F` of polynomial growth, with coefficients
+`∑ i, a i • F (η - v i)` of translates of a function `F` of polynomial growth, with coefficients
 `a i` rapidly decreasing in `‖v i‖`, decays rapidly on every set `Γ'` whose conic neighbourhoods
 `closedBall η (c ‖η‖)`, `c > 0`, lie in a set `Γ` on which `F` decays rapidly: for every `N` the
-quantity `(1 + ‖η‖) ^ N ‖∑ i, a i F (η - v i)‖` is bounded on `Γ'`. -/
-theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι : Type*} {v : ι → E} {a : ι → ℂ}
-    (ha : ∀ j : ℕ, Summable fun i ↦ (1 + ‖v i‖) ^ j * ‖a i‖) {F : E → ℂ} {C₀ : ℝ} {k : ℕ}
-    (hC₀ : 0 ≤ C₀) (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c)
+quantity `(1 + ‖η‖) ^ N ‖∑ i, a i • F (η - v i)‖` is bounded on `Γ'`. -/
+theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [NormedField 𝕜]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {v : ι → E} {a : ι → 𝕜}
+    (ha : ∀ j : ℕ, Summable fun i ↦ (1 + ‖v i‖) ^ j * ‖a i‖) {F : E → G} {C₀ : ℝ} {k : ℕ}
+    (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c)
     (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
     (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖F η‖ ≤ C) (N : ℕ) :
-    ∃ C, ∀ η ∈ Γ', ∀ s, HasSum (fun i ↦ a i * F (η - v i)) s → (1 + ‖η‖) ^ N * ‖s‖ ≤ C := by
+    ∃ C, ∀ η ∈ Γ', ∀ s, HasSum (fun i ↦ a i • F (η - v i)) s → (1 + ‖η‖) ^ N * ‖s‖ ≤ C := by
+  have hC₀ : 0 ≤ C₀ := (norm_nonneg (F 0)).trans (by simpa using hF 0)
   set c' := min c (1 / 2)
   have hc' : 0 < c' := lt_min hc (by norm_num)
   have hc'1 : c' ≤ 1 / 2 := min_le_right _ _
@@ -145,12 +147,15 @@ theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι : Type*} {v : ι → E
         _ ≤ C₀ * ((c'⁻¹ * (1 + ‖v i‖)) ^ (N + k) * (1 + ‖v i‖) ^ k) := by gcongr
         _ = C₀ * c'⁻¹ ^ (N + k) * (1 + ‖v i‖) ^ (N + 2 * k) := by rw [mul_pow]; ring
         _ ≤ D * (1 + ‖v i‖) ^ (N + 2 * k) := by gcongr; exact le_max_right _ _
-  have hbound := (hs.mul_left (((1 + ‖η‖) ^ N : ℝ) : ℂ)).norm_le_of_bounded
-    ((ha (N + 2 * k)).hasSum.mul_left D) fun i ↦ by
-      rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity), mul_left_comm]
-      calc ‖a i‖ * ((1 + ‖η‖) ^ N * ‖F (η - v i)‖) ≤ ‖a i‖ * (D * (1 + ‖v i‖) ^ (N + 2 * k)) :=
-            mul_le_mul_of_nonneg_left (hterm i) (norm_nonneg _)
+  have hp : 0 < (1 + ‖η‖) ^ N := by positivity
+  have hbound := hs.norm_le_of_bounded (((ha (N + 2 * k)).hasSum.mul_left D).div_const _)
+    fun i ↦ by
+      rw [norm_smul, le_div_iff₀ hp]
+      calc ‖a i‖ * ‖F (η - v i)‖ * (1 + ‖η‖) ^ N
+          = ‖a i‖ * ((1 + ‖η‖) ^ N * ‖F (η - v i)‖) := by ring
+        _ ≤ ‖a i‖ * (D * (1 + ‖v i‖) ^ (N + 2 * k)) := by gcongr ‖a i‖ * ?_; exact hterm i
         _ = D * ((1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖) := by ring
-  rwa [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)] at hbound
+  rw [le_div_iff₀ hp] at hbound
+  linarith
 
 end TauCeti
