@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
-public import Mathlib.RingTheory.Spectrum.Prime.Basic
 
 /-!
 # Local order of an ideal
