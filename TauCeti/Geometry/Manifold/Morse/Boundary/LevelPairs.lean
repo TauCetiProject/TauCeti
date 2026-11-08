@@ -42,9 +42,6 @@ This is not proved here.
 
 ## Main declarations
 
-* `TauCeti.IsMorse.exists_separating_levels`: levels separating the intermediate critical values
-  exist.
-
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `trajectoryLevelPairs`: the trajectories from `p` to `r`, recorded by their points on two
@@ -54,8 +51,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `bijOn_brokenLevelPairs`, `ncard_brokenLevelPairs`: following the flow from the middle levels
   to the levels `c₁` and `c₂` is a bijection from the broken trajectories onto the broken pairs.
 * `IsMorseSmale.finite_brokenLevelPairs`: there are finitely many broken pairs.
-* `IsMorseSmale.closure_trajectoryLevelPairs_subset`: limits of unbroken pairs are unbroken or
-  broken.
+* `IsMorseSmale.closure_trajectoryLevelPairs_subset_union_brokenLevelPairs`: limits of unbroken
+  pairs are unbroken or broken.
 
 ## References
 
@@ -76,38 +73,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- **Separating levels exist.** For a Morse function on a compact manifold and critical points `p`
-and `r`, there are levels `c₂` above `f r` and `c₁` below `f p` such that every critical value
-strictly between `f r` and `f p` lies strictly between `c₂` and `c₁`, and no critical point lies on
-the level `c₁`. -/
-theorem IsMorse.exists_separating_levels (hf : IsMorse 𝓘(ℝ, E) f) (p r : M) :
-    ∃ c₁ c₂ : ℝ, c₁ < f p ∧ f r < c₂ ∧ (∀ y, f y = c₁ → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0) ∧
-      ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 → f r < f q → f q < f p → c₂ < f q ∧ f q < c₁ := by
-  have hcrit := hf.finite_criticalPoints
-  -- Levels close enough to `f p` from below, and to `f r` from above, separate the finitely many
-  -- critical values.
-  have h₁ : ∀ᶠ c in 𝓝[<] (f p), c < f p ∧
-      ∀ q ∈ criticalPoints 𝓘(ℝ, E) f, f q < f p → f q < c :=
-    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
-      fun q _ ↦ by
-        by_cases hq : f q < f p
-        · filter_upwards [Ioo_mem_nhdsLT hq] with c hc _ using hc.1
-        · exact Eventually.of_forall fun _ h ↦ absurd h hq
-  have h₂ : ∀ᶠ c in 𝓝[>] (f r), f r < c ∧
-      ∀ q ∈ criticalPoints 𝓘(ℝ, E) f, f r < f q → c < f q :=
-    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
-      fun q _ ↦ by
-        by_cases hq : f r < f q
-        · filter_upwards [Ioo_mem_nhdsGT hq] with c hc _ using hc.2
-        · exact Eventually.of_forall fun _ h ↦ absurd h hq
-  obtain ⟨c₁, hc₁p, hc₁⟩ := h₁.exists
-  obtain ⟨c₂, hc₂r, hc₂⟩ := h₂.exists
-  refine ⟨c₁, c₂, hc₁p, hc₂r, fun y hy h0 ↦ ?_, fun q hq hrq hqp ↦ ?_⟩
-  · have hy' := hc₁ y (mem_criticalPoints_iff_mfderiv_eq_zero.2 h0) (hy ▸ hc₁p)
-    exact hy'.ne hy
-  · exact ⟨hc₂ q (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq) hrq,
-      hc₁ q (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq) hqp⟩
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- Points of different Morse indices are different. -/
+private theorem ne_of_manifoldMorseIndex_eq_add {a b : M} {k : ℕ} (hk : 0 < k)
+    (h : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + k) : a ≠ b :=
+  ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by omega)
 
 namespace IsAdaptedPseudoGradient
 
@@ -154,46 +124,30 @@ theorem disjoint_trajectoryLevelPairs_brokenLevelPairs (p r : M) (c₁ c₂ : �
     Disjoint (hX.trajectoryLevelPairs p r c₁ c₂) (hX.brokenLevelPairs p r c₁ c₂) := by
   refine disjoint_left.2 fun w hT hB ↦ ?_
   obtain ⟨q, -, -, hqr, ⟨hq, -⟩, -⟩ := hB
-  have hne : q ≠ r := by
-    rintro rfl
-    omega
-  exact (Flow.disjoint_stableSet hne).notMem_of_mem_left hq.2 hT.1.2
+  exact (Flow.disjoint_stableSet (ne_of_manifoldMorseIndex_eq_add one_pos hqr)).notMem_of_mem_left
+    hq.2 hT.1.2
 
 variable {hX}
 
-/-- Following a trajectory from `a` to `b` to its point on a level `c` strictly between `f b` and
-`f a` stays on the trajectory and lands on the level. -/
-private theorem flow_levelCrossingTime_mem (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {a b z : M}
-    (hab : a ≠ b) (hz : z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ}
-    (hc : f b < c ∧ c < f a) :
-    hX.flow (Flow.levelCrossingTime hX.flow f c z) z ∈
-        hX.flow.unstableSet a ∩ hX.flow.stableSet b ∧
-      f (hX.flow (Flow.levelCrossingTime hX.flow f c z) z) = c :=
-  ⟨hX.flow.isInvariant_unstableSet_inter_stableSet a b _ hz, Flow.apply_flow_levelCrossingTime
-    (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hz hc.1 hc.2).exists⟩
-
-/-- A point `w` of a trajectory from `a` to `b` lying on the level `c` is the point on that level of
-the orbit of any `φ s w`. -/
-private theorem flow_levelCrossingTime_flow (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {a b w : M}
-    (hab : a ≠ b) (hw : w ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ}
-    (hwc : f w = c) (s : ℝ) :
-    hX.flow (Flow.levelCrossingTime hX.flow f c (hX.flow s w)) (hX.flow s w) = w := by
-  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hw
-  rw [Flow.levelCrossingTime_flow hanti ⟨0, by rwa [Flow.map_zero_apply]⟩,
-    (Flow.levelCrossingTime_eq_zero_iff hanti ⟨0, by rwa [Flow.map_zero_apply]⟩).2 hwc,
-    ← Flow.map_add, zero_sub, neg_add_cancel, Flow.map_zero_apply]
-
-/-- Two points of trajectories from `a` to `b` on the same level and on the same orbit are equal.
--/
-private theorem eq_of_flow_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {a b z z' : M} (hab : a ≠ b)
-    (hz : z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (hzz' : f z = f z') {t t' : ℝ}
-    (ht : hX.flow t z = hX.flow t' z') : z = z' := by
-  have hz' : z' = hX.flow (t - t') z := by
-    rw [sub_eq_neg_add, Flow.map_add, ht, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-  have h0 : t - t' = 0 :=
-    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hz).injective
-      (by rw [← hz', Flow.map_zero_apply, hzz'])
-  rw [hz', h0, Flow.map_zero_apply]
+/-- Along a broken trajectory from `p` through `q` to `r`, the critical value `f q` lies between
+levels `c₂` and `c₁` separating the critical values of the intermediate index. -/
+private theorem value_mem_Ioo_of_separating (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    {p q r y z : M} {c₁ c₂ : ℝ}
+    (hsep : ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 →
+      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 →
+      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1 →
+      f r < f q → f q < f p → c₂ < f q ∧ f q < c₁)
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+    (hz : z ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
+    f q ∈ Ioo c₂ c₁ := by
+  have hy' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf
+    (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hy
+  have hz' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf
+    (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hz
+  exact hsep q hq hpq hqr (hz'.1.trans hz'.2) (hy'.1.trans hy'.2)
 
 /-- **Broken trajectories correspond to broken pairs.** Let the levels `c₂ > f r` and `c₁ < f p`
 separate the critical values of the intermediate index strictly between `f r` and `f p`. Sending a
@@ -210,64 +164,68 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
         (hX.flow (Flow.levelCrossingTime hX.flow f c₁ x.2.1) x.2.1,
           hX.flow (Flow.levelCrossingTime hX.flow f c₂ x.2.2) x.2.2))
       (hX.morseBrokenTrajectorySet p r) (hX.brokenLevelPairs p r c₁ c₂) := by
-  have hne {a b : M} (h : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + 1) :
-      a ≠ b := by
-    rintro rfl
-    omega
-  -- The critical values along a broken trajectory through `q` are ordered, so `q` is separated.
-  have hlev {q y z : M} (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
-      (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
-      (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-      (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-      (hz : z ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
-      (f q < c₁ ∧ c₁ < f p) ∧ f r < c₂ ∧ c₂ < f q := by
-    have hy' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf (hne hpq) hy
-    have hz' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf (hne hqr) hz
-    have hs := hsep q hq hpq hqr (hz'.1.trans hz'.2) (hy'.1.trans hy'.2)
-    exact ⟨⟨hs.2, hc₁⟩, hc₂, hs.1⟩
+  -- On each component, following the flow from the middle level to a level `c` crossed by every
+  -- trajectory is `Flow.levelSliceHomeomorph`.
+  have hbij {a b : M} (hab : a ≠ b) {c : ℝ} (hc : f b < c ∧ c < f a) :
+      BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c z) z)
+        ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
+        ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = c}) := by
+    set e := Flow.levelSliceHomeomorph hf.continuous.continuousOn
+      (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy)
+      (fun _ hy ↦ (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf hab
+        hy).exists)
+      (fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hc.1
+        hc.2).exists)
+    have he (z) : (e z : M) = hX.flow (Flow.levelCrossingTime hX.flow f c z) z :=
+      Flow.coe_levelSliceHomeomorph ..
+    refine ⟨fun z hz ↦ ?_, fun z hz z' hz' h ↦ ?_, fun w hw ↦ ?_⟩
+    · simpa only [he] using (e ⟨z, hz⟩).2
+    · exact congrArg Subtype.val (e.injective (a₁ := ⟨z, hz⟩) (a₂ := ⟨z', hz'⟩)
+        (Subtype.ext (by simpa only [he] using h)))
+    · exact ⟨e.symm ⟨w, hw⟩, (e.symm ⟨w, hw⟩).2,
+        by simpa only [he] using congrArg Subtype.val (e.apply_symm_apply ⟨w, hw⟩)⟩
   refine ⟨?_, ?_, ?_⟩
   · rintro ⟨q, z₁, z₂⟩ hx
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := (mem_morseBrokenTrajectorySet hX).1 hx
-    rw [mem_morseTrajectorySlice] at hz₁ hz₂
+    simp only [mem_morseTrajectorySlice, ← and_assoc] at hz₁ hz₂
     have hq := mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2
-    obtain ⟨hc₁q, hc₂q⟩ := hlev hpq hqr hq ⟨hz₁.1, hz₁.2.1⟩ ⟨hz₂.1, hz₂.2.1⟩
-    exact ⟨q, hq, hpq, hqr, flow_levelCrossingTime_mem hf (hne hpq) ⟨hz₁.1, hz₁.2.1⟩ hc₁q,
-      flow_levelCrossingTime_mem hf (hne hqr) ⟨hz₂.1, hz₂.2.1⟩ hc₂q⟩
+    have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hz₁.1 hz₂.1
+    exact ⟨q, hq, hpq, hqr,
+      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hpq) ⟨hcq.2, hc₁⟩).mapsTo hz₁,
+      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hqr) ⟨hc₂, hcq.1⟩).mapsTo hz₂⟩
   · rintro ⟨q, z₁, z₂⟩ hx ⟨q', z₁', z₂'⟩ hx' heq
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := (mem_morseBrokenTrajectorySet hX).1 hx
     obtain ⟨-, -, hz₁', hz₂'⟩ := (mem_morseBrokenTrajectorySet hX).1 hx'
-    rw [mem_morseTrajectorySlice] at hz₁ hz₂ hz₁' hz₂'
+    simp only [mem_morseTrajectorySlice, ← and_assoc] at hz₁ hz₂ hz₁' hz₂'
     simp only [Prod.mk.injEq] at heq
     -- The first level point flows to both `q` and `q'`.
     have hqq : q = q' := by
       by_contra hqq
       have h₁ := (Flow.apply_mem_stableSet_iff hX.flow
-        (Flow.levelCrossingTime hX.flow f c₁ z₁)).2 hz₁.2.1
+        (Flow.levelCrossingTime hX.flow f c₁ z₁)).2 hz₁.1.2
       have h₂ := (Flow.apply_mem_stableSet_iff hX.flow
-        (Flow.levelCrossingTime hX.flow f c₁ z₁')).2 hz₁'.2.1
+        (Flow.levelCrossingTime hX.flow f c₁ z₁')).2 hz₁'.1.2
       rw [← heq.1] at h₂
       exact (Flow.disjoint_stableSet (Subtype.coe_ne_coe.2 hqq)).notMem_of_mem_left h₁ h₂
     subst hqq
-    obtain rfl := eq_of_flow_eq hf (hne hpq) ⟨hz₁.1, hz₁.2.1⟩ (hz₁.2.2.trans hz₁'.2.2.symm) heq.1
-    obtain rfl := eq_of_flow_eq hf (hne hqr) ⟨hz₂.1, hz₂.2.1⟩ (hz₂.2.2.trans hz₂'.2.2.symm) heq.2
+    have hcq := value_mem_Ioo_of_separating hf hsep (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2)
+      hpq hqr hz₁.1 hz₂.1
+    obtain rfl := (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hpq) ⟨hcq.2, hc₁⟩).injOn
+      hz₁ hz₁' heq.1
+    obtain rfl := (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hqr) ⟨hc₂, hcq.1⟩).injOn
+      hz₂ hz₂' heq.2
     rfl
-  · rintro ⟨w₁, w₂⟩ ⟨q, hq, hpq, hqr, ⟨hw₁, hw₁c⟩, hw₂, hw₂c⟩
+  · rintro ⟨w₁, w₂⟩ ⟨q, hq, hpq, hqr, hw₁, hw₂⟩
     -- Follow each component of the broken pair back to its middle level.
-    obtain ⟨-, hc₁q⟩ := hlev hpq hqr hq hw₁ hw₂
-    have hmid {a b w : M} (hab : a ≠ b) (hw : w ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :=
-      flow_levelCrossingTime_mem (c := (f a + f b) / 2) hf hab hw
-        (by have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hw
-            constructor <;> linarith [this.1, this.2])
-    refine ⟨(⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq⟩,
-      hX.flow (Flow.levelCrossingTime hX.flow f ((f p + f q) / 2) w₁) w₁,
-      hX.flow (Flow.levelCrossingTime hX.flow f ((f q + f r) / 2) w₂) w₂),
-      (mem_morseBrokenTrajectorySet hX).2 ⟨hpq, hqr, ?_, ?_⟩, ?_⟩
-    · exact (mem_morseTrajectorySlice hX).2
-        ⟨(hmid (hne hpq) hw₁).1.1, (hmid (hne hpq) hw₁).1.2, (hmid (hne hpq) hw₁).2⟩
-    · exact (mem_morseTrajectorySlice hX).2
-        ⟨(hmid (hne hqr) hw₂).1.1, (hmid (hne hqr) hw₂).1.2, (hmid (hne hqr) hw₂).2⟩
-    · simp only [flow_levelCrossingTime_flow hf (hne hpq) hw₁ hw₁c,
-        flow_levelCrossingTime_flow hf (hne hqr) hw₂ hw₂c]
+    have hcq := value_mem_Ioo_of_separating hf hsep hq hpq hqr hw₁.1 hw₂.1
+    obtain ⟨z₁, hz₁, rfl⟩ :=
+      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hpq) ⟨hcq.2, hc₁⟩).surjOn hw₁
+    obtain ⟨z₂, hz₂, rfl⟩ :=
+      (hbij (ne_of_manifoldMorseIndex_eq_add one_pos hqr) ⟨hc₂, hcq.1⟩).surjOn hw₂
+    exact ⟨(⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq⟩, z₁, z₂),
+      (mem_morseBrokenTrajectorySet hX).2 ⟨hpq, hqr, (mem_morseTrajectorySlice hX).2
+        ⟨hz₁.1.1, hz₁.1.2, hz₁.2⟩, (mem_morseTrajectorySlice hX).2 ⟨hz₂.1.1, hz₂.1.2, hz₂.2⟩⟩,
+      rfl⟩
 
 /-- **Counting broken pairs.** Under the separation hypotheses of
 `TauCeti.IsAdaptedPseudoGradient.bijOn_brokenLevelPairs`, there are as many broken pairs as broken
@@ -302,7 +260,8 @@ theorem finite_brokenLevelPairs (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E)
 the intermediate index strictly between `f r` and `f p` lie strictly between `c₂` and `c₁`. Then
 every limit in `M × M` of level pairs of trajectories from `p` to `r` is either such a pair or the
 level pair of a broken trajectory. -/
-theorem closure_trajectoryLevelPairs_subset (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
     {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hreg : ∀ y, f y = c₁ → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
@@ -314,9 +273,7 @@ theorem closure_trajectoryLevelPairs_subset (h : hX.IsMorseSmale) (hf : IsMorse 
       hX.trajectoryLevelPairs p r c₁ c₂ ∪ hX.brokenLevelPairs p r c₁ c₂ := by
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
   have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  have hpr : p ≠ r := by
-    rintro rfl
-    omega
+  have hpr : p ≠ r := ne_of_manifoldMorseIndex_eq_add two_pos hind
   rintro ⟨y₁, y₂⟩ hy
   obtain ⟨w, hwT, hw⟩ := mem_closure_iff_seq_limit.1 hy
   choose hw₁ hwc₁ hwc₂ s hs using fun k ↦ (mem_trajectoryLevelPairs hX).1 (hwT k)
@@ -341,19 +298,10 @@ theorem closure_trajectoryLevelPairs_subset (h : hX.IsMorseSmale) (hf : IsMorse 
     obtain rfl := tendsto_nhds_unique h₂
       (hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr hyT hσ hlim hsc)
     exact Or.inl ⟨hyT, hyc, hσ, σ, rfl⟩
-  all_goals
-    have hpq' : p ≠ q := by
-      rintro rfl
-      omega
-    have hqr' : q ≠ r := by
-      rintro rfl
-      omega
   · -- A limit broken after the level `c₁`: the second points converge on the second component.
-    have hyq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq' hyq
-    have hzq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hqr' hzq
-    have hsepq := hsep q hq hpq hqr (hzq'.1.trans hzq'.2) (hyq'.1.trans hyq'.2)
-    obtain ⟨σ, hσ, -⟩ :=
-      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hqr' hzq hc₂.1 hsepq.1
+    have hqr' := ne_of_manifoldMorseIndex_eq_add one_pos hqr
+    obtain ⟨σ, hσ, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hqr' hzq
+      hc₂.1 (value_mem_Ioo_of_separating hfd hsep hq hpq hqr hyq hzq).1
     have hlim₂ := hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hfd hqr' hzq hσ
       hzlim (s := fun k ↦ s (n k) - t k)
       fun k ↦ by rw [← Flow.map_add, sub_add_cancel, hsc]
@@ -362,10 +310,10 @@ theorem closure_trajectoryLevelPairs_subset (h : hX.IsMorseSmale) (hf : IsMorse 
     exact Or.inr ⟨q, hq, hpq, hqr, ⟨hyq, hyc⟩,
       hX.flow.isInvariant_unstableSet_inter_stableSet q r σ hzq, hσ⟩
   · -- A limit broken before the level `c₁` would put `f q` both above and below `c₁`.
-    have hyq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hqr' hyq
-    have hzq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq' hzq
-    have hsepq := hsep q hq hpq hqr (hyq'.1.trans hyq'.2) (hzq'.1.trans hzq'.2)
-    exact absurd hsepq.2 (hyc ▸ hyq'.2).not_gt
+    have hyq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd
+      (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hyq
+    exact absurd (value_mem_Ioo_of_separating hfd hsep hq hpq hqr hzq hyq).2
+      (hyc ▸ hyq'.2).not_gt
 
 end IsMorseSmale
 
