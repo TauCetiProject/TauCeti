@@ -48,6 +48,7 @@ level. They use neither smoothness nor transversality.
 
 * `Flow.continuousOn_levelCrossingTime`: the crossing time is continuous on `C`.
 * `Flow.levelCrossingTime_flow`: flowing for time `t` subtracts `t` from the crossing time.
+* `Flow.flow_levelCrossingTime_flow`: all points of one orbit cross the level at the same point.
 * `Flow.isProperMap_restrict_pair`: time translation on `C` is a proper action.
 
 ## References
@@ -133,6 +134,14 @@ theorem levelCrossingTime_flow (hanti : StrictAnti fun t ↦ f (φ t x))
   refine ((eq_levelCrossingTime_iff hanti' h').2 ?_).symm
   rw [← φ.map_add, sub_add_cancel]
   exact apply_flow_levelCrossingTime ⟨s, hs⟩
+
+/-- Along an orbit on which `f` strictly decreases, the orbit through any of its points crosses the
+level `f (φ s x)` at `φ s x`. -/
+theorem flow_levelCrossingTime_flow {s : ℝ} (hanti : StrictAnti fun t ↦ f (φ t x))
+    (hs : f (φ s x) = c) (t : ℝ) :
+    φ (levelCrossingTime φ f c (φ t x)) (φ t x) = φ s x := by
+  rw [levelCrossingTime_flow hanti ⟨s, hs⟩, ← (eq_levelCrossingTime_iff hanti ⟨s, hs⟩).2 hs,
+    ← φ.map_add, sub_add_cancel]
 
 section Connecting
 
