@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Linearization
 
 /-!
 # Linearization of differential forms as bundle sections
