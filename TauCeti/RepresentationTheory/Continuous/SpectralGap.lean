@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Continuous.AlmostInvariant
 public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
 
 /-!
-# Spectral gap of a unitary representation
+# Spectral gap of a representation
 
 A representation has spectral gap when a finite sum of squared orbit displacements controls
 squared norms on the orthogonal complement of its invariant vectors. The fixed subspace is
@@ -17,7 +17,7 @@ removed: in particular a trivial representation has spectral gap.
 
 For a unitary group representation the orthogonal complement carries a unitary representation,
 `IsUnitary.invariantsOrthogonal`. Spectral gap is equivalent to the absence of almost invariant
-vectors in this representation. Every unitary representation of a finite group has spectral gap.
+vectors in this representation. Every representation of a finite group has spectral gap.
 These criteria are the representation-theoretic starting point for spectral gap of actions.
 Neither completeness nor a topology on the acting group is needed here.
 
@@ -30,8 +30,11 @@ public section
 
 namespace ContRepresentation
 
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V]
-  [InnerProductSpace 𝕜 V]
+variable {𝕜 G V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+section Monoid
+
+variable [Monoid G]
 
 /-- A representation has spectral gap if finitely many squared orbit displacements control the
 squared norm of every vector orthogonal to the invariant subspace. -/
@@ -44,6 +47,12 @@ theorem hasSpectralGap_def (ρ : ContRepresentation 𝕜 G V) :
     ρ.HasSpectralGap ↔ ∃ (F : Finset G) (C : ℝ), 0 < C ∧
       ∀ v ∈ ρ.invariantsᗮ, ‖v‖ ^ 2 ≤ C * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
   Iff.rfl
+
+end Monoid
+
+section Group
+
+variable [Group G]
 
 namespace IsUnitary
 
@@ -109,14 +118,31 @@ theorem hasSpectralGap_iff_not_hasAlmostInvariantVectors
       _ ≤ c⁻¹ * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
         mul_le_mul_of_nonneg_left hbound (inv_nonneg.mpr hc.le)
 
-/-- Every unitary representation of a finite group has spectral gap. -/
-theorem hasSpectralGap_of_finite (ρ : ContRepresentation 𝕜 G V) (hρ : ρ.IsUnitary)
-    [Finite G] : ρ.HasSpectralGap := by
-  rw [hasSpectralGap_iff_not_hasAlmostInvariantVectors ρ hρ]
-  intro h
-  obtain ⟨v, hv, hfixed⟩ := h.exists_invariant_ne_zero
-  rw [hρ.invariants_invariantsOrthogonal, Submodule.mem_bot] at hfixed
-  exact hv hfixed
+/-- Every representation of a finite group has spectral gap, without unitarity or
+completeness assumptions. -/
+theorem hasSpectralGap_of_finite [Finite G] (ρ : ContRepresentation 𝕜 G V) :
+    ρ.HasSpectralGap := by
+  classical
+  let := Fintype.ofFinite G
+  refine ⟨Finset.univ, 1, zero_lt_one, fun v hv ↦ ?_⟩
+  rw [one_mul]
+  by_contra! hbound
+  have hmove (g : G) : ‖ρ g v - v‖ < ‖v‖ := by
+    have hsingle := Finset.single_le_sum
+      (fun i (_ : i ∈ (Finset.univ : Finset G)) ↦ sq_nonneg ‖ρ i v - v‖)
+      (Finset.mem_univ g)
+    nlinarith [norm_nonneg (ρ g v - v), norm_nonneg v]
+  obtain ⟨w, hw, hclose⟩ := ρ.exists_invariant_norm_sub_lt hmove
+  have horth := (ρ.invariants.mem_orthogonal v).mp hv w hw
+  have hpyth := norm_sub_sq (𝕜 := 𝕜) w v
+  rw [horth, map_zero, mul_zero, sub_zero] at hpyth
+  nlinarith [sq_nonneg ‖w‖, norm_nonneg (w - v), norm_nonneg v]
+
+end Group
+
+section Monoid
+
+variable [Monoid G]
 
 /-- The trivial representation has spectral gap, since its invariant complement is zero. -/
 @[simp]
@@ -127,5 +153,7 @@ theorem hasSpectralGap_trivial :
   have hzero : v = 0 :=
     (Submodule.disjoint_def.mp (trivial 𝕜 G V).invariants.orthogonal_disjoint) v hfixed hv
   simp [hzero]
+
+end Monoid
 
 end ContRepresentation
