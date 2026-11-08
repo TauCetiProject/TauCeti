@@ -268,6 +268,22 @@ theorem map_mul_of_basis {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
     | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
     | smul_of s ψ => simp only [smul_mul_assoc, mul_smul_comm, map_smul, h]
 
+/-- The coefficient of `χ` in a product is the sum of the products of the coefficients of the
+pairs of composable diagrams whose composite is `χ`. -/
+theorem repr_mul_apply [Fintype (StrandDiagram α)] (x y : StrandsAlgebra R α)
+    (χ : StrandDiagram α) :
+    (basis R α).repr (x * y) χ = ∑ φ, ∑ ψ, if φ.Composable ψ ∧ φ.trans ψ = χ then
+      (basis R α).repr x φ * (basis R α).repr y ψ else 0 := by
+  conv_lhs => rw [← (basis R α).sum_repr x, ← (basis R α).sum_repr y, Finset.sum_mul_sum]
+  simp only [map_sum, Finset.sum_apply', smul_mul_smul_comm, basis_apply, map_smul,
+    Finsupp.smul_apply, smul_eq_mul]
+  refine Finset.sum_congr rfl fun φ _ ↦ Finset.sum_congr rfl fun ψ _ ↦ ?_
+  rw [of_mul_of]
+  by_cases h : φ.Composable ψ
+  · rw [ite_eq_left h, ← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+    by_cases h' : φ.trans ψ = χ <;> simp [h, h']
+  · simp [h]
+
 end StrandsAlgebra
 
 end TauCeti
