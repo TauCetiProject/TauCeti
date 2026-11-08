@@ -142,7 +142,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
   · -- Boundedness: `|u| ≤ D N` on `B(x, R/2)`, by local boundedness, since `(βR/λ)² ≤ σ²`.
     rw [hρ]
     filter_upwards [hbound (gamma := 0) h ha hb aestronglyMeasurable_const hb_bound
-      (fun _ _ => by simp) (fun _ _ => le_rfl) hu hR (hball x hx)] with y hy'
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hu (hball x hx)] with y hy'
     rw [Real.norm_eq_abs, hM]
     refine hy'.trans ?_
     rw [mul_assoc]
