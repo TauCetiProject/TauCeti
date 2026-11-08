@@ -213,8 +213,8 @@ theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : 
 
 /-- A rectangle `X ×ˢ Y` inside a block `A ×ˢ B` of disjoint sets, with sides carrying an
 `ε`-fraction of `A` and `B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
-theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] {ε : R} {A B X Y : Finset α} (hε : 0 ≤ ε)
+theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommSemiring R]
+    [LinearOrder R] [IsStrictOrderedRing R] {ε : R} {A B X Y : Finset α} (hε : 0 ≤ ε)
     (hAB : Disjoint A B) (hX : X ⊆ A) (hY : Y ⊆ B) (hXc : ε * #A ≤ #X) (hYc : ε * #B ≤ #Y) :
     ε ^ 2 * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤
       (#((X ×ˢ Y).filter fun p => p.1 ≠ p.2) : R) := by
