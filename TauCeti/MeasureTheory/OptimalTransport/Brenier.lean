@@ -17,6 +17,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.Convex.FenchelMoreau
 import TauCeti.Analysis.Convex.MongeAmpere.Decomposition
 import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 
 /-!
@@ -292,11 +293,12 @@ be finite measures with finite second moments on a real inner product space. A c
 `μ` and `ν` concentrated on a `c`-cyclically monotone set for the cost `‖x - y‖ ^ 2 / 2` is an
 optimal plan for that cost. -/
 theorem IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two
-    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
+    [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν)
     {S : Set (E × E)} (hS : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) S)
     (h : ∀ᵐ z ∂π, z ∈ S) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν := by
+  have : OpensMeasurableSpace E := OpensMeasurableSpace.of_prod_left (Y := E)
   -- By Rockafellar's theorem `S` lies in the subdifferential graph of a conjugate `u = g⋆`; both
   -- `u` and `u⋆` are lower semicontinuous, hence measurable.
   obtain ⟨g, hg⟩ := hS.exists_fenchelConjugate_innerₗ_subset_subdifferential
@@ -313,7 +315,7 @@ finite measures with finite second moments on a real inner product space, and `u
 any function. A coupling `π` of `μ` and `ν` such that `y ∈ ∂u(x)` for `π`-almost every
 `(x, y)` is an optimal plan for the cost `‖x - y‖ ^ 2 / 2`. -/
 theorem IsCoupling.isOptimalCoupling_of_ae_mem_subdifferential
-    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
+    [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν)
     {u : E → EReal} (h : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
@@ -326,7 +328,7 @@ function, and `T` a transport map from `μ` to `ν` with `T x ∈ ∂u(x)` for `
 Then `T` is an optimal transport map for the cost `‖x - y‖ ^ 2 / 2`, attaining the Kantorovich
 value. -/
 theorem isKantorovichOptimalTransportMap_of_ae_mem_subdifferential
-    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν)
+    [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν)
     {T : E → E} (hT : HasLaw T ν μ)
     {u : E → EReal} (h : ∀ᵐ x ∂μ, T x ∈ subdifferential (innerₗ E) u x) :
     IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
@@ -348,8 +350,7 @@ and `ν` be finite measures with finite second moments on a real Hilbert space, 
 `μ`-almost every point. If the gradient `∇ u` pushes `μ` to `ν`, it is an optimal transport map
 for the cost `‖x - y‖ ^ 2 / 2`, attaining the Kantorovich value. This is the converse of Brenier's
 theorem `TauCeti.exists_isKantorovichOptimalTransportMap_gradient`. -/
-theorem isKantorovichOptimalTransportMap_gradient [OpensMeasurableSpace E] [CompleteSpace E]
-    [IsFiniteMeasure μ]
+theorem isKantorovichOptimalTransportMap_gradient [CompleteSpace E] [IsFiniteMeasure μ]
     (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) {u : E → EReal}
     (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
     (hdiff : ∀ᵐ x ∂μ, u x ≠ ⊤ ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x)
@@ -363,7 +364,7 @@ theorem isKantorovichOptimalTransportMap_gradient [OpensMeasurableSpace E] [Comp
 `π` of finite measures `μ` and `ν` with finite second moments is an optimal plan for the cost
 `‖x - y‖ ^ 2 / 2` exactly when there is a proper (never `⊥`, and finite somewhere) convex, lower
 semicontinuous `u : E → EReal` such that `y ∈ ∂u(x)` for `π`-almost every `(x, y)`. -/
-theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential [OpensMeasurableSpace E]
+theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential
     [SecondCountableTopology E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν ↔
@@ -394,10 +395,17 @@ near `μ`-almost every point with differentiable real representative there, and 
 plan of the gradient of that real representative. -/
 theorem eq_graphPlan_gradient_of_ae_mem_subdifferential (hπ : π.fst = μ) (hμ : μ ≪ ρ)
     {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hlsc : LowerSemicontinuous u) (hbot : ∀ x, u x ≠ ⊥)
+    (hlsc : LowerSemicontinuous u)
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
       π = graphPlan (∇ fun x => (u x).toReal) μ := by
+  -- The empty plan is trivial; otherwise a subgradient exists somewhere, so `u` is never `⊥`.
+  rcases eq_zero_or_neZero π with rfl | hne
+  · obtain rfl : μ = 0 := hπ.symm.trans Measure.fst_zero
+    simp [graphPlan_def]
+  have := ae_neBot.2 hne.out
+  obtain ⟨z, hz⟩ := hsub.exists
+  have hbot : ∀ x, u x ≠ ⊥ := apply_ne_bot_of_mem_subdifferential (innerₗ E) hz
   -- The effective domain of `u` contains the first coordinate of almost every point of `π`,
   -- hence `μ`-almost every point, since `π` has first marginal `μ`.
   have hdom : ∀ᵐ x ∂μ, u x ≠ ⊤ := by
@@ -440,7 +448,7 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_gradient [IsFiniteMeasure μ] (hμ
   have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
     filter_upwards [π.support_mem_ae] with z hz using hsub hz
   obtain ⟨hdiff, hgraph⟩ :=
-    eq_graphPlan_gradient_of_ae_mem_subdifferential h.fst_eq hμ hconv hlsc hbot hsub'
+    eq_graphPlan_gradient_of_ae_mem_subdifferential h.fst_eq hμ hconv hlsc hsub'
   exact ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩
 
 /-- **The exchanged plan is the graph plan of the gradient of the conjugate.** Let `π` be a plan
@@ -455,29 +463,22 @@ theorem map_swap_eq_graphPlan_gradient_fenchelConjugate (hπ : π.snd = ν) (hν
     (∀ᵐ y ∂ν, (∀ᶠ y' in 𝓝 y, fenchelConjugate (innerₗ E) u y' ≠ ⊤) ∧
         DifferentiableAt ℝ (fun y' => (fenchelConjugate (innerₗ E) u y').toReal) y) ∧
       π.map Prod.swap = graphPlan (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ν := by
-  rcases eq_zero_or_neZero π with rfl | hne
-  · obtain rfl : ν = 0 := hπ.symm.trans Measure.snd_zero
-    simp
-  -- `u` is finite somewhere since `π` is not zero, so `u⋆` never takes the value `⊥`.
-  have := ae_neBot.2 hne.out
-  obtain ⟨z, hz⟩ := hsub.exists
   exact eq_graphPlan_gradient_of_ae_mem_subdifferential (Measure.fst_map_swap.trans hπ) hν
     (convex_epigraph_fenchelConjugate (innerₗ E) u) (lowerSemicontinuous_fenchelConjugate_innerₗ u)
-    (fenchelConjugate_ne_bot (innerₗ E) (ne_top_of_mem_subdifferential (innerₗ E) hz))
     (ae_mem_subdifferential_fenchelConjugate_map_swap hsub)
 
 /-- **Conjugate potentials give inverse maps.** Let `π` couple `μ` and `ν`, both absolutely
 continuous with respect to an additive Haar measure on a finite-dimensional real inner product
-space, and let `u : E → EReal` be convex, lower semicontinuous and never `⊥`, with `y ∈ ∂u(x)`
+space, and let `u : E → EReal` be convex and lower semicontinuous, with `y ∈ ∂u(x)`
 for `π`-almost every `(x, y)`. Then the gradient of the conjugate `u⋆` is a left inverse of the
 gradient of `u`, `μ`-almost everywhere. -/
 theorem IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id (hπ : IsCoupling π μ ν)
     (hμ : μ ≪ ρ) (hν : ν ≪ ρ) {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hlsc : LowerSemicontinuous u) (hbot : ∀ x, u x ≠ ⊥)
+    (hlsc : LowerSemicontinuous u)
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal) =ᵐ[μ] id := by
   have h₁ :=
-    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hbot hsub).2
+    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hsub).2
   have h₂ := (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub).2
   rw [h₁] at h₂
   exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
@@ -485,16 +486,16 @@ theorem IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id (hπ : IsCou
 
 /-- **Conjugate potentials give inverse maps.** Let `π` couple `μ` and `ν`, both absolutely
 continuous with respect to an additive Haar measure on a finite-dimensional real inner product
-space, and let `u : E → EReal` be convex, lower semicontinuous and never `⊥`, with `y ∈ ∂u(x)`
+space, and let `u : E → EReal` be convex and lower semicontinuous, with `y ∈ ∂u(x)`
 for `π`-almost every `(x, y)`. Then the gradient of `u` is a left inverse of the gradient of the
 conjugate `u⋆`, `ν`-almost everywhere. -/
 theorem IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id (hπ : IsCoupling π μ ν)
     (hμ : μ ≪ ρ) (hν : ν ≪ ρ) {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hlsc : LowerSemicontinuous u) (hbot : ∀ x, u x ≠ ⊥)
+    (hlsc : LowerSemicontinuous u)
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) =ᵐ[ν] id := by
   have h₁ :=
-    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hbot hsub).2
+    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hsub).2
   have h₂ := (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub).2
   rw [h₁] at h₂
   exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
@@ -551,10 +552,11 @@ theorem gradient_ae_eq_gradient_of_hasLaw [IsFiniteMeasure μ] (hμ2 : MemLp id 
   exact (graphPlan_eq_graphPlan_iff huν.aemeasurable hvν.aemeasurable).1
     (hu'.unique hμ hv' hfin)
 
-/-- **Brenier's theorem.** Let `μ` and `ν` be probability measures on a finite-dimensional real
-inner product space `E`, with `μ` absolutely continuous with respect to an additive Haar measure,
-and suppose the optimal cost for `‖x - y‖ ^ 2 / 2` is finite, as it is for laws with finite second
-moment (`TauCeti.transportCost_norm_sub_sq_div_two_ne_top`). Then there is a convex, lower
+/-- **Brenier's theorem.** Let `μ` be a probability measure and `ν` a measure on a
+finite-dimensional real inner product space `E`, with `μ` absolutely continuous with respect to an
+additive Haar measure, and suppose the optimal cost for `‖x - y‖ ^ 2 / 2` is finite, as it is for
+laws with finite second moment (`TauCeti.transportCost_norm_sub_sq_div_two_ne_top`); then `ν` is a
+probability measure too. Then there is a convex, lower
 semicontinuous `u : E → EReal` that never takes the value `⊥`, is finite near `μ`-almost every
 point and has differentiable real representative there, such that the gradient
 `T = ∇ (fun x => (u x).toReal)`:
@@ -563,7 +565,7 @@ point and has differentiable real representative there, such that the gradient
 * induces the unique optimal plan: a plan is optimal exactly when it is the graph plan of `T`;
 * is the unique optimal transport map up to `μ`-almost everywhere equality. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] (hμ : μ ≪ ρ)
+    (hμ : μ ≪ ρ)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
       (∀ x, u x ≠ ⊥) ∧
@@ -575,6 +577,9 @@ theorem exists_isKantorovichOptimalTransportMap_gradient [IsProbabilityMeasure �
       ∀ S : E → E,
         IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
           μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal := by
+  -- Finite cost gives a coupling, so the target of `μ` is a probability measure as well.
+  have : IsProbabilityMeasure ν :=
+    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.isProbabilityMeasure_right
   have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
     continuous_ofReal_norm_sub_sq_div_two
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc.lowerSemicontinuous
@@ -632,7 +637,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
   have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
     filter_upwards [π.support_mem_ae] with z hz using hsub hz
   obtain ⟨hdiff, hgraph⟩ :=
-    eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hbot hsub'
+    eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hsub'
   obtain ⟨hdiff', hgraph'⟩ :=
     map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub'
   -- The quadratic cost is symmetric, so the exchanged plan is optimal from `ν` to `μ`.
@@ -654,12 +659,12 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
       hc.measurable.aemeasurable).2 (hgraph ▸ hπ),
     (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw'
       hc.measurable.aemeasurable).2 (hgraph' ▸ hswap),
-    hπ.toIsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id hμ hν hconv hlsc hbot hsub',
-    hπ.toIsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id hμ hν hconv hlsc hbot hsub'⟩
+    hπ.toIsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id hμ hν hconv hlsc hsub',
+    hπ.toIsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id hμ hν hconv hlsc hsub'⟩
 
-/-- **The Brenier potential is a weak solution of its transport equation.** Let `μ` and `ν` be
-probability measures on a finite-dimensional real inner product space `E`, both absolutely
-continuous with respect to an additive Haar measure, and suppose the optimal cost for
+/-- **The Brenier potential is a weak solution of its transport equation.** Let `μ` be a
+probability measure and `ν` a measure on a finite-dimensional real inner product space `E`, both
+absolutely continuous with respect to an additive Haar measure, and suppose the optimal cost for
 `‖x - y‖ ^ 2 / 2` is finite. Then there is a convex, lower semicontinuous `u : E → EReal` that
 never takes the value `⊥`, with `D` the interior of its effective domain, such that:
 
@@ -668,7 +673,7 @@ never takes the value `⊥`, with `D` the interior of its effective domain, such
   every measurable `s`; for `μ = g₀ dx` and `ν = g₁ dy` this is `∫_{∂u(s ∩ D)} g₁ = ∫_s g₀`;
 * `ν`-almost every point is a subgradient of `u` at a point of `D`. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
+    [IsProbabilityMeasure μ] (hμ : μ ≪ ρ) (hν : ν ≪ ρ)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
       (∀ x, u x ≠ ⊥) ∧
@@ -676,6 +681,8 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
         μ ν (∇ fun x => (u x).toReal) ∧
       mongeAmpereMeasure ν u = μ ∧
       ∀ᵐ y ∂ν, y ∈ subgradientImage (innerₗ E) u (interior {x | u x ≠ ⊤}) := by
+  have : IsProbabilityMeasure ν :=
+    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.isProbabilityMeasure_right
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hT, -⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient hμ hfin
   refine ⟨u, hconv, hlsc, hbot, hT,
@@ -801,10 +808,11 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq
   exact ⟨_, (hx (interior_subset hxD)).2⟩
 
 /-- **Displacement interpolants of an absolutely continuous law are absolutely continuous.** Let
-`μ` and `ν` be probability measures on a finite-dimensional real inner product space `E`, with `μ`
-absolutely continuous with respect to an additive Haar measure `ρ`, and suppose the optimal cost
-for `‖x - y‖ ^ 2 / 2` is finite. Then there is a convex, lower semicontinuous `u : E → EReal` that
-never takes the value `⊥`, with `D` the interior of its effective domain, such that:
+`μ` be a probability measure and `ν` a measure on a finite-dimensional real inner product space
+`E`, with `μ` absolutely continuous with respect to an additive Haar measure `ρ`, and suppose the
+optimal cost for `‖x - y‖ ^ 2 / 2` is finite. Then there is a convex, lower semicontinuous
+`u : E → EReal` that never takes the value `⊥`, with `D` the interior of its effective domain,
+such that:
 
 * the gradient `∇ u` is an optimal transport map from `μ` to `ν`;
 * at `ρ`-almost every point `x` of the effective domain, the subdifferential of `u` has a positive
@@ -818,7 +826,7 @@ never takes the value `⊥`, with `D` the interior of its effective domain, such
 The target `ν = μ₁` need not be absolutely continuous. -/
 theorem
     exists_isKantorovichOptimalTransportMap_gradient_and_rnDeriv_ae_eq_map_smul_add_smul_gradient
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ)
+    [IsProbabilityMeasure μ] (hμ : μ ≪ ρ)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
       (∀ x, u x ≠ ⊥) ∧
@@ -833,6 +841,8 @@ theorem
             ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det *
               (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (u x').toReal) x).rnDeriv ρ
                 ((1 - t) • x + t • (∇ fun x' => (u x').toReal) x) := by
+  have : IsProbabilityMeasure ν :=
+    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.isProbabilityMeasure_right
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hT, -⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient hμ hfin
   obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hconv hbot
