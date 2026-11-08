@@ -56,9 +56,9 @@ every shuffle path to `S` has `S.length` letters. Along a shuffle path to `S`:
 In the normalization `gᵢ = q • T i` the leading coefficient is `(-q) ^ S.length`. These are the
 surjectivity and triangularity halves of the comparison of the shuffle module with the induced
 module `Ind (triv_k ⊗ U)` of the Hecke algebra on `k + l` strands, along the map sending `h ⊗ u` to
-`h` applied to `u` at the initial mask. The induced module itself, and the parabolic coset basis
-over the subalgebra of the first `k - 1` and the last `l - 1` generators that makes this map an
-isomorphism, are not constructed here.
+`h` applied to `u` at the initial mask. That this map is an isomorphism, in the form of the
+universal property of the induced module, is proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Shuffle.Induced`.
 
 ## Main definitions
 
@@ -126,6 +126,24 @@ theorem mem_swap {a b x : Fin (k + l)} {S : ShuffleMask k l} :
 @[simp]
 theorem swap_swap (a b : Fin (k + l)) (S : ShuffleMask k l) : (S.swap a b).swap a b = S :=
   Subtype.ext <| Finset.ext fun x ↦ by simp
+
+/-- Exchanging two positions which are both selected, or both rest positions, does not change
+the mask. -/
+theorem swap_eq_self {a b : Fin (k + l)} {S : ShuffleMask k l} (h : a ∈ S.1 ↔ b ∈ S.1) :
+    S.swap a b = S :=
+  Subtype.ext <| Finset.ext fun x ↦ by
+    rw [mem_swap, Equiv.swap_apply_def]
+    split_ifs with hxa hxb
+    · rw [hxa, h]
+    · rw [hxb, h]
+    · rfl
+
+/-- Exchanging two disjoint pairs of positions gives the same mask in either order. -/
+theorem swap_swap_comm {a b c d : Fin (k + l)} (h : [a, b, c, d].Nodup) (S : ShuffleMask k l) :
+    (S.swap a b).swap c d = (S.swap c d).swap a b :=
+  Subtype.ext <| Finset.ext fun x ↦ by
+    simp only [mem_swap, ← Equiv.Perm.mul_apply,
+      (Equiv.Perm.disjoint_swap_swap h).commute.eq]
 
 /-- The number of rest positions of `S` before the position `p`. If `p` is a rest position,
 it is the index of `p` among the rest positions, counted from `0`. -/
@@ -689,6 +707,35 @@ theorem shuffleRep_T_single_of_notMem_of_mem {i : Fin (k + l - 1)} {S : ShuffleM
     rw [shuffleRep_T_apply_of_mem_of_notMem ρ (by simpa using hb) (by simpa using ha)]
     simp [Pi.single_eq_of_ne hne]
   · simp [shuffleRep_T_single_apply_of_ne ρ hM hM', Pi.single_eq_of_ne hM']
+
+/-- At a mask selecting both positions crossed by `T i`, the generator multiplies the vector `u`
+at `S` by `q`. -/
+theorem shuffleRep_T_single_of_mem_of_mem {i : Fin (k + l - 1)} {S : ShuffleMask k l}
+    (ha : BraidGroup.strand i ∈ S.1) (hb : BraidGroup.strandSucc i ∈ S.1) (u : U) :
+    shuffleRep k ρ (T q i) (Pi.single S u) = (q : R) • (Pi.single S u : ShuffleMask k l → U) := by
+  ext M
+  by_cases hM : M = S
+  · subst hM
+    rw [shuffleRep_T_apply_of_mem_of_mem ρ ha hb, Pi.smul_apply]
+  · have hM' : M ≠ S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i) := by
+      rwa [ShuffleMask.swap_eq_self (iff_of_true ha hb)]
+    rw [shuffleRep_T_single_apply_of_ne ρ hM hM', Pi.smul_apply, Pi.single_eq_of_ne hM, smul_zero]
+
+/-- At a mask selecting neither position crossed by `T i`, the generator acts on the vector `u`
+at `S` by the generator of `H_l` indexed by the position of the first of them among the rest
+positions. -/
+theorem shuffleRep_T_single_of_notMem_of_notMem {i : Fin (k + l - 1)} {S : ShuffleMask k l}
+    (ha : BraidGroup.strand i ∉ S.1) (hb : BraidGroup.strandSucc i ∉ S.1) (u : U) :
+    shuffleRep k ρ (T q i) (Pi.single S u) =
+      Pi.single S (ρ (T q ⟨S.restIndex (BraidGroup.strand i),
+        ShuffleMask.restIndex_lt_sub_one (by simp [Fin.lt_def]) ha hb⟩) u) := by
+  ext M
+  by_cases hM : M = S
+  · subst hM
+    rw [shuffleRep_T_apply_of_notMem_of_notMem ρ ha hb, Pi.single_eq_same, Pi.single_eq_same]
+  · have hM' : M ≠ S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i) := by
+      rwa [ShuffleMask.swap_eq_self (iff_of_false ha hb)]
+    rw [shuffleRep_T_single_apply_of_ne ρ hM hM', Pi.single_eq_of_ne hM]
 
 /-- At a mask selecting the first but not the second position crossed by `T i`, the inverse
 generator sends the vector `u` at `S` to `-u` at the exchanged mask. -/
