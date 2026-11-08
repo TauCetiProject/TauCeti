@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.Normed.Module.Ray
+import TauCeti.Analysis.Convex.Segment
 
 /-!
 # Transport segments of a cyclically monotone set do not cross
@@ -58,21 +59,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
 
-omit [StrictConvexSpace ℝ E] in
-/-- The broken path from `x` to `y'` through the meeting point of the segments `[x, x']` and
-`[y, y']` at time `t` is at most as long as the two pieces:
-`‖x - y'‖ ≤ t ‖x - x'‖ + (1 - t) ‖y - y'‖`. -/
-theorem norm_sub_le_of_smul_add_smul_eq {t : ℝ} (ht₀ : 0 < t) (ht₁ : 0 < 1 - t) {x x' y y' : E}
-    (he : (1 - t) • x + t • x' = (1 - t) • y + t • y') :
-    ‖x - y'‖ ≤ t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
-  have h₁ : x - ((1 - t) • x + t • x') = t • (x - x') := by module
-  have h₂ : ((1 - t) • x + t • x') - y' = (1 - t) • (y - y') := by rw [he]; module
-  calc ‖x - y'‖ = ‖(x - ((1 - t) • x + t • x')) + (((1 - t) • x + t • x') - y')‖ := by
-        rw [sub_add_sub_cancel]
-    _ ≤ ‖x - ((1 - t) • x + t • x')‖ + ‖((1 - t) • x + t • x') - y'‖ := norm_add_le _ _
-    _ = t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
-      rw [h₁, h₂, norm_smul, norm_smul, Real.norm_of_nonneg ht₀.le, Real.norm_of_nonneg ht₁.le]
-
 /-- **Two-point no-crossing.** In a strictly convex real normed space, let `1 < p` and
 `0 < t < 1`. If the pairs `(x, x')` and `(y, y')` satisfy the two-point swap inequality
 `‖x - x'‖ ^ p + ‖y - y'‖ ^ p ≤ ‖x - y'‖ ^ p + ‖y - x'‖ ^ p` for the cost `‖· - ·‖ ^ p` and their
@@ -87,8 +73,8 @@ theorem eq_and_eq_of_smul_add_smul_eq {p t : ℝ} (hp : 1 < p) (ht : t ∈ Ioo (
   -- the two pieces of each broken path through `z`
   have h₁ : x - z = t • (x - x') := by rw [hz]; module
   have h₂ : z - y' = (1 - t) • (y - y') := by rw [he]; module
-  have hxy' := norm_sub_le_of_smul_add_smul_eq ht₀ ht₁' he
-  have hyx' := norm_sub_le_of_smul_add_smul_eq ht₀ ht₁' he.symm
+  have hxy' := norm_sub_le_of_smul_add_smul_eq ht₀.le ht₁'.le he
+  have hyx' := norm_sub_le_of_smul_add_smul_eq ht₀.le ht₁'.le he.symm
   have ha : 0 ≤ ‖x - x'‖ := norm_nonneg _
   have hb : 0 ≤ ‖y - y'‖ := norm_nonneg _
   have hp₀ : 0 ≤ p := zero_le_one.trans hp.le
