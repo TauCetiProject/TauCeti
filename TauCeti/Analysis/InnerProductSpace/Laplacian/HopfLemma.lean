@@ -12,7 +12,6 @@ import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
