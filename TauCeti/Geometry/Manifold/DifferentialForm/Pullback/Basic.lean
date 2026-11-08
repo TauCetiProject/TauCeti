@@ -481,27 +481,33 @@ theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A :
   rw [mpullback_comp_at hL.differentiableAt.mdifferentiableAt hu, mpullback_eq_flat]
   exact congrArg _ hL.fderiv
 
-/-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces with a
-section `j` that is differentiable at `P z` and passes through `z`, vanishes at `z` on every family
-of vectors one of which lies in the kernel of `P`. Where `γ` is differentiable this is the chain
-rule; where it is not, neither is `γ ∘ P`, since `γ = (γ ∘ P) ∘ j`, and the pullback is zero. -/
+/-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces,
+vanishes on every family of vectors one of which lies in the kernel of `P`. Where `γ ∘ P` is
+differentiable, it is constant along the line through `z` in that direction; where it is not, the
+derivative is zero by convention. -/
 theorem mpullback_comp_clm_apply_eq_zero (ω : RoughForm I M F k) (γ : E' → M)
-    (P : E'' →L[ℝ] E') {j : E' → E''} {z : E''} (hj : DifferentiableAt ℝ j (P z))
-    (hjP : ∀ t, P (j t) = t) (hjz : j (P z) = z) {v : Fin k → E''} {i : Fin k}
-    (hv : P (v i) = 0) :
+    (P : E'' →L[ℝ] E') {z : E''} {v : Fin k → E''} {i : Fin k} (hv : P (v i) = 0) :
     mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z v = 0 := by
-  by_cases hγ : MDifferentiableAt 𝓘(ℝ, E') I γ (P z)
-  · rw [mpullback_comp_apply_of_hasFDerivAt P.hasFDerivAt hγ]
-    exact (mpullback 𝓘(ℝ, E') I γ ω (P z)).map_coord_zero i hv
-  · have hnd : ¬ MDifferentiableAt 𝓘(ℝ, E'') I (γ ∘ P) z := by
-      intro h
-      refine hγ ?_
-      have hγ' : γ = (γ ∘ P) ∘ j := funext fun t ↦ by simp [hjP]
-      rw [hγ']
-      exact (hjz ▸ h).comp (P z) hj.mdifferentiableAt
-    have h0 : mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z = 0 := by
+  by_cases hd : MDifferentiableAt 𝓘(ℝ, E'') I (γ ∘ P) z
+  · refine (mpullback_apply (γ ∘ P) ω z v).trans ((ω _).map_coord_zero i ?_)
+    let c : ℝ → E'' := fun t ↦ z + t • v i
+    have hc : HasFDerivAt c ((1 : ℝ →L[ℝ] ℝ).smulRight (v i)) 0 :=
+      ((hasFDerivAt_id (0 : ℝ)).smul_const (v i)).const_add z
+    have hconst : (γ ∘ P) ∘ c = fun _ ↦ γ (P z) := funext fun t ↦ by simp [c, hv]
+    have hcomp := mfderiv_comp (I := 𝓘(ℝ, ℝ)) (I' := 𝓘(ℝ, E'')) (I'' := I) (0 : ℝ)
+      (by simpa [c] using hd) hc.differentiableAt.mdifferentiableAt
+    have hmc : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, E'') c 0 = (1 : ℝ →L[ℝ] ℝ).smulRight (v i) := by
+      rw [mfderiv_eq_fderiv, hc.fderiv]
+      rfl
+    rw [hconst, mfderiv_const, hmc] at hcomp
+    have hcz : c 0 = z := by simp [c]
+    have key : mfderiv 𝓘(ℝ, E'') I (γ ∘ P) (c 0) ((1 : ℝ →L[ℝ] ℝ).smulRight (v i) 1) = 0 :=
+      (DFunLike.congr_fun hcomp (1 : ℝ)).symm
+    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul, hcz] at key
+    exact key
+  · have h0 : mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z = 0 := by
       ext w
-      rw [mpullback_apply, mfderiv_zero_of_not_mdifferentiableAt hnd,
+      rw [mpullback_apply, mfderiv_zero_of_not_mdifferentiableAt hd,
         ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
       exact (ω _).map_coord_zero i (zero_apply _)
     -- The zero alternating map evaluates to zero.
