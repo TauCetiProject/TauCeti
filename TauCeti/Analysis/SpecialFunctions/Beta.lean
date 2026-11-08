@@ -970,9 +970,9 @@ namespace BoundedContinuousFunction
 open Filter MeasureTheory Set
 open scoped Topology
 
-/-- Halving the shapes gives a locally uniform integrable bound at both endpoints, so the
-unnormalized beta kernel integral against a bounded continuous function is continuous in the
-shape parameters. -/
+/-- The unnormalized beta kernel integral `∫ x in (0, 1), x ^ (a - 1) * (1 - x) ^ (b - 1) * f x`
+against a bounded continuous function `f` is continuous in the two positive shape parameters
+`a` and `b`. -/
 theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
     Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
       ∫ x in Ioo (0 : ℝ) 1, x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
@@ -981,6 +981,7 @@ theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
   have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
     continuous_subtype_val.comp continuous_snd
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  -- Halving the shapes gives a locally uniform integrable bound at both endpoints.
   let bound : ℝ → ℝ := fun x ↦
     ‖f‖ * (x ^ ((p.1 : ℝ) / 2 - 1) * (1 - x) ^ ((p.2 : ℝ) / 2 - 1))
   have hbound : Integrable bound (volume.restrict (Ioo (0 : ℝ) 1)) :=
