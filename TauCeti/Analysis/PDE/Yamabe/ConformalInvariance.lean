@@ -18,14 +18,16 @@ let `ĝ = u ^ (4 / (n - 2)) g` for a positive function `u`. The Yamabe quotient
 
 `Q_ĝ(v) = Q_g(u v)`
 
-for every compactly supported `C²` function `v` (`TauCeti.Yamabe.yamabeQuotient_rescale`). The
-numerator is the conformally invariant energy `TauCeti.Yamabe.integral_energy_rescale`, and the
-denominator is invariant by `TauCeti.WithMetric.integral_abs_rpow_rescale_rpow`.
+for every compactly supported `C²` function `v`
+(`Bundle.ContMDiffRiemannianMetric.yamabeQuotient_rescale`). The numerator is the conformally
+invariant energy `TauCeti.Yamabe.integral_energy_rescale`, and the denominator is invariant by
+`TauCeti.WithMetric.integral_abs_rpow_rescale_rpow`.
 
 Two consequences on a closed manifold are recorded here.
 
 * The quotient of the constant function `1` is the volume-normalized total scalar curvature
-  `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)` (`TauCeti.Yamabe.yamabeQuotient_one`). Applied to `ĝ`,
+  `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)` (`TauCeti.Yamabe.yamabeQuotient_one`, proved with the
+  definition of the quotient). Applied to `ĝ`,
   conformal invariance gives `Q_g(u) = (∫ Scal_ĝ dV_ĝ) / Vol(ĝ) ^ (2 / pₙ)`. This is the
   integrated-by-parts form of
   `TauCeti.Yamabe.integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow`.
@@ -43,12 +45,14 @@ two metric instances are ever installed on one carrier at once.
 
 ## Main results
 
-All in the namespace `TauCeti.Yamabe`.
+In the namespace `Bundle.ContMDiffRiemannianMetric`, for dot notation on the metric `g`:
 
 * `yamabeQuotient_rescale`: `Q_ĝ(v) = Q_g(u v)`.
-* `yamabeQuotient_one`: `Q_g(1) = (∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`.
 * `yamabeQuotient_eq_integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow`:
   `Q_g(u) = (∫ Scal_ĝ dV_ĝ) / Vol(ĝ) ^ (2 / pₙ)`.
+
+In the namespace `TauCeti.Yamabe`:
+
 * `image_yamabeQuotient_eq_of_mem_conformalClass`: conformal metrics have the same Yamabe
   quotients of positive smooth functions.
 
@@ -66,28 +70,9 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
-namespace TauCeti.Yamabe
+namespace Bundle.ContMDiffRiemannianMetric
 
-section Constant
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
-  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-/-- On a compact manifold of dimension `n`, the Yamabe quotient of the constant function `1` is
-the volume-normalized total scalar curvature `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. -/
-theorem yamabeQuotient_one :
-    yamabeQuotient I (fun _ : M ↦ (1 : ℝ)) =
-      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
-        ∂riemannianVolume I M) /
-        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
-  simp [yamabeQuotient_def, mgradient_const, riemannianTotalVolume_def]
-
-end Constant
+open TauCeti TauCeti.Yamabe
 
 section Rescale
 
@@ -170,7 +155,7 @@ theorem yamabeQuotient_eq_integral_scalarCurvature_rescale_div_riemannianTotalVo
           x.ofWithMetric ∂riemannianVolume I (WithMetric (g.rescale _ hf hf_pos))) /
         riemannianTotalVolume I (WithMetric (g.rescale _ hf hf_pos)) ^
           (2 / criticalExponent (finrank ℝ E)) := by
-  have h := yamabeQuotient_rescale g hn hu_pos (hf := hf) (hf_pos := hf_pos)
+  have h := g.yamabeQuotient_rescale hn hu_pos (hf := hf) (hf_pos := hf_pos)
     (v := fun _ ↦ 1) contMDiff_const (HasCompactSupport.of_compactSpace _)
   have hu1 : (u * fun _ ↦ (1 : ℝ)) = u := funext fun x ↦ mul_one (u x)
   have h0 (y : M) :
@@ -191,6 +176,19 @@ theorem yamabeQuotient_eq_integral_scalarCurvature_rescale_div_riemannianTotalVo
   -- Rewriting with `hu1` would fail: the goal mentions the installed metric, whose continuity
   -- instance matches it only up to unfolding, so its motive is not type correct reducibly.
   exact (congrArg _ hu1).symm.trans h.symm
+
+end Compact
+
+end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti.Yamabe
+
+section Compact
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
 
 /-- **The Yamabe quotients of positive smooth functions are a conformal invariant.** On a closed
 manifold of dimension `n ≠ 2`, two conformal smooth metrics `g` and `g'` have the same set of
@@ -215,13 +213,13 @@ theorem image_yamabeQuotient_eq_of_mem_conformalClass (hn : finrank ℝ E ≠ 2)
   constructor
   · rintro ⟨w, ⟨hw, hw_pos⟩, rfl⟩
     exact ⟨u * w, ⟨hu.mul hw, fun x ↦ mul_pos (hu_pos x) (hw_pos x)⟩,
-      (yamabeQuotient_rescale g hn hu_pos (hw.of_le (by simp))
+      (g.yamabeQuotient_rescale hn hu_pos (hw.of_le (by simp))
         (HasCompactSupport.of_compactSpace _)).symm⟩
   · rintro ⟨w, ⟨hw, hw_pos⟩, rfl⟩
     have hwu : ContMDiff I 𝓘(ℝ) ∞ (w / u) := hw.div₀ hu fun x ↦ (hu_pos x).ne'
     have h : u * (w / u) = w := funext fun x ↦ mul_div_cancel₀ (w x) (hu_pos x).ne'
     exact ⟨w / u, ⟨hwu, fun x ↦ div_pos (hw_pos x) (hu_pos x)⟩,
-      (yamabeQuotient_rescale g hn hu_pos (hwu.of_le (by simp))
+      (g.yamabeQuotient_rescale hn hu_pos (hwu.of_le (by simp))
         (HasCompactSupport.of_compactSpace _)).trans (congrArg _ h)⟩
 
 end Compact
