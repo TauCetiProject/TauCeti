@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.LpSeminorm.EDist
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 
@@ -38,32 +39,6 @@ namespace TauCeti
 
 variable {Y : Type*} [MeasurableSpace Y] [PseudoMetricSpace Y] [OpensMeasurableSpace Y]
   [TopologicalSpace.SeparableSpace Y] {p : ℝ≥0∞}
-
-omit [OpensMeasurableSpace Y] [TopologicalSpace.SeparableSpace Y] in
-/-- **Minkowski bound for quantized distances.** The `L^p (γ)` norm of the distance between the
-quantized points `Q₁ z.1` and `Q₂ z.2` is at most the `L^p (γ)` norm of the distance `d (z.1, z.2)`
-plus the two displacement norms `d (z.1, Q₁ z.1)` and `d (z.2, Q₂ z.2)`. -/
-theorem eLpNorm_edist_comp_prod_le {Q₁ Q₂ : Y → Y} (hp1 : 1 ≤ p) (γ : Measure (Y × Y))
-    (hmeas : Measurable fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) :
-    eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ ≤
-      eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ +
-        (eLpNorm (fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) p γ +
-          eLpNorm (fun z : Y × Y ↦ edist z.2 (Q₂ z.2)) p γ) := by
-  calc eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ
-      ≤ eLpNorm ((fun z : Y × Y ↦ edist z.1 z.2) +
-          ((fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) + fun z ↦ edist z.2 (Q₂ z.2))) p γ := by
-        refine eLpNorm_mono_enorm hmeas.aestronglyMeasurable fun z ↦ ?_
-        simp only [enorm_eq_self, Pi.add_apply]
-        calc edist (Q₁ z.1) (Q₂ z.2)
-            ≤ edist (Q₁ z.1) z.1 + edist z.1 z.2 + edist z.2 (Q₂ z.2) :=
-              edist_triangle4 _ _ _ _
-          _ = edist z.1 z.2 + (edist z.1 (Q₁ z.1) + edist z.2 (Q₂ z.2)) := by
-              rw [edist_comm (Q₁ z.1)]
-              ring
-    _ ≤ eLpNorm (fun z : Y × Y ↦ edist z.1 z.2) p γ +
-          (eLpNorm (fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) p γ +
-            eLpNorm (fun z : Y × Y ↦ edist z.2 (Q₂ z.2)) p γ) :=
-        (eLpNorm_add_le hp1).trans (add_le_add le_rfl (eLpNorm_add_le hp1))
 
 /-- **Weak duality for quantized potentials.** If `f₁ y + f₂ y'` is bounded by the `p`-th power of
 the distance between the quantized points `Q₁ y` and `Q₂ y'`, then the dual value of `(f₁, f₂)` is
@@ -110,7 +85,8 @@ theorem ofReal_integral_add_integral_le_wassersteinEDist_add_rpow (hp1 : 1 ≤ p
         = eLpNorm (fun y ↦ edist y (Q₂ y)) p B :=
       eLpNorm_comp_measurePreserving hd₂.aestronglyMeasurable hγ.measurePreserving_snd
     refine hle.trans ?_
-    exact (eLpNorm_edist_comp_prod_le hp1 γ hmeas).trans_eq (by rw [hmarg₁, hmarg₂])
+    exact (eLpNorm_edist_comp_prod_le hp1 γ hmeas.aestronglyMeasurable).trans_eq
+      (by rw [hmarg₁, hmarg₂])
   have hroot : D ^ p.toReal⁻¹ ≤ wassersteinEDist p A B + e :=
     tsub_le_iff_right.1 (le_wassersteinEDist fun γ hγ ↦ tsub_le_iff_right.2 (key γ hγ))
   calc D = (D ^ p.toReal⁻¹) ^ p.toReal := (ENNReal.rpow_inv_rpow hr.ne' D).symm
