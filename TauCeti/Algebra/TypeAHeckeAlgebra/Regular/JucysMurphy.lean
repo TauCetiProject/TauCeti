@@ -90,6 +90,10 @@ theorem additiveJucysMurphyMatrix_eq_leftMulMatrix [DecidableEq W] (q : Rˣ)
   induction i using Fin.induction with
   | zero => simp
   | succ i ih =>
+    -- Specialize the natural-index recurrence to this Fin induction step: its indices
+    -- ⟨i.val + 1, _⟩ and ⟨i.val, _⟩ are definitionally i.succ and i.castSucc.
+    -- The generator index has type Fin (n + 1 - 1), definitionally Fin n, so the
+    -- local type ascription needs no casts or separate index-equality rewrites.
     have hrec : additiveJucysMurphy q i.succ =
         ((↑q⁻¹ : R) ^ 2) •
           (((q : R) • T (n := n + 1) q i) * additiveJucysMurphy q i.castSucc *
