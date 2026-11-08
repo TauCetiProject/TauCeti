@@ -31,6 +31,9 @@ This file records general-purpose facts about open subsets of schemes.
   used to compute cohomology by Čech complexes, again have affine nonempty finite intersections.
 * `AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top`: the affine opens of `X`
   which a morphism `X ⟶ Y` maps into an affine open of `Y` cover `X`.
+* `AlgebraicGeometry.Scheme.toSpecΓ_morphismRestrict_comp_basicOpenIsoSpecAway_hom`:
+  restricting `toSpecΓ` to the basic open of a global section, as the map induced by a ring map out
+  of the localization extending the restriction.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
 * `AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq`: in a commutative square, the
@@ -357,6 +360,31 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality {R S 
     (Scheme.Hom.appLE_comp_appLE (Spec.map φ) f V ⊤ ⊤ e le_top).symm.trans
       (congrArg (f.appLE V ⊤ e ≫ ·) (Scheme.Hom.appLE_eq_app (Spec.map φ) (U := ⊤)))
   rw [h, Category.assoc, Category.assoc, Scheme.ΓSpecIso_naturality]
+
+/-- Restricting the canonical map to the spectrum of global sections to the basic open of a
+global section `s` and identifying the spectrum of a localization with the basic open is the map
+induced by any ring map out of the localization that extends the restriction of global
+sections. -/
+lemma _root_.AlgebraicGeometry.Scheme.toSpecΓ_morphismRestrict_comp_basicOpenIsoSpecAway_hom
+    (s : Γ(X, ⊤)) (l : Localization.Away s →+* Γ(X, X.basicOpen s))
+    (hl : l.comp (algebraMap Γ(X, ⊤) (Localization.Away s)) =
+      (X.presheaf.map (homOfLE (le_top : X.basicOpen s ≤ ⊤)).op).hom) :
+    (X.isoOfEq (X.toSpecΓ_preimage_basicOpen s)).inv ≫
+        X.toSpecΓ ∣_ PrimeSpectrum.basicOpen s ≫
+        (basicOpenIsoSpecAway s).hom =
+      (X.basicOpen s).toSpecΓ ≫ Spec.map (CommRingCat.ofHom l) := by
+  rw [← cancel_mono (Spec.map (CommRingCat.ofHom
+    (algebraMap Γ(X, ⊤) (Localization.Away s))))]
+  simp only [Category.assoc, basicOpenIsoSpecAway_hom_SpecMap]
+  have hrest := congrArg
+    (fun e ↦ (X.isoOfEq (X.toSpecΓ_preimage_basicOpen s)).inv ≫ e)
+    (morphismRestrict_ι X.toSpecΓ
+      (PrimeSpectrum.basicOpen s : (Spec Γ(X, ⊤)).Opens))
+  simp only [Scheme.isoOfEq_inv_ι_assoc] at hrest
+  refine hrest.trans ?_
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  rw [hl]
+  exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top (X.basicOpen s)).symm
 
 end
 
