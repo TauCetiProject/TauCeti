@@ -161,16 +161,6 @@ theorem isUnramifiedInCodimOne_of_isOpenImmersion [IsOpenImmersion f]
 
 variable {X' : Scheme.{u}} (g : X' ⟶ X)
 
-/-- The residue field map of `g` and the stalk maps are compatible with the specializations
-`x ⤳ g ξ'` and `x' ⤳ ξ'`, after identifying the residue fields at `x = g x'`. -/
-private lemma stalkSpecializes_residue_residueFieldCongr_residueFieldMap {X X' : Scheme.{u}}
-    (g : X' ⟶ X) {x : X} {x' ξ' : X'} (hx : x = g x') (h : x ⤳ g ξ') (h' : x' ⤳ ξ') :
-    X.presheaf.stalkSpecializes h ≫ X.residue x ≫ (X.residueFieldCongr hx).hom ≫
-        g.residueFieldMap x' =
-      g.stalkMap ξ' ≫ X'.presheaf.stalkSpecializes h' ≫ X'.residue x' := by
-  subst hx
-  simp [Scheme.residue_residueFieldMap, ← Scheme.Hom.stalkSpecializes_stalkMap_assoc]
-
 /-- The fibre square of a base change commutes. -/
 private lemma fst_comp_comp_eq {X' : Scheme.{u}} (g : X' ⟶ X) :
     pullback.fst f (g ∣_ U) ≫ f ≫ U.ι = pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι ≫ g := by
@@ -195,55 +185,6 @@ private lemma residueFieldMap_fst_comp_eq {X' : Scheme.{u}} {g : X' ⟶ X}
     Scheme.Hom.residueFieldMap_congr (fst_comp_comp_eq (f := f) g)]
   -- The two sides differ only by associativity of composition, which holds definitionally.
   rfl
-
-/-- Let `y'` be a point of the base change `Y ×_U g⁻¹ U`, over `y ∈ Y` and `x' ∈ X'`, and let
-`ψ : κ(y) → κ(y')` be the residue field map of the first projection, an algebra map over `κ(x)`.
-Then the induced `κ(x')`-algebra map `κ(x') ⊗[κ(x)] κ(y) → κ(y')` is surjective, where `κ(y')` is a
-`κ(x')`-algebra through the residue field map of the second projection. -/
-private lemma surjective_liftEquiv_residueFieldMap [FormallyUnramified f] [LocallyOfFiniteType f]
-    {g : X' ⟶ X} (y' : (pullback f (g ∣_ U) : Scheme.{u}))
-    [Algebra (X.residueField ((f ≫ U.ι) (pullback.fst f (g ∣_ U) y')))
-      (Y.residueField (pullback.fst f (g ∣_ U) y'))]
-    [Algebra (X.residueField ((f ≫ U.ι) (pullback.fst f (g ∣_ U) y')))
-      (X'.residueField ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y'))]
-    [Algebra (X'.residueField ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y'))
-      ((pullback f (g ∣_ U)).residueField y')]
-    [Algebra (X.residueField ((f ≫ U.ι) (pullback.fst f (g ∣_ U) y')))
-      ((pullback f (g ∣_ U)).residueField y')]
-    [IsScalarTower (X.residueField ((f ≫ U.ι) (pullback.fst f (g ∣_ U) y')))
-      (X'.residueField ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y'))
-      ((pullback f (g ∣_ U)).residueField y')]
-    (ψ : Y.residueField (pullback.fst f (g ∣_ U) y') →ₐ[X.residueField
-      ((f ≫ U.ι) (pullback.fst f (g ∣_ U) y'))] (pullback f (g ∣_ U)).residueField y')
-    (hψ : ∀ l, ψ l = (pullback.fst f (g ∣_ U)).residueFieldMap y' l)
-    (hK' : ∀ k, algebraMap (X'.residueField ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y'))
-      ((pullback f (g ∣_ U)).residueField y') k =
-        (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y' k) :
-    Function.Surjective (AlgHom.liftEquiv _
-      (X'.residueField ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y')) _ _ ψ) := by
-  set R := (AlgHom.liftEquiv _
-    (X'.residueField ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y')) _ _ ψ).range
-  have h₁ (l : Y.residueField (pullback.fst f (g ∣_ U) y')) :
-      (pullback.fst f (g ∣_ U)).residueFieldMap y' l ∈ R :=
-    (AlgHom.mem_range _).mpr ⟨1 ⊗ₜ l, by rw [AlgHom.liftEquiv_tmul, one_smul, hψ]⟩
-  have h₂ (k : (g ⁻¹ᵁ U).toScheme.residueField (pullback.snd f (g ∣_ U) y')) :
-      (pullback.snd f (g ∣_ U)).residueFieldMap y' k ∈ R := by
-    obtain ⟨k, rfl⟩ : ∃ k₀ : X'.residueField ((pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι) y'),
-        (g ⁻¹ᵁ U).ι.residueFieldMap _ k₀ = k :=
-      (ConcreteCategory.bijective_of_isIso ((g ⁻¹ᵁ U).ι.residueFieldMap _)).2 k
-    have hk : (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y' k =
-        (pullback.snd f (g ∣_ U)).residueFieldMap y' ((g ⁻¹ᵁ U).ι.residueFieldMap _ k) := by
-      rw [Scheme.residueFieldMap_comp]
-      -- The point `(snd ≫ ι) y'` is `ι (snd y')` by definition, but `rw` cannot see it.
-      rfl
-    refine (AlgHom.mem_range _).mpr ⟨k ⊗ₜ 1, ?_⟩
-    exact (AlgHom.liftEquiv_tmul _ _ _).trans <| ((congrArg (k • ·) (map_one ψ)).trans
-      (Algebra.algebraMap_eq_smul_one k).symm).trans ((hK' k).trans hk)
-  have hle := (Subring.closure_le (t := R.toSubring)).mpr
-    (Set.union_subset (Set.range_subset_iff.mpr h₁) (Set.range_subset_iff.mpr h₂))
-  rw [Scheme.Pullback.closure_range_residueFieldMap_eq_top y'
-    (RingHom.Finite.to_isIntegral (Scheme.Hom.finite_residueField f _))] at hle
-  exact fun z ↦ (AlgHom.mem_range _).mp (hle (Subring.mem_top z))
 
 /-- **Base change of covers unramified in codimension one.** Let `f : Y ⟶ U` be unramified over
 `X` in codimension one, formally unramified and locally of finite type (for instance finite
@@ -284,8 +225,9 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
   let : Algebra (X.presheaf.stalk ξ) L :=
     (X.presheaf.stalkSpecializes h ≫ X.residue _ ≫ (f ≫ U.ι).residueFieldMap y).hom.toAlgebra
   have : IsScalarTower (X.presheaf.stalk ξ) K L := .of_algebraMap_eq fun _ ↦ rfl
-  have := Scheme.isFractionRing_residueField_of_specializes h
-    (fun e ↦ hξ' (show (ξ : X) ∈ U from e ▸ (f y).2) : (f ≫ U.ι) y ≠ ξ)
+  have hξU : (ξ : X) ∉ U := by simpa [ξ] using hξ'
+  have hne : (f ≫ U.ι) y ≠ ξ := fun e ↦ hξU (e ▸ (f y).2)
+  have := Scheme.isFractionRing_residueField_of_specializes h hne
   have : FormallyUnramified (f ≫ U.ι) := MorphismProperty.comp_mem _ _ _ ‹_› inferInstance
   -- The fields `K' ⊆ L'` over `A'`, with the algebra structure of the conclusion.
   let : Algebra (X'.presheaf.stalk ξ') K' :=
@@ -306,7 +248,7 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
     .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower (X.presheaf.stalk ξ) K K' :=
     .of_algebraMap_eq' <| congrArg CommRingCat.Hom.hom <| Eq.symm <|
-      stalkSpecializes_residue_residueFieldCongr_residueFieldMap g hx h h'
+      g.stalkSpecializes_residue_residueFieldCongr_residueFieldMap hx h h'
   -- The map `K' ⊗[K] L ⟶ L'` given by the two projections of the fibre product.
   let : Algebra K L' := (((X.residueFieldCongr hx).hom ≫ g.residueFieldMap x') ≫
     (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y').hom.toAlgebra
@@ -315,8 +257,20 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
     { ((pullback.fst f (g ∣_ U)).residueFieldMap y').hom with
       commutes' := fun k ↦ ConcreteCategory.congr_hom (residueFieldMap_fst_comp_eq hx) k }
   -- It is surjective: its range contains the images of `κ(y)` and of `κ(x')`.
-  have hφ : Function.Surjective (AlgHom.liftEquiv _ K' _ _ ψ) :=
-    surjective_liftEquiv_residueFieldMap y' ψ (fun _ ↦ rfl) fun _ ↦ rfl
+  have hφ : Function.Surjective (AlgHom.liftEquiv _ K' _ _ ψ) := by
+    refine Scheme.Pullback.surjective_liftEquiv_residueFieldMap y'
+      (RingHom.Finite.to_isIntegral (Scheme.Hom.finite_residueField f _)) ψ (fun _ ↦ rfl) ?_
+    rintro _ ⟨z, rfl⟩
+    -- Every residue field element of `g⁻¹ U` at `snd y'` comes from `κ(x')`, as `ι` is an open
+    -- immersion, and the residue field map of `snd ≫ ι` is that of `snd` after that of `ι`.
+    obtain ⟨k, rfl⟩ : ∃ k₀ : K', ((g ⁻¹ᵁ U).ι.residueFieldMap _) k₀ = z :=
+      (ConcreteCategory.bijective_of_isIso ((g ⁻¹ᵁ U).ι.residueFieldMap _)).2 z
+    have hk : (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y' k =
+        (pullback.snd f (g ∣_ U)).residueFieldMap y' ((g ⁻¹ᵁ U).ι.residueFieldMap _ k) := by
+      rw [Scheme.residueFieldMap_comp]
+      -- The point `(snd ≫ ι) y'` is `ι (snd y')` by definition, but `rw` cannot see it.
+      rfl
+    exact ⟨k, hk⟩
   exact (hf ξ hξ' y h).baseChange _ hφ
 
 end AlgebraicGeometry.Scheme.Hom
