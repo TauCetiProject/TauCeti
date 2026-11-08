@@ -192,9 +192,8 @@ theorem MooreLoopSpace.doubleHomologySphereAddEquiv_apply
       homotopyGroupSphereAddEquiv (n := n + 2) b x ((doubleHomologyAddEquiv x n hX).symm a) :=
   (rfl)
 
-/-- **`πₙ(Sⁿ)` is nontrivial** for `n ≥ 2`. For the unit sphere `Sⁿ⁺²` of an `(n + 3)`-dimensional
-real normed space, `πₙ₊₂(Sⁿ⁺², x)` is isomorphic to `ℤ` by `TauCeti.homotopyGroupSphereAddEquiv`
-for the Euclidean sphere, transported along `TauCeti.sphereHomeomorphOfFinrankEq`. -/
+/-- **`πₙ(Sⁿ)` is nontrivial** for `n ≥ 2`: for the unit sphere `Sⁿ⁺²` of an
+`(n + 3)`-dimensional real normed space, `πₙ₊₂(Sⁿ⁺², x)` is nontrivial. -/
 theorem nontrivial_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (hE : finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
     Nontrivial (π_ (n + 2) (sphere (0 : E) 1) x) := by
