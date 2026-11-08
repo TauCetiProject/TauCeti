@@ -208,8 +208,9 @@ theorem exists_convexSection_subset_convexSection :
   have hzG : z ∈ G := convexSection_mono_height (by linarith) hz
   -- The upper bound `Λ` is positive, since `G` is a nonempty open set.
   have hLam : 0 < Lam :=
-    Measure.pos_of_smul_restrict_le hlam (hMA.trans hMA')
-      (((hGo.measure_pos μ ⟨y, hyG⟩).trans_le (measure_mono hGΩ)).ne')
+    ENNReal.coe_pos.1 <| Measure.pos_of_smul_le_smul (ENNReal.coe_pos.2 hlam) (hMA.trans hMA')
+      (mt Measure.restrict_eq_zero.1
+        (((hGo.measure_pos μ ⟨y, hyG⟩).trans_le (measure_mono hGΩ)).ne'))
   -- Subtract the plane: `v p = u p - u x - ℓ (p - x) - 2h` vanishes on the frontier of `G`.
   set c := ℓ x - u x - 2 * h
   have hfr : ∀ p ∈ frontier G, u p + (-ℓ) p + c = 0 := fun p hp => by
