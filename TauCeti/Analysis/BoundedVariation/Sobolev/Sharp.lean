@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Coarea
 import TauCeti.Analysis.BoundedVariation.Composition
 import TauCeti.Analysis.BoundedVariation.Isoperimetric
 import TauCeti.MeasureTheory.Function.LpSeminorm.LayerCake
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The sharp BV Sobolev bound
@@ -56,7 +57,7 @@ private theorem sharpSobolevConst_pos (hp : NNReal.HolderConjugate (finrank ℝ 
     0 < (finrank ℝ E : ℝ) * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ := by
   have hn : 0 < (finrank ℝ E : ℝ) := by exact_mod_cast hp.pos
   have hball : 0 < volume.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos volume 0 one_pos
   positivity
 
 private theorem mul_eLpNorm_le_totalVariationOn_of_nonneg (hu : Integrable u)
