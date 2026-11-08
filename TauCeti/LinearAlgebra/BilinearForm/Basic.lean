@@ -41,6 +41,8 @@ maps valued in an arbitrary module.
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
+* `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
+  multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
   `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
@@ -107,6 +109,12 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
 end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm.IsSymm
+
+/-- A form `C` is symmetric when `a • C` is, for a non-zero-divisor `a`. -/
+theorem of_smul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    {a : R} (ha : a ∈ nonZeroDivisors R) {C : LinearMap.BilinForm R M}
+    (hC : (a • C).IsSymm) : C.IsSymm :=
+  ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa using hC.eq x y)⟩
 
 /-- Polarization of a symmetric bilinear form over a commutative semiring. -/
 theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
