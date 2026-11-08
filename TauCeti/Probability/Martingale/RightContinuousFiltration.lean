@@ -19,9 +19,10 @@ remains a martingale after replacing its filtration by its right-continuous hull
 completeness nor right continuity of the original filtration is required. The exceptional
 null set for path right continuity may depend on the time.
 
-The same result holds for native local martingales with almost surely right-continuous paths,
-using exactly the original localizing sequence and its initial-time indicators. It requires
-no literal adaptation or initial integrability of the original local process.
+The same result holds for native local martingales with almost surely right-continuous paths
+at each deterministic time, using exactly the original localizing sequence and its initial-time
+indicators. It requires no literal adaptation or initial integrability of the original local
+process.
 
 These are lifting steps used when passing from a raw stochastic basis to its usual
 augmentation. They do not adjoin null sets or complete the ambient measure.
@@ -86,24 +87,25 @@ namespace ProbabilityTheory.Locally
 
 open MeasureTheory
 
-/-- An almost surely right-continuous native local martingale remains local for the
-right-continuous hull, with its original raw localizing sequence. Literal adaptation of the
-original process and integrability of its initial value are not required. -/
+/-- A native local martingale with almost surely right-continuous paths at each fixed time
+remains local for the right-continuous hull, with its original raw localizing sequence.
+No common exceptional null set, literal adaptation of the original process, or integrability
+of its initial value is required. -/
 theorem martingale_rightCont {ι Ω : Type*} [LinearOrder ι] [OrderBot ι]
     [DenselyOrdered ι] [TopologicalSpace ι] [OrderTopology ι] [FirstCountableTopology ι]
     {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ι mΩ} {M : ι → Ω → ℝ}
     (hM : Locally (fun Y => Martingale Y ℱ μ) ℱ M μ)
-    (hcont : ∀ᵐ ω ∂μ, ∀ t, ContinuousWithinAt (M · ω) (Ioi t) t) :
+    (hcont : ∀ s, ∀ᵐ ω ∂μ, ContinuousWithinAt (M · ω) (Ioi s) s) :
     Locally (fun Y => Martingale Y ℱ.rightCont μ) ℱ.rightCont M μ := by
   refine ⟨hM.localSeq, hM.isLocalizingSequence_localSeq.mono_filtration ℱ.le_rightCont,
     fun n => (hM.stoppedProcess_localSeq n).rightCont ?_⟩
   intro s
-  filter_upwards [hcont] with ω hω
+  filter_upwards [hcont s] with ω hω
   have hpath : ContinuousWithinAt
       (fun t => {ω | ⊥ < hM.localSeq n ω}.indicator (M t) ω) (Ioi s) s := by
     by_cases hω' : ⊥ < hM.localSeq n ω
-    · simpa [hω'] using hω s
+    · simpa [hω'] using hω
     · simpa [hω'] using (continuousWithinAt_const (b := (0 : ℝ)))
   exact hpath.stoppedProcess
 
