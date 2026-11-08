@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.MeasureTheory.Integral.RpowLaplace
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Improper-integral asymptotics and logarithmic decay
@@ -13,14 +17,24 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 This file extends Mathlib's improper-integral estimates with an asymptotic estimate for weighted
 integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
 `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
-closed form `∫_A^∞ dy / y² = 1 / A` as a Lebesgue integral.
+closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
+Lebesgue integrals.
+
+It also evaluates the power-weighted sine integral on the positive half-line for exponents between
+zero and one.
 
 ## Main declarations
 
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
 
+* `TauCeti.integrableOn_rpow_mul_sin` and `TauCeti.integral_Ioi_rpow_mul_sin`: integrability
+  and the value of `∫ x in Ioi 0, x ^ (-(alpha + 1)) * sin x` for `0 < alpha < 1`.
+
 * `TauCeti.lintegral_Ioi_inv_sq`: `∫⁻ y in Ioi A, (1 / ‖y‖₊) ^ 2 = ofReal A⁻¹` for `0 < A`, the
   integrand being the density of the hyperbolic area measure.
+* `TauCeti.lintegral_Iic_ofReal_exp_mul`, `TauCeti.lintegral_Ioi_ofReal_exp_neg_mul`:
+  `∫⁻ s in Iic 0, ofReal (exp (a s)) = ∫⁻ s in Ioi 0, ofReal (exp (-a s)) = ofReal a⁻¹`
+  for `0 < a`.
 
 * `TauCeti.integrableAtFilter_inv_mul_one_add_log_sq`: the function
   `t ↦ (t (1 + log t) ^ 2)⁻¹` is integrable at infinity.
@@ -35,8 +49,69 @@ public section
 
 namespace TauCeti
 
-open Asymptotics Filter MeasureTheory Set
+open Asymptotics Filter MeasureTheory Real Set
 open scoped Topology
+
+/-- For `0 < alpha < 1`, the function `x ↦ x ^ (-(alpha + 1)) * sin x` is integrable on the
+positive half-line. -/
+theorem integrableOn_rpow_mul_sin {alpha : ℝ} (halpha : alpha ∈ Ioo 0 1) :
+    IntegrableOn (fun x : ℝ ↦ x ^ (-(alpha + 1)) • sin x) (Ioi 0) := by
+  have hzero_major : IntegrableOn (fun x : ℝ ↦ x ^ (-alpha)) (Ioo 0 1) :=
+    (intervalIntegral.integrableOn_Ioo_rpow_iff one_pos).2 (by linarith [halpha.2])
+  have hzero : IntegrableOn (fun x : ℝ ↦ x ^ (-(alpha + 1)) • sin x) (Ioo 0 1) := by
+    refine hzero_major.mono' (by fun_prop) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
+    simp only [norm_smul, Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg hx.1.le _)]
+    calc
+      x ^ (-(alpha + 1)) * |sin x| ≤ x ^ (-(alpha + 1)) * |x| := by
+        exact mul_le_mul_of_nonneg_left Real.abs_sin_le_abs (Real.rpow_nonneg hx.1.le _)
+      _ = x ^ (-alpha) := by
+        rw [abs_of_pos hx.1]
+        calc
+          x ^ (-(alpha + 1)) * x = x ^ (-(alpha + 1)) * x ^ (1 : ℝ) := by
+            rw [Real.rpow_one]
+          _ = x ^ (-(alpha + 1) + 1) := (Real.rpow_add hx.1 _ _).symm
+          _ = x ^ (-alpha) := by congr 1; ring
+  have htop_major : IntegrableOn (fun x : ℝ ↦ x ^ (-(alpha + 1))) (Ioi 1) :=
+    integrableOn_Ioi_rpow_of_lt (by linarith [halpha.1]) one_pos
+  have htop_Ioi : IntegrableOn (fun x : ℝ ↦ x ^ (-(alpha + 1)) • sin x) (Ioi 1) := by
+    refine htop_major.mono' (by fun_prop) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
+    simp only [norm_smul, Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (zero_le_one.trans hx.le) _)]
+    exact mul_le_of_le_one_right (Real.rpow_nonneg (zero_le_one.trans hx.le) _) (abs_sin_le_one x)
+  have htop : IntegrableOn (fun x : ℝ ↦ x ^ (-(alpha + 1)) • sin x) (Ici 1) :=
+    (integrableOn_Ici_iff_integrableOn_Ioi
+      (f := fun x : ℝ ↦ x ^ (-(alpha + 1)) • sin x)).2 htop_Ioi
+  rw [← Ioo_union_Ici_eq_Ioi zero_lt_one]
+  exact hzero.union htop
+
+/-- For `0 < alpha < 1`, the power-weighted sine integral on the positive half-line is
+`Γ(alpha + 1)⁻¹ * (π / (2 * cos (π * alpha / 2)))`. -/
+theorem integral_Ioi_rpow_mul_sin {alpha : ℝ} (halpha : alpha ∈ Ioo 0 1) :
+    ∫ x in Ioi (0 : ℝ), x ^ (-(alpha + 1)) • sin x =
+      (Real.Gamma (alpha + 1))⁻¹ * (Real.pi / (2 * Real.cos (Real.pi * alpha / 2))) := by
+  have hint := integrableOn_rpow_mul_sin halpha
+  rw [TauCeti.integral_Ioi_rpow_neg_smul (E := ℝ) (by linarith [halpha.1]) hint]
+  simp only [smul_eq_mul]
+  have hlap : EqOn (fun s : ℝ ↦ s ^ alpha *
+      ∫ x in Ioi (0 : ℝ), Real.exp (-(x * s)) * Real.sin x)
+      (fun s ↦ s ^ alpha / (1 + s ^ 2)) (Ioi 0) := by
+    intro s (hs : 0 < s)
+    dsimp only
+    rw [TauCeti.integral_Ioi_exp_neg_mul_mul_sin hs]
+    ring
+  rw [setIntegral_congr_fun measurableSet_Ioi hlap]
+  have hbeta := TauCeti.integral_rpow_div_one_add_sq (s := alpha + 1)
+    (by linarith [halpha.1]) (by linarith [halpha.2])
+  have htrig : Real.sin (Real.pi * (alpha + 1) / 2) =
+      Real.cos (Real.pi * alpha / 2) := by
+    rw [show Real.pi * (alpha + 1) / 2 = Real.pi * alpha / 2 + Real.pi / 2 by ring,
+      Real.sin_add, Real.sin_pi_div_two, Real.cos_pi_div_two]
+    ring
+  simpa only [show alpha + 1 - 1 = alpha by ring, htrig] using
+    congrArg (fun z ↦ (Real.Gamma (alpha + 1))⁻¹ * z) hbeta
 
 /-- The inverse quadratic `x ↦ (x ^ 2 + c ^ 2)⁻¹` is integrable when `c ≠ 0`. -/
 theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
@@ -224,5 +299,19 @@ theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
   simp [Real.rpow_neg hy.le, Real.nnnorm_of_nonneg hy.le]
+
+/-- `∫_{-∞}^0 e^{a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
+theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :
+    ∫⁻ s in Iic 0, ENNReal.ofReal (Real.exp (a * s)) = ENNReal.ofReal a⁻¹ := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Iic ha 0)
+    (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Iic ha]
+  simp
+
+/-- `∫_0^∞ e^{-a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
+theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
+    ∫⁻ s in Ioi 0, ENNReal.ofReal (Real.exp (-a * s)) = ENNReal.ofReal a⁻¹ := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
+    (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
+  simp
 
 end TauCeti

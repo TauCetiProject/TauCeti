@@ -197,6 +197,4 @@ theorem ext {Φ Ψ : SymmetricOperatorIdealFamily.{u, v} 𝕜}
 
 end SymmetricOperatorIdealFamily
 
-attribute [simp] SymmetricOperatorIdealFamily.gauge_adjoint
-
 end TauCeti

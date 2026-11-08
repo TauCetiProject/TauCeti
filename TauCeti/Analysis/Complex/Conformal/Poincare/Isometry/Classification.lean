@@ -266,7 +266,7 @@ theorem bijOn_ball_of_forall_pseudoHyperbolicExpr_map_eq
   have hinj : InjOn g (ball (0 : ℂ) 1) := by
     intro z hz w hw hzw
     have hd := hg z hz w hw
-    rw [hzw, pseudoHyperbolicExpr_eq_zero_of_eq rfl] at hd
+    rw [hzw, pseudoHyperbolicExpr_self] at hd
     exact (pseudoHyperbolicExpr_eq_zero_iff_of_mem_ball hz hw).mp hd.symm
   obtain ⟨u, b, hu, hb, hcase⟩ :=
     exists_eqOn_ball_unitDiscStandardAutomorphismFormula_or_conj_of_pseudoHyperbolicExpr_map_eq

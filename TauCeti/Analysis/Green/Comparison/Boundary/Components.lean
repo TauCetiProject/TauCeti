@@ -98,8 +98,9 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
     ext j
     rw [Subsingleton.elim j 0]
     exact hp
-  have hr := integralTopForm_eq_oriented_parametrizations l φ hi hD
-    hZ himage hdisj hinj e hqd hqo
+  have hr := integralTopForm_eq_oriented_parametrizations l
+    (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis φ hi hD hZ himage hdisj hinj e hqd hqo
+  rw [OrthonormalBasis.addHaar_eq_volume] at hr
   have hic (i : ι) : IntervalIntegrable (circulationFun P Q (γ i).extend) volume 0 1 := by
     have hparam := (hr.1 i).congr_fun (heval i) hD
     have hci : IntegrableOn (circulationFun P Q (γ i).extend) (Ioo (0 : ℝ) 1) :=

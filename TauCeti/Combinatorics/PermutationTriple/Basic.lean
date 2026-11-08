@@ -573,7 +573,7 @@ theorem card_automorphismGroup_dvd
     (ht : MulAction.IsPretransitive t.monodromyGroup (Fin n)) :
     Nat.card t.automorphismGroup ∣ n := by
   rw [automorphismGroup_eq_centralizer_monodromyGroup (t := t)]
-  simpa only [Fintype.card_fin] using Subgroup.card_centralizer_dvd t.monodromyGroup ht
+  simpa only [Nat.card_fin] using Subgroup.card_centralizer_dvd ht
 
 /-! ### Images under representations of the monodromy group -/
 

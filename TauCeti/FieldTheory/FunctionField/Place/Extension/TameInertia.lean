@@ -105,6 +105,7 @@ private theorem apply_mul_inv_mem_integers (ht : P.ord t = 1)
     (g : F' ≃ₐ[F] F') t * t⁻¹ ∈ P.integers := by
   rw [mem_integers_iff_ord_nonneg, ord_apply_mul_inv F P ht]
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An element of the inertia group does not change the value at `P` of a function integral at
 `P`. -/
 private theorem residue_apply_eq {g : P.integers.decompositionSubgroup F}

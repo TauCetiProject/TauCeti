@@ -298,7 +298,7 @@ theorem IsPiecewiseC1On.intervalIntegrable_deriv (h : IsPiecewiseC1On γ a b) :
     (Q := fun c d => IntervalIntegrable (fun t ↦ deriv γ t) volume c d)
     (fun c d hcd hsub hdisj =>
       ((hC1 c d hsub hdisj).mono (uIcc_of_le hcd).le).intervalIntegrable_deriv le_rfl)
-    (fun _ _ _ _ _ h₁ h₂ => h₁.trans h₂) min_le_max Icc_min_max.subset).mono_set ?_
+    (fun _ _ _ _ _ _ h₁ h₂ => h₁.trans h₂) min_le_max Icc_min_max.subset).mono_set ?_
   rw [uIcc_of_le min_le_max, Icc_min_max]
 
 /-- **Boundedness of the derivative of a piecewise-`C¹` curve on its whole parameter interval.**
@@ -312,7 +312,7 @@ theorem IsPiecewiseC1On.isBounded_image_deriv (h : IsPiecewiseC1On γ a b) :
   refine Icc_induction_of_disjoint_Ioo (p := p)
     (Q := fun c d => Bornology.IsBounded (deriv γ '' Icc c d))
     (fun c d _ hsub hdisj => (hC1 c d hsub hdisj).isBounded_image_deriv le_rfl)
-    (fun c m d hcm hmd h₁ h₂ => ?_) min_le_max Icc_min_max.subset
+    (fun c m d hcm hmd _ h₁ h₂ => ?_) min_le_max Icc_min_max.subset
   rw [← Icc_union_Icc_eq_Icc hcm hmd, image_union]
   exact h₁.union h₂
 

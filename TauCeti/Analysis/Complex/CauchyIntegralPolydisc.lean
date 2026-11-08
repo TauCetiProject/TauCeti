@@ -10,10 +10,11 @@ public import TauCeti.MeasureTheory.Integral.Torus.ContinuousMap
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Star
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Units
-import TauCeti.Analysis.Calculus.FDeriv.Pi
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Topology.Compactness.Normed
 
 /-!
@@ -56,6 +57,8 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   are the corresponding statements for a function differentiable everywhere.
 * `TauCeti.analyticOnNhd_iff_differentiableOn_of_finiteDimensional`: on an open subset of a
   finite-dimensional complex normed space, analyticity and complex differentiability agree.
+* `AnalyticAt.star_star`: on a finite-dimensional complex normed space with conjugations,
+  `star ∘ f ∘ star` is analytic at `star z` whenever `f` is analytic at `z`.
 * `TauCeti.hasFDerivAt_integral_smul_of_analyticAt`: an integral `q ↦ ∫ a, g a • f (q, φ a) ∂μ`,
   with `g` integrable and `φ` continuous with values in a compact set `K`, whose integrand is
   jointly analytic along `{p} × K` may be differentiated under the integral sign at `p`.
@@ -380,6 +383,18 @@ only if it is complex differentiable. This is the several-variable form of
 theorem analyticOnNhd_iff_differentiableOn_of_finiteDimensional (hs : IsOpen s) :
     AnalyticOnNhd ℂ f s ↔ DifferentiableOn ℂ f s :=
   ⟨AnalyticOnNhd.differentiableOn, fun hd => hd.analyticOnNhd_of_finiteDimensional hs⟩
+
+/-- If `f` is analytic at `z`, then `star ∘ f ∘ star` is analytic at `star z`, for a function on
+a finite-dimensional complex normed space with conjugations. This is the analytic form of
+`DifferentiableAt.star_star`; in one variable it is `AnalyticAt.conj_conj`. -/
+theorem _root_.AnalyticAt.star_star [StarAddMonoid V] [StarModule ℂ V] [ContinuousStar V]
+    [StarAddMonoid E] [StarModule ℂ E] [ContinuousStar E] (hf : AnalyticAt ℂ f z) :
+    AnalyticAt ℂ (star ∘ f ∘ star) (star z) := by
+  have hstar : Tendsto star (𝓝 (star z)) (𝓝 z) := by
+    simpa using (continuous_star (R := V)).tendsto (star z)
+  refine DifferentiableOn.analyticAt_of_finiteDimensional (s := star ⁻¹' {y | AnalyticAt ℂ f y})
+    (fun y hy => ?_) (hstar hf.eventually_analyticAt)
+  simpa using (hy.differentiableAt.star_star).differentiableWithinAt
 
 end FiniteDimensional
 

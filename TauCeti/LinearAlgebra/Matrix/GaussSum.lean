@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.Algebra.Group.AddChar
 
 /-!
 # Gauss sums of quadratic forms over a finite semiring
@@ -20,7 +22,12 @@ quadratic form of `A`. This file proves its two structural properties:
   Gram matrix of a bilinear form on a free module does not depend on the basis;
 * it is multiplicative over block diagonal matrices
   (`Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec`), so the Gauss sum of an orthogonal
-  sum of forms is the product of their Gauss sums.
+  sum of forms is the product of their Gauss sums; for a diagonal matrix it is the product of the
+  one-variable sums `∑_y ψ(d y²)` (`Matrix.sum_addChar_dotProduct_diagonal_mulVec`).
+
+The Gauss sum of the Gram matrix of a bilinear form, reduced along a ring homomorphism to `S`,
+is therefore the same in every basis
+(`LinearMap.BilinForm.sum_addChar_dotProduct_toMatrix_map_mulVec_eq`).
 
 The evaluations of such sums at odd moduli are in `TauCeti.NumberTheory.QuadraticForm.GaussSum`.
 
@@ -29,6 +36,9 @@ The evaluations of such sums at odd moduli are in `TauCeti.NumberTheory.Quadrati
 * `Matrix.sum_addChar_dotProduct_transpose_mul_mul_mulVec`: invariance under congruence.
 * `Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec`: multiplicativity over block
   diagonal matrices.
+* `Matrix.sum_addChar_dotProduct_diagonal_mulVec`: the Gauss sum of a diagonal matrix.
+* `LinearMap.BilinForm.sum_addChar_dotProduct_toMatrix_map_mulVec_eq`: the Gauss sum of a Gram
+  matrix does not depend on the basis.
 -/
 
 public section
@@ -67,4 +77,39 @@ theorem sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec (A : Matrix m m S)
   rw [hp, fromBlocks_mulVec, sumElim_dotProduct_sumElim, ← AddChar.map_add_eq_mul]
   simp [Function.comp_def]
 
+/-- **The Gauss sum of a diagonal matrix** is the product of the one-variable Gauss sums of its
+diagonal entries. -/
+theorem sum_addChar_dotProduct_diagonal_mulVec (d : n → S) :
+    ∑ x : n → S, ψ (x ⬝ᵥ diagonal d *ᵥ x) = ∏ i, ∑ y : S, ψ (d i * y ^ 2) := by
+  rw [Fintype.prod_sum]
+  refine Fintype.sum_congr _ _ fun x ↦ ?_
+  simp only [mulVec_diagonal, dotProduct, ← AddChar.map_sum_eq_prod]
+  exact congrArg ψ (Finset.sum_congr rfl fun i _ ↦ by ring)
+
 end Matrix
+
+open Module
+open LinearMap (BilinForm)
+
+namespace LinearMap.BilinForm
+
+variable {R M S T ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [CommSemiring S]
+  [Fintype S] [CommSemiring T] [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+
+/-- **The Gauss sum of a Gram matrix does not depend on the basis.** Reduce the Gram matrices of
+a bilinear form `B` in two finite bases `b` and `c` along a ring homomorphism `f` to a finite
+semiring `S`. Their Gauss sums for an additive character `ψ` of `S` agree, because the reduced
+change of basis matrix is invertible. -/
+theorem sum_addChar_dotProduct_toMatrix_map_mulVec_eq (B : BilinForm R M) (b : Basis ι R M)
+    (c : Basis κ R M) (f : R →+* S) (ψ : AddChar S T) :
+    ∑ x : κ → S, ψ (x ⬝ᵥ (B.toMatrix c).map f *ᵥ x) =
+      ∑ x : ι → S, ψ (x ⬝ᵥ (B.toMatrix b).map f *ᵥ x) := by
+  have hbij : Function.Bijective ((b.toMatrix c).map f).mulVec := by
+    refine Function.bijective_iff_has_inverse.mpr
+      ⟨((c.toMatrix b).map f).mulVec, fun x ↦ ?_, fun x ↦ ?_⟩ <;>
+    rw [Matrix.mulVec_mulVec, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
+      Matrix.map_one _ (map_zero f) (map_one f), Matrix.one_mulVec]
+  rw [← toMatrix_mul_basis_toMatrix b c B, Matrix.map_mul, Matrix.map_mul, Matrix.transpose_map,
+    Matrix.sum_addChar_dotProduct_transpose_mul_mul_mulVec ψ _ hbij]
+
+end LinearMap.BilinForm

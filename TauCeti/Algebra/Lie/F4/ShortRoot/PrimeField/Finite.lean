@@ -38,7 +38,7 @@ private theorem quotientIsogeny_apply_apply
 
 /-- The exceptional F4 coordinate endomorphism is finite. -/
 theorem finite_quotientIsogeny : quotientIsogeny.hom.toAlgHom.Finite :=
-  quotientIsogeny.hom.toAlgHom.finite_of_comp_self_eq_pow (by decide)
+  quotientIsogeny.hom.toAlgHom.finite_of_comp_eq_pow (by decide)
     quotientIsogeny_apply_apply
 
 /-- The scheme-theoretic kernel of the exceptional F4 endomorphism is finite over `𝔽₂`. -/
@@ -53,7 +53,7 @@ instance moduleFinite_quotient_kernel_quotientIsogeny :
 It is therefore bijective there, even though the coordinate endomorphism need not be invertible. -/
 theorem comap_quotientIsogeny_involutive :
     Function.Involutive (PrimeSpectrum.comap quotientIsogeny.hom.toAlgHom.toRingHom) :=
-  quotientIsogeny.hom.toAlgHom.toRingHom.comap_involutive_of_comp_self_eq_pow
+  quotientIsogeny.hom.toAlgHom.toRingHom.leftInverse_comap_of_comp_eq_pow
     (by decide) quotientIsogeny_apply_apply
 
 end TauCeti.F4ShortRoot.PrimeField

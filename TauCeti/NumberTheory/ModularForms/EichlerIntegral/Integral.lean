@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.EichlerIntegral.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Complex.Periodic
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The Eichler integral as an integral

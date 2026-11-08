@@ -78,6 +78,14 @@ theorem closedRegionBetween_self (f : α → ℝ) (s : Set α) :
   ext ⟨x, t⟩
   simp [le_antisymm_iff, and_comm]
 
+/-- The closed region between two constant functions over a set `s` is the prism
+`s ×ˢ Icc y₁ y₂`. -/
+@[simp]
+theorem closedRegionBetween_const (s : Set α) (y₁ y₂ : ℝ) :
+    closedRegionBetween (Function.const α y₁) (Function.const α y₂) s = s ×ˢ Icc y₁ y₂ := by
+  ext ⟨x, t⟩
+  simp
+
 /-- The region between two functions only depends on their values on the base set. -/
 theorem regionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : EqOn f f' s)
     (hg : EqOn g g' s) : regionBetween f g s = regionBetween f' g' s := by

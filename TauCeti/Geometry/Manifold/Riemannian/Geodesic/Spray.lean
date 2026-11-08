@@ -189,77 +189,31 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
     HasMFDerivWithinAt 𝓘(ℝ, ℝ) I.tangent (curveVelocityLiftWithin I γ s) s t
         ((1 : ℝ →L[ℝ] ℝ).smulRight (geodesicSpray I M (curveVelocityLiftWithin I γ s t))) ↔
       accelerationWithin (leviCivitaConnection I M) γ s t = 0 := by
-  rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj]
-  have hxbase : γ t ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
+  have hxbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
   have hγd : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s := hγ.mdifferentiableOn (by norm_num)
-  have hw : derivWithin (extChartAt I (γ t) ∘ γ) s t = curveVelocityWithin I γ s t :=
-    derivWithin_extChartAt_comp_curve (hγd t ht) (hs t ht)
-  -- the fibre reading of the velocity lift is the coordinate velocity of the curve
-  have hcoord : (fun r ↦ (trivializationAt E (TangentSpace I) (γ t)
-      (curveVelocityLiftWithin I γ s r)).2) =ᶠ[𝓝[s] t]
-      sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t) := by
-    have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
-      (hγd t ht).continuousWithinAt.preimage_mem_nhdsWithin
-        ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds hxbase)
-    filter_upwards [hbase] with r hr
-    rw [curveVelocityLiftWithin_apply, sectionCoord_apply]
-    exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hr _).symm
+  rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj,
+    accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hs hγd ht,
+    derivWithin_extChartAt_comp_curve (hγd t ht) (hs t ht)]
+  -- the fibre reading of the velocity lift is the derivative of the chart reading of the curve
   have hsec : (fun r ↦ (trivializationAt E (TangentSpace I) (γ t)
       (curveVelocityLiftWithin I γ s r)).2) =ᶠ[𝓝[s] t]
-      derivWithin (extChartAt I (γ t) ∘ γ) s :=
-    hcoord.trans (sectionCoord_curveVelocityWithin_eventuallyEq γ hs hγd ht hxbase)
-  have hdiff : DifferentiableWithinAt ℝ (derivWithin (extChartAt I (γ t) ∘ γ) s) s t :=
-    ((sectionCoord_curveVelocityWithin_eventuallyEq γ hs hγd ht
-      hxbase).differentiableWithinAt_iff_of_mem ht).1
-      (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht hxbase)
-  have hcont : ContinuousWithinAt (curveVelocityLiftWithin I γ s) s t := by
-    rw [FiberBundle.continuousWithinAt_totalSpace E (curveVelocityLiftWithin I γ s)]
-    simp only [curveVelocityLiftWithin_proj]
-    exact ⟨(hγd t ht).continuousWithinAt,
-      ((hcoord.differentiableWithinAt_iff_of_mem ht).2
-        (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
-          hxbase)).continuousWithinAt⟩
-  -- the Christoffel term of the spray, read through the two presentations of the velocity
-  have hchris : christoffelMap (finBasis ℝ E)
-        ((leviCivitaConnection I M).isCovariantDerivativeOn
-          (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
-        (derivWithin (extChartAt I (γ t) ∘ γ) s t)
-        (derivWithin (extChartAt I (γ t) ∘ γ) s t) =
-      christoffelMap (finBasis ℝ E)
-        ((leviCivitaConnection I M).isCovariantDerivativeOn
-          (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
-        (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t) :=
-    congrArg (fun v : E ↦ christoffelMap (finBasis ℝ E)
-      ((leviCivitaConnection I M).isCovariantDerivativeOn
-        (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t) v v) hw
-  rw [accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hs hγd ht]
-  have htotal := hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
-    (F := E) (V := fun x : M ↦ TangentSpace I x) (IB := I)
-    (z := curveVelocityLiftWithin I γ s)
-    (a := curveVelocityWithin I γ s t)
-    (b := -christoffelMap (finBasis ℝ E)
-      ((leviCivitaConnection I M).isCovariantDerivativeOn
-        (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
-      (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) hcont
-  simp only [curveVelocityLiftWithin_proj] at htotal
-  refine Iff.trans htotal ?_
-  refine Iff.trans (and_iff_right (hasDerivWithinAt_extChartAt_comp_curve
-    (hasMFDerivWithinAt_curveVelocityWithin (hγd t ht)))) ?_
-  refine Iff.trans (hsec.hasDerivWithinAt_iff_of_mem ht) ?_
-  constructor
-  · intro h
-    rw [h.derivWithin (hs t ht), hchris, neg_add_cancel]
-  · intro h
-    have h1 : derivWithin (derivWithin (extChartAt I (γ t) ∘ γ) s) s t =
-        -christoffelMap (finBasis ℝ E)
-          ((leviCivitaConnection I M).isCovariantDerivativeOn
-            (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
-          (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t) := by
-      rw [← hchris]
-      exact eq_neg_of_add_eq_zero_left h
-    rw [← h1]
-    exact hdiff.hasDerivWithinAt
+      derivWithin (extChartAt I (γ t) ∘ γ) s := by
+    filter_upwards [(hγd t ht).continuousWithinAt.preimage_mem_nhdsWithin
+        ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds hxbase),
+      sectionCoord_curveVelocityWithin_eventuallyEq γ hs hγd ht hxbase] with r hr hr'
+    rw [← hr', curveVelocityLiftWithin_apply, sectionCoord_apply]
+    exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hr _).symm
+  have hcont := ContMDiffOn.continuousOn_curveVelocityLiftWithin (hγ.of_le one_le_two)
+    hs.uniqueMDiffOn t ht
+  refine (hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
+    (F := E) (V := fun x : M ↦ TangentSpace I x) hcont).trans ?_
+  simp only [curveVelocityLiftWithin_proj]
+  refine (and_iff_right (hasDerivWithinAt_extChartAt_comp_curve
+    (hasMFDerivWithinAt_curveVelocityWithin (hγd t ht)))).trans <|
+    (hsec.hasDerivWithinAt_iff_of_mem ht).trans ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [h.derivWithin (hs t ht), neg_add_cancel]
+  · rw [← eq_neg_of_add_eq_zero_left h]
+    exact hasDerivWithinAt_derivWithin_extChartAt_comp_curve (hγ t ht) hs ht
 
 /-- **Geodesics are the base curves of the spray.**  The velocity lift of a `C²` curve is an
 integral curve of the geodesic spray on a parameter set with unique derivatives exactly when the

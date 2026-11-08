@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
 
+import TauCeti.Algebra.Lie.Killing.Perfect
+
 /-!
 # Dual bases for the Killing form
 
@@ -15,8 +17,9 @@ For a Lie algebra with nondegenerate Killing form, every basis has a Killing-dua
 coordinate identities and the basis-independent contraction of a bilinear map against a basis and
 its dual hold for every nondegenerate bilinear form; they live in
 `TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` and apply to the Killing-dual basis directly. This
-file adds the fact that uses the Lie structure: the canonical contraction is invariant under the
-adjoint action, because the Killing form is.
+file adds the facts that use the Lie structure: the trace of `ad x` vanishes along a basis and its
+Killing dual, and the canonical contraction is invariant under the adjoint action, because the
+Killing form is.
 
 ## Main definitions
 
@@ -24,6 +27,8 @@ adjoint action, because the Killing form is.
 
 ## Main results
 
+* `TauCeti.sum_killingForm_lie_killingDualBasis_eq_zero`: the trace of `ad x`, written along a basis
+  and its Killing dual, vanishes.
 * `TauCeti.sum_apply_lie_killingDualBasis_add_eq_zero`: the canonical contraction is invariant under
   the adjoint action.
 -/
@@ -46,6 +51,21 @@ and the expansions in `TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` apply to i
 noncomputable abbrev killingDualBasis {ι : Type*} [DecidableEq ι] [Finite ι]
     (b : Module.Basis ι K L) : Module.Basis ι K L :=
   (killingForm K L).dualBasis (IsKilling.killingForm_nondegenerate K L) b
+
+/-- **The trace of `ad x`, written along a basis and its Killing dual, vanishes**, because a Lie
+algebra with nondegenerate Killing form is perfect. -/
+theorem sum_killingForm_lie_killingDualBasis_eq_zero {ι : Type*} [DecidableEq ι] [Fintype ι]
+    (b : Module.Basis ι K L) (x : L) :
+    ∑ i, killingForm K L ⁅x, b i⁆ (killingDualBasis b i) = 0 := by
+  have := b.finiteDimensional_of_finite
+  have htrace := LinearMap.BilinForm.sum_apply_dualBasis_eq_trace
+    (IsKilling.killingForm_nondegenerate K L) b (ad K L x)
+  simp only [ad_apply] at htrace
+  rw [Finset.sum_congr rfl fun i _ ↦ LieModule.traceForm_comm K L L ⁅x, b i⁆ _, htrace]
+  refine LieModule.trace_toEnd_eq_zero_of_mem_lcs K L L le_rfl
+    (LieModule.derivedSeries_le_lowerCentralSeries K L 1 ?_)
+  rw [derivedSeries_one_eq_top_of_isKilling]
+  exact LieSubmodule.mem_top x
 
 /-- **The element `∑ᵢ xᵢ ⊗ yᵢ` is invariant under the adjoint action.**  Read through a bilinear
 map `f`, the Leibniz expansion of the adjoint action of `z` vanishes: `ad z` and `-ad z` are an

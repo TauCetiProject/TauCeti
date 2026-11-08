@@ -9,13 +9,15 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Lp.Map
+public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 
 /-!
 # Hilbert direct sums of covariant representations
 
 Covariant representations of a fixed C⋆-action can be summed over an arbitrary index type.
 The Hilbert space is `lp H 2`, and both representations act coordinatewise. The coefficient
-operators are uniformly bounded by the coefficient norm, and the group operators by one.
+operators are uniformly bounded by the coefficient norm, and the group representation is the
+Hilbert direct sum `ContRepresentation.hilbertSum` of the unitary group representations.
 Strong continuity follows from uniform approximation by finite coordinate sums.
 
 The vector-integrated form acts coordinatewise as well: evaluation in a summand commutes
@@ -56,25 +58,15 @@ def hilbertSum : CovariantRepresentation α (lp H 2) where
           (fun i => by simpa using NonUnitalStarAlgHom.norm_apply_le (P i).coefficient a)]
         ext x i
         simp [← ContinuousLinearMap.star_eq_adjoint, map_star] }
-  group := .ofMonoidHom
-    { toFun g := lp.mapCLM 2 (fun i => (P i).group g) zero_le_one
-        (fun i => (P i).isUnitary.norm_le_one g)
-      map_one' := by ext x i; simp
-      map_mul' g h := by ext x i; simp [mul_apply_eq_comp] }
-  isUnitary := (ContRepresentation.isUnitary_iff_norm_map _).mpr fun g x => by
-    apply le_antisymm
-    · apply lp.norm_mono (by norm_num)
-      intro i
-      exact ((P i).isUnitary.norm_map g (x i)).le
-    · apply lp.norm_mono (by norm_num)
-      intro i
-      exact ((P i).isUnitary.norm_map g (x i)).ge
-  continuous_orbit := lp.continuous_mapCLM_apply (by simp)
+  group := .hilbertSum (fun i => (P i).group) fun i => (P i).isUnitary
+  isUnitary := ContRepresentation.isUnitary_hilbertSum _ _
+  continuous_orbit x := (lp.continuous_mapCLM_apply (p := 2) (by simp)
     (fun g i => (P i).group g) zero_le_one
-    (fun g i => (P i).isUnitary.norm_le_one g) (fun i => (P i).continuous_orbit)
+    (fun g i => (P i).isUnitary.norm_le_one g) (fun i => (P i).continuous_orbit) x).congr
+    fun g => by ext i; simp
   covariance g a x := by
     ext i
-    exact (P i).covariance g a (x i)
+    simpa using (P i).covariance g a (x i)
 
 /-- Coefficients in the Hilbert direct sum act coordinatewise. -/
 @[simp]
@@ -86,7 +78,7 @@ theorem hilbertSum_coefficient_apply (a : A) (x : lp H 2) (i : ι) :
 @[simp]
 theorem hilbertSum_group_apply (g : G) (x : lp H 2) (i : ι) :
     (hilbertSum P).group g x i = (P i).group g (x i) :=
-  (rfl)
+  ContRepresentation.hilbertSum_apply_apply _ _ g x i
 
 section Integrated
 

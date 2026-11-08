@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Defs
-public import Mathlib.Algebra.Group.Action.End
-public import Mathlib.Algebra.GroupWithZero.Action.End
 
 /-!
 # Trivial actions
@@ -40,17 +38,22 @@ variable {G : Type*} {R : Type*} [Mul R] [SMul G R]
 /-- For a trivial action of `G` on a multiplicative structure, multiplication is equivariant. -/
 theorem smul_mul_smul_of_smul_eq_self (htriv : ∀ (g : G) (m : R), g • m = m) (g : G) (m n : R) :
     g • m * g • n = g • (m * n) := by
-  rw [htriv, htriv, htriv]
+  simp only [htriv]
 
-/-- **The trivial action of a monoid `G` on a monoid `M`**, `g • a = a`, obtained by composing the
-tautological action of `MulAut M` with the trivial homomorphism. It is the action for which the
-extension built from a factor set is central, so it is the one a projective representation's factor
-set is bundled over in `TauCeti.IsProjectiveRep.exists_factorSet_linearization`. It is reducible and
-deliberately not an instance, since the theory of factor sets is stated for an arbitrary action; it
-is only used to supply one where the ambient theory has none. -/
+/-- **The trivial action of a monoid `G` on a monoid `M`**, `g • a = a`. Its scalar
+multiplication is literally `fun _ a ↦ a`, so `g • a` unfolds to `a` at instance transparency.
+It is the action for which the extension built from a factor set is central, so it is the one a
+projective representation's factor set is bundled over in
+`TauCeti.IsProjectiveRep.exists_factorSet_linearization`. It is reducible and deliberately not an
+instance, since the theory of factor sets is stated for an arbitrary action; it is only used to
+supply one where the ambient theory has none. -/
 abbrev trivialMulDistribMulAction (G M : Type*) [Monoid G] [Monoid M] :
-    MulDistribMulAction G M :=
-  MulDistribMulAction.compHom M (1 : G →* MulAut M)
+    MulDistribMulAction G M where
+  smul _ a := a
+  one_smul _ := rfl
+  mul_smul _ _ _ := rfl
+  smul_mul _ _ _ := rfl
+  smul_one _ := rfl
 
 section TrivialActionSmul
 

@@ -5,7 +5,7 @@ Authors: Codex, Alexander Richard Towell
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.TotalVariation
+public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Probability.Exchangeability.SamplingWithoutReplacement
 
 /-!
