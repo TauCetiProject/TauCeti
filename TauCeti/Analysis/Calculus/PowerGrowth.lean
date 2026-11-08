@@ -71,23 +71,19 @@ theorem monotoneOn_div_rpow_of_mul_le_mul_deriv {f f' : ℝ → ℝ} {s : Set �
     (hf : ∀ t ∈ interior s, HasDerivAt f (f' t) t)
     (hle : ∀ t ∈ interior s, α * f t ≤ t * f' t) :
     MonotoneOn (fun t ↦ f t / t ^ α) s := by
-  have hd (t : ℝ) (ht : t ∈ interior s) :=
-    (hf t ht).div (Real.hasDerivAt_rpow_const (Or.inl (hpos t (interior_subset ht)).ne'))
-      (Real.rpow_pos_of_pos (hpos t (interior_subset ht)) α).ne'
   have hpow : ContinuousOn (fun t : ℝ ↦ t ^ α) s :=
     continuousOn_id.rpow_const (fun t ht ↦ Or.inl (hpos t ht).ne')
-  apply monotoneOn_of_deriv_nonneg hs
-    (hcont.div hpow
-      (fun t ht ↦ (Real.rpow_pos_of_pos (hpos t ht) α).ne'))
-    (fun t ht ↦ (hd t ht).differentiableAt.differentiableWithinAt)
-  intro t ht
-  rw [(hd t ht).deriv]
-  apply div_nonneg _ (sq_nonneg _)
-  rw [Real.rpow_sub_one (hpos t (interior_subset ht)).ne']
-  have h := hle t ht
-  have hp := Real.rpow_pos_of_pos (hpos t (interior_subset ht)) α
-  have htpos := hpos t (interior_subset ht)
-  convert div_nonneg (mul_nonneg (sub_nonneg.mpr h) hp.le) htpos.le using 1
+  refine monotoneOn_of_hasDerivWithinAt_nonneg hs
+    (hcont.div hpow fun t ht ↦ (Real.rpow_pos_of_pos (hpos t ht) α).ne')
+    (fun t ht ↦ ((hf t ht).div (Real.hasDerivAt_rpow_const
+      (Or.inl (hpos t (interior_subset ht)).ne'))
+      (Real.rpow_pos_of_pos (hpos t (interior_subset ht)) α).ne').hasDerivWithinAt)
+    fun t ht ↦ div_nonneg ?_ (sq_nonneg _)
+  -- The numerator is `t ^ (α - 1) (t f' t - α f t)`.
+  have ht0 := hpos t (interior_subset ht)
+  have hp := Real.rpow_pos_of_pos ht0 α
+  rw [Real.rpow_sub_one ht0.ne']
+  convert div_nonneg (mul_nonneg (sub_nonneg.mpr (hle t ht)) hp.le) ht0.le using 1
   field_simp
 
 /-- **Power growth from an almost-everywhere differential inequality.** Let `m` be monotone on
@@ -98,49 +94,37 @@ theorem mul_le_mul_rpow_of_rpow_one_sub_le_mul_deriv {m : ℝ → ℝ} {a K r : 
     (ha : 0 < a) (hK : 0 ≤ K)
     (h : ∀ᵐ ρ, ρ ∈ Ioo 0 r → m ρ ^ (1 - a) ≤ K * deriv m ρ) :
     a * r ≤ K * m r ^ a := by
-  rcases hr.eq_or_lt with rfl | hr'
-  · simpa using mul_nonneg hK (Real.rpow_nonneg hm0 a)
-  -- The inequality at a single point of `(0, r)` forces `K > 0`.
-  replace hK : 0 < K := by
-    refine hK.lt_of_ne fun hK0 => ?_
-    have : (ae (volume.restrict (Ioo (0 : ℝ) r))).NeBot := ae_restrict_neBot.2 (by simp [hr'])
-    have hev : ∀ᵐ ρ ∂volume.restrict (Ioo 0 r),
-        ρ ∈ Ioo 0 r ∧ (ρ ∈ Ioo 0 r → m ρ ^ (1 - a) ≤ K * deriv m ρ) :=
-      (ae_restrict_mem measurableSet_Ioo).and (ae_restrict_of_ae h)
-    obtain ⟨ρ, hρ, hρ'⟩ := hev.exists
-    have h0 := hρ' hρ
-    rw [← hK0, zero_mul] at h0
-    exact (Real.rpow_pos_of_pos (hpos ρ hρ) _).not_ge h0
   set g : ℝ → ℝ := fun ρ => m ρ ^ a
   have hg : MonotoneOn g (uIcc 0 r) := by
     rw [uIcc_of_le hr]
     intro ρ hρ ρ' hρ' hle
     exact Real.rpow_le_rpow (hm0.trans (hm ⟨le_rfl, hr⟩ hρ hρ.1)) (hm hρ hρ' hle) ha.le
-  -- `a / K ≤ g'` at almost every point of `[0, r]`, where
+  -- `a ≤ K g'` at almost every point of `[0, r]`, since
   -- `K g' = a m ^ (a - 1) (K m') ≥ a m ^ (a - 1) m ^ (1 - a) = a`.
-  have hlow : (fun _ => a / K) ≤ᵐ[volume.restrict (Icc 0 r)] deriv g := by
+  have hlow : (fun _ => a) ≤ᵐ[volume.restrict (Icc 0 r)] fun ρ => K * deriv g ρ := by
     rw [Filter.EventuallyLE, Measure.restrict_congr_set Ioo_ae_eq_Icc.symm,
       ae_restrict_iff' measurableSet_Ioo]
     filter_upwards [h, (hm.mono Ioo_subset_Icc_self).ae_differentiableWithinAt_of_mem]
       with ρ hρ hd hρI
     have hmρ := hpos ρ hρI
     have hd' := (hd hρI).differentiableAt (Ioo_mem_nhds hρI.1 hρI.2)
-    rw [deriv_rpow_const hd' (Or.inl hmρ.ne'), div_le_iff₀ hK]
+    rw [deriv_rpow_const hd' (Or.inl hmρ.ne')]
     calc a = a * (m ρ ^ (a - 1) * m ρ ^ (1 - a)) := by
           rw [← Real.rpow_add hmρ, sub_add_sub_cancel', sub_self, Real.rpow_zero, mul_one]
       _ ≤ a * (m ρ ^ (a - 1) * (K * deriv m ρ)) := by
           gcongr
           exact hρ hρI
-      _ = deriv m ρ * a * m ρ ^ (a - 1) * K := by ring
-  -- Integrating, `a r / K ≤ ∫₀^r g' ≤ g r - g 0 ≤ g r`.
+      _ = K * (deriv m ρ * a * m ρ ^ (a - 1)) := by ring
+  -- Integrating, `a r ≤ K ∫₀^r g' ≤ K (g r - g 0) ≤ K g r`.
   have hint := intervalIntegral.integral_mono_ae_restrict hr intervalIntegrable_const
-    hg.intervalIntegrable_deriv hlow
-  rw [intervalIntegral.integral_const, smul_eq_mul, sub_zero] at hint
+    (hg.intervalIntegrable_deriv.const_mul K) hlow
+  rw [intervalIntegral.integral_const, smul_eq_mul, sub_zero,
+    intervalIntegral.integral_const_mul] at hint
   have hup := hg.intervalIntegral_deriv_mem_uIcc
   rw [uIcc_of_le (sub_nonneg.2 (hg (by simp) (by simp [hr]) (by simp [hr])))] at hup
-  have hgr := hint.trans (hup.2.trans (sub_le_self _ (Real.rpow_nonneg hm0 a)))
-  rw [mul_div_assoc', div_le_iff₀ hK] at hgr
-  linarith
+  rw [mul_comm a]
+  exact hint.trans (mul_le_mul_of_nonneg_left
+    (hup.2.trans (sub_le_self _ (Real.rpow_nonneg hm0 a))) hK)
 
 /-! ### Almost-Euler inequalities with a forcing term -/
 
@@ -159,11 +143,10 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     (h : ∀ᵐ σ, σ ∈ Ioo s t → α * f σ ≤ σ * (1 + C * σ) * deriv f σ + A * σ ^ n) :
     (t / (1 + C * t)) ^ α * (f s + A / (n - α) * s ^ n) ≤
       (s / (1 + C * s)) ^ α * (f t + A / (n - α) * t ^ n) := by
-  obtain ⟨B, hB_def⟩ : ∃ B, B = A / (n - α) := ⟨_, rfl⟩
-  rw [← hB_def]
   have hnα : 0 < (n : ℝ) - α := sub_pos.2 hαn
-  have hB : 0 ≤ B := hB_def ▸ div_nonneg hA hnα.le
-  have hBA : B * (n - α) = A := hB_def ▸ div_mul_cancel₀ A hnα.ne'
+  set B := A / (n - α)
+  have hB : 0 ≤ B := div_nonneg hA hnα.le
+  have hBA : B * (n - α) = A := div_mul_cancel₀ A hnα.ne'
   set g : ℝ → ℝ := fun σ => f σ + B * σ ^ n
   set k : ℝ → ℝ := fun σ => α * (σ * (1 + C * σ))⁻¹
   have hσpos (σ : ℝ) (hσ : σ ∈ Icc s t) : 0 < σ := hs.trans_le hσ.1
@@ -189,8 +172,6 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     rw [hgd.deriv]
     simp only [k, g]
     rw [← div_eq_mul_inv, div_mul_eq_mul_div, div_le_iff₀ hD]
-    have hfσ := hσ hσI
-    rw [← hBA] at hfσ
     -- `n σ ^ (n - 1) σ = n σ ^ n`, also for `n = 0`.
     have hpow : (n : ℝ) * σ ^ (n - 1) * σ = n * σ ^ n := by
       rcases n with _ | m
@@ -199,11 +180,8 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     have hgap : 0 ≤ C * σ * (n * B * σ ^ n) :=
       mul_nonneg (mul_nonneg hC hσ0.le) (mul_nonneg (mul_nonneg (Nat.cast_nonneg _) hB)
         (pow_nonneg hσ0.le _))
-    have e : (deriv f σ + B * (n * σ ^ (n - 1))) * (σ * (1 + C * σ)) -
-        α * (f σ + B * σ ^ n) = (σ * (1 + C * σ) * deriv f σ + B * (n - α) * σ ^ n - α * f σ) +
-          C * σ * (n * B * σ ^ n) := by
-      linear_combination (B * (1 + C * σ)) * hpow
-    linarith
+    -- The hypothesis at `σ`, with `A = B (n - α)`, plus the nonnegative gap `hgap`.
+    linear_combination hσ hσI + hgap - (B * (1 + C * σ)) * hpow - σ ^ n * hBA
   have ht : 0 < t := hs.trans_le hst
   have hexp : Real.exp (∫ σ in s..t, k σ) = (t / (1 + C * t)) ^ α / (s / (1 + C * s)) ^ α := by
     rw [intervalIntegral.integral_const_mul, integral_inv_mul_one_add_mul hs ht hC,
