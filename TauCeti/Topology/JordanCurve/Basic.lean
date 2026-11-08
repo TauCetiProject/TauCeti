@@ -110,11 +110,11 @@ def IsJordanCurve (C : Set X) : Prop := Nonempty (C ≃ₜ Circle)
 to `TauCeti.IsJordanCurve` outside its defining module. -/
 theorem isJordanCurve_iff : IsJordanCurve C ↔ Nonempty (C ≃ₜ Circle) := Iff.rfl
 
-/-- A continuous injection defined on a compact set is a homeomorphism onto its image, the image
-carrying the subspace topology of a Hausdorff space. This is the set-level form of
-`Continuous.homeoOfEquivCompactToT2`, and the engine of both transfer lemmas below. -/
-private noncomputable def imageHomeomorphOfIsCompact [T2Space Y] (hC : IsCompact C) {g : X → Y}
-    (hg : ContinuousOn g C) (hgi : InjOn g C) : C ≃ₜ g '' C :=
+/-- A continuous injection defined on a compact set is a homeomorphism onto its image, when the
+image is Hausdorff. This is the set-level form of `Continuous.homeoOfEquivCompactToT2`, and the
+engine of both transfer lemmas below. -/
+private noncomputable def imageHomeomorphOfIsCompact (hC : IsCompact C) {g : X → Y}
+    (hg : ContinuousOn g C) (hgi : InjOn g C) [T2Space (g '' C)] : C ≃ₜ g '' C :=
   haveI : CompactSpace C := isCompact_iff_compactSpace.mp hC
   Continuous.homeoOfEquivCompactToT2 (f := hgi.bijOn_image.equiv g)
     (hg.mapsToRestrict hgi.bijOn_image.mapsTo)
@@ -165,9 +165,10 @@ here, since it is no longer inherited from the curve. It is the form in which th
 verified when the curve is the *unknown* rather than the parameter: one exhibits a continuous
 injective map of the set onto a set already known to be a Jordan curve, as the boundary
 correspondence does with the boundary of a disc. -/
-theorem IsJordanCurve.of_image [T2Space Y] (hC : IsCompact C) {g : X → Y} (hg : ContinuousOn g C)
+theorem IsJordanCurve.of_image (hC : IsCompact C) {g : X → Y} (hg : ContinuousOn g C)
     (hgi : InjOn g C) (h : IsJordanCurve (g '' C)) : IsJordanCurve C := by
   obtain ⟨e⟩ := h
+  have : T2Space (g '' C) := e.symm.t2Space
   exact ⟨(imageHomeomorphOfIsCompact hC hg hgi).trans e⟩
 
 /-- The image of a Jordan curve under a homeomorphism of the ambient spaces is a Jordan curve.
