@@ -176,16 +176,11 @@ theorem aeval_snoc_zero_newtonMvPolynomial {S : Type*} [CommSemiring S] [Algebra
       (newtonMvPolynomial R (n + 1) k) = newtonMvPolynomial R n k := by
     refine eq_newtonMvPolynomial_of_aeval ?_
     -- The elementary symmetric polynomials of `x₁, …, xₙ, 0` are those of `x₁, …, xₙ`, then `0`.
-    have h : (fun j : Fin (n + 1) => aeval
-        (fun j : Fin n => (univ.val.map (X (R := R) (σ := Fin n))).esymm (j + 1))
-        (Fin.snoc (α := fun _ => MvPolynomial (Fin n) R) X 0 j)) =
-        fun j : Fin (n + 1) =>
-          (0 ::ₘ univ.val.map (X : Fin n → MvPolynomial (Fin n) R)).esymm (j + 1) := by
-      funext j
-      refine Fin.lastCases ?_ (fun i => ?_) j
-      · rw [Fin.snoc_last, map_zero, Fin.val_last, Multiset.esymm_cons_zero,
-          Multiset.esymm_of_card_lt (by simp)]
-      · rw [Fin.snoc_castSucc, aeval_X, Fin.val_castSucc, Multiset.esymm_cons_zero]
+    have h := Fin.comp_snoc
+      (aeval (R := R) fun j : Fin n => (univ.val.map (X (R := R) (σ := Fin n))).esymm (j + 1))
+      X 0
+    simp only [map_zero, Function.comp_def, aeval_X] at h
+    rw [← Multiset.esymm_cons_zero_eq_snoc _ (by simp)] at h
     rw [comp_aeval_apply, h, Multiset.aeval_esymm_newtonMvPolynomial _ (by simp)]
     simp [zero_pow hk]
   rw [← hX, comp_aeval_apply]
@@ -203,7 +198,7 @@ theorem newtonMvPolynomial_zero_right : newtonMvPolynomial R n 0 = n :=
 @[simp]
 theorem newtonMvPolynomial_one_right : newtonMvPolynomial R (n + 1) 1 = X 0 := by
   refine (eq_newtonMvPolynomial_of_aeval ?_).symm
-  rw [Multiset.sum_map_pow_one_eq_esymm, aeval_X, Fin.val_zero]
+  simp only [pow_one, Multiset.map_id', aeval_X, Fin.val_zero, zero_add, Multiset.esymm_one]
 
 /-- **The quadratic Newton polynomial**: in at least two variables, `s₂ = e₁² - 2e₂`. -/
 theorem newtonMvPolynomial_two_right :
