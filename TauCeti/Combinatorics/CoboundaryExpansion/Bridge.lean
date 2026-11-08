@@ -24,7 +24,7 @@ order isomorphism `e : Fin k ≃o V`:
 * `h1_eq`: `h1 (complete V) (movedNorm (Fin 3)) = Sym3.h1 (card V)`.
 
 An order isomorphism preserves the orientation `u < v < w` used by every sum, so no
-orientation-independence lemma (roadmap 2.3) is needed.
+orientation-independence lemma is needed.
 -/
 
 public section
@@ -56,7 +56,7 @@ variable {k : ℕ}
     Fin k → Fin k → Sym3.S3 :=
   fun i j => α.toFun (e i) (e j)
 
-/-- A bare function on `Fin k`, read on `u < v` and inverted on `u > v`, as a roadmap cochain. -/
+/-- A bare function on `Fin k`, read on `u < v` and inverted on `u > v`, as a cochain. -/
 @[expose] def ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     Cochain (complete V) (Perm (Fin 3)) where
   toFun u v := Sym3.val f (e.symm u) (e.symm v)
@@ -130,31 +130,6 @@ theorem gaugeDist_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3)
     rw [cost_eq e]
     exact_mod_cast Sym3.gaugeDist_le _ _
 
-/-- Reading a bare function through `val` changes neither its defect nor its gauge distance. -/
-private theorem defect_val (f : Fin k → Fin k → Sym3.S3) :
-    Sym3.defect (fun i j => Sym3.val f i j) = Sym3.defect f := by
-  rw [Sym3.defect_eq_sum, Sym3.defect_eq_sum]
-  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
-    Finset.sum_congr rfl fun w _ => ?_
-  split_ifs with h
-  · obtain ⟨huv, hvw⟩ := h
-    have huw : u < w := huv.trans hvw
-    simp [Sym3.hol, Sym3.val, huv, hvw, huw, not_lt.mpr huw.le]
-  · rfl
-
-theorem cost_val (f : Fin k → Fin k → Sym3.S3) (β : Fin k → Sym3.S3) :
-    Sym3.cost (fun i j => Sym3.val f i j) β = Sym3.cost f β := by
-  rw [Sym3.cost_eq_sum, Sym3.cost_eq_sum]
-  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
-  split_ifs with h
-  · simp [Sym3.val, h]
-  · rfl
-
-private theorem gaugeDist_val (f : Fin k → Fin k → Sym3.S3) :
-    Sym3.gaugeDist (fun i j => Sym3.val f i j) = Sym3.gaugeDist f := by
-  unfold Sym3.gaugeDist
-  simp only [cost_val]
-
 theorem toFin_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     toFin e (ofFin e f) = fun i j => Sym3.val f i j := by
   funext i j
@@ -162,13 +137,13 @@ theorem toFin_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
 
 theorem defect_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     (ofFin e f).defect (movedNorm (Fin 3)) = (Sym3.defect f : ℝ) := by
-  rw [defect_eq e, toFin_ofFin, defect_val]
+  rw [defect_eq e, toFin_ofFin, Sym3.defect_val]
 
 theorem gaugeDist_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     (ofFin e f).gaugeDist (movedNorm (Fin 3)) = (Sym3.gaugeDist f : ℝ) := by
-  rw [gaugeDist_eq e, toFin_ofFin, gaugeDist_val]
+  rw [gaugeDist_eq e, toFin_ofFin, Sym3.gaugeDist_val]
 
-/-- **The bridge.** The roadmap's `Sym(3)` constant of `complete V` is the `Fin k` constant of
+/-- **The bridge.** The `Sym(3)` constant of `complete V` is the `Fin k` constant of
 `Sym3` at `k = card V` (any order isomorphism `Fin k ≃o V` witnesses this). -/
 theorem h1_eq (e : Fin k ≃o V) :
     h1 (complete V) (movedNorm (Fin 3)) = Sym3.h1 k := by

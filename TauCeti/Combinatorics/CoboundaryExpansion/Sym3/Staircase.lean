@@ -11,9 +11,6 @@ public import TauCeti.GroupTheory.Perm.ParityRetract
 /-!
 # Staircase seeds for `Sym(3)`, and `h₁(K_k) = k/3` for every `k ≥ 3`
 
-(Called Layer 7 in the coboundary-k3-lean repository; it is not this roadmap's Layer 7,
-`h1_complete_movedNorm_fin_two`, which is neither stated nor used here.)
-
 Attribution: the seeds are Kozlov's staircase graphs [D. N. Kozlov, arXiv:1610.07136, Def. 3.2
 and §3.1]; the cut-minimality bound is proved directly here, following [Kozlov, Lemma 3.8 and
 Cor. 3.13] (triangle count after [Kozlov, Lemma 3.10]); the `Sym(3)` transfer (parity retraction)
@@ -34,8 +31,8 @@ All counts are moved-point counts, as in `Basic`: a staircase edge costs `2`.
   the two newest vertices adds at least `t + 1` to every `F₂` count (`st_cutF_ge`).
 * `stair_defect_mul`: `3N = (2t+1) D`, from the triangle count
   `N = 2(1² + 2² + … + t²) = t(t+1)(2t+1)/3` (`st_tri`).
-* `h1_mul_of_seed`: balanced replication (`rep_defect`, `rep_attain`, `rep_lower`) turns any
-  seed with `3N = mD` into `h₁(K_{mq}) = mq/3` for every `q ≥ 1`.
+* `h1_stair_mul`: `Sym3.h1_mul_of_seed` of `Replication` turns the staircase into
+  `h₁(K_{(2t+1)q}) = (2t+1)q/3` for every `q ≥ 1`.
 * `h1_eq_card_div_three`: every `k ≥ 3` is `4q` or `(2t+1)q` with `t ≥ 1`, so
   `h₁(K_k) = k/3` for every `k ≥ 3` (Beasley's Theorem 8 is the case `k ≥ 4`).
 
@@ -567,43 +564,15 @@ theorem stair_defect_mul (t : ℕ) :
   have h := st_tri t
   nlinarith
 
-/-! ## Replication of any seed, and every `k ≥ 3` -/
-
-/-- **Any seed replicates.** If a cochain on `K_m` has gauge distance `D > 0` (attained by the
-identity gauge) and `3N = mD`, then `h₁(K_{mq}) = mq/3` for every `q ≥ 1`. -/
-theorem h1_mul_of_seed {m : ℕ} (α : Fin m → Fin m → S3) (D : ℕ)
-    (hlow : ∀ β, D ≤ cost α β) (hatt : cost α (fun _ => 1) = D) (hD : 0 < D)
-    (hratio : 3 * defect α = m * D) (q : ℕ) (hq : 0 < q) :
-    h1 (m * q) = ((m * q : ℕ) : ℝ) / 3 := by
-  have hatt' : cost (rep q α) (fun _ => 1) = q ^ 2 * D := by
-    have h := rep_attain q α (fun _ => 1)
-    rw [hatt] at h
-    exact h
-  have hlow' : ∀ γ, q ^ 2 * D ≤ cost (rep q α) γ := rep_lower q hq α D hlow
-  have hG : gaugeDist (rep q α) = q ^ 2 * D := gaugeDist_eq_of hlow' _ hatt'
-  have hpos : 0 < gaugeDist (rep q α) := by
-    rw [hG]
-    exact Nat.mul_pos (pow_pos hq 2) hD
-  apply le_antisymm
-  · have h := h1_le_of_pos hpos
-    rw [hG, rep_defect] at h
-    have hq0 : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
-    have hD0 : (D : ℝ) ≠ 0 := by exact_mod_cast hD.ne'
-    have h3 : (3 : ℝ) * (defect α : ℝ) = (m : ℝ) * (D : ℝ) := by exact_mod_cast hratio
-    have hdef : (defect α : ℝ) = (m : ℝ) * (D : ℝ) / 3 := by linarith
-    calc h1 (m * q) ≤ ((q ^ 3 * defect α : ℕ) : ℝ) / ((q ^ 2 * D : ℕ) : ℝ) := h
-      _ = ((m * q : ℕ) : ℝ) / 3 := by
-        push_cast
-        rw [hdef, div_eq_iff (mul_ne_zero (pow_ne_zero 2 hq0) hD0)]
-        ring
-  · exact k_div_three_le_h1 ⟨rep q α, hpos⟩
+/-! ## Replicated staircases, and every `k ≥ 3` -/
 
 /-- **Odd seeds.** `h₁(K_{(2t+1)q}) = (2t+1)q/3` for every `t ≥ 1` and `q ≥ 1`, from Kozlov's
 staircase. -/
 theorem h1_stair_mul (t q : ℕ) (ht : 1 ≤ t) (hq : 0 < q) :
     h1 ((2 * t + 1) * q) = (((2 * t + 1) * q : ℕ) : ℝ) / 3 :=
-  h1_mul_of_seed (stair (2 * t + 1)) (t * (t + 1)) (stair_cost_lower t) (stair_cost_id t)
-    (Nat.mul_pos (by omega) (by omega)) (stair_defect_mul t) q hq
+  h1_mul_of_seed (stair (2 * t + 1))
+    (by rw [stair_gaugeDist]; exact Nat.mul_pos (by omega) (by omega))
+    (by rw [stair_gaugeDist]; exact stair_defect_mul t) q hq
 
 /-- Every `k ≥ 3` is `4q` or `(2t+1)q` with `t ≥ 1` and `q ≥ 1` (halve while even). -/
 theorem st_decomp (n : ℕ) : ∀ k, k ≤ n → 3 ≤ k →

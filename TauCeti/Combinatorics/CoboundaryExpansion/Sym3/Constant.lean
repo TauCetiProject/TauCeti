@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Ring
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Algebra.BigOperators.Group.List.Basic
 
 /-!
 # The `Sym(3)` coboundary constant of `K_k`
@@ -90,57 +91,26 @@ theorem gaugeDist_eq_of {α : Fin k → Fin k → S3} {D : ℕ} (hlow : ∀ β, 
 
 /-! ### Cost and defect as sums over vertices -/
 
-private theorem lsum_flatMap {ι κ : Type*} (l : List ι) (f : ι → List κ) (g : κ → ℕ) :
-    ((l.flatMap f).map g).sum = (l.map fun a => ((f a).map g).sum).sum := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    simp only [List.flatMap_cons, List.map_append, List.sum_append, List.map_cons, List.sum_cons,
-      ih]
-
-private theorem lsum_filter {ι : Type*} (l : List ι) (p : ι → Bool) (f : ι → ℕ) :
-    ((l.filter p).map f).sum = (l.map fun a => if p a = true then f a else 0).sum := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    by_cases hp : p a = true
-    · simp only [List.filter_cons_of_pos hp, List.map_cons, List.sum_cons, ih, ite_eq_left hp]
-    · simp only [List.filter_cons_of_neg hp, List.map_cons, List.sum_cons, ih, ite_eq_right hp,
-        zero_add]
-
 /-- A sum over the edges `u < v` as a double sum over vertices. -/
 private theorem sum_edges (g : Fin k → Fin k → ℕ) :
     ((edges k).map fun e => g e.1 e.2).sum =
       ∑ u : Fin k, ∑ v : Fin k, if u < v then g u v else 0 := by
   unfold edges
-  rw [lsum_flatMap, Fin.sum_univ_def]
-  apply congrArg List.sum
-  apply List.map_congr_left
-  intro u _
-  rw [List.map_map, lsum_filter, Fin.sum_univ_def]
-  apply congrArg List.sum
-  apply List.map_congr_left
-  intro v _
-  simp
+  rw [List.map_flatMap, List.flatMap_def, List.sum_flatten, List.map_map, Fin.sum_univ_def]
+  refine congrArg List.sum (List.map_congr_left fun u _ => ?_)
+  simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
 
 /-- A sum over the triangles `u < v < w` as a triple sum over vertices. -/
 private theorem sum_triangles (g : Fin k → Fin k → Fin k → ℕ) :
     ((triangles k).map fun t => g t.1 t.2.1 t.2.2).sum =
       ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k, if u < v ∧ v < w then g u v w else 0 := by
   unfold triangles
-  rw [lsum_flatMap, Fin.sum_univ_def]
-  apply congrArg List.sum
-  apply List.map_congr_left
-  intro u _
-  rw [lsum_flatMap, Fin.sum_univ_def]
-  apply congrArg List.sum
-  apply List.map_congr_left
-  intro v _
-  rw [List.map_map, lsum_filter, Fin.sum_univ_def]
-  apply congrArg List.sum
-  apply List.map_congr_left
-  intro w _
-  simp
+  rw [List.map_flatMap, List.flatMap_def, List.sum_flatten, List.map_map, Fin.sum_univ_def]
+  refine congrArg List.sum (List.map_congr_left fun u _ => ?_)
+  rw [Function.comp_apply, List.map_flatMap, List.flatMap_def, List.sum_flatten, List.map_map,
+    Fin.sum_univ_def]
+  refine congrArg List.sum (List.map_congr_left fun v _ => ?_)
+  simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
 
 theorem cost_eq_sum (α : Fin k → Fin k → S3) (β : Fin k → S3) :
     cost α β = ∑ u : Fin k, ∑ v : Fin k,
@@ -154,6 +124,30 @@ theorem defect_eq_sum (α : Fin k → Fin k → S3) :
     defect α = ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k,
       if u < v ∧ v < w then moved (hol α u v w) else 0 :=
   sum_triangles fun u v w => moved (hol α u v w)
+
+/-- Reading a bare function through `val` changes neither its defect nor its gauge distance. -/
+theorem defect_val (f : Fin k → Fin k → S3) : defect (fun i j => val f i j) = defect f := by
+  rw [defect_eq_sum, defect_eq_sum]
+  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
+    Finset.sum_congr rfl fun w _ => ?_
+  split_ifs with h
+  · obtain ⟨huv, hvw⟩ := h
+    have huw : u < w := huv.trans hvw
+    simp [hol, val, huv, hvw, huw, not_lt.mpr huw.le]
+  · rfl
+
+theorem cost_val (f : Fin k → Fin k → S3) (β : Fin k → S3) :
+    cost (fun i j => val f i j) β = cost f β := by
+  rw [cost_eq_sum, cost_eq_sum]
+  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
+  split_ifs with h
+  · simp [val, h]
+  · rfl
+
+theorem gaugeDist_val (f : Fin k → Fin k → S3) :
+    gaugeDist (fun i j => val f i j) = gaugeDist f := by
+  unfold gaugeDist
+  simp only [cost_val]
 
 /-! ### What `gaugeDist α = 0` means -/
 
@@ -385,7 +379,7 @@ theorem k_div_three_le_h1 (hne : ∃ α : Fin k → Fin k → S3, 0 < gaugeDist 
 
 /-! ## The value at `k = 4` -/
 
-/-- README 6.1 check: each of the four star gauges of the seed costs exactly `6`. -/
+/-- Each of the four star gauges of the seed costs exactly `6`. -/
 theorem cost_starGauge_w4 : ∀ x, cost w4 (starGauge w4 x) = 6 := by decide +kernel
 
 /-- **Theorem 4, k = 4.** `h₁(K_4) = 4/3`. -/

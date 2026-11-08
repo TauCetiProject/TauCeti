@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Constant
-public import Mathlib.Tactic.FieldSimp
 public import Mathlib.Tactic.GCongr
 
 /-!
@@ -24,7 +23,9 @@ a cluster and the seed value on every edge between two clusters. For every cocha
   minimum (the finite double count over the `q^k` sections);
 * `rep_seed`: with `witness_k4`, the replicated seed on `K_{4q}` has `N = 8q³` and gauge minimum
   exactly `6q²`, so `N/D = 4q/3 = k/3` at every multiple of four;
-* `h1_eq_four_mul`: with the star bound of `Constant`, `h₁(K_{4q}) = 4q/3` for every `q ≥ 1`.
+* `h1_mul_of_seed`: with the star bound of `Constant`, any non-coboundary seed on `K_m` with
+  `3N = mD` gives `h₁(K_{mq}) = mq/3` for every `q ≥ 1`;
+* `h1_eq_four_mul`: the seed `w4` gives `h₁(K_{4q}) = 4q/3` for every `q ≥ 1`.
 
 `cost` and `defect` are rewritten as sums over all pairs and triples with an order indicator by
 `cost_eq_sum` and `defect_eq_sum` of `Sym3.Constant`, so that they can be reindexed by clusters.
@@ -266,21 +267,37 @@ theorem gaugeDist_rep_seed (q : ℕ) (hq : 0 < q) : gaugeDist (rep q w4) = 6 * q
   obtain ⟨-, hC, hlow⟩ := rep_seed q hq
   exact gaugeDist_eq_of hlow _ hC
 
+/-- **Any seed replicates.** If a cochain on `K_m` is not a coboundary and `3N = mD`, then
+`h₁(K_{mq}) = mq/3` for every `q ≥ 1`. -/
+theorem h1_mul_of_seed {m : ℕ} (α : Fin m → Fin m → S3) (hpos : 0 < gaugeDist α)
+    (hratio : 3 * defect α = m * gaugeDist α) (q : ℕ) (hq : 0 < q) :
+    h1 (m * q) = ((m * q : ℕ) : ℝ) / 3 := by
+  set D := gaugeDist α
+  obtain ⟨β₀, hβ₀⟩ := exists_cost_eq_gaugeDist α
+  have hatt' : cost (rep q α) (fun x => β₀ (clus q x)) = q ^ 2 * D := by
+    rw [rep_attain, hβ₀]
+  have hlow' : ∀ γ, q ^ 2 * D ≤ cost (rep q α) γ := rep_lower q hq α D (gaugeDist_le α)
+  have hG : gaugeDist (rep q α) = q ^ 2 * D := gaugeDist_eq_of hlow' _ hatt'
+  have hpos' : 0 < gaugeDist (rep q α) := by
+    rw [hG]
+    exact Nat.mul_pos (pow_pos hq 2) hpos
+  apply le_antisymm
+  · have h := h1_le_of_pos hpos'
+    rw [hG, rep_defect] at h
+    have hq0 : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
+    have hD0 : (D : ℝ) ≠ 0 := by exact_mod_cast hpos.ne'
+    have h3 : (3 : ℝ) * (defect α : ℝ) = (m : ℝ) * (D : ℝ) := by exact_mod_cast hratio
+    have hdef : (defect α : ℝ) = (m : ℝ) * (D : ℝ) / 3 := by linarith
+    calc h1 (m * q) ≤ ((q ^ 3 * defect α : ℕ) : ℝ) / ((q ^ 2 * D : ℕ) : ℝ) := h
+      _ = ((m * q : ℕ) : ℝ) / 3 := by
+        push_cast
+        rw [hdef, div_eq_iff (mul_ne_zero (pow_ne_zero 2 hq0) hD0)]
+        ring
+  · exact k_div_three_le_h1 ⟨rep q α, hpos'⟩
+
 /-- **Corollary 7.** `h₁(K_{4q}) = 4q/3` for every `q ≥ 1`: the coboundary constant equals `k/3`
 at every multiple of four. -/
-theorem h1_eq_four_mul (q : ℕ) (hq : 0 < q) : h1 (4 * q) = ((4 * q : ℕ) : ℝ) / 3 := by
-  have hD : 0 < gaugeDist (rep q w4) := by
-    rw [gaugeDist_rep_seed q hq]
-    exact Nat.mul_pos (by norm_num) (pow_pos hq 2)
-  apply le_antisymm
-  · have h := h1_le_of_pos hD
-    rw [gaugeDist_rep_seed q hq, (rep_seed q hq).1] at h
-    have hq' : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
-    calc h1 (4 * q) ≤ ((8 * q ^ 3 : ℕ) : ℝ) / ((6 * q ^ 2 : ℕ) : ℝ) := h
-      _ = ((4 * q : ℕ) : ℝ) / 3 := by
-        push_cast
-        field_simp
-        ring
-  · exact k_div_three_le_h1 ⟨rep q w4, hD⟩
+theorem h1_eq_four_mul (q : ℕ) (hq : 0 < q) : h1 (4 * q) = ((4 * q : ℕ) : ℝ) / 3 :=
+  h1_mul_of_seed w4 (by rw [gaugeDist_w4]; norm_num) (by rw [witness_k4.1, gaugeDist_w4]) q hq
 
 end TauCeti.CoboundaryExpansion.Sym3

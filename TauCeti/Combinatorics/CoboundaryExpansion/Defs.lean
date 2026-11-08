@@ -16,16 +16,10 @@ public import TauCeti.GroupTheory.Perm.MovedNorm
 
 Group-valued 1-cochains `Cochain X G` on a finite two-complex, with their triangle defect, gauge
 cost and gauge distance, and the first coboundary Cheeger constant `h1` in the counting convention
-together with its normalized form `h1Norm`. The carrier type `TauCeti.TwoComplex`, the complete
-complex `TwoComplex.complete`, the conversions to and from `HypergraphComplex 3`, both round
-trips, and the complete face counts come from main
-(`TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex`, #27759). This file does not redefine them.
-The Cochain / h1 pieces needed to state the Layer 8.1 results are defined here. The norm on
-permutations is `Equiv.Perm.movedNorm` of `TauCeti.GroupTheory.Perm.MovedNorm`.
-
-These are the definitions of Layers 2.1, 2.2 and 3.1/3.3 needed to state the Layer 8.1 results:
-counting convention, gauge convention `β u⁻¹ * α u v * β v`, orientation `u < v < w`, and
-infimum over cochains at positive gauge distance.
+together with its normalized form `h1Norm`. The carrier type is `TauCeti.TwoComplex` of
+`TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex`; the norm on permutations is
+`Equiv.Perm.movedNorm` of `TauCeti.GroupTheory.Perm.MovedNorm`. Conventions: gauge
+`β u⁻¹ * α u v * β v`, orientation `u < v < w`, infimum over cochains at positive gauge distance.
 -/
 
 -- These are the specification definitions; downstream files unfold them.

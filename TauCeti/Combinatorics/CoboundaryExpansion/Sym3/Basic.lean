@@ -17,9 +17,9 @@ import Mathlib.Algebra.Order.BigOperators.Group.List
 /-!
 # `Sym(3)`-valued cochains on `K_k`: counts, exhaustion, and the witness for `k = 4`
 
-The permutation coboundary constant of the complete complex is k/3 for every k ≥ 4
-(Jeromie Beasley, DOI 10.5281/zenodo.22090958, version DOI 10.5281/zenodo.23245792). This
-file supplies the `k = 4` seed used by the Layer 8.1 route.
+The permutation coboundary constant of the complete complex is k/3 for every k ≥ 4 (Jeromie
+Beasley, DOI 10.5281/zenodo.22090958, version DOI 10.5281/zenodo.23245792). This file supplies
+the `k = 4` seed.
 
 The `Sym3` files follow the Lean development of the paper in
 https://github.com/dicipler-pixel/coboundary-k3-lean at commit

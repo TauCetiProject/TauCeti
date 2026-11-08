@@ -10,22 +10,16 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
 public import Mathlib.Tactic.LinearCombination
 
 /-!
-# Layer 8.1: the `Sym(3)` constant of the complete complex is `k/3`
+# The `Sym(3)` constant of the complete complex is `k/3`
 
 `h1_complete_movedNorm_fin_three` and `h1Norm_complete_movedNorm_fin_three`, for the
 definitions of `Defs`.
 
 Route: `Bridge.h1_eq_card` reduces to `Sym3.h1_eq_card_div_three` (Beasley, Theorem 8), which
 uses the replicated `k = 4` seed at powers of two and replicated `Sym(3)` staircase seeds on
-`K_{2t+1}` elsewhere, with the star bound `Sym3.k_div_three_le_h1`. The explicit witnesses for
-finite `k = 5, …, 8` certificates are not used. The staircase seeds are
+`K_{2t+1}` elsewhere, with the star bound `Sym3.k_div_three_le_h1`. The staircase seeds are
 `Sym(3)`-valued cochains whose gauge distance is proved directly (parity of the gauge, then a cut
-count); Layer 7's
-`h1_complete_movedNorm_fin_two` (the `𝔽₂` constant) is neither stated nor used. `h1Sym_complete`
-(which needs the Layer 4 star bound in every degree) is not proved here.
-
-This is an alternative route to README 8.1, whose listed dependency is 7.4 (Kozlov's `𝔽₂`
-theorem); 7.4 is not used.
+count); the `𝔽₂` constant is not used.
 
 Attribution: the seeds are Kozlov's staircase graphs [D. N. Kozlov, arXiv:1610.07136, Def. 3.2
 and §3.1]; the cut-minimality bound is proved directly here, following [Kozlov, Lemma 3.8 and
@@ -48,14 +42,14 @@ open Bridge
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
-/-- **Layer 8.1.** The permutation coboundary constant of the complete complex is `k/3` for every
+/-- The permutation coboundary constant of the complete complex is `k/3` for every
 `k ≥ 4`, attained with values in `Sym(3)`. -/
 theorem h1_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
     h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 := by
   rw [h1_eq_card]
   exact Sym3.h1_eq_card_div_three _ (by omega)
 
-/-- **Layer 8.1, normalized.** `(k choose 2) / (k choose 3) · k/3 = k/(k-2)`. -/
+/-- Normalized form: `(k choose 2) / (k choose 3) · k/3 = k/(k-2)`. -/
 theorem h1Norm_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
     h1Norm (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / (Fintype.card V - 2) := by
   unfold h1Norm
