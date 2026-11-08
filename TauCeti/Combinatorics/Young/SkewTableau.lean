@@ -643,4 +643,28 @@ theorem apply_lt_colLen_zero_of_rowLen_add_content_eq
       exact Nat.le_add_left _ _)
     (by rw [YoungDiagram.rowLen_bot]; exact Nat.zero_le c) (YoungDiagram.mem_iff_lt_rowLen.mp hc)
 
+/-- If some cell in a column at least `j` holds the letter `a`, there is a lowest row `k`
+holding such a cell, and no row below `k` holds one. -/
+theorem exists_lowestRow_of_exists {T : SemistandardYoungTableau μ} {j a : ℕ}
+    (hex : ∃ k c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) :
+    ∃ k c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a ∧
+      ∀ r, k < r → #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = a} = 0 := by
+  classical
+  obtain ⟨k, hk⟩ : ∃ k, k = Nat.findGreatest
+      (fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) (μ.colLen 0) := ⟨_, rfl⟩
+  obtain ⟨k₀, c₀, hc₀, hjc₀, hT₀⟩ := hex
+  have hk₀ : k₀ ≤ μ.colLen 0 :=
+    (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc₀)).le
+  have hspec := Nat.findGreatest_spec
+    (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) hk₀ ⟨c₀, hc₀, hjc₀, hT₀⟩
+  rw [← hk] at hspec
+  obtain ⟨c, hc, hjc, hTc⟩ := hspec
+  refine ⟨k, c, hc, hjc, hTc, fun r hr => ?_⟩
+  refine card_eq_zero.mpr (filter_eq_empty_iff.mpr fun c' hc' ⟨hjc', hTc'⟩ => ?_)
+  have hc' := mem_range.mp hc'
+  exact Nat.findGreatest_is_greatest
+    (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) (hk ▸ hr)
+    (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc')).le
+    ⟨c', hc', hjc', hTc'⟩
+
 end SemistandardYoungTableau
