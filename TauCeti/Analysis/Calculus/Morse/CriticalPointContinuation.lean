@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 import Mathlib.Analysis.Calculus.ImplicitContDiff
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 
@@ -47,50 +48,22 @@ variable {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [CompleteSpace
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {F : P × E → ℝ} {p : P} {x : E}
 
-omit [CompleteSpace P] [FiniteDimensional ℝ E] in
-/-- The spatial differential of a `C^n` family is `C^m` jointly in the parameter and the spatial
-variable, for `m + 1 ≤ n`. -/
-theorem _root_.TauCeti.contDiffAt_fderiv_slice {n m : WithTop ℕ∞}
-    (hF : ContDiffAt ℝ n F (p, x)) (hmn : m + 1 ≤ n) :
-    ContDiffAt ℝ m (fun q : P × E ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2) (p, x) := by
-  apply ContDiffAt.fderiv (n := n) (m := m) (x₀ := (p, x))
-    (f := fun q : P × E ↦ fun y : E ↦ F (q.1, y)) (g := fun q : P × E ↦ q.2)
-  · exact hF.comp ((p, x), x) (by fun_prop)
-  · fun_prop
-  · exact hmn
-
-omit [CompleteSpace P] [FiniteDimensional ℝ E] in
-/-- A function that is `C^n` at `(p, ψ p)` is `C^n` at `(q, ψ q)` for `q` near `p`, when `ψ` is
-continuous at `p`. -/
-theorem _root_.TauCeti.eventually_contDiffAt_graph {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] {f : P × E → X} {ψ : P → E} {n : ℕ} (hf : ContDiffAt ℝ n f (p, ψ p))
-    (hψ : ContinuousAt ψ p) : ∀ᶠ q in 𝓝 p, ContDiffAt ℝ n f (q, ψ q) :=
-  (continuousAt_id.prodMk hψ).eventually (hf.eventually (by norm_num))
-
-omit [CompleteSpace P] [FiniteDimensional ℝ E] in
-/-- The vertical part of the derivative of a `C²` map is continuous along a `C²` graph. -/
-theorem _root_.TauCeti.continuousAt_fderiv_comp_inr {G : P × E → E →L[ℝ] ℝ} {ψ : P → E}
-    (hG : ContDiffAt ℝ 2 G (p, ψ p)) (hψ : ContDiffAt ℝ 2 ψ p) :
-    ContinuousAt (fun q ↦ (fderiv ℝ G (q, ψ q)).comp (ContinuousLinearMap.inr ℝ P E)) p :=
-  ((hG.continuousAt_fderiv (by norm_num)).comp_of_eq
-    (f := fun q ↦ (q, ψ q)) (continuousAt_id.prodMk hψ.continuousAt) rfl).clm_comp
-    continuousAt_const
-
 omit [CompleteSpace P] in
 /-- Near the base point, the continued critical points are nondegenerate. -/
 private theorem eventually_isNondegenerateCriticalPoint_graph
     {G : P × E → E →L[ℝ] ℝ} {ψ : P → E}
     (hGF : G = fun q ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2)
-    (hF : ContDiffAt ℝ 3 F (p, ψ p)) (hψ : ContDiffAt ℝ 2 ψ p)
+    (hF : ContDiffAt ℝ 3 F (p, ψ p)) (hψ : ContinuousAt ψ p)
     (hinv : ((fderiv ℝ G (p, ψ p)).comp (ContinuousLinearMap.inr ℝ P E)).IsInvertible)
     (hcrit : ∀ᶠ q in 𝓝 p, G (q, ψ q) = 0) :
     ∀ᶠ q in 𝓝 p, IsNondegenerateCriticalPoint (fun y ↦ F (q, y)) (ψ q) := by
   subst hGF
   have hG : ContDiffAt ℝ 2 (fun q : P × E ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2) (p, ψ p) :=
-    contDiffAt_fderiv_slice hF (by norm_num)
-  filter_upwards [hcrit, (continuousAt_fderiv_comp_inr hG hψ).eventually hinv.eventually_nhds,
-    eventually_contDiffAt_graph hF hψ.continuousAt,
-    eventually_contDiffAt_graph hG hψ.continuousAt] with q hqcrit hqinv hFq hGq
+    hF.fderiv_slice (by norm_num)
+  filter_upwards [hcrit,
+    ((hG.of_le one_le_two).continuousAt_fderiv_comp_inr hψ).eventually hinv.eventually_nhds,
+    hF.eventually_contDiffAt_graph hψ, hG.eventually_contDiffAt_graph hψ] with
+    q hqcrit hqinv hFq hGq
   refine ⟨?_, hqcrit, ?_⟩
   · exact hFq.comp (ψ q) (contDiffAt_const.prodMk contDiffAt_id) |>.of_le (by norm_num)
   · rw [← fderiv_slice_right (hGq.differentiableAt (by norm_num))] at hqinv
@@ -101,12 +74,12 @@ omit [CompleteSpace P] in
 private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ : P → E}
     (hGF : G = fun q ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2)
     (h : IsNondegenerateCriticalPoint (fun y ↦ F (p, y)) x) (hF : ContDiffAt ℝ 3 F (p, ψ p))
-    (hψp : ψ p = x) (hψ : ContDiffAt ℝ 2 ψ p) :
+    (hψp : ψ p = x) (hψ : ContinuousAt ψ p) :
     ∀ᶠ q in 𝓝 p,
       morseIndex (fun y ↦ F (q, y)) (ψ q) = morseIndex (fun y ↦ F (p, y)) x := by
   have hG : ContDiffAt ℝ 2 G (p, ψ p) := by
     rw [hGF]
-    exact contDiffAt_fderiv_slice hF (by norm_num)
+    exact hF.fderiv_slice (by norm_num)
   have hGhess (q : P) (hd : DifferentiableAt ℝ G (q, ψ q)) :
       (fderiv ℝ G (q, ψ q)).comp (ContinuousLinearMap.inr ℝ P E) =
         fderiv ℝ (fderiv ℝ (fun y ↦ F (q, y))) (ψ q) := by
@@ -114,10 +87,10 @@ private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ
     congr 1
     funext y
     rw [hGF]
-  have hGAlong := eventually_contDiffAt_graph hG hψ.continuousAt
+  have hGAlong := hG.eventually_contDiffAt_graph hψ
   have hsymm : ∀ᶠ q in 𝓝 p,
       ((fderiv ℝ G (q, ψ q)).comp (ContinuousLinearMap.inr ℝ P E)).toBilinForm.IsSymm := by
-    filter_upwards [eventually_contDiffAt_graph hF hψ.continuousAt, hGAlong] with q hFq hGq
+    filter_upwards [hF.eventually_contDiffAt_graph hψ, hGAlong] with q hFq hGq
     have hslice : ContDiffAt ℝ 2 (fun y ↦ F (q, y)) (ψ q) :=
       hFq.comp (ψ q) (contDiffAt_const.prodMk contDiffAt_id) |>.of_le (by norm_num)
     refine ⟨fun u v ↦ ?_⟩
@@ -135,7 +108,7 @@ private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ
           (ContinuousLinearMap.inr ℝ P E)).toBilinForm.toQuadraticMap := by
     rw [morseIndex_def, hessianQuadraticForm_def, hGhess q (hGq.differentiableAt (by norm_num))]
   filter_upwards [ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt hsymm
-    (continuousAt_fderiv_comp_inr hG hψ) hnd, hGAlong] with q hq hGq
+    ((hG.of_le one_le_two).continuousAt_fderiv_comp_inr hψ) hnd, hGAlong] with q hq hGq
   rw [hmorseIndex q hGq, hq, ← hmorseIndex p hG, hψp]
 
 /-- **Continuation of a nondegenerate critical point.**
@@ -161,7 +134,7 @@ theorem exists_contDiffAt_criticalPoint_continuation
       ContDiffAt ℝ 2 (fun q ↦ F (q, ψ q)) p ∧
       fderiv ℝ (fun q ↦ F (q, ψ q)) p = fderiv ℝ (fun q ↦ F (q, x)) p := by
   let G : P × E → E →L[ℝ] ℝ := fun q ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2
-  have hG : ContDiffAt ℝ 2 G (p, x) := contDiffAt_fderiv_slice hF (by norm_num)
+  have hG : ContDiffAt ℝ 2 G (p, x) := hF.fderiv_slice (by norm_num)
   have hbase : G (p, x) = 0 := by
     simpa only [G] using h.fderiv_eq_zero
   have hinv :
@@ -187,8 +160,9 @@ theorem exists_contDiffAt_criticalPoint_continuation
     simpa only [hψp] using
       hfamilyAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero
         (hψ.differentiableAt (by norm_num)) hcritical
-  refine ⟨ψ, hψp, hψ, eventually_isNondegenerateCriticalPoint_graph rfl hFbase hψ hinv' hcrit,
-    eventually_morseIndex_graph rfl h hFbase hψp hψ, ?_,
+  refine ⟨ψ, hψp, hψ,
+    eventually_isNondegenerateCriticalPoint_graph rfl hFbase hψ.continuousAt hinv' hcrit,
+    eventually_morseIndex_graph rfl h hFbase hψp hψ.continuousAt, ?_,
     (hFbase.of_le (by norm_num)).comp p (contDiffAt_id.prodMk hψ), hvalueDeriv⟩
   simpa only [G] using hunique
 
