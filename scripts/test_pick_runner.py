@@ -19,12 +19,13 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated"):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
+    source = source.replace("!contains", "not contains").replace("!(", "not (").replace(".labels.*.name", ".label_names")
     github = SimpleNamespace(repository="TauCetiProject/TauCeti", run_attempt=attempt, run_id=42, event_name=event, event=SimpleNamespace(
-        action=action, pull_request=SimpleNamespace(number=7, user=SimpleNamespace(type=author_type),
+        action=action, label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
@@ -32,7 +33,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
     source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
-                         "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
+                         "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
                          "vars": SimpleNamespace(PICKER_GITHUB_FALLBACK="true" if hosted_picker else "")})
 
 
@@ -75,6 +76,18 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-pr-approved"), "pr-build pr=7 head=" + "a" * 40)
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-staging"), "bors branch=main batch=12 head=" + "a" * 40 + " base=" + "b" * 40)
 
+    def test_label_events_only_route_self_tested_prs(self):
+        condition = BUILD["jobs"]["pick-runner"]["if"]
+        for action in ("labeled", "unlabeled"):
+            self.assertFalse(expression(condition, action=action))
+            self.assertTrue(expression(condition, action=action, label="self-tested"))
+            self.assertFalse(expression(condition, action=action, labels=("self-tested",)))
+            self.assertFalse(expression(condition, action=action, label="full-lint"))
+            for label in ("full-lint", "lint-repair"):
+                self.assertTrue(expression(condition, action=action, label=label, labels=("self-tested",)))
+            self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
+        self.assertTrue(expression(condition))
+
     def test_maintenance_build_keeps_its_explicit_namespace_runner(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
         expected = ["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1",
@@ -92,7 +105,10 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
         self.assertEqual(expression(pick["runs-on"], staging=True), priority_control)
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
-        self.assertFalse(any("create-github-app-token" in step.get("uses", "") for step in pick["steps"]))
+        token = next(s for s in pick["steps"] if "create-github-app-token" in s.get("uses", ""))
+        self.assertTrue(token["continue-on-error"])
+        self.assertIn("inputs.pr-number > 0", token["if"])
+        self.assertIn("'self-tested'", token["if"])
         self.assertTrue(pick["continue-on-error"])
         step = next(s for s in pick["steps"] if s.get("id") == "pick")
         self.assertEqual(step["run"], "python3 scripts/fleet_runner.py --route")
