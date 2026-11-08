@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Shrink
+public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 
 /-!
 # Projective finite-dimensional modules
@@ -29,6 +30,9 @@ every short exact sequence of finite-dimensional modules splits.
   module.
 * `FGModuleCat.moduleProjective_of_projective`: a projective object of `FGModuleCat R` is a
   projective `R`-module, provided `R` is small relative to the universe of the modules.
+* `FGModuleCat.hasProjectiveDimensionLE_of_forget₂`: over a left noetherian ring, a finitely
+  generated module of projective dimension at most `n` among all modules has projective dimension
+  at most `n` in `FGModuleCat R`.
 * `FGModuleCat.nonempty_splitting_of_shortExact`: every short exact sequence of finite-dimensional
   modules over a division ring splits.
 -/
@@ -103,6 +107,40 @@ instance _root_.FGModuleCat.enoughProjectives [Small.{v} R] :
       projective := FGModuleCat.projective_of_free R _
       f := FGModuleCat.ofHom (f ∘ₗ e.toLinearMap)
       epi := ConcreteCategory.epi_of_surjective _ (hf.comp e.surjective) }⟩
+
+variable {R} in
+/-- **Projective dimension of finitely generated modules**: over a left noetherian ring, a
+finitely generated module whose projective dimension is at most `n` among all modules also has
+projective dimension at most `n` in `FGModuleCat R`. The syzygies of a resolution by finite free
+modules stay finitely generated, and the `n`-th one is projective. The smallness hypothesis holds
+automatically when the modules live in a universe containing `R`. -/
+theorem _root_.FGModuleCat.hasProjectiveDimensionLE_of_forget₂ [Small.{v} R]
+    [IsNoetherianRing R] (n : ℕ) (X : FGModuleCat.{v} R)
+    (hX : HasProjectiveDimensionLE ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X) n) :
+    HasProjectiveDimensionLE X n := by
+  induction n generalizing X with
+  | zero =>
+    have : Projective ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X) :=
+      projective_iff_hasProjectiveDimensionLT_one.2 hX
+    have : Module.Projective R X := ModuleCat.projective_of_module_projective
+      ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X)
+    exact projective_iff_hasProjectiveDimensionLT_one.1
+      (FGModuleCat.projective_of_moduleProjective R X)
+  | succ n ih =>
+    -- The short exact sequence `0 ⟶ K ⟶ P ⟶ X ⟶ 0` with `P` finite free, and its image among
+    -- all modules.
+    let S := ShortComplex.mk (kernel.ι (Projective.π X)) (Projective.π X) (kernel.condition _)
+    have hS : S.ShortExact :=
+      .mk' (S.exact_of_f_is_kernel (kernelIsKernel _)) inferInstance inferInstance
+    have hS' := hS.map_of_exact (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R))
+    -- Instance search does not see the carrier of `Projective.over X` through `forget₂`.
+    have hP : Projective (S.map (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R))).X₂ :=
+      @ModuleCat.projective_of_categoryTheory_projective R _
+        ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj (Projective.over X))
+        (FGModuleCat.moduleProjective_of_projective (Projective.over X))
+    have hK := ih S.X₁ ((hS'.hasProjectiveDimensionLT_X₃_iff n hP).1 hX)
+    exact (hS.hasProjectiveDimensionLT_X₃_iff n
+      (inferInstanceAs (Projective (Projective.over X)))).2 hK
 
 variable (k : Type u) [DivisionRing k]
 
