@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Analysis.Calculus.MeanValue
@@ -38,42 +39,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace N] [ChartedSpace G N]
   [IsManifold I 1 M] [IsManifold J 1 N]
   {f : M → N} {s : Set M}
-
-/-- The chain rule transfers a vanishing manifold differential to the coordinate expression
-`extChartAt J (f x) ∘ f ∘ (extChartAt I x).symm`, computed within the model range: at a point of
-the chart target whose image lies in the open set, the expression is differentiable within the
-range with zero derivative. -/
-private theorem differentiableWithinAt_fderivWithin_extChart_comp_eq_zero
-    (hf : MDifferentiableOn I J f s) (hs : IsOpen s) (hzero : ∀ y ∈ s, mfderiv I J f y = 0)
-    {x : M} {u : E} (hu1 : u ∈ (extChartAt I x).target) (hu2 : (extChartAt I x).symm u ∈ s)
-    (hu3 : f ((extChartAt I x).symm u) ∈ (extChartAt J (f x)).source) :
-    DifferentiableWithinAt ℝ (extChartAt J (f x) ∘ f ∘ (extChartAt I x).symm) (range I) u ∧
-      fderivWithin ℝ (extChartAt J (f x) ∘ f ∘ (extChartAt I x).symm) (range I) u = 0 := by
-  let c := extChartAt I x
-  let d := extChartAt J (f x)
-  let g : E → F := d ∘ f ∘ c.symm
-  have hc : MDifferentiableWithinAt 𝓘(ℝ, E) I c.symm (range I) u :=
-    mdifferentiableWithinAt_extChartAt_symm hu1
-  have hfu := (hf (c.symm u) hu2).mdifferentiableAt (hs.mem_nhds hu2)
-  have hd : MDifferentiableAt J 𝓘(ℝ, F) d (f (c.symm u)) :=
-    mdifferentiableAt_extChartAt (by
-      simpa only [mem_preimage, d, extChartAt_source] using hu3)
-  have hg := (hd.comp _ hfu).comp_mdifferentiableWithinAt _ hc
-  refine ⟨hg.differentiableWithinAt, ?_⟩
-  have hderiv : mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, F) g (range I) u = 0 := by
-    dsimp only [g]
-    rw [← Function.comp_assoc, mfderiv_comp_mfderivWithin u (hd.comp _ hfu) hc
-      ((uniqueMDiffOn_iff_uniqueDiffOn.mpr I.uniqueDiffOn) u
-        (extChartAt_target_subset_range x hu1)),
-      mfderiv_comp (c.symm u) hd hfu, hzero _ hu2,
-      ContinuousLinearMap.comp_zero, ContinuousLinearMap.zero_comp]
-  have hz : mvfderivWithin 𝓘(ℝ, E) g (range I) u = 0 := by
-    rw [mvfderivWithin, hderiv, ContinuousLinearMap.comp_zero]
-  rw [mvfderivWithin_eq_fderivWithin] at hz
-  ext v
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, zero_apply] using
-    DFunLike.congr_fun hz ((NormedSpace.fromTangentSpace (𝕜 := ℝ) u).symm v)
 
 /-- A differentiable map with zero differential on an open set agrees locally with its
 value at each point of that set. Both manifolds may have boundary or corners. -/

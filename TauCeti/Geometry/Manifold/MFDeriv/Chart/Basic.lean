@@ -95,6 +95,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
   smooth at `x` with the identity as its derivative there.
+* `MDifferentiableOn.differentiableWithinAt_fderivWithin_extChart_comp_eq_zero`: where the manifold
+  differential vanishes on an open set, the coordinate expression in extended charts is
+  differentiable within the model range with zero derivative.
 -/
 
 public section
@@ -735,3 +738,49 @@ theorem eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiabl
 end ProductCharts
 
 end TauCeti
+
+section ConstancyCoordinates
+
+namespace MDifferentiableOn
+
+variable {f : M → M'} {s : Set M}
+
+/-- The chain rule transfers a vanishing manifold differential to the coordinate expression
+`extChartAt I' (f x) ∘ f ∘ (extChartAt I x).symm`, computed within the model range: at a point of
+the chart target whose image lies in the open set, the expression is differentiable within the
+range with zero derivative. -/
+theorem differentiableWithinAt_fderivWithin_extChart_comp_eq_zero
+    (hf : MDifferentiableOn I I' f s) (hs : IsOpen s) (hzero : ∀ y ∈ s, mfderiv I I' f y = 0)
+    {x : M} {u : E} (hu1 : u ∈ (extChartAt I x).target) (hu2 : (extChartAt I x).symm u ∈ s)
+    (hu3 : f ((extChartAt I x).symm u) ∈ (extChartAt I' (f x)).source) :
+    DifferentiableWithinAt 𝕜 (extChartAt I' (f x) ∘ f ∘ (extChartAt I x).symm) (range I) u ∧
+      fderivWithin 𝕜 (extChartAt I' (f x) ∘ f ∘ (extChartAt I x).symm) (range I) u = 0 := by
+  let c := extChartAt I x
+  let d := extChartAt I' (f x)
+  let g : E → E' := d ∘ f ∘ c.symm
+  have hc : MDifferentiableWithinAt 𝓘(𝕜, E) I c.symm (range I) u :=
+    mdifferentiableWithinAt_extChartAt_symm hu1
+  have hfu := (hf (c.symm u) hu2).mdifferentiableAt (hs.mem_nhds hu2)
+  have hd : MDifferentiableAt I' 𝓘(𝕜, E') d (f (c.symm u)) :=
+    mdifferentiableAt_extChartAt (by
+      simpa only [mem_preimage, d, extChartAt_source] using hu3)
+  have hg := (hd.comp _ hfu).comp_mdifferentiableWithinAt _ hc
+  refine ⟨hg.differentiableWithinAt, ?_⟩
+  have hderiv : mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E') g (range I) u = 0 := by
+    dsimp only [g]
+    rw [← Function.comp_assoc, mfderiv_comp_mfderivWithin u (hd.comp _ hfu) hc
+      ((uniqueMDiffOn_iff_uniqueDiffOn.mpr I.uniqueDiffOn) u
+        (extChartAt_target_subset_range x hu1)),
+      mfderiv_comp (c.symm u) hd hfu, hzero _ hu2,
+      ContinuousLinearMap.comp_zero, ContinuousLinearMap.zero_comp]
+  have hz : mvfderivWithin 𝓘(𝕜, E) g (range I) u = 0 := by
+    rw [mvfderivWithin, hderiv, ContinuousLinearMap.comp_zero]
+  rw [mvfderivWithin_eq_fderivWithin] at hz
+  ext v
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply, zero_apply] using
+    DFunLike.congr_fun hz ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) u).symm v)
+
+end MDifferentiableOn
+
+end ConstancyCoordinates
