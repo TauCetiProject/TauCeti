@@ -40,7 +40,8 @@ hypothesis.
 * `hasPDF_of_hasLaw_studentTMeasure`, `pdf_eq_studentTPDF_of_hasLaw_studentTMeasure` and
   `rnDeriv_studentTMeasure` — the `HasPDF` bridge, the density, and the Radon–Nikodym derivative;
 * `studentTMeasure_map_neg` — the law is invariant under reflection in the origin;
-* `studentTMeasure_real_Iic_eq_real_Ioi_neg` — the mass of `Iic x` equals that of `Ioi (-x)`;
+* `measureReal_Iic_eq_measureReal_Ioi_neg` — a negation-invariant measure on `ℝ` gives `Iic x` and
+  `Ioi (-x)` the same mass when `{-x}` is null;
 * `studentTMeasure_one` — one degree of freedom gives the standard Cauchy law
   `ProbabilityTheory.cauchyMeasure 0 1`;
 * `measurable_studentTMeasure` — the family is measurable in its parameter, so it can be used as a
@@ -302,16 +303,13 @@ theorem studentTMeasure_map_neg (ν : ℝ) :
 instance isNegInvariant_studentTMeasure (ν : ℝ) : (studentTMeasure ν).IsNegInvariant :=
   ⟨studentTMeasure_map_neg ν⟩
 
-/-- A Student t law gives the same mass to `Iic x` as to `Ioi (-x)`, by symmetry about the
-origin and because points are null. -/
-theorem studentTMeasure_real_Iic_eq_real_Ioi_neg (ν x : ℝ) :
-    (studentTMeasure ν).real (Iic x) = (studentTMeasure ν).real (Ioi (-x)) := by
-  have hnull : (studentTMeasure ν) ({-x} : Set ℝ) = 0 :=
-    (studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x))
-  have hcic := (measure_congr (Ioi_ae_eq_Ici' hnull)).symm
-  have h2 : (studentTMeasure ν) (Iic x) = (studentTMeasure ν) (Ici (-x)) := by
-    simpa only [Set.neg_Iic] using (Measure.measure_neg (studentTMeasure ν) (Iic x)).symm
-  rw [Measure.real, Measure.real, h2, hcic]
+/-- A negation-invariant measure on `ℝ` gives the same mass to `Iic x` as to `Ioi (-x)`, provided
+the point `-x` is null. -/
+theorem measureReal_Iic_eq_measureReal_Ioi_neg (μ : Measure ℝ) [μ.IsNegInvariant] {x : ℝ}
+    (hnull : μ {-x} = 0) : μ.real (Iic x) = μ.real (Ioi (-x)) := by
+  have h2 : μ (Iic x) = μ (Ici (-x)) := by
+    simpa only [Set.neg_Iic] using (Measure.measure_neg μ (Iic x)).symm
+  rw [Measure.real, Measure.real, h2, (measure_congr (Ioi_ae_eq_Ici' hnull)).symm]
 
 /-! ### One degree of freedom -/
 

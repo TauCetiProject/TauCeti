@@ -194,7 +194,8 @@ theorem cdf_studentTMeasure_eq (hν : 0 < ν) (x : ℝ) :
   · -- negative branch: reflection in the origin gives `cdf(x) = tail(-x)`
     have hxneg : x < 0 := by linarith
     have hmy : 0 ≤ -x := by linarith
-    have hreal := studentTMeasure_real_Iic_eq_real_Ioi_neg ν x
+    have hreal := measureReal_Iic_eq_measureReal_Ioi_neg (studentTMeasure ν)
+      ((studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x)))
     have h9 : (-x) ^ 2 / (ν + (-x) ^ 2) = 1 - z := by
       simp only [hz, neg_sq]; field_simp; ring
     have hsym : regularizedIncompleteBeta (1 / 2) (ν / 2) (1 - z) =
