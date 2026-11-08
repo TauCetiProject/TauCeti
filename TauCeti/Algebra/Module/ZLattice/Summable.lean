@@ -30,6 +30,8 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
 
 * `ZLattice.summable_exp_neg_mul_norm_add_sq`: `∑ v ∈ L, exp (-c ‖x + v‖²)` converges for
   `0 < c`.
+* `ZLattice.summable_one_add_norm_pow_inv`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ (-r)` converges once the
+  natural number `r` exceeds the rank of `L`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
 -/
 
@@ -58,6 +60,18 @@ theorem summable_exp_neg_mul_norm_add_sq {c : ℝ} (hc : 0 < c) (x : E) :
   have key := ((rexp_neg_quadratic_isLittleO_rpow_atTop (neg_lt_zero.mpr hc) 0 r).isBigO
     |>.comp_tendsto htend)
   simpa [Function.comp_def, sub_neg_eq_add, add_comm] using key
+
+/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ (-r)` is
+summable as soon as `r` exceeds the rank of `L`. -/
+theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) :
+    Summable fun ℓ : L ↦ ((1 + ‖(ℓ : E)‖) ^ r)⁻¹ := by
+  refine Summable.of_norm_bounded_eventually (summable_norm_pow_inv L r hr) ?_
+  -- Away from `0`, `(1 + ‖ℓ‖) ^ (-r) ≤ ‖ℓ‖ ^ (-r)`.
+  filter_upwards [Set.Finite.compl_mem_cofinite (Set.finite_singleton (0 : L))] with ℓ hℓ
+  have hℓ : 0 < ‖(ℓ : E)‖ := by simpa using hℓ
+  rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), ← inv_pow]
+  gcongr
+  simp
 
 end ZLattice
 

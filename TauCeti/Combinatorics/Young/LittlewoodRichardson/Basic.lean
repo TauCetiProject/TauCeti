@@ -101,7 +101,7 @@ theorem isLatticeWord_readingWord_iff (T : SkewSemistandardYoungTableau inner ou
     omega
   · refine fun h => List.isLatticeWord_iff.mpr fun p hp k => ?_
     rw [← T.flatMap_range_rowReadingWord le_rfl] at hp
-    obtain ⟨x, q, hq, rfl⟩ := List.exists_eq_flatMap_range_append hp
+    obtain ⟨x, -, q, hq, rfl⟩ := List.exists_eq_flatMap_range_append hp
     rw [List.count_append, List.count_append, count_flatMap_range_rowReadingWord,
       count_flatMap_range_rowReadingWord]
     have h₁ := hq.count_le (k + 1)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
-public import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
+public import TauCeti.RingTheory.Valuation.Orthogonality
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly

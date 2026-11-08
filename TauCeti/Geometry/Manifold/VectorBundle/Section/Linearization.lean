@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
@@ -70,6 +71,20 @@ theorem sectionLinearization_def :
       ((trivializationAt F E (b x)).symmL 𝕜 (b x)).comp
         (mvfderiv IM (fun y ↦ (trivializationAt F E (b x) ⟨b y, s y⟩).2) x) :=
   (rfl)
+
+/-- For finite-dimensional source and model fiber, the intrinsic section linearization has
+index equal to the source dimension minus the fiber dimension, even away from zeros and
+without differentiability assumptions. -/
+theorem index_sectionLinearization_of_finiteDimensional
+    [FiniteDimensional 𝕜 EM] [FiniteDimensional 𝕜 F] :
+    LinearMap.index (sectionLinearization (F := F) IM b s x).toLinearMap =
+      (Module.finrank 𝕜 EM : ℤ) - Module.finrank 𝕜 F := by
+  let := VectorBundle.finiteDimensional 𝕜 F E (b x)
+  -- The tangent fiber is the model space, independently of differentiability of the atlas.
+  let : FiniteDimensional 𝕜 (TangentSpace IM x) := inferInstanceAs (FiniteDimensional 𝕜 EM)
+  have hdim : Module.finrank 𝕜 (TangentSpace IM x) = Module.finrank 𝕜 EM := rfl
+  rw [LinearMap.index_eq_of_finiteDimensional, hdim,
+    VectorBundle.finrank_eq 𝕜 F E (b x)]
 
 /-- The zero section along a continuous map has zero linearization. -/
 @[simp]

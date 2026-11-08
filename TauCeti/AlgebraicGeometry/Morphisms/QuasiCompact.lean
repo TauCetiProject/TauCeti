@@ -8,11 +8,15 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 
 /-!
-# Quasi-compactness from a finite open cover of the source
+# Quasi-compactness and open neighbourhoods
 
 A morphism is quasi-compact if its restrictions to the members of a finite open cover of its
 source are quasi-compact. This allows quasi-compact morphisms to be glued along open subschemes.
 Finiteness is essential: an infinite union of quasi-compact pieces need not be quasi-compact.
+
+Every point of the target of a quasi-compact morphism of schemes has an open neighbourhood whose
+preimage is quasi-compact (`Scheme.Hom.exists_isOpen_mem_isCompact_preimage`): an affine open
+neighbourhood will do.
 -/
 
 public section
@@ -39,3 +43,19 @@ theorem QuasiCompact.of_openCover {X Y : Scheme.{u}} (f : X ⟶ Y) (𝒰 : X.Ope
     exact (QuasiCompact.isCompact_preimage (f := 𝒰.f i ≫ f) V hV hVc).image (𝒰.f i).continuous
 
 end AlgebraicGeometry
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) [QuasiCompact f]
+
+/-- Every point of the target of a quasi-compact morphism has an open neighbourhood, for instance
+an affine one, whose preimage is quasi-compact. -/
+lemma exists_isOpen_mem_isCompact_preimage (y : Y) :
+    ∃ U : Set Y, IsOpen U ∧ y ∈ U ∧ IsCompact (f ⁻¹' U) := by
+  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
+    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
+  exact ⟨U, U.isOpen, hyU, QuasiCompact.isCompact_preimage (f := f) _ U.isOpen hU.isCompact⟩
+
+end AlgebraicGeometry.Scheme.Hom
