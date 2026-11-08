@@ -114,7 +114,7 @@ private theorem perm_finRange_G2 :
 /-! ### Independence of the ordering -/
 
 /-- The characteristic polynomial of any Coxeter element of a base of Cartan type `t`, with standard
-Cartan matrix `A`, is that of `coxeterElement A` when the diagram of `t` has an elimination
+Cartan matrix `A`, is that of `coxeterElement A` when the diagram of `t` has a one-degenerate
 order. -/
 theorem charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy [DecidableEq ι] {t : DynkinType}
     {A : Matrix (Fin t.rank) (Fin t.rank) ℤ} (ht : t.cartanMatrix = A) {S₀ : List (Fin t.rank)}
