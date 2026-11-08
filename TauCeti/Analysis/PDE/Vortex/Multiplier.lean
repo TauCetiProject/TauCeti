@@ -130,6 +130,11 @@ theorem gaugeLinearAction_mem_sobolevFields {k : ℕ} {u : ℂ → Circle}
     (smul_mem_sobolevFields_natCast k (Complex.reCLM.contDiff.comp hu) hMr hre hQ))
     (smul_mem_sobolevFields_natCast k (Complex.imCLM.contDiff.comp hu) hMi him hR) using 1
   ext z i
-  fin_cases i <;> simp [gaugeLinearAction_apply] <;> ring
+  fin_cases i <;>
+    simp only [gaugeLinearAction_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val, Matrix.cons_val_zero, Matrix.cons_val_one, Function.comp_apply,
+      Complex.reCLM_apply, Complex.imCLM_apply, Pi.add_apply, PiLp.add_apply, PiLp.smul_apply,
+      smul_eq_mul, mul_zero, add_zero, zero_add, mul_neg] <;>
+    ring
 
 end TauCeti.Vortex

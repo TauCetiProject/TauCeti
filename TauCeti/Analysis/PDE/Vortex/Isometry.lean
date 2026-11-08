@@ -147,7 +147,11 @@ theorem gaugeTransform_rotateField_mem_framedFieldSpace {f : ContDiffBump (0 : �
   have hsub : rotateField u x - rotateField u (referenceField f m) =
       rotateField u (x - referenceField f m) := by
     ext z i
-    fin_cases i <;> simp <;> ring
+    fin_cases i <;>
+      simp only [Pi.sub_apply, PiLp.sub_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one,
+        Fin.reduceFinMk, rotateField_apply_zero, rotateField_apply_one, rotateField_apply_two,
+        rotateField_apply_three] <;>
+      ring
   have h := gaugeTransform_sub_gaugeTransform (fun _ ↦ u⁻¹ ^ m) (rotateField u x)
     (rotateField u (referenceField f m))
   rw [gaugeTransform_rotateField_referenceField, hsub] at h
@@ -175,6 +179,13 @@ one where `‖z‖² ≥ ‖a‖² + 2`. Outside a disc it carries `((z + a) / �
 def translationGauge (m : ℕ) (a z : ℂ) : Circle :=
   Circle.exp (translationPhase m a z)
 
+/-- Where the cutoff of the translation phase can be nonzero, `‖a‖ < ‖z‖`, so `z` and `z + a` are
+nonzero. -/
+private theorem norm_lt_of_sq_add_one_le {a z : ℂ} (hz : ‖a‖ ^ 2 + 1 ≤ ‖z‖ ^ 2) :
+    ‖a‖ < ‖z‖ ∧ z ≠ 0 ∧ z + a ≠ 0 := by
+  have hza : ‖a‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
+  exact ⟨hza, norm_pos_iff.1 ((norm_nonneg a).trans_lt hza), TauCeti.add_ne_zero_of_norm_lt hza⟩
+
 /-- The phase of the translation gauge is smooth. -/
 private theorem contDiff_translationPhase (m : ℕ) (a : ℂ) :
     ContDiff ℝ ∞ (translationPhase m a) := by
@@ -192,8 +203,7 @@ private theorem contDiff_translationPhase (m : ℕ) (a : ℂ) :
       have hw : ‖w‖ ^ 2 < ‖a‖ ^ 2 + 1 := hw
       linarith
     simp [translationPhase, Real.smoothTransition.zero_of_nonpos hw']
-  · have hza : ‖a‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
-    have hz0 : z ≠ 0 := norm_pos_iff.1 ((norm_nonneg a).trans_lt hza)
+  · obtain ⟨hza, hz0, -⟩ := norm_lt_of_sq_add_one_le hz
     have hlog : ContDiffAt ℂ ∞ (fun w : ℂ ↦ log (1 + a / w)) z :=
       (contDiffAt_log (TauCeti.one_add_div_mem_slitPlane hza)).comp z
         (contDiffAt_const.add (contDiffAt_const.div contDiffAt_id hz0))
@@ -254,9 +264,7 @@ carries the translated winding phase `((z + a) / ‖z + a‖) ^ m` to the windin
 `(z / ‖z‖) ^ m`. -/
 theorem coe_translationGauge_mul_pow {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2 ≤ ‖z‖ ^ 2) :
     (translationGauge m a z : ℂ) * ((z + a) / ‖z + a‖) ^ m = (z / ‖z‖) ^ m := by
-  have hza : ‖a‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
-  have hz0 : z ≠ 0 := norm_pos_iff.1 ((norm_nonneg a).trans_lt hza)
-  have hza0 : z + a ≠ 0 := TauCeti.add_ne_zero_of_norm_lt hza
+  obtain ⟨-, hz0, hza0⟩ := norm_lt_of_sq_add_one_le (a := a) (z := z) (by linarith)
   have hn : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz0)
   have hna : (‖z + a‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hza0)
   have hw : 1 + a / z = (z + a) / z := by field_simp
@@ -280,9 +288,7 @@ one-form `Im (g⁻¹ dg)` of the translation gauge is `m (dθ_z - dθ_(z + a))`,
 theorem gaugeForm_translationGauge_apply {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2 < ‖z‖ ^ 2)
     (v : ℂ) :
     gaugeForm (translationGauge m a) z v = m * ((v / z).im - (v / (z + a)).im) := by
-  have hza : ‖a‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg z) (by linarith)
-  have hz0 : z ≠ 0 := norm_pos_iff.1 ((norm_nonneg a).trans_lt hza)
-  have hza0 : z + a ≠ 0 := TauCeti.add_ne_zero_of_norm_lt hza
+  obtain ⟨hza, hz0, hza0⟩ := norm_lt_of_sq_add_one_le (a := a) (z := z) (by linarith)
   -- `w ↦ arg (1 + a / w)` has derivative `v ↦ Im (v / (z + a)) - Im (v / z)` at `z`.
   have hd : HasDerivAt (fun w : ℂ ↦ 1 + a / w) (a * -(z ^ 2)⁻¹) z := by
     simpa only [div_eq_mul_inv] using ((hasDerivAt_inv hz0).const_mul a).const_add 1
@@ -368,13 +374,17 @@ private theorem gaugeTransform_translationGauge_translateField_referenceField_ap
       PiLp.toLp_apply, Matrix.cons_val_zero]
     rw [gaugeForm_translationGauge_apply h₁, referenceConnection_eq_angular f m h₂,
       referenceConnection_eq_angular f m h₃]
-    simp
+    simp only [neg_mul, one_div, inv_im, add_im, neg_add_rev, ofReal_div, ofReal_add, ofReal_neg,
+      neg_im, mul_im, mul_re, natCast_re, I_re, mul_zero, natCast_im, I_im, mul_one, sub_self,
+      div_ofReal_im, ofReal_im, neg_zero, add_zero, zero_div, div_ofReal_re, add_re, neg_re,
+      ofReal_re, zero_add]
     ring
   · simp only [gaugeTransform_apply, translateField_apply, referenceField_apply,
       PiLp.toLp_apply, Matrix.cons_val_one, Matrix.cons_val_zero]
     rw [gaugeForm_translationGauge_apply h₁, referenceConnection_eq_angular f m h₂,
       referenceConnection_eq_angular f m h₃]
-    simp
+    simp only [neg_mul, neg_im, mul_im, mul_re, natCast_re, I_re, mul_zero, natCast_im, I_im,
+      mul_one, sub_self, ofReal_im, add_zero, ofReal_re, zero_add]
     ring
   · rw [sectionValue_gaugeTransform, sectionValue_translateField, sectionValue_referenceField,
       sectionValue_referenceField, referenceSection_eq_phase f m h₃,
