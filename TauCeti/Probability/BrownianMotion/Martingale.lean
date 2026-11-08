@@ -41,11 +41,16 @@ namespace ProbabilityTheory.IsPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
+/-- Each Brownian marginal has every finite `Lᵖ` moment. -/
+theorem memLp_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (B t) p P :=
+  (hB.hasLaw_eval t).memLp (memLp_id_gaussianReal' p hp)
+
 /-- The compensated Brownian square has every finite `Lᵖ` moment. -/
 theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (t : ℝ≥0) {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun ω => B t ω ^ 2 - (t : ℝ)) p P := by
   have := hB.isGaussianProcess.isProbabilityMeasure
-  have h := (hB.hasLaw_eval t).memLp (memLp_id_gaussianReal' (p * 2) (by finiteness))
+  have h := hB.memLp_eval t (p := p * 2) (by finiteness)
   have hsquare : MemLp (fun ω => B t ω ^ 2) p P := by
     simpa [ENNReal.mul_div_cancel_right, Real.rpow_two, Real.norm_eq_abs, sq_abs] using
       h.norm_rpow_div 2
@@ -102,8 +107,7 @@ theorem condExp_sq (hB : IsFilteredPreBrownianReal ℱ B P) (hst : s ≤ t) :
   let D := B t - B s
   have hD : MemLp D 2 P := (hB.hasLaw_sub_of_le hst).memLp
     (memLp_id_gaussianReal' 2 (by simp))
-  have hS : MemLp (B s) 2 P := (hB.hasLaw_eval s).memLp
-    (memLp_id_gaussianReal' 2 (by simp))
+  have hS : MemLp (B s) 2 P := hB.memLp_eval s (by simp)
   have hpull := condExp_mul_of_stronglyMeasurable_left (m := ℱ s)
     (hB.adapted s).stronglyMeasurable (hS.integrable_mul hD) (hD.integrable (by norm_num))
   have hcross : P[B s * D | ℱ s] =ᵐ[P] fun _ => 0 := by
@@ -134,7 +138,7 @@ theorem martingale_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P) :
   have := hB.isGaussianProcess.isProbabilityMeasure
   refine ⟨fun t => ((hB.adapted t).pow_const 2 |>.sub measurable_const).stronglyMeasurable,
     fun s t hst => ?_⟩
-  have hi := ((hB.hasLaw_eval t).memLp (memLp_id_gaussianReal' 2 (by simp))).integrable_sq
+  have hi := (hB.memLp_eval t (p := 2) (by simp)).integrable_sq
   have hlin := MeasureTheory.condExp_sub (m := ℱ s) hi (integrable_const (t : ℝ))
   simp only [Pi.sub_def] at hlin
   filter_upwards [hlin, hB.condExp_sq hst] with ω h₁ h₂
