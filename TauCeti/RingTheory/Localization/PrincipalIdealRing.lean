@@ -13,9 +13,10 @@ public import Mathlib.RingTheory.PrincipalIdealDomain
 
 Every ideal of a localization `S = M⁻¹R` is extended from its contraction to `R`
 (`IsLocalization.map_under`), and the extension of a principal ideal is principal. So a
-localization of a principal ideal ring is again a principal ideal ring. For instance the rings
-`ℤ[1/m] = Localization.Away m` are principal ideal domains, so the structure theorem for finitely
-generated modules over a principal ideal domain applies to modules over them.
+localization of a principal ideal ring is again a principal ideal ring. For instance, for
+`m ≠ 0` the rings `ℤ[1/m] = Localization.Away m` are principal ideal domains, so the structure
+theorem for finitely generated modules over a principal ideal domain applies to modules over them.
+(For `m = 0` the localization is the zero ring.)
 
 ## Main results
 

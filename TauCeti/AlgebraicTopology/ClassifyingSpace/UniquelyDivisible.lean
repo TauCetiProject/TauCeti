@@ -25,13 +25,14 @@ positive degree, and so the Eilenberg--MacLane space `K(A, 1) = B(Multiplicative
 
 The proof follows Serre. The group `A` is the directed union of its finitely generated
 `ℤ[1/m]`-submodules, and a class of a directed union comes from a member
-(`TauCeti.groupHomology.isZero_groupHomology_of_directed`). Since `ℤ[1/m]` is a principal ideal
-domain (`IsLocalization.isPrincipalIdealRing`), a finitely generated `ℤ[1/m]`-module is the product
-of a free module `ℤ[1/m]ⁿ` and a torsion module. The torsion part is a finite group whose order is
-prime to `m`, hence a unit of `k`, so its homology vanishes
+(`TauCeti.groupHomology.isZero_groupHomology_of_directed`). For `m ≠ 0`, `ℤ[1/m]` is a principal
+ideal domain (`IsLocalization.isPrincipalIdealRing`), so a finitely generated `ℤ[1/m]`-module is
+the product of a free module `ℤ[1/m]ⁿ` and a torsion module. The torsion part is a finite group
+whose order is prime to `m`, hence a unit of `k`, so its homology vanishes
 (`groupHomology.subsingleton_of_isUnit_natCard`); the factor `ℤ[1/m]` is acyclic over `k`
 (`TauCeti.isZero_groupHomology_localizationAway`); and a product of acyclic groups is acyclic over
-a semisimple ring, by the Künneth theorem (`TauCeti.subsingleton_groupHomology_prod`).
+a semisimple ring, by the Künneth theorem (`TauCeti.subsingleton_groupHomology_prod`). The case
+`m = 0` is handled separately: multiplication by zero is bijective only on the trivial group.
 
 For `m = 2` this is the vanishing `H_i(K(A, 1); 𝔽₂) = 0` for all `i > 0` and every uniquely
 two-divisible group `A`, the case `n = 1` of the mod-two acyclicity of the Eilenberg--MacLane
