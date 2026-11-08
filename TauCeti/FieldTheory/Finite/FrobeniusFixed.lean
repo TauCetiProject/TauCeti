@@ -27,9 +27,9 @@ what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
 * `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that a
   domain over `K` *all* of whose elements are fixed by the `q`-power map is `K` itself.
 * `TauCeti.FiniteField.pow_natCard_pow_natCard`: in a quadratic extension the `q`-power map is an
-  involution, with `TauCeti.FiniteField.pow_natCard_ne` and
-  `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` its two consequences for an element
-  outside `K`.
+  involution. `TauCeti.FiniteField.pow_natCard_ne` and
+  `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` say that an element outside `K` is
+  moved by the map and stays outside `K`; neither needs the quadratic hypothesis.
 * `TauCeti.FiniteField.units_map_algebraMap_pow_natCard` and
   `TauCeti.FiniteField.units_pow_natCard_pow_natCard`: the fixed-point and involution statements
   as equalities of units, the form in which a character of `Lˣ` consumes them, with
@@ -110,6 +110,23 @@ theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
   rw [Nat.card_eq_fintype_card]
   exact pow_card_eq_self_iff_mem_range_algebraMap a
 
+/-- **The `q`-th power of an element outside the base field is again outside it**: if
+`a ^ q = c` came from the base field then `c ^ q = c`, so `(a ^ q) ^ q = a ^ q`, and the `q`-power
+map, a power of the Frobenius endomorphism, is injective. -/
+theorem pow_natCard_notMem_range_algebraMap {a : L}
+    (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ∉ Set.range (algebraMap K L) := by
+  intro hmem
+  have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
+  have : Fintype K := Fintype.ofFinite K
+  obtain ⟨p, hp⟩ := CharP.exists K
+  obtain ⟨n, hp', hn⟩ := FiniteField.card K p
+  have : Fact p.Prime := ⟨hp'⟩
+  have : CharP L p := (RingHom.charP_iff (algebraMap K L) (algebraMap K L).injective p).mp hp
+  have hinj : Function.Injective (fun x : L ↦ x ^ Nat.card K) := by
+    rw [Nat.card_eq_fintype_card, hn]
+    exact iterateFrobenius_inj L p n
+  exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp (hinj h1))
+
 /-- **An element outside the base field is not fixed by the `q`-power map.** -/
 theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
   fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
@@ -171,16 +188,6 @@ survives simp normalization. -/
 theorem units_powMonoidHom_comp_powMonoidHom :
     (powMonoidHom (Nat.card K) : Lˣ →* Lˣ).comp (powMonoidHom (Nat.card K)) = MonoidHom.id Lˣ :=
   MonoidHom.ext fun a => units_pow_natCard_pow_natCard a
-
-/-- **In a quadratic extension the `q`-th power of an element outside the base field is again
-outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to
-be fixed. -/
-theorem pow_natCard_notMem_range_algebraMap {a : L}
-    (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ∉ Set.range (algebraMap K L) := by
-  intro hmem
-  have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
-  rw [pow_natCard_pow_natCard] at h1
-  exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h1.symm)
 
 end Quadratic
 
