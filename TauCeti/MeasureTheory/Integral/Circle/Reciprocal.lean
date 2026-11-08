@@ -36,11 +36,25 @@ theorem circleIntegral_inv_mul_sub_inv_eq {w : ℂ} {r : ℝ} (hr : r ≠ 0) :
   field_simp
 
 /-- Partial fractions for the contour integral of `z⁻¹ * (w - z)⁻¹` over a centered circle, for a
-nonzero pole `w` off the circle. -/
-theorem circleIntegral_inv_mul_sub_inv_eq_of_ne {w : ℂ} {r : ℝ} (hr : r ≠ 0) (hne : ‖w‖ ≠ |r|)
-    (hw : w ≠ 0) :
+pole `w` off the circle. Both sides vanish at `w = 0`. -/
+theorem circleIntegral_inv_mul_sub_inv_eq_inv_mul_sub_circleIntegral {w : ℂ} {r : ℝ}
+    (hr : r ≠ 0) (hne : ‖w‖ ≠ |r|) :
     (∮ z in C(0, r), z⁻¹ * (w - z)⁻¹) =
       w⁻¹ * ((2 * π * I : ℂ) - ∮ z in C(0, r), (z - w)⁻¹) := by
+  have hcongr {f g : ℂ → ℂ} (h : EqOn f g (sphere 0 |r|)) :
+      (∮ z in C(0, r), f z) = ∮ z in C(0, r), g z :=
+    intervalIntegral.integral_congr fun θ _ => by simp only [h (circleMap_mem_sphere' 0 r θ)]
+  by_cases hw : w = 0
+  · subst w
+    rw [inv_zero, zero_mul]
+    calc
+      _ = ∮ z in C(0, r), (-1 : ℂ) * (z - 0) ^ (-2 : ℤ) := by
+        refine hcongr fun z _ => ?_
+        simp [zpow_neg, pow_two]
+      _ = -(∮ z in C(0, r), (z - 0) ^ (-2 : ℤ)) := by
+        rw [circleIntegral.integral_const_mul]
+        ring
+      _ = 0 := by rw [circleIntegral.integral_sub_zpow_of_ne (by decide)]; simp
   have hz : ∀ z ∈ sphere (0 : ℂ) |r|, z ≠ 0 := by
     intro z hz hz0
     exact hr (abs_eq_zero.mp (by simpa [hz0] using (mem_sphere_iff_norm.mp hz).symm))
@@ -52,9 +66,6 @@ theorem circleIntegral_inv_mul_sub_inv_eq_of_ne {w : ℂ} {r : ℝ} (hr : r ≠ 
       (Or.inr (by simpa [eq_comm] using hr))
   have h1 : CircleIntegrable (fun z : ℂ => (z - w)⁻¹) 0 r :=
     circleIntegrable_sub_inv_iff.mpr (Or.inr (by simpa using hne))
-  have hcongr {f g : ℂ → ℂ} (h : EqOn f g (sphere 0 |r|)) :
-      (∮ z in C(0, r), f z) = ∮ z in C(0, r), g z :=
-    intervalIntegral.integral_congr fun θ _ => by simp only [h (circleMap_mem_sphere' 0 r θ)]
   calc
     _ = ∮ z in C(0, r), w⁻¹ * (z⁻¹ - (z - w)⁻¹) := by
       refine hcongr fun z hz' => ?_
@@ -74,33 +85,20 @@ theorem integral_circleMap_sub_inv {w : ℂ} {r : ℝ} (hr : 0 < r) (hne : ‖w�
     (∫ θ in 0..2 * π, (w - circleMap 0 r θ)⁻¹) =
       if r < ‖w‖ then (2 * π : ℂ) / w else 0 := by
   have hangle := circleIntegral_inv_mul_sub_inv_eq (w := w) hr.ne'
-  by_cases hw : w = 0
-  · subst w
-    have hzero : (∮ z in C(0, r), z⁻¹ * ((0 : ℂ) - z)⁻¹) = 0 := by
-      calc
-        _ = ∮ z in C(0, r), (-1 : ℂ) * (z - 0) ^ (-2 : ℤ) := by
-          apply circleIntegral.integral_congr hr.le
-          intro z _
-          simp [zpow_neg, pow_two]
-        _ = -(∮ z in C(0, r), (z - 0) ^ (-2 : ℤ)) := by
-          rw [circleIntegral.integral_const_mul]
-          ring
-        _ = 0 := by rw [circleIntegral.integral_sub_zpow_of_ne (by decide)]; simp
-    have hzero' := (mul_eq_zero.mp (hangle ▸ hzero)).resolve_left I_ne_zero
-    simpa [hr.not_gt] using hzero'
-  · have hsplit := circleIntegral_inv_mul_sub_inv_eq_of_ne hr.ne' (by rwa [abs_of_pos hr]) hw
-    rw [hangle] at hsplit
-    by_cases hwr : r < ‖w‖
-    · rw [TauCeti.Contour.circleIntegral_sub_inv_eq_zero_of_lt_dist hr.le
-        (by simpa only [dist_zero_right] using hwr), sub_zero] at hsplit
-      rw [ite_eq_left hwr]
-      apply mul_left_cancel₀ I_ne_zero
-      rw [hsplit]
-      field_simp
-    · have hwball : w ∈ ball (0 : ℂ) r := by
-        simpa using lt_of_le_of_ne (not_lt.mp hwr) hne
-      rw [circleIntegral.integral_sub_inv_of_mem_ball hwball, sub_self, mul_zero] at hsplit
-      simpa [hwr] using (mul_eq_zero.mp hsplit).resolve_left I_ne_zero
+  have hsplit := circleIntegral_inv_mul_sub_inv_eq_inv_mul_sub_circleIntegral hr.ne'
+    (by rwa [abs_of_pos hr])
+  rw [hangle] at hsplit
+  by_cases hwr : r < ‖w‖
+  · rw [TauCeti.Contour.circleIntegral_sub_inv_eq_zero_of_lt_dist hr.le
+      (by simpa only [dist_zero_right] using hwr), sub_zero] at hsplit
+    rw [ite_eq_left hwr]
+    apply mul_left_cancel₀ I_ne_zero
+    rw [hsplit]
+    field_simp
+  · have hwball : w ∈ ball (0 : ℂ) r := by
+      simpa using lt_of_le_of_ne (not_lt.mp hwr) hne
+    rw [circleIntegral.integral_sub_inv_of_mem_ball hwball, sub_self, mul_zero] at hsplit
+    simpa [hwr] using (mul_eq_zero.mp hsplit).resolve_left I_ne_zero
 
 /-- The same angular mean on the symmetric polar interval. -/
 theorem integral_neg_pi_pi_circleMap_sub_inv {w : ℂ} {r : ℝ} (hr : 0 < r)
