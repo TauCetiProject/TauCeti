@@ -37,6 +37,11 @@ def IsCutMinimal (G : SimpleGraph V) : Prop :=
   ∀ S : Set V, (G.between S Sᶜ).edgeSet.encard ≤
     ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeSet.encard
 
+/-- The defining cut inequality for cut-minimality, with no finiteness assumptions. -/
+theorem isCutMinimal_def (G : SimpleGraph V) :
+    G.IsCutMinimal ↔ ∀ S : Set V, (G.between S Sᶜ).edgeSet.encard ≤
+      ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeSet.encard := (Iff.rfl)
+
 variable [Fintype V] [DecidableEq V]
 
 /-- The defining cut inequality for cut-minimality, using decidable edge finsets. -/
