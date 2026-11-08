@@ -103,9 +103,19 @@ theorem IsAcute.of_projectionGap_lt_one (h : U.projectionGap V < 1) : U.IsAcute 
       disjoint_orthogonal_of_directedProjectionGap_lt_one V U
         ((directedProjectionGap_le_projectionGap V U).trans_lt (projectionGap_comm U V ▸ h))⟩
 
+end Submodule
+
+namespace Submodule
+
+open Module
+
 section FiniteDimensional
 
-variable [FiniteDimensional 𝕜 E]
+/-! In a finite-dimensional space every submodule has an orthogonal projection, so the statements
+below take `U` and `V` without that hypothesis. -/
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] (U V : Submodule 𝕜 E)
 
 /-- In finite dimension, a pair of subspaces is acute exactly when all principal angles from `U`
 to `V` and from `V` to `U` are strictly below `π/2`. -/
