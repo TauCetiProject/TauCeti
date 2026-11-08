@@ -161,7 +161,6 @@ theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ
         inv_le_one_of_one_le₀ (by linarith)
       have hne : (1 + c) ≠ 0 := by positivity
       refine h ((⟨(1 + c)⁻¹, ⟨hs, hs1⟩⟩ : I), t) ?_
-      change (1 - (1 + c)⁻¹) • ((γ t : sphere (0 : E) 1) : E) + (1 + c)⁻¹ • f t = 0
       rw [hneg]
       rw [hfc]
       rw [smul_neg, smul_smul, ← neg_smul, ← add_smul]
