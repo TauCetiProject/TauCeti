@@ -51,27 +51,26 @@ variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F]
 at `Q`**, for `Q` unramified over `𝓞 K`. -/
 theorem inertiaDeg_eq_orderOf_autToPow {m : ℕ} [NeZero m] {ζ : F} (hζ : IsPrimitiveRoot ζ m)
     [IsCyclotomicExtension {m} K F]
-    (Q : Ideal (𝓞 F)) [Q.IsPrime] (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q]
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Algebra.IsUnramifiedAt (𝓞 K) Q]
     {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     Q.inertiaDeg (𝓞 K) = orderOf (hζ.autToPow K σ) := by
   -- The character is injective, hence order-preserving.
   rw [orderOf_injective _ (hζ.autToPow_injective K),
-    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hσ]
+    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
 
 /-- **The cyclotomic splitting law.** At a prime `𝔭` not dividing `m`, the residue degree of `Q`
 above `𝔭` is the multiplicative order in `(ZMod m)ˣ` of any unit `u` reducing to `𝔑𝔭`. -/
 theorem inertiaDeg_eq_orderOf_of_val_eq_absNorm {m : ℕ} [NeZero m] {ζ : F}
     (hζ : IsPrimitiveRoot ζ m) [IsCyclotomicExtension {m} K F]
     (𝔭 : HeightOneSpectrum (𝓞 K)) (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal)
-    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] (hQ : Q ≠ ⊥)
-    [Algebra.IsUnramifiedAt (𝓞 K) Q]
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] [Algebra.IsUnramifiedAt (𝓞 K) Q]
     {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q)
     (u : (ZMod m)ˣ) (hu : (u : ZMod m) = Ideal.absNorm 𝔭.asIdeal) :
     Q.inertiaDeg (𝓞 K) = orderOf u := by
   -- A unit of `ZMod m` is determined by its value, so `u` is the character at `σ`.
   have hueq : u = hζ.autToPow K σ :=
     Units.ext (by rw [hu, hσ.autToPow_eq_absNorm hζ 𝔭 hm Q])
-  rw [hueq, hζ.inertiaDeg_eq_orderOf_autToPow Q hQ hσ]
+  rw [hueq, hζ.inertiaDeg_eq_orderOf_autToPow Q hσ]
 
 end IsPrimitiveRoot
 

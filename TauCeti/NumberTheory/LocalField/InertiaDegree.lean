@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 /-!
 # The residue degree of an extension of local fields, and `e · f = [L : K]`
@@ -38,6 +39,7 @@ side, and conversely.
 
 * `TauCeti.primesOver_maximalIdeal_eq_singleton`: `𝓂[L]` is the unique prime of `𝒪[L]`
   above `𝓂[K]`.
+* `TauCeti.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
 * `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
   `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
@@ -87,6 +89,16 @@ variable (K L) in
 cardinalities here are genuine. -/
 theorem natCard_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
   Module.natCard_eq_pow_finrank
+
+variable (K L) in
+/-- The residue degree is unchanged by an equivalence of extensions over the base field. -/
+theorem inertiaDegree_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    inertiaDegree K L = inertiaDegree K M := by
+  have := finite_of_valuativeExtension K M
+  rw [inertiaDegree_def, inertiaDegree_def]
+  exact (IsLocalRing.ResidueField.mapAlgEquiv' e.integerRingEquiv).toLinearEquiv.finrank_eq
 
 /-- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X`, where `q` and `q^f` are the
 cardinalities of the residue fields of `K` and `L`. -/

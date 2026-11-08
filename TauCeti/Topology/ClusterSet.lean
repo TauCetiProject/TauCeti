@@ -409,13 +409,13 @@ section Extension
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T3Space Y] {U : Set X}
   {K : Set Y} {f : X → Y}
 
-/-- **The extension criterion.** A continuous function on an open `U`, taking values in a compact
-set and whose cluster set at each boundary point has at most one element, extends continuously to
-`closure U`.
+/-- **The extension criterion.** A continuous function on `U`, taking values in a compact set and
+whose cluster set at each boundary point has at most one element, extends continuously to
+`closure U`. `U` need not be open: a point of `closure U` outside `U` lies in `frontier U`.
 
 The compactness is what `TauCeti.exists_tendsto_of_clusterSetOn_subsingleton` consumes to turn each
-subsingleton boundary cluster set into a limit; at an interior point continuity already supplies
-the limit. Having a limit at every point of `closure U`, the map extends by Mathlib's `extendFrom`,
+subsingleton boundary cluster set into a limit; at a point of `U` continuity already supplies the
+limit. Having a limit at every point of `closure U`, the map extends by Mathlib's `extendFrom`,
 which is continuous on `closure U` by `continuousOn_extendFrom` and agrees with `f` on `U` by
 `extendFrom_extends`. `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` is the common special
 case of a bounded-image map into a proper metric space.
@@ -429,7 +429,7 @@ set the singleton `{f w}`.
 The conclusion is exactly a continuous extension: `F` is continuous on `closure U` and agrees with
 `f` on `U`. Nothing is claimed about injectivity of `F` on `closure U`; that is an independent
 matter, requiring a separate proof that `F` is injective on `frontier U`. -/
-theorem exists_continuousOn_closure_eqOn (hUo : IsOpen U) (hfc : ContinuousOn f U)
+theorem exists_continuousOn_closure_eqOn (hfc : ContinuousOn f U)
     (hK : IsCompact K) (hfK : MapsTo f U K)
     (hsub : ∀ w ∈ frontier U, (clusterSetOn f U w).Subsingleton) :
     ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U := by
@@ -438,7 +438,7 @@ theorem exists_continuousOn_closure_eqOn (hUo : IsOpen U) (hfc : ContinuousOn f 
     by_cases hwU : w ∈ U
     · exact ⟨f w, hfc w hwU⟩
     · exact exists_tendsto_of_clusterSetOn_subsingleton hK hfK hw
-        (hsub w (by rw [hUo.frontier_eq]; exact ⟨hw, hwU⟩))
+        (hsub w ⟨hw, fun hwi => hwU (interior_subset hwi)⟩)
   exact ⟨extendFrom U f, continuousOn_extendFrom subset_rfl hall, extendFrom_extends hfc⟩
 
 end Extension
@@ -450,11 +450,11 @@ variable {X Y : Type*} [TopologicalSpace X] [MetricSpace Y] [ProperSpace Y] {U :
 /-- **The extension criterion for a bounded map into a proper metric space.** The special case of
 `TauCeti.exists_continuousOn_closure_eqOn` in which the compact set containing the values of `f` is
 the closure of a bounded image, properness of the codomain being what makes that closure compact. -/
-theorem exists_continuousOn_closure_eqOn_of_isBounded (hUo : IsOpen U) (hfc : ContinuousOn f U)
+theorem exists_continuousOn_closure_eqOn_of_isBounded (hfc : ContinuousOn f U)
     (hfb : Bornology.IsBounded (f '' U))
     (hsub : ∀ w ∈ frontier U, (clusterSetOn f U w).Subsingleton) :
     ∃ F : X → Y, ContinuousOn F (closure U) ∧ EqOn F f U :=
-  exists_continuousOn_closure_eqOn hUo hfc hfb.isCompact_closure
+  exists_continuousOn_closure_eqOn hfc hfb.isCompact_closure
     (fun z hz => subset_closure ⟨z, hz, rfl⟩) hsub
 
 end ProperExtension
@@ -470,8 +470,7 @@ extends continuously to `closure U`.
 
 The limits at the boundary points come from the Cauchy criterion
 `TauCeti.exists_tendsto_of_forall_exists`, so, unlike `TauCeti.exists_continuousOn_closure_eqOn`,
-no compact set containing the values of `f` is needed. Nor is `U` assumed open: a point of
-`closure U` outside `U` lies in `frontier U`. -/
+no compact set containing the values of `f` is needed. Neither theorem assumes `U` open. -/
 theorem exists_continuousOn_closure_eqOn_of_forall_exists (hfc : ContinuousOn f U)
     (h : ∀ w ∈ frontier U, ∀ ε > 0, ∃ δ > 0, ∀ x ∈ U ∩ Metric.ball w δ,
       ∀ y ∈ U ∩ Metric.ball w δ, dist (f x) (f y) ≤ ε) :

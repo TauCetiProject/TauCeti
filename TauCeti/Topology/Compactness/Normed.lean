@@ -8,13 +8,16 @@ module
 public import Mathlib.Analysis.Normed.Group.Bounded
 
 /-!
-# Uniform local norm bounds over compact parameter sets
+# Uniform local properties and norm bounds over compact parameter sets
 
 This file records a uniform local boundedness consequence of continuity over a compact family.
 Such bounds provide constant dominating functions for compact-parameter integration.
+It also gives a norm-ball version of the tube lemma for properties near a compact fiber.
 
 ## Main declarations
 
+* `IsCompact.exists_pos_forall_norm_lt`: a property holding near each point of `{0} × K`
+  holds on a uniform norm-ball times `K`.
 * `IsCompact.exists_eventually_norm_le`: a function continuous at every point of a compact fiber
   is uniformly bounded on nearby fibers, which remain in any open set containing the original
   fiber.
@@ -26,6 +29,15 @@ open Filter Set
 open scoped Topology
 
 variable {X P H : Type*} [TopologicalSpace X] [TopologicalSpace P] [SeminormedAddGroup H]
+
+/-- A property holding near every point of `{0} × K`, with `K` compact, holds uniformly on
+the product of a sufficiently small norm-ball about zero with `K`. -/
+theorem IsCompact.exists_pos_forall_norm_lt {K : Set P} (hK : IsCompact K)
+    {Q : H → P → Prop} (hQ : ∀ y ∈ K, ∀ᶠ z in 𝓝 ((0 : H), y), Q z.1 z.2) :
+    ∃ r > 0, ∀ {x : H}, ‖x‖ < r → ∀ y ∈ K, Q x y := by
+  obtain ⟨r, hr, h⟩ := Metric.eventually_nhds_iff.1
+    (hK.eventually_forall_of_forall_eventually hQ)
+  exact ⟨r, hr, fun hx => h (by simpa using hx)⟩
 
 /-- A function continuous at every point of `{x₀} × K`, with `K` compact, is uniformly bounded
 on `{x} × K` for `x` near `x₀`. These nearby fibers also lie in any open set `W` containing

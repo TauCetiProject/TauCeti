@@ -116,6 +116,18 @@ theorem torusCharacter_torusPointMap [Fintype ι] (φ : (ι → ℤ) →ₗ[ℤ]
   refine Finset.prod_congr rfl fun i _ => ?_
   rw [map_zsmul, torusCharacter_zsmul, torusPointMap_apply]
 
+/-- A torus point is in the kernel of the dual map exactly when it evaluates to one on the
+image of the lattice map. -/
+theorem mem_ker_torusPointMap_iff [Finite ι] (φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) (s : κ → Rˣ) :
+    s ∈ (torusPointMap φ).ker ↔ ∀ μ, torusCharacter s (φ μ) = 1 := by
+  let := Fintype.ofFinite ι
+  rw [MonoidHom.mem_ker]
+  constructor
+  · intro hs μ
+    rw [← torusCharacter_torusPointMap, hs, torusCharacter_one]
+  · intro hs
+    exact funext fun i => (torusPointMap_apply φ s i).trans (hs (Pi.single i 1))
+
 /-- The identity of the character lattice gives the identity of the torus. -/
 @[simp]
 theorem torusPointMap_id [Fintype ι] :

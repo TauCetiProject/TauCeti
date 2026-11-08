@@ -41,8 +41,8 @@ applies as soon as every point of `X` is joined by a path to `A` and all relativ
 `π_{k+1}(X, A, a)` vanish
 (`TauCeti.isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup`). For the inclusion of the
 bottom of the mapping cylinder of a weak homotopy equivalence, this gives the invariance of
-singular homology under weak homotopy equivalences (Hatcher, Proposition 4.21), proved as
-`ContinuousMap.IsWeakHomotopyEquivalence.isIso_singularHomologyMap`.
+normalized cubical chains under weak homotopy equivalences (Hatcher, Proposition 4.21), proved as
+`ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_normalizedCubicalChainComplex_map`.
 
 ## Main definitions
 

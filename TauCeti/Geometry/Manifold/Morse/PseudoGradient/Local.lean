@@ -42,6 +42,8 @@ decreases along orbits, so the orbit cannot converge to `x`.
   other points near `x`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_forall_mem_stableSet_iff`: on a small coordinate cube,
   `W^s(x)` is the coordinate subspace of the positive weights.
+* `TauCeti.IsAdaptedPseudoGradient.exists_forall_coord_flow_eq_exp_smul`: on a small coordinate
+  cube, points of `W^s(x)` move by the linear contraction `z ↦ e^{-t} z` for all `t ≥ 0`.
 
 ## References
 
@@ -309,20 +311,13 @@ theorem mem_stableSet_of_forall_coord_eq_zero (hX : IsAdaptedPseudoGradient f X)
     {r : ℝ} (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
     {y : M} (hy : y ∈ φ.toChart.source) (hyr : ‖φ.coord (φ.toChart y)‖ < r / 2)
     (hu : ∀ i, φ.weight i < 0 → φ.coord (φ.toChart y) i = 0) : y ∈ hX.flow.stableSet x := by
-  have hr : 0 < r := by linarith [norm_nonneg (φ.coord (φ.toChart y))]
   set z := φ.coord (φ.toChart y)
-  have hcont : Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0)
-      (𝓝 (φ.toChart.symm (φ.coord.symm 0))) := by
-    refine (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp ?_
-    exact φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply)
   have hlin : Tendsto (fun t ↦ Real.exp (-t) • z) atTop (𝓝 0) := by
     simpa using Real.tendsto_exp_neg_atTop_nhds_zero.smul_const z
-  have h := (hcont.comp hlin).congr' (f₂ := fun t ↦ hX.flow t y) <| by
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    rw [comp_apply, ← hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hyr hu ht,
-      φ.toChart_symm_coord_symm_coord hy]
-  rw [φ.toChart_symm_coord_symm_zero] at h
-  exact Flow.mem_stableSet.2 h
+  refine Flow.mem_stableSet.2 <| (φ.tendsto_toChart_symm_coord_symm_nhds_zero.comp hlin).congr' ?_
+  filter_upwards [eventually_ge_atTop 0] with t ht
+  rw [comp_apply, ← hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hyr hu ht,
+    φ.toChart_symm_coord_symm_coord hy]
 
 /-- **The energy barrier.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`,
 and let the coordinates of `y` be small, with some coordinate of negative weight nonzero. Then the
@@ -407,6 +402,34 @@ theorem exists_forall_mem_stableSet_iff (hX : IsAdaptedPseudoGradient f X)
       hf.continuous.continuousAt (hX.antitone_flow hf _))
   · gcongr
     linarith
+
+/-- **The linear contraction on the local stable set.** Let `X` be the linear field
+`z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`. On a small coordinate cube, a point `y` of `W^s(x)` stays
+in the chart for all positive times, and its coordinates at time `t ≥ 0` are `e^{-t}` times those
+of `y`. -/
+theorem exists_forall_coord_flow_eq_exp_smul (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) :
+    ∃ ρ > 0, ∀ y ∈ hX.flow.stableSet x, y ∈ φ.toChart.source → ‖φ.coord (φ.toChart y)‖ < ρ →
+      ∀ t, 0 ≤ t → hX.flow t y ∈ φ.toChart.source ∧
+        φ.coord (φ.toChart (hX.flow t y)) = Real.exp (-t) • φ.coord (φ.toChart y) := by
+  obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  refine ⟨min ε (r / 2), by positivity, fun y hys hy hyρ t ht ↦ ?_⟩
+  set z := φ.coord (φ.toChart y)
+  have hu := (hεs y hy (hyρ.trans_le (min_le_left _ _))).1 hys
+  have hz2 : ‖z‖ < r / 2 := hyρ.trans_le (min_le_right _ _)
+  have hflow := hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hz2 hu ht
+  rw [φ.toChart_symm_coord_symm_coord hy] at hflow
+  -- The contracted coordinates are again coordinates of a point of the chart.
+  have hnorm : ‖Real.exp (-t) • z‖ ≤ ‖z‖ := by
+    rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
+    exact mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))
+  have hT := hrT _ (hnorm.trans_lt (hz2.trans (half_lt_self hr)))
+  rw [hflow]
+  exact ⟨φ.toChart.map_target hT, by rw [φ.toChart.right_inv hT, LinearEquiv.apply_symm_apply]⟩
 
 end IsAdaptedPseudoGradient
 

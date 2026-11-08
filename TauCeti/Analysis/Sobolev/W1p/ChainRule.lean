@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
+public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence

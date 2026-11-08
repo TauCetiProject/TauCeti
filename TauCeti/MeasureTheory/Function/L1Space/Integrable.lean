@@ -10,12 +10,16 @@ import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.Tactic.NormNum
 
 /-!
-# Integrability under signed real coefficients
+# Integrability criteria
 
 Taking the absolute value of an almost everywhere measurable real coefficient does not change
 integrability of its scalar product with a real normed-space-valued function, even when that
 function is not measurable by itself. The equivalence permits signed Jacobians in oriented
 change of variables for arbitrary rough-form coefficients.
+
+For absolute moments, membership of the identity in `Lᵖ` gives integrability of its norm
+power even on a seminormed group. On the real line, positive-order `Lᵖ` membership is
+equivalent to integrability of the corresponding absolute power.
 -/
 
 public section
@@ -71,3 +75,26 @@ theorem isFiniteMeasure_of_integrable_of_one_le {X F : Type*} [MeasurableSpace X
   exact (integrable_const_iff_isFiniteMeasure one_ne_zero).mp hconst
 
 end MeasureTheory
+
+namespace TauCeti
+
+open MeasureTheory
+
+/-- On a finite measure, `Lᵖ` membership of the identity gives integrability of its norm
+power, including for seminormed groups and order zero. -/
+theorem integrable_norm_rpow_of_memLp_id_ofReal {E : Type*} [SeminormedAddCommGroup E]
+    [MeasurableSpace E] {p : ℝ} (hp : 0 ≤ p) {ν : Measure E} [IsFiniteMeasure ν]
+    (hν : MemLp id (ENNReal.ofReal p) ν) : Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
+  -- Apply the normed-target moment lemma to the real-valued norm.
+  simpa only [ENNReal.toReal_ofReal hp, id_eq, norm_norm] using
+    (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
+
+/-- For a positive real order, `Lᵖ` membership of the identity on the real line is
+equivalent to integrability of the absolute power. -/
+theorem memLp_id_ofReal_iff_integrable_abs_rpow {q : ℝ} (hq : 0 < q) (μ : Measure ℝ) :
+    MemLp id (ENNReal.ofReal q) μ ↔ Integrable (fun x : ℝ ↦ |x| ^ q) μ := by
+  simpa only [id_eq, Real.norm_eq_abs, ENNReal.toReal_ofReal hq.le] using
+    (integrable_norm_rpow_iff (f := id) (μ := μ) aestronglyMeasurable_id
+      (ENNReal.ofReal_pos.mpr hq).ne' ENNReal.ofReal_ne_top).symm
+
+end TauCeti

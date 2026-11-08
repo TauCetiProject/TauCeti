@@ -61,7 +61,7 @@ theorem moduleInjective_of_dual_projective (e : Q ≃ₗ[k] Module.Dual k N)
   have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
     (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
   let : Module.Injective A (Module.Dual k A) :=
-    moduleInjective_of_equiv_dual_regular k (LinearEquiv.refl k _) hsmul
+    (LinearEquiv.refl k _).moduleInjective_of_dual_regular hsmul
   let : Module.Injective A (N → Module.Dual k A) := Module.Injective.pi A _
   -- Dualize the splitting of `N` off a free right module.
   let s : Q →ₗ[A] (N → Module.Dual k A) :=

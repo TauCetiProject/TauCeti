@@ -11,12 +11,11 @@ public import TauCeti.Algebra.Homology.TotallyAcyclic.Projective
 /-!
 # Projective kernels of extensions of Gorenstein-projective modules
 
-Every short exact sequence with a finitely generated projective kernel and a
-Gorenstein-projective quotient splits. This is the vanishing of degree-one extensions of a
-Gorenstein-projective module by a finite projective module, and is the input for identifying
-finite projectives as relative injectives in the Gorenstein-projective exact category.
-Maps into finite projectives therefore extend across short exact sequences with
-Gorenstein-projective quotient.
+Every short exact sequence with a projective kernel and a Gorenstein-projective quotient
+splits. This is the vanishing of degree-one extensions of a Gorenstein-projective module by a
+projective module, and is the input for identifying finite projectives as relative injectives in
+the Gorenstein-projective exact category. Maps into projectives therefore extend across short
+exact sequences with Gorenstein-projective quotient.
 
 No noetherian or self-injectivity hypothesis is required, and the ring and module universes are
 independent. Taking the ring to be `Rᵐᵒᵖ` gives the result for right `R`-modules.
@@ -37,11 +36,11 @@ namespace TauCeti
 
 variable {A : Type u} [Ring A]
 
-/-- A short exact sequence with finite projective kernel and Gorenstein-projective quotient
+/-- A short exact sequence with projective kernel and Gorenstein-projective quotient
 admits a splitting. The middle term need not be assumed Gorenstein-projective. -/
 theorem IsGorensteinProjective.nonempty_splitting_of_projective
     {S : ShortComplex (ModuleCat.{v} A)} (hN : IsGorensteinProjective A S.X₃)
-    (hS : S.ShortExact) [Module.Finite A S.X₁] [Module.Projective A S.X₁] :
+    (hS : S.ShortExact) [Module.Projective A S.X₁] :
     Nonempty S.Splitting := by
   obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff S.X₃).mp hN
   let T := ShortComplex.mk (P.iCycles (-1)) (P.toCycles (-1) 0) (P.iCycles_toCycles (-1) 0)
@@ -69,11 +68,11 @@ theorem IsGorensteinProjective.nonempty_splitting_of_projective
   refine ⟨ShortComplex.Splitting.ofExactOfSection S hS.exact (e.inv ≫ s) ?_ hS.mono_f⟩
   rw [Category.assoc, hs, e.inv_hom_id]
 
-/-- Maps into a finite projective module extend across a short exact sequence with
+/-- Maps into a projective module extend across a short exact sequence with
 Gorenstein-projective quotient. The middle module need not be Gorenstein-projective. -/
 theorem IsGorensteinProjective.exists_extend
     {S : ShortComplex (ModuleCat.{v} A)} (hN : IsGorensteinProjective A S.X₃)
-    (hS : S.ShortExact) (Q : ModuleCat.{v} A) [Module.Finite A Q] [Module.Projective A Q]
+    (hS : S.ShortExact) (Q : ModuleCat.{v} A) [Module.Projective A Q]
     (f : S.X₁ ⟶ Q) : ∃ g : S.X₂ ⟶ Q, S.f ≫ g = f := by
   let sq := IsPushout.of_hasPushout S.f f
   have hT := shortExact_cobaseChange hS sq
