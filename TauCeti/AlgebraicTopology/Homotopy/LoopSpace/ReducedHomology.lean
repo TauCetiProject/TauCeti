@@ -13,32 +13,32 @@ public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
 # Reduced homology of double loop spaces and the first nonvanishing higher homotopy group
 
 The reduced homology `H~_*(Ω²X)` of a double loop space is the kernel of the map
-`H_*(Ω²X) → H_*(pt)` induced by the map to a point. This file shows that it detects the first
-nontrivial higher homotopy group `π_k(X, x)`, `k ≥ 2`, of a pointed space:
+`H_*(Ω²X) → H_*(pt)` induced by the map to a point. This file proves the degree-zero part of the
+statement that it detects the first nontrivial higher homotopy group `π_k(X, x)`, `k ≥ 2`, of a
+pointed space: the path components of `Ω²X` are the elements of `π₂(X, x)`, so the reduced
+zeroth homology `H~₀(Ω²X; R)` is the coproduct of copies of `R` indexed by the nontrivial
+elements of `π₂(X, x)`, the generator at `a` being `[γ] - [1]` for a double loop `γ` of class `a`.
+If `π₂(X, x)` is nontrivial, `H~₀(Ω²X; ℤ)` therefore contains an infinite cyclic subgroup.
 
-* **Degree zero.** The path components of `Ω²X` are the elements of `π₂(X, x)`, so the reduced
-  zeroth homology `H~₀(Ω²X; R)` is the coproduct of copies of `R` indexed by the nontrivial
-  elements of `π₂(X, x)`, the generator at `a` being `[γ] - [1]` for a double loop `γ` of
-  class `a`. If `π₂(X, x)` is nontrivial, `H~₀(Ω²X; ℤ)` therefore contains an infinite cyclic
-  subgroup.
-* **Positive degrees.** In positive degrees reduced and ordinary homology agree
-  (`TauCeti.reducedSingularHomologySuccIso`). If `π_j(X, x)` vanishes for `2 ≤ j < k` and `k ≥ 3`,
-  then `H_{k-2}(Ω²X; ℤ) ≅ π_k(X, x)` by the Hurewicz theorem for the `(k - 3)`-connected space
-  `Ω²X`: this is `TauCeti.MooreLoopSpace.doubleFirstHomologyAddEquiv` for `k = 3` and
-  `TauCeti.MooreLoopSpace.doubleHomologyAddEquiv` (or `TauCeti.doubleLoopSpaceHomologyAddEquiv`)
-  for `k ≥ 4`.
+For context, the positive-degree part is proved in other files. In positive degrees reduced and
+ordinary homology agree (`TauCeti.reducedSingularHomologySuccIso`), and if `π_j(X, x)` vanishes
+for `2 ≤ j < k` and `k ≥ 3`, then `H_{k-2}(Ω²X; ℤ) ≅ π_k(X, x)` by the Hurewicz theorem for the
+`(k - 3)`-connected space `Ω²X`: this is
+`TauCeti.MooreLoopSpace.doubleFirstHomologyAddEquiv` for `k = 3` and
+`TauCeti.MooreLoopSpace.doubleHomologyAddEquiv` (or `TauCeti.doubleLoopSpaceHomologyAddEquiv`)
+for `k ≥ 4`.
 
 These are the homological facts behind the first part of Proposition 5.11 of
-Barraud--Damian--Humilière--Oancea. There the map `i_{Q*} : H_*(Q; i_Q^*𝓕) → H_*(𝓛₀Q; 𝓕)`, for
-the DG local system `𝓕 = C_*(Ω𝓛₀Q)`, is identified with the map `H_*(Ω²Q) → H_*(pt)`, whose
-kernel is `H~_*(Ω²Q)`, and the two items above show that `ker i_{Q*}` contains an infinite cyclic
-subgroup if `π₂(Q) ≠ 0` and a copy of `π_k(Q)` otherwise. The case of the sphere `S²` is
+Barraud--Damian--Humilière--Oancea. In the paper's argument, the map
+`i_{Q*} : H_*(Q; i_Q^*𝓕) → H_*(𝓛₀Q; 𝓕)`, for the DG local system `𝓕 = C_*(Ω𝓛₀Q)`, is
+identified with the map `H_*(Ω²Q) → H_*(pt)`, whose kernel is `H~_*(Ω²Q)`; that identification is
+not formalized here, so the results of this file are statements about `H~₀(Ω²Q)` rather than about
+`ker i_{Q*}`. The case of the sphere `S²` is
 `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`, with the homotopy groups of spheres.
 
-This file proves the degree-zero item. Both the fixed-interval double loop space
-`Ω (Ω X x) (Path.refl x)` and the double Moore loop space `MooreLoopSpace (MooreLoopSpace X x) 1`
-are treated. The statements with integer coefficients take `X : Type`, so that `ℤ`-modules live in
-the universe of the space.
+Both the fixed-interval double loop space `Ω (Ω X x) (Path.refl x)` and the double Moore loop
+space `MooreLoopSpace (MooreLoopSpace X x) 1` are treated. The statements with integer
+coefficients take `X : Type`, so that `ℤ`-modules live in the universe of the space.
 
 The path components of `Ω²X` and `ΩᴹΩᴹX` are identified with the elements of `π₂(X, x)` by
 `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv` and `TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`.
