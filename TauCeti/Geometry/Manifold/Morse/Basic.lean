@@ -33,6 +33,7 @@ manifold, rather than to a function on one global coordinate space.
 
 * `TauCeti.IsManifoldNondegenerateCriticalPoint`: a nondegenerate critical point of a
   real-valued function on a smooth manifold.
+* `TauCeti.IsManifoldNondegenerateCriticalPoint.contMDiffAt`: such a function is `C²` at the point.
 * `TauCeti.IsMorseOn`: a smooth function whose critical points in a set are nondegenerate.
 * `TauCeti.IsMorse`: a Morse function on the whole manifold.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_modelSpace_iff` and
@@ -67,6 +68,12 @@ theorem isManifoldNondegenerateCriticalPoint_iff (I : ModelWithCorners ℝ E H) 
     IsManifoldNondegenerateCriticalPoint I f x ↔
       IsNondegenerateCriticalPoint (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
   Iff.rfl
+
+/-- A function with a nondegenerate critical point is `C²` there. -/
+theorem IsManifoldNondegenerateCriticalPoint.contMDiffAt {I : ModelWithCorners ℝ E H}
+    (h : IsManifoldNondegenerateCriticalPoint I f x) : ContMDiffAt I 𝓘(ℝ) 2 f x :=
+  contMDiffAt_iff_source.2 <| contMDiffWithinAt_iff_contDiffWithinAt.2
+    (((isManifoldNondegenerateCriticalPoint_iff I).mp h).contDiffAt.contDiffWithinAt)
 
 /-- Negating a function preserves its nondegenerate critical points. -/
 theorem IsManifoldNondegenerateCriticalPoint.neg {I : ModelWithCorners ℝ E H}
