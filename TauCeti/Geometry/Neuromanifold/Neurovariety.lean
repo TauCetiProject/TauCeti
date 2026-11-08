@@ -25,7 +25,8 @@ of the image do not depend on the choice of linear coordinates. More generally, 
 linear presentations `E₁ (c₁ w) = F w = E₂ (c₂ w)` of the same map in finitely many coordinates
 have coefficient maps related by a linear map which restricts to a bijection between their
 neurovarieties, and their coefficient images are algebraic simultaneously
-(`exists_linearMap_comp_eq_bijOn_neurovariety`, `isAlgebraicImage_iff_of_injective`).
+(`exists_linearMap_comp_eq_bijOn_neurovariety`,
+`isAlgebraicImage_iff_isAlgebraicImage_of_injective`).
 Zero-padding the coordinates, as when the degree bound of a polynomial coefficient presentation
 is raised, transports the neurovariety along the padding, preserves and reflects algebraicity of
 the image, and the padding coordinates vanish on the neurovariety.
@@ -204,7 +205,7 @@ theorem exists_linearMap_comp_eq_bijOn_neurovariety [Finite σ] [Finite τ]
 /-- Whether the coefficient image is algebraic does not depend on the faithful linear
 presentation in finitely many coordinates: two such presentations of the same map have algebraic
 coefficient images simultaneously. -/
-theorem isAlgebraicImage_iff_of_injective [Finite σ] [Finite τ]
+theorem isAlgebraicImage_iff_isAlgebraicImage_of_injective [Finite σ] [Finite τ]
     (hE₁ : Function.Injective E₁) (hE₂ : Function.Injective E₂)
     (h₁ : ∀ w, E₁ (c₁ w) = F w) (h₂ : ∀ w, E₂ (c₂ w) = F w) :
     IsAlgebraicImage c₁ ↔ IsAlgebraicImage c₂ := by

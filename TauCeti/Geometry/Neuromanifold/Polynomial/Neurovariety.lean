@@ -147,7 +147,7 @@ theorem isAlgebraicImage_polynomialCoefficientCoordinates_iff_of_injective
     (P : J → MvPolynomial (W ⊕ X) K) (hE : Function.Injective E)
     (h : ∀ w, E (c w) = polynomialRealization P w) :
     IsAlgebraicImage (polynomialCoefficientCoordinates P) ↔ IsAlgebraicImage c :=
-  isAlgebraicImage_iff_of_injective
+  isAlgebraicImage_iff_isAlgebraicImage_of_injective
     (E₁ := tupleEvaluation J _ ∘ₗ (boundedCoefficientEquiv X K J _).symm.toLinearMap)
     ((tupleEvaluation_injective _).comp (LinearEquiv.injective _)) hE
     (tupleEvaluation_boundedCoefficientEquiv_symm_polynomialCoefficientCoordinates P) h
