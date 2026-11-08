@@ -29,6 +29,12 @@ public section
 
 namespace PresentedGroup
 
+/-- Lifting the canonical generators is the quotient map on every free-group element. -/
+@[simp]
+theorem lift_of_eq_mk {α : Type*} {rels : Set (FreeGroup α)} (x : FreeGroup α) :
+    FreeGroup.lift (of : α → PresentedGroup rels) x = mk rels x :=
+  (FreeGroup.lift_unique (mk rels) (fun _ => rfl)).symm
+
 /-- The induced homomorphism evaluates a presented word by the free-group lift. -/
 @[simp]
 theorem toGroup_mk {α G : Type*} [Group G] {f : α → G} {rels : Set (FreeGroup α)}

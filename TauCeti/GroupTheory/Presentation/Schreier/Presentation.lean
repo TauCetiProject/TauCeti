@@ -70,10 +70,10 @@ private theorem rewritten_relators_sound (v : FreeGroup (Q × α)) (hv : v ∈ R
   rw [coe_lift_stabilizerGenerator]
   rcases hv with ⟨q, w, hw, rfl⟩ | ⟨q, rfl⟩
   · exact lift_rewrite_eq_one f _ q w (by
-      simpa only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk] using
+      simpa only [PresentedGroup.lift_of_eq_mk] using
         (PresentedGroup.one_of_mem ⟨w, hw, rfl⟩ : ev (FreeGroup.mk w) = 1))
   · rw [lift_rewrite, trace_actionPerm]
-    simp only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk, hr, hb]
+    simp only [PresentedGroup.lift_of_eq_mk, hr, hb]
     simp
 
 /-- The canonical map from the rewritten presentation to the actual stabilizer. An edge
@@ -95,17 +95,22 @@ theorem stabilizerHom_rewrite (w : PresentationWord α)
   apply Subtype.ext
   rw [stabilizerHom, PresentedGroup.toGroup_mk]
   have hw' : FreeGroup.lift f (FreeGroup.mk w) ∈ MulAction.stabilizer G b := by
-    simpa only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk] using hw
+    simpa only [PresentedGroup.lift_of_eq_mk] using hw
   rw [coe_lift_stabilizerGenerator_rewrite f b _ hr hb w hw']
-  simp only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk]
+  simp only [PresentedGroup.lift_of_eq_mk]
 
 /-- The canonical stabilizer map is onto; signed rewriting supplies a preimage for every
 word fixing the base point. -/
 theorem stabilizerHom_surjective : Function.Surjective (stabilizerHom W b r hr hb) := by
+  classical
   intro g
   obtain ⟨v, hv⟩ := PresentedGroup.mk_surjective _ (g : G)
-  obtain ⟨w, rfl⟩ := Quot.mk_surjective v
-  have hw : ev (FreeGroup.mk w) ∈ MulAction.stabilizer G b := hv ▸ g.property
+  obtain ⟨w, hwv⟩ : ∃ w : PresentationWord α, FreeGroup.mk w = v :=
+    ⟨v.toWord, FreeGroup.mk_toWord⟩
+  rw [← hwv] at hv
+  have hw : ev (FreeGroup.mk w) ∈ MulAction.stabilizer G b := by
+    rw [hv]
+    exact g.property
   refine ⟨PresentedGroup.mk R (FreeGroup.mk (rewrite σ b w)), ?_⟩
   rw [stabilizerHom_rewrite W b r hr hb w hw]
   exact Subtype.ext hv
@@ -121,7 +126,7 @@ private def sourcePerm : G →* Equiv.Perm (Q × K) :=
     rintro ⟨q, h⟩
     rw [lift_pathPerm, trace_actionPerm]
     have hw' : ev (FreeGroup.mk w) = 1 := PresentedGroup.one_of_mem ⟨w, hw, rfl⟩
-    simp only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk, hw']
+    simp only [PresentedGroup.lift_of_eq_mk, hw']
     have he : PresentedGroup.mk R (FreeGroup.mk (rewrite σ q w)) = 1 :=
       PresentedGroup.one_of_mem (Or.inl ⟨q, w, hw, rfl⟩)
     simp [he])
@@ -135,7 +140,7 @@ private theorem sourcePerm_word (q : Q) (h : K) (w : PresentationWord α) :
     (sourcePerm W b r (ev (FreeGroup.mk w)))⁻¹ (q, h) =
       (trace σ q w, h * PresentedGroup.mk R (FreeGroup.mk (rewrite σ q w))) := by
   rw [sourcePerm, PresentedGroup.toGroup_mk, lift_pathPerm]
-  simp only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk]
+  simp only [PresentedGroup.lift_of_eq_mk]
 
 include hr in
 private theorem sourcePerm_representative (q : Q) (h : K) :
@@ -143,7 +148,7 @@ private theorem sourcePerm_representative (q : Q) (h : K) :
   rw [sourcePerm_word, trace_actionPerm]
   have he : PresentedGroup.mk R (FreeGroup.mk (rewrite σ b (r q))) = 1 :=
     PresentedGroup.one_of_mem (Or.inr ⟨q, rfl⟩)
-  simp only [FreeGroup.lift_mk, ← PresentedGroup.mk_mk, hr, he, mul_one]
+  simp only [PresentedGroup.lift_of_eq_mk, hr, he, mul_one]
 
 private theorem sourcePerm_edge (e : Q × α) (h : K) :
     (sourcePerm W b r
@@ -192,6 +197,15 @@ noncomputable def stabilizerEquiv : K ≃* MulAction.stabilizer G b :=
 @[simp]
 theorem stabilizerEquiv_apply (x : K) :
     stabilizerEquiv W b r hr hb x = stabilizerHom W b r hr hb x := (rfl)
+
+/-- The inverse presentation equivalence sends each stabilizer edge to its named generator. -/
+@[simp]
+theorem stabilizerEquiv_symm_stabilizerGenerator (e : Q × α) :
+    (stabilizerEquiv W b r hr hb).symm
+        (stabilizerGenerator f b (fun q => ev (FreeGroup.mk (r q))) hr e) =
+      PresentedGroup.of e := by
+  apply (stabilizerEquiv W b r hr hb).symm_apply_eq.mpr
+  simpa only [stabilizerEquiv_apply] using (stabilizerHom_of W b r hr hb e).symm
 
 /-- The inverse word dictionary of the Schreier presentation equivalence. -/
 @[simp]
