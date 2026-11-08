@@ -748,9 +748,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
   obtain ⟨hE, harea, hcurv⟩ := integrableOn_truncation_pairOfPantsPerturbation ω hH hHs hu R
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
   -- end pieces.
-  have hTm : MeasurableSet T :=
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet
+  have hTm : MeasurableSet T := measurableSet_preimage_truncation R
   have hAm (q : Puncture) : MeasurableSet (A q) := measurableSet_image_endPiece q R
   have hAT (q : Puncture) : A q ⊆ T := image_endPiece_subset q hR
   have hAd : Pairwise (Disjoint on A) := fun q r hqr => disjoint_image_endPiece hqr
@@ -842,9 +840,8 @@ private theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
       (𝓝 (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1}, f z)) := by
   rw [← iUnion_preimage_truncation] at hf ⊢
-  exact tendsto_setIntegral_of_monotone (fun R =>
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet) monotone_preimage_truncation hf
+  exact tendsto_setIntegral_of_monotone measurableSet_preimage_truncation
+    monotone_preimage_truncation hf
 
 /-- **The curvature is integrable over the pair of pants.** Along a map `u` which is continuous
 on `S`, the curvature of the pair-of-pants perturbation of period-one `C¹` Hamiltonians is

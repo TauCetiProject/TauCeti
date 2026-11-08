@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -109,6 +107,11 @@ theorem endChart_apply (q : Puncture) (z : ℝ × ℝ) :
     endChart q z =
       Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
+
+/-- The end chart is the end lift read in the real coordinates. -/
+theorem endChart_eq_realChart (q : Puncture) :
+    endChart q = TauCeti.Complex.realChart q.cylindricalEndLift :=
+  funext fun z ↦ (TauCeti.Complex.realChart_apply _ z).symm
 
 /-- The end chart at a point `(s, t)` of the cylinder is the end lift at `s + i t`. -/
 theorem endChart_mk (q : Puncture) (s t : ℝ) :
@@ -299,21 +302,25 @@ theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by
   exact (measurableSet_lt measurable_const (measurable_const.mul measurable_id)).prod
     measurableSet_Ico
 
+/-- The truncation `S_R` of the pair of pants is measurable in the real coordinates. -/
+theorem measurableSet_preimage_truncation (R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_truncation R)).isClosed.measurableSet
+
 /-- The end charts preserve orientation. -/
 theorem det_fderiv_endChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :
     0 ≤ (fderiv ℝ (endChart q) ζ).det := by
-  -- The derivative is multiplication by a complex number `c`, whose real determinant is the
-  -- complex norm `|c|²`.
-  rw [(hasFDerivAt_endChart q ζ).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_nonneg]
+  rw [endChart_eq_realChart]
+  exact TauCeti.Complex.det_fderiv_realChart_nonneg
+    (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt
 
 /-- The end charts are local diffeomorphisms: their Jacobian determinants are positive. -/
 theorem det_fderiv_endChart_pos (q : Puncture) (ζ : ℝ × ℝ) :
     0 < (fderiv ℝ (endChart q) ζ).det := by
-  rw [(hasFDerivAt_endChart q ζ).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_pos, q.deriv_cylindricalEndLift_ne_zero]
+  rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
+    (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt]
+  exact Complex.normSq_pos.2 (q.deriv_cylindricalEndLift_ne_zero _)
 
 /-- The three end strips have disjoint images. -/
 theorem pairwise_disjoint_image_endChart :

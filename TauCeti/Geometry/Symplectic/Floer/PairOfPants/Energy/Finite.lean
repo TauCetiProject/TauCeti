@@ -121,9 +121,8 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           stdComplexLineImag)
-        (u ∘ endChart q) ζ := by
-    simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
-      perturbedFDeriv_apply_stdComplexLineImag, hKs, hKt]
+        (u ∘ endChart q) ζ :=
+    ω.floerEnergyDensity_congr_perturbation _ hKs.symm hKt.symm
   rw [heq, hpb]
   exact mul_nonneg (det_fderiv_endChart_nonneg q ζ) (ω.floerEnergyDensity_nonneg hJ hfloer)
 

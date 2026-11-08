@@ -310,13 +310,15 @@ theorem plumbingMap_image_inter {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
       by linarith⟩
 
 /-- **The truncated plumbed four-punctured sphere.** For neck length `L` and `R ≥ L / 2`, the
-part `Re z ≤ L / 2` of the end `q` of the truncation `S_R` of the receiving thrice-punctured
-sphere, together with the image under the plumbing map of the part `Re z ≥ -L / 2` of the end at
-`∞` of the truncation `S_R` of the inserted one. The two pieces meet along the circle
-`Re z = L / 2` of the end `q`, the image of the circle `Re z = -L / 2` of the end at `∞`
-(`re_endCoord_plumbingMap`). The four boundary circles are the circles `±s = R` of the two
-remaining ends of the receiving sphere and the images of the circles `s = R` of the two input
-ends of the inserted one. -/
+part of the truncation `S_R` of the receiving thrice-punctured sphere where the longitudinal
+coordinate of the end `q` is at most `L / 2` (all of `S_R` except the collar of the end `q` beyond
+the middle of the neck), together with the image under the plumbing map of the part of the
+truncation `S_R` of the inserted one where the longitudinal coordinate of the end at `∞` is at
+least `-L / 2` (all of it except the collar of the end at `∞` beyond the middle of the neck). The
+two pieces meet along the circle `Re z = L / 2` of the end `q`, the image of the circle
+`Re z = -L / 2` of the end at `∞` (`re_endCoord_plumbingMap`). The four boundary circles are the
+circles `±s = R` of the two remaining ends of the receiving sphere and the images of the circles
+`s = R` of the two input ends of the inserted one. -/
 def plumbedTruncation (q : Puncture) (L R : ℝ) : Set ℂ :=
   (truncation R ∩ {w | (q.endCoord w).re ≤ L / 2}) ∪
     q.plumbingMap L '' (truncation R ∩ {w | -(L / 2) ≤ (inf.endCoord w).re})
@@ -327,9 +329,10 @@ theorem plumbedTruncation_def (q : Puncture) (L R : ℝ) :
         q.plumbingMap L '' (truncation R ∩ {w | -(L / 2) ≤ (inf.endCoord w).re}) :=
   (rfl)
 
-/-- A point lies in the truncated plumbed sphere if it lies in the part `Re z ≤ L / 2` of the end
-`q` of the receiving truncation, or it is the image under the plumbing map of a point in the part
-`Re z ≥ -L / 2` of the end at `∞` of the inserted truncation. -/
+/-- A point lies in the truncated plumbed sphere if it lies in the truncation `S_R` and the
+longitudinal coordinate of the end `q` there is at most `L / 2`, or it is the image under the
+plumbing map of a point of `S_R` at which the longitudinal coordinate of the end at `∞` is at
+least `-L / 2`. -/
 @[simp]
 theorem mem_plumbedTruncation_iff {q : Puncture} {L R : ℝ} {w : ℂ} :
     w ∈ q.plumbedTruncation L R ↔
