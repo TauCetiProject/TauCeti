@@ -11,7 +11,8 @@ public import Mathlib.Topology.PartitionOfUnity
 /-!
 # Approximation by partitions of unity adapted to a dense set
 
-A compactly supported continuous function `f` with values in a normed space admits, for every
+A compactly supported continuous function `f` with values in a pseudometric space with a
+distinguished zero (for instance a normed space) admits, for every
 `δ > 0` and every dense set `S` of the target, a finite partition of unity over the support of
 `f` whose members have compact support, lie inside a prescribed neighbourhood of the support, and
 are supported where `f` is `δ`-close to the corresponding point of `S`. Consequently `f` is
@@ -19,7 +20,7 @@ uniformly within `δ` of the corresponding combination of those points.
 
 ## Main results
 
-* `CompactlySupportedContinuousMap.exists_partitionOfUnity_norm_sub_lt`: the adapted finite
+* `CompactlySupportedContinuousMap.exists_partitionOfUnity_dist_lt`: the adapted finite
   partition of unity.
 * `PartitionOfUnity.norm_sub_sum_smul_le`: the uniform estimate for a partition of unity whose
   members are supported where `f` is `δ`-close to the corresponding vector.
@@ -30,14 +31,13 @@ public section
 open Set Metric
 open scoped CompactlySupported
 
-variable {X E : Type*} [TopologicalSpace X] [LocallyCompactSpace X] [T2Space X]
-  [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {X : Type*} [TopologicalSpace X]
 
-omit [LocallyCompactSpace X] [T2Space X] in
 /-- A partition of unity over the support of `f`, all of whose members are supported where `f`
 is within `δ` of the corresponding vector, gives a sum of scalar multiples of those vectors
 within `δ` of `f` everywhere. -/
-theorem PartitionOfUnity.norm_sub_sum_smul_le {ι : Type*} [Fintype ι] (f : X → E)
+theorem PartitionOfUnity.norm_sub_sum_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {ι : Type*} [Fintype ι] (f : X → E)
     (ρ : PartitionOfUnity ι X (tsupport f)) (c : ι → E) {δ : ℝ} (hδ : 0 ≤ δ)
     (hρ : ∀ i x, ρ i x ≠ 0 → ‖f x - c i‖ ≤ δ) (x : X) :
     ‖f x - ∑ i, ρ i x • c i‖ ≤ δ := by
@@ -66,15 +66,17 @@ theorem PartitionOfUnity.norm_sub_sum_smul_le {ι : Type*} [Fintype ι] (f : X �
 
 namespace CompactlySupportedContinuousMap
 
-omit [NormedSpace ℝ E] in
+variable [LocallyCompactSpace X] [T2Space X] {E : Type*} [PseudoMetricSpace E] [Zero E]
+
 /-- A compactly supported continuous function admits a partition of unity over its support,
 finitely indexed by a subset of a dense set, whose members have compact support inside a given
-neighbourhood of the support and are supported where `f` is `δ`-close to the index. -/
-theorem exists_partitionOfUnity_norm_sub_lt (f : C_c(X, E)) {S : Set E} (hS : Dense S)
+neighbourhood of the support and are supported where `f` is `δ`-close to the index. Only a
+pseudometric and a distinguished zero on the target are needed. -/
+theorem exists_partitionOfUnity_dist_lt (f : C_c(X, E)) {S : Set E} (hS : Dense S)
     {K : Set X} (hfK : tsupport f ⊆ interior K) {δ : ℝ} (hδ : 0 < δ) :
     ∃ (s : Finset S) (ρ : PartitionOfUnity s X (tsupport f)),
       (∀ i, HasCompactSupport (ρ i)) ∧
-        ∀ i x, ρ i x ≠ 0 → x ∈ interior K ∧ ‖f x - (i.val.val : E)‖ < δ := by
+        ∀ i x, ρ i x ≠ 0 → x ∈ interior K ∧ dist (f x) (i.val.val : E) < δ := by
   let U (a : S) := interior K ∩ f ⁻¹' ball (a : E) δ
   have hU (a : S) : IsOpen (U a) :=
     isOpen_interior.inter (isOpen_ball.preimage f.continuous)
@@ -90,6 +92,6 @@ theorem exists_partitionOfUnity_norm_sub_lt (f : C_c(X, E)) {S : Set E} (hS : De
       exact mem_iUnion.2 ⟨⟨a, ha⟩, hxa⟩)
   refine ⟨s, ρ, hρc, fun i x hx => ?_⟩
   have hxU := (hρ i (subset_closure hx))
-  exact ⟨hxU.1, by simpa only [mem_preimage, mem_ball, dist_eq_norm] using hxU.2⟩
+  exact ⟨hxU.1, by simpa only [mem_preimage, mem_ball] using hxU.2⟩
 
 end CompactlySupportedContinuousMap

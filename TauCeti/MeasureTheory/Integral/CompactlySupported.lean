@@ -42,11 +42,12 @@ theorem exists_integral_norm_sub_sum_smul_lt (f : C_c(X, E)) (μ : Measure X)
   obtain ⟨K, hK, hfK⟩ := exists_compact_superset f.hasCompactSupport
   let δ := ε / (μ.real K + 1)
   have hδ : 0 < δ := by positivity
-  obtain ⟨s, ρ, hρc, hρ⟩ := exists_partitionOfUnity_norm_sub_lt f hS hfK hδ
+  obtain ⟨s, ρ, hρc, hρ⟩ := exists_partitionOfUnity_dist_lt f hS hfK hδ
   let φ (i : s) : C_c(X, ℝ) := ⟨ρ i, hρc i⟩
   refine ⟨s, φ, ?_⟩
   have hbound (x : X) : ‖f x - ∑ i : s, φ i x • (i.val.val : E)‖ ≤ δ :=
-    ρ.norm_sub_sum_smul_le f (fun i => (i.val.val : E)) hδ.le (fun i x hx => (hρ i x hx).2.le) x
+    ρ.norm_sub_sum_smul_le f (fun i => (i.val.val : E)) hδ.le (fun i x hx => by
+      simpa only [dist_eq_norm] using (hρ i x hx).2.le) x
   have hout (x : X) (hx : x ∉ K) : f x - ∑ i : s, φ i x • (i.val.val : E) = 0 := by
     have hfx : f x = 0 := image_eq_zero_of_notMem_tsupport fun h =>
       hx (interior_subset (hfK h))
