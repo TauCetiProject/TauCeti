@@ -51,6 +51,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
 * `TauCeti.Manifold.tangentMap_curveVelocityLiftWithin`: tangent maps carry velocity lifts to
   velocity lifts, with `TauCeti.Manifold.tangentMap_curveVelocityLift` as its unrestricted form.
+* `TauCeti.Manifold.eq_curveVelocityLift_of_hasMFDerivAt`: a curve in the tangent bundle whose
+  velocity projects to the curve itself is the velocity lift of its base curve, as along integral
+  curves of second-order vector fields.
 * `ContMDiffOn.contMDiffOn_curveVelocityLiftWithin`: the within-domain velocity lift of a
   `C^(m + 1)` curve is `C^m` on a unique-differentiability domain, and
   `ContMDiffOn.continuousOn_curveVelocityLiftWithin` is its continuous case, with open-domain and
@@ -522,6 +525,28 @@ theorem tangentMap_curveVelocityLift
     (uniqueMDiffWithinAt_univ 𝓘(𝕜, 𝕜))
 
 variable [IsManifold I 1 M]
+
+/-- **A curve in `TM` over the velocity of its base curve is a velocity lift.** If the velocity `w`
+of a curve `z` in the tangent bundle at `t` projects, under the derivative of the bundle
+projection, to the point `z t` itself, then `z t` is the velocity of the base curve
+`s ↦ (z s).proj` at `t`. This holds along every integral curve of a second-order vector field
+on `TM`. -/
+theorem eq_curveVelocityLift_of_hasMFDerivAt {z : 𝕜 → TangentBundle I M} {t : 𝕜}
+    {w : TangentSpace I.tangent (z t)}
+    (hz : HasMFDerivAt 𝓘(𝕜, 𝕜) I.tangent z t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hw : mfderiv I.tangent I (π E (TangentSpace I)) (z t) w = (z t).2) :
+    z t = curveVelocityLift I (fun s ↦ (z s).proj) t := by
+  have hzv : curveVelocity I.tangent z t = w := by
+    rw [← curveVelocityWithin_univ]
+    exact curveVelocityWithin_eq_of_hasMFDerivWithinAt hz.hasMFDerivWithinAt
+      uniqueDiffWithinAt_univ
+  have hvel : curveVelocity I (fun s ↦ (z s).proj) t = (z t).2 := by
+    rw [← curveVelocityWithin_univ]
+    refine (curveVelocityWithin_map (f := π E (TangentSpace I))
+      ((contMDiff_proj (TangentSpace I) (z t)).mdifferentiableAt (n := 1) one_ne_zero)
+      uniqueDiffWithinAt_univ hz.mdifferentiableAt.mdifferentiableWithinAt).trans ?_
+    rw [curveVelocityWithin_univ, hzv, hw]
+  rw [curveVelocityLift_apply, hvel]
 
 /-- The within-domain velocity lift of a `C^n` curve is `C^m` on a domain with unique manifold
 derivatives, when `m + 1 ≤ n`. -/

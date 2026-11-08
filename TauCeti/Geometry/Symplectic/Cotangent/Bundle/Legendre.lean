@@ -83,7 +83,7 @@ Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
 * `TauCeti.lagrangianEnergy`: the energy `E_L(v) = FL(v)(v) - L(v)`, with
   `TauCeti.contMDiff_lagrangianEnergy`.
 * `TauCeti.fiberHessian`, `TauCeti.IsRegularLagrangian`: the fibre Hessian of a Lagrangian, and
-  regular Lagrangians.
+  regular Lagrangians; `TauCeti.fiberHessian_apply_comm`: the fibre Hessian is symmetric.
 * `TauCeti.isInvertible_mfderiv_legendreMap_iff`: the differential of `FL` is invertible exactly
   where the fibre Hessian is.
 * `TauCeti.isLocalDiffeomorphAt_legendreMap_iff`, `TauCeti.isLocalDiffeomorph_legendreMap_iff`:
@@ -277,6 +277,15 @@ theorem fiberHessian_sub_comp_proj (L : TangentBundle I M → 𝕜) (V : M → �
   exact funext fun w ↦
     fderiv_sub_const (𝕜 := 𝕜) (f := fun w : E ↦ L (TotalSpace.mk' E v.proj w)) (V v.proj)
 
+/-- **The fibre Hessian is symmetric**: `∂²L/∂v∂v (u, w) = ∂²L/∂v∂v (w, u)` for a Lagrangian of
+class `minSmoothness 𝕜 2`, that is `C²` over `ℝ` or `ℂ`, by symmetry of second derivatives. -/
+theorem fiberHessian_apply_comm [IsManifold I 1 M] {n : WithTop ℕ∞}
+    (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L) (hn : minSmoothness 𝕜 2 ≤ n)
+    (v : TangentBundle I M) (u w : TangentSpace I v.proj) :
+    fiberHessian L v u w = fiberHessian L v w u :=
+  (contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
+    ).contDiffAt.isSymmSndFDerivAt hn u w
+
 /-- A Lagrangian `L : TM → 𝕜` is **regular** when its fibre Hessian is invertible at every
 tangent vector: contraction with the fibre Hessian is an isomorphism from each tangent space onto
 its dual. -/
@@ -305,7 +314,7 @@ variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 
 /-- In bundle charts, the differential of the Legendre map keeps the base coordinate, because the
 Legendre map covers the identity of `M`. -/
-private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
     (hn : 2 ≤ n) (v : TangentBundle I M) :
     ContinuousLinearMap.fst 𝕜 E (E →L[𝕜] 𝕜) ∘L
         mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v =
@@ -324,7 +333,7 @@ private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜
 differential of the Legendre map at `v` sends the vertical vector with fibre coordinate `w` to the
 vertical covector with fibre coordinate the fibre Hessian `∂²L/∂v∂v` applied to `w`. It is stated
 for the differential `T` read as a map between the model spaces of the charts. -/
-private theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
     (hn : 2 ≤ n) (v : TangentBundle I M) {T : E × E →L[𝕜] E × (E →L[𝕜] 𝕜)}
     (hT : mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v = T)
     (w : TangentSpace I v.proj) :
