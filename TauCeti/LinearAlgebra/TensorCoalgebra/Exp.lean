@@ -232,9 +232,9 @@ theorem map_expCoderiv_deconcatenation_eq_sum (hφ : φ ∘ₗ ofLetter R M = 0)
     | add u v hu hv => simp only [map_add, hu, hv]
   -- The tensor square of `S` expands into the summands.
   rw [hS]
-  have hmap : TensorProduct.map S S = TensorProduct.mapBilinear (RingHom.id R) _ _ _ _ S S := rfl
-  rw [hmap, show S = ∑ r ∈ Finset.range N, c r • coderiv R φ ^ r from rfl,
-    LinearMap.apply_sum_smul_sum_smul]
+  rw [← TensorProduct.mapBilinear_apply]
+  simp only [S]
+  rw [LinearMap.apply_sum_smul_sum_smul]
   simp only [LinearMap.sum_apply, LinearMap.smul_apply, TensorProduct.mapBilinear_apply,
     smul_smul, c]
 
