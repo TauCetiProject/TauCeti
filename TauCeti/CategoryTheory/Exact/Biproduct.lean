@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
+public import TauCeti.CategoryTheory.Exact.Split
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
@@ -29,6 +30,8 @@ so the componentwise short complex `CategoryTheory.ShortComplex.biprod` itself i
 * `TauCeti.ExactStructure.isInflation_biprod`: binary direct sums preserve inflations.
 * `TauCeti.ExactStructure.isDeflation_biprod`: binary direct sums preserve deflations.
 * `TauCeti.ExactStructure.conflation_biprod`: binary direct sums preserve conflations.
+* `CategoryTheory.Iso.conflation_hom_comp_biprod_map`: an isomorphism followed by the identity
+  summand and a conflation gives a conflation.
 
 ## References
 
@@ -128,3 +131,28 @@ theorem conflation_biprod (E : ExactStructure C) {S₁ S₂ : ShortComplex C}
 end ExactStructure
 
 end TauCeti
+
+namespace CategoryTheory.Iso
+
+open CategoryTheory Limits TauCeti ZeroObject
+
+variable {C : Type*} [Category C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+
+/-- If `M ≅ P ⊞ N` and `N ⟶ Q ⟶ K` is a conflation of `E`, then `M ⟶ P ⊞ Q ⟶ 0 ⊞ K`,
+with the first map the isomorphism followed by `𝟙 P ⊞ i`, is a conflation of `E`. -/
+theorem conflation_hom_comp_biprod_map {P N Q K M : C} (e : M ≅ P ⊞ N) (E : ExactStructure C)
+    {i : N ⟶ Q} {p : Q ⟶ K} {hi : i ≫ p = 0} (hT : E.Conflation (ShortComplex.mk i p hi)) :
+    ∃ h : (e.hom ≫ biprod.map (𝟙 P) i) ≫ biprod.map (0 : P ⟶ 0) p = 0,
+      E.Conflation
+        (ShortComplex.mk (e.hom ≫ biprod.map (𝟙 P) i) (biprod.map (0 : P ⟶ 0) p) h) := by
+  have hz : biprod.map (𝟙 P) i ≫ biprod.map (0 : P ⟶ 0) p = 0 := by
+    apply biprod.hom_ext' <;> simp [reassoc_of% hi]
+  have hbip : E.Conflation (ShortComplex.mk (biprod.map (𝟙 P) i)
+      (biprod.map (0 : P ⟶ 0) p) hz) :=
+    E.conflation_biprod (E.conflation_id_zero P) hT
+  refine ⟨by rw [Category.assoc, hz, comp_zero], E.conflation_of_iso ?_ hbip⟩
+  exact ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _)
+    (by simp only [Iso.symm_hom, Iso.refl_hom, Iso.inv_hom_id_assoc, Category.comp_id])
+    (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
+
+end CategoryTheory.Iso

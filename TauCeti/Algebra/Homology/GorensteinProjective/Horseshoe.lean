@@ -48,26 +48,6 @@ namespace TauCeti
 
 variable {A : Type u} [Ring A]
 
-/-- If `M ≅ P ⊞ N` and `N ⟶ Q ⟶ K` is a short exact sequence, then `M ⟶ P ⊞ Q ⟶ 0 ⊞ K`,
-with the first map the isomorphism followed by `𝟙 P ⊞ i`, is a conflation of the abelian exact
-structure. -/
-theorem ExactStructure.conflation_iso_hom_comp_biprod_map {C : Type*} [Category C] [Abelian C]
-    {P N Q K M : C} (e : M ≅ P ⊞ N) {i : N ⟶ Q} (p : Q ⟶ K) {hi : i ≫ p = 0}
-    (hT : (ShortComplex.mk i p hi).ShortExact) :
-    ∃ h : (e.hom ≫ biprod.map (𝟙 P) i) ≫ biprod.map (0 : P ⟶ 0) p = 0,
-      (ExactStructure.abelian C).Conflation
-        (ShortComplex.mk (e.hom ≫ biprod.map (𝟙 P) i) (biprod.map (0 : P ⟶ 0) p) h) := by
-  let E := ExactStructure.abelian C
-  have hz : biprod.map (𝟙 P) i ≫ biprod.map (0 : P ⟶ 0) p = 0 := by
-    apply biprod.hom_ext' <;> simp [reassoc_of% hi]
-  have hbip : E.Conflation (ShortComplex.mk (biprod.map (𝟙 P) i)
-      (biprod.map (0 : P ⟶ 0) p) hz) :=
-    E.conflation_biprod (E.conflation_id_zero P) ((ExactStructure.abelian_conflation _).mpr hT)
-  refine ⟨by rw [Category.assoc, hz, comp_zero], E.conflation_of_iso ?_ hbip⟩
-  exact ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _)
-    (by simp only [Iso.symm_hom, Iso.refl_hom, Iso.inv_hom_id_assoc, Category.comp_id])
-    (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
-
 /-- **The positive horseshoe step.** Copresentations of the two ends of a short exact sequence
 with Gorenstein-projective quotient combine to a copresentation of the middle term. The left
 copresenting module is projective; no injectivity or projectivity is required of the
@@ -102,8 +82,8 @@ theorem IsGorensteinProjective.exists_copresentation_horseshoe
   have hsnd : sp.isoBinaryBiproduct.hom ≫ biprod.snd = cobaseChangeπ S sq.flip := by
     simp
   -- After splitting the pushout, insert the prescribed copresentation of the right end.
-  obtain ⟨hzero, hnext⟩ := ExactStructure.conflation_iso_hom_comp_biprod_map
-    sp.isoBinaryBiproduct pZ hTZ
+  obtain ⟨hzero, hnext⟩ := sp.isoBinaryBiproduct.conflation_hom_comp_biprod_map E
+    ((ExactStructure.abelian_conflation _).mpr hTZ)
   rw [cobaseChange_def] at hmiddle
   -- Noether's conflations give the middle copresentation and the extension of cokernels.
   obtain ⟨K, p, a, b, hip, hab, hK, hC, hcomm, hright⟩ :=
