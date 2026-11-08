@@ -129,10 +129,8 @@ theorem isSeparable_abhyankarModelKummerHom
   let := ((algebraMap _ S).comp (abhyankarModelKummerHom (d := d) hπB).toRingHom).toAlgebra
   have : IsLocalHom (algebraMap R S) :=
     isLocalHom_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
-  have : IsScalarTower A R S := .of_algebraMap_eq fun a ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes,
-      ← IsScalarTower.algebraMap_apply A (abhyankarModel ϖ u e d) S]
+  have : IsScalarTower A R S := .of_algHom
+    ((IsScalarTower.toAlgHom A (abhyankarModel ϖ u e d) S).comp (abhyankarModelKummerHom hπB))
   -- Finiteness makes every maximal ideal of the model lie over the closed point of `B`.
   obtain ⟨_, hrank⟩ := abhyankarModel_free ϖ u (Nat.pos_of_ne_zero he₀)
     (Nat.pos_of_ne_zero hd)
@@ -190,10 +188,8 @@ theorem formallyUnramified_abhyankarModelKummerHom
     isLocalHom_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
   have : Algebra.IsSeparable (ResidueField R) (ResidueField S) :=
     isSeparable_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
-  have : IsScalarTower A R S := .of_algebraMap_eq fun a ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes,
-      ← IsScalarTower.algebraMap_apply A (abhyankarModel ϖ u e d) S]
+  have : IsScalarTower A R S := .of_algHom
+    ((IsScalarTower.toAlgHom A D S).comp (abhyankarModelKummerHom hπB))
   have : Algebra.FiniteType B D := inferInstance
   have : Algebra.EssFiniteType A D := .comp A B D
   have : Algebra.EssFiniteType A S := .comp A D S
