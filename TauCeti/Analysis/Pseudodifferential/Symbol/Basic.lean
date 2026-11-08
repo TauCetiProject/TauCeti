@@ -36,7 +36,9 @@ space, and develop the first operations of the symbol calculus:
   product) of symbols of orders `m'` and `m` has order `m' + m`. By the Leibniz rule
   `ContinuousLinearMap.mixedDeriv_of_bilinear`, `∂_x^α ∂_ξ^β (b ∘ a)` is a sum of terms
   `∂_x^{α₁} ∂_ξ^{β₁} b ∘ ∂_x^{α₂} ∂_ξ^{β₂} a`, each of size
-  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`.
+  `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`. It is bilinear and associative, with
+  the constant symbol `id` as identity, and spatial and frequency derivatives obey the Leibniz
+  rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
 
 A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of every order. Smoothing
 symbols are closed under the operations above, and they form a two-sided ideal under composition
@@ -53,6 +55,10 @@ compact set. Symbols with compact spatial support are uniform
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
+Composition preserves uniform estimates (`TauCeti.Symbol.IsUniform.comp`) and compact spatial
+support of either factor. Composing with the symbol of multiplication by a compactly supported
+smooth function (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_iff`) is therefore a spatial
+cutoff, producing a symbol with uniform estimates.
 
 The mixed derivative `TauCeti.mixedDeriv α β a x ξ`, defined with the coordinate derivatives,
 takes the frequency derivatives first. For smooth `a` the two kinds of derivatives commute
@@ -504,6 +510,16 @@ theorem isUniform_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W} (hf : 
       exact (hC x).trans (le_max_left _ _)
     · exact ⟨0, le_rfl, fun x ξ => by simp [hc, mixedDeriv_comp_fst f α hβ]⟩
 
+/-- The symbol of multiplication by `f` has compact spatial support exactly when `f` has compact
+support. Composing with it is a spatial cutoff: by `HasCompactSpatialSupport.comp_right`, a
+compactly supported smooth `f` cuts every symbol off to one with compact spatial support, which
+therefore satisfies uniform estimates. -/
+theorem hasCompactSpatialSupport_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) : (ofSpatial f hf).HasCompactSpatialSupport ↔ HasCompactSupport f := by
+  refine ⟨fun ⟨K, hK, hKf⟩ => HasCompactSupport.intro hK fun x hx => ?_, fun h => ?_⟩
+  · simpa using hKf x hx 0
+  · exact ⟨tsupport f, h, fun x hx _ => by simpa using image_eq_zero_of_notMem_tsupport hx⟩
+
 /-- The local estimates do not imply the uniform ones: the coordinate function `x_j`, times a
 nonzero coefficient `T`, is a symbol of order `0` that is unbounded in the position. -/
 theorem not_isUniform_ofSpatial_smul (j : Fin n) {T : V →L[ℂ] W} (hT : T ≠ 0)
@@ -723,6 +739,49 @@ theorem HasCompactSpatialSupport.comp_left {a : Symbol n V W m}
     (b.comp a).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
+
+/-- The constant symbol `id` is a left identity for composition. -/
+@[simp]
+theorem const_id_comp (a : Symbol n V W m) :
+    (const (ContinuousLinearMap.id ℂ W)).comp a = inclusion (zero_add m).ge a := by
+  ext1
+  funext p
+  simp
+
+/-- The constant symbol `id` is a right identity for composition. -/
+@[simp]
+theorem comp_const_id (b : Symbol n W U m') :
+    b.comp (const (ContinuousLinearMap.id ℂ W)) = inclusion (add_zero m').ge b := by
+  ext1
+  funext p
+  simp
+
+/-- The Leibniz rule for a spatial derivative of a composition. -/
+theorem spatialDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W m) :
+    spatialDeriv j (b.comp a) = (spatialDeriv j b).comp a + b.comp (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simpa only [coefficient_spatialDeriv, coefficient_comp, coefficient_add, Pi.add_apply] using
+    coordinateDeriv_singleton_clm_comp (f := fun y => b.coefficient (y, ξ))
+      (g := fun y => a.coefficient (y, ξ))
+      ((b.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).of_le (by simp))
+      ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).of_le (by simp)) j x
+
+/-- The Leibniz rule for a frequency derivative of a composition. The orders `m' - 1 + m` and
+`m' + (m - 1)` of the two terms are identified with the order `m' + m - 1` of the left side
+through `Symbol.inclusion`. -/
+theorem frequencyDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W m) :
+    frequencyDeriv j (b.comp a) =
+      inclusion (by linarith) ((frequencyDeriv j b).comp a) +
+        inclusion (by linarith) (b.comp (frequencyDeriv j a)) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simpa only [coefficient_frequencyDeriv, coefficient_comp, coefficient_add, Pi.add_apply,
+    coefficient_inclusion] using
+    coordinateDeriv_singleton_clm_comp (f := fun η => b.coefficient (x, η))
+      (g := fun η => a.coefficient (x, η))
+      ((b.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
+      ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j ξ
 
 end Comp
 
