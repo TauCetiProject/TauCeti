@@ -69,9 +69,9 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J ∞ N]
 
-/-- A diffeomorphism `ψ` of cotangent bundles pulling `λ_N` back to `λ_M` and covering a
-differentiable map `f` of the bases sends a covector `p` at `x` to a covector `q` at `f x` with
-`q (df_x v) = p v` for every tangent vector `v` at `x`. -/
+/-- A diffeomorphism `ψ` of cotangent bundles pulling `λ_N` back to `λ_M` and covering a map
+`f` of the bases (automatically smooth) sends a covector `p` at `x` to a covector `q` at `f x`
+with `q (df_x v) = p v` for every tangent vector `v` at `x`. -/
 private theorem snd_apply_mfderiv_of_proj_apply_eq
     (ψ : CotangentBundle I M ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), J.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯
       CotangentBundle J N)
