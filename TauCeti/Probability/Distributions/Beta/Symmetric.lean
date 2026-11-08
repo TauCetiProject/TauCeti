@@ -160,21 +160,21 @@ theorem integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure {ι : Typ
   exact Finset.prod_congr rfl fun i _ ↦
     integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha i) (hr i) (n i)
 
-/-- Centered symmetric Beta variables lie in the closed unit cube almost surely. -/
-theorem ae_abs_le_one_pi_centered_betaMeasure {ι : Type*} [Fintype ι]
+/-- Centered symmetric Beta variables lie in the open unit cube almost surely. -/
+theorem ae_abs_lt_one_pi_centered_betaMeasure {ι : Type*} [Fintype ι]
     {a : ι → ℝ} (ha : ∀ ij, 0 < a ij) :
     ∀ᵐ z ∂(Measure.pi fun ij ↦
-      (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)), ∀ ij, |z ij| ≤ 1 := by
+      (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)), ∀ ij, |z ij| < 1 := by
   have (ij : ι) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
     isProbabilityMeasureBeta (ha ij) (ha ij)
   apply ae_all_iff.2
   intro ij
   apply (Measure.tendsto_eval_ae_ae (α := fun _ ↦ ℝ) (μ := fun ij ↦
     (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) (i := ij)).eventually
-      (p := fun x : ℝ ↦ |x| ≤ 1)
+      (p := fun x : ℝ ↦ |x| < 1)
   apply (ae_map_iff (by fun_prop) (by measurability)).2
   filter_upwards [ae_mem_Ioo_betaMeasure (a ij) (a ij)] with x hx
-  rw [abs_le]
+  rw [abs_lt]
   constructor <;> linarith [hx.1, hx.2]
 
 end TauCeti.Probability

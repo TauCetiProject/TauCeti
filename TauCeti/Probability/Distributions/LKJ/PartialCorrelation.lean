@@ -61,29 +61,6 @@ namespace TauCeti.Probability
 
 variable {p : ℕ} {η : ℝ}
 
-/-- Independent centered symmetric Beta partial correlations lie in the open cube. -/
-private theorem ae_abs_lt_one_pi_betaMeasure (hη : 0 < η) :
-    ∀ᵐ z ∂Measure.pi (fun ij : strictLowerTriangle p ↦
-        (betaMeasure (lkjPartialCorrelationShape p η ij)
-          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)),
-      ∀ ij, |z ij| < 1 := by
-  let _ (ij : strictLowerTriangle p) :
-      IsProbabilityMeasure
-        (betaMeasure (lkjPartialCorrelationShape p η ij) (lkjPartialCorrelationShape p η ij)) :=
-    isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)
-      (lkjPartialCorrelationShape_pos hη ij)
-  refine Filter.eventually_all.2 fun ij ↦ ?_
-  have hij : ∀ᵐ z ∂(betaMeasure (lkjPartialCorrelationShape p η ij)
-      (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x), |z| < 1 := by
-    refine (ae_map_iff (by fun_prop) (by measurability)).2 ?_
-    filter_upwards [ae_mem_Ioo_betaMeasure (lkjPartialCorrelationShape p η ij)
-      (lkjPartialCorrelationShape p η ij)] with x hx
-    rw [abs_lt]
-    constructor <;> linarith [hx.1, hx.2]
-  exact (Measure.tendsto_eval_ae_ae (i := ij) (μ := fun ij : strictLowerTriangle p ↦
-    (betaMeasure (lkjPartialCorrelationShape p η ij)
-      (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x))).eventually hij
-
 /-- On the open cube, the Jacobian of the partial-correlation map times the LKJ density is the
 product of the centered symmetric Beta densities of the partial correlations. -/
 private theorem prod_sqrt_pow_mul_lkj_density {z : strictLowerTriangle p → ℝ}
@@ -190,7 +167,9 @@ theorem map_partialCorrelationOfCorrelationCoordinates_withDensity (hη : 0 < η
       continuous_correlationCoordinatesOfPartialCorrelation.measurable]
   conv_rhs => rw [← Measure.map_id (μ := Measure.pi _)]
   refine Measure.map_congr ?_
-  filter_upwards [ae_abs_lt_one_pi_betaMeasure hη] with z hz
+  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure
+    (a := fun ij : strictLowerTriangle p ↦ lkjPartialCorrelationShape p η ij)
+    (lkjPartialCorrelationShape_pos hη)] with z hz
   exact partialCorrelationOfCorrelationCoordinates_correlationCoordinatesOfPartialCorrelation hz
 
 end TauCeti.Probability
