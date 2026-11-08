@@ -81,6 +81,21 @@ theorem mapsTo_pow_ball_zero_diff_singleton (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
     MapsTo (fun t : ℂ => t ^ n) (ball 0 R' \ {0}) (ball 0 R \ {0}) :=
   fun _ ht => ⟨mapsTo_pow_ball_zero hn hR ht.1, pow_ne_zero n ht.2⟩
 
+/-- A power-times-unit form for `G` off the hyperplane `t = 0`, on `V × (ball 0 R \ {0})`,
+pulls back along `(w, t) ↦ (w, t ^ n)` to a power-times-unit form with exponent `n * m` near
+every point `(x, 0)` with `x ∈ V`, whenever `R' ^ n ≤ R`. -/
+theorem eventually_comp_pow_eq_pow_mul {V : Set E} {G w : E × ℂ → ℂ} {m : ℕ} (hV : IsOpen V)
+    (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
+    (h : ∀ b ∈ V ×ˢ (ball 0 R \ {0}), G b = b.2 ^ m * w b) {x : E} (hx : x ∈ V) :
+    ∀ᶠ b in nhds (x, (0 : ℂ)), b.2 ≠ 0 →
+      G (b.1, b.2 ^ n) = b.2 ^ (n * m) * w (b.1, b.2 ^ n) := by
+  have hx' : (x, (0 : ℂ)) ∈ V ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
+  filter_upwards [(hV.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+  have hqmem : MapsTo (fun b : E × ℂ ↦ (b.1, b.2 ^ n)) (V ×ˢ (ball 0 R' \ {0}))
+      (V ×ˢ (ball 0 R \ {0})) :=
+    (mapsTo_id V).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
+  simpa only [← pow_mul] using h _ (hqmem ⟨hb.1, hb.2, hb0⟩)
+
 /-- The **power substitution** `(w, s) ↦ (w, s ^ n)` from `U × (ball 0 R' \ {0})` to
 `U × (ball 0 R \ {0})`, for `n ≠ 0` and `R' ^ n ≤ R`. -/
 def powerSubstitution (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
