@@ -16,8 +16,6 @@ public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
 
-import Mathlib.Topology.Algebra.Group.Basic
-
 /-!
 # Transfer instances for restricted and properly discontinuous actions
 
@@ -31,11 +29,11 @@ A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
 countable, and that the translates of a compact set under it form a locally finite family.
-Conversely, for a jointly continuous action of a `T₁` group with separately continuous
-multiplication, local finiteness of the translates of any nonempty set forces the group topology
-to be discrete. Likewise, a nonempty open set disjoint from all of its nontrivial translates
-forces the acting topological group to be discrete, and on such a set the orbit projection is an
-open embedding.
+Conversely, for a jointly continuous action of a group with a `T₁` topology, local finiteness of
+the translates of any nonempty set forces the topology on the group to be discrete. Likewise, a
+nonempty open set disjoint from all of its nontrivial translates forces the acting group, with
+any topology for which the orbit maps are continuous, to be discrete, and on such a set the orbit
+projection is an open embedding.
 
 ## Main results
 
@@ -64,7 +62,7 @@ open embedding.
 * `TauCeti.isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul`: the orbit projection is an
   open embedding on an open set disjoint from its nontrivial translates.
 * `TauCeti.discreteTopology_of_disjoint_smul`: the existence of a nonempty such open set makes the
-  acting topological group discrete.
+  acting group discrete.
 -/
 
 public section
@@ -185,11 +183,11 @@ open Set
 variable {G X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
   {U : Set X}
 
-/-- **Discreteness from a disjoint open translate.** If a topological group acts with continuous
+/-- **Discreteness from a disjoint open translate.** If a group with a topology acts with continuous
 orbit maps and some nonempty open set is disjoint from all of its translates by nonidentity
 elements, then the group is discrete. -/
 @[to_additive
-/-- **Discreteness from a disjoint open translate.** If a topological additive group acts with
+/-- **Discreteness from a disjoint open translate.** If an additive group with a topology acts with
 continuous orbit maps and some nonempty open set is disjoint from all of its translates by nonzero
 elements, then the group is discrete. -/]
 theorem discreteTopology_of_disjoint_smul (hcont : ∀ x : X, Continuous fun g : G ↦ g • x)
