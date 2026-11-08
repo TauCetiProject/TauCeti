@@ -7,11 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Range
--- Proof-only: `E₀(F_u)` has finite index, by Tate's algorithm.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
--- Proof-only: the reduced curve over a finite residue field has finitely many points.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
--- Proof-only: the residue field of `O_u` is finite, and `O_u` is Henselian.
+-- Proof-only: `O_u` is Henselian.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
@@ -36,8 +32,6 @@ ideal: Silverman AEC VII.2.2.
   parametrisation is the kernel of reduction.
 * `WeierstrassCurve.index_kerReduction`: the reduction exact sequence computes the index of
   `E₁(F_u)` as the nonsingular reduction count times the index of `E₀(F_u)`.
-* `WeierstrassCurve.finiteIndex_kerReduction`: for a minimal equation over a finite residue
-  field, the kernel of reduction has finite index.
 
 ## References
 
@@ -60,6 +54,10 @@ local notation "m_u" => IsLocalRing.maximalIdeal O_u
 local notation "R_u" =>
   Valuation.valuationSubring
     (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
+
+-- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`, so the Henselian
+-- structure on `O_u` also supplies the valuation-ring instance used by reduction.
+private local instance : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
 
 local instance : IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
@@ -118,7 +116,6 @@ theorem index_kerReduction :
       Nat.card ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point *
         ((C.baseChange F_u).toAffine.nonsingularReduction Valued.v).index := by
   have : IsIntegral O_u (C.baseChange F_u) := ⟨C, rfl⟩
-  have : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
   let W := (C.baseChange F_u).toAffine
   have hle : C.kerReduction u ≤ W.nonsingularReduction Valued.v := by
     intro P hP
@@ -133,18 +130,5 @@ theorem index_kerReduction :
   rw [← AddSubgroup.relIndex_mul_index hle, AddSubgroup.relIndex, hker,
     AddSubgroup.index_ker, AddMonoidHom.range_eq_top.mpr
       (Affine.nonsingularReductionHom_surjective Valued.v), AddSubgroup.card_top]
-
-open scoped Classical in
-/-- **`E₁(F_u)` has finite index in `E(F_u)`**: the kernel of reduction of a minimal equation over
-`O_u` has finite index in the points over `F_u` when the residue field is finite. -/
-instance finiteIndex_kerReduction [Finite (A ⧸ u.asIdeal)]
-    [IsMinimal O_u (C.baseChange F_u)] : (C.kerReduction u).FiniteIndex := by
-  have : IsDiscreteValuationRing R_u := inferInstanceAs (IsDiscreteValuationRing O_u)
-  have : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
-  have : Finite (ResidueField R_u) := inferInstanceAs (Finite (ResidueField O_u))
-  have : IsMinimal R_u (C.baseChange F_u) := inferInstanceAs (IsMinimal O_u (C.baseChange F_u))
-  refine ⟨?_⟩
-  rw [C.index_kerReduction u]
-  exact mul_ne_zero Nat.card_pos.ne' AddSubgroup.FiniteIndex.index_ne_zero
 
 end WeierstrassCurve

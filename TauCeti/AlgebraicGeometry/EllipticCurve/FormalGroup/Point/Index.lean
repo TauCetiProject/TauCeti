@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Filtration
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Local
+-- Proof-only: the reduced curve over a finite residue field has finitely many points.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 
 /-!
 # Indices of the formal filtration in the local point group
@@ -52,6 +54,16 @@ local notation "R_u" =>
   Valuation.valuationSubring
     (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
 
+-- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`. Register the
+-- structures known on `O_u` also at the valuation-ring spelling used by reduction.
+private local instance : IsDiscreteValuationRing R_u :=
+  inferInstanceAs (IsDiscreteValuationRing O_u)
+
+private local instance : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
+
+private local instance [Finite (A ⧸ u.asIdeal)] : Finite (ResidueField R_u) :=
+  inferInstanceAs (Finite (ResidueField O_u))
+
 local instance isLinearTopology_index : IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
 
@@ -60,6 +72,11 @@ private local instance fact_isAdic_index : Fact (IsAdic m_u) :=
 
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
+
+-- The same definitional identification of `O_u` and `R_u` transports minimality.
+private local instance [IsMinimal O_u (C.baseChange F_u)] :
+    IsMinimal R_u (C.baseChange F_u) :=
+  inferInstanceAs (IsMinimal O_u (C.baseChange F_u))
 
 open scoped Classical in
 /-- The image in the local point group of formal parameters in `𝔪_u ^ k`. For `k ≥ 1` this
@@ -148,8 +165,16 @@ theorem index_formalPointFiltration_eq_mul_tamagawaNumber [IsMinimal O_u (C.base
       Nat.card (ResidueField O_u) ^ k *
         Nat.card ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point *
         (C.baseChange F_u).tamagawaNumber Valued.v := by
-  have : IsMinimal R_u (C.baseChange F_u) := inferInstanceAs (IsMinimal O_u (C.baseChange F_u))
   rw [C.index_formalPointFiltration u, tamagawaNumber_eq_index]
+
+open scoped Classical in
+/-- **`E₁(F_u)` has finite index in `E(F_u)`**: the kernel of reduction of a minimal equation over
+`O_u` has finite index in the points over `F_u` when the residue field is finite. -/
+instance finiteIndex_kerReduction [Finite (A ⧸ u.asIdeal)]
+    [IsMinimal O_u (C.baseChange F_u)] : (C.kerReduction u).FiniteIndex := by
+  refine ⟨?_⟩
+  rw [C.index_kerReduction u]
+  exact mul_ne_zero Nat.card_pos.ne' AddSubgroup.FiniteIndex.index_ne_zero
 
 open scoped Classical in
 /-- Over a finite residue field every formal level of a minimal equation has finite index
