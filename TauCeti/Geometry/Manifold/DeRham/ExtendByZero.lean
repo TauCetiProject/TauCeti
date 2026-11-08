@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Topology.Sets.Opens
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DifferentialForm.Support
 import Mathlib.Geometry.Manifold.PartitionOfUnity
