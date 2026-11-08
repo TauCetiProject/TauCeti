@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.Center.OfHom
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 public import TauCeti.CategoryTheory.Semisimple.DualBasis
@@ -226,8 +225,8 @@ section Fusion
 
 variable (k : Type w) [Field k] [IsAlgClosed k]
 variable {C : Type u} [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategory C]
-  [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C] [IsFiniteSemisimpleCategory C]
-  [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
+  [MonoidalPreadditive C] [MonoidalLinear k C] [RightRigidCategory C]
+  [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
 
 attribute [local instance] Abelian.hasFiniteBiproducts
 
@@ -417,19 +416,6 @@ theorem inductionβHom_tensorUnit : inductionβHom k X (𝟙_ C) = (ρ_ _).hom �
   · rw [biproduct.ι_π_ne_assoc _ h, zero_comp, comp_zero,
       inductionβComponent_tensorUnit_of_ne k X h]
 
-/-- The half-braiding of `inductionObj X = ⨁ S, S ⊗ X ⊗ Sᘁ`. Its components are
-`inductionβHom k X`, and its inverse components are obtained from them using left duals
-(`CategoryTheory.HalfBraiding.ofHom`). -/
-def inductionHalfBraiding : HalfBraiding (inductionObj X) :=
-  HalfBraiding.ofHom (inductionβHom_tensorUnit k X) (inductionβHom_tensor k X)
-    (inductionβHom_naturality k X)
-
-/-- The components of `inductionHalfBraiding k X` are `inductionβHom k X`. -/
-@[simp]
-theorem inductionHalfBraiding_β_hom (Y : C) :
-    ((inductionHalfBraiding k X).β Y).hom = inductionβHom k X Y :=
-  HalfBraiding.ofHom_β_hom _ _ _ Y
-
 /-- The morphism `⨁ S, S ⊗ X ⊗ Sᘁ ⟶ ⨁ S, S ⊗ X' ⊗ Sᘁ` induced by `h : X ⟶ X'`. -/
 abbrev inductionMap {X X' : C} (h : X ⟶ X') : inductionObj X ⟶ inductionObj X' :=
   biproduct.map fun S ↦ S.repr ◁ h ▷ S.reprᘁ
@@ -442,6 +428,21 @@ theorem inductionMap_whiskerRight_comp_inductionβHom {X' : C} (h : X ⟶ X') (Y
     biproduct.map_π]
   rw [comp_whiskerRight_assoc, ι_whiskerRight_inductionβHom_whiskerLeft_π, whiskerLeft_comp,
     ι_whiskerRight_inductionβHom_whiskerLeft_π_assoc, whiskerRight_comp_inductionβComponent]
+
+variable [LeftRigidCategory C]
+
+/-- The half-braiding of `inductionObj X = ⨁ S, S ⊗ X ⊗ Sᘁ`. Its components are
+`inductionβHom k X`, and its inverse components are obtained from them using left duals
+(`CategoryTheory.HalfBraiding.ofHom`). -/
+def inductionHalfBraiding : HalfBraiding (inductionObj X) :=
+  HalfBraiding.ofHom (inductionβHom_tensorUnit k X) (inductionβHom_tensor k X)
+    (inductionβHom_naturality k X)
+
+/-- The components of `inductionHalfBraiding k X` are `inductionβHom k X`. -/
+@[simp]
+theorem inductionHalfBraiding_β_hom (Y : C) :
+    ((inductionHalfBraiding k X).β Y).hom = inductionβHom k X Y :=
+  HalfBraiding.ofHom_β_hom _ _ _ Y
 
 /-- The object `⨁ S, S ⊗ X ⊗ Sᘁ` of the Drinfeld centre, with the half-braiding
 `inductionHalfBraiding`. -/
