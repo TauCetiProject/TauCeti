@@ -27,13 +27,19 @@ permutation representations `k[G ⧸ H]` and `k[G ⧸ K]`
 (`TauCeti.almostConjugate_iff_nonempty_equiv_ofMulAction`), so the two spaces of
 morphisms are isomorphic.
 
-This is the representation-theoretic core of Sunada's construction of isospectral manifolds. If
-`G` acts by isometries on a Riemannian manifold `X`, the eigenfunctions of the Laplacian on
-`X ⧸ H` are the `H`-invariant eigenfunctions on `X`. Each eigenspace of the Laplacian on `X` is a
-representation of `G`, so `X ⧸ H` and `X ⧸ K` have the same eigenvalues with the same
-multiplicities. `Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq` states this
-equality of multiplicities for an operator commuting with the action. Only the dimensions agree:
-the two spaces of invariants are in general different subspaces of the representation.
+This is the representation-theoretic core of Sunada's construction of isospectral manifolds.
+What this file proves is purely algebraic:
+`Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq` says that for a linear operator
+commuting with the action, the `H`-fixed and `K`-fixed vectors in each eigenspace have the same
+dimension. Only the dimensions agree: the two spaces of invariants are in general different
+subspaces of the representation.
+
+The geometric application needs analytic input that is not formalised here. Let `G` act freely by
+isometries on a closed Riemannian manifold `X`. Then `X ⧸ H` and `X ⧸ K` are closed Riemannian
+manifolds, each eigenspace of the Laplacian on `X` is a finite-dimensional representation of `G`,
+and the eigenfunctions on `X ⧸ H` are identified with the `H`-invariant eigenfunctions on `X`.
+Given these facts, the algebraic result shows that `X ⧸ H` and `X ⧸ K` have the same eigenvalues
+with the same multiplicities.
 
 The coefficient field, the group and the representation share one universe, as the categorical
 constructions behind `TauCeti.quotientHomEquivInvariants` (`Rep.indResHomEquiv` and
