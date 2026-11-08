@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.ExactFunctor
+public import Mathlib.CategoryTheory.Triangulated.Adjunction
 
 /-!
 # Derived equivalences induced by additive equivalences
 
 An additive equivalence of abelian categories induces an equivalence of their derived categories.
-Its functor and inverse are Mathlib's actual termwise derived actions. The unit and counit
-are the derived images of the original comparisons, composed with Mathlib's identity and
-composition comparisons for derived functors.
+Its functor and inverse are Mathlib's actual termwise derived actions, with their shift
+structures. The counit is the derived image of the original counit, composed with Mathlib's
+identity and composition comparisons for derived functors; the unit is the corresponding
+adjointified unit. The induced equivalence is compatible with shifts and triangulated.
 -/
 
 public section
@@ -26,15 +28,29 @@ namespace CategoryTheory.NatIso
 
 variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [HasDerivedCategory.{w₁} A]
   {B : Type u₂} [Category.{v₂} B] [Abelian B] [HasDerivedCategory.{w₂} B]
+  {F G : A ⥤ B} [F.Additive] [G.Additive] [PreservesFiniteLimits F] [PreservesFiniteLimits G]
+  [PreservesFiniteColimits F] [PreservesFiniteColimits G]
 
 /-- An isomorphism of exact functors induces an isomorphism of their derived actions. -/
-noncomputable def mapDerivedCategory {F G : A ⥤ B}
-    [F.Additive] [G.Additive] [PreservesFiniteLimits F] [PreservesFiniteLimits G]
-    [PreservesFiniteColimits F] [PreservesFiniteColimits G] (α : F ≅ G) :
+noncomputable def mapDerivedCategory (α : F ≅ G) :
     F.mapDerivedCategory ≅ G.mapDerivedCategory :=
   Localization.liftNatIso DerivedCategory.Q
     (HomologicalComplex.quasiIso A (ComplexShape.up ℤ)) _ _ _ _
     (isoWhiskerRight (NatIso.mapHomologicalComplex α (ComplexShape.up ℤ)) DerivedCategory.Q)
+
+/-- The forward map of the derived isomorphism is Mathlib's derived natural transformation. -/
+@[simp]
+lemma mapDerivedCategory_hom (α : F ≅ G) :
+    (mapDerivedCategory α).hom = NatTrans.mapDerivedCategory α.hom := (rfl)
+
+/-- The inverse map of the derived isomorphism is Mathlib's derived natural transformation. -/
+@[simp]
+lemma mapDerivedCategory_inv (α : F ≅ G) :
+    (mapDerivedCategory α).inv = NatTrans.mapDerivedCategory α.inv := (rfl)
+
+/-- The derived isomorphism commutes with integer shifts. -/
+instance (α : F ≅ G) : NatTrans.CommShift (mapDerivedCategory α).hom ℤ :=
+  inferInstanceAs (NatTrans.CommShift (NatTrans.mapDerivedCategory α.hom) ℤ)
 
 end CategoryTheory.NatIso
 
@@ -65,7 +81,24 @@ lemma mapDerivedCategory_inverse :
 noncomputable instance : e.mapDerivedCategory.functor.CommShift ℤ :=
   inferInstanceAs (e.functor.mapDerivedCategory.CommShift ℤ)
 
+/-- The inverse of the induced equivalence carries the termwise shift structure. -/
+noncomputable instance : e.mapDerivedCategory.inverse.CommShift ℤ :=
+  inferInstanceAs (e.inverse.mapDerivedCategory.CommShift ℤ)
+
+/-- The unit and counit of the induced equivalence commute with integer shifts. -/
+instance : e.mapDerivedCategory.CommShift ℤ :=
+  -- `Equivalence.mk` keeps the given counit, a composite of shift-compatible isomorphisms.
+  CommShift.mk'' _ _ (inferInstanceAs (NatTrans.CommShift
+    ((e.inverse.mapDerivedCategoryCompIso e.functor).hom ≫
+      (NatIso.mapDerivedCategory e.counitIso).hom ≫ (mapDerivedCategoryIdIso B).hom) ℤ))
+
 instance : e.mapDerivedCategory.functor.IsTriangulated :=
   inferInstanceAs (e.functor.mapDerivedCategory.IsTriangulated)
+
+instance : e.mapDerivedCategory.inverse.IsTriangulated :=
+  inferInstanceAs (e.inverse.mapDerivedCategory.IsTriangulated)
+
+/-- Both directions of the induced equivalence preserve distinguished triangles. -/
+instance : e.mapDerivedCategory.IsTriangulated where
 
 end CategoryTheory.Equivalence
