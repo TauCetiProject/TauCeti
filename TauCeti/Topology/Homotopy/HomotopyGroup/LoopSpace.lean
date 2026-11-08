@@ -189,6 +189,13 @@ theorem _root_.genLoopHomeoOfIsEmpty_apply [IsEmpty N] (p : Ω^ N X x) :
     genLoopHomeoOfIsEmpty N x p = p 0 :=
   rfl
 
+/-- The inverse of Mathlib's homeomorphism `Ω^ N X x ≃ₜ X` for empty `N` sends a point to the
+constant zero-dimensional generalized loop at it. -/
+@[simp]
+theorem _root_.genLoopHomeoOfIsEmpty_symm_apply [IsEmpty N] (c : X) (t : I^N) :
+    (genLoopHomeoOfIsEmpty N x).symm c t = c :=
+  rfl
+
 /-- Mathlib's bijection between the homotopy group indexed by an empty type and the path
 components of `X` sends the class of a zero-dimensional generalized loop to the path component of
 its value. -/

@@ -177,7 +177,7 @@ private theorem joined_of_joined_map_of_fiber (hp : serreFibrations p)
   -- Points of the fibres are zero-dimensional generalized loops, whose classes are their path
   -- components (`homotopyGroupEquivZerothHomotopyOfIsEmpty`).
   let ℓ : Ω^ (Fin 0) (p.fiber b) e := (genLoopHomeoOfIsEmpty (Fin 0) e).symm y
-  have hℓ : ℓ 0 = y := (genLoopHomeoOfIsEmpty_apply ℓ).symm.trans (Homeomorph.apply_symm_apply _ y)
+  have hℓ : ℓ 0 = y := genLoopHomeoOfIsEmpty_symm_apply y 0
   -- The image of `y` in the fibre of `p'` is joined to the base point in `E'`, so its class is a
   -- boundary, of an element which comes from `B` since `g` is surjective on `π_1`.
   obtain ⟨y', hy'⟩ : HomotopyGroup.map (sq.fiberMap b).hom rfl (⟦ℓ⟧ : HomotopyGroup _ _ _) ∈
