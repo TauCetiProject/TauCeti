@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 
 /-!
-# The action functional on contractible loops of a weakly exact manifold
+# The action functional on capped and contractible loops
 
 Loops in a manifold `M` are `1`-periodic maps `γ : ℝ → M`. A **cylinder** from a loop `γ₀` to a
 loop `γ₁` (`TauCeti.IsLoopCylinder`) is a `C²` map `w : ℝ × ℝ → M`, `1`-periodic in its second
@@ -20,7 +20,29 @@ constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. A c
 constant loops is a **sphere**.
 
 The integral `∫ w^* φ` of a two-form `φ` over a cylinder is `TauCeti.rectangleIntegral φ w (0, 0)
-(1, 1)`, oriented by the coordinates `(s, t)`. The form `φ` is **weakly exact**
+(1, 1)`, oriented by the coordinates `(s, t)`.
+
+For an arbitrary two-form `ω` and a time-dependent Hamiltonian `H : ℝ → M → ℝ`, the **action of
+the capped loop** `(γ, u)`, where `u` is a cap of `γ = u (0, ·)`, is
+
+`A_H(γ, u) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt`
+
+(`TauCeti.cappedLoopAction`). This is the action on which capped Hamiltonian Floer theory on a
+closed symplectic manifold is built; it obeys the following laws for every continuous form.
+
+* **Recapping.** Two caps `u`, `v` of the same loop differ by a sphere, obtained by running
+  backwards through `u` and then through `v`, and `A_H(γ, v) - A_H(γ, u)` is the area of this
+  sphere (`TauCeti.cappedLoopAction_sub_cappedLoopAction`). Dually, gluing a sphere `σ` at the
+  centre of a cap adds its area, `A_H(γ, u # σ) = A_H(γ, u) + ∫ σ^* ω`
+  (`TauCeti.cappedLoopAction_rectangleTrans`).
+* **Cylinders.** For a cylinder `w` from `γ₀` to `γ₁` and a cap `v` of `γ₁`,
+  `A_H(γ₀, w # v) - A_H(γ₁, v) = ∫ w^* ω - ∫₀¹ H(t, γ₀(t)) dt + ∫₀¹ H(t, γ₁(t)) dt`
+  (`TauCeti.cappedLoopAction_rectangleTrans_sub`). This identifies the energy of a Floer cylinder
+  with the drop of the capped action.
+* **Homotopy invariance.** For a closed form the action is unchanged along a `C²` homotopy of
+  caps fixing the loop (`TauCeti.cappedLoopAction_eq_of_homotopy`).
+
+The form `φ` is **weakly exact**
 (`TauCeti.IsWeaklyExact`) when its integral over every sphere vanishes. Gluing two caps of the
 same loop along the loop gives a sphere, so for a continuous weakly exact form all caps of a loop
 have the same integral (`TauCeti.IsWeaklyExact.rectangleIntegral_eq_of_isCap`). This common value
@@ -31,13 +53,14 @@ of two loops joined by a cylinder `w` differ by `∫ w^* φ`
 `-∫_γ α` (`TauCeti.capArea_mextDeriv`). Weak exactness is natural: its pullback along a `C²` map
 is weakly exact (`TauCeti.IsWeaklyExact.mpullback`).
 
-For a weakly exact two-form `ω` and a time-dependent Hamiltonian `H : ℝ → M → ℝ`, the **action**
-of a loop `γ` admitting a cap `u` is
+For a weakly exact two-form `ω`, the **action** of a loop `γ` admitting a cap `u` is
 
 `A_H(γ) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt`
 
-(`TauCeti.contractibleLoopAction`), with `u` running from `γ` to the constant loop. It does not
-depend on the cap (`TauCeti.IsWeaklyExact.contractibleLoopAction_eq`), and along a cylinder `w`
+(`TauCeti.contractibleLoopAction`), with `u` running from `γ` to the constant loop. It is the
+capped action for any cap (`TauCeti.IsWeaklyExact.contractibleLoopAction_eq`); conversely, a
+continuous form is weakly exact exactly when the capped action never depends on the cap
+(`TauCeti.isWeaklyExact_iff_forall_cappedLoopAction_eq`). Along a cylinder `w`
 from `γ₀` to `γ₁` it changes by the area of `w` and the Hamiltonian terms
 (`TauCeti.IsWeaklyExact.contractibleLoopAction_sub`); this is how the energy of a Floer cylinder
 is identified with the action difference of its ends. A constant loop at `x` has cap area `0` and
@@ -61,12 +84,20 @@ action exactly when it has a `C²` cap.
 
 * `TauCeti.IsLoopCylinder`: a `C²` cylinder between two loops.
 * `TauCeti.IsCap`: a `C²` cap of a loop.
+* `TauCeti.cappedLoopAction`: the Hamiltonian action of a loop with a chosen cap.
 * `TauCeti.IsWeaklyExact`: a two-form whose integral over every sphere vanishes.
 * `TauCeti.capArea`: the integral of a two-form over a cap of a loop.
 * `TauCeti.contractibleLoopAction`: the Hamiltonian action of a capped loop.
 
 ## Main results
 
+* `TauCeti.cappedLoopAction_sub_cappedLoopAction`: recapping changes the capped action by the area
+  of the sphere between the two caps.
+* `TauCeti.cappedLoopAction_rectangleTrans_sub`: the capped action difference along a cylinder.
+* `TauCeti.cappedLoopAction_eq_of_homotopy`: for a closed form, homotopic caps give the same
+  action.
+* `TauCeti.isWeaklyExact_iff_forall_cappedLoopAction_eq`: weak exactness is independence of the
+  cap.
 * `TauCeti.IsWeaklyExact.rectangleIntegral_eq_of_isCap`: for a weakly exact form, all caps of a
   loop have the same area.
 * `TauCeti.IsWeaklyExact.capArea_eq_rectangleIntegral_add`: the cap areas of the two ends of a
@@ -93,6 +124,7 @@ public section
 
 noncomputable section
 
+open Set
 open scoped Manifold Interval Topology
 
 namespace TauCeti
@@ -174,6 +206,104 @@ theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [To
 
 end IsLoopCylinder
 
+/-! ### The action of a capped loop -/
+
+/-- The **action of a capped loop**, for a two-form `ω` and a time-dependent Hamiltonian `H`. A
+map `u : ℝ × ℝ → M` is read as a cap of the loop `γ = u (0, ·)`, running from `γ` at `s = 0` to
+its centre at `s = 1`, and
+
+`A_H(γ, u) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt`.
+
+No condition is imposed on `ω`. When `ω` does not vanish on spheres the action depends on the
+cap: changing the cap by a sphere changes it by the area of that sphere
+(`TauCeti.cappedLoopAction_sub_cappedLoopAction`). For a weakly exact form it is the action
+`TauCeti.contractibleLoopAction` of the loop (`TauCeti.IsWeaklyExact.contractibleLoopAction_eq`).
+-/
+def cappedLoopAction (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (u : ℝ × ℝ → M) : ℝ :=
+  rectangleIntegral ω u (0, 0) (1, 1) - ∫ t in 0..1, H t (u (0, t))
+
+theorem cappedLoopAction_def (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (u : ℝ × ℝ → M) :
+    cappedLoopAction ω H u = rectangleIntegral ω u (0, 0) (1, 1) - ∫ t in 0..1, H t (u (0, t)) :=
+  (rfl)
+
+/-- The constant cap of the constant loop at `x` has action `-∫₀¹ H(t, x) dt`. -/
+@[simp]
+theorem cappedLoopAction_const (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (x : M) :
+    cappedLoopAction ω H (fun _ ↦ x) = -∫ t in 0..1, H t x := by
+  have h : rectangleIntegral ω (fun _ : ℝ × ℝ ↦ x) (0, 0) (1, 1) = 0 :=
+    rectangleIntegral_comp_fst ω (fun _ ↦ x) _ _
+  rw [cappedLoopAction_def, h, zero_sub]
+
+section Continuous
+
+variable [IsManifold I 1 M] {ω : RoughForm I M ℝ 2}
+
+/-- **Gluing at the centre.** For a continuous form and `C¹` maps `u` and `v` with
+`u (1, ·) = v (0, ·)`, gluing `v` to the far end of `u` adds the area of `v` to the action of
+`u`. If `u` is a cap whose centre is the base of a sphere `v`, then the glued map is again a cap
+of the same loop (`TauCeti.IsLoopCylinder.trans`), and this is the recapping law
+`A_H(γ, u # v) = A_H(γ, u) + ω(v)`. -/
+theorem cappedLoopAction_rectangleTrans (hω : IsSmoothForm I 0 ω) (H : ℝ → M → ℝ)
+    {u v : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (h : ∀ t, u (1, t) = v (0, t)) :
+    cappedLoopAction ω H (rectangleTrans u v) =
+      cappedLoopAction ω H u + rectangleIntegral ω v (0, 0) (1, 1) := by
+  simp only [cappedLoopAction_def, rectangleTrans_apply_zero,
+    rectangleIntegral_rectangleTrans hω hu hv h]
+  ring
+
+/-- **The capped action along a cylinder.** For a continuous form and `C¹` maps `w` and `v` with
+`w (1, ·) = v (0, ·)`, the action of the cap `w # v` of the loop `γ₀ = w (0, ·)` exceeds the
+action of the cap `v` of the loop `γ₁ = w (1, ·)` by the area of `w` minus the change of the
+Hamiltonian term:
+`A_H(γ₀, w # v) - A_H(γ₁, v) = ∫ w^* ω - ∫₀¹ H(t, γ₀(t)) dt + ∫₀¹ H(t, γ₁(t)) dt`. -/
+theorem cappedLoopAction_rectangleTrans_sub (hω : IsSmoothForm I 0 ω) (H : ℝ → M → ℝ)
+    {w v : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (h : ∀ t, w (1, t) = v (0, t)) :
+    cappedLoopAction ω H (rectangleTrans w v) - cappedLoopAction ω H v =
+      rectangleIntegral ω w (0, 0) (1, 1) - (∫ t in 0..1, H t (w (0, t))) +
+        ∫ t in 0..1, H t (w (1, t)) := by
+  simp only [cappedLoopAction_rectangleTrans hω H hw hv h, cappedLoopAction_def, h]
+  ring
+
+/-- **Recapping.** For a continuous form and two `C¹` caps `u` and `v` of the same loop,
+`u (0, ·) = v (0, ·)`, the actions differ by the area of the sphere by which the caps differ:
+the concatenation running backwards through `u` and then forwards through `v`. For caps in the
+sense of `TauCeti.IsCap` this concatenation is a sphere, a cylinder between two constant loops
+(`TauCeti.IsLoopCylinder.symm` and `TauCeti.IsLoopCylinder.trans`). -/
+theorem cappedLoopAction_sub_cappedLoopAction (hω : IsSmoothForm I 0 ω) (H : ℝ → M → ℝ)
+    {u v : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (h : ∀ t, u (0, t) = v (0, t)) :
+    cappedLoopAction ω H v - cappedLoopAction ω H u =
+      rectangleIntegral ω (rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) v) (0, 0) (1, 1) := by
+  simp only [cappedLoopAction_def, rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hω hu hv h,
+    h]
+  ring
+
+end Continuous
+
+/-- **Homotopy invariance of the capped action.** For a closed `C¹` two-form, the action does not
+change along a `C²` homotopy `Φ` of caps that fixes the loop `Φ ((0, t), c)`, keeps the centre
+`Φ ((1, t), c)` a single point at each time `c` (the point may move), and keeps the maps periodic
+in `t`. So caps related by such a homotopy relative to the loop give the same action. -/
+theorem cappedLoopAction_eq_of_homotopy [IsManifold I 2 M] {ω : RoughForm I M ℝ 2}
+    (hω : IsSmoothForm I 1 ω) (hdω : mextDeriv ω = 0) (H : ℝ → M → ℝ)
+    {Φ : (ℝ × ℝ) × ℝ → M} (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ)
+    (hloop : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((0, t), c) = Φ ((0, t), 0))
+    (hcentre : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
+    (hper : ∀ s ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, 1), c) = Φ ((s, 0), c)) :
+    cappedLoopAction ω H (fun z ↦ Φ (z, 1)) = cappedLoopAction ω H (fun z ↦ Φ (z, 0)) := by
+  have hI : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
+  have hc1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
+  -- The loop does not move, so the Hamiltonian terms agree.
+  have hH : ∫ t in 0..1, H t (Φ ((0, t), 1)) = ∫ t in 0..1, H t (Φ ((0, t), 0)) :=
+    intervalIntegral.integral_congr fun t ht ↦ by rw [hloop t (hI ▸ ht) 1 hc1]
+  simp only [cappedLoopAction_def]
+  rw [rectangleIntegral_eq_of_homotopy (a := (0, 0)) (b := (1, 1)) hω hdω hΦ
+      (.inl fun t ht c hc ↦ hloop t (hI ▸ ht) c hc)
+      (.inr fun t ht c hc ↦ (hcentre t (hI ▸ ht) c hc).trans (hcentre 1 hc1 c hc).symm)
+      (fun s hs c hc ↦ hper s (hI ▸ hs) c hc), hH]
+
 /-! ### Weakly exact forms and the cap area -/
 
 /-- A two-form is **weakly exact** when its integral over every sphere, a cylinder between two
@@ -225,11 +355,10 @@ theorem IsWeaklyExact.rectangleIntegral_eq_of_isCap (hφ : IsSmoothForm I 0 φ)
   obtain ⟨x, hu⟩ := hu
   obtain ⟨y, hv⟩ := hv
   have hsphere := hw (hu.symm.trans hv)
-  rw [rectangleIntegral_rectangleTrans hφ (hu.symm.contMDiff.of_le one_le_two)
-      (hv.contMDiff.of_le one_le_two)
-      (fun t ↦ (hu.symm.apply_one t).trans (hv.apply_zero t).symm),
-    rectangleIntegral_comp_prodMap_one_sub hφ (hu.contMDiff.of_le one_le_two)] at hsphere
-  exact (neg_add_eq_zero.mp hsphere)
+  rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le one_le_two)
+    (hv.contMDiff.of_le one_le_two) fun t ↦ (hu.apply_zero t).trans (hv.apply_zero t).symm,
+    sub_eq_zero] at hsphere
+  exact hsphere.symm
 
 /-- For a continuous weakly exact form, the cap area of a loop is the integral over any of its
 caps. -/
@@ -313,12 +442,28 @@ section Continuous
 
 variable [IsManifold I 1 M] {ω : RoughForm I M ℝ 2}
 
-/-- For a continuous weakly exact form, the action of a loop is computed with any of its caps. -/
+/-- For a continuous weakly exact form, the action of a loop is the capped action
+`A_H(γ, u) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt` for any of its caps `u`. -/
 theorem IsWeaklyExact.contractibleLoopAction_eq (hω : IsSmoothForm I 0 ω) (hw : IsWeaklyExact ω)
     (H : ℝ → M → ℝ) {u : ℝ × ℝ → M} {γ : ℝ → M} (hu : IsCap I u γ) :
-    contractibleLoopAction ω H γ =
-      rectangleIntegral ω u (0, 0) (1, 1) - ∫ t in 0..1, H t (γ t) := by
-  rw [contractibleLoopAction_def, hw.capArea_eq hω hu]
+    contractibleLoopAction ω H γ = cappedLoopAction ω H u := by
+  obtain ⟨x, hu'⟩ := hu
+  simp only [contractibleLoopAction_def, cappedLoopAction_def, hw.capArea_eq hω ⟨x, hu'⟩,
+    hu'.apply_zero]
+
+/-- **Weak exactness is independence of the cap.** A continuous two-form is weakly exact exactly
+when, for one (equivalently every) Hamiltonian `H`, any two caps of the same loop have the same
+capped action. -/
+theorem isWeaklyExact_iff_forall_cappedLoopAction_eq (hω : IsSmoothForm I 0 ω)
+    (H : ℝ → M → ℝ) :
+    IsWeaklyExact ω ↔ ∀ ⦃u v : ℝ × ℝ → M⦄ ⦃γ : ℝ → M⦄, IsCap I u γ → IsCap I v γ →
+      cappedLoopAction ω H u = cappedLoopAction ω H v := by
+  refine ⟨fun hw u v γ hu hv ↦ ?_, fun h w x y hw ↦ ?_⟩
+  · rw [← hw.contractibleLoopAction_eq hω H hu, hw.contractibleLoopAction_eq hω H hv]
+  · have hc := h (isLoopCylinder_const x).isCap hw.isCap
+    rw [cappedLoopAction_const, cappedLoopAction_def] at hc
+    simp only [hw.apply_zero] at hc
+    linarith
 
 /-- **The action difference along a cylinder.** For a continuous weakly exact form and a cylinder
 `w` from `γ₀` to a loop `γ₁` with a cap, the action decreases from `γ₀` to `γ₁` by the area of `w`
