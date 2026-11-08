@@ -504,17 +504,14 @@ theorem forall_subsingleton_homotopyGroup_doubleLoopSpace_iff (x : X) :
 component of a double loop `γ` is sent to the class of `γ` under the loop-space shift. -/
 noncomputable def zerothHomotopyDoubleLoopSpaceEquiv (x : X) :
     ZerothHomotopy (Ω (Ω X x) (Path.refl x)) ≃ π_ 2 X x :=
-  zerothHomotopyLoopSpaceEquivFundamentalGroup.trans
-    (pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0)).toEquiv
+  zerothHomotopyLoopSpaceEquivFundamentalGroup.trans fundamentalGroupLoopSpaceMulEquiv.toEquiv
 
-/-- The component of a double loop `γ` is the image of its homotopy class under the loop-space
-shift. -/
+/-- The component of a double loop `γ` is the image of its homotopy class under
+`fundamentalGroupLoopSpaceMulEquiv`. -/
 theorem zerothHomotopyDoubleLoopSpaceEquiv_mk (x : X) (γ : Ω (Ω X x) (Path.refl x)) :
     zerothHomotopyDoubleLoopSpaceEquiv x (.mk γ) =
-      pathLoopSpaceMulEquiv 0
-        (pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ))) :=
-  congrArg (pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0))
-    (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ)
+      fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk γ)) :=
+  congrArg fundamentalGroupLoopSpaceMulEquiv (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ)
 
 /-- The component of the constant double loop is the identity of `π₂(X, x)`. -/
 @[simp]
@@ -523,7 +520,6 @@ theorem zerothHomotopyDoubleLoopSpaceEquiv_mk_refl (x : X) :
         (.mk (Path.refl (Path.refl x) : Ω (Ω X x) (Path.refl x))) = 1 := by
   rw [zerothHomotopyDoubleLoopSpaceEquiv_mk]
   -- the class of the constant path is the identity of the fundamental group
-  exact (pi1MulEquivFundamentalGroup.symm.trans
-    (pathLoopSpaceMulEquiv (X := X) (x := x) 0)).map_one
+  exact fundamentalGroupLoopSpaceMulEquiv.map_one
 
 end TauCeti

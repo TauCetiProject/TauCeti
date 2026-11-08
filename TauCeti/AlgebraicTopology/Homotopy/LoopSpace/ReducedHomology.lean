@@ -139,9 +139,10 @@ section Integral
 
 variable {X : Type} [TopologicalSpace X]
 
-/-- **Proposition 5.11 of Barraud--Damian--Humilière--Oancea, case `k = 2`.** If `π₂(X, x)` is
-nontrivial, the reduced zeroth integral homology of the double loop space, the kernel of
-`H₀(Ω²X; ℤ) → H₀(pt; ℤ)`, contains an infinite cyclic subgroup. -/
+/-- **The degree-zero homological input to Proposition 5.11 of Barraud--Damian--Humilière--Oancea
+(case `k = 2`).** If `π₂(X, x)` is nontrivial, the reduced zeroth integral homology of the double
+loop space, the kernel of `H₀(Ω²X; ℤ) → H₀(pt; ℤ)`, contains an infinite cyclic subgroup. The
+identification of this kernel with `ker i_{Q*}` is not formalized here. -/
 theorem exists_injective_doubleLoopSpaceReducedHomology₀ (x : X) [Nontrivial (π_ 2 X x)] :
     ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
         (TopCat.of (Ω (Ω X x) (Path.refl x))),
@@ -152,9 +153,9 @@ theorem exists_injective_doubleLoopSpaceReducedHomology₀ (x : X) [Nontrivial (
 
 namespace MooreLoopSpace
 
-/-- **Proposition 5.11 of Barraud--Damian--Humilière--Oancea, case `k = 2`, for Moore loops.** If
-`π₂(X, x)` is nontrivial, the reduced zeroth integral homology of the double Moore loop space
-contains an infinite cyclic subgroup. -/
+/-- **The degree-zero homological input to Proposition 5.11 of Barraud--Damian--Humilière--Oancea
+(case `k = 2`), for Moore double loops.** If `π₂(X, x)` is nontrivial, the reduced zeroth integral
+homology of the double Moore loop space contains an infinite cyclic subgroup. -/
 theorem exists_injective_doubleReducedHomology₀ (x : X) [Nontrivial (π_ 2 X x)] :
     ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1)),
