@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Counting.BoundedRank
 public import TauCeti.ModelTheory.Counting.EquivalenceRelation
 public import TauCeti.ModelTheory.Scott.EquivalenceRelation
+import TauCeti.Data.Set.Infinite
 
 /-!
 # Countably many equivalence relations with infinite classes
@@ -80,21 +81,6 @@ private theorem realize_neighborCardGe_iff {M : Type*} [Language.graph.Structure
     exact ⟨y, fun i j hij => by_contra fun hne => hy ⟨(i, j), hne⟩ hij, hadj⟩
   · obtain ⟨y, hy, hadj⟩ := h (x 0)
     exact ⟨y, fun p hp => p.2 (hy hp), hadj⟩
-
-/-- A set contains injective tuples of every finite length exactly when it is infinite. -/
-private theorem forall_exists_injective_iff_infinite {M : Type*} (s : Set M) :
-    (∀ n : ℕ, ∃ y : Fin n → M, Function.Injective y ∧ ∀ i, y i ∈ s) ↔ s.Infinite := by
-  refine ⟨fun h hs => ?_, fun hs n => ?_⟩
-  · have := hs.to_subtype
-    obtain ⟨y, hy, hys⟩ := h (Nat.card s + 1)
-    have hle := Nat.card_le_card_of_injective (fun i => (⟨y i, hys i⟩ : s))
-      fun i j hij => hy (congrArg Subtype.val hij)
-    simp at hle
-  · have := hs.to_subtype
-    exact ⟨fun i => (Infinite.natEmbedding s i : M),
-      fun i j hij => Fin.val_injective ((Infinite.natEmbedding s).injective
-        (Subtype.val_injective hij)),
-      fun i => (Infinite.natEmbedding s i).2⟩
 
 /-- The sentence of `L_{ω₁ω}` in the language of graphs saying that adjacency is the graph of an
 equivalence relation all of whose classes are infinite. -/
@@ -195,14 +181,14 @@ theorem countable_quotient_isoSetoidOn_nat_infiniteClassesSentence :
   exact (isoSetoid_fromRel_iff_enatCard_eq (hinf _) (hinf _)).2 h
 
 /-- Congruence modulo `k + 1` on `ℕ` has infinite classes. -/
-private theorem infinite_setOf_ker_ofNat (k x : ℕ) :
+theorem infinite_setOf_ker_ofNat (k x : ℕ) :
     {x' | Setoid.ker (Fin.ofNat (k + 1)) x x'}.Infinite := by
   refine Set.infinite_of_injective_forall_mem (f := fun t : ℕ => x + (k + 1) * t)
     (fun a b h => by simpa using h) fun t => ?_
   simp [Setoid.ker_def, Fin.ext_iff]
 
 /-- Congruence modulo `k + 1` on `ℕ` has `k + 1` classes. -/
-private theorem enatCard_quotient_ker_ofNat (k : ℕ) :
+theorem enatCard_quotient_ker_ofNat (k : ℕ) :
     ENat.card (Quotient (Setoid.ker (Fin.ofNat (k + 1)))) = k + 1 := by
   rw [ENat.card_congr (Setoid.quotientKerEquivOfSurjective (Fin.ofNat (k + 1))
     fun j => ⟨j, Fin.ofNat_val_eq_self j⟩)]
