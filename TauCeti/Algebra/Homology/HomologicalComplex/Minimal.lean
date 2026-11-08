@@ -146,4 +146,12 @@ theorem isMinimal_iff_range_d_succ_le {R : Type u} [CommRing R]
     obtain rfl := hij
     exact h j⟩
 
+/-- Over a local ring, a natural-number-indexed chain complex is minimal exactly when each
+successive differential has image in the maximal ideal times its target. -/
+theorem isMinimal_iff_range_d_succ_le_maximalIdeal_smul {R : Type u} [CommRing R]
+    [IsLocalRing R] {K : ChainComplex (ModuleCat.{v} R) ℕ} : K.IsMinimal ↔
+    ∀ n, LinearMap.range (K.d (n + 1) n).hom ≤
+      IsLocalRing.maximalIdeal R • (⊤ : Submodule R (K.X n)) := by
+  rw [isMinimal_iff_range_d_succ_le, IsLocalRing.ringJacobson_eq_maximalIdeal]
+
 end ChainComplex
