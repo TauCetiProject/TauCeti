@@ -34,6 +34,8 @@ statements that use it.
 * `TauCeti.IsMorseSmale.of_forall` and `TauCeti.IsMorseSmale.transverse_at`: its introduction
   and pointwise elimination rules.
 * `TauCeti.isMorseSmale_congr`: the predicate does not depend on the Lipschitz witness.
+* `TauCeti.IsMorseSmale.of_forall_exists_negativeGradientFlow`: for a `C²` function it suffices to
+  check transversality at one point of each connecting trajectory.
 * `TauCeti.IsMorseSmale.morseIndex_lt`: for a Morse–Smale function, a trajectory between two
   different nondegenerate critical points runs from higher to strictly lower Morse index.
 * `TauCeti.IsMorseSmale.unstableSet_inter_stableSet_eq_empty`: consequently no trajectory runs
@@ -99,6 +101,24 @@ theorem isMorseSmale_congr (f : E → ℝ) {K K' : ℝ≥0} (hf : LipschitzWith 
   rw [negativeGradientFlow_congr f hf hf']
 
 variable [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
+
+/-- **One point per trajectory suffices.** For a `C²` function, the Morse–Smale condition holds as
+soon as, on the trajectory through each point `y` of `W^u(p) ∩ W^s(q)`, the unstable set of `p` and
+the stable set of `q` are transverse at some point `φ_t y`: transversality propagates along
+trajectories. -/
+theorem IsMorseSmale.of_forall_exists_negativeGradientFlow (hfs : ContDiff ℝ 2 f)
+    (h : ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p → IsNondegenerateCriticalPoint f q →
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
+        Flow.stableSet (negativeGradientFlow f hf) q → ∃ t,
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p)
+          (negativeGradientFlow f hf t y)) ⊔
+        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q)
+          (negativeGradientFlow f hf t y)) = ⊤) :
+    IsMorseSmale f hf :=
+  .of_forall fun _ _ _ hp hq hy ↦ by
+    obtain ⟨t, ht⟩ := h hp hq hy
+    exact (span_tangentConeAt_unstableSet_sup_stableSet_negativeGradientFlow_apply_eq_top_iff
+      hfs hf t).1 ht
 
 /-- **The Morse index drops along trajectories.** For a `C²` Morse–Smale function, a trajectory of
 the negative-gradient flow from a nondegenerate critical point `p` to a different nondegenerate

@@ -38,12 +38,18 @@ This file proves the two basic consequences of transversality at a point `y` of
   intersection has positive dimension.
 
 The tangent spaces themselves have the expected dimensions: `morseIndex f p` for the unstable set
-of `p`, and the complementary dimension for the stable set of `q`.
+of `p`, and the complementary dimension for the stable set of `q`. Transversality is a property of
+whole trajectories: the time-`t` map of the flow is a `C¹` diffeomorphism preserving both invariant
+sets, so its derivative carries their tangent spaces at `y` onto those at `φ_t y`.
 
 ## Main results
 
 * `TauCeti.neg_gradient_mem_tangentConeAt_unstableSet_inter_stableSet`: the velocity of a
   connecting trajectory is tangent to `W^u(p) ∩ W^s(q)`.
+* `TauCeti.span_tangentConeAt_negativeGradientFlow_apply`: the derivative of the time-`t` map
+  carries the tangent spaces of a flow-invariant set along the trajectory.
+* `TauCeti.span_tangentConeAt_unstableSet_sup_stableSet_negativeGradientFlow_apply_eq_top_iff`:
+  hence transversality at one point of a trajectory is transversality at all of its points.
 * `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_unstableSet` and
   `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_stableSet_add_morseIndex`: the
   dimensions of the tangent spaces of the unstable and stable sets.
@@ -87,6 +93,54 @@ theorem neg_gradient_mem_tangentConeAt_unstableSet_inter_stableSet (hf : Lipschi
     (fun t ⦃_⦄ hz ↦
       ⟨Flow.isInvariant_unstableSet _ p t hz.1, Flow.isInvariant_stableSet _ q t hz.2⟩)
     ⟨hyu, hys⟩
+
+/-- The time-`t` map of the negative-gradient flow of a `C²` function has, at every point, a
+derivative which is a continuous linear equivalence: the time-`(-t)` map inverts it. -/
+theorem exists_hasFDerivAt_negativeGradientFlow (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (t : ℝ) (y : E) :
+    ∃ A : E ≃L[ℝ] E, HasFDerivAt (negativeGradientFlow f hf t) (A : E →L[ℝ] E) y := by
+  have h1 (τ : ℝ) : Differentiable ℝ (negativeGradientFlow f hf τ) :=
+    (contDiff_negativeGradientFlow_apply f hf le_rfl (by simpa [one_add_one_eq_two] using hfs)
+      τ).differentiable one_ne_zero
+  exact ((negativeGradientFlow f hf).toHomeomorph t).toOpenPartialHomeomorph
+    |>.exists_hasFDerivAt_of_chart (mem_univ y) (h1 t y) (h1 (-t) _)
+
+/-- **Tangent spaces of invariant sets along the flow.** For a `C²` function, the derivative of the
+time-`t` map of the negative-gradient flow carries the tangent space at `y` of a flow-invariant set
+onto its tangent space at the image point. -/
+theorem span_tangentConeAt_negativeGradientFlow_apply (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S)
+    (t : ℝ) (y : E) :
+    Submodule.span ℝ (tangentConeAt ℝ S (negativeGradientFlow f hf t y)) =
+      (Submodule.span ℝ (tangentConeAt ℝ S y)).map
+        (fderiv ℝ (negativeGradientFlow f hf t) y : E →ₗ[ℝ] E) := by
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_negativeGradientFlow hfs hf t y
+  have hST : (negativeGradientFlow f hf).toHomeomorph t ⁻¹' S = S := by
+    ext z
+    refine ⟨fun hz ↦ ?_, fun hz ↦ hS t hz⟩
+    simpa only [Flow.toHomeomorph_apply, ← _root_.Flow.map_add, neg_add_cancel,
+      _root_.Flow.map_zero_apply] using hS (-t) hz
+  rw [hA.fderiv, Submodule.map_span, ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
+    image_tangentConeAt_eq_of_preimage_eq (Φ := (negativeGradientFlow f hf).toHomeomorph t) hST hA]
+  rfl
+
+/-- **Transversality propagates along trajectories.** For a `C²` function, the unstable set of `p`
+and the stable set of `q` are transverse at the point `φ_t y` of the trajectory through `y` if and
+only if they are transverse at `y`. -/
+theorem span_tangentConeAt_unstableSet_sup_stableSet_negativeGradientFlow_apply_eq_top_iff
+    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) (t : ℝ) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p)
+        (negativeGradientFlow f hf t y)) ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q)
+        (negativeGradientFlow f hf t y)) = ⊤ ↔
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) =
+        ⊤ := by
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_negativeGradientFlow hfs hf t y
+  rw [span_tangentConeAt_negativeGradientFlow_apply hfs hf (Flow.isInvariant_unstableSet _ p),
+    span_tangentConeAt_negativeGradientFlow_apply hfs hf (Flow.isInvariant_stableSet _ q),
+    ← Submodule.map_sup, hA.fderiv]
+  exact Submodule.map_eq_top_iff
 
 namespace IsNondegenerateCriticalPoint
 
