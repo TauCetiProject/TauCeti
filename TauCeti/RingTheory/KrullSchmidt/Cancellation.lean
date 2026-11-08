@@ -158,11 +158,11 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
 
 end Semiring
 
-section Ring
+section FiniteLength
 
 variable {A : Type u} [Ring A]
-variable {M : Type v} [AddCommGroup M] [Module A M]
-variable {N : Type w} [AddCommGroup N] [Module A N]
+variable {M : Type v} [AddCommMonoid M] [Module A M]
+variable {N : Type w} [AddCommMonoid N] [Module A N]
 variable {P : Type x} [AddCommGroup P] [Module A P]
 
 /-- **Cancellation of a summand of finite length.** If `P` has finite length, a linear equivalence
@@ -205,6 +205,15 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isFiniteLength (hP : IsFinit
   let f := Submodule.equivMapOfInjective Q.subtype Q.injective_subtype Q₁
   exact ih _ hlt ⟨((LinearEquiv.refl A M).prodCongr f.symm).trans
     (e₁.trans ((LinearEquiv.refl A N).prodCongr f))⟩
+
+end FiniteLength
+
+section Ring
+
+variable {A : Type u} [Ring A]
+variable {M : Type v} [AddCommGroup M] [Module A M]
+variable {N : Type w} [AddCommGroup N] [Module A N]
+variable {P : Type x} [AddCommGroup P] [Module A P]
 
 /-- **Two surjections onto a projective module of finite length differ by an automorphism.** If
 `P` is projective of finite length and `s t : M → P` are surjective, then `t ∘ θ = s` for some
