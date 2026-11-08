@@ -80,6 +80,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   at `n` and `0` elsewhere.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
+* `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
+  maps.
 
 ## Tags
 
@@ -232,6 +234,15 @@ theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   congr 1
   funext x
   simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
+
+/-- Fourier coefficients commute with continuous linear maps: the coefficients of `x ↦ φ (f x)`
+are the images under `φ` of those of an integrable `f`. -/
+theorem _root_.ContinuousLinearMap.fourierCoeff_comp {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [CompleteSpace F] (φ : E →L[ℂ] F) {f : AddCircle T → E} (hf : Integrable f haarAddCircle)
+    (n : ℤ) :
+    fourierCoeff (fun x ↦ φ (f x)) n = φ (fourierCoeff f n) := by
+  simp only [fourierCoeff, ← φ.integral_comp_comm (hf.fourier_smul (-n)), map_smul]
 
 /-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
 theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}
