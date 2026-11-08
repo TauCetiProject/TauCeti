@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
-public import TauCeti.AlgebraicGeometry.IdealSheaf.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 
 /-!
 # Finite presentation of effective Cartier divisors
