@@ -218,6 +218,12 @@ theorem evalCLM_boundaryCLM (T : RealFlatChain Ω (k + 1))
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih T => simp
 
+@[simp] theorem evalCLM_zero (T : RealFlatChain Ω k) :
+    evalCLM (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) T = 0 := by
+  induction T using Completion.induction_on with
+  | hp => exact isClosed_eq (by fun_prop) continuous_const
+  | ih T => simp
+
 @[simp] theorem evalCLM_add (ω η : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : RealFlatChain Ω k) :
     evalCLM (ω + η) T = evalCLM ω T + evalCLM η T := by
   induction T using Completion.induction_on with
