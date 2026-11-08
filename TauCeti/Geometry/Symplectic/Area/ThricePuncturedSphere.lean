@@ -91,11 +91,11 @@ variable [FiniteDimensional ℝ V]
 
 /-- Stokes' formula on a closed annulus, in terms of circle areas. -/
 private theorem integral_annulus (ω : SymplecticForm V) {u : ℂ → V} (c : ℂ) {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
+    (ha : 0 ≤ a) (hab : a ≤ b)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     ∫ z in {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b}, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
       ω.circleArea u c b - ω.circleArea u c a := by
-  rw [ω.integral_fderiv_apply_annulus c ha.le hab hu, circleArea, circleArea, mul_sub]
+  rw [ω.integral_fderiv_apply_annulus c ha hab hu, circleArea, circleArea, mul_sub]
 
 /-- The truncation `S_R` splits along the circle of radius `3/4` about `1` into the part of the
 annulus `r ≤ ‖z‖ ≤ ρ` outside that circle and the part of the annulus `r ≤ ‖z - 1‖ ≤ 3/4` inside
@@ -220,7 +220,7 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
   -- The annulus about `0`, for the cut-off map.
   have hI₀ : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
       ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
-    rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ huc (hA₀ne hz)]
+    rw [integral_annulus ω 0 hr₀.le (by linarith) fun z hz ↦ huc (hA₀ne hz)]
     congr 1 <;> refine circleArea_congr ω fun θ ↦ huc_eq ?_
     · have := (htri (circleMap 0 ρ θ)).1
       rw [← sub_zero (circleMap 0 ρ θ), hcircle 0 (by linarith) θ] at this
@@ -257,7 +257,7 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
   -- The annulus about `1`, for `u` itself.
   have hI₁ : ∫ z in B, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
       ω.circleArea u 1 (3 / 4) - ω.circleArea u 1 r :=
-    integral_annulus ω 1 hr₀ (by linarith) fun z hz ↦
+    integral_annulus ω 1 hr₀.le (by linarith) fun z hz ↦
       hu' (hne₀ (by linarith [hz.2])) fun h ↦ by
         subst h
         have := hz.1

@@ -82,7 +82,7 @@ theorem abs_integral_apply_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hab : a <
 energies of its boundary loops parametrized on `[-π, π]`. The map need not extend over the
 inner disc, and no holomorphicity assumption is imposed. -/
 theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (ha : 0 < a) (hab : a ≤ b)
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (ha : 0 ≤ a) (hab : a ≤ b)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     |∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
       ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I)| ≤
@@ -100,14 +100,14 @@ theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
     have hmem (θ : ℝ) :
         circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_nonneg (ha.le.trans hr.1)] using (mem_Icc.mp hr)
+        abs_of_nonneg (ha.trans hr.1)] using (mem_Icc.mp hr)
     have hE : 0 ≤ ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 :=
       intervalIntegral.integral_nonneg (by linarith [Real.pi_pos]) fun θ _ ↦ sq_nonneg _
     have h := norm_integral_apply_apply_circleMap_le u (B := B) z₀ r
       (fun θ ↦ (hu _ (hmem θ)).of_le one_le_two)
     simpa only [B, LinearMap.mkContinuous₂_apply, Real.norm_eq_abs, one_mul] using
       h.trans (mul_le_mul_of_nonneg_right hB hE)
-  rw [ω.integral_fderiv_apply_annulus z₀ ha.le hab hu, abs_mul,
+  rw [ω.integral_fderiv_apply_annulus z₀ ha hab hu, abs_mul,
     abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
   gcongr
   exact (abs_sub _ _).trans (add_le_add (hloop b ⟨hab, le_rfl⟩)
