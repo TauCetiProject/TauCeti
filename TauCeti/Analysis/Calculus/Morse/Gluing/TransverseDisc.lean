@@ -159,7 +159,8 @@ and graphs `g`, `k` in the entrance and exit faces such that:
 
 * the closure of the entrance/exit pairs `splitGluingPairs ε r₀ g k` of unbroken orbits is a
   closed interval, with the gluing coordinate `‖y‖ / ε` of the entrance point as inverse
-  coordinate and the broken pair `((x₀, 0), (0, y₀))` at parameter zero;
+  coordinate and the broken pair `((x₀, 0), (0, y₀))` at parameter zero, and this broken pair is
+  the only point the closure adds;
 * every such pair consists of the entry point of the orbit through `ψ z` for some `z ∈ U` and the
   exit point of the orbit through `χ z'` for some `z' ∈ V`;
 * conversely, for `z` and `z'` near `0`, if the orbit through `ψ z` enters the box off the stable
@@ -182,6 +183,8 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
         (∀ p, (e.symm p : ℝ) = ‖p.val.1.snd‖ / ε) ∧
         (e ⟨0, left_mem_Icc.2 hr₀.le⟩).val =
           (WithLp.toLp 2 (x₀, 0), WithLp.toLp 2 (0, y₀))) ∧
+      closure (splitGluingPairs ε r₀ g k) =
+        insert (WithLp.toLp 2 (x₀, 0), WithLp.toLp 2 (0, y₀)) (splitGluingPairs ε r₀ g k) ∧
       (∀ p ∈ splitGluingPairs ε r₀ g k,
         (∃ z ∈ U, splitQuadraticFlow (splitEntryTime ε (ψ z)) (ψ z) = p.1) ∧
         ∃ z ∈ V, splitQuadraticFlow (splitExitTime ε (χ z)) (χ z) = p.2) ∧
@@ -219,7 +222,9 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
   have hkε : ∀ x ∈ closedBall (0 : Eₛ) (r₀ * ε), ‖k x‖ = ε := fun x hx ↦ (hkpts x (hball₂ hx)).1
   obtain ⟨e, he, he₀⟩ := exists_homeomorph_closure_splitGluingPairs (hg.mono hball₁) hgε
     (hk.mono hball₂) hkε hε hr₀ hr₀₁ hK
-  refine ⟨r₀, hr₀, g, k, ⟨e, he, by rw [he₀, hg₀, hk₀]⟩, ?_, ?_⟩
+  refine ⟨r₀, hr₀, g, k, ⟨e, he, by rw [he₀, hg₀, hk₀]⟩, ?_, ?_, ?_⟩
+  · rw [closure_splitGluingPairs (hg.mono hball₁) hgε (hk.mono hball₂) hkε hε hr₀ hr₀₁ hK, hg₀,
+      hk₀]
   · intro p hp
     obtain ⟨hsrc, hsnd, hfst, hpass, hexit⟩ := mem_splitGluingPairs.1 hp
     have hy : p.1.snd ∈ closedBall (0 : Eᵤ) δ₁ := hball₁ (mem_closedBall_zero_iff.2 hsnd)
