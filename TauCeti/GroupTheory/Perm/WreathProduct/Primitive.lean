@@ -90,23 +90,6 @@ theorem not_isPreprimitive_imprimitive [Nontrivial ι] [Nontrivial Λ] :
 
 /-! ### The product action -/
 
-/-- The coordinate inclusion of the base group at `i` acts on a function by moving its value at `i`
-by `g` and leaving every other coordinate alone. -/
-private lemma inl_mulSingle_smul [DecidableEq ι] (i : ι) (g : D) (x : ι → Λ) :
-    (SemidirectProduct.inl (Pi.mulSingle i g : ι → D) : WreathProduct D ι) • x =
-      Function.update x i (g • x i) := by
-  funext j
-  by_cases hji : j = i
-  · subst j
-    simp
-  · simp [hji]
-
-/-- A base element `⟨t, 1⟩` acts on a function coordinatewise, by `t j` at the coordinate `j`. -/
-private lemma mk_one_smul (t : ι → D) (x : ι → Λ) :
-    (⟨t, 1⟩ : WreathProduct D ι) • x = fun j ↦ t j • x j := by
-  funext j
-  rfl
-
 /-- If a block of the product action contains the constant function `fun _ ↦ a` and a function
 differing from it in the single coordinate `i` (with value `b ≠ a`), then, by primitivity of the
 base action, it contains every function differing from the constant one in coordinate `i`. -/
@@ -192,14 +175,13 @@ private lemma eq_univ_of_forall_update_mem [Finite ι] [DecidableEq ι] [IsPretr
   apply Set.eq_univ_of_forall
   intro z
   choose f hf using fun j ↦ exists_smul_eq D a (z j)
-  let u : WreathProduct D ι := ⟨f, 1⟩
+  let u : WreathProduct D ι := SemidirectProduct.inl f
   have huB : u ∈ stabilizer (WreathProduct D ι) B := by
     have hfK : f ∈ (stabilizer (WreathProduct D ι) B).comap SemidirectProduct.inl :=
       Subgroup.pi_mem_of_mulSingle_mem f fun j ↦ hsingle j (f j)
-    -- `u = ⟨f, 1⟩` is `SemidirectProduct.inl f` by definition.
     exact Subgroup.mem_comap.mp hfK
   have huc : u • c = z := by
-    rw [mk_one_smul]
+    rw [inl_smul]
     funext j
     exact hf j
   rw [← huc, ← mem_stabilizer_iff.mp huB]
@@ -230,9 +212,9 @@ private lemma exists_update_mem_ne [DecidableEq ι] [FaithfulSMul D Λ]
   have hsB : s • B = B := hB.smul_eq_of_mem hc (hsc.symm ▸ hc)
   have hsy : s • y ∈ B := hsB ▸ Set.smul_mem_smul_set hy
   choose t ht using fun j ↦ exists_smul_eq D (y j) a
-  let w : WreathProduct D ι := ⟨t, 1⟩
+  let w : WreathProduct D ι := SemidirectProduct.inl t
   have hwy : w • y = c := by
-    rw [mk_one_smul]
+    rw [inl_smul]
     funext j
     exact ht j
   have hwB : w • B = B := hB.smul_eq_of_mem hy (hwy.symm ▸ hc)
@@ -240,7 +222,7 @@ private lemma exists_update_mem_ne [DecidableEq ι] [FaithfulSMul D Λ]
   have hba : b ≠ a := by
     have hb : b = t i • (d • y i) := by
       simp only [b]
-      rw [hsy_eq, mk_one_smul]
+      rw [hsy_eq, inl_smul]
       simp
     rw [hb, ← ht i]
     exact fun h ↦ hdy (smul_left_cancel (t i) h)
@@ -253,7 +235,7 @@ private lemma exists_update_mem_ne [DecidableEq ι] [FaithfulSMul D Λ]
       simp [b]
     · calc
         (w • (s • y)) j = (w • y) j := by
-          rw [hsy_eq, mk_one_smul, mk_one_smul]
+          rw [hsy_eq, inl_smul, inl_smul]
           simp [hji]
         _ = c j := congrFun hwy j
         _ = Function.update c i b j := by simp [hji]
@@ -276,8 +258,8 @@ theorem isPreprimitive_product [Finite ι] [FaithfulSMul D Λ]
   let _ : IsPretransitive (WreathProduct D ι) (ι → Λ) :=
     { exists_smul_eq := fun x y ↦ by
         choose d hd using fun i ↦ exists_smul_eq D (x i) (y i)
-        refine ⟨⟨d, 1⟩, ?_⟩
-        rw [mk_one_smul]
+        refine ⟨SemidirectProduct.inl d, ?_⟩
+        rw [inl_smul]
         funext i
         exact hd i }
   -- It suffices to show that a nonsingleton block through the constant function is universal.
