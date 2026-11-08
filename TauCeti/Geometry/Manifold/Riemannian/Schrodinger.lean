@@ -41,7 +41,7 @@ solution of `Δu = f u` vanishes (`TauCeti.Manifold.eq_zero_of_laplaceBeltrami_e
 
 In Seiberg–Witten theory the linearized gauge action at a configuration `(A, ψ)` is
 `d₀ ξ = (-2 dξ, ξ ψ)` on imaginary functions `ξ`, and `d₀* d₀ ξ = -4 Δξ + |ψ|² ξ`, whose energy is
-`4 ∫ ‖∇ξ‖² dV + ∫ |ψ|² ξ² dV`. For a continuous spinor `ψ` that does not vanish identically, the
+`4 ∫ ‖∇ξ‖² dV + ∫ |ψ|² |ξ|² dV`. For a continuous spinor `ψ` that does not vanish identically, the
 results here, applied to the potential `|ψ|² / 4`, give the coercivity of this energy and the
 injectivity of `d₀* d₀` behind the local slice theorem. Without the potential the kernel consists
 of the constants, the stabilizer of a reducible configuration.
@@ -137,10 +137,9 @@ theorem exists_pos_mul_integral_sq_le_integral_norm_sq_mgradient_add_integral_mu
   obtain ⟨x₀, hx₀⟩ := Function.ne_iff.mp hf₁
   have hB₀ : 0 ≤ B := (hf₀ x₀).trans (hfB x₀)
   -- The potential has positive integral, since it is positive on a nonempty open set.
-  have hF : 0 < ∫ x, f x ∂μ := by
-    rw [integral_pos_iff_support_of_nonneg hf₀
-      (hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f))]
-    exact hf.isOpen_support.measure_pos μ ⟨x₀, hx₀⟩
+  have hF : 0 < ∫ x, f x ∂μ :=
+    hf.integral_pos_of_hasCompactSupport_nonneg_ne_zero (HasCompactSupport.of_compactSpace f) hf₀
+      hx₀
   set F := ∫ x, f x ∂μ
   set V := μ.real univ
   have hV : 0 ≤ V := measureReal_nonneg
