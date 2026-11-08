@@ -72,22 +72,22 @@ noncomputable def typeE₇MinusculeDual (a : Fin 56) : typeE₇RootLattice.dualC
 
 /-- The realized weight has the fundamental coordinates of the original weight table. -/
 @[simp]
-theorem typeE₇DualWeightEquiv_minusculeDual (a : Fin 56) :
+theorem typeE₇DualWeightEquiv_typeE₇MinusculeDual (a : Fin 56) :
     typeE₇DualWeightEquiv (typeE₇MinusculeDual a) = e7MinusculeWeight a :=
   typeE₇DualWeightEquiv.apply_symm_apply _
 
 /-- Simple-root pairings of realized minuscule weights read off their table entries. -/
 @[simp]
-theorem form_typeE₇MinusculeDual_simpleRoot (a : Fin 56) (i : Fin 7) :
+theorem form_typeE₇MinusculeDual_typeE₇SimpleRoot (a : Fin 56) (i : Fin 7) :
     typeE₇RootLattice.form (typeE₇MinusculeDual a) (typeE₇SimpleRoot i) =
       (e7MinusculeWeight a i : ℚ) := by
-  rw [← typeE₇DualWeightEquiv_apply, typeE₇DualWeightEquiv_minusculeDual]
+  rw [← typeE₇DualWeightEquiv_apply, typeE₇DualWeightEquiv_typeE₇MinusculeDual]
 
 /-- The realization preserves distinctness of minuscule weights. -/
 theorem typeE₇MinusculeDual_injective : Function.Injective typeE₇MinusculeDual := by
   intro a b h
   apply e7MinusculeWeight_injective
-  simpa only [typeE₇DualWeightEquiv_minusculeDual] using congrArg typeE₇DualWeightEquiv h
+  simpa only [typeE₇DualWeightEquiv_typeE₇MinusculeDual] using congrArg typeE₇DualWeightEquiv h
 
 /-- The highest table weight is the previously chosen dual representative `ϖ₇`. -/
 @[simp]
@@ -95,7 +95,7 @@ theorem typeE₇MinusculeDual_zero : typeE₇MinusculeDual 0 = typeE₇Minuscule
   apply typeE₇DualWeightEquiv.injective
   ext i
   apply Int.cast_injective (α := ℚ)
-  rw [typeE₇DualWeightEquiv_minusculeDual, typeE₇DualWeightEquiv_apply,
+  rw [typeE₇DualWeightEquiv_typeE₇MinusculeDual, typeE₇DualWeightEquiv_apply,
     coe_typeE₇MinusculeWeightDual, form_typeE₇MinusculeWeight_typeE₇SimpleRoot,
     e7MinusculeWeight_zero]
   simp [Pi.single_apply]
@@ -115,7 +115,7 @@ private theorem minusculeDual_reflection (i : Fin 7) (a : Fin 56) :
     typeE₇MinusculeDual (e7MinusculeReflection i a) =
       typeE₇MinusculeDual a - e7MinusculeWeight a i • e7SimpleDual i := by
   apply typeE₇DualWeightEquiv.injective
-  simp only [typeE₇DualWeightEquiv_minusculeDual, map_sub, map_zsmul, weight_e7SimpleDual]
+  simp only [typeE₇DualWeightEquiv_typeE₇MinusculeDual, map_sub, map_zsmul, weight_e7SimpleDual]
   exact (e7MinusculeWeight_reflection i a).trans (by rw [root_e7SimpleIndex])
 
 /-- A simple reflection of the table realizes the corresponding root reflection in the dual
@@ -135,7 +135,7 @@ private theorem norm_minusculeDual_reflection (i : Fin 7) (a : Fin 56) :
   rw [typeE₇MinusculeDual_reflection]
   simp only [LinearMap.BilinForm.sub_left, LinearMap.BilinForm.sub_right,
     LinearMap.BilinForm.smul_left, LinearMap.BilinForm.smul_right,
-    form_typeE₇MinusculeDual_simpleRoot,
+    form_typeE₇MinusculeDual_typeE₇SimpleRoot,
     typeE₇RootLattice.isSymm.eq (typeE₇SimpleRoot i) (typeE₇MinusculeDual a),
     form_typeE₇SimpleRoot_typeE₇SimpleRoot, CartanMatrix.E_diag]
   ring
@@ -186,7 +186,7 @@ theorem exists_typeE₇MinusculeDual_eq_neg (a : Fin 56) :
     ∃ b, typeE₇MinusculeDual b = -typeE₇MinusculeDual a := by
   obtain ⟨b, hb⟩ := exists_e7MinusculeWeight_eq_neg a
   exact ⟨b, typeE₇DualWeightEquiv.injective (by
-    simp only [typeE₇DualWeightEquiv_minusculeDual, map_neg, hb])⟩
+    simp only [typeE₇DualWeightEquiv_typeE₇MinusculeDual, map_neg, hb])⟩
 
 /-! ## Exhaustiveness of the minimal vectors -/
 
@@ -289,7 +289,7 @@ theorem form_self_eq_three_halves_iff_mem_range_typeE₇MinusculeDual
     obtain ⟨a, ha⟩ := mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three
       (typeE₇DualWeightEquiv x) (minuscule_pairing_bounds x hx) hn
     refine ⟨a, typeE₇DualWeightEquiv.injective ?_⟩
-    rw [typeE₇DualWeightEquiv_minusculeDual, ha]
+    rw [typeE₇DualWeightEquiv_typeE₇MinusculeDual, ha]
   · rintro ⟨a, rfl⟩
     exact form_typeE₇MinusculeDual_self a
 

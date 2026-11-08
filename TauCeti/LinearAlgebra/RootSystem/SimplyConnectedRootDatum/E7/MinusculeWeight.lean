@@ -30,9 +30,18 @@ The table is closed under negation, and it carries an alternating sign, normaliz
 negative. The sign supplies the entries of the invariant alternating form of the minuscule
 carrier.
 
+Twice the inverse Cartan matrix defines an integral quadratic form on the weight lattice.
+The table is exactly the set of weights with coordinates in `[-1, 1]` and quadratic value `3`
+under this form.
+
 ## Main declarations
 
 * `TauCeti.DynkinType.e7MinusculeWeight`: the fifty-six weights in fundamental coordinates.
+* `TauCeti.DynkinType.e7TwiceInverse`: the integral twice-inverse Cartan matrix.
+* `TauCeti.DynkinType.cartanMatrix_E7_mul_e7TwiceInverse`: its product with the Cartan matrix
+  is twice the identity.
+* `TauCeti.DynkinType.mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three`: weights
+  with coordinates in `[-1, 1]` and quadratic value `3` belong to the table.
 * `TauCeti.DynkinType.odd_e7MinusculeWeight_add_add`: every weight pairs oddly with the sum of
   the simple coroots at the Bourbaki nodes `2`, `5` and `7`.
 * `TauCeti.DynkinType.e7MinusculeReflection`: the permutation induced by a simple reflection.
