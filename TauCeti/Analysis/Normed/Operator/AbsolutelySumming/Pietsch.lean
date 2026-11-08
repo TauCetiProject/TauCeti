@@ -122,13 +122,6 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Scaling `x` by the real scalar `a ^ q⁻¹`, for `a ≥ 0` and `q ≠ 0`, multiplies
-`‖g x‖ ^ q` by `a` for every continuous linear map `g`. -/
-private theorem norm_map_ofReal_rpow_inv_smul_rpow {G : Type*} [SeminormedAddCommGroup G]
-    [NormedSpace 𝕜 G] (g : E →L[𝕜] G) {a q : ℝ} (ha : 0 ≤ a) (hq : q ≠ 0) (x : E) :
-    ‖g (((a ^ q⁻¹ : ℝ) : 𝕜) • x)‖ ^ q = a * ‖g x‖ ^ q := by
-  rw [map_smul, norm_ofReal_rpow_inv_smul_rpow ha hq]
-
 /-- The summing inequality rules out a nonnegative combination of the functions
 `f ↦ ‖T x‖ ^ p - C ^ p * ‖f x‖ ^ p` that is bounded below on the dual ball by some `δ > 0`. -/
 private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ}
@@ -145,7 +138,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
   have hA : ‖WithLp.toLp p (fun i ↦ T (y i))‖ = A ^ (1 / p.toReal) := by
     rw [PiLp.norm_eq_sum hq]
     have hy (x : s) : ‖T (y x)‖ ^ p.toReal = w x * ‖T x‖ ^ p.toReal :=
-      norm_map_ofReal_rpow_inv_smul_rpow T (hw x) hq.ne' x
+      by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq.ne']
     rw [Finset.sum_congr rfl fun x _ ↦ hy x,
       Finset.sum_coe_sort s fun x ↦ w x * ‖T x‖ ^ p.toReal]
   have hge' (f : dualBall 𝕜 E) :
@@ -171,8 +164,8 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
         refine Finset.sum_congr rfl fun x _ ↦ ?_
         simp only [Pi.smul_apply, map_smul, norm_smul, RCLike.norm_ofReal,
           abs_of_nonneg hC]
-        rw [Real.mul_rpow hC (norm_nonneg _),
-          norm_map_ofReal_rpow_inv_smul_rpow g (hw x) hq.ne']
+        rw [Real.mul_rpow hC (norm_nonneg _), map_smul,
+          norm_ofReal_rpow_inv_smul_rpow (hw x) hq.ne']
       _ = C ^ p.toReal * ∑ x ∈ s, w x * ‖g x‖ ^ p.toReal := by
         rw [← Finset.mul_sum, Finset.sum_coe_sort s fun x ↦ w x * ‖g x‖ ^ p.toReal]
       _ ≤ A - δ := h
