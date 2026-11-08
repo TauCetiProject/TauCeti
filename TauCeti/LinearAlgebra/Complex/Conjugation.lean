@@ -513,6 +513,16 @@ theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
 
 end Complexification
 
+/-- The fixed-point complexification equivalence intertwines scalar conjugation with the
+original conjugate-linear involution. -/
+@[simp]
+theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
+    (u : ℂ ⊗[ℝ] realPoints K) :
+    realPointsEquiv hK (tmulConj (realPoints K) u) = K (realPointsEquiv hK u) := by
+  induction u using TensorProduct.inductionOn with
+  | tmul z w => simp [mem_realPoints.mp w.property]
+  | add u v hu hv => simp_all
+
 /-- **The conjugation of a complexification commutes with every base-changed map**, because
 `LinearMap.baseChange` leaves the conjugated factor alone. -/
 theorem tmulConj_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W']
