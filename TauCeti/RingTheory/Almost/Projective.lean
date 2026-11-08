@@ -149,13 +149,13 @@ theorem IsAlmostFiniteProjective.of_forall_exists_comp_eq_smul_id
     S.IsAlmostFiniteProjective N := by
   rw [isAlmostFiniteProjective_iff_smul_id_mem_range]
   intro ε hε
-  rw [← S.isIdempotentElem.eq] at hε
   -- The admissible `ε` form an ideal, so it suffices to treat the products `a * δ`.
-  refine Submodule.mul_induction_on hε (fun a ha δ hδ ↦ ?_) fun x y hx hy ↦ ?_
+  refine S.mul_induction_on hε (fun a ha δ hδ ↦ ?_) fun x y hx hy ↦ ?_
   · obtain ⟨n, u, v, huv⟩ := h a ha
     obtain ⟨f, g, hfg⟩ := hfg δ hδ
     refine mem_range_dualTensorHom_iff.mpr ⟨n, u ∘ₗ g, f ∘ₗ v, ?_⟩
-    rw [comp_assoc, ← comp_assoc g u v, huv, smul_comp, id_comp, comp_smul, hfg, smul_smul]
+    ext x
+    simp [mul_smul, ← comp_apply v u, huv, ← comp_apply f g, hfg]
   · rw [add_smul]
     exact add_mem hx hy
 

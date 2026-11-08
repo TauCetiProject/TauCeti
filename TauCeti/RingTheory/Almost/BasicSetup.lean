@@ -147,6 +147,14 @@ theorem tildeMul_tmul (x y : S.ideal) : S.tildeMul (x ⊗ₜ y) = x * y :=
 theorem range_tildeMul : LinearMap.range S.tildeMul = S.ideal :=
   (Submodule.mulMap_range S.ideal S.ideal).trans S.isIdempotentElem.eq
 
+/-- Induction principle for elements of `m`, using `m = m * m`: a property that holds for all
+products `a * b` with `a, b ∈ m` and is closed under addition holds on `m`. -/
+@[elab_as_elim]
+theorem mul_induction_on {p : V → Prop} {ε : V} (hε : ε ∈ S.ideal)
+    (mul : ∀ a ∈ S.ideal, ∀ b ∈ S.ideal, p (a * b)) (add : ∀ x y, p x → p y → p (x + y)) :
+    p ε :=
+  Submodule.mul_induction_on (C := p) (by rwa [S.isIdempotentElem.eq]) mul add
+
 /-- The multiplication map `m~ → m`, `x ⊗ y ↦ x * y`, which is surjective because `m * m = m`. -/
 noncomputable def tildeToIdeal : S.tilde →ₗ[V] S.ideal :=
   (LinearEquiv.ofEq _ _ S.isIdempotentElem.eq).toLinearMap ∘ₗ Submodule.mulMap' S.ideal S.ideal
@@ -507,8 +515,7 @@ theorem IsAlmostIso.exists_comp_eq_smul_id {f : M →ₗ[V] N} (hf : S.IsAlmostI
     (hδ : δ ∈ S.ideal) :
     ∃ g : N →ₗ[V] M, f ∘ₗ g = δ • LinearMap.id ∧ g ∘ₗ f = δ • LinearMap.id := by
   obtain ⟨hker, hcoker⟩ := isAlmostIso_iff.mp hf
-  rw [← S.isIdempotentElem.eq] at hδ
-  refine Submodule.mul_induction_on hδ (fun b hb c hc ↦ ?_) fun x y hx hy ↦ ?_
+  refine S.mul_induction_on hδ (fun b hb c hc ↦ ?_) fun x y hx hy ↦ ?_
   · obtain ⟨g, hfg, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator
       (isAlmostZero_iff_le_annihilator.mp hker hc) (isAlmostZero_iff_le_annihilator.mp hcoker hb)
     exact ⟨g, by rw [hfg]; ext; simp, by rw [hgf]; ext; simp⟩
