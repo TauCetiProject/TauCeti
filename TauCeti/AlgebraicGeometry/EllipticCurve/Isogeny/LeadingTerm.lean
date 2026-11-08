@@ -72,8 +72,8 @@ variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsE
 
 omit [W₁.IsElliptic] [W₂.IsElliptic] in
 private theorem four_ne_zero_of_two_ne_zero (h2 : (2 : F) ≠ 0) : (4 : F) ≠ 0 := by
-  rw [show (4 : F) = 2 * 2 by norm_num]
-  exact mul_ne_zero h2 h2
+  convert mul_ne_zero h2 h2 using 1
+  norm_num
 
 section Separable
 
@@ -162,13 +162,16 @@ theorem leadingCoeff_num_xRatFunc_mul_sq : φ.xRatFunc.num.leadingCoeff * c ^ 2 
   have hwdeg : (wronskian D N).natDegree ≤ 2 * d := by
     have : (wronskian D N).natDegree < d + N.natDegree := natDegree_wronskian_lt_add hw
     omega
-  have h := congrArg (coeff · (2 * (2 * d) + 3)) (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
+  -- The top coefficient of the left-hand side `w² Ψ₂Sq₁`, in degree `2 (2 d) + 3`.
+  have hlhs : (wronskian D N ^ 2 * W₁.Ψ₂Sq).coeff (2 * (2 * d) + 3) = N.leadingCoeff ^ 2 * 4 := by
+    rw [coeff_mul_add_eq_of_natDegree_le (natDegree_pow_le_of_le 2 hwdeg) W₁.natDegree_Ψ₂Sq_le,
+      coeff_pow_of_natDegree_le hwdeg, coeff_wronskian_of_natDegree_eq_succ hN,
+      φ.xRatFunc.monic_denom.leadingCoeff, one_mul, WeierstrassCurve.coeff_Ψ₂Sq]
+  -- The same degree is the degree `d + 3 deg N` of the right-hand side.
   obtain ⟨hdeg, hlc⟩ := natDegree_and_leadingCoeff_rhs (φ := φ) hc0 h2
-  rw [coeff_mul_add_eq_of_natDegree_le (natDegree_pow_le_of_le 2 hwdeg) W₁.natDegree_Ψ₂Sq_le,
-    coeff_pow_of_natDegree_le hwdeg, coeff_wronskian_of_natDegree_eq_succ hN,
-    φ.xRatFunc.monic_denom.leadingCoeff, one_mul,
-    WeierstrassCurve.coeff_Ψ₂Sq, show 2 * (2 * d) + 3 = d + 3 * N.natDegree by omega, ← hdeg,
-    coeff_natDegree, hlc] at h
+  have hidx : 2 * (2 * d) + 3 = d + 3 * N.natDegree := by omega
+  have h := congrArg (coeff · (2 * (2 * d) + 3)) (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
+  rw [hlhs, hidx, ← hdeg, coeff_natDegree, hlc] at h
   have h4 : (4 : F) * N.leadingCoeff ^ 2 ≠ 0 :=
     mul_ne_zero (four_ne_zero_of_two_ne_zero h2) (pow_ne_zero 2 hN0)
   apply mul_left_cancel₀ h4
@@ -201,8 +204,14 @@ theorem exists_valuation_xCoord_pointMap_mul_sq [DecidableEq F] {Γ₀ : Type*}
     rw [← map_pow, ← map_mul, leadingCoeff_num_xRatFunc_mul_sq hc hc0 h2, v.map_one]
   have hpow : v x ^ (D.natDegree + 1) / v x ^ D.natDegree = v x := by
     rw [pow_succ, mul_div_cancel_left₀ _ (pow_ne_zero _ hx0)]
-  rw [xCoord_pointMap_ofIsogeny_some h hDx, map_div₀, hvD, hRN x ((le_max_left _ _).trans_lt hx),
-    hN, mul_div_assoc, hpow, mul_right_comm, hlc, one_mul]
+  have hvx : v (Point.xCoord ((Hom.ofIsogeny φ).pointMap (.some x y h))) =
+      v N.leadingCoeff * v x ^ (D.natDegree + 1) / v x ^ D.natDegree := by
+    rw [xCoord_pointMap_ofIsogeny_some h hDx, map_div₀, hvD,
+      hRN x ((le_max_left _ _).trans_lt hx), hN]
+  calc v (Point.xCoord ((Hom.ofIsogeny φ).pointMap (.some x y h))) * v c ^ 2
+      = v N.leadingCoeff * v c ^ 2 * (v x ^ (D.natDegree + 1) / v x ^ D.natDegree) := by
+        rw [hvx, mul_div_assoc, mul_right_comm]
+    _ = v x := by rw [hlc, hpow, one_mul]
 
 end Separable
 
