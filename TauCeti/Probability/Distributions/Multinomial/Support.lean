@@ -46,9 +46,8 @@ cells. This includes the singleton zero vector when there are no trials. -/
 theorem support_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
     (multinomialMeasure n p).support =
       {k | (∑ i, k i = n) ∧ ∀ i, k i ≠ 0 → p.weights i ≠ 0} := by
-  ext k
-  simp only [Measure.mem_support_iff_measure_singleton_ne_zero,
-    multinomialMeasure_singleton_ne_zero_iff, Set.mem_ofPred_eq]
+  rw [Measure.support_eq_setOf_singleton_ne_zero]
+  simp only [multinomialMeasure_singleton_ne_zero_iff]
 
 /-- Applying labels to multinomial counts transports their finite support exactly, even when
 several count vectors have the same label. No closure of the image is needed. -/
