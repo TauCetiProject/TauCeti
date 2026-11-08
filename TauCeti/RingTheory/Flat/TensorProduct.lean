@@ -368,7 +368,7 @@ open scoped nonZeroDivisors
 disjoint from the nonzerodivisors, then `ψ` is injective on both tensor factors. -/
 theorem injective_comp_include_of_disjoint_nonZeroDivisors {R A B L : Type*} [CommRing R]
     [CommRing A] [CommRing B] [IsDomain A] [IsDomain B] [Algebra R A] [Algebra R B]
-    [Module.Flat R A] [Module.Flat R B] [CommRing L] (ψ : A ⊗[R] B →+* L) (P : Ideal (A ⊗[R] B))
+    [Module.Flat R A] [Module.Flat R B] [Ring L] (ψ : A ⊗[R] B →+* L) (P : Ideal (A ⊗[R] B))
     (hψ : ∀ x, ψ x = 0 ↔ x ∈ P)
     (hdisj : Disjoint (P : Set (A ⊗[R] B)) (nonZeroDivisors (A ⊗[R] B))) :
     Function.Injective (ψ.comp Algebra.TensorProduct.includeLeftRingHom) ∧
