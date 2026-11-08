@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Holder.Bilinear
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Gradient
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.HeatEquation
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Holder
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -60,6 +60,8 @@ problem `∂ₜu - Δu = f`, `u(·, 0) = g`, whose initial-data part is the Cauc
 * `TauCeti.timeDerivL_heatDuhamelPotentialL_eq_laplacian_add`: the inhomogeneous heat equation
   `∂ₜw = Δw + f` on the closed slab.
 * `TauCeti.spatialTrace_heatDuhamelPotentialL_zero`: the initial trace is zero.
+* `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_heatDuhamelPotentialL`: on
+  `ℝⁿ`, the scalar heat operator `∂ₜ - Δ` sends the Duhamel potential of `f` back to `f`.
 * `TauCeti.exists_norm_heatDuhamelPotentialL_le`: the operator norm is `O(1 + T)`.
 
 ## References
@@ -754,5 +756,17 @@ theorem exists_norm_heatDuhamelPotentialL_le (hα₀ : 0 < α) (hα₁ : α < 1)
         exact norm_potentialTwo_le hα₀ hα₁ hT f⟩
 
 end OrderTwo
+
+/-- **The inhomogeneous heat equation for the heat operator.** On `ℝⁿ`, the scalar Euclidean heat
+operator `∂ₜ - Δ` sends the Duhamel potential of `f` to `f`, including at both endpoints of the
+time slab. -/
+theorem ParabolicC2HolderSpace.euclideanParabolicOperatorL_heatDuhamelPotentialL
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) :
+    euclideanParabolicOperatorL hα₁.le (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
+      (heatDuhamelPotentialL hα₀ hα₁ hT f) = f := by
+  ext p
+  rw [euclideanParabolicOperatorL_one_apply, timeDerivL_heatDuhamelPotentialL_eq_laplacian_add,
+    add_sub_cancel_left]
 
 end TauCeti
