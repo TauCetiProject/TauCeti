@@ -58,244 +58,74 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] ContMDiffMul.boundarylessManifold
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
+attribute [local instance] ImmersedLieSubgroupData.group
+  ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
+  ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.finiteDimensional
+  ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
+  ImmersedLieSubgroupData.isManifold ImmersedLieSubgroupData.lieGroup
+
 /-- The homomorphism presenting an immersed Lie subgroup, packaged as a smooth monoid morphism. -/
 def toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    ContMDiffMonoidMorphism d.I' I ∞ d.X G := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  exact { toMonoidHom := d.toHom, contMDiff_toFun := d.contMDiff_toHom }
+    ContMDiffMonoidMorphism d.I' I ∞ d.X G where
+  toMonoidHom := d.toHom
+  contMDiff_toFun := d.contMDiff_toHom
 
 omit [FiniteDimensional ℝ E] [T2Space G] in
 /-- The smooth monoid morphism underlying an immersed presentation is its presenting
 homomorphism. -/
 @[simp]
-theorem toContMDiffMonoidMorphism_apply (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    ∀ x : d.X, d.toContMDiffMonoidMorphism x = d.toHom x := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  dsimp only
-  intro x
-  rfl
+theorem toContMDiffMonoidMorphism_apply (d : ImmersedLieSubgroupData I K) (x : d.X) :
+    d.toContMDiffMonoidMorphism x = d.toHom x :=
+  (rfl)
 
 omit [FiniteDimensional ℝ E] [T2Space G] in
 /-- The monoid homomorphism underlying the smooth monoid morphism of an immersed presentation is
 its presenting homomorphism. -/
 @[simp]
 theorem toContMDiffMonoidMorphism_toMonoidHom (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    d.toContMDiffMonoidMorphism.toMonoidHom = d.toHom := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  dsimp only
-  ext x
-  exact d.toContMDiffMonoidMorphism_apply x
+    d.toContMDiffMonoidMorphism.toMonoidHom = d.toHom :=
+  (rfl)
 
 /-- The Lie map induced by the homomorphism presenting an immersed Lie subgroup. -/
 noncomputable def lieMapToHom (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    LeftInvariantDerivation d.I' d.X →ₗ⁅ℝ⁆ LeftInvariantDerivation I G := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  exact lieMap d.toContMDiffMonoidMorphism
+    LeftInvariantDerivation d.I' d.X →ₗ⁅ℝ⁆ LeftInvariantDerivation I G :=
+  lieMap d.toContMDiffMonoidMorphism
 
 omit [T2Space G] in
 /-- The immersed-presentation Lie map is the Lie functor applied to its smooth homomorphism. -/
 @[simp]
-theorem lieMapToHom_apply (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    ∀ X : LeftInvariantDerivation d.I' d.X,
-      d.lieMapToHom X = lieMap d.toContMDiffMonoidMorphism X := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  dsimp only
-  intro X
-  rfl
+theorem lieMapToHom_apply (d : ImmersedLieSubgroupData I K) (X : LeftInvariantDerivation d.I' d.X) :
+    d.lieMapToHom X = lieMap d.toContMDiffMonoidMorphism X :=
+  (rfl)
 
 omit [T2Space G] in
 /-- The Lie functor applied to the smooth homomorphism of an immersed presentation is its
 differential `lieMapToHom`. -/
 theorem lieMap_toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    lieMap d.toContMDiffMonoidMorphism = d.lieMapToHom := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  dsimp only
-  apply LieHom.ext
-  intro X
-  exact (d.lieMapToHom_apply X).symm
+    lieMap d.toContMDiffMonoidMorphism = d.lieMapToHom :=
+  (rfl)
 
 omit [T2Space G] in
 /-- The Lie map induced by an immersed subgroup presentation is injective. -/
 theorem injective_lieMapToHom (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
     Function.Injective d.lieMapToHom := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  dsimp only
   apply ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective
   exact d.injective_mfderiv_toHom 1
-
-/-- The differential of an immersed presentation takes every source derivation into the ambient
-Lie subalgebra associated to its image subgroup. -/
-theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    ∀ X : LeftInvariantDerivation d.I' d.X,
-      d.lieMapToHom X ∈ lieSubalgebraOfSubgroup (I := I) K := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  dsimp only
-  intro X
-  apply range_lieMap_le_lieSubalgebraOfSubgroup d.toContMDiffMonoidMorphism
-  · simpa only [toContMDiffMonoidMorphism] using le_of_eq d.range_eq
-  · exact ⟨X, rfl⟩
 
 /-- The range of the differential of an immersed presentation lies in the ambient Lie subalgebra
 associated to its image subgroup. -/
 theorem range_lieMapToHom_le (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
     d.lieMapToHom.range ≤ lieSubalgebraOfSubgroup (I := I) K := by
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : FiniteDimensional ℝ d.E' := d.finiteDimensional
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  dsimp only
   apply range_lieMap_le_lieSubalgebraOfSubgroup d.toContMDiffMonoidMorphism
-  simpa only [toContMDiffMonoidMorphism] using le_of_eq d.range_eq
+  rw [toContMDiffMonoidMorphism_toMonoidHom]
+  exact d.range_eq.le
+
+/-- The differential of an immersed presentation takes every source derivation into the ambient
+Lie subalgebra associated to its image subgroup. -/
+theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K)
+    (X : LeftInvariantDerivation d.I' d.X) :
+    d.lieMapToHom X ∈ lieSubalgebraOfSubgroup (I := I) K :=
+  d.range_lieMapToHom_le ⟨X, rfl⟩
 
 
 section Factorization
