@@ -270,11 +270,13 @@ variable [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F')
 theorem restrict_smul : (σ • P).restrict k F = P.restrict k F :=
   restrict_map_restrictScalars P σ
 
+omit [Algebra.IsIntegral F F'] in
 /-- The ramification index is invariant under the action. -/
 @[simp]
 theorem ramificationIdx_smul : ramificationIdx F (σ • P) = ramificationIdx F P := by
-  refine ramificationIdx_eq_of_forall_ord_eq k F (σ • P) fun f ↦ ?_
-  rw [restrict_smul, ord_smul, AlgEquiv.commutes, ord_algebraMap_restrict k F P f]
+  rw [ramificationIdx_def, ramificationIdx_def]
+  congr 1
+  exact Valuation.ext fun f ↦ by simp [valuation_smul, AlgEquiv.commutes]
 
 /-- The relative degree is invariant under the action: `σ⁻¹` induces an isomorphism of the
 residue field of `σ • P` with the residue field of `P` over the residue field of the place
@@ -440,6 +442,12 @@ theorem ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank (P : Place k F')
       ← relativeDegree_eq_of_restrict_eq (hfin.mem_toFinset.mp hQ)]
 
 
+end Galois
+
+section RamificationIdxIn
+
+variable [FiniteDimensional F F']
+
 open scoped Classical in
 /-- **The ramification index of a place of the base in a Galois extension**: all the places of `F'`
 over `P` share one ramification index (`TauCeti.Place.ramificationIdx_eq_of_restrict_eq`), and this
@@ -450,22 +458,14 @@ noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [A
     [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] : ℕ :=
   if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
 
-/-- The ramification index of a place of the base is the ramification index of any place above
-it. -/
-theorem ramificationIdxIn_eq_ramificationIdx {P : Place k F} {P' : Place k F'}
-    (hP' : P'.restrict k F = P) : P.ramificationIdxIn F' = ramificationIdx F P' := by
-  have hex : ∃ Q : Place k F', Q.restrict k F = P := ⟨P', hP'⟩
-  rw [ramificationIdxIn, dite_eq_left hex]
-  exact ramificationIdx_eq_of_restrict_eq (by rw [hex.choose_spec, hP'])
-
 /-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
 @[simp]
 theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
     P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
   constructor
   · intro h P' hP'
-    rw [ramificationIdxIn_eq_ramificationIdx hP'] at h
-    exact absurd h (ramificationIdx_pos F P').ne'
+    rw [ramificationIdxIn, dite_eq_left ⟨P', hP'⟩] at h
+    exact absurd h (ramificationIdx_pos F _).ne'
   · intro h
     rw [ramificationIdxIn, dite_eq_right]
     exact fun ⟨P', hP'⟩ ↦ h P' hP'
@@ -475,8 +475,22 @@ fields: some place of `F'` lies above it. -/
 theorem ramificationIdxIn_pos (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
     {P : Place k F} : 0 < P.ramificationIdxIn F' := by
   obtain ⟨P', hP'⟩ := restrict_surjective_of_finiteDimensional (k' := k) hF hF' P
-  rw [ramificationIdxIn_eq_ramificationIdx hP']
-  exact ramificationIdx_pos F P'
+  rw [ramificationIdxIn, dite_eq_left ⟨P', hP'⟩]
+  exact ramificationIdx_pos F _
+
+end RamificationIdxIn
+
+section Galois
+
+variable [FiniteDimensional F F'] [IsGalois F F']
+
+/-- The ramification index of a place of the base is the ramification index of any place above
+it. -/
+theorem ramificationIdxIn_eq_ramificationIdx {P : Place k F} {P' : Place k F'}
+    (hP' : P'.restrict k F = P) : P.ramificationIdxIn F' = ramificationIdx F P' := by
+  have hex : ∃ Q : Place k F', Q.restrict k F = P := ⟨P', hP'⟩
+  rw [ramificationIdxIn, dite_eq_left hex]
+  exact ramificationIdx_eq_of_restrict_eq (by rw [hex.choose_spec, hP'])
 
 /-- **The branch contribution of a Galois fibre**: the places over a place `P` of `F` share one
 ramification index `e` and one relative degree `f`, and there are `[F' : F] / (e f)` of them, so
