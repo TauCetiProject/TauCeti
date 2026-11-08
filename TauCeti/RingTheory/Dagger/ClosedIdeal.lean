@@ -45,13 +45,9 @@ local notation "T" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
 /-- Every ideal of the Monsky–Washnitzer algebra is closed for the Gauss norm. -/
 instance isClosed_ideal (I : Ideal W) : IsClosed (I : Set W) := by
-  let := (toTate σ K).toRingHom.toAlgebra
-  have : Module.FaithfullyFlat W T := faithfullyFlat_toTate
-  have hI : (I.map (toTate σ K)).comap (toTate σ K) = I :=
-    I.comap_map_eq_self_of_faithfullyFlat (B := T)
   have hc : IsClosed (I.map (toTate σ K) : Set T) :=
     TauCeti.MvPowerSeries.isClosed_ideal_isRestrictedSubring _
-  exact hI ▸ hc.preimage (isometry_toTate (σ := σ) (R := K)).continuous
+  exact I.comap_map_toTate ▸ hc.preimage (isometry_toTate (σ := σ) (R := K)).continuous
 
 /-- **Strict closedness of overconvergent ideals.** Every coset of an ideal in the
 Monsky–Washnitzer algebra has a representative of least Gauss norm. -/
@@ -60,13 +56,8 @@ theorem _root_.Ideal.exists_norm_sub_le_washnitzerAlgebra (I : Ideal W) (f : W) 
   let J : Ideal T := I.map (toTate σ K)
   obtain ⟨g, hg, hmin⟩ := J.exists_norm_sub_le_isRestricted_subring (toTate σ K f)
   by_cases hzero : toTate σ K f - g = 0
-  · have hf : f ∈ I := by
-      let := (toTate σ K).toRingHom.toAlgebra
-      have : Module.FaithfullyFlat W T := faithfullyFlat_toTate
-      have hI : (I.map (toTate σ K)).comap (toTate σ K) = I :=
-        I.comap_map_eq_self_of_faithfullyFlat (B := T)
-      have hfJ : toTate σ K f ∈ I.map (toTate σ K) := (sub_eq_zero.mp hzero).symm ▸ hg
-      exact hI ▸ hfJ
+  · have hfJ : toTate σ K f ∈ I.map (toTate σ K) := (sub_eq_zero.mp hzero).symm ▸ hg
+    have hf : f ∈ I := I.comap_map_toTate ▸ hfJ
     exact ⟨f, hf, by simp⟩
   · have hpos : 0 < ‖toTate σ K f - g‖ := norm_pos_iff.mpr hzero
     have hclosure := Ideal.map_subset_closure_image_of_denseRange denseRange_toTate I hg
