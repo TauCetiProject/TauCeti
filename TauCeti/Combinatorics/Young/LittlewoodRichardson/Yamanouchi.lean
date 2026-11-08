@@ -203,7 +203,7 @@ private theorem isYamanouchi_of_rowLen_add_sum_rowCount_le {lam : YoungDiagram}
   set N := μ.colLen 0 + k + 1
   have hN : μ.colLen 0 ≤ N := by omega
   have hf : T.contentFromCol j (i + 1) ≤ ∑ r ∈ range (k + 1), T'.rowCount r (i + 1) :=
-    T.contentFromCol_le_sum_rowCount hN (by omega) hzero
+    T.contentFromCol_le_sum_rowCount hzero
   rcases Nat.eq_zero_or_pos k with hk0 | hkpos
   · -- In the top row the condition is the row-count condition at `x = 0`.
     have := h i k
