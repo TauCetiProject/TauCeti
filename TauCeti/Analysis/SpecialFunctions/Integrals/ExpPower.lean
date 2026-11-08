@@ -126,11 +126,12 @@ private theorem integral_Ioi_rpow_neg_mul_one_sub_exp_neg {r : ℝ} (hr : r ∈ 
     have hexp : Tendsto (fun x : ℝ ↦ 1 - exp (-x)) atTop (𝓝 1) := by
       simpa using tendsto_const_nhds.sub Real.tendsto_exp_neg_atTop_nhds_zero
     simpa using hpow.mul hexp
+  have hexponent : -r - 1 = -(r + 1) := by ring
   have hderivInt : IntegrableOn
       (fun x : ℝ ↦ (-r * x ^ (-r - 1)) * (1 - exp (-x))) (Ioi 0) := by
     refine (hint.const_mul (-r)).congr ?_
     filter_upwards with x
-    rw [show -r - 1 = -(r + 1) by ring]
+    rw [hexponent]
     ring
   have hibp := integral_Ioi_mul_deriv_eq_deriv_mul
     (a := 0) (u := fun x : ℝ ↦ x ^ (-r)) (u' := fun x ↦ -r * x ^ (-r - 1))
@@ -147,7 +148,7 @@ private theorem integral_Ioi_rpow_neg_mul_one_sub_exp_neg {r : ℝ} (hr : r ∈ 
     calc
       _ = ∫ x in Ioi (0 : ℝ), -r * (x ^ (-(r + 1)) * (1 - exp (-x))) := by
         refine setIntegral_congr_fun measurableSet_Ioi fun x _hx ↦ ?_
-        rw [show -r - 1 = -(r + 1) by ring]
+        rw [hexponent]
         ring
       _ = _ := by rw [integral_const_mul]
   rw [hGamma, hderiv_eq] at hibp
