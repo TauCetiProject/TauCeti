@@ -31,7 +31,7 @@ The approximation step rests on a uniform bound. If the partial sums of `‖a‖
 Chebyshev bound `∑_{1 ≤ n ≤ N} ‖a n‖ ≤ C N`, then
 `∑ ‖a n‖ / n * (1 + (log (n / x) / 2π) ^ 2)⁻¹ ≤ C (1 + 2π²)` for every scale `x > 0`.
 The weight `t ↦ (t (1 + (log (t / x) / 2π) ^ 2))⁻¹` is antitone on `t > 0`, so Abel's inequality
-`TauCeti.sum_range_mul_le_sum_range_mul` bounds the weighted sum by `C` times the sum of the
+`TauCeti.sum_range_smul_le_sum_range_smul` bounds the weighted sum by `C` times the sum of the
 weight, and the integral test bounds the latter by `1 + ∫ = 1 + 2π (arctan - arctan) ≤ 1 + 2π²`.
 Consequently a weight `W` with `‖W v‖ ≤ M (1 + v ^ 2)⁻¹` gives a series of size at most
 `M C (1 + 2π²)`, uniformly in `x`, and a small error in the weighted sup norm costs little in the
@@ -55,7 +55,7 @@ The uniform bound and the truncation argument follow `bound_sum_log`, `bound_I1`
 `limiting_cor_W21` in `PrimeNumberTheoremAnd/Wiener.lean` of the Apache-2.0
 `AxiomMath/PrimeNumberTheoremAnd` repository, revision
 `2667e414c38e5a5dc9aa1946f16f13001e5cd3ed`, the same source as the sibling files in this
-directory. Here the summation by parts is the general `TauCeti.sum_range_mul_le_sum_range_mul`,
+directory. Here the summation by parts is the general `TauCeti.sum_range_smul_le_sum_range_smul`,
 the integral of the weight is bounded on finite intervals by the fundamental theorem of calculus
 rather than evaluated on `(0, ∞)`, and the approximation hypothesis is stated for an arbitrary
 weight `W` instead of a fixed truncation of a `W^{2,1}` function. For a Schwartz function `g`
@@ -216,14 +216,15 @@ private lemma sum_range_norm_term_mul_inv_one_add_sq_le
     convert hC k using 1
     rw [Finset.range_eq_Ico, Finset.sum_Ico_add' (fun n ↦ ‖a n‖) 0 k 1]
     rfl
-  have habel := sum_range_mul_le_sum_range_mul (w := fun i ↦ logWeight x (i + 1 : ℕ)) hpartial
+  have habel := sum_range_smul_le_sum_range_smul (w := fun i ↦ logWeight x (i + 1 : ℕ)) hpartial
     (fun i _ ↦ antitoneOn_logWeight hx (by simp only [mem_Ioi]; positivity)
       (by simp only [mem_Ioi]; positivity) (by push_cast; linarith))
     (logWeight_nonneg hx (Nat.cast_nonneg _))
   calc ∑ i ∈ Finset.range N, ‖a (i + 1)‖ * logWeight x (i + 1 : ℕ)
       = ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) * ‖a (i + 1)‖ :=
         Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-    _ ≤ ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) * C := habel
+    _ ≤ ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) * C := by
+        simpa only [smul_eq_mul] using habel
     _ = C * ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) := by
         rw [Finset.mul_sum]
         exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
