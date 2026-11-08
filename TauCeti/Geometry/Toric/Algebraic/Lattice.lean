@@ -239,6 +239,19 @@ theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+
   h.isBaseChange.algHom_ext φ (h.realCharacter m) fun n ↦ by
     simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply]
 
+/-- A real-linear functional is the real extension of an integral character exactly when it takes
+integer values at every lattice point. -/
+theorem IsIntegralLattice.exists_realCharacter_eq_iff (h : IsIntegralLattice i)
+    {φ : Module.Dual ℝ V} : (∃ m : N →+ ℤ, h.realCharacter m = φ) ↔ ∀ n, ∃ k : ℤ, φ (i n) = k := by
+  refine ⟨fun ⟨m, hm⟩ n ↦ ⟨m n, by rw [← hm, h.realCharacter_apply]⟩, fun hφ ↦ ?_⟩
+  choose k hk using hφ
+  let m : N →+ ℤ :=
+    { toFun := k
+      map_zero' := Int.cast_injective (α := ℝ) (by rw [← hk, map_zero, map_zero, Int.cast_zero])
+      map_add' := fun a b ↦ Int.cast_injective (α := ℝ) (by
+        rw [Int.cast_add, ← hk, ← hk, ← hk, map_add, map_add]) }
+  exact ⟨m, (h.eq_realCharacter (m := m) hk).symm⟩
+
 /-- Real extension of integral characters is injective. -/
 theorem IsIntegralLattice.realCharacter_injective (h : IsIntegralLattice i) :
     Function.Injective h.realCharacter := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 

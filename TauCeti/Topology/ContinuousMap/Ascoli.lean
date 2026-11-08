@@ -7,8 +7,12 @@ module
 
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.Ascoli
+public import Mathlib.Algebra.Ring.Periodic
+public import Mathlib.Topology.MetricSpace.Pseudo.Real
 
+import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.UniformSpace.Completion
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # The Arzelà–Ascoli theorem in `C(X, Y)`
@@ -28,6 +32,8 @@ and adds companion statements used for compactness and finite approximation of f
 * An equicontinuous family with pointwise totally bounded values has finite uniform
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a compact domain, a compact subset of `C(X, Y)` is equicontinuous.
+* A sequence of continuous `1`-periodic loops in a compact subset of a metric space, with a common
+  modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -49,6 +55,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
   total boundedness of the values at the points of a dense set suffices.
 * `IsCompact.equicontinuous`: a compact set of continuous maps on a compact space is
   equicontinuous.
+* `TauCeti.exists_tendstoUniformly_subseq_of_periodic_of_modulus`: Arzelà–Ascoli for periodic
+  loops with a common modulus of continuity.
 
 ## References
 
@@ -184,3 +192,51 @@ theorem IsCompact.equicontinuous [CompactSpace X] [UniformSpace Y] {K : Set C(X,
   rintro ⟨f, hf⟩
   obtain ⟨g, hg, hfg⟩ := mem_iUnion₂.mp (hcover hf)
   exact hVU ⟨g x', ⟨g x, hfg x, hx' g hg⟩, hVsymm.symm _ _ (hfg x')⟩
+
+namespace TauCeti
+
+open Function
+
+/-- **Periodic Arzelà–Ascoli.** A sequence of continuous `1`-periodic loops in a compact set `K`,
+sharing a modulus of continuity `ρ` with `ρ(h) → 0` as `h → 0` on `[0, 1]`, has a subsequence
+converging uniformly on `ℝ` to a continuous `1`-periodic loop. -/
+theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [MetricSpace M]
+    {K : Set M} (hK : IsCompact K) {y : ℕ → ℝ → M} (hy : ∀ n, Continuous (y n))
+    (hper : ∀ n, Periodic (y n) 1) (hyK : ∀ n t, y n t ∈ K) {ρ : ℝ → ℝ}
+    (hρ : Tendsto ρ (𝓝 0) (𝓝 0))
+    (hmod : ∀ n, ∀ t₁ ∈ Icc (0 : ℝ) 1, ∀ t₂ ∈ Icc (0 : ℝ) 1, t₁ ≤ t₂ →
+      dist (y n t₂) (y n t₁) ≤ ρ (t₂ - t₁)) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → M, Periodic x 1 ∧ Continuous x ∧
+      TendstoUniformly (fun n ↦ y (ψ n)) x atTop := by
+  -- Arzelà–Ascoli on `C([0, 1], M)`.
+  let G : ℕ → BoundedContinuousFunction (Icc (0 : ℝ) 1) M := fun n ↦
+    BoundedContinuousFunction.mkOfCompact ⟨fun t ↦ y n t, (hy n).comp continuous_subtype_val⟩
+  have hGK : ∀ f x, f ∈ range G → f x ∈ K := by
+    rintro _ x ⟨n, rfl⟩
+    exact hyK n x
+  have hGeq : Equicontinuous ((↑) : range G → Icc (0 : ℝ) 1 → M) := by
+    refine Metric.equicontinuous_of_continuity_modulus ρ hρ _ ?_
+    rintro t₁ t₂ ⟨_, n, rfl⟩
+    rw [Subtype.dist_eq, Real.dist_eq]
+    rcases le_total (t₁ : ℝ) t₂ with h | h
+    · rw [dist_comm, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h)]
+      exact hmod n t₁ t₁.2 t₂ t₂.2 h
+    · rw [abs_of_nonneg (sub_nonneg.2 h)]
+      exact hmod n t₂ t₂.2 t₁ t₁.2 h
+  obtain ⟨g, -, ψ, hψ, hlim⟩ :=
+    (BoundedContinuousFunction.arzela_ascoli K hK (range G) hGK hGeq).tendsto_subseq
+      (fun n ↦ subset_closure (mem_range_self n))
+  have hunif := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1 hlim
+  -- The limit loop, extended periodically.
+  let p : ℝ → Icc (0 : ℝ) 1 := fun t ↦ ⟨Int.fract t, Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
+  set x : ℝ → M := fun t ↦ g (p t)
+  have hxper : Periodic x 1 := fun t ↦ by simp only [x, p, Int.fract_add_one]
+  have hux : TendstoUniformly (fun n ↦ y (ψ n)) x atTop := by
+    have heq : (fun n ↦ y (ψ n)) = fun n ↦ ⇑((G ∘ ψ) n) ∘ p := by
+      funext n t
+      exact ((hper (ψ n)).apply_fract t).symm
+    rw [heq]
+    exact hunif.comp p
+  exact ⟨ψ, hψ, x, hxper, hux.continuous (Frequently.of_forall fun n ↦ hy _), hux⟩
+
+end TauCeti

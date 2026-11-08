@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
