@@ -63,16 +63,6 @@ open Set MeasureTheory TopologicalSpace Metric Filter LineDeriv
 open ContinuousLinearMap (lsmul)
 open scoped Distributions Topology Convolution Pointwise
 
-/-- The sum of a point of `closedBall 0 s` and a point of `ball x r` lies in `ball x (2 * r)` when
-`s ≤ r`. -/
-theorem Metric.add_mem_ball_two_mul_of_mem_closedBall {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {s r : ℝ} (hs : s ≤ r) {x z y : E} (hz : z ∈ closedBall (0 : E) s)
-    (hy : y ∈ ball x r) : z + y ∈ ball x (2 * r) := by
-  have hs0 : 0 ≤ s := (norm_nonneg z).trans (mem_closedBall_zero_iff.1 hz)
-  have h := add_mem_add hz hy
-  rw [closedBall_add_ball hs0 (pos_of_mem_ball hy), zero_add] at h
-  exact ball_subset_ball (by linarith) h
-
 namespace Distribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -91,8 +81,10 @@ private theorem apply_mollify_eq_integral_smul_translatePairing (μ : Measure E)
   have htsupp : tsupport ρ' = closedBall 0 ρ.rOut := by
     rw [hρ']
     exact ρ.tsupport_normed_eq
-  have hU (y : E) (hy : y ∈ ball x r) : MapsTo (· + y) (tsupport ρ') Ω := fun z hz =>
-    hr (Metric.add_mem_ball_two_mul_of_mem_closedBall hρ (htsupp ▸ hz) hy)
+  have hU (y : E) (hy : y ∈ ball x r) : MapsTo (· + y) (tsupport ρ') Ω := fun z hz => by
+    have h := add_mem_add (htsupp ▸ hz : z ∈ closedBall (0 : E) ρ.rOut) hy
+    rw [closedBall_add_ball ρ.rOut_pos.le (pos_of_mem_ball hy), zero_add] at h
+    exact hr (ball_subset_ball (by linarith [ρ.rOut_pos]) h)
   have hflip : (lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip = lsmul ℝ ℝ := by
     ext
     simp
@@ -132,7 +124,9 @@ private theorem apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero (μ : Measu
   have hsub {ψ : 𝓓(Ω, ℝ)} (hψ : tsupport ψ ⊆ ball x r) (n : ℕ) :
       closedBall (0 : E) (ρ n).rOut + tsupport ψ ⊆ (Ω : Set E) := by
     rintro _ ⟨z, hz, y, hy, rfl⟩
-    exact hr (Metric.add_mem_ball_two_mul_of_mem_closedBall (hle n) hz (hψ hy))
+    have h := add_mem_add hz (hψ hy)
+    rw [closedBall_add_ball (ρ n).rOut_pos.le (pos_of_mem_ball (hψ hy)), zero_add] at h
+    exact hr (ball_subset_ball (by linarith [hle n]) h)
   have hmoll (n : ℕ) {ψ : 𝓓(Ω, ℝ)} (hψ : tsupport ψ ⊆ ball x r) :=
     apply_mollify_eq_integral_smul_translatePairing μ hT hr (hle n) (ρ' := bump (ρ n)) rfl hψ
       (hsub hψ n)
