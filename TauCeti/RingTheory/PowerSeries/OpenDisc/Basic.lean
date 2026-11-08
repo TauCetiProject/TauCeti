@@ -277,8 +277,10 @@ theorem OnOpenDisc.hasseDeriv (hf : f.OnOpenDisc R₀) (k : ℕ) :
 that disc coefficientwise. -/
 theorem OnOpenDisc.map {S : Type*} [NormedRing S] (hf : f.OnOpenDisc R₀) (φ : R →+* S) {C : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) : (map φ f).OnOpenDisc R₀ :=
-  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`.
-  fun r hr hrR ↦ (hf r hr hrR).map φ hφ
+  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`, and
+  -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, the series that
+  -- `isRestricted_map` shows to be restricted.
+  fun r hr hrR ↦ MvPowerSeries.isRestricted_map _ φ hφ (hf r hr hrR)
 
 /-- The geometric series `∑ aⁿ Xⁿ` lies on the open disc of radius `‖a‖⁻¹`: at a radius
 `r < ‖a‖⁻¹`, its weighted coefficient norms are bounded by `(‖a‖ r)ⁿ` from `n = 1` on. -/
