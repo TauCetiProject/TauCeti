@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Compression
+public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
+public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 
 /-!
@@ -192,5 +194,62 @@ theorem inner_map_ritzResidual_eq_zero (A : E →ₗ[𝕜] E) (X : F →ₗᵢ[�
       0 := by
   rw [← LinearMap.adjoint_inner_right, ← LinearMap.comp_apply, adjoint_comp_ritzResidual_eq_zero]
   simp
+
+/-- The pairing of a sine left singular vector with the Ritz residual of the matching right
+singular vector is the sine times the gap between the two Rayleigh quotients. -/
+theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
+    {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
+    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
+    (X : F →ₗᵢ[𝕜] E) (i : Fin (finrank 𝕜 F)) :
+    RCLike.re ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i,
+        (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
+          (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)⟫_𝕜 =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i *
+        (RCLike.re ⟪A (LinearMap.leftSingularVector
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+          LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i⟫_𝕜 -
+          RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)
+            (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+            LinearMap.rightSingularBasis
+              (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i⟫_𝕜) := by
+  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
+  let M := (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)
+  let R := (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
+  let σ := S.singularValues i
+  let v := LinearMap.rightSingularBasis S i
+  let y := LinearMap.leftSingularVector S i
+  have hSv : S v = ((σ : ℝ) : 𝕜) • y := by
+    simpa [S, σ, v, y] using LinearMap.apply_rightSingularBasis S i
+  have hSadj : S.adjoint y = ((σ : ℝ) : 𝕜) • v := by
+    simpa only [S, σ, v, y] using LinearMap.adjoint_leftSingularVector S i
+  have hyUperp : y ∈ Uᗮ := by
+    dsimp [y]
+    rw [LinearMap.leftSingularVector_def]
+    exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
+  have hSyl := LinearMap.congr_fun
+    (hA.sylvester_starProjection_orthogonal_comp hU X.toLinearMap M) v
+  have hright :
+      ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
+    -- Expand composition so the projection can move across the inner product.
+    change ⟪y, Uᗮ.starProjection (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜
+    rw [← Uᗮ.inner_starProjection_left_eq_right,
+      Submodule.starProjection_eq_self_iff.mpr hyUperp]
+  have hsyl' : A (S v) - S (M v) = Uᗮ.starProjection.toLinearMap (R v) := by
+    simpa [S, M, R] using hSyl
+  have hSM : ⟪y, S (M v)⟫_𝕜 = ⟪S.adjoint y, M v⟫_𝕜 :=
+    (LinearMap.adjoint_inner_left S (M v) y).symm
+  have hpairComplex :
+      ⟪y, R v⟫_𝕜 = (((σ : ℝ) : 𝕜) * (⟪y, A y⟫_𝕜 - ⟪v, M v⟫_𝕜)) := by
+    calc
+      ⟪y, R v⟫_𝕜 = ⟪y, A (S v) - S (M v)⟫_𝕜 := by rw [hsyl', hright]
+      _ = (((σ : ℝ) : 𝕜) * ⟪y, A y⟫_𝕜) - (((σ : ℝ) : 𝕜) * ⟪v, M v⟫_𝕜) := by
+        rw [inner_sub_right, hSv, map_smul, inner_smul_right, hSM, hSadj, inner_smul_left,
+          RCLike.conj_ofReal]
+      _ = _ := by ring
+  have hAy : RCLike.re ⟪y, A y⟫_𝕜 = RCLike.re ⟪A y, y⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  have hMv : RCLike.re ⟪v, M v⟫_𝕜 = RCLike.re ⟪M v, v⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  rw [hpairComplex, RCLike.re_ofReal_mul, map_sub, hAy, hMv]
 
 end LinearMap

@@ -705,15 +705,16 @@ theorem adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
 
 /-- Each Ritz vector `X vᵢ` is orthogonal to the unnormalized residual direction
 `y_j - σ_j • X v_j`. -/
-theorem inner_map_sub_leftSingularVector_eq_zero
+@[simp] theorem inner_map_sub_leftSingularVector_eq_zero
     (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
     (i j : Fin (finrank 𝕜 F)) :
-    ⟪X.toLinearMap (LinearMap.rightSingularBasis
+    ⟪X (LinearMap.rightSingularBasis
         (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
       LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j -
         (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j : ℝ) : 𝕜) •
-          X.toLinearMap (LinearMap.rightSingularBasis
+          X (LinearMap.rightSingularBasis
             (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 = 0 := by
+  simp only [← LinearIsometry.coe_toLinearMap]
   have hadj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
     U X.toLinearMap (i := j)
   have hXX : ⟪X.toLinearMap (LinearMap.rightSingularBasis
