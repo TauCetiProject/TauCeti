@@ -32,8 +32,8 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
