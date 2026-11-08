@@ -81,29 +81,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c₀ : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
-/-- If `w ∈ H¹₀(H)` is a weak solution on `H` for a Lipschitz field `a'` that is uniformly elliptic
-on `H`, and `H` is invariant under the translations orthogonal to `ν`, then any `u'` on an open
-`Ω' ≤ H` whose gradient is that of `w` on `Ω'` is the first-order part of an element of
-`W^{2,2}(Ω')`. -/
-private theorem exists_lowerOrder_eq_of_gradient_eq_of_isWeakSolutionDirichlet (hν : ν ≠ 0)
-    (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
-    {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {K' : ℝ≥0}
-    (ha' : UniformlyEllipticOn (H : Set (EuclideanSpace ℝ ι)) a' lam Lam)
-    (hK' : LipschitzWith K' fun x => matrixBilinearForm (a' x))
-    {g : Lp ℝ 2 (mu.restrict H)} {w : W1p0 mu H 2} (hw : IsWeakSolutionDirichlet a' 0 0 g w)
-    {Ω' : Opens (EuclideanSpace ℝ ι)} (hΩ' : Ω' ≤ H) {u' : W1p mu Ω' 2}
-    (hgrad : ∀ᵐ x ∂mu.restrict Ω', W1p.gradient (w : W1p mu H 2) x = W1p.gradient u' x) :
-    ∃ W : Wkp mu Ω' 2 2, Wkp.lowerOrder 1 W = u' := by
-  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun i j => ?_
-  obtain ⟨G, hG⟩ := ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw
-    (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
-  have hGm : MemLp G 2 (mu.restrict Ω') :=
-    (Lp.memLp G).mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩ') le_rfl)
-  refine ⟨hGm.toLp G, ((hG.mono hΩ').congr_ae ?_).congr_ae_deriv hGm.coeFn_toLp.symm⟩
-  filter_upwards [hgrad] with x hx
-  rw [hx]
-
 /-- **Local `H²` regularity near a flat part of the boundary.** Let `ν ≠ 0`, and let `H` be an
 open set mapped into itself by every translation orthogonal to `ν`, as a half-space
 `{x | c₀ < ⟪x, ν⟫}` is. Let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`. Let `a` be uniformly
@@ -188,7 +165,9 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     have hxV := hψ_V x (subset_closure hx.2)
     rw [h1, h3, indicator_of_mem (hΩVΩ₁ hx), hxV.1, hxV.2, one_smul, smul_zero, add_zero, h2]
   -- The global theorem on `H` gives the second derivatives.
-  exact exists_lowerOrder_eq_of_gradient_eq_of_isWeakSolutionDirichlet hν hH ha' hK' hw hΩV hgradV
+  exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn
+    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j =>
+      ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
 
 /-- **Local `H²` regularity near the boundary of a half-space.** Let `H = {x | c₀ < ⟪x, ν⟫}` with
 `ν ≠ 0`, and let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`, so that `∂Ω ∩ U` is a piece of the

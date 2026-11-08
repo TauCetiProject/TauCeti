@@ -70,9 +70,6 @@ restriction of `u` solves the equation with the extended field.
   a cutoff compactly supported in `Ω`.
 * `TauCeti.PDE.exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact`: near a compact subset
   of `Ω`, a weak solution and its forcing agree with a whole-space weak solution and its forcing.
-* `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: the restriction of a weak solution to a set where
-  the principal coefficient is replaced by a bounded continuous one solves the equation without
-  lower-order terms, with some `L²` forcing.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`:
   interior `H²` regularity for locally Lipschitz principal coefficients.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`: its case of a constant
@@ -859,38 +856,6 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
 
 /-! ### Interior `H²` regularity -/
 
-/-- If `a'` agrees with `a` on an open `Ω₁ ≤ Ω`, is bounded and continuous, and `u ∈ H¹(Ω)` solves
-the equation with coefficients `a, b, c` and right-hand side `f`, then the restriction of `u`
-to `Ω₁` solves the equation with principal part `a'` and no lower-order terms, with some forcing
-`g ∈ L²(Ω₁)`. -/
-theorem exists_forcing_restrictL_of_eqOn {Ω₁ : Opens (EuclideanSpace ℝ ι)}
-    {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
-    (hΩ₁ : Ω₁ ≤ Omega) (haa' : EqOn a' a Ω₁)
-    (hM : ∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M)
-    (hK : Continuous fun x => matrixBilinearForm (a' x))
-    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
-    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
-    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
-      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
-    ∃ g : Lp ℝ 2 (mu.restrict Ω₁), ∀ v : W1p0 mu Ω₁ 2,
-      energyFormH1 a' 0 0 (W1p.restrictL hΩ₁ u) (v : W1p mu Ω₁ 2) =
-        ∫ x in Ω₁, g x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
-  have hle : mu.restrict Ω₁ ≤ mu.restrict Omega :=
-    Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩ₁) le_rfl
-  have hfU : MemLp f 2 (mu.restrict Ω₁) := (Lp.memLp f).mono_measure hle
-  have hu₁ : ∀ v : W1p0 mu Ω₁ 2, energyFormH1 a' b c (W1p.restrictL hΩ₁ u) (v : W1p mu Ω₁ 2) =
-      ∫ x in Ω₁, hfU.toLp f x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
-    intro v
-    have h := energyFormH1_restrictL_eq_setIntegral hΩ₁ hu v
-    rw [energyFormH1_def] at h ⊢
-    rw [setIntegral_congr_fun Ω₁.isOpen.measurableSet fun x hx => by rw [haa' hx], h]
-    refine integral_congr_ae ?_
-    filter_upwards [hfU.coeFn_toLp] with x hx
-    rw [hx]
-  exact exists_forcing_energyFormH1_principal_eq (memLp_energyIntegrand_of_continuous hM hK Ω₁)
-    (hb.mono_measure hle) (hc.mono_measure hle) hu₁
-
 /-- **Interior `H²` regularity for Lipschitz principal coefficients.** Let `a` be uniformly
 elliptic on `Ω`, with `x ↦ a(x)` locally Lipschitz on `Ω` in the operator norm of its bilinear
 forms, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
@@ -938,15 +903,11 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
       (ae_restrict_iff' V.isOpen.measurableSet).2
         (hgrad.mono fun x hx hxV => hx (subset_closure hxV))] with x h1 h2 h3
     rw [h1, h3, h2]
-  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun i j => ?_
-  obtain ⟨G, -, hG⟩ := ha'.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith hK' hw
-    (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
-  have hmem : MemLp G 2 (mu.restrict V) :=
-    (Lp.memLp G).mono_measure (by rw [htop]; exact Measure.restrict_le_self)
-  refine ⟨hmem.toLp G, ((hG.mono le_top).congr_ae ?_).congr_ae_deriv hmem.coeFn_toLp.symm⟩
-  filter_upwards [hgradV] with x hx
-  rw [hx]
+  exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn (EuclideanSpace.basisFun ι ℝ)
+    le_top hgradV fun i j => by
+      obtain ⟨G, -, hG⟩ := ha'.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith hK' hw
+        (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
+      exact ⟨G, hG⟩
 
 /-- **Interior `H²` regularity for a constant principal coefficient.** Let `A` be a constant,
 uniformly elliptic matrix, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
