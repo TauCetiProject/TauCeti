@@ -131,8 +131,8 @@ theorem exists_bijective_localizationAway (f : R →+* S) (hf : f.FiniteType)
 
 /-- If a finitely presented ring map becomes surjective after inverting `a`, then the kernel of the
 resulting map between the localizations away from `a` and `f a` is finitely generated. -/
-theorem FinitePresentation.fg_ker_awayMap_of_surjective {f : R →+* S} (hf : f.FinitePresentation)
-    (a : R) (hsurj : Function.Surjective (Localization.awayMap f a)) :
+private theorem FinitePresentation.fg_ker_awayMap_of_surjective {f : R →+* S}
+    (hf : f.FinitePresentation) (a : R) (hsurj : Function.Surjective (Localization.awayMap f a)) :
     (ker (Localization.awayMap f a)).FG := by
   classical
   let Ra := Localization.Away a
