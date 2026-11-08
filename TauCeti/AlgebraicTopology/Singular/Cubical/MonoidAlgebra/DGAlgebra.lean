@@ -77,6 +77,18 @@ theorem mem_cubicalChainGrading_iff {i : ℤ} {x : normalizedCubicalChainAlgebra
         exact ⟨y, rfl⟩
       exact key _ hn'
 
+/-- The cubical chains have no elements of positive cohomological degree. -/
+theorem cubicalChainGrading_eq_bot {i : ℤ} (hi : 0 < i) : cubicalChainGrading G R i = ⊥ := by
+  rw [cubicalChainGrading]
+  split_ifs with h
+  · omega
+  · rfl
+
+/-- A chain of positive cohomological degree vanishes. -/
+theorem eq_zero_of_mem_cubicalChainGrading_of_pos {i : ℤ} (hi : 0 < i)
+    {x : normalizedCubicalChainAlgebra G R} (hx : x ∈ cubicalChainGrading G R i) : x = 0 := by
+  rwa [cubicalChainGrading_eq_bot G R hi, Submodule.mem_bot] at hx
+
 /-- A chain of dimension `n` lies in cohomological degree `-n`. -/
 theorem cubicalChainLof_mem {n : ℕ} (y : NormalizedCubicalChain G R n) :
     cubicalChainLof G R n y ∈ cubicalChainGrading G R (-(n : ℤ)) :=

@@ -246,6 +246,12 @@ theorem cubicalChainModuleEquiv_lof {n : ℕ} (c : NormalizedCubicalChain Y R n)
     cubicalChainModuleEquiv Y G R (cubicalChainModuleLof Y G R n c) = cubicalChainLof Y R n c :=
   (rfl)
 
+/-- The inverse of the equivalence with the direct sum sends a homogeneous chain to itself. -/
+theorem cubicalChainModuleEquiv_symm_lof {n : ℕ} (c : NormalizedCubicalChain Y R n) :
+    (cubicalChainModuleEquiv Y G R).symm (cubicalChainLof Y R n c) =
+      cubicalChainModuleLof Y G R n c :=
+  (rfl)
+
 /-- Reindexing a chain does not change its image in the module. -/
 theorem cubicalChainModuleLof_cast {n m : ℕ} (h : n = m) (x : NormalizedCubicalChain Y R n) :
     cubicalChainModuleLof Y G R m (cast R h x) = cubicalChainModuleLof Y G R n x := by
