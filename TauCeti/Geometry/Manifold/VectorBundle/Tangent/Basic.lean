@@ -182,17 +182,6 @@ theorem mdifferentiableAt_trivializationAt_symm_apply [IsManifold I 1 M] (x : M)
     ((trivializationAt E (TangentSpace I) x).symm x u)
   rwa [← hext] at h
 
-/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
-`x` takes the value `u` at `x`. -/
-@[simp]
-theorem trivializationAt_symm_apply_self [IsManifold I 1 M] (x : M) (u : E) :
-    (trivializationAt E (TangentSpace I) x).symm x u = u := by
-  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt' x
-  rw [← (trivializationAt E (TangentSpace I) x).symmL_apply (R := 𝕜) hx u,
-    TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
-  exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) u
-
 end TangentBundle
 
 namespace TauCeti.Manifold
@@ -239,6 +228,15 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` takes the value `u` at `x`. -/
+@[simp]
+theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
+    (trivializationAt E (TangentSpace I) x).symm x u = u := by
+  rw [← (trivializationAt E (TangentSpace I) x).symmL_apply (R := 𝕜)
+    (FiberBundle.mem_baseSet_trivializationAt' x) u]
+  exact symmL_trivializationAt_self x u
 
 /-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
 tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
