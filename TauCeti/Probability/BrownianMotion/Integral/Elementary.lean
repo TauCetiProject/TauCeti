@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.Probability.Distributions.Gaussian.Moments
-import Mathlib.Probability.Independence.Integration
+import TauCeti.Probability.Moments.SampleMean
 
 /-!
 # The isometry for elementary Brownian integrals
@@ -21,8 +21,9 @@ integrable and that their second moments equal
 The heights need only be square integrable, not bounded or mutually independent. Distinct
 weighted increments are orthogonal because the later Brownian increment is centered and
 independent of the information at its left endpoint. Empty sums and repeated grid times
-are allowed. Only finite-dimensional Brownian laws and filtration-relative increment
-independence are used; neither path continuity nor usual conditions are needed.
+are allowed. Only finite-dimensional Brownian laws, adaptedness to the filtration, and
+filtration-relative increment independence are used; neither path continuity nor usual
+conditions are needed.
 
 These are the elementary isometry and orthogonality identities used to extend the Brownian
 integral by completion. No integral for general predictable processes is constructed here.
@@ -44,6 +45,12 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {ξ η : Ω → ℝ}
   {s t u v : ℝ≥0}
 
+/-- A height known at the left endpoint is independent of the following Brownian increment. -/
+private theorem indepFun_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
+    (hξ : StronglyMeasurable[ℱ s] ξ) : IndepFun ξ (W t - W s) P :=
+  (IndepFun_iff_Indep _ _ _).2
+    (indep_of_indep_of_le_left (hW.indep_sub hst).symm hξ.measurable.comap_le)
+
 /-- A square-integrable height known at the left endpoint times a Brownian increment
 is square integrable. -/
 theorem memLp_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
@@ -51,58 +58,54 @@ theorem memLp_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
     MemLp (fun ω => ξ ω * (W t ω - W s ω)) 2 P := by
   have hΔ : MemLp (W t - W s) 2 P :=
     (hW.hasLaw_sub_of_le hst).memLp (memLp_id_gaussianReal 2)
-  have hind : IndepFun ξ (W t - W s) P :=
-    indep_of_indep_of_le_left (hW.indep_sub hst).symm hξ.measurable.comap_le
-  have hi := (hind.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
-    hξ₂.integrable_sq hΔ.integrable_sq
+  have hi := ((hW.indepFun_sub hst hξ).comp (measurable_id.pow_const 2)
+    (measurable_id.pow_const 2)).integrable_mul hξ₂.integrable_sq hΔ.integrable_sq
   apply (memLp_two_iff_integrable_sq (hξ₂.aestronglyMeasurable.mul
     hΔ.aestronglyMeasurable)).2
   simpa only [Pi.mul_def, Function.comp_apply, id_eq, mul_pow, Pi.sub_apply] using hi
 
-/-- An integrable height known at the left endpoint times a Brownian increment has mean zero. -/
+/-- A measurable height known at the left endpoint times a Brownian increment has mean zero.
+No integrability is required: the Bochner integral is zero also in the nonintegrable case. -/
 theorem integral_mul_sub_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
-    (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₁ : Integrable ξ P) :
+    (hξ : StronglyMeasurable[ℱ s] ξ) :
     ∫ ω, ξ ω * (W t ω - W s ω) ∂P = 0 := by
-  have hind : IndepFun ξ (W t - W s) P :=
-    indep_of_indep_of_le_left (hW.indep_sub hst).symm hξ.measurable.comap_le
-  have h := hind.integral_fun_mul_eq_mul_integral hξ₁.aestronglyMeasurable
+  have h := (hW.indepFun_sub hst hξ).integral_fun_mul_eq_mul_integral
+    (hξ.mono (ℱ.le s)).aestronglyMeasurable
     (hW.adapted.measurable.sub hW.adapted.measurable).aestronglyMeasurable
   have hmean : ∫ ω, W t ω - W s ω ∂P = 0 := by
     simpa only [Pi.sub_apply] using
       (hW.hasLaw_sub_of_le hst).integral_eq.trans integral_id_gaussianReal
   simpa only [Pi.sub_apply, hmean, mul_zero] using h
 
-/-- The one-interval Brownian isometry for a square-integrable left-endpoint height. -/
+/-- The one-interval Brownian second-moment identity for a measurable left-endpoint height.
+No integrability is required; nonintegrable squares have Bochner integral zero. -/
 theorem integral_sq_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
-    (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P) :
+    (hξ : StronglyMeasurable[ℱ s] ξ) :
     ∫ ω, (ξ ω * (W t ω - W s ω)) ^ 2 ∂P =
       (∫ ω, ξ ω ^ 2 ∂P) * ((t : ℝ) - s) := by
-  have hind : IndepFun ξ (W t - W s) P :=
-    indep_of_indep_of_le_left (hW.indep_sub hst).symm hξ.measurable.comap_le
   have hΔ : ∫ ω, (W t ω - W s ω) ^ 2 ∂P = ((t : ℝ) - s) := by
     have h := (hW.hasLaw_sub_of_le hst).integral_comp
       (f := fun x : ℝ => x ^ 2) (by fun_prop)
     simpa [Function.comp_def, integral_sq_gaussianReal, NNReal.coe_sub hst] using h
   simp_rw [mul_pow]
-  have h := (hind.comp (measurable_id.pow_const 2)
+  have h := ((hW.indepFun_sub hst hξ).comp (measurable_id.pow_const 2)
     (measurable_id.pow_const 2)).integral_fun_mul_eq_mul_integral
-      hξ₂.integrable_sq.aestronglyMeasurable
+      ((hξ.mono (ℱ.le s)).measurable.pow_const 2).aestronglyMeasurable
       ((hW.adapted.measurable.sub hW.adapted.measurable).pow_const 2).aestronglyMeasurable
   simpa only [Function.comp_apply, id_eq, Pi.sub_apply, hΔ] using h
 
-/-- Weighted Brownian increments on ordered disjoint intervals are orthogonal in `L²`.
-The heights may depend on all the information available at their respective left endpoints. -/
+/-- The product of weighted Brownian increments on ordered disjoint intervals has integral zero.
+The heights need only be measurable at their respective left endpoints; in the square-integrable
+case this is orthogonality in `L²`. -/
 theorem integral_mul_sub_mul_mul_sub_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P)
     (huv : u ≤ v) (hvs : v ≤ s) (hst : s ≤ t)
-    (hξ : StronglyMeasurable[ℱ u] ξ) (hξ₂ : MemLp ξ 2 P)
-    (hη : StronglyMeasurable[ℱ s] η) (hη₂ : MemLp η 2 P) :
+    (hξ : StronglyMeasurable[ℱ u] ξ) (hη : StronglyMeasurable[ℱ s] η) :
     ∫ ω, (ξ ω * (W v ω - W u ω)) * (η ω * (W t ω - W s ω)) ∂P = 0 := by
   have hknown : StronglyMeasurable[ℱ s] (fun ω => (ξ ω * (W v ω - W u ω)) * η ω) :=
     (((hξ.mono (ℱ.mono (huv.trans hvs))).mul
       ((hW.adapted.stronglyAdapted.stronglyMeasurable_le hvs).sub
         (hW.adapted.stronglyAdapted.stronglyMeasurable_le (huv.trans hvs)))).mul hη)
-  have hi := (hW.memLp_mul_sub huv hξ hξ₂).integrable_mul hη₂
-  simpa only [mul_assoc] using hW.integral_mul_sub_eq_zero hst hknown hi
+  simpa only [mul_assoc] using hW.integral_mul_sub_eq_zero hst hknown
 
 variable {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
 
@@ -114,7 +117,9 @@ theorem memLp_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
     MemLp (fun ω => ∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) 2 P := by
   exact memLp_finsetSum _ fun i hi =>
-    hW.memLp_mul_sub (hτ (mem_range.mp hi).le (mem_range.mp hi) i.le_succ)
+    hW.memLp_mul_sub
+      (hτ (Set.mem_Iic.mpr (mem_range.mp hi).le)
+        (Set.mem_Iic.mpr (Nat.succ_le_of_lt (mem_range.mp hi))) (Nat.le_succ i))
       (ha i (mem_range.mp hi)) (ha₂ i (mem_range.mp hi))
 
 /-- **The elementary Brownian isometry.** The second moment of a finite predictable
@@ -127,35 +132,32 @@ theorem integral_sq_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     ∫ ω, (∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) ^ 2 ∂P =
       ∑ i ∈ range n, (∫ ω, a i ω ^ 2 ∂P) * ((τ (i + 1) : ℝ) - τ i) := by
   let Z (i : ℕ) (ω : Ω) := a i ω * (W (τ (i + 1)) ω - W (τ i) ω)
+  have hstep (i : ℕ) (hi : i < n) : τ i ≤ τ (i + 1) :=
+    hτ (Set.mem_Iic.mpr hi.le) (Set.mem_Iic.mpr (Nat.succ_le_of_lt hi)) (Nat.le_succ i)
+  have hordered (i j : ℕ) (hij : i < j) (hj : j < n) : τ (i + 1) ≤ τ j :=
+    hτ (Set.mem_Iic.mpr ((Nat.succ_le_of_lt hij).trans hj.le))
+      (Set.mem_Iic.mpr hj.le) (Nat.succ_le_of_lt hij)
   have hZ (i : ℕ) (hi : i < n) : MemLp (Z i) 2 P :=
-    hW.memLp_mul_sub (hτ hi.le hi i.le_succ) (ha i hi) (ha₂ i hi)
+    hW.memLp_mul_sub (hstep i hi) (ha i hi) (ha₂ i hi)
   have hoff (i j : ℕ) (hi : i < n) (hj : j < n) (hij : i < j) :
       ∫ ω, Z i ω * Z j ω ∂P = 0 :=
-    hW.integral_mul_sub_mul_mul_sub_eq_zero (hτ hi.le hi i.le_succ)
-      (hτ hi hj.le hij) (hτ hj.le hj j.le_succ) (ha i hi) (ha₂ i hi) (ha j hj) (ha₂ j hj)
+    hW.integral_mul_sub_mul_mul_sub_eq_zero (hstep i hi)
+      (hordered i j hij hj) (hstep j hj) (ha i hi) (ha j hj)
   have hpair (i j : ℕ) (hi : i < n) (hj : j < n) (hij : i ≠ j) :
       ∫ ω, Z i ω * Z j ω ∂P = 0 := by
     rcases hij.lt_or_gt with hij | hij
     · exact hoff i j hi hj hij
     · simpa only [mul_comm] using hoff j i hj hi hij
-  have hexpand (ω : Ω) :
-      (∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) ^ 2 =
-        ∑ i ∈ range n, ∑ j ∈ range n, Z i ω * Z j ω := by
-    rw [sq, sum_mul]
-    exact sum_congr rfl fun i _ => mul_sum _ _ _
-  simp_rw [hexpand]
-  have hint (i j : ℕ) (hi : i < n) (hj : j < n) :
-      Integrable (fun ω => Z i ω * Z j ω) P := by
-    simpa only [Pi.mul_def] using (hZ i hi).integrable_mul (hZ j hj)
-  rw [integral_finsetSum _ fun i hi =>
-    integrable_finsetSum _ fun j hj => hint i j (mem_range.mp hi) (mem_range.mp hj)]
-  refine sum_congr rfl fun i hi => ?_
-  rw [integral_finsetSum _ fun j hj => hint i j (mem_range.mp hi) (mem_range.mp hj),
-    sum_eq_single_of_mem i hi]
-  · simpa only [Z, ← sq] using
-      hW.integral_sq_mul_sub (hτ (mem_range.mp hi).le (mem_range.mp hi) i.le_succ)
-        (ha i (mem_range.mp hi)) (ha₂ i (mem_range.mp hi))
-  · intro j hj hji
-    exact hpair i j (mem_range.mp hi) (mem_range.mp hj) hji.symm
+  have hiso := TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
+    (X := Z) (s := range n)
+    (fun i hi j hj => by
+      simpa only [Real.inner_apply, Pi.mul_def] using
+        (hZ i (mem_range.mp hi)).integrable_mul (hZ j (mem_range.mp hj)))
+    (fun i hi j hj hij => by
+      simpa only [Real.inner_apply] using hpair i j (mem_range.mp hi) (mem_range.mp hj) hij)
+  simp only [Real.norm_eq_abs, sq_abs] at hiso
+  rw [hiso]
+  exact sum_congr rfl fun i hi =>
+    hW.integral_sq_mul_sub (hstep i (mem_range.mp hi)) (ha i (mem_range.mp hi))
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
