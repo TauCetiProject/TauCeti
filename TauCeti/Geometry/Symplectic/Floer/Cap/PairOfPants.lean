@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.HSpace
-public import TauCeti.Geometry.Symplectic.Floer.Cap.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Loop
 
 /-!
@@ -42,9 +41,11 @@ period group `Γ`. So it is a gluing map of the kind that the cap-class API of
 `TauCeti.Geometry.Symplectic.Floer.Cap.Basic` takes as input. In particular the class
 `A = D₀ + u - D₁ - D₂ ∈ Γ` of the pair of pants `u = P` relative to caps `D₁`, `D₂`, `D₀`, which is
 `TauCeti.Floer.productClass (SphericalCapClass.pantsGlue P) D₁ D₂ D₀`, obeys the change of
-reference caps (`TauCeti.Floer.SphericalCapClass.productClass_pantsGlue_eq_add_sub`), and the
-topological energy `A₁(D₁) + A₂(D₂) - A₀(D₀) + ω(A)` of a pair of pants does not depend on the caps
-(`TauCeti.Floer.SphericalCapClass.add_sub_add_map_productClass_pantsGlue_eq`).
+reference caps, and the topological energy `A₁(D₁) + A₂(D₂) - A₀(D₀) + ω(A)` of a pair of pants
+does not depend on the caps. These are `TauCeti.Floer.productClass_eq_add_sub` and
+`TauCeti.Floer.add_sub_add_map_productClass_eq` applied to the equivariance laws
+`TauCeti.Floer.SphericalCapClass.pantsGlue_vadd_left P` and
+`TauCeti.Floer.SphericalCapClass.pantsGlue_vadd_right P`.
 
 The three loops share the base point `x`, which is where the two seams of the pair of pants
 start and end. Orbits with different base points are brought to this form by conjugating the input
@@ -233,38 +234,6 @@ theorem pantsGlue_vadd_right (P : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) �
   induction q₂ using induction_on with
   | h D₂ => rw [ofHomotopyGroup_vadd_mk, pantsGlue_mk, pantsGlue_mk, ofHomotopyGroup_vadd_mk,
       RawCap.pantsGlue_vadd_right]
-
-variable [Nonempty (RawCap γ₀)] [Nonempty (RawCap γ₁)] [Nonempty (RawCap γ₂)]
-
-/-- **Change of reference caps for a pair of pants.** The class `A = D₀ + P - D₁ - D₂` of the pair
-of pants `P` relative to cap classes `D₁`, `D₂`, `D₀` of its boundary loops is its class relative
-to reference cap classes `r₁`, `r₂`, `r₀`, plus the recapping class of the output, minus the
-recapping classes of the inputs. -/
-theorem productClass_pantsGlue_eq_add_sub
-    (P : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
-    (D₁ r₁ : SphericalCapClass ω c γ₁) (D₂ r₂ : SphericalCapClass ω c γ₂)
-    (D₀ r₀ : SphericalCapClass ω c γ₀) :
-    productClass (pantsGlue P) D₁ D₂ D₀ =
-      productClass (pantsGlue P) r₁ r₂ r₀ + (D₀ -ᵥ r₀) - (D₁ -ᵥ r₁) - (D₂ -ᵥ r₂) :=
-  productClass_eq_add_sub (pantsGlue_vadd_left P) (pantsGlue_vadd_right P) D₁ r₁ D₂ r₂ D₀ r₀
-
-/-- **Cap independence of the topological energy of a pair of pants.** If functions `fᵢ` on the
-cap classes of the boundary loops change by `φ g` under recapping by `g`, then
-`f₁ D₁ + f₂ D₂ - f₀ D₀ + φ A` does not depend on the cap classes, where
-`A = D₀ + P - D₁ - D₂` is the class of the pair of pants `P`. With the actions of capped orbits
-as `fᵢ` and the area as `φ`, this is the quantity `A₁ + A₂ - A₀ + ω(A)` in the energy identity of
-the pair of pants. -/
-theorem add_sub_add_map_productClass_pantsGlue_eq {A : Type*} [AddCommGroup A]
-    (P : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
-    (φ : SphericalPeriodGroup ω c →+ A) {f₁ : SphericalCapClass ω c γ₁ → A}
-    {f₂ : SphericalCapClass ω c γ₂ → A} {f₀ : SphericalCapClass ω c γ₀ → A}
-    (hf₁ : ∀ g D, f₁ (g +ᵥ D) = φ g + f₁ D) (hf₂ : ∀ g D, f₂ (g +ᵥ D) = φ g + f₂ D)
-    (hf₀ : ∀ g D, f₀ (g +ᵥ D) = φ g + f₀ D) (D₁ D₁' : SphericalCapClass ω c γ₁)
-    (D₂ D₂' : SphericalCapClass ω c γ₂) (D₀ D₀' : SphericalCapClass ω c γ₀) :
-    f₁ D₁ + f₂ D₂ - f₀ D₀ + φ (productClass (pantsGlue P) D₁ D₂ D₀) =
-      f₁ D₁' + f₂ D₂' - f₀ D₀' + φ (productClass (pantsGlue P) D₁' D₂' D₀') :=
-  add_sub_add_map_productClass_eq φ (pantsGlue_vadd_left P) (pantsGlue_vadd_right P) hf₁ hf₂ hf₀
-    D₁ D₁' D₂ D₂' D₀ D₀'
 
 end SphericalCapClass
 

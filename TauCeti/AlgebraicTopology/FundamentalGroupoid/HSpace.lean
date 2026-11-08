@@ -19,8 +19,8 @@ of the fundamental groupoid of `Y`, `HSpace.pathHmul p q : a₁ ⋀ a₂ ⟶ b�
 `t ↦ p t ⋀ q t`. It is functorial (`HSpace.pathHmul_id`, `HSpace.pathHmul_comp`).
 
 Multiplying by the identity of `e` is conjugation by the traces of the unit homotopies
-(`HSpace.pathHmul_id_comp_evalAt_eHmul`, `HSpace.pathHmul_comp_evalAt_hmulE`): this is the
-naturality of the isomorphism of induced functors given by a homotopy
+(`HSpace.pathHmul_id_left_comp_evalAt_eHmul`, `HSpace.pathHmul_id_right_comp_evalAt_hmulE`):
+this is the naturality of the isomorphism of induced functors given by a homotopy
 (`FundamentalGroupoidFunctor.homotopicMapsNatIso`). Since the unit homotopies are relative to
 `e`, their traces at `e` are constant, so on loops at `e` the product with the identity of `e` is
 the loop itself, transported along `e ⋀ e = e`
@@ -87,26 +87,32 @@ theorem pathHmul_comp {a₁ b₁ c₁ a₂ b₂ c₂ : Y} (p : (⟨a₁⟩ : Fun
 /-- **Left multiplication by the neutral element, on path classes.** For a path class
 `p : a ⟶ b`, the product `𝟙 e ⋀ p : e ⋀ a ⟶ e ⋀ b` is `p` conjugated by the traces at `a` and `b`
 of the left unit homotopy `eHmul` from `y ↦ e ⋀ y` to the identity. -/
-theorem pathHmul_id_comp_evalAt_eHmul {a b : Y} (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+theorem pathHmul_id_left_comp_evalAt_eHmul {a b : Y} (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
     pathHmul (𝟙 (⟨e⟩ : FundamentalGroupoid Y)) p ≫
         (⟦eHmul.evalAt b⟧ : (⟨e ⋀ b⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) =
       (⟦eHmul.evalAt a⟧ : (⟨e ⋀ a⟩ : FundamentalGroupoid Y) ⟶ ⟨a⟩) ≫ p := by
   have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso eHmul.toHomotopy).naturality p
   simp only [FundamentalGroupoidFunctor.homotopicMapsNatIso_app, FundamentalGroupoid.map_map,
     ContinuousMap.coe_id] at h
+  -- `h` is stated with `Path.Homotopic.Quotient.map`, defined by `Quotient.map`: on a
+  -- representative path, `pathHmul (𝟙 e) p` and the image of `p` under `y ↦ e ⋀ y` are both the
+  -- class of `t ↦ e ⋀ p t`, and the image of `p` under the identity is `p`. These agree
+  -- definitionally only once a representative is chosen.
   induction p using Path.Homotopic.Quotient.ind with
   | mk p => exact h
 
 /-- **Right multiplication by the neutral element, on path classes.** For a path class
 `p : a ⟶ b`, the product `p ⋀ 𝟙 e : a ⋀ e ⟶ b ⋀ e` is `p` conjugated by the traces at `a` and `b`
 of the right unit homotopy `hmulE` from `y ↦ y ⋀ e` to the identity. -/
-theorem pathHmul_comp_evalAt_hmulE {a b : Y} (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+theorem pathHmul_id_right_comp_evalAt_hmulE {a b : Y} (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
     pathHmul p (𝟙 (⟨e⟩ : FundamentalGroupoid Y)) ≫
         (⟦hmulE.evalAt b⟧ : (⟨b ⋀ e⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) =
       (⟦hmulE.evalAt a⟧ : (⟨a ⋀ e⟩ : FundamentalGroupoid Y) ⟶ ⟨a⟩) ≫ p := by
   have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso hmulE.toHomotopy).naturality p
   simp only [FundamentalGroupoidFunctor.homotopicMapsNatIso_app, FundamentalGroupoid.map_map,
     ContinuousMap.coe_id] at h
+  -- As in `pathHmul_id_left_comp_evalAt_eHmul`, the two sides of `h` agree with the goal
+  -- definitionally only once a representative of `p` is chosen.
   induction p using Path.Homotopic.Quotient.ind with
   | mk p => exact h
 
@@ -136,7 +142,7 @@ theorem pathHmul_id_left_comp_eqToHom (p : (⟨e⟩ : FundamentalGroupoid Y) ⟶
         eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) =
       eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) ≫ p := by
   rw [← mk_evalAt_eHmul_e]
-  exact pathHmul_id_comp_evalAt_eHmul p
+  exact pathHmul_id_left_comp_evalAt_eHmul p
 
 /-- **The identity of `e` is a right unit for loops at `e`**: for a loop class `p` at `e`, the
 product `p ⋀ 𝟙 e` is `p`, transported along `e ⋀ e = e`. -/
@@ -146,6 +152,6 @@ theorem pathHmul_id_right_comp_eqToHom (p : (⟨e⟩ : FundamentalGroupoid Y) �
         eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) =
       eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) ≫ p := by
   rw [← mk_evalAt_hmulE_e]
-  exact pathHmul_comp_evalAt_hmulE p
+  exact pathHmul_id_right_comp_evalAt_hmulE p
 
 end HSpace
