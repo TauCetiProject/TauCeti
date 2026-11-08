@@ -52,7 +52,7 @@ same endomorphism dimension as its image. -/
 private theorem finrank_end_eq_one_or_eq_reflectionFunctorList :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
-      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V fld q),
+      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V _ q),
       Indecomposable M →
       Module.finrank k (End M) = 1 ∨
         Indecomposable ((reflectionFunctorList k l q hq hl).obj M) ∧
@@ -79,7 +79,7 @@ private theorem finrank_end_eq_one_or_eq_reflectionFunctorList :
 private theorem finrank_end_eq_one_of_isZero_iterate (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l) :
-    ∀ (n : ℕ) (M : @QuiverRep.{u, v, w, max v w x} k V fld q), Indecomposable M →
+    ∀ (n : ℕ) (M : @QuiverRep.{u, v, w, max v w x} k V _ q), Indecomposable M →
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       Limits.IsZero (((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj)^[n] M) →
       Module.finrank k (End M) = 1 := by
@@ -107,7 +107,7 @@ Tits form and a sink-admissible ordering has a one-dimensional endomorphism spac
 theorem finrank_end_eq_one_of_indecomposable_of_isSinkAdmissible (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (hpd : (@titsForm V q fV hq).PosDef) (M : @QuiverRep.{u, v, w, max v w x} k V fld q)
+    (hpd : (@titsForm V q fV hq).PosDef) (M : @QuiverRep.{u, v, w, max v w x} k V _ q)
     (hM : Indecomposable M) (hfd : @IsFinDim.{u, v, w, max v w x} k V fld q M) :
     Module.finrank k (End M) = 1 := by
   obtain ⟨n, hn⟩ := exists_isZero_coxeterFunctor_iterate q hq hnd hall hl hpd M hM hfd

@@ -119,7 +119,8 @@ private theorem norm_picardMap_le {v : E → E} {k : ℝ} (hk : 0 < k)
     nlinarith [norm_nonneg (v x), norm_nonneg u, hk.le, mul_nonneg hk.le (norm_nonneg u)]
   have hstep : ‖∫ s in (0 : ℝ)..t, v (picardCurve k x u s)‖ ≤
       (‖v x‖ + k * ‖u‖) * Real.cosh (2 * k * t) / (2 * k) :=
-    TauCeti.norm_intervalIntegral_le_cosh (by positivity) hCnn t (.of_forall hbound)
+    (TauCeti.norm_intervalIntegral_le_cosh (by positivity) hCnn t (.of_forall hbound)).trans_eq
+      (by rw [abs_of_pos (by positivity)])
   have hcosh : (0 : ℝ) < Real.cosh (2 * k * t) := Real.cosh_pos _
   rw [picardMap, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hcosh)]
   rw [inv_mul_le_iff₀ hcosh]
@@ -162,7 +163,7 @@ private theorem dist_picardOp_le {v : E → E} (hvc : Continuous v) {k : ℝ} (h
   have hint := TauCeti.norm_intervalIntegral_le_cosh (F := fun s ↦
     v (picardCurve k x u₁ s) - v (picardCurve k y u₂ s))
     (by positivity) (mul_nonneg hk.le hD) t (.of_forall hbound)
-  rw [hsub] at hint
+  rw [hsub, abs_of_pos (by positivity)] at hint
   rw [dist_eq_norm, picardOp_apply, picardOp_apply, picardMap, picardMap, ← smul_sub, norm_smul,
     Real.norm_eq_abs, abs_of_pos (inv_pos.2 hcosh), inv_mul_le_iff₀ hcosh]
   refine hint.trans_eq ?_
