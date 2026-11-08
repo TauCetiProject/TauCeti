@@ -108,24 +108,27 @@ theorem monotone_dyadicCeilTime (n : ℕ) : Monotone (dyadicCeilTime n) := by
         exact_mod_cast Nat.ceil_mono (mul_le_mul_of_nonneg_right huv (by positivity))
       exact div_le_div_of_nonneg_right hc (by positivity)
 
+/-- Finite dyadic grid points are fixed by rounding. -/
+theorem dyadicCeilTime_dyadic (n k : ℕ) :
+    dyadicCeilTime n (↑((k : ℝ≥0) / 2 ^ n) : WithTop ℝ≥0) =
+      (↑((k : ℝ≥0) / 2 ^ n) : WithTop ℝ≥0) := by
+  rw [dyadicCeilTime_coe]
+  congr 1
+  rw [div_mul_cancel₀ _ (by positivity), Nat.ceil_natCast]
+
 /-- Refining the dyadic grid decreases the rounded time. -/
 theorem antitone_dyadicCeilTime (u : WithTop ℝ≥0) : Antitone (fun n => dyadicCeilTime n u) := by
   apply antitone_nat_of_succ_le
   intro n
+  refine (monotone_dyadicCeilTime (n + 1) (le_dyadicCeilTime n u)).trans_eq ?_
   cases u with
   | top => simp
   | coe u =>
-    simp only [dyadicCeilTime_coe, WithTop.coe_le_coe]
-    rw [div_le_div_iff₀ (by positivity) (by positivity)]
-    have h : ⌈u * 2 ^ (n + 1)⌉₊ ≤ 2 * ⌈u * 2 ^ n⌉₊ := by
-      rw [Nat.ceil_le]
+    have hgrid (k : ℕ) : (k : ℝ≥0) / 2 ^ n = ((2 * k : ℕ) : ℝ≥0) / 2 ^ (n + 1) := by
       push_cast
       rw [pow_succ]
-      simpa [mul_assoc, mul_comm, mul_left_comm] using
-        mul_le_mul_of_nonneg_left (Nat.le_ceil (u * 2 ^ n)) (by norm_num : (0 : ℝ≥0) ≤ 2)
-    have hc : (⌈u * 2 ^ (n + 1)⌉₊ : ℝ≥0) ≤ 2 * ⌈u * 2 ^ n⌉₊ := by exact_mod_cast h
-    simpa [pow_succ, mul_assoc, mul_comm, mul_left_comm] using
-      mul_le_mul_of_nonneg_right hc (by positivity : (0 : ℝ≥0) ≤ 2 ^ n)
+      field_simp
+    rw [dyadicCeilTime_coe n u, hgrid, dyadicCeilTime_dyadic]
 
 /-- Dyadic ceilings converge to the original time, including infinity. -/
 theorem tendsto_dyadicCeilTime (u : WithTop ℝ≥0) :
@@ -155,19 +158,25 @@ theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0
     rw [dyadicCeilTime_coe]
     exact mem_insert_of_mem _ ⟨_, rfl⟩
 
-/-- Finite dyadic grid points are fixed by rounding. -/
-theorem dyadicCeilTime_dyadic (n k : ℕ) :
-    dyadicCeilTime n (↑((k : ℝ≥0) / 2 ^ n) : WithTop ℝ≥0) =
-      (↑((k : ℝ≥0) / 2 ^ n) : WithTop ℝ≥0) := by
-  rw [dyadicCeilTime_coe]
-  congr 1
-  rw [div_mul_cancel₀ _ (by positivity), Nat.ceil_natCast]
-
 /-- Rounding cannot turn a finite time into infinity. -/
 @[simp]
 theorem dyadicCeilTime_eq_top_iff (n : ℕ) (u : WithTop ℝ≥0) :
     dyadicCeilTime n u = ⊤ ↔ u = ⊤ := by
   cases u <;> simp only [dyadicCeilTime_top, dyadicCeilTime_coe, WithTop.coe_ne_top]
+
+/-- Right-continuous stopped values converge along any random times tending from above to a
+finite random time. No measurability hypothesis is needed for this pathwise assertion. -/
+theorem tendsto_stoppedValue_of_tendsto_of_le {α Ω E : Type*} [TopologicalSpace E]
+    (X : ℝ≥0 → Ω → E) {l : Filter α} {σ : α → Ω → WithTop ℝ≥0}
+    {τ : Ω → WithTop ℝ≥0} {ω : Ω} (hτ : τ ω ≠ ⊤)
+    (hσ : Tendsto (fun a => σ a ω) l (𝓝 (τ ω))) (hle : ∀ᶠ a in l, τ ω ≤ σ a ω)
+    (hX : ContinuousWithinAt (fun t => X t ω) (Ici (τ ω).untopA) (τ ω).untopA) :
+    Tendsto (fun a => stoppedValue X (σ a) ω) l (𝓝 (stoppedValue X τ ω)) := by
+  have h : Tendsto (fun a => (σ a ω).untopA) l (𝓝[≥] (τ ω).untopA) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨(WithTop.tendsto_untopA hτ).comp hσ, ?_⟩
+    filter_upwards [hσ.eventually (eventually_ne_nhds hτ), hle] with a ha hle
+    exact WithTop.untopA_mono ha hle
+  simpa only [stoppedValue, Function.comp_def] using hX.tendsto.comp h
 
 /-- Right-continuous paths converge along the dyadic approximations at a finite random time.
 No measurability hypothesis is needed for this pathwise assertion. -/
@@ -176,32 +185,27 @@ theorem tendsto_stoppedValue_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E]
     (hX : ContinuousWithinAt (fun t => X t ω) (Ici (τ ω).untopA) (τ ω).untopA) :
     Tendsto (fun n => stoppedValue X (fun ω => dyadicCeilTime n (τ ω)) ω)
       atTop (𝓝 (stoppedValue X τ ω)) := by
-  have h : Tendsto (fun n => (dyadicCeilTime n (τ ω)).untopA) atTop
-      (𝓝[≥] (τ ω).untopA) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨(WithTop.tendsto_untopA hτ).comp
-      (tendsto_dyadicCeilTime (τ ω)), Eventually.of_forall fun n => ?_⟩
-    exact WithTop.untopA_mono (fun h => hτ ((dyadicCeilTime_eq_top_iff n _).1 h))
-      (le_dyadicCeilTime n _)
-  exact hX.tendsto.comp h
+  exact tendsto_stoppedValue_of_tendsto_of_le X hτ (tendsto_dyadicCeilTime (τ ω))
+    (Eventually.of_forall fun n => le_dyadicCeilTime n _) hX
 
-/-- At every deterministic horizon, stopped right-continuous paths converge along dyadic
-approximations, including paths on which the stopping time is infinite. -/
+/-- At every deterministic horizon, stopped paths converge along dyadic approximations if
+right-continuous at the evaluated time, including paths with infinite stopping time. -/
 theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E]
     (X : ℝ≥0 → Ω → E) (τ : Ω → WithTop ℝ≥0) (t : ℝ≥0) (ω : Ω)
-    (hX : ∀ s, ContinuousWithinAt (fun u => X u ω) (Ici s) s) :
+    (hX : ContinuousWithinAt (fun u => X u ω)
+      (Ici (min (t : WithTop ℝ≥0) (τ ω)).untopA) (min (t : WithTop ℝ≥0) (τ ω)).untopA) :
     Tendsto (fun n => stoppedProcess X (fun ω => dyadicCeilTime n (τ ω)) t ω)
       atTop (𝓝 (stoppedProcess X τ t ω)) := by
-  have hfinite (u : WithTop ℝ≥0) : min (t : WithTop ℝ≥0) u ≠ ⊤ :=
+  have hfinite : min (t : WithTop ℝ≥0) (τ ω) ≠ ⊤ :=
     ne_of_lt (lt_of_le_of_lt (min_le_left _ _) (WithTop.coe_lt_top t))
   have hmin : Tendsto (fun n => min (t : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)))
       atTop (𝓝 (min (t : WithTop ℝ≥0) (τ ω))) :=
     tendsto_const_nhds.min (tendsto_dyadicCeilTime (τ ω))
-  have h : Tendsto (fun n => (min (t : WithTop ℝ≥0) (dyadicCeilTime n (τ ω))).untopA)
-      atTop (𝓝[≥] (min (t : WithTop ℝ≥0) (τ ω)).untopA) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨(WithTop.tendsto_untopA (hfinite _)).comp hmin,
-      Eventually.of_forall fun n => ?_⟩
-    exact WithTop.untopA_mono (hfinite _) (min_le_min_left _ (le_dyadicCeilTime n _))
-  simpa only [stoppedProcess, Function.comp_def] using (hX _).tendsto.comp h
+  simpa only [stoppedProcess, stoppedValue, Function.comp_def] using
+    tendsto_stoppedValue_of_tendsto_of_le X
+      (σ := fun n ω => min (t : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)))
+      (τ := fun ω => min (t : WithTop ℝ≥0) (τ ω)) (ω := ω) hfinite hmin
+      (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
 
 end TauCeti
 
