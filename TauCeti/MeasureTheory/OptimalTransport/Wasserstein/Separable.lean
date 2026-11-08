@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FiniteSupport
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Separability of the finite-moment Wasserstein space
@@ -64,67 +65,14 @@ universe u
 
 variable {X : Type u} [MeasurableSpace X] {p : ℝ≥0∞}
 
-/-- The probability measure with weights given by natural multiplicities `m x` on the points of a
-finite set `S` is a probability measure when the total multiplicity is positive. -/
-theorem isProbabilityMeasure_natWeights {S : Finset X} {m : X → ℕ} (hm : 0 < ∑ x ∈ S, m x) :
-    IsProbabilityMeasure
-      ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) := by
-  refine ⟨?_⟩
-  have hmsum : ∑ x ∈ S, ((m x : ℕ) : ℝ≥0∞) = ((∑ x ∈ S, m x : ℕ) : ℝ≥0∞) :=
-    (Nat.cast_sum _ _).symm
-  have hmass : (∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) univ
-      = ((∑ x ∈ S, m x : ℕ) : ℝ≥0∞) := by
-    rw [FunLike.coe_sum, Finset.sum_apply, ← hmsum]
-    exact Finset.sum_congr rfl fun x _ ↦ by simp
-  rw [_root_.smul_apply, hmass, smul_eq_mul, hmsum,
-    ENNReal.inv_mul_cancel (Nat.cast_ne_zero.2 hm.ne') (ENNReal.natCast_ne_top _)]
-
-/-- The measure with natural multiplicities `m x` on the points of a finite set `S` is carried
-by `S`. -/
-theorem natWeights_compl_eq_zero [MeasurableSingletonClass X] (S : Finset X) (m : X → ℕ) :
-    ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x)
-      ((S : Set X)ᶜ) = 0 := by
-  have hzero : (∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) ((S : Set X)ᶜ) = 0 := by
-    rw [FunLike.coe_sum, Finset.sum_apply]
-    refine Finset.sum_eq_zero fun x hx ↦ ?_
-    rw [_root_.smul_apply, Measure.dirac_apply' _ S.measurableSet.compl,
-      Set.indicator_of_notMem (by simpa using hx), smul_zero]
-  rw [_root_.smul_apply, hzero, smul_zero]
-
-/-- The measure with natural multiplicities on a finite set of terms of a sequence `u` is of the
-form `(∑ m)⁻¹ • ∑ m • δ_(u i)` for a finite set of pairs `(i, k)`, where `k` is the
-multiplicity of the `i`-th term. -/
-theorem exists_finset_prod_natWeights_eq {u : ℕ → X} {S : Finset X} (m : X → ℕ)
-    (hS : ∀ x ∈ S, x ∈ Set.range u) :
-    ∃ t : Finset (ℕ × ℕ), (∑ q ∈ t, (q.2 : ℝ≥0∞))⁻¹ •
-        ∑ q ∈ t, (q.2 : ℝ≥0∞) • Measure.dirac (u q.1) =
-      (∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x := by
-  classical
-  choose! i hi using hS
-  have hinj : ∀ x ∈ S, ∀ y ∈ S, (i x, m x) = (i y, m y) → x = y := by
-    intro x hx y hy hxy
-    have hix : i x = i y := congrArg Prod.fst hxy
-    rw [← hi x hx, ← hi y hy, hix]
-  refine ⟨S.image fun x ↦ (i x, m x), ?_⟩
-  rw [Finset.sum_image hinj, Finset.sum_image hinj]
-  exact congrArg₂ _ rfl (Finset.sum_congr rfl fun x hx ↦ by rw [hi x hx])
-
 namespace WassersteinSpace
-
-/-- The Wasserstein space over an empty ground space is empty: there is no probability measure. -/
-theorem isEmpty_of_isEmpty [PseudoEMetricSpace X] [IsEmpty X] :
-    IsEmpty (WassersteinSpace p X) := by
-  refine ⟨fun μ ↦ ?_⟩
-  have h : ((μ : ProbabilityMeasure X) : Measure X) univ = 1 := measure_univ
-  rw [Set.univ_eq_empty_iff.2 ‹IsEmpty X›, measure_empty] at h
-  exact zero_ne_one h
 
 /-- Approximation by laws with rational weights on a dense sequence: a law of finite `p`-moment is
 within `3 * δ` in `W_p` of a law with natural multiplicities on finitely many terms of the
 dense sequence `u`, by the three imported approximation steps (finite support, moving the atoms
 onto terms of `u`, rounding the weights) each costing `δ`. -/
 theorem exists_natWeights_wassersteinEDist_le [PseudoMetricSpace X] [StandardBorelSpace X]
-    [BorelSpace X] [SecondCountableTopology X] {u : ℕ → X} (hu : DenseRange u) (hp1 : 1 ≤ p)
+    [BorelSpace X] {u : ℕ → X} (hu : DenseRange u) (hp1 : 1 ≤ p)
     (hp_top : p ≠ ∞)
     {μ : Measure X} [IsProbabilityMeasure μ] (hμ : HasFiniteMoment p μ) {δ : ℝ} (hδ : 0 < δ) :
     ∃ (S : Finset X) (m : X → ℕ), (∀ x ∈ S, x ∈ Set.range u) ∧ 0 < ∑ x ∈ S, m x ∧
@@ -132,6 +80,7 @@ theorem exists_natWeights_wassersteinEDist_le [PseudoMetricSpace X] [StandardBor
         ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) ≤
         ENNReal.ofReal (3 * δ) := by
   classical
+  have : TopologicalSpace.SeparableSpace X := ⟨⟨Set.range u, Set.countable_range u, hu⟩⟩
   have hδ' : ENNReal.ofReal δ ≠ 0 := by simpa using hδ
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
   -- step one: approximate by a law carried by a finite set
@@ -194,7 +143,7 @@ theorem separableSpace (hp_top : p ≠ ∞) :
     rintro rfl
     simp at hmpos
   have hmom₃ : HasFiniteMoment p ν₃ :=
-    hasFiniteMoment_of_ae_mem_finset x₁ (mem_ae_iff.2 (natWeights_compl_eq_zero S m))
+    hasFiniteMoment_of_ae_mem_finset x₁ (mem_ae_iff.2 (S.natWeights_compl_eq_zero m))
   -- the approximating law belongs to the countable family
   have hrange : ν₃ ∈ Set.range G := by
     obtain ⟨t, ht⟩ := exists_finset_prod_natWeights_eq m hSu
