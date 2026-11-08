@@ -228,7 +228,7 @@ end OpensMeasurable
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
 
 /-- **A harmonic function is weakly harmonic.** -/
-theorem _root_.InnerProductSpace.HarmonicOnNhd.weaklyHarmonicOn [CompleteSpace F]
+theorem _root_.InnerProductSpace.HarmonicOnNhd.weaklyHarmonicOn
     (h : HarmonicOnNhd w Ω) : WeaklyHarmonicOn μ Ω w :=
   ⟨h.contDiffOn.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet,
     h.integral_laplacian_smul_eq_zero⟩
