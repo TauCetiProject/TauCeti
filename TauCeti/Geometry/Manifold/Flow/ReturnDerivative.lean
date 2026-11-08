@@ -534,8 +534,8 @@ theorem finrank_eigenspace_returnDerivative_eq {μ : ℝ} (hμ : μ ≠ 0) :
       Module.finrank ℝ ((returnDerivative v g' T₀ q).eigenspace μ) :=
   finrank_genEigenspace_returnDerivative_eq hv hT hq hP hp hg hgv hg' hg'v hμ 1
 
-/-- **The spectrum of the normal return derivative does not depend on the section or the base
-point.** For `μ ≠ 0`, the normal return derivative at time `T₀` of a transverse section through
+/-- **The nonzero eigenvalues of the normal return derivative do not depend on the section or the
+base point.** For `μ ≠ 0`, the normal return derivative at time `T₀` of a transverse section through
 `p` has eigenvalue `μ` exactly when that of a transverse section through any point `q` of the orbit
 does. For `μ = 1` this is the eigenvalue-one test. -/
 theorem hasEigenvalue_normalReturnDerivative_iff_of_flowOf
