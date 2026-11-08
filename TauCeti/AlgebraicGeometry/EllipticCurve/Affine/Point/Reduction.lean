@@ -97,19 +97,14 @@ theorem reduction_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x
     reduction v (some x y h) = ⟦![0, 1, 0]⟧ := by
   simp [reduction, hx.not_ge]
 
-private lemma valuation_valuationSubring_le_one (a : v.valuationSubring) : v a ≤ 1 :=
-  (v.mem_valuationSubring_iff _).mp a.2
-
-private lemma isUnit_valuationSubring_iff {a : v.valuationSubring} : IsUnit a ↔ v a = 1 :=
-  (Valuation.valuationSubring.integers v).isUnit_iff_valuation_eq_one
-
 /-- The integral case of `reduction_some_eq_mk`: when `x` is integral, so is `y`, `Z` must be the
 unit, and `(X : Y : Z) = Z • (x : y : 1)`. -/
 private lemma reduction_some_eq_mk_of_valuation_le_one {x y : F} (h : W.Nonsingular x y)
     {X Y Z : v.valuationSubring} (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z)
     (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) (hx : v x ≤ 1) :
     reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
-  have hle := valuation_valuationSubring_le_one v
+  have hint := Valuation.valuationSubring.integers v
+  have hle := hint.map_le_one
   have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
   set a : v.valuationSubring := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩
   set b : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩
@@ -117,13 +112,13 @@ private lemma reduction_some_eq_mk_of_valuation_le_one {x y : F} (h : W.Nonsingu
   have hYb : Y = b * Z := Subtype.ext hY
   have hZ : IsUnit Z := by
     by_contra hZ
-    have hZ1 : v Z < 1 := lt_of_le_of_ne (hle Z) ((isUnit_valuationSubring_iff v).not.mp hZ)
+    have hZ1 : v Z < 1 := lt_of_le_of_ne (hle Z) (hint.isUnit_iff_valuation_eq_one.not.mp hZ)
     have hlt : ∀ c : v.valuationSubring, v (c * Z : v.valuationSubring) < 1 := fun c ↦ by
       rw [Subring.coe_mul, map_mul]
       exact lt_of_le_of_lt (mul_le_of_le_one_left' (hle c)) hZ1
     rcases hu with hX' | hY' | hZ'
-    · exact (hlt a).ne (hXa ▸ (isUnit_valuationSubring_iff v).mp hX')
-    · exact (hlt b).ne (hYb ▸ (isUnit_valuationSubring_iff v).mp hY')
+    · exact (hlt a).ne (hXa ▸ hint.isUnit_iff_valuation_eq_one.mp hX')
+    · exact (hlt b).ne (hYb ▸ hint.isUnit_iff_valuation_eq_one.mp hY')
     · exact hZ hZ'
   rw [reduction_some_of_valuation_le_one v h hx, hXa, hYb, map_mul, map_mul,
     ← Projective.smul_eq _ (hZ.map (residue v.valuationSubring))]
@@ -137,7 +132,8 @@ private lemma reduction_some_eq_mk_of_one_lt {x y : F} (h : W.Nonsingular x y)
     {X Y Z : v.valuationSubring} (hX : (X : F) = x * Z) (hY : (Y : F) = y * Z)
     (hu : IsUnit X ∨ IsUnit Y ∨ IsUnit Z) (hx : 1 < v x) :
     reduction v (some x y h) = ⟦![residue _ X, residue _ Y, residue _ Z]⟧ := by
-  have hle := valuation_valuationSubring_le_one v
+  have hint := Valuation.valuationSubring.integers v
+  have hle := hint.map_le_one
   rw [reduction_some_of_one_lt v h hx]
   have hxy := valuation_x_lt_valuation_y v h.left hx
   have hY1 : v (Y : F) ≤ 1 := hle Y
@@ -155,9 +151,9 @@ private lemma reduction_some_eq_mk_of_one_lt {x y : F} (h : W.Nonsingular x y)
       exact mul_lt_mul_of_pos_right hxy (zero_lt_iff.mpr h0)
   have hYu : IsUnit Y := by
     rcases hu with hX' | hY' | hZ'
-    · exact absurd ((isUnit_valuationSubring_iff v).mp hX') hX1.ne
+    · exact absurd (hint.isUnit_iff_valuation_eq_one.mp hX') hX1.ne
     · exact hY'
-    · exact absurd ((isUnit_valuationSubring_iff v).mp hZ') hZ1.ne
+    · exact absurd (hint.isUnit_iff_valuation_eq_one.mp hZ') hZ1.ne
   rw [(residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hX1),
     (residue_eq_zero_iff _).mpr ((Valuation.mem_maximalIdeal_iff (v := v)).mpr hZ1),
     ← Projective.smul_eq _ (hYu.map (residue v.valuationSubring))]
