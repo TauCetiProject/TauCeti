@@ -278,8 +278,9 @@ private theorem defect_mul_correction_prod_mem {k : ℕ} (hF : IsProP p F)
     rw [gradedMk_mul, hB, add_neg_cancel]
   exact gradedMk_eq_zero_iff.mp hDB
 
-/-- The correction step of `exists_mem_level_succ` in positive rank: the graded corrections
-solve the bracket equation in `gr_{m+1}` and give conjugators at the next level. -/
+/-- The correction step of `exists_mem_level_succ` in positive rank: in rank `k + 1`, a pair of
+conjugators at level `m + 1` can be corrected to a pair at level `m + 2` by corrections in `γ_m`,
+the first correction being trivial. -/
 private theorem exists_mem_level_succ_of_succ {k : ℕ} (hF : IsProP p F)
     (e : F ≃ₜ* freeProP p (Fin (k + 1))) (u : ℤ_[p]ˣ) (m : ℕ)
     (c : Fin (k + 1) → F) (d : F) (h : (c, d) ∈ level hF (basis e) (u : ℤ_[p]) (m + 1)) :
@@ -288,7 +289,7 @@ private theorem exists_mem_level_succ_of_succ {k : ℕ} (hF : IsProP p F)
       d' ∈ closedLowerCentralSeries F m ∧
       (∀ h0 : 0 < k + 1, c' ⟨0, h0⟩ = 1) ∧
       ((fun i ↦ c i * c' i), d * d') ∈ level hF (basis e) (u : ℤ_[p]) (m + 1 + 1) := by
-  -- Read the current defect in `gr_m` and use the peripheral tuple without its first entry
+  -- Read the current defect in `gr_{m+1}` and use the peripheral tuple without its first entry
   -- as a finite topological generating family. Its bracket coefficients prescribe the
   -- corrections while leaving the first conjugator unchanged.
   have hdef : defect hF (basis e) u c d ∈ pLowerCentralSeries 0 F (m + 1) := by
