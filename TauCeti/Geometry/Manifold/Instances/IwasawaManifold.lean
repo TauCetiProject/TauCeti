@@ -32,7 +32,8 @@ the inclusion `H(ℤ[i]) → H(ℂ)`, freely and properly discontinuously, so
 `TauCeti.instIsManifoldQuotient` makes the orbit space `TauCeti.IwasawaManifold` a complex
 manifold modelled on `ℂ³`, and the projection `TauCeti.IwasawaManifold.mk` is a holomorphic local
 diffeomorphism. The orbit space is Hausdorff, second countable, connected and compact: every orbit
-meets the product of three half-open unit squares (`TauCeti.IwasawaManifold.Cover.exists_smul_mem`).
+meets the product of three half-open unit squares
+(`TauCeti.IwasawaManifold.Cover.exists_smul_mem_reProdIm_Ico`).
 
 ## Main definitions
 
@@ -61,6 +62,14 @@ meets the product of three half-open unit squares (`TauCeti.IwasawaManifold.Cove
   the projection is a local biholomorphism, and in particular holomorphic.
 * `TauCeti.IwasawaManifold.mk_eq_mk_iff`: its fibres are the orbits of the deck group.
 * `TauCeti.IwasawaManifold.instCompactSpace`: the Iwasawa manifold is compact.
+
+## Implementation notes
+
+The construction adapts the Kodaira–Thurston manifold
+(`TauCeti.Geometry.Manifold.Instances.KodairaThurston`), with `ℂ` in place of `ℝ`, the
+Gaussian-integer lattice in place of `ℤ`, and no circle factor: the type synonym cover with its
+coordinate API, the shear-based affine description of the action and its smoothness and
+differential, and the freeness, proper discontinuity and compactness proofs follow that file.
 
 ## References
 
@@ -144,6 +153,24 @@ theorem ext {p q : Cover} (hx : p.x = q.x) (hy : p.y = q.y) (hz : p.z = q.z) : p
 
 @[simp] theorem z_add (p q : Cover) : (p + q).z = p.z + q.z := (rfl)
 
+@[simp] theorem x_neg (p : Cover) : (-p).x = -p.x := (rfl)
+
+@[simp] theorem y_neg (p : Cover) : (-p).y = -p.y := (rfl)
+
+@[simp] theorem z_neg (p : Cover) : (-p).z = -p.z := (rfl)
+
+@[simp] theorem x_sub (p q : Cover) : (p - q).x = p.x - q.x := (rfl)
+
+@[simp] theorem y_sub (p q : Cover) : (p - q).y = p.y - q.y := (rfl)
+
+@[simp] theorem z_sub (p q : Cover) : (p - q).z = p.z - q.z := (rfl)
+
+@[simp] theorem x_zero : (0 : Cover).x = 0 := (rfl)
+
+@[simp] theorem y_zero : (0 : Cover).y = 0 := (rfl)
+
+@[simp] theorem z_zero : (0 : Cover).z = 0 := (rfl)
+
 @[simp] theorem x_smul (c : ℂ) (p : Cover) : (c • p).x = c * p.x := (rfl)
 
 @[simp] theorem y_smul (c : ℂ) (p : Cover) : (c • p).y = c * p.y := (rfl)
@@ -208,6 +235,13 @@ instance : SMul (HeisenbergGroup ℂ) Cover where
 `(x, y, z) ↦ (a + x, b + y, c + z + a y)`. -/
 theorem smul_def (g : HeisenbergGroup ℂ) (p : Cover) :
     g • p = mk (g.x + p.x) (g.y + p.y) (g.z + p.z + g.x * p.y) :=
+  (rfl)
+
+/-- An element `(a, b, c)` of the complex Heisenberg group sends the point with coordinates
+`(x, y, z)` to the point with coordinates `(a + x, b + y, c + z + a y)`. -/
+@[simp]
+theorem smul_mk (g : HeisenbergGroup ℂ) (a b c : ℂ) :
+    g • mk a b c = mk (g.x + a) (g.y + b) (g.z + c + g.x * b) :=
   (rfl)
 
 /-- Left multiplication translates the `x`-coordinate. -/
@@ -295,6 +329,13 @@ theorem z_deck_smul (γ : DeckGroup) (p : Cover) :
     (γ • p).z = γ.z + p.z + γ.x * p.y := by
   simp [deck_smul_def]
 
+/-- An element `(a, b, c)` of the deck group sends the point with coordinates `(x, y, z)` to the
+point with coordinates `(a + x, b + y, c + z + a y)`. -/
+@[simp]
+theorem deck_smul_mk (γ : DeckGroup) (a b c : ℂ) :
+    γ • mk a b c = mk (γ.x + a) (γ.y + b) (γ.z + c + γ.x * b) := by
+  ext <;> simp
+
 /-- The deck group acts on the cover by holomorphic maps. -/
 instance instContMDiffConstSMulDeckGroup {n : ℕ∞ω} :
     ContMDiffConstSMul 𝓘(ℂ, Cover) n DeckGroup Cover where
@@ -348,7 +389,7 @@ instance instProperlyDiscontinuousSMul : ProperlyDiscontinuousSMul DeckGroup Cov
 
 /-- Every orbit of the deck group meets the product of three half-open unit squares
 `[0, 1) × [0, 1)` in `ℂ`. -/
-theorem exists_smul_mem (p : Cover) :
+theorem exists_smul_mem_reProdIm_Ico (p : Cover) :
     ∃ γ : DeckGroup, (γ • p).x ∈ Ico (0 : ℝ) 1 ×ℂ Ico 0 1 ∧
       (γ • p).y ∈ Ico (0 : ℝ) 1 ×ℂ Ico 0 1 ∧ (γ • p).z ∈ Ico (0 : ℝ) 1 ×ℂ Ico 0 1 := by
   obtain ⟨a, ha⟩ := GaussianInt.exists_sub_mem_reProdIm_Ico p.x
@@ -414,7 +455,7 @@ instance instCompactSpace : CompactSpace IwasawaManifold := by
     Complex.reProdIm_subset_iff'.2 (Or.inl ⟨Ico_subset_Icc_self, Ico_subset_Icc_self⟩)
   refine ⟨(hB.image continuous_mk).of_isClosed_subset isClosed_univ fun w _ ↦ ?_⟩
   obtain ⟨p, rfl⟩ := mk_surjective w
-  obtain ⟨γ, hx, hy, hz⟩ := exists_smul_mem p
+  obtain ⟨γ, hx, hy, hz⟩ := exists_smul_mem_reProdIm_Ico p
   exact ⟨γ • p, ⟨hsub hx, hsub hy, hsub hz⟩, MulAction.orbitRel.Quotient.quotient_smul_eq⟩
 
 end IwasawaManifold
