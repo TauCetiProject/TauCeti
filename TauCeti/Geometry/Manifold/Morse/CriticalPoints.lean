@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
