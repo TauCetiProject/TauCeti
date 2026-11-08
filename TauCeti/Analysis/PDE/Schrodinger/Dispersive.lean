@@ -205,13 +205,13 @@ private theorem tendsto_fourierMultiplierCLM_gaussian_schrodingerPropagator {t :
     exact ((Complex.continuous_exp.comp (continuous_neg.mul continuous_const)).tendsto
       b₀).comp hb
 
-omit [CompleteSpace F] in
 /-- For integrable `f`, the regularized convolution integrals `∫ G_{b_k}(x - y) f(y) dy` converge
 at every point `x` to `∫ K_t(x - y) f(y) dy`. -/
-private theorem tendsto_integral_gaussianKernel_smul {t : ℝ} (ht : t ≠ 0)
+private theorem tendsto_integral_gaussianKernel_smul {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] {t : ℝ} (ht : t ≠ 0)
     {b : ℕ → ℂ} (hbre : ∀ k, 0 ≤ (b k).re) (hbim : ∀ k, (b k).im = 4 * π ^ 2 * t)
     (hb : Tendsto b atTop (𝓝 (((4 * π ^ 2 * t : ℝ) : ℂ) * I)))
-    (f : E → F) (hf : Integrable f) (x : E) :
+    (f : E → G) (hf : Integrable f) (x : E) :
     Tendsto (fun k ↦ ∫ y, gaussianKernel (b k) (x - y) • f y) atTop
       (𝓝 (∫ y, schrodingerKernel t (x - y) • f y)) := by
   refine tendsto_integral_of_dominated_convergence
