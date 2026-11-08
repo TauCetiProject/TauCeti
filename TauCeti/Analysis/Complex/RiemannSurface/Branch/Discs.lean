@@ -45,79 +45,31 @@ section Helpers
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y}
 
-/-- Compactness rules out further sheets outside a neighbourhood of the fibre: if an open set `U`
-contains `f ⁻¹' {y}`, then in a chart `e'` at `y` a small open coordinate disc has its
-preimage inside `U`. -/
-theorem exists_ball_preimage_subset [CompactSpace X] [T2Space Y] (hf : Continuous f) {y : Y}
-    {e' : OpenPartialHomeomorph Y ℂ} (hy : y ∈ e'.source) {U : Set X} (hU : IsOpen U)
-    (hfib : f ⁻¹' {y} ⊆ U) :
-    ∃ ε > 0, ball (e' y) ε ⊆ e'.target ∧
-      ∀ z, f z ∈ e'.source → e' (f z) ∈ ball (e' y) ε → z ∈ U := by
-  have hV : IsOpen (f '' Uᶜ)ᶜ :=
-    (hU.isClosed_compl.isCompact.image hf).isClosed.isOpen_compl
-  have hyV : y ∈ (f '' Uᶜ)ᶜ := by
-    rintro ⟨z, hz, hzy⟩
-    exact hz (hfib hzy)
-  have hcoord : e'.target ∩ e'.symm ⁻¹' (f '' Uᶜ)ᶜ ∈ 𝓝 (e' y) :=
-    inter_mem (e'.open_target.mem_nhds (e'.map_source hy))
-      ((e'.tendsto_symm hy).eventually (hV.mem_nhds hyV))
-  obtain ⟨ε, hε, hεsub⟩ := Metric.mem_nhds_iff.mp hcoord
-  refine ⟨ε, hε, fun w hw ↦ (hεsub hw).1, fun z hz hzb ↦ ?_⟩
-  by_contra hzU
-  have := (hεsub hzb).2
-  simp only [mem_preimage, e'.left_inv hz] at this
-  exact this ⟨z, hzU, rfl⟩
-
-/-- The preimage of an open coordinate disc is the union of the source discs, when each source
-chart `e x` carries the target chart to the `m x`-th power with radii `r x ^ m x = δ`, and every
-point over the disc lies in a source chart. -/
-private theorem preimage_ball_eq_iUnion {ι : Type*} {e' : OpenPartialHomeomorph Y ℂ} {y : Y}
-    {δ : ℝ} {e : ι → OpenPartialHomeomorph X ℂ} {r : ι → ℝ} {m : ι → ℕ}
-    (hm : ∀ x, m x ≠ 0) (hr : ∀ x, 0 < r x) (hrpow : ∀ x, r x ^ m x = δ)
-    (hrsub : ∀ x, closedBall (0 : ℂ) (r x) ⊆ (e x).target)
+/-- The preimage of a set `S` of target-chart coordinates is the union of the source sets `T x`
+carried to `S` by the `m x`-th power maps, when every point over `S` lies in a source chart.
+The ball and closed ball statements of `exists_disjoint_power_charts` are instances. -/
+private theorem preimage_eq_iUnion {ι : Type*} {e' : OpenPartialHomeomorph Y ℂ} {y : Y}
+    {e : ι → OpenPartialHomeomorph X ℂ} {m : ι → ℕ} {S : Set ℂ} {T : ι → Set ℂ}
+    (hT : ∀ x, T x ⊆ (e x).target)
+    (hiff : ∀ x, ∀ w ∈ (e x).target, w ∈ T x ↔ e' y + w ^ m x ∈ S)
     (hpow : ∀ x, ∀ z ∈ (e x).source, f z ∈ e'.source ∧ e' (f z) - e' y = e x z ^ m x)
-    (hfull : ∀ z, f z ∈ e'.source ∧ e' (f z) ∈ ball (e' y) δ → z ∈ ⋃ x, (e x).source) :
-    f ⁻¹' (e'.source ∩ e' ⁻¹' ball (e' y) δ) = ⋃ x, (e x).symm '' ball 0 (r x) := by
+    (hfull : ∀ z, f z ∈ e'.source ∧ e' (f z) ∈ S → z ∈ ⋃ x, (e x).source) :
+    f ⁻¹' (e'.source ∩ e' ⁻¹' S) = ⋃ x, (e x).symm '' T x := by
   ext z
   constructor
   · intro hz
     obtain ⟨x, hx⟩ := mem_iUnion.mp (hfull z hz)
     refine mem_iUnion.mpr ⟨x, e x z, ?_, (e x).left_inv hx⟩
-    rw [mem_ball_zero_iff, ← pow_lt_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x), hrpow x,
-      ← norm_pow, ← (hpow x z hx).2]
-    exact mem_ball_iff_norm.mp hz.2
+    refine (hiff x _ ((e x).map_source hx)).2 ?_
+    rw [← (hpow x z hx).2, add_sub_cancel]
+    exact hz.2
   · intro hz
     obtain ⟨x, w, hw, rfl⟩ := mem_iUnion.mp hz
-    have hwt := hrsub x (ball_subset_closedBall hw)
+    have hwt := hT x hw
     have h := hpow x ((e x).symm w) ((e x).map_target hwt)
     refine ⟨h.1, ?_⟩
-    rw [mem_preimage, mem_ball_iff_norm, h.2, (e x).right_inv hwt, norm_pow, ← hrpow x]
-    exact (pow_lt_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).2 (mem_ball_zero_iff.mp hw)
-
-/-- The preimage of a closed coordinate disc is the union of the closed source discs, under the
-hypotheses of `preimage_ball_eq_iUnion`. -/
-private theorem preimage_closedBall_eq_iUnion {ι : Type*} {e' : OpenPartialHomeomorph Y ℂ}
-    {y : Y} {δ : ℝ} {e : ι → OpenPartialHomeomorph X ℂ} {r : ι → ℝ} {m : ι → ℕ}
-    (hm : ∀ x, m x ≠ 0) (hr : ∀ x, 0 < r x) (hrpow : ∀ x, r x ^ m x = δ)
-    (hrsub : ∀ x, closedBall (0 : ℂ) (r x) ⊆ (e x).target)
-    (hpow : ∀ x, ∀ z ∈ (e x).source, f z ∈ e'.source ∧ e' (f z) - e' y = e x z ^ m x)
-    (hfull : ∀ z, f z ∈ e'.source ∧ e' (f z) ∈ closedBall (e' y) δ → z ∈ ⋃ x, (e x).source) :
-    f ⁻¹' (e'.source ∩ e' ⁻¹' closedBall (e' y) δ) = ⋃ x, (e x).symm '' closedBall 0 (r x) := by
-  ext z
-  constructor
-  · intro hz
-    obtain ⟨x, hx⟩ := mem_iUnion.mp (hfull z hz)
-    refine mem_iUnion.mpr ⟨x, e x z, ?_, (e x).left_inv hx⟩
-    rw [mem_closedBall_zero_iff, ← pow_le_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x),
-      hrpow x, ← norm_pow, ← (hpow x z hx).2]
-    exact mem_closedBall_iff_norm.mp hz.2
-  · intro hz
-    obtain ⟨x, w, hw, rfl⟩ := mem_iUnion.mp hz
-    have hwt := hrsub x hw
-    have h := hpow x ((e x).symm w) ((e x).map_target hwt)
-    refine ⟨h.1, ?_⟩
-    rw [mem_preimage, mem_closedBall_iff_norm, h.2, (e x).right_inv hwt, norm_pow, ← hrpow x]
-    exact (pow_le_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).2 (mem_closedBall_zero_iff.mp hw)
+    rw [mem_preimage, eq_add_of_sub_eq' h.2, (e x).right_inv hwt]
+    exact (hiff x w hwt).1 hw
 
 end Helpers
 
@@ -169,9 +121,19 @@ theorem exists_disjoint_power_charts
     intro x x' hxx'
     exact (hdisj x.2 x'.2 (fun h ↦ hxx' (Subtype.ext h))).mono
       ((hsub x).trans inter_subset_left) ((hsub x').trans inter_subset_left)
-  obtain ⟨ε, hε, hεt, hεU⟩ := exists_ball_preimage_subset hf.continuous hy
-    (isOpen_iUnion fun x ↦ (e x).open_source)
-    fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hxe ⟨z, hz⟩⟩
+  -- Compactness rules out further sheets outside a neighbourhood of the fibre.
+  obtain ⟨V, hV, hVU⟩ := mem_comap.1 (hf.continuous.isClosedMap.comap_nhds_le
+    ((isOpen_iUnion fun x ↦ (e x).open_source).mem_nhdsSet.2
+      fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hxe ⟨z, hz⟩⟩))
+  obtain ⟨ε, hε, hεsub⟩ := Metric.mem_nhds_iff.mp
+    (inter_mem (e'.open_target.mem_nhds (e'.map_source hy))
+      ((e'.tendsto_symm hy).eventually hV))
+  have hεt : ball (e' y) ε ⊆ e'.target := fun w hw ↦ (hεsub hw).1
+  have hεU {z : X} (hz : f z ∈ e'.source) (hzb : e' (f z) ∈ ball (e' y) ε) :
+      z ∈ ⋃ x, (e x).source := by
+    refine hVU ?_
+    have : e'.symm (e' (f z)) ∈ V := (hεsub hzb).2
+    rwa [e'.left_inv hz] at this
   have hrad (x : f ⁻¹' {y}) : ∃ R > 0, ball (0 : ℂ) R ⊆ (e x).target :=
     Metric.mem_nhds_iff.mp ((e x).open_target.mem_nhds (hex x ▸ (e x).map_source (hxe x)))
   choose R hR hRsub using hrad
@@ -194,12 +156,20 @@ theorem exists_disjoint_power_charts
       (by rw [hrpow]; exact hδsmall.2 x))).trans (hRsub x)
   have hfull {z : X} (hz : f z ∈ e'.source ∧ e' (f z) ∈ closedBall (e' y) δ) :
       z ∈ ⋃ x, (e x).source :=
-    hεU z hz.1 (closedBall_subset_ball hδsmall.1 hz.2)
+    hεU hz.1 (closedBall_subset_ball hδsmall.1 hz.2)
   exact ⟨δ, e, r, hδ, (closedBall_subset_ball hδsmall.1).trans hεt,
     fun x ↦ ⟨he x, hxe x, hex x, (hsub x).trans inter_subset_right, hr x, hrpow x, hrsub x,
       hpow x⟩, hedisj,
-    preimage_ball_eq_iUnion (fun x ↦ hm x) hr hrpow hrsub hpow fun z hz ↦
-      hfull ⟨hz.1, ball_subset_closedBall hz.2⟩,
-    preimage_closedBall_eq_iUnion (fun x ↦ hm x) hr hrpow hrsub hpow fun z hz ↦ hfull hz⟩
+    preimage_eq_iUnion (fun x ↦ ball_subset_closedBall.trans (hrsub x))
+      (fun x w _ ↦ by
+        rw [mem_ball_zero_iff, mem_ball_iff_norm, add_sub_cancel_left, norm_pow, ← hrpow x]
+        exact (pow_lt_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).symm)
+      hpow fun z hz ↦ hfull ⟨hz.1, ball_subset_closedBall hz.2⟩,
+    preimage_eq_iUnion hrsub
+      (fun x w _ ↦ by
+        rw [mem_closedBall_zero_iff, mem_closedBall_iff_norm, add_sub_cancel_left, norm_pow,
+          ← hrpow x]
+        exact (pow_le_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).symm)
+      hpow fun z hz ↦ hfull hz⟩
 
 end TauCeti.RiemannSurface
