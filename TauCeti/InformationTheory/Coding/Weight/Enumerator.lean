@@ -265,8 +265,8 @@ theorem weightDistribution_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ 
 end WeightPreservingEquivalence
 
 /-- A finite set containing zero whose nonzero words all have weight `d` has one word of
-weight zero, `Nat.card C - 1` words of weight `d`, and no words of any other weight. (For `d = 0`
-the set is `{0}`, and the two counts agree.) -/
+weight zero and no words of any weight other than zero and `d`. For `d ≠ 0` it has `Nat.card C - 1`
+words of weight `d`. For `d = 0` the set is the singleton `{0}`, whose one word has weight zero. -/
 theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*} [Fintype ι]
     [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] {C : Set (∀ i, β i)} {d : ℕ}
     (hC : C.Finite) (h0 : 0 ∈ C)
