@@ -14,11 +14,9 @@ Let `1 → A → B → Q → 1` be a short exact sequence of sheaves of groups o
 by `i : A ⟶ B` and `π : B ⟶ Q`. This file proves that the sequence of pointed sets
 `1 → A(C) → B(C) → Q(C) → H¹(A) → H¹(B) → H¹(Q)` is exact, where `Q(C) → H¹(A)` is the
 connecting map `NonabelianH1.connecting` sending a global section of `Q` to its torsor of lifts.
-Exactness at `Q(C)` is `NonabelianH1.connecting_eq_one_iff`; this file adds the other
-positions.
+Exactness at `A(C)` and `B(C)` is `IsGroupExtension.existsUnique_sections_iff` and exactness
+at `Q(C)` is `NonabelianH1.connecting_eq_one_iff`; this file adds the other positions.
 
-* At `B(C)`: a global section of `B` maps to the unit section of `Q` if and only if it comes
-  from a global section of `A`, which is then unique.
 * At `H¹(A)`: an `A`-torsor `P` becomes trivial as a `B`-torsor if and only if it is a torsor of
   lifts. A trivialisation of `P ×^A B` is an `i`-equivariant morphism `u : P → B`, and `π ∘ u`
   is constant on `P`, so it is a global section `q` of `Q`; then `u` identifies `P` with the
@@ -29,8 +27,6 @@ positions.
 
 ## Main declarations
 
-* `CategoryTheory.Sheaf.IsGroupExtension.existsUnique_sections_iff`: exactness at `A(C)` and
-  `B(C)`.
 * `CategoryTheory.Sheaf.NonabelianH1.map_eq_one_iff_mem_range_connecting`: exactness at
   `H¹(A)`.
 * `CategoryTheory.Sheaf.NonabelianH1.map_eq_one_iff_mem_range_map`: exactness at `H¹(B)`.
@@ -53,26 +49,6 @@ namespace CategoryTheory.Sheaf
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   {A B Q : Sheaf J GrpCat.{w}} {i : A ⟶ B} {π : B ⟶ Q}
-
-namespace IsGroupExtension
-
-variable (hE : IsGroupExtension i π)
-
-include hE in
-/-- Exactness of `1 → A(C) → B(C) → Q(C)`: a global section of `B` maps to the unit section of
-`Q` if and only if it comes from a unique global section of `A`. -/
-theorem existsUnique_sections_iff (b : (B.obj ⋙ forget GrpCat).sections) :
-    (∃! a : (A.obj ⋙ forget GrpCat).sections, ∀ U, i.hom.app U (a.1 U) = b.1 U) ↔
-      ∀ U, π.hom.app U (b.1 U) = 1 := by
-  refine ⟨fun ⟨a, ha, _⟩ U ↦ ha U ▸ hE.app_app_eq_one (a.1 U), fun hb ↦ ?_⟩
-  choose a ha using fun U ↦ hE.exists_app_eq (hb U)
-  refine ⟨⟨a, fun {U V} f ↦ hE.injective V ?_⟩, ha, fun a' ha' ↦ ?_⟩
-  · -- `i` commutes with restriction, and `b` is compatible.
-    exact (NatTrans.naturality_apply i.hom f (a U)).trans
-      ((congrArg _ (ha U)).trans ((b.2 f).trans (ha V).symm))
-  · exact Subtype.ext (funext fun U ↦ hE.injective U ((ha' U).trans (ha U).symm))
-
-end IsGroupExtension
 
 namespace Torsor
 
