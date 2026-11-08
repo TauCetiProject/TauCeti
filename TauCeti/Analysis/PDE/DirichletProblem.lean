@@ -654,7 +654,7 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_slab
   exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
-    (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0)
+    (energyFormH1_poincare_constant_pos (le_max_right beta 0)
       (sub_nonneg.2 (le_max_left s t)) hsmall')
     (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_slab h ha hb hc
       (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
@@ -682,7 +682,7 @@ theorem isCoercive_energyFormH1L0_of_subset_ball
   have hsmall' : max beta 0 * (2 * max R 0) < lam := by
     exact max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall
   exact isCoercive_energyFormH1L0 hcoeff
-    (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0) (by positivity) hsmall')
+    (energyFormH1_poincare_constant_pos (le_max_right beta 0) (by positivity) hsmall')
     fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc
       (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
       (hball.trans (Metric.ball_subset_ball (le_max_left R 0))) w.2
