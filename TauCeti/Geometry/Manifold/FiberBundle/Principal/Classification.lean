@@ -192,7 +192,7 @@ theorem NonabelianCechH1.mk_eq_one_iff_exists_section :
     refine ((hh (indexAt b₀)).contMDiffAt ((hU _).mem_nhds (hindex b₀))).inv.congr_of_eventuallyEq
       ?_
     filter_upwards [(hU _).mem_nhds (hindex b₀)] with b hb
-    simp [trivializationAt_fiberBundleCoreOfGroupCocycle, hch _ _ b ⟨hindex b, hb⟩]
+    simp [hch _ _ b ⟨hindex b, hb⟩]
   · rintro ⟨s, hs⟩
     have := contMDiffFiberBundle_fiberBundleCoreOfGroupCocycle n IB IG G U c hc.mul_eq hU indexAt
       hindex hc.continuousOn hc.contMDiffOn
