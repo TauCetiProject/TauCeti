@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Contour.Cycle.Trace
 import TauCeti.Analysis.Green.AbsolutelyContinuous
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
-import Mathlib.Analysis.Convex.Segment
+import TauCeti.Analysis.Convex.Segment
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Reparam
 
 /-!
@@ -29,12 +29,6 @@ noncomputable section
 open MeasureTheory Set Function
 
 namespace TauCeti.Green
-
-/-- Reparametrizing a function on `[a, b]` by `lineMap a b` from `[0, 1]` does not change the
-image. -/
-theorem _root_.Set.image_comp_lineMap_uIcc_zero_one {α : Type*} (f : ℝ → α) (a b : ℝ) :
-    (f ∘ AffineMap.lineMap a b) '' uIcc (0 : ℝ) 1 = f '' uIcc a b := by
-  rw [image_comp, uIcc_of_le zero_le_one, ← segment_eq_image_lineMap, segment_eq_uIcc]
 
 /-- The winding weights of the affine normalizations of the generators of a cycle add up, almost
 everywhere, to the winding weight of the cycle. -/
