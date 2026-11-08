@@ -27,13 +27,13 @@ They also show that testing one basis is equivalent to testing every basis.
 
 public noncomputable section
 
-open MeasureTheory TopologicalSpace
+open MeasureTheory
 
 namespace TauCeti
 
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
-  {p : ENNReal} {U : Set ℂ} {Ω : Opens ℂ} {k : ℕ} {f : ℂ → F}
+  {p : ENNReal} {U : Set ℂ} {k : ℕ} {f : ℂ → F}
 
 variable {ι : Type*} [Finite ι]
 
@@ -57,7 +57,7 @@ theorem _root_.Module.Basis.memLpLoc_iff (b : Module.Basis ι ℝ F) :
 Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
 in the same Sobolev class. -/
 theorem _root_.Module.Basis.memWkpLoc_iff (b : Module.Basis ι ℝ F) :
-    MemWkpLoc p Ω k f ↔ ∀ i, MemWkpLoc p Ω k (fun z => b.repr (f z) i) := by
+    MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p U k (fun z => b.repr (f z) i) := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
   let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
@@ -65,7 +65,7 @@ theorem _root_.Module.Basis.memWkpLoc_iff (b : Module.Basis ι ℝ F) :
   · intro h i
     exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
   · intro h
-    have hs : MemWkpLoc p Ω k (fun z => ∑ i, b.repr (f z) i • b i) := by
+    have hs : MemWkpLoc p U k (fun z => ∑ i, b.repr (f z) i • b i) := by
       apply MemWkpLoc.sum
       intro i _
       exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))

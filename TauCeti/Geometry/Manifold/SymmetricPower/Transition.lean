@@ -150,6 +150,135 @@ private theorem sum_map_filter_map_eq_map (φ : ι → OpenPartialHomeomorph α 
     Sym.filter_mem_sumSubtype hWdisj]
   exact Multiset.map_map _ _ _
 
+open scoped Classical in
+/-- The coefficient expression `F` of the target chart, built from the points `R c i` of the source
+blocks (`hRdef`) collected over the target patches (`hMdef`), agrees with the transition wherever
+the latter is defined (`hFdef`). -/
+private theorem coeffExpr_eq_transition
+    (φ : ι → OpenPartialHomeomorph α ℂ) (ψ : κ → OpenPartialHomeomorph α ℂ)
+    (V : ι → Set α) (m : ι → ℕ) (hm : ∑ i, m i = n)
+    (W : κ → Set α) (p : κ → ℕ) (hp : ∑ j, p j = n)
+    (hVo : ∀ i, IsOpen (V i)) (hVsub : ∀ i, V i ⊆ (φ i).source)
+    (hVdisj : Pairwise (Function.onFun Disjoint V))
+    (hWo : ∀ j, IsOpen (W j)) (hWsub : ∀ j, W j ⊆ (ψ j).source)
+    (hWdisj : Pairwise (Function.onFun Disjoint W))
+    (e : (Σ i, Fin (m i)) ≃ Fin n) (e' : (Σ j, Fin (p j)) ≃ Fin n)
+    (hq : Nonempty (∀ i, Sym ↥(V i) (m i))) (hr : Nonempty (∀ j, Sym ↥(W j) (p j)))
+    (R : (Fin n → ℂ) → ι → Multiset ℂ) (M : (Fin n → ℂ) → κ → Multiset ℂ)
+    (F : (Fin n → ℂ) → Fin n → ℂ)
+    (hRdef : R = fun c i =>
+      ((Sym.coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i) : Multiset ℂ))
+    (hMdef : M = fun c j =>
+      ∑ i, ((R c i).filter (· ∈ φ i '' (V i ∩ W j))).map fun w => ψ j ((φ i).symm w))
+    (hFdef : F = fun c => piSigmaConstHomeomorph ℂ e' fun j k =>
+      (-1) ^ (p j - (k : ℕ)) * (M c j).esymm (p j - (k : ℕ)))
+    (c : Fin n → ℂ)
+    (hc : c ∈ ((symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hq).symm.trans
+      (symOpenPartialHomeomorph ψ W p hp hWo hWsub hWdisj e' hr)).source) :
+    F c = symOpenPartialHomeomorph ψ W p hp hWo hWsub hWdisj e' hr
+      ((symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hq).symm c) := by
+  classical
+  set C := symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hq with hC
+  set D := symOpenPartialHomeomorph ψ W p hp hWo hWsub hWdisj e' hr with hD
+  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
+    Set.mem_inter_iff, Set.mem_preimage] at hc
+  obtain ⟨hcC, hcD⟩ := hc
+  obtain ⟨q', hq'⟩ : C.symm c ∈ Set.range (Sym.sumSubtype V m hm) := by
+    rw [← symOpenPartialHomeomorph_source φ V m hm hVo hVsub hVdisj e hq]
+    exact C.map_target hcC
+  obtain ⟨r', hr'⟩ : C.symm c ∈ Set.range (Sym.sumSubtype W p hp) := by
+    rwa [← symOpenPartialHomeomorph_source ψ W p hp hWo hWsub hWdisj e' hr]
+  have hqr : Sym.sumSubtype V m hm q' = Sym.sumSubtype W p hp r' := hq'.trans hr'.symm
+  have hcq : c = C (Sym.sumSubtype V m hm q') := by rw [hq', C.right_inv hcC]
+  have hR : ∀ i, R c i = (q' i : Multiset ↥(V i)).map fun x : ↥(V i) => φ i (x : α) := by
+    intro i
+    simp only [hRdef, hcq, hC, symOpenPartialHomeomorph_apply, Homeomorph.symm_apply_apply,
+      Equiv.symm_apply_apply, _root_.Sym.coe_map]
+  rw [← hq', hqr, hD, symOpenPartialHomeomorph_apply]
+  simp only [hFdef, hMdef, hR]
+  congr 1
+  funext j
+  ext k
+  rw [Sym.coeffEquiv_apply, _root_.Sym.coe_map, sum_map_filter_map_eq_map φ ψ hVsub hWdisj hqr]
+
+omit [Fintype κ] in
+open scoped Classical in
+/-- The coefficient expression `F` of the target chart is analytic at the source coordinates `c₀`
+of a tuple `t` lying in both chart sources, whose `i`-th source block is `q i` (`hRt`). Here `R`,
+`M` and `F` are as in `coeffExpr_eq_transition`. -/
+private theorem analyticAt_coeffExpr
+    (φ : ι → OpenPartialHomeomorph α ℂ) (ψ : κ → OpenPartialHomeomorph α ℂ)
+    (V : ι → Set α) (m : ι → ℕ) (W : κ → Set α) (p : κ → ℕ)
+    (hVo : ∀ i, IsOpen (V i)) (hVsub : ∀ i, V i ⊆ (φ i).source)
+    (hWo : ∀ j, IsOpen (W j)) (hWdisj : Pairwise (Function.onFun Disjoint W))
+    (e : (Σ i, Fin (m i)) ≃ Fin n) (e' : (Σ j, Fin (p j)) ≃ Fin n)
+    [Finite κ] (R : (Fin n → ℂ) → ι → Multiset ℂ) (M : (Fin n → ℂ) → κ → Multiset ℂ)
+    (F : (Fin n → ℂ) → Fin n → ℂ)
+    (hRdef : R = fun c i =>
+      ((Sym.coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i) : Multiset ℂ))
+    (hMdef : M = fun c j =>
+      ∑ i, ((R c i).filter (· ∈ φ i '' (V i ∩ W j))).map fun w => ψ j ((φ i).symm w))
+    (hFdef : F = fun c => piSigmaConstHomeomorph ℂ e' fun j k =>
+      (-1) ^ (p j - (k : ℕ)) * (M c j).esymm (p j - (k : ℕ)))
+    {t : Sym α n} {q : ∀ i, Sym ↥(V i) (m i)} {c₀ : Fin n → ℂ}
+    (hRt : ∀ i, R c₀ i = (q i : Multiset ↥(V i)).map fun x : ↥(V i) => φ i (x : α))
+    (hmem_t : ∀ i (x : ↥(V i)), x ∈ q i → (x : α) ∈ t)
+    (hmem_W : ∀ a ∈ t, ∃ j, a ∈ W j)
+    (hφψ : ∀ i j, ∀ z ∈ V i ∩ W j, z ∈ t →
+      AnalyticAt ℂ (fun w : ℂ => ψ j ((φ i).symm w)) (φ i z)) :
+    AnalyticAt ℂ F c₀ := by
+  have := Fintype.ofFinite κ
+  have hUdisj : ∀ i j j', j ≠ j' → Disjoint (φ i '' (V i ∩ W j)) (φ i '' (V i ∩ W j')) :=
+    fun i j j' hjj' => ((hWdisj hjj').mono Set.inter_subset_right Set.inter_subset_right).image
+      (φ i).injOn (Set.inter_subset_left.trans (hVsub i)) (Set.inter_subset_left.trans (hVsub i))
+  rw [hFdef]
+  refine (analyticAt_piSigmaConstHomeomorph e' _).comp (AnalyticAt.pi fun j =>
+    AnalyticAt.pi fun k => analyticAt_const.mul
+      (analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun l _ _ => ?_))
+  -- the power sums of the `j`-th target block are sums over the source blocks
+  have hMl : ∀ c, ((M c j).map (· ^ l)).sum = ∑ i,
+      (((R c i).filter (· ∈ φ i '' (V i ∩ W j))).map fun w => ψ j ((φ i).symm w) ^ l).sum := by
+    intro c
+    rw [hMdef]
+    rw [← Multiset.coe_mapAddMonoidHom, map_sum, ← Multiset.coe_sumAddMonoidHom, map_sum]
+    simp only [Multiset.coe_mapAddMonoidHom, Multiset.coe_sumAddMonoidHom, Multiset.map_map,
+      Function.comp_def]
+  simp only [hMl]
+  refine Finset.analyticAt_fun_sum _ fun i _ => ?_
+  have hproj : AnalyticAt ℂ (fun c : Fin n → ℂ => (piSigmaConstHomeomorph ℂ e).symm c i) c₀ :=
+    ((ContinuousLinearMap.proj (R := ℂ) (φ := fun i => Fin (m i) → ℂ) i).analyticAt _).comp
+      (analyticAt_piSigmaConstHomeomorph_symm e c₀)
+  have hRi : ∀ c, R c i =
+      ((Sym.coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i) : Multiset ℂ) :=
+    fun c => by rw [hRdef]
+  simp only [hRi]
+  refine (Sym.analyticAt_sum_map_filter_coeffEquiv_symm (g := fun w => ψ j ((φ i).symm w) ^ l)
+    (U := φ i '' (V i ∩ W j)) ?_ ?_).comp hproj
+  · -- no point of the block lies on the frontier of `φ i '' (V i ∩ W j)`
+    intro z hz
+    have hz' : z ∈ R c₀ i := by rw [hRi]; exact _root_.Sym.mem_coe.2 hz
+    rw [hRt, Multiset.mem_map] at hz'
+    obtain ⟨x, hx, rfl⟩ := hz'
+    obtain ⟨j', hj'⟩ := hmem_W x (hmem_t i x hx)
+    have hzU' : φ i x ∈ φ i '' (V i ∩ W j') := ⟨x, ⟨x.2, hj'⟩, rfl⟩
+    have hUo : IsOpen (φ i '' (V i ∩ W j')) :=
+      (φ i).isOpen_image_of_subset_source ((hVo i).inter (hWo j'))
+        (Set.inter_subset_left.trans (hVsub i))
+    rcases eq_or_ne j' j with rfl | hjj'
+    · rw [hUo.frontier_eq]
+      exact fun h => h.2 hzU'
+    · exact fun h => Set.disjoint_left.1 ((hUdisj i j j' hjj'.symm).closure_left hUo)
+        (frontier_subset_closure h) hzU'
+  · -- at the points of the block lying in `φ i '' (V i ∩ W j)`, the change of coordinate is
+    -- analytic
+    intro z hz hzU
+    have hz' : z ∈ R c₀ i := by rw [hRi]; exact _root_.Sym.mem_coe.2 hz
+    rw [hRt, Multiset.mem_map] at hz'
+    obtain ⟨x, hx, rfl⟩ := hz'
+    obtain ⟨y, ⟨hyV, hyW⟩, hyx⟩ := hzU
+    rw [(φ i).injOn (hVsub i hyV) (hVsub i x.2) hyx] at hyW
+    exact (hφψ i j x ⟨x.2, hyW⟩ (hmem_t i x hx)).fun_pow l
+
 /-- **The transition between two elementary-symmetric charts is analytic at every tuple lying in
 both sources.** The charts are built from disjoint patch families `V`, `W` with multiplicities
 `m`, `p`, surface coordinates `φ`, `ψ` and regrouping bijections `e`, `e'`, which may all differ.
@@ -193,29 +322,12 @@ theorem analyticAt_symOpenPartialHomeomorph_transition
     rwa [hC, symOpenPartialHomeomorph_source] at ht
   obtain ⟨r, hrt⟩ : t ∈ Set.range (Sym.sumSubtype W p hp) := by
     rwa [hD, symOpenPartialHomeomorph_source] at ht'
-  -- `F` agrees with the transition wherever the latter is defined
-  have hF : ∀ c ∈ (C.symm.trans D).source, F c = D (C.symm c) := by
-    intro c hc
-    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
-      Set.mem_inter_iff, Set.mem_preimage] at hc
-    obtain ⟨hcC, hcD⟩ := hc
-    obtain ⟨q', hq'⟩ : C.symm c ∈ Set.range (Sym.sumSubtype V m hm) := by
-      rw [← symOpenPartialHomeomorph_source φ V m hm hVo hVsub hVdisj e hq]
-      exact C.map_target hcC
-    obtain ⟨r', hr'⟩ : C.symm c ∈ Set.range (Sym.sumSubtype W p hp) := by
-      rwa [← symOpenPartialHomeomorph_source ψ W p hp hWo hWsub hWdisj e' hr]
-    have hqr : Sym.sumSubtype V m hm q' = Sym.sumSubtype W p hp r' := hq'.trans hr'.symm
-    have hcq : c = C (Sym.sumSubtype V m hm q') := by rw [hq', C.right_inv hcC]
-    have hR : ∀ i, R c i = (q' i : Multiset ↥(V i)).map fun x : ↥(V i) => φ i (x : α) := by
-      intro i
-      simp only [R, hcq, hC, symOpenPartialHomeomorph_apply, Homeomorph.symm_apply_apply,
-        Equiv.symm_apply_apply, _root_.Sym.coe_map]
-    rw [← hq', hqr, hD, symOpenPartialHomeomorph_apply]
-    simp only [F, M, hR]
-    congr 1
-    funext j
-    ext k
-    rw [Sym.coeffEquiv_apply, _root_.Sym.coe_map, sum_map_filter_map_eq_map φ ψ hVsub hWdisj hqr]
+  have hRdef : R = fun c i =>
+      ((Sym.coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i) : Multiset ℂ) := rfl
+  have hMdef : M = fun c j =>
+      ∑ i, ((R c i).filter (· ∈ φ i '' (V i ∩ W j))).map fun w => ψ j ((φ i).symm w) := rfl
+  have hFdef : F = fun c => piSigmaConstHomeomorph ℂ e' fun j k =>
+      (-1) ^ (p j - (k : ℕ)) * (M c j).esymm (p j - (k : ℕ)) := rfl
   -- the points of the `i`-th block of `C t`
   have hRt : ∀ i, R (C t) i = (q i : Multiset ↥(V i)).map fun x : ↥(V i) => φ i (x : α) := by
     intro i
@@ -229,57 +341,9 @@ theorem analyticAt_symOpenPartialHomeomorph_transition
   have hmem_W : ∀ a ∈ t, ∃ j, a ∈ W j := fun a ha => by
     rw [← hrt] at ha
     exact Sym.exists_mem_of_mem_sumSubtype ha
-  have hUo : ∀ i j, IsOpen (φ i '' (V i ∩ W j)) := fun i j =>
-    ((φ i).isOpen_image_iff_of_subset_source (Set.inter_subset_left.trans (hVsub i))).2
-      ((hVo i).inter (hWo j))
-  -- the images of the pieces `V i ∩ W j` under `φ i` are pairwise disjoint in `j`
-  have hUdisj : ∀ i j j', j ≠ j' → Disjoint (φ i '' (V i ∩ W j)) (φ i '' (V i ∩ W j')) := by
-    intro i j j' hjj'
-    rw [Set.disjoint_left]
-    rintro w ⟨a, ⟨haV, haW⟩, rfl⟩ ⟨a', ⟨ha'V, ha'W⟩, ha'⟩
-    rw [(φ i).injOn (hVsub i ha'V) (hVsub i haV) ha'] at ha'W
-    exact Set.disjoint_left.1 (hWdisj hjj') haW ha'W
-  -- `F` is analytic at `C t`
-  have hFa : AnalyticAt ℂ F (C t) := by
-    refine (analyticAt_piSigmaConstHomeomorph e' _).comp (AnalyticAt.pi fun j =>
-      AnalyticAt.pi fun k => analyticAt_const.mul
-        (analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun l _ _ => ?_))
-    -- the power sums of the `j`-th target block are sums over the source blocks
-    have hMl : ∀ c, ((M c j).map (· ^ l)).sum = ∑ i,
-        (((R c i).filter (· ∈ φ i '' (V i ∩ W j))).map fun w => ψ j ((φ i).symm w) ^ l).sum := by
-      intro c
-      simp only [M]
-      rw [← Multiset.coe_mapAddMonoidHom, map_sum, ← Multiset.coe_sumAddMonoidHom, map_sum]
-      simp only [Multiset.coe_mapAddMonoidHom, Multiset.coe_sumAddMonoidHom, Multiset.map_map,
-        Function.comp_def]
-    simp only [hMl]
-    refine Finset.analyticAt_fun_sum _ fun i _ => ?_
-    have hproj : AnalyticAt ℂ (fun c : Fin n → ℂ => (piSigmaConstHomeomorph ℂ e).symm c i) (C t) :=
-      ((ContinuousLinearMap.proj (R := ℂ) (φ := fun i => Fin (m i) → ℂ) i).analyticAt _).comp
-        (analyticAt_piSigmaConstHomeomorph_symm e (C t))
-    refine (Sym.analyticAt_sum_map_filter_coeffEquiv_symm (g := fun w => ψ j ((φ i).symm w) ^ l)
-      (U := φ i '' (V i ∩ W j)) ?_ ?_).comp hproj
-    · -- no point of the block lies on the frontier of `φ i '' (V i ∩ W j)`
-      intro z hz
-      have hz' : z ∈ R (C t) i := _root_.Sym.mem_coe.2 hz
-      rw [hRt, Multiset.mem_map] at hz'
-      obtain ⟨x, hx, rfl⟩ := hz'
-      obtain ⟨j', hj'⟩ := hmem_W x (hmem_t i x hx)
-      have hzU' : φ i x ∈ φ i '' (V i ∩ W j') := ⟨x, ⟨x.2, hj'⟩, rfl⟩
-      rcases eq_or_ne j' j with rfl | hjj'
-      · rw [(hUo i j').frontier_eq]
-        exact fun h => h.2 hzU'
-      · exact fun h => Set.disjoint_left.1 ((hUdisj i j j' hjj'.symm).closure_left (hUo i j'))
-          (frontier_subset_closure h) hzU'
-    · -- at the points of the block lying in `φ i '' (V i ∩ W j)`, the change of coordinate is
-      -- analytic
-      intro z hz hzU
-      have hz' : z ∈ R (C t) i := _root_.Sym.mem_coe.2 hz
-      rw [hRt, Multiset.mem_map] at hz'
-      obtain ⟨x, hx, rfl⟩ := hz'
-      obtain ⟨y, ⟨hyV, hyW⟩, hyx⟩ := hzU
-      rw [(φ i).injOn (hVsub i hyV) (hVsub i x.2) hyx] at hyW
-      exact (hφψ i j x ⟨x.2, hyW⟩ (hmem_t i x hx)).fun_pow l
+  have hFa : AnalyticAt ℂ F (C t) :=
+    analyticAt_coeffExpr φ ψ V m W p hVo hVsub hWo hWdisj e e' R M F hRdef hMdef hFdef hRt hmem_t
+      hmem_W hφψ
   -- the transition is defined near `C t`
   have hmem : C t ∈ (C.symm.trans D).source := by
     rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
@@ -287,7 +351,8 @@ theorem analyticAt_symOpenPartialHomeomorph_transition
     exact ⟨C.map_source ht, ht'⟩
   refine hFa.congr ?_
   filter_upwards [(C.symm.trans D).open_source.mem_nhds hmem] with c hc
-  exact hF c hc
+  exact coeffExpr_eq_transition φ ψ V m hm W p hp hVo hVsub hVdisj hWo hWsub hWdisj e e' hq hr R M F
+    hRdef hMdef hFdef c hc
 
 /-- **The transition partial homeomorphism between two elementary-symmetric charts is analytic on
 its source.** This is the source-and-target form consumed by `isManifold_of_contDiffOn`. Here
