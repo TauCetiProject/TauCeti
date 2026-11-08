@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Derivation.TaylorExp
 import Mathlib.Algebra.Ring.Action.ConjAct
-import TauCeti.RingTheory.Nilpotent.Exp
+import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
 # The inner automorphisms `exp (ad x)`
