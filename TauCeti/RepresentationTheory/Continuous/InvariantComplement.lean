@@ -26,6 +26,8 @@ complemented.
 
 ## Main definitions
 
+* `ContRepresentation.IsUnitary.invariantsOrthogonal`: the restricted representation on the
+  orthogonal complement of the fixed vectors; it is unitary and has no nonzero fixed vectors.
 * `ContRepresentation.IsUnitary.orthogonalSubrepresentation`: the orthogonal complement of
   a subrepresentation of a unitary representation, as a subrepresentation.
 * `ContRepresentation.IsUnitary.starProjectionIntertwiner`: the orthogonal projection onto
@@ -99,6 +101,32 @@ theorem apply_mem_orthogonal (hπ : IsUnitary π) (hW : ∀ g, ∀ v ∈ W, π g
   intro u hu
   rw [hπ.inner_map_right]
   exact hv _ (hW g⁻¹ u hu)
+
+/-- The restriction of a unitary representation to the orthogonal complement of its fixed vectors.
+This is the representation on which absence of almost invariant vectors detects spectral gap. -/
+def invariantsOrthogonal (hρ : π.IsUnitary) : ContRepresentation 𝕜 G π.invariantsᗮ :=
+  π.subrepresentation _ (hρ.apply_mem_orthogonal (fun g v hv ↦ by simpa [hv g] using hv))
+
+/-- The action on the orthogonal complement of the fixed vectors agrees with the ambient action. -/
+@[simp]
+theorem coe_invariantsOrthogonal_apply (hρ : π.IsUnitary) (g : G) (v : π.invariantsᗮ) :
+    (hρ.invariantsOrthogonal g v : V) = π g (v : V) :=
+  coe_subrepresentation_apply g v
+
+/-- The orthogonal complement of the fixed vectors remains unitary. -/
+theorem isUnitary_invariantsOrthogonal (hρ : π.IsUnitary) : hρ.invariantsOrthogonal.IsUnitary :=
+  hρ.subrepresentation _
+
+/-- The orthogonal complement of the fixed vectors has no nonzero fixed vectors. -/
+@[simp]
+theorem invariants_invariantsOrthogonal (hρ : π.IsUnitary) :
+    hρ.invariantsOrthogonal.invariants = ⊥ := by
+  rw [Submodule.eq_bot_iff]
+  intro v hv
+  have hfixed : (v : V) ∈ π.invariants :=
+    mem_invariants_subrepresentation.mp hv
+  apply Subtype.ext
+  exact (Submodule.disjoint_def.mp π.invariants.orthogonal_disjoint) v hfixed v.property
 
 /-- **Invariant complements.** For a unitary representation of a group, the orthogonal complement
 of an invariant submodule is again invariant. -/
