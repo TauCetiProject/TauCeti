@@ -37,7 +37,7 @@ and only its existence is recorded.
 
 ## Main results
 
-* `TauCeti.isPPrimaryTorsion_trivialFp_V`: the carrier of `trivialFp p G` is `p`-primary torsion.
+* `TauCeti.isAddPGroup_trivialFp_V`: the carrier of `trivialFp p G` is `p`-primary torsion.
 * `TauCeti.nonempty_cohomFp_addEquiv_of_natCard_eq`: the cohomology of `𝔽_p` is additively
   equivalent to the cohomology of any trivial discrete `G`-module of prime order `p`.
 * `TauCeti.subsingleton_continuousCohomology_iff_subsingleton_cohomFp_of_natCard_eq`,
@@ -71,8 +71,8 @@ section Monoid
 variable [Monoid G]
 
 /-- The carrier of `trivialFp p G` is `p`-primary torsion, its `Nat.card` being `p`. -/
-theorem isPPrimaryTorsion_trivialFp_V : IsPPrimaryTorsion p (trivialFp p G).V :=
-  isPPrimaryTorsion_of_natCard_eq_pow ((natCard_trivialFp_V p G).trans (pow_one p).symm)
+theorem isAddPGroup_trivialFp_V : IsAddPGroup p (trivialFp p G).V :=
+  IsAddPGroup.of_card ((natCard_trivialFp_V p G).trans (pow_one p).symm)
 
 end Monoid
 
@@ -125,7 +125,7 @@ then `Hᵐ(G, 𝔽_p)` vanishes for every `m > n`. -/
 theorem CohomologicalDimensionLE.subsingleton_cohomFp {n : ℕ}
     (h : CohomologicalDimensionLE.{u} p G n) {m : ℕ} (hm : n < m) : Subsingleton (cohomFp p G m) :=
   (subsingleton_continuousCohomology_ofDiscreteModule_iff (trivialFp p G) m).1
-    (cohomologicalDimensionLE_iff.1 h _ (isPPrimaryTorsion_trivialFp_V p G) m hm)
+    (cohomologicalDimensionLE_iff.1 h _ (isAddPGroup_trivialFp_V p G) m hm)
 
 /-- **`cd_p G ≤ n` kills `Hᵐ(G, 𝔽_p)` above `n`.** -/
 theorem subsingleton_cohomFp_of_cohomologicalDimensionAt_le {n : ℕ}
