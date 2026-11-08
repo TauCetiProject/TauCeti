@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.WithDensity
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -230,44 +231,6 @@ variable {𝕜 G E E' F : Type*} [NontriviallyNormedField 𝕜]
   [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
   {μ : Measure G} [SigmaFinite μ] [IsAddLeftInvariant μ] [IsNegInvariant μ]
 
-/-- The real exponents of Young's inequality: if `1 ≤ p`, `1 ≤ r` and `1/p + 1/r = 1 + 1/q` with
-`q < ∞`, then `p` and `r` are finite, `q` is positive, and the relation holds between the real
-exponents, with `1 ≤ p ≤ q`. -/
-private theorem toReal_of_inv_add_inv_eq {p q r : ℝ≥0∞} (hp : 1 ≤ p) (hr : 1 ≤ r)
-    (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹) (hq : q ≠ ∞) :
-    p ≠ ∞ ∧ r ≠ ∞ ∧ q ≠ 0 ∧ 1 ≤ p.toReal ∧ p.toReal ≤ q.toReal ∧
-      p.toReal⁻¹ + r.toReal⁻¹ = 1 + q.toReal⁻¹ := by
-  have hp1 : p⁻¹ ≤ 1 := ENNReal.inv_le_one.2 hp
-  have hr1 : r⁻¹ ≤ 1 := ENNReal.inv_le_one.2 hr
-  have hq0 : q⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 hq
-  have hp_top : p ≠ ∞ := by
-    rintro rfl
-    rw [ENNReal.inv_top, zero_add] at hpqr
-    have : 1 + q⁻¹ ≤ 1 + 0 := by rw [add_zero, ← hpqr]; exact hr1
-    exact hq0 (nonpos_iff_eq_zero.1 ((ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 this))
-  have hr_top : r ≠ ∞ := by
-    rintro rfl
-    rw [ENNReal.inv_top, add_zero] at hpqr
-    have : 1 + q⁻¹ ≤ 1 + 0 := by rw [add_zero, ← hpqr]; exact hp1
-    exact hq0 (nonpos_iff_eq_zero.1 ((ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 this))
-  have hqp : q⁻¹ ≤ p⁻¹ := by
-    have : 1 + q⁻¹ ≤ 1 + p⁻¹ := by
-      rw [← hpqr, add_comm]
-      gcongr
-    exact (ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 this
-  have hq_ne : q ≠ 0 := by
-    rintro rfl
-    rw [ENNReal.inv_zero] at hpqr
-    exact ENNReal.add_ne_top.2 ⟨(hp1.trans_lt ENNReal.one_lt_top).ne,
-      (hr1.trans_lt ENNReal.one_lt_top).ne⟩ (hpqr.trans (by simp))
-  refine ⟨hp_top, hr_top, hq_ne, by simpa using ENNReal.toReal_mono hp_top hp,
-    ENNReal.toReal_mono hq (ENNReal.inv_le_inv.1 hqp), ?_⟩
-  have h := congrArg ENNReal.toReal hpqr
-  rwa [ENNReal.toReal_add (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp).ne')
-      (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hr).ne'),
-    ENNReal.toReal_add ENNReal.one_ne_top (ENNReal.inv_ne_top.2 hq_ne), ENNReal.toReal_inv,
-    ENNReal.toReal_inv, ENNReal.toReal_inv, ENNReal.toReal_one] at h
-
 /-- **Young's convolution inequality.** On an abelian group with a translation- and
 negation-invariant measure, for `1 ≤ p, r ≤ ∞` and `1/p + 1/r = 1 + 1/q`,
 `‖f ⋆[L] g‖_q ≤ ‖L‖ ‖f‖_r ‖g‖_p`.
@@ -284,7 +247,7 @@ theorem eLpNorm_convolution_le_of_inv_add_inv_eq
     rw [eLpNorm_exponent_top (hf.convolution L hg)]
     exact eLpNormEssSup_le_of_ae_enorm_bound
       (Filter.Eventually.of_forall fun x ↦ enorm_convolution_le L hf hg x)
-  obtain ⟨hp_top, hr_top, hq0, hP, hPQ, hPQR⟩ := toReal_of_inv_add_inv_eq hp hr hpqr hq_top
+  obtain ⟨hp_top, hr_top, hq0, hP, hPQ, hPQR⟩ := ENNReal.toReal_of_inv_add_inv_eq hp hr hpqr hq_top
   set P := p.toReal
   set Q := q.toReal
   set R := r.toReal
