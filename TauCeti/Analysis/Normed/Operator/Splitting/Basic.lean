@@ -170,6 +170,12 @@ theorem kerEquivOfProd_symm_apply (h : (A.prod q).IsInvertible) (x : ↥A.ker) :
     (kerEquivOfProd A q h).symm x = q x :=
   (rfl)
 
+/-- The kernel of the first component of an invertible pair is a finite module whenever the
+codomain of the second component is. -/
+theorem finite_ker_of_isInvertible_prod [Module.Finite R G] (h : (A.prod q).IsInvertible) :
+    Module.Finite R A.ker :=
+  Module.Finite.equiv (kerEquivOfProd A q h).toLinearEquiv
+
 section Projections
 
 variable {R M F : Type*} [Ring R]

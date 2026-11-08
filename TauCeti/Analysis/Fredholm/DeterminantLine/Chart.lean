@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Operator.Splitting.Family
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Kernel charts of Fredholm determinant lines
@@ -84,8 +85,7 @@ omit [FiniteDimensional 𝕜 Λ] in
 of the original operator finite-dimensional. -/
 theorem finiteDimensional_ker_of_isInvertible_prod_coprod
     (h : ((T.coprod D₂).prod q).IsInvertible) : FiniteDimensional 𝕜 T.ker :=
-  have : FiniteDimensional 𝕜 (T.coprod D₂).ker :=
-    (kerEquivOfProd _ q h).toLinearEquiv.finiteDimensional
+  have := finite_ker_of_isInvertible_prod h
   FiniteDimensional.of_injective (kerCoprodHom T D₂ : T.ker →ₗ[𝕜] (T.coprod D₂).ker)
     (kerCoprodHom_injective T D₂)
 
@@ -122,33 +122,6 @@ theorem detLineChartEquiv_detLineStabilizationEquiv [FiniteDimensional 𝕜 T.ke
         (detLineStabilizationEquiv T D₂ (surjective_of_isInvertible_prod h) z) =
       LinearEquiv.rTensor _ (kerEquivOfProd _ q h).toLinearEquiv.symm.detLineCongr z := by
   simp [detLineChartEquiv]
-
-/-- A family of linear maps on `L ⊗ N`, with `L` a line, which takes a common value on
-`y x ⊗ n` for a family `y` of vectors of `L` with `y x₀ = c x • y x` and `y x₀ ≠ 0`, is the
-multiple `c x` of its value at `x₀`. -/
-private theorem eq_smul_of_tmul_eq {R L N P X : Type*} [Field R] [AddCommGroup L] [Module R L]
-    [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P] (hL : finrank R L = 1)
-    (M : X → L ⊗[R] N →ₗ[R] P) (y : X → L) (K : N → P) (hM : ∀ x n, M x (y x ⊗ₜ n) = K n)
-    {x₀ : X} (hy0 : y x₀ ≠ 0) (c : X → R) (hyy : ∀ x, y x₀ = c x • y x) (x : X) :
-    M x = c x • M x₀ := by
-  refine TensorProduct.ext' fun e n ↦ ?_
-  obtain ⟨s, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' _ hy0).1 hL e
-  calc M x ((s • y x₀) ⊗ₜ n) = s • c x • K n := by
-        rw [← smul_tmul', map_smul, hyy x, ← smul_tmul', map_smul, hM]
-    _ = (c x • M x₀) ((s • y x₀) ⊗ₜ n) := by
-        rw [LinearMap.smul_apply, ← smul_tmul', map_smul, hM, smul_comm]
-
-/-- If two families of isomorphisms out of a common space are multiples `c₁ x` and `c₂ x` of
-their values at `x₀`, then the composite of the first with the inverse of the second is the
-multiple `c₁ x / c₂ x` of its value at `x₀`. -/
-private theorem trans_symm_eq_smul {R A B C X : Type*} [Field R] [AddCommGroup A] [Module R A]
-    [AddCommGroup B] [Module R B] [AddCommGroup C] [Module R C] (M₁ : X → A ≃ₗ[R] B)
-    (M₂ : X → A ≃ₗ[R] C) {x₀ : X} (c₁ c₂ : X → R) (h₁ : ∀ x a, M₁ x a = c₁ x • M₁ x₀ a)
-    (h₂ : ∀ x a, M₂ x a = c₂ x • M₂ x₀ a) {x : X} (hc : c₂ x ≠ 0) (v : C) :
-    M₁ x ((M₂ x).symm v) = (c₁ x / c₂ x) • M₁ x₀ ((M₂ x₀).symm v) := by
-  have hv : (M₂ x₀).symm v = c₂ x • (M₂ x).symm v := by
-    rw [LinearEquiv.symm_apply_eq, map_smul, ← h₂, LinearEquiv.apply_symm_apply]
-  rw [h₁, hv, map_smul, smul_smul, div_mul_cancel₀ _ hc]
 
 section Nested
 
@@ -218,16 +191,25 @@ private theorem mem_ker_coprod_kerSection (hι : ∀ l, D₂' (ι l) = D₂ l)
   simp only [coprod_apply, LinearMap.mem_ker, coe_coe, map_add, hι] at this ⊢
   rw [← add_assoc, add_right_comm, this, neg_add_cancel]
 
+variable (T D₂ q D₂' q' ι) in
+/-- The `q'`-coordinates of the vectors of `b` carried by the kernel section of `q` to the kernel
+of the larger stabilization, followed by those of the kernel vectors of the larger stabilization
+lifting `lift` (`private theorem mem_ker_coprod_kerSection`). -/
+private noncomputable def kerCoordAppend {k m : ℕ} (b : Fin k → G) (lift : Fin m → Λ') :
+    Fin (k + m) → G' :=
+  Fin.append
+    (fun i ↦ q' (((T.coprod D₂).kerSection q (b i)).1, ι ((T.coprod D₂).kerSection q (b i)).2))
+    (fun j ↦ q' ((q.kerSection (T.coprod D₂) (-D₂' (lift j))).1,
+      lift j + ι (q.kerSection (T.coprod D₂) (-D₂' (lift j))).2))
+
 omit [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 Λ'] in
 /-- Nested kernel charts have model dimensions differing by that of `Λ' ⧸ range ι`. -/
 private theorem finrank_eq_finrank_add_finrank_quotient (hι : ∀ l, D₂' (ι l) = D₂ l)
     (hι' : Function.Injective ι) (h : ((T.coprod D₂).prod q).IsInvertible)
     (h' : ((T.coprod D₂').prod q').IsInvertible) :
     finrank 𝕜 G' = finrank 𝕜 G + finrank 𝕜 (Λ' ⧸ LinearMap.range ι) := by
-  have : FiniteDimensional 𝕜 (T.coprod D₂).ker :=
-    (kerEquivOfProd _ q h).toLinearEquiv.finiteDimensional
-  have : FiniteDimensional 𝕜 (T.coprod D₂').ker :=
-    (kerEquivOfProd _ q' h').toLinearEquiv.finiteDimensional
+  have := finite_ker_of_isInvertible_prod h
+  have := finite_ker_of_isInvertible_prod h'
   rw [(kerEquivOfProd _ q' h').toLinearEquiv.finrank_eq,
     (exact_kerCoprodMap hι).finrank_eq_add (kerCoprodMap_injective hι hι')
       (surjective_mkQ_comp_parameterProj hι (surjective_of_isInvertible_prod h)),
@@ -281,29 +263,19 @@ operator. -/
 private theorem continuous_det_append_kerSection (hT : Continuous T)
     (h : ∀ x, (((T x).coprod D₂).prod q).IsInvertible) {k m : ℕ}
     (bB : Module.Basis (Fin (k + m)) 𝕜 G') (b : Fin k → G) (lift : Fin m → Λ') :
-    Continuous fun x ↦ bB.det (Fin.append
-      (fun i ↦ q' ((((T x).coprod D₂).kerSection q (b i)).1,
-        ι (((T x).coprod D₂).kerSection q (b i)).2))
-      (fun j ↦ q' ((q.kerSection ((T x).coprod D₂) (-D₂' (lift j))).1,
-        lift j + ι (q.kerSection ((T x).coprod D₂) (-D₂' (lift j))).2))) := by
+    Continuous fun x ↦ bB.det (kerCoordAppend (T x) D₂ q D₂' q' ι b lift) := by
   have : CompleteSpace Λ := FiniteDimensional.complete 𝕜 Λ
   have hA : Continuous fun x ↦ (T x).coprod D₂ := hT.continuousLinearMapCoprod continuous_const
   have hιc : Continuous ι := ι.continuous_of_finiteDimensional
   have hks : Continuous fun x ↦ ((T x).coprod D₂).kerSection q := continuous_kerSection hA h
   have hrc : Continuous fun x ↦ q.kerSection ((T x).coprod D₂) :=
-    continuous_iff_continuousAt.2 fun x ↦
-      (contDiffAt_kerSection (n := 0) (isInvertible_prod_comm.mp (h x))).continuousAt.comp
-        (f := fun x ↦ (q, (T x).coprod D₂)) (continuousAt_const.prodMk hA.continuousAt)
-  have hfam : Continuous fun x ↦ Fin.append
-      (fun i ↦ q' ((((T x).coprod D₂).kerSection q (b i)).1,
-        ι (((T x).coprod D₂).kerSection q (b i)).2))
-      (fun j ↦ q' ((q.kerSection ((T x).coprod D₂) (-D₂' (lift j))).1,
-        lift j + ι (q.kerSection ((T x).coprod D₂) (-D₂' (lift j))).2)) := by
+    continuous_const.kerSection hA fun x ↦ isInvertible_prod_comm.mp (h x)
+  have hfam : Continuous fun x ↦ kerCoordAppend (T x) D₂ q D₂' q' ι b lift := by
     refine continuous_pi fun i ↦ Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) i
-    · simp only [Fin.append_left]
+    · simp only [kerCoordAppend, Fin.append_left]
       have := hks.clm_apply (continuous_const (y := b i))
       fun_prop
-    · simp only [Fin.append_right]
+    · simp only [kerCoordAppend, Fin.append_right]
       have := hrc.clm_apply (continuous_const (y := -D₂' (lift j)))
       fun_prop
   simp only [Module.Basis.det_apply]
@@ -325,8 +297,7 @@ theorem exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp (hT : Continuou
         c x • detLineChartEquiv (T x₀) D₂ q (h x₀)
           ((detLineChartEquiv (T x₀) D₂' q' (h' x₀)).symm v) := by
   set W := Λ' ⧸ LinearMap.range ι
-  have hfd (x) : FiniteDimensional 𝕜 ((T x).coprod D₂).ker :=
-    (kerEquivOfProd _ q (h x)).toLinearEquiv.finiteDimensional
+  have hfd (x) : FiniteDimensional 𝕜 ((T x).coprod D₂).ker := finite_ker_of_isInvertible_prod (h x)
   -- Fixed data: bases of `G` and `W`, lifts of the latter to `Λ'`, and a basis of `G'`.
   let bG := Module.finBasis 𝕜 G
   let bW := Module.finBasis 𝕜 W
@@ -356,23 +327,22 @@ theorem exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp (hT : Continuou
         ((kerEquivOfProd _ q (h x)).toLinearEquiv.detLineCongr (exteriorPower.ιMulti 𝕜 _ bG) ⊗ₜ
           exteriorPower.ιMulti 𝕜 _ bW))
   have hc := continuous_det_append_kerSection (q' := q') (ι := ι) (D₂' := D₂') hT h bB bG lift
-  set c₀ : X → 𝕜 := fun x ↦ bB.det (Fin.append
-      (fun i ↦ q' ((((T x).coprod D₂).kerSection q (bG i)).1,
-        ι (((T x).coprod D₂).kerSection q (bG i)).2))
-      (fun j ↦ q' ((q.kerSection ((T x).coprod D₂) (-D₂' (lift j))).1,
-        lift j + ι (q.kerSection ((T x).coprod D₂) (-D₂' (lift j))).2)))
+  set c₀ : X → 𝕜 := fun x ↦ bB.det (kerCoordAppend (T x) D₂ q D₂' q' ι bG lift)
   have hyc (x) : (y x : ExteriorAlgebra 𝕜 G') = c₀ x • ExteriorAlgebra.ιMulti 𝕜 _ bB := by
     have := hfd x
     have hy := coe_detLineCongr_detLineShortExactEquiv_nested hι hι' (h x) (h' x) bG (wv x)
     rw [hgv x] at hy
     rw [hy, ← exteriorPower.ιMulti_apply_coe, bB.exteriorPower_ιMulti_eq_det_smul,
       Submodule.coe_smul, exteriorPower.ιMulti_apply_coe]
+    simp only [c₀, kerCoordAppend, wv, W]
   have hy0 (x) : y x ≠ 0 :=
     have := hfd x
     detLineCongr_detLineShortExactEquiv_ne_zero hι hι' (h x) (h' x) bG bW
+  -- The transition from the larger chart to the smaller one.
+  let e (x : X) := (detLineChartEquiv (T x) D₂' q' (h' x)).symm ≪≫ₗ
+    detLineChartEquiv (T x) D₂ q (h x)
   have hM (x) (φ : Dual 𝕜 (TauCeti.detLine 𝕜 Λ')) :
-      ((detLineChartEquiv (T x) D₂' q' (h' x)).symm ≪≫ₗ
-        detLineChartEquiv (T x) D₂ q (h x)).toLinearMap (y x ⊗ₜ φ) =
+      (e x).toLinearMap (y x ⊗ₜ φ) =
       exteriorPower.ιMulti 𝕜 _ bG ⊗ₜ (φ ∘ₗ (TauCeti.detLineShortExactEquiv hι'
         (LinearMap.exact_map_mkQ_range ι) (Submodule.mkQ_surjective _)).toLinearMap ∘ₗ
           (TensorProduct.mk 𝕜 _ _).flip (exteriorPower.ιMulti 𝕜 _ bW)) :=
@@ -380,17 +350,18 @@ theorem exists_continuous_detLineChartEquiv_symm_eq_smul_of_comp (hT : Continuou
     detLineChartEquiv_symm_tmul_nested hι hι' (h x) (h' x) (exteriorPower.ιMulti 𝕜 _ bG)
       (exteriorPower.ιMulti 𝕜 _ bW) φ
   clear_value y c₀
-  have hc0 (x) : c₀ x ≠ 0 := fun hc ↦ hy0 x (Subtype.ext (by rw [hyc, hc, zero_smul]; rfl))
+  have hc0 (x) : c₀ x ≠ 0 := fun hc ↦
+    hy0 x (Subtype.ext (by rw [hyc, hc, zero_smul, ZeroMemClass.coe_zero]))
   refine ⟨fun x ↦ c₀ x₀ / c₀ x, continuous_const.div hc hc0,
     fun x ↦ div_ne_zero (hc0 x₀) (hc0 x), fun x v ↦ ?_⟩
   -- The transition is constant on `y x ⊗ φ`, and `det G'` is spanned by `y x₀`.
-  have key := eq_smul_of_tmul_eq (N := Dual 𝕜 (TauCeti.detLine 𝕜 Λ'))
-    (P := TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) (TauCeti.finrank_detLine 𝕜 G')
-    (fun x ↦ ((detLineChartEquiv (T x) D₂' q' (h' x)).symm ≪≫ₗ
-      detLineChartEquiv (T x) D₂ q (h x)).toLinearMap) y _ (fun x n ↦ hM x n) (hy0 x₀) _
-    (fun x ↦ Subtype.ext (by rw [Submodule.coe_smul, hyc, hyc, smul_smul,
-      div_mul_cancel₀ _ (hc0 x)])) x
-  simpa using LinearMap.congr_fun key v
+  have key : (e x).toLinearMap = (c₀ x₀ / c₀ x) • (e x₀).toLinearMap :=
+    TauCeti.eq_smul_of_tmul_eq_tmul (N := Dual 𝕜 (TauCeti.detLine 𝕜 Λ'))
+      (P := TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ)) (y := y x)
+      (TauCeti.finrank_detLine 𝕜 G') (hy0 x₀)
+      (Subtype.ext (by rw [Submodule.coe_smul, hyc, hyc, smul_smul, div_mul_cancel₀ _ (hc0 x)]))
+      fun n ↦ (hM x n).trans (hM x₀ n).symm
+  simpa [e] using LinearMap.congr_fun key v
 
 variable {Λ₃ G₃ : Type*} [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [FiniteDimensional 𝕜 Λ₃]
   [NormedAddCommGroup G₃] [NormedSpace 𝕜 G₃] [FiniteDimensional 𝕜 G₃]
@@ -419,17 +390,12 @@ theorem exists_continuous_detLineChartEquiv_symm_eq_smul (hT : Continuous T)
     (ι := LinearMap.inr 𝕜 Λ Λ₃) (fun _ ↦ by simp) LinearMap.inr_injective h₃ h'' x₀
   refine ⟨fun x ↦ c₁ x / c₂ x, hc₁.div hc₂ hc₂0, fun x ↦ div_ne_zero (hc₁0 x) (hc₂0 x),
     fun x v ↦ ?_⟩
-  have := trans_symm_eq_smul (R := 𝕜) (x₀ := x₀)
-    (A := TauCeti.detLine 𝕜 (G × Λ₃) ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 (Λ × Λ₃)))
-    (B := TauCeti.detLine 𝕜 G ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ))
-    (C := TauCeti.detLine 𝕜 G₃ ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ₃))
-    (fun x ↦ (detLineChartEquiv (T x) (D₂.coprod D₃) q'' (h'' x)).symm ≪≫ₗ
-      detLineChartEquiv (T x) D₂ q (h x))
-    (fun x ↦ (detLineChartEquiv (T x) (D₂.coprod D₃) q'' (h'' x)).symm ≪≫ₗ
-      detLineChartEquiv (T x) D₃ q₃ (h₃ x))
-    c₁ c₂ (fun x a ↦ by rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply]; exact h₁ x a)
-    (fun x a ↦ by rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply]; exact h₂ x a) (hc₂0 x) v
-  simpa only [LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+  let M₁ (x : X) := (detLineChartEquiv (T x) (D₂.coprod D₃) q'' (h'' x)).symm ≪≫ₗ
+    detLineChartEquiv (T x) D₂ q (h x)
+  let M₂ (x : X) := (detLineChartEquiv (T x) (D₂.coprod D₃) q'' (h'' x)).symm ≪≫ₗ
+    detLineChartEquiv (T x) D₃ q₃ (h₃ x)
+  have := LinearEquiv.apply_symm_eq_div_smul (M₁ x) (M₁ x₀) (M₂ x) (M₂ x₀) (h₁ x) (h₂ x) (hc₂0 x) v
+  simpa only [M₁, M₂, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
     LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply] using this
 
 end Continuity

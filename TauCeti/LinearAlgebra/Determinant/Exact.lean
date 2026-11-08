@@ -238,6 +238,18 @@ theorem rid_lTensor_eval_injective {M L : Type*} [AddCommGroup M] [Module K M] [
   simp only [Dual.eval_apply] at hψ
   rw [map_smul, map_smul, hψ]
 
+/-- Two linear maps out of `L ⊗ N`, with `L` a line, that agree on `y ⊗ n` and on `y₀ ⊗ n`
+respectively, where `y₀ = c • y` is nonzero, differ by the factor `c`. -/
+theorem eq_smul_of_tmul_eq_tmul {L N P : Type*} [AddCommGroup L] [Module K L] [AddCommGroup N]
+    [Module K N] [AddCommGroup P] [Module K P] (hL : finrank K L = 1)
+    {M M₀ : L ⊗[K] N →ₗ[K] P} {y y₀ : L} {c : K} (hy₀ : y₀ ≠ 0) (hyy : y₀ = c • y)
+    (hM : ∀ n, M (y ⊗ₜ n) = M₀ (y₀ ⊗ₜ n)) : M = c • M₀ := by
+  refine TensorProduct.ext' fun e n ↦ ?_
+  obtain ⟨s, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' _ hy₀).1 hL e
+  have h₀ : M (y₀ ⊗ₜ n) = c • M₀ (y₀ ⊗ₜ n) := by
+    rw [← hM, ← map_smul, smul_tmul', ← hyy]
+  rw [LinearMap.smul_apply, ← smul_tmul', map_smul, map_smul, h₀, smul_comm]
+
 section ChangeOfMiddle
 
 /-! ### Enlarging the middle of a four-term exact sequence -/

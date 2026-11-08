@@ -88,12 +88,20 @@ end Stabilizer
 
 variable {X : Type*} [TopologicalSpace X] {A : X → E →L[𝕜] F} {q : E →L[𝕜] G}
 
-/-- Kernel sections are continuous on any continuous family of invertible pairs. -/
-theorem continuous_kerSection (hA : Continuous A) (h : ∀ x, ((A x).prod q).IsInvertible) :
-    Continuous (fun x ↦ (A x).kerSection q) := by
+/-- Kernel sections are continuous on any continuous family of invertible pairs in which both
+the operator and the complementary coordinate vary. -/
+theorem _root_.Continuous.kerSection {A : X → E →L[𝕜] F} {q : X → E →L[𝕜] G}
+    (hA : Continuous A) (hq : Continuous q) (h : ∀ x, ((A x).prod (q x)).IsInvertible) :
+    Continuous (fun x ↦ (A x).kerSection (q x)) := by
   refine continuous_iff_continuousAt.mpr fun x ↦ ?_
   exact (contDiffAt_kerSection (n := 0) (h x)).continuousAt.comp
-    (f := fun x ↦ (A x, q)) (hA.continuousAt.prodMk continuousAt_const)
+    (f := fun x ↦ (A x, q x)) (hA.continuousAt.prodMk hq.continuousAt)
+
+/-- Kernel sections are continuous on any continuous family of invertible pairs with a fixed
+complementary coordinate. -/
+theorem continuous_kerSection (hA : Continuous A) (h : ∀ x, ((A x).prod q).IsInvertible) :
+    Continuous (fun x ↦ (A x).kerSection q) :=
+  hA.kerSection continuous_const h
 
 /-- Product coordinates on the actual kernel locus, with its subspace topology.
 The base coordinate is unchanged, and the fibre coordinate is the fixed map `q`. -/

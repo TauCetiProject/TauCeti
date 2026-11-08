@@ -72,6 +72,9 @@ determinant line bundle require.
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   AMS Colloquium Publications 52, 2012, Section A.2 (determinant line bundles).
+* A. Zinger, *The determinant line bundle for Fredholm operators: construction, properties, and
+  classification*, Math. Scand. 118 (2016), 203–268, arXiv:1304.6368 (sign-normalized
+  stabilization isomorphisms).
 -/
 
 public section
@@ -237,7 +240,9 @@ with the identifications on the nose
 sign `(-1) ^ (dim (F ⧸ range D₁) * (dim Λ' - dim Λ))`, which depends on the dimension of the
 cokernel of `D₁` and so jumps along a family of operators. The changes of stabilizer therefore
 satisfy the identity and cocycle laws (`ContinuousLinearMap.detLineCoprodMapEquiv_id`,
-`ContinuousLinearMap.detLineCoprodMapEquiv_comp`). -/
+`ContinuousLinearMap.detLineCoprodMapEquiv_comp`). This normalization follows A. Zinger,
+*The determinant line bundle for Fredholm operators: construction, properties, and
+classification*, arXiv:1304.6368. -/
 noncomputable def detLineStabilizationEquiv (h : Function.Surjective (D₁.coprod D₂)) :
     TauCeti.detLine 𝕜 (D₁.coprod D₂).ker ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 Λ) ≃ₗ[𝕜]
       (D₁ : E →ₗ[𝕜] F).detLine :=
