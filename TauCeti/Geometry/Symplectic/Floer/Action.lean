@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # The Hamiltonian action and the energy of cylindrical Floer solutions
@@ -336,9 +337,8 @@ theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncu
     Tendsto (fun i ↦ ω.hamiltonianAction H (x i)) l (𝓝 (ω.hamiltonianAction H x₀)) := by
   rcases l.eq_or_neBot with rfl | hl
   · simp
-  -- The triples `(t, x(t), x'(t))` converge uniformly on `[0, 1]`, so they eventually lie in a
-  -- compact neighbourhood `K` of the image of the limit, on which both integrands are uniformly
-  -- continuous.
+  -- The triples `(t, x(t), x'(t))` converge uniformly on `[0, 1]` to a continuous limit, whose
+  -- image is compact, so composing with a continuous integrand preserves uniform convergence.
   have hid : TendstoUniformlyOn (fun (_ : ι) (t : ℝ) ↦ t) id l (Icc 0 1) :=
     fun u hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
   have hxx : TendstoUniformlyOn (fun i t ↦ (x i t, deriv (x i) t)) (fun t ↦ (x₀ t, deriv x₀ t)) l
@@ -348,22 +348,14 @@ theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncu
     tendsto_diag.eventually (hid.prodMk hxx u hu)
   have hPc : ∀ᶠ i in l, ContinuousOn (fun t ↦ (t, x i t, deriv (x i) t)) (Icc 0 1) :=
     (hx.and hdx).mono fun i hi ↦ continuousOn_id.prodMk (hi.1.prodMk hi.2)
-  set K := Metric.cthickening 1 ((fun t ↦ (t, x₀ t, deriv x₀ t)) '' Icc 0 1)
-  have hK : IsCompact K := (isCompact_Icc.image_of_continuousOn (hP.continuousOn hPc.frequently))
-    |>.cthickening
-  have hPK : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, (t, x i t, deriv (x i) t) ∈ K :=
-    (Metric.tendstoUniformlyOn_iff.1 hP 1 one_pos).mono fun _ hi t ht ↦
-      Metric.mem_cthickening_of_dist_le _ _ _ _ (mem_image_of_mem _ ht)
-        (by rw [dist_comm]; exact (hi t ht).le)
   have hconv (g : ℝ × V × V → ℝ) (hg : Continuous g) :
       Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, g (t, x i t, deriv (x i) t)) l
         (𝓝 (∫ t in (0 : ℝ)..1, g (t, x₀ t, deriv x₀ t))) := by
     refine TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn ?_ ?_ <;>
       rw [uIcc_of_le zero_le_one]
     · exact hPc.mono fun _ hi ↦ hg.comp_continuousOn hi
-    · exact (hK.uniformContinuousOn_of_continuous hg.continuousOn)
-        |>.comp_tendstoUniformlyOn_eventually hPK
-          (fun t ht ↦ Metric.self_subset_cthickening _ (mem_image_of_mem _ ht)) hP
+    · exact (isCompact_Icc.image_of_continuousOn (hP.continuousOn hPc.frequently))
+        |>.comp_tendstoUniformlyOn (fun _ _ ↦ hg.continuousAt) hP
   simp only [hamiltonianAction_def, loopArea_def]
   exact (tendsto_const_nhds.mul (hconv (fun p : ℝ × V × V ↦ ω p.2.1 p.2.2)
     (ω.continuous_apply_comp continuous_snd.fst continuous_snd.snd))).add
