@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Polynomial.Puiseux.Lazard
 public import TauCeti.Analysis.MvPolynomial.Lazard.RootFactorization
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Map
-import Mathlib.Algebra.MvPolynomial.Polynomial
 
 /-!
 # Constructed Lazard root multisets
