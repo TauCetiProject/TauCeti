@@ -61,7 +61,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   contractive scalar action.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
-  (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
+  (`PadicInt.isUnit_intCast_iff`, and `PadicInt.isUnit_natCast_iff` for natural numbers), and `2`
+  is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
 * `PadicInt.intCast_not_surjective`: not every `p`-adic integer is an integer.
 * `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
   `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
@@ -195,6 +196,13 @@ theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z :=
 theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
   rw [← not_iff_not, not_not, not_isUnit_iff_dvd, ← pow_one (p : ℤ_[p]), pow_p_dvd_int_iff,
     pow_one]
+
+/-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it.
+
+Not a `simp` lemma: `simp` rewrites the left-hand side by the general
+`IsLocalRing.isUnit_natCast_iff_not_dvd` first. -/
+theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
+  rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 
 /-- Not every `p`-adic integer is an integer: the inverse in `ℤ_p` of the unit `1 + p` is not the
 image of an integer. -/
