@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FittingIdeal.BaseChange
-public import TauCeti.RingTheory.FittingIdeal.Generators
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
