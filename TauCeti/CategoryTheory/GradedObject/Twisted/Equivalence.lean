@@ -154,6 +154,27 @@ lemma equivalence_functor : (g.equivalence C).functor = g.functor C := (rfl)
 @[simp]
 lemma equivalence_inverse : (g.equivalence C).inverse = g.symm.functor C := (rfl)
 
+-- Equality transports let the component formulas avoid unfolding the sealed equivalence.
+/-- The unit of the gauge equivalence is the identity on each graded object. -/
+@[simp]
+lemma equivalence_unitIso_hom_app (X : TwistedGradedObject c C) :
+    (g.equivalence C).unitIso.hom.app X = eqToHom (by simp [functor]) := (rfl)
+
+/-- The inverse unit of the gauge equivalence is the identity on each graded object. -/
+@[simp]
+lemma equivalence_unitIso_inv_app (X : TwistedGradedObject c C) :
+    (g.equivalence C).unitIso.inv.app X = eqToHom (by simp [functor]) := (rfl)
+
+/-- The counit of the gauge equivalence is the identity on each graded object. -/
+@[simp]
+lemma equivalence_counitIso_hom_app (X : TwistedGradedObject d C) :
+    (g.equivalence C).counitIso.hom.app X = eqToHom (by simp [functor]) := (rfl)
+
+/-- The inverse counit of the gauge equivalence is the identity on each graded object. -/
+@[simp]
+lemma equivalence_counitIso_inv_app (X : TwistedGradedObject d C) :
+    (g.equivalence C).counitIso.inv.app X = eqToHom (by simp [functor]) := (rfl)
+
 variable [MonoidalCategory C] [Preadditive C] [Linear R C] [MonoidalPreadditive C]
   [MonoidalLinear R C]
   [∀ (X Y : GradedObject I C), HasTensor X Y]
