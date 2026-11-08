@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Pushing a weighted measure forward
@@ -275,16 +276,7 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
   let r : ℝ≥0∞ := ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹|
   have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
   have hr : r ≠ 0 := by simp [r, hdet]
-  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := by
-    have hmapA : μ.map A = r • μ := by
-      simpa [r] using Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
-    calc
-      μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
-        (Measure.map_map (by fun_prop) (by fun_prop)).symm
-      _ = (r • μ).map (fun y : E ↦ c + y) := by rw [hmapA]
-      _ = r • μ := by
-        rw [Measure.map_smul r
-          ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable), map_add_left_eq_self]
+  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := Measure.map_affine_addHaar_eq_smul μ A c
   have hsing : (ν.singularPart μ).map (fun x ↦ c + A x) ⟂ₘ μ := by
     have h := hemb.mutuallySingular_map (Measure.mutuallySingular_singularPart ν μ)
     rw [hmapμ] at h
