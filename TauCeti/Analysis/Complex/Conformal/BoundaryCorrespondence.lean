@@ -69,10 +69,9 @@ than for an abstract proper map.
   continuous extension carries `frontier U` onto `frontier (f '' U)`.
 * `TauCeti.bijOn_closure_closure_image` and `TauCeti.closureHomeomorph` — for bounded `U`, an
   extension injective on `closure U` is a homeomorphism `closure U ≃ₜ closure (f '' U)`.
-* `TauCeti.injOn_closedBall_of_homeomorph_closure`, `TauCeti.bijOn_closedBall_closure` and
-  `TauCeti.bijOn_sphere_frontier` — for a bijection of the open unit disc onto `Ω`, continuous and
-  injective on the closed disc, the closed disc goes onto `closure Ω` and the circle onto
-  `frontier Ω`.
+* `TauCeti.bijOn_closedBall_closure` and `TauCeti.bijOn_sphere_frontier` — for a bijection of the
+  open unit disc onto `Ω`, continuous and injective on the closed disc, the closed disc goes onto
+  `closure Ω` and the circle onto `frontier Ω`.
 
 ## References
 
@@ -264,13 +263,6 @@ lemma coe_closureHomeomorph_symm_apply (hUb : Bornology.IsBounded U)
 section ClosedDisc
 
 variable {g : ℂ → ℂ} {Ω : Set ℂ}
-
-/-- If a map `g` agrees on the closed unit disc with a homeomorphism of the closed disc onto
-`closure Ω`, then `g` is injective on the closed disc. -/
-theorem injOn_closedBall_of_homeomorph_closure (e : closedBall (0 : ℂ) 1 ≃ₜ closure Ω)
-    (he : ∀ z : closedBall (0 : ℂ) 1, (e z : ℂ) = g z) : InjOn g (closedBall 0 1) :=
-  fun x hx y hy hxy => congrArg Subtype.val
-    (e.injective (Subtype.ext ((he ⟨x, hx⟩).trans (hxy.trans (he ⟨y, hy⟩).symm))))
 
 /-- A bijection `g` of the open unit disc onto `Ω`, continuous and injective on the closed disc,
 is a bijection of the closed disc onto `closure Ω`. -/

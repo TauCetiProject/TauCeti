@@ -31,8 +31,8 @@ Riemann map of a domain `W` and the Riemann map of the exterior of the inverted 
 * `TauCeti.tendsto_add_inv_comp_inv`: the map tends to infinity at infinity if `G` is continuous at
   `0`.
 * `TauCeti.exists_homeomorph_compl_ball_add_inv_comp_inv`: if `G` is a bijection of the closed disc
-  onto the closure of a domain `W`, the map is a homeomorphism of the
-  closed exterior onto the inversion of `W`.
+  onto a set `K` whose punctured copy is the inversion of `S`, the map is a homeomorphism of the
+  closed exterior onto `S`.
 -/
 
 public section
@@ -68,34 +68,35 @@ theorem tendsto_add_inv_comp_inv {G : ℂ → ℂ} (p : ℂ)
   exact (tendsto_const_add_cobounded p).comp (tendsto_inv₀_nhdsNE_zero.comp
     (tendsto_nhdsWithin_iff.mpr ⟨hG0t.comp tendsto_inv₀_cobounded, hev⟩))
 
-/-- **Reading a Riemann map of an inverted domain back.** Let `W` be a domain whose punctured
-closure is the inversion `z ↦ (z - p)⁻¹` of a closed set `S` not containing `p`, and `G` a
-bijection of the closed unit disc onto `closure W` with `G 0 = 0`, continuous on the closed disc.
-Then `w ↦ p + (G w⁻¹)⁻¹` is continuous on the closed exterior `(ball 0 1)ᶜ` and restricts to a
-homeomorphism of it onto `S`. -/
-theorem exists_homeomorph_compl_ball_add_inv_comp_inv {G : ℂ → ℂ} {W S : Set ℂ} {p : ℂ}
-    (hp : p ∉ S) (hG0 : G 0 = 0) (hGc : ContinuousOn G (closedBall 0 1))
-    (hGcl : BijOn G (closedBall 0 1) (closure W))
-    (hclW : closure W \ {0} = (fun z : ℂ => (z - p)⁻¹) '' S) :
+/-- **Reading a Riemann map of an inverted set back.** Let `K` be a set whose punctured copy
+`K \ {0}` is the inversion `z ↦ (z - p)⁻¹` of a set `S`, and `G` a bijection of the closed unit disc
+onto `K` with `G 0 = 0`, continuous on the closed disc. Then `w ↦ p + (G w⁻¹)⁻¹` is continuous on
+the closed exterior `(ball 0 1)ᶜ` and restricts to a homeomorphism of it onto `S`. -/
+theorem exists_homeomorph_compl_ball_add_inv_comp_inv {G : ℂ → ℂ} {K S : Set ℂ} {p : ℂ}
+    (hG0 : G 0 = 0) (hGc : ContinuousOn G (closedBall 0 1))
+    (hGcl : BijOn G (closedBall 0 1) K)
+    (hK : K \ {0} = (fun z : ℂ => (z - p)⁻¹) '' S) :
     ContinuousOn (fun w : ℂ => p + (G w⁻¹)⁻¹) (ball 0 1)ᶜ ∧
       ∃ e : ((ball (0 : ℂ) 1)ᶜ : Set ℂ) ≃ₜ S, ∀ z, (e z : ℂ) = p + (G (z : ℂ)⁻¹)⁻¹ := by
+  have hp : p ∉ S := fun h =>
+    ((hK ▸ mem_image_of_mem (fun z : ℂ => (z - p)⁻¹) h : (p - p)⁻¹ ∈ K \ {0}).2) (by simp)
   set Ginv := invFunOn G (closedBall 0 1) with hGinv
-  have hGinvc : ContinuousOn Ginv (closure W) :=
+  have hGinvc : ContinuousOn Ginv (K) :=
     hGcl.image_eq ▸ hGc.continuousOn_invFunOn_image_of_isCompact (isCompact_closedBall 0 1)
       subset_rfl hGcl.injOn (by simp)
   have hI1 := bijOn_inv_compl_ball_one (𝕜 := ℂ)
-  have hG1 : BijOn G (closedBall 0 1 \ {0}) (closure W \ {0}) := by
+  have hG1 : BijOn G (closedBall 0 1 \ {0}) (K \ {0}) := by
     simpa only [hG0] using hGcl.sdiff_singleton (mem_closedBall_self zero_le_one)
   set h : ℂ → ℂ := fun w => p + (G w⁻¹)⁻¹ with hh
   have hbij : BijOn h (ball 0 1)ᶜ S :=
-    (bijOn_add_inv_image_inv_sub _).comp ((hclW ▸ hG1).comp hI1)
+    (bijOn_add_inv_image_inv_sub _).comp ((hK ▸ hG1).comp hI1)
   have hne {w : ℂ} (hw : w ∈ (ball (0 : ℂ) 1)ᶜ) : G w⁻¹ ≠ 0 := (hG1.mapsTo (hI1.mapsTo hw)).2
   have hhc : ContinuousOn h (ball 0 1)ᶜ := by
     have hw0 : (ball (0 : ℂ) 1)ᶜ ⊆ {0}ᶜ := fun w hw (h : w = 0) => hw (h ▸ mem_ball_self one_pos)
     exact continuousOn_const.add (((hGc.comp (continuousOn_inv₀.mono hw0)
       fun w hw => (hI1.mapsTo hw).1).inv₀ fun w hw => hne hw))
-  have hιW {y : ℂ} (hy : y ∈ S) : (y - p)⁻¹ ∈ closure W \ {0} := by
-    rw [hclW]
+  have hιW {y : ℂ} (hy : y ∈ S) : (y - p)⁻¹ ∈ K \ {0} := by
+    rw [hK]
     exact mem_image_of_mem _ hy
   have hGinvW {y : ℂ} (hy : y ∈ S) :
       Ginv (y - p)⁻¹ ∈ closedBall (0 : ℂ) 1 \ {0} ∧ G (Ginv (y - p)⁻¹) = (y - p)⁻¹ := by

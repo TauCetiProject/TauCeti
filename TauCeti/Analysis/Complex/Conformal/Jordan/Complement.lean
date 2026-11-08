@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Conformal.BoundaryCorrespondence
 import TauCeti.Analysis.Complex.Inversion
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Data.Set.Image
 
 /-!
 # Carathéodory's theorem for both complementary domains of a Jordan curve
@@ -76,7 +77,7 @@ theorem IsJordanCurve.exists_homeomorph_closedBall_filledHull (hC : IsJordanCurv
   obtain ⟨g, hgc, hgd, hgbij, hg0, e, he⟩ :=
     exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier_of_mem hJ.isOpen
       hJ.isConnected hJ.isBounded hJ.isJordanCurve_frontier hp
-  have hgS := bijOn_sphere_frontier hgc hgd (injOn_closedBall_of_homeomorph_closure e he) hgbij
+  have hgS := bijOn_sphere_frontier hgc hgd (injOn_of_equiv_apply_eq e.toEquiv he) hgbij
   exact ⟨g, hgc, hgd, hgbij, hC.frontier_filledHull_sdiff ▸ hgS, hg0,
     e.trans (Homeomorph.setCongr hC.closure_filledHull_sdiff), he⟩
 
@@ -115,7 +116,7 @@ theorem IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff (hC : 
     insert_sdiff_self_of_notMem (h0 fun h => h hp.1)
   /- The extension `G` is a bijection of the closed disc onto `closure W`, and of the circle onto
   `frontier W`. -/
-  have hGi := injOn_closedBall_of_homeomorph_closure E hE
+  have hGi := injOn_of_equiv_apply_eq E.toEquiv hE
   have hGcl := bijOn_closedBall_closure hGc hGi hGbij
   have hGS := bijOn_sphere_frontier hGc hGd hGi hGbij
   rw [hC.frontier_insert_zero_image_inv_sub_compl_filledHull hp] at hGS
@@ -123,7 +124,7 @@ theorem IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff (hC : 
     simpa only [hG0] using hGbij.sdiff_singleton (mem_ball_self one_pos)
   have hne : ∀ x ∈ ball (0 : ℂ) 1, x ≠ 0 → G x ≠ 0 := fun x hx hx0 => (hG2.mapsTo ⟨hx, hx0⟩).2
   obtain ⟨hhc, e, he⟩ := exists_homeomorph_compl_ball_add_inv_comp_inv
-    (not_not_intro hp) hG0 hGc hGcl hclW
+    hG0 hGc hGcl hclW
   refine ⟨_, hhc, differentiableOn_add_inv_comp_inv p hGd hne,
     (bijOn_add_inv_image_inv_sub _).comp ((hW0 ▸ hG2).comp bijOn_inv_compl_closedBall_one),
     (bijOn_add_inv_image_inv_sub _).comp (hGS.comp bijOn_inv_sphere_one),
