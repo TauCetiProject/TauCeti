@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Syzygy
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.RingTheory.GlobalDimension
 
 /-!
@@ -62,14 +63,12 @@ private theorem perfect_singleFunctor_zero_obj_of_hasProjectiveDimensionLT [Enou
   | succ n ih =>
     intro X _
     -- The short exact sequence `0 ⟶ K ⟶ P ⟶ X ⟶ 0` with `P` projective.
-    let S := ShortComplex.mk (kernel.ι (Projective.π X)) (Projective.π X) (kernel.condition _)
-    have hS : S.ShortExact :=
-      .mk' (S.exact_of_f_is_kernel (kernelIsKernel _)) inferInstance inferInstance
+    let S := Projective.kernelShortComplex X
+    have hS : S.ShortExact := Projective.kernelShortComplex_shortExact X
     have : HasProjectiveDimensionLT S.X₁ (n + 1) :=
-      (hS.hasProjectiveDimensionLT_X₃_iff n (inferInstanceAs (Projective (Projective.over X)))).1
-        inferInstance
+      (hS.hasProjectiveDimensionLT_X₃_iff n inferInstance).1 inferInstance
     exact (perfect C).ext_of_isTriangulatedClosed₃ _ hS.boundedSingleTriangle_distinguished
-      (ih S.X₁) (perfect_singleFunctor_obj C 0 (inferInstanceAs (Projective (Projective.over X))))
+      (ih S.X₁) (perfect_singleFunctor_obj C 0 inferInstance)
 
 /-- **Objects of finite projective dimension are perfect**: in an abelian category with enough
 projectives, an object of finite projective dimension, placed in any degree, is a perfect object
@@ -110,12 +109,11 @@ theorem isZero_of_forall_hasProjectiveDimensionLT [EnoughProjectives C]
 end SingularityCategory
 
 /-- **A ring of finite global dimension has zero singularity category**: for a left noetherian
-ring `A` of finite global dimension, every object of `D_sg(A) = Dᵇ(mod-A) / Kᵇ(proj-A)` is zero.
-Every finitely generated module has finite projective dimension in `FGModuleCat A`
-(`FGModuleCat.hasProjectiveDimensionLE_of_forget₂`). -/
+ring `A` of finite global dimension, every object of `D_sg(A) = Dᵇ(mod-A) / Kᵇ(proj-A)` is zero. -/
 theorem ModuleCat.SingularityCategory.isZero_of_globalDimension_le (A : Type u) [Ring A]
     [IsNoetherianRing A] [HasDerivedCategory.{w} (FGModuleCat.{u} A)] (n : ℕ)
     (h : globalDimension.{u} A ≤ n) (Y : ModuleCat.SingularityCategory A) : IsZero Y :=
+  -- Every finitely generated module has finite projective dimension in `FGModuleCat A`.
   SingularityCategory.isZero_of_forall_hasProjectiveDimensionLT (fun X ↦ ⟨n + 1,
     FGModuleCat.hasProjectiveDimensionLE_of_forget₂ n X
       ((globalDimension_le_iff_hasProjectiveDimensionLE A n).1 h _)⟩) Y
