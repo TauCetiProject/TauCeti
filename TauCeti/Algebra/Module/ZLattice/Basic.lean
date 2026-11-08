@@ -36,6 +36,8 @@ equivalence.
 * `Module.Basis.mem_span_basisFun_iff`: a point of `ℝ^ι` lies in the standard lattice `ℤ^ι`
   exactly when it is the coordinate vector of an element of `Λ` in a `ℤ`-basis of `Λ`.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
+* `ZLattice.exists_forall_ne_zero_lt_norm`: a finite-dimensional real normed space has full
+  lattices all of whose nonzero vectors are longer than a prescribed bound.
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
@@ -193,5 +195,32 @@ theorem exists_basis_span_eq (L : Submodule ℤ E) [DiscreteTopology L] [IsZLatt
   have := module_free K L
   ⟨_, inferInstance, Classical.decEq _, (Free.chooseBasis ℤ L).ofZLatticeBasis K L,
     (Free.chooseBasis ℤ L).ofZLatticeBasis_span K L⟩
+
+/-- A finite-dimensional real normed space has full lattices whose nonzero vectors are all longer
+than any prescribed `R`: pull back the integer span of a basis along `x ↦ c⁻¹ • x` for a large
+`c`. In particular a bounded set meets none of its translates by nonzero vectors of such a
+lattice once `R` exceeds its diameter. -/
+theorem exists_forall_ne_zero_lt_norm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] (R : ℝ) :
+    ∃ (L : Submodule ℤ F) (_ : DiscreteTopology L) (_ : IsZLattice ℝ L),
+      ∀ ℓ ∈ L, ℓ ≠ 0 → R < ‖ℓ‖ := by
+  set L₀ := Submodule.span ℤ (Set.range (Module.finBasis ℝ F))
+  -- The integer span of a basis is discrete, so its nonzero vectors have norm at least some `δ`.
+  obtain ⟨δ, hδ, hL₀⟩ := Metric.isOpen_singleton_iff.1 (isOpen_discrete ({0} : Set L₀))
+  set c : ℝ := (|R| + 1) / δ
+  have hc : 0 < c := by positivity
+  let e : F ≃L[ℝ] F := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc.ne')⁻¹
+  refine ⟨ZLattice.comap ℝ L₀ e.toLinearMap, inferInstance, inferInstance, fun ℓ hℓ hne ↦ ?_⟩
+  have hmem : c⁻¹ • ℓ ∈ L₀ := by
+    simpa [mem_comap, e, Units.smul_def] using hℓ
+  have hδℓ : δ ≤ ‖c⁻¹ • ℓ‖ := by
+    by_contra! h
+    have h0 := hL₀ ⟨_, hmem⟩ (by simpa [dist_eq_norm] using h)
+    exact smul_ne_zero (inv_ne_zero hc.ne') hne (congrArg Subtype.val h0)
+  rw [norm_smul, norm_inv, Real.norm_of_nonneg hc.le, inv_mul_eq_div, le_div_iff₀ hc] at hδℓ
+  have hcδ : δ * c = |R| + 1 := by
+    simp only [c]
+    field_simp
+  linarith [le_abs_self R]
 
 end ZLattice
