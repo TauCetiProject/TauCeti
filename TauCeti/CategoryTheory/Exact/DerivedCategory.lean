@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Exact.Acyclic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
 public import Mathlib.CategoryTheory.Localization.Triangulated
 public import Mathlib.Algebra.Homology.HomotopyCategory.Triangulated
+public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
 
 /-!
 # The bounded derived category of an exact category
@@ -172,12 +173,8 @@ instance : IsTriangulated E.BoundedDerivedCategory :=
 variable {E} in
 /-- A bounded acyclic complex is zero in the bounded derived category. -/
 lemma isZero_Q_obj_of_acyclicBounded {X : HomotopyCategory.Bounded C}
-    (hX : E.acyclicBounded X) : IsZero ((Q E).obj X) := by
-  -- The map from zero to `X` has cone `X`, which is acyclic, so it becomes invertible.
-  have h : E.acyclicBounded.trW (0 : 0 ⟶ X) :=
-    ObjectProperty.trW.mk _ (contractible_distinguished₁ X) hX
-  have := Localization.inverts (Q E) _ _ h
-  exact ((Q E).map_isZero (isZero_zero _)).of_iso (asIso ((Q E).map (0 : 0 ⟶ X))).symm
+    (hX : E.acyclicBounded X) : IsZero ((Q E).obj X) :=
+  ObjectProperty.TrWLocalization.isZero_obj E.acyclicBounded (Q E) hX
 
 end BoundedDerivedCategory
 

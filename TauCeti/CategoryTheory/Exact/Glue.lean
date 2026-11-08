@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Bicartesian
-public import TauCeti.CategoryTheory.Exact.Biproduct
-public import TauCeti.CategoryTheory.Exact.Split
 
 /-!
 # Gluing a pullback of a deflation with a pushout of an inflation

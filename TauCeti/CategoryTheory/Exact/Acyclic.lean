@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Glue
-public import TauCeti.CategoryTheory.Exact.BaseChange
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
-public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.CategoryTheory.ObjectProperty.Shift
 
