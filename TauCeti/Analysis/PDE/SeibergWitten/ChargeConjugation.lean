@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.QuaternionicStructure
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.Trace.Semilinear
 
 /-!
 # Charge conjugation of the Seiberg–Witten quadratic map
@@ -40,12 +41,12 @@ identifies `W'` with the conjugate of `W`; for the spinors of `Spinᶜ(4)` it is
 the quaternion `j`, and `W'` is the spinor module of the conjugate `Spinᶜ` structure. Then `j`
 commutes with every Clifford element (`CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`), in
 particular with the chirality element, so it restricts to the positive half-spinors
-(`TauCeti.SeibergWitten.positiveHalfSpinorsConjEquiv`). Since `j` is conjugate-linear, it
+(`CliffordAlgebra.positiveHalfSpinorsConjEquiv`). Since `j` is conjugate-linear, it
 anticommutes with the Clifford map `C(iα) = i c₂(α)`:
 
 `C(iα) (j ψ) = -j (C(iα) ψ)`.
 
-Since `j` conjugates traces (`LinearIsometryEquiv.trace_eq_conj_trace`), the adjoint `τ = C*`
+Since `j` conjugates traces (`LinearEquiv.trace_eq_map_trace`), the adjoint `τ = C*`
 also changes sign, and hence so does `q`:
 
 `q(j ψ) = -q(ψ)`,  `q'(j ψ, j φ) = -q'(ψ, φ)`.
@@ -54,9 +55,17 @@ This holds for every such `j` and in any dimension of `W⁺`, without assuming `
 conjugation negates `F_A`, these are the pointwise identities by which
 `(A, ψ, η) ↦ (conj A, j ψ, -η)` carries the curvature equation, and through the polarization,
 which is the derivative of `q`, its linearization, to those of the conjugate `Spinᶜ` structure.
-Finally `j` exchanges the two eigenlines of a self-dual form `ω` of norm `√2`, the summands of
-Taubes's decomposition `ψ = α u₀ + β`: `P_α (j ψ) = j (P_β ψ)`, where `P_α = (1 + C(iω) / 2) / 2`
-and `P_β` is the complementary projection.
+Finally `j` exchanges the `±2`-eigenspaces of `C(iω)` for a self-dual form `ω` of norm `√2`:
+`P_α (j ψ) = j (P_β ψ)`, where `P_α = (1 + C(iω) / 2) / 2` and `P_β` is the complementary
+projection. When `W⁺` has complex dimension two these eigenspaces are lines, the summands of
+Taubes's decomposition `ψ = α u₀ + β`.
+
+This section follows the unitary `Spinᶜ` equivariance of `SeibergWitten/Naturality.lean`, which
+passes from the Clifford map (`TauCeti.SeibergWitten.cliffordRestriction_map`) to its adjoint
+(`TauCeti.SeibergWitten.cliffordRestrictionAdjoint_conjContinuousAlgEquiv`), the quadratic
+two-form (`TauCeti.SeibergWitten.quadraticTwoForm_positiveHalfSpinorsEquiv`) and its polarization
+(`TauCeti.SeibergWitten.quadraticTwoFormPolar_positiveHalfSpinorsEquiv`); here a conjugate-linear
+`j` replaces the unitary equivalence, so each step acquires a sign.
 
 ## Main results
 
@@ -66,8 +75,6 @@ and `P_β` is the complementary projection.
 * `TauCeti.SeibergWitten.quadraticEndPolar_map_map`: the polarization, which is also the
   derivative of `Q₀`, satisfies `B(j ψ, j φ) = -B(ψ, φ)`.
 * `TauCeti.SeibergWitten.map_quadraticEnd_apply_eq_neg`: `j` anticommutes with `Q₀(ψ)`.
-* `TauCeti.SeibergWitten.positiveHalfSpinorsConjEquiv`: a conjugate-linear Clifford intertwiner
-  restricted to the positive half-spinors.
 * `TauCeti.SeibergWitten.cliffordRestriction_positiveHalfSpinorsConjEquiv`:
   `C(iα) (j ψ) = -j (C(iα) ψ)`.
 * `TauCeti.SeibergWitten.cliffordRestrictionAdjoint_eq_neg`: `τ(T') = -τ(T)` when `T' j = j T`.
@@ -163,46 +170,6 @@ private theorem map_apply_of_forall_ι (x : CliffordAlgebra Q) (w : W) :
     (fun v ↦ LinearMap.ext (hj v)) x
   simpa [map_id] using LinearMap.congr_fun h w
 
-variable {o ρ ρ' j} in
-include hj in
-/-- A conjugate-linear Clifford intertwiner maps positive half-spinors to positive half-spinors. -/
-theorem map_mem_positiveHalfSpinors {w : W} (hw : w ∈ positiveHalfSpinors o ρ) :
-    j w ∈ positiveHalfSpinors o ρ' := by
-  rw [mem_positiveHalfSpinors] at hw ⊢
-  rw [← map_apply_of_forall_ι hj, hw]
-
-omit [Fact (finrank ℝ V = 4)] in
-include hj in
-/-- The inverse of a conjugate-linear Clifford intertwiner is again one. -/
-private theorem symm_apply_of_forall_ι (v : V) (w : W') :
-    j.symm (ρ' (ι Q v) w) = ρ (ι Q v) (j.symm w) := by
-  rw [j.symm_apply_eq, hj, j.apply_symm_apply]
-
-/-- **Charge conjugation of positive half-spinors**: a conjugate-linear isometric equivalence `j`
-commuting with Clifford multiplication restricts to a conjugate-linear isometric equivalence
-`W⁺ ≃ W'⁺` of the positive half-spinors. -/
-def positiveHalfSpinorsConjEquiv :
-    positiveHalfSpinors o ρ ≃ₗᵢ⋆[ℂ] positiveHalfSpinors o ρ' where
-  toFun ψ := ⟨j ψ, map_mem_positiveHalfSpinors hj ψ.2⟩
-  invFun ψ := ⟨j.symm ψ, map_mem_positiveHalfSpinors (symm_apply_of_forall_ι ρ ρ' j hj) ψ.2⟩
-  map_add' ψ φ := Subtype.ext <| by simp
-  map_smul' c ψ := Subtype.ext <| by simp [map_smulₛₗ]
-  left_inv ψ := Subtype.ext (j.symm_apply_apply ψ)
-  right_inv ψ := Subtype.ext (j.apply_symm_apply ψ)
-  norm_map' ψ := j.norm_map (ψ : W)
-
-/-- The restriction of `j` to the positive half-spinors is `j`. -/
-@[simp]
-theorem coe_positiveHalfSpinorsConjEquiv_apply (ψ : positiveHalfSpinors o ρ) :
-    (positiveHalfSpinorsConjEquiv o ρ ρ' j hj ψ : W') = j ψ :=
-  (rfl)
-
-/-- The inverse of the restriction of `j` to the positive half-spinors is `j⁻¹`. -/
-@[simp]
-theorem coe_positiveHalfSpinorsConjEquiv_symm_apply (ψ : positiveHalfSpinors o ρ') :
-    ((positiveHalfSpinorsConjEquiv o ρ ρ' j hj).symm ψ : W) = j.symm ψ :=
-  (rfl)
-
 attribute [local instance] finiteDimensional_of_finrank_four
 
 variable [FiniteDimensional ℂ W] [FiniteDimensional ℂ W']
@@ -228,7 +195,7 @@ theorem cliffordRestrictionAdjoint_eq_neg (hkl : 2 + 2 = finrank ℝ V)
   -- `j` relates `T' C(iβ)` to `-T C(iβ)`, so their traces are conjugate.
   rw [inner_neg_left, inner_cliffordRestrictionAdjoint_left, inner_cliffordRestrictionAdjoint_left,
     ← ContinuousLinearMap.toLinearMap_mul, ← ContinuousLinearMap.toLinearMap_mul,
-    LinearIsometryEquiv.trace_eq_conj_trace (positiveHalfSpinorsConjEquiv o ρ ρ' j hj)
+    (positiveHalfSpinorsConjEquiv o ρ ρ' j hj).toLinearEquiv.trace_eq_map_trace
       (T := ((-(T * cliffordRestriction o ρ β) : positiveHalfSpinors o ρ →L[ℂ] _) :
         Module.End ℂ (positiveHalfSpinors o ρ))) ?_]
   · simp
@@ -264,8 +231,8 @@ theorem quadraticTwoFormPolar_positiveHalfSpinorsConjEquiv (hkl : 2 + 2 = finran
 
 /-- **Charge conjugation exchanges the Clifford projections**: `P_α (j ψ) = j (P_β ψ)`, where
 `P_α = (1 + C(iω) / 2) / 2` and `P_β` is the same projection for `-ω`. For self-dual `ω` with
-`‖ω‖² = 2`, `j` thus maps the `-2`-eigenline of `C(iω)` on `W⁺` to the `2`-eigenline on `W'⁺`,
-and the `2`-eigenline to the `-2`-eigenline. -/
+`‖ω‖² = 2`, `j` thus maps the `-2`-eigenspace of `C(iω)` on `W⁺` to the `2`-eigenspace on `W'⁺`,
+and the `2`-eigenspace to the `-2`-eigenspace; in complex dimension two these are lines. -/
 theorem cliffordProjection_positiveHalfSpinorsConjEquiv (ω : ⋀[ℝ]^2 V)
     (ψ : positiveHalfSpinors o ρ) :
     cliffordProjection o ρ' ω (positiveHalfSpinorsConjEquiv o ρ ρ' j hj ψ) =
