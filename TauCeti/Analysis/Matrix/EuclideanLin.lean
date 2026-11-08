@@ -138,16 +138,9 @@ omit [Fintype κ] [DecidableEq κ] in
 space. -/
 theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
     A.rank = Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) := by
-  have h : LinearMap.range (toEuclideanLin A) =
-      (LinearMap.range A.mulVecLin).map (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap := by
-    ext y
-    simp only [LinearMap.mem_range, Submodule.mem_map]
-    refine ⟨fun ⟨x, hx⟩ ↦ ⟨WithLp.ofLp y, ⟨WithLp.ofLp x, ?_⟩, rfl⟩,
-      fun ⟨_, ⟨x, hx⟩, hy⟩ ↦ ⟨WithLp.toLp 2 x, ?_⟩⟩
-    · simpa using congrArg WithLp.ofLp hx
-    · ext
-      simp [toEuclideanLin, ← hy, ← hx]
-  rw [h, LinearEquiv.finrank_map_eq]
+  have h : toEuclideanLin A = (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap ∘ₗ
+      A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
+  rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq]
   rfl
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
