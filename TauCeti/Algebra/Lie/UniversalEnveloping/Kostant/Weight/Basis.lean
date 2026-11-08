@@ -326,12 +326,28 @@ theorem isCartanWeightVector_kostantWeightBasis
       ((kostantWeightBasis e h ρ M hM hV a : M) : V) :=
   (mem_weightSublattice_iff h ρ M).1 (kostantWeightBasis_mem e h ρ M hM hV a)
 
-include e hM hV in
-/-- The index of the weight basis is finite, since the lattice is finitely generated. -/
+/-- A weight sublattice that has a basis index is nonzero. -/
+theorem weightSublattice_ne_bot_of_chooseBasisIndex {μ : κ → ℤ}
+    (j : Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) :
+    weightSublattice h ρ M μ ≠ ⊥ :=
+  Submodule.nontrivial_iff_ne_bot.mp
+    (nontrivial_of_ne _ _ ((Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).ne_zero j))
+
+/-- The index of the weight basis is finite, since the lattice is finitely generated: its weight
+sublattices are independent, so only finitely many of them are nonzero, and each is a finitely
+generated free `ℤ`-module. Neither Kostant-stability nor lying in the span of the integral weight
+spaces is needed, so the numbering of the index below needs neither either. -/
 theorem finite_kostantWeightBasis_index :
     Finite (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) := by
-  classical
-  exact Module.Finite.finite_basis (kostantWeightBasis e h ρ M hM hV)
+  have : IsNoetherian ℤ M := isNoetherian_of_isNoetherianRing_of_finite ℤ M
+  have hfin : {μ : κ → ℤ | weightSublattice h ρ M μ ≠ ⊥}.Finite :=
+    Submodule.finite_ne_bot_of_iSupIndep (iSupIndep_weightSublattice h ρ M)
+  have := hfin.to_subtype
+  have (μ : κ → ℤ) : Finite (Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) :=
+    Module.Finite.finite_basis (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ))
+  exact Finite.of_surjective
+    (Sigma.map (Subtype.val : {μ : κ → ℤ | weightSublattice h ρ M μ ≠ ⊥} → κ → ℤ) fun _ j => j)
+    fun a => ⟨⟨⟨a.1, weightSublattice_ne_bot_of_chooseBasisIndex h ρ M a.2⟩, a.2⟩, rfl⟩
 
 include e hM hV in
 /-- The weight basis has one vector for each unit of rank: its index has cardinality the rank of the
@@ -343,13 +359,12 @@ theorem nat_card_kostantWeightBasis_index_eq_finrank :
   classical
   exact (Module.finrank_eq_nat_card_basis (kostantWeightBasis e h ρ M hM hV)).symm
 
-include e hM hV in
 /-- The numbering of the weight-basis index by `Fin n` along which the weight basis is reindexed;
 it exists because the index is finite. -/
 noncomputable def kostantWeightBasisIndexEquivFin :
     (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)) ≃
       Fin (Nat.card (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ))) :=
-  have := finite_kostantWeightBasis_index e h ρ M hM hV
+  have := finite_kostantWeightBasis_index h ρ M
   Finite.equivFin _
 
 include e hM hV in
@@ -359,7 +374,7 @@ noncomputable def kostantWeightBasisFin :
     Module.Basis
       (Fin (Nat.card (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ))))
       ℤ M :=
-  (kostantWeightBasis e h ρ M hM hV).reindex (kostantWeightBasisIndexEquivFin e h ρ M hM hV)
+  (kostantWeightBasis e h ρ M hM hV).reindex (kostantWeightBasisIndexEquivFin h ρ M)
 
 /-- The `Fin`-indexed weight basis is the weight basis read through the numbering of its index. -/
 @[simp]
@@ -367,22 +382,22 @@ theorem kostantWeightBasisFin_apply
     (x : Fin (Nat.card
       (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)))) :
     kostantWeightBasisFin e h ρ M hM hV x =
-      kostantWeightBasis e h ρ M hM hV
-        ((kostantWeightBasisIndexEquivFin e h ρ M hM hV).symm x) :=
+      kostantWeightBasis e h ρ M hM hV ((kostantWeightBasisIndexEquivFin h ρ M).symm x) :=
   Module.Basis.reindex_apply _ _ _
 
-include e hM hV in
-/-- The weight of the `x`-th vector of the `Fin`-indexed weight basis. -/
+/-- The weight of the `x`-th vector of the `Fin`-indexed weight basis: the first component of the
+index numbered `x`. It is a function of the numbering alone, so it is defined for any finitely
+generated subgroup, whether or not that subgroup has a weight basis. -/
 noncomputable def kostantWeightFin :
     Fin (Nat.card (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ))) →
       κ → ℤ :=
-  fun x => ((kostantWeightBasisIndexEquivFin e h ρ M hM hV).symm x).1
+  fun x => ((kostantWeightBasisIndexEquivFin h ρ M).symm x).1
 
 /-- **The `Fin`-indexed weight basis consists of weight vectors** of the recorded weights. -/
 theorem isCartanWeightVector_kostantWeightBasisFin
     (x : Fin (Nat.card
       (Σ μ : κ → ℤ, Module.Free.ChooseBasisIndex ℤ (weightSublattice h ρ M μ)))) :
-    IsCartanWeightVector h ρ (kostantWeightFin e h ρ M hM hV x)
+    IsCartanWeightVector h ρ (kostantWeightFin h ρ M x)
       ((kostantWeightBasisFin e h ρ M hM hV x : M) : V) := by
   rw [kostantWeightBasisFin_apply]
   exact isCartanWeightVector_kostantWeightBasis e h ρ M hM hV _
@@ -391,14 +406,14 @@ theorem isCartanWeightVector_kostantWeightBasisFin
 lattice**: an integral weight is carried by some vector of the basis if and only if its weight
 sublattice is nonzero. -/
 theorem mem_range_kostantWeightFin_iff {μ : κ → ℤ} :
-    μ ∈ Set.range (kostantWeightFin e h ρ M hM hV) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
+    μ ∈ Set.range (kostantWeightFin h ρ M) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
   refine ⟨?_, fun hμ => ?_⟩
   · rintro ⟨x, rfl⟩
-    rw [Submodule.ne_bot_iff]
-    exact ⟨_, kostantWeightBasis_mem e h ρ M hM hV _, (kostantWeightBasis e h ρ M hM hV).ne_zero _⟩
+    exact weightSublattice_ne_bot_of_chooseBasisIndex h ρ M
+      ((kostantWeightBasisIndexEquivFin h ρ M).symm x).2
   · have := Submodule.nontrivial_iff_ne_bot.mpr hμ
     obtain ⟨j⟩ := (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).index_nonempty
-    exact ⟨kostantWeightBasisIndexEquivFin e h ρ M hM hV ⟨μ, j⟩, by
+    exact ⟨kostantWeightBasisIndexEquivFin h ρ M ⟨μ, j⟩, by
       simp only [kostantWeightFin, Equiv.symm_apply_apply]⟩
 
 end WeightBasis
