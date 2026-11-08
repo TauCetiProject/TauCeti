@@ -66,15 +66,13 @@ private theorem integral_homDensityFin_exposedSample {V : Type*} [Fintype V]
 most `ε / 2` once `2q² ≤ εn`, where `q` is the number of vertices of `F`. -/
 private theorem abs_integral_homDensityFin_exposedSample_sub_le {V : Type*} [Fintype V]
     (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {n : ℕ} {ε : ℝ}
-    (hq : 0 < Fintype.card V) (hn0 : 0 < n) (hVn : Fintype.card V ≤ n)
+    (hn0 : 0 < n) (hVn : Fintype.card V ≤ n)
     (hn : 2 * (Fintype.card V : ℝ) ^ 2 ≤ ε * n) :
     |(∫ x, homDensityFin F (exposedSample W x) ∂exposureMeasure μ n) - homDensity F W| ≤
       ε / 2 := by
   have hnR : (0 : ℝ) < n := by exact_mod_cast hn0
   have hchoose : ((Fintype.card V).choose 2 : ℝ) ≤ (Fintype.card V : ℝ) ^ 2 := by
-    rw [Nat.cast_choose_two]
-    have hq1 : (1 : ℝ) ≤ Fintype.card V := by exact_mod_cast hq
-    nlinarith [Nat.cast_nonneg (α := ℝ) (Fintype.card V - 1)]
+    exact_mod_cast Nat.choose_le_pow (Fintype.card V) 2
   rw [integral_homDensityFin_exposedSample F W n]
   calc
     |(∫ G, homDensityFin F G ∂sampleGraph W n) - homDensity F W|
@@ -121,7 +119,7 @@ private theorem sampleGraph_homDensityFin_concentration_of_card_pos {V : Type*} 
     map_measureReal_apply (measurable_exposedSample W) MeasurableSet.of_discrete,
     ← Probability.neg_sq_div_two_mul_variance_proxy (ε := ε) hq hnpos]
   exact Probability.measureReal_abs_sub_ge_le_of_hasSubgaussianMGF (g := f) hsub
-    (abs_integral_homDensityFin_exposedSample_sub_le F W hq hnpos hVn hn) hε
+    (abs_integral_homDensityFin_exposedSample_sub_le F W hnpos hVn hn) hε.le
 
 /-- **Exponential concentration of a sampled homomorphism density.** Let `F` have `q` vertices.
 If `2q² ≤ εn`, then under the graphon sampling law `G(n, W)`,
