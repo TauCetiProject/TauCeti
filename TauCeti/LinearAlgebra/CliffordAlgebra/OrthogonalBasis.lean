@@ -239,14 +239,15 @@ theorem basis_insert_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b
 /-- **A generator below every index times a basis vector**, for an orthogonal basis: if `a` is
 smaller than every index of `s`, then `ι Q (b a) * e_s` is the basis vector of `insert a s`, which
 is the case `k = 0` and `a ∉ s` of `CliffordAlgebra.ι_mul_basis`. -/
-theorem ι_mul_basis_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {a : I}
+private theorem ι_mul_basis_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {a : I}
     {s : Finset I} (hat : ∀ x ∈ s, a < x) :
     ι Q (b a) * basis Q b s =
       ((-1 : R) ^ (s.filter (· < a)).card * if a ∈ s then Q (b a) else 1) •
         basis Q b (s ∆ {a}) := by
   have ha : a ∉ s := fun h ↦ lt_irrefl a (hat a h)
   have hsd : s ∆ {a} = insert a s := by
-    ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
+    simpa only [Finset.union_singleton] using
+      Finset.symmDiff_eq_union (Finset.disjoint_singleton_right.mpr ha)
   have hf : s.filter (· < a) = ∅ :=
     Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
   rw [hsd, hf, ite_eq_right ha, basis_insert_of_forall_lt hb hat]
