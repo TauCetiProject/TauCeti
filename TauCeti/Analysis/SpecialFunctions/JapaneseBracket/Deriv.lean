@@ -38,6 +38,8 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   `(1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
+* `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
+  `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
   rescaled argument `c x` and its derivative bounds.
@@ -111,6 +113,13 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
 end ContinuousLinearMap
 
 namespace TauCeti
+
+/-- For `p ≥ 0`, the bracket power `(1 + ‖x‖ ^ 2) ^ (p / 2)` is at most `(1 + ‖x‖) ^ p`. -/
+theorem one_add_norm_sq_rpow_half_le_one_add_norm_rpow (x : E) {p : ℝ} (hp : 0 ≤ p) :
+    (1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p := by
+  rw [show p / 2 = 1 / 2 * p by ring, Real.rpow_mul (by positivity), ← Real.sqrt_eq_rpow]
+  gcongr
+  exact Real.sqrt_le_iff.2 ⟨by positivity, by nlinarith [norm_nonneg x]⟩
 
 section NormedSpace
 
