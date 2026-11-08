@@ -139,6 +139,7 @@ theorem ker_mapOfLE [U.Normal] [V.Normal] (hVU : V ≤ U) :
 
 /-- The homomorphism `G ⧸ U →* H ⧸ M` induced by `f : G →* H` on the quotients is injective
 exactly when `U` is the preimage `f⁻¹(M)`: its kernel is the image of `f⁻¹(M)` in `G ⧸ U`. -/
+@[simp]
 theorem map_injective_iff {H : Type*} [Group H] (f : G →* H) [U.Normal] (M : Subgroup H)
     [M.Normal] (h : U ≤ M.comap f) :
     Function.Injective (_root_.QuotientGroup.map U M f h) ↔ U = M.comap f :=
