@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.NumberTheory.PrimeCounting
 
 /-!
 # Absolute control of the higher prime powers at the boundary
@@ -21,7 +22,9 @@ The majorant sums the geometric series at each integer `m ≥ 2` to
 `1 / (m * (m - 1))`; summing over all such integers telescopes to one.
 Only the higher-power tail is summed unconditionally here, not the boundary
 Dirichlet series or the full Euler logarithm. The identification with the local
-logarithmic remainders uses Mathlib's `Complex.hasSum_taylorSeries_neg_log'`.
+logarithmic remainders uses Mathlib's `Complex.hasSum_taylorSeries_neg_log'`. Extending these
+remainders by zero off the primes, their ordered sums over the primes `p ≤ N` tend to the same
+tail (`TauCeti.LSeries.tendsto_sum_primesLE_log_one_sub_inv_sub_div`).
 -/
 
 public section
@@ -143,5 +146,33 @@ theorem hasSum_neg_log_one_sub_sub_div (hc : ∀ p : Nat.Primes, ‖c p‖ ≤ 1
       Nat.cast_add, Nat.cast_one, Nat.cast_ofNat, add_assoc, one_add_one_eq_two,
       div_pow, div_div, mul_one, mul_comm] using h
   exact (summable_norm_higher_prime_powers hc).of_norm.hasSum.prod_fiberwise hfiber
+
+/-- **The local remainders of an Euler logarithm.** If `‖c p‖ ≤ 1` at every prime `p`, the ordered
+sums over the primes `p ≤ N` of `log (1 - c p / p)⁻¹ - c p / p` converge to the sum of the
+higher-prime-power terms `c p ^ (k + 2) / ((k + 2) * p ^ (k + 2))`. -/
+theorem tendsto_sum_primesLE_log_one_sub_inv_sub_div (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) :
+    Tendsto (fun N : ℕ ↦ ∑ p ∈ Nat.primesLE N, (Complex.log (1 - c p / p)⁻¹ - c p / p)) atTop
+      (𝓝 (∑' q : Nat.Primes × ℕ,
+        c q.1 ^ (q.2 + 2) / (((q.2 + 2 : ℕ) : ℂ) * (q.1 : ℂ) ^ (q.2 + 2)))) := by
+  set r : ℕ → ℂ := fun n ↦ Complex.log (1 - c n / n)⁻¹ - c n / n
+  -- Extend the remainders by zero off the primes, so that the absolutely convergent sum over
+  -- `Nat.Primes` becomes a sum over `ℕ` whose partial sums are the ordered prime sums.
+  have hr : HasSum (fun n ↦ if n.Prime then r n else 0) (∑' q : Nat.Primes × ℕ,
+      c q.1 ^ (q.2 + 2) / (((q.2 + 2 : ℕ) : ℂ) * (q.1 : ℂ) ^ (q.2 + 2))) := by
+    refine (Function.Injective.hasSum_iff (g := fun p : Nat.Primes ↦ (p : ℕ))
+      Nat.Primes.coe_nat_injective fun n hn ↦ ?_).mp ?_
+    · simp only [ite_eq_right_iff]
+      exact fun hp ↦ (hn ⟨⟨n, hp⟩, rfl⟩).elim
+    · refine (hasSum_neg_log_one_sub_sub_div fun p ↦ hc p p.prop).congr_fun fun p ↦ ?_
+      have hz : ‖-(c p / p)‖ < 1 := by
+        have hp : (1 : ℝ) < (p : ℕ) := mod_cast p.prop.one_lt
+        rw [norm_neg, norm_div, Complex.norm_natCast, div_lt_one (by linarith)]
+        exact (hc p p.prop).trans_lt hp
+      have hslit : 1 - c p / p ∈ Complex.slitPlane := by
+        simpa [sub_eq_add_neg] using Complex.mem_slitPlane_of_norm_lt_one hz
+      simp only [Function.comp_apply, p.prop, ↓reduceIte, r]
+      exact congrArg (· - _) (Complex.log_inv _ (Complex.slitPlane_arg_ne_pi hslit))
+  refine (hr.tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)).congr fun N ↦ ?_
+  rw [Function.comp_apply, Nat.primesLE_eq_filter_range, sum_filter]
 
 end TauCeti.LSeries
