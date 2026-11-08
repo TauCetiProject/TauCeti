@@ -26,7 +26,9 @@ equivalence relation (`ModuliProblem.RelRepData.doubleEquivalenceRelation`), so 
 `𝕄(𝒫, δ)` is affine and `p₁` is finite locally free, SGA 3, Exposé V, Théorème 4.1 applies: the
 projection `π : 𝕄(𝒫, δ) ⟶ 𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ)` is finite locally free and surjective, the relation
 is its kernel pair, and `π` is the coequalizer of `p₁` and `p₂` both in schemes and in fppf
-sheaves. The quotient is a `B`-scheme (`ModuliProblem.RelRepData.doubleQuotientStructureMap`).
+sheaves. These are the results on `AlgebraicGeometry.Scheme.Hom.affineCoequalizerπ`, which apply to
+`π` once `ModuliProblem.RelRepData.isEquivalenceRelation` is installed as a local instance. The
+quotient is a `B`-scheme (`ModuliProblem.RelRepData.doubleQuotientStructureMap`).
 
 **The classifying morphism.** Suppose that `δ` is flat, surjective and locally of finite
 presentation over `Ell/B`; a finite étale surjective rigidifier is an example. A `𝒫`-structure
@@ -65,11 +67,11 @@ onto morphisms of `B`-schemes.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isKernelPair_doubleQuotientπ`: for rigid
-  `𝒫`, `𝕄(𝒫, δ, δ)` is the kernel pair of the projection to the quotient.
-* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isColimitDoubleQuotientCofork` and
-  `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isColimitFppfYonedaDoubleQuotientCofork`:
-  the projection is the coequalizer of the two projections in schemes and in fppf sheaves.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isEquivalenceRelation`: for rigid `𝒫`,
+  the two projections `𝕄(𝒫, δ, δ) ⇉ 𝕄(𝒫, δ)` form an equivalence relation, so the affine
+  coequalizer results of SGA 3, Exposé V, Théorème 4.1 apply to the projection to the quotient.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isColimitDoubleQuotientCofork`: the
+  projection is the coequalizer of the two projections in schemes.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.comp_toDoubleQuotient`: the classifying
   morphism is computed by any local rigidification.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.toDoubleQuotient_map`: naturality of the
@@ -100,7 +102,7 @@ by the scheme `𝕄(𝒫, δ, δ)` of two rigidifications: the affine coequalize
 projections, the spectrum of the ring of functions on `𝕄(𝒫, δ)` whose pullbacks along them agree.
 The first projection is the representing morphism `δ_V ⟶ V.base`. For rigid `𝒫`, affine
 `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ V.base` it is the quotient of `𝕄(𝒫, δ)` by an
-equivalence relation (`isKernelPair_doubleQuotientπ`, `isColimitDoubleQuotientCofork`). -/
+equivalence relation (`isEquivalenceRelation`, `isColimitDoubleQuotientCofork`). -/
 noncomputable abbrev doubleQuotient : Scheme.{u} :=
   (D.rep V).hom.affineCoequalizer (D.doubleSnd R).base
 
@@ -115,9 +117,12 @@ theorem doubleQuotient_condition :
     (D.rep V).hom ≫ D.doubleQuotientπ R = (D.doubleSnd R).base ≫ D.doubleQuotientπ R :=
   Scheme.Hom.affineCoequalizer_condition _ _
 
--- the equivalence relation `doubleEquivalenceRelation`, whose first projection is
--- `(V.baseChangeFunctorHom (D.rep V)).base`, that is `(D.rep V).hom`
-private lemma isEquivalenceRelation (hP : P.IsRigid) :
+/-- For rigid `𝒫`, the two forgetful projections `𝕄(𝒫, δ, δ) ⇉ 𝕄(𝒫, δ)` form an equivalence
+relation: this is `doubleEquivalenceRelation`, whose first projection
+`(V.baseChangeFunctorHom (D.rep V)).base` is the representing morphism `(D.rep V).hom`. Installed as
+a local instance, it makes the results of SGA 3, Exposé V, Théorème 4.1 on
+`Scheme.Hom.affineCoequalizerπ` apply to `doubleQuotientπ`. -/
+theorem isEquivalenceRelation (hP : P.IsRigid) :
     IsEquivalenceRelation (D.rep V).hom (D.doubleSnd R).base := by
   have := (D.doubleEquivalenceRelation R hP).isEquivalenceRelation
   rwa [EllObj.baseChangeFunctorHom_base] at this
@@ -133,39 +138,6 @@ section Quotient
 variable [IsAffine V.base] [IsFinite (D.rep V).hom] [Flat (D.rep V).hom]
   [LocallyOfFinitePresentation (D.rep V).hom]
 
-/-- **The relation is the kernel pair of the quotient map.** If `𝒫` is rigid, `𝕄(𝒫, δ)` is affine
-and `δ_V ⟶ 𝕄(𝒫, δ)` is finite locally free, then `𝕄(𝒫, δ, δ)` is the fibre product
-`𝕄(𝒫, δ) ×_{𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ)} 𝕄(𝒫, δ)`, with the two forgetful projections. -/
-theorem isKernelPair_doubleQuotientπ (hP : P.IsRigid) :
-    IsKernelPair (D.doubleQuotientπ R) (D.rep V).hom (D.doubleSnd R).base :=
-  have := D.isEquivalenceRelation R hP
-  Scheme.Hom.isKernelPair_affineCoequalizerπ _ _
-
-/-- For rigid `𝒫`, affine `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`, the projection to the
-quotient `𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ)` is finite. -/
-theorem isFinite_doubleQuotientπ (hP : P.IsRigid) : IsFinite (D.doubleQuotientπ R) :=
-  have := D.isEquivalenceRelation R hP
-  Scheme.Hom.isFinite_affineCoequalizerπ _ _
-
-/-- For rigid `𝒫`, affine `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`, the projection to the
-quotient `𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ)` is flat. -/
-theorem flat_doubleQuotientπ (hP : P.IsRigid) : Flat (D.doubleQuotientπ R) :=
-  have := D.isEquivalenceRelation R hP
-  Scheme.Hom.flat_affineCoequalizerπ _ _
-
-/-- For rigid `𝒫`, affine `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`, the projection to the
-quotient `𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ)` is surjective. -/
-theorem surjective_doubleQuotientπ (hP : P.IsRigid) : Surjective (D.doubleQuotientπ R) :=
-  have := D.isEquivalenceRelation R hP
-  Scheme.Hom.surjective_affineCoequalizerπ _ _
-
-/-- For rigid `𝒫`, affine `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`, the projection to the
-quotient `𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ)` is locally of finite presentation. -/
-theorem locallyOfFinitePresentation_doubleQuotientπ (hP : P.IsRigid) :
-    LocallyOfFinitePresentation (D.doubleQuotientπ R) :=
-  have := D.isEquivalenceRelation R hP
-  Scheme.Hom.locallyOfFinitePresentation_affineCoequalizerπ _ _
-
 /-- **The quotient is a coequalizer of schemes** (SGA 3, Exposé V, Théorème 4.1). For rigid `𝒫`,
 affine `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`, the projection to the quotient is the
 coequalizer of the two forgetful projections `𝕄(𝒫, δ, δ) ⇉ 𝕄(𝒫, δ)` in the category of schemes. -/
@@ -173,19 +145,6 @@ noncomputable def isColimitDoubleQuotientCofork (hP : P.IsRigid) :
     IsColimit (Cofork.ofπ _ (D.doubleQuotient_condition R)) :=
   have := D.isEquivalenceRelation R hP
   Scheme.Hom.isColimitAffineCoequalizerCofork _ _
-
-/-- **The quotient represents the fppf quotient sheaf** (SGA 3, Exposé V, Théorème 4.1). For rigid
-`𝒫`, affine `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`, under the Yoneda embedding into
-fppf sheaves the projection to the quotient is the coequalizer of the two forgetful projections
-`𝕄(𝒫, δ, δ) ⇉ 𝕄(𝒫, δ)`. -/
-noncomputable def isColimitFppfYonedaDoubleQuotientCofork (hP : P.IsRigid) :
-    IsColimit (Cofork.ofπ (Scheme.fppfTopology.yoneda.map (D.doubleQuotientπ R))
-        ((Functor.map_comp _ _ _).symm.trans ((congrArg _ (D.doubleQuotient_condition R)).trans
-          (Functor.map_comp _ _ _))) :
-      Cofork (Scheme.fppfTopology.yoneda.map (D.rep V).hom)
-        (Scheme.fppfTopology.yoneda.map (D.doubleSnd R).base)) :=
-  have := D.isEquivalenceRelation R hP
-  Scheme.Hom.isColimitFppfYonedaAffineCoequalizerCofork _ _
 
 /-- The **structure morphism** `𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ) ⟶ B` of the quotient, for rigid `𝒫`, affine
 `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`: the morphism through which the structure
@@ -320,6 +279,7 @@ theorem comp_toDoubleQuotient {X W : EllObj B} (α : P.obj (op X)) (g : W ⟶ X)
 `𝒫`-structure `α` on `X`, the classifying morphism of the pullback `f^* α` is `f.base` followed by
 the classifying morphism of `α`. In particular isomorphic `𝒫`-structures on the same elliptic curve
 have the same classifying morphism. -/
+@[simp]
 theorem toDoubleQuotient_map {X Y : EllObj B} (f : Y ⟶ X) (α : P.obj (op X)) :
     D.toDoubleQuotient R hf hl hs (P.map f.op α) = f.base ≫ D.toDoubleQuotient R hf hl hs α := by
   have := D.hasProperty_iff.mp hf Y
