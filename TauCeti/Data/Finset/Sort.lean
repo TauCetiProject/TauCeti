@@ -38,6 +38,9 @@ Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
 
 The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+
+If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
+order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
 -/
 
 public section
@@ -199,5 +202,36 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
     · rw [hsort hB]
 
 end LinearOrder
+
+open Classical in
+/-- If every element of `I` is at most `s` and `s ≤ t`, then the sequence `⊥`, the elements of
+`I` in increasing order, `s`, then constantly `t` (from index `I.card + 2` on), is monotone in
+`ℕ`. -/
+theorem monotone_bot_orderEmbOfFin_snoc {T : Type*} [LinearOrder T] [OrderBot T] (I : Finset T)
+    {s t : T}
+    (hI : ∀ i ∈ I, i ≤ s) (hst : s ≤ t) :
+    Monotone (fun n : ℕ ↦ if h : n = 0 then (⊥ : T) else
+      if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
+        if n = I.card + 1 then s else t) := by
+  apply monotone_nat_of_le_succ
+  intro n
+  by_cases hn : n = 0
+  · simp [hn]
+  by_cases hnI : n ≤ I.card
+  · by_cases hnI' : n + 1 ≤ I.card
+    · simp [hn, hnI, hnI']
+    · have hncard : n = I.card := by omega
+      have hcard : I.card ≠ 0 := by omega
+      have h1 : ¬I.card + 1 ≤ I.card := by omega
+      subst hncard
+      simpa [hcard, h1] using hI _ (I.orderEmbOfFin_mem rfl ⟨I.card - 1, by omega⟩)
+  · by_cases hncard : n = I.card + 1
+    · have h1 : ¬I.card + 1 ≤ I.card := by omega
+      have h2 : ¬I.card + 1 + 1 ≤ I.card := by omega
+      subst hncard
+      simp [hst, h1, h2]
+    · have hne : n ≠ I.card := by omega
+      have h1 : ¬n + 1 ≤ I.card := by omega
+      simp [hn, hnI, hncard, hne, h1]
 
 end Finset
