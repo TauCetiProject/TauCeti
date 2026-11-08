@@ -38,7 +38,8 @@ theorem isSFiniteKernel_of_isFiniteMeasure (κ : Kernel α β) [∀ a, IsFiniteM
     exact hc.inv.mul (κ.measurable_coe hs)⟩
   have : IsFiniteKernel η := by
     refine ⟨⟨1, ENNReal.one_lt_top, fun a ↦ ?_⟩⟩
-    calc η a Set.univ = (c a)⁻¹ * κ a Set.univ := by rfl
+    calc η a Set.univ = (c a)⁻¹ * κ a Set.univ := by
+          simp only [η, Kernel.coe_mk, smul_apply, smul_eq_mul]
       _ ≤ (c a)⁻¹ * c a := by gcongr; simp [c]
       _ = 1 := ENNReal.inv_mul_cancel (hc_ne_zero a) (hc_ne_top a)
   have hd : Measurable (Function.uncurry fun a (_ : β) ↦ c a) := hc.comp measurable_fst
