@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GeodesicEdges
 public import TauCeti.GroupTheory.HaagerupProperty.Basic
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Set.Finite.List
 
 /-!

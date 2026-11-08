@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
