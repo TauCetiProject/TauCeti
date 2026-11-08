@@ -54,8 +54,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   closed unit ball.
 * `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms.
-* `TauCeti.Huber.exists_isOpen_isBounded_subring`: an ultrametric seminormed commutative ring has
-  an open bounded subring, even when `‖1‖ ≠ 1`.
+* `TauCeti.Huber.exists_isOpen_isBounded_subring`: an ultrametric seminormed ring has an open
+  bounded subring, even when `‖1‖ ≠ 1`.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
   with a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
@@ -260,10 +260,10 @@ theorem coe_powerBoundedSubring_eq_closedBall :
 
 end Ultrametric
 
-/-- **An ultrametric seminormed commutative ring has an open bounded subring**: the elements
+/-- **An ultrametric seminormed ring has an open bounded subring**: the elements
 acting contractively by multiplication. This is the closed unit ball when `‖1‖ = 1`, and it is
 still a subring when the norm has `‖1‖ > 1`. -/
-theorem exists_isOpen_isBounded_subring (R : Type*) [SeminormedCommRing R] [IsUltrametricDist R] :
+theorem exists_isOpen_isBounded_subring (R : Type*) [SeminormedRing R] [IsUltrametricDist R] :
     ∃ R₀ : Subring R, IsOpen (R₀ : Set R) ∧ IsBounded (R₀ : Set R) := by
   let R₀ : Subring R :=
     { carrier := {a | ∀ x : R, ‖a * x‖ ≤ ‖x‖}
