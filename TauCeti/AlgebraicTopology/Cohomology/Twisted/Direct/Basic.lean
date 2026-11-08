@@ -452,16 +452,16 @@ def cochainsPullback : cochains L ⟶ cochains ((pullback f.hom).obj L) where
     LinearMap.proj ((TopCat.toSSet.map f).app (Opposite.op n) σ))
   naturality {m n} α := by
     ext c σ
-    -- Evaluate the dependent-product maps before rewriting transport: the pullback fibre
-    -- and the fibre at the image simplex carry definitionally equal module instances.
+    -- Evaluation simp lemmas do not match the dependent-product module instances inherited
+    -- from `cochains`; `change` evaluates these maps while leaving pullback transport explicit.
     change L.map (inv (vertexTransport α.op ((TopCat.toSSet.map f).app _ σ)))
         (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ))) =
-      L.map ((FundamentalGroupoid.map f.hom).map (inv (vertexTransport α.op σ)))
+      ((pullback f.hom).obj L).map (inv (vertexTransport α.op σ))
         (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ)))
-    have hi := congrArg (fun γ ↦ L.map (inv γ)) (map_vertexTransport f α.op σ)
-    rw [← Functor.map_inv] at hi
-    exact congrArg (fun φ ↦ φ
-      (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ)))) hi.symm
+    simp only [pullback_obj_map, (FundamentalGroupoid.map f.hom).map_inv,
+      map_vertexTransport]
+    -- The fibre module instances agree definitionally after the transport rewrites.
+    rfl
 
 /-- Pullback evaluates a cochain on the image simplex. -/
 @[simp↓]

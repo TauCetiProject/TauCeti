@@ -54,8 +54,8 @@ lemma cochainsPullback_coefficient_naturality {K : LocalCoefficientSystem.{u, v,
   intro σ
   simp only [NatTrans.comp_app, ModuleCat.comp_apply]
   rw [cochainsPullback_eval, cochainsCoefficientMap_eval, cochainsCoefficientMap_eval,
-    cochainsPullback_eval]
-  -- A pullback fibre and its coefficient map are definitionally those at the image vertex.
+    cochainsPullback_eval, pullback_map_app]
+  -- The initial vertex of the image simplex is definitionally the image of its initial vertex.
   rfl
 
 /-- Pullback along the identity is the canonical identification of coefficient systems. -/
