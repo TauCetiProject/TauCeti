@@ -58,6 +58,11 @@ between the pulled-back structures, for the pulled-back form.
   depending smoothly on a parameter, the paths depend smoothly on the parameter and the point.
 * `TauCeti.SmoothTwoForm.Compatible.cayleyPath_congr`: the path depends only on its endpoints.
 * `TauCeti.SmoothTwoForm.Compatible.pullback_cayleyPath`: naturality under diffeomorphisms.
+* `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_of_cayley_eq_sum`: a family of tame structures
+  whose Cayley coordinates relative to `J₀` are weighted sums of the Cayley coordinates of smooth
+  tame families, with smooth weights, is smooth. Domain-dependent structures interpolating
+  between prescribed structures, such as those on the ends of punctured Riemann surfaces, are
+  built this way.
 
 ## References
 
@@ -345,6 +350,149 @@ theorem pullback_cayleyPath {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSp
     cayleyPath_toEndomorphism, map_cayleyPathFormula,
     SmoothAlmostComplexStructure.pullback_toEndomorphism,
     SmoothAlmostComplexStructure.pullback_toEndomorphism]
+
+/-! ### Smoothness from weighted sums of Cayley coordinates -/
+
+/-- A tame structure on a tangent space whose Cayley coordinate at `J₀` is a weighted sum of the
+Cayley coordinates of smooth tame structures is the inverse Cayley expression of the weighted sum
+of their Cayley formulas, as continuous endomorphisms. -/
+private theorem toContinuousLinearMap_eq_of_cayley_eq_sum {ι : Type*} [Fintype ι] (x : M)
+    {K : AlmostComplexStructure (TangentSpace I x)}
+    (hK : (h₀.isNondegenerate.symplecticFormAt x).Tames K)
+    {L : ι → SmoothAlmostComplexStructure I M} (hL : ∀ i, σ.Tames (L i)) {a : ι → ℝ}
+    (hKL : (J₀.almostComplexStructureAt x).cayley K =
+      ∑ i, a i • (J₀.almostComplexStructureAt x).cayley ((L i).almostComplexStructureAt x)) :
+    LinearMap.toContinuousLinearMap K.toLinearMap =
+        J₀.toEndomorphism x *
+          (1 + ∑ i, a i • cayleyFormula (J₀.toEndomorphism x) ((L i).toEndomorphism x)) *
+          Ring.inverse
+            (1 - ∑ i, a i • cayleyFormula (J₀.toEndomorphism x) ((L i).toEndomorphism x)) ∧
+      IsUnit (1 - ∑ i, a i • cayleyFormula (J₀.toEndomorphism x) ((L i).toEndomorphism x)) := by
+  let : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
+  let : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
+  -- The weighted sum is the Cayley coordinate of `K`, read as a continuous endomorphism.
+  have hCK : LinearMap.toContinuousLinearMap ((J₀.almostComplexStructureAt x).cayley K) =
+      ∑ i, a i • cayleyFormula (J₀.toEndomorphism x) ((L i).toEndomorphism x) := by
+    rw [hKL, map_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [map_smul]
+    exact congrArg (a i • ·) ((h₀.compatibleAt x).tames.toContinuousLinearMap_cayley
+      (h₀.isNondegenerate.tames_iff.mp (hL i) x)
+      (J₀.almostComplexStructureAt_toLinearMap x).symm
+      ((L i).almostComplexStructureAt_toLinearMap x).symm)
+  have hc : (LinearMap.toContinuousLinearMap
+      ((J₀.almostComplexStructureAt x).cayley K)).toLinearMap ∈
+      (h₀.isNondegenerate.symplecticFormAt x).cayleyBall (J₀.almostComplexStructureAt x) := by
+    simpa only [LinearMap.coe_toContinuousLinearMap] using
+      (h₀.compatibleAt x).cayley_mem_cayleyBall hK
+  rw [← hCK]
+  refine ⟨?_, SymplecticForm.isUnit_one_sub_of_toLinearMap_mem_cayleyBall hc⟩
+  have heq : ((h₀.compatibleAt x).cayleyEquiv.symm ⟨_, hc⟩).val = K := by
+    rw [(h₀.compatibleAt x).cayleyEquiv.symm_apply_eq.mpr (Subtype.ext (by simp) :
+      ⟨_, hc⟩ = (h₀.compatibleAt x).cayleyEquiv ⟨K, hK⟩)]
+  have hbase : LinearMap.toContinuousLinearMap (J₀.almostComplexStructureAt x).toLinearMap =
+      J₀.toEndomorphism x :=
+    ContinuousLinearMap.coe_injective (J₀.almostComplexStructureAt_toLinearMap x)
+  have h := (h₀.compatibleAt x).cayleyEquiv_symm_apply_toContinuousLinearMap _ hc
+  rw [heq] at h
+  exact h.trans (congrArg (fun B : TangentSpace I x →L[ℝ] TangentSpace I x =>
+    B * (1 + LinearMap.toContinuousLinearMap ((J₀.almostComplexStructureAt x).cayley K)) *
+      Ring.inverse (1 - LinearMap.toContinuousLinearMap
+        ((J₀.almostComplexStructureAt x).cayley K))) hbase)
+
+include h₀ in
+/-- Read in the tangent trivialization at `x₀`, the Cayley denominator `1 - J₀ L` of a tame
+structure `L` is invertible at `x₀`. -/
+private theorem isUnit_one_sub_inCoordinates_mul {L : SmoothAlmostComplexStructure I M}
+    (hL : σ.Tames L) (x₀ : M) :
+    IsUnit (1 - ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀
+        (J₀.toEndomorphism x₀) *
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀
+        (L.toEndomorphism x₀)) := by
+  let : NormedAddCommGroup (TangentSpace I x₀) := inferInstanceAs (NormedAddCommGroup E)
+  let : NormedSpace ℝ (TangentSpace I x₀) := inferInstanceAs (NormedSpace ℝ E)
+  let e := trivializationAt E (TangentSpace I) x₀
+  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
+  let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
+  -- Reading in coordinates at `x₀` is conjugation by an algebra isomorphism.
+  have hconj (A : TangentSpace I x₀ →L[ℝ] TangentSpace I x₀) :
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀ A =
+        φ₀ A := by
+    simp only [φ₀, e, ContinuousLinearMap.inCoordinates_eq hx₀ hx₀,
+      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  rw [hconj, hconj, ← map_mul, ← map_one φ₀, ← map_sub]
+  exact ((h₀.compatibleAt x₀).tames.isUnit_one_sub_mul_of_toLinearMap
+    (h₀.isNondegenerate.tames_iff.mp hL x₀) (J₀.almostComplexStructureAt_toLinearMap x₀).symm
+    (L.almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
+
+/-- **Smoothness from Cayley coordinates.** Let `K y` be tame structures on the tangent spaces at
+the points `b y` of a `C^n` family, for `y` in a manifold `N`. If the Cayley coordinate of each
+`K y` relative to `J₀` is a weighted sum `∑ i, a i y • cayley (L i y)` of the Cayley coordinates of
+smooth tame structures `L i y`, with weights and sections `y ↦ L i y (b y)` that are `C^n` at `y₀`,
+then `y ↦ K y` is a `C^n` section of the tangent endomorphism bundle along `b` at `y₀`. -/
+theorem contMDiffAt_of_cayley_eq_sum {ι : Type*} [Fintype ι]
+    {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+    {IN : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
+    {n : WithTop ℕ∞} [ENat.LEInfty n] {b : N → M}
+    {K : (y : N) → AlmostComplexStructure (TangentSpace I (b y))}
+    {L : ι → N → SmoothAlmostComplexStructure I M} {a : ι → N → ℝ} {y₀ : N}
+    (hK : ∀ y, (h₀.isNondegenerate.symplecticFormAt (b y)).Tames (K y))
+    (hL : ∀ i y, σ.Tames (L i y))
+    (hKL : ∀ y, (J₀.almostComplexStructureAt (b y)).cayley (K y) =
+      ∑ i, a i y • (J₀.almostComplexStructureAt (b y)).cayley
+        ((L i y).almostComplexStructureAt (b y)))
+    (hb : ContMDiffAt IN I n b y₀) (ha : ∀ i, ContMDiffAt IN 𝓘(ℝ) n (a i) y₀)
+    (hLs : ∀ i, ContMDiffAt IN (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        (b y) ((L i y).toEndomorphism (b y))) y₀) :
+    ContMDiffAt IN (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y => TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
+        (b y) (LinearMap.toContinuousLinearMap (K y).toLinearMap)) y₀ := by
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨hb, ?_⟩
+  set x₀ := b y₀
+  let e := trivializationAt E (TangentSpace I) x₀
+  let coord := fun (x : M) (A : TangentSpace I x →L[ℝ] TangentSpace I x) =>
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x x₀ x A
+  -- On the base set, reading in coordinates is conjugation by an algebra isomorphism.
+  have hconj {x : M} (hx : x ∈ e.baseSet) (A : TangentSpace I x →L[ℝ] TangentSpace I x) :
+      coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A := by
+    simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hx hx,
+      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
+  -- The base structure and the families `L i`, in coordinates.
+  let A := fun y => coord (b y) (J₀.toEndomorphism (b y))
+  let B := fun i y => coord (b y) ((L i y).toEndomorphism (b y))
+  have hA : ContMDiffAt IN 𝓘(ℝ, E →L[ℝ] E) n A y₀ :=
+    ((contMDiffAt_hom_bundle _).mp
+      (((J₀.toEndomorphism.contMDiff (b y₀)).of_le ENat.LEInfty.out).comp y₀ hb)).2
+  have hB (i : ι) : ContMDiffAt IN 𝓘(ℝ, E →L[ℝ] E) n (B i) y₀ :=
+    ((contMDiffAt_hom_bundle _).mp (hLs i)).2
+  -- In coordinates, the Cayley denominators of the `L i` are units at `y₀`.
+  let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
+  have hu (i : ι) : IsUnit (1 - A y₀ * B i y₀) := isUnit_one_sub_inCoordinates_mul h₀ (hL i y₀) x₀
+  let C := fun y => ∑ i, a i y • cayleyFormula (A y) (B i y)
+  have hC : ContMDiffAt IN 𝓘(ℝ, E →L[ℝ] E) n C y₀ :=
+    contMDiffAt_finsetSum fun i _ =>
+      (ha i).smul (SymplecticForm.contMDiffAt_cayleyFormula_of_isUnit hA (hB i) (hu i))
+  -- On the base set, the coordinates of the weighted sum of Cayley formulas are `C`.
+  have hcoordC {y : N} (hy : b y ∈ e.baseSet) :
+      coord (b y) (∑ i, a i y •
+        cayleyFormula (J₀.toEndomorphism (b y)) ((L i y).toEndomorphism (b y))) = C y := by
+    simp only [hconj hy, map_sum, map_smul, map_cayleyFormula, C, A, B]
+  have hfib (y : N) := toContinuousLinearMap_eq_of_cayley_eq_sum h₀ (b y) (hK y)
+    (fun i => hL i y) (hKL y)
+  have hCu : IsUnit (1 - C y₀) := by
+    rw [← hcoordC hx₀, hconj hx₀, ← map_one φ₀, ← map_sub]
+    exact (hfib y₀).2.map φ₀
+  refine (SymplecticForm.contMDiffAt_mul_one_add_ringInverse hA hC hCu).congr_of_eventuallyEq ?_
+  filter_upwards [hb.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with y hy
+  -- The hom-bundle smoothness criterion reads the fiber value in the fixed trivialization.
+  change coord (b y) _ = _
+  rw [(hfib y).1, hconj hy, map_mul, map_mul, map_add, map_one, map_ringInverse, map_sub,
+    map_one, ← hconj hy, ← hconj hy, hcoordC hy]
 
 end SmoothTwoForm.Compatible
 
