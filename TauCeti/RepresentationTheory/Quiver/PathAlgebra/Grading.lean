@@ -714,7 +714,7 @@ theorem integerGrade_zero_eq_span_range_vertexIdempotent :
 
 /-- The integer-indexed path-length pieces form an internal direct sum. -/
 theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade k Q) :=
-  Graded.isInternal_extendByZero (isInternal_grade k Q)
+  Graded.isInternal_extendByZero_iff.2 (isInternal_grade k Q)
 
 /-- The path algebra is integer graded by path length, with zero pieces in negative degrees. -/
 @[instance_reducible]
