@@ -156,19 +156,18 @@ theorem existsUnique_hardyMultiplier_iff (T : HardySpace →L[ℂ] HardySpace) :
   · rintro ⟨a, rfl, _⟩
     exact (commute_toeplitz_fourierLp_one_iff a).mpr a.property
   · intro hT
-    have hnorm (f : HardySpace) : ‖toeplitz (fourierLp (T := 1) ∞ 1) f‖ = ‖f‖ := by
-      simpa only [Submodule.norm_coe, Nat.cast_one] using
-        norm_toeplitz_fourierLp_natCast_apply 1 f
-    have hinner := (LinearMap.norm_map_iff_inner_map_map
-      (toeplitz (fourierLp (T := 1) ∞ 1))).mp hnorm
-    obtain ⟨a, ha⟩ := (exists_toeplitz_eq_iff_inner_hardyBasis_succ T).mpr (by
-      intro i j
-      have h := congrArg (fun U : HardySpace →L[ℂ] HardySpace ↦ U (hardyBasis j)) hT.eq
-      simp only [mul_apply_eq_comp, toeplitz_fourierLp_one_hardyBasis] at h
-      rw [← toeplitz_fourierLp_one_hardyBasis i, h, hinner])
+    have hS : ContinuousLinearMap.adjoint (toeplitz (fourierLp (T := 1) ∞ 1)) ∘L
+        toeplitz (fourierLp (T := 1) ∞ 1) = 1 :=
+      (ContinuousLinearMap.isometry_iff_adjoint_comp_self _).mp (by
+        simpa only [Nat.cast_one] using isometry_toeplitz_fourierLp_natCast 1)
+    obtain ⟨a, ha, hunique⟩ :=
+      (existsUnique_toeplitz_eq_iff_adjoint_comp_comp_eq T).mpr (by
+        rw [← ContinuousLinearMap.mul_def T _, hT.eq, ContinuousLinearMap.mul_def,
+          ← ContinuousLinearMap.comp_assoc, hS, ContinuousLinearMap.one_def,
+          ContinuousLinearMap.id_comp])
     have ha' : a ∈ hardyMultiplierAlgebra :=
       (commute_toeplitz_fourierLp_one_iff a).mp (ha.symm ▸ hT)
-    exact ⟨⟨a, ha'⟩, ha, fun b hb ↦ Subtype.ext (toeplitz_injective (hb.trans ha.symm))⟩
+    exact ⟨⟨a, ha'⟩, ha, fun b hb ↦ Subtype.ext (hunique b hb)⟩
 
 /-- Restriction of multiplication gives an algebra homomorphism from boundary H∞ to bounded
 operators on Hardy space. Multiplication in the target is operator composition. -/
