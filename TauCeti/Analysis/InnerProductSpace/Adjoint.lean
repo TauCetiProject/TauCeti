@@ -349,10 +349,12 @@ end WithLp
 
 namespace LinearMap
 
+omit [FiniteDimensional 𝕜 F] in
 /-- The orthogonal complement of the kernel of a surjective linear map has the dimension of the
 codomain. -/
 theorem finrank_orthogonal_ker_of_surjective (f : E →ₗ[𝕜] F) (hf : Function.Surjective f) :
     Module.finrank 𝕜 (ker f)ᗮ = Module.finrank 𝕜 F := by
+  have := Module.Finite.of_surjective f hf
   rw [orthogonal_ker, finrank_range_adjoint, range_eq_top.mpr hf, finrank_top]
 
 /-- The determinant of the adjoint of an endomorphism is the conjugate of its determinant. -/
