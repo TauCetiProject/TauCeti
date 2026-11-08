@@ -69,15 +69,10 @@ theorem martingale_add_initial [IsFiniteMeasure P]
     measurableSet_le hξ.norm.measurable measurable_const
   let τ : ℕ → Ω → WithTop ι := fun n ω ↦ if ω ∈ A n then hX.localSeq n ω else ⊥
   have hτ : IsLocalizingSequence ℱ τ P := by
-    refine ⟨⟨fun n t ↦ ?_, ?_⟩, ?_⟩
-    · have heq : {ω | τ n ω ≤ t} = (A n)ᶜ ∪ (A n ∩ {ω | hX.localSeq n ω ≤ t}) := by
-        ext ω
-        simp [τ]
-        split_ifs <;> simp_all
-      rw [heq]
-      exact (ℱ.mono bot_le _ (hA n).compl).union
-        ((ℱ.mono bot_le _ (hA n)).inter
-          (hX.isLocalizingSequence_localSeq.isStoppingTime n t))
+    refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
+    · simpa +unfoldPartialApp [Set.piecewise, τ] using
+        (hX.isLocalizingSequence_localSeq.isStoppingTime n).piecewise_of_le
+          (isStoppingTime_const ℱ ⊥) (i := ⊥) (by simp) (by simp) (hA n)
     · filter_upwards [hX.isLocalizingSequence_localSeq.tendsto_top] with ω hω
       have hlarge : ∀ᶠ n : ℕ in atTop, ω ∈ A n :=
         (tendsto_natCast_atTop_atTop.eventually (eventually_ge_atTop ‖ξ ω‖))
