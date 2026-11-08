@@ -215,7 +215,7 @@ theorem isSheafFor_laurentSieve_topCommRingCat
         coyoneda.obj (op E)) :=
   TopCommRingCat.isSheafFor_of_isSheafFor_forget
     (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι)
-    (laurentSieve Aplus T W)
+    (laurentSieve Aplus T W).arrows
     (isSheafFor_laurentSieve_of_isSheafFor
       (hC.isSheafFor_ofArrows_inf_laurentCoverOpen P hA hAplus) T hW)
     (isInducing_presentationLimitPresheafMap_laurentSieve_of_isInducing P

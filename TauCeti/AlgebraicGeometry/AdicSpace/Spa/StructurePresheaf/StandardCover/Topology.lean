@@ -111,7 +111,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_isUnit_topCommRingCat
   rw [Presieve.isSheafFor_iff_generate]
   exact TopCommRingCat.isSheafFor_of_isSheafFor_forget
     (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι)
-    (Sieve.ofArrows _ _)
+    (Sieve.ofArrows _ _).arrows
     ((Presieve.isSheafFor_iff_generate _).mp
       (isSheafFor_ofArrows_inf_spaBasicOpen_of_isUnit_of_isSheafFor hT hu hW _ fun R _ hV ↦
         isSheafFor_laurentSieve_of_isSheafFor
@@ -310,7 +310,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_topCommRingCat
   rw [Presieve.isSheafFor_iff_generate]
   exact TopCommRingCat.isSheafFor_of_isSheafFor_forget
     (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι)
-    (Sieve.ofArrows _ _)
+    (Sieve.ofArrows _ _).arrows
     ((Presieve.isSheafFor_iff_generate _).mp
       (isSheafFor_ofArrows_inf_spaBasicOpen_of_laurentGluing P hC.toLaurentGluing hA hP hAplus hT
         hW hTW))
