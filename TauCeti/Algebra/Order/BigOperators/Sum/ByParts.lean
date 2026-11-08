@@ -40,6 +40,16 @@ Bessel-type weight bounds into Ky Fan inequalities for singular values and eigen
   against a nonnegative antitone sequence give at most the sum of its first `k` terms.
 * `TauCeti.sum_range_mul_le_sum_range_of_sum_eq`: the same for weights of total mass exactly `k`,
   against an antitone sequence of any sign.
+
+## Implementation notes
+
+The proof of `TauCeti.sum_range_smul_le_sum_range_smul` follows Mathlib's ring-valued
+`Finset.sum_mul_le_sum_mul_of_sum_range_le` in `Mathlib/Algebra/Order/Chebyshev.lean`: rewrite the
+difference by `Finset.sum_range_by_parts` and bound each term by `Finset.sum_nonpos`. Following the
+implementation notes of that file, which decouple the two factors by replacing multiplication with
+a scalar action, the sequences `f` and `g` take values in an ordered module over the ring of
+weights. The weight hypotheses are also weaker than Mathlib's: `w` need only be antitone on the
+first `N` indices with `0 ≤ w (N - 1)`, rather than nonnegative everywhere.
 -/
 
 public section
