@@ -193,7 +193,7 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
   -- The regularized multipliers converge strongly to `S(t)`.
   have hL2 : Tendsto (fun k ↦ Lp.fourierMultiplierCLM F ((σ k).toLp ∞) f) atTop
       (𝓝 (schrodingerPropagator F t f)) := by
-    rw [schrodingerPropagator_def]
+    rw [schrodingerPropagator_def, phasePropagator_def]
     refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun k ↦
       SchwartzMap.norm_toLp_top_le.trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _ zero_le_one
         fun ξ ↦ ?_)) ?_ f
@@ -201,10 +201,10 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
       rw [norm_cexp_neg_mul_sq, Real.exp_le_one_iff]
       exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (hbre k).le) (sq_nonneg _)
     · filter_upwards [ae_all_iff.2 fun k ↦ (σ k).coeFn_toLp ∞ volume,
-        (memLp_schrodingerSymbol (E := E) t).coeFn_toLp] with ξ h₁ h₂
+        (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp] with ξ h₁ h₂
       simp only [h₁, h₂, σ, SchwartzMap.gaussian_apply]
-      have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = schrodingerSymbol t ξ := by
-        rw [schrodingerSymbol_apply]
+      have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = phaseSymbol laplacianSymbol t ξ := by
+        rw [phaseSymbol_apply, laplacianSymbol_apply]
         congr 1
         simp only [b₀]
         push_cast
@@ -280,13 +280,13 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
     rw [this]
     exact pi_pos
   have hfourier : ∀ ξ : E, 𝓕 (𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))) ξ =
-      schrodingerSymbol t ξ • 𝓕 (SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) ξ := fun ξ ↦ by
+      phaseSymbol laplacianSymbol t ξ • 𝓕 (SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) ξ := fun ξ ↦ by
     rw [FourierTransform.fourier_fourierInv_eq, SchwartzMap.fourier_coe]
     have : ⇑(SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) = fun ξ ↦ cexp (-π * ‖ξ‖ ^ 2) :=
       funext (SchwartzMap.gaussian_apply hπ)
     rw [this, fourier_gaussian_innerProductSpace hπ]
     simp only [div_self (ofReal_ne_zero.2 pi_ne_zero), one_cpow, one_mul,
-      SchwartzMap.gaussian_apply, schrodingerSymbol_apply, smul_eq_mul]
+      SchwartzMap.gaussian_apply, phaseSymbol_apply, laplacianSymbol_apply, smul_eq_mul]
     rw [← Complex.exp_add]
     congr 1
     simp only [b]
@@ -294,8 +294,8 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
     field_simp
     ring
   have h := SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
-    (memLp_schrodingerSymbol (E := E) t).coeFn_toLp hfourier
-  rw [schrodingerPropagator_def, ← h]
+    (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp hfourier
+  rw [schrodingerPropagator_def, phasePropagator_def, ← h]
   filter_upwards [(𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))).coeFn_toLp 2] with x hx
   have h1 : (1 + 4 * π * t * I : ℂ).arg ≠ π :=
     (mem_slitPlane_iff_arg.1 (mem_slitPlane_iff.2 (Or.inl (by simp)))).1
