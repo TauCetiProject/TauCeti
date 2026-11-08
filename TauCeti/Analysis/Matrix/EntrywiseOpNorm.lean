@@ -45,10 +45,11 @@ theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Typ
     ‖(Matrix.toEuclideanLin A x) i‖ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
   calc
     ‖(Matrix.toEuclideanLin A x) i‖ = ‖∑ j : κ, A i j * x j‖ := by
-      exact congrArg norm
-        ((congrArg (fun y : EuclideanSpace 𝕜 ι => y i)
-          (Matrix.toLpLin_apply (p := 2) (q := 2) A x)).trans
-          (Matrix.mulVec_apply_eq_sum A (WithLp.ofLp x) i))
+      -- `toEuclideanLin` is `toLpLin 2 2`: unwrap `WithLp` explicitly, then expand `mulVec`;
+      -- the closing `rfl` of `rw` identifies `ofLp x j` with `x j`.
+      rw [show (Matrix.toEuclideanLin A x) i = (A *ᵥ WithLp.ofLp x) i from
+        congrArg (fun y : EuclideanSpace 𝕜 ι => y i) (Matrix.toLpLin_apply (p := 2) (q := 2) A x),
+        Matrix.mulVec_apply_eq_sum]
     _ ≤ ∑ j : κ, ‖A i j * x j‖ := norm_sum_le _ _
     _ = ∑ j : κ, ‖A i j‖ * ‖x j‖ := by simp only [norm_mul]
     _ ≤ ∑ j : κ, ε * ‖x j‖ :=
@@ -60,7 +61,7 @@ theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Typ
 
 /-- Squared form of the entrywise bound on the Euclidean action of a finite matrix with entries
 bounded by `ε ≥ 0`. -/
-theorem _root_.Matrix.norm_toEuclideanLin_sq_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
+private theorem _root_.Matrix.norm_toEuclideanLin_sq_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
     [Fintype ι] [Fintype κ] [DecidableEq κ]
     {A : Matrix ι κ 𝕜} {ε : ℝ} (heps : 0 ≤ ε) (hentry : ∀ i j, ‖A i j‖ ≤ ε)
     (x : EuclideanSpace 𝕜 κ) :
