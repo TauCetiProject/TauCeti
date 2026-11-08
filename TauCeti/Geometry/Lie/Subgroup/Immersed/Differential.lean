@@ -30,6 +30,11 @@ supplies the Hausdorff instance needed by the exponential API.
 * `TauCeti.Lie.ImmersedLieSubgroupData.range_lieMapToHom_le`: its range lies in
   `TauCeti.Lie.lieSubalgebraOfSubgroup K`.
 
+* `TauCeti.Lie.ImmersedLieSubgroupData.toHom_lieExp`: exponential naturality.
+* `TauCeti.Lie.ImmersedLieSubgroupData.lieHomOfRangeLe`: the canonical Lie-algebra
+  factorization, with ambient apply, uniqueness, identity and composition formulas, including
+  the applied `TauCeti.Lie.ImmersedLieSubgroupData.lieHomOfRangeLe_lieHomOfRangeLe`.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Chapters 8 and 20.
@@ -291,5 +296,100 @@ theorem range_lieMapToHom_le (d : ImmersedLieSubgroupData I K) :
   dsimp only
   apply range_lieMap_le_lieSubalgebraOfSubgroup d.toContMDiffMonoidMorphism
   simpa only [toContMDiffMonoidMorphism] using le_of_eq d.range_eq
+
+
+section Factorization
+
+variable {L M : Subgroup G}
+
+attribute [local instance] ImmersedLieSubgroupData.group
+  ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
+  ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.finiteDimensional
+  ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
+  ImmersedLieSubgroupData.isManifold ImmersedLieSubgroupData.lieGroup
+  ImmersedLieSubgroupData.connectedSpace
+
+/-- The presenting injection intertwines the Lie-group exponentials. -/
+@[simp]
+theorem toHom_lieExp (d : ImmersedLieSubgroupData I K)
+    (X : LeftInvariantDerivation d.I' d.X) :
+    let _ : T2Space d.X := d.I'.t2Space_of_lieGroup ∞
+    d.toHom (lieExp X) = lieExp (d.lieMapToHom X) := by
+  let _ : T2Space d.X := d.I'.t2Space_of_lieGroup ∞
+  simpa only [toContMDiffMonoidMorphism_apply, lieMap_toContMDiffMonoidMorphism] using
+    map_lieExp d.toContMDiffMonoidMorphism X
+
+omit [T2Space G] in
+/-- The canonical Lie-algebra factorization for included differential ranges. -/
+noncomputable def lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)
+    (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range ≤ e.lieMapToHom.range) :
+    LeftInvariantDerivation d.I' d.X →ₗ⁅ℝ⁆ LeftInvariantDerivation e.I' e.X :=
+  (e.lieMapToHom.equivRangeOfInjective e.injective_lieMapToHom).symm.toLieHom.comp
+    ((LieSubalgebra.inclusion h).comp d.lieMapToHom.rangeRestrict)
+
+omit [T2Space G] in
+/-- The canonical Lie-algebra factorization commutes with the ambient differentials. -/
+@[simp]
+theorem lieMap_lieHomOfRangeLe_apply (d : ImmersedLieSubgroupData I K)
+    (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range ≤ e.lieMapToHom.range)
+    (X : LeftInvariantDerivation d.I' d.X) :
+    lieMap e.toContMDiffMonoidMorphism (d.lieHomOfRangeLe e h X) =
+      lieMap d.toContMDiffMonoidMorphism X := by
+  have hright := congrArg Subtype.val
+    ((e.lieMapToHom.equivRangeOfInjective e.injective_lieMapToHom).apply_symm_apply
+      ((LieSubalgebra.inclusion h) (d.lieMapToHom.rangeRestrict X)))
+  simpa only [lieMap_toContMDiffMonoidMorphism, lieHomOfRangeLe, LieHom.comp_apply,
+    LieEquiv.coe_toLieHom, LieHom.equivRangeOfInjective_apply,
+    LieSubalgebra.coe_inclusion, LieHom.rangeRestrict_apply] using hright
+
+omit [T2Space G] in
+/-- The ambient differential diagram determines the canonical Lie-algebra factorization. -/
+theorem eq_lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)
+    (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range ≤ e.lieMapToHom.range)
+    (φ : LeftInvariantDerivation d.I' d.X →ₗ⁅ℝ⁆ LeftInvariantDerivation e.I' e.X)
+    (hφ : ∀ X, lieMap e.toContMDiffMonoidMorphism (φ X) =
+      lieMap d.toContMDiffMonoidMorphism X) : φ = d.lieHomOfRangeLe e h := by
+  apply LieHom.ext
+  intro X
+  apply e.injective_lieMapToHom
+  simpa only [lieMapToHom_apply, lieMap_lieHomOfRangeLe_apply] using hφ X
+
+omit [T2Space G] in
+/-- Factoring a differential through itself gives the identity Lie homomorphism. -/
+@[simp]
+theorem lieHomOfRangeLe_refl (d : ImmersedLieSubgroupData I K) :
+    d.lieHomOfRangeLe d le_rfl = LieHom.id := by
+  symm
+  apply d.eq_lieHomOfRangeLe d le_rfl
+  intro X
+  simp only [LieHom.id_apply]
+
+omit [T2Space G] in
+/-- Canonical Lie-algebra factorizations compose according to range inclusion. -/
+@[simp]
+theorem lieHomOfRangeLe_comp (d : ImmersedLieSubgroupData I K)
+    (e : ImmersedLieSubgroupData I L) (f : ImmersedLieSubgroupData I M)
+    (hKL : d.lieMapToHom.range ≤ e.lieMapToHom.range)
+    (hLM : e.lieMapToHom.range ≤ f.lieMapToHom.range) :
+    (e.lieHomOfRangeLe f hLM).comp (d.lieHomOfRangeLe e hKL) =
+      d.lieHomOfRangeLe f (hKL.trans hLM) := by
+  apply d.eq_lieHomOfRangeLe f (hKL.trans hLM)
+  intro X
+  simp only [LieHom.comp_apply, lieMap_lieHomOfRangeLe_apply]
+
+omit [T2Space G] in
+/-- Successive Lie factorizations evaluate as the factorization of the composed inclusion. -/
+@[simp]
+theorem lieHomOfRangeLe_lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)
+    (e : ImmersedLieSubgroupData I L) (f : ImmersedLieSubgroupData I M)
+    (hKL : d.lieMapToHom.range ≤ e.lieMapToHom.range)
+    (hLM : e.lieMapToHom.range ≤ f.lieMapToHom.range)
+    (X : LeftInvariantDerivation d.I' d.X) :
+    e.lieHomOfRangeLe f hLM (d.lieHomOfRangeLe e hKL X) =
+      d.lieHomOfRangeLe f (hKL.trans hLM) X := by
+  simpa only [LieHom.comp_apply] using
+    DFunLike.congr_fun (d.lieHomOfRangeLe_comp e f hKL hLM) X
+
+end Factorization
 
 end TauCeti.Lie.ImmersedLieSubgroupData
