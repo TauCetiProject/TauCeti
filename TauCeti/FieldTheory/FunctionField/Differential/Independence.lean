@@ -215,8 +215,8 @@ theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul (hF : IsFunc
   obtain ⟨q, hq, hqx⟩ := hxq hx0.ge
   obtain ⟨r, hr, hry⟩ := hyq hy0.ge
   -- The values of `x` and `y` at `P` are separable over `k`, so `q` and `r` are separable.
-  have hqs := P.separable_of_ord_aeval_pos hx0.ge hq (by rw [hqx]; exact one_pos)
-  have hrs := P.separable_of_ord_aeval_pos hy0.ge hr (by rw [hry]; exact one_pos)
+  have hqs := P.separable_of_ord_aeval_pos hq (by rw [hqx]; exact one_pos)
+  have hrs := P.separable_of_ord_aeval_pos hr (by rw [hry]; exact one_pos)
   -- Enlarge the constants until the places over `P` are rational, and pick one of them.
   have := P.finiteDimensional_residueField hF
   obtain ⟨F', k', _, _, h, hdeg⟩ :=
