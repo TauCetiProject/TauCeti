@@ -59,37 +59,6 @@ theorem schwarzChristoffelSideIntegral_def (a e : Fin (n + 1) → ℝ) (i : Fin 
       ∫ x in a i.castSucc..a i.succ, schwarzChristoffelDensity a e x :=
   (rfl)
 
-/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
-between `p < q` when both exponents are greater than `-1`. This reduces to Euler's beta integral. -/
-theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow {p q α β : ℝ} (hpq : p < q)
-    (hα : -1 < α) (hβ : -1 < β) :
-    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
-  let L := q - p
-  have hL : 0 < L := sub_pos.mpr hpq
-  have hbeta : IntervalIntegrable (fun t : ℝ ↦ t ^ α * (1 - t) ^ β) volume 0 1 := by
-    simpa only [add_sub_cancel_right] using
-      intervalIntegrable_rpow_mul_one_sub_rpow (a := α + 1) (b := β + 1)
-        (by linarith) (by linarith) (u := 0) (v := 1) (by simp) (by simp)
-  have hscaled : IntervalIntegrable
-      (fun x : ℝ ↦ (x / L) ^ α * (1 - x / L) ^ β) volume 0 L := by
-    have h := hbeta.comp_mul_right (c := L⁻¹)
-    simpa [div_eq_mul_inv, hL.ne'] using h
-  have hshifted : IntervalIntegrable
-      (fun x : ℝ ↦ ((x - p) / L) ^ α * (1 - (x - p) / L) ^ β) volume p q := by
-    have h := hscaled.comp_sub_right p
-    simpa [L] using h
-  refine (hshifted.const_mul (L ^ (α + β))).congr fun x hx ↦ ?_
-  rw [uIoc_of_le hpq.le] at hx
-  have hxp : 0 < x - p := sub_pos.mpr hx.1
-  have hqx : 0 ≤ q - x := sub_nonneg.mpr hx.2
-  have hone : 1 - (x - p) / L = (q - x) / L := by
-    field_simp [hL.ne']
-    ring
-  rw [abs_of_pos hxp, abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub, hone,
-    Real.div_rpow hxp.le hL.le, Real.div_rpow hqx hL.le, div_eq_mul_inv]
-  rw [Real.rpow_add hL]
-  field_simp [(Real.rpow_pos_of_pos hL _).ne']
-
 /-- The Schwarz--Christoffel density is interval integrable between two distinct endpoints when
 there is no nonzero-exponent prevertex in the open interval and the total exponent at each
 endpoint is greater than `-1`. -/
@@ -114,7 +83,7 @@ theorem intervalIntegrable_schwarzChristoffelDensity {ι : Type*} [Fintype ι]
         exact ⟨lt_of_le_of_ne hx.1 hk'.1.symm, lt_of_le_of_ne hx.2 hk'.2⟩
       exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
         (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hxne)))).continuousWithinAt
-  have hkernel := intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow hpq hleft hright
+  have hkernel := intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow (p := p) (q := q) hleft hright
   have hg' : ContinuousOn g (uIcc p q) := by simpa [uIcc_of_le hpq.le] using hg
   refine (hkernel.mul_continuousOn hg').congr_ae ?_
   filter_upwards [MeasureTheory.ae_restrict_of_ae (volume.ae_ne p),
