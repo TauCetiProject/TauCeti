@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.Grading
+public import TauCeti.RingTheory.NovikovModule.InjectiveGrading
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 
 /-!
@@ -32,9 +32,22 @@ completed integer grading of that case. Residues still determine parity, since e
 `Γ` is even (`TauCeti.Floer.PeriodGroup.negOnePow_eq_negOnePow_of_quotientMk_eq`); thus Koszul
 signs `(-1)^(ab)` are defined on residue pieces.
 
-The kernel's grading and support hypotheses remain explicit: establishing them for geometric
-counts requires the index and compactness theorems of the chosen Floer problem. No complex,
-orientation line, differential or geometric count is constructed here.
+In the opposite case, when every spherical class of vanishing first Chern number has vanishing
+area (for instance for a spherically monotone target), `2 c₁` is injective on `Γ`, so each orbit
+carries exactly one cap of each grading in `μ + 2 c₁(Γ)`. The grading of a capped generator then
+determines its action up to a constant depending only on the orbit. Consequently the action
+change `A₁ + A₂ - A₀`, which is the energy of a pair of pants up to the curvature term of its
+perturbation, is bounded over all capped generator triples of a fixed index
+(`TauCeti.Floer.exists_abs_add_sub_le_of_ker_le`), independently of the class of the pair of
+pants. A product kernel of raw degree `-n` therefore satisfies the potential bound of
+`TauCeti.NovikovModule.kernelProduct` by its grading alone, and it has only finitely many nonzero
+outputs at each pair of inputs (`TauCeti.Floer.mem_novikovModule_of_ker_le`). This is the energy
+ceiling of the monotone branch. When `c₁` vanishes on spheres but the area does not, the grading
+gives no such bound.
+
+Otherwise the kernel's grading and support hypotheses remain explicit: establishing them for
+geometric counts requires the index and compactness theorems of the chosen Floer problem. No
+complex, orientation line, differential or geometric count is constructed here.
 
 The product is `TauCeti.NovikovModule.kernelProduct`, and its homogeneity follows from
 `TauCeti.NovikovModule.kernelProduct_mem_gradeBy`.
@@ -122,5 +135,64 @@ theorem vadd_eq_of_chern_eq_zero (hc : ∀ s, c s = 0) (i : ι) (γ : PeriodGrou
   rw [hμ, PeriodGroup.degree_apply, PeriodGroup.chern_eq_zero hc, mul_zero, zero_add]
 
 end Residue
+
+section KerLE
+
+variable {S : Type*} [AddGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
+
+/-- The recapping law of the action says that it is a potential for the valuation `-area`, in
+the convention of `TauCeti.NovikovModule`. -/
+private theorem action_vadd {ι : Type*} {P : ι → Type*} [∀ i, AddTorsor (PeriodGroup ω c) (P i)]
+    {A : (Σ i, P i) → ℝ}
+    (hA : ∀ i γ (D : P i), A ⟨i, γ +ᵥ D⟩ = PeriodGroup.area ω c γ + A ⟨i, D⟩) (i : ι)
+    (γ : PeriodGroup ω c) (D : P i) :
+    A ⟨i, γ +ᵥ D⟩ = A ⟨i, D⟩ - (-PeriodGroup.area ω c) γ := by
+  rw [hA, AddMonoidHom.neg_apply, sub_neg_eq_add, add_comm]
+
+variable (hker : c.ker ≤ ω.ker)
+  {ι₀ : Type*} [Finite ι₀] {P₀ : ι₀ → Type*} [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
+  {μ₀ : (Σ k, P₀ k) → ℤ}
+  (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = PeriodGroup.degree ω c γ + μ₀ ⟨k, D⟩)
+  {n : ℤ}
+include hker hμ₀
+
+/-- If every spherical class of vanishing first Chern number has vanishing area, for instance for
+a spherically monotone target, then a product kernel of raw Floer degree `-n` on capped output
+generators has only finitely many nonzero outputs at each pair of inputs. This is the finiteness
+hypothesis of `TauCeti.NovikovModule.kernelProduct`, for every action functional `F₀`. -/
+theorem mem_novikovModule_of_ker_le {R S₁ S₂ : Type*} [Semiring R] {μ₁ : S₁ → ℤ}
+    {μ₂ : S₂ → ℤ} {κ : S₁ → S₂ → (Σ k, P₀ k) → R}
+    (hμ : ∀ p₁ p₂ p₀, κ p₁ p₂ p₀ ≠ 0 → μ₀ p₀ = μ₁ p₁ + μ₂ p₂ - n) (F₀ : (Σ k, P₀ k) → ℝ)
+    (p₁ : S₁) (p₂ : S₂) : κ p₁ p₂ ∈ NovikovModule R F₀ :=
+  NovikovModule.mem_of_finite_support <| NovikovModule.finite_support_productKernel_of_eq_add_add
+    hμ₀ (PeriodGroup.degree_injective_iff.2 (PeriodGroup.chern_injective_iff.2 hker))
+    (ε := -n) (fun p₁ p₂ p₀ h => by rw [hμ p₁ p₂ p₀ h, sub_eq_add_neg]) p₁ p₂
+
+/-- If every spherical class of vanishing first Chern number has vanishing area, for instance for
+a spherically monotone target, then the action change `A₁ p₁ + A₂ p₂ - A₀ p₀` is bounded over all
+triples of capped generators with `μ₀ p₀ = μ₁ p₁ + μ₂ p₂ - n`, the grading condition for rigid
+pairs of pants. Here the actions and gradings obey the recapping laws for the area and twice the
+first Chern number. Up to the curvature term of the perturbation this action change is the
+energy of a pair of pants, so the energy of the pairs of pants counted by a product kernel of raw
+degree `-n` is bounded independently of their class; in particular such a kernel satisfies the
+potential bound of `TauCeti.NovikovModule.kernelProduct`. -/
+theorem exists_abs_add_sub_le_of_ker_le {ι₁ ι₂ : Type*} [Finite ι₁] [Finite ι₂]
+    {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)]
+    [∀ j, AddTorsor (PeriodGroup ω c) (P₂ j)] {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ}
+    (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = PeriodGroup.degree ω c γ + μ₁ ⟨i, D⟩)
+    (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = PeriodGroup.degree ω c γ + μ₂ ⟨j, D⟩)
+    {A₁ : (Σ i, P₁ i) → ℝ} {A₂ : (Σ j, P₂ j) → ℝ} {A₀ : (Σ k, P₀ k) → ℝ}
+    (hA₁ : ∀ i γ (D : P₁ i), A₁ ⟨i, γ +ᵥ D⟩ = PeriodGroup.area ω c γ + A₁ ⟨i, D⟩)
+    (hA₂ : ∀ j γ (D : P₂ j), A₂ ⟨j, γ +ᵥ D⟩ = PeriodGroup.area ω c γ + A₂ ⟨j, D⟩)
+    (hA₀ : ∀ k γ (D : P₀ k), A₀ ⟨k, γ +ᵥ D⟩ = PeriodGroup.area ω c γ + A₀ ⟨k, D⟩) :
+    ∃ C, ∀ p₁ p₂ p₀, μ₀ p₀ = μ₁ p₁ + μ₂ p₂ - n → |A₁ p₁ + A₂ p₂ - A₀ p₀| ≤ C := by
+  obtain ⟨C, hC⟩ := NovikovModule.exists_abs_sub_add_le_of_eq_add_add (action_vadd hA₁)
+    (action_vadd hA₀) (action_vadd hA₂) hμ₁ hμ₂ hμ₀
+    (PeriodGroup.degree_injective_iff.2 (PeriodGroup.chern_injective_iff.2 hker)) (-n)
+  refine ⟨C, fun p₁ p₂ p₀ h => ?_⟩
+  rw [abs_sub_comm]
+  exact hC p₁ p₂ p₀ (by rw [h, sub_eq_add_neg])
+
+end KerLE
 
 end TauCeti.Floer
