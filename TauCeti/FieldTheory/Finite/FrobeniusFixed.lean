@@ -15,10 +15,10 @@ element of `L` is fixed by the `q`-power map exactly when it comes from `K`:
 
 `a ^ q = a ↔ a ∈ Set.range (algebraMap K L)`.
 
-So an element outside `K` is moved by the map. In a quadratic extension the map is moreover an
-involution, since `L` then has `q²` elements, and it therefore exchanges the two roots of the
-minimal polynomial of such an element; in particular it keeps it outside `K`. Those statements are
-what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
+So an element outside `K` is moved by the map, and for any such domain `L` it stays outside `K`.
+In a quadratic extension the map is moreover an involution, since `L` then has `q²` elements, and
+it therefore exchanges the two roots of the minimal polynomial of such an element. Those
+statements are what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
 
 ## Main results
 
@@ -110,11 +110,13 @@ theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
   rw [Nat.card_eq_fintype_card]
   exact pow_card_eq_self_iff_mem_range_algebraMap a
 
-/-- **The `q`-th power of an element outside the base field is again outside it**: if
-`a ^ q = c` came from the base field then `c ^ q = c`, so `(a ^ q) ^ q = a ^ q`, and the `q`-power
-map, a power of the Frobenius endomorphism, is injective. -/
+/-- **The `q`-th power of an element outside the base field is again outside it**, for any
+commutative domain `L` over a finite field `K` with `q` elements; no quadratic hypothesis on `L`
+is needed. -/
 theorem pow_natCard_notMem_range_algebraMap {a : L}
     (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ∉ Set.range (algebraMap K L) := by
+  -- If `a ^ q = c` came from `K` then `c ^ q = c`, so `(a ^ q) ^ q = a ^ q`; the `q`-power map,
+  -- a power of the Frobenius endomorphism, is injective.
   intro hmem
   have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
   have : Fintype K := Fintype.ofFinite K
