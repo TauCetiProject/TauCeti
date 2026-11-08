@@ -117,46 +117,6 @@ private theorem nullhomotopic_iff_orbitLoop {τ : ℝ} [Fact (0 < τ)] {y : X} (
   g.nullhomotopic_iff_homotopic_refl _ fun θ ↦ by
     simp [orbitLoop, orbitSegment, hg]
 
-/-- Two loops in a common tube are conjugate by any path `α` joining their base points inside
-both end vertex sets: the same path `α` serves as the rung at both ends of the partition, and any
-path in the vertex set serves elsewhere. -/
-private theorem trans_homotopic_trans_of_isInTube {X : Type*} [TopologicalSpace X] {n : ℕ}
-    {part : unitInterval.Partition (n + 1)} {U : Path.Tube X (n + 1)} {x y : X}
-    {γ₀ : Path x x} {γ : Path y y} (h₀ : Path.IsInTube γ₀ part U) (h : Path.IsInTube γ part U)
-    (α : Path x y) (hα₀ : range α ⊆ U.V 0) (hα₁ : range α ⊆ U.V (Fin.last (n + 1))) :
-    (γ₀.trans α).Homotopic (α.trans γ) := by
-  have hend {j : Fin (n + 2)} (hj : j = 0 ∨ j = Fin.last (n + 1)) :
-      γ₀ (part.t j) = x ∧ γ (part.t j) = y := by
-    rcases hj with rfl | rfl <;> simp
-  let rung (j : Fin (n + 2)) : Path (γ₀ (part.t j)) (γ (part.t j)) :=
-    if hj : j = 0 ∨ j = Fin.last (n + 1) then
-      α.cast (hend hj).1 (hend hj).2
-    else ((U.isPathConnected_V j).joinedIn _ (h₀.mem_V j) _ (h.mem_V j)).somePath
-  have hrung (j : Fin (n + 2)) : range (rung j) ⊆ U.V j := by
-    by_cases hj : j = 0 ∨ j = Fin.last (n + 1)
-    · simp only [rung, hj, ↓reduceDIte]
-      rcases hj with rfl | rfl
-      exacts [hα₀, hα₁]
-    · simp only [rung, hj, ↓reduceDIte]
-      exact range_subset_iff.2 (JoinedIn.somePath_mem _)
-  have hrung_end {j : Fin (n + 2)} (hj : j = 0 ∨ j = Fin.last (n + 1)) :
-      (rung j).cast (hend hj).1.symm (hend hj).2.symm = α := by
-    ext t
-    simp [rung, hj]
-  -- On each segment, both loops and the rungs at its ends lie in one path-homotopy-trivial set.
-  have h_rect : ∀ k : Fin (n + 1),
-      ((γ₀.subpath (part.t k.castSucc) (part.t k.succ)).trans (rung k.succ)).Homotopic
-        ((rung k.castSucc).trans (γ.subpath (part.t k.castSucc) (part.t k.succ))) := fun k ↦
-    isPathHomotopyTrivial_def.mp (U.isPathHomotopyTrivial_U k) _ _
-      (by
-        rw [Path.trans_range]
-        exact union_subset (h₀.range_subpath_subset k) ((hrung _).trans (U.V_succ_subset k)))
-      (by
-        rw [Path.trans_range]
-        exact union_subset ((hrung _).trans (U.V_castSucc_subset k)) (h.range_subpath_subset k))
-  have key := Path.Homotopic.trans_of_subpath_trans γ₀ γ part rung h_rect
-  rwa [hrung_end (.inr rfl), hrung_end (.inl rfl)] at key
-
 /-- **Limits of contractible periodic orbits are contractible.** Let `X` be locally path-connected
 and semilocally simply connected. Suppose that `xᵢ → x₀` and `Tᵢ → T₀ > 0` along a nontrivial
 filter, that `x₀` returns to itself at time `T₀`, and that eventually the loop `t ↦ ϕ t xᵢ` lifts
@@ -202,7 +162,7 @@ theorem exists_nullhomotopic_of_tendsto [LocallyPathConnectedSpace X]
   have hγ : γ.Homotopic (Path.refl (x i)) := (ϕ.nullhomotopic_iff_orbitLoop hyi hgx).1 hg
   -- Join the base points by a path `α` in `W`; it lies in the vertex sets at both ends.
   obtain ⟨α, hα⟩ := hW.joinedIn _ (mem_of_mem_nhds hWx) _ hxi
-  have key := trans_homotopic_trans_of_isInTube (γ := γ) hγ₀ hi α
+  have key := hγ₀.trans_homotopic_trans (γ := γ) hi α
     (range_subset_iff.2 fun t ↦ (hWV (hα t)).1) (range_subset_iff.2 fun t ↦ (hWV (hα t)).2)
   -- So `γ₀ · α ≃ α · γ ≃ α ≃ refl · α`, and `γ₀` is null-homotopic.
   exact Path.Homotopic.trans_right_cancel <| key.trans <|
