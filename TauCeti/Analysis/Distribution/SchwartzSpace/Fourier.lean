@@ -31,7 +31,8 @@ for the Laplacian on `ℝⁿ`.
 Fourier multipliers are additive in their symbol and commute with the Laplacian.
 
 For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_lineDerivOp_eq`
-gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, and Mathlib's `norm_fourier_toL2_eq` gives
+gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, the inverse Fourier transform commutes with
+postcomposition by a continuous linear map, and Mathlib's `norm_fourier_toL2_eq` gives
 Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 
 ## Main declarations
@@ -47,6 +48,8 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
   iterated directional derivative, `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`.
 * `SchwartzMap.norm_fourierInv_iterate_lineDerivOp_sq`: its consequence for squared norms,
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
+* `SchwartzMap.fourierInv_postcompCLM_apply`: the inverse Fourier transform commutes with
+  postcomposition by a continuous linear map.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel's theorem for Fourier multipliers,
   `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
@@ -157,6 +160,20 @@ theorem norm_fourierInv_iterate_lineDerivOp_sq (σ : 𝓢(E, F)) (m : E) (N : �
     Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos Real.pi_pos,
     ← (even_two_mul N).pow_abs ⟪x, m⟫]
   ring
+
+/-- The inverse Fourier transform of a Schwartz function commutes with postcomposition by a
+continuous complex-linear map: `𝓕⁻ (L ∘ f) = L ∘ 𝓕⁻ f`. -/
+@[simp]
+theorem fourierInv_postcompCLM_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace F] [CompleteSpace G] (L : F →L[ℂ] G) (f : 𝓢(E, F)) (x : E) :
+    𝓕⁻ (postcompCLM L f) x = L (𝓕⁻ f x) := by
+  rw [fourierInv_coe, fourierInv_coe, Real.fourierInv_eq, Real.fourierInv_eq,
+    ← L.integral_comp_comm]
+  · simp [Circle.smul_def]
+  · refine f.integrable.norm.mono' ?_ (.of_forall fun v ↦ ?_)
+    · exact ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
+        f.continuous).aestronglyMeasurable
+    · simp [Circle.norm_smul]
 
 end normed
 
