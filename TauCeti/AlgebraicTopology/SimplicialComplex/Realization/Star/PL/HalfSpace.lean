@@ -141,24 +141,7 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
   · exact (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap none).isPLOn.comp
       ((isPLOn_continuousAffineMap P.toContinuousAffineMap univ).comp hF
         (mapsTo_univ _ _)) (mapsTo_univ _ _)
-  · -- Model points in the target are sent back into the actual standard simplex.
-    let s := (modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' c.target ∩
-      range (modelWithCornersHalfSpace (Fin n → ℝ))
-    have hmap : MapsTo (R ∘ A.symm) s
-        (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
-          (y.1 : Fin (n + 2) → ℝ)) := by
-      intro z hz
-      have hnonneg : 0 ≤ z.2 := by simpa using hz.2
-      let y := (modelWithCornersHalfSpace (Fin n → ℝ)).symm z
-      have hy : y ∈ a.target := hct ▸ hz.1
-      refine ⟨a.symm y, ?_⟩
-      simpa only [a, R, A, y, Function.comp_apply,
-        coe_modelWithCornersHalfSpace_symm_apply _ hnonneg] using
-          coe_simplexHalfSpacePLChart_symm_apply n none hy
-    exact hG.comp
-      (((isPLOn_continuousAffineMap R univ).comp
-        (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm none).isPLOn
-        (mapsTo_univ _ _)).mono (subset_univ _)) hmap
+  · exact isPLOn_comp_simplexHalfSpace_symm none hG hct.subset
   · intro x hx
     have hx' : x ∈ openStarRealization K v := hcs ▸ hx
     rw [hc ⟨x, hx'⟩, coe_simplexHalfSpacePLChart_apply]
