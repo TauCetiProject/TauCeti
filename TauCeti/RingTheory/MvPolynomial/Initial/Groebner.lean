@@ -75,36 +75,6 @@ theorem IsRemainder.weightInitialForm_mem_span
         (by simpa [add_comm] using hlt))]
     exact zero_mem _
 
-/-- If every other term has strictly smaller weight than the leading exponent, the weight
-initial is exactly the monomial-order leading term. No positivity of the weights is required. -/
-theorem weightInitialForm_eq_leadingTerm (m : MonomialOrder σ) (w : σ → ℕ)
-    (f : MvPolynomial σ R)
-    (h : ∀ a ∈ f.support, a ≠ m.degree f →
-      Finsupp.weight w a < Finsupp.weight w (m.degree f)) :
-    weightInitialForm w f = m.leadingTerm f := by
-  classical
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  have hdeg : f.weightedTotalDegree w = Finsupp.weight w (m.degree f) := by
-    apply le_antisymm (Finset.sup_le fun a ha ↦ ?_)
-      (le_weightedTotalDegree w (m.degree_mem_support hf))
-    by_cases heq : a = m.degree f
-    · simp [heq]
-    · exact (h a ha heq).le
-  ext a
-  rw [coeff_weightInitialForm, hdeg, leadingTerm, coeff_monomial]
-  by_cases ha : a = m.degree f
-  · subst a
-    simp [leadingCoeff]
-  · have hzero : Finsupp.weight w a = Finsupp.weight w (m.degree f) → f.coeff a = 0 := by
-      intro heq
-      by_contra hn
-      exact (ne_of_lt (h a (mem_support_iff.2 hn) ha)) heq
-    simp only [Ne.symm ha, ↓reduceIte]
-    split_ifs with heq
-    · exact hzero heq
-    · rfl
-
 end CommSemiring
 
 section CommRing
@@ -126,7 +96,7 @@ theorem IsGroebnerBasis.weightInitialIdeal_eq_span
 /-- A finite Gröbner basis with unit leading coefficients admits a positive integral weight
 which preserves the basis in the refined order and makes each basis initial a single term.
 Consequently the entire weight-initial ideal equals the original leading-term ideal. -/
-theorem IsGroebnerBasis.exists_pos_weight_initialIdeal_eq
+theorem IsGroebnerBasis.exists_pos_weight_weightInitialIdeal_eq_span_leadingTerm
     (h : m.IsGroebnerBasis G I) (hG : G.Finite)
     (hu : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
     ∃ w : σ → ℕ, (∀ i, 0 < w i) ∧
@@ -166,12 +136,13 @@ theorem IsGroebnerBasis.exists_pos_weight_initialIdeal_eq
 /-- Over a field in finitely many variables, every monomial-order initial ideal is a
 weight-initial ideal for some strictly positive integral weight. This assertion is about the
 given ideal, not a representation of the monomial order on all monomials. -/
-theorem exists_pos_weight_initialIdeal_eq_span_leadingTerm {k : Type*} [Field k] [Finite σ]
+theorem exists_pos_weight_weightInitialIdeal_eq_span_leadingTerm {k : Type*} [Field k] [Finite σ]
     (m : MonomialOrder σ) (I : Ideal (MvPolynomial σ k)) :
     ∃ w : σ → ℕ, (∀ i, 0 < w i) ∧
       I.weightInitialIdeal w = Ideal.span (m.leadingTerm '' (I : Set (MvPolynomial σ k))) := by
   obtain ⟨G, hG⟩ := m.exists_finset_isGroebnerBasis I
-  obtain ⟨w, hw, -, -, heq⟩ := hG.exists_pos_weight_initialIdeal_eq G.finite_toSet
+  obtain ⟨w, hw, -, -, heq⟩ :=
+    hG.exists_pos_weight_weightInitialIdeal_eq_span_leadingTerm G.finite_toSet
     fun g _ ↦ m.isUnit_leadingCoeff.2
   exact ⟨w, hw, heq⟩
 
