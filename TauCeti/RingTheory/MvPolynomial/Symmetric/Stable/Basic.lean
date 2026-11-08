@@ -82,6 +82,7 @@ variable {R n}
 
 /-- A family of symmetric polynomials of degree `n` is a symmetric function exactly when setting
 the last variable to zero turns each member into the previous one. -/
+@[simp]
 theorem mem_stableSymmetricSubmodule {f : ∀ d : ℕ, symmetricHomogeneousSubmodule (Fin d) R n} :
     f ∈ stableSymmetricSubmodule R n ↔ ∀ d, aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0)
       (f (d + 1) : MvPolynomial (Fin (d + 1)) R) = f d :=
