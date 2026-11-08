@@ -141,14 +141,6 @@ private theorem mfderiv_implicitCoord_symm_eq_id (hf : ContMDiffAt I J n f x) (h
   ext v
   exact L.symm_apply_apply v
 
-omit [FiniteDimensional ℝ F] [I.Boundaryless] in
-/-- The kernel of a surjective linear map between finite-dimensional spaces is isomorphic to the
-standard space of the complementary dimension. -/
-private theorem nonempty_continuousLinearEquiv_ker_fin (D : E →L[ℝ] F) (hD : D.range = ⊤) :
-    Nonempty (D.ker ≃L[ℝ] (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ)) := by
-  have hd := D.toLinearMap.finrank_ker_eq_sub_of_surjective (LinearMap.range_eq_top.1 hD)
-  exact ⟨(LinearEquiv.ofFinrankEq _ _ (by simpa using hd)).toContinuousLinearEquiv⟩
-
 omit [I.Boundaryless] in
 /-- The coordinate map `y ↦ L.symm (c (f y), P (e y))` from the implicit coordinates of a split
 derivative is smooth on any set where `f` is smooth and both charts are defined. -/
@@ -209,7 +201,9 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
     · exact (Φ.symm.contMDiffOn.mono inter_subset_left).comp I.contMDiff.contMDiffOn
         (fun y hy ↦ hy)
   -- A fixed standard complement lets the pointwise constructions assemble globally.
-  obtain ⟨K⟩ := nonempty_continuousLinearEquiv_ker_fin D hD
+  let K : D.ker ≃L[ℝ] (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ) :=
+    ContinuousLinearEquiv.ofFinrankEq <| by
+      rw [D.toLinearMap.finrank_ker_eq_sub_of_surjective hs, Module.finrank_fin_fun]
   apply (IsSubmersionAtOfComplement.congr_F K).mp
   refine IsSubmersionAtOfComplement.mk_of_charts L φ (chartAt G (f x))
     ?_ (mem_chart_source _ _) hφ (IsManifold.chart_mem_maximalAtlas _) ?_ ?_
