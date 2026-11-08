@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Holomorphic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Cusps
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Invariance
