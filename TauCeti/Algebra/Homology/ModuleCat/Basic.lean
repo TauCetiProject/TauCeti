@@ -336,6 +336,12 @@ variable {n} {m : ι} (hm : c.next n = m)
 noncomputable def moduleCatKerHomologyClass : LinearMap.ker (K.d n m).hom →ₗ[R] K.homology n :=
   K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.2
 
+/-- The kernel class map is the homology class map of the kernel's inclusion into the term. -/
+lemma moduleCatKerHomologyClass_eq_moduleCatHomologyClass :
+    K.moduleCatKerHomologyClass hm =
+      K.moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.2) :=
+  (rfl)
+
 /-- The homology class of the kernel element given by a cycle `y` is the class of `y`. -/
 @[simp]
 lemma moduleCatKerHomologyClass_moduleCatCyclesToKer (y : K.cycles n) :
