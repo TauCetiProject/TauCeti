@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic
-public import TauCeti.Algebra.Order.Field.Finite
+public import TauCeti.LinearAlgebra.AffineSpace.Ordered
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
