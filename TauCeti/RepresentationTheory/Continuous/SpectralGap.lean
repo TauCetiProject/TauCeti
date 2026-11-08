@@ -16,8 +16,8 @@ invariant vectors, not on the whole representation space. For a unitary group re
 is equivalent to the absence of almost invariant vectors in that complement. This is the
 representation-theoretic criterion used for spectral gap of actions and commutator representations.
 
-Every representation of a finite group has spectral gap when it is unitary, and the trivial
-representation has spectral gap even on a nonzero space. None of these results requires
+Every representation of a finite group has spectral gap, without a unitarity assumption, and the
+trivial representation has spectral gap even on a nonzero space. None of these results requires
 completeness or finite dimensionality.
 
 The mathematical reference is Anantharaman–Popa, *An Introduction to II₁ Factors*,
@@ -78,12 +78,24 @@ theorem hasSpectralGap_iff_not_hasAlmostInvariantVectors
     simpa only [← Submodule.norm_coe, Submodule.coe_sub,
       IsUnitary.coe_invariantComplement_apply] using hbound ⟨v, hv⟩
 
-/-- Every unitary representation of a finite group has spectral gap. -/
-theorem IsUnitary.hasSpectralGap_of_finite [Finite G] {ρ : ContRepresentation 𝕜 G V}
-    (hρ : ρ.IsUnitary) : ρ.HasSpectralGap := by
-  rw [hasSpectralGap_iff_not_hasAlmostInvariantVectors ρ hρ]
-  intro h
-  obtain ⟨v, hv, hfixed⟩ := h.exists_invariant_ne_zero
-  exact hv (by simpa only [hρ.invariants_invariantComplement, Submodule.mem_bot] using hfixed)
+/-- Every representation of a finite group has spectral gap, without unitarity or completeness. -/
+theorem hasSpectralGap_of_finite [Finite G] (ρ : ContRepresentation 𝕜 G V) :
+    ρ.HasSpectralGap := by
+  classical
+  let := Fintype.ofFinite G
+  refine ⟨Finset.univ, 1, zero_lt_one, fun v hv ↦ ?_⟩
+  simp only [one_mul]
+  by_contra! hbound
+  have hmove : ∀ g, ‖ρ g v - v‖ < ‖v‖ := by
+    intro g
+    have hsingle := Finset.single_le_sum
+      (fun g (_ : g ∈ Finset.univ) ↦ sq_nonneg ‖ρ g v - v‖) (Finset.mem_univ g)
+    exact (sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (hsingle.trans_lt hbound)
+  obtain ⟨w, hw, hclose⟩ := ρ.exists_invariant_norm_sub_lt hmove
+  have horth : inner (𝕜 := 𝕜) w v = 0 := hv w hw
+  have hnorm := norm_sub_sq (𝕜 := 𝕜) w v
+  rw [horth, map_zero] at hnorm
+  have hsq := (sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _)).mpr hclose
+  nlinarith [sq_nonneg ‖w‖]
 
 end ContRepresentation
