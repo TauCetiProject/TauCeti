@@ -183,7 +183,9 @@ private theorem prod_dvd_two_mul_neg_of_mod_four_ne_one
       have h4 : p ∣ 4 * d.natAbs := by
         simpa [hdisc, Int.natAbs_mul] using Int.natAbs_dvd_natAbs.mpr (hdvddiscr p hp)
       rcases ((hpprime p hp).dvd_mul).mp h4 with h' | h'
-      · exact (((hpprime p hp).dvd_of_dvd_pow (show p ∣ 2 ^ 2 by simpa using h')).mul_right _)
+      · -- `4 = 2 ^ 2` exposes the power that `dvd_of_dvd_pow` needs to conclude `p ∣ 2`
+        have h22 : p ∣ 2 ^ 2 := by simpa using h'
+        exact ((hpprime p hp).dvd_of_dvd_pow h22).mul_right _
       · exact h'.mul_left 2
 
 /-- The absolute norm of a product of ramified primes is the product of the rational primes below
