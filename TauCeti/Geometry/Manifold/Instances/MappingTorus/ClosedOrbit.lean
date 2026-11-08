@@ -383,7 +383,7 @@ theorem hasMFDerivAt_closedOrbit (θ : AddCircle (d : ℝ)) :
     have hp : flow φ t (mk φ 0 x) = closedOrbit φ hx t := by simp
     beta_reduce at h
     rwa [hp, ← hc] at h
-  rw [← (AddCircle.mfderiv_comp_coe hd).symm.trans hlift.mfderiv]
+  rw [← AddCircle.mfderiv_comp_coe.symm.trans hlift.mfderiv]
   exact hd.hasMFDerivAt
 
 /-- The velocity of the closed orbit at `θ` is `T (γ θ)`. -/
