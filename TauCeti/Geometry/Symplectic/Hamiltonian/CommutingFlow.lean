@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.NoncommPiCoprod
 public import TauCeti.Geometry.Diffeomorphism.Action
-public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
