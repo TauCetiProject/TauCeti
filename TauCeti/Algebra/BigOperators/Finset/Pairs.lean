@@ -39,7 +39,7 @@ sign of the permutation.
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
-* `TauCeti.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
+* `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
   pairs separates into the strictly increasing pairs and the diagonal.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
@@ -57,6 +57,19 @@ sign of the permutation.
 
 public section
 
+namespace Finset
+
+/-- A product over weakly increasing pairs splits into the strictly increasing pairs and the
+diagonal. -/
+theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
+    {ι M : Type*} [PartialOrder ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (s : Finset ι)
+    (f : ι → ι → M) :
+    (∏ i ∈ s, ∏ j ∈ Ici i, f i j) = (∏ i ∈ s, ∏ j ∈ Ioi i, f i j) * ∏ i ∈ s, f i i := by
+  simp_rw [← prod_Ioi_mul_eq_prod_Ici]
+  exact prod_mul_distrib
+
+end Finset
+
 namespace TauCeti
 
 open Finset
@@ -71,15 +84,6 @@ theorem sum_fin_product_eq_sum_antidiagonal {M : Type*} [AddCommMonoid M] {n d :
   refine sum_bij' (fun l _ ↦ ((l.1 : ℕ), (l.2 : ℕ)))
     (fun l hl ↦ (⟨l.1, by grind [mem_antidiagonal]⟩, ⟨l.2, by grind [mem_antidiagonal]⟩))
     (by simp) (by simp +contextual) (by simp) (by simp) fun l hl ↦ hfg l (mem_filter.mp hl).2
-
-/-- A product over weakly increasing pairs splits into the strictly increasing pairs and the
-diagonal. -/
-theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
-    {ι M : Type*} [PartialOrder ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (s : Finset ι)
-    (f : ι → ι → M) :
-    (∏ i ∈ s, ∏ j ∈ Ici i, f i j) = (∏ i ∈ s, ∏ j ∈ Ioi i, f i j) * ∏ i ∈ s, f i i := by
-  simp_rw [← prod_Ioi_mul_eq_prod_Ici]
-  exact prod_mul_distrib
 
 /-- Peel the first two indices off a product over the increasing pairs of `Fin (m + 2)`. -/
 theorem prod_prod_Ioi_eq_of_two {M : Type*} [CommMonoid M] {m : ℕ}
