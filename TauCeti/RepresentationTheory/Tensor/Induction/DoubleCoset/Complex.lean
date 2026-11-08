@@ -23,10 +23,6 @@ not the coinduced resolutions of the conjugated coefficient modules. This compar
 double-coset formula for the Evens norm. Its augmentation applies the original augmentation in
 every factor, as recorded by `smoothTensorInducedMackeyIso_resolutionAugmentation`.
 
-We obtain the equivariant differential by conjugating the ambient differential along the smooth
-Mackey isomorphism, then identify it with the iterated slot sum by the algebraic chain identity.
-This avoids constructing a second equivariance proof for the same slot operator.
-
 ## References
 
 * L. Evens, *A generalization of the transfer map in the cohomology of groups*, Trans. Amer.
@@ -94,6 +90,10 @@ theorem smoothTensorInducedMackeyIso_mem_resolutionPiece_iff (n : ℤ)
     (smoothTensorInducedMackeyIso_hom_apply U V hU r hr t s
       (smoothGradedResolutionFunctor.obj A) z)).to_iff.trans
         (Subgroup.tensorInducedMackey_mem_totalDegreePiece_iff U V r hr t B.ρ s hρ n z)
+
+/- We obtain the equivariant differential by conjugating the ambient differential along the smooth
+Mackey isomorphism, then identify it with the iterated slot sum by the algebraic chain identity.
+This avoids constructing a second equivariance proof for the same slot operator. -/
 
 /-- The differential on the orbitwise tensor product, transported along the Mackey comparison.
 Its iterated slot-sum formula is `smoothTensorInducedMackeyResolutionDifferential_apply`. -/
