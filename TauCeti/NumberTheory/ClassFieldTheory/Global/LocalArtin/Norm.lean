@@ -7,8 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Open
-import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
-import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 
 /-!
 # Norm functoriality of the global Artin map in the ground field
