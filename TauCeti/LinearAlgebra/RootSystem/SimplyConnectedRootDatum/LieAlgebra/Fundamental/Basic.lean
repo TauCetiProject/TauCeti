@@ -143,6 +143,11 @@ instance instFiniteDimensionalFundamentalModule (i : Fin t.rank) :
   finiteDimensional_irreducibleQuotient_of_isDominantIntegral
     (t.isDominantIntegral_fundamentalWeight ht i)
 
+/-- The rational fundamental module is torsion-free over `ℤ`. -/
+instance instIsTorsionFreeFundamentalModule (i : Fin t.rank) :
+    Module.IsTorsionFree ℤ (t.fundamentalModule ht i) :=
+  Module.IsTorsionFree.trans ℚ
+
 /-- **The highest weight space of `L(ϖᵢ)` is a line**: its `ϖᵢ`-weight space is spanned by the
 highest weight vector `v⁺ᵢ`. -/
 theorem genWeightSpace_fundamentalModule_fundamentalWeight (i : Fin t.rank) :
