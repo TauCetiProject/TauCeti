@@ -13,7 +13,7 @@ import Mathlib.RingTheory.Localization.Ideal
 /-!
 # Annihilators of finite modules commute with localization
 
-Let `M` be a finitely generated module over a commutative ring `R`, and let `M'` be its
+Let `M` be a finitely generated module over a commutative semiring `R`, and let `M'` be its
 localization at a submonoid `S`, a module over the localization `A` of `R` at `S`. Then
 
 `Ann_A(M') = Ann_R(M) A`.
