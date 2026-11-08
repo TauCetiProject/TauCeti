@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.Algebraic.Basic
 
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.Transcendental.GelfondSchneider.Gelfond.AnalyticBound
 import TauCeti.NumberTheory.Transcendental.GelfondSchneider.Gelfond.Value
 
@@ -36,7 +37,7 @@ that `r ≥ n`. Then
   (`RingHom.exists_norm_gelfond_value_le`).
 
 Since `m = 2 h + 2`, together they give `1 ≤ (c₂ c₃) ^ r r ^ ((1 - r) / 2)`, which fails once `n`,
-and hence `r`, is large.
+and hence `r`, is large (`Real.exists_pow_mul_rpow_lt_one`).
 
 ## Main results
 
@@ -58,36 +59,6 @@ open Finset Module NumberField
 
 namespace TauCeti
 
-/-- For `C ≥ 0` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: writing
-`s = √r`, the left side is `s (C / s) ^ r ≤ s 2 ^ (-r)` as soon as `s ≥ 2 C`. -/
-private theorem exists_pow_mul_rpow_lt_one {C : ℝ} (hC : 0 ≤ C) :
-    ∃ N : ℕ, ∀ r : ℕ, N ≤ r → C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
-  refine ⟨⌈4 * C ^ 2⌉₊ + 1, fun r hr ↦ ?_⟩
-  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast (Nat.le_add_left 1 _).trans hr
-  have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
-  have hCr : 4 * C ^ 2 ≤ r :=
-    (Nat.le_ceil _).trans (by exact_mod_cast (Nat.le_succ _).trans hr)
-  set s := Real.sqrt r
-  have hs₀ : 0 < s := Real.sqrt_pos.2 hr₀
-  have hsr : s ≤ r := Real.sqrt_le_self_iff.2 (Or.inr hr₁)
-  -- `2 C ≤ s`, since `(2 C) ^ 2 ≤ r`.
-  have hCs : 2 * C ≤ s := Real.le_sqrt_of_sq_le (by nlinarith)
-  -- `r ^ ((1 - r) / 2) = s / s ^ r`.
-  have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
-    rw [show (1 - (r : ℝ)) / 2 = 1 / 2 * (1 - r) by ring, Real.rpow_mul hr₀.le,
-      ← Real.sqrt_eq_rpow, Real.rpow_sub hs₀, Real.rpow_one, Real.rpow_natCast]
-  have hCs' : C / s ≤ 1 / 2 := by
-    rw [div_le_div_iff₀ hs₀ two_pos]
-    linarith
-  calc C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s * (C / s) ^ r := by
-        rw [hrs, div_pow]
-        field_simp
-    _ ≤ s * (1 / 2) ^ r := by gcongr
-    _ = s / 2 ^ r := by rw [one_div, inv_pow, div_eq_mul_inv]
-    _ < 1 := by
-        rw [div_lt_one (by positivity)]
-        exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
-
 /-- **Gelfond's contradiction.** No number field `K` with an embedding `σ : K →+* ℂ` contains
 elements `α, β, γ` with `β` irrational, `σ α = exp λ` and `σ γ = exp (σ β λ)` for some `λ ≠ 0`. -/
 private theorem gelfond_false {K : Type*} [Field K] [NumberField K] (σ : K →+* ℂ) {l : ℂ}
@@ -102,7 +73,7 @@ private theorem gelfond_false {K : Type*} [Field K] [NumberField K] (σ : K →+
   obtain ⟨c, -, haux⟩ := exists_gelfond_auxiliary_algebraic α β γ hm
   obtain ⟨c₂, hc₂, hlow⟩ := exists_one_le_pow_mul_norm_gelfond_value α β γ m c
   obtain ⟨c₃, hc₃, hup⟩ := σ.exists_norm_gelfond_value_le hl hα hγ m c
-  obtain ⟨N, hN⟩ := exists_pow_mul_rpow_lt_one
+  obtain ⟨N, hN⟩ := Real.exists_pow_mul_rpow_lt_one
     (mul_nonneg (zero_le_one.trans hc₂) (zero_le_one.trans hc₃))
   -- Take `n = 2 m (N + 1) ^ 2 ≥ N` and `q = 2 m (N + 1)`, so that `q ^ 2 = 2 m n`.
   set n := 2 * m * (N + 1) ^ 2
