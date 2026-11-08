@@ -58,28 +58,29 @@ theorem mul_dvd_iff_forall_not_pow_dvd {f d h : ℕ} (hh : h ≠ 0) (hf : f ∣ 
   · rw [(prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hd0]
     simp only [Finsupp.coe_add, Pi.add_apply, hp, forall_const]
     omega
-  · have : f.factorization p = 0 := Finsupp.notMem_support_iff.mp hp
+  · have : f.factorization p = 0 := by rwa [← Finsupp.notMem_support_iff, support_factorization]
     simpa [hp, this] using (factorization_le_iff_dvd hd0 hh).2 hd p
 
-/-- **The prime power tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.** For a prime `p`
-of `f` that divides `h`, the exponent `v_p h - v_p f + 1` does not exceed `v_p h`: `f`
-contributes at least one power of `p`, and `h` has at least one. -/
+/-- **The prime power tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.** Let `p` be a
+prime of `f` that divides `h`. Every power of `p` divides `h = 0`. For `h ≠ 0`, the exponent
+`v_p h - v_p f + 1` does not exceed `v_p h`: `f` contributes at least one power of `p`, and `h`
+has at least one. -/
 theorem pow_factorization_sub_factorization_add_one_dvd {f h p : ℕ}
     (hp : p ∈ f.primeFactors) (hph : p ∣ h) :
     p ^ (h.factorization p - f.factorization p + 1) ∣ h := by
   rcases eq_or_ne h 0 with rfl | hh
   · exact dvd_zero _
   have hprime := prime_of_mem_primeFactors hp
-  have : f.factorization p ≠ 0 := Finsupp.mem_support_iff.mp hp
+  have : f.factorization p ≠ 0 := by rwa [← Finsupp.mem_support_iff, support_factorization]
   have := hprime.factorization_pos_of_dvd hh hph
   rw [hprime.pow_dvd_iff_le_factorization hh]
   omega
 
 /-- **The product of the prime powers tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.**
-If every prime of `f` divides `h` (for instance when `f ∣ h`), the prime powers
-`p ^ (v_p h - v_p f + 1)` occur at distinct primes and each divides `h`, so their product still
-divides `h`: it is the product of prime powers read off a finitely supported exponent function
-bounded by the factorization of `h`. -/
+Suppose every prime of `f` divides `h` (for instance when `f ∣ h`). Everything divides `h = 0`.
+For `h ≠ 0`, the prime powers `p ^ (v_p h - v_p f + 1)` occur at distinct primes and each divides
+`h`, so their product still divides `h`: it is the product of prime powers read off a finitely
+supported exponent function bounded by the factorization of `h`. -/
 theorem prod_pow_factorization_sub_factorization_add_one_dvd {f h : ℕ}
     (hf : ∀ p ∈ f.primeFactors, p ∣ h) :
     (∏ p ∈ f.primeFactors, p ^ (h.factorization p - f.factorization p + 1)) ∣ h := by
