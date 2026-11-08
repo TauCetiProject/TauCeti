@@ -15,10 +15,10 @@ The approximation numbers form a strict s-number sequence. They also dominate ev
 s-number sequence: perturbation by a rank-at-most-`n` operator bounds the `n`-th term by
 the approximation error.
 
-`ContinuousLinearMap.approximationNumber` is the Banach-space name for the existing
-`ContinuousLinearMap.singularValue`; it introduces no second infimum or parallel calculus.
-The strict normalization is supplied by `ContinuousLinearMap.singularValue_id`, whose
-rank-nullity proof does not require completeness of the scalar field.
+The approximation family uses the existing `ContinuousLinearMap.singularValue` directly,
+without a second name, infimum or parallel calculus. The strict normalization is supplied by
+`ContinuousLinearMap.singularValue_id`, whose rank-nullity proof does not require
+completeness of the scalar field.
 
 ## References
 
@@ -30,19 +30,6 @@ public section
 
 open scoped NNReal
 
-namespace ContinuousLinearMap
-
-variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-  [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-
-/-- The approximation numbers of a bounded operator: the Banach-space name for
-`ContinuousLinearMap.singularValue`, with its zero-based indexing and existing calculus. -/
-noncomputable abbrev approximationNumber (T : X →L[𝕜] Y) : ℕ → ℝ≥0 :=
-  T.singularValue
-
-end ContinuousLinearMap
-
 universe u
 
 namespace TauCeti.SNumbers
@@ -51,13 +38,13 @@ variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 
 /-- The family of approximation numbers on all normed spaces over the scalar field. -/
 noncomputable def approximation : SNumberFamily 𝕜 :=
-  fun T ↦ T.approximationNumber
+  fun T ↦ T.singularValue
 
 /-- Evaluation of the approximation family is the existing approximation number. -/
 @[simp]
 theorem approximation_apply {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-    (T : X →L[𝕜] Y) (n : ℕ) : approximation T n = T.approximationNumber n := (rfl)
+    (T : X →L[𝕜] Y) (n : ℕ) : approximation T n = T.singularValue n := (rfl)
 
 /-- Approximation numbers satisfy Pietsch's s-number axioms over every nontrivially
 normed field. -/
@@ -82,10 +69,10 @@ theorem isStrictSNumberSequence_approximation :
     simp [approximation_apply, ContinuousLinearMap.singularValue_id, hn]
 
 /-- Approximation numbers are the largest s-number sequence, pointwise on every operator. -/
-theorem IsSNumberSequence.le_approximationNumber {s : SNumberFamily 𝕜}
+theorem IsSNumberSequence.le_singularValue {s : SNumberFamily 𝕜}
     (hs : IsSNumberSequence s) {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-    (T : X →L[𝕜] Y) (n : ℕ) : s T n ≤ T.approximationNumber n := by
+    (T : X →L[𝕜] Y) (n : ℕ) : s T n ≤ T.singularValue n := by
   refine ContinuousLinearMap.le_singularValue_iff.mpr fun R hR ↦ ?_
   have h := hs.add_le R (T - R) n
   simpa [hs.eq_zero_of_rank_le hR] using h
