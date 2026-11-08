@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.Algebra.Algebra.Opposite
-import Mathlib.Algebra.Algebra.Tower
 
 /-!
 # Recovering module equivalences from scalar duals
