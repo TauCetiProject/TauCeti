@@ -188,6 +188,27 @@ private theorem coord_le_norm_sub {σ τ : Finset ι} {x y : ι → ℝ} (hx : x
   · rw [hy.2.1 i hτ]
     exact norm_nonneg _
 
+/-- The mass of `y` off `σ ∩ τ` is at most the number of vertices times the distance of `x`
+and `y`, for `x` in the closed simplex on `σ` and `y` in that on `τ`. -/
+private theorem sum_ite_mem_inter_le [DecidableEq ι] {σ τ : Finset ι} {x y : ι → ℝ}
+    (hx : x ∈ coordSimplex σ) (hy : y ∈ coordSimplex τ) :
+    (∑ i, if i ∈ σ ∩ τ then 0 else y i) ≤ Fintype.card ι * ‖x - y‖ := by
+  have hpt : ∀ i ∈ (Finset.univ : Finset ι), (if i ∈ σ ∩ τ then 0 else y i) ≤ ‖x - y‖ := by
+    intro i _
+    split_ifs with hi
+    · exact norm_nonneg _
+    · exact coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)
+  simpa using Finset.sum_le_sum hpt
+
+/-- A nonnegative vector of total mass `1` that vanishes off `σ ∩ τ` lies in both closed
+simplices. -/
+private theorem mem_inter_of_forall_notMem_eq_zero [DecidableEq ι] {σ τ : Finset ι}
+    {w : ι → ℝ}
+    (hw : ∀ i ∉ σ ∩ τ, w i = 0) (h0 : ∀ i, 0 ≤ w i) (h1 : ∑ i, w i = 1) :
+    w ∈ coordSimplex σ ∩ coordSimplex τ :=
+  ⟨⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').1, h1⟩,
+    ⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').2, h1⟩⟩
+
 /-- Two points of the closed simplices on `σ` and on `τ` at distance less than `1 / N`, where `N`
 is the number of vertices, force the two simplices to meet: otherwise one of the two coordinates
 vanishes at every vertex. -/
@@ -234,13 +255,7 @@ private theorem exists_mem_inter {σ τ : Finset ι} {x y : ι → ℝ} (hx : x 
   -- The mass `m` of `y` off `σ ∩ τ`, which is at most `N` times the distance of `x` and `y`.
   set m : ℝ := ∑ i, if i ∈ ρ then 0 else y i
   have hm0 : 0 ≤ m := Finset.sum_nonneg fun i _ => by split_ifs <;> simp [hy.1 i]
-  have hmN : m ≤ N * ‖x - y‖ := by
-    have h := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) =>
-      show (if i ∈ ρ then 0 else y i) ≤ ‖x - y‖ by
-        split_ifs with hi
-        · exact norm_nonneg _
-        · exact coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)
-    simpa [N] using h
+  have hmN : m ≤ N * ‖x - y‖ := sum_ite_mem_inter_le hx hy
   have hsplit : (∑ i, if i ∈ ρ then y i else 0) + m = 1 := by
     rw [← Finset.sum_add_distrib, ← hy.2.2]
     exact Finset.sum_congr rfl fun i _ => by split_ifs <;> simp
@@ -248,9 +263,7 @@ private theorem exists_mem_inter {σ τ : Finset ι} {x y : ι → ℝ} (hx : x 
     rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, nsmul_eq_mul]
     exact mul_inv_cancel₀ hcard.ne'
   have hzero {w : ι → ℝ} (hw : ∀ i ∉ ρ, w i = 0) (h0 : ∀ i, 0 ≤ w i) (h1 : ∑ i, w i = 1) :
-      w ∈ coordSimplex σ ∩ coordSimplex τ :=
-    ⟨⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').1, h1⟩,
-      ⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').2, h1⟩⟩
+      w ∈ coordSimplex σ ∩ coordSimplex τ := mem_inter_of_forall_notMem_eq_zero hw h0 h1
   refine ⟨fun i => if i ∈ ρ then y i + m * c else 0, hzero (fun i hi => by simp [hi])
     (fun i => ?_) ?_, fun i => if i ∈ ρ then c else 0, hzero (fun i hi => by simp [hi])
     (fun i => ?_) hβsum, ?_, fun i hσ hτ => ?_⟩
