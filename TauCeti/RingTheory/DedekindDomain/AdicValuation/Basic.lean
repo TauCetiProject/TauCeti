@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Valuation.Center
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+-- Proof-only: the ramification comparison of adic valuations.
+import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 -- Proof-only: the normalization of a valuation, which is how a merely bounded one is brought into
 -- the normalized form the centre construction compares against.
 import TauCeti.RingTheory.Valuation.Discrete.Normalize
@@ -56,6 +58,9 @@ by the class-group interface and the multiplicative value can be read off from o
   height one prime contains an element of order of vanishing `1`.
 * `IsDedekindDomain.HeightOneSpectrum.exp_neg_one_le_intValuation_of_squarefree`: in a principal
   ideal domain, a squarefree element vanishes to order at most `1` at every height one prime.
+* `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_intValuation_map_eq`: if `π` has
+  valuation `exp (-1)` at `v` and the image of `x` has at a prime `w` above `v` the `N`-th power of
+  the valuation of the image of `π`, then `x` has valuation `exp (-N)` at `v`.
 * `IsDedekindDomain.HeightOneSpectrum.ne_zero_of_span_singleton_eq_pow`: a generator of a power
   of a height one prime is nonzero.
 * `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_span_singleton_eq_pow` and
@@ -367,6 +372,28 @@ theorem intValuation_prod_pow_of_span_singleton_eq_pow {P : Finset (HeightOneSpe
   · refine Finset.prod_eq_one fun w hw ↦ ?_
     rw [map_pow, v.intValuation_eq_one_of_span_singleton_eq_pow (by rintro rfl; exact hv hw)
       (hπ w hw), one_pow]
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {A B : Type*} [CommRing A] [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B]
+  [Algebra A B] [Module.IsTorsionFree A B]
+
+/-- If `π` has valuation `exp (-1)` at `v` and the valuation at a prime `w` above `v` of the image
+of `x` is the `N`-th power of that of the image of `π`, then `x` has valuation `exp (-N)` at `v`. -/
+theorem intValuation_eq_exp_neg_of_intValuation_map_eq {v : HeightOneSpectrum A}
+    {w : HeightOneSpectrum B} [w.asIdeal.LiesOver v.asIdeal] {x π : A} {N : ℕ}
+    (hvπ : v.intValuation π = WithZero.exp (-1))
+    (hval : w.intValuation (algebraMap A B x) = w.intValuation (algebraMap A B π) ^ N) :
+    v.intValuation x = WithZero.exp (-(N : ℤ)) := by
+  have he := (Ideal.ramificationIdx_pos_of_isDedekindDomain' w.asIdeal v.ne_bot).ne'
+  have h1 := intValuation_liesOver v w x
+  have h2 := intValuation_liesOver v w π
+  rw [hvπ] at h2
+  refine (pow_left_inj₀ zero_le zero_le he).1 ?_
+  rw [h1, hval, ← h2, ← pow_mul, mul_comm, pow_mul]
+  simp [← WithZero.exp_nsmul]
 
 end IsDedekindDomain.HeightOneSpectrum
 
