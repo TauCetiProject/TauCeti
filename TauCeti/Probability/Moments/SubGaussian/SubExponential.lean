@@ -29,6 +29,21 @@ open scoped NNReal
 
 namespace ProbabilityTheory.HasSubgaussianMGF
 
+/-- A sub-Gaussian bound on the centered variable implies a sub-exponential bound. -/
+theorem hasSubexponentialMGF_of_centered {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0} {K : ℝ}
+    (hX : Integrable X μ)
+    (hcenter : HasSubgaussianMGF (fun ω ↦ X ω - μ[X]) c μ)
+    (hK : 0 < K) (hc : (c : ℝ) / 2 ≤ K ^ 2) :
+    TauCeti.Probability.HasSubexponentialMGF X K μ := by
+  refine ⟨hK, hX, ?_, ?_⟩
+  · intro t ht
+    exact hcenter.integrable_exp_mul t
+  · intro t ht
+    have hbound : (c : ℝ) * t ^ 2 / 2 ≤ K ^ 2 * t ^ 2 := by
+      nlinarith [mul_le_mul_of_nonneg_right hc (sq_nonneg t)]
+    exact (hcenter.mgf_le t).trans (Real.exp_le_exp.mpr hbound)
+
 /-- A sub-Gaussian variable is sub-exponential when the quadratic MGF constants
 are compatible. -/
 theorem hasSubexponentialMGF {Ω : Type*} [MeasurableSpace Ω]
@@ -36,14 +51,8 @@ theorem hasSubexponentialMGF {Ω : Type*} [MeasurableSpace Ω]
     (hX : HasSubgaussianMGF X c μ)
     (hK : 0 < K) (hc : (c : ℝ) / 2 ≤ K ^ 2) :
     TauCeti.Probability.HasSubexponentialMGF X K μ := by
-  have hmean := hX.integral_eq_zero
-  refine ⟨hK, hX.integrable, ?_, ?_⟩
-  · intro t ht
-    simpa [hmean] using hX.integrable_exp_mul t
-  · intro t ht
-    have hbound : (c : ℝ) * t ^ 2 / 2 ≤ K ^ 2 * t ^ 2 := by
-      nlinarith [mul_le_mul_of_nonneg_right hc (sq_nonneg t)]
-    simpa only [hmean, sub_zero] using (hX.mgf_le t).trans (Real.exp_le_exp.mpr hbound)
+  apply hasSubexponentialMGF_of_centered hX.integrable _ hK hc
+  simpa only [hX.integral_eq_zero, sub_zero] using hX
 
 end ProbabilityTheory.HasSubgaussianMGF
 
@@ -70,12 +79,7 @@ theorem hasSubexponentialMGF_fun_id_gaussianReal {m : ℝ} {v : ℝ≥0} {K : �
     convert hcenter.integrable.add (integrable_const m) using 1
     funext x
     simp only [Pi.add_apply, sub_add_cancel]
-  refine ⟨hK, hi, ?_, ?_⟩
-  · intro t ht
-    simpa [integral_id_gaussianReal] using hcenter.integrable_exp_mul t
-  · intro t ht
-    have hbound : (v : ℝ) * t ^ 2 / 2 ≤ K ^ 2 * t ^ 2 := by
-      nlinarith [mul_le_mul_of_nonneg_right hv (sq_nonneg t)]
-    simpa [integral_id_gaussianReal] using (hcenter.mgf_le t).trans (exp_le_exp.mpr hbound)
+  apply ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF_of_centered hi _ hK hv
+  simpa [integral_id_gaussianReal] using hcenter
 
 end TauCeti.Probability
