@@ -56,11 +56,8 @@ def _root_.ModuleCat.dualTensorIhomNatIso :
     ext x
     apply ModuleCat.Hom.ext
     ext m
-    -- The goal composes categorical maps; contraction naturality composes linear maps.
-    change dualTensorHom R M P (g.hom.lTensor _ x) m =
-      (g.hom.compRight R (dualTensorHom R M N x)) m
-    exact congrArg (fun h : M →ₗ[R] P => h m)
-      (congrArg (fun h : _ => h x) (dualTensorHom_comp_lTensor g.hom)))
+    -- Both sides unfold to the linear maps compared by Mathlib's contraction naturality.
+    exact LinearMap.congr_fun (LinearMap.congr_fun (dualTensorHom_comp_lTensor g.hom) x) m)
 
 /-- The component of the natural tensor–Hom comparison is the contraction isomorphism. -/
 @[simp]
@@ -75,19 +72,12 @@ theorem _root_.ModuleCat.dualTensorIhomNatIso_inv_app (N : ModuleCat.{u} R) :
 
 /-- Under the contraction isomorphism, internal-Hom evaluation sends
 `m ⊗ (f ⊗ n)` to `f(m) • n`. -/
-@[simp]
 theorem _root_.ModuleCat.dualTensorIhomIso_ev (N : ModuleCat.{u} R)
     (m : M) (f : Module.Dual R M) (n : N) :
-    (@DFunLike.coe
-      (↑(M ⊗ (ihom M).obj N : ModuleCat.{u} R) →ₗ[R] N)
-      (↑(M ⊗ (ihom M).obj N : ModuleCat.{u} R))
-      (fun _ => N) LinearMap.instFunLike
-      ((ihom.ev M).app N).hom)
-      (m ⊗ₜ[R] (dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)) = f m • n := by
+    (ihom.ev M).app N (m ⊗ₜ[R] (dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)) = f m • n := by
+  -- `ihom_ev_app` describes evaluation as uncurried application, which unfolds to applying
+  -- the internal-Hom element to `m`.
   rw [ModuleCat.ihom_ev_app]
-  -- `ihom_ev_app` describes evaluation through an uncurry map, while the contraction
-  -- lemma describes the resulting internal-Hom element applied to `m`.
-  change ((dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)).hom m = f m • n
   exact dualTensorIhomIso_hom_tmul M N f n m
 
 /-- The tensor–Hom comparison is contravariantly natural in a finite projective source:
@@ -102,10 +92,7 @@ theorem _root_.ModuleCat.dualTensorIhomIso_naturality_left
   ext m
   -- `pre` and tensoring by the dual map are categorical wrappers around the two
   -- linear-map compositions in `dualTensorHom_comp_rTensor_dualMap`.
-  change dualTensorHom R M N (φ.hom.dualMap.rTensor N x) m =
-    (φ.hom.lcomp R N (dualTensorHom R M' N x)) m
-  exact congrArg (fun h : M →ₗ[R] N => h m)
-    (congrArg (fun h : _ => h x) (dualTensorHom_comp_rTensor_dualMap φ.hom))
+  exact LinearMap.congr_fun (LinearMap.congr_fun (dualTensorHom_comp_rTensor_dualMap φ.hom) x) m
 
 end
 

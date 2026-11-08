@@ -338,6 +338,26 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [Nontrivial K]
 
 /-! ## Exhaustion of the nonzero roots -/
 
+/-- If the root space of the diagonal Cartan for `chi` is nontrivial, then some element of the
+even orthogonal Lie algebra has a nonzero entry at a position whose weight is `chi`. -/
+private theorem exists_entry_weight_eq_of_rootSpace_ne_bot [IsDomain K]
+    (chi : Module.Dual K (typeDDiagonalCartan K ι))
+    (hroot : LieAlgebra.rootSpace (typeDDiagonalCartan K ι) chi ≠ ⊥) :
+    ∃ (X : LieAlgebra.Orthogonal.typeD ι K) (a b : ι ⊕ ι),
+      (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b ≠ 0 ∧ typeDMatrixWeight (K := K) a b = chi := by
+  rw [ne_eq, ← LieSubmodule.toSubmodule_eq_bot] at hroot
+  obtain ⟨X, hX, hX0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hroot
+  rw [LieSubmodule.mem_toSubmodule] at hX
+  have hmatrix : (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ≠ 0 := by
+    intro hzero
+    exact hX0 (Subtype.ext hzero)
+  obtain ⟨a, ha⟩ := Function.ne_iff.mp hmatrix
+  obtain ⟨b, hab⟩ := Function.ne_iff.mp ha
+  have hweight : typeDMatrixWeight (K := K) a b = chi := by
+    by_contra hne
+    exact hab ((mem_rootSpace_typeDDiagonalCartan_iff chi X).mp hX a b hne)
+  exact ⟨X, a, b, hab, hweight⟩
+
 /-- **The nonzero roots of the split even orthogonal Lie algebra are exactly the type-`D` roots.**
 
 Over a domain away from characteristic two, a nonzero functional on the diagonal Cartan has a
@@ -351,21 +371,7 @@ theorem rootSpace_typeDDiagonalCartan_ne_bot_iff [IsDomain K]
           chi = -typeDWeightAdd i j) := by
   constructor
   · intro hroot
-    rw [ne_eq, ← LieSubmodule.toSubmodule_eq_bot] at hroot
-    obtain ⟨X, hX, hX0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hroot
-    rw [LieSubmodule.mem_toSubmodule] at hX
-    have hmatrix : (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ≠ 0 := by
-      intro hzero
-      exact hX0 (Subtype.ext hzero)
-    obtain ⟨a, b, hab⟩ : ∃ a b, (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b ≠ 0 := by
-      by_contra hentries
-      push Not at hentries
-      apply hmatrix
-      ext a b
-      exact hentries a b
-    have hweight : typeDMatrixWeight (K := K) a b = chi := by
-      by_contra hne
-      exact hab ((mem_rootSpace_typeDDiagonalCartan_iff chi X).mp hX a b hne)
+    obtain ⟨X, a, b, hab, hweight⟩ := exists_entry_weight_eq_of_rootSpace_ne_bot chi hroot
     have eq_zero_of_eq_neg_self {x : K} (hx : x = -x) : x = 0 := by
       apply (mul_eq_zero.mp ?_).resolve_left h2
       rw [two_mul]

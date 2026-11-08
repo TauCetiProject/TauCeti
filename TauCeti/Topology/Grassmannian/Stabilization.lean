@@ -20,11 +20,14 @@ coordinate line first: it sends `V` to `𝕜 e₀ ⊕ shift(V)`, with shift send
 `i` to `i.succ`. The two stabilizations commute strictly, so they can be used as the
 two structure maps of a Grassmannian tower without choosing coordinate permutations.
 
+`ambientInclusion` includes `𝕜^N` into the first coordinates of `𝕜^M` for any `N ≤ M`.
+These inclusions compose functorially and agree with `ambientStabilization` in one step.
+
 The rank map is continuous for the frame-quotient topology and injective. Its image
 consists exactly of the planes containing `e₀`. Each stabilized subspace is identified
 linearly with `𝕜 × V`, in that order, by `Submodule.finConsEquiv`. Over the real or
-complex numbers both maps are closed embeddings. All constructions include rank zero
-and empty Grassmannians.
+complex numbers both stabilizations and all ambient inclusions are closed embeddings.
+All constructions include rank zero and empty Grassmannians.
 
 The continuity proof uses the frame-span quotient from
 `TauCeti.Topology.Grassmannian.Basic`; the coordinate splitting is Mathlib's
@@ -114,23 +117,84 @@ theorem rankStabilization_injective :
     (LinearMap.funLeft_surjective_of_injective 𝕜 𝕜 Fin.succ (Fin.succ_injective N))
   exact congrArg Subtype.val h
 
-/-- Append a zero last coordinate, leaving the rank unchanged. -/
+/-- The inclusion `𝕜^N → 𝕜^M`, for `N ≤ M`, onto the first `N` coordinates, on planes. Its
+one-step case is `ambientStabilization`. -/
+noncomputable def ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N) :
+    finiteGrassmannian 𝕜 r M :=
+  map (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h))
+    (Function.extend_injective (Fin.castLE_injective h) 0) V
+
+theorem coe_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N) :
+    (ambientInclusion h V).1 = V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.castLE h)) :=
+  coe_map _ _ V
+
+/-- Membership in an ambient inclusion is detected by restricting to the old coordinates and
+checking that the remaining coordinates vanish. -/
+@[simp]
+theorem mem_ambientInclusion {M : ℕ} (h : N ≤ M) (V : finiteGrassmannian 𝕜 r N)
+    (v : Fin M → 𝕜) :
+    v ∈ (ambientInclusion h V).1 ↔ v ∘ Fin.castLE h ∈ V.1 ∧ ∀ i : Fin M, N ≤ i → v i = 0 := by
+  rw [coe_ambientInclusion, Submodule.mem_map]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    constructor
+    · simpa only [Function.comp_def,
+        Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castLE_injective h)] using hw
+    · intro i hi
+      have hnot : i ∉ range (Fin.castLE h) := by simpa [Fin.range_castLE] using hi
+      exact Function.ExtendByZero.linearMap_apply_of_notMem_range 𝕜 w hnot
+  · rintro ⟨hv, hz⟩
+    refine ⟨v ∘ Fin.castLE h, hv, funext fun i ↦ ?_⟩
+    by_cases hi : (i : ℕ) < N
+    · obtain ⟨j, rfl⟩ : i ∈ range (Fin.castLE h) := by simpa [Fin.range_castLE] using hi
+      simp only [Function.ExtendByZero.linearMap_apply_of_injective 𝕜
+        (Fin.castLE_injective h), Function.comp_apply]
+    · have hnot : i ∉ range (Fin.castLE h) := by simpa [Fin.range_castLE] using hi
+      rw [Function.ExtendByZero.linearMap_apply_of_notMem_range 𝕜 _ hnot,
+        hz i (Nat.le_of_not_gt hi)]
+
+theorem ambientInclusion_injective {M : ℕ} (h : N ≤ M) :
+    Function.Injective (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=
+  map_injective _ _
+
+@[simp]
+theorem ambientInclusion_refl (V : finiteGrassmannian 𝕜 r N) :
+    ambientInclusion le_rfl V = V := by
+  apply Subtype.ext
+  rw [coe_ambientInclusion, Fin.castLE_rfl, Function.ExtendByZero.linearMap_id, Submodule.map_id]
+
+@[simp]
+theorem ambientInclusion_ambientInclusion {M L : ℕ} (h : N ≤ M) (h' : M ≤ L)
+    (V : finiteGrassmannian 𝕜 r N) :
+    ambientInclusion h' (ambientInclusion h V) = ambientInclusion (h.trans h') V := by
+  apply Subtype.ext
+  rw [coe_ambientInclusion, coe_ambientInclusion, coe_ambientInclusion, ← Submodule.map_comp,
+    ← Function.ExtendByZero.linearMap_comp _ (Fin.castLE_injective h) (Fin.castLE_injective h'),
+    Fin.castLE_comp_castLE]
+
+/-- Append a zero last coordinate, leaving the rank unchanged: the one-step ambient inclusion. -/
 noncomputable def ambientStabilization (V : finiteGrassmannian 𝕜 r N) :
     finiteGrassmannian 𝕜 r (N + 1) :=
-  map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc)
-    (Function.extend_injective (Fin.castSucc_injective N) 0) V
+  ambientInclusion (Nat.le_succ N) V
+
+/-- The one-step ambient inclusion is ambient stabilization. -/
+@[simp]
+theorem ambientInclusion_succ (V : finiteGrassmannian 𝕜 r N) :
+    ambientInclusion (Nat.le_succ N) V = ambientStabilization V :=
+  (rfl)
 
 /-- Ambient stabilization is exactly the image under extension along `Fin.castSucc`.
 Use `mem_ambientStabilization` for membership simplification. -/
 theorem coe_ambientStabilization (V : finiteGrassmannian 𝕜 r N) :
     (ambientStabilization V).1 =
-      V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc) :=
-  coe_map _ _ V
+      V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc) := by
+  have : Fin.castLE (Nat.le_succ N) = Fin.castSucc := funext fun i ↦ Fin.ext (by simp)
+  rw [ambientStabilization, coe_ambientInclusion, this]
 
 /-- Appending a zero coordinate does not identify distinct planes. -/
 theorem ambientStabilization_injective :
     Function.Injective (ambientStabilization : finiteGrassmannian 𝕜 r N → _) :=
-  map_injective _ _
+  ambientInclusion_injective _
 
 /-- Membership in an ambient-stabilized plane: the old coordinates belong to the
 original plane and the last coordinate vanishes. -/
@@ -185,11 +249,17 @@ theorem continuous_rankStabilization [TopologicalSpace 𝕜] :
   exact (continuous_frameSpan.comp finiteFullRankFrame.continuous_rankStabilization).congr
     fun v ↦ frameSpan_rankStabilization v
 
+/-- Including into a larger coordinate space is continuous for the frame-quotient topologies. -/
+@[fun_prop]
+theorem continuous_ambientInclusion [TopologicalSpace 𝕜] {M : ℕ} (h : N ≤ M) :
+    Continuous (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=
+  continuous_map _ _ (Function.ExtendByZero.continuous_linearMap 𝕜 _)
+
 /-- Appending the last coordinate is continuous for the frame-quotient topologies. -/
 @[fun_prop]
 theorem continuous_ambientStabilization [TopologicalSpace 𝕜] :
     Continuous (ambientStabilization : finiteGrassmannian 𝕜 r N → _) :=
-  continuous_map _ _ (Function.ExtendByZero.continuous_linearMap 𝕜 Fin.castSucc)
+  continuous_ambientInclusion _
 
 /-- A plane is in the image of rank stabilization exactly when it contains the new
 first coordinate vector. -/
@@ -225,10 +295,16 @@ theorem isClosedEmbedding_rankStabilization :
     Topology.IsClosedEmbedding (rankStabilization : finiteGrassmannian 𝕜 r N → _) :=
   continuous_rankStabilization.isClosedEmbedding rankStabilization_injective
 
+/-- Over the real or complex numbers, the inclusion into a larger coordinate space is a closed
+embedding. -/
+theorem isClosedEmbedding_ambientInclusion {M : ℕ} (h : N ≤ M) :
+    Topology.IsClosedEmbedding (ambientInclusion (𝕜 := 𝕜) (r := r) h) :=
+  (continuous_ambientInclusion h).isClosedEmbedding (ambientInclusion_injective h)
+
 /-- Over the real or complex numbers, appending a last coordinate is a closed embedding. -/
 theorem isClosedEmbedding_ambientStabilization :
     Topology.IsClosedEmbedding (ambientStabilization : finiteGrassmannian 𝕜 r N → _) :=
-  continuous_ambientStabilization.isClosedEmbedding ambientStabilization_injective
+  isClosedEmbedding_ambientInclusion _
 
 /-- The locus of planes containing the first coordinate line is closed. -/
 theorem isClosed_single_zero_mem :

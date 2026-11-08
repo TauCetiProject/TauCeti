@@ -117,13 +117,16 @@ variable (hw : ∀ v, w v < 0)
   (hhom : ∀ i j, IsWeightedHomogeneous w (d (Finsupp.single i 1) j) (g i + r - g j))
 include hhom
 
-/-- One step of the filtration argument: a cycle in `J ^ k • (ι →₀ S)` of degree at least `a` is
-congruent modulo `J ^ (k + 1) • (ι →₀ S)` to a boundary of a chain of degree at least `a - r`. -/
-private theorem exists_sub_apply_mem_pow_idealOfVars
+/-- The coefficients of a cycle `z` at the monomials of total degree `k` have primitives `u' e`,
+which can be chosen so that each nonzero coefficient `u' e i` satisfies `a ≤ g i + r + weight w e`:
+the generator `i` has degree `g i`, shifted by `r` and by the weight of the monomial `e`. -/
+private theorem exists_primitive_constantCoeffReduction
     (hexact : ker d.constantCoeffReduction ≤ range d.constantCoeffReduction) {k : ℕ}
     {a : ℤ} {z : ι →₀ MvPolynomial σ R} (hz : d z = 0) (hza : DegreeGE w g a z)
     (hzk : ∀ i, z i ∈ idealOfVars σ R ^ k) :
-    ∃ y, DegreeGE w g (a - r) y ∧ ∀ i, (z - d y) i ∈ idealOfVars σ R ^ (k + 1) := by
+    ∃ u' : (σ →₀ ℕ) → ι →₀ R, (∀ e, degree e = k →
+      d.constantCoeffReduction (u' e) = z.mapRange (lcoeff R e) (map_zero _)) ∧
+      ∀ e i, u' e i ≠ 0 → a ≤ g i + r + weight w e := by
   classical
   -- the coefficients of `z` at the monomials `V ^ e` of total degree `k`
   let zc (e : σ →₀ ℕ) : ι →₀ R := z.mapRange (lcoeff R e) (map_zero _)
@@ -140,6 +143,19 @@ private theorem exists_sub_apply_mem_pow_idealOfVars
     rw [hu e he, (filter_eq_self_iff (fun j ↦ a ≤ g j + weight w e) _).mpr
       fun i hi ↦ hza i e (by simpa [zc] using hi)] at this
     exact this.symm
+  refine ⟨u', hu', fun e i hi ↦ ?_⟩
+  by_contra h
+  exact hi (by simp [u', h])
+
+/-- One step of the filtration argument: a cycle in `J ^ k • (ι →₀ S)` of degree at least `a` is
+congruent modulo `J ^ (k + 1) • (ι →₀ S)` to a boundary of a chain of degree at least `a - r`. -/
+private theorem exists_sub_apply_mem_pow_idealOfVars
+    (hexact : ker d.constantCoeffReduction ≤ range d.constantCoeffReduction) {k : ℕ}
+    {a : ℤ} {z : ι →₀ MvPolynomial σ R} (hz : d z = 0) (hza : DegreeGE w g a z)
+    (hzk : ∀ i, z i ∈ idealOfVars σ R ^ k) :
+    ∃ y, DegreeGE w g (a - r) y ∧ ∀ i, (z - d y) i ∈ idealOfVars σ R ^ (k + 1) := by
+  classical
+  obtain ⟨u', hu', hu'g⟩ := exists_primitive_constantCoeffReduction (d := d) hhom hexact hz hza hzk
   -- the monomials of total degree `k` occurring in `z`
   let E : Finset (σ →₀ ℕ) := (z.support.biUnion fun i ↦ (z i).support).filter (degree · = k)
   have hE {e : σ →₀ ℕ} (he : degree e = k) (heE : e ∉ E) (i : ι) : (z i).coeff e = 0 := by
@@ -165,7 +181,8 @@ private theorem exists_sub_apply_mem_pow_idealOfVars
   · rw [hy] at he
     split_ifs at he with heE
     · by_contra h
-      exact he (filter_apply_neg _ _ (by omega))
+      have := hu'g e i he
+      omega
     · exact absurd rfl he
   · rw [mem_pow_idealOfVars_iff']
     intro e he
@@ -178,7 +195,7 @@ private theorem exists_sub_apply_mem_pow_idealOfVars
       · have : y.mapRange (lcoeff R e) (map_zero _) = u' e := Finsupp.ext fun i ↦ by
           simp [hy, heE]
         rw [this, hu' e he]
-        simp [zc]
+        simp
       · have : y.mapRange (lcoeff R e) (map_zero _) = 0 := Finsupp.ext fun i ↦ by
           simp [hy, heE]
         rw [this, map_zero, Finsupp.zero_apply, hE he heE]

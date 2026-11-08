@@ -20,6 +20,8 @@ This file collects elementary norm facts for scalar actions on seminormed additi
   against positive weights `r i`, the combination `∑ i ∈ s, a i • u i` has norm at most
   `(∑ i ∈ s, ‖u i‖ / r i) * b`; in particular, strict-generator representations yield uniformly
   norm-bounded preimages along linear maps.
+* `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
+  multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
 -/
 
 public section
@@ -48,6 +50,20 @@ theorem norm_sum_smul_le_sum_div_mul {ι A E : Type*} [SeminormedAddGroup A]
               mul_le_mul_of_nonneg_right ((le_div_iff₀ (hr i hi)).mpr (ha i hi)) (norm_nonneg _)
           _ = ‖u i‖ / r i * b := by ring
     _ = (∑ i ∈ s, ‖u i‖ / r i) * b := (Finset.sum_mul s _ b).symm
+
+/-- **A quadratic error cannot swallow the linear term.** If `z` lies within `K * a ^ 2` of the
+real multiple `a • v`, and `a` is small enough that `|a| * (2 * K) ≤ ‖v‖`, then `z` still inherits
+half of the length `|a| * ‖v‖` of that multiple. -/
+theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {z v : E} {a K : ℝ} (hR : ‖z - a • v‖ ≤ K * a ^ 2)
+    (ha : |a| * (2 * K) ≤ ‖v‖) :
+    |a| * ‖v‖ ≤ 2 * ‖z‖ := by
+  have h1 : ‖a • v‖ - ‖z - a • v‖ ≤ ‖z‖ := by
+    simpa [norm_sub_rev z (a • v)] using norm_sub_norm_le (a • v) (a • v - z)
+  rw [norm_smul, Real.norm_eq_abs] at h1
+  rw [← sq_abs a] at hR
+  nlinarith [mul_le_mul_of_nonneg_left ha (abs_nonneg a),
+    mul_nonneg (abs_nonneg a) (norm_nonneg v)]
 
 end TauCeti
 

@@ -70,8 +70,8 @@ theorem compactSpace_mulAction_orbitRel_quotient_iff [ContinuousConstSMul G X]
     let := h
     obtain ⟨K, hK, hcover⟩ :=
       MulAction.isOpenQuotientMap_quotientMk.isOpenMap.exists_isCompact_subset_image
-        Quotient.mk_surjective (isCompact_univ : IsCompact (univ : Set
-          (MulAction.orbitRel.Quotient G X)))
+        (isCompact_univ : IsCompact (univ : Set (MulAction.orbitRel.Quotient G X)))
+        Quotient.mk_surjective.range_eq.ge
     refine ⟨K, hK, fun x ↦ ?_⟩
     obtain ⟨y, hy, hyx⟩ := hcover (mem_univ (Quotient.mk (MulAction.orbitRel G X) x))
     obtain ⟨g, hg⟩ := MulAction.orbitRel_apply.mp (Quotient.exact hyx)

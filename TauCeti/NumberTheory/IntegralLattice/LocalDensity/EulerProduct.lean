@@ -142,13 +142,17 @@ theorem tprod_inv_half_localDensity_ne_zero_of_card_eq_two_mul_add_one (hA : A�
 
 /-- **The product of the normalized local densities over the good primes, in rank `1`**: every
 normalized density `α p / 2` is `1`, and the product is `1`. -/
-theorem hasProd_inv_half_localDensity_of_card_eq_one (hA : Aᵀ = A) (hdet : A.det ≠ 0)
+theorem hasProd_inv_half_localDensity_of_card_eq_one (hdet : A.det ≠ 0)
     (hn : Fintype.card n = 1) {α : ℕ → ℚ}
     (hα : ∀ (p : ℕ) [Fact p.Prime], ¬ p ∣ (2 * A.det).natAbs →
       Tendsto (fun r => ((A.map (Int.castRingHom ℤ_[p])).localDensityCount r : ℚ) /
         (p : ℚ) ^ (r * (Fintype.card n).choose 2)) atTop (𝓝 (α p))) :
     HasProd (fun p : {p : Nat.Primes // ¬ (p : ℕ) ∣ (2 * A.det).natAbs} => ((α p : ℂ) / 2)⁻¹)
       1 := by
+  have : Subsingleton n := Fintype.card_le_one_iff_subsingleton.mp hn.le
+  have hA : Aᵀ = A := by
+    ext i j
+    rw [transpose_apply, Subsingleton.elim j i]
   simpa using hasProd_inv_half_localDensity_of_card_eq_two_mul_add_one hA hdet (m := 0) hn hα
 
 /-- **The product of the normalized local densities over the good primes, in even rank at

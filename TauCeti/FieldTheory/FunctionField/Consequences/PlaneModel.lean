@@ -96,7 +96,7 @@ theorem genus_le_finrank_sub_one_mul_finrank_sub_two_div_two (hF : IsFunctionFie
       (pow_mem_riemannRochSpace_zsmul hy j)
       (pow_mem_riemannRochSpace_zsmul (mem_riemannRochSpace_poles hF u) i))
     rw [← add_smul]
-    exact (Divisor.isEffective_poles hF u).zsmul_le_zsmul (by have := i.isLt; omega)
+    exact zsmul_le_zsmul_left (Divisor.poles_nonneg hF u) (by have := i.isLt; omega)
   have hg : Function.Injective fun q : (Σ j : Fin d, Fin (r + 1 - j)) ↦ (q.1, (q.2 : ℕ)) := by
     rintro ⟨j, i⟩ ⟨j', i'⟩ h
     simp only [Prod.mk.injEq] at h

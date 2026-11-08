@@ -42,6 +42,7 @@ theorem matrixCochainExtension_map_algebraMap_eq_zero {ι : Type*} [Fintype ι] 
     matrixCochainExtension ι n (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ Unitization R A) M)
       (fun k ↦ (a k).map (algebraMap R (Unitization R A))) = 0 := by
   rw [matrixCochainExtension_apply]
-  exact Finset.sum_eq_zero fun p _ ↦ (mem_relativeCyclicCochains_iff_forall R A M).1 φ.2 _
+  exact Finset.sum_eq_zero fun p _ ↦
+    (mem_reducedCyclicCochains_iff_forall R (Unitization R A) M).1 φ.2 _
 
 end TauCeti

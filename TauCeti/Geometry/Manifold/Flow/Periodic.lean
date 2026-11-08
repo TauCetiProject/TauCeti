@@ -36,7 +36,7 @@ are isolated, so there are only finitely many periodic solutions
 (`TauCeti.finite_periodicSolutions`).
 
 This is the manifold counterpart of `TauCeti.periodicSolutionEquivFixedPoints` in
-`TauCeti.Dynamics.Flow.Periodic`, which treats globally Lipschitz fields on Banach spaces.
+`TauCeti.Dynamics.Flow.Periodic.Basic`, which treats globally Lipschitz fields on Banach spaces.
 
 ## Main definitions
 

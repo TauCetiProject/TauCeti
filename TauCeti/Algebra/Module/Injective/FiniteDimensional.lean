@@ -98,10 +98,8 @@ theorem _root_.Module.Finite.exists_injective_linearMap_pi [FiniteDimensional k 
   let : Module A (Module.Dual k A) := Module.compHom _ (dualRightAction k A)
   have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
     (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
-  have : IsScalarTower k A (Module.Dual k A) := IsScalarTower.of_algebraMap_smul fun c φ ↦ by
-    ext x
-    simp only [hsmul, ← Algebra.commutes, ← Algebra.smul_def, map_smul,
-      LinearMap.smul_apply]
+  have : IsScalarTower k A (Module.Dual k A) :=
+    (LinearEquiv.refl k _).isScalarTower_of_dual_regular hsmul
   have : Module.Finite A (Module.Dual k A) := .of_restrictScalars_finite k A _
   let : Module.Injective Aᵐᵒᵖ A := hA
   have : Module.Projective A (Module.Dual k A) :=

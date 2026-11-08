@@ -12,8 +12,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 -- Proof-only: a Frobenius element satisfies `X² - a_q X + q` on prime-to-`u` torsion.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Reduction
--- Proof-only: the valuation of a maximal ideal recovers its valuation ring.
-import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 -- Proof-only: a multiplicative reduction is a nodal cubic.
 import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
 -- Proof-only: local-field structures on finite subextensions, and descent of points to them.
@@ -98,81 +96,11 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
 /-! The proofs over a finite extension `L/K` apply the statements over the fraction field of a
-Dedekind domain to the discrete valuation ring `𝒪[L]`, at the adic valuation of its maximal ideal.
-Its valuation ring `B` is `𝒪[L]` again; the private declarations below supply the integral model of
-`W` over `B`, its reduction, the action of a Frobenius on the residues of `B`, and the units. -/
-
-variable (L) in
-/-- `𝒪[L]`, packaged as a valuation subring, is a discrete valuation ring. -/
-private theorem isDiscreteValuationRing_valuationSubring :
-    IsDiscreteValuationRing (valuation L).valuationSubring :=
-  inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
-
-attribute [local instance] isDiscreteValuationRing_valuationSubring
-
-variable (L) in
-/-- The maximal ideal of `𝒪[L]`, as a height-one prime. -/
-private noncomputable abbrev maximalPrime :
-    IsDedekindDomain.HeightOneSpectrum (valuation L).valuationSubring :=
-  IsDiscreteValuationRing.maximalIdeal _
-
-variable (L) in
-/-- The valuation ring of the adic valuation of the maximal ideal of `𝒪[L]` is `𝒪[L]`. -/
-private theorem valuationSubring_valuation_maximalPrime :
-    ((maximalPrime L).valuation L).valuationSubring = (valuation L).valuationSubring :=
-  Place.valuationSubring_valuation_maximalIdeal _
-
-variable (L) in
-/-- The adic valuation of the maximal ideal of `𝒪[L]` is equivalent to the valuation of `L`. -/
-private theorem isEquiv_valuation_maximalPrime :
-    ((maximalPrime L).valuation L).IsEquiv (valuation L) :=
-  (Valuation.isEquiv_iff_valuationSubring _ _).2 (valuationSubring_valuation_maximalPrime L)
-
-variable (K L) in
-/-- `𝒪[K]` maps into the valuation ring of the adic valuation of the maximal ideal of `𝒪[L]`. -/
-private noncomputable abbrev algebraValuationSubringMaximalPrime :
-    Algebra 𝒪[K] ((maximalPrime L).valuation L).valuationSubring :=
-  (((algebraMap K L).comp (algebraMap 𝒪[K] K)).codRestrict _ fun r ↦
-    (by
-      rw [valuationSubring_valuation_maximalPrime, ← TauCeti.coe_algebraMap_integerRing]
-      exact (algebraMap 𝒪[K] 𝒪[L] r).2 :
-        algebraMap K L r ∈ ((maximalPrime L).valuation L).valuationSubring)).toAlgebra
-
-attribute [local instance] algebraValuationSubringMaximalPrime
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K L] in
-variable (K L) in
-/-- The map from `𝒪[K]` to the valuation ring of `L` is local. -/
-private theorem isLocalHom_algebraMap_valuationSubringMaximalPrime :
-    IsLocalHom (algebraMap 𝒪[K] ((maximalPrime L).valuation L).valuationSubring) :=
-  ⟨fun r hr ↦ by
-    by_contra hr'
-    rw [Valuation.Integer.not_isUnit_iff_valuation_lt_one] at hr'
-    rw [(Valuation.valuationSubring.integers _).isUnit_iff_valuation_eq_one] at hr
-    have h₁ : valuation L (algebraMap K L r) < 1 :=
-      (Valuation.HasExtension.val_map_lt_one_iff (vR := valuation K) (vA := valuation L) _).mpr hr'
-    exact ((isEquiv_valuation_maximalPrime L).lt_one_iff_lt_one.mpr h₁).ne hr⟩
-
-attribute [local instance] isLocalHom_algebraMap_valuationSubringMaximalPrime
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K L] in
-/-- The base change of an equation integral over `𝒪[K]` is integral over the valuation ring of the
-adic valuation of the maximal ideal of `𝒪[L]`. -/
-private theorem isIntegral_valuationSubring_maximalPrime (W : WeierstrassCurve K)
-    [IsIntegral 𝒪[K] W] : IsIntegral ((maximalPrime L).valuation L).valuationSubring (W⁄L) :=
-  IsIntegral.baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
-
-attribute [local instance] isIntegral_valuationSubring_maximalPrime
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K L] in
-/-- The integral model of the base change of `W` over the valuation ring of `L` is the image of the
-integral model of `W` over `𝒪[K]`. -/
-private theorem integralModel_valuationSubring_maximalPrime (W : WeierstrassCurve K)
-    [IsIntegral 𝒪[K] W] :
-    integralModel ((maximalPrime L).valuation L).valuationSubring (W⁄L) =
-      (integralModel 𝒪[K] W).map
-        (algebraMap 𝒪[K] ((maximalPrime L).valuation L).valuationSubring) :=
-  integralModel_baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
+Dedekind domain to the discrete valuation ring `𝒪[L]`, at its maximal ideal
+`TauCeti.maximalPrime L`. The valuation ring `B` of its adic valuation is `𝒪[L]` again, and
+`WeierstrassCurve.integralModel_valuationSubring_maximalPrime` gives the integral model of `W` over
+`B`. The private declarations below supply its reduction and the action of a Frobenius on the
+residues of `B`. -/
 
 omit [Module.Finite K L] in
 /-- The reduction of the base change of `W` over the valuation ring of `L` is the reduction of `W`
@@ -196,14 +124,6 @@ private theorem valuation_maximalPrime_sub_pow_lt_one {τ : Gal(L/K)}
     (maximalPrime L).valuation L (τ.toAlgHom x - x ^ Nat.card 𝓀[K]) < 1 :=
   (isEquiv_valuation_maximalPrime L).lt_one_iff_lt_one.mpr <|
     τ.valuation_apply_sub_pow_lt_one hτ ((isEquiv_valuation_maximalPrime L).le_one_iff_le_one.mp hx)
-
-omit [Module.Finite K L] in
-/-- An integer nonzero in the residue field of `K` is a unit of `𝒪[L]`
-(`TauCeti.valuation_natCast_eq_one_of_residueField_natCast_ne_zero`, read in `𝒪[L]`). -/
-private theorem natCast_notMem_maximalPrime {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) :
-    (n : (valuation L).valuationSubring) ∉ (maximalPrime L).asIdeal := fun h ↦
-  ((Valuation.mem_maximalIdeal_iff (v := valuation L)).mp h).ne
-    (by simpa using valuation_natCast_eq_one_of_residueField_natCast_ne_zero (L := L) hn)
 
 variable [DecidableEq L] {W : WeierstrassCurve K} [IsMinimal 𝒪[K] W]
 

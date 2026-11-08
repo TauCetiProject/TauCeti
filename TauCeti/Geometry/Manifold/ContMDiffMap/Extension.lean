@@ -28,6 +28,27 @@ public section
 open Set Function Topology
 open scoped Manifold ContDiff
 
+namespace ContMDiffMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
+
+/-- Extending a native smooth map arbitrarily outside an open source preserves differentiability
+on the original source. -/
+theorem contDiffOn_extend (U : TopologicalSpace.Opens E)
+    (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) (g : E → F) :
+    ContDiffOn 𝕜 n (Function.extend Subtype.val f g) U := by
+  apply ContMDiffOn.contDiffOn
+  intro x hx
+  have hf := f.contMDiff ⟨x, hx⟩
+  have heq : (fun z : U ↦ Function.extend Subtype.val f g (z : E)) = f :=
+    Function.extend_comp Subtype.val_injective _ _
+  rw [← heq] at hf
+  exact (contMDiffAt_subtype_iff.mp hf).contMDiffWithinAt
+
+end ContMDiffMap
+
 section Germ
 
 variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
