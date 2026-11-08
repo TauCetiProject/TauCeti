@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.LinearAlgebra.Trace.Exact
 import TauCeti.RingTheory.GradedAlgebra.HilbertSeries.RegularSequence
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
@@ -251,7 +252,8 @@ theorem mk_trace_quotientPiece_of_isWeaklyRegular [∀ n, Module.Finite k (𝒜 
     rw [List.map_append, List.map_singleton] at hreg
     let I := Ideal.ofList (fs.map Prod.fst)
     -- `T` commutes with multiplication by the generators of `I`, so it induces `Q₀` on `A ⧸ I`.
-    obtain ⟨Q₀, hQ₀⟩ := exists_quotient_linearMap_of_map_mul (s := {r | r ∈ fs.map Prod.fst}) T
+    obtain ⟨Q₀, hQ₀⟩ :=
+      Ideal.exists_quotient_linearMap_of_map_mul (s := {r | r ∈ fs.map Prod.fst}) T
       fun r hr ↦ by obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hr; exact hmul q (hfs q hq)
     have hJ : I ⊔ Ideal.span {p.1} = Ideal.ofList ((fs ++ [p]).map Prod.fst) := by
       rw [List.map_append, List.map_singleton, Ideal.ofList_append, Ideal.ofList_singleton]
