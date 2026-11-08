@@ -29,8 +29,8 @@ are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
 `explicitCoeff0_eq_explicitMap0`. If `φ : H → G` maps a subgroup `T` into a subgroup `S`, pullback
 along `φ` sends classes restricting to zero on `S` to classes restricting to zero on `T`
 (`ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le`). Pullback along an
-isomorphism onto a subgroup `S` followed by its inclusion, with a bijective coefficient map out of a
-discrete module, vanishes exactly when restriction to `S` does
+isomorphism onto a subgroup `S` followed by its inclusion, with a continuous bijective coefficient
+map, vanishes exactly when restriction to `S` does
 (`explicitMap1_eq_zero_iff_explicitRes1_eq_zero`).
 The constructions
 `explicitCoeff1Equiv` and
@@ -668,18 +668,18 @@ theorem _root_.ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le
 variable {G M} in
 /-- **Pullback along an isomorphism onto a subgroup detects restriction to that subgroup.** If
 `φ : H → G` is a continuous isomorphism `e : H ≃ₜ* S` onto a subgroup `S` of `G` followed by the
-inclusion, and `f : M → N` is a compatible bijection of coefficient modules with `M` discrete, then
-a class of `H¹(G, M)` pulls back to zero along `(φ, f)` exactly when its restriction to `S`
+inclusion, and `f : M → N` is a continuous compatible bijection of coefficient modules, then a
+class of `H¹(G, M)` pulls back to zero along `(φ, f)` exactly when its restriction to `S`
 vanishes. -/
-theorem explicitMap1_eq_zero_iff_explicitRes1_eq_zero [DiscreteTopology M]
+theorem explicitMap1_eq_zero_iff_explicitRes1_eq_zero
     {H : Type uH} [Group H] [TopologicalSpace H]
     {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
     {S : Subgroup G} (e : H ≃ₜ* S) {φ : H →ₜ* G}
     (hφ : φ = (ContinuousMonoidHom.subgroupSubtype S).comp (e : H →ₜ* S)) {f : M →+ N}
-    (hf : Function.Bijective f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    {c : H1 G M} :
-    explicitMap1 G M H N φ f continuous_of_discreteTopology hequiv c = 0 ↔
+    (hf : Function.Bijective f) (hcont : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) {c : H1 G M} :
+    explicitMap1 G M H N φ f hcont hequiv c = 0 ↔
       explicitRes1 G M S c = 0 := by
   subst hφ
   obtain ⟨z, rfl⟩ := QuotientAddGroup.mk_surjective c
@@ -690,13 +690,14 @@ theorem explicitMap1_eq_zero_iff_explicitRes1_eq_zero [DiscreteTopology M]
   have hcomp : ∀ h : H,
       ((ContinuousMonoidHom.subgroupSubtype S).comp (e : H →ₜ* S)) h = ((e h : S) : G) :=
     fun _ => rfl
+  have hsub : ∀ s : S, ContinuousMonoidHom.subgroupSubtype S s = (s : G) := fun _ => rfl
   refine ⟨fun ⟨n, hn⟩ => ?_, fun ⟨m, hm⟩ => ⟨f m, fun h => ?_⟩⟩
   · obtain ⟨m, rfl⟩ := hf.2 n
     refine ⟨m, fun s => hf.1 ?_⟩
     have h1 := hn (e.symm s)
     have h3 := hequiv (e.symm s) m
     simp only [hcomp, e.apply_symm_apply] at h1 h3
-    change f ((s : G) • m - m) = f ((z : G → M) s)
+    simp only [Subgroup.smul_def, AddMonoidHom.id_apply, hsub]
     rw [map_sub, h3, h1]
   · have h1 := hm (e h)
     have h3 := hequiv h m
