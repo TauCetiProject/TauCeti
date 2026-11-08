@@ -39,6 +39,9 @@ of the discounted process `e^{-μ t} S_t` and the conditional moments `E[S_t ^ q
   `r` that the Black–Scholes risk-neutral measure induces.
 * `TauCeti.Probability.rpow_geometricBrownianMotion`: real powers of `S_t` as multiples of
   exponential martingales.
+* `TauCeti.Probability.abs_geometricBrownianMotion`: taking absolute values replaces `s` by `|s|`.
+* `TauCeti.Probability.abs_rpow_geometricBrownianMotion`: absolute powers as multiples of
+  exponential martingales, without a sign restriction on `s`.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_geometricBrownianMotion`: for `s > 0`, `S_t` is
   log-normal with log-mean `log s + (μ - σ² / 2) t` and log-variance `σ² t`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_geometricBrownianMotion`: `E[S_t] = s e^{μ t}`.
@@ -132,6 +135,22 @@ theorem rpow_geometricBrownianMotion (hs : 0 ≤ s) (μ σ q : ℝ) (W : ℝ≥0
     mul_rpow (by positivity) (exponentialMartingale_pos σ W t ω).le, mul_rpow hs (exp_pos _).le,
     ← exp_mul, rpow_exponentialMartingale, mul_assoc, ← mul_assoc (exp _), ← exp_add, mul_assoc]
   ring_nf
+
+/-- Taking the absolute value of a geometric Brownian motion replaces its initial
+value by its absolute value. -/
+@[simp] theorem abs_geometricBrownianMotion (s μ σ : ℝ) (W : ℝ≥0 → Ω → ℝ)
+    (t : ℝ≥0) (ω : Ω) :
+    |geometricBrownianMotion s μ σ W t ω| = geometricBrownianMotion |s| μ σ W t ω := by
+  simp only [geometricBrownianMotion_def, abs_mul, abs_of_pos (exp_pos _)]
+
+/-- An absolute power of geometric Brownian motion factors through an exponential
+martingale, without a sign restriction on its initial value. -/
+theorem abs_rpow_geometricBrownianMotion (s μ σ q : ℝ)
+    (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
+    |geometricBrownianMotion s μ σ W t ω| ^ q =
+      |s| ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) *
+        exponentialMartingale (q * σ) W t ω := by
+  rw [abs_geometricBrownianMotion, rpow_geometricBrownianMotion (abs_nonneg s)]
 
 end TauCeti.Probability
 

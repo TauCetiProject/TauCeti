@@ -42,17 +42,15 @@ open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
 
-/-- An absolute power of geometric Brownian motion factors through an exponential
-martingale, without a sign restriction on its initial value. -/
-theorem abs_rpow_geometricBrownianMotion {Ω : Type*} (s μ σ q : ℝ)
-    (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
-    |geometricBrownianMotion s μ σ W t ω| ^ q =
-      |s| ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) *
-        exponentialMartingale (q * σ) W t ω := by
-  have h : |geometricBrownianMotion s μ σ W t ω| =
-      geometricBrownianMotion |s| μ σ W t ω := by
-    simp only [geometricBrownianMotion_def, abs_mul, abs_of_pos (exp_pos _)]
-  rw [h, rpow_geometricBrownianMotion (abs_nonneg s)]
+/-- Function-level factorization used in random-initial absolute-moment proofs. -/
+private theorem abs_rpow_geometricBrownianMotion_random_initial_eq_mul {Ω : Type*}
+    (ξ : Ω → ℝ) (μ σ q : ℝ) (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) :
+    (fun ω ↦ |geometricBrownianMotion (ξ ω) μ σ W t ω| ^ q) =
+      fun ω ↦ (|ξ ω| ^ q * exponentialMartingale (q * σ) W t ω) *
+        exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) := by
+  ext ω
+  rw [abs_rpow_geometricBrownianMotion]
+  ring
 
 namespace IsFilteredPreBrownianReal
 
@@ -70,19 +68,22 @@ private theorem indepFun_initial_abs_rpow_exponentialMartingale
     (by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q)
     (by fun_prop : Measurable fun x : ℝ ↦ exp (θ * x - θ ^ 2 * t / 2)))
 
+/-- Integrability of the independent product used in random-initial moments. -/
+private theorem integrable_initial_abs_rpow_mul_exponentialMartingale
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hξ : Measurable[ℱ 0] ξ)
+    {q : ℝ} (hξq : Integrable (fun ω ↦ |ξ ω| ^ q) P) (θ : ℝ) (t : ℝ≥0) :
+    Integrable (fun ω ↦ |ξ ω| ^ q * exponentialMartingale θ W t ω) P :=
+  (hW.indepFun_initial_abs_rpow_exponentialMartingale hξ q θ t).integrable_mul
+    hξq (hW.integrable_exponentialMartingale θ t)
+
 /-- A random-initial-value GBM has an integrable absolute power whenever its
 initial value has that moment. No higher initial moment is needed. -/
 theorem integrable_abs_rpow_geometricBrownianMotion_random_initial
     (hW : IsFilteredPreBrownianReal ℱ W P) (hξ : Measurable[ℱ 0] ξ)
     {q : ℝ} (hξq : Integrable (fun ω ↦ |ξ ω| ^ q) P) (μ σ : ℝ) (t : ℝ≥0) :
     Integrable (fun ω ↦ |geometricBrownianMotion (ξ ω) μ σ W t ω| ^ q) P := by
-  have hprod := (hW.indepFun_initial_abs_rpow_exponentialMartingale hξ q (q * σ) t).integrable_mul
-    hξq (hW.integrable_exponentialMartingale (q * σ) t)
-  convert hprod.mul_const (exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t)) using 1
-  ext ω
-  rw [abs_rpow_geometricBrownianMotion]
-  simp only [Pi.mul_apply]
-  ring
+  rw [abs_rpow_geometricBrownianMotion_random_initial_eq_mul]
+  exact (hW.integrable_initial_abs_rpow_mul_exponentialMartingale hξ hξq (q * σ) t).mul_const _
 
 /-- Exact absolute moments of geometric Brownian motion with an initial variable
 known at time zero. The only moment hypothesis is the initial absolute `q`th moment. -/
@@ -91,14 +92,8 @@ theorem integral_abs_rpow_geometricBrownianMotion_random_initial
     {q : ℝ} (hξq : Integrable (fun ω ↦ |ξ ω| ^ q) P) (μ σ : ℝ) (t : ℝ≥0) :
     ∫ ω, |geometricBrownianMotion (ξ ω) μ σ W t ω| ^ q ∂P =
       (∫ ω, |ξ ω| ^ q ∂P) * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) := by
-  have hfactor : (fun ω ↦ |geometricBrownianMotion (ξ ω) μ σ W t ω| ^ q) =
-      fun ω ↦ (|ξ ω| ^ q * exponentialMartingale (q * σ) W t ω) *
-        exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) := by
-    ext ω
-    rw [abs_rpow_geometricBrownianMotion]
-    ring
   have hindep := hW.indepFun_initial_abs_rpow_exponentialMartingale hξ q (q * σ) t
-  rw [hfactor, integral_mul_const,
+  rw [abs_rpow_geometricBrownianMotion_random_initial_eq_mul, integral_mul_const,
     hindep.integral_fun_mul_eq_mul_integral hξq.aestronglyMeasurable
       (hW.integrable_exponentialMartingale (q * σ) t).aestronglyMeasurable,
     hW.integral_exponentialMartingale, mul_one]
@@ -122,7 +117,7 @@ theorem memLp_geometricBrownianMotion_random_initial
 
 /-- Exponentially normalized absolute powers of a random-initial-value GBM are
 true martingales when the corresponding initial absolute power is integrable. -/
-theorem martingale_abs_rpow_geometricBrownianMotion_random_initial
+theorem martingale_exp_neg_mul_abs_rpow_geometricBrownianMotion_random_initial
     (hW : IsFilteredPreBrownianReal ℱ W P) (hξ : Measurable[ℱ 0] ξ)
     {q : ℝ} (hξq : Integrable (fun ω ↦ |ξ ω| ^ q) P) (μ σ : ℝ) :
     Martingale (fun (t : ℝ≥0) ω ↦
@@ -134,7 +129,8 @@ theorem martingale_abs_rpow_geometricBrownianMotion_random_initial
         |geometricBrownianMotion (ξ ω) μ σ W t ω| ^ q) =
       fun t ω ↦ |ξ ω| ^ q * exponentialMartingale (q * σ) W t ω := by
     ext t ω
-    rw [abs_rpow_geometricBrownianMotion, exp_neg]
+    rw [congrFun (abs_rpow_geometricBrownianMotion_random_initial_eq_mul ξ μ σ q W t) ω,
+      exp_neg]
     field_simp
   rw [hfactor]
   have hmeas : ∀ t, StronglyMeasurable[ℱ t] (fun ω ↦ |ξ ω| ^ q) := by
@@ -142,8 +138,7 @@ theorem martingale_abs_rpow_geometricBrownianMotion_random_initial
     exact ((by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q).comp
       (hξ.mono (ℱ.mono (zero_le (a := t))) le_rfl)).stronglyMeasurable
   have hint : ∀ t, Integrable (fun ω ↦ |ξ ω| ^ q * exponentialMartingale (q * σ) W t ω) P :=
-    fun t ↦ (hW.indepFun_initial_abs_rpow_exponentialMartingale hξ q (q * σ) t).integrable_mul
-      hξq (hW.integrable_exponentialMartingale (q * σ) t)
+    fun t ↦ hW.integrable_initial_abs_rpow_mul_exponentialMartingale hξ hξq (q * σ) t
   refine ⟨fun t ↦ (hmeas t).mul
     ((hW.martingale_exponentialMartingale (q * σ)).stronglyMeasurable t), fun s t hst ↦ ?_⟩
   exact (condExp_mul_of_stronglyMeasurable_left (hmeas s) (hint t)
@@ -162,7 +157,8 @@ theorem condExp_abs_rpow_geometricBrownianMotion_random_initial
         |geometricBrownianMotion (ξ ω) μ σ W u ω| ^ q := by
   let c := q * μ + q * (q - 1) * σ ^ 2 / 2
   have hmart :=
-    (hW.martingale_abs_rpow_geometricBrownianMotion_random_initial hξ hξq μ σ).condExp_ae_eq hut
+    (hW.martingale_exp_neg_mul_abs_rpow_geometricBrownianMotion_random_initial
+      hξ hξq μ σ).condExp_ae_eq hut
   have hpull := condExp_smul (𝕜 := ℝ) (μ := P) (exp (-(c * t)))
     (fun ω ↦ |geometricBrownianMotion (ξ ω) μ σ W t ω| ^ q) (ℱ u)
   simp only [Pi.smul_def, smul_eq_mul, c] at hpull
