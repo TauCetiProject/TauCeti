@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Lebesgue integrals over horizontal bands in `ℂ`
@@ -23,7 +24,6 @@ that is periodic in the direction `I`. This file collects the facts about Lebesg
 integrals over the sets `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` that are needed to work with such
 periodic functions on half-strips.
 
-* The set `s ×ℂ t` is measurable when `s` and `t` are (`MeasurableSet.reProdIm`).
 * For a function periodic under `z ↦ z + I`, translating the band `t` vertically by an integer
   does not change the integral (`Function.Periodic.setLIntegral_reProdIm_preimage_add_intCast`),
   so its integral over a band of `k` periods is `k` times its integral over one period
@@ -45,12 +45,6 @@ public section
 
 open Complex Filter Function Metric MeasureTheory Set Topology
 open scoped ENNReal
-
-/-- The set `s ×ℂ t` is measurable when `s` and `t` are. -/
-theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : MeasurableSet t) :
-    MeasurableSet (s ×ℂ t) := by
-  rw [Complex.reProdIm]
-  exact (continuous_re.measurable hs).inter (continuous_im.measurable ht)
 
 namespace Function.Periodic
 
