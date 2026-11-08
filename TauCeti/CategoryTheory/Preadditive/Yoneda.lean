@@ -25,10 +25,10 @@ about it.
   `Y ⟶ Y'`. This is the form in which representable functors are projective that is used to
   build presentations of finitely presented functors.
 
-An additive functor `G : C ⥤ D` also induces a natural transformation `(-, X) ⟶ (G -, G X)`,
-the additive version of `CategoryTheory.yonedaMap`. It is an epimorphism when `G` is full, and
-the morphisms `f` with `(-, f)` killed by it are those killed by `G`. For the quotient functor
-by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
+For an additive functor `G : C ⥤ D`, Mathlib's natural transformation
+`CategoryTheory.preadditiveYonedaMap G X : (-, X) ⟶ (G -, G X)` is an epimorphism when `G` is
+full, and the morphisms `f` with `(-, f)` killed by it are those killed by `G`. For the quotient
+functor by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
 
 ## Main declarations
 
@@ -40,8 +40,8 @@ by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
   are equal.
 * `CategoryTheory.exists_preadditiveYoneda_map_comp_eq`: lifting along an epimorphism out of a
   representable functor.
-* `CategoryTheory.Functor.preadditiveYonedaMap`: the natural transformation `(-, X) ⟶ (G -, G X)`
-  induced by an additive functor `G`.
+* `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
+  transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`.
 -/
 
 public section
@@ -95,42 +95,25 @@ theorem exists_preadditiveYoneda_map_comp_eq {Y Y' : C} {F : Cᵒᵖ ⥤ AddComm
   exact (congrArg (p.app (op Y))
     ((preadditiveYoneda_map_app_apply u (op Y) (𝟙 Y)).trans (Category.id_comp u))).trans hu
 
-/-! ### The natural transformation induced by an additive functor -/
+/-! ### The natural transformation `(-, X) ⟶ (G -, G X)` induced by an additive functor -/
 
 section preadditiveYonedaMap
 
 variable {D : Type u'} [Category.{v} D] [Preadditive D] (G : C ⥤ D) [G.Additive]
 
-/-- For an additive functor `G : C ⥤ D` and `X : C`, applying `G` to morphisms into `X` is a
-natural transformation `(-, X) ⟶ (G -, G X)`. This is the additive version of
-`CategoryTheory.yonedaMap`. -/
-def Functor.preadditiveYonedaMap (X : C) :
-    preadditiveYoneda.obj X ⟶ G.op ⋙ preadditiveYoneda.obj (G.obj X) where
-  app Z := AddCommGrpCat.ofHom (G.mapAddHom : (Z.unop ⟶ X) →+ (G.obj Z.unop ⟶ G.obj X))
-  naturality Z W f := by
-    -- An element of `(preadditiveYoneda.obj X).obj Z` is a morphism `g : Z.unop ⟶ X`, and
-    -- naturality is the compatibility of `G` with composition.
-    ext (g : Z.unop ⟶ X)
-    exact G.map_comp f.unop g
-
-@[simp]
-theorem Functor.preadditiveYonedaMap_app_apply (X : C) (Z : Cᵒᵖ) (g : Z.unop ⟶ X) :
-    dsimp% (G.preadditiveYonedaMap X).app Z g = G.map g :=
-  (rfl)
-
 /-- The natural transformation `(-, X) ⟶ (G -, G X)` is an epimorphism when `G` is full. -/
-instance Functor.epi_preadditiveYonedaMap [G.Full] (X : C) : Epi (G.preadditiveYonedaMap X) := by
-  have (Z : Cᵒᵖ) : Epi ((G.preadditiveYonedaMap X).app Z) :=
+instance epi_preadditiveYonedaMap [G.Full] (X : C) : Epi (preadditiveYonedaMap G X) := by
+  have (Z : Cᵒᵖ) : Epi ((preadditiveYonedaMap G X).app Z) :=
     (AddCommGrpCat.epi_iff_surjective _).2 fun g ↦ ⟨G.preimage g, G.map_preimage g⟩
   exact NatTrans.epi_of_epi_app _
 
 /-- The natural transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`. -/
-theorem Functor.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff {Y X : C}
-    (f : Y ⟶ X) : preadditiveYoneda.map f ≫ G.preadditiveYonedaMap X = 0 ↔ G.map f = 0 := by
+theorem preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff {Y X : C}
+    (f : Y ⟶ X) : preadditiveYoneda.map f ≫ preadditiveYonedaMap G X = 0 ↔ G.map f = 0 := by
   -- Both sides are read off on `𝟙 Y`, where `(-, f)` followed by the transformation gives
   -- `G.map (𝟙 Y ≫ f)`.
-  have key : (preadditiveYoneda.map f ≫ G.preadditiveYonedaMap X).app (op Y) (𝟙 Y) = G.map f :=
-    (G.preadditiveYonedaMap_app_apply X (op Y) (𝟙 Y ≫ f)).trans (by rw [Category.id_comp])
+  have key : (preadditiveYoneda.map f ≫ preadditiveYonedaMap G X).app (op Y) (𝟙 Y) = G.map f :=
+    (congrArg G.map (Category.id_comp f) :)
   have hzero : (0 : preadditiveYoneda.obj Y ⟶ G.op ⋙ preadditiveYoneda.obj (G.obj X)).app (op Y)
       (𝟙 Y) = 0 :=
     (rfl)

@@ -181,10 +181,10 @@ section Top
 is a projective cover exactly when every endomorphism of `X` killed by `Φ` is radical. -/
 theorem isRepresentableProjectiveCover_preadditiveYonedaMap_iff {D : Type*} [Category.{v} D]
     [Preadditive D] (Φ : C ⥤ D) [Φ.Additive] [Φ.Full] (X : C) :
-    IsRepresentableProjectiveCover (Φ.preadditiveYonedaMap X) ↔
+    IsRepresentableProjectiveCover (preadditiveYonedaMap Φ X) ↔
       ∀ ψ : X ⟶ X, Φ.map ψ = 0 → ψ ∈ jacobsonRadical X X := by
   simp only [isRepresentableProjectiveCover_iff,
-    Functor.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff]
+    preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff]
   exact and_iff_right inferInstance
 
 /-- **Projective covers of the tops of representable functors.** For an ideal `I` of `C`, the
@@ -192,7 +192,7 @@ quotient `(-, X) ⟶ (-, X) / I(-, X)`, the functor `Z ↦ Hom_{C/I}(Z, X)` of t
 category, is a projective cover exactly when `I(X, X)` lies in the radical of `End X`. -/
 theorem MorphismIdeal.isRepresentableProjectiveCover_preadditiveYonedaMap_quotientFunctor_iff
     (I : MorphismIdeal C) (X : C) :
-    IsRepresentableProjectiveCover (I.quotientFunctor.preadditiveYonedaMap X) ↔
+    IsRepresentableProjectiveCover (preadditiveYonedaMap I.quotientFunctor X) ↔
       I.hom X X ≤ jacobsonRadical X X := by
   rw [isRepresentableProjectiveCover_preadditiveYonedaMap_iff, IsConcreteLE.le_iff]
   simp only [MorphismIdeal.quotientFunctor_map_eq_zero_iff]
@@ -201,7 +201,7 @@ theorem MorphismIdeal.isRepresentableProjectiveCover_preadditiveYonedaMap_quotie
 `(-, X) ⟶ S_X = (-, X) / rad(-, X)` is a projective cover. -/
 theorem isRepresentableProjectiveCover_preadditiveYonedaMap_jacobsonRadicalIdeal (X : C) :
     IsRepresentableProjectiveCover
-      ((jacobsonRadicalIdeal C).quotientFunctor.preadditiveYonedaMap X) :=
+      (preadditiveYonedaMap (jacobsonRadicalIdeal C).quotientFunctor X) :=
   ((jacobsonRadicalIdeal C).isRepresentableProjectiveCover_preadditiveYonedaMap_quotientFunctor_iff
     X).2 (jacobsonRadicalIdeal_hom X X).le
 
