@@ -423,4 +423,20 @@ theorem sum_eq_finrank_add_card_of_bijective_aeval_symmetricAlgebraInvariants_du
     (ρ.dual_injective_iff.mpr hρ) hf hbij, Subspace.dual_finrank_eq]
   simp_rw [finrank_quotient_fixedSubmodule_dual]
 
+/-- For homogeneous basic polynomial functions of a faithful finite action in characteristic
+zero, the sum of the degrees minus one is the number of pseudoreflections on `M`. -/
+theorem sum_sub_one_eq_card_of_bijective_aeval_symmetricAlgebraInvariants_dual
+    (hρ : Function.Injective ρ) {f : ι → ρ.dual.symmetricAlgebraInvariants}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Dual K M)) ∈
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule K (Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∑ i, (d i - 1) = #{g | finrank K (M ⧸ (ρ g).fixedSubmodule) = 1} := by
+  have h := ρ.dual.natCard_ker_mul_sum_sub_one_eq_card_of_sum_inv_reverse_charpoly_mul_prod_eq
+    (ρ.dual.sum_inv_reverse_charpoly_mul_prod_eq_of_mk_finrank_mul_prod_eq_one
+      (ρ.dual.mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_mul_prod_one_sub_X_pow
+        K hf hbij))
+  rw [(MonoidHom.ker_eq_bot_iff ρ.dual).2 (ρ.dual_injective_iff.mpr hρ),
+    Subgroup.card_bot, one_mul] at h
+  simpa only [finrank_quotient_fixedSubmodule_dual] using h
+
 end Representation

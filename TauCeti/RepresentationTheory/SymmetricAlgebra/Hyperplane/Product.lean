@@ -43,6 +43,21 @@ namespace Representation
 variable {K G V : Type*} [Field K] [Group G] [Finite G] [AddCommGroup V] [Module K V]
   (ρ : Representation K G V)
 
+/-- The inertia group of a defining form of a reflecting hyperplane has order greater than
+one, even without faithfulness or a restriction on the characteristic. -/
+theorem one_lt_card_dual_inertia (H : ρ.reflectingHyperplanes) {ℓ : Module.Dual K V}
+    (hker : LinearMap.ker ℓ = H.val) :
+    letI := ρ.dual.symmetricAlgebraMulSemiringAction
+    1 < Nat.card ((Ideal.span {ι K (Module.Dual K V) ℓ}).inertia G) := by
+  let := ρ.dual.symmetricAlgebraMulSemiringAction
+  obtain ⟨g, hg, hfix⟩ := ρ.mem_reflectingHyperplanes.1 H.property
+  have hgI : g ∈ (Ideal.span {ι K (Module.Dual K V) ℓ}).inertia G := by
+    rw [ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule, hker, ← hfix]
+  have hne : (⟨g, hgI⟩ : (Ideal.span {ι K (Module.Dual K V) ℓ}).inertia G) ≠ 1 := by
+    intro h
+    exact ρ.ne_one_of_finrank_quotient_fixedSubmodule_eq_one hg (congrArg Subtype.val h)
+  exact Finite.one_lt_card_iff_nontrivial.2 (nontrivial_iff.2 ⟨⟨g, hgI⟩, 1, hne⟩)
+
 /-- For a faithful representation, forgetting the reflecting hyperplane identifies the
 nonidentity elements of its inertia groups with the pseudoreflections. -/
 private noncomputable def sigmaInertiaNeOneEquivPseudoreflections
