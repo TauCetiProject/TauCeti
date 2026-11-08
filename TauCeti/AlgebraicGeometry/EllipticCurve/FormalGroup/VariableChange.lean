@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Inverse
 import Mathlib.Algebra.CharP.Algebra
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
@@ -301,27 +302,16 @@ open PowerSeries TauCeti.WeierstrassChange
 
 variable {R : Type*} [CommRing R]
 
-/-- The field identity behind the transformation of the invariant differential. Under
-`x = U²x' + r` and `y = U³y' + sU²x' + t` with `UV = 1`, the expression `2y + a₁x + a₃` is
-`U³(2y' + a₁'x' + a₃')`, where `a₁' = V(a₁ + 2s)` and `a₃' = V³(a₃ + ra₁ + 2t)`. So if `δ` is the
-derivative of `x'` and `G₁⁻¹Ψ`, `G₂⁻¹` are the two expressions of the invariant differential,
-then `G₁ = UΨG₂`. -/
-private theorem eq_mul_mul_of_inv_mul_eq {F : Type*} [Field F]
-    {δ x y G₁ G₂ Ψ U V a₁ a₃ r s t : F} (hU : U * V = 1) (hG₁ : G₁ ≠ 0) (hG₂ : G₂ ≠ 0)
-    (e₁ : (2 * (U ^ 3 * y + s * U ^ 2 * x + t) + a₁ * (U ^ 2 * x + r) + a₃)⁻¹ * (U ^ 2 * δ) =
-      G₁⁻¹ * Ψ)
-    (e₂ : (2 * y + V * (a₁ + 2 * s) * x + V ^ 3 * (a₃ + r * a₁ + 2 * t))⁻¹ * δ = G₂⁻¹) :
+/-- The field identity behind the transformation of the invariant differential. If `δ` is the
+derivative of `x'`, the curve morphism scales `x` by `U²` and `2y + a₁x + a₃` by `U³`, and `G₁⁻¹Ψ`,
+`G₂⁻¹` are the two expressions of the invariant differential, then `G₁ = UΨG₂`. -/
+private theorem eq_mul_mul_of_inv_mul_eq {F : Type*} [Field F] {δ P G₁ G₂ Ψ U : F} (hU : U ≠ 0)
+    (hG₁ : G₁ ≠ 0) (hG₂ : G₂ ≠ 0) (e₁ : (U ^ 3 * P)⁻¹ * (U ^ 2 * δ) = G₁⁻¹ * Ψ)
+    (e₂ : P⁻¹ * δ = G₂⁻¹) :
     G₁ = U * Ψ * G₂ := by
-  have hP : 2 * (U ^ 3 * y + s * U ^ 2 * x + t) + a₁ * (U ^ 2 * x + r) + a₃ =
-      U ^ 3 * (2 * y + V * (a₁ + 2 * s) * x + V ^ 3 * (a₃ + r * a₁ + 2 * t)) := by
-    linear_combination (-(U ^ 2 * x * (a₁ + 2 * s)) -
-      (a₃ + r * a₁ + 2 * t) * (1 + U * V + U ^ 2 * V ^ 2)) * hU
-  rw [hP] at e₁
-  generalize 2 * y + V * (a₁ + 2 * s) * x + V ^ 3 * (a₃ + r * a₁ + 2 * t) = P at e₁ e₂
   have hP0 : P ≠ 0 := by
     rintro rfl
     exact hG₂ (inv_eq_zero.1 (by simpa using e₂.symm))
-  have hU0 : U ≠ 0 := left_ne_zero_of_mul_eq_one hU
   field_simp at e₁ e₂
   have hδ : δ ≠ 0 := by
     rintro rfl
@@ -384,16 +374,21 @@ private theorem subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDom
     field_simp
   have hy : -1 / ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
       algebraMap R K (C.u : R) ^ 3 * (-1 / ι (formalW (C • W))) +
-        algebraMap R K C.s * algebraMap R K (C.u : R) ^ 2 * (ι X / ι (formalW (C • W))) +
+        algebraMap R K (C.u : R) ^ 2 * algebraMap R K C.s * (ι X / ι (formalW (C • W))) +
         algebraMap R K C.t := by
     rw [subst_formalCoordinate_formalW, map_mul]
     field_simp
     linear_combination hDe
+  -- `2y + a₁x + a₃` scales by `u³` under the change of variables
+  have hP := Affine.variableChange_evalEval_polynomialY (W.baseChange K) (C.map (algebraMap R K))
+    (ι X / ι (formalW (C • W))) (-1 / ι (formalW (C • W)))
+  simp only [WeierstrassCurve.baseChange, map_variableChange, map_u, Units.coe_map,
+    MonoidHom.coe_ofClass, map_r, map_s, map_t] at hP
   rw [hx, hy] at e₁
-  simp only [Affine.evalEval_polynomialY, WeierstrassCurve.baseChange, map_a₁, map_a₃,
-    variableChange_a₁, variableChange_a₃, map_mul, map_add, map_pow, map_ofNat,
-    Derivation.leibniz, Derivation.leibniz_pow, hDc, mul_zero, smul_zero, add_zero,
-    smul_eq_mul] at e₁ e₂
+  simp only [WeierstrassCurve.baseChange] at e₁ e₂
+  rw [hP] at e₁
+  simp only [map_add, Derivation.leibniz, Derivation.leibniz_pow, hDc, mul_zero, smul_zero,
+    add_zero, smul_eq_mul] at e₁
   have hG₁ : ι (subst (C.formalCoordinate W).toPowerSeries
       W.formalInvariantDifferentialDenom) ≠ 0 :=
     (map_ne_zero_iff _ hinj).2 fun h ↦ by
@@ -401,11 +396,9 @@ private theorem subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDom
         congrArg constantCoeff h
   have hG₂ : ι (C • W).formalInvariantDifferentialDenom ≠ 0 :=
     (map_ne_zero_iff _ hinj).2 fun h ↦ by simpa using congrArg constantCoeff h
-  have hU : algebraMap R K (C.u : R) * algebraMap R K ↑C.u⁻¹ = 1 := by
-    rw [← map_mul, Units.mul_inv, map_one]
   apply hinj
   rw [map_mul, map_mul, hC]
-  exact eq_mul_mul_of_inv_mul_eq hU hG₁ hG₂ e₁ e₂
+  exact eq_mul_mul_of_inv_mul_eq (C.u.isUnit.map (algebraMap R K)).ne_zero hG₁ hG₂ e₁ e₂
 
 end Domain
 
@@ -455,10 +448,11 @@ theorem subst_formalCoordinate_formalInvariantDifferentialDenom
       subst (PowerSeries.map k (C₀.formalCoordinate W₀).toPowerSeries)
         (PowerSeries.map k W₀.formalInvariantDifferentialDenom) :=
     PowerSeries.map_subst (TauCeti.FormalCoordinate.hasSubst _) _
-  rw [← hW, ← hC, map_formalCoordinate, TauCeti.FormalCoordinate.toPowerSeries_map,
-    map_variableChange, map_formalInvariantDifferentialDenom,
-    map_formalInvariantDifferentialDenom, derivative_map, ← hs, h, map_mul, map_mul,
-    PowerSeries.map_C]
+  -- every series of the specialized pair is the image of the universal one under `k`
+  rw [← hW, ← hC]
+  simp only [map_formalCoordinate, TauCeti.FormalCoordinate.toPowerSeries_map, map_variableChange,
+    map_formalInvariantDifferentialDenom, derivative_map]
+  rw [← hs, h]
   simp
 
 /-- **The transition pulls back the invariant differential `ω_W` to `u⁻¹ ω_{C • W}`**: in the
@@ -490,11 +484,16 @@ private theorem formalGroup_smul_of_algebra [Algebra ℚ R] (C : VariableChange 
     (W : WeierstrassCurve R) :
     formalGroup (C • W) = (C.formalCoordinate W)⁻¹ • formalGroup W := by
   refine FormalGroup.invariantDifferential_injective ?_
-  rw [← FormalGroup.derivative_log, ← FormalGroup.derivative_log, FormalGroup.log_smul, inv_inv,
-    map_inv, linearCoeff_formalCoordinate, inv_inv, Derivation.map_smul,
-    derivative_subst (C.formalCoordinate W).hasSubst, FormalGroup.derivative_log,
-    FormalGroup.derivative_log, subst_formalCoordinate_invariantDifferential_formalGroup,
-    smul_eq_C_mul, ← mul_assoc, ← map_mul, Units.mul_inv, map_one, one_mul]
+  have hlog : ((C.formalCoordinate W)⁻¹ • formalGroup W).log =
+      (C.u : R) • subst (C.formalCoordinate W).toPowerSeries (formalGroup W).log := by
+    simp [FormalGroup.log_smul]
+  have hd : d⁄dX (subst (C.formalCoordinate W).toPowerSeries (formalGroup W).log) =
+      PowerSeries.C ((C.u⁻¹ : Rˣ) : R) * (formalGroup (C • W)).invariantDifferential := by
+    rw [derivative_subst (C.formalCoordinate W).hasSubst, FormalGroup.derivative_log,
+      subst_formalCoordinate_invariantDifferential_formalGroup]
+  rw [← FormalGroup.derivative_log ((C.formalCoordinate W)⁻¹ • formalGroup W), hlog,
+    Derivation.map_smul, hd, smul_eq_C_mul, ← mul_assoc, ← map_mul]
+  simp
 
 /-- The transport of the formal group law of `W` along the inverse transition commutes with
 base change. -/
@@ -528,6 +527,7 @@ theorem formalGroup_smul (C : VariableChange R) (W : WeierstrassCurve R) :
 /-- **The formal parameter transition is an isomorphism of formal group laws**: transporting the
 formal group law of `C • W` along the transition `ψ` to `W` gives that of `W`, so
 `FormalGroup.smulIso` makes `ψ` an isomorphism from `Ê_{C • W}` to `Ê_W`. -/
+@[simp]
 theorem formalCoordinate_smul_formalGroup (C : VariableChange R) (W : WeierstrassCurve R) :
     C.formalCoordinate W • formalGroup (C • W) = formalGroup W := by
   rw [formalGroup_smul, smul_inv_smul]
