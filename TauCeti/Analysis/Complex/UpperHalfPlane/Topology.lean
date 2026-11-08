@@ -338,6 +338,48 @@ theorem injOn_update_comp_const_sub_inv {α : Type*} [Zero α] {g : ℂ → α}
   · rw [Function.update_of_ne hz0, Function.update_of_ne hz0'] at h
     exact inv_injective (sub_right_injective (hgi (hT hz hz0 hGz) (hT hz' hz0' hGz') h))
 
+/-- Inverting `f (-w⁻¹) - c` about `c` and filling in `0` at the origin is continuous on the part
+of the closed upper half-plane near `0`, when `f` tends to infinity at infinity. -/
+theorem continuousOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ}
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
+    ContinuousOn (Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  have hT := tendsto_comp_neg_inv_cobounded hp
+  refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+  · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
+      (continuousAt_inv₀ hw.2).neg.continuousWithinAt
+    exact continuousWithinAt_const.div (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
+      (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
+        im_neg_inv_nonneg.mpr hy.1.2).sub_const c) (hne w hw.1.1 hw.1.2 hw.2)
+  · have hlim := (tendsto_inv₀_cobounded.comp ((tendsto_sub_const_cobounded c).comp
+      (hT.mono_left (nhdsWithin_mono _
+        (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))).const_mul b
+    simpa only [mul_zero, Function.comp_def, div_eq_mul_inv] using hlim
+
+/-- Inverting `f (-w⁻¹) - c` about `c` and filling in `0` at the origin is injective on the part
+of the closed upper half-plane near `0`, when `f` is injective on it. -/
+theorem injOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
+    InjOn (Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  set g : ℂ → ℂ := Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0
+  have hg0 : g 0 = 0 := Function.update_self _ _ _
+  have hgv : ∀ w, w ≠ 0 → g w = b / (f (-w⁻¹) - c) := fun w hw => Function.update_of_ne hw _ _
+  intro w₁ hw₁ w₂ hw₂ h
+  by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
+  · rw [h₁, h₂]
+  · rw [h₁, hg0, hgv w₂ h₂] at h
+    exact absurd h.symm (div_ne_zero hb (hne w₂ hw₂.1 hw₂.2 h₂))
+  · rw [h₂, hg0, hgv w₁ h₁] at h
+    exact absurd h (div_ne_zero hb (hne w₁ hw₁.1 hw₁.2 h₁))
+  · rw [hgv w₁ h₁, hgv w₂ h₂] at h
+    have h' := congrArg (·⁻¹) h
+    simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
+    simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h'
+
 end TauCeti
 
 namespace TauCeti.UpperHalfPlane

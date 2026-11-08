@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Complex.Angle
 public import TauCeti.Topology.ClusterSet
 
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
@@ -27,7 +29,7 @@ infinity. These facts supply the boundary conditions for polygonal conformal map
 
 public section
 
-open Complex Metric Set Topology
+open Bornology Complex Filter Metric Set Topology
 
 namespace TauCeti
 
@@ -346,6 +348,57 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
     (continuous_im.comp hζc).continuousAt.eventually (isOpen_Ioo.mem_nhds him)]
     with z hzρ hzre hzim hzU
   exact hU z hzρ hzU ⟨hzre, hzim⟩
+
+/-- The map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin, is continuous
+on the part of the closed upper half-plane near `0` where `(f (-w⁻¹) - c) / b` lies in the closed
+half-strip, when `f` tends to infinity at infinity. -/
+theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      0 ≤ ((f (-w⁻¹) - c) / b).re ∧ ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
+    ContinuousOn (Function.update (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+  · -- continuity away from `0` by continuity of `f` up to the axis
+    have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
+      (continuousAt_inv₀ hw.2).neg.continuousWithinAt
+    exact (continuousWithinAt_const.sub ((((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
+      (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
+        im_neg_inv_nonneg.mpr hy.1.2).sub_const c).div_const b)).cexp
+  · -- in the closed half-strip `exp (π * I - ζ)` tends to `0` as `ζ` tends to infinity
+    refine tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded ?_
+      (eventually_nhdsWithin_of_forall fun w hw => hζ w hw.1.1 hw.1.2 hw.2)
+    exact tendsto_sub_div_of_tendsto_cobounded hb ((tendsto_comp_neg_inv_cobounded hp).mono_left
+      (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
+
+/-- The map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin, is injective
+on the part of the closed upper half-plane near `0` where `im ((f (-w⁻¹) - c) / b)` lies in
+`[0, π]`, when `f` is injective on it. -/
+theorem injOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
+    InjOn (Function.update (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  set ζ : ℂ → ℂ := fun w => (f (-w⁻¹) - c) / b
+  set g : ℂ → ℂ := Function.update (fun w => exp (Real.pi * Complex.I - ζ w)) 0 0
+  have hg0 : g 0 = 0 := Function.update_self _ _ _
+  have hgv : ∀ w, w ≠ 0 → g w = exp (Real.pi * Complex.I - ζ w) := fun w hw =>
+    Function.update_of_ne hw _ _
+  have hne : ∀ w, w ≠ 0 → g w ≠ 0 := fun w hw => by rw [hgv w hw]; exact exp_ne_zero _
+  intro w₁ hw₁ w₂ hw₂ h
+  by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
+  · rw [h₁, h₂]
+  · rw [h₁, hg0] at h
+    exact absurd h.symm (hne w₂ h₂)
+  · rw [h₂, hg0] at h
+    exact absurd h (hne w₁ h₁)
+  · rw [hgv w₁ h₁, hgv w₂ h₂] at h
+    have hζeq : ζ w₁ = ζ w₂ :=
+      injOn_exp_pi_mul_I_sub (hζ w₁ hw₁.1 hw₁.2 h₁) (hζ w₂ hw₂.1 hw₂.2 h₂) h
+    simp only [ζ, div_left_inj' hb, sub_left_inj] at hζeq
+    simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) hζeq
 
 end TauCeti
 
