@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Geometry
 public import TauCeti.AlgebraicTopology.SimplicialComplex.ElementaryCollapse
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Homotopy
+import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
 # Elementary collapse as a strong deformation retraction
@@ -35,41 +36,10 @@ open Set AbstractSimplicialComplex
 
 attribute [local instance] Classical.decEq
 
-/-- A homotopy from the identity that fixes a subset `S` at all times and ends in `S` gives a
-strong deformation retraction onto `S`: the retraction is the corestriction of the time-one
-map. -/
-theorem exists_strong_deformation_retraction_of_homotopy {X : Type*} [TopologicalSpace X]
-    {S : Set X} {F : unitInterval × X → X} (hFc : Continuous F) (hzero : ∀ x, F (0, x) = x)
-    (hone : ∀ x, F (1, x) ∈ S) (hfix : ∀ t, ∀ x ∈ S, F (t, x) = x) :
-    ∃ r : C(X, S), (∀ x : S, r x = x) ∧ Nonempty
-      ((ContinuousMap.id X).HomotopyRel ((ContinuousMap.subtypeVal S).comp r) S) := by
-  let r : C(X, S) := ⟨fun x => ⟨F (1, x), hone x⟩,
-    (hFc.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
-  refine ⟨r, fun x => Subtype.ext (hfix 1 x.1 x.2), ⟨?_⟩⟩
-  exact
-    { toFun := F
-      continuous_toFun := hFc
-      map_zero_left := hzero
-      map_one_left := fun _ => rfl
-      prop' := hfix }
-
 namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} {K L : PreAbstractSimplicialComplex ι}
   {A : AbstractSimplicialComplex ι} {σ τ : Finset ι}
-
-/-- A face of a free pair that contains the lower face lies inside the upper face. -/
-theorem IsFreePair.subset_upper_of_lower_subset (h : IsFreePair K σ τ) {ω : Finset ι}
-    (hω : ω ∈ K) (hσω : σ ⊆ ω) : ω ⊆ τ := by
-  rcases h.eq_lower_or_eq_upper hω hσω with rfl | rfl
-  · exact h.lower_ssubset_upper.subset
-  · exact Finset.Subset.rfl
-
-/-- A face of the complex that is not contained in the upper face of a free pair survives the
-deletion of the pair. -/
-theorem IsFreePair.mem_deletion_of_not_subset_upper (h : IsFreePair K σ τ) {ω : Finset ι}
-    (hω : ω ∈ K) (hωτ : ¬ ω ⊆ τ) : ω ∈ deletion K σ :=
-  mem_deletion.mpr ⟨hω, fun hσω => hωτ (h.subset_upper_of_lower_subset hω hσω)⟩
 
 /-- The extension by the identity of a deformation of the upper simplex of a free pair is
 continuous. Here `Hτ` deforms the upper simplex, `iτ` includes it, `toτ` reads a point supported
@@ -173,7 +143,7 @@ theorem IsFreePair.exists_strong_deformation_retraction (h : IsFreePair K σ τ)
           (hT (rτ (toτ x hx))).mp (rτ (toτ x hx)).2
     · simpa only [F, dite_eq_right hx, S, mem_ofPred_eq] using
         h.mem_deletion_of_not_subset_upper x.2 hx
-  exact exists_strong_deformation_retraction_of_homotopy hFc hzero hone hfix
+  exact TauCeti.exists_strong_deformation_retraction_of_homotopy hFc hzero hone hfix
 
 /-- Every elementary simplicial collapse gives a strong deformation retraction onto the
 target polyhedron. The subsets carry the topology inherited from any ambient weak realization;
