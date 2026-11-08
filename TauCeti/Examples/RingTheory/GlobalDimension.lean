@@ -10,6 +10,7 @@ import Mathlib.RingTheory.DualNumber
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.MvPolynomial.Ideal
 import Mathlib.RingTheory.RegularLocalRing.Polynomial
+import TauCeti.RingTheory.Regular.ProjectiveDimension
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 import TauCeti.RingTheory.TrivSqZeroExt
@@ -57,8 +58,8 @@ dimension `1`. -/
 example : projectiveDimension (ModuleCat.of ℤ (ℤ ⧸ span {(2 : ℤ)})) = 1 := by
   rw [← projectiveDimension_eq_of_iso
     (Shrink.linearEquiv.{0} ℤ (ℤ ⧸ span {(2 : ℤ)})).toModuleIso]
-  exact ModuleCat.projectiveDimension_quotient_span_singleton_eq_one two_ne_zero
-    (by norm_num [Int.isUnit_iff])
+  exact ModuleCat.projectiveDimension_quotient_span_singleton_eq_one
+    (mem_nonZeroDivisors_of_ne_zero two_ne_zero) (by norm_num [Int.isUnit_iff])
 
 /-- *globalDimension_int_iSup*: the global dimension `1` of `ℤ` is the supremum of the projective
 dimensions of its cyclic modules and of its finite modules. -/

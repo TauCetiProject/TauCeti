@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import TauCeti.Algebra.Module.PseudoCoherent.FaithfullyFlat
+import TauCeti.RingTheory.Regular.ProjectiveDimension
 
 /-!
 # The global dimension of a ring
@@ -123,7 +124,7 @@ theorem globalDimension_le_tfae [Small.{v} R] (n : ℕ) :
     (ModuleCat.hasProjectiveDimensionLE_of_quotients n h)
   tfae_finish
 
-/-- **Auslander's theorem: the global dimension is attained on cyclic modules.** The global
+/-- **Auslander's theorem: the global dimension is the supremum over cyclic modules.** The global
 dimension of `R` is the supremum of the projective dimensions of the cyclic modules `R ⧸ I`, for
 `I` a left ideal. M. Auslander, *On the dimension of modules and algebras III*, Theorem 1. -/
 theorem globalDimension_eq_iSup_cyclic [Small.{v} R] :
@@ -145,11 +146,10 @@ theorem globalDimension_eq_iSup_cyclic [Small.{v} R] :
     | top => exact le_top
     | coe n =>
       exact ((globalDimension_le_tfae.{v} R n).out 3 1).mp fun I ↦
-        (projectiveDimension_le_iff _ n).mp (h ▸ le_iSup (fun I : Ideal R ↦
-          projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ I)))) I)
+        (projectiveDimension_le_iff _ n).mp (h ▸ le_iSup _ I)
 
-/-- **The global dimension is attained on finite modules.** The global dimension of `R` is the
-supremum of the projective dimensions of the finite `R`-modules: this supremum lies between the
+/-- **The global dimension is the supremum over finite modules.** The global dimension of `R` is
+the supremum of the projective dimensions of the finite `R`-modules: this supremum lies between the
 one over the cyclic modules (`TauCeti.globalDimension_eq_iSup_cyclic`) and the one over all
 modules. -/
 theorem globalDimension_eq_iSup_finite [Small.{v} R] :
@@ -230,8 +230,9 @@ theorem globalDimension_eq_one_of_isPrincipalIdealRing [IsDomain R] [IsPrincipal
   obtain ⟨a, rfl⟩ := IsPrincipalIdealRing.principal I
   have ha : a ≠ 0 := by rintro rfl; simp at hbot
   have ha' : ¬ IsUnit a := fun h ↦ htop.ne (Ideal.span_singleton_eq_top.mpr h)
-  rw [← ModuleCat.projectiveDimension_quotient_span_singleton_eq_one.{u, v} ha ha']
-  exact ModuleCat.projectiveDimension_le_globalDimension _
+  exact (ModuleCat.projectiveDimension_quotient_span_singleton_eq_one
+    (mem_nonZeroDivisors_of_ne_zero ha) ha').symm.le.trans
+    (ModuleCat.projectiveDimension_le_globalDimension _)
 
 end CommRing
 
