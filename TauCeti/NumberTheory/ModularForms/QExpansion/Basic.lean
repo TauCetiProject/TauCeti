@@ -381,8 +381,10 @@ private lemma coe_vadd_one_div_eq_sub {d : ℕ} (σ : ℍ) :
 
 /-- **A shift by `1 / d` fixes every `q`-power the support condition leaves alive.** Translating
 the argument by `1 / d` scales the `n`-th `q`-power by a `d`-th root of unity raised to `n`, which
-is trivial exactly on the multiples of `d` — and a coefficient function supported there kills
-every other index. This is what a `q`-support hypothesis is spent on when descending along `V_d`.
+for `d > 0` is trivial exactly on the multiples of `d` — and a coefficient function supported there
+kills every other index. This is what a `q`-support hypothesis is spent on when descending along
+`V_d`. For `d = 0` the shift `1 / d` is `0`, so it is the identity shift and every `q`-power is
+fixed.
 -/
 theorem smul_qParam_pow_shift_eq {d : ℕ} {c : ℕ → ℂ}
     (hc : ∀ n : ℕ, ¬ d ∣ n → c n = 0) (σ : ℍ) (n : ℕ) :
