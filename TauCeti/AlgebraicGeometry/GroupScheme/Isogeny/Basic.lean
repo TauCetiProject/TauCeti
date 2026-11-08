@@ -62,30 +62,19 @@ theorem isIsogeny_iff (f : G ⟶ H) :
 /-- Group-scheme isogenies contain identities and are closed under composition. -/
 instance : (isogenies X).IsMultiplicative := by
   unfold isogenies
-  let : (@Flat ⊓ @Surjective : MorphismProperty Scheme).IsMultiplicative :=
+  have : (@Flat ⊓ @Surjective : MorphismProperty Scheme).IsMultiplicative :=
     MorphismProperty.IsMultiplicative.inf
-  let : (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme).IsMultiplicative :=
+  have : (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme).IsMultiplicative :=
     MorphismProperty.IsMultiplicative.inf
   infer_instance
 
 /-- Being a group-scheme isogeny is invariant under isomorphisms of arrows. -/
-instance : (isogenies X).RespectsIso := by
-  unfold isogenies
-  let _ : MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme) :=
-    MorphismProperty.respectsIso_of_isStableUnderComposition
-      (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-  let _ : MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme) :=
-    MorphismProperty.respectsIso_of_isStableUnderComposition
-      (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-  let _ : MorphismProperty.RespectsIso
-      (@Flat ⊓ @Surjective : MorphismProperty Scheme) :=
-    MorphismProperty.RespectsIso.inf @Flat @Surjective
-  let _ : MorphismProperty.RespectsIso
-      (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme) :=
-    MorphismProperty.RespectsIso.inf @IsFinite (@Flat ⊓ @Surjective)
-  exact MorphismProperty.RespectsIso.inverseImage
-    (@IsFinite ⊓ (@Flat ⊓ @Surjective) : MorphismProperty Scheme)
-    (Grp.forget (Over X) ⋙ Over.forget X)
+instance : (isogenies X).RespectsIso :=
+  -- An isomorphism of group schemes maps to an isomorphism of underlying schemes, which is finite,
+  -- flat, and surjective. The goal `isogenies X f` unfolds to these three conditions on the
+  -- functor-mapped arrow, where Mathlib's `IsIso` instances apply.
+  MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ _ _ ↦
+    ⟨inferInstance, inferInstance, inferInstance⟩
 
 /-- The identity of a group scheme is an isogeny. -/
 @[simp]
