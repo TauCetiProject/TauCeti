@@ -65,7 +65,7 @@ theorem le_ambientNullAugmentation (ℱ : Filtration ι m) (P : Measure Ω) :
     ℱ ≤ ℱ.ambientNullAugmentation P :=
   fun i ↦ le_inf (ℱ.le i) (ℱ.le_nullAugment P i)
 
-/-- All ambient-measurable null events are known at every time, in particular at time zero. -/
+/-- All ambient-measurable null events are known at every time. -/
 theorem measurableSet_ambientNullAugmentation_of_null (ℱ : Filtration ι m) (P : Measure Ω)
     (i : ι) {s : Set Ω} (hs : MeasurableSet s) (hP : P s = 0) :
     MeasurableSet[ℱ.ambientNullAugmentation P i] s :=
@@ -113,7 +113,8 @@ theorem ambientNullAugmentation_idem (ℱ : Filtration ι m) (P : Measure Ω) :
 
 /-- If the only ambient-measurable null event is empty, every filtration is unchanged.
 This applies, for example, to a finite discrete space charging every point. -/
-theorem ambientNullAugmentation_eq_self_of_null (ℱ : Filtration ι m) (P : Measure Ω)
+theorem ambientNullAugmentation_eq_self_of_forall_measure_eq_zero_eq_empty
+    (ℱ : Filtration ι m) (P : Measure Ω)
     (hP : ∀ s : Set Ω, MeasurableSet s → P s = 0 → s = ∅) :
     ℱ.ambientNullAugmentation P = ℱ := by
   apply ℱ.ambientNullAugmentation_eq_self P
@@ -149,8 +150,9 @@ end MeasureTheory.Filtration
 
 namespace MeasureTheory.Adapted
 
-variable {Ω ι E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [MeasurableSpace E]
-  {ℱ : Filtration ι m} {P : Measure Ω} {X Y : ι → Ω → E}
+variable {Ω ι : Type*} {m : MeasurableSpace Ω} [Preorder ι]
+  {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
+  {ℱ : Filtration ι m} {P : Measure Ω} {X Y : (i : ι) → Ω → β i}
 
 /-- An ambient-measurable version of an adapted process is adapted on the original-space
 null augmentation. Equality is required only at each fixed time, not simultaneously. -/
