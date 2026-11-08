@@ -592,9 +592,11 @@ theorem memLp_edist_iff_of_edist_ne_top
 /-- Finiteness of the Wasserstein distance from a Dirac source transfers to every basepoint at
 finite ground distance from the original basepoint. -/
 theorem wassersteinEDist_dirac_left_ne_top (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
-    {x₀ x₁ : X} (hx : edist x₁ x₀ ≠ ∞) (ν : Measure X) [IsProbabilityMeasure ν]
+    {x₀ x₁ : X} (hx : edist x₁ x₀ ≠ ∞) (ν : Measure X)
     (h : wassersteinEDist p (Measure.dirac x₀) ν ≠ ∞) :
     wassersteinEDist p (Measure.dirac x₁) ν ≠ ∞ := by
+  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top h
+  have : IsProbabilityMeasure ν := ⟨by rw [← hπ.measure_univ_eq]; simp⟩
   rw [← memLp_edist_iff_wassersteinEDist_dirac_ne_top hd] at h ⊢
   exact (memLp_edist_iff_of_edist_ne_top
     (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable
@@ -667,17 +669,20 @@ variable [PseudoMetricSpace X]
 
 /-- On an ordinary pseudometric space, the real-distance and extended-distance formulations of
 finite `p`-moment at a basepoint agree. -/
-theorem memLp_dist_iff_memLp_edist
-    {x : X} {ν : Measure X}
-    (hd : AEStronglyMeasurable (fun y ↦ dist y x) ν) :
+theorem memLp_dist_iff_memLp_edist {x : X} {ν : Measure X} :
     MemLp (fun y ↦ dist y x) p ν ↔ MemLp (fun y ↦ edist x y) p ν := by
-  apply memLp_congr_enorm
-  · exact hd
-  · exact (ENNReal.continuous_ofReal.comp_aestronglyMeasurable hd).congr
-      (.of_forall fun y ↦ by simp only [edist_dist, dist_comm])
-  · exact .of_forall fun y ↦ by
-      simp only [edist_dist, dist_comm, enorm_eq_self]
-      exact Real.enorm_eq_ofReal dist_nonneg
+  have key (hd : AEStronglyMeasurable (fun y ↦ dist y x) ν) :
+      MemLp (fun y ↦ dist y x) p ν ↔ MemLp (fun y ↦ edist x y) p ν := by
+    apply memLp_congr_enorm
+    · exact hd
+    · exact (ENNReal.continuous_ofReal.comp_aestronglyMeasurable hd).congr
+        (.of_forall fun y ↦ by simp only [edist_dist, dist_comm])
+    · exact .of_forall fun y ↦ by
+        simp only [edist_dist, dist_comm, enorm_eq_self]
+        exact Real.enorm_eq_ofReal dist_nonneg
+  refine ⟨fun h ↦ (key h.aestronglyMeasurable).1 h, fun h ↦ (key ?_).2 h⟩
+  exact h.aestronglyMeasurable.aemeasurable.ennreal_toReal.aestronglyMeasurable.congr
+    (.of_forall fun y ↦ by simp only [← dist_edist, dist_comm])
 
 /-- On an ordinary pseudometric space, a finite measure with finite `p`-moment at some basepoint
 has finite `p`-moment at every basepoint whose distance section is almost-everywhere strongly
@@ -699,7 +704,7 @@ theorem HasFiniteMoment.integrable_of_lipschitzWith [OpensMeasurableSpace X] {ν
   obtain ⟨x₀, hx₀⟩ := h
   have hd : Measurable fun y ↦ dist y x₀ := (continuous_id.dist continuous_const).measurable
   have hint : Integrable (fun y ↦ dist y x₀) ν :=
-    memLp_one_iff_integrable.1 ((memLp_dist_iff_memLp_edist hd.aestronglyMeasurable).2 hx₀)
+    memLp_one_iff_integrable.1 (memLp_dist_iff_memLp_edist.2 hx₀)
   refine ((integrable_const |f x₀|).add (hint.const_mul K)).mono'
     hf.continuous.aestronglyMeasurable (.of_forall fun y ↦ ?_)
   have hy := hf.dist_le_mul y x₀
@@ -767,7 +772,7 @@ theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] {μ ν : Measure X}
   -- Apply the measure-addition API to the real-valued distance section.
   have hdist (σ : Measure X) :
       MemLp (fun y ↦ dist y x) p σ ↔ MemLp (fun y ↦ edist x y) p σ :=
-    memLp_dist_iff_memLp_edist (by fun_prop)
+    memLp_dist_iff_memLp_edist
   exact ⟨x, (hdist _).1 (((hdist _).2 hx).add_measure
     ((hdist _).2 (hν.memLp measurable_edist_right.aestronglyMeasurable)))⟩
 
@@ -796,7 +801,7 @@ theorem memLp_edist_iff_hasFiniteMoment_of_isCoupling
   have hbase : ∀ σ : Measure X, AEStronglyMeasurable (fun y : X ↦ dist y x₀) σ := fun _ ↦
     (hdR.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable
   have hmoment : MemLp (fun y ↦ dist y x₀) p ν ↔ HasFiniteMoment p ν :=
-    (memLp_dist_iff_memLp_edist (hbase ν)).trans
+    memLp_dist_iff_memLp_edist.trans
       (hasFiniteMoment_iff_memLp_edist
         (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable).symm
   have hmap : MemLp (fun z : X × X ↦ dist z.2 x₀) p π ↔ MemLp (fun y ↦ dist y x₀) p ν := by
@@ -806,7 +811,7 @@ theorem memLp_edist_iff_hasFiniteMoment_of_isCoupling
         measurable_snd.aemeasurable).symm
   have hfst : MemLp (fun z : X × X ↦ dist z.1 x₀) p π := by
     simpa only [Function.comp_def] using
-      ((memLp_dist_iff_memLp_edist (hbase μ₀)).mpr hx₀).comp_measurePreserving
+      (memLp_dist_iff_memLp_edist.mpr hx₀).comp_measurePreserving
         hπ.measurePreserving_fst
   constructor
   · intro hdist
@@ -872,16 +877,19 @@ finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight ha
 and `0 < q`: the corresponding summand bounds `W_p(ν, μ i)`. -/
 theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
-    {μ : ι → Measure X} {ν : Measure X} [IsProbabilityMeasure ν] {i : ι} (hi : i ∈ s)
+    {μ : ι → Measure X} {ν : Measure X} {i : ι} (hi : i ∈ s)
     (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
     (hq : 0 < q) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ q ≠ ∞) :
     HasFiniteMoment p ν := by
   have hi' : w i * wassersteinEDist p ν (μ i) ^ q ≠ ∞ :=
     ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ q)
       (fun _ _ ↦ bot_le) hi)
-  rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ,
-    wassersteinEDist_comm hd]
-  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
+  have hW : wassersteinEDist p (μ i) ν ≠ ∞ := by
+    rw [wassersteinEDist_comm hd]
+    exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
+  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top hW
+  have : IsProbabilityMeasure ν := ⟨by rw [← hπ.measure_univ_eq]; simp⟩
+  exact (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2 hW
 
 end Anchor
 
