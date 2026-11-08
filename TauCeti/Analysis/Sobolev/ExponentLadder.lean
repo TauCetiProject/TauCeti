@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
-public import TauCeti.Algebra.Order.Floor.Semifield
 import Mathlib.Tactic
+import TauCeti.Algebra.Order.Floor.Semifield
 
 /-!
 # A strict finite Sobolev exponent ladder in dimension two
@@ -34,10 +34,11 @@ namespace TauCeti
 
 /-- The initial exponent of the ladder lies in `(p / (p - 1), p]` when its reciprocal `b` lies
 in `[1 / p, (p - 1) / p)`, with strict inequality at the left end. -/
-private theorem ladder_initial_exponent {p b : ℝ} (hp : 2 < p) (hb0 : 0 < b)
+private theorem ladder_initial_exponent {p b : ℝ} (hp : 2 < p)
     (hb1 : 1 / p < b) (hb2 : b < (p - 1) / p) : p / (p - 1) < 1 / b ∧ 1 / b ≤ p := by
   have hp0 : 0 < p := by linarith
   have hp1 : 0 < p - 1 := by linarith
+  have hb0 : 0 < b := (one_div_pos.mpr hp0).trans hb1
   refine ⟨?_, ?_⟩
   · apply (div_lt_div_iff₀ hp1 hb0).2
     have h := (lt_div_iff₀ hp0).mp hb2
@@ -71,7 +72,7 @@ product exponent exceeds two. Here `a = (p - 2) / (2 p)` and the last two recipr
 `3 a / 2` and `a / 2`. -/
 private theorem ladder_final_exponents {p a : ℝ} (hp : 2 < p) (ha : a = (p - 2) / (2 * p)) :
     1 / (3 * a / 2) < 2 * p / (p - 2) ∧ 2 * p / (p - 2) < 1 / (a / 2) ∧
-      2 < p * (1 / (a / 2)) / (p + 1 / (a / 2)) := by
+      2 < 1 / (1 / p + a / 2) := by
   have hp0 : 0 < p := by linarith
   have hapos : 0 < a := ha ▸ div_pos (by linarith) (by positivity)
   have hae : a = 1 / 2 - 1 / p := by
@@ -83,7 +84,6 @@ private theorem ladder_final_exponents {p a : ℝ} (hp : 2 < p) (ha : a = (p - 2
   rw [hthreshold]
   refine ⟨one_div_lt_one_div_of_lt hapos (by linarith),
     one_div_lt_one_div_of_lt (by positivity) (by linarith), ?_⟩
-  rw [ladder_product_exponent hp0 (by positivity)]
   apply (lt_div_iff₀ (by positivity : 0 < 1 / p + a / 2)).2
   rw [hae]
   have h := (one_div_lt_one_div_of_lt (by norm_num : (0 : ℝ) < 2) hp)
@@ -92,13 +92,11 @@ private theorem ladder_final_exponents {p a : ℝ} (hp : 2 < p) (ha : a = (p - 2
 /-- The reciprocal of the initial exponent lies strictly between `1 / p` and `(p - 1) / p`. -/
 private theorem ladder_initial_reciprocal {p a : ℝ} {N : ℕ} (hp : p ≠ 0) (hae : a = 1 / 2 - 1 / p)
     (ha : 0 < a) (hNlow : 1 / p < N * a) (hNhigh : N * a ≤ 1 / p + a) :
-    1 / p < ((N : ℝ) + 1 / 2 - ((0 : ℕ) : ℝ)) * a ∧
-      ((N : ℝ) + 1 / 2 - ((0 : ℕ) : ℝ)) * a < (p - 1) / p := by
+    1 / p < ((N : ℝ) + 1 / 2) * a ∧ ((N : ℝ) + 1 / 2) * a < (p - 1) / p := by
   have hfrac : (p - 1) / p = 1 / p + 2 * a := by
     rw [hae]
     field_simp
     ring
-  push_cast
   rw [hfrac]
   constructor <;> nlinarith
 
@@ -132,7 +130,6 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
       q (N - 1) < 2 * p / (p - 2) ∧ 2 * p / (p - 2) < q N ∧
         2 < p * q N / (p + q N) := by
   have hp0 : 0 < p := by linarith
-  have hp1 : 0 < p - 1 := by linarith
   let a : ℝ := (p - 2) / (2 * p)
   have ha : 0 < a := div_pos (by linarith) (by positivity)
   have hae : a = 1 / 2 - 1 / p := by
@@ -154,8 +151,10 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
     have hcast : (i : ℝ) < j := by exact_mod_cast hij
     have hbij : b j < b i := by dsimp only [b]; nlinarith
     exact one_div_lt_one_div_of_lt (hb j hj) hbij
-  have hb0 := ladder_initial_reciprocal hp0.ne' hae ha hNlow hNhigh
-  obtain ⟨hq0, hq0p⟩ := ladder_initial_exponent hp (hb 0 (by omega)) hb0.1 hb0.2
+  have hb0 : b 0 = ((N : ℝ) + 1 / 2) * a := by simp [b]
+  have hbinit := ladder_initial_reciprocal hp0.ne' hae ha hNlow hNhigh
+  rw [← hb0] at hbinit
+  obtain ⟨hq0, hq0p⟩ := ladder_initial_exponent hp hbinit.1 hbinit.2
   have hqpos (j : ℕ) (hj : j ≤ N) : 0 < q j := one_div_pos.mpr (hb j hj)
   have hrone (j : ℕ) (hj : j ≤ N) : 1 < p * q j / (p + q j) :=
     one_lt_product_exponent hp (hqpos j hj)
@@ -180,6 +179,7 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
     ring
   · simpa only [q, hprev] using hf1
   · simpa only [q, hlast] using hf2
-  · simpa only [q, hr N le_rfl, hlast, ladder_product_exponent hp0 (hb N le_rfl)] using hf3
+  · rw [hr N le_rfl, hlast]
+    exact hf3
 
 end TauCeti
