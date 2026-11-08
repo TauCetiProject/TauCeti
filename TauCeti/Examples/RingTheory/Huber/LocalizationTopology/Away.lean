@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Away
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Away
 public import TauCeti.RingTheory.Huber.Padic.Field
 public import TauCeti.RingTheory.Huber.Pair.Complete
 
