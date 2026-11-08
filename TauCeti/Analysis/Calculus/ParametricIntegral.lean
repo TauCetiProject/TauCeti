@@ -254,6 +254,21 @@ theorem integrable_smul_of_continuousOn {H : Type*} [NormedAddCommGroup H] [Norm
   have hm := hφ.stronglyMeasurable_of_support_subset_isCompact isCompact_univ (subset_univ _)
   exact hg.smul_bdd C hm.aestronglyMeasurable (ae_of_all _ fun y ↦ hC y (mem_univ y))
 
+omit [MeasurableSpace α] [OpensMeasurableSpace α] in
+/-- If `W` is open and `ι` is continuous on a compact space, the set of parameters `x` with
+`{x} × ι(α) ⊆ W` is open. -/
+theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
+    IsOpen {x : E | ∀ y, (x, ι y) ∈ W} := by
+  refine isOpen_iff_mem_nhds.2 fun x₀ hx₀ ↦ ?_
+  have hmem : {x₀} ×ˢ range ι ⊆ W := by
+    rintro ⟨x, p⟩ ⟨hx, y, rfl⟩
+    rcases mem_singleton_iff.mp hx with rfl
+    exact hx₀ y
+  obtain ⟨u, v, hu, _, hxu, hv, huv⟩ :=
+    generalized_tube_lemma isCompact_singleton (isCompact_range hι) hW hmem
+  exact Filter.mem_of_superset (hu.mem_nhds (hxu (mem_singleton x₀))) fun x hx y ↦
+    huv ⟨hx, hv (mem_range_self y)⟩
+
 /-- Integration against an integrable weight over a compact parameter space is continuous in a
 parameter `x` of the integrand, at any `x₀` with `{x₀} × ι(α)` inside the open set where the
 integrand is continuous. -/
@@ -344,20 +359,23 @@ private theorem contDiffOn_integral_smul_nat {G : Type max u v} [NormedAddCommGr
       exact (ih (hF'.fderiv_partial_of_isOpen hW)).congr fun x hx ↦ (hderiv x hx).fderiv
 
 /-- **Smoothness of integrals over a compact parameter space.** If `F` is `C^n` on an open set
-`W ⊆ E × P` and `{x} × ι(α) ⊆ W` for every `x` in an open set `U`, then integrating `F (x, ι y)`
+`W ⊆ E × P` and `{x} × ι(α) ⊆ W` for every `x` in a set `U`, then integrating `F (x, ι y)`
 against an integrable weight `g` is `C^n` in `x` on `U`. -/
 theorem contDiffOn_integral_smul_of_contDiffOn {G : Type v} [NormedAddCommGroup G]
     [NormedSpace ℝ G] {n : ℕ∞} {F : E × P → G} (hg : Integrable g μ)
-    (hι : Continuous ι) (hW : IsOpen W) (hF : ContDiffOn ℝ n F W) {U : Set E} (hU : IsOpen U)
+    (hι : Continuous ι) (hW : IsOpen W) (hF : ContDiffOn ℝ n F W) {U : Set E}
     (hUW : ∀ x ∈ U, ∀ y, (x, ι y) ∈ W) :
     ContDiffOn ℝ n (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) U := by
+  refine ContDiffOn.mono (s := {x : E | ∀ y, (x, ι y) ∈ W}) ?_ hUW
+  set U' : Set E := {x : E | ∀ y, (x, ι y) ∈ W} with hU'
   let eG : Type max u v := ULift.{u} G
   let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
-  have he : ContDiffOn ℝ n (fun x ↦ ∫ y, g y • isoG.symm (F (x, ι y)) ∂μ) U := by
+  have he : ContDiffOn ℝ n (fun x ↦ ∫ y, g y • isoG.symm (F (x, ι y)) ∂μ) U' := by
     rw [contDiffOn_iff_forall_nat_le]
     intro m hm
     exact contDiffOn_integral_smul_nat m hg hι hW
-      (isoG.symm.contDiff.comp_contDiffOn (hF.of_le (by exact_mod_cast hm))) hU hUW
+      (isoG.symm.contDiff.comp_contDiffOn (hF.of_le (by exact_mod_cast hm)))
+      (isOpen_forall_prodMk_mem hι hW) fun _ hx ↦ hx
   refine (isoG.contDiff.comp_contDiffOn he).congr fun x _ ↦ ?_
   have hsmul : ∀ y, g y • isoG.symm (F (x, ι y)) = isoG.symm (g y • F (x, ι y)) :=
     fun y ↦ (map_smul _ _ _).symm

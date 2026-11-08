@@ -82,7 +82,7 @@ theorem harmonicOnNhd_integral_smul_of_contDiffOn {F : E × P → G} (hg : Integ
     (hUW : ∀ x ∈ U, ∀ y, (x, ι y) ∈ W) (hharm : ∀ y, HarmonicOnNhd (fun x ↦ F (x, ι y)) U) :
     HarmonicOnNhd (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) U := by
   intro x hx
-  refine ⟨(contDiffOn_integral_smul_of_contDiffOn (n := 2) hg hι hW hF hU hUW).contDiffAt
+  refine ⟨(contDiffOn_integral_smul_of_contDiffOn (n := 2) hg hι hW hF hUW).contDiffAt
     (hU.mem_nhds hx), ?_⟩
   filter_upwards [hU.mem_nhds hx] with x' hx'
   rw [laplacian_integral_smul_of_contDiffOn hg hι hW hF hU hUW hx']
