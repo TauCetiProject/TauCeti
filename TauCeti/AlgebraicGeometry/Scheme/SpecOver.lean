@@ -23,7 +23,7 @@ functor-of-points sense, the morphisms `Spec K ⟶ Spec A` over `Spec K`, are th
 homomorphism `A →+* K` and need not be `K`-linear.
 
 A morphism `Spec B ⟶ X` over `Spec R` whose image lies in an affine open `Spec A ⟶ X` over
-`Spec R` factors through it by an `R`-algebra homomorphism `A →ₐ[R] B`.
+`Spec R` factors through it by a unique `R`-algebra homomorphism `A →ₐ[R] B`.
 
 The same correspondence is stated for Mathlib's bundled spectrum functor
 `AlgebraicGeometry.algSpec`, whose morphisms are morphisms in the category of schemes over
@@ -33,8 +33,9 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
-* `TauCeti.AlgebraicGeometry.exists_spec_map_comp_eq_of_range_subset`: a morphism over `Spec R`
-  with image in an affine open over `Spec R` factors through it by an algebra homomorphism.
+* `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`: a morphism over
+  `Spec R` with image in an affine open over `Spec R` factors through it by a unique algebra
+  homomorphism.
 * `TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom`: morphisms `algSpec B ⟶ algSpec A` of schemes
   over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`: `algSpec A` is `Spec A` with structure
@@ -49,7 +50,7 @@ universe u
 
 namespace AlgebraicGeometry.Spec
 
-/-- The inverse affine equivalence has underlying morphism given by `Spec.map`. -/
+/-- The scheme morphism underlying `Spec.homEquivAlgHom.symm φ` is `Spec.map φ`. -/
 @[simp]
 theorem homEquivAlgHom_symm_apply_val {R A B : Type u}
     [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] (φ : A →ₐ[R] B) :
@@ -87,16 +88,20 @@ theorem spec_map_specOverHomEquivAlgHom
   rw [← coe_specOverHomEquivAlgHom_symm_apply, Equiv.symm_apply_apply]
 
 /-- A morphism `p : Spec B ⟶ X` over `Spec R` whose image lies in the image of an open immersion
-`f : Spec A ⟶ X` over `Spec R` factors through `f` by an `R`-algebra homomorphism
+`f : Spec A ⟶ X` over `Spec R` factors through `f` by a unique `R`-algebra homomorphism
 `A →ₐ[R] B`. -/
-theorem exists_spec_map_comp_eq_of_range_subset {X : Scheme.{u}} [X.Over (Spec (.of R))]
-    (f : Spec (.of A) ⟶ X) [IsOpenImmersion f] [f.IsOver (Spec (.of R))]
+theorem existsUnique_spec_map_comp_eq_of_range_subset {X : Scheme.{u}}
+    [X.Over (Spec (.of R))] (f : Spec (.of A) ⟶ X) [IsOpenImmersion f] [f.IsOver (Spec (.of R))]
     (p : Spec (.of B) ⟶ X) [p.IsOver (Spec (.of R))] (h : Set.range p ⊆ Set.range f) :
-    ∃ φ : A →ₐ[R] B, Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ f = p := by
+    ∃! φ : A →ₐ[R] B, Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ f = p := by
   have hlift : (IsOpenImmersion.lift f p h).IsOver (Spec (.of R)) := by
     rw [Scheme.Hom.isOver_iff, ← comp_over f, IsOpenImmersion.lift_fac_assoc, comp_over]
-  refine ⟨specOverHomEquivAlgHom ⟨_, hlift⟩, ?_⟩
-  rw [AlgHom.toRingHom_eq_coe, spec_map_specOverHomEquivAlgHom, IsOpenImmersion.lift_fac]
+  refine ⟨specOverHomEquivAlgHom ⟨_, hlift⟩, ?_, fun ψ hψ ↦ ?_⟩
+  · beta_reduce
+    rw [AlgHom.toRingHom_eq_coe, spec_map_specOverHomEquivAlgHom, IsOpenImmersion.lift_fac]
+  · rw [← Equiv.symm_apply_eq]
+    exact Subtype.ext <|
+      (coe_specOverHomEquivAlgHom_symm_apply ψ).trans (IsOpenImmersion.lift_uniq f p h _ hψ)
 
 section algSpec
 
@@ -129,9 +134,7 @@ variable (A B) in
 noncomputable def algSpecHomEquivAlgHom :
     ((algSpec R).obj (op B) ⟶ (algSpec R).obj (op A)) ≃ (A →ₐ[R] B) :=
   (algSpec.fullyFaithful.homEquiv (X := op B) (Y := op A)).symm.trans <|
-    Quiver.Hom.opEquiv.symm.trans
-      { toFun := CommAlgCat.Hom.hom, invFun := CommAlgCat.ofHom
-        left_inv _ := rfl, right_inv _ := rfl }
+    Quiver.Hom.opEquiv.symm.trans (ConcreteCategory.homEquiv (C := CommAlgCat R))
 
 /-- The inverse of `algSpecHomEquivAlgHom` applies `algSpec` to an algebra homomorphism. -/
 @[simp]
