@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Hodge.Mixed.Bigrading
 public import TauCeti.Geometry.Hodge.Mixed.Substructure
 public import TauCeti.Geometry.Hodge.SubquotientModel
+import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Mixed Hodge structures induced on rational subspaces
@@ -73,21 +74,6 @@ private theorem iSup₂_inf_rationalToComplexSubmodule (h : IsHodgeBigrading h�
     (fun _ ↦ inf_le_right) P
   rwa [← hUC] at this
 
-/-- The traces of an independent family of submodules on a submodule `S` are independent. -/
-private theorem iSupIndep_comap_subtype {ι : Type*} {S : Submodule ℂ Vℂ}
-    {I : ι → Submodule ℂ Vℂ} (hI : _root_.iSupIndep I) :
-    _root_.iSupIndep fun i ↦ (I i).comap S.subtype := by
-  let e : Submodule ℂ S ≃o Set.Iic S := S.mapIic
-  rw [← iSupIndep_map_orderIso_iff e]
-  have he : (e ∘ fun i ↦ (I i).comap S.subtype) = fun i ↦
-      ⟨I i ⊓ S, Set.mem_Iic.mpr inf_le_right⟩ := by
-    funext i
-    apply Subtype.ext
-    simp only [Function.comp_apply, e, Submodule.coe_mapIic_apply, Submodule.map_comap_subtype]
-    rw [inf_comm]
-  rw [he]
-  exact iSupIndep.of_coe_Iic_comp (hI.mono fun _ ↦ inf_le_left)
-
 /-- The conjugation condition of a Hodge bigrading restricts to a rational subspace spanned by its
 intersections with the pieces. -/
 private theorem map_latticeConj_comap_subtype_le (h : IsHodgeBigrading hℚ hℂ WQ F I)
@@ -139,7 +125,7 @@ theorem comap_subtype (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ
   -- A sum of pieces traces on the complexification of `U` in the sum of the traces of those
   -- pieces; this is `iSup₂_inf_rationalToComplexSubmodule`.
   refine
-    { iSupIndep := iSupIndep_comap_subtype h.iSupIndep
+    { iSupIndep := TauCeti.iSupIndep_comap_subtype h.iSupIndep
       rationalToComplexSubmodule_eq_iSup := fun k ↦ ?_
       F_eq_iSup := fun p ↦ ?_
       map_latticeConj_le := map_latticeConj_comap_subtype_le h hU }
