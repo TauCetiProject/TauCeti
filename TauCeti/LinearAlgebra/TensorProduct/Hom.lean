@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 import Mathlib.RingTheory.Finiteness.Projective
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 import TauCeti.Logic.Function.Basic
 
 /-!
@@ -30,18 +31,13 @@ open TensorProduct
 
 namespace LinearMap
 
-/-- Base-changing the precomposition maps along a retraction `p` of a section `i` gives the
-identity. -/
-theorem baseChange_lcomp_comp_baseChange_lcomp {R S M N F : Type*} [CommSemiring R]
-    [CommSemiring S] [Algebra R S] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    [AddCommMonoid F] [Module R F] {i : M →ₗ[R] F} {p : F →ₗ[R] M} (hpi : p ∘ₗ i = .id)
-    (z : S ⊗[R] (M →ₗ[R] N)) :
-    (lcomp R N i).baseChange S ((lcomp R N p).baseChange S z) = z := by
-  rw [← comp_apply, ← baseChange_comp]
-  have : lcomp R N i ∘ₗ lcomp R N p = .id := by
-    ext x : 1
-    simp [lcomp_apply', comp_assoc, hpi]
-  simp [this]
+/-- Precomposition with a retraction `p` of a section `i` is a section of precomposition with
+`i`: `lcomp R N i ∘ₗ lcomp R N p = id`. -/
+theorem lcomp_comp_lcomp_eq_id {R M N F : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [AddCommMonoid F] [Module R F] {i : M →ₗ[R] F}
+    {p : F →ₗ[R] M} (hpi : p ∘ₗ i = .id) : lcomp R N i ∘ₗ lcomp R N p = .id := by
+  ext x : 1
+  simp [lcomp_apply', comp_assoc, hpi]
 
 end LinearMap
 
@@ -102,7 +98,7 @@ theorem linearMapLeftRight_of_projective [Module.Finite R M] [Module.Projective 
   -- Hence `ΦM` is a retract of the bijection `ΦF`, so it is bijective.
   exact of_equiv (LinearEquiv.ofBijective ΦM (Function.bijective_of_retract (a := fun z ↦
     (LinearMap.lcomp R N p).baseChange S z) (b := (· ∘ₗ pS)) (d := (· ∘ₗ iS)) hΦF ha hb
-    (LinearMap.baseChange_lcomp_comp_baseChange_lcomp hpi) hd)) fun x ↦
+    (LinearMap.baseChange_leftInverse (LinearMap.lcomp_comp_lcomp_eq_id hpi)) hd)) fun x ↦
     (LinearMap.liftBaseChange_tmul _ _ _ _).trans (one_smul S _)
 
 end IsBaseChange

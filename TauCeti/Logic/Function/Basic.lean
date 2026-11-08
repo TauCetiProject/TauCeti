@@ -22,8 +22,8 @@ and target of `Φ` into those of `Φ'` with retractions `c`, `d`, `Φ'` restrict
 in both directions. -/
 theorem bijective_of_retract {A B A' B' : Type*} {Φ : A → B} {Φ' : A' → B'} {a : A → A'}
     {c : A' → A} {b : B → B'} {d : B' → B} (hΦ' : Bijective Φ')
-    (ha : ∀ z, Φ' (a z) = b (Φ z)) (hb : ∀ z, Φ (c z) = d (Φ' z)) (hc : ∀ z, c (a z) = z)
-    (hd : ∀ g, d (b g) = g) : Bijective Φ :=
+    (ha : ∀ z, Φ' (a z) = b (Φ z)) (hb : ∀ z, Φ (c z) = d (Φ' z)) (hc : LeftInverse c a)
+    (hd : LeftInverse d b) : Bijective Φ :=
   ⟨fun z z' h ↦ by rw [← hc z, ← hc z', hΦ'.1 ((ha z).trans (h ▸ (ha z').symm))],
     fun g ↦ by
       obtain ⟨z, hz⟩ := hΦ'.2 (b g)
