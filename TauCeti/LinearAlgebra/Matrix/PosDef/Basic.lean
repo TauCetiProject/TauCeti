@@ -161,7 +161,7 @@ theorem posDef_map_intCast_iff {A : Matrix n n ℤ} :
 
 /-- **A rational matrix is positive definite exactly when its cast to `ℝ` is**, and more generally
 its cast to any linearly ordered field `K` whose order is the star order of the trivial star. -/
-theorem posDef_map_ratCast_iff {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K]
+theorem posDef_map_ratCast_iff {K : Type*} [Field K] [LinearOrder K] [StarRing K]
     [StarOrderedRing K] [Finite n] {A : Matrix n n ℚ} :
     (A.map (Rat.cast : ℚ → K)).PosDef ↔ A.PosDef := by
   classical
@@ -208,7 +208,7 @@ end TauCeti
 namespace Matrix.PosDef
 
 variable {B K : Type*} [Fintype B] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [StarRing K] [TrivialStar K]
+  [StarRing K]
 
 /-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
 matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared
@@ -216,6 +216,18 @@ coordinates bounded independently of `c`. -/
 theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) (w : B → K) :
     ∃ M : K, ∀ c : B → K, c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w → ∀ k, c k ^ 2 ≤ M := by
   classical
+  rcases isEmpty_or_nonempty B with hB | ⟨⟨k₀⟩⟩
+  · exact ⟨0, fun _ _ k ↦ isEmptyElim k⟩
+  -- A positive definite matrix on a nonempty index type forces the star of `K` to be trivial.
+  have : TrivialStar K := ⟨fun s ↦ by
+    by_contra hne
+    have ht : s - star s ≠ 0 := sub_ne_zero.mpr (Ne.symm hne)
+    have h := hS.2 (x := Finsupp.single k₀ (s - star s)) (Finsupp.single_ne_zero.mpr ht)
+    have hpos : 0 < S k₀ k₀ := hS.diag_pos
+    have htt : 0 < (s - star s) * (s - star s) := mul_self_pos.mpr ht
+    rw [Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp)] at h
+    simp only [star_sub, star_star] at h
+    nlinarith [mul_pos htt hpos]⟩
   set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S with hFdef
   have hFapply : ∀ u v : B → K, F u v = u ⬝ᵥ S *ᵥ v := fun u v ↦ Matrix.toBilin'_apply' S u v
   have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
