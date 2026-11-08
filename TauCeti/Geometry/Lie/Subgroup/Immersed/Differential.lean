@@ -107,20 +107,19 @@ theorem injective_lieMapToHom (d : ImmersedLieSubgroupData I K) :
   apply ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective
   exact d.injective_mfderiv_toHom 1
 
-/-- The differential of an immersed presentation takes every source derivation into the ambient
-Lie subalgebra associated to its image subgroup. -/
-theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K)
-    (X : LeftInvariantDerivation d.I' d.X) :
-    d.lieMapToHom X ∈ lieSubalgebraOfSubgroup (I := I) K := by
-  apply range_lieMap_le_lieSubalgebraOfSubgroup d.toContMDiffMonoidMorphism
-  · simpa only [toContMDiffMonoidMorphism] using le_of_eq d.range_eq
-  · exact ⟨X, rfl⟩
-
 /-- The range of the differential of an immersed presentation lies in the ambient Lie subalgebra
 associated to its image subgroup. -/
 theorem range_lieMapToHom_le (d : ImmersedLieSubgroupData I K) :
     d.lieMapToHom.range ≤ lieSubalgebraOfSubgroup (I := I) K := by
   apply range_lieMap_le_lieSubalgebraOfSubgroup d.toContMDiffMonoidMorphism
-  simpa only [toContMDiffMonoidMorphism] using le_of_eq d.range_eq
+  rw [toContMDiffMonoidMorphism_toMonoidHom]
+  exact d.range_eq.le
+
+/-- The differential of an immersed presentation takes every source derivation into the ambient
+Lie subalgebra associated to its image subgroup. -/
+theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K)
+    (X : LeftInvariantDerivation d.I' d.X) :
+    d.lieMapToHom X ∈ lieSubalgebraOfSubgroup (I := I) K :=
+  d.range_lieMapToHom_le ⟨X, rfl⟩
 
 end TauCeti.Lie.ImmersedLieSubgroupData
