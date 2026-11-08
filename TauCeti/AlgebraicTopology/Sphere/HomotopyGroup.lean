@@ -192,11 +192,18 @@ theorem MooreLoopSpace.doubleHomologySphereAddEquiv_apply
       homotopyGroupSphereAddEquiv (n := n + 2) b x ((doubleHomologyAddEquiv x n hX).symm a) :=
   (rfl)
 
-/-- **`πₙ(Sⁿ)` is nontrivial** for `n ≥ 2`, being isomorphic to `ℤ` by
-`TauCeti.homotopyGroupSphereAddEquiv`. -/
-theorem nontrivial_homotopyGroup_sphere (b : OrthonormalBasis (Fin (n + 3)) ℝ E)
-    (x : sphere (0 : E) 1) : Nontrivial (π_ (n + 2) (sphere (0 : E) 1) x) :=
-  (Additive.ofMul.trans (homotopyGroupSphereAddEquiv b x).toEquiv).nontrivial
+/-- **`πₙ(Sⁿ)` is nontrivial** for `n ≥ 2`. For the unit sphere `Sⁿ⁺²` of an `(n + 3)`-dimensional
+real normed space, `πₙ₊₂(Sⁿ⁺², x)` is isomorphic to `ℤ` by `TauCeti.homotopyGroupSphereAddEquiv`
+for the Euclidean sphere, transported along `TauCeti.sphereHomeomorphOfFinrankEq`. -/
+theorem nontrivial_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hE : finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
+    Nontrivial (π_ (n + 2) (sphere (0 : E) 1) x) := by
+  have := Module.finite_of_finrank_eq_succ hE
+  let h := sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm :
+    finrank ℝ E = finrank ℝ (EuclideanSpace ℝ (Fin (n + 3))))
+  have := (Additive.ofMul.trans (homotopyGroupSphereAddEquiv
+    (EuclideanSpace.basisFun (Fin (n + 3)) ℝ) (h x)).toEquiv).nontrivial
+  exact (HomotopyGroup.homeomorphEquiv h x).nontrivial
 
 /-- The path components of the double Moore loop space of `S²` are the integers, through
 `π₂(S²) ≅ ℤ`. -/
@@ -248,15 +255,16 @@ theorem MooreLoopSpace.ι_doubleReducedHomology₀SphereIso_inv_ι {C : Type*} [
     (zerothHomotopyDoubleSphereEquiv b x) (zerothHomotopyDoubleSphereEquiv_mk_one b x) h
 
 /-- **The reduced zeroth homology of `ΩᴹΩᴹS²` contains the coefficients.** For the unit sphere
-`S²` of a real inner product space of dimension three and a ring `R`, the kernel of the
-augmentation `H₀(ΩᴹΩᴹS²; R) → H₀(pt; R)` contains a copy of `R`; for `R = ℤ` this is an infinite
-cyclic subgroup. -/
-theorem MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere {R : Type} [Ring R]
-    (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1) :
+`S²` of a real normed space of dimension three and a ring `R`, the kernel of the augmentation
+`H₀(ΩᴹΩᴹS²; R) → H₀(pt; R)` contains a copy of `R`; for `R = ℤ` this is an infinite cyclic
+subgroup. -/
+theorem MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere {E : Type}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {R : Type} [Ring R] (hE : finrank ℝ E = 3)
+    (x : sphere (0 : E) 1) :
     ∃ f : R →ₗ[R] (reducedSingularHomologyFunctor (ModuleCat.of R R) 0).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)),
       Function.Injective f :=
-  have := nontrivial_homotopyGroup_sphere (n := 0) b x
+  have := nontrivial_homotopyGroup_sphere (n := 0) hE x
   exists_injective_doubleReducedHomology₀ x
 
 end Hurewicz
