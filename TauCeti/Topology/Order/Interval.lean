@@ -11,6 +11,7 @@ import Mathlib.Topology.Algebra.Order.Group
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.ProjIcc
+import Mathlib.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # Intervals in order topologies
@@ -27,6 +28,7 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing real function on a compact interval has a continuous inverse on
 its range, extended to the whole line by clamping.
+Every compact real interval admits a finite partition with arbitrarily small consecutive gaps.
 
 ## Main results
 
@@ -54,6 +56,40 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
+
+/-- Every compact real interval has a finite set containing its endpoints with no consecutive
+gap larger than a prescribed positive number. A zero-length interval is allowed. -/
+theorem exists_finset_Icc_gap_le {a b ε : ℝ} (hab : a ≤ b) (hε : 0 < ε) :
+    ∃ p : Finset ℝ, (p : Set ℝ) ⊆ Icc a b ∧ a ∈ p ∧ b ∈ p ∧
+      ∀ x ∈ p, ∀ y ∈ p, x < y → (∀ z ∈ p, x < z → y ≤ z) → y - x ≤ ε := by
+  classical
+  obtain ⟨t, ht, htf, hcover⟩ := (isCompact_Icc : IsCompact (Icc a b)).finite_cover_balls
+    (e := ε / 2) (by positivity)
+  refine ⟨insert a (insert b htf.toFinset), ?_, by simp, by simp, ?_⟩
+  · intro x hx
+    simp only [Finset.mem_coe, Finset.mem_insert, Set.Finite.mem_toFinset] at hx
+    rcases hx with rfl | rfl | hx
+    · exact left_mem_Icc.mpr hab
+    · exact right_mem_Icc.mpr hab
+    · exact ht hx
+  · intro x hx y hy hxy hgap
+    by_contra h
+    have hεxy : ε < y - x := lt_of_not_ge h
+    have hxI : x ∈ Icc a b := by
+      simp only [Finset.mem_insert, Set.Finite.mem_toFinset] at hx
+      rcases hx with rfl | rfl | hx <;> grind
+    have hyI : y ∈ Icc a b := by
+      simp only [Finset.mem_insert, Set.Finite.mem_toFinset] at hy
+      rcases hy with rfl | rfl | hy <;> grind
+    have hmid : (x + y) / 2 ∈ Icc a b := by
+      constructor <;> linarith [hxI.1, hyI.2]
+    obtain ⟨z, hz, hball⟩ := mem_iUnion₂.mp (hcover hmid)
+    have hd : |(x + y) / 2 - z| < ε / 2 := by
+      simpa [Metric.mem_ball, Real.dist_eq] using hball
+    have hz' : z ∈ insert a (insert b htf.toFinset) := by simp [hz]
+    have hbounds := abs_lt.mp hd
+    have := hgap z hz' (by linarith)
+    linarith
 
 /-- An unordered closed interval `uIcc a b` is a neighbourhood of each of its points other than
 its endpoints `a` and `b`. -/
