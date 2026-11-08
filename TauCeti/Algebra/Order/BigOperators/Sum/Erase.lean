@@ -13,8 +13,10 @@ public import Mathlib.Algebra.Order.Group.Abs
 /-!
 # Absolute values of sums after merging two indices
 
-Removing an index `t` from a finite sum and adding its value to the value at another index `t'`
-can lower the sum of absolute values by at most the absolute value at `t`.
+Take a finite sum of absolute values over the indices other than `t`, and add the value at `t` to
+the value at another index `t'`. The sum of absolute values over these remaining indices, before
+merging, exceeds the one after merging by at most the absolute value at `t`; the index `t` itself
+is excluded from both sums.
 
 ## Main results
 

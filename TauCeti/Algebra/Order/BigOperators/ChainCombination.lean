@@ -13,6 +13,7 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.Algebra.Order.BigOperators.Sum.Erase
+import TauCeti.Algebra.Order.BigOperators.Sum.NatSub
 import TauCeti.Order.Chain
 
 /-!
@@ -33,17 +34,6 @@ public section
 open Finset
 
 namespace TauCeti
-
-/-- If `C t' < C t` coordinatewise on a finite index type, the differences sum to at least `1`. -/
-theorem one_le_sum_sub_of_lt {β : Type*} [Fintype β] {c d : β → ℕ} (h : c < d) :
-    1 ≤ ∑ i, ((d i : ℝ) - c i) := by
-  obtain ⟨i₀, hi₀⟩ := Pi.lt_def.mp h |>.2
-  calc (1 : ℝ) ≤ (d i₀ : ℝ) - c i₀ := by
-        rw [le_sub_iff_add_le', ← Nat.cast_one, ← Nat.cast_add, Nat.cast_le]
-        omega
-    _ ≤ ∑ i, ((d i : ℝ) - c i) :=
-        single_le_sum (f := fun i => (d i : ℝ) - c i)
-          (fun i _ => sub_nonneg.mpr (Nat.cast_le.mpr (h.le i))) (mem_univ i₀)
 
 /-- Coordinatewise, the vector of the maximum `t` exceeds that of the second largest `t'` by `0`
 or `1`. -/
@@ -128,7 +118,7 @@ theorem sum_abs_le_two_mul_sum_abs_sum_mul {α β : Type*} [Fintype β]
     (fun a ha b hb => hinj a (mem_of_mem_erase ha) b (mem_of_mem_erase hb))
     (fun a => v a + if a = t' then v t else 0) ((sum_erase_merge ht'A' htA v).trans hv)
   -- The vectors of `t` and `t'` differ somewhere, so `t` exceeds `t'` by at least `1` in total.
-  have hgap := one_le_sum_sub_of_lt <| lt_of_le_of_ne (ht t' (mem_of_mem_erase ht'A'))
+  have hgap := Finset.one_le_sum_sub_of_lt <| lt_of_le_of_ne (ht t' (mem_of_mem_erase ht'A'))
     fun h => (ne_of_mem_erase ht'A') (hinj t' (mem_of_mem_erase ht'A') t htA h)
   -- Removing `t` costs `|v t|` once on the left and at least `|v t|` on the right.
   have hright : ∑ i, |∑ a ∈ A, v a * C a i| =
