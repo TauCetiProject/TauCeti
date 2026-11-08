@@ -6,11 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 
 /-!
 # Classical symbols
@@ -23,16 +19,11 @@ The leading term `a_m` is the principal symbol. Differential operators with smoo
 and their parametrices have classical symbols, and the principal symbol of a classical symbol is
 what ellipticity, the symbol calculus and index theory are phrased in.
 
-This file first turns a homogeneous term into a symbol. For a homogeneous symbol `a` of degree `m`
-and a frequency cutoff `χ`, `TauCeti.HomogeneousSymbol.cutoffSymbol χ a` is the symbol
-`χ(ξ) a(x, ξ)` of order `m`. Changing the cutoff changes it by a smoothing symbol
-(`TauCeti.HomogeneousSymbol.isSmoothing_cutoffSymbol_sub_cutoffSymbol`), and it has no order
-below `m` unless `a = 0` (`TauCeti.HomogeneousSymbol.eq_zero_of_coefficient_eq_cutoffSymbol`):
-homogeneity transports any extra decay at large frequencies to every frequency.
-
-It then defines the carrier `TauCeti.ClassicalSymbol n V W m` of classical symbols, with an
-actual remainder symbol `TauCeti.ClassicalSymbol.remainder χ N` of order `m - N` after `N` terms,
-and proves:
+The homogeneous terms enter the expansion through their cut-off terms
+`TauCeti.HomogeneousSymbol.cutoffSymbol χ a`, the symbols `χ(ξ) a(x, ξ)` of
+`TauCeti/Analysis/Pseudodifferential/Symbol/Homogeneous.lean`. This file defines the carrier
+`TauCeti.ClassicalSymbol n V W m` of classical symbols, with an actual remainder symbol
+`TauCeti.ClassicalSymbol.remainder χ N` of order `m - N` after `N` terms, and proves:
 
 * `TauCeti.ClassicalSymbol.exists_remainder`: the expansion holds for every frequency cutoff, not
   only for the one used to define the symbol;
@@ -48,10 +39,6 @@ and proves:
   smoothing symbol classical;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`.
-
-The derivative estimates for `χ(ξ) a(x, ξ)` come from those of the homogeneous term
-(`TauCeti.exists_norm_iteratedFDeriv_le_of_smul_snd_eq`), read on the coordinate directions
-through `TauCeti.mixedDeriv_eq_iteratedFDeriv`.
 
 ## References
 
@@ -73,120 +60,6 @@ namespace TauCeti
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
-
-namespace HomogeneousSymbol
-
-/-- The cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of degree `m` satisfies the symbol
-estimates of order `m`. -/
-private theorem exists_bound_mixedDeriv_smul_coefficient
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (fun p => χ p.2 • a.coefficient p) x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  set L := mixedDirections α β
-  have hg := a.contDiff_smul_coefficient χ
-  -- Near the zero frequency the cut-off term is smooth, so compactness bounds its derivatives.
-  obtain ⟨C₁, hC₁, h₁⟩ := (hg.of_le (mod_cast le_top) : ContDiff ℝ (α.length + β.length) _)
-    |>.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le hK 2 (m - β.length)
-  -- At large frequencies it is `a`, whose derivatives homogeneity controls.
-  obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_iteratedFDeriv_le_of_smul_snd_eq hK
-    a.contDiffOn_coefficient (fun x ξ _ t ht => a.homogeneous x ξ t ht) (k := L.length)
-    (mod_cast le_top)
-  refine ⟨max C₁ (C₂ * 2 ^ (|m - β.length| / 2)), le_max_of_le_left hC₁, fun x hx ξ => ?_⟩
-  rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
-  · exact (norm_mixedDeriv_le hg α β x ξ).trans <| (h₁ x hx ξ hξ).trans <|
-      mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · have hξ0 : 0 < ‖ξ‖ := two_pos.trans hξ
-    have heq : (fun p : CoordinateSpace n × CoordinateSpace n => χ p.2 • a.coefficient p)
-        =ᶠ[𝓝 (x, ξ)] a.coefficient := by
-      filter_upwards [continuous_snd.continuousAt.eventually
-        (χ.eventuallyEq_one_of_two_lt_norm hξ)] with q hq
-      simp [hq]
-    rw [mixedDeriv_eq_iteratedFDeriv hg, heq.iteratedFDeriv ℝ L.length |>.eq_of_nhds]
-    refine (h₂ x hx ξ (norm_pos_iff.1 hξ0) _).trans ?_
-    rw [prod_norm_mixedDirections, abs_of_pos (inv_pos.2 hξ0), mul_assoc, ← Real.rpow_natCast,
-      Real.inv_rpow hξ0.le, ← Real.rpow_neg hξ0.le, ← Real.rpow_add hξ0, ← sub_eq_add_neg]
-    calc C₂ * ‖ξ‖ ^ (m - β.length)
-        ≤ C₂ * (2 ^ (|m - β.length| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :=
-          mul_le_mul_of_nonneg_left (norm_rpow_le_one_add_norm_sq_rpow (by linarith) _) hC₂
-      _ = C₂ * 2 ^ (|m - β.length| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by ring
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
-
-variable (χ χ' : FrequencyCutoff (CoordinateSpace n))
-
-/-- The cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol `a` of degree `m`, as a symbol of order
-`m`. The cutoff removes the singularity of `a` at `ξ = 0` and leaves `a` unchanged at frequencies
-of norm at least `2`. -/
-def cutoffSymbol :
-    HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m →ₗ[ℂ] Symbol n V W m where
-  toFun a :=
-    { coefficient p := χ p.2 • a.coefficient p
-      contDiff_coefficient := a.contDiff_smul_coefficient χ
-      exists_bound _ hK α β := exists_bound_mixedDeriv_smul_coefficient a χ hK α β }
-  map_add' a b := Symbol.ext <| funext fun p => by simp [smul_add]
-  map_smul' c a := Symbol.ext <| funext fun p => by simp [smul_comm (χ p.2) c]
-
-@[simp]
-theorem coefficient_cutoffSymbol
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    (cutoffSymbol χ a).coefficient p = χ p.2 • a.coefficient p :=
-  (rfl)
-
-/-- At frequencies of norm at least `2` the cut-off term is the homogeneous symbol itself. -/
-theorem coefficient_cutoffSymbol_of_two_le_norm
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) {x ξ : CoordinateSpace n}
-    (hξ : 2 ≤ ‖ξ‖) : (cutoffSymbol χ a).coefficient (x, ξ) = a.coefficient (x, ξ) := by
-  simp [χ.apply_eq_one_of_two_le_norm hξ]
-
-/-- **Independence of the cutoff.** Changing the frequency cutoff changes the cut-off term by a
-smoothing symbol: the two cut-off terms agree at all frequencies of norm at least `2`. -/
-theorem isSmoothing_cutoffSymbol_sub_cutoffSymbol
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-    (cutoffSymbol χ a - cutoffSymbol χ' a).IsSmoothing := Symbol.isSmoothing_iff.2 fun _ =>
-  ⟨Symbol.ofBoundedFrequencySupport _ (cutoffSymbol χ a - cutoffSymbol χ' a).contDiff_coefficient
-    2 fun x ξ hξ => by
-      simp [χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ],
-    Symbol.coefficient_ofBoundedFrequencySupport _ _ _ _⟩
-
-/-- A homogeneous symbol of degree `m` whose cut-off term is a symbol of some order `m' < m`
-vanishes. -/
-theorem eq_zero_of_coefficient_eq_cutoffSymbol {m' : ℝ} (hm : m' < m)
-    {a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m} (b : Symbol n V W m')
-    (hb : b.coefficient = (cutoffSymbol χ a).coefficient) : a = 0 := by
-  refine ext_of_ne_zero fun x ξ hξ => ?_
-  rw [coefficient_zero, Pi.zero_apply, ← norm_le_zero_iff]
-  have hξ0 : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  obtain ⟨C, hC, hbC⟩ := b.exists_bound {x} isCompact_singleton [] []
-  set D := C * 2 ^ (|m'| / 2) * ‖ξ‖ ^ m'
-  -- For `t ≥ 2 / ‖ξ‖`, homogeneity at `t • ξ` and the bound of order `m'` there give
-  -- `t ^ m ‖a (x, ξ)‖ ≤ D t ^ m'`.
-  have key : ∀ᶠ t in atTop, ‖a.coefficient (x, ξ)‖ ≤ D * t ^ (m' - m) := by
-    filter_upwards [eventually_ge_atTop (2 / ‖ξ‖), eventually_gt_atTop 0] with t ht ht0
-    have htξ : 2 ≤ ‖t • ξ‖ := by
-      rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
-    have h := hbC x rfl (t • ξ)
-    rw [mixedDeriv_nil_nil, hb, coefficient_cutoffSymbol_of_two_le_norm χ a htξ,
-      a.homogeneous x ξ t ht0, norm_smul, Real.norm_of_nonneg (by positivity),
-      List.length_nil, Nat.cast_zero, sub_zero] at h
-    have hw := one_add_norm_sq_rpow_le_norm_rpow (by linarith : 1 ≤ ‖t • ξ‖) m'
-    rw [norm_smul, Real.norm_of_nonneg ht0.le, Real.mul_rpow ht0.le hξ0.le] at hw
-    refine le_of_mul_le_mul_left ?_ (Real.rpow_pos_of_pos ht0 m)
-    calc t ^ m * ‖a.coefficient (x, ξ)‖
-        ≤ C * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) :=
-          h.trans (mul_le_mul_of_nonneg_left
-            (by rw [norm_smul, Real.norm_of_nonneg ht0.le]; exact hw) hC)
-      _ = t ^ m * (D * t ^ (m' - m)) := by
-          rw [Real.rpow_sub ht0]
-          field_simp
-          ring
-  have hlim : Tendsto (fun t : ℝ => D * t ^ (m' - m)) atTop (𝓝 0) := by
-    simpa [neg_sub] using (tendsto_rpow_neg_atTop (by linarith : 0 < m - m')).const_mul D
-  exact ge_of_tendsto hlim key
-
-end HomogeneousSymbol
 
 open HomogeneousSymbol
 
