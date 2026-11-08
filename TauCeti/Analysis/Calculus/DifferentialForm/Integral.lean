@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Coordinates
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
@@ -28,6 +29,9 @@ Applied to a wedge `φ ∧ ψ` of real-valued forms, together with the Leibniz r
 `d (φ ∧ ψ) = dφ ∧ ψ + (-1) ^ k φ ∧ dψ`, this is integration by parts for forms: when `ψ` has
 compact support, `∫ dφ ∧ ψ = -(-1) ^ k ∫ φ ∧ dψ`
 (`Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv`).
+
+The integral of a wedge `ω ∧ η` with `η` vanishing outside a set `K` is bounded by a constant
+depending only on the basis times `sup ‖η‖ ∫_K ‖ω‖` (`Module.Basis.exists_abs_integral_wedge_le`).
 -/
 
 public section
@@ -128,5 +132,35 @@ theorem _root_.Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv {
     _ = _ := by
         rw [integral_sub hint (hB.const_mul _), integral_const_mul, hzero]
         ring
+
+open ContinuousAlternatingMap in
+/-- The integral of the wedge of a form `ω` with a form `η` vanishing outside a set `K` is at
+most a constant depending only on the basis `b` times `A ∫_K G`, when `‖ω‖ ≤ G` on `K` and
+`‖η‖ ≤ A`. -/
+theorem _root_.Module.Basis.exists_abs_integral_wedge_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] {k l : ℕ}
+    (b : Module.Basis (Fin (k + l)) ℝ E) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ω : E → E [⋀^Fin k]→L[ℝ] ℝ⦄ ⦃η : E → E [⋀^Fin l]→L[ℝ] ℝ⦄ ⦃K : Set E⦄
+      ⦃G : E → ℝ⦄ ⦃A : ℝ⦄, MeasurableSet K → (∀ x ∉ K, η x = 0) →
+      IntegrableOn G K b.addHaar → (∀ x ∈ K, ‖ω x‖ ≤ G x) → (∀ x, ‖η x‖ ≤ A) →
+      |∫ x, wedge (ω x) (η x) b ∂b.addHaar| ≤ C * (A * ∫ x in K, G x ∂b.addHaar) := by
+  refine ⟨(k + l).choose k * ∏ i, ‖b i‖, by positivity, ?_⟩
+  intro ω η K G A hK hη0 hG hωG hηA
+  have hvan (x : E) (hx : x ∉ K) : wedge (ω x) (η x) b = 0 := by
+    simp [hη0 x hx, wedge_def]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, ← integral_const_mul,
+    ← integral_const_mul, ← Real.norm_eq_abs]
+  refine norm_integral_le_of_norm_le ((hG.const_mul _).const_mul _)
+    (ae_restrict_of_forall_mem hK fun x hx ↦ ?_)
+  have hG0 : 0 ≤ G x := (norm_nonneg _).trans (hωG x hx)
+  calc ‖wedge (ω x) (η x) b‖ ≤ ‖wedge (ω x) (η x)‖ * ∏ i, ‖b i‖ :=
+        (wedge (ω x) (η x)).le_opNorm _
+    _ ≤ (k + l).choose k * ‖ω x‖ * ‖η x‖ * ∏ i, ‖b i‖ := by
+        gcongr
+        exact norm_wedge_le _ _
+    _ ≤ (k + l).choose k * G x * A * ∏ i, ‖b i‖ := by
+        gcongr
+        exacts [hωG x hx, hηA x]
+    _ = _ := by ring
 
 end TauCeti

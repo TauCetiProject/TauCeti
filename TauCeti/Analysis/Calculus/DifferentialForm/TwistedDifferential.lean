@@ -10,7 +10,9 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
@@ -32,9 +34,13 @@ differential of a real function `f` is the one-form `d^c_J f = -(1/2) df ∘ J`.
   `TauCeti.AlmostComplexStructure.twistedDifferential_const_smul`: linearity.
 * `TauCeti.AlmostComplexStructure.integral_twistedDifferential_wedge_eq`: integration by parts.
   For a compactly supported form `η` of complementary degree,
-  `∫ d^c_J g ∧ η = (det J / 2) ∫ g d((-J)^* η)`. Pulling back by `J` moves `J` from `dg` onto `η`
-  at the cost of `det J`, and then `g` absorbs the derivative. The right side involves `g` but
-  not its derivative.
+  `∫ d^c_J g ∧ η = (det J / 2) ∫ g d((-J)^* η)`, where `((-J)^* η)(x)(v₁, …, vₘ) =
+  η(x)(-J v₁, …, -J vₘ)` precomposes each value of `η` with `-J` and keeps the base point fixed.
+  Precomposing the integrand with `J` in each fibre moves `J` from `dg` onto `η` at the cost of
+  `det J`, and then `g` absorbs the derivative. The right side involves `g` but not its
+  derivative.
+* `TauCeti.AlmostComplexStructure.exists_abs_integral_twistedDifferential_wedge_le`: the
+  resulting bound of `∫ d^c_J g ∧ η` by a constant times `sup ‖Dη‖ ∫_K |g|`.
 -/
 
 public section
@@ -94,8 +100,9 @@ open MeasureTheory in
 /-- **Integration by parts for the twisted differential.** For a C1 function `g` and a compactly
 supported C1 form `η` of degree `m` on a space of dimension `1 + m`,
 `∫ d^c_J g ∧ η = (det J / 2) ∫ g d((-J)^* η)`, the top-degree coefficients being taken on a basis
-`b` and integrated against its Haar measure. Here `(-J)^* η` is the pullback of `η` by the inverse
-`-J` of `J`. -/
+`b` and integrated against its Haar measure. Here `(-J)^* η` is the form
+`x ↦ η(x)(-J v₁, …, -J vₘ)`, which precomposes each value of `η` with the inverse `-J` of `J` and
+keeps the base point fixed. -/
 theorem integral_twistedDifferential_wedge_eq [MeasurableSpace E] [BorelSpace E] {m : ℕ}
     (b : Module.Basis (Fin (1 + m)) ℝ E) {g : E → ℝ} {η : E → E [⋀^Fin m]→L[ℝ] ℝ}
     (hg : ContDiff ℝ 1 g) (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport η) :
@@ -105,7 +112,7 @@ theorem integral_twistedDifferential_wedge_eq [MeasurableSpace E] [BorelSpace E]
         (b ∘ Fin.cast (by omega)) ∂b.addHaar := by
   set J' := LinearMap.toContinuousLinearMap J.toLinearMap
   set η' := fun y ↦ (η y).compContinuousLinearMap (-J')
-  -- Pointwise, pulling back by `J` turns `d^c_J g ∧ η` into `-(det J / 2) dg ∧ η'`.
+  -- Pointwise, precomposing with `J` in the fibre turns `d^c_J g ∧ η` into `-(det J / 2) dg ∧ η'`.
   have hpt (x : E) : wedge (J.twistedDifferential g x) (η x) b =
       -(LinearMap.det J.toLinearMap / 2) *
         wedge (ofSubsingleton ℝ E ℝ (0 : Fin 1) (fderiv ℝ g x)) (η' x) b := by
@@ -140,5 +147,54 @@ theorem integral_twistedDifferential_wedge_eq [MeasurableSpace E] [BorelSpace E]
   simp only [hpt, integral_const_mul]
   simp only [wedge_def, hibp]
   ring
+
+open MeasureTheory in
+/-- The integral of `d^c_J g ∧ η`, for a C1 function `g` with `|g| ≤ G` on a compact set `K` and
+a C1 form `η` supported in `K` with `‖Dη‖ ≤ A`, is at most a constant depending only on `J` and
+the basis `b` times `A ∫_K G`. Integration by parts moves the derivative from `g` onto `η`. -/
+theorem exists_abs_integral_twistedDifferential_wedge_le [MeasurableSpace E] [BorelSpace E]
+    {m : ℕ} (b : Module.Basis (Fin (1 + m)) ℝ E) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃g : E → ℝ⦄ ⦃η : E → E [⋀^Fin m]→L[ℝ] ℝ⦄ ⦃K : Set E⦄ ⦃G : E → ℝ⦄
+      ⦃A : ℝ⦄, ContDiff ℝ 1 g → ContDiff ℝ 1 η → IsCompact K → tsupport η ⊆ K →
+      IntegrableOn G K b.addHaar → (∀ x ∈ K, |g x| ≤ G x) → (∀ x, ‖fderiv ℝ η x‖ ≤ A) →
+      |∫ x, wedge (J.twistedDifferential g x) (η x) b ∂b.addHaar| ≤
+        C * (A * ∫ x in K, G x ∂b.addHaar) := by
+  let J' := LinearMap.toContinuousLinearMap J.toLinearMap
+  let L := compContinuousLinearMapCLM (F := ℝ) (ι := Fin m) (-J')
+  let b' := ⇑b ∘ Fin.cast (show m + 1 = 1 + m by omega)
+  refine ⟨|LinearMap.det J.toLinearMap| / 2 * ((m + 1) * ‖L‖ * ∏ i, ‖b' i‖), by positivity, ?_⟩
+  intro g η K G A hg hη hK hηK hG hgG hηA
+  have hDη0 (x) (hx : x ∉ K) : fderiv ℝ η x = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hηK (tsupport_fderiv_subset ℝ h))
+  rw [J.integral_twistedDifferential_wedge_eq b hg hη
+    (hK.of_isClosed_subset (isClosed_tsupport η) hηK)]
+  set η' := fun y ↦ (η y).compContinuousLinearMap (-J')
+  have hDη' (x : E) : fderiv ℝ η' x = L.comp (fderiv ℝ η x) :=
+    (L.hasFDerivAt.comp x (hη.differentiable one_ne_zero x).hasFDerivAt).fderiv
+  have hnorm (x : E) : ‖extDeriv η' x‖ ≤ (m + 1) * ‖L‖ * A :=
+    calc ‖extDeriv η' x‖ ≤ (m + 1) * ‖fderiv ℝ η' x‖ := norm_alternatizeUncurryFin_le _
+      _ ≤ (m + 1) * (‖L‖ * A) := by
+          rw [hDη']
+          gcongr
+          exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr; exact hηA x)
+      _ = _ := by ring
+  have hvan (x : E) (hx : x ∉ K) : g x * extDeriv η' x b' = 0 := by
+    simp [extDeriv, hDη', hDη0 x hx, ← alternatizeUncurryFinCLM_apply]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, abs_mul, abs_div, abs_two]
+  calc |LinearMap.det J.toLinearMap| / 2 * |∫ x in K, g x * extDeriv η' x b' ∂b.addHaar|
+      ≤ |LinearMap.det J.toLinearMap| / 2 *
+          ∫ x in K, (m + 1) * ‖L‖ * A * (∏ i, ‖b' i‖) * G x ∂b.addHaar := by
+        gcongr
+        rw [← Real.norm_eq_abs]
+        refine norm_integral_le_of_norm_le (hG.const_mul _)
+          (ae_restrict_of_forall_mem hK.measurableSet fun x hx ↦ ?_)
+        have hD : |extDeriv η' x b'| ≤ (m + 1) * ‖L‖ * A * ∏ i, ‖b' i‖ := by
+          rw [← Real.norm_eq_abs]
+          exact ((extDeriv η' x).le_opNorm b').trans (by gcongr; exact hnorm x)
+        rw [Real.norm_eq_abs, abs_mul, mul_comm _ (G x)]
+        exact mul_le_mul (hgG x hx) hD (abs_nonneg _) ((abs_nonneg _).trans (hgG x hx))
+    _ = _ := by
+        rw [integral_const_mul]
+        ring
 
 end TauCeti.AlmostComplexStructure

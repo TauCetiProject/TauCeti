@@ -87,83 +87,7 @@ theorem integral_cutoffCurrent_add_extDeriv_wedge_eq (e : Module.Basis (Fin (2 +
   rw [e₁, pow_one, neg_neg, one_mul] at h
   simpa only [cutoffCurrent_apply, sub_add_cancel] using h
 
-omit [FiniteDimensional ℝ E] in
-/-- The integral of the wedge of a form `ω` with a form `η` vanishing outside a set `K` is at
-most a constant depending only on the basis `e` times `A ∫_K G`, when `‖ω‖ ≤ G` on `K` and
-`‖η‖ ≤ A`. -/
-private theorem exists_abs_integral_wedge_le {k l : ℕ} (e : Module.Basis (Fin (k + l)) ℝ E) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ω : E → E [⋀^Fin k]→L[ℝ] ℝ⦄ ⦃η : E → E [⋀^Fin l]→L[ℝ] ℝ⦄ ⦃K : Set E⦄
-      ⦃G : E → ℝ⦄ ⦃A : ℝ⦄, MeasurableSet K → (∀ x ∉ K, η x = 0) →
-      IntegrableOn G K e.addHaar → (∀ x ∈ K, ‖ω x‖ ≤ G x) → (∀ x, ‖η x‖ ≤ A) →
-      |∫ x, wedge (ω x) (η x) e ∂e.addHaar| ≤ C * (A * ∫ x in K, G x ∂e.addHaar) := by
-  refine ⟨(k + l).choose k * ∏ i, ‖e i‖, by positivity, ?_⟩
-  intro ω η K G A hK hη0 hG hωG hηA
-  have hvan (x : E) (hx : x ∉ K) : wedge (ω x) (η x) e = 0 := by
-    simp [hη0 x hx, wedge_def]
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, ← integral_const_mul,
-    ← integral_const_mul, ← Real.norm_eq_abs]
-  refine norm_integral_le_of_norm_le ((hG.const_mul _).const_mul _)
-    (ae_restrict_of_forall_mem hK fun x hx ↦ ?_)
-  have hG0 : 0 ≤ G x := (norm_nonneg _).trans (hωG x hx)
-  calc ‖wedge (ω x) (η x) e‖ ≤ ‖wedge (ω x) (η x)‖ * ∏ i, ‖e i‖ :=
-        (wedge (ω x) (η x)).le_opNorm _
-    _ ≤ (k + l).choose k * ‖ω x‖ * ‖η x‖ * ∏ i, ‖e i‖ := by
-        gcongr
-        exact norm_wedge_le _ _
-    _ ≤ (k + l).choose k * G x * A * ∏ i, ‖e i‖ := by
-        gcongr
-        exacts [hωG x hx, hηA x]
-    _ = _ := by ring
-
 variable (J : AlmostComplexStructure E)
-
-/-- The integral of `d^c_J g ∧ η`, for a C1 function `g` with `|g| ≤ G` on a compact set `K` and
-a C1 form `η` supported in `K` with `‖Dη‖ ≤ A`, is at most a constant depending only on `J` and
-the basis `e` times `A ∫_K G`. Integration by parts moves the derivative from `g` onto `η`. -/
-private theorem exists_abs_integral_twistedDifferential_wedge_le {m : ℕ}
-    (e : Module.Basis (Fin (1 + m)) ℝ E) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃g : E → ℝ⦄ ⦃η : E → E [⋀^Fin m]→L[ℝ] ℝ⦄ ⦃K : Set E⦄ ⦃G : E → ℝ⦄
-      ⦃A : ℝ⦄, ContDiff ℝ 1 g → ContDiff ℝ 1 η → IsCompact K → tsupport η ⊆ K →
-      IntegrableOn G K e.addHaar → (∀ x ∈ K, |g x| ≤ G x) → (∀ x, ‖fderiv ℝ η x‖ ≤ A) →
-      |∫ x, wedge (J.twistedDifferential g x) (η x) e ∂e.addHaar| ≤
-        C * (A * ∫ x in K, G x ∂e.addHaar) := by
-  let J' := LinearMap.toContinuousLinearMap J.toLinearMap
-  let L := compContinuousLinearMapCLM (F := ℝ) (ι := Fin m) (-J')
-  let e' := ⇑e ∘ Fin.cast (show m + 1 = 1 + m by omega)
-  refine ⟨|LinearMap.det J.toLinearMap| / 2 * ((m + 1) * ‖L‖ * ∏ i, ‖e' i‖), by positivity, ?_⟩
-  intro g η K G A hg hη hK hηK hG hgG hηA
-  have hDη0 (x) (hx : x ∉ K) : fderiv ℝ η x = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hηK (tsupport_fderiv_subset ℝ h))
-  rw [J.integral_twistedDifferential_wedge_eq e hg hη
-    (hK.of_isClosed_subset (isClosed_tsupport η) hηK)]
-  set η' := fun y ↦ (η y).compContinuousLinearMap (-J')
-  have hDη' (x : E) : fderiv ℝ η' x = L.comp (fderiv ℝ η x) :=
-    (L.hasFDerivAt.comp x (hη.differentiable one_ne_zero x).hasFDerivAt).fderiv
-  have hnorm (x : E) : ‖extDeriv η' x‖ ≤ (m + 1) * ‖L‖ * A :=
-    calc ‖extDeriv η' x‖ ≤ (m + 1) * ‖fderiv ℝ η' x‖ := norm_alternatizeUncurryFin_le _
-      _ ≤ (m + 1) * (‖L‖ * A) := by
-          rw [hDη']
-          gcongr
-          exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr; exact hηA x)
-      _ = _ := by ring
-  have hvan (x : E) (hx : x ∉ K) : g x * extDeriv η' x e' = 0 := by
-    simp [extDeriv, hDη', hDη0 x hx, ← alternatizeUncurryFinCLM_apply]
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, abs_mul, abs_div, abs_two]
-  calc |LinearMap.det J.toLinearMap| / 2 * |∫ x in K, g x * extDeriv η' x e' ∂e.addHaar|
-      ≤ |LinearMap.det J.toLinearMap| / 2 *
-          ∫ x in K, (m + 1) * ‖L‖ * A * (∏ i, ‖e' i‖) * G x ∂e.addHaar := by
-        gcongr
-        rw [← Real.norm_eq_abs]
-        refine norm_integral_le_of_norm_le (hG.const_mul _)
-          (ae_restrict_of_forall_mem hK.measurableSet fun x hx ↦ ?_)
-        have hD : |extDeriv η' x e'| ≤ (m + 1) * ‖L‖ * A * ∏ i, ‖e' i‖ := by
-          rw [← Real.norm_eq_abs]
-          exact ((extDeriv η' x).le_opNorm e').trans (by gcongr; exact hnorm x)
-        rw [Real.norm_eq_abs, abs_mul, mul_comm _ (G x)]
-        exact mul_le_mul (hgG x hx) hD (abs_nonneg _) ((abs_nonneg _).trans (hgG x hx))
-    _ = _ := by
-        rw [integral_const_mul]
-        ring
 
 /-- **Comparison of the cutoff current with the curvature current.** There is a constant `C`,
 depending only on `J` and the basis `e`, with the following property. Let `χ` vanish below
@@ -185,8 +109,8 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
         C * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e.addHaar +
           A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e.addHaar) := by
   let e₁ := e.reindex (finCongr (by omega : 2 + n = 1 + (n + 1)))
-  obtain ⟨C₁, hC₁, hIA⟩ := exists_abs_integral_twistedDifferential_wedge_le J e₁
-  obtain ⟨C₂, hC₂, hIB⟩ := exists_abs_integral_wedge_le e₁
+  obtain ⟨C₁, hC₁, hIA⟩ := J.exists_abs_integral_twistedDifferential_wedge_le e₁
+  obtain ⟨C₂, hC₂, hIB⟩ := e₁.exists_abs_integral_wedge_le
   refine ⟨max C₁ (2 * C₂), by positivity, ?_⟩
   intro χ b α ζ K c A₁ A₂ hc hχc hχ₁ hχ hα hb hζ hK hζK hA₁ hA₂
   have hχ₀ : χ =ᶠ[𝓝 0] 0 := (eventually_lt_nhds hc).mono hχc
