@@ -189,3 +189,36 @@ theorem coe_rangeEquivOfRetract_symm_apply (e : M →L[R] M) (hri : r.comp i = .
 end Retract
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearMap.IsIdempotentElem
+
+variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  {p q : M →L[R] M}
+
+/-- The ranges of idempotents `p` and `q` with `p * q = 0` are disjoint. -/
+theorem disjoint_range (hp : IsIdempotentElem p) (hpq : p * q = 0) :
+    Disjoint p.range q.range := by
+  rw [Submodule.disjoint_def]
+  rintro _ ⟨a, rfl⟩ ⟨b, hb⟩
+  have h1 : p (p a) = p a := congr($hp.eq a)
+  have h2 : p (q b) = 0 := by rw [← mul_apply_eq_comp, hpq, zero_apply]
+  simp only [ContinuousLinearMap.coe_coe] at hb ⊢
+  rw [← h1, ← hb, h2]
+
+variable [IsTopologicalAddGroup M]
+
+/-- The range of the sum of idempotents `p` and `q` with `p * q = 0` and `q * p = 0` is the
+supremum of their ranges. -/
+theorem range_add (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (hpq : p * q = 0)
+    (hqp : q * p = 0) : (p + q).range = p.range ⊔ q.range := by
+  refine le_antisymm ?_ (sup_le ?_ ?_)
+  · rintro _ ⟨x, rfl⟩
+    exact Submodule.add_mem_sup ⟨x, rfl⟩ ⟨x, rfl⟩
+  · rintro _ ⟨x, rfl⟩
+    refine ⟨p x, ?_⟩
+    simp [← mul_apply_eq_comp, hp.eq, hqp]
+  · rintro _ ⟨x, rfl⟩
+    refine ⟨q x, ?_⟩
+    simp [← mul_apply_eq_comp, hq.eq, hpq]
+
+end ContinuousLinearMap.IsIdempotentElem

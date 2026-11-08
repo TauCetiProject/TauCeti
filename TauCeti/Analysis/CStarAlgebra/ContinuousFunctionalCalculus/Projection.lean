@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+public import TauCeti.Topology.Indicator
 
 /-!
 # Star projections from the continuous functional calculus
@@ -68,11 +69,9 @@ omit [StarRing A] [TopologicalSpace A] [ContinuousFunctionalCalculus ℝ A IsSel
 /-- At an invertible element, the indicator of a set whose frontier is contained in `{0}`, such as
 a half-line ending at `0`, is continuous on the spectrum, since the spectrum avoids `0`. -/
 theorem _root_.IsUnit.continuousOn_indicator_spectrum {a : A} (ha : IsUnit a) {Ω : Set ℝ}
-    (hΩ : frontier Ω ⊆ {0}) : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ a) := by
-  classical
-  rw [← piecewise_eq_indicator]
-  refine ContinuousOn.piecewise (fun x hx ↦ ?_) continuousOn_const continuousOn_const
-  exact absurd (mem_singleton_iff.mp (hΩ hx.2) ▸ hx.1) (spectrum.zero_notMem ℝ ha)
+    (hΩ : frontier Ω ⊆ {0}) : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ a) :=
+  ContinuousOn.indicator_of_disjoint_frontier (by exact continuousOn_const) <| disjoint_left.2
+    fun _ hx hx' ↦ spectrum.zero_notMem ℝ ha (mem_singleton_iff.1 (hΩ hx') ▸ hx)
 
 /-- For an invertible self-adjoint `a`, the spectral projectors onto the positive and the negative
 parts of the spectrum add up to `1`. -/
