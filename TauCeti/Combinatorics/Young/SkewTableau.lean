@@ -659,6 +659,10 @@ namespace BoundedSkewSSYT
 
 variable {n m : ℕ} {inner outer : YoungDiagram}
 
+/-- There are no bounded skew tableaux unless the inner diagram is contained in the outer one. -/
+theorem isEmpty_of_not_le (h : ¬ inner ≤ outer) : IsEmpty (BoundedSkewSSYT n inner outer) :=
+  ⟨fun T => h T.1.le⟩
+
 /-- Every entry on a skew cell belongs to the bounded alphabet. -/
 theorem entry_lt (T : BoundedSkewSSYT n inner outer) {i j : ℕ}
     (h : (i, j) ∈ outer.cells \ inner.cells) : T.1 i j < n :=
@@ -700,6 +704,16 @@ theorem castLE_injective (h : n ≤ m) :
     Function.Injective (castLE (inner := inner) (outer := outer) h) := by
   intro T U hTU
   exact Subtype.ext (by simpa only [coe_castLE] using congrArg Subtype.val hTU)
+
+/-- A tableau comes from alphabet enlargement exactly when all its skew entries lie in the
+smaller alphabet. -/
+theorem exists_castLE_iff (h : n ≤ m) (T : BoundedSkewSSYT m inner outer) :
+    (∃ U, castLE h U = T) ↔ ∀ i j, (i, j) ∈ outer.cells \ inner.cells → T.1 i j < n := by
+  constructor
+  · rintro ⟨U, rfl⟩
+    exact U.2
+  · intro hT
+    exact ⟨⟨T.1, hT⟩, rfl⟩
 
 /-- A letter outside the alphabet has multiplicity zero. -/
 theorem content_eq_zero (T : BoundedSkewSSYT n inner outer) {k : ℕ} (hk : n ≤ k) :

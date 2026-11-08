@@ -142,7 +142,7 @@ theorem eval_one_skewSchurPoly :
 /-- A nonexistent skew shape has no tableau monomials. -/
 theorem skewSchurPoly_eq_zero_of_not_le (h : ¬ inner ≤ outer) :
     skewSchurPoly n R inner outer = 0 := by
-  have : IsEmpty (BoundedSkewSSYT n inner outer) := ⟨fun T => h T.1.le⟩
+  have : IsEmpty (BoundedSkewSSYT n inner outer) := BoundedSkewSSYT.isEmpty_of_not_le h
   simp [skewSchurPoly_eq_sum]
 
 /-- The empty skew shape contributes the constant polynomial one. -/
@@ -161,8 +161,10 @@ theorem skewSchurPoly_bot : skewSchurPoly n R ⊥ outer = diagramSchurPoly n R o
     fun T => by rw [BoundedSkewSSYT.weight_botEquiv])
 
 /-- Setting the last variable to zero discards exactly the tableaux using the last letter,
-leaving the skew Schur polynomial in the smaller alphabet. -/
-@[simp]
+leaving the skew Schur polynomial in the smaller alphabet.
+
+Not a `simp` lemma: substituting polynomials for the variables, `simp` rewrites `aeval` to
+`bind₁` by `MvPolynomial.aeval_eq_bind₁`, so this left-hand side is not in `simp`-normal form. -/
 theorem aeval_snoc_zero_skewSchurPoly :
     aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
       (skewSchurPoly (n + 1) R inner outer) = skewSchurPoly n R inner outer := by
@@ -172,16 +174,15 @@ theorem aeval_snoc_zero_skewSchurPoly :
   apply Fintype.sum_of_injective (BoundedSkewSSYT.castLE (Nat.le_succ n))
     (BoundedSkewSSYT.castLE_injective _) _ _
   · intro T hT
-    have hex : ∃ c ∈ outer.cells \ inner.cells, T.1 c.1 c.2 = n := by
-      by_contra hn
+    have hw : T.weight (Fin.last n) ≠ 0 := by
+      intro hw
       apply hT
-      refine ⟨⟨T.1, fun i j hc => ?_⟩, Subtype.ext (BoundedSkewSSYT.coe_castLE _ _)⟩
+      apply (BoundedSkewSSYT.exists_castLE_iff _ T).mpr
+      intro i j hc
+      have hne : T.1 i j ≠ n := fun he =>
+        (Nat.ne_of_gt ((T.weight_pos_iff (Fin.last n)).mpr ⟨(i, j), hc, he⟩)) hw
       have := T.entry_lt hc
-      have := not_exists.mp hn (i, j)
-      simp only [not_and] at this
-      exact lt_of_le_of_ne (by omega) (this hc)
-    have hw : T.weight (Fin.last n) ≠ 0 :=
-      Nat.ne_of_gt ((T.weight_pos_iff (Fin.last n)).mpr hex)
+      omega
     rw [aeval_monomial, map_one, one_mul, Finsupp.prod_fintype _ _ (fun _ => pow_zero _)]
     exact Finset.prod_eq_zero (Finset.mem_univ (Fin.last n))
       (by rw [Fin.snoc_last, zero_pow hw])
