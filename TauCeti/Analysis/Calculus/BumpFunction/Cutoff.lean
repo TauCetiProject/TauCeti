@@ -44,7 +44,10 @@ universal constant `c`, the quantitative form needed by iteration arguments over
 with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
 vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported
 in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
-independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`).
+independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
+function supported in a closed ball with bounded gradient there has integral at most the squared
+bound times the volume of the ball
+(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 ## References
 
@@ -602,5 +605,76 @@ theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ (c : ℝ) {r : ℝ}, 0
             Real.volume_real_closedBall (by linarith), measureReal_def, Real.volume_ball,
             ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
           ring
+
+open MeasureTheory Metric in
+/-- A function whose gradient is at most `K` on a closed ball and vanishes off it has
+`∫_s ‖∇ψ‖² ≤ K² |B|` over every set `s`, where `B` is the closed ball. -/
+theorem setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {mu : Measure E} [IsFiniteMeasureOnCompacts mu] {s : Set E} {ψ : E → ℝ} {x₀ : E} {R K : ℝ}
+    (hψts : tsupport ψ ⊆ closedBall x₀ R) (hψg : ∀ x ∈ closedBall x₀ R, ‖∇ ψ x‖ ≤ K) :
+    ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+  have hmeasB : MeasurableSet (closedBall x₀ R) := measurableSet_closedBall
+  calc ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu
+      ≤ ∫ x in s, (closedBall x₀ R).indicator (fun _ => K ^ 2) x ∂mu := by
+        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
+          ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
+            hmeasB).restrict
+          (Filter.Eventually.of_forall fun x => ?_)
+        by_cases hx : x ∈ closedBall x₀ R
+        · rw [indicator_of_mem hx]
+          exact pow_le_pow_left₀ (norm_nonneg _) (hψg x hx) 2
+        · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
+            hx (hψts (support_fderiv_subset ℝ hx'))
+          simp [indicator_of_notMem hx, _root_.gradient, hfd]
+    _ ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+        rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
+        gcongr
+        rw [measureReal_restrict_apply hmeasB]
+        exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+
+section ScaledCutoff
+
+open Metric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Cutoff functions.** There is `C ≥ 0`, depending only on `E`, such that for every `c` and
+`r > 0` there is a smooth function `ρ : E → ℝ` with values in `[0, 1]`, equal to `1` on the closed
+ball of radius `r` about `c` and to `0` off the closed ball of radius `2 r`, whose derivative has
+norm at most `C * r⁻¹`. -/
+theorem exists_cutoff_fderiv_bound :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (c : E) (r : ℝ), 0 < r → ∃ (ρ : E → ℝ) (ρ' : E → E →L[ℝ] ℝ),
+      (∀ n : ℕ∞, ContDiff ℝ n ρ) ∧ (∀ x, 0 ≤ ρ x ∧ ρ x ≤ 1) ∧ (∀ x ∈ closedBall c r, ρ x = 1) ∧
+      (∀ x, 2 * r < dist x c → ρ x = 0) ∧ (∀ x, HasFDerivAt ρ (ρ' x) x) ∧
+      ∀ x, ‖ρ' x‖ ≤ C * r⁻¹ := by
+  let β : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+  have hβ : Continuous (fderiv ℝ β) := (β.contDiff (n := 1)).continuous_fderiv one_ne_zero
+  obtain ⟨C, hC⟩ := hβ.bounded_above_of_compact_support (β.hasCompactSupport.fderiv (𝕜 := ℝ))
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  refine ⟨C, hC0, fun c r hr ↦ ?_⟩
+  have hnorm (x : E) : ‖r⁻¹ • (x - c)‖ = r⁻¹ * dist x c := by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hr.le), dist_eq_norm]
+  refine ⟨fun x ↦ β (r⁻¹ • (x - c)), fun x ↦
+    (fderiv ℝ β (r⁻¹ • (x - c))).comp (r⁻¹ • ContinuousLinearMap.id ℝ E), fun n ↦
+    β.contDiff.comp (contDiff_const.smul (contDiff_id.sub contDiff_const)),
+    fun x ↦ ⟨β.nonneg, β.le_one⟩, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x ↦ ?_, fun x ↦ ?_⟩
+  · refine β.one_of_mem_closedBall ?_
+    rw [mem_closedBall, dist_zero_right, hnorm]
+    exact (inv_mul_le_one₀ hr).2 (mem_closedBall.1 hx)
+  · refine Function.notMem_support.1 fun hx' ↦ ?_
+    have hmem : r⁻¹ • (x - c) ∈ Function.support β := hx'
+    rw [β.support_eq, mem_ball, dist_zero_right, hnorm] at hmem
+    have h2 : r⁻¹ * dist x c < 2 := hmem
+    rw [inv_mul_lt_iff₀ hr] at h2
+    linarith
+  · exact ((β.contDiff (n := 1)).differentiable one_ne_zero _).hasFDerivAt.comp x
+      (((hasFDerivAt_id x).sub_const c).const_smul r⁻¹)
+  · refine (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _) hC0)
+    refine (norm_smul_le r⁻¹ (ContinuousLinearMap.id ℝ E)).trans ?_
+    rw [Real.norm_of_nonneg (inv_nonneg.2 hr.le)]
+    exact mul_le_of_le_one_right (inv_nonneg.2 hr.le) ContinuousLinearMap.norm_id_le
+
+end ScaledCutoff
 
 end TauCeti

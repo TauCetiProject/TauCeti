@@ -73,6 +73,11 @@ say `u ≤ (2 - δ) * s` with `0 ≤ t ≤ s`. Strict convexity of `t ↦ t ^ q`
 for each ratio `t / s`, and compactness of `[0, 1]` makes it uniform. This is the scalar step in
 showing that `q`-th powers of norms on a uniformly convex space are uniformly convex.
 
+If `u : ℝ → F` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, with
+`0 ≤ β ≤ 1`, then its increments satisfy `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` whenever `a < 0`, or
+`a > 0` and `b < a / 2`. This is the part of a time-Lipschitz estimate for a Hölder-in-time
+function that does not need a derivative.
+
 ## Main results
 
 * `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
@@ -107,6 +112,10 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
   for `1 ≤ ‖ξ‖`.
 * `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
   `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`.
+* `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left` and
+  `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half`: increment bounds
+  `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
+  `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
 -/
 
 public section
@@ -472,5 +481,57 @@ theorem one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow {E : Type*} [SeminormedA
       (Real.one_le_rpow (by nlinarith [norm_nonneg ξ]) (by linarith))
   · rw [abs_of_neg hr, neg_neg]
     exact Real.rpow_le_rpow_of_nonpos (by positivity) hR (by linarith)
+
+open Real in
+/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
+`a < 0` and every `b`, `‖u b - u a‖ ≤ K |b - a| (-a)^(β - 1)`, where `0 ≤ β ≤ 1`. -/
+theorem norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left {F : Type*} [NormedAddCommGroup F]
+    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
+    (hK : 0 ≤ K) (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
+    {a : ℝ} (ha : a < 0) (b : ℝ) : ‖u b - u a‖ ≤ K * (|b - a| * (-a) ^ (β - 1)) := by
+  rw [hneg a ha.le]
+  have hd : 0 < -a := neg_pos.2 ha
+  rcases le_or_gt b 0 with hb | hb
+  · rw [hneg b hb, sub_self, norm_zero]
+    positivity
+  have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) := by
+    rw [abs_of_pos (by linarith : 0 < b - a)]
+    rcases le_total b (-a) with hba | hba
+    · calc b ^ β ≤ (-a) ^ β := rpow_le_rpow hb.le hba hβ₀
+        _ = -a * (-a) ^ (β - 1) := by
+          simpa only [sub_add_cancel, mul_comm] using (Real.rpow_add_one hd.ne' (β - 1))
+        _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
+    · calc b ^ β = b * b ^ (β - 1) := by
+            simpa only [sub_add_cancel, mul_comm] using
+              (Real.rpow_add_one hb.ne' (β - 1))
+        _ ≤ b * (-a) ^ (β - 1) :=
+          mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos hd hba hβ₁) hb.le
+        _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
+  exact (hrate b hb.le).trans (by gcongr)
+
+open Real in
+/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
+`a > 0` and `b < a / 2`, `‖u b - u a‖ ≤ 4 K |b - a| a^(β - 1)`. -/
+theorem norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half {F : Type*} [NormedAddCommGroup F]
+    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hK : 0 ≤ K)
+    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
+    {a b : ℝ} (ha : 0 < a) (hb : b < a / 2) :
+    ‖u b - u a‖ ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
+  have h1 : ‖u b - c‖ ≤ K * a ^ β := by
+    rcases le_or_gt b 0 with hb0 | hb0
+    · rw [hneg b hb0, sub_self, norm_zero]
+      positivity
+    · exact (hrate b hb0.le).trans (by gcongr; linarith)
+  have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) := by
+    have hpow : a ^ β = a * a ^ (β - 1) := by
+      simpa only [sub_add_cancel, mul_comm] using (Real.rpow_add_one ha.ne' (β - 1))
+    rw [hpow, abs_of_neg (by linarith : b - a < 0)]
+    have : 0 ≤ a ^ (β - 1) := by positivity
+    nlinarith
+  calc ‖u b - u a‖ = ‖(u b - c) - (u a - c)‖ := by rw [sub_sub_sub_cancel_right]
+    _ ≤ ‖u b - c‖ + ‖u a - c‖ := norm_sub_le _ _
+    _ ≤ 2 * (K * a ^ β) := by linarith [hrate a ha.le]
+    _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
+    _ = _ := by ring
 
 end TauCeti
