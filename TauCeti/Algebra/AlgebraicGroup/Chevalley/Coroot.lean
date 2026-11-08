@@ -95,6 +95,13 @@ theorem coe_simpleCorootPoints_eq_kostantTorusMatrix (i : Fin t.rank) (A : Type 
       kostantTorusMatrix D.lattice D.basis D.coordinateWeight (D.simpleCorootParameter i A s) := by
   rfl
 
+/-- Simple coroot points are actual torus points at the simple coroot parameter. -/
+theorem simpleCorootPoints_eq_torusPoints (i : Fin t.rank) (A : Type v) [CommRing A]
+    (s : Aˣ) :
+    D.simpleCorootPoints i A s = D.torusPoints A (D.simpleCorootParameter i A s) := by
+  apply Subtype.ext
+  rw [coe_simpleCorootPoints_eq_kostantTorusMatrix, coe_torusPoints]
+
 /-- On a weight vector, the simple coroot acts by its weight's `i`-th coordinate. -/
 @[simp]
 theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : Aˣ) :
@@ -102,6 +109,16 @@ theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : A
       diagGL (fun j => s ^ D.weight j i) := by
   rw [coe_simpleCorootPoints_eq_kostantTorusMatrix, kostantTorusMatrix_apply]
   simp
+
+/-- The coordinate cocharacter on lattice automorphisms is the simple coroot in the weight
+basis. -/
+theorem basisMatrix_kostantCoordinateCocharacter (i : Fin t.rank) (A : Type v) [CommRing A]
+    (s : Aˣ) :
+    Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
+      (kostantCoordinateCocharacter D.lattice D.basis D.weight A i s) =
+        (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) := by
+  rw [kostantCoordinateCocharacter_apply, coe_simpleCorootPoints]
+  simp only [basisMatrix_kostantTorusPoints, kostantTorusMatrix_apply, torusCharacter_mulSingle]
 
 /-- Simple coroot values commute with every scalar extension of the value ring. -/
 theorem map_simpleCorootPoints {A : Type v} {B : Type*} [CommRing A] [CommRing B]
@@ -129,19 +146,14 @@ theorem coe_simpleCorootPoints_eq_root_word (i : Fin t.rank) (A : Type v) [CommR
       x (.inl i) s * x (.inr i) (-((s⁻¹ : Aˣ) : A)) * x (.inl i) s *
         (x (.inl i) 1 * x (.inr i) (-1) * x (.inl i) 1)⁻¹ := by
   dsimp only
-  have hneg : ∀ j, ⁅(t.lieBasis ht).h j, (t.lieBasis ht).rootGenerator (.inr i)⁆ =
-      -((t.rootGeneratorWeight ht (.inl i) j : ℚ) •
-        (t.lieBasis ht).rootGenerator (.inr i)) := by
-    intro j
-    rw [t.lie_lieBasis_h_rootGenerator ht, t.rootGeneratorWeight_inr,
-      t.rootGeneratorWeight_inl, Int.cast_neg, neg_smul]
   have h := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
     D.representation_mem_lattice D.basis D.weight D.isCartanWeightVector_basis
     (D.isSl2Triple_representation_rootGenerator i)
     (D.isNilpotent_representation_rootGenerator (.inl i))
     (D.isNilpotent_representation_rootGenerator (.inr i))
-    (t.lie_lieBasis_h_rootGenerator ht (.inl i)) hneg (CommAlgCat.of ℤ A) s
+    (t.lie_lieBasis_h_rootGenerator ht (.inl i))
+    (t.lie_lieBasis_h_rootGenerator_inr_neg ht i) (CommAlgCat.of ℤ A) s
   rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul] at h
   have hm := congrArg (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) h
   simp only [map_mul,
@@ -149,13 +161,7 @@ theorem coe_simpleCorootPoints_eq_root_word (i : Fin t.rank) (A : Type v) [CommR
       D.representation D.lattice D.representation_mem_lattice
       D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight,
     coe_kostantToralRootSubgroupPoints] at hm
-  have hc : Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-      (kostantCoordinateCocharacter D.lattice D.basis D.weight A i s) =
-        (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-    rw [kostantCoordinateCocharacter_apply, coe_simpleCorootPoints]
-    simp only [MulEquiv.toMonoidHom_eq_coe, basisMatrix_kostantTorusPoints,
-      kostantTorusMatrix_apply, torusCharacter_mulSingle]
-  rw [hc] at hm
+  simp only [MulEquiv.toMonoidHom_eq_coe, D.basisMatrix_kostantCoordinateCocharacter] at hm
   exact (eq_mul_inv_iff_mul_eq.mpr hm.symm)
 
 end
