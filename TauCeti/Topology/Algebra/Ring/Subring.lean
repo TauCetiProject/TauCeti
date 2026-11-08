@@ -76,16 +76,9 @@ theorem topologicalClosure_coe (S : Subring R) :
 
 end Subring
 
-variable {B : Type*} [CommRing B] [TopologicalSpace B] [SeparatelyContinuousAdd B]
+section Ideal
 
-/-- The integral closure of an open subring `R` of `B` is open: it contains `R` itself, as the
-image of `algebraMap`, and an additive subgroup containing an open one is open. Only separate
-continuity of addition on `B` is used, not the full additive topological group structure. -/
-theorem isOpen_integralClosure_toSubring {R : Subring B} (hR : IsOpen (R : Set B)) :
-    IsOpen ((integralClosure R B).toSubring : Set B) :=
-  AddSubgroup.isOpen_mono (H₁ := R.toAddSubgroup)
-    (H₂ := (integralClosure R B).toSubring.toAddSubgroup)
-    (fun x hx ↦ (integralClosure R B).algebraMap_mem ⟨x, hx⟩) hR
+variable {B : Type*} [Ring B] [TopologicalSpace B] [SeparatelyContinuousAdd B]
 
 /-- **An ideal is open exactly when its trace on an open subring is.** For an open subring `R` of
 `B`, with the subspace topology, the contraction `p.comap R.subtype` of an ideal `p` of `B` is open
@@ -98,6 +91,19 @@ theorem Ideal.isOpen_comap_subtype_iff (p : Ideal B) {R : Subring B} (hR : IsOpe
   refine Filter.mem_of_superset ((hR.isOpenMap_subtype_val _ h).mem_nhds ⟨0, by simp, rfl⟩) ?_
   rintro _ ⟨x, hx, rfl⟩
   exact hx
+
+end Ideal
+
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [SeparatelyContinuousAdd B]
+
+/-- The integral closure of an open subring `R` of `B` is open: it contains `R` itself, as the
+image of `algebraMap`, and an additive subgroup containing an open one is open. Only separate
+continuity of addition on `B` is used, not the full additive topological group structure. -/
+theorem isOpen_integralClosure_toSubring {R : Subring B} (hR : IsOpen (R : Set B)) :
+    IsOpen ((integralClosure R B).toSubring : Set B) :=
+  AddSubgroup.isOpen_mono (H₁ := R.toAddSubgroup)
+    (H₂ := (integralClosure R B).toSubring.toAddSubgroup)
+    (fun x hx ↦ (integralClosure R B).algebraMap_mem ⟨x, hx⟩) hR
 
 namespace Subring
 
