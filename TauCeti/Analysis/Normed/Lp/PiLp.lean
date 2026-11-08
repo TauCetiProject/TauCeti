@@ -91,6 +91,18 @@ theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
   simpa [PiLp.norm_eq_of_L2] using
     Real.sum_mul_le_sqrt_mul_sqrt Finset.univ (fun _ : ι ↦ 1) (fun i ↦ ‖x i‖)
 
+/-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm, for every
+exponent. -/
+theorem norm_toLp_comp_equiv {E : Type*} [SeminormedAddCommGroup E] {κ : Type*} [Fintype κ]
+    (e : κ ≃ ι) (x : ι → E) : ‖WithLp.toLp p (x ∘ e)‖ = ‖WithLp.toLp p x‖ := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · simp only [norm_eq_card, Set.toFinite_toFinset, Set.toFinset_card]
+    exact congrArg Nat.cast (Fintype.card_congr (e.subtypeEquiv fun _ ↦ Iff.rfl))
+  · simp only [norm_eq_ciSup]
+    exact e.iSup_congr fun _ ↦ rfl
+  · simp only [norm_eq_sum hp]
+    exact congrArg (· ^ _) (Fintype.sum_equiv e _ _ fun _ ↦ rfl)
+
 section Constant
 
 variable [Fact (1 ≤ p)] {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
@@ -115,15 +127,6 @@ theorem norm_toLp_smul_const {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜
         (norm_mono fun i ↦ by simp [norm_smul, mul_comm])
     _ = ‖WithLp.toLp p a‖ * ‖y‖ := by
       rw [norm_smul, _root_.norm_norm, norm_norm (WithLp.toLp p a), mul_comm]
-
-/-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm. -/
-theorem norm_toLp_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (x : ι → E) :
-    ‖WithLp.toLp p (x ∘ e)‖ = ‖WithLp.toLp p x‖ := by
-  have he : LinearIsometryEquiv.piLpCongrLeft p ℤ E e.symm (WithLp.toLp p x) =
-      WithLp.toLp p (x ∘ e) := by
-    ext i
-    simp [Equiv.piCongrLeft']
-  rw [← he, LinearIsometryEquiv.norm_map]
 
 end Constant
 

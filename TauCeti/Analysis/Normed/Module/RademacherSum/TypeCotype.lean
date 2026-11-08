@@ -102,7 +102,7 @@ theorem HasCotype.mono_const (h : HasCotype E q C) (hC : C ≤ C') : HasCotype E
 
 section Fintype
 
-variable [Fact (1 ≤ p)] [Fact (1 ≤ q)] {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The type inequality holds for families indexed by any finite type. -/
 theorem HasType.rademacherSecondMoment_le (h : HasType E p C) (y : ι → E) :
@@ -155,15 +155,25 @@ theorem HasCotype.of_map [Fact (1 ≤ q)] (h : HasCotype F q C) (f : 𝓕)
 
 /-- Type passes along linear isometries with the same constant; in particular it passes to
 subspaces, through `Submodule.subtypeₗᵢ`. -/
-theorem HasType.of_linearIsometry [Fact (1 ≤ p)] {R : Type*} [Semiring R] [Module R E]
-    [Module R F] (h : HasType F p C) (f : E →ₗᵢ[R] F) : HasType E p C := by
-  simpa using h.of_map f (K := 1) (M := 1) (fun x ↦ by simp) fun x ↦ by simp
+theorem HasType.of_linearIsometry {R : Type*} [Semiring R] [Module R E] [Module R F]
+    (h : HasType F p C) (f : E →ₗᵢ[R] F) : HasType E p C := fun n y ↦ by
+  have hR := rademacherSecondMoment_le_mul_map f zero_le_one (fun x ↦ by simp) y
+  have hy : ‖WithLp.toLp p fun i ↦ f (y i)‖ = ‖WithLp.toLp p y‖ :=
+    le_antisymm (PiLp.norm_mono fun i ↦ by simp) (PiLp.norm_mono fun i ↦ by simp)
+  rw [one_mul] at hR
+  rw [← hy]
+  exact hR.trans (h n _)
 
 /-- Cotype passes along linear isometries with the same constant; in particular it passes to
 subspaces, through `Submodule.subtypeₗᵢ`. -/
-theorem HasCotype.of_linearIsometry [Fact (1 ≤ q)] {R : Type*} [Semiring R] [Module R E]
-    [Module R F] (h : HasCotype F q C) (f : E →ₗᵢ[R] F) : HasCotype E q C := by
-  simpa using h.of_map f (K := 1) (M := 1) (fun x ↦ by simp) fun x ↦ by simp
+theorem HasCotype.of_linearIsometry {R : Type*} [Semiring R] [Module R E] [Module R F]
+    (h : HasCotype F q C) (f : E →ₗᵢ[R] F) : HasCotype E q C := fun n y ↦ by
+  have hR := rademacherSecondMoment_map_le f zero_le_one (fun x ↦ by simp) y
+  have hy : ‖WithLp.toLp q fun i ↦ f (y i)‖ = ‖WithLp.toLp q y‖ :=
+    le_antisymm (PiLp.norm_mono fun i ↦ by simp) (PiLp.norm_mono fun i ↦ by simp)
+  rw [one_mul] at hR
+  rw [← hy]
+  exact (h n _).trans (by gcongr)
 
 section ContinuousLinearEquiv
 
