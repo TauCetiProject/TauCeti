@@ -125,6 +125,7 @@ theorem _root_.IsCompact.tendstoUniformlyOn_cauchyPowerSeries {P : Type*} [Topol
 variable [CompleteSpace E] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [FiniteDimensional ℂ V]
 
+omit [CompleteSpace E] in
 /-- The coefficients of the scalar-variable Cauchy expansion of a jointly analytic family
 are analytic in the parameter. Evaluating a multilinear coefficient at the tuple of ones
 recovers the usual coefficient of the scalar power series. -/

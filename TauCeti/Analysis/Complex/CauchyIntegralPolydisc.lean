@@ -400,13 +400,23 @@ end FiniteDimensional
 
 section Parametric
 
-variable [CompleteSpace E] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
 section Integral
 
 variable {Y α : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y] [MeasurableSpace α]
-  [TopologicalSpace α] [OpensMeasurableSpace α] [SecondCountableTopology α] {μ : Measure α}
+  [TopologicalSpace α] [OpensMeasurableSpace α] {μ : Measure α}
   {f : V × Y → E} {φ : α → Y} {g : α → ℂ} {K : Set Y}
+
+/-- A continuous function whose range lies in a compact set is strongly measurable, without any
+countability assumption on the domain. -/
+theorem _root_.Continuous.stronglyMeasurable_of_range_subset_isCompact {X Z : Type*}
+    [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup Z]
+    {u : X → Z} (hu : Continuous u) {s : Set Z} (hs : IsCompact s) (hus : ∀ x, u x ∈ s) :
+    StronglyMeasurable u := by
+  borelize Z
+  refine stronglyMeasurable_iff_measurable_separable.2 ⟨hu.measurable, ?_⟩
+  exact (hs.isSeparable).mono (Set.range_subset_iff.2 hus)
 
 /-- **Differentiation under the integral sign for a jointly analytic integrand.** If `f` is
 jointly analytic at every point of `{p} × K`, with `K` compact, and `φ` is a continuous map with
@@ -416,6 +426,15 @@ theorem hasFDerivAt_integral_smul_of_analyticAt {p : V} (hK : IsCompact K) (hφ 
     (hφK : ∀ a, φ a ∈ K) (hf : ∀ y ∈ K, AnalyticAt ℂ f (p, y)) (hg : Integrable g μ) :
     HasFDerivAt (fun q ↦ ∫ a, g a • f (q, φ a) ∂μ)
       (∫ a, g a • (fderiv ℂ f (p, φ a)).comp (ContinuousLinearMap.inl ℂ V Y) ∂μ) p := by
+  -- Discard the trivial case where `E` is not complete, as all integrals vanish.
+  by_cases hE : CompleteSpace E; swap
+  · rcases subsingleton_or_nontrivial V with hV | hV
+    · have : Subsingleton (V →L[ℂ] E) := inferInstance
+      convert hasFDerivAt_of_subsingleton _ p
+    · have : ¬CompleteSpace (V →L[ℂ] E) := by
+        simpa [SeparatingDual.completeSpace_continuousLinearMap_iff] using hE
+      simp only [integral_of_not_completeSpace hE, integral_of_not_completeSpace this]
+      exact hasFDerivAt_const 0 p
   -- The partial derivative of `f` in the parameter, continuous where `f` is analytic.
   set G : V × Y → V →L[ℂ] E := fun x ↦ (fderiv ℂ f x).comp (ContinuousLinearMap.inl ℂ V Y)
   -- Near `p`, `f` is analytic on `{q} × K` and `G` is bounded there uniformly in `q`.
@@ -430,6 +449,18 @@ theorem hasFDerivAt_integral_smul_of_analyticAt {p : V} (hK : IsCompact K) (hφ 
   have hGcont : Continuous fun a ↦ G (p, φ a) := continuous_iff_continuousAt.2 fun a ↦
     ((hf _ (hφK a)).fderiv.continuousAt.clm_comp continuousAt_const).comp_of_eq
       (f := fun a ↦ (p, φ a)) (continuous_const.prodMk hφ).continuousAt rfl
+  -- The integrands are continuous with values in compact sets, hence strongly measurable.
+  have hmeas : ∀ q ∈ s, StronglyMeasurable fun a ↦ f (q, φ a) := fun q hq ↦
+    (hcont q hq).stronglyMeasurable_of_range_subset_isCompact
+      (hK.image_of_continuousOn (f := fun y ↦ f (q, y)) fun y hy ↦
+        ((hq y hy).1.continuousAt.comp (continuous_const.prodMk continuous_id).continuousAt
+          ).continuousWithinAt) fun a ↦ ⟨φ a, hφK a, rfl⟩
+  have hGmeas : StronglyMeasurable fun a ↦ G (p, φ a) :=
+    hGcont.stronglyMeasurable_of_range_subset_isCompact
+      (hK.image_of_continuousOn (f := fun y ↦ G (p, y)) fun y hy ↦
+        ((hf y hy).fderiv.continuousAt.clm_comp continuousAt_const).comp_of_eq
+          (f := fun y ↦ (p, y)) (continuous_const.prodMk continuous_id).continuousAt rfl
+          |>.continuousWithinAt) fun a ↦ ⟨φ a, hφK a, rfl⟩
   -- The integrand at `p` is bounded by a multiple of `‖g‖`, hence integrable.
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun y ↦ f (p, y)) fun y hy ↦
     ((hf y hy).continuousAt.comp (continuous_const.prodMk continuous_id).continuousAt
@@ -437,10 +468,10 @@ theorem hasFDerivAt_integral_smul_of_analyticAt {p : V} (hK : IsCompact K) (hφ 
   refine hasFDerivAt_integral_of_dominated_of_fderiv_le (F' := fun q a ↦ g a • G (q, φ a))
     (bound := fun a ↦ ‖g a‖ * C) hs
     (eventually_of_mem hs fun q hq ↦
-      hg.aestronglyMeasurable.smul (hcont q hq).aestronglyMeasurable) ?_
-    (hg.aestronglyMeasurable.smul hGcont.aestronglyMeasurable) ?_ (hg.norm.mul_const C) ?_
+      hg.aestronglyMeasurable.smul (hmeas q hq).aestronglyMeasurable) ?_
+    (hg.aestronglyMeasurable.smul hGmeas.aestronglyMeasurable) ?_ (hg.norm.mul_const C) ?_
   · refine (hg.norm.mul_const B).mono'
-      (hg.aestronglyMeasurable.smul (hcont p (mem_of_mem_nhds hs)).aestronglyMeasurable)
+      (hg.aestronglyMeasurable.smul (hmeas p (mem_of_mem_nhds hs)).aestronglyMeasurable)
       (ae_of_all _ fun a ↦ ?_)
     rw [norm_smul]
     exact mul_le_mul_of_nonneg_left (hB _ (hφK a)) (norm_nonneg _)
@@ -458,6 +489,10 @@ theorem analyticAt_integral_smul [FiniteDimensional ℂ V] {p : V} (hK : IsCompa
     (hφ : Continuous φ) (hφK : ∀ a, φ a ∈ K) (hf : ∀ y ∈ K, AnalyticAt ℂ f (p, y))
     (hg : Integrable g μ) :
     AnalyticAt ℂ (fun q ↦ ∫ a, g a • f (q, φ a) ∂μ) p := by
+  -- Discard the trivial case where `E` is not complete, as all integrals vanish.
+  by_cases hE : CompleteSpace E; swap
+  · simp only [integral_of_not_completeSpace hE]
+    exact analyticAt_const
   -- Analyticity of `f` on `{p} × K` persists on `{q} × K` for `q` near `p`, and the integral is
   -- differentiable at each such `q`.
   have h : ∀ᶠ q in 𝓝 p, ∀ y ∈ K, AnalyticAt ℂ f (q, y) :=
