@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.Dynamics.Flow.OfLipschitz
 public import TauCeti.Dynamics.Flow.TimeDependent
--- Private: parametric integrals and the chain rule are used only inside proofs.
+-- Private: parametric integrals, the chain rule and the local-inverse derivative are used only
+-- inside proofs.
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -207,12 +209,31 @@ theorem coe_inv_fderivUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     ((Flow.fderivUnit hs ht)⁻¹ : (E →L[ℝ] E)ˣ) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
   (rfl)
 
-/-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. -/
+/-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. No
+differentiability of the reverse time map is assumed: when `Dϕ_t(x)` is not invertible, the reverse
+time map is not differentiable at `ϕ t x`, and both sides are `0`. -/
 @[simp]
-theorem ringInverse_fderiv (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
-    (ht : DifferentiableAt ℝ (ϕ t) x) :
-    Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
-  Ring.inverse_unit (Flow.fderivUnit hs ht)
+theorem ringInverse_fderiv (ht : DifferentiableAt ℝ (ϕ t) x) :
+    Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) := by
+  have hx : ϕ (-t) (ϕ t x) = x := by rw [← ϕ.map_add, neg_add_cancel, Flow.map_zero_apply]
+  by_cases hu : IsUnit (fderiv ℝ (ϕ t) x)
+  · obtain ⟨u, hu⟩ := hu
+    have hs : HasFDerivAt (ϕ (-t)) ((ContinuousLinearEquiv.unitsEquiv ℝ E u).symm : E →L[ℝ] E)
+        (ϕ t x) := by
+      refine HasFDerivAt.of_local_left_inverse (f := ϕ t)
+        (f' := ContinuousLinearEquiv.unitsEquiv ℝ E u) ?_ ?_ ?_
+      · exact (ϕ.continuous continuous_const continuous_id).continuousAt
+      · rw [hx, show ((ContinuousLinearEquiv.unitsEquiv ℝ E u : E ≃L[ℝ] E) : E →L[ℝ] E) =
+          fderiv ℝ (ϕ t) x from hu]
+        exact ht.hasFDerivAt
+      · exact Filter.Eventually.of_forall fun y ↦ by rw [← ϕ.map_add, add_neg_cancel,
+          Flow.map_zero_apply]
+    rw [hs.fderiv, ← hu]
+    exact Ring.inverse_unit u ▸ rfl
+  · rw [Ring.inverse_non_unit _ hu]
+    by_cases hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x)
+    · exact absurd ⟨Flow.fderivUnit hs ht, rfl⟩ hu
+    · exact (fderiv_zero_of_not_differentiableAt hs).symm
 
 /-- **The derivative of a flow carries its velocity field along**: if the orbits of `x` and of
 `ϕ t x` have velocities `a` and `b` at time `0`, then `Dϕ_t(x) a = b`. -/
