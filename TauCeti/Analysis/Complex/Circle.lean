@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -34,6 +35,7 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
+* `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
 -/
 
 public section
@@ -116,6 +118,12 @@ theorem mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
         ((u : ℂ) ^ q * (u : ℂ) ^ d) * ((u : ℂ) ^ q)⁻¹ = (u : ℂ) ^ d := by field_simp
         _ = -1 := huk
   simpa only [u, d] using hfactor
+
+/-- Every point of the circle has an `n`-th root on the circle, for `n ≠ 0`: `exp (i arg z / n)`.
+-/
+theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
+  ⟨exp (Complex.arg z / n), by
+    rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
