@@ -124,20 +124,13 @@ theorem exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add [LindelofS
   have hGNS : eLpNorm w p' μ ≤ K * eLpNorm (fderiv ℝ w) p μ :=
     eLpNorm_le_eLpNorm_fderiv_of_eq μ hw hwcs hp hn hp'
   -- Read the `L^{p'}` norm of `u` over the chart preimage of the small ball in the chart.
+  have hb : ball (φ c) b.rIn ⊆ ball (φ c) r :=
+    ball_subset_closedBall.trans ((closedBall_subset_closedBall b.rIn_lt_rOut.le).trans hbr)
   have hloc : eLpNorm u p' (dV.restrict (φ.source ∩ φ ⁻¹' ball (φ c) b.rIn)) ≤
-      A * eLpNorm w p' μ := by
-    rcases eq_or_ne p' 0 with hp'0 | hp'0
-    · simp [hp'0, eLpNorm_exponent_zero hu.continuous.aestronglyMeasurable]
-    have hp'R : 0 < (p' : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hp'0)
-    rw [← ENNReal.rpow_le_rpow_iff hp'R,
-      eLpNorm_nnreal_pow_eq_lintegral hp'0 hu.continuous.aestronglyMeasurable,
-      ENNReal.mul_rpow_of_nonneg _ _ hp'R.le, ENNReal.rpow_inv_rpow hp'R.ne',
-      eLpNorm_nnreal_pow_eq_lintegral hp'0 hw.continuous.aestronglyMeasurable]
-    have hb : ball (φ c) b.rIn ⊆ ball (φ c) r :=
-      ball_subset_closedBall.trans ((closedBall_subset_closedBall b.rIn_lt_rOut.le).trans hbr)
-    exact (b.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm
-      (hb.trans hrt) (fun y hy ↦ (hball y (hb hy)).2.2.le) u fun t ↦ ‖t‖ₑ ^ (p' : ℝ)).trans
-      (by gcongr; exact Measure.restrict_le_self)
+      A * eLpNorm w p' μ :=
+    b.eLpNorm_restrict_inter_preimage_ball_le_mul_eLpNorm_mul_comp_extChartAt_symm
+      (hb.trans hrt) (fun y hy ↦ (hball y (hb hy)).2.2.le) hu.continuous.aestronglyMeasurable
+      hw.continuous.aestronglyMeasurable
   calc eLpNorm u p' (dV.restrict (φ.source ∩ φ ⁻¹' ball (φ c) b.rIn))
       ≤ A * (K * (D * X)) := hloc.trans (by gcongr; exact hGNS.trans (by gcongr))
     _ = (A * K * D).toNNReal * X := by
