@@ -599,12 +599,22 @@ variable {Y Y' Y'' : Type u} {G : Type*} [TopologicalSpace Y] [TopologicalSpace 
   [MulAction Gᵐᵒᵖ Y''] [ContinuousSMul Gᵐᵒᵖ Y''] (R : Type*) [CommRing R]
 
 /-- The `R`-linear map of modules induced by a continuous map: the push-forward of chains in each
-dimension. -/
+dimension, `TauCeti.cubicalChainSumMap` read through the equivalences with the direct sums. -/
 def cubicalChainModuleLinearMap (f : C(Y, Y')) :
     cubicalChainModule Y G R →ₗ[R] cubicalChainModule Y' G R :=
-  cubicalChainModuleDesc fun n ↦ (cubicalChainModuleLof Y' G R n).comp (map R f n)
+  (cubicalChainModuleEquiv Y' G R).symm.toLinearMap ∘ₗ cubicalChainSumMap R f ∘ₗ
+    (cubicalChainModuleEquiv Y G R).toLinearMap
 
 variable {R}
+
+omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
+  [ContinuousSMul Gᵐᵒᵖ Y] [MulAction Gᵐᵒᵖ Y'] [ContinuousSMul Gᵐᵒᵖ Y'] in
+/-- The induced map is the push-forward of the direct sums, read through the equivalences. -/
+@[simp]
+theorem cubicalChainModuleEquiv_linearMap (f : C(Y, Y')) (x : cubicalChainModule Y G R) :
+    cubicalChainModuleEquiv Y' G R (cubicalChainModuleLinearMap R f x) =
+      cubicalChainSumMap R f (cubicalChainModuleEquiv Y G R x) :=
+  (rfl)
 
 omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
   [ContinuousSMul Gᵐᵒᵖ Y] [MulAction Gᵐᵒᵖ Y'] [ContinuousSMul Gᵐᵒᵖ Y'] in
@@ -613,7 +623,9 @@ omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
 theorem cubicalChainModuleLinearMap_lof (f : C(Y, Y')) {n : ℕ} (c : NormalizedCubicalChain Y R n) :
     cubicalChainModuleLinearMap (G := G) R f (cubicalChainModuleLof Y G R n c) =
       cubicalChainModuleLof Y' G R n (map R f n c) :=
-  cubicalChainModuleDesc_lof _ c
+  (cubicalChainModuleEquiv Y' G R).injective <| by
+    rw [cubicalChainModuleEquiv_linearMap, cubicalChainModuleEquiv_lof, cubicalChainSumMap_lof,
+      cubicalChainModuleEquiv_lof]
 
 /-- The induced map of an equivariant map commutes with the action. -/
 theorem cubicalChainModuleLinearMap_op_smul (f : C(Y, Y'))
@@ -637,29 +649,19 @@ omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
 /-- The induced map commutes with the differentials. -/
 theorem cubicalChainModuleDifferential_linearMap (f : C(Y, Y')) (x : cubicalChainModule Y G R) :
     cubicalChainModuleDifferential Y' G R (cubicalChainModuleLinearMap R f x) =
-      cubicalChainModuleLinearMap R f (cubicalChainModuleDifferential Y G R x) := by
-  induction x using cubicalChainModule.induction_on with
-  | zero => rw [map_zero, map_zero, map_zero, map_zero]
-  | add x x' hx hx' => rw [map_add, map_add, hx, hx', map_add, map_add]
-  | lof n c =>
-    rcases n with _ | k
-    · rw [cubicalChainModuleLinearMap_lof, cubicalChainModuleDifferential_lof_zero,
-        cubicalChainModuleDifferential_lof_zero, map_zero]
-    · rw [cubicalChainModuleLinearMap_lof, cubicalChainModuleDifferential_lof_succ,
-        cubicalChainModuleDifferential_lof_succ, cubicalChainModuleLinearMap_lof,
-        ← LinearMap.comp_apply (boundary Y' R k), ← map_boundary, LinearMap.comp_apply]
+      cubicalChainModuleLinearMap R f (cubicalChainModuleDifferential Y G R x) :=
+  (cubicalChainModuleEquiv Y' G R).injective <| by
+    rw [cubicalChainModuleEquiv_differential, cubicalChainModuleEquiv_linearMap,
+      cubicalChainDifferential_cubicalChainSumMap, cubicalChainModuleEquiv_linearMap,
+      cubicalChainModuleEquiv_differential]
 
 omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
   [ContinuousSMul Gᵐᵒᵖ Y] [MulAction Gᵐᵒᵖ Y'] [ContinuousSMul Gᵐᵒᵖ Y'] in
 /-- The induced map preserves the grading. -/
 theorem cubicalChainModuleLinearMap_mem (f : C(Y, Y')) {i : ℤ} {x : cubicalChainModule Y G R}
     (hx : x ∈ cubicalChainModuleGrading Y G R i) :
-    cubicalChainModuleLinearMap R f x ∈ cubicalChainModuleGrading Y' G R i := by
-  rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨n, c, hn, rfl⟩
-  · rw [map_zero]
-    exact zero_mem _
-  · exact mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨n, _, hn,
-      (cubicalChainModuleLinearMap_lof f c).symm⟩)
+    cubicalChainModuleLinearMap R f x ∈ cubicalChainModuleGrading Y' G R i :=
+  cubicalChainSumMap_mem f hx
 
 variable (R) in
 /-- The morphism of DG right modules induced by an equivariant continuous map `f : Y → Y'`. -/
@@ -693,8 +695,8 @@ omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
 @[simp]
 theorem cubicalChainModuleLinearMap_id :
     cubicalChainModuleLinearMap (G := G) R (ContinuousMap.id Y) = LinearMap.id :=
-  cubicalChainModule_linearMap_ext fun n c ↦ by
-    rw [cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_id, LinearMap.id_apply,
+  LinearMap.ext fun x ↦ (cubicalChainModuleEquiv Y G R).injective <| by
+    rw [cubicalChainModuleEquiv_linearMap, cubicalChainSumMap_id, LinearMap.id_apply,
       LinearMap.id_apply]
 
 omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
@@ -704,9 +706,9 @@ omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
 theorem cubicalChainModuleLinearMap_comp (f : C(Y, Y')) (g : C(Y', Y'')) :
     cubicalChainModuleLinearMap (G := G) R (g.comp f) =
       cubicalChainModuleLinearMap R g ∘ₗ cubicalChainModuleLinearMap R f :=
-  cubicalChainModule_linearMap_ext fun n c ↦ by
-    rw [cubicalChainModuleLinearMap_lof, LinearMap.comp_apply, cubicalChainModuleLinearMap_lof,
-      cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+  LinearMap.ext fun x ↦ (cubicalChainModuleEquiv Y'' G R).injective <| by
+    rw [cubicalChainModuleEquiv_linearMap, LinearMap.comp_apply, cubicalChainModuleEquiv_linearMap,
+      cubicalChainModuleEquiv_linearMap, cubicalChainSumMap_comp, LinearMap.comp_apply]
 
 /-- The identity map induces the identity morphism. -/
 @[simp]

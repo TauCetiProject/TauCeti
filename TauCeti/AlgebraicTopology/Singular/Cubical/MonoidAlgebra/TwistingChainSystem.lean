@@ -29,18 +29,19 @@ Two facts about the right-hand side, the **twisting sum** `TauCeti.twistingChain
 
 * It is a cycle as soon as the twisting equation holds at `(x, z)` and `(z, y)` for every `z`
   whose index lies strictly between those of `y` and `x`, and the composition maps are associative
-  (`TauCeti.cubicalChainDifferential_twistingChainSum`). This is what makes an inductive
-  construction of a chain system possible: once the chains of the pairs with smaller index
-  difference are chosen, the twisting sum of `(x, y)` is a cycle, and `s x y` is any chain
-  bounding it.
+  (`TauCeti.cubicalChainDifferential_twistingChainSum`). This is the necessary condition for the
+  inductive step of the construction of a chain system: once the chains of the pairs with smaller
+  index difference are chosen, the twisting sum of `(x, y)` must be a cycle before a chain `s x y`
+  bounding it can be chosen. The existence of such a chain needs a separate argument.
 * Evaluation maps `q x y : M x y → G` to a topological monoid that are multiplicative,
   `q (ι (u, v)) = q u * q v`, carry it to the twisting product of the push-forwards
   (`TauCeti.cubicalChainSumMap_twistingChainSum`).
 
 Consequently the push-forwards `q_* (s x y)` form a twisting cocycle with values in the
-differential graded algebra `C^□_*(G; R)` (`TauCeti.TwistingChainSystem.twistingCocycle`). For
-`G` the Moore loops of a space `B` and `q` the evaluation of trajectories into loops, this is the
-**Barraud–Cornea cocycle**, the input of the Morse complex with coefficients in a DG local system.
+differential graded algebra `C^□_*(G; R)` (`TauCeti.TwistingChainSystem.twistingCocycle`). When
+the system is a representing chain system, `G` is the Moore loops of a space `B` and `q` evaluates
+trajectories into loops, this is the **Barraud–Cornea cocycle**, the input of the Morse complex
+with coefficients in a DG local system.
 
 ## Main definitions
 
@@ -109,11 +110,12 @@ section Graded
 variable {s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R}
 
 /-- The twisting sum of a family of chains of cohomological degrees `ind y - ind x + 1` vanishes
-when `ind x ≤ ind y`: the term of `z` vanishes because the chain of `(x, z)` does when
-`ind x ≤ ind z`, and the chain of `(z, y)` does when `ind z < ind x ≤ ind y`. -/
+when `ind x ≤ ind y`. -/
 theorem twistingChainSum_eq_zero_of_le
     (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1)) {x y : P}
     (hxy : ind x ≤ ind y) : twistingChainSum ind ι R s x y = 0 := by
+  -- The term of `z` vanishes because the chain of `(x, z)` does when `ind x ≤ ind z`, and the
+  -- chain of `(z, y)` does when `ind z < ind x ≤ ind y`.
   refine Finset.sum_eq_zero fun z _ ↦ ?_
   rcases le_or_gt (ind x) (ind z) with hxz | hxz
   · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
@@ -245,11 +247,13 @@ theorem cubicalChainSumMap_twistingChainSum {x y : P}
 namespace TwistingChainSystem
 
 variable (q) in
-/-- **The Barraud–Cornea cocycle** of a twisting chain system: for evaluation maps
+/-- **The twisting cocycle of push-forwards** of a twisting chain system: for evaluation maps
 `q x y : M x y → G` into a topological monoid that are multiplicative,
 `q x y (ι x z y (u, v)) = q x z u * q z y v`, the push-forwards `q_* (s x y)` form a twisting
 cocycle with values in the differential graded algebra `C^□_*(G; R)` of normalized cubical
-chains. For the Moore loops `G = Ω_b B` of a space, it is a `TauCeti.LoopTwistingCocycle`. -/
+chains. For the Moore loops `G = Ω_b B` of a space, it is a `TauCeti.LoopTwistingCocycle`; when
+moreover `S` is a representing chain system and `q` evaluates trajectories into Moore loops, it
+is the Barraud–Cornea cocycle. -/
 def twistingCocycle (S : TwistingChainSystem ind ι R)
     (hq : ∀ x z y (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v) :
     TwistingCocycle (R := R) (A := normalizedCubicalChainAlgebra G R) (cubicalChainGrading G R)
@@ -261,7 +265,7 @@ def twistingCocycle (S : TwistingChainSystem ind ι R)
         cubicalChainSumMap_twistingChainSum (hq x · y)])
     fun _ hn ↦ cubicalChainGrading_eq_bot G R hn
 
-/-- The entries of the Barraud–Cornea cocycle are the push-forwards of the chains. -/
+/-- The entries of the twisting cocycle of push-forwards are the push-forwards of the chains. -/
 @[simp]
 theorem twistingCocycle_m (S : TwistingChainSystem ind ι R)
     (hq : ∀ x z y (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v)

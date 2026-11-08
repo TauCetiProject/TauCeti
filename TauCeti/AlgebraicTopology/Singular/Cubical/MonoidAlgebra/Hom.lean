@@ -23,21 +23,17 @@ augmentation of the DG algebra `C^□_*(G; R)` in the sense of
 degree zero with zero differential.  The morphisms induced by continuous monoid homomorphisms are
 compatible with these augmentations.
 
-More generally, a continuous map `f : X → Y` of spaces pushes chains forward to a chain map
-`cubicalChainSumMap R f : ⨁ n, C^□_n(X; R) → ⨁ n, C^□_n(Y; R)` of the plain direct sums, which
-for a continuous monoid homomorphism is the underlying linear map of `cubicalChainAlgHom R φ`.
+For a continuous monoid homomorphism, the underlying linear map of `cubicalChainAlgHom R φ` is
+the push-forward `TauCeti.cubicalChainSumMap` of the direct sums of chains.
 
 ## Main definitions
 
-* `TauCeti.cubicalChainSumMap R f`: the push-forward of the direct sums of chains along `f`.
 * `TauCeti.cubicalChainAlgHom R φ`: the algebra homomorphism induced by `φ : G →ₜ* G'`.
 * `TauCeti.cubicalChainDGAlgHom R φ`: the same as a morphism of DG algebras.
 * `TauCeti.cubicalChainAugmentation G R`: the augmentation of `C^□_*(G; R)`.
 
 ## Main results
 
-* `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
-  `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
 * `TauCeti.cubicalChainDGAlgHom_id`, `TauCeti.cubicalChainDGAlgHom_comp`: functoriality.
 * `TauCeti.cubicalChainAugmentation_comp_dgAlgHom`: compatibility with the augmentations.
 
@@ -59,66 +55,6 @@ variable {G G' G'' : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   [Monoid G''] [TopologicalSpace G''] [ContinuousMul G''] {R : Type*} [CommRing R]
 
 open NormalizedCubicalChain
-
-section SumMap
-
-variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-
-variable (R) in
-/-- The **push-forward** `f_* : ⨁ n, C^□_n(X; R) → ⨁ n, C^□_n(Y; R)` along a continuous map,
-dimension by dimension. -/
-def cubicalChainSumMap (f : C(X, Y)) :
-    normalizedCubicalChainAlgebra X R →ₗ[R] normalizedCubicalChainAlgebra Y R :=
-  DirectSum.lmap fun n ↦ map R f n
-
-/-- The push-forward on a chain of dimension `n`. -/
-@[simp]
-theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R n) :
-    cubicalChainSumMap R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
-  DirectSum.lmap_lof _ n c
-
-/-- The push-forward along the identity is the identity. -/
-@[simp]
-theorem cubicalChainSumMap_id : cubicalChainSumMap R (ContinuousMap.id X) = LinearMap.id :=
-  DirectSum.linearMap_ext R fun n ↦ LinearMap.ext fun c ↦ by
-    rw [LinearMap.comp_apply, cubicalChainSumMap_lof, NormalizedCubicalChain.map_id]
-    rfl
-
-/-- The push-forward along a composite is the composite of the push-forwards. -/
-theorem cubicalChainSumMap_comp (g : C(Y, Z)) (f : C(X, Y)) :
-    cubicalChainSumMap R (g.comp f) = cubicalChainSumMap R g ∘ₗ cubicalChainSumMap R f :=
-  DirectSum.linearMap_ext R fun n ↦ LinearMap.ext fun c ↦ by
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, cubicalChainSumMap_lof,
-      cubicalChainSumMap_lof, cubicalChainSumMap_lof, NormalizedCubicalChain.map_comp,
-      LinearMap.comp_apply]
-
-/-- The push-forward preserves the cohomological degree. -/
-theorem cubicalChainSumMap_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
-    (ha : a ∈ cubicalChainGrading X R i) :
-    cubicalChainSumMap R f a ∈ cubicalChainGrading Y R i := by
-  rcases (mem_cubicalChainGrading_iff X R).1 ha with rfl | ⟨n, c, hn, rfl⟩
-  · rw [map_zero]
-    exact zero_mem _
-  · exact (mem_cubicalChainGrading_iff Y R).2
-      (Or.inr ⟨n, _, hn, (cubicalChainSumMap_lof f c).symm⟩)
-
-/-- **The push-forward is a chain map**: it commutes with the boundary. -/
-theorem cubicalChainDifferential_cubicalChainSumMap (f : C(X, Y))
-    (a : normalizedCubicalChainAlgebra X R) :
-    cubicalChainDifferential Y R (cubicalChainSumMap R f a) =
-      cubicalChainSumMap R f (cubicalChainDifferential X R a) := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | add a a' ha ha' => rw [map_add, map_add, ha, ha', map_add, map_add]
-  | of n c =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof]
-    rcases n with _ | k
-    · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, map_zero]
-    · rw [cubicalChainDifferential_lof_succ, cubicalChainDifferential_lof_succ,
-        cubicalChainSumMap_lof, ← LinearMap.comp_apply (map R f k), map_boundary,
-        LinearMap.comp_apply]
-
-end SumMap
 
 section Hom
 
