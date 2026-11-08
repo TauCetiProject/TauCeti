@@ -523,17 +523,9 @@ private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional
     obtain ⟨A, hA⟩ := hx.2.2
     rw [hψF]
     exact ⟨ContinuousLinearEquiv.ofUnit A, hA⟩
-  -- The partial diffeomorphism has the underlying partial equivalence of `ψ`, so its source and
-  -- coercion are those of `ψ`.
-  have hd := TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψsmooth
-    hψsymmSmooth
-  have hdsrc : (TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth).source
-      = ψ.source := congrArg PartialEquiv.source hd
-  have hdcoe : ⇑(TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth) =
-      ψ := congrArg (⇑) hd
   refine ⟨TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth,
-    hdsrc ▸ hzeroψ, fun x hx => ?_, hψF.symm.trans hdcoe.symm⟩
-  rw [hdsrc, hsrc] at hx
+    by simpa using hzeroψ, fun x hx => ?_, by simpa using hψF.symm⟩
+  simp only [TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv, hsrc] at hx
   exact hx.2.1
 
 /-- The fully charted exponential is a smooth local diffeomorphism at zero. -/
