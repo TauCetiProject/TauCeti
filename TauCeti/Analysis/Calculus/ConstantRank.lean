@@ -39,6 +39,8 @@ their local structure of submanifolds of dimension `dim E - rank L`.
   `0` with derivative the identity there, such that `ψ ∘ f = Df(a) ∘ φ` near `a`.
 * `ContDiffOn.exists_openPartialHomeomorph_apply_eq_iff_mem_ker`: near `a`, the level set of `f`
   through `a` is the preimage under a chart `φ` of the kernel of `Df(a)`.
+* `HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq`: if `P ∘ g` agrees near `z` with a linear map
+  `L` and `Dg(z)` has rank at most that of `L`, then `Dg(z)` vanishes on `ker L`.
 
 ## Implementation notes
 
@@ -71,40 +73,12 @@ variable {𝕂 : Type*} [RCLike 𝕂]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
 
-/-- If `T` is a pseudo-inverse of `L`, then `T ∘ L` is a projection. -/
-private theorem isIdempotentElem_comp_of_comp_comp_eq_self {L : E →L[𝕂] F} {T : F →L[𝕂] E}
-    (hT : L ∘L T ∘L L = L) : IsIdempotentElem (T ∘L L) := by
-  ext v
-  simpa using congrArg T congr($hT v)
-
-/-- Let `π` be a continuous projection of `E`. If `g` is differentiable on the ball of radius `r`
-about `0` and its derivative there kills the kernel of `π`, then `g` only depends on the `π`
-component on the part of that ball where `‖π z‖ + ‖z - π z‖ < r`. -/
-private theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : E → F} {π : E →L[𝕂] E}
-    (hπ : IsIdempotentElem π) {r : ℝ} (hg : DifferentiableOn 𝕂 g (Metric.ball 0 r))
-    (hker : ∀ u ∈ Metric.ball (0 : E) r, ∀ v, π v = 0 → fderiv 𝕂 g u v = 0) {z : E}
-    (hz : ‖π z‖ + ‖z - π z‖ < r) : g (π z) = g z := by
-  have hπz : π (z - π z) = 0 := by
-    rw [map_sub, sub_eq_zero]
-    exact congr($hπ z).symm
-  -- The segment from `π z` to `z` stays in the ball.
-  have hball (t : 𝕂) (ht : ‖t‖ ≤ 1) : π z + t • (z - π z) ∈ Metric.ball (0 : E) r := by
-    rw [mem_ball_zero_iff]
-    refine (norm_add_le _ _).trans_lt (lt_of_le_of_lt ?_ hz)
-    rw [norm_smul]
-    gcongr
-    exact mul_le_of_le_one_left (norm_nonneg _) ht
-  have h := TauCeti.apply_add_eq_of_fderiv_apply_eq_zero (z := π z) (v := z - π z)
-    (fun t ht ↦ hg.differentiableAt (Metric.isOpen_ball.mem_nhds (hball t ht)))
-    (fun t ht ↦ hker _ (hball t ht) _ hπz)
-  rw [add_sub_cancel] at h
-  exact h.symm
-
 /-- If `P ∘ g` agrees near `z` with a continuous linear map `L`, and the derivative `D` of `g` at
-`z` has rank at most that of `L`, then `D` vanishes on the kernel of `L`: projecting the range of
-`D` with `P` does not lower its dimension, so it does not enlarge its kernel. -/
-private theorem HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq [FiniteDimensional 𝕂 E]
+`z` has finite rank at most that of `L`, then `D` vanishes on the kernel of `L`: projecting the
+range of `D` with `P` does not lower its dimension, so it does not enlarge its kernel. -/
+theorem HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq
     {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕂 G] {g : E → F} {D : E →L[𝕂] F}
+    [FiniteDimensional 𝕂 (LinearMap.range D.toLinearMap)]
     {P : F →L[𝕂] G} {L : E →L[𝕂] G} {z : E} (hg : HasFDerivAt g D z)
     (hPg : (fun w ↦ P (g w)) =ᶠ[𝓝 z] L)
     (hrank : finrank 𝕂 (LinearMap.range D.toLinearMap) ≤
@@ -180,7 +154,8 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
   obtain ⟨T, hT⟩ := L.exists_comp_comp_eq_self
   have hT' (v : E) : L (T (L v)) = L v := by simpa using congr($hT v)
   set π : E →L[𝕂] E := T ∘L L with hπ
-  have hπidem : IsIdempotentElem π := isIdempotentElem_comp_of_comp_comp_eq_self hT
+  have hπidem : IsIdempotentElem π :=
+    ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self hT
   set Q : E →L[𝕂] E := ContinuousLinearMap.id 𝕂 E - π with hQ
   have hππ (z : E) : π (π z) = π z := congr($hπidem z)
   have hπQ (z : E) : π (Q z) = 0 := by simp [hQ, hππ]
@@ -226,7 +201,7 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
   /- Hence `g` only depends on the `range π` component on a neighbourhood of `0`. -/
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (Φ₀.open_target.mem_nhds h0Φ₀)
   have hgπ : ∀ z, ‖π z‖ + ‖z - π z‖ < ε → g (π z) = g z := fun z hz ↦
-    apply_proj_eq_of_fderiv_apply_eq_zero hπidem ((hgC.differentiableOn hn0).mono hball)
+    TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero hπidem ((hgC.differentiableOn hn0).mono hball)
       (fun u hu v hv ↦ hker u (hball hu) v (by simpa [hπ, hT'] using congrArg L hv)) hz
   /- The second chart `ψ w = (w - f a) - (1 - P) (g (c w))` with `c w = π (T (w - f a))`. -/
   set c : F → E := fun w ↦ π (T (w - f a)) with hc

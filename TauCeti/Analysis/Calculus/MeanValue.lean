@@ -62,7 +62,9 @@ Over `ℝ` or `ℂ`, a map whose derivative kills a vector `v` at every point `z
 `‖t‖ ≤ 1` takes the same value at `z` and `z + v`
 (`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`). Unlike Mathlib's
 `Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
-vanish, so the map need not be constant near the segment.
+vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
+projection and the derivative of a map kills `ker π` on a ball about `0`, then near `0` the map
+only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`).
 -/
 
 public section
@@ -232,6 +234,29 @@ theorem apply_add_eq_of_fderiv_apply_eq_zero {g : F → G} {z v : F}
       simp [hv t (by simpa using ht)])
     (Metric.mem_closedBall_self zero_le_one) (show (1 : 𝕂) ∈ Metric.closedBall 0 1 by simp)
   simpa [sub_eq_zero] using h
+
+/-- Let `π` be a continuous projection of `F`. If `g` is differentiable on the ball of radius `r`
+about `0` and its derivative there kills the kernel of `π`, then `g` only depends on the `π`
+component on the part of that ball where `‖π z‖ + ‖z - π z‖ < r`. -/
+theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F}
+    (hπ : IsIdempotentElem π) {r : ℝ} (hg : DifferentiableOn 𝕂 g (Metric.ball 0 r))
+    (hker : ∀ u ∈ Metric.ball (0 : F) r, ∀ v, π v = 0 → fderiv 𝕂 g u v = 0) {z : F}
+    (hz : ‖π z‖ + ‖z - π z‖ < r) : g (π z) = g z := by
+  have hπz : π (z - π z) = 0 := by
+    rw [map_sub, sub_eq_zero]
+    exact congr($hπ z).symm
+  -- The segment from `π z` to `z` stays in the ball.
+  have hball (t : 𝕂) (ht : ‖t‖ ≤ 1) : π z + t • (z - π z) ∈ Metric.ball (0 : F) r := by
+    rw [mem_ball_zero_iff]
+    refine (norm_add_le _ _).trans_lt (lt_of_le_of_lt ?_ hz)
+    rw [norm_smul]
+    gcongr
+    exact mul_le_of_le_one_left (norm_nonneg _) ht
+  have h := apply_add_eq_of_fderiv_apply_eq_zero (z := π z) (v := z - π z)
+    (fun t ht ↦ hg.differentiableAt (Metric.isOpen_ball.mem_nhds (hball t ht)))
+    (fun t ht ↦ hker _ (hball t ht) _ hπz)
+  rw [add_sub_cancel] at h
+  exact h.symm
 
 end Direction
 

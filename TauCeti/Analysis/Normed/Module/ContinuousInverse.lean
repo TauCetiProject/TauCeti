@@ -35,6 +35,8 @@ subbundle spanned by local frames.
 
 * `ContinuousLinearMap.exists_comp_comp_eq_self`: a continuous linear map out of a
   finite-dimensional space over `ℝ` or `ℂ` has a continuous pseudo-inverse.
+* `ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`: if `g` is a pseudo-inverse
+  of `f`, then `g ∘ f` is a continuous projection.
 * `ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain`: an injective
   continuous linear map out of a finite-dimensional space over `ℝ` or `ℂ` has a continuous left
   inverse.
@@ -73,6 +75,14 @@ theorem exists_comp_comp_eq_self [IsRCLikeNormedField 𝕜] [PolynormableSpace �
   have hv : p (f v) = f.toLinearMap.rangeRestrict v :=
     hp ⟨f v, LinearMap.mem_range_self f.toLinearMap v⟩
   simpa [hv] using congrArg Subtype.val (LinearMap.congr_fun hσ (f.toLinearMap.rangeRestrict v))
+
+/-- If `g` is a pseudo-inverse of `f`, that is `f ∘ g ∘ f = f`, then `g ∘ f` is a projection. -/
+theorem isIdempotentElem_comp_of_comp_comp_eq_self {R M N : Type*} [Semiring R]
+    [TopologicalSpace M] [AddCommMonoid M] [Module R M] [TopologicalSpace N] [AddCommMonoid N]
+    [Module R N] {f : M →L[R] N} {g : N →L[R] M} (hfg : f ∘L g ∘L f = f) :
+    IsIdempotentElem (g ∘L f) := by
+  ext v
+  simpa using congrArg g congr($hfg v)
 
 /-- Over `ℝ` or `ℂ`, an injective continuous linear map out of a finite-dimensional space into a
 locally convex (polynormable) space has a continuous left inverse: any continuous pseudo-inverse
