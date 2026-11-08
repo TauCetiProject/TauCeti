@@ -132,7 +132,7 @@ private theorem integrable_norm_gradient_sq_mul_rpow {u : W1p mu Omega 2} {ε : 
   obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
     (by linarith : p / 2 ≤ 1) hεu
   refine ((Lp.memLp (W1p.value w)).integrable_sq.bdd_mul
-    ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
+    ((ContDiff.continuous_gradient hψ (by simp)).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
     (Filter.Eventually.of_forall fun x => by
       rw [Pi.pow_apply, norm_pow, norm_norm]
       exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)).congr ?_
