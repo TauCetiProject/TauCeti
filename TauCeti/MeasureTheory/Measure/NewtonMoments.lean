@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
+import TauCeti.Analysis.Polynomial.PrescribedPowerSums
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
@@ -50,12 +51,22 @@ Both limits have the same first `m` moments, so they agree by the invertibility 
 matrix (`TauCeti.Measure.ext_of_forall_lt_card_integral_pow_eq_of_support`, in
 `TauCeti.Probability.Moments.CompactDeterminacy`).
 
+Independently of any smallness, the moments satisfy `|M_k| ≤ V Rᵏ` with `V = μ(ℂ) + ν(ℂ)`, so the
+`j`-th coefficient of `P_σ` is at most `((V + 1) R)ʲ` and every root of `P_σ` lies in the disc of
+radius `2 (V + 1) R` (`TauCeti.norm_newtonCoeff_integral_pow_sub_le`,
+`TauCeti.norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub`). These bounds hold for every
+signed measure of bounded variation on the disc, before `P_σ` is known to describe its mass.
+
 ## Main results
 
 * `TauCeti.exists_forall_abs_integral_sub_sum_roots_le`: the compact moment lemma, in the
   bounded-Lipschitz distance.
 * `TauCeti.exists_forall_norm_integral_sub_sum_roots_le`: the same against a fixed continuous
   test function.
+* `TauCeti.norm_integral_pow_sub_le`: the moments of `σ` are bounded by `(μ(ℂ) + ν(ℂ)) Rᵏ`.
+* `TauCeti.norm_newtonCoeff_integral_pow_sub_le`,
+  `TauCeti.norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub`: the coefficients of `P_σ` and
+  its roots are bounded in terms of `R` and the total variation `μ(ℂ) + ν(ℂ)` of `σ` alone.
 
 ## References
 
@@ -355,5 +366,43 @@ theorem exists_forall_norm_integral_sub_sum_roots_le {𝕜 : Type*} [RCLike 𝕜
     hvar (Ultrafilter.of_le atTop) (fun _ => hg) hg
     (fun B u hu => Eventually.of_forall fun _ _ _ => refl_mem_uniformity hu) hε
   exact (hgε n).not_gt hn
+
+/-! ### Bounds from the total variation -/
+
+/-- The moments of `σ = μ - ν`, for finite measures carried by the closed disc of radius `R`,
+satisfy `|∫ wᵏ dσ| ≤ (μ(ℂ) + ν(ℂ)) Rᵏ`. -/
+theorem norm_integral_pow_sub_le {μ ν : Measure ℂ} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {R : ℝ} (hμR : μ (closedBall 0 R)ᶜ = 0) (hνR : ν (closedBall 0 R)ᶜ = 0)
+    (k : ℕ) : ‖∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν‖ ≤ (μ.real univ + ν.real univ) * R ^ k := by
+  have hbound {ρ : Measure ℂ} [IsFiniteMeasure ρ] (hρ : ρ (closedBall 0 R)ᶜ = 0) :
+      ‖∫ w, w ^ k ∂ρ‖ ≤ R ^ k * ρ.real univ :=
+    norm_integral_le_of_norm_le_const <| Filter.mem_of_superset (mem_ae_iff.2 hρ) fun _ hw =>
+      norm_pow_le_of_mem_closedBall hw k
+  calc ‖∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν‖ ≤ ‖∫ w, w ^ k ∂μ‖ + ‖∫ w, w ^ k ∂ν‖ := norm_sub_le _ _
+    _ ≤ R ^ k * μ.real univ + R ^ k * ν.real univ := add_le_add (hbound hμR) (hbound hνR)
+    _ = (μ.real univ + ν.real univ) * R ^ k := by ring
+
+/-- **Newton coefficients of a signed measure on a disc.** Let `σ = μ - ν` be given by finite
+measures carried by the closed disc of radius `R ≥ 0`, with total variation at most
+`V = μ(ℂ) + ν(ℂ)`. The `j`-th Newton coefficient of the moments `∫ wᵏ dσ` is bounded by
+`((V + 1) R)ʲ`. -/
+theorem norm_newtonCoeff_integral_pow_sub_le {μ ν : Measure ℂ} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {R : ℝ} (hR : 0 ≤ R) (hμR : μ (closedBall 0 R)ᶜ = 0)
+    (hνR : ν (closedBall 0 R)ᶜ = 0) (j : ℕ) :
+    ‖newtonCoeff (fun k => ∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν) j‖ ≤
+      ((μ.real univ + ν.real univ + 1) * R) ^ j :=
+  norm_newtonCoeff_le (by positivity) hR (fun k _ => norm_integral_pow_sub_le hμR hνR k) j
+
+/-- **Roots of the Newton polynomial of a signed measure on a disc.** Let `σ = μ - ν` be given by
+finite measures carried by the closed disc of radius `R ≥ 0`, with total variation at most
+`V = μ(ℂ) + ν(ℂ)`. Every root of the Newton polynomial of degree `m` of the moments `∫ wᵏ dσ` lies
+in the closed disc of radius `2 (V + 1) R`. -/
+theorem norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub {μ ν : Measure ℂ}
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] {R : ℝ} (hR : 0 ≤ R) (hμR : μ (closedBall 0 R)ᶜ = 0)
+    (hνR : ν (closedBall 0 R)ᶜ = 0) {m : ℕ} {z : ℂ}
+    (hz : z ∈ (newtonPolynomial (fun k => ∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν) m).roots) :
+    ‖z‖ ≤ 2 * ((μ.real univ + ν.real univ + 1) * R) :=
+  norm_le_of_mem_roots_newtonPolynomial (by positivity) hR
+    (fun k _ => norm_integral_pow_sub_le hμR hνR k) hz
 
 end TauCeti
