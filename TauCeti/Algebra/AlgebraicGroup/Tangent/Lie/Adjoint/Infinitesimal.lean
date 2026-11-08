@@ -32,83 +32,6 @@ open WithConv TrivSqZeroExt
 variable {R H B : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [CommRing B] [Algebra R B]
 
-/-- The counit coefficient of the dual-number point of a tangent vector `d` is the counit. -/
-private theorem fstHom_comp_point
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-    (fstHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).toLinearMap ∘ₗ
-        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
-      (1 : WithConv (H →ₗ[R] Bialgebra.CounitAlgebra R H B)).ofConv := by
-  ext x
-  simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, fstHom_apply,
-    LinearMap.convOne_apply, Bialgebra.CounitAlgebra.algebraMap_apply,
-    Bialgebra.CounitAlgebra.algebraMap_base] using
-      derivationMulEquivTangentKer_apply_fst (Multiplicative.ofAdd d) x
-
-/-- The infinitesimal coefficient of the dual-number point of a tangent vector `d` is `d`. -/
-private theorem sndHom_comp_point
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-    ((sndHom (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).restrictScalars
-        R) ∘ₗ
-        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
-      d.toLinearMap := by
-  ext x
-  dsimp
-  exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
-
-/-- The inverse of the dual-number point of `d` is the dual-number point of `-d`. -/
-private theorem inv_point (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-    (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val⁻¹ =
-      (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd (-d))).val := by
-  simpa only [← Subgroup.coe_inv, ← ofAdd_neg] using congrArg Subtype.val
-    (map_inv (derivationMulEquivTangentKer R H B) (Multiplicative.ofAdd d)).symm
-
-/-- The counit coefficient of the constant dual-number lift of `e` is `e`. -/
-private theorem fstHom_comp_constLift (e : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-    (fstHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).toLinearMap ∘ₗ
-        ((Bialgebra.CounitAlgebra.algEquivSelf R H
-          (DualNumber (Bialgebra.CounitAlgebra R H B))).toAlgHom.toLinearMap ∘ₗ
-          (Derivation.mapValue ((inlAlgHom R (Bialgebra.CounitAlgebra R H B)
-            (Bialgebra.CounitAlgebra R H B)).comp
-              (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toAlgHom) e).toLinearMap) =
-      e.toLinearMap := by
-  ext x
-  dsimp
-  -- The evaluation lemmas identify the exported counit-algebra type synonyms.
-  erw [Derivation.mapValue_apply, AlgHom.comp_apply, inlAlgHom_apply,
-    Bialgebra.CounitAlgebra.algEquivSelf_apply, fstHom_apply, fst_inl,
-    Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
-
-/-- The infinitesimal coefficient of the constant dual-number lift of `e` vanishes. -/
-private theorem sndHom_comp_constLift (e : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-    ((sndHom (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).restrictScalars
-        R) ∘ₗ
-        ((Bialgebra.CounitAlgebra.algEquivSelf R H
-          (DualNumber (Bialgebra.CounitAlgebra R H B))).toAlgHom.toLinearMap ∘ₗ
-          (Derivation.mapValue ((inlAlgHom R (Bialgebra.CounitAlgebra R H B)
-            (Bialgebra.CounitAlgebra R H B)).comp
-              (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toAlgHom) e).toLinearMap) =
-      0 := by
-  ext x
-  dsimp
-  -- As above, evaluate through the counit coefficient identification.
-  erw [Derivation.mapValue_apply, AlgHom.comp_apply, inlAlgHom_apply,
-    Bialgebra.CounitAlgebra.algEquivSelf_apply, sndHom_apply, snd_inl]
-
-/-- Transporting a point of the dual-number counit algebra through the coefficient equivalence
-does not change its underlying linear map. -/
-private theorem algEquivSelf_comp_pointsMulEquiv_symm
-    (g : WithConv (H →ₐ[R] DualNumber (Bialgebra.CounitAlgebra R H B))) :
-    (Bialgebra.CounitAlgebra.algEquivSelf R H
-      (DualNumber (Bialgebra.CounitAlgebra R H B))).toAlgHom.toLinearMap ∘ₗ
-        ((Bialgebra.CounitAlgebra.pointsMulEquiv R H
-          (DualNumber (Bialgebra.CounitAlgebra R H B))).symm g).ofConv.toLinearMap =
-      g.ofConv.toLinearMap := by
-  apply LinearMap.ext
-  intro x
-  dsimp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply]
-  rw [Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
-  exact AlgEquiv.apply_symm_apply _ _
-
 /-- The adjoint action of the dual-number point of `d` on the constant lift of `e`
 is `e + ε[d,e]`. Thus the differential of the group adjoint action is the Lie bracket. -/
 -- Apply before the general adjoint and coefficient-map evaluation rules expand the input.
@@ -132,14 +55,15 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
   let F := (fstHom R C C).toLinearMap
   let S := (sndHom C C).restrictScalars R
   have hF (d : Derivation R H C) :
-      F ∘ₗ (p d).ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] C)).ofConv := fstHom_comp_point d
+      F ∘ₗ (p d).ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] C)).ofConv :=
+    fstHom_comp_derivationMulEquivTangentKer d
   have hS (d : Derivation R H C) : S ∘ₗ (p d).ofConv.toLinearMap = d.toLinearMap :=
-    sndHom_comp_point d
+    sndHom_comp_derivationMulEquivTangentKer d
   let c := (Bialgebra.CounitAlgebra.algEquivSelf R H (DualNumber C)).toAlgHom
   let E := c.toLinearMap ∘ₗ (Derivation.mapValue ((inlAlgHom R C C).comp
     (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toAlgHom) e).toLinearMap
-  have hFE : F ∘ₗ E = e.toLinearMap := fstHom_comp_constLift e
-  have hSE : S ∘ₗ E = 0 := sndHom_comp_constLift e
+  have hFE : F ∘ₗ E = e.toLinearMap := Derivation.fstHom_comp_mapValue_inlAlgHom e
+  have hSE : S ∘ₗ E = 0 := Derivation.sndHom_comp_mapValue_inlAlgHom e
   dsimp only [F] at hF hFE
   dsimp only [S] at hS hSE
   -- Apply the convolution product rule to `(1 + εd) e (1 - εd)`.
@@ -168,7 +92,7 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
   simp only [LinearMap.algHom_comp_convMul_distrib, toConv_ofConv]
   erw [← map_inv (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm (p d)]
   rw [hc, hc]
-  rw [inv_point]
+  rw [derivationMulEquivTangentKer_val_inv]
   -- Expand the local coefficient transport in the computed product coefficients.
   dsimp only [E, c] at hprodF hprodS
   apply TrivSqZeroExt.ext

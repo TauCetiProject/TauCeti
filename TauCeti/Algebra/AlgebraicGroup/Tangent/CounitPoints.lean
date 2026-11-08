@@ -122,4 +122,26 @@ end Naturality
 
 end Bialgebra.CounitAlgebra
 
+section PointsTransport
+
+variable {R H B : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H] [CommSemiring B]
+  [Algebra R B]
+
+/-- Transporting a point of the dual-number counit algebra through the coefficient equivalence
+does not change its underlying linear map. -/
+theorem algEquivSelf_comp_pointsMulEquiv_symm
+    (g : WithConv (H →ₐ[R] DualNumber (Bialgebra.CounitAlgebra R H B))) :
+    (Bialgebra.CounitAlgebra.algEquivSelf R H
+      (DualNumber (Bialgebra.CounitAlgebra R H B))).toAlgHom.toLinearMap ∘ₗ
+        ((Bialgebra.CounitAlgebra.pointsMulEquiv R H
+          (DualNumber (Bialgebra.CounitAlgebra R H B))).symm g).ofConv.toLinearMap =
+      g.ofConv.toLinearMap := by
+  apply LinearMap.ext
+  intro x
+  dsimp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply]
+  rw [Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
+  exact AlgEquiv.apply_symm_apply _ _
+
+end PointsTransport
+
 end TauCeti
