@@ -574,12 +574,12 @@ private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun �
     convert (hasFDerivAt_fourierChar_neg_bilinear_right (-innerSL ℝ) x ζ).hasLineDerivAt v
       using 1
     · simp only [real_inner_comm x, neg_apply, neg_neg]
-      rfl
+      funext ζ
+      rw [innerSL_apply_apply]
     · simp only [real_inner_comm x, neg_mul, neg_apply, neg_neg, ContinuousLinearMap.comp_neg,
         smul_neg, neg_smul, smul_apply, ContinuousLinearMap.comp_apply, Complex.ofRealCLM_apply,
         smul_eq_mul]
-      rw [mul_right_comm]
-      rfl
+      rw [mul_right_comm, innerSL_apply_apply, innerSL_apply_apply]
   -- integrate by parts in the frequency, moving the derivative from the phase to the rest
   have hibp := integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable
     (μ := volume) (B := ContinuousLinearMap.lsmul ℝ ℂ (E := W))
