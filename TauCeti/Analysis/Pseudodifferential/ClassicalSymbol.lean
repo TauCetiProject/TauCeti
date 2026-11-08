@@ -338,6 +338,12 @@ theorem toSymbol_ofHomogeneous (χ : FrequencyCutoff (CoordinateSpace n))
   (rfl)
 
 @[simp]
+theorem term_ofHomogeneous_zero (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (ofHomogeneous χ a).term 0 = a.castDegree (by simp) :=
+  (rfl)
+
+@[simp]
 theorem term_ofHomogeneous_succ (χ : FrequencyCutoff (CoordinateSpace n))
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (j : ℕ) :
     (ofHomogeneous χ a).term (j + 1) = 0 :=
@@ -347,8 +353,8 @@ theorem term_ofHomogeneous_succ (χ : FrequencyCutoff (CoordinateSpace n))
 theorem principalSymbol_ofHomogeneous (χ : FrequencyCutoff (CoordinateSpace n))
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
     principalSymbol (ofHomogeneous χ a) = a := by
-  ext1
-  simp [ofHomogeneous]
+  rw [principalSymbol_apply, term_ofHomogeneous_zero, HomogeneousSymbol.castDegree_castDegree,
+    HomogeneousSymbol.castDegree_rfl]
 
 /-- Every homogeneous symbol of degree `m` is the principal symbol of a classical symbol of
 order `m`. -/
