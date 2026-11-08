@@ -83,6 +83,44 @@ variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 variable {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
 
+/-- For a metric connection, the terms of `∑ᵢ b(Fᵢ, Dᵢ)` involving `∇Fᵢ` and `∇Dᵢ` cancel at `x`,
+where `Fᵢ` is the chart-local frame at `x` and `Dᵢ` its metric-dual frame. -/
+private theorem sum_apply_chartDualFrame_cancel
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (x : M) (b : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v : TangentSpace I x)
+    (hU : (trivializationAt E (TangentSpace I) x).baseSet ∈ 𝓝 x)
+    (hF : ∀ i, MDiffAt (T% (chartLocalFrame (I := I) x i)) x)
+    (hD : ∀ i, MDiffAt (T% (chartDualFrame (I := I) x i)) x) :
+    ∑ i, b (chartLocalFrame (I := I) x i x) (cov (chartDualFrame (I := I) x i) x v) =
+      -∑ i, b (cov (chartLocalFrame (I := I) x i) x v) (chartDualFrame (I := I) x i x) := by
+  -- Differentiating `⟪Dᵢ, Fⱼ⟫ = δᵢⱼ` near `x` relates `∇Dᵢ` to `∇Fⱼ`.
+  set F := chartLocalFrame (I := I) x with hFdef
+  set D := chartDualFrame (I := I) x with hDdef
+  have hxc : x ∈ (chartAt H x).source := mem_chart_source H x
+  have hdual (i j : Fin (Module.finrank ℝ E)) :
+      inner ℝ (F j x) (cov (D i) x v) = -inner ℝ (D i x) (cov (F j) x v) := by
+    have hconst : (fun y ↦ inner ℝ (D i y) (F j y)) =ᶠ[𝓝 x]
+        fun _ ↦ if i = j then (1 : ℝ) else 0 := by
+      filter_upwards [hU] with y hy
+      exact inner_chartDualFrame x
+        (by simpa only [TangentBundle.trivializationAt_baseSet] using hy) i j
+    have h := hcov.mvfderiv_inner_eq (extend E v) (hD i) (hF j)
+    rw [hconst.mvfderiv_eq, mvfderiv_const] at h
+    simp only [extend_apply_self, zero_apply] at h
+    rw [real_inner_comm]
+    linarith
+  have hexp (i : Fin (Module.finrank ℝ E)) : b (F i x) (cov (D i) x v) =
+      -∑ j, inner ℝ (D i x) (cov (F j) x v) * b (F i x) (D j x) := by
+    conv_lhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (D i) x v)).2]
+    simp only [← hFdef, ← hDdef, map_sum, map_smul, smul_eq_mul, hdual, neg_mul,
+      Finset.sum_neg_distrib]
+  simp only [hexp, Finset.sum_neg_distrib, neg_inj]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  conv_rhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (F j) x v)).1]
+  simp only [← hFdef, ← hDdef, map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
+    Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+
 /-- **Covariant differentiation commutes with the metric trace.** For a connection compatible
 with the metric and a field of bilinear forms `b` pairing sections differentiable at `x` to
 functions differentiable at `x`, the derivative of the metric trace of `b` along `v` is the
@@ -124,32 +162,9 @@ theorem IsMetricCompatible.mvfderiv_bilinFormTrace
     rw [hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
     -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
     exact _root_.sum_apply ..
-  -- Differentiating `⟪Dᵢ, Fⱼ⟫ = δᵢⱼ` near `x` relates `∇Dᵢ` to `∇Fⱼ`.
-  have hdual (i j : Fin (Module.finrank ℝ E)) :
-      inner ℝ (F j x) (cov (D i) x v) = -inner ℝ (D i x) (cov (F j) x v) := by
-    have hconst : (fun y ↦ inner ℝ (D i y) (F j y)) =ᶠ[𝓝 x]
-        fun _ ↦ if i = j then (1 : ℝ) else 0 := by
-      filter_upwards [hU] with y hy
-      exact inner_chartDualFrame x
-        (by simpa only [TangentBundle.trivializationAt_baseSet] using hy) i j
-    have h := hcov.mvfderiv_inner_eq (extend E v) (hD i) (hF j)
-    rw [hconst.mvfderiv_eq, mvfderiv_const] at h
-    simp only [extend_apply_self, zero_apply] at h
-    rw [real_inner_comm]
-    linarith
   -- The terms involving `∇Fᵢ` and `∇Dᵢ` cancel.
-  have hcancel : ∑ i, b x (F i x) (cov (D i) x v) = -∑ i, b x (cov (F i) x v) (D i x) := by
-    have hexp (i : Fin (Module.finrank ℝ E)) : b x (F i x) (cov (D i) x v) =
-        -∑ j, inner ℝ (D i x) (cov (F j) x v) * b x (F i x) (D j x) := by
-      conv_lhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (D i) x v)).2]
-      simp only [← hFdef, ← hDdef, map_sum, map_smul, smul_eq_mul, hdual, neg_mul,
-        Finset.sum_neg_distrib]
-    simp only [hexp, Finset.sum_neg_distrib, neg_inj]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    conv_rhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (F j) x v)).1]
-    simp only [← hFdef, ← hDdef, map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
-      Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+  have hcancel := sum_apply_chartDualFrame_cancel hcov x (b x) v hU hF hD
+  simp only [← hFdef, ← hDdef] at hcancel
   -- At `x`, both sides are metric traces of `∇_v b`.
   let β : LinearMap.BilinForm ℝ (TangentSpace I x) :=
     LinearMap.mk₂ ℝ (fun u w ↦ cov.derivBilinearTensor b x u w v) (by simp) (by simp)

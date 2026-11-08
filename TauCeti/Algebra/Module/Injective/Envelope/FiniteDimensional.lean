@@ -49,12 +49,10 @@ theorem exists_isInjectiveEnvelope_finiteDimensional [Module k M] [IsScalarTower
   let : Module A (Module.Dual k A) := Module.compHom _ (dualRightAction k A)
   have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
     (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
-  let : IsScalarTower k A (Module.Dual k A) := IsScalarTower.of_algebraMap_smul fun c φ => by
-    ext x
-    rw [hsmul, ← Algebra.commutes, ← Algebra.smul_def]
-    simp
+  have : IsScalarTower k A (Module.Dual k A) :=
+    (LinearEquiv.refl k _).isScalarTower_of_dual_regular hsmul
   let : Module.Injective A (Module.Dual k A) :=
-    moduleInjective_of_equiv_dual_regular k (LinearEquiv.refl k _) hsmul
+    (LinearEquiv.refl k _).moduleInjective_of_dual_regular hsmul
   obtain ⟨n, f, hf⟩ := (LinearEquiv.refl k _).exists_injective_linearMap_pi_of_dual hsmul M
   let : Module.Injective A (Fin n → Module.Dual k A) := Module.Injective.pi A _
   obtain ⟨P, hP, hp⟩ := f.exists_isInjectiveEnvelope_submodule hf
