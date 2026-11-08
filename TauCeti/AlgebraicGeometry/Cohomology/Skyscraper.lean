@@ -84,6 +84,7 @@ theorem _root_.AlgebraicGeometry.Scheme.finiteDimensional_cohomology_skyscraperR
 /-- **The Euler characteristic of a skyscraper sheaf.** Over a field `k`, the Euler characteristic
 `χ(X, κ(x)ₓ) = dim H⁰ - dim H¹` of the skyscraper sheaf of the residue field at `x` is the residue
 degree `[κ(x) : k]`. -/
+@[simp high]
 theorem _root_.AlgebraicGeometry.Scheme.eulerCharBelow_skyscraperResidueField (x : X) :
     Scheme.Modules.eulerCharBelow k X (skyscraperResidueField x) 2 =
       (X ↘ Spec (.of k)).residueDegree x := by
