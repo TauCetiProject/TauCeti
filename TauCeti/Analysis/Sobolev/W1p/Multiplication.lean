@@ -78,12 +78,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 /-! ### The two `Lᵖ` components -/
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The gradient of a smooth function is continuous.  This is what makes the product below
-measurable. -/
-theorem ContDiff.continuous_gradient (hpsi : ContDiff ℝ ∞ psi) : Continuous (∇ psi) :=
-  (hpsi.gradient_right (m := ∞) (by simp)).continuous
-
 omit [FiniteDimensional ℝ E] in
 /-- The value component `ψ u` of the product is `Lᵖ`, because `ψ` is bounded. -/
 theorem W1p.memLp_smul_value (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
@@ -110,7 +104,7 @@ theorem W1p.memLp_smul_gradient (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
       exact mul_le_mul_of_nonneg_right (hpsiM x hx) (norm_nonneg _)
   · refine MemLp.of_le ((Lp.memLp (W1p.value u)).const_mul M) ?_ ?_
     · exact (Lp.aestronglyMeasurable _).smul
-        (ContDiff.continuous_gradient hpsi).aestronglyMeasurable
+        (ContDiff.continuous_gradient hpsi (by simp)).aestronglyMeasurable
     · filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
       rw [norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, abs_of_nonneg hM, mul_comm M]
       exact mul_le_mul_of_nonneg_left (hgradM x hx) (abs_nonneg _)
@@ -285,7 +279,7 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         exact pow_le_pow_left₀ (abs_nonneg _) (hpsiM x hx) 2)
   have hI2 : Integrable (fun x => ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
     (Lp.memLp (W1p.value u)).integrable_sq.bdd_mul
-      ((ContDiff.continuous_gradient hpsi).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
+      ((ContDiff.continuous_gradient hpsi (by simp)).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
       (hmem.mono fun x hx => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
         exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x hx) 2)
