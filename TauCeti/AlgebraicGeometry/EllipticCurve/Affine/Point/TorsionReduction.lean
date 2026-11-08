@@ -16,6 +16,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 -- Proof-only: the torsion of the nonsingular points of a singular cubic.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Singular
+-- Proof-only: integers outside `u` are nonzero in the residue field.
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 
 /-!
 # Torsion and reduction
@@ -60,6 +62,10 @@ points, `n` divides that index. This is the step of the criterion of Néron, Ogg
 (Silverman AEC VII.7.1) that turns unramified torsion of unbounded order into good reduction, the
 index being bounded independently of `n` over unramified extensions.
 
+At additive reduction the singular point of the reduced cubic is a cusp, whose nonsingular points
+have no torsion prime to the residue characteristic. Then `E₀(F)` meets `W(F)[n]` only in the point
+at infinity, for every `n ∉ u`.
+
 ## Main results
 
 Unless indicated otherwise, the results are in `WeierstrassCurve.Affine.Point`.
@@ -94,6 +100,8 @@ Unless indicated otherwise, the results are in `WeierstrassCurve.Affine.Point`.
   `E₀(F)` killed by an integer prime to `u` cannot lie in the kernel of reduction.
 * `natCard_nonsingularReduction_inf_torsionBy_dvd`: at bad reduction, the number of points of
   `W(F)[n]` with nonsingular reduction divides `n`, for `n ∉ u`.
+* `nonsingularReduction_inf_torsionBy_eq_bot`: at additive reduction, no nonzero point of
+  `W(F)[n]` has nonsingular reduction, for `n ∉ u`.
 * `natCard_torsionBy_dvd_mul_index_nonsingularReduction`: at bad reduction, `#W(F)[n]` divides
   `n · [E(F) : E₀(F)]` for `n ∉ u`.
 * `dvd_index_nonsingularReduction`: at bad reduction, if `W(F)[n]` has `n²` points for some
@@ -521,10 +529,7 @@ theorem natCard_nonsingularReduction_inf_torsionBy_dvd (hΔ : u.valuation F W.Δ
     rw [map_Δ, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
     rwa [← integralModel_Δ_eq (u.valuation F).valuationSubring W,
       ValuationSubring.algebraMap_apply] at hΔ
-  have hnk : (n : ResidueField (u.valuation F).valuationSubring) ≠ 0 := by
-    rw [← map_natCast (residue _), Ne, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
-    push_cast
-    rwa [← map_natCast (algebraMap A F), HeightOneSpectrum.valuation_lt_one_iff_mem]
+  have hnk := (u.natCast_residueField_valuationSubring_eq_zero_iff (K := F) n).not.2 hn
   -- reduction is injective on the `n`-torsion with nonsingular reduction
   let ρ := (W.nonsingularReductionHom (u.valuation F)).comp
     (AddSubgroup.inclusion (inf_le_left (b := AddSubgroup.torsionBy W.Point n)))
@@ -541,6 +546,30 @@ theorem natCard_nonsingularReduction_inf_torsionBy_dvd (hΔ : u.valuation F W.Δ
     rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, hnP, _root_.map_zero]
   exact (AddSubgroup.card_dvd_of_injective (ρ.codRestrict _ hρn)
     fun P Q h ↦ hρ (congrArg Subtype.val h)).trans (natCard_torsionBy_dvd_of_Δ_eq_zero hΔk hnk)
+
+/-- **At additive reduction, `E₀` has no torsion prime to `u`** (Silverman AEC III.2.5 and
+VII.3.1): if the reduction of the integral model of `W` at `u` is a cuspidal cubic, with `Δ = 0` and
+`c₄ = 0`, then for `n ∉ u` the only point of `W(F)[n]` with nonsingular reduction is the point at
+infinity. -/
+theorem nonsingularReduction_inf_torsionBy_eq_bot
+    (hΔ : ((integralModel (u.valuation F).valuationSubring W).map
+      (residue (u.valuation F).valuationSubring)).Δ = 0)
+    (hc₄ : ((integralModel (u.valuation F).valuationSubring W).map
+      (residue (u.valuation F).valuationSubring)).c₄ = 0) {n : ℕ} (hn : (n : A) ∉ u.asIdeal) :
+    W.nonsingularReduction (u.valuation F) ⊓ AddSubgroup.torsionBy W.Point n = ⊥ := by
+  classical
+  refine eq_bot_iff.2 fun P ⟨hP₀, hP⟩ ↦ ?_
+  have hnP : n • P = 0 := AddSubgroup.torsionBy.nsmul_iff.1 hP
+  -- the reduction of `P` is an `n`-torsion point of the cusp, hence the point at infinity
+  have hρ : W.nonsingularReductionHom (u.valuation F) ⟨P, hP₀⟩ = 0 := by
+    have hmem : W.nonsingularReductionHom (u.valuation F) ⟨P, hP₀⟩ ∈
+        AddSubgroup.torsionBy _ n := by
+      have h0 : n • (⟨P, hP₀⟩ : W.nonsingularReduction (u.valuation F)) = 0 := Subtype.ext hnP
+      rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, h0, _root_.map_zero]
+    have hnk := (u.natCast_residueField_valuationSubring_eq_zero_iff (K := F) n).not.2 hn
+    rwa [torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero hΔ hc₄ hnk, AddSubgroup.mem_bot] at hmem
+  exact AddSubgroup.mem_bot.2
+    (congrArg Subtype.val (eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero u hn hρ hnP))
 
 /-- **At bad reduction, torsion forces a large index of `E₀`** (Silverman AEC VII.7.1): if the
 integral model of `W` at `u` has singular reduction, then for `n ∉ u` the number of points of
