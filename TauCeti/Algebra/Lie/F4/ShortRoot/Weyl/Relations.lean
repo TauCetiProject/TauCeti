@@ -61,52 +61,12 @@ private def negativeMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
 
 private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
-  intro i
-  fin_cases i <;> decide +kernel
-
-private theorem weylMatrix_apply (i : Fin 4) (a b : Fin 26) :
-    weylMatrix i a b = (if a = weylTarget i b then weylCoeff i b else 0) +
-      (if i = 2 ∧ b = 13 then if a = 13 then 1 else 0 else 0) +
-      (if i = 3 ∧ b = 12 then if a = 13 then -1 else 0 else 0) := by
-  simp only [weylMatrix, Matrix.of_apply]
-  split_ifs <;> omega
-
-private theorem mul_weylMatrix_apply (M : Matrix (Fin 26) (Fin 26) ℤ)
-    (i : Fin 4) (a b : Fin 26) :
-    (M * weylMatrix i) a b = M a (weylTarget i b) * weylCoeff i b +
-      (if i = 2 ∧ b = 13 then M a 13 else 0) +
-      (if i = 3 ∧ b = 12 then -M a 13 else 0) := by
-  by_cases h₂ : i = 2 ∧ b = 13 <;> by_cases h₃ : i = 3 ∧ b = 12 <;>
-    simp [Matrix.mul_apply, weylMatrix_apply, mul_add, mul_ite,
-      Finset.sum_add_distrib, h₂, h₃]
-
--- Multiply in reverse order using the at-most-two nonzero entries in each column.
--- This avoids retaining dense four-factor products in the kernel braid certificate.
-private def weylProduct : List (Fin 4) → Matrix (Fin 26) (Fin 26) ℤ
-  | [] => 1
-  | i :: l => Matrix.of fun a b ↦
-      weylProduct l a (weylTarget i b) * weylCoeff i b +
-        (if i = 2 ∧ b = 13 then weylProduct l a 13 else 0) +
-        (if i = 3 ∧ b = 12 then -weylProduct l a 13 else 0)
-
-private theorem weylProduct_eq (l : List (Fin 4)) :
-    weylProduct l = (l.reverse.map weylMatrix).prod := by
-  induction l with
-  | nil => rfl
-  | cons i l ih =>
-    ext a b
-    simp only [weylProduct, Matrix.of_apply, List.reverse_cons, List.map_append,
-      List.map_cons, List.map_nil, List.prod_append, List.prod_cons, List.prod_nil,
-      mul_one, mul_weylMatrix_apply, ← ih]
+  decide +kernel
 
 private theorem braid_certificate : ∀ i j : Fin 4,
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  have h : ∀ i j : Fin 4,
-      weylProduct (CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).reverse =
-        weylProduct (CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).reverse := by
-    decide +kernel
-  simpa only [weylProduct_eq, List.reverse_reverse] using h
+  decide +kernel
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :
