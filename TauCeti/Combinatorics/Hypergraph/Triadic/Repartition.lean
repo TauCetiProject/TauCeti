@@ -62,8 +62,7 @@ theorem TopRegularOverMostPolyads.of_repartition
   refine (exceptionalPolyadMass_le_of_injective hC hD
     (Polyad3.mapData_injective f.injective g.injective) hε hη hbudget).trans
       (add_le_add h ?_)
-  refine div_le_div_of_nonneg_right
-    (mul_le_mul_of_nonneg_left ?_ (by positivity)) (Nat.cast_nonneg _)
+  gcongr (1 + 2 / η) * ?_ / _
   exact_mod_cast Polyad3.card_filter_ofTriple_ne_mapData_ofTriple_le f g B E hcell hcolor
 
 end TauCeti.Colored3Graph
