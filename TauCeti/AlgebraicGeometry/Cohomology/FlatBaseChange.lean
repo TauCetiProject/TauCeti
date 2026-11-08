@@ -62,7 +62,9 @@ those in degree `n` for `I` and `Q` are.
   the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field,
   `TauCeti.AlgebraicGeometry.finrank_cohomology_trivial_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback`: their
-  specialisation to the structure sheaf, whose pullback is identified with `𝒪_Y`, and
+  specialisation to the structure sheaf, whose pullback is identified with `𝒪_Y`, with
+  `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback_of_isProper` the
+  finite-dimensionality for a proper scheme, and
   `TauCeti.AlgebraicGeometry.eulerCharBelow_pullback_eq_of_isPullback`: the same invariance of the
   truncated Euler characteristic `Scheme.Modules.eulerCharBelow`.
 
@@ -321,6 +323,19 @@ theorem finiteDimensional_cohomology_trivial_of_isPullback [CompactSpace X]
       Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
   exact (finiteDimensional_cohomology_congr K e n).mp
     (finiteDimensional_cohomology_pullback_of_isPullback H _ n)
+
+include H in
+/-- For a proper scheme over a field, `Hⁿ(X, 𝒪_X)` stays finite-dimensional under extension of the
+base field. -/
+theorem finiteDimensional_cohomology_trivial_of_isPullback_of_isProper
+    [IsProper (X ↘ Spec (.of k))] (n : ℕ)
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
+    FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
+  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
+  have : IsSeparated (terminal.from X) := by
+    rw [← terminal.comp_from (X ↘ Spec (.of k))]
+    infer_instance
+  exact finiteDimensional_cohomology_trivial_of_isPullback H n
 
 include H in
 /-- The truncated Euler characteristic `∑_{i < n} (-1)ⁱ dim Hⁱ(X, M)` of a quasi-coherent sheaf

@@ -76,19 +76,6 @@ theorem finiteDimensional_cohomology_one_trivial_of_isPullback_of_smooth
   exact finiteDimensional_cohomology_one_trivial_of_isPullback H hU hV hUV
 
 include H in
-/-- For a proper scheme over a field, `Hⁿ(X, 𝒪_X)` stays finite-dimensional under extension of the
-base field. -/
-theorem finiteDimensional_cohomology_trivial_of_isPullback_of_isProper
-    [IsProper (X ↘ Spec (.of k))] (n : ℕ)
-    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj n)] :
-    FiniteDimensional K (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj n) := by
-  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
-  exact finiteDimensional_cohomology_trivial_of_isPullback H n
-
-include H in
 /-- **The genus of a proper scheme over a field is invariant under extension of the base field**:
 `dim_K H¹(X_K, 𝒪) = dim_k H¹(X, 𝒪)`. The scheme need not be smooth, reduced, irreducible or of
 dimension one. The finite-dimensionality of `H¹` after base change, needed to form the genus of
