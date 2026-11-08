@@ -198,7 +198,7 @@ private theorem bijective_quotientMap_toLocalization (hJ : J.FG) {K : Ideal S}
       IsLocalization.algebraMap_mem_map_algebraMap_iff
         (Algebra.algebraMapSubmonoid (AdicCompletion J R) M)] at hr
     obtain ⟨_, ⟨m₀, hm₀, rfl⟩, hm⟩ := hr
-    rw [← map_mul, AdicCompletion.algebraMap_mem_map_pow_iff hJ] at hm
+    rw [← map_mul, AdicCompletion.algebraMap_mem_map_pow_iff] at hm
     rw [← hK, ← Ideal.map_pow, ← Ideal.mul_unit_mem_iff_mem _
       (IsLocalization.map_units S (⟨m₀ * m, mul_mem hm₀ m.2⟩ : M)), map_mul,
       mul_left_comm, IsLocalization.mk'_spec, ← map_mul]

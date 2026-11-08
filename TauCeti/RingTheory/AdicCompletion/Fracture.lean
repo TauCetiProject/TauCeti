@@ -71,7 +71,7 @@ theorem existsUnique_localization_lift (hr : IsRegular r)
     exact ⟨b, hcb⟩
   have hcR : c ∈ Ideal.span {r ^ n} := by
     rw [← Ideal.span_singleton_pow]
-    exact (algebraMap_mem_map_pow_iff (Submodule.fg_span_singleton r) n).mp hcI
+    exact (algebraMap_mem_map_pow_iff n).mp hcI
   obtain ⟨x, hx⟩ := Ideal.mem_span_singleton.mp hcR
   have ha : algebraMap R (Localization.Away r) x = a := by
     apply (IsLocalization.Away.algebraMap_pow_isUnit r n).mul_left_injective
