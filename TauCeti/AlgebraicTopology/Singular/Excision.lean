@@ -309,17 +309,22 @@ lemma interPairMap_comp_excisionMap :
 
 omit hA hB in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
-`L₂ ⊆ L₁ ⊆ U` be closed. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
+`L₂ ⊆ L₁ ⊆ U` with `L₁` closed. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
 relative singular homology exactly when `(X, X ∖ L₁) ⟶ (X, X ∖ L₂)` does, since both pairs in `U`
 are carried isomorphically to the corresponding pairs in `X` by excision. -/
 theorem isIso_singularHomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} (hU : IsOpen U)
-    (hL₁ : IsClosed L₁) (hL₂ : IsClosed L₂) (hL₁U : L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
+    (hL₁ : IsClosed L₁) (hL₁U : L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 (TopCat.of U))
         (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
         fun _ hz ↦ Set.compl_subset_compl.2 h hz) R n) ↔
       IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) (Set.compl_subset_compl.2 h)) R n) := by
   have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₁ hL₁U n
-  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₂ (h.trans hL₁U) n
+  have := isIso_singularHomologyMap_excisionMap R U L₂ᶜ (by
+    rw [hU.interior_eq, interior_compl, Set.eq_univ_iff_forall]
+    intro x
+    by_cases hx : x ∈ closure L₂
+    · exact Or.inl (hL₁U (closure_minimal h hL₁ hx))
+    · exact Or.inr hx) n
   have hw := congrArg (TopPair.singularHomologyMap · R n)
     (interPairMap_comp_excisionMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h))
   simp only [TopPair.singularHomologyMap_comp] at hw
