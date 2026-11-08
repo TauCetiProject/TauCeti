@@ -19,8 +19,9 @@ potential `V x = x ^ 2 / 2`.
 
 ## Main results
 
-* `twoParticleGaussianBetaGasPartitionFunction` is the unnormalized density integral.
-* `integral_twoParticleGaussianBetaGasPartitionFunction` evaluates it for every positive `β`.
+* `integrable_twoParticleGaussianBetaGasWeight` proves finiteness of the density integral.
+* `integral_twoParticleGaussianBetaGasWeight` evaluates it for every positive `β`.
+* `integral_twoParticleGaussianBetaGasWeight_pos` proves that integral is positive.
 -/
 
 public section
@@ -30,18 +31,6 @@ open MeasureTheory Real
 open Set
 
 namespace TauCeti.Probability
-
-/-- The two-particle beta-gas partition function for `V x = x ^ 2 / 2`. -/
-def twoParticleGaussianBetaGasPartitionFunction (β : ℝ) : ℝ :=
-  ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
-    ∂(volume.prod volume)
-
-/-- The partition function is the integral of the unnormalized density. -/
-theorem twoParticleGaussianBetaGasPartitionFunction_def (β : ℝ) :
-    twoParticleGaussianBetaGasPartitionFunction β =
-      ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
-        ∂(volume.prod volume) := by
-  simp [twoParticleGaussianBetaGasPartitionFunction]
 
 private def betaGasCenter (p : ℝ × ℝ) : ℝ × ℝ :=
   (p.1 - p.2, p.2 + (p.1 - p.2) / 2)
@@ -85,9 +74,38 @@ private lemma measurePreserving_betaGasUncenter :
   convert hadd.comp hshift using 1
   ext p <;> dsimp [betaGasUncenter, shift] <;> ring
 
-/-- The two-particle Gaussian beta-gas partition function is finite and has this closed form. -/
-theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0 < β) :
-    twoParticleGaussianBetaGasPartitionFunction β =
+private lemma betaGasUncenter_weight (β : ℝ) (p : ℝ × ℝ) :
+    exp (-β / 2 * ((betaGasUncenter p).1 ^ 2 + (betaGasUncenter p).2 ^ 2)) *
+        |(betaGasUncenter p).1 - (betaGasUncenter p).2| ^ β =
+      (|p.1| ^ β * exp (-(β / 4 * p.1 ^ 2))) * exp (-(β * p.2 ^ 2)) := by
+  simp only [betaGasUncenter]
+  have hd : (p.2 + p.1 / 2) - (p.2 - p.1 / 2) = p.1 := by ring
+  have hexp :
+      -β / 2 * ((p.2 + p.1 / 2) ^ 2 + (p.2 - p.1 / 2) ^ 2) =
+        -(β / 4 * p.1 ^ 2) + -(β * p.2 ^ 2) := by ring
+  rw [hd, hexp, exp_add]
+  ring
+
+/-- The two-particle Gaussian beta-gas weight is integrable for positive inverse temperature. -/
+theorem integrable_twoParticleGaussianBetaGasWeight {β : ℝ} (hβ : 0 < β) :
+    Integrable (fun p : ℝ × ℝ =>
+      exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β)
+      (volume.prod volume) := by
+  apply (measurePreserving_betaGasUncenter.integrable_comp_emb
+    betaGasUncenterEquiv.measurableEmbedding).mp
+  have hg := integrable_abs_rpow_mul_exp_neg_mul_sq (q := β) (b := β / 4)
+    (by linarith) (by positivity)
+  have hh : Integrable (fun z : ℝ => exp (-(β * z ^ 2))) := by
+    simpa only [neg_mul] using integrable_exp_neg_mul_sq hβ
+  have h := hg.mul_prod hh
+  convert h using 1
+  ext p
+  simpa only [Function.comp_apply, neg_mul] using betaGasUncenter_weight β p
+
+/-- The two-particle Gaussian beta-gas density integral has this closed form. -/
+theorem integral_twoParticleGaussianBetaGasWeight {β : ℝ} (hβ : 0 < β) :
+    (∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
+      ∂(volume.prod volume)) =
       2 ^ (β + 1) * sqrt π * β ^ (-(β + 2) / 2) * Gamma ((β + 1) / 2) := by
   let f : ℝ × ℝ → ℝ :=
     fun p => exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
@@ -95,13 +113,7 @@ theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0
   let h : ℝ → ℝ := fun z => exp (-(β * z ^ 2))
   have hpoint : ∀ p, f (betaGasUncenter p) = g p.1 * h p.2 := by
     intro p
-    simp only [f, g, h, betaGasUncenter]
-    have hd : (p.2 + p.1 / 2) - (p.2 - p.1 / 2) = p.1 := by ring
-    have hexp :
-        -β / 2 * ((p.2 + p.1 / 2) ^ 2 + (p.2 - p.1 / 2) ^ 2) =
-          -(β / 4 * p.1 ^ 2) + -(β * p.2 ^ 2) := by ring
-    rw [hd, hexp, exp_add]
-    ring
+    exact betaGasUncenter_weight β p
   have hchange :
       (∫ p : ℝ × ℝ, f p ∂(volume.prod volume)) =
         ∫ p : ℝ × ℝ, g p.1 * h p.2 ∂(volume.prod volume) := by
@@ -121,7 +133,8 @@ theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0
     rw [hGaussian, Real.sqrt_div Real.pi_pos.le, Real.sqrt_eq_rpow β,
       show -(1 : ℝ) / 2 = -(1 / 2 : ℝ) by ring, Real.rpow_neg hβ.le]
     ring
-  rw [twoParticleGaussianBetaGasPartitionFunction, hchange, integral_prod_mul, hg, hh]
+  change (∫ p : ℝ × ℝ, f p ∂(volume.prod volume)) = _
+  rw [hchange, integral_prod_mul, hg, hh]
   have h4 : (4 : ℝ) ^ ((β + 1) / 2) = 2 ^ (β + 1) := by
     calc
       _ = ((2 : ℝ) ^ (2 : ℝ)) ^ ((β + 1) / 2) := by norm_num
@@ -144,5 +157,13 @@ theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0
     _ = 2 ^ (β + 1) * sqrt π *
         (β ^ (-((β + 1) / 2)) * β ^ (-(1 : ℝ) / 2)) * Gamma ((β + 1) / 2) := by ring
     _ = _ := by rw [hβpow]; rw [show -((β + 2) / 2) = -(β + 2) / 2 by ring]
+
+/-- The two-particle Gaussian beta-gas density integral is positive. -/
+theorem integral_twoParticleGaussianBetaGasWeight_pos {β : ℝ} (hβ : 0 < β) :
+    0 < ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
+      ∂(volume.prod volume) := by
+  rw [integral_twoParticleGaussianBetaGasWeight hβ]
+  have hGamma : 0 < Gamma ((β + 1) / 2) := Gamma_pos_of_pos (by linarith)
+  positivity
 
 end TauCeti.Probability

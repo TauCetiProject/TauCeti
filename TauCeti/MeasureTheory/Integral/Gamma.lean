@@ -60,6 +60,14 @@ theorem integral_abs_rpow_mul_exp_neg_abs_rpow {p q : ℝ} (hp : 0 < p) (hq : -1
     integral_rpow_mul_exp_neg_rpow hp hq]
   ring
 
+/-- The two-sided Gamma integrand with a scaled Gaussian exponential is integrable. -/
+theorem integrable_abs_rpow_mul_exp_neg_mul_sq {q b : ℝ} (hq : -1 < q) (hb : 0 < b) :
+    Integrable (fun x : ℝ => |x| ^ q * Real.exp (-b * x ^ 2)) := by
+  have h := MeasureTheory.integrable_comp_abs
+    (f := fun x : ℝ => x ^ q * Real.exp (-b * x ^ (2 : ℝ)))
+    (integrableOn_rpow_mul_exp_neg_mul_rpow hq (by norm_num) hb)
+  simpa only [Real.rpow_two, sq_abs] using h
+
 /-- The two-sided Gamma integral with a scaled Gaussian exponential. -/
 theorem integral_abs_rpow_mul_exp_neg_sq {q b : ℝ} (hq : -1 < q) (hb : 0 < b) :
     ∫ x : ℝ, |x| ^ q * Real.exp (-b * x ^ 2) =
