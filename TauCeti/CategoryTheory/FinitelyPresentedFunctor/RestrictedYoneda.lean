@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
-public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
+public import TauCeti.CategoryTheory.Preadditive.RestrictedYoneda
 
 /-!
 # Finitely presented functors on a subcategory of projective objects
@@ -16,12 +15,11 @@ public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 Let `C` be an abelian category and let `P` be a property of objects of `C` satisfied only by
 projective objects. Restricting representable functors along the inclusion of the full
 subcategory of `P` gives the functor `X ↦ (-, X)|_P`,
-`P.restrictedPreadditiveYoneda : C ⥤ P.FullSubcategoryᵒᵖ ⥤ AddCommGrpCat`. Since `Hom(Q, -)` is
-exact for `Q` projective, a presentation `A ⟶ B ⟶ X ⟶ 0` of `X` by objects of `P` becomes a
-presentation `(-, A) ⟶ (-, B) ⟶ (-, X)|_P ⟶ 0` of a functor by representables, so the objects with
-such a presentation, `P.presented`, go to finitely presented functors. This is an equivalence
-between `P.presented` and `mod P`, the Yoneda description of the finitely presented functors on a
-category of projectives.
+`P.restrictedPreadditiveYoneda : C ⥤ P.FullSubcategoryᵒᵖ ⥤ AddCommGrpCat`. It sends a presentation
+`A ⟶ B ⟶ X ⟶ 0` of `X` by objects of `P` to a presentation `(-, A) ⟶ (-, B) ⟶ (-, X)|_P ⟶ 0` of a
+functor by representables, so the objects with such a presentation, `P.presented`, go to finitely
+presented functors. This is an equivalence between `P.presented` and `mod P`, the Yoneda description
+of the finitely presented functors on a category of projectives.
 
 If moreover every object of `C` is a quotient of an object of `P`, every object of `C` is
 `P`-presented and `C ≌ mod P`. In particular, an abelian category with enough projectives is
@@ -29,10 +27,8 @@ recovered from its projective objects as `mod (proj C)`.
 
 ## Main declarations
 
-* `CategoryTheory.ObjectProperty.presented`: the objects that are cokernels of morphisms between
-  objects of `P`.
-* `CategoryTheory.ObjectProperty.bijective_restrictedPreadditiveYoneda_map`: the functor
-  `X ↦ (-, X)|_P` is fully faithful on morphisms out of a `P`-presented object.
+* `CategoryTheory.ObjectProperty.isFinitelyPresentedFunctor_restrictedPreadditiveYoneda_obj`: the
+  restriction `(-, X)|_P` of a `P`-presented object `X` is a finitely presented functor on `P`.
 * `CategoryTheory.ObjectProperty.exists_iso_restrictedPreadditiveYoneda_obj`: every finitely
   presented functor on `P` is `(-, X)|_P` for a `P`-presented object `X`.
 * `CategoryTheory.ObjectProperty.equivalenceMod`: the equivalence between `P.presented` and
@@ -59,79 +55,7 @@ variable {C : Type u} [Category.{v} C]
 
 namespace ObjectProperty
 
-section Preadditive
-
-variable [Preadditive C] (P : ObjectProperty C)
-
-/-- The objects of `C` that are cokernels of morphisms between objects of `P`. -/
-abbrev presented : ObjectProperty C :=
-  (MorphismProperty.ofObjectProperty P P).cokernels
-
-variable {P}
-
-/-- The functor `X ↦ (-, X)|_P` is fully faithful on morphisms out of a `P`-presented object: a
-natural transformation `θ : (-, X)|_P ⟶ (-, Y)|_P` is `(-, g)` for the unique `g : X ⟶ Y` extending
-`θ π : B ⟶ Y` along the epimorphism `π : B ⟶ X`, where `B` is an object of `P`. -/
-theorem bijective_restrictedPreadditiveYoneda_map (hP : P ≤ isProjective C) {X : C}
-    (hX : P.presented X) (Y : C) :
-    Function.Bijective (P.restrictedPreadditiveYoneda.map : (X ⟶ Y) → _) := by
-  obtain ⟨f, c, hc, hA, hB⟩ := hX
-  have : Epi c.π := Cofork.IsColimit.epi hc
-  let B : P.FullSubcategory := ⟨_, hB⟩
-  constructor
-  · intro g g' h
-    rw [← cancel_epi c.π]
-    exact congr($(h).app (op B) (c.π : B.obj ⟶ c.pt))
-  · intro θ
-    let t : B.obj ⟶ Y := θ.app (op B) c.π
-    -- Naturality of `θ` says that `θ (u ≫ π) = u ≫ θ π` for `u` between objects of `P`.
-    have hnat (Q : P.FullSubcategory) (u : Q.obj ⟶ B.obj) :
-        θ.app (op Q) (u ≫ c.π) = u ≫ t :=
-      NatTrans.naturality_apply θ (P.homMk u : Q ⟶ B).op (c.π : B.obj ⟶ c.pt)
-    have hf : f ≫ t = 0 := by
-      rw [← hnat ⟨_, hA⟩ f, CokernelCofork.condition]
-      exact map_zero (θ.app (op ⟨_, hA⟩)).hom
-    obtain ⟨g, hg⟩ := CokernelCofork.IsColimit.desc' hc t hf
-    refine ⟨g, ?_⟩
-    ext Q (u : Q.unop.obj ⟶ c.pt)
-    have : Projective Q.unop.obj := hP _ Q.unop.property
-    obtain ⟨v, rfl⟩ : ∃ v, v ≫ c.π = u :=
-      ⟨_, Projective.factorThru_comp (P := Q.unop.obj) u c.π⟩
-    simpa [hg] using (hnat Q.unop v).symm
-
-end Preadditive
-
-section Abelian
-
 variable [Abelian C] {P : ObjectProperty C}
-
-/-- Restriction to projective objects preserves exactness of short complexes. -/
-theorem exact_map_restrictedPreadditiveYoneda (hP : P ≤ isProjective C) {S : ShortComplex C}
-    (hS : S.Exact) : (S.map P.restrictedPreadditiveYoneda).Exact := by
-  refine ShortComplex.exact_of_forall_evaluation _ fun Q ↦ ?_
-  rw [ShortComplex.ab_exact_iff]
-  intro (v : Q.unop.obj ⟶ S.X₂) hv
-  have : Projective Q.unop.obj := hP _ Q.unop.property
-  exact ⟨hS.liftFromProjective (P := Q.unop.obj) v hv,
-    hS.liftFromProjective_comp (P := Q.unop.obj) v hv⟩
-
-/-- A presentation `A ⟶ B ⟶ X ⟶ 0` by objects of `P`, which are projective, gives a presentation
-`(-, A) ⟶ (-, B) ⟶ (-, X)|_P ⟶ 0` of `(-, X)|_P` by representable functors on `P`. -/
-noncomputable def isColimitRestrictedPreadditiveYoneda (hP : P ≤ isProjective C)
-    {A B : P.FullSubcategory} (f : A ⟶ B) {X : C} {π : B.obj ⟶ X} {w : f.hom ≫ π = 0}
-    (hc : IsColimit (CokernelCofork.ofπ π w)) :
-    IsColimit (CokernelCofork.ofπ (f := preadditiveYoneda.map f)
-      (P.preadditiveYonedaIsoRestricted.hom.app B ≫ P.restrictedPreadditiveYoneda.map π) (by
-        rw [reassoc_of% P.preadditiveYoneda_map_comp_preadditiveYonedaIsoRestricted_hom f,
-          ← Functor.map_comp, w, Functor.map_zero, comp_zero])) := by
-  have : Epi π := Cofork.IsColimit.epi hc
-  let S : ShortComplex C := .mk f.hom π w
-  have : Epi (S.map P.restrictedPreadditiveYoneda).g := epi_map_restrictedPreadditiveYoneda hP π
-  have hS := exact_map_restrictedPreadditiveYoneda hP (ShortComplex.exact_of_g_is_cokernel S hc)
-  refine CokernelCofork.isColimitOfIsColimitOfIff hS.gIsCokernel _
-    (P.preadditiveYonedaIsoRestricted.app B) fun W φ ↦ ?_
-  rw [Iso.app_hom, reassoc_of% P.preadditiveYoneda_map_comp_preadditiveYonedaIsoRestricted_hom f]
-  exact (Preadditive.IsIso.comp_left_eq_zero _ _).symm
 
 /-- The restriction `(-, X)|_P` of a `P`-presented object is a finitely presented functor on `P`. -/
 theorem isFinitelyPresentedFunctor_restrictedPreadditiveYoneda_obj (hP : P ≤ isProjective C)
@@ -155,22 +79,6 @@ theorem exists_iso_restrictedPreadditiveYoneda_obj (hP : P ≤ isProjective C)
   have hf : MorphismProperty.ofObjectProperty P P f.hom := ⟨A.property, B.property⟩
   exact ⟨cokernel f.hom, (MorphismProperty.cokernels.of_isColimit f.hom _ (cokernelIsCokernel f.hom)
     hf :), ⟨hX.coconePointUniqueUpToIso hc⟩⟩
-
-/-- If every object of `C` is a quotient of an object of `P`, then every object of `C` is a
-cokernel of a morphism between objects of `P`. -/
-theorem presented_eq_top (hgen : ∀ X : C, ∃ (Q : C) (π : Q ⟶ X), P Q ∧ Epi π) :
-    P.presented = ⊤ := by
-  refine top_le_iff.1 fun X _ ↦ ?_
-  obtain ⟨B, π, hB, hπ⟩ := hgen X
-  obtain ⟨A, e, hA, he⟩ := hgen (kernel π)
-  let S : ShortComplex C := .mk (e ≫ kernel.ι π) π (by simp)
-  have hS : S.Exact := by
-    rw [S.exact_iff_epi_kernel_lift]
-    convert he
-    ext
-    simp [S]
-  have : Epi S.g := hπ
-  exact .of_isColimit S.f _ hS.gIsCokernel ⟨hA, hB⟩
 
 variable (P) in
 /-- The functor `X ↦ (-, X)|_P` from a full subcategory `Q` of `P`-presented objects to `mod P`.
@@ -250,8 +158,6 @@ noncomputable def equivalenceModOfExistsEpiCompιIso (hP : P ≤ isProjective C)
     (equivalenceModOfExistsEpi hP hgen).functor ⋙ (isFinitelyPresentedFunctor _).ι ≅
       P.restrictedPreadditiveYoneda :=
   Iso.refl _
-
-end Abelian
 
 end ObjectProperty
 
