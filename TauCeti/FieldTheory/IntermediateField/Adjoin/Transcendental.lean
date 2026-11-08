@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.AlgebraTower
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import TauCeti.RingTheory.Algebraic.LinearIndependent
 import Mathlib.RingTheory.AlgebraicIndependent.AlgebraicClosure
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # Simple transcendental field extensions
