@@ -58,7 +58,8 @@ theorem integral_norm_fderiv_one_sq_punctured_disc_le {u : ℂ → V}
   classical
   let D := {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   have : CompleteSpace V := FiniteDimensional.complete ℝ V
-  have hE := integrableOn_norm_fderiv_one_sq_puncturedClosedDisc z₀ hu henergy
+  have hE := integrableOn_norm_fderiv_one_sq_puncturedClosedDisc z₀
+    (fun z hz ↦ (hu z hz).of_le (by norm_num)) henergy
   let B (r : ℝ) := ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2
   let A (a : ℝ) := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   have hAsub {a : ℝ} (ha : 0 < a) : A a ⊆ D := fun z hz ↦ ⟨ha.trans_le hz.1, hz.2⟩

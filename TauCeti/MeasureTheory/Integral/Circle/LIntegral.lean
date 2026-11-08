@@ -653,15 +653,15 @@ theorem setIntegral_puncturedClosedDisc_le_of_forall_annulus {f : ℂ → ℝ} (
   exact le_of_tendsto hlimit (Filter.Eventually.of_forall fun n ↦ h (a n) (ha n) (hab n))
 
 /-- Finite energy on a punctured closed disc gives integrability of the squared norm of the
-real-direction derivative of a map that is `C²` there. -/
+real-direction derivative of a map that is `C¹` there. -/
 theorem integrableOn_norm_fderiv_one_sq_puncturedClosedDisc {V : Type*}
     [NormedAddCommGroup V] [NormedSpace ℝ V] {u : ℂ → V} (ζ : ℂ)
-    {b : ℝ} (hu : ∀ z ∈ {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}, ContDiffAt ℝ 2 u z)
+    {b : ℝ} (hu : ∀ z ∈ {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}, ContDiffAt ℝ 1 u z)
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
       {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}) :
     IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} := by
   have hDu : ContinuousOn (fderiv ℝ u) {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} := fun z hz ↦
-    ((hu z hz).continuousAt_fderiv (by norm_num)).continuousWithinAt
+    ((hu z hz).continuousAt_fderiv one_ne_zero).continuousWithinAt
   have hcont : ContinuousOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2)
       {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} :=
     (hDu.clm_apply continuousOn_const).norm.pow 2
