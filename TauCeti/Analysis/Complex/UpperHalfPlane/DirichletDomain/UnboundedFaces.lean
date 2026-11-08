@@ -37,11 +37,11 @@ namespace TauCeti.UpperHalfPlane
 
 variable {G : Type*} [SMul G ℍ]
 
-/-- Every nonempty unbounded equality face whose index moves the centre is either an extended
+/-- Every unbounded equality face whose index moves the centre is either an extended
 geodesic segment with one finite and one ideal endpoint, or a complete geodesic between two
 distinct ideal endpoints. -/
 theorem exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded
-    {p : ℍ} {g : G} (hg : g • p ≠ p) (hne : (dirichletFace p g).Nonempty)
+    {p : ℍ} {g : G} (hg : g • p ≠ p)
     (hunbounded : ¬ Bornology.IsBounded (dirichletFace p g)) :
     (∃ z : ℍ, ∃ ξ : OnePoint ℝ,
       dirichletFace p g = extGeodesicSegment (.inl z) (.inr ξ)) ∨
@@ -54,10 +54,6 @@ theorem exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded
     exact inter_subset_right
   have himage : geodesicLine k '' S = dirichletFace p g :=
     image_preimage_eq_of_subset hsub
-  have hS : S.Nonempty := by
-    obtain ⟨z, hz⟩ := hne
-    obtain ⟨t, rfl⟩ := hsub hz
-    exact ⟨t, hz⟩
   have hclosed : IsClosed S :=
     (isClosed_dirichletFace p g).preimage (isometry_geodesicLine k).continuous
   have hnotOrderBounded : ¬(BddBelow S ∧ BddAbove S) := by
@@ -69,7 +65,7 @@ theorem exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded
   have hclassification :
       (∃ a, S = Ici a) ∨ (∃ a, S = Iic a) ∨ S = univ :=
     (ordConnected_preimage_geodesicLine_dirichletFace hg).eq_Ici_or_eq_Iic_or_eq_univ
-      hS hclosed hnotOrderBounded
+      hclosed hnotOrderBounded
   rcases hclassification with ⟨a, hS⟩ | ⟨a, hS⟩ | hS
   · refine Or.inl ⟨geodesicLine k a, k • (∞ : OnePoint ℝ), ?_⟩
     rw [← himage, hS, geodesicLine_image_Ici]
@@ -87,7 +83,7 @@ theorem exists_dirichletFace_eq_extGeodesicSegment {p : ℍ} {g : G} (hg : g •
   by_cases hb : Bornology.IsBounded (dirichletFace p g)
   · obtain ⟨z, w, hzw⟩ := exists_dirichletFace_eq_geodesicSegment hg hne hb
     exact ⟨.inl z, .inl w, hzw.trans (extGeodesicSegment_inl_inl z w).symm⟩
-  · rcases exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded hg hne hb with
+  · rcases exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded hg hb with
       ⟨z, ξ, hzξ⟩ | ⟨ξ, η, -, hξη⟩
     · exact ⟨.inl z, .inr ξ, hzξ⟩
     · exact ⟨.inr ξ, .inr η, hξη⟩

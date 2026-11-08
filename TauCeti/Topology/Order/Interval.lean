@@ -95,13 +95,18 @@ theorem _root_.IsCompact.exists_Icc_between {α : Type*} [LinearOrder α] [Topol
   exact ⟨c, d, fun x hx ↦ ⟨hcm.trans_le (hm hx), (hM hx).trans_lt hMd⟩,
     fun x hx ↦ ⟨hac.trans_le hx.1, hx.2.trans_lt hdb⟩⟩
 
-/-- A nonempty closed order-connected set which is not bounded on both sides is a right
-half-line, a left half-line, or the whole space. -/
+/-- A closed order-connected set which is not bounded on both sides is a right half-line, a left
+half-line, or the whole space. -/
 theorem _root_.Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ
     {α : Type*} [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
-    {s : Set α} (hs : s.OrdConnected) (hne : s.Nonempty) (hclosed : IsClosed s)
+    {s : Set α} (hs : s.OrdConnected) (hclosed : IsClosed s)
     (hunbounded : ¬(BddBelow s ∧ BddAbove s)) :
     (∃ a, s = Ici a) ∨ (∃ b, s = Iic b) ∨ s = univ := by
+  -- An empty `s` is bounded on both sides unless `α` is empty, in which case `s = univ`.
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · rcases isEmpty_or_nonempty α with h | h
+    · exact Or.inr (Or.inr (eq_univ_of_forall fun x ↦ (IsEmpty.false x).elim))
+    · exact (hunbounded ⟨bddBelow_empty, bddAbove_empty⟩).elim
   have exists_gt (x : α) (h : ¬BddAbove s) : ∃ y ∈ s, x < y := by
     by_contra! h'
     exact h ⟨x, h'⟩

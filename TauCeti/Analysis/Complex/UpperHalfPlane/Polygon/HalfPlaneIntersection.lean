@@ -222,7 +222,7 @@ private theorem inter_range_eq_extGeodesicSegment (hS : IsClosed (geodesicLine g
     congr 1
     exact Subset.antisymm (fun σ hσ ↦ ⟨csInf_le hb.1 hσ, le_csSup hb.2 hσ⟩)
       (hoc.out (hS.csInf_mem ⟨a, ha⟩ hb.1) (hS.csSup_mem ⟨a, ha⟩ hb.2))
-  rcases hoc.eq_Ici_or_eq_Iic_or_eq_univ hne hS hb with ⟨a, h⟩ | ⟨b, h⟩ | h
+  rcases hoc.eq_Ici_or_eq_Iic_or_eq_univ hS hb with ⟨a, h⟩ | ⟨b, h⟩ | h
   · rw [faceStart, faceEnd, h, ite_eq_left bddBelow_Ici, ite_eq_right (not_bddAbove_Ici a),
       csInf_Ici, geodesicLine_image_Ici]
   · rw [faceStart, faceEnd, h, ite_eq_right (not_bddBelow_Iic b), ite_eq_left bddAbove_Iic,
