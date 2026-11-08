@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.FreeProbability.Cumulant.Free
 public import TauCeti.Probability.FreeProbability.Cumulant.Series
 public import TauCeti.Probability.FreeProbability.Distribution.Basic
 public import TauCeti.RingTheory.WordSeries.PowerSeries
