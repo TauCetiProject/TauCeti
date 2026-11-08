@@ -96,15 +96,7 @@ mass is the corresponding countdown zero-state transition mass, including time z
 theorem renewalMeasure_apply_singleton_eq_countdownKernel_pow (ν : Measure ℕ) [SFinite ν]
     (hν : ν {0} = 0) (n : ℕ) :
     ν.renewalMeasure {n} = ((ν.map Nat.pred).countdownKernel ^ n) 0 {0} := by
-  have hpos : ∀ᵐ j ∂ν, j ≠ 0 := by
-    apply ae_iff.mpr
-    simpa using hν
-  have hmap : (ν.map Nat.pred).map Nat.succ = ν := by
-    rw [map_map (measurable_of_countable _) (measurable_of_countable _)]
-    conv_rhs => rw [← map_id (μ := ν)]
-    apply map_congr
-    filter_upwards [hpos] with j hj
-    exact Nat.succ_pred_eq_of_ne_zero hj
-  simpa only [hmap] using renewalMeasure_map_succ_apply_singleton (ν.map Nat.pred) n
+  simpa only [map_succ_map_pred hν] using
+    renewalMeasure_map_succ_apply_singleton (ν.map Nat.pred) n
 
 end MeasureTheory.Measure
