@@ -115,13 +115,6 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [N
   (E : B → Type w) [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
 
-/-- A convex combination of `1` and a positive number is positive. -/
-private theorem one_sub_add_mul_pos {t a : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (ha : 0 < a) :
-    0 < 1 - t + t * a := by
-  rcases ht₁.lt_or_eq with ht | rfl
-  · nlinarith
-  · simpa using ha
-
 /-- The straight-line homotopy `t ↦ (1 - t + t c) • v` between a vector and its rescaling by `c` is
 continuous when the time, the factor and the vector depend continuously on a parameter. -/
 private theorem continuous_radialHomotopy {X : Type*} [TopologicalSpace X] {τ c : X → ℝ}
@@ -186,7 +179,9 @@ def sphereBundleHomotopyEquiv (hnorm : Continuous fun v : TotalSpace F E ↦ ‖
       (continuous_subtype_val.comp continuous_snd))
     (fun p ↦ have hp := mem_zeroSectionCompl.1 p.2.2
       mem_zeroSectionCompl.2 <|
-        smul_ne_zero (one_sub_add_mul_pos p.1.2.1 p.1.2.2 (inv_pos.2 (norm_pos_iff.2 hp))).ne' hp)
+        smul_ne_zero (by
+          simpa using (convex_Ioi (0 : ℝ) one_pos (inv_pos.2 (norm_pos_iff.2 hp))
+            (sub_nonneg.2 p.1.2.2) p.1.2.1 (sub_add_cancel 1 _)).ne') hp)
     (fun v ↦ by simp)
     (fun v ↦ by
       simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 (mem_zeroSectionCompl.1 v.2))])
