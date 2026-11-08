@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Algebra.Algebra.RestrictScalars
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
-# Real scalars for bounded operators over `RCLike` fields
+# Real scalars for continuous linear endomorphisms over real algebras
 
-For a normed space `E` over `RCLike 𝕜`, restricting the scalar action along `ℝ → 𝕜` gives a
-real algebra structure on the bounded endomorphisms `E →L[𝕜] E`, compatible with the `𝕜`-action.
+For a topological module `E` over a commutative real algebra `𝕜` (for example an `RCLike`
+field), restricting the scalar action along `ℝ → 𝕜` gives a real algebra structure on the
+continuous linear endomorphisms `E →L[𝕜] E`, compatible with the `𝕜`-action.
 
 ## Main definitions and results
 
@@ -29,17 +32,19 @@ public section
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*} [CommSemiring 𝕜] [Algebra ℝ 𝕜] [TopologicalSpace E] [AddCommGroup E]
+  [Module 𝕜 E] [ContinuousConstSMul 𝕜 E] [IsTopologicalAddGroup E]
 
-/-- The real algebra structure on bounded endomorphisms of a normed space over an `RCLike`
-field, obtained by restricting scalars along `ℝ → 𝕜`, so that `r • T = (r : 𝕜) • T`. -/
+/-- The real algebra structure on continuous linear endomorphisms of a topological module over a
+commutative real algebra `𝕜`, obtained by restricting scalars along `ℝ → 𝕜`, so that
+`r • T = algebraMap ℝ 𝕜 r • T`. -/
 @[reducible]
 def realAlgebra : Algebra ℝ (E →L[𝕜] E) :=
   Algebra.restrictScalars ℝ 𝕜 (E →L[𝕜] E)
 
 attribute [local instance] realAlgebra
 
-/-- With `ContinuousLinearMap.realAlgebra`, the real and `𝕜`-scalar actions on bounded
+/-- With `ContinuousLinearMap.realAlgebra`, the real and `𝕜`-scalar actions on continuous linear
 endomorphisms form a scalar tower. -/
 theorem realIsScalarTower : IsScalarTower ℝ 𝕜 (E →L[𝕜] E) :=
   IsScalarTower.restrictScalars ℝ 𝕜 (E →L[𝕜] E)
