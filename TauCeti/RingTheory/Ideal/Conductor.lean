@@ -15,7 +15,8 @@ Let `S` be a subring of a commutative ring `R`, and let `C` be an ideal of `R` c
 in `S`. Extension and contraction are inverse for ideals coprime to `C`, and the inclusion
 induces isomorphisms of their quotient rings. In particular, extension preserves primality
 on this restricted family. Taking `C` to be the conductor compares ideals and residue rings
-of an order with those of its normalization.
+of an order with those of its normalization. That an ideal is coprime to `C` exactly when its
+contraction is coprime to the contraction of `C` holds more generally in any ring.
 
 The argument generalizes the monogenic conductor calculation in Mathlib's
 `comap_map_eq_map_adjoin_of_coprime_conductor` and `quotAdjoinEquivQuotMap` to arbitrary
@@ -30,6 +31,25 @@ subrings. No integrality or finiteness assumption is needed.
 public section
 
 namespace TauCeti
+
+section Ring
+
+variable {R : Type*} [Ring R] {S : Subring R} {C : Ideal R}
+
+/-- An ideal is coprime to an ideal contained in the subring if and only if their
+contractions are coprime. -/
+theorem comap_sup_comap_eq_top_iff (hC : (C : Set R) ⊆ S) {J : Ideal R} :
+    J.comap S.subtype ⊔ C.comap S.subtype = ⊤ ↔ J ⊔ C = ⊤ := by
+  refine ⟨fun h ↦ top_unique <| (Ideal.map_sup_eq_top_of_coprime_comap h).ge.trans <|
+    sup_le_sup_right Ideal.map_comap_le C, fun hJ ↦ ?_⟩
+  obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((Ideal.eq_top_iff_one _).mp hJ)
+  refine (Ideal.eq_top_iff_one _).mpr <|
+    Submodule.mem_sup.mpr ⟨1 - ⟨b, hC hb⟩, ?_, ⟨b, hC hb⟩, hb, sub_add_cancel _ _⟩
+  simpa [← eq_sub_of_add_eq hab] using ha
+
+end Ring
+
+section CommRing
 
 variable {R : Type*} [CommRing R] {S : Subring R} {C : Ideal R}
 
@@ -64,17 +84,6 @@ theorem comap_map_of_coprime_comap (hC : (C : Set R) ⊆ S)
   obtain ⟨y, hy, hyx⟩ := mul_mem_image_of_mem_map_of_le hC hb hx
   rw [← one_mul x, ← hab, add_mul, (Subtype.ext hyx.symm : b * x = y)]
   exact I.add_mem (I.mul_mem_right x ha) hy
-
-/-- An ideal is coprime to an ideal contained in the subring if and only if their
-contractions are coprime. -/
-theorem comap_sup_comap_eq_top_iff (hC : (C : Set R) ⊆ S) {J : Ideal R} :
-    J.comap S.subtype ⊔ C.comap S.subtype = ⊤ ↔ J ⊔ C = ⊤ := by
-  refine ⟨fun h ↦ top_unique <| (Ideal.map_sup_eq_top_of_coprime_comap h).ge.trans <|
-    sup_le_sup_right Ideal.map_comap_le C, fun hJ ↦ ?_⟩
-  obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((Ideal.eq_top_iff_one _).mp hJ)
-  refine (Ideal.eq_top_iff_one _).mpr <|
-    Submodule.mem_sup.mpr ⟨1 - ⟨b, hC hb⟩, ?_, ⟨b, hC hb⟩, hb, sub_add_cancel _ _⟩
-  simpa [← eq_sub_of_add_eq hab] using ha
 
 /-- Extending a contracted ideal recovers it when it is coprime to an ideal contained
 in the subring. -/
@@ -130,5 +139,7 @@ theorem isPrime_map_iff_of_coprime_comap (hC : (C : Set R) ⊆ S)
   rw [← comap_map_of_coprime_comap hC hI] at h
   exact (Ideal.Quotient.isDomain_iff_prime _).mp <|
     (quotientComapEquivOfCoprime hC (Ideal.map_sup_eq_top_of_coprime_comap hI)).symm.isDomain _
+
+end CommRing
 
 end TauCeti
