@@ -145,21 +145,24 @@ end TauCeti
 namespace OpenSubgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {N : Subgroup G}
-  [N.Normal]
 
-/-- The image of an open subgroup of `G` in the quotient by a normal subgroup `N` is
+/-- The image of an open subgroup of `G` in the quotient by a subgroup `N` is
 clopen under separate continuity of multiplication. -/
 theorem isClopen_image_mk (U : OpenSubgroup G) :
     IsClopen ((QuotientGroup.mk : G → G ⧸ N) '' (U : Set G)) := by
   have hopen : IsOpen ((QuotientGroup.mk : G → G ⧸ N) '' (U : Set G)) :=
     QuotientGroup.isOpenMap_coe _ U.isOpen'
   refine ⟨(QuotientGroup.isQuotientMap_mk N).isClosed_preimage.mp ?_, hopen⟩
-  have hpreimage :
-      IsOpen ((U.toSubgroup.map (QuotientGroup.mk' N)).comap (QuotientGroup.mk' N) : Set G) := by
-    simpa only [Subgroup.coe_comap, Subgroup.coe_map, QuotientGroup.coe_mk',
-      OpenSubgroup.coe_toSubgroup] using hopen.preimage QuotientGroup.continuous_mk
-  simpa only [Subgroup.coe_comap, Subgroup.coe_map, QuotientGroup.coe_mk',
-    OpenSubgroup.coe_toSubgroup] using Subgroup.isClosed_of_isOpen _ hpreimage
+  -- the preimage is `U * N`; its complement is a union of the open right cosets `U g`
+  rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
+  intro g hg
+  refine ⟨(fun x ↦ x * g⁻¹) ⁻¹' (U : Set G), fun x hx ↦ ?_, ?_, ?_⟩
+  · rintro ⟨y, hy, hyx⟩
+    refine hg ⟨(x * g⁻¹)⁻¹ * y, U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hx) hy, ?_⟩
+    simp only [QuotientGroup.eq] at hyx ⊢
+    simpa [mul_assoc] using hyx
+  · exact U.isOpen'.preimage (continuous_mul_const _)
+  · simp
 
 end OpenSubgroup
 
