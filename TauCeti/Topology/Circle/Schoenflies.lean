@@ -11,8 +11,8 @@ import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Geometry.Sphere.Circle
+import TauCeti.Topology.Circle.Arc
 import TauCeti.Topology.Closure
-import TauCeti.Topology.JordanCurve.Separation
 import TauCeti.Topology.Path.Arc
 
 /-!
@@ -31,7 +31,7 @@ of an injective path from `p` to `q`, hence a closed one-dimensional disc with b
 (`Path.exists_homeomorph_range_closedBall`).
 The open arcs are read off Mathlib's `Circle.path`, which traces the arc from one point to another
 counterclockwise; that they are open, connected and disjoint and cover the complement of `{p, q}` is
-in `TauCeti/Topology/JordanCurve/Separation.lean`. The circle is then transported to the unit sphere
+in `TauCeti/Topology/Circle/Arc.lean`. The circle is then transported to the unit sphere
 of any two-dimensional real normed space. The collar does govern how the two sides of `Σ`
 meet the two components: at each point of `S⁰` the two collar arcs lie in different components,
 since otherwise, by invariance of domain, the corresponding point of `Σ` would have a neighbourhood
