@@ -247,6 +247,7 @@ theorem cubicalChainModuleEquiv_lof {n : ℕ} (c : NormalizedCubicalChain Y R n)
   (rfl)
 
 /-- The inverse of the equivalence with the direct sum sends a homogeneous chain to itself. -/
+@[simp]
 theorem cubicalChainModuleEquiv_symm_lof {n : ℕ} (c : NormalizedCubicalChain Y R n) :
     (cubicalChainModuleEquiv Y G R).symm (cubicalChainLof Y R n c) =
       cubicalChainModuleLof Y G R n c :=
@@ -346,13 +347,19 @@ theorem cubicalChainModuleDifferential_lof_zero (c : NormalizedCubicalChain Y R 
 theorem cubicalChainModuleDifferential_lof_succ (k : ℕ) (c : NormalizedCubicalChain Y R (k + 1)) :
     cubicalChainModuleDifferential Y G R (cubicalChainModuleLof Y G R (k + 1) c) =
       cubicalChainModuleLof Y G R k (boundary Y R k c) := by
-  simp [cubicalChainModuleDifferential, cubicalChainModuleLof]
+  simp [cubicalChainModuleDifferential]
 
 /-- The differential of the module is the boundary, read through the equivalence with the direct
 sum. -/
 theorem cubicalChainModuleEquiv_differential (m : cubicalChainModule Y G R) :
     cubicalChainModuleEquiv Y G R (cubicalChainModuleDifferential Y G R m) =
       cubicalChainDifferential Y R (cubicalChainModuleEquiv Y G R m) := by
+  simp [cubicalChainModuleDifferential]
+
+/-- The inverse of the equivalence with the direct sum intertwines the differentials. -/
+theorem cubicalChainModuleEquiv_symm_differential (a : normalizedCubicalChainAlgebra Y R) :
+    (cubicalChainModuleEquiv Y G R).symm (cubicalChainDifferential Y R a) =
+      cubicalChainModuleDifferential Y G R ((cubicalChainModuleEquiv Y G R).symm a) := by
   simp [cubicalChainModuleDifferential]
 
 variable (Y G R) in

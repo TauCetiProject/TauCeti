@@ -27,8 +27,8 @@ system in which each `s x y` is moreover a fundamental chain of `M x y` relative
 
 Two facts about the right-hand side, the **twisting sum** `TauCeti.twistingChainSum`, are proved:
 
-* It is a cycle as soon as the twisting equation holds for every pair of elements whose indices
-  lie strictly between those of `x` and `y` and the composition maps are associative
+* It is a cycle as soon as the twisting equation holds at `(x, z)` and `(z, y)` for every `z`
+  whose index lies strictly between those of `y` and `x`, and the composition maps are associative
   (`TauCeti.cubicalChainDifferential_twistingChainSum`). This is what makes an inductive
   construction of a chain system possible: once the chains of the pairs with smaller index
   difference are chosen, the twisting sum of `(x, y)` is a cycle, and `s x y` is any chain
@@ -109,8 +109,8 @@ section Graded
 variable {s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R}
 
 /-- The twisting sum of a family of chains of cohomological degrees `ind y - ind x + 1` vanishes
-when `ind x ≤ ind y`: every term passes through some `z` with `ind z < ind x ≤ ind y`, where the
-chain of `(z, y)` vanishes. -/
+when `ind x ≤ ind y`: the term of `z` vanishes because the chain of `(x, z)` does when
+`ind x ≤ ind z`, and the chain of `(z, y)` does when `ind z < ind x ≤ ind y`. -/
 theorem twistingChainSum_eq_zero_of_le
     (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1)) {x y : P}
     (hxy : ind x ≤ ind y) : twistingChainSum ind ι R s x y = 0 := by
@@ -197,11 +197,13 @@ theorem cubicalChainDifferential_twistingChainSum
         (ind x - ind z).negOnePow •
             cubicalChainSumPairing R (ι x z y) (twistingChainSum ind ι R s x z) (s z y) -
           cubicalChainSumPairing R (ι x z y) (s x z) (twistingChainSum ind ι R s z y) := by
+    have hsign : (ind x - ind z).negOnePow * (ind z - ind x + 1).negOnePow = -1 := by
+      rw [← Int.negOnePow_add, show ind x - ind z + (ind z - ind x + 1) = 1 by ring,
+        Int.negOnePow_one]
     rw [map_zsmul_unit, cubicalChainDifferential_cubicalChainSumPairing _ (hs x z),
       pairing_differential_left hs fun h₁ h₂ ↦ (h z h₁ h₂).1,
-      pairing_differential_right hs fun h₁ h₂ ↦ (h z h₁ h₂).2, smul_add, smul_smul,
-      show ind z - ind x + 1 = -(ind x - ind z) + 1 by ring, Int.negOnePow_succ,
-      Int.negOnePow_neg, mul_neg, ← sq, Int.units_sq, Units.neg_smul, one_smul]
+      pairing_differential_right hs fun h₁ h₂ ↦ (h z h₁ h₂).2, smul_add, smul_smul, hsign,
+      Units.neg_smul, one_smul]
     exact (sub_eq_add_neg _ _).symm
   rw [twistingChainSum_def, map_sum, Finset.sum_congr rfl fun z _ ↦ hL z, Finset.sum_sub_distrib,
     sub_eq_zero]
@@ -227,16 +229,16 @@ variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
 /-- **Push-forward of the twisting sum along multiplicative evaluation maps**: if
 `q x y (ι x z y (u, v)) = q x z u * q z y v`, the push-forward of the twisting sum is the twisting
 sum of the Pontryagin products of the push-forwards. -/
-theorem cubicalChainSumMap_twistingChainSum
-    (hq : ∀ x z y (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v)
-    (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R) (x y : P) :
+theorem cubicalChainSumMap_twistingChainSum {x y : P}
+    (hq : ∀ z (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v)
+    (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R) :
     cubicalChainSumMap R (q x y) (twistingChainSum ind ι R s x y) =
       ∑ z, (ind x - ind z).negOnePow •
         (cubicalChainSumMap R (q x z) (s x z) * cubicalChainSumMap R (q z y) (s z y)) := by
   rw [twistingChainSum_def, map_sum]
   refine Finset.sum_congr rfl fun z _ ↦ ?_
   have hcomp : (q x y).comp (ι x z y) = (mulMap G).comp ((q x z).prodMap (q z y)) :=
-    ContinuousMap.ext fun ⟨u, v⟩ ↦ by simpa using hq x z y u v
+    ContinuousMap.ext fun ⟨u, v⟩ ↦ by simpa using hq z u v
   rw [map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing, hcomp,
     cubicalChainSumPairing_comp_prodMap, cubicalChainSumPairing_mulMap]
 
@@ -256,7 +258,7 @@ def twistingCocycle (S : TwistingChainSystem ind ι R)
     (fun x y ↦ cubicalChainSumMap_mem _ (S.mem_graded x y))
     (fun x y ↦ by
       rw [cubicalChainDifferential_cubicalChainSumMap, S.twisting,
-        cubicalChainSumMap_twistingChainSum hq])
+        cubicalChainSumMap_twistingChainSum (hq x · y)])
     fun _ hn ↦ cubicalChainGrading_eq_bot G R hn
 
 /-- The entries of the Barraud–Cornea cocycle are the push-forwards of the chains. -/

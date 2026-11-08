@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Bimodule
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Hom
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Lift
 
 /-!
@@ -26,10 +27,10 @@ differential graded `(C_*(G), C_*(K))`-bimodules
 The basic example is concatenation of Moore paths, which induces the composition maps of the
 chain bimodules of paths that change the basepoint of a DG local system.
 
-The push-forward and the pairing are also stated on the plain direct sums
-`⨁ n, C^□_n(X; R)` of spaces carrying no action (`TauCeti.cubicalChainSumMap`,
-`TauCeti.cubicalChainSumPairing`), with the Leibniz rule, associativity and naturality. For the
-multiplication of a topological monoid the pairing is the Pontryagin product. These are the
+The pairing is also stated on the plain direct sums `⨁ n, C^□_n(X; R)` of spaces carrying no
+action (`TauCeti.cubicalChainSumPairing`), with the Leibniz rule, associativity and naturality for
+the push-forward `TauCeti.cubicalChainSumMap`. For the multiplication of a topological monoid the
+pairing is the Pontryagin product. These are the
 operations of the chain systems of trajectory spaces in Morse theory.
 
 ## Main definitions
@@ -37,8 +38,7 @@ operations of the chain systems of trajectory spaces in Morse theory.
 * `TauCeti.cubicalChainPairing H K R f`: the pairing `C_*(X) × C_*(Y) → C_*(Z)` induced by `f`.
 * `TauCeti.cubicalChainTensorHom f hf hfG hfK`: the morphism of DG bimodules
   `C_*(X) ⊗_{C_*(H)} C_*(Y) → C_*(Z)` induced by a balanced equivariant map.
-* `TauCeti.cubicalChainSumMap R f`, `TauCeti.cubicalChainSumPairing R f`: the push-forward and the
-  pairing on the direct sums of chains.
+* `TauCeti.cubicalChainSumPairing R f`: the pairing on the direct sums of chains.
 
 ## Main results
 
@@ -376,19 +376,13 @@ end TensorHom
 
 section SumPairing
 
-/-! ### Push-forwards and pairings of the direct sums of chains
+/-! ### Pairings of the direct sums of chains
 
-The same constructions on the plain direct sum `⨁ n, C^□_n(X; R)` of a space, with no action
+The same construction on the plain direct sum `⨁ n, C^□_n(X; R)` of a space, with no action
 recorded. -/
 
 variable {X Y Z W U V : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   [TopologicalSpace W] [TopologicalSpace U] [TopologicalSpace V] (R : Type*) [CommRing R]
-
-/-- The **push-forward** `f_* : ⨁ n, C^□_n(X; R) → ⨁ n, C^□_n(Y; R)` along a continuous map,
-dimension by dimension. -/
-def cubicalChainSumMap (f : C(X, Y)) :
-    normalizedCubicalChainAlgebra X R →ₗ[R] normalizedCubicalChainAlgebra Y R :=
-  DirectSum.lmap fun n ↦ map R f n
 
 /-- The **pairing of direct sums of chains induced by a map** `f : X × Y → Z`: the push-forward of
 the cross product, `c ⊗ c' ↦ f_* (c × c')`. It is `TauCeti.cubicalChainPairing` read through the
@@ -403,38 +397,6 @@ def cubicalChainSumPairing (f : C(X × Y, Z)) :
       (cubicalChainModuleEquiv Z Unit R).toLinearMap
 
 variable {R}
-
-/-- The push-forward on a chain of dimension `n`. -/
-@[simp]
-theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R n) :
-    cubicalChainSumMap R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
-  DirectSum.lmap_lof _ n c
-
-/-- The push-forward preserves the cohomological degree. -/
-theorem cubicalChainSumMap_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
-    (ha : a ∈ cubicalChainGrading X R i) :
-    cubicalChainSumMap R f a ∈ cubicalChainGrading Y R i := by
-  rcases (mem_cubicalChainGrading_iff X R).1 ha with rfl | ⟨n, c, hn, rfl⟩
-  · rw [map_zero]
-    exact zero_mem _
-  · exact (mem_cubicalChainGrading_iff Y R).2
-      (Or.inr ⟨n, _, hn, (cubicalChainSumMap_lof f c).symm⟩)
-
-/-- **The push-forward is a chain map**: it commutes with the boundary. -/
-theorem cubicalChainDifferential_cubicalChainSumMap (f : C(X, Y))
-    (a : normalizedCubicalChainAlgebra X R) :
-    cubicalChainDifferential Y R (cubicalChainSumMap R f a) =
-      cubicalChainSumMap R f (cubicalChainDifferential X R a) := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | add a a' ha ha' => rw [map_add, map_add, ha, ha', map_add, map_add]
-  | of n c =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof]
-    rcases n with _ | k
-    · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, map_zero]
-    · rw [cubicalChainDifferential_lof_succ, cubicalChainDifferential_lof_succ,
-        cubicalChainSumMap_lof, ← LinearMap.comp_apply (map R f k), map_boundary,
-        LinearMap.comp_apply]
 
 /-- The pairing of direct sums is the pairing of chain modules, read through the equivalences. -/
 theorem cubicalChainSumPairing_apply (f : C(X × Y, Z)) (a : normalizedCubicalChainAlgebra X R)
@@ -471,20 +433,9 @@ theorem cubicalChainDifferential_cubicalChainSumPairing (f : C(X × Y, Z)) {i : 
     cubicalChainDifferential Z R (cubicalChainSumPairing R f a b) =
       cubicalChainSumPairing R f (cubicalChainDifferential X R a) b +
         i.negOnePow • cubicalChainSumPairing R f a (cubicalChainDifferential Y R b) := by
-  have hX (m : normalizedCubicalChainAlgebra X R) : (cubicalChainModuleEquiv X Unit R).symm
-      (cubicalChainDifferential X R m) =
-        cubicalChainModuleDifferential X Unit R ((cubicalChainModuleEquiv X Unit R).symm m) :=
-    (cubicalChainModuleEquiv X Unit R).injective (by
-      rw [LinearEquiv.apply_symm_apply, cubicalChainModuleEquiv_differential,
-        LinearEquiv.apply_symm_apply])
-  have hY (m : normalizedCubicalChainAlgebra Y R) : (cubicalChainModuleEquiv Y Unit R).symm
-      (cubicalChainDifferential Y R m) =
-        cubicalChainModuleDifferential Y Unit R ((cubicalChainModuleEquiv Y Unit R).symm m) :=
-    (cubicalChainModuleEquiv Y Unit R).injective (by
-      rw [LinearEquiv.apply_symm_apply, cubicalChainModuleEquiv_differential,
-        LinearEquiv.apply_symm_apply])
   rw [cubicalChainSumPairing_apply, cubicalChainSumPairing_apply, cubicalChainSumPairing_apply,
-    ← cubicalChainModuleEquiv_differential, hX, hY,
+    ← cubicalChainModuleEquiv_differential, cubicalChainModuleEquiv_symm_differential,
+    cubicalChainModuleEquiv_symm_differential,
     cubicalChainModuleDifferential_cubicalChainPairing f
       (mem_cubicalChainModuleGrading.2 (by rwa [LinearEquiv.apply_symm_apply])),
     map_add, map_zsmul_unit]
