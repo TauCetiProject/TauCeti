@@ -52,7 +52,7 @@ The arbitrary values of the chosen extension outside the source do not affect it
 def openIteratedFDerivContinuousMap (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯)
     (m : ℕ) (hm : m ≤ n) : C(U, E [×m]→L[𝕜] F) :=
   ⟨fun x ↦ iteratedFDerivWithin 𝕜 m (Function.extend Subtype.val f (fun _ ↦ 0)) U x,
-    ((contDiffOn_extend U f (fun _ ↦ 0)).continuousOn_iteratedFDerivWithin hm
+    ((contMDiffOn_extend U f (fun _ ↦ 0)).contDiffOn.continuousOn_iteratedFDerivWithin hm
       U.isOpen.uniqueDiffOn).domRestrict⟩
 
 /-- Evaluation of the open-source derivative map. -/
@@ -248,7 +248,7 @@ theorem exists_openWeakWhitneyJet_eq_of_tendsto
   let h : E → F := fun x ↦ (p x 0).curry0
   have hh : HasFTaylorSeriesUpToOn (r : ℕ∞ω) h p U :=
     HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn U.isOpen
-      (fun i ↦ (contDiffOn_extend U (f i) (fun _ ↦ 0)).ftaylorSeriesWithin
+      (fun i ↦ (contMDiffOn_extend U (f i) (fun _ ↦ 0)).contDiffOn.ftaylorSeriesWithin
         U.isOpen.uniqueDiffOn) hlim fun x hx ↦ by
       have ht := ((continuousMultilinearCurryFin0 𝕜 E F).continuous.tendsto (p x 0)).comp
         ((hlim 0 (by simp)).tendsto_at hx)
