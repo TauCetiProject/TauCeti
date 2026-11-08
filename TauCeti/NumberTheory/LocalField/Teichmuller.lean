@@ -58,6 +58,12 @@ open IsLocalRing ValuativeRel
 
 namespace TauCeti
 
+/-- An exponent prime to the residue characteristic is nonzero. -/
+theorem ne_zero_of_coprime_ringChar {K : Type*} [Field K] [ValuativeRel K] {m : ℕ}
+    (hm : m.Coprime (ringChar 𝓀[K])) : m ≠ 0 := by
+  rintro rfl
+  exact CharP.ringChar_ne_one (Nat.coprime_zero_left _ |>.1 hm)
+
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
@@ -108,12 +114,6 @@ theorem isUnit_natCast_natCard_pow_sub_one {f : ℕ} (hf : f ≠ 0) :
     Nat.cast_sub (Nat.one_le_pow _ _ Nat.card_pos), Nat.cast_pow, Nat.card_eq_fintype_card,
     Nat.cast_card_eq_zero, zero_pow hf, Nat.cast_one, zero_sub, neg_ne_zero]
   exact one_ne_zero
-
-variable {K} in
-/-- An exponent prime to the residue characteristic is nonzero. -/
-theorem ne_zero_of_coprime_ringChar {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) : m ≠ 0 := by
-  rintro rfl
-  exact (CharP.prime_ringChar 𝓀[K]).ne_one (Nat.coprime_zero_left _ |>.1 hm)
 
 /-- A nonarchimedean local field contains a primitive `(q - 1)`-st root of unity, where `q` is the
 cardinality of its residue field: the Teichmüller lifts of the units of `𝓀[K]` are the `(q - 1)`-st
