@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Gaussian
-public import TauCeti.Analysis.MellinTransform
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Algebra.Module.ZLattice.Summable
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.NumberTheory.LSeries.MellinEqDirichlet
 
 /-!
 # The radial Mellin transform and Epstein zeta
@@ -25,8 +23,8 @@ convergence of the Epstein series and summability of the integrals of the norms 
 interchanging the lattice sum with the Mellin integral. The zero term is removed from the
 whole theta series, rather than subtracting a constant from each summand.
 
-The convergence proof uses Mathlib's `ZLattice.summable_norm_rpow`. The individual Mellin
-integrals are Mathlib's `Complex.integral_cpow_mul_exp_neg_mul_Ioi` and its real counterpart.
+The convergence proof uses Mathlib's `ZLattice.summable_norm_rpow`. The Mellin identity
+specializes Mathlib's `hasSum_mellin_pi_mul` for sums of exponentials.
 
 ## References
 
@@ -75,59 +73,6 @@ theorem summable_epsteinZeta (L : Submodule ℤ (mixedSpace K)) [DiscreteTopolog
       congr 1
       ring
 
-private theorem radial_integrable {L : Submodule ℤ (mixedSpace K)}
-    (x : {x : L // x ≠ 0}) {s : ℂ} (hs : 0 < s.re) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) *
-      archGaussian (K := K) (fun _ ↦ t) (x : L)) (Ioi 0) := by
-  have hx : 0 < mixedInner K x x := mixedInner_self_pos K (by simpa using x.2)
-  simp_rw [archGaussian_const, mul_comm _ (mixedInner K (x : mixedSpace K) x),
-    ← mul_assoc, neg_mul]
-  exact mellinConvergent_exp_neg_mul (mul_pos Real.pi_pos hx) hs
-
-private theorem radial_integral {L : Submodule ℤ (mixedSpace K)}
-    (x : {x : L // x ≠ 0}) {s : ℂ} (hs : 0 < s.re) :
-    ∫ t : ℝ in Ioi 0, (t : ℂ) ^ (s - 1) * archGaussian (K := K) (fun _ ↦ t) (x : L) =
-      (π : ℂ) ^ (-s) * Gamma s * (mixedInner K x x : ℂ) ^ (-s) := by
-  have hx : 0 < mixedInner K x x := mixedInner_self_pos K (by simpa using x.2)
-  simp_rw [archGaussian_const, mul_comm _ (mixedInner K (x : mixedSpace K) x),
-    ← mul_assoc, neg_mul,
-    ofReal_exp, ofReal_neg, ofReal_mul (π * mixedInner K (x : mixedSpace K) x)]
-  rw [integral_cpow_mul_exp_neg_mul_Ioi hs (mul_pos Real.pi_pos hx),
-    one_div, inv_cpow_ofReal_nonneg (mul_pos Real.pi_pos hx).le,
-    ← cpow_neg, ofReal_mul, ofReal_mul_cpow Real.pi_pos.le]
-  ring
-
-/-- The integrals of the norms of the nonzero radial Gaussian Mellin terms are summable.
-This is the absolute-integrability bound needed to exchange the lattice sum and integral. -/
-private theorem summable_integral_norm_radialGaussian (L : Submodule ℤ (mixedSpace K))
-    [DiscreteTopology L] {s : ℂ} (hs : (Module.finrank ℤ L : ℝ) / 2 < s.re) :
-    Summable fun x : {x : L // x ≠ 0} ↦
-      ∫ t : ℝ in Ioi 0, ‖(t : ℂ) ^ (s - 1) *
-        archGaussian (K := K) (fun _ ↦ t) (x : L)‖ := by
-  classical
-  have hs0 : 0 < s.re := lt_of_le_of_lt (by positivity) hs
-  have hsum : Summable fun x : {x : L // x ≠ 0} ↦ mixedInner K x x ^ (-s.re) := by
-    refine (summable_epsteinZeta L hs).norm.congr fun x ↦ ?_
-    rw [norm_cpow_eq_rpow_re_of_pos (mixedInner_self_pos K (by simpa using x.2)), neg_re]
-  refine (hsum.mul_left (π ^ (-s.re) * Real.Gamma s.re)).congr fun x ↦ ?_
-  have hx : 0 < mixedInner K x x := mixedInner_self_pos K (by simpa using x.2)
-  calc
-    π ^ (-s.re) * Real.Gamma s.re * mixedInner K x x ^ (-s.re) =
-        ∫ t : ℝ in Ioi 0, t ^ (s.re - 1) * Real.exp (-(π * mixedInner K x x * t)) := by
-      rw [Real.integral_rpow_mul_exp_neg_mul_Ioi hs0
-        (mul_pos Real.pi_pos hx), one_div,
-        Real.inv_rpow (mul_pos Real.pi_pos hx).le,
-        ← Real.rpow_neg (mul_pos Real.pi_pos hx).le,
-        Real.mul_rpow Real.pi_pos.le hx.le]
-      ring
-    _ = _ := by
-      refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-      rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, sub_re, one_re,
-        archGaussian_const, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (Real.exp_pos _)]
-      congr 2
-      ring
-
 /-- For `rank(L) / 2 < Re s`, the Mellin transform of `θ_L(t) − 1` is `π^(-s) Γ(s)` times
 Epstein zeta. The constant term is removed from the whole theta series. A single radial
 parameter gives a sum over lattice points, rather than the unit quotient required for a
@@ -139,21 +84,22 @@ theorem radialMellin_eq_epsteinZeta (L : Submodule ℤ (mixedSpace K)) [Discrete
   classical
   let : Countable L := Countable.of_moduleFinite (R := ℤ)
   have hs0 : 0 < s.re := lt_of_le_of_lt (by positivity) hs
-  rw [mellin]
-  calc
-    (∫ t : ℝ in Ioi 0, (t : ℂ) ^ (s - 1) • (latticeTheta L (fun _ ↦ t) - 1)) =
-        ∫ t : ℝ in Ioi 0, ∑' x : {x : L // x ≠ 0},
-          (t : ℂ) ^ (s - 1) * archGaussian (K := K) (fun _ ↦ t) (x : L) := by
-      refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-      rw [latticeTheta_eq_one_add L _ (fun _ ↦ ht), add_sub_cancel_left,
-        smul_eq_mul, tsum_mul_left]
-    _ = ∑' x : {x : L // x ≠ 0}, ∫ t : ℝ in Ioi 0,
-        (t : ℂ) ^ (s - 1) * archGaussian (K := K) (fun _ ↦ t) (x : L) :=
-      (integral_tsum_of_summable_integral_norm
-        (fun x : {x : L // x ≠ 0} ↦ radial_integrable x hs0)
-        (summable_integral_norm_radialGaussian L hs)).symm
-    _ = _ := by
-      simp_rw [radial_integral _ hs0]
-      rw [epsteinZeta_def, tsum_mul_left]
+  have hF (t : ℝ) (ht : t ∈ Ioi 0) :
+      HasSum (fun x : {x : L // x ≠ 0} ↦
+        (1 : ℂ) * Real.exp (-π * mixedInner K x x * t))
+        (latticeTheta L (fun _ ↦ t) - 1) := by
+    rw [latticeTheta_eq_one_add L _ (fun _ ↦ ht), add_sub_cancel_left]
+    convert ((summable_archGaussian L _ (fun _ ↦ ht)).subtype (· ≠ 0)).hasSum using 1 <;>
+      simp only [Function.comp_def, archGaussian_const, one_mul, mul_assoc, mul_comm t]
+  have hsum : Summable fun x : {x : L // x ≠ 0} ↦
+      ‖(1 : ℂ)‖ / mixedInner K x x ^ s.re := by
+    refine (summable_epsteinZeta L hs).norm.congr fun x ↦ ?_
+    rw [norm_cpow_eq_rpow_re_of_pos (mixedInner_self_pos K (by simpa using x.2)),
+      neg_re, Real.rpow_neg (mixedInner_self_pos K (by simpa using x.2)).le,
+      norm_one, one_div]
+  have h := (hasSum_mellin_pi_mul (a := fun _ : {x : L // x ≠ 0} ↦ 1)
+    (q := fun x ↦ mixedInner K x x)
+    (fun x ↦ Or.inr (mixedInner_self_pos K (by simpa using x.2))) hs0 hF hsum).tsum_eq.symm
+  simpa only [epsteinZeta_def, cpow_neg, mul_one, div_eq_mul_inv, tsum_mul_left] using h
 
 end TauCeti.LFunctions

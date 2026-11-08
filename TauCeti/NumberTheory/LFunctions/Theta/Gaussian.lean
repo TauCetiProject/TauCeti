@@ -112,7 +112,7 @@ theorem archGaussian_const (t : ℝ) (x : mixedSpace K) :
 /-- At the constant parameter `1`, the Gaussian uses the Euclidean mixed-space pairing. -/
 theorem archGaussian_one (x : mixedSpace K) :
     archGaussian (1 : realSpace K) x = ↑(Real.exp (-Real.pi * mixedInner K x x)) := by
-  simp [archGaussian_apply, mixedInner_self_eq_sum]
+  simpa only [Pi.one_def, one_mul] using archGaussian_const (K := K) 1 x
 
 open scoped Classical in
 /-- The archimedean Gaussian is the standard Euclidean Gaussian after square-root dilation. -/
