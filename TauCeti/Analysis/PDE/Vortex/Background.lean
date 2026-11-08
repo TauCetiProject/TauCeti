@@ -107,6 +107,12 @@ def backgroundWeight (f : ℂ → ℂ) (z : ℂ) : ℝ :=
 theorem backgroundWeight_def (f : ℂ → ℂ) (z : ℂ) :
     backgroundWeight f z = ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) := (rfl)
 
+/-- `h = exp (2u₀) ‖f‖²`: the coefficient `TauCeti.Vortex.backgroundWeight` is the squared modulus
+of the background section. -/
+theorem exp_two_mul_backgroundAmplitude_mul_sq_norm (f : ℂ → ℂ) (z : ℂ) :
+    Real.exp (2 * backgroundAmplitude f z) * ‖f z‖ ^ 2 = backgroundWeight f z := by
+  rw [exp_two_mul_backgroundAmplitude, backgroundWeight_def, inv_mul_eq_div]
+
 theorem backgroundWeight_nonneg (f : ℂ → ℂ) (z : ℂ) : 0 ≤ backgroundWeight f z := by
   rw [backgroundWeight_def]
   positivity
@@ -157,8 +163,8 @@ theorem laplacian_backgroundAmplitude_add_eq_iff {w : ℂ → ℝ} (hf : Analyti
     contDiffAt_backgroundAmplitude (hf.contDiffAt.restrict_scalars ℝ)
   have hexp : Real.exp (2 * (backgroundAmplitude f z + w z)) * ‖f z‖ ^ 2 =
       Real.exp (2 * w z) * backgroundWeight f z := by
-    rw [mul_add, Real.exp_add, exp_two_mul_backgroundAmplitude, backgroundWeight_def]
-    field_simp
+    rw [mul_add, Real.exp_add, mul_right_comm, exp_two_mul_backgroundAmplitude_mul_sq_norm,
+      mul_comm]
   rw [← Pi.add_def, hbg.laplacian_add hw, laplacian_backgroundAmplitude hf, hexp]
   constructor <;> intro h <;> linarith
 

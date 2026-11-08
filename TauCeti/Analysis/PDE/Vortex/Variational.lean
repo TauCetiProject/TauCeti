@@ -219,8 +219,8 @@ private theorem integrable_firstVariation [μ.IsAddHaarMeasure] (hh : Continuous
     (hk : Continuous k) (hw : ContDiff ℝ 1 w) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     Integrable (fun x ↦ ⟪∇ w x, ∇ v x⟫_ℝ + (h x * (Real.exp (2 * w x) - 1) / 8 + k x) * v x)
       μ := by
-  have := (hw.gradient_right (m := 0) (by simp)).continuous
-  have := (hv.gradient_right (m := 0) (by simp)).continuous
+  have := hw.continuous_gradient one_ne_zero
+  have := hv.continuous_gradient one_ne_zero
   have := hw.continuous
   have := hv.continuous
   refine Continuous.integrable_of_hasCompactSupport (by fun_prop) ?_
@@ -231,7 +231,7 @@ private theorem integrable_secondVariation [μ.IsAddHaarMeasure] (hh : Continuou
     (hw : Continuous w) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     Integrable (fun x ↦ ‖∇ v x‖ ^ 2 / 2 + h x * Real.exp (2 * w x) * taubesPotential (v x))
       μ := by
-  have := (hv.gradient_right (m := 0) (by simp)).continuous
+  have := hv.continuous_gradient one_ne_zero
   have := hv.continuous
   refine Continuous.integrable_of_hasCompactSupport (by fun_prop) ?_
   exact hvc.mono_of_forall_gradient fun x hx hgx ↦ by simp [hx, hgx]
@@ -280,7 +280,7 @@ private theorem isBigO_remainder_taubesFunctional [μ.IsAddHaarMeasure] (hh : Co
   obtain ⟨M, hM⟩ := hv.continuous.bounded_above_of_compact_support hvc
   set B : E → ℝ := fun x ↦ ‖∇ v x‖ ^ 2 / 2 + |h x| * Real.exp (2 * w x) * (v x ^ 2 / 4)
   have hB : Integrable B μ := by
-    have := (hv.gradient_right (m := 0) (by simp)).continuous
+    have := hv.continuous_gradient one_ne_zero
     have := hv.continuous
     refine Continuous.integrable_of_hasCompactSupport (by fun_prop) ?_
     exact hvc.mono_of_forall_gradient fun x hx hgx ↦ by simp [B, hx, hgx]
@@ -367,9 +367,8 @@ private theorem integral_firstVariation_eq [μ.IsAddHaarMeasure] (hh : Continuou
     (hk : Continuous k) (hw : ContDiff ℝ 2 w) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     ∫ x, (⟪∇ w x, ∇ v x⟫_ℝ + (h x * (Real.exp (2 * w x) - 1) / 8 + k x) * v x) ∂μ =
       ∫ x, v x * (-Δ w x + h x * (Real.exp (2 * w x) - 1) / 8 + k x) ∂μ := by
-  have hw1 : ContDiff ℝ 1 w := hw.of_le one_le_two
-  have := (hw1.gradient_right (m := 0) (by simp)).continuous
-  have := (hv.gradient_right (m := 0) (by simp)).continuous
+  have := hw.continuous_gradient two_ne_zero
+  have := hv.continuous_gradient one_ne_zero
   have := hw.continuous
   have := hv.continuous
   have := hw.continuous_laplacian
@@ -450,7 +449,7 @@ theorem taubesFunctional_lt_add [Nontrivial E] [μ.IsAddHaarMeasure] (hh₀ : �
     mul_nonneg (mul_nonneg (hh₀ x) (Real.exp_pos _).le) (taubesPotential_nonneg _)
   have hg₀ : 0 ≤ g := fun x ↦ add_nonneg (by positivity) (hrem x)
   have hgc : Continuous g := by
-    have := (hv.gradient_right (m := 0) (by simp)).continuous
+    have := hv.continuous_gradient one_ne_zero
     have := hv.continuous
     have := hw.continuous
     fun_prop

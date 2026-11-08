@@ -270,7 +270,7 @@ theorem measurable_divMatrixGradient (ha : Continuous fun x => matrixBilinearFor
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) :
     Measurable (divMatrixGradient a ψ) :=
   Finset.measurable_sum _ fun _ _ => measurable_lineDeriv
-    ((ha.clm_apply continuous_const).clm_apply (ContDiff.continuous_gradient hψ))
+    ((ha.clm_apply continuous_const).clm_apply (ContDiff.continuous_gradient hψ (by simp)))
 
 /-- The test function `φ ⟨v, a ∇ψ⟩`, for a test function `φ` on `H` and a smooth cutoff `ψ` with
 `tsupport ψ ∩ H ⊆ Ω`, is Lipschitz with compact support in `Ω`. -/
@@ -394,7 +394,7 @@ theorem memLp_localizedForcing (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M
   obtain ⟨N, _, hψN, hgradN⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
   obtain ⟨C, hC⟩ := exists_norm_divMatrixGradient_le hM hK hψ hψc
   have hM0 : 0 ≤ M := (norm_nonneg (matrixBilinearForm (a 0))).trans (hM 0)
-  have hgψ := ContDiff.continuous_gradient hψ
+  have hgψ := ContDiff.continuous_gradient hψ (by simp)
   have hB : ∀ x (η ξ : EuclideanSpace ℝ ι), ‖matrixBilinearForm (a x) η ξ‖ ≤ M * ‖η‖ * ‖ξ‖ :=
     fun x η ξ => ((matrixBilinearForm (a x)).le_opNorm₂ η ξ).trans (by gcongr; exact hM x)
   have h1 : MemLp (fun x => ψ x * f x) 2 (mu.restrict Omega) :=
@@ -513,8 +513,8 @@ private theorem integrable_matrixBilinearForm_gradient_terms
   -- Every weight vanishes off `tsupport ψ` and is continuous.
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
-  have hgψ := ContDiff.continuous_gradient hψ
-  have hgφ := ContDiff.continuous_gradient φ.contDiff
+  have hgψ := ContDiff.continuous_gradient hψ (by simp)
+  have hgφ := ContDiff.continuous_gradient φ.contDiff (by simp)
   have hBn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
     Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   have hcs := hasCompactSupport_of_forall_eq_zero_cutoff (a := a) hψc
@@ -570,8 +570,8 @@ private theorem integrable_value_terms (hM : ∀ x, ‖matrixBilinearForm (a x)�
   have hBc := hK.continuous
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
-  have hgψ := ContDiff.continuous_gradient hψ
-  have hgφ := ContDiff.continuous_gradient φ.contDiff
+  have hgψ := ContDiff.continuous_gradient hψ (by simp)
+  have hgφ := ContDiff.continuous_gradient φ.contDiff (by simp)
   have hBn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
     Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   obtain ⟨C, hC⟩ := exists_norm_divMatrixGradient_le hM hK hψ hψc
