@@ -78,8 +78,8 @@ positive coroot is not merely positive but at least `1`, being a positive intege
 * `TauCeti.add_weylVector_mem_openDominantChamber` and
   `TauCeti.weylVector_mem_openDominantChamber`: over a linearly ordered coefficient ring the
   `ρ`-shift of a dominant weight is strictly dominant, and `ρ` itself is a regular weight.
-* `TauCeti.openDominantChamber_nonempty`: consequently the open dominant chamber has a point,
-  which over a general coefficient ring is a genuine hypothesis rather than a formality.
+* `TauCeti.openDominantChamber_nonempty`: consequently the open dominant chamber has a point, with
+  no inverse of `2` needed (the witness is `2ρ`).
 * `TauCeti.one_le_coroot'_weylVector_of_mem_posRoots` and
   `TauCeti.coroot'_weylVector_le_neg_one_of_mem_negRoots`: over a linearly ordered coefficient ring
   `⟨ρ, α^∨⟩ ≥ 1` for a positive root and `≤ -1` for a negative one.
@@ -385,6 +385,7 @@ theorem twoWeylVector_mem_openDominantChamber :
     rw [coroot'_twoWeylVector P b hi]
     exact two_pos
 
+omit [CharZero R] in
 /-- **A dominant weight in the negative of the positive root cone is zero**: if `y` is dominant and
 `-y` is a nonnegative integer combination of the simple roots, then `y = 0`. The sum `2ρ^∨` of the
 positive coroots pairs to `2` with every simple root and nonnegatively with every dominant weight,
@@ -439,10 +440,11 @@ theorem weylVector_mem_openDominantChamber :
     weylVector P b ∈ openDominantChamber P b := by
   simpa using add_weylVector_mem_openDominantChamber P b (zero_mem_dominantChamber P b)
 
-/-- **The open dominant chamber is nonempty** once `2` is invertible: the Weyl vector `ρ` pairs to
-`1` with every simple coroot, so it is strictly dominant. -/
+omit [Invertible (2 : R)] in
+/-- **The open dominant chamber is nonempty**: twice the Weyl vector pairs to `2` with every simple
+coroot, so it is strictly dominant. -/
 theorem openDominantChamber_nonempty : (openDominantChamber P b).Nonempty :=
-  ⟨weylVector P b, weylVector_mem_openDominantChamber P b⟩
+  ⟨twoWeylVector P b, twoWeylVector_mem_openDominantChamber P b⟩
 
 /-- **The Weyl vector pairs to at least `1` with the coroot of every positive root.** This sharpens
 `RootPairing.coroot'_pos_of_mem_posRoots` at `ρ` from a strict inequality to an integral one: the

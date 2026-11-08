@@ -33,12 +33,11 @@ which the open chambers are the complement of the walls:
 weights, and `TauCeti.existsUnique_mem_openWeylChamber` puts each regular weight in exactly one of
 them.
 
-Unlike the uniqueness statements, the bijection needs the open dominant chamber to be *nonempty*,
-which is a genuine hypothesis rather than a formality: the open chambers are cut out by strict
-inequalities, and over a coefficient ring where `2` is not invertible a base may have no strictly
-dominant weight to offer. So it is carried as an explicit argument, and
-`TauCeti.openDominantChamber_nonempty` discharges it whenever `2` is invertible, the Weyl vector
-`ρ` being strictly dominant there.
+Unlike the uniqueness statements, the bijection needs the open dominant chamber to be *nonempty*:
+the open chambers are cut out by strict inequalities, and over a general coefficient ring a base
+may have no strictly dominant weight to offer. So it is carried as an explicit argument, and
+`TauCeti.openDominantChamber_nonempty` discharges it over a linearly ordered coefficient ring for a
+reduced crystallographic pairing, twice the Weyl vector being strictly dominant there.
 
 ## Main definitions
 
@@ -314,10 +313,9 @@ end Regular
 
 section Nonempty
 
-variable [IsStrictOrderedRing R] [Invertible (2 : R)] [Finite ι] [P.IsCrystallographic]
-  [P.IsReduced]
+variable [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
 
-/-- Every open Weyl chamber is nonempty once `2` is invertible. -/
+/-- Every open Weyl chamber is nonempty. -/
 theorem openWeylChamber_nonempty (w : P.weylGroup) : (openWeylChamber P b w).Nonempty :=
   (openDominantChamber_nonempty P b).image _
 
