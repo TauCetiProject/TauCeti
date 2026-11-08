@@ -96,10 +96,10 @@ theorem HasFPowerSeriesAt.coeff_mul {p q r : FormalMultilinearSeries 𝕜 𝕜 A
     have hcoeff := congrArg (FormalMultilinearSeries.coeff · n)
       (hfg.dslope_fslope.eq_formalMultilinearSeries hfg')
     have ih' := ih hf.dslope_fslope hr'
+    have hp0 : p.coeff 0 = f a := by rw [FormalMultilinearSeries.coeff, hf.coeff_zero]
     simp only [FormalMultilinearSeries.coeff_fslope] at hcoeff ih'
     rw [hcoeff, Finset.Nat.sum_antidiagonal_succ, ← ih', ← q.coeff_fslope,
-      FormalMultilinearSeries.coeff_add, FormalMultilinearSeries.coeff_smul, smul_eq_mul,
-      show p.coeff 0 = f a from hf.coeff_zero 1]
+      FormalMultilinearSeries.coeff_add, FormalMultilinearSeries.coeff_smul, smul_eq_mul, hp0]
 
 namespace TauCeti
 
