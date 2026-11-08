@@ -62,6 +62,8 @@ dimension these common cells are smaller. So this need not be assumed.
 * `Geometry.SimplicialComplex.exists_extension_of_intrinsicFrontier_subset_space`: a complex `L`
   extends over a family of compact convex cells attached to `L` along subcomplexes covering their
   intrinsic frontiers, by coning each cell to a prescribed point.
+* `Geometry.SimplicialComplex.isSubdivision_of_cells`: a complex whose faces lie in finitely many
+  convex cells covering `K`, each inside a simplex of `K`, is a finite subdivision of `K`.
 * `Geometry.SimplicialComplex.exists_subdivision_extending`: the relative subdivision of a family
   of compact convex cells, extending a prescribed triangulation `L`.
 * `Geometry.SimplicialComplex.exists_subdivision`: a locally finite simplicial subdivision of a
@@ -108,6 +110,35 @@ theorem IsSubdivision.trans (h' : K''.IsSubdivision K') (h : K'.IsSubdivision K)
   obtain ⟨t, ht, hst⟩ := h'.exists_convexHull_subset hs
   obtain ⟨u, hu, htu⟩ := h.exists_convexHull_subset ht
   exact ⟨u, hu, hst.trans htu⟩
+
+/-- **A complex whose faces lie in finitely many convex cells subdivides the covered complex.**
+Let finitely many convex cells `P p`, each inside a simplex `σ p` of `K`, cover `K`, and let a
+complex `M` with space the union of the cells have finitely many faces on each cell, each face
+inside a cell. Then `M` is a finite subdivision of `K`, and the convex hull of each face of `M`
+lies in a cell. -/
+theorem isSubdivision_of_cells {J : Type*} [Finite J] {P : J → Set E}
+    {σ : J → Finset E} {M : SimplicialComplex 𝕜 E} (hσ : ∀ p, σ p ∈ K.faces)
+    (hPσ : ∀ p, P p ⊆ convexHull 𝕜 (σ p : Set E)) (hPv : ∀ p, Convex 𝕜 (P p))
+    (hcov : ∀ x ∈ K.space, ∃ q, x ∈ P q) (hMs : M.space = ⋃ p, P p)
+    (hMP : ∀ p, (M.restrict (P p)).faces.Finite) (hMface : ∀ s ∈ M.faces, ∃ p, (s : Set E) ⊆ P p) :
+    M.IsSubdivision K ∧ M.faces.Finite ∧
+      ∀ s ∈ M.faces, ∃ p, convexHull 𝕜 (s : Set E) ⊆ P p := by
+  have hconv : ∀ s ∈ M.faces, ∃ p, convexHull 𝕜 (s : Set E) ⊆ P p := fun s hs => by
+    obtain ⟨p, hsp⟩ := hMface s hs
+    exact ⟨p, convexHull_min hsp (hPv p)⟩
+  refine ⟨⟨?_, fun s hs => ?_⟩, ?_, hconv⟩
+  · rw [hMs]
+    ext x
+    refine ⟨fun hx => ?_, fun hx => ?_⟩
+    · obtain ⟨p, hxp⟩ := mem_iUnion.1 hx
+      exact mem_space_iff.2 ⟨_, hσ p, hPσ p hxp⟩
+    · obtain ⟨q, hxq⟩ := hcov x hx
+      exact mem_iUnion.2 ⟨q, hxq⟩
+  · obtain ⟨p, hp⟩ := hconv s hs
+    exact ⟨_, hσ p, hp.trans (hPσ p)⟩
+  · refine (Set.finite_iUnion hMP).subset fun s hs => ?_
+    obtain ⟨p, hsp⟩ := hMface s hs
+    exact mem_iUnion.2 ⟨p, mem_restrict_faces.2 ⟨hs, hsp⟩⟩
 
 end IsSubdivision
 
