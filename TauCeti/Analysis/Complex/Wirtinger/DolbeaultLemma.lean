@@ -110,7 +110,7 @@ private theorem exists_differentiableOn_eqOn_add_tsum {h P : ℕ → ℂ → W} 
       .of_norm_bounded hsumm fun k ↦ he_le (Nat.le_add_left m k) hz
     have htel : ∑ k ∈ Finset.range m, e k z = h m z - h 0 z - ∑ k ∈ Finset.range m, P k z := by
       simp only [e, Pi.sub_apply, Finset.sum_sub_distrib, Finset.sum_range_sub fun k ↦ h k z]
-    change h 0 z + ∑' k, e k z = h m z + (∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z)
+    simp only [Pi.add_apply]
     rw [← hs.sum_add_tsum_nat_add m, htel]
     abel
 
