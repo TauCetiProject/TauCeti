@@ -344,7 +344,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_at_prim
     have hcls : NarrowClassGroup.mk0
         (⟨v.asIdeal, mem_nonZeroDivisors_iff_ne_zero.mpr v.ne_bot⟩ :
           (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰) = 1 :=
-      NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hane hpos hspan
+      NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hpos hspan
     rw [hσone, map_one, hcls, TauCeti.elementaryTwoQuotientMk_one, ofAdd_zero]
 
 /-! ### The Artin map on ideals -/

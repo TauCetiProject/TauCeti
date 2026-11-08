@@ -297,17 +297,21 @@ generator. -/
     rfl
 
 /-- **A principal ideal with a totally positive generator has trivial narrow class.** -/
-theorem mk0_eq_one_of_isTotallyPositive {a : 𝓞 K} (ha : a ≠ 0)
+theorem mk0_eq_one_of_isTotallyPositive {a : 𝓞 K}
     (hpos : IsTotallyPositive (a : K)) {I : (Ideal (𝓞 K))⁰}
     (hI : (I : Ideal (𝓞 K)) = Ideal.span {a}) : mk0 I = 1 := by
+  have ha : a ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp
+    (Ideal.span_singleton_nonZeroDivisors.mp (hI ▸ I.2))
   exact mk0_eq_one_iff.mpr ⟨a, ha, hpos, hI⟩
 
 /-- **The narrow class of a principal ideal is `2`-torsion**, since the square of any generator is
 totally positive. -/
-theorem mk0_sq_eq_one_of_eq_span_singleton {a : 𝓞 K} (ha : a ≠ 0) {I : (Ideal (𝓞 K))⁰}
+theorem mk0_sq_eq_one_of_eq_span_singleton {a : 𝓞 K} {I : (Ideal (𝓞 K))⁰}
     (hI : (I : Ideal (𝓞 K)) = Ideal.span {a}) : mk0 I ^ 2 = 1 := by
+  have ha : a ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp
+    (Ideal.span_singleton_nonZeroDivisors.mp (hI ▸ I.2))
   rw [← map_pow]
-  refine mk0_eq_one_of_isTotallyPositive (a := a ^ 2) (pow_ne_zero 2 ha) ?_ ?_
+  refine mk0_eq_one_of_isTotallyPositive (a := a ^ 2) ?_ ?_
   · push_cast
     exact isTotallyPositive_sq (RingOfIntegers.coe_ne_zero_iff.mpr ha)
   · rw [SubmonoidClass.coe_pow, hI, ← Ideal.span_singleton_pow]
@@ -349,7 +353,7 @@ theorem mk0_surjective : Function.Surjective (mk0 : (Ideal (𝓞 K))⁰ → Narr
     exact hab.symm
   have hb2 : (mk0 ⟨Ideal.span {b}, hspb⟩)⁻¹ = mk0 ⟨Ideal.span {b}, hspb⟩ := by
     rw [inv_eq_iff_mul_eq_one, ← sq]
-    exact mk0_sq_eq_one_of_eq_span_singleton hb rfl
+    exact mk0_sq_eq_one_of_eq_span_singleton rfl
   have hprin : mk0 ⟨Ideal.span {a}, hspa⟩ * mk0 ⟨Ideal.span {b}, hspb⟩ = mkPrincipal u := by
     rw [hsplit, map_mul, map_inv,
       mkPrincipal_coe_eq_mk0 (I := ⟨Ideal.span {a}, hspa⟩) ha rfl,
@@ -402,13 +406,13 @@ theorem mk0_eq_mk0_iff {I J : (Ideal (𝓞 K))⁰} :
     have hxy : mk0 ⟨Ideal.span {x}, hspx⟩ = mk0 ⟨Ideal.span {y}, hspy⟩ := by
       have hone : mk0 ⟨Ideal.span {x}, hspx⟩ * mk0 ⟨Ideal.span {y}, hspy⟩ = 1 := by
         rw [← map_mul]
-        refine mk0_eq_one_of_isTotallyPositive (a := x * y) (mul_ne_zero hx hy) ?_ ?_
+        refine mk0_eq_one_of_isTotallyPositive (a := x * y) ?_ ?_
         · push_cast
           exact hpos
         · rw [Submonoid.coe_mul, Ideal.span_singleton_mul_span_singleton]
       have hyinv : (mk0 ⟨Ideal.span {y}, hspy⟩)⁻¹ = mk0 ⟨Ideal.span {y}, hspy⟩ := by
         rw [inv_eq_iff_mul_eq_one, ← sq]
-        exact mk0_sq_eq_one_of_eq_span_singleton hy rfl
+        exact mk0_sq_eq_one_of_eq_span_singleton rfl
       rw [← hyinv, eq_inv_iff_mul_eq_one]
       exact hone
     have hprod := congrArg mk0 (Subtype.ext heq :

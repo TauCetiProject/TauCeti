@@ -144,7 +144,7 @@ theorem exists_mk0_eq_and_isCoprime (C : NarrowClassGroup K) (M : (Ideal (𝓞 K
   have hspan0 : Ideal.span {a} ∈ (Ideal (𝓞 K))⁰ :=
     Ideal.span_singleton_nonZeroDivisors.mpr (mem_nonZeroDivisors_iff_ne_zero.mpr ha0)
   have hone : mk0 ⟨Ideal.span {a}, hspan0⟩ = 1 :=
-    mk0_eq_one_of_isTotallyPositive ha0 hapos rfl
+    mk0_eq_one_of_isTotallyPositive hapos rfl
   have hmul := congrArg mk0
     (Subtype.ext haIJ : (⟨Ideal.span {a}, hspan0⟩ : (Ideal (𝓞 K))⁰) = I * J)
   rw [map_mul, hI, hone] at hmul

@@ -105,7 +105,7 @@ theorem mk0_map_ringOfIntegersQuadraticConj_eq_inv (hmin : minpoly ℤ θ = X ^ 
     intro h0
     refine mem_nonZeroDivisors_iff_ne_zero.mp (I * J).2 ?_
     rw [hspan, h0, Ideal.span_singleton_eq_bot.mpr rfl, Ideal.zero_eq_bot]
-  refine mk0_eq_one_of_isTotallyPositive hne ?_ hspan
+  refine mk0_eq_one_of_isTotallyPositive ?_ hspan
   have hpos : 0 < n := lt_of_le_of_ne (Int.natCast_nonneg _) fun h0 => hne (by rw [← h0]; simp)
   simpa using isTotallyPositive_intCast (K := K) hpos
 
@@ -185,8 +185,8 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one
         (Ideal (𝓞 K))⁰) = 1 := by
       rcases isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
         hmin hgen hposε with hcase | hcase
-      · exact mk0_eq_one_of_isTotallyPositive hε0 hcase rfl
-      · refine mk0_eq_one_of_isTotallyPositive (a := -ε) (neg_ne_zero.mpr hε0) ?_ ?_
+      · exact mk0_eq_one_of_isTotallyPositive hcase rfl
+      · refine mk0_eq_one_of_isTotallyPositive (a := -ε) ?_ ?_
         · push_cast
           exact hcase
         · rw [Ideal.span_singleton_neg]
@@ -310,7 +310,7 @@ theorem mk0_mem_closure_of_map_eq_self (hmin : minpoly ℤ θ = X ^ 2 - C d)
     refine Subtype.ext ?_
     rw [Submonoid.coe_mul, hA, Submonoid.coe_finsetProd]
     exact hIeq
-  have hAone : mk0 A = 1 := mk0_eq_one_of_isTotallyPositive hα0 hαpos rfl
+  have hAone : mk0 A = 1 := mk0_eq_one_of_isTotallyPositive hαpos rfl
   rw [hIfact, map_mul, map_prod, hAone, one_mul]
   exact Subgroup.prod_mem _ fun p hp ↦
     Subgroup.subset_closure ⟨p, hs (by exact_mod_cast hp), rfl⟩

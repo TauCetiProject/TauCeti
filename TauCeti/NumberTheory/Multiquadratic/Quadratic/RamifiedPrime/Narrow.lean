@@ -161,8 +161,8 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
     rw [← map_prod]
     rcases isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
       hmin hgen hposratio with h | h
-    · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hγ0 h hcoe
-    · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -γ) (neg_ne_zero.mpr hγ0)
+    · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive h hcoe
+    · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -γ)
         (by push_cast; exact h) ?_
       rw [Ideal.span_singleton_neg]
       exact hcoe
@@ -213,9 +213,9 @@ theorem exists_nonempty_prod_narrowMk0_eq_one (hmin : minpoly ℤ θ = X ^ 2 - C
     refine ⟨d.natAbs.primeFactors, Nat.nonempty_primeFactors.mpr hd, hsub, ?_⟩
     rw [← map_prod]
     rcases hu with h | h
-    · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hθu0 h hspan
+    · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive h hspan
     · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -(θ * (u : 𝓞 K)))
-        (neg_ne_zero.mpr hθu0) (by push_cast; exact h) ?_
+        (by push_cast; exact h) ?_
       rw [Ideal.span_singleton_neg]
       exact hspan
   · -- No such unit: `K` is real and every unit has norm one.
