@@ -156,6 +156,7 @@ theorem geodesicJacobiPropagator_zero (z : TangentBundle I M) (ξ : TangentSpace
 
 /-- The initial covariant derivative of Jacobi propagation agrees with the covariant velocity
 of any smooth curve representing its infinitesimal initial state. -/
+@[simp]
 theorem alongCurveWithin_geodesicJacobiPropagator_zero
     {σ : ℝ → TangentBundle I M} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 σ 0) :
     CovariantDerivative.alongCurveWithin (CovariantDerivative.leviCivitaConnection I M)
