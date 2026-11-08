@@ -178,7 +178,7 @@ private theorem infinite_linearFormApproximations_of_infinite {n : ℕ} {ξ w w'
     simpa using congrArg norm (aeval_algebraMap_apply ℂ ξ (primitiveMinpoly α))
   -- `F_α(ξ) ≠ 0`, since otherwise `α` would be a conjugate of `ξ`.
   have hne : aeval ξ (primitiveMinpoly α) ≠ 0 := fun h₀ ↦ hconj <| by
-    rw [← minpoly_eq_of_aeval_primitiveMinpoly_eq_zero halg h₀, mem_rootSet]
+    rw [← minpoly_eq_of_aeval_primitiveMinpoly_eq_zero h₀, mem_rootSet]
     exact ⟨minpoly.ne_zero halg.isIntegral, minpoly.aeval ℚ α⟩
   have hx₀ : x ≠ 0 := fun hx ↦ hne (by rw [← hL, hx]; simp)
   have hξα : ‖(ξ : ℂ) - α‖ ≤ 1 :=
