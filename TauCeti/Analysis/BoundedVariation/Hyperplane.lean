@@ -64,8 +64,8 @@ private lemma integral_setOf_inner_lt_divergenceCLM (hν : ‖ν‖ = 1) (c : �
   exact setIntegral_setOf_inner_lt_trace_fderiv hν c (φ.contDiff.of_le (by simp))
     φ.hasCompactSupport
 
-/-- The upper bound for the perimeter of a half-space: an admissible field has normal component at
-most one on `Ω` and vanishes off `Ω`. -/
+/-- The perimeter of the half-space `{x | ⟪x, ν⟫ < c}` in `Ω` is at most the normalized Hausdorff
+measure of the part `Ω ∩ {x | ⟪x, ν⟫ = c}` of the boundary hyperplane lying in `Ω`. -/
 private lemma perimeter_setOf_inner_lt_le (hν : ‖ν‖ = 1) (c : ℝ) (Ω : Opens F) :
     perimeter volume Ω {x | ⟪x, ν⟫ < c} ≤ μHE[finrank ℝ F - 1] (Ω ∩ {x | ⟪x, ν⟫ = c}) := by
   set S : Set F := {x | ⟪x, ν⟫ = c}
@@ -90,9 +90,8 @@ private lemma perimeter_setOf_inner_lt_le (hν : ‖ν‖ = 1) (c : ℝ) (Ω : O
           Ω.isOpen.measurableSet]
 
 
-/-- The lower bound for the perimeter of a half-space: test with `χ ν` for a cutoff `χ` equal to
-one on a compact subset of `Ω ∩ {x | ⟪x, ν⟫ = c}`, and use inner regularity of Lebesgue measure on
-the hyperplane. -/
+/-- The perimeter of the half-space `{x | ⟪x, ν⟫ < c}` in `Ω` is at least the normalized Hausdorff
+measure of the part `Ω ∩ {x | ⟪x, ν⟫ = c}` of the boundary hyperplane lying in `Ω`. -/
 private lemma le_perimeter_setOf_inner_lt (hν : ‖ν‖ = 1) (c : ℝ) (Ω : Opens F) :
     μHE[finrank ℝ F - 1] (Ω ∩ {x | ⟪x, ν⟫ = c}) ≤ perimeter volume Ω {x | ⟪x, ν⟫ < c} := by
   set S : Set F := {x | ⟪x, ν⟫ = c}
@@ -100,6 +99,8 @@ private lemma le_perimeter_setOf_inner_lt (hν : ‖ν‖ = 1) (c : ℝ) (Ω : O
   have hH : MeasurableSet {x : F | ⟪x, ν⟫ < c} := measurableSet_lt (by fun_prop) measurable_const
   have hdiv := integral_setOf_inner_lt_divergenceCLM hν c Ω
   rw [perimeter_eq_iSup hH.nullMeasurableSet]
+  -- Test with `χ ν` for a cutoff `χ` equal to one on a compact subset of the hyperplane part in
+  -- `Ω`, and use inner regularity of Lebesgue measure on the hyperplane.
   -- Approximate the open part `ι ⁻¹' Ω` of the parametrizing space by compact sets.
   set ι : (ℝ ∙ ν)ᗮ → F := fun y => c • ν + (y : F)
   have hι : Continuous ι := by fun_prop
