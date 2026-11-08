@@ -130,10 +130,11 @@ theorem mem_riemannRochSpace_iff_neg_le_ord {D : Divisor k F} {f : F} (hf : f �
   rw [P.valuation_eq_exp_neg_ord hf, WithZero.exp_le_exp]
   omega
 
-/-- **Roots of functions in a Riemann–Roch space.** If `f ^ n ∈ L(D)` for some `n ≥ 1` and
-`D < n (E + 1)` at every place, then `f ∈ L(E)`: the pole orders of `f` are those of `f ^ n`
-divided by `n`. For instance `E = ⌊D / n⌋`. -/
-theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} (hn : 0 < n) {D E : Divisor k F}
+/-- **Roots of functions in a Riemann–Roch space.** If `f ^ n ∈ L(D)` and `D < n (E + 1)` at
+every place, then `f ∈ L(E)`: the pole orders of `f` are those of `f ^ n` divided by `n`. For
+instance `E = ⌊D / n⌋`. For `n = 0` the hypotheses are contradictory as soon as there is a place,
+and otherwise `L(E)` is all of `F`. -/
+theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} {D E : Divisor k F}
     (hDE : ∀ P : Place k F, D.coeff P < n * (E.coeff P + 1)) {f : F}
     (hf : f ^ n ∈ riemannRochSpace D) : f ∈ riemannRochSpace E := by
   rcases eq_or_ne f 0 with rfl | h0
@@ -144,6 +145,9 @@ theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} (hn : 0 < n) {D E : Divisor k 
   have hord := (mem_riemannRochSpace_iff_neg_le_ord (pow_ne_zero n h0)).mp hf P
   rw [P.ord_pow] at hord
   have := hDE P
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp at hord this
+    omega
   have hn' : (0 : ℤ) < n := by exact_mod_cast hn
   nlinarith
 
