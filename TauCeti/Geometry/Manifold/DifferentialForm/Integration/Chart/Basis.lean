@@ -49,6 +49,7 @@ private theorem signedChartExpression_apply (φ : RoughForm I M ℝ k) (α : M)
   split_ifs <;> simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
+omit [FiniteDimensional ℝ E] in
 /-- The actual signed chart integral does not depend on the chosen basis, even if neither
 basis is positively oriented for the model orientation. -/
 theorem integral_signedInChartAt_basis_eq (φ : RoughForm I M ℝ k)
@@ -59,6 +60,7 @@ theorem integral_signedInChartAt_basis_eq (φ : RoughForm I M ℝ k)
   simpa only [signedChartExpression_apply] using
     b.integral_signed_apply_eq o b' (signedChartExpression φ α σ)
 
+omit [FiniteDimensional ℝ E] in
 /-- Genuine signed coefficient integrability is independent of the model basis and its
 normalized Haar measure, without a regularity assumption on the form or chart sign. -/
 theorem integrable_signedInChartAt_basis_iff (φ : RoughForm I M ℝ k)
