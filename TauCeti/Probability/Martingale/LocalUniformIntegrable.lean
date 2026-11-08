@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Uniformly integrable localizations of martingales
@@ -37,22 +37,48 @@ value at infinite time.
 
 public section
 
-open Filter ProbabilityTheory Set
+open Filter MeasureTheory ProbabilityTheory Set
 open scoped ENNReal Topology
-
-namespace MeasureTheory.StronglyAdapted
 
 variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   [TopologicalSpace ι] [OrderTopology ι]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
+  {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {τ : ℕ → Ω → WithTop ι} {p : ℝ≥0∞}
 
+namespace ProbabilityTheory.IsPreLocalizingSequence
+
+/-- The native stopped stages of a pre-localizing sequence converge almost surely at each
+fixed time. Eventually both the stopping and the positive-stopping-time indicator disappear. -/
+theorem ae_tendsto_stoppedProcess [Zero E] [TopologicalSpace E]
+    (hτ : IsPreLocalizingSequence ℱ τ P) (X : ι → Ω → E) (t : ι) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ MeasureTheory.stoppedProcess
+      (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t ω) atTop (𝓝 (X t ω)) := by
+  filter_upwards [hτ.tendsto_top] with ω hω
+  have ht := hω.eventually (Ioi_mem_nhds (WithTop.coe_lt_top t))
+  refine tendsto_const_nhds.congr' (ht.mono fun n hn ↦ ?_)
+  have hpos : ω ∈ {ω | ⊥ < τ n ω} := lt_of_le_of_lt bot_le hn
+  simp only [stoppedProcess_eq_of_le hn.le, indicator_of_mem hpos]
+
+/-- Uniform `Lᵖ` integrability of native stopped stages at a fixed time gives an `Lᵖ` value
+of the original process. No adaptation, martingale, or exponent restriction is required. -/
+theorem memLp_of_uniformIntegrable_stoppedProcess [NormedAddCommGroup E]
+    (hτ : IsPreLocalizingSequence ℱ τ P) {t : ι}
+    (hUI : UniformIntegrable (fun n ↦ MeasureTheory.stoppedProcess
+      (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t) p P) :
+    MemLp (X t) p P :=
+  hUI.memLp_of_ae_tendsto (hτ.ae_tendsto_stoppedProcess X t)
+
+end ProbabilityTheory.IsPreLocalizingSequence
+
+namespace MeasureTheory.StronglyAdapted
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] [IsFiniteMeasure P]
+
 /-- Uniform `Lᵖ` integrability of the native stopped martingale stages at every fixed
- time upgrades a strongly adapted local process to a martingale with `Lᵖ` values.
+ time upgrades a strongly adapted local process to a martingale.
  The stages include the positive-stopping-time indicator, so no initial-value
  integrability assumption is hidden in the localization convention. -/
-theorem martingale_and_memLp_of_uniformIntegrable_stoppedProcess
+theorem martingale_of_uniformIntegrable_stoppedProcess
     (hX : StronglyAdapted ℱ X) (hτ : IsPreLocalizingSequence ℱ τ P)
     (hM : ∀ n, Martingale
       (MeasureTheory.stoppedProcess (fun t ↦ {ω | ⊥ < τ n ω}.indicator (X t)) (τ n)) ℱ P)
@@ -60,39 +86,20 @@ theorem martingale_and_memLp_of_uniformIntegrable_stoppedProcess
     (hUI : ∀ t, UniformIntegrable
       (fun n ↦ MeasureTheory.stoppedProcess
         (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t) p P) :
-    Martingale X ℱ P ∧ ∀ t, MemLp (X t) p P := by
+    Martingale X ℱ P := by
   let Y := fun n ↦ MeasureTheory.stoppedProcess
     (fun t ↦ {ω | ⊥ < τ n ω}.indicator (X t)) (τ n)
-  -- Beyond a fixed time, the stopping and the initial-time indicator both disappear.
-  have hlim (t : ι) : ∀ᵐ ω ∂P, Tendsto (fun n ↦ Y n t ω) atTop (𝓝 (X t ω)) := by
-    filter_upwards [hτ.tendsto_top] with ω hω
-    have ht := hω.eventually (Ioi_mem_nhds (WithTop.coe_lt_top t))
-    refine tendsto_const_nhds.congr' (ht.mono fun n hn ↦ ?_)
-    have hpos : ω ∈ {ω | ⊥ < τ n ω} := lt_of_le_of_lt bot_le hn
-    simp only [Y, stoppedProcess_eq_of_le hn.le, indicator_of_mem hpos]
-  have hLp (t : ι) : MemLp (X t) p P := (hUI t).memLp_of_ae_tendsto (hlim t)
+  have hLp (t : ι) : MemLp (X t) p P :=
+    hτ.memLp_of_uniformIntegrable_stoppedProcess (hUI t)
   have hconv (t : ι) :
       Tendsto (fun n ↦ eLpNorm (Y n t - X t) p P) atTop (𝓝 0) :=
     tendsto_Lp_finite_of_tendsto_ae hp hp_top (fun n ↦ (hUI t).aestronglyMeasurable n)
-      (hLp t) (hUI t).unifIntegrable (hlim t)
+      (hLp t) (hUI t).unifIntegrable (hτ.ae_tendsto_stoppedProcess X t)
   -- On a finite measure space, Lᵖ convergence with p ≥ 1 implies L¹ convergence.
   have hconv₁ (t : ι) :
-      Tendsto (fun n ↦ eLpNorm (Y n t - X t) 1 P) atTop (𝓝 0) := by
-    have hC : P univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal) ≠ ∞ := by
-      apply ENNReal.rpow_ne_top_of_nonneg
-      · simp only [ENNReal.toReal_one, div_one]
-        have hp_real : (1 : ℝ) ≤ p.toReal := by
-          simpa using ENNReal.toReal_mono hp_top hp
-        exact sub_nonneg.mpr (by simpa using
-          one_div_le_one_div_of_le (by norm_num : (0 : ℝ) < 1) hp_real)
-      · exact measure_ne_top P univ
-    have hbound := ENNReal.Tendsto.mul_const (hconv t) (Or.inr hC)
-    rw [zero_mul] at hbound
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
-      (Eventually.of_forall fun _ ↦ bot_le) (Eventually.of_forall fun n ↦
-        eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp
-          (((hM n).integrable t).aestronglyMeasurable.sub (hLp t).aestronglyMeasurable))
-  refine ⟨⟨hX, fun s t hst ↦ ?_⟩, hLp⟩
+      Tendsto (fun n ↦ eLpNorm (Y n t - X t) 1 P) atTop (𝓝 0) :=
+    TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp (hconv t)
+  refine ⟨hX, fun s t hst ↦ ?_⟩
   -- Test the conditional identity on each measurable event, then pass to L¹ limits.
   refine (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s)
     ((hLp t).integrable hp) (fun _ _ _ ↦ ((hLp s).integrable hp).integrableOn)
