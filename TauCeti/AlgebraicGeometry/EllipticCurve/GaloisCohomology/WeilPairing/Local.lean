@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cohomology
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
@@ -66,6 +66,15 @@ theorem localTateWeilPairing_apply (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionC
     W.localTateWeilPairing m hm a b =
       h2MuEquivZMod K hm (muNRepH2Equiv m K (W.torsionH1WeilPairing m hm a b)) :=
   (rfl)
+
+/-- The local Tate pairing, embedded in `ℚ/ℤ` by `k ↦ k/m`, is the Brauer invariant of the
+Weil cup product. The exponent need only be invertible in the field, not in its residue field. -/
+theorem toRatAddCircle_localTateWeilPairing
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    ZMod.toRatAddCircle m (W.localTateWeilPairing m hm a b) =
+      invMap K (W.torsionWeilBrauerPairing m hm a b) := by
+  rw [W.localTateWeilPairing_apply m hm, W.torsionWeilBrauerPairing_apply m hm]
+  exact toRatAddCircle_h2MuEquivZMod K hm _
 
 /-- **Perfect local Tate duality for `E[m]`.** Pairing with a class gives a bijection from
 `H¹(K, E[m])` to its additive characters with values in `ℤ/m`. -/
