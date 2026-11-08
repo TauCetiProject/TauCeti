@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Dominated convergence away from one point
@@ -19,7 +20,7 @@ which equal one on a closed ball and are supported in shrinking larger balls, an
 which equal one on balls exhausting a normed space, as well as convergence after removing a
 shrinking neighbourhood of zero from an integrable function vanishing at zero, and the convergence
 of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` with values in
-a compact set which converge pointwise.
+a compact set which converge pointwise, or along continuous paths which converge uniformly.
 
 ## Main declarations
 
@@ -37,6 +38,8 @@ a compact set which converge pointwise.
   pointwise.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
+* `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
+  `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
 -/
 
 public section
@@ -195,3 +198,22 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
 
 end TauCeti
+
+open Filter MeasureTheory Topology Set Function Interval in
+/-- **Integrals along uniformly convergent paths.** If continuous paths `F i` converge uniformly on
+`[[a, b]]` to `f`, then for every jointly continuous integrand `g`, the integrals of
+`t ↦ g t (F i t)` over `a..b` converge to the integral of `t ↦ g t (f t)`. -/
+theorem TendstoUniformlyOn.tendsto_intervalIntegral_comp {ι β E : Type*} [UniformSpace β]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ]
+    {l : Filter ι} [l.IsCountablyGenerated] {F : ι → ℝ → β} {f : ℝ → β} {g : ℝ → β → E}
+    {a b : ℝ} (hg : Continuous (uncurry g)) (hF : ∀ᶠ i in l, ContinuousOn (F i) [[a, b]])
+    (h : TendstoUniformlyOn F f l [[a, b]]) :
+    Tendsto (fun i ↦ ∫ t in a..b, g t (F i t) ∂μ) l (𝓝 (∫ t in a..b, g t (f t) ∂μ)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
+  refine tendsto_intervalIntegral_of_continuousOn
+    (hF.mono fun _ hi ↦ hg.comp_continuousOn (continuousOn_id.prodMk hi)) ?_
+  exact (isCompact_uIcc.image_of_continuousOn
+    (continuousOn_id.prodMk (h.continuousOn hF.frequently)))
+    |>.comp_tendstoUniformlyOn (g := uncurry g) (fun _ _ ↦ hg.continuousAt)
+      ((TauCeti.tendstoUniformlyOn_const id l _).prodMk_same h)
