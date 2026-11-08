@@ -27,9 +27,7 @@ open DirectSum
 
 namespace DirectSum
 
-section Injective
-
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {Q : ℕ → Type*}
+variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] {Q : ℕ → Type*}
   [∀ j, AddCommGroup (Q j)] [∀ j, Module R (Q j)]
 
 /-- The sum of maps `f j : Q j → M` out of the pieces of a direct sum is injective when `f j`
@@ -67,20 +65,17 @@ theorem toModule_injective_of_filtration (N : ℕ → Submodule R M) (hN : Monot
         refine hzero J (d J) ?_
         have : f J (d J) = -DirectSum.toModule R ℕ M f (d.erase J) :=
           eq_neg_of_add_eq_zero_right (hψd.symm.trans h)
-        exact this ▸ neg_mem hmemJ
+        -- Negate in the additive group `⨁ j, Q j`, since `N J` need not be closed under negation
+        -- when `R` is only a semiring.
+        have hneg := (ih (-(d.erase J)) (by simpa only [DFinsupp.support_neg] using hd')).1
+        rw [map_neg] at hneg
+        exact this ▸ hneg
       have herase : d.erase J = 0 := hzeroJ (by simpa [hJ] using hψd.symm.trans h)
       rw [hd_eq, herase, hJ, zero_add, DFinsupp.single_zero]
   rw [injective_iff_map_eq_zero]
   intro d hd
   refine (key (d.support.sup id + 1) d fun j hj ↦ ?_).2 hd
   exact Nat.lt_succ_of_le (Finset.le_sup (f := id) hj)
-
-end Injective
-
-section Surjective
-
-variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] {Q : ℕ → Type*}
-  [∀ j, AddCommGroup (Q j)] [∀ j, Module R (Q j)]
 
 /-- The sum of maps `f j : Q j → M` out of the pieces of a direct sum is surjective when the
 filtration `N` of `M` starts at `⊥`, is exhaustive, and every element of `N (J + 1)` is congruent
@@ -102,7 +97,5 @@ theorem toModule_surjective_of_filtration (N : ℕ → Submodule R M) (h0 : N 0 
     have hof : DirectSum.toModule R ℕ M f (DirectSum.of Q J q) = f J q :=
       DirectSum.toModule_lof R J q
     rw [map_add, hd, hof, sub_add_cancel]
-
-end Surjective
 
 end DirectSum
