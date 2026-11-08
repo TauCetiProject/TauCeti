@@ -67,6 +67,25 @@ private lemma convex_setOf_im_mul_sub_nonneg (u w : ℂ) :
     sub_im, sub_nonneg] using
     convex_halfSpace_ge (Complex.imLm.comp (LinearMap.mulLeft ℝ u)).isLinear (u * w).im
 
+/-- **The edge angles, indexed by naturals, turn monotonically from above `-2π` up to `0`.**
+For any `φ : ℕ → ℝ` agreeing with `k ↦ schwarzChristoffelEdgeAngle a e (a k)` on `Fin (n + 1)`,
+the sequence is monotone on `0 ≤ l ≤ m ≤ n`, bounded below by `-2π`, and vanishes at `n`. -/
+private theorem schwarzChristoffelEdgeAngle_natIndexed_turning (a e : Fin (n + 1) → ℝ)
+    (ha : StrictMono a) (he : ∀ k, e k < 0) (hsum : ∑ k, e k = -2)
+    (φ : ℕ → ℝ) (hφ : ∀ k : Fin (n + 1), φ k = schwarzChristoffelEdgeAngle a e (a k)) :
+    (∀ l m : ℕ, l ≤ m → m ≤ n → φ l ≤ φ m) ∧ (∀ l : ℕ, l ≤ n → -2 * Real.pi < φ l) ∧
+      φ n = 0 := by
+  have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha he
+  refine ⟨fun l m hlm hm ↦ ?_, fun l hl ↦ ?_, ?_⟩
+  · have := hangle.monotone
+      (Fin.mk_le_mk.mpr hlm : (⟨l, by omega⟩ : Fin (n + 1)) ≤ ⟨m, by omega⟩)
+    simpa only [← hφ] using this
+  · have := (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum ⟨l, by omega⟩).1
+    simpa only [← hφ] using this
+  · have :=
+      schwarzChristoffelEdgeAngle_eq_zero_of_last_le a e ha.monotone (le_refl (a (Fin.last n)))
+    simpa only [← hφ, Fin.val_last] using this
+
 /-- **The finite vertices and the vertex at infinity lie on the interior side of each bounded
 side.**  Under the classical convex-polygon hypotheses, rotate the direction of the bounded side
 from vertex `i` to vertex `i + 1` to the positive real axis; then no vertex lies below the

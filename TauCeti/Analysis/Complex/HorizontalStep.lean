@@ -35,7 +35,9 @@ lemma im_exp_neg_mul_sub_sub_eq_of_le (θ : ℝ) (w : ℂ) {x y : ℂ} (hxy : x 
     have h := Complex.exp_ofReal_mul_I_im (-θ)
     push_cast at h
     exact h
-  rw [← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right, Complex.mul_im, Complex.sub_im,
-    (Complex.le_def.mp hxy).2, sub_self, mul_zero, zero_add, hu, mul_comm]
+  rw [← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right]
+  simp only [Complex.mul_im, Complex.sub_im, (Complex.le_def.mp hxy).2, hu, sub_self, mul_zero,
+    zero_add]
+  ring
 
 end Complex
