@@ -27,9 +27,10 @@ When `R` is not a field, every maximal ideal of `R` is a height-one prime. Since
 all maximal ideals detect exactness, so do the completions `R → 𝒪_v`: for arbitrary `R`-modules
 (not necessarily finitely generated), a sequence `M → N → P` is exact if and only if
 `𝒪_v ⊗[R] M → 𝒪_v ⊗[R] N → 𝒪_v ⊗[R] P` is exact for every `v`; likewise for injectivity,
-surjectivity and the vanishing of a module. This is how lattices over orders are compared with
-their completions. As an application, projectivity of a finitely presented module over an
-`R`-algebra can be checked after every completion.
+surjectivity, the vanishing of a map and the vanishing of a module. This is how lattices over
+orders are compared with their completions. As applications, a submodule `p` of an `R`-module `M`
+is determined by its completions `p.baseChange 𝒪_v ⊆ 𝒪_v ⊗[R] M`, and projectivity of a finitely
+presented module over an `R`-algebra can be checked after every completion.
 
 If `R` is a field there are no height-one primes, so the family detects nothing; this is why the
 hypothesis `¬ IsField R` appears.
@@ -49,13 +50,20 @@ The algebra structure and its instances are in the namespace
   and surjectivity.
 * `subsingleton_iff_forall_subsingleton_adicCompletionIntegers_tensor`: a module vanishes if and
   only if all its completions vanish.
+* `eq_zero_iff_forall_lTensor_adicCompletionIntegers_eq_zero`: a map vanishes if and only if all
+  its completions vanish.
+* `le_iff_forall_baseChange_adicCompletionIntegers_le` and
+  `eq_iff_forall_baseChange_adicCompletionIntegers_eq`: containment and equality of submodules
+  are detected by their completions.
+* `eq_iff_forall_surjective_lTensor_inclusion_adicCompletionIntegers`: submodules `p ≤ q` are
+  equal if and only if `𝒪_v ⊗[R] p → 𝒪_v ⊗[R] q` is surjective for every `v`.
 * `projective_of_forall_projective_adicCompletionIntegers`:
   projectivity descends from the completions.
 
 ## References
 
 * J. Voight, *Quaternion Algebras*, Graduate Texts in Mathematics 288, Springer, 2021,
-  Lemma 9.4.6 and Lemma 10.2.10.
+  Lemma 9.4.6, Corollary 9.4.7 and Lemma 10.2.10.
 -/
 
 public section
@@ -184,6 +192,64 @@ theorem subsingleton_iff_forall_subsingleton_adicCompletionIntegers_tensor (hR :
     (v.adicCompletionIntegers K) (v.adicCompletionIntegers K) M).toEquiv.subsingleton
   exact (Module.FaithfullyFlat.subsingleton_tensorProduct_iff_right _
     (v.adicCompletionIntegers K)).mp this
+
+variable (K) in
+/-- If `R` is not a field, a map of `R`-modules vanishes if and only if it vanishes after
+tensoring with the ring of integers `𝒪_v` of every completion. -/
+theorem eq_zero_iff_forall_lTensor_adicCompletionIntegers_eq_zero (hR : ¬IsField R)
+    {F : M →ₗ[R] N} :
+    F = 0 ↔ ∀ v : HeightOneSpectrum R, F.lTensor (v.adicCompletionIntegers K) = 0 := by
+  have h := exact_iff_forall_exact_lTensor_adicCompletionIntegers K hR (F := F) (G := .id)
+  simpa only [LinearMap.exact_iff, LinearMap.lTensor_id, LinearMap.ker_id, eq_comm (a := ⊥),
+    LinearMap.range_eq_bot] using h
+
+variable (K) in
+/-- **Containment of lattices is detected by completions.** If `R` is not a field, a submodule
+`p` of an `R`-module `M` is contained in a submodule `q` if and only if
+`𝒪_v ⊗[R] p ⊆ 𝒪_v ⊗[R] q` inside `𝒪_v ⊗[R] M` for the ring of integers `𝒪_v` of every completion.
+No finiteness is needed. This is the analogue, for the family of completions, of Mathlib's
+`Submodule.baseChange_le_iff` for a single faithfully flat algebra. -/
+theorem le_iff_forall_baseChange_adicCompletionIntegers_le (hR : ¬IsField R)
+    {p q : Submodule R M} :
+    p ≤ q ↔ ∀ v : HeightOneSpectrum R,
+      p.baseChange (v.adicCompletionIntegers K) ≤ q.baseChange (v.adicCompletionIntegers K) := by
+  refine ⟨fun h v ↦ Submodule.baseChange_mono _ h, fun h ↦ ?_⟩
+  -- `p ≤ q` says that `p → M → M ⧸ q` vanishes, and right exactness of `𝒪_v ⊗[R] -` identifies
+  -- the kernel of `𝒪_v ⊗[R] M → 𝒪_v ⊗[R] (M ⧸ q)` with `q.baseChange 𝒪_v`. This follows the proof
+  -- of Mathlib's `Submodule.baseChange_le_iff`.
+  rw [← q.ker_mkQ, LinearMap.le_ker_iff_comp_subtype_eq_zero,
+    eq_zero_iff_forall_lTensor_adicCompletionIntegers_eq_zero K hR]
+  intro v
+  rw [LinearMap.lTensor_comp, ← LinearMap.range_le_ker_iff, lTensor_mkQ,
+    ← Submodule.restrictScalars_le R]
+  exact h v
+
+variable (K) in
+/-- **Lattices are determined by their completions.** If `R` is not a field, two submodules `p`
+and `q` of an `R`-module `M` are equal if and only if `𝒪_v ⊗[R] p = 𝒪_v ⊗[R] q` inside
+`𝒪_v ⊗[R] M` for the ring of integers `𝒪_v` of every completion. No finiteness is needed. This is
+the analogue, for the family of completions, of Mathlib's `Submodule.baseChange_inj`. -/
+theorem eq_iff_forall_baseChange_adicCompletionIntegers_eq (hR : ¬IsField R)
+    {p q : Submodule R M} :
+    p = q ↔ ∀ v : HeightOneSpectrum R,
+      p.baseChange (v.adicCompletionIntegers K) = q.baseChange (v.adicCompletionIntegers K) := by
+  simp only [le_antisymm_iff, le_iff_forall_baseChange_adicCompletionIntegers_le K hR,
+    forall_and]
+
+variable (K) in
+/-- **Equality of nested lattices is detected by completions.** If `R` is not a field and `p ≤ q`
+are submodules of an `R`-module, then `p = q` if and only if the map
+`𝒪_v ⊗[R] p → 𝒪_v ⊗[R] q` is surjective for the ring of integers `𝒪_v` of every completion.
+No finiteness is needed. -/
+theorem eq_iff_forall_surjective_lTensor_inclusion_adicCompletionIntegers (hR : ¬IsField R)
+    {p q : Submodule R M} (h : p ≤ q) :
+    p = q ↔ ∀ v : HeightOneSpectrum R,
+      Function.Surjective ((Submodule.inclusion h).lTensor (v.adicCompletionIntegers K)) := by
+  rw [← surjective_iff_forall_surjective_lTensor_adicCompletionIntegers K hR]
+  refine ⟨fun hpq x ↦ ⟨⟨x, hpq ▸ x.2⟩, rfl⟩, fun hs ↦ le_antisymm h fun x hx ↦ ?_⟩
+  obtain ⟨⟨y, hy⟩, hyx⟩ := hs ⟨x, hx⟩
+  simp only [Subtype.ext_iff, Submodule.coe_inclusion] at hyx
+  exact hyx ▸ hy
 
 attribute [local instance low] TauCeti.CentralBaseChange.module in
 variable (K) in
