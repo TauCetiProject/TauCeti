@@ -17,6 +17,9 @@ two lifts is a lift of the sum, and lifts of the same morphism are homotopic. Th
 derived functors of additive functors are additive. If the functor is exact, its
 positive right derived functors vanish.
 
+`CategoryTheory.NatIso.rightDerived` transports a natural isomorphism to right derived
+functors, with the induced transformations as its hom and inverse.
+
 Right derived functors also commute with exact functors which preserve injective objects
 (`CategoryTheory.Functor.rightDerivedCompIso`): if `F ⋙ G ≅ H ⋙ F'` where `G` preserves
 homology and `H` preserves homology and injective objects, then `RⁿF ⋙ G ≅ H ⋙ RⁿF'`.
@@ -69,6 +72,27 @@ instance Functor.additive_rightDerived (F : C ⥤ D) [F.Additive] (q : ℕ) :
     (F.rightDerived q).Additive :=
   inferInstanceAs ((injectiveResolutions C ⋙ F.mapHomotopyCategory _ ⋙
     HomotopyCategory.homologyFunctor D _ q).Additive)
+
+/-- A natural isomorphism between additive functors induces an isomorphism between their
+right derived functors in each degree. -/
+noncomputable def NatIso.rightDerived {F G : C ⥤ D} [F.Additive] [G.Additive]
+    (e : F ≅ G) (n : ℕ) : F.rightDerived n ≅ G.rightDerived n where
+  hom := e.hom.rightDerived n
+  inv := e.inv.rightDerived n
+  hom_inv_id := by rw [← NatTrans.rightDerived_comp, e.hom_inv_id, NatTrans.rightDerived_id]
+  inv_hom_id := by rw [← NatTrans.rightDerived_comp, e.inv_hom_id, NatTrans.rightDerived_id]
+
+/-- The forward map of the derived isomorphism is the derived forward transformation. -/
+@[simp]
+lemma NatIso.rightDerived_hom {F G : C ⥤ D} [F.Additive] [G.Additive]
+    (e : F ≅ G) (n : ℕ) : (NatIso.rightDerived e n).hom = e.hom.rightDerived n :=
+  (rfl)
+
+/-- The inverse map of the derived isomorphism is the derived inverse transformation. -/
+@[simp]
+lemma NatIso.rightDerived_inv {F G : C ⥤ D} [F.Additive] [G.Additive]
+    (e : F ≅ G) (n : ℕ) : (NatIso.rightDerived e n).inv = e.inv.rightDerived n :=
+  (rfl)
 
 /-- An exact additive functor has no positive right derived functors. -/
 theorem Functor.isZero_rightDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesHomology]
