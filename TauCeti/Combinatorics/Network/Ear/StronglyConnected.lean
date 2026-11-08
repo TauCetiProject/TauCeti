@@ -172,8 +172,9 @@ theorem exists_earDecomposition_top_extend [Finite V] [∀ v w, Finite (N.Hom v 
     exact ⟨D, le_rfl, rfl, fun i ↦ rfl⟩
   obtain ⟨P⟩ := Ear.nonempty_of_ne_top hN ⟨_, D.initialVertex_mem⟩ hT
   obtain ⟨D', h, hinit, hstage⟩ := ih P.adjoin P.lt_adjoin (D.snoc P)
-  refine ⟨D', (Nat.le_succ _).trans h, hinit, fun i ↦ ?_⟩
-  rw [← D.snoc_stage_castSucc P i, ← hstage i.castSucc]
+  refine ⟨D', (Nat.le_succ _).trans ((D.snoc_length P).symm.trans_le h),
+    hinit.trans (D.snoc_initialVertex P), fun i ↦ ?_⟩
+  rw [← D.snoc_stage_castSucc P i, ← hstage _]
   -- Both indices have value `i`; `simp` cannot see this through the length of `D.snoc P`.
   exact congrArg D'.stage (Fin.ext rfl)
 

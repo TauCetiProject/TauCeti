@@ -349,7 +349,6 @@ theorem prefixDecomposition_ear (D : EarDecomposition T) (k : Fin (D.length + 1)
   rfl
 
 /-- Adjoin one ear at the end of a directed ear decomposition. -/
-@[expose]
 def snoc (D : EarDecomposition T) (P : Ear T) : EarDecomposition P.adjoin where
   length := D.length + 1
   initialVertex := D.initialVertex
@@ -378,19 +377,19 @@ theorem snoc_initialVertex (D : EarDecomposition T) (P : Ear T) :
 /-- Appending an ear leaves the earlier stages unchanged. -/
 @[simp]
 theorem snoc_stage_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin (D.length + 1)) :
-    (D.snoc P).stage i.castSucc = D.stage i := by
+    (D.snoc P).stage (Fin.cast (D.snoc_length P).symm i).castSucc = D.stage i := by
   simp [snoc]
 
 /-- Appending an ear leaves the earlier ears unchanged. -/
 theorem snoc_ear_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
-    HEq ((D.snoc P).ear i.castSucc) (D.ear i) := by
-  simp only [snoc, Fin.lastCases_castSucc]
+    HEq ((D.snoc P).ear (Fin.cast (D.snoc_length P).symm i.castSucc)) (D.ear i) := by
+  simp only [snoc, Fin.cast_eq_self, Fin.lastCases_castSucc]
   exact eqRec_heq _ _
 
 /-- The last ear of `D.snoc P` is `P`. -/
 theorem snoc_ear_last (D : EarDecomposition T) (P : Ear T) :
-    HEq ((D.snoc P).ear (Fin.last D.length)) P := by
-  simp only [snoc, Fin.lastCases_last]
+    HEq ((D.snoc P).ear (Fin.cast (D.snoc_length P).symm (Fin.last D.length))) P := by
+  simp only [snoc, Fin.cast_eq_self, Fin.lastCases_last]
   exact (eqRec_heq _ _).trans (eqRec_heq _ _)
 
 end EarDecomposition
