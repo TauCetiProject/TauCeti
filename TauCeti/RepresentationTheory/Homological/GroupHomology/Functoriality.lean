@@ -30,6 +30,10 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
 * `Rep.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
   chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
 * `Rep.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
+* `TauCeti.groupHomology.subsingleton_trivial_of_mulEquiv`,
+  `TauCeti.groupHomology.isZero_res_subtype_trivial_of_mulEquiv`: vanishing of group homology with
+  trivial coefficients is invariant under isomorphism of groups, including an isomorphism onto a
+  subgroup, with the restricted coefficients.
 -/
 
 public noncomputable section
@@ -104,6 +108,31 @@ theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.I
   | add t t' ht ht' => rw [map_add, map_add, map_add, ht, ht', map_add]
 
 end IsTrivial
+
+section MulEquiv
+
+open _root_.groupHomology Limits
+
+variable (R) {H : Type u} [Group H]
+
+/-- **Vanishing of group homology with trivial coefficients is invariant under isomorphism of
+groups**: if `Hₙ(G, R) = 0` and `G ≃* H`, then `Hₙ(H, R) = 0`. -/
+theorem subsingleton_trivial_of_mulEquiv (e : G ≃* H) {n : ℕ}
+    (h : Subsingleton (groupHomology (Rep.trivial R G R) n)) :
+    Subsingleton (groupHomology (Rep.trivial R H R) n) :=
+  (mapIso (A := Rep.trivial R G R) (B := Rep.trivial R H R) e (LinearEquiv.refl R R)
+    (fun _ ↦ by ext; simp) n).toLinearEquiv.symm.toEquiv.subsingleton
+
+/-- If `G` is isomorphic to a subgroup `S` of `H` and `Hₙ(G, R) = 0`, then the homology of `S` with
+coefficients in the restriction of the trivial `H`-representation `R` vanishes in degree `n`. -/
+theorem isZero_res_subtype_trivial_of_mulEquiv {S : Subgroup H} (e : G ≃* S) {n : ℕ}
+    (h : Subsingleton (groupHomology (Rep.trivial R G R) n)) :
+    IsZero (groupHomology (Rep.res S.subtype (Rep.trivial R H R)) n) :=
+  ModuleCat.isZero_of_subsingleton _ |>.of_iso (mapIso (A := Rep.trivial R G R)
+    (B := Rep.res S.subtype (Rep.trivial R H R)) e (LinearEquiv.refl R R)
+    (fun _ ↦ by ext; simp) n).symm
+
+end MulEquiv
 
 end TauCeti.groupHomology
 
