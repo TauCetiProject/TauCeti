@@ -25,6 +25,8 @@ This file collects general facts about paths and cycles in a simple graph, compl
   walk outside the interior of such an arc lie on the remaining path.
 * `SimpleGraph.Walk.IsPath.isCycle_append_append_reverse`: two paths from a common vertex close
   up with a third path into a cycle.
+* `SimpleGraph.Walk.IsPath.isCycle_cons_append_cons_reverse`: two vertex-disjoint paths joined at
+  both ends by distinct edges form a cycle.
 * `SimpleGraph.Walk.exists_eq_append_of_exists_mem_support`: a walk meeting a finset splits at
   its first vertex in it.
 * `SimpleGraph.Walk.exists_eq_append_append_of_countP_lt`: a walk starting in `F` with fewer
@@ -141,6 +143,20 @@ theorem IsPath.isCycle_append_append_reverse {x a b : V} {P : G.Walk x a} {Q : G
     have h₂ : R.length ≠ 0 := fun h0 ↦ hab (eq_of_length_eq_zero h0).symm
     rw [length_append]
     omega
+
+/-- Two vertex-disjoint paths `P` from `x` to `y` and `Q` from `x'` to `y'`, joined by distinct
+edges `s(x, x')` and `s(y', y)`, close up into a cycle through both edges. -/
+theorem IsPath.isCycle_cons_append_cons_reverse {x x' y y' : V} {P : G.Walk x y}
+    {Q : G.Walk x' y'} (hP : P.IsPath) (hQ : Q.IsPath) (hPQ : P.support.Disjoint Q.support)
+    (hx : G.Adj x x') (hy : G.Adj y' y) (hxy : s(x, x') ≠ s(y', y)) :
+    (cons hx (Q.append (cons hy P.reverse))).IsCycle := by
+  rw [cons_isCycle_iff, isPath_append, edges_append, List.mem_append, edges_cons, List.mem_cons,
+    edges_reverse, List.mem_reverse]
+  refine ⟨⟨hQ, by simpa using hP, by simpa using hPQ.symm⟩, ?_⟩
+  rintro (h | h | h)
+  · exact hPQ P.start_mem_support (Q.fst_mem_support_of_mem_edges h)
+  · exact hxy h
+  · exact hPQ (P.snd_mem_support_of_mem_edges h) Q.start_mem_support
 
 /-- A walk meeting a set `F` splits at its first vertex `b` in `F`: the first part has `b` as its
 only vertex in `F`, occurring once. -/
