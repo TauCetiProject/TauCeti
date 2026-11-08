@@ -32,6 +32,8 @@ function inside a rectangle, as in the Riemann–von Mangoldt formula.
 The interior value is computed edge by edge: off the boundary the winding number is the sum of the
 winding numbers of the four edges, a point strictly to the left of a directed segment sees that
 segment with winding number of real part in `(0, 1/2)`, and the only integer in `(0, 2)` is `1`.
+This adapts the argument of `TauCeti.Green.windingNumber_triangleCurve_eq_one`, which evaluates
+the winding number of a counterclockwise triangle in the same way.
 The exterior value holds because the rectangle is convex, so the curve contracts inside it.
 -/
 

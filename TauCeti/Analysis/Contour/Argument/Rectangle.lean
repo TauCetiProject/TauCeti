@@ -47,13 +47,6 @@ namespace TauCeti.Contour
 
 variable {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} {z w : ℂ}
 
-/-- A point of the closed rectangle that is not on its frontier lies in the open rectangle. -/
-private theorem mem_Ioo_reProdIm_of_mem_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
-    {s : ℂ} (hs : s ∈ Rectangle z w) (hfr : s ∉ frontier (Rectangle z w)) :
-    s ∈ Ioo z.re w.re ×ℂ Ioo z.im w.im := by
-  rw [← interior_rectangle hre him, ← self_sdiff_frontier]
-  exact ⟨hs, hfr⟩
-
 /-- The winding number of the rectangle boundary about a point off its frontier is the indicator
 of the rectangle. -/
 private theorem windingNumber_rectBoundary_eq_ite (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
