@@ -132,7 +132,7 @@ theorem weightDistribution_tetracode (w : ℕ) :
       if w = 0 then 1 else if w = 3 then 8 else 0 := by
   simpa only [SetLike.coe_sort_coe, natCard_tetracode, Nat.reduceSub] using
     weightDistribution_eq_of_constant_weight (Set.toFinite _) tetracode.zero_mem
-      (by decide : 3 ≠ 0) (fun _ hx hx0 ↦
+      (fun _ hx hx0 ↦
         hammingNorm_eq_three_of_mem_tetracode_of_ne_zero hx hx0) w
 
 /-- The homogeneous weight enumerator of the tetracode is `X^4 + 8XY^3`. -/
