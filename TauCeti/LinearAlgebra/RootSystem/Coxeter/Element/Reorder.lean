@@ -56,7 +56,7 @@ theorem wordProd_eq_of_perm [P.IsCrystallographic] [IsDomain R] [CharZero R] (b 
     (hp : l.Perm l')
     (h : ∀ x y, List.Sublist [x, y] l → List.Sublist [y, x] l' → b.cartanMatrix x y = 0) :
     wordProd P b l = wordProd P b l' := by
-  rw [wordProd_def, wordProd_def]
+  rw [b.wordProd_def, b.wordProd_def]
   refine List.prod_map_eq_of_perm _ hp fun x y hxy hyx => ?_
   have hxy0 := h x y hxy hyx
   exact weylGroup.commute_ofIdx_of_isOrthogonal P

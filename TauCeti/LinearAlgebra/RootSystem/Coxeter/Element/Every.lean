@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Reorder
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Charpoly
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 
@@ -33,9 +32,6 @@ classification has matched to a type. TauCeti's `G₂` Cartan matrix is the tran
 
 ## Main results
 
-* `RootPairing.Base.charpoly_prod_reflMatrix_eq_of_isElimOrder`: for a base whose Dynkin diagram has
-  an elimination order, the matrices of all Coxeter elements on the simple roots have the same
-  characteristic polynomial.
 * `TauCeti.Coxeter.orderOf_wordProd_of_isElimOrder_of_hasCartanType` and
   `TauCeti.Coxeter.charpoly_of_isElimOrder_of_hasCartanType_of_actsBy`: for a base of Cartan type
   `t` with an elimination order, every Coxeter element has the order and the characteristic
@@ -80,27 +76,6 @@ private theorem exists_isElimOrder_of_cartanMatrix_eq {n : ℕ} (b : P.Base)
     (List.perm_ext_iff_of_nodup hnd hndτ).2 fun i =>
       iff_of_true (hall i) (List.mem_map.2 ⟨e i, List.mem_finRange _, e.symm_apply_apply i⟩)
   exact ⟨_, hS.nodup_iff.1 hndτ, hfun ▸ hel₀.map_equiv e, hlτ.trans hS, hS⟩
-
-/-- **All Coxeter elements have the same characteristic polynomial** (of their matrices on the
-simple roots) when the Dynkin diagram of the base has an elimination order. -/
-theorem charpoly_prod_reflMatrix_eq_of_isElimOrder [DecidableEq ι] (b : P.Base)
-    {S : List b.support} (hnd : S.Nodup)
-    (hel : List.IsElimOrder (fun x y => b.cartanMatrix x y ≠ 0) S) {l l' : List b.support}
-    (hl : l.Perm S) (hl' : l'.Perm S) :
-    ((l.map (reflMatrix b.cartanMatrix)).prod).charpoly =
-      ((l'.map (reflMatrix b.cartanMatrix)).prod).charpoly :=
-  List.eq_of_isElimOrder (fun _ _ h h' => h (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')) hnd hel
-    (fun l => ((l.map (reflMatrix b.cartanMatrix)).prod).charpoly)
-    (fun l l' _ hce => by
-      have hw : wordProd P b l = wordProd P b l' := wordProd_eq_of_commEquiv b hce
-      have hl' : ActsBy b (wordProd P b l) ((l'.map (reflMatrix b.cartanMatrix)).prod) := by
-        rw [hw]; exact actsBy_wordProd b l'
-      rw [(actsBy_wordProd b l).unique hl'])
-    (fun a t _ => by
-      simp only [List.map_cons, List.prod_cons, List.map_append, List.prod_append,
-        List.map_nil, List.prod_nil, mul_one]
-      exact charpoly_mul_comm _ _)
-    hl hl'
 
 end RootPairing.Base
 

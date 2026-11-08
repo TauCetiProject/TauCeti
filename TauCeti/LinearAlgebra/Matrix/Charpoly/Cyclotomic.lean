@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Minpoly
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.Polynomial.Cyclotomic.ComplexRoots
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Minpoly
 
 /-!
 # Integer matrices whose characteristic polynomial is cyclotomic
@@ -79,15 +80,6 @@ theorem charpoly_eq_cyclotomic {M : Matrix κ κ ℤ} {a : ℕ} (ha : 0 < a)
   refine eq_of_monic_of_dvd_of_natDegree_le (cyclotomic.monic a ℚ) (charpoly_monic _)
     (hq ▸ minpoly_dvd_charpoly _) ?_
   rw [charpoly_natDegree_eq_dim, natDegree_cyclotomic, hdeg]
-
-/-- If the minimal polynomial of `M` divides `Φₐ q` and `q` does not annihilate `M`, then `Φₐ`
-divides the minimal polynomial, since `Φₐ` is irreducible over `ℚ`. -/
-private theorem cyclotomic_dvd_minpoly {M : Matrix κ κ ℚ} {a : ℕ} (ha : 0 < a) {q : ℚ[X]}
-    (hq : minpoly ℚ M ∣ cyclotomic a ℚ * q) (hn : aeval M q ≠ 0) :
-    cyclotomic a ℚ ∣ minpoly ℚ M := by
-  by_contra h
-  have hcop := ((cyclotomic.irreducible_rat ha).coprime_iff_not_dvd.2 h).symm
-  exact hn (minpoly.dvd_iff.1 (hcop.dvd_of_dvd_mul_left hq))
 
 /-- If `Φₐ Φ_b` (`a ≠ b`) annihilates `M`, neither factor annihilates it alone, and the degrees
 add up to the dimension, then `Φₐ Φ_b` is the characteristic polynomial of `M`. -/
