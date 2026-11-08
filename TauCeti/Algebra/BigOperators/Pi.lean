@@ -24,8 +24,6 @@ coordinate `i` to another coordinate.
   or sum of `Pi.mulSingle i (Pi.mulSingle j (f i j))` / `Pi.single i (Pi.single j (f i j))` equals
   `f`.
 * `Fintype.prod_pow_pi_single`: `∏ j, f j ^ Pi.single i a j = f i ^ a`.
-* `Fintype.prod_apply_mulSingle`, `Fintype.sum_apply_single`: if `f 1 = 1` (resp. `f 0 = 0`),
-  then `∏ j, f (Pi.mulSingle i x j) = f x` (resp. `∑ j, f (Pi.single i x j) = f x`).
 * `Pi.exists_eq_add_single_one`: an exponent vector with a positive `i`-th entry is `γ + e_i`.
 * `Pi.eq_single_of_apply_eq_sum`: an exponent vector of degree `d` with `i`-th entry `d` is
   `Pi.single i d`.
@@ -59,15 +57,6 @@ theorem Fintype.prod_pow_pi_single [Fintype ι] [DecidableEq ι] {M : Type*} [Co
     (f : ι → M) (i : ι) (a : ℕ) : ∏ j, f j ^ Pi.single (M := fun _ ↦ ℕ) i a j = f i ^ a := by
   rw [prod_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)]
   simp
-
-/-- If `f 1 = 1`, then `∏ j, f (Pi.mulSingle i x j) = f x`: only the factor at `i` is not `1`. -/
-@[to_additive /-- If `f 0 = 0`, then `∑ j, f (Pi.single i x j) = f x`: only the term at `i` is
-not `0`. -/]
-theorem Fintype.prod_apply_mulSingle [Fintype ι] [DecidableEq ι] {β M : Type*} [One β]
-    [CommMonoid M] {f : β → M} (hf : f 1 = 1) (i : ι) (x : β) :
-    ∏ j, f ((Pi.mulSingle i x : ι → β) j) = f x :=
-  (prod_congr rfl fun j _ ↦ Pi.apply_mulSingle (fun _ ↦ f) (fun _ ↦ hf) i x j).trans
-    (Fintype.prod_pi_mulSingle' i (f x))
 
 /-- An exponent vector with a positive `i`-th entry is of the form `γ + e_i`. -/
 theorem Pi.exists_eq_add_single_one [DecidableEq ι] {β : ι → ℕ} {i : ι} (h : 0 < β i) :

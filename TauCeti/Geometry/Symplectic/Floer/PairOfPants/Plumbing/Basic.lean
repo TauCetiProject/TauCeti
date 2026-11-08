@@ -136,6 +136,12 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
+private theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
+  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
+    funext (plumbingMap_apply q L)
+  exact contDiff_realChart (by rw [hψ]; fun_prop)
+
 /-- At points other than the four punctures, the components of the plumbed perturbation of `C¹`
 Hamiltonians are differentiable in the domain point. -/
 private theorem differentiableAt_plumbedPerturbation_domain (hq : q ≠ inf)
@@ -302,7 +308,7 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
     mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL (hS₄ hw) y v
   rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
     (realChart_injective (q.plumbingMap_injective L)).injOn
-    (fun w _ ↦ (contDiff_realChart (q.contDiff_plumbingMap L)).contDiffAt)
+    (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
     (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]
   calc _ = ∫⁻ w in S, ‖ω.hamiltonianCurvature
