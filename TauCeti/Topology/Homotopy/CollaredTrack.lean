@@ -330,24 +330,24 @@ theorem snd_stack_lt_iff (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h 
     (stack F G p).2 < 2 / 3 ↔ p.2 < 2 / 3 := by
   obtain ⟨x, t⟩ := p
   rcases le_or_gt t (1 / 2) with ht | ht
-  · rw [stack_apply_of_le F G x ht, div_lt_div_iff_of_pos_right three_pos,
-      hF.snd_apply_lt_iff x fun h => by linarith [h.2]]
-    constructor <;> intro <;> linarith
-  · rw [stack_apply_of_lt F G x ht, div_lt_div_iff_of_pos_right three_pos, add_lt_iff_neg_right,
-      hG.snd_apply_lt_iff x left_notMem_Ioo]
-    constructor <;> intro <;> linarith
+  · rw [stack_apply_of_le F G x ht]
+    have := hF.snd_apply_lt_iff x (t := 3 * t) (c := 2) fun h => by linarith [h.2]
+    grind
+  · rw [stack_apply_of_lt F G x ht]
+    have := hG.snd_apply_lt_iff x (t := 3 * t - 2) left_notMem_Ioo
+    grind
 
 /-- The stacked track preserves the comparison of time with the level `1 / 3`. -/
 theorem lt_snd_stack_iff (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h G) (p : M × ℝ) :
     1 / 3 < (stack F G p).2 ↔ 1 / 3 < p.2 := by
   obtain ⟨x, t⟩ := p
   rcases le_or_gt t (1 / 2) with ht | ht
-  · rw [stack_apply_of_le F G x ht, div_lt_div_iff_of_pos_right three_pos,
-      hF.lt_snd_apply_iff x right_notMem_Ioo]
-    constructor <;> intro <;> linarith
-  · rw [stack_apply_of_lt F G x ht, div_lt_div_iff_of_pos_right three_pos,
-      ← sub_lt_iff_lt_add, hG.lt_snd_apply_iff x fun h => by linarith [h.1]]
-    constructor <;> intro <;> linarith
+  · rw [stack_apply_of_le F G x ht]
+    have := hF.lt_snd_apply_iff x (t := 3 * t) right_notMem_Ioo
+    grind
+  · rw [stack_apply_of_lt F G x ht]
+    have := hG.lt_snd_apply_iff x (t := 3 * t - 2) (c := -1) fun h => by linarith [h.1]
+    grind
 
 /-- The stack of a collared track from `f` to `g` and one from `g` to `h` is a collared track from
 `f` to `h`. -/
@@ -395,9 +395,11 @@ theorem isEmbedding_stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h
   have hG3 : IsEmbedding (conjTime G 3 (-2)) := by
     rw [conjTime_eq_comp G (-2) (by norm_num)]
     exact (Homeomorph.isEmbedding _).comp (hG'.comp (Homeomorph.isEmbedding _))
-  -- At the seam `t = 1 / 2` the two rescaled tracks agree, both being the stacked track there.
-  have hcont : Continuous (TauCeti.stack F G) :=
-    hF3.continuous.if_le hG3.continuous continuous_snd continuous_const fun p hp =>
+  -- Unfolded, `stack F G` is the `if` on `p.2 ≤ 1 / 2` between the two rescaled tracks. At the
+  -- seam `t = 1 / 2` they agree, both being the stacked track there.
+  have hcont : Continuous (TauCeti.stack F G) := by
+    unfold TauCeti.stack
+    exact hF3.continuous.if_le hG3.continuous continuous_snd continuous_const fun p hp =>
       (hF.stack_eqOn_lower hG (by norm_num [hp])).symm.trans
         (hF.stack_eqOn_upper hG (by norm_num [hp]))
   -- The two open slabs `{s < 2 / 3}` and `{1 / 3 < s}` cover `N × ℝ`; over each the stacked
