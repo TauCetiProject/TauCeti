@@ -221,6 +221,36 @@ theorem IsPowerBounded.isTopologicallyNilpotent_mul {a b : R} (ha : IsPowerBound
 
 end CommMonoidWithZero
 
+section SeparatelyContinuousMul
+
+variable {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [SeparatelyContinuousMul R]
+
+/-- An element with a power-bounded positive power is power-bounded. Each of the finitely many
+powers `x ^ r` with `r < n` is absorbed into the neighbourhood supplied by the boundedness of the
+powers of `x ^ n`, by continuity of multiplication by `x ^ r`. -/
+theorem IsPowerBounded.of_pow {x : R} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBounded (x ^ n)) :
+    IsPowerBounded x := by
+  rw [isPowerBounded_iff, isBounded_iff]
+  intro U hU
+  obtain ⟨V', hV', hV'U⟩ := isBounded_iff.mp (isPowerBounded_iff.mp hx) U hU
+  have hV : ∀ r : Fin n, (· * x ^ (r : ℕ)) ⁻¹' V' ∈ 𝓝 (0 : R) := fun r ↦
+    (continuous_mul_const (x ^ (r : ℕ))).continuousAt.preimage_mem_nhds (by simpa using hV')
+  refine ⟨⋂ r : Fin n, (· * x ^ (r : ℕ)) ⁻¹' V', Filter.iInter_mem.mpr hV, ?_⟩
+  rintro _ ⟨v, hv, _, ⟨j, rfl⟩, rfl⟩
+  have hj : v * x ^ j = (v * x ^ (j % n)) * (x ^ n) ^ (j / n) := by
+    rw [mul_assoc, ← pow_mul, ← pow_add, Nat.mod_add_div]
+  change v * x ^ j ∈ U
+  rw [hj]
+  exact hV'U (Set.mul_mem_mul (Set.mem_iInter.mp hv ⟨j % n, Nat.mod_lt _ (Nat.pos_of_ne_zero hn)⟩)
+    ⟨j / n, rfl⟩)
+
+/-- A positive power of an element is power-bounded exactly when the element is. -/
+theorem isPowerBounded_pow_iff {x : R} {n : ℕ} (hn : n ≠ 0) :
+    IsPowerBounded (x ^ n) ↔ IsPowerBounded x :=
+  ⟨IsPowerBounded.of_pow hn, fun h ↦ h.pow n⟩
+
+end SeparatelyContinuousMul
+
 section HasDistribNeg
 
 variable {A : Type*} [MonoidWithZero A] [HasDistribNeg A] [TopologicalSpace A]
@@ -495,18 +525,6 @@ theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubri
   · by_cases h : p.coeff i = 0
     · rw [h]; exact zero_mem _
     · exact Subring.subset_closure (Polynomial.coeff_mem_coeffs h)
-
-/-- An element with a power-bounded positive power is power-bounded. -/
-theorem IsPowerBounded.of_pow {x : A} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBounded (x ^ n)) :
-    IsPowerBounded x :=
-  -- `x` is a root of the monic polynomial `X ^ n - x ^ n` over `A°`
-  isPowerBounded_of_isIntegral <| IsIntegral.of_pow (Nat.pos_of_ne_zero hn) <|
-    isIntegral_algebraMap (x := (⟨x ^ n, hx⟩ : powerBoundedSubring A))
-
-/-- A positive power of an element is power-bounded exactly when the element is. -/
-theorem isPowerBounded_pow_iff {x : A} {n : ℕ} (hn : n ≠ 0) :
-    IsPowerBounded (x ^ n) ↔ IsPowerBounded x :=
-  ⟨IsPowerBounded.of_pow hn, fun h ↦ h.pow n⟩
 
 /-- **Homogeneity of power bounds**: if `c ∈ A°` and `c * S ^ n`, `c * T ^ n` are power-bounded,
 then so is `c * (S ^ a * T ^ b)` whenever `a + b ≤ n`. -/
