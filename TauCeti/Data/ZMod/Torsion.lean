@@ -11,8 +11,9 @@ public import TauCeti.Data.ZMod.MulCastHom
 /-!
 # Torsion in residue rings
 
-For `N = m * k` with `m ≠ 0`, the exact sequence `0 → ZMod m → ZMod N → ZMod k → 0` of
-`TauCeti.Data.ZMod.MulCastHom` describes the elements of `ZMod N` killed by `m`. Such an element
+For `N = m * k` with `m ≠ 0`, the elements of `ZMod N` killed by `m` are described by the
+exactness at `ZMod N` of `ZMod m → ZMod N → ZMod k`, multiplication by `k` followed by reduction
+(`ZMod.exact_mulCastHom_castHom` in `TauCeti.Data.ZMod.MulCastHom`). Such an element
 is exactly the class of an integer multiple of `k`
 (`ZMod.natCast_mul_eq_zero_iff_exists_eq_mul`). It is exactly one whose reduction modulo `k`
 vanishes (`ZMod.natCast_mul_eq_zero_iff`). For `N ≠ 0`, it is exactly one whose representative is
@@ -100,8 +101,8 @@ noncomputable def zmodTorsionByEquiv (m n : ℕ) [NeZero m] [NeZero n] :
 @[simp]
 theorem zmodTorsionByEquiv_apply_coe (m n : ℕ) [NeZero m] [NeZero n] (x : ZMod m) :
     (zmodTorsionByEquiv m n x : ZMod (m * n)) = (x.val * n : ℕ) := by
-  rw [Nat.cast_mul, ← ZMod.cast_eq_val, ← ZMod.mulCastHom_apply]
-  rfl
+  rw [Nat.cast_mul, ← ZMod.cast_eq_val, ← ZMod.mulCastHom_apply, zmodTorsionByEquiv,
+    AddEquiv.ofBijective_apply, zmodTorsionByEquivHom, AddMonoidHom.codRestrict_apply]
 
 /-- The inverse of `zmodTorsionByEquiv` divides the representative by `n`. -/
 @[simp]
