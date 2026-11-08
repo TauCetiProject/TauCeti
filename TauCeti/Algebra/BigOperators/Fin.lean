@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -29,7 +30,8 @@ A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a ca
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
 
-A product over the pairs `Fin 2 → α` is the double product over their two entries.
+A product over the pairs `Fin 2 → α` is the double product over their two entries. A sum over the
+pairs `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
 -/
 
 public section
@@ -126,6 +128,16 @@ theorem prod_filter_succ_eq_of_prod_filter_eq {M : Type*} [CommMonoidWithZero M]
 end Fin
 
 namespace Fintype
+
+/-- A sum over the pairs `(a, b)` with `P a` and second entry `b` is the sum of the values at
+`(a, b)` over the `a` with `P a`. -/
+theorem sum_filter_and_snd_eq {α β M : Type*} [Fintype α] [Fintype β] [DecidableEq β]
+    [AddCommMonoid M] (h : α × β → M) (P : α → Prop) [DecidablePred P] (b : β) :
+    ∑ x ∈ Finset.univ.filter (fun x : α × β ↦ P x.1 ∧ x.2 = b), h x =
+      ∑ a ∈ Finset.univ.filter P, h (a, b) := by
+  rw [Finset.sum_filter, Finset.sum_filter, Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  by_cases hP : P a <;> simp [hP]
 
 /-- **A product over the pairs `Fin 2 → α`** is the double product over their two entries. -/
 @[to_additive /-- **A sum over the pairs `Fin 2 → α`** is the double sum over their two

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Maps and homeomorphisms between standard simplices
@@ -20,6 +21,9 @@ weights are the bilinear expressions `∑ m, w.weights m * (v m).weights n`, so 
 continuous; `Convexity.StdSimplex.continuousAffineMapMk` bundles it as a continuous map. This
 makes affine simplices, such as the simplices of a barycentric subdivision,
 available as continuous maps between topological standard simplices.
+
+The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuously on a point `x`
+of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
 A standard simplex on a finite type is Hausdorff (`Convexity.StdSimplex.t2Space`), so continuous
 surjections onto it from compact spaces are quotient maps.
@@ -95,6 +99,15 @@ noncomputable def continuousAffineMapMk [Finite N] (v : M → StdSimplex R N) :
 @[simp]
 lemma continuousAffineMapMk_apply [Finite N] (v : M → StdSimplex R N) (w : StdSimplex R M) :
     continuousAffineMapMk v w = affineMapMk v w := (rfl)
+
+/-- The prefix sums of the weights of a continuously varying point of a standard simplex on
+`Fin n` vary continuously. -/
+@[fun_prop]
+lemma continuous_prefixSum_weights {n : ℕ} {Z : Type*} [TopologicalSpace Z]
+    {f : Z → StdSimplex R (Fin n)} (hf : Continuous f) (N : ℕ) :
+    Continuous fun z ↦ TauCeti.prefixSum N (f z).weights := by
+  simp only [TauCeti.prefixSum_def]
+  exact continuous_finsetSum _ fun j _ ↦ (continuous_weights_apply R j).comp hf
 
 /-- A standard simplex on a finite type is Hausdorff, being embedded in `N → R` by its weights. -/
 instance t2Space [T2Space R] [Finite N] : T2Space (StdSimplex R N) :=

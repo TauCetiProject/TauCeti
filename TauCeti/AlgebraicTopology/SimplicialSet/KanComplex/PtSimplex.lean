@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex.MulStruct
-public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplexOne
+public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.One
 
 /-!
 # Homotopies of pointed simplices in Kan complexes
