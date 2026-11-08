@@ -116,7 +116,7 @@ theorem IsLink.exists_ear_of_mem_notMem {e : β} {x y : α} (h : G.IsLink e x y)
 /-- Every proper subgraph with a nonempty vertex set of a `2`-edge-connected graph can be strictly
 enlarged by adjoining one open or closed ear.  This is the extension engine for constructing an
 ear decomposition; it does not require finiteness. -/
-theorem Set.Nonempty.exists_ear_of_lt (hH : V(H).Nonempty) (hHG : H < G)
+theorem _root_.Set.Nonempty.exists_ear_of_lt (hH : V(H).Nonempty) (hHG : H < G)
     (hG : G.IsEdgeConnected 2) : ∃ ear : G.Ear H, H < ear.add := by
   classical
   have hV : V(G).Nonempty := hH.mono hHG.le.vertexSet_mono
