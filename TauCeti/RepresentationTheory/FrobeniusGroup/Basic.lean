@@ -149,6 +149,32 @@ private theorem eq_one_of_forall_irreducibleCharacter_eq (k : Type u) {G : Type 
 
 variable {G : Type u} [Group G] [Finite G] {H : Subgroup G}
 
+/-- **A subgroup element fixed by every exceptional character is trivial**: if for every
+irreducible character `φ` of `H` the exceptional extension `φ*` takes at `h : H` the value
+`φ(1)`, then `h = 1`.  Restricting `φ*` to `H` gives back `φ`, so every irreducible character of `H`
+is unmoved at `h`. -/
+private theorem eq_one_of_forall_indExtend_eq (hH : IsTISubgroup H) {h : H}
+    (hh : ∀ j : Fin (Nat.card (ConjClasses H)),
+      (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).1 (h : G) =
+        (ofCharacter (irreducibleRepresentation ℂ j)).1 1) : h = 1 := by
+  classical
+  let : Invertible (Nat.card H : ℂ) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  refine eq_one_of_forall_irreducibleCharacter_eq ℂ fun f hf => ?_
+  obtain ⟨j, rfl⟩ := exists_irreducibleCharacter_eq (k := ℂ) hf
+  have hφcoe : ((ofCharacter (irreducibleRepresentation ℂ j) : ClassFunction ℂ H) : H → ℂ) =
+      irreducibleCharacter ℂ j := funext fun y => by
+    simp only [ofCharacter_apply, character_irreducibleRepresentation]
+  rw [← hφcoe]
+  calc (ofCharacter (irreducibleRepresentation ℂ j)).1 h
+      = (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).1 (h : G) := by
+        simpa only [comap_apply, Subgroup.coe_subtype] using
+          (congrArg (fun F : ClassFunction ℂ H => F.1 h)
+            (comap_subtype_indExtend hH
+              (isUnit_natCard_subgroup H (isUnit_of_invertible _))
+              (ofCharacter (irreducibleRepresentation ℂ j)))).symm
+    _ = _ := hh j
+
 /-- **Frobenius's theorem.**  For a trivial-intersection subgroup `H` of a finite group `G` — a
 Frobenius complement, in the nondegenerate case — the Frobenius kernel is the carrier of a normal
 subgroup of `G`.
@@ -205,17 +231,8 @@ private theorem exists_normal_coe_eq_frobeniusKernel (hH : IsTISubgroup H) :
       (MonoidHom.normal_ker (σ j)).conj_mem' g ((hker j g).mpr (hgN j)) x
     -- on `H` the extension restricts back to `φ`, so every irreducible character of `H` is
     -- unmoved at the conjugated element, which therefore is the identity
-    have hone : (⟨x⁻¹ * g * x, hx⟩ : H) = 1 := by
-      refine eq_one_of_forall_irreducibleCharacter_eq ℂ fun f hf => ?_
-      obtain ⟨j, rfl⟩ := exists_irreducibleCharacter_eq (k := ℂ) hf
-      rw [← hφcoe j]
-      calc (φ j).1 (⟨x⁻¹ * g * x, hx⟩ : H)
-          = (indExtend H (φ j)).1 (x⁻¹ * g * x) := by
-            simpa only [comap_apply, Subgroup.coe_subtype] using
-              (congrArg (fun F : ClassFunction ℂ H => F.1 (⟨x⁻¹ * g * x, hx⟩ : H))
-                (comap_subtype_indExtend hH
-                  (isUnit_natCard_subgroup H (isUnit_of_invertible _)) (φ j))).symm
-        _ = (φ j).1 1 := (hker j _).mp (hyN j)
+    have hone : (⟨x⁻¹ * g * x, hx⟩ : H) = 1 :=
+      eq_one_of_forall_indExtend_eq hH fun j => (hker j _).mp (hyN j)
     refine hg1 ?_
     have hy : x⁻¹ * g * x = 1 := congrArg Subtype.val hone
     have hgx : g = x * (x⁻¹ * g * x) * x⁻¹ := by group

@@ -34,6 +34,8 @@ it therefore becomes a character, which is what governs the stabilizers of a dis
   `Matrix.ProjectiveSpecialLinearGroup.deriv_coe_smul`: it is the complex derivative of that
   transformation, read through Mathlib's partial inverse `UpperHalfPlane.ofComplex` of the
   inclusion `ℍ → ℂ`.
+* `Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq`: the derivative
+  of a function invariant under a Möbius transformation.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`: the chain rule
   `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and
   `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
@@ -190,6 +192,18 @@ theorem hasStrictDerivAt_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
 theorem deriv_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
     deriv (fun w : ℂ ↦ ((q • ofComplex w : ℍ) : ℂ)) (z : ℂ) = smulDeriv q z :=
   (hasStrictDerivAt_coe_smul q z).hasDerivAt.deriv
+
+/-- **The derivative of an invariant function.** If a function `W` on `ℂ` is unchanged near `z`
+by the Möbius transformation attached to `q`, read on `ℂ` through `UpperHalfPlane.ofComplex`, and
+is differentiable at `q • z`, then by the chain rule its derivative at `z` is its derivative at
+`q • z` times `smulDeriv q z`. -/
+theorem deriv_smul_mul_smulDeriv_of_eventuallyEq {W : ℂ → ℂ} (q : PSL(2, ℝ)) {z : ℍ}
+    (hW : (fun w : ℂ ↦ W ((q • ofComplex w : ℍ) : ℂ)) =ᶠ[nhds (z : ℂ)] W)
+    (hd : DifferentiableAt ℂ W ((q • z : ℍ) : ℂ)) :
+    deriv W ((q • z : ℍ) : ℂ) * smulDeriv q z = deriv W z := by
+  have h := hd.hasDerivAt.comp_of_eq (z : ℂ) (hasStrictDerivAt_coe_smul q z).hasDerivAt
+    (by rw [ofComplex_apply])
+  rw [← hW.deriv_eq, ← h.deriv, Function.comp_def]
 
 -- Not `@[simp]`: `smulDeriv_coe` rewrites the left-hand side first. Use it via `rw`.
 /-- The derivative of the dilation `z ↦ exp s * z` is `exp s`. -/
