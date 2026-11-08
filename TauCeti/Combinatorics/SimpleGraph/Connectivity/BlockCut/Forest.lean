@@ -102,6 +102,23 @@ private theorem exists_walk_notMem_support_of_blockCutGraph_walk {x y : G.BlockC
       exact ih hq' (blockCutCarrier_inl C ▸ (G.blockCutGraph_adj_cutVertex_block w C).1 h) hb hac
     · simp at h
 
+/-- A walk between two block vertices in the block--cut graph that avoids a cut vertex projects
+to a walk between any chosen vertices of the blocks that avoids the corresponding original
+vertex. -/
+theorem Walk.exists_avoiding_of_blockCutGraph {B C : G.BlockVertex}
+    (q : G.blockCutGraph.Walk (.inl B) (.inl C)) {c : G.CutVertex} {a b : V}
+    (hq : (.inr c : G.BlockCutVertex) ∉ q.support) (ha : a ∈ (B : Set V))
+    (hb : b ∈ (C : Set V)) (hac : a ≠ c) (hbc : b ≠ c) :
+    ∃ p : G.Walk a b, (c : V) ∉ p.support := by
+  apply exists_walk_notMem_support_of_blockCutGraph_walk q
+  · intro w hw hwc
+    have : w = c := Subtype.ext hwc
+    exact hq (this ▸ hw)
+  · exact blockCutCarrier_inl B ▸ ha
+  · exact blockCutCarrier_inl C ▸ hb
+  · exact hac
+  · exact hbc
+
 /-- **The block--cut graph is a forest.** No finiteness is needed. -/
 theorem blockCutGraph_isAcyclic : G.blockCutGraph.IsAcyclic := by
   classical
