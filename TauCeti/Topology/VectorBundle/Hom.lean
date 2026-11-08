@@ -201,20 +201,14 @@ theorem ContinuousWithinAt.clm_bundle_inverse
   have hinv : (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (b x) (b x) (b x) (b x)
       (ϕ x)).IsInvertible :=
     (ContinuousLinearMap.isInvertible_inCoordinates_iff h₁ h₂).2 hx
-  -- Near `x`, the inverse in coordinates is the inverse of the coordinate expression,
+  -- The inverse in coordinates is the inverse of the coordinate expression,
   -- and inversion is continuous at an invertible map.
-  have hev : ∀ᶠ m in 𝓝[s] x, b m ∈ (trivializationAt F₁ E₁ (b x)).baseSet ∧
-      b m ∈ (trivializationAt F₂ E₂ (b x)).baseSet :=
-    hϕ.1.preimage_mem_nhdsWithin <| Filter.inter_mem
-      ((trivializationAt F₁ E₁ (b x)).open_baseSet.mem_nhds h₁)
-      ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)
   have hcomp := (hinv.contDiffAt_map_inverse (n := 0)).continuousAt.comp_continuousWithinAt
     (f := fun m : M ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂
       (b x) (b m) (b x) (b m) (ϕ m)) hϕ.2
-  refine hcomp.congr_of_eventuallyEq ?_
-    (ContinuousLinearMap.inCoordinates_inverse (ϕ x) h₁ h₂)
-  filter_upwards [hev] with m hm
-  exact ContinuousLinearMap.inCoordinates_inverse (ϕ m) hm.1 hm.2
+  exact hcomp.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun m ↦ ContinuousLinearMap.inCoordinates_inverse (ϕ m))
+    (ContinuousLinearMap.inCoordinates_inverse (ϕ x))
 
 /-- Inversion of a continuous Hom-bundle section is continuous at a point where its fibre
 map is invertible. -/
