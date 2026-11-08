@@ -21,13 +21,12 @@ multiplication by `i`. So in `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` the graph is the
 
 `Γ(A) = {(conj (φ x), φ (A x)) | x ∈ ℝ^{n ⊕ n}}`
 
-(`TauCeti.GLSymplectic.graphSubspace`, characterized by
-`TauCeti.GLSymplectic.mem_graphSubspace_iff`). It is the image `Matrix.realImage` of the real
-points `TauCeti.realSubspace` of `ℂ^{n ⊕ n}` under the complex matrix
-`TauCeti.GLSymplectic.graphFrame A`, whose columns are the images of the real basis vectors. That
-matrix is invertible when `A` is symplectic (`TauCeti.GLSymplectic.isUnit_det_graphFrame`), so the
-graphs of a loop `γ` of symplectic matrices form a loop of maximal totally real subspaces with a
-continuous frame (`TauCeti.GLSymplectic.graphLoop`).
+(`Matrix.graphSubspace`, characterized by `Matrix.mem_graphSubspace_iff`). It is the image
+`Matrix.realImage` of the real points `TauCeti.realSubspace` of `ℂ^{n ⊕ n}` under the complex
+matrix `Matrix.graphFrame A`, whose columns are the images of the real basis vectors. That matrix
+is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`), so the graphs
+of a loop `γ` of symplectic matrices form a loop of maximal totally real subspaces with a continuous
+frame (`TauCeti.GLSymplectic.graphLoop`).
 
 The main result is that **the Maslov index of the graph loop is twice the Maslov index of the
 loop**, `μ(Γ ∘ γ) = 2 μ(γ)` (`TauCeti.GLSymplectic.maslovIndex_graphLoop`). Here `μ(γ)` is the
@@ -41,7 +40,7 @@ Conley–Zehnder index of symplectic paths is expressed as a Robbin–Salamon in
 ## Proof
 
 The determinant of the frame is `det ((A₁₂ - A₂₁) + i (A₁₁ + A₂₂))` by a Schur complement
-(`TauCeti.GLSymplectic.det_graphFrame`), and its phase is the Maslov phase of the graph
+(`Matrix.det_graphFrame`), and its phase is the Maslov phase of the graph
 (`TauCeti.GLSymplectic.coe_graphPhase_eq_maslovPhase`). The realification of
 `(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)` is `A J + J A`, which is invertible when `A` is symplectic
 (`SymplecticGroup.isUnit_det_mul_J_add_J_mul`), so the frame is invertible. For a realified
@@ -65,9 +64,9 @@ public section
 open Matrix Matrix.GeneralLinearGroup Complex
 open scoped unitInterval ComplexConjugate
 
-namespace TauCeti.GLSymplectic
+namespace Matrix
 
-open Matrix.UnitaryGroup
+open TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
@@ -75,7 +74,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The **graph frame** of a real matrix `A` on `ℝ^{n ⊕ n}`: the complex matrix sending the real
 point `x` of `ℂ^{n ⊕ n}` to `(conj (φ x), φ (A x))`, where `φ (x, y) = x + i y`. Its columns are the
-images of the real basis vectors, so it frames the graph `TauCeti.GLSymplectic.graphSubspace A`. -/
+images of the real basis vectors, so it frames the graph `Matrix.graphSubspace A`. -/
 noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ :=
   fromBlocks 1 (-(Complex.I • 1))
     (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
@@ -103,20 +102,23 @@ private noncomputable def graphCore (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matri
   (A.toBlocks₁₂ - A.toBlocks₂₁).map ((↑) : ℝ → ℂ) +
     Complex.I • (A.toBlocks₁₁ + A.toBlocks₂₂).map ((↑) : ℝ → ℂ)
 
-/-- The determinant of the graph frame is `det ((A₁₂ - A₂₁) + i (A₁₁ + A₂₂))`. -/
-theorem det_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    (graphFrame A).det =
-      ((A.toBlocks₁₂ - A.toBlocks₂₁).map ((↑) : ℝ → ℂ) +
-    Complex.I • (A.toBlocks₁₁ + A.toBlocks₂₂).map ((↑) : ℝ → ℂ)).det := by
-  rw [graphFrame, det_fromBlocks_one₁₁]
+/-- The determinant of the graph frame is that of `(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)`. -/
+private theorem det_graphFrame_eq_det_graphCore (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphFrame A).det = (graphCore A).det := by
+  rw [graphFrame, graphCore, det_fromBlocks_one₁₁]
   congr 1
   ext i j
   simp only [Matrix.sub_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply,
     Matrix.mul_neg, Matrix.mul_smul, Matrix.mul_one, Matrix.neg_apply, smul_eq_mul, ofReal_sub,
     ofReal_add]
-  ring_nf
-  rw [I_sq]
-  ring
+  linear_combination (A.toBlocks₂₁ i j : ℂ) * I_sq
+
+/-- The determinant of the graph frame is `det ((A₁₂ - A₂₁) + i (A₁₁ + A₂₂))`. -/
+theorem det_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphFrame A).det =
+      ((A.toBlocks₁₂ - A.toBlocks₂₁).map ((↑) : ℝ → ℂ) +
+    Complex.I • (A.toBlocks₁₁ + A.toBlocks₂₂).map ((↑) : ℝ → ℂ)).det :=
+  det_graphFrame_eq_det_graphCore A
 
 /-- The realification of `(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)` is `A J + J A`. -/
 private theorem realify_graphCore (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
@@ -125,15 +127,24 @@ private theorem realify_graphCore (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     simp [graphCore, J, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, toBlocks₁₁,
       toBlocks₁₂, toBlocks₂₁, toBlocks₂₂] <;> ring
 
+omit [Fintype n] [DecidableEq n] in
+/-- On a realified complex matrix `U`, the matrix `(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)` is `2 i U`. -/
+private theorem graphCore_realify (U : Matrix n n ℂ) :
+    graphCore U.realify = (2 * Complex.I) • U := by
+  ext i j
+  apply Complex.ext <;>
+    simp [graphCore, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, realify_apply_inl_inl,
+      realify_apply_inl_inr, realify_apply_inr_inl, realify_apply_inr_inr] <;> ring
+
 /-- **The graph frame of a symplectic matrix is invertible.** -/
 theorem isUnit_det_graphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hA : A ∈ symplecticGroup n ℝ) :
     IsUnit (graphFrame A).det := by
   have h := SymplecticGroup.isUnit_det_mul_J_add_J_mul hA
   rw [← realify_graphCore, det_realify] at h
-  rw [det_graphFrame, isUnit_iff_ne_zero]
+  rw [det_graphFrame_eq_det_graphCore, isUnit_iff_ne_zero]
   intro h0
   apply (isUnit_iff_ne_zero.1 h)
-  simp [graphCore, h0]
+  simp [h0]
 
 omit [Fintype n] in
 /-- The graph frame depends continuously on the matrix. -/
@@ -148,7 +159,7 @@ theorem continuous_graphFrame : Continuous (graphFrame : Matrix (n ⊕ n) (n ⊕
 
 /-- The **graph** of a real matrix `A` on `ℝ^{n ⊕ n}`, as a real subspace of
 `ℂ^{n ⊕ n} = ℂⁿ × ℂⁿ`: the image `Matrix.realImage` of the real points under the graph frame, that
-is, the set of `(conj (φ x), φ (A x))` (`TauCeti.GLSymplectic.mem_graphSubspace_iff`). -/
+is, the set of `(conj (φ x), φ (A x))` (`Matrix.mem_graphSubspace_iff`). -/
 noncomputable def graphSubspace (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     Submodule ℝ (EuclideanSpace ℂ (n ⊕ n)) :=
   (graphFrame A).realImage
@@ -166,8 +177,7 @@ theorem mem_graphSubspace_iff {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} {w : Euclidea
       funext fun k => Complex.ext rfl (by simp [mem_realSubspace.1 hv k])
     refine ⟨fun k => (v k).re, ?_⟩
     refine (congrArg (WithLp.toLp 2) (graphFrame_mulVec A fun k => (v k).re).symm).trans ?_
-    rw [toEuclideanCLM_apply, ← hv']
-    rfl
+    rw [toEuclideanCLM_apply, toLpLin_apply, ← hv']
   · rintro ⟨x, rfl⟩
     refine ⟨WithLp.toLp 2 fun k => (x k : ℂ), mem_realSubspace.2 fun k => by simp, ?_⟩
     rw [toEuclideanCLM_apply]
@@ -180,6 +190,14 @@ theorem isMaximalTotallyReal_graphSubspace {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
       ((LinearMap.lsmul ℂ (EuclideanSpace ℂ (n ⊕ n)) Complex.I).restrictScalars ℝ)
       (graphSubspace A) :=
   isMaximalTotallyReal_realImage (isUnit_det_graphFrame hA).ne_zero
+
+end Matrix
+
+namespace TauCeti.GLSymplectic
+
+open Matrix.UnitaryGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The determinant of the graph frame of a symplectic matrix does not vanish. -/
 theorem det_graphFrame_ne_zero (A : GLSymplectic n ℝ) :
@@ -195,8 +213,7 @@ noncomputable def graphFrameEquiv (A : GLSymplectic n ℝ) :
 @[simp]
 theorem graphFrameEquiv_apply (A : GLSymplectic n ℝ) (v : EuclideanSpace ℂ (n ⊕ n)) :
     graphFrameEquiv A v = WithLp.toLp 2 (graphFrame (A : GL (n ⊕ n) ℝ) *ᵥ WithLp.ofLp v) := by
-  rw [graphFrameEquiv, toEuclideanCLE_apply]
-  rfl
+  rw [graphFrameEquiv, toEuclideanCLE_apply, toLpLin_apply]
 
 /-- The graph of a symplectic matrix is the image of the real points under its graph frame
 automorphism. -/
@@ -263,20 +280,10 @@ theorem coe_graphPhase_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup
     rw [Subgroup.coe_inclusion,
       ← realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply,
       GeneralLinearGroup.coe_realify, Unitary.val_toUnits_apply]
-  have hcore : (((V : Matrix n n ℂ).realify.toBlocks₁₂ - (V : Matrix n n ℂ).realify.toBlocks₂₁).map
-      ((↑) : ℝ → ℂ) + Complex.I • ((V : Matrix n n ℂ).realify.toBlocks₁₁ +
-        (V : Matrix n n ℂ).realify.toBlocks₂₂).map ((↑) : ℝ → ℂ) : Matrix n n ℂ) =
-      (2 * Complex.I) • (V : Matrix n n ℂ) := by
-    ext i j
-    simp only [Matrix.add_apply, Matrix.sub_apply, Matrix.map_apply, Matrix.smul_apply, toBlocks₁₁,
-      toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Matrix.of_apply, realify_apply_inl_inl,
-      realify_apply_inl_inr, realify_apply_inr_inl, realify_apply_inr_inr, RCLike.re_to_complex,
-      RCLike.im_to_complex, smul_eq_mul, ofReal_sub, ofReal_neg, ofReal_add]
-    apply Complex.ext <;> simp <;> ring
   have hdet : (graphFrame (((Subgroup.inclusion inf_le_left U : GLSymplectic n ℝ) :
       GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det =
       (2 * Complex.I) ^ Fintype.card n * (V : Matrix n n ℂ).det := by
-    rw [det_graphFrame, hV, hcore, det_smul]
+    rw [det_graphFrame_eq_det_graphCore, hV, graphCore_realify, det_smul]
   have hρ : (maslovPhase (Subgroup.inclusion inf_le_left U) : ℂ) = (V : Matrix n n ℂ).det := by
     rw [maslovPhase_inclusion, coe_detCircle]
   have hconj : conj (V : Matrix n n ℂ).det = ((V : Matrix n n ℂ).det)⁻¹ := by
@@ -285,11 +292,17 @@ theorem coe_graphPhase_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup
     rw [← coe_detCircle]
     exact Circle.coe_ne_zero _
   have h2I : (2 * Complex.I) ^ Fintype.card n ≠ 0 := pow_ne_zero _ (by simp)
+  have hs : (-1 : ℂ) ^ Fintype.card n * (-1) ^ Fintype.card n = 1 := by
+    rw [← mul_pow]
+    norm_num
+  -- The scalar identity `c d / (s c d⁻¹) = s d²` for a sign `s` with `s² = 1`.
+  have key (s c d : ℂ) (hs : s * s = 1) (hd : d ≠ 0) (hc : c ≠ 0) :
+      c * d / (s * c * d⁻¹) = s * d ^ 2 := by
+    rw [div_eq_iff (mul_ne_zero (mul_ne_zero (left_ne_zero_of_mul_eq_one hs) hc) (inv_ne_zero hd))]
+    linear_combination (-(c * d)) * mul_inv_cancel₀ hd - c * d * d * d⁻¹ * hs
   rw [coe_graphPhase, hdet, hρ, map_mul, map_pow, hconj, map_mul, map_ofNat, conj_I,
-    show 2 * -Complex.I = (-1) * (2 * Complex.I) by ring, mul_pow]
-  field_simp
-  rw [← mul_pow, ← mul_pow]
-  ring_nf
+    show 2 * -Complex.I = (-1) * (2 * Complex.I) by ring, mul_pow (-1 : ℂ)]
+  exact key _ _ _ hs hne h2I
 
 /-! ### The Maslov index of the graph loop -/
 
