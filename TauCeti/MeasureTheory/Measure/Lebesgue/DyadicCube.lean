@@ -128,6 +128,7 @@ theorem dyadicCube_nonempty (k : ℤ) (m : ι → ℤ) : (dyadicCube k m).Nonemp
     rw [dyadicIndex_apply, mul_div_cancel_right₀ _ (zpow_ne_zero k two_ne_zero), Int.floor_intCast]⟩
 
 /-- Two dyadic cubes of the same level are disjoint if and only if they are distinct. -/
+@[simp]
 theorem disjoint_dyadicCube : Disjoint (dyadicCube k m) (dyadicCube k m') ↔ m ≠ m' := by
   refine ⟨fun h hm => ?_, fun h => Set.disjoint_left.2 fun _ hx hx' => h (hx.symm.trans hx')⟩
   subst hm
