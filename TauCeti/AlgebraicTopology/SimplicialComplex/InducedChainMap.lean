@@ -107,11 +107,6 @@ private theorem image_eq_of_det_incidence_ne_zero {g : Fin (n + 1) → ι}
   · rw [c.2, Finset.card_image_of_injective _ (injective_of_det_incidence_ne_zero h),
       Finset.card_univ, Fintype.card_fin]
 
-omit [LinearOrder ι] in
-/-- Cells with the same vertex set are equal. -/
-private theorem eq_of_val_eq {c d : RealizationCell K n} (h : c.1.1 = d.1.1) : c = d :=
-  Subtype.ext (Subtype.ext h)
-
 private theorem det_incidence_vertexEmbedding (c d : RealizationCell K n) :
     (incidence c.vertexEmbedding d).det = if c = d then 1 else 0 := by
   split_ifs with hcd
@@ -121,7 +116,7 @@ private theorem det_incidence_vertexEmbedding (c d : RealizationCell K n) :
       simp [incidence, Matrix.one_apply, c.vertexEmbedding.injective.eq_iff]
     rw [h1, Matrix.det_one]
   · by_contra h
-    exact hcd (eq_of_val_eq ((c.image_vertexEmbedding).symm.trans
+    exact hcd (RealizationCell.ext ((c.image_vertexEmbedding).symm.trans
       (image_eq_of_det_incidence_ne_zero h)))
 
 variable (R : Type v) [Ring R]
@@ -132,7 +127,7 @@ multiplied by the sign of the permutation that sorts the tuple increasingly
 (`tupleChain_vertexEmbedding_comp`). -/
 def tupleChain (g : Fin (n + 1) → ι) : OrderedSimplicialChain K R n :=
   ofSupportFinite (fun c ↦ ((incidence g c).det : R)) <| by
-    refine Set.Subsingleton.finite fun c hc d hd ↦ eq_of_val_eq ?_
+    refine Set.Subsingleton.finite fun c hc d hd ↦ RealizationCell.ext ?_
     have hc' : (incidence g c).det ≠ 0 := fun h ↦ hc (by simp [h])
     have hd' : (incidence g d).det ≠ 0 := fun h ↦ hd (by simp [h])
     exact (image_eq_of_det_incidence_ne_zero hc').symm.trans
@@ -142,7 +137,7 @@ variable {R}
 
 private theorem tupleChain_apply (g : Fin (n + 1) → ι) (c : RealizationCell K n) :
     tupleChain R g c = ((incidence g c).det : R) :=
-  (rfl)
+  congrFun ofSupportFinite_coe c
 
 /-- The chain of the increasing enumeration of a cell is that cell. -/
 @[simp]
@@ -156,8 +151,7 @@ theorem tupleChain_vertexEmbedding (c : RealizationCell K n) :
 theorem tupleChain_comp_perm (g : Fin (n + 1) → ι) (σ : Equiv.Perm (Fin (n + 1))) :
     tupleChain (K := K) R (g ∘ σ) = Equiv.Perm.sign σ • tupleChain R g := by
   ext c
-  rw [Units.smul_def, Finsupp.smul_apply, tupleChain_apply, tupleChain_apply, incidence_comp_perm,
-    Matrix.det_permute, Int.cast_id, Int.cast_mul, zsmul_eq_mul]
+  simp [tupleChain_apply, incidence_comp_perm, Matrix.det_permute, Units.smul_def]
 
 /-- The chain of a permuted increasing enumeration of a cell is that cell with the sign of the
 permutation. -/
@@ -240,10 +234,11 @@ theorem boundary_tupleChain {g : Fin (n + 2) → ι} (hg : Finset.univ.image g �
     ext d
     rw [tupleChain_vertexEmbedding_comp, Units.smul_def, map_zsmul, hc, Finsupp.smul_apply,
       sum_tupleChain_comp_succAbove_apply, sum_tupleChain_comp_succAbove_apply,
-      det_boundaryIncidence_comp_perm, Int.cast_mul, zsmul_eq_mul]
+      det_boundaryIncidence_comp_perm]
+    simp
   · ext d
-    rw [tupleChain_eq_zero_of_not_injective hinj, map_zero, sum_tupleChain_comp_succAbove_apply,
-      det_boundaryIncidence_of_not_injective hinj, Finsupp.zero_apply, Int.cast_zero]
+    simp [tupleChain_eq_zero_of_not_injective hinj, sum_tupleChain_comp_succAbove_apply,
+      det_boundaryIncidence_of_not_injective hinj]
 
 end Tuple
 
@@ -254,12 +249,6 @@ variable {κ τ : Type*} [LinearOrder κ] [LinearOrder τ]
   (R : Type v) [Ring R]
   (f : PreAbstractSimplicialComplex.SimplicialMap
     K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-
-/-- A simplicial map sends a vertex tuple spanning a face to a vertex tuple spanning a face. -/
-private theorem image_comp_mem {m : ℕ} {g : Fin m → ι} (hg : Finset.univ.image g ∈ K) :
-    Finset.univ.image (f ∘ g) ∈ L := by
-  rw [← Finset.image_image]
-  exact f.map_face hg
 
 /-- The map on ordered chains induced by a simplicial map. A cell with increasing vertices
 `[v₀, ..., vₙ]` goes to the chain of the tuple `[f v₀, ..., f vₙ]`: it vanishes when `f`
@@ -303,7 +292,7 @@ theorem map_comp
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   have hc : Finset.univ.image c.vertexEmbedding ∈ K := c.image_vertexEmbedding ▸ c.1.2
   simp only [LinearMap.comp_apply, lsingle_apply, map_single, one_smul,
-    map_tupleChain g (image_comp_mem f hc),
+    map_tupleChain g (f.image_comp_mem hc),
     PreAbstractSimplicialComplex.SimplicialMap.coe_comp, Function.comp_assoc]
 
 /-- The induced maps commute with the alternating boundary. -/
@@ -312,7 +301,7 @@ theorem boundary_comp_map (n : ℕ) :
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   have hc : Finset.univ.image c.vertexEmbedding ∈ K := c.image_vertexEmbedding ▸ c.1.2
   simp only [LinearMap.comp_apply, lsingle_apply, map_single, one_smul,
-    boundary_tupleChain (image_comp_mem f hc), boundary_single, map_sum, map_smul,
+    boundary_tupleChain (f.image_comp_mem hc), boundary_single, map_sum, map_smul,
     RealizationCell.vertexEmbedding_face, Function.comp_assoc]
 
 end Map

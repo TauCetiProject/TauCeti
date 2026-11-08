@@ -59,6 +59,12 @@ theorem map_face (f : SimplicialMap K L) {σ : Finset α} (hσ : σ ∈ K) :
     σ.image f ∈ L :=
   f.map_face' hσ
 
+/-- A simplicial map sends a vertex tuple spanning a face to a vertex tuple spanning a face. -/
+theorem image_comp_mem [DecidableEq α] {m : Type*} [Fintype m] (f : SimplicialMap K L)
+    {g : m → α} (hg : Finset.univ.image g ∈ K) : Finset.univ.image (f ∘ g) ∈ L := by
+  rw [← Finset.image_image]
+  exact f.map_face hg
+
 /-- A vertex map is simplicial exactly when its image complex is a subcomplex of the codomain. -/
 theorem map_le_iff (f : α → β) :
     K.map f ≤ L ↔ ∀ ⦃σ : Finset α⦄, σ ∈ K → σ.image f ∈ L :=

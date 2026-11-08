@@ -44,6 +44,11 @@ abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
 
 namespace RealizationCell
 
+/-- Cells with the same vertex set are equal. -/
+theorem ext {K : AbstractSimplicialComplex ι} {n : ℕ} {c d : RealizationCell K n}
+    (h : c.1.1 = d.1.1) : c = d :=
+  Subtype.ext (Subtype.ext h)
+
 section Vertex
 
 variable (K : AbstractSimplicialComplex ι)
@@ -89,8 +94,8 @@ theorem vertexEmbedding_vertex (v : ι) (i : Fin 1) : (vertex K v).vertexEmbeddi
 
 /-- Every `0`-cell is the `0`-cell of its only vertex. -/
 theorem eq_vertex (c : RealizationCell K 0) : c = vertex K (c.vertexEmbedding 0) :=
-  Subtype.ext (Subtype.ext (Finset.eq_singleton_iff_unique_mem.mpr ⟨c.vertexEmbedding_mem 0,
-    fun _ hw ↦ Finset.card_le_one.mp c.2.le _ hw _ (c.vertexEmbedding_mem 0)⟩))
+  ext (Finset.eq_singleton_iff_unique_mem.mpr ⟨c.vertexEmbedding_mem 0,
+    fun _ hw ↦ Finset.card_le_one.mp c.2.le _ hw _ (c.vertexEmbedding_mem 0)⟩)
 
 /-- A tuple of distinct vertices spanning a face is a permuted increasing enumeration of the
 cell it spans. -/
@@ -99,14 +104,10 @@ theorem exists_eq_vertexEmbedding_comp {g : Fin (n + 1) → ι} (hg : Function.I
     ∃ (c : RealizationCell K n) (σ : Equiv.Perm (Fin (n + 1))), g = c.vertexEmbedding ∘ σ := by
   let c : RealizationCell K n :=
     ⟨⟨Finset.univ.image g, hK⟩, by simp [Finset.card_image_of_injective _ hg]⟩
-  have hc : Finset.univ.image c.vertexEmbedding = Finset.univ.image g := c.image_vertexEmbedding
   have hmono : StrictMono (g ∘ Tuple.sort g) :=
     (Tuple.monotone_sort g).strictMono_of_injective (hg.comp (Tuple.sort g).injective)
-  have hsort : g ∘ Tuple.sort g = c.vertexEmbedding := by
-    refine (hmono.range_inj_of_wellFoundedLT c.strictMono_vertexEmbedding).mp ?_
-    rw [(Tuple.sort g).surjective.range_comp]
-    simpa only [Finset.coe_image, Finset.coe_univ, Set.image_univ] using
-      congrArg (fun s : Finset ι ↦ (s : Set ι)) hc.symm
+  have hsort : g ∘ Tuple.sort g = c.vertexEmbedding :=
+    Finset.orderEmbOfFin_unique c.2 (fun _ ↦ Finset.mem_image_of_mem g (Finset.mem_univ _)) hmono
   refine ⟨c, (Tuple.sort g).symm, ?_⟩
   rw [← hsort]
   ext i
@@ -165,7 +166,7 @@ theorem exists_face_eq_iff_subset (c : RealizationCell K (n + 1)) (d : Realizati
         simp only [d.2, c.2] at hcard
         omega⟩
     obtain ⟨j, hdj⟩ := (c.exists_subset_face_iff_ssubset d.1.1).mpr hdc'
-    refine ⟨j, Subtype.ext (Subtype.ext ?_)⟩
+    refine ⟨j, ext ?_⟩
     exact (Finset.eq_of_subset_of_card_le hdj (by
       simp only [d.2, (c.face j).2]
       omega)).symm
@@ -186,8 +187,7 @@ theorem vertexEmbedding_face (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
 the first deletion.  This is the semisimplicial face identity. -/
 theorem face_face (c : RealizationCell K (n + 2)) (i : Fin (n + 3)) (j : Fin (n + 2)) :
     (c.face i).face j = (c.face (i.succAbove j)).face (j.predAbove i) := by
-  apply Subtype.ext
-  apply Subtype.ext
+  apply ext
   rw [face_val, face_val, face_val, face_val]
   rw [congrFun (vertexEmbedding_face c i) j,
     congrFun (vertexEmbedding_face c (i.succAbove j)) (j.predAbove i)]
@@ -234,7 +234,7 @@ theorem vertexEmbedding_cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈
 @[simp]
 theorem face_cone_last (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
     (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face (Fin.last (n + 1)) = c := by
-  refine Subtype.ext (Subtype.ext ?_)
+  refine ext ?_
   rw [face_val, congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_last, cone_val,
     Finset.erase_insert fun hv ↦ (hlt v hv).false]
 
@@ -258,7 +258,7 @@ theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w
     (hK : insert v c.1.1 ∈ K) (j : Fin (n + 2)) :
     (c.cone v hlt hK).face j.castSucc =
       (c.face j).cone v (fun w hw ↦ hlt w (c.face_val_subset j hw)) (c.insert_face_mem j hK) := by
-  refine Subtype.ext (Subtype.ext ?_)
+  refine ext ?_
   rw [face_val, congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_castSucc, cone_val,
     cone_val, face_val, Finset.erase_insert_of_ne (hlt _ (c.vertexEmbedding_mem j)).ne']
 
@@ -266,7 +266,7 @@ theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w
 @[simp]
 theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
     (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face 0 = vertex K v := by
-  refine Subtype.ext (Subtype.ext ?_)
+  refine ext ?_
   have hc : c.1.1 = {c.vertexEmbedding 0} := congrArg (fun d ↦ d.1.1) c.eq_vertex
   rw [face_val, ← Fin.castSucc_zero, congrFun (vertexEmbedding_cone c v hlt hK),
     Fin.lastCases_castSucc, cone_val, hc]
