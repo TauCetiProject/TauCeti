@@ -6,16 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
 
 /-!
 # Global reciprocity for the Weil cup product
 
 For a number field `K`, two global classes in `H¹(K, E[m])` give local classes at every place.
-The sum of their local Tate pairings, read in `ℚ/ℤ`, is zero. The finite-place pairings have
-finite support, so the finite sum over all finite places is an honest sum, not the junk value
-of `finsum` on an infinitely supported function. The archimedean terms are included: they vanish
-at complex places but need not vanish at real places.
+The finite-place terms are their local Tate pairings embedded in `ℚ/ℤ` by `k ↦ k/m`;
+the archimedean terms are the archimedean Brauer invariants of their Weil cup product.
+The sum of these terms is zero. The finite-place pairings have finite support, so the finite
+sum over all finite places is an honest sum, not the junk value of `finsum` on an infinitely
+supported function. The archimedean terms vanish at complex places but need not vanish at
+real places.
 
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals.
 It follows by localizing the Brauer class of the global Weil cup product and applying the
@@ -70,8 +73,9 @@ theorem hasFiniteSupport_localTateWeilPairing_torsionRes
   rw [Function.mem_support, W.finiteInvAt_torsionWeilBrauerPairing m hm a b v (τ v)]
   exact fun h ↦ hv (ZMod.toRatAddCircle_injective m (h.trans (map_zero _).symm))
 
-/-- **Global reciprocity for the Weil cup product.** The invariants of the local Tate pairings
-of two global torsion-cohomology classes sum to zero over every finite and infinite place.
+/-- **Global reciprocity for the Weil cup product.** The finite-place local Tate pairings of
+two global torsion-cohomology classes, embedded in `ℚ/ℤ` by `k ↦ k/m`, together with the
+archimedean Brauer invariants of their Weil cup product, sum to zero.
 The finite-place sum has finite support by
 `hasFiniteSupport_localTateWeilPairing_torsionRes`. All choices of embeddings of separable
 closures are allowed, independently at each place. -/
