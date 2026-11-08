@@ -217,8 +217,7 @@ theorem mem_ramifiedPrimes_iff_ramificationIdx_eq_two :
     have h0 : 𝔭 = ⊥ := Ideal.eq_bot_of_under_eq_bot
       (by simpa using (Ideal.LiesOver.over (p := (span {((0 : ℕ) : ℤ)} : Ideal ℤ)) (P := 𝔭)).symm)
     subst h0
-    have := Algebra.isUnramifiedAt_bot (R := ℤ) (S := 𝓞 K)
-    rw [Ideal.ramificationIdx_eq_one] at he
+    simp only [Ideal.ramificationIdx_bot_eq_one] at he
     omega
   have hp : p.Prime := by
     have : (span {(p : ℤ)} : Ideal ℤ).IsPrime := by
