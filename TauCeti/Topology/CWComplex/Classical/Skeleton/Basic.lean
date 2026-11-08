@@ -18,7 +18,9 @@ unique, and how cells account for points in consecutive skeleta, so that a map s
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
 skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
-with that point (`TauCeti.skeletonLT_one_eq_insert`).  The preimages of the skeleta under a map
+with that point (`TauCeti.skeletonLT_one_eq_insert`).  When every cell is attached directly along
+the base, a subset of the `0`-skeleton is closed as soon as its trace on the base is
+(`TauCeti.isClosed_of_subset_skeletonLT_one`).  The preimages of the skeleta under a map
 into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
@@ -154,6 +156,31 @@ lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
   rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
   obtain ⟨j, hj⟩ := hx
   exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
+
+/-- **Closed subsets of the `0`-skeleton of a complex attached along its base.** If the frontier of
+every cell of `C` lies in the base `D`, then a subset `A` of the `0`-skeleton `skeletonLT C 1`,
+which consists of `D` and the `0`-cells, is closed as soon as `A ∩ D` is closed. -/
+lemma isClosed_of_subset_skeletonLT_one (hfr : ∀ n (j : cell C n), cellFrontier n j ⊆ D)
+    {A : Set X} (hA : A ⊆ skeletonLT C 1) (hAD : IsClosed (A ∩ D)) : IsClosed A := by
+  refine (RelCWComplex.closed C A (hA.trans (skeletonLT C 1).subset_complex)).2
+    ⟨fun n j ↦ ?_, hAD⟩
+  cases n with
+  | zero =>
+    -- A `0`-cell is a single point.
+    rw [closedCell_zero_eq_singleton]
+    exact (subsingleton_singleton.anti inter_subset_right).isClosed
+  | succ n =>
+    -- A point of the `0`-skeleton in a cell of positive dimension lies on its frontier.
+    have hsub : A ∩ closedCell (n + 1) j ⊆ D := by
+      rintro x ⟨hxA, hx⟩
+      rw [← cellFrontier_union_openCell_eq_closedCell] at hx
+      refine hx.elim (fun hx ↦ hfr _ j hx) fun hx ↦ absurd hx ?_
+      exact disjoint_left.1 (disjoint_skeletonLT_openCell (by norm_cast; omega)) (hA hxA)
+    have : A ∩ closedCell (n + 1) j = (A ∩ D) ∩ closedCell (n + 1) j := by
+      ext x
+      exact ⟨fun hx ↦ ⟨⟨hx.1, hsub hx⟩, hx.2⟩, fun hx ↦ ⟨hx.1.1, hx.2⟩⟩
+    rw [this]
+    exact hAD.inter isClosed_closedCell
 
 variable {E : Type*}
 

@@ -37,10 +37,11 @@ So critical points of index one are the only ones through which loops can appear
   (`TauCeti.IsMorse.simplyConnectedSpace_of_manifoldMorseIndex_ne_one`).
 
 Conversely, a proper Morse function bounded below on a manifold with a nontrivial fundamental group
-has a critical point of index one (`TauCeti.IsMorse.exists_manifoldMorseIndex_eq_one`). This is an
-obstruction to perfection that homology does not see: on a compact manifold with a nontrivial
-fundamental group whose first Betti number over a division ring `k` vanishes, such as `ℝℙⁿ`
-for `n ≥ 2` over `ℚ`, the weak Morse inequality `b₁ ≤ c₁` is strict
+has a critical point of index one (`TauCeti.IsMorse.exists_manifoldMorseIndex_eq_one`), so its
+count `c₁` of critical points of index one is nonzero (`TauCeti.IsMorse.criticalCount_one_ne_zero`).
+This is an obstruction to perfection that homology does not see: on a compact manifold with a
+nontrivial fundamental group whose first Betti number over a division ring `k` vanishes, such as
+`ℝℙⁿ` for `n ≥ 2` over `ℚ`, the weak Morse inequality `b₁ ≤ c₁` is strict
 (`TauCeti.IsMorse.finrank_singularHomology_one_lt_toNat_criticalCount`). Hence no Morse function
 on such a manifold has exactly `bⱼ` critical points of index `j` in every degree `j`.
 
@@ -140,19 +141,9 @@ theorem IsMorse.subsingleton_fundamentalGroup_of_manifoldMorseIndex_ne_one (hf :
   have hKj : (K j : Set M) = {x | f x ≤ c j} := hK j
   have hmem (t : unitInterval) : γ t ∈ {x | f x ≤ c j} := hKj ▸ hj (mem_range_self t)
   have hx : x ∈ {x | f x ≤ c j} := γ.source ▸ hmem 0
-  let δ : Path (⟨x, hx⟩ : {x | f x ≤ c j}) ⟨x, hx⟩ :=
-    { toFun t := ⟨γ t, hmem t⟩
-      continuous_toFun := by fun_prop
-      source' := by ext; simp
-      target' := by ext; simp }
-  have hδ := (subsingleton_fundamentalGroup_iff.1
-    (hf.subsingleton_fundamentalGroup_sublevel_of_manifoldMorseIndex_ne_one (hKj ▸ K.isCompact j)
-      (hreg j) (fun p hp _ ↦ hd p hp) _) δ).map ⟨_, continuous_subtype_val⟩
-  have hδγ : δ.map continuous_subtype_val = γ := by ext; rfl
-  have hrefl : (Path.refl (⟨x, hx⟩ : {x | f x ≤ c j})).map continuous_subtype_val =
-      Path.refl x := by
-    ext; rfl
-  rwa [hδγ, hrefl] at hδ
+  have := hf.subsingleton_fundamentalGroup_sublevel_of_manifoldMorseIndex_ne_one
+    (hKj ▸ K.isCompact j) (hreg j) (fun p hp _ ↦ hd p hp) ⟨x, hx⟩
+  exact Path.Homotopic.refl_of_forall_mem_of_subsingleton (x := ⟨x, hx⟩) γ hmem
 
 /-- **A proper Morse function without critical points of index one forces simple connectivity.**
 A connected manifold carrying a proper Morse function, bounded below, with no critical point of
@@ -178,22 +169,34 @@ theorem IsMorse.exists_manifoldMorseIndex_eq_one (hf : IsMorse I f) (hp : IsProp
   have := hf.subsingleton_fundamentalGroup_of_manifoldMorseIndex_ne_one hp hbdd h x
   exact false_of_nontrivial_of_subsingleton (FundamentalGroup M x)
 
+/-- **A nontrivial fundamental group forces critical points of index one.** A proper Morse
+function, bounded below, on a manifold whose fundamental group is nontrivial at some basepoint has
+a nonzero number of critical points of Morse index one. -/
+theorem IsMorse.criticalCount_one_ne_zero (hf : IsMorse I f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (x : M) [Nontrivial (FundamentalGroup M x)] :
+    criticalCount I f 1 ≠ 0 := by
+  obtain ⟨p, hp, hp₁⟩ := hf.exists_manifoldMorseIndex_eq_one hp hbdd x
+  rw [criticalCount_def, Ne, encard_eq_zero]
+  exact nonempty_iff_ne_empty.1 ⟨p, hp, hp₁⟩
+
 /-- **The fundamental group obstructs perfection.** Let `f` be a Morse function on a compact
 manifold whose fundamental group is nontrivial at some basepoint, and let `k` be a division ring
 over which the first Betti number `b₁ = dim_k H₁(M; k)` vanishes. Then the weak Morse inequality
 `b₁ ≤ c₁` is strict: `f` has more critical points of index one than `b₁`, so it does not have
-exactly `bⱼ` critical points of index `j` in every degree. -/
+exactly `bⱼ` critical points of index `j` in every degree. This is the compact case of
+`TauCeti.IsMorse.criticalCount_one_ne_zero`, read against the vanishing first Betti number. -/
 theorem IsMorse.finrank_singularHomology_one_lt_toNat_criticalCount [CompactSpace M]
     (hf : IsMorse I f) (x : M) [Nontrivial (FundamentalGroup M x)] (k : Type u) [DivisionRing k]
     (hb : Module.finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) 1).obj
       (ModuleCat.of k k)).obj (TopCat.of M)) = 0) :
     Module.finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) 1).obj
       (ModuleCat.of k k)).obj (TopCat.of M)) < (criticalCount I f 1).toNat := by
-  obtain ⟨p, hp, hp₁⟩ := hf.exists_manifoldMorseIndex_eq_one
-    hf.contMDiff.continuous.isProperMap (isCompact_range hf.contMDiff.continuous).bddBelow x
-  have hfin : {q ∈ criticalPoints I f | manifoldMorseIndex I f q = 1}.Finite :=
-    hf.finite_criticalPoints.subset fun q hq ↦ hq.1
-  rw [hb, criticalCount_def, ← hfin.cast_ncard_eq, ENat.toNat_natCast]
-  exact (ncard_pos hfin).2 ⟨p, hp, hp₁⟩
+  have hc := hf.criticalCount_one_ne_zero hf.contMDiff.continuous.isProperMap
+    (isCompact_range hf.contMDiff.continuous).bddBelow x
+  have hfin : criticalCount I f 1 ≠ ⊤ := by
+    rw [criticalCount_def, Ne, encard_eq_top_iff, not_infinite]
+    exact hf.finite_criticalPoints.subset fun q hq ↦ hq.1
+  rw [hb]
+  exact Nat.pos_of_ne_zero fun h ↦ (ENat.toNat_eq_zero.1 h).elim hc hfin
 
 end TauCeti
