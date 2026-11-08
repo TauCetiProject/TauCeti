@@ -56,6 +56,15 @@ theorem cauchyRiemannOperator_apply (j : U →L[ℝ] U) (J : V → V →L[ℝ] V
       fderiv ℝ u x (j v) - J (u x) (fderiv ℝ u x v) :=
   (rfl)
 
+/-- A vanishing Cauchy–Riemann defect makes the derivative intertwine the source and
+target endomorphisms pointwise. -/
+theorem fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V} {u : U → V} {x : U}
+    (h : cauchyRiemannOperator j J u x = 0) (v : U) :
+    fderiv ℝ u x (j v) = J (u x) (fderiv ℝ u x v) := by
+  have hv := congrArg (fun L : U →L[ℝ] V ↦ L v) h
+  simpa only [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero] using hv
+
 /-- Vanishing of the defect is precisely the existing J-holomorphicity condition.
 Finite dimensionality supplies continuity of the algebraic almost complex structures. -/
 theorem cauchyRiemannOperator_eq_zero_iff [FiniteDimensional ℝ U] [FiniteDimensional ℝ V]
@@ -68,9 +77,7 @@ theorem cauchyRiemannOperator_eq_zero_iff [FiniteDimensional ℝ U] [FiniteDimen
   · intro h
     apply isJHolomorphicAt_of_hasFDerivAt hu.hasFDerivAt
     apply (isComplexLinearMap_iff_apply _ _ _).mpr
-    intro v
-    have hv := congrArg (fun L : U →L[ℝ] V ↦ L v) h
-    simpa using sub_eq_zero.mp hv
+    exact fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero h
   · intro h
     ext v
     simp [h.fderiv_apply_commute]
@@ -201,8 +208,7 @@ private theorem fderiv_cauchyRiemannOperator_eq_zero
   have hh : (fun y ↦ fderiv ℝ u y (j v)) =ᶠ[𝓝 x]
       (fun y ↦ J (u y) (fderiv ℝ u y v)) := by
     filter_upwards [hhol] with y hy
-    have he := congrArg (fun L : U →L[ℝ] V ↦ L v) hy
-    simpa only [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero] using he
+    exact fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hy v
   have hleft := (hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) (j v))).fderiv
   have hright := (hJu.hasFDerivAt.clm_apply
     (hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) v))).fderiv
@@ -227,10 +233,8 @@ theorem cauchyRiemannLinearization_fderiv_apply
   have hs := hu.isSymmSndFDerivAt (by norm_num)
   have he := fderiv_cauchyRiemannOperator_eq_zero j J u x (a x) v hu hJ hhol
   have ht : J (u x) (fderiv ℝ u x (fderiv ℝ a x v)) =
-      fderiv ℝ u x (j (fderiv ℝ a x v)) := by
-    have he := congrArg (fun L : U →L[ℝ] V ↦ L (fderiv ℝ a x v)) hhol.self_of_nhds
-    simp only [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero] at he
-    exact he.symm
+      fderiv ℝ u x (j (fderiv ℝ a x v)) :=
+    (fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hhol.self_of_nhds _).symm
   simp only [cauchyRiemannLinearization_apply, fderiv_clm_apply hdu ha,
     add_apply, comp_apply, flip_apply, map_add, map_sub]
   rw [hs (j v) (a x), hs v (a x), ht]

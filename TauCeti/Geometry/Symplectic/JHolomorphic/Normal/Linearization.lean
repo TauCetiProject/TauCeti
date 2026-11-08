@@ -97,7 +97,7 @@ theorem normalCauchyRiemannLinearization_fderiv_apply
   rw [normalCauchyRiemannLinearization_apply,
     cauchyRiemannLinearization_fderiv_apply j J u a x v hu ha hJ hhol]
   rw [LinearMap.zero_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-  exact ⟨_, rfl⟩
+  exact LinearMap.mem_range_self _ _
 
 /-- For `u` C² at `x` and J-holomorphic near `x`, with `J` differentiable at `u x`,
 adding `du · a` to a differentiable ambient lift does not change the normal linearization,
