@@ -64,10 +64,12 @@ theorem kaplanskyFunInv_def (s : ℝ) : kaplanskyFunInv s = s / (1 + √(1 - s ^
 
 private theorem one_add_sq_pos (t : ℝ) : 0 < 1 + t ^ 2 := by positivity
 
-private theorem continuous_inv_one_add_sq : Continuous fun t : ℝ => (1 + t ^ 2)⁻¹ :=
+/-- The function `ρ t = (1 + t ^ 2)⁻¹` of the Kaplansky difference identity is continuous. -/
+theorem continuous_inv_one_add_sq : Continuous fun t : ℝ => (1 + t ^ 2)⁻¹ :=
   (continuous_const.add (continuous_pow 2)).inv₀ fun t => (one_add_sq_pos t).ne'
 
-private theorem continuous_div_one_add_sq : Continuous fun t : ℝ => t / (1 + t ^ 2) :=
+/-- The function `σ t = t / (1 + t ^ 2)` of the Kaplansky difference identity is continuous. -/
+theorem continuous_div_one_add_sq : Continuous fun t : ℝ => t / (1 + t ^ 2) :=
   continuous_id.div (continuous_const.add (continuous_pow 2)) fun t => (one_add_sq_pos t).ne'
 
 @[fun_prop]
@@ -87,6 +89,7 @@ theorem abs_kaplanskyFun_le_one (t : ℝ) : |kaplanskyFun t| ≤ 1 := by
   nlinarith [sq_nonneg (|t| - 1), sq_abs t]
 
 /-- `kaplanskyFunInv` is a right inverse of the Kaplansky function on `[-1, 1]`. -/
+@[simp]
 theorem kaplanskyFun_kaplanskyFunInv {s : ℝ} (hs : |s| ≤ 1) :
     kaplanskyFun (kaplanskyFunInv s) = s := by
   have h1 : 0 ≤ 1 - s ^ 2 := by nlinarith [sq_abs s, abs_nonneg s]
@@ -96,7 +99,8 @@ theorem kaplanskyFun_kaplanskyFunInv {s : ℝ} (hs : |s| ≤ 1) :
   field_simp
   linear_combination (-s) * hr
 
-private theorem abs_div_one_add_sq_le (t : ℝ) : |t / (1 + t ^ 2)| ≤ 1 / 2 := by
+/-- `t / (1 + t ^ 2)` takes values in `[-1 / 2, 1 / 2]`. -/
+theorem abs_div_one_add_sq_le (t : ℝ) : |t / (1 + t ^ 2)| ≤ 1 / 2 := by
   rw [abs_div, abs_of_pos (one_add_sq_pos t), div_le_iff₀ (one_add_sq_pos t)]
   nlinarith [sq_nonneg (|t| - 1), sq_abs t]
 
@@ -107,32 +111,37 @@ section Algebra
 variable {A : Type*} [Ring A] [StarRing A] [Algebra ℝ A] [TopologicalSpace A]
   [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
 
-private theorem cfc_one_add_sq {a : A} (ha : IsSelfAdjoint a) :
+/-- The functional calculus sends `1 + t ^ 2` to `1 + a ^ 2`. -/
+theorem cfc_one_add_sq {a : A} (ha : IsSelfAdjoint a) :
     cfc (fun t : ℝ => 1 + t ^ 2) a = 1 + a ^ 2 := by
   rw [cfc_const_add 1 (fun t : ℝ => t ^ 2) a, cfc_pow_id a 2, Algebra.algebraMap_eq_smul_one,
     one_smul]
 
-private theorem cfc_inv_one_add_sq_mul {a : A} (ha : IsSelfAdjoint a) :
+/-- `cfc (1 + t ^ 2)⁻¹ a` is a left inverse of `1 + a ^ 2`. -/
+theorem cfc_inv_one_add_sq_mul {a : A} (ha : IsSelfAdjoint a) :
     cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a * (1 + a ^ 2) = 1 := by
   rw [← cfc_one_add_sq ha, ← cfc_mul _ _ a continuous_inv_one_add_sq.continuousOn,
     ← cfc_const_one ℝ a]
   exact cfc_congr fun t _ => inv_mul_cancel₀ (one_add_sq_pos t).ne'
 
-private theorem mul_cfc_inv_one_add_sq {a : A} (ha : IsSelfAdjoint a) :
+/-- `cfc (1 + t ^ 2)⁻¹ a` is a right inverse of `1 + a ^ 2`. -/
+theorem mul_cfc_inv_one_add_sq {a : A} (ha : IsSelfAdjoint a) :
     (1 + a ^ 2) * cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a = 1 := by
   rw [← cfc_one_add_sq ha, ← cfc_mul (fun t : ℝ => 1 + t ^ 2) _ a
     (continuous_const.add (continuous_pow 2)).continuousOn continuous_inv_one_add_sq.continuousOn,
     ← cfc_const_one ℝ a]
   exact cfc_congr fun t _ => mul_inv_cancel₀ (one_add_sq_pos t).ne'
 
-private theorem cfc_div_one_add_sq_eq_mul {a : A} (ha : IsSelfAdjoint a) :
+/-- `cfc (t / (1 + t ^ 2)) a = cfc (1 + t ^ 2)⁻¹ a * a`. -/
+theorem cfc_div_one_add_sq_eq_mul {a : A} (ha : IsSelfAdjoint a) :
     cfc (fun t : ℝ => t / (1 + t ^ 2)) a = cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a * a := calc
   _ = cfc (fun t : ℝ => (1 + t ^ 2)⁻¹ * t) a := cfc_congr fun t _ => div_eq_inv_mul t _
   _ = cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a * cfc (fun t : ℝ => t) a :=
     cfc_mul _ _ a continuous_inv_one_add_sq.continuousOn
   _ = _ := by rw [cfc_id' ℝ a]
 
-private theorem cfc_div_one_add_sq_eq_mul' {a : A} (ha : IsSelfAdjoint a) :
+/-- `cfc (t / (1 + t ^ 2)) a = a * cfc (1 + t ^ 2)⁻¹ a`. -/
+theorem cfc_div_one_add_sq_eq_mul' {a : A} (ha : IsSelfAdjoint a) :
     cfc (fun t : ℝ => t / (1 + t ^ 2)) a = a * cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a := calc
   _ = cfc (fun t : ℝ => t * (1 + t ^ 2)⁻¹) a := cfc_congr fun t _ => div_eq_mul_inv t _
   _ = cfc (fun t : ℝ => t) a * cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a :=
@@ -192,6 +201,7 @@ end Normed
 
 /-- Every selfadjoint contraction `b` is the Kaplansky function of the selfadjoint element
 `cfc kaplanskyFunInv b`, which lies in every closed star subalgebra containing `b` (`cfc_mem`). -/
+@[simp]
 theorem _root_.IsSelfAdjoint.cfc_kaplanskyFun_cfc_kaplanskyFunInv {A : Type*} [NormedRing A]
     [StarRing A] [NormedAlgebra ℝ A] [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
     {b : A} (hb : IsSelfAdjoint b) (hb₁ : ‖b‖ ≤ 1) :
