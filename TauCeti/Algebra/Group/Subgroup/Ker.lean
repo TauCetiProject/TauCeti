@@ -39,13 +39,14 @@ theorem mem_eqLocus {f g : G →* M} {x : G} : x ∈ f.eqLocus g ↔ f x = g x :
 range. -/]
 theorem range_comp_of_surjective {N P : Type*} [Group N] [Group P] (g : N →* P) (f : G →* N)
     (hf : Function.Surjective f) : (g.comp f).range = g.range :=
-  SetLike.coe_injective (hf.range_comp g)
+  SetLike.coe_injective <| by simpa only [coe_range, coe_comp] using hf.range_comp g
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same range. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative
 additive group has the same range. -/]
 theorem range_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.range = f.range := by
   ext
+  simp only [mem_range]
   exact inv_surjective.exists.trans (by simp)
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same kernel. -/
