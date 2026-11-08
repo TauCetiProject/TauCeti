@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+public import Mathlib.CategoryTheory.Limits.Shapes.RegularMono
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 
 /-!
@@ -139,6 +140,18 @@ theorem IsDeflation.epi {E : ConflationClass C} {Y Z : C} {p : Y ⟶ Z}
     (hp : E.IsDeflation p) : Epi p := by
   obtain ⟨X, i, zero, hS⟩ := hp
   exact (E.isKernelCokernelPair (ShortComplex.mk i p zero) hS).epi_g
+
+/-- A deflation is a regular epimorphism, since it is a cokernel. -/
+theorem IsDeflation.isRegularEpi {E : ConflationClass C} {X Y : C} {p : X ⟶ Y}
+    (hp : E.IsDeflation p) : IsRegularEpi p := by
+  obtain ⟨K, k, h, hc⟩ := (E.isDeflation_iff p).1 hp
+  exact ⟨⟨Cofork.IsColimit.regularEpi (E.isKernelCokernelPair _ hc).gIsCokernel⟩⟩
+
+/-- An inflation is a regular monomorphism, since it is a kernel. -/
+theorem IsInflation.isRegularMono {E : ConflationClass C} {X Y : C} {i : X ⟶ Y}
+    (hi : E.IsInflation i) : IsRegularMono i := by
+  obtain ⟨Q, q, h, hc⟩ := (E.isInflation_iff i).1 hi
+  exact ⟨⟨Fork.IsLimit.regularMono (E.isKernelCokernelPair _ hc).fIsKernel⟩⟩
 
 /-- An isomorphism of short complexes transports the property of being a conflation. -/
 theorem conflation_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e : S ≅ T)
