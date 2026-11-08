@@ -298,6 +298,12 @@ theorem isZero_supportedSectionsSheaf_obj (h : IsZero (F.supportedHSheaf S 0)) :
     IsZero (F.supportedSectionsSheaf S).obj :=
   (sheafToPresheaf _ _).map_isZero (h.of_iso (F.supportedHSheafZeroIso S).symm)
 
+/-- If the local cohomology sheaf `𝓗_S⁰(F)` vanishes, then the presheaf of sections of `F`
+supported in `S` is flasque, being zero. -/
+theorem isFlasque_supportedSectionsSheaf_obj_of_isZero (h : IsZero (F.supportedHSheaf S 0)) :
+    TopCat.Presheaf.IsFlasque (F.supportedSectionsSheaf S).obj :=
+  TopCat.Presheaf.IsFlasque.of_isZero (F.isZero_supportedSectionsSheaf_obj S h)
+
 /-- The local cohomology sheaves `𝓗_Sⁿ(F)` are supported in `S`: their stalks at points outside
 `S` vanish. -/
 theorem isZero_stalk_supportedHSheaf_of_notMem {x : X} (hx : x ∉ S) (n : ℕ) :
@@ -524,7 +530,7 @@ theorem subsingleton_supportedH_of_isZero_supportedHSheaf {n : ℕ}
   · have : Subsingleton (F.supportedSections S W) :=
       AddCommGrpCat.subsingleton_of_isZero (hΓ.obj (op W))
     exact (F.supportedHZeroEquiv S W).injective.subsingleton
-  · have := TopCat.Presheaf.IsFlasque.of_isZero hΓ
+  · have := F.isFlasque_supportedSectionsSheaf_obj_of_isZero S (h 0 (by omega))
     exact subsingleton_supportedH_succ_of_isZero_supportedHSheaf_succ F S
       (fun q hq ↦ h (q + 1) (by omega)) (by omega : q < n - 1) W
 
@@ -696,8 +702,7 @@ theorem isSheaf_supportedHPresheaf_of_isZero_supportedHSheaf {n : ℕ}
   rcases n with _ | n
   · exact (Presheaf.isSheaf_of_iso_iff (F.supportedHPresheafZeroIso S)).2
       (F.isSheaf_supportedSectionsPresheaf S)
-  · have : TopCat.Presheaf.IsFlasque (F.supportedSectionsSheaf S).obj :=
-      TopCat.Presheaf.IsFlasque.of_isZero (F.isZero_supportedSectionsSheaf_obj S (h 0 (by omega)))
+  · have := F.isFlasque_supportedSectionsSheaf_obj_of_isZero S (h 0 (by omega))
     exact F.isSheaf_supportedHPresheaf_succ_of_isZero_supportedHSheaf_succ S
       fun q hq ↦ h (q + 1) (by omega)
 
@@ -992,8 +997,7 @@ def supportedHPresheafEdgeIso (h : ∀ q ≠ n, IsZero (F.supportedHSheaf S q)) 
   | 0, j + 1, h, hk =>
     supportedHPresheafEdgeIsoOfIsZeroSucc F (fun q ↦ h (q + 1) (by omega)) hZS (by omega)
   | m + 1, j + 1, h, hk =>
-    have : TopCat.Presheaf.IsFlasque (F.supportedSectionsSheaf S).obj :=
-      TopCat.Presheaf.IsFlasque.of_isZero (F.isZero_supportedSectionsSheaf_obj S (h 0 (by omega)))
+    have := F.isFlasque_supportedSectionsSheaf_obj_of_isZero S (h 0 (by omega))
     supportedHPresheafEdgeIsoSucc hZS F m (fun q hq ↦ h (q + 1) (by omega)) hk
 
 /-- In degree zero, the degenerate edge comparison `H_Zⁿ(W, F) ≅ H_Z⁰(W, 𝓗_Sⁿ(F))` is

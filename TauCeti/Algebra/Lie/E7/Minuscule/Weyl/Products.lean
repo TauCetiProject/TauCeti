@@ -40,8 +40,8 @@ open TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-local notation "rootGen" => TauCeti.serreRootGenerator (CartanMatrix.E 7)
-local notation "cartanGen" => TauCeti.serreH ℚ (CartanMatrix.E 7)
+local notation "rootGen" => TauCeti.serreRootGenerator weightTable.cartanMatrix
+local notation "cartanGen" => TauCeti.serreH ℚ weightTable.cartanMatrix
 
 noncomputable section
 
@@ -100,12 +100,12 @@ theorem rootSubgroupPoints_weyl_mul (i : Fin 7) (u v : Aˣ) :
     (α := fun j ↦ CartanMatrix.E 7 i j)
     (by
       intro j
-      rw [TauCeti.serreRootGenerator_inl, TauCeti.lie_serreH_serreE,
+      rw [weightTable_cartanMatrix, TauCeti.serreRootGenerator_inl, TauCeti.lie_serreH_serreE,
         (CartanMatrix.E_isSymm 7).apply]
       simp only [Int.cast_smul_eq_zsmul])
     (by
       intro j
-      rw [TauCeti.serreRootGenerator_inr, TauCeti.lie_serreH_serreF,
+      rw [weightTable_cartanMatrix, TauCeti.serreRootGenerator_inr, TauCeti.lie_serreH_serreF,
         (CartanMatrix.E_isSymm 7).apply]
       simp only [Int.cast_smul_eq_zsmul])
     (CommAlgCat.of ℤ A) u v

@@ -10,6 +10,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The energy estimate and uniqueness for linear parabolic equations
@@ -83,6 +84,38 @@ private theorem two_mul_apply_le {B : V →L[ℝ] StrongDual ℝ V} {x : V} {d g
   rw [hdx]
   nlinarith [hB x, hgx, hyoung, hαα]
 
+omit [InnerProductSpace ℝ H] in
+/-- Integrating the pointwise energy balance `2 u'(u) ≤ α⁻¹ ‖f‖² - α ‖u‖² + 2 β ‖w‖²`, valid almost
+everywhere on `(a, b)`, over `(a, s)` with `s ∈ [a, b]`. -/
+private theorem integral_two_mul_apply_le_of_ae_le
+    (hp : IntegrableOn (fun r ↦ 2 * u' r (u r)) (Ioo a b))
+    (hu2 : IntegrableOn (fun r ↦ ‖u r‖ ^ 2) (Ioo a b))
+    (hf2 : IntegrableOn (fun r ↦ ‖f r‖ ^ 2) (Ioo a b))
+    (hφi : IntegrableOn (fun r ↦ ‖w r‖ ^ 2) (Ioo a b))
+    (hpt : ∀ᵐ r ∂volume.restrict (Ioo a b),
+      2 * u' r (u r) ≤ α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2)
+    {s : ℝ} (hs : s ∈ Icc a b) :
+    ∫ r in a..s, 2 * u' r (u r) ≤ α⁻¹ * (∫ r in a..s, ‖f r‖ ^ 2) -
+      α * (∫ r in a..s, ‖u r‖ ^ 2) + 2 * β * ∫ r in a..s, ‖w r‖ ^ 2 := by
+  have ha : a ∈ Icc a b := ⟨le_rfl, hs.1.trans hs.2⟩
+  have hsub : Ioo a s ⊆ Ioo a b := Ioo_subset_Ioo_right hs.2
+  have hφs := hφi.intervalIntegrable_of_mem_Icc ha hs
+  have hfs := hf2.intervalIntegrable_of_mem_Icc ha hs
+  have hus := hu2.intervalIntegrable_of_mem_Icc ha hs
+  have hint : ∫ r in a..s, 2 * u' r (u r) ≤
+      ∫ r in a..s, (α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2) := by
+    rw [intervalIntegral.integral_of_le hs.1, intervalIntegral.integral_of_le hs.1,
+      integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo]
+    exact setIntegral_mono_ae_restrict (hp.mono_set hsub)
+      (IntegrableOn.mono_set (((hf2.const_mul α⁻¹).sub (hu2.const_mul α)).add
+        (hφi.const_mul (2 * β))) hsub)
+      (ae_restrict_of_ae_restrict_of_subset hsub hpt)
+  refine hint.trans_eq ?_
+  rw [intervalIntegral.integral_add ((hfs.const_mul α⁻¹).sub (hus.const_mul α))
+    (hφs.const_mul (2 * β)), intervalIntegral.integral_sub (hfs.const_mul α⁻¹)
+    (hus.const_mul α)]
+  simp only [intervalIntegral.integral_const_mul]
+
 variable [CompleteSpace V]
 
 /-- **The energy estimate for linear parabolic equations.** Let `ι : V →L[ℝ] H` define a Gelfand
@@ -123,12 +156,8 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
   -- Integrating, `χ s = ‖w s‖² + α ∫ₐˢ ‖u‖²` satisfies `χ s ≤ ‖w a‖² + α⁻¹ ∫ₐᵗ ‖f‖² + 2 β ∫ₐˢ χ`
   -- on `[a, t]`.
   set χ : ℝ → ℝ := fun s ↦ ‖w s‖ ^ 2 + α * ∫ r in a..s, ‖u r‖ ^ 2 with hχ_def
-  have hU : ContinuousOn (fun s ↦ ∫ r in a..s, ‖u r‖ ^ 2) (Icc a b) := by
-    have hU2 : IntegrableOn (fun r ↦ ‖u r‖ ^ 2) (uIcc a b) := by
-      rw [uIcc_of_le hab]
-      exact (integrableOn_Icc_iff_integrableOn_Ioo (f := fun r ↦ ‖u r‖ ^ 2)).2 hu2
-    have := intervalIntegral.continuousOn_primitive_interval (μ := volume) hU2
-    rwa [uIcc_of_le hab] at this
+  have hU : ContinuousOn (fun s ↦ ∫ r in a..s, ‖u r‖ ^ 2) (Icc a b) :=
+    TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hu2 ha
   have hχ : ContinuousOn χ (Icc a b) := hφ.add (hU.const_smul α)
   have hU0 (s : ℝ) (hs : a ≤ s) : 0 ≤ ∫ r in a..s, ‖u r‖ ^ 2 :=
     intervalIntegral.integral_nonneg hs fun _ _ ↦ by positivity
@@ -139,27 +168,11 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
     have hsb : s ∈ Icc a b := htb hs
     have hsub : Ioo a s ⊆ Ioo a b := Ioo_subset_Ioo_right hsb.2
     have hφs := hφi.intervalIntegrable_of_mem_Icc ha hsb
-    have hfs := hf2.intervalIntegrable_of_mem_Icc ha hsb
-    have hus := hu2.intervalIntegrable_of_mem_Icc ha hsb
     -- the energy identity, then the pointwise bound integrated over `(a, s)`
     have hid : ‖w s‖ ^ 2 - ‖w a‖ ^ 2 = ∫ r in a..s, 2 * u' r (u r) := by
       rw [h.norm_sq_sub_norm_sq_eq_of_gelfandDual hu hu' hw hae ha hsb,
         intervalIntegral.integral_const_mul]
-    have hint : ∫ r in a..s, 2 * u' r (u r) ≤
-        ∫ r in a..s, (α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2) := by
-      rw [intervalIntegral.integral_of_le hs.1, intervalIntegral.integral_of_le hs.1,
-        integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo]
-      exact setIntegral_mono_ae_restrict (hp.mono_set hsub)
-        (IntegrableOn.mono_set (((hf2.const_mul α⁻¹).sub (hu2.const_mul α)).add
-          (hφi.const_mul (2 * β))) hsub)
-        (ae_restrict_of_ae_restrict_of_subset hsub hpt)
-    have hsplit : ∫ r in a..s, (α⁻¹ * ‖f r‖ ^ 2 - α * ‖u r‖ ^ 2 + 2 * β * ‖w r‖ ^ 2) =
-        α⁻¹ * (∫ r in a..s, ‖f r‖ ^ 2) - α * (∫ r in a..s, ‖u r‖ ^ 2) +
-          2 * β * ∫ r in a..s, ‖w r‖ ^ 2 := by
-      rw [intervalIntegral.integral_add ((hfs.const_mul α⁻¹).sub (hus.const_mul α))
-        (hφs.const_mul (2 * β)), intervalIntegral.integral_sub (hfs.const_mul α⁻¹)
-        (hus.const_mul α)]
-      simp only [intervalIntegral.integral_const_mul]
+    have hsplit := integral_two_mul_apply_le_of_ae_le hp hu2 hf2 hφi hpt hsb
     -- `∫ₐˢ ‖f‖² ≤ ∫ₐᵗ ‖f‖²` and `∫ₐˢ ‖w‖² ≤ ∫ₐˢ χ`
     have hfmono : ∫ r in a..s, ‖f r‖ ^ 2 ≤ ∫ r in a..t, ‖f r‖ ^ 2 :=
       intervalIntegral.integral_mono_interval le_rfl hs.1 hs.2

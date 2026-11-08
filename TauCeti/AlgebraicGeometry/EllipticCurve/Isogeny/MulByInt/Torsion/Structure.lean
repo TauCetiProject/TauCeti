@@ -147,8 +147,9 @@ is invertible. It identifies `E[N]` with the rank-two free module `ZMod N × ZMo
 action of an endomorphism on `E[N]` is a `2 × 2` matrix over `ZMod N` and has a determinant and
 trace. The basis is noncanonical, so the result asserts its existence. -/
 theorem nonempty_basis_torsionBy [DecidableEq K] (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ)
-    [NeZero N] (hN : (N : K) ≠ 0) :
+    (hN : (N : K) ≠ 0) :
     Nonempty (Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))) := by
+  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   -- `torsion_addEquiv_prod` is stated for the classical decidable-equality instance
   obtain ⟨e⟩ : Nonempty (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
     convert W.torsion_addEquiv_prod N hN

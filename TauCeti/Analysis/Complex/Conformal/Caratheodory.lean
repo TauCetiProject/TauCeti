@@ -212,7 +212,7 @@ theorem exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier
     (hb : IsBounded (f '' ball c r)) [LocallyConnectedSpace (frontier (f '' ball c r))] :
     ∃ F : ℂ → ℂ, ContinuousOn F (closedBall c r) ∧ EqOn F f (ball c r) := by
   -- every boundary cluster set is a subsingleton, as the extension theorem asks
-  have h := exists_continuousOn_closure_eqOn_of_isBounded isOpen_ball hf.continuousOn hb
+  have h := exists_continuousOn_closure_eqOn_of_isBounded hf.continuousOn hb
     fun w hw => subsingleton_clusterSetOn_of_locallyConnectedSpace_frontier hr hf hinj hb
       (mem_sphere.mp (by rwa [frontier_ball c hr.ne'] at hw))
   rwa [closure_ball c hr.ne'] at h

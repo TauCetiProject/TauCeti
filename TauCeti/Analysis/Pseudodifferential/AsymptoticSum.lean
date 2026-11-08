@@ -143,7 +143,7 @@ private theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W 
     fun x hx ξ => ?_⟩
   have hg : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x :=
     (a.contDiff_coefficient.coordinateDeriv_fst α).comp (contDiff_prodMk_right x)
-  refine (norm_iteratedFDeriv_le_sum_norm_coordinateDeriv (contDiff_infty.1 hg _) ξ).trans ?_
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hg _) ξ).trans ?_
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun w _ => ?_
   have h := hA (List.ofFn w) x hx ξ

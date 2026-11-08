@@ -21,6 +21,8 @@ compatibility under linear equivalences.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
   if and only if `0 < det f * det g`.
+* `Orientation.map_eq_map_of_det_pos`: two linear equivalences whose relative map has positive
+  determinant transport an orientation to the same orientation.
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
 * `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
@@ -110,6 +112,15 @@ theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orie
       div_eq_mul_inv, mul_comm]
   rw [htransport, map_eq_iff_det_pos _ _ h, hdet]
   exact div_pos_iff.trans mul_pos_iff.symm
+
+/-- Two linear equivalences `S` and `T` such that `S.trans T.symm` has positive determinant
+transport an orientation to the same orientation. -/
+theorem Orientation.map_eq_map_of_det_pos [FiniteDimensional R M] {N : Type*} [AddCommGroup N]
+    [Module R N] (x : Orientation R M ι) (S T : M ≃ₗ[R] N) (h : Fintype.card ι = finrank R M)
+    (hdet : 0 < LinearMap.det ((S.trans T.symm : M ≃ₗ[R] M) : M →ₗ[R] M)) :
+    Orientation.map ι S x = Orientation.map ι T x := by
+  have hfix := (map_eq_iff_det_pos x _ h).mpr hdet
+  rwa [map_trans, ← map_symm, Equiv.symm_apply_eq] at hfix
 
 /-- The signed Jacobian criterion for transporting orientations with arbitrary unit scalars. -/
 theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]

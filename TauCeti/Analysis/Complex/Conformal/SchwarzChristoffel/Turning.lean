@@ -96,83 +96,46 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
   let uq := Complex.exp (schwarzChristoffelEdgeAngle a e q * Complex.I)
   have hangle := schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent
     a e hpq hpqFree
-  have hdet : (conj up * uq).im ≠ 0 := by
-    have hexp :
-        conj (schwarzChristoffelEdgeAngle a e p * Complex.I) +
-            schwarzChristoffelEdgeAngle a e q * Complex.I =
-          (schwarzChristoffelEdgeAngle a e q -
-            schwarzChristoffelEdgeAngle a e p) * Complex.I := by
-      simp only [map_mul, conj_ofReal, conj_I]
-      ring
-    dsimp only [up, uq]
-    rw [← Complex.exp_conj, ← Complex.exp_add, hexp]
-    rw [← Complex.ofReal_sub, Complex.exp_ofReal_mul_I_im]
+  have hdet : up.re * uq.im - up.im * uq.re ≠ 0 := by
+    have h : conj up * uq = Complex.exp
+        (↑(schwarzChristoffelEdgeAngle a e q - schwarzChristoffelEdgeAngle a e p) * Complex.I) := by
+      rw [← Complex.exp_conj, ← Complex.exp_add]
+      simp only [map_mul, conj_ofReal, conj_I, ofReal_sub]
+      ring_nf
+    have him := congrArg Complex.im h
     have hdelta : schwarzChristoffelEdgeAngle a e q - schwarzChristoffelEdgeAngle a e p =
         -(Real.pi * ∑ i with a i = q, e i) := by linarith [hangle]
-    rw [hdelta, Real.sin_neg]
-    simp only [neg_ne_zero]
-    exact hqSin
+    rw [Complex.exp_ofReal_mul_I_im, hdelta, Real.sin_neg] at him
+    simp only [Complex.mul_im, conj_re, conj_im] at him
+    intro h0
+    exact hqSin (by linarith)
   have hdir : LinearIndependent ℝ ![up, uq] := by
-    rw [linearIndependent_fin2]
-    constructor
-    · intro huq
-      have : uq = 0 := by simpa using huq
-      simp [this] at hdet
-    · intro t ht
-      have ht' : (t : ℂ) * uq = up := by
-        simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Complex.real_smul] using ht
-      have him : (conj up * uq).im = 0 := by
-        rw [← ht']
-        simp only [map_mul, conj_ofReal, mul_assoc]
-        rw [Complex.conj_mul']
-        have hpowim : ((‖uq‖ : ℂ) ^ 2).im = 0 := by
-          rw [← Complex.ofReal_pow, Complex.ofReal_im]
-        rw [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, hpowim]
-        ring
-      exact hdet him
-  have hpqEq : B q - B p = (‖B q - B p‖ : ℂ) * up := by
-    exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hpqFree hp hq
+    rw [LinearIndependent.pair_iff]
+    intro s t hst
+    have h1 : s * up.re + t * uq.re = 0 := by simpa using congrArg Complex.re hst
+    have h2 : s * up.im + t * uq.im = 0 := by simpa using congrArg Complex.im hst
+    exact ⟨(mul_eq_zero.mp (by linear_combination uq.im * h1 - uq.re * h2)).resolve_right hdet,
+      (mul_eq_zero.mp (by linear_combination up.re * h2 - up.im * h1)).resolve_right hdet⟩
+  have hpqEq : B q - B p = (‖B q - B p‖ : ℂ) * up :=
+    schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hpqFree hp hq
       ⟨hpq.le, le_rfl⟩ ⟨le_rfl, hpq.le⟩ hpq.le
-  have hqrEq : B r - B q = (‖B r - B q‖ : ℂ) * uq := by
-    exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hqrFree hq hr
+  have hqrEq : B r - B q = (‖B r - B q‖ : ℂ) * uq :=
+    schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hqrFree hq hr
       ⟨hqr.le, le_rfl⟩ ⟨le_rfl, hqr.le⟩ hqr.le
-  have hpqne : B q - B p ≠ 0 := sub_ne_zero.mpr <|
-    fun h => hpq.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hpqFree hp hq
+  have hpqne : ‖B q - B p‖ ≠ 0 := norm_ne_zero_iff.mpr <| sub_ne_zero.mpr fun h ↦
+    hpq.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hpqFree hp hq
       ⟨le_rfl, hpq.le⟩ ⟨hpq.le, le_rfl⟩ h.symm
-  have hqrne : B r - B q ≠ 0 := sub_ne_zero.mpr <|
-    fun h => hqr.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hqrFree hq hr
+  have hqrne : ‖B r - B q‖ ≠ 0 := norm_ne_zero_iff.mpr <| sub_ne_zero.mpr fun h ↦
+    hqr.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hqrFree hq hr
       ⟨le_rfl, hqr.le⟩ ⟨hqr.le, le_rfl⟩ h.symm
-  have hscaled : LinearIndependent ℝ
-      ![-(‖B q - B p‖ • up), ‖B r - B q‖ • uq] := by
-    have hs : LinearIndependent ℝ
-        ![‖B q - B p‖ • up, ‖B r - B q‖ • uq] :=
-      (LinearIndependent.pair_smul_smul_iff
-        (isUnit_iff_ne_zero.mpr (norm_ne_zero_iff.mpr hpqne))
-        (isUnit_iff_ne_zero.mpr (norm_ne_zero_iff.mpr hqrne))).2 hdir
-    simpa only [_root_.neg_smul] using
-      (LinearIndependent.pair_neg_left_iff (R := ℝ)).2 hs
-  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3), ←
-    linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))]
-  have hfamily :
-      ((fun i : {x : Fin 3 // x ≠ 1} =>
-          (![B p, B q, B r] i -ᵥ ![B p, B q, B r] 1 : ℂ)) ∘
-        (finSuccAboveEquiv (1 : Fin 3))) =
-        ![-(‖B q - B p‖ • up), ‖B r - B q‖ • uq] := by
-    funext i
-    fin_cases i
-    · simp only [Function.comp_apply, finSuccAboveEquiv_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one]
-      calc
-        B p - B q = -(B q - B p) := by ring
-        _ = -((‖B q - B p‖ : ℂ) * up) := congrArg Neg.neg hpqEq
-        _ = -(‖B q - B p‖ • up) := by rw [Complex.real_smul]
-    · simp only [Function.comp_apply, finSuccAboveEquiv_apply,
-        Matrix.cons_val_zero, Matrix.cons_val_one]
-      calc
-        B r - B q = (‖B r - B q‖ : ℂ) * uq := hqrEq
-        _ = ‖B r - B q‖ • uq := by rw [Complex.real_smul]
-  rw [hfamily]
-  exact hscaled
+  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
+    ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))]
+  convert (LinearIndependent.pair_smul_smul_iff (isUnit_iff_ne_zero.mpr (neg_ne_zero.mpr hpqne))
+    (isUnit_iff_ne_zero.mpr hqrne)).2 hdir using 1
+  ext i
+  fin_cases i
+  · simp [finSuccAboveEquiv_apply, Complex.real_smul, ← hpqEq, B]
+  · simp [finSuccAboveEquiv_apply, Complex.real_smul, ← hqrEq, B]
 
 /-- Three indexed Schwarz--Christoffel vertices at consecutive ordered prevertices are affinely
 independent when the total exponent at the middle prevertex exceeds `-1` and its `π` multiple
