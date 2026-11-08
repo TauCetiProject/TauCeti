@@ -329,8 +329,8 @@ section Pairing
 variable {ρ} (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 include hρ
 
-omit hω₂ hρ in
-/-- **The `ω`-component of `q`**: `⟪q(ψ), ω⟫ = (‖P_α ψ‖² - ‖P_β ψ‖²) / 2` for every self-dual `ω`.
+omit hω hω₂ hρ in
+/-- **The `ω`-component of `q`**: `⟪q(ψ), ω⟫ = (‖P_α ψ‖² - ‖P_β ψ‖²) / 2` for every two-form `ω`.
 With `ψ = α u₀ + β` and `‖ω‖² = 2` this is `(|α|² - ‖β‖²) / 2`, the term of the curvature equation
 along `ω`. -/
 theorem inner_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
@@ -346,7 +346,7 @@ theorem inner_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
       (2⁻¹ : ℂ) • ψ - (4⁻¹ : ℂ) • cliffordRestriction o ρ ω ψ := by
     rw [cliffordProjection_neg_apply, hP]
     module
-  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl hω, hP, hP', @norm_add_sq ℂ,
+  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl ω, hP, hP', @norm_add_sq ℂ,
     @norm_sub_sq ℂ, inner_smul_left, inner_smul_right]
   simp only [RCLike.re_to_complex, map_inv₀, map_ofNat, ← mul_assoc]
   norm_num [Complex.mul_re]
@@ -419,7 +419,7 @@ theorem coe_quadraticTwoForm_sqrt_smul_add_sub_smul
     coe_quadraticTwoForm_add_of_cliffordProjection o hQ hkl hω hω₂ hρ h₂ hφ hβ]
   module
 
-omit hρ in
+omit hω hρ in
 /-- **The curvature equation along `ω`**: for `Ψ = √r (φ + β)` with `P_α φ = φ` and `P_α β = 0`,
 `⟪q(Ψ) - (r / 4) ω, ω⟫ = (r / 2) (‖φ‖² - ‖β‖² - 1)`. -/
 theorem inner_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positiveHalfSpinors o ρ}
@@ -431,11 +431,11 @@ theorem inner_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positiveHalfSpino
   have hPβ : cliffordProjection o ρ (-ω) (φ + β) = β := by
     rw [cliffordProjection_neg_apply, hPφ, add_sub_cancel_left]
   rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul, inner_sub_left,
-    real_inner_smul_left, real_inner_smul_left, inner_quadraticTwoForm o hQ hkl hω, hPφ, hPβ,
+    real_inner_smul_left, real_inner_smul_left, inner_quadraticTwoForm o hQ hkl, hPφ, hPβ,
     real_inner_self_eq_norm_sq, hω₂]
   ring
 
-omit hρ in
+omit hω hρ in
 /-- **The projection of the curvature equation onto `ω`**: for `Ψ = √r (φ + β)` with `P_α φ = φ`
 and `P_α β = 0`, the orthogonal projection of `q(Ψ) - (r / 4) ω` onto the line `ℝ ω` is
 `(r / 4) (‖φ‖² - ‖β‖² - 1) ω`. With `φ = α u₀` for a unit `u₀`, this is the pointwise identity
@@ -448,7 +448,7 @@ theorem starProjection_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positive
         ((quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω) =
       (r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • ω := by
   rw [Submodule.starProjection_singleton, real_inner_comm,
-    inner_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hω₂ hφ hβ hr, hω₂]
+    inner_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω₂ hφ hβ hr, hω₂]
   congr 1
   simp only [RCLike.ofReal_real_eq_id, id_eq]
   ring
