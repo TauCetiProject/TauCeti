@@ -56,14 +56,13 @@ theorem matrixCoefficientSubmodule_eq_isotypicComponent
   · apply matrixCoefficientSubmodule_le
     intro φ m
     let f := (matrixCoefficientHom (C := C) φ).toConvolutionLinearMap
-    rcases f.injective_or_eq_zero with hf | hf
-    · have hle : LinearMap.range f ≤ isotypicComponent D C M :=
-        le_sSup ⟨(LinearEquiv.ofInjective f hf).symm⟩
-      exact hle ⟨m, by simp [f]⟩
-    · have hm : matrixCoefficient (C := C) φ m = 0 := by
-        simpa [f] using DFunLike.congr_fun hf m
-      rw [hm]
-      exact zero_mem _
+    have : IsSimpleModule D (⊤ : Submodule D M) :=
+      IsSimpleModule.congr Submodule.topEquiv
+    have hle : LinearMap.range f ≤ isotypicComponent D C M := by
+      simpa only [Submodule.map_top,
+        Submodule.topEquiv.isotypicComponent_eq (R := D) (M := C)] using
+        (⊤ : Submodule D M).map_le_isotypicComponent f
+    exact hle ⟨m, by simp [f]⟩
   · rw [isotypicComponent, Submodule.restrictScalars_sSup]
     apply sSup_le
     rintro _ ⟨N, ⟨e⟩, rfl⟩ c hc
