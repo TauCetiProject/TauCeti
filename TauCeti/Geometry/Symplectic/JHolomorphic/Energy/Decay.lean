@@ -67,17 +67,16 @@ private theorem angular_energy_le {r : ℝ} (hr : 0 < r)
   apply intervalIntegral.integral_mono_on (by linarith [Real.pi_pos])
     (hcont.intervalIntegrable _ _) ((hbcont.const_mul _).intervalIntegrable _ _)
   intro θ _
-  have hI : ‖fderiv ℝ u (circleMap z₀ r θ) I‖ ≤
-      M * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ := by
-    rw [hCR θ]
-    exact ((J _).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hJ θ) (norm_nonneg _))
-  have hbound := (fderiv ℝ u (circleMap z₀ r θ)).norm_apply_le_norm_one_add_norm_I
-    (circleMap 0 r θ * I)
-  rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_pos hr] at hbound
   have hs : ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ≤
       (1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ := by
     rw [heq]
-    nlinarith
+    calc _ ≤ ‖fderiv ℝ u (circleMap z₀ r θ)‖ * ‖circleMap 0 r θ * I‖ :=
+          (fderiv ℝ u (circleMap z₀ r θ)).le_opNorm _
+      _ ≤ ((1 + M) * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) * r := by
+          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_pos hr]
+          gcongr
+          exact (fderiv ℝ u (circleMap z₀ r θ)).norm_le_of_apply_I_eq (hCR θ) (hJ θ) le_rfl
+      _ = _ := by ring
   calc
     _ ≤ ((1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) ^ 2 := by
       gcongr
