@@ -100,6 +100,24 @@ private theorem permanencesMinusVariations_signedPsc_eq_add {p q : K[X]} (hq : q
     linear_combination (sign p.leadingCoeff * sign q.leadingCoeff : ℤ) * h2
   · simp only [hke, mt hodd.1 hke, ↓reduceIte]
 
+/-- Across an even gap, the leading entry of the signed coefficients of `(p, q)` times the rescaling
+constant `c` of a Euclidean step has the sign of `q.leadingCoeff`. -/
+private theorem sign_mul_sign_signedPsc_scale {lc : K} {m n ρ : ℕ} (h : n < m) (hρ : ρ < n)
+    (hk : Even (n - (ρ + 1))) :
+    (SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n)) : ℤ) *
+      SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ)) = SignType.sign lc := by
+  have hodd : Odd ((m - n) + (m - ρ)) := by
+    obtain ⟨i, hi⟩ := hk
+    exact ⟨m - n + i, by omega⟩
+  have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
+    rw [← pow_mul, mul_comm, pow_mul]
+    simp
+  have hprod : (-1) ^ (m - n).choose 2 * lc ^ (m - n) *
+      ((-1) ^ (m - n).choose 2 * lc ^ (m - ρ)) = lc ^ ((m - n) + (m - ρ)) := by
+    linear_combination (lc ^ (m - n) * lc ^ (m - ρ)) * h1
+  rw [← SignType.coe_mul, ← sign_mul, hprod]
+  simp [sign_pow, SignType.pow_odd _ hodd]
+
 /-- After the leading entry, the signed coefficients of `(p, q)` and of `(q, -(p % q))` have the
 same permanences minus variations. -/
 private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
@@ -118,6 +136,7 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
   set s := signedPsc p q m n
   set t := signedPsc q (-(p % q)) n ρ
   set c : K := (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - ρ) with hcdef
+  have hc : c ≠ 0 := by simp [c, hq']
   -- Below the remainder degree the two coefficient lists are proportional.
   have hst : (List.range (ρ + 1)).reverse.map s =
       ((List.range (ρ + 1)).reverse.map t).map (c * ·) := by
@@ -155,8 +174,8 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
     have htρ0 : t ρ ≠ 0 := by
       rw [htρ]
       exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (pow_ne_zero _ hlc)
-    rw [hsn, hcdef]
-    exact List.permanencesMinusVariations_cons_replicate_zero_append_map_mul hq' htρ0 h hρ
+    exact List.permanencesMinusVariations_cons_replicate_zero_append_map_mul_left hc htρ0 _ _
+      fun hk ↦ by rw [hsn, hcdef]; exact sign_mul_sign_signedPsc_scale h hρ hk
 
 end Ordered
 
