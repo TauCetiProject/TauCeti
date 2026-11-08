@@ -195,18 +195,6 @@ private theorem band_trichotomy (hSle : IsTotalOnVertices S) (ha₁ : (s, a₁) 
     · exact .inl (closedRegionBetween_congr (hcongr he) (hcongr he')).symm
     · exact .inr h'.symm
 
-/-- The closed band between two sections over a face `t ⊆ s` lies in the closed band between two
-sections over `s` that bound them at the vertices of `t`. -/
-private theorem closedRegionBetween_subset_of_le {t : Finset E} {d : E →ᴬ[ℝ] ℝ} (hts : t ⊆ s)
-    (hac : ∀ v ∈ t, a v ≤ c v) (hdb : ∀ v ∈ t, d v ≤ b v) :
-    closedRegionBetween c d (convexHull ℝ (t : Set E)) ⊆
-      closedRegionBetween a b (convexHull ℝ (s : Set E)) := by
-  rintro ⟨p, q⟩ hpq
-  obtain ⟨hp, hcq, hqd⟩ := mem_closedRegionBetween.1 hpq
-  exact mem_closedRegionBetween.2 ⟨convexHull_mono (Finset.coe_subset.2 hts) hp,
-    (le_of_forall_le_of_mem_convexHull hac hp).trans hcq,
-    hqd.trans (le_of_forall_le_of_mem_convexHull hdb hp)⟩
-
 end Ordered
 
 /-! ### The cells -/
@@ -331,7 +319,7 @@ private theorem exists_mem_rectilinearCells_of_graph {s t : Finset E} {a b c : E
   · rw [ContinuousAffineMap.intrinsicInterior_graphOn]
     exact mem_graphOn.2 ⟨hxt, hcy⟩
   · rw [← closedRegionBetween_self]
-    exact closedRegionBetween_subset_of_le (d := c) hts hac hcb
+    exact closedRegionBetween_convexHull_subset_of_le (d := c) (Finset.coe_subset.2 hts) hac hcb
 
 /-- **Covering a band by smaller cells.** Every point of the closed band between two ordered
 sections over a face lies in the intrinsic interior of a cell contained in that band. -/
@@ -389,7 +377,7 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
       exact .inr fun v hv ↦ eq_of_le_of_mem_intrinsicInterior hc₁ hxt hcx (subset_convexHull ℝ _ hv)
   refine ⟨closedRegionBetween c₀ c₁ (convexHull ℝ (t : Set E)),
     .inr ⟨t, c₀, c₁, hT₀.1, hT₁.1, hcons, rfl⟩, ?_,
-    closedRegionBetween_subset_of_le hts hT₀.2.1 hT₁.2.2⟩
+    closedRegionBetween_convexHull_subset_of_le (Finset.coe_subset.2 hts) hT₀.2.1 hT₁.2.2⟩
   rw [intrinsicInterior_closedRegionBetween (fun v hv ↦ le_of_forall_le_of_mem_convexHull hle hv)
     ⟨x, hxt', h₀.trans h₁⟩]
   exact ⟨hxt, h₀, h₁⟩
