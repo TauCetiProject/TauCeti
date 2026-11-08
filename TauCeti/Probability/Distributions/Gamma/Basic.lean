@@ -119,13 +119,9 @@ theorem gammaMeasure_eq_withDensity_restrict_Ioi (a r : ℝ) :
   rw [← restrict_withDensity measurableSet_Ioi, ← gammaMeasure,
     Measure.restrict_eq_self_of_ae_mem hae]
 
-/-- Almost every point of a product of two gamma laws with positive parameters lies in the
-open positive quadrant. -/
-theorem ae_mem_prod_Ioi_gammaMeasure {b s : ℝ} (ha : 0 < a) (hb : 0 < b) (hr : 0 < r)
-    (hs : 0 < s) :
+/-- Almost every point of a product of two gamma laws lies in the open positive quadrant. -/
+theorem ae_mem_prod_Ioi_gammaMeasure {b s : ℝ} :
     ∀ᵐ z ∂(gammaMeasure a r).prod (gammaMeasure b s), z ∈ Ioi (0 : ℝ) ×ˢ Ioi (0 : ℝ) := by
-  let _ := isProbabilityMeasure_gammaMeasure ha hr
-  let _ := isProbabilityMeasure_gammaMeasure hb hs
   rw [Measure.ae_prod_mem_iff_ae_ae_mem (measurableSet_Ioi.prod measurableSet_Ioi)]
   filter_upwards [ae_pos_gammaMeasure a r] with x hx
   filter_upwards [ae_pos_gammaMeasure b s] with y hy
@@ -485,25 +481,40 @@ theorem gammaMeasure_conv_gammaMeasure {b : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
 
 /-! ### Scaling -/
 
+/-- Dividing the base of a real power by a positive number divides the power by the same power
+of that number, whatever the sign of the base. -/
+private lemma div_rpow_of_pos_right {c : ℝ} (hc : 0 < c) (r a : ℝ) (hGa : Real.Gamma a ≠ 0) :
+    (r / c) ^ a = r ^ a / c ^ a := by
+  rcases lt_trichotomy r 0 with hr | rfl | hr
+  · rw [Real.rpow_def_of_neg hr, Real.rpow_def_of_neg (div_neg_of_neg_of_pos hr hc),
+      Real.rpow_def_of_pos hc, Real.log_div hr.ne hc.ne', sub_mul, Real.exp_sub]
+    ring
+  · have ha : a ≠ 0 := by
+      rintro rfl
+      exact hGa Real.Gamma_zero
+    simp [Real.zero_rpow ha]
+  · exact Real.div_rpow hr.le hc.le a
+
 /-- Scaling a gamma density by `c > 0` divides its rate by `c`: the two densities differ by the
 Jacobian factor `c`. -/
-private lemma ofReal_mul_gammaPDF_const_mul (ha : 0 < a) (hr : 0 < r) {c : ℝ} (hc : 0 < c)
-    (x : ℝ) : ENNReal.ofReal c * gammaPDF a (r / c) (c * x) = gammaPDF a r x := by
+private lemma ofReal_mul_gammaPDF_const_mul {c : ℝ} (hc : 0 < c) (x : ℝ) :
+    ENNReal.ofReal c * gammaPDF a (r / c) (c * x) = gammaPDF a r x := by
   rcases le_or_gt 0 x with hx | hx
   · rw [gammaPDF_of_nonneg hx, gammaPDF_of_nonneg (by positivity : (0 : ℝ) ≤ c * x),
       ← ENNReal.ofReal_mul hc.le]
     congr 1
+    by_cases hGa : Real.Gamma a = 0
+    · simp [hGa]
     have hca := (Real.rpow_pos_of_pos hc a).ne'
-    have hGa := (Real.Gamma_pos_of_pos ha).ne'
     have hrate : r / c * (c * x) = r * x := by field_simp
-    rw [Real.mul_rpow hc.le hx, Real.div_rpow hr.le hc.le,
+    rw [Real.mul_rpow hc.le hx, div_rpow_of_pos_right hc r a hGa,
       hrate, Real.rpow_sub hc a 1, Real.rpow_one]
     field_simp
   · rw [gammaPDF_of_neg hx, gammaPDF_of_neg (mul_neg_of_pos_of_neg hc hx), mul_zero]
 
 /-- Scaling a gamma variable by `c > 0` divides its rate by `c`. -/
 @[simp]
-theorem gammaMeasure_map_const_mul (ha : 0 < a) (hr : 0 < r) {c : ℝ} (hc : 0 < c) :
+theorem gammaMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (gammaMeasure a r).map (c * ·) = gammaMeasure a (r / c) := by
   have hT : Measurable fun x : ℝ ↦ c * x := measurable_const_mul c
   ext s hs
@@ -511,7 +522,7 @@ theorem gammaMeasure_map_const_mul (ha : 0 < a) (hr : 0 < r) {c : ℝ} (hc : 0 <
     withDensity_apply _ hs]
   calc ∫⁻ x in (c * ·) ⁻¹' s, gammaPDF a r x
       = ∫⁻ x in (c * ·) ⁻¹' s, ENNReal.ofReal c * gammaPDF a (r / c) (c * x) := by
-        simp_rw [ofReal_mul_gammaPDF_const_mul ha hr hc]
+        simp_rw [ofReal_mul_gammaPDF_const_mul hc]
     _ = ENNReal.ofReal c * ∫⁻ x in (c * ·) ⁻¹' s, gammaPDF a (r / c) (c * x) :=
         lintegral_const_mul _ ((Probability.measurable_gammaPDF a (r / c)).comp hT)
     _ = ENNReal.ofReal c * ∫⁻ y in s, gammaPDF a (r / c) y ∂(volume.map (c * ·)) := by
