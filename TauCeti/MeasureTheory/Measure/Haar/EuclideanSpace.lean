@@ -141,26 +141,6 @@ theorem measurableEmbedding_euclideanSpace_proj {ι : Type*} [Unique ι] (i : ι
   funext z
   exact congrArg (fun j ↦ z j) (Subsingleton.elim i default)
 
-/-- The image of the preimage of `s` under the unique-coordinate projection, composed with a
-function `g` of that coordinate, is the image of `s` under `g`. -/
-theorem image_comp_euclideanSpace_proj_preimage {ι : Type*} {α : Type*} (g : ℝ → α)
-    (s : Set ℝ) (i : ι) :
-    (fun z : EuclideanSpace ℝ ι ↦ g (z i)) '' (proj (𝕜 := ℝ) i ⁻¹' s) = g '' s := by
-  have hsurj : Function.Surjective (proj (𝕜 := ℝ) i : EuclideanSpace ℝ ι → ℝ) := fun t ↦
-    ⟨(EuclideanSpace.equiv ι ℝ).symm fun _ ↦ t, rfl⟩
-  rw [show (fun z : EuclideanSpace ℝ ι ↦ g (z i)) = g ∘ proj (𝕜 := ℝ) i from rfl,
-    Set.image_comp, hsurj.image_preimage]
-
-/-- A function of the unique coordinate of a Euclidean line is injective on the preimage of `s`
-if it is injective on `s`. -/
-theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : Type*} {g : ℝ → α}
-    {s : Set ℝ} (hg : Set.InjOn g s) (i : ι) :
-    Set.InjOn (fun z : EuclideanSpace ℝ ι ↦ g (z i)) (proj (𝕜 := ℝ) i ⁻¹' s) := by
-  intro x hx y hy he
-  ext j
-  rw [Subsingleton.elim j i]
-  exact hg hx hy he
-
 /-- Integrating a function of the unique coordinate of a Euclidean line over the preimage of `s`
 is integrating it over `s`. -/
 theorem setIntegral_comp_euclideanSpace_proj_preimage {ι : Type*} [Fintype ι] [Unique ι]

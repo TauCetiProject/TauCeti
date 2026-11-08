@@ -424,4 +424,24 @@ theorem measurable_euclideanFiberSum [MeasurableSpace 𝕜] [BorelSpace 𝕜] (f
     Measurable (euclideanFiberSum (𝕜 := 𝕜) (ι := ι) f) :=
   (continuous_euclideanFiberSum (𝕜 := 𝕜) f).measurable
 
+/-- The image of the preimage of `s` under the unique-coordinate projection, composed with a
+function `g` of that coordinate, is the image of `s` under `g`. -/
+theorem image_comp_euclideanSpace_proj_preimage {ι : Type*} {α : Type*} (g : ℝ → α)
+    (s : Set ℝ) (i : ι) :
+    (fun z : EuclideanSpace ℝ ι ↦ g (z i)) '' (EuclideanSpace.proj (𝕜 := ℝ) i ⁻¹' s) =
+      g '' s := by
+  have hsurj : Function.Surjective (EuclideanSpace.proj (𝕜 := ℝ) i : EuclideanSpace ℝ ι → ℝ) :=
+    fun t ↦ ⟨(EuclideanSpace.equiv ι ℝ).symm fun _ ↦ t, rfl⟩
+  exact (Set.image_comp g (EuclideanSpace.proj (𝕜 := ℝ) i) _).trans
+    (congrArg (g '' ·) (hsurj.image_preimage s))
+
+/-- A function of the unique coordinate of a Euclidean line is injective on the preimage of `s`
+if it is injective on `s`. -/
+theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : Type*} {g : ℝ → α}
+    {s : Set ℝ} (hg : Set.InjOn g s) (i : ι) :
+    Set.InjOn (fun z : EuclideanSpace ℝ ι ↦ g (z i)) (EuclideanSpace.proj (𝕜 := ℝ) i ⁻¹' s) := by
+  have hinj : Function.Injective (EuclideanSpace.proj (𝕜 := ℝ) i : EuclideanSpace ℝ ι → ℝ) :=
+    fun x y h ↦ by ext j; rw [Subsingleton.elim j i]; exact h
+  exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
+
 end TauCeti
