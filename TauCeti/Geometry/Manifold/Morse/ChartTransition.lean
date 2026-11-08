@@ -52,6 +52,9 @@ orientations agree exactly when `det h = 1`
 * `PartialDiffeomorph.det_polarFactor_fst_fderiv_transition_inl_eq_one_iff`: the polar factor of
   the negative block has determinant one exactly when the charts induce the same orientation on
   their negative spaces, compared through the space of negative subspaces.
+* `PartialDiffeomorph.exists_negative_disk_homotopy_polarFactor`: the small negative disk
+  `u ↦ ψ₁⁻¹(u, 0)` is homotopic to `u ↦ ψ₀⁻¹(h u, 0)`, staying in a given neighbourhood of `x`
+  with `f ≤ f(x) - ‖u‖²` over each point `u`.
 
 ## References
 
