@@ -7,20 +7,27 @@ module
 
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
-# Local integrability of `log ‖x‖`
+# Local integrability of `log ‖x‖` and of `log (log t)`
 
 On a finite-dimensional real normed space with an additive Haar measure, the function
 `x ↦ log ‖x‖` is locally integrable. Its only singularity is at the origin, where it is dominated
 by `‖x‖ ^ (-1 / 2)`, which is locally integrable in every positive dimension. In the plane this is
 the local integrability of the logarithmic fundamental solution of the Laplacian.
 
+On the half-line `[1, ∞)` the iterated logarithm `t ↦ log (log t)` is locally integrable as well:
+its singularity at `t = 1` is integrable, by Mathlib's `Real.integrableOn_log_log_mul_rpow`. This
+is the integrability that Abelian arguments against `log log t` need, as in Mertens' theorems.
+
 ## Main declarations
 
 * `TauCeti.locallyIntegrable_log_norm`: `x ↦ log ‖x‖` is locally integrable.
+* `TauCeti.locallyIntegrableOn_log_log`: `t ↦ log (log t)` is locally integrable on `[1, ∞)`.
 -/
 
 public section
@@ -60,5 +67,24 @@ theorem locallyIntegrable_log_norm {E : Type*} [NormedAddCommGroup E] [NormedSpa
   have hpow : 0 ≤ ‖x‖ ^ (-(1 / 2 : ℝ)) := Real.rpow_nonneg (norm_nonneg x) _
   rw [abs_le]
   constructor <;> linarith [norm_nonneg x]
+
+/-- `t ↦ log (log t)` is locally integrable on `[1, ∞)`: its logarithmic singularity at `t = 1`
+is integrable. This lets Abelian integrals `∫_1^∞ t ^ (-s) f(t) dt` treat `log (log t)` like any
+other locally integrable weight up to the endpoint `t = 1`. -/
+theorem locallyIntegrableOn_log_log :
+    LocallyIntegrableOn (fun t : ℝ ↦ Real.log (Real.log t)) (Set.Ici 1) := by
+  rw [locallyIntegrableOn_iff isClosed_Ici.isLocallyClosed]
+  intro k hk hkc
+  obtain ⟨T, hT⟩ := hkc.isBounded.bddAbove
+  have h2 : IntegrableOn (fun t : ℝ ↦ Real.log (Real.log t) * t ^ (-(2 : ℝ)))
+      (Set.Icc 1 (max T 1)) :=
+    ((integrableOn_Ici_iff_integrableOn_Ioi (μ := volume)).mpr
+      (Real.integrableOn_log_log_mul_rpow one_lt_two)).mono_set Set.Icc_subset_Ici_self
+  refine ((h2.mul_continuousOn (Real.continuous_rpow_const zero_le_two).continuousOn
+    isCompact_Icc).mono_set fun x hx ↦ ⟨hk hx, (hT hx).trans (le_max_left _ _)⟩).congr_fun
+    (fun t ht ↦ ?_) hkc.measurableSet
+  have ht0 : (0 : ℝ) < t := zero_lt_one.trans_le (hk ht)
+  beta_reduce
+  rw [mul_assoc, ← Real.rpow_add ht0, neg_add_cancel, Real.rpow_zero, mul_one]
 
 end TauCeti
