@@ -176,6 +176,8 @@ theorem degree_map_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) (n : �
 under the degree-`n` functor is an epimorphism of the underlying modules. -/
 theorem epi_hom_hom_of_epi_degree_map {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) (n : ℕ)
     (h : Epi ((degree (X := X) n).map f).hom) : Epi (f.hom.hom.hom n) :=
+  -- The `map` field of `degree` is the degree-`n` component by construction, so taking
+  -- `.hom` of its quasicoherent-sheaf morphism gives `f.hom.hom.hom n` definitionally.
   h
 
 /-- Extract the degree-one component of a graded quasicoherent algebra. This is the component

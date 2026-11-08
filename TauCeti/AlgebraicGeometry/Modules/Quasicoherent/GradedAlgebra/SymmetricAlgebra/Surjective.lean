@@ -49,6 +49,8 @@ variable {X : Scheme.{u}} (A : GradedQuasicoherentAlgebra X)
 is split by `A₁ ≅ Sym¹ A₁`. -/
 theorem epi_gradedSymmetricAlgebraLift_one :
     Epi ((gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom.hom.hom 1) :=
+  -- For `FullSubcategory` morphisms, `.hom` preserves composition and identities
+  -- definitionally. Applying it to the splitting identity gives a section in modules.
   epi_hom_hom_of_epi_degree_map _ 1 (SplitEpi.epi ⟨_, congrArg (·.hom)
     (gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift (𝟙 (degreeOne.obj A)))⟩)
 
