@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.Torsor.Quotient
 public import TauCeti.CategoryTheory.Groupoid.Torsor
+public import TauCeti.Geometry.Symplectic.Floer.Cap.Basic
 public import TauCeti.Geometry.Symplectic.Floer.SphericalPeriodGroup
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+public import TauCeti.Topology.PathSpace.Prepend
 
 /-!
 # Caps of contractible loops
@@ -33,6 +35,13 @@ morphisms from `γ` to the constant loop in the fundamental groupoid of `Ω X x`
   to a cap `D` of `γ₂` and gives the cap `p ≫ D` of `γ₁`. This commutes with gluing spheres and
   preserves differences of caps (`TauCeti.Floer.RawCap.comp_vadd`,
   `TauCeti.Floer.RawCap.comp_vsub_comp`).
+* A homotopy of loops `u` from `γ₀` to `γ₁.trans γ₂`, a pair of pants with inputs `γ₁`, `γ₂` and
+  output `γ₀`, glues caps `D₁` of `γ₁` and `D₂` of `γ₂` to the cap
+  `TauCeti.Floer.RawCap.glue₂ u D₁ D₂` of `γ₀`: follow `u`, then concatenate `D₁` and `D₂`
+  pointwise in the loop space. Gluing a sphere to either input glues it to the output
+  (`TauCeti.Floer.RawCap.glue₂_vadd_left`, `TauCeti.Floer.RawCap.glue₂_vadd_right`), because
+  concatenating every loop of a loop of loops with the constant loop does not change its class
+  (`Path.Homotopic.Quotient.cast_map_trans_prod_refl`).
 
 Capped Hamiltonian Floer theory works with caps modulo spheres of zero symplectic area and zero
 first Chern number. For homomorphisms `ω` and `c` on `H₂(X; ℤ)`, the *cap classes* of `γ`
@@ -45,7 +54,12 @@ classes of a contractible loop form a torsor under `Γ`
 `Γ` does not depend on the base point. This gives one common coefficient group acting on the
 caps of all the contractible orbits of a Hamiltonian, whose based loops have different base
 points. Gluing a homotopy of loops descends to cap classes
-(`TauCeti.Floer.SphericalCapClass.glue`) and commutes with recapping. Functions on raw caps that
+(`TauCeti.Floer.SphericalCapClass.glue`) and commutes with recapping. So does gluing along a pair
+of pants (`TauCeti.Floer.SphericalCapClass.glue₂`), which is equivariant in each input: these are
+the hypotheses of the product-class laws of `TauCeti.Geometry.Symplectic.Floer.Cap.Basic`, such
+as `TauCeti.Floer.productClass_eq_add_sub`. The product class of the classes of caps `D₁`, `D₂`,
+`D₀` is the class of the sphere `D₀ -ᵥ RawCap.glue₂ u D₁ D₂`
+(`TauCeti.Floer.SphericalCapClass.productClass_glue₂_mk`). Functions on raw caps that
 obey a recapping law descend to cap classes (`TauCeti.Floer.SphericalCapClass.lift`); this is how
 the action and the grading of a capped orbit descend.
 
@@ -59,6 +73,8 @@ cap classes of actual loops.
 * `TauCeti.Floer.RawCap γ`: the homotopy classes of discs bounding the loop `γ`.
 * `TauCeti.Floer.RawCap.instAddTorsor`: for a null-homotopic loop, the raw caps form a torsor under
   `π₂(X, x)`.
+* `TauCeti.Floer.RawCap.glue₂`, `TauCeti.Floer.SphericalCapClass.glue₂`: gluing caps of the inputs
+  of a pair of pants to a cap of its output.
 * `TauCeti.Floer.SphericalCapClass ω c γ`: the cap classes of `γ` with respect to `ω` and `c`.
 * `TauCeti.Floer.SphericalCapClass.instAddTorsor`: on a path-connected space, the cap classes of a
   null-homotopic loop form a torsor under the spherical period group.
@@ -82,6 +98,12 @@ cap classes of actual loops.
 * `TauCeti.Floer.SphericalCapClass.glue_vadd`, `TauCeti.Floer.SphericalCapClass.glue_vsub_glue`,
   `TauCeti.Floer.SphericalCapClass.lift_vadd`: gluing and descended functions obey the recapping
   laws.
+* `TauCeti.Floer.RawCap.glue₂_vadd_left`, `TauCeti.Floer.RawCap.glue₂_vadd_right`,
+  `TauCeti.Floer.SphericalCapClass.glue₂_vadd_left`,
+  `TauCeti.Floer.SphericalCapClass.glue₂_vadd_right`: gluing along a pair of pants is equivariant
+  in each input.
+* `TauCeti.Floer.SphericalCapClass.productClass_glue₂_mk`: the product class of actual caps is the
+  class of the sphere by which the output cap differs from the glued cap.
 
 ## References
 
@@ -117,7 +139,7 @@ abbrev RawCap (γ : Ω X x) : Type _ :=
 
 namespace RawCap
 
-variable {γ γ₁ γ₂ : Ω X x}
+variable {γ γ₀ γ₁ γ₂ : Ω X x}
 
 /-- **A loop has a raw cap exactly when it is null-homotopic.** -/
 theorem nonempty_iff : Nonempty (RawCap γ) ↔ γ.Homotopic (Path.refl x) := by
@@ -171,6 +193,52 @@ theorem comp_vsub_comp (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨
   have h := vadd_vsub (D' -ᵥ D) (p ≫ D : RawCap γ₁)
   rwa [← comp_vadd, vsub_vadd] at h
 
+/-- **Gluing caps along a pair of pants.** A homotopy of loops `u` from `γ₀` to the concatenation
+`γ₁.trans γ₂`, a pair of pants with inputs `γ₁`, `γ₂` and output `γ₀`, glues raw caps `D₁` of
+`γ₁` and `D₂` of `γ₂` to a raw cap of `γ₀`: follow `u`, then concatenate `D₁` and `D₂` pointwise
+in the loop space, ending at the concatenation of the constant loop with itself, which is the
+constant loop. -/
+def glue₂ (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩) (D₁ : RawCap γ₁)
+    (D₂ : RawCap γ₂) : RawCap γ₀ :=
+  u ≫ ((Path.Homotopic.prod D₁ D₂).map
+    ⟨fun ρ : Path x x × Path x x => ρ.1.trans ρ.2, Path.continuous_trans⟩).cast rfl
+      Path.refl_trans_refl.symm
+
+theorem glue₂_def (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
+    (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) :
+    glue₂ u D₁ D₂ = u ≫ ((Path.Homotopic.prod D₁ D₂).map
+      ⟨fun ρ : Path x x × Path x x => ρ.1.trans ρ.2, Path.continuous_trans⟩).cast rfl
+        Path.refl_trans_refl.symm :=
+  (rfl)
+
+/-- Gluing a sphere to the cap of the first input of a pair of pants glues it to the glued cap of
+the output. -/
+@[simp]
+theorem glue₂_vadd_left (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
+    (a : Additive (π_ 2 X x)) (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) :
+    glue₂ u (a +ᵥ D₁) D₂ = a +ᵥ glue₂ u D₁ D₂ := by
+  rw [vadd_def, vadd_def, glue₂_def, glue₂_def]
+  refine (congrArg (u ≫ ·) ?_).trans (Category.assoc _ _ _).symm
+  conv_lhs => rw [FundamentalGroupoid.comp_eq, ← Path.Homotopic.Quotient.trans_refl D₂,
+    ← Path.Homotopic.comp_prod_eq_prod_comp,
+    Path.Homotopic.Quotient.map_trans_cast _ _ rfl Path.refl_trans_refl.symm
+      Path.refl_trans_refl.symm]
+  exact congrArg _ (Path.Homotopic.Quotient.cast_map_trans_prod_refl _)
+
+/-- Gluing a sphere to the cap of the second input of a pair of pants glues it to the glued cap
+of the output. -/
+@[simp]
+theorem glue₂_vadd_right (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
+    (a : Additive (π_ 2 X x)) (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) :
+    glue₂ u D₁ (a +ᵥ D₂) = a +ᵥ glue₂ u D₁ D₂ := by
+  rw [vadd_def, vadd_def, glue₂_def, glue₂_def]
+  refine (congrArg (u ≫ ·) ?_).trans (Category.assoc _ _ _).symm
+  conv_lhs => rw [FundamentalGroupoid.comp_eq, ← Path.Homotopic.Quotient.trans_refl D₁,
+    ← Path.Homotopic.comp_prod_eq_prod_comp,
+    Path.Homotopic.Quotient.map_trans_cast _ _ rfl Path.refl_trans_refl.symm
+      Path.refl_trans_refl.symm]
+  exact congrArg _ (Path.Homotopic.Quotient.cast_map_trans_refl_prod _)
+
 end RawCap
 
 end Raw
@@ -194,7 +262,7 @@ number. On a path-connected space, the cap classes of a null-homotopic loop form
 
 namespace SphericalCapClass
 
-variable {ω c} {γ γ₁ γ₂ : Ω X x}
+variable {ω c} {γ γ₀ γ₁ γ₂ : Ω X x}
 
 variable (ω c) in
 /-- The cap class of a raw cap. -/
@@ -300,6 +368,21 @@ theorem glue_vsub_glue (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨
   induction q using induction_on with
   | h D => rw [glue_mk, glue_mk, mk_vsub_mk, mk_vsub_mk, RawCap.comp_vsub_comp]
 
+/-- **Gluing cap classes along a pair of pants.** A homotopy of loops `u` from `γ₀` to
+`γ₁.trans γ₂` glues cap classes of `γ₁` and `γ₂` to a cap class of `γ₀`, computed on
+representatives by `TauCeti.Floer.RawCap.glue₂`. -/
+def glue₂ (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩) :
+    SphericalCapClass ω c γ₁ → SphericalCapClass ω c γ₂ → SphericalCapClass ω c γ₀ :=
+  Quotient.map₂ (RawCap.glue₂ u) fun _ D₁ ⟨k₁, hk₁⟩ _ D₂ ⟨k₂, hk₂⟩ =>
+    ⟨k₂ + k₁, by simp only [← hk₁, ← hk₂, AddSubgroup.vadd_def, RawCap.glue₂_vadd_left,
+      RawCap.glue₂_vadd_right, add_vadd]⟩
+
+@[simp]
+theorem glue₂_mk (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
+    (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) :
+    glue₂ u (mk ω c D₁) (mk ω c D₂) = mk ω c (RawCap.glue₂ u D₁ D₂) :=
+  (rfl)
+
 variable [PathConnectedSpace X]
 
 /-- Recapping a cap class by a class of the period group: `[a] +ᵥ mk D = mk (a +ᵥ D)` for any
@@ -346,6 +429,43 @@ theorem glue_vadd (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂
   induction q using induction_on with
   | h D => rw [ofHomotopyGroup_vadd_mk, glue_mk, glue_mk, ofHomotopyGroup_vadd_mk,
       RawCap.comp_vadd]
+
+/-- Recapping the first input of a pair of pants recaps the glued output by the same class. -/
+@[simp]
+theorem glue₂_vadd_left (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
+    (g : SphericalPeriodGroup ω c)
+    (q₁ : SphericalCapClass ω c γ₁) (q₂ : SphericalCapClass ω c γ₂) :
+    glue₂ u (g +ᵥ q₁) q₂ = g +ᵥ glue₂ u q₁ q₂ := by
+  obtain ⟨a, rfl⟩ := SphericalPeriodGroup.ofHomotopyGroup_surjective (ω := ω) (c := c) x g
+  induction q₁ using induction_on with | h D₁ =>
+  induction q₂ using induction_on with
+  | h D₂ => rw [ofHomotopyGroup_vadd_mk, glue₂_mk, glue₂_mk, ofHomotopyGroup_vadd_mk,
+      RawCap.glue₂_vadd_left]
+
+/-- Recapping the second input of a pair of pants recaps the glued output by the same class. -/
+@[simp]
+theorem glue₂_vadd_right (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩)
+    (g : SphericalPeriodGroup ω c)
+    (q₁ : SphericalCapClass ω c γ₁) (q₂ : SphericalCapClass ω c γ₂) :
+    glue₂ u q₁ (g +ᵥ q₂) = g +ᵥ glue₂ u q₁ q₂ := by
+  obtain ⟨a, rfl⟩ := SphericalPeriodGroup.ofHomotopyGroup_surjective (ω := ω) (c := c) x g
+  induction q₁ using induction_on with | h D₁ =>
+  induction q₂ using induction_on with
+  | h D₂ => rw [ofHomotopyGroup_vadd_mk, glue₂_mk, glue₂_mk, ofHomotopyGroup_vadd_mk,
+      RawCap.glue₂_vadd_right]
+
+/-- The class `A = D₀ + u − D₁ − D₂` of a pair of pants `u` relative to caps `D₁`, `D₂` of its
+inputs and `D₀` of its output is the class of the sphere `D₀ -ᵥ RawCap.glue₂ u D₁ D₂` by which
+the output cap differs from the glued cap. -/
+@[simp]
+theorem productClass_glue₂_mk [Nonempty (RawCap γ₀)]
+    (u : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩) (D₁ : RawCap γ₁) (D₂ : RawCap γ₂)
+    (D₀ : RawCap γ₀) :
+    productClass (ω := ω.comp (sphericalClasses X 1).subtype)
+        (c := c.comp (sphericalClasses X 1).subtype) (glue₂ u) (mk ω c D₁) (mk ω c D₂)
+        (mk ω c D₀) =
+      SphericalPeriodGroup.ofHomotopyGroup ω c x (D₀ -ᵥ RawCap.glue₂ u D₁ D₂) := by
+  rw [productClass_def, glue₂_mk, mk_vsub_mk]
 
 /-- The descended function obeys the recapping law on cap classes. -/
 @[simp]
