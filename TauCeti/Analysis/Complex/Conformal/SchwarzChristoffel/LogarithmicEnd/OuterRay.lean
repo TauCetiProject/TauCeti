@@ -54,7 +54,7 @@ theorem schwarzChristoffelBoundary_image_Ioi_of_prevertex_sum_eq_neg_one
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   let d : ℝ → ℝ := fun x => ‖V - B x‖
   have hfinite {x : ℝ} (hx : p < x) : -1 < ∑ i with a i = x, e i :=
-    by rw [Finset.sum_filter_eq_zero_of_forall_ne Finset.univ a e
+    by rw [Finset.sum_filter_eq_zero_of_ne
       fun i _ hei => ((ha i hei).trans_lt hx).ne]; norm_num
   have hBtop : Tendsto B atTop (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
@@ -116,7 +116,7 @@ theorem schwarzChristoffelBoundary_image_Iio_of_prevertex_sum_eq_neg_one
   let u : ℂ := exp ((Real.pi * ∑ i, e i) * Complex.I)
   let d : ℝ → ℝ := fun x => ‖B x - V‖
   have hfinite {x : ℝ} (hx : x < p) : -1 < ∑ i with a i = x, e i :=
-    by rw [Finset.sum_filter_eq_zero_of_forall_ne Finset.univ a e
+    by rw [Finset.sum_filter_eq_zero_of_ne
       fun i _ hei => (hx.trans_le (ha i hei)).ne']; norm_num
   have hBbot : Tendsto B atBot (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
