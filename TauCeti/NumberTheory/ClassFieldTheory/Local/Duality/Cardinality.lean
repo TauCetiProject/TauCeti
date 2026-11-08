@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Perfect
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
 import TauCeti.Algebra.Module.ZMod.Dual
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.RootsOfUnity
@@ -101,5 +102,22 @@ theorem natCard_continuousCohomology_two_eq_natCard_hom (hn : IsUnit (n : F)) (A
     Nat.card (continuousCohomology 2 A) = Nat.card (A ⟶ muNRep n F) := by
   rw [natCard_continuousCohomology_two_eq_zero_tateDual hn A,
     natCard_continuousCohomology_zero_tateDual A]
+
+/-- Local duality computes the order of explicit second cohomology of a finite discrete
+module killed by `n` from the invariants of its dual into the `n`th roots of unity. -/
+theorem natCard_H2_eq_natCard_H0_internalHom (hn : IsUnit (n : F))
+    (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
+    [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Nat.card (ContCohomology.H2 (AbsoluteGaloisGroup F) M) =
+      Nat.card (ContCohomology.H0 (AbsoluteGaloisGroup F)
+        (InternalHom (AbsoluteGaloisGroup F) M (KummerCoeff F n))) := by
+  have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
+  let e₂ := (muNRepH2Equiv n F).trans (h2MuEquivZMod F hn)
+  rw [Nat.card_congr (Equiv.ofBijective _ (dualityMap2_kummerCoeff_bijective hn M hM)),
+    e₂.natCard_addMonoidHom_zmod]
+  intro x
+  apply Subtype.ext
+  exact InternalHom.nsmul_eq_zero_of_domain hM x.1
 
 end TauCeti.ClassFieldTheory

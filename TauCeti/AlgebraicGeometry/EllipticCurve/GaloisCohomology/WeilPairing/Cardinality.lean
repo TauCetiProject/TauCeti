@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinality
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Explicit
+import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Cardinality
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 
 /-!
@@ -40,32 +41,24 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
   (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
 
 include hn in
-open scoped Classical in
 /-- Local duality computes second cohomology from the rational invariants of the dual kernel. -/
-theorem natCard_H2_kerCoeff :
+theorem natCard_H2_kerCoeff [DecidableEq K] :
     Nat.card (H2 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) =
       Nat.card (ofIsogeny φ.dual).pointMapHom.ker := by
   have := hn.neZero_natCast
   rw [Nat.card_congr (ofIsogeny φ.dual).kerPointMapEquivInvariants.toEquiv]
-  let e₂ := (muNRepH2Equiv φ.degree K).trans (h2MuEquivZMod K hn)
-  rw [Nat.card_congr (Equiv.ofBijective _
-    (dualityMap2_kummerCoeff_bijective hn (ofIsogeny φ).KerCoeff
-      φ.degree_nsmul_kerCoeff_eq_zero)),
-    e₂.natCard_addMonoidHom_zmod]
-  · exact Nat.card_congr (Equiv.ofBijective _
-      (explicitCoeff0_bijective _ _ (φ.kerCoeffWeilDual_bijective hn))).symm
-  · intro x
-    apply Subtype.ext
-    exact InternalHom.nsmul_eq_zero_of_domain φ.degree_nsmul_kerCoeff_eq_zero x.1
+  rw [natCard_H2_eq_natCard_H0_internalHom hn (ofIsogeny φ).KerCoeff
+    φ.degree_nsmul_kerCoeff_eq_zero]
+  exact Nat.card_congr (Equiv.ofBijective _
+    (explicitCoeff0_bijective _ _ (φ.kerCoeffWeilDual_bijective hn))).symm
 
 section MixedCharacteristic
 
 variable (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p]
 
-open scoped Classical in
 /-- The order of first cohomology of an isogeny kernel over a finite extension of `ℚ_p`,
 including when the residue characteristic divides the kernel order. -/
-theorem natCard_H1_kerCoeff :
+theorem natCard_H1_kerCoeff [DecidableEq K] :
     Nat.card (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) =
       Nat.card (ofIsogeny φ).pointMapHom.ker *
         Nat.card (ofIsogeny φ.dual).pointMapHom.ker *

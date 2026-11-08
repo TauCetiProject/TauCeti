@@ -31,10 +31,10 @@ open WeierstrassCurve ContCohomology Hom
 variable {K : Type} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
 
-open scoped Classical in
 /-- Rational kernel points are exactly the Galois invariants of the geometric kernel. -/
-def Hom.kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine) :
+def Hom.kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.toAffine) :
     f.pointMapHom.ker ≃+ H0 (AbsoluteGaloisGroup K) f.KerCoeff := by
+  classical
   let ι : f.pointMapHom.ker →+ H0 (AbsoluteGaloisGroup K) f.KerCoeff :=
     { toFun P := ⟨⟨W₁.basePointCoeff P, by
         rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass,
@@ -55,10 +55,9 @@ def Hom.kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine) :
     exact P.val.2
   exact ⟨⟨Q, hker⟩, Subtype.ext (Subtype.ext hQ)⟩
 
-open scoped Classical in
 /-- The kernel-invariant equivalence is the usual inclusion of rational points into `E(Kˢ)`. -/
 @[simp]
-theorem Hom.coe_kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine)
+theorem Hom.coe_kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.toAffine)
     (P : f.pointMapHom.ker) :
     ((f.kerPointMapEquivInvariants P).val : W₁.PointCoeff) = W₁.basePointCoeff P := (rfl)
 
