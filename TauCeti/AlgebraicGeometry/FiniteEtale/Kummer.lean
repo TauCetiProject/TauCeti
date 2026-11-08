@@ -19,8 +19,9 @@ The *Kummer cover* `Spec R[x]/(x ^ n - t) ⟶ Spec R` extracts an `n`-th root of
 étale (`TauCeti.standardTameCover_etale`). For `R = K[T, T⁻¹]` and `t = T` it is the power map
 `z ↦ z ^ n` of the multiplicative group `𝔾_m` over `K`, whose fibre over `1` is the group
 `μ_n` of `n`-th roots of unity. The fibres over `1` of the covers of all degrees `n` invertible
-in `R` form the inverse system of the `μ_n` under the power maps. In characteristic zero its
-limit is the Tate module of `𝔾_m`; in characteristic `p > 0` only the prime-to-`p` part is
+in `R` form the inverse system of the `μ_n` under the power maps. For `R = K[T, T⁻¹]` with `K` a
+field of characteristic zero, every `n ≠ 0` is invertible and the limit of this system is the
+Tate module of `𝔾_m` over `K`; for `K` of characteristic `p > 0` only the prime-to-`p` part is
 reached, since `𝔾_m` then also has covers, such as Artin–Schreier covers, which are not Kummer
 covers.
 
@@ -315,11 +316,9 @@ noncomputable def kummerCoverFiberEquivRootsOfUnity (h : algebraMap R Ω t = 1) 
       rootsOfUnity n Ω :=
   -- `n ≠ 0`: otherwise `R` would be the zero ring, which has no map to the field `Ω`.
   haveI : NeZero n := ⟨by rintro rfl; simpa using hn.map (algebraMap R Ω)⟩
-  (kummerCoverFiberEquiv t Ω n hn).trans
-    { toFun ω := rootsOfUnity.mkOfPowEq (ω : Ω) (ω.2.trans h)
-      invFun ζ := ⟨(ζ : Ωˣ), by simpa [h] using congrArg Units.val ((mem_rootsOfUnity n _).mp ζ.2)⟩
-      left_inv _ := rfl
-      right_inv _ := rootsOfUnity.coe_injective rfl }
+  (kummerCoverFiberEquiv t Ω n hn).trans <|
+    (Equiv.subtypeEquivRight fun ω ↦ by rw [mem_nthRoots (NeZero.pos n), h]).trans
+      (rootsOfUnityEquivNthRoots Ω n).symm
 
 /-- The root of unity attached to a point of the fibre over `1` of the Kummer cover is the
 corresponding `n`-th root of `t`. -/
