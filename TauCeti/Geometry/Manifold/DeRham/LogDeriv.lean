@@ -143,6 +143,23 @@ theorem exists_pathIntegral_mlogDeriv_eq_int_mul {u : M → ℂ} (hu : ContMDiff
 
 /-! ### Closed forms with periods in `2πiℤ` -/
 
+/-- If near each point `x` the function `exp ∘ f` is a constant multiple of `exp g` for a function
+`g` that is `C^r` at `x` with `dg = φ` at `x` (`1 ≤ r`), then `exp ∘ f` is `C^r` with logarithmic
+derivative `φ`. -/
+private theorem contMDiff_exp_comp_and_mlogDeriv_eq {r : ℕ∞} (hr : 1 ≤ r)
+    {φ : RoughForm I M ℂ 1} {f : M → ℂ}
+    (h : ∀ x, ∃ g : M → ℂ, ContMDiffAt I 𝓘(ℝ, ℂ) r g x ∧
+      (∀ᶠ y in 𝓝 x, exp (f y) = exp (f x - g x) * exp (g y)) ∧
+      mextDeriv (RoughForm.ofFunction I g) x = φ x) :
+    ContMDiff I 𝓘(ℝ, ℂ) r (fun y ↦ exp (f y)) ∧ mlogDeriv I (fun y ↦ exp (f y)) = φ := by
+  refine ⟨fun x ↦ ?_, funext fun x ↦ ?_⟩
+  · obtain ⟨g, hg, hfg, -⟩ := h x
+    exact ((contDiff_const.mul Complex.contDiff_exp).contDiffAt.comp_contMDiffAt hg)
+      |>.congr_of_eventuallyEq hfg
+  · obtain ⟨g, hg, hfg, hdg⟩ := h x
+    rw [mlogDeriv_eq_of_eventuallyEq_mul_exp (exp_ne_zero _)
+      ((hg.of_le (by exact_mod_cast hr)).mdifferentiableAt one_ne_zero) hfg, hdg]
+
 /-- If the integrals of `φ` along smooth loops at `x₀` lie in `2πiℤ`, then two smooth curves from
 `x₀` to `y`, constant on `(-∞, 0]` and on `[1, ∞)`, have line integrals with the same
 exponential. -/
@@ -186,15 +203,10 @@ theorem exists_mlogDeriv_eq_of_forall_pathIntegral_eq_int_mul [FiniteDimensional
       (hγ₁ y) hδ hδ₀ hδ₁, hδφ, ← exp_add]
     congr 1
     ring
-  refine ⟨fun y ↦ exp (f y), fun x ↦ ?_, fun x ↦ exp_ne_zero _, ?_, funext fun x ↦ ?_⟩
-  · obtain ⟨g, hg, hfg, -⟩ := hloc x
-    exact ((contDiff_const.mul Complex.contDiff_exp).contDiffAt.comp_contMDiffAt hg)
-      |>.congr_of_eventuallyEq hfg
-  · obtain ⟨n, hn⟩ := h _ (hγ x₀) (hγ₀ x₀ 0 le_rfl) (hγ₁ x₀ 1 le_rfl)
-    exact exp_eq_one_iff.mpr ⟨n, hn⟩
-  · obtain ⟨g, hg, hfg, hdg⟩ := hloc x
-    rw [mlogDeriv_eq_of_eventuallyEq_mul_exp (exp_ne_zero _)
-      ((hg.of_le (by exact_mod_cast hr)).mdifferentiableAt one_ne_zero) hfg, hdg]
+  obtain ⟨hu, hdu⟩ := contMDiff_exp_comp_and_mlogDeriv_eq hr hloc
+  refine ⟨fun y ↦ exp (f y), hu, fun x ↦ exp_ne_zero _, ?_, hdu⟩
+  obtain ⟨n, hn⟩ := h _ (hγ x₀) (hγ₀ x₀ 0 le_rfl) (hγ₁ x₀ 1 le_rfl)
+  exact exp_eq_one_iff.mpr ⟨n, hn⟩
 
 /-! ### Integrals of `dlog u` along continuous paths -/
 
@@ -279,7 +291,8 @@ theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
         singularChains_d_simplexChain (n := 0), Fin.sum_univ_two]
       simp only [map_add, map_zsmul, chainsDesc_simplexChain_one]
       rw [toSSetObj₀Equiv_δ_zero, toSSetObj₀Equiv_δ_one, hN]
-      simp [zsmul_eq_mul]
+      simp only [LinearMap.toSpanSingleton_apply, zsmul_eq_mul, Fin.coe_ofNat_eq_mod, Nat.zero_mod,
+        Nat.mod_succ, pow_zero, pow_one, one_smul, neg_smul]
       ring
   obtain ⟨z, rfl⟩ := (H₁AddEquivHomology (.of M)).surjective.comp H₁.mk_surjective c
   refine ⟨chainsDesc N (z : ((singularChains ℤ).obj (.of M)).X 1), ?_⟩
@@ -432,28 +445,22 @@ theorem exists_mlogDeriv_eq_of_homologyPeriodHom_eq_int_mul {r : ℕ∞} (hr : 1
   obtain ⟨b, hb, hbj⟩ := exists_pathComponent_representative (X := M)
   set f : M → ℂ := fun y ↦ pathClassIntegral φ (.mk (hb y).somePath)
   -- Near each point `x`, `exp ∘ f` is a constant multiple of `exp g` for a local primitive `g`.
-  have hloc (x : M) : ∃ g : M → ℂ, ContMDiff I 𝓘(ℝ, ℂ) r g ∧
+  have hloc (x : M) : ∃ g : M → ℂ, ContMDiffAt I 𝓘(ℝ, ℂ) r g x ∧
       (∀ᶠ y in 𝓝 x, exp (f y) = exp (f x - g x) * exp (g y)) ∧
       mextDeriv (RoughForm.ofFunction I g) x = φ x := by
     obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
-    refine ⟨g, hg, ?_, hgU.mextDeriv_eq x hxU⟩
+    refine ⟨g, hg x, ?_, hgU.mextDeriv_eq x hxU⟩
     filter_upwards [hgU.eventually_exists_path_pathClassIntegral_eq_sub hφ₁ hclosed hxU]
       with y ⟨γ, hγ⟩
     rw [hpath (hbj ⟨γ⟩).symm (hb y).somePath ((hb x).somePath.trans γ),
       Path.Homotopic.Quotient.mk_trans, pathClassIntegral_trans, hγ, ← exp_add]
     congr 1
     ring
-  refine ⟨fun y ↦ exp (f y), fun x ↦ ?_, fun x ↦ exp_ne_zero _, fun x ↦ ⟨b x, hb x, ?_⟩,
-    funext fun x ↦ ?_⟩
-  · obtain ⟨g, hg, hfg, -⟩ := hloc x
-    exact ((contDiff_const.mul Complex.contDiff_exp).contDiffAt.comp_contMDiffAt (hg x))
-      |>.congr_of_eventuallyEq hfg
-  · beta_reduce
-    rw [hpath (hbj (hb x)) _ (Path.refl (b x)), Path.Homotopic.Quotient.mk_refl,
-      pathClassIntegral_refl, exp_zero]
-  · obtain ⟨g, hg, hfg, hdg⟩ := hloc x
-    rw [mlogDeriv_eq_of_eventuallyEq_mul_exp (exp_ne_zero _)
-      ((hg.of_le (by exact_mod_cast hr) x).mdifferentiableAt one_ne_zero) hfg, hdg]
+  obtain ⟨hu, hdu⟩ := contMDiff_exp_comp_and_mlogDeriv_eq hr hloc
+  refine ⟨fun y ↦ exp (f y), hu, fun x ↦ exp_ne_zero _, fun x ↦ ⟨b x, hb x, ?_⟩, hdu⟩
+  beta_reduce
+  rw [hpath (hbj (hb x)) _ (Path.refl (b x)), Path.Homotopic.Quotient.mk_refl,
+    pathClassIntegral_refl, exp_zero]
 
 /-- **Closed imaginary forms with periods in `2πiℤ` are logarithmic derivatives of circle-valued
 maps.** A smooth closed imaginary `1`-form whose integrals over singular `1`-cycles lie in `2πiℤ`
