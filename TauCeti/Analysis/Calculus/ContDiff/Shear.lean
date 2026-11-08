@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
