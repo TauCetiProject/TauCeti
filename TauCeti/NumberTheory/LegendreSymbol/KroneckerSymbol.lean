@@ -377,7 +377,7 @@ private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀
       exact ⟨-(-(k : ℤ) / D), by ring⟩
     have hk₀ : -(k : ℤ) < 0 := by have := hk.pos; omega
     rw [kroneckerSym_of_odd D hm, Int.natAbs_neg, Int.natAbs_natCast,
-      jacobiSym_eq_sign_mul_of_emod_four_eq_zero hD hk hr hdvd]
+      jacobiSym_eq_sign_mul_of_emod_four_eq_zero hD hk hdvd]
     simp only [hk₀, and_true, Int.ite_lt_zero_eq_sign hD₀]
 
 private theorem kroneckerSym_eq_zero_of_two_dvd {D m : ℤ} (hD : 2 ∣ D) (hm : 2 ∣ m) :
