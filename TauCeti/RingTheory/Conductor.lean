@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Ideal.Colon
 public import TauCeti.Algebra.Module.LocalizedModule.Submodule
+public import Mathlib.RingTheory.Flat.Localization
+public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.RingTheory.Localization.Annihilator
 public import TauCeti.RingTheory.Flat.Annihilator
 public import Mathlib.RingTheory.IsTensorProduct
@@ -100,6 +102,35 @@ zero. -/
 theorem ker_algebraMap_le_conductor : RingHom.ker (algebraMap A B) ≤ conductor A B :=
   fun a ha ↦ mem_conductor_iff.mpr fun _ ↦ ⟨0, by simp [(RingHom.mem_ker).mp ha]⟩
 
+section BaseChange
+
+variable (A) {B : Type*} [CommRing B] [Algebra A B]
+  (A' B' : Type*) [CommRing A'] [CommRing B'] [Algebra A A']
+  [Algebra A B'] [Algebra A' B'] [Algebra B B']
+  [IsScalarTower A A' B'] [IsScalarTower A B B']
+  [Algebra.IsPushout A A' B B'] [Module.Flat A A']
+  [Module.Finite A (B ⧸ (1 : Submodule A B))]
+
+/-- The conductor commutes with flat base change when `B / A` is finite, in particular
+for finite algebras. The pushout formulation applies to any chosen realization of the
+base-changed algebra. This follows from flat base change of annihilators (Stacks Tag 07T8). -/
+theorem conductor_eq_map_of_flat :
+    conductor A' B' = (conductor A B).map (algebraMap A A') := by
+  let e := Algebra.IsPushout.equiv A A' B B'
+  have hmap : (LinearMap.range ((Algebra.linearMap A B).baseChange A')).map
+      e.toLinearMap = (1 : Submodule A' B') := by
+    simp [← LinearMap.baseChange_range, ← Submodule.one_eq_range,
+      Submodule.one_eq_span, Submodule.baseChange_span, Submodule.map_span,
+      Algebra.IsPushout.equiv_tmul, e]
+  let q := Submodule.Quotient.equiv _ _ e.toLinearEquiv hmap
+  rw [conductor_eq_annihilator, ← q.annihilator_eq]
+  rw [conductor_eq_annihilator, Submodule.one_eq_range]
+  have : Module.Finite A (B ⧸ LinearMap.range (Algebra.linearMap A B)) := by
+    rwa [← Submodule.one_eq_range]
+  exact (Algebra.linearMap A B).cokernel_annihilator_flat_baseChange (S := A')
+
+end BaseChange
+
 section Localization
 
 variable {B : Type*} [CommRing B] [Algebra A B]
@@ -123,39 +154,10 @@ localization of `A` at a submonoid `S` and `B'` the localization of `B` at the i
 the conductor of `B'` over `A'` is the extension of the conductor of `B` over `A`. -/
 theorem conductor_eq_map [Module.Finite A B] :
     conductor A' B' = (conductor A B).map (algebraMap A A') := by
-  have h := IsLocalizedModule.annihilator_eq_map S A'
-    ((1 : Submodule A B).toLocalizedQuotient' A' S (IsScalarTower.toAlgHom A B B').toLinearMap)
-  rwa [Submodule.localized'_one S A' B'] at h
+  have := (Algebra.isPushout_of_isLocalization S A' B B').symm
+  have : Module.Flat A A' := IsLocalization.flat A' S
+  exact conductor_eq_map_of_flat A A' B'
 
 end Localization
-
-section BaseChange
-
-variable (A) {B : Type*} [CommRing B] [Algebra A B]
-  (A' B' : Type*) [CommRing A'] [CommRing B'] [Algebra A A']
-  [Algebra A B'] [Algebra A' B'] [Algebra B B']
-  [IsScalarTower A A' B'] [IsScalarTower A B B']
-  [Algebra.IsPushout A A' B B'] [Module.Flat A A']
-  [Module.Finite A (B ⧸ (1 : Submodule A B))]
-
-/-- The conductor commutes with flat base change when `B / A` is finite, in particular
-for finite algebras. The pushout formulation applies to any chosen realization of the
-base-changed algebra. This follows from flat base change of annihilators (Stacks Tag 07T8). -/
-theorem conductor_eq_map_of_flat :
-    conductor A' B' = (conductor A B).map (algebraMap A A') := by
-  let e := Algebra.IsPushout.equiv A A' B B'
-  have hmap : (LinearMap.range ((Algebra.linearMap A B).baseChange A')).map
-      e.toLinearMap = (1 : Submodule A' B') := by
-    rw [← LinearMap.baseChange_range, ← Submodule.one_eq_range,
-      Submodule.one_eq_span, Submodule.baseChange_span, Submodule.map_span]
-    simp [Algebra.IsPushout.equiv_tmul, Submodule.one_eq_span, e]
-  let q := Submodule.Quotient.equiv _ _ e.toLinearEquiv hmap
-  rw [conductor_eq_annihilator, ← q.annihilator_eq]
-  rw [conductor_eq_annihilator, Submodule.one_eq_range]
-  have : Module.Finite A (B ⧸ LinearMap.range (Algebra.linearMap A B)) := by
-    rwa [← Submodule.one_eq_range]
-  exact (Algebra.linearMap A B).cokernel_annihilator_flat_baseChange (S := A')
-
-end BaseChange
 
 end TauCeti.Algebra

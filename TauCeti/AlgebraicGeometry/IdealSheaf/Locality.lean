@@ -12,6 +12,8 @@ public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 
 An ideal sheaf is determined by its pullbacks to an open cover. This lets affine
 computations of ideal sheaves, such as Fitting ideals, be glued on an arbitrary scheme.
+For a morphism `f : X ⟶ Y`, it suffices to compare pullbacks along affine charts of `X`
+mapping into affine opens of `Y` (`ext_of_comap_fromSpec_over`).
 
 Vanishing of the sections of an ideal sheaf under a morphism also passes to smaller affine opens
 (`AlgebraicGeometry.Scheme.IdealSheafData.ideal_le_ker_appLE_of_le`), so it can be checked
@@ -77,5 +79,27 @@ theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_comap_openCover
     (h : ∀ i, I.comap (𝒰.f i) = J.comap (𝒰.f i)) : I = J := by
   rw [← I.iInf_map_comap_openCover 𝒰, ← J.iInf_map_comap_openCover 𝒰]
   simp only [h]
+
+/-- Ideal sheaves on `X` are equal if their pullbacks agree on every affine chart mapping
+into an affine open of `Y`. This allows comparisons local on both sides of `f`. -/
+theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_comap_fromSpec_over
+    {Y : Scheme.{u}} (I : X.IdealSheafData) {J : X.IdealSheafData} (f : X ⟶ Y)
+    (h : ∀ (U : Y.affineOpens) (V : X.affineOpens), V.1 ≤ f ⁻¹ᵁ U.1 →
+      I.comap V.2.fromSpec = J.comap V.2.fromSpec) : I = J := by
+  have charts (x : X) : ∃ (U : Y.Opens) (V : X.Opens), IsAffineOpen U ∧
+      IsAffineOpen V ∧ x ∈ V ∧ V ≤ f ⁻¹ᵁ U := by
+    obtain ⟨U, hU, hxU, -⟩ :=
+      TopologicalSpace.Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens
+        (U := ⊤) (x := f x) (by simp)
+    obtain ⟨V, hV, hxV, hVU⟩ :=
+      TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
+        (U := f ⁻¹ᵁ U) (x := x) hxU
+    exact ⟨U, V, hU, hV, hxV, hVU⟩
+  choose U V hU hV hx hVU using charts
+  let 𝒰 : X.OpenCover := Scheme.Cover.mkOfCovers X (fun x ↦ Spec Γ(X, V x))
+    (fun x ↦ (hV x).fromSpec) (fun x ↦ ⟨x, by
+      have hmem : x ∈ Set.range (hV x).fromSpec := (hV x).range_fromSpec.symm ▸ hx x
+      simpa only [Set.mem_range] using hmem⟩)
+  exact ext_of_comap_openCover 𝒰 fun x ↦ h ⟨U x, hU x⟩ ⟨V x, hV x⟩ (hVU x)
 
 end TauCeti

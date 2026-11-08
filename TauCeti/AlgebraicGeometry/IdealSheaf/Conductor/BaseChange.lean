@@ -76,29 +76,10 @@ private theorem conductor_ideal_of_isPullback (H : IsPullback g' f' f g)
 The square may be any chosen pullback square. -/
 theorem conductor_of_isPullback (H : IsPullback g' f' f g) :
     f'.conductor = f.conductor.comap g := by
-  have charts (y : Y') : ∃ (U : Y.Opens) (V : Y'.Opens), IsAffineOpen U ∧
-      IsAffineOpen V ∧ y ∈ V ∧ V ≤ g ⁻¹ᵁ U := by
-    obtain ⟨U, hU, hyU, -⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens
-        (U := ⊤) (x := g y) (by simp)
-    obtain ⟨V, hV, hyV, hVU⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp Y'.isBasis_affineOpens
-        (U := g ⁻¹ᵁ U) (x := y) hyU
-    exact ⟨U, V, hU, hV, hyV, hVU⟩
-  choose U V hU hV hy hVU using charts
-  let 𝒰 : Y'.OpenCover := Scheme.Cover.mkOfCovers Y' (fun y ↦ Spec Γ(Y', V y))
-    (fun y ↦ (hV y).fromSpec) (fun y ↦ ⟨y, by
-      have hmem : y ∈ Set.range (hV y).fromSpec := (hV y).range_fromSpec.symm ▸ hy y
-      simpa only [Set.mem_range] using hmem⟩)
-  apply Scheme.IdealSheafData.ext_of_comap_openCover 𝒰
-  intro y
-  -- The cover projections are the chosen affine chart maps; make these dependent
-  -- projections explicit before using the affine ideal-sheaf comparisons.
-  change f'.conductor.comap (hV y).fromSpec =
-    (f.conductor.comap g).comap (hV y).fromSpec
-  rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop,
-    Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g (hU y) (hV y) (hVU y),
-    conductor_ideal_of_isPullback H ⟨U y, hU y⟩ ⟨V y, hV y⟩ (hVU y)]
+  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over _ g fun U V e ↦ ?_
+  rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop f'.conductor V.2,
+    Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g U.2 V.2 e,
+    conductor_ideal_of_isPullback H U V e]
 
 /-- The conductor of the base change of a finite morphism is the pullback of its
 conductor ideal sheaf along a flat morphism. -/
