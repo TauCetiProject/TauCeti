@@ -170,6 +170,19 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp (L : F →L[ℝ] E)
   rw [((hA.clm_comp hL).congr_of_eventuallyEq hev).fderiv]
   simp
 
+/-- The Hessian quadratic form pulls back along a continuous linear equivalence, with no
+regularity hypothesis: both sides use the totalized derivative. -/
+theorem _root_.ContinuousLinearEquiv.hessianQuadraticForm_comp (L : F ≃L[ℝ] E) (f : E → ℝ)
+    (b : F) :
+    hessianQuadraticForm (f ∘ L) b = (hessianQuadraticForm f (L b)).comp L.toLinearMap := by
+  ext v
+  simp only [hessianQuadraticForm_apply, QuadraticMap.comp_apply]
+  let Φ : (E →L[ℝ] ℝ) ≃L[ℝ] (F →L[ℝ] ℝ) :=
+    ContinuousLinearEquiv.arrowCongr L.symm (ContinuousLinearEquiv.refl ℝ ℝ)
+  have h1 : fderiv ℝ (f ∘ L) = Φ ∘ (fderiv ℝ f ∘ L) := funext fun y ↦ L.comp_right_fderiv
+  rw [h1, Φ.comp_fderiv, L.comp_right_fderiv]
+  rfl
+
 /-- The Hessian of `ℓ ∘ φ`, for a continuous linear functional `ℓ`, is `ℓ` applied to the second
 derivative of `φ`. -/
 theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_left_apply (ℓ : F →L[ℝ] ℝ)
