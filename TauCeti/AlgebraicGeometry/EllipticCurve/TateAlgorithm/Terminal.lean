@@ -425,7 +425,7 @@ theorem IsTateTerminal.two_le_algorithmicOggExponent (hϖ : Irreducible ϖ) {s :
   have key := addVal_le_iff_dvd.2 (h.pow_componentCount_add_one_dvd_Δ hϖ.prime hs)
   rw [hϖ.addVal_pow, hn] at key
   have : s.componentCount + 1 ≤ n := by exact_mod_cast key
-  rw [ReductionSymbol.algorithmicOggExponent_eq]
+  rw [ReductionSymbol.algorithmicOggExponent_def]
   omega
 
 /-! ### Termination -/
