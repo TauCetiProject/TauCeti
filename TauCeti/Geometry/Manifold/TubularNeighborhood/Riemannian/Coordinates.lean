@@ -182,9 +182,7 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
     exact Ψ.map_source (hW₀src w hw)
   have hsymm : ∀ y ∈ W, Ψ.symm y ∈ W₀ := by
     rintro _ ⟨w, hw, rfl⟩
-    have := Ψ.toPartialEquiv.left_inv (hW₀src w hw)
-    change Ψ.toPartialEquiv.symm _ ∈ _
-    rwa [this]
+    simpa [Ψ.left_inv (hW₀src w hw)] using hw
   let Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
     { toFun := fun p => ⟨Ψ (Φ₀ p), Φ₀ p, (Φ₀ p).2, rfl⟩
       invFun := fun y => Φ₀.symm ⟨Ψ.symm y, hsymm y y.2⟩
@@ -204,6 +202,7 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
           (Ψ.symm.contMDiffOn.comp_contMDiff contMDiff_subtype_val
             fun y => hWt y y.2)) }
   refine ⟨W, fun y hy => htarget (hWt y hy), Φ, fun x => ?_⟩
+  -- the value of `Φ` is the `toFun` field above, so this holds by `rfl`
   have hΦ : ((Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : W) : N) =
       Ψ (Φ₀ (zeroSection P (fun x ↦ f.NormalSpace x hn) x)).val := rfl
   rw [hΦ, hzero₀]
