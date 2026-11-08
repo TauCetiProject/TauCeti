@@ -235,7 +235,8 @@ theorem not_memLp_of_tendsto_norm_atTop {E : Type*} [NormedAddCommGroup E] {f : 
     obtain ⟨a, ha⟩ := eventually_atTop.mp (hf.eventually_gt_atTop (lpNorm f ∞ volume))
     have hnull : volume {x | ¬ ‖f x‖ ≤ lpNorm f ∞ volume} = 0 :=
       ae_iff.mp (ae_le_lpNorm_exponent_top hmem)
-    have := measure_mono_null (show Set.Ici a ⊆ _ from fun x hx => not_le.mpr (ha x hx)) hnull
+    have hsub : Set.Ici a ⊆ {x | ¬ ‖f x‖ ≤ lpNorm f ∞ volume} := fun x hx => not_le.mpr (ha x hx)
+    have := measure_mono_null hsub hnull
     simp at this
   · exact not_integrableOn_Ioi_of_eventually_le_norm one_pos 0
       ((hf.eventually_ge_atTop 1).mono fun x hx => by
