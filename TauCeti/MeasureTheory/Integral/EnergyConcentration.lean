@@ -9,8 +9,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Topology.Sequences
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
-import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.Topology.Order.Compact
+import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 import TauCeti.Topology.Sequences
 
@@ -65,8 +66,6 @@ which the `g k` are unbounded (`TauCeti.coe_eq_setOf_forall_exists_lt_of_concent
   measure of small balls from concentrating energy loses arbitrarily little of it.
 * `TauCeti.exists_strictMono_finset_forall_le_of_concentration`: when energy concentrates at
   blow-up points, a subsequence is bounded on compact sets off finitely many concentration points.
-* `TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`: a set of measure below `δ / c` carrying
-  energy at least `δ` contains a point where the density exceeds `c`.
 * `TauCeti.exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball`: energy
   concentration at a null point gives a subsequence blowing up at points converging to it.
 * `TauCeti.coe_eq_setOf_forall_exists_lt_of_concentration`: a finite set of concentration
@@ -87,38 +86,6 @@ namespace TauCeti
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} {Ω : Set X} {δ E : ℝ}
-
-/-- The balls about a point `z`, one of which has finite measure, have measures tending to the
-measure of `{z}` as the radius decreases to `0`. -/
-theorem tendsto_measure_ball_nhdsGT_zero {z : X} (hfin : ∃ R > 0, μ (ball z R) ≠ ⊤) :
-    Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 (μ {z})) := by
-  simpa [thickening_singleton] using
-    tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
-
-/-- **Large energy on a small set forces a large density.** If a set `S` of measure less than
-`δ / c`, with `c > 0`, carries energy `∫_S f ≥ δ`, then `f` exceeds `c` at some point of `S`. No
-integrability, measurability or sign condition on `f` is needed. -/
-theorem exists_lt_of_measure_lt_of_le_setIntegral {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {f : α → ℝ} {S : Set α} {c : ℝ} (hc : 0 < c)
-    (hS : ν S < ENNReal.ofReal (δ / c)) (hδS : δ ≤ ∫ y in S, f y ∂ν) : ∃ y ∈ S, c < f y := by
-  have hδ : 0 < δ := (div_pos_iff_of_pos_right hc).1 (ENNReal.ofReal_pos.1 (pos_of_gt hS))
-  have hint : IntegrableOn f S ν := by
-    by_contra h
-    rw [integral_undef h] at hδS
-    linarith
-  have hν0 : ν S ≠ 0 := fun h ↦ by
-    rw [setIntegral_measure_zero _ h] at hδS
-    linarith
-  have hνS : ν S ≠ ⊤ := (hS.trans ENNReal.ofReal_lt_top).ne
-  obtain ⟨y, hy, hle⟩ := exists_setAverage_le hν0 hνS hint
-  have hpos : 0 < ν.real S := ENNReal.toReal_pos hν0 hνS
-  have hlt : ν.real S * c < δ := by
-    rw [← lt_div_iff₀ hc]
-    exact ENNReal.toReal_lt_of_lt_ofReal hS
-  rw [setAverage_eq, smul_eq_mul, inv_mul_eq_div] at hle
-  refine ⟨y, hy, lt_of_lt_of_le ?_ hle⟩
-  rw [lt_div_iff₀ hpos]
-  linarith
 
 /-- **Counting energy concentration points.** Let `e i ≥ 0` be densities on a measurable set `Ω`
 with `∫_Ω e i ≤ E`, and let `Z` be a finite set of points at which energy at least `δ`
