@@ -11,11 +11,13 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # The co-Leibniz rule for a perturbed homotopy
 
-Let `D` be a linear map `X → X ⊗ X` and let `h` be a map satisfying the co-Leibniz rule along `D`
-with respect to the idempotent `i p` and a sign `τ`. If `δ` satisfies the co-Leibniz rule
-with respect to the identity, and `h'`, `i'`, `p'` are obtained from `h`, `i`, `p` by the
-perturbation identities `h' (1 + δ h) = h`, `i' + h' δ i = i`, `p' (1 + δ h) = p`, then `h'`
-satisfies the co-Leibniz rule along `D` with respect to `i' p'`, provided `1 + δ h` is surjective.
+Let `D` be a linear map `X → X ⊗ X`, `τ` an involution of `X`, and `h` a map satisfying the
+co-Leibniz rule along `D` with respect to the idempotent `i p` and `τ`. Let `δ` satisfy the
+co-Leibniz rule with respect to the identity and `τ`. Let `h'`, `i'`, `p'` be obtained from
+`h`, `i`, `p` by the perturbation identities `h' (1 + δ h) = h`, `i' + h' δ i = i`,
+`p' (1 + δ h) = p`. Assume the side conditions `h' h = 0`, `h' i p = 0`, `h' τ h = 0`,
+`p' h = 0` and `p' i p = p`. Then `h'` satisfies the co-Leibniz rule along `D` with respect to
+`i' p'` and `τ`, provided `1 + δ h` is surjective.
 
 ## Main result
 
@@ -29,8 +31,10 @@ open scoped TensorProduct
 namespace TauCeti
 
 /-- The co-Leibniz rule for a perturbed homotopy `h'`, in terms of a comultiplication `D`,
-from the corresponding rules for `h` and `δ` and the perturbation identities
-`h' (1 + δ h) = h`, `i' + h' δ i = i`, `p' (1 + δ h) = p`. -/
+from the corresponding rules for `h` and `δ`, the perturbation identities
+`h' (1 + δ h) = h`, `i' + h' δ i = i`, `p' (1 + δ h) = p`, the side conditions
+`h' h = 0`, `h' i p = 0`, `h' τ h = 0`, `p' h = 0`, `p' i p = p` and `τ τ = id`, and the
+surjectivity of `1 + δ h`. -/
 theorem comp_perturbed_homotopy_eq {R : Type*} [CommRing R] {X Y : Type*} [AddCommGroup X]
     [Module R X] [AddCommGroup Y] [Module R Y] {D : X →ₗ[R] X ⊗[R] X}
     {h h' δ τ : X →ₗ[R] X}
