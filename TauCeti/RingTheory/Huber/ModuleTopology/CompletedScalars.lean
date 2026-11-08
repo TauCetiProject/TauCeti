@@ -71,26 +71,31 @@ theorem completionModule_smul_coe (a : Completion A) (m : M) :
   rw [completionModule_smul, ofTensorProductEquiv_symm_coe]
   simp [TensorProduct.smul_tmul']
 
+/-- The original and completed scalar actions form a scalar tower. -/
+theorem isScalarTower_completionModule :
+    letI := P.completionModule (M := M)
+    IsScalarTower A (Completion A) (Completion M) :=
+  P.ofTensorProductEquiv.symm.isScalarTower (Completion A)
+
 /-- The completed scalar action restricts to the existing `A`-module structure on `M̂`. -/
 @[simp]
 theorem completionModule_coe_smul (a : A) (x : Completion M) :
     letI := P.completionModule (M := M)
     (a : Completion A) • x = a • x := by
   let := P.completionModule (M := M)
-  rw [completionModule_smul]
-  have ht : (a : Completion A) • P.ofTensorProductEquiv.symm x =
-      a • P.ofTensorProductEquiv.symm x := by
-    simpa only [Completion.algebraMap_def, Algebra.algebraMap_self_apply] using
-      IsScalarTower.algebraMap_smul (A := Completion A) a (P.ofTensorProductEquiv.symm x)
-  rw [ht, map_smul]
-  simpa only [ofTensorProductEquiv_apply] using
-    congrArg (a • ·) (P.ofTensorProductEquiv.apply_symm_apply x)
+  have := P.isScalarTower_completionModule (M := M)
+  rw [← smul_one_smul (Completion A) a x, Algebra.smul_def, mul_one,
+    Completion.algebraMap_def, Algebra.algebraMap_self_apply]
 
-/-- The original and completed scalar actions form a scalar tower. -/
-theorem isScalarTower_completionModule :
+/-- The transported linear equivalence has the canonical base-change map as its inverse. -/
+private theorem completionModule_linearEquiv_symm_apply (t : Completion A ⊗[A] M) :
     letI := P.completionModule (M := M)
-    IsScalarTower A (Completion A) (Completion M) :=
-  P.ofTensorProductEquiv.symm.isScalarTower (Completion A)
+    (P.ofTensorProductEquiv.symm.toAddEquiv.linearEquiv (Completion A)).symm t =
+      Completion.ofTensorProduct A M t := by
+  let := P.completionModule (M := M)
+  rw [AddEquiv.linearEquiv_symm_apply, AddEquiv.symm_apply_eq,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    ← P.ofTensorProductEquiv_apply, LinearEquiv.symm_apply_apply]
 
 section Topology
 
@@ -108,9 +113,7 @@ noncomputable def completionTensorHomeomorph :
       ((P.ofTensorProductEquiv.symm.toAddEquiv.linearEquiv (Completion A)).symm : _ → _) =
         Completion.ofTensorProduct A M := by
     ext t
-    rw [AddEquiv.linearEquiv_symm_apply (R := Completion A)]
-    -- Taking `toAddEquiv` preserves the forward and inverse functions definitionally.
-    exact P.ofTensorProductEquiv_apply t
+    exact P.completionModule_linearEquiv_symm_apply t
   have hhome : IsHomeomorph
       ((P.ofTensorProductEquiv (M := M)).symm.toAddEquiv.linearEquiv (Completion A)).symm := by
     rw [hmap]
@@ -125,9 +128,7 @@ theorem completionTensorHomeomorph_apply (t : Completion A ⊗[A] M) :
     P.completionTensorHomeomorph t = Completion.ofTensorProduct A M t := by
   let := P.completionModule (M := M)
   rw [completionTensorHomeomorph, ContinuousLinearEquiv.coe_ofIsHomeomorph,
-    AddEquiv.linearEquiv_symm_apply (R := Completion A)]
-  -- Taking `toAddEquiv` preserves the forward and inverse functions definitionally.
-  exact P.ofTensorProductEquiv_apply t
+    completionModule_linearEquiv_symm_apply]
 
 /-- The inverse homeomorphism sends the dense image of `m` to `1 ⊗ m`. -/
 @[simp]
