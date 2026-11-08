@@ -92,11 +92,14 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_ne [H
       hf.contMDiff hst hcompact
         (fun x hx₁ hx₂ hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hx₁, hx₂⟩) R n)
     (fun p hp hap hpb _ hδ hcompact ↦ by
-      obtain ⟨ε, hε, hεδ, hzero, -⟩ :=
-        hf.exists_isZero_and_finrank_le_singularHomology_sublevelPair hδ hcompact
-      exact ⟨ε, hε, hεδ, hzero R n fun q hq ↦ hn q ⟨hq.1, by
-        have : f q = f p := hq.2
-        constructor <;> linarith⟩⟩)
+      obtain ⟨ε, hε, hεδ, hiso⟩ := hf.exists_singularHomology_sublevelPair_iso_sigma hδ hcompact
+      -- No critical point of the level has index `n`, so the coproduct is empty.
+      have : IsEmpty {q : ↥(criticalPoints I f ∩ f ⁻¹' {f p}) // manifoldMorseIndex I f q = n} :=
+        ⟨fun q ↦ hn q.1 ⟨q.1.2.1, by
+          have : f q.1 = f p := q.1.2.2
+          constructor <;> linarith⟩ q.2⟩
+      exact ⟨ε, hε, hεδ,
+        ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso (hiso R n).some⟩)
     -- The long exact sequence of the triple `(M_t, M_m, M_s)` joins the pieces.
     fun _ _ _ hsm hmt _ h₁ h₂ ↦ (TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f hsm)
       (sublevel_mono f hmt)).isZero_singularHomology_totalPair R n h₁ h₂
