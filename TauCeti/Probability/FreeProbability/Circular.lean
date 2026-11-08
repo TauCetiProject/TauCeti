@@ -73,7 +73,7 @@ theorem apply_star_mul (h : IsCircular φ c) : φ (star c * c) = 1 :=
   IsSemicircularSystem.apply_mul h 1 0
 
 @[simp]
-theorem apply_sq (h : IsCircular φ c) : φ (c ^ 2) = 0 := by
+theorem apply_pow_two (h : IsCircular φ c) : φ (c ^ 2) = 0 := by
   simpa [pow_two] using IsSemicircularSystem.apply_mul h 0 0
 
 /-- Taking the adjoint preserves circularity. -/
