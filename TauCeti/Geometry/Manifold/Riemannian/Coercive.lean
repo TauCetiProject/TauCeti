@@ -38,14 +38,6 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞ω}
 
-/-- The square of the sup norm on `ℝ³` is at most the sum of the squares of the coordinates. -/
-theorem norm_mul_self_le_sq_add_sq_add_sq (v : ℝ × ℝ × ℝ) :
-    ‖v‖ * ‖v‖ ≤ v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2 := by
-  have hv : ‖v‖ ≤ √(v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2) := by
-    refine norm_prod_le_iff.2 ⟨?_, norm_prod_le_iff.2 ⟨?_, ?_⟩⟩ <;>
-      refine Real.abs_le_sqrt ?_ <;> nlinarith [sq_nonneg v.1, sq_nonneg v.2.1, sq_nonneg v.2.2]
-  exact (mul_self_le_mul_self (norm_nonneg v) hv).trans (Real.mul_self_sqrt (by positivity)).le
-
 private theorem trivializationAt_symm_vectorSpace (x y : F) (v : F) :
     (trivializationAt F (TangentSpace 𝓘(ℝ, F) : F → Type _) x).symm y v =
       (tangentSpaceCastModel 𝓘(ℝ, F) y).symm v := by

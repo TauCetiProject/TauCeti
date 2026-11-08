@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import TauCeti.Analysis.Normed.Group.Prod
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
@@ -206,7 +207,7 @@ private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   have h₁ : exp (-2 * |t|) ≤ exp (-2 * t) := exp_le_exp.2 (by linarith [le_abs_self t])
   have h₂ : exp (-2 * |t|) ≤ 1 := exp_le_one_iff.2 (by linarith [abs_nonneg t])
   have h₃ : exp (-2 * t) = exp (-t) * exp (-t) := by rw [← exp_add]; ring_nf
-  have hv' := norm_mul_self_le_sq_add_sq_add_sq v
+  have hv' := v.norm_mul_self_le_sq_add_sq_add_sq
   -- With `u = e^{-t} v₁`, the form is `u² + v₂² + (v₃ + u)²`, which is at least
   -- `(u² + v₂² + v₃²) / 3` because `5 u² + 6 u v₃ + 2 v₃² ≥ 0`.
   set u := exp (-t) * v.1
