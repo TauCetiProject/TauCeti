@@ -33,9 +33,9 @@ this is a Delzant polytope (`TauCeti.Toric.isDelzant_simplex`). Each of its `#κ
 out by one of the normals. At a vertex all constraints but one are active: if two constraints
 `o₁ ≠ o₂` were inactive, a nonzero functional on `ℝ^κ` (a coordinate, or a difference of two
 coordinates) would vanish on all the active normals. Any `#κ` of the `#κ + 1` normals generate
-`ℤ^κ`, since the missing one is minus the sum of the others when it is `-1`, and is recovered as
-`e k = -(-1) - ∑_{m ≠ k} e m` otherwise. Having `#κ = rank ℤ^κ` elements, they then form a basis
-of `ℤ^κ`.
+`ℤ^κ`: when the missing normal is `-1`, the remaining normals are the coordinate vectors `e k`,
+which generate `ℤ^κ`; when it is `e k`, it is recovered as `e k = -(-1) - ∑_{m ≠ k} e m`. Having
+`#κ = rank ℤ^κ` elements, they then form a basis of `ℤ^κ`.
 
 ## Main definitions
 
