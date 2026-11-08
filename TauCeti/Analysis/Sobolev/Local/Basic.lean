@@ -137,7 +137,7 @@ theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
 
 /-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
 @[simp]
-theorem _root_.ContinuousLinearEquiv.memLpLoc_comp_iff (e : F ≃L[ℝ] G) :
+theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
     MemLpLoc p U (fun z => e (f z)) ↔ MemLpLoc p U f := by
   constructor
   · intro h
@@ -286,12 +286,12 @@ theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p U k f)
 /-- A continuous linear change of codomain preserves and reflects every local weak
 Sobolev order. -/
 @[simp]
-theorem _root_.ContinuousLinearEquiv.memWkpLoc_comp_iff (e : F ≃L[ℝ] G) :
+theorem _root_.ContinuousLinearEquiv.comp_memWkpLoc_iff (e : F ≃L[ℝ] G) :
     MemWkpLoc p U k (fun z => e (f z)) ↔ MemWkpLoc p U k f := by
   cases k with
   | zero =>
     simpa only [memWkpLoc_zero_iff] using
-      (e.memLpLoc_comp_iff (p := p) (U := U) (f := f))
+      (e.comp_memLpLoc_iff (p := p) (U := U) (f := f))
   | succ k =>
     constructor
     · intro h
