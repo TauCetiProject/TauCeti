@@ -205,7 +205,8 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
       ≤ M + |∫ t in T..x, t ^ (τ - 1) * E t| := abs_add_le _ _
     _ ≤ ε * x ^ (τ + 1) := by linarith
 
-/-- If `‖g t - L‖ ≤ c` beyond `T`, then `t ^ (-ε - 1) • (g t - L)` is integrable on `(1, ∞)`
+/-- Let `ε > 0`, `c ≥ 0`, and let `g` be locally integrable on `[1, ∞)`. If `‖g t - L‖ ≤ c` for
+all `t > T`, then `t ^ (-ε - 1) • (g t - L)` is integrable on `(1, ∞)`
 and its integral has norm at most `∫ t in Ioc 1 T, ‖g t - L‖ + c * ∫ t in Ioi 1, t ^ (-ε - 1)`. -/
 lemma integrableOn_and_norm_integral_rpow_smul_sub_le {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {L : E}
