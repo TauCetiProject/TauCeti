@@ -44,6 +44,8 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   possible monomial with exponent `n` in `X₁` is `X₁ ^ n`.
 * `MvPolynomial.totalDegree_pos_of_aeval_eq_zero`: if the coefficient of `X₁ ^ n` in `φ` is `1`,
   where `n` is the total degree of `φ`, and `φ` has a zero, then `n` is positive.
+* `MvPolynomial.sum_coeff_mul_div_pow_mul_inv_pow_eq_zero`: dividing a relation `φ(x, y) = 0` by
+  `y ^ totalDegree φ` gives a vanishing sum in the variables `x / y` and `y⁻¹`.
 * `MvPolynomial.exists_sum_coeff_mul_pow_ne_zero`: over a domain with more than `deg φ` elements,
   the leading form `φ_n` of `φ` satisfies `φ_n(c, 1) ≠ 0` for some `c`.
 * `MvPolynomial.natDegree_minpoly_le_totalDegree`: if `φ(u + c y, y) = 0` with `u ∈ K` and
@@ -258,6 +260,25 @@ theorem coeff_single_one_inftyChart {φ : MvPolynomial (Fin 2) R} {n : ℕ}
     (hφ : φ.totalDegree ≤ n) :
     (inftyChart n φ).coeff (Finsupp.single 1 n) = φ.coeff (Finsupp.single 1 n) := by
   simpa using coeff_inftyChart hφ (Finsupp.single 1 n)
+
+/-- Dividing a plane relation `φ(x, y) = 0` by `y ^ totalDegree φ` gives a vanishing sum in the
+variables `x / y` and `y⁻¹`. -/
+theorem sum_coeff_mul_div_pow_mul_inv_pow_eq_zero {F : Type*} [Semifield F] [Algebra R F]
+    {φ : MvPolynomial (Fin 2) R} {x y : F}
+    (hφxy : aeval ![x, y] φ = 0) (hy0 : y ≠ 0) :
+    ∑ s ∈ φ.support, algebraMap R F (φ.coeff s) * (x / y) ^ s 0 *
+      y⁻¹ ^ (φ.totalDegree - (s 0 + s 1)) = 0 := by
+  have : ∑ s ∈ φ.support, algebraMap R F (φ.coeff s) * (x / y) ^ s 0 *
+      y⁻¹ ^ (φ.totalDegree - (s 0 + s 1)) = y⁻¹ ^ φ.totalDegree * aeval ![x, y] φ := by
+    rw [aeval_fin_two_eq_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun s hs ↦ ?_
+    obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le (add_le_totalDegree_of_mem_support hs)
+    have hyy : y⁻¹ ^ s 1 * y ^ s 1 = 1 := by rw [← mul_pow, inv_mul_cancel₀ hy0, one_pow]
+    simp only [hd, Nat.add_sub_cancel_left, div_eq_mul_inv, mul_pow, pow_add]
+    calc _ = algebraMap R F (φ.coeff s) * (x ^ s 0 * y⁻¹ ^ s 0) * y⁻¹ ^ d *
+          (y⁻¹ ^ s 1 * y ^ s 1) := by rw [hyy, mul_one]
+      _ = _ := by ring
+  rw [this, hφxy, mul_zero]
 
 section Semifield
 
