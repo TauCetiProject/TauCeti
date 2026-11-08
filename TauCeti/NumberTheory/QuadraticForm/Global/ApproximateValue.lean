@@ -66,7 +66,7 @@ private theorem _root_.QuadraticForm.represents_atFinitePlace_neg_apply
         IsSquare (U.atFinitePlace v ((1 : v.adicCompletion K) ⊗ₜ[K] x) / U.atFinitePlace v x₀)) :
     Represents (W.atFinitePlace v) (algebraMap K (v.adicCompletion K) (-U x)) := by
   simpa using QuadraticForm.represents_neg_of_forall_anisotropic _
-    (QuadraticForm.Nondegenerate.atFinitePlace hW v)
+    (QuadraticForm.Nondegenerate.atFinitePlace hW v).radical_eq_bot
     (U.atFinitePlace v ((1 : v.adicCompletion K) ⊗ₜ[K] x)) fun han => by
       obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
       exact ⟨_, y, hx₀, hxy, hsq⟩
@@ -85,7 +85,7 @@ private theorem _root_.QuadraticForm.represents_atRealPlace_neg_apply
     Represents (W.atRealPlace w) (embedding_of_isReal w.2 (-U x)) := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   simpa using QuadraticForm.represents_neg_of_forall_anisotropic _
-    (QuadraticForm.Nondegenerate.atRealPlace hW w)
+    (QuadraticForm.Nondegenerate.atRealPlace hW w).radical_eq_bot
     (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w)) fun han => by
       obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
       exact ⟨_, y, hx₀, hxy, hsq⟩
