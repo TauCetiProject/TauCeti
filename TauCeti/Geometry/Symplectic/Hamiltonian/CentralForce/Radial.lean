@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.InnerProductSpace.QuadraticForm.TwoVector
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Radial reduction of central-force motion
@@ -76,6 +77,9 @@ Two consequences describe the qualitative radial motion:
   energy, with equality exactly at the radial turning points.
 * `stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential_eq_zero_iff`:
   the equilibria of the reduced system are the critical points of the effective potential.
+* `TauCeti.centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt`,
+  `TauCeti.hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential`: along the
+  reduced motion the energy `H_ℓ` is conserved and `r' = p_r / m`.
 * `TauCeti.forall_hasDerivAt_circularMotion_iff`: circular motions solve Hamilton's equations
   exactly at the critical points of the effective potential.
 
@@ -381,6 +385,44 @@ theorem
   rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential hU hr,
     hasDerivAt_effectivePotential_zero_iff hU hr.ne']
   simp [hm, sub_eq_zero, eq_comm (a := U')]
+
+/-- **Energy conservation for the radial motion.** The reduced Hamiltonian
+`H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is constant along an integral curve of its Hamiltonian vector
+field on `[t₁, t₂]` in the half-line `r > 0`, with `U` differentiable along it. -/
+theorem centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt {m ℓ : ℝ} {U : ℝ → ℝ}
+    {γ : ℝ → ℝ × ℝ} {t₁ t₂ : ℝ}
+    (hγ : ∀ t ∈ Set.Icc t₁ t₂, HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
+    (hr : ∀ t ∈ Set.Icc t₁ t₂, 0 < (γ t).1)
+    (hU : ∀ t ∈ Set.Icc t₁ t₂, DifferentiableAt ℝ U (γ t).1) :
+    ∀ t ∈ Set.Icc t₁ t₂, centralForceHamiltonian m (effectivePotential m ℓ U) (γ t) =
+      centralForceHamiltonian m (effectivePotential m ℓ U) (γ t₁) := by
+  have hd (t : ℝ) (ht : t ∈ Set.Icc t₁ t₂) :
+      HasDerivAt (fun s ↦ centralForceHamiltonian m (effectivePotential m ℓ U) (γ s)) 0 t := by
+    have hU' : HasDerivAt (effectivePotential m ℓ U)
+        (deriv U (γ t).1 - ℓ ^ 2 / (m * (γ t).1 ^ 3)) ‖(γ t).1‖ := by
+      rw [Real.norm_of_nonneg (hr t ht).le]
+      exact hasDerivAt_effectivePotential (hU t ht).hasDerivAt (hr t ht).ne'
+    have hH := hasFDerivAt_centralForceHamiltonian (m := m) hU' (hr t ht).ne'
+    have h := hH.comp_hasDerivAt t (hγ t ht)
+    rwa [← hH.fderiv, SymplecticForm.fderiv_apply_hamiltonianVectorField] at h
+  exact constant_of_has_deriv_right_zero (fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt)
+    fun t ht ↦ (hd t (Set.Ico_subset_Icc_self ht)).hasDerivWithinAt
+
+/-- **The radial velocity.** Along an integral curve of the reduced Hamiltonian vector field in
+the half-line `r > 0`, with `U` differentiable at the radius, the radius has derivative
+`r' = p_r / m`. -/
+theorem hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential {m ℓ : ℝ}
+    {U : ℝ → ℝ} {γ : ℝ → ℝ × ℝ} {t : ℝ}
+    (hγ : HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
+    (hr : 0 < (γ t).1) (hU : DifferentiableAt ℝ U (γ t).1) :
+    HasDerivAt (fun s ↦ (γ s).1) ((γ t).2 / m) t := by
+  rw [← Prod.mk.eta (p := γ t),
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
+      hU.hasDerivAt hr] at hγ
+  convert (hasFDerivAt_fst (𝕜 := ℝ) (p := γ t)).comp_hasDerivAt t hγ using 1 <;>
+    simp [Function.comp_def]
 
 /-! ### The radial projection of the Hamiltonian flow -/
 
