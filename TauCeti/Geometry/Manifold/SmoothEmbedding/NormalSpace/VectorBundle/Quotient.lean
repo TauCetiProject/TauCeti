@@ -47,8 +47,8 @@ variable {𝕜 E V P H G M N : Type*} [NontriviallyNormedField 𝕜] [CompleteSp
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
   [FiniteDimensional 𝕜 P] [IsManifold I (m + 1) M] [IsManifold J (m + 1) N] in
-/-- Near a point of a bundle total space whose base point lies in the base set of a normal chart
-datum, the base point stays in that base set. -/
+/-- If a continuous map `g` sends `x` into the base set of a normal chart datum, then `g y` stays
+in that base set for all `y` near `x`. -/
 private theorem NormalChartData.eventually_proj_mem_baseSet [IsManifold I 1 M] [IsManifold J 1 N]
     {f : SmoothEmbedding I J n M N} {hn : n ≠ 0} {x₀ : M}
     (d : NormalChartData (P := P) f hn x₀) {X : Type*} [TopologicalSpace X] {g : X → M}
