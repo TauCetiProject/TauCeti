@@ -338,9 +338,7 @@ private theorem coe_morseCellComparison_morseCellReattachment_morseCellAttachmen
   · rw [morseCellReattachmentFun_of_le_norm (hw := hw),
       coe_morseCellComparison_morseCellAttachmentIncl]
     exact congrArg (fun v ↦ (K i (diskTime w, v) : M))
-      (ULift.ext (Subtype.ext ((TopCat.coe_diskBoundaryInclusion_apply_down _ _).trans
-        ((TopCat.coe_annulusDir _ _).trans
-          (TopCat.coe_diskRadialPush_one_of_le_norm (by norm_num) hw).symm))))
+      (TopCat.diskBoundaryInclusion_annulusDir _ ⟨w, hw⟩)
   · rw [morseCellReattachmentFun_of_norm_le (hw := (not_le.1 hw).le),
       coe_morseCellComparison_morseCellAttachmentCell, diskTime_of_norm_le (not_le.1 hw).le,
       ContinuousMap.Homotopy.apply_one, TopCat.hom_comp, ContinuousMap.comp_apply]

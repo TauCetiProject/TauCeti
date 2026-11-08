@@ -299,8 +299,8 @@ private def middleStageHomotopy :
   map_zero_left w := by
     rw [ContinuousMap.curry_apply]
     rcases le_total ‖w.down.1‖ d with hw | hw
-    · rw [middleStage_of_norm_le (hw := hw), chartStage_of_norm_le (hw := hw), hG₀]
-      rfl
+    · rw [middleStage_of_norm_le (hw := hw), chartStage_of_norm_le (hw := hw), hG₀,
+        LinearIsometryEquiv.coe_refl, id]
     · rw [middleStage_of_le_norm (hw := hw), chartStage_of_le_norm (hw := hw)]
       simp
   map_one_left w := by

@@ -38,11 +38,6 @@ namespace TauCeti.TopCat
 
 variable {P Y : Type*} [TopologicalSpace P] [TopologicalSpace Y] {k : ℕ} {d : ℝ}
 
-/-- A point of the boundary sphere has norm `1` in the disk. -/
-theorem norm_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
-    ‖(TopCat.diskBoundaryInclusion k s).down.1‖ = 1 :=
-  mem_sphere_zero_iff_norm.1 s.down.2
-
 /-- The radial parameter `s ∈ [0, 1]` of a point `w = (d + (1 - d) s) • θ` of the annulus
 `d ≤ ‖w‖ ≤ 1` of the disk. -/
 def annulusParam (d : ℝ) (w : TopCat.disk.{u} k) : I :=
@@ -69,13 +64,20 @@ theorem coe_annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.do
     ((annulusDir hd w).down : EuclideanSpace ℝ (Fin k)) = ‖w.1.down.1‖⁻¹ • w.1.down.1 :=
   coe_diskRadialPush_one_of_le_norm hd w.2
 
+/-- Viewed in the disk, the direction of `w` is the end of the radial push with radius `d`. -/
+theorem diskBoundaryInclusion_annulusDir (hd : 0 < d)
+    (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
+    TopCat.diskBoundaryInclusion k (annulusDir hd w) = diskRadialPush k hd.le (1, w.1) :=
+  ULift.ext (Subtype.ext (TopCat.coe_diskBoundaryInclusion_apply_down k _))
+
 /-- The direction of a point of the boundary sphere is the point itself. -/
+@[simp]
 theorem annulusDir_diskBoundaryInclusion (hd : 0 < d) (s : TopCat.diskBoundary.{u} k)
     (hs : d ≤ ‖(TopCat.diskBoundaryInclusion k s).down.1‖) :
     annulusDir hd ⟨TopCat.diskBoundaryInclusion k s, hs⟩ = s := by
   refine ULift.ext (Subtype.ext ?_)
   rw [coe_annulusDir, norm_diskBoundaryInclusion, inv_one, one_smul]
-  rfl
+  exact (TopCat.coe_diskBoundaryInclusion_apply_down k s).symm
 
 /-- The radius `d + (1 - d) s` of the annulus coordinates of `w` is the norm of `w`. -/
 theorem add_one_sub_mul_annulusParam (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k}
