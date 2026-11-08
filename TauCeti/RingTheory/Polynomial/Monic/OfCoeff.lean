@@ -140,11 +140,14 @@ theorem natDegree_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).natDegree = 
     exact degree_sum_monomial_lt c
   rw [monicOfCoeff, natDegree_add_eq_left_of_degree_lt hlt, natDegree_X_pow]
 
+omit [Nontrivial R] in
 /-- Every monic polynomial of degree `n` is the monic polynomial attached to its own lower
 coefficients: together with `TauCeti.Polynomial.coeff_monicOfCoeff` this identifies the monic
 polynomials of degree `n` with the coefficient tuples. -/
 theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
     monicOfCoeff (fun i : Fin n => p.coeff (i : ℕ)) = p := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
   refine Polynomial.ext fun k => ?_
   rcases lt_trichotomy k n with hk | hk | hk
   · exact coeff_monicOfCoeff _ ⟨k, hk⟩
