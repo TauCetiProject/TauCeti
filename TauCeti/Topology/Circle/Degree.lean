@@ -55,6 +55,7 @@ continuous part of the Maslov index of a path of Lagrangian frames.
 * `Circle.degree_map_pow`: the pointwise `n`-th power of a loop has `n` times its degree.
 * `Circle.degree_inv`: the pointwise inverse of a loop has the opposite degree.
 * `Circle.degree_congr`: loops agreeing pointwise have the same degree.
+* `Circle.exists_lift`: every path in the circle has a continuous lift through `Circle.exp`.
 * `Circle.angleChange`: the angle swept by a path in the circle.
 * `Circle.angleChange_eq_sub`: it is `θ 1 - θ 0` for every continuous lift `θ`.
 * `Circle.angleChange_eq_of_homotopic`, `Circle.angleChange_trans`, `Circle.angleChange_mul`:
@@ -100,7 +101,7 @@ theorem exists_int_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A]
   exact ⟨m, fun a ↦ by rw [hc a, hm]⟩
 
 /-- Every path in the circle has a continuous lift through `Circle.exp`. -/
-private theorem exists_lift {x y : Circle} (γ : Path x y) :
+theorem exists_lift {x y : Circle} (γ : Path x y) :
     ∃ θ : C(I, ℝ), ∀ t, exp (θ t) = γ t := by
   obtain ⟨θ, hθ, -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
     (by simp [exp_arg])

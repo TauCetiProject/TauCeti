@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Topology.Circle.Degree
 
 /-!
@@ -266,37 +267,13 @@ theorem maslovIndex_eq_two_mul_degree {U : unitaryGroup n ℂ} (γ : Path U U) :
   push_cast
   ring
 
-/-- If `φ / π` is not an integer, then `-e^{2iφ} = e^{iψ}` for the angle
-`ψ = 2φ - π - 2π⌊φ / π⌋`, which lies in `(-π, π)`, so `ψ` is the argument of `-e^{2iφ}`. -/
-private theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / Real.pi ≠ k) :
-    arg (-Complex.exp (↑(2 * φ) * Complex.I)) =
-      2 * φ - Real.pi - 2 * Real.pi * ⌊φ / Real.pi⌋ := by
-  set x := φ / Real.pi with hx
-  have hlt : (⌊x⌋ : ℝ) < x := lt_of_le_of_ne (Int.floor_le x) fun h => hφ _ h.symm
-  have hlt' : x < ⌊x⌋ + 1 := Int.lt_floor_add_one x
-  set ψ := 2 * φ - Real.pi - 2 * Real.pi * ⌊x⌋ with hψ
-  have hφx : φ = x * Real.pi := by rw [hx]; field_simp
-  have hψlo : -Real.pi < ψ := by
-    rw [hψ, hφx]; nlinarith [Real.pi_pos]
-  have hψhi : ψ < Real.pi := by
-    rw [hψ, hφx]; nlinarith [Real.pi_pos]
-  have hneg : -Complex.exp (↑(2 * φ) * Complex.I) = Complex.exp (↑ψ * Complex.I) := by
-    have h2φ : (2 * φ : ℝ) = ψ + Real.pi + ⌊x⌋ * (2 * Real.pi) := by rw [hψ]; ring
-    rw [h2φ]
-    push_cast
-    rw [add_mul, add_mul, Complex.exp_add, Complex.exp_add, Complex.exp_pi_mul_I,
-      mul_assoc (⌊x⌋ : ℂ),
-      Complex.exp_int_mul_two_pi_mul_I]
-    ring
-  rw [hneg, Complex.arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
-
 /-- For `x = φ / π`, the difference `x - angleOffset (e^{2iφ})` is the half-integer
 `(⌊x⌋ + ⌈x⌉) / 2`: it is `⌊x⌋ + 1/2` if `x` is not an integer and `x` if it is. -/
 private theorem div_pi_sub_angleOffset (φ : ℝ) :
     φ / Real.pi - angleOffset (Complex.exp (↑(2 * φ) * Complex.I)) =
       ((⌊φ / Real.pi⌋ + ⌈φ / Real.pi⌉ : ℤ) : ℝ) / 2 := by
   -- If `φ / π` is an integer then `e^{2iφ} = 1` and the offset vanishes; otherwise
-  -- `⌈φ / π⌉ = ⌊φ / π⌋ + 1` and the offset comes from `arg_neg_exp_of_div_pi_ne`.
+  -- `⌈φ / π⌉ = ⌊φ / π⌋ + 1` and the offset comes from `Complex.arg_neg_exp_of_div_pi_ne`.
   by_cases hφ : ∃ k : ℤ, φ / Real.pi = k
   · obtain ⟨k, hk⟩ := hφ
     have hexp : Complex.exp (↑(2 * φ) * Complex.I) = 1 := by
