@@ -94,10 +94,11 @@ theorem norm_sq_div_two_add_norm_sub_sq_div {τ : ℝ} (hτ : τ ≠ 0) (hτ' : 
       ‖x‖ ^ 2 / (2 * (1 + τ)) + (1 + τ) / (2 * τ) * ‖y - (1 + τ)⁻¹ • x‖ ^ 2 := by
   have h₀ : 2⁻¹ + (2 * τ)⁻¹ = (1 + τ) / (2 * τ) := by field_simp; ring
   have h₁ : (2 * τ)⁻¹ / ((1 + τ) / (2 * τ)) = (1 + τ)⁻¹ := by field_simp
-  rw [div_eq_inv_mul, div_eq_inv_mul _ (2 * τ),
-    mul_norm_sq_add_mul_norm_sub_sq (h₀ ▸ by simp [hτ, hτ']) x y, h₀, h₁]
-  field_simp
-  ring
+  have h := mul_norm_sq_add_mul_norm_sub_sq (a := 2⁻¹) (b := (2 * τ)⁻¹)
+    (by rw [h₀]; simp [hτ, hτ']) x y
+  rw [h₀, h₁] at h
+  field_simp at h ⊢
+  linear_combination h
 
 /-- The completed square at the weights `1 - t` and `t`, for extended distances: for `t ∈ [0, 1]`,
 `d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`. -/
