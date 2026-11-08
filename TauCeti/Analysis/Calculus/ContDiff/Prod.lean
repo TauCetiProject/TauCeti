@@ -19,6 +19,9 @@ For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and the vertical part
 of the derivative of a `C¹` map is continuous along a continuous graph
 (`ContDiffAt.continuousAt_fderiv_comp_inr`).
+
+The partial derivative in the second variable of a `C^n` function on a product, applied to a fixed
+vector, is `C^(n - 1)` jointly (`TauCeti.contDiffAt_fderiv_snd_apply`).
 -/
 
 public section
@@ -36,6 +39,13 @@ smooth on `s`. -/
 theorem contDiffOn_comp_prodMk_left (hH : ∀ p ∈ s ×ˢ I, ContDiffAt 𝕜 n H p) {t : G}
     (ht : t ∈ I) : ContDiffOn 𝕜 n (fun x ↦ H (x, t)) s :=
   fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
+
+/-- The partial derivative in the second variable of a function of `(r.1, z)`, applied to a fixed
+vector, is as differentiable in `r` as the function allows. -/
+theorem contDiffAt_fderiv_snd_apply {f : E × G → F} {r : E × G} {m : WithTop ℕ∞}
+    (hf : ContDiffAt 𝕜 n f r) (hmn : m + 1 ≤ n) (v : G) :
+    ContDiffAt 𝕜 m (fun r : E × G ↦ fderiv 𝕜 (fun z ↦ f (r.1, z)) r.2 v) r :=
+  (hf.fderiv_slice hmn).clm_apply contDiffAt_const
 
 end TauCeti
 
