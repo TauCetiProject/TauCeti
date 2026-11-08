@@ -281,16 +281,16 @@ end Separated
 variable {n : ℕ}
 
 /-- If every root of the polynomial `p` lies in one of the separated discs `ball w r` about the
-points `w` of `T`, with `g` holomorphic on the closed discs centred in `U` and the open discs
-centred in `U` inside `U` while the other closed discs miss `U`, then the sum of `g` over the roots
-of `p` in `U` is the sum, over the points `w ∈ T ∩ U`, of `(2πi)⁻¹` times the contour integral of
-`g · p' / p` about `w`. -/
+points `w` of `T`, with `g` holomorphic on the open discs centred in `U` and continuous up to
+their boundary, and the open discs centred in `U` inside `U` while the other open discs miss `U`,
+then the sum of `g` over the roots of `p` in `U` is the sum, over the points `w ∈ T ∩ U`, of
+`(2πi)⁻¹` times the contour integral of `g · p' / p` about `w`. -/
 private theorem sum_circleIntegral_eq_sum_map_filter_roots {T : Finset ℂ} {r : ℝ}
     (hsep : ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w') {g : ℂ → ℂ} {U : Set ℂ}
     [DecidablePred (· ∈ U)] (hr : 0 < r)
     (hin : ∀ w ∈ T, w ∈ U → ball w r ⊆ U)
-    (hout : ∀ w ∈ T, w ∉ U → closedBall w r ⊆ (closure U)ᶜ)
-    (hgd : ∀ w ∈ T, w ∈ U → DifferentiableOn ℂ g (closedBall w r)) (p : ℂ[X])
+    (hout : ∀ w ∈ T, w ∉ U → ball w r ⊆ Uᶜ)
+    (hgd : ∀ w ∈ T, w ∈ U → DiffContOnCl ℂ g (ball w r)) (p : ℂ[X])
     (hc : ∀ z ∈ p.roots, ∃ w ∈ T, z ∈ ball w r) :
     ∑ w ∈ T with w ∈ U, (2 * π * I)⁻¹ * ∮ t in C(w, r),
       g t * (p.derivative.eval t / p.eval t) = ((p.roots.filter (· ∈ U)).map g).sum := by
@@ -299,18 +299,16 @@ private theorem sum_circleIntegral_eq_sum_map_filter_roots {T : Finset ℂ} {r :
     (fun z hz => hc z (Multiset.mem_of_mem_filter hz)), Finset.sum_filter]
   refine Finset.sum_congr rfl fun w hw => ?_
   split_ifs with hwU
-  · have hgw : DiffContOnCl ℂ g (ball w r) :=
-      ((hgd w hw hwU).mono (closure_ball w hr.ne').subset).diffContOnCl
-    have hfilter : (p.roots.filter (· ∈ U)).filter (· ∈ ball w r) =
+  · have hfilter : (p.roots.filter (· ∈ U)).filter (· ∈ ball w r) =
         p.roots.filter (· ∈ ball w r) := by
       rw [Multiset.filter_filter]
       exact Multiset.filter_congr fun z _ => and_iff_left_of_imp fun hz => hin w hw hwU hz
-    rw [Polynomial.circleIntegral_mul_derivative_div_eval _ hr hgw fun z hz => by
+    rw [Polynomial.circleIntegral_mul_derivative_div_eval _ hr (hgd w hw hwU) fun z hz => by
         obtain ⟨w', hw', hzw'⟩ := hc z hz
         exact notMem_sphere_of_mem_ball hsep hw hw' hzw',
       inv_mul_cancel_left₀ two_pi_I_ne_zero, hfilter]
   · rw [Multiset.filter_eq_nil.2 fun z hz hzw =>
-      hout w hw hwU (ball_subset_closedBall hzw) (subset_closure (Multiset.mem_filter.1 hz).2)]
+      hout w hw hwU hzw (Multiset.mem_filter.1 hz).2]
     simp
 
 /-- **Sums of a holomorphic function over the roots in a region depend analytically on the
@@ -367,7 +365,11 @@ theorem analyticAt_sum_map_filter_coeffEquiv_symm {g : ℂ → ℂ} {U : Set ℂ
     rw [coeffEquiv_symm_apply]
     exact sum_circleIntegral_eq_sum_map_filter_roots hsep hr
       (fun w hw hwU => (ball_subset_closedBall.trans (hin w hw hwU)).trans
-        (Set.inter_subset_left.trans interior_subset)) hout hgd _ fun z hz => hV z <|
+        (Set.inter_subset_left.trans interior_subset))
+      (fun w hw hwU => (ball_subset_closedBall.trans (hout w hw hwU)).trans
+        (Set.compl_subset_compl.2 subset_closure))
+      (fun w hw hwU => ((hgd w hw hwU).mono (closure_ball w hr.ne').subset).diffContOnCl) _
+      fun z hz => hV z <|
       hc z (by rwa [← _root_.Sym.mem_coe, coeffEquiv_symm_apply])
   -- Each contour integral is analytic in the coefficients.
   refine AnalyticAt.congr (Finset.analyticAt_fun_sum _ fun w hw => ?_) hsum
