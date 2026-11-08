@@ -49,18 +49,18 @@ section IsDomain
 variable [IsDomain R] {W : Projective R}
 
 /-- Over an integral domain, if the discriminant is nonzero, then a nonzero point representative
-satisfies the projective Weierstrass equation if and only if it is nonsingular. If `Z = 0`, the
-equation forces `X = 0`, and then `Y ≠ 0` makes `W_Z = Y²` nonzero; if `Z ≠ 0`, this is the
-affine statement over the fraction field. -/
+satisfies the projective Weierstrass equation if and only if it is nonsingular. -/
 theorem equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero (hΔ : W.Δ ≠ 0) {P : Fin 3 → R}
     (hP : P ≠ 0) : W.Equation P ↔ W.Nonsingular P := by
   refine ⟨fun h ↦ ?_, And.left⟩
   by_cases hz : P 2 = 0
-  · have hx : P 0 = 0 := X_eq_zero_of_Z_eq_zero h hz
+  · -- If `Z = 0`, the equation forces `X = 0`, and then `Y ≠ 0` makes `W_Z = Y²` nonzero.
+    have hx : P 0 = 0 := X_eq_zero_of_Z_eq_zero h hz
     have hy : P 1 ≠ 0 := fun hy ↦ hP (funext fun k ↦ by fin_cases k <;> assumption)
     rw [nonsingular_of_Z_eq_zero hz]
     exact ⟨h, Or.inr (by simpa [hx] using hy)⟩
-  · have hf := IsFractionRing.injective R (FractionRing R)
+  · -- If `Z ≠ 0`, this is the affine statement over the fraction field.
+    have hf := IsFractionRing.injective R (FractionRing R)
     rw [← W.map_equation hf, equation_of_Z_ne_zero (by simpa using hz)] at h
     rw [← W.map_nonsingular hf, nonsingular_of_Z_ne_zero (by simpa using hz)]
     exact (Affine.equation_iff_nonsingular_of_Δ_ne_zero (by simpa [map_Δ] using hΔ)).mp h
