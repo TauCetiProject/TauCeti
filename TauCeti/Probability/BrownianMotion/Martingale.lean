@@ -63,23 +63,28 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ} {s t : ℝ≥0}
 
+/-- A strongly measurable function of a future Brownian increment has conditional expectation
+equal to its mean given the past. -/
+theorem condExp_comp_sub_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] (hB : IsFilteredPreBrownianReal ℱ B P) (hst : s ≤ t)
+    {f : ℝ → E} (hf : StronglyMeasurable f) :
+    P[fun ω => f (B t ω - B s ω) | ℱ s] =ᵐ[P] fun _ => ∫ ω, f (B t ω - B s ω) ∂P := by
+  have := hB.isGaussianProcess.isProbabilityMeasure
+  exact condExp_indep_eq
+    (hB.adapted.measurable.sub hB.adapted.measurable).comap_le (ℱ.le s)
+    (hf.comp_measurable (comap_measurable (B t - B s))) (hB.indep_sub hst)
+
 /-- A future Brownian increment has conditional mean zero given the past. -/
 theorem condExp_sub (hB : IsFilteredPreBrownianReal ℱ B P) (hst : s ≤ t) :
     P[B t - B s | ℱ s] =ᵐ[P] fun _ => 0 := by
-  have := hB.isGaussianProcess.isProbabilityMeasure
-  have h := condExp_indep_eq
-    (hB.adapted.measurable.sub hB.adapted.measurable).comap_le (ℱ.le s)
-    (comap_measurable (B t - B s)).stronglyMeasurable (hB.indep_sub hst)
-  simpa only [Pi.sub_apply, integral_sub (hB.integrable_eval t) (hB.integrable_eval s),
+  have h := hB.condExp_comp_sub_eq_integral hst stronglyMeasurable_id
+  simpa only [id_eq, Pi.sub_def, integral_sub (hB.integrable_eval t) (hB.integrable_eval s),
     hB.integral_eval, sub_self] using h
 
 /-- A future Brownian increment has conditional second moment equal to its elapsed time. -/
-theorem condExp_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P) (hst : s ≤ t) :
+theorem condExp_sub_sq (hB : IsFilteredPreBrownianReal ℱ B P) (hst : s ≤ t) :
     P[fun ω => (B t ω - B s ω) ^ 2 | ℱ s] =ᵐ[P] fun _ => (t : ℝ) - s := by
-  have := hB.isGaussianProcess.isProbabilityMeasure
-  have h := condExp_indep_eq
-    (hB.adapted.measurable.sub hB.adapted.measurable).comap_le (ℱ.le s)
-    ((comap_measurable (B t - B s)).pow_const 2).stronglyMeasurable (hB.indep_sub hst)
+  have h := hB.condExp_comp_sub_eq_integral hst (f := fun x : ℝ => x ^ 2) (by fun_prop)
   have hi : (∫ ω, (B t ω - B s ω) ^ 2 ∂P) = (t : ℝ) - s := by
     calc
       _ = ∫ x, x ^ 2 ∂gaussianReal 0 (t - s) := by
@@ -125,7 +130,7 @@ theorem condExp_sq (hB : IsFilteredPreBrownianReal ℱ B P) (hst : s ≤ t) :
   have hscale := condExp_smul (μ := P) (2 : ℝ) (B s * D) (ℱ s)
   simp only [Pi.add_def, Pi.smul_def, Pi.mul_def, smul_eq_mul] at heq hsum hsum' hscale hcross
   rw [heq]
-  filter_upwards [hsum, hsum', hscale, hcross, hB.condExp_sq_sub hst]
+  filter_upwards [hsum, hsum', hscale, hcross, hB.condExp_sub_sq hst]
     with ω h₁ h₂ h₃ hcross' hsquare
   rw [h₁, h₂, h₃, hcross', mul_zero, add_zero,
     condExp_of_stronglyMeasurable (ℱ.le s)
