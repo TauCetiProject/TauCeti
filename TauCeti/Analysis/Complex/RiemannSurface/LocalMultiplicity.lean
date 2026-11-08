@@ -224,6 +224,29 @@ theorem natCast_localMultiplicity (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt �
   rw [← localMultiplicity_eq_zero_iff hf, localMultiplicity_def, analyticOrderNatAt, htop,
     ENat.toNat_top]
 
+/-- The recentred preferred-chart representative of a holomorphic, locally nonconstant map
+has analytic order equal to its local multiplicity. -/
+theorem analyticOrderAt_chartAt_comp_comp_chartAt_symm_sub
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hnc : ¬ EventuallyConst f (𝓝 x)) :
+    analyticOrderAt
+      (fun z ↦ chartAt ℂ (f x) (f ((chartAt ℂ x).symm z)) -
+        chartAt ℂ (f x) (f ((chartAt ℂ x).symm (chartAt ℂ x x))))
+      (chartAt ℂ x x) = (localMultiplicity f x : ℕ∞) := by
+  simpa only [(chartAt ℂ x).left_inv (mem_chart_source ℂ x)] using
+    (natCast_localMultiplicity hf hnc).symm
+
+/-- The preferred-chart representative of a holomorphic, locally nonconstant map is itself
+locally nonconstant. -/
+theorem not_eventuallyConst_chartAt_comp_comp_chartAt_symm
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hnc : ¬ EventuallyConst f (𝓝 x)) :
+    ¬ EventuallyConst ((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
+      (𝓝 (chartAt ℂ x x)) := by
+  simp only [eventuallyConst_iff_analyticOrderAt_sub_eq_top, comp_apply,
+    analyticOrderAt_chartAt_comp_comp_chartAt_symm_sub hf hnc]
+  simp
+
 /-! ### Composition -/
 
 /-- **Multiplicativity of the local multiplicity.** The local multiplicity of a composition of
