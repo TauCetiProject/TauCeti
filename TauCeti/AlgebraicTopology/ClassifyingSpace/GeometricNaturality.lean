@@ -17,8 +17,9 @@ intertwines the cellular maps of `MonoidHom.universalGSpaceMap` with the relabel
 maps. In particular this holds for noninjective homomorphisms: indices distinguish the
 vertices within a simplex, so relabelling preserves dimension and orientation.
 
-Composing this identification with the explicit join-to-bar map gives a natural chain
-homotopy equivalence from geometric cellular chains to Mathlib's standard complex.
+Composing this identification with the explicit join-to-bar map gives a chain homotopy
+equivalence from geometric cellular chains to the underlying module complex of Mathlib's
+standard complex, whose forward map is natural in group homomorphisms.
 The cellular basis of a simplex maps to its increasing-index tuple of group labels,
 multiplied by the orientation unit `realizationChainScale` in that dimension.
 
@@ -74,7 +75,7 @@ theorem universalGSpaceChainComplexForget₂Iso_naturality (φ : G →* H) :
 Forgetting the restricted target action yields the usual underlying module complex. -/
 @[reassoc]
 theorem universalGSpaceCellularChainComplexIso_naturality (φ : G →* H) :
-    cellularChainComplexMap univ univ φ.isCellular_universalGSpaceMap (ModuleCat.of k k) ≫
+    cellularChainComplexMap univ univ φ.isCellular_universalGSpaceCellularMap (ModuleCat.of k k) ≫
         (universalGSpaceCellularChainComplexIso k H).hom =
       (universalGSpaceCellularChainComplexIso k G).hom ≫
         ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
@@ -87,7 +88,7 @@ theorem universalGSpaceCellularChainComplexIso_naturality (φ : G →* H) :
     Category.assoc, Iso.inv_hom_id, Category.comp_id]
   rw [← φ.universalGSpaceChainComplexForget₂Iso_naturality]
   have hcell :
-      cellularChainComplexMap univ univ φ.isCellular_universalGSpaceMap (ModuleCat.of k k) =
+      cellularChainComplexMap univ univ φ.isCellular_universalGSpaceCellularMap (ModuleCat.of k k) =
         cellularChainComplexMap univ univ
           (φ.universalGSpaceSimplicialMap).isCellular_realizationMap (ModuleCat.of k k) := by
     congr 1
@@ -133,8 +134,8 @@ theorem universalGSpaceCellularStandardHomotopyEquiv_inv :
           (ProjectiveResolution.lift (𝟙 _) (Rep.standardResolution k G)
             (universalGSpaceResolution k G)) ≫
         (universalGSpaceCellularChainComplexIso k G).inv := by
-  simp [universalGSpaceCellularStandardHomotopyEquiv, HomotopyEquiv.trans,
-    HomotopyEquiv.ofIso, Functor.mapHomotopyEquiv]
+  simp only [universalGSpaceCellularStandardHomotopyEquiv, HomotopyEquiv.trans,
+    HomotopyEquiv.ofIso, Functor.mapHomotopyEquiv, universalGSpaceStandardHomotopyEquiv_inv]
   -- The two projective lifts carry the definitionally equal augmentation targets of the
   -- join and standard resolutions. Reflexivity identifies these implicit object arguments.
   rfl
@@ -151,7 +152,7 @@ variable {k G H : Type u} [CommRing k] [Group G] [Group H]
 homomorphism, with the cellular map induced by its actual continuous map on Milnor joins. -/
 @[reassoc]
 theorem universalGSpaceCellularStandardHomotopyEquiv_hom_naturality (φ : G →* H) :
-    cellularChainComplexMap univ univ φ.isCellular_universalGSpaceMap (ModuleCat.of k k) ≫
+    cellularChainComplexMap univ univ φ.isCellular_universalGSpaceCellularMap (ModuleCat.of k k) ≫
         (universalGSpaceCellularStandardHomotopyEquiv k H).hom =
       (universalGSpaceCellularStandardHomotopyEquiv k G).hom ≫
         ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map

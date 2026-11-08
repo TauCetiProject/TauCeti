@@ -19,7 +19,10 @@ the tuple indexing a standard-resolution generator.
 
 The characteristic-map formula identifies this cell map with the existing continuous map
 `MonoidHom.universalGSpaceMap`. These formulas supply the combinatorial input to naturality
-of the comparison between join chains and the standard resolution.
+of the comparison between join chains and the standard resolution. The relabelling map is
+also the realization of `MonoidHom.universalGSpaceSimplicialMap`, so its restriction
+`MonoidHom.universalGSpaceCellularMap` to the universal subsets used by cellular chains is
+cellular, as proved by `MonoidHom.isCellular_universalGSpaceCellularMap`.
 
 ## References
 
@@ -231,7 +234,7 @@ theorem universalGSpaceSimplicialMap_restrictPreimage (φ : G →* H) :
 
 /-- The continuous map on Milnor joins preserves the simplicial CW filtrations.
 The map is restricted to the universal subsets used by cellular chains. -/
-theorem isCellular_universalGSpaceMap (φ : G →* H) :
+theorem isCellular_universalGSpaceCellularMap (φ : G →* H) :
     IsCellular (univ : Set (universalGSpace G)) (univ : Set (universalGSpace H))
       φ.universalGSpaceCellularMap := by
   convert (φ.universalGSpaceSimplicialMap).isCellular_realizationMap using 1
