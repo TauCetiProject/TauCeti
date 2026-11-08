@@ -198,4 +198,28 @@ theorem hyperbolic_deficit_two_three_seven :
     Multiset.map_singleton, Multiset.sum_singleton]
   norm_num
 
+/-- The numerical half of the Hurwitz bound: if `n * (2 γ - 2 + ∑ᵢ (1 - 1/eᵢ)) = 2 g - 2` with all
+`eᵢ ≥ 2`, `n > 0` and `g ≥ 2`, then `n ≤ 84 (g - 1)`. -/
+theorem card_le_eighty_four_mul_sub_one {n g γ : ℕ} {e : Multiset ℕ} (hg : 2 ≤ g)
+    (hn : 0 < n) (he : ∀ m ∈ e, 2 ≤ m)
+    (hkey : (n : ℚ) * (2 * (γ : ℚ) - 2 + (e.map fun m : ℕ ↦ 1 - 1 / (m : ℚ)).sum) =
+      2 * (g : ℚ) - 2) :
+    n ≤ 84 * (g - 1) := by
+  have hnQ : (0 : ℚ) < n := by exact_mod_cast hn
+  have hgQ : (2 : ℚ) ≤ g := by exact_mod_cast hg
+  have hDpos : 0 < 2 * (γ : ℚ) - 2 + (e.map fun m : ℕ ↦ 1 - 1 / (m : ℚ)).sum := by
+    by_contra hcon
+    have hle := mul_nonpos_of_nonneg_of_nonpos hnQ.le (not_lt.mp hcon)
+    rw [hkey] at hle
+    linarith
+  have hdef := one_div_forty_two_le_hyperbolic_deficit he hDpos
+  -- `n · (1/42) ≤ n · D = 2g - 2`.
+  have hfinal : (n : ℚ) ≤ 42 * (2 * (g : ℚ) - 2) := by
+    rw [← hkey]
+    nlinarith [hdef, hnQ]
+  have hnat : (n : ℚ) ≤ ((84 * (g - 1) : ℕ) : ℚ) := by
+    push_cast [Nat.cast_sub (by omega : 1 ≤ g)]
+    linarith
+  exact_mod_cast hnat
+
 end TauCeti
