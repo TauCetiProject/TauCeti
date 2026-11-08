@@ -186,6 +186,7 @@ theorem matchingSubgraph_injective (G : Graph α β) :
 /-- The canonical graph of selected edges is a subgraph of the original graph. -/
 theorem matchingSubgraph_le (G : Graph α β) (M : Set E(G)) : G.matchingSubgraph M ≤ G := by
   refine ⟨fun x hx ↦ ?_, fun e x y h ↦ (matchingSubgraph_isLink.mp h).2.2⟩
+  rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
   obtain ⟨e, -, hex⟩ := hx
   exact hex.vertex_mem
 
@@ -197,10 +198,12 @@ theorem matchingSubgraph_eq_of_le_of_exists_inc {H : Graph α β} (hHG : H ≤ G
   · ext x
     constructor
     · intro hx
+      rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
       obtain ⟨e, heH, hex⟩ := hx
       exact ((hHG.inc_congr heH).mpr hex).vertex_mem
     · intro hx
       obtain ⟨e, hex⟩ := hH x hx
+      rw [vertexSet_matchingSubgraph, mem_matchingSupport]
       exact ⟨⟨e, hHG.edgeSet_mono hex.edge_mem⟩, hex.edge_mem, hex.mono hHG⟩
   · ext e
     constructor
@@ -213,7 +216,9 @@ theorem matchingSubgraph_eq_of_le_of_exists_inc {H : Graph α β} (hHG : H ≤ G
 
 /-- Enlarging the selected edge set enlarges its canonical subgraph. -/
 theorem matchingSubgraph_mono (hMN : M ⊆ N) : G.matchingSubgraph M ≤ G.matchingSubgraph N := by
-  refine ⟨matchingSupport_mono hMN, fun e x y h ↦ ?_⟩
+  refine ⟨?_, fun e x y h ↦ ?_⟩
+  · rw [vertexSet_matchingSubgraph, vertexSet_matchingSubgraph]
+    exact matchingSupport_mono hMN
   obtain ⟨heG, heM, hxy⟩ := matchingSubgraph_isLink.mp h
   exact matchingSubgraph_isLink.mpr ⟨heG, hMN heM, hxy⟩
 
@@ -227,6 +232,7 @@ theorem matchingSubgraph_empty (G : Graph α β) : G.matchingSubgraph ∅ = ⊥ 
 /-- Every vertex of the canonical graph of selected edges is incident to one of its edges. -/
 theorem matchingSubgraph_exists_inc {x : α} (hx : x ∈ V(G.matchingSubgraph M)) :
     ∃ e, (G.matchingSubgraph M).Inc e x := by
+  rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
   obtain ⟨e, heM, hex⟩ := hx
   exact ⟨e, matchingSubgraph_inc.mpr ⟨e.2, heM, hex⟩⟩
 
@@ -278,8 +284,10 @@ theorem IsMatching.isPerfectMatching_iff_matchingSubgraph_spanning (hM : G.IsMat
       (matchingSubgraph_le G M).vertexSet_mono ?_⟩, fun h ↦ ⟨hM, fun x ↦ ?_⟩⟩
   · intro x hx
     obtain ⟨e, heM, hex⟩ := h.2 ⟨x, hx⟩
+    rw [vertexSet_matchingSubgraph, mem_matchingSupport]
     exact ⟨e, heM, hex⟩
   · have hx : (x : α) ∈ V(G.matchingSubgraph M) := h.vertexSet_eq.symm ▸ x.2
+    rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
     exact hx
 
 /-- The empty matching is perfect exactly when the graph has no actual vertices. -/
