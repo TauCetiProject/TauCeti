@@ -8,7 +8,9 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.GaussSum
+import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.Data.ZMod.Torsion
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Gauss sums of the dyadic generators
@@ -49,6 +51,9 @@ sum `-2`, because its form takes the value `1/2` on the three nonzero elements o
 * `TauCeti.FiniteQuadraticModule.gaussSign_dyadicV` and
   `TauCeti.FiniteQuadraticModule.gaussSum_dyadicV`: `sign v^{(2)}(2^k) = 4k` and its Gauss sum
   is `(-2)^k`.
+* `TauCeti.FiniteQuadraticModule.scaledGaussSum_dyadicU_pow_add` and
+  `TauCeti.FiniteQuadraticModule.scaledGaussSum_dyadicV_pow_add`: scaling a generator at
+  exponent `j + e` by `2^j` gives `2^(2j)` times its Gauss sum at exponent `e`.
 
 ## References
 
@@ -422,5 +427,69 @@ theorem gaussSum_dyadicV : (dyadicV k).gaussSum = (-2 : ℂ) ^ k := by
   push_cast
   rw [← mul_pow]
   norm_num
+
+/-! ## Scaled Gauss sums of the rank-two generators -/
+
+/-- Coordinatewise reduction modulo `2^e` counts each quadratic exponential `2^(2j)` times. -/
+private theorem sum_expCircle_dyadic_reduction (j e : ℕ)
+    (q : ZMod (2 ^ (j + e)) × ZMod (2 ^ (j + e)) → AddCircle (1 : ℚ))
+    (q' : ZMod (2 ^ e) × ZMod (2 ^ e) → AddCircle (1 : ℚ))
+    (hq : ∀ a b : ℤ, (2 ^ j) • q (a, b) = q' (a, b)) :
+    ∑ x, expCircle ((2 ^ j) • q x) =
+      (2 : ℂ) ^ (2 * j) * ∑ y, expCircle (q' y) := by
+  have hdvd : 2 ^ e ∣ 2 ^ (j + e) := pow_dvd_pow 2 (Nat.le_add_left e j)
+  let r := (ZMod.castHom hdvd (ZMod (2 ^ e))).toAddMonoidHom
+  have hr : Function.Surjective (r.prodMap r) :=
+    Prod.map_surjective.2 ⟨ZMod.castHom_surjective hdvd, ZMod.castHom_surjective hdvd⟩
+  have hc : Nat.card r.ker = 2 ^ j :=
+    ZMod.natCard_ker_castHom (2 ^ e) (pow_add 2 j e).symm (by positivity)
+  have hker : Nat.card (r.prodMap r).ker = 2 ^ (2 * j) := by
+    rw [AddMonoidHom.ker_prodMap,
+      Nat.card_congr (AddSubgroup.prodEquiv r.ker r.ker).toEquiv, Nat.card_prod, hc,
+      Nat.mul_comm 2 j, pow_mul, pow_two]
+  have hsum := AddMonoidHom.sum_comp_of_surjective (r.prodMap r) hr
+    fun y ↦ expCircle (q' y)
+  rw [hker, nsmul_eq_mul, Nat.cast_pow] at hsum
+  refine Eq.trans ?_ hsum
+  refine Finset.sum_congr rfl fun x _ ↦ congrArg expCircle ?_
+  obtain ⟨x₁, x₂⟩ := x
+  obtain ⟨a, rfl⟩ := ZMod.intCast_surjective x₁
+  obtain ⟨b, rfl⟩ := ZMod.intCast_surjective x₂
+  simpa only [r, AddMonoidHom.coe_prodMap, Prod.map_apply,
+    RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, map_intCast] using hq a b
+
+/-- The `2^j`-scaled Gauss sum of `u^{(2)}(2^{j+e})` is `2^{2j}` times the Gauss sum of
+`u^{(2)}(2^e)`: coordinatewise reduction modulo `2^e` has `2^{2j}` elements in every fiber. -/
+theorem scaledGaussSum_dyadicU_pow_add (j e : ℕ) :
+    scaledGaussSum (dyadicU (j + e)) (2 ^ j) =
+      (2 : ℂ) ^ (2 * j) * (dyadicU e).gaussSum := by
+  let _ : Fintype (dyadicU (j + e)) :=
+    inferInstanceAs (Fintype (ZMod (2 ^ (j + e)) × ZMod (2 ^ (j + e))))
+  let _ : Fintype (dyadicU e) := inferInstanceAs (Fintype (ZMod (2 ^ e) × ZMod (2 ^ e)))
+  rw [scaledGaussSum_eq_sum, gaussSum_eq_sum]
+  refine sum_expCircle_dyadic_reduction j e _ _ fun a b ↦ ?_
+  simp only [dyadicU_quadratic, ← Int.cast_mul,
+    ZMod.toRatAddCircle_intCast, ← AddCircle.coe_nsmul, nsmul_eq_mul]
+  congr 1
+  push_cast
+  rw [pow_add]
+  field_simp
+
+/-- The `2^j`-scaled Gauss sum of `v^{(2)}(2^{j+e})` is `2^{2j}` times the Gauss sum of
+`v^{(2)}(2^e)`: coordinatewise reduction modulo `2^e` has `2^{2j}` elements in every fiber. -/
+theorem scaledGaussSum_dyadicV_pow_add (j e : ℕ) :
+    scaledGaussSum (dyadicV (j + e)) (2 ^ j) =
+      (2 : ℂ) ^ (2 * j) * (dyadicV e).gaussSum := by
+  let _ : Fintype (dyadicV (j + e)) :=
+    inferInstanceAs (Fintype (ZMod (2 ^ (j + e)) × ZMod (2 ^ (j + e))))
+  let _ : Fintype (dyadicV e) := inferInstanceAs (Fintype (ZMod (2 ^ e) × ZMod (2 ^ e)))
+  rw [scaledGaussSum_eq_sum, gaussSum_eq_sum]
+  refine sum_expCircle_dyadic_reduction j e _ _ fun a b ↦ ?_
+  simp only [dyadicV_quadratic, intCast_sq_add_mul_add_sq, ZMod.toRatAddCircle_intCast,
+    ← AddCircle.coe_nsmul, nsmul_eq_mul]
+  congr 1
+  push_cast
+  rw [pow_add]
+  field_simp
 
 end TauCeti.FiniteQuadraticModule
