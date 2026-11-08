@@ -165,6 +165,17 @@ theorem realOperator_zero (S : StronglyContinuousSemigroup X) :
     S.realOperator 0 = ContinuousLinearMap.id ℝ X := by
   rw [realOperator, Real.toNNReal_zero, S.map_zero]
 
+/-- At a nonpositive real time the real-time operator is the identity: `realOperator` extends the
+semigroup to `ℝ` by `id` for `t ≤ 0`. -/
+theorem realOperator_of_nonpos (S : StronglyContinuousSemigroup X) {t : ℝ} (ht : t ≤ 0) :
+    S.realOperator t = ContinuousLinearMap.id ℝ X := by
+  rw [realOperator, Real.toNNReal_of_nonpos ht, S.map_zero]
+
+/-- At a nonpositive real time the real-time operator fixes every vector. -/
+theorem realOperator_of_nonpos_apply (S : StronglyContinuousSemigroup X) {t : ℝ} (ht : t ≤ 0)
+    (x : X) : S.realOperator t x = x := by
+  rw [S.realOperator_of_nonpos ht, ContinuousLinearMap.id_apply]
+
 /-- The real-time shim satisfies the semigroup law at nonnegative real times. -/
 theorem realOperator_add (S : StronglyContinuousSemigroup X) (s t : ℝ) (hs : 0 ≤ s) (ht : 0 ≤ t) :
     S.realOperator (s + t) = (S.realOperator s).comp (S.realOperator t) := by
@@ -434,7 +445,7 @@ theorem StronglyContinuousSemigroup.continuous_realOperator_apply
   have hneg : ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Iic 0) := by
     apply (continuousOn_const : ContinuousOn (fun _ : ℝ => x) (Set.Iic 0)).congr
     intro t ht
-    simp [S.realOperator_def t, Real.toNNReal_of_nonpos ht]
+    exact S.realOperator_of_nonpos_apply ht x
   have h := hneg.union_of_isClosed (S.realOperator_continuousOn_Ici x)
     isClosed_Iic isClosed_Ici
   simpa [Set.Iic_union_Ici] using h
