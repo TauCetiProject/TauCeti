@@ -75,10 +75,10 @@ theorem schwarzChristoffelCompactifiedBoundary_injective
   have hlast : ∀ k, e k ≠ 0 → a k ≤ a (Fin.last n) := fun k _ ↦ ha.monotone k.le_last
   have hleft {x : ℝ} (hx : x ≤ a 0) :=
     schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
-      (fun k ↦ (he k).1) hsum hx
+      (he 0).1 hsum hx
   have hright {x : ℝ} (hx : a (Fin.last n) ≤ x) :=
     schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le a e z₀ ha
-      (fun k ↦ (he k).1) hsum hx
+      (he (Fin.last n)).1 (by rw [hsum]; norm_num) hx
   have hmiddle {x : ℝ} (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :=
     im_schwarzChristoffelVertexAtInfinity_lt_im_boundary a e z₀ ha he hsum hx
   rw [schwarzChristoffelCompactifiedBoundary_injective_iff]
