@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
-import TauCeti.Analysis.Fourier.CharDeriv
+import Mathlib.Analysis.Fourier.FourierTransformDeriv
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -188,42 +188,26 @@ quantization of a Schwartz function is the integral operator with kernel `K_a`:
 theorem quantizeSchwartzValue_eq_integral_quantizationKernel [CompleteSpace V] [CompleteSpace W]
     (ha : Integrable (fun ξ ↦ a (x, ξ))) (u : 𝓢(E, V)) :
     quantizeSchwartzValue a u x = ∫ y, quantizationKernel a x y (u y) := by
-  have hs : Integrable (fun ζ : E ↦ a (x, (2 * π) • ζ)) := ha.comp_smul two_pi_pos.ne'
-  set F : E → E → W := fun ζ y ↦ (𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ)) (u y) with hF
-  -- The double integrand is dominated by `‖a(x, 2πζ)‖ ‖u(y)‖`, integrable on the product.
-  have hFint : Integrable (Function.uncurry F) ((volume : Measure E).prod volume) := by
-    refine (hs.norm.mul_prod u.integrable.norm).mono' ?_ (ae_of_all _ fun q ↦ ?_)
-    · have hchar : Continuous fun q : E × E ↦ 𝐞 ⟪q.1, x - q.2⟫ :=
-        Real.continuous_fourierChar.comp
-          (continuous_fst.inner (continuous_const.sub continuous_snd))
-      exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable
-        ((hchar.aestronglyMeasurable.smul hs.aestronglyMeasurable.comp_fst).prodMk
-          (u.continuous.comp continuous_snd).aestronglyMeasurable)
-    · simp only [Function.uncurry, hF]
-      exact ((𝐞 ⟪q.1, x - q.2⟫ • a (x, (2 * π) • q.1)).le_opNorm (u q.2)).trans_eq
-        (by rw [Circle.norm_smul (E := V →L[ℂ] W)])
-  -- Integrating out `y` first recovers the Fourier-side integrand of `Op(a) u (x)`.
-  have hinner (ζ : E) : ∫ y, F ζ y = 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 u ζ) := by
-    have hpt (y : E) : F ζ y =
-        a (x, (2 * π) • ζ) ((𝐞 ⟪ζ, x⟫ : ℂ) • ((𝐞 (-⟪y, ζ⟫) : ℂ) • u y)) := by
-      have hin : ⟪ζ, x - y⟫ = ⟪ζ, x⟫ + -⟪y, ζ⟫ := by
-        rw [inner_sub_right, real_inner_comm y ζ, sub_eq_add_neg]
-      simp only [hF, hin, smul_apply, Circle.smul_def, map_smul, smul_smul, ← Circle.coe_mul,
-        ← AddChar.map_add_eq_mul]
-    have hu : Integrable (fun y : E ↦ (𝐞 (-⟪y, ζ⟫) : ℂ) • u y) := by
-      simpa only [Circle.smul_def] using (Real.fourierIntegral_convergent_iff ζ).2 u.integrable
-    have hu' : Integrable (fun y : E ↦ (𝐞 ⟪ζ, x⟫ : ℂ) • (𝐞 (-⟪y, ζ⟫) : ℂ) • u y) := hu.smul _
-    simp_rw [hpt]
-    rw [(a (x, (2 * π) • ζ)).integral_comp_comm hu', integral_smul, map_smul, Circle.smul_def,
-      SchwartzMap.fourier_coe, Real.fourier_eq]
-    simp only [Circle.smul_def]
-  calc quantizeSchwartzValue a u x = ∫ ζ, ∫ y, F ζ y := by
-        simp only [quantizeSchwartzValue_def, hinner]
-    _ = ∫ y, ∫ ζ, F ζ y := integral_integral_swap hFint
-    _ = ∫ y, quantizationKernel a x y (u y) := by
-        congr 1 with y
-        rw [quantizationKernel_def,
-          ContinuousLinearMap.integral_apply (integrable_quantizationKernel_integrand ha y)]
+  -- Self-adjointness of the Fourier transform, `∫ M (𝓕 u) g = ∫ M u (𝓕 g)`, for the evaluation
+  -- pairing `M` and `g ζ = 𝐞 ⟪ζ, x⟫ • a(x, 2πζ)`, whose Fourier transform at `y` is `K_a(x, y)`.
+  have hg : Integrable (fun ζ : E ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)) := by
+    simpa only [sub_zero] using integrable_quantizationKernel_integrand ha 0
+  -- The Fourier transform of a function is `VectorFourier.fourierIntegral 𝐞 volume (innerₗ E)` by
+  -- definition, and `M = ContinuousLinearMap.apply ℂ W` evaluates `g ζ` at `𝓕 u ζ`.
+  have h : ∫ ζ, (𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)) (𝓕 (u : E → V) ζ) =
+      ∫ y, VectorFourier.fourierIntegral 𝐞 volume (innerₗ E).flip
+        (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)) y (u y) :=
+    VectorFourier.integral_bilin_fourierIntegral_eq_flip (ContinuousLinearMap.apply ℂ W)
+      Real.continuous_fourierChar continuous_inner (u.integrable (μ := volume)) hg
+  have hK (y : E) : VectorFourier.fourierIntegral 𝐞 volume (innerₗ E).flip
+      (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)) y = quantizationKernel a x y := by
+    rw [VectorFourier.fourierIntegral, quantizationKernel_def]
+    congr 1 with ζ
+    rw [smul_smul, ← AddChar.map_add_eq_mul, LinearMap.flip_apply, innerₗ_apply_apply,
+      real_inner_comm, inner_sub_right, neg_add_eq_sub]
+  simp only [hK] at h
+  rw [quantizeSchwartzValue_def, SchwartzMap.fourier_coe, ← h]
+  simp only [Circle.smul_def, smul_apply]
 
 /-- **Uniqueness of the kernel.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable and a
 continuous `K` represents `u ↦ Op(a) u (x)` on Schwartz functions, `Op(a) u (x) = ∫ K(y) u(y) dy`,
@@ -285,7 +269,14 @@ theorem inner_smul_quantizationKernel {a' : E × E → V →L[ℂ] W} {v : E}
       exact smul_comm _ _ _))
     (hI.congr (ae_of_all _ fun ζ ↦ by
       simp only [ContinuousLinearMap.lsmul_apply, Circle.smul_def, z]))
-    (fun ζ _ ↦ hasLineDerivAt_fourierChar_inner z ζ v) (fun ζ _ ↦ hg ζ)
+    (fun ζ _ ↦ by
+      convert (Real.differentiable_fourierChar_neg_bilinear_left (innerSL ℝ) (-z)
+        ζ).hasFDerivAt.hasLineDerivAt v using 1
+      · simp only [innerSL_apply_apply ℝ, inner_neg_right, neg_neg]
+      · rw [Real.fderiv_fourierChar_neg_bilinear_left_apply]
+        simp only [innerSL_apply_apply ℝ, inner_neg_right, neg_neg, Complex.ofReal_neg, c,
+          real_inner_comm z v]
+        ring) (fun ζ _ ↦ hg ζ)
   simp only [ContinuousLinearMap.lsmul_apply] at hparts
   have hL : ∫ ζ, (𝐞 ⟪ζ, z⟫ : ℂ) • (2 * π) • a' (x, (2 * π) • ζ) =
       (2 * π) • quantizationKernel a' x y := by
