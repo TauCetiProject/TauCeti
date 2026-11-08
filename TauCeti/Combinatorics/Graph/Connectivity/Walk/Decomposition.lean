@@ -214,19 +214,6 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
 
 end Split
 
-/-- A walk that starts in a vertex set and ends outside it traverses an edge from the set to its
-complement.  The edge identity and its ordered endpoints are retained. -/
-theorem exists_isLink_of_start_mem_end_notMem (p : G.Walk x y) {S : Set α}
-    (hx : x ∈ S) (hy : y ∉ S) :
-    ∃ (e : β) (a b : α), e ∈ p.edges ∧ G.IsLink e a b ∧ a ∈ S ∧ b ∉ S := by
-  induction p with
-  | nil => exact (hy hx).elim
-  | @cons x y z e h p ih =>
-      by_cases hyS : y ∈ S
-      · obtain ⟨f, a, b, hf, hab, haS, hbS⟩ := ih hyS hy
-        exact ⟨f, a, b, by simp [hf], hab, haS, hbS⟩
-      · exact ⟨e, x, y, by simp, h, hx, hyS⟩
-
 /-- A path from outside a vertex set to a vertex in it has an initial segment whose endpoint is
 the first visited vertex in the set.  Every other vertex of the segment is outside the set, and
 the segment uses only vertices and edge identities of the original path. -/

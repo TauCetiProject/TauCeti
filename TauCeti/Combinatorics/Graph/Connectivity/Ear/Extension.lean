@@ -163,8 +163,8 @@ theorem _root_.Set.Nonempty.exists_ear_of_lt (hH : V(H).Nonempty) (hHG : H < G)
     obtain ⟨x, hxH⟩ := hH
     obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp
       (hG'.1.reachable (hHG.le.vertexSet_mono hxH) hyG)
-    obtain ⟨e, a, b, -, hab, haH, hbH⟩ :=
-      p.exists_isLink_of_start_mem_end_notMem hxH hyH
+    obtain ⟨e, -, he⟩ := p.exists_mem_edges_mem_edgeCut hxH hyH
+    obtain ⟨a, b, hab, haH, hbH⟩ := Graph.mem_edgeCut_iff.mp he
     obtain ⟨ear, hear, -⟩ :=
       hab.exists_ear_of_mem_notMem hHG.le haH hbH (hG'.2 e)
     exact ⟨ear, hear⟩
