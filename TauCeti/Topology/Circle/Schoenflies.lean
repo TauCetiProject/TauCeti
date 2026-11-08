@@ -171,7 +171,7 @@ omit [NormedSpace ℝ E] in
 /-- The collar clause of the one-dimensional Schoenflies theorem: if the complement of the zero
 slice `Σ` of a continuous injection `β : S⁰ × [-1, 1] → S¹` is split into open sets `A` and `B`
 whose closures add exactly `Σ`, then the two collar arcs at each point lie on different sides. -/
-private theorem collar_mapsTo [InnerProductSpace ℝ F] (hF : finrank ℝ F = 2)
+private theorem collar_mapsTo [NormedSpace ℝ F] (hF : finrank ℝ F = 2)
     {β : sphere (0 : E) 1 × Icc (-1 : ℝ) 1 → sphere (0 : F) 1} (hβ : Continuous β)
     (hinj : Injective β) {A B : Set (sphere (0 : F) 1)} (hAo : IsOpen A) (hBo : IsOpen B)
     (hdisj : Disjoint A B)
@@ -220,13 +220,17 @@ private theorem collar_mapsTo [InnerProductSpace ℝ F] (hF : finrank ℝ F = 2)
     Set.ext fun t ↦ ⟨fun h ↦ ⟨t.2.1, h⟩, fun h ↦ h.2⟩
   simp only [mapsTo_iff_image_subset, hpos, hneg, hslice hIoc, hslice hIco]
   -- By invariance of domain the open collar arc is a neighbourhood of its centre `g 0 ∈ Σ`.
-  have : Fact (finrank ℝ F = 1 + 1) := ⟨hF⟩
+  -- Invariance of domain is applied in the Euclidean unit circle, through a homeomorphism `Φ`.
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  let Φ : sphere (0 : F) 1 ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 :=
+    sphereHomeomorphOfFinrankEq (by simp [hF])
   have hinjOn : InjOn g (Ioo (-1) 1) := fun s hs t ht hst ↦ by
     rw [hgβ (Ioo_subset_Icc_self hs), hgβ (Ioo_subset_Icc_self ht)] at hst
     simpa using congrArg (fun z ↦ (z.2 : ℝ)) (hinj hst)
-  have hN : IsOpen (g '' Ioo (-1) 1) :=
-    isOpen_Ioo.image_of_continuousOn_of_injOn (E := ℝ) (F := EuclideanSpace ℝ (Fin 1))
-      hg.continuousOn hinjOn (by simp)
+  have hN : IsOpen (g '' Ioo (-1) 1) := by
+    have := isOpen_Ioo.image_of_continuousOn_of_injOn (E := ℝ) (F := EuclideanSpace ℝ (Fin 1))
+      (Φ.continuous.comp hg).continuousOn (Φ.injective.comp_injOn hinjOn) (by simp)
+    rwa [image_comp, Φ.isOpen_image] at this
   have h0N : g 0 ∈ g '' Ioo (-1) 1 := mem_image_of_mem g ⟨by norm_num, by norm_num⟩
   have h0S : g 0 ∈ β '' (univ ×ˢ {t : ↥(Icc (-1 : ℝ) 1) | (t : ℝ) = 0}) :=
     ⟨(x, ⟨0, by norm_num⟩), ⟨mem_univ _, rfl⟩, (hgβ _).symm⟩
@@ -250,7 +254,7 @@ private theorem collar_mapsTo [InnerProductSpace ℝ F] (hF : finrank ℝ F = 2)
 
 /-- **The generalized Schoenflies theorem in dimension one.** Let `β : S⁰ × [-1, 1] → S¹` be a
 continuous injection, where `S⁰` is the unit sphere of a one-dimensional real normed space `E` and
-`S¹` is the unit sphere of a two-dimensional real inner product space, and let `Σ` be the image of
+`S¹` is the unit sphere of a two-dimensional real normed space, and let `Σ` be the image of
 its zero slice `S⁰ × {0}`, a pair of points. Then:
 
 * the complement of `Σ` is the union of two disjoint open connected sets `A` and `B`, which are
@@ -262,7 +266,7 @@ its zero slice `S⁰ × {0}`, a pair of points. Then:
 
 Unlike in higher dimensions, the two sides `β(S⁰ × (0, 1])` and `β(S⁰ × [-1, 0))` of the collar
 need not lie in different components. -/
-theorem exists_closure_homeomorph_closedBall_of_finrank_eq_one [InnerProductSpace ℝ F]
+theorem exists_closure_homeomorph_closedBall_of_finrank_eq_one [NormedSpace ℝ F]
     (hE : finrank ℝ E = 1) (hF : finrank ℝ F = 2)
     {β : sphere (0 : E) 1 × Icc (-1 : ℝ) 1 → sphere (0 : F) 1} (hβ : Continuous β)
     (hinj : Injective β) :
