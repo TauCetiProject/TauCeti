@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 public import TauCeti.Topology.PathSpace.Moore.From
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
