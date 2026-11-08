@@ -72,7 +72,7 @@ theorem siegelFunction_add_intCast_pow_twelve_mul (r : Fin 2 → ℝ) (s : Fin 2
 
 /-- For an integral numerator `a`, the power `g_(a/N)^(12k)` is invariant under
 `Γ(N)` as soon as `N` divides `6k`. -/
-theorem siegelFunction_div_pow_twelve_mul_smul {N : ℕ}
+theorem siegelFunction_div_pow_twelve_mul_smul_of_mem_Gamma {N : ℕ}
     (a : Fin 2 → ℤ) (k : ℕ) (hk : N ∣ 6 * k) {γ : SL(2, ℤ)}
     (hγ : γ ∈ CongruenceSubgroup.Gamma N) (τ : ℍ) :
     siegelFunction (fun i ↦ (a i : ℝ) / N) ↑(γ • τ) ^ (12 * k) =
@@ -106,7 +106,7 @@ theorem siegelFunction_div_pow_smul_of_mem_Gamma {N : ℕ}
   have hexponent : 12 * N / Nat.gcd 6 N = 12 * (N / Nat.gcd 6 N) :=
     Nat.mul_div_assoc 12 hg
   rw [hexponent]
-  refine siegelFunction_div_pow_twelve_mul_smul a _ ?_ hγ τ
+  refine siegelFunction_div_pow_twelve_mul_smul_of_mem_Gamma a _ ?_ hγ τ
   obtain ⟨m, hm⟩ := Nat.gcd_dvd_left 6 N
   refine ⟨m, ?_⟩
   calc
