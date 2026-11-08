@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Polynomial.Laurent.Symmetric
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
 
+import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
+import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.Tactic
 
 /-!
@@ -41,6 +43,9 @@ classical specialization at `v = 1` at the same time.
 * `TauCeti.laurentEval_laurentQuantumInteger`: the value at a unit `q` of a field with
   `q - q⁻¹ ≠ 0` is the quantum integer `[r]_q`.
 * `TauCeti.laurentEval_one_laurentQuantumInteger`: the value at `v = 1` is `r`.
+* `TauCeti.eq_of_forall_laurentEval_eq`: an identity in `ℤ[v, v⁻¹]` holds as soon as it holds at
+  every unit `q` with `q - q⁻¹ ≠ 0` of every field.
+* `TauCeti.laurentQuantumInteger_add`: the addition formula `[a + b]_v = v^a [b]_v + v^(-b) [a]_v`.
 * `TauCeti.qInt_add_inv_eq_laurentEval`: the value of `[n]_v` at a unit `u` of a commutative ring
   is the quantum integer `TauCeti.qInt` at the loop parameter `u + u⁻¹`.
 * `TauCeti.sub_inv_mul_qInt_add_inv`: `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ` at `δ = u + u⁻¹`.
@@ -139,5 +144,36 @@ theorem qInt_add_inv_eq_quantumInteger {K : Type*} [Field K] {q : K} (hq : q - q
   have h := qInt_add_inv_eq_laurentEval (Units.mk0 q (ne_zero_of_sub_inv_ne_zero hq)) n
   rw [laurentEval_laurentQuantumInteger (by simpa using hq)] at h
   simpa using h
+
+/-- **Identities of integral Laurent polynomials can be checked at generic parameters**: two
+elements of `ℤ[v, v⁻¹]` are equal as soon as their values agree at every unit `q` with
+`q - q⁻¹ ≠ 0` of every field. Indeed evaluation at the generic point `v` of the fraction field
+`ℚ(v)` of `ℤ[v, v⁻¹]` is injective, and `v - v⁻¹ ≠ 0` there. This transports identities between
+the field quantum integers to their Laurent forms. -/
+theorem eq_of_forall_laurentEval_eq {p p' : ℤ[T;T⁻¹]}
+    (h : ∀ (K : Type) [Field K] (u : Kˣ), (u : K) - (u : K)⁻¹ ≠ 0 →
+      laurentEval u p = laurentEval u p') :
+    p = p' := by
+  obtain ⟨K, _, f, hf⟩ : ∃ (K : Type) (_ : Field K) (f : ℤ[T;T⁻¹] →+* K), Function.Injective f :=
+    ⟨FractionRing ℤ[T;T⁻¹], inferInstance, algebraMap _ _, IsFractionRing.injective _ _⟩
+  let v : Kˣ := Units.map f.toMonoidHom (genericUnit ℤ)
+  have hinj : Function.Injective (laurentEval (R := ℤ) v) := by
+    rwa [← laurentEval_unique v { f with commutes' := fun c => by simp } (by simp [v])]
+  refine hinj (h K v ?_)
+  -- `v - v⁻¹` is the image of `T - T⁻¹`, which is nonzero since its value at `2` is `3 / 2`.
+  have hT : (T 1 - T (-1) : ℤ[T;T⁻¹]) ≠ 0 := by
+    intro h₀
+    have h₂ := congrArg (laurentEval (R := ℤ) (Units.mk0 (2 : ℚ) two_ne_zero)) h₀
+    norm_num at h₂
+  simpa [Units.val_inv_eq_inv_val] using hinj.ne hT
+
+
+/-- The addition formula `[a + b]_v = v^a [b]_v + v^(-b) [a]_v`. -/
+theorem laurentQuantumInteger_add (a b : ℤ) :
+    laurentQuantumInteger (a + b) =
+      T a * laurentQuantumInteger b + T (-b) * laurentQuantumInteger a := by
+  refine eq_of_forall_laurentEval_eq fun K _ u hu => ?_
+  simp only [map_add, map_mul, laurentEval_T, laurentEval_laurentQuantumInteger hu,
+    Units.val_zpow_eq_zpow_val, quantumInteger_add]
 
 end TauCeti
