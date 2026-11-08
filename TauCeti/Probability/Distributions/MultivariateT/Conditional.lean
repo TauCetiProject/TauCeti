@@ -157,7 +157,10 @@ theorem _root_.EuclideanSpace.map_snd_fst_multivariateTMeasure (m : EuclideanSpa
   have : Measurable mean :=
     EuclideanSpace.measurable_gaussianCondMean.comp
       ((measurable_const (a := (m, S))).prodMk measurable_id)
-  have hF := measurable_multivariateGaussian_prodMk_left_apply this C hA
+  have hF : Measurable fun p : ℝ × EuclideanSpace ℝ κ =>
+      multivariateGaussian (mean p.2) (p.1⁻¹ • C) (Prod.mk p.2 ⁻¹' A) :=
+    measurable_multivariateGaussian_prodMk_left_apply (g := Prod.snd) (this.comp measurable_snd)
+      (by fun_prop) measurable_snd hA
   calc (multivariateTMeasure m S ν).map
         (fun x => ((EuclideanSpace.sumEquivProd x).2, (EuclideanSpace.sumEquivProd x).1)) A
       = ∫⁻ τ, ((multivariateGaussian m (τ⁻¹ • S)).map

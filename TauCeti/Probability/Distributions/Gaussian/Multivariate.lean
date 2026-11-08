@@ -38,8 +38,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
   `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.measurable_multivariateGaussian_prodMk_left_apply` shows that the Gaussian
-  law with measurable mean and precision-scaled covariance, evaluated on a section of a measurable
-  set, is jointly measurable in the precision and the section point.
+  law with measurable mean and covariance families, evaluated on a section of a measurable set, is
+  measurable in the parameter.
 * `TauCeti.Probability.covariance_inner_matrix_multivariateGaussian` computes covariance after two
   matrix
   maps.
@@ -111,24 +111,24 @@ theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]
     Measurable fun τ : ℝ => multivariateGaussian m (τ⁻¹ • S) :=
   measurable_multivariateGaussian.comp (measurable_const.prodMk (by fun_prop))
 
-/-- For a measurable mean function `μ`, the Gaussian law with mean `μ x` and scale `τ⁻¹ • C`,
-evaluated on the section at `x` of a measurable set `A`, is jointly measurable in the precision
-`τ` and the conditioning value `x`. -/
+/-- For measurable mean and covariance families `m` and `S` on a measurable space `Y` and a
+measurable map `g : Y → X`, the Gaussian law with mean `m y` and covariance `S y`, evaluated on
+the section at `g y` of a measurable set `A ⊆ X × EuclideanSpace ℝ ι`, is measurable in `y`. -/
 theorem measurable_multivariateGaussian_prodMk_left_apply [Fintype ι] [DecidableEq ι]
-    {X : Type*} [MeasurableSpace X] {μ : X → EuclideanSpace ℝ ι} (hμ : Measurable μ)
-    (C : Matrix ι ι ℝ) {A : Set (X × EuclideanSpace ℝ ι)} (hA : MeasurableSet A) :
-    Measurable fun p : ℝ × X => multivariateGaussian (μ p.2) (p.1⁻¹ • C) (Prod.mk p.2 ⁻¹' A) := by
-  -- Given the precision `τ`, the law at `x` is Gaussian with mean `μ x` and covariance `τ⁻¹ • C`;
-  -- this is a kernel from `(τ, x)`.
-  let η : Kernel (ℝ × X) (EuclideanSpace ℝ ι) :=
-    ⟨fun p => multivariateGaussian (μ p.2) (p.1⁻¹ • C),
-      measurable_multivariateGaussian.comp ((hμ.comp measurable_snd).prodMk (by fun_prop))⟩
-  have : IsMarkovKernel η := ⟨fun p => inferInstanceAs (IsProbabilityMeasure
-    (multivariateGaussian (μ p.2) (p.1⁻¹ • C)))⟩
-  -- The section of `{q | (q.1.2, q.2) ∈ A}` at `p` is by definition the section of `A` at `p.2`.
+    {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {m : Y → EuclideanSpace ℝ ι}
+    {S : Y → Matrix ι ι ℝ} {g : Y → X} (hm : Measurable m) (hS : Measurable S) (hg : Measurable g)
+    {A : Set (X × EuclideanSpace ℝ ι)} (hA : MeasurableSet A) :
+    Measurable fun y : Y => multivariateGaussian (m y) (S y) (Prod.mk (g y) ⁻¹' A) := by
+  -- The law at `y` is Gaussian with mean `m y` and covariance `S y`; this is a kernel from `y`.
+  let η : Kernel Y (EuclideanSpace ℝ ι) :=
+    ⟨fun y => multivariateGaussian (m y) (S y),
+      measurable_multivariateGaussian.comp (hm.prodMk hS)⟩
+  have : IsMarkovKernel η := ⟨fun y => inferInstanceAs (IsProbabilityMeasure
+    (multivariateGaussian (m y) (S y)))⟩
+  -- The section of `{q | (g q.1, q.2) ∈ A}` at `y` is by definition the section of `A` at `g y`.
   exact Kernel.measurable_kernel_prodMk_left (κ := η)
-    (t := {q : (ℝ × X) × EuclideanSpace ℝ ι | (q.1.2, q.2) ∈ A})
-    (hA.preimage (by fun_prop))
+    (t := {q : Y × EuclideanSpace ℝ ι | (g q.1, q.2) ∈ A})
+    (hA.preimage ((hg.comp measurable_fst).prodMk measurable_snd))
 
 /-- The covariance of scalar inner-product projections after two matrix-valued linear maps of a
 multivariate Gaussian. -/
