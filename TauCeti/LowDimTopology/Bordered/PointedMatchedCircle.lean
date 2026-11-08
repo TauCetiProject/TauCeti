@@ -109,10 +109,12 @@ theorem matching_ne (i : Fin n) : Z.matching i ≠ i :=
 
 /-- **Surgery along the pairs gives one circle**: any two points lie on one cycle of the boundary
 traversal `finRotate n * matching`. -/
+@[simp]
 theorem sameCycle_finRotate_mul (i j : Fin n) : (finRotate n * Z.matching).SameCycle i j :=
   orbitCount_le_one_iff.mp Z.orbitCount_finRotate_mul_le_one i j
 
 /-- When there are points, the boundary traversal has exactly one orbit. -/
+@[simp]
 theorem orbitCount_finRotate_mul [NeZero n] : orbitCount (finRotate n * Z.matching) = 1 :=
   orbitCount_eq_one_of_forall_sameCycle Z.sameCycle_finRotate_mul
 
