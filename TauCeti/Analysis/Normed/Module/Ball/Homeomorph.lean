@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.GaugeRescale
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -46,7 +47,8 @@ valued in the closed unit ball.
   finite dimension `k` is homeomorphic to the cube `Iᵏ`.
 * `TauCeti.sphereHomeomorphOfFinrankEq` and `TauCeti.closedBallHomeomorphOfFinrankEq`: the unit
   spheres, and the closed unit balls, of two finite-dimensional real normed spaces of the same
-  dimension are homeomorphic.
+  dimension are homeomorphic; `TauCeti.sphereHomeomorphOfFinrankEq_neg`: the first commutes with
+  the antipodal map.
 * `TauCeti.nonempty_homeomorph_closedBall_of_convex`: a compact convex set with nonempty interior
   is homeomorphic to a closed ball of the same dimension.
 * `TauCeti.nonempty_homeomorph_Icc_prod_closedBall`: a nondegenerate closed rectangle is
@@ -260,6 +262,20 @@ theorem coe_sphereHomeomorphOfFinrankEq_apply (hEF : Module.finrank ℝ E = Modu
     (sphereHomeomorphOfFinrankEq hEF x : F) =
       (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
   (rfl)
+
+/-- `TauCeti.sphereHomeomorphOfFinrankEq` commutes with the antipodal map. -/
+theorem sphereHomeomorphOfFinrankEq_neg (hEF : Module.finrank ℝ E = Module.finrank ℝ F)
+    (x : sphere (0 : E) 1) :
+    sphereHomeomorphOfFinrankEq hEF (-x) = -sphereHomeomorphOfFinrankEq hEF x := by
+  ext
+  rw [coe_neg_sphere, coe_sphereHomeomorphOfFinrankEq_apply,
+    coe_sphereHomeomorphOfFinrankEq_apply, coe_neg_sphere,
+    ContinuousLinearEquiv.unitBallHomeomorph_apply,
+    ContinuousLinearEquiv.unitBallHomeomorph_apply, map_neg, gaugeRescale_def, gaugeRescale_def,
+    gauge_neg, gauge_neg, smul_neg]
+  · exact fun y hy ↦ by simpa using hy
+  · rintro _ ⟨y, hy, rfl⟩
+    exact ⟨-y, by simpa using hy, map_neg _ y⟩
 
 /-- The closed unit balls of two finite-dimensional real normed spaces of the same dimension are
 homeomorphic, through `ContinuousLinearEquiv.unitBallHomeomorph` applied to

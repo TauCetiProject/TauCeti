@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Latitude
-public import TauCeti.Geometry.Manifold.LocallyFlat.Sphere
+public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
@@ -337,7 +338,7 @@ end Collapse
 section CollapseSphere
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : sphere (0 : E) 1 → sphere (0 : F) 1} {b : sphere (0 : E) 1 × ℝ → sphere (0 : F) 1}
   {A B : Set (sphere (0 : F) 1)}
 
@@ -356,48 +357,58 @@ theorem IsBicollar.exists_collapse_sphere (h : IsBicollar f b) (hE : 0 < finrank
       c ⁻¹' {p} = A \ b '' (univ ×ˢ Iio 1) ∧ c ⁻¹' {-p} = B \ b '' (univ ×ˢ Ioi (-1)) ∧
       ∀ y, y ≠ p → y ≠ -p → (c ⁻¹' {y}).Subsingleton := by
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
-  have : Nontrivial F := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  -- Work on the sphere of the Euclidean space `F'` of the same dimension, carried to that of `F`
+  -- by `φ`, which commutes with the antipodal map.
+  let F' := EuclideanSpace ℝ (Fin (finrank ℝ F))
+  have hF' : finrank ℝ F' = finrank ℝ F := finrank_euclideanSpace_fin
+  have : Nontrivial F' := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  let φ := sphereHomeomorphOfFinrankEq hF'
   -- A pole `p` and the identification of the sphere of `E` with the equator `(ℝ ∙ p)ᗮ`.
-  obtain ⟨p, hp⟩ := (NormedSpace.sphere_nonempty (x := (0 : F)) (r := 1)).2 zero_le_one
-  let P : sphere (0 : F) 1 := ⟨p, hp⟩
+  obtain ⟨p, hp⟩ := (NormedSpace.sphere_nonempty (x := (0 : F')) (r := 1)).2 zero_le_one
+  let P : sphere (0 : F') 1 := ⟨p, hp⟩
   have hp0 : p ≠ 0 := ne_zero_of_mem_unit_sphere P
-  have : Fact (finrank ℝ F = finrank ℝ E + 1) := ⟨hEF⟩
+  have : Fact (finrank ℝ F' = finrank ℝ E + 1) := ⟨hF'.trans hEF⟩
   have hfin : finrank ℝ E = finrank ℝ (ℝ ∙ p)ᗮ :=
     (Submodule.finrank_orthogonal_span_singleton hp0).symm
   have : Nontrivial (ℝ ∙ p)ᗮ := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   let e := sphereHomeomorphOfFinrankEq hfin
   let g : sphere (0 : E) 1 × Icc (-1 : ℝ) 1 → sphere (0 : F) 1 :=
-    fun z ↦ sphereLatitude P (e z.1, z.2)
-  have hg : Continuous g := (sphereLatitude P).continuous.comp
-    ((e.continuous.comp continuous_fst).prodMk continuous_snd)
-  have hgpos : ∀ z, g z = P ↔ (z.2 : ℝ) = 1 := fun z ↦ sphereLatitude_apply_eq_iff_eq_one P
-  have hgneg : ∀ z, g z = -P ↔ (z.2 : ℝ) = -1 := fun z ↦ sphereLatitude_apply_eq_neg_iff P
-  have hg1 : ∀ x, g (x, ⟨1, by norm_num⟩) = P := fun x ↦ (hgpos _).2 rfl
-  have hgm1 : ∀ x, g (x, ⟨-1, by norm_num⟩) = -P := fun x ↦ (hgneg _).2 rfl
+    fun z ↦ φ (sphereLatitude P (e z.1, z.2))
+  have hg : Continuous g := φ.continuous.comp ((sphereLatitude P).continuous.comp
+    ((e.continuous.comp continuous_fst).prodMk continuous_snd))
+  have hgpos : ∀ z, g z = φ P ↔ (z.2 : ℝ) = 1 :=
+    fun z ↦ φ.injective.eq_iff.trans (sphereLatitude_apply_eq_iff_eq_one P)
+  have hgneg : ∀ z, g z = -φ P ↔ (z.2 : ℝ) = -1 := fun z ↦ by
+    rw [← sphereHomeomorphOfFinrankEq_neg]
+    exact φ.injective.eq_iff.trans (sphereLatitude_apply_eq_neg_iff P)
+  have hg1 : ∀ x, g (x, ⟨1, by norm_num⟩) = φ P := fun x ↦ (hgpos _).2 rfl
+  have hgm1 : ∀ x, g (x, ⟨-1, by norm_num⟩) = -φ P := fun x ↦ (hgneg _).2 rfl
   have hginj : InjOn g {z | (z.2 : ℝ) ∈ Ioo (-1 : ℝ) 1} := by
     intro z hz z' hz' he
-    have := injOn_sphereLatitude P (x₁ := (e z.1, z.2)) hz (x₂ := (e z'.1, z'.2)) hz' he
+    have := injOn_sphereLatitude P (x₁ := (e z.1, z.2)) hz (x₂ := (e z'.1, z'.2)) hz'
+      (φ.injective he)
     simp only [Prod.mk.injEq] at this
     exact Prod.ext (e.injective this.1) this.2
   have hgs : Surjective g := by
     intro y
-    obtain ⟨⟨x, t⟩, hxt⟩ := sphereLatitude_surjective P y
+    obtain ⟨⟨x, t⟩, hxt⟩ := sphereLatitude_surjective P (φ.symm y)
     exact ⟨(e.symm x, t), by simp [g, hxt]⟩
-  have hy : P ≠ -P := by
-    intro hP
-    have : p = -p := congrArg (fun q : sphere (0 : F) 1 ↦ (q : F)) hP
+  have hy : φ P ≠ -φ P := by
+    rw [← sphereHomeomorphOfFinrankEq_neg]
+    refine φ.injective.ne fun hP ↦ ?_
+    have : p = -p := congrArg (fun q : sphere (0 : F') 1 ↦ (q : F')) hP
     have h2 : (2 : ℝ) • p = 0 := by
       rw [two_smul]
       nth_rw 1 [this]
       exact neg_add_cancel p
     exact hp0 ((smul_eq_zero.1 h2).resolve_left two_ne_zero)
-  refine ⟨⟨bicollarCollapse b A g P (-P), h.continuous_bicollarCollapse g P (-P) hA hB hAB
-    hcompl hpos hneg hg hg1 hgm1⟩, P,
-    h.surjective_bicollarCollapse g P (-P) hgs,
-    h.preimage_bicollarCollapse_left g P (-P) hAB hcompl hpos hneg hgpos hgm1 hy,
-    h.preimage_bicollarCollapse_right g P (-P) hAB hcompl hpos hneg hg1 hgneg hy,
-    fun y hypos hyneg ↦ h.subsingleton_preimage_bicollarCollapse g P (-P) hg1 hgm1 hginj hypos
-      hyneg⟩
+  refine ⟨⟨bicollarCollapse b A g (φ P) (-φ P), h.continuous_bicollarCollapse g (φ P) (-φ P) hA hB
+    hAB hcompl hpos hneg hg hg1 hgm1⟩, φ P,
+    h.surjective_bicollarCollapse g (φ P) (-φ P) hgs,
+    h.preimage_bicollarCollapse_left g (φ P) (-φ P) hAB hcompl hpos hneg hgpos hgm1 hy,
+    h.preimage_bicollarCollapse_right g (φ P) (-φ P) hAB hcompl hpos hneg hg1 hgneg hy,
+    fun y hypos hyneg ↦ h.subsingleton_preimage_bicollarCollapse g (φ P) (-φ P) hg1 hgm1 hginj
+      hypos hyneg⟩
 
 end CollapseSphere
 
