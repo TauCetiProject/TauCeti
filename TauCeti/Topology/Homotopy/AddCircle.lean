@@ -33,7 +33,7 @@ simple connectivity at infinity.
 
 After rotating the circle, a continuous `p`-periodic curve `γ : ℝ → X` is contractible, as a map
 `ℝ ⧸ pℤ → X`, exactly when the loop it traces over a period `[s, s + p]` (`Function.Periodic.loop`)
-is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_homotopic_loop`).
+is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`).
 
 Null-homotopy of a loop does not depend on its constant speed: a null-homotopic loop
 `g : AddCircle T → X`, run at speed `a ≠ 0` (backwards when `a < 0`), is the null-homotopic loop
@@ -47,7 +47,7 @@ Null-homotopy of a loop does not depend on its constant speed: a null-homotopic 
 * `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`: every continuous map from a
   circle `AddCircle p` with `0 < p` into a simply connected space is null-homotopic.
 * `Function.Periodic.loop`: the loop traced by a continuous periodic curve over one period.
-* `Function.Periodic.exists_nullhomotopic_iff_homotopic_loop`: a continuous periodic curve is
+* `Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`: a continuous periodic curve is
   contractible exactly when its loop over a period is null-homotopic.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
@@ -160,7 +160,7 @@ theorem loop_apply (hp : Periodic γ p) (hγ : Continuous γ) (s : ℝ) (t : I) 
 map `ℝ ⧸ pℤ → X` induced by a continuous `p`-periodic curve `γ` is null-homotopic exactly when
 the loop traced by `γ` over the period `[s, s + p]` is null-homotopic relative to its endpoints,
 for any initial time `s`. -/
-theorem exists_nullhomotopic_iff_homotopic_loop [Fact (0 < p)] (hp : Periodic γ p)
+theorem exists_nullhomotopic_iff_loop_homotopic_refl [Fact (0 < p)] (hp : Periodic γ p)
     (hγ : Continuous γ) (s : ℝ) :
     (∃ g : C(AddCircle p, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t) ↔
       (hp.loop hγ s).Homotopic (Path.refl (γ s)) := by

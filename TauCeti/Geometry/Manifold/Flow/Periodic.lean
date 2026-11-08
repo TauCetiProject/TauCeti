@@ -320,8 +320,8 @@ theorem finite_contractiblePeriodicSolutions [FiniteDimensional ℝ E] [CompactS
   let P (γ : periodicSolutions X T) : Prop :=
     ((hper γ).loop (hcont γ) s).Homotopic (Path.refl (γ.1 s))
   have hP (γ : periodicSolutions X T) : P γ ↔ γ.1 ∈ contractiblePeriodicSolutions X T :=
-    ⟨fun hγ ↦ ⟨γ.2, ((hper γ).exists_nullhomotopic_iff_homotopic_loop (hcont γ) s).2 hγ⟩,
-      fun hγ ↦ ((hper γ).exists_nullhomotopic_iff_homotopic_loop (hcont γ) s).1 hγ.2⟩
+    ⟨fun hγ ↦ ⟨γ.2, ((hper γ).exists_nullhomotopic_iff_loop_homotopic_refl (hcont γ) s).2 hγ⟩,
+      fun hγ ↦ ((hper γ).exists_nullhomotopic_iff_loop_homotopic_refl (hcont γ) s).1 hγ.2⟩
   -- These loops depend continuously on the fixed point, which ranges over a closed set.
   have hfam : Continuous ↿fun y ↦ (hper (e.symm y)).loop (hcont (e.symm y)) s := by
     have heq : (↿fun y ↦ (hper (e.symm y)).loop (hcont (e.symm y)) s) =
