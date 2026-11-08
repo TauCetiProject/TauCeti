@@ -20,7 +20,7 @@ function's coordinate expression in the preferred extended chart.
 Following `TauCeti.IsManifoldNondegenerateCriticalPoint`, the definition itself assumes no
 smoothness and no boundarylessness. The results below prove that it depends only on the germ of
 the function, and that it is unchanged when the model space is transported through a continuous
-linear equivalence, assuming `C²` regularity of the chart expression. The model-space comparison
+linear equivalence. The model-space comparison
 theorem makes the construction reduce exactly to the existing calculus definition. This file does
 not compare the preferred chart with arbitrary manifold charts.
 
@@ -125,10 +125,8 @@ theorem manifoldMorseIndex_eq_zero_of_isLocalMin [FiniteDimensional ℝ E] [I.Bo
     exact fderiv_fderiv_self_nonneg_of_isLocalMin hf.contDiffAt_comp_extChartAt_symm hmin' v
 
 /-- The manifold Morse index is unchanged when the manifold model is transported through a
-continuous linear equivalence, assuming `C²` regularity of the preferred-chart expression. -/
-theorem manifoldMorseIndex_transContinuousLinearEquiv
-    (hreg : ContDiffAt ℝ 2 (f ∘ (extChartAt I x).symm) (extChartAt I x x))
-    (e : E ≃L[ℝ] E') :
+continuous linear equivalence. -/
+theorem manifoldMorseIndex_transContinuousLinearEquiv (e : E ≃L[ℝ] E') :
     manifoldMorseIndex (I.transContinuousLinearEquiv e) f x = manifoldMorseIndex I f x := by
   let g : E → ℝ := f ∘ (extChartAt I x).symm
   let a : E := extChartAt I x x
@@ -141,12 +139,10 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv
       congrFun (I.coe_extChartAt_transContinuousLinearEquiv e x) x
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hfun, hpoint]
   rw [morseIndex_def, morseIndex_def]
-  have hgreg : ContDiffAt ℝ 2 g (e.symm (e a)) := by
-    simpa only [ContinuousLinearEquiv.symm_apply_apply, g, a] using hreg
   have hquad : hessianQuadraticForm
       (g ∘ (e.symm.toContinuousLinearMap : E' → E)) (e a) =
       (hessianQuadraticForm g (e.symm (e a))).comp e.symm.toLinearMap :=
-    e.symm.toContinuousLinearMap.hessianQuadraticForm_comp hgreg
+    e.symm.hessianQuadraticForm_comp g (e a)
   rw [hquad]
   simpa only [ContinuousLinearEquiv.symm_apply_apply, g, a] using
     (QuadraticMap.Equivalent.sigNeg_eq
