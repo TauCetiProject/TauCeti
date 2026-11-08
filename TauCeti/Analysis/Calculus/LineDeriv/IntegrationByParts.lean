@@ -174,6 +174,17 @@ open scoped NNReal Topology
 
 variable {g : E → ℝ} {L : ℝ≥0}
 
+omit [FiniteDimensional ℝ E] in
+/-- The directional derivative of a Lipschitz function `g` with compact support lies in every
+`Lq`, being bounded with compact support. -/
+theorem _root_.LipschitzWith.memLp_lineDeriv_of_hasCompactSupport {q : ENNReal} {ν : Measure E}
+    [IsFiniteMeasureOnCompacts ν] (hg : LipschitzWith L g) (hgc : HasCompactSupport g) (v : E) :
+    MemLp (fun x => lineDeriv ℝ g x v) q ν := by
+  have hdgc : HasCompactSupport fun x => lineDeriv ℝ g x v :=
+    hgc.mono' fun x hx => by_contra fun h => hx (lineDeriv_of_notMem_tsupport h v)
+  exact hdgc.memLp_of_bound (aestronglyMeasurable_lineDeriv hg.continuous ν) (L * ‖v‖)
+    (.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hg)
+
 /-- **Integration by parts against a Lipschitz function.** For an open set `U`, a function `f`
 that is `C¹` on `U`, and a Lipschitz function `g` with compact support in `U`,
 `∫ (∂_v g) f = -∫ g (∂_v f)`, where `∂_v g = lineDeriv ℝ g · v` exists almost everywhere by
@@ -184,7 +195,7 @@ theorem integral_lineDeriv_mul_eq_neg_of_contDiffOn {U : Set E} (hU : IsOpen U) 
     (hf : ContDiffOn ℝ 1 f U) (hg : LipschitzWith L g) (hgc : HasCompactSupport g)
     (hgs : tsupport g ⊆ U) (v : E) :
     ∫ x, lineDeriv ℝ g x v * f x ∂μ = -∫ x, g x * fderiv ℝ f x v ∂μ := by
-  obtain ⟨χ, hχ, -, hχ1, hχc, hχs⟩ := hgc.exists_contDiff_cutoff hU hgs
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχs⟩ := hgc.exists_contDiff_cutoff_eventuallyEq_one hU hgs
   set F : E → ℝ := fun x => χ x * f x
   -- `F = χ f` is `C¹` on the whole space: near a point outside `U` it vanishes identically.
   have hF : ContDiff ℝ 1 F := by
@@ -195,10 +206,8 @@ theorem integral_lineDeriv_mul_eq_neg_of_contDiffOn {U : Set E} (hU : IsOpen U) 
   have hibp := hFC.integral_lineDeriv_mul_eq (μ := μ) hg hgc v
   -- On a neighbourhood of each point of `tsupport g` the cutoff is one, so `F` agrees with `f`.
   have hnear : ∀ x ∈ tsupport g, F =ᶠ[𝓝 x] f := fun x hx => by
-    filter_upwards [isOpen_interior.mem_nhds (hχ1 hx)] with y hy
-    have hy1 : y ∈ χ ⁻¹' {1} := interior_subset hy
-    have hχy : χ y = 1 := Set.mem_singleton_iff.mp (Set.mem_preimage.mp hy1)
-    simp [F, hχy]
+    filter_upwards [hχ1 x hx] with y hy
+    simp [F, hy]
   have h1 : ∀ x, lineDeriv ℝ F x v * g x = g x * fderiv ℝ f x v := fun x => by
     by_cases hx : x ∈ tsupport g
     · have hfx : DifferentiableAt ℝ f x :=
