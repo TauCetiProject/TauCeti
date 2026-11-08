@@ -272,13 +272,7 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
   rw [← LinearMap.comp_apply (((D.khovanovComplexMirrorIso hD R j hD').inv.f i).hom),
     ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f,
     ModuleCat.hom_id, LinearMap.id_apply]
-  have htot : ∑ S', D.mirror.khovanovComplexπ hD' R j S' ≫ D.mirror.khovanovComplexι hD' R j S' =
-      𝟙 ((D.mirror.khovanovComplex hD' R j).X i) := by
-    refine D.mirror.khovanovComplex_hom_ext hD' R j fun T ↦ ?_
-    rw [Preadditive.comp_sum, Category.comp_id, Fintype.sum_eq_single T fun T' h ↦ by
-      rw [khovanovComplexι_π_of_ne_assoc _ _ _ _ (Ne.symm h), Limits.zero_comp],
-      khovanovComplexι_π_self_assoc]
-  have hz := congrArg (fun g ↦ g.hom z) htot
+  have hz := congrArg (fun g ↦ g.hom z) (D.mirror.khovanovComplex_total hD' R j i)
   simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_comp,
     LinearMap.comp_apply, ModuleCat.hom_id, LinearMap.id_apply] at hz
   conv_rhs => rw [← hz]
