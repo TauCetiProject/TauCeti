@@ -85,13 +85,7 @@ theorem exists_isTotallyComplex_isCyclic_subextension_two_pow (n : ℕ)
     rw [IntermediateField.finrank_fixedField_eq_card]
     exact (Nat.card_le_card_of_injective i hi).trans hχker
   -- The image of `f` is cyclic; the first isomorphism theorem transfers this to E/K.
-  have : Finite f.range := Finite.of_injective
-    (fun y : f.range ↦ (⟨y.val.toAdd, by
-      obtain ⟨σ, hσ⟩ := y.property
-      exact ⟨Additive.ofMul (hζ.autToPow K σ), by
-        simpa [f] using congrArg Multiplicative.toAdd hσ⟩⟩ : χ.range))
-    fun y z h ↦ Subtype.ext (Multiplicative.toAdd.injective
-      (congrArg (fun t : χ.range ↦ (t : AddCircle (1 : ℚ))) h))
+  have : Finite f.range := Finite.of_surjective f.rangeRestrict f.rangeRestrict_surjective
   have : IsCyclic f.range :=
     AddCircle.isCyclic_of_finite_multiplicative _ f.range
   have : IsCyclic ((Gal(L/K)) ⧸ f.ker) :=
