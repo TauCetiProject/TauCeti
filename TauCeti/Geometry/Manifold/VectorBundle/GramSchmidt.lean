@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Topology.VectorBundle.GramSchmidt
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
@@ -25,9 +26,9 @@ The sectionwise induction follows `ContinuousWithinAt.gramSchmidt_bundle` in
 `TauCeti.Topology.VectorBundle.GramSchmidt`, which adapts Patrick Massot and Michael Rothgang's
 construction in Mathlib PR [#26221](https://github.com/leanprover-community/mathlib4/pull/26221).
 Here smooth section operations replace the coordinate calculations of the continuity proof.
-In particular, every compatible local trivialization of a finite-rank Riemannian bundle carries a
-smooth orthonormal frame over its base set
-(`Bundle.Trivialization.exists_contMDiffOn_orthonormal`).
+In particular, the Gram–Schmidt orthonormal basis `Bundle.Trivialization.orthonormalBasis` of a
+compatible local trivialization of a finite-rank Riemannian bundle is smooth over its base set
+(`Bundle.Trivialization.contMDiffOn_orthonormalBasis`).
 -/
 
 public section
@@ -99,19 +100,30 @@ theorem ContMDiffAt.gramSchmidtNormed_bundle
         (gramSchmidt ℝ (fun i ↦ v i y) j)) hh
   exact (hn.inv₀ (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero j hli))).smul_section hg
 
-/-- A compatible local trivialization of a finite-rank `C^n` Riemannian bundle carries a `C^n`
-orthonormal frame over its base set: normalized Gram–Schmidt applied to the local frame of the
-trivialization. -/
-theorem Bundle.Trivialization.exists_contMDiffOn_orthonormal [ContMDiffVectorBundle n F V I]
-    [FiniteDimensional ℝ F] (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M))
-    [MemTrivializationAtlas e] :
-    ∃ ε : Fin (Module.finrank ℝ F) → Π x, V x,
-      (∀ i, CMDiff[e.baseSet] n (T% (ε i))) ∧ ∀ x ∈ e.baseSet, Orthonormal ℝ (ε · x) := by
-  have hfr := e.isLocalFrameOn_localFrame_baseSet I n (Module.finBasis ℝ F)
-  refine ⟨fun j x ↦ gramSchmidtNormed ℝ (fun i ↦ e.localFrame (Module.finBasis ℝ F) i x) j,
-    fun j x hx ↦ ?_, fun x hx ↦ gramSchmidtNormed_orthonormal (hfr.linearIndependent hx)⟩
-  exact (ContMDiffAt.gramSchmidtNormed_bundle (fun i ↦ hfr.contMDiffAt e.open_baseSet hx i)
-    (hfr.linearIndependent hx) j).contMDiffWithinAt
+open scoped Classical in
+/-- The vectors of the Gram–Schmidt orthonormal basis `e.orthonormalBasis c` of the fibres over the
+base set of a compatible local trivialization are `C^n` sections over that base set (extended by
+`0` outside it, as for `Bundle.Trivialization.localFrame`). This is the smooth counterpart of
+`Bundle.Trivialization.continuous_orthonormalBasis`. -/
+theorem Bundle.Trivialization.contMDiffOn_orthonormalBasis [ContMDiffVectorBundle n F V I]
+    [Fintype ι] (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M))
+    [MemTrivializationAtlas e] (c : Module.Basis ι ℝ F) (i : ι) :
+    CMDiff[e.baseSet] n
+      (T% fun y ↦ (if hy : y ∈ e.baseSet then e.orthonormalBasis c ⟨y, hy⟩ i else 0 : V y)) := by
+  have hfr := e.isLocalFrameOn_localFrame_baseSet I n c
+  have heq {y : M} (hy : y ∈ e.baseSet) :
+      (if hy : y ∈ e.baseSet then e.orthonormalBasis c ⟨y, hy⟩ i else 0 : V y) =
+        gramSchmidtNormed ℝ (fun j ↦ e.localFrame c j y) i := by
+    rw [dite_eq_left_of_eq_true (eq_true hy), orthonormalBasis_apply]
+    congr 1
+    funext j
+    rw [e.localFrame_apply_of_mem_baseSet c hy, basisAt, Module.Basis.map_apply,
+      e.symmL_apply hy, e.linearEquivAt_symm_apply]
+  intro x hx
+  refine ((ContMDiffAt.gramSchmidtNormed_bundle (fun j ↦ hfr.contMDiffAt e.open_baseSet hx j)
+    (hfr.linearIndependent hx) i).contMDiffWithinAt).congr (fun y hy ↦ ?_) ?_
+  · exact congrArg (TotalSpace.mk' F y) (heq hy)
+  · exact congrArg (TotalSpace.mk' F x) (heq hx)
 
 section Differentiable
 

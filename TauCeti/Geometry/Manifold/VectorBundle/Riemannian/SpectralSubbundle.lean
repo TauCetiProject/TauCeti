@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
@@ -39,9 +40,9 @@ not depend on the metric, and they are locally constant
 the metric. The positive case is the negative case for `-Q`
 (`InnerProductSpace.pointSpectralSubspace_Iio_continuousLinearMapOfBilin_neg`).
 
-No smooth choice of eigenvectors is made. Over the base set of a trivialization, normalized
-Gram–Schmidt gives a smooth orthonormal frame
-(`Bundle.Trivialization.exists_contMDiffOn_orthonormal`). Read in this frame, `Q` becomes a
+No smooth choice of eigenvectors is made. Over the base set of a trivialization, the normalized
+Gram–Schmidt orthonormal basis `Bundle.Trivialization.orthonormalBasis` is a smooth orthonormal
+frame (`Bundle.Trivialization.contMDiffOn_orthonormalBasis`). Read in this frame, `Q` becomes a
 smooth family of self-adjoint invertible operators on a fixed Euclidean space, whose spectral
 subspaces are those of `Q` in coordinates
 (`InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap`) and whose
@@ -147,12 +148,21 @@ theorem exists_isSubbundleFrameOn_pointSpectralSubspace_Iio
         (continuousLinearMapOfBilin (Q x)).toLinearMap (Iio 0)) X U ∧
       ∀ i, CMDiff[U] n (T% (X i)) := by
   set e := trivializationAt F V x₀
-  obtain ⟨ε, hε, hon⟩ := e.exists_contMDiffOn_orthonormal (I := IB) (n := n)
-  -- Over the base set `ε` is an orthonormal basis of the fibre.
+  classical
+  -- The Gram–Schmidt orthonormal basis of the fibres over the base set, extended by `0`.
+  set ε : Fin (Module.finrank ℝ F) → Π x, V x := fun i y ↦
+    if hy : y ∈ e.baseSet then e.orthonormalBasis (Module.finBasis ℝ F) ⟨y, hy⟩ i else 0
+  have hε (i : Fin (Module.finrank ℝ F)) : CMDiff[e.baseSet] n (T% (ε i)) :=
+    e.contMDiffOn_orthonormalBasis (I := IB) (n := n) (Module.finBasis ℝ F) i
+  have hεb (y : B) (hy : y ∈ e.baseSet) :
+      (ε · y) = e.orthonormalBasis (Module.finBasis ℝ F) ⟨y, hy⟩ := by
+    funext i
+    exact dite_eq_left_of_eq_true (eq_true hy)
+  have hon (y : B) (hy : y ∈ e.baseSet) : Orthonormal ℝ (ε · y) := by
+    rw [hεb y hy]
+    exact OrthonormalBasis.orthonormal _
   have hsp (y : B) (hy : y ∈ e.baseSet) : ⊤ ≤ Submodule.span ℝ (range (ε · y)) := by
-    have := (e.linearEquivAt ℝ y hy).symm.finiteDimensional
-    refine ((hon y hy).linearIndependent.span_eq_top_of_card_eq_finrank' ?_).ge
-    simpa using (e.linearEquivAt ℝ y hy).finrank_eq.symm
+    rw [hεb y hy, ← OrthonormalBasis.coe_toBasis, Module.Basis.span_eq]
   -- In these frames the negative spectral subspaces are the images of those in coordinates.
   have hspec (y : B) (hy : y ∈ e.baseSet) :=
     pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap (Q y) (hon y hy) (hsp y hy)
