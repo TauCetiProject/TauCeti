@@ -77,6 +77,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `S` is
   recovered from its sections over an open `W` of `Spec S`, the sections of a scheme identified
   with `W` over `Spec R` are `S`, compatibly with the maps from `R`.
+* `TauCeti.AlgebraicGeometry.exists_affine_pair_comp_eq`: for a morphism `f : T' ⟶ T` of affine
+  `S`-schemes, the affine `S`-scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T', 𝒪))` carries two maps to
+  `T'` that agree after composing with `f` and induce the two tensor factor inclusions.
 -/
 
 public section
@@ -362,5 +365,46 @@ theorem Spec.exists_isIso_appTop_eq_comp_of_bijective {R S : CommRingCat.{u}} (f
   have : IsIso e.hom.appTop := Scheme.Γ.map_isIso e.hom.op
   refine ⟨(Scheme.ΓSpecIso S).inv ≫ W.ι.appTop ≫ e.hom.appTop, inferInstance, ?_⟩
   simp only [← he, Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_inv_naturality_assoc]
+
+open TensorProduct in
+/-- For a morphism `f : T' ⟶ T` of affine `S`-schemes, the scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)]
+Γ(T', 𝒪))` is an affine `S`-scheme with two maps `g₁`, `g₂` to `T'` that agree after composing
+with `f`. Under the identification `κ` of its global sections with the tensor product, they induce
+the two inclusions of the factors. -/
+theorem exists_affine_pair_comp_eq {S : Scheme.{u}} {T T' : Over S} (f : T' ⟶ T) [IsAffine T.left]
+    [IsAffine T'.left] :
+    letI := f.left.appTop.hom.toAlgebra
+    ∃ (Z : Over S) (_ : IsAffine Z.left) (g₁ g₂ : Z ⟶ T')
+      (κ : Γ(Z.left, ⊤) →+* Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ(T'.left, ⊤)),
+      g₁ ≫ f = g₂ ≫ f ∧ (∀ a, κ (g₁.left.appTop a) = a ⊗ₜ 1) ∧
+        ∀ a, κ (g₂.left.appTop a) = 1 ⊗ₜ a := by
+  algebraize [f.left.appTop.hom]
+  let A := Γ(T.left, ⊤)
+  let A' := Γ(T'.left, ⊤)
+  -- The test scheme `Z = Spec (A' ⊗[A] A')` over `S`, with the two maps `g₁`, `g₂ : Z ⟶ T'`
+  -- induced by the inclusions `χ₁`, `χ₂` of the two factors.
+  let B := CommRingCat.of (A' ⊗[A] A')
+  let χ₁ : A' ⟶ B := CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom
+  let χ₂ : A' ⟶ B := CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom
+  have hχ : f.left.appTop ≫ χ₁ = f.left.appTop ≫ χ₂ := by
+    ext a
+    exact (Algebra.TensorProduct.algebraMap_apply (R := A) (A := A') (B := A') a).symm.trans
+      (Algebra.TensorProduct.algebraMap_apply' a)
+  let ι (χ : A' ⟶ B) : Spec B ⟶ T'.left := Spec.map χ ≫ T'.left.isoSpec.inv
+  have hι : ι χ₁ ≫ f.left = ι χ₂ ≫ f.left := by
+    simp only [ι, Category.assoc, ← Scheme.isoSpec_inv_naturality, ← Spec.map_comp_assoc, hχ]
+  let κ := (Scheme.ΓSpecIso B).hom.hom
+  have hκ (χ : A' ⟶ B) (a : A') : κ ((ι χ).appTop a) = χ a := by
+    have h : (ι χ).appTop ≫ (Scheme.ΓSpecIso B).hom = χ := by
+      rw [Scheme.Hom.comp_appTop, Scheme.isoSpec_inv_appTop, Category.assoc,
+        Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+    exact congr(($h).hom a)
+  let Z : Over S := Over.mk (ι χ₁ ≫ T'.hom)
+  have : IsAffine Z.left := inferInstanceAs (IsAffine (Spec B))
+  let g₁ : Z ⟶ T' := Over.homMk (ι χ₁)
+  let g₂ : Z ⟶ T' := Over.homMk (ι χ₂) (by
+    dsimp only [Z, Over.mk_hom]
+    rw [← Over.w f, reassoc_of% hι])
+  exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
 
 end TauCeti.AlgebraicGeometry

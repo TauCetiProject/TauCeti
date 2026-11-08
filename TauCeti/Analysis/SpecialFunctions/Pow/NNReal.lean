@@ -74,6 +74,8 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
+* `ENNReal.le_two_rpow_mul_inv_rpow_mul`: a bound `(s / 2) ^ q * a ≤ B` gives
+  `a ≤ 2 ^ q * (s ^ q)⁻¹ * B` for `s ≠ 0, ∞`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 -/
@@ -247,6 +249,19 @@ theorem exists_enorm_sub_rpow_neg_half_mul_le {E : Type*} [NormedAddGroup E] {e�
     calc h₁ * h₂ * h₃ ≤ h₁ * k * k := by gcongr <;> exact far ‹_›
       _ = k * k * h₁ := by ring
       _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_self_add.trans le_self_add
+
+/-- A bound on `(s / 2) ^ q * a` bounds `a`. -/
+theorem le_two_rpow_mul_inv_rpow_mul {q : ℝ} {s a B : ℝ≥0∞} (hs : s ≠ 0) (hs' : s ≠ ∞)
+    (h : (s / 2) ^ q * a ≤ B) : a ≤ 2 ^ q * (s ^ q)⁻¹ * B := by
+  have hs2 : s / 2 ≠ 0 := ENNReal.div_ne_zero.2 ⟨hs, ENNReal.ofNat_ne_top⟩
+  have hs2' : s / 2 ≠ ∞ := ENNReal.div_ne_top hs' two_ne_zero
+  rw [ENNReal.mul_le_iff_le_inv (ENNReal.rpow_pos (pos_iff_ne_zero.2 hs2) hs2').ne'
+    (ENNReal.rpow_ne_top_of_ne_zero hs2 hs2')] at h
+  convert h using 2
+  rw [div_eq_mul_inv, ENNReal.mul_rpow_of_ne_zero hs (by simp), ENNReal.inv_rpow]
+  rw [ENNReal.mul_inv
+    (Or.inr (ENNReal.inv_ne_top.2 (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'))
+    (Or.inl (ENNReal.rpow_ne_top_of_ne_zero hs hs')), inv_inv, mul_comm]
 
 end ENNReal
 

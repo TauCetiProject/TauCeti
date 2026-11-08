@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.LinearAlgebra.Determinant.Basic
 public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -64,6 +65,8 @@ diffeomorphisms.
   extension if it agrees on the unit vector and its orthogonal complement.
 * `LinearIsometryEquiv.eq_refl_or_eq_neg`: the only real linear isometry equivalences of `ℝ`
   are the identity and negation.
+* `LinearIsometryEquiv.eq_refl_of_det_eq_one`, `LinearIsometryEquiv.eq_neg_of_det_eq_neg_one`: on
+  a one-dimensional real space, these are the linear isometries of determinant `1` and `-1`.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -232,6 +235,25 @@ theorem eq_refl_or_eq_neg (A : ℝ ≃ₗᵢ[ℝ] ℝ) : A = .refl ℝ ℝ ∨ A
   rcases sq_eq_one_iff.mp hsq with h | h
   · exact .inl (ext fun x ↦ by simp [hA x, h])
   · exact .inr (ext fun x ↦ by simp [hA x, h])
+
+section FinrankOne
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : Module.finrank ℝ E = 1)
+  {e : E ≃ₗᵢ[ℝ] E}
+include hE
+
+/-- An orientation-preserving real linear isometry of a one-dimensional space is the
+identity. -/
+theorem eq_refl_of_det_eq_one (he : LinearMap.det e.toLinearMap = 1) : e = .refl ℝ E :=
+  ext fun x ↦ (LinearMap.apply_eq_det_smul_of_finrank_eq_one hE e.toLinearMap x).trans <| by
+    rw [he, one_smul, coe_refl, id_eq]
+
+/-- An orientation-reversing real linear isometry of a one-dimensional space is negation. -/
+theorem eq_neg_of_det_eq_neg_one (he : LinearMap.det e.toLinearMap = -1) : e = .neg ℝ :=
+  ext fun x ↦ (LinearMap.apply_eq_det_smul_of_finrank_eq_one hE e.toLinearMap x).trans <| by
+    rw [he, neg_one_smul, coe_neg]
+
+end FinrankOne
 
 end LinearIsometryEquiv
 
