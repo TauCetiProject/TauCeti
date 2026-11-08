@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 
-import TauCeti.Analysis.Calculus.FDeriv.InvOn
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # Divergence-form equations under a change of variables
