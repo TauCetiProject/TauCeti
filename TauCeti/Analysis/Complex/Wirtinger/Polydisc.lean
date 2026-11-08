@@ -407,9 +407,7 @@ private theorem exists_contDiffOn_delBarCoeff_insert_step {q : ℕ} {U : ι → 
         hWc (hWU k) (g := (-1 : ℂ) ^ #{i ∈ J | i < k} • f (insert k J))
         ((hf _ hcard).const_smul _)
         fun z hz j hj ↦ by
-          rw [conjWirtingerDeriv_const_smul
-            (((hf _ hcard).contDiffAt (hpi.mem_nhds hz)).differentiableAt (by simp)),
-            _root_.smul_apply,
+          rw [conjWirtingerDeriv_const_smul, _root_.smul_apply,
             conjWirtingerDeriv_insert_eq_zero_of_delBarCoeff_eq_zero hpi hclosed hkS hS
               hJ.1 hJ.2 hz (Finset.mem_compl.1 hj), smul_zero]
     refine ⟨v, hv, fun z hz j hj ↦ hvT z hz j (Finset.mem_compl.2 hj), fun _ _ z hz ↦ ?_⟩

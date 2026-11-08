@@ -228,10 +228,10 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
   module
 
 /-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
-theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (hg : DifferentiableAt ℝ g x) (c : ℂ) :
+theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
     conjWirtingerDeriv (c • g) x = c • conjWirtingerDeriv g x := by
   ext v
-  simp only [conjWirtingerDeriv_apply, fderiv_const_smul hg c, smul_apply]
+  simp only [conjWirtingerDeriv_apply, fderiv_const_smul_field c, Pi.smul_apply, smul_apply]
   module
 
 /-- The conjugate Wirtinger derivative in the direction `v` is the one-variable conjugate

@@ -125,19 +125,17 @@ theorem delBarCoeff_sub {u w : Finset ι → (ι → ℂ) → F} {I : Finset ι}
   refine Finset.sum_congr rfl fun j hj ↦ ?_
   rw [Pi.sub_apply, conjWirtingerDeriv_sub (hu j hj) (hw j hj), _root_.sub_apply]
 
-/-- `bar∂` commutes with constant complex scaling of real-differentiable coefficients. -/
+/-- `bar∂` commutes with constant complex scaling. -/
 theorem delBarCoeff_const_smul (c : ℂ) {u : Finset ι → (ι → ℂ) → F} {I : Finset ι}
-    {z : ι → ℂ} (hu : ∀ j ∈ I, DifferentiableAt ℝ (u (I.erase j)) z) :
-    delBarCoeff (c • u) I z = c • delBarCoeff u I z := by
+    {z : ι → ℂ} : delBarCoeff (c • u) I z = c • delBarCoeff u I z := by
   simp only [delBarCoeff_def, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun j hj ↦ ?_
-  rw [Pi.smul_apply, conjWirtingerDeriv_const_smul (hu j hj), _root_.smul_apply, smul_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [Pi.smul_apply, conjWirtingerDeriv_const_smul, _root_.smul_apply, smul_comm]
 
-/-- `bar∂` commutes with negation of real-differentiable coefficients. -/
-theorem delBarCoeff_neg {u : Finset ι → (ι → ℂ) → F} {I : Finset ι} {z : ι → ℂ}
-    (hu : ∀ j ∈ I, DifferentiableAt ℝ (u (I.erase j)) z) :
+/-- `bar∂` commutes with negation. -/
+theorem delBarCoeff_neg {u : Finset ι → (ι → ℂ) → F} {I : Finset ι} {z : ι → ℂ} :
     delBarCoeff (-u) I z = -delBarCoeff u I z := by
-  simpa only [neg_one_smul] using delBarCoeff_const_smul (-1) hu
+  rw [← neg_one_smul ℂ u, delBarCoeff_const_smul, neg_one_smul]
 
 /-- `bar∂` of a form whose coefficients are `C^(m+1)` at `z` has `C^m` coefficients at `z`. -/
 theorem contDiffAt_delBarCoeff {u : Finset ι → (ι → ℂ) → F} {I : Finset ι} {z : ι → ℂ}
