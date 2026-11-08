@@ -13,9 +13,8 @@ import Mathlib.Data.Fintype.EquivFin
 # Generating families and the least number of generators
 
 For a finitely generated submodule, its least number of generators is at most `n` exactly
-when it has a generating family indexed by `Fin n`. A minimum generating finset can be
-embedded in `Fin n`, with zero at the unused indices. This includes the zero submodule
-and the empty family.
+when it has a generating family indexed by `Fin n`; a shorter family can be padded with
+zeros.
 
 If `p ≤ q` are submodules with `p` finitely generated, the `spanFinrank` of `q` is bounded by
 those of `p` and the image of `q` in `M ⧸ p`. When `q` is finitely generated, this bounds its
@@ -57,37 +56,29 @@ theorem FG.spanFinrank_le_iff_exists_fin_generating_family {p : Submodule R M}
     (hp : p.FG) (n : ℕ) :
     p.spanFinrank ≤ n ↔ ∃ f : Fin n → M, span R (Set.range f) = p := by
   classical
-  constructor
-  · intro hn
-    obtain ⟨s, hs, hspan⟩ := hp.exists_span_finset_card_eq_spanFinrank
-    let e : s ↪ Fin n := s.equivFin.toEmbedding.trans
-      ⟨Fin.castLE (hs.trans_le hn), Fin.castLE_injective _⟩
-    let f : Fin n → M := Function.extend e Subtype.val (fun _ ↦ 0)
-    refine ⟨f, le_antisymm ?_ ?_⟩
-    · apply span_le.mpr
-      rintro x ⟨i, rfl⟩
-      dsimp [f]
-      rw [Function.extend_def]
-      split_ifs with hi
-      · exact hspan ▸ subset_span (Classical.choose hi).property
-      · exact p.zero_mem
-    · rw [← hspan]
-      apply span_mono
-      intro x hx
-      refine ⟨e ⟨x, hx⟩, ?_⟩
-      exact e.injective.extend_apply Subtype.val (fun _ ↦ 0) ⟨x, hx⟩
+  refine ⟨fun hn ↦ ?_, ?_⟩
+  · obtain ⟨s, hs, rfl⟩ := hp.exists_span_finset_card_eq_spanFinrank
+    let e : s ↪ Fin n := s.equivFin.toEmbedding.trans (Fin.castLEEmb (hs.trans_le hn))
+    refine ⟨Function.extend e Subtype.val 0, le_antisymm (span_le.mpr ?_) (span_mono ?_)⟩
+    · rintro _ ⟨i, rfl⟩
+      by_cases hi : ∃ a, e a = i
+      · obtain ⟨a, rfl⟩ := hi
+        rw [e.injective.extend_apply]
+        exact subset_span a.2
+      · rw [Function.extend_apply' _ _ _ hi]
+        exact zero_mem _
+    · exact fun x hx ↦ ⟨e ⟨x, hx⟩, e.injective.extend_apply _ _ _⟩
   · rintro ⟨f, rfl⟩
     exact (spanFinrank_span_le_ncard_of_finite (Set.finite_range f)).trans
-      (by simpa using (Set.ncard_image_le (f := f) (s := Set.univ)))
+      (by simpa using Set.ncard_image_le (f := f) (s := Set.univ))
 
 /-- The span of the entries of a list needs at most as many generators as the list has entries. -/
 theorem spanFinrank_span_list_le_length (l : List M) :
     (span R {x | x ∈ l}).spanFinrank ≤ l.length := by
   classical
-  calc (span R {x | x ∈ l}).spanFinrank ≤ {x | x ∈ l}.ncard :=
-        spanFinrank_span_le_ncard_of_finite l.finite_toSet
-    _ = l.toFinset.card := by rw [← Set.ncard_coe_finset]; simp
-    _ ≤ l.length := l.toFinset_card_le
+  rw [← List.coe_toFinset]
+  exact (spanFinrank_span_le_ncard_of_finite l.toFinset.finite_toSet).trans
+    ((Set.ncard_coe_finset _).trans_le l.toFinset_card_le)
 
 section RestrictScalars
 
@@ -121,24 +112,18 @@ theorem spanFinrank_le_spanFinrank_map_mkQ_add_spanFinrank {p q : Submodule R M}
   obtain ⟨t, ht, htspan⟩ := (hq.map p.mkQ).exists_span_finset_card_eq_spanFinrank
   obtain ⟨s, hs, hsspan⟩ := hp.exists_span_finset_card_eq_spanFinrank
   let g : M ⧸ p → M := Function.surjInv p.mkQ_surjective
-  have hg : ∀ y, p.mkQ (g y) = y := Function.surjInv_eq p.mkQ_surjective
-  -- the lifts of the generators of the image of `q` generate `q` modulo `p`
-  have hlift : (span R (t.image g : Set M)).map p.mkQ = q.map p.mkQ := by
-    rw [map_span, Finset.coe_image, ← Set.image_comp, ← htspan]
-    congr 1
-    simp [hg]
-  -- equal images modulo `p`, and `p ≤ q`
+  -- generators of `p` together with lifts of generators of the image of `q` generate `q`
   have hspan : span R (s ∪ t.image g : Finset M) = q := by
+    have hlift : (span R (t.image g : Set M)).map p.mkQ = q.map p.mkQ := by
+      rw [map_span, Finset.coe_image, ← Set.image_comp, Function.comp_surjInv, Set.image_id,
+        htspan]
     have hsup := congrArg (comap p.mkQ) hlift
     rw [comap_map_mkQ, comap_map_mkQ, sup_eq_right.mpr hpq] at hsup
     rw [Finset.coe_union, span_union, hsspan, hsup]
-  have hcard : (s ∪ t.image g).card ≤ s.card + t.card :=
-    (Finset.card_union_le _ _).trans (Nat.add_le_add_left Finset.card_image_le _)
-  calc q.spanFinrank ≤ (s ∪ t.image g).card := by
-        have hbound :=
-          (spanFinrank_span_le_ncard_of_finite (R := R) (M := M)
-            (s := ↑(s ∪ t.image g : Finset M)) (s ∪ t.image g).finite_toSet)
-        simpa only [Set.ncard_coe_finset, hspan] using hbound
-    _ ≤ _ := by omega
+  calc q.spanFinrank ≤ (s ∪ t.image g).card := hspan ▸
+        (spanFinrank_span_le_ncard_of_finite (Finset.finite_toSet _)).trans_eq
+          (Set.ncard_coe_finset _)
+    _ ≤ s.card + t.card := (Finset.card_union_le _ _).trans (by grw [Finset.card_image_le])
+    _ = _ := by omega
 
 end Submodule
