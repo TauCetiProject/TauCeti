@@ -24,7 +24,9 @@ so they also handle coordinate domains of manifolds with boundary or corners.
 For a function `g` on a normed space `E` and a normed algebra `A`, the product
 `z ↦ z.2 * g z.1` on `E × A` is linear in its second variable. By the Leibniz rule, its `k`-th
 iterated derivative has norm at most `‖z.2‖ ‖D^k g (z.1)‖ + k ‖D^(k-1) g (z.1)‖`
-(`TauCeti.norm_iteratedFDeriv_snd_mul_comp_fst_le`).
+(`TauCeti.norm_iteratedFDeriv_snd_mul_comp_fst_le`). The fibrewise multiplication
+`z ↦ (z.1, z.2 * g z.1)` therefore has `k`-th iterated derivative of norm at most the maximum of `1`
+and this bound when `1 ≤ k` (`TauCeti.norm_iteratedFDeriv_fst_prodMk_snd_mul_comp_fst_le`).
 -/
 
 public section
@@ -159,6 +161,20 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
       norm_iteratedFDeriv_zero]
     gcongr
     exact hle _ le_rfl
+
+/-- **Derivative bound for a fibrewise multiplication.** For `g : E → A` of class `C^k` with
+`1 ≤ k`, the `k`-th iterated derivative of `z ↦ (z.1, z.2 * g z.1)` on `E × A` has norm at most
+`max 1 (‖z.2‖ ‖D^k g (z.1)‖ + k ‖D^(k-1) g (z.1)‖)`. -/
+theorem norm_iteratedFDeriv_fst_prodMk_snd_mul_comp_fst_le {g : E → A} {k : ℕ}
+    (hg : ContDiff 𝕜 k g) (hk : 1 ≤ k) (z : E × A) :
+    ‖iteratedFDeriv 𝕜 k (fun w : E × A ↦ (w.1, w.2 * g w.1)) z‖ ≤
+      max 1 (‖z.2‖ * ‖iteratedFDeriv 𝕜 k g z.1‖ + k * ‖iteratedFDeriv 𝕜 (k - 1) g z.1‖) := by
+  have hmul : ContDiff 𝕜 k (fun w : E × A ↦ w.2 * g w.1) :=
+    contDiff_snd.mul (hg.comp contDiff_fst)
+  rw [iteratedFDeriv_prodMk (f := Prod.fst) contDiff_fst.contDiffAt hmul.contDiffAt le_rfl,
+    ContinuousMultilinearMap.opNorm_prod]
+  exact max_le_max (norm_iteratedFDeriv_fst_le_one hk z)
+    (norm_iteratedFDeriv_snd_mul_comp_fst_le hg z)
 
 end Product
 

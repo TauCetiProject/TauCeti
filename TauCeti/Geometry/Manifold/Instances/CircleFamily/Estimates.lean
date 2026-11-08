@@ -78,10 +78,8 @@ theorem norm_iteratedFDeriv_realNormalization_le (hp : ContMDiff 𝓘(ℝ, E) �
       fun w : E × ℝ ↦ (w.1, w.2 * (p w.1 : ℝ)⁻¹) := by
     funext w
     rw [realNormalization_apply, div_eq_mul_inv]
-  have hg : ContDiff ℝ k (fun w : E × ℝ ↦ w.2 * (p w.1 : ℝ)⁻¹) :=
-    contDiff_snd.mul (hinv.comp contDiff_fst)
-  rw [hcoe, iteratedFDeriv_prodMk (f := Prod.fst) contDiff_fst.contDiffAt hg.contDiffAt le_rfl,
-    ContinuousMultilinearMap.opNorm_prod]
+  rw [hcoe]
+  refine (norm_iteratedFDeriv_fst_prodMk_snd_mul_comp_fst_le hinv hk z).trans ?_
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hk
   -- The bound `X` on the last derivative of `p⁻¹`, which dominates the previous one.
   set X : ℝ := ((m + 1) ! : ℝ) ^ 2 * C ^ (m + 1) / ε ^ (m + 1 + 1) with hX
@@ -94,12 +92,11 @@ theorem norm_iteratedFDeriv_realNormalization_le (hp : ContMDiff 𝓘(ℝ, E) �
     calc ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖
         ≤ ((m + 1 : ℕ) : ℝ) * ((m ! : ℝ) ^ 2 * C ^ m / ε ^ (m + 1)) := by gcongr
       _ ≤ X := succ_mul_factorial_sq_mul_pow_div_pow_le m hε hε₁ hC
-  refine max_le ((norm_iteratedFDeriv_fst_le_one hk z).trans ?_) ?_
+  refine max_le ?_ ?_
   · calc (1 : ℝ) ≤ X := hX₁
       _ ≤ X * (R + 1) := le_mul_of_one_le_right (by positivity) (by linarith)
       _ = _ := by rw [hX]; ring
-  · refine (norm_iteratedFDeriv_snd_mul_comp_fst_le (g := fun x ↦ (p x : ℝ)⁻¹) hinv z).trans ?_
-    rw [Nat.add_sub_cancel, Real.norm_eq_abs]
+  · rw [Nat.add_sub_cancel, Real.norm_eq_abs]
     calc |z.2| * ‖iteratedFDeriv ℝ (m + 1) (fun x ↦ (p x : ℝ)⁻¹) z.1‖ +
           ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖
         ≤ R * X + X := by gcongr
@@ -119,15 +116,12 @@ theorem norm_iteratedFDeriv_realNormalization_symm_le (hp : ContMDiff 𝓘(ℝ, 
       fun w : E × ℝ ↦ (w.1, w.2 * (p w.1 : ℝ)) := by
     funext w
     rw [realNormalization_symm_apply]
-  have hg : ContDiff ℝ k (fun w : E × ℝ ↦ w.2 * (p w.1 : ℝ)) :=
-    contDiff_snd.mul (hq.comp contDiff_fst)
-  rw [hcoe, iteratedFDeriv_prodMk (f := Prod.fst) contDiff_fst.contDiffAt hg.contDiffAt le_rfl,
-    ContinuousMultilinearMap.opNorm_prod]
+  rw [hcoe]
+  refine (norm_iteratedFDeriv_fst_prodMk_snd_mul_comp_fst_le hq hk z).trans ?_
   have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  refine max_le ((norm_iteratedFDeriv_fst_le_one hk z).trans ?_) ?_
+  refine max_le ?_ ?_
   · nlinarith
-  · refine (norm_iteratedFDeriv_snd_mul_comp_fst_le (g := fun x ↦ (p x : ℝ)) hq z).trans ?_
-    rw [Real.norm_eq_abs]
+  · rw [Real.norm_eq_abs]
     calc |z.2| * ‖iteratedFDeriv ℝ k (fun x ↦ (p x : ℝ)) z.1‖ +
           (k : ℝ) * ‖iteratedFDeriv ℝ (k - 1) (fun x ↦ (p x : ℝ)) z.1‖
         ≤ Θ * C + k * C := by
