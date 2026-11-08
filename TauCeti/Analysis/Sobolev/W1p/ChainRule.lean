@@ -525,6 +525,24 @@ theorem W1p.exists_value_gradient_ae_eq_log (hp : p ≠ ∞) (hε : 0 < ε) {u :
       exact inv_anti₀ hε ht) hu
   exact ⟨w, hwv, hwg.mono fun x hx => by simp only [hx, Real.deriv_log]⟩
 
+/-- The logarithm of a Sobolev function bounded below by a positive constant is `p`-integrable on
+every subset of `Ω`. -/
+theorem W1p.memLp_log_value (hp : p ≠ ∞) (hε : 0 < ε) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {S : Set E}
+    (hS : S ⊆ (Omega : Set E)) :
+    MemLp (fun x => Real.log (W1p.value u x)) p (mu.restrict S) := by
+  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_log hp hε hu
+  exact ((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure (Measure.restrict_mono hS le_rfl)
+
+/-- The logarithm of a Sobolev function bounded below by a positive constant is integrable on
+every subset of `Ω` of finite measure. -/
+theorem W1p.integrableOn_log_value (hp : p ≠ ∞) (hε : 0 < ε) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {S : Set E}
+    (hS : S ⊆ (Omega : Set E)) (hSt : mu S ≠ ⊤) :
+    IntegrableOn (fun x => Real.log (W1p.value u x)) S mu := by
+  have : IsFiniteMeasure (mu.restrict S) := isFiniteMeasure_restrict.2 hSt
+  exact (W1p.memLp_log_value hp hε hu hS).integrable Fact.out
+
 /-- A real power `u ^ r`, `r ≤ 1`, of a Sobolev function bounded below by a positive constant is a
 Sobolev function, with weak gradient `r u ^ (r - 1) ∇u`. -/
 theorem W1p.exists_value_gradient_ae_eq_rpow (hp : p ≠ ∞) (hε : 0 < ε) {r : ℝ} (hr : r ≤ 1)

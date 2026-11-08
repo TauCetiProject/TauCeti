@@ -252,8 +252,7 @@ theorem exists_setAverage_abs_log_sub_setAverage_le :
   have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ r)) := isFiniteMeasure_restrict.2 hBtop
   obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_log (by simp) hε hεu
   have hmem : MemLp (fun x => f x - m) 2 (mu.restrict (Metric.ball x₀ r)) :=
-    (((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure
-      (Measure.restrict_mono hBsub le_rfl)).sub (memLp_const m)
+    (W1p.memLp_log_value (by simp) hε hεu hBsub).sub (memLp_const m)
   -- The Poincaré–Wirtinger inequality on the ball, for `log u`.
   have hP := setIntegral_log_sub_setAverage_sq_le hε hεu hr hBsub hwv hwg
   -- Jensen's inequality bounds the `L¹` mean oscillation by the `L²` one.

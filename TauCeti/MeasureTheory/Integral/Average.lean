@@ -124,6 +124,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   of `s` converge to those over `s`.
 * `TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`: a set of measure below `δ / c` with
   integral at least `δ` contains a point where the function exceeds `c`.
+* `TauCeti.setAverage_mul_setAverage_le_of_setLIntegral_mul_le`: a bound `C μ(B)²` on the product of
+  the integrals of two almost everywhere nonnegative functions over `B` is a bound `C` on the
+  product of their averages.
 * `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
   a smaller average.
 * `TauCeti.ae_eq_zero_of_setAverage_rpow_eq_zero`: a nonnegative `Lᵠ` function whose `p`-th power
@@ -913,5 +916,45 @@ theorem _root_.ContinuousLinearMap.average_apply {H : X → E →L[𝕜] F} (hH 
   rw [average_eq, average_eq, smul_apply, ContinuousLinearMap.integral_apply hH]
 
 end ContinuousLinearMap
+
+section Product
+
+/-- If two almost everywhere nonnegative, almost everywhere strongly measurable functions on `B`
+have a product of integrals at most `C μ(B)²`, then the product of their averages over `B` is at
+most `C`. -/
+theorem setAverage_mul_setAverage_le_of_setLIntegral_mul_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {B : Set α} {f₁ f₂ : α → ℝ} {C : NNReal}
+    (h₁ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₁ x) (h₂ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₂ x)
+    (hm₁ : AEStronglyMeasurable f₁ (μ.restrict B)) (hm₂ : AEStronglyMeasurable f₂ (μ.restrict B))
+    (h : (∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ) * ∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ ≤
+      C * μ B ^ 2) :
+    (⨍ x in B, f₁ x ∂μ) * (⨍ x in B, f₂ x ∂μ) ≤ C := by
+  have havg {f : α → ℝ} (hf : ∀ᵐ x ∂μ.restrict B, 0 ≤ f x)
+      (hm : AEStronglyMeasurable f (μ.restrict B)) :
+      ⨍ x in B, f x ∂μ = (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f x) ∂μ).toReal := by
+    rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae hf hm]
+  by_cases hB : μ B = 0 ∨ μ B = ⊤
+  · have hB0 : μ.real B = 0 := by
+      rcases hB with hB | hB <;> simp [measureReal_def, hB]
+    rw [havg h₁ hm₁, havg h₂ hm₂, hB0]
+    simp
+  have hB0 : μ B ≠ 0 := fun h0 => hB (Or.inl h0)
+  have hBt : μ B ≠ ⊤ := fun ht => hB (Or.inr ht)
+  have hBpos : 0 < μ.real B := ENNReal.toReal_pos hB0 hBt
+  rw [havg h₁ hm₁, havg h₂ hm₂]
+  calc (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ).toReal *
+        ((μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ).toReal)
+      = (μ.real B)⁻¹ ^ 2 * ((∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ) *
+          ∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ).toReal := by
+        rw [ENNReal.toReal_mul]
+        ring
+    _ ≤ (μ.real B)⁻¹ ^ 2 * ((C : ℝ≥0∞) * μ B ^ 2).toReal := by
+        gcongr
+        exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top hBt)
+    _ = C := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.coe_toReal, ← measureReal_def]
+        field_simp
+
+end Product
 
 end TauCeti
