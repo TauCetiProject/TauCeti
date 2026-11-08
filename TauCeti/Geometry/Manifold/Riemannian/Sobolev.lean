@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # The Sobolev inequality on a closed Riemannian manifold
@@ -197,16 +198,6 @@ theorem exists_eLpNorm_le_mul_eLpNorm_mgradient_two_add [CompactSpace M] (hn : 2
     field_simp
   exact exists_eLpNorm_le_mul_eLpNorm_mgradient_add (I := I) (M := M) one_le_two (by omega) hp'
 
-omit [I.Boundaryless] in
-/-- The `Lᵖ` norm of a continuous function on a compact Riemannian manifold, for a finite exponent
-`p ≠ 0`, as an integral: `‖u‖_{Lᵖ} = (∫ |u| ^ p dV) ^ (1 / p)`. -/
-private theorem eLpNorm_eq_ofReal_integral_abs_rpow [CompactSpace M] {u : M → ℝ}
-    (hu : Continuous u) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hpt : p ≠ ∞) :
-    eLpNorm u p (riemannianVolume I M) =
-      ENNReal.ofReal ((∫ x, |u x| ^ p.toReal ∂riemannianVolume I M) ^ p.toReal⁻¹) := by
-  simpa only [Real.norm_eq_abs] using MemLp.eLpNorm_eq_integral_rpow_norm hp0 hpt
-    (hu.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace u))
-
 /-- **The Sobolev inequality for `H¹` with integrals.** On a compact manifold without boundary of
 dimension `n > 2` with a continuous Riemannian metric, let `p' = 2 n / (n - 2)`. There is a constant
 `K > 0` such that `(∫ |u| ^ p' dV) ^ (2 / p') ≤ K (∫ |∇u|² dV + ∫ u² dV)` for every `C¹`
@@ -232,13 +223,12 @@ theorem exists_integral_abs_rpow_rpow_le_mul_integral_mgradient_sq_add [CompactS
   -- The Sobolev inequality in real numbers: `A ^ (1 / p) ≤ K (B ^ (1 / 2) + D ^ (1 / 2))`.
   have hsob : A ^ p⁻¹ ≤ K * (B ^ (2 : ℝ)⁻¹ + D ^ (2 : ℝ)⁻¹) := by
     have h := hK u hu
-    rw [eLpNorm_eq_ofReal_integral_abs_rpow hu.continuous (by simpa using hp)
-        ENNReal.ofReal_ne_top,
-      eLpNorm_eq_ofReal_integral_abs_rpow (continuous_norm_mgradient hu) two_ne_zero
+    rw [hu.continuous.eLpNorm_eq_integral_rpow_norm (by simpa using hp) ENNReal.ofReal_ne_top,
+      (continuous_norm_mgradient hu).eLpNorm_eq_integral_rpow_norm two_ne_zero
         ENNReal.ofNat_ne_top,
-      eLpNorm_eq_ofReal_integral_abs_rpow hu.continuous two_ne_zero ENNReal.ofNat_ne_top] at h
-    simp only [ENNReal.toReal_ofReal hp.le, ENNReal.toReal_ofNat, abs_norm, Real.rpow_two,
-      sq_abs] at h
+      hu.continuous.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top] at h
+    simp only [ENNReal.toReal_ofReal hp.le, ENNReal.toReal_ofNat, Real.norm_eq_abs, abs_norm,
+      Real.rpow_two, sq_abs] at h
     have hK' : (K : ℝ≥0∞) * (ENNReal.ofReal (B ^ (2 : ℝ)⁻¹) + ENNReal.ofReal (D ^ (2 : ℝ)⁻¹)) =
         ENNReal.ofReal (K * (B ^ (2 : ℝ)⁻¹ + D ^ (2 : ℝ)⁻¹)) := by
       rw [ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_coe_nnreal,
