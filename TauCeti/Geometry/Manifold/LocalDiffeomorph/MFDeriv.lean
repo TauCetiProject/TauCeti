@@ -19,7 +19,7 @@ corresponding points, as for a global diffeomorphism
 (`Diffeomorph.mfderiv_symm_apply_mfderiv_apply`), and on the open source of a partial
 diffeomorphism the differential within the source is the differential.
 
-For partial diffeomorphisms `ψ`, `χ`, `φ` into a normed space, such as charts, the transitions
+For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts, the transitions
 `ψ ∘ φ⁻¹` are differentiable, and their derivatives compose by the chain rule.
 
 ## Main results
@@ -29,7 +29,7 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into a normed space, such as charts
   differential.
 * `PartialDiffeomorph.mfderiv_apply_mfderiv_symm_apply`: the differential undoes the differential of
   the inverse.
-* `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into a normed space,
+* `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
@@ -77,19 +77,24 @@ theorem mfderiv_apply_mfderiv_symm_apply (Φ : PartialDiffeomorph I J M N n) (hn
 section Transition
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {G' : Type*} [NormedAddCommGroup G'] [NormedSpace 𝕜 G']
+  {G'' : Type*} [NormedAddCommGroup G''] [NormedSpace 𝕜 G'']
 
-/-- The transition `ψ ∘ φ⁻¹` between two partial diffeomorphisms into a normed space is
+/-- The transition `ψ ∘ φ⁻¹` between two partial diffeomorphisms into normed spaces is
 differentiable at the image under `φ` of every point of both sources. -/
-theorem differentiableAt_comp_symm (ψ φ : PartialDiffeomorph I 𝓘(𝕜, G) M G n) (hn : n ≠ 0)
+theorem differentiableAt_comp_symm (ψ : PartialDiffeomorph I 𝓘(𝕜, G') M G' n)
+    (φ : PartialDiffeomorph I 𝓘(𝕜, G) M G n) (hn : n ≠ 0)
     {x : M} (hψ : x ∈ ψ.source) (hφ : x ∈ φ.source) :
     DifferentiableAt 𝕜 (fun z ↦ ψ (φ.symm z)) (φ x) :=
   mdifferentiableAt_iff_differentiableAt.1 <| (ψ.mdifferentiableAt hn hψ).comp_of_eq (φ x)
     (φ.symm.mdifferentiableAt hn (φ.map_source hφ)) (φ.left_inv hφ)
 
-/-- **The chain rule for transitions.** For partial diffeomorphisms `ψ`, `χ`, `φ` into a normed
-space whose sources contain `x`, the derivative of the transition `ψ ∘ φ⁻¹` at `φ x` is the
+/-- **The chain rule for transitions.** For partial diffeomorphisms `ψ`, `χ`, `φ` into normed
+spaces whose sources contain `x`, the derivative of the transition `ψ ∘ φ⁻¹` at `φ x` is the
 derivative of `χ ∘ φ⁻¹` at `φ x` followed by that of `ψ ∘ χ⁻¹` at `χ x`. -/
-theorem fderiv_comp_symm_eq_comp (ψ χ φ : PartialDiffeomorph I 𝓘(𝕜, G) M G n) (hn : n ≠ 0)
+theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'' n)
+    (χ : PartialDiffeomorph I 𝓘(𝕜, G') M G' n) (φ : PartialDiffeomorph I 𝓘(𝕜, G) M G n)
+    (hn : n ≠ 0)
     {x : M} (hψ : x ∈ ψ.source) (hχ : x ∈ χ.source) (hφ : x ∈ φ.source) :
     fderiv 𝕜 (fun z ↦ ψ (φ.symm z)) (φ x) =
       (fderiv 𝕜 (fun z ↦ ψ (χ.symm z)) (χ x)).comp (fderiv 𝕜 (fun z ↦ χ (φ.symm z)) (φ x)) := by
