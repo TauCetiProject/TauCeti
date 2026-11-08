@@ -22,9 +22,9 @@ homotopy equivalence from geometric cellular chains to Mathlib's standard comple
 The cellular basis of a simplex maps to its increasing-index tuple of group labels,
 multiplied by the orientation unit `realizationChainScale` in that dimension.
 
-The geometric comparison uses the general naturality theorem
-`SimplicialMap.cellularChainComplexRealizationIso_hom_naturality`, rather than a new
-calculation on relative homology.
+The geometric naturality square is the instance of
+`SimplicialMap.cellularChainComplexRealizationIso_hom_naturality` for the relabelling
+map `MonoidHom.universalGSpaceSimplicialMap`.
 
 ## References
 
@@ -45,43 +45,30 @@ universe u
 
 attribute [local instance] universalGSpaceVertexOrder
 
-section MulOne
-
-variable {G H : Type u} [MulOne G] [MulOne H]
-
-/-- The map of Milnor joins on the universal subsets used by cellular chains. -/
-def universalGSpaceCellularMap (φ : G →* H) :
-    TopCat.of (univ : Set (universalGSpace G)) ⟶
-      TopCat.of (univ : Set (universalGSpace H)) :=
-  TopCat.ofHom ⟨fun x ↦ ⟨φ.universalGSpaceMap x.1, mem_univ _⟩,
-    (φ.universalGSpaceMap.continuous.comp continuous_subtype_val).subtype_mk _⟩
-
-/-- The universal-subset map agrees with the continuous map on underlying points. -/
-@[simp]
-theorem universalGSpaceCellularMap_apply (φ : G →* H)
-    (x : (univ : Set (universalGSpace G))) :
-    (φ.universalGSpaceCellularMap x).1 = φ.universalGSpaceMap x.1 := (rfl)
-
-private theorem universalGSpaceSimplicialMap_restrictPreimage (φ : G →* H) :
-    TopCat.ofHom ((φ.universalGSpaceSimplicialMap).realizationMap.restrictPreimage univ) =
-      φ.universalGSpaceCellularMap := by
-  apply ConcreteCategory.hom_ext
-  intro x
-  apply Subtype.ext
-  exact congrArg (fun f : C(universalGSpace G, universalGSpace H) ↦ f x.1)
-    φ.universalGSpaceSimplicialMap_realizationMap
-
-/-- The continuous map on Milnor joins preserves the simplicial CW filtrations.
-The map is restricted to the universal subsets used by cellular chains. -/
-theorem isCellular_universalGSpaceMap (φ : G →* H) :
-    IsCellular (univ : Set (universalGSpace G)) (univ : Set (universalGSpace H))
-      φ.universalGSpaceCellularMap := by
-  convert (φ.universalGSpaceSimplicialMap).isCellular_realizationMap using 1
-  exact φ.universalGSpaceSimplicialMap_restrictPreimage.symm
-
-end MulOne
-
 variable {k G H : Type u} [Ring k] [Group G] [Group H]
+
+/-- Reading permutation coefficients intertwines relabelling join chains with the induced
+map of ordered simplicial chains. -/
+@[reassoc]
+theorem universalGSpaceChainComplexForget₂Iso_naturality (φ : G →* H) :
+    (universalGSpaceChainComplexForget₂Iso k G).hom ≫
+        orderedSimplicialChainComplexMap k φ.universalGSpaceSimplicialMap
+          (fun _ c ↦ φ.universalGSpaceSimplicialMap_strictMonoOn c) =
+      ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
+          φ.universalGSpaceChainMap ≫
+        ((universalGSpaceChainComplex k H).repResForget₂Iso φ).hom ≫
+        (universalGSpaceChainComplexForget₂Iso k H).hom := by
+  ext n : 1
+  simp only [HomologicalComplex.comp_f, universalGSpaceChainComplexForget₂Iso_hom_f,
+    orderedSimplicialChainComplexMap_f, Functor.mapHomologicalComplex_map_f,
+    universalGSpaceChainMap_f, HomologicalComplex.repResForget₂Iso_hom_f]
+  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  simp only [← Category.assoc]
+  rw [cancel_mono]
+  apply ModuleCat.hom_ext
+  refine MonoidAlgebra.lhom_ext' fun c ↦ LinearMap.ext_ring ?_
+  simp [universalGSpaceChainHom, ← universalGSpaceCellMap_def]
 
 /-- Cellular chains and ordered join chains are naturally identified under maps of groups.
 Forgetting the restricted target action yields the usual underlying module complex. -/
@@ -94,37 +81,18 @@ theorem universalGSpaceCellularChainComplexIso_naturality (φ : G →* H) :
           φ.universalGSpaceChainMap ≫
         ((universalGSpaceChainComplex k H).repResForget₂Iso φ).hom := by
   have h := (φ.universalGSpaceSimplicialMap).cellularChainComplexRealizationIso_hom_naturality
-    (fun _ c ↦ φ.universalGSpaceMap_strictMonoOn c) k
+    (fun _ c ↦ φ.universalGSpaceSimplicialMap_strictMonoOn c) k
+  apply (cancel_mono (universalGSpaceChainComplexForget₂Iso k H).hom).mp
+  simp only [universalGSpaceCellularChainComplexIso_def, Iso.trans_hom, Iso.symm_hom,
+    Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [← φ.universalGSpaceChainComplexForget₂Iso_naturality]
   have hcell :
       cellularChainComplexMap univ univ φ.isCellular_universalGSpaceMap (ModuleCat.of k k) =
         cellularChainComplexMap univ univ
           (φ.universalGSpaceSimplicialMap).isCellular_realizationMap (ModuleCat.of k k) := by
     congr 1
     exact φ.universalGSpaceSimplicialMap_restrictPreimage.symm
-  ext n : 1
-  apply (cancel_mono ((universalGSpaceChainComplexForget₂Iso k H).hom.f n)).mp
-  simp only [universalGSpaceCellularChainComplexIso_def, Iso.trans_hom, Iso.symm_hom,
-    ← HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
-    universalGSpaceChainMap_f, universalGSpaceChainComplexForget₂Iso_inv_f,
-    universalGSpaceChainComplexForget₂Iso_hom_f,
-    HomologicalComplex.repResForget₂Iso_hom_f]
-  -- Restriction changes only the action. Normalize the underlying module terms before
-  -- reassociating compositions in ModuleCat.
-  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X]
-  simp only [Category.assoc]
-  have hn := congrArg (fun f ↦ HomologicalComplex.Hom.f f n) h
-  rw [← hcell] at hn
-  simp only [HomologicalComplex.comp_f] at hn
-  rw [hn]
-  congr 1
-  simp only [orderedSimplicialChainComplexMap_f]
-  congr 1
-  simp only [← Category.assoc]
-  rw [cancel_mono]
-  apply ModuleCat.hom_ext
-  refine Finsupp.lhom_ext fun c r ↦ ?_
-  simp [universalGSpaceChainHom, ← universalGSpaceCellMap_def]
+  simpa only [Iso.inv_hom_id_assoc, hcell] using h
 
 end MonoidHom
 
@@ -189,15 +157,14 @@ theorem universalGSpaceCellularStandardHomotopyEquiv_hom_naturality (φ : G →*
         ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
           φ.standardComplexMap ≫
         ((Rep.standardComplex k H).repResForget₂Iso φ).hom := by
-  have h := congrArg
-    (((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map)
-    (φ.universalGSpaceChainComplexToStandardComplex_naturality (k := k))
-  simp only [Functor.map_comp] at h
   simp only [universalGSpaceCellularStandardHomotopyEquiv_hom, Category.assoc,
     universalGSpaceCellularChainComplexIso_naturality_assoc]
-  rw [← HomologicalComplex.repResForget₂Iso_hom_naturality]
-  have h' := congrArg (fun f ↦ f ≫ ((Rep.standardComplex k H).repResForget₂Iso φ).hom) h
-  simp only [Category.assoc] at h'
-  exact congrArg (fun f ↦ (universalGSpaceCellularChainComplexIso k G).hom ≫ f) h'
+  simp only [HomologicalComplex.repResForget₂Iso_def, Iso.app_hom]
+  rw [← (Functor.mapHomologicalComplexCompIso
+    (F := Rep.resFunctor φ) (G := forget₂ (Rep k G) (ModuleCat k))
+    (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) _).hom.naturality]
+  simp only [Functor.comp_map]
+  rw [← Functor.map_comp_assoc,
+    φ.universalGSpaceChainComplexToStandardComplex_naturality, Functor.map_comp_assoc]
 
 end MonoidHom

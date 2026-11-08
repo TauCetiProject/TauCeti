@@ -17,8 +17,7 @@ For a noncommutative monoid they need not be morphisms of representations.
 
 Restriction of a representation changes only its action. The isomorphism
 `HomologicalComplex.repResForget₂Iso` identifies the underlying module complexes before
-and after restriction explicitly, so naturality squares need not rely on unfolding
-whole complexes to identify their intermediate objects.
+and after restriction, naturally in maps of complexes.
 -/
 
 public section
@@ -80,7 +79,18 @@ def repResForget₂Iso :
     ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex c).obj
         (((Rep.resFunctor φ).mapHomologicalComplex c).obj D) ≅
       ((forget₂ (Rep k H) (ModuleCat k)).mapHomologicalComplex c).obj D :=
-  HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (fun _ _ _ ↦ rfl)
+  (Functor.mapHomologicalComplexCompIso
+    (F := Rep.resFunctor φ) (G := forget₂ (Rep k G) (ModuleCat k))
+    (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) c).app D
+
+/-- The restriction comparison is the component of the induced natural isomorphism on
+underlying module complexes. -/
+theorem repResForget₂Iso_def :
+    D.repResForget₂Iso φ =
+      (Functor.mapHomologicalComplexCompIso
+        (F := Rep.resFunctor φ) (G := forget₂ (Rep k G) (ModuleCat k))
+        (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) c).app D :=
+  (rfl)
 
 /-- The comparison after forgetting restriction is the identity in each degree. -/
 @[simp]
@@ -91,19 +101,6 @@ theorem repResForget₂Iso_hom_f (n : ι) :
 @[simp]
 theorem repResForget₂Iso_inv_f (n : ι) :
     (D.repResForget₂Iso φ).inv.f n = 𝟙 _ := (rfl)
-
-/-- The underlying-complex comparison commutes with maps of representations. -/
-@[reassoc]
-theorem repResForget₂Iso_hom_naturality {E : HomologicalComplex (Rep.{w} k H) c}
-    (f : D ⟶ E) :
-    ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex c).map
-          (((Rep.resFunctor φ).mapHomologicalComplex c).map f) ≫
-        (E.repResForget₂Iso φ).hom =
-      (D.repResForget₂Iso φ).hom ≫
-        ((forget₂ (Rep k H) (ModuleCat k)).mapHomologicalComplex c).map f := by
-  ext n : 1
-  simp only [comp_f, repResForget₂Iso_hom_f, Category.comp_id, Category.id_comp]
-  rfl
 
 end Restriction
 
