@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Moments
-public import TauCeti.Probability.Process.EmpiricalMeasure
+public import TauCeti.Probability.Process.EmpiricalMeasure.Basic
 
 /-!
 # Empirical measures of conditionally i.i.d. processes

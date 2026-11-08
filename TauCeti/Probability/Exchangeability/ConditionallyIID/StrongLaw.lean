@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegration
-public import TauCeti.Probability.Process.EmpiricalMeasure
+public import TauCeti.Probability.Process.EmpiricalMeasure.Basic
 -- Non-public: the fibrewise strong law and its measurable tagged form are used only inside proofs.
 import TauCeti.Probability.StrongLaw
 

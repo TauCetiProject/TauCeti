@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Alexander Richard Towell
 module
 
 public import TauCeti.Probability.PopulationSampling.Basic
-public import TauCeti.Probability.Process.EmpiricalMeasure
+public import TauCeti.Probability.Process.EmpiricalMeasure.Basic
 public import TauCeti.Probability.UniformSampling
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
 

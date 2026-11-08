@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
-public import TauCeti.Probability.Process.EmpiricalMeasure
+public import TauCeti.Probability.Process.EmpiricalMeasure.Basic
 
 import Mathlib.LinearAlgebra.Matrix.Trace
 
