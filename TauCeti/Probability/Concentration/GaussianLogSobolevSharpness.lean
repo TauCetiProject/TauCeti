@@ -65,7 +65,7 @@ theorem entropy_exp_half_sq_gaussianReal (a : ℝ) :
     rw [Real.log_exp]
     ring
   rw [hint, gaussian_x_exp_integral]
-  ring
+  ring_nf
 
 private theorem deriv_exp_half (a x : ℝ) :
     deriv (fun y : ℝ => exp (a * y / 2)) x = (a / 2) * exp (a * x / 2) := by
