@@ -15,8 +15,9 @@ A compactly supported continuous function `f` with values in a pseudometric spac
 distinguished zero (for instance a normed space) admits, for every
 `δ > 0` and every dense set `S` of the target, a finite partition of unity over the support of
 `f` whose members have compact support, lie inside a prescribed neighbourhood of the support, and
-are supported where `f` is `δ`-close to the corresponding point of `S`. Consequently `f` is
-uniformly within `δ` of the corresponding combination of those points.
+are supported where `f` is `δ`-close to the corresponding point of `S`. When the target is a real
+normed space, `f` is consequently uniformly within `δ` of the corresponding combination of those
+points.
 
 ## Main results
 
