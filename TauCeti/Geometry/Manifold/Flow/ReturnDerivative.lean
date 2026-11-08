@@ -453,7 +453,7 @@ theorem charpoly_returnDerivative_pow_eq (k : ℕ) :
     ← returnDerivative_natCast_mul hv hQ hq' hg' hg'v hk]
   exact charpoly_returnDerivative_eq hv hT hq hkP hkp hg hgv hg' hg'v
 
-/-- **The linearized return maps along an orbit are conjugate.** If the flow carries `p` to `q`
+/-- **Transitions intertwine the linearized return maps.** If the flow carries `p` to `q`
 at time `T` and `p` returns to itself at time `T₀`, the derivative `dh` of the transition between
 transverse sections through `p` and through `q`, read as a linear map into `T_qM`, intertwines the
 linearized return maps at time `T₀`: `dP_q ∘ dh = dh ∘ dP_p`. -/

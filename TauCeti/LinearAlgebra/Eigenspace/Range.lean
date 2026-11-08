@@ -31,8 +31,7 @@ namespace Module.End
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
 /-- For `μ ≠ 0`, the generalized eigenvectors for `μ` of an endomorphism `f` lie in every submodule
-containing the range of `f`: if `(f - μ)^(l + 1) w` lies in it, so do `(f - μ)^l w` and `f w`,
-hence `μ • w`. -/
+containing the range of `f`. -/
 theorem genEigenspace_le_of_range_le {f : End K V} {S : Submodule K V}
     (hf : LinearMap.range f ≤ S) {μ : K} (hμ : μ ≠ 0) (k : ℕ∞) : f.genEigenspace μ k ≤ S :=
   fun w hw ↦ by
