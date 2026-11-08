@@ -45,24 +45,6 @@ namespace TauCeti
 
 variable {K : Type w} [Monoid K]
 
-/-- A homomorphism out of the fundamental group of a path connected space extends to a functor
-from its fundamental groupoid to the one-object category on the units of the target: the
-functor sends the based loops `g.asHom` to the image of `g` in the units. -/
-theorem exists_functor_map_asHom_eq {Y : Type v} [TopologicalSpace Y] [PathConnectedSpace Y]
-    (y : Y) (f : FundamentalGroup Y y →* K) :
-    ∃ F : FundamentalGroupoid Y ⥤ SingleObj Kˣ,
-      ∀ g : FundamentalGroup Y y, F.map g.asHom = f.toHomUnits g := by
-  classical
-  let b := FundamentalGroupoid.mk y
-  let τ (z : FundamentalGroupoid Y) : b ⟶ z :=
-    if hz : z = b then eqToHom hz.symm else (FundamentalGroupoid.nonempty_hom _ _).some
-  have hτ : τ b = 𝟙 _ := by simp [τ]
-  refine ⟨Groupoid.functorOfEndHom b τ f.toHomUnits, fun g ↦ ?_⟩
-  rw [Groupoid.functorOfEndHom_map]
-  -- Pin the chosen basepoint carrier before applying its normalized transport equation.
-  change f.toHomUnits (.of (τ b ≫ g.asHom ≫ inv (τ b))) = _
-  erw [hτ, IsIso.inv_id, Category.id_comp, Category.comp_id]
-
 section Transition
 
 variable {X : Type v} [TopologicalSpace X] {ι : Type u} {U : ι → Set X}
@@ -104,7 +86,9 @@ private theorem exists_natIso_app_base {x : X} (hx : ∀ i, x ∈ U i)
         (ContinuousMap.inclusion (inter_subset_right : U i ∩ U j ⊆ U j)) ⋙ F j)
       hconn (Iso.refl _) hnat)⟩
 
-/-- One path in the triple overlap computes all three transitions, proving the cocycle law. -/
+/-- Transitions `t i j` on the double overlaps satisfying the based-path compatibility equation
+`F i q ≫ t i j y = F j q` for every path `q` from the basepoint to `y` obey the cocycle law
+`t i j ≫ t j k = t i k` at every point of a path connected triple overlap. -/
 private theorem transition_cocycle {x : X} (hx : ∀ i, x ∈ U i)
     (hTriple : ∀ i j k, IsPathConnected (U i ∩ U j ∩ U k))
     {F : ∀ i, FundamentalGroupoid (U i) ⥤ SingleObj Kˣ}
@@ -198,7 +182,10 @@ private theorem exists_transition {x : X} (hx : ∀ i, x ∈ U i)
         (F j).map ((FundamentalGroupoid.map
           (ContinuousMap.inclusion (inter_subset_right : U i ∩ U j ⊆ U j))).map q) := by
     have h := htnat i j _ y q
-    rw [show t i j ⟨x, hx i, hx j⟩ = 𝟙 _ from hT i j, Category.id_comp] at h
+    -- `hT i j` is about a component of type `(… ⋙ F i).obj _ ⟶ (… ⋙ F j).obj _`, which is
+    -- definitionally the endomorphism type of the single object, so it applies to `t` as is.
+    have hbase : t i j ⟨x, hx i, hx j⟩ = 𝟙 _ := hT i j
+    rw [hbase, Category.id_comp] at h
     exact h
   exact ⟨t, hT, htnat, transition_cocycle hx hTriple ht⟩
 
