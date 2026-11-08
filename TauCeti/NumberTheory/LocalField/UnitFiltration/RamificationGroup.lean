@@ -150,17 +150,32 @@ theorem mem_ramificationGroup_natCast_iff_valuation_le (hϖ : Irreducible ϖ) :
   rw [mem_ramificationGroup_natCast_iff]
   exact forall_congr' fun y ↦ sub_mem_maximalIdeal_pow_iff hϖ σ y (i + 1)
 
-/-- The action preserves the valuation of a uniformizer: the image of an irreducible element of
-`𝒪[L]` is irreducible, hence associated to it. -/
-theorem valuation_smul_of_irreducible (hϖ : Irreducible ϖ) (σ : G) :
+/-- The action preserves the valuation of every integer of `L`. For an irreducible element this
+is because its image is irreducible, hence associated to it; a general nonzero integer is a unit
+times a power of an irreducible element, and units have valuation `1`. -/
+theorem valuation_smul_integer (σ : G) :
     valuation L (σ • (ϖ : L)) = valuation L (ϖ : L) := by
-  have hσϖ : Irreducible (σ • ϖ) := hϖ.map (MulSemiringAction.toRingAut G 𝒪[L] σ)
-  obtain ⟨u, hu⟩ : ∃ u : 𝒪[L]ˣ, σ • ϖ * (u : 𝒪[L]) = ϖ :=
-    ⟨uniformizerChangeUnit (σ • ϖ) ϖ hσϖ hϖ, mul_uniformizerChangeUnit (σ • ϖ) ϖ hσϖ hϖ⟩
-  have h := congrArg (fun y : 𝒪[L] ↦ valuation L (y : L)) hu
-  have hu1 : valuation L ((u : 𝒪[L]) : L) = 1 :=
+  have hirr (π : 𝒪[L]) (hπ : Irreducible π) :
+      valuation L (σ • (π : L)) = valuation L (π : L) := by
+    have hσπ : Irreducible (σ • π) := hπ.map (MulSemiringAction.toRingAut G 𝒪[L] σ)
+    obtain ⟨u, hu⟩ : ∃ u : 𝒪[L]ˣ, σ • π * (u : 𝒪[L]) = π :=
+      ⟨uniformizerChangeUnit (σ • π) π hσπ hπ, mul_uniformizerChangeUnit (σ • π) π hσπ hπ⟩
+    have h := congrArg (fun y : 𝒪[L] ↦ valuation L (y : L)) hu
+    have hu1 : valuation L ((u : 𝒪[L]) : L) = 1 :=
+      (Valuation.integer.integers (valuation L)).valuation_unit u
+    simpa [hu1, coe_smul_integer] using h
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  rcases eq_or_ne ϖ 0 with rfl | h0
+  · simp
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible h0 hπ
+  have hu : valuation L ((σ • (u : 𝒪[L]) : 𝒪[L]) : L) = 1 :=
+    (Valuation.integer.integers (valuation L)).one_of_isUnit
+      (u.isUnit.map (MulSemiringAction.toRingAut G 𝒪[L] σ))
+  have hu' : valuation L ((u : 𝒪[L]) : L) = 1 :=
     (Valuation.integer.integers (valuation L)).valuation_unit u
-  simpa [hu1, coe_smul_integer] using h
+  rw [← coe_smul_integer, smul_mul', smul_pow']
+  simp only [Subring.coe_mul, Subring.coe_pow, map_mul, map_pow, hu, hu', one_mul]
+  rw [coe_smul_integer, hirr π hπ]
 
 /-! ### The ratio of a uniformizer -/
 
@@ -188,7 +203,7 @@ theorem mem_unitFiltration_of_val_eq_smul_div (hϖ : Irreducible ϖ)
     simpa using Valuation.integer.v_irreducible_pos (v := valuation L) hϖ
   have hϖne : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   refine (mem_unitFiltration_iff_valuation_le hϖ).mpr ⟨?_, ?_⟩
-  · rw [hy, map_div₀, valuation_smul_of_irreducible hϖ σ, div_self hϖpos.ne']
+  · rw [hy, map_div₀, valuation_smul_integer (ϖ := ϖ) σ, div_self hϖpos.ne']
   · rw [hy, div_sub_one hϖne, map_div₀, div_le_iff₀ hϖpos, ← pow_succ]
     exact (mem_ramificationGroup_natCast_iff_valuation_le hϖ).mp hσ ϖ
 
@@ -348,7 +363,7 @@ theorem mem_ramificationGroup_one_of_valuation_pow_sub_one_lt_one (hϖ : Irreduc
   have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   -- The ratio `c = σ ϖ / ϖ` is an integer of `L`, and `σ ϖ = ϖ c`.
   have hcv : valuation L (σ • (ϖ : L) / (ϖ : L)) ≤ 1 := by
-    rw [map_div₀, valuation_smul_of_irreducible hϖ σ, div_self ((map_ne_zero _).2 hϖ0)]
+    rw [map_div₀, valuation_smul_integer (ϖ := ϖ) σ, div_self ((map_ne_zero _).2 hϖ0)]
   set c : 𝒪[L] := ⟨σ • (ϖ : L) / (ϖ : L), hcv⟩
   have hc : σ • ϖ = ϖ * c := Subtype.ext (by
     rw [coe_smul_integer, MulMemClass.coe_mul, mul_div_cancel₀ _ hϖ0])
