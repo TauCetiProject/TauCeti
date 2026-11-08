@@ -66,23 +66,20 @@ theorem HasWeakLineDerivOn.indicator_of_isClosed (h : HasWeakLineDerivOn μ Ω u
     HasWeakLineDerivOn μ V ((Ω : Set E).indicator u) ((Ω : Set E).indicator u') v := by
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace,
-    h.locallyIntegrableOn.indicator_of_isClosed Ω.isOpen.measurableSet
+    h.locallyIntegrableOn.indicator_of_isClosed Ω.isOpen.measurableSet.nullMeasurableSet
       V.isOpen.isLocallyClosed hK hKV hu,
-    h.locallyIntegrableOn_deriv.indicator_of_isClosed Ω.isOpen.measurableSet
-      V.isOpen.isLocallyClosed hK hKV hu', ?_⟩
+    h.locallyIntegrableOn_deriv.indicator_of_isClosed
+      Ω.isOpen.measurableSet.nullMeasurableSet V.isOpen.isLocallyClosed hK hKV hu', ?_⟩
   intro φ
   -- Only the compact part of the test support that meets `K` needs a cutoff.
   have hC : IsCompact (tsupport (φ : E → ℝ) ∩ K) := φ.hasCompactSupport.inter_right hK
-  obtain ⟨χ, hχ, -, hχone, -, hχΩ⟩ := hC.exists_contDiff_cutoff Ω.isOpen
+  obtain ⟨χ, hχ, -, hχone, -, hχΩ⟩ := hC.exists_contDiff_cutoff_eventuallyEq_one Ω.isOpen
     (fun x hx => hKV ⟨φ.tsupport_subset hx.1, hx.2⟩)
   let ψ : 𝓓(Ω, ℝ) := ⟨χ * (φ : E → ℝ), hχ.mul φ.contDiff,
     φ.hasCompactSupport.mul_left, tsupport_mul_subset_left.trans hχΩ⟩
   have hψ : (ψ : E → ℝ) = χ * (φ : E → ℝ) := TestFunction.coe_mk
   have hone (x : E) (hx : x ∈ tsupport (φ : E → ℝ) ∩ K) :
-      χ =ᶠ[nhds x] fun _ => (1 : ℝ) := by
-    filter_upwards [isOpen_interior.mem_nhds (hχone hx)] with y hy
-    have hy' : y ∈ χ ⁻¹' ({1} : Set ℝ) := interior_subset hy
-    exact hy'
+      χ =ᶠ[nhds x] fun _ => (1 : ℝ) := hχone x hx
   -- The cutoff leaves both test pairings unchanged where the jet can be nonzero.
   have hleft : (fun x => lineDeriv ℝ (φ : E → ℝ) x v • (Ω : Set E).indicator u x) =ᵐ[μ]
       fun x => lineDeriv ℝ (ψ : E → ℝ) x v • u x := by
