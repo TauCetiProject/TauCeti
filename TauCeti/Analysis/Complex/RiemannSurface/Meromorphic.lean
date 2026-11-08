@@ -221,7 +221,7 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
   have hF' : _root_.MeromorphicAt (F ∘ (chartAt ℂ (φ x)).symm)
       (chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm (chartAt ℂ x x)))) := by
     rwa [(chartAt ℂ x).left_inv hcx]
-  have hmult := natCast_localMultiplicity hφ hnc
+  have hmult := natCast_localMultiplicity hφ.self_of_nhds.continuousAt hnc
   -- The representative of `φ` is not constant near `chartAt ℂ x x`, since its recentred order of
   -- vanishing is the finite local multiplicity of `φ`.
   have hnc' : ¬ EventuallyConst (fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
