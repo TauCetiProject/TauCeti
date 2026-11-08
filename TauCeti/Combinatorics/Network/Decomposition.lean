@@ -265,16 +265,19 @@ theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
   List.eq_nil_iff_forall_not_mem.2 fun p hp ↦
     D.source_ne_of_mem_paths hp ((isCirculation_iff f).1 hf p.source).ge rfl
 
+/-- A path component of a decomposition is nonnegative. -/
+theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
+    0 ≤ p.assignment := fun x y e ↦ by
+  by_cases he : ⟨x, y, e⟩ ∈ p.walk.arrows
+  · exact (D.assignment_apply_of_mem_arrows hp he).symm ▸ (D.weight_pos_of_mem_paths p hp).le
+  · simp [WeightedWalk.assignment_def, walkAssignment_eq_zero_of_notMem p.walk p.weight he]
+
 end Preorder
 
 section PartialOrder
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
   (D : PathCycleDecomposition f)
-
-theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
-    0 ≤ p.assignment :=
-  walkAssignment_nonneg _ (D.weight_pos_of_mem_paths p hp).le
 
 theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
     0 ≤ c.assignment :=
