@@ -199,7 +199,8 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
       (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge (dist_pos.mpr hyne)
         (hyr.le.trans (min_le_right _ _)) (min_le_left T 0)) hC.le)
   refine exists_tendsto_of_forall_exists fun ε hε => ?_
-  -- `K * (2 * ρ) ^ (u + 1) → 0` as `ρ → 0⁺`, so some radius `ρ ≤ ρ₀` makes it at most `ε`.
+  -- `C * (2 / (u + 1)) * (2 * ρ) ^ (u + 1) → 0` as `ρ → 0⁺`, so some radius `ρ ≤ ρ₀` makes it
+  -- less than `ε`.
   have hK : 0 < C * (2 / (u + 1)) := by positivity
   have hlim : Tendsto (fun ρ : ℝ => C * (2 / (u + 1)) * (2 * ρ) ^ (u + 1)) (𝓝[>] 0) (𝓝 0) := by
     have hc : Continuous fun ρ : ℝ => C * (2 / (u + 1)) * (2 * ρ) ^ (u + 1) :=
