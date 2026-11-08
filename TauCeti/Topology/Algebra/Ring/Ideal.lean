@@ -255,8 +255,8 @@ open Topology
 /-- **An open quotient of a topological ring is a topological ring.** If `π : R →+* B` is an open
 quotient map and `R` is a topological ring, then addition, multiplication and negation on `B` are
 continuous, because their composites with the quotient map `π × π` (resp. `π`) are continuous. -/
-theorem IsOpenQuotientMap.isTopologicalRing {R B : Type*} [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] [CommRing B] [TopologicalSpace B] {π : R →+* B}
+theorem IsOpenQuotientMap.isTopologicalRing {R B : Type*} [Ring R] [TopologicalSpace R]
+    [IsTopologicalRing R] [Ring B] [TopologicalSpace B] {π : R →+* B}
     (hπ : IsOpenQuotientMap π) : IsTopologicalRing B := by
   have h2 := hπ.prodMap hπ
   have hadd : Continuous fun p : B × B ↦ p.1 + p.2 := by
