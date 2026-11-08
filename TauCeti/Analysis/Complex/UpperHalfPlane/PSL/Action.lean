@@ -35,8 +35,6 @@ Mathlib's `GL(2, ℝ)`-invariance).
   faithful `PGL(2, ℝ)`-action along the injective `toPGL` and `psl2zToPSL2R`.
 * `SMulInvariantMeasure` instances for `SL(2, R)` and `PSL(2, R)` (any coefficients
   mapping to `ℝ`) on `(ℍ, volume)`.
-* `UpperHalfPlane.smul_eq_smul_of_coe_eq_smul` — matrices differing by a nonzero scalar act
-  identically on `ℍ`.
 * `UpperHalfPlane.psl2zToPSL2R_smul` and `UpperHalfPlane.sl2zToPSL2R_smul` — the integral
   actions factor through the `PSL(2, ℝ)`-action along `psl2zToPSL2R` and `sl2zToPSL2R`.
 * `Subgroup.orbitRel_map_sl2zToPSL2R_iff` — the orbits of the image in `PSL(2, ℝ)` of a
@@ -88,25 +86,6 @@ instance : SMulInvariantMeasure SL(2, R) ℍ volume where
     -- as above, rewrite through the `compHom` definition of the action
     simp only [MulAction.compHom_smul_def]
     exact (measurePreserving_smul (mapGL ℝ g) volume).measure_preimage hs.nullMeasurableSet
-
-/-- Scalar action invariance for `GL (Fin 2) ℝ`: a matrix that is a scalar multiple of another
-acts identically on `ℍ`, through Mathlib's scalar-matrix action `glScalar_smul`. The scalar is
-necessarily nonzero, since an invertible matrix is not zero. -/
-lemma smul_eq_smul_of_coe_eq_smul {g h : GL (Fin 2) ℝ} {c : ℝ}
-    (h_eq : ((h : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
-      c • ((g : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ))
-    (τ : ℍ) :
-    h • τ = g • τ := by
-  have hc : c ≠ 0 := by
-    rintro rfl
-    rw [zero_smul] at h_eq
-    exact h.ne_zero h_eq
-  have h_mul : h = Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 c hc) * g := by
-    refine Units.ext ?_
-    rw [Units.val_mul, Matrix.GeneralLinearGroup.coe_scalar, h_eq]
-    ext i j
-    simp [Matrix.scalar, Matrix.diagonal_mul]
-  rw [h_mul, mul_smul, glScalar_smul]
 
 /-- Central elements of `SL(2, R)` fix every point of `ℍ`, for any coefficients mapping
 to `ℝ`: they are the scalar matrices `r • 1` with `r ^ 2 = 1`, and nonzero-scalar
