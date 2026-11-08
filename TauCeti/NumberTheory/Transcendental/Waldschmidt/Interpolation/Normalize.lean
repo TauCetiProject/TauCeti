@@ -25,10 +25,11 @@ original coefficients.
 
 * **The field.** The `βᵢ` lie in every subfield containing the `cᵢ`, and normalization commutes
   with ring homomorphisms, such as complex embeddings of a number field.
-* **The denominators.** The products `cₘ βᵢ` lie in every subring containing the `cᵢ`; when
-  `cₘ ≠ 0` they equal `-cᵢ`, so `cₘ` is a common denominator of the `βᵢ` (when `cₘ = 0` the `βᵢ`
-  and the products are all `0`). In the homogeneous rational case, where the `cᵢ` are integers,
-  the `cₘ βᵢ` are integers; this is the hypothesis on the coefficients of the denominator bounds
+* **The denominators.** The products `cₘ βᵢ` lie in every subring containing `c₀, …, c_{m-1}`,
+  with no assumption on `cₘ`; when `cₘ ≠ 0` they equal `-cᵢ`, so `cₘ` is a common denominator
+  of the `βᵢ` (when `cₘ = 0` the `βᵢ` and the products are all `0`). In the homogeneous rational
+  case, where the `cᵢ` are integers, the `cₘ βᵢ` are integers; this is the hypothesis on the
+  coefficients of the denominator bounds
   for the delta-polynomial rows (`Subring.mul_waldschmidtInterpolationMatrix_waldschmidtDelta_mem`).
 * **The height.** The vector `(β₀, …, β_{m-1}, -1)` is a scalar multiple of `(c₀, c₁, …, cₘ)`,
   so the projective height `h(1 : β₀ : ⋯ : β_{m-1})`, which is the affine height of
@@ -96,11 +97,12 @@ theorem waldschmidtNormalize_mem {S : Type*} [SetLike S K] [SubfieldClass S K] (
     rw [waldschmidtNormalize_succ]
     exact div_mem (neg_mem (hc _)) (hc _)
 
-/-- If the coefficients `cᵢ` lie in a subring `A`, then so do the products `cₘ βᵢ` of `cₘ` with
-the normalized coefficients. When `cₘ ≠ 0` these products are `-cᵢ`, so `cₘ` is a common
-denominator of the `βᵢ`; when `cₘ = 0` they are all `0`. -/
+/-- If the numerator coefficients `c₀, …, c_{m-1}` lie in a subring `A`, then so do the products
+`cₘ βᵢ`, without requiring `cₘ ∈ A`. When `cₘ ≠ 0` these products are `-cᵢ`, so `cₘ` is a
+common denominator of the `βᵢ`; when `cₘ = 0` they are all `0`. -/
 theorem mul_waldschmidtNormalize_mem {S : Type*} [SetLike S K] [SubringClass S K] (A : S)
-    {c₀ : K} {c : Fin (n + 1) → K} (hc₀ : c₀ ∈ A) (hc : ∀ j, c j ∈ A) (i : Fin (n + 1)) :
+    {c₀ : K} {c : Fin (n + 1) → K} (hc₀ : c₀ ∈ A) (hc : ∀ j : Fin n, c j.castSucc ∈ A)
+    (i : Fin (n + 1)) :
     c (Fin.last n) * waldschmidtNormalize c₀ c i ∈ A := by
   rcases eq_or_ne (c (Fin.last n)) 0 with h | h
   · rw [h, zero_mul]
@@ -120,7 +122,7 @@ theorem intCast_mul_waldschmidtNormalize_intCast_mem_range_intCast (a₀ : ℤ)
     (a (Fin.last n) : K) * waldschmidtNormalize (a₀ : K) (fun j ↦ (a j : K)) i ∈
       Set.range (Int.cast : ℤ → K) :=
   Subring.mem_bot.1 <| mul_waldschmidtNormalize_mem (⊥ : Subring K)
-    (intCast_mem _ a₀) (fun j ↦ intCast_mem _ (a j)) i
+    (c := fun j ↦ (a j : K)) (intCast_mem _ a₀) (fun j ↦ intCast_mem _ (a j.castSucc)) i
 
 /-- The coefficient vector `(β₀, β₁, …, β_{m-1}, -1)` of the normalized linear form is the
 coefficient vector `(c₀, c₁, …, cₘ)` of the original linear form divided by `-cₘ`. -/
