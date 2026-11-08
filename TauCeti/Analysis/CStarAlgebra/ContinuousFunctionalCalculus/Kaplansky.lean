@@ -117,21 +117,6 @@ theorem cfc_one_add_sq {a : A} (ha : IsSelfAdjoint a) :
   rw [cfc_const_add 1 (fun t : ℝ => t ^ 2) a, cfc_pow_id a 2, Algebra.algebraMap_eq_smul_one,
     one_smul]
 
-/-- `cfc (1 + t ^ 2)⁻¹ a` is a left inverse of `1 + a ^ 2`. -/
-theorem cfc_inv_one_add_sq_mul {a : A} (ha : IsSelfAdjoint a) :
-    cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a * (1 + a ^ 2) = 1 := by
-  rw [← cfc_one_add_sq ha, ← cfc_mul _ _ a continuous_inv_one_add_sq.continuousOn,
-    ← cfc_const_one ℝ a]
-  exact cfc_congr fun t _ => inv_mul_cancel₀ (one_add_sq_pos t).ne'
-
-/-- `cfc (1 + t ^ 2)⁻¹ a` is a right inverse of `1 + a ^ 2`. -/
-theorem mul_cfc_inv_one_add_sq {a : A} (ha : IsSelfAdjoint a) :
-    (1 + a ^ 2) * cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a = 1 := by
-  rw [← cfc_one_add_sq ha, ← cfc_mul (fun t : ℝ => 1 + t ^ 2) _ a
-    (continuous_const.add (continuous_pow 2)).continuousOn continuous_inv_one_add_sq.continuousOn,
-    ← cfc_const_one ℝ a]
-  exact cfc_congr fun t _ => mul_inv_cancel₀ (one_add_sq_pos t).ne'
-
 /-- `cfc (t / (1 + t ^ 2)) a = cfc (1 + t ^ 2)⁻¹ a * a`. -/
 theorem cfc_div_one_add_sq_eq_mul {a : A} (ha : IsSelfAdjoint a) :
     cfc (fun t : ℝ => t / (1 + t ^ 2)) a = cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a * a := calc
@@ -165,8 +150,11 @@ theorem cfc_kaplanskyFun_sub_cfc_kaplanskyFun {a b : A} (ha : IsSelfAdjoint a)
           cfc (fun t : ℝ => t / (1 + t ^ 2)) b) := by
   rw [cfc_kaplanskyFun_eq_smul, cfc_kaplanskyFun_eq_smul, ← smul_sub, cfc_div_one_add_sq_eq_mul ha,
     cfc_div_one_add_sq_eq_mul' hb]
-  have h1 := cfc_inv_one_add_sq_mul ha
-  have h2 := mul_cfc_inv_one_add_sq hb
+  have h1 := (cfcUnits (fun t : ℝ => 1 + t ^ 2) a fun t _ => (one_add_sq_pos t).ne').inv_mul
+  have h2 := (cfcUnits (fun t : ℝ => 1 + t ^ 2) b fun t _ => (one_add_sq_pos t).ne').mul_inv
+  simp only [val_inv_cfcUnits, val_cfcUnits] at h1 h2
+  rw [cfc_one_add_sq ha] at h1
+  rw [cfc_one_add_sq hb] at h2
   generalize cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) a = ρa at h1 ⊢
   generalize cfc (fun t : ℝ => (1 + t ^ 2)⁻¹) b = ρb at h2 ⊢
   -- Insert `1 = (1 + b ^ 2) * ρb` on the right of `ρa * a` and `1 = ρa * (1 + a ^ 2)` on the
