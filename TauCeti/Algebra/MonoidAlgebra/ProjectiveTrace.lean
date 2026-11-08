@@ -98,7 +98,7 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have : Module.Free (MonoidAlgebra A Q) (MonoidAlgebra A G) := .of_basis b
   have : Module.Finite (MonoidAlgebra A Q) (MonoidAlgebra A G) := .of_basis b
   have : Module.Finite (MonoidAlgebra A Q) X := .trans (MonoidAlgebra A G) X
-  have : Module.Projective (MonoidAlgebra A Q) X := .trans (S := MonoidAlgebra A G)
+  have : Module.Projective (MonoidAlgebra A Q) X := .trans (MonoidAlgebra A G) X
   have : IsLocalRing (MonoidAlgebra A Q) := TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup hp hQ
   have : IsLocalHom (MonoidAlgebra.lift A A Q 1) :=
     TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup hp hQ

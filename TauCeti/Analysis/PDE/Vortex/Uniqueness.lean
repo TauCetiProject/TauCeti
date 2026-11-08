@@ -249,34 +249,16 @@ theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : Co
   have hd (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) : Differentiable ℝ f := hf.differentiable (by simp)
   obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := ⊤) le_top (hxi 0) (hxi 1)
     (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
-  have hnormsq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-      ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    rw [sectionValue_apply, Complex.sq_norm, normSq_mul, normSq_add_mul_I, normSq_apply]
-    norm_num
-  -- The end framing gives `|α| → 1` at infinity.
-  have hlim (x : ℂ → EuclideanSpace ℝ (Fin 4))
-      (hfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1)) :
-      Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-    have hn : Tendsto (fun z ↦ ‖sectionValue x z‖) (cocompact ℂ) (𝓝 1) := by
-      have hdiv := hfr.norm.div hphase one_ne_zero
-      rw [norm_one, div_one] at hdiv
-      refine hdiv.congr' ?_
-      filter_upwards [hphase.eventually_ne one_ne_zero] with z hz
-      rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
-    simpa only [hnormsq, one_pow] using hn.pow 2
-  have hylim := hlim y hyfr
+  have hxlim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hxfr
+  have hylim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr
   -- The zeros of `α_y` are finite, so their complement is dense.
   have hdense : Dense {z | sectionValue y z ≠ 0} := by
     refine (dense_univ.sdiff_finite (finite_setOfPred_sectionValue_eq_zero (k := ⊤) le_top (hyi 0)
       (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hylim)).mono fun z hz ↦ ?_
     simp only [Set.mem_sdiff, Set.mem_univ, true_and, Set.mem_ofPred_eq] at hz ⊢
     exact hz
-  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} := hdense.mono fun z hz ↦ by
-    have h4 := hnormsq y z
-    simp only [Set.mem_ofPred_eq] at hz ⊢
-    intro h0
-    rw [h0, mul_zero] at h4
-    exact hz (norm_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp h4))
+  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} :=
+    hdense.mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
   have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
     have := hα z
     rw [sectionValue_apply, sectionValue_apply] at this
@@ -284,7 +266,7 @@ theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : Co
   obtain ⟨f, hf, hhf, hxy⟩ := exists_eq_phaseGauge_of_forall_section_eq_mul (hd _ (hxi 0))
     (hd _ (hxi 1)) (contDiff_infty.1 (hxi 2) 2) (contDiff_infty.1 (hxi 3) 2) (hd _ (hyi 0))
     (hd _ (hyi 1)) (contDiff_infty.1 (hyi 2) 2) (contDiff_infty.1 (hyi 3) 2) hxsol hysol
-    (hlim x hxfr) hylim (contDiff_infty.1 hh 2) hh₀ hα' hdense'
+    hxlim hylim (contDiff_infty.1 hh 2) hh₀ hα' hdense'
   -- The gauge `exp (i f)` is `h`, which is smooth and tends to one at infinity.
   have hcoe (w : ℂ) : ((Circle.exp (f w) : Circle) : ℂ) = h w := by
     rw [Circle.coe_exp, hhf]
