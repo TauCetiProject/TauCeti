@@ -238,9 +238,7 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
           rw [Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one, mul_right_comm]
       _ = i ⊔ f := by rw [hMj, hbf]
       _ = one := hif
-  have hIfr : Ifr ≠ 0 := FractionalIdeal.coeIdeal_ne_zero.mpr <|
-    (Ideal.map_eq_bot_iff_of_injective O.toRingOfIntegersEquiv.injective).not.mpr hI.1
-  exact FractionalIdeal.isUnit_of_restrictScalars_mul_eq_one (A := ℤ) hIfr hinv
+  exact FractionalIdeal.isUnit_of_restrictScalars_mul_eq_one (A := ℤ) hinv
 
 variable (O)
 
