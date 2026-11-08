@@ -121,13 +121,14 @@ private theorem exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo
     exact QuotientGroup.eq.mpr he₁
   · -- They have the same exponent vector `q e₁`, because `e₁` fixes `x₁`.
     refine Multiplicative.toAdd.injective ?_
-    rw [toAdd_exponentSum_demushkinWordNeTwo,
-      ← ContinuousMonoidHom.coe_coe e₁,
-      toAdd_exponentSum_apply_eq_sum_smul,
-      Finset.sum_eq_single ⟨0, hn⟩ (fun k _ hk ↦ by
-        rw [hv, ite_eq_right fun h ↦ hk (Fin.ext h), zero_smul])
-        (fun h ↦ (h (Finset.mem_univ _)).elim),
-      hv, ite_eq_left rfl, ContinuousMonoidHom.coe_coe, ← freeProPGen_of_lt p hn, he₁0]
+    rw [toAdd_exponentSum_demushkinWordNeTwo, ← ContinuousMonoidHom.coe_coe e₁,
+      toAdd_exponentSum_apply_eq_sum_smul]
+    -- Only the summand at `x₁` survives, since `r` has exponent `q` there and `0` elsewhere.
+    rw [Finset.sum_eq_single ⟨0, hn⟩]
+    · rw [hv, ite_eq_left rfl, ContinuousMonoidHom.coe_coe, ← freeProPGen_of_lt p hn, he₁0]
+    · intro k _ hk
+      rw [hv, ite_eq_right fun h ↦ hk (Fin.ext h), zero_smul]
+    · exact fun h ↦ (h (Finset.mem_univ _)).elim
   · -- The class of `e₁ r` has derivatives spanning `gr_0(F)`.
     have hr' : gradedMk p (freeProP p (Fin n)) 1 ⟨e₁ r, hmem⟩ =
         gradedMap p (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
