@@ -241,7 +241,7 @@ the outer boundary action minus the inner boundary action for the primitive `λ�
 This identity does not require any regularity on the inner disc or a holomorphicity hypothesis. -/
 theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
     (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ) {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
+    (ha : 0 ≤ a) (hab : a ≤ b)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
       ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
@@ -260,10 +260,10 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
     have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_nonneg (le_trans ha.le hr.1)] using (mem_Icc.mp hr)
+        abs_of_nonneg (le_trans ha hr.1)] using (mem_Icc.mp hr)
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
-  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
+  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
   linarith
