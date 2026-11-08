@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.Convex
 import TauCeti.Algebra.Order.BigOperators.Sum.AbsSumMulLt
 import TauCeti.Analysis.Calculus.Deriv.InjOn
-import TauCeti.Analysis.Complex.Univalence
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
@@ -61,7 +60,7 @@ theorem re_exp_mul_schwarzChristoffelIntegrand_pos_of_sum_abs_le_one
     simp [S, θ, mul_im, log_im, mul_sub, sum_sub_distrib, sum_mul, mul_comm]
   have hrot : exp (-(θ : ℂ) * Complex.I) * schwarzChristoffelIntegrand a e z =
       exp (S - (θ : ℂ) * Complex.I) := by
-    have hne : ∀ i, z ≠ (a i : ℂ) := fun i h => (show 0 < z.im from hz).ne' (by simp [h])
+    have hne : ∀ i, z ≠ (a i : ℂ) := fun i h => by simp [h] at hz
     rw [schwarzChristoffelIntegrand_eq_exp_sum_log a e hne, ← exp_add]
     congr 1
     ring
