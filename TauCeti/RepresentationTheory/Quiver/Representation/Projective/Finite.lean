@@ -62,23 +62,14 @@ private theorem ofVertex_indecProjRep_mem_span [DecidableEq Q] (i j : Q)
     QuiverRep.ofVertex k Q (indecProjRep k Q i) j
   -- The explicit domain identifies the representation's `Paths` object with the vertex.
   change f z ∈ _
-  have hz : z ∈ Submodule.span k (Set.range (indecProjRepBasis k i j)) := by
-    rw [(indecProjRepBasis k i j).span_eq]
-    exact Submodule.mem_top
-  induction hz using Submodule.span_induction with
-  | mem y hy =>
-      obtain ⟨p, rfl⟩ := hy
-      exact ofVertex_indecProjRepBasis_mem_span k Q i j p
-  | zero =>
-      rw [f.map_zero]
-      exact Submodule.zero_mem _
-  | add y z _ _ hy hz =>
-      rw [f.map_add]
-      exact Submodule.add_mem _ hy hz
-  | smul c y _ hy =>
-      rw [f.map_smul]
-      rw [← algebraMap_smul (pathAlgebra k Q) c (f y)]
-      exact Submodule.smul_mem _ _ hy
+  have h : Submodule.span k (Set.range (indecProjRepBasis k i j)) ≤
+      ((Submodule.span (pathAlgebra k Q) {(QuiverRep.ofVertex k Q (indecProjRep k Q i) i
+        (indecProjRepBasis k i i Quiver.Path.nil) :
+          QuiverRep.asModule k Q (indecProjRep k Q i))}).restrictScalars k).comap f :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 fun p ↦
+      ofVertex_indecProjRepBasis_mem_span k Q i j p)
+  rw [(indecProjRepBasis k i j).span_eq] at h
+  exact h Submodule.mem_top
 
 /-- A vertex projective is finitely generated as a path-algebra module. -/
 theorem module_finite_indecProjModule (i : Q) :
