@@ -20,8 +20,8 @@ finite set of elements of a subgroup, a submodule or any other set-like structur
 that structure, which is the form the generation and rank statements over a `Finset` of a subgroup
 take.
 
-A finite family of finite tuples in a type factors through one injective enumeration of the
-entries (`TauCeti.exists_embedding_fin_comp_eq`).
+A finite family of functions on finite types into a type factors through one injective
+enumeration of the values (`TauCeti.exists_embedding_fin_comp_eq`).
 -/
 
 public section
@@ -57,11 +57,12 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
 
 namespace TauCeti
 
-/-- A finite family of finite tuples in `γ`, together with one more tuple, factor through a single
-injective enumeration `b : Fin m ↪ γ`: each entry of each tuple is `b` of some index. -/
-theorem exists_embedding_fin_comp_eq {γ : Type*} {ι : Type*} [Finite ι] {k : ι → ℕ}
-    (d : ∀ x, Fin (k x) → γ) {n : ℕ} (c : Fin n → γ) :
-    ∃ (m : ℕ) (b : Fin m ↪ γ) (f : Fin n → Fin m) (g : ∀ x, Fin (k x) → Fin m),
+/-- A finite family of functions from finite types to `γ`, together with one more such function
+`c`, factor through a single injective enumeration `b : Fin m ↪ γ`: each value of each function is
+`b` of some index. -/
+theorem exists_embedding_fin_comp_eq {γ : Type*} {ι : Type*} [Finite ι] {α : ι → Type*}
+    [∀ x, Finite (α x)] (d : ∀ x, α x → γ) {β : Type*} [Finite β] (c : β → γ) :
+    ∃ (m : ℕ) (b : Fin m ↪ γ) (f : β → Fin m) (g : ∀ x, α x → Fin m),
       (∀ i, b (f i) = c i) ∧ ∀ x i, b (g x i) = d x i := by
   let F : Set γ := Set.range c ∪ ⋃ x, Set.range (d x)
   have hF : F.Finite :=
@@ -69,7 +70,7 @@ theorem exists_embedding_fin_comp_eq {γ : Type*} {ι : Type*} [Finite ι] {k : 
   obtain ⟨m, b, hb⟩ := hF.fin_embedding
   obtain ⟨f, hf⟩ := Set.range_subset_range_iff_exists_comp.mp
     (show Set.range c ⊆ Set.range b from hb ▸ Set.subset_union_left)
-  have hd (x : ι) : ∃ g : Fin (k x) → Fin m, d x = b ∘ g :=
+  have hd (x : ι) : ∃ g : α x → Fin m, d x = b ∘ g :=
     Set.range_subset_range_iff_exists_comp.mp
       (show Set.range (d x) ⊆ Set.range b from
         hb ▸ (Set.subset_iUnion (fun x => Set.range (d x)) x).trans Set.subset_union_right)
