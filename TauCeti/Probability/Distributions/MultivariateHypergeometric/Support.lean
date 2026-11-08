@@ -53,7 +53,7 @@ theorem support_multivariateHypergeometricMeasure (K : ι → ℕ) (n : ℕ) :
     (multivariateHypergeometricMeasure K n).support =
       {k | ∑ i, k i = n ∧ ∀ i, k i ≤ K i} := by
   ext k
-  simp only [Measure.support_eq_setOf_singleton_ne_zero, mem_setOf_eq,
+  simp only [Measure.support_eq_setOf_singleton_ne_zero, mem_ofPred_eq,
     multivariateHypergeometricMeasure_singleton_ne_zero_iff]
 
 /-- Arbitrary labels of a multivariate hypergeometric sample have support equal to the labels of
