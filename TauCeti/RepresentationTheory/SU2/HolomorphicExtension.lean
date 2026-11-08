@@ -121,17 +121,21 @@ theorem symPowerSLHolomorphicExtension_apply (g : SpecialLinearGroup (Fin 2) ℂ
   simp only [symPowerSLHolomorphicExtension_def, MonoidHom.comp_apply,
     symPowerHolomorphicExtension_apply]
 
+/-- The inclusion of `SU(2)` in `GL₂(ℂ)` factors through `SL₂(ℂ)`. -/
+@[simp]
+theorem toGL_comp_toSL :
+    (SpecialLinearGroup.toGL (n := Fin 2) (R := ℂ)).comp
+      Matrix.specialUnitaryGroup.toSL = toGL := by
+  ext g i j
+  simp only [MonoidHom.comp_apply, SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.specialUnitaryGroup.coe_toSL, coe_toGL]
+
 /-- Restricting the holomorphic special-linear action to `SU(2)` gives the original model. -/
 @[simp]
 theorem symPowerSLHolomorphicExtension_comp_toSL :
     (symPowerSLHolomorphicExtension d).comp Matrix.specialUnitaryGroup.toSL =
       (symPowerModel d).toMonoidHom.toHomUnits := by
-  have h : (SpecialLinearGroup.toGL (n := Fin 2) (R := ℂ)).comp
-      Matrix.specialUnitaryGroup.toSL = toGL := by
-    ext g i j
-    simp only [MonoidHom.comp_apply, SpecialLinearGroup.coe_GL_coe_matrix,
-      Matrix.specialUnitaryGroup.coe_toSL, coe_toGL]
-  rw [symPowerSLHolomorphicExtension_def, MonoidHom.comp_assoc, h,
+  rw [symPowerSLHolomorphicExtension_def, MonoidHom.comp_assoc, toGL_comp_toSL,
     symPowerHolomorphicExtension_comp_toGL]
 
 /-- The symmetric-power special-linear action is complex analytic. -/
