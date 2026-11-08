@@ -70,12 +70,12 @@ applies to the quotients appearing here without any further appeal to defeq.
   over `A`.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
-* `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`: `A ⧸ I` has finite length when the
-  radical of `I` is the maximal ideal of a noetherian local ring. It is in the namespace of `Ideal`
-  rather than that of `TauCeti` because its first explicit argument is an ideal, so that a consumer
-  reads it as `I.isFiniteLength_quotient_of_radical_eq_maximalIdeal`.
-* `Ideal.isFiniteLength_quotient_smul_top_of_radical_eq_maximalIdeal`: `M ⧸ I M` has finite
-  length for a finite module `M` when the radical of `I` is the maximal ideal.
+* `Ideal.isFiniteLength_quotient_of_isMaximal_radical`: `A ⧸ I` has finite length when `A` is
+  noetherian and the radical of `I` is maximal. It is in the namespace of `Ideal` rather than that
+  of `TauCeti` because its first explicit argument is an ideal, so that a consumer reads it as
+  `I.isFiniteLength_quotient_of_isMaximal_radical`.
+* `Ideal.isFiniteLength_quotient_smul_top_of_isMaximal_radical`: `M ⧸ I M` has finite length for
+  a finite module `M` over a noetherian ring when the radical of `I` is maximal.
 * `Ideal.length_localizedModule_quotient_eq_one`: for a prime `𝔭`, the localization of `A ⧸ 𝔭`
   at `𝔭` has length one over `A_𝔭`, being its residue field.
 * `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
@@ -124,40 +124,20 @@ theorem length_map_mkQ (N P : Submodule A M) :
 /-- **Length is detected by finitely generated submodules.** -/
 theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG → Module.length A N ≤ c) :
     Module.length A M ≤ c := by
-  rcases eq_or_ne c ⊤ with rfl | hc
-  · exact le_top
-  lift c to ℕ using hc
-  by_contra hlt
-  rw [not_le] at hlt
-  -- A chain one step longer than `c` exists in the submodule lattice.
-  have hstep : ((c + 1 : ℕ) : ℕ∞) ≤ Module.length A M := by
-    exact_mod_cast Order.add_one_le_of_lt hlt
-  have hkd : ((c + 1 : ℕ) : WithBot ℕ∞) ≤ Order.krullDim (Submodule A M) := by
-    rw [← Module.coe_length]; exact_mod_cast hstep
-  obtain ⟨l, hl⟩ := Order.le_krullDim_iff.mp hkd
-  -- Pick a witness for each strict step, and span them: the chain survives inside that span.
+  rw [Module.length_eq_height, Order.height_le_iff]
+  intro l _
+  -- Pick a witness for each strict step of `l`, and span them: the chain survives inside that span.
   have hx : ∀ i : Fin l.length, ∃ x : M, x ∈ l i.succ ∧ x ∉ l i.castSucc := fun i =>
-    IsConcreteLE.exists_of_lt (l.strictMono (Fin.castSucc_lt_succ : i.castSucc < i.succ))
+    IsConcreteLE.exists_of_lt (l.strictMono i.castSucc_lt_succ)
   choose x hx1 hx2 using hx
-  set N : Submodule A M := Submodule.span A (Set.range x) with _
+  set N : Submodule A M := Submodule.span A (Set.range x)
   have hxN : ∀ i, x i ∈ N := fun i => Submodule.subset_span ⟨i, rfl⟩
   have hmono : StrictMono (fun i => Submodule.comap N.subtype (l i)) :=
-    Fin.strictMono_iff_lt_succ.mpr fun i => by
-      refine lt_of_le_of_ne (Submodule.comap_mono
-        (l.strictMono (Fin.castSucc_lt_succ : i.castSucc < i.succ)).le) ?_
-      intro hEq
-      refine hx2 i ?_
-      have hmem : (⟨x i, hxN i⟩ : N) ∈ Submodule.comap N.subtype (l i.castSucc) := by
-        rw [hEq]; exact hx1 i
-      simpa using hmem
-  have hq : ((l.length : ℕ) : WithBot ℕ∞) ≤ Order.krullDim (Submodule A N) :=
-    Order.LTSeries.length_le_krullDim
-      (LTSeries.mk l.length (fun i => Submodule.comap N.subtype (l i)) hmono)
-  rw [← Module.coe_length, hl] at hq
-  have hfin := h N (Submodule.fg_span (Set.finite_range x))
-  have habs : ((c + 1 : ℕ) : ℕ∞) ≤ ((c : ℕ) : ℕ∞) := le_trans (by exact_mod_cast hq) hfin
-  have : c + 1 ≤ c := by exact_mod_cast habs
-  omega
+    Fin.strictMono_iff_lt_succ.mpr fun i => IsConcreteLE.lt_iff_le_and_exists.mpr
+      ⟨Submodule.comap_mono (l.strictMono i.castSucc_lt_succ).le, ⟨x i, hxN i⟩, hx1 i, hx2 i⟩
+  refine le_trans ?_ (h N (Submodule.fg_span (Set.finite_range x)))
+  rw [Module.length_eq_height]
+  exact Order.length_le_height (p := .mk l.length _ hmono) le_top
 
 /-- **Finite length ascends along a scalar tower.** A module of finite length over `R` has finite
 length over any `S` acting compatibly, since its `S`-submodules are among its `R`-submodules. -/
@@ -331,11 +311,8 @@ variable {A : Type*} [CommRing A] [IsLocalRing A]
 /-- The length of a quotient by the maximal ideal of a local ring is one, the quotient being the
 residue field. -/
 @[simp]
-theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A) = 1 := by
-  rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
-    (S := A ⧸ maximalIdeal A) Ideal.Quotient.mk_surjective]
-  let _ := Ideal.Quotient.field (maximalIdeal A)
-  exact instIsSimpleModule _
+theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A) = 1 :=
+  Module.length_eq_one_iff.mpr (isSimpleModule_iff_isCoatom.mpr (maximalIdeal.isMaximal A).out)
 
 /-- The residue field of a local ring has length one over the ring. -/
 @[simp]
@@ -350,47 +327,46 @@ end TauCeti
 
 namespace Ideal
 
+section NoetherianRing
+
+variable {A : Type*} [CommRing A] [IsNoetherianRing A]
+
+/-- **A quotient by an ideal with maximal radical has finite length.** Let `A` be a noetherian ring
+and `I` an ideal whose radical is a maximal ideal `𝔪`, so that `I` is `𝔪`-primary. Then `A ⧸ I`
+has finite length over `A`. -/
+theorem isFiniteLength_quotient_of_isMaximal_radical (I : Ideal A) (hI : I.radical.IsMaximal) :
+    IsFiniteLength A (A ⧸ I) := by
+  -- `𝔪` is the only prime over `I`, so `A ⧸ I` is a noetherian ring of dimension zero.
+  have : Ring.KrullDimLE 0 (A ⧸ I) :=
+    krullDimLE_zero_quotient_iff_forall_minimalPrimes_isMaximal.mpr fun J hJ ↦ by
+      have := hI.isPrime
+      rw [← radical_minimalPrimes, minimalPrimes_eq_subsingleton_self] at hJ
+      exact Set.mem_singleton_iff.mp hJ ▸ hI
+  have : IsArtinianRing (A ⧸ I) := IsNoetherianRing.isArtinianRing_of_krullDimLE_zero
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
+    ⟨inferInstance, isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
+
+/-- **A finite module modulo an ideal with maximal radical has finite length.** Let `A` be a
+noetherian ring, `I` an ideal whose radical is a maximal ideal and `M` a finite `A`-module. Then
+`M ⧸ I M` is a finite module over the Artinian ring `A ⧸ I`, so it has finite length over `A`. -/
+theorem isFiniteLength_quotient_smul_top_of_isMaximal_radical (I : Ideal A)
+    (hI : I.radical.IsMaximal) (M : Type*) [AddCommGroup M] [Module A M] [Module.Finite A M] :
+    IsFiniteLength A (M ⧸ (I • ⊤ : Submodule A M)) := by
+  have hA := isFiniteLength_iff_isNoetherian_isArtinian.mp
+    (isFiniteLength_quotient_of_isMaximal_radical I hI)
+  have : IsArtinianRing (A ⧸ I) := isArtinian_of_tower A hA.2
+  have : Module.Finite (A ⧸ I) (M ⧸ (I • ⊤ : Submodule A M)) :=
+    Module.Finite.of_restrictScalars_finite A _ _
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
+    ⟨inferInstance, isArtinian_of_surjective_algebraMap (R := A ⧸ I) Ideal.Quotient.mk_surjective⟩
+
+end NoetherianRing
+
 section NoetherianLocalRing
 
 open _root_.IsLocalRing
 
 variable {A : Type*} [CommRing A] [IsNoetherianRing A] [IsLocalRing A]
-
-/-- **A quotient by a maximal-primary ideal has finite length.** Let `(A, 𝔪)` be a noetherian
-local ring and let `I` be an ideal whose radical is `𝔪`, so that `I` is maximal-primary. Then
-`A ⧸ I` is a noetherian local ring, its maximal ideal is the image of `𝔪`, and
-`𝔪 ⁿ ≤ I` for some power `𝔪 ⁿ` of `𝔪`, so that maximal ideal is nilpotent.
-A noetherian local ring with nilpotent maximal ideal is Artinian, and `A ⧸ I` is then both
-noetherian and Artinian as an `A`-module, which is finite length. -/
-theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
-    (hI : I.radical = maximalIdeal A) : IsFiniteLength A (A ⧸ I) := by
-  -- the quotient by `I` is a noetherian local ring
-  have hne : I ≠ ⊤ := by
-    rintro htop
-    have hone : (1 : A) ∈ I := htop ▸ Submodule.mem_top
-    exact (IsLocalRing.notMem_maximalIdeal (R := A)).mpr isUnit_one
-      (hI.symm ▸ Ideal.le_radical hone)
-  let _ : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hne
-  let _ : IsLocalRing (A ⧸ I) :=
-    IsLocalRing.of_surjective' (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
-  -- a power of the maximal ideal lies in `I`, so its image is nilpotent
-  obtain ⟨n, hn⟩ : ∃ n, maximalIdeal A ^ n ≤ I :=
-    Ideal.exists_pow_le_of_le_radical_of_fg (by rw [hI])
-      (maximalIdeal A).fg_of_isNoetherianRing
-  have hnil : IsNilpotent (maximalIdeal (A ⧸ I)) := by
-    have hmap : (maximalIdeal A).map (Ideal.Quotient.mk I) = maximalIdeal (A ⧸ I) :=
-      IsLocalRing.map_maximalIdeal_of_surjective (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
-    rw [← hmap]
-    refine ⟨n, ?_⟩
-    rw [← Ideal.map_pow]
-    exact (Ideal.map_eq_bot_iff_le_ker (Ideal.Quotient.mk I)).mpr
-      (hn.trans (le_of_eq Ideal.mk_ker.symm))
-  -- noetherian and Artinian over `A`, hence of finite length
-  rw [isFiniteLength_iff_isNoetherian_isArtinian]
-  let _ : IsArtinianRing (A ⧸ I) :=
-    isArtinianRing_iff_isNilpotent_maximalIdeal (A ⧸ I) |>.mpr hnil
-  exact ⟨inferInstance,
-    isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
 
 /-- Every quotient of a noetherian local ring by a power of its maximal ideal has finite length:
 for `n ≠ 0` the power `𝔪 ⁿ` is maximal-primary, and for `n = 0` the quotient is zero. -/
@@ -401,22 +377,9 @@ theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
       rw [pow_zero, Ideal.one_eq_top]
       infer_instance
     exact .of_subsingleton
-  · exact isFiniteLength_quotient_of_radical_eq_maximalIdeal _ <| by
+  · exact isFiniteLength_quotient_of_isMaximal_radical _ <| by
       rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
-
-/-- **A finite module modulo a maximal-primary ideal has finite length.** Let `(A, 𝔪)` be a
-noetherian local ring, `I` an ideal whose radical is `𝔪` and `M` a finite `A`-module. Then
-`M ⧸ I M` is a finite module over the Artinian ring `A ⧸ I`, so it has finite length over `A`. -/
-theorem isFiniteLength_quotient_smul_top_of_radical_eq_maximalIdeal (I : Ideal A)
-    (hI : I.radical = maximalIdeal A) (M : Type*) [AddCommGroup M] [Module A M]
-    [Module.Finite A M] : IsFiniteLength A (M ⧸ (I • ⊤ : Submodule A M)) := by
-  have hA := isFiniteLength_iff_isNoetherian_isArtinian.mp
-    (isFiniteLength_quotient_of_radical_eq_maximalIdeal I hI)
-  have : IsArtinianRing (A ⧸ I) := isArtinian_of_tower A hA.2
-  have : Module.Finite (A ⧸ I) (M ⧸ (I • ⊤ : Submodule A M)) :=
-    Module.Finite.of_restrictScalars_finite A _ _
-  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
-    ⟨inferInstance, isArtinian_of_surjective_algebraMap (R := A ⧸ I) Ideal.Quotient.mk_surjective⟩
+      infer_instance
 
 end NoetherianLocalRing
 
@@ -448,13 +411,9 @@ section PositiveKrullDimension
 
 variable {A : Type*} [CommRing A]
 
-/-- **A ring of positive Krull dimension has infinite length over itself.** A ring of finite
-length over itself is both noetherian and Artinian, by `Module.length_ne_top_iff` and
-`isFiniteLength_iff_isNoetherian_isArtinian`, and a commutative Artinian ring is of Krull
-dimension zero, by `isArtinianRing_iff_isNoetherianRing_krullDimLE_zero`. So a ring of positive
-Krull dimension is of infinite length over itself, and the hypothesis is what rules out the
-zero-dimensional case, the trivial ring among it, whose `ringKrullDim` is `⊥` rather than `0` and
-which is of length zero over itself.
+/-- **A ring of positive Krull dimension has infinite length over itself**, since a ring of finite
+length over itself is Artinian, hence of Krull dimension zero. Positivity cannot be weakened to
+`ringKrullDim A ≠ 0`: the trivial ring, whose `ringKrullDim` is `⊥`, has length zero over itself.
 
 In particular the length of a one-dimensional local domain over itself is infinite, which is what
 a length read along such a domain, the order of vanishing of an element of it, has to be measured
@@ -463,11 +422,9 @@ against. -/
 theorem length_self_eq_top_of_ringKrullDim_pos (hpos : 0 < ringKrullDim A) :
     Module.length A A = ⊤ := by
   by_contra h
-  have hfin : IsFiniteLength A A := (Module.length_ne_top_iff).1 fun hc => h hc
-  obtain ⟨-, hArt⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hfin
-  have hle : ringKrullDim A ≤ 0 :=
-    Ring.krullDimLE_iff.mp (isArtinianRing_iff_isNoetherianRing_krullDimLE_zero.mp hArt).2
-  exact absurd hpos (not_lt_of_ge hle)
+  have : IsArtinianRing A :=
+    (isFiniteLength_iff_isNoetherian_isArtinian.mp (Module.length_ne_top_iff.mp h)).2
+  exact hpos.not_ge (Ring.krullDimLE_iff.mp inferInstance)
 
 end PositiveKrullDimension
 
