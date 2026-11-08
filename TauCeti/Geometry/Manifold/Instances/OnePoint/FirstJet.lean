@@ -53,8 +53,12 @@ direction at one of them, in the way that ordered triples normalize three marked
 * `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_zero` and
   `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_infty`: the dilation `z ↦ a z` has derivative `a`
   at `0` and `a⁻¹` at `∞`.
+* `OnePoint.mfderiv_pgl_smul_ne_zero`: the derivative of a Möbius transformation is nonzero on
+  nonzero tangent vectors.
 * `OnePoint.mfderiv_smul_zero_eq_pglFixingZeroInftyEquiv`: the coordinate of an element fixing `0`
   and `∞` is its derivative at `0`.
+* `OnePoint.mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero`: precomposing with the dilation
+  `z ↦ a z` multiplies the derivative at `0` by `a`.
 * `OnePoint.existsUnique_pgl_smul_zero_infty_mfderiv_eq`: the first-jet coordinates of
   `PGL(2, 𝕜)`.
 
@@ -76,21 +80,6 @@ namespace OnePoint
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
-omit [DecidableEq 𝕜] in
-/-- The derivative of a self-map of the projective line, read in the preferred charts at a point and
-at its image, is multiplication by the derivative of the chart expression. -/
-private theorem mfderiv_apply_eq_of_hasDerivAt {f : OnePoint 𝕜 → OnePoint 𝕜} {x : OnePoint 𝕜}
-    (hf : MDifferentiableAt 𝓘(𝕜) 𝓘(𝕜) f x) {φ : 𝕜 → 𝕜} {c : 𝕜}
-    (hφ : chartAt 𝕜 (f x) ∘ f ∘ (chartAt 𝕜 x).symm =ᶠ[𝓝 (chartAt 𝕜 x x)] φ)
-    (hc : HasDerivAt φ c (chartAt 𝕜 x x)) (v : 𝕜) :
-    mfderiv 𝓘(𝕜) 𝓘(𝕜) f x v = (c * v : 𝕜) := by
-  rw [hf.mfderiv_abuse]
-  have hw : writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x f = chartAt 𝕜 (f x) ∘ f ∘ (chartAt 𝕜 x).symm := by
-    ext; simp [writtenInExtChartAt]
-  simp only [hw, modelWithCornersSelf_coe, range_id, fderivWithin_univ, extChartAt_coe,
-    Function.comp_apply, id_eq, hφ.fderiv_eq, hc.hasFDerivAt.fderiv]
-  exact (ContinuousLinearMap.toSpanSingleton_apply 𝕜 c v).trans (mul_comm v c)
-
 /-- A Möbius transformation of `PGL(2, 𝕜)` is differentiable. -/
 private theorem mdifferentiableAt_pgl_smul (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) :
     MDifferentiableAt 𝓘(𝕜) 𝓘(𝕜) (fun y : OnePoint 𝕜 ↦ g • y) x :=
@@ -98,7 +87,7 @@ private theorem mdifferentiableAt_pgl_smul (g : PGL(2, 𝕜)) (x : OnePoint 𝕜
 
 /-- The derivative of a Möbius transformation of `PGL(2, 𝕜)` vanishes on no nonzero tangent
 vector, since the transformation is a diffeomorphism. -/
-private theorem mfderiv_pgl_smul_ne_zero (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) {v : 𝕜} (hv : v ≠ 0) :
+theorem mfderiv_pgl_smul_ne_zero (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) {v : 𝕜} (hv : v ≠ 0) :
     (mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun y : OnePoint 𝕜 ↦ g • y) x v : 𝕜) ≠ 0 := by
   intro h
   obtain ⟨e, he⟩ := (Diffeomorph.constSmul 𝓘(𝕜) ⊤ g).isInvertible_mfderiv (x := x) (by simp)
@@ -190,7 +179,7 @@ theorem mfderiv_smul_infty_eq_pglFixingZeroInftyEquiv
 
 /-- Precomposing a Möbius transformation with the dilation `z ↦ a z` multiplies its derivative at
 `0` by `a`. -/
-private theorem mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero (g : PGL(2, 𝕜)) (a : 𝕜ˣ) (v : 𝕜) :
+theorem mfderiv_mul_pglFixingZeroInftyEquiv_symm_zero (g : PGL(2, 𝕜)) (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜)
       (fun x : OnePoint 𝕜 ↦ (g * (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜))) • x)
       ((0 : 𝕜) : OnePoint 𝕜) v =
