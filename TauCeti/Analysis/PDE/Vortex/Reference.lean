@@ -166,6 +166,19 @@ theorem norm_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
   rw [referenceSection_eq_phase f m hz, norm_pow, norm_div]
   simp [norm_ne_zero_iff.2 hz0]
 
+/-- The reference section has norm at most one everywhere. -/
+theorem norm_referenceSection_le_one (f : ContDiffBump (0 : ℝ)) (m : ℕ) (z : ℂ) :
+    ‖referenceSection f m z‖ ≤ 1 := by
+  rw [referenceSection_apply, norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs]
+  have h₁ : |1 - f (‖z‖ ^ 2)| ≤ 1 := by
+    rw [abs_le]
+    constructor <;> linarith [f.nonneg (x := ‖z‖ ^ 2), f.le_one (x := ‖z‖ ^ 2)]
+  have h₂ : ‖z / (‖z‖ : ℂ)‖ ^ m ≤ 1 := by
+    refine pow_le_one₀ (norm_nonneg _) ?_
+    rw [norm_div, Complex.norm_real, norm_norm]
+    exact div_self_le_one _
+  simpa using mul_le_mul h₁ h₂ (by positivity) zero_le_one
+
 /-- Rotation of the coordinate multiplies the reference section by the degree-`m` phase. -/
 theorem referenceSection_mul (f : ContDiffBump (0 : ℝ)) (m : ℕ) {u : ℂ}
     (hu : ‖u‖ = 1) (z : ℂ) :
