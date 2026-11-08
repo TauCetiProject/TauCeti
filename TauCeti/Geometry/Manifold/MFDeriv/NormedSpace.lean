@@ -33,6 +33,8 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
+* `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
+  their `mvfderiv`s.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
   at `x` has the identity as derivative at `x`.
@@ -203,6 +205,22 @@ theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
     hg (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcg.const_smul c⁻¹)
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hcg]
+
+/-- The derivative of a finite sum of vector-valued functions, read in the target space, is the
+sum of their derivatives at a point where each summand is differentiable. This is the manifold
+version of `fderiv_fun_sum`. -/
+theorem mvfderiv_fun_sum {ι : Type*} {u : Finset ι} {f : ι → M → F} {x : M}
+    (hf : ∀ i ∈ u, MDiffAt (f i) x) :
+    mvfderiv I (fun y ↦ ∑ i ∈ u, f i y) x = ∑ i ∈ u, mvfderiv I (f i) x := by
+  have hfun : (fun y ↦ ∑ i ∈ u, f i y) = ∑ i ∈ u, f i := by
+    ext y
+    simp
+  have hH : HasMFDerivAt I 𝓘(𝕜, F) (∑ i ∈ u, f i) x (∑ i ∈ u, mvfderiv I (f i) x) :=
+    HasMFDerivAt.sum fun i hi ↦ (hf i hi).hasMFDerivAt
+  ext v
+  rw [hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
+  -- The tangent spaces of `F` in which `mfderiv` takes values are `F` itself.
+  rfl
 
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/
