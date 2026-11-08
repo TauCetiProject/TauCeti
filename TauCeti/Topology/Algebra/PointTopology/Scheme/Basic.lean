@@ -23,8 +23,9 @@ are open embeddings; that additional assertion requires open units and continuou
 on the units of `R`.
 
 The affine comparison uses Mathlib's `Spec.homEquivAlgHom`, rather than another
-algebraic dictionary between affine-scheme points and algebra homomorphisms. The chart
-range criterion uses `TauCeti.AlgebraicGeometry.exists_spec_map_comp_eq_of_range_subset`.
+algebraic dictionary between affine-scheme points and algebra homomorphisms. Morphisms
+over the base act on points by composition; the chart injectivity and range criteria
+follow from those for this general action.
 
 ## References
 
@@ -49,6 +50,55 @@ being a morphism over `Spec k`. -/
 abbrev Points :=
   {x : Spec (.of R) ⟶ X // x ≫ f = Spec.algebraMap k R}
 
+section Map
+
+variable {Y : Scheme.{u}} {fX : X ⟶ Spec (.of k)} {fY : Y ⟶ Spec (.of k)}
+
+/-- The map on scheme-valued points induced by a morphism over the base. -/
+noncomputable def map (g : X ⟶ Y) (hg : g ≫ fY = fX) (x : Points (R := R) fX) :
+    Points (R := R) fY :=
+  ⟨x.val ≫ g, by rw [Category.assoc, hg, x.property]⟩
+
+/-- The underlying morphism of the image of a point is its composite with `g`. -/
+@[simp]
+theorem map_val (g : X ⟶ Y) (hg : g ≫ fY = fX) (x : Points (R := R) fX) :
+    (map g hg x).val = x.val ≫ g :=
+  (rfl)
+
+/-- A monomorphism of schemes is injective on points. -/
+theorem map_injective (g : X ⟶ Y) (hg : g ≫ fY = fX) [Mono g] :
+    Function.Injective (map (R := R) g hg) := by
+  intro x y h
+  exact Subtype.ext ((cancel_mono g).mp (congrArg Subtype.val h))
+
+/-- The image of an open immersion on points consists exactly of the morphisms whose
+image lies in the open subscheme. This algebraic statement needs no locality assumption. -/
+theorem mem_range_map_iff (g : X ⟶ Y) (hg : g ≫ fY = fX) [IsOpenImmersion g]
+    (y : Points (R := R) fY) :
+    y ∈ Set.range (map g hg) ↔ Set.range y.val ⊆ Set.range g := by
+  constructor
+  · rintro ⟨x, rfl⟩ z ⟨p, rfl⟩
+    exact ⟨_, Scheme.Hom.comp_apply _ _ p⟩
+  · intro hy
+    refine ⟨⟨IsOpenImmersion.lift g y.val hy, ?_⟩, ?_⟩
+    · rw [← hg, ← Category.assoc, IsOpenImmersion.lift_fac, y.property]
+    · exact Subtype.ext (IsOpenImmersion.lift_fac g y.val hy)
+
+/-- Over a local ring, a point belongs to an open subscheme exactly when the image of
+the closed point of its source does. -/
+theorem mem_range_map_iff_closedPoint [IsLocalRing R]
+    (g : X ⟶ Y) (hg : g ≫ fY = fX) [IsOpenImmersion g] (y : Points (R := R) fY) :
+    y ∈ Set.range (map g hg) ↔ y.val (IsLocalRing.closedPoint R) ∈ g.opensRange := by
+  rw [mem_range_map_iff]
+  constructor
+  · exact fun h ↦ h (Set.mem_range_self _)
+  · intro hy z hz
+    obtain ⟨p, rfl⟩ := hz
+    exact ((IsLocalRing.specializes_closedPoint p).map y.val.continuous).mem_open
+      g.opensRange.isOpen hy
+
+end Map
+
 /-- Apply an affine chart to a point of its coordinate algebra. The equality `hi` says
 that the chart is a morphism over the base. -/
 noncomputable def chartPoint (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
@@ -66,29 +116,27 @@ theorem chartPoint_val (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (chartPoint f A i hi x).val = Spec.map (CommRingCat.ofHom x.toRingHom) ≫ i :=
   (rfl)
 
+/-- A chart point is the image of the corresponding affine-scheme point under the chart. -/
+theorem chartPoint_eq_map_comp_homEquivAlgHom_symm (A : CommAlgCat.{u} k)
+    (i : Spec (.of A) ⟶ X) (hi : i ≫ f = Spec.algebraMap k A) :
+    chartPoint (R := R) f A i hi = map i hi ∘ Spec.homEquivAlgHom.symm := by
+  funext x
+  apply Subtype.ext
+  simp only [Function.comp_apply, map_val, Spec.homEquivAlgHom_symm_apply_val, chartPoint_val]
+
 /-- An affine chart is injective on points. -/
 theorem chartPoint_injective (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (hi : i ≫ f = Spec.algebraMap k A) [Mono i] :
     Function.Injective (chartPoint (R := R) f A i hi) := by
-  intro x y h
-  have hxy := (cancel_mono i).mp (congrArg Subtype.val h)
-  exact AlgHom.toRingHom_injective (CommRingCat.hom_ext_iff.mp (Spec.map_injective hxy))
+  rw [chartPoint_eq_map_comp_homEquivAlgHom_symm]
+  exact (map_injective i hi).comp Spec.homEquivAlgHom.symm.injective
 
 /-- A scheme-valued point comes from an affine open chart exactly when its underlying
 morphism has image in that chart. This criterion does not require a local coefficient ring. -/
 theorem mem_range_chartPoint_iff (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (hi : i ≫ f = Spec.algebraMap k A) [IsOpenImmersion i] (x : Points (R := R) f) :
     x ∈ Set.range (chartPoint f A i hi) ↔ Set.range x.val ⊆ Set.range i := by
-  constructor
-  · rintro ⟨y, rfl⟩
-    rintro _ ⟨p, rfl⟩
-    exact ⟨_, Scheme.Hom.comp_apply _ _ p⟩
-  · intro hx
-    let : X.Over (Spec (.of k)) := ⟨f⟩
-    have : i.IsOver (Spec (.of k)) := ⟨hi⟩
-    have : x.val.IsOver (Spec (.of k)) := ⟨x.property⟩
-    obtain ⟨φ, hφ⟩ := AlgebraicGeometry.exists_spec_map_comp_eq_of_range_subset (R := k) i x.val hx
-    exact ⟨φ, Subtype.ext hφ⟩
+  rw [chartPoint_eq_map_comp_homEquivAlgHom_symm, EquivLike.range_comp, mem_range_map_iff]
 
 /-- Over a local ring, membership in the points of an affine open chart can be tested
 at the closed point of the source spectrum. -/
@@ -96,13 +144,8 @@ theorem mem_range_chartPoint_iff_closedPoint [IsLocalRing R]
     (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (hi : i ≫ f = Spec.algebraMap k A) [IsOpenImmersion i] (x : Points (R := R) f) :
     x ∈ Set.range (chartPoint f A i hi) ↔ x.val (IsLocalRing.closedPoint R) ∈ i.opensRange := by
-  rw [mem_range_chartPoint_iff]
-  constructor
-  · exact fun h ↦ h (Set.mem_range_self _)
-  · intro hx z hz
-    obtain ⟨p, rfl⟩ := hz
-    exact ((IsLocalRing.specializes_closedPoint p).map x.val.continuous).mem_open
-      i.opensRange.isOpen hx
+  rw [chartPoint_eq_map_comp_homEquivAlgHom_symm, EquivLike.range_comp,
+    mem_range_map_iff_closedPoint]
 
 /-- Every point over a local ring factors through an affine open chart over the base.
 In particular the affine chart point spaces cover the entire space of scheme-valued points. -/
