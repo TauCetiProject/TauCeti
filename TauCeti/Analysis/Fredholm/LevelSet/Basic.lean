@@ -233,7 +233,7 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_symm_eq {n : ℕ
   let L := D.implicitCoordEquiv (LinearMap.range_eq_top.2 hsurj)
     hFred.closedComplemented_ker
   have hL (x : E) : L x = (D x, Classical.choose hFred.closedComplemented_ker x) :=
-    congrArg (fun T : E →L[𝕜] F × D.ker ↦ T x) (D.coe_implicitCoordEquiv _ _)
+    D.implicitCoordEquiv_apply _ _ x
   let A : ((Fin n → 𝕜) × F) ≃L[𝕜] E :=
     ((K.symm.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans
       (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans L.symm

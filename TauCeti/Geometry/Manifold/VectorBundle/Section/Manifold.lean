@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Chart
 public import Mathlib.Geometry.Manifold.Immersion
-public import TauCeti.Analysis.Calculus.ContDiff.Shear
+import TauCeti.Analysis.Calculus.ContDiff.Shear
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
