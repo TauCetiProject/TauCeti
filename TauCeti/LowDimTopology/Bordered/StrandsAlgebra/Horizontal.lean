@@ -137,35 +137,37 @@ section Finite
 
 variable [Fintype α]
 
-/-- When `U` avoids the source and target of `φ`, the source of `φ.addHorizontal U` is that of `φ`
-together with `U`. -/
-theorem source_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjoint φ.source U)
-    (ht : Disjoint φ.target U) : (φ.addHorizontal U).source = φ.source ∪ U := by
+/-- When `U` avoids the target of `φ`, the source of `φ.addHorizontal U` is that of `φ` together
+with `U`. -/
+theorem source_addHorizontal {φ : StrandDiagram α} {U : Finset α} (ht : Disjoint φ.target U) :
+    (φ.addHorizontal U).source = φ.source ∪ U := by
   ext i
   simp only [mem_source, mem_addHorizontal, mem_union]
   constructor
   · rintro ⟨j, (⟨hi, -⟩ | ⟨-, -, hij⟩)⟩
     · exact Or.inr hi
     · exact Or.inl ⟨j, hij⟩
-  · rintro (⟨j, hij⟩ | hi)
-    · exact ⟨j, Or.inr ⟨notMem_of_mem_of_disjoint_source hs hij,
-        notMem_of_mem_of_disjoint_target ht hij, hij⟩⟩
+  · intro hi'
+    by_cases hi : i ∈ U
     · exact ⟨i, Or.inl ⟨hi, rfl⟩⟩
+    obtain ⟨j, hij⟩ := hi'.resolve_right hi
+    exact ⟨j, Or.inr ⟨hi, notMem_of_mem_of_disjoint_target ht hij, hij⟩⟩
 
-/-- When `U` avoids the source and target of `φ`, the target of `φ.addHorizontal U` is that of `φ`
-together with `U`. -/
-theorem target_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjoint φ.source U)
-    (ht : Disjoint φ.target U) : (φ.addHorizontal U).target = φ.target ∪ U := by
+/-- When `U` avoids the source of `φ`, the target of `φ.addHorizontal U` is that of `φ` together
+with `U`. -/
+theorem target_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjoint φ.source U) :
+    (φ.addHorizontal U).target = φ.target ∪ U := by
   ext j
   simp only [mem_target, mem_addHorizontal, mem_union]
   constructor
   · rintro ⟨i, (⟨hi, rfl⟩ | ⟨-, -, hij⟩)⟩
     · exact Or.inr hi
     · exact Or.inl ⟨i, hij⟩
-  · rintro (⟨i, hij⟩ | hj)
-    · exact ⟨i, Or.inr ⟨notMem_of_mem_of_disjoint_source hs hij,
-        notMem_of_mem_of_disjoint_target ht hij, hij⟩⟩
+  · intro hj'
+    by_cases hj : j ∈ U
     · exact ⟨j, Or.inl ⟨hj, rfl⟩⟩
+    obtain ⟨i, hij⟩ := hj'.resolve_right hj
+    exact ⟨i, Or.inr ⟨notMem_of_mem_of_disjoint_source hs hij, hj, hij⟩⟩
 
 /-- On a point outside `U`, `φ.addHorizontal U` agrees with `φ` when `U` avoids the target. -/
 @[simp]
@@ -276,7 +278,7 @@ theorem composable_addHorizontal_iff {φ ψ : StrandDiagram α} {W : Finset α}
     (hψt : Disjoint ψ.target W) :
     (φ.addHorizontal W).Composable (ψ.addHorizontal W) ↔ φ.Composable ψ := by
   have htarget : (φ.addHorizontal W).target = (ψ.addHorizontal W).source ↔ φ.target = ψ.source := by
-    rw [target_addHorizontal hφs hφt, source_addHorizontal hψs hψt]
+    rw [target_addHorizontal hφs, source_addHorizontal hψt]
     refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
     ext i
     constructor <;> intro hi

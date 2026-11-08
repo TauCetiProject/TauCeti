@@ -157,10 +157,8 @@ private theorem eq_union_inter_of_composable (hρ : IsMatchedGenerator M ρ h)
     ρ.target.image M ∪ h = σ.source.image M ∪ k ∧ U = {i ∈ σ.source | M i ∈ h} ∪ U ∩ V ∧
       V = {i ∈ ρ.target | M i ∈ k} ∪ U ∩ V ∧ (U ∩ V).image M = h ∩ k := by
   have hX : ρ.target ∪ U = σ.source ∪ V := by
-    rw [← StrandDiagram.target_addHorizontal (hρ.disjoint_source_of_image_subset hU.le)
-      (hρ.disjoint_target_of_image_subset hU.le),
-      ← StrandDiagram.source_addHorizontal (hσ.disjoint_source_of_image_subset hV.le)
-      (hσ.disjoint_target_of_image_subset hV.le)]
+    rw [← StrandDiagram.target_addHorizontal (hρ.disjoint_source_of_image_subset hU.le),
+      ← StrandDiagram.source_addHorizontal (hσ.disjoint_target_of_image_subset hV.le)]
     exact hUV.target_eq
   have hmem (x : α) : x ∈ ρ.target ∨ x ∈ U ↔ x ∈ σ.source ∨ x ∈ V := by
     simpa using congrArg (x ∈ ·) hX
@@ -188,21 +186,19 @@ private theorem eq_union_inter_of_composable (hρ : IsMatchedGenerator M ρ h)
       refine ⟨x, ⟨hxU, ?_⟩, rfl⟩
       exact ((hmem x).1 (Or.inr hxU)).resolve_left fun hxS ↦ hSk x hxS hmk
 
-/-- The horizontal strands of `a(ρ, h)` forced at the points of `A` over `h` avoid the starting and
-end points of `ρ`, so they add to its starting points. -/
+/-- The horizontal strands of `a(ρ, h)` forced at the points of `A` over `h` avoid the end points
+of `ρ`, so they add to its starting points. -/
 private theorem source_addHorizontal_filter (hρ : IsMatchedGenerator M ρ h) (A : Finset α) :
     (ρ.addHorizontal {i ∈ A | M i ∈ h}).source = ρ.source ∪ {i ∈ A | M i ∈ h} :=
   StrandDiagram.source_addHorizontal
-    (hρ.disjoint_source_of_image_subset (image_filter_mem_subset _ _ _))
     (hρ.disjoint_target_of_image_subset (image_filter_mem_subset _ _ _))
 
-/-- The horizontal strands of `a(ρ, h)` forced at the points of `A` over `h` avoid the starting and
-end points of `ρ`, so they add to its end points. -/
+/-- The horizontal strands of `a(ρ, h)` forced at the points of `A` over `h` avoid the starting
+points of `ρ`, so they add to its end points. -/
 private theorem target_addHorizontal_filter (hρ : IsMatchedGenerator M ρ h) (A : Finset α) :
     (ρ.addHorizontal {i ∈ A | M i ∈ h}).target = ρ.target ∪ {i ∈ A | M i ∈ h} :=
   StrandDiagram.target_addHorizontal
     (hρ.disjoint_source_of_image_subset (image_filter_mem_subset _ _ _))
-    (hρ.disjoint_target_of_image_subset (image_filter_mem_subset _ _ _))
 
 /-- Adding common horizontal strands over `h ∩ k` to the forced parts of two summands does not
 change their composability, and commutes with their product. -/
