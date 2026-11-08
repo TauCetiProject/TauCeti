@@ -46,7 +46,7 @@ the homology of a space exhausted by subspaces whose successive relative homolog
 
 * `TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit`: the ranges of the legs of a colimit cocone
   span its point.
-* `ModuleCat.finite_coproduct_of_finite_support`: a coproduct of finite modules is finite if
+* `TauCeti.ModuleCat.finite_coproduct_of_finite_support`: a coproduct of finite modules is finite if
   only finitely many summands are nonzero.
 * `TauCeti.ModuleCat.isIso_of_isIso_app_self`: a natural transformation between
   colimit-preserving functors out of `ModuleCat R` whose component at `R` is invertible is an
@@ -134,16 +134,6 @@ theorem isIso_of_isIso_app_self {F G : ModuleCat.{u} R ⥤ D}
     exact isIso_app_coconePt_of_preservesColimit _ α _ hc
   exact NatIso.isIso_of_isIso_app α
 
-end ModuleCat
-
-end TauCeti
-
-namespace ModuleCat
-
-open CategoryTheory Limits DirectSum
-
-variable {R : Type u} [Ring R]
-
 /-- A coproduct of finite modules is finite when only finitely many summands are nonzero.
 The index type itself need not be finite. -/
 theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v} R)
@@ -171,7 +161,15 @@ theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v
   rw [← htop, hrange]
   exact Submodule.fg_iSup _ fun i ↦ Submodule.fg_range _
 
-variable (F : ℕ ⥤ ModuleCat.{v} R)
+end ModuleCat
+
+end TauCeti
+
+namespace ModuleCat
+
+open CategoryTheory Limits DirectSum
+
+variable {R : Type u} [Ring R] (F : ℕ ⥤ ModuleCat.{v} R)
 
 /-- The difference map of the telescope of a sequence `F₀ → F₁ → ⋯` of modules: the endomorphism
 of `⨁ₙ Fₙ` sending `x` in the summand `Fₙ` to `x - φₙ(x)`, where `φₙ(x)` lies in the summand

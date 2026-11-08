@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
+public import Mathlib.CategoryTheory.Monoidal.Category
 public import Mathlib.CategoryTheory.Limits.Preserves.Basic
 
 /-!
@@ -14,8 +14,6 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Basic
 The left unitor identifies tensoring on the left by the tensor unit with the identity functor.
 Thus this functor preserves colimits, without any closedness assumption on the monoidal category.
 This allows constructions that require tensoring to preserve coproducts to be used with the unit.
-In a braided category, colimit preservation by left tensoring also gives colimit preservation
-by right tensoring, via the braiding.
 
 When tensoring with an object `U` on one side preserves a limit `c`, morphisms into the tensor
 product of `U` with `c.pt` are determined by their composites with the whiskered legs of `c`;
@@ -35,13 +33,6 @@ namespace TauCeti
 instance preservesColimits_tensorUnitLeft (C : Type u) [Category.{v} C] [MonoidalCategory C] :
     PreservesColimitsOfSize.{w, w'} (tensorUnitLeft C) :=
   preservesColimits_of_natIso (leftUnitorNatIso C).symm
-
-/-- In a braided category, right tensoring preserves colimits whenever left tensoring does. -/
-instance preservesColimits_tensorRight_of_braided {C : Type u} [Category.{v} C]
-    [MonoidalCategory C] [BraidedCategory C] (X : C)
-    [PreservesColimitsOfSize.{w, w'} (tensorLeft X)] :
-    PreservesColimitsOfSize.{w, w'} (tensorRight X) :=
-  preservesColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight X)
 
 end TauCeti
 

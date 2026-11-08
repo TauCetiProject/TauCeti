@@ -26,9 +26,9 @@ open scoped TensorProduct
 
 namespace CategoryTheory.GradedObject
 
-universe u v w
+universe u w
 
-variable {R : Type u} {I J : Type v}
+variable {R : Type u} {I J : Type*}
 
 section Ring
 
@@ -48,7 +48,7 @@ degree, without a finiteness assumption on the fibres of the reindexing map. -/
 lemma HasFiniteSupport.finite_mapObj {X : GradedObject I (ModuleCat.{w} R)}
     (hX : X.HasFiniteSupport) [∀ i, Module.Finite R (X i)] (p : I → J) [X.HasMap p]
     (j : J) : Module.Finite R (X.mapObj p j) :=
-  ModuleCat.finite_coproduct_of_finite_support (X.mapObjFun p j) (by
+  TauCeti.ModuleCat.finite_coproduct_of_finite_support (X.mapObjFun p j) (by
     have hf := (hasFiniteSupport_iff_finite X).mp hX
     refine (hf.preimage (f := fun i : p ⁻¹' {j} ↦ i.1)
       Subtype.val_injective.injOn).subset ?_
@@ -64,6 +64,9 @@ lemma HasFiniteSupport.finite_tensorObj {X Y : GradedObject I (ModuleCat.{u} R)}
     (hX : X.HasFiniteSupport) (hY : Y.HasFiniteSupport)
     [∀ i, Module.Finite R (X i)] [∀ i, Module.Finite R (Y i)] [HasTensor X Y]
     (i : I) : Module.Finite R (Monoidal.tensorObj (C := ModuleCat.{u} R) X Y i) := by
+  -- The external tensor product evaluates definitionally to the module tensor product:
+  -- mapBifunctor evaluates pointwise, curriedTensor gives the categorical tensor, and
+  -- ModuleCat's tensorObj is the raw tensor product with its canonical module structure.
   have (ij : I × I) : Module.Finite R
       ((((GradedObject.mapBifunctor (curriedTensor (ModuleCat R)) I I).obj X).obj Y) ij) :=
     inferInstanceAs (Module.Finite R (X ij.1 ⊗[R] Y ij.2))

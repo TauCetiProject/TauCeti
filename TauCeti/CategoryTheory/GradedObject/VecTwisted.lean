@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
+public import Mathlib.CategoryTheory.Monoidal.Limits.Preserves
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.CategoryTheory.GradedObject.Module
 public import TauCeti.CategoryTheory.GradedObject.Twisted
-public import TauCeti.CategoryTheory.Monoidal.Limits
 
 /-!
 # Finitely supported cocycle-twisted graded vector spaces
@@ -66,10 +66,12 @@ theorem objects_iff (X : TwistedGradedObject c (ModuleCat.{u} k)) :
       CategoryTheory.GradedObject.HasFiniteSupport X ∧ ∀ g, Module.Finite k (X g) :=
   Iff.rfl
 
-open Classical in
+section Monoidal
+
+variable [DecidableEq G]
+
 /-- Convolution and the unit preserve the finiteness conditions defining `VecTwisted`. -/
 instance objects_isMonoidal : (objects k G c).IsMonoidal := by
-  classical
   refine { prop_unit := ?_, prop_tensor := ?_ }
   · refine ⟨CategoryTheory.GradedObject.hasFiniteSupport_single 0 _, ?_⟩
     intro g
@@ -79,11 +81,11 @@ instance objects_isMonoidal : (objects k G c).IsMonoidal := by
     have := hY.2
     exact ⟨hX.1.tensorObj hY.1, fun g ↦ hX.1.finite_tensorObj hY.1 g⟩
 
-/-- The cocycle-twisted monoidal structure on finite-dimensional, finitely supported objects,
-using classical decidability of equality of degrees. -/
+/-- The cocycle-twisted monoidal structure on finite-dimensional, finitely supported objects. -/
 instance instMonoidalCategory : MonoidalCategory (VecTwisted k G c) := by
-  classical
   infer_instance
+
+end Monoidal
 
 /-- The fully faithful inclusion into all cocycle-twisted graded vector spaces. -/
 abbrev forget : VecTwisted k G c ⥤ TwistedGradedObject c (ModuleCat.{u} k) :=
@@ -113,25 +115,30 @@ theorem of_obj (X : CategoryTheory.GradedObject (Additive G) (ModuleCat.{u} k))
     (of (c := c) X hX).obj = X :=
   (rfl)
 
+variable [DecidableEq G]
+
 /-- A finite-dimensional vector space concentrated in degree `g`. -/
 def single (g : G) (V : ModuleCat.{u} k) [Module.Finite k V] : VecTwisted k G c := by
-  classical
   letI (i : Additive G) := CategoryTheory.GradedObject.finite_single_obj (Additive.ofMul g) V i
   exact of ((CategoryTheory.GradedObject.single (Additive.ofMul g)).obj V)
     (CategoryTheory.GradedObject.hasFiniteSupport_single _ _)
 
-open Classical in
 @[simp]
 theorem single_obj (g : G) (V : ModuleCat.{u} k) [Module.Finite k V] :
     (single (c := c) g V).obj =
       (CategoryTheory.GradedObject.single (Additive.ofMul g)).obj V :=
   (rfl)
 
+/-- A nonzero finite-dimensional vector space concentrated in degree `g` has singleton support. -/
+theorem support_single (g : G) (V : ModuleCat.{u} k) [Module.Finite k V]
+    (hV : ¬ IsZero V) : (single (c := c) g V).obj.support = {Additive.ofMul g} := by
+  rw [single_obj]
+  exact CategoryTheory.GradedObject.support_single _ V hV
+
 /-- The one-dimensional graded object concentrated in degree `g`. -/
 def delta (g : G) : VecTwisted k G c :=
   single g (ModuleCat.of k k)
 
-open Classical in
 /-- The underlying graded vector space of `δ_g` is the single-degree copy of the field. -/
 theorem delta_obj (g : G) : (delta (c := c) g).obj =
     (CategoryTheory.GradedObject.single (Additive.ofMul g)).obj (ModuleCat.of k k) :=
@@ -141,18 +148,10 @@ theorem delta_obj (g : G) : (delta (c := c) g).obj =
 also when the grading group is infinite. -/
 @[simp]
 theorem support_delta (g : G) : (delta (c := c) g).obj.support = {Additive.ofMul g} := by
-  classical
-  ext i
-  rw [delta_obj, CategoryTheory.GradedObject.mem_support, Set.mem_singleton_iff]
-  constructor
-  · intro hi
-    by_contra h
-    exact hi (CategoryTheory.GradedObject.isInitialSingleObjApply _ _ _ h).isZero
-  · rintro rfl hz
-    have hz' := (CategoryTheory.GradedObject.singleObjApplyIso
-      _ (ModuleCat.of k k)).isZero_iff.mp hz
-    have := ModuleCat.isZero_iff_subsingleton.mp hz'
-    exact zero_ne_one (Subsingleton.elim (0 : k) 1)
+  apply support_single
+  intro hz
+  have := ModuleCat.isZero_iff_subsingleton.mp hz
+  exact zero_ne_one (Subsingleton.elim (0 : k) 1)
 
 end VecTwisted
 
