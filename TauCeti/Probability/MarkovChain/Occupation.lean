@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.MarkovChain.Visits
+public import TauCeti.Probability.MarkovChain.EntranceLimits
+public import TauCeti.Probability.MarkovChain.Recurrence
 public import TauCeti.Probability.Process.Excursion.MarkovChain
 public import TauCeti.Probability.Renewal.StrongLaw
 
@@ -22,9 +23,17 @@ The proof consumes the independent-excursion decomposition
 omits its closing return step, so its length plus one is the renewal increment. Visits at time
 zero are not included in the occupation count.
 
+Writing `r_y = (m_y⁻¹).toReal` with `m_y = κ.meanReturnTime y`, the limit holds at every state
+with no recurrence hypothesis: started at `y`, the occupation frequency of `y` converges almost
+surely to `r_y` (`ProbabilityTheory.Kernel.ae_tendsto_visitCount_div_markovChainLaw_dirac`), since
+at a transient state the visits are almost surely finite and `m_y = ∞`. The first-entrance
+transfer then gives the limit from any finite initial law
+(`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`) and the limit of the mean
+occupation frequency (`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`).
+
 ## References
 
-* J. R. Norris, *Markov Chains*, Cambridge University Press, 1997, §1.10.
+* J. R. Norris, *Markov Chains*, Cambridge University Press, 1997, §1.10, Theorem 1.10.2.
 -/
 
 public section
@@ -178,3 +187,70 @@ theorem tendsto_integral_visitCount_div_of_return_eq_one
       (integrable_const 1) hb (hX.ae_tendsto_visitCount_div_of_return_eq_one hy)
 
 end ProbabilityTheory.HasLaw
+
+namespace ProbabilityTheory.Kernel
+
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
+  (κ : Kernel α α) [IsMarkovKernel κ]
+
+/-- **Long-run occupation frequency, started at the state.** Started at `y`,
+the proportion `V_y(n) / n` of the times `1, …, n` spent at `y` converges almost surely to
+`r_y = (m_y⁻¹).toReal`, where `m_y` is the mean return time. In particular the limit is zero when
+`y` is transient or null recurrent. -/
+theorem ae_tendsto_visitCount_div_markovChainLaw_dirac (y : α) :
+    ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ,
+      Tendsto (fun n : ℕ => (visitCount (fun k => x (k + 1)) y n : ℝ) / n) atTop
+        (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
+  by_cases hy : κ.IsRecurrent y
+  · have hm : κ.meanReturnTime y = ∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
+        (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ := by
+      rw [meanReturnTime_def]
+      refine lintegral_congr fun x => ?_
+      cases hittingAfter (fun n x => x n) {y} 1 x <;> rfl
+    rw [hm]
+    exact κ.ae_tendsto_visitCount_div_of_return_eq_one (isRecurrent_iff.mp hy)
+  -- A transient state has infinite mean return time and is visited only finitely often.
+  replace hy : κ.IsTransient y := isTransient_iff.mpr hy
+  rw [hy.meanReturnTime_eq_top, ENNReal.inv_top, ENNReal.toReal_zero]
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1
+    (Measure.markovChainLaw_setOf_infinite_setOf_eq_eq_zero (Measure.dirac y) κ
+      (isTransient_iff_return_probability_lt_one.mp hy))] with x hx
+  have hfin : (Set.ofPred fun k => x (k + 1) = y).Finite :=
+    (Set.not_infinite.1 hx).preimage (fun _ _ _ _ h => Nat.succ_injective h)
+  classical
+  refine squeeze_zero (fun n => by positivity) (fun n => ?_)
+    (tendsto_const_div_atTop_nhds_zero_nat (hfin.toFinset.card : ℝ))
+  gcongr
+  rw [visitCount_eq_count]
+  exact_mod_cast Nat.count_le_card hfin n
+
+end ProbabilityTheory.Kernel
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
+  (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
+
+/-- **Long-run occupation frequencies.** From any finite initial law, the
+proportion `V_y(n) / n` of the times `1, …, n` spent at `y` converges almost surely to
+`r_y = (m_y⁻¹).toReal` on the event that the chain enters `y`, and to zero off that event. -/
+theorem ae_tendsto_visitCount_div_markovChainLaw (y : α) :
+    ∀ᵐ x ∂markovChainLaw ν κ,
+      Tendsto (fun n : ℕ => (visitCount (fun k => x (k + 1)) y n : ℝ) / n) atTop
+        (𝓝 (if hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ then
+          (κ.meanReturnTime y)⁻¹.toReal else 0)) :=
+  ae_tendsto_visitCount_div_of_ae_tendsto_dirac ν κ
+    (κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y)
+
+/-- **Mean occupation frequencies.** From any finite initial law, the mean proportion of the times
+`1, …, n` spent at `y` converges to `ℙ(H_y < ∞) * r_y`, where `H_y` is the first entrance time to
+`y` and `r_y = (m_y⁻¹).toReal`. -/
+theorem tendsto_integral_visitCount_div_markovChainLaw (y : α) :
+    Tendsto (fun n : ℕ => ∫ x, (visitCount (fun k => x (k + 1)) y n : ℝ) / n
+        ∂markovChainLaw ν κ) atTop
+      (𝓝 ((markovChainLaw ν κ).real {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
+        (κ.meanReturnTime y)⁻¹.toReal)) :=
+  tendsto_integral_visitCount_div_of_ae_tendsto_dirac ν κ
+    (κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y)
+
+end MeasureTheory.Measure

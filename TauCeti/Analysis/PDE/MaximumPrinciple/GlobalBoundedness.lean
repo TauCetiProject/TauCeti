@@ -243,6 +243,91 @@ private theorem measureReal_lt_le_div_sub_rpow_mul_rpow
   rw [Real.div_rpow hM htl.le, div_mul_eq_mul_div, le_div_iff₀ (by positivity), mul_comm]
   exact hreal.trans hpow
 
+/-- The exponent facts behind Stampacchia's method: if `s (1 - 1/r) > 2` then `s > 0`,
+`2/s < 1 - 1/r`, `1/r + 1/s ≤ 1` and `β = s (1 - 1/r - 1/s) = s (1 - 1/r) - 1 > 1`. -/
+private theorem exponent_facts {r s : ℝ≥0} (hrs : 2 < (s : ℝ) * (1 - (r : ℝ)⁻¹)) :
+    0 < (s : ℝ) ∧ 2 / (s : ℝ) < 1 - (r : ℝ)⁻¹ ∧ (r : ℝ)⁻¹ + (s : ℝ)⁻¹ ≤ 1 ∧
+      (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) = (s : ℝ) * (1 - (r : ℝ)⁻¹) - 1 ∧
+      1 < (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) := by
+  have hs0 : (0 : ℝ) < s := by
+    rcases (NNReal.coe_nonneg s).eq_or_lt with hs | hs
+    · rw [← hs, zero_mul] at hrs
+      norm_num at hrs
+    · exact hs
+  have h2s : 2 / (s : ℝ) < 1 - (r : ℝ)⁻¹ := by
+    rw [div_lt_iff₀ hs0]
+    linarith
+  have hβ_eq : (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) = (s : ℝ) * (1 - (r : ℝ)⁻¹) - 1 := by
+    field_simp
+  refine ⟨hs0, h2s, ?_, hβ_eq, by linarith⟩
+  have : (s : ℝ)⁻¹ ≤ 2 / s := by
+    rw [div_eq_mul_inv]
+    linarith [inv_pos.2 hs0]
+  linarith
+
+/-- The core of Stampacchia's global bound: with `M = S² ‖f‖_{Lʳ} / λ` and
+`β = s (1 - 1/r - 1/s) > 1`, almost everywhere
+`u ≤ k + M |{u > k}| ^ ((β - 1)/s) 2 ^ (β/(β - 1))`. -/
+private theorem ae_value_le_add_mul_rpow_mul_rpow
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x)
+    (hOmega : mu Omega ≠ ∞) {r s S : ℝ≥0} (hr : 0 < r) (hs0 : (0 : ℝ) < s)
+    (hrs : (r : ℝ)⁻¹ + (s : ℝ)⁻¹ ≤ 1)
+    (hβ : 1 < (s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹))
+    (hS : ∀ v ∈ w1p0Submodule mu Omega 2,
+      eLpNorm (W1p.value v) s (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f r (mu.restrict Omega))
+    {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a 0 c u (v : W1p mu Omega 2) ≤
+          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    {k : ℝ} (hk : 0 ≤ k)
+    (hboundary : W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤
+      k + S ^ 2 * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
+          (mu.restrict Omega).real {x | k < W1p.value u x} ^
+            (((s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) - 1) / s) *
+        2 ^ ((s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) /
+          ((s : ℝ) * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) - 1)) := by
+  set ν := mu.restrict Omega
+  have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
+  have hs : 0 < s := by exact_mod_cast hs0
+  set β : ℝ := s * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹)
+  set M := S ^ 2 * (eLpNorm f r ν).toReal / lam
+  have hM : 0 ≤ M := div_nonneg (by positivity) h.pos.le
+  set φ : ℝ → ℝ := fun t => ν.real {x | t < W1p.value u x}
+  rcases hM.eq_or_lt with hM0 | hMpos
+  · -- If `M = 0`, the truncation `(u - k)⁺` has zero `Lˢ` norm, so `u ≤ k`.
+    have hW : (eLpNorm (W1p.value (W1p.posPartAbove (by norm_num) hk u)) s ν).toReal ≤
+        M * φ k ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) :=
+      toReal_eLpNorm_posPartAbove_le h ha hc hc_bound hc_nonneg hOmega hr hs hrs hS hf hu hk
+        hboundary le_rfl
+    rw [← hM0, zero_mul] at hW
+    have hfin : eLpNorm (W1p.value (W1p.posPartAbove (by norm_num) hk u)) s ν ≠ ∞ :=
+      ((hS _ hboundary).trans_lt (by finiteness)).ne
+    have hzero : eLpNorm (W1p.value (W1p.posPartAbove (by norm_num) hk u)) s ν = 0 :=
+      ((ENNReal.toReal_eq_zero_iff _).1 (le_antisymm hW ENNReal.toReal_nonneg)).resolve_right hfin
+    rw [eLpNorm_eq_zero_iff (by exact_mod_cast hs.ne')] at hzero
+    filter_upwards [hzero, W1p.value_posPartAbove_ae (by norm_num) hk u] with x hx hx'
+    rw [← hM0, zero_mul, zero_mul, add_zero]
+    have : max (W1p.value u x - k) 0 = 0 := hx'.symm.trans hx
+    linarith [le_max_left (W1p.value u x - k) 0]
+  · -- If `M > 0`, Stampacchia's lemma applies to the measures of the superlevel sets.
+    have hanti : AntitoneOn φ (Ici k) := fun t₁ _ t₂ _ ht =>
+      measureReal_mono (fun x hx => lt_of_le_of_lt ht hx) (measure_ne_top _ _)
+    have hrec : ∀ l t, k ≤ l → l < t → φ t ≤ (M / (t - l)) ^ (s : ℝ) * φ l ^ β :=
+      fun l t hkl hlt => measureReal_lt_le_div_sub_rpow_mul_rpow h ha hc hc_bound hc_nonneg hOmega
+        hr hs hrs hS hf hu hk hboundary hkl hlt
+    have hstamp := apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow hMpos hs0 hβ
+      (fun _ _ => measureReal_nonneg) hanti hrec
+    have hnull := (measureReal_eq_zero_iff (measure_ne_top _ _)).1 hstamp
+    filter_upwards [measure_eq_zero_iff_ae_notMem.1 hnull] with x hx
+    exact not_lt.1 hx
+
 /-- **Stampacchia's global bound.** Let `Ω` have finite measure, let `a` be measurable and
 uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `c` be bounded, measurable and
 nonnegative. Suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality `‖v‖_{Lˢ} ≤ S ‖∇v‖_{L²}`,
@@ -277,82 +362,84 @@ theorem UniformlyEllipticOn.ae_value_le_add_of_forall_eLpNorm_le
       k + 2 ^ (((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)) * S ^ 2 *
         (eLpNorm f r (mu.restrict Omega)).toReal / lam *
           mu.real Omega ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ)) := by
-  set ν := mu.restrict Omega
-  have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
-  -- The exponents: `s > 2`, `1/r + 1/s < 1`, and `β = s (1 - 1/r - 1/s) > 1`.
-  have hs0 : (0 : ℝ) < s := by
-    rcases (NNReal.coe_nonneg s).eq_or_lt with hs | hs
-    · rw [← hs, zero_mul] at hrs
-      norm_num at hrs
-    · exact hs
+  have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hOmega
+  obtain ⟨hs0, h2s, hrs', hβ_eq, hβ⟩ := exponent_facts hrs
   have hs : 0 < s := by exact_mod_cast hs0
-  have h2s : 2 / (s : ℝ) < 1 - (r : ℝ)⁻¹ := by
-    rw [div_lt_iff₀ hs0]
-    linarith
-  have hrs' : (r : ℝ)⁻¹ + (s : ℝ)⁻¹ ≤ 1 := by
-    have : (s : ℝ)⁻¹ ≤ 2 / s := by
-      rw [div_eq_mul_inv]
-      linarith [inv_pos.2 hs0]
-    linarith
   set β : ℝ := s * (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹)
-  have hβ_eq : β = s * (1 - (r : ℝ)⁻¹) - 1 := by
-    simp only [β]
-    field_simp
-  have hβ : 1 < β := by linarith
-  set M := S ^ 2 * (eLpNorm f r ν).toReal / lam
+  set M := S ^ 2 * (eLpNorm f r (mu.restrict Omega)).toReal / lam
   have hM : 0 ≤ M := div_nonneg (by positivity) h.pos.le
-  set φ : ℝ → ℝ := fun t => ν.real {x | t < W1p.value u x}
-  -- It suffices to bound `u` by the level `k + M φ(k) ^ ((β - 1)/s) 2 ^ (β/(β - 1))`.
-  suffices hmain : ∀ᵐ x ∂ν, W1p.value u x ≤ k + M * φ k ^ ((β - 1) / s) * 2 ^ (β / (β - 1)) by
-    have hexp : (β - 1) / s = 1 - (r : ℝ)⁻¹ - 2 / s := by
-      rw [hβ_eq]
-      field_simp
-      ring
-    have hexp2 : β / (β - 1) =
-        ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2) := by
-      rw [hβ_eq]
-      ring
-    have hφk : φ k ≤ mu.real Omega := by
-      refine (measureReal_mono (subset_univ _)).trans_eq ?_
-      simp [ν, measureReal_def]
-    filter_upwards [hmain] with x hx
-    refine hx.trans ?_
-    rw [hexp, hexp2]
-    calc k + M * φ k ^ (1 - (r : ℝ)⁻¹ - 2 / s) * 2 ^ (((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) /
-          ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2))
-        ≤ k + M * mu.real Omega ^ (1 - (r : ℝ)⁻¹ - 2 / s) * 2 ^ (((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) /
-          ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)) := by
-          gcongr
-      _ = _ := by
-          simp only [M]
-          ring
-  rcases hM.eq_or_lt with hM0 | hMpos
-  · -- If `M = 0`, the truncation `(u - k)⁺` has zero `Lˢ` norm, so `u ≤ k`.
-    have hW : (eLpNorm (W1p.value (W1p.posPartAbove (by norm_num) hk u)) s ν).toReal ≤
-        M * φ k ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) :=
-      toReal_eLpNorm_posPartAbove_le h ha hc hc_bound hc_nonneg hOmega hr hs hrs' hS hf hu hk
-        hboundary le_rfl
-    rw [← hM0, zero_mul] at hW
-    have hfin : eLpNorm (W1p.value (W1p.posPartAbove (by norm_num) hk u)) s ν ≠ ∞ :=
-      ((hS _ hboundary).trans_lt (by finiteness)).ne
-    have hzero : eLpNorm (W1p.value (W1p.posPartAbove (by norm_num) hk u)) s ν = 0 :=
-      ((ENNReal.toReal_eq_zero_iff _).1 (le_antisymm hW ENNReal.toReal_nonneg)).resolve_right hfin
-    rw [eLpNorm_eq_zero_iff (by exact_mod_cast hs.ne')] at hzero
-    filter_upwards [hzero, W1p.value_posPartAbove_ae (by norm_num) hk u] with x hx hx'
-    rw [← hM0, zero_mul, zero_mul, add_zero]
-    have : max (W1p.value u x - k) 0 = 0 := hx'.symm.trans hx
-    linarith [le_max_left (W1p.value u x - k) 0]
-  · -- If `M > 0`, Stampacchia's lemma applies to the measures of the superlevel sets.
-    have hanti : AntitoneOn φ (Ici k) := fun t₁ _ t₂ _ ht =>
-      measureReal_mono (fun x hx => lt_of_le_of_lt ht hx) (measure_ne_top _ _)
-    have hrec : ∀ l t, k ≤ l → l < t → φ t ≤ (M / (t - l)) ^ (s : ℝ) * φ l ^ β :=
-      fun l t hkl hlt => measureReal_lt_le_div_sub_rpow_mul_rpow h ha hc hc_bound hc_nonneg hOmega
-        hr hs hrs' hS hf hu hk hboundary hkl hlt
-    have hstamp := apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow hMpos hs0 hβ
-      (fun _ _ => measureReal_nonneg) hanti hrec
-    have hnull := (measureReal_eq_zero_iff (measure_ne_top _ _)).1 hstamp
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 hnull] with x hx
-    exact not_lt.1 hx
+  set φ : ℝ → ℝ := fun t => (mu.restrict Omega).real {x | t < W1p.value u x}
+  have hmain := ae_value_le_add_mul_rpow_mul_rpow h ha hc hc_bound hc_nonneg hOmega hr hs0 hrs'
+    hβ hS hf hu hk hboundary
+  have hexp : (β - 1) / s = 1 - (r : ℝ)⁻¹ - 2 / s := by
+    rw [hβ_eq]
+    field_simp
+    ring
+  have hexp2 : β / (β - 1) =
+      ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2) := by
+    rw [hβ_eq]
+    ring
+  have hφk : φ k ≤ mu.real Omega := by
+    refine (measureReal_mono (subset_univ _)).trans_eq ?_
+    simp [measureReal_def]
+  filter_upwards [hmain] with x hx
+  refine hx.trans ?_
+  rw [hexp, hexp2]
+  calc k + M * φ k ^ (1 - (r : ℝ)⁻¹ - 2 / s) * 2 ^ (((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) /
+        ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2))
+      ≤ k + M * mu.real Omega ^ (1 - (r : ℝ)⁻¹ - 2 / s) * 2 ^ (((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) /
+        ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)) := by
+        gcongr
+    _ = _ := by
+        simp only [M]
+        ring
+
+/-- The Sobolev exponent `s = (1/2 - δ)⁻¹` used in the global bound: for `r > 1` with `n < 2 r`
+there are `δ` with `1/(2r) < δ < min (1/n) (1/2)` and `s = (1/2 - δ)⁻¹ ≥ 2`, which satisfies
+`s (1 - 1/r) > 2` and `2/s = 1 - 2δ`. -/
+private theorem exists_sobolev_exponent {n : ℕ} {r : ℝ≥0} (hn0 : (0 : ℝ) < n) (hr : 1 < r)
+    (hrn : (n : ℝ) < 2 * r) :
+    ∃ (δ : ℝ) (s : ℝ≥0), δ < (n : ℝ)⁻¹ ∧ δ < 2⁻¹ ∧ (s : ℝ) = (2⁻¹ - δ)⁻¹ ∧ (2 : ℝ≥0∞) ≤ s ∧
+      2 < (s : ℝ) * (1 - (r : ℝ)⁻¹) ∧ 2 / (s : ℝ) = 1 - 2 * δ := by
+  have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
+  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
+  have hlow : ((2 : ℝ) * r)⁻¹ < min (n : ℝ)⁻¹ 2⁻¹ :=
+    lt_min ((inv_lt_inv₀ (by positivity) hn0).2 hrn)
+      ((inv_lt_inv₀ (by positivity) two_pos).2 (by linarith))
+  obtain ⟨δ, hδ0, hδmin⟩ := exists_between hlow
+  obtain ⟨hδn, hδ2⟩ := lt_min_iff.1 hδmin
+  have hδpos : 0 < δ := (inv_pos.2 (by positivity)).trans hδ0
+  have hs : ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) = (2⁻¹ - δ)⁻¹ :=
+    Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
+  refine ⟨δ, Real.toNNReal (2⁻¹ - δ)⁻¹, hδn, hδ2, hs, ?_, ?_, ?_⟩
+  · have : (2 : ℝ) ≤ Real.toNNReal (2⁻¹ - δ)⁻¹ := by
+      rw [hs, le_inv_comm₀ two_pos (by linarith)]
+      linarith
+    exact_mod_cast this
+  · rw [hs, ← div_eq_inv_mul, lt_div_iff₀ (by linarith)]
+    have : (r : ℝ)⁻¹ < 2 * δ := by
+      rw [mul_inv] at hδ0
+      linarith
+    linarith
+  · rw [hs]
+    field_simp
+
+/-- The exponent bookkeeping in the global bound: `(K m^(1/n - δ))² m^(1 - 1/r - 2/s) =
+K² m^(2/n - 1/r)` when `2/s = 1 - 2δ`. -/
+private theorem sq_mul_rpow_eq {n : ℕ} {r s K m δ : ℝ} (hm : 0 ≤ m) (hn0 : (0 : ℝ) < n)
+    (hr0 : 0 < r) (hrn : (n : ℝ) < 2 * r) (h2s : 2 / s = 1 - 2 * δ) :
+    (K * m ^ ((n : ℝ)⁻¹ - δ)) ^ 2 * m ^ (1 - r⁻¹ - 2 / s) = K ^ 2 * m ^ (2 / (n : ℝ) - r⁻¹) := by
+  have hsum : 2 * ((n : ℝ)⁻¹ - δ) + (1 - r⁻¹ - 2 / s) = 2 / n - r⁻¹ := by
+    rw [h2s]
+    ring
+  have hne : 2 / (n : ℝ) - r⁻¹ ≠ 0 := by
+    have : r⁻¹ < 2 / n := by
+      rw [inv_lt_comm₀ hr0 (by positivity), inv_div, div_lt_iff₀ (two_pos (α := ℝ))]
+      linarith
+    linarith
+  rw [mul_pow, ← Real.rpow_natCast (m ^ _), ← Real.rpow_mul hm, mul_assoc,
+    ← Real.rpow_add' hm (by rwa [Nat.cast_ofNat, mul_comm, hsum]), Nat.cast_ofNat,
+    mul_comm (((n : ℝ)⁻¹ - δ)), hsum]
 
 /-- **Stampacchia's global bound, in every dimension.** Let `n ≥ 1` be the dimension and let
 `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the normalization of the
@@ -394,30 +481,7 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast Fintype.card_pos
   have hn0 : (0 : ℝ) < n := by linarith
   have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  -- The Sobolev exponent `s = (1/2 - δ)⁻¹`, with `1/(2r) < δ < min (1/n) (1/2)`.
-  have hlow : ((2 : ℝ) * r)⁻¹ < min (n : ℝ)⁻¹ 2⁻¹ :=
-    lt_min ((inv_lt_inv₀ (by positivity) hn0).2 hrn)
-      ((inv_lt_inv₀ (by positivity) two_pos).2 (by linarith))
-  obtain ⟨δ, hδ0, hδmin⟩ := exists_between hlow
-  obtain ⟨hδn, hδ2⟩ := lt_min_iff.1 hδmin
-  have hδpos : 0 < δ := (inv_pos.2 (by positivity)).trans hδ0
-  set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
-  have hs : (s : ℝ) = (2⁻¹ - δ)⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
-  have hs2 : (2 : ℝ≥0∞) ≤ s := by
-    have : (2 : ℝ) ≤ s := by
-      rw [hs, le_inv_comm₀ two_pos (by linarith)]
-      linarith
-    exact_mod_cast this
-  have hrs : 2 < (s : ℝ) * (1 - (r : ℝ)⁻¹) := by
-    rw [hs, ← div_eq_inv_mul, lt_div_iff₀ (by linarith)]
-    have : (r : ℝ)⁻¹ < 2 * δ := by
-      rw [mul_inv] at hδ0
-      linarith
-    linarith
-  have h2s : 2 / (s : ℝ) = 1 - 2 * δ := by
-    rw [hs]
-    field_simp
+  obtain ⟨δ, s, hδn, hδ2, hs, hs2, hrs, h2s⟩ := exists_sobolev_exponent hn0 hr hrn
   -- The constant `K` of the Sobolev inequality `‖v‖_{Lˢ} ≤ K |Ω| ^ (1/n - δ) ‖∇v‖_{L²}`.
   set K : ℝ := (n : ℝ)⁻¹ * mu.real (Metric.ball 0 1) ^ (-(n : ℝ)⁻¹) *
     ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ)
@@ -452,19 +516,8 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   refine hx.trans_eq ?_
   -- `S² |Ω| ^ (1 - 1/r - 2/s) = K² |Ω| ^ (2/n - 1/r)`.
   have hpow : (S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ)) =
-      K ^ 2 * m ^ (2 / (n : ℝ) - (r : ℝ)⁻¹) := by
-    have hsum : 2 * ((n : ℝ)⁻¹ - δ) + (1 - (r : ℝ)⁻¹ - 2 / s) = 2 / n - (r : ℝ)⁻¹ := by
-      rw [h2s]
-      ring
-    have hne : 2 / (n : ℝ) - (r : ℝ)⁻¹ ≠ 0 := by
-      have : (r : ℝ)⁻¹ < 2 / n := by
-        rw [inv_lt_comm₀ hr0 (by positivity), inv_div, div_lt_iff₀ (two_pos (α := ℝ))]
-        linarith
-      linarith
-    have hSval : (S : ℝ) = K * m ^ ((n : ℝ)⁻¹ - δ) := rfl
-    rw [hSval, mul_pow, ← Real.rpow_natCast (m ^ _), ← Real.rpow_mul hm, mul_assoc,
-      ← Real.rpow_add' hm (by rwa [Nat.cast_ofNat, mul_comm, hsum]), Nat.cast_ofNat,
-      mul_comm (((n : ℝ)⁻¹ - δ)), hsum]
+      K ^ 2 * m ^ (2 / (n : ℝ) - (r : ℝ)⁻¹) :=
+    sq_mul_rpow_eq hm hn0 hr0 hrn h2s
   calc k + 2 ^ E * (S : ℝ) ^ 2 * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
         m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))
       = k + 2 ^ E * ((S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))) *

@@ -340,6 +340,15 @@ private theorem integral_exp_mul_centered_le_pi {ι : Type*} [Fintype ι] {β : 
   rw [e.symm.sum_comp (fun i => (c i / 2) ^ 2)] at key
   exact key
 
+/-- The real value of McDiarmid's variance proxy `∑ i, (c i).toNNReal ^ 2 / 4` for nonnegative
+`c`. -/
+theorem coe_sum_toNNReal_sq_div_four {ι : Type*} [Fintype ι] {c : ι → ℝ} (hc : ∀ i, 0 ≤ c i) :
+    (((∑ i, (c i).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ)) = ∑ i, (c i / 2) ^ 2 := by
+  push_cast [Real.coe_toNNReal (c _) (hc _)]
+  apply Finset.sum_congr rfl
+  intro i _
+  ring
+
 /-- **McDiarmid's bounded-differences inequality at MGF level.** Let `f` be a measurable
 real-valued function on a finite i.i.d. product. If two inputs that differ only at coordinate `i`
 have outputs differing by at most `c i`, then the centered `f` is sub-Gaussian with variance proxy
@@ -369,13 +378,7 @@ theorem hasSubgaussianMGF_of_bounded_differences
     integrable_exp_mul_sub_of_bounded_differences c hf.aemeasurable hbd I t
   refine ⟨hint, fun t => ?_⟩
   have hkey := integral_exp_mul_centered_le_pi ν f hf c hc hbd t
-  have hcoe : (((∑ i, (c i).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ)) =
-      ∑ i, (c i / 2) ^ 2 := by
-    push_cast [Real.coe_toNNReal (c _) (hc _)]
-    apply Finset.sum_congr rfl
-    intro i _
-    ring
-  rw [ProbabilityTheory.mgf, hcoe]
+  rw [ProbabilityTheory.mgf, coe_sum_toNNReal_sq_div_four hc]
   exact hkey
 
 /-- McDiarmid's bounded-differences inequality for a product indexed by `Fin n`, stated in the

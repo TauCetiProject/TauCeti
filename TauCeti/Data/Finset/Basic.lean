@@ -32,6 +32,8 @@ import TauCeti.Data.Set.PowersetCard
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
   nonempty finite type by the parity of their cardinality: each parity accounts for exactly half
   of them.
+* `Finset.filter_lt_eq_insert_of_forall_lt` splits the elements of a finite set after `s` into its
+  first such element and the elements after a later point.
 * `Finset.sum_powerset_neg_one_pow_card_of_ring` evaluates the alternating sum over the subsets of
   a finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
@@ -53,13 +55,17 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.Nonempty.exists_subset_Ioi_insert_eq` writes a nonempty finset of a linear order as its
   minimum inserted into a finset above it, and `Finset.min'_insert_of_subset_Ioi` recovers that
   minimum.
+* `Finset.filter_min'_lt_eq_erase` identifies the elements above the minimum with the erasure of
+  the minimum.
 * `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
   a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
   `Finset.card_image_comp_eq_and_image_comp_subset_Ioo_iff` splits that condition for a composite
-  of maps.
+  of maps. `StrictMono.image_subset_Ioo` maps a finset inside `Ioo a b` into the interval between
+  the images of `a` and `b` under a strictly monotone map, and
+  `StrictMono.exists_image_eq_of_subset_Ioo` lifts such an interval and finset along it.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -76,9 +82,8 @@ import TauCeti.Data.Set.PowersetCard
   from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
-* `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
-  over a pair of finite types, to the values of its summand at the two points where it is
-  supported, and at the four cells of a rectangle.
+* `Finset.sum_eq_four` reduces a double sum over a pair of finite types to the values of its
+  summand at the four cells of a rectangle where it is supported.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
   has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
@@ -426,6 +431,29 @@ theorem exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : �
     simp only [g, hjI, ite_false] at this
     rw [this]; omega
 
+/-- For finite index sets `tA ⊆ S ×ˢ S` and `tB ⊆ S' ×ˢ S'` with `S`, `S'` disjoint, and every
+cutoff `n`, some permutation of `ℕ` fixes every index of `tA` and moves both coordinates of every
+index of `tB` to at least `n`. -/
+theorem exists_perm_prod_fix_and_le {S S' : Set ℕ} (hd : Disjoint S S')
+    {tA tB : Finset (ℕ × ℕ)} (htA : ↑tA ⊆ S ×ˢ S) (htB : ↑tB ⊆ S' ×ˢ S') (n : ℕ) :
+    ∃ ρ : Equiv.Perm ℕ, (∀ p ∈ tA, (ρ p.1, ρ p.2) = p) ∧ ∀ p ∈ tB, n ≤ ρ p.1 ∧ n ≤ ρ p.2 := by
+  classical
+  have hmem : ∀ {t : Finset (ℕ × ℕ)} {T : Set ℕ}, ↑t ⊆ T ×ˢ T →
+      ∀ i ∈ t.image Prod.fst ∪ t.image Prod.snd, i ∈ T := by
+    intro t T ht i hi
+    simp only [Finset.mem_union, Finset.mem_image] at hi
+    rcases hi with ⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩
+    · exact (ht (Finset.mem_coe.2 hp)).1
+    · exact (ht (Finset.mem_coe.2 hp)).2
+  obtain ⟨ρ, hρI, hρJ⟩ := (tA.image Prod.fst ∪ tA.image Prod.snd).exists_perm_eqOn_le_apply
+    (tB.image Prod.fst ∪ tB.image Prod.snd) (Finset.disjoint_left.2 fun i hi hj ↦
+      Set.disjoint_left.mp hd (hmem htA i hi) (hmem htB i hj)) n
+  refine ⟨ρ, fun p hp ↦ ?_, fun p hp ↦ ⟨?_, ?_⟩⟩
+  · rw [hρI _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp)),
+      hρI _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))]
+  · exact hρJ _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp))
+  · exact hρJ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))
+
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
 be summed first over `c` and then over the interval of possible `b`. -/
@@ -634,6 +662,11 @@ theorem min'_insert_of_subset_Ioi {α : Type*} [LinearOrder α] [LocallyFiniteOr
     · exact le_rfl
     · exact (mem_Ioi.1 (hs hy)).le)
 
+/-- Removing the minimum of a nonempty finset leaves the elements strictly above it. -/
+theorem filter_min'_lt_eq_erase {α : Type*} [LinearOrder α] {s : Finset α} (hs : s.Nonempty) :
+    {x ∈ s | s.min' hs < x} = s.erase (s.min' hs) :=
+  (filter_congr fun y hy ↦ ⟨LT.lt.ne', (s.min'_le y hy).lt_of_ne'⟩).trans (filter_ne' s _)
+
 /-- A nonempty finset of a linear order is an element `a` inserted into a finset above `a`. -/
 theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
     [LocallyFiniteOrderTop α] {s : Finset α} (hs : s.Nonempty) :
@@ -716,20 +749,32 @@ theorem card_image_comp_eq_and_image_comp_subset_Ioo_iff {α β γ : Type*} [Par
   · rintro ⟨⟨hcg, -⟩, hcf, hsub⟩
     exact ⟨hcf.trans hcg, hsub⟩
 
-/-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
-of its values at those two points. -/
-theorem sum_eq_two {α M : Type*} [Fintype α] [AddCommMonoid M] (f : α → M) (a b : α)
-    (hab : a ≠ b) (h : ∀ x, x ≠ a → x ≠ b → f x = 0) : ∑ x, f x = f a + f b := by
+/-- A strictly monotone map sends elements strictly between `a` and `b` to elements strictly
+between their images. -/
+theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [LocallyFiniteOrder α]
+    [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β} (he : StrictMono e)
+    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) := fun _ hx ↦ by
+  obtain ⟨s, hs, rfl⟩ := mem_image.1 hx
+  have := mem_Ioo.1 (hS hs)
+  exact mem_Ioo.2 ⟨he this.1, he this.2⟩
+
+/-- Endpoints `a ≤ b` and a finset `S ⊆ Ioo a b`, all of whose elements are values of a strictly
+monotone map `e`, are the images under `e` of endpoints `a' ≤ b'` and of a finset
+`S' ⊆ Ioo a' b'`. -/
+theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearOrder α]
+    [LocallyFiniteOrder α] [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β}
+    (he : StrictMono e) {a b : β} {S : Finset β} (hab : a ≤ b) (hS : S ⊆ Ioo a b)
+    (ha : ∃ a', e a' = a) (hb : ∃ b', e b' = b) (hSe : ∀ s ∈ S, ∃ s', e s' = s) :
+    ∃ a' b' S', e a' = a ∧ e b' = b ∧ S'.image e = S ∧ a' ≤ b' ∧ S' ⊆ Ioo a' b' := by
   classical
-  -- The summand vanishes away from the pair `a`, `b`, so the sum over the whole type is the sum
-  -- over the two-point finset, which `Finset.sum_pair` evaluates.
-  calc (∑ x, f x) = ∑ x ∈ ({a, b} : Finset α), f x := by
-        refine (Finset.sum_subset (s₁ := ({a, b} : Finset α)) (s₂ := (Finset.univ : Finset α))
-          (fun x _ => Finset.mem_univ x) ?_).symm
-        intro x _ hx
-        have hx' : x ≠ a ∧ x ≠ b := by simpa using hx
-        exact h x hx'.1 hx'.2
-    _ = f a + f b := Finset.sum_pair hab
+  obtain ⟨a', rfl⟩ := ha
+  obtain ⟨b', rfl⟩ := hb
+  obtain ⟨S', rfl⟩ : ∃ S', S'.image e = S := ⟨S.preimage e he.injective.injOn, by
+    rw [image_preimage]
+    exact filter_true_of_mem hSe⟩
+  refine ⟨a', b', S', rfl, rfl, rfl, he.le_iff_le.1 hab, fun s hs ↦ ?_⟩
+  have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
+  exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
 /-- The double sum over a pair of finite types of a function that vanishes outside the four cells
 of the rectangle `i`, `i'` by `j`, `j'` is the sum of its four values there. -/
@@ -744,13 +789,31 @@ theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M
     intro y _
     exact h0 x y (fun h => hx h.1) (fun h => hx h.1) (fun h => hx' h.1) (fun h => hx' h.1)
   calc (∑ x, ∑ y, g x y) = (∑ y, g i y) + (∑ y, g i' y) :=
-        sum_eq_two (fun x => ∑ y, g x y) i i' hi'ne (fun x hx hx' => hzero x hx hx')
+        Fintype.sum_eq_add i i' hi'ne (fun x hx => hzero x hx.1 hx.2)
     _ = (g i j + g i j') + (g i' j + g i' j') := by
-        rw [sum_eq_two (g i) j j' hj'ne (fun y hyj hyj' => h0 i y (fun h => hyj h.2)
-              (fun h => hyj' h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
-            sum_eq_two (g i') j j' hj'ne (fun y hyj hyj' => h0 i' y (fun h => hi'ne h.1.symm)
-              (fun h => hi'ne h.1.symm) (fun h => hyj h.2) (fun h => hyj' h.2))]
+        rw [Fintype.sum_eq_add j j' hj'ne (f := g i) (fun y hy => h0 i y (fun h => hy.1 h.2)
+              (fun h => hy.2 h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
+            Fintype.sum_eq_add j j' hj'ne (f := g i') (fun y hy => h0 i' y
+              (fun h => hi'ne h.1.symm) (fun h => hi'ne h.1.symm) (fun h => hy.1 h.2)
+              (fun h => hy.2 h.2))]
     _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
+
+/-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
+`(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`. -/
+theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [LinearOrder α] {S : Finset α} {s c t₂ : α}
+    (hc : c ∈ S) (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hct : c < t₂)
+    (hgap : ∀ t ∈ S, c < t → t₂ < t) :
+    {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
+  ext t
+  simp only [Finset.mem_filter, Finset.mem_insert]
+  constructor
+  · rintro ⟨htS, hst⟩
+    rcases (hcmin t htS hst).eq_or_lt with h | h
+    · exact Or.inl h.symm
+    · exact Or.inr ⟨htS, hgap t htS h⟩
+  · rintro (rfl | ⟨htS, ht⟩)
+    · exact ⟨hc, hsc⟩
+    · exact ⟨htS, hsc.trans (hct.trans ht)⟩
 
 end Finset
 

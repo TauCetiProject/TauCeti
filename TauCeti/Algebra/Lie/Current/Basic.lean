@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.Algebra.Lie.Loop
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
+public import TauCeti.RingTheory.HahnSeries.TensorProduct
 -- Non-public: used only inside proofs.
 import TauCeti.Algebra.Lie.BaseChange.Perfect
 
@@ -109,24 +110,26 @@ theorem coeff_tmul (n : ℤ) (f : R⸨X⸩) (x : L) :
     coeff R L n (f ⊗ₜ x) = f.coeff n • x := by
   simp [coeff]
 
-/-- In any basis of `L`, scalar-series coordinates and current coefficients agree. -/
-theorem coeff_equivFinsuppOfBasisRight {ι : Type*} [DecidableEq ι]
-    (b : Module.Basis ι R L) (u : currentAlgebra R L) (i : ι) (n : ℤ) :
-    (TensorProduct.equivFinsuppOfBasisRight b u i).coeff n = b.repr (coeff R L n u) i := by
+variable {R} in
+/-- On formal currents, the comparison with module-valued Laurent series preserves
+coefficients. -/
+@[simp]
+theorem _root_.HahnModule.coeff_tensorProductToHahnModule {V : Type*}
+    [AddCommGroup V] [Module R V] (u : currentAlgebra R V) (n : ℤ) :
+    ((HahnModule.of R).symm (HahnModule.tensorProductToHahnModule ℤ R V u)).coeff n =
+      coeff R V n u := by
   induction u using TensorProduct.inductionOn with
-  | tmul f x =>
-    simp [mul_comm]
-  | add u v hu hv => simp [hu, hv]
+  | tmul f x => simp
+  | add u v hu hv =>
+    simp only [map_add, HahnModule.of_symm_add, HahnSeries.coeff_add, hu, hv]
 
 /-- Coefficients determine a formal current over a free coefficient module. -/
 @[ext]
 theorem ext [Module.Free R L] {u v : currentAlgebra R L}
     (h : ∀ n, coeff R L n u = coeff R L n v) : u = v := by
-  classical
-  let b := Module.Free.chooseBasis R L
-  apply (TensorProduct.equivFinsuppOfBasisRight b).injective
-  ext i n
-  simp only [coeff_equivFinsuppOfBasisRight, h]
+  apply HahnModule.tensorProductToHahnModule_injective
+  ext n
+  simpa only [HahnModule.coeff_tensorProductToHahnModule] using h n
 
 /-- Over a finite coefficient module, every coefficient family vanishing below some order is the
 coefficient family of a formal current. Freeness is not needed. -/
@@ -190,7 +193,8 @@ theorem mem_orderSubmodule_iff [Module.Free R L] (N : ℤ) (u : currentAlgebra R
   apply tmul_mem_orderSubmodule
   rw [HahnSeries.le_orderTop_iff_forall]
   intro n hn
-  rw [coeff_equivFinsuppOfBasisRight, hu n (by exact_mod_cast hn)]
+  rw [HahnModule.coeff_equivFinsuppOfBasisRight, HahnModule.coeff_tensorProductToHahnModule,
+    hu n (by exact_mod_cast hn)]
   simp
 
 /-- Increasing the required order makes the order submodule smaller. -/
@@ -535,6 +539,15 @@ theorem apply_trunc_ofLoop {V : Type*} [AddCommGroup V] [Module R V] {N : ℤ}
   dsimp only
   rw [LieAlgebra.LoopAlgebra.toFinsupp_symm_single,
     hg n (not_lt.mp fun h ↦ Finsupp.mem_support_iff.mp hn (hvN n h))]
+
+variable {R L} in
+/-- The brackets of `X⁻¹ ⊗ x` with `X ⊗ y` and of `1 ⊗ x` with `1 ⊗ y` agree. -/
+lemma lie_single_neg_one_eq_lie_single_zero (x y : L) :
+    ⁅(HahnSeries.single (-1) 1 ⊗ₜ x : currentAlgebra R L),
+        (HahnSeries.single 1 1 ⊗ₜ y : currentAlgebra R L)⁆ =
+      ⁅(HahnSeries.single 0 1 ⊗ₜ x : currentAlgebra R L),
+        (HahnSeries.single 0 1 ⊗ₜ y : currentAlgebra R L)⁆ := by
+  simp [_root_.LieAlgebra.ExtendScalars.bracket_tmul, HahnSeries.single_mul_single]
 
 end Lie
 
