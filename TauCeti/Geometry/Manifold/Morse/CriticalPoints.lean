@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
@@ -128,14 +129,8 @@ theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 :=
 
 /-- A point is critical exactly when the manifold derivative `mfderiv I 𝓘(ℝ) f` vanishes there. -/
 theorem mem_criticalPoints_iff_mfderiv_eq_zero :
-    x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 := by
-  rw [mem_criticalPoints, mvfderiv]
-  -- `mvfderiv` postcomposes `mfderiv` with the identification `NormedSpace.fromTangentSpace`.
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
-    fun h ↦ by rw [h, ContinuousLinearMap.comp_zero]⟩
-  have hv := DFunLike.congr_fun h v
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at hv
-  exact (NormedSpace.fromTangentSpace (f x)).map_eq_zero_iff.1 hv
+    x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 :=
+  mvfderiv_eq_zero_iff
 
 /-- On a normed space with its trivial model, a point is critical exactly when the Fréchet
 derivative vanishes there. -/
@@ -174,28 +169,47 @@ theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by
   ext x
   rw [mem_criticalPoints, mem_criticalPoints, mvfderiv_neg, neg_eq_zero]
 
+/-! ### Composition with a local diffeomorphism -/
+
+section LocalDiffeomorph
+
+variable {F G M' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace M'] [ChartedSpace G M'] {n : WithTop ℕ∞}
+  {π : M → M'}
+
+/-- **Criticality under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
+with `1 ≤ n`, then `x` is a critical point of `f ∘ π` exactly when `π x` is a critical point of
+`f`. -/
+theorem _root_.IsLocalDiffeomorphAt.mem_criticalPoints_comp_iff
+    (hπ : IsLocalDiffeomorphAt I J n π x) (hn : 1 ≤ n) {f : M' → ℝ} :
+    x ∈ criticalPoints I (f ∘ π) ↔ π x ∈ criticalPoints J f := by
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  simp only [mem_criticalPoints_iff_mfderiv_eq_zero]
+  by_cases hf : MDifferentiableAt J 𝓘(ℝ) f (π x)
+  · -- The differential of `π` at `x` is invertible, so it can be cancelled in the chain rule.
+    rw [mfderiv_comp x hf (hπ.mdifferentiableAt hn0)]
+    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
+      fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
+    have := congr($h ((hπ.mfderivToContinuousLinearEquiv hn0).symm v))
+    rwa [ContinuousLinearMap.comp_apply, ← hπ.mfderivToContinuousLinearEquiv_coe hn0,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at this
+  -- Near `π x`, `f` is `f ∘ π` after a local inverse of `π`, so `f ∘ π` is not differentiable at
+  -- `x` either, and both derivatives vanish by convention.
+  have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := fun h ↦ hf <|
+    (h.comp_of_eq (π x) (hπ.mdifferentiableAt_localInverse hn0)
+      (hπ.localInverse_left_inv hπ.localInverse_mem_target)).congr_of_eventuallyEq
+      (hπ.localInverse_eventuallyEq_right.fun_comp f).symm
+  simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfπ]
+
+end LocalDiffeomorph
+
 /-! ### Restriction to an open submanifold -/
 
 /-- A point of an open submanifold `U` is a critical point of the restriction of `f` to `U` exactly
 when it is a critical point of `f`. -/
 theorem mem_criticalPoints_comp_subtypeVal {U : Opens M} {x : U} :
-    x ∈ criticalPoints I (f ∘ Subtype.val : U → ℝ) ↔ (x : M) ∈ criticalPoints I f := by
-  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
-  swap
-  · -- On the open set `U`, `f` and its restriction are differentiable at the same points, and
-    -- both manifold derivatives vanish by convention where they are not.
-    have hfU : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ Subtype.val : U → ℝ) x :=
-      (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).not.1 hf
-    simp only [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt hfU]
-  rw [mem_criticalPoints_iff_mfderiv_eq_zero, mem_criticalPoints_iff_mfderiv_eq_zero,
-    mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
-    Manifold.mfderiv_subtype_val]
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
-    fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, zero_apply] using
-    DFunLike.congr_fun h ((Manifold.tangentSpaceOpenEquiv (I := I) x).symm v)
+    x ∈ criticalPoints I (f ∘ Subtype.val : U → ℝ) ↔ (x : M) ∈ criticalPoints I f :=
+  (isLocalDiffeomorph_subtype_val (I := I) (n := 1) x).mem_criticalPoints_comp_iff le_rfl
 
 /-- The critical points of the restriction of `f` to an open submanifold `U` are the critical
 points of `f` lying in `U`. -/
