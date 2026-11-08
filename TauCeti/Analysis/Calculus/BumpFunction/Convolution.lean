@@ -181,13 +181,14 @@ theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {
 
 open Set in
 /-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
-converges uniformly on the half-radius ball. -/
-theorem tendstoUniformlyOn_convolution_indicator_ball {x : G} {r : ℝ} (hr : 0 < r) {V : G → F}
+converges uniformly on the half-radius ball, along any filter of parameters. -/
+theorem tendstoUniformlyOn_convolution_indicator_ball {ι : Type*} {l : Filter ι} {x : G}
+    {r : ℝ} (hr : 0 < r) {V : G → F}
     (hVc : ContinuousOn V (ball x r))
-    {phi : ℕ → ContDiffBump (0 : G)} (hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0)) :
+    {phi : ι → ContDiffBump (0 : G)} (hphi : Tendsto (fun n => (phi n).rOut) l (𝓝 0)) :
     TendstoUniformlyOn (fun n => (ball x r).indicator V ⋆[
       (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ)
-      ((ball x r).indicator V) atTop (ball x (r / 2)) := by
+      ((ball x r).indicator V) l (ball x (r / 2)) := by
   let Fn := fun n => (ball x r).indicator V ⋆[
     (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ
   -- Continuity on the ball makes the truncation measurable.
@@ -195,12 +196,12 @@ theorem tendstoUniformlyOn_convolution_indicator_ball {x : G} {r : ℝ} (hr : 0 
     (aestronglyMeasurable_indicator_iff measurableSet_ball).2
       (hVc.aestronglyMeasurable measurableSet_ball)
   -- The mollifications converge locally uniformly throughout the larger ball.
-  have hlocal : TendstoLocallyUniformlyOn Fn ((ball x r).indicator V) atTop (ball x r) := by
+  have hlocal : TendstoLocallyUniformlyOn Fn ((ball x r).indicator V) l (ball x r) := by
     rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
     intro y hy
     have hcont : ContinuousAt ((ball x r).indicator V) y :=
       (hVc.congr fun z hz => indicator_of_mem hz V).continuousAt (isOpen_ball.mem_nhds hy)
-    have hconv : Tendsto (fun p : ℕ × G => Fn p.1 p.2) (atTop ×ˢ 𝓝 y)
+    have hconv : Tendsto (fun p : ι × G => Fn p.1 p.2) (l ×ˢ 𝓝 y)
         (𝓝 (((ball x r).indicator V) y)) := by
       simp only [Fn, convolution_flip]
       exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
