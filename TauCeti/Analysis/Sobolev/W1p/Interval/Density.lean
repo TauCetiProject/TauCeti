@@ -166,8 +166,9 @@ theorem exists_value_gradient_ae_eq_abs (a b : ℝ) :
   have hderiv : ∀ᵐ x ∂(volume : Measure ℝ), x ∈ (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) →
       HasFDerivAt (fun x : ℝ ↦ |x|) (innerSL ℝ (s x)) x := by
     filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : ℝ))] with x hx _
+    have hx0 : x ≠ 0 := by simpa using hx
     have hd : HasDerivAt (fun x : ℝ ↦ |x|) (s x) x := by
-      rcases lt_or_gt_of_ne (show x ≠ 0 from hx) with hx | hx
+      rcases lt_or_gt_of_ne hx0 with hx | hx
       · simpa [hs_def, hx.not_gt] using hasDerivAt_abs_neg hx
       · simpa [hs_def, hx] using hasDerivAt_abs_pos hx
     convert hd.hasFDerivAt using 1
@@ -226,10 +227,14 @@ theorem one_le_dist_of_gradient_ae_eq_sign {a b : ℝ} (ha : a < 0) (hb : 0 < b)
     ⟨by linarith [lt_min hδ hb], min_le_right _ _⟩
   obtain ⟨t₂, ht₂, h₂⟩ := hex (max (-δ) a) 0 (max_lt (by linarith) ha)
     ⟨le_max_right _ _, by linarith [max_lt (neg_lt_zero.2 hδ) ha]⟩ ⟨ha.le, hb.le⟩
-  have hc₁ := hcont (show dist t₁ 0 < δ by
-    rw [Real.dist_0_eq_abs, abs_of_pos ht₁.1]; exact ht₁.2.trans_le (min_le_left _ _))
-  have hc₂ := hcont (show dist t₂ 0 < δ by
-    rw [Real.dist_0_eq_abs, abs_of_neg ht₂.2]; linarith [ht₂.1.trans_le' (le_max_left _ _)])
+  have hd₁ : dist t₁ 0 < δ := by
+    rw [Real.dist_0_eq_abs, abs_of_pos ht₁.1]
+    exact ht₁.2.trans_le (min_le_left _ _)
+  have hd₂ : dist t₂ 0 < δ := by
+    rw [Real.dist_0_eq_abs, abs_of_neg ht₂.2]
+    linarith [ht₂.1.trans_le' (le_max_left _ _)]
+  have hc₁ := hcont hd₁
+  have hc₂ := hcont hd₂
   simp only [ht₁.1, ↓reduceIte] at h₁
   simp only [ht₂.2.not_gt, ↓reduceIte] at h₂
   rw [Real.dist_eq] at hc₁ hc₂

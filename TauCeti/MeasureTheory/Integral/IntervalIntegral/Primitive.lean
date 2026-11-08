@@ -135,8 +135,14 @@ theorem eLpNorm_primitive_le_mul_eLpNorm {p : ENNReal} (hp : 1 ≤ p) {t₀ : �
         gcongr
         simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hf.aestronglyMeasurable
     _ = ENNReal.ofReal (b - a) * eLpNorm f p (volume.restrict (Ioo a b)) := by
-        rw [mul_left_comm, ← ENNReal.rpow_add _ _ hne measure_Ioo_lt_top.ne, ENNReal.toReal_one,
-          div_one, one_div, add_sub_cancel, ENNReal.rpow_one, Real.volume_Ioo, mul_comm]
+        -- The two powers of the interval length combine to its first power.
+        have hpow : volume (Ioo a b) ^ p.toReal⁻¹ *
+            volume (Ioo a b) ^ (1 / (1 : ENNReal).toReal - 1 / p.toReal) =
+              ENNReal.ofReal (b - a) := by
+          rw [← ENNReal.rpow_add _ _ hne measure_Ioo_lt_top.ne]
+          simp
+        rw [← hpow]
+        ring
 
 variable [CompleteSpace E]
 
