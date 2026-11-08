@@ -253,12 +253,12 @@ theorem unitOfIsCoprime_div_eq_iff {n : ℕ} {a b a' b' : ℤ} (ha : IsCoprime a
 `(ZMod (q ^ N - 1))ˣ` has exact order `N`. This is the elementary arithmetic behind the choice of
 cyclotomic modulus in Milne's global existence argument. -/
 theorem orderOf_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
-    orderOf (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)) = N := by
+    orderOf (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)) = N := by
   let _ : NeZero (q ^ N - 1) := ⟨by
     have : 1 < q ^ N := one_lt_pow₀ hq hN
     omega⟩
   let m := q ^ N - 1
-  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)
+  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)
   have hpow : 1 ≤ q ^ N := Nat.one_le_iff_ne_zero.mpr
     (pow_ne_zero N (Nat.ne_zero_of_lt hq))
   have huN : u ^ N = 1 := by
