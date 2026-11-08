@@ -654,7 +654,7 @@ theorem coe_assocDiffeomorph :
   letI := chartedSpace (H := H) hb' hc
   letI := chartedSpace (H := H) (isOpenEmbedding_inrBall ha hb hb'b hb') hc
   letI := chartedSpace (H := H) ha (isOpenEmbedding_inlBall hb' hc hbb' hb)
-  coe_diffeomorphOfBijective
+  IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
 @[simp]
 theorem coe_assocDiffeomorph_symm :
