@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Sheaves.Stalks
 public import TauCeti.Topology.Sheaves.SupportedCohomology
 import Mathlib.Topology.Sheaves.LocallySurjective
+import TauCeti.CategoryTheory.Sites.EpiMono
 
 /-!
 # Local cohomology sheaves
@@ -401,9 +402,8 @@ instance isFlasque_map_supportedSectionsFunctor_X₂
 first map is a monomorphism to an exact sequence `Γ_S(F₁) ⟶ Γ_S(F₂) ⟶ Γ_S(F₃)`. -/
 theorem exact_map_supportedSectionsFunctor (hT : T.Exact) [Mono T.f] :
     (T.map (supportedSectionsFunctor S)).Exact := by
-  have hinj (W : (Opens X)ᵒᵖ) : Function.Injective (T.f.hom.app W) := by
-    have := (Sheaf.Hom.mono_iff_presheaf_mono _ _ T.f).1 inferInstance
-    exact (AddCommGrpCat.mono_iff_injective _).1 inferInstance
+  have hinj (W : (Opens X)ᵒᵖ) : Function.Injective (T.f.hom.app W) :=
+    injective_app_of_mono T.f W
   have hlift {Z} (φ : Z ⟶ T.X₂.supportedSectionsSheaf S)
       (hφ : φ ≫ (supportedSectionsFunctor S).map T.g = 0) :
       (φ ≫ T.X₂.supportedSectionsι S) ≫ T.g = 0 := by
@@ -804,9 +804,7 @@ private lemma bijective_supportedSectionsFunctor_map_supportedSectionsι (hZS : 
       (((supportedSectionsFunctor Z).map (F.supportedSectionsι S)).hom.app (op W)) := by
   refine ⟨?_, fun t ↦ ?_⟩
   · -- `Γ_Z` preserves the monomorphism `Γ_S(F) ⟶ F`
-    have := (Sheaf.Hom.mono_iff_presheaf_mono _ _
-      ((supportedSectionsFunctor Z).map (F.supportedSectionsι S))).1 inferInstance
-    exact (AddCommGrpCat.mono_iff_injective _).1 inferInstance
+    exact injective_app_of_mono ((supportedSectionsFunctor Z).map (F.supportedSectionsι S)) _
   -- the section `t` supported in `Z` is supported in `S`
   obtain ⟨y, rfl⟩ := (F.supportedHZeroEquiv Z W).surjective t
   have hS := (F.supportedHZeroEquiv S W (F.supportedHMap hZS W 0 y)).2
