@@ -62,6 +62,7 @@ arbitrary initial time is recovered by translating the parameter with
   `IsMIntegralCurveOn.Ioi_subset_maximalIntegralCurveInterval_of_Ici`: moving the time origin
   to any interior time compares a prescribed closed-ray curve with the maximal curve, without
   requiring a two-sided derivative at the endpoint.
+  `IsMIntegralCurveOn.mapsTo_maximalIntegralCurve_Ici` transfers forward trapping sets, and
   `IsMIntegralCurveOn.tendsto_maximalIntegralCurve_iff` transfers limits at positive infinity.
 * `exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB` and its `IsGLB` counterpart: a finite
   endpoint of the maximal interval is reached by an open subinterval straddling `0`.
@@ -319,6 +320,18 @@ theorem IsMIntegralCurveOn.eqOn_maximalIntegralCurve_Ici
     EqOn (maximalIntegralCurve v (γ b)) (γ ∘ (· + b)) (Ioi (a - b)) :=
   (hγ.comp_add_Ioi_sub_of_Ici b).eqOn_maximalIntegralCurve_Ioi hv
     (by linarith) (by simp)
+
+/-- A set containing a prescribed curve on a closed forward ray also contains the forward
+maximal curve through any of its interior points. -/
+theorem IsMIntegralCurveOn.mapsTo_maximalIntegralCurve_Ici
+    (hγ : IsMIntegralCurveOn γ v (Ici a))
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hb : a < b)
+    {S : Set M} (hmem : MapsTo γ (Ici a) S) :
+    MapsTo (maximalIntegralCurve v (γ b)) (Ici 0) S := by
+  have heq := hγ.eqOn_maximalIntegralCurve_Ici hv hb
+  intro t ht
+  rw [heq (lt_of_lt_of_le (sub_neg.mpr hb) ht)]
+  exact hmem (by simp only [mem_Ici] at *; linarith)
 
 /-- A curve on a closed forward ray has the same limit at positive infinity as the maximal
 curve through any of its interior points. -/

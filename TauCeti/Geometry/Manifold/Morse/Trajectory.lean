@@ -59,14 +59,10 @@ theorem IsMIntegralCurveOn.exists_tendsto_neg_mgradient
     (hK : IsCompact K) (hmem : MapsTo γ (Ici 0) K)
     (hfin : (criticalPoints I f ∩ K).Finite) :
     ∃ p ∈ criticalPoints I f ∩ K, Tendsto γ atTop (𝓝 p) := by
-  have heq := hγ.eqOn_maximalIntegralCurve_Ici
-    (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
-  have hmaps : MapsTo (maximalIntegralCurve (-mgradient I f) (γ 1))
-      (maximalIntegralCurveInterval (-mgradient I f) (γ 1) ∩ Ici 0) K := by
-    intro t ht
-    rw [heq (x := t) (lt_of_lt_of_le (by norm_num : (0 : ℝ) - 1 < 0) ht.2)]
-    exact hmem (by simpa only [comp_apply, mem_Ici] using add_nonneg ht.2 zero_le_one)
-  obtain ⟨p, hp, hlim⟩ := exists_tendsto_maximalIntegralCurve_neg_mgradient hK hmaps hf hfin
+  have hmaps := hγ.mapsTo_maximalIntegralCurve_Ici (contMDiff_neg_mgradient_one hf)
+    (by norm_num : (0 : ℝ) < 1) hmem
+  obtain ⟨p, hp, hlim⟩ := exists_tendsto_maximalIntegralCurve_neg_mgradient hK
+    (hmaps.mono_left inter_subset_right) hf hfin
   exact ⟨p, hp, (hγ.tendsto_maximalIntegralCurve_iff
     (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).1 hlim⟩
 
@@ -82,16 +78,10 @@ theorem IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient
   have hK : IsCompact (insert p (γ '' Ici 0)) := by
     simpa only [image_eq_range] using
       hlim.isCompact_insert_range_of_cocompact hγ.continuousOn.domRestrict
-  have heq := hγ.eqOn_maximalIntegralCurve_Ici
-    (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
-  have hmaps : MapsTo (maximalIntegralCurve (-mgradient I f) (γ 1))
-      (maximalIntegralCurveInterval (-mgradient I f) (γ 1) ∩ Ici 0)
-      (insert p (γ '' Ici 0)) := by
-    intro t ht
-    rw [heq (x := t) (lt_of_lt_of_le (by norm_num : (0 : ℝ) - 1 < 0) ht.2)]
-    exact mem_insert_of_mem p (mem_image_of_mem γ (by
-      simpa only [mem_Ici] using add_nonneg ht.2 zero_le_one))
-  exact mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient hK hmaps hf
+  have hmaps := hγ.mapsTo_maximalIntegralCurve_Ici (contMDiff_neg_mgradient_one hf)
+    (by norm_num : (0 : ℝ) < 1) (fun t ht ↦ mem_insert_of_mem p (mem_image_of_mem γ ht))
+  exact mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient hK
+    (hmaps.mono_left inter_subset_right) hf
     ((hγ.tendsto_maximalIntegralCurve_iff
       (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).2 hconv).mapClusterPt
 
