@@ -267,18 +267,11 @@ theorem exists_le_two_mul_reducedFunctional_add (hm : 0 < P.natDegree) :
   set M := A / 2 + E / 16
   have hM : 0 ≤ M := energy_nonneg w
   have hwL : MemLp w 2 := hw.continuous.memLp_of_hasCompactSupport hws
-  -- The linear term: `|∫ c w| ≤ x` with `x² ≤ K ∫ w²`, hence `x⁴ ≤ D (1 + M)³`.
-  set x := ∫ z, |c z| * |w z|
-  have hlin : -x ≤ ∫ z, c z * w z := by
-    have h1 : |∫ z, c z * w z| ≤ x :=
-      calc |∫ z, c z * w z| ≤ ∫ z, |c z * w z| := abs_integral_le_integral_abs
-        _ = x := by simp_rw [abs_mul, x]
-    linarith [neg_abs_le (∫ z, c z * w z)]
+  -- The linear term: `x = |∫ c w|` has `x² ≤ K ∫ w²`, hence `x⁴ ≤ D (1 + M)³`.
+  set x := |∫ z, c z * w z|
   have hx2 : x ^ 2 ≤ K * ∫ z, w z ^ 2 := by
-    have := sq_integral_mul_le_integral_sq_mul_integral_sq (f := fun z ↦ |c z|)
-      (g := fun z ↦ |w z|) (by simpa [Real.norm_eq_abs] using hc.norm)
-      (by simpa [Real.norm_eq_abs] using hwL.norm)
-    simpa only [sq_abs] using this
+    rw [sq_abs]
+    exact sq_integral_mul_le_integral_sq_mul_integral_sq hc hwL
   have hx4 : x ^ 4 ≤ D * (1 + M) ^ 3 := by
     calc x ^ 4 = (x ^ 2) ^ 2 := by ring
       _ ≤ (K * ∫ z, w z ^ 2) ^ 2 := pow_le_pow_left₀ (sq_nonneg x) hx2 2
@@ -288,7 +281,7 @@ theorem exists_le_two_mul_reducedFunctional_add (hm : 0 < P.natDegree) :
   have hxM := le_div_two_add_of_pow_four_le (by positivity) hM hx4
   have hI : reducedFunctional P w = M + ∫ z, c z * w z := by
     rw [reducedFunctional_def]
-  linarith
+  linarith [neg_abs_le (∫ z, c z * w z)]
 
 /-- Taubes's functional is bounded below on compactly supported `C¹` functions. -/
 theorem exists_le_reducedFunctional (hm : 0 < P.natDegree) :

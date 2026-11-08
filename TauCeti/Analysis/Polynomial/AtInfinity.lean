@@ -91,6 +91,19 @@ private theorem exists_eventually_norm_bounds (hm : 0 < P.natDegree) :
   · calc ‖P.derivative.eval z‖ ^ 2 ≤ (c * ‖z‖ ^ (P.natDegree - 1)) ^ 2 := by gcongr
       _ = c ^ 2 * ‖z‖ ^ (2 * (P.natDegree - 1)) := by ring
 
+-- A nonnegative continuous function on the plane with `f z (1 + ‖z‖) ^ 4 ≤ K` at infinity is
+-- integrable: it is `O((1 + ‖z‖) ^ (-4))` and `4 > 2`.
+private theorem integrable_of_eventually_mul_one_add_norm_pow_four_le {f : ℂ → ℝ} {K : ℝ}
+    (hf : Continuous f) (hf0 : ∀ z, 0 ≤ f z)
+    (hb : ∀ᶠ z in cocompact ℂ, f z * (1 + ‖z‖) ^ 4 ≤ K) : Integrable f := by
+  refine hf.locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
+    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound K ?_)
+  filter_upwards [hb] with z hz
+  rw [Real.norm_of_nonneg (hf0 z), Real.norm_of_nonneg (by positivity),
+    Real.rpow_neg (by positivity), Real.rpow_ofNat, ← div_eq_mul_inv,
+    le_div_iff₀ (by positivity)]
+  exact hz
+
 -- The decay `‖P'‖² / (1 + ‖P‖²)² ≤ K (1 + ‖z‖) ^ (-4)` at infinity, for `m ≥ 1`.
 private theorem exists_eventually_norm_derivative_sq_div_le (hm : 0 < P.natDegree) :
     ∃ K : ℝ, 0 < K ∧ ∀ᶠ z : ℂ in cocompact ℂ,
@@ -124,15 +137,9 @@ theorem integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Poly
     Integrable fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
   rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
   · simp [derivative_of_natDegree_zero h0]
-  obtain ⟨K, hK, hb⟩ := exists_eventually_norm_derivative_sq_div_le hm
-  refine (continuous_norm_derivative_eval_sq_div P).locallyIntegrable
-    |>.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
-    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound K ?_)
-  filter_upwards [hb] with z hz
-  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    Real.rpow_neg (by positivity), Real.rpow_ofNat, ← div_eq_mul_inv,
-    le_div_iff₀ (by positivity)]
-  exact hz
+  obtain ⟨K, -, hb⟩ := exists_eventually_norm_derivative_sq_div_le hm
+  exact integrable_of_eventually_mul_one_add_norm_pow_four_le
+    (continuous_norm_derivative_eval_sq_div P) (fun z ↦ by positivity) hb
 
 /-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` is square integrable on
 the plane. -/
@@ -143,15 +150,12 @@ theorem memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Polynomia
   rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
   · simp [derivative_of_natDegree_zero h0]
   obtain ⟨K, hK, hb⟩ := exists_eventually_norm_derivative_sq_div_le hm
-  refine (hcont.pow 2).locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
-    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound (K ^ 2) ?_)
+  refine integrable_of_eventually_mul_one_add_norm_pow_four_le (K := K ^ 2) (hcont.pow 2)
+    (fun z ↦ by positivity) ?_
   filter_upwards [hb] with z hz
   set q := ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2
   have hq : 0 ≤ q := by positivity
   have h1 : 1 ≤ (1 + ‖z‖) ^ 4 := one_le_pow₀ (by linarith [norm_nonneg z])
-  rw [Pi.pow_apply, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    Real.rpow_neg (by positivity), Real.rpow_ofNat, ← div_eq_mul_inv,
-    le_div_iff₀ (by positivity)]
   -- `q (1 + ‖z‖)⁴ ≤ K` gives `q ≤ K`, hence `q² (1 + ‖z‖)⁴ ≤ K²`.
   have hqK : q ≤ K := le_trans (le_mul_of_one_le_right hq h1) hz
   calc q ^ 2 * (1 + ‖z‖) ^ 4 = q * (q * (1 + ‖z‖) ^ 4) := by ring
@@ -167,12 +171,10 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
       (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne'
   rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
   obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
-  refine (hcont.pow 2).locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
-    (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound (16 * c ^ 4) ?_)
+  refine integrable_of_eventually_mul_one_add_norm_pow_four_le (K := 16 * c ^ 4) (hcont.pow 2)
+    (fun z ↦ by positivity) ?_
   filter_upwards [hb] with z ⟨h₁, hr, ha, _⟩
-  rw [Pi.pow_apply, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    Real.rpow_neg (by positivity), Real.rpow_ofNat, inv_pow, ← one_div, ← div_eq_mul_inv,
-    div_le_div_iff₀ (by positivity) (by positivity)]
+  rw [inv_pow, inv_mul_le_iff₀ (by positivity)]
   have hpow : ‖z‖ ^ 4 ≤ (‖z‖ ^ P.natDegree) ^ 4 := by
     rw [← pow_mul]
     exact pow_le_pow_right₀ h₁ (by omega)
