@@ -162,11 +162,21 @@ lemma singularCap_assoc
     (ModuleCat.epi_iff_surjective _).2 (HomologicalComplex.moduleCat_homologyπ_surjective _ n)
   refine (cancel_epi (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ n)).1 ?_
   -- The `homologyπ` squares are stated for `homology`, while `singularCap` is stated for
-  -- `singularHomologyFunctor`; `erw` unfolds the latter's objects to `homology n`, and the
-  -- final `rfl` closes the remaining goal by the same definitional unfolding.
-  erw [← Category.assoc, singularCap_homologyπ, Category.assoc, singularCap_homologyπ,
-    singularCup_homologyπ, singularCap_homologyπ, ← Category.assoc,
-    capCycles_comp_capCycles_cupCycles X k hp hq]
-  rfl
+  -- `singularHomologyFunctor`; the two agree by unfolding, so the squares are applied through
+  -- `Eq.trans` and `congrArg`, whose unification sees through it, rather than through `rw`.
+  have hp' := singularCap_homologyπ X k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+    (ρ_ (𝟙_ (ModuleCat.{w} k))).hom p m n hp φ
+  have hq' := singularCap_homologyπ X k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+    (ρ_ (𝟙_ (ModuleCat.{w} k))).hom q r m hq ψ
+  have hpq := singularCap_homologyπ X k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+    (ρ_ (𝟙_ (ModuleCat.{w} k))).hom (p + q) r n (by omega)
+    (TauCeti.ChainComplex.cupCycles k
+      (X.alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv)
+      (ρ_ (𝟙_ (ModuleCat.{w} k))).hom p q (p + q) rfl φ ψ)
+  rw [singularCup_homologyπ]
+  refine (Category.assoc _ _ _).symm.trans <|
+    (congrArg (· ≫ _) hp').trans <| (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) hq').trans <| (Category.assoc _ _ _).symm.trans <|
+    (congrArg (· ≫ _) (capCycles_comp_capCycles_cupCycles X k hp hq φ ψ)).trans hpq.symm
 
 end TopCat
