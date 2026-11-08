@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.Martingale.Basic
 public import TauCeti.Probability.Process.LocalProperty
-import TauCeti.Probability.Process.StoppedProcess
+import TauCeti.Probability.Process.Stopping
 import TauCeti.Probability.Martingale.Convergence
 import Mathlib.Topology.Order.IsLUB
 
