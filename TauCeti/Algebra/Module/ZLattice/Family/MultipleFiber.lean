@@ -380,49 +380,6 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyFiberMulActionHom :
   exact (isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbone
     hbmul hR hbc hfree).contMDiff.comp (contMDiff_torusFamilyFiberMap P hinj hP y)
 
-/-- **Charts in which an induced map is a function of the base coordinate.** For a `Γ`-invariant
-map `f : Y → Z`, every point of `X / Γ` lies in the source of a `C^n` partial diffeomorphism
-`κ : X / Γ → Y × E` in which the map `X / Γ → Z` induced by `f` reads `f` of the first coordinate
-of `κ`. The charts are local inverses of the composite orbit map `Y × E → X → X / Γ`. -/
-theorem exists_partialDiffeomorph_torusFamilyAffineQuotientLift_eq {Z : Type*} (f : Y → Z)
-    (hf : ∀ (g : Γ) y, f (g • y) = f y)
-    (q : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-      orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E))) :
-    letI := periodAddAction P
-    letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
-      (fun g ↦ (hbc g).continuous) hfree
-    ∃ κ : PartialDiffeomorph (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E))
-        (orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E))) (Y × E) n,
-      q ∈ κ.source ∧ ∀ x ∈ κ.source,
-        torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul f hf x =
-          f (κ x).1 := by
-  let _ := periodAddAction P
-  let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  let _ := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
-      (fun g ↦ (hbc g).continuous) hfree
-  have := isManifold_torusFamily P hinj hP
-  -- The composite orbit map `ψ : Y × E → X / Γ` is a surjective local diffeomorphism along which
-  -- the induced map is `(y, v) ↦ f y`; take a local inverse of `ψ` at a preimage of `q`.
-  have hψ : IsLocalDiffeomorph (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) n
-      (Quotient.mk (orbitRel Γ (AddAction.orbitRel.Quotient Λ (Y × E))) ∘ Quotient.mk _) :=
-    fun p ↦ IsLocalDiffeomorphAt.comp (hf := isLocalDiffeomorph_torusFamily_mk P hinj hP p)
-      (hg := isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
-        hbone hbmul hR hbc hfree _)
-  have hlift (p : Y × E) :
-      torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul f hf
-        (Quotient.mk _ (Quotient.mk _ p)) = f p.1 := by
-    rw [torusFamilyAffineQuotientLift_mk, torusFamilyProjection_mk]
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective.comp Quotient.mk_surjective q
-  refine ⟨(hψ p).localInverse, (hψ p).localInverse_mem_source, fun x hx ↦ ?_⟩
-  rw [← hlift]
-  exact congrArg _ ((hψ p).localInverse_right_inv hx).symm
-
 end Regularity
 
 section Embedding
