@@ -15,6 +15,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegr
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 import TauCeti.Probability.DeFinetti.Subsequence
 import TauCeti.Probability.Independence.InfinitePi
+import TauCeti.MeasureTheory.MeasurableSpace.Pi
 
 /-!
 # The coding representation of an exchangeable sequence
@@ -186,12 +187,6 @@ private lemma ConditionallyIIDWith.aemeasurable_directing_path {μ : Measure Ω}
     AEMeasurable (fun ω => (ν ω, fun n => X n ω)) μ :=
   h.measurable_directing.aemeasurable.prodMk (AEMeasurable.of_eval h.aemeasurable)
 
-omit [StandardBorelSpace α] [Nonempty α] in
-/-- Reading a sequence along a selection `e` is measurable. -/
-private lemma measurable_comp_apply {β ι : Type*} [MeasurableSpace β] (e : ι → ℕ) :
-    Measurable fun (u : ℕ → β) (a : ι) => u (e a) :=
-  Measurable.of_eval fun a => measurable_pi_apply (e a)
-
 /-- Coding a family of noise coordinates by the parameter, keeping the parameter, is
 measurable. -/
 private lemma measurable_coding_single {ι : Type*} :
@@ -256,7 +251,8 @@ private lemma ConditionallyIIDWith.map_directing_comp_eq_map_coding {μ : Measur
       ((μ.map ν).prod ((Measure.infinitePi fun _ : ℕ => (volume : Measure I)).map
           fun u a => u (e a))).map
         fun p => (p.1, fun a => unitIntervalCoding α p.1 (p.2 a)) :=
-  h.map_directing_selection_eq (Φ := id) (measurable_comp_apply e) (measurable_comp_apply e)
+  h.map_directing_selection_eq (Φ := id) (MeasureTheory.measurable_comp_apply e)
+    (MeasureTheory.measurable_comp_apply e)
     measurable_id measurable_coding_single fun _ _ => rfl
 
 /-- The coded law of the directing measure with the coordinates along `e`, together with the
@@ -274,8 +270,8 @@ private lemma ConditionallyIIDWith.map_directing_comp_pair_eq_map_coding {μ : M
   exact h.map_directing_selection_eq
     (F := fun u : ℕ → α => ((fun a => u (e a)), fun b => u (g b)))
     (Φ := fun q : ProbabilityMeasure α × ((ι → α) × (κ → α)) => ((q.1, q.2.1), q.2.2))
-    ((measurable_comp_apply e).prodMk (measurable_comp_apply g))
-    ((measurable_comp_apply e).prodMk (measurable_comp_apply g))
+    ((MeasureTheory.measurable_comp_apply e).prodMk (MeasureTheory.measurable_comp_apply g))
+    ((MeasureTheory.measurable_comp_apply e).prodMk (MeasureTheory.measurable_comp_apply g))
     ((measurable_fst.prodMk (measurable_fst.comp measurable_snd)).prodMk
       (measurable_snd.comp measurable_snd)) measurable_coding_pair fun _ _ => rfl
 
@@ -337,11 +333,11 @@ theorem ConditionallyIIDWith.map_comp_eq_map_unitIntervalCoding_of_ae_eq {μ : M
   set Uκ := Measure.infinitePi fun _ : κ => (volume : Measure I)
   -- Replace the observed pair `(ν, X ∘ e)` by a measurable version `Y'`.
   have hF : Measurable fun q : ProbabilityMeasure α × (ℕ → α) => (q.1, fun a => q.2 (e a)) :=
-    measurable_fst.prodMk ((measurable_comp_apply e).comp measurable_snd)
+    measurable_fst.prodMk ((MeasureTheory.measurable_comp_apply e).comp measurable_snd)
   have hY : AEMeasurable (fun ω => (ν ω, fun a => X (e a) ω)) μ :=
     hF.comp_aemeasurable h.aemeasurable_directing_path
   have hYW : AEMeasurable (fun ω => ((ν ω, fun a => X (e a) ω), fun b => X (g b) ω)) μ :=
-    hY.prodMk ((measurable_comp_apply g).comp_aemeasurable
+    hY.prodMk ((MeasureTheory.measurable_comp_apply g).comp_aemeasurable
       (AEMeasurable.of_eval h.aemeasurable))
   obtain ⟨Y', hY', hYY'⟩ := hY
   have hkey : ∀ᵐ ω ∂μ, (Y' ω).1 = G (φ (Y' ω).2) := by
