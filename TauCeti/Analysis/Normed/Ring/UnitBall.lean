@@ -165,19 +165,25 @@ theorem norm_inverse_one_sub (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x)‖ = 1
   have hinv := (Units.isNormMulUnit_iff_norm_inv u).mp (hu ▸ isNormMulUnit_one_sub hx)
   rw [← hu, Ring.inverse_unit, hinv, h1, inv_one]
 
-/-- **Ultrametric Neumann estimate.** In a normed ring with `‖1‖ = 1`, convergent geometric
-series and an ultrametric norm, `‖(1 - x)⁻¹ - 1‖ = ‖x‖` whenever `‖x‖ < 1`. -/
+omit [NormOneClass R] in
+/-- **Ultrametric Neumann estimate.** In a normed ring with convergent geometric series and an
+ultrametric norm, `‖(1 - x)⁻¹ - 1‖ = ‖x‖` whenever `‖x‖ < 1`. -/
 @[simp]
 theorem norm_inverse_one_sub_sub_one (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x) - 1‖ = ‖x‖ := by
-  have h1 := norm_inverse_one_sub hx
-  obtain ⟨u, hu⟩ := (isNormMulUnit_one_sub hx).isUnit
-  have hinv : IsNormMulUnit ((u⁻¹ : Rˣ) : R) :=
-    IsNormMulUnit.units_inv (hu ▸ isNormMulUnit_one_sub hx)
-  rw [← hu, Ring.inverse_unit] at h1 ⊢
+  -- multiplication by `1 - x` preserves norms
+  have key (w : R) : ‖(1 - x) * w‖ = ‖w‖ := by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    have hxw : ‖x * w‖ < ‖w‖ :=
+      (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul_of_pos_right hx (norm_pos_iff.mpr hw))
+    rw [sub_mul, one_mul, sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm
+      (by rw [norm_neg]; exact hxw.ne'), norm_neg, max_eq_left hxw.le]
+  obtain ⟨u, hu⟩ := IsUnit.one_sub_of_norm_lt_one hx
+  rw [← hu, Ring.inverse_unit]
   -- `u⁻¹ - 1 = u⁻¹ - u⁻¹ * (1 - x) = u⁻¹ * x`
   have hsub : ((u⁻¹ : Rˣ) : R) - 1 = ((u⁻¹ : Rˣ) : R) * x := by
     rw [← Units.inv_mul u, hu, mul_sub, mul_one, sub_sub_cancel]
-  rw [hsub, hinv.norm_mul, h1, one_mul]
+  rw [hsub, ← key (((u⁻¹ : Rˣ) : R) * x), ← mul_assoc, ← hu, Units.mul_inv, one_mul]
 
 /-- **Units of the unit ball.** In a normed ring with `‖1‖ = 1`, convergent geometric series and
 an ultrametric norm, an element of the closed unit ball within distance less than one of `1` is
