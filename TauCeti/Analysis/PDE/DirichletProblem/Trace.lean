@@ -35,8 +35,9 @@ of `u ∘ e⁻¹` on `frontier V`. This file states the Dirichlet problem with t
   on a bounded Lipschitz domain, there is exactly one `u ∈ H¹(Ω)` with the same trace as `g` and
   `a(u, v) = ℓ v` for every `v ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_frontierTrace_eq_forall_energyFormH1_eq`: the
-  same for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u` with uniformly elliptic measurable `a` and bounded measurable
-  `c ≥ 0`, where coercivity follows from the Poincaré inequality of the bounded domain.
+  same for `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` with uniformly elliptic measurable `a`, a small bounded
+  measurable drift `b` and bounded measurable `c ≥ 0` on a ball-contained domain, where
+  coercivity follows from the Poincaré inequality of the ball.
 
 ## References
 
@@ -99,50 +100,45 @@ section Euclidean
 
 variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-  {c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {lam Lam gamma : ℝ}
+  {b : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+  {c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {lam Lam beta gamma : ℝ}
 
 namespace UniformlyEllipticOn
 
 /-- **The Dirichlet problem on a bounded Lipschitz domain.** Let an affine isometry `e` carry
-`Ω ⊆ ℝ^{n+1}` onto a bounded Lipschitz domain `V`, let `a` be measurable and uniformly elliptic
-on `Ω`, and let `c` be measurable with `0 ≤ c ≤ γ` on `Ω`. For every `g ∈ H¹(Ω)` and every
-`ℓ ∈ H⁻¹(Ω)` there is exactly one `u ∈ H¹(Ω)` solving `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = ℓ` weakly in `Ω`
-with `u = g` on `∂Ω` in the sense of traces: `u ∘ e⁻¹` and `g ∘ e⁻¹` have the same trace on
-`frontier V`. The principal coefficient need not be symmetric. Coercivity of the energy form
-comes from the Poincaré inequality on a ball containing the bounded set `Ω`. -/
+`Ω ⊆ ℝ^{n+1}` onto a bounded Lipschitz domain `V`, and let `Ω ⊆ B(z, R)`. Let `a` be measurable
+and uniformly elliptic on `Ω`, let the drift `b` be measurable with `‖b‖ ≤ β` on `Ω` and
+`2βR < λ`, and let `c` be measurable with `0 ≤ c ≤ γ` on `Ω`. For every `g ∈ H¹(Ω)` and every
+`ℓ ∈ H⁻¹(Ω)` there is exactly one `u ∈ H¹(Ω)` solving `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = ℓ` weakly
+in `Ω` with `u = g` on `∂Ω` in the sense of traces: `u ∘ e⁻¹` and `g ∘ e⁻¹` have the same trace
+on `frontier V`. The principal coefficient need not be symmetric. Coercivity of the energy form
+comes from the Poincaré inequality on the ball; with no drift (`b = 0`, `β = 0`) the smallness
+condition holds for every ball containing the bounded set `Ω`. -/
 theorem existsUnique_frontierTrace_eq_forall_energyFormH1_eq
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hb : AEStronglyMeasurable b (volume.restrict Omega))
     (hc : AEStronglyMeasurable c (volume.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
+    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
+    (hsmall : beta * (2 * R) < lam)
     (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : Bornology.IsBounded (V : Set (WithLp 2 (ℝ × E))))
+    (hVb : Bornology.IsBounded (V : Set (WithLp 2 (ℝ × E))))
     (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
     (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Omega) (g : W1p volume Omega 2)
     (ℓ : StrongDual ℝ (W1p0 volume Omega 2)) :
     ∃! u : W1p volume Omega 2,
-      W1p.frontierTrace ENNReal.ofNat_ne_top hV hb (W1p.compAffineIsometryEquivL e.symm hVΩ u) =
-          W1p.frontierTrace ENNReal.ofNat_ne_top hV hb
+      W1p.frontierTrace ENNReal.ofNat_ne_top hV hVb (W1p.compAffineIsometryEquivL e.symm hVΩ u) =
+          W1p.frontierTrace ENNReal.ofNat_ne_top hV hVb
             (W1p.compAffineIsometryEquivL e.symm hVΩ g) ∧
-        ∀ v : W1p0 volume Omega 2, energyFormH1 a 0 c u (v : W1p volume Omega 2) = ℓ v := by
-  -- `Ω = e⁻¹(V)` is bounded, hence contained in a ball of positive radius.
-  have hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) := by
-    have himage := e.symm.lipschitzWith.isBounded_image hb
-    rwa [hVΩ, Set.image_preimage_eq _ e.symm.surjective] at himage
-  have hball := Bornology.IsBounded.subset_ball_lt hΩ 0 (e.symm 0)
-  rcases hball with ⟨R, hR⟩
-  have hb0 : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ‖(0 : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x‖ ≤ 0 :=
-    fun _ _ => by rw [Pi.zero_apply, norm_zero]
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_const hc
-    (fun _x hx eta xi => h.upper_bound hx eta xi) hb0 hc_bound
-  have hC := energyFormH1_poincare_constant_pos h.pos le_rfl (P := 2 * R) (by linarith [hR.1])
-    (by rw [zero_mul]; exact h.pos)
-  have hcoercive := isCoercive_energyFormH1L0 hcoeff hC fun w =>
-    mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha aestronglyMeasurable_const hc hb0
-      hc_bound hc_nonneg hR.2 w.2
-  exact PDE.existsUnique_frontierTrace_eq_forall_energyFormH1_eq hV hb e hVΩ hcoeff hcoercive g ℓ
+        ∀ v : W1p0 volume Omega 2, energyFormH1 a b c u (v : W1p volume Omega 2) = ℓ v := by
+  simpa only [W1p.sub_mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq (p := 2)
+    ENNReal.ofNat_ne_top hV hVb e hVΩ] using
+    h.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball ha hb hc hb_bound
+      hc_bound hc_nonneg hball hsmall ℓ g
 
 end UniformlyEllipticOn
 

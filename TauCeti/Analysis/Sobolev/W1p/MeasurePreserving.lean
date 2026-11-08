@@ -300,7 +300,7 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥
     g.toHomeomorph.isProperMap _ _ _ _ hu
 
 /-- Precomposition with `g.symm` undoes precomposition with `g`: `(u ∘ g) ∘ g⁻¹ = u`. -/
-theorem W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+@[simp] theorem W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
     (hUV : (U : Set F) = g ⁻¹' V) (hVU : (V : Set F') = g.symm ⁻¹' U) (u : W1p volume V p) :
     W1p.compAffineIsometryEquivL g.symm hVU (W1p.compAffineIsometryEquivL g hUV u) = u :=
   W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
@@ -309,7 +309,7 @@ theorem W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL (g : F ≃ᵃ
 /-- **Zero boundary values are invariant under rigid changes of coordinates.** For `p < ∞` and
 `U = g⁻¹(V)`, the function `u ∘ g` lies in `W^{1,p}_0(U)` exactly when `u` lies in
 `W^{1,p}_0(V)`. -/
-theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff (hp : p ≠ (∞ : ℝ≥0∞))
+@[simp] theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff (hp : p ≠ (∞ : ℝ≥0∞))
     (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p} :
     W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p ↔
       u ∈ w1p0Submodule volume V p := by

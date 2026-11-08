@@ -371,7 +371,7 @@ theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energy
       (W1p.restrictL hB u)
   have hw0 : ∀ v : W1p0 volume B 2,
       energyFormH1 (fun _ => A) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
-    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+    rw [hw v, zero_apply]
   have huw : W1p.restrictL hB u - w ∈ w1p0Submodule volume B 2 := by
     have h := (ClosedSubmodule.mem_toSubmodule_iff (w - W1p.restrictL hB u)
       (w1p0Submodule volume B 2)).2 hwu

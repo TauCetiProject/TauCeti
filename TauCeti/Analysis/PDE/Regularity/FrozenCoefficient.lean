@@ -226,7 +226,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
       (fun _ _ => by simp) (fun _ _ => le_rfl) hBr (by simpa using hA.pos) 0 (W1p.restrictL hB u)
   have hw0 : ∀ v : W1p0 volume B 2,
       energyFormH1 (fun _ => a x₀) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
-    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+    rw [hw v, zero_apply]
   have hsub : W1p.restrictL hB u - w ∈ w1p0Submodule volume B 2 := by
     have hwu :=
       (ClosedSubmodule.mem_toSubmodule_iff (w - W1p.restrictL hB u)
