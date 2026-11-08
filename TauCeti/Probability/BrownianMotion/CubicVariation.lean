@@ -9,7 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 import Mathlib.Probability.Moments.Variance
-import Mathlib.Algebra.BigOperators.Fin
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Cubic sums of Brownian increments
@@ -76,8 +76,8 @@ theorem integral_sum_cube_sub (hB : IsPreBrownianReal B P) :
   rw [integral_finsetSum _ fun i _ => (hB.memLp_cube_sub _ _).integrable (by norm_num)]
   exact sum_eq_zero fun i _ => hB.integral_cube_sub _ _
 
-/-- The exact second moment of the cubic-increment sum on a deterministic grid.
-Independence removes the off-diagonal terms, while each diagonal term is a sixth moment. -/
+/-- The second moment of the cubic-increment sum on a deterministic nondecreasing grid is
+`15 ∑ i, (Δtᵢ)³`, where `Δtᵢ` is the length of the `i`th grid interval. -/
 theorem integral_sq_sum_cube_sub (hB : IsPreBrownianReal B P) (hτ : Monotone τ) :
     ∫ ω, (∑ i : Fin n, (B (τ i.succ) ω - B (τ i.castSucc) ω) ^ 3) ^ 2 ∂P =
       15 * ∑ i : Fin n, ((τ i.succ : ℝ) - τ i.castSucc) ^ 3 := by
@@ -106,9 +106,7 @@ theorem integral_sq_sum_cube_sub_le (hB : IsPreBrownianReal B P) (hτ : Monotone
   rw [hB.integral_sq_sum_cube_sub hτ]
   have hsum : ∑ i : Fin n, ((τ i.succ : ℝ) - τ i.castSucc) =
       (τ (Fin.last n) : ℝ) - τ 0 := by
-    rw [sum_sub_distrib]
-    linarith [Fin.sum_univ_succ (fun i => (τ i : ℝ)),
-      Fin.sum_univ_castSucc (fun i => (τ i : ℝ))]
+    exact Fin.sum_univ_succ_sub_castSucc (fun i => (τ i : ℝ))
   calc
     _ ≤ 15 * ∑ i : Fin n, ((τ i.succ : ℝ) - τ i.castSucc) * (δ : ℝ) ^ 2 := by
       gcongr with i
