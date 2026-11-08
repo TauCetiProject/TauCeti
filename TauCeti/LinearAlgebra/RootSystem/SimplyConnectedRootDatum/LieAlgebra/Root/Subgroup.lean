@@ -168,6 +168,18 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
 
+/-- Root-subgroup points commute when their Chevalley root vectors have zero bracket. -/
+theorem commute_chevalleyRootSubgroup_of_lie_eq_zero {α β : Fin t.numRoots}
+    (hαβ : ⁅t.chevalleySystem ht α, t.chevalleySystem ht β⁆ = 0)
+    (A : CommAlgCat ℤ) (u v : A) :
+    Commute (chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u))
+      (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)) := by
+  apply Units.ext
+  simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd] using
+    (commute_baseChangeExp M (commute_of_lie_eq_zero ρ hαβ)
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β) u v).eq
+
 /-- A bracket `⁅e_α, e_β⁆ = c • e_γ` with `e_γ` commuting with both root vectors gives the
 one-factor Chevalley commutator formula over every commutative value ring. -/
 theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ}
@@ -205,13 +217,8 @@ theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numR
       (hxz.smul_right c) (hyz.smul_right c)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil β) (hdp α) (hdp β) hscaled u v
-  have hcomm (w : A) : Commute
-      (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
-      (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd w)) := by
-    apply Units.ext
-    simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd] using
-      (commute_baseChangeExp M hyz (hdp β) (hdp γ) v w).eq
-  rw [commutatorElement_def, hprod, mul_inv_cancel_right, (hcomm _).eq]
+  rw [commutatorElement_def, hprod, mul_inv_cancel_right,
+    (commute_chevalleyRootSubgroup_of_lie_eq_zero ρ M hM hnil hβγ A v _).eq]
   simp
 
 /-- **At a simple root the root subgroup is the simple root subgroup** `xᵢ` of the Kostant data. -/
