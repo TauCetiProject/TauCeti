@@ -699,11 +699,17 @@ theorem signAt_mul_signAt_mul_det_pos
     subst hD₀
     exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
       (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
-  have hdet : ((C.symm : E' →L[ℝ] E) ∘L D).det =
-      LinearMap.det (A.trans C.toLinearEquiv.symm).toLinearMap := by
+  -- `e` is the derivative `D`, read as a linear equivalence of the model spaces; this is `rfl`
+  -- because `TangentSpace I x` and `TangentSpace J (f x)` are by definition `E` and `E'`.
+  have hDA : (D : E →ₗ[ℝ] E') = A := by
     subst hD₀ hA
     rw [← he]
     rfl
+  have hdet : ((C.symm : E' →L[ℝ] E) ∘L D).det =
+      LinearMap.det (A.trans C.toLinearEquiv.symm).toLinearMap := by
+    rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, hDA, LinearEquiv.coe_trans,
+      ← ContinuousLinearEquiv.toLinearEquiv_symm,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   rw [hD, C.det_symm_comp_comp_comp, hdet, signAt_of_mem _ hx, signAt_of_mem _ hfx]
   simp only [Units.coe_map] at h₁
   -- Multiply the three positive quantities; the signs at `x` and at `f x` appear squared.

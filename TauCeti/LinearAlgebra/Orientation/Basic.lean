@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Orientation
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Transporting orientations along linear equivalences
@@ -136,9 +137,7 @@ theorem Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos [FiniteDime
     Orientation.map ι A (u • o) = v • Orientation.map ι C o ↔
       0 < (u : R) * (v : R) * LinearMap.det (A.trans C.symm).toLinearMap := by
   have hC : v • Orientation.map ι C o = Orientation.map ι C (v • o) := by
-    induction o using Module.Ray.ind with | h w hw =>
-      simp only [map_apply, smul_rayOfNeZero]
-      congr 1
+    rw [Orientation.map, Module.Ray.map_units_smul]
   rw [← map_units_smul_eq_iff_det_mul_pos o _ u v hι, hC, map_trans, ← map_symm,
     Equiv.symm_apply_eq]
 

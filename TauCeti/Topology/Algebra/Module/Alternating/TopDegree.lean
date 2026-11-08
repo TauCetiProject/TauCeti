@@ -58,8 +58,8 @@ theorem compContinuousLinearMap_apply_basis_map [Finite ι] {F : Type*} [AddComm
         ((C.symm : F →L[R] E) ∘L A) := by
     ext v
     simp [Function.comp_def]
-  rw [hA, compContinuousLinearMap_apply_basis, compContinuousLinearMap_apply]
-  congr 2
+  rw [hA, compContinuousLinearMap_apply_basis, compContinuousLinearMap_apply,
+    Module.Basis.coe_map, ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_coe]
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- A top-degree alternating form vanishes on a basis exactly when it is zero. -/
