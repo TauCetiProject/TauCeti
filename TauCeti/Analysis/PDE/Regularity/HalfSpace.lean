@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
-import TauCeti.Analysis.Normed.Field.Lipschitz
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -139,26 +139,6 @@ private theorem setIntegral_energyFormH1_split
   exact Finset.sum_congr rfl fun j _ =>
     (setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul φ (P (b i))).symm
 
-omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- Integrating the test function against the right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak
-derivative equation. -/
-private theorem neg_integral_smul_neg_add_eq {f : Lp ℝ 2 (mu.restrict Omega)}
-    {G : ι → ι → EuclideanSpace ℝ ι → ℝ} (φ : 𝓓(Omega, ℝ))
-    (hfloc : LocallyIntegrableOn (f : EuclideanSpace ℝ ι → ℝ) Omega mu)
-    (hIG : ∀ i j, Integrable (fun x => (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x) mu) :
-    -∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • -(f x + ∑ i, ∑ j, G i j x) ∂mu =
-      (∫ x in Omega, f x * φ x ∂mu) +
-        ∑ i, ∑ j, ∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x ∂mu := by
-  simp only [smul_neg, integral_neg, neg_neg, smul_add, Finset.smul_sum]
-  rw [integral_add (φ.integrable_smul hfloc)
-    (integrable_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j),
-    integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j]
-  congr 1
-  · rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-      simp [φ.zero_on_compl hx]]
-    simp only [smul_eq_mul, mul_comm]
-  · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
-
 omit [DecidableEq ι] in
 /-- **The equation gives a normal derivative.** Let `u ∈ H¹(Ω)` satisfy `a(u, φ) = ∫_Ω f φ` for
 every test function `φ`, where `a` is the energy form of a coefficient field continuous on `Ω`.
@@ -206,35 +186,11 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
     (hG i j).integral_lineDeriv_smul_eq_neg_integral_smul φ
   have hIG : ∀ i j, Integrable (fun x => (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x) mu :=
     fun i j => φ.integrable_smul (hG i j).locallyIntegrableOn_deriv
-  have hR := neg_integral_smul_neg_add_eq φ hfloc hIG
+  have hR := TestFunction.neg_integral_smul_neg_add_eq φ hfloc hIG
   rw [hR, ← heq]
   simp only [b] at htan ⊢
   simp only [htan, Finset.sum_neg_distrib]
   ring
-
-/-- If `a` is uniformly elliptic and bounded on `Ω` and `x ↦ a(x)` is Lipschitz on `Ω` as a bilinear
-form, then for `w ≠ 0` the form `a(x)(w, w)` is nonzero on `Ω` and its reciprocal is bounded and
-Lipschitz on `Ω`. -/
-private theorem exists_lipschitzOnWith_inv_matrixBilinearForm_self
-    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
-    {w : EuclideanSpace ℝ ι} (hw : w ≠ 0) :
-    ∃ (L : ℝ≥0) (B : ℝ),
-      LipschitzOnWith L (fun x => (matrixBilinearForm (a x) w w)⁻¹) Omega ∧
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖(matrixBilinearForm (a x) w w)⁻¹‖ ≤ B) ∧
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), matrixBilinearForm (a x) w w ≠ 0 := by
-  have hβL := lipschitzOnWith_matrixBilinearForm_apply_apply hK
-  set m : ℝ := lam * ‖w‖ ^ 2
-  have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 hw) 2)
-  have hcm : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), m ≤ matrixBilinearForm (a x) w w :=
-    fun x hx => by simpa only [m, matrixBilinearForm_self] using ha.lower_bound hx w
-  refine ⟨K * ‖w‖₊ * ‖w‖₊ / ⟨m, hm.le⟩ ^ 2, m⁻¹,
-    (hβL w w).inv_of_le_norm hm fun x hx =>
-      (hcm x hx).trans (Real.le_norm_self (matrixBilinearForm (a x) w w)),
-    fun x hx => ?_, fun x hx => (hm.trans_le (hcm x hx)).ne'⟩
-  have hx' := hm.trans_le (hcm x hx)
-  rw [Real.norm_eq_abs, abs_inv, abs_of_pos hx']
-  exact inv_anti₀ hm (hcm x hx)
 
 /-- **The normal second derivative.** Let `ν ≠ 0`, let `a` be uniformly elliptic and bounded on
 `Ω`, with `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form, and let `u ∈ H¹(Ω)` satisfy
