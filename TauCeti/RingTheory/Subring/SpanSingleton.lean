@@ -19,6 +19,7 @@ For a subring `S` of a commutative ring `A` and an element `a ∈ S`, the princi
 
 * `Subring.mem_span_singleton_iff`: `x ∈ a S` exactly when `x = a * y` for some `y ∈ S`.
 * `Subring.coe_span_singleton_pow`: `(a S)ⁿ` is the preimage in `S` of `aⁿ • S ⊆ A`.
+* `Subring.coe_mem_smul_iff_dvd`: for `c, y ∈ S`, `y ∈ c • S` exactly when `c ∣ y` in `S`.
 -/
 
 public section
@@ -49,5 +50,14 @@ theorem coe_span_singleton_pow (ha : a ∈ S) (n : ℕ) :
   rw [Ideal.span_singleton_pow, SetLike.mem_coe, SubmonoidClass.mk_pow,
     mem_span_singleton_iff S (pow_mem ha n), Set.mem_preimage, Set.mem_smul_set]
   simp only [smul_eq_mul, SetLike.mem_coe]
+
+/-- Membership of an element of a subring `S` in the scaled copy `c • S`, for `c ∈ S`, is
+divisibility by `c` in `S`. -/
+theorem coe_mem_smul_iff_dvd {c y : S} : (y : A) ∈ (c : A) • (S : Set A) ↔ c ∣ y := by
+  constructor
+  · rintro ⟨r, hr, h⟩
+    exact ⟨⟨r, hr⟩, Subtype.ext (by simpa using h.symm)⟩
+  · rintro ⟨r, rfl⟩
+    exact ⟨r, r.2, by simp⟩
 
 end Subring

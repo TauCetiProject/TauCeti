@@ -33,6 +33,8 @@ series only; here the substituted series may have any number of variables.
 ## Main results
 
 * `MvPowerSeries.le_order_pderiv`: if `n + 1 ≤ f.order` then `n ≤ (pderiv i f).order`.
+* `MvPowerSeries.coeff_pderiv_mem`: partial derivatives keep the coefficients in an additive
+  submonoid, such as a subring.
 * `MvPowerSeries.succ_le_order_iff`: `n + 1 ≤ f.order` if and only if the constant coefficient of
   `f` vanishes and `n ≤ (pderiv i f).order` for every `i`.
 * `MvPowerSeries.eq_zero_of_pderiv_eq_zero_of_subst_eq_zero`: over a ring without additive
@@ -59,6 +61,14 @@ theorem le_order_pderiv [CommSemiring R] {f : MvPowerSeries σ R} {n : ℕ∞}
   rw [coeff_pderiv, coeff_of_lt_order (lt_of_lt_of_le ?_ h), zero_mul]
   simpa only [map_add, degree_single, Nat.cast_add, Nat.cast_one] using
     (ENat.add_lt_add_iff_right ENat.one_ne_top).mpr hd
+
+/-- Partial differentiation keeps the coefficients in an additive submonoid of the coefficient
+ring, such as a subring. -/
+theorem coeff_pderiv_mem [CommSemiring R] {S : Type*} [SetLike S R] [AddSubmonoidClass S R]
+    {s : S} {f : MvPowerSeries σ R} (hf : ∀ m, coeff m f ∈ s) (i : σ) (m : σ →₀ ℕ) :
+    coeff m (pderiv i f) ∈ s := by
+  rw [coeff_pderiv, ← Nat.cast_succ, mul_comm, ← nsmul_eq_mul]
+  exact nsmul_mem (hf _) _
 
 variable [CommSemiring R] [IsAddTorsionFree R]
 
