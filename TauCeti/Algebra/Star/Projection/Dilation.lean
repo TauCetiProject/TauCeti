@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Tactic.NoncommRing
+public import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # Projection dilations in a star ring
@@ -41,21 +42,9 @@ is how positive contractions are shown to be weak operator limits of orthogonal 
 
 public section
 
-variable {R : Type*}
-
-/-- For self-adjoint `x` and `q`, taking stars turns `x * q = x` into `q * x = x`. -/
-theorem IsSelfAdjoint.mul_eq_right_of_mul_eq_left [Mul R] [StarMul R] {x q : R}
-    (hx : IsSelfAdjoint x) (hq : IsSelfAdjoint q) (h : x * q = x) : q * x = x := by
-  simpa only [star_mul, hq.star_eq, hx.star_eq] using congrArg star h
-
-/-- For self-adjoint `q`, taking stars turns `q * u = 0` into `star u * q = 0`. -/
-theorem IsSelfAdjoint.star_mul_eq_zero_of_mul_eq_zero [NonUnitalNonAssocSemiring R] [StarRing R]
-    {q u : R} (hq : IsSelfAdjoint q) (h : q * u = 0) : star u * q = 0 := by
-  simpa only [star_mul, hq.star_eq, star_zero] using congrArg star h
-
 namespace TauCeti
 
-variable [Ring R] [StarRing R]
+variable {R : Type*} [Ring R] [StarRing R]
 
 /-- The **projection dilation** `c + d * star u + u * d + u * (q - c) * star u`. When `q` is a
 star projection, `star u * u = q`, `q * u = 0`, and `c`, `d` are self-adjoint commuting elements
