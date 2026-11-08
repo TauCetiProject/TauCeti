@@ -61,7 +61,7 @@ theorem coeff_principalPart_succ_eq_residue {φ : meromorphicGerms ℂ a} {f : �
     coeff_C_mul_X_pow, Nat.add_sub_cancel_left, FormalMultilinearSeries.coeff_ofScalars,
     Contour.residue_eq_of_eventuallyEq_zpow_smul (n := -((N + 1 : ℕ) : ℤ)) (by omega) hh]
   · simp only [↓reduceIte]
-    congr <;> omega
+    rw [show (-1 - -((N + 1 : ℕ) : ℤ)).toNat = N by omega, smul_eq_mul, inv_mul_eq_div]
   · filter_upwards [self_mem_nhdsWithin] with z hz
     have hza : z - a ≠ 0 := sub_ne_zero.2 hz
     rw [zpow_neg, zpow_natCast, smul_eq_mul, smul_eq_mul, pow_succ]
