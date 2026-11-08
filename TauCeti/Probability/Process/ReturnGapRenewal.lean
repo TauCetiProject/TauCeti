@@ -28,19 +28,6 @@ namespace TauCeti.Probability
 
 variable {Ω α : Type*} {X : ℕ → Ω → α} {a : α} {ω : Ω}
 
-/-- The return-gap arrivals of an infinitely returning path tend to infinity. -/
-theorem tendsto_arrival_returnGap_atTop (hω : {n | X n ω = a}.Infinite) :
-    Tendsto (fun n => arrival (fun k ω => (returnGap X a k ω : ℝ≥0)) n ω)
-      atTop atTop := by
-  apply tendsto_atTop_mono _ tendsto_natCast_atTop_atTop
-  intro n
-  calc
-    (n : ℝ≥0) = ∑ _k ∈ Finset.range n, (1 : ℝ≥0) := by simp
-    _ ≤ arrival (fun k ω => (returnGap X a k ω : ℝ≥0)) n ω := by
-      rw [arrival_def]
-      exact Finset.sum_le_sum fun k _ => by
-        exact_mod_cast returnGap_pos (exists_visitCount_of_infinite hω (k + 1))
-
 /-- Return-gap renewals count visits in times `1, …, n`, not the visit at time zero.
 Both endpoints are therefore consistent with the positive first-return convention. -/
 @[simp]
@@ -62,7 +49,9 @@ theorem renewalCountNat_returnGap (hω : {n | X n ω = a}.Infinite) (h0 : X 0 ω
       visitCount_add (fun k => X k ω) a 1 n
   apply eq_of_forall_le_iff
   intro k
-  rw [le_renewalCountNat_iff (tendsto_arrival_returnGap_atTop hω), harr]
+  rw [le_renewalCountNat_iff (tendsto_arrival_atTop_of_frequently_le one_pos
+    (Frequently.of_forall fun k => by
+      exact_mod_cast returnGap_pos (exists_visitCount_of_infinite hω (k + 1)))), harr]
   have hle : ((∑ i ∈ Finset.range k, returnGap X a i ω : ℕ) : WithTop ℕ) ≤ n ↔
       k ≤ visitCount (fun k => X (k + 1) ω) a n := by
     rw [← hsum, successiveVisit_le_iff, hcount]

@@ -40,10 +40,8 @@ This equality remains valid for infinite mean. -/
 theorem IsRecurrent.lintegral_returnGap (hx : κ.IsRecurrent x) (k : ℕ) :
     ∫⁻ ω, (returnGap (fun n (ω : ℕ → S) => ω n) x k ω : ℝ≥0∞)
       ∂markovChainLaw (Measure.dirac x) κ = κ.meanReturnTime x := by
-  have hid : HasLaw (id : (ℕ → S) → (ℕ → S))
-      (markovChainLaw (Measure.dirac x) κ) (markovChainLaw (Measure.dirac x) κ) :=
-    ⟨measurable_id.aemeasurable, Measure.map_id⟩
-  have hgap := hid.natCast_returnGap_map_hittingAfter (isRecurrent_iff.mp hx) k
+  have hgap := HasLaw.natCast_returnGap_map_hittingAfter
+    (HasLaw.id (μ := markovChainLaw (Measure.dirac x) κ)) (isRecurrent_iff.mp hx) k
   have hm : Measurable (fun t : WithTop ℕ => ENat.toENNReal t) :=
     measurable_of_countable _
   have hmean := hgap.lintegral_comp hm.aemeasurable
