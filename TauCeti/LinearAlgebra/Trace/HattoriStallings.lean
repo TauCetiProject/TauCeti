@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.Algebra.Algebra.CyclicQuotient
+public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.Trace.Projective
 
 /-!
@@ -66,17 +67,8 @@ theorem hattoriStallingsTrace_apply {ι : Type*} [Fintype ι] (b : Basis ι R M)
 theorem hattoriStallingsTrace_comp_comm {ι κ : Type*} [Fintype ι] [Fintype κ]
     (b : Basis ι R M) (c : Basis κ R N) (f : M →ₗ[R] N) (g : N →ₗ[R] M) :
     b.hattoriStallingsTrace (g ∘ₗ f) = c.hattoriStallingsTrace (f ∘ₗ g) := by
-  have h₁ (i : ι) : b.repr ((g ∘ₗ f) (b i)) i =
-      ∑ j, c.repr (f (b i)) j * b.repr (g (c j)) i := by
-    conv_lhs => rw [comp_apply, ← c.sum_repr (f (b i))]
-    simp only [map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
-      Finsupp.smul_apply, smul_eq_mul]
-  have h₂ (j : κ) : c.repr ((f ∘ₗ g) (c j)) j =
-      ∑ i, b.repr (g (c j)) i * c.repr (f (b i)) j := by
-    conv_lhs => rw [comp_apply, ← b.sum_repr (g (c j))]
-    simp only [map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
-      Finsupp.smul_apply, smul_eq_mul]
-  simp only [hattoriStallingsTrace_apply, h₁, h₂, map_sum]
+  simp only [hattoriStallingsTrace_apply, repr_comp_apply_apply b c,
+    repr_comp_apply_apply c b, map_sum]
   rw [Finset.sum_comm]
   apply Finset.sum_congr rfl
   intro j _
