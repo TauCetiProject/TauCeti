@@ -34,6 +34,16 @@ differentials with all their signs; it is not merely an identification of ranks.
   normalized Khovanov complex of `D.mirror` in quantum degree `j` to the dual of the normalized
   Khovanov complex of `D` in quantum degree `-j`.
 
+## Main results
+
+* `TauCeti.OrientedPDCode.khovanovComplexMirrorIso_hom_f_apply`: the isomorphism sends an
+  element `x` of the state `S` of the mirror to the cochain pairing `x` with the complementary
+  state `Sᶜ` of `D` by the Frobenius pairing of circle tensors, times the sign
+  `(-1)^(i n) * Finset.dualCubeSign S n₋(D)`.
+* `TauCeti.OrientedPDCode.khovanovComplexMirrorIso_inv_f_apply`: the inverse isomorphism sends a
+  cochain `f` to the element whose state-`S` component pairs with `y` in the state `Sᶜ` of `D`
+  to `f(y)`, times the same sign.
+
 ## References
 
 * M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §7.3.
@@ -45,7 +55,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory CochainComplex Opposite
+open CategoryTheory CochainComplex Opposite Finset
 
 namespace TauCeti.OrientedPDCode
 
@@ -82,7 +92,9 @@ the normalized Khovanov complex of `D.mirror` in quantum degree `j` is isomorphi
 `R`-linear Hom complex into `R` placed in degree `0`. In cochain degree `i` it pairs the states of
 the mirror with `|S| - n₋(D.mirror) = i` with the complementary states of `D`, of cochain
 degree `-i`, by the Frobenius pairing of their circle tensors, up to a sign depending on the state
-and the degree. Any planarity proof `hD'` for the mirror may be used. -/
+and the degree (`TauCeti.OrientedPDCode.khovanovComplexMirrorIso_hom_f_apply` and
+`TauCeti.OrientedPDCode.khovanovComplexMirrorIso_inv_f_apply`). Any planarity proof `hD'` for the
+mirror may be used. -/
 def khovanovComplexMirrorIso (hD' : D.mirror.toPDCode.IsPlanar) :
     D.mirror.khovanovComplex hD' R j ≅
       linearHomComplex R (D.khovanovComplex hD R (-j))
@@ -103,5 +115,212 @@ def khovanovComplexMirrorIso (hD' : D.mirror.toPDCode.IsPlanar) :
           (D.negativeCrossingCount : ℤ)).mapIso
             (eqToIso (D.toPDCode.khovanovBracket_apply hD R _))).op).app
       ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))
+
+/-- Vertex inclusions commute with the transport between the totalizations of the cubes of equal
+codes in equal quantum degrees. -/
+@[reassoc]
+private lemma cubeComplexι_eqToHom {P Q : PDCode n} (e : P = Q) (hP : P.IsPlanar)
+    (hQ : Q.IsPlanar) {k k' : ℤ} (hk : k = k') {r : ℤ} (S : {S : Finset (Fin n) // (#S : ℤ) = r})
+    (h : (P.resolutionCube hP R k).cubeComplex.X r = (Q.resolutionCube hQ R k').cubeComplex.X r) :
+    (P.resolutionCube hP R k).cubeComplexι S ≫ eqToHom h =
+      eqToHom (by subst e hk; rfl) ≫ (Q.resolutionCube hQ R k').cubeComplexι S := by
+  subst e hk
+  simp
+
+/-- Vertex inclusions commute with the transport between the totalizations of the dual cubes in
+equal quantum degrees. -/
+@[reassoc]
+private lemma dualCube_cubeComplexι_eqToHom {k k' : ℤ} (hk : k = k') {r : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = r})
+    (h : (D.toPDCode.resolutionCube hD R k).dualCube.cubeComplex.X r =
+      (D.toPDCode.resolutionCube hD R k').dualCube.cubeComplex.X r) :
+    (D.toPDCode.resolutionCube hD R k).dualCube.cubeComplexι S ≫ eqToHom h =
+      eqToHom (by subst hk; rfl) ≫ (D.toPDCode.resolutionCube hD R k').dualCube.cubeComplexι S := by
+  subst hk
+  simp
+
+/-- Transporting a linear form on a vertex of the dual cube between equal quantum degrees
+precomposes it with the inverse transport of the vertex of the cube. -/
+private lemma eqToHom_dualCube_apply {k k' : ℤ} (hk : k = k') (T : Finset (Fin n))
+    (h : (D.toPDCode.resolutionCube hD R k).dualCube.obj T =
+      (D.toPDCode.resolutionCube hD R k').dualCube.obj T)
+    (φ : (D.toPDCode.resolutionCube hD R k).dualCube.obj T)
+    (y : (D.toPDCode.resolutionCube hD R k').obj Tᶜ) :
+    (eqToHom h).hom φ y = φ ((eqToHom (show (D.toPDCode.resolutionCube hD R k').obj Tᶜ =
+      (D.toPDCode.resolutionCube hD R k).obj Tᶜ by subst hk; rfl)).hom y) := by
+  subst hk
+  rfl
+
+/-- Transporting a vertex of the cube between equal quantum degrees preserves its circle
+tensors. -/
+private lemma resolutionCubeι_eqToHom {k k' : ℤ} (hk : k = k') (T : Finset (Fin n))
+    (h : (D.toPDCode.resolutionCube hD R k).obj T = (D.toPDCode.resolutionCube hD R k').obj T)
+    (y : (D.toPDCode.resolutionCube hD R k).obj T) :
+    (D.toPDCode.resolutionCubeι hD R k' T).hom ((eqToHom h).hom y) =
+      (D.toPDCode.resolutionCubeι hD R k T).hom y := by
+  subst hk
+  rfl
+
+/-- The projection of a normalized term onto a state is the projection of the cube term. -/
+private lemma khovanovComplexπ_eq {i : ℤ}
+    (T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount}) :
+    D.khovanovComplexπ hD R j T = eqToHom (D.khovanovComplex_X hD R j i) ≫
+      (D.toPDCode.resolutionCube hD R
+        (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ T := by
+  refine D.khovanovComplex_hom_ext hD R j fun T' ↦ ?_
+  by_cases h : T' = T
+  · subst h
+    rw [khovanovComplexι_π_self]
+    simp [khovanovComplexι_def]
+  · rw [khovanovComplexι_π_of_ne _ _ _ _ h]
+    simp [khovanovComplexι_def, Functor.cubeComplexι_π_of_ne _ h]
+
+/-- In cochain degree `i`, the mirror isomorphism sends an element `x` of the state `S` of the
+mirror to the cochain of degree `i` on the projection onto the complementary state `Sᶜ` of `D`
+followed by the Frobenius pairing with `x`, times `(-1)^(i n) * Finset.dualCubeSign S n₋(D)`. The
+vertex `S` of the cube of `D.mirror` is identified with that of the mirror of the underlying
+code of `D`, on which `TauCeti.PDCode.mirrorResolutionCubeIso` pairs circle tensors. -/
+theorem khovanovComplexMirrorIso_hom_f_apply (hD' : D.mirror.toPDCode.IsPlanar) (i : ℤ)
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.mirror.negativeCrossingCount})
+    (x : (D.mirror.toPDCode.resolutionCube hD' R
+      (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj S.1) :
+    HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
+        (((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom
+          ((D.mirror.khovanovComplexι hD' R j S).hom x)) =
+      ((i * n).negOnePow * S.1.dualCubeSign (D.negativeCrossingCount : ℤ)) •
+        (D.khovanovComplexπ hD R (-j) ⟨S.1ᶜ, by
+          have := card_compl_add_card S.1
+          have := D.positiveCrossingCount_add_negativeCrossingCount
+          have := S.2
+          simp only [negativeCrossingCount_mirror, Fintype.card_fin] at *
+          omega⟩ ≫ ModuleCat.ofHom
+          (Khovanov.circleDuality R _ (PiTensorProduct.reindex R (fun _ ↦ DualNumber R)
+            (PDCode.SmoothingEquiv.mirror D.toPDCode
+              (PDCode.cubeState_compl S.1)).symm.resolvedCircleCongr
+              ((D.toPDCode.mirror.resolutionCubeι ((PDCode.isPlanar_mirror _).2 hD) R
+                (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)
+                  S.1).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
+                    (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
+                      S.1 = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
+                    (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
+                      S.1 by simp only [mirror_toPDCode])).hom x))) ∘ₗ
+            (D.toPDCode.resolutionCubeι hD R _ S.1ᶜ).hom)) := by
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp]
+  simp only [khovanovComplexMirrorIso, Iso.trans_hom, HomologicalComplex.comp_f,
+    Functor.mapIso_hom, khovanovComplexShiftIso_hom_f, khovanovComplexι_def, Category.assoc,
+    shiftFunctor_map_f', eqToIso.hom, HomologicalComplex.eqToHom_f,
+    PDCode.mirrorKhovanovBracketIso_hom, eqToHom_trans_assoc, Linear.comp_units_smul,
+    Linear.units_smul_comp]
+  rw [cubeComplexι_eqToHom_assoc R (mirror_toPDCode D) _ ((PDCode.isPlanar_mirror _).2 hD) rfl,
+    NatTrans.ι_cubeComplexMap_f_assoc, dualCube_cubeComplexι_eqToHom_assoc D hD R
+      (mirror_cube_degree D j)]
+  simp only [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
+    LinearMap.comp_apply, map_zsmul]
+  -- The last factor is typed as `linearHomComplexFunctor` applied to the shifted complex, which is
+  -- `linearHomComplex` only up to unfolding; `erw` identifies the two.
+  erw [Iso.trans_hom]
+  rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    Functor.dualCubeComplexIso_hom_f_apply]
+  rw [Iso.app_hom, Functor.mapIso_hom, Iso.op_hom, linearHomComplexFunctor_map_app]
+  erw [linearHomComplexPrecomp_f_apply]
+  rw [Quiver.Hom.unop_op, HomComplex.Cochain.comp_units_smul,
+    ← HomComplex.Cochain.toSingleMk_precomp, Units.smul_def, map_zsmul,
+    HomComplex.Cochain.toSingleEquiv_toSingleMk]
+  simp only [Iso.trans_hom, HomologicalComplex.comp_f, khovanovComplexShiftIso_hom_f,
+    Functor.mapIso_hom, shiftFunctor_map_f', eqToIso.hom, HomologicalComplex.eqToHom_f,
+    Linear.units_smul_comp, Category.assoc, eqToHom_trans_assoc]
+  rw [khovanovComplexπ_eq]
+  simp only [Units.smul_def, smul_smul, Units.val_mul]
+  -- The normalization signs of the two shifts combine to `(-1)^(i n)`.
+  have hs : (i * D.mirror.negativeCrossingCount).negOnePow *
+      (-i * D.negativeCrossingCount).negOnePow = (i * n).negOnePow := by
+    have h := D.positiveCrossingCount_add_negativeCrossingCount
+    rw [negativeCrossingCount_mirror, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    have h' : (n : ℤ) = D.positiveCrossingCount + D.negativeCrossingCount := by
+      exact_mod_cast h.symm
+    exact ⟨-i * D.negativeCrossingCount, by rw [h']; ring⟩
+  rw [Category.assoc, mul_left_comm, mul_comm, ← Units.val_mul, hs]
+  congr 3
+  ext y
+  rw [ModuleCat.hom_ofHom, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+    eqToHom_dualCube_apply D hD R (mirror_cube_degree D j),
+    PDCode.mirrorResolutionCubeIso_hom_app_apply, resolutionCubeι_eqToHom D hD R
+      (mirror_cube_degree D j).symm]
+
+/-- In cochain degree `i`, the inverse mirror isomorphism sends a cochain `f` to the element whose
+component `x` on the state `S` of the mirror pairs with each `y` in the complementary state `Sᶜ`
+of `D` to `f(y)`, times `(-1)^(i n) * Finset.dualCubeSign S n₋(D)`. Since the Frobenius pairing is
+perfect, this determines the component. -/
+theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) (i : ℤ)
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.mirror.negativeCrossingCount})
+    (f : HomComplex.Cochain (D.khovanovComplex hD R (-j))
+      ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i)
+    (y : (D.toPDCode.resolutionCube hD R
+      (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1ᶜ) :
+    Khovanov.circleDuality R _ (PiTensorProduct.reindex R (fun _ ↦ DualNumber R)
+        (PDCode.SmoothingEquiv.mirror D.toPDCode
+          (PDCode.cubeState_compl S.1)).symm.resolvedCircleCongr
+          ((D.toPDCode.mirror.resolutionCubeι ((PDCode.isPlanar_mirror _).2 hD) R
+            (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)
+              S.1).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
+                (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
+                  S.1 = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
+                (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
+                  S.1 by simp only [mirror_toPDCode])).hom
+              ((D.mirror.khovanovComplexπ hD' R j S).hom
+                (((D.khovanovComplexMirrorIso hD R j hD').inv.f i).hom f)))))
+        ((D.toPDCode.resolutionCubeι hD R _ S.1ᶜ).hom y) =
+      ((i * n).negOnePow * S.1.dualCubeSign (D.negativeCrossingCount : ℤ)) •
+        (HomComplex.Cochain.toSingleEquiv (neg_add_cancel i) f).hom
+          ((D.khovanovComplexι hD R (-j) ⟨S.1ᶜ, by
+            have := card_compl_add_card S.1
+            have := D.positiveCrossingCount_add_negativeCrossingCount
+            have := S.2
+            simp only [negativeCrossingCount_mirror, Fintype.card_fin] at *
+            omega⟩).hom y) := by
+  -- Write `f` as the image of `z`, and `z` as the sum of its state components.
+  obtain ⟨z, rfl⟩ : ∃ z, ((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom z = f :=
+    ⟨((D.khovanovComplexMirrorIso hD R j hD').inv.f i).hom f, by
+      rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
+        Iso.inv_hom_id, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]⟩
+  rw [← LinearMap.comp_apply (((D.khovanovComplexMirrorIso hD R j hD').inv.f i).hom),
+    ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f,
+    ModuleCat.hom_id, LinearMap.id_apply]
+  have htot : ∑ S', D.mirror.khovanovComplexπ hD' R j S' ≫ D.mirror.khovanovComplexι hD' R j S' =
+      𝟙 ((D.mirror.khovanovComplex hD' R j).X i) := by
+    refine D.mirror.khovanovComplex_hom_ext hD' R j fun T ↦ ?_
+    rw [Preadditive.comp_sum, Category.comp_id, Fintype.sum_eq_single T fun T' h ↦ by
+      rw [khovanovComplexι_π_of_ne_assoc _ _ _ _ (Ne.symm h), Limits.zero_comp],
+      khovanovComplexι_π_self_assoc]
+  have hz := congrArg (fun g ↦ g.hom z) htot
+  simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_comp,
+    LinearMap.comp_apply, ModuleCat.hom_id, LinearMap.id_apply] at hz
+  conv_rhs => rw [← hz]
+  simp only [map_sum, ModuleCat.hom_sum, LinearMap.sum_apply, Finset.smul_sum,
+    khovanovComplexMirrorIso_hom_f_apply]
+  -- Only the state `S` pairs with the complementary state of `D`.
+  have hιπ (T T' : {T : Finset (Fin n) // (#T : ℤ) = -i + D.negativeCrossingCount})
+      (w : (D.toPDCode.resolutionCube hD R
+        (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.1) :
+      (D.khovanovComplexπ hD R (-j) T').hom ((D.khovanovComplexι hD R (-j) T).hom w) =
+        if h : T = T' then (eqToHom (congrArg (fun T ↦ (D.toPDCode.resolutionCube hD R
+          (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.1) h)).hom w
+        else 0 := by
+    split_ifs with h
+    · subst h
+      rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, khovanovComplexι_π_self]
+      rfl
+    · rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, khovanovComplexι_π_of_ne _ _ _ _ h]
+      rfl
+  rw [Fintype.sum_eq_single S fun T h ↦ by
+    have h' : S.1 ≠ T.1 := fun e ↦ h (Subtype.ext e.symm)
+    simp only [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
+      LinearMap.comp_apply, hιπ, Subtype.mk.injEq, compl_inj_iff, h', ↓reduceDIte, map_zero,
+      smul_zero]]
+  simp only [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
+    LinearMap.comp_apply, hιπ, ↓reduceDIte, ModuleCat.hom_ofHom, smul_smul, ← Units.val_mul,
+    Int.units_mul_self, Units.val_one, one_smul]
+  -- The remaining transport of `y` is along a reflexive equality.
+  rfl
 
 end TauCeti.OrientedPDCode
