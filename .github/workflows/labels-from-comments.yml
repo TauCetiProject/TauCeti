@@ -14,7 +14,10 @@ permissions: {}
 jobs:
   label:
     if: github.repository == 'TauCetiProject/TauCeti'
-    runs-on: ubuntu-latest
+    # Keep comment commands responsive when GitHub-hosted runners are backlogged.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 5
     steps:
       # No checkout: neither PR code nor comment text is ever executed.
