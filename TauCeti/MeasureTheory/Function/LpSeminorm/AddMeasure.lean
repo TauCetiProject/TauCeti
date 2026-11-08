@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Monotonicity and subadditivity of `eLpNorm` in the measure
@@ -63,13 +64,11 @@ theorem eLpNorm_add_measure_le (f : α → ε) (hp : 1 ≤ p) :
         eLpNormEssSup_add_measure]
       exact max_le_add_of_nonneg (by simp) (by simp)
     · have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-      have hp1 : 1 ≤ p.toReal := by
-        simpa using ENNReal.toReal_mono hp_top hp
       rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hadd,
         eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfμ,
         eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfν, lintegral_add_measure]
       exact ENNReal.rpow_add_le_add_rpow _ _ (by positivity)
-        (div_le_one_of_le₀ hp1 (by positivity))
+        (sub_nonneg.1 (TauCeti.zero_le_one_sub_one_div_toReal hp))
   · by_cases hfμ : AEStronglyMeasurable f μ
     · have hfν : ¬ AEStronglyMeasurable f ν := fun hfν => hadd (hfμ.add_measure hfν)
       simp [eLpNorm_of_not_aestronglyMeasurable, hadd, hfν]

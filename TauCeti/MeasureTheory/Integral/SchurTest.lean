@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
@@ -172,19 +173,14 @@ theorem lintegral_rpow_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β
     (by simpa only [ENNReal.rpow_one] using hB)
   rwa [mul_one_sub, mul_inv_cancel₀ (by linarith), div_self (by linarith), ENNReal.rpow_one] at h
 
-/-- For `1 ≤ p ≤ ∞` the exponent `1 - 1/p` in Schur's test is nonnegative; for `p = ∞` it is `1`,
-as `ENNReal.toReal ∞ = 0`. -/
-theorem one_sub_toReal_inv_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - p.toReal⁻¹ := by
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · simp
-  · exact sub_nonneg.2 (inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hp_top hp))
-
 /-- For finite `A` and `B`, the constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is the
 coercion of the same expression in `ℝ≥0`. -/
 theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p : ℝ≥0∞} (hp : 1 ≤ p) (A B : ℝ≥0) :
     ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
       (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ := by
-  rw [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ (one_sub_toReal_inv_nonneg hp),
+  have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
+    simpa only [one_div] using zero_le_one_sub_one_div_toReal hp
+  rw [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ h₀,
     ENNReal.coe_rpow_of_nonneg _ (by positivity)]
 
 /-- The constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is finite for finite `A` and `B`. -/

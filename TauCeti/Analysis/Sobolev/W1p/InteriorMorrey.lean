@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.DirichletGrowth
 public import TauCeti.Analysis.Sobolev.W1p.Morrey
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -91,13 +92,7 @@ theorem W1p.setIntegral_ball_norm_gradient_le {Omega : Opens E} (u : W1p mu Omeg
         r ^ ((finrank ℝ E : ℝ) * (1 - 1 / p.toReal)) *
           (eLpNorm (W1p.gradient u) p (mu.restrict (ball z r))).toReal := by
   set q : ℝ := 1 - 1 / p.toReal
-  have hq : 0 ≤ q := by
-    have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-    rcases eq_or_ne p ∞ with rfl | hptop
-    · simp [q]
-    · have : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hptop h1
-      simp only [q, sub_nonneg]
-      exact (div_le_one (by linarith)).2 this
+  have hq : 0 ≤ q := zero_le_one_sub_one_div_toReal Fact.out
   have hf : AEStronglyMeasurable (W1p.gradient u) (mu.restrict (ball z r)) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hball le_rfl)
   have hfin : eLpNorm (W1p.gradient u) p (mu.restrict (ball z r)) ≠ ∞ :=
