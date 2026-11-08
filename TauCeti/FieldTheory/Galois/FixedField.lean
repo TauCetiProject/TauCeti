@@ -608,13 +608,8 @@ theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) :
   · have hσ : orderOf σ = 0 := by
       rw [orderOf_eq_zero_iff, ← finite_zpowers]
       exact hfin
-    have hinf : Infinite (M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M) := by
-      by_contra hf
-      have : Finite (M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M) :=
-        not_infinite_iff_finite.mp hf
-      exact (orderOf_pos (toFixedFieldAlgEquiv σ)).ne' (horder.trans hσ)
     rw [hσ]
-    exact Nat.card_eq_zero_of_infinite
+    simpa only [horder, hσ, zero_dvd_iff] using orderOf_dvd_natCard (toFixedFieldAlgEquiv σ)
 
 /-- Every automorphism of `M` over `M ^ ⟨σ⟩` commutes with every other when `⟨σ⟩` is finite.
 Neither finiteness nor Galoisness of `M / K` is required. -/
