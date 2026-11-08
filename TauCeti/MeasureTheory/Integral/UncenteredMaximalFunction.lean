@@ -18,7 +18,7 @@ The **uncentred Hardy–Littlewood maximal function** of `f` is
 `M_u f x = sup_{B ∋ x} ⨍_B ‖f‖`,
 
 the supremum of the averages of `‖f‖` over all open balls containing `x`, centred anywhere
-(`TauCeti.uncentredMaximalFunction`). It dominates the centred maximal function
+(`TauCeti.uncenteredMaximalFunction`). It dominates the centred maximal function
 `TauCeti.maximalFunction`, whose balls are centred at `x`, and for an additive Haar measure on a
 real normed space of dimension `n` it is at most `2ⁿ` times it: a ball of radius `r` containing
 `x` lies in the ball of radius `2r` about `x`, whose measure is `2ⁿ` times larger. So the two
@@ -31,11 +31,14 @@ the value `1 / x`.
 
 ## Main declarations
 
-* `TauCeti.uncentredMaximalFunction`: the uncentred maximal function, with
-  `TauCeti.setLAverage_le_uncentredMaximalFunction`, `TauCeti.uncentredMaximalFunction_le` and
-  `TauCeti.lt_uncentredMaximalFunction_iff` as its interface.
-* `TauCeti.maximalFunction_le_uncentredMaximalFunction`: `M f ≤ M_u f`.
-* `TauCeti.uncentredMaximalFunction_le_two_pow_mul_maximalFunction`: `M_u f ≤ 2ⁿ M f` for an
+* `TauCeti.uncenteredMaximalFunction`: the uncentred maximal function, with
+  `TauCeti.setLAverage_le_uncenteredMaximalFunction`, `TauCeti.uncenteredMaximalFunction_le` and
+  `TauCeti.lt_uncenteredMaximalFunction_iff` as its interface.
+* `TauCeti.lowerSemicontinuous_uncenteredMaximalFunction`,
+  `TauCeti.measurable_uncenteredMaximalFunction`: the superlevel sets of `M_u f` are open, so it is
+  Borel measurable.
+* `TauCeti.maximalFunction_le_uncenteredMaximalFunction`: `M f ≤ M_u f`.
+* `TauCeti.uncenteredMaximalFunction_le_two_pow_mul_maximalFunction`: `M_u f ≤ 2ⁿ M f` for an
   additive Haar measure.
 
 ## References
@@ -58,37 +61,52 @@ variable {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [ENorm F] {μ :
 
 /-- The **uncentred Hardy–Littlewood maximal function** of `f` with respect to `μ`: the supremum
 of the averages of `‖f‖ₑ` over the open balls containing `x`. -/
-noncomputable def uncentredMaximalFunction (μ : Measure X) (f : X → F) (x : X) : ℝ≥0∞ :=
+noncomputable def uncenteredMaximalFunction (μ : Measure X) (f : X → F) (x : X) : ℝ≥0∞ :=
   ⨆ (y : X) (r : ℝ) (_ : x ∈ ball y r), ⨍⁻ z in ball y r, ‖f z‖ₑ ∂μ
 
-theorem uncentredMaximalFunction_def (μ : Measure X) (f : X → F) (x : X) :
-    uncentredMaximalFunction μ f x = ⨆ (y : X) (r : ℝ) (_ : x ∈ ball y r),
+theorem uncenteredMaximalFunction_def (μ : Measure X) (f : X → F) (x : X) :
+    uncenteredMaximalFunction μ f x = ⨆ (y : X) (r : ℝ) (_ : x ∈ ball y r),
       ⨍⁻ z in ball y r, ‖f z‖ₑ ∂μ :=
   (rfl)
 
 /-- The average over a ball containing `x` is at most the uncentred maximal function at `x`. -/
-theorem setLAverage_le_uncentredMaximalFunction (μ : Measure X) (f : X → F) (hx : x ∈ ball y r) :
-    ⨍⁻ z in ball y r, ‖f z‖ₑ ∂μ ≤ uncentredMaximalFunction μ f x :=
+theorem setLAverage_le_uncenteredMaximalFunction (μ : Measure X) (f : X → F) (hx : x ∈ ball y r) :
+    ⨍⁻ z in ball y r, ‖f z‖ₑ ∂μ ≤ uncenteredMaximalFunction μ f x :=
   le_iSup₂_of_le y r (le_iSup (fun _ : x ∈ ball y r => ⨍⁻ z in ball y r, ‖f z‖ₑ ∂μ) hx)
 
 /-- A bound for the averages over all balls containing `x` bounds the uncentred maximal function
 at `x`. -/
-theorem uncentredMaximalFunction_le
+theorem uncenteredMaximalFunction_le
     (h : ∀ y r, x ∈ ball y r → ⨍⁻ z in ball y r, ‖f z‖ₑ ∂μ ≤ a) :
-    uncentredMaximalFunction μ f x ≤ a :=
+    uncenteredMaximalFunction μ f x ≤ a :=
   iSup₂_le fun y r => iSup_le (h y r)
 
 /-- The uncentred maximal function exceeds `t` at `x` exactly when the average over some ball
 containing `x` does. -/
-theorem lt_uncentredMaximalFunction_iff :
-    t < uncentredMaximalFunction μ f x ↔
+theorem lt_uncenteredMaximalFunction_iff :
+    t < uncenteredMaximalFunction μ f x ↔
       ∃ y r, x ∈ ball y r ∧ t < ⨍⁻ z in ball y r, ‖f z‖ₑ ∂μ := by
-  simp only [uncentredMaximalFunction_def, lt_iSup_iff, exists_prop]
+  simp only [uncenteredMaximalFunction_def, lt_iSup_iff, exists_prop]
+
+/-- The superlevel sets of the uncentred maximal function are open, each being a union of open
+balls. No hypothesis on `μ` or `f` is needed. -/
+theorem lowerSemicontinuous_uncenteredMaximalFunction (μ : Measure X) (f : X → F) :
+    LowerSemicontinuous (uncenteredMaximalFunction μ f) := by
+  intro x t ht
+  obtain ⟨y, r, hx, hlt⟩ := lt_uncenteredMaximalFunction_iff.1 ht
+  filter_upwards [isOpen_ball.mem_nhds hx] with z hz
+  exact hlt.trans_le (setLAverage_le_uncenteredMaximalFunction μ f hz)
+
+/-- The uncentred maximal function is Borel measurable, being lower semicontinuous. -/
+@[fun_prop]
+theorem measurable_uncenteredMaximalFunction [OpensMeasurableSpace X] (μ : Measure X)
+    (f : X → F) : Measurable (uncenteredMaximalFunction μ f) :=
+  (lowerSemicontinuous_uncenteredMaximalFunction μ f).measurable
 
 /-- The centred maximal function is at most the uncentred one. -/
-theorem maximalFunction_le_uncentredMaximalFunction (μ : Measure X) (f : X → F) (x : X) :
-    maximalFunction μ f x ≤ uncentredMaximalFunction μ f x :=
-  maximalFunction_le fun _ hr => setLAverage_le_uncentredMaximalFunction μ f (mem_ball_self hr)
+theorem maximalFunction_le_uncenteredMaximalFunction (μ : Measure X) (f : X → F) (x : X) :
+    maximalFunction μ f x ≤ uncenteredMaximalFunction μ f x :=
+  maximalFunction_le fun _ hr => setLAverage_le_uncenteredMaximalFunction μ f (mem_ball_self hr)
 
 end PseudoMetricSpace
 
@@ -100,10 +118,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
 /-- **The uncentred maximal function is at most `2ⁿ` times the centred one**, for an additive Haar
 measure on a real normed space of dimension `n`: a ball of radius `r` containing `x` lies in the
 ball of radius `2r` about `x`, whose measure is `2ⁿ` times larger. -/
-theorem uncentredMaximalFunction_le_two_pow_mul_maximalFunction (μ : Measure E)
+theorem uncenteredMaximalFunction_le_two_pow_mul_maximalFunction (μ : Measure E)
     [μ.IsAddHaarMeasure] (f : E → F) (x : E) :
-    uncentredMaximalFunction μ f x ≤ 2 ^ finrank ℝ E * maximalFunction μ f x := by
-  refine uncentredMaximalFunction_le fun y r hx => ?_
+    uncenteredMaximalFunction μ f x ≤ 2 ^ finrank ℝ E * maximalFunction μ f x := by
+  refine uncenteredMaximalFunction_le fun y r hx => ?_
   have hr : 0 < r := pos_of_mem_ball hx
   have hsub : ball y r ⊆ ball x (2 * r) := fun z hz => mem_ball.2 <| by
     calc dist z x ≤ dist z y + dist y x := dist_triangle _ _ _

@@ -41,6 +41,7 @@ its closed orthant, so `M_d f` vanishes on any orthant disjoint from the support
 * `TauCeti.dyadicMaximalFunction`: the dyadic maximal function, with
   `TauCeti.setLAverage_le_dyadicMaximalFunction`, `TauCeti.dyadicMaximalFunction_le` and
   `TauCeti.lt_dyadicMaximalFunction_iff` as its interface.
+* `TauCeti.measurable_dyadicMaximalFunction`: `M_d f` is Borel measurable.
 * `TauCeti.setOf_lt_dyadicMaximalFunction_eq`: its superlevel sets are the unions of the
   Calderón–Zygmund cubes.
 * `TauCeti.mul_volume_lt_dyadicMaximalFunction_le`: the weak type `(1, 1)` bound.
@@ -96,6 +97,18 @@ theorem lt_dyadicMaximalFunction_iff :
     (setLAverage_le_dyadicMaximalFunction f hx)⟩
   obtain ⟨k, hk⟩ := lt_iSup_iff.1 h
   exact ⟨k, _, mem_dyadicCube_dyadicIndex k x, hk⟩
+
+/-- The dyadic maximal function is Borel measurable: at each level it depends on `x` only through
+the dyadic index, and it is a countable supremum over the levels. No hypothesis on `f` is
+needed. -/
+@[fun_prop]
+theorem measurable_dyadicMaximalFunction (f : (ι → ℝ) → F) :
+    Measurable (dyadicMaximalFunction f) := by
+  refine Measurable.iSup fun k => (measurable_of_countable
+    fun m : ι → ℤ => ⨍⁻ y in dyadicCube k m, ‖f y‖ₑ ∂volume).comp ?_
+  refine measurable_to_countable' fun m => ?_
+  rw [show dyadicIndex k ⁻¹' {m} = dyadicCube k m from Set.ext fun _ => mem_dyadicCube.symm]
+  exact measurableSet_dyadicCube k m
 
 /-- **The dyadic maximal function is controlled by the centred one**: `M_d f ≤ 2ⁿ M f`, for the
 sup norm on `ℝⁿ`. A dyadic cube of side `2ᵏ` containing `x` lies in the ball of radius `2ᵏ`
