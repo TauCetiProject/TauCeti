@@ -43,11 +43,11 @@ variable
 /-- An operation on sections which is additive on globally smooth sections takes equal values on
 two finite sums of globally smooth sections whenever it takes equal values on the summands.  The
 sums are again globally smooth.  The target needs only an addition, without any algebraic laws. -/
-theorem map_sum_eq_of_contMDiff_additive [IsManifold I ∞ M]
+theorem map_sum_eq_of_contMDiff_additive
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
     [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    [FiberBundle G W] [VectorBundle ℝ G W]
     {A : Type*} [Add A] (Φ : (Π x : M, W x) → A)
     (hadd : ∀ {s s' : Π x : M, W x}, CMDiff ∞ (T% s) → CMDiff ∞ (T% s') →
       Φ (s + s') = Φ s + Φ s')
