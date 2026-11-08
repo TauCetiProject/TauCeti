@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.NumberTheory.DiophantineApproximation.Exponent
 public import TauCeti.NumberTheory.Height.Rat
 
+import TauCeti.Data.Int.MaxAbs
+
 /-!
 # Rational approximation measured by height
 
@@ -92,17 +94,21 @@ theorem liouvilleWith_iff_frequently_max {p ξ : ℝ} :
 open Real in
 /-- The case `|x| < 2 (‖α‖ + 1) |y|` of the linear-form bound: if every rational `ξ ≠ α`
 satisfies the rational approximation bound `c₀ H(ξ) ^ (-κ) ≤ ‖ξ - α‖`, then at integers `x`, `y`
-with `|x| < 2 (‖α‖ + 1) |y|`, `x ≠ α y` and `max(|x|, |y|) ≥ 1`, the linear form satisfies
+with `|x| < 2 (‖α‖ + 1) |y|`, `x ≠ α y`, the linear form satisfies
 `‖x - α y‖ ≥ c₀ / (2 (‖α‖ + 1)) max(|x|, |y|) ^ (1 - κ)`. -/
 theorem mul_max_abs_rpow_le_norm_sub_of_lt {α : ℂ} {κ c₀ : ℝ} (hκ : 0 ≤ κ) (hc₀ : 0 ≤ c₀)
     (h : ∀ ξ : ℚ, (ξ : ℂ) ≠ α → c₀ * mulHeight₁ ξ ^ (-κ) ≤ ‖(ξ : ℂ) - α‖) {x y : ℤ}
-    (hxy : (x : ℂ) - α * y ≠ 0) (hM : 1 ≤ max |(x : ℝ)| |(y : ℝ)|)
+    (hxy : (x : ℂ) - α * y ≠ 0)
     (hsmall : |(x : ℝ)| < 2 * (‖α‖ + 1) * |(y : ℝ)|) :
     c₀ / (2 * (‖α‖ + 1)) * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ ‖(x : ℂ) - α * y‖ := by
   set A := ‖α‖ + 1
   have hA : 1 ≤ A := by linarith [norm_nonneg α]
   set M := max |(x : ℝ)| |(y : ℝ)|
-  have hM₀ : 0 < M := by linarith
+  have hM₀ : 0 < M := by
+    have : 1 ≤ M := Int.one_le_max_abs_cast (R := ℝ) <| by
+      by_contra! h0
+      exact hxy (by simp [h0.1, h0.2])
+    linarith
   have hy : y ≠ 0 := by
     rintro rfl
     simp only [Int.cast_zero, abs_zero, mul_zero] at hsmall

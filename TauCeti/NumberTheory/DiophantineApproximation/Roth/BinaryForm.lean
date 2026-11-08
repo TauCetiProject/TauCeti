@@ -97,7 +97,7 @@ theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ
           gcongr
           exact min_le_left _ _
       _ ≤ ‖(x : ℂ) - α * y‖ := by linarith
-  · refine le_trans ?_ (mul_max_abs_rpow_le_norm_sub_of_lt (by linarith) hc₀.le h hxy hM hsmall)
+  · refine le_trans ?_ (mul_max_abs_rpow_le_norm_sub_of_lt (by linarith) hc₀.le h hxy hsmall)
     gcongr
     exact min_le_right _ _
 
