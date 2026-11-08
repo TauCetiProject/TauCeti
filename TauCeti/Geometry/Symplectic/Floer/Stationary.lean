@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.CylinderAction
-import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
@@ -123,6 +122,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_of_mem_periodicSolutions {T
 
 /-- **The energy density of a stationary map.** For the cylindrical perturbation `K = H_t dt`,
 the Floer energy density of `(s, t) ↦ x(t)` vanishes. -/
+@[simp]
 theorem floerEnergyDensity_comp_snd (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z = 0 := by
   rw [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,

@@ -392,6 +392,7 @@ theorem curveVelocity_eq_deriv {γ : 𝕜 → F} : curveVelocity 𝓘(𝕜, F) �
 
 /-- A map `(a, b) ↦ x b` of the plane, which depends only on the second coordinate, has zero
 differential in the direction of the first coordinate. -/
+@[simp]
 theorem mfderiv_comp_snd_apply_one_zero {x : 𝕜 → M} {p : 𝕜 × 𝕜}
     (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.2) :
     mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.2) p (1, 0) = 0 := by
@@ -402,6 +403,7 @@ theorem mfderiv_comp_snd_apply_one_zero {x : 𝕜 → M} {p : 𝕜 × 𝕜}
 
 /-- The differential of a map `(a, b) ↦ x b` of the plane in the direction of the second
 coordinate is the velocity of `x`. -/
+@[simp]
 theorem mfderiv_comp_snd_apply_zero_one {x : 𝕜 → M} {p : 𝕜 × 𝕜}
     (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.2) :
     mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.2) p (0, 1) = curveVelocity I x p.2 :=
