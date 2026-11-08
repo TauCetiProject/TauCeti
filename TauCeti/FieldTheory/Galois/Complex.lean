@@ -29,7 +29,8 @@ instance instIsQuadraticExtensionRealComplex : Algebra.IsQuadraticExtension ℝ 
 @[simp] theorem zpowers_conjAe_eq_top : Subgroup.zpowers Complex.conjAe = ⊤ :=
   (Subgroup.eq_top_iff' _).2 fun σ ↦
     (Complex.real_algHom_eq_id_or_conj σ).elim
-      (fun h ↦ AlgEquiv.coe_toAlgHom_injective (h.trans AlgEquiv.refl_toAlgHom.symm) ▸ one_mem _)
+      (fun h ↦ ((AlgEquiv.coe_toAlgHom_injective (h.trans AlgEquiv.refl_toAlgHom.symm)).trans
+        AlgEquiv.aut_one.symm) ▸ one_mem _)
       fun h ↦ AlgEquiv.coe_toAlgHom_injective h ▸ Subgroup.mem_zpowers _
 
 end TauCeti
