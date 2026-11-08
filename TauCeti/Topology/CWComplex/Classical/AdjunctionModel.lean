@@ -27,7 +27,8 @@ the `m`-cells of `W` together with the indices `i` with `n i = m`
 (`TauCeti.sigmaDiskAdjunctionCWComplexCellEquiv`). The cells of `W` keep their characteristic
 maps, followed by the closed embedding of `W` into the adjunction space
 (`TauCeti.sigmaDiskAdjunctionCWComplex_map_inl`), and the new cells have the characteristic maps
-of the disks (`TauCeti.sigmaDiskAdjunctionCWComplex_map_inr`).
+of the disks (`TauCeti.sigmaDiskAdjunctionCWComplex_map_inr`). The image of `W` is a subcomplex,
+made of the cells of `W` (`TauCeti.sigmaDiskAdjunctionSubcomplex`).
 
 Every map of a sphere into a CW complex can be moved into the required skeleton by a homotopy
 (`TauCeti.exists_homotopic_mapsTo_skeletonLT_diskBoundary`), by cellular approximation for the
@@ -55,6 +56,7 @@ homotopy `h ∘ b ≃ a` (`CategoryTheory.IsPushout.exists_homotopicRel_id_of_ho
 * `TauCeti.sigmaDiskAdjunctionCWComplex`: the CW structure on `W ∪_b ⨆ᵢ Dⁿⁱ`.
 * `TauCeti.sigmaDiskAdjunctionCWComplexCellEquiv`: its `m`-cells are those of `W` and the indices
   `i` with `n i = m`.
+* `TauCeti.sigmaDiskAdjunctionSubcomplex`: `W` as a subcomplex of `W ∪_b ⨆ᵢ Dⁿⁱ`.
 
 ## Main results
 
@@ -93,29 +95,20 @@ theorem exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
       ∀ x, g x ∈ (skeletonLT (univ : Set W) m : Set W) := by
   obtain _ | k := m
   · -- The boundary of the `0`-disk is empty.
-    exact ⟨f, .refl f, fun x ↦ ((sphere_eq_empty_of_subsingleton one_ne_zero).subset x.down.2).elim⟩
+    exact ⟨f, .refl f, isEmptyElim⟩
   -- Cellular approximation for the CW structure on `Sᵏ` with one `0`-cell and one `k`-cell,
   -- indexed by `ULift (Fin (k + 1))` so that the sphere lives in the universe of `W`.
   let ι := ULift.{u} (Fin (k + 1))
   have hι : Fintype.card ι = k + 1 := by simp [ι]
   let _ := sphereCWComplex hι
   let S := sphere (0 : EuclideanSpace ℝ ι) 1
-  let e := LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.ulift.symm : Fin (k + 1) ≃ ι)
-  let down : C(TopCat.diskBoundary.{u} (k + 1), S) :=
-    ⟨fun x ↦ ⟨e x.down, mem_sphere_zero_iff_norm.2
-        ((e.norm_map _).trans (mem_sphere_zero_iff_norm.1 x.down.2))⟩,
-      (e.continuous.comp (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _⟩
-  let up : C(S, TopCat.diskBoundary.{u} (k + 1)) :=
-    ⟨fun y ↦ ULift.up ⟨e.symm y, mem_sphere_zero_iff_norm.2
-        ((e.symm.norm_map _).trans (mem_sphere_zero_iff_norm.1 y.2))⟩,
-      continuous_uliftUp.comp ((e.symm.continuous.comp continuous_subtype_val).subtype_mk _)⟩
+  let E := diskBoundaryHomeomorph.{u} (k + 1)
+  let down : C(TopCat.diskBoundary.{u} (k + 1), S) := E
   let val : C((univ : Set W), W) := ⟨Subtype.val, continuous_subtype_val⟩
-  let φ : C(S, (univ : Set W)) := ⟨fun y ↦ ⟨f (up y), mem_univ _⟩, by fun_prop⟩
-  have hud (x : TopCat.diskBoundary.{u} (k + 1)) : up (down x) = x :=
-    ULift.ext (Subtype.ext (e.symm_apply_apply _))
+  let φ : C(S, (univ : Set W)) := ⟨fun y ↦ ⟨f (E.symm y), mem_univ _⟩, by fun_prop⟩
   have hf : f = val.comp (φ.comp down) := by
     ext x
-    simp [val, φ, hud]
+    simp [val, φ, down]
   obtain ⟨g, hg, hφg⟩ := exists_isCellular_homotopic (TopCat.ofHom φ)
   refine ⟨val.comp (g.hom.comp down), hf ▸ (ContinuousMap.Homotopic.refl val).comp
     (hφg.comp (ContinuousMap.Homotopic.refl down)), fun x ↦ hg (k + 1) ?_⟩
@@ -129,27 +122,6 @@ theorem exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
   exact CWComplex.mem_skeletonLT_iff.2 ⟨l, by exact_mod_cast hl, j, hj⟩
 
 variable {ι : Type u} {n : ι → ℕ}
-
-/-- On its boundary sphere, the characteristic map of a cell of the disjoint union of disks lands
-on the boundary sphere of a disk of the dimension of the cell. -/
-private theorem exists_map_sigmaDiskRelCWComplex_eq {m : ℕ}
-    (j : letI := sigmaDiskRelCWComplex n
-      cell (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) m)
-    {x : Fin m → ℝ} (hx : x ∈ sphere 0 1) :
-    letI := sigmaDiskRelCWComplex n
-    ∃ s : Σ i, TopCat.diskBoundary.{u} (n i), n s.1 = m ∧
-      map m j x = ⟨s.1, TopCat.diskBoundaryInclusion (n s.1) s.2⟩ := by
-  let := sigmaDiskRelCWComplex n
-  obtain ⟨⟨i, rfl⟩, rfl⟩ : ∃ p, (sigmaDiskRelCWComplexCellEquiv n m).symm p = j :=
-    ⟨_, Equiv.symm_apply_apply _ j⟩
-  have hcell : (sigmaDiskRelCWComplexCellEquiv n (n i)).symm ⟨i, rfl⟩ =
-      sigmaDiskRelCWComplexCell n i :=
-    (Equiv.symm_apply_eq _).2 (sigmaDiskRelCWComplexCellEquiv_cell n i).symm
-  have hmap := sigmaDiskRelCWComplex_map_apply n i ⟨x, sphere_subset_closedBall hx⟩
-  obtain ⟨z, hz⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff
-    ((diskHomeomorphClosedBall (n i)).symm ⟨x, sphere_subset_closedBall hx⟩)).1
-      (by simpa using hx)
-  exact ⟨⟨i, z⟩, rfl, by rw [hcell, hmap, hz]⟩
 
 variable (b : ∀ i, C(TopCat.diskBoundary.{u} (n i), W))
 
@@ -309,6 +281,53 @@ theorem sigmaDiskAdjunctionCWComplex_map_inr (i : ι) (x : closedBall (0 : Fin (
   simp only [c, sigmaDiskAdjunctionSpaceCellEquiv_symm_mk, Equiv.apply_symm_apply,
     sigmaDiskRelCWComplex_map_apply]
 
+/-- **`W` is a subcomplex of `W ∪_b ⨆ᵢ Dⁿⁱ`.** Its image in the adjunction space is the
+subcomplex of `TauCeti.sigmaDiskAdjunctionCWComplex` made of the cells of `W`. -/
+def sigmaDiskAdjunctionSubcomplex :
+    letI := sigmaDiskRelCWComplex n
+    letI := sigmaDiskAdjunctionCWComplex n b hb
+    Subcomplex (univ : Set (relCWAdjunctionSpace
+      (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) (sigmaDiskAttachingMap b))) :=
+  letI := sigmaDiskRelCWComplex n
+  letI := sigmaDiskAdjunctionCWComplex n b hb
+  letI := sigmaDiskAdjunctionBaseCWComplex b
+  RelCWComplex.Subcomplex.mk'' _ (range (pushout.inr (relCWBaseInclusion
+      (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))))
+        (TopCat.ofHom (sigmaDiskAttachingMap b))))
+    (fun m ↦ range fun j ↦ (sigmaDiskAdjunctionCWComplexCellEquiv n b hb m).symm (.inl j)) <| by
+      ext x
+      simp only [empty_union, mem_iUnion, Subtype.exists, mem_range, exists_prop,
+        exists_exists_eq_and]
+      constructor
+      · rintro ⟨m, j, y, -, rfl⟩
+        exact ⟨_, (sigmaDiskAdjunctionCWComplex_map_inl n b hb m j y).symm⟩
+      · rintro ⟨w, rfl⟩
+        obtain ⟨m, j, y, hy, rfl⟩ : ∃ m, ∃ j : cell (univ : Set W) m, w ∈ openCell m j := by
+          simpa using
+            (CWComplex.iUnion_openCell_eq_complex (C := (univ : Set W))).symm.subset (mem_univ w)
+        exact ⟨m, j, y, hy, sigmaDiskAdjunctionCWComplex_map_inl n b hb m j y⟩
+
+/-- The subcomplex `TauCeti.sigmaDiskAdjunctionSubcomplex` is the image of `W`. -/
+@[simp]
+theorem coe_sigmaDiskAdjunctionSubcomplex :
+    letI := sigmaDiskRelCWComplex n
+    letI := sigmaDiskAdjunctionCWComplex n b hb
+    (sigmaDiskAdjunctionSubcomplex n b hb : Set (relCWAdjunctionSpace
+      (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) (sigmaDiskAttachingMap b))) =
+      range (pushout.inr (relCWBaseInclusion
+        (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))))
+          (TopCat.ofHom (sigmaDiskAttachingMap b))) :=
+  (rfl)
+
+/-- The `m`-cells of the subcomplex `TauCeti.sigmaDiskAdjunctionSubcomplex` are the `m`-cells of
+`W`. -/
+theorem sigmaDiskAdjunctionSubcomplex_I (m : ℕ) :
+    letI := sigmaDiskRelCWComplex n
+    letI := sigmaDiskAdjunctionCWComplex n b hb
+    (sigmaDiskAdjunctionSubcomplex n b hb).I m =
+      range fun j ↦ (sigmaDiskAdjunctionCWComplexCellEquiv n b hb m).symm (.inl j) :=
+  (rfl)
+
 variable {n} {Z : Type u} [TopologicalSpace Z]
 
 /-- The inclusion of the boundary spheres into the disjoint union of disks is an embedding whose
@@ -375,22 +394,10 @@ theorem exists_homotopyEquiv_sigmaDiskAdjunction (h : W ≃ₕ Z)
     h.left_inv h.right_inv (hP.inl_desc _ _ hw) (hP.inr_desc _ _ hw)
   -- Then reattach along a homotopy `h ∘ b ≃ a`, assembled from the homotopies `h ∘ b i ≃ a i` on
   -- the boundary spheres.
-  have hsigma {Y : Type u} [TopologicalSpace Y] (c : ∀ i, C(TopCat.diskBoundary.{u} (n i), Y))
-      (d : univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) :
-      sigmaDiskAttachingMap c d = ContinuousMap.sigma c (sigmaDiskBoundaryHomeomorph n d) := by
-    obtain ⟨⟨i, z⟩, rfl⟩ := (sigmaDiskBoundaryHomeomorph n).symm.surjective d
-    simp
   have hK : (ab ≫ f).hom.Homotopic (TopCat.ofHom (sigmaDiskAttachingMap a)).hom := by
-    have h₁ : (ab ≫ f).hom = (ContinuousMap.sigma fun i ↦ h.toFun.comp (b i)).comp
-        (sigmaDiskBoundaryHomeomorph n : C(_, _)) := by
-      ext d
-      simp [ab, f, hsigma b d]
-    have h₂ : (TopCat.ofHom (sigmaDiskAttachingMap a)).hom = (ContinuousMap.sigma a).comp
-        (sigmaDiskBoundaryHomeomorph n : C(_, _)) := by
-      ext d
-      simp [hsigma a d]
-    rw [h₁, h₂]
-    exact (ContinuousMap.Homotopic.sigma hhb).comp (ContinuousMap.Homotopic.refl _)
+    rw [TopCat.hom_comp, TopCat.hom_ofHom, TopCat.hom_ofHom, TopCat.hom_ofHom,
+      ← sigmaDiskAttachingMap_comp]
+    exact ContinuousMap.Homotopic.sigmaDiskAttachingMap hhb
   obtain ⟨φ, ψ, hφ, -, hφψ, hψφ⟩ := hP'.exists_homotopicRel_id_of_homotopy
     (IsPushout.of_hasPushout i₀ (TopCat.ofHom (sigmaDiskAttachingMap a))) hi hA hK.some
   let E₁ : (pushout i₀ ab : TopCat.{u}) ≃ₕ (pushout i₀ (ab ≫ f) : TopCat.{u}) :=
