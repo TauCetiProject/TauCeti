@@ -169,13 +169,11 @@ theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M} {D : ℤ}
     {w : ReducedTensorWords R M} (hw : w ∈ ReducedTensorWords.gradedPiece G D) :
     reducedInclusion R M w ∈ gradedPiece G D := by
   refine ReducedTensorWords.gradedPiece_induction
-    (motive := fun w ↦ reducedInclusion R M w ∈ gradedPiece G D) hw ?_ ?_ ?_ ?_
+    (motive := fun w ↦ reducedInclusion R M w ∈ gradedPiece G D) hw ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     rw [reducedInclusion_of]
     rw [← hD]
     exact mem_gradedPiece_of_tprod G x 𝒟 hx
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv
