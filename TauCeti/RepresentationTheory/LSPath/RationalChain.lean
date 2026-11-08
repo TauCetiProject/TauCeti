@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.LSPath.Basic
+public import TauCeti.RepresentationTheory.LSPath.Stretch
 import TauCeti.GroupTheory.Coxeter.ChainProperty
 import TauCeti.Data.Rat.NumDenDvd
 
@@ -56,12 +56,10 @@ noncomputable def ofBruhatChain
     (time : Fin (l + 2) → ℚ) (hzero : time 0 = 0) (hlast : time (Fin.last _) = 1)
     (htime : StrictMono time) (n : ℕ) (hn : 0 < n)
     (hden : ∀ j : Fin l, (time j.castSucc.succ).den ∣ n) : LSPath P b (n • lam) := by
-  have hw : P.wallIndices b (n • lam) = P.wallIndices b lam := by
-    simpa only [Nat.cast_smul_eq_nsmul] using
-      (P.wallIndices_smul (b := b) (Int.natCast_ne_zero.mpr hn.ne') lam)
-  let dir' (j : Fin (l + 1)) :
-      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} :=
-    ⟨(dir j).1, hw.symm ▸ (dir j).2⟩
+  let liftDir := P.minimalCosetRepNsmulEquiv b lam n hn.ne'
+  let dir' := fun j ↦ liftDir (dir j)
+  -- The directions are already distinct at adjacent breaks and the times strictly increase.
+  -- Retain these exact indexed data rather than normalizing a list of segments.
   refine
     { length := l
       dir := dir'
@@ -69,21 +67,17 @@ noncomputable def ofBruhatChain
       time_zero := hzero
       time_last := hlast
       strictMono_time := htime
-      dir_succ_ne := fun j h ↦ hne j (Subtype.ext
-        (congrArg (fun w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep
-          (P.wallIndices b (n • lam)) w} ↦ w.1) h))
+      dir_succ_ne := fun j h ↦ hne j (liftDir.injective h)
       exists_isAChain := ?_ }
   intro j
   obtain ⟨C, hhead, hlast⟩ := CoxeterSystem.exists_minimalCosetRepChain
-    (dir' j.succ).2 (dir' j.castSucc).2 (hdir j)
+    (dir' j.succ).2 (dir' j.castSucc).2
+    (by simpa only [dir', liftDir, coe_minimalCosetRepNsmulEquiv] using hdir j)
   refine ⟨C, hhead, hlast, isAChain_iff_forall_reflectionBond.mpr fun k ↦ ?_⟩
   obtain ⟨z, hz⟩ := (Rat.den_dvd_iff_exists_mul_intCast_eq (time j.castSucc.succ) (n : ℤ)).mp
     (by exact_mod_cast hden j)
-  have hb := P.reflectionBond_smul (b := b) (n : ℤ)
-    ((C k.castSucc).1 • lam) ((C k.succ).1 • lam)
-  simp only [Nat.cast_smul_eq_nsmul] at hb
   refine ⟨z * P.reflectionBond b ((C k.castSucc).1 • lam) ((C k.succ).1 • lam), ?_⟩
-  rw [smul_comm (C k.castSucc).1 n lam, smul_comm (C k.succ).1 n lam, hb]
+  rw [P.reflectionBond_smul_nsmul b]
   push_cast at hz ⊢
   rw [← mul_assoc, hz]
 
@@ -108,7 +102,9 @@ theorem dir_ofBruhatChain
     (j : Fin ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).length + 1)) :
     ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).dir j).1 =
       (dir (j.cast (congrArg (· + 1)
-        (length_ofBruhatChain dir hdir hne time hzero hlast htime n hn hden)))).1 := (rfl)
+        (length_ofBruhatChain dir hdir hne time hzero hlast htime n hn hden)))).1 := by
+  simp only [ofBruhatChain, coe_minimalCosetRepNsmulEquiv]
+  exact congrArg (fun k ↦ (dir k).1) (Fin.ext rfl)
 
 /-- Clearing break denominators retains every break time, including the endpoints. -/
 @[simp]

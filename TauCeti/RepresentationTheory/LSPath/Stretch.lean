@@ -36,6 +36,41 @@ universe u v w
 variable {ι : Type u} {M : Type v} {N : Type w} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
 
+variable (P b)
+
+omit [Finite ι] [P.IsReduced] in
+/-- A nonzero natural multiple of a weight lies on exactly the same simple walls. -/
+@[simp]
+theorem _root_.RootPairing.wallIndices_nsmul {n : ℕ} (hn : n ≠ 0) (lam : M) :
+    P.wallIndices b (n • lam) = P.wallIndices b lam := by
+  simpa only [Nat.cast_smul_eq_nsmul] using
+    (P.wallIndices_smul (b := b) (Int.natCast_ne_zero.mpr hn) lam)
+
+omit [Finite ι] in
+/-- Scaling the shape by a natural number multiplies each orbit bond by that number. -/
+theorem _root_.RootPairing.reflectionBond_smul_nsmul (n : ℕ) (lam : M)
+    (x y : P.weylGroup) :
+    P.reflectionBond b (x • n • lam) (y • n • lam) =
+      (n : ℤ) * P.reflectionBond b (x • lam) (y • lam) := by
+  simpa only [Nat.cast_smul_eq_nsmul, smul_comm x n lam, smul_comm y n lam] using
+    P.reflectionBond_smul (b := b) (n : ℤ) (x • lam) (y • lam)
+
+/-- Identify minimal wall-parabolic representatives before and after nonzero natural scaling.
+The underlying Weyl-group element is unchanged. -/
+def _root_.RootPairing.minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0) :
+    {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w} ≃
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} :=
+  Equiv.subtypeEquivRight fun _ ↦ by rw [P.wallIndices_nsmul b hn lam]
+
+/-- Scaling the shape preserves the Weyl-group element of a minimal representative. -/
+@[simp]
+theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0)
+    (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    (P.minimalCosetRepNsmulEquiv b lam n hn w).1 = w.1 := by
+  simp only [minimalCosetRepNsmulEquiv, Equiv.subtypeEquivRight_apply]
+
+variable {P b}
+
 namespace LSPath
 
 variable {lam : M}
@@ -53,11 +88,8 @@ private theorem isAChain_map_nsmul {a : ℚ} (n : ℕ)
   have hscaled (k : Fin C.length) : ∃ z : ℤ,
       a * P.reflectionBond b ((C k.castSucc).1 • n • lam) ((C k.succ).1 • n • lam) = z := by
     obtain ⟨z, hz⟩ := isAChain_iff_forall_reflectionBond.mp hC k
-    have hb := P.reflectionBond_smul (b := b) (n : ℤ)
-      ((C k.castSucc).1 • lam) ((C k.succ).1 • lam)
-    simp only [Nat.cast_smul_eq_nsmul] at hb
     refine ⟨(n : ℤ) * z, ?_⟩
-    rw [smul_comm (C k.castSucc).1 n lam, smul_comm (C k.succ).1 n lam, hb]
+    rw [P.reflectionBond_smul_nsmul b]
     push_cast
     rw [mul_left_comm a, hz]
   have hentry (j : Fin (C.length + 1)) : ((C.map f) j).1 = (C j).1 :=
@@ -74,13 +106,7 @@ private theorem isAChain_map_nsmul {a : ℚ} (n : ℕ)
 All its break-chain bonds are multiplied by `n`. -/
 noncomputable def stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
     LSPath P b (n • lam) := by
-  have hw : P.wallIndices b (n • lam) = P.wallIndices b lam := by
-    simpa only [Nat.cast_smul_eq_nsmul] using
-      (P.wallIndices_smul (b := b) (Int.natCast_ne_zero.mpr hn.ne') lam)
-  let liftDir (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep
-      (P.wallIndices b lam) w}) :
-      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} :=
-    ⟨w.1, hw.symm ▸ w.2⟩
+  let liftDir := P.minimalCosetRepNsmulEquiv b lam n hn.ne'
   refine
     { length := π.length
       dir := fun j ↦ liftDir (π.dir j)
@@ -88,18 +114,14 @@ noncomputable def stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
       time_zero := π.time_zero
       time_last := π.time_last
       strictMono_time := π.strictMono_time
-      dir_succ_ne := by
-        intro j h
-        apply π.dir_succ_ne j
-        apply Subtype.ext
-        exact congrArg (fun w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep
-          (P.wallIndices b (n • lam)) w} ↦ w.1) h
+      dir_succ_ne := fun j h ↦ π.dir_succ_ne j (liftDir.injective h)
       exists_isAChain := ?_ }
   intro j
   obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain j
   let D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b (n • lam)) :=
     C.map ⟨liftDir, fun {x y} h ↦ by
-      simpa only [Set.mem_ofPred_eq, liftDir, hw] using h⟩
+      simpa only [Set.mem_ofPred_eq, liftDir, coe_minimalCosetRepNsmulEquiv,
+        P.wallIndices_nsmul b hn.ne' lam] using h⟩
   refine ⟨D, ?_, ?_, isAChain_map_nsmul n C _ (fun _ ↦ rfl) hC⟩
   · simpa only [D, RelSeries.head_map, RelHom.coeFn_mk] using congrArg liftDir hhead
   · simpa only [D, RelSeries.last_map, RelHom.coeFn_mk] using congrArg liftDir hlast
