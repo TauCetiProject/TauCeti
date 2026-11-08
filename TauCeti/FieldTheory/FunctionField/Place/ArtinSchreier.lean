@@ -216,13 +216,9 @@ theorem not_exists_reduced_artinSchreier_representative_of_forall_pow_ne_residue
   have hsn0 : s ^ n ≠ 0 := right_ne_zero_of_mul hus0
   have hlt : P.ord (u * s ^ n) < 1 := by
     by_contra! hge
-    have hmem : u * s ^ n ∈ P.filtration 1 := (P.mem_filtration_iff_le_ord hus0).2 hge
-    apply hres 0
-    have h := (P.residue_eq_iff_sub_mem_filtration_one (y := ⟨u * s ^ n, hs⟩) (z := 0)).2
-      (by simpa using hmem)
-    rw [map_zero] at h
-    rw [zero_pow (by omega)]
-    exact h.symm
+    have hz := (P.residue_eq_zero_iff_ord_pos (f := ⟨u * s ^ n, hs⟩) hus0).mpr
+      (by simp only; omega)
+    exact hres 0 (by rw [zero_pow (by omega)]; exact hz.symm)
   have hge : 0 ≤ P.ord (u * s ^ n) := P.mem_integers_iff_ord_nonneg.mp hs
   have hdvd : (n : ℤ) ∣ P.ord u := by
     have h := P.ord_mul hu0 hsn0
