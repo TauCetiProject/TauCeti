@@ -280,22 +280,6 @@ theorem _root_.Rep.indSubtypeEquivPi_indMap [S.FiniteIndex]
       Rep.hom_comp, Representation.IntertwiningMap.comp_apply] using hx
   exact hn.trans (Representation.coindMap_coe_apply_apply S.subtype V.ρ W.ρ f.hom _ q.out)
 
-/-- Induction from a subgroup is injective on intertwining spaces. -/
-theorem _root_.Rep.indMap_injective {V W : Rep.{max w u} k S} :
-    Function.Injective (Rep.indMap S.subtype : (V ⟶ W) → _) := by
-  intro f g h
-  apply Rep.hom_ext
-  ext x
-  apply Representation.IndV.mk_one_injective S W.ρ
-  simpa using congrArg (fun m : Rep.ind S.subtype V ⟶ Rep.ind S.subtype W ↦
-    m.hom (Representation.IndV.mk S.subtype V.ρ 1 x)) h
-
-/-- Induction from a subgroup is a faithful functor, the functorial form of
-`Rep.indMap_injective`. -/
-instance _root_.Rep.indFunctor_faithful :
-    (Rep.indFunctor k S.subtype : Rep.{max w u} k S ⥤ Rep k G).Faithful where
-  map_injective h := _root_.Rep.indMap_injective h
-
 /-- **Induction from a finite-index subgroup preserves finiteness** of the underlying module. -/
 instance finite_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [Finite A] :
     Finite (Rep.ind S.subtype A) :=
@@ -343,9 +327,15 @@ theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) :
   let : Fintype (Quotient (QuotientGroup.rightRel S)) :=
     QuotientGroup.fintypeQuotientRightRel
   -- Transfer the computation to the explicit finite product supplied by the coset model.
-  rw [LinearEquiv.finrank_eq (indSubtypeEquivPi A), Module.finrank, rank_fun_eq_lift_mul,
-    Cardinal.toNat_mul, Cardinal.toNat_natCast, Cardinal.toNat_lift]
-  simp [QuotientGroup.card_quotient_rightRel, Subgroup.index_eq_card, Module.finrank]
+  rw [LinearEquiv.finrank_eq (indSubtypeEquivPi A)]
+  by_cases hA : FiniteDimensional k A
+  · rw [Module.finrank_pi_fintype]
+    simp [QuotientGroup.card_quotient_rightRel, Subgroup.index_eq_card]
+  · -- An infinite-dimensional factor makes the product infinite-dimensional, so both sides are `0`.
+    let q : Quotient (QuotientGroup.rightRel S) := Quotient.mk _ 1
+    have hpi : ¬FiniteDimensional k (Quotient (QuotientGroup.rightRel S) → A) := fun _ ↦
+      hA (.of_surjective (LinearMap.proj (R := k) (φ := fun _ ↦ A) q) (LinearMap.proj_surjective q))
+    rw [Module.finrank_of_not_finite hpi, Module.finrank_of_not_finite hA, mul_zero]
 
 end Dimension
 
@@ -566,8 +556,7 @@ theorem indFDRepMap_injective {k : Type u} {G : Type v} [Field k] [Group G] {S :
     Function.Injective (indFDRepMap : (A ⟶ B) → _) := by
   intro f g h
   apply (forget₂ (FDRep k S) (Rep k S)).map_injective
-  -- The forgotten carrier lies in `u`, so `w := 0` specializes `max w u` to `u`.
-  apply _root_.Rep.indMap_injective.{u, v, 0} (S := S)
+  apply _root_.Rep.indMap_injective (S := S)
   apply Rep.hom_ext
   refine Representation.IntertwiningMap.ext (LinearMap.ext fun x ↦ ?_)
   have hx := congrArg (fun m : indFDRep A ⟶ indFDRep B ↦ indFDRepForgetEquiv B
