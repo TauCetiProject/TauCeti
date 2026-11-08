@@ -45,7 +45,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
   [CompleteSpace E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
 
-omit [BoundarylessManifold I M] [FiniteDimensional ℝ E] [T2Space M] in
+omit [BoundarylessManifold I M] [CompleteSpace E] [T2Space M] in
 /-- A curve in the extended chart at `x₀` that solves the coordinate equation and stays in the
 interior of the chart target on an open set `s` is an integral curve of `v` on `s` once pulled back
 through the inverse chart. -/
