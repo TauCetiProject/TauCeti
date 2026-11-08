@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 
 /-!
@@ -22,9 +24,9 @@ cylinder, a solution is read in the coordinate `z = s + i t`, with `s` running a
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`
 
 on a half-plane `s > a`, and it is periodic, `u(z + i) = u(z)`. On the end the Floer data are
-cylindrical, `J = J_t` and `K = H_t dt`, so `J` and `X` do not depend on `s` and are periodic in
-`t`. The results below only use that `J(·, x)` and `X(·, x)` are periodic under both `z ↦ z + 1`
-and `z ↦ z + i`.
+cylindrical, `J = J_t` and Hamiltonian perturbation `H_t dt`, so `J` and `X` do not depend on
+`s` and are periodic in `t`. The results below only use that `J(·, x)` and `X(·, x)` are periodic
+under both `z ↦ z + 1` and `z ↦ z + i`.
 
 The main result is that bubbling cannot occur along a cylindrical end of finite energy: if `u` has
 image in a compact set `K` and finite energy `∫ ‖∂ₛu‖²` over the half-strip `(a, ∞) × [0, 1]`,
@@ -39,7 +41,7 @@ then its derivative is bounded on every half-plane `s ≥ b` with `b > a`
   (`TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_periodic`).
 * The energy of the end over the discs of a fixed small radius `r` about points far out along the
   end tends to zero, since such a disc lies in two periods of a far-out half-strip
-  (`TauCeti.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioi`,
+  (`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioi`,
   `TauCeti.tendsto_setLIntegral_reProdIm_Ioi_atTop`). Far out, the mean-value inequality therefore
   bounds `‖∂ₛu‖`, and on the remaining compact part of the end `du` is bounded by continuity.
   The equation bounds `∂ₜu` in terms of `∂ₛu`
@@ -70,20 +72,6 @@ namespace TauCeti.Floer
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {W : Set (ℂ × V)} {K : Set V}
 
-/-- A function periodic under `z ↦ z + 1` and `z ↦ z + i` is periodic under every lattice vector
-`m + n i`. -/
-private theorem periodic_intCast_add_intCast_mul_I {β : Type*} {g : ℂ → β} (h1 : Periodic g 1)
-    (hI : Periodic g I) (m n : ℤ) : Periodic g ((m : ℂ) + n * I) := by
-  simpa using (h1.int_mul m).add_period (hI.int_mul n)
-
-/-- Subtracting the lattice vector `⌊z.re⌋ + ⌊z.im⌋ i` moves `z` into the unit square. -/
-private theorem sub_floor_mem_reProdIm (z : ℂ) :
-    z - ((⌊z.re⌋ : ℂ) + ⌊z.im⌋ * I) ∈ Ico 0 1 ×ℂ Ico 0 1 := by
-  simp only [mem_reProdIm, sub_re, add_re, intCast_re, mul_re, intCast_im, I_re, I_im, mul_zero,
-    mul_one, sub_zero, add_zero, sub_im, add_im, mul_im, zero_add, mem_Ico, sub_nonneg]
-  exact ⟨⟨Int.floor_le _, by linarith [Int.lt_floor_add_one z.re]⟩,
-    Int.floor_le _, by linarith [Int.lt_floor_add_one z.im]⟩
-
 /-- **The mean-value inequality for doubly periodic data.** Let `J` and `X` be `C²` on an open set
 `W ⊆ ℂ × V` containing `ℂ × K` for a compact `K ⊆ V`, with `J(z, x)² = -1` on `ℂ × K`, and let
 `J(·, x)` and `X(·, x)` be periodic under `z ↦ z + 1` and `z ↦ z + i`. Then the threshold of the
@@ -112,10 +100,10 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_periodic
   refine ⟨δ, hδ, fun u z₀ r hr hr1 hu hu' hCR huK hE ↦ ?_⟩
   -- Translate `z₀` by a lattice vector `w` into the unit square; the data do not change.
   set w : ℂ := (⌊z₀.re⌋ : ℂ) + ⌊z₀.im⌋ * I
-  have hJw (y : ℂ) (x : V) : J (y + w, x) = J (y, x) :=
-    periodic_intCast_add_intCast_mul_I (hJ1 x) (hJI x) _ _ y
-  have hXw (y : ℂ) (x : V) : X (y + w, x) = X (y, x) :=
-    periodic_intCast_add_intCast_mul_I (hX1 x) (hXI x) _ _ y
+  have hJw (y : ℂ) (x : V) : J (y + w, x) = J (y, x) := by
+    simpa only [mul_one] using (hJ1 x).int_mul_add_int_mul (hJI x) ⌊z₀.re⌋ ⌊z₀.im⌋ y
+  have hXw (y : ℂ) (x : V) : X (y + w, x) = X (y, x) := by
+    simpa only [mul_one] using (hX1 x).int_mul_add_int_mul (hXI x) ⌊z₀.re⌋ ⌊z₀.im⌋ y
   have hpre : (· + w) ⁻¹' ball z₀ r = ball (z₀ - w) r := preimage_add_right_ball w z₀ r
   have hmaps : MapsTo (· + w) (ball (z₀ - w) r) (ball z₀ r) := hpre ▸ mapsTo_preimage _ _
   have hdv (y : ℂ) : fderiv ℝ (fun y ↦ u (y + w)) y = fderiv ℝ u (y + w) :=
@@ -165,8 +153,10 @@ theorem exists_forall_norm_fderiv_le_mul_one_add_norm_fderiv_one
     have hmem : (z - ((⌊z.re⌋ : ℂ) + ⌊z.im⌋ * I), x) ∈ (Icc 0 1 ×ℂ Icc 0 1) ×ˢ K :=
       ⟨reProdIm_subset_iff.2 (prod_mono Ico_subset_Icc_self Ico_subset_Icc_self)
         (sub_floor_mem_reProdIm z), hx⟩
-    rw [← (periodic_intCast_add_intCast_mul_I (hJ1 x) (hJI x) _ _).sub_eq z,
-      ← (periodic_intCast_add_intCast_mul_I (hX1 x) (hXI x) _ _).sub_eq z]
+    have hJx := (hJ1 x).int_mul_add_int_mul (hJI x) ⌊z.re⌋ ⌊z.im⌋
+    have hXx := (hX1 x).int_mul_add_int_mul (hXI x) ⌊z.re⌋ ⌊z.im⌋
+    rw [mul_one] at hJx hXx
+    rw [← hJx.sub_eq z, ← hXx.sub_eq z]
     exact ⟨(ha _ hmem).trans (le_max_left _ _), (hc _ hmem).trans (le_max_left _ _)⟩
   set a' := max a 0
   set c' := max c 0
@@ -189,46 +179,6 @@ theorem exists_forall_norm_fderiv_le_mul_one_add_norm_fderiv_one
   have h1 : 0 ≤ ‖L 1‖ := norm_nonneg _
   nlinarith [mul_nonneg ha' hc', mul_nonneg ha' h1, mul_nonneg hc' h1,
     mul_nonneg (mul_nonneg ha' hc') h1]
-
-/-- If an `i`-periodic map has energy at most `ε` over one period of the half-strip `re > R`, then
-its energy over every disc of radius `r ≤ 1/2` lying in the half-plane `re > R` is at most
-`2 ε`. -/
-private theorem integral_ball_le_two_mul {u : ℂ → V} (hper : Periodic u I) {z : ℂ} {r R ε : ℝ}
-    (hr : r ≤ 1 / 2) (hRz : R ≤ z.re - r) (hε : 0 ≤ ε)
-    (hcont : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z r))
-    (hR : ∫⁻ y in Ioi R ×ℂ Icc 0 1, ‖fderiv ℝ u y 1‖ₑ ^ 2 ≤ ENNReal.ofReal ε) :
-    ∫ y in ball z r, ‖fderiv ℝ u y 1‖ ^ 2 ≤ 2 * ε := by
-  have hf : Periodic (fun y ↦ ‖fderiv ℝ u y 1‖ₑ ^ 2) I := fun y ↦ by simp only [hper.fderiv y]
-  have hlE : ∫⁻ y in ball z r, ‖fderiv ℝ u y 1‖ₑ ^ 2 ≤ ENNReal.ofReal (2 * ε) := by
-    calc ∫⁻ y in ball z r, ‖fderiv ℝ u y 1‖ₑ ^ 2
-        ≤ 2 * ∫⁻ y in Ioi (z.re - r) ×ℂ Icc 0 1, ‖fderiv ℝ u y 1‖ₑ ^ 2 :=
-          setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioi hf z hr
-      _ ≤ 2 * ∫⁻ y in Ioi R ×ℂ Icc 0 1, ‖fderiv ℝ u y 1‖ₑ ^ 2 := by
-          gcongr
-          exact reProdIm_subset_iff.2 (prod_mono (Ioi_subset_Ioi hRz) le_rfl)
-      _ ≤ 2 * ENNReal.ofReal ε := by gcongr
-      _ = ENNReal.ofReal (2 * ε) := by
-          rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _)
-    ((hcont.mono ball_subset_closedBall).norm.pow 2 |>.aestronglyMeasurable measurableSet_ball)]
-  refine ENNReal.toReal_le_of_le_ofReal (by positivity) (le_trans (le_of_eq ?_) hlE)
-  exact lintegral_congr fun y ↦ by simp only [← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
-
-/-- An `i`-periodic map whose derivative is continuous on the half-plane `re > a` has bounded
-derivative on every band `b ≤ re ≤ R` with `a < b`. -/
-private theorem exists_forall_norm_fderiv_le_of_le_re_le {u : ℂ → V} (hper : Periodic u I)
-    {a b R : ℝ} (hab : a < b) (hdu : ContinuousOn (fderiv ℝ u) {z | a < z.re}) :
-    ∃ M, ∀ z, b ≤ z.re → z.re ≤ R → ‖fderiv ℝ u z‖ ≤ M := by
-  obtain ⟨M, hM⟩ := (isCompact_Icc.reProdIm isCompact_Icc).exists_bound_of_continuousOn
-    (hdu.mono fun z (hz : z ∈ Icc b R ×ℂ Icc 0 1) ↦ hab.trans_le hz.1.1)
-  refine ⟨M, fun z hb hR ↦ ?_⟩
-  -- Move `z` into one period by an integer multiple of `i`.
-  have hmem : z - ⌊z.im⌋ * I ∈ Icc b R ×ℂ Icc 0 1 := by
-    simp only [mem_reProdIm, sub_re, mul_re, intCast_re, intCast_im, I_re, I_im, mul_zero,
-      mul_one, sub_zero, sub_im, mul_im, add_zero, mem_Icc, sub_nonneg]
-    exact ⟨⟨hb, hR⟩, Int.floor_le _, by linarith [Int.lt_floor_add_one z.im]⟩
-  rw [← hper.fderiv.sub_int_mul_eq ⌊z.im⌋]
-  exact hM _ hmem
 
 /-- **Finite-energy Floer solutions have bounded derivatives on cylindrical ends.** Let `J` and `X`
 be `C²` on an open set `W ⊆ ℂ × V` containing `ℂ × K` for a compact `K ⊆ V`, with
@@ -268,11 +218,12 @@ theorem exists_forall_norm_fderiv_le_of_lintegral_ne_top
     (gt_mem_nhds (ENNReal.ofReal_pos.2 (by linarith : 0 < δ / 4)))).and
     (eventually_ge_atTop a) |>.exists
   -- On the compact part `b ≤ re z ≤ R + r` of the end, `du` is bounded by continuity.
-  obtain ⟨M₁, hM₁⟩ := exists_forall_norm_fderiv_le_of_le_re_le hper (R := R + r) hab hdu
+  obtain ⟨M₁, hM₁⟩ := (hper.fderiv (𝕜 := ℝ)).exists_bound_of_continuousOn_reProdIm_univ
+    (isCompact_Icc (a := b) (b := R + r)) (hdu.mono fun z hz ↦ hab.trans_le hz.1.1)
   set B : ℝ := 8 + 4 * δ / (π * r ^ 2)
   refine ⟨max M₁ (A * (1 + B)), fun z hz ↦ ?_⟩
   rcases le_or_gt z.re (R + r) with hzR | hzR
-  · exact (hM₁ z hz hzR).trans (le_max_left _ _)
+  · exact (hM₁ z ⟨⟨hz, hzR⟩, mem_univ _⟩).trans (le_max_left _ _)
   · -- Far out, the mean-value inequality bounds `∂ₛu`, and the equation bounds `du`.
     have hball : closedBall z r ⊆ {z | a < z.re} := fun y hy ↦ by
       have := abs_re_le_norm (y - z)
@@ -281,7 +232,15 @@ theorem exists_forall_norm_fderiv_le_of_lintegral_ne_top
       exact (by linarith : a < y.re)
     have hcont : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z r) :=
       (hdu.clm_apply continuousOn_const).mono hball
-    have hE := integral_ball_le_two_mul hper hr2 (by linarith) (by linarith) hcont hR.le
+    -- The energy over the disc is at most twice the energy over one far-out period.
+    have hper' : Periodic (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) I := fun y ↦ by
+      simp only [hper.fderiv y]
+    have hR' : ∫⁻ y in Ioi R ×ℂ Icc 0 1, ENNReal.ofReal (‖fderiv ℝ u y 1‖ ^ 2) ≤
+        ENNReal.ofReal (δ / 4) := by
+      simpa only [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm] using hR.le
+    have hE := hper'.setIntegral_ball_le_two_mul (fun _ ↦ sq_nonneg _) hr2 (by linarith)
+      (by linarith) ((hcont.mono ball_subset_closedBall).norm.pow 2 |>.aestronglyMeasurable
+        measurableSet_ball) hR'
     have hE0 : 0 ≤ ∫ y in ball z r, ‖fderiv ℝ u y 1‖ ^ 2 :=
       setIntegral_nonneg measurableSet_ball fun _ _ ↦ sq_nonneg _
     have hmv := hmean hr.le (by linarith) (hu.mono (ball_subset_closedBall.trans hball)) hcont
