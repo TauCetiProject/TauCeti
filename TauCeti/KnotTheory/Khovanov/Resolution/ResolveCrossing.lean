@@ -359,7 +359,7 @@ private theorem resolveCrossingCubeLinearEquiv_naturality {S T : Finset (Fin n)}
   -- of the two cubes are saddle maps and the vertex identifications are reindexings.
   rw [Functor.comp_map, Subsingleton.elim ((monotone_resolveCrossingVertex c t).functor.map
       (homOfLE h.le)) (homOfLE h'.le), ← cancel_mono (D.resolutionCubeι hD R j _),
-    Category.assoc, Category.assoc, D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R j haS'
+    Category.assoc, Category.assoc, D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R j
       (resolveCrossingVertex_insert c t S a).symm _ hst hc
       (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc)]
   ext x
