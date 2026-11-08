@@ -15,7 +15,7 @@ multiple of a measure, and the support of a pushforward by a continuous map. It 
 pushing a measure forward along a homeomorphism transports its topological support onto the image
 of the original support.
 
-## Main results
+## Main result
 
 * `MeasureTheory.Measure.support_eq_setOf_singleton_ne_zero` — on a discrete space, the support
   consists exactly of the points with nonzero singleton mass.

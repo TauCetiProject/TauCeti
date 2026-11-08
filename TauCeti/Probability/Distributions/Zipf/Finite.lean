@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Uniform.Finite
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-public import TauCeti.MeasureTheory.Measure.Support
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Probability.Moments.Variance
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.GeneratingFunction
@@ -190,8 +190,16 @@ theorem ae_mem_Icc_finiteZipfMeasure (N : ℕ) (s : ℝ) :
 theorem support_finiteZipfMeasure (N : ℕ) (s : ℝ) :
     (finiteZipfMeasure N s).support = Icc 1 N := by
   ext k
-  simp only [Measure.support_eq_setOf_singleton_ne_zero, mem_ofPred_eq,
-    finiteZipfMeasure_singleton_ne_zero_iff, Finset.mem_Icc, Set.mem_Icc]
+  rw [Measure.mem_support_iff_forall]
+  constructor
+  · intro h
+    have hk := (finiteZipfMeasure_singleton_ne_zero_iff N s k).mp
+      (h {k} (by simp)).ne'
+    exact Finset.mem_Icc.mp hk
+  · intro hk U hU
+    exact (pos_iff_ne_zero.mpr
+      ((finiteZipfMeasure_singleton_ne_zero_iff N s k).mpr (Finset.mem_Icc.mpr hk))).trans_le
+      (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-- Exponent zero recovers the uniform measure on `1, …, N`, including the empty case. -/
 @[simp]
