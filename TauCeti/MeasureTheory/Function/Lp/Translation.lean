@@ -286,11 +286,6 @@ theorem ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u
     {r : ℝ} (hr : 1 ≤ r) (x h : E) :
     ‖u (x + h) - u x‖ₑ ^ r ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
-  have hmeas : AEMeasurable (fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ)
-      (volume.restrict (Icc (0 : ℝ) 1)) :=
-    (((hu.continuous_fderiv one_ne_zero).comp
-      (by fun_prop : Continuous fun t : ℝ => x + t • h)).clm_apply
-      continuous_const).enorm.aemeasurable
   have huniv : (volume.restrict (Icc (0 : ℝ) 1)) univ = 1 := by
     rw [Measure.restrict_apply_univ, Real.volume_Icc]
     simp
@@ -303,7 +298,8 @@ theorem ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u
       ≤ (∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ) ^ r :=
         ENNReal.rpow_le_rpow hsegment hr0.le
     _ ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
-        simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul hmeas hr
+        simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul
+          (μ := volume.restrict (Icc (0 : ℝ) 1)) (u := fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ) hr
 
 end Calculus
 
