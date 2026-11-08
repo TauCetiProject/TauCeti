@@ -79,14 +79,6 @@ variable {n : ℕ} {k K A : Type u} [Field k] [Field K] [Algebra k K] [CommRing 
 
 attribute [local instance] MvPolynomial.algebraMvPolynomial
 
-/-- The kernel of the base change of a presentation to `K` is the extension of its kernel. -/
-theorem _root_.Algebra.Presentation.ker_baseChange_eq_map {ι σ : Type}
-    (P : Algebra.Presentation k A ι σ) (K : Type u) [CommRing K] [Algebra k K] :
-    (P.baseChange K).ker = P.ker.map (algebraMap P.Ring (P.baseChange K).Ring) := by
-  rw [← P.span_range_relation_eq_ker, Ideal.map_span, ← Set.range_comp]
-  exact (P.baseChange K).ker_eq_ker_aeval_val.trans
-    (P.span_range_relation_eq_ker_baseChange K).symm
-
 /-- Let `P` present `A` over `k` with generators indexed by `ι`, and let `q` be a prime of `A`. If
 `K ⊗[k] A` is locally standard syntomic of relative dimension `n`, then at some field-valued point
 `F` of `k[ι]` lying over `q`, the fibre of the kernel of `P` has dimension at most `#ι - n`. -/
