@@ -119,8 +119,8 @@ theorem surjective_homotopyGroupMap_skeletonLT {N : Type v} [Finite N] (hN : Nat
     obtain ⟨b, hb⟩ := exists_joined_skeletonLT hA hAC (γ 0)
     refine ⟨⟦(genLoopHomeoOfIsEmpty N a).symm b⟧,
       (homotopyGroupEquivZerothHomotopyOfIsEmpty N _).injective ?_⟩
-    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
+    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
+      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
     exact ZerothHomotopy.sound hb.somePath
   · -- Split off a direction `i` and use exactness of the pair at `π_k(C, a)`.
     let e := Equiv.optionSubtypeNe i
