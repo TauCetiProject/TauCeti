@@ -22,7 +22,7 @@ public section
 
 namespace TauCeti.SymplecticForm
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
 /-- A continuous alternating two-form with trivial left kernel gives an algebraic symplectic
 form. No finite-dimensionality assumption is needed. -/

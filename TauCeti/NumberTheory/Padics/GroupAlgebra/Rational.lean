@@ -139,8 +139,8 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd (hG : ¬p ∣
     (h : Nonempty ((M ⊗[ℤ_[p]] ℚ_[p]) ≃ₗ[A] (N ⊗[ℤ_[p]] ℚ_[p]))) :
     Nonempty (M ≃ₗ[A] N) := by
   -- Projective `ℤ_p[G]`-modules are projective, hence torsion-free, over `ℤ_p`.
-  have : Module.Projective ℤ_[p] M := .trans (S := A)
-  have : Module.Projective ℤ_[p] N := .trans (S := A)
+  have : Module.Projective ℤ_[p] M := .trans A M
+  have : Module.Projective ℤ_[p] N := .trans A N
   -- Work with the radical quotients, which are finite and semisimple; the radical is `(p)`.
   have hJ := jacobson_padicInt_monoidAlgebra_eq_span_p p hG
   have : IsArtinianRing (A ⧸ Ring.jacobson A) := isArtinian_of_finite
