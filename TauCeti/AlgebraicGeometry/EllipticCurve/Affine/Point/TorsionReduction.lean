@@ -449,26 +449,20 @@ noncomputable def _root_.WeierstrassCurve.torsionReductionAddEquiv
       Submodule.torsionBy ℤ
         ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point (n : ℤ) := by
   let ρ := reductionHom Valued.v (W := (C.baseChange F_u).toAffine)
-  let f := (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
-  apply AddEquiv.ofBijective f
-  constructor
-  · intro P Q h
-    apply Subtype.ext
-    have hPn : n • (P : (C.baseChange F_u).toAffine.Point) = 0 := by
-      simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp P.property
-    have hQn : n • (Q : (C.baseChange F_u).toAffine.Point) = 0 := by
-      simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp Q.property
-    obtain ⟨T, -, hT⟩ := existsUnique_torsion_lift u C hn (ρ P) (by
-      rw [← map_nsmul, hPn, _root_.map_zero])
-    have hPQ : ρ P = ρ Q := by
-      simpa [f, TauCeti.coe_torsionByMap_apply] using congrArg Subtype.val h
-    exact (hT P ⟨hPn, rfl⟩).trans (hT Q ⟨hQn, hPQ.symm⟩).symm
-  · intro Q
-    obtain ⟨P, hP, -⟩ := existsUnique_torsion_lift u C hn Q
-      (by simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp Q.property)
-    refine ⟨⟨P, (Submodule.mem_torsionBy_iff _ _).mpr (by simpa using hP.1)⟩, ?_⟩
-    apply Subtype.ext
-    simpa [f, TauCeti.coe_torsionByMap_apply] using hP.2
+  have hker : Function.Bijective (fun P : ρ.ker ↦ (n : ℤ) • P) := by
+    -- The formal-kernel API fixes classical equality decisions on the completed field.
+    cases Subsingleton.elim (inferInstance : DecidableEq F_u)
+      (fun a b ↦ Classical.propDecidable (a = b))
+    classical
+    have heq : ρ.ker = C.kerReduction u := by
+      ext P
+      exact (mem_kerReduction_iff_reductionHom_eq_zero u C).symm
+    rw [heq]
+    simpa only [natCast_zsmul] using C.nsmul_kerReduction_bijective u hn
+  -- The additive and ℤ-linear kernels have definitionally equal carriers.
+  exact AddEquiv.ofBijective (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
+    (TauCeti.bijective_torsionByMap_of_bijective_ker_smul (n : ℤ) ρ.toIntLinearMap
+      (reductionHom_surjective Valued.v) hker)
 
 /-- The torsion specialization equivalence sends a point to its reduction. -/
 @[simp]

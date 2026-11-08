@@ -135,44 +135,6 @@ theorem exact_torsionByMap {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Exact 
 
 end Map
 
-section Lift
-
-variable {R : Type*} [CommRing R] (r : R) {M N : Type*}
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-
-/-- A surjective linear map whose kernel is uniquely divisible by `r` lifts every
-`r`-torsion point uniquely to an `r`-torsion point. -/
-theorem existsUnique_torsion_lift_of_bijective_ker_smul (f : M →ₗ[R] N)
-    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x)
-    (y : N) (hy : r • y = 0) : ∃! x : M, r • x = 0 ∧ f x = y := by
-  obtain ⟨x, hx⟩ := hf y
-  have hrx : r • x ∈ LinearMap.ker f := by simp [LinearMap.mem_ker, hx, hy]
-  obtain ⟨z, hz⟩ := hr.2 ⟨r • x, hrx⟩
-  have hrz : r • (z : M) = r • x := congrArg Subtype.val hz
-  have hfz : f z = 0 := z.2
-  refine ⟨x - z, ⟨by rw [smul_sub, hrz, sub_self], by rw [map_sub, hfz, sub_zero, hx]⟩,
-    fun w hw ↦ ?_⟩
-  have hker : w - (x - z) ∈ LinearMap.ker f := by
-    simp [LinearMap.mem_ker, hw.2, hx, hfz]
-  have hzero : r • (⟨w - (x - z), hker⟩ : LinearMap.ker f) = 0 := by
-    apply Subtype.ext
-    simp [smul_sub, hw.1, hrz]
-  exact sub_eq_zero.mp (congrArg Subtype.val (hr.1 (hzero.trans (smul_zero r).symm)))
-
-/-- A surjective linear map induces a bijection on `r`-torsion when multiplication
-by `r` is bijective on its kernel. -/
-theorem bijective_torsionByMap_of_bijective_ker_smul (f : M →ₗ[R] N)
-    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x) :
-    Bijective (torsionByMap r f) := by
-  rw [Function.bijective_iff_existsUnique]
-  intro y
-  obtain ⟨x, hx, huniq⟩ := existsUnique_torsion_lift_of_bijective_ker_smul r f hf hr y
-    ((mem_torsionBy_iff _ _).mp y.2)
-  refine ⟨⟨x, (mem_torsionBy_iff _ _).mpr hx.1⟩, Subtype.ext hx.2, fun z hz ↦ ?_⟩
-  exact Subtype.ext (huniq z ⟨(mem_torsionBy_iff _ _).mp z.2, congrArg Subtype.val hz⟩)
-
-end Lift
-
 section Snake
 
 variable {R : Type*} [CommRing R] (r : R) {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁]
@@ -285,6 +247,43 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
     torsionByδ_eq hfg hf hg x hy hz, QuotSMulTop.map_apply_mk]
 
 end Snake
+
+section Lift
+
+variable {R : Type*} [CommRing R] (r : R) {M N : Type*}
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A surjective linear map induces a bijection on `r`-torsion when multiplication
+by `r` is bijective on its kernel. -/
+theorem bijective_torsionByMap_of_bijective_ker_smul (f : M →ₗ[R] N)
+    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x) :
+    Bijective (torsionByMap r f) := by
+  have hex := LinearMap.exact_subtype_ker_map f
+  have hinj := (LinearMap.ker f).injective_subtype
+  have : Subsingleton (QuotSMulTop r (LinearMap.ker f)) := by
+    apply Submodule.Quotient.subsingleton_iff.mpr
+    apply top_unique
+    intro x _
+    obtain ⟨y, rfl⟩ := hr.2 x
+    exact Submodule.smul_mem_pointwise_smul y r ⊤ trivial
+  exact ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
+    obtain ⟨y, rfl⟩ := (exact_torsionByMap hex hinj x).1 hx
+    have hy : y = 0 := Subtype.ext (hr.1 (by simp))
+    rw [hy, map_zero],
+    fun y ↦ (exact_torsionByMap_torsionByδ hex hinj hf y).1 (Subsingleton.elim _ _)⟩
+
+/-- A surjective linear map whose kernel is uniquely divisible by `r` lifts every
+`r`-torsion point uniquely to an `r`-torsion point. -/
+theorem existsUnique_torsion_lift_of_bijective_ker_smul (f : M →ₗ[R] N)
+    (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x)
+    (y : N) (hy : r • y = 0) : ∃! x : M, r • x = 0 ∧ f x = y := by
+  obtain ⟨x, hx, huniq⟩ :=
+    (bijective_torsionByMap_of_bijective_ker_smul r f hf hr).existsUnique
+      ⟨y, (mem_torsionBy_iff _ _).mpr hy⟩
+  refine ⟨x, ⟨(mem_torsionBy_iff _ _).mp x.2, congrArg Subtype.val hx⟩, fun z hz ↦ ?_⟩
+  exact congrArg Subtype.val (huniq ⟨z, (mem_torsionBy_iff _ _).mpr hz.1⟩ (Subtype.ext hz.2))
+
+end Lift
 
 end TauCeti
 
