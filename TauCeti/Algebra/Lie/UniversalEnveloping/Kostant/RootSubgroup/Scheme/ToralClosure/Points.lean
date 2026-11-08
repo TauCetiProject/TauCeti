@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Points
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Presentation
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 
@@ -28,7 +28,7 @@ B_S(A) ≤ kostantToralPointsSubgroup(A).
 ```
 
 Taking `S = Set.univ` places the full torus--elementary subgroup assembled in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel` inside the points
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel.Basic` inside the points
 of the assembled scheme carrier. Equality over an algebraically closed field is a separate
 generation theorem and is not asserted here.
 

@@ -172,6 +172,13 @@ theorem kostantSubsystemSubgroup_le_kostantTorusSubsystemSubgroup (S : Set ι)
       kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S A :=
   (kostantTorusSubsystemSubgroup_eq_sup e h ρ M hM hnil b wt S A) ▸ le_sup_left
 
+/-- The torus image is contained in the Borel-type subgroup. -/
+theorem range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup (S : Set ι)
+    (A : CommAlgCat.{w} ℤ) :
+    (kostantTorusPoints M b wt A).range ≤
+      kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S A :=
+  (kostantTorusSubsystemSubgroup_eq_sup e h ρ M hM hnil b wt S A) ▸ le_sup_right
+
 /-- A root-subgroup element with index in `S` lies in the Borel-type subgroup. -/
 theorem kostantRootSubgroupParam_mem_kostantTorusSubsystemSubgroup {S : Set ι} {i : ι}
     (hiS : i ∈ S) (A : CommAlgCat.{w} ℤ) (t : Multiplicative A) :
