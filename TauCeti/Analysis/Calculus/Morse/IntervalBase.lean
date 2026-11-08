@@ -154,7 +154,7 @@ is `0`. -/
 @[simp]
 theorem morseIndex_intervalBasePotential_one (hC : 0 < C) :
     morseIndex (intervalBasePotential C) 1 = 0 :=
-  (isNondegenerateCriticalPoint_intervalBasePotential_one hC.ne').morseIndex_real_of_pos
+  morseIndex_real_of_pos
     (by rw [iteratedDeriv_two_intervalBasePotential]; linarith)
 
 /-! ### A trajectory from `0` to `1` and the time coordinate -/

@@ -28,10 +28,9 @@ of one variable.
 * `TauCeti.hessianOperator_real`: the Hessian operator is multiplication by `f''(t)`.
 * `TauCeti.isNondegenerateCriticalPoint_real_iff`: nondegenerate critical points of a function of
   one variable.
-* `TauCeti.morseIndex_real_of_neg` and
-  `TauCeti.IsNondegenerateCriticalPoint.morseIndex_real_of_pos`: the Morse index is `1` where the
-  second derivative is negative (a local maximum at a critical point) and `0` at a nondegenerate
-  critical point with positive second derivative (a local minimum).
+* `TauCeti.morseIndex_real_of_neg` and `TauCeti.morseIndex_real_of_pos`: the Morse index is `1`
+  where the second derivative is negative (a local maximum at a critical point) and `0` where it is
+  positive (a local minimum at a critical point).
 -/
 
 public section
@@ -81,11 +80,10 @@ theorem morseIndex_real_of_neg (hneg : iteratedDeriv 2 f t < 0) : morseIndex f t
     nlinarith [pow_pos (abs_pos.2 hv) 2, sq_abs v]
   simpa using this
 
-/-- At a nondegenerate critical point with positive second derivative, a local minimum, the Morse
-index of a function of one variable is `0`. -/
-theorem IsNondegenerateCriticalPoint.morseIndex_real_of_pos (h : IsNondegenerateCriticalPoint f t)
-    (hpos : 0 < iteratedDeriv 2 f t) : morseIndex f t = 0 :=
-  h.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.1 fun v hv ↦ by
+/-- Where the second derivative is positive, the Morse index of a function of one variable is `0`;
+at a critical point this is a local minimum. -/
+theorem morseIndex_real_of_pos (hpos : 0 < iteratedDeriv 2 f t) : morseIndex f t = 0 :=
+  morseIndex_eq_zero_of_posDef fun v hv ↦ by
     rw [hessianQuadraticForm_real_apply]
     nlinarith [pow_pos (abs_pos.2 hv) 2, sq_abs v]
 
