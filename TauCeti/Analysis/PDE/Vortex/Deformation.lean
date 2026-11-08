@@ -310,10 +310,13 @@ theorem contDiff_equation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n m : WithTo
     ((hc i).fderiv_right hmn).clm_apply contDiff_const
   refine contDiff_piLp 2 |>.2 fun j ↦ ?_
   fin_cases j
-  · exact ((hd 0 I).sub (hd 1 1)).add
+  · simp only [Fin.zero_eta, equation_apply_zero]
+    exact ((hd 0 I).sub (hd 1 1)).add
       (((contDiff_const.mul (((hv 2).pow 2).add ((hv 3).pow 2))).sub contDiff_const).div_const _)
-  · exact (((hd 2 1).sub (hd 3 I)).sub ((hv 0).mul (hv 3))).sub ((hv 1).mul (hv 2))
-  · exact (((hd 3 1).add (hd 2 I)).add ((hv 0).mul (hv 2))).sub ((hv 1).mul (hv 3))
+  · simp only [Fin.mk_one, equation_apply_one]
+    exact (((hd 2 1).sub (hd 3 I)).sub ((hv 0).mul (hv 3))).sub ((hv 1).mul (hv 2))
+  · simp only [Fin.reduceFinMk, equation_apply_two]
+    exact (((hd 3 1).add (hd 2 I)).add ((hv 0).mul (hv 2))).sub ((hv 1).mul (hv 3))
 
 /-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
 `F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/

@@ -201,7 +201,7 @@ theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) 
   have hs : (w / (‖w‖ : ℂ)) ^ m = (Real.exp (-(m * Real.log ‖w‖)) : ℂ) * w ^ m := by
     rw [Real.exp_neg, Real.exp_nat_mul, Real.exp_log hn, div_pow, div_eq_inv_mul]
     push_cast
-    rfl
+    ring
   rw [referenceField_eq_of_rOut_le f m hw.le, hs, re_ofReal_mul, im_ofReal_mul]
   ext i
   fin_cases i <;> simp [hd, amplitudeField_apply_two, amplitudeField_apply_three]
@@ -248,8 +248,10 @@ theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 
   have hconn (v : ℂ) : ContDiff ℝ ∞ (fun z ↦ referenceConnection f m z v) :=
     (ContinuousLinearMap.apply ℝ ℂ v).contDiff.comp (contDiff_referenceConnection f m)
   fin_cases i
-  · exact hcomp (hconn 1) imCLM (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n 1)
-  · exact hcomp (hconn I) imCLM (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n I)
+  · simpa [referenceField_apply] using
+      hcomp (hconn 1) imCLM (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n 1)
+  · simpa [referenceField_apply] using
+      hcomp (hconn I) imCLM (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n I)
   · simpa [referenceField_apply, div_eq_inv_mul] using hcomp (contDiff_referenceSection f m)
       ((1 / 2 : ℝ) • reCLM) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
   · simpa [referenceField_apply, div_eq_inv_mul] using hcomp (contDiff_referenceSection f m)
