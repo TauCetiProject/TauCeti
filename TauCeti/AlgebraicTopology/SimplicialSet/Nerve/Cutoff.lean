@@ -129,6 +129,20 @@ weighted by `c` to the function on single arrows given by the value at their sou
 def cutoffAverage (φ : ComposableArrows C 0 → M) : ComposableArrows C 0 → M :=
   cutoffPrepend c 0 (φ ∘ fun τ ↦ ComposableArrows.mk₀ τ.left)
 
+/-- The value of `TauCeti.nerveCochainComplex.cutoffPrepend` at a string `σ` is the sum, over the
+arrows `b` into its first vertex, of `c` at the source of `b` times the value at `σ` with `b`
+prepended. -/
+theorem cutoffPrepend_apply (n : ℕ) (φ : ComposableArrows C (n + 1) → M)
+    (σ : ComposableArrows C n) :
+    cutoffPrepend c n φ σ = ∑ᶠ b : Quiver.Costar σ.left, c b.1 • φ (σ.precomp b.2) := by
+  rfl
+
+/-- The value of `TauCeti.nerveCochainComplex.cutoffAverage` at an object `σ.left` is the sum,
+over the arrows `b` into it, of `c` at the source of `b` times the value at that source. -/
+theorem cutoffAverage_apply (φ : ComposableArrows C 0 → M) (σ : ComposableArrows C 0) :
+    cutoffAverage c φ σ = ∑ᶠ b : Quiver.Costar σ.left, c b.1 • φ (ComposableArrows.mk₀ b.1) := by
+  rfl
+
 variable {c}
 
 variable (hc : ∀ x : C, ∑ᶠ b : Quiver.Costar x, c b.1 = 1)
