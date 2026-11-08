@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Integral.RieszPotential
 import TauCeti.MeasureTheory.Integral.SchurTest
