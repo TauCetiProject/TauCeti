@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Green.Comparison.Area.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Embedding
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+public import TauCeti.MeasureTheory.Integral.RangeTransport
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
@@ -77,36 +78,6 @@ private lemma mpullback_areaForm_coeff {E : Type*} [NormedAddCommGroup E] [Norme
     exact e.apply_symm_apply _
   rw [hv, Complex.coe_basisOneI, Complex.orientation_volumeFormL_one_I, mul_one]
 
-/-- Transport of integrals over the image of a continuous map `f : M → ℂ` from `E` to `ℂ` along
-a continuous linear equivalence `e`, where `E` carries the Haar measure of the basis transported
-from `1, i`. -/
-private lemma integral_range_transport {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [TopologicalSpace M]
-    [CompactSpace M] (e : E ≃L[ℝ] ℂ) {f : M → ℂ} (hf : Continuous f) (g : ℂ → ℝ)
-    (hgi : IntegrableOn (fun y ↦ g (e y)) (range (e.symm ∘ f))
-      (Complex.basisOneI.map e.symm.toLinearEquiv).addHaar) :
-    IntegrableOn g (range f) ∧
-      ∫ y in range (e.symm ∘ f), g (e y)
-        ∂(Complex.basisOneI.map e.symm.toLinearEquiv).addHaar = ∫ z in range f, g z := by
-  set b := Complex.basisOneI.map e.symm.toLinearEquiv with hbdef
-  have hb : b.map e.toLinearEquiv = Complex.basisOneI := by
-    ext i
-    exact e.apply_symm_apply _
-  have hmp : MeasurePreserving e b.addHaar volume := ⟨e.continuous.measurable, by
-    rw [b.map_addHaar e, hb, basisOneI_addHaar]⟩
-  have hme : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
-  have hm : MeasurableSet (range f) := (isCompact_range hf).measurableSet
-  have hr : range (e.symm ∘ f) = e ⁻¹' range f := by
-    ext y
-    constructor
-    · rintro ⟨x, rfl⟩
-      exact ⟨x, (e.apply_symm_apply (f x)).symm⟩
-    · rintro ⟨x, hx⟩
-      exact ⟨x, e.injective ((e.apply_symm_apply (f x)).trans hx)⟩
-  rw [hr] at hgi ⊢
-  exact ⟨((hmp.restrict_preimage hm).integrable_comp_emb hme).mp hgi,
-    (hmp.restrict_preimage hm).integral_comp hme g⟩
-
 /-- Integration of actual pulled-back planar area along an injective orientation-preserving
 manifold map is integration over its image. Intrinsic integrability implies image integrability;
 weights may be rough, and boundary and corner points are retained. -/
@@ -172,7 +143,12 @@ theorem integralTopForm_mpullback_area_eq_integral_image
     (e.symm.injective.comp hinj) F' hF' ho' ω hi'
   simp_rw [hcoef] at hgi hge
   rw [hpull] at hge
-  obtain ⟨hgi', hint⟩ := integral_range_transport e hf.continuous g hgi
+  have hb : b.map e.toLinearEquiv = Complex.basisOneI := by ext i; exact e.apply_symm_apply _
+  have hmp : MeasurePreserving e.toHomeomorph.toMeasurableEquiv b.addHaar volume :=
+    ⟨e.continuous.measurable, by
+      change Measure.map e b.addHaar = _
+      rw [b.map_addHaar e, hb, basisOneI_addHaar]⟩
+  obtain ⟨hgi', hint⟩ := hmp.integrableOn_range_and_setIntegral_range (f := f) g hgi
   exact ⟨hgi', hge.trans hint⟩
 
 end TauCeti.Green
