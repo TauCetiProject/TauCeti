@@ -106,9 +106,8 @@ theorem flowOf_surjective (t : ℝ) : Function.Surjective (flowOf v t) :=
 theorem isMIntegralCurve_globalFlow (x : M) :
     IsMIntegralCurve (fun t ↦ globalFlow v hv hcomplete t x) v := by
   simp only [globalFlow_apply]
-  rw [isMIntegralCurve_iff_isMIntegralCurveOn,
-    ← hcomplete.maximalIntegralCurveInterval_eq_univ x]
-  exact isMIntegralCurveOn_maximalIntegralCurve hv
+  exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
+    (hcomplete.maximalIntegralCurveInterval_eq_univ x)
 
 /-- **Unit-speed descent along a flow.** Let `v` be a complete `C¹` vector field with
 `df(v) = -1` on an open set `U` containing the band `a ≤ f ≤ b`. If `f x ≤ b`, then `f` decreases
