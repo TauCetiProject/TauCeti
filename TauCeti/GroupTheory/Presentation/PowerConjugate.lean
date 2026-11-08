@@ -21,8 +21,9 @@ finite, so conjugation into it is automatically onto. No finiteness of the ambie
 is assumed. Consequently these results apply inside an abstract presented group, where the
 power and conjugation relations must be proved, not merely checked in a finite image.
 
-`finite_and_card_closure_le_of_power_conjugate` supplies both finiteness and the order bound.
-The resulting expressions need not be unique, and the power bounds need not be exact orders.
+`finite_closure_of_power_conjugate` supplies finiteness, and
+`card_closure_le_of_power_conjugate` supplies the order bound. The resulting expressions
+need not be unique, and the power bounds need not be exact orders.
 
 ## References
 
@@ -55,14 +56,25 @@ theorem generatorSuffix_zero {n : ℕ} (x : Fin n → G) :
     generatorSuffix x 0 = Subgroup.closure (Set.range x) := by
   simp [generatorSuffix]
 
-@[simp]
-theorem generatorSuffix_self {n : ℕ} (x : Fin n → G) : generatorSuffix x n = ⊥ := by
-  have h : x '' {i : Fin n | n ≤ (i : ℕ)} = ∅ := by
+/-- Increasing the cut shrinks the suffix subgroup. -/
+theorem generatorSuffix_antitone {n : ℕ} (x : Fin n → G) : Antitone (generatorSuffix x) := by
+  intro k l hkl
+  simp only [generatorSuffix_def]
+  exact Subgroup.closure_mono (Set.image_mono (fun _ hi ↦ hkl.trans hi))
+
+/-- Every suffix at or beyond the length of the family is trivial. -/
+theorem generatorSuffix_eq_bot_of_le {n : ℕ} (x : Fin n → G) {k : ℕ} (hnk : n ≤ k) :
+    generatorSuffix x k = ⊥ := by
+  have h : x '' {i : Fin n | k ≤ (i : ℕ)} = ∅ := by
     ext g
     simp only [Set.mem_image, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_exists]
     intro i hi
     omega
   simp [generatorSuffix, h]
+
+@[simp]
+theorem generatorSuffix_self {n : ℕ} (x : Fin n → G) : generatorSuffix x n = ⊥ :=
+  generatorSuffix_eq_bot_of_le x le_rfl
 
 /-- Removing the first generator shifts every suffix by one. -/
 theorem generatorSuffix_succ {n : ℕ} (x : Fin (n + 1) → G) (k : ℕ) :
@@ -81,21 +93,13 @@ theorem generatorSuffix_succ {n : ℕ} (x : Fin (n + 1) → G) (k : ℕ) :
 /-- The full generated subgroup is obtained by adjoining the first generator to its suffix. -/
 theorem closure_range_eq_generatorSuffix_sup_zpowers {n : ℕ} (x : Fin (n + 1) → G) :
     Subgroup.closure (Set.range x) = generatorSuffix x 1 ⊔ Subgroup.zpowers (x 0) := by
-  apply le_antisymm
-  · refine (Subgroup.closure_le _).mpr ?_
-    rintro _ ⟨i, rfl⟩
-    by_cases hi : i = 0
-    · exact Subgroup.mem_sup_right (hi ▸ Subgroup.mem_zpowers (x 0))
-    · have hi' : (i : ℕ) ≠ 0 := fun h ↦ hi (Fin.ext h)
-      exact Subgroup.mem_sup_left (mem_generatorSuffix x i (by omega))
-  · refine sup_le (Subgroup.closure_mono (by rintro _ ⟨i, _, rfl⟩; exact ⟨i, rfl⟩)) ?_
-    exact Subgroup.zpowers_le.mpr (Subgroup.subset_closure ⟨0, rfl⟩)
+  rw [Fin.range_fin_succ, Set.insert_eq, Subgroup.closure_union,
+    ← Subgroup.zpowers_eq_closure, sup_comm, generatorSuffix_succ, generatorSuffix_zero]
+  rfl
 
-/-- Triangular power and conjugation relations certify finiteness and the product upper bound.
-For each `i`, certify a positive power in the later-generator subgroup, and certify that
-conjugation by `x i` sends each later generator into that same subgroup. Relations are required
-in the actual ambient group; no consistency, exact-order or uniqueness hypothesis is needed. -/
-theorem finite_and_card_closure_le_of_power_conjugate {n : ℕ} (x : Fin n → G)
+-- The induction establishes finiteness before using it to turn one-sided conjugation
+-- into normalization. Its two conclusions are exposed separately below.
+private theorem power_conjugate_bound {n : ℕ} (x : Fin n → G)
     (m : Fin n → ℕ) (hm : ∀ i, 0 < m i)
     (hpow : ∀ i : Fin n, x i ^ m i ∈ generatorSuffix x ((i : ℕ) + 1))
     (hconj : ∀ i j : Fin n, i < j →
@@ -117,21 +121,49 @@ theorem finite_and_card_closure_le_of_power_conjugate {n : ℕ} (x : Fin n → G
     have : Finite (generatorSuffix x 1) := heq ▸ htail.1
     have hnorm : x 0 ∈ Subgroup.normalizer (generatorSuffix x 1) := by
       apply Subgroup.mem_normalizer_fintype
-      have hle : generatorSuffix x 1 ≤
-          (generatorSuffix x 1).comap (MulAut.conj (x 0)).toMonoidHom := by
-        rw [generatorSuffix_def]
-        apply (Subgroup.closure_le _).mpr
-        rintro _ ⟨j, hj, rfl⟩
-        have hj' : 1 ≤ (j : ℕ) := hj
-        exact hconj 0 j (by
+      intro g hg
+      rw [generatorSuffix_def] at hg
+      induction hg using Subgroup.closure_induction with
+      | mem g hg =>
+        obtain ⟨j, hj, rfl⟩ := hg
+        have hj' : 1 ≤ (j : ℕ) := by simpa only [Set.mem_ofPred_eq] using hj
+        simpa only [Fin.val_zero, zero_add, SetLike.mem_coe] using hconj 0 j (by
           simp only [Fin.lt_def, Fin.val_zero]
           omega)
-      exact fun g hg ↦ hle hg
-    obtain ⟨hf, hc⟩ := (generatorSuffix x 1).finite_and_card_sup_zpowers_le (hm 0) hnorm
-      (hpow 0)
+      | one => simp
+      | mul a b _ _ ha hb =>
+        rw [← MulAut.conj_apply, map_mul, MulAut.conj_apply, MulAut.conj_apply]
+        exact (generatorSuffix x 1).mul_mem ha hb
+      | inv a _ ha =>
+        rw [← MulAut.conj_apply, map_inv, MulAut.conj_apply]
+        exact (generatorSuffix x 1).inv_mem ha
+    have hf := (generatorSuffix x 1).finite_sup_zpowers (hm 0) hnorm (hpow 0)
+    have hc := (generatorSuffix x 1).card_sup_zpowers_le (hm 0) hnorm (hpow 0)
     rw [closure_range_eq_generatorSuffix_sup_zpowers]
     refine ⟨hf, hc.trans ?_⟩
     rw [heq, Fin.prod_univ_succ]
     simpa only [mul_comm] using Nat.mul_le_mul_right (m 0) htail.2
+
+/-- Triangular power and conjugation relations certify finiteness of the generated subgroup.
+The relations must hold in the actual ambient group. Only conjugation of later generators
+by earlier ones is required; no consistency or uniqueness hypothesis is needed. -/
+theorem finite_closure_of_power_conjugate {n : ℕ} (x : Fin n → G)
+    (m : Fin n → ℕ) (hm : ∀ i, 0 < m i)
+    (hpow : ∀ i : Fin n, x i ^ m i ∈ generatorSuffix x ((i : ℕ) + 1))
+    (hconj : ∀ i j : Fin n, i < j →
+      x i * x j * (x i)⁻¹ ∈ generatorSuffix x ((i : ℕ) + 1)) :
+    Finite (Subgroup.closure (Set.range x)) :=
+  (power_conjugate_bound x m hm hpow hconj).1
+
+/-- Triangular power and conjugation relations bound the order by the product of the positive
+power bounds. The relations must hold in the actual ambient group; the bounds need not be
+exact relative orders, and expressions in the generators need not be unique. -/
+theorem card_closure_le_of_power_conjugate {n : ℕ} (x : Fin n → G)
+    (m : Fin n → ℕ) (hm : ∀ i, 0 < m i)
+    (hpow : ∀ i : Fin n, x i ^ m i ∈ generatorSuffix x ((i : ℕ) + 1))
+    (hconj : ∀ i j : Fin n, i < j →
+      x i * x j * (x i)⁻¹ ∈ generatorSuffix x ((i : ℕ) + 1)) :
+    Nat.card (Subgroup.closure (Set.range x)) ≤ ∏ i, m i :=
+  (power_conjugate_bound x m hm hpow hconj).2
 
 end TauCeti
