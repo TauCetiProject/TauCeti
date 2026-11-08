@@ -268,7 +268,7 @@ private lemma sum_image_mulMap_multiplicity_right [IsHeckeTriple Δ H₁ H₂]
 /-- Joining the right-handed Fubini step with the one-sided count: the right association counts
 pairs of representatives whose product moves `d` into `H₃g₃H₄`. -/
 private lemma sum_multiplicity_eq_card [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
-    [IsHeckeTriple Δ H₃ H₄] (g₁ g₂ g₃ d : Δ) :
+    (g₁ g₂ g₃ d : Δ) :
     ∑ i : DecompQuotient H₁ H₂ (g₁ : G),
         multiplicity H₂ H₃ H₄ (g₂ : G) (g₃ : G) (((i.out : G) * g₁)⁻¹ * d) =
       Nat.card {p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G) |
@@ -291,7 +291,7 @@ open Classical in
 cosets `l` of `H₁ E H₃` and the pairs `p`, of the indicator of the two conditions holding
 together. -/
 private lemma multiplicity_mul_multiplicity_eq_sum_indicator [IsHeckeTriple Δ H₁ H₂]
-    [IsHeckeTriple Δ H₂ H₃] [IsHeckeTriple Δ H₃ H₄] (g₁ g₂ g₃ d : Δ)
+    [IsHeckeTriple Δ H₂ H₃] (g₁ g₂ g₃ d : Δ)
     (E : HeckeCoset Δ H₁ H₃) [Fintype (DecompQuotient H₁ H₃ (E.rep : G))] :
     multiplicity H₁ H₂ H₃ (g₁ : G) (g₂ : G) (E.rep : G) *
         multiplicity H₁ H₃ H₄ (E.rep : G) (g₃ : G) (d : G) =
@@ -340,7 +340,7 @@ open Classical in
 whose product moves `d` into `H₃g₃H₄`, using the invariance of the multiplicity across the
 left cosets of a double coset. -/
 private lemma sum_image_mulMap_multiplicity_left [IsHeckeTriple Δ H₁ H₂]
-    [IsHeckeTriple Δ H₂ H₃] [IsHeckeTriple Δ H₃ H₄] (g₁ g₂ g₃ d : Δ) :
+    [IsHeckeTriple Δ H₂ H₃] (g₁ g₂ g₃ d : Δ) :
     ∑ E ∈ Finset.univ.image (mulMap H₁ H₂ H₃ g₁ g₂),
         multiplicity H₁ H₂ H₃ (g₁ : G) (g₂ : G) (E.rep : G) *
           multiplicity H₁ H₃ H₄ (E.rep : G) (g₃ : G) (d : G) =
