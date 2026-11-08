@@ -15,12 +15,13 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 # Integrability and integration of Laplacians
 
 The Laplacian of a compactly supported twice continuously differentiable function has integral
-zero. Green's first identity `∫ ⟪∇u, ∇v⟫ = -∫ v Δu` holds for a `C²` function `u` and a
-compactly supported `C¹` function `v`, with no condition on `u` at infinity. More generally, an
-integrable `C²` scalar function whose Laplacian is bounded below by an integrable function has an
-integrable Laplacian. Dilated cutoffs turn the one-sided
+zero. More generally, an integrable `C²` scalar function whose Laplacian is bounded below by an
+integrable function has an integrable Laplacian. Dilated cutoffs turn the one-sided
 bound into a global mass bound. These statements allow integrated Bochner estimates without
 assuming derivative decay at infinity.
+
+Green's first identity `∫ ⟪∇u, ∇v⟫ = -∫ v Δu` holds for a `C²` function `u` and a compactly
+supported `C¹` function `v`, with no condition on `u` at infinity.
 -/
 
 public section
