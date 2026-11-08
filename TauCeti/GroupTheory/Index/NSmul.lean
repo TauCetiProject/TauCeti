@@ -229,15 +229,21 @@ namespace MulEquiv
 
 variable {G H : Type*} [CommGroup G] [CommGroup H]
 
+/-- A multiplicative equivalence maps the kernel of the `n`-th power map on `G` onto that on `H`.
+This is the multiplicative form of `AddEquiv.map_ker_nsmulAddMonoidHom`. -/
+lemma map_ker_powMonoidHom (e : G ≃* H) (n : ℕ) :
+    ((powMonoidHom n : G →* G).ker).map e.toMonoidHom = (powMonoidHom n : H →* H).ker := by
+  ext x
+  rw [Subgroup.mem_map_equiv]
+  simp only [MonoidHom.mem_ker, powMonoidHom_apply]
+  rw [← map_pow, EmbeddingLike.map_eq_one_iff]
+
 /-- The number of `n`-th roots of unity is invariant under multiplicative equivalence: the
 kernels of the `n`-th power maps on `G` and `H` have the same cardinality. -/
 theorem card_ker_powMonoidHom (e : G ≃* H) (n : ℕ) :
     Nat.card (powMonoidHom n : G →* G).ker = Nat.card (powMonoidHom n : H →* H).ker := by
-  have h := Nat.card_congr (AddSubgroup.equivMapOfInjective
-    (nsmulAddMonoidHom (α := Additive G) n).ker e.toAdditive.toAddMonoidHom
-    e.toAdditive.injective).toEquiv
-  rw [AddEquiv.map_ker_nsmulAddMonoidHom] at h
-  exact (h.symm.trans (Nat.card_congr (by exact Equiv.refl _))).symm
+  rw [← e.map_ker_powMonoidHom n]
+  exact Nat.card_congr (Subgroup.equivMapOfInjective _ e.toMonoidHom e.injective).toEquiv
 
 /-- The index of the `n`-th powers is invariant under multiplicative equivalence. -/
 theorem index_range_powMonoidHom (e : G ≃* H) (n : ℕ) :
