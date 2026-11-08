@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Topology.Order.Compact
 
@@ -196,6 +197,30 @@ theorem aestronglyMeasurable_truncated {α E : Type*} [MeasurableSpace α] [Topo
   rw [h]
   exact hF.indicator₀ (nullMeasurableSet_lt aemeasurable_const ((hγ.sub_const z₀).norm))
 
+/-- **The `ε`-truncated integrand `f (γ t) * deriv γ t` is a.e.-strongly measurable for a
+measurable `f` and an arbitrary curve `γ`.** The integrand vanishes off the measurable set where
+`γ` is differentiable, because `deriv γ` is `0` there, and `γ` is continuous, hence measurable, on
+that set. -/
+theorem aestronglyMeasurable_truncated_mul_deriv {f : ℂ → ℂ} (hf : Measurable f) (γ : ℝ → ℂ)
+    (z₀ : ℂ) (ε : ℝ) (μ : MeasureTheory.Measure ℝ) :
+    MeasureTheory.AEStronglyMeasurable
+      (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) μ := by
+  have hD : MeasurableSet {t | DifferentiableAt ℝ γ t} := measurableSet_of_differentiableAt ℝ γ
+  have hcont : ContinuousOn γ {t | DifferentiableAt ℝ γ t} := fun t ht =>
+    (show DifferentiableAt ℝ γ t from ht).continuousAt.continuousWithinAt
+  have hγ : AEMeasurable γ (μ.restrict {t | DifferentiableAt ℝ γ t}) := hcont.aemeasurable hD
+  have heq : (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) =
+      {t | DifferentiableAt ℝ γ t}.indicator
+        (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) := by
+    funext t
+    by_cases ht : DifferentiableAt ℝ γ t
+    · simp [Set.indicator_of_mem (show t ∈ {t | DifferentiableAt ℝ γ t} from ht)]
+    · simp [Set.indicator_of_notMem (show t ∉ {t | DifferentiableAt ℝ γ t} from ht),
+        deriv_zero_of_not_differentiableAt ht]
+  rw [heq, aestronglyMeasurable_indicator_iff hD]
+  exact aestronglyMeasurable_truncated hγ
+    ((hf.comp_aemeasurable hγ).mul (measurable_deriv γ).aemeasurable).aestronglyMeasurable
+
 /-- **The `ε`-truncated integrand is interval-integrable from a bound off the ball**: whenever
 `f ∘ γ` is bounded by `M` at distance `> ε` from `z₀` and the truncated integrand is
 a.e.-strongly measurable, the truncated integrand is dominated by `M · ‖deriv γ‖`. -/
@@ -218,19 +243,16 @@ theorem intervalIntegrable_truncated_mul_deriv {γ : ℝ → ℂ} {f : ℂ → �
 /-- The `ε`-truncated order-`k` polar integrand is interval-integrable: off the `ε`-ball it is
 dominated by `(‖c‖ / ε ^ k) · ‖deriv γ‖`. -/
 theorem intervalIntegrable_pow_inv_mul_deriv_truncated {γ : ℝ → ℂ} {z₀ : ℂ} {a b : ℝ}
-    (c : ℂ) (k : ℕ) (hγ_cont : ContinuousOn γ (Set.uIcc a b))
+    (c : ℂ) (k : ℕ)
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
     {ε : ℝ} (hε : 0 < ε) :
     IntervalIntegrable
       (fun t => if ‖γ t - z₀‖ > ε then c / (γ t - z₀) ^ k * deriv γ t else 0)
       MeasureTheory.volume a b := by
-  have hγ_aem : AEMeasurable γ (MeasureTheory.volume.restrict (Set.uIoc a b)) :=
-    (hγ_cont.mono Set.uIoc_subset_uIcc).aemeasurable measurableSet_uIoc
   refine intervalIntegrable_truncated_mul_deriv (f := fun z => c / (z - z₀) ^ k)
     (M := ‖c‖ / ε ^ k) hderiv_int
-    (aestronglyMeasurable_truncated hγ_aem
-      ((((hγ_aem.sub_const z₀).pow_const k).const_div c).aestronglyMeasurable.mul
-        hderiv_int.def'.aestronglyMeasurable)) fun t h_far => ?_
+    (aestronglyMeasurable_truncated_mul_deriv
+      (measurable_const.div ((measurable_id.sub_const z₀).pow_const k)) γ z₀ ε _) fun t h_far => ?_
   rw [norm_div, norm_pow]
   gcongr
 
@@ -239,13 +261,12 @@ order-`1` polar term with coefficient `1`, so this is
 `intervalIntegrable_pow_inv_mul_deriv_truncated` at `c = 1`, `k = 1`, where the domination bound
 reads `(1/ε) · ‖deriv γ‖`. -/
 theorem intervalIntegrable_inv_sub_truncated {γ : ℝ → ℂ} {z₀ : ℂ} {a b : ℝ}
-    (hγ_cont : ContinuousOn γ (Set.uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
     {ε : ℝ} (hε : 0 < ε) :
     IntervalIntegrable (fun t => if ‖γ t - z₀‖ > ε then (γ t - z₀)⁻¹ * deriv γ t else 0)
       MeasureTheory.volume a b := by
   simpa using
-    intervalIntegrable_pow_inv_mul_deriv_truncated (z₀ := z₀) 1 1 hγ_cont hderiv_int hε
+    intervalIntegrable_pow_inv_mul_deriv_truncated (z₀ := z₀) 1 1 hderiv_int hε
 
 /-- **Off the truncation the integrand is a logarithmic derivative.** Where the curve stays
 further than `ε` from the centre `z₀`, the `ε`-truncated winding integrand agrees with the

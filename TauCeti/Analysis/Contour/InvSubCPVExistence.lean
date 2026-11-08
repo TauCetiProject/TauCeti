@@ -148,7 +148,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t => if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0)
       MeasureTheory.volume a b :=
-    fun _ hε => intervalIntegrable_inv_sub_truncated h_imm.continuousOn
+    fun _ hε => intervalIntegrable_inv_sub_truncated
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
   choose! R hR_pos _ _ _ _ _ _ h_spec using
     fun t₀ (ht₀ : t₀ ∈ T) =>
