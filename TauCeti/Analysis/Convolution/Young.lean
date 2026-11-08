@@ -347,10 +347,9 @@ theorem eLpNorm_convolution_le_of_inv_add_inv_eq {𝕜 E E' F : Type*} [Nontrivi
     eLpNorm (f ⋆[L, μ] g) q μ ≤ ‖L‖ₑ * eLpNorm f p μ * eLpNorm g r μ := by
   have hpt : ∀ x, ‖(f ⋆[L, μ] g) x‖ₑ ≤
       ‖L‖ₑ * ‖((fun t ↦ ‖f t‖ₑ) ⋆ₗ[μ] fun t ↦ ‖g t‖ₑ) x‖ₑ := fun x ↦ by
-    rw [convolution_def, enorm_eq_self, lconvolution_def, ← lintegral_const_mul' _ _ enorm_ne_top]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun t ↦ ?_)
-    rw [neg_add_eq_sub, ← mul_assoc]
-    exact ContinuousLinearMap.le_opENorm₂ L _ _
+    rw [enorm_eq_self, lconvolution_def, ← lintegral_const_mul' _ _ enorm_ne_top]
+    refine (enorm_convolution_le_lintegral L μ x).trans_eq (lintegral_congr fun t ↦ ?_)
+    rw [neg_add_eq_sub, mul_assoc]
   calc eLpNorm (f ⋆[L, μ] g) q μ
       ≤ ‖L‖ₑ * eLpNorm ((fun t ↦ ‖f t‖ₑ) ⋆ₗ[μ] fun t ↦ ‖g t‖ₑ) q μ :=
         eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' q (hf.convolution L hg)
