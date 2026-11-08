@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 public import TauCeti.Analysis.Green.Examples.CurveArea.Ellipse
-import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
 
 /-!
 # The perimeter of an ellipse
@@ -55,15 +54,6 @@ private theorem norm_deriv_ellipse_eq_legendreE_integrand {a b : ℝ}
     nlinarith [Real.sin_sq_add_cos_sq t]
   rw [hrad, Real.sqrt_mul (sq_nonneg a), Real.sqrt_sq ha.le]
 
-/-- Exchanging the axes of the ellipse reflects it in the diagonal and reverses the angle
-about `π / 4`, so the speeds agree. -/
-private theorem norm_deriv_ellipse_eq_norm_deriv_ellipse_swap (a b t : ℝ) :
-    ‖deriv (ellipse a b) t‖ = ‖deriv (ellipse b a) (π / 2 - t)‖ := by
-  rw [(hasDerivAt_ellipse a b t).deriv, (hasDerivAt_ellipse b a _).deriv,
-    Complex.norm_add_mul_I, Complex.norm_add_mul_I, Real.sin_pi_div_two_sub,
-    Real.cos_pi_div_two_sub]
-  ring_nf
-
 /-- The integrated speed of one angular traversal of an ellipse is `4aE(e)`.
 The major semiaxis is positive; the other axis may have either sign or vanish. -/
 theorem integral_norm_deriv_ellipse {a b : ℝ} (ha : 0 < a) (hba : b ^ 2 ≤ a ^ 2) :
@@ -110,16 +100,6 @@ theorem integral_norm_deriv_ellipse_of_sq_le_sq {a b : ℝ} (hb : 0 < b) (hab : 
   push_cast at hend
   rw [hend, legendreE_zero]
   ring
-
-private theorem eVariationOn_ellipse_eq_ofReal_integral (a b : ℝ) :
-    eVariationOn (ellipse a b) (Icc 0 (2 * π)) =
-      ENNReal.ofReal (∫ t in (0 : ℝ)..2 * π, ‖deriv (ellipse a b) t‖) := by
-  have hAC := absolutelyContinuous_ellipse a b
-  have hlength := hAC.integral_norm_deriv_eq_eVariationOn_toReal Real.two_pi_pos.le
-  rw [uIcc_of_le Real.two_pi_pos.le] at hlength
-  have hfinite : eVariationOn (ellipse a b) (Icc 0 (2 * π)) ≠ ⊤ := by
-    simpa only [BoundedVariationOn, uIcc_of_le Real.two_pi_pos.le] using hAC.boundedVariationOn
-  rw [hlength, ENNReal.ofReal_toReal hfinite]
 
 /-- The perimeter of an ellipse, as metric total variation, is `4aE(e)`.
 This includes the circle and the twice-traversed segment when the minor axis is zero. -/
