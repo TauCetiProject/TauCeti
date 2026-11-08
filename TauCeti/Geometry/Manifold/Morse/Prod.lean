@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Analysis.Calculus.Morse.Prod
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
 

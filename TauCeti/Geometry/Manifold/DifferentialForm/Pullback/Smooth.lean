@@ -215,6 +215,14 @@ theorem IsSmoothForm.continuous_mpullback_apply {φ : RoughForm I M F k} (hφ : 
     Continuous fun z ↦ TauCeti.mpullback 𝓘(ℝ, E') I u φ z v := by
   have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
   exact (ContinuousAlternatingMap.apply ℝ E' F v).continuous.comp h.continuous
+
+/-- For a continuous two-form `φ` and a `C¹` map `u` from a normed space, the form evaluated on
+the derivatives of `u` along two fixed vectors, `z ↦ φ (u z) (du_z a, du_z b)`, is continuous. -/
+theorem IsSmoothForm.continuous_apply_mfderiv {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    {u : E' → M} (hu : ContMDiff 𝓘(ℝ, E') I 1 u) (a b : E') :
+    Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b] :=
+  (hφ.continuous_mpullback_apply hu ![a, b]).congr fun z ↦ mpullback_apply_pair u φ z a b
+
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
 @[simp]

@@ -329,6 +329,14 @@ theorem e_ne_zero_two [Nontrivial R] (i : Fin (2 - 1)) : e δ i ≠ 0 := by
     rw [← twoStrandRep_e δ i, h, map_zero]
   simp at h'
 
+/-- On two strands, distinct scalar multiples of the generator are distinct: the coefficient of
+`r • e i` is read off from the two-dimensional representation. -/
+theorem smul_left_injective_e_two (i : Fin (2 - 1)) :
+    Function.Injective fun r : R ↦ r • e δ i := by
+  intro r s h
+  have h' := congrArg (fun x ↦ twoStrandRep δ x 1 0) h
+  simpa using h'
+
 end SmallCases
 
 section Kauffman

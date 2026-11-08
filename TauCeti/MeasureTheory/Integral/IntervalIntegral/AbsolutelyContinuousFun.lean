@@ -146,6 +146,22 @@ theorem integrableOn_deriv_Ioc [FiniteDimensional ℝ F]
     IntegrableOn (deriv γ) (Ioc a b) :=
   hγ.intervalIntegrable_deriv_of_finiteDimensional.1
 
+/-- If an interval-integrable function `s` approximates the velocity of `γ` in `L¹` on `(a, b]`
+to within `ε`, then the endpoint defect `γ b - γ a - ∫ s` has norm at most `ε`. For `a < b`, this
+says that the average correction `(γ b - γ a - ∫ s) / (b - a)` to `s` has norm at most
+`ε / (b - a)`. -/
+theorem norm_sub_integral_le [FiniteDimensional ℝ F]
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) {s : ℝ → F}
+    (hsi : IntervalIntegrable s volume a b) {ε : ℝ}
+    (hg : (∫ t in Ioc a b, ‖s t - deriv γ t‖) ≤ ε) :
+    ‖γ b - γ a - ∫ t in a..b, s t‖ ≤ ε := by
+  have hγi := hγ.intervalIntegrable_deriv_of_finiteDimensional
+  have hEq : γ b - γ a - ∫ t in a..b, s t = ∫ t in a..b, deriv γ t - s t := by
+    rw [intervalIntegral.integral_sub hγi hsi, hγ.integral_deriv_eq_sub_of_finiteDimensional]
+  rw [hEq]
+  apply (intervalIntegral.norm_integral_le_integral_norm hab).trans
+  simpa only [intervalIntegral.integral_of_le hab, norm_sub_rev] using hg
+
 end AbsolutelyContinuousOnInterval
 
 namespace AbsolutelyContinuousOnInterval
