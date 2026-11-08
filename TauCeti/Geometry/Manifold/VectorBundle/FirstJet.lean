@@ -379,15 +379,19 @@ omit [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] in
 /-- The first-jet bundle of a smooth vector bundle over a smooth manifold is smooth. -/
 instance [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I] :
     ContMDiffVectorBundle ∞ (F × (E →L[𝕜] F)) (FirstJetBundle I F V) I := by
-  have : IsManifold I (∞ + 1) M := ‹IsManifold I ∞ M›
-  have : ContMDiffVectorBundle (∞ + 1) F V I := ‹ContMDiffVectorBundle ∞ F V I›
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle (∞ + 1) F V I := by
+    simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
   exact FirstJetBundle.contMDiffVectorBundle I F V
 
 omit [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] in
 /-- The first-jet bundle of an analytic vector bundle over an analytic manifold is analytic. -/
 instance [IsManifold I ω M] [ContMDiffVectorBundle ω F V I] :
-    ContMDiffVectorBundle ω (F × (E →L[𝕜] F)) (FirstJetBundle I F V) I :=
-  FirstJetBundle.contMDiffVectorBundle I F V
+    ContMDiffVectorBundle ω (F × (E →L[𝕜] F)) (FirstJetBundle I F V) I := by
+  have : IsManifold I (ω + 1) M := by simpa using (inferInstance : IsManifold I ω M)
+  have : ContMDiffVectorBundle (ω + 1) F V I := by
+    simpa using (inferInstance : ContMDiffVectorBundle ω F V I)
+  exact FirstJetBundle.contMDiffVectorBundle I F V
 
 namespace FirstJetBundle
 
