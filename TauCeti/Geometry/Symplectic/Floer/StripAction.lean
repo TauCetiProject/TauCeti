@@ -340,18 +340,10 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPat
         (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
           fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (hJ z (hRsub n hz))
             (hfloer z (hRsub n hz)))]
-  -- The integrals of `∂_s H` along `u` over the rectangles converge to the one over the strip.
-  have hf : Tendsto (fun n : ℕ ↦ ∫ z in Icc (-(n : ℝ)) n ×ˢ Icc 0 1, f z) atTop
-      (𝓝 (∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, f z)) := by
-    have h := tendsto_setIntegral_of_monotone (μ := volume) (f := f)
-      (fun _ ↦ measurableSet_Icc.prod measurableSet_Icc) (monotone_Icc_neg_prod (Icc 0 1))
-      (by rwa [iUnion_Icc_neg_prod])
-    rwa [iUnion_Icc_neg_prod] at h
-  refine tendsto_nhds_unique (tendsto_setLIntegral_Icc_neg_prod volume (Icc (0 : ℝ) 1) _) ?_
-  simp only [hE]
-  exact (ENNReal.continuous_ofReal.tendsto _).comp
-    (((hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)).sub
-      (htop.comp tendsto_natCast_atTop_atTop)).sub hf)
+  -- With `F = -A`, the identity on rectangles reads `F(n) - F(-n) - ∫ ∂_s H`.
+  have h := setLIntegral_univ_prod_eq_ofReal_of_tendsto_sub_integral (F := fun s ↦ -A s)
+    measurableSet_Icc hint (fun n ↦ (hE n).trans (by simp only [neg_sub_neg])) hbot.neg htop.neg
+  rwa [neg_sub_neg] at h
 
 /-- **The energy of a Floer strip.** Let `ω = dα` be a nondegenerate exact two-form on a
 finite-dimensional manifold, `H` a `C¹` time-dependent Hamiltonian, and `u` a `C²` map whose
