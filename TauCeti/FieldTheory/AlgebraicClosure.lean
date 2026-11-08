@@ -93,7 +93,7 @@ theorem AlgebraicIndependent.linearDisjoint_algebraicClosure {ι : Type*} {x : �
   let f : A ⊗[k] Algebra.adjoin k (Set.range x) →ₐ[k] K :=
     ((MvPolynomial.aeval x).restrictScalars k).comp
       (((MvPolynomial.algebraTensorAlgEquiv (σ := ι) k A).toAlgHom.restrictScalars k).comp
-        (Algebra.TensorProduct.map (AlgHom.id k A) hx.aevalEquiv.symm.toAlgHom))
+        (Algebra.TensorProduct.congr AlgEquiv.refl hx.aevalEquiv.symm).toAlgHom)
   have hf : Function.Injective f :=
     (algebraicIndependent_iff_injective_aeval.mp (hx.extendScalars A)).comp
       ((MvPolynomial.algebraTensorAlgEquiv (σ := ι) k A).injective.comp

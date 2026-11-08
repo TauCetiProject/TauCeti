@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Finiteness.Quotient
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
+import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.IntegralClosure.Pi
 
@@ -120,7 +121,7 @@ private theorem finite_integralClosure_fractionRing_quotient [IsNagata R] (S : T
   have : Algebra.EssFiniteType (S ⧸ q) L := .of_isLocalization (S := L) (nonZeroDivisors (S ⧸ q))
   have : Algebra.EssFiniteType R' L := .comp R' (S ⧸ q) L
   have : Algebra.EssFiniteType (FractionRing R') L := .of_comp R' (FractionRing R') L
-  have := IsJapanese.finite_integralClosure_of_essFiniteType (R := R') (FractionRing R') L
+  have := IsJapanese.finite_integralClosure (R := R') (FractionRing R') L
   -- `R'` is integral over `R`, so the integral closures of `R` and of `R'` in `L` agree.
   have : Module.Finite R (integralClosure R' L) := .trans R' _
   let f : integralClosure R' L →ₗ[R] integralClosure R L :=
@@ -143,16 +144,9 @@ theorem finite_integralClosure [IsNagata R] (S : Type v) [CommRing S] [IsReduced
   let g : S →ₐ[R] ∀ q, L q := AlgHom.pi fun q ↦
     (IsScalarTower.toAlgHom R (S ⧸ q.1) (L q)).comp (Ideal.Quotient.mkₐ R q.1)
   have hg : Function.Injective g := by
-    rw [injective_iff_map_eq_zero]
-    intro x hx
-    have hmem : x ∈ sInf (minimalPrimes S) := Submodule.mem_sInf.mpr fun q hq ↦ by
-      have := congrFun hx ⟨q, hq⟩
-      simp only [g, AlgHom.pi_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-        IsScalarTower.coe_toAlgHom', Pi.zero_apply] at this
-      exact Ideal.Quotient.eq_zero_iff_mem.mp
-        ((IsFractionRing.injective (S ⧸ q) (L ⟨q, hq⟩)).eq_iff' (map_zero _) |>.mp this)
-    rw [minimalPrimes, Ideal.sInf_minimalPrimes] at hmem
-    exact IsReduced.eq_zero x hmem
+    have := (Function.Injective.piMap fun q ↦ IsFractionRing.injective (S ⧸ q.1) (L q)).comp
+      (Ideal.injective_pi_quotient_mk_minimalPrimes S)
+    exact this
   have (q : minimalPrimes S) : Module.Finite R (integralClosure R (L q)) :=
     finite_integralClosure_fractionRing_quotient S q.1
   have : Module.Finite R (integralClosure R (∀ q, L q)) :=
