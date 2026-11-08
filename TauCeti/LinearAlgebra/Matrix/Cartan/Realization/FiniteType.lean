@@ -115,9 +115,11 @@ theorem isMinimal_toRealisation_toCartanRealization
     simp [Pi.basisFun_apply]
   rw [hb, Basis.span_eq]
 
-/-- Every minimal realization of a finite Cartan matrix agrees with Mathlib's canonical
-realization. Transpose the input matrix to match the coroot-row convention. -/
-theorem existsUnique_equiv_toRealisation (hA : A.IsFiniteCartan)
+/-- Every minimal realization of `A` has a unique linear equivalence with `I → K` sending
+coroots to `Pi.single i 1` and carrying each root to the corresponding coordinate of
+`A.transpose.map Int.cast *ᵥ ·`. This identifies it with the realization obtained from Mathlib's
+`hA.transpose.toRealisation`, whose transpose matches our coroot-row convention. -/
+theorem existsUnique_linearEquiv_pi_of_isMinimal (hA : A.IsFiniteCartan)
     {H : Type*} [AddCommGroup H] [Module K H]
     (R : TauCeti.CartanRealization (A.map (Int.cast : ℤ → K)) H)
     (hR : R.IsMinimal) :
