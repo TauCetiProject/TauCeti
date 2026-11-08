@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Mean value estimates
@@ -59,6 +60,13 @@ point `y`, then by the mean value inequality applied to their difference they st
 `2 ε ‖x - y‖` of each other (`Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le`).
 This compares a map to a model agreeing with it to first order before splicing them together
 (`TauCeti.Analysis.Calculus.Splice`).
+
+For an antilipschitz parametrization with bounded derivative, an image chord controls the
+parametric chord and its intervening points. A scalar mean value estimate permits bounds on
+individual coordinate derivatives. These estimates are adapted from
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/Disk.lean`.
 -/
 
 public section
@@ -241,3 +249,72 @@ theorem norm_image_sub_le_of_norm_hasDerivWithin_le' {φ : G} {C : ℝ}
   abel
 
 end Convex
+
+/-- A chord in a closed unit ball remains uniformly close in the image to its initial point,
+relative to the image distance to a prescribed intermediate point, if the parametrization
+has bounded derivative and is antilipschitz on the ball. -/
+theorem Differentiable.norm_sub_le_mul_of_segment {P Q : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup Q] [NormedSpace ℝ Q]
+    {φ : P → Q} (hφd : Differentiable ℝ φ) {C κ : ℝ}
+    (hbound : ∀ x ∈ Metric.closedBall (0 : P) 1, ‖fderiv ℝ φ x‖ ≤ C)
+    (hanti : ∀ a ∈ Metric.closedBall (0 : P) 1, ∀ b ∈ Metric.closedBall (0 : P) 1,
+      ‖a - b‖ ≤ κ * ‖φ a - φ b‖)
+    {a b : P} (ha : a ∈ Metric.closedBall (0 : P) 1)
+    (hb : b ∈ Metric.closedBall (0 : P) 1) {s t : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (ht : t ∈ Set.Icc (0 : ℝ) s) :
+    ‖φ a - φ (a + t • (b - a))‖ ≤ C * κ * ‖φ a - φ (a + s • (b - a))‖ := by
+  have hC : 0 ≤ C := (norm_nonneg _).trans (hbound 0 (by simp))
+  have hsnorm : s * ‖b - a‖ ≤ κ * ‖φ a - φ (a + s • (b - a))‖ := by
+    have h1 := hanti a ha _ ((convex_closedBall (0 : P) 1).add_smul_sub_mem ha hb hs)
+    have heq : a - (a + s • (b - a)) = -(s • (b - a)) := by module
+    simpa only [heq, norm_neg, norm_smul, Real.norm_eq_abs, abs_of_nonneg hs.1] using h1
+  have hconv := convex_closedBall (0 : P) 1
+  have hmv := hconv.norm_image_sub_le_of_norm_hasFDerivWithin_le
+      (fun x _ ↦ (hφd x).hasFDerivAt.hasFDerivWithinAt) hbound ha
+      ((convex_closedBall (0 : P) 1).add_smul_sub_mem ha hb ⟨ht.1, ht.2.trans hs.2⟩)
+  have heq : (a + t • (b - a)) - a = t • (b - a) := by module
+  rw [heq, norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1] at hmv
+  rw [norm_sub_rev]
+  refine hmv.trans ?_
+  have htnorm : t * ‖b - a‖ ≤ κ * ‖φ a - φ (a + s • (b - a))‖ :=
+    (mul_le_mul_of_nonneg_right ht.2 (norm_nonneg _)).trans hsnorm
+  calc C * (t * ‖b - a‖) ≤ C * (κ * ‖φ a - φ (a + s • (b - a))‖) :=
+        mul_le_mul_of_nonneg_left htnorm hC
+    _ = C * κ * ‖φ a - φ (a + s • (b - a))‖ := by ring
+
+/-- The mean value estimate along a parametrized chord, with bounds on the coordinate
+derivatives of a real-valued function and the derivative of the parametrization. -/
+theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] {n : ℕ}
+    {φ : P → (Fin n → ℝ)} (hφd : Differentiable ℝ φ)
+    {f : (Fin n → ℝ) → ℝ} (hf : Differentiable ℝ f) {C D : ℝ} (hD : 0 ≤ D)
+    (hbound : ∀ x ∈ Metric.closedBall (0 : P) 1, ‖fderiv ℝ φ x‖ ≤ C)
+    {a b : P} (ha : a ∈ Metric.closedBall (0 : P) 1)
+    (hb : b ∈ Metric.closedBall (0 : P) 1) {s : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hcoord : ∀ t ∈ Set.Ico (0 : ℝ) s, ∀ j : Fin n,
+      |fderiv ℝ f (φ (a + t • (b - a))) (Pi.single j (1 : ℝ))| ≤ D) :
+    |f (φ (a + s • (b - a))) - f (φ a)| ≤ n * (C * ‖b - a‖) * D * s := by
+  let g : ℝ → ℝ := fun t ↦ f (φ (a + t • (b - a)))
+  let g' : ℝ → ℝ := fun t ↦
+    fderiv ℝ f (φ (a + t • (b - a))) (fderiv ℝ φ (a + t • (b - a)) (b - a))
+  have hcurve (t : ℝ) : HasDerivAt (fun t : ℝ ↦ a + t • (b - a)) (b - a) t := by
+    simpa using ((hasDerivAt_id t).smul_const (b - a)).const_add a
+  have hgd (t : ℝ) : HasDerivAt g (g' t) t :=
+    (hf _).hasFDerivAt.comp_hasDerivAt t
+      ((hφd _).hasFDerivAt.comp_hasDerivAt t (hcurve t))
+  have hderiv : ∀ t ∈ Ico (0 : ℝ) s, ‖g' t‖ ≤ n * (C * ‖b - a‖) * D := by
+    intro t ht
+    have hball := (convex_closedBall (0 : P) 1).add_smul_sub_mem ha hb
+      ⟨ht.1, ht.2.le.trans hs.2⟩
+    have hvnorm : ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ ≤ C * ‖b - a‖ :=
+      (ContinuousLinearMap.le_opNorm _ _).trans
+        (mul_le_mul_of_nonneg_right (hbound _ hball) (norm_nonneg _))
+    have hcoord_bound := (fderiv ℝ f (φ (a + t • (b - a)))).abs_apply_le_card_mul_norm
+      (fderiv ℝ φ (a + t • (b - a)) (b - a)) (hcoord t ht)
+    have hscalar : |g' t| ≤ n * ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ * D := by
+      simpa only [g', Fintype.card_fin] using hcoord_bound
+    exact hscalar.trans
+      (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hvnorm (Nat.cast_nonneg n)) hD)
+  have hmain := norm_image_sub_le_of_norm_deriv_le_segment'
+    (fun t _ ↦ (hgd t).hasDerivWithinAt) hderiv s (right_mem_Icc.mpr hs.1)
+  simpa only [g, zero_smul, add_zero, sub_zero, Real.norm_eq_abs] using hmain
