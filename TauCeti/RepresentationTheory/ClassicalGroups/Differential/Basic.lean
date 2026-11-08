@@ -136,10 +136,8 @@ private theorem counit_coefficients
     (hY : ∀ g i j, (generalLinearToPoint n g).ofConv (Y i j) =
       LinearMap.toMatrix b b (ρ g) i j) (i j : ι) :
     Coalgebra.counit (R := ℂ) (Y i j) = (Pi.basisFun ℂ ι).repr ((Pi.basisFun ℂ ι) j) i := by
-  have hone : generalLinearToPoint (R := ℂ) (A := ℂ) n 1 = 1 := by
-    simpa using (pointsMulEquiv (R := ℂ) (A := ℂ) n).symm.map_one
   have h := hY 1 i j
-  rw [hone, map_one, LinearMap.toMatrix_one] at h
+  rw [generalLinearToPoint_one, map_one, LinearMap.toMatrix_one] at h
   simpa [Matrix.one_apply, Pi.single_apply, eq_comm] using h
 
 end Coefficients
