@@ -95,6 +95,16 @@ def weightParabolicSimple : Set (glTitsSystem k n).simple :=
     (s : (glTitsSystem k n).WeylGroup) =
       QuotientGroup.mk (glTitsSystemSimpleRep k n i)}
 
+/-- A selected simple reflection is an adjacent transposition of equal-weight coordinates.
+This constructor description is a named rewrite; the Bruhat-cell criterion gives its
+intrinsic characterization. -/
+theorem mem_weightParabolicSimple_iff_exists (s : (glTitsSystem k n).simple) :
+    s ∈ weightParabolicSimple k w ↔
+      ∃ i : Fin n, w i.castSucc = w i.succ ∧
+        (s : (glTitsSystem k n).WeylGroup) =
+          QuotientGroup.mk (glTitsSystemSimpleRep k n i) :=
+  Iff.rfl
+
 /-- The selected simple reflections are exactly the simple Bruhat cells contained in the
 weight parabolic. -/
 theorem mem_weightParabolicSimple_iff (hw : Antitone w) (s : (glTitsSystem k n).simple) :
