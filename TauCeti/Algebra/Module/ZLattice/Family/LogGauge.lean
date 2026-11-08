@@ -30,9 +30,10 @@ generator `ζ = exp (2πi / m)` the translation is `(1 / m) • P (z ^ m) l`. Le
 Over the punctured disc `D_t*` the cyclic quotient is canonically the family `Y` itself, by the
 *logarithmic gauge*
 `G [z, e] = [z ^ m, e - (log z / 2πi) • P (z ^ m) l]`.
-Here too the logarithm of `z` is any branch: a change of branch by `2πi k` changes `G` by the
-period `k • P (z ^ m) l` (`TauCeti.torusFamilyLogGauge_mk_of_exp_eq`), so the local formulas
-patch to a single map `X* → Y*`. Replacing `z` by `ζ z` adds `log ζ` to the logarithm, which
+Here too the logarithm of `z` is any branch: a change of branch by `2πi k` changes the
+representative of `G` by the period `-k • P (z ^ m) l`
+(`TauCeti.torusFamilyLogGauge_mk_of_exp_eq`), so the local formulas patch to a single map
+`X* → Y*`. Replacing `z` by `ζ z` adds `log ζ` to the logarithm, which
 cancels the translation of the action, so `G` is invariant under the rotations
 (`TauCeti.torusFamilyLogGauge_smul`) and descends to `Q* → Y*`. Its inverse sends `[t, e]` to the
 class of `[z, e + (log z / 2πi) • P t l]` for any `m`-th root `z` of `t` and any logarithm of `z`
@@ -98,13 +99,13 @@ noncomputable def logTranslationSection (ζ : rootsOfUnity m ℂ) (z : rootsOfUn
   Quotient.mk _ (ζ • z, (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l)
 
 /-- The translation section of `ζ` at `z` lies over `ζ z`. -/
-theorem torusFamilyProjection_logTranslationSection (ζ : rootsOfUnity m ℂ)
+@[simp] theorem torusFamilyProjection_logTranslationSection (ζ : rootsOfUnity m ℂ)
     (z : rootsOfUnityBall m r) :
     torusFamilyProjection (powPullbackPeriod m r P) (logTranslationSection P l ζ z) = ζ • z :=
   torusFamilyProjection_mk _ _
 
 /-- The identity rotation translates by zero. -/
-theorem logTranslationSection_one (z : rootsOfUnityBall m r) :
+@[simp] theorem logTranslationSection_one (z : rootsOfUnityBall m r) :
     logTranslationSection P l 1 z = Quotient.mk _ (z, 0) := by
   simp [logTranslationSection]
 
@@ -227,8 +228,8 @@ noncomputable def torusFamilyLogGauge :
   (torusFamilyProjection_baseChangeMap P _ _).trans (congrArg _ (torusFamilyProjection_gauge _ _ x))
 
 /-- **Independence of the branch.** Over `z ≠ 0`, the logarithmic gauge may be computed with any
-logarithm `L` of `z`: two branches differ by `2πi k`, which changes the result by the period
-`k • P (z ^ m) l`. -/
+logarithm `L` of `z`: replacing `L` by `L + 2πi k` changes the representative by the period
+`-k • P (z ^ m) l`. -/
 theorem torusFamilyLogGauge_mk_of_exp_eq {z : rootsOfUnityBall m r} {L : ℂ}
     (hL : exp L = (z : ℂ)) (e : E) :
     letI := periodAddAction (powPullbackPeriod m r P)
@@ -448,7 +449,7 @@ noncomputable def torusFamilyLogGaugeEquiv :
           torusFamilyLogGauge_mk, rootsOfUnityBall.powMap_rootMap, add_sub_cancel_right] }
 
 /-- The logarithmic gauge on the class of a point over `z ≠ 0`. -/
-theorem torusFamilyLogGaugeEquiv_mk
+@[simp] theorem torusFamilyLogGaugeEquiv_mk
     (x : letI := periodAddAction (powPullbackPeriod m r P)
       AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) (hx) :
     letI := periodAddAction P
@@ -478,7 +479,7 @@ theorem torusFamilyLogGaugeEquiv_symm_mk {t : Metric.ball (0 : ℂ) (r ^ m)}
 
 /-- The logarithmic gauge lies over the identity of the punctured disc: the image of a point of
 `Q` with coordinate `t` lies over `t`. -/
-theorem coe_torusFamilyProjection_torusFamilyLogGaugeEquiv (q) :
+@[simp] theorem coe_torusFamilyProjection_torusFamilyLogGaugeEquiv (q) :
     letI := periodAddAction P
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
