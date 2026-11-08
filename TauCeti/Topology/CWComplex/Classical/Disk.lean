@@ -316,6 +316,19 @@ def sigmaDiskAdjunctionSpaceCellEquiv {Y : Type u} [TopologicalSpace Y]
   letI := sigmaDiskRelCWComplex n
   (relativeCWPushoutCellEquiv _ _ m).trans (sigmaDiskRelCWComplexCellEquiv n m)
 
+/-- The cell of `Y ∪_b ⨆ᵢ Dⁿⁱ` with index `i` is the cell of the `i`-th disk. -/
+theorem sigmaDiskAdjunctionSpaceCellEquiv_symm_mk {Y : Type u} [TopologicalSpace Y]
+    (b : ∀ i, C(TopCat.diskBoundary.{u} (n i), Y)) (i : ι) :
+    letI := sigmaDiskRelCWComplex n
+    letI := relativeCWPushout (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))
+      (sigmaDiskAttachingMap b)
+    (sigmaDiskAdjunctionSpaceCellEquiv b (n i)).symm ⟨i, rfl⟩ =
+      (relativeCWPushoutCellEquiv _ (sigmaDiskAttachingMap b) (n i)).symm
+        (sigmaDiskRelCWComplexCell n i) := by
+  let := sigmaDiskRelCWComplex n
+  rw [Equiv.symm_apply_eq, sigmaDiskAdjunctionSpaceCellEquiv, Equiv.trans_apply,
+    Equiv.apply_symm_apply, sigmaDiskRelCWComplexCellEquiv_cell]
+
 end Sigma
 
 end TauCeti
