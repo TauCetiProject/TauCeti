@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.LFunctions.Theta.Inversion
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Invariance
-public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.TraceDual
 
 /-!
 # The Mellin kernel of a lattice
@@ -189,31 +188,13 @@ theorem traceShift_def : traceShift K = surfacePart fun w ↦ (mult w : ℝ) ^ 2
 theorem traceShift_mem_normOneSurface : traceShift K ∈ normOneSurface K :=
   surfacePart_mem_normOneSurface fun _ ↦ pow_pos (zero_lt_one.trans_le one_le_mult) 2
 
-/-- The norm of `(mult w ^ 2)_w` is `16 ^ r₂`: a complex place contributes `(2 ^ 2) ^ 2`. -/
-private theorem archNorm_mult_sq :
-    archNorm (fun w : InfinitePlace K ↦ (mult w : ℝ) ^ 2) = 16 ^ nrComplexPlaces K := by
-  classical
-  rw [archNorm_apply, prod_eq_prod_mul_prod]
-  simp only [mult_isReal, mult_isComplex, Nat.cast_one, one_pow, Finset.prod_const_one, one_mul,
-    Finset.prod_const, Finset.card_univ, nrComplexPlaces]
-  norm_num
-
-/-- `traceToEuclidean K` on the lattice variable multiplies the parameter of the archimedean
-Gaussian by `(mult w ^ 2)_w`. -/
-private theorem latticeTheta_map_traceToEuclidean (L : Submodule ℤ (mixedSpace K))
-    (y : realSpace K) :
-    latticeTheta (L.map ((traceToEuclidean K).toLinearMap.restrictScalars ℤ)) y =
-      latticeTheta L ((fun w ↦ (mult w : ℝ) ^ 2) * y) := by
-  let e := Submodule.equivMapOfInjective ((traceToEuclidean K).toLinearMap.restrictScalars ℤ)
-    (traceToEuclidean K).injective L
-  rw [latticeTheta_def, latticeTheta_def, ← e.toEquiv.tsum_eq]
-  refine tsum_congr fun x ↦ ?_
-  have he : (e x : mixedSpace K) = traceToEuclidean K x :=
-    Submodule.coe_equivMapOfInjective_apply _ _ _ x
-  rw [LinearEquiv.coe_toEquiv, he]
-  simp only [archGaussian_apply, normAtPlace_traceToEuclidean, Pi.mul_apply]
-  congr 4 with w
-  ring
+/-- The coordinates of `traceShift K`: `mult w ^ 2 / (16 ^ r₂) ^ (1 / n)`. -/
+@[simp]
+theorem traceShift_apply (w : InfinitePlace K) :
+    traceShift K w =
+      (mult w : ℝ) ^ 2 / ((16 : ℝ) ^ nrComplexPlaces K) ^ (1 / (Module.finrank ℚ K : ℝ)) := by
+  rw [traceShift_def, surfacePart_apply _ (archNorm_mult_sq K ▸ by positivity),
+    archNorm_mult_sq]
 
 open scoped Classical in
 /-- **The dual side of the transformation law is an ideal kernel.** For the lattice `σ(I)` of a
