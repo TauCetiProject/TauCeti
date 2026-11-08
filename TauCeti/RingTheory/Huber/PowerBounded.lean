@@ -82,6 +82,11 @@ a prior formalisation of this theory; its proofs were not used.
   `A° ≃+* B°`; that restriction carries `A°°` onto `B°°`
   (`TauCeti.Huber.mem_topologicallyNilpotentIdeal_powerBoundedSubringEquiv_iff` pointwise,
   `TauCeti.Huber.map_topologicallyNilpotentIdeal` as an equality of ideals).
+* `TauCeti.Huber.isPowerBounded_completion_coe_of_isPowerBounded`,
+  `TauCeti.Huber.isPowerBounded_of_isPowerBounded_completion_coe`,
+  `TauCeti.Huber.isPowerBounded_completion_coe_iff`: in a uniform topological ring, an element is
+  power-bounded exactly when its image in the completion is (Wedhorn's Lemma 7.47(1) at the level
+  of elements, that `A⁰` is the preimage of `Â⁰`).
 * `TauCeti.Huber.isPowerBounded_ringEquiv_iff`,
   `TauCeti.Huber.isTopologicallyNilpotent_ringEquiv_iff`: both constructions transport along a
   topological ring isomorphism.
@@ -734,5 +739,46 @@ theorem map_topologicallyNilpotentIdeal (e : A ≃+* B) (he : Continuous e)
 end TransportIdeal
 
 end Transport
+
+section Completion
+
+open UniformSpace
+
+variable {A : Type*} [Ring A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+
+/-- **A power-bounded element of `A` stays power-bounded in `Â`.** -/
+theorem isPowerBounded_completion_coe_of_isPowerBounded {a : A}
+    (ha : IsPowerBounded a) : IsPowerBounded ((a : Completion A)) := by
+  -- the coercion is `⇑Completion.coeRingHom`, so it commutes with powers; stated once here
+  have hcoe : ∀ k : ℕ, ((a : Completion A)) ^ k = ((a ^ k : A) : Completion A) :=
+    fun k ↦ (map_pow Completion.coeRingHom a k).symm
+  have h : Set.range (((a : Completion A)) ^ · : ℕ → Completion A)
+      = ((↑) : A → Completion A) '' Set.range (a ^ · : ℕ → A) := by
+    simpa only [hcoe] using Set.range_comp' (((↑) : A → Completion A)) (a ^ · : ℕ → A)
+  rw [isPowerBounded_iff, h]
+  exact isBounded_image_completion_coe_of_isBounded (isPowerBounded_iff.mp ha)
+
+/-- **The converse of `isPowerBounded_completion_coe_of_isPowerBounded`.** An element of `A` whose
+image in `Â` is power-bounded was already power-bounded. -/
+theorem isPowerBounded_of_isPowerBounded_completion_coe {a : A}
+    (ha : IsPowerBounded ((a : Completion A))) : IsPowerBounded a := by
+  have hcoe : ∀ k : ℕ, ((a : Completion A)) ^ k = ((a ^ k : A) : Completion A) :=
+    fun k ↦ (map_pow Completion.coeRingHom a k).symm
+  have h : Set.range (((a : Completion A)) ^ · : ℕ → Completion A)
+      = ((↑) : A → Completion A) '' Set.range (a ^ · : ℕ → A) := by
+    simpa only [hcoe] using Set.range_comp' (((↑) : A → Completion A)) (a ^ · : ℕ → A)
+  rw [isPowerBounded_iff] at ha ⊢
+  rw [h] at ha
+  exact isBounded_of_isBounded_image_completion_coe ha
+
+/-- **Wedhorn Lemma 7.47(1), at the level of elements: `A⁰` is the preimage of `Â⁰`.** An element of
+`A` is power-bounded exactly when its image in the completion is. -/
+@[simp]
+theorem isPowerBounded_completion_coe_iff {a : A} :
+    IsPowerBounded ((a : Completion A)) ↔ IsPowerBounded a :=
+  ⟨isPowerBounded_of_isPowerBounded_completion_coe,
+    isPowerBounded_completion_coe_of_isPowerBounded⟩
+
+end Completion
 
 end TauCeti.Huber

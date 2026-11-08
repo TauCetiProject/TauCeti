@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
+public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.Topology.Algebra.Module.Bounded
 
 /-!
@@ -63,6 +64,9 @@ results follows AINTLIB's `Bounded.lean`; its proofs were not used.
   generally monoids with zero, is bounded exactly when both of its projections are.
 * `TauCeti.Huber.IsBounded.smul`: a bounded set of scalars times a bounded subset of a module is
   bounded.
+* `TauCeti.Huber.isBounded_image_completion_coe_of_isBounded` and
+  `TauCeti.Huber.isBounded_of_isBounded_image_completion_coe`: in a uniform topological ring, a
+  subset is bounded exactly when its image in the completion is bounded.
 * `Subring.not_isUnit_of_isTopologicallyNilpotent`: a topologically nilpotent element of a
   bounded subring of a nonzero Hausdorff ring is not invertible in that subring.
 
@@ -401,5 +405,60 @@ theorem _root_.Subring.not_isUnit_of_isTopologicallyNilpotent {A : Type*} [Ring 
     simpa using congrArg (fun x : S ↦ (x : A)) (Units.mul_inv (u ^ n))
   simp only [heq] at ht
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds ht)
+
+section Completion
+
+open UniformSpace
+
+variable {A : Type*} [Ring A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+
+/-- **The image of a bounded subset of `A` is bounded in `Â`.**
+
+The closure argument follows AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, branch
+`dev/adic-spaces` at `37bbdaeb9`), `projects/AdicSpaces/Adic spaces/LocalizationTopology.lean:545`,
+where it is stated for the rational-localisation completion. No proof was copied. -/
+theorem isBounded_image_completion_coe_of_isBounded {X : Set A}
+    (hX : IsBounded X) : IsBounded (((↑) : A → Completion A) '' X) := by
+  rw [isBounded_iff]
+  intro U hU
+  -- shrink `U` to a closed neighbourhood `C` of `0`, so that closures stay inside `U`
+  obtain ⟨C, hC, hCc, hCU⟩ := exists_mem_nhds_isClosed_subset hU
+  have hcoe0 : ((0 : A) : Completion A) = 0 := Completion.coe_zero
+  obtain ⟨V, hV, hVX⟩ := isBounded_iff.mp hX (((↑) : A → Completion A) ⁻¹' C)
+    (Completion.continuous_coe A |>.continuousAt.preimage_mem_nhds (by rwa [hcoe0]))
+  have hV' := Completion.isDenseInducing_coe.closure_image_mem_nhds hV
+  rw [hcoe0] at hV'
+  refine ⟨_, hV', Set.Subset.trans ?_ hCU⟩
+  rintro _ ⟨y, hy, _, ⟨x, hxX, rfl⟩, rfl⟩
+  -- `· * ↑x` is continuous and carries the image of `V` into the closed set `C`, so it carries
+  -- the closure of the image of `V` into `C`.
+  have hcont : Continuous (fun u : Completion A ↦ u * (x : Completion A)) :=
+    continuous_id.mul continuous_const
+  have hmaps : ((↑) : A → Completion A) '' V ⊆
+      (fun u : Completion A ↦ u * (x : Completion A)) ⁻¹' C := by
+    rintro _ ⟨a, ha, rfl⟩
+    rw [Set.mem_preimage, ← Completion.coe_mul]
+    exact hVX (Set.mul_mem_mul ha hxX)
+  exact closure_minimal hmaps (hCc.preimage hcont) hy
+
+/-- **The converse of `isBounded_image_completion_coe_of_isBounded`.** A set whose image in `Â` is
+bounded was already bounded in `A`. -/
+theorem isBounded_of_isBounded_image_completion_coe {X : Set A}
+    (hX : IsBounded (((↑) : A → Completion A) '' X)) : IsBounded X := by
+  rw [isBounded_iff]
+  intro U hU
+  -- the completion map is inducing, so `U` contains the preimage of a neighbourhood of `0` in `Â`
+  rw [Completion.isDenseInducing_coe.toIsInducing.nhds_eq_comap, Filter.mem_comap] at hU
+  obtain ⟨U', hU', hU'U⟩ := hU
+  rw [Completion.coe_zero] at hU'
+  obtain ⟨V', hV', hV'X⟩ := isBounded_iff.mp hX U' hU'
+  refine ⟨((↑) : A → Completion A) ⁻¹' V',
+    Completion.continuous_coe A |>.continuousAt.preimage_mem_nhds hV', ?_⟩
+  rintro _ ⟨v, hv, x, hx, rfl⟩
+  exact hU'U (by
+    rw [Set.mem_preimage, Completion.coe_mul]
+    exact hV'X (Set.mul_mem_mul hv ⟨x, hx, rfl⟩))
+
+end Completion
 
 end TauCeti.Huber
