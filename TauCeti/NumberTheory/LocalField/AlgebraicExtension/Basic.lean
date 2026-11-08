@@ -515,7 +515,8 @@ theorem residueFieldHom_id : (AlgHom.id K L).residueFieldHom = AlgHom.id 𝓀[K]
   simp only [residueFieldHom_residue, AlgHom.id_apply]
   exact congrArg _ (Subtype.ext (by simp))
 
-omit [Algebra.IsAlgebraic K L] in
+variable {K L M : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L] [Algebra K L]
+  [ValuativeExtension K L] [Field M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M] in
 /-- The image under a residue embedding `φ` of the residue of `z ∈ 𝒪[L]` is a root of the reduction
 of the minimal polynomial of `z` over `𝒪[K]`. -/
 @[simp]
