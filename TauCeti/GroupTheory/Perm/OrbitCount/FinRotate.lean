@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Orbits of cyclic rotation
@@ -65,6 +66,30 @@ theorem parts_partition_finRotate_pow_eq_singleton_iff {n k : ℕ} (hn : n ≠ 0
     rw [← lcm_parts_partition, h, Multiset.lcm_singleton, normalize_eq]
   rw [orderOf_pow, orderOf_finRotate hn, Nat.div_eq_self] at hord
   exact Nat.Coprime.symm (hord.resolve_left hn)
+
+/-- A power of cyclic rotation of `Fin n` with exponent coprime to `n` is a single cycle through
+every point. -/
+theorem isCycleOn_univ_finRotate_pow {n k : ℕ} (hk : k.Coprime n) :
+    (finRotate n ^ k).IsCycleOn Set.univ := by
+  rcases n with _ | _ | n
+  · exact isCycleOn_of_subsingleton _ _
+  · have := Fin.subsingleton_iff_le_one.2 (show 0 + 1 ≤ 1 by omega)
+    exact isCycleOn_of_subsingleton _ _
+  · have hk' : k.Coprime (orderOf (finRotate (n + 2))) := by rwa [orderOf_finRotate (by omega)]
+    rw [isCycleOn_univ_iff, support_pow_coprime hk', support_finRotate]
+    exact ⟨isCycle_finRotate.pow_iff.mpr hk', rfl⟩
+
+/-- A power of cyclic rotation of a nonempty finite ordinal of length `n` is a single cycle through
+every point exactly when its exponent is coprime to `n`. -/
+@[simp]
+theorem isCycleOn_univ_finRotate_pow_iff {n k : ℕ} (hn : n ≠ 0) :
+    (finRotate n ^ k).IsCycleOn Set.univ ↔ k.Coprime n := by
+  refine ⟨fun h => ?_, isCycleOn_univ_finRotate_pow⟩
+  rcases n with _ | _ | n
+  · exact absurd rfl hn
+  · exact Nat.coprime_one_right k
+  · rw [← orderOf_finRotate hn]
+    exact isCycle_finRotate.pow_iff.mp (isCycleOn_univ_iff.mp h).1
 
 /-- Cyclic rotation has one orbit when the ordinal is nonempty, and none otherwise. -/
 @[simp]

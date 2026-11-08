@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.NoncrossingPartition.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 public import TauCeti.GroupTheory.Perm.SwapFactors
 import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Boundary cycles of one-vertex chord diagrams
@@ -46,6 +47,13 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
 `orbitCount (finRotate (2 * m) * σ) = m + 1`
 (`TauCeti.IsPerfectMatching.orbitCount_finRotate_mul_eq_iff`).
 
+At the other extreme, a diagram may have a single boundary cycle through all its points,
+`(finRotate n * σ).IsCycleOn Set.univ`; capping it gives a closed surface. When every point is
+the end of a band this forces `4 ∣ n`, the surface having genus `n / 4`
+(`TauCeti.IsPerfectMatching.four_dvd_of_isCycleOn_finRotate_mul`), and no band joins two
+consecutive points (`TauCeti.IsPerfectMatching.apply_ne_finRotate_of_isCycleOn`). These are the
+pointed matched circles of bordered Floer homology.
+
 ## Main definitions
 
 * `Equiv.Perm.IsNoncrossingMatching σ`: no two chords `{a, σ a}` and `{b, σ b}` of `σ`
@@ -70,6 +78,13 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
   is invariant under rotating and reflecting the boundary circle.
 * `TauCeti.IsPerfectMatching.orbitCount_finRotate_mul_le`,
   `TauCeti.IsPerfectMatching.orbitCount_finRotate_mul_eq_iff`: the same for perfect matchings.
+* `Function.Involutive.isCycleOn_finRotate_mul_permCongr_revPerm_iff`: having a single boundary
+  cycle is invariant under reflecting the boundary circle.
+* `TauCeti.IsPerfectMatching.sign_finRotate_mul`: the sign of the boundary traversal of a
+  perfect matching.
+* `TauCeti.IsPerfectMatching.four_dvd_of_isCycleOn_finRotate_mul`,
+  `TauCeti.IsPerfectMatching.apply_ne_finRotate_of_isCycleOn`: a perfect matching with a single
+  boundary cycle has `4 ∣ n` points and no band between consecutive points.
 
 ## References
 
@@ -78,6 +93,9 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
   (chord diagrams).
 * P. Biane, *Some properties of crossings and partitions*, Discrete Math. 175 (1997), 41–53
   (noncrossing permutations as geodesics to the full cycle).
+* R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
+  Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.2
+  (pointed matched circles).
 -/
 
 public section
@@ -430,5 +448,74 @@ theorem orbitCount_finRotate_mul_eq_iff [NeZero m] (hσ : IsPerfectMatching σ) 
   have : NeZero (2 * m) := ⟨by simp [NeZero.ne m]⟩
   rw [← hσ.involutive.orbitCount_finRotate_mul_add_orbitCount_eq_iff]
   omega
+
+end TauCeti.IsPerfectMatching
+
+/-! ### Diagrams with a single boundary cycle -/
+
+/-- **A single boundary cycle is invariant under reflection.** For an involution `σ` of `Fin n`,
+the boundary traversal of the diagram reflected in `Fin.rev` is a single cycle through every
+point exactly when that of `σ` is. -/
+theorem Function.Involutive.isCycleOn_finRotate_mul_permCongr_revPerm_iff {n : ℕ}
+    {σ : Perm (Fin n)} (hinv : Function.Involutive σ) :
+    (finRotate n * Fin.revPerm.permCongr σ).IsCycleOn Set.univ ↔
+      (finRotate n * σ).IsCycleOn Set.univ := by
+  -- Reflection conjugates the inverse traversal by `Fin.revPerm * σ`.
+  set g := Fin.revPerm * σ
+  have hconj : finRotate n * Fin.revPerm.permCongr σ = g * (finRotate n * σ)⁻¹ * g⁻¹ := by
+    rw [eq_mul_inv_iff_mul_eq, eq_mul_inv_iff_mul_eq]
+    refine Equiv.ext fun p => ?_
+    simpa [g, hinv _] using Fin.finRotate_rev_finRotate_rev (σ p).rev
+  rw [hconj, ← Perm.isCycleOn_inv (f := finRotate n * σ)]
+  constructor
+  · intro h
+    have := h.conj (g := g⁻¹)
+    rwa [show g⁻¹ * (g * (finRotate n * σ)⁻¹ * g⁻¹) * g⁻¹⁻¹ = (finRotate n * σ)⁻¹ by group,
+      Set.image_univ_of_surjective (Equiv.surjective _)] at this
+  · intro h
+    have := h.conj (g := g)
+    rwa [Set.image_univ_of_surjective (Equiv.surjective _)] at this
+
+namespace TauCeti.IsPerfectMatching
+
+variable {n : ℕ} {σ : Perm (Fin n)}
+
+/-- The boundary traversal of a chord diagram whose `n ≠ 0` boundary points are the ends of
+`n / 2` bands has sign `-(-1) ^ (n / 2)`: `finRotate n` is an `n`-cycle with `n` even, and `σ` is
+a product of `n / 2` transpositions. -/
+theorem sign_finRotate_mul (hσ : IsPerfectMatching σ) (hn : n ≠ 0) :
+    Perm.sign (finRotate n * σ) = -(-1) ^ (n / 2) := by
+  obtain ⟨m, hm⟩ : Even n := by
+    simpa using even_card_of_nonempty_perfectMatching (Fin n) ⟨⟨σ, hσ⟩⟩
+  rw [Perm.sign_mul, sign_finRotate, hσ.sign_eq, Fintype.card_fin,
+    Odd.neg_one_pow ⟨m - 1, by omega⟩, neg_one_mul]
+
+/-- If a chord diagram whose `n` boundary points are the ends of `n / 2` bands has a single
+boundary cycle, then `4 ∣ n`: comparing the sign of the boundary traversal, an `n`-cycle, with
+`TauCeti.IsPerfectMatching.sign_finRotate_mul` shows that `n / 2` is even. Equivalently, the
+closed surface obtained by capping the boundary has genus `n / 4`. -/
+theorem four_dvd_of_isCycleOn_finRotate_mul (hσ : IsPerfectMatching σ)
+    (h : (finRotate n * σ).IsCycleOn Set.univ) : 4 ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact dvd_zero 4
+  have : Nontrivial (Fin n) := nontrivial_of_ne _ _ (hσ.apply_ne ⟨0, by omega⟩)
+  obtain ⟨hc, hsupp⟩ := Perm.isCycleOn_univ_iff.1 h
+  obtain ⟨m, rfl⟩ : Even n := by
+    simpa using even_card_of_nonempty_perfectMatching (Fin n) ⟨⟨σ, hσ⟩⟩
+  have hsign := hc.sign
+  rw [hσ.sign_finRotate_mul hn, hsupp, Finset.card_univ, Fintype.card_fin,
+    Even.neg_one_pow ⟨m, rfl⟩, neg_inj] at hsign
+  obtain ⟨t, ht⟩ := (neg_one_pow_eq_one_iff_even (by decide)).1 hsign
+  omega
+
+/-- In a chord diagram with a single boundary cycle whose boundary points are all ends of bands,
+no band joins two consecutive points; this includes the last and the first point. Otherwise the
+boundary arc between them would close up on its own. -/
+theorem apply_ne_finRotate_of_isCycleOn (hσ : IsPerfectMatching σ)
+    (h : (finRotate n * σ).IsCycleOn Set.univ) (p : Fin n) : σ p ≠ finRotate n p := by
+  have : Nontrivial (Fin n) := nontrivial_of_ne _ _ (hσ.apply_ne p)
+  intro hp
+  refine h.apply_ne Set.nontrivial_univ (Set.mem_univ (σ p)) ?_
+  rw [Perm.mul_apply, hσ.apply_apply, hp]
 
 end TauCeti.IsPerfectMatching
