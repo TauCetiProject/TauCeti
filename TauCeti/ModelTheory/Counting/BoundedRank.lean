@@ -48,9 +48,7 @@ every isomorphism-invariant countable rank on the models on `ℕ`.
   set of pairwise non-isomorphic configurations (hence `≤ ℵ₀` or `= 𝔠` classes).
 * `TauCeti.countableModelCount_le_aleph0_or_hasPerfectlyMany_of_bounded`: **the bounded-rank
   dichotomy**, witnessed form.
-* `TauCeti.countableModelCount_le_aleph0_or_eq_continuum_of_bounded` and
-  `TauCeti.countableModelCount_le_aleph0_or_eq_continuum_of_bounded'`: its cardinal form, from the
-  witnessed form and, independently, from the cardinality form of Silver's theorem.
+* `TauCeti.countableModelCount_le_aleph0_or_eq_continuum_of_bounded`: its cardinal form.
 * `TauCeti.countableModelCount_le_aleph0_or_hasPerfectlyMany_of_scottHeight_le` and
   `TauCeti.countableModelCount_le_aleph0_or_hasPerfectlyMany_of_internalScottRank_le`: the forms
   with a bound on the Scott height or on the internal Scott rank of the countably infinite models.
@@ -154,24 +152,6 @@ theorem countableModelCount_le_aleph0_or_eq_continuum_of_bounded (hρ : IsIsolat
     countableModelCount φ ≤ ℵ₀ ∨ countableModelCount φ = 𝔠 :=
   (countableModelCount_le_aleph0_or_hasPerfectlyMany_of_bounded hρ hβ hφ).imp_right
     HasPerfectlyManyCountableModels.countableModelCount_eq
-
-/-- The cardinal bounded-rank dichotomy, obtained tier by tier from the cardinality form of
-Silver's theorem rather than from perfect sets. The statement is that of
-`TauCeti.countableModelCount_le_aleph0_or_eq_continuum_of_bounded`. -/
-theorem countableModelCount_le_aleph0_or_eq_continuum_of_bounded' (hρ : IsIsolatingRank ρ)
-    (hβ : β < ω₁) (hφ : ∀ c ∈ modelsOf (V := ℕ) φ, ρ c ≤ β) :
-    countableModelCount φ ≤ ℵ₀ ∨ countableModelCount φ = 𝔠 := by
-  have hfin := sum_mk_quotient_isoSetoidOn_fin_le_aleph0_or_eq_continuum φ
-  rw [countableModelCount_eq_add_sum]
-  rcases hρ.mk_isoClasses_le_aleph0_or_eq_continuum (measurableSet_modelsOf φ) hβ hφ with
-    hℕ | hℕ
-  · rcases hfin with hfin | hfin
-    · exact .inl ((add_le_add hℕ hfin).trans_eq aleph0_add_aleph0)
-    · rw [hfin]
-      exact .inr (Cardinal.add_eq_right aleph0_le_continuum (hℕ.trans aleph0_le_continuum))
-  · rw [hℕ]
-    exact .inr (Cardinal.add_eq_left aleph0_le_continuum
-      (hfin.elim (fun h => h.trans aleph0_le_continuum) le_of_eq))
 
 /-- **The bounded-rank dichotomy for Scott height.** In a vocabulary with countably many relation
 symbols of each arity, if every countably infinite model `M : Type` of an infinitary sentence `φ`
