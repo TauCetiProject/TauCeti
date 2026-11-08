@@ -41,7 +41,8 @@ relative to the fixed inner product of `E`.
 
 * `InnerProductSpace.isStrictlyPositive_continuousLinearMapOfBilin_iff`: in finite dimension,
   the Riesz operator of `h` is strictly positive exactly when `h` is symmetric and positive
-  definite.
+  definite; `InnerProductSpace.isStrictlyPositive_continuousLinearMapOfBilin_of_injective`: in
+  particular for an inner product pulled back along an injective linear map.
 * `ContinuousLinearMap.metricChangeTransport`: the inverse square root of the Riesz operator.
 * `ContinuousLinearMap.metricChangeEquiv`: the same transport as a continuous linear equivalence,
   with the positive square root as inverse.
@@ -321,6 +322,16 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ
       refine (hpos v hne).ne' ?_
       rw [← continuousLinearMapOfBilin_apply (𝕜 := ℝ) h, hv, inner_zero_left]
     exact ⟨hinj, (LinearMap.injective_iff_surjective (f := (h♯ : E →ₗ[ℝ] E))).mp hinj⟩
+
+/-- The inner product of `F` pulled back along an injective linear map `K : E → F` has strictly
+positive Riesz operator. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_of_injective [FiniteDimensional ℝ E]
+    {K : E →ₗ[ℝ] F} (hK : Function.Injective K) {h : E →L[ℝ] E →L[ℝ] ℝ}
+    (hh : ∀ u v, h u v = ⟪K u, K v⟫_ℝ) : IsStrictlyPositive h♯ :=
+  isStrictlyPositive_continuousLinearMapOfBilin_iff.2
+    ⟨fun u v ↦ by rw [hh, hh, real_inner_comm], fun v hv ↦ by
+      rw [hh]
+      exact real_inner_self_pos.2 fun h0 ↦ hv (hK (h0.trans K.map_zero.symm))⟩
 
 end InnerProductSpace
 

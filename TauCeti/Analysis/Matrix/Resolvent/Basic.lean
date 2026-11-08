@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Spectrum
 
+import TauCeti.Analysis.Complex.Basic
+
 /-!
 # Resolvents of Hermitian matrices
 
@@ -43,6 +45,10 @@ entries back into diagonal entries. The first resolvent identity is Mathlib's
   of a Hermitian matrix;
 * `Matrix.IsHermitian.l2_opNorm_inv_sub_smul_one_le` — the resolvent bound
   `‖(A - z • 1)⁻¹‖ ≤ |Im z|⁻¹`;
+* `Matrix.IsHermitian.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le` — the Cayley
+  expression has norm at most one;
+* `Matrix.IsHermitian.l2_opNorm_inv_sub_smul_one_sub_le` — the difference of two resolvents
+  at the same parameter has norm at most `|Im z|⁻¹`;
 * `Matrix.IsHermitian.im_inv_sub_smul_one_apply_self` and
   `Matrix.IsHermitian.sum_norm_inv_sub_smul_one_apply_sq` — the Ward identity;
 * `Matrix.IsHermitian.im_inv_sub_smul_one_apply_self_pos` — `0 < Im (R_A(z) i i)` when
@@ -149,6 +155,55 @@ theorem l2_opNorm_inv_sub_smul_one_le {z : 𝕜} (hz : RCLike.im z ≠ 0) :
   rw [norm_inv]
   refine inv_anti₀ (abs_pos.2 hz) ?_
   simpa using RCLike.abs_im_le_norm ((hA.eigenvalues j : 𝕜) - z)
+
+omit hA
+
+section Complex
+
+variable {A B : Matrix n n ℂ}
+
+open scoped Matrix.Norms.L2Operator
+
+/-- The Cayley expression of a Hermitian resolvent has Euclidean operator norm at most one.
+The inequality, unlike equality with one, includes the empty matrix. -/
+theorem l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le (hA : A.IsHermitian)
+    {z : ℂ} (hz : z.im ≠ 0) :
+    ‖1 + (z - conj z) • (A - z • 1)⁻¹‖ ≤ 1 := by
+  rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal
+    (hA.notMem_spectrum_of_im_ne_zero hz)]
+  simp only [RCLike.ofReal_eq_complex_ofReal]
+  have hdiag : 1 + (z - conj z) •
+      conjStarAlgAut ℂ _ hA.eigenvectorUnitary
+        (diagonal fun i => ((hA.eigenvalues i : ℂ) - z)⁻¹) =
+      conjStarAlgAut ℂ _ hA.eigenvectorUnitary
+        (1 + (z - conj z) • diagonal fun i => ((hA.eigenvalues i : ℂ) - z)⁻¹) := by
+    simp only [map_add, map_one, map_smul]
+  rw [hdiag, conjStarAlgAut_apply, ← coe_star]
+  simp only [CStarRing.norm_mul_coe_unitary, CStarRing.norm_coe_unitary_mul]
+  rw [← diagonal_smul, ← diagonal_one, diagonal_add, l2_opNorm_diagonal]
+  refine (pi_norm_le_iff_of_nonneg zero_le_one).2 fun i => ?_
+  simpa only [Pi.smul_apply, smul_eq_mul] using
+    (Complex.norm_one_add_sub_conj_mul_inv_ofReal_sub z (hA.eigenvalues i)).le
+
+/-- At a fixed nonreal parameter the difference of two Hermitian resolvents has operator norm
+at most `1 / |Im z|`, independently of the size of the perturbation. -/
+theorem l2_opNorm_inv_sub_smul_one_sub_le (hA : A.IsHermitian) (hB : B.IsHermitian)
+    {z : ℂ} (hz : z.im ≠ 0) :
+    ‖(A - z • 1)⁻¹ - (B - z • 1)⁻¹‖ ≤ |z.im|⁻¹ := by
+  have h := (norm_sub_le (1 + (z - conj z) • (A - z • 1)⁻¹)
+    (1 + (z - conj z) • (B - z • 1)⁻¹)).trans
+      (add_le_add (hA.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le hz)
+        (hB.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le hz))
+  rw [add_sub_add_left_eq_sub, ← smul_sub, norm_smul, Complex.sub_conj] at h
+  have hn : ‖((2 * z.im : ℝ) : ℂ) * Complex.I‖ = 2 * |z.im| := by
+    simp [Real.norm_eq_abs]
+  rw [hn] at h
+  rw [inv_eq_one_div |z.im|, le_div_iff₀ (abs_pos.mpr hz)]
+  nlinarith
+
+end Complex
+
+include hA
 
 /-- The **Ward identity** for the resolvent `R = (A - z • 1)⁻¹` of a Hermitian matrix, in
 multiplicative form: `Im (R i i) = Im z * ∑ j, ‖R i j‖ ^ 2`. No hypothesis on `z` is needed: when
