@@ -121,7 +121,7 @@ private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : �
   · obtain rfl : k = 0 := by omega
     simp [pt_zero]
   have _ : (0 : ℝ) < N := by exact_mod_cast hN
-  refine Path.trans_apply_of_le γ δ _ ?_
+  refine Path.trans_apply_of_eq_two_mul γ δ _ ?_
   rw [coe_pt hk, coe_pt (by omega : k ≤ N + N)]
   push_cast
   field_simp
@@ -131,7 +131,7 @@ private lemma trans_pt_right {x y z : X} (γ : Path x y) (δ : Path y z) {N : �
     (k : ℕ) : γ.trans δ (pt (N + N) (N + k)) = δ (pt N k) := by
   rcases le_or_gt k N with hk | hk
   · have _ : (0 : ℝ) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
-    refine Path.trans_apply_of_ge γ δ _ ?_
+    refine Path.trans_apply_of_eq_two_mul_sub_one γ δ _ ?_
     rw [coe_pt hk, coe_pt (by omega : N + k ≤ N + N)]
     push_cast
     field_simp
@@ -142,7 +142,7 @@ private lemma trans_subpath_left {x y z : X} (γ : Path x y) (δ : Path y z) {N 
     (t : I) : (γ.trans δ).subpath (pt (N + N) k) (pt (N + N) (k + 1)) t =
       γ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine Path.trans_apply_of_le γ δ _ ?_
+  refine Path.trans_apply_of_eq_two_mul γ δ _ ?_
   rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : k < N + N)]
   push_cast
   field_simp
@@ -153,7 +153,7 @@ private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N
     (γ.trans δ).subpath (pt (N + N) (N + k)) (pt (N + N) (N + k + 1)) t =
       δ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine Path.trans_apply_of_ge γ δ _ ?_
+  refine Path.trans_apply_of_eq_two_mul_sub_one γ δ _ ?_
   rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : N + k < N + N)]
   push_cast
   field_simp

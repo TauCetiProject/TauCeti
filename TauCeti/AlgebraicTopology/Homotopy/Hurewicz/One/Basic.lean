@@ -181,12 +181,12 @@ lemma pathChain_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ 
   rw [d_chain₂ _ δ.toContinuousMap (γ.trans δ).toContinuousMap γ.toContinuousMap]
   · abel
   · ext a
-    exact Path.trans_apply_of_ge γ δ _
+    exact Path.trans_apply_of_eq_two_mul_sub_one γ δ _
       (by simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]; linarith [a.total_fin_two])
   · ext a
     simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]
   · ext a
-    exact Path.trans_apply_of_le γ δ _
+    exact Path.trans_apply_of_eq_two_mul γ δ _
       (by simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]; ring)
 
 /-- The weight of the last vertex of the standard `2`-simplex, as a point of the unit

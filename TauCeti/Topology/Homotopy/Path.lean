@@ -51,10 +51,10 @@ partition into a homotopy of the whole paths.
 path-homotopy-trivial. `AlgebraicTopology/ThricePuncturedSphere/LoopAtInfinity.lean` uses it to
 compare paths inside a closed half-plane.
 
-`Path.trans_apply_of_le` and `Path.trans_apply_of_ge` express a value of a concatenation as a
-value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
-values of the path on an interval containing its endpoints. `Path.coe_subpath` and
-`Path.subpath_subpath_apply` evaluate a subpath and a subpath of a subpath, and
+`Path.trans_apply_of_eq_two_mul` and `Path.trans_apply_of_eq_two_mul_sub_one` express a value of a
+concatenation as a value of one of its two halves, and `Path.subpath_apply_mem` bounds the values
+of a subpath by the values of the path on an interval containing its endpoints. `Path.coe_subpath`
+and `Path.subpath_subpath_apply` evaluate a subpath and a subpath of a subpath, and
 `Path.cast_subpath_eq_codRestrict` identifies a subpath of a path in a subset, cast to the
 endpoints of a corestricted subpath, with that corestriction. The last two are used by the gluing
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
@@ -105,7 +105,7 @@ theorem map_refl {Y : Type*} [TopologicalSpace Y] {f : X → Y} (hf : Continuous
   rfl
 
 /-- The value of `γ.trans δ` at `u` is the value of `γ` at any `v` with `v = 2 * u`. -/
-theorem trans_apply_of_le {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
+theorem trans_apply_of_eq_two_mul {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
     (v : I) (hv : (v : ℝ) = 2 * u) : γ.trans δ u = γ v := by
   rw [trans_apply]
   split_ifs with h
@@ -114,7 +114,7 @@ theorem trans_apply_of_le {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
     linarith [v.2.2]
 
 /-- The value of `γ.trans δ` at `u` is the value of `δ` at any `v` with `v = 2 * u - 1`. -/
-theorem trans_apply_of_ge {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
+theorem trans_apply_of_eq_two_mul_sub_one {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
     (v : I) (hv : (v : ℝ) = 2 * u - 1) : γ.trans δ u = δ v := by
   rw [trans_apply]
   split_ifs with h
