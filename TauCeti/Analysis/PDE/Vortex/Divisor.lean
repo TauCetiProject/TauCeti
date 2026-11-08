@@ -82,15 +82,22 @@ namespace IsZeroDivisor
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {D D' : Multiset ℂ}
 
+/-- The multiplicity of `z` in the zero divisor is the exponent of any local factorization
+`α(w) = (w - z) ^ n v(w)` of the section with `v` continuous at `z` and nonzero there. -/
+theorem count_eq_of_eventually_eq_pow_mul (hD : IsZeroDivisor x D) {z : ℂ} {n : ℕ} {v : ℂ → ℂ}
+    (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * v w) : D.count z = n := by
+  obtain ⟨u, hu, hu₀, hfu⟩ := hD z
+  refine eq_of_eventually_sub_pow_mul_eq hu hu₀ hv hv₀ ?_
+  filter_upwards [hfu, h] with w hwu hwv
+  rw [← hwu, ← hwv]
+
 /-- **Uniqueness of the zero divisor.** The multiplicities are the exponents of the local
 factorizations of the section, which are unique. -/
 theorem eq (hD : IsZeroDivisor x D) (hD' : IsZeroDivisor x D') : D = D' := by
   refine Multiset.ext.2 fun z ↦ ?_
-  obtain ⟨u, hu, hu₀, hfu⟩ := hD z
   obtain ⟨v, hv, hv₀, hfv⟩ := hD' z
-  refine eq_of_eventually_sub_pow_mul_eq hu hu₀ hv hv₀ ?_
-  filter_upwards [hfu, hfv] with w hwu hwv
-  rw [← hwu, ← hwv]
+  exact hD.count_eq_of_eventually_eq_pow_mul hv hv₀ hfv
 
 /-- The zeros of the section are the points of its zero divisor. -/
 theorem sectionValue_eq_zero_iff (hD : IsZeroDivisor x D) {z : ℂ} :
@@ -204,11 +211,7 @@ theorem IsZeroDivisor.exists_contDiffAt {D : Multiset ℂ} (hD : IsZeroDivisor x
   obtain ⟨n, v, hvc, hv₀, hvf⟩ :=
     exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol
       hD.exists_sectionValue_ne_zero z
-  obtain ⟨u, hu, hu₀, hfu⟩ := hD z
-  have hcount : D.count z = n := eq_of_eventually_sub_pow_mul_eq hu hu₀ hvc.continuousAt hv₀ <| by
-    filter_upwards [hfu, hvf] with w hwu hwv
-    rw [← hwu, ← hwv]
-  exact ⟨v, hvc, hv₀, hcount ▸ hvf⟩
+  exact ⟨v, hvc, hv₀, hD.count_eq_of_eventually_eq_pow_mul hvc.continuousAt hv₀ hvf ▸ hvf⟩
 
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a
 field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the end
