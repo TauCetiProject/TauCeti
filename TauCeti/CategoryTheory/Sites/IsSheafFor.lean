@@ -24,10 +24,10 @@ between two objects, and two members `X i`, `X j` of a family have the greatest 
 `X i ⊓ X j`. So a family of elements is compatible exactly when the restrictions of `x i` and
 `x j` to `X i ⊓ X j` agree.
 
-The sheaf condition for a presieve `R` on `X` reads a presheaf only at `X` and at the sources of
-the arrows of `R`. So a natural transformation `P ⟶ P'` that is bijective at `X` and injective at
-those sources carries the sheaf condition from `P'` back to `P`, even if `P` and `P'` differ
-elsewhere. This is how a sheaf condition on an open subspace is compared with one on the ambient
+Every natural transformation `P ⟶ P'` carries compatible families for a presieve `R` on `X` to
+compatible families. So it carries the sheaf condition for `R` from `P'` back to `P` as soon as it
+is bijective at `X` and injective at the sources of the arrows of `R`, whatever it does at other
+objects. This is how a sheaf condition on an open subspace is compared with one on the ambient
 space.
 
 ## Main results
@@ -95,10 +95,10 @@ namespace CategoryTheory.Presieve
 
 variable {C : Type u} [Category.{v} C] {P P' : Cᵒᵖ ⥤ Type w}
 
-/-- **The sheaf condition for a presieve on `X` only involves `X` and the sources of its arrows.**
-If a natural transformation `α : P ⟶ P'` is bijective at `X` and injective at the source of every
-arrow of a presieve `R` on `X`, then `P` satisfies the sheaf condition for `R` whenever `P'` does.
-Unlike `CategoryTheory.Presieve.isSheafFor_of_nat_equiv`, nothing is assumed at other objects. -/
+/-- **Transferring the sheaf condition along a natural transformation.** If a natural
+transformation `α : P ⟶ P'` is bijective at `X` and injective at the source of every arrow of a
+presieve `R` on `X`, then `P` satisfies the sheaf condition for `R` whenever `P'` does. Unlike
+`CategoryTheory.Presieve.isSheafFor_of_nat_equiv`, nothing is assumed at other objects. -/
 theorem isSheafFor_of_bijective_app (α : P ⟶ P') {X : C} {R : Presieve X}
     (hX : Function.Bijective (α.app (op X)))
     (hR : ∀ ⦃Y : C⦄ ⦃f : Y ⟶ X⦄, R f → Function.Injective (α.app (op Y)))
