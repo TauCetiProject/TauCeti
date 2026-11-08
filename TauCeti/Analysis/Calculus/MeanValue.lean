@@ -175,15 +175,16 @@ open Metric in
 /-- The mean value inequality: if `h` fixes `c` and `h - id` has derivative of norm at most `δ` on
 the closed ball of radius `2 r` about `c`, then `h - id` moves points of this ball by at most
 `δ * (2 * r)`. -/
-theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ} (hr : 0 < r)
-    (hδ0 : 0 ≤ δ) (hhc : h c = c)
+theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ}
+    (hhc : h c = c)
     (hhd : ∀ x ∈ closedBall c (2 * r),
       HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x)
     (hδ : ∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ)
     {x : E} (hx : x ∈ closedBall c (2 * r)) : ‖h x - x‖ ≤ δ * (2 * r) := by
+  have hδ0 : 0 ≤ δ := (norm_nonneg _).trans (hδ x hx)
   have := Convex.norm_image_sub_le_of_norm_fderiv_le (fun y hy ↦ (hhd y hy).differentiableAt)
     (fun y hy ↦ (hhd y hy).fderiv ▸ hδ y hy) (convex_closedBall c (2 * r))
-    (mem_closedBall_self (by positivity)) hx
+    (mem_closedBall_self ((dist_nonneg).trans (mem_closedBall.1 hx))) hx
   rw [hhc, sub_self, sub_zero] at this
   exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
 
@@ -192,10 +193,10 @@ open Real in
 every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
 theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {u f' : ℝ → F} {β D : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hD : 0 ≤ D)
     (hderiv : ∀ r, 0 < r → HasDerivAt u (f' r) r) (hbound : ∀ r, 0 < r → ‖f' r‖ ≤ D * r ^ (β - 1))
     {a b : ℝ} (ha : 0 < a) (hb : a / 2 ≤ b) : ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
   have ha2 : 0 < a / 2 := half_pos ha
+  have hD : 0 ≤ D := by simpa using (norm_nonneg _).trans (hbound 1 one_pos)
   have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
     (f' := f') (C := D * (a / 2) ^ (β - 1))
     (fun r hr => (hderiv r (ha2.trans_le hr)).hasDerivWithinAt)
