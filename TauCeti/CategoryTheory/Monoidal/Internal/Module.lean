@@ -63,6 +63,7 @@ variable {R : Type u} [CommRing R]
 namespace CommMonModuleEquivalenceCommAlgebra
 
 open MonModuleEquivalenceAlgebra
+open scoped MonObj
 
 attribute [local instance] MonObj.toCommRing
 
@@ -86,6 +87,9 @@ noncomputable def inverse : CommAlgCat.{u} R ⥤ CommMon (ModuleCat.{u} R) where
         exact TensorProduct.ext' fun x y ↦ mul_comm y x }
   map f := CommMon.homMk (MonModuleEquivalenceAlgebra.inverse.map (AlgCat.ofHom f.hom))
 
+theorem functor_obj (A : CommMon (ModuleCat.{u} R)) : functor.obj A = CommAlgCat.of R A.X :=
+  rfl
+
 @[simp]
 theorem functor_map_apply {A B : CommMon (ModuleCat.{u} R)} (f : A ⟶ B) (x : A.X) :
     functor.map f x = f.hom.hom x :=
@@ -93,6 +97,16 @@ theorem functor_map_apply {A B : CommMon (ModuleCat.{u} R)} (f : A ⟶ B) (x : A
 
 @[simp]
 theorem inverse_obj_X (A : CommAlgCat.{u} R) : (inverse.obj A).X = ModuleCat.of R A :=
+  rfl
+
+@[simp]
+theorem inverse_obj_one (A : CommAlgCat.{u} R) :
+    η[(inverse.obj A).X] = ModuleCat.ofHom (Algebra.linearMap R A) :=
+  rfl
+
+@[simp]
+theorem inverse_obj_mul (A : CommAlgCat.{u} R) :
+    μ[(inverse.obj A).X] = ModuleCat.ofHom (LinearMap.mul' R A) :=
   rfl
 
 @[simp]

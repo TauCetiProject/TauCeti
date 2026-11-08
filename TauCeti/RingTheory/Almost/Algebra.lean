@@ -53,6 +53,7 @@ public section
 universe u
 
 open CategoryTheory Limits
+open scoped MonObj
 
 namespace TauCeti.Almost
 
@@ -87,6 +88,22 @@ linear map of `f`. -/
 theorem toAlmost_map_hom_hom {R R' : CommAlgCat.{u} V} (f : R ⟶ R') :
     ((toAlmost S).map f).hom.hom = (Module.toAlmost S).map (ModuleCat.ofHom f.hom.toLinearMap) :=
   (rfl)
+
+/-- The unit of `R^a` is the almostification of the unit `V → R` of `R`. -/
+@[simp]
+theorem toAlmost_obj_one (R : CommAlgCat.{u} V) :
+    η[((toAlmost S).obj R).X] = Functor.LaxMonoidal.ε (Module.toAlmost S) ≫
+      (Module.toAlmost S).map (ModuleCat.ofHom (Algebra.linearMap V R)) :=
+  rfl
+
+/-- The multiplication of `R^a` is the almostification of the multiplication `R ⊗[V] R → R`
+of `R`. -/
+@[simp]
+theorem toAlmost_obj_mul (R : CommAlgCat.{u} V) :
+    μ[((toAlmost S).obj R).X] =
+      Functor.LaxMonoidal.μ (Module.toAlmost S) (ModuleCat.of V R) (ModuleCat.of V R) ≫
+        (Module.toAlmost S).map (ModuleCat.ofHom (LinearMap.mul' V R)) :=
+  rfl
 
 /-- **`f^a` is an isomorphism iff `f` is an almost isomorphism.** An algebra map becomes invertible
 after almostification exactly when its kernel and cokernel are killed by `m`. -/
