@@ -43,10 +43,12 @@ namespace TauCeti.LSeries
 variable {f : ℝ → ℂ} {G : ℂ → ℂ} {M T R : ℝ}
 
 private theorem continuousOn_semicircle_integrand {w : ℂ → ℂ} {a b : ℝ}
-    (hR : R ≠ 0) (hw : ContinuousOn w (circleMap 0 R '' uIcc a b)) :
+    (hw : ContinuousOn w (circleMap 0 R '' uIcc a b)) :
     ContinuousOn (fun θ : ℝ ↦ circleMap 0 R θ * Complex.I *
       (w (circleMap 0 R θ) * cexp (T * circleMap 0 R θ) *
         (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) / circleMap 0 R θ)) (uIcc a b) := by
+  obtain rfl | hR := eq_or_ne R 0
+  · simpa [circleMap] using continuousOn_const
   have hc := hw.comp (continuous_circleMap 0 R).continuousOn (mapsTo_image _ _)
   exact ((continuous_circleMap 0 R).continuousOn.mul continuousOn_const).mul
     (((hc.mul (by fun_prop)).mul (by fun_prop)).div
@@ -99,11 +101,9 @@ theorem intervalIntegrable_right_semicircle_mul_kernel
       ((G (circleMap 0 R θ) - ∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
         cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
           circleMap 0 R θ)) volume (-π / 2) (π / 2) := by
-  obtain rfl | hR := eq_or_ne R 0
-  · simp [circleMap]
   apply ContinuousOn.intervalIntegrable
   apply continuousOn_semicircle_integrand (w := fun z ↦
-    G z - ∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) hR
+    G z - ∫ t in (0 : ℝ)..T, f t * cexp (-z * t))
   rw [uIcc_of_le (by linarith [Real.pi_pos] : -π / 2 ≤ π / 2)]
   exact hG.sub (differentiable_intervalIntegral_mul_cexp_neg_mul hf).continuous.continuousOn
 
@@ -115,9 +115,7 @@ theorem intervalIntegrable_circleMap_intervalIntegral_mul_kernel {a b : ℝ}
       ((∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
         cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
           circleMap 0 R θ)) volume a b := by
-  obtain rfl | hR := eq_or_ne R 0
-  · simp [circleMap]
-  exact ContinuousOn.intervalIntegrable <| continuousOn_semicircle_integrand hR
+  exact ContinuousOn.intervalIntegrable <| continuousOn_semicircle_integrand
     (differentiable_intervalIntegral_mul_cexp_neg_mul hf).continuous.continuousOn
 
 /-- The normalized right semicircle integral of the Laplace-transform tail has norm at most
