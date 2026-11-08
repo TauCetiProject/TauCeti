@@ -43,6 +43,7 @@ variable {P Y : Type*} [TopologicalSpace P] [TopologicalSpace Y] {k : ℕ} {d : 
 def annulusParam (d : ℝ) (w : TopCat.disk.{u} k) : I :=
   projIcc 0 1 zero_le_one ((‖w.down.1‖ - d) / (1 - d))
 
+@[continuity, fun_prop]
 theorem continuous_annulusParam : Continuous (annulusParam.{u} (k := k) d) :=
   continuous_projIcc.comp (((continuous_norm.comp
     (continuous_subtype_val.comp continuous_uliftDown)).sub continuous_const).div_const _)
@@ -54,6 +55,7 @@ def annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.1‖}
   ULift.up ⟨(diskRadialPush k hd.le (1, w.1)).down.1,
     mem_sphere_zero_iff_norm.2 (norm_diskRadialPush_one hd w.2)⟩
 
+@[continuity, fun_prop]
 theorem continuous_annulusDir (hd : 0 < d) : Continuous (annulusDir.{u} (k := k) hd) :=
   continuous_uliftUp.comp ((continuous_subtype_val.comp (continuous_uliftDown.comp
     ((diskRadialPush k hd.le).continuous.comp
@@ -174,8 +176,6 @@ def discGlue (hd : 0 < d) (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)
           fun q ↦ B (q.1.1, annulusParam d q.1.2, annulusDir hd ⟨q.1.2, q.2⟩) :=
         funext fun q ↦ discGlueFun_of_le_norm hd A B hAB _ q.2
       rw [he]
-      have := continuous_annulusParam.{u} (k := k) (d := d)
-      have := continuous_annulusDir.{u} (k := k) hd
       exact B.continuous.comp (by fun_prop)
     rw [← continuousOn_univ]
     convert hs.union_of_isClosed ht (isClosed_le hn continuous_const)
