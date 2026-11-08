@@ -90,7 +90,7 @@ theorem subsingleton_groupHomology_localizationAway {m : ℤ} (hm : m ≠ 0) (hk
 
 /-- The free `ℤ[1/m]`-module `ℤ[1/m]ʳ` has no homology in positive degrees with coefficients in a
 semisimple ring in which `m = 0`. -/
-theorem subsingleton_groupHomology_fin_localizationAway [IsSemisimpleRing k] {m : ℤ} (hm : m ≠ 0)
+theorem subsingleton_groupHomology_pi_localizationAway [IsSemisimpleRing k] {m : ℤ} (hm : m ≠ 0)
     (hk : (m : k) = 0) (r n : ℕ) :
     Subsingleton
       (groupHomology (Rep.trivial k (Multiplicative (Fin r → Localization.Away m)) k) (n + 1)) := by
@@ -132,7 +132,7 @@ private theorem subsingleton_groupHomology_of_linearEquiv_prod [IsSemisimpleRing
     {x : Localization.Away (p : ℤ)} (hx : x ≠ 0) (hT : ∀ t : T, x • t = 0) (n : ℕ) :
     Subsingleton (groupHomology (Rep.trivial k (Multiplicative N) k) (n + 1)) := by
   have := subsingleton_groupHomology_prod _ _ k
-    (subsingleton_groupHomology_fin_localizationAway (Int.natCast_ne_zero.2 hp.ne_zero)
+    (subsingleton_groupHomology_pi_localizationAway (Int.natCast_ne_zero.2 hp.ne_zero)
       (by exact_mod_cast hk) r)
     (subsingleton_groupHomology_of_natCast_eq_zero_of_smul_eq_zero hp hk hx hT) n
   exact subsingleton_groupHomology_of_mulEquiv
@@ -191,12 +191,18 @@ theorem subsingleton_groupHomology_of_natCast_eq_zero [IsSemisimpleRing k] (hp :
   let φ : Multiplicative N →* Multiplicative A := N.subtype.toAddMonoidHom.toMultiplicative
   have hφ : S s = MonoidHom.range (G := Multiplicative N) φ := by
     ext g
-    exact ⟨fun hg ↦ ⟨Multiplicative.ofAdd ⟨g.toAdd, hg⟩, rfl⟩, fun ⟨x, hx⟩ ↦ hx ▸ x.toAdd.2⟩
-  have := subsingleton_groupHomology_of_natCast_eq_zero_of_moduleFinite hp hk (N := N) n
-  have := subsingleton_groupHomology_of_mulEquiv (k := k)
-    ((MulEquiv.subgroupCongr hφ).trans (MonoidHom.ofInjective (G := Multiplicative N) (f := φ)
-      fun _ _ h ↦ Subtype.val_injective h).symm) (n + 1)
-  exact @ModuleCat.isZero_of_subsingleton _ _ _ this
+    rw [Multiplicative.mem_toSubgroup, Submodule.mem_toAddSubgroup, MonoidHom.mem_range]
+    refine ⟨fun hg ↦ ⟨Multiplicative.ofAdd ⟨g.toAdd, hg⟩, rfl⟩, ?_⟩
+    rintro ⟨x, rfl⟩
+    exact x.toAdd.2
+  let e : Multiplicative N ≃* S s :=
+    (MonoidHom.ofInjective (G := Multiplicative N) (f := φ)
+      fun _ _ h ↦ Subtype.val_injective h).trans (MulEquiv.subgroupCongr hφ).symm
+  have hN := ModuleCat.isZero_iff_subsingleton.2
+    (subsingleton_groupHomology_of_natCast_eq_zero_of_moduleFinite hp hk (k := k) (N := N) n)
+  refine hN.of_iso (groupHomology.mapIso e (LinearEquiv.refl k k) (fun _ ↦ ?_) (n + 1)).symm
+  ext
+  simp
 
 /-- **`K(A, 1)` is acyclic modulo `p` for a `ℤ[1/p]`-module `A`.** For a prime `p`, a module `A`
 over `ℤ[1/p]` and a commutative semisimple ring `k` in which `p = 0`, such as `𝔽_p`, the singular
