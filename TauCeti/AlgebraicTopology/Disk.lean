@@ -40,7 +40,9 @@ induces homeomorphisms of the disk and of its boundary sphere, compatible with t
 inclusion (`LinearIsometryEquiv.diskIso`, `LinearIsometryEquiv.diskBoundaryIso`); these are the
 orthogonal reparametrizations of attached cells.  Similarly, the closed unit ball of
 `EuclideanSpace ℝ ι` is homeomorphic to the disk `TopCat.disk k` for any reindexing `ι ≃ Fin k` of
-the coordinates (`TauCeti.closedBallHomeomorphDisk`).
+the coordinates (`TauCeti.closedBallHomeomorphDisk`); in particular the product of the closed unit
+balls of the first `k` and of the remaining coordinates of `ℝⁿ` is homeomorphic to
+`D^k × D^(n-k)` (`TauCeti.handleDiskHomeomorph`).
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
@@ -213,6 +215,68 @@ lemma norm_closedBallHomeomorphDisk_apply_down {ι : Type*} [Fintype ι] {k : �
       (0 : EuclideanSpace ℝ (Fin k)) 1)).down : EuclideanSpace ℝ (Fin k))‖ =
       ‖(x : EuclideanSpace ℝ ι)‖ := by
   rw [coe_closedBallHomeomorphDisk_apply_down, LinearIsometryEquiv.norm_map]
+
+/-- The point of the closed unit ball corresponding to a point of the disk under
+`TauCeti.closedBallHomeomorphDisk e` has the same coordinates, reindexed by `e.symm`. -/
+@[simp]
+lemma coe_closedBallHomeomorphDisk_symm_apply {ι : Type*} [Fintype ι] {k : ℕ} (e : ι ≃ Fin k)
+    (y : TopCat.disk.{u} k) :
+    ((closedBallHomeomorphDisk.{u} e).symm y : EuclideanSpace ℝ ι) =
+      (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e).symm
+        ((y : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down :
+          EuclideanSpace ℝ (Fin k)) :=
+  -- `Homeomorph.ulift` is `ULift.down` and `Homeomorph.subtype` keeps the underlying vector.
+  (rfl)
+
+/-- The product of the closed unit balls of the first `k` and of the remaining coordinates of
+`ℝⁿ` is homeomorphic to `D^k × D^(n-k)`, by `TauCeti.closedBallHomeomorphDisk` on each factor
+(`TauCeti.handleDiskHomeomorph_apply_fst`, `TauCeti.handleDiskHomeomorph_apply_snd`).  This is the
+parametrization of a handle of index `k` in an `n`-manifold. -/
+def handleDiskHomeomorph {n k : ℕ} (hk : k ≤ n) :
+    Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+        Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1 ≃ₜ
+      TopCat.disk.{u} k × TopCat.disk.{u} (n - k) :=
+  Homeomorph.prodCongr (closedBallHomeomorphDisk (Fin.castLEquiv hk).symm)
+    (closedBallHomeomorphDisk (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype_compl,
+      Fintype.card_fin, ← Fintype.card_congr (Fin.castLEquiv hk), Fintype.card_fin])))
+
+/-- The first factor of `TauCeti.handleDiskHomeomorph` reindexes the first `k` coordinates. -/
+@[simp]
+lemma handleDiskHomeomorph_apply_fst {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    (handleDiskHomeomorph.{u} hk z).1 = closedBallHomeomorphDisk (Fin.castLEquiv hk).symm z.1 :=
+  (rfl)
+
+/-- The second factor of `TauCeti.handleDiskHomeomorph` reindexes the remaining coordinates. -/
+@[simp]
+lemma handleDiskHomeomorph_apply_snd {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    (handleDiskHomeomorph.{u} hk z).2 = closedBallHomeomorphDisk (Fintype.equivFinOfCardEq
+      (by rw [Fintype.card_subtype_compl, Fintype.card_fin,
+        ← Fintype.card_congr (Fin.castLEquiv hk), Fintype.card_fin])) z.2 :=
+  (rfl)
+
+/-- The first factor of `TauCeti.handleDiskHomeomorph` preserves the Euclidean norm. -/
+lemma norm_fst_handleDiskHomeomorph {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    ‖(((handleDiskHomeomorph.{u} hk z).1 :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down :
+        EuclideanSpace ℝ (Fin k))‖ =
+      ‖(z.1 : EuclideanSpace ℝ {j : Fin n // j.val < k})‖ := by
+  rw [handleDiskHomeomorph_apply_fst, norm_closedBallHomeomorphDisk_apply_down]
+
+/-- The second factor of `TauCeti.handleDiskHomeomorph` preserves the Euclidean norm. -/
+lemma norm_snd_handleDiskHomeomorph {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    ‖(((handleDiskHomeomorph.{u} hk z).2 :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (n - k))) 1)).down :
+        EuclideanSpace ℝ (Fin (n - k)))‖ =
+      ‖(z.2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k})‖ := by
+  rw [handleDiskHomeomorph_apply_snd, norm_closedBallHomeomorphDisk_apply_down]
 
 /-- The antipodal map `x ↦ -x` of the boundary sphere `TopCat.diskBoundary n` of the `n`-disk. -/
 def diskBoundaryNeg (n : ℕ) : TopCat.diskBoundary.{u} n ⟶ TopCat.diskBoundary.{u} n :=

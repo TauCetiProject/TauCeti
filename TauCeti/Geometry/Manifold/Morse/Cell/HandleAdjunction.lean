@@ -68,35 +68,6 @@ section HandleAdjunction
 
 variable {n k : ℕ}
 
-/-- The product of the closed unit balls of the first `k` and of the remaining coordinates of
-`ℝⁿ` is homeomorphic to `D^k × D^(n-k)`, by linear isometries reindexing the coordinates. -/
-private def handleDiskHomeomorph (hk : k ≤ n) :
-    closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
-        closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1 ≃ₜ
-      TopCat.disk.{u} k × TopCat.disk.{u} (n - k) :=
-  Homeomorph.prodCongr (closedBallHomeomorphDisk (Fin.castLEquiv hk).symm)
-    (closedBallHomeomorphDisk (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype_compl,
-      Fintype.card_fin, ← Fintype.card_congr (Fin.castLEquiv hk), Fintype.card_fin])))
-
-private theorem norm_fst_handleDiskHomeomorph (hk : k ≤ n)
-    (z : closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
-      closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
-    ‖(((handleDiskHomeomorph.{u} hk z).1 :
-      ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down : EuclideanSpace ℝ (Fin k))‖ =
-      ‖(z.1 : EuclideanSpace ℝ {j : Fin n // j.val < k})‖ := by
-  rw [handleDiskHomeomorph, Homeomorph.coe_prodCongr, Prod.map_fst,
-    norm_closedBallHomeomorphDisk_apply_down]
-
-private theorem norm_snd_handleDiskHomeomorph (hk : k ≤ n)
-    (z : closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
-      closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
-    ‖(((handleDiskHomeomorph.{u} hk z).2 :
-      ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin (n - k))) 1)).down :
-        EuclideanSpace ℝ (Fin (n - k)))‖ =
-      ‖(z.2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k})‖ := by
-  rw [handleDiskHomeomorph, Homeomorph.coe_prodCongr, Prod.map_snd,
-    norm_closedBallHomeomorphDisk_apply_down]
-
 variable {M : Type u} [TopologicalSpace M] [T2Space M] {ι : Type u} {f : M → ℝ} {c ε : ℝ}
 
 /-- A space covered by the closed lower sublevel and by finitely many disjoint handles, each meeting
