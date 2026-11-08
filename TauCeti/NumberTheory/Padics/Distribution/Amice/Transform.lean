@@ -109,21 +109,14 @@ theorem amiceTransform_injective :
   intro μ ν hμν
   apply ext
   intro h
-  have heq : stage h μ ∘L (amiceEquiv p h K).toContinuousLinearEquiv.toContinuousLinearMap =
-      stage h ν ∘L (amiceEquiv p h K).toContinuousLinearEquiv.toContinuousLinearMap := by
-    apply continuousLinearMap_ext_single_one
-    intro n
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      ContinuousLinearEquiv.coe_coe, amiceEquiv_apply, amiceMap_single, stage_amiceTerm, hμν]
-  ext c
-  simpa only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.apply_symm_apply] using
-    DFunLike.congr_fun heq ((amiceEquiv p h K).symm c)
+  apply continuousLinearMap_ext_amiceTerm
+  intro n
+  simp only [stage_amiceTerm, hμν]
 
 /-- A distribution evaluates an analytic-stage vector by pairing its Amice coordinates with
 the factorial-weighted moments. The sum is unconditional. -/
-theorem hasSum_amice (μ : LocallyAnalyticDistribution p K) {h : ℕ}
-    (c : AnalyticStage p h K) :
+theorem hasSum_amiceEquiv_symm_mul_coeff_amiceTransform
+    (μ : LocallyAnalyticDistribution p K) {h : ℕ} (c : AnalyticStage p h K) :
     HasSum (fun n ↦ (amiceEquiv p h K).symm c n *
       (((n / p ^ h).factorial : K) * (amiceTransform μ).coeff n)) (stage h μ c) := by
   convert ((hasSum_amiceMap K ((amiceEquiv p h K).symm c)).mapL (stage h μ)) using 1
@@ -147,9 +140,7 @@ theorem onOpenDisc_amiceTransform (μ : LocallyAnalyticDistribution p K) :
   rw [onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial (p := p)]
   intro h
   refine ⟨‖stage h μ‖, Set.forall_mem_range.mpr fun n ↦ ?_⟩
-  have hnorm : ‖((n / p ^ h).factorial : K)‖ = ‖((n / p ^ h).factorial : ℚ_[p])‖ := by
-    simpa using norm_algebraMap' K ((n / p ^ h).factorial : ℚ_[p])
-  simpa only [norm_mul, hnorm, mul_comm] using
+  simpa only [norm_mul, ← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap', mul_comm] using
     norm_factorial_mul_coeff_amiceTransform_le μ h n
 
 /-- The transform extends Mathlib's Amice transform on continuous measures. -/
@@ -166,9 +157,7 @@ private noncomputable def seriesStage {F : PowerSeries K} (hF : F.OnOpenDisc 1) 
   linearCombination K
     ⟨fun n ↦ ((n / p ^ h).factorial : K) * F.coeff n,
       memℓp_infty (by
-        have hnorm (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
-          simpa using norm_algebraMap' K (m : ℚ_[p])
-        simpa only [norm_mul, hnorm, mul_comm] using
+        simpa only [norm_mul, ← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap', mul_comm] using
           (onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial (p := p)).mp hF h)⟩ ∘L
     (amiceEquiv p h K).symm.toContinuousLinearEquiv.toContinuousLinearMap
 
@@ -180,23 +169,14 @@ private theorem seriesStage_amiceTerm {F : PowerSeries K} (hF : F.OnOpenDisc 1) 
 
 private theorem seriesStage_comp_transition {F : PowerSeries K} (hF : F.OnOpenDisc 1) (h : ℕ) :
     seriesStage (p := p) hF (h + 1) ∘L transition K = seriesStage hF h := by
-  have heq : (seriesStage hF (h + 1) ∘L transition K) ∘L
-      (amiceEquiv p h K).toContinuousLinearEquiv.toContinuousLinearMap =
-      seriesStage hF h ∘L (amiceEquiv p h K).toContinuousLinearEquiv.toContinuousLinearMap := by
-    apply continuousLinearMap_ext_single_one
-    intro n
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      ContinuousLinearEquiv.coe_coe, amiceEquiv_apply, amiceMap_single]
-    rw [transition_amiceTerm, ← IsScalarTower.algebraMap_smul K,
-      amiceTerm_smul, map_smul, seriesStage_amiceTerm, seriesStage_amiceTerm]
-    have hf := congrArg (algebraMap ℤ_[p] K) (factorial_mul_amiceTransitionCoeff (p := p) h n)
-    simp only [map_mul, map_natCast] at hf
-    simpa only [smul_eq_mul, mul_assoc, mul_comm, mul_left_comm] using
-      congrArg (fun a : K ↦ a * F.coeff n) hf
-  ext c
-  simpa only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.apply_symm_apply] using
-    DFunLike.congr_fun heq ((amiceEquiv p h K).symm c)
+  apply continuousLinearMap_ext_amiceTerm
+  intro n
+  rw [ContinuousLinearMap.comp_apply, transition_amiceTerm, ← IsScalarTower.algebraMap_smul K,
+    amiceTerm_smul, map_smul, seriesStage_amiceTerm, seriesStage_amiceTerm]
+  have hf := congrArg (algebraMap ℤ_[p] K) (factorial_mul_amiceTransitionCoeff (p := p) h n)
+  simp only [map_mul, map_natCast] at hf
+  simpa only [smul_eq_mul, mul_assoc, mul_comm, mul_left_comm] using
+    congrArg (fun a : K ↦ a * F.coeff n) hf
 
 /-- The distribution associated to a series on the open unit disc. Its stage functionals pair
 Amice coordinates with the factorial-weighted coefficients. -/
@@ -234,7 +214,7 @@ theorem mem_range_amiceTransform_iff {F : PowerSeries K} :
 
 /-- The Amice bijection between locally analytic distributions and the native open-unit-disc
 series algebra, bundled additively. The forward transform is also `K`-linear. -/
-noncomputable def amiceEquiv :
+noncomputable def amiceTransformEquiv :
     LocallyAnalyticDistribution p K ≃+ _root_.PowerSeries.OnOpenDisc.subring K 1 where
   toFun μ := ⟨amiceTransform μ, _root_.PowerSeries.OnOpenDisc.mem_subring.mpr
     (onOpenDisc_amiceTransform μ)⟩
@@ -246,22 +226,20 @@ noncomputable def amiceEquiv :
 
 /-- The bijection has the usual Amice transform as its underlying formal series. -/
 @[simp]
-theorem coe_amiceEquiv (μ : LocallyAnalyticDistribution p K) :
-    (amiceEquiv μ : PowerSeries K) = amiceTransform μ := (rfl)
+theorem coe_amiceTransformEquiv (μ : LocallyAnalyticDistribution p K) :
+    (amiceTransformEquiv μ : PowerSeries K) = amiceTransform μ := (rfl)
 
 /-- The inverse bijection constructs the distribution from the given open-disc series. -/
 @[simp]
-theorem amiceEquiv_symm_apply (F : _root_.PowerSeries.OnOpenDisc.subring K 1) :
-    amiceEquiv.symm F = ofSeries (p := p)
+theorem amiceTransformEquiv_symm_apply (F : _root_.PowerSeries.OnOpenDisc.subring K 1) :
+    amiceTransformEquiv.symm F = ofSeries (p := p)
       (_root_.PowerSeries.OnOpenDisc.mem_subring.mp F.2) := (rfl)
 
 private theorem norm_seriesStage {F : PowerSeries K} (hF : F.OnOpenDisc 1) (h : ℕ) :
     ‖seriesStage (p := p) hF h‖ = amiceDualNorm p h F := by
-  have hnorm (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
-    simpa using norm_algebraMap' K (m : ℚ_[p])
   rw [seriesStage, ContinuousLinearMap.opNorm_comp_linearIsometryEquiv,
     opNorm_linearCombination, lp.norm_eq_ciSup, amiceDualNorm_def]
-  simp only [norm_mul, hnorm, mul_comm]
+  simp only [norm_mul, ← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap', mul_comm]
 
 /-- The stage operator norm is the supremum of the factorial-weighted binomial moments. -/
 theorem norm_stage_eq_amiceDualNorm (μ : LocallyAnalyticDistribution p K) (h : ℕ) :
