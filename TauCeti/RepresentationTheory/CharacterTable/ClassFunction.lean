@@ -291,12 +291,21 @@ theorem ofCharacter_apply {V : Type w} [AddCommGroup V] [Module k V]
   (rfl)
 
 /-- Inverting the group element in a character gives the character of the dual
-representation: `χ_{ρ*}(g) = χ_ρ(g⁻¹)`. -/
+representation: `χ_{ρ*}(g) = χ_ρ(g⁻¹)`. For an infinite-dimensional space both sides are `0`, since
+the trace is `0` there. -/
 @[simp]
-theorem invMap_ofCharacter {V : Type w} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+theorem invMap_ofCharacter {V : Type w} [AddCommGroup V] [Module k V]
     (ρ : Representation k G V) : invMap (ofCharacter ρ) = ofCharacter ρ.dual :=
   Subtype.ext (funext fun g => by
-    rw [invMap_apply, ofCharacter_apply, ofCharacter_apply, Representation.char_dual])
+    rw [invMap_apply, ofCharacter_apply, ofCharacter_apply]
+    by_cases hV : FiniteDimensional k V
+    · exact (Representation.char_dual ρ g).symm
+    · have hVd : ¬ Module.Finite k (Module.Dual k V) := fun h =>
+        hV ((Module.finite_dual_iff k).mp h)
+      simp only [Representation.character, LinearMap.trace]
+      rw [dite_eq_right (fun ⟨s, ⟨b⟩⟩ => hV (Module.Finite.of_basis b)),
+        dite_eq_right (fun ⟨s, ⟨b⟩⟩ => hVd (Module.Finite.of_basis b))]
+      rfl)
 
 /-- The character of a finite-dimensional bundled representation is a class function. -/
 noncomputable def ofFDRep (V : FDRep k G) : ClassFunction k G :=
