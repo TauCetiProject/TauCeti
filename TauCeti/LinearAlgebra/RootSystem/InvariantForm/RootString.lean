@@ -21,6 +21,8 @@ integrality of Chevalley structure constants.
   quadratic along integral root relations `γ = β + n • α`.
 * `RootPairing.chainBotCoeff_comm_of_root_add_mem`: `chainBotCoeff` is symmetric when the sum of
   two roots is a root.
+* `RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero`:
+  orthogonal roots whose sum is a root have one string step in each direction.
 * `RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero`: orthogonal roots
   whose sum is a root have equal squared length under any invariant form.
 * `RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq`: along a root string,
@@ -30,6 +32,7 @@ integrality of Chevalley structure constants.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Chapter VI, §1.
 -/
 
 public section
@@ -39,6 +42,26 @@ noncomputable section
 open Set
 
 namespace RootPairing
+
+section
+
+variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The string through orthogonal roots with a root as their sum has precisely one step
+in each direction. -/
+theorem chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
+    (P : RootPairing I R M N) [P.IsCrystallographic] [P.IsReduced] {α β : I}
+    (h : P.root α + P.root β ∈ Set.range P.root) (horth : P.pairingIn ℤ β α = 0) :
+    P.chainBotCoeff α β = 1 ∧ P.chainTopCoeff α β = 1 := by
+  have hli := P.linearIndependent_of_add_mem_range_root' h
+  have hdiff := P.chainBotCoeff_sub_chainTopCoeff hli
+  have hbound := P.chainBotCoeff_add_chainTopCoeff_le_three (i := α) (j := β)
+  have hpos := P.one_le_chainTopCoeff_of_root_add_mem h
+  rw [horth] at hdiff
+  omega
+
+end
 
 section
 
@@ -185,44 +208,21 @@ theorem n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_lon
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
     rcases hp with hp | hp | hp <;> rw [hp] at hlen' <;> norm_num at hlen'
 
-/-- If two roots of length one add to a root of length two, and every root at the next positive
-string position has length one or two, their descending chain coefficient is one. -/
+/-- If two roots of length one add to a root of length two, their descending chain coefficient
+is one. -/
 theorem chainBotCoeff_eq_one_of_short_add_short_eq_long
     [Finite I] [P.IsCrystallographic] [P.IsReduced]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
-    (hlength : ∀ δ, P.root δ = P.root β + (2 : ℤ) • P.root α →
-      length δ = 1 ∨ length δ = 2)
     (hα : length α = 1) (hβ : length β = 1) (hγ : length γ = 2)
     (h : P.root γ = P.root β + P.root α) : P.chainBotCoeff α β = 1 := by
   have hrange : P.root α + P.root β ∈ Set.range P.root := by
     refine ⟨γ, ?_⟩
     rw [h, add_comm]
-  have hlin := P.linearIndependent_of_add_mem_range_root' hrange
-  have htop_ge := P.one_le_chainTopCoeff_of_root_add_mem hrange
   have hp := P.pairing_eq_zero_of_short_add_short_eq_long length hsym α β γ hα hβ hγ h
-  have htop_le : P.chainTopCoeff α β ≤ 1 := by
-    by_contra hnot
-    have htwo : 2 ≤ P.chainTopCoeff α β := by omega
-    have hrange2 := (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hlin).2 htwo
-    obtain ⟨δ, hδ⟩ := hrange2
-    have hδ' : P.root δ = P.root β + (2 : ℤ) • P.root α := by
-      simpa only [two_nsmul, two_zsmul] using hδ
-    have hδlen := P.length_of_root_eq_add_zsmul length hsym α β δ 2 hδ'
-    have hδlen' : length δ = 5 := by
-      rw [hα, hβ, hp] at hδlen
-      norm_num at hδlen ⊢
-      exact hδlen
-    rcases hlength δ hδ' with hδshort | hδlong <;> omega
-  have htop : P.chainTopCoeff α β = 1 := by omega
-  have hpIn : P.pairingIn ℤ β α = 0 := by
-    simpa using (P.algebraMap_pairingIn ℤ β α).trans hp
-  have hdiff := P.chainBotCoeff_sub_chainTopCoeff hlin
-  rw [htop] at hdiff
-  norm_num at hdiff
-  rw [hpIn] at hdiff
-  omega
+  exact (P.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero hrange
+    (by simpa using (P.algebraMap_pairingIn ℤ β α).trans hp)).1
 
 /-- If adding twice a length-one root to a length-two root gives a root, the endpoint has length
 two and the two Cartan pairings are `-2` and `-1`. -/

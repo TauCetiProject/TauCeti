@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.Topology.Algebra.Module.Complement
+public import TauCeti.Topology.Algebra.Module.Complement
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.MetricSpace.Sequences
 
@@ -84,14 +84,11 @@ theorem exists_norm_le_mul_norm_add_norm_projectionL
     ∃ C > 0, ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖(T.ker).projectionL X₁ h x‖ := by
   obtain ⟨C, hC, hbound⟩ := T.exists_norm_le_mul_norm_of_mem hclosed h
   refine ⟨C, hC, fun x ↦ ?_⟩
-  have hTx : T (X₁.projectionL T.ker h.symm x) = T x := by
-    rw [projectionL_eq_self_sub_projectionL h, map_sub, sub_eq_self]
-    exact LinearMap.mem_ker.mp (projectionL_apply_mem h x)
   calc ‖x‖ = ‖X₁.projectionL T.ker h.symm x + T.ker.projectionL X₁ h x‖ := by
         rw [add_comm, projectionL_add_projectionL_eq_self]
     _ ≤ ‖X₁.projectionL T.ker h.symm x‖ + ‖T.ker.projectionL X₁ h x‖ := norm_add_le _ _
     _ ≤ C * ‖T x‖ + ‖T.ker.projectionL X₁ h x‖ := by
-        grw [hbound _ (projectionL_apply_mem h.symm x), hTx]
+        grw [hbound _ (projectionL_apply_mem h.symm x), T.apply_projectionL_ker h.symm x]
 
 /-- **The a priori estimate of a closed-range operator with complemented kernel**, with the
 complement discharged: there is a continuous projection `P` of `E` onto `ker T` and a constant

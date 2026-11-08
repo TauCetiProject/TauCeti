@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # Meromorphic functions on a Riemann surface and their orders
@@ -47,6 +49,8 @@ and products add the two divisor bounds.
   `TauCeti.RiemannSurface.meromorphicOrderAt_eq_of_mem_maximalAtlas`: chart independence.
 * `TauCeti.RiemannSurface.tendsto_zero_iff_meromorphicOrderAt_pos`: the order is positive exactly
   where the function tends to zero.
+* `TauCeti.RiemannSurface.MeromorphicAt.eventually_contMDiffAt`: a meromorphic function is
+  holomorphic on a punctured neighbourhood of its centre.
 * `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt` and
   `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt`: a holomorphic
   function is meromorphic, of nonnegative order.
@@ -74,7 +78,7 @@ public noncomputable section
 
 open Filter Function IsManifold Set Topology
 
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti.RiemannSurface
 
@@ -169,6 +173,17 @@ theorem meromorphicOrderAt_eq_of_mem_maximalAtlas {e : OpenPartialHomeomorph X �
       (deriv_symm_trans_ne_zero he (chart_mem_maximalAtlas x) hx hcx)]
   simp [meromorphicOrderAt, e.left_inv hx]
 
+/-- A meromorphic function is holomorphic on a punctured neighbourhood of its centre. -/
+theorem MeromorphicAt.eventually_contMDiffAt [CompleteSpace E] (hf : MeromorphicAt f x) :
+    ∀ᶠ y in 𝓝[≠] x, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, E) ω f y := by
+  have : IsManifold 𝓘(ℂ) ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  have hm := ((meromorphicAt_def _ _).1 hf).eventually_analyticAt
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually hm,
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
+    with y hy hys
+  exact (contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas
+    (chart_mem_maximalAtlas x) hys).2 (by simpa using hy)
+
 /-- A function holomorphic near `x` is meromorphic at `x`. -/
 theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : MeromorphicAt f x :=
@@ -221,6 +236,16 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
   simp [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx, ← hmult]
 
 end IsManifold
+
+/-- A meromorphic function of finite order is nonzero on a punctured neighbourhood. -/
+theorem MeromorphicAt.eventually_ne_zero (hf : MeromorphicAt f x)
+    (ho : meromorphicOrderAt f x ≠ ⊤) : ∀ᶠ y in 𝓝[≠] x, f y ≠ 0 := by
+  have hz : ∀ᶠ z in 𝓝[≠] (chartAt ℂ x x), f ((chartAt ℂ x).symm z) ≠ 0 :=
+    (_root_.meromorphicOrderAt_ne_top_iff_eventually_ne_zero hf).mp ho
+  filter_upwards [(tendsto_chartAt_nhdsNE (H := ℂ) x).eventually hz,
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
+    with y hy hs
+  simpa only [Function.comp_apply, (chartAt ℂ x).left_inv hs] using hy
 
 /-! ### Arithmetic of meromorphic orders -/
 
@@ -326,6 +351,11 @@ theorem MeromorphicAt.inv (hf : MeromorphicAt f x) : MeromorphicAt f⁻¹ x := b
   rw [Pi.inv_comp]
   exact hf.inv
 
+/-- The order of the inverse of a function on a Riemann surface is the negative of its order. -/
+@[to_fun]
+theorem meromorphicOrderAt_inv : meromorphicOrderAt f⁻¹ x = -meromorphicOrderAt f x := by
+  simp only [meromorphicOrderAt_def, Pi.inv_comp, _root_.meromorphicOrderAt_inv]
+
 /-- A power of a function meromorphic at a point of a Riemann surface is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.pow (hf : MeromorphicAt f x) (n : ℕ) : MeromorphicAt (f ^ n) x := by
@@ -344,3 +374,41 @@ theorem meromorphicOrderAt_mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x)
 end Multiplicative
 
 end TauCeti.RiemannSurface
+
+namespace OpenPartialHomeomorph
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
+  [IsManifold 𝓘(ℂ) 1 X]
+
+/-- Every integer power of a centered holomorphic coordinate is meromorphic on its chart. -/
+theorem meromorphicAt_coordinate_zpow (e : OpenPartialHomeomorph X ℂ)
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (a : ℂ) (n : ℤ) {x : X} (hx : x ∈ e.source) :
+    TauCeti.RiemannSurface.MeromorphicAt (fun y ↦ (e y - a) ^ n) x := by
+  rw [TauCeti.RiemannSurface.meromorphicAt_iff_of_mem_maximalAtlas he hx]
+  apply (_root_.MeromorphicAt.zpow (f := fun z : ℂ ↦ z - a) (by fun_prop) n).congr
+  filter_upwards [nhdsWithin_le_nhds (e.open_target.mem_nhds (e.map_source hx))] with z hz
+  simp only [Function.comp_apply, e.right_inv hz]
+  rfl
+
+/-- A power of a centered coordinate has its prescribed order at the centre, and order zero
+at the other points of the chart. -/
+theorem meromorphicOrderAt_coordinate_zpow (e : OpenPartialHomeomorph X ℂ)
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (a : ℂ) (n : ℤ) {x : X} (hx : x ∈ e.source) :
+    TauCeti.RiemannSurface.meromorphicOrderAt (fun y ↦ (e y - a) ^ n) x =
+      if e x = a then (n : WithTop ℤ) else 0 := by
+  rw [TauCeti.RiemannSurface.meromorphicOrderAt_eq_of_mem_maximalAtlas he hx]
+  have heq : (fun y ↦ (e y - a) ^ n) ∘ e.symm =ᶠ[𝓝[≠] (e x)] fun z ↦ (z - a) ^ n := by
+    filter_upwards [nhdsWithin_le_nhds (e.open_target.mem_nhds (e.map_source hx))] with z hz
+    simp only [Function.comp_apply, e.right_inv hz]
+  rw [_root_.meromorphicOrderAt_congr heq]
+  split_ifs with h
+  · subst a
+    exact _root_.meromorphicOrderAt_zpow_id_sub_const
+  · have ha : AnalyticAt ℂ (fun z : ℂ ↦ (z - a) ^ n) (e x) := by
+      apply AnalyticAt.zpow (by fun_prop)
+      exact sub_ne_zero.mpr h
+    rw [ha.meromorphicOrderAt_eq, ha.analyticOrderAt_eq_zero.mpr
+      (zpow_ne_zero n (sub_ne_zero.mpr h))]
+    rfl
+
+end OpenPartialHomeomorph

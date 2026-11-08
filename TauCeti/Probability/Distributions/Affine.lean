@@ -46,7 +46,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 
 ## Main results
 
-* `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
+* `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose, and
+  `TauCeti.Probability.neg_map_affine` reflects an affine image;
 * `TauCeti.Probability.support_map_affine` — a nonconstant affine pushforward transports the
   topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
@@ -73,6 +74,8 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 * `TauCeti.Probability.mgf_id_map_affine`, `TauCeti.Probability.integrableExpSet_id_map_affine`,
   `TauCeti.Probability.cgf_id_map_affine` — the moment-generating function `exp (a t) M(b t)`,
   its domain `{t | b t ∈ D}`, and the cumulant-generating function `a t + K(b t)` on it;
+* `TauCeti.Probability.mgf_id_neg`, `TauCeti.Probability.integrableExpSet_id_neg`,
+  `TauCeti.Probability.cgf_id_neg` — the exponential transforms of the reflected law at `-t`;
 * `TauCeti.Probability.charFun_map_affine` — the characteristic function `exp (i a t) φ(b t)`.
 -/
 
@@ -94,6 +97,16 @@ theorem map_affine_map_affine (a b c d : ℝ) :
     (μ.map fun x => a + b * x).map (fun y => c + d * y) =
       μ.map fun x => c + d * a + d * b * x := by
   rw [Measure.map_map (measurable_affine c d) (measurable_affine a b)]
+  congr 1
+  ext x
+  simp only [Function.comp_apply]
+  ring
+
+/-- **Reflection of an affine image.** The law of `-(a + b X)` is the affine image of the law of
+`X` with intercept `-a` and slope `-b`. -/
+theorem neg_map_affine (a b : ℝ) :
+    (μ.map fun x => a + b * x).neg = μ.map fun x => -a + -b * x := by
+  rw [Measure.neg_def, Measure.map_map measurable_neg (measurable_affine a b)]
   congr 1
   ext x
   simp only [Function.comp_apply]
@@ -480,6 +493,28 @@ theorem cgf_id_map_affine [NeZero μ] {t : ℝ} (ht : b * t ∈ integrableExpSet
     cgf id (μ.map fun x => a + b * x) t = a * t + cgf id μ (b * t) := by
   rw [cgf, cgf, mgf_id_map_affine, log_mul (exp_pos _).ne' (mgf_pos' (NeZero.ne μ) ht).ne',
     log_exp]
+
+/-- **Moment-generating function of the reflected law.** `M_{-X}(t) = M_X(-t)`. -/
+theorem mgf_id_neg (t : ℝ) : mgf id μ.neg t = mgf id μ (-t) := by
+  rw [Measure.neg_def, mgf_map measurable_neg.aemeasurable (by fun_prop), Function.id_comp]
+  exact mgf_neg
+
+/-- **Exponential-integrability domain of the reflected law.** `-X` has a finite exponential
+moment at `t` exactly when `X` has one at `-t`. -/
+theorem integrableExpSet_id_neg :
+    integrableExpSet id μ.neg = Neg.neg ⁻¹' integrableExpSet id μ := by
+  have hneg : μ.neg = μ.map fun x => 0 + -1 * x := by
+    rw [Measure.neg_def]
+    congr 1
+    ext x
+    ring
+  rw [hneg, integrableExpSet_id_map_affine]
+  ext t
+  simp
+
+/-- **Cumulant-generating function of the reflected law.** `K_{-X}(t) = K_X(-t)`. -/
+theorem cgf_id_neg (t : ℝ) : cgf id μ.neg t = cgf id μ (-t) := by
+  rw [cgf, cgf, mgf_id_neg]
 
 /-- **Characteristic function of an affine image.** `φ_{a + bX}(t) = exp (i a t) φ_X(b t)`. -/
 theorem charFun_map_affine (t : ℝ) :

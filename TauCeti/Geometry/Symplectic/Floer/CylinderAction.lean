@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction
+public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!
 # The energy of Floer cylinders in a manifold and the action of their loops
@@ -120,8 +120,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   -- The symplectic area density is the integrand of the rectangle integral.
   let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area := (hω₀.continuous_apply_mfderiv hu).congr fun z ↦ by
-    simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  have harea_cont : Continuous area :=
+    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
+      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
   -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
   have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
     contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))

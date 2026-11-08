@@ -198,6 +198,13 @@ lemma _root_.Module.Basis.exteriorPowerTopEquiv_symm_apply (b : Module.Basis (Fi
     b.exteriorPowerTopEquiv.symm r = r • ιMulti R n ⇑b := by
   simp [Module.Basis.exteriorPowerTopEquiv]
 
+/-- For a basis indexed by `Fin n`, every element of the degree-`n` exterior power is a multiple
+of the exterior product of the basis. -/
+lemma _root_.Module.Basis.exists_smul_ιMulti_eq (b : Module.Basis (Fin n) R M) (x : ⋀[R]^n M) :
+    ∃ r : R, r • ιMulti R n ⇑b = x :=
+  ⟨b.exteriorPowerTopEquiv x, by
+    rw [← Module.Basis.exteriorPowerTopEquiv_symm_apply, LinearEquiv.symm_apply_apply]⟩
+
 /-- For a basis indexed by `Fin n`, the trace of the induced endomorphism on the degree-`n`
 exterior power is the determinant. -/
 theorem _root_.Module.Basis.trace_map_exteriorPower_top
