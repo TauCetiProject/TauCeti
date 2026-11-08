@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Parabolic.Classification
+import TauCeti.Order.Fin.Antitone
 
 /-!
 # Weight parabolics and the standard general-linear Tits system
@@ -25,7 +26,20 @@ weights; this identifies the selected simple reflections without choosing Bruhat
 
 The comparison uses `TitsSystem.standardParabolic_eq_of_subgroupB_le`, the classification
 of subgroups containing the upper-triangular group. The final cell criterion transfers
-the Bruhat decomposition to the concrete weight-parabolic subgroup.
+the Bruhat decomposition to the concrete weight-parabolic subgroup. Conversely, every
+subgroup containing the upper-triangular group is a weight parabolic: choose a decreasing
+weight whose equal adjacent coordinates are those of the transpositions the subgroup contains.
+
+## Main declarations
+
+* `TauCeti.GeneralLinear.bruhatCell_glTitsSystemSimpleRep_subset_iff`: a subgroup containing
+  the upper-triangular group contains a simple Bruhat cell exactly when it contains the
+  corresponding adjacent transposition.
+* `TauCeti.GeneralLinear.standardParabolic_weightParabolicSimple`: the points of a decreasing
+  weight parabolic form the standard parabolic of its equal-weight adjacent transpositions.
+* `TauCeti.GeneralLinear.exists_antitone_weightParabolicPoints_eq`: every subgroup of
+  `GLₙ₊₁(k)` containing the upper-triangular group is the group of points of a decreasing
+  weight parabolic.
 
 ## References
 
@@ -95,6 +109,20 @@ def weightParabolicSimple : Set (glTitsSystem k n).simple :=
     (s : (glTitsSystem k n).WeylGroup) =
       QuotientGroup.mk (glTitsSystemSimpleRep k n i)}
 
+/-- A subgroup of `GLₙ₊₁(k)` containing the upper-triangular group contains the Bruhat cell of
+the `i`-th simple reflection exactly when it contains the permutation matrix of the
+transposition of `i` and `i + 1`. -/
+theorem bruhatCell_glTitsSystemSimpleRep_subset_iff {H : Subgroup (GL (Fin (n + 1)) k)}
+    (hB : (glTitsSystem k n).subgroupB ≤ H) (i : Fin n) :
+    (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) ⊆ H ↔
+      permutationGL (k := k) (Equiv.swap i.castSucc i.succ) ∈ H := by
+  have hrep : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
+      (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) := by
+    rw [TitsSystem.bruhatCell_mk]
+    exact DoubleCoset.mem_doubleCoset_self _ _ _
+  rw [coe_glTitsSystemSimpleRep] at hrep
+  exact ⟨fun h ↦ h hrep, (glTitsSystem k n).bruhatCell_subset_of_mem hB hrep⟩
+
 /-- The selected simple reflections are exactly the simple Bruhat cells contained in the
 weight parabolic. -/
 theorem mem_weightParabolicSimple_iff (hw : Antitone w) (s : (glTitsSystem k n).simple) :
@@ -106,26 +134,15 @@ theorem mem_weightParabolicSimple_iff (hw : Antitone w) (s : (glTitsSystem k n).
   have hs := s.property
   simp only [glTitsSystem_simple, Set.mem_range] at hs
   obtain ⟨i, hi⟩ := hs
-  have hrep : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
-      (glTitsSystem k n).bruhatCell s.val := by
-    rw [← hi, TitsSystem.bruhatCell_mk]
-    exact DoubleCoset.mem_doubleCoset_self _ _ _
+  rw [← hi, bruhatCell_glTitsSystemSimpleRep_subset_iff k hB,
+    permutationGL_swap_mem_weightParabolicPoints_iff]
   constructor
   · rintro ⟨j, hj, hs⟩
-    have hrepj : (glTitsSystemSimpleRep k n j : GL (Fin (n + 1)) k) ∈
-        (glTitsSystem k n).bruhatCell s.val := by
-      rw [hs, TitsSystem.bruhatCell_mk]
-      exact DoubleCoset.mem_doubleCoset_self _ _ _
-    apply (glTitsSystem k n).bruhatCell_subset_of_mem hB hrepj
-    rw [coe_glTitsSystemSimpleRep]
-    exact (permutationGL_swap_mem_weightParabolicPoints_iff k w (A := k)
-      j.castSucc j.succ).mpr hj
-  · intro h
-    refine ⟨i, ?_, hi.symm⟩
-    have hm := h hrep
-    rw [coe_glTitsSystemSimpleRep] at hm
-    exact (permutationGL_swap_mem_weightParabolicPoints_iff k w (A := k)
-      i.castSucc i.succ).mp hm
+    have hj' := (bruhatCell_glTitsSystemSimpleRep_subset_iff k hB j).mpr
+      ((permutationGL_swap_mem_weightParabolicPoints_iff k w j.castSucc j.succ).mpr hj)
+    rwa [← hs, ← hi, bruhatCell_glTitsSystemSimpleRep_subset_iff k hB,
+      permutationGL_swap_mem_weightParabolicPoints_iff] at hj'
+  · exact fun h ↦ ⟨i, h, hi.symm⟩
 
 /-- The matrix points of a decreasing weight-parabolic subgroup scheme are exactly the
 standard parabolic selected by its equal-weight adjacent coordinates. -/
@@ -148,6 +165,35 @@ theorem mem_weightParabolicPoints_iff_of_mem_bruhatCell (hw : Antitone w)
       σ ∈ Subgroup.closure (Subtype.val '' weightParabolicSimple k w) := by
   rw [← standardParabolic_weightParabolicSimple k w hw]
   exact (glTitsSystem k n).mem_standardParabolic_iff_of_mem_bruhatCell hg
+
+/-- **Subgroups of `GLₙ₊₁(k)` containing the upper-triangular group are block triangular.**
+Over a field with a nontrivial unit group, every subgroup of `GLₙ₊₁(k)` containing the
+invertible upper-triangular matrices is the group of `k`-points of the weight parabolic of a
+decreasing integer weight. -/
+theorem exists_antitone_weightParabolicPoints_eq {H : Subgroup (GL (Fin (n + 1)) k)}
+    (hH : upperTriangularGroup (Fin (n + 1)) k ≤ H) :
+    ∃ w : Fin (n + 1) → ℤ, Antitone w ∧ weightParabolicPoints k w k = H := by
+  rw [← glTitsSystem_subgroupB k n] at hH
+  -- Select the adjacent transpositions lying in `H`.
+  obtain ⟨w, hw, hwS⟩ := Fin.exists_antitone_castSucc_eq_succ_iff_mem
+    {i : Fin n | permutationGL (k := k) (Equiv.swap i.castSucc i.succ) ∈ H}
+  have hBw : (glTitsSystem k n).subgroupB ≤ weightParabolicPoints k w k := by
+    rw [glTitsSystem_subgroupB]
+    exact upperTriangularGroup_le_weightParabolicPoints hw
+  refine ⟨w, hw, ?_⟩
+  -- Both subgroups are the standard parabolic of the same simple reflections.
+  rw [← standardParabolic_weightParabolicSimple k w hw,
+    ← (glTitsSystem k n).standardParabolic_eq_of_subgroupB_le hH]
+  congr 1
+  ext s
+  obtain ⟨i, hi⟩ : (s : (glTitsSystem k n).WeylGroup) ∈ Set.range fun i : Fin n ↦
+      (QuotientGroup.mk (glTitsSystemSimpleRep k n i) : (glTitsSystem k n).WeylGroup) := by
+    rw [← glTitsSystem_simple]
+    exact s.property
+  rw [mem_weightParabolicSimple_iff k w hw, Set.mem_ofPred_eq, ← hi,
+    bruhatCell_glTitsSystemSimpleRep_subset_iff k hBw,
+    bruhatCell_glTitsSystemSimpleRep_subset_iff k hH,
+    permutationGL_swap_mem_weightParabolicPoints_iff, hwS, Set.mem_ofPred_eq]
 
 end Field
 
