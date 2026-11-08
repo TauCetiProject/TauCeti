@@ -36,15 +36,18 @@ theorem essSurj_pullback_of_essSurj_baseChange (R S : Type u) [CommRing R] [Comm
     (pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).EssSurj := by
   constructor
   intro X
-  have : (spec (.of S)).IsEquivalence := by
-    rw [← finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor]
-    infer_instance
+  -- Synthesis does not find the exported instance for `spec (.of S)`; apply it explicitly.
+  have := instEssSurjOppositeFiniteEtaleCarrierSpecSpec (.of S)
   obtain ⟨A, ⟨eA⟩⟩ := Functor.EssSurj.mem_essImage (spec (.of S)) X
   obtain ⟨B, ⟨eB⟩⟩ := Functor.EssSurj.mem_essImage
     (CommAlgCat.FiniteEtale.baseChange R S) A.unop
   refine ⟨(spec (.of R)).obj (op B), ⟨?_ ≪≫ (spec (.of S)).mapIso eB.symm.op ≪≫ eA⟩⟩
   apply ObjectProperty.isoMk
   rw [pullback_obj_obj, spec_obj_obj, spec_obj_obj]
+  -- Use the defining object formulas: `Over.pullback` bundles `pullback.snd`, and
+  -- `algSpec` bundles `Spec.algebraMap`. The existing component lemmas do not rewrite
+  -- these bundled `Over` objects directly. Also, `baseChange` has underlying algebra
+  -- `S ⊗[R] B.obj` by definition, so its comparison algebra equivalence is the identity.
   exact TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv R B.obj S (S ⊗[R] B.obj)
     (AlgEquiv.refl : S ⊗[R] B.obj ≃ₐ[S] S ⊗[R] B.obj)
 
