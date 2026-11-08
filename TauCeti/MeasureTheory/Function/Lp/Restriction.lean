@@ -197,42 +197,64 @@ variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
 
 /-- Restricting a totally bounded family of `Lᵖ(μ)` classes `g u` to a measurable set `K` on which
 `g u = u` gives a totally bounded family of `Lᵖ(μ|_K)` classes `u`. -/
-theorem totallyBounded_restrict_of_forall_eqOn [NormedSpace ℝ F] [Fact (1 ≤ p)] {K : Set α}
+theorem totallyBounded_restrict_of_forall_eqOn [Fact (1 ≤ p)] {K : Set α}
     (hK : MeasurableSet K) {S : Set (α → F)} {g : (α → F) → α → F}
     (hg : ∀ u ∈ S, MemLp (g u) p mu) (hgK : ∀ u ∈ S, ∀ x ∈ K, g u x = u x)
     (hT : TotallyBounded {f : Lp F p mu | ∃ u ∈ S, f =ᵐ[mu] g u}) :
     TotallyBounded {f : Lp F p (mu.restrict K) | ∃ u ∈ S, f =ᵐ[mu.restrict K] u} := by
-  have hle : mu.restrict K ≤ (1 : ℝ≥0∞) • mu := by simpa using Measure.restrict_le_self
-  let res : Lp F p mu →L[ℝ] Lp F p (mu.restrict K) :=
-    Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top hle
-  refine (hT.image res.uniformContinuous).subset ?_
+  let res : Lp F p mu → Lp F p (mu.restrict K) := fun f => ((Lp.memLp f).restrict K).toLp f
+  have hres_ae (f : Lp F p mu) : res f =ᵐ[mu.restrict K] f := MemLp.coeFn_toLp _
+  have hres : LipschitzWith 1 res := by
+    refine LipschitzWith.of_dist_le_mul fun f f' => ?_
+    rw [NNReal.coe_one, one_mul, dist_eq_norm, dist_eq_norm, Lp.norm_def, Lp.norm_def]
+    refine ENNReal.toReal_mono (Lp.memLp (f - f')).eLpNorm_ne_top ?_
+    refine le_of_eq_of_le (eLpNorm_congr_ae ?_) (eLpNorm_mono_measure _ Measure.restrict_le_self)
+    filter_upwards [Lp.coeFn_sub (res f) (res f'), ae_restrict_of_ae (Lp.coeFn_sub f f'),
+      hres_ae f, hres_ae f'] with x h₁ h₂ h₃ h₄
+    rw [h₁, h₂, Pi.sub_apply, Pi.sub_apply, h₃, h₄]
+  refine (hT.image hres.uniformContinuous).subset ?_
   rintro f ⟨u, hu, hfu⟩
   refine ⟨(hg u hu).toLp _, ⟨u, hu, MemLp.coeFn_toLp _⟩, ?_⟩
   refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul (μ := mu.restrict K) ENNReal.one_ne_top hle
-      ((hg u hu).toLp _), ae_restrict_of_ae (MemLp.coeFn_toLp (hg u hu)),
+  filter_upwards [hres_ae ((hg u hu).toLp _), ae_restrict_of_ae (MemLp.coeFn_toLp (hg u hu)),
     ae_restrict_mem hK, hfu] with x h₁ h₂ hx h₃
   rw [h₁, h₂, h₃, hgK u hu x hx]
 /-- `Lᵖ` convergence gives `L¹` convergence of representatives on every finite-measure set. -/
 theorem tendsto_setLIntegral_enorm_sub_of_tendsto_Lp
-    {E H ι : Type*} [MeasurableSpace E] [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {E H ι : Type*} [MeasurableSpace E] [NormedAddCommGroup H]
     {μ : Measure E} {r : ℝ≥0∞} [Fact (1 ≤ r)] {W : Set E} (hW : μ W < ⊤)
     {l : Filter ι} {A : ι → Lp H r μ} {A₀ : Lp H r μ} (hA : Tendsto A l (𝓝 A₀))
     {a : ι → E → H} {a₀ : E → H} (ha : ∀ n, A n =ᵐ[μ] a n)
     (ha₀ : A₀ =ᵐ[μ.restrict W] a₀) :
     Tendsto (fun n => ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ) l (𝓝 0) := by
-  let R := W.LpToL1RestrictCLM (𝕜 := ℝ) (F := H) (p := r) hW
-  have h := (R.continuous.tendsto A₀).comp hA
-  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at h
-  refine h.congr fun n => ?_
-  rw [eLpNorm_one_eq_lintegral_enorm ((Lp.aestronglyMeasurable _).sub
-    (Lp.aestronglyMeasurable _))]
-  apply lintegral_congr_ae
-  filter_upwards [W.LpToL1RestrictCLM_coeFn (𝕜 := ℝ) hW (A n),
-    W.LpToL1RestrictCLM_coeFn (𝕜 := ℝ) hW A₀, ae_restrict_of_ae (ha n), ha₀]
-    with x h₁ h₂ h₃ h₄
-  rw [Function.comp_apply, Pi.sub_apply]
-  exact congrArg (fun z => ‖z‖ₑ) (congrArg₂ (· - ·) (h₁.trans h₃) (h₂.trans h₄))
+  -- Hölder's inequality on the finite-measure set `W` bounds the `L¹(W)` distance by the `Lʳ` one.
+  have h := (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1 hA
+  have hC : μ W ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal) ≠ ⊤ := by
+    refine ENNReal.rpow_ne_top_of_nonneg ?_ hW.ne
+    rcases eq_or_ne r ⊤ with rfl | hr
+    · simp
+    · have : 1 ≤ r.toReal := by simpa using ENNReal.toReal_mono hr (Fact.out : 1 ≤ r)
+      simp [inv_le_one_of_one_le₀ this]
+  have hlim : Tendsto (fun n => eLpNorm (⇑(A n) - ⇑A₀) r μ *
+      μ W ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal)) l (𝓝 0) := by
+    simpa using ENNReal.Tendsto.mul_const h (Or.inr hC)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun n => zero_le)
+    fun n => ?_
+  have hmeas : AEStronglyMeasurable (⇑(A n) - ⇑A₀) (μ.restrict W) :=
+    ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)).mono_measure
+      Measure.restrict_le_self
+  calc ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ
+      = ∫⁻ x in W, ‖(⇑(A n) - ⇑A₀) x‖ₑ ∂μ := by
+        refine lintegral_congr_ae ?_
+        filter_upwards [ae_restrict_of_ae (ha n), ha₀] with x h₁ h₂
+        rw [Pi.sub_apply, h₁, h₂]
+    _ = eLpNorm (⇑(A n) - ⇑A₀) 1 (μ.restrict W) := (eLpNorm_one_eq_lintegral_enorm hmeas).symm
+    _ ≤ eLpNorm (⇑(A n) - ⇑A₀) r (μ.restrict W) *
+          (μ.restrict W) Set.univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal) :=
+        eLpNorm_le_eLpNorm_mul_rpow_measure_univ Fact.out hmeas
+    _ ≤ eLpNorm (⇑(A n) - ⇑A₀) r μ * μ W ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal) := by
+        rw [Measure.restrict_apply_univ]
+        exact mul_le_mul_left (eLpNorm_mono_measure (⇑(A n) - ⇑A₀) Measure.restrict_le_self) _
 
 end TauCeti
 
