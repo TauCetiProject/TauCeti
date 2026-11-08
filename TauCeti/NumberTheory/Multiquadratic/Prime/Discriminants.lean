@@ -175,20 +175,22 @@ theorem primeDiscriminantRadicand_oddPrimeDiscriminant {p : ℕ} (hodd : Odd p) 
 
 /-- A prime discriminant is either its own radicand, or four times its radicand in the even
 cases. -/
-theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand {D : ℤ} (hD : IsPrimeDiscriminant D) :
+theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand (D : ℤ) :
     D = primeDiscriminantRadicand D ∨ D = 4 * primeDiscriminantRadicand D := by
-  rcases hD with hD | ⟨p, _hp, hodd, rfl⟩
+  by_cases hD : IsEvenPrimeDiscriminant D
   · exact Or.inr <| by
       rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hD]
       exact evenPrimeDiscriminant_eq_four_mul_radicand hD
-  · exact Or.inl <| by rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
+  · have h : ¬ (D = -4 ∨ D = 8 ∨ D = -8) := hD
+    exact Or.inl (by simp [primeDiscriminantRadicand, h])
 
 /-- A prime discriminant and its squarefree radicand have the same sign. -/
-@[simp] theorem primeDiscriminantRadicand_neg_iff {D : ℤ} (hD : IsPrimeDiscriminant D) :
+@[simp] theorem primeDiscriminantRadicand_neg_iff (D : ℤ) :
     primeDiscriminantRadicand D < 0 ↔ D < 0 := by
-  rcases hD with hD | ⟨p, _hp, hodd, rfl⟩
+  by_cases hD : IsEvenPrimeDiscriminant D
   · rcases hD with rfl | rfl | rfl <;> simp
-  · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
+  · have h : ¬ (D = -4 ∨ D = 8 ∨ D = -8) := hD
+    simp [primeDiscriminantRadicand, h]
 
 variable {q : ℕ} [Fact q.Prime]
 
@@ -445,19 +447,19 @@ theorem prime_primeDiscriminantPrime {D : ℤ} (hD : IsPrimeDiscriminant D) :
   · rwa [primeDiscriminantPrime_oddPrimeDiscriminant hodd]
 
 /-- The prime under a prime discriminant divides it. -/
-theorem primeDiscriminantPrime_dvd {D : ℤ} (hD : IsPrimeDiscriminant D) :
-    (primeDiscriminantPrime D : ℤ) ∣ D := by
-  rcases hD with hev | ⟨p, _hp, hodd, rfl⟩
+theorem primeDiscriminantPrime_dvd (D : ℤ) : (primeDiscriminantPrime D : ℤ) ∣ D := by
+  by_cases hev : IsEvenPrimeDiscriminant D
   · rw [primeDiscriminantPrime_of_isEvenPrimeDiscriminant hev]
     simpa using two_dvd_evenPrimeDiscriminant hev
-  · simp [primeDiscriminantPrime_oddPrimeDiscriminant hodd]
+  · have : ¬ (D = -4 ∨ D = 8 ∨ D = -8) := hev
+    simp [primeDiscriminantPrime, this]
 
 /-- **A prime discriminant has exactly one prime divisor.** A natural prime divides a prime
 discriminant precisely when it is the prime under it. This is what makes the prime-discriminant
 factorization of a fundamental discriminant a list of ramified primes without repetition. -/
 theorem natCast_dvd_primeDiscriminant_iff {D : ℤ} (hD : IsPrimeDiscriminant D) {p : ℕ}
     (hp : p.Prime) : (p : ℤ) ∣ D ↔ p = primeDiscriminantPrime D := by
-  refine ⟨fun hdvd => ?_, fun h => h ▸ primeDiscriminantPrime_dvd hD⟩
+  refine ⟨fun hdvd => ?_, fun h => h ▸ primeDiscriminantPrime_dvd D⟩
   rcases hD with hev | ⟨r, hr, hodd, rfl⟩
   · rw [primeDiscriminantPrime_of_isEvenPrimeDiscriminant hev]
     have hd8 : D ∣ (8 : ℤ) := by
