@@ -229,7 +229,8 @@ theorem not_evenUnitaryGroup_le_lipschitzGroup_of_six_le_finrank (hQ : Q.Nondege
   obtain ⟨l, hl, hlen, -, haniso⟩ := hQ.exists_list_pairwise_isOrtho
   have hl' : (l.take 6).Pairwise Q.IsOrtho := hl.sublist (List.take_sublist 6 l)
   have hlen' : (l.take 6).length = 6 := by rw [List.length_take]; omega
-  obtain ⟨a, b, ha, hb, hab⟩ := TauCeti.exists_sq_add_sq_mul_eq_one ((l.take 6).map Q).prod
+  obtain ⟨a, b, ha, hb, hab⟩ := TauCeti.exists_sq_add_sq_mul_eq_one
+    (Cardinal.ofNat_lt_aleph0.trans_le (Cardinal.aleph0_le_mk K)) ((l.take 6).map Q).prod
   exact not_evenUnitaryGroup_le_lipschitzGroup_of_sq_add_sq_mul_eq_one hl'
     (by rw [hlen']; decide) (by rw [hlen']; decide) (by omega)
     (fun v hv => haniso v (List.mem_of_mem_take hv)) ha hb hab
