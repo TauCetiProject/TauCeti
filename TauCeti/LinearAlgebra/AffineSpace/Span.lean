@@ -7,24 +7,23 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.LinearAlgebra.Projection
+public import TauCeti.LinearAlgebra.LinearMap.Ker
 
 /-!
-# Directions of affine spans under affine maps
+# Directions of affine spans under preimages and products
 
-The direction of the affine span of an image is the linear image of the original
-direction (Mathlib's `AffineMap.map_vectorSpan`). This formula supports transport of
-transversality and codimension without requiring an invertible map or a nonempty set.
-A linear map whose kernel contains the direction of a set is constant on it.
-Equality of affine spans transfers tangency between level hyperplanes.
-Adding unrestricted coordinates preserves and reflects equality of affine spans.
-For nonempty sets it also preserves and reflects equality of their directions.
+Under an affine map, the direction of the affine span of an image is the linear image of the
+original direction (Mathlib's `AffineMap.map_vectorSpan`). This file adds the corresponding
+statements for preimages under linear surjections and for products.
 
-Over a division ring, a surjective linear map `A : V → V'` is the first coordinate of a linear
-equivalence `V ≃ V' × ker A`, which carries the preimage `A⁻¹(S)` to the cylinder
-`S × ker A`. Hence the direction of the affine span of a nonempty preimage is the preimage of
-the direction. The splitting uses Mathlib's `LinearMap.equivProdOfSurjectiveOfIsCompl` and
-`Submodule.projectionOnto`.
+Over a division ring, a linear surjection `A : V → V'` splits as `V ≃ V' × ker A`
+(`LinearMap.prodKerEquiv`), which carries the preimage `A⁻¹(S)` to the cylinder `S × ker A`.
+Hence the direction of the affine span of a nonempty preimage is the preimage of the direction.
+Adding unrestricted coordinates preserves and reflects equality of affine spans, and for nonempty
+sets also equality of their directions.
+
+A linear map whose kernel contains the direction of a set is constant on it, and equality of
+affine spans transfers tangency between fibers of linear maps.
 
 ## Main results
 
@@ -34,10 +33,7 @@ the direction. The splitting uses Mathlib's `LinearMap.equivProdOfSurjectiveOfIs
   adding unrestricted coordinates preserves and reflects equality of affine spans and of their
   directions.
 * `LinearMap.map_eq_zero_of_affineSpan_eq`: equality of affine spans transfers tangency between
-  level hyperplanes.
-
-These transport affine directions, and hence transversality of a segment to a wall, along
-affine maps, linear surjections and products.
+  fibers of linear maps.
 
 ## Attribution
 
@@ -60,10 +56,11 @@ theorem apply_eq_of_direction_le_ker {K V W : Type*} [Ring K] [AddCommGroup V] [
     (subset_affineSpan K P hy))
   rwa [LinearMap.mem_ker, vsub_eq_sub, map_sub, sub_eq_zero] at hd
 
-/-- If two sets share an affine span and the first has constant height for `f`,
-a displacement tangent to the second at a point of the first is tangent for `f`. -/
-theorem map_eq_zero_of_affineSpan_eq {K V : Type*} [Ring K] [AddCommGroup V] [Module K V]
-    {W₁ W₂ : Set V} (f ν : V →ₗ[K] K) {c b : K}
+/-- If two sets share an affine span, the first has constant value under `f`, and the affine span of
+the second is a fiber of `ν`, then every vector in the kernel of `ν` is in the kernel of `f`. -/
+theorem map_eq_zero_of_affineSpan_eq {K V E F : Type*} [Ring K] [AddCommGroup V] [Module K V]
+    [AddCommGroup E] [Module K E] [AddCommGroup F] [Module K F]
+    {W₁ W₂ : Set V} (f : V →ₗ[K] E) (ν : V →ₗ[K] F) {c : E} {b : F}
     (hheight : ∀ x ∈ W₁, f x = c) (hspan : (affineSpan K W₂ : Set V) = {x | ν x = b})
     (heq : affineSpan K W₁ = affineSpan K W₂) {y q : V} (hy : y ∈ W₁) (hq : ν q = 0) :
     f q = 0 := by
@@ -135,46 +132,6 @@ open Set
 
 variable {K V V' : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
   [AddCommGroup V'] [Module K V'] (A : V →ₗ[K] V') (hA : Function.Surjective A)
-
-/-- A surjective linear map is the first coordinate of a linear equivalence with the product
-of its target and its kernel. The kernel coordinate is the projection along a chosen
-complement. -/
-noncomputable def prodKerEquiv : V ≃ₗ[K] V' × LinearMap.ker A :=
-  A.equivProdOfSurjectiveOfIsCompl
-    (Submodule.projectionOnto (LinearMap.ker A)
-      (Submodule.exists_isCompl (LinearMap.ker A)).choose
-      (Submodule.exists_isCompl (LinearMap.ker A)).choose_spec)
-    (LinearMap.range_eq_top.mpr hA) (Submodule.range_projectionOnto _)
-    (by
-      rw [Submodule.ker_projectionOnto]
-      exact (Submodule.exists_isCompl (LinearMap.ker A)).choose_spec)
-
-/-- The first coordinate of the splitting is the surjection itself. -/
-@[simp]
-theorem prodKerEquiv_apply_fst (x : V) : (A.prodKerEquiv hA x).1 = A x := (rfl)
-
-/-- The first coordinate of the inverse splitting is recovered by the surjection. -/
-@[simp]
-theorem apply_prodKerEquiv_symm (z : V' × LinearMap.ker A) :
-    A ((A.prodKerEquiv hA).symm z) = z.1 := by
-  rw [← prodKerEquiv_apply_fst A hA, LinearEquiv.apply_symm_apply]
-
-/-- The splitting carries the preimage of a set to the cylinder over that set. -/
-theorem image_prodKerEquiv_preimage (S : Set V') :
-    A.prodKerEquiv hA '' (A ⁻¹' S) = S ×ˢ (univ : Set (LinearMap.ker A)) := by
-  ext z
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨by simpa using hx, mem_univ _⟩
-  · intro hz
-    exact ⟨(A.prodKerEquiv hA).symm z, by simpa using hz.1,
-      (A.prodKerEquiv hA).apply_symm_apply z⟩
-
-/-- The inverse splitting carries the cylinder over a set to its preimage. -/
-theorem image_prodKerEquiv_symm_prod_univ (S : Set V') :
-    (A.prodKerEquiv hA).symm '' (S ×ˢ (univ : Set (LinearMap.ker A))) = A ⁻¹' S := by
-  rw [← A.image_prodKerEquiv_preimage hA S]
-  exact (A.prodKerEquiv hA).toEquiv.symm_image_image _
 
 include hA in
 /-- The supporting direction of a preimage of a nonempty set under a linear surjection is
