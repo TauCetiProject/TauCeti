@@ -101,6 +101,11 @@ theorem eq_one_of_mul_eq_one [I.IsTwoSided] (h : I * J = 1) : I = 1 := by
   rw [Ideal.one_eq_top] at h ⊢
   exact eq_top_mono Ideal.mul_le_left h
 
+/-- Any left multiple of the `n`-th power of an element of an ideal lies in the `n`-th power of
+the ideal. -/
+theorem mul_pow_mem_pow {ϖ : R} (hϖ : ϖ ∈ I) (n : ℕ) (c : R) : c * ϖ ^ n ∈ I ^ n :=
+  (I ^ n).mul_mem_left c (Ideal.pow_mem_pow hϖ n)
+
 end Mul
 
 section CommSemiring
