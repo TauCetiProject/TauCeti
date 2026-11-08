@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Constructions
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -59,7 +60,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 * `TauCeti.eulerClass`: the Euler class `Hⁿ(E, E₀) ⟶ Hⁿ(B)`.
 * `TauCeti.negTotalSpace`, `TauCeti.negThomPairMap`: fibrewise negation, as a self-map of the
   total space and of the Thom pair; it does not change Euler classes
-  (`TauCeti.singularCohomologyMap_negThomPairMap_comp_eulerClass`).
+  (`TauCeti.singularCohomologyMap_negThomPairMap_comp_eulerClass`). On a fibre it is conjugate to
+  negation of `F` (`TauCeti.fiberThomPairMap_comp_negThomPairMap`).
 
 ## References
 
@@ -480,6 +482,42 @@ theorem eulerClass_pullback (n : ℕ) :
     (TopCat.ext fun _ ↦ (pullbackThomPairMap_fst_apply F E f _).trans rfl) n
 
 end EulerClass
+
+section FiberNeg
+
+variable {B : Type w} [TopologicalSpace B] (F : Type w) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- **Fibrewise negation is conjugate to negation of `F`.** On the fibre over `b`, read through a
+continuous linear equivalence `t : E b ≃L[ℝ] F`, the map `negThomPairMap` is
+`t⁻¹ ∘ (x ↦ -x) ∘ t`. -/
+theorem fiberThomPairMap_comp_negThomPairMap (b : B) (t : E b ≃L[ℝ] F) :
+    fiberThomPairMap F E b ≫ negThomPairMap F E =
+      t.complZeroPairIso.hom ≫ (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom ≫
+        t.complZeroPairIso.inv ≫ fiberThomPairMap F E b := by
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
+  have h₁ : TopPair.Hom.fst t.complZeroPairIso.inv
+      (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
+        (TopPair.Hom.fst t.complZeroPairIso.hom x)) = (-1 : ℝ) • x := by
+    have h : t.symm (-t x) = (-1 : ℝ) • x := by
+      simpa using t.symm_apply_apply ((-1 : ℝ) • x)
+    simp only [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
+      ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply]
+    exact h
+  -- The ambient map of a composite of maps of pairs is the composite of the ambient maps. After
+  -- `TopPair.Hom.fst_comp`, `ConcreteCategory.comp_apply` and `ContinuousMap.comp_apply` do not
+  -- fire: the intermediate objects are `TopPair.ofSubset` carriers that agree with the types of
+  -- the composed maps only after unfolding. So `change` states the iterated applications.
+  change TopPair.Hom.fst (negThomPairMap F E) (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
+    TopPair.Hom.fst (fiberThomPairMap F E b) (TopPair.Hom.fst t.complZeroPairIso.inv
+      (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
+        (TopPair.Hom.fst t.complZeroPairIso.hom x)))
+  rw [h₁]
+  exact (congrArg _ (fiberThomPairMap_fst_apply F E b x)).trans
+    ((negThomPairMap_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b _).symm)
+
+end FiberNeg
 
 /-- A trivial real vector bundle `B × V` of positive rank has zero Euler class in every degree. -/
 theorem eulerClass_trivial_eq_zero (B : Type w) [TopologicalSpace B] (V : Type w)

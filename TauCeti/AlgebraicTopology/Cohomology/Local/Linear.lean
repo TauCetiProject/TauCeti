@@ -18,7 +18,9 @@ for a zero-dimensional space.
 
 In particular, orientation-preserving linear changes of coordinates fix every local
 cohomology class, whereas orientation-reversing ones negate it. This is the transition
-formula needed to compare the local fibre generators of an oriented Thom class.
+formula needed to compare the local fibre generators of an oriented Thom class. In odd
+dimension the antipodal map `x ↦ -x` therefore acts by `-1`
+(`TauCeti.singularCohomologyMap_neg_complZeroPairIso_hom`).
 
 The proof uses the determinant action on local homology in
 `TauCeti.singularHomologyMap_continuousLinearMap_compl_zero` and the relative
@@ -62,5 +64,33 @@ theorem singularCohomologyMap_continuousLinearMap_compl_zero (f : E →L[ℝ] E)
   rw [TopPair.singularKronecker_naturality,
     singularHomologyMap_continuousLinearMap_compl_zero]
   simp
+
+/-- **The antipodal map acts by `-1` in odd dimension.** For `E` of odd finite dimension, `x ↦ -x`
+acts as `-1` on `Hᵈ(E, E ∖ {0}; R, N)` in every degree `d`, by the sign of
+`det (-1) = (-1) ^ finrank E = -1`. -/
+theorem singularCohomologyMap_neg_complZeroPairIso_hom (d : ℕ) (hodd : Odd (finrank ℝ E)) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
+      (ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E).complZeroPairIso.hom d = -𝟙 _ := by
+  have hdet : ((ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E) : E →L[ℝ] E).det = -1 := by
+    have hneg : (((ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E) : E →L[ℝ] E) : E →ₗ[ℝ] E) =
+        (-1 : ℝ) • LinearMap.id := by
+      ext; simp
+    rw [ContinuousLinearMap.det, hneg, LinearMap.det_smul, LinearMap.det_id, mul_one,
+      hodd.neg_one_pow]
+  have hf : Set.MapsTo ((ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E) : E →L[ℝ] E) ({0}ᶜ : Set E)
+      {0}ᶜ :=
+    (ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E).mapsTo_compl_zero
+  have hneg : (ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E).complZeroPairIso.hom =
+      TopPair.ofSubsetMap
+        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E) : E →L[ℝ] E) : C(E, E))) hf :=
+    ContinuousLinearEquiv.complZeroPairIso_hom _
+  -- The determinant-sign action.
+  have hact : TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
+      (TopPair.ofSubsetMap
+        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E) : E →L[ℝ] E) : C(E, E))) hf)
+      d = -𝟙 _ := by
+    refine (singularCohomologyMap_continuousLinearMap_compl_zero R N _ hf d).trans ?_
+    simp [hdet]
+  rw [hneg, hact]
 
 end TauCeti
