@@ -356,8 +356,7 @@ private theorem sum_toNat_mul_finrank_le {x : F} [FiniteDimensional k⟮x⟯ F]
       Module.Basis (Fin (Module.finrank k (P : Place k F).ResidueField)) k
         (P : Place k F).ResidueField) :=
     ⟨fun P ↦
-      let _ := (P : Place k F).finiteDimensional_residueField_of_ord_ne_zero
-        (hS (P : Place k F) P.2).ne'
+      let _ := (P : Place k F).finiteDimensional_residueField_of_finiteDimensional_adjoin x
       Module.finBasis k _⟩
   -- Uniformizers, chosen to be units at the other places of `S`.
   choose t ht1 ht0 using fun P : {P : Place k F // P ∈ S} ↦
@@ -402,7 +401,7 @@ theorem card_le_finrank_of_forall_ord_pos {x : F} [FiniteDimensional k⟮x⟯ F]
     have hcard : (S.card : ℤ) = ∑ _P ∈ S, (1 : ℤ) := by simp
     rw [hcard]
     refine Finset.sum_le_sum fun P hP ↦ ?_
-    let _ := P.finiteDimensional_residueField_of_ord_ne_zero (x := x) (hS P hP).ne'
+    let _ := P.finiteDimensional_residueField_of_finiteDimensional_adjoin x
     have h1 : 1 ≤ P.degree := P.one_le_degree
     have h2 : 1 ≤ P.ord x := hS P hP
     exact one_le_mul_of_one_le_of_one_le h2 (by exact_mod_cast h1)
