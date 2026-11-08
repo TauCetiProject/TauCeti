@@ -37,7 +37,9 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 `(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
-bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and the power inequality
+`L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)` from `L / (2 r) < m + 1`, which bounds
+the volume of a convex set containing a ball and a point.
 
 ## Main results
 
@@ -54,6 +56,8 @@ bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
+* `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
+  (r / 2) ^ n)` for `0 < r`, `1 ≤ n` and `L / (2 r) < m + 1`.
 -/
 
 public section
@@ -164,6 +168,22 @@ theorem mul_le_one_of_le_inv_one_add {α : Type*} [Semifield α] [LinearOrder α
   refine (mul_le_mul_of_nonneg_right ha hb).trans ?_
   rw [inv_mul_eq_div, div_le_one (add_pos_of_pos_of_nonneg zero_lt_one hb)]
   exact le_add_of_nonneg_left zero_le_one
+
+/-- The inequality behind the volume bound for a convex set containing a ball and a point: if
+`L / (2 r) < m + 1` then `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/
+theorem mul_pow_le_two_pow_mul_succ_mul_pow {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {L r : α} {m n : ℕ} (hr : 0 < r) (hn : 1 ≤ n)
+    (hm : L / (2 * r) < m + 1) :
+    L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+  have hrn : r ^ n = r * r ^ (n - 1) := by rw [← pow_succ', Nat.sub_add_cancel hn]
+  have h2 : (2 : α) ^ (n + 1) * (r / 2) ^ n = 2 * r ^ n := by
+    rw [div_pow, pow_succ]
+    field_simp
+  rw [div_lt_iff₀ (by positivity)] at hm
+  calc L * r ^ (n - 1) ≤ (m + 1) * (2 * r) * r ^ (n - 1) := by gcongr
+    _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+      rw [mul_left_comm (2 ^ (n + 1) : α), h2, hrn]
+      ring
 
 end TauCeti
 
