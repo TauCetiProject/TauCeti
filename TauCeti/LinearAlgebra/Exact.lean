@@ -145,6 +145,26 @@ theorem _root_.LinearMap.finrank_sub_finrank_sub_finrank_of_exact
     congrArg (fun S : Submodule k D ↦ Module.finrank k S) hδf.linearMap_ker_eq
   omega
 
+/-- Let `A → B → C` and `A → B' → C'` be exact with `A → B` and `A → B'` injective, let
+`B → B' → W` be exact where `B' → W` is the composite of `B' → C'` with a map `C' → W`, and let
+this composite be surjective. If `B` and `W` are finite-dimensional, then the image of `B' → C'`
+has the dimension of the image of `B → C` plus that of `W`. -/
+theorem finrank_range_eq_finrank_range_add_of_exact_comp
+    {A B C B' C' W : Type*} [AddCommGroup A] [Module k A] [AddCommGroup B] [Module k B]
+    [AddCommGroup C] [Module k C] [AddCommGroup B'] [Module k B'] [AddCommGroup C']
+    [Module k C'] [AddCommGroup W] [Module k W] [FiniteDimensional k B]
+    [FiniteDimensional k W] {f : A →ₗ[k] B} {g : B →ₗ[k] C} {f' : A →ₗ[k] B'}
+    {g' : B' →ₗ[k] C'} {j : B →ₗ[k] B'} {π : C' →ₗ[k] W}
+    (hf : Function.Injective f) (hfg : Function.Exact f g) (hf' : Function.Injective f')
+    (hfg' : Function.Exact f' g') (hj : Function.Injective j)
+    (hjπ : Function.Exact j (π ∘ₗ g')) (hπg : Function.Surjective (π ∘ₗ g')) :
+    Module.finrank k (LinearMap.range g') =
+      Module.finrank k (LinearMap.range g) + Module.finrank k W := by
+  have : FiniteDimensional k B' := finiteDimensional_of_exact hjπ
+  have e₁ := hfg.rangeRestrict.finrank_eq_add hf g.surjective_rangeRestrict
+  have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
+  have e₃ := hjπ.finrank_eq_add hj hπg
+  omega
 end FiniteDimensionalExact
 
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are trivial, then so is `N`. -/
