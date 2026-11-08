@@ -58,7 +58,7 @@ theorem norm_cauchyPowerSeries_apply_le_of_bound {f : ℂ → E} {c w : ℂ} {R 
     (hR : 0 < R)
     (hf : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) (hw : w ∈ closedBall c r) (n : ℕ) :
     ‖cauchyPowerSeries f c R n (fun _ ↦ w - c)‖ ≤ M * (r / R) ^ n := by
-  have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.1 hw)
+  have hr : 0 ≤ r := Metric.nonneg_of_mem_closedBall hw
   calc
     ‖cauchyPowerSeries f c R n (fun _ ↦ w - c)‖ ≤
         ‖cauchyPowerSeries f c R n‖ * r ^ n :=
@@ -78,8 +78,7 @@ theorem norm_cauchyPowerSeries_partialSum_sub_integral_le {f : ℂ → E} {c : �
     ‖(∑ n ∈ Finset.range N, cauchyPowerSeries f c R n (fun _ ↦ w - c)) -
       (2 * π * I : ℂ)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • f z‖ ≤
         M * (r / R) ^ N / (1 - r / R) := by
-  have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.1 hw)
-  have hR : 0 < R := hr.trans_lt hrR
+  have hR : 0 < R := (Metric.nonneg_of_mem_closedBall hw).trans_lt hrR
   apply norm_sub_le_of_geometric_bound_of_hasSum ((div_lt_one hR).2 hrR)
     (fun n ↦ norm_cauchyPowerSeries_apply_le_of_bound hR hb hw n)
   simpa using hasSum_cauchyPowerSeries_integral (w := w - c) hf
