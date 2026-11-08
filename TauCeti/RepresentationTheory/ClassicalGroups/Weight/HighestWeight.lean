@@ -132,7 +132,7 @@ theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
     intro e
     rw [hA e, LinearMap.sum_apply]
     exact Finset.sum_congr rfl fun m' _ ↦ rfl
-  refine eq_of_forall_sum_range_pow_smul_eq (K := K)
+  refine eq_of_forall_sum_range_pow_smul_eq (R := K)
     (u := fun m' ↦ ρ (diagGL t) (A m' w))
     (v := fun m' ↦ ((weightChar K (l + m' • (Pi.single i 1 - Pi.single j 1)) t : Kˣ) : K) •
       A m' w) (fun c ↦ ?_) hm
@@ -189,7 +189,7 @@ theorem IsRationalRep.exists_forall_transvectionUnit_eq_sum_smul (h : IsRational
     simp only [Matrix.transvection, Matrix.single, Matrix.add_apply, Matrix.of_apply,
       Matrix.one_apply, Polynomial.eval_add, apply_ite (Polynomial.eval c),
       Polynomial.eval_one, Polynomial.eval_zero, Polynomial.eval_X]
-  refine b.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval
+  refine b.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval b
     (fun c ↦ ρ (transvectionUnit hij c)) (fun a a' ↦ MvPolynomial.aeval E (P a a'))
     (fun c a a' ↦ ?_)
   have hdet : ((transvectionUnit hij c : GL (Fin n) ℂ) :

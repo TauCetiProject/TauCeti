@@ -57,6 +57,28 @@ variable {E V P H G M N : Type*}
 variable {m : ℕ∞ω} [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
+omit [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] in
+/-- Pointwise formula for the orthogonal representative of an intrinsic normal class, written
+with any `C^m` Riemannian metric `g` that has the ambient metric as its fiberwise inner product:
+the tangential component is recovered by inverting the pullback of `g` along `f`. -/
+private theorem normalRepresentative_normalClass_eq_sub_inverse_pullback
+    [IsManifold I 1 M]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+    (g : ContMDiffRiemannianMetric J m V (fun y : N ↦ TangentSpace J y))
+    (hg : ∀ y, g.inner y = RiemannianBundle.g.inner y) (x : M) (v : TangentSpace J (f x)) :
+    f.normalRepresentative x hn (f.normalClass x hn v) = v -
+      mfderiv I J f x
+        (((g.pullback f (f.contMDiff.of_le (by simpa using hm))
+          (f.isImmersion.mfderiv_injective hn)).inner x).inverse
+            ((g.inner (f x) v).comp (mfderiv I J f x))) := by
+  have hflat : (g.pullback f (f.contMDiff.of_le (by simpa using hm))
+      (f.isImmersion.mfderiv_injective hn)).inner x =
+      (ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
+        ((g.inner (f x)).comp (mfderiv I J f x)) := by
+    ext w z
+    exact ContMDiffRiemannianMetric.pullback_inner _ _ _ _ _ _ _
+  simpa only [hflat, hg] using f.normalRepresentative_normalClass_eq_sub_mfderiv_inverse x hn v
+
 /-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/
@@ -111,15 +133,10 @@ theorem contMDiff_normalRepresentative_normalClass
       f.normalRepresentative x hn (f.normalClass x hn v) =
         v + (-1 : ℝ) • mfderiv I J f x (u x v) := by
     rw [neg_one_smul, ← sub_eq_add_neg]
-    have hg : g.inner (f x) = RiemannianBundle.g.inner (f x) := by
-      ext w z
-      exact ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner _ _ _
-    have hflat : a.inner x = (ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
-        ((g.inner (f x)).comp (mfderiv I J f x)) := by
-      ext w z
-      exact ContMDiffRiemannianMetric.pullback_inner _ _ _ _ _ _ _
-    simpa only [u, φ, hflat, hg] using
-      f.normalRepresentative_normalClass_eq_sub_mfderiv_inverse x hn v
+    exact normalRepresentative_normalClass_eq_sub_inverse_pullback f hn hm g
+      (fun y ↦ by
+        ext w z
+        exact ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner _ _ _) x v
   exact hsub.congr fun p => congrArg (TotalSpace.mk (f p.proj)) (hformula p.proj p.2)
 
 /-- The map taking an intrinsic normal vector to its orthogonal representative in the ambient

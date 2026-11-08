@@ -114,6 +114,17 @@ theorem apply_zero (hF : IsCollaredTrack f g F) (x : M) : F (x, 0) = (f x, 0) :=
 theorem apply_one (hF : IsCollaredTrack f g F) (x : M) : F (x, 1) = (g x, 1) :=
   hF.apply_of_one_le x le_rfl
 
+/-- Near both of its ends the arc `t ↦ F (z₀, t)` of a collared track from `f` to `g`, with
+`g z₀ = f z₀`, is the straight line `t ↦ (f z₀, t)`. -/
+theorem exists_pos_apply_eq_line (hF : IsCollaredTrack f g F) {z₀ : M} (hz₀ : g z₀ = f z₀) :
+    ∃ ε₀ > 0, ∃ ε₁ > 0, ∀ t, t ≤ ε₀ ∨ 1 - ε₁ ≤ t → F (z₀, t) = (f z₀, t) := by
+  obtain ⟨ε₀, hε₀, hF₀⟩ := hF.exists_pos_apply_eq_left
+  obtain ⟨ε₁, hε₁, hF₁⟩ := hF.exists_pos_apply_eq_right
+  refine ⟨ε₀, hε₀, ε₁, hε₁, ?_⟩
+  rintro t (ht | ht)
+  · exact hF₀ z₀ t ht
+  · rw [hF₁ z₀ t ht, hz₀]
+
 /-- A collared track moves no time outside the open interval `(0, 1)` and keeps times inside it,
 so it preserves the comparison of time with any level `c ∉ (0, 1)`. -/
 theorem snd_apply_lt_iff (hF : IsCollaredTrack f g F) (x : M) {t c : ℝ} (hc : c ∉ Ioo 0 1) :

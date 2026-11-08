@@ -296,7 +296,7 @@ theorem finrank_eigenspace_complexVolume_of_bijective_lsmul (hn : Even n) (hn0 :
   have hV : finrank ℂ (ℂ ⊗[ℝ] V) = n := by
     rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
   have hS : finrank ℂ S = 2 ^ (n / 2) := by
-    rw [finrank_eq_two_pow_of_bijective_lsmul _ h (hV ▸ hn), hV]
+    rw [finrank_eq_two_pow_of_bijective_lsmul _ h, hV]
   rw [hS, finrank_eigenspace_complexVolume_neg o hQ hn hn0 1] at hsum
   have hpow : 2 ^ (n / 2) = 2 * 2 ^ (n / 2 - 1) := by
     rw [← pow_succ']
