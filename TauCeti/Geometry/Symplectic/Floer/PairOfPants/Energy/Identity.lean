@@ -671,7 +671,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_eq_sum_hamiltonianAc
       (𝓝 (∑ q, q.endSign * A q)) :=
     tendsto_finsetSum _ fun q _ ↦ by
       have h := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-        q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hA q)
+        (by simpa only [Puncture.inv_endSign] using hA q)
         (eventually_ge_atTop 2 |>.mono fun T hT ↦
           (integral_image_endChart_boundaryForm ω hH hHs hu hT q).2)
       rw [abs_endSign, inv_one, one_mul] at h

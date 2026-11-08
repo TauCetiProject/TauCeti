@@ -52,8 +52,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
-* `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
-  `a ≥ 0` and `|y| ≤ C |t|`.
+* `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`
+  and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.setIntegral_Icc_deriv`, `Real.smoothTransition.setIntegral_deriv_le_one`:
   its integral over an interval containing `[0, 1]` is one, and over any set at most one.
@@ -129,22 +129,22 @@ theorem hasCompactSupport_deriv : HasCompactSupport (deriv smoothTransition) :=
     · exact deriv_of_neg (not_le.1 h)
     · exact deriv_of_one_lt (not_le.1 h)
 
-/-- A bound for the error term of a smooth transition rescaled by `a ≥ 0`: if `M` bounds the
+/-- A bound for the error term of a smooth transition rescaled by `a`: if `M` bounds the
 derivative of the smooth transition function `ψ` and `|y| ≤ C |t|`, then
 `|ψ'(a t) (a y)| ≤ M C`. The factor `a y` only matters where `0 ≤ a t ≤ 1`, the support of
 `ψ'`, and there `|a y| ≤ C |a t| ≤ C`. -/
 theorem abs_deriv_mul_mul_le {M C a t y : ℝ} (hM : ∀ t, ‖deriv smoothTransition t‖ ≤ M)
-    (hC : 0 ≤ C) (ha : 0 ≤ a) (hy : |y| ≤ C * |t|) :
+    (hC : 0 ≤ C) (hy : |y| ≤ C * |t|) :
     |deriv smoothTransition (a * t) * (a * y)| ≤ M * C := by
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
   rcases lt_or_ge (a * t) 0 with ht | ht
   · simpa [deriv_of_neg ht] using mul_nonneg hM0 hC
   rcases lt_or_ge 1 (a * t) with ht' | ht'
   · simpa [deriv_of_one_lt ht'] using mul_nonneg hM0 hC
-  rw [abs_mul, abs_mul, abs_of_nonneg ha]
+  rw [abs_mul, abs_mul]
   refine mul_le_mul (hM _) ?_ (by positivity) hM0
-  calc a * |y| ≤ a * (C * |t|) := by gcongr
-    _ = C * |a * t| := by rw [abs_mul, abs_of_nonneg ha]; ring
+  calc |a| * |y| ≤ |a| * (C * |t|) := by gcongr
+    _ = C * |a * t| := by rw [abs_mul]; ring
     _ ≤ C * 1 := by rw [abs_of_nonneg ht]; gcongr
     _ = C := mul_one _
 
@@ -230,12 +230,18 @@ theorem lintegral_ofReal_deriv_sub_mul (a : ℝ) {c : ℝ} (hc : c ≠ 0) :
 
 /-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition
 function `ψ`, for `c ≠ 0`, recovers `|c|⁻¹` times its limit `a₀` along the direction of `c` as
-`T → ∞`: the weight has integral `|c|⁻¹` and is supported where `c y ≥ T`. -/
-theorem tendsto_integral_deriv_mul_sub_mul {c : ℝ} (hc : c ≠ 0) {a : ℝ → ℝ} {a₀ : ℝ}
+`T → ∞`: the weight has integral `|c|⁻¹` and is supported where `c y ≥ T`. For `c = 0` both
+sides vanish, since the weight is then `0` for `T > 0`. -/
+theorem tendsto_integral_deriv_mul_sub_mul {c : ℝ} {a : ℝ → ℝ} {a₀ : ℝ}
     (ha : Tendsto (fun σ => a (c⁻¹ * σ)) atTop (𝓝 a₀))
     (hint : ∀ᶠ T in atTop, Integrable fun y => deriv smoothTransition (c * y - T) * a y) :
     Tendsto (fun T => ∫ y, deriv smoothTransition (c * y - T) * a y) atTop
       (𝓝 (|c|⁻¹ * a₀)) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [abs_zero, inv_zero, zero_mul]
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with T hT
+    simp [deriv_of_neg (neg_lt_zero.2 hT)]
   have hc' : 0 < |c| := abs_pos.2 hc
   have hβ (T : ℝ) : Integrable fun y => deriv smoothTransition (c * y - T) :=
     (integrable_deriv.comp_sub_right T).comp_mul_left' hc
