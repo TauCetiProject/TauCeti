@@ -27,7 +27,7 @@ public section
 
 namespace IsLocalization
 
-variable {R : Type*} [CommRing R] (M : Submonoid R) (S : Type*) [CommRing S] [Algebra R S]
+variable {R : Type*} [CommSemiring R] (M : Submonoid R) (S : Type*) [CommSemiring S] [Algebra R S]
   [IsLocalization M S]
 
 include M in

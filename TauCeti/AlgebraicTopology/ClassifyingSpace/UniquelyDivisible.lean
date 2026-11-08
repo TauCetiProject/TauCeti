@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.LocalizationAway
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Prod
-public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Basic
 import Mathlib.Algebra.Module.PID
 import TauCeti.Algebra.Module.LocalizedModule.CoprimeTorsion
@@ -70,24 +69,6 @@ namespace TauCeti
 
 variable {k : Type} [CommRing k]
 
-/-- Vanishing of group homology with trivial coefficients transfers along group isomorphisms. -/
-private theorem subsingleton_groupHomology_of_mulEquiv {G H : Type} [Group G] [Group H]
-    (e : G ≃* H) (n : ℕ) [Subsingleton (groupHomology (Rep.trivial k H k) n)] :
-    Subsingleton (groupHomology (Rep.trivial k G k) n) :=
-  (groupHomology.mapIso (A := Rep.trivial k G k) (B := Rep.trivial k H k) e
-    (LinearEquiv.refl k k) (fun _ ↦ by ext; simp) n).toLinearEquiv.toEquiv.subsingleton
-
-/-- The additive group of `ℤ[1/m]` has no homology in positive degrees with coefficients in which
-`m = 0`. -/
-theorem subsingleton_groupHomology_localizationAway {m : ℤ} (hm : m ≠ 0) (hk : (m : k) = 0)
-    (n : ℕ) :
-    Subsingleton
-      (groupHomology (Rep.trivial k (Multiplicative (Localization.Away m)) k) (n + 1)) := by
-  rw [← ModuleCat.isZero_iff_subsingleton]
-  rcases n with _ | n
-  · exact isZero_groupHomology_one_localizationAway k hk
-  · exact isZero_groupHomology_localizationAway k hm (by omega)
-
 /-- The free `ℤ[1/m]`-module `ℤ[1/m]ʳ` has no homology in positive degrees with coefficients in a
 semisimple ring in which `m = 0`. -/
 theorem subsingleton_groupHomology_pi_localizationAway [IsSemisimpleRing k] {m : ℤ} (hm : m ≠ 0)
@@ -99,10 +80,10 @@ theorem subsingleton_groupHomology_pi_localizationAway [IsSemisimpleRing k] {m :
     exact ModuleCat.subsingleton_of_isZero (isZero_groupHomology_succ_of_subsingleton _ n)
   | succ r ih =>
     have := subsingleton_groupHomology_prod _ _ k
-      (subsingleton_groupHomology_localizationAway hm hk) ih n
-    exact subsingleton_groupHomology_of_mulEquiv
+      (subsingleton_groupHomology_localizationAway k hm hk) ih n
+    exact groupHomology.subsingleton_groupHomology_of_mulEquiv (B := Rep.trivial k _ k)
       ((Fin.consLinearEquiv ℤ fun _ ↦ Localization.Away m).symm.toAddEquiv.toMultiplicative
-        |>.trans (MulEquiv.prodMultiplicative _ _)) (n + 1)
+        |>.trans (MulEquiv.prodMultiplicative _ _)) (.refl k k) (n + 1)
 
 variable {p : ℕ}
 
@@ -135,9 +116,9 @@ private theorem subsingleton_groupHomology_of_linearEquiv_prod [IsSemisimpleRing
     (subsingleton_groupHomology_pi_localizationAway (Int.natCast_ne_zero.2 hp.ne_zero)
       (by exact_mod_cast hk) r)
     (subsingleton_groupHomology_of_natCast_eq_zero_of_smul_eq_zero hp hk hx hT) n
-  exact subsingleton_groupHomology_of_mulEquiv
+  exact groupHomology.subsingleton_groupHomology_of_mulEquiv (B := Rep.trivial k _ k)
     (((f.trans ((Finsupp.linearEquivFunOnFinite _ _ _).prodCongr (LinearEquiv.refl _ _))).toAddEquiv
-      |>.toMultiplicative).trans (MulEquiv.prodMultiplicative _ _)) (n + 1)
+      |>.toMultiplicative).trans (MulEquiv.prodMultiplicative _ _)) (.refl k k) (n + 1)
 
 /-- For a prime `p`, a finitely generated `ℤ[1/p]`-module has no homology in positive degrees with
 coefficients in a semisimple ring in which `p = 0`. -/
@@ -198,11 +179,10 @@ theorem subsingleton_groupHomology_of_natCast_eq_zero [IsSemisimpleRing k] (hp :
   let e : Multiplicative N ≃* S s :=
     (MonoidHom.ofInjective (G := Multiplicative N) (f := φ)
       fun _ _ h ↦ Subtype.val_injective h).trans (MulEquiv.subgroupCongr hφ).symm
-  have hN := ModuleCat.isZero_iff_subsingleton.2
-    (subsingleton_groupHomology_of_natCast_eq_zero_of_moduleFinite hp hk (k := k) (N := N) n)
-  refine hN.of_iso (groupHomology.mapIso e (LinearEquiv.refl k k) (fun _ ↦ ?_) (n + 1)).symm
-  ext
-  simp
+  have := subsingleton_groupHomology_of_natCast_eq_zero_of_moduleFinite hp hk (k := k) (N := N) n
+  exact ModuleCat.isZero_iff_subsingleton.2
+    (groupHomology.subsingleton_groupHomology_of_mulEquiv (G := S s) (H := Multiplicative N)
+      (B := Rep.trivial k (Multiplicative N) k) e.symm (.refl k k) (n + 1))
 
 /-- **`K(A, 1)` is acyclic modulo `p` for a `ℤ[1/p]`-module `A`.** For a prime `p`, a module `A`
 over `ℤ[1/p]` and a commutative semisimple ring `k` in which `p = 0`, such as `𝔽_p`, the singular
