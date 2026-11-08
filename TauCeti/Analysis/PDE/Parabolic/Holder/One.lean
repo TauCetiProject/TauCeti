@@ -209,6 +209,7 @@ theorem fderiv_eq (f : ParabolicC1HolderSpace α E F a b) (t : Icc a b) (x : E) 
   (f.hasSpatialFDerivAt t x).fderiv
 
 /-- The time slice at `x` is the map `t ↦ u (x, t)`. -/
+@[simp]
 theorem timeSliceL_apply (f : ParabolicC1HolderSpace α E F a b) (x : E) (t : Icc a b) :
     timeSliceL f x t = f (slabMk x t) :=
   (isJetGraph_toJetL f).2 x t
