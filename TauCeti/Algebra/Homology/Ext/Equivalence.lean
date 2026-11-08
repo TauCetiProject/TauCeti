@@ -56,8 +56,7 @@ theorem _root_.CategoryTheory.Equivalence.extAddEquiv_apply
     (α : Ext.{w} X Y n) :
     e.extAddEquiv X Y n α = α.mapExactFunctor e.functor := (rfl)
 
-/-- The forward functor of an additive equivalence is bijective on `Ext` groups, since
-`CategoryTheory.Equivalence.extAddEquiv` is `CategoryTheory.Abelian.Ext.mapExactFunctor`. -/
+/-- The forward functor of an additive equivalence induces a bijection on `Ext` groups. -/
 theorem _root_.CategoryTheory.Equivalence.mapExtAddHom_bijective
     (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
     Function.Bijective (e.functor.mapExtAddHom.{w, w'} X Y n) :=
