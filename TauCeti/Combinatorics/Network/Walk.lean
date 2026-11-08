@@ -343,6 +343,21 @@ theorem IsPath.target_notMem_vertices_of_cons {s t x : V} {p : ArrowWalk Q s t} 
   rw [isPath_def, vertices_cons, List.concat_eq_append, List.nodup_append] at hp
   exact fun hx ↦ hp.2.2 x hx x (List.mem_singleton_self x) rfl
 
+/-- The source of an arrow traversed by a path is not the path's target. -/
+theorem IsPath.source_ne_target_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s t}
+    (hp : p.IsPath) {e : Q x y} (he : ⟨x, y, e⟩ ∈ p.arrows) : x ≠ t := by
+  cases p with
+  | nil => simp at he
+  | @cons z _ p e' =>
+    change Q z t at e'
+    intro hxt
+    apply hp.target_notMem_vertices_of_cons
+    rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at he
+    rcases he with he | he
+    · exact hxt ▸ source_mem_vertices_of_mem_arrows (Q := Q) p he
+    · obtain ⟨rfl, -⟩ := Sigma.mk.inj_iff.1 he
+      exact hxt ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p
+
 /-- A path from `s` to `t` that traverses an arrow `e` from `s` to `t` consists of `e` alone. -/
 theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) {e : Q s t}
     (he : ⟨s, t, e⟩ ∈ p.arrows) : p = (nil s).cons e := by
@@ -363,6 +378,19 @@ theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsP
       | cons q' e'' =>
         exact absurd (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ q')
           hp.of_cons.target_notMem_vertices_of_cons
+
+/-- A walk from a vertex in `C` to a vertex outside `C` traverses an arrow leaving `C`. -/
+theorem exists_mem_arrows_source_mem_target_notMem {C : Set V} {s t : V}
+    (p : ArrowWalk Q s t) (hs : s ∈ C) (ht : t ∉ C) :
+    ∃ x y, ∃ e : Q x y, ⟨x, y, e⟩ ∈ p.arrows ∧ x ∈ C ∧ y ∉ C := by
+  induction p with
+  | nil => exact absurd hs ht
+  | @cons x y p e ih =>
+    change Q x y at e
+    by_cases hx : x ∈ C
+    · exact ⟨x, y, e, by simp, hx, ht⟩
+    · obtain ⟨u, v, a, ha, hu, hv⟩ := ih hx
+      exact ⟨u, v, a, by simpa [arrows_cons] using Or.inl ha, hu, hv⟩
 
 /-- A walk that traverses a specified arrow splits into the part before that arrow, the arrow
 itself, and the part after it. -/
