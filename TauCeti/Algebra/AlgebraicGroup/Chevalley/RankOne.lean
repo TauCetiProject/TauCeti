@@ -46,24 +46,17 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 -- Use the integral scalar action carried by the algebra objects in the Kostant formulas.
 attribute [local instance high] Algebra.toModule
 
-private theorem negative_simple_weight (j : Fin t.rank) :
-    ⁅(t.lieBasis ht).h j, (t.lieBasis ht).rootGenerator (.inr i)⁆ =
-      -((t.rootGeneratorWeight ht (.inl i) j : ℚ) •
-        (t.lieBasis ht).rootGenerator (.inr i)) := by
-  rw [t.lie_lieBasis_h_rootGenerator ht, t.rootGeneratorWeight_inr,
-    t.rootGeneratorWeight_inl, Int.cast_neg, neg_smul]
-
 private def matrixMap :
     LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice) →*
       Matrix.GeneralLinearGroup (Fin D.dim) A :=
-  Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
+  Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
 
 private theorem matrixMap_positive (u : Multiplicative A) :
     D.matrixMap A (kostantRootSubgroupParam (t.lieBasis ht).rootGenerator
       (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice (.inl i)
       (D.isNilpotent_representation_rootGenerator (.inl i)) (CommAlgCat.of ℤ A) u) =
       (D.rootSubgroup (t.simpleIndex ht i) A u : Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-  rw [coe_rootSubgroup, chevalleyRootSubgroup_simpleIndex]; rfl
+  rw [matrixMap, coe_rootSubgroup, chevalleyRootSubgroup_simpleIndex]
 
 private theorem matrixMap_negative (u : Multiplicative A) :
     D.matrixMap A (kostantRootSubgroupParam (t.lieBasis ht).rootGenerator
@@ -72,14 +65,12 @@ private theorem matrixMap_negative (u : Multiplicative A) :
       (D.rootSubgroup ((t.simplyConnectedRootDatum ht).reflectionPerm
         (t.simpleIndex ht i) (t.simpleIndex ht i)) A u :
         Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-  rw [coe_rootSubgroup, chevalleyRootSubgroup_reflectionPerm_simpleIndex]; rfl
+  rw [matrixMap, coe_rootSubgroup, chevalleyRootSubgroup_reflectionPerm_simpleIndex]
 
 private theorem matrixMap_coroot (s : Aˣ) :
     D.matrixMap A (kostantCoordinateCocharacter D.lattice D.basis D.weight A i s) =
-      (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-  rw [kostantCoordinateCocharacter_apply, coe_simpleCorootPoints]
-  simp only [matrixMap, MulEquiv.toMonoidHom_eq_coe, basisMatrix_kostantTorusPoints,
-    kostantTorusMatrix_apply, torusCharacter_mulSingle]
+      (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :=
+  D.matrix_kostantCoordinateCocharacter i A s
 
 private theorem matrixMap_weyl :
     D.matrixMap A (kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
@@ -87,26 +78,23 @@ private theorem matrixMap_weyl :
       (D.isNilpotent_representation_rootGenerator (.inl i))
       (D.isNilpotent_representation_rootGenerator (.inr i)) (CommAlgCat.of ℤ A)) =
       (D.weylElement (t.simpleIndex ht i) A 1 :
-        Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-  rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul]
-  simp only [map_mul, D.matrixMap_positive i A, D.matrixMap_negative i A, weylElement_def,
-    Subgroup.coe_mul, inv_one, Units.val_one]
+        Matrix.GeneralLinearGroup (Fin D.dim) A) :=
+  (D.coe_weylElement_simpleIndex_one i A).symm
 
 /-- A simple coroot rescales its positive simple-root parameter by its square. -/
 theorem simpleCorootPoints_conj_rootSubgroup (s : Aˣ) (u : A) :
     D.simpleCorootPoints i A s * D.rootSubgroup (t.simpleIndex ht i) A (ofAdd u) *
         (D.simpleCorootPoints i A s)⁻¹ =
       D.rootSubgroup (t.simpleIndex ht i) A (ofAdd ((s : A) ^ 2 * u)) := by
-  apply Subtype.ext
-  have h := congrArg (D.matrixMap A)
-    (kostantCoordinateCocharacter_conj_kostantRootSubgroupParam
-      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
-      D.representation_mem_lattice D.basis D.weight D.isCartanWeightVector_basis
-      (D.isSl2Triple_representation_rootGenerator i)
-      (D.isNilpotent_representation_rootGenerator (.inl i))
-      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (CommAlgCat.of ℤ A) s u)
-  simpa only [map_mul, map_inv, D.matrixMap_coroot i A, D.matrixMap_positive i A,
-    Subgroup.coe_mul, Subgroup.coe_inv] using h
+  rw [D.simpleCorootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroup]
+  simp [coordinateRoot_def, D.torusCharacter_simpleCorootParameter]
+
+/-- Moving a simple coroot past its positive root subgroup rescales the parameter. -/
+theorem simpleCorootPoints_mul_rootSubgroup (s : Aˣ) (u : A) :
+    D.simpleCorootPoints i A s * D.rootSubgroup (t.simpleIndex ht i) A (ofAdd u) =
+      D.rootSubgroup (t.simpleIndex ht i) A (ofAdd ((s : A) ^ 2 * u)) *
+        D.simpleCorootPoints i A s :=
+  mul_inv_eq_iff_eq_mul.mp (D.simpleCorootPoints_conj_rootSubgroup i A s u)
 
 /-- A simple Weyl representative inverts its coroot parameters. -/
 theorem weylElement_mul_simpleCorootPoints (s : Aˣ) :
@@ -121,7 +109,7 @@ theorem weylElement_mul_simpleCorootPoints (s : Aˣ) :
       (D.isNilpotent_representation_rootGenerator (.inl i))
       (D.isNilpotent_representation_rootGenerator (.inr i)) D.basis D.weight
       D.isCartanWeightVector_basis (D.isSl2Triple_representation_rootGenerator i)
-      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (negative_simple_weight i)
+      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (t.lie_lieBasis_h_rootGenerator_inr_neg ht i)
       (CommAlgCat.of ℤ A) 1 s)
   simpa only [kostantWeylParam_one, map_mul, map_inv, D.matrixMap_coroot i A, D.matrixMap_weyl i A,
     Subgroup.coe_mul, Subgroup.coe_inv] using h
@@ -138,7 +126,7 @@ theorem weylElement_mul_self :
       (D.isNilpotent_representation_rootGenerator (.inl i))
       (D.isNilpotent_representation_rootGenerator (.inr i)) D.basis D.weight
       D.isCartanWeightVector_basis (D.isSl2Triple_representation_rootGenerator i)
-      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (negative_simple_weight i)
+      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (t.lie_lieBasis_h_rootGenerator_inr_neg ht i)
       (CommAlgCat.of ℤ A))
   simpa only [map_mul, D.matrixMap_coroot i A, D.matrixMap_weyl i A, Subgroup.coe_mul] using h
 
@@ -158,7 +146,7 @@ theorem weylElement_mul_rootSubgroup_mul_weylElement (u : Aˣ) :
       (D.isNilpotent_representation_rootGenerator (.inl i))
       (D.isNilpotent_representation_rootGenerator (.inr i)) D.basis D.weight
       D.isCartanWeightVector_basis (D.isSl2Triple_representation_rootGenerator i)
-      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (negative_simple_weight i)
+      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (t.lie_lieBasis_h_rootGenerator_inr_neg ht i)
       (CommAlgCat.of ℤ A) u)
   simpa only [map_mul, D.matrixMap_positive i A, D.matrixMap_coroot i A, D.matrixMap_weyl i A,
     Subgroup.coe_mul] using h
@@ -178,24 +166,11 @@ theorem closure_simpleRootPair_eq :
       (D.isNilpotent_representation_rootGenerator (.inl i))
       (D.isNilpotent_representation_rootGenerator (.inr i)) D.basis D.weight
       D.isCartanWeightVector_basis (D.isSl2Triple_representation_rootGenerator i)
-      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (negative_simple_weight i)
+      (t.lie_lieBasis_h_rootGenerator ht (.inl i)) (t.lie_lieBasis_h_rootGenerator_inr_neg ht i)
       (CommAlgCat.of ℤ A))
   simpa only [MonoidHom.map_closure, Set.image_union, ← Set.range_comp, Set.image_singleton,
     Function.comp_def, D.matrixMap_positive i A, D.matrixMap_negative i A,
     D.matrixMap_coroot i A, D.matrixMap_weyl i A, Subgroup.coe_subtype] using h
-
-/-- The actual torus normalizes the subgroup generated by an opposite simple-root pair. -/
-theorem range_torusPoints_le_normalizer_simpleRootPair :
-    (D.torusPoints A).range ≤ Subgroup.normalizer
-      (Subgroup.closure (Set.range (D.rootSubgroup (t.simpleIndex ht i) A) ∪
-        Set.range (D.rootSubgroup ((t.simplyConnectedRootDatum ht).reflectionPerm
-          (t.simpleIndex ht i) (t.simpleIndex ht i)) A))) := by
-  apply Subgroup.le_normalizer_closure_iff.mpr
-  rintro _ ⟨s, rfl⟩ _ (⟨u, rfl⟩ | ⟨u, rfl⟩)
-  · rw [← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroup]
-    exact Subgroup.subset_closure (Or.inl ⟨_, rfl⟩)
-  · rw [← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroup]
-    exact Subgroup.subset_closure (Or.inr ⟨_, rfl⟩)
 
 variable (K : Type v) [Field K]
 
@@ -236,15 +211,9 @@ theorem mem_sup_simpleRootPair_torus_iff (g : D.points K) :
   let h := D.simpleCorootPoints i K
   let n := D.weylElement (t.simpleIndex ht i) K 1
   let T := D.torusPoints K
-  have htorus (s : Kˣ) : h s = T (D.simpleCorootParameter i K s) := by
-    apply Subtype.ext
-    simpa only [h, T, coe_torusPoints] using
-      D.coe_simpleCorootPoints_eq_kostantTorusMatrix i K s
-  have hmove (s : Kˣ) (b : K) : h s * x (ofAdd b) =
-      x (ofAdd ((s : K) ^ 2 * b)) * h s :=
-    mul_inv_eq_iff_eq_mul.mp (D.simpleCorootPoints_conj_rootSubgroup i K s b)
   constructor
   · intro hg
+    -- Normalization writes a point of the supremum as a root-pair word times a torus point.
     have hprod := D.range_torusPoints_le_normalizer_simpleRootPair i K
     rw [← SetLike.mem_coe, Subgroup.coe_mul_of_right_le_normalizer_left _ _ hprod] at hg
     obtain ⟨q, hq, _, ⟨s, rfl⟩, rfl⟩ := hg
@@ -253,20 +222,25 @@ theorem mem_sup_simpleRootPair_torus_iff (g : D.points K) :
       (D.mem_closure_simpleRootPair_iff i K q).mp hq
     rcases hq' with ⟨a, v, rfl⟩ | ⟨a, v, b, rfl⟩
     · exact Or.inl ⟨a, D.simpleCorootParameter i K v * s, by
-        rw [(D.torusPoints K).map_mul, ← htorus]; simp only [x, h]; group⟩
+        rw [(D.torusPoints K).map_mul, ← D.simpleCorootPoints_eq_torusPoints]
+        simp only [x, h]
+        group⟩
     · refine Or.inr ⟨a, ((v⁻¹ : Kˣ) : K) ^ 2 * b,
         D.simpleCorootParameter i K v⁻¹ * s, ?_⟩
       have hn : h v * n = n * h v⁻¹ := by
         simpa only [h, n, inv_inv] using
           (D.weylElement_mul_simpleCorootPoints i K v⁻¹).symm
+      -- Move the coroot through the Weyl and root factors, then absorb it into the torus.
       calc
         _ = x (ofAdd a) * (h v * n) * x (ofAdd b) * T s := by
           simp only [T]; group
         _ = x (ofAdd a) * n * (h v⁻¹ * x (ofAdd b)) * T s := by rw [hn]; group
         _ = _ := by
-          rw [hmove, (D.torusPoints K).map_mul, ← htorus]
-          simp only [x, h, n, T]; group
-  · have hx (a : K) : x (ofAdd a) ∈
+          rw [D.simpleCorootPoints_mul_rootSubgroup, (D.torusPoints K).map_mul,
+            ← D.simpleCorootPoints_eq_torusPoints]
+          simp only [x, n, T]; group
+  · -- Conversely, every factor of either displayed form belongs to the supremum.
+    have hx (a : K) : x (ofAdd a) ∈
         Subgroup.closure (Set.range x ∪ Set.range y) ⊔ T.range :=
       Subgroup.mem_sup_left (Subgroup.subset_closure (Or.inl ⟨_, rfl⟩))
     have hn : n ∈ Subgroup.closure (Set.range x ∪ Set.range y) ⊔ T.range := by
