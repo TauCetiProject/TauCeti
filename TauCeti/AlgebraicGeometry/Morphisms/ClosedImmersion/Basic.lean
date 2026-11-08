@@ -68,7 +68,7 @@ universe u
 
 /-- Points factoring through a closed immersion that is a monoid homomorphism remain in its
 closed subscheme after multiplication. -/
-theorem ker_le_mul_left {S : Scheme.{u}} {X Y Z : Over S} [MonObj X] [MonObj Y]
+theorem le_ker_mul {S : Scheme.{u}} {X Y Z : Over S} [MonObj X] [MonObj Y]
     (i : X ⟶ Y) [IsClosedImmersion i.left] [IsMonHom i] (x y : Z ⟶ Y)
     (hx : i.left.ker ≤ x.left.ker) (hy : i.left.ker ≤ y.left.ker) :
     i.left.ker ≤ (x * y).left.ker := by

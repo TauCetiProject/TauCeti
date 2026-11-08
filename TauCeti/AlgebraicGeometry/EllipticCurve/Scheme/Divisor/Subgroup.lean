@@ -82,7 +82,7 @@ theorem formalAdd_pow_mem_span_of_zeroSectionDivisor_submonoid (q : ℕ)
   have hy : I ≤ y.left.ker := (hpoint _ _).mpr (Ideal.subset_span (by simp))
   -- Their product lies on the divisor because its inclusion is a monoid homomorphism.
   have hxy : I ≤ (x * y).left.ker := by
-    simpa [i] using i.ker_le_mul_left x y
+    simpa [i] using i.le_ker_mul x y
       (by simpa [i] using hx) (by simpa [i] using hy)
   -- The scheme addition comparison identifies the parameter of that product.
   have he : x * y = point W.formalAdd
