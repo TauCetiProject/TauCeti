@@ -7,10 +7,7 @@ module
 
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Latitude
-public import TauCeti.Geometry.Manifold.LocallyFlat.Separation
-import Mathlib.Analysis.Normed.Module.Connected
-import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
-import Mathlib.Geometry.Manifold.Instances.Sphere
+public import TauCeti.Geometry.Manifold.LocallyFlat.Sphere
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
@@ -26,9 +23,10 @@ other set would disconnect `M`.
 For an embedded sphere `f : Sᵐ⁻¹ → Sᵐ`, `m ≥ 2`, the Jordan–Brouwer separation theorem
 (`TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`) says the complement of the image
 has exactly two path components. If `f` is bicollared, the two sides of the bicollar are
-connected and lie one in each of them (`TauCeti.IsBicollar.exists_pathComponents_sphere`). For
-`m = 1` the sides are not connected, and the two components need not be told apart by the sides:
-both halves of one side may lie in the same component.
+connected and lie one in each of them (`TauCeti.IsBicollar.exists_pathComponents_sphere`, in
+`TauCeti.Geometry.Manifold.LocallyFlat.Sphere`). For `m = 1` the sides are not connected, and
+the two components need not be told apart by the sides: both halves of one side may lie in the
+same component.
 
 Given such a decomposition, M. Brown's proof of the generalized Schoenflies theorem collapses the
 two outer regions to points. Follow the bicollar by a map `g : N × [-1, 1] → Y` sending the two
@@ -53,8 +51,6 @@ homeomorphism type; this identifies the closure of each complementary component 
 
 ## Main results
 
-* `TauCeti.IsBicollar.exists_pathComponents_sphere`: the complement of a bicollared sphere
-  `Sᵐ⁻¹ → Sᵐ`, `m ≥ 2`, has two path components, one on each side of the bicollar.
 * `TauCeti.IsBicollar.continuous_bicollarCollapse`: the collapsing map is continuous.
 * `TauCeti.IsBicollar.preimage_bicollarCollapse_left` and
   `TauCeti.IsBicollar.preimage_bicollarCollapse_right`: the two collapsed point preimages.
@@ -76,74 +72,6 @@ noncomputable section
 open Function Metric Module Set Topology
 
 namespace TauCeti
-
-section Sphere
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {f : sphere (0 : E) 1 → sphere (0 : F) 1} {b : sphere (0 : E) 1 × ℝ → sphere (0 : F) 1}
-
-/-- **The two sides of a bicollared sphere.** Let `b` be a bicollar of an embedding `f` of the
-unit sphere of `E` into the unit sphere of `F`, where `dim F = dim E + 1` and `dim E ≥ 2`. Then
-the complement of the image of `f` is the union of two disjoint open path-connected sets `A` and
-`B`, its two path components, with the positive side of the bicollar in `A` and the negative side
-in `B`. -/
-theorem IsBicollar.exists_pathComponents_sphere (h : IsBicollar f b) (hE : 2 ≤ finrank ℝ E)
-    (hEF : finrank ℝ F = finrank ℝ E + 1) :
-    ∃ A B : Set (sphere (0 : F) 1), IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧
-      (range f)ᶜ = A ∪ B ∧ IsPathConnected A ∧ IsPathConnected B ∧
-      MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B := by
-  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
-  have : PreconnectedSpace (sphere (0 : E) 1) :=
-    isPreconnected_iff_preconnectedSpace.1 (isPathConnected_sphere
-      (one_lt_rank_of_one_lt_finrank (by omega)) 0 zero_le_one).isConnected.isPreconnected
-  have : PreconnectedSpace (sphere (0 : F) 1) :=
-    isPreconnected_iff_preconnectedSpace.1 (isPathConnected_sphere
-      (one_lt_rank_of_one_lt_finrank (by omega)) 0 zero_le_one).isConnected.isPreconnected
-  -- The unit sphere of `F` is homeomorphic to a Euclidean sphere, a manifold, so it is locally
-  -- path connected.
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) :=
-    ⟨by simp⟩
-  have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin (finrank ℝ E)))
-    (sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1)
-  have := (sphereHomeomorphOfFinrankEq (F := F)
-    (E := EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) (by simp [hEF])).locallyPathConnectedSpace
-  set X := (range f)ᶜ
-  have hX : IsOpen X := (isCompact_range h.continuous).isClosed.isOpen_compl
-  -- By the Jordan–Brouwer theorem, `X` has two path components, those of some `p` and `q`.
-  obtain ⟨c, d, hcd, hcover⟩ := Nat.card_eq_two_iff.1
-    (natCard_zerothHomotopy_sphere_compl_range_eq_two hEF h.continuous h.injective)
-  obtain ⟨⟨p, hp⟩, rfl⟩ := ZerothHomotopy.mk_surjective c
-  obtain ⟨⟨q, hq⟩, rfl⟩ := ZerothHomotopy.mk_surjective d
-  have hjoined : ∀ {u v : sphere (0 : F) 1} (hu : u ∈ X) (hv : v ∈ X),
-      ZerothHomotopy.mk (⟨u, hu⟩ : X) = ZerothHomotopy.mk ⟨v, hv⟩ ↔ JoinedIn X u v := by
-    intro u v hu hv
-    rw [joinedIn_iff_joined hu hv, ← mem_pathComponent_iff,
-      ← ZerothHomotopy.preimage_singleton_eq_pathComponent, mem_preimage, mem_singleton_iff,
-      eq_comm]
-  set A := pathComponentIn X p
-  set B := pathComponentIn X q
-  have hAB : Disjoint A B := by
-    refine disjoint_left.2 fun r hrA hrB ↦ hcd ?_
-    exact (hjoined hp hq).2 ((hrA : JoinedIn X p r).trans (hrB : JoinedIn X q r).symm)
-  have hXAB : X = A ∪ B := by
-    refine Subset.antisymm (fun r hr ↦ ?_) (union_subset pathComponentIn_subset
-      pathComponentIn_subset)
-    have hr' : ZerothHomotopy.mk (⟨r, hr⟩ : X) ∈ ({ZerothHomotopy.mk ⟨p, hp⟩,
-        ZerothHomotopy.mk ⟨q, hq⟩} : Set (ZerothHomotopy X)) := hcover ▸ mem_univ _
-    rcases hr' with hr' | hr'
-    · exact Or.inl ((hjoined hr hp).1 hr').symm
-    · exact Or.inr ((hjoined hr hq).1 hr').symm
-  have hAo : IsOpen A := hX.pathComponentIn p
-  have hBo : IsOpen B := hX.pathComponentIn q
-  rcases h.mapsTo_or_mapsTo hAo hBo hAB hXAB ⟨p, mem_pathComponentIn_self hp⟩
-      ⟨q, mem_pathComponentIn_self hq⟩ with ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
-  · exact ⟨A, B, hAo, hBo, hAB, hXAB, isPathConnected_pathComponentIn hp,
-      isPathConnected_pathComponentIn hq, hpos, hneg⟩
-  · exact ⟨B, A, hBo, hAo, hAB.symm, hXAB.trans (union_comm _ _),
-      isPathConnected_pathComponentIn hq, isPathConnected_pathComponentIn hp, hpos, hneg⟩
-
-end Sphere
 
 section Collapse
 
@@ -168,6 +96,7 @@ section Values
 variable (g : N × Icc (-1 : ℝ) 1 → Y) (ypos yneg : Y)
 
 /-- Off the image of `b`, the collapsing map is `ypos` on `A`. -/
+@[simp]
 theorem bicollarCollapse_of_notMem_range_of_mem {m : M} (hm : m ∉ range b) (hmA : m ∈ A) :
     bicollarCollapse b A g ypos yneg m = ypos := by
   classical
@@ -175,11 +104,21 @@ theorem bicollarCollapse_of_notMem_range_of_mem {m : M} (hm : m ∉ range b) (hm
     ite_eq_left_of_eq_true _ _ (eq_true hmA)]
 
 /-- Off the image of `b`, the collapsing map is `yneg` outside `A`. -/
+@[simp]
 theorem bicollarCollapse_of_notMem_range_of_notMem {m : M} (hm : m ∉ range b) (hmA : m ∉ A) :
     bicollarCollapse b A g ypos yneg m = yneg := by
   classical
   rw [bicollarCollapse, dite_eq_right_of_eq_false (eq_false hm),
     ite_eq_right_of_eq_false _ _ (eq_false hmA)]
+
+/-- On the image of an injective `b`, such as a bicollar, the collapsing map is `g` with the
+depth clamped to `[-1, 1]`. -/
+@[simp]
+theorem bicollarCollapse_apply (hb : Injective b) (x : N) (t : ℝ) :
+    bicollarCollapse b A g ypos yneg (b (x, t)) = g (x, projIcc (-1) 1 (by norm_num) t) := by
+  have key : ∀ hm : b (x, t) ∈ range b, Classical.choose hm = (x, t) :=
+    fun hm ↦ hb (Classical.choose_spec hm)
+  rw [bicollarCollapse, dite_eq_left_of_eq_true (eq_true (mem_range_self _)), key]
 
 end Values
 
@@ -187,13 +126,6 @@ variable [TopologicalSpace N] [TopologicalSpace M] {f : N → M} (g : N × Icc (
   (ypos yneg : Y)
 
 namespace IsBicollar
-
-/-- On a bicollar, the collapsing map is `g` with the depth clamped to `[-1, 1]`. -/
-theorem bicollarCollapse_apply (h : IsBicollar f b) (x : N) (t : ℝ) :
-    bicollarCollapse b A g ypos yneg (b (x, t)) = g (x, projIcc (-1) 1 (by norm_num) t) := by
-  have key : ∀ hm : b (x, t) ∈ range b, Classical.choose hm = (x, t) :=
-    fun hm ↦ h.isOpenEmbedding.injective (Classical.choose_spec hm)
-  rw [bicollarCollapse, dite_eq_left_of_eq_true (eq_true (mem_range_self _)), key]
 
 omit [TopologicalSpace N] [TopologicalSpace M] in
 /-- The image of `f` is disjoint from a complementary region. -/
@@ -228,7 +160,7 @@ theorem bicollarCollapse_of_mem_left (h : IsBicollar f b)
   by_cases hmb : m ∈ range b
   · obtain ⟨⟨x, t⟩, rfl⟩ := hmb
     have ht : 1 ≤ t := not_lt.1 fun ht ↦ hm.2 ⟨(x, t), ⟨mem_univ x, ht⟩, rfl⟩
-    rw [h.bicollarCollapse_apply, projIcc_of_right_le _ ht, hgpos]
+    rw [bicollarCollapse_apply _ _ _ h.isOpenEmbedding.injective, projIcc_of_right_le _ ht, hgpos]
   · exact bicollarCollapse_of_notMem_range_of_mem g ypos yneg hmb hm.1
 
 /-- The collapsing map is `yneg` on the outer piece `B \ b (N × (-1, ∞))`. -/
@@ -238,7 +170,7 @@ theorem bicollarCollapse_of_mem_right (h : IsBicollar f b) (hAB : Disjoint A B)
   by_cases hmb : m ∈ range b
   · obtain ⟨⟨x, t⟩, rfl⟩ := hmb
     have ht : t ≤ -1 := not_lt.1 fun ht ↦ hm.2 ⟨(x, t), ⟨mem_univ x, ht⟩, rfl⟩
-    rw [h.bicollarCollapse_apply, projIcc_of_le_left _ ht, hgneg]
+    rw [bicollarCollapse_apply _ _ _ h.isOpenEmbedding.injective, projIcc_of_le_left _ ht, hgneg]
   · exact bicollarCollapse_of_notMem_range_of_notMem g ypos yneg hmb
       fun hmA ↦ disjoint_left.1 hAB hmA hm.1
 
@@ -258,7 +190,7 @@ theorem continuous_bicollarCollapse [TopologicalSpace Y] [CompactSpace N] [T2Spa
     rw [← h.isOpenEmbedding.continuousAt_iff]
     have hcomp : bicollarCollapse b A g ypos yneg ∘ b =
         fun z : N × ℝ ↦ g (z.1, projIcc (-1) 1 (by norm_num) z.2) :=
-      funext fun z ↦ h.bicollarCollapse_apply g ypos yneg z.1 z.2
+      funext fun z ↦ bicollarCollapse_apply g ypos yneg h.isOpenEmbedding.injective z.1 z.2
     rw [hcomp]
     exact (hg.comp (continuous_fst.prodMk (continuous_projIcc.comp continuous_snd))).continuousAt
   -- Off the bicollar, `m` lies in `A` or `B` but outside the compact set `b (N × [-1, 1])`.
@@ -326,7 +258,8 @@ theorem preimage_bicollarCollapse_left (h : IsBicollar f b) (hAB : Disjoint A B)
   · exact hm'
   · exact (hy ((h.bicollarCollapse_of_mem_right g ypos yneg hAB hgneg hm').symm.trans
       hm).symm).elim
-  · have hgt := (hgpos _).1 ((h.bicollarCollapse_apply g ypos yneg x t).symm.trans hm)
+  · have hgt := (hgpos _).1
+      ((bicollarCollapse_apply g ypos yneg h.isOpenEmbedding.injective x t).symm.trans hm)
     rw [projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at hgt
     exact (ht.2.ne hgt).elim
 
@@ -345,7 +278,8 @@ theorem preimage_bicollarCollapse_right (h : IsBicollar f b) (hAB : Disjoint A B
   rcases (hcov ▸ mem_univ m : m ∈ _) with (hm' | hm') | ⟨⟨x, t⟩, ⟨-, ht⟩, rfl⟩
   · exact (hy ((h.bicollarCollapse_of_mem_left g ypos yneg hgpos hm').symm.trans hm)).elim
   · exact hm'
-  · have hgt := (hgneg _).1 ((h.bicollarCollapse_apply g ypos yneg x t).symm.trans hm)
+  · have hgt := (hgneg _).1
+      ((bicollarCollapse_apply g ypos yneg h.isOpenEmbedding.injective x t).symm.trans hm)
     rw [projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at hgt
     exact (ht.1.ne' hgt).elim
 
@@ -355,7 +289,8 @@ theorem injOn_bicollarCollapse (h : IsBicollar f b)
     (hg : InjOn g {z | (z.2 : ℝ) ∈ Ioo (-1 : ℝ) 1}) :
     InjOn (bicollarCollapse b A g ypos yneg) (b '' (univ ×ˢ Ioo (-1) 1)) := by
   rintro _ ⟨⟨x, t⟩, ⟨-, ht⟩, rfl⟩ _ ⟨⟨x', t'⟩, ⟨-, ht'⟩, rfl⟩ he
-  rw [h.bicollarCollapse_apply, h.bicollarCollapse_apply,
+  rw [bicollarCollapse_apply _ _ _ h.isOpenEmbedding.injective,
+    bicollarCollapse_apply _ _ _ h.isOpenEmbedding.injective,
     projIcc_of_mem _ (Ioo_subset_Icc_self ht), projIcc_of_mem _ (Ioo_subset_Icc_self ht')] at he
   have := hg ht ht' he
   simp only [Prod.mk.injEq, Subtype.mk.injEq] at this
@@ -366,34 +301,38 @@ theorem surjective_bicollarCollapse (h : IsBicollar f b) (hg : Surjective g) :
     Surjective (bicollarCollapse b A g ypos yneg) := by
   intro y
   obtain ⟨⟨x, t⟩, rfl⟩ := hg y
-  exact ⟨b (x, t), by rw [h.bicollarCollapse_apply, projIcc_val]⟩
+  exact ⟨b (x, t), by rw [bicollarCollapse_apply _ _ _ h.isOpenEmbedding.injective, projIcc_val]⟩
 
 /-- **Every other point preimage of the collapsing map has at most one point.** If `g` takes the
-value `ypos` only on the end `N × {1}`, the value `yneg` only on the end `N × {-1}`, and is
-injective on `N × (-1, 1)`, then every point other than `ypos` and `yneg` has at most one
-preimage. -/
-theorem subsingleton_preimage_bicollarCollapse (h : IsBicollar f b) (hAB : Disjoint A B)
-    (hcompl : (range f)ᶜ = A ∪ B) (hpos : MapsTo b (univ ×ˢ Ioi 0) A)
-    (hneg : MapsTo b (univ ×ˢ Iio 0) B)
+value `ypos` on the end `N × {1}`, the value `yneg` on the end `N × {-1}`, and is injective on
+`N × (-1, 1)`, then every point other than `ypos` and `yneg` has at most one preimage, for any
+set `A`. -/
+theorem subsingleton_preimage_bicollarCollapse (h : IsBicollar f b)
     (hgpos : ∀ x, g (x, ⟨1, by norm_num⟩) = ypos) (hgneg : ∀ x, g (x, ⟨-1, by norm_num⟩) = yneg)
     (hg : InjOn g {z | (z.2 : ℝ) ∈ Ioo (-1 : ℝ) 1}) {y : Y} (hypos : y ≠ ypos) (hyneg : y ≠ yneg) :
     (bicollarCollapse b A g ypos yneg ⁻¹' {y}).Subsingleton := by
-  -- The preimage of `y` misses both outer pieces, so it lies on the open part of the bicollar.
+  -- Off the open part of the bicollar the collapsing map only takes the values `ypos` and `yneg`.
   have hS : ∀ m, bicollarCollapse b A g ypos yneg m = y → m ∈ b '' (univ ×ˢ Ioo (-1) 1) := by
     intro m hm
-    have hcov := h.diff_union_diff_union_image_Ioo_eq_univ hcompl hpos hneg
-    rcases (hcov ▸ mem_univ m : m ∈ _) with (hm' | hm') | hm'
-    · exact (hypos (hm.symm.trans (h.bicollarCollapse_of_mem_left g ypos yneg hgpos hm'))).elim
-    · exact (hyneg (hm.symm.trans
-        (h.bicollarCollapse_of_mem_right g ypos yneg hAB hgneg hm'))).elim
-    · exact hm'
+    by_cases hmb : m ∈ range b
+    · obtain ⟨⟨x, t⟩, rfl⟩ := hmb
+      rw [bicollarCollapse_apply _ _ _ h.isOpenEmbedding.injective] at hm
+      refine ⟨(x, t), ⟨mem_univ x, ?_, ?_⟩, rfl⟩
+      · refine lt_of_not_ge fun ht ↦ hyneg ?_
+        rw [← hm, projIcc_of_le_left _ ht, hgneg]
+      · refine lt_of_not_ge fun ht ↦ hypos ?_
+        rw [← hm, projIcc_of_right_le _ ht, hgpos]
+    · by_cases hmA : m ∈ A
+      · exact (hypos (hm.symm.trans (bicollarCollapse_of_notMem_range_of_mem g ypos yneg hmb
+          hmA))).elim
+      · exact (hyneg (hm.symm.trans (bicollarCollapse_of_notMem_range_of_notMem g ypos yneg hmb
+          hmA))).elim
   intro m hm m' hm'
   exact h.injOn_bicollarCollapse g ypos yneg hg (hS m hm) (hS m' hm') (hm.trans hm'.symm)
 
 end IsBicollar
 
 end Collapse
-
 
 section CollapseSphere
 
@@ -457,8 +396,8 @@ theorem IsBicollar.exists_collapse_sphere (h : IsBicollar f b) (hE : 0 < finrank
     h.surjective_bicollarCollapse g P (-P) hgs,
     h.preimage_bicollarCollapse_left g P (-P) hAB hcompl hpos hneg hgpos hgm1 hy,
     h.preimage_bicollarCollapse_right g P (-P) hAB hcompl hpos hneg hg1 hgneg hy,
-    fun y hypos hyneg ↦ h.subsingleton_preimage_bicollarCollapse g P (-P) hAB hcompl hpos hneg
-      hg1 hgm1 hginj hypos hyneg⟩
+    fun y hypos hyneg ↦ h.subsingleton_preimage_bicollarCollapse g P (-P) hg1 hgm1 hginj hypos
+      hyneg⟩
 
 end CollapseSphere
 
