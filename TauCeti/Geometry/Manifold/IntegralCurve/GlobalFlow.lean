@@ -24,9 +24,7 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 ## Main declarations
 
 * `TauCeti.globalFlow`: the flow of a complete `C¹` vector field;
-  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`;
-  `TauCeti.flowOf_flowOf_neg`: the time-`(-t)` map inverts the time-`t` map, so
-  (`TauCeti.flowOf_surjective`) the time-`t` map is surjective.
+  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`.
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band;
@@ -92,15 +90,6 @@ theorem globalFlow_apply (t : ℝ) (x : M) :
 theorem flowOf_eq_globalFlow : flowOf v = globalFlow v hv hcomplete := by
   funext t x
   rw [flowOf_apply, globalFlow_apply]
-
-/-- For a complete `C¹` vector field, the time-`(-t)` map of the maximal flow inverts the time-`t`
-map. -/
-theorem flowOf_flowOf_neg (t : ℝ) (x : M) : flowOf v t (flowOf v (-t) x) = x := by
-  rw [flowOf_eq_globalFlow hv hcomplete, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
-
-/-- For a complete `C¹` vector field, the time-`t` map of the maximal flow is surjective. -/
-theorem flowOf_surjective (t : ℝ) : Function.Surjective (flowOf v t) :=
-  fun x ↦ ⟨flowOf v (-t) x, flowOf_flowOf_neg hv hcomplete t x⟩
 
 /-- The orbits of the flow are integral curves of the field. -/
 theorem isMIntegralCurve_globalFlow (x : M) :
