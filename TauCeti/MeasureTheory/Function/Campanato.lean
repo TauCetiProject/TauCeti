@@ -44,11 +44,11 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 
 * `setAverage_norm_sub_setAverage_le_of_holderOnWith`: the mean oscillation of an `α`-Hölder
   function on a ball of radius `r` is at most a multiple of `r^α`.
+* `norm_setAverage_closedBall_sub_setAverage_closedBall_le`: mean oscillation decaying like `r^α`
+  at `x` keeps the averages over concentric balls within `O(r^α)` of each other.
 * `tendsto_setAverage_closedBall_preciseRepresentative_of_setAverage_norm_sub_le`: mean
   oscillation decaying like `r^α` at `x` makes the averages converge at `x`.
 * `norm_setAverage_closedBall_sub_preciseRepresentative_le`: the rate of that convergence.
-* `norm_setAverage_closedBall_sub_setAverage_closedBall_le`: the averages over concentric balls
-  stay within the same rate of each other.
 * `dist_preciseRepresentative_le_of_setAverage_norm_sub_le`: the local Hölder estimate between
   two points, from mean oscillation bounds on balls of radius comparable to their distance.
 * `holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le`: the Hölder bound on a set, from
@@ -139,10 +139,12 @@ private lemma norm_setAverage_closedBall_sub_le_of_le_two_mul {y : E} {ε r : �
     mul_le_mul (μ.addHaar_real_closedBall_div_le x y hε hr hrε) hosc
       (average_nonneg fun _ ↦ norm_nonneg _) (by positivity)
 
-/-- **Telescoping over dyadic radii.** If the mean oscillation of `f` on `closedBall x r` is at
-most `M r^α` for `0 < r ≤ ρ`, then the averages over `closedBall x ε` and `closedBall x r`,
-`0 < ε ≤ r ≤ ρ`, differ by at most `2ⁿ / (1 - 2^(-α)) · M r^α`. -/
-private lemma norm_setAverage_closedBall_sub_le (hα : 0 < α)
+/-- **Averages over concentric balls.** Let `α > 0`. If `f` is integrable on `closedBall x ρ`
+and its mean oscillation on `closedBall x r` is at most `M r^α` for `0 < r ≤ ρ`, then the averages
+of `f` over `closedBall x ε` and `closedBall x r`, `0 < ε ≤ r ≤ ρ`, differ by at most
+`2ⁿ / (1 - 2^(-α)) · M r^α`, where `n` is the dimension. The proof telescopes over dyadic
+radii. -/
+theorem norm_setAverage_closedBall_sub_setAverage_closedBall_le (hα : 0 < α)
     (hf : IntegrableOn f (closedBall x ρ) μ)
     (hosc : ∀ r, 0 < r → r ≤ ρ →
       ⨍ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ‖ ∂μ ≤ M * r ^ α)
@@ -229,8 +231,9 @@ theorem tendsto_setAverage_closedBall_preciseRepresentative_of_setAverage_norm_s
           dist_triangle_right _ _ _
       _ ≤ C * (M * τ ^ α) + C * (M * τ ^ α) := by
           rw [dist_eq_norm, dist_eq_norm]
-          exact add_le_add (norm_setAverage_closedBall_sub_le hα hf hosc ha.1 ha.2 hτρ.2)
-            (norm_setAverage_closedBall_sub_le hα hf hosc hb.1 hb.2 hτρ.2)
+          exact add_le_add
+            (norm_setAverage_closedBall_sub_setAverage_closedBall_le hα hf hosc ha.1 ha.2 hτρ.2)
+            (norm_setAverage_closedBall_sub_setAverage_closedBall_le hα hf hosc hb.1 hb.2 hτρ.2)
       _ < δ := by linarith
   obtain ⟨v, hv⟩ := CompleteSpace.complete hcauchy
   rwa [preciseRepresentative_eq_of_tendsto hv]
@@ -252,33 +255,7 @@ theorem norm_setAverage_closedBall_sub_preciseRepresentative_le (hα : 0 < α)
   refine le_of_tendsto (tendsto_const_nhds.sub ht).norm ?_
   filter_upwards [Ioc_mem_nhdsGT hr] with ε hε
   rw [norm_sub_rev]
-  exact norm_setAverage_closedBall_sub_le hα hf hosc hε.1 hε.2 hrρ
-
-/-- **Averages over concentric balls.** If `f` has mean oscillation at most `M r^α` on
-`closedBall x r` for `0 < r ≤ ρ` and is integrable on `closedBall x ρ`, then its averages over
-`closedBall x r` and `closedBall x ρ` differ by at most `2 · 2ⁿ / (1 - 2^(-α)) · M ρ^α` for
-`0 < r ≤ ρ`, where `n` is the dimension. -/
-theorem norm_setAverage_closedBall_sub_setAverage_closedBall_le (hα : 0 < α)
-    (hf : IntegrableOn f (closedBall x ρ) μ)
-    (hosc : ∀ r, 0 < r → r ≤ ρ →
-      ⨍ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ‖ ∂μ ≤ M * r ^ α)
-    {r : ℝ} (hr : 0 < r) (hrρ : r ≤ ρ) :
-    ‖(⨍ y in closedBall x r, f y ∂μ) - ⨍ y in closedBall x ρ, f y ∂μ‖ ≤
-      2 * (2 ^ finrank ℝ E / (1 - 2 ^ (-α))) * (M * ρ ^ α) := by
-  have hρ := hr.trans_le hrρ
-  have hM : 0 ≤ M := nonneg_of_mul_nonneg_left
-    ((average_nonneg fun _ => norm_nonneg _).trans (hosc ρ hρ le_rfl)) (by positivity)
-  have h₁ := norm_setAverage_closedBall_sub_preciseRepresentative_le hα hf hosc hr hrρ
-  have h₂ := norm_setAverage_closedBall_sub_preciseRepresentative_le hα hf hosc hρ le_rfl
-  have h₃ : M * r ^ α ≤ M * ρ ^ α := by gcongr
-  have hC : (0 : ℝ) ≤ 2 ^ finrank ℝ E / (1 - 2 ^ (-α)) :=
-    div_nonneg (by positivity) (one_sub_two_rpow_neg_pos hα).le
-  calc _ ≤ ‖(⨍ y in closedBall x r, f y ∂μ) - preciseRepresentative μ f x‖ +
-        ‖preciseRepresentative μ f x - ⨍ y in closedBall x ρ, f y ∂μ‖ :=
-        norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ _ := by
-        rw [norm_sub_rev (preciseRepresentative μ f x)]
-        nlinarith [mul_le_mul_of_nonneg_left h₃ hC]
+  exact norm_setAverage_closedBall_sub_setAverage_closedBall_le hα hf hosc hε.1 hε.2 hrρ
 
 /-- **The local Campanato estimate.** Let `α > 0` and `d = dist x y`. If `f` has mean oscillation
 at most `M r^α` on `closedBall x r` for `0 < r ≤ 2 d` and on `closedBall y r` for `0 < r ≤ d`,

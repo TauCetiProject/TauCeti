@@ -538,7 +538,7 @@ private theorem setAverage_closedBall_norm_gradient_sub_le
 `ball z R ⊆ Ω`, `∫_{B_R} ‖∇u‖² ≤ V` and the square mean oscillation of `∇u` satisfies
 `∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C₂ V (t / R)^{n+1+2κ}` for `0 < t ≤ θ R`, then for `0 < t ≤ θ R`
 the averages of `∇u` over `closedBall z t` satisfy
-`‖(∇u)_{z,t}‖² ≤ (2 θ^{-(n+1)} + 8 c² C₂) V / (ω R^{n+1})`, where `ω` is the volume of the unit
+`‖(∇u)_{z,t}‖² ≤ (2 θ^{-(n+1)} + 2 c² C₂) V / (ω R^{n+1})`, where `ω` is the volume of the unit
 ball and `c = 2^{n+1} / (1 - 2^{-κ})` is the constant of Campanato's theorem. -/
 private theorem sq_norm_setAverage_closedBall_gradient_le {κ θ C₂ : ℝ} (hκ : 0 < κ) (hθ : 0 < θ)
     (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
@@ -549,7 +549,7 @@ private theorem sq_norm_setAverage_closedBall_gradient_le {κ θ C₂ : ℝ} (h�
         C₂ * V * ((t / R) ^ (n + 1) * (t / R) ^ (2 * κ)))
     {t : ℝ} (ht : 0 < t) (htθ : t ≤ θ * R) :
     ‖⨍ y in closedBall z t, W1p.gradient u y‖ ^ 2 ≤
-      (2 / θ ^ (n + 1) + 8 * (2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) /
+      (2 / θ ^ (n + 1) + 2 * (2 ^ finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) /
         (1 - 2 ^ (-κ))) ^ 2 * C₂) *
         (V / (volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * R ^ (n + 1))) := by
   obtain ⟨c, hcdef⟩ : ∃ c : ℝ,
@@ -583,15 +583,15 @@ private theorem sq_norm_setAverage_closedBall_gradient_le {κ θ C₂ : ℝ} (h�
   -- By Campanato's estimate, the averages over `closedBall z t` stay close to the average at
   -- radius `θ R`.
   have hat : ‖⨍ y in closedBall z t, W1p.gradient u y‖ ≤
-      ‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ + 2 * (c * √(C₂ * W)) := by
+      ‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ + c * √(C₂ * W) := by
     have h := norm_setAverage_closedBall_sub_setAverage_closedBall_le hκ
-      (integrableOn_closedBall_gradient u hball hθR) hosc ht htθ
+      (integrableOn_closedBall_gradient u hball hθR) hosc ht htθ le_rfl
     rw [← hcdef] at h
     have hRr : R ^ (-κ) * (θ * R) ^ κ ≤ 1 := by
       rw [Real.rpow_neg hR.le, inv_mul_le_one₀ (by positivity)]
       exact Real.rpow_le_rpow (by positivity) hθR hκ.le
-    have h' : 2 * c * (√(C₂ * W) * R ^ (-κ) * (θ * R) ^ κ) ≤ 2 * (c * √(C₂ * W)) := by
-      have := mul_le_mul_of_nonneg_left hRr (by positivity : (0 : ℝ) ≤ 2 * c * √(C₂ * W))
+    have h' : c * (√(C₂ * W) * R ^ (-κ) * (θ * R) ^ κ) ≤ c * √(C₂ * W) := by
+      have := mul_le_mul_of_nonneg_left hRr (by positivity : (0 : ℝ) ≤ c * √(C₂ * W))
       linarith
     have h4 := norm_le_norm_add_norm_sub' (⨍ y in closedBall z t, W1p.gradient u y)
       (⨍ y in closedBall z (θ * R), W1p.gradient u y)
@@ -599,12 +599,12 @@ private theorem sq_norm_setAverage_closedBall_gradient_le {κ θ C₂ : ℝ} (h�
   have hsq : (c * √(C₂ * W)) ^ 2 = c ^ 2 * C₂ * W := by
     rw [mul_pow, Real.sq_sqrt (by positivity)]; ring
   calc ‖⨍ y in closedBall z t, W1p.gradient u y‖ ^ 2
-      ≤ (‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ + 2 * (c * √(C₂ * W))) ^ 2 :=
+      ≤ (‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ + c * √(C₂ * W)) ^ 2 :=
         pow_le_pow_left₀ (norm_nonneg _) hat 2
     _ ≤ 2 * ‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ ^ 2 +
-          2 * (2 * (c * √(C₂ * W))) ^ 2 := add_sq_le.trans_eq (by ring)
-    _ ≤ 2 * (W / θ ^ (n + 1)) + 8 * (c ^ 2 * C₂ * W) := by nlinarith
-    _ = (2 / θ ^ (n + 1) + 8 * c ^ 2 * C₂) * W := by ring
+          2 * (c * √(C₂ * W)) ^ 2 := add_sq_le.trans_eq (mul_add _ _ _)
+    _ ≤ 2 * (W / θ ^ (n + 1)) + 2 * (c ^ 2 * C₂ * W) := by nlinarith
+    _ = (2 / θ ^ (n + 1) + 2 * c ^ 2 * C₂) * W := by ring
 
 /-- **Morrey decay with the full exponent from Campanato decay.** Let `κ > 0` and `θ ∈ (0, 1]`.
 There is `C₃`, depending only on `n`, `κ`, `θ` and `C₂`, such that the following holds. If
@@ -620,7 +620,7 @@ private theorem exists_setIntegral_norm_gradient_sq_le_pow {κ θ C₂ : ℝ} (h
           C₂ * V * ((t / R) ^ (n + 1) * (t / R) ^ (2 * κ))) →
       ∀ t, 0 < t → t ≤ θ * R →
         ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2 ≤ C₃ * V * (t / R) ^ (n + 1) := by
-  obtain ⟨K, hK⟩ : ∃ K : ℝ, K = 2 / θ ^ (n + 1) + 8 * (2 ^ finrank ℝ
+  obtain ⟨K, hK⟩ : ∃ K : ℝ, K = 2 / θ ^ (n + 1) + 2 * (2 ^ finrank ℝ
       (EuclideanSpace ℝ (Fin (n + 1))) / (1 - 2 ^ (-κ))) ^ 2 * C₂ := ⟨_, rfl⟩
   have hK0 : 0 ≤ K := hK ▸ by positivity
   refine ⟨C₂ + K, by positivity, ?_⟩
