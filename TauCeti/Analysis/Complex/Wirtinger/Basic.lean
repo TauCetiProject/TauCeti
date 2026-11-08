@@ -58,6 +58,7 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
+* `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
@@ -330,6 +331,14 @@ theorem conjWirtingerDeriv_eq_sum_smul {f : V → W} {x : V} {ι : Type*} {s : F
     ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   module
+
+/-- The conjugate Wirtinger derivative of a finite sum of real-differentiable functions is the sum
+of their conjugate Wirtinger derivatives. -/
+theorem conjWirtingerDeriv_fun_sum {ι : Type*} {s : Finset ι} {g : ι → V → W} {x : V}
+    (h : ∀ i ∈ s, DifferentiableAt ℝ (g i) x) :
+    conjWirtingerDeriv (fun y ↦ ∑ i ∈ s, g i y) x = ∑ i ∈ s, conjWirtingerDeriv (g i) x := by
+  simpa using conjWirtingerDeriv_eq_sum_smul (c := fun _ ↦ (1 : ℂ)) (g := g)
+    ((fderiv_fun_sum h).trans (by simp))
 
 section Mul
 
