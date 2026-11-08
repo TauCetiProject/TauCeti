@@ -131,17 +131,19 @@ noncomputable def cokerDualMapEquiv : (Dual K M ⧸ range f.dualMap) ≃ₗ[K] D
 
 @[simp]
 theorem cokerDualMapEquiv_mk_apply (θ : Dual K M) (u : ker f) :
-    f.cokerDualMapEquiv (Submodule.Quotient.mk θ) u = θ u :=
-  (rfl)
+    f.cokerDualMapEquiv (Submodule.Quotient.mk θ) u = θ u := by
+  simp [cokerDualMapEquiv]
 
 /-- The `finrank` of the kernel of `f^*` equals the `finrank` of the cokernel of `f`. When the
 cokernel is finite-dimensional this says the two spaces have the same dimension. -/
+@[simp]
 theorem finrank_ker_dualMap_eq_finrank_quotient_range :
     finrank K (ker f.dualMap) = finrank K (N ⧸ range f) :=
   f.kerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
 
 /-- The `finrank` of the cokernel of `f^*` equals the `finrank` of the kernel of `f`. When the
 kernel is finite-dimensional this says the two spaces have the same dimension. -/
+@[simp]
 theorem finrank_quotient_range_dualMap :
     finrank K (Dual K M ⧸ range f.dualMap) = finrank K (ker f) :=
   f.cokerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.Dual.Annihilator
-public import TauCeti.LinearAlgebra.Dual.Rank
+public import TauCeti.LinearAlgebra.Dual.Basis
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -79,10 +79,9 @@ theorem detLineDualEquiv_ιMulti_ιMulti (φ : Fin (finrank R (Dual R V)) → Du
     (v : Fin (finrank R V) → V) :
     detLineDualEquiv R V (exteriorPower.ιMulti R _ φ) (exteriorPower.ιMulti R _ v) =
       (Matrix.of fun i j ↦ φ (Fin.cast (Module.dual_finrank_eq R V).symm j) (v i)).det := by
-  rw [detLineDualEquiv, LinearEquiv.trans_apply,
+  simp only [detLineDualEquiv, LinearEquiv.trans_apply,
     exteriorPower.ofEq_ιMulti (Module.dual_finrank_eq R V), LinearEquiv.ofBijective_apply,
-    exteriorPower.pairingDual_ιMulti_ιMulti]
-  rfl
+    exteriorPower.pairingDual_ιMulti_ιMulti, Function.comp_apply]
 
 end TauCeti
 
