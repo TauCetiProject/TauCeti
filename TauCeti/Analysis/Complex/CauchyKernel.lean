@@ -103,8 +103,8 @@ theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
   convert integral_norm_sub_inv_closedBall_le_add (dist_nonneg.trans (mem_closedBall.mp hw)) hw
     using 1; ring
 
-/-- The reciprocal kernel `w ↦ (w - z)⁻¹` is integrable over every set `s` uniformly in its pole:
-`∫_s |w - z|⁻¹ ≤ 2π + |s|`. -/
+/-- The integral of `‖(w - z)⁻¹‖` over a set `s` is at most `2π + |s|`, uniformly in the pole `z`;
+in particular the reciprocal kernel is integrable over every set of finite measure. -/
 theorem setLIntegral_enorm_sub_inv_le (s : Set ℂ) (z : ℂ) :
     ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ ≤ ENNReal.ofReal (2 * Real.pi) + volume s := by
   have hpt (w : ℂ) :

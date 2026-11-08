@@ -47,13 +47,14 @@ properties of the Cauchy transform.
   data on `s × ℂ`.
 * `TauCeti.integrableOn_cauchyTransform` and `TauCeti.locallyIntegrable_cauchyTransform`: the
   Cauchy transform of integrable data is integrable on sets of finite measure.
-* `TauCeti.integral_lineDeriv_smul_cauchyTransform`: the integration-by-parts identity against a
-  compactly supported real `C¹` function.
+* `TauCeti.integral_lineDeriv_smul_cauchyTransform_add_I_smul_eq_neg_two_smul_integral_smul`:
+  the integration-by-parts identity against a compactly supported real `C¹` function.
 * `TauCeti.hasWeakConjWirtingerDerivOn_cauchyTransform`: `bar∂ (T f) = f` distributionally, and
   `TauCeti.hasWeakConjWirtingerDerivOn_cauchyTransform_of_memLp` its form for compactly supported
   `Lᵖ` data.
 * `TauCeti.HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq_cauchyTransform_add`: every
-  distributional solution of `bar∂ u = f` is `T f` plus a holomorphic function.
+  distributional solution on `Ω` of `bar∂ u = f` with integrable `f` and finite-dimensional
+  coefficients agrees a.e. on `Ω` with `T f` plus a holomorphic function.
 
 ## References
 
@@ -166,19 +167,20 @@ private theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace 
 /-- **Integration by parts against the Cauchy transform.** For integrable `f` and a compactly
 supported real `C¹` function `φ`,
 `∫ ∂ₛφ • T f + i ∫ ∂ₜφ • T f = -2 ∫ φ • f`, the weak form of `bar∂ (T f) = f`. -/
-theorem integral_lineDeriv_smul_cauchyTransform [CompleteSpace F] {f : ℂ → F} (hf : Integrable f)
-    {φ : ℂ → ℝ} (hc : HasCompactSupport φ) (hφ : ContDiff ℝ 1 φ) :
+theorem integral_lineDeriv_smul_cauchyTransform_add_I_smul_eq_neg_two_smul_integral_smul
+    [CompleteSpace F] {f : ℂ → F} (hf : Integrable f) {φ : ℂ → ℝ} (hc : HasCompactSupport φ)
+    (hφ : ContDiff ℝ 1 φ) :
     (∫ w, lineDeriv ℝ φ w 1 • cauchyTransform f w) +
         I • (∫ w, lineDeriv ℝ φ w I • cauchyTransform f w) =
       -(2 : ℂ) • ∫ z, φ z • f z := by
-  set ψ : ℂ → ℂ := fun z ↦ (φ z : ℂ) with hψ_def
+  set ψ : ℂ → ℂ := fun z ↦ (φ z : ℂ)
   have hψ : ContDiff ℝ 1 ψ := ofRealCLM.contDiff.comp hφ
   have hψc : HasCompactSupport ψ := hc.comp_left ofReal_zero
   have hd (w : ℂ) (v : ℂ) : fderiv ℝ ψ w v = ((lineDeriv ℝ φ w v : ℝ) : ℂ) := by
     have hφw : DifferentiableAt ℝ φ w := hφ.differentiable one_ne_zero w
-    rw [hφw.lineDeriv_eq_fderiv, hψ_def, show (fun z ↦ (φ z : ℂ)) = ofRealCLM ∘ φ from rfl,
-      fderiv_comp w ofRealCLM.differentiableAt hφw, ContinuousLinearMap.fderiv]
-    rfl
+    have hψφ : ψ = ofRealCLM ∘ φ := funext fun z ↦ (ofRealCLM_apply (φ z)).symm
+    rw [hφw.lineDeriv_eq_fderiv, hψφ, fderiv_comp w ofRealCLM.differentiableAt hφw,
+      ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, ofRealCLM_apply]
   have hi (v : ℂ) : Integrable fun w ↦ ((lineDeriv ℝ φ w v : ℝ) : ℂ) • cauchyTransform f w := by
     refine (locallyIntegrable_cauchyTransform hf).integrable_smul_left_of_hasCompactSupport ?_ ?_
     · simp_rw [← hd]
@@ -212,8 +214,8 @@ theorem hasWeakConjWirtingerDerivOn_cauchyTransform [CompleteSpace F] {f : ℂ �
   hasWeakConjWirtingerDerivOn_iff.2 ⟨inferInstance,
     (locallyIntegrable_cauchyTransform hf).locallyIntegrableOn _,
     hf.locallyIntegrable.locallyIntegrableOn _, fun φ ↦
-      integral_lineDeriv_smul_cauchyTransform hf φ.hasCompactSupport
-        (φ.contDiff.of_le (by simp))⟩
+      integral_lineDeriv_smul_cauchyTransform_add_I_smul_eq_neg_two_smul_integral_smul hf
+        φ.hasCompactSupport (φ.contDiff.of_le (by simp))⟩
 
 /-- **`bar∂ (T f) = f` for compactly supported `Lᵖ` data.** For `1 ≤ p ≤ ∞` and `f` in `Lᵖ` with
 support in a closed disc, the Cauchy transform solves `bar∂ (T f) = f` distributionally on every
