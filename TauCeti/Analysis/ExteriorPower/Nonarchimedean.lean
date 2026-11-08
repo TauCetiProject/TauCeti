@@ -166,8 +166,8 @@ theorem exists_integral_plucker_reduction (v : AbsoluteValue K ℝ) (hv : IsNona
     rw [← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr he),
       Matrix.one_mul]
   -- Extend the off-pivot columns of the normalized family by zero on the
-  -- other rows. This shear has square zero.
-  obtain ⟨N, hNN, hN, hcol, hout, hrow⟩ := v.exists_shear e B hb
+  -- other rows. This matrix has square zero.
+  obtain ⟨N, hNN, hN, hcol, hout, hrow⟩ := v.exists_square_zero_extension e B fun a j _ ↦ hb a j
   have hunit (i j : ι) : v ((1 : Matrix ι ι K) i j) ≤ 1 := by
     by_cases h : i = j <;> simp [Matrix.one_apply, h]
   have hbound (i j : ι) : v ((1 - N) i j) ≤ 1 ∧ v ((1 + N) i j) ≤ 1 := by
@@ -180,7 +180,7 @@ theorem exists_integral_plucker_reduction (v : AbsoluteValue K ℝ) (hv : IsNona
   · simp [sub_mul, mul_add, hNN]
   · simp [mul_sub, add_mul, hNN]
   -- Summing over the pivot rows recovers P B = x off the pivot columns;
-  -- the shear vanishes on the pivot columns themselves.
+  -- the matrix vanishes on the pivot columns themselves.
   · intro i j
     rw [Matrix.mul_sub, Matrix.mul_one, Matrix.sub_apply]
     by_cases hj : j ∈ range e

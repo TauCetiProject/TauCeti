@@ -10,17 +10,18 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Basic.Real.Basic
 
 /-!
-# Bounded square-zero shears
+# Bounded square-zero matrices
 
-Given a family `B` of rows indexed by `Fin p`, with entries in the unit ball of an absolute value,
-and an embedding `e : Fin p ↪ ι`, `AbsoluteValue.exists_shear` produces a matrix `N` on `ι` with
+Given a family `B` of rows indexed by `Fin p`, with entries in the unit ball of an absolute value
+outside the pivot columns, and an embedding `e : Fin p ↪ ι`,
+`AbsoluteValue.exists_square_zero_extension` produces a matrix `N` on `ι` with
 square zero and entries in the unit ball, supported on the rows `e a` and the columns outside
-`range e`, and agreeing with `B` there. Then `1 - N` and `1 + N` are mutually inverse changes of
-coordinates with entries in the unit ball.
+`range e`, and agreeing with `B` there. Over a ring, `1 - N` and `1 + N` are then mutually inverse
+changes of coordinates.
 
 ## Main results
 
-* `AbsoluteValue.exists_shear`: the existence of such a matrix `N`.
+* `AbsoluteValue.exists_square_zero_extension`: the existence of such a matrix `N`.
 -/
 
 public section
@@ -32,9 +33,11 @@ namespace AbsoluteValue
 variable {ι K : Type*} {p : ℕ} [Fintype ι] [Semiring K]
 
 /-- A matrix supported on the pivot rows and the non-pivot columns, with entries in the unit ball
-whenever those of a given family `B` are, and agreeing with `B` there, has square zero. -/
-theorem exists_shear (v : AbsoluteValue K ℝ) (e : Fin p ↪ ι) (B : Matrix (Fin p) ι K)
-    (hb : ∀ a j, v (B a j) ≤ 1) :
+whenever those of a given family `B` are on the non-pivot columns, and agreeing with `B` there,
+has square zero. -/
+theorem exists_square_zero_extension (v : AbsoluteValue K ℝ) (e : Fin p ↪ ι)
+    (B : Matrix (Fin p) ι K)
+    (hb : ∀ a j, j ∉ range e → v (B a j) ≤ 1) :
     ∃ N : Matrix ι ι K, N * N = 0 ∧ (∀ i j, v (N i j) ≤ 1) ∧
       (∀ i, ∀ j ∈ range e, N i j = 0) ∧ (∀ i ∉ range e, ∀ j, N i j = 0) ∧
       ∀ a j, j ∉ range e → N (e a) j = B a j := by
@@ -59,9 +62,9 @@ theorem exists_shear (v : AbsoluteValue K ℝ) (e : Fin p ↪ ι) (B : Matrix (F
   · by_cases hi : i ∈ range e
     · obtain ⟨a, rfl⟩ := hi
       rw [hrow]
-      split_ifs
+      split_ifs with hj
       · simp
-      · exact hb a j
+      · exact hb a j hj
     · simp [hout hi j]
 
 end AbsoluteValue
