@@ -47,11 +47,11 @@ theorem continuous_eigenvalueMeasure :
     empiricalMeasureOfFintype fun z : (s : Multiset ℂ) => (z : ℂ)
   have hμ : Continuous μ := by
     apply TauCeti.Sym.continuous_iff_comp_ofFn.mpr
-    have hcomp : μ ∘ TauCeti.Sym.ofFn =
+    have hcomp : μ ∘ Sym.ofFn =
         (empiricalMeasureOfFintype : (Fin (Fintype.card n) → ℂ) → ProbabilityMeasure ℂ) := by
       funext a
       apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
-      rw [Multiset.map_univ_coe, TauCeti.Sym.coe_ofFn, Fin.univ_val_map]
+      rw [Multiset.map_univ_coe, Sym.coe_ofFn, Fin.univ_val_map]
     rw [hcomp]
     exact continuous_empiricalMeasureOfFintype
   have hroots (A : Matrix n n ℂ) :
