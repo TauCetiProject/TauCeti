@@ -182,8 +182,8 @@ section DiscreteTopology
 
 open Set
 
-variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-  [TopologicalSpace X] [MulAction G X] {U : Set X}
+variable {G X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
+  {U : Set X}
 
 /-- **Discreteness from a disjoint open translate.** If a topological group acts with continuous
 orbit maps and some nonempty open set is disjoint from all of its translates by nonidentity
@@ -195,20 +195,21 @@ elements, then the group is discrete. -/]
 theorem discreteTopology_of_disjoint_smul (hcont : ∀ x : X, Continuous fun g : G ↦ g • x)
     (hU_open : IsOpen U) (hU_nonempty : U.Nonempty) (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
     DiscreteTopology G := by
-  apply discreteTopology_of_isOpen_singleton_one
-  -- The elements carrying a chosen point of `U` back into `U` form an open set equal to `{1}`.
+  refine discreteTopology_iff_isOpen_singleton.mpr fun g₀ ↦ ?_
+  -- The elements carrying `g₀⁻¹ • x` back into `U` form an open set equal to `{g₀}`.
   obtain ⟨x, hx⟩ := hU_nonempty
-  have hopen : IsOpen ((fun g : G ↦ g • x) ⁻¹' U) := hU_open.preimage (hcont x)
-  have heq : (fun g : G ↦ g • x) ⁻¹' U = {1} := by
+  have heq : (fun g : G ↦ g • g₀⁻¹ • x) ⁻¹' U = {g₀} := by
     ext g
     simp only [Set.mem_preimage, Set.mem_singleton_iff]
     constructor
     · intro hgx
       by_contra hg_ne
-      exact Set.disjoint_left.mp (hU g hg_ne) (Set.smul_mem_smul_set hx) hgx
+      have hne : g * g₀⁻¹ ≠ 1 := fun h ↦ hg_ne (mul_inv_eq_one.mp h)
+      exact Set.disjoint_left.mp (hU _ hne) (Set.smul_mem_smul_set hx) (by rwa [mul_smul])
     · rintro rfl
       simpa using hx
-  rwa [heq] at hopen
+  rw [← heq]
+  exact hU_open.preimage (hcont _)
 
 variable [ContinuousSMul G X] [T1Space G] {S : Set X}
 
@@ -224,16 +225,15 @@ discrete.** -/]
 theorem discreteTopology_of_locallyFinite_smul (hS : S.Nonempty)
     (hlocal : LocallyFinite fun g : G ↦ g • S) : DiscreteTopology G := by
   obtain ⟨x, hx⟩ := hS
-  obtain ⟨U, hU, hfinite⟩ := hlocal x
+  refine discreteTopology_iff_isOpen_singleton.mpr fun g₀ ↦ ?_
+  obtain ⟨U, hU, hfinite⟩ := hlocal (g₀ • x)
   let V : Set G := (fun g ↦ g • x) ⁻¹' U
-  have hV : V ∈ nhds (1 : G) := by
-    exact (continuous_smul.comp (continuous_id.prodMk continuous_const)).continuousAt
-      (by simpa only [Function.comp_apply, id_eq, one_smul] using hU)
+  have hV : V ∈ nhds g₀ := by
+    exact (continuous_smul.comp (continuous_id.prodMk continuous_const)).continuousAt hU
   have hVF : V ⊆ {g : G | (g • S ∩ U).Nonempty} := by
     intro g hg
     exact ⟨g • x, ⟨x, hx, rfl⟩, hg⟩
-  exact discreteTopology_of_isOpen_singleton_one <|
-    isOpen_singleton_of_finite_mem_nhds 1 (Filter.mem_of_superset hV hVF) hfinite
+  exact isOpen_singleton_of_finite_mem_nhds g₀ (Filter.mem_of_superset hV hVF) hfinite
 
 end DiscreteTopology
 
