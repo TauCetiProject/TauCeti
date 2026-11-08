@@ -534,6 +534,18 @@ section Weight
 variable {a : E × E → V →L[ℂ] W} {x : E} {C C' m m' : ℝ}
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The line derivative in the direction `v` of the phase `ζ ↦ 𝐞 ⟪ζ, x⟫` is
+`2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫`. -/
+private lemma hasLineDerivAt_fourierChar_inner (x v ζ : E) :
+    HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ)) ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫) ζ v := by
+  have h : HasDerivAt (fun t : ℝ ↦ ⟪ζ + t • v, x⟫) ⟪v, x⟫ 0 := by
+    simpa [inner_add_left, inner_smul_left] using
+      ((hasDerivAt_id (0 : ℝ)).mul_const ⟪v, x⟫).const_add ⟪ζ, x⟫
+  have h' := (hasDerivAt_fourierChar ⟪ζ + (0 : ℝ) • v, x⟫).scomp 0 h
+  rw [zero_smul, add_zero] at h'
+  exact h'.congr_deriv (by rw [Complex.real_smul]; ring)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The line derivative in the direction `v` of the frequency-side integrand
 `ζ ↦ a(x, 2πζ) (f ζ)`. -/
 private lemma hasLineDerivAt_apply (ha : ContDiff ℝ 1 fun ξ ↦ a (x, ξ)) (f : 𝓢(E, V)) (v ζ : E) :
@@ -568,18 +580,6 @@ private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun �
   have hint := integrable_quantizeSchwartzValue_integrand hmeas hC (𝓕 u)
   have hint₁ := integrable_quantizeSchwartzValue_integrand (a := a') hmeas' hC' (𝓕 u)
   have hint₂ := integrable_quantizeSchwartzValue_integrand hmeas hC (∂_{v} (𝓕 u))
-  -- the line derivative of the phase `ζ ↦ 𝐞 ⟪ζ, x⟫`
-  have hphase (ζ : E) : HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ))
-      ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫) ζ v := by
-    convert (hasFDerivAt_fourierChar_neg_bilinear_right (-innerSL ℝ) x ζ).hasLineDerivAt v
-      using 1
-    · simp only [real_inner_comm x, neg_apply, neg_neg]
-      funext ζ
-      rw [innerSL_apply_apply]
-    · simp only [real_inner_comm x, neg_mul, neg_apply, neg_neg, ContinuousLinearMap.comp_neg,
-        smul_neg, neg_smul, smul_apply, ContinuousLinearMap.comp_apply, Complex.ofRealCLM_apply,
-        smul_eq_mul]
-      rw [mul_right_comm, innerSL_apply_apply, innerSL_apply_apply]
   -- integrate by parts in the frequency, moving the derivative from the phase to the rest
   have hibp := integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable
     (μ := volume) (B := ContinuousLinearMap.lsmul ℝ ℂ (E := W))
@@ -592,7 +592,7 @@ private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun �
     (((hint₁.smul (2 * π)).add hint₂).congr (ae_of_all _ fun ζ ↦ by
       simp [Circle.smul_def, smul_add, smul_comm (2 * π)]))
     (hint.congr (ae_of_all _ fun ζ ↦ by simp [Circle.smul_def]))
-    (fun ζ _ ↦ hphase ζ)
+    (fun ζ _ ↦ hasLineDerivAt_fourierChar_inner x v ζ)
     (fun ζ _ ↦ hasLineDerivAt_apply ha (𝓕 u) v ζ)
   have h₁ : ∫ ζ, ContinuousLinearMap.lsmul ℝ ℂ (𝐞 ⟪ζ, x⟫ : ℂ)
       ((2 * π) • a' (x, (2 * π) • ζ) (𝓕 u ζ) + a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ)) =
