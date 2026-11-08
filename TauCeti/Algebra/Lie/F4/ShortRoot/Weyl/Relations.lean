@@ -61,12 +61,61 @@ private def negativeMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
 
 private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
+  -- Bound the kernel's reduction cache by checking one node at a time.
+  intro i
+  fin_cases i <;> decide +kernel
+
+-- Separate kernel checks bound memory usage without exceeding elaboration heartbeats.
+private theorem braid_certificate_01 :
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 0 1).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 1 0).map weylMatrix).prod := by
   decide +kernel
 
-private theorem braid_certificate : ∀ i j : Fin 4,
+private theorem braid_certificate_02 :
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 0 2).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 2 0).map weylMatrix).prod := by
+  decide +kernel
+
+private theorem braid_certificate_03 :
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 0 3).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 3 0).map weylMatrix).prod := by
+  decide +kernel
+
+private theorem braid_certificate_12 :
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 1 2).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 2 1).map weylMatrix).prod := by
+  decide +kernel
+
+private theorem braid_certificate_13 :
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 1 3).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 3 1).map weylMatrix).prod := by
+  decide +kernel
+
+private theorem braid_certificate_23 :
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 2 3).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 3 2).map weylMatrix).prod := by
+  decide +kernel
+
+private theorem braid_certificate (i j : Fin 4) :
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  decide +kernel
+  fin_cases i <;> fin_cases j
+  · rfl
+  · exact braid_certificate_01
+  · exact braid_certificate_02
+  · exact braid_certificate_03
+  · exact braid_certificate_01.symm
+  · rfl
+  · exact braid_certificate_12
+  · exact braid_certificate_13
+  · exact braid_certificate_02.symm
+  · exact braid_certificate_12.symm
+  · rfl
+  · exact braid_certificate_23
+  · exact braid_certificate_03.symm
+  · exact braid_certificate_13.symm
+  · exact braid_certificate_23.symm
+  · rfl
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :
