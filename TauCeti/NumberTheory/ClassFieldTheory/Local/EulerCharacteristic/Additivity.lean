@@ -45,8 +45,7 @@ variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
 omit [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
 /-- The explicit `H⁰` of a discrete module has the cardinality of the continuous cohomology
 `H⁰`. -/
-private theorem natCard_H0_eq (X : GalRep n F) [DiscreteTopology X.V]
-    [ContinuousSMul (Field.absoluteGaloisGroup F) X.V] :
+private theorem natCard_H0_eq (X : GalRep n F) [DiscreteTopology X.V] :
     Nat.card (H0 (Field.absoluteGaloisGroup F) X.V) = Nat.card (continuousCohomology 0 X) :=
   Nat.card_congr
     (((explicitH0IsoContinuousCohomology (Field.absoluteGaloisGroup F) X.V
