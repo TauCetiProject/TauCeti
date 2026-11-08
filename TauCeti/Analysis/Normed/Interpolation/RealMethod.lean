@@ -44,7 +44,18 @@ Here `K` is Peetre's `K`-functional `CompatibleCouple.kFunctional` and `dt / t` 
   `KMethodSpace.opNorm_map_le`; the underlying estimate `CompatibleCouple.kMethodENorm_map_le`
   holds over any normed field). It respects identities and composition
   (`KMethodSpace.map_id`, `KMethodSpace.map_comp`). Thus the real method is an exact
-  interpolation functor of exponent `θ`.
+  interpolation functor of exponent `θ`. Endpoint contractions induce a contraction
+  (`KMethodSpace.norm_map_le_of_norm_le`).
+* `CompatibleCouple.kMethod_eq_comap_of_leftInverse`,
+  `CompatibleCouple.kMethod_eq_map_of_leftInverse`: if `(X₀, X₁)` is a retract of `(Y₀, Y₁)`,
+  with morphisms of couples `I` and `P` such that `P ∘ I = id`, then `u ∈ (X₀, X₁)_{θ,q}` exactly
+  when `I u ∈ (Y₀, Y₁)_{θ,q}`, and `(X₀, X₁)_{θ,q} = P ((Y₀, Y₁)_{θ,q})`. The norms of `u` and
+  `I u` are equivalent (`CompatibleCouple.kMethodENorm_le_of_leftInverse`,
+  `KMethodSpace.norm_le_mul_norm_map_of_leftInverse`), and the induced map of `P` is a left
+  inverse of that of `I` (`KMethodSpace.leftInverse_map`).
+* `KMethodSpace.mapEquiv`: isomorphisms of the endpoints, compatible on the sum spaces, induce an
+  isomorphism of the real interpolation spaces, isometric when the endpoint isomorphisms are
+  (`KMethodSpace.norm_mapEquiv`).
 * `CompatibleCouple.kMethodConst_eq`: `c_{θ,q} = (θ (1 - θ) q) ^ (-1 / q)` for `0 < θ < 1` and
   finite `q ≠ 0`, and `c_{θ,∞} = 1` for `0 ≤ θ ≤ 1` (`CompatibleCouple.kMethodConst_top`); by
   `CompatibleCouple.kMethodENorm_refl`, for the couple `(X, X)` the norm is
@@ -53,7 +64,8 @@ Here `K` is Peetre's `K`-functional `CompatibleCouple.kFunctional` and `dt / t` 
 ## References
 
 * J. Bergh and J. Löfström, *Interpolation Spaces. An Introduction*, Grundlehren 223,
-  Springer, 1976, §3.1 (Theorem 3.1.2) and §3.4 (Theorem 3.4.2(a)).
+  Springer, 1976, §3.1 (Theorem 3.1.2), §3.4 (Theorem 3.4.2(a)) and, for retracts, §6.4
+  (Theorem 6.4.2).
 -/
 
 public noncomputable section
@@ -549,13 +561,41 @@ theorem kMethodENorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X�
           (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u) hmp,
           Real.enorm_of_nonneg (by positivity), kMethodENorm]
 
+/-- A linear map `P` of sum spaces is a left inverse of another one `I` as soon as their
+restrictions to the endpoints are left inverses of each other. -/
+theorem leftInverse_of_leftInverse {I : C.SumSpace →ₗ[𝕜] D.SumSpace}
+    {P : D.SumSpace →ₗ[𝕜] C.SumSpace} {I₀ : X₀ → Y₀} {I₁ : X₁ → Y₁} {P₀ : Y₀ → X₀}
+    {P₁ : Y₁ → X₁} (hI₀ : ∀ x, I (C.fstToSum x) = D.fstToSum (I₀ x))
+    (hI₁ : ∀ x, I (C.sndToSum x) = D.sndToSum (I₁ x))
+    (hP₀ : ∀ y, P (D.fstToSum y) = C.fstToSum (P₀ y))
+    (hP₁ : ∀ y, P (D.sndToSum y) = C.sndToSum (P₁ y)) (h₀ : Function.LeftInverse P₀ I₀)
+    (h₁ : Function.LeftInverse P₁ I₁) : Function.LeftInverse P I := by
+  intro u
+  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+  rw [map_add, map_add, hI₀, hI₁, hP₀, hP₁, h₀, h₁]
+
+/-- **Retracts.** Let `P` be a linear map of sum spaces restricting to maps `P₀ : Y₀ → X₀` and
+`P₁ : Y₁ → X₁` with `‖P₀ y‖ ≤ N₀ ‖y‖` and `‖P₁ y‖ ≤ N₁ ‖y‖`, where `N₀`, `N₁` are positive. If `P`
+is a left inverse of a linear map `I` of sum spaces, then the `K`-method norm of `u` is at most
+`N₀ ^ (1 - θ) * N₁ ^ θ` times that of `I u`. When `I` is a morphism of couples as well,
+`kMethodENorm_map_le` gives the reverse estimate, so the two norms are equivalent. -/
+theorem kMethodENorm_le_of_leftInverse {I : C.SumSpace →ₗ[𝕜] D.SumSpace}
+    (P : D.SumSpace →ₗ[𝕜] C.SumSpace) {P₀ : Y₀ → X₀} {P₁ : Y₁ → X₁}
+    (hP₀ : ∀ y, P (D.fstToSum y) = C.fstToSum (P₀ y))
+    (hP₁ : ∀ y, P (D.sndToSum y) = C.sndToSum (P₁ y)) (hPI : Function.LeftInverse P I)
+    {N₀ N₁ : ℝ} (hN₀ : 0 < N₀) (hN₁ : 0 < N₁) (h₀ : ∀ y, ‖P₀ y‖ ≤ N₀ * ‖y‖)
+    (h₁ : ∀ y, ‖P₁ y‖ ≤ N₁ * ‖y‖) (u : C.SumSpace) :
+    C.kMethodENorm θ q u ≤ ENNReal.ofReal (N₀ ^ (1 - θ) * N₁ ^ θ) * D.kMethodENorm θ q (I u) := by
+  have h := kMethodENorm_map_le P hP₀ hP₁ hN₀ hN₁ h₀ h₁ (θ := θ) (q := q) (I u)
+  rwa [hPI u] at h
+
 end Map
 
 end CompatibleCouple
 
 /-! ### Operator norms and functoriality -/
 
-namespace CompatibleCouple.KMethodSpace
+namespace CompatibleCouple
 
 variable {𝕜 X₀ X₁ V Y₀ Y₁ W : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup X₀] [NormedSpace 𝕜 X₀] [NormedAddCommGroup X₁] [NormedSpace 𝕜 X₁]
@@ -564,6 +604,20 @@ variable {𝕜 X₀ X₁ V Y₀ Y₁ W : Type*} [NontriviallyNormedField 𝕜]
   [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [ContinuousAdd W] [T1Space W]
   {C : CompatibleCouple 𝕜 X₀ X₁ V} {D : CompatibleCouple 𝕜 Y₀ Y₁ W} {θ : ℝ} {q : ℝ≥0∞}
   [Fact (1 ≤ q)]
+
+omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
+/-- A linear map `T` of sum spaces that restricts to continuous linear maps `T₀ : X₀ →L[𝕜] Y₀`
+and `T₁ : X₁ →L[𝕜] Y₁` maps `(X₀, X₁)_{θ,q}` into `(Y₀, Y₁)_{θ,q}`. -/
+theorem map_mem_kMethod (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ →L[𝕜] Y₀}
+    {T₁ : X₁ →L[𝕜] Y₁} (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
+    (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) {u : C.SumSpace}
+    (hu : u ∈ C.kMethod θ q) : T u ∈ D.kMethod θ q := by
+  obtain ⟨M₀, hM₀, h₀⟩ := T₀.bound
+  obtain ⟨M₁, hM₁, h₁⟩ := T₁.bound
+  exact (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ u).trans_lt
+    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (mem_kMethod_iff.1 hu))
+
+namespace KMethodSpace
 
 /-- The inclusion into the sum space has norm at most `c_{θ,q}⁻¹`. -/
 theorem opNorm_toSum_le :
@@ -584,16 +638,10 @@ variable (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ →L[𝕜] Y₀} 
   (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x))
 include hT₀ hT₁
 
-omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
-private theorem map_toSumₗ_mem (u : C.KMethodSpace θ q) : T (toSumₗ u) ∈ D.kMethod θ q := by
-  obtain ⟨M₀, hM₀, h₀⟩ := T₀.bound
-  obtain ⟨M₁, hM₁, h₁⟩ := T₁.bound
-  exact (kMethodENorm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁ _).trans_lt
-    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (kMethodENorm_toSumₗ_lt_top u))
-
 private theorem norm_mk_map_toSumₗ_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
     (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.KMethodSpace θ q) :
-    ‖mk (T (toSumₗ u)) (map_toSumₗ_mem T hT₀ hT₁ u)‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
+    ‖mk (T (toSumₗ u)) (map_mem_kMethod T hT₀ hT₁ (toSumₗ_mem u))‖ ≤
+      M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
   rw [norm_mk, norm_def, ← ENNReal.toReal_ofReal (by positivity : 0 ≤ M₀ ^ (1 - θ) * M₁ ^ θ),
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
@@ -605,7 +653,7 @@ sum spaces that restricts to continuous linear maps `T₀ : X₀ →L[𝕜] Y₀
 multiplies the norm by at most `M₀ ^ (1 - θ) * M₁ ^ θ` (`KMethodSpace.norm_map_le`). -/
 def map : C.KMethodSpace θ q →L[𝕜] D.KMethodSpace θ q :=
   LinearMap.mkContinuous
-    { toFun u := mk (T (toSumₗ u)) (map_toSumₗ_mem T hT₀ hT₁ u)
+    { toFun u := mk (T (toSumₗ u)) (map_mem_kMethod T hT₀ hT₁ (toSumₗ_mem u))
       map_add' u v := by ext; simp
       map_smul' c u := by ext; simp }
     (T₀.bound.choose ^ (1 - θ) * T₁.bound.choose ^ θ)
@@ -629,6 +677,13 @@ theorem opNorm_map_le {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (h
     (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) :
     ‖(map T hT₀ hT₁ : C.KMethodSpace θ q →L[𝕜] D.KMethodSpace θ q)‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_map_le T hT₀ hT₁ hM₀ hM₁ h₀ h₁)
+
+/-- **Exactness of the real method** for contractions: if `T₀` and `T₁` do not increase norms,
+neither does the induced map. -/
+theorem norm_map_le_of_norm_le (h₀ : ∀ x, ‖T₀ x‖ ≤ ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ ‖x‖)
+    (u : C.KMethodSpace θ q) : ‖map T hT₀ hT₁ u‖ ≤ ‖u‖ := by
+  simpa using norm_map_le T hT₀ hT₁ one_pos one_pos (fun x => by simpa using h₀ x)
+    (fun x => by simpa using h₁ x) u
 
 end Map
 
@@ -657,6 +712,145 @@ theorem map_comp (S : D.SumSpace →ₗ[𝕜] E.SumSpace) (T : C.SumSpace →ₗ
   ext u
   rfl
 
-end CompatibleCouple.KMethodSpace
+end KMethodSpace
+
+/-! ### Retracts and isomorphisms of couples -/
+
+section Retract
+
+variable (I : C.SumSpace →ₗ[𝕜] D.SumSpace) {I₀ : X₀ →L[𝕜] Y₀} {I₁ : X₁ →L[𝕜] Y₁}
+  (hI₀ : ∀ x, I (C.fstToSum x) = D.fstToSum (I₀ x))
+  (hI₁ : ∀ x, I (C.sndToSum x) = D.sndToSum (I₁ x))
+  (P : D.SumSpace →ₗ[𝕜] C.SumSpace) {P₀ : Y₀ →L[𝕜] X₀} {P₁ : Y₁ →L[𝕜] X₁}
+  (hP₀ : ∀ y, P (D.fstToSum y) = C.fstToSum (P₀ y))
+  (hP₁ : ∀ y, P (D.sndToSum y) = C.sndToSum (P₁ y))
+
+omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
+include hI₀ hI₁ hP₀ hP₁ in
+/-- **Retracts.** If `(X₀, X₁)` is a retract of `(Y₀, Y₁)`, that is, a morphism of couples `P`
+is a left inverse of a morphism of couples `I`, then `u` lies in `(X₀, X₁)_{θ,q}` exactly when
+`I u` lies in `(Y₀, Y₁)_{θ,q}`. -/
+theorem kMethod_eq_comap_of_leftInverse (hPI : Function.LeftInverse P I) :
+    C.kMethod θ q = (D.kMethod θ q).comap I := by
+  ext u
+  refine ⟨map_mem_kMethod I hI₀ hI₁, fun hu => ?_⟩
+  rw [← hPI u]
+  exact map_mem_kMethod P hP₀ hP₁ hu
+
+omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
+include hI₀ hI₁ hP₀ hP₁ in
+/-- **Retracts.** If a morphism of couples `P` is a left inverse of a morphism of couples `I`,
+then `(X₀, X₁)_{θ,q}` is the image of `(Y₀, Y₁)_{θ,q}` under `P`. -/
+theorem kMethod_eq_map_of_leftInverse (hPI : Function.LeftInverse P I) :
+    C.kMethod θ q = (D.kMethod θ q).map P := by
+  ext u
+  refine ⟨fun hu => ⟨I u, map_mem_kMethod I hI₀ hI₁ hu, hPI u⟩, ?_⟩
+  rintro ⟨v, hv, rfl⟩
+  exact map_mem_kMethod P hP₀ hP₁ hv
+
+namespace KMethodSpace
+
+/-- **Retracts.** If a morphism of couples `P` is a left inverse of a morphism of couples `I`,
+then the induced map of `P` is a left inverse of the induced map of `I`. -/
+theorem leftInverse_map (hPI : Function.LeftInverse P I) :
+    Function.LeftInverse (map P hP₀ hP₁ : D.KMethodSpace θ q →L[𝕜] C.KMethodSpace θ q)
+      (map I hI₀ hI₁) := fun u => by
+  ext
+  simp only [toSumₗ_map]
+  exact hPI _
+
+include hP₀ hP₁ in
+/-- **Retracts.** If a morphism of couples `P` is a left inverse of a morphism of couples `I`, and
+`‖P₀ y‖ ≤ N₀ ‖y‖`, `‖P₁ y‖ ≤ N₁ ‖y‖` for positive `N₀`, `N₁`, then
+`‖u‖_{θ,q} ≤ N₀ ^ (1 - θ) * N₁ ^ θ * ‖I u‖_{θ,q}`. With `norm_map_le` for `I`, the norm of the
+retract `(X₀, X₁)_{θ,q}` is equivalent to the norm of its image in `(Y₀, Y₁)_{θ,q}`. -/
+theorem norm_le_mul_norm_map_of_leftInverse (hPI : Function.LeftInverse P I) {N₀ N₁ : ℝ}
+    (hN₀ : 0 < N₀) (hN₁ : 0 < N₁) (h₀ : ∀ y, ‖P₀ y‖ ≤ N₀ * ‖y‖) (h₁ : ∀ y, ‖P₁ y‖ ≤ N₁ * ‖y‖)
+    (u : C.KMethodSpace θ q) : ‖u‖ ≤ N₀ ^ (1 - θ) * N₁ ^ θ * ‖map I hI₀ hI₁ u‖ := by
+  conv_lhs => rw [← leftInverse_map I hI₀ hI₁ P hP₀ hP₁ hPI u]
+  exact norm_map_le P hP₀ hP₁ hN₀ hN₁ h₀ h₁ _
+
+end KMethodSpace
+
+end Retract
+
+section Equiv
+
+variable {e : C.SumSpace ≃ₗ[𝕜] D.SumSpace} {e₀ : X₀ ≃L[𝕜] Y₀} {e₁ : X₁ ≃L[𝕜] Y₁}
+
+omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
+/-- If a linear equivalence of sum spaces restricts to an isomorphism `e₀` of the first
+endpoints, its inverse restricts to `e₀.symm`. -/
+theorem symm_apply_fstToSum (he₀ : ∀ x, e (C.fstToSum x) = D.fstToSum (e₀ x)) (y : Y₀) :
+    e.symm (D.fstToSum y) = C.fstToSum (e₀.symm y) :=
+  e.symm_apply_eq.2 (by rw [he₀, ContinuousLinearEquiv.apply_symm_apply])
+
+omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
+/-- If a linear equivalence of sum spaces restricts to an isomorphism `e₁` of the second
+endpoints, its inverse restricts to `e₁.symm`. -/
+theorem symm_apply_sndToSum (he₁ : ∀ x, e (C.sndToSum x) = D.sndToSum (e₁ x)) (y : Y₁) :
+    e.symm (D.sndToSum y) = C.sndToSum (e₁.symm y) :=
+  e.symm_apply_eq.2 (by rw [he₁, ContinuousLinearEquiv.apply_symm_apply])
+
+variable (e)
+
+namespace KMethodSpace
+
+variable (he₀ : ∀ x, e (C.fstToSum x) = D.fstToSum (e₀ x))
+  (he₁ : ∀ x, e (C.sndToSum x) = D.sndToSum (e₁ x))
+
+/-- **Invariance under endpoint isomorphisms.** A linear equivalence `e` of sum spaces that
+restricts to isomorphisms `e₀ : X₀ ≃L[𝕜] Y₀` and `e₁ : X₁ ≃L[𝕜] Y₁` induces an isomorphism
+`(X₀, X₁)_{θ,q} ≃L[𝕜] (Y₀, Y₁)_{θ,q}`, acting as `e` on the sum spaces (`toSumₗ_mapEquiv`). The
+norms of the endpoint isomorphisms and of their inverses bound its norm and the norm of its
+inverse by `norm_map_le`; if `e₀` and `e₁` preserve norms, so does it (`norm_mapEquiv`). -/
+def mapEquiv : C.KMethodSpace θ q ≃L[𝕜] D.KMethodSpace θ q :=
+  ContinuousLinearEquiv.equivOfInverse
+    (map e.toLinearMap (T₀ := e₀.toContinuousLinearMap) (T₁ := e₁.toContinuousLinearMap) he₀ he₁)
+    (map e.symm.toLinearMap (T₀ := e₀.symm.toContinuousLinearMap)
+      (T₁ := e₁.symm.toContinuousLinearMap) (symm_apply_fstToSum he₀) (symm_apply_sndToSum he₁))
+    (leftInverse_map _ _ _ _ _ _ e.symm_apply_apply)
+    (leftInverse_map _ _ _ _ _ _ e.apply_symm_apply)
+
+theorem mapEquiv_apply (u : C.KMethodSpace θ q) :
+    mapEquiv e he₀ he₁ u =
+      map e.toLinearMap (T₀ := e₀.toContinuousLinearMap) (T₁ := e₁.toContinuousLinearMap)
+        he₀ he₁ u :=
+  (rfl)
+
+theorem mapEquiv_symm_apply (v : D.KMethodSpace θ q) :
+    (mapEquiv e he₀ he₁).symm v =
+      map e.symm.toLinearMap (T₀ := e₀.symm.toContinuousLinearMap)
+        (T₁ := e₁.symm.toContinuousLinearMap) (symm_apply_fstToSum he₀)
+        (symm_apply_sndToSum he₁) v :=
+  (rfl)
+
+@[simp]
+theorem toSumₗ_mapEquiv (u : C.KMethodSpace θ q) :
+    toSumₗ (mapEquiv e he₀ he₁ u) = e (toSumₗ u) :=
+  (rfl)
+
+@[simp]
+theorem toSumₗ_mapEquiv_symm (v : D.KMethodSpace θ q) :
+    toSumₗ ((mapEquiv e he₀ he₁).symm v) = e.symm (toSumₗ v) :=
+  (rfl)
+
+/-- If the endpoint isomorphisms `e₀` and `e₁` preserve norms, then so does the induced
+isomorphism of real interpolation spaces. -/
+theorem norm_mapEquiv (h₀ : ∀ x, ‖e₀ x‖ = ‖x‖) (h₁ : ∀ x, ‖e₁ x‖ = ‖x‖)
+    (u : C.KMethodSpace θ q) : ‖mapEquiv e he₀ he₁ u‖ = ‖u‖ := by
+  refine le_antisymm ?_ ?_
+  · rw [mapEquiv_apply]
+    exact norm_map_le_of_norm_le _ he₀ he₁ (fun x => (h₀ x).le) (fun x => (h₁ x).le) u
+  · conv_lhs => rw [← (mapEquiv e he₀ he₁).symm_apply_apply u, mapEquiv_symm_apply]
+    refine norm_map_le_of_norm_le _ _ _ (fun y => ?_) (fun y => ?_) _
+    · rw [ContinuousLinearEquiv.coe_coe, ← h₀ (e₀.symm y), ContinuousLinearEquiv.apply_symm_apply]
+    · rw [ContinuousLinearEquiv.coe_coe, ← h₁ (e₁.symm y), ContinuousLinearEquiv.apply_symm_apply]
+
+end KMethodSpace
+
+end Equiv
+
+end CompatibleCouple
 
 end TauCeti
