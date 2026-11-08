@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 public import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
 public import TauCeti.Analysis.ODE.UniformTime
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
