@@ -129,7 +129,7 @@ theorem mulInvariantExp_neg [CompleteSpace E]
 
 section LieAlgebra
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [IsManifold I 1 G] [T2Space G]
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
   [BoundarylessManifold I G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
