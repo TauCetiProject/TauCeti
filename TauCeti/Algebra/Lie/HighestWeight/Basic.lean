@@ -76,11 +76,10 @@ structure, and `TauCeti.isHighestWeightVector_iff` together with the three proje
 `TauCeti.IsHighestWeightVector.lie_eq_zero_of_mem_positiveNilradical` is its elimination API; no
 consumer needs to take the conjunction apart by hand.
 
-The canonical public helper `TauCeti.lieAnnihilator` in `TauCeti.Algebra.Lie.Basic` packages the
-elements annihilating a vector as a Lie subalgebra. Here it lets
-`TauCeti.positiveNilradical_le_iff` extend positive-root-space annihilation to the positive
-nilradical; `TauCeti.IsHighestWeightVector.lie_eq_zero_of_weight_zero` uses the same helper with
-`TauCeti.negativeNilradical_le_iff` for the negative nilradical.
+The criterion `TauCeti.isHighestWeightVector_of_forall_rootSpace` reduces annihilation by the
+positive nilradical to annihilation by each positive root space, because the positive nilradical
+is the additive closure of those root spaces; it needs no compatibility between the scalar actions
+of `K` on `L` and on `M`.
 
 Finite-dimensionality of `M` is a hypothesis of the dominance theorem alone: the definitions and
 the elimination API are stated for an arbitrary `L`-module, since the Verma modules that Layer 3 of
@@ -204,14 +203,14 @@ variable [LieModule K L M]
 
 omit [LieModule K L M] in
 /-- **Positive root spaces suffice.** A nonzero `H`-eigenvector annihilated by the root space of
-every positive root is a highest weight vector: the positive nilradical is spanned by those root
-spaces, and the elements of `L` annihilating `v` are closed under addition, so it suffices to
-check them on each root space. -/
+every positive root is a highest weight vector. -/
 theorem isHighestWeightVector_of_forall_rootSpace {lam : Dual K H} {v : M} (hv0 : v ≠ 0)
     (hcartan : ∀ x : H, ⁅(x : L), v⁆ = lam x • v)
     (hpos : ∀ α ∈ posRoots (IsKilling.rootSystem H) b,
       ∀ x ∈ rootSpace H (α : H → K), ⁅x, v⁆ = 0) :
     IsHighestWeightVector b lam v := by
+  -- The positive nilradical is the additive closure of the positive root spaces, and
+  -- `x ↦ ⁅x, v⁆` is additive, so it suffices to check the root spaces.
   refine isHighestWeightVector_iff.mpr ⟨hv0, hcartan, fun x hx => ?_⟩
   rw [mem_positiveNilradical, rootSpaceSpan_eq_iSup] at hx
   exact LieSubmodule.iSup_induction _ (motive := fun x => ⁅x, v⁆ = 0) hx
