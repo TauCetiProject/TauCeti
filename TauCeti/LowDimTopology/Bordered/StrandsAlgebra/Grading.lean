@@ -9,6 +9,8 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.GroupTheory.Subgroup.Center
+public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
+public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
 import Mathlib.Tactic.LinearCombination
 
@@ -46,19 +48,23 @@ functions of total sum zero. The boundary of the class of a diagram `φ : S → 
 `T` minus that of `S` (`TauCeti.StrandDiagram.boundary`). In these terms the multiplicity is
 `m(β, p) = -∑_{y < p} ∂β(y) - ∂β(p) / 2`, and for the class of a diagram this is the average of the
 number of strands passing just below and just above `p`
-(`TauCeti.StrandDiagram.pointMultiplicity_boundary`). The Maslov component is taken in `ℚ`.
-Lipshitz, Ozsváth and Thurston's `G'(n)` is the subgroup `TauCeti.StrandGradingGroup.halfIntegral`
+(`TauCeti.StrandDiagram.pointMultiplicity_boundary`). The Maslov component is taken in `ℚ`, and
+the grading group is the central extension `TauCeti.FactorSet.Extension` of `α → ℤ` by `ℚ` built
+from the bimultiplicative factor set `L` (`TauCeti.StrandGradingGroup.linkingFactorSet`), with the
+action trivial, so that `λ` is the image of `1` under its central inclusion `TauCeti.FactorSet.inl`.
+Lipshitz, Ozsváth and Thurston's `G'(n)` is the subgroup `TauCeti.StrandGradingGroup.gPrime`
 of `TauCeti.StrandGradingGroup (Fin n)` of the elements with half-integral Maslov component and
 boundary of total sum zero, and every grading of a diagram lies in it
-(`TauCeti.StrandDiagram.grading_mem_halfIntegral`).
+(`TauCeti.StrandDiagram.grading_mem_gPrime`).
 
 ## Main definitions
 
 * `TauCeti.StrandGradingGroup α`: the grading group, with its group structure.
 * `TauCeti.StrandGradingGroup.pointMultiplicity`: the multiplicity `m(β, p)` of a class at a point.
 * `TauCeti.StrandGradingGroup.linking`: the bilinear form `L(β₁, β₂) = m(β₂, ∂β₁)`.
+* `TauCeti.StrandGradingGroup.linkingFactorSet`: `L` as a factor set for the trivial action.
 * `TauCeti.StrandGradingGroup.lambda`: the central element `λ = (1, 0)`.
-* `TauCeti.StrandGradingGroup.halfIntegral`: the subgroup `G'(n)`.
+* `TauCeti.StrandGradingGroup.gPrime`: the subgroup `G'(n)`.
 * `TauCeti.StrandDiagram.boundary`: the boundary of the class of the strands of a diagram.
 * `TauCeti.StrandDiagram.grading`: the grading `gr(φ)` of a strand diagram.
 * `TauCeti.StrandsAlgebra.gradedPart`: the elements supported on the diagrams of a given grading.
@@ -67,7 +73,7 @@ boundary of total sum zero, and every grading of a diagram lies in it
 
 * `TauCeti.StrandDiagram.grading_trans`: the grading is multiplicative on composable diagrams.
 * `TauCeti.StrandDiagram.grading_idOn`: the identity diagrams have grading `1`.
-* `TauCeti.StrandDiagram.grading_mem_halfIntegral`: every grading of a diagram lies in `G'(n)`.
+* `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
 * `TauCeti.StrandDiagram.grading_eq_lambda_zpow_mul`: diagrams with the same ends differ in
   grading by a power of `λ`.
 * `TauCeti.StrandsAlgebra.mul_mem_gradedPart`, `TauCeti.StrandsAlgebra.one_mem_gradedPart`,
@@ -91,48 +97,9 @@ open Finset
 
 namespace TauCeti
 
-/-- The grading group of the strands algebra on a finite linear order `α`: pairs of a Maslov
-component `maslov` and the boundary `boundary = ∂β : α → ℤ` of a class
-`β ∈ H₁([1, n], {1, …, n})`, multiplied by `(j₁, β₁) (j₂, β₂) = (j₁ + j₂ + L(β₁, β₂), β₁ + β₂)`.
-For `α = Fin n`, Lipshitz, Ozsváth and Thurston's group `G'(n)` is its subgroup
-`StrandGradingGroup.halfIntegral` of elements with half-integral Maslov component and boundary of
-total sum zero. -/
-@[ext]
-structure StrandGradingGroup (α : Type*) where
-  /-- The Maslov component. -/
-  maslov : ℚ
-  /-- The boundary `∂β` of the homology class `β`, which determines it. -/
-  boundary : α → ℤ
-
 namespace StrandGradingGroup
 
-variable {α : Type*}
-
-instance : One (StrandGradingGroup α) :=
-  ⟨⟨0, 0⟩⟩
-
-@[simp]
-theorem one_maslov : (1 : StrandGradingGroup α).maslov = 0 :=
-  (rfl)
-
-@[simp]
-theorem one_boundary : (1 : StrandGradingGroup α).boundary = 0 :=
-  (rfl)
-
-/-- The central element `λ = (1, 0)` of the grading group, which shifts the Maslov component by
-one. The differential of the strands algebra has degree `λ⁻¹`. -/
-def lambda : StrandGradingGroup α :=
-  ⟨1, 0⟩
-
-@[simp]
-theorem lambda_maslov : (lambda : StrandGradingGroup α).maslov = 1 :=
-  (rfl)
-
-@[simp]
-theorem lambda_boundary : (lambda : StrandGradingGroup α).boundary = 0 :=
-  (rfl)
-
-variable [LinearOrder α] [Fintype α]
+variable {α : Type*} [LinearOrder α] [Fintype α]
 
 /-- The multiplicity `m(β, p)` at the point `p` of the class `β` with boundary `δ`: the average
 of the multiplicities of `β` on the two intervals adjacent to `p`. In terms of the boundary it is
@@ -167,16 +134,86 @@ theorem linking_apply (δ₁ δ₂ : α → ℤ) :
     linking δ₁ δ₂ = ∑ p, (δ₁ p : ℚ) * pointMultiplicity p δ₂ := by
   simp [linking, AddMonoidHom.finsetSum_apply, zsmul_eq_mul]
 
-instance : Mul (StrandGradingGroup α) :=
-  ⟨fun g h ↦ ⟨g.maslov + h.maslov + linking g.boundary h.boundary, g.boundary + h.boundary⟩⟩
+/-- The form `L` takes half-integral values. -/
+theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
+    ∃ k : ℤ, linking δ₁ δ₂ = k / 2 := by
+  choose k hk using fun p ↦ exists_pointMultiplicity_eq p δ₂
+  refine ⟨∑ p, δ₁ p * k p, ?_⟩
+  simp [linking_apply, hk, div_eq_mul_inv, Finset.sum_mul, mul_assoc]
 
-instance : Inv (StrandGradingGroup α) :=
-  ⟨fun g ↦ ⟨-g.maslov + linking g.boundary g.boundary, -g.boundary⟩⟩
+end StrandGradingGroup
+
+section GradingGroup
+
+attribute [local instance] trivialMulDistribMulAction
+
+variable {α : Type*} [LinearOrder α] [Fintype α]
+
+/-- The form `L`, written multiplicatively, as a factor set of `Multiplicative (α → ℤ)` with values
+in `Multiplicative ℚ` for the trivial action. -/
+def StrandGradingGroup.linkingFactorSet : FactorSet (Multiplicative (α → ℤ)) (Multiplicative ℚ) :=
+  FactorSet.ofBimultiplicative
+    { toFun δ₁ := AddMonoidHom.toMultiplicative (StrandGradingGroup.linking δ₁.toAdd)
+      map_one' := by ext; simp
+      map_mul' δ₁ δ₂ := by ext; simp }
+    trivialMulDistribMulAction_smul
+
+@[simp]
+theorem StrandGradingGroup.linkingFactorSet_apply
+    (p : Multiplicative (α → ℤ) × Multiplicative (α → ℤ)) :
+    linkingFactorSet p = .ofAdd (linking p.1.toAdd p.2.toAdd) :=
+  FactorSet.ofBimultiplicative_apply _ _ p
+
+/-- The grading group of the strands algebra on a finite linear order `α`: the central extension
+of the group of boundaries `∂β : α → ℤ` of classes `β ∈ H₁([1, n], {1, …, n})` by the Maslov
+component in `ℚ`, built from the factor set `L`. An element is a pair of a Maslov component
+`maslov` and a boundary `boundary`, multiplied by
+`(j₁, β₁) (j₂, β₂) = (j₁ + j₂ + L(β₁, β₂), β₁ + β₂)`. For `α = Fin n`, Lipshitz, Ozsváth and
+Thurston's group `G'(n)` is its subgroup `StrandGradingGroup.gPrime` of elements with
+half-integral Maslov component and boundary of total sum zero. -/
+abbrev StrandGradingGroup (α : Type*) [LinearOrder α] [Fintype α] : Type _ :=
+  (StrandGradingGroup.linkingFactorSet (α := α)).Extension
+
+namespace StrandGradingGroup
+
+/-- The Maslov component of an element of the grading group. -/
+def maslov (g : StrandGradingGroup α) : ℚ :=
+  g.left.toAdd
+
+/-- The boundary `∂β` of the homology class `β` of an element of the grading group, which
+determines it. -/
+def boundary (g : StrandGradingGroup α) : α → ℤ :=
+  g.right.toAdd
+
+/-- The element of the grading group with Maslov component `j` and boundary `δ`. -/
+def mk (j : ℚ) (δ : α → ℤ) : StrandGradingGroup α :=
+  ⟨.ofAdd j, .ofAdd δ⟩
+
+@[simp]
+theorem mk_maslov (j : ℚ) (δ : α → ℤ) : (mk j δ).maslov = j :=
+  (rfl)
+
+@[simp]
+theorem mk_boundary (j : ℚ) (δ : α → ℤ) : (mk j δ).boundary = δ :=
+  (rfl)
+
+@[ext]
+theorem ext {g h : StrandGradingGroup α} (hm : g.maslov = h.maslov)
+    (hb : g.boundary = h.boundary) : g = h :=
+  FactorSet.Extension.ext hm hb
+
+@[simp]
+theorem one_maslov : (1 : StrandGradingGroup α).maslov = 0 :=
+  (rfl)
+
+@[simp]
+theorem one_boundary : (1 : StrandGradingGroup α).boundary = 0 :=
+  (rfl)
 
 @[simp]
 theorem mul_maslov (g h : StrandGradingGroup α) :
-    (g * h).maslov = g.maslov + h.maslov + linking g.boundary h.boundary :=
-  (rfl)
+    (g * h).maslov = g.maslov + h.maslov + linking g.boundary h.boundary := by
+  simp [maslov, boundary]
 
 @[simp]
 theorem mul_boundary (g h : StrandGradingGroup α) :
@@ -185,65 +222,51 @@ theorem mul_boundary (g h : StrandGradingGroup α) :
 
 @[simp]
 theorem inv_maslov (g : StrandGradingGroup α) :
-    g⁻¹.maslov = -g.maslov + linking g.boundary g.boundary :=
-  (rfl)
+    g⁻¹.maslov = -g.maslov + linking g.boundary g.boundary := by
+  simp only [maslov, boundary, FactorSet.Extension.inv_left, linkingFactorSet_apply,
+    trivialMulDistribMulAction_smul, toAdd_inv, toAdd_mul, toAdd_ofAdd, map_neg]
+  ring
 
 @[simp]
 theorem inv_boundary (g : StrandGradingGroup α) : g⁻¹.boundary = -g.boundary :=
   (rfl)
 
-instance : Group (StrandGradingGroup α) where
-  mul_assoc g h k := by
-    ext
-    · simp only [mul_maslov, mul_boundary, map_add, AddMonoidHom.add_apply]
-      ring
-    · simp [add_assoc]
-  one_mul g := by ext <;> simp
-  mul_one g := by ext <;> simp
-  inv_mul_cancel g := by
-    ext
-    · simp only [mul_maslov, inv_maslov, inv_boundary, map_neg, AddMonoidHom.neg_apply,
-        one_maslov]
-      ring
-    · simp
+/-- The central element `λ = (1, 0)` of the grading group, the image of `1` under the inclusion
+of the Maslov component, which shifts the Maslov component by one. The differential of the
+strands algebra has degree `λ⁻¹`. -/
+def lambda : StrandGradingGroup α :=
+  FactorSet.inl _ (.ofAdd 1)
+
+@[simp]
+theorem lambda_maslov : (lambda : StrandGradingGroup α).maslov = 1 := by
+  simp [lambda, maslov]
+
+@[simp]
+theorem lambda_boundary : (lambda : StrandGradingGroup α).boundary = 0 := by
+  simp [lambda, boundary]
 
 /-- The powers of `λ` shift only the Maslov component. -/
-theorem lambda_zpow (n : ℤ) : (lambda : StrandGradingGroup α) ^ n = ⟨n, 0⟩ := by
-  induction n using Int.induction_on with
-  | zero => ext <;> simp
-  | succ n ih =>
-    rw [zpow_add_one, ih]
-    ext <;> simp
-  | pred n ih =>
-    rw [zpow_sub_one, ih]
-    ext
-    · simp [sub_eq_add_neg, add_comm]
-    · simp
+theorem lambda_zpow (n : ℤ) : (lambda : StrandGradingGroup α) ^ n = mk n 0 := by
+  rw [lambda, ← map_zpow, ← ofAdd_zsmul, zsmul_one]
+  ext <;> simp [maslov, boundary, mk]
 
 theorem lambda_zpow_mul (n : ℤ) (g : StrandGradingGroup α) :
-    lambda ^ n * g = ⟨n + g.maslov, g.boundary⟩ := by
+    lambda ^ n * g = mk (n + g.maslov) g.boundary := by
   rw [lambda_zpow]
   ext <;> simp
 
 theorem mul_lambda_zpow (g : StrandGradingGroup α) (n : ℤ) :
-    g * lambda ^ n = ⟨g.maslov + n, g.boundary⟩ := by
+    g * lambda ^ n = mk (g.maslov + n) g.boundary := by
   rw [lambda_zpow]
   ext <;> simp
 
 /-- `λ` is central. -/
 theorem lambda_mem_center : (lambda : StrandGradingGroup α) ∈ Subgroup.center _ :=
-  Subgroup.mem_center_iff.2 fun g ↦ by ext <;> simp [add_comm]
-
-/-- The form `L` takes half-integral values. -/
-theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
-    ∃ k : ℤ, linking δ₁ δ₂ = k / 2 := by
-  choose k hk using fun p ↦ exists_pointMultiplicity_eq p δ₂
-  refine ⟨∑ p, δ₁ p * k p, ?_⟩
-  simp [linking_apply, hk, div_eq_mul_inv, Finset.sum_mul, mul_assoc]
+  FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨_, rfl⟩
 
 /-- The grading group `G'(n)` of Lipshitz, Ozsváth and Thurston, for `α = Fin n`: the subgroup of
 the elements with half-integral Maslov component and boundary of total sum zero. -/
-def halfIntegral : Subgroup (StrandGradingGroup α) where
+def gPrime : Subgroup (StrandGradingGroup α) where
   carrier := {g | (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0}
   mul_mem' := by
     rintro g h ⟨⟨k₁, hk₁⟩, hg⟩ ⟨⟨k₂, hk₂⟩, hh⟩
@@ -263,14 +286,16 @@ def halfIntegral : Subgroup (StrandGradingGroup α) where
       ring
     · simp [hg]
 
-theorem mem_halfIntegral {g : StrandGradingGroup α} :
-    g ∈ halfIntegral ↔ (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0 :=
+theorem mem_gPrime {g : StrandGradingGroup α} :
+    g ∈ gPrime ↔ (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0 :=
   Iff.rfl
 
-theorem lambda_mem_halfIntegral : (lambda : StrandGradingGroup α) ∈ halfIntegral :=
+theorem lambda_mem_gPrime : (lambda : StrandGradingGroup α) ∈ gPrime :=
   ⟨⟨2, by simp⟩, by simp⟩
 
 end StrandGradingGroup
+
+end GradingGroup
 
 namespace StrandDiagram
 
@@ -419,7 +444,8 @@ theorem linking_boundary (φ : StrandDiagram α) (δ : α → ℤ) :
 /-- The grading `gr(φ) = (inv(φ) - m([φ], S), [φ])` of a strand diagram `φ : S → T` in the
 grading group of the strands algebra. -/
 def grading (φ : StrandDiagram α) : StrandGradingGroup α :=
-  ⟨φ.inversionCount - ∑ s ∈ φ.source, pointMultiplicity s φ.boundary, φ.boundary⟩
+  StrandGradingGroup.mk (φ.inversionCount - ∑ s ∈ φ.source, pointMultiplicity s φ.boundary)
+    φ.boundary
 
 @[simp]
 theorem grading_maslov (φ : StrandDiagram α) :
@@ -431,7 +457,7 @@ theorem grading_boundary (φ : StrandDiagram α) : φ.grading.boundary = φ.boun
   (rfl)
 
 /-- The Maslov component of the grading of a diagram is a half-integer. -/
-theorem exists_maslov_grading_eq (φ : StrandDiagram α) :
+theorem exists_grading_maslov_eq (φ : StrandDiagram α) :
     ∃ k : ℤ, φ.grading.maslov = k / 2 := by
   choose k hk using fun s ↦ exists_pointMultiplicity_eq s φ.boundary
   refine ⟨2 * φ.inversionCount - ∑ s ∈ φ.source, k s, ?_⟩
@@ -469,15 +495,15 @@ theorem grading_eq_lambda_zpow_mul {φ ψ : StrandDiagram α} (hs : ψ.source = 
     simp [boundary_apply, hs, ht]
   rw [lambda_zpow_mul]
   ext
-  · simp only [grading_maslov, hs, hb]
+  · simp only [grading_maslov, mk_maslov, hs, hb]
     push_cast
     ring
   · simp [hb]
 
 /-- The grading of a diagram lies in the grading group `G'(n)` of Lipshitz, Ozsváth and
 Thurston. -/
-theorem grading_mem_halfIntegral (φ : StrandDiagram α) : φ.grading ∈ halfIntegral :=
-  ⟨φ.exists_maslov_grading_eq, φ.sum_boundary⟩
+theorem grading_mem_gPrime (φ : StrandDiagram α) : φ.grading ∈ gPrime :=
+  ⟨φ.exists_grading_maslov_eq, φ.sum_boundary⟩
 
 end StrandDiagram
 

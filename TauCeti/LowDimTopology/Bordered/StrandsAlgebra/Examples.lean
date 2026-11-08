@@ -90,7 +90,7 @@ example :
       ⟨PEquiv.single 0 1, fun _ _ hk ↦ by
         obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
         decide⟩
-    φ.grading = ⟨-1 / 2, ![-1, 1, 0]⟩ := by
+    φ.grading = mk (-1 / 2) ![-1, 1, 0] := by
   intro φ
   have hinv : φ.inversionCount = 0 := by
     rw [inversionCount_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
@@ -110,4 +110,4 @@ example :
   ext
   · rw [grading_maslov, hinv, hS, Finset.sum_singleton, pointMultiplicity_apply, hb, hlt]
     norm_num
-  · rw [grading_boundary, hb]
+  · rw [grading_boundary, hb, mk_boundary]
