@@ -5,11 +5,10 @@ Authors: Ralf Stephan, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
+public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Order.Interval.Set.Basic
 public import Mathlib.Order.Monotone.Basic
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Algebra.Order.Field.Basic
 
 /-!
 # Product bounds for minima of finite sequences
@@ -34,11 +33,13 @@ namespace TauCeti
 
 /-- A product of pairwise minima gains the ratio across the first `k` indices when every
 first index is above the cut and some second index is below it. -/
-theorem prod_min_le_div_mul_prod {N k p : ℕ} {μ : ℕ → ℝ}
+theorem prod_min_le_div_mul_prod {K ι : Type*} [Semifield K] [LinearOrder K]
+    [IsStrictOrderedRing K] [Fintype ι] {N k : ℕ} {μ : ℕ → K}
     (hμm : MonotoneOn μ (Set.Iio N)) (hμp : ∀ j < N, 0 < μ j)
-    {i j : Fin p → ℕ} (hi : ∀ b, i b < N) (hj : ∀ b, j b < N)
+    {i j : ι → ℕ} (hi : ∀ b, i b < N) (hj : ∀ b, j b < N)
     (h : ∀ b, k ≤ i b) (hk : ∃ b, j b < k) :
     ∏ b, min (μ (i b)) (μ (j b)) ≤ μ (k - 1) / μ k * ∏ b, μ (i b) := by
+  classical
   have hm0 (b) : 0 ≤ min (μ (i b)) (μ (j b)) :=
     le_min (hμp _ (hi b)).le (hμp _ (hj b)).le
   obtain ⟨b₀, hb₀⟩ := hk

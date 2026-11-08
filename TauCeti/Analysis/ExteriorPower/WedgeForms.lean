@@ -5,6 +5,7 @@ Authors: Ralf Stephan, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import TauCeti.Algebra.Order.BigOperators.Min
 public import TauCeti.LinearAlgebra.ExteriorPower.LinearForms
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
