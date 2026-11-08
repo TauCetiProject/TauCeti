@@ -70,16 +70,20 @@ open Finset
 
 variable {A : Type*} [Ring A] [Module ℚ A]
 
-/-- Taking a nilpotent exponential in the opposite ring and reading it back in the original ring
-gives the original exponential. -/
+/-- Taking the exponential in the opposite ring and reading it back in the original ring gives the
+original exponential. Both sides take the junk value `0` at a non-nilpotent element. -/
 @[simp]
-theorem unop_exp_op {x : A} (hx : IsNilpotent x) :
-    MulOpposite.unop (exp (MulOpposite.op x)) = exp x := by
-  obtain ⟨k, hk⟩ := hx
-  have hk_op : MulOpposite.op x ^ k = 0 := by
-    rw [← MulOpposite.op_pow, hk, MulOpposite.op_zero]
-  rw [exp_eq_sum hk, exp_eq_sum hk_op]
-  simp
+theorem unop_exp_op {x : A} : MulOpposite.unop (exp (MulOpposite.op x)) = exp x := by
+  by_cases hx : IsNilpotent x
+  · obtain ⟨k, hk⟩ := hx
+    have hk_op : MulOpposite.op x ^ k = 0 := by
+      rw [← MulOpposite.op_pow, hk, MulOpposite.op_zero]
+    rw [exp_eq_sum hk, exp_eq_sum hk_op]
+    simp
+  · have hx_op : ¬ IsNilpotent (MulOpposite.op x) := fun ⟨k, hk⟩ ↦
+      hx ⟨k, MulOpposite.op_injective (by rw [MulOpposite.op_pow, hk, MulOpposite.op_zero])⟩
+    simp [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx),
+      Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx_op)]
 
 variable {R : Type*} [Semiring R] [Module R A]
 
@@ -134,7 +138,7 @@ namespace IsNilpotent
 
 open Finset
 
-variable {A : Type*} [Ring A] [Module ℚ A] [IsScalarTower ℚ A A] [SMulCommClass ℚ A A]
+variable {A : Type*} [Ring A] [Module ℚ A]
 
 /-- The exponential preserves nilpotency bounds: if `a ^ n = 0`, then `(exp a - 1) ^ n = 0`. -/
 theorem pow_exp_sub_one_eq_zero {a : A} {n : ℕ} (ha : a ^ n = 0) : (exp a - 1) ^ n = 0 := by
