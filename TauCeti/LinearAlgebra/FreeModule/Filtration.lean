@@ -11,9 +11,9 @@ public import Mathlib.LinearAlgebra.DirectSum.Basis
 /-!
 # Free modules with an exhaustive filtration by free subquotients
 
-Let `N 0 ≤ N 1 ≤ ⋯` be an increasing sequence of submodules of `M`, starting at `⊥` and with
+Let `N 0 ≤ N 1 ≤ ⋯` be an increasing sequence of submodules of `M`, with `N 0` free and
 supremum `⊤`. If every subquotient `N (j + 1) ⧸ N j` is free, then `M` is free. Splitting each
-subquotient off `N (j + 1)` identifies `M` with the direct sum of the subquotients.
+subquotient off `N (j + 1)` identifies `M` with the direct sum of `N 0` and the subquotients.
 
 No finiteness is assumed: this is the form needed when a module that is not finitely generated
 over the base, such as a polynomial ring, is filtered by degree.
@@ -34,7 +34,7 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
 
 /-- A module with an exhaustive increasing filtration `⊥ = N 0 ≤ N 1 ≤ ⋯`, all of whose
 subquotients `N (j + 1) ⧸ N j` are free, is free. -/
-theorem of_filtration (N : ℕ → Submodule R M) (hN : Monotone N) (h0 : N 0 = ⊥)
+private theorem of_filtration_of_bot (N : ℕ → Submodule R M) (hN : Monotone N) (h0 : N 0 = ⊥)
     (htop : ⨆ j, N j = ⊤)
     (hfree : ∀ j, Module.Free R (N (j + 1) ⧸ (N j).submoduleOf (N (j + 1)))) :
     Module.Free R M := by
@@ -104,5 +104,29 @@ theorem of_filtration (N : ℕ → Submodule R M) (hN : Monotone N) (h0 : N 0 = 
       refine ⟨d + DirectSum.of Q J (Submodule.Quotient.mk y), ?_⟩
       rw [map_add, hd, hψof, Submodule.subtype_apply, Submodule.coe_sub, sub_add_cancel]
   exact Module.Free.of_equiv (LinearEquiv.ofBijective ψ ⟨hinj, hsurj⟩)
+
+/-- A module with an exhaustive increasing filtration `N 0 ≤ N 1 ≤ ⋯`, whose initial term
+and successive subquotients `N (j + 1) ⧸ N j` are free, is free. -/
+theorem of_filtration (N : ℕ → Submodule R M) (hN : Monotone N)
+    (h0 : Module.Free R (N 0)) (htop : ⨆ j, N j = ⊤)
+    (hfree : ∀ j, Module.Free R (N (j + 1) ⧸ (N j).submoduleOf (N (j + 1)))) :
+    Module.Free R M := by
+  -- Prepend zero so that the initial free module is also a successive subquotient.
+  let P : ℕ → Submodule R M
+    | 0 => ⊥
+    | j + 1 => N j
+  refine of_filtration_of_bot P (monotone_nat_of_le_succ fun j ↦ ?_) rfl ?_ ?_
+  · cases j with
+    | zero => exact bot_le
+    | succ j => exact hN j.le_succ
+  · apply top_unique
+    rw [← htop]
+    exact iSup_le fun j ↦ le_iSup P (j + 1)
+  · intro j
+    cases j with
+    | zero =>
+      exact Module.Free.of_equiv (Submodule.quotEquivOfEqBot _
+        ((Submodule.comap_bot _).trans (Submodule.ker_subtype _))).symm
+    | succ j => exact hfree j
 
 end Module.Free
