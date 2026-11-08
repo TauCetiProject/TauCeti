@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.DFinite.Basic
+import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
 # Minimal differential equations of D-finite series
