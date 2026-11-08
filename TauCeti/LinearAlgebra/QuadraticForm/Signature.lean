@@ -485,23 +485,6 @@ theorem card_le_sigNeg_toQuadraticMap_of_iIsOrtho {ι : Type*} [Fintype ι]
     fun i ↦ by simpa using hneg i
   rwa [LinearMap.BilinMap.toQuadraticMap_neg, sigPos_neg] at h
 
-omit [FiniteDimensional K M] in
-/-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
-bilinear form is positive-semidefinite and nondegenerate. -/
-@[grind =]
-theorem posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate (B : LinearMap.BilinForm K M)
-    (hB : B.IsSymm) :
-    B.toQuadraticMap.PosDef ↔ B.IsPosSemidef ∧ B.Nondegenerate := by
-  have hB' : LinearMap.IsSymm B := LinearMap.BilinForm.isSymm_iff.mp hB
-  rw [isPosSemidef_iff_forall_nonneg B hB]
-  simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply]
-  refine ⟨fun h ↦ ?_, fun ⟨hnn, hnd⟩ ↦ (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mp hnd⟩
-  have hnn : ∀ x, 0 ≤ B x x := fun x ↦ by
-    by_cases hx : x = 0
-    · simp [hx]
-    · exact (h x hx).le
-  exact ⟨hnn, (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mpr h⟩
-
 /-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
 kernel of the bilinear form and the negative index of the quadratic form both vanish. -/
 @[grind =]

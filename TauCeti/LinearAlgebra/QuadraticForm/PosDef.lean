@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Data.Int.Interval
+import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 
 /-!
 # Positive definite quadratic maps
@@ -17,7 +18,9 @@ public import Mathlib.Data.Int.Interval
 Multiplication by a positive scalar preserves and reflects positive-definiteness when the scalar
 action preserves and reflects strict inequalities on values. In particular, symmetrizing a
 bilinear form preserves positive-definiteness of its quadratic map, since the diagonal values
-are doubled. A diagonal form is positive definite exactly when its weights are positive.
+are doubled. A diagonal form is positive definite exactly when its weights are positive. The
+quadratic form of a symmetric bilinear form is positive definite exactly when the bilinear form is
+positive semidefinite and nondegenerate.
 
 A positive definite quadratic form on a finitely generated free `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
@@ -30,6 +33,9 @@ the one that turns an orbit lying in a level set into a periodic orbit.
   its multiple by a positive scalar is positive definite.
 * `LinearMap.BilinForm.posDef_toQuadraticMap_add_flip_iff`: symmetrizing a bilinear form
   preserves and reflects positive-definiteness of its quadratic map.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate`: over a linearly
+  ordered ring, the quadratic form of a symmetric bilinear form is positive definite exactly when
+  the form is positive semidefinite and nondegenerate.
 * `QuadraticMap.posDef_weightedSumSquares_iff`: a diagonal form over a linearly ordered ring is
   positive definite exactly when all of its weights are positive.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
@@ -104,6 +110,20 @@ theorem posDef_toQuadraticMap_add_flip_iff {R M : Type*} [CommSemiring R] [Linea
     simp only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinForm.flip_apply]
   rw [LinearMap.BilinMap.toQuadraticMap_add, hflip, ← two_smul R B.toQuadraticMap]
   exact QuadraticMap.posDef_smul_iff_of_pos _ (a := (2 : R)) zero_lt_two
+
+/-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
+bilinear form is positive-semidefinite and nondegenerate. -/
+@[grind =]
+theorem posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate {R M : Type*} [CommRing R]
+    [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
+    (B : LinearMap.BilinForm R M) (hB : B.IsSymm) :
+    B.toQuadraticMap.PosDef ↔ B.IsPosSemidef ∧ B.Nondegenerate := by
+  have hB' : LinearMap.IsSymm B := LinearMap.BilinForm.isSymm_iff.mp hB
+  rw [isPosSemidef_iff_forall_nonneg B hB]
+  simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply]
+  refine ⟨fun h ↦ ?_, fun ⟨hnn, hnd⟩ ↦ (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mp hnd⟩
+  have hnn : ∀ x, 0 ≤ B x x := fun x ↦ (show B.toQuadraticMap.PosDef from h).nonneg x
+  exact ⟨hnn, (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mpr h⟩
 
 end LinearMap.BilinForm
 
