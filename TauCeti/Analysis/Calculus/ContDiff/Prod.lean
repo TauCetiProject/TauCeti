@@ -19,7 +19,8 @@ the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`.
 
 For a compactly supported `C³` function on `E × ℝ`, the spatial first and second derivative fields
 and the time derivative field are compactly supported of the expected smoothness and compute the
-derivatives of every translate (`TauCeti.exists_derivative_fields_of_contDiff_three`).
+derivatives of every translate (`TauCeti.exists_derivative_fields_of_contDiff_three`); the
+derivative of a translated slice `y ↦ g (y - a, c)` is `TauCeti.HasFDerivAt.comp_sub_prodMk_left`.
 -/
 
 public section
@@ -38,6 +39,16 @@ theorem contDiffOn_comp_prodMk_left (hH : ∀ p ∈ s ×ˢ I, ContDiffAt 𝕜 n 
     (ht : t ∈ I) : ContDiffOn 𝕜 n (fun x ↦ H (x, t)) s :=
   fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
 
+/-- **Derivative of a translated slice**: if `g` has derivative `g'` at `(x - a, c)`, then the
+slice `y ↦ g (y - a, c)` has derivative `g'.comp (inl 𝕜 E G)` at `x`. -/
+theorem HasFDerivAt.comp_sub_prodMk_left {g : E × G → F} {g' : E × G →L[𝕜] F} {a x : E} {c : G}
+    (hg : HasFDerivAt g g' (x - a, c)) :
+    HasFDerivAt (fun y ↦ g (y - a, c)) (g'.comp (ContinuousLinearMap.inl 𝕜 E G)) x := by
+  have h : HasFDerivAt (fun y : E ↦ (y - a, c)) ((ContinuousLinearMap.inl 𝕜 E G).comp
+      (ContinuousLinearMap.id 𝕜 E)) x :=
+    (hasFDerivAt_prodMk_left (𝕜 := 𝕜) (x - a) c).comp x ((hasFDerivAt_id x).sub_const a)
+  simpa [Function.comp_def] using hg.comp x h
+
 noncomputable section CompactSupport
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -48,14 +59,6 @@ private local instance : NormedAddCommGroup (E →L[ℝ] F) := inferInstance
 private local instance : NormedSpace ℝ (E →L[ℝ] F) := inferInstance
 private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
 private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
-
-private theorem hasFDerivAt_comp_spatial_coords {g : E × ℝ → F} (hg : ContDiff ℝ 1 g)
-    (z : E × ℝ) (t : ℝ) (x : E) :
-    HasFDerivAt (fun y ↦ g (y - z.1, t - z.2))
-      ((fderiv ℝ g (x - z.1, t - z.2)).comp (ContinuousLinearMap.inl ℝ E ℝ)) x := by
-  simpa [Function.comp_def] using (hg.differentiable (by simp) _).hasFDerivAt.comp x
-    ((hasFDerivAt_prodMk_left (x - z.1) (t - z.2)).comp x
-      ((hasFDerivAt_id x).sub_const z.1))
 
 /-- The spatial first and second derivative fields and the time derivative field of a compactly
 supported `C³` function on ordinary space-time are compactly supported, of the expected
@@ -94,9 +97,9 @@ theorem exists_derivative_fields_of_contDiff_three {f : E × ℝ → F} (hf : Co
   refine ⟨fx, fxx, ft, hfx, hsfx, hfxx, hsfxx, hft, hsft, fun z t x ↦ ?_, fun z t x ↦ ?_,
     fun z x t ↦ ?_⟩
   · simpa [fx, R, ι, Function.comp_def] using
-      hasFDerivAt_comp_spatial_coords (hf.of_le (by norm_num)) z t x
+      HasFDerivAt.comp_sub_prodMk_left (hf.differentiable (by norm_num) _).hasFDerivAt
   · simpa [fxx, S, ι, Function.comp_def] using
-      hasFDerivAt_comp_spatial_coords (hfx.of_le (by norm_num)) z t x
+      HasFDerivAt.comp_sub_prodMk_left (hfx.differentiable (by norm_num) _).hasFDerivAt
   · simpa [ft, Function.comp_def] using
       ((hf.differentiable (by simp) _).hasFDerivAt.comp t
         ((hasFDerivAt_const (x - z.1) t).prodMk ((hasFDerivAt_id t).sub_const z.2))).hasDerivAt
