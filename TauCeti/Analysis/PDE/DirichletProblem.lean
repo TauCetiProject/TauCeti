@@ -759,6 +759,24 @@ theorem existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
     aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
     (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) f
 
+/-- The weak solution in `H¹₀(Ω)` of `-Δw = h`, for a domain `Ω` contained in a ball and a
+right-hand side `h` in `L²(Ω)`, tested against `H¹₀(Ω)`. -/
+theorem exists_energyFormH1_eq_integral_of_subset_ball
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
+    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
+    {h : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hh : MemLp h 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :
+    ∃ u : W1p0 volume Omega 2, ∀ v : W1p0 volume Omega 2,
+      energyFormH1 (fun _ => 1) 0 0 (u : W1p volume Omega 2) (v : W1p volume Omega 2) =
+        ∫ x in Omega, h x * W1p.value (v : W1p volume Omega 2) x := by
+  obtain ⟨u, hu, -⟩ := existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball hball
+    (hh.toLp h)
+  refine ⟨u, fun v => ?_⟩
+  have h1 := (isWeakSolutionDirichlet_iff _ _).1 hu v
+  refine h1.trans (integral_congr_ae ?_)
+  filter_upwards [hh.coeFn_toLp] with x hx
+  rw [hx]
+
 end Euclidean
 
 end PDE
