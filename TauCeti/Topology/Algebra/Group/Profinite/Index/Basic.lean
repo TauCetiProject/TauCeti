@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Index.PrimePart
 public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.NumberTheory.Supernatural
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
@@ -261,21 +262,9 @@ theorem _root_.Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Sub
     simpa only [Nat.padicValNat_def, Nat.cast_eq_zero] using
       multiplicity_eq_zero_of_not_dvd (h N)
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] in
-/-- The `ℓ`-adic valuation of the index of a subgroup is at most that of any subgroup it contains,
-provided the smaller subgroup has nonzero index. -/
-theorem _root_.Subgroup.padicValNat_index_le_of_le {A B : Subgroup G} (h : A ≤ B)
-    (hA : A.index ≠ 0) (ℓ : ℕ) [Fact ℓ.Prime] :
-    (padicValNat ℓ B.index : ℕ∞) ≤ padicValNat ℓ A.index := by
-  have hdvd := Subgroup.index_dvd_of_le h
-  simp only [Nat.padicValNat_def]
-  rw [multiplicity_eq_emultiplicity (ne_zero_of_dvd_ne_zero hA hdvd),
-    multiplicity_eq_emultiplicity hA]
-  exact emultiplicity_le_emultiplicity_of_dvd_right hdvd
-
 /-- The `ℓ`-adic valuation of the index of the image of a subgroup `X` in the finite quotient
-`G / N` increases when `N` shrinks to a smaller open normal subgroup `M`. -/
-theorem _root_.Subgroup.padicValNat_index_map_mk'_mono (X : Subgroup G) (ℓ : ℕ) [Fact ℓ.Prime]
+`G / N` is antitone in `N`: it increases when `N` shrinks to a smaller open normal subgroup `M`. -/
+theorem _root_.Subgroup.padicValNat_index_map_mk'_anti (X : Subgroup G) (ℓ : ℕ) [Fact ℓ.Prime]
     {N M : OpenNormalSubgroup G} (h : M ≤ N) :
     (padicValNat ℓ (X.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) ≤
       padicValNat ℓ (X.map (QuotientGroup.mk' M.toSubgroup)).index := by

@@ -139,33 +139,7 @@ private lemma iSup_padicValNat_relIndex_add_iSup_padicValNat_index [CompactSpace
     exact Subgroup.padicValNat_index_le_of_le
       (sup_le_sup_left (Subgroup.comap_mono inf_le_left) (H.subgroupOf K))
       (index_subgroupOf_sup_comap_ne_zero H K P) ell
-  · exact K.padicValNat_index_map_mk'_mono ell inf_le_right
-
-omit [TotallyDisconnectedSpace G] in
-/-- Multiplicativity of the relative index, at the level of `ℓ`-adic valuations of the finite
-quotient `G / N`. -/
-private lemma padicValNat_relIndex_add_padicValNat_index (hHK : H ≤ K) (ell : ℕ)
-    [Fact ell.Prime] (N : OpenNormalSubgroup G) :
-    (padicValNat ell
-        ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
-          (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞) +
-        (padicValNat ell (K.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) =
-      (padicValNat ell (H.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) := by
-  have hrelne :
-      (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
-          (K.map (QuotientGroup.mk' N.toSubgroup)) ≠ 0 := by
-    have : (H.map (QuotientGroup.mk' N.toSubgroup)).FiniteIndex :=
-      Subgroup.finiteIndex_of_finite_quotient
-    have : (H.map (QuotientGroup.mk' N.toSubgroup)).IsFiniteRelIndex
-        (K.map (QuotientGroup.mk' N.toSubgroup)) :=
-      Subgroup.isFiniteRelIndex_of_finiteIndex
-    exact Subgroup.relIndex_ne_zero
-  simp only [Nat.padicValNat_def]
-  rw [← (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex_mul_index
-      (Subgroup.map_mono hHK),
-    Nat.multiplicity_mul hrelne
-      Subgroup.index_ne_zero_of_finite,
-    Nat.cast_add]
+  · exact K.padicValNat_index_map_mk'_anti ell inf_le_right
 
 /-- Primewise multiplicativity of profinite index through a closed intermediate subgroup. -/
 theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
@@ -176,7 +150,10 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
   rw [H.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex K hHK hK,
     Subgroup.profiniteIndex_apply, Subgroup.profiniteIndex_apply]
   rw [iSup_padicValNat_relIndex_add_iSup_padicValNat_index H K hHK ell]
-  exact iSup_congr (padicValNat_relIndex_add_padicValNat_index H K hHK ell)
+  refine iSup_congr fun N ↦ ?_
+  exact Subgroup.padicValNat_relIndex_add_padicValNat_index
+    (Subgroup.map_mono hHK : H.map (QuotientGroup.mk' N.toSubgroup) ≤
+      K.map (QuotientGroup.mk' N.toSubgroup)) Subgroup.index_ne_zero_of_finite ell
 
 omit [TotallyDisconnectedSpace G] in
 /-- **A closed subgroup of prime-power relative index.** If `H ∩ K` is closed in `K` and the
