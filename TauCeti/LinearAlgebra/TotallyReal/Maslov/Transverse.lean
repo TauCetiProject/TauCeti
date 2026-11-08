@@ -96,9 +96,9 @@ theorem lagrangianChartFrame_mul (S : Matrix n n ℝ) :
       (S * S + 1).map ((↑) : ℝ → ℂ) := by
   have h : (S * S).map ((↑) : ℝ → ℂ) = S.map (↑) * S.map (↑) :=
     Matrix.map_mul (f := Complex.ofRealHom)
-  rw [lagrangianChartFrame, add_mul, mul_sub, mul_sub, mul_smul_comm, smul_mul_assoc,
-    smul_mul_assoc, mul_one, one_mul, one_mul, smul_smul, Complex.I_mul_I, neg_one_smul,
-    Matrix.map_add _ Complex.ofReal_add, h, Matrix.map_one _ (by simp) (by simp)]
+  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, h,
+    Matrix.map_one _ (by simp) (by simp)]
+  simp [add_mul, mul_sub, smul_smul]
   abel
 
 /-- For a symmetric real matrix `S`, the matrix `S + i` is invertible: its product with `S - i`
@@ -232,6 +232,62 @@ theorem lagrangianChart_neg_one :
   rw [← neg_one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_neg, arctan_one, h,
     ← smul_smul, Complex.coe_smul, realImage_smul _ (by norm_num)]
 
+/-- For a nonzero scalar `z`, the rotated subspace `z ℝⁿ` is maximal totally real. -/
+theorem isMaximalTotallyReal_realImage_smul_one {z : ℂ} (hz : z ≠ 0) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ)
+      (z • (1 : Matrix n n ℂ)).realImage :=
+  isMaximalTotallyReal_realImage (by simp [hz])
+
+/-- The Maslov phase of the rotated subspace `z ℝⁿ` relative to `ℝⁿ` is `(z / conj z) ^ n`. -/
+theorem maslovPhase_realImage_smul_one {z : ℂ} (hz : z ≠ 0) :
+    isMaximalTotallyReal_realSubspace.maslovPhase
+      (isMaximalTotallyReal_realImage_smul_one (n := n) hz) =
+      (z / conj z) ^ Fintype.card n := by
+  have h : (z • (1 : Matrix n n ℂ)).realImage = (realSubspace n).map
+      (((LinearEquiv.smulOfNeZero ℂ (EuclideanSpace ℂ n) z hz : _ ≃ₗ[ℂ] _) :
+        EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
+    rw [realImage_eq_map_toEuclideanCLE (by simp [hz])]
+    congr 1
+    ext v
+    simp
+  rw [isMaximalTotallyReal_realSubspace.maslovPhase_congr _
+      (isMaximalTotallyReal_realSubspace.map_linearEquiv _) h,
+    isMaximalTotallyReal_realSubspace.maslovPhase_map_lsmul hz, finrank_euclideanSpace]
+
+/-- The Maslov phase of the rotated subspace `e^{iθ} ℝⁿ` relative to `ℝⁿ` is `e^{2inθ}`. -/
+theorem maslovPhase_realImage_exp_smul_one (θ : ℝ) :
+    isMaximalTotallyReal_realSubspace.maslovPhase
+      (isMaximalTotallyReal_realImage_smul_one (n := n) (Complex.exp_ne_zero (θ * Complex.I))) =
+      Complex.exp ((2 * Fintype.card n * θ : ℝ) * Complex.I) := by
+  rw [maslovPhase_realImage_smul_one (Complex.exp_ne_zero _), ← Complex.exp_conj, ← Complex.exp_sub,
+    ← Complex.exp_nat_mul]
+  congr 1
+  simp [Complex.conj_ofReal]
+  ring
+
+omit [Fintype n] [DecidableEq n] in
+/-- The catenation of two paths of symmetric matrices consists of symmetric matrices. -/
+theorem isSymm_path_trans {α : Type*} [TopologicalSpace α] {S₀ S₁ S₂ : Matrix n n α}
+    {S : Path S₀ S₁} {T : Path S₁ S₂} (hS : ∀ t, (S t).IsSymm) (hT : ∀ t, (T t).IsSymm)
+    (t : I) : ((S.trans T) t).IsSymm := by
+  rw [Path.trans_apply]
+  split_ifs
+  exacts [hS _, hT _]
+
+omit [Fintype n] [DecidableEq n] in
+/-- The reversal of a path of symmetric matrices consists of symmetric matrices. -/
+theorem isSymm_path_symm {α : Type*} [TopologicalSpace α] {S₀ S₁ : Matrix n n α}
+    {S : Path S₀ S₁} (hS : ∀ t, (S t).IsSymm) (t : I) : (S.symm t).IsSymm := by
+  rw [Path.symm_apply]
+  exact hS _
+
+omit [Fintype n] [DecidableEq n] in
+/-- The matrices along the segment between two symmetric matrices are symmetric. -/
+theorem isSymm_segment {S₀ S₁ : Matrix n n ℝ} (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm)
+    (t : I) : (Path.segment S₀ S₁ t).IsSymm := by
+  rw [Path.segment_apply, AffineMap.lineMap_apply_module]
+  exact (hS₀.smul _).add (hS₁.smul _)
+
 end Matrix
 
 namespace TauCeti
@@ -278,39 +334,19 @@ theorem ofLagrangianChart_apply {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁
 theorem ofLagrangianChart_symm {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁)
     (hS : ∀ t, (S t).IsSymm) :
     (ofLagrangianChart S hS).symm =
-      ofLagrangianChart S.symm fun t ↦ by rw [Path.symm_apply]; exact hS _ :=
+      ofLagrangianChart S.symm (isSymm_path_symm hS) :=
   ext fun t ↦ by
     rw [symm_apply, ofLagrangianChart_apply, ofLagrangianChart_apply, Path.symm_apply,
       Function.comp_apply]
-
-omit [Fintype n] [DecidableEq n] in
-/-- The catenation of two paths of symmetric matrices consists of symmetric matrices. -/
-private theorem isSymm_trans {S₀ S₁ S₂ : Matrix n n ℝ} {S : Path S₀ S₁} {T : Path S₁ S₂}
-    (hS : ∀ t, (S t).IsSymm) (hT : ∀ t, (T t).IsSymm) (t : I) : ((S.trans T) t).IsSymm := by
-  rw [Path.trans_apply]
-  split_ifs
-  exacts [hS _, hT _]
 
 /-- Catenating chart paths gives the chart path of the catenated path of matrices. -/
 theorem ofLagrangianChart_trans {S₀ S₁ S₂ : Matrix n n ℝ} (S : Path S₀ S₁) (T : Path S₁ S₂)
     (hS : ∀ t, (S t).IsSymm) (hT : ∀ t, (T t).IsSymm) :
     (ofLagrangianChart S hS).trans (ofLagrangianChart T hT) (by simp) =
-      ofLagrangianChart (S.trans T) fun t ↦ by
-        rw [Path.trans_apply]
-        split_ifs
-        exacts [hS _, hT _] := by
+      ofLagrangianChart (S.trans T) (isSymm_path_trans hS hT) := by
   ext1 t
   rw [trans_apply, ofLagrangianChart_apply, Path.trans_apply]
   split_ifs <;> rfl
-
-omit [DecidableEq n] in
-/-- The relative Maslov index only depends on the second path, not on the proofs that its endpoints
-agree with those of the first. -/
-private theorem relativeMaslovIndex_congr_right {Λ Γ Γ' : TotallyRealPath (EuclideanSpace ℂ n)}
-    (h : Γ = Γ') (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) :
-    relativeMaslovIndex Λ Γ h₀ h₁ = relativeMaslovIndex Λ Γ' (h ▸ h₀) (h ▸ h₁) := by
-  subst h
-  rfl
 
 /-- **Paths in the chart have relative Maslov index zero.** Two chart paths of paths of symmetric
 matrices with the same endpoints are joined by the straight-line homotopy of the matrices, which
@@ -343,20 +379,13 @@ theorem relativeMaslovIndex_ofLagrangianChart {S₀ S₁ : Matrix n n ℝ} (S T 
     (fun s ↦ by simp [A, B, map_toEuclideanCLE_lagrangianChartFrame, H])
   exact h.trans (relativeMaslovIndex_self _)
 
-omit [Fintype n] [DecidableEq n] in
-/-- The matrices along the segment between two symmetric matrices are symmetric. -/
-private theorem isSymm_segment {S₀ S₁ : Matrix n n ℝ} (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm)
-    (t : I) : (Path.segment S₀ S₁ t).IsSymm := by
-  rw [Path.segment_apply, AffineMap.lineMap_apply_module]
-  exact (hS₀.smul _).add (hS₁.smul _)
-
 /-- The **Maslov index relative to `ℝⁿ`** of a path `Λ` of maximal totally real subspaces of `ℂⁿ`
 from the chart subspace `{S₀ y + i y}` of a symmetric matrix `S₀` to the chart subspace of a
 symmetric matrix `S₁`; these endpoints are Lagrangian and transverse to `ℝⁿ`. It is the relative
 Maslov index of `Λ` against the chart path of the segment from `S₀` to `S₁`, and any other path of
 symmetric matrices from `S₀` to `S₁` gives the same value
-(`TauCeti.TotallyRealPath.transverseMaslovIndex_eq`). It satisfies the axioms of the
-Robbin–Salamon index relative to `ℝⁿ` for such endpoints: zero, catenation, homotopy and
+(`TauCeti.TotallyRealPath.transverseMaslovIndex_eq_relativeMaslovIndex`). It satisfies the axioms
+of the Robbin–Salamon index relative to `ℝⁿ` for such endpoints: zero, catenation, homotopy and
 normalization. -/
 def transverseMaslovIndex (Λ : TotallyRealPath (EuclideanSpace ℂ n)) {S₀ S₁ : Matrix n n ℝ}
     (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm) (h₀ : Λ 0 = S₀.lagrangianChart)
@@ -366,7 +395,7 @@ def transverseMaslovIndex (Λ : TotallyRealPath (EuclideanSpace ℂ n)) {S₀ S�
 
 /-- The Maslov index relative to `ℝⁿ` may be computed against the chart path of any path of
 symmetric matrices with the same endpoints. -/
-theorem transverseMaslovIndex_eq (Λ : TotallyRealPath (EuclideanSpace ℂ n))
+theorem transverseMaslovIndex_eq_relativeMaslovIndex (Λ : TotallyRealPath (EuclideanSpace ℂ n))
     {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁) (hS : ∀ t, (S t).IsSymm)
     (h₀ : Λ 0 = S₀.lagrangianChart) (h₁ : Λ 1 = S₁.lagrangianChart) :
     Λ.transverseMaslovIndex (by simpa using hS 0) (by simpa using hS 1) h₀ h₁ =
@@ -382,7 +411,7 @@ theorem transverseMaslovIndex_ofLagrangianChart {S₀ S₁ : Matrix n n ℝ} (S 
     (hS : ∀ t, (S t).IsSymm) :
     (ofLagrangianChart S hS).transverseMaslovIndex (S₀ := S₀) (S₁ := S₁) (by simpa using hS 0)
       (by simpa using hS 1) (by simp) (by simp) = 0 := by
-  rw [transverseMaslovIndex_eq _ S hS, relativeMaslovIndex_self]
+  rw [transverseMaslovIndex_eq_relativeMaslovIndex _ S hS, relativeMaslovIndex_self]
 
 /-- **Catenation axiom.** The Maslov index relative to `ℝⁿ` is additive under catenation of paths
 whose common point is a chart subspace. -/
@@ -395,8 +424,8 @@ theorem transverseMaslovIndex_trans (Λ₁ Λ₂ : TotallyRealPath (EuclideanSpa
         Λ₂.transverseMaslovIndex hS₁ hS₂ (h.symm.trans h₁) h₂ := by
   have hseg := ofLagrangianChart_trans (Path.segment S₀ S₁) (Path.segment S₁ S₂)
     (isSymm_segment hS₀ hS₁) (isSymm_segment hS₁ hS₂)
-  rw [transverseMaslovIndex_eq _ _
-    (isSymm_trans (isSymm_segment hS₀ hS₁) (isSymm_segment hS₁ hS₂))]
+  rw [transverseMaslovIndex_eq_relativeMaslovIndex _ _
+    (isSymm_path_trans (isSymm_segment hS₀ hS₁) (isSymm_segment hS₁ hS₂))]
   exact (relativeMaslovIndex_congr_right hseg.symm _ _).trans
     (relativeMaslovIndex_trans Λ₁ Λ₂ _ _ h (by simp) (by simpa using h₀) (by simpa using h₁)
       (by simpa using h₂))
@@ -407,9 +436,8 @@ theorem transverseMaslovIndex_symm (Λ : TotallyRealPath (EuclideanSpace ℂ n))
     (h₁ : Λ 1 = S₁.lagrangianChart) :
     Λ.symm.transverseMaslovIndex hS₁ hS₀ (by simpa using h₁) (by simpa using h₀) =
       -Λ.transverseMaslovIndex hS₀ hS₁ h₀ h₁ := by
-  rw [transverseMaslovIndex_eq _ (Path.segment S₀ S₁).symm fun t ↦ by
-    rw [Path.symm_apply]
-    exact isSymm_segment hS₀ hS₁ _]
+  rw [transverseMaslovIndex_eq_relativeMaslovIndex _ (Path.segment S₀ S₁).symm
+    (isSymm_path_symm (isSymm_segment hS₀ hS₁))]
   exact (relativeMaslovIndex_congr_right (ofLagrangianChart_symm _ _).symm _ _).trans
     (relativeMaslovIndex_symm _ _ _ _)
 
@@ -445,30 +473,6 @@ theorem transverseMaslovIndex_eq_of_homotopy (Λ₀ Λ₁ : TotallyRealPath (Euc
 
 /-! ### Normalization -/
 
-/-- The Maslov phase of the rotated subspace `e^{iθ} ℝⁿ` relative to `ℝⁿ` is `e^{2inθ}`. -/
-private theorem maslovPhase_realImage_exp_smul_one (θ : ℝ) :
-    isMaximalTotallyReal_realSubspace.maslovPhase
-      (isMaximalTotallyReal_realImage (n := n)
-        (show (Complex.exp (θ * Complex.I) • (1 : Matrix n n ℂ)).det ≠ 0 by
-          simp [Complex.exp_ne_zero])) =
-      Complex.exp ((2 * Fintype.card n * θ : ℝ) * Complex.I) := by
-  have hdet : (Complex.exp (θ * Complex.I) • (1 : Matrix n n ℂ)).det ≠ 0 := by
-    simp [Complex.exp_ne_zero]
-  rw [isMaximalTotallyReal_realSubspace.maslovPhase_congr _
-      (isMaximalTotallyReal_realSubspace.map_linearEquiv _)
-      (realImage_eq_map_toEuclideanCLE hdet),
-    IsMaximalTotallyReal.maslovPhase_map]
-  have hd : LinearMap.det (((Complex.exp (θ * Complex.I) • (1 : Matrix n n ℂ)).toEuclideanCLE
-      hdet).toLinearEquiv : EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n) =
-      Complex.exp (θ * Complex.I) ^ Fintype.card n := by
-    have := det_toEuclideanCLE _ hdet
-    rw [det_smul, det_one, mul_one] at this
-    exact this
-  rw [hd, map_pow, ← div_pow, ← Complex.exp_conj, ← Complex.exp_sub, ← Complex.exp_nat_mul]
-  congr 1
-  simp [Complex.conj_ofReal]
-  ring
-
 /-- The angle lifts in the normalization: `n` times twice the rotation angle `π (2t - 1) / 4` of the
 path, and `n` times twice the angle `π / 2 - arctan (2t - 1)` of the chart subspace of the
 segment. Their difference grows by `2π n` from `t = 0` to `t = 1`. -/
@@ -497,9 +501,8 @@ theorem transverseMaslovIndex_rotation (Λ : TotallyRealPath (EuclideanSpace ℂ
         ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ) X) (θ : ℝ)
       (hXθ : X = (Complex.exp (θ * Complex.I) • (1 : Matrix n n ℂ)).realImage) :
       hL₀.maslovPhase hX = Complex.exp ((2 * k * θ - c : ℝ) * Complex.I) := by
-    have hmax (φ : ℝ) := isMaximalTotallyReal_realImage
-      (show (Complex.exp (φ * Complex.I) • (1 : Matrix n n ℂ)).det ≠ 0 by
-        simp [Complex.exp_ne_zero])
+    have hmax (φ : ℝ) := isMaximalTotallyReal_realImage_smul_one (n := n)
+      (Complex.exp_ne_zero (φ * Complex.I))
     rw [← isMaximalTotallyReal_realSubspace.maslovPhase_div_maslovPhase hL₀ hX,
       isMaximalTotallyReal_realSubspace.maslovPhase_congr hX (hmax θ) hXθ,
       isMaximalTotallyReal_realSubspace.maslovPhase_congr hL₀ (hmax _) (hΛ 0),
@@ -539,7 +542,7 @@ theorem transverseMaslovIndex_toTotallyRealPath (Λ : TotallyRealLoop (Euclidean
       (const (E := EuclideanSpace ℂ n)
         (isMaximalTotallyReal_lagrangianChart hS₀)).toTotallyRealPath :=
     TotallyRealPath.ext fun t ↦ (TotallyRealPath.ofLagrangianChart_apply _ _ t).trans (by simp)
-  rw [TotallyRealPath.transverseMaslovIndex_eq _ (Path.refl S₀) fun _ ↦ hS₀]
+  rw [TotallyRealPath.transverseMaslovIndex_eq_relativeMaslovIndex _ (Path.refl S₀) fun _ ↦ hS₀]
   refine (TotallyRealPath.relativeMaslovIndex_congr_right hconst _ _).trans ?_
   rw [relativeMaslovIndex_toTotallyRealPath Λ _ (by simpa using h₀), maslovIndex_const, sub_zero]
 
