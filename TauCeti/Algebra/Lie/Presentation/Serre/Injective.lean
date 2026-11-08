@@ -40,7 +40,7 @@ with its Serre presentation.
 * `TauCeti.serreLift_injective_of_base`: Serre's theorem.
 * `TauCeti.serreLiftEquiv_symm_coroot`, `TauCeti.serreLiftEquiv_symm_e` and
   `TauCeti.serreLiftEquiv_symm_f`: the inverse of the presentation on the generators.
-* `TauCeti.serreLift_lieBasis_injective`: Serre's theorem for the generators of a Lie algebra
+* `LieAlgebra.Basis.serreLift_injective`: Serre's theorem for the generators of a Lie algebra
   basis.
 
 ## References
@@ -113,7 +113,11 @@ theorem serreLiftEquiv_symm_f (i : b.support) :
 
 end Base
 
-section Basis
+end TauCeti
+
+namespace LieAlgebra.Basis
+
+open TauCeti
 
 variable {ι K L : Type*} [Finite ι] [DecidableEq ι] [Field K] [CharZero K] [LieRing L]
   [LieAlgebra K L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
@@ -122,7 +126,7 @@ variable {ι K L : Type*} [Finite ι] [DecidableEq ι] [Field K] [CharZero K] [L
 Lie algebra with nondegenerate Killing form over a field of characteristic zero, the homomorphism
 onto `L` from the Lie algebra presented by Serre's relations for the transposed matrix
 `LieAlgebra.Basis.A`, sending the generators to those of the basis, is injective. -/
-theorem serreLift_lieBasis_injective (b : LieAlgebra.Basis ι H) :
+theorem serreLift_injective (b : LieAlgebra.Basis ι H) :
     Function.Injective (serreLift (isSerreSystem_lieBasis b)) := by
   classical
   let _ := Fintype.ofFinite ι
@@ -166,6 +170,4 @@ theorem serreLift_lieBasis_injective (b : LieAlgebra.Basis ι H) :
   exact (serreLift_injective_of_base hS hspan).comp
     (Function.LeftInverse.injective (g := serreLift hβ) fun x ↦ DFunLike.congr_fun hβα x)
 
-end Basis
-
-end TauCeti
+end LieAlgebra.Basis

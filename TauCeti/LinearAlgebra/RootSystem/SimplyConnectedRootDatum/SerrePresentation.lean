@@ -233,7 +233,7 @@ theorem serreLift_injective : Function.Injective (t.serreLift ht) := by
       ∀ h : IsSerreSystem ℚ CM (t.lieBasis ht).h (t.lieBasis ht).e (t.lieBasis ht).f,
         Function.Injective (_root_.TauCeti.serreLift h) := by
     rintro _ rfl h
-    exact serreLift_lieBasis_injective (t.lieBasis ht)
+    exact (t.lieBasis ht).serreLift_injective
   exact key (by rw [lieBasis_A_eq]) _
 
 /-- **The Serre presentation of the pinned split Lie algebra**: the comparison map
