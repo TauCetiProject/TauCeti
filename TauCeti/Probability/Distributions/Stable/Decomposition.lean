@@ -41,32 +41,6 @@ namespace TauCeti.Probability
 
 variable {α β r : ℝ}
 
-/-- For positive `ε ≤ r`, the compensated compound-Poisson law of the jumps of size at most `ε`
-splits off the large jumps in `(ε, r]`: it is the convolution of a probability measure, the
-compensated compound-Poisson law of the finite band `ε < |x| ≤ r`, with the law of the jumps of
-size at most `r`. -/
-theorem exists_probabilityMeasure_conv_stableCompensatedPoissonMeasure_eq {ε : ℝ} (hε : 0 < ε)
-    (hεr : ε ≤ r) :
-    ∃ μ : ProbabilityMeasure ℝ,
-      (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r =
-        stableCompensatedPoissonMeasure α β ε := by
-  let ν := stableLevyMeasure α β
-  let band := {x : ℝ | ε < |x| ∧ |x| ≤ r}
-  have hfinite : IsFiniteMeasure (ν.restrict band) :=
-    isFiniteMeasure_restrict.mpr (ne_top_of_le_ne_top
-      (stableLevyMeasure_abs_gt_ne_top (α := α) (β := β) hε)
-      (measure_mono fun _ hx ↦ hx.1))
-  have := hfinite
-  refine ⟨⟨(compoundPoissonMeasure (ν band).toNNReal (cond ν band)).map
-      (fun x ↦ x - ∫ y in band, sin y ∂ν), ?_⟩, ?_⟩
-  · have hprob := isProbabilityMeasure_compoundPoissonMeasure_cond (ν.restrict band)
-    let _ : IsProbabilityMeasure (compoundPoissonMeasure (ν band).toNNReal (cond ν band)) := by
-      simpa only [Measure.restrict_apply_univ, ProbabilityTheory.cond,
-        Measure.restrict_univ] using hprob
-    infer_instance
-  · have h := (stableCompensatedPoissonMeasure_split α β hε hεr).symm
-    rwa [stableSmallJumpRemainderMeasure_def] at h
-
 /-- At a positive cutoff, the standardized stable law has a unique small-jump probability
 factor complementary to its compensated compound-Poisson large jumps. This includes both
 fully skewed laws and shape one. -/
@@ -77,9 +51,12 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
   -- Keep every lower cutoff below `r`, so even the initial finite-band laws are probabilities.
   let ε (n : ℕ) := min r ((2 : ℝ)⁻¹ ^ n)
   have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
-  choose μ hsplit using fun n ↦
-    exists_probabilityMeasure_conv_stableCompensatedPoissonMeasure_eq (α := α) (β := β)
-      (hε n) (min_le_left r _)
+  let μ (n : ℕ) : ProbabilityMeasure ℝ :=
+    ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩
+  have hsplit (n : ℕ) : (μ n : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r =
+      stableCompensatedPoissonMeasure α β (ε n) :=
+    (stableCompensatedPoissonMeasure_split α β (hε n) (min_le_left r _)).symm
   let large := stableCompensatedPoissonMeasure α β r
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have hlarge (t : ℝ) : charFun large t ≠ 0 := by
