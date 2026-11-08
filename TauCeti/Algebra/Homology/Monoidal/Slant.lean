@@ -93,18 +93,12 @@ lemma slantCochain_apply (p q n : ℕ) (h : p + q = n) (z : K.X p) (φ : T.X n �
     slantCochain k D p q n h z φ v = φ (D.f n (ιTensorObj K L p q n h (z ⊗ₜ v))) := by
   simp only [slantCochain_eq, ConcreteCategory.comp_apply, ModuleCat.tensorMk_apply]
 
-private lemma tensorObj_d_eq (n : ℕ) :
-    (HomologicalComplex.tensorObj K L).d (n + 1) n =
-      mapBifunctor.D₁ K L (curriedTensor _) (ComplexShape.down ℕ) (n + 1) n +
-        mapBifunctor.D₂ K L (curriedTensor _) (ComplexShape.down ℕ) (n + 1) n :=
-  mapBifunctor.d_eq _ _ _ _ _ _
-
 /-- **The boundary formula for the slant product by a chain of degree zero**: the coboundary of
 `φ / z` is `δφ / z`. -/
 lemma d_comp_slantCochain_zero (q : ℕ) (z : K.X 0) (φ : T.X q ⟶ P) :
     L.d (q + 1) q ≫ slantCochain k D 0 q q (zero_add q) z φ =
       slantCochain k D 0 (q + 1) (q + 1) (zero_add _) z (T.d (q + 1) q ≫ φ) := by
-  rw [slantCochain_eq, slantCochain_eq, D.comm_assoc, tensorObj_d_eq,
+  rw [slantCochain_eq, slantCochain_eq, D.comm_assoc, mapBifunctor.d_eq,
     ModuleCat.comp_tensorMk_assoc]
   simp only [Preadditive.add_comp, Preadditive.comp_add,
     ChainComplex.ιTensorObj_D₁_zero_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc, zero_comp,
@@ -118,7 +112,7 @@ lemma slantCochain_d_comp_succ (p s n : ℕ) (h : p + 1 + s = n) (w : K.X (p + 1
       slantCochain k D p (s + 1) n (by omega) (K.d (p + 1) p w) φ +
         ((-1 : ℤ) ^ (p + 1)) • (L.d (s + 1) s ≫ slantCochain k D (p + 1) s n h w φ) := by
   obtain rfl := h
-  rw [slantCochain_eq, slantCochain_eq, slantCochain_eq, D.comm_assoc, tensorObj_d_eq]
+  rw [slantCochain_eq, slantCochain_eq, slantCochain_eq, D.comm_assoc, mapBifunctor.d_eq]
   simp only [Preadditive.add_comp, Preadditive.comp_add,
     ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc,
     Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
@@ -129,7 +123,7 @@ lemma slantCochain_d_comp_succ (p s n : ℕ) (h : p + 1 + s = n) (w : K.X (p + 1
 lemma slantCochain_d_zero (p : ℕ) (w : K.X (p + 1)) (φ : T.X p ⟶ P) :
     slantCochain k D p 0 p (add_zero p) (K.d (p + 1) p w) φ =
       slantCochain k D (p + 1) 0 (p + 1) (add_zero _) w (T.d (p + 1) p ≫ φ) := by
-  rw [slantCochain_eq, slantCochain_eq, D.comm_assoc, tensorObj_d_eq]
+  rw [slantCochain_eq, slantCochain_eq, D.comm_assoc, mapBifunctor.d_eq]
   simp only [Preadditive.add_comp, Preadditive.comp_add,
     ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_zero_assoc, zero_comp,
     add_zero, ModuleCat.tensorMk_whiskerRight_assoc]
@@ -180,10 +174,6 @@ private lemma slantCochainHom_d_zero (p : ℕ) (w : K.X (p + 1)) (φ : (T.linear
       slantCochainHom k D (p + 1) 0 (p + 1) (add_zero _) w (T.d (p + 1) p ≫ φ) :=
   slantCochain_d_zero D p w φ
 
-/-- A cycle has zero boundary. -/
-private lemma d_iCycles_apply (i j : ℕ) (z : K.cycles i) : K.d i j (K.iCycles i z) = 0 :=
-  (ConcreteCategory.comp_apply _ _ z).symm.trans (ConcreteCategory.congr_hom (K.iCycles_d _ _) z)
-
 /-- A cocycle slanted by a cycle is a cocycle. -/
 private lemma d_comp_slantCochain_iCycles (p q n : ℕ) (h : p + q = n) (z : K.cycles p)
     (φ : T.X n ⟶ P) (hφ : T.d (n + 1) n ≫ φ = 0) :
@@ -191,7 +181,7 @@ private lemma d_comp_slantCochain_iCycles (p q n : ℕ) (h : p + q = n) (z : K.c
   obtain _ | r := p
   · obtain rfl : n = q := by omega
     rw [d_comp_slantCochain_zero, hφ, map_zero]
-  · have hz := d_iCycles_apply (K := K) (r + 1) r z
+  · have hz := K.iCycles_d_apply (r + 1) r z
     have hd := slantCochain_d_comp_succ D r q n h (K.iCycles (r + 1) z) φ
     rw [hφ, map_zero, hz, map_zero, LinearMap.zero_apply, zero_add] at hd
     -- `(-1)^(r+1)` is its own inverse
@@ -284,7 +274,7 @@ private lemma homologyπ_slantCycles_toCycles_right (p q n : ℕ) (h : p + q = n
         rw [iCycles_slantCycles_slantCochainHom, linearYonedaObj_iCycles_toCycles_apply,
           linearYonedaObj_iCycles_toCycles_apply, d_comp_slantCochainHom_zero]
       rw [key, linearYonedaObj_homologyπ_toCycles_apply]
-    · have hz := d_iCycles_apply (K := K) (r + 1) r z
+    · have hz := K.iCycles_d_apply (r + 1) r z
       obtain _ | s := q
       · -- in degree zero of `L`, `δψ / z = ψ / ∂z = 0`
         obtain rfl : r = i := by omega
