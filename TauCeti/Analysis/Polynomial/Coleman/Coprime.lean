@@ -119,9 +119,7 @@ theorem isUnit_evalAt_one_colemanDSeries_one_sub_C_mul_reverse_iff (hc : c * Q.l
   have hunit : IsUnit (⟨C c, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe _)⟩ :
       IsEntire.subring R) :=
     IsUnit.of_mul_eq_one ⟨C Q.leadingCoeff, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe _)⟩
-      (Subtype.ext (by
-        rw [MulMemClass.coe_mul, OneMemClass.coe_one, ← Polynomial.coe_mul, ← C_mul, hc, C_1,
-          Polynomial.coe_one]))
+      (Subtype.ext (by simpa using congrArg PowerSeries.C hc))
   convert isCoprime_mul_unit_left_left hunit _ _ using 2
   exact Subtype.ext (by simp)
 

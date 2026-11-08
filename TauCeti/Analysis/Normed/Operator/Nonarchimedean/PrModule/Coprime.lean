@@ -70,15 +70,21 @@ theorem IsPrCompact.isUnit_aeval_reverse_iff {u : M →L[R] M} (hu : u.IsPrCompa
         ⟨u.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   obtain ⟨c, hc⟩ := hQ.exists_left_inv
   have hB0 := coeff_zero_one_sub_C_mul_reverse hc
-  -- `1 - B(u) = c • Q*(u)` for `B = 1 - c Q*`, and `c` is a unit
-  have hBu :
-      1 - Polynomial.aeval u (1 - C c * Q.reverse) = c • Polynomial.aeval u Q.reverse := by
-    rw [map_sub, map_one, sub_sub_cancel, map_mul, aeval_C, Algebra.smul_def]
-  have hcu : IsUnit c := IsUnit.of_mul_eq_one _ hc
-  rw [← isUnit_evalAt_one_colemanDSeries_one_sub_C_mul_reverse_iff hc hu.isEntire_charPowerSeries
-    u.constantCoeff_charPowerSeries, ← hu.charPowerSeries_aeval hB0,
-    ← (hu.aeval hB0).isUnit_one_sub_smul_iff, one_smul, hBu, ← hcu.unit_spec, ← Units.smul_def,
-    isUnit_smul_iff]
+  -- `1 - B(u) = c • Q*(u)` for `B = 1 - c Q*`, and scaling by the unit `c` preserves invertibility
+  have hBu : IsUnit (1 - Polynomial.aeval u (1 - C c * Q.reverse)) ↔
+      IsUnit (Polynomial.aeval u Q.reverse) := by
+    have h : 1 - Polynomial.aeval u (1 - C c * Q.reverse) =
+        (IsUnit.of_mul_eq_one _ hc).unit • Polynomial.aeval u Q.reverse := by
+      simp [Units.smul_def, Algebra.smul_def]
+    rw [h, isUnit_smul_iff]
+  calc IsUnit (Polynomial.aeval u Q.reverse)
+      ↔ IsUnit (1 - Polynomial.aeval u (1 - C c * Q.reverse)) := hBu.symm
+    _ ↔ IsUnit ((Polynomial.aeval u (1 - C c * Q.reverse)).charPowerSeries.evalAt (1 : R)) := by
+      simpa only [one_smul] using (hu.aeval hB0).isUnit_one_sub_smul_iff (a := 1)
+    _ ↔ IsUnit (((1 - C c * Q.reverse).colemanDSeries u.charPowerSeries).evalAt (1 : R)) := by
+      rw [hu.charPowerSeries_aeval hB0]
+    _ ↔ _ := isUnit_evalAt_one_colemanDSeries_one_sub_C_mul_reverse_iff hc
+      hu.isEntire_charPowerSeries u.constantCoeff_charPowerSeries
 
 /-- **Coprime polynomial factors and invertibility on model spaces.** For a row-compact
 endomorphism `u` of `C₀(I, R)` and a polynomial `Q` with invertible leading coefficient, `Q*(u)` is
