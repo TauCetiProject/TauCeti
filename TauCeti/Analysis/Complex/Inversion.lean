@@ -12,9 +12,9 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Topology.Bornology.BoundedOperation
-import Mathlib.Analysis.Complex.Basic
 import Mathlib.Topology.Algebra.GroupWithZero
 import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Reading a map of the closed unit disc back through the inversion `w ↦ w⁻¹`
@@ -31,7 +31,7 @@ Riemann map of a domain `W` and the Riemann map of the exterior of the inverted 
 * `TauCeti.tendsto_add_inv_comp_inv`: the map tends to infinity at infinity if `G` is continuous at
   `0`.
 * `TauCeti.exists_homeomorph_compl_ball_add_inv_comp_inv`: if `G` is a bijection of the closed disc
-  onto the closure of a domain `W` with continuous inverse, the map is a homeomorphism of the
+  onto the closure of a domain `W`, the map is a homeomorphism of the
   closed exterior onto the inversion of `W`.
 -/
 
@@ -70,17 +70,19 @@ theorem tendsto_add_inv_comp_inv {G : ℂ → ℂ} (p : ℂ)
 
 /-- **Reading a Riemann map of an inverted domain back.** Let `W` be a domain whose punctured
 closure is the inversion `z ↦ (z - p)⁻¹` of a closed set `S` not containing `p`, and `G` a
-bijection of the closed unit disc onto `closure W` with `G 0 = 0`, continuous with continuous
-inverse. Then `w ↦ p + (G w⁻¹)⁻¹` is continuous on the closed exterior `(ball 0 1)ᶜ` and
-restricts to a homeomorphism of it onto `S`. -/
+bijection of the closed unit disc onto `closure W` with `G 0 = 0`, continuous on the closed disc.
+Then `w ↦ p + (G w⁻¹)⁻¹` is continuous on the closed exterior `(ball 0 1)ᶜ` and restricts to a
+homeomorphism of it onto `S`. -/
 theorem exists_homeomorph_compl_ball_add_inv_comp_inv {G : ℂ → ℂ} {W S : Set ℂ} {p : ℂ}
     (hp : p ∉ S) (hG0 : G 0 = 0) (hGc : ContinuousOn G (closedBall 0 1))
     (hGcl : BijOn G (closedBall 0 1) (closure W))
-    (hGinvc : ContinuousOn (invFunOn G (closedBall 0 1)) (closure W))
     (hclW : closure W \ {0} = (fun z : ℂ => (z - p)⁻¹) '' S) :
     ContinuousOn (fun w : ℂ => p + (G w⁻¹)⁻¹) (ball 0 1)ᶜ ∧
       ∃ e : ((ball (0 : ℂ) 1)ᶜ : Set ℂ) ≃ₜ S, ∀ z, (e z : ℂ) = p + (G (z : ℂ)⁻¹)⁻¹ := by
   set Ginv := invFunOn G (closedBall 0 1) with hGinv
+  have hGinvc : ContinuousOn Ginv (closure W) :=
+    hGcl.image_eq ▸ hGc.continuousOn_invFunOn_image_of_isCompact (isCompact_closedBall 0 1)
+      subset_rfl hGcl.injOn (by simp)
   have hI1 := bijOn_inv_compl_ball_one (𝕜 := ℂ)
   have hG1 : BijOn G (closedBall 0 1 \ {0}) (closure W \ {0}) := by
     simpa only [hG0] using hGcl.sdiff_singleton (mem_closedBall_self zero_le_one)

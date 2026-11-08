@@ -12,7 +12,6 @@ import TauCeti.Analysis.Complex.Conformal.BoundaryCorrespondence
 import TauCeti.Analysis.Complex.Inversion
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.FilledHull
-import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Carathéodory's theorem for both complementary domains of a Jordan curve
@@ -123,11 +122,8 @@ theorem IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff (hC : 
   have hG2 : BijOn G (ball 0 1 \ {0}) (W \ {0}) := by
     simpa only [hG0] using hGbij.sdiff_singleton (mem_ball_self one_pos)
   have hne : ∀ x ∈ ball (0 : ℂ) 1, x ≠ 0 → G x ≠ 0 := fun x hx hx0 => (hG2.mapsTo ⟨hx, hx0⟩).2
-  have hGinvc : ContinuousOn (invFunOn G (closedBall 0 1)) (closure W) :=
-    hGcl.image_eq ▸ hGc.continuousOn_invFunOn_image_of_isCompact (isCompact_closedBall 0 1)
-      subset_rfl hGcl.injOn (by simp)
   obtain ⟨hhc, e, he⟩ := exists_homeomorph_compl_ball_add_inv_comp_inv
-    (not_not_intro hp) hG0 hGc hGcl hGinvc hclW
+    (not_not_intro hp) hG0 hGc hGcl hclW
   refine ⟨_, hhc, differentiableOn_add_inv_comp_inv p hGd hne,
     (bijOn_add_inv_image_inv_sub _).comp ((hW0 ▸ hG2).comp bijOn_inv_compl_closedBall_one),
     (bijOn_add_inv_image_inv_sub _).comp (hGS.comp bijOn_inv_sphere_one),
