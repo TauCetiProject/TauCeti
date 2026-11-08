@@ -253,8 +253,7 @@ def cechComplexBaseChangeIso [Finite ι] (U : ι → X.Opens) (M : X.Modules)
   haveI := isIso_cechComplexFunctor_map_sectionsPullbackExtend H U M hU
   (cechComplexFunctorMapIso U _).app _ ≪≫
     asIso ((cechComplexFunctor U).map (sectionsPullbackExtend H.toCommSq M)) ≪≫
-    (cechComplexCompIso (Opens.map g.base) U _
-      fun _ a ↦ g.nonempty_pi_preimage_hom fun j ↦ U (a j)).symm
+    (cechComplexCompIso (Opens.map g.base) U _).symm
 
 /-- The factor indexed by `a` of the degree `n` component of `cechComplexBaseChangeIso` is the
 component `R' ⊗_R Γ(M, W) ⟶ Γ(g^* M, g⁻¹ W)` of `sectionsPullbackExtend` at the intersection
@@ -273,19 +272,17 @@ theorem cechComplexBaseChangeIso_hom_f_π [Finite ι] (U : ι → X.Opens) (M : 
           ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)).map
             (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op := by
   let Q := (sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)
-  let E := cechComplexCompIso (Opens.map g.base) U Q fun _ a ↦
-    g.nonempty_pi_preimage_hom fun j ↦ U (a j)
+  let E := cechComplexCompIso (Opens.map g.base) U Q
   let r := (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op
   -- The restrictions between the equal opens `∏ g⁻¹ U (a j)` and `g⁻¹ ∏ U (a j)` are inverse.
-  have hr : Q.map (Pi.lift fun j ↦ (Opens.map g.base).map (Pi.π (fun j ↦ U (a j)) j)).op ≫
-      Q.map r = 𝟙 _ := by
+  have hr : Q.map (piComparison (Opens.map g.base) fun j ↦ U (a j)).op ≫ Q.map r = 𝟙 _ := by
     rw [← Q.map_comp, ← Q.map_id]
     exact congrArg Q.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
   -- So the factors of the inverse of `cechComplexCompIso` are restrictions.
   have h : E.hom.f n ≫
       Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)))) a ≫ Q.map r =
         Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a :=
-    (cechComplexCompIso_hom_f_π_assoc _ U Q _ n a (Q.map r)).trans <|
+    (cechComplexCompIso_hom_f_π_assoc _ U Q n a (Q.map r)).trans <|
       (congrArg (_ ≫ ·) hr).trans (Category.comp_id _)
   have hE : E.inv.f n ≫
       Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a =

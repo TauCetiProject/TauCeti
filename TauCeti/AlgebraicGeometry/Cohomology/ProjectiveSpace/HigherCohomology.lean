@@ -1102,11 +1102,11 @@ end TopDegree
 
 open Limits OrderDual in
 open scoped Classical in
-/-- The product of the charts of the coordinates `a j` lies in the chart of their product. -/
-private lemma nonempty_pi_chartFunctor_obj_hom {n : ℕ} (a : Fin (n + 1) → κ) :
-    Nonempty ((∏ᶜ fun j ↦ (chartFunctor b).obj (toDual {a j})) ⟶
-      (chartFunctor b).obj (∏ᶜ fun j ↦ toDual {a j})) := by
-  refine ⟨homOfLE ?_⟩
+/-- The chart functor preserves the finite products of the coordinates `a j`: the product of
+their charts lies in the chart of their product. -/
+private instance isIso_piComparison_chartFunctor {n : ℕ} (a : Fin (n + 1) → κ) :
+    IsIso (piComparison (chartFunctor b) fun j ↦ toDual {a j}) := by
+  refine (isIso_iff_of_thin _).2 ⟨homOfLE ?_⟩
   rw [chartFunctor_obj, basicOpen_coordProd, ofDual_pi_toDual_singleton]
   refine Finset.le_inf fun i hi ↦ ?_
   obtain ⟨j, -, rfl⟩ := Finset.mem_image.1 hi
@@ -1127,11 +1127,9 @@ private lemma homologyMap_smul_comp_homologyMap_cechComplexCompIso_hom (m : ℤ)
         fun i : κ ↦ (chartFunctor b).obj (toDual {i})).map
           ((SheafOfModules.toSheaf _).map (twistingSheafSmul m r)).hom) q ≫
         HomologicalComplex.homologyMap (cechComplexCompIso (chartFunctor b)
-          (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)
-          fun _ ↦ nonempty_pi_chartFunctor_obj_hom b).hom q =
+          (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)).hom q =
       HomologicalComplex.homologyMap (cechComplexCompIso (chartFunctor b)
-          (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)
-          fun _ ↦ nonempty_pi_chartFunctor_obj_hom b).hom q ≫
+          (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)).hom q ≫
         HomologicalComplex.homologyMap
           ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
             (Functor.whiskerLeft (chartFunctor b).op
@@ -1155,8 +1153,7 @@ private def cohomologyIsoHomologyLaurentCech (q : ℕ) :
       (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)
       (Proj.twistingSheaf 𝒜 m) q).symm ≪≫
     HomologicalComplex.homologyMapIso (cechComplexCompIso (chartFunctor b)
-      (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)
-      fun _ ↦ nonempty_pi_chartFunctor_obj_hom b) q ≪≫
+      (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)) q ≪≫
     (HomologicalComplex.homologyMapIso
       (asIso ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
         (laurentToSections b m))) q).symm

@@ -165,9 +165,9 @@ theorem quasiIso_cechAugmentation_prod_iff [HasProducts.{w} AddCommGrpCat.{v}] (
   rw [quasiIso_cechAugmentation_iff_of_iso _ _ _ (restrIso P Y)]
   -- intersection with `Y` sends products of members into the intersection of their product
   have hG (m : ℕ) (a : Fin (m + 1) → ι) :
-      Nonempty ((∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))) ⟶
-        (interFunctor Y).obj (∏ᶜ fun j ↦ U (a j))) := by
-    refine ⟨homOfLE (Subtype.mk_le_mk.2 (le_inf (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2 ?_))⟩
+      IsIso (piComparison (interFunctor Y) fun j ↦ U (a j)) := by
+    refine (isIso_iff_of_thin _).2
+      ⟨homOfLE (Subtype.mk_le_mk.2 (le_inf (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2 ?_))⟩
     let Z : Set.Iic W :=
       ⟨_, Set.mem_Iic.2 ((∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2.trans Y.2)⟩
     have hπ (j : Fin (m + 1)) : (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).1 ≤
@@ -179,7 +179,7 @@ theorem quasiIso_cechAugmentation_prod_iff [HasProducts.{w} AddCommGrpCat.{v}] (
   -- intersection with `Y` sends `W` to `Y`
   have hGT : IsTerminal ((interFunctor Y).obj ⊤) :=
     isTerminalTop.ofIso (eqToIso (Subtype.ext (inf_eq_left.2 Y.2)).symm)
-  rw [quasiIso_cechAugmentation_op_comp_iff (interFunctor Y) _ _ hG isTerminalTop hGT]
+  rw [quasiIso_cechAugmentation_op_comp_iff (interFunctor Y) _ _ isTerminalTop hGT]
   suffices h : ∀ {T : Set.Iic Y.1} (hT : IsTerminal T), T = ⊤ →
       (QuasiIso (cechAugmentation (fun i ↦ (interFunctor Y).obj (U i)) hT
         (presentationLimitAddCommGrpPresheaf P Aplus Y.1)) ↔
@@ -349,8 +349,11 @@ theorem quasiIso_cechAugmentation_iff_locOpensComap [HasProducts.{w} AddCommGrpC
     spaComapLoc_functor_obj_locOpensComap P Aplus hP T s S hden (V.2.trans hWT)
   -- the image functor sends `j⁻¹(W)` to `W`
   have hGT : IsTerminal (G.obj ⊤) := isTerminalTop.ofIso (eqToIso (Subtype.ext (himage ⊤)).symm)
-  rw [quasiIso_cechAugmentation_op_comp_iff G _ _
-    (fun _ _ ↦ nonempty_pi_locImageFunctor_obj_hom P T s S hden hP _) isTerminalTop hGT]
+  -- the image functor preserves finite products of opens contained in `j⁻¹(W)`
+  have hG (m : ℕ) (a : Fin (m + 1) → Set.Iic (locOpensComap P Aplus T s S hden W)) :
+      IsIso (piComparison G a) :=
+    (isIso_iff_of_thin _).2 (nonempty_pi_locImageFunctor_obj_hom P T s S hden hP a)
+  rw [quasiIso_cechAugmentation_op_comp_iff G _ _ isTerminalTop hGT]
   -- the images of the pullbacks of the members are the members
   have hU : (fun i ↦ G.obj ⟨locOpensComap P Aplus T s S hden (U i).1,
       Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).2)⟩) = U :=
