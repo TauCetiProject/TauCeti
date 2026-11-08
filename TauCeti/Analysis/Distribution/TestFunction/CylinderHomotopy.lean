@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
 # The product of a current with the unit interval
@@ -39,6 +40,8 @@ build homotopies between pushforwards of currents and to estimate their masses.
 
 ## Main declarations
 
+* `TopologicalSpace.Opens.cylinder`: the open cylinder `Ω × ℝ`, and `TestFunction.timeCutoff`, a
+  test function of time equal to one near `[0, 1]`, used to cut forms on it off in time.
 * `TestFunction.cylinderHomotopyCLM`: the cylinder homotopy operator on test forms, as a
   continuous linear map.
 * `TauCeti.isCompact_inter_preimage_prodMk_left`: the slices `ι₀` and `ι₁` are proper from `Ω`
@@ -68,7 +71,7 @@ public section
 noncomputable section
 
 open Set TopologicalSpace TauCeti
-open scoped Distributions ENNReal BoundedContinuousFunction
+open scoped Distributions ENNReal BoundedContinuousFunction Topology
 
 namespace TauCeti
 
@@ -97,11 +100,46 @@ theorem isCompact_inter_preimage_prodMk_left [T2Space X]
 
 end TauCeti
 
+namespace TopologicalSpace.Opens
+
+variable {X : Type*} [TopologicalSpace X] {Ω : Opens X}
+
+/-- The open **cylinder** `Ω × ℝ` over an open set `Ω`, the main domain of the cylinder homotopy
+operator `TestFunction.cylinderHomotopyCLM`. -/
+def cylinder (Ω : Opens X) : Opens (X × ℝ) :=
+  ⟨(Ω : Set X) ×ˢ univ, Ω.isOpen.prod isOpen_univ⟩
+
+@[simp]
+theorem mem_cylinder {p : X × ℝ} : p ∈ Ω.cylinder ↔ p.1 ∈ Ω := by
+  simp [cylinder, ← SetLike.mem_coe]
+
+/-- The product of `Ω` with the whole line lies in the cylinder over `Ω`; this is the form in
+which `TestFunction.prodSMulCLM` takes a product domain. -/
+theorem prod_top_subset_cylinder : (Ω : Set X) ×ˢ ((⊤ : Opens ℝ) : Set ℝ) ⊆ Ω.cylinder :=
+  fun _ hp ↦ mem_cylinder.2 hp.1
+
+end TopologicalSpace.Opens
+
 namespace TestFunction
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
+
+/-- A test function of time equal to one on a neighbourhood of `[0, 1]`. Multiplying a form on a
+cylinder by it cuts the form off in time without changing it near times in `[0, 1]`. -/
+def timeCutoff : 𝓓((⊤ : Opens ℝ), ℝ) :=
+  (exists_eventually_eq_one (Ω := ⊤) (n := ⊤) isCompact_Icc
+    (subset_univ (Icc (0 : ℝ) 1))).choose
+
+/-- The time cutoff is equal to one on a neighbourhood of `[0, 1]`. -/
+theorem timeCutoff_eventually_eq_one : ∀ᶠ t in 𝓝ˢ (Icc (0 : ℝ) 1), timeCutoff t = 1 :=
+  (exists_eventually_eq_one (Ω := ⊤) (n := ⊤) isCompact_Icc
+    (subset_univ (Icc (0 : ℝ) 1))).choose_spec.1
+
+/-- The time cutoff is equal to one on `[0, 1]`. -/
+theorem timeCutoff_eq_one {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : timeCutoff t = 1 :=
+  timeCutoff_eventually_eq_one.self_of_nhdsSet t ht
 
 variable [CompleteSpace F]
 
