@@ -695,10 +695,10 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     ∃ ρ : Fin (m + 2) →o Fin (m + 1), ∀ v, v ≠ l → l.succAbove (ρ v) = v := by
   by_cases hl : l = Fin.last (m + 1)
   · subst hl
-    refine ⟨⟨(Fin.last m).predAbove, Fin.predAbove_right_monotone _⟩, fun v hv ↦ ?_⟩
+    refine ⟨(Fin.last m).predAboveOrderHom, fun v hv ↦ ?_⟩
     rw [← Fin.succ_last] at hv ⊢
     exact Fin.succ_succAbove_predAbove hv
-  · refine ⟨⟨(l.castPred hl).predAbove, Fin.predAbove_right_monotone _⟩, fun v hv ↦ ?_⟩
+  · refine ⟨(l.castPred hl).predAboveOrderHom, fun v hv ↦ ?_⟩
     have := Fin.succAbove_predAbove (p := l.castPred hl) (i := v)
       (by rwa [Fin.castSucc_castPred])
     rwa [Fin.castSucc_castPred] at this
