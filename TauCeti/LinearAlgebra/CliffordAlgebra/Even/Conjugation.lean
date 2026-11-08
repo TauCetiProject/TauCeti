@@ -138,7 +138,7 @@ variable {Q}
 
 omit [Invertible (2 : R)] in
 /-- The square of the even bivector of two orthogonal vectors is the scalar `-Q x * Q y`. -/
-theorem even_ι_bilin_mul_self_of_isOrtho {x y : M} (h : Q.IsOrtho x y) :
+@[simp] theorem even_ι_bilin_mul_self_of_isOrtho {x y : M} (h : Q.IsOrtho x y) :
     (even.ι Q).bilin x y * (even.ι Q).bilin x y = algebraMap R (even Q) (-(Q x * Q y)) := by
   apply Subtype.ext
   rw [Subalgebra.coe_mul, coe_even_ι_bilin, ι_mul_ι_mul_self_of_isOrtho h]
