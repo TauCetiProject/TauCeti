@@ -66,11 +66,29 @@ def shift (n : ℤ) (L : WindingWord α) : WindingWord α :=
     shift m (shift n L) = shift (n + m) L := by
   simp [shift, List.map_map, Function.comp_def, add_assoc]
 
+@[simp] theorem shift_reverse (n : ℤ) (L : WindingWord α) :
+    shift n L.reverse = (shift n L).reverse := by
+  simp [shift]
+
 /-- The boundary of the chosen right dual: reverse the ports and increase their levels. -/
 def rightDual (L : WindingWord α) : WindingWord α := shift 1 L.reverse
 
 /-- The boundary of the chosen left dual: reverse the ports and decrease their levels. -/
 def leftDual (L : WindingWord α) : WindingWord α := shift (-1) L.reverse
+
+theorem rightDual_eq_shift_reverse (L : WindingWord α) :
+    L.rightDual = shift 1 L.reverse := by rfl
+
+theorem leftDual_eq_shift_reverse (L : WindingWord α) :
+    L.leftDual = shift (-1) L.reverse := by rfl
+
+@[simp] theorem rightDual_shift (n : ℤ) (L : WindingWord α) :
+    (shift n L).rightDual = shift n L.rightDual := by
+  simp [rightDual, shift, List.map_reverse, List.map_map, Function.comp_def, add_right_comm]
+
+@[simp] theorem leftDual_shift (n : ℤ) (L : WindingWord α) :
+    (shift n L).leftDual = shift n L.leftDual := by
+  simp [leftDual, shift, List.map_reverse, List.map_map, Function.comp_def, add_right_comm]
 
 @[simp] theorem rightDual_nil : rightDual ([] : WindingWord α) = [] := by rfl
 
@@ -188,7 +206,7 @@ def subst (f : α → RigidObject β) : RigidObject α → RigidObject β
   induction X <;> simp_all
 
 /-- The generating-object inclusion is the identity substitution. -/
-@[simp] theorem subst_id (X : RigidObject α) : subst of X = X := by
+@[simp] theorem subst_self (X : RigidObject α) : subst of X = X := by
   induction X <;> simp_all
 
 /-- Include Mathlib's parenthesized monoidal objects into the rigid object syntax. -/
