@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Henselian.Section
 import TauCeti.RingTheory.Jacobson.Basic
+import TauCeti.RingTheory.Polynomial.UniversalFactorizationRing
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
@@ -49,28 +50,6 @@ this is the lift of factorizations. Coprimality of the lifted factors comes from
 public section
 
 open Polynomial
-
-namespace Polynomial.UniversalCoprimeFactorizationRing
-
-variable {R : Type*} [CommRing R] (I : Ideal R)
-
-/-- Composing a point of the universal coprime factorization ring with values in `R` with the
-reduction `R → R ⧸ I` reduces both factors modulo `I`. -/
-lemma homEquiv_comp_mkₐ_eq_map {p : R[X]} (m k : ℕ) (hn : p.natDegree = m + k)
-    (P : MonicDegreeEq R p.natDegree) (φ : UniversalCoprimeFactorizationRing m k hn P →ₐ[R] R) :
-    (homEquiv (R ⧸ I) m k hn P
-        ((Ideal.Quotient.mkₐ R I).comp φ)).1.1.1 =
-      (homEquiv R m k hn P φ).1.1.1.map
-        (Ideal.Quotient.mk I) ∧
-    (homEquiv (R ⧸ I) m k hn P
-        ((Ideal.Quotient.mkₐ R I).comp φ)).1.2.1 =
-      (homEquiv R m k hn P φ).1.2.1.map
-        (Ideal.Quotient.mk I) := by
-  rw [homEquiv_comp_fst, homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe,
-    Ideal.Quotient.mkₐ_toRingHom]
-  simp
-
-end Polynomial.UniversalCoprimeFactorizationRing
 
 namespace Ideal
 
