@@ -59,7 +59,6 @@ private theorem exists_generator_pPowerRootsOfUnity (L : Type*) [Field L]
     (h : Finite (pPowerRootsOfUnity p L)) :
     ∃ ζ ∈ pPowerRootsOfUnity p L, IsPrimitiveRoot ζ (localRootOfUnityOrder p L h) ∧
       ∀ ξ ∈ pPowerRootsOfUnity p L, ∃ j : ℕ, ζ ^ j = ξ := by
-  have := h
   obtain ⟨ζ, hζ⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := pPowerRootsOfUnity p L)
   have hprim : IsPrimitiveRoot (ζ : Lˣ) (localRootOfUnityOrder p L h) := by
     rw [localRootOfUnityOrder_def, ← hζ, ← Subgroup.orderOf_coe]

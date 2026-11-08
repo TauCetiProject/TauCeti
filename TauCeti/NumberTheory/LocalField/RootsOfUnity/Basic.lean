@@ -102,7 +102,6 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite
     [NeZero p] (hfinite : Finite (pPowerRootsOfUnity p K)) (n : ℕ) :
     (∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)) ↔
       p ^ n ∣ localRootOfUnityOrder p K hfinite := by
-  let _ := hfinite
   constructor
   · rintro ⟨ζ, hζ⟩
     have hpn : p ^ n ≠ 0 := pow_ne_zero n (NeZero.ne p)
@@ -118,7 +117,6 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite
     simpa only [localRootOfUnityOrder_def, hord] using
       (orderOf_dvd_natCard (⟨u, hmem⟩ : pPowerRootsOfUnity p K))
   · intro hdvd
-    have := hfinite
     obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard
       (α := pPowerRootsOfUnity p K)
     have hdiv : p ^ n ∣ orderOf g := by
