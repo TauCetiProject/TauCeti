@@ -49,12 +49,11 @@ faithfully flat `τ`.
 
 ## Main results
 
-* `TauCeti.Dagger.comap_map_toCompletion_of_finite`: an ideal `J` of `A` of finite codimension
-  satisfies `J Â ∩ A = J`.
-* `TauCeti.Dagger.quotientMap_map_toCompletion_bijective`: for such `J`, the map
-  `A ⧸ J → Â ⧸ J Â` is bijective.
 * `TauCeti.Dagger.faithfullyFlat_toCompletion`: the completion map `τ : A → Â` is faithfully flat,
   and `TauCeti.Dagger.toCompletion_injective`: it is injective.
+* `TauCeti.Dagger.comap_map_toCompletion`: every ideal `J` of `A` satisfies `J Â ∩ A = J`.
+* `TauCeti.Dagger.quotientMap_map_toCompletion_bijective`: for an ideal `J` of `A` of finite
+  codimension, the map `A ⧸ J → Â ⧸ J Â` is bijective.
 * `TauCeti.Dagger.isMaximal_map_toCompletion` and
   `TauCeti.Dagger.map_comap_toCompletion_of_isMaximal`: maximal ideals of `A` and `Â` correspond by
   extension and contraction.
@@ -117,43 +116,6 @@ end Presentation
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
-variable (K) in
-/-- **Finite quotients of a dagger algebra and of its completion agree.** An ideal `J` of `A`
-whose quotient is finite-dimensional over `K` satisfies `J Â ∩ A = J`. -/
-@[simp]
-theorem comap_map_toCompletion_of_finite (J : Ideal A) [Module.Finite K (A ⧸ J)] :
-    (J.map (toCompletion K A)).comap (toCompletion K A) = J := by
-  refine le_antisymm (fun a ha ↦ ?_) Ideal.le_comap_map
-  have := finite_quotient_comap_presentation K J
-  obtain ⟨f, rfl⟩ := presentation_surjective K A a
-  rw [Ideal.mem_comap, toCompletion_presentation, map_toCompletion_eq,
-    Ideal.mem_quotient_iff_mem (map_ker_le_map_comap J), ← Ideal.mem_comap,
-    washnitzerAlgebra.comap_map_toTate_of_finite] at ha
-  exact ha
-
-variable (K) in
-/-- **Finite quotients of a dagger algebra are quotients of its completion.** For an ideal `J` of
-`A` of finite codimension, the map `A ⧸ J → Â ⧸ J Â` is bijective. -/
-theorem quotientMap_map_toCompletion_bijective (J : Ideal A) [Module.Finite K (A ⧸ J)] :
-    Function.Bijective (Ideal.quotientMapₐ (J.map (toCompletion K A)) (toCompletion K A)
-      Ideal.le_comap_map) := by
-  refine ⟨Ideal.quotientMap_injective' (H := Ideal.le_comap_map)
-    (comap_map_toCompletion_of_finite K J).le, fun y ↦ ?_⟩
-  have := finite_quotient_comap_presentation K J
-  set J' := J.comap (presentation K A)
-  obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective y
-  obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective t
-  -- Approximate `t ∈ T_n` by a series `f ∈ W_n` modulo `J' T_n`.
-  obtain ⟨x, hx⟩ := (washnitzerAlgebra.quotientMap_map_toTate_bijective J').2
-    (Ideal.Quotient.mk _ t)
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  refine ⟨Ideal.Quotient.mk _ (presentation K A f), ?_⟩
-  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq] at hx
-  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq,
-    toCompletion_presentation, ← map_sub, map_toCompletion_eq,
-    Ideal.mem_quotient_iff_mem (map_ker_le_map_comap J)]
-  simpa using hx
-
 /-- The completion map of a dagger algebra is faithfully flat. -/
 theorem faithfullyFlat_toCompletion : (toCompletion K A).toRingHom.FaithfullyFlat := by
   have h := RingHom.FaithfullyFlat.isStableUnderBaseChange.quotientMap
@@ -180,6 +142,39 @@ theorem faithfullyFlat_toCompletion : (toCompletion K A).toRingHom.FaithfullyFla
 theorem toCompletion_injective : Function.Injective (toCompletion K A) :=
   faithfullyFlat_toCompletion.injective
 
+variable (K) in
+/-- **Ideals of a dagger algebra are contracted from its completion.** Every ideal `J` of `A`
+satisfies `J Â ∩ A = J`, since `τ` is faithfully flat. -/
+@[simp]
+theorem comap_map_toCompletion (J : Ideal A) :
+    (J.map (toCompletion K A)).comap (toCompletion K A) = J := by
+  let := (toCompletion K A).toRingHom.toAlgebra
+  have : Module.FaithfullyFlat A (completion K A) := faithfullyFlat_toCompletion (K := K)
+  exact J.comap_map_eq_self_of_faithfullyFlat (B := completion K A)
+
+variable (K) in
+/-- **Finite quotients of a dagger algebra are quotients of its completion.** For an ideal `J` of
+`A` of finite codimension, the map `A ⧸ J → Â ⧸ J Â` is bijective. -/
+theorem quotientMap_map_toCompletion_bijective (J : Ideal A) [Module.Finite K (A ⧸ J)] :
+    Function.Bijective (Ideal.quotientMapₐ (J.map (toCompletion K A)) (toCompletion K A)
+      Ideal.le_comap_map) := by
+  refine ⟨Ideal.quotientMap_injective' (H := Ideal.le_comap_map)
+    (comap_map_toCompletion K J).le, fun y ↦ ?_⟩
+  have := finite_quotient_comap_presentation K J
+  set J' := J.comap (presentation K A)
+  obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective y
+  obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective t
+  -- Approximate `t ∈ T_n` by a series `f ∈ W_n` modulo `J' T_n`.
+  obtain ⟨x, hx⟩ := (washnitzerAlgebra.quotientMap_map_toTate_bijective J').2
+    (Ideal.Quotient.mk _ t)
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  refine ⟨Ideal.Quotient.mk _ (presentation K A f), ?_⟩
+  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq] at hx
+  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq,
+    toCompletion_presentation, ← map_sub, map_toCompletion_eq,
+    Ideal.mem_quotient_iff_mem (map_ker_le_map_comap J)]
+  simpa using hx
+
 /-- **Maximal ideals extend to maximal ideals of the completion.** For a maximal ideal `m` of a
 dagger algebra `A`, the ideal `m Â` of the completion is maximal. -/
 theorem isMaximal_map_toCompletion (m : Ideal A) [hm : m.IsMaximal] :
@@ -199,16 +194,6 @@ theorem map_comap_toCompletion_of_isMaximal (m : Ideal (completion K A)) [hm : m
   exact (isMaximal_map_toCompletion _).eq_of_le hm.ne_top Ideal.map_comap_le
 
 variable (K) in
-/-- The powers of an ideal with maximal radical have finite codimension. -/
-private theorem finite_quotient_pow (J : Ideal A) [J.radical.IsMaximal] (n : ℕ) :
-    Module.Finite K (A ⧸ J ^ n) := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · have : Subsingleton (A ⧸ J ^ 0) := Ideal.Quotient.subsingleton_iff.mpr (by simp)
-    infer_instance
-  · have : (J ^ n).radical.IsMaximal := by rwa [Ideal.radical_pow J hn.ne']
-    exact IsDaggerAlgebra.finite_quotient_of_isMaximal_radical K _
-
-variable (K) in
 /-- **Completed local rings of a dagger algebra and of its completion agree.** For an ideal `J` of
 `A` whose radical is maximal, for instance a maximal ideal, the completion map `τ` induces an
 isomorphism of the `J`-adic completion of `A` with the `J Â`-adic completion of `Â`. -/
@@ -216,7 +201,7 @@ noncomputable def adicCompletionAlgEquiv (J : Ideal A) [J.radical.IsMaximal] :
     AdicCompletion J A ≃ₐ[K] AdicCompletion (J.map (toCompletion K A)) (completion K A) :=
   AlgEquiv.ofBijective (AdicCompletion.mapₐ (toCompletion K A) Ideal.le_comap_map) <|
     AdicCompletion.mapₐ_bijective _ _ fun n ↦ by
-      have := finite_quotient_pow K J n
+      have := IsDaggerAlgebra.finite_quotient_pow_of_isMaximal_radical K J n
       -- `(J Â) ^ n = J ^ n Â`, so this is the bijection `A ⧸ J ^ n → Â ⧸ J ^ n Â`.
       have key : ∀ J' : Ideal (completion K A), J' = (J ^ n).map (toCompletion K A) →
           ∀ H : J ^ n ≤ J'.comap (toCompletion K A).toRingHom,
