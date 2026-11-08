@@ -76,13 +76,15 @@ theorem tsum_lintegral_rootCount_eq
 
 /-- For Haar measure normalized on the integer box, the sum of root-count integrals is
 `n * q⁻ⁿ * (1 - q⁻¹)`, where `q` is the residue cardinality. -/
-theorem tsum_lintegral_rootCount_eq_of_normalized (hn : 0 < n)
+theorem tsum_lintegral_rootCount_eq_of_normalized
     (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure]
     (hμ : μ (integerBox K (Fin n)) = 1) :
     ∑' L : totallyRamifiedOfDegree K n,
       ∫⁻ a in eisensteinSet K n, (L.1.rootCount a : ℝ≥0∞) ∂μ =
         n * (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n *
           (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
   rw [tsum_lintegral_rootCount_eq μ, measure_eisensteinSet hn μ hμ]
 
 /-- The ordinary real root-count integrals form a convergent series whose sum is `n` times
