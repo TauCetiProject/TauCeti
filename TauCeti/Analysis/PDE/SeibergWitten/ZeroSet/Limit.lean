@@ -33,8 +33,8 @@ on compact sets away from `Z`, and the regions where `|α|` is small concentrate
   (`TauCeti.SeibergWitten.eventually_forall_lt_of_tendsto`). With the upper bound
   `|αᵢ|² ≤ |αᵢ|² + |βᵢ|² ≤ 1 + C' / rᵢ` this means `|αᵢ|² → 1` uniformly on `K`
   (`TauCeti.SeibergWitten.tendstoUniformlyOn_of_tendsto`).
-* **Support convergence.** For `σ < 1`, the closures of the sublevel sets `{|αᵢ|² ≤ σ}`, which
-  contain the zero sets, converge to the same limit `Z` in the Hausdorff distance
+* **Support convergence.** For `0 ≤ σ < 1`, the closures of the sublevel sets `{|αᵢ|² ≤ σ}`,
+  which contain the zero sets, converge to the same limit `Z` in the Hausdorff distance
   (`TauCeti.SeibergWitten.tendsto_closure_setOf_le_of_tendsto`): every point where
   `|αᵢ|² ≤ σ` lies within a fixed multiple of `hᵢ` of `Zᵢ`. For `σ = 1 / 2` these sets contain
   the supports of the cutoff currents `Θᵢ = i F_{aᵢ} + d(χ(|αᵢ|²) τᵢ)`, which therefore eventually
