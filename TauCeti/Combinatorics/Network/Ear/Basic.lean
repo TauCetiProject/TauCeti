@@ -203,23 +203,6 @@ theorem disjoint_arrowSet (P : Ear S) : Disjoint P.toSubnetwork.arrowSet S.arrow
   | «open» P => exact fun a ha hS ↦ P.arrows_notMem a (by simpa using ha) hS
   | closed P => exact fun a ha hS ↦ P.arrows_notMem a (by simpa using ha) hS
 
-/-- Adjoining an ear strictly enlarges its base subnetwork. -/
-theorem lt_adjoin (P : Ear S) : S < P.adjoin := by
-  refine lt_of_le_of_ne P.le_adjoin fun h ↦ ?_
-  have hex : ∃ a, a ∈ P.toSubnetwork.arrowSet := by
-    cases P with
-    | «open» P =>
-        obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ (P.walk.arrows_ne_nil P.source_ne_target)
-        exact ⟨a, by simpa using ha⟩
-    | closed P =>
-        obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ P.isCycle.arrows_ne_nil
-        exact ⟨a, by simpa using ha⟩
-  obtain ⟨a, ha⟩ := hex
-  have ha' : a ∈ P.adjoin.arrowSet := by
-    rw [adjoin_def, Network.Subnetwork.sup_arrowSet]
-    exact Or.inr ha
-  exact (Set.disjoint_left.1 P.disjoint_arrowSet ha) (h.symm ▸ ha')
-
 @[simp]
 theorem adjoin_vertexSet (P : Ear S) :
     P.adjoin.vertexSet = S.vertexSet ∪ P.toSubnetwork.vertexSet :=
@@ -229,6 +212,25 @@ theorem adjoin_vertexSet (P : Ear S) :
 theorem adjoin_arrowSet (P : Ear S) :
     P.adjoin.arrowSet = S.arrowSet ∪ P.toSubnetwork.arrowSet :=
   Network.Subnetwork.sup_arrowSet _ _
+
+/-- Every ear traverses at least one arrow. -/
+theorem nonempty_toSubnetwork_arrowSet (P : Ear S) : P.toSubnetwork.arrowSet.Nonempty := by
+  cases P with
+  | «open» P =>
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ (P.walk.arrows_ne_nil P.source_ne_target)
+    exact ⟨a, by simpa using ha⟩
+  | closed P =>
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ P.isCycle.arrows_ne_nil
+    exact ⟨a, by simpa using ha⟩
+
+/-- Adjoining an ear strictly enlarges the current subnetwork, since its arrows are new. -/
+theorem lt_adjoin (P : Ear S) : S < P.adjoin := by
+  refine lt_of_le_of_ne P.le_adjoin fun h ↦ ?_
+  obtain ⟨a, ha⟩ := P.nonempty_toSubnetwork_arrowSet
+  have haS : a ∈ S.arrowSet := by
+    rw [h, adjoin_arrowSet]
+    exact Or.inr ha
+  exact Set.disjoint_left.1 P.disjoint_arrowSet ha haS
 
 end Ear
 
@@ -441,6 +443,12 @@ theorem snoc_ear_last (D : EarDecomposition T) (P : Ear T) :
     HEq ((D.snoc P).ear (Fin.last D.length)) P := by
   simp only [snoc, Fin.lastCases_last]
   exact Ear.copy_heq _ _
+
+/-- The initial vertex belongs to the decomposed subnetwork. -/
+theorem initialVertex_mem (D : EarDecomposition T) : D.initialVertex ∈ T.vertexSet := by
+  have h := (D.monotone_stage (Fin.zero_le (Fin.last D.length))).1
+  rw [D.stage_zero, D.stage_last] at h
+  exact h (by simp)
 
 /-- The first `k` ears, as an ear decomposition of the `k`-th stage. -/
 @[expose]
