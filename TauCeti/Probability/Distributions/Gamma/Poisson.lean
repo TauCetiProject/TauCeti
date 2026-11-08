@@ -212,7 +212,7 @@ theorem bind_gammaMeasure_poissonMeasure_mul_toNNReal {r c : ℝ} (hr : 0 < r)
       rw [Measure.bind_map (by fun_prop) (by fun_prop)]
       simp only [Real.toNNReal_mul a.coe_nonneg, Real.toNNReal_coe]
     _ = _ := by
-      rw [gammaMeasure_map_const_mul hr hc ha',
+      rw [gammaMeasure_map_const_mul ha',
         ← hrate, bind_gammaMeasure_poissonMeasure hr hp hp1]
 
 /-- **The Gamma-mixed Poisson law is negative-binomial**, stated for
