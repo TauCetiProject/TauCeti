@@ -154,17 +154,18 @@ private theorem discrAtRealPlace_complementLine (hI : I.IsAdmissible)
     (complementLine I c d).discrAtRealPlace w =
       (complementLine I c d).realNegativeIndex w • squareClass (-1 : ℝˣ) := by
   have h := hI.discrAtRealPlace_eq w
-  rw [discrAtRealPlace_def, ← hd, squareClassMap_embedding_of_isReal_squareClass] at h
+  rw [discrAtRealPlace_def, ← hd, RingHom.squareClassMap_apply] at h
   rw [realNegativeIndex_complementLine hc hI, discrAtRealPlace_def]
   simp only [complementLine]
-  rw [squareClassMap_embedding_of_isReal_squareClass, map_mul, squareClass_mul, h]
+  rw [RingHom.squareClassMap_apply, map_mul, squareClass_mul, h]
   split_ifs with hw
   · rw [(Units.squareClass_eq_zero_iff_pos _).mpr (by simpa using hw)]
     exact zero_add (I.realNegativeIndex w • squareClass (-1 : ℝˣ))
   · have hcn : embedding_of_isReal w.2 (c : K) < 0 :=
       (hc w).mpr (realPositiveIndex_eq_zero_of_not_pos hc hw)
     obtain ⟨m, hm⟩ := exists_realNegativeIndex_eq_add_one_of_not_pos hc hI hw
-    have hc1 : squareClass (unitAtRealPlace w c) = squareClass (-1 : ℝˣ) :=
+    have hc1 : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom c) =
+        squareClass (-1 : ℝˣ) :=
       (Units.squareClass_eq_squareClass_neg_one_iff_neg _).mpr (by simpa using hcn)
     have h2 : squareClass (-1 : ℝˣ) + (m + 1) • squareClass (-1 : ℝˣ) =
         m • squareClass (-1 : ℝˣ) := by
@@ -236,12 +237,13 @@ private theorem globalInvariants_prod_complementLine (hd : squareClass d = I.dis
       hLd, hQd, hcd]
   · have hv := congrFun (congrArg GlobalFormInvariants.finiteHasse hQI) v
     rw [_root_.QuadraticForm.globalInvariants_finiteHasse] at hv ⊢
-    -- The local image of a global square class is the class of the localized unit.
-    have hloc (x : Kˣ) : (algebraMap K (v.adicCompletion K)).squareClassMap (squareClass x) =
-        squareClass (v.unitAtFinitePlace x) :=
-      (RingHom.squareClassMap_apply _ x).trans (congrArg squareClass (Units.ext (by simp)))
+    -- The localized unit is the image under `Units.map` of the completion map.
+    have hu (x : Kˣ) :
+        Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x = v.unitAtFinitePlace x :=
+      Units.ext (by simp)
     rw [_root_.QuadraticForm.finiteHasse_prod _ (nondegenerate_presentedForm _) Q' hQ', hv, hLd,
-      hQd, _root_.QuadraticForm.finiteHasse_eq_one_of_finrank_le_one _ _ hL1, hloc, hloc,
+      hQd, _root_.QuadraticForm.finiteHasse_eq_one_of_finrank_le_one _ _ hL1,
+      RingHom.squareClassMap_apply, RingHom.squareClassMap_apply, hu, hu,
       hilbertSymbolOnSquareClasses_squareClass]
     -- The symbol `(c, c d)_v` is a sign, so it cancels against itself.
     simp only [complementLine, one_mul, mul_assoc, Int.units_mul_self, mul_one]
