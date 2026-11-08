@@ -54,9 +54,10 @@ product, and solvable when both factors are, because it is an extension of `L` b
 * `LieIdeal.nonempty_lieEquiv_semiDirectSum` and `LieIdeal.exists_lieEquiv_semiDirectSum`:
   **the recognition theorem**, in the `Nonempty (L ≃ₗ⁅R⁆ ↥S ⋊⁅ψ⁆ ↥H)` form that consumers of a
   splitting hypothesis take as input.
-* `LieSubalgebra.exists_lieIdeal_isCompl_of_sup_eq`: a subalgebra `T'` that is the sum of a
-  subalgebra `T` and a complementary subalgebra `H` normalizing `T` has `T` as an ideal
-  complemented by `H`, the input that the recognition isomorphism consumes.
+* `LieSubalgebra.idealOfLeNormalizer`: a subalgebra `T`, cut down to a subalgebra `T'` that
+  normalizes it, as an ideal of `T'`; `LieSubalgebra.isCompl_idealOfLeNormalizer_comap_incl`
+  complements it by `H` when `T'` is the sum of `T` and a subalgebra `H` disjoint from `T`, the
+  input that the recognition isomorphism consumes.
 * `LieIdeal.semiDirectSumEquiv_symm_apply_right_eq_zero_iff` and
   `LieIdeal.semiDirectSumEquiv_symm_apply_left_eq_zero_iff`: the recognition isomorphism carries
   `S` and `H` onto the two factors, which is what lets a statement about the left factor be read
@@ -259,38 +260,57 @@ namespace LieSubalgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- If `T'` is the sum of a Lie subalgebra `T` and a complementary Lie subalgebra `H` that
-normalizes `T`, then `T`, read inside `T'`, is an ideal `I` of `T'` complemented by `H`; moreover
-`T` and `H` both lie in `T'`. -/
-theorem exists_lieIdeal_isCompl_of_sup_eq {T T' H : LieSubalgebra R L}
-    (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule)
-    (hdisj : Disjoint T.toSubmodule H.toSubmodule) (hHT : ∀ h ∈ H, ∀ t ∈ T, ⁅h, t⁆ ∈ T) :
-    T ≤ T' ∧ H ≤ T' ∧
-      ∃ (I : LieIdeal R T') (H' : LieSubalgebra R T'), (∀ x : T', x ∈ I ↔ (x : L) ∈ T) ∧
-        (∀ x : T', x ∈ H' ↔ (x : L) ∈ H) ∧ IsCompl I.toSubmodule H'.toSubmodule := by
-  have hmemsup {y : L} (hy : y ∈ T') : y ∈ T.toSubmodule ⊔ H.toSubmodule := by
+variable {T T' H : LieSubalgebra R L}
+
+/-- A Lie subalgebra `T`, cut down to a Lie subalgebra `T'` that normalizes it, is a Lie ideal of
+`T'`: the named form of `LieSubalgebra.exists_nested_lieIdeal_ofLe_normalizer`. -/
+def idealOfLeNormalizer (hT' : T' ≤ T.normalizer) : LieIdeal R T' where
+  __ := T.toSubmodule.comap T'.toSubmodule.subtype
+  lie_mem {x m} hm := by
+    -- membership in the comap is membership of the underlying element of `L` in `T`
+    change ⁅(x : L), (m : L)⁆ ∈ T
+    exact ideal_in_normalizer (hT' x.2) hm
+
+@[simp]
+theorem mem_idealOfLeNormalizer_iff (hT' : T' ≤ T.normalizer) {x : T'} :
+    x ∈ T.idealOfLeNormalizer hT' ↔ (x : L) ∈ T :=
+  Iff.rfl
+
+/-- When `T ≤ T'`, the ideal `T.idealOfLeNormalizer hT'` is `T` viewed as a Lie subalgebra of
+`T'`. -/
+theorem coe_idealOfLeNormalizer (hT' : T' ≤ T.normalizer) (hle : T ≤ T') :
+    (T.idealOfLeNormalizer hT' : LieSubalgebra R T') = ofLe hle := by
+  ext x
+  simp
+
+/-- If `T'` is the sum of `T` and a Lie subalgebra `H` normalizing `T`, then `T'` normalizes
+`T`. -/
+theorem le_normalizer_of_sup_eq (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule)
+    (hHT : ∀ h ∈ H, ∀ t ∈ T, ⁅h, t⁆ ∈ T) : T' ≤ T.normalizer := fun x hx ↦ by
+  have hx' : x ∈ T.toSubmodule ⊔ H.toSubmodule := by
     rw [hsup]
-    exact hy
-  have hTT' : T ≤ T' := fun t ht ↦ by
-    have : t ∈ T.toSubmodule ⊔ H.toSubmodule := Submodule.mem_sup_left ht
-    rwa [hsup] at this
-  have hHT' : H ≤ T' := fun h hh ↦ by
-    have : h ∈ T.toSubmodule ⊔ H.toSubmodule := Submodule.mem_sup_right hh
-    rwa [hsup] at this
-  let I : LieIdeal R T' :=
-    { T.toSubmodule.comap T'.toSubmodule.subtype with
-      lie_mem := fun {x m} hm ↦ by
-        obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp (hmemsup x.2)
-        -- membership in the comap is membership of the underlying element of `L` in `T`
-        change ⁅(x : L), (m : L)⁆ ∈ T
-        rw [← hx, add_lie]
-        exact T.add_mem (T.lie_mem ht hm) (hHT h hh _ hm) }
-  refine ⟨hTT', hHT', I, H.comap T'.incl, fun _ ↦ Iff.rfl, fun _ ↦ Iff.rfl, ?_⟩
+    exact hx
+  obtain ⟨t, ht, h, hh, rfl⟩ := Submodule.mem_sup.mp hx'
+  refine (mem_normalizer_iff T _).mpr fun y hy ↦ ?_
+  rw [add_lie]
+  exact T.add_mem (T.lie_mem ht hy) (hHT h hh y hy)
+
+/-- If `T'` is the sum of `T` and a Lie subalgebra `H` disjoint from `T`, then the ideal
+`T.idealOfLeNormalizer hT'` of `T'` is complemented by `H`, read inside `T'`. -/
+theorem isCompl_idealOfLeNormalizer_comap_incl (hT' : T' ≤ T.normalizer)
+    (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule)
+    (hdisj : Disjoint T.toSubmodule H.toSubmodule) :
+    IsCompl (T.idealOfLeNormalizer hT').toSubmodule (H.comap T'.incl).toSubmodule := by
+  have hTT' : T ≤ T' := (toSubmodule_le_toSubmodule T T').mp (hsup ▸ le_sup_left)
+  have hHT' : H ≤ T' := (toSubmodule_le_toSubmodule H T').mp (hsup ▸ le_sup_right)
   refine ⟨Submodule.disjoint_def.mpr fun x hxI hxH ↦ Subtype.ext ?_,
     codisjoint_iff.mpr (Submodule.eq_top_iff'.mpr fun x ↦ ?_)⟩
   · exact (Submodule.disjoint_def.mp hdisj) _ hxI hxH
-  · obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp (hmemsup x.2)
-    refine Submodule.mem_sup.mpr ⟨⟨t, hTT' ht⟩, ht, ⟨h, hHT' hh⟩, hh, Subtype.ext hx⟩
+  · have hx : (x : L) ∈ T.toSubmodule ⊔ H.toSubmodule := by
+      rw [hsup]
+      exact x.2
+    obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp hx
+    exact Submodule.mem_sup.mpr ⟨⟨t, hTT' ht⟩, ht, ⟨h, hHT' hh⟩, hh, Subtype.ext hx⟩
 
 end LieSubalgebra
 

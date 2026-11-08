@@ -113,9 +113,15 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
   -- representation of `T` across that split extension, and check the two Ado-stage conditions on
   -- `T'`: the centre lies in `I`, and the nilradical either lies in `I` or contains all of `T'`.
   obtain ⟨V, _, _, _, σ, hσZ, hσN⟩ := hT
-  obtain ⟨hTT', hHT', I, H', hmemI₀, hmemH, hc⟩ :=
-    LieSubalgebra.exists_lieIdeal_isCompl_of_sup_eq hsup hdisj fun h hh t ht ↦ (hHT h hh t ht).1
-  have hmemI {x : T'} : x ∈ I ↔ (x : L) ∈ T := hmemI₀ x
+  have hTT' : T ≤ T' := (LieSubalgebra.toSubmodule_le_toSubmodule T T').mp (hsup ▸ le_sup_left)
+  have hHT' : H ≤ T' := (LieSubalgebra.toSubmodule_le_toSubmodule H T').mp (hsup ▸ le_sup_right)
+  -- `T`, read inside `T'`, is an ideal `I` of `T'` complemented by `H`.
+  let I : LieIdeal K T' := T.idealOfLeNormalizer
+    (LieSubalgebra.le_normalizer_of_sup_eq hsup fun h hh t ht ↦ (hHT h hh t ht).1)
+  have hmemI {x : T'} : x ∈ I ↔ (x : L) ∈ T := T.mem_idealOfLeNormalizer_iff _
+  let H' : LieSubalgebra K T' := H.comap T'.incl
+  have hc : IsCompl I.toSubmodule H'.toSubmodule :=
+    LieSubalgebra.isCompl_idealOfLeNormalizer_comap_incl _ hsup hdisj
   let e := I.semiDirectSumEquiv H' hc
   let ψ := (LieIdeal.ad I).comp H'.incl
   -- The representation `σ` of `T`, read on the ideal `I` of `T'`.
@@ -131,7 +137,7 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
     fun h s ↦ hNI.mpr (by
       rw [show (ψ h) s = LieIdeal.ad I (H'.incl h) s from rfl, LieIdeal.coe_ad_apply,
         LieSubalgebra.coe_bracket]
-      exact (hHT _ ((hmemH _).mp h.2) _ (hmemI.mp s.2)).2)
+      exact (hHT _ h.2 _ (hmemI.mp s.2)).2)
   have he (z : T') (hz : (z : L) ∈ T) :
       e.symm z = LieAlgebra.SemiDirectSum.inl ψ ⟨z, hmemI.mpr hz⟩ :=
     LieIdeal.semiDirectSumEquiv_symm_of_mem_left I H' hc (hmemI.mpr hz)
@@ -152,7 +158,7 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
       have hloc (r : H') (s : I) : ∃ n : ℕ, ((ψ r).toLinearMap ^ n) s = 0 := by
         obtain ⟨n, hn⟩ := LieIdeal.isNilpotent_ad_toLinearMap_of_isNilpotent_ad I (H'.incl r)
           (LieAlgebra.isNilpotent_ad_of_mem_nilradical
-            (hN _ (hHT' ((hmemH _).mp r.2))))
+            (hN _ (hHT' r.2)))
         exact ⟨n, LinearMap.congr_fun hn s⟩
       exact hall (fun s ↦ hσN _ (hN _ (hTT' ((ι s).2)))) _ fun s ↦ hloc _ s
 
