@@ -435,14 +435,24 @@ theorem restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv
   rw [← coe_maximalUnramifiedFrobenius_apply_of_mem hx, ← isArithFrobeniusLift_def.1 hσ,
     restrictMaximalUnramifiedHom_coe_apply]
 
-/-- **A Frobenius lift generates the Galois group of each finite unramified level.** For `f ≠ 0`,
-the restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
-inside `K^{alg}` generates `Gal(K_f/K)`. -/
-theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ}
-    (hf : f ≠ 0) :
+/-- **A Frobenius lift generates the Galois group of each finite unramified level.** The
+restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
+inside `K^{alg}` generates `Gal(K_f/K)`; for `f = 0` the extension is `K` itself and the group is
+trivial. -/
+theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) (f : ℕ) :
     Subgroup.zpowers
       (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by
   set F := unramifiedExtension K (AlgebraicClosure K) f
+  by_cases hf : f = 0
+  · have hF : F = ⊥ := by simp only [F, hf]; exact unramifiedExtension_zero K (AlgebraicClosure K)
+    have h0 : ∀ x : F, ∃ k : K, algebraMap K F k = x := fun x ↦ by
+      obtain ⟨k, hk⟩ := IntermediateField.mem_bot.1 (show (x : AlgebraicClosure K) ∈ ⊥ by
+        rw [← hF]; exact x.2)
+      exact ⟨k, Subtype.ext hk⟩
+    have : Subsingleton (F ≃ₐ[K] F) := ⟨fun a b ↦ AlgEquiv.ext fun x ↦ by
+      obtain ⟨k, rfl⟩ := h0 x
+      simp [AlgEquiv.commutes]⟩
+    exact eq_top_iff.2 fun x _ ↦ by rw [Subsingleton.elim x 1]; exact one_mem _
   let := algebraicExtensionValuativeRel K F
   let := algebraicExtensionNormedFieldTopology K F
   have := finiteExtension_isNonarchimedeanLocalField K F
