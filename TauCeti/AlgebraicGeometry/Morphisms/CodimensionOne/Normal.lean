@@ -5,17 +5,16 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import Mathlib.AlgebraicGeometry.Morphisms.Integral
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.RingTheory.IntegralClosure.GoingDown
 public import TauCeti.AlgebraicGeometry.Morphisms.CodimensionOne.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
-public import TauCeti.RingTheory.KrullDimension.Fiber
 
 /-!
-# Codimension of points under finite morphisms to a normal scheme
+# Codimension of points under integral morphisms to a normal scheme
 
-Let `f : X ⟶ Y` be a finite dominant morphism of integral schemes with `Y` normal. Then `f`
+Let `f : X ⟶ Y` be an integral dominant morphism of integral schemes with `Y` normal. Then `f`
 preserves the codimension of every point, and in particular sends points of codimension one to
 points of codimension one. This supplies the input `hf` of
 `AlgebraicGeometry.Scheme.Hom.codimensionOneMap`. Without normality of `Y` this fails
@@ -24,8 +23,8 @@ Normality makes the target reduced, so dominance implies scheme-theoretic domina
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_coheight`: a finite dominant morphism of integral
-  schemes with normal target preserves the coheight of every point.
+* `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_coheight`: an integral dominant morphism of
+  integral schemes with normal target preserves the coheight of every point.
 * `AlgebraicGeometry.Scheme.Hom.coheight_apply_eq_one_of_coheight_eq_one`: in particular it sends
   points of coheight one to points of coheight one.
 
@@ -51,9 +50,9 @@ universe u
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
-/-- A finite dominant morphism of integral schemes with normal target preserves the coheight of
+/-- An integral dominant morphism of integral schemes with normal target preserves the coheight of
 every point. -/
-@[simp] theorem coheight_apply_eq_coheight [IsFinite f] [IsDominant f]
+@[simp] theorem coheight_apply_eq_coheight [IsIntegralHom f] [IsDominant f]
     [IsIntegral X] [IsNormalScheme Y] (x : X) :
     coheight (f x) = coheight x := by
   have : IsSchemeTheoreticallyDominant f := .of_isDominant f
@@ -69,7 +68,7 @@ every point. -/
   have : Nonempty U := ⟨⟨f x, hxU⟩⟩
   have : Nonempty (f ⁻¹ᵁ U) := ⟨⟨x, hxU⟩⟩
   let := (f.app U).hom.toAlgebra
-  have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := f.finite_app U hU
+  have : Algebra.IsIntegral Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := ⟨f.isIntegral_app U hU⟩
   have : FaithfulSMul Γ(Y, U) Γ(X, f ⁻¹ᵁ U) :=
     (faithfulSMul_iff_algebraMap_injective _ _).mpr (f.app_injective U)
   have : IsIntegrallyClosed Γ(Y, U) := IsNormalScheme.isIntegrallyClosed_of_isAffineOpen hU
@@ -89,13 +88,13 @@ every point. -/
   have : IsDomain Γ(X, f ⁻¹ᵁ U) := inferInstance
   exact (Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown _).symm
 
-/-- A finite dominant morphism of integral schemes with normal target sends points of coheight
+/-- An integral dominant morphism of integral schemes with normal target sends points of coheight
 one to points of coheight one (going down, Stacks, Proposition 10.38.7
 (00H8)). This is the scheme-theoretic codimension consequence of going down, rather than
 the ring-theoretic existence statement of that tag. -/
-@[stacks 00H8 "codimension-one consequence for finite dominant morphisms to normal schemes"]
+@[stacks 00H8 "codimension-one consequence for integral dominant morphisms to normal schemes"]
 theorem coheight_apply_eq_one_of_coheight_eq_one [IsNormalScheme Y]
-    [IsFinite f] [IsDominant f] [IsIntegral X]
+    [IsIntegralHom f] [IsDominant f] [IsIntegral X]
     (x : X) (hx : coheight x = 1) : coheight (f x) = 1 :=
   (coheight_apply_eq_coheight f x).trans hx
 
