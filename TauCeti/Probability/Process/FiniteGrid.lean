@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.FactorsThrough
-public import Mathlib.MeasureTheory.MeasurableSpace.EventuallyMeasurable
+public import TauCeti.MeasureTheory.MeasurableSpace.EventuallyMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 
 /-!
@@ -18,9 +18,10 @@ deterministic only almost surely, the observation and increment sigma algebras a
 adjoining ambient null sets, not necessarily before augmentation.
 
 Every standard Borel-valued measurable claim on the observations then has an almost-sure
-representation as a Borel function of the normalized increments. This transfers finite-grid Gaussian
-expansions from increment-dependent claims to observation-dependent claims. No independence,
-Gaussian law, path regularity, or moment hypothesis is needed for this information dictionary.
+representation as a Borel function of the normalized increments. This enables finite-grid Gaussian
+expansions of increment-dependent claims to be transferred to observation-dependent claims.
+No independence, Gaussian law, path regularity, or moment hypothesis is needed for this
+information dictionary.
 In a Brownian grid starting at zero the scales are square roots of the positive time steps;
 a grid starting at a positive date must retain its initial observation instead.
 
@@ -65,8 +66,7 @@ theorem measurable_fin_succ_iff_initial_increments [MeasurableSpace Ω]
       exact hi.add hd'
 
 /-- Finite observations generate the same sigma algebra as the pair consisting of their
-initial value and normalized increments. In particular, a random initial observation cannot
-in general be discarded. -/
+initial value and normalized increments. The initial value is kept because it may be random. -/
 theorem comap_fin_succ_eq_initial_increments
     (X : Ω → Fin (n + 1) → ℝ) (a : Fin n → ℝ) (ha : ∀ i, a i ≠ 0) :
     MeasurableSpace.comap X inferInstance = MeasurableSpace.comap (fun ω => (X ω 0,
@@ -104,7 +104,25 @@ theorem comap_fin_succ_eq_increments_of_initial_const
     exact measurable_iff_comap_le.mp
       ((measurable_fin_succ_iff_initial_increments X a ha).mp (comap_measurable _)).2
 
+/-- Subtracting the initial observation and adding a deterministic value leaves precisely
+the information carried by the normalized increments, without an initial-value hypothesis. -/
+theorem comap_fin_succ_sub_initial_eq_increments
+    (X : Ω → Fin (n + 1) → ℝ) (a : Fin n → ℝ) (ha : ∀ i, a i ≠ 0) (c : ℝ) :
+    MeasurableSpace.comap (fun ω j => X ω j - X ω 0 + c) inferInstance =
+      MeasurableSpace.comap (fun ω (i : Fin n) =>
+        (X ω i.succ - X ω i.castSucc) / a i) inferInstance := by
+  convert comap_fin_succ_eq_increments_of_initial_const
+    (fun ω j => X ω j - X ω 0 + c) a ha c (fun ω => by simp) using 1
+  simp
+
 variable [mΩ : MeasurableSpace Ω] {P : Measure Ω}
+
+private theorem fin_succ_ae_eq_sub_initial_add_const
+    (X : Ω → Fin (n + 1) → ℝ) (c : ℝ) (h0 : ∀ᵐ ω ∂P, X ω 0 = c) :
+    X =ᵐ[P] fun ω j => X ω j - X ω 0 + c := by
+  filter_upwards [h0] with ω hω
+  funext j
+  simp [hω]
 
 /-- If the initial observation is constant almost surely, adjoining ambient null sets makes
 the observation and normalized-increment sigma algebras equal. This uses the ambient a.e.
@@ -116,21 +134,9 @@ theorem eventuallyMeasurableSpace_comap_fin_succ_eq_increments
       eventuallyMeasurableSpace
         (MeasurableSpace.comap (fun ω (i : Fin n) => (X ω i.succ - X ω i.castSucc) / a i)
           inferInstance) (ae P) := by
-  let Y : Ω → Fin (n + 1) → ℝ := fun ω j => X ω j - X ω 0 + c
-  have hY : MeasurableSpace.comap Y inferInstance =
-      MeasurableSpace.comap (fun ω (i : Fin n) => (X ω i.succ - X ω i.castSucc) / a i)
-        inferInstance := by
-    convert comap_fin_succ_eq_increments_of_initial_const Y a ha c
-      (fun ω => by simp [Y]) using 1
-    simp [Y]
-  have hXY : X =ᵐ[P] Y := by
-    filter_upwards [h0] with ω hω
-    funext j
-    simp [Y, hω]
-  rw [← hY]
-  apply le_antisymm <;> rintro s ⟨t, ⟨u, hu, rfl⟩, hst⟩
-  · exact ⟨Y ⁻¹' u, ⟨u, hu, rfl⟩, hst.trans (hXY.preimage u)⟩
-  · exact ⟨X ⁻¹' u, ⟨u, hu, rfl⟩, hst.trans (hXY.symm.preimage u)⟩
+  rw [← comap_fin_succ_sub_initial_eq_increments X a ha c]
+  exact eventuallyMeasurableSpace_comap_congr X _
+    (fin_succ_ae_eq_sub_initial_add_const X c h0)
 
 /-- A standard Borel-valued claim measurable in a finite observation vector with almost-surely
 deterministic initial value is almost surely a Borel function of its normalized increments.
@@ -144,25 +150,16 @@ theorem exists_measurable_comp_increments_ae {E : Type*} [Nonempty E]
       H =ᵐ[P] fun ω => g (fun i => (X ω i.succ - X ω i.castSucc) / a i) := by
   obtain ⟨f, hf, hfact⟩ := hH.exists_eq_measurable_comp
   let Y : Ω → Fin (n + 1) → ℝ := fun ω j => X ω j - X ω 0 + c
-  have hY : MeasurableSpace.comap Y inferInstance =
-      MeasurableSpace.comap (fun ω (i : Fin n) =>
-        (X ω i.succ - X ω i.castSucc) / a i) inferInstance := by
-    convert comap_fin_succ_eq_increments_of_initial_const Y a ha c
-      (fun ω => by simp [Y]) using 1
-    simp [Y]
   have hm : Measurable[MeasurableSpace.comap (fun ω (i : Fin n) =>
       (X ω i.succ - X ω i.castSucc) / a i) inferInstance] (fun ω => f (Y ω)) := by
-    rw [← hY]
+    rw [← comap_fin_succ_sub_initial_eq_increments X a ha c]
     exact hf.comp (comap_measurable Y)
   obtain ⟨g, hg, hgfact⟩ := hm.exists_eq_measurable_comp
   refine ⟨g, hg, ?_⟩
-  filter_upwards [h0] with ω hω
+  filter_upwards [fin_succ_ae_eq_sub_initial_add_const X c h0] with ω hω
   calc
     H ω = f (X ω) := congrFun hfact ω
-    _ = f (Y ω) := by
-      congr 1
-      funext j
-      simp [Y, hω]
+    _ = f (Y ω) := congrArg f hω
     _ = g (fun i => (X ω i.succ - X ω i.castSucc) / a i) := congrFun hgfact ω
 
 end TauCeti
