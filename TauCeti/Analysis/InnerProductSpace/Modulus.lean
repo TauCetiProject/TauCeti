@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
-public import TauCeti.Analysis.Normed.Operator.RealAlgebra
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
 /-!
 # The modulus of a bounded operator
