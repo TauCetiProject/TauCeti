@@ -145,18 +145,25 @@ end LinearMap
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
+omit [FiniteDimensional ℝ V] in
 /-- The `m`-dimensional Jacobian `normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends
 continuously on the map. -/
 theorem ContinuousLinearMap.continuous_normDet :
     Continuous fun A : U →L[ℝ] V => A.normDet := by
-  have h (A : U →L[ℝ] V) : A.normDet = √((ContinuousLinearMap.adjoint A ∘L A).det) := by
-    rw [← A.normDet_sq, RCLike.ofReal_real_eq_id, id, Real.sqrt_sq A.normDet_nonneg]
+  let b := stdOrthonormalBasis ℝ U
+  have h (A : U →L[ℝ] V) :
+      A.normDet = √(Matrix.gram ℝ fun i => A (b i)).det := by
+    have hsq := (A : U →ₗ[ℝ] V).normDet_sq_eq_det_gram b
+    simp only [RCLike.ofReal_real_eq_id, id] at hsq
+    exact (hsq ▸ Real.sqrt_sq A.normDet_nonneg).symm
   simp_rw [h]
-  exact (ContinuousLinearMap.continuous_det.comp
-    (ContinuousLinearMap.adjoint.continuous.clm_comp continuous_id)).sqrt
+  refine Continuous.sqrt (Continuous.matrix_det (continuous_matrix fun i j => ?_))
+  simp only [Matrix.gram_apply]
+  fun_prop
 
 namespace ContinuousLinearMap
 
+omit [FiniteDimensional ℝ V] in
 /-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is
 uniform and the Jacobian varies by a factor at most `τ`: every `C` within distance `ρ` of `B` is
 `K`-antilipschitz, and `C.normDet` and `B.normDet` agree up to the factor `τ`. -/
