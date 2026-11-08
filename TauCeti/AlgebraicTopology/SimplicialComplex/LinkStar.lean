@@ -286,8 +286,8 @@ theorem insert_mem_deletion_of_notMem {v w : ι} (hwσ : w ∉ σ)
     ∀ τ ∈ deletion K σ, v ∈ τ → insert w τ ∈ deletion K σ := by
   intro τ hτ hvτ
   obtain ⟨hτK, hστ⟩ := mem_deletion.mp hτ
-  refine mem_deletion.mpr ⟨hdom τ hτK hvτ, fun hsub => hστ fun a ha => ?_⟩
-  exact (Finset.mem_insert.mp (hsub ha)).resolve_left (fun haw => hwσ (haw ▸ ha))
+  exact mem_deletion.mpr ⟨hdom τ hτK hvτ,
+    fun hsub => hστ ((Finset.subset_insert_iff_of_notMem hwσ).mp hsub)⟩
 
 omit [DecidableEq ι] in
 /-- Deleting a face `σ` containing `v` does not affect a subsequent deletion of `v`. -/
