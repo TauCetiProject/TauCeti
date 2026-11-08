@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import TauCeti.Analysis.Real.Sqrt
+import TauCeti.Topology.Category.TopCat.ClosedCover
 import TauCeti.Topology.Category.TopCat.OpenEmbedding
 import TauCeti.Topology.Category.TopCat.Pushout
 
@@ -503,96 +504,70 @@ theorem range_morseCellComparison (hε : 0 < ε) :
     exact ⟨morseCellAttachmentCell φ k hk hε.le hball hf i w, by
       rw [← ConcreteCategory.comp_apply, morseCellAttachmentCell_comp_morseCellComparison]⟩
 
-/-- A point of the cell of the chart `φ i` which lies in the lower sublevel is the image of a point
-of the lower sublevel in `TauCeti.morseCellAttachment`. -/
-private theorem morseCellAttachmentIncl_eq_morseCellAttachmentCell (hε : 0 < ε)
-    {x : {x | f x ≤ c - ε}} {i : ι} {w : TopCat.disk.{u} (k i)}
-    (hxw : (x : M) = (φ i).morseCellMap (hk i) ε w.down) :
-    morseCellAttachmentIncl φ k hk hε.le hball hf x =
-      morseCellAttachmentCell φ k hk hε.le hball hf i w := by
-  have hw : w ∈ (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i) ⁻¹'
-      {x | f x ≤ c - ε} := by
-    rw [mem_preimage, mem_ofPred_eq, OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
-      ← hxw]
-    exact x.2
-  rw [OpenPartialHomeomorph.preimage_morseCharacteristicMap_sublevel (hball i) (hf i) (hk i) hε]
-    at hw
-  obtain ⟨s, rfl⟩ := hw
-  rw [← ConcreteCategory.comp_apply, ← morseAttachingMap_comp_morseCellAttachmentIncl,
-    ConcreteCategory.comp_apply]
-  refine congrArg _ (Subtype.ext ?_)
-  rw [hxw, OpenPartialHomeomorph.coe_morseAttachingMap_apply,
-    TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down]
+/-- The cells of charts with pairwise disjoint sources are pairwise disjoint. -/
+private theorem pairwise_disjoint_range_morseCharacteristicMap
+    (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source)) (hε : 0 ≤ ε) :
+    Pairwise (Disjoint on fun i ↦
+      range ((φ i).morseCharacteristicMap (hk i) hε (hball i) (hf i))) :=
+  fun i i' hii' ↦ disjoint_left.2 fun _ ⟨v, hv⟩ ⟨w, hw⟩ ↦ (hφ hii').ne_of_mem
+    ((φ i).morseCellMap_mem_source (hball i) (hk i) (mem_closedBall_zero_iff.1 v.down.2))
+    ((φ i').morseCellMap_mem_source (hball i') (hk i') (mem_closedBall_zero_iff.1 w.down.2))
+    (by rw [← OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball i) (hf i) (hk i) hε,
+      ← OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball i') (hf i') (hk i') hε,
+      hv, hw])
+
+/-- A point of the disc carried by the characteristic map of a cell into the lower sublevel lies on
+the boundary sphere. -/
+private theorem mem_range_diskBoundaryInclusion_of_morseCharacteristicMap (hε : 0 < ε) (i : ι)
+    (w : TopCat.disk.{u} (k i))
+    (hw : (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i) w ∈
+      range (TopCat.ofHom (sublevelInclusion f (c - ε) (c + ε) (by linarith)))) :
+    w ∈ range (TopCat.diskBoundaryInclusion.{u} (k i)) := by
+  obtain ⟨x, hx⟩ := hw
+  rw [← OpenPartialHomeomorph.preimage_morseCharacteristicMap_sublevel (hball i) (hf i) (hk i) hε,
+    mem_preimage, mem_ofPred_eq, ← hx]
+  exact (congrArg f (coe_sublevelInclusion_apply f _ x)).trans_le x.2
+
+/-- On the cells, the comparison map restricts to the characteristic maps. -/
+private theorem ι_comp_morseCellComparison (hε : 0 ≤ ε) (i : ι) :
+    Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i ≫
+        Sigma.desc (morseCellAttachmentCell φ k hk hε hball hf) ≫
+          morseCellComparison φ k hk hε hball hf =
+      (φ i).morseCharacteristicMap (hk i) hε (hball i) (hf i) := by
+  rw [← Category.assoc, Sigma.ι_comp_desc, morseCellAttachmentCell_comp_morseCellComparison]
 
 /-- The comparison map is injective: the open discs are carried off the lower sublevel and into
 the pairwise disjoint chart sources. -/
 theorem morseCellComparison_injective (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source))
-    (hε : 0 < ε) : Injective (morseCellComparison φ k hk hε.le hball hf) := by
-  have hsurj :=
-    range_morseCellAttachmentIncl_union_iUnion_range_morseCellAttachmentCell φ k hk hball hf hε.le
-  intro a b hab
-  have hab' : (morseCellComparison φ k hk hε.le hball hf a : M) =
-      morseCellComparison φ k hk hε.le hball hf b := congrArg Subtype.val hab
-  obtain ⟨x, rfl⟩ | ha := hsurj.symm ▸ mem_univ a <;>
-    obtain ⟨y, rfl⟩ | hb := hsurj.symm ▸ mem_univ b
-  · rw [coe_morseCellComparison_morseCellAttachmentIncl,
-      coe_morseCellComparison_morseCellAttachmentIncl] at hab'
-    exact congrArg _ (Subtype.ext hab')
-  · obtain ⟨j, w, rfl⟩ := mem_iUnion.1 hb
-    rw [coe_morseCellComparison_morseCellAttachmentIncl,
-      coe_morseCellComparison_morseCellAttachmentCell] at hab'
-    exact morseCellAttachmentIncl_eq_morseCellAttachmentCell φ k hk hball hf hε hab'
-  · obtain ⟨i, w, rfl⟩ := mem_iUnion.1 ha
-    rw [coe_morseCellComparison_morseCellAttachmentIncl,
-      coe_morseCellComparison_morseCellAttachmentCell] at hab'
-    exact (morseCellAttachmentIncl_eq_morseCellAttachmentCell φ k hk hball hf hε hab'.symm).symm
-  · obtain ⟨i, v, rfl⟩ := mem_iUnion.1 ha
-    obtain ⟨j, w, rfl⟩ := mem_iUnion.1 hb
-    rw [coe_morseCellComparison_morseCellAttachmentCell,
-      coe_morseCellComparison_morseCellAttachmentCell] at hab'
-    obtain rfl | hij := eq_or_ne i j
-    · exact congrArg _ (ULift.ext (Subtype.ext
-        ((φ i).injOn_morseCellMap (hball i) (hk i) hε v.down.2 w.down.2 hab')))
-    · exact absurd hab' ((hφ hij).ne_of_mem
-        ((φ i).morseCellMap_mem_source (hball i) (hk i) (mem_closedBall_zero_iff.1 v.down.2))
-        ((φ j).morseCellMap_mem_source (hball j) (hk j) (mem_closedBall_zero_iff.1 w.down.2)))
+    (hε : 0 < ε) : Injective (morseCellComparison φ k hk hε.le hball hf) :=
+  TopCat.injective_of_isPushout_sigma
+    (fun x y h ↦ Subtype.ext (by simpa using congr(($h : M))))
+    (χ := fun i ↦ (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i))
+    (fun i v w hvw ↦ ULift.ext <| Subtype.ext <|
+      (φ i).injOn_morseCellMap (hball i) (hk i) hε v.down.2 w.down.2 (by
+        rw [← OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball i) (hf i) (hk i) hε.le,
+          ← OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball i) (hf i) (hk i) hε.le,
+          hvw]))
+    (pairwise_disjoint_range_morseCharacteristicMap φ k hk hball hf hφ hε.le)
+    (mem_range_diskBoundaryInclusion_of_morseCharacteristicMap φ k hk hball hf hε)
+    (isPushout_morseCellAttachment φ k hk hball hf hε.le)
+    (morseCellAttachmentIncl_comp_morseCellComparison φ k hk hball hf hε.le)
+    (ι_comp_morseCellComparison φ k hk hball hf hε.le)
 
 /-- **The handle-to-cell comparison is a closed embedding.** For a continuous `f` on a Hausdorff
 space, the comparison map `M_{c-ε} ∪_α ⨆ᵢ D^{k i} → M_{c+ε}` of finitely many normal-form charts
 with disjoint sources is a closed embedding. -/
 theorem isClosedEmbedding_morseCellComparison [T2Space M] [Finite ι] (hfc : Continuous f)
     (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source)) (hε : 0 < ε) :
-    IsClosedEmbedding (morseCellComparison φ k hk hε.le hball hf) := by
-  refine .of_continuous_injective_isClosedMap (morseCellComparison φ k hk hε.le hball hf).hom.2
-    (morseCellComparison_injective φ k hk hball hf hφ hε) fun A hA ↦ ?_
-  -- `A` is the union of its parts in the lower sublevel and in the cells.
-  have hA' : A = morseCellAttachmentIncl φ k hk hε.le hball hf ''
-      (morseCellAttachmentIncl φ k hk hε.le hball hf ⁻¹' A) ∪
-        ⋃ i, morseCellAttachmentCell φ k hk hε.le hball hf i ''
-          (morseCellAttachmentCell φ k hk hε.le hball hf i ⁻¹' A) := by
-    conv_lhs => rw [← inter_univ A,
-      ← range_morseCellAttachmentIncl_union_iUnion_range_morseCellAttachmentCell φ k hk hball hf
-        hε.le, inter_union_distrib_left, inter_iUnion]
-    simp only [inter_comm A, ← image_preimage_eq_range_inter]
-  -- The lower sublevel is closed in `M_{c+ε}` and the discs are compact.
-  have hab : c - ε ≤ c + ε := by linarith
-  have h₀ : morseCellComparison φ k hk hε.le hball hf ∘
-      morseCellAttachmentIncl φ k hk hε.le hball hf =
-      sublevelInclusion f (c - ε) (c + ε) hab :=
-    funext (ConcreteCategory.congr_hom
-      (morseCellAttachmentIncl_comp_morseCellComparison φ k hk hball hf hε.le))
-  have h₁ (i : ι) : morseCellComparison φ k hk hε.le hball hf ∘
-      morseCellAttachmentCell φ k hk hε.le hball hf i =
-        (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i) :=
-    funext (ConcreteCategory.congr_hom
-      (morseCellAttachmentCell_comp_morseCellComparison φ k hk hball hf hε.le i))
-  rw [hA', image_union, image_iUnion, ← image_comp, h₀]
-  refine ((isClosedEmbedding_sublevelInclusion hfc hab).isClosedMap _
-    (hA.preimage (morseCellAttachmentIncl φ k hk hε.le hball hf).hom.2)).union
-    (isClosed_iUnion_of_finite fun i ↦ ?_)
-  rw [← image_comp, h₁]
-  exact ((φ i).isClosedEmbedding_morseCharacteristicMap (hball i) (hf i) (hk i) hε).isClosedMap
-    _ (hA.preimage (morseCellAttachmentCell φ k hk hε.le hball hf i).hom.2)
+    IsClosedEmbedding (morseCellComparison φ k hk hε.le hball hf) :=
+  TopCat.isClosedEmbedding_of_isPushout_sigma
+    (isClosedEmbedding_sublevelInclusion hfc (by linarith))
+    (fun i ↦ (φ i).isClosedEmbedding_morseCharacteristicMap (hball i) (hf i) (hk i) hε)
+    (pairwise_disjoint_range_morseCharacteristicMap φ k hk hball hf hφ hε.le)
+    (mem_range_diskBoundaryInclusion_of_morseCharacteristicMap φ k hk hball hf hε)
+    (isPushout_morseCellAttachment φ k hk hball hf hε.le)
+    (morseCellAttachmentIncl_comp_morseCellComparison φ k hk hball hf hε.le)
+    (ι_comp_morseCellComparison φ k hk hball hf hε.le)
 
 end Attachment
 

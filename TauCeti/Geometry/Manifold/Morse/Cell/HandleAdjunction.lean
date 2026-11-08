@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.Topology.Category.TopCat.Sphere
-import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.AlgebraicTopology.Disk
 import TauCeti.Topology.Category.TopCat.ClosedCover
 
 /-!
@@ -38,6 +38,11 @@ The pushout property is an instance of the recognition of adjunction spaces from
 covers (`TauCeti.TopCat.isPushout_sigmaDesc_of_isClosedEmbedding`): `M_{c+ε}` is covered by the
 closed image of the lower sublevel and by the compact, pairwise disjoint handles.
 
+## Main definitions
+
+* `TauCeti.handleDiskHomeomorph`: the parametrization `D^λ × D^(n-λ)` of the product of the closed
+  unit balls of the first `λ` and of the remaining coordinates of `ℝⁿ`.
+
 ## Main results
 
 * `TauCeti.exists_isPushout_sublevel_handles`: for normal-form charts with disjoint sources around
@@ -63,6 +68,60 @@ open scoped ContDiff Manifold
 universe u
 
 namespace TauCeti
+
+section HandleDisk
+
+/-- The product of the closed unit balls of the first `k` and of the remaining coordinates of
+`ℝⁿ` is homeomorphic to `D^k × D^(n-k)`, by `TauCeti.closedBallHomeomorphDisk` on each factor
+(`TauCeti.handleDiskHomeomorph_apply_fst`, `TauCeti.handleDiskHomeomorph_apply_snd`).  This is the
+parametrization of a handle of index `k` in an `n`-manifold. -/
+def handleDiskHomeomorph {n k : ℕ} (hk : k ≤ n) :
+    Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+        Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1 ≃ₜ
+      TopCat.disk.{u} k × TopCat.disk.{u} (n - k) :=
+  Homeomorph.prodCongr (closedBallHomeomorphDisk (Fin.castLEquiv hk).symm)
+    (closedBallHomeomorphDisk (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype_compl,
+      Fintype.card_fin, ← Fintype.card_congr (Fin.castLEquiv hk), Fintype.card_fin])))
+
+/-- The first factor of `TauCeti.handleDiskHomeomorph` reindexes the first `k` coordinates. -/
+@[simp]
+lemma handleDiskHomeomorph_apply_fst {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    (handleDiskHomeomorph.{u} hk z).1 = closedBallHomeomorphDisk (Fin.castLEquiv hk).symm z.1 :=
+  (rfl)
+
+/-- The second factor of `TauCeti.handleDiskHomeomorph` reindexes the remaining coordinates. -/
+@[simp]
+lemma handleDiskHomeomorph_apply_snd {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    (handleDiskHomeomorph.{u} hk z).2 = closedBallHomeomorphDisk (Fintype.equivFinOfCardEq
+      (by rw [Fintype.card_subtype_compl, Fintype.card_fin,
+        ← Fintype.card_congr (Fin.castLEquiv hk), Fintype.card_fin])) z.2 :=
+  (rfl)
+
+/-- The first factor of `TauCeti.handleDiskHomeomorph` preserves the Euclidean norm. -/
+lemma norm_fst_handleDiskHomeomorph {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    ‖(((handleDiskHomeomorph.{u} hk z).1 :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down :
+        EuclideanSpace ℝ (Fin k))‖ =
+      ‖(z.1 : EuclideanSpace ℝ {j : Fin n // j.val < k})‖ := by
+  rw [handleDiskHomeomorph_apply_fst, norm_closedBallHomeomorphDisk_apply_down]
+
+/-- The second factor of `TauCeti.handleDiskHomeomorph` preserves the Euclidean norm. -/
+lemma norm_snd_handleDiskHomeomorph {n k : ℕ} (hk : k ≤ n)
+    (z : Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
+      Metric.closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
+    ‖(((handleDiskHomeomorph.{u} hk z).2 :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (n - k))) 1)).down :
+        EuclideanSpace ℝ (Fin (n - k)))‖ =
+      ‖(z.2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k})‖ := by
+  rw [handleDiskHomeomorph_apply_snd, norm_closedBallHomeomorphDisk_apply_down]
+
+end HandleDisk
 
 section HandleAdjunction
 
