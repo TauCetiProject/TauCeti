@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.AdicCompletion.DerivedComplete.Module
 
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.DerivedCategory.Linear
 public import Mathlib.Algebra.Homology.DerivedCategory.SingleTriangle
 public import Mathlib.Algebra.Homology.DerivedCategory.TStructure
@@ -22,6 +21,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.KInjective
 public import TauCeti.CategoryTheory.ObjectProperty.Orthogonal
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.Localization.Away.MayerVietoris
+public import TauCeti.RingTheory.Localization.Away.Presentation
 public import TauCeti.RingTheory.Polynomial.Ideal
 
 /-!
@@ -61,7 +61,6 @@ multiplication by `f X - 1`, so all `Extⁿ_A(A[1/f], N)` vanish exactly when th
 * `TauCeti.derivedComplete_iff_le`: `M` is derived `I`-complete iff `I ≤ derivedCompleteIdeal M`.
 * `TauCeti.derivedComplete_span_iff`: derived completeness can be tested on generators.
 * `TauCeti.derivedComplete_radical_iff`: derived completeness depends only on the radical.
-* `TauCeti.awayPresentation f`: the free resolution `0 → A[X] → A[X] → A[1/f] → 0`.
 * `TauCeti.derivedComplete_singleFunctor_iff`: a module placed in one degree is derived
   `I`-complete iff it is a derived `I`-complete module.
 
@@ -357,72 +356,6 @@ open Abelian
 variable (f : A)
 
 omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-/-- The free resolution `0 → A[X] → A[X] → A[1/f] → 0` of the `A`-module `A[1/f]`, whose first
-map is multiplication by `f X - 1` and whose second map is `X ↦ 1/f`
-(`Localization.awayEquivAdjoin`). It is short exact (`TauCeti.awayPresentation_shortExact`) with
-free, hence projective, first two terms, so `A[1/f]` has projective dimension at most one. -/
-def awayPresentation : ShortComplex (ModuleCat.{u} A) :=
-  ModuleCat.shortComplexOfCompEqZero (LinearMap.mulLeft A (C f * X - 1 : A[X]))
-    ((Localization.awayEquivAdjoin f).symm.toLinearMap ∘ₗ
-      (Ideal.Quotient.mkₐ A (Ideal.span {C f * X - 1})).toLinearMap)
-    ((Ideal.exact_mulLeft_mkₐ_span_singleton (C f * X - 1 : A[X])).comp_injective _
-      (Localization.awayEquivAdjoin f).symm.injective (map_zero _)).linearMap_comp_eq_zero
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-@[simp]
-theorem awayPresentation_X₁ : (awayPresentation f).X₁ = ModuleCat.of A A[X] := by
-  unfold awayPresentation
-  rfl
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-@[simp]
-theorem awayPresentation_X₂ : (awayPresentation f).X₂ = ModuleCat.of A A[X] := by
-  unfold awayPresentation
-  rfl
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-@[simp]
-theorem awayPresentation_X₃ :
-    (awayPresentation f).X₃ = ModuleCat.of A (Localization.Away f) := by
-  unfold awayPresentation
-  rfl
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-/-- The first map of `TauCeti.awayPresentation f` is multiplication by `f X - 1`. -/
-theorem awayPresentation_f : (awayPresentation f).f = eqToHom (awayPresentation_X₁ f) ≫
-    ModuleCat.ofHom (LinearMap.mulLeft A (C f * X - 1 : A[X])) ≫
-      eqToHom (awayPresentation_X₂ f).symm := by
-  unfold awayPresentation
-  rfl
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-/-- The second map of `TauCeti.awayPresentation f` is the quotient map
-`A[X] → A[X] ⧸ (f X - 1)` followed by `Localization.awayEquivAdjoin`, sending `X` to `1/f`. -/
-theorem awayPresentation_g : (awayPresentation f).g = eqToHom (awayPresentation_X₂ f) ≫
-    ModuleCat.ofHom ((Localization.awayEquivAdjoin f).symm.toLinearMap ∘ₗ
-      (Ideal.Quotient.mkₐ A (Ideal.span {C f * X - 1})).toLinearMap) ≫
-      eqToHom (awayPresentation_X₃ f).symm := by
-  unfold awayPresentation
-  rfl
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-theorem awayPresentation_shortExact : (awayPresentation f).ShortExact := by
-  unfold awayPresentation
-  exact ModuleCat.shortComplex_shortExact _
-    ((Ideal.exact_mulLeft_mkₐ_span_singleton (C f * X - 1 : A[X])).comp_injective _
-      (Localization.awayEquivAdjoin f).symm.injective (map_zero _))
-    (mulLeft_C_mul_X_sub_one_injective A f)
-    ((Localization.awayEquivAdjoin f).symm.surjective.comp (Ideal.Quotient.mkₐ_surjective A _))
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-instance : Projective (awayPresentation f).X₁ :=
-  inferInstanceAs (Projective (ModuleCat.of A A[X]))
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
-instance : Projective (awayPresentation f).X₂ :=
-  inferInstanceAs (Projective (ModuleCat.of A A[X]))
-
-omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
 /-- Under `Hom_A(A[X], N) ≃ (ℕ → N)`, `φ ↦ (φ(Xⁿ))ₙ`, restriction along multiplication by
 `f X - 1` is minus the telescope map. -/
 private lemma bijective_mulLeft_comp_iff (N : ModuleCat.{u} A) :
@@ -457,8 +390,15 @@ theorem forall_subsingleton_ext_localizationAway_iff [HasExt.{w'} (ModuleCat.{u}
     (N : ModuleCat.{u} A) :
     (∀ n, Subsingleton (Ext.{w'} (ModuleCat.of A (Localization.Away f)) N n)) ↔
       Function.Bijective (telescope N f) := by
-  rw [← bijective_mulLeft_comp_iff f N]
-  exact (awayPresentation_shortExact f).forall_subsingleton_ext_X₃_iff_bijective N
+  have h := (awayPresentation_shortExact f).forall_subsingleton_ext_X₃_iff_bijective N
+  rw [awayPresentation_X₃, awayPresentation_f] at h
+  rw [h, ← bijective_mulLeft_comp_iff f N]
+  -- Identify the first two terms of `awayPresentation f` with `A[X]`, removing the `eqToHom`s.
+  generalize awayPresentation_X₁ f = h₁, awayPresentation_X₂ f = h₂
+  generalize (awayPresentation f).X₁ = X₁ at h₁ ⊢
+  generalize (awayPresentation f).X₂ = X₂ at h₂ ⊢
+  subst h₁ h₂
+  simp
 
 end Module
 
