@@ -152,6 +152,12 @@ theorem exists_addGeneratingFamily (S : Type*) [AddCommMonoid S] [AddMonoid.FG S
   rw [T.equivFin.symm.surjective.range_comp]
   simpa using hT
 
+/-- Every element of the monoid is a combination of the generators with natural-number
+coefficients. -/
+theorem AddGeneratingFamily.exists_eq_sum (g : AddGeneratingFamily S r) (s : S) :
+    ∃ a : Fin r → ℕ, s = ∑ j, a j • g.toFun j :=
+  AddSubmonoid.exists_of_mem_closure_range g.toFun s (g.spans ▸ AddSubmonoid.mem_top s)
+
 /-- Evaluation of the affine complex points of `S` on a finite generating family. -/
 noncomputable def monomialEmbedding (g : AddGeneratingFamily S r) :
     AffineSemigroupComplexPoint S → Fin r → ℂ :=
@@ -169,21 +175,15 @@ exponents given by any expression of the monoid element through the generating f
 theorem apply_single_eq_prod_monomialEmbedding (g : AddGeneratingFamily S r) {s : S}
     {a : Fin r → ℕ} (ha : s = ∑ j, a j • g.toFun j) (x : AffineSemigroupComplexPoint S) :
     x (MonoidAlgebra.single (ofAdd s) 1) = ∏ j, monomialEmbedding g x j ^ a j := by
-  have key : ∀ t : S, x (MonoidAlgebra.single (ofAdd t) 1) =
-      (MonoidAlgebra.lift ℂ ℂ (Multiplicative S)).symm x (ofAdd t) := fun t =>
-    (MonoidAlgebra.lift_symm_apply x (ofAdd t)).symm
-  rw [ha]
-  simp only [monomialEmbedding_apply, key]
-  simp only [ofAdd_sum, ofAdd_nsmul, map_prod, map_pow]
+  simp only [ha, monomialEmbedding_apply, ← MonoidAlgebra.lift_symm_apply, ofAdd_sum, ofAdd_nsmul,
+    map_prod, map_pow]
 
 /-- An affine complex point is determined by its values on a finite generating family. -/
 theorem monomialEmbedding_injective (g : AddGeneratingFamily S r) :
     Function.Injective (monomialEmbedding g) := by
   intro x y hxy
   refine AffineSemigroupComplexPoint.ext fun s ↦ ?_
-  obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
-    rw [g.spans]
-    trivial)
+  obtain ⟨a, ha⟩ := g.exists_eq_sum s
   rw [apply_single_eq_prod_monomialEmbedding g ha x,
     apply_single_eq_prod_monomialEmbedding g ha y, hxy]
 
@@ -200,9 +200,7 @@ theorem range_monomialEmbedding (g : AddGeneratingFamily S r) :
     rw [← apply_single_eq_prod_monomialEmbedding g rfl x,
       ← apply_single_eq_prod_monomialEmbedding g rfl x, hab]
   · intro hz
-    choose a ha using fun s ↦ AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
-      rw [g.spans]
-      trivial)
+    choose a ha using g.exists_eq_sum
     -- The relations satisfied by `z` make `s ↦ ∏ j, z j ^ a s j` a well-defined character.
     have hprod : ∀ b : Fin r → ℕ, ∀ s : S, s = ∑ j, b j • g.toFun j →
         ∏ j, z j ^ a s j = ∏ j, z j ^ b j := fun b s hs ↦ hz _ _ (by rw [← ha s, ← hs])
@@ -229,14 +227,7 @@ theorem range_monomialEmbedding (g : AddGeneratingFamily S r) :
 of the binomials attached to the additive relations of the generating family. -/
 theorem isClosed_range_monomialEmbedding (g : AddGeneratingFamily S r) :
     IsClosed (Set.range (monomialEmbedding g)) := by
-  rw [range_monomialEmbedding]
-  have : {z : Fin r → ℂ | ∀ a b : Fin r → ℕ, ∑ j, a j • g.toFun j = ∑ j, b j • g.toFun j →
-        ∏ j, z j ^ a j = ∏ j, z j ^ b j} =
-      ⋂ a : Fin r → ℕ, ⋂ b : Fin r → ℕ,
-        ⋂ _ : ∑ j, a j • g.toFun j = ∑ j, b j • g.toFun j,
-          {z : Fin r → ℂ | ∏ j, z j ^ a j = ∏ j, z j ^ b j} := by
-    ext z; simp
-  rw [this]
+  simp only [range_monomialEmbedding, Set.ofPred_forall]
   exact isClosed_iInter fun a ↦ isClosed_iInter fun b ↦ isClosed_iInter fun _ ↦
     isClosed_eq (by fun_prop) (by fun_prop)
 
@@ -250,7 +241,7 @@ noncomputable def affinePointTopology (g : AddGeneratingFamily S r) :
 /-- The monomial embedding is continuous for the topology it induces. -/
 theorem continuous_monomialEmbedding (g : AddGeneratingFamily S r) :
     Continuous[affinePointTopology g, inferInstance] (monomialEmbedding g) :=
-  continuous_iff_le_induced.mpr le_rfl
+  continuous_induced_dom
 
 /-- Evaluation at a fixed monomial is continuous for the monomial-embedding topology: it is a
 monomial in the coordinates of the embedding. -/
@@ -259,9 +250,7 @@ theorem continuous_apply_single (g : AddGeneratingFamily S r) (s : S) :
       fun x : AffineSemigroupComplexPoint S ↦ x (MonoidAlgebra.single (ofAdd s) 1) := by
   -- install the induced topology as an instance so that the continuity combinators apply
   let _ := affinePointTopology g
-  obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
-    rw [g.spans]
-    trivial)
+  obtain ⟨a, ha⟩ := g.exists_eq_sum s
   simp only [apply_single_eq_prod_monomialEmbedding g ha]
   exact continuous_finsetProd _ fun k _ ↦
     ((continuous_apply k).comp (continuous_monomialEmbedding g)).pow _
@@ -274,19 +263,17 @@ theorem continuous_eval_const (g : AddGeneratingFamily S r)
     Continuous[affinePointTopology g, inferInstance]
       fun x : AffineSemigroupComplexPoint S ↦ x f := by
   let _ := affinePointTopology g
-  have hf : ∀ x : AffineSemigroupComplexPoint S,
-      x f = ∑ m ∈ f.coeff.support, f.coeff m * x (MonoidAlgebra.single m 1) := by
-    intro x
-    conv_lhs => rw [← MonoidAlgebra.sum_coeff_single f]
-    rw [Finsupp.sum, map_sum]
-    refine Finset.sum_congr rfl fun m _ ↦ ?_
-    have hsingle : MonoidAlgebra.single m (f.coeff m) =
-        f.coeff m • MonoidAlgebra.single (R := ℂ) m 1 := by
-      rw [MonoidAlgebra.smul_single', mul_one]
-    rw [hsingle, map_smul, smul_eq_mul]
-  simp only [hf]
-  exact continuous_finsetSum _ fun m _ ↦
-    continuous_const.mul (continuous_apply_single g (toAdd m))
+  induction f using MonoidAlgebra.induction_linear with
+  | zero => simpa using continuous_const
+  | add f f' hf hf' =>
+    simp only [map_add]
+    exact hf.add hf'
+  | single m c =>
+    have h (x : AffineSemigroupComplexPoint S) :
+        x (MonoidAlgebra.single m c) = c * x (MonoidAlgebra.single m 1) := by
+      rw [← smul_eq_mul, ← map_smul, MonoidAlgebra.smul_single', mul_one]
+    simp only [h]
+    exact continuous_const.mul (continuous_apply_single g (toAdd m))
 
 /-- The monomial-embedding topology is the coarsest one making evaluation at every monomial
 continuous. This description mentions no generating family, so it identifies the topologies
@@ -376,9 +363,7 @@ theorem isCompact_setOf_forall_norm_apply_single_le_one (g : AddGeneratingFamily
       {x | ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ ≤ 1} := by
     ext x
     refine ⟨fun hx j ↦ hx (g.toFun j), fun hx s ↦ ?_⟩
-    obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
-      rw [g.spans]
-      trivial)
+    obtain ⟨a, ha⟩ := g.exists_eq_sum s
     rw [apply_single_eq_prod_monomialEmbedding g ha, norm_prod]
     exact Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ by
       rw [norm_pow]
@@ -422,25 +407,19 @@ theorem comap_default (f : S →+ T) :
 @[simp]
 theorem comap_id : comap (AddMonoidHom.id S) = id := by
   funext x
-  rw [comap, AddMonoidHom.toMultiplicative_id, MonoidAlgebra.mapDomainAlgHom_id,
-    AlgHom.comp_id]
-  rfl
+  ext s
+  simp
 
 /-- Pulling back along two homomorphisms in turn is pulling back along their composite. -/
 @[simp]
 theorem comap_comap (f : S →+ T) (f' : T →+ U) (x : AffineSemigroupComplexPoint U) :
     comap f (comap f' x) = comap (f'.comp f) x := by
-  -- Mathlib supplies `AddMonoidHom.toMultiplicative_id` but no composition counterpart.
-  have hcomp : AddMonoidHom.toMultiplicative (f'.comp f) =
-      (AddMonoidHom.toMultiplicative f').comp (AddMonoidHom.toMultiplicative f) := by
-    ext s
-    simp
-  simp only [comap, hcomp, MonoidAlgebra.mapDomainAlgHom_comp, AlgHom.comp_assoc]
+  ext s
+  simp
 
 /-- The pullback of complex points is contravariant for composition. -/
-theorem comap_comp (f : S →+ T) (f' : T →+ U) : comap (f'.comp f) = comap f ∘ comap f' := by
-  funext x
-  exact (comap_comap f f' x).symm
+theorem comap_comp (f : S →+ T) (f' : T →+ U) : comap (f'.comp f) = comap f ∘ comap f' :=
+  funext fun x ↦ (comap_comap f f' x).symm
 
 /-- The map induced by a homomorphism of additive monoids is continuous for the
 monomial-embedding topologies attached to any finite generating families of the source and the
@@ -449,10 +428,8 @@ theorem continuous_comap (g : AddGeneratingFamily S r) (h : AddGeneratingFamily 
     (f : S →+ T) : Continuous[affinePointTopology h, affinePointTopology g] (comap f) := by
   -- install the source topology as an instance so that `continuous_apply_single` applies
   let _ := affinePointTopology h
-  rw [affinePointTopology_eq_iInf g, continuous_iInf_rng]
-  intro s
-  rw [continuous_induced_rng]
-  simpa [Function.comp_def] using continuous_apply_single h (f s)
+  exact (continuous_iff_forall_continuous_apply_single g _).2 fun s ↦ by
+    simpa [comap_apply_single] using continuous_apply_single h (f s)
 
 /-- An isomorphism of additive monoids induces a bijection between their affine complex
 points. -/

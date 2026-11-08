@@ -101,7 +101,7 @@ theorem sqrt_log_card_div_le_integral_sup'_abs (hindep : iIndepFun g P)
   -- Each `|g i|` exceeds `s` with probability at least `p = φ(s + 1)`, and `m p ≥ 1 / 7`.
   set p : ℝ := gaussianPDFReal 0 1 (s + 1)
   have hp : p ≤ ν.real (Ioi s) := by
-    have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs0 zero_le_one
+    have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs0 (t := 1)
     rw [one_mul] at h
     rw [map_measureReal_apply measurable_abs measurableSet_Ioi]
     exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))

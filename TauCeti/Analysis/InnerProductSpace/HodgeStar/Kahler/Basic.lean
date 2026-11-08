@@ -33,7 +33,8 @@ In dimension four, for the complex orientation, the one in which unitary frames 
 oriented, `ω` is self-dual, and on the self-dual two-forms
 `Λ⁺ = ℝ ω ⊕ (ℝ ω)ᗮ` the operator `D_J / 2` is zero on `ω` and squares to `-1` on its
 orthogonal complement: `D_J² η = 2 ⟪ω, η⟫ ω - 4 η`. This is the complex structure
-`ρ ↦ ω_u × ρ`, `ω_u = ω / √2`, of the anti-`J`-invariant self-dual forms. Finally the
+`ρ ↦ ω_u × ρ`, `ω_u = ω / √2`, of the anti-`J`-invariant self-dual forms. On the
+anti-self-dual two-forms `D_J` vanishes, so these are `J`-invariant. Finally the
 self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`; this is what makes the principal symbol of
 the anti-self-dual deformation operator complex linear.
 
@@ -53,6 +54,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
+* `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
 * `lieMap_kahlerForm`: `D_J ω = 0`.
 * `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
   contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
@@ -61,8 +63,10 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
+* `inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`: `ω` is orthogonal to anti-self-dual forms.
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
+* `lieMap_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
 
 The supporting norm-preservation and four-frame construction lemmas live in
@@ -136,6 +140,16 @@ theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V
 @[simp]
 theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
   rw [← real_inner_self_eq_norm_sq, inner_kahlerForm_self hJ]
+
+/-- `‖v ∧ J v‖² = ‖v‖⁴` for an orthogonal `J`, since `J v` is orthogonal to `v` and has the same
+norm. -/
+theorem norm_ιMulti_apply_sq (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = ‖v‖ ^ 4 := by
+  have h0 : ⟪v, J v⟫ = 0 := by
+    have := inner_apply_left hJ v v
+    rw [real_inner_comm] at this
+    linarith
+  rw [← real_inner_self_eq_norm_sq, inner_ιMulti_two, hJ, h0, real_inner_self_eq_norm_sq]
+  ring
 
 /-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. -/
 @[simp]
@@ -243,6 +257,15 @@ theorem hodgeStar_kahlerForm : o.hodgeStar hkl J.kahlerForm = J.kahlerForm := by
   ring
 
 include he h₀ h₂ in
+/-- **The Kähler form is orthogonal to the anti-self-dual forms**: `⟪ω, μ⟫ = 0` when `⋆μ = -μ`,
+since `ω` is self-dual for the complex orientation. -/
+theorem inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
+    (hμ : o.hodgeStar hkl μ = -μ) : ⟪J.kahlerForm, μ⟫ = 0 := by
+  have h := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ J.kahlerForm
+  rw [hodgeStar_kahlerForm h₀ h₂ hkl he, real_inner_comm] at h
+  linarith
+
+include he h₀ h₂ in
 /-- The square of the derivation action of `J` on the self-dual part of a two-form:
 `D_J² (x + ⋆x) = 4 ⟪ω, x⟫ ω - 4 (x + ⋆x)`. -/
 private theorem lieMap_lieMap_add_hodgeStar
@@ -286,6 +309,32 @@ theorem lieMap_lieMap_of_hodgeStar_eq_self
   have h := lieMap_lieMap_add_hodgeStar h₀ h₂ hkl he η
   rw [hη, map_add, map_add] at h
   linear_combination (norm := module) (2⁻¹ : ℝ) • h
+
+include he h₀ h₂ in
+/-- **`J` acts trivially on the anti-self-dual two-forms**: `D_J η = 0` for `⋆η = -η`. Since
+`D_J` is skew-adjoint, this says that an anti-self-dual two-form is `J`-invariant,
+`η(J u, J w) = η(u, w)`, as is `ω`; the anti-self-dual forms are the primitive `(1,1)`-forms. -/
+theorem lieMap_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η) :
+    exteriorPower.lieMap 2 J.toLinearMap η = 0 := by
+  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
+  set D := exteriorPower.lieMap 2 J.toLinearMap
+  -- `D_J` kills the anti-self-dual part `x - ⋆x` of every two-vector `x`.
+  have key : D ∘ₗ (LinearMap.id - (o.hodgeStar hkl).toLinearMap) = 0 := by
+    refine linearMap_ext_inner_ιMulti_two fun a b u w ↦ ?_
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,
+      LinearEquiv.coe_coe, LinearMap.zero_apply, inner_zero_left,
+      inner_lieMap_left (inner_apply_left hJ), D, exteriorPower.lieMap_two_apply_ιMulti,
+      inner_add_right, inner_sub_left, o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two,
+      o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four]
+    simp only [e.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four, Basis.toMatrix_apply,
+      OrthonormalBasis.coe_toBasis_repr_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
+      repr_apply h₀ h₂]
+    ring
+  have h := LinearMap.congr_fun key η
+  rw [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe, hη,
+    sub_neg_eq_add, map_add, LinearMap.zero_apply] at h
+  rwa [← two_smul ℝ (D η), smul_eq_zero, or_iff_right two_ne_zero] at h
 
 include he h₀ h₂ in
 /-- **The self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`**:

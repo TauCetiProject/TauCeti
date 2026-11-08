@@ -100,6 +100,14 @@ theorem add (hx : G.IsCapacitatedMatching b x) (hy : G.IsCapacitatedMatching b' 
     G.IsCapacitatedMatching (b + b') (x + y) :=
   fun v ↦ by simpa [sum_add_distrib] using add_le_add (hx v) (hy v)
 
+/-- A multiset capacitated matching in a bipartite multigraph has size `b(L)` exactly when it
+saturates every vertex of `L`. -/
+theorem sum_eq_sum_left_iff (hx : G.IsCapacitatedMatching b x) {L R : Finset V(G)}
+    (hLR : G.IsBipartition L R) :
+    ∑ e, x e = ∑ v ∈ L, b v ↔ ∀ v ∈ L, ∑ e ∈ G.incidentEdges {v}, x e = b v := by
+  rw [← hLR.sum_sum_incidentEdges_left x]
+  exact sum_eq_sum_iff_of_le fun v _ ↦ isCapacitatedMatching_def.1 hx v
+
 /-- **Weak duality for multiset capacitated matchings.** The size of a multiset capacitated
 matching is at most the weight of any vertex cover. -/
 theorem sum_le_sum_of_isVertexCover (hx : G.IsCapacitatedMatching b x) {C : Finset V(G)}

@@ -255,19 +255,13 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   -- `W₂(μ₀, μ₁) ≤ d + 2 r`, so the midpoint is within `d / 2 + 2 r` of both `δ_{x₀}` and `δ_{x₁}`.
   have hW : dist μ₀ μ₁ ≤ d + 2 * r := by
     rw [← edist_le_ofReal (by positivity), WassersteinSpace.edist_def]
-    calc wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X) (μ₁ : ProbabilityMeasure X)
-        ≤ wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X) (Measure.dirac x₀) +
-          (wassersteinEDist 2 (Measure.dirac x₀) (Measure.dirac x₁) +
-            wassersteinEDist 2 (Measure.dirac x₁) ((μ₁ : ProbabilityMeasure X) : Measure X)) :=
-          (wassersteinEDist_triangle measurable_edist one_le_two _ _ _).trans
-            (add_le_add le_rfl (wassersteinEDist_triangle measurable_edist one_le_two _ _ _))
-      _ ≤ ENNReal.ofReal r + (ENNReal.ofReal d + ENNReal.ofReal r) := by
-          rw [wassersteinEDist_comm measurable_edist, wassersteinEDist_dirac_dirac two_ne_zero,
-            edist_dist]
-          gcongr
-      _ = ENNReal.ofReal (d + 2 * r) := by
-          rw [← ENNReal.ofReal_add hd hr.le, ← ENNReal.ofReal_add hr.le (by positivity)]
-          ring_nf
+    refine (wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le measurable_edist
+      one_le_two hW₀ hW₁).trans_eq ?_
+    rw [edist_dist, ← ENNReal.ofReal_add hr.le dist_nonneg,
+      ← ENNReal.ofReal_add (by positivity) hr.le]
+    congr 1
+    simp only [d]
+    ring
   have hmid (x : X) (μ : WassersteinSpace 2 X)
       (hx : wassersteinEDist 2 (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
         ENNReal.ofReal r) (hμ : dist μ (γ (1 / 2)) = 1 / 2 * dist μ₀ μ₁) :

@@ -326,13 +326,15 @@ theorem integralTopForm_circleOrientation_circleAngularForm :
   have hD : MeasurableSet ((EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1)) ⁻¹'
       Set.Ioo (-Real.pi) Real.pi) :=
     measurableSet_Ioo.preimage (EuclideanSpace.proj (𝕜 := ℝ) 0).continuous.measurable
-  have h := integralTopForm_eq_oriented_parametrization l circleAngularForm
+  have h := integralTopForm_eq_oriented_parametrization l
+    (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis circleAngularForm
     (isSmoothForm_circleAngularForm.integrableTopForm hc
       (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis)
-    hD image_circleParam injOn_circleParam circleParamDerivEquiv
+    hD (Set.finite_singleton _) image_circleParam injOn_circleParam circleParamDerivEquiv
     (fun z _ ↦ hasMFDerivAt_circleParam z)
     (fun z _ ↦ by
       rw [← Manifold.Orientation.orientationAt_mk, hl, map_circleParamDerivEquiv_orientation])
+  rw [OrthonormalBasis.addHaar_eq_volume] at h
   rw [← hl, h.2, MeasureTheory.setIntegral_congr_fun hD fun z _ ↦
       circleAngularForm_apply_circleParamDerivEquiv z]
   rw [MeasureTheory.setIntegral_const, MeasureTheory.measureReal_def,
