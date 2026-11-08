@@ -50,39 +50,29 @@ theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.graphAut (d.weightTorus s) =
       d.weightTorus (fun i => s (d.toGraphTwistedIndex.diagramPerm.symm i)) := by
-  -- On the constructor form, the rank identification is the identity, making the dependent
-  -- node permutation literally the native E₆ diagram permutation.
   obtain ⟨q, rfl⟩ := d.exists_eq_of
-  rw [graphAut_def, weightTorus_apply,
+  rw [graphAut_def]
+  -- The constructor's semireducible rank requires `erw` to apply the explicit torus equation.
+  erw [weightTorus_of,
     E6DoubledMinuscule.graphAutomorphismPoints_weightTorusPoints,
-    weightTorus_apply, GraphTwistedIndex.diagramPerm_twistedE6]
-  congr 1
-  funext i
-  -- Make the rank-six indices explicit: dependent `finCongr` transports otherwise block `rw`.
-  change s (graphPermE6 i) = s (graphPermE6.symm i)
-  rw [graphPermE6_symm]
+    weightTorus_of, GraphTwistedIndex.diagramPerm_twistedE6, graphPermE6_symm]
+  rfl
 
 /-- Frobenius pulls characters back by multiplication by the recorded field order. -/
 theorem isCharacterMap_frobenius :
     IsCharacterMap d.weightTorus d.frobenius ((d.1.fieldOrder : ℕ) • 1) := by
-  -- On the constructor form, `finCongr` reindexing is definitionally the identity.
-  obtain ⟨q, rfl⟩ := d.exists_eq_of
   refine isCharacterMap_iff.mpr fun s => ?_
-  rw [frobenius_def, weightTorus_apply, weightTorus_apply,
-    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
-  exact (E6DoubledMinuscule.isCharacterMap_frobenius _ _ _).map_apply s
+  rw [frobenius_weightTorus, torusPointMap_nsmul, torusPointMap_one,
+    MonoidHom.pow_apply, MonoidHom.id_apply]
 
 /-- The graph factor has the inverse native datum graph action as character pullback. -/
 theorem isCharacterMap_graphAut :
     IsCharacterMap d.weightTorus d.graphAut.toMonoidHom
       d.toGraphTwistedIndex.datumGraphAut⁻¹.toHom.weightMap := by
-  -- The constructor form identifies both the rank reindexing and diagram permutation.
-  obtain ⟨q, rfl⟩ := d.exists_eq_of
   refine isCharacterMap_iff.mpr fun s => ?_
-  rw [graphAut_def, weightTorus_apply, weightTorus_apply,
+  rw [MulEquiv.coe_toMonoidHom, graphAut_weightTorus,
     GraphTwistedIndex.datumGraphAut_def, DynkinType.diagramAut_inv_weightMap,
-    GraphTwistedIndex.diagramPerm_twistedE6]
-  exact (E6DoubledMinuscule.isCharacterMap_graphAutomorphismPoints _).map_apply s
+    torusPointMap_funCongrLeft]
 
 /-- The represented Steinberg map pulls characters back by the uniform native datum map. -/
 theorem isCharacterMap_steinberg :
