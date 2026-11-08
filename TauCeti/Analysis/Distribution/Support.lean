@@ -118,15 +118,16 @@ theorem dsupport_eq_empty_iff : dsupport T = ∅ ↔ ⇑T = 0 :=
     fun h ↦ univ_disjoint.1 <|
       (isVanishingOn_iff_disjoint_dsupport T isOpen_univ).1 fun φ _ ↦ congrFun h φ⟩
 
-/-- The support of a sum of additive maps on test functions lies in the union of their supports. -/
+omit [FiniteDimensional ℝ E] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V]
+  [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V] in
+/-- The support of a sum of maps on test functions lies in the union of their supports. -/
 theorem dsupport_add_subset (S : 𝓖) : dsupport (⇑T + ⇑S) ⊆ dsupport T ∪ dsupport S := by
-  have h : IsVanishingOn (⇑T + ⇑S) (dsupport T ∪ dsupport S)ᶜ := fun φ hφ ↦ by
-    rw [compl_union] at hφ
-    simp [isVanishingOn_compl_dsupport T φ (hφ.trans inter_subset_left),
-      isVanishingOn_compl_dsupport S φ (hφ.trans inter_subset_right)]
-  have hsub :=
-    (h.disjoint_dsupport (isClosed_dsupport.union isClosed_dsupport).isOpen_compl).subset_compl_left
-  rwa [compl_compl] at hsub
+  refine compl_subset_compl.1 fun x hx ↦ ?_
+  rw [mem_compl_iff, mem_union, not_or, notMem_dsupport_iff, notMem_dsupport_iff] at hx
+  obtain ⟨⟨s, hs, hso, hxs⟩, ⟨t, ht, hto, hxt⟩⟩ := hx
+  rw [mem_compl_iff, notMem_dsupport_iff]
+  refine ⟨s ∩ t, fun φ hφ ↦ ?_, hso.inter hto, hxs, hxt⟩
+  simp [hs φ (hφ.trans inter_subset_left), ht φ (hφ.trans inter_subset_right)]
 
 end Localization
 
@@ -322,30 +323,23 @@ end AugmentationGroup
 
 section Module
 
-variable [FiniteDimensional ℝ E] [AddCommGroup V] [Module ℝ V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
-  [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+variable [AddCommGroup V] [Module ℝ V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
 
 /-- The augmentation is homogeneous. -/
 theorem augmentation_smul (a : ℝ) (c : F) :
     augmentation (a • ⇑T) c = a • augmentation T c := by
-  let A : 𝓓^{n}(Ω, F) →+ V := a • (T : 𝓓^{n}(Ω, F) →+ V)
-  have hA : ⇑A = a • ⇑T := by
-    ext φ
-    simp [A]
-  have hsub : dsupport A ⊆ dsupport T :=
-    dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [A, h φ hφ]
-  by_cases h : ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1
-  · obtain ⟨χ, hχ⟩ := h
-    rw [← hA, augmentation_eq A (hχ.filter_mono (nhdsSet_mono hsub)), augmentation_eq T hχ]
-    simp [A]
-  rw [augmentation_of_not_exists h, smul_zero]
   rcases eq_or_ne a 0 with rfl | ha
   · unfold augmentation
     split_ifs <;> simp
-  -- For `a ≠ 0` the supports agree, so no cutoff exists for `a • T` either.
-  have hsup : dsupport T ⊆ dsupport A :=
-    dsupport_subset_dsupport fun _ _ h' φ hφ ↦ by simpa [A, ha] using h' φ hφ
-  rw [← hA, augmentation_of_not_exists (hsub.antisymm hsup ▸ h)]
+  -- For `a ≠ 0` the supports agree, so both sides use the same cutoff.
+  have hsup : dsupport (a • ⇑T) = dsupport T :=
+    (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [h φ hφ]).antisymm
+      (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simpa [ha] using h φ hφ)
+  unfold augmentation
+  rw [hsup]
+  split_ifs
+  · rfl
+  · simp
 
 end Module
 
