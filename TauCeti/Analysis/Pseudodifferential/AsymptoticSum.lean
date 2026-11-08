@@ -29,8 +29,8 @@ Following Borel, the sum is `b(x, ξ) = ∑ⱼ χ(ξ / tⱼ) aⱼ(x, ξ)` for a 
 The radii are chosen so large that the `j`-th term is at most `2^{-j}` in the estimates of order
 `mⱼ + 1` for the derivatives of length at most `j` on the ball of radius `j`; since `mⱼ + 1 ≤ m_N`
 for large `j`, the tail of the series is then summable in every estimate of order `m_N`. The
-removed cutoffs `(χ(ξ / tⱼ) - 1) aⱼ` have bounded frequency support, so they satisfy the estimates
-of every order (`TauCeti.exists_norm_mixedDeriv_le_of_eq_zero_of_lt_norm`).
+removed cutoffs `(χ(ξ / tⱼ) - 1) aⱼ` have bounded frequency support, so they are symbols of every
+order (`TauCeti.Symbol.ofBoundedFrequencySupport`).
 
 The radii can be chosen independently of the position because the dilated cutoffs `χ(ξ / t)`,
 `t ≥ 1`, satisfy the order-zero symbol estimates uniformly in `t` and vanish for `‖ξ‖ ≤ t`. For a
@@ -43,8 +43,6 @@ order `m' ≥ m` with constants `C t^{m - m'}`
 
 * `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off symbols
   `χ(ξ / t) a(x, ξ)`, uniform in `t ≥ 1`.
-* `TauCeti.exists_norm_mixedDeriv_le_of_eq_zero_of_lt_norm`: a smooth function with bounded
-  frequency support satisfies the symbol estimates of every order.
 * `TauCeti.Symbol.exists_asymptoticSum`: every sequence of symbols of orders decreasing to `-∞`
   has an asymptotic sum.
 
@@ -67,42 +65,6 @@ namespace TauCeti
 variable {n : ℕ} {A V W : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
   [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
 
-/-- A smooth function `F(x, ξ)` that vanishes for `‖ξ‖ > R` satisfies the symbol estimates of
-every order `s`: on each compact set `K` of positions its mixed derivatives are bounded by
-`C ⟨ξ⟩^s`. -/
-theorem exists_norm_mixedDeriv_le_of_eq_zero_of_lt_norm
-    {F : CoordinateSpace n × CoordinateSpace n → A} (hF : ContDiff ℝ ∞ F) {R : ℝ}
-    (hR : ∀ x ξ, R < ‖ξ‖ → F (x, ξ) = 0) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (α β : List (Fin n)) (s : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β F x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-  -- The mixed derivative divided by the weight is continuous, hence bounded on the compact set
-  -- `K × closedBall 0 R`; outside it the mixed derivative vanishes.
-  have hH : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
-      ‖mixedDeriv α β F p.1 p.2‖ * (1 + ‖p.2‖ ^ 2) ^ (-s / 2) :=
-    (hF.mixedDeriv α β).continuous.norm.mul
-      ((continuous_const.add (continuous_snd.norm.pow 2) :
-        Continuous fun p : CoordinateSpace n × CoordinateSpace n => 1 + ‖p.2‖ ^ 2).rpow_const
-          fun _ => Or.inl (add_pos_of_pos_of_nonneg one_pos (sq_nonneg _)).ne')
-  have hS := hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)
-  obtain ⟨M, hM⟩ := hS.exists_bound_of_continuousOn hH.continuousOn
-  refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  by_cases hξ : ‖ξ‖ ≤ R
-  · have h := hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩
-    rw [Real.norm_of_nonneg (by positivity)] at h
-    calc ‖mixedDeriv α β F x ξ‖
-        = ‖mixedDeriv α β F x ξ‖ * (1 + ‖ξ‖ ^ 2) ^ (-s / 2) * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-          rw [mul_assoc, ← Real.rpow_add hw, neg_div, neg_add_cancel, Real.rpow_zero, mul_one]
-      _ ≤ max M 0 * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-          gcongr
-          exact h.trans (le_max_left _ _)
-  · have h0 : F =ᶠ[𝓝 (x, ξ)] 0 := by
-      filter_upwards [(isOpen_lt continuous_const continuous_snd.norm).mem_nhds (not_le.1 hξ)]
-        with p hp
-      exact hR p.1 p.2 hp
-    rw [h0.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
-    positivity
-
 namespace Symbol
 
 variable {m : ℝ}
@@ -112,24 +74,6 @@ theorem contDiff_cutoff_smul_coefficient (χ : FrequencyCutoff (CoordinateSpace 
     (a : Symbol n V W m) :
     ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (t⁻¹ • p.2) • a.coefficient p :=
   ((χ.contDiff (n := ⊤)).comp (contDiff_snd.const_smul t⁻¹)).smul a.contDiff_coefficient
-
-/-- Above radius `t > 0`, raising the order of the weight `⟨ξ⟩^s` to `s' ≥ s` costs at most the
-factor `t^(s - s')`. -/
-private theorem rpow_weight_le_rpow_mul_rpow_weight {t s s' : ℝ} {ξ : CoordinateSpace n}
-    (ht : 0 < t) (hξ : t ≤ ‖ξ‖) (hs : s ≤ s') :
-    (1 + ‖ξ‖ ^ 2) ^ (s / 2) ≤ t ^ (s - s') * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  have hsplit : (1 + ‖ξ‖ ^ 2) ^ (s / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((s - s') / 2) * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
-    rw [← Real.rpow_add hw]
-    ring_nf
-  have ht2 : t ^ (s - s') = (t ^ 2) ^ ((s - s') / 2) := by
-    rw [← Real.rpow_natCast t 2, ← Real.rpow_mul ht.le]
-    ring_nf
-  rw [hsplit, ht2]
-  refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos (by positivity) ?_
-    (by linarith)) (by positivity)
-  nlinarith [norm_nonneg ξ]
 
 /-- The symbol estimates of `a` bound the Fréchet derivatives in `ξ` of each position derivative
 `∂_x^α a(x, ξ)`: the `i`-th one is at most `G ⟨ξ⟩^(m - i)` for `x` in a compact set. -/
@@ -224,13 +168,6 @@ theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateS
         mul_le_mul_of_nonneg_left hweight hC0
     _ = _ := by ring
 
-/-- A finite sum of smooth functions is smooth. -/
-private theorem contDiff_finsetSum {ι : Type*} {s : Finset ι}
-    {f : ι → CoordinateSpace n × CoordinateSpace n → A} (hf : ∀ i ∈ s, ContDiff ℝ ∞ (f i)) :
-    ContDiff ℝ ∞ (∑ i ∈ s, f i) := by
-  rw [Finset.sum_fn]
-  exact ContDiff.sum hf
-
 /-- For large `t`, the cut-off term `χ(ξ / t) a(x, ξ)` of a symbol `a` of order `μ` is at most
 `2^{-j}` in the estimates of order `μ + 1` for the derivatives of length at most `j` on the ball of
 radius `j`. -/
@@ -286,8 +223,11 @@ private theorem contDiff_borelSum (χ : FrequencyCutoff (CoordinateSpace n)) {t 
     ContDiff ℝ ∞ (borelSum χ t a) := by
   refine contDiff_iff_contDiffAt.2 fun p₀ => ?_
   obtain ⟨J, hJ⟩ := exists_nat_gt ‖p₀.2‖
-  exact (contDiff_finsetSum fun j _ => (a j).contDiff_cutoff_smul_coefficient χ (t j)).contDiffAt
-    |>.congr_of_eventuallyEq (borelSum_eventuallyEq χ ht a hJ)
+  have hs : ContDiff ℝ ∞
+      (∑ j ∈ Finset.range J, fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) := by
+    simpa only [Finset.sum_fn] using
+      ContDiff.sum fun j _ => (a j).contDiff_cutoff_smul_coefficient χ (t j)
+  exact hs.contDiffAt.congr_of_eventuallyEq (borelSum_eventuallyEq χ ht a hJ)
 
 /-- If the radii `tⱼ` make the `j`-th term of the Borel sum at most `2^{-j}` in the estimates of
 order `mⱼ + 1` for the derivatives of length at most `j` on the ball of radius `j`, then from some
@@ -347,10 +287,13 @@ private theorem mixedDeriv_borelSum_sub (χ : FrequencyCutoff (CoordinateSpace n
       ← Finset.sum_range_add_sum_Ico _ (hNj₁.trans hj₁J), Finset.sum_sub_distrib]
     simp only [Pi.add_apply, Pi.sub_apply]
     abel
-  have hs₁ : ContDiff ℝ ∞ (∑ j ∈ Finset.range N, (g j - (a j).coefficient)) :=
-    contDiff_finsetSum fun j _ => (hg j).sub (a j).contDiff_coefficient
-  have hs₂ : ContDiff ℝ ∞ (∑ j ∈ Finset.Ico N j₁, g j) := contDiff_finsetSum fun j _ => hg j
-  have hs₃ : ContDiff ℝ ∞ (∑ j ∈ Finset.Ico j₁ J, g j) := contDiff_finsetSum fun j _ => hg j
+  have hs₁ : ContDiff ℝ ∞ (∑ j ∈ Finset.range N, (g j - (a j).coefficient)) := by
+    simpa only [Finset.sum_fn, Pi.sub_apply] using
+      ContDiff.sum fun j _ => (hg j).sub (a j).contDiff_coefficient
+  have hs₂ : ContDiff ℝ ∞ (∑ j ∈ Finset.Ico N j₁, g j) := by
+    simpa only [Finset.sum_fn] using ContDiff.sum fun j _ => hg j
+  have hs₃ : ContDiff ℝ ∞ (∑ j ∈ Finset.Ico j₁ J, g j) := by
+    simpa only [Finset.sum_fn] using ContDiff.sum fun j _ => hg j
   have hs₂₃ : ContDiff ℝ ∞ (∑ j ∈ Finset.Ico N j₁, g j + ∑ j ∈ Finset.Ico j₁ J, g j) :=
     hs₂.add hs₃
   rw [heq.mixedDeriv_eq, mixedDeriv_add hs₁ hs₂₃, mixedDeriv_add hs₂ hs₃,
@@ -378,12 +321,17 @@ private theorem exists_norm_mixedDeriv_borelSum_sub_le (χ : FrequencyCutoff (Co
   -- The removed cutoffs `(χ(ξ / tⱼ) - 1) aⱼ` have bounded frequency support.
   have hD1 : ∀ j, ∃ D, 0 ≤ D ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β
       ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient) x ξ‖ ≤
-        D * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := fun j =>
-    exists_norm_mixedDeriv_le_of_eq_zero_of_lt_norm
-      (((a j).contDiff_cutoff_smul_coefficient χ (t j)).sub (a j).contDiff_coefficient)
-      (R := 2 * t j) (fun x ξ hξ => by
-        simp only [χ.apply_inv_smul_eq_one (one_pos.trans_le (ht1 j)) hξ.le, one_smul,
-          sub_self]) hK α β _
+        D * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := fun j => by
+    have hR : ∀ x ξ, 2 * t j ≤ ‖ξ‖ →
+        ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient) (x, ξ) = 0 :=
+      fun x ξ hξ => by
+        simp only [Pi.sub_apply, χ.apply_inv_smul_eq_one (one_pos.trans_le (ht1 j)) hξ,
+          one_smul, sub_self]
+    simpa only [coefficient_ofBoundedFrequencySupport] using
+      (ofBoundedFrequencySupport (m := m N)
+        ((fun p => χ ((t j)⁻¹ • p.2) • (a j).coefficient p) - (a j).coefficient)
+        (((a j).contDiff_cutoff_smul_coefficient χ (t j)).sub (a j).contDiff_coefficient)
+        (2 * t j) hR).exists_bound K hK α β
   choose D₁ hD₁0 hD₁ using hD1
   choose D₂ hD₂0 hD₂ using fun j => (a j).exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
   refine ⟨∑ j ∈ Finset.range N, D₁ j + ∑ j ∈ Finset.range j₁, D₂ j + 2,
@@ -437,7 +385,8 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
     fun j => (ht j).2
   refine ⟨⟨borelSum χ t a, hb, fun K hK α β => ?_⟩, fun N =>
     ⟨⟨borelSum χ t a - ∑ j ∈ Finset.range N, (a j).coefficient,
-      hb.sub (contDiff_finsetSum fun j _ => (a j).contDiff_coefficient),
+      hb.sub (by simpa only [Finset.sum_fn] using
+        ContDiff.sum fun j _ => (a j).contDiff_coefficient),
       fun K hK α β => hrem N hK α β⟩, rfl⟩⟩
   simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using hrem 0 hK α β
 

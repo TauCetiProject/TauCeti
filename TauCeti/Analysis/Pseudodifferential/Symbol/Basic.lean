@@ -89,6 +89,24 @@ theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
     0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
 
+/-- Above radius `t > 0`, raising the order of the weight `⟨ξ⟩^s` to `s' ≥ s` costs at most the
+factor `t^(s - s')`. -/
+theorem rpow_weight_le_rpow_mul_rpow_weight {t s s' : ℝ} {ξ : CoordinateSpace n}
+    (ht : 0 < t) (hξ : t ≤ ‖ξ‖) (hs : s ≤ s') :
+    (1 + ‖ξ‖ ^ 2) ^ (s / 2) ≤ t ^ (s - s') * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
+  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  have hsplit : (1 + ‖ξ‖ ^ 2) ^ (s / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((s - s') / 2) * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
+    rw [← Real.rpow_add hw]
+    ring_nf
+  have ht2 : t ^ (s - s') = (t ^ 2) ^ ((s - s') / 2) := by
+    rw [← Real.rpow_natCast t 2, ← Real.rpow_mul ht.le]
+    ring_nf
+  rw [hsplit, ht2]
+  refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos (by positivity) ?_
+    (by linarith)) (by positivity)
+  nlinarith [norm_nonneg ξ]
+
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
 maps `a` such that on every compact set `K` of positions and for all words `α`, `β` of coordinate
