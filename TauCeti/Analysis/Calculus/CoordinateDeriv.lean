@@ -43,7 +43,8 @@ Both satisfy the general Leibniz rule for a continuous bilinear map `B`: the der
 of `α` (`α.sublists'.revzip`), of `B (∂^s f x) (∂^t g x)`
 (`ContinuousLinearMap.coordinateDeriv_of_bilinear`,
 `ContinuousLinearMap.mixedDeriv_of_bilinear`). This is what gives the product estimates of the
-symbol calculus.
+symbol calculus. Its first-order case for a pointwise composition of continuous linear maps is
+`TauCeti.coordinateDeriv_singleton_clm_comp`.
 
 ## Main declarations
 
@@ -740,6 +741,20 @@ theorem _root_.ContinuousLinearMap.mixedDeriv_of_bilinear (B : F →L[ℝ] G →
   rw [mixedDeriv_def, hinner, coordinateDeriv_list_sum _ hterm]
   congr 1
   exact List.map_congr_left fun t ht => B.coordinateDeriv_of_bilinear (hsa t ht) (hsb t ht) x
+
+/-- The first-order Leibniz rule for a coordinate derivative of a pointwise composition of
+continuous linear maps, the case `α = [j]` of `ContinuousLinearMap.coordinateDeriv_of_bilinear`. -/
+theorem coordinateDeriv_singleton_clm_comp {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] {E₁ E₂ E₃ : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+    [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃]
+    [NormedSpace ℝ E₂] [IsScalarTower ℝ 𝕜 E₂] [NormedSpace ℝ E₃] [IsScalarTower ℝ 𝕜 E₃]
+    {f : CoordinateSpace n → E₂ →L[𝕜] E₃} {g : CoordinateSpace n → E₁ →L[𝕜] E₂}
+    (hf : ContDiff ℝ 1 f) (hg : ContDiff ℝ 1 g) (j : Fin n) (x : CoordinateSpace n) :
+    coordinateDeriv [j] (fun y => (f y).comp (g y)) x =
+      (coordinateDeriv [j] f x).comp (g x) + (f x).comp (coordinateDeriv [j] g x) := by
+  have h := ((ContinuousLinearMap.compL 𝕜 E₁ E₂ E₃).bilinearRestrictScalars ℝ)
+    |>.coordinateDeriv_of_bilinear (α := [j]) hf hg x
+  simpa [List.revzip, add_comm] using h
 
 end Leibniz
 
