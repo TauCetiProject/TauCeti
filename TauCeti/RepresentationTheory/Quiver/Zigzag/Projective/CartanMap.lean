@@ -510,8 +510,7 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_zigzagGradedProjective 
     exact isHomogeneous_zigzagProjective k G i
   simpa only [zigzagGradedProjective, zigzagProjective_def] using
     isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents
-      (completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
-      (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G) hI
+      (completeOrthogonalIdempotents_zigzagVertexIdempotent k G) hI
       (fun i => by
         simpa only [zigzagGradedProjective, zigzagProjective_def] using
           indecomposable_zigzagGradedProjective k G i)

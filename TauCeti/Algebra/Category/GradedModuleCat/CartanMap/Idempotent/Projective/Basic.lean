@@ -285,10 +285,43 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
 
 end Corner
 
+include he hI in
+/-- **A complete family of orthogonal idempotents with homogeneous left ideals is homogeneous of
+degree zero.** The nonzero-degree components of `eⱼ` lie in `A eⱼ`, they sum to the nonzero-degree
+components of `1`, which vanish, and the ideals `A eⱼ` are independent. -/
+theorem mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous (i : I) : e i ∈ 𝒜 0 := by
+  classical
+  have hfix : ∀ j p, (DirectSum.decompose 𝒜 (e j) p : A) * e j = DirectSum.decompose 𝒜 (e j) p :=
+    fun j p => (mem_span_singleton_iff_mul_eq_self (he.idem j)).1
+      (hI j p (Ideal.mem_span_singleton_self _))
+  have hvanish : ∀ p, p ≠ 0 → (DirectSum.decompose 𝒜 (e i) p : A) = 0 := by
+    intro p hp
+    have hsum : ∑ j, (DirectSum.decompose 𝒜 (e j) p : A) = 0 := by
+      have h : (DirectSum.decompose 𝒜 (∑ j, e j) p : A) =
+          ∑ j, (DirectSum.decompose 𝒜 (e j) p : A) := by
+        rw [DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+      rw [← h, he.complete]
+      exact DirectSum.decompose_of_mem_ne 𝒜 (SetLike.one_mem_graded 𝒜) hp.symm
+    calc (DirectSum.decompose 𝒜 (e i) p : A)
+        = (DirectSum.decompose 𝒜 (e i) p : A) * e i := (hfix i p).symm
+      _ = (∑ j, (DirectSum.decompose 𝒜 (e j) p : A)) * e i := by
+        rw [Finset.sum_mul, Finset.sum_eq_single i _ (by simp)]
+        intro j _ hji
+        calc (DirectSum.decompose 𝒜 (e j) p : A) * e i
+            = ((DirectSum.decompose 𝒜 (e j) p : A) * e j) * e i := by rw [hfix j p]
+          _ = 0 := by rw [mul_assoc, he.ortho hji, mul_zero]
+      _ = 0 := by rw [hsum, zero_mul]
+  rw [← DirectSum.sum_support_decompose 𝒜 (e i)]
+  refine Submodule.sum_mem _ fun p _ => ?_
+  by_cases hp : p = 0
+  · subst hp
+    exact (DirectSum.decompose 𝒜 (e i) 0).2
+  · rw [hvanish p hp]
+    exact zero_mem _
+
 variable [Module.Finite k A]
 
-include he₀ in
-/-- A complete family of homogeneous degree-zero idempotents whose graded ideals are
+/-- A complete family of orthogonal idempotents whose left ideals are homogeneous and
 indecomposable exhausts all finite graded indecomposable projectives up to internal shift. -/
 theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents
     (hind : ∀ i, Indecomposable
@@ -299,6 +332,7 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalId
       ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
         gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem i) (hI i)⟩) := by
   classical
+  have he₀ := mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous he hI
   rw [isExhaustiveGradedIndecomposableProjectiveFamily_iff]
   intro M hM
   -- Split a finite homogeneous free cover using projectivity of the underlying module.
@@ -381,13 +415,14 @@ variable (hprim : ∀ i, IsPrimitiveIdempotent (e i))
   (hnoniso : Pairwise fun i j =>
     IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A)))
 
-include he₀ hprim hnoniso in
+include hprim hnoniso in
 /-- **The graded projectives `A eᵢ` of primitive idempotents form a basis of `K₀^gr(proj A)`**
 over `ℤ[q,q⁻¹]`, for a finite-dimensional graded algebra with a complete family of orthogonal
-primitive idempotents `eᵢ` of degree zero whose ungraded left ideals `A eᵢ` are pairwise
-nonisomorphic. Its basis vector at `i` is the class `[A eᵢ]`. The degree-zero corners
-`eᵢ A eᵢ ∩ 𝒜 0` need not be the lines `k eᵢ`, so the field need not split the simple modules. This
-is the graded counterpart of `TauCeti.idempotentProjectiveBasis`. -/
+primitive idempotents `eᵢ` whose left ideals `A eᵢ` are homogeneous (so the `eᵢ` have degree
+zero) and, as ungraded modules, pairwise nonisomorphic. Its basis vector at `i` is the class
+`[A eᵢ]`. The degree-zero corners `eᵢ A eᵢ ∩ 𝒜 0` need not be the lines `k eᵢ`, so the field need
+not split the simple modules. This is the graded counterpart of
+`TauCeti.idempotentProjectiveBasis`. -/
 def gradedIdempotentProjectiveBasisOfPrimitive :
     Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :=
@@ -397,14 +432,14 @@ def gradedIdempotentProjectiveBasisOfPrimitive :
     (fun _ _ hij _ => ⟨fun φ => (hnoniso hij).false
       (((gradedFiniteProjectiveModules 𝒜).ι ⋙ GradedModuleCat.toModuleCat).mapIso
         φ).toLinearEquiv⟩)
-    (isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents he he₀ hI
+    (isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents he hI
       fun i => indecomposable_ofIdeal_span_singleton (hprim i) (hI i))
 
 /-- The basis vector of `TauCeti.gradedIdempotentProjectiveBasisOfPrimitive` at `i` is the class
 `[A eᵢ]`. -/
 @[simp]
 theorem gradedIdempotentProjectiveBasisOfPrimitive_apply (i : I) :
-    gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso i =
+    gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso i =
       LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
           gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem i) (hI i)⟩ :=
@@ -424,20 +459,22 @@ is the projective counterpart of the head basis `TauCeti.gradedIdempotentHeadBas
 def gradedIdempotentProjectiveBasis :
     Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :=
-  gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI
-    (fun i => isPrimitiveIdempotent_of_gradeZero_le_span he₀ he.toOrthogonalIdempotents hneg hspan i
-      (hne i))
-    (fun i _ hij => isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span he₀
+  gradedIdempotentProjectiveBasisOfPrimitive he hI
+    (fun i => isPrimitiveIdempotent_of_gradeZero_le_span
+      (mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous he hI)
+      he.toOrthogonalIdempotents hneg hspan i (hne i))
+    (fun i _ hij => isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span
+      (mem_zero_of_completeOrthogonalIdempotents_of_isHomogeneous he hI)
       he.toOrthogonalIdempotents hneg hspan hij (hne i))
 
 /-- The basis vector of `TauCeti.gradedIdempotentProjectiveBasis` at `i` is the class `[A eᵢ]`. -/
 @[simp]
 theorem gradedIdempotentProjectiveBasis_apply (i : I) :
-    gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne i =
+    gradedIdempotentProjectiveBasis he hI hneg hspan hne i =
       LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
           gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem i) (hI i)⟩ :=
-  gradedIdempotentProjectiveBasisOfPrimitive_apply _ _ _ _ _ i
+  gradedIdempotentProjectiveBasisOfPrimitive_apply _ _ _ _ i
 
 end Basis
 
