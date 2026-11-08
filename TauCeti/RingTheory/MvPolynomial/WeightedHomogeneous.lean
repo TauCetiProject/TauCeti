@@ -271,12 +271,13 @@ theorem IsWeightedHomogeneous.eq_zero_of_eval₂_ne_zero {ι κ : Type*} [Decida
   obtain rfl : i = b := by simpa using hp
   exact hg l
 
-variable [PartialOrder M] [IsOrderedAddMonoid M] [CanonicallyOrderedAdd M]
+variable [PartialOrder M] [CanonicallyOrderedAdd M]
 
 /-- Only variables of weight zero occur in a weighted homogeneous polynomial of weight zero, for
 canonically ordered weights. -/
 theorem IsWeightedHomogeneous.apply_eq_zero_of_coeff_ne_zero (hφ : φ.IsWeightedHomogeneous w 0)
     {c : σ →₀ ℕ} (hc : φ.coeff c ≠ 0) {i : σ} (hi : c i ≠ 0) : w i = 0 :=
+  haveI := CanonicallyOrderedAdd.toIsOrderedAddMonoid (α := M)
   nonpos_iff_eq_zero.mp (hφ hc ▸ Finsupp.le_weight_of_ne_zero' w hi)
 
 /-- The value of a weighted homogeneous polynomial of weight zero only depends on the
