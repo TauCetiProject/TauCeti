@@ -54,6 +54,9 @@ product, and solvable when both factors are, because it is an extension of `L` b
 * `LieIdeal.nonempty_lieEquiv_semiDirectSum` and `LieIdeal.exists_lieEquiv_semiDirectSum`:
   **the recognition theorem**, in the `Nonempty (L ≃ₗ⁅R⁆ ↥S ⋊⁅ψ⁆ ↥H)` form that consumers of a
   splitting hypothesis take as input.
+* `LieSubalgebra.exists_lieIdeal_isCompl_of_sup_eq`: a subalgebra `T'` that is the sum of a
+  subalgebra `T` and a complementary subalgebra `H` normalizing `T` has `T` as an ideal
+  complemented by `H`, the input that the recognition isomorphism consumes.
 * `LieIdeal.semiDirectSumEquiv_symm_apply_right_eq_zero_iff` and
   `LieIdeal.semiDirectSumEquiv_symm_apply_left_eq_zero_iff`: the recognition isomorphism carries
   `S` and `H` onto the two factors, which is what lets a statement about the left factor be read
@@ -104,6 +107,10 @@ def ad : L →ₗ⁅R⁆ LieDerivation R S S where
 
 @[simp]
 theorem ad_apply_apply (x : L) (a : S) : ad S x a = ⁅x, a⁆ := (rfl)
+
+/-- The adjoint action of `x` on an ideal `S`, read in `L`, is the Lie bracket with `x`. -/
+theorem coe_ad_apply (x : L) (a : S) : ((ad S x a : S) : L) = ⁅x, (a : L)⁆ := by
+  simp
 
 end Ad
 
@@ -247,6 +254,45 @@ theorem exists_lieEquiv_semiDirectSum (h : IsCompl S.toSubmodule H.toSubmodule) 
 end Internal
 
 end LieIdeal
+
+namespace LieSubalgebra
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- If `T'` is the sum of a Lie subalgebra `T` and a complementary Lie subalgebra `H` that
+normalizes `T`, then `T`, read inside `T'`, is an ideal `I` of `T'` complemented by `H`; moreover
+`T` and `H` both lie in `T'`. -/
+theorem exists_lieIdeal_isCompl_of_sup_eq {T T' H : LieSubalgebra R L}
+    (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule)
+    (hdisj : Disjoint T.toSubmodule H.toSubmodule) (hHT : ∀ h ∈ H, ∀ t ∈ T, ⁅h, t⁆ ∈ T) :
+    T ≤ T' ∧ H ≤ T' ∧
+      ∃ (I : LieIdeal R T') (H' : LieSubalgebra R T'), (∀ x : T', x ∈ I ↔ (x : L) ∈ T) ∧
+        (∀ x : T', x ∈ H' ↔ (x : L) ∈ H) ∧ IsCompl I.toSubmodule H'.toSubmodule := by
+  have hmemsup {y : L} (hy : y ∈ T') : y ∈ T.toSubmodule ⊔ H.toSubmodule := by
+    rw [hsup]
+    exact hy
+  have hTT' : T ≤ T' := fun t ht ↦ by
+    have : t ∈ T.toSubmodule ⊔ H.toSubmodule := Submodule.mem_sup_left ht
+    rwa [hsup] at this
+  have hHT' : H ≤ T' := fun h hh ↦ by
+    have : h ∈ T.toSubmodule ⊔ H.toSubmodule := Submodule.mem_sup_right hh
+    rwa [hsup] at this
+  let I : LieIdeal R T' :=
+    { T.toSubmodule.comap T'.toSubmodule.subtype with
+      lie_mem := fun {x m} hm ↦ by
+        obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp (hmemsup x.2)
+        -- membership in the comap is membership of the underlying element of `L` in `T`
+        change ⁅(x : L), (m : L)⁆ ∈ T
+        rw [← hx, add_lie]
+        exact T.add_mem (T.lie_mem ht hm) (hHT h hh _ hm) }
+  refine ⟨hTT', hHT', I, H.comap T'.incl, fun _ ↦ Iff.rfl, fun _ ↦ Iff.rfl, ?_⟩
+  refine ⟨Submodule.disjoint_def.mpr fun x hxI hxH ↦ Subtype.ext ?_,
+    codisjoint_iff.mpr (Submodule.eq_top_iff'.mpr fun x ↦ ?_)⟩
+  · exact (Submodule.disjoint_def.mp hdisj) _ hxI hxH
+  · obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp (hmemsup x.2)
+    refine Submodule.mem_sup.mpr ⟨⟨t, hTT' ht⟩, ht, ⟨h, hHT' hh⟩, hh, Subtype.ext hx⟩
+
+end LieSubalgebra
 
 namespace LieAlgebra.SemiDirectSum
 
