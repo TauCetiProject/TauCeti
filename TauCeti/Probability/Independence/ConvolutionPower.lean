@@ -29,7 +29,7 @@ open scoped MeasureTheory
 namespace ProbabilityTheory
 
 variable {Ω ι α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [AddCommMonoid α]
-  [MeasurableAdd₂ α] {P : Measure Ω} [IsProbabilityMeasure P]
+  [MeasurableAdd₂ α] {P : Measure Ω}
   {μ : Measure α} {X : ι → Ω → α}
 
 /-- A finite sum of independent random variables with common law `μ` has law the corresponding
@@ -38,6 +38,7 @@ theorem iIndepFun.hasLaw_finset_sum_convolutionPower (hindep : iIndepFun X P)
     (hX : ∀ i, HasLaw (X i) μ P) (s : Finset ι) :
     HasLaw (∑ i ∈ s, X i) (μ.convolutionPower s.card) P := by
   classical
+  have := hindep.isProbabilityMeasure
   induction s using Finset.induction_on with
   | empty =>
       simp only [Finset.card_empty, Measure.convolutionPower_zero]
