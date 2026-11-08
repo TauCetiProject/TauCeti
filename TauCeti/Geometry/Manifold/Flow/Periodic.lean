@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+public import TauCeti.Geometry.Manifold.Topology
+public import TauCeti.Topology.Homotopy.AddCircle
 public import Mathlib.Algebra.Ring.Periodic
 
 /-!
@@ -38,11 +41,23 @@ are isolated, so there are only finitely many periodic solutions
 This is the manifold counterpart of `TauCeti.periodicSolutionEquivFixedPoints` in
 `TauCeti.Dynamics.Flow.Periodic.Basic`, which treats globally Lipschitz fields on Banach spaces.
 
+Hamiltonian Floer theory on the contractible sector uses only the **contractible** periodic
+solutions (`TauCeti.contractiblePeriodicSolutions`), those whose loop `ℝ ⧸ Tℤ → M` is
+null-homotopic, and assumes nondegeneracy only for them. If they are all nondegenerate, there are
+still only finitely many of them (`TauCeti.finite_contractiblePeriodicSolutions`). The trajectory
+of a fixed point of the return map over one period is a loop depending continuously on the fixed
+point, and on a manifold null-homotopy of such a family of loops is locally constant
+(`isClopen_setOf_homotopic_refl`). So the initial points of the contractible solutions form a
+closed subset of the compact set of fixed points, and a compact set of nondegenerate, hence
+isolated, fixed points is finite.
+
 ## Main definitions
 
 * `TauCeti.periodicSolutions X T`: the `T`-periodic solutions of `X`.
 * `TauCeti.periodicSolutionsEquivFixedPoints`: periodic solutions correspond to fixed points of the
   return map.
+* `TauCeti.contractiblePeriodicSolutions X T`: the `T`-periodic solutions whose loop is
+  null-homotopic.
 
 ## Main results
 
@@ -52,6 +67,8 @@ This is the manifold counterpart of `TauCeti.periodicSolutionEquivFixedPoints` i
   of the return map is defined for all time.
 * `TauCeti.finite_periodicSolutions`: on a compact boundaryless finite-dimensional manifold, a
   field whose periodic solutions are all nondegenerate has finitely many of them.
+* `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible periodic solutions,
+  assuming only that they are nondegenerate.
 
 ## References
 
@@ -88,6 +105,28 @@ theorem mem_periodicSolutions {γ : ℝ → M} :
       (∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (γ t)))) ∧
         ∀ t, γ (t + T) = γ t :=
   Iff.rfl
+
+/-- A periodic solution is continuous. -/
+theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
+    Continuous γ :=
+  continuous_iff_continuousAt.2 fun t ↦ (hγ.1 t).continuousAt
+
+/-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
+`ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
+def contractiblePeriodicSolutions (X : ℝ → (x : M) → TangentSpace I x) (T : ℝ) : Set (ℝ → M) :=
+  {γ ∈ periodicSolutions X T | ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t}
+
+/-- The defining characterization of a contractible periodic solution. -/
+@[simp]
+theorem mem_contractiblePeriodicSolutions {γ : ℝ → M} :
+    γ ∈ contractiblePeriodicSolutions X T ↔ γ ∈ periodicSolutions X T ∧
+      ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t :=
+  Iff.rfl
+
+/-- Contractible periodic solutions are periodic solutions. -/
+theorem contractiblePeriodicSolutions_subset :
+    contractiblePeriodicSolutions X T ⊆ periodicSolutions X T :=
+  fun _ hγ ↦ hγ.1
 
 section Flow
 
@@ -250,5 +289,69 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
       IsFixedPt (timeDependentFlowOf X s (s + T)) x} :=
     (hfin.subset (ofPred_subset_ofPred.2 fun _ hx ↦ hx.2)).to_subtype
   exact Set.finite_coe_iff.1 (Finite.of_equiv _ e.symm)
+
+/-- **Finiteness of nondegenerate contractible periodic solutions.** Let `X` be a jointly `C¹`
+time-dependent vector field on a compact boundaryless manifold modelled on a finite-dimensional
+space, `T`-periodic in time with `0 < T`. If every contractible `T`-periodic solution `γ` is
+nondegenerate, in the sense that `γ s` is a nondegenerate fixed point of the return map
+`timeDependentFlowOf X s (s + T)`, then `X` has only finitely many contractible `T`-periodic
+solutions. Noncontractible solutions may be degenerate, and there may be infinitely many of
+them. -/
+theorem finite_contractiblePeriodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (hT : Periodic X T) (hT0 : 0 < T) (s : ℝ)
+    (h : ∀ γ ∈ contractiblePeriodicSolutions X T,
+      IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s)) :
+    (contractiblePeriodicSolutions X T).Finite := by
+  have : Fact (0 < T) := ⟨hT0⟩
+  let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
+  -- On a compact manifold the flow is defined everywhere and is continuous.
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
+    (fun _ _ hy ↦ (hy (mem_univ _)).elim)
+  have hflow := (contMDiff_timeDependentFlowOf hcomplete le_rfl hX).continuous
+  let e := periodicSolutionsEquivFixedPoints hX hT hT0.ne' s
+  -- A periodic solution is contractible exactly when its loop over `[s, s + T]` is
+  -- null-homotopic.
+  have hcont (γ : periodicSolutions X T) : Continuous γ.1 := continuous_of_mem_periodicSolutions γ.2
+  have hper (γ : periodicSolutions X T) : Periodic γ.1 T := γ.2.2
+  let P (γ : periodicSolutions X T) : Prop :=
+    ((hper γ).loop (hcont γ) s).Homotopic (Path.refl (γ.1 s))
+  have hP (γ : periodicSolutions X T) : P γ ↔ γ.1 ∈ contractiblePeriodicSolutions X T :=
+    ⟨fun hγ ↦ ⟨γ.2, ((hper γ).exists_nullhomotopic_iff_loop_homotopic_refl (hcont γ) s).2 hγ⟩,
+      fun hγ ↦ ((hper γ).exists_nullhomotopic_iff_loop_homotopic_refl (hcont γ) s).1 hγ.2⟩
+  -- These loops depend continuously on the fixed point, which ranges over a closed set.
+  have hfam : Continuous ↿fun y ↦ (hper (e.symm y)).loop (hcont (e.symm y)) s := by
+    have heq : (↿fun y ↦ (hper (e.symm y)).loop (hcont (e.symm y)) s) =
+        (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ∘
+          fun q ↦ ((s, s + q.2 * T), q.1.1) :=
+      funext fun q ↦ (Periodic.loop_apply _ _ _ _).trans
+        (periodicSolutionsEquivFixedPoints_symm_apply hX hT hT0.ne' s _ _)
+    rw [heq]
+    exact hflow.comp (by fun_prop)
+  have hY : IsClosed {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
+      IsFixedPt (timeDependentFlowOf X s (s + T)) x} := by
+    have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
+      hflow.comp (by fun_prop : Continuous fun x : M ↦ ((s, s + T), x))
+    convert isClosed_fixedPoints hφ using 1
+    ext x
+    simp [timeDependentFlowDomain_eq_univ hcomplete]
+  -- The initial points of the contractible solutions form a closed set of nondegenerate fixed
+  -- points, hence a finite set.
+  have hK : IsClosed (Subtype.val '' {y | P (e.symm y)}) :=
+    hY.isClosedMap_subtype_val _ (isClopen_setOf_homotopic_refl _ hfam).isClosed
+  have hKfin := hK.isCompact.finite_of_isNondegenerateFixedPt (I := I) <| by
+    rintro _ ⟨y, hy, rfl⟩
+    have hnd := h _ ((hP _).1 hy)
+    rwa [periodicSolutionsEquivFixedPoints_symm_apply, timeDependentFlowOf_self hX] at hnd
+  refine Set.Finite.of_finite_image (f := fun γ ↦ γ s) (hKfin.subset ?_) fun γ₁ hγ₁ γ₂ hγ₂ hs ↦ ?_
+  · rintro _ ⟨γ, hγ, rfl⟩
+    refine ⟨e ⟨γ, hγ.1⟩, ?_, by simp [e]⟩
+    rw [Set.mem_ofPred_eq, Equiv.symm_apply_apply]
+    exact (hP _).2 hγ
+  · exact congrArg Subtype.val
+      (e.injective (a₁ := ⟨γ₁, hγ₁.1⟩) (a₂ := ⟨γ₂, hγ₂.1⟩) (Subtype.ext (by simpa [e] using hs)))
 
 end TauCeti
