@@ -29,17 +29,16 @@ recovered from its projective objects as `mod (proj C)`.
 
 ## Main declarations
 
-* `CategoryTheory.ObjectProperty.restrictedPreadditiveYoneda`: the functor `X ↦ (-, X)|_P`.
 * `CategoryTheory.ObjectProperty.presented`: the objects that are cokernels of morphisms between
   objects of `P`.
 * `CategoryTheory.ObjectProperty.bijective_restrictedPreadditiveYoneda_map`: the functor
   `X ↦ (-, X)|_P` is fully faithful on morphisms out of a `P`-presented object.
 * `CategoryTheory.ObjectProperty.exists_iso_restrictedPreadditiveYoneda_obj`: every finitely
   presented functor on `P` is `(-, X)|_P` for a `P`-presented object `X`.
-* `CategoryTheory.ObjectProperty.presentedEquivalenceMod`: the equivalence between `P.presented`
-  and `mod P`.
-* `CategoryTheory.ObjectProperty.equivalenceMod`: the equivalence `C ≌ mod P` when every object is
-  a quotient of an object of `P`, and `TauCeti.equivalenceModProjectives`, the case
+* `CategoryTheory.ObjectProperty.equivalenceMod`: the equivalence between `P.presented` and
+  `mod P`.
+* `CategoryTheory.ObjectProperty.equivalenceModOfExistsEpi`: the equivalence `C ≌ mod P` when every
+  object is a quotient of an object of `P`, and `TauCeti.equivalenceModProjectives`, the case
   `C ≌ mod (proj C)` of an abelian category with enough projectives.
 
 ## References
@@ -64,62 +63,11 @@ section Preadditive
 
 variable [Preadditive C] (P : ObjectProperty C)
 
-/-- The functor `X ↦ (-, X)|_P`, restricting the representable functor `(-, X)` to the full
-subcategory of `P`. -/
-@[expose] def restrictedPreadditiveYoneda : C ⥤ P.FullSubcategoryᵒᵖ ⥤ AddCommGrpCat.{v} :=
-  preadditiveYoneda ⋙ (Functor.whiskeringLeft _ _ _).obj P.ι.op
-
-/-- The natural transformation `(-, f)|_P` is postcomposition with `f`. -/
-@[simp]
-theorem restrictedPreadditiveYoneda_map_app_apply {X Y : C} (f : X ⟶ Y) (Q : P.FullSubcategoryᵒᵖ)
-    (g : Q.unop.obj ⟶ X) : (P.restrictedPreadditiveYoneda.map f).app Q g = g ≫ f :=
-  rfl
-
-/-- The functor `(-, X)|_P` acts on morphisms of `P` by precomposition. -/
-@[simp]
-theorem restrictedPreadditiveYoneda_obj_map_apply (X : C) {Q Q' : P.FullSubcategoryᵒᵖ}
-    (u : Q ⟶ Q') (g : Q.unop.obj ⟶ X) :
-    (P.restrictedPreadditiveYoneda.obj X).map u g = u.unop.hom ≫ g :=
-  rfl
-
-instance : P.restrictedPreadditiveYoneda.Additive :=
-  inferInstanceAs (preadditiveYoneda ⋙ _).Additive
-
-/-- On the full subcategory of `P`, the functor `X ↦ (-, X)|_P` is the preadditive Yoneda
-embedding. -/
-def preadditiveYonedaIsoRestricted : preadditiveYoneda ≅ P.ι ⋙ P.restrictedPreadditiveYoneda :=
-  NatIso.ofComponents (fun Y ↦ NatIso.ofComponents (fun Z ↦
-    (InducedCategory.homAddEquiv (F := FullSubcategory.obj)).toAddCommGrpIso))
-
-/-- The identification of `(-, Y)` with `(-, Y.obj)|_P` sends a morphism of the full subcategory to
-the underlying morphism of `C`. -/
-theorem preadditiveYonedaIsoRestricted_hom_app_app_apply (Y : P.FullSubcategory)
-    (Z : P.FullSubcategoryᵒᵖ) (g : Z.unop ⟶ Y) :
-    ((P.preadditiveYonedaIsoRestricted.hom.app Y).app Z) g = g.hom :=
-  (rfl)
-
-/-- The identification of `(-, Y)` with `(-, Y.obj)|_P` is natural in `Y`. -/
-theorem preadditiveYoneda_map_comp_preadditiveYonedaIsoRestricted_hom {X Y : P.FullSubcategory}
-    (f : X ⟶ Y) : preadditiveYoneda.map f ≫ P.preadditiveYonedaIsoRestricted.hom.app Y =
-      P.preadditiveYonedaIsoRestricted.hom.app X ≫ P.restrictedPreadditiveYoneda.map f.hom :=
-  P.preadditiveYonedaIsoRestricted.hom.naturality f
-
 /-- The objects of `C` that are cokernels of morphisms between objects of `P`. -/
 abbrev presented : ObjectProperty C :=
   (MorphismProperty.ofObjectProperty P P).cokernels
 
 variable {P}
-
-/-- Restriction to projective objects preserves epimorphisms. -/
-theorem epi_map_restrictedPreadditiveYoneda (hP : P ≤ isProjective C) {X Y : C} (π : X ⟶ Y)
-    [Epi π] : Epi (P.restrictedPreadditiveYoneda.map π) := by
-  rw [NatTrans.epi_iff_epi_app]
-  intro Q
-  rw [AddCommGrpCat.epi_iff_surjective]
-  intro (v : Q.unop.obj ⟶ Y)
-  have : Projective Q.unop.obj := hP _ Q.unop.property
-  exact ⟨Projective.factorThru (P := Q.unop.obj) v π,
-    Projective.factorThru_comp (P := Q.unop.obj) v π⟩
 
 /-- The functor `X ↦ (-, X)|_P` is fully faithful on morphisms out of a `P`-presented object: a
 natural transformation `θ : (-, X)|_P ⟶ (-, Y)|_P` is `(-, g)` for the unique `g : X ⟶ Y` extending
@@ -225,7 +173,8 @@ theorem presented_eq_top (hgen : ∀ X : C, ∃ (Q : C) (π : Q ⟶ X), P Q ∧ 
   exact .of_isColimit S.f _ hS.gIsCokernel ⟨hA, hB⟩
 
 variable (P) in
-/-- The functor `X ↦ (-, X)|_P` from a full subcategory `Q` of `P`-presented objects to `mod P`. -/
+/-- The functor `X ↦ (-, X)|_P` from a full subcategory `Q` of `P`-presented objects to `mod P`.
+It is exposed so that `restrictedPreadditiveYonedaToMod_map_hom` has homogeneous types. -/
 @[expose] def restrictedPreadditiveYonedaToMod (hP : P ≤ isProjective C) {Q : ObjectProperty C}
     (hQ : Q ≤ P.presented) :
     Q.FullSubcategory ⥤ (isFinitelyPresentedFunctor P.FullSubcategory).FullSubcategory :=
