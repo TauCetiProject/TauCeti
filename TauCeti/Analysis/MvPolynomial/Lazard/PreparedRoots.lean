@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Polynomial.Puiseux.Lazard
 public import TauCeti.Analysis.MvPolynomial.Lazard.RootFactorization
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Map
-import TauCeti.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Polynomial
 
 /-!
@@ -34,30 +33,6 @@ open Filter Finsupp Function Metric Set Topology
 namespace Polynomial
 
 variable {ι : Type*} [Fintype ι] {n : ℕ}
-
-/-- Substituting the monomial curve into the complexified rotated polynomial and evaluating at the
-distinguished variable is the same as substituting the curve into the coefficients of `p`. -/
-private theorem aeval_monomialCurve_eval_eq_map (p : Polynomial (MvPolynomial (Fin n) ℝ))
-    (s : Fin n → ℝ) (d : ℕ) (c : Fin n → ℕ) (y : ℂ) :
-    (MvPolynomial.aeval (MvPolynomial.monomialCurve (Polynomial.C ∘ (fun j ↦ (s j : ℂ)))
-      (d • c)) (MvPolynomial.map (Polynomial.mapRingHom Complex.ofRealHom)
-      (MvPolynomial.optionEquivRight ℝ (Fin n)
-        ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm p)))).eval (Polynomial.C y) =
-        p.map (MvPolynomial.eval₂Hom Complex.ofRealHom (fun j ↦ (s j : ℂ) + y ^ (d * c j))) := by
-  simp only [MvPolynomial.aeval_def, Polynomial.algebraMap_eq,
-    MvPolynomial.polynomial_eval_eval₂, MvPolynomial.monomialCurve_apply,
-    Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_pow, Polynomial.eval_X,
-    Function.comp_apply, Pi.smul_apply, smul_eq_mul, ← Polynomial.C_pow, ← Polynomial.C_add]
-  rw [← MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂Hom_map_hom]
-  have hcoeff : ((evalRingHom (C y)).comp C).comp (Polynomial.mapRingHom Complex.ofRealHom) =
-      Polynomial.mapRingHom Complex.ofRealHom := by
-    apply RingHom.ext
-    intro b
-    simp only [RingHom.comp_apply, coe_evalRingHom, eval_C]
-  rw [hcoeff]
-  simpa only [AlgEquiv.trans_apply, Function.comp_def] using
-    MvPolynomial.eval₂Hom_optionEquivRight_optionEquivLeft_symm
-      Complex.ofRealHom (fun j ↦ (s j : ℂ) + y ^ (d * c j)) p
 
 /-- The factorial substitution keeps the prepared scalar unit in the factorization: for a fixed
 center `z` and all small nonzero `y`, the complexified rotated polynomial along the monomial curve
@@ -98,13 +73,14 @@ private theorem eventually_eval_monomialCurve_eq_prod_of_laurent
   have hlead' := hunit (z, y ^ p.natDegree.factorial) hyp
   simp only [← pow_mul] at hlead'
   rw [hΦ] at hsplit hlead'
-  rw [aeval_monomialCurve_eval_eq_map]
+  rw [MvPolynomial.aeval_monomialCurve_map_optionEquivRight_eval Complex.ofRealHom]
   simpa only [Function.comp_def, ← pow_mul, hlead', ← Int.natCast_mul, zpow_natCast,
     hyr hy0'] using hsplit
 
 /-- The roots of the complexified Lazard evaluation at a nearby center `x` are the finite limits of
-the Laurent branches, and the weight of its Lazard exponent is the sum of the negative branch
-exponents. -/
+the Laurent branches, and the weight of its Lazard exponent, with respect to the factorial-scaled
+evaluator, equals the factorial-scaled weight of the leading coefficient plus the sum of the
+negative branch exponents. -/
 private theorem roots_weight_lazardEval_of_laurent
     (p : Polynomial (MvPolynomial (Fin n) ℝ)) (hp : p ≠ 0) {a x : ι → ℝ} {ρ R : ℝ} (hρ : 0 < ρ)
     (hR : 0 < R) (hx : dist x a < ρ) {c : Fin n → ℕ} {vLead : Fin n →₀ ℕ}
@@ -119,15 +95,15 @@ private theorem roots_weight_lazardEval_of_laurent
       MvPolynomial.eval₂ Complex.ofRealHom (fun j ↦ Φ b.1 j + b.2 ^ c j) p.leadingCoeff =
         b.2 ^ Finsupp.weight c vLead * u b)
     (hfac : ∀ b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ (ball 0 R \ {0}),
-      Injective (fun i ↦ r i b) ∧ p.map (MvPolynomial.eval₂Hom Complex.ofRealHom
+      p.map (MvPolynomial.eval₂Hom Complex.ofRealHom
           (fun j ↦ Φ b.1 j + b.2 ^ (p.natDegree.factorial * c j))) =
         C (MvPolynomial.eval₂ Complex.ofRealHom
           (fun j ↦ Φ b.1 j + b.2 ^ (p.natDegree.factorial * c j)) p.leadingCoeff) *
           ∏ i, (X - C (r i b)))
-    (hxregular : ∀ i, AnalyticAt ℂ (w i) ((fun j ↦ (x j : ℂ)), 0) ∧
-      w i ((fun j ↦ (x j : ℂ)), 0) ≠ 0)
-    (hxlocal : ∀ᶠ y in 𝓝 (0 : ℂ), (∀ i, w i ((fun j ↦ (x j : ℂ)), y) ≠ 0) ∧
-      (y ≠ 0 → ∀ i, r i ((fun j ↦ (x j : ℂ)), y) = y ^ e i * w i ((fun j ↦ (x j : ℂ)), y))) :
+    (hxan : ∀ i, AnalyticAt ℂ (w i) ((fun j ↦ (x j : ℂ)), 0))
+    (hxne : ∀ i, e i < 0 → w i ((fun j ↦ (x j : ℂ)), 0) ≠ 0)
+    (hxlocal : ∀ᶠ y in 𝓝 (0 : ℂ),
+      y ≠ 0 → ∀ i, r i ((fun j ↦ (x j : ℂ)), y) = y ^ e i * w i ((fun j ↦ (x j : ℂ)), y)) :
     (((MvPolynomial.optionEquivRight ℝ (Fin n)
         ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm p)).lazardEval
           (Polynomial.C ∘ s)).map Complex.ofRealHom).roots =
@@ -176,10 +152,10 @@ private theorem roots_weight_lazardEval_of_laurent
   have hcx : TauCeti.IsLazardEvaluator {qC.lazardExponent (Polynomial.C ∘ (fun j ↦ (s j : ℂ)))}
       (d • c) := (hc.mono (by simpa only [hexp, Set.singleton_subset_iff] using hmem)).smul hd
   have hsplit := eventually_eval_monomialCurve_eq_prod_of_laurent p hρ hR hz hΦ
-    (fun b hb ↦ (hunit b hb).2) (fun b hb ↦ (hfac b hb).2) (hxlocal.mono fun y hy ↦ hy.2)
+    (fun b hb ↦ (hunit b hb).2) hfac hxlocal
   have hw' (i) : AnalyticAt ℂ (fun y ↦ w i (z, y)) 0 :=
-    (hxregular i).1.comp (analyticAt_const.prod analyticAt_id)
-  have hw0' (i) (_ : e i < 0) : w i (z, 0) ≠ 0 := (hxregular i).2
+    (hxan i).comp (analyticAt_const.prod analyticAt_id)
+  have hw0' (i) (hi : e i < 0) : w i (z, 0) ≠ 0 := hxne i hi
   rw [← heval, ← hexp]
   exact ⟨MvPolynomial.roots_lazardEval_eq_map_of_laurent qC hqC _ _ hcx hU hU0 hw' hw0' hsplit,
     MvPolynomial.weight_lazardExponent_eq_of_laurent qC hqC _ _ hcx hU hU0 hw' hw0' hsplit⟩
@@ -287,7 +263,9 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
         ((tendsto_id.prodMk_nhds tendsto_const_nhds).eventually hregular),
       hcenters.eventually hcurried] with x hx hxregular hxlocal
     exact roots_weight_lazardEval_of_laurent p hp hρ hR hx hc
-      (Set.mem_union_right _ (Set.mem_range_self _)) (hreal x hx) hu hunit hfac hxregular hxlocal
+      (Set.mem_union_right _ (Set.mem_range_self _)) (hreal x hx) hu hunit
+      (fun b hb ↦ (hfac b hb).2) (fun i ↦ (hxregular i).1) (fun i _ ↦ (hxregular i).2)
+      (hxlocal.mono fun y hy ↦ hy.2)
   have haweight := hdata.self_of_nhds.2
   filter_upwards [hdata] with x hx
   exact ⟨hx.1, (hc.smul (Nat.factorial_pos _)).weight_injOn
