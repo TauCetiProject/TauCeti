@@ -15,7 +15,7 @@ import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 Let `f = a X + ⋯` be an integral power series without constant term. On an adic ideal,
 a unit linear coefficient makes evaluation bijective. More generally, if `a` divides `c`
-and `a c ≠ 0` in a domain, evaluation maps `c I` bijectively onto `a c I`.
+and `a c` is regular, evaluation maps `c I` bijectively onto `a c I`.
 Indeed, `f(c X) = a c g(X)` with `g = X + ⋯`, and the compositional inverse of `g`
 converges on `I`.
 
@@ -69,9 +69,9 @@ theorem bijOn_eval₂_of_isUnit (hf : constantCoeff f = 0) (ha : IsUnit (coeff 1
       hinv hy hg (subst_substInvOfIsUnit_right f hf ha)⟩
 
 /-- If the linear coefficient `a` of `f` divides `c`, evaluation carries `c I` bijectively
-onto `a c I`, provided `a c ≠ 0`. This permits nonunit linear coefficients. -/
-theorem bijOn_eval₂_span_singleton_mul [IsDomain R] (hf : constantCoeff f = 0)
-    {c : R} (hc : coeff 1 f ∣ c) (hac : coeff 1 f * c ≠ 0) :
+onto `a c I`, provided `a c` is regular. This permits nonunit linear coefficients. -/
+theorem bijOn_eval₂_span_singleton_mul (hf : constantCoeff f = 0)
+    {c : R} (hc : coeff 1 f ∣ c) (hac : IsRegular (coeff 1 f * c)) :
     Set.BijOn (fun x ↦ eval₂ (RingHom.id R) x f)
       (↑(Ideal.span {c} * I) : Set R) (↑(Ideal.span {coeff 1 f * c} * I) : Set R) := by
   obtain ⟨g, hg0, hg1, hfg⟩ := exists_rescale_eq_C_mul hf hc
@@ -95,7 +95,7 @@ theorem bijOn_eval₂_span_singleton_mul [IsDomain R] (hf : constantCoeff f = 0)
     obtain ⟨t, ht, rfl⟩ := Ideal.mem_span_singleton_mul.mp hy
     dsimp only at hxy
     rw [heval hs, heval ht] at hxy
-    rw [hg.injOn hs ht (mul_left_cancel₀ hac hxy)]
+    rw [hg.injOn hs ht (hac.left hxy)]
   · intro y hy
     obtain ⟨t, ht, rfl⟩ := Ideal.mem_span_singleton_mul.mp hy
     obtain ⟨s, hs, hst⟩ := hg.surjOn ht
@@ -135,7 +135,7 @@ theorem bijOn_eval₂_maximalIdeal_pow (hf : constantCoeff f = 0) {e k : ℕ}
     exact pow_ne_zero _
       (IsDiscreteValuationRing.not_a_field R) hke
   rw [hk, hke]
-  exact bijOn_eval₂_span_singleton_mul hf hac hne
+  exact bijOn_eval₂_span_singleton_mul hf hac (.of_ne_zero hne)
 
 end DiscreteValuationRing
 
