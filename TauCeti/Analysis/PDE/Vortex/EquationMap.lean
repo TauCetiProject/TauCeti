@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.Winding
+import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 
 /-!
 # The plane vortex equation on the affine Sobolev field space
@@ -126,29 +126,6 @@ theorem equation_referenceField_apply_mem_realSobolevFunctions (f : ContDiffBump
 /-! ### Mapping properties on the Sobolev scale -/
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-- **Multiplication by a coordinate of a framed field.** For `k > 1`, the product of a real
-`H^k` function with a coordinate of a field of `A_m^k` lies in `H^k`, although the coordinate
-itself does not decay. -/
-theorem mul_mem_realSobolevFunctions_of_mem_framedFieldSpace (hk : 1 < k)
-    (hx : x ∈ framedFieldSpace f m k) (i : Fin 4) {g : ℂ → ℝ}
-    (hg : g ∈ realSobolevFunctions ℂ k 2) :
-    (fun z ↦ x z i * g z) ∈ realSobolevFunctions ℂ k 2 := by
-  -- Split `x = x_m + (x - x_m)`: the reference coordinate is a bounded smooth multiplier and
-  -- the Sobolev coordinate multiplies in the algebra `H^k`.
-  have hy := mem_sobolevFields.1 (mem_framedFieldSpace.1 hx) i
-  choose C hC using exists_norm_iteratedFDeriv_referenceField_apply_le f m i
-  have hM : 0 ≤ ∑ j ∈ Finset.range (k + 1), |C j| := by positivity
-  have h₁ := mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k
-    (contDiff_euclidean.1 (contDiff_referenceField f m) i) hM
-    (fun j hj z ↦ (hC j z).trans ((le_abs_self _).trans (Finset.single_le_sum
-      (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_range.2 (by omega))))) hg
-  have h₂ := mul_mem_realSobolevFunctions
-    (finrank_real_complex_lt_two_mul (by exact_mod_cast hk)) hy hg
-  convert add_mem h₁ h₂ using 1
-  ext z
-  simp only [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, PiLp.sub_apply]
-  ring
 
 /-- The products `x_i y_j` of a framed field of order `k + 1` and a Sobolev field of order
 `k + 1` have order `k + 1`, in particular order `k`. -/
