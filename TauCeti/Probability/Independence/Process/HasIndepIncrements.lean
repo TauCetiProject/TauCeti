@@ -67,7 +67,7 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
   let τ : ℕ → T := fun n ↦ if h : n = 0 then ⊥ else
     if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
       if n = I.card + 1 then s else t
-  have hτ : Monotone τ := Finset.monotone_pastTimes I hI hst
+  have hτ : Monotone τ := Finset.monotone_bot_orderEmbOfFin_snoc I hI hst
   let D : ℕ → Ω → E := fun n ω ↦ X (τ (n + 1)) ω - X (τ n) ω
   have hD := hX.nat hτ
   -- Separate the adjacent increments generating the past from the last increment.

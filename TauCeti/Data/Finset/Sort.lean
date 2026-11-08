@@ -39,8 +39,8 @@ last position going to `0`) commutes with sorting up to a cyclic rotation of the
 
 The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
 
-The sorted elements of `I`, preceded by `⊥` and followed by `s` and then `t` (where every element
-of `I` is at most `s ≤ t`), form a monotone sequence of times, `Finset.monotone_pastTimes`.
+If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
+order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
 -/
 
 public section
@@ -204,9 +204,11 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
 end LinearOrder
 
 open Classical in
-/-- The sorted past of a finite set, followed by the two increment endpoints `s ≤ t`, is a
-monotone sequence of times. -/
-theorem monotone_pastTimes {T : Type*} [LinearOrder T] [OrderBot T] (I : Finset T) {s t : T}
+/-- If every element of `I` is at most `s` and `s ≤ t`, then the sequence `⊥`, the elements of
+`I` in increasing order, `s`, then constantly `t` (from index `I.card + 2` on), is monotone in
+`ℕ`. -/
+theorem monotone_bot_orderEmbOfFin_snoc {T : Type*} [LinearOrder T] [OrderBot T] (I : Finset T)
+    {s t : T}
     (hI : ∀ i ∈ I, i ≤ s) (hst : s ≤ t) :
     Monotone (fun n : ℕ ↦ if h : n = 0 then (⊥ : T) else
       if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
