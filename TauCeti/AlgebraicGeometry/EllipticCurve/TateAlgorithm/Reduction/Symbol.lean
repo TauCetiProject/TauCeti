@@ -111,6 +111,7 @@ theorem algorithmicOggExponent_I_zero (vΔ : ℕ) :
 
 /-- A multiplicative symbol `Iₙ`, `n ≠ 0`, has Ogg exponent `vΔ - n + 1`; in particular it is
 one when the minimal discriminant valuation is `n`. -/
+@[simp]
 theorem algorithmicOggExponent_I {n : ℕ} (hn : n ≠ 0) (vΔ : ℕ) :
     (I n).algorithmicOggExponent vΔ = (vΔ : ℤ) - n + 1 := by
   simp [algorithmicOggExponent, Nat.one_le_iff_ne_zero.2 hn]

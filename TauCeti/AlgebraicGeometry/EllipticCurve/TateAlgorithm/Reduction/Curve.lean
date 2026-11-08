@@ -243,7 +243,7 @@ private theorem algorithmicOggExponent_reductionSymbol_cases (W : WeierstrassCur
     simp
   · obtain ⟨n, hn⟩ := (exists_reductionSymbol_eq_I_add_one_iff W).2 hm
     rw [hn, ((reductionSymbol_eq_I_iff W _).1 hn).2]
-    simp [ReductionSymbol.algorithmicOggExponent_I]
+    simp
   · obtain ⟨W', D, ϖ, hmin, hD, hϖ, h⟩ := W.exists_isTateTerminal_reductionSymbol R
     exact h.two_le_algorithmicOggExponent hϖ ((forall_reductionSymbol_ne_I_iff W).2 ha)
       (W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange R D hD).symm
