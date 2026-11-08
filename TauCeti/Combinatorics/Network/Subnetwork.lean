@@ -620,7 +620,7 @@ theorem length_restrictPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
   rw [← S.length_mapPath, mapPath_restrictPath]
 
 @[simp]
-theorem vertices_restrictPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+theorem unattach_vertices_restrictPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
     (p : ArrowWalk N.Hom x.1 y.1) (h : p.toSubnetwork.arrowSet ⊆ S.arrowSet) :
     (S.restrictPath p h).vertices.unattach = p.vertices := by
   rw [List.unattach, ← S.vertices_mapPath, mapPath_restrictPath]
