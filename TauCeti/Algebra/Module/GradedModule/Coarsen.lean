@@ -234,7 +234,7 @@ theorem parityGrading_zero (ℳ : ℤ → Submodule R M) :
   refine le_antisymm (parityGrading_le_iff.2 fun n hn ↦ ?_) (iSup_le fun k x hx ↦ ?_)
   · obtain ⟨k, rfl⟩ : 2 ∣ n := (ZMod.intCast_zmod_eq_zero_iff_dvd n 2).1 hn
     exact le_iSup (fun k ↦ ℳ (2 * k)) k
-  · simpa [show (2 : ZMod 2) = 0 from rfl] using mem_parityGrading_of_mem hx
+  · simpa [CharP.ofNat_eq_zero] using mem_parityGrading_of_mem hx
 
 /-- The odd piece of the parity grading is the sum of the pieces of degree `2 * k + 1`. -/
 theorem parityGrading_one (ℳ : ℤ → Submodule R M) :
@@ -244,7 +244,7 @@ theorem parityGrading_one (ℳ : ℤ → Submodule R M) :
       (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).1 (by push_cast; rw [hn, sub_self])
     rw [eq_add_of_sub_eq hk]
     exact le_iSup (fun k ↦ ℳ (2 * k + 1)) k
-  · simpa [show (2 : ZMod 2) = 0 from rfl] using mem_parityGrading_of_mem hx
+  · simpa [CharP.ofNat_eq_zero] using mem_parityGrading_of_mem hx
 
 end Parity
 

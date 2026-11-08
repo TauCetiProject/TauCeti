@@ -36,9 +36,9 @@ public section
 
 namespace TauCeti
 
-section Leibniz
+section Odd
 
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
+variable {R A : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
   {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
 
 /-- A linear map raising integer degree by one maps elements of parity `i` to elements of parity
@@ -50,6 +50,13 @@ theorem map_mem_parityGrading_of_map_mem
   have := ((LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hd hx).coarsenGrading
     (Int.castAddHom (ZMod 2))).map_mem ha
   rwa [h1] at this
+
+end Odd
+
+section Leibniz
+
+variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
+  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
 
 /-- **The integer Leibniz rule implies the parity Leibniz rule.** If `d` satisfies the graded
 Leibniz rule with the sign `(-1) ^ p` on a left factor of degree `p`, it satisfies the graded

@@ -28,8 +28,9 @@ integer-graded algebra are those of its parity reduction.
 
 * `TauCeti.coarsenGrading_mul_le`: the product of coarsened pieces of degrees `k` and `l` lies in
   the coarsened piece of degree `k + l`.
-* The instances `SetLike.GradedMonoid (coarsenGrading 𝒜 f)` and
-  `GradedAlgebra (coarsenGrading 𝒜 f)`, which apply in particular to `parityGrading 𝒜`.
+* The instances `SetLike.GradedMul (coarsenGrading 𝒜 f)`, over a nonunital algebra,
+  `SetLike.GradedMonoid (coarsenGrading 𝒜 f)` and `GradedAlgebra (coarsenGrading 𝒜 f)`, which
+  apply in particular to `parityGrading 𝒜`.
 * `TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading`: integer graded commutativity implies
   parity graded commutativity.
 -/
@@ -41,6 +42,26 @@ open DirectSum
 namespace TauCeti
 
 universe uR uA uι uκ
+
+section GradedMul
+
+variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ}
+  [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A] [AddMonoid ι] [AddMonoid κ]
+  (𝒜 : ι → Submodule R A)
+
+/-- Coarsening a graded multiplication along an additive homomorphism of index monoids gives a
+graded multiplication. -/
+instance [SetLike.GradedMul 𝒜] (f : ι →+ κ) : SetLike.GradedMul (coarsenGrading 𝒜 f) where
+  mul_mem k l a b ha hb := by
+    -- Both sides are additive in each factor, so it suffices to treat homogeneous elements.
+    refine coarsenGrading_induction (motive := fun a ↦ a * b ∈ coarsenGrading 𝒜 f (k + l)) ha
+      (fun i hi a ha ↦ ?_) (by simp) fun x y hx hy ↦ by rw [add_mul]; exact add_mem hx hy
+    refine coarsenGrading_induction (motive := fun b ↦ a * b ∈ coarsenGrading 𝒜 f (k + l)) hb
+      (fun j hj b hb ↦ ?_) (by simp) fun x y hx hy ↦ by rw [mul_add]; exact add_mem hx hy
+    rw [← hi, ← hj, ← map_add]
+    exact mem_coarsenGrading_of_mem f (SetLike.mul_mem_graded ha hb)
+
+end GradedMul
 
 section Coarsen
 
@@ -58,9 +79,9 @@ theorem coarsenGrading_mul_le [SetLike.GradedMul 𝒜] (f : ι →+ κ) (k l : �
   exact (Submodule.mul_le.2 fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb).trans
     (le_coarsenGrading 𝒜 f _)
 
-instance [SetLike.GradedMonoid 𝒜] (f : ι →+ κ) : SetLike.GradedMonoid (coarsenGrading 𝒜 f) where
-  one_mem := by simpa using mem_coarsenGrading_of_mem f (SetLike.one_mem_graded 𝒜)
-  mul_mem _ _ _ _ ha hb := coarsenGrading_mul_le 𝒜 f _ _ (Submodule.mul_mem_mul ha hb)
+instance [SetLike.GradedMonoid 𝒜] (f : ι →+ κ) : SetLike.GradedMonoid (coarsenGrading 𝒜 f) :=
+  { (inferInstance : SetLike.GradedMul (coarsenGrading 𝒜 f)) with
+    one_mem := by simpa using mem_coarsenGrading_of_mem f (SetLike.one_mem_graded 𝒜) }
 
 /-- Coarsening the grading of a graded algebra along an additive homomorphism of index monoids
 gives a graded algebra. -/
