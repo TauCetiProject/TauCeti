@@ -497,6 +497,7 @@ variable (e : CentralQuotient R (centralElement (twoCocycleOfBilinear R L Ψ hΨ
 
 /-- The extension of `e` is the extension `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the
 underlying algebra morphism of `e`. -/
+@[simp]
 theorem completedEnvelopingEquiv_toAlgHom :
     (completedEnvelopingEquiv e he he' : CompletedEnveloping Ψ hΨ hΨs b →ₐ[R]
       CompletedEnveloping Φ hΦ hΦs a) =
@@ -505,6 +506,7 @@ theorem completedEnvelopingEquiv_toAlgHom :
 
 /-- The inverse of the extension of `e` is the extension
 `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the underlying algebra morphism of `e⁻¹`. -/
+@[simp]
 theorem completedEnvelopingEquiv_symm_toAlgHom :
     ((completedEnvelopingEquiv e he he').symm : CompletedEnveloping Φ hΦ hΦs a →ₐ[R]
       CompletedEnveloping Ψ hΨ hΨs b) =
