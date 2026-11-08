@@ -294,6 +294,15 @@ theorem norm_apply_le (f : HolderSpace α X Y) (x : X) : ‖f x‖ ≤ ‖f‖ :
   simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
     f.norm_toBoundedContinuousFunction_le
 
+/-- A Hölder function bounded pointwise by `M` and `α`-Hölder with constant `K` has
+supremum-plus-Hölder norm at most `M + K`. -/
+theorem norm_le_of_norm_le_of_holderWith {f : HolderSpace α X Y} {M : ℝ} {K : ℝ≥0}
+    (hM0 : 0 ≤ M) (hM : ∀ x, ‖f x‖ ≤ M) (hK : HolderWith K α f) : ‖f‖ ≤ M + K := by
+  rw [norm_def]
+  gcongr
+  · exact (BoundedContinuousFunction.norm_le hM0).mpr fun x ↦ by simpa using hM x
+  · simpa using hK.nnholderNorm_le
+
 /-- Evaluation has operator norm at most one. -/
 theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by simpa using f.norm_apply_le x

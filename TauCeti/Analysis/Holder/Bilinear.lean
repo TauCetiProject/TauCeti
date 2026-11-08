@@ -71,39 +71,25 @@ private theorem holderBilinear_apply (B : E →L[ℝ] F →L[ℝ] G)
 private theorem norm_holderBilinear_le (B : E →L[ℝ] F →L[ℝ] G)
     (f : HolderSpace α X E) (g : HolderSpace α X F) :
     ‖holderBilinear B f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ := by
-  have hsup : ‖(holderBilinear B f g).toBoundedContinuousFunction‖ ≤
-      ‖B‖ * ‖f.toBoundedContinuousFunction‖ * ‖g.toBoundedContinuousFunction‖ := by
-    apply (BoundedContinuousFunction.norm_le (by positivity)).mpr
-    intro x
-    rw [HolderSpace.toBoundedContinuousFunction_apply, holderBilinear_apply]
-    exact (B.le_opNorm₂ _ _).trans (by
-      gcongr
-      · simpa using f.toBoundedContinuousFunction.norm_coe_le_norm x
-      · simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x)
   have hholder := B.holderWith_comp₂
     (Mf := ‖f.toBoundedContinuousFunction‖₊) (Mg := ‖g.toBoundedContinuousFunction‖₊)
     f.memHolder.holderWith g.memHolder.holderWith
     f.toBoundedContinuousFunction.norm_coe_le_norm
     g.toBoundedContinuousFunction.norm_coe_le_norm
-  have hsemi : (nnHolderNorm α
-      ((holderBilinear B f g).toBoundedContinuousFunction : X → G) : ℝ) ≤
-      ‖B‖ * (‖f.toBoundedContinuousFunction‖ * nnHolderNorm α (g : X → F) +
-        ‖g.toBoundedContinuousFunction‖ * nnHolderNorm α (f : X → E)) := by
-    have heq : ((holderBilinear B f g).toBoundedContinuousFunction : X → G) =
-        fun x ↦ B (f x) (g x) := by
-      funext x
-      rw [HolderSpace.toBoundedContinuousFunction_apply, holderBilinear_apply]
-    rw [heq]
-    exact_mod_cast (by simpa using hholder.nnholderNorm_le :
-      nnHolderNorm α (fun x ↦ B (f x) (g x)) ≤
-        ‖B‖₊ * (‖f.toBoundedContinuousFunction‖₊ * nnHolderNorm α (g : X → F) +
-          ‖g.toBoundedContinuousFunction‖₊ * nnHolderNorm α (f : X → E)))
-  have htotal := add_le_add hsup hsemi
-  simp only [HolderSpace.coe_toBoundedContinuousFunction] at htotal
-  simp only [HolderSpace.norm_def, HolderSpace.coe_toBoundedContinuousFunction]
-  nlinarith [mul_nonneg (norm_nonneg B)
-    (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f : X → E)))
-      (NNReal.coe_nonneg (nnHolderNorm α (g : X → F))))]
+  refine (HolderSpace.norm_le_of_norm_le_of_holderWith
+    (M := ‖B‖ * ‖f.toBoundedContinuousFunction‖ * ‖g.toBoundedContinuousFunction‖)
+    (by positivity) (fun x ↦ ?_)
+    (by rw [funext (holderBilinear_apply B f g)]; simpa using hholder)).trans ?_
+  · rw [holderBilinear_apply]
+    exact (B.le_opNorm₂ _ _).trans (by
+      gcongr
+      · simpa using f.toBoundedContinuousFunction.norm_coe_le_norm x
+      · simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x)
+  · simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnnorm,
+      HolderSpace.coe_toBoundedContinuousFunction]
+    nlinarith [mul_nonneg (norm_nonneg B)
+      (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f : X → E)))
+        (NNReal.coe_nonneg (nnHolderNorm α (g : X → F))))]
 
 private def holderBilinearLinear (B : E →L[ℝ] F →L[ℝ] G) :
     HolderSpace α X E →ₗ[ℝ] HolderSpace α X F →ₗ[ℝ] HolderSpace α X G :=
@@ -286,16 +272,23 @@ private theorem holderWith_comp₂_extendByZeroFun (B : E →L[ℝ] F →L[ℝ] 
       simpa using (f : HolderSpace α X F).toBoundedContinuousFunction.norm_coe_le_norm x)
     (fun x hx ↦ mem_supportedHolderSubmodule_iff.mp f.2 x hx)
 
+private theorem norm_comp₂_extendByZeroFun_le (B : E →L[ℝ] F →L[ℝ] G)
+    (f : supportedHolderSubmodule (Y := F) α s) (g : HolderSpace α s E) (x : X) :
+    ‖B (extendByZeroFun g x) ((f : HolderSpace α X F) x)‖ ≤
+      ‖B‖ * ‖g.toBoundedContinuousFunction‖ *
+        ‖(f : HolderSpace α X F).toBoundedContinuousFunction‖ :=
+  (B.le_opNorm₂ _ _).trans (by
+    gcongr
+    · simpa using norm_extendByZeroFun_le g x
+    · simpa using (f : HolderSpace α X F).toBoundedContinuousFunction.norm_coe_le_norm x)
+
 private def compHolder₂ExtendByZeroFun (B : E →L[ℝ] F →L[ℝ] G)
     (f : supportedHolderSubmodule (Y := F) α s) (g : HolderSpace α s E) : HolderSpace α X G :=
   HolderSpace.ofBoundedContinuousFunction
     (BoundedContinuousFunction.ofNormedAddCommGroup _ (continuous_comp₂_extendByZeroFun B f g)
       (‖B‖ * ‖g.toBoundedContinuousFunction‖ *
         ‖(f : HolderSpace α X F).toBoundedContinuousFunction‖)
-      fun x ↦ (B.le_opNorm₂ _ _).trans (by
-        gcongr
-        · simpa using norm_extendByZeroFun_le g x
-        · simpa using (f : HolderSpace α X F).toBoundedContinuousFunction.norm_coe_le_norm x))
+      (norm_comp₂_extendByZeroFun_le B f g))
     (by simpa using (holderWith_comp₂_extendByZeroFun B f g).memHolder)
 
 private theorem compHolder₂ExtendByZeroFun_apply (B : E →L[ℝ] F →L[ℝ] G)
@@ -307,31 +300,19 @@ private theorem norm_compHolder₂ExtendByZeroFun_le (B : E →L[ℝ] F →L[ℝ
     (f : supportedHolderSubmodule (Y := F) α s) (g : HolderSpace α s E) :
     ‖compHolder₂ExtendByZeroFun B f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ := by
   set f' : HolderSpace α X F := ↑f
-  have hsup : ‖(compHolder₂ExtendByZeroFun B f g).toBoundedContinuousFunction‖ ≤
-      ‖B‖ * ‖g.toBoundedContinuousFunction‖ * ‖f'.toBoundedContinuousFunction‖ := by
-    apply (BoundedContinuousFunction.norm_le (by positivity)).mpr
-    intro x
-    rw [HolderSpace.toBoundedContinuousFunction_apply, compHolder₂ExtendByZeroFun_apply]
-    exact (B.le_opNorm₂ _ _).trans (by
-      gcongr
-      · simpa using norm_extendByZeroFun_le g x
-      · simpa using f'.toBoundedContinuousFunction.norm_coe_le_norm x)
-  have hsemi : (nnHolderNorm α
-      ((compHolder₂ExtendByZeroFun B f g).toBoundedContinuousFunction : X → G) : ℝ) ≤
-      ‖B‖ * (‖g.toBoundedContinuousFunction‖ * nnHolderNorm α (f' : X → F) +
-        ‖f'.toBoundedContinuousFunction‖ * nnHolderNorm α (g : s → E)) := by
-    have heq : ((compHolder₂ExtendByZeroFun B f g).toBoundedContinuousFunction : X → G) =
-        fun x ↦ B (extendByZeroFun g x) (f' x) := by
-      funext x
-      rw [HolderSpace.toBoundedContinuousFunction_apply, compHolder₂ExtendByZeroFun_apply]
-    rw [heq]
-    exact_mod_cast (holderWith_comp₂_extendByZeroFun B f g).nnholderNorm_le
-  have htotal := add_le_add hsup hsemi
-  rw [← Submodule.norm_coe]
-  simp only [HolderSpace.norm_def, HolderSpace.coe_toBoundedContinuousFunction] at htotal ⊢
-  nlinarith [mul_nonneg (norm_nonneg B)
-    (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f' : X → F)))
-      (NNReal.coe_nonneg (nnHolderNorm α (g : s → E))))]
+  have hholder := holderWith_comp₂_extendByZeroFun B f g
+  refine (HolderSpace.norm_le_of_norm_le_of_holderWith
+    (M := ‖B‖ * ‖g.toBoundedContinuousFunction‖ * ‖f'.toBoundedContinuousFunction‖)
+    (by positivity) (fun x ↦ ?_)
+    (by rw [funext (compHolder₂ExtendByZeroFun_apply B f g)]; simpa using hholder)).trans ?_
+  · rw [compHolder₂ExtendByZeroFun_apply]
+    exact norm_comp₂_extendByZeroFun_le B f g x
+  · rw [← Submodule.norm_coe]
+    simp only [HolderSpace.norm_def, NNReal.coe_mul, NNReal.coe_add, coe_nnnorm,
+      HolderSpace.coe_toBoundedContinuousFunction]
+    nlinarith [mul_nonneg (norm_nonneg B)
+      (mul_nonneg (NNReal.coe_nonneg (nnHolderNorm α (f' : X → F)))
+        (NNReal.coe_nonneg (nnHolderNorm α (g : s → E))))]
 
 /-- For `f` vanishing off `s`, pointwise application `x ↦ B (g x) (f x)` of a continuous bilinear
 map to a bounded Hölder function `g` given only on `s`, extended by zero off `s`. The result is

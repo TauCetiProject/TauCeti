@@ -9,8 +9,8 @@ public import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Holder.Bilinear
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -42,8 +42,9 @@ complex structure on a surface, after the Beltrami coefficient has been made sma
 * `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`: for `‖μ‖` below a threshold
   depending only on `α`, `c` and `r`, there is a source `h` supported in the disc with
   `‖h‖ ≤ 2 ‖μ‖` such that `ψ = z + T h` is `C¹` on `ball c (r + 1)`, solves `\bar∂ψ = μ ∂ψ` there,
-  has derivative within `C ‖μ‖` of the identity in the Hölder norm on the disc, and has an
-  invertible strict derivative at every point of the disc.
+  has derivative within `C ‖μ‖` of the identity at every point of the disc, with `α`-Hölder
+  constant at most `C ‖μ‖` there, and has an invertible strict derivative at every point of the
+  disc.
 
 ## References
 
@@ -62,17 +63,11 @@ namespace TauCeti
 
 variable {α : ℝ≥0} {c : ℂ} {r : ℝ}
 
-/-- `L ↦ ½ (L 1 - i L i)`, which sends the real derivative of `f` at `z` to `∂f(z)`. -/
-private def wirtingerOne : (ℂ →L[ℝ] ℂ) →L[ℝ] ℂ :=
-  (2 : ℂ)⁻¹ • (ContinuousLinearMap.apply ℝ ℂ (1 : ℂ) - I • ContinuousLinearMap.apply ℝ ℂ I)
-
-private theorem wirtingerOne_fderiv (f : ℂ → ℂ) (z : ℂ) :
-    wirtingerOne (fderiv ℝ f z) = wirtingerDeriv f z 1 := by
-  simp [wirtingerOne, wirtingerDeriv_apply]
-
-/-- `(L, a) ↦ ½ (L 1 - i L i) · a`. -/
+/-- `(L, a) ↦ ½ (L 1 - i L i) · a`, which sends the real derivative of `f` at `z` and `a` to
+`∂f(z) · a`. -/
 private def beltramiPairing : (ℂ →L[ℝ] ℂ) →L[ℝ] ℂ →L[ℝ] ℂ :=
-  (ContinuousLinearMap.mul ℝ ℂ).comp wirtingerOne
+  (ContinuousLinearMap.mul ℝ ℂ).comp
+    ((2 : ℂ)⁻¹ • (ContinuousLinearMap.apply ℝ ℂ (1 : ℂ) - I • ContinuousLinearMap.apply ℝ ℂ I))
 
 /-- The linear part `h ↦ μ ∂ T h` of the Beltrami fixed-point map, on sources supported in the
 disc. -/
@@ -89,7 +84,7 @@ private theorem beltramiOperator_apply_of_mem (hα : 0 < α) (hα1 : α < 1) (hr
       wirtingerDeriv (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ x, (w - x)⁻¹ • (h : HolderSpace α ℂ ℂ) x) z 1 *
         (μ : HolderSpace α ℂ ℂ) z := by
   simp [beltramiOperator, ContinuousLinearMap.compHolder₂ExtendByZero_apply_of_mem _ _ _ hz,
-    beltramiPairing, wirtingerOne_fderiv]
+    beltramiPairing, wirtingerDeriv_apply]
 
 private theorem norm_beltramiOperator_le (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     (μ : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
@@ -122,23 +117,6 @@ private theorem exists_add_beltramiOperator_eq (hα : 0 < α) (hα1 : α < 1) (h
       _ ≤ ‖μ‖ + 4⁻¹ * ‖k‖ := by gcongr
   linarith [norm_nonneg μ]
 
-/-- The real derivative of `w ↦ w + T w` is `id + D T`. -/
-private theorem fderiv_id_add {T : ℂ → ℂ} {z : ℂ} (hT : DifferentiableAt ℝ T z) :
-    fderiv ℝ (fun w ↦ w + T w) z = ContinuousLinearMap.id ℝ ℂ + fderiv ℝ T z :=
-  ((hasFDerivAt_id z).add hT.hasFDerivAt).fderiv
-
-private theorem wirtingerDeriv_id_add {T : ℂ → ℂ} {z : ℂ} (hT : DifferentiableAt ℝ T z) :
-    wirtingerDeriv (fun w ↦ w + T w) z 1 = 1 + wirtingerDeriv T z 1 := by
-  rw [wirtingerDeriv_apply, wirtingerDeriv_apply, fderiv_id_add hT]
-  simp only [add_apply, ContinuousLinearMap.id_apply, smul_eq_mul, mul_one]
-  linear_combination (-(2 : ℂ)⁻¹) * I_sq
-
-private theorem conjWirtingerDeriv_id_add {T : ℂ → ℂ} {z : ℂ} (hT : DifferentiableAt ℝ T z) :
-    conjWirtingerDeriv (fun w ↦ w + T w) z 1 = conjWirtingerDeriv T z 1 := by
-  rw [conjWirtingerDeriv_apply, conjWirtingerDeriv_apply, fderiv_id_add hT]
-  simp only [add_apply, ContinuousLinearMap.id_apply, smul_eq_mul, mul_one]
-  linear_combination (2 : ℂ)⁻¹ * I_sq
-
 /-- Regularity of `T h` for a source supported in the disc: it is `C¹` on `ball c (r + 1)` with
 `\bar∂ T h = h` there, and on the disc its real derivative is the bounded derivative operator
 applied to `h`. -/
@@ -155,6 +133,24 @@ private theorem cauchy_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     (support_subset_of_mem_supportedHolderSubmodule h.2) (h : HolderSpace α ℂ ℂ).holderWith
     (fun z ↦ by simpa using (h : HolderSpace α ℂ ℂ).toBoundedContinuousFunction.norm_coe_le_norm z)
   exact ⟨hTC, hTbar, fun z hz ↦ (cauchyDerivativeCLM_apply hα hα1 hr hr h ⟨z, hz⟩).symm⟩
+
+/-- If the real derivative of `ψ` on the disc is the identity plus the bounded derivative operator
+`D` applied to a source `h`, then it is `α`-Hölder there with constant `‖D h‖`. -/
+private theorem holderOnWith_fderiv_of_eq_id_add (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
+    (h : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) {ψ : ℂ → ℂ}
+    (hψ : ∀ z (hz : z ∈ closedBall c r),
+      fderiv ℝ ψ z = ContinuousLinearMap.id ℝ ℂ + cauchyDerivativeCLM hα hα1 hr hr h ⟨z, hz⟩) :
+    HolderOnWith ‖cauchyDerivativeCLM hα hα1 hr hr h‖₊ α (fderiv ℝ ψ) (closedBall c r) := by
+  set Dh := cauchyDerivativeCLM hα hα1 hr hr h
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
+  rw [hψ x hx, hψ y hy, dist_add_left]
+  refine (Dh.holderWith.dist_le ⟨x, hx⟩ ⟨y, hy⟩).trans ?_
+  gcongr
+  · rw [← NNReal.coe_le_coe]
+    have hn := Dh.nnHolderNorm_le
+    simp only [HolderSpace.coe_toBoundedContinuousFunction] at hn
+    exact_mod_cast hn
+  · exact (Subtype.dist_eq _ _).le
 
 /-- **The Beltrami equation with small Hölder coefficient.** Let `0 < α < 1`. There are `δ > 0`
 and `C` such that every bounded `α`-Hölder function `μ` vanishing off `closedBall c r` with
@@ -219,42 +215,43 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
   have hDT' : ∀ z ∈ closedBall c r, ‖fderiv ℝ T z‖ ≤ 2 * ‖D‖ * ‖μ‖ := fun z hz ↦ by
     rw [hDT z hz]
     exact ((D h).norm_apply_le _).trans hDh
-  refine ⟨h, h.2, hh, contDiffOn_id.add hTC, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_, ?_,
-    fun z hz ↦ ?_⟩
-  · rw [conjWirtingerDeriv_id_add (hTd z hz)]
-    exact hTbar z hz
-  · rw [conjWirtingerDeriv_id_add (hTd z hz), hTbar z hz, wirtingerDeriv_id_add (hTd z hz)]
+  -- On `ball c (r + 1)`, `ψ = id + T` has real derivative `id + D T`.
+  have hψT : (fun w ↦ w + T w) = id + T := rfl
+  have hψ : ∀ z ∈ ball c (r + 1),
+      HasFDerivAt (id + T) (ContinuousLinearMap.id ℝ ℂ + fderiv ℝ T z) z := fun z hz ↦
+    (hasFDerivAt_id z).add (hTd z hz).hasFDerivAt
+  have hψbar : ∀ z ∈ ball c (r + 1), conjWirtingerDeriv (id + T) z 1 = (h : HolderSpace α ℂ ℂ) z :=
+    fun z hz ↦ by
+      rw [conjWirtingerDeriv_add differentiableAt_id (hTd z hz), conjWirtingerDeriv_id, zero_add]
+      exact hTbar z hz
+  refine ⟨h, h.2, hh, contDiffOn_id.add hTC, hψbar, fun z hz ↦ ?_, fun z hz ↦ ?_,
+    ?_, fun z hz ↦ ?_⟩
+  · rw [hψT, hψbar z hz,
+      wirtingerDeriv_add differentiableAt_id (hTd z hz), wirtingerDeriv_id]
     by_cases hz' : z ∈ closedBall c r
     · exact hpt z hz'
     · rw [mem_supportedHolderSubmodule_iff.mp h.2 z hz',
         mem_supportedHolderSubmodule_iff.mp hμ z hz', zero_mul]
-  · rw [fderiv_id_add (hTd z (hsub hz)), add_sub_cancel_left]
+  · rw [hψT, (hψ z (hsub hz)).fderiv, add_sub_cancel_left]
     push_cast
     exact hDT' z hz
-  · refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-    rw [fderiv_id_add (hTd x (hsub hx)), fderiv_id_add (hTd y (hsub hy)), dist_add_left,
-      hDT x hx, hDT y hy]
-    refine ((D h).holderWith.dist_le ⟨x, hx⟩ ⟨y, hy⟩).trans ?_
-    gcongr
+  · refine (holderOnWith_fderiv_of_eq_id_add hα hα1 hr h fun z hz ↦ ?_).mono_const ?_
+    · rw [hψT, (hψ z (hsub hz)).fderiv, hDT z hz]
     · rw [← NNReal.coe_le_coe]
-      have hn := (D h).nnHolderNorm_le
-      simp only [HolderSpace.coe_toBoundedContinuousFunction] at hn
       push_cast
       linarith
-    · exact (Subtype.dist_eq _ _).le
-  · -- `D ψ(z) = id + D T(z)` is a unit of the Banach algebra of real endomorphisms of `ℂ`.
-    have hlt : ‖-fderiv ℝ T z‖ < 1 := by
-      rw [norm_neg]
+  · -- `D ψ(z) = id + D T(z)` is a small perturbation of the identity, so it is invertible.
+    have hlt : ‖fderiv ℝ T z‖₊ < ‖((ContinuousLinearEquiv.refl ℝ ℂ).symm : ℂ →L[ℝ] ℂ)‖₊⁻¹ := by
+      rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
+        ContinuousLinearMap.nnnorm_id, inv_one, ← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one]
       refine (hDT' z hz).trans_lt ?_
       nlinarith [norm_nonneg μ, mul_nonneg hb (mul_nonneg hD (norm_nonneg μ))]
-    refine ⟨ContinuousLinearEquiv.unitsEquiv ℝ ℂ (Units.oneSub _ hlt), ?_⟩
-    have hu : (ContinuousLinearEquiv.unitsEquiv ℝ ℂ (Units.oneSub _ hlt) : ℂ →L[ℝ] ℂ) =
-        ContinuousLinearMap.id ℝ ℂ + fderiv ℝ T z := by
-      ext1 v
-      simp
-    have hTz := hTC.contDiffAt (isOpen_ball.mem_nhds (hsub hz))
-    rw [hu]
-    exact (contDiffAt_id.add hTz).hasStrictFDerivAt
-      ((hasFDerivAt_id z).add (hTd z (hsub hz)).hasFDerivAt) one_ne_zero
+    obtain ⟨L, hL⟩ := ContinuousLinearMap.isInvertible_of_norm_sub_lt
+      (ContinuousLinearEquiv.refl ℝ ℂ) (A := ContinuousLinearMap.id ℝ ℂ + fderiv ℝ T z)
+      (by rwa [ContinuousLinearEquiv.coe_refl, add_sub_cancel_left])
+    refine ⟨L, ?_⟩
+    rw [hL]
+    exact (contDiffAt_id.add (hTC.contDiffAt (isOpen_ball.mem_nhds (hsub hz)))).hasStrictFDerivAt
+      (hψ z (hsub hz)) one_ne_zero
 
 end TauCeti
