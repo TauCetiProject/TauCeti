@@ -281,11 +281,16 @@ lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → E} {z₀ : ℂ} {m :
     rw [hz1, smul_smul, ← zpow_natCast, ← zpow_add₀ (sub_ne_zero.mpr hz2),
       Int.toNat_of_nonneg (by omega), add_sub_cancel]
 
-/-- **Additivity of the residue.** The residue is additive on functions meromorphic at `z₀`. -/
+/-- **Additivity of the residue.** The residue is additive on functions meromorphic at `z₀`.
+
+No completeness hypothesis is needed: for an incomplete `E` every residue is the junk value `0`. -/
 @[simp]
-theorem residue_add [CompleteSpace E] {f g : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
+theorem residue_add {f g : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
     (hg : MeromorphicAt g z₀) :
     residue (f + g) z₀ = residue f z₀ + residue g z₀ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp only [residue_of_not_completeSpace hE, add_zero]
   obtain ⟨m, hm1, hm⟩ :=
     (min (meromorphicOrderAt f z₀) (meromorphicOrderAt g z₀)).exists_le_and_coe_le (-1)
   rw [le_min_iff] at hm
@@ -340,7 +345,7 @@ theorem residue_const_mul {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) :
 /-- **Subtractivity of the residue.** The residue distributes over subtraction of meromorphic
 functions; the `−1` scaling case of `residue_add` and `residue_const_smul`. -/
 @[simp]
-theorem residue_sub [CompleteSpace E] {f g : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
+theorem residue_sub {f g : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
     (hg : MeromorphicAt g z₀) :
     residue (f - g) z₀ = residue f z₀ - residue g z₀ := by
   rw [sub_eq_add_neg, residue_add hf hg.neg, ← neg_one_smul ℂ g, residue_const_smul, neg_one_smul,
@@ -349,7 +354,7 @@ theorem residue_sub [CompleteSpace E] {f g : ℂ → E} {z₀ : ℂ} (hf : Merom
 /-- **The residue of a finite sum.** For a finite family of functions meromorphic at `z₀`, the
 residue of the sum is the sum of the residues — the form consumed by the residue theorem. -/
 @[simp]
-theorem residue_sum [CompleteSpace E] {ι : Type*} (s : Finset ι) {f : ι → ℂ → E} {z₀ : ℂ}
+theorem residue_sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → E} {z₀ : ℂ}
     (hf : ∀ i ∈ s, MeromorphicAt (f i) z₀) :
     residue (∑ i ∈ s, f i) z₀ = ∑ i ∈ s, residue (f i) z₀ := by
   classical
