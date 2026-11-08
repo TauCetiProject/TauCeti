@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -24,6 +25,11 @@ eigenline, into the ambient module.
 
 Two surjective linear maps with the same kernel identify their codomains, by the first
 isomorphism theorem; `LinearMap.equivOfSurjectiveOfKerEq` packages this equivalence.
+
+If an ideal `I` annihilates `S`, every linear map `M → S` kills `I • M`, so maps out of
+`M ⧸ I • M` into `S` are the same as maps out of `M`; `TauCeti.linearMapQuotientSMulTopEquiv`
+packages this as an additive equivalence. For `I = Ring.jacobson R` it applies to every semisimple
+`S`, by `IsSemisimpleModule.jacobson_le_annihilator`.
 -/
 
 public section
@@ -110,3 +116,39 @@ theorem equivOfSurjectiveOfKerEq_symm_apply (x : M) :
   (LinearEquiv.symm_apply_eq _).mpr (equivOfSurjectiveOfKerEq_apply g h hg hh hk x).symm
 
 end LinearMap
+
+namespace TauCeti
+
+variable {R : Type*} [Ring R]
+
+/-- **Maps into a module annihilated by `I` factor through `M ⧸ I • M`.** If the ideal `I`
+annihilates `S`, then composition with `M → M ⧸ I • M` identifies maps out of `M ⧸ I • M` with maps
+out of `M`; the identification is additive. For `I = Ring.jacobson R` this applies to every
+semisimple `S` by `IsSemisimpleModule.jacobson_le_annihilator`. -/
+def linearMapQuotientSMulTopEquiv {I : Ideal R} (M : Type*) [AddCommGroup M] [Module R M]
+    {S : Type*} [AddCommGroup S] [Module R S] (hI : I ≤ Module.annihilator R S) :
+    (M ⧸ I • (⊤ : Submodule R M) →ₗ[R] S) ≃+ (M →ₗ[R] S) where
+  toFun g := g ∘ₗ (I • (⊤ : Submodule R M)).mkQ
+  invFun f := (I • (⊤ : Submodule R M)).liftQ f <|
+    Submodule.smul_le.mpr fun r hr x _ ↦ by
+      rw [LinearMap.mem_ker, map_smul]
+      exact Module.mem_annihilator.mp (hI hr) _
+  left_inv g := Submodule.linearMap_qext _ (Submodule.liftQ_mkQ _ _ _)
+  right_inv f := Submodule.liftQ_mkQ _ _ _
+  map_add' g h := LinearMap.add_comp _ h g
+
+@[simp]
+theorem linearMapQuotientSMulTopEquiv_apply {I : Ideal R} (M : Type*) [AddCommGroup M]
+    [Module R M] {S : Type*} [AddCommGroup S] [Module R S] (hI : I ≤ Module.annihilator R S)
+    (g : M ⧸ I • (⊤ : Submodule R M) →ₗ[R] S) (x : M) :
+    linearMapQuotientSMulTopEquiv M hI g x = g (Submodule.Quotient.mk x) :=
+  (rfl)
+
+@[simp]
+theorem linearMapQuotientSMulTopEquiv_symm_apply_mk {I : Ideal R} (M : Type*) [AddCommGroup M]
+    [Module R M] {S : Type*} [AddCommGroup S] [Module R S] (hI : I ≤ Module.annihilator R S)
+    (f : M →ₗ[R] S) (x : M) :
+    (linearMapQuotientSMulTopEquiv M hI).symm f (Submodule.Quotient.mk x) = f x :=
+  (rfl)
+
+end TauCeti
