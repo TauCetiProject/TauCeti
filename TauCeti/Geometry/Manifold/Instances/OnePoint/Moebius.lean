@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
+public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
 # Möbius transformations of the projective line are analytic
@@ -41,6 +42,7 @@ inverse the transformation of the inverse matrix: this is `Diffeomorph.constSmul
 * `Matrix.GeneralLinearGroup.contMDiff_smul_coe`: a Möbius transformation restricted to `𝕜` is
   analytic.
 * `OnePoint.instContMDiffConstSMul`: `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps.
+* `OnePoint.instContMDiffConstSMulPGL`: so does `PGL(2, 𝕜)`.
 * `OnePoint.instContinuousConstSMul`: in particular it acts by homeomorphisms.
 
 ## References
@@ -53,7 +55,7 @@ public noncomputable section
 
 open Filter Matrix Set Topology
 
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold MatrixGroups
 
 namespace OnePoint
 
@@ -186,6 +188,13 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(𝕜) ω (GL (Fin 2) �
       exact ((g.contMDiff_smul_coe _).comp _
         (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inl rfl))
           (by simp))).congr_of_eventuallyEq hev
+
+/-- **The Möbius transformations of `PGL(2, 𝕜)` are analytic**, since the class of a matrix acts
+as the matrix does. -/
+instance instContMDiffConstSMulPGL : ContMDiffConstSMul 𝓘(𝕜) ω PGL(2, 𝕜) (OnePoint 𝕜) where
+  contMDiff_const_smul g := by
+    induction g using ProjGenLinGroup.induction_on with
+    | mk g => simpa only [pglMk_smul] using contMDiff_const_smul (I := 𝓘(𝕜)) (n := ω) g
 
 /-- Möbius transformations are homeomorphisms of the projective line. -/
 instance instContinuousConstSMul : ContinuousConstSMul (GL (Fin 2) 𝕜) (OnePoint 𝕜) :=
