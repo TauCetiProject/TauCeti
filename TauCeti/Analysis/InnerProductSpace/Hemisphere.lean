@@ -10,8 +10,10 @@ public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Topology.Order.ProjIcc
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Extension
 import TauCeti.Data.Set.InjOnUnion
+import TauCeti.Order.Interval.Set.ProjIcc
 import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
@@ -34,9 +36,10 @@ after the radial extension of the matching homeomorphism (`Homeomorph.radialExte
 how a manifold built from two discs, such as one carrying a Morse function with exactly two
 critical points, is recognized as a sphere.
 
-Every point of the unit sphere is `√(1 - t²) • u + t • p` for a point `u` of the equator and a
-height `t ∈ [-1, 1]`, and this latitude parametrization is injective off the poles `p` and `-p`
-(`TauCeti.latitude`).
+When the equator is nonempty, every point of the unit sphere is `√(1 - t²) • u + t • p` for a
+point `u` of the equator and a height `t ∈ [-1, 1]`, and this latitude parametrization is injective
+off the poles `p` and `-p` (`TauCeti.latitude`). The equator is empty when `E` has dimension one,
+and then the latitude map reaches no point.
 
 ## Main definitions
 
@@ -58,7 +61,7 @@ height `t ∈ [-1, 1]`, and this latitude parametrization is injective off the p
 * `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`: two closed discs glued along their
   boundary spheres form a sphere.
 * `TauCeti.exists_latitude_eq` and `TauCeti.eq_and_eq_of_latitude_eq`: the latitude map is
-  surjective, and injective off the poles.
+  surjective when the equator is nonempty, and injective off the poles.
 
 ## References
 
@@ -99,11 +102,8 @@ private lemma sub_inner_smul_mem_closedBall (x : sphere (0 : E) 1) :
 sphere when `‖y‖² + t² = 1`. -/
 private lemma norm_add_smul_eq_one {y : E} (hy : y ∈ (ℝ ∙ (p : E))ᗮ) {t : ℝ}
     (h : ‖y‖ ^ 2 + t ^ 2 = 1) : ‖y + t • (p : E)‖ = 1 := by
-  have hyp : ⟪y, (p : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 hy
-  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, norm_add_sq_real,
-    real_inner_smul_right, hyp, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
-    norm_eq_of_mem_sphere p]
-  linarith
+  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]
+  exact (norm_add_smul_sq (p : E) (norm_eq_of_mem_sphere p) ⟨y, hy⟩ t).trans h
 
 /-- Lifting a point `y` of the closed unit ball of `(ℝ ∙ p)ᗮ` by `√(1 - ‖y‖²)` in the direction
 of `p` lands on the unit sphere, with inner product `√(1 - ‖y‖²)` against `p`. -/
@@ -300,20 +300,12 @@ theorem latitude_of_le_neg_one (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) {t : �
   simp [latitude, projIcc_of_le_left _ ht]
 
 /-- The height of a point of the latitude map is the clamped parameter. -/
+@[simp]
 theorem inner_latitude (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : ℝ) :
     ⟪(latitude p u t : E), (p : E)⟫ = projIcc (-1 : ℝ) 1 (by norm_num) t := by
   have hu : ⟪((u : (ℝ ∙ (p : E))ᗮ) : E), (p : E)⟫ = 0 :=
     Submodule.mem_orthogonal_singleton_iff_inner_left.1 (u : (ℝ ∙ (p : E))ᗮ).2
   simp [latitude, inner_add_left, inner_smul_left, hu]
-
-/-- A parameter whose clamp to `[-1, 1]` lies in `(-1, 1)` is its own clamp. -/
-private theorem eq_of_coe_projIcc_eq {s t : ℝ} (h : (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ) = s)
-    (hs : s ∈ Ioo (-1 : ℝ) 1) : t = s := by
-  have ht : t ∈ Icc (-1 : ℝ) 1 := by
-    refine ⟨not_lt.1 fun ht ↦ hs.1.ne ?_, not_lt.1 fun ht ↦ hs.2.ne' ?_⟩
-    · rwa [projIcc_of_le_left _ ht.le] at h
-    · rwa [projIcc_of_right_le _ ht.le] at h
-  rwa [projIcc_of_mem _ ht] at h
 
 /-- The latitude map hits the equator exactly at height `0`. -/
 theorem inner_latitude_eq_zero_iff (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : ℝ) :
@@ -353,8 +345,8 @@ theorem eq_and_eq_of_latitude_eq {u u' : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1} {t
     coe_latitude_of_mem p u' (Ioo_subset_Icc_self ht), add_left_inj] at h₂
   exact Subtype.ext (Subtype.ext (smul_right_injective E hpos.ne' h₂))
 
-/-- Every point of the unit sphere is a point of the latitude map with parameter in `[-1, 1]`; the
-poles are reached over any given point `u₀` of the equator. -/
+/-- If the equator is nonempty, every point of the unit sphere is a point of the latitude map with
+parameter in `[-1, 1]`; the poles are reached over the given point `u₀` of the equator. -/
 theorem exists_latitude_eq (u₀ : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (z : sphere (0 : E) 1) :
     ∃ u t, t ∈ Icc (-1 : ℝ) 1 ∧ latitude p u t = z := by
   set s := ⟪(z : E), (p : E)⟫ with hs_def

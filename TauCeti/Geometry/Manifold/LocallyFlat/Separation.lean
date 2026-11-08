@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocallyFlat.TwoSided
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # Separating locally bicollared embeddings are two-sided
@@ -71,16 +72,6 @@ namespace TauCeti
 open Function Filter Metric Set Topology
 
 variable {M N : Type*} [TopologicalSpace M] [TopologicalSpace N] {f : N → M} {A B : Set M}
-
-/-- An open set that is not preconnected is the union of two disjoint nonempty open sets. -/
-private theorem exists_isOpen_eq_union_of_not_isPreconnected {s : Set M} (hs : IsOpen s)
-    (h : ¬ IsPreconnected s) : ∃ A B : Set M, IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧ s = A ∪ B ∧
-      A.Nonempty ∧ B.Nonempty := by
-  simp only [IsPreconnected, not_forall, not_nonempty_iff_eq_empty, exists_prop] at h
-  obtain ⟨u, v, hu, hv, huv, hsu, hsv, hsuv⟩ := h
-  exact ⟨s ∩ u, s ∩ v, hs.inter hu, hs.inter hv,
-    disjoint_iff_inter_eq_empty.2 (by rw [inter_inter_inter_comm, inter_self, hsuv]),
-    by rw [← inter_union_distrib_left, inter_eq_left.2 huv], hsu, hsv⟩
 
 namespace IsLocallyBicollared
 
@@ -304,8 +295,8 @@ Hausdorff space is bicollared as soon as the complement of its image is not prec
 theorem isBicollared_of_not_isPreconnected_compl_range [CompactSpace N] [PreconnectedSpace N]
     [LocallyConnectedSpace N] [T2Space M] [PreconnectedSpace M] (h : IsLocallyBicollared f)
     (hf : Injective f) (hsep : ¬ IsPreconnected (range f)ᶜ) : IsBicollared f := by
-  obtain ⟨A, B, hA, hB, hAB, hcompl, hA₀, hB₀⟩ := exists_isOpen_eq_union_of_not_isPreconnected
-    (isCompact_range h.continuous).isClosed.isOpen_compl hsep
+  obtain ⟨A, B, hA, hB, hA₀, hB₀, hAB, hcompl⟩ :=
+    ((isCompact_range h.continuous).isClosed.isOpen_compl.not_isPreconnected_iff).1 hsep
   obtain ⟨b, hb, -⟩ := h.exists_isBicollar hf hA hB hAB hcompl hA₀ hB₀
   exact hb.isBicollared
 
@@ -367,8 +358,8 @@ theorem exists_isOpen_compl_range_eq_union [CompactSpace N] [PreconnectedSpace N
     [PreconnectedSpace M] (h : IsBicollar f b) (hsep : ¬ IsPreconnected (range f)ᶜ) :
     ∃ A B : Set M, IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧ (range f)ᶜ = A ∪ B ∧
       MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B := by
-  obtain ⟨A, B, hA, hB, hAB, hcompl, hA₀, hB₀⟩ := exists_isOpen_eq_union_of_not_isPreconnected
-    (isCompact_range h.continuous).isClosed.isOpen_compl hsep
+  obtain ⟨A, B, hA, hB, hA₀, hB₀, hAB, hcompl⟩ :=
+    ((isCompact_range h.continuous).isClosed.isOpen_compl.not_isPreconnected_iff).1 hsep
   rcases h.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo hA hB hAB hcompl hA₀ hB₀ with
     ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
   · exact ⟨A, B, hA, hB, hAB, hcompl, hpos, hneg⟩
