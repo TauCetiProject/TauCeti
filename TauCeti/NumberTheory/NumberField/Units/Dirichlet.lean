@@ -155,6 +155,16 @@ theorem prod_fundSystem_zpow_mem_torsion_iff {e : Fin (rank K) → ℤ} :
   exact (congrArg Prod.snd ((huniq (⟨_, he⟩, 0) (by simp)).trans
     (huniq (1, e) (by simp)).symm)).symm
 
+/-- In a number field of unit rank one, some unit generates all units modulo torsion. -/
+theorem exists_closure_sup_torsion_eq_top_of_rank_eq_one (hr : rank K = 1) :
+    ∃ g : (𝓞 K)ˣ, Subgroup.closure {g} ⊔ torsion K = ⊤ := by
+  let i : Fin (rank K) := ⟨0, by omega⟩
+  have : Nonempty (Fin (rank K)) := ⟨i⟩
+  refine ⟨fundSystem K i, ?_⟩
+  have hrange : Set.range (fundSystem K) = {fundSystem K i} :=
+    Set.range_eq_singleton (fun j => congrArg (fundSystem K) (Fin.ext (by omega)))
+  simpa only [hrange] using closure_fundSystem_sup_torsion_eq_top (K := K)
+
 end Units
 
 end NumberField
