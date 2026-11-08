@@ -186,6 +186,28 @@ theorem coe_specialOrthogonalSphereBoundaryHom [NeZero n] [DecidableEq N] [Nonem
     ⇑(specialOrthogonalSphereBoundaryHom n N) = specialOrthogonalSphereBoundary n N :=
   (rfl)
 
+/-- For `k ≥ 1`, the boundary map of the sphere bundle sends the identity to the identity. -/
+@[simp]
+theorem specialOrthogonalSphereBoundary_one [NeZero n] [DecidableEq N] [Nonempty N] :
+    specialOrthogonalSphereBoundary n N 1 = 1 :=
+  map_one (specialOrthogonalSphereBoundaryHom n N)
+
+/-- For `k ≥ 1`, the boundary map of the sphere bundle commutes with powers. -/
+@[simp]
+theorem specialOrthogonalSphereBoundary_pow [NeZero n] [DecidableEq N] [Nonempty N]
+    (a : HomotopyGroup (Option N) (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)
+      (specialOrthogonalSphereMap n 1)) (k : ℕ) :
+    specialOrthogonalSphereBoundary n N (a ^ k) = specialOrthogonalSphereBoundary n N a ^ k :=
+  map_pow (specialOrthogonalSphereBoundaryHom n N) a k
+
+/-- For `k ≥ 1`, the boundary map of the sphere bundle commutes with inverses. -/
+@[simp]
+theorem specialOrthogonalSphereBoundary_inv [NeZero n] [DecidableEq N] [Nonempty N]
+    (a : HomotopyGroup (Option N) (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)
+      (specialOrthogonalSphereMap n 1)) :
+    specialOrthogonalSphereBoundary n N a⁻¹ = (specialOrthogonalSphereBoundary n N a)⁻¹ :=
+  map_inv (specialOrthogonalSphereBoundaryHom n N) a
+
 /-! ### Exactness -/
 
 /-- **Exactness at `π_{k+1}(Sⁿ)`.** A class of `π_{k+1}(Sⁿ, e₀)` comes from `SO(1 + n)` exactly
@@ -249,8 +271,7 @@ theorem exists_pow_mem_range_homotopyGroupMap_specialOrthogonalSphereMap_of_isOf
       ⟨specialOrthogonalSphereMap n, continuous_specialOrthogonalSphereMap n⟩ rfl) := by
   obtain ⟨k, hk, hak⟩ := isOfFinOrder_iff_pow_eq_one.1 ha
   refine ⟨k, hk, mem_range_homotopyGroupMap_specialOrthogonalSphereMap_iff.2 ?_⟩
-  rw [← coe_specialOrthogonalSphereBoundaryHom, map_pow, coe_specialOrthogonalSphereBoundaryHom,
-    hak, HomotopyGroup.mk_const_eq_one]
+  rw [specialOrthogonalSphereBoundary_pow, hak, HomotopyGroup.mk_const_eq_one]
 
 /-- If `π_k(SO(n))` is trivial, then every class of `π_{k+1}(Sⁿ, e₀)` comes from
 `π_{k+1}(SO(1 + n), 1)`. -/
