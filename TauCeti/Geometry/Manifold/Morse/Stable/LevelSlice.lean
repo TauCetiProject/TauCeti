@@ -45,6 +45,8 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
   the time at which an orbit crosses the level of a point `y` of such a trajectory depends
   continuously on the orbit near `y`.
+* `TauCeti.IsAdaptedPseudoGradient.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
+  so does the point at which it crosses that level.
 * `TauCeti.IsAdaptedPseudoGradient.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top`:
   every level of `f` is transverse to `W^u(a) ∩ W^s(b)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_level_chart`: under
@@ -181,6 +183,26 @@ theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} 
     filter_upwards [(hfw t).eventually (gt_mem_nhds hlt)] with i hi
     by_contra! hle
     exact (hX.antitone_flow hf (w i) hle).not_gt (hi.trans_eq (hσ i).symm)
+
+/-- **Level points depend continuously on the orbit.** Let `y` lie on a trajectory from a critical
+point `a` to a different critical point `b`, whose orbit meets the level `c` at the time `σ`, and
+let `w` tend to `y`. If the orbit of each `w i` meets the level `c` at the time `s i`, then these
+level points tend to the level point of the orbit of `y`. -/
+theorem tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} {l : Filter ι}
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {σ : ℝ} (hσ : f (hX.flow σ y) = c)
+    {w : ι → M} (hw : Tendsto w l (𝓝 y)) {s : ι → ℝ} (hs : ∀ i, f (hX.flow (s i) (w i)) = c) :
+    Tendsto (fun i ↦ hX.flow (s i) (w i)) l (𝓝 (hX.flow σ y)) := by
+  have hw' : Tendsto (fun i ↦ hX.flow σ (w i)) l (𝓝 (hX.flow σ y)) :=
+    ((hX.contMDiff_flow_apply σ).continuous.tendsto y).comp hw
+  -- Measured from the level point of `y`, the crossing times tend to `0`.
+  have h0 := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hf hab
+    (hX.flow.isInvariant_unstableSet_inter_stableSet a b σ hy) hw' (σ := fun i ↦ s i - σ)
+    fun i ↦ by rw [← Flow.map_add, sub_add_cancel, hs, hσ]
+  have hlim := (hX.contMDiff_flow_uncurry.continuous.tendsto ((0 : ℝ), hX.flow σ y)).comp
+    (h0.prodMk_nhds hw')
+  rw [Function.comp_def, Flow.map_zero_apply] at hlim
+  exact hlim.congr fun i ↦ by rw [← Flow.map_add, sub_add_cancel]
 
 /-- **Levels are transverse to connecting trajectories.** At a point `y` of `W^u(a) ∩ W^s(b)` with
 `a ≠ b`, the tangent space of `W^u(a) ∩ W^s(b)` and the kernel of `df_y`, the tangent space of the
