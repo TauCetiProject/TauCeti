@@ -53,6 +53,7 @@ times are allowed and the formula is used with an oriented interval integral.
 
 All declarations are in the `TauCeti.PDE` namespace.
 
+* `hasDerivAt_comp_add_add_comp_sub`: the time and space derivatives of `A(x + t) + B(x - t)`.
 * `deriv_deriv_comp_add_add_comp_sub`: `A(x + t) + B(x - t)` solves the wave equation.
 * `dAlembert`: d'Alembert's formula.
 * `contDiff_dAlembert`, `deriv_deriv_dAlembert`, `dAlembert_time_zero`, `deriv_dAlembert_zero`:
@@ -61,6 +62,8 @@ All declarations are in the `TauCeti.PDE` namespace.
 * `eq_of_deriv_deriv_eq_of_eqOn_initial`, `eq_of_deriv_deriv_eq_of_eq_initial`: the domain of
   dependence and uniqueness for the Cauchy problem.
 * `norm_dAlembert_le`: the bound `‖u(t, x)‖ ≤ M + |t| N`.
+* `lintegral_enorm_sub_sq_add_enorm_add_sq`: the energy of two travelling waves is independent of
+  time.
 * `lintegral_enorm_deriv_sq_add_enorm_deriv_sq_eq`: conservation of energy.
 * `dAlembert_zero_right_apply_add_of_abs_lt`: the absence of dispersive decay.
 
@@ -90,8 +93,8 @@ section TravellingWave
 variable {A B A' B' : ℝ → F}
 
 /-- The time and space derivatives of the superposition `A(x + t) + B(x - t)` of a left- and a
-right-moving wave. -/
-private theorem hasDerivAt_comp_add_add_comp_sub (hA : ∀ z, HasDerivAt A (A' z) z)
+right-moving wave: `∂ₜu = A'(x + t) - B'(x - t)` and `∂ₓu = A'(x + t) + B'(x - t)`. -/
+theorem hasDerivAt_comp_add_add_comp_sub (hA : ∀ z, HasDerivAt A (A' z) z)
     (hB : ∀ z, HasDerivAt B (B' z) z) (t x : ℝ) :
     HasDerivAt (fun s ↦ A (x + s) + B (x - s)) (A' (x + t) - B' (x - t)) t ∧
       HasDerivAt (fun y ↦ A (y + t) + B (y - t)) (A' (x + t) + B' (x - t)) x := by
@@ -407,19 +410,21 @@ section Energy
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 
-/-- The energy of the superposition `A(x + t) + B(x - t)` of two travelling waves with continuous
-profiles `A'`, `B'` of `∂ₓ`, written in terms of the two profiles: it does not depend on `t`. -/
-private theorem lintegral_enorm_sub_sq_add_enorm_add_sq {A' B' : ℝ → H} (hA : Continuous A')
-    (hB : Continuous B') (t : ℝ) :
+/-- The energy of the superposition `A(x + t) + B(x - t)` of two travelling waves, written in terms
+of the a.e. strongly measurable profiles `A'`, `B'` of their derivatives: since
+`∂ₜu = A'(x + t) - B'(x - t)` and `∂ₓu = A'(x + t) + B'(x - t)`, it equals
+`2 ∫ ‖A'‖² + 2 ∫ ‖B'‖²` and does not depend on `t`. -/
+theorem lintegral_enorm_sub_sq_add_enorm_add_sq {A' B' : ℝ → H} (hA : AEStronglyMeasurable A')
+    (hB : AEStronglyMeasurable B') (t : ℝ) :
     ∫⁻ x, (‖A' (x + t) - B' (x - t)‖ₑ ^ 2 + ‖A' (x + t) + B' (x - t)‖ₑ ^ 2) =
       2 * (∫⁻ z, ‖A' z‖ₑ ^ 2) + 2 * ∫⁻ z, ‖B' z‖ₑ ^ 2 := by
   simp_rw [add_comm (‖_ - _‖ₑ ^ 2), parallelogram_law_with_enorm ℝ, mul_add]
-  have hA' : Measurable fun x ↦ ‖A' (x + t)‖ₑ ^ 2 :=
-    (hA.comp (continuous_id.add continuous_const)).enorm.measurable.pow_const 2
-  have hB' : Measurable fun x ↦ ‖B' (x - t)‖ₑ ^ 2 :=
-    (hB.comp (continuous_id.sub continuous_const)).enorm.measurable.pow_const 2
-  rw [lintegral_add_left (hA'.const_mul 2), lintegral_const_mul _ hA', lintegral_const_mul _ hB',
-    lintegral_add_right_eq_self (fun z ↦ ‖A' z‖ₑ ^ 2),
+  have hA' : AEMeasurable fun x ↦ ‖A' (x + t)‖ₑ ^ 2 :=
+    (hA.comp_measurePreserving (measurePreserving_add_right volume t)).enorm.pow_const 2
+  have hB' : AEMeasurable fun x ↦ ‖B' (x - t)‖ₑ ^ 2 :=
+    (hB.comp_measurePreserving (measurePreserving_sub_right volume t)).enorm.pow_const 2
+  rw [lintegral_add_left' (hA'.const_mul 2), lintegral_const_mul'' _ hA',
+    lintegral_const_mul'' _ hB', lintegral_add_right_eq_self (fun z ↦ ‖A' z‖ₑ ^ 2),
     lintegral_sub_right_eq_self (fun z ↦ ‖B' z‖ₑ ^ 2)]
 
 /-- **Conservation of energy.** For a `C²` solution `u` of the wave equation with values in a
@@ -451,8 +456,8 @@ theorem lintegral_enorm_deriv_sq_add_enorm_deriv_sq_eq [CompleteSpace H] {u : �
     rw [hrep]
     simp_rw [(hasDerivAt_dAlembert_time hfd hg t _).deriv,
       (hasDerivAt_dAlembert_space hfd hg t _).deriv]
-    exact lintegral_enorm_sub_sq_add_enorm_add_sq ((hf'.add hg).const_smul _)
-      ((hf'.sub hg).const_smul _) t
+    exact lintegral_enorm_sub_sq_add_enorm_add_sq ((hf'.add hg).const_smul _).aestronglyMeasurable
+      ((hf'.sub hg).const_smul _).aestronglyMeasurable t
   rw [key, key]
 
 end Energy
