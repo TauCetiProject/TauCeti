@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Order.RegionBetween
-import Mathlib.Topology.Compactness.LocallyFinite
 import TauCeti.Topology.Order.IntermediateValue
 
 /-!
@@ -190,7 +189,7 @@ theorem exists_isConsecutiveOn_mem_regionBetween (hs : IsPreconnected s)
 /-- The strata of a family over a preconnected base cover the cylinder over the base, provided
 that at every point of the base the values of the family are unbounded above and below, with only
 finitely many distinct values in each compact interval. The finiteness condition follows from
-`LocallyFinite.finite_setOf_apply_mem_Icc` when the graphs form a locally finite family. -/
+`LocallyFinite.finite_range_apply_inter` when the graphs form a locally finite family. -/
 theorem sUnion_bandStrata (hs : IsPreconnected s) (hf : ∀ i, ContinuousOn (f i) s)
     (hsep : ∀ i j, EqOn (f i) (f j) s ∨ ∀ x ∈ s, f i x ≠ f j x)
     (hfin : ∀ x ∈ s, ∀ a b, (range (fun i ↦ f i x) ∩ Icc a b).Finite)
@@ -209,14 +208,6 @@ theorem sUnion_bandStrata (hs : IsPreconnected s) (hf : ∀ i, ContinuousOn (f i
       exact ⟨_, .inr ⟨i, j, h, rfl⟩, hp⟩
 
 end Cover
-
-/-- If the graphs of a family over `s` form a locally finite family, then over each point of `s`
-only finitely many members of the family take values in a given compact interval. -/
-theorem _root_.LocallyFinite.finite_setOf_apply_mem_Icc [TopologicalSpace X]
-    (hlf : LocallyFinite fun i ↦ s.graphOn (f i)) {x : X} (hx : x ∈ s) (a b : ℝ) :
-    {i | f i x ∈ Icc a b}.Finite :=
-  (hlf.finite_nonempty_inter_compact (isCompact_singleton.prod isCompact_Icc)).subset
-    fun i hi ↦ ⟨(x, f i x), ⟨x, hx, rfl⟩, rfl, hi⟩
 
 section LocallyFinite
 
@@ -301,62 +292,66 @@ section Face
 
 Let `s₀ ⊆ closure s` be a face of the base, carrying its own family of sections `g`, such that
 every graph of `g` over `s₀` lies in the closure of the union of the graphs of `f` over `s`.
-When the members of `f` extend continuously to `s₀`, two consecutive members of `f` over `s`
-which restrict on `s₀` to members of `g` restrict to equal or consecutive members of `g`, so
-the closure of a band over `s` meets the cylinder over `s₀` in strata of `g`. -/
+Two consecutive members of `f` over `s` which extend continuously to `s₀` and restrict on `s₀` to
+members of `g` restrict to equal or consecutive members of `g`, so the closure of the band between
+them meets the cylinder over `s₀` in strata of `g`. -/
 
 variable [TopologicalSpace X] {κ : Type*} {g : κ → X → ℝ} {s₀ : Set X} {k₁ k₂ : κ}
 
 /-- **Consecutive sections restrict to equal or consecutive sections on a face.** Let
-`s₀ ⊆ closure s`, let the members of `f` be continuous on `s ∪ s₀` with a locally finite family of
-graphs over `s`, and let every graph of the family `g` over `s₀` lie in the closure of the union
-of the graphs of `f` over `s`. If `f i` and `f j` are consecutive over `s` and agree on `s₀` with
-`g k₁` and `g k₂`, then `g k₁` and `g k₂` agree on `s₀` or are consecutive over `s₀`. -/
+`s₀ ⊆ closure s` and let every graph of the family `g` over `s₀` lie in the closure of the union
+of the graphs of `f` over `s`. If `f i` and `f j` are consecutive over `s`, continuous on
+`s ∪ s₀`, and agree on `s₀` with `g k₁` and `g k₂`, then `g k₁` and `g k₂` agree on `s₀` or are
+consecutive over `s₀`. -/
 theorem IsConsecutiveOn.eqOn_or_isConsecutiveOn (h : IsConsecutiveOn f s i j)
-    (hs₀ : s₀ ⊆ closure s) (hf : ∀ i, ContinuousOn (f i) (s ∪ s₀))
+    (hs₀ : s₀ ⊆ closure s) (hfi : ContinuousOn (f i) (s ∪ s₀))
+    (hfj : ContinuousOn (f j) (s ∪ s₀))
     (hsep₀ : ∀ k k', EqOn (g k) (g k') s₀ ∨ ∀ x ∈ s₀, g k x ≠ g k' x)
-    (hlf : LocallyFinite fun i ↦ s.graphOn (f i))
     (hg : ∀ k, s₀.graphOn (g k) ⊆ closure (⋃ i, s.graphOn (f i)))
     (hi : EqOn (f i) (g k₁) s₀) (hj : EqOn (f j) (g k₂) s₀) :
     EqOn (g k₁) (g k₂) s₀ ∨ IsConsecutiveOn g s₀ k₁ k₂ := by
-  have hcont : ∀ i, ∀ y ∈ s₀, ContinuousWithinAt (f i) s y :=
-    fun i y hy ↦ (hf i y (.inr hy)).mono subset_union_left
+  have hci : ∀ y ∈ s₀, ContinuousWithinAt (f i) s y :=
+    fun y hy ↦ (hfi y (.inr hy)).mono subset_union_left
+  have hcj : ∀ y ∈ s₀, ContinuousWithinAt (f j) s y :=
+    fun y hy ↦ (hfj y (.inr hy)).mono subset_union_left
   refine (hsep₀ k₁ k₂).imp id fun hne ↦ ⟨fun y hy ↦ ?_, fun k y hy hk ↦ ?_⟩
-  · exact (hi hy ▸ hj hy ▸ ContinuousWithinAt.closure_le (hs₀ hy) (hcont i y hy) (hcont j y hy)
+  · exact (hi hy ▸ hj hy ▸ ContinuousWithinAt.closure_le (hs₀ hy) (hci y hy) (hcj y hy)
       fun x hx ↦ (h.lt x hx).le).lt_of_ne (hne y hy)
-  -- a section of `g` strictly between the two is the restriction of some member `f i'`
-  obtain ⟨i', hi'⟩ := hlf.exists_apply_eq_of_mem_closure_iUnion_graphOn hf subset_union_left
-    (.inr hy) (hg k ⟨y, hy, rfl⟩)
-  rw [← hi', ← hi hy, ← hj hy] at hk
-  -- which then lies strictly between `f i` and `f j` at points of `s` near `y`
-  have := mem_closure_iff_nhdsWithin_neBot.1 (hs₀ hy)
-  obtain ⟨x, hx, h₁, h₂⟩ := (eventually_mem_nhdsWithin.and
-    ((Tendsto.eventually_lt (hcont i y hy) (hcont i' y hy) hk.1).and
-      (Tendsto.eventually_lt (hcont i' y hy) (hcont j y hy) hk.2))).exists
-  exact h.notMem_Ioo i' x hx ⟨h₁, h₂⟩
+  rw [← hi hy, ← hj hy] at hk
+  -- near `y`, the members `f i` and `f j` stay below and above a box around `(y, g k y)`
+  obtain ⟨a, hia, hak⟩ := exists_between hk.1
+  obtain ⟨b, hkb, hbj⟩ := exists_between hk.2
+  obtain ⟨U, hU, hyU, hUs⟩ := mem_nhdsWithin.1
+    (((hci y hy).eventually (gt_mem_nhds hia)).and ((hcj y hy).eventually (lt_mem_nhds hbj)))
+  -- so a point of a graph of `f` in that box lies strictly between `f i` and `f j`
+  obtain ⟨p, ⟨hpU, hpa, hpb⟩, hp⟩ := mem_closure_iff.1 (hg k ⟨y, hy, rfl⟩) _
+    (hU.prod isOpen_Ioo) ⟨hyU, hak, hkb⟩
+  obtain ⟨i', hp⟩ := mem_iUnion.1 hp
+  obtain ⟨hps, hpi'⟩ := mem_graphOn.1 hp
+  obtain ⟨h₁, h₂⟩ := hUs ⟨hpU, hps⟩
+  exact h.notMem_Ioo i' p.1 hps ⟨h₁.trans (hpi' ▸ hpa), (hpi' ▸ hpb).trans h₂⟩
 
 /-- **The closure of a band meets the cylinder over a face in strata.** Under the hypotheses of
-`TauCeti.IsConsecutiveOn.eqOn_or_isConsecutiveOn`, with the members of `f` continuous on all of
-`closure s`, the closure of the band between consecutive members `f i` and `f j` over `s` meets
-`s₀ ×ˢ univ` in a union of strata of `g` over `s₀`. -/
+`TauCeti.IsConsecutiveOn.eqOn_or_isConsecutiveOn`, with `f i` and `f j` continuous on all of
+`closure s`, the closure of the band between the consecutive members `f i` and `f j` over `s`
+meets `s₀ ×ˢ univ` in a union of strata of `g` over `s₀`. -/
 theorem IsConsecutiveOn.exists_closure_regionBetween_inter_eq_sUnion
     (h : IsConsecutiveOn f s i j) (hs₀ : s₀ ⊆ closure s)
-    (hf : ∀ i, ContinuousOn (f i) (closure s))
+    (hfi : ContinuousOn (f i) (closure s)) (hfj : ContinuousOn (f j) (closure s))
     (hsep₀ : ∀ k k', EqOn (g k) (g k') s₀ ∨ ∀ x ∈ s₀, g k x ≠ g k' x)
-    (hlf : LocallyFinite fun i ↦ s.graphOn (f i))
     (hg : ∀ k, s₀.graphOn (g k) ⊆ closure (⋃ i, s.graphOn (f i)))
     (hi : EqOn (f i) (g k₁) s₀) (hj : EqOn (f j) (g k₂) s₀) :
     ∃ T ⊆ bandStrata g s₀,
       closure (regionBetween (f i) (f j) s) ∩ s₀ ×ˢ (univ : Set ℝ) = ⋃₀ T := by
   have hcl : closure (regionBetween (f i) (f j) s) ∩ s₀ ×ˢ (univ : Set ℝ) =
       closedRegionBetween (g k₁) (g k₂) s₀ := by
-    rw [closure_regionBetween (hf i) (hf j) h.lt, ← closedRegionBetween_congr hi hj]
+    rw [closure_regionBetween hfi hfj h.lt, ← closedRegionBetween_congr hi hj]
     ext p
     simp only [mem_inter_iff, mem_closedRegionBetween, mem_prod, mem_univ, and_true]
     exact ⟨fun ⟨⟨_, hp⟩, hp₀⟩ ↦ ⟨hp₀, hp⟩, fun ⟨hp₀, hp⟩ ↦ ⟨⟨hs₀ hp₀, hp⟩, hp₀⟩⟩
   rw [hcl]
-  rcases h.eqOn_or_isConsecutiveOn hs₀ (fun i ↦ (hf i).mono (union_subset subset_closure hs₀))
-    hsep₀ hlf hg hi hj with he | hc
+  have hss : s ∪ s₀ ⊆ closure s := union_subset subset_closure hs₀
+  rcases h.eqOn_or_isConsecutiveOn hs₀ (hfi.mono hss) (hfj.mono hss) hsep₀ hg hi hj with he | hc
   · refine ⟨{s₀.graphOn (g k₁)}, singleton_subset_iff.2 (.inl ⟨k₁, rfl⟩), ?_⟩
     rw [sUnion_singleton, ← closedRegionBetween_congr (eqOn_refl _ _) he,
       closedRegionBetween_self]
