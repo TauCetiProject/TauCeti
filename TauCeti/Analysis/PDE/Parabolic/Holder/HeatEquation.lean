@@ -117,7 +117,7 @@ variable {ι : Type*} [Fintype ι]
 variable [DecidableEq ι] in
 /-- The coordinate identity identifies the first data component with the existing Euclidean
 parabolic operator having identity diffusion and zero lower-order coefficients. -/
-private theorem heatInitialDataL_fst_eq (hα : α ≤ 1)
+theorem heatInitialDataL_fst_eq_euclideanParabolicOperatorL (hα : α ≤ 1)
     (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) :
     (heatInitialDataL hα hT u).1 = euclideanParabolicOperatorL hα
       (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0 u := by
@@ -142,7 +142,7 @@ theorem heatInitialDataL_injective (hα : α ≤ 1) :
         simp
       rw [hI, Matrix.toQuadraticForm'_apply, Matrix.one_mulVec]
       exact Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _)
-  · simpa only [heatInitialDataL_fst_eq] using congrArg Prod.fst huv
+  · simpa only [heatInitialDataL_fst_eq_euclideanParabolicOperatorL] using congrArg Prod.fst huv
   · intro x
     have h := congrArg (fun d ↦ d.2 x) huv
     simpa using h
