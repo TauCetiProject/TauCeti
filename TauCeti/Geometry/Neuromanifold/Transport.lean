@@ -35,42 +35,44 @@ variable {W X X' Y Z : Type*}
 functions under postcomposition. -/
 theorem realizedFunctions_postcomp (f : W → X → Y) (h : Y → Z) :
     realizedFunctions (fun w => h ∘ f w) = (fun g => h ∘ g) '' realizedFunctions f := by
-  simpa only [realizedFunctions_def] using Set.range_comp' (fun g => h ∘ g) f
+  simpa only [realizedFunctions_def] using
+    realizedFunctions_eq_image_range (E := fun g => h ∘ g) (c := f) fun _ => rfl
 
 /-- Precomposition on inputs sends the neuromanifold onto the image of its realized
 functions under precomposition. -/
 theorem realizedFunctions_precomp (f : W → X → Y) (a : X' → X) :
     realizedFunctions (fun w => f w ∘ a) = (fun g => g ∘ a) '' realizedFunctions f := by
-  simpa only [realizedFunctions_def] using Set.range_comp' (fun g => g ∘ a) f
+  simpa only [realizedFunctions_def] using
+    realizedFunctions_eq_image_range (E := fun g => g ∘ a) (c := f) fun _ => rfl
 
 /-- An injective change of outputs preserves and reflects parameter equivalence. -/
 @[simp] theorem parameterSetoid_postcomp (f : W → X → Y) {h : Y → Z}
     (hh : Function.Injective h) :
     parameterSetoid (fun w => h ∘ f w) = parameterSetoid f := by
-  ext w v
-  simp only [parameterSetoid_iff, hh.comp_left.eq_iff]
+  simpa only [Setoid.ext_iff, Setoid.ker_def, parameterSetoid_iff] using
+    parameterSetoid_eq_ker (E := fun g => h ∘ g) (c := f) hh.comp_left fun _ => rfl
 
 /-- A surjective change of inputs preserves and reflects parameter equivalence. -/
 @[simp] theorem parameterSetoid_precomp (f : W → X → Y) {a : X' → X}
     (ha : Function.Surjective a) :
     parameterSetoid (fun w => f w ∘ a) = parameterSetoid f := by
-  ext w v
-  simp only [parameterSetoid_iff, ha.injective_comp_right.eq_iff]
+  simpa only [Setoid.ext_iff, Setoid.ker_def, parameterSetoid_iff] using
+    parameterSetoid_eq_ker (E := fun g => g ∘ a) (c := f) ha.injective_comp_right fun _ => rfl
 
 /-- An injective change of outputs does not change the fibre over the corresponding
 postcomposed function. -/
 @[simp] theorem fiber_postcomp (f : W → X → Y) {h : Y → Z}
     (hh : Function.Injective h) (g : X → Y) :
     fiber (fun w => h ∘ f w) (h ∘ g) = fiber f g := by
-  ext w
-  simp only [mem_fiber, hh.comp_left.eq_iff]
+  simpa only [fiber_def] using
+    fiber_apply_eq_preimage (E := fun g => h ∘ g) (c := f) hh.comp_left (fun _ => rfl) g
 
 /-- A surjective change of inputs does not change the fibre over the corresponding
 precomposed function. -/
 @[simp] theorem fiber_precomp (f : W → X → Y) {a : X' → X}
     (ha : Function.Surjective a) (g : X → Y) :
     fiber (fun w => f w ∘ a) (g ∘ a) = fiber f g := by
-  ext w
-  simp only [mem_fiber, ha.injective_comp_right.eq_iff]
+  simpa only [fiber_def] using
+    fiber_apply_eq_preimage (E := fun g => g ∘ a) (c := f) ha.injective_comp_right (fun _ => rfl) g
 
 end TauCeti.Neuromanifold
