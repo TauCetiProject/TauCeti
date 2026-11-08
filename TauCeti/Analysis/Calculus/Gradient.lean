@@ -98,6 +98,7 @@ theorem gradient_const_smul (c : 𝕜) :
     fderiv_const_smul_field, Pi.smul_apply]
 
 /-- The gradient of the negative of a function is the negative of its gradient. -/
+@[simp]
 theorem gradient_neg : ∇ (-f) x = -∇ f x := by
   simpa using gradient_const_smul (f := f) (x := x) (-1 : 𝕜)
 
