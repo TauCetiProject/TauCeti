@@ -140,10 +140,12 @@ variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
   [(u.sheafPushforwardContinuous AddCommGrpCat.{w} J K).IsRightAdjoint] [u.Final]
   [PreservesFiniteLimits (u.sheafPullback AddCommGrpCat.{w} J K)]
 
-local instance : (u.sheafPullback AddCommGrpCat.{w} J K).Additive :=
+/-- The exact inverse image `u^*` of a morphism of sites is additive. -/
+instance : (u.sheafPullback AddCommGrpCat.{w} J K).Additive :=
   Functor.additive_of_preserves_binary_products _
 
-local instance : PreservesFiniteColimits (u.sheafPullback AddCommGrpCat.{w} J K) :=
+/-- The inverse image `u^*`, a left adjoint, preserves finite colimits. -/
+instance : PreservesFiniteColimits (u.sheafPullback AddCommGrpCat.{w} J K) :=
   letI := (u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).leftAdjoint_preservesColimits.{0, 0}
   inferInstance
 
