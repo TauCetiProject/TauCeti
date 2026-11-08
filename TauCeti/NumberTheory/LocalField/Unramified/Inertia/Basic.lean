@@ -445,14 +445,11 @@ theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLif
   set F := unramifiedExtension K (AlgebraicClosure K) f
   by_cases hf : f = 0
   · have hF : F = ⊥ := by simp only [F, hf]; exact unramifiedExtension_zero K (AlgebraicClosure K)
-    have h0 : ∀ x : F, ∃ k : K, algebraMap K F k = x := fun x ↦ by
-      obtain ⟨k, hk⟩ := IntermediateField.mem_bot.1 (show (x : AlgebraicClosure K) ∈ ⊥ by
-        rw [← hF]; exact x.2)
-      exact ⟨k, Subtype.ext hk⟩
-    have : Subsingleton (F ≃ₐ[K] F) := ⟨fun a b ↦ AlgEquiv.ext fun x ↦ by
-      obtain ⟨k, rfl⟩ := h0 x
-      simp [AlgEquiv.commutes]⟩
-    exact eq_top_iff.2 fun x _ ↦ by rw [Subsingleton.elim x 1]; exact one_mem _
+    have : Subsingleton (F ≃ₐ[K] F) := by
+      rw [hF]
+      exact (AlgEquiv.autCongr
+        (IntermediateField.botEquiv K (AlgebraicClosure K))).injective.subsingleton
+    exact Subsingleton.elim _ _
   let := algebraicExtensionValuativeRel K F
   let := algebraicExtensionNormedFieldTopology K F
   have := finiteExtension_isNonarchimedeanLocalField K F
