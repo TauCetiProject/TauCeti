@@ -47,6 +47,8 @@ the positive orientation and `-1` for the negative one.
   `Γ = i ^ ℓ (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ))`, while
   `CliffordAlgebra.complexVolume_eq_prod_pairs_mul`: in dimension `2ℓ + 1` it groups as
   `ω_ℂ = i ^ (ℓ + 1) (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ)) c(e₂ℓ₊₁)`.
+* `CliffordAlgebra.ofBaseChangeAux_volumeElement`: conversely, the real volume element is
+  `(-i) ^ ⌊(n + 1) / 2⌋ Γ`.
 * `CliffordAlgebra.complexVolume_neg_orientation`: reversing the orientation negates `Γ`, and
   `CliffordAlgebra.complexVolume_positiveOrientation`: in rank zero, `Γ = 1`.
 * `CliffordAlgebra.map_complexVolume`: the complexification of an isometry of quadratic forms that
@@ -101,6 +103,13 @@ theorem complexVolume_def :
   (rfl)
 
 variable {Q}
+
+/-- The real volume element is `(-i) ^ ⌊(n + 1) / 2⌋ Γ` in the complexified Clifford algebra; in
+dimension two it is `-i Γ`. -/
+theorem ofBaseChangeAux_volumeElement :
+    ofBaseChangeAux ℂ Q (volumeElement Q o) = (-Complex.I) ^ ((n + 1) / 2) • complexVolume Q o := by
+  rw [complexVolume_def, smul_smul, ← mul_pow, neg_mul, Complex.I_mul_I, neg_neg, one_pow,
+    one_smul]
 
 /-- Reversing the orientation negates the normalized complex volume element. -/
 @[simp]
