@@ -113,6 +113,21 @@ theorem cliffordReconstructionRestrictModuleEquiv_apply {ι : Type*}
   erw [LinearEquiv.trans_apply, Representation.finsuppAsModuleEquiv_apply,
     TauCeti.Representation.asModuleLinearEquivOfEquiv_apply, LinearEquiv.apply_symm_apply]
 
+/-- A single module coordinate reconstructs the corresponding basis tensor. -/
+@[simp]
+theorem cliffordReconstructionRestrictModuleEquiv_symm_single {ι : Type*}
+    (b : Module.Basis ι (End A)ᵐᵒᵖ M) (i : ι) (x : Representation.asModule A.ρ) :
+    (cliffordReconstructionRestrictModuleEquiv A s hs U b).symm (Finsupp.single i x) =
+      (Representation.asModuleEquiv recRep).symm
+        (BalancedTensorProduct.tmul k (End A) (b i) (Representation.asModuleEquiv A.ρ x)) := by
+  apply (cliffordReconstructionRestrictModuleEquiv A s hs U b).injective
+  ext j
+  rw [LinearEquiv.apply_symm_apply, cliffordReconstructionRestrictModuleEquiv_apply,
+    LinearEquiv.apply_symm_apply]
+  erw [← cliffordReconstructionRestrictEquiv_symm_single A s hs U b i,
+    Representation.Equiv.apply_symm_apply]
+  rfl
+
 /-- Reconstruction of a simple normal-subgroup representation has semisimple
 normal restriction. The multiplicity module may be infinite-dimensional. -/
 theorem isSemisimpleModule_cliffordReconstruction_restrict [Simple A] :
