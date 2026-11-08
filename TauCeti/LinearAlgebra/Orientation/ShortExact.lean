@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Exact.Basic
 import Mathlib.Algebra.Module.Projective
 import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Orientations of short exact sequences
@@ -101,13 +102,12 @@ private theorem map_splitSurjectiveEquiv_prod_basis (hf : Function.Injective f)
       ((Basis.ofExactLift hf hfg b e t ht).reindex finSumFinEquiv).orientation := by
   obtain ⟨hφf, hφg⟩ := (hfg.splitSurjectiveEquiv hf l).2
   set φ := (hfg.splitSurjectiveEquiv hf l).1
+  rw [prod_basis_orientation, ← Basis.orientation_map]
   set B := ((b.prod e).reindex finSumFinEquiv).map φ.symm
   have hB₁ (i : Fin a) : B (Fin.castAdd c i) = f (b i) := by
     simpa [B, Basis.prod_apply] using (LinearMap.congr_fun hφf (b i)).symm
   have hB₂ (j : Fin c) : g (B (Fin.natAdd a j)) = e j := by
     simpa [B, Basis.prod_apply] using LinearMap.congr_fun hφg (φ.symm (0, e j))
-  rw [prod_basis_orientation, ← Basis.orientation_map]
-  change B.orientation = _
   rw [Basis.eq_reindex_ofExactLift hf hfg b e B hB₁ hB₂]
   exact orientation_reindex_ofExactLift hf hfg b e _ _
 
@@ -174,19 +174,17 @@ theorem shortExact_neg_right (o : Orientation K U (Fin a)) (p : Orientation K W 
 @[simp]
 theorem shortExact_units_smul_left (u : Kˣ) (o : Orientation K U (Fin a))
     (p : Orientation K W (Fin c)) :
-    shortExact hf hfg hg (u • o) p ha hc = u • shortExact hf hfg hg o p ha hc := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · simp only [Module.Ray.units_smul_of_neg u hu, shortExact_neg_left]
-  · simp only [Module.Ray.units_smul_of_pos u hu]
+    shortExact hf hfg hg (u • o) p ha hc = u • shortExact hf hfg hg o p ha hc :=
+  Module.Ray.units_smul_of_map_neg (F := (shortExact hf hfg hg · p ha hc))
+    (shortExact_neg_left hf hfg hg ha hc · p) u o
 
 /-- Scaling the orientation of the quotient by a unit scales the induced orientation. -/
 @[simp]
 theorem shortExact_units_smul_right (u : Kˣ) (o : Orientation K U (Fin a))
     (p : Orientation K W (Fin c)) :
-    shortExact hf hfg hg o (u • p) ha hc = u • shortExact hf hfg hg o p ha hc := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · simp only [Module.Ray.units_smul_of_neg u hu, shortExact_neg_right]
-  · simp only [Module.Ray.units_smul_of_pos u hu]
+    shortExact hf hfg hg o (u • p) ha hc = u • shortExact hf hfg hg o p ha hc :=
+  Module.Ray.units_smul_of_map_neg (F := (shortExact hf hfg hg o · ha hc))
+    (shortExact_neg_right hf hfg hg ha hc o ·) u p
 
 /-- The induced orientation determines the orientation of the subspace. -/
 @[simp]
@@ -300,18 +298,16 @@ theorem shortExactLeft_neg_right (ov : Orientation K V (Fin (a + c)))
 @[simp]
 theorem shortExactLeft_units_smul_left (u : Kˣ) (ov : Orientation K V (Fin (a + c)))
     (p : Orientation K W (Fin c)) :
-    shortExactLeft hf hfg hg ha hc (u • ov) p = u • shortExactLeft hf hfg hg ha hc ov p := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · simp only [Module.Ray.units_smul_of_neg u hu, shortExactLeft_neg_left]
-  · simp only [Module.Ray.units_smul_of_pos u hu]
+    shortExactLeft hf hfg hg ha hc (u • ov) p = u • shortExactLeft hf hfg hg ha hc ov p :=
+  Module.Ray.units_smul_of_map_neg (F := (shortExactLeft hf hfg hg ha hc · p))
+    (shortExactLeft_neg_left hf hfg hg ha hc · p) u ov
 
 /-- Scaling the orientation of the quotient by a unit scales the induced subspace orientation. -/
 @[simp]
 theorem shortExactLeft_units_smul_right (u : Kˣ) (ov : Orientation K V (Fin (a + c)))
     (p : Orientation K W (Fin c)) :
-    shortExactLeft hf hfg hg ha hc ov (u • p) = u • shortExactLeft hf hfg hg ha hc ov p := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · simp only [Module.Ray.units_smul_of_neg u hu, shortExactLeft_neg_right]
-  · simp only [Module.Ray.units_smul_of_pos u hu]
+    shortExactLeft hf hfg hg ha hc ov (u • p) = u • shortExactLeft hf hfg hg ha hc ov p :=
+  Module.Ray.units_smul_of_map_neg (F := (shortExactLeft hf hfg hg ha hc ov ·))
+    (shortExactLeft_neg_right hf hfg hg ha hc ov ·) u p
 
 end Orientation

@@ -140,26 +140,23 @@ theorem fiberProduct_neg_base :
 /-- Scaling the orientation of the first factor by a unit scales the fibre product orientation. -/
 @[simp]
 theorem fiberProduct_units_smul_left (u : Kˣ) :
-    fiberProduct h (u • ox) oy ot hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · simp only [Module.Ray.units_smul_of_neg u hu, fiberProduct_neg_left]
-  · simp only [Module.Ray.units_smul_of_pos u hu]
+    fiberProduct h (u • ox) oy ot hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq :=
+  Module.Ray.units_smul_of_map_neg (F := (fiberProduct h · oy ot hx hy ht hq))
+    (fiberProduct_neg_left h · oy ot hx hy ht hq) u ox
 
 /-- Scaling the orientation of the second factor by a unit scales the fibre product orientation. -/
 @[simp]
 theorem fiberProduct_units_smul_right (u : Kˣ) :
-    fiberProduct h ox (u • oy) ot hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · simp only [Module.Ray.units_smul_of_neg u hu, fiberProduct_neg_right]
-  · simp only [Module.Ray.units_smul_of_pos u hu]
+    fiberProduct h ox (u • oy) ot hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq :=
+  Module.Ray.units_smul_of_map_neg (F := (fiberProduct h ox · ot hx hy ht hq))
+    (fiberProduct_neg_right h ox · ot hx hy ht hq) u oy
 
 /-- Scaling the orientation of the base by a unit scales the fibre product orientation. -/
 @[simp]
 theorem fiberProduct_units_smul_base (u : Kˣ) :
-    fiberProduct h ox oy (u • ot) hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
-  · simp only [Module.Ray.units_smul_of_neg u hu, fiberProduct_neg_base]
-  · simp only [Module.Ray.units_smul_of_pos u hu]
+    fiberProduct h ox oy (u • ot) hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq :=
+  Module.Ray.units_smul_of_map_neg (F := (fiberProduct h ox oy · hx hy ht hq))
+    (fiberProduct_neg_base h ox oy · hx hy ht hq) u ot
 
 /-- Exchanging the factors of a fibre product: the exchange `X × Y ≃ Y × X` restricts to an
 isomorphism of the fibre product of `α` and `β` with that of `β` and `α`, and it carries the fibre
