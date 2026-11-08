@@ -346,8 +346,10 @@ theorem ReducedTensorWords.gradedPiece_induction {G : InternalGrading R M} {D : 
     exact mem n hn 𝒟 x hx hD
   | zero =>
     have h := mem 1 one_pos (fun _ ↦ D) (fun _ ↦ 0) (fun _ ↦ zero_mem _) (by simp)
-    rwa [show PiTensorProduct.tprod R (fun _ : Fin 1 ↦ (0 : M)) = 0 from
-      MultilinearMap.map_coord_zero _ (0 : Fin 1) rfl, map_zero] at h
+    -- the singleton word on the letter `0` is the zero tensor, since `tprod` is multilinear
+    have htprod : PiTensorProduct.tprod R (fun _ : Fin 1 ↦ (0 : M)) = 0 :=
+      MultilinearMap.map_coord_zero _ (0 : Fin 1) rfl
+    rwa [htprod, map_zero] at h
   | add u v hu hv ihu ihv => exact add u v hu hv ihu ihv
   | smul a u hu ih => exact smul a u hu ih
 
