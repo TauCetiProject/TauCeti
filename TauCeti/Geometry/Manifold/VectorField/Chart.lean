@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 
 /-!
@@ -29,9 +30,9 @@ Milnor's proof of the homogeneity lemma.
   and extended by zero; `TauCeti.contMDiff_chartField` shows it is smooth when the field is
   supported in a compact subset of the chart target, and `TauCeti.hasMFDerivAt_chartField` that
   straight segments along which the field is constant are its integral curves.
-* `TauCeti.exists_contDiffBump_extChartAt_subset`: a bump function in the chart at a point of an
-  open set `U`, supported in the chart target and in the image of `U`.
 * `TauCeti.bumpChartField`: a constant field cut off by a bump function, read in the chart;
+  `TauCeti.bumpChartField_extChartAt_symm` and
+  `TauCeti.bumpChartField_extChartAt_symm_of_mem_ball` give its values in the chart;
   `TauCeti.contMDiff_bumpChartField`, `TauCeti.bumpChartField_eq_zero` and
   `TauCeti.isMIntegralCurveOn_bumpChartField` record its smoothness, compact support and straight
   flow lines near the centre; `TauCeti.maximalIntegralCurve_bumpChartField_extChartAt_symm`
@@ -170,40 +171,18 @@ section BumpChartField
 
 variable {x z : M} {ρ : ContDiffBump (extChartAt I x x)}
 
-/-- Around a point `x` of an open set `U` of a boundaryless manifold, some bump function in the
-chart at `x` has its closed outer ball inside the chart target, with image under the inverse chart
-inside `U`. -/
-theorem exists_contDiffBump_extChartAt_subset [BoundarylessManifold I M] {U : Set M}
-    (hU : IsOpen U) (hx : x ∈ U) :
-    ∃ ρ : ContDiffBump (extChartAt I x x),
-      closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target ∧
-        (extChartAt I x).symm '' closedBall (extChartAt I x x) ρ.rOut ⊆ U := by
-  have hU' : (extChartAt I x).symm ⁻¹' U ∈ 𝓝 (extChartAt I x x) :=
-    (continuousAt_extChartAt_symm x).preimage_mem_nhds
-      (by rw [extChartAt_to_inv]; exact hU.mem_nhds hx)
-  have ht : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) :=
-    mem_interior_iff_mem_nhds.1 ((I.isInteriorPoint_iff).1 BoundarylessManifold.isInteriorPoint)
-  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 (inter_mem ht hU')
-  have hball : closedBall (extChartAt I x x) (r / 2) ⊆
-      (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U :=
-    (closedBall_subset_ball (half_lt_self hr)).trans hrU
-  refine ⟨⟨r / 4, r / 2, by positivity, by linarith⟩, fun p hp ↦ (hball hp).1, ?_⟩
-  rintro _ ⟨p, hp, rfl⟩
-  exact (hball hp).2
-
 variable [FiniteDimensional ℝ E]
-
-/-- The image under the inverse chart of a closed ball in the chart target is compact. -/
-theorem isCompact_extChartAt_symm_image_closedBall {r : ℝ}
-    (hr : closedBall (extChartAt I x x) r ⊆ (extChartAt I x).target) :
-    IsCompact ((extChartAt I x).symm '' closedBall (extChartAt I x x) r) :=
-  (isCompact_closedBall _ _).image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hr)
 
 variable (x ρ) in
 /-- The constant vector field `v` on the model space, cut off by the bump function `ρ` and read in
 the chart at `x`. -/
 def bumpChartField (v : E) (z : M) : TangentSpace I z :=
   chartField x (fun p : E ↦ ((ρ p : ℝ) • v : E)) z
+
+/-- The cut-off field `bumpChartField x ρ v` is the chart field of `p ↦ ρ p • v`. -/
+theorem bumpChartField_def (v : E) (z : M) :
+    bumpChartField x ρ v z = chartField x (fun p : E ↦ ((ρ p : ℝ) • v : E)) z :=
+  (rfl)
 
 variable (v : E)
 
@@ -221,6 +200,24 @@ theorem bumpChartField_eq_zero
   chartField_eq_zero (fun _ hp ↦ smul_eq_zero_of_notMem_closedBall v hp) hz
 
 variable [IsManifold I 1 M]
+
+/-- On the chart target, the cut-off field `bumpChartField x ρ v` is the image of `ρ p • v` under
+the derivative of the inverse chart. -/
+theorem bumpChartField_extChartAt_symm {p : E} (hp : p ∈ (extChartAt I x).target) :
+    bumpChartField x ρ v ((extChartAt I x).symm p) =
+      mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) p ((ρ p : ℝ) • v) :=
+  chartField_extChartAt_symm hp rfl
+
+/-- On the inner ball of `ρ`, where `ρ = 1`, the cut-off field `bumpChartField x ρ v` is the image
+of `v` under the derivative of the inverse chart. -/
+theorem bumpChartField_extChartAt_symm_of_mem_ball
+    (hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) {p : E}
+    (hp : p ∈ ball (extChartAt I x x) ρ.rIn) :
+    bumpChartField x ρ v ((extChartAt I x).symm p) =
+      mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) p v := by
+  rw [bumpChartField_extChartAt_symm v
+    (hρ (closedBall_subset_closedBall ρ.rIn_lt_rOut.le (ball_subset_closedBall hp))),
+    ρ.one_of_mem_closedBall (ball_subset_closedBall hp), one_smul]
 
 /-- The cut-off field `bumpChartField x ρ v` is `C^m` when `M` is `C^(m + 1)` and the closed outer
 ball of `ρ` lies in the chart target. -/
