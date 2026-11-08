@@ -74,21 +74,18 @@ private def handleDiskHomeomorph (hk : k ≤ n) :
     closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
         closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1 ≃ₜ
       TopCat.disk.{u} k × TopCat.disk.{u} (n - k) :=
-  Homeomorph.prodCongr
-    (((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Fin.castLEquiv hk).symm).toHomeomorph.subtype
-      fun x ↦ by simp).trans Homeomorph.ulift.symm)
-    (((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
-      (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype_compl, Fintype.card_fin,
-        ← Fintype.card_congr (Fin.castLEquiv hk), Fintype.card_fin]))).toHomeomorph.subtype
-        fun x ↦ by simp).trans Homeomorph.ulift.symm)
+  Homeomorph.prodCongr (closedBallHomeomorphDisk (Fin.castLEquiv hk).symm)
+    (closedBallHomeomorphDisk (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype_compl,
+      Fintype.card_fin, ← Fintype.card_congr (Fin.castLEquiv hk), Fintype.card_fin])))
 
 private theorem norm_fst_handleDiskHomeomorph (hk : k ≤ n)
     (z : closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
       closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
     ‖(((handleDiskHomeomorph.{u} hk z).1 :
       ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down : EuclideanSpace ℝ (Fin k))‖ =
-      ‖(z.1 : EuclideanSpace ℝ {j : Fin n // j.val < k})‖ :=
-  (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ _).norm_map _
+      ‖(z.1 : EuclideanSpace ℝ {j : Fin n // j.val < k})‖ := by
+  rw [handleDiskHomeomorph, Homeomorph.coe_prodCongr, Prod.map_fst,
+    norm_closedBallHomeomorphDisk_apply_down]
 
 private theorem norm_snd_handleDiskHomeomorph (hk : k ≤ n)
     (z : closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
@@ -96,8 +93,9 @@ private theorem norm_snd_handleDiskHomeomorph (hk : k ≤ n)
     ‖(((handleDiskHomeomorph.{u} hk z).2 :
       ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin (n - k))) 1)).down :
         EuclideanSpace ℝ (Fin (n - k)))‖ =
-      ‖(z.2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k})‖ :=
-  (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ _).norm_map _
+      ‖(z.2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k})‖ := by
+  rw [handleDiskHomeomorph, Homeomorph.coe_prodCongr, Prod.map_snd,
+    norm_closedBallHomeomorphDisk_apply_down]
 
 variable {M : Type u} [TopologicalSpace M] [T2Space M] {ι : Type u} {f : M → ℝ} {c ε : ℝ}
 
@@ -153,10 +151,13 @@ private theorem exists_isPushout_of_handles [Finite ι] (hfc : Continuous f) (k 
     TopCat.ofHom ⟨fun w ↦ ⟨Φ.symm ((E i).symm w), hH' i _⟩,
       ((Φ.symm.continuous.comp continuous_subtype_val).comp (E i).symm.continuous).subtype_mk _⟩
   have hsub : IsClosed {x | f x ≤ c + ε} := isClosed_le hfc continuous_const
-  refine ⟨g, α, χ, TopCat.isPushout_sigmaDesc_of_isClosedEmbedding (fun i ↦ rfl) ?_
+  refine ⟨g, α, χ, TopCat.isPushout_sigmaDesc_of_isClosedEmbedding (fun i ↦ ?_) ?_
     (fun i ↦ (χ i).hom.continuous.isClosedEmbedding fun w w' h ↦
       (E i).symm.injective (Subtype.ext (Φ.symm.injective (congrArg Subtype.val h)))) ?_ ?_ ?_,
     fun x ↦ rfl, fun i x hx ↦ ?_, fun i w ↦ ?_⟩
+  · -- Both sides send `s` to `Φ⁻¹ ((E i)⁻¹ (s.1, s.2))`.
+    ext s
+    simp [g, α, χ, Prod.map]
   · -- The lower sublevel is closed, and `Φ⁻¹` is a homeomorphism.
     rw [← hsub.isClosedEmbedding_subtypeVal.of_comp_iff]
     exact Φ.symm.isClosedEmbedding.comp
