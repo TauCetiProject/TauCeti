@@ -91,16 +91,13 @@ theorem additiveJucysMurphyMatrix_eq_leftMulMatrix [DecidableEq W] (q : Rˣ)
   | zero => simp
   | succ i ih =>
     have hrec : additiveJucysMurphy q i.succ =
-        T (n := n + 1) q i * additiveJucysMurphy q i.castSucc * T (n := n + 1) q i +
-          (↑q⁻¹ : R) • T (n := n + 1) q i :=
-      additiveJucysMurphy_succ (n := n + 1) i.val (by omega)
+        ((↑q⁻¹ : R) ^ 2) •
+          (((q : R) • T (n := n + 1) q i) * additiveJucysMurphy q i.castSucc *
+            ((q : R) • T (n := n + 1) q i) + (q : R) • T (n := n + 1) q i) :=
+      additiveJucysMurphy_succ_eq_smul (n := n + 1) i.val i.succ.isLt
     rw [additiveJucysMurphyMatrix_succ, ih, hrec]
-    simp only [heckeLeftMatrix_eq_leftMulMatrix (n := n + 1), map_add, map_mul, map_smul,
-      smul_add, smul_mul_assoc, mul_smul_comm, smul_smul]
-    simp only [← pow_two, inv_pow, inv_mul_cancel₀ (pow_ne_zero 2 q.ne_zero), one_smul,
-      Units.val_inv_eq_inv_val]
-    congr 2
-    field_simp
+    simp only [heckeLeftMatrix_eq_leftMulMatrix (n := n + 1), map_smul, map_add,
+      map_mul, Units.val_inv_eq_inv_val]
 
 /-- The fixed-coordinate action agrees with left multiplication on every vector. -/
 theorem additiveJucysMurphyMatrix_mulVec_repr (q : Rˣ) (i : Fin (n + 1))
@@ -110,14 +107,19 @@ theorem additiveJucysMurphyMatrix_mulVec_repr (q : Rˣ) (i : Fin (n + 1))
   classical
   rw [additiveJucysMurphyMatrix_eq_leftMulMatrix, Algebra.leftMulMatrix_mulVec_repr]
 
-/-- The additive Jucys–Murphy matrices commute at every unit parameter. -/
-theorem commute_additiveJucysMurphyMatrix (q : Rˣ) (i j : Fin (n + 1)) :
-    Commute (additiveJucysMurphyMatrix cs (q : R) i)
-      (additiveJucysMurphyMatrix cs (q : R) j) := by
+/-- The additive Jucys–Murphy matrices commute at every parameter, including zero. -/
+theorem commute_additiveJucysMurphyMatrix (s : R) (i j : Fin (n + 1)) :
+    Commute (additiveJucysMurphyMatrix cs s i) (additiveJucysMurphyMatrix cs s j) := by
   classical
-  simpa only [additiveJucysMurphyMatrix_eq_leftMulMatrix] using
-    (commute_additiveJucysMurphy (q := q) i j).map
-      (Algebra.leftMulMatrix (basisTw (n := n + 1) q cs))
+  by_cases hs : s = 0
+  · have hz (k : Fin (n + 1)) : additiveJucysMurphyMatrix cs s k = 0 := by
+      induction k using Fin.induction with
+      | zero => simp
+      | succ k _ => simp [additiveJucysMurphyMatrix_succ, hs]
+    simp [hz]
+  · simpa only [← additiveJucysMurphyMatrix_eq_leftMulMatrix, Units.val_mk0] using
+      (commute_additiveJucysMurphy (q := Units.mk0 s hs) i j).map
+        (Algebra.leftMulMatrix (basisTw (n := n + 1) (Units.mk0 s hs) cs))
 
 /-- Every additive Jucys–Murphy matrix commutes with right simple multiplication,
 as required for simultaneous left/right regular spectral decompositions. -/
@@ -131,15 +133,15 @@ theorem commute_additiveJucysMurphyMatrix_heckeRightMatrix (s : R)
     have h := commute_heckeLeftMatrix_heckeRightMatrix cs s i j
     exact (((h.mul_left ih).mul_left h).add_left h).smul_left _
 
-section Real
-
-/-- On nonzero real parameters the additive regular matrices vary continuously. In
-particular both `s = 1` and `s = -1` are regular points of this family. -/
-theorem continuousOn_additiveJucysMurphyMatrix (i : Fin (n + 1)) :
-    ContinuousOn (fun s : ℝ => additiveJucysMurphyMatrix cs s i) {s | s ≠ 0} := by
+/-- On nonzero parameters in a topological field the additive regular matrices vary
+continuously. In particular both `s = 1` and `s = -1` are regular points of this family. -/
+@[fun_prop]
+theorem continuousOn_additiveJucysMurphyMatrix [TopologicalSpace R]
+    [IsTopologicalDivisionRing R] (i : Fin (n + 1)) :
+    ContinuousOn (fun s : R => additiveJucysMurphyMatrix cs s i) {s | s ≠ 0} := by
   induction i using Fin.induction with
-  | zero => simpa using (continuousOn_const : ContinuousOn (fun _ : ℝ =>
-      (0 : Matrix W W ℝ)) {s | s ≠ 0})
+  | zero => simpa using (continuousOn_const : ContinuousOn (fun _ : R =>
+      (0 : Matrix W W R)) {s | s ≠ 0})
   | succ i ih =>
     simp only [additiveJucysMurphyMatrix_succ]
     exact ((continuousOn_id.inv₀ fun _ h => h).pow 2).smul
@@ -149,13 +151,12 @@ theorem continuousOn_additiveJucysMurphyMatrix (i : Fin (n + 1)) :
 
 /-- The positive-real additive Jucys–Murphy matrices are continuous through `Q = 1`.
 The domain is the entire positive half-line, not a punctured neighborhood of `1`. -/
+@[fun_prop]
 theorem continuousOn_additiveJucysMurphyMatrix_sqrt (i : Fin (n + 1)) :
     ContinuousOn (fun Q : ℝ => additiveJucysMurphyMatrix cs (Real.sqrt Q) i)
       (Set.Ioi 0) := by
   exact (continuousOn_additiveJucysMurphyMatrix cs i).comp
     Real.continuous_sqrt.continuousOn fun Q hQ => (Real.sqrt_pos.2 hQ).ne'
-
-end Real
 
 end CoxeterSystem
 
@@ -171,26 +172,11 @@ theorem additiveJucysMurphyMatrix_one_apply {R : Type*} [Field R] {n : ℕ}
         if v = Equiv.swap (j.castLE (Nat.le_of_lt k.isLt)) k * w then 1 else 0 := by
   classical
   let cs := permCoxeterSystem (n + 1)
-  let e := groupAlgebraEquiv (R := R) cs (q := 1) (by simp)
-  have hcoords : (basisTw (1 : Rˣ) cs).repr.toLinearMap =
-      (MonoidAlgebra.coeffLinearEquiv R).toLinearMap.comp e.toLinearMap := by
-    apply (basisTw (1 : Rˣ) cs).ext
-    intro u
-    have he : e ((basisTw (1 : Rˣ) cs) u) = MonoidAlgebra.single u 1 := by
-      simp [e, coe_basisTw]
-    simpa only [LinearEquiv.coe_coe, Module.Basis.repr_self, LinearMap.comp_apply,
-      AlgEquiv.toLinearMap_apply, MonoidAlgebra.coeffLinearEquiv_apply,
-      MonoidAlgebra.coeff_single] using (congrArg MonoidAlgebra.coeff he).symm
-  have hc (x : TypeAHeckeAlgebra R 1 (n + 1)) :
-      (basisTw (1 : Rˣ) cs).repr x = (e x).coeff := LinearMap.congr_fun hcoords x
   have hmatrix := CoxeterSystem.additiveJucysMurphyMatrix_eq_leftMulMatrix cs (1 : Rˣ) k
   simp only [Units.val_one] at hmatrix
   rw [hmatrix, Algebra.leftMulMatrix_eq_repr_mul]
-  simp only [coe_basisTw, hc, map_mul]
-  simp only [e, cs, groupAlgebraEquiv_additiveJucysMurphy, groupAlgebraEquiv_Tw,
-    Finset.sum_mul, MonoidAlgebra.single_mul_single, inv_one, Units.val_one, mul_one,
-    MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, MonoidAlgebra.coeff_single,
-    Finsupp.single_apply]
-  exact Finset.sum_congr rfl fun j _ => by simp only [eq_comm]
+  rw [cs.basisTw_repr_eq_coeff_groupAlgebraEquiv (by simp)]
+  simp [cs, coe_basisTw, groupAlgebraEquiv_additiveJucysMurphy, Finset.sum_mul,
+    MonoidAlgebra.coeff_single, Finsupp.single_apply, eq_comm]
 
 end TauCeti.TypeAHeckeAlgebra
