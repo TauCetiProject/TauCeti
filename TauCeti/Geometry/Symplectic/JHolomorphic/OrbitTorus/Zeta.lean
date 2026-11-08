@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.ConfigurationCount
 public import TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic
-public import TauCeti.RingTheory.NovikovSeries.PowerSeries
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
