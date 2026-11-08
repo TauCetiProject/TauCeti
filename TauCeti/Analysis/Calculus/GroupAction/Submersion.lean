@@ -81,39 +81,6 @@ private theorem exists_map_straightening (ρ : ContRepresentation 𝕜 G E)
     simp only [ContinuousLinearMap.comp_apply] at hqg
     simp [hri, hqg, map_add, hsfix]
 
-omit [CompleteSpace E] in
-/-- An open partial homeomorphism that is equivariant on its source restricts to one with
-invariant source and target, the same forward map and the same inverse map. -/
-private theorem exists_invariant_restriction (ρ : ContRepresentation 𝕜 G E)
-    {f : E → E} {Θ : OpenPartialHomeomorph E E} (hΘ : (Θ : E → E) = f) (h0Θ : (0 : E) ∈ Θ.source)
-    (hfeq : ∀ (g : G) {y : E}, y ∈ Θ.source → f (ρ g y) = ρ g (f y)) :
-    ∃ e : OpenPartialHomeomorph E E, (0 : E) ∈ e.source ∧ (e : E → E) = f ∧
-      (e.symm : E → E) = Θ.symm ∧ e.source ⊆ Θ.source ∧ e.target ⊆ Θ.target ∧
-      (∀ (g : G) (y : E), y ∈ e.source →
-        ρ g y ∈ e.source ∧ e (ρ g y) = ρ g (e y)) ∧
-      ∀ (g : G) (z : E), z ∈ e.target →
-        ρ g z ∈ e.target ∧ e.symm (ρ g z) = ρ g (e.symm z) := by
-  -- Use the existing invariant restriction for the action underlying the representation.
-  let : MulAction G E := MulAction.compHom E ρ.toRepresentation
-  have hsmul (g : G) (y : E) : g • y = ρ g y := by
-    simp [MulAction.compHom_smul_def, Module.End.smul_def, toMonoidHom_apply]
-  let : ContinuousConstSMul G E := ⟨fun g ↦ by
-    simpa only [hsmul] using (ρ g).continuous⟩
-  let e := Θ.restrInvariant G
-  have he : (e : E → E) = f := by simpa [e] using hΘ
-  have hsourceΘ : e.source ⊆ Θ.source := Θ.restrInvariant_source_subset
-  have hequiv (g : G) {y : E} (hy : y ∈ e.source) :
-      ρ g y ∈ e.source ∧ e (ρ g y) = ρ g (e y) := by
-    refine ⟨?_, ?_⟩
-    · simpa only [hsmul] using Θ.smul_mem_restrInvariant_source hy g
-    · rw [he]
-      exact hfeq g (hsourceΘ hy)
-  refine ⟨e, Θ.mem_restrInvariant_source_of_forall_smul_eq (fun g ↦ by simp [hsmul]) h0Θ, he,
-    by simp [e], hsourceΘ, Θ.restrInvariant_target_subset, fun g y hy ↦ hequiv g hy, ?_⟩
-  intro g z hz
-  simpa only [hsmul] using e.symm_map_smul_of_map_smul
-    (fun g y hy ↦ by simpa only [hsmul] using hequiv g hy) g z hz
-
 /-- **Equivariant submersion coordinates.** A locally invariant `C^n` map vanishing at zero,
 with surjective derivative `q`, can be straightened to `q` by an equivariant local coordinate
 change tangent to the identity. Its source lies in the prescribed open set `U`, both source
@@ -142,9 +109,29 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
   obtain ⟨Θ, hΘ, h0Θ, hΘV, hΘsmooth⟩ :=
     TauCeti.ContDiffOn.exists_openPartialHomeomorph (hf.mono fun y hy ↦ (hVsub hy).1)
       hV h0V hn (e := ContinuousLinearEquiv.refl 𝕜 E) hdf.fderiv.symm
-  obtain ⟨e, h0e, he, heinv, hsourceΘ, htarget, hequiv, hequiv'⟩ :=
-    ρ.exists_invariant_restriction hΘ h0Θ fun g y hy ↦
-      hfinv g y ((hVsub (hΘV hy)).2 g)
+  -- Restrict `Θ` to an invariant source, using the action underlying the representation.
+  let : MulAction G E := MulAction.compHom E ρ.toRepresentation
+  have hsmul (g : G) (y : E) : g • y = ρ g y := by
+    simp [MulAction.compHom_smul_def, Module.End.smul_def, toMonoidHom_apply]
+  let : ContinuousConstSMul G E := ⟨fun g ↦ by
+    simpa only [hsmul] using (ρ g).continuous⟩
+  let e := Θ.restrInvariant G
+  have he : (e : E → E) = f := by simpa [e] using hΘ
+  have heinv : (e.symm : E → E) = Θ.symm := by simp [e]
+  have hsourceΘ : e.source ⊆ Θ.source := Θ.restrInvariant_source_subset
+  have htarget : e.target ⊆ Θ.target := Θ.restrInvariant_target_subset
+  have h0e : (0 : E) ∈ e.source :=
+    Θ.mem_restrInvariant_source_of_forall_smul_eq (fun g ↦ by simp [hsmul]) h0Θ
+  have hequiv (g : G) (y : E) (hy : y ∈ e.source) :
+      ρ g y ∈ e.source ∧ e (ρ g y) = ρ g (e y) := by
+    simpa only [hsmul] using Θ.restrInvariant_map_smul (G := G)
+      (fun g y hy ↦ by
+        simp only [hsmul, hΘ]
+        exact hfinv g y ((hVsub (hΘV hy)).2 g)) hy g
+  have hequiv' (g : G) (z : E) (hz : z ∈ e.target) :
+      ρ g z ∈ e.target ∧ e.symm (ρ g z) = ρ g (e.symm z) := by
+    simpa only [hsmul] using e.symm_map_smul_of_map_smul
+      (fun g y hy ↦ by simpa only [hsmul] using hequiv g y hy) g z hz
   refine ⟨e, h0e, ?_, fun y hy ↦ (hVsub (hΘV (hsourceΘ hy))).1, ?_, ?_, ?_,
     ?_, ?_, hequiv, hequiv'⟩
   · rw [he, hf0]
