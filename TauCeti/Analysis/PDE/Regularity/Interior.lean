@@ -888,11 +888,10 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
   -- On `U`, the restriction of `u` solves the equation with the principal coefficient `a'`, and
   -- the lower-order terms move to the right-hand side.
   obtain ⟨g, hg⟩ := exists_forcing_restrictL_of_eqOn hUΩ haa'
-    (fun x => ha'.opNorm_matrixBilinearForm_le (mem_univ x)) hK'.continuous hb hc hu
+    (memLp_energyIntegrand_of_continuous
+      (fun x => ha'.opNorm_matrixBilinearForm_le (mem_univ x)) hK'.continuous _) hb hc hu
   obtain ⟨w, f', hw, -, hgrad, -⟩ := exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
     (fun x => ha'.opNorm_matrixBilinearForm_le (mem_univ x)) hK' hg hV hVU
-  have htop : mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) = mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
   have hVU' : (V : Set (EuclideanSpace ℝ ι)) ⊆ U := subset_closure.trans hVU
   -- On `V`, the gradient of the localized solution is that of `u`.
   have hgradV : ∀ᵐ x ∂mu.restrict V, W1p.gradient (w : W1p mu ⊤ 2) x =

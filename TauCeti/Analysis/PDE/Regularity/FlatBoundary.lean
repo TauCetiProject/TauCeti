@@ -124,7 +124,8 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
   -- and the lower-order terms move to the right-hand side.
   set u₁ := W1p.restrictL hΩ₁ u
   obtain ⟨g, hg⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
-    (fun x hx => haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩) hM' hK'.continuous hb hc hu
+    (fun x hx => haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩)
+    (memLp_energyIntegrand_of_continuous hM' hK'.continuous _) hb hc hu
   -- A cutoff equal to one near `closure V` and supported in `W`.
   obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
     hV.exists_contDiff_cutoff_with_bounds W.isOpen hVW
