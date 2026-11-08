@@ -65,6 +65,7 @@ variable [CommSemiring R] [IsAddTorsionFree R]
 /-- Over a commutative semiring without additive torsion, a coefficient of the partial derivative
 in `X i` vanishes exactly when the corresponding coefficient of `f`, with the exponent of `X i`
 raised by one, does. -/
+@[simp]
 theorem coeff_pderiv_eq_zero_iff {f : MvPowerSeries σ R} {i : σ} {d : σ →₀ ℕ} :
     coeff d (pderiv i f) = 0 ↔ coeff (d + single i 1) f = 0 := by
   rw [coeff_pderiv, mul_comm, ← Nat.cast_succ, ← nsmul_eq_mul, nsmul_eq_zero_iff,
