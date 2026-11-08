@@ -871,6 +871,11 @@ theorem isSmoothing_ofBoundedFrequencySupport
     (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
 
+/-- A symbol whose coefficient vanishes at every frequency of norm at least `R` is smoothing. -/
+theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
+    (h : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
+  isSmoothing_ofBoundedFrequencySupport (m := m) a.coefficient a.contDiff_coefficient R h
+
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
 `-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
