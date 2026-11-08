@@ -89,12 +89,13 @@ cutoff
 Hermitian part of the curvature, with `K ≥ 0`, and a bound `|∂bar_a α| ≤ D` give
 `Θ(v, J v) ≥ -(K + 2 M D²) |v|²` when `0 ≤ χ ≤ 1` and `0 ≤ χ' ≤ M`
 (`neg_mul_le_cutoffCurrent_apply_pair_apply`). On a `J`-holomorphic disc this bounds the negative
-part of the slice density of `Θ` by a multiple of the area of the disc
+part of the slice density of `Θ` by a multiple of `∫ |dσ (1)|²`, which is the area of the disc
+when the norm comes from an inner product for which `J` is orthogonal
 (`integral_negPart_cutoffCurrent_compContinuousLinearMap_le`). The anti-`J`-invariant part of `Θ`
 is that of `(1 - χ(s)) i F_a` up to the mixed products of `∂_a α` with `∂bar_a α`
-(`cutoffCurrent_apply_pair_apply_sub`, `abs_cutoffCurrent_apply_pair_apply_sub_le`). In Taubes's
-analysis these bound the negative mass of the slices of the cutoff current on the normal discs of
-a pseudoholomorphic curve, and the distance of the cutoff current to the cone of positive
+(`cutoffCurrent_apply_pair_apply_sub`, `abs_cutoffCurrent_apply_pair_apply_sub_add_le`). In
+Taubes's analysis these bound the negative mass of the slices of the cutoff current on the normal
+discs of a pseudoholomorphic curve, and the distance of the cutoff current to the cone of positive
 `(1,1)`-forms.
 
 The cutoff phase form, the cutoff current, their regularity, support and gauge invariance are
@@ -430,16 +431,10 @@ theorem cutoffCurrent_apply_pair (hα : ContDiffAt ℝ 2 α x) (hb : Differentia
     have hdτ : extDeriv (covariantPhaseForm b α) x = extDeriv b x := by
       rw [covariantPhaseForm, extDeriv_add hφ hb, extDeriv_phaseForm hα h, zero_add]
     have hsplit : cutoffPhaseForm χ b α = (fun y ↦ χ (normSq (α y))) • covariantPhaseForm b α :=
-      rfl
-    have halt (f : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ) :
-        alternatizeUncurryFin f ![v, w] = f v (fun _ ↦ w) - f w (fun _ ↦ v) := by
-      have h₀ : (0 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ w) := by
-        funext i; fin_cases i; rfl
-      have h₁ : (1 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ v) := by
-        funext i; fin_cases i; rfl
-      simp [alternatizeUncurryFin_apply, h₀, h₁, sub_eq_add_neg]
+      funext fun y ↦ cutoffPhaseForm_apply χ b α y
     rw [cutoffCurrent_apply, hsplit, extDeriv_function_smul hc.differentiableAt hτ, hdτ,
-      hc.fderiv, ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.add_apply, halt]
+      hc.fderiv, ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.add_apply,
+      alternatizeUncurryFin_apply_pair]
     have hn := (normSq_pos.2 h).ne'
     simp only [ContinuousAlternatingMap.smul_apply, ContinuousLinearMap.smulRight_apply,
       _root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
@@ -651,9 +646,9 @@ differentiable at `s = |α(x)|²`,
 
 `Θ(v, J v) = (1 - χ(s)) i F_a(v, J v) + 2 χ'(s) (|∂_v α|² - |∂bar_v α|²)`,
 
-where `i F_a = -db` and `∂_a α = ∇_a α - ∂bar_a α`. In particular, where `α` is `J`-holomorphic
-and `χ` is nondecreasing, the cutoff current is at least `(1 - χ(s))` times the curvature on every
-complex line. -/
+where `i F_a = -db` and `∂_a α = ∇_a α - ∂bar_a α`. In particular, where `α` is covariantly
+`J`-holomorphic, `∂bar_a α = 0`, and `χ` is nondecreasing, the cutoff current is at least
+`(1 - χ(s))` times the curvature on every complex line. -/
 theorem cutoffCurrent_apply_pair_apply (hα : ContDiffAt ℝ 2 α x) (hb : DifferentiableAt ℝ b x)
     (hχ : DifferentiableAt ℝ χ (normSq (α x))) (hχ₀ : χ =ᶠ[𝓝 0] 0) (v : E) :
     cutoffCurrent χ b α x ![v, J v] =
@@ -732,27 +727,32 @@ theorem neg_mul_le_cutoffCurrent_compContinuousLinearMap {σ : ℂ → E} {z : �
   exact neg_mul_le_cutoffCurrent_apply_pair_apply J hα hb hχ hχ₀ hχ₁ hχ' hK hF hD
 
 /-- **Negative mass of the slices of the cutoff current on a `J`-holomorphic disc.** Let
-`σ : ℂ → E` be `J`-holomorphic on a measurable set `s`, let `χ` be a differentiable cutoff
-vanishing near `0` with `0 ≤ χ ≤ 1` and `0 ≤ χ' ≤ M`, and suppose that at the points of `σ(s)`
-the curvature satisfies `i F_a(v, J v) ≥ -K |v|²` with `K ≥ 0`, where `i F_a = -db`, and
-`|∂bar_a α| ≤ D`. Then the negative part of the density `(σ^* Θ)(1, i)` has integral over `s` at
-most `K + 2 M D²` times the area `∫_s |dσ (1)|²` of `σ` on `s`. -/
+`σ : ℂ → E` be `J`-holomorphic on a measurable set `s`, and let `χ` be a cutoff vanishing near `0`.
+Suppose that at each `z ∈ s`, with `t = |α(σ z)|²` and `v = dσ (1)`, the cutoff is
+differentiable at `t` with `0 ≤ χ(t) ≤ 1` and `0 ≤ χ'(t) ≤ M`, the curvature satisfies
+`i F_a(v, J v) ≥ -K |v|²` with `K ≥ 0`, where `i F_a = -db`, and `|∂bar_a α| ≤ D` at `σ z`. Then
+the negative part of the density `(σ^* Θ)(1, i)` has integral over `s` at most `K + 2 M D²` times
+the directional energy `∫_s |dσ (1)|²`. This is the area of `σ` on `s` when the norm comes from an
+inner product for which `J` is orthogonal. -/
 theorem integral_negPart_cutoffCurrent_compContinuousLinearMap_le {σ : ℂ → E} {s : Set ℂ}
     (hs : MeasurableSet s) (hα : ∀ z ∈ s, ContDiffAt ℝ 2 α (σ z))
-    (hb : ∀ z ∈ s, DifferentiableAt ℝ b (σ z)) (hχ : Differentiable ℝ χ) (hχ₀ : χ =ᶠ[𝓝 0] 0)
-    {K M D : ℝ} (hχ₁ : ∀ t, χ t ∈ Icc 0 1) (hχ' : ∀ t, deriv χ t ∈ Icc 0 M) (hK : 0 ≤ K)
+    (hb : ∀ z ∈ s, DifferentiableAt ℝ b (σ z))
+    (hχ : ∀ z ∈ s, DifferentiableAt ℝ χ (normSq (α (σ z)))) (hχ₀ : χ =ᶠ[𝓝 0] 0) {K M D : ℝ}
+    (hχ₁ : ∀ z ∈ s, χ (normSq (α (σ z))) ∈ Icc 0 1)
+    (hχ' : ∀ z ∈ s, deriv χ (normSq (α (σ z))) ∈ Icc 0 M) (hK : 0 ≤ K)
     (hσ : ∀ z ∈ s, fderiv ℝ σ z I = J (fderiv ℝ σ z 1))
-    (hF : ∀ z ∈ s, ∀ v, -K * ‖v‖ ^ 2 ≤ -extDeriv b (σ z) ![v, J v])
+    (hF : ∀ z ∈ s, -K * ‖fderiv ℝ σ z 1‖ ^ 2 ≤
+      -extDeriv b (σ z) ![fderiv ℝ σ z 1, J (fderiv ℝ σ z 1)])
     (hD : ∀ z ∈ s, ‖covariantDBar J b α (σ z)‖ ≤ D)
     (hint : IntegrableOn (fun z ↦ ‖fderiv ℝ σ z 1‖ ^ 2) s) :
     ∫ z in s, ((cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I])⁻ ≤
       (K + 2 * M * D ^ 2) * ∫ z in s, ‖fderiv ℝ σ z 1‖ ^ 2 := by
-  have hM : 0 ≤ M := (hχ' 0).1.trans (hχ' 0).2
   rw [← integral_const_mul]
   refine integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ negPart_nonneg _)
     (hint.const_mul _) ((ae_restrict_iff' hs).2 (Eventually.of_forall fun z hz ↦ ?_))
+  have hM : 0 ≤ M := (hχ' z hz).1.trans (hχ' z hz).2
   have h := neg_mul_le_cutoffCurrent_compContinuousLinearMap J (hσ z hz) (hα z hz) (hb z hz)
-    (hχ _) hχ₀ (hχ₁ _) (hχ' _) hK (hF z hz _) (hD z hz)
+    (hχ z hz) hχ₀ (hχ₁ z hz) (hχ' z hz) hK (hF z hz) (hD z hz)
   simp only [negPart_def]
   exact sup_le (by linarith) (by positivity)
 
@@ -798,7 +798,7 @@ near `0` and differentiable at `s = |α(x)|²`, with `i F_a = -db` and `∂_a α
 
 Where the curvature is nearly `J`-invariant and `∂bar_a α` is small, so is the anti-`J`-invariant
 part of `Θ`. -/
-theorem abs_cutoffCurrent_apply_pair_apply_sub_le (hα : ContDiffAt ℝ 2 α x)
+theorem abs_cutoffCurrent_apply_pair_apply_sub_add_le (hα : ContDiffAt ℝ 2 α x)
     (hb : DifferentiableAt ℝ b x) (hχ : DifferentiableAt ℝ χ (normSq (α x)))
     (hχ₀ : χ =ᶠ[𝓝 0] 0) (v w : E) :
     |cutoffCurrent χ b α x ![J v, J w] - cutoffCurrent χ b α x ![v, w] +
