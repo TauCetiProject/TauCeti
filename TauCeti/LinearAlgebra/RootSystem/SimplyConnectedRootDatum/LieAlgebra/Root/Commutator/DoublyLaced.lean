@@ -117,8 +117,9 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
   have hiij : ⁅e α, ⁅e α, e β⁆⁆ = (2 * d) • e δ := by
     rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
       lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul, hdiv]
-  have hM' := kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil
-  simp_rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam, kostantRootSubgroupParam_apply]
+  have hM' := kostantForm_chevalleySystem_smul_mem ρ M hM hnil
+  simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil hM',
+    kostantRootSubgroupParam_apply]
   -- Normalize the stored integer algebra without destructuring the bundled value ring.
   have halg := Subsingleton.elim
     (inferInstance : Algebra ℤ ((CategoryTheory.forget (CommAlgCat ℤ)).obj A))
