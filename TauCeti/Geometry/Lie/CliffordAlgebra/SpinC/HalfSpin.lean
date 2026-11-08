@@ -135,6 +135,7 @@ theorem realSpinCHalfSpinSmoothHom_comp_halfSpinCliffordMul
 
 /-- In complex rank two the determinant of the descended half-spin action is the
 weight-two character, not the weight-one spinor character. -/
+@[simp]
 theorem det_realSpinCHalfSpinSmoothHom (h₂ : finrank ℂ S = 2) (x : SpinC) :
     LinearMap.det (realSpinCHalfSpinSmoothHom o hQ b ρ ε x).toLinearMap =
       (spinCGroup.det _ hpos x : ℂ) := by
