@@ -82,22 +82,6 @@ theorem mk_inv_mul_mul (S Y : SL(2, R)) :
 def IsParabolic (g : PSL(2, R)) : Prop :=
   ∃ a : SL(2, R), (a : PSL(2, R)) = g ∧ (a : GL (Fin 2) R).IsParabolic
 
-/-- Multiplying a parabolic matrix by a scalar whose square is `1` gives a parabolic matrix. -/
-private theorem isParabolic_smul_of_sq_eq_one {r : R} (hr : r ^ 2 = 1)
-    {m : Matrix (Fin 2) (Fin 2) R}
-    (h : m.IsParabolic) : (r • m).IsParabolic := by
-  refine ⟨?_, ?_⟩
-  · rintro ⟨s, hs⟩
-    refine h.1 ⟨r * s, ?_⟩
-    have hm : m = r • (r • m) := by rw [smul_smul, ← sq, hr, one_smul]
-    rw [hm, ← hs]
-    ext i j
-    by_cases hij : i = j <;> simp [Matrix.scalar_apply, hij]
-  · have h2 := h.2
-    simp only [Matrix.discr_fin_two, Matrix.trace_smul, Matrix.det_smul, Fintype.card_fin,
-      smul_eq_mul] at h2 ⊢
-    linear_combination r ^ 2 * h2
-
 /-- The class of a matrix of `SL(2, R)` is parabolic exactly when the matrix is: two
 representatives of a class differ by a central scalar whose square is `1`, which preserves
 parabolicity. -/
@@ -114,9 +98,8 @@ theorem isParabolic_mk_iff (a : SL(2, R)) :
     ext i j
     simp [Matrix.scalar_apply, Matrix.mul_diagonal, mul_comm]
   have hr2 : r ^ 2 = 1 := by simpa using hr
-  change (a : Matrix (Fin 2) (Fin 2) R).IsParabolic
-  rw [hab]
-  exact isParabolic_smul_of_sq_eq_one hr2 hpar
+  rw [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix, hab]
+  exact Matrix.isParabolic_smul_of_sq_eq_one hr2 hpar
 
 /-- Parabolicity is invariant under conjugation in `PSL(2, R)`. -/
 @[simp]
