@@ -35,6 +35,9 @@ it, are shown to be analytic across it.
   hyperplane.**
 * `TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton`: uniqueness of the extension, for continuous
   functions.
+* `TauCeti.bddAbove_slice_of_local`, `TauCeti.extension_ne_zero_of_local`: the transverse slices
+  of a function locally equal off the hyperplane to a function continuous on it are bounded, and
+  an extension across the hyperplane keeps a local nonvanishing witness nonvanishing there.
 
 ## References
 
@@ -60,6 +63,47 @@ theorem eqOn_prod_of_eqOn_prod_diff_singleton {X Y : Type*} [TopologicalSpace X]
   refine h.of_subset_closure h₁ h₂ (prod_mono subset_rfl sdiff_subset) ?_
   rw [closure_prod_eq, sdiff_eq]
   exact prod_mono subset_closure ((dense_compl_singleton c).open_subset_closure_inter hs)
+
+/-- If a function agrees off the hyperplane `z = 0` with a function continuous at `(x, 0)`, for
+each `x ∈ U`, then its transverse slices are bounded near `0` away from `0`. -/
+theorem bddAbove_slice_of_local {X : Type*} [TopologicalSpace X] {q : X × ℂ → ℂ} {U : Set X}
+    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → ℂ,
+      ContinuousAt v (x, 0) ∧ ∀ᶠ p in 𝓝 (x, (0 : ℂ)), p.2 ≠ 0 → q p = v p) :
+    ∀ x ∈ U, ∃ t ∈ 𝓝 (0 : ℂ), BddAbove (norm ∘ (fun z ↦ q (x, z)) '' (t \ {0})) := by
+  intro x hx
+  obtain ⟨v, hv, heq⟩ := hlocalq x hx
+  have hline : Tendsto (fun z : ℂ ↦ (x, z)) (𝓝 0) (𝓝 (x, (0 : ℂ))) :=
+    continuous_const.prodMk continuous_id |>.tendsto 0
+  obtain ⟨C, hC⟩ := (hv.tendsto.comp hline).norm.isBoundedUnder_le
+  refine ⟨{z | (z ≠ 0 → q (x, z) = v (x, z)) ∧ ‖v (x, z)‖ ≤ C},
+    (hline.eventually heq).and hC, C, ?_⟩
+  rintro _ ⟨z, ⟨hz, hz0⟩, rfl⟩
+  simpa only [comp_apply, hz.1 hz0] using hz.2
+
+/-- An extension `w` of `q` across the hyperplane `z = 0`, continuous along it, agrees with a
+nonvanishing local witness also on the hyperplane, by uniqueness of the limit along a punctured
+slice. Thus no zero is introduced by extension. -/
+theorem extension_ne_zero_of_local {X : Type*} [TopologicalSpace X] {q w : X × ℂ → ℂ} {U : Set X}
+    {s : Set ℂ} (hs : IsOpen s) (h0 : (0 : ℂ) ∈ s) (hw : ∀ x ∈ U, ContinuousAt w (x, 0))
+    (hwq : EqOn w q (U ×ˢ (s \ {0})))
+    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → ℂ,
+      ContinuousAt v (x, 0) ∧ v (x, 0) ≠ 0 ∧
+        ∀ᶠ p in 𝓝 (x, (0 : ℂ)), p.2 ≠ 0 → q p = v p) :
+    ∀ x ∈ U, w (x, 0) ≠ 0 := by
+  intro x hx
+  obtain ⟨v, hv, hv0, heq⟩ := hlocalq x hx
+  have hline : Tendsto (fun z : ℂ ↦ (x, z)) (𝓝 0) (𝓝 (x, (0 : ℂ))) :=
+    continuous_const.prodMk continuous_id |>.tendsto 0
+  have hs0 : ∀ᶠ z in 𝓝[≠] (0 : ℂ), z ∈ s := nhdsWithin_le_nhds (hs.mem_nhds h0)
+  have heq' : (fun z : ℂ ↦ w (x, z)) =ᶠ[𝓝[≠] 0] fun z ↦ v (x, z) := by
+    filter_upwards [(hline.eventually heq).filter_mono nhdsWithin_le_nhds,
+      hs0, self_mem_nhdsWithin] with z hz hzs hz0
+    exact (hwq ⟨hx, hzs, hz0⟩).trans (hz hz0)
+  have hlim : Tendsto (fun z : ℂ ↦ w (x, z)) (𝓝[≠] 0) (𝓝 (w (x, 0))) :=
+    ((hw x hx).tendsto.comp hline).mono_left nhdsWithin_le_nhds
+  have hlim' : Tendsto (fun z : ℂ ↦ v (x, z)) (𝓝[≠] 0) (𝓝 (v (x, 0))) :=
+    (hv.tendsto.comp hline).mono_left nhdsWithin_le_nhds
+  exact (tendsto_nhds_unique (hlim.congr' heq') hlim') ▸ hv0
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V × ℂ → E} {U : Set V} {s : Set ℂ}
