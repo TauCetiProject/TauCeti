@@ -121,9 +121,11 @@ theorem alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum [CharZero 𝕜]
     inv_mul_cancel₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero), one_smul]
 
 open ContinuousLinearMap in
-/-- The alternation of `D ∘ N`, for `D` the derivative of `ω` and `N` the Nijenhuis-type tensor
+/-- The alternation of `D ∘ N`, for `D` the derivative of `L ↦ ω.compContinuousLinearMap L` at the
+identity and `N` the Nijenhuis-type tensor
 `N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)`, is twice the alternation of `D ∘ S`
-for `S v = A (J v) + A v ∘ J`; this involves only `D ∘ A ∘ J` and `D ∘ J ∘ A`. -/
+for `S v = A (J v) + A v ∘ J`; this involves only the families `v ↦ D (A (J v))` and
+`v ↦ D (A v ∘L J)`. -/
 theorem alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq
     {J : E →L[𝕜] E} (ω : E [⋀^Fin n]→L[𝕜] F) {A N : E →L[𝕜] E →L[𝕜] E}
     (hN : ∀ v w, N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)) :
