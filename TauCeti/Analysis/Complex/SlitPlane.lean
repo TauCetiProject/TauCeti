@@ -14,7 +14,8 @@ The quotient `z₂ / z₁` of two points of an open half-plane through the origi
 nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded by a normal
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
 four axis-aligned half-planes cover the common cases. A relative displacement smaller than
-the distance to a pole also gives a slit-plane quotient. A product of two points in the
+the distance to a pole also gives a slit-plane quotient; in particular `1 + a / z` lies in the slit
+plane when `‖a‖ < ‖z‖`. A product of two points in the
 right half-plane lies in the slit plane as well, and positive real scaling preserves it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
@@ -34,7 +35,7 @@ is a principal logarithm.
 
 ## Main declarations
 
-* `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
+* `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
@@ -67,6 +68,11 @@ theorem div_sub_mem_slitPlane_of_dist_lt_dist
   rw [Metric.mem_ball, dist_eq_norm, hsub, norm_div, div_lt_one (norm_pos_iff.mpr hne)]
   simpa only [dist_eq_norm] using h
 
+/-- If `‖a‖ < ‖z‖`, then `1 + a / z` lies in the slit plane. -/
+theorem one_add_div_mem_slitPlane {a z : ℂ} (h : ‖a‖ < ‖z‖) : 1 + a / z ∈ slitPlane :=
+  mem_slitPlane_of_norm_lt_one <| by
+    rw [norm_div, div_lt_one ((norm_nonneg a).trans_lt h)]
+    exact h
 
 /-- The ratio of two members of an open half-plane through the origin lies in the slit
 plane. The half-plane with normal direction `a` is `{z | 0 < (conj a * z).re}`; degenerate
