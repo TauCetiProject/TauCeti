@@ -107,6 +107,17 @@ variable {R : Type uR} {M N : Type uM} [Ring R] [AddCommGroup M] [Module R M]
   {𝒩 : ℤ → Submodule R N} {dN : N →ₗ[R] N}
   {hdegN : LinearMap.IsHomogeneous dN 𝒩 𝒩 1} {hsqN : ∀ p (x : 𝒩 p), dN (dN x) = 0}
 
+/-- `HomologicalComplex.moduleCat_quasiIsoAt_iff` for cochain complexes indexed by `ℤ`, where the
+neighbouring degrees of `n` are `n - 1` and `n + 1`. -/
+private theorem quasiIsoAt_cochainComplex_iff {K L : CochainComplex (ModuleCat R) ℤ} (φ : K ⟶ L)
+    (n : ℤ) :
+    QuasiIsoAt φ n ↔
+      (∀ y : L.X n, L.d n (n + 1) y = 0 →
+        ∃ x : K.X n, K.d n (n + 1) x = 0 ∧ ∃ b : L.X (n - 1), L.d (n - 1) n b = y - φ.f n x) ∧
+      (∀ x : K.X n, K.d n (n + 1) x = 0 → ∀ b : L.X (n - 1), L.d (n - 1) n b = φ.f n x →
+        ∃ a : K.X (n - 1), K.d (n - 1) n a = x) :=
+  HomologicalComplex.moduleCat_quasiIsoAt_iff φ (CochainComplex.prev ℤ n) (CochainComplex.next ℤ n)
+
 /-- The forward direction of `TauCeti.quasiIso_gradedCochainComplexHom_iff`: a quasi-isomorphism
 makes every relative cycle a relative boundary. -/
 private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f : M →ₗ[R] N)
@@ -115,56 +126,39 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
       (hsqN := hsqN) f hf hcomm)) :
     ∀ n (x : M) (y : N), x ∈ ℳ (n + 1) → y ∈ 𝒩 n → dM x = 0 → f x = dN y →
       ∃ u ∈ ℳ n, ∃ v ∈ 𝒩 (n - 1), dM u = x ∧ f u + dN v = y := by
-  set φ := gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
-    (hsqN := hsqN) f hf hcomm
-  have hφ (p : ℤ) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
-      (gradedCochainComplexXEquiv p (φ.f p x) : N) = f (gradedCochainComplexXEquiv p x) :=
-    gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply f hf hcomm p x
   have hfd (x : M) : dN (f x) = f (dM x) := LinearMap.congr_fun hcomm x
-  have hqi (n : ℤ) := HomologicalComplex.moduleCat_quasiIsoAt_iff φ (CochainComplex.prev ℤ n)
-    (CochainComplex.next ℤ n)
   rw [_root_.quasiIso_iff] at hq
   intro n x y hx hy hdx hfx
   -- `x` is a cycle whose image is a boundary, hence a boundary `dM u₀`.
-  obtain ⟨a, ha⟩ := ((hqi (n + 1)).1 (hq (n + 1))).2
+  obtain ⟨a, ha⟩ := ((quasiIsoAt_cochainComplex_iff _ (n + 1)).1 (hq (n + 1))).2
     ((gradedCochainComplexXEquiv (n + 1)).symm ⟨x, hx⟩)
-    ((gradedCochainComplexXEquiv (n + 1 + 1)).injective (Subtype.ext (by
-      rw [gradedCochainComplexXEquiv_d_of_add_one_eq (p := n + 1) rfl, LinearEquiv.apply_symm_apply,
-        map_zero]
-      exact hdx)))
+    ((gradedCochainComplex_d_eq_zero_iff rfl _).2 (by simpa only [LinearEquiv.apply_symm_apply]
+      using hdx))
     ((gradedCochainComplexXEquiv (n + 1 - 1)).symm ⟨y, by rwa [add_sub_cancel_right]⟩)
-    ((gradedCochainComplexXEquiv (n + 1)).injective (Subtype.ext (by
-      rw [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel (n + 1) 1),
-        hφ,
-        LinearEquiv.apply_symm_apply, 
-        LinearEquiv.apply_symm_apply]
-      exact hfx.symm)))
+    ((gradedCochainComplex_d_eq_iff (sub_add_cancel (n + 1) 1) _ _).2 (by
+      simpa only [gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply,
+        LinearEquiv.apply_symm_apply] using hfx.symm))
   set u₀ : M := (gradedCochainComplexXEquiv (n + 1 - 1) a : M)
   have hu₀ : u₀ ∈ ℳ n := by
     simpa only [add_sub_cancel_right] using (gradedCochainComplexXEquiv (n + 1 - 1) a).2
   have hdu₀ : dM u₀ = x := by
-    have := congrArg (fun z ↦ (gradedCochainComplexXEquiv (n + 1) z : M)) ha
-    simpa only [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel (n + 1) 1),
-      LinearEquiv.apply_symm_apply] using this
+    simpa only [LinearEquiv.apply_symm_apply] using
+      (gradedCochainComplex_d_eq_iff (sub_add_cancel (n + 1) 1) _ _).1 ha
   -- `y - f u₀` is a cycle, hence `f c + dN v` for a cycle `c`.
   have hyu : y - f u₀ ∈ 𝒩 n := (𝒩 n).sub_mem hy (by simpa using hf.map_mem hu₀)
   have hcyc : dN (y - f u₀) = 0 := by rw [map_sub, hfd, hdu₀, hfx, sub_self]
-  obtain ⟨c, hc, b, hb⟩ := ((hqi n).1 (hq n)).1
+  obtain ⟨c, hc, b, hb⟩ := ((quasiIsoAt_cochainComplex_iff _ n).1 (hq n)).1
     ((gradedCochainComplexXEquiv n).symm ⟨y - f u₀, hyu⟩)
-    ((gradedCochainComplexXEquiv (n + 1)).injective (Subtype.ext (by
-      rw [gradedCochainComplexXEquiv_d_of_add_one_eq (p := n) rfl, LinearEquiv.apply_symm_apply,
-        map_zero]
-      exact hcyc)))
-  have hdc : dM (gradedCochainComplexXEquiv n c) = 0 := by
-    have := congrArg (fun z ↦ (gradedCochainComplexXEquiv (n + 1) z : M)) hc
-    simpa only [gradedCochainComplexXEquiv_d_of_add_one_eq (p := n) rfl, map_zero,
-      Submodule.coe_zero] using this
+    ((gradedCochainComplex_d_eq_zero_iff rfl _).2 (by simpa only [LinearEquiv.apply_symm_apply]
+      using hcyc))
+  have hdc : dM (gradedCochainComplexXEquiv n c) = 0 :=
+    (gradedCochainComplex_d_eq_zero_iff rfl _).1 hc
   have hdb : dN (gradedCochainComplexXEquiv (n - 1) b) =
       y - f u₀ - f (gradedCochainComplexXEquiv n c) := by
-    have := congrArg (fun z ↦ (gradedCochainComplexXEquiv n z : N)) hb
-    simpa only [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel n 1), map_sub,
-      Submodule.coe_sub, hφ, 
-      LinearEquiv.apply_symm_apply] using this
+    simpa only [map_sub, Submodule.coe_sub,
+      gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply,
+      LinearEquiv.apply_symm_apply] using
+      (gradedCochainComplex_d_eq_iff (sub_add_cancel n 1) _ _).1 hb
   refine ⟨u₀ + gradedCochainComplexXEquiv n c, (ℳ n).add_mem hu₀ (SetLike.coe_mem _),
     gradedCochainComplexXEquiv (n - 1) b, SetLike.coe_mem _, ?_, ?_⟩
   · rw [map_add, hdu₀, hdc, add_zero]
@@ -180,52 +174,34 @@ private theorem quasiIso_gradedCochainComplexHom_of_exists_relative_boundary (f 
     QuasiIso (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
       (hsqN := hsqN) f hf hcomm) := by
   rw [_root_.quasiIso_iff]
-  set φ := gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
-    (hsqN := hsqN) f hf hcomm
-  have hφ (p : ℤ) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
-      (gradedCochainComplexXEquiv p (φ.f p x) : N) = f (gradedCochainComplexXEquiv p x) :=
-    gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply f hf hcomm p x
-  have hqi (n : ℤ) := HomologicalComplex.moduleCat_quasiIsoAt_iff φ (CochainComplex.prev ℤ n)
-    (CochainComplex.next ℤ n)
   intro n
-  refine (hqi n).2 ⟨fun y hy ↦ ?_, fun x hx b hb ↦ ?_⟩
+  refine (quasiIsoAt_cochainComplex_iff _ n).2 ⟨fun y hy ↦ ?_, fun x hx b hb ↦ ?_⟩
   · -- A cycle `y`: the relative cycle `(0, y)` is a relative boundary `(dM u, f u + dN v)`.
-    have hdy : dN (gradedCochainComplexXEquiv n y) = 0 := by
-      have := congrArg (fun z ↦ (gradedCochainComplexXEquiv (n + 1) z : N)) hy
-      simpa only [gradedCochainComplexXEquiv_d_of_add_one_eq (p := n) rfl, map_zero,
-        Submodule.coe_zero] using this
+    have hdy : dN (gradedCochainComplexXEquiv n y) = 0 :=
+      (gradedCochainComplex_d_eq_zero_iff rfl _).1 hy
     obtain ⟨u, hu, v, hv, hdu, huv⟩ := H n 0 (gradedCochainComplexXEquiv n y)
       (zero_mem _) (SetLike.coe_mem _) (map_zero dM) (by rw [map_zero, hdy])
     refine ⟨(gradedCochainComplexXEquiv n).symm ⟨u, hu⟩,
-      (gradedCochainComplexXEquiv (n + 1)).injective (Subtype.ext ?_),
+      (gradedCochainComplex_d_eq_zero_iff rfl _).2 (by simpa only [LinearEquiv.apply_symm_apply]
+        using hdu),
       (gradedCochainComplexXEquiv (n - 1)).symm ⟨v, hv⟩,
-      (gradedCochainComplexXEquiv n).injective (Subtype.ext ?_)⟩
-    · rw [gradedCochainComplexXEquiv_d_of_add_one_eq (p := n) rfl, LinearEquiv.apply_symm_apply,
-      map_zero]
-      exact hdu
-    · rw [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel n 1),
-      LinearEquiv.apply_symm_apply, map_sub, Submodule.coe_sub, 
-        hφ,
-          LinearEquiv.apply_symm_apply, ← huv]
-      exact (add_sub_cancel_left _ _).symm
+      (gradedCochainComplex_d_eq_iff (sub_add_cancel n 1) _ _).2 ?_⟩
+    simp only [map_sub, Submodule.coe_sub,
+      gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply,
+      LinearEquiv.apply_symm_apply, ← huv, add_sub_cancel_left]
   · -- A cycle `x` with `φ x = d b`: the relative cycle `(x, b)` is a relative boundary.
     have hx' : (gradedCochainComplexXEquiv n x : M) ∈ ℳ (n - 1 + 1) := by
       simpa only [sub_add_cancel] using SetLike.coe_mem (gradedCochainComplexXEquiv n x)
-    have hdx : dM (gradedCochainComplexXEquiv n x) = 0 := by
-      have := congrArg (fun z ↦ (gradedCochainComplexXEquiv (n + 1) z : M)) hx
-      simpa only [gradedCochainComplexXEquiv_d_of_add_one_eq (p := n) rfl, map_zero,
-        Submodule.coe_zero] using this
+    have hdx : dM (gradedCochainComplexXEquiv n x) = 0 :=
+      (gradedCochainComplex_d_eq_zero_iff rfl _).1 hx
     have hfx :
         f (gradedCochainComplexXEquiv n x) = dN (gradedCochainComplexXEquiv (n - 1) b) := by
-      have := congrArg (fun z ↦ (gradedCochainComplexXEquiv n z : N)) hb
-      simpa only [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel n 1),
-        hφ] using this.symm
+      simpa only [gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply] using
+        ((gradedCochainComplex_d_eq_iff (sub_add_cancel n 1) _ _).1 hb).symm
     obtain ⟨u, hu, v, -, hdu, -⟩ := H (n - 1) _ _ hx' (SetLike.coe_mem _) hdx hfx
-    refine ⟨(gradedCochainComplexXEquiv (n - 1)).symm ⟨u, hu⟩,
-      (gradedCochainComplexXEquiv n).injective (Subtype.ext ?_)⟩
-    rw [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel n 1),
-      LinearEquiv.apply_symm_apply]
-    exact hdu
+    exact ⟨(gradedCochainComplexXEquiv (n - 1)).symm ⟨u, hu⟩,
+      (gradedCochainComplex_d_eq_iff (sub_add_cancel n 1) _ _).2 (by
+        simpa only [LinearEquiv.apply_symm_apply] using hdu)⟩
 
 /-- **Quasi-isomorphisms of graded cochain complexes, on homogeneous elements.** The cochain map
 induced by a degree-preserving map `f` commuting with the differentials is a quasi-isomorphism
