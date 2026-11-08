@@ -100,13 +100,9 @@ lemma liftDGFullSubcategory_map {n m : ℕ} (x : Simplex R C n) (hx : ∀ i, P (
     (x.map α).liftDGFullSubcategory
       (fun i ↦ by simpa only [map_obj, Function.comp_apply] using hx (α i)) =
       (x.liftDGFullSubcategory hx).map α := by
-  refine Simplex.ext rfl fun i j S d hij hS hd ↦ heq_of_eq ?_
-  rw [liftDGFullSubcategory_coh, map_coh, map_coh]
-  by_cases h : #(S.image α) = #S ∧ S.image α ⊆ Ioo (α i) (α j)
-  · rw [mapCoh_eq_coh _ _ h, mapCoh_eq_coh _ _ h]
-    rfl
-  · rw [mapCoh_eq_zero _ _ h, mapCoh_eq_zero _ _ h]
-    rfl
+  simpa only [CategoryTheory.EnrichedFunctor.mapDGNerveSimplex_map,
+    mapDGNerveSimplex_inclusion_liftDGFullSubcategory] using
+    ((x.liftDGFullSubcategory hx).map α).liftDGFullSubcategory_mapDGNerveSimplex_inclusion
 
 end DGNerve.Simplex
 
@@ -115,10 +111,11 @@ namespace dgNerve
 /-- A dg simplex belongs to the full enhanced subcategory on `P` exactly when all its
 objects satisfy `P`. -/
 @[simp]
-lemma mem_fullEnhancedSubcategory_iff {n : ℕ} (x : (dgNerve R C) _⦋n⦌) :
+lemma mem_fullEnhancedSubcategory_obj_iff_forall_fin {n : ℕ} (x : (dgNerve R C) _⦋n⦌) :
     x ∈ ((dgNerve R C).fullEnhancedSubcategory (fun v ↦ P (v.obj 0))).obj
       (op ⦋n⦌) ↔ ∀ i, P (x.obj i) := by
   simp only [SSet.mem_fullEnhancedSubcategory_obj_iff_forall_fin, dgNerve_map_apply]
+  -- The object map of a simplex restricts by composition; the constant operator evaluates to i.
   rfl
 
 end dgNerve
@@ -131,23 +128,33 @@ variable (R P)
 dg nerve on the same objects. This is an isomorphism of simplicial sets in every degree. -/
 def dgNerveIso :
     dgNerve R (DGFullSubcategory P) ≅
-      ((dgNerve R C).fullEnhancedSubcategory (fun v ↦ P (v.obj 0)) : SSet) :=
-  NatIso.ofComponents (fun n ↦ Equiv.toIso
-    { toFun (x : (dgNerve R (DGFullSubcategory P)).obj n) :=
-        ⟨(inclusion (R := R)).mapDGNerveSimplex x,
-          (dgNerve.mem_fullEnhancedSubcategory_iff _).2 (fun i ↦ by
-            -- At an arbitrary simplex-category object, reduce the exposed dg-nerve object
-            -- wrapper to match the simplex-level object formula.
-            erw [CategoryTheory.EnrichedFunctor.mapDGNerveSimplex_obj, inclusion_obj]
-            exact (x.obj i).property)⟩
-      invFun x := x.1.liftDGFullSubcategory
-        ((dgNerve.mem_fullEnhancedSubcategory_iff x.1).1 x.2)
-      left_inv x := x.liftDGFullSubcategory_mapDGNerveSimplex_inclusion
-      right_inv x := Subtype.ext (x.1.mapDGNerveSimplex_inclusion_liftDGFullSubcategory _) })
-    (fun {n m} α ↦ by
-      ext x
-      apply Subtype.ext
-      exact (inclusion (R := R)).mapDGNerveSimplex_map x α.unop.toOrderHom)
+      ((dgNerve R C).fullEnhancedSubcategory (fun v ↦ P (v.obj 0)) : SSet) where
+  hom := SSet.Subcomplex.lift (inclusion (R := R)).mapDGNerve <| by
+    rw [SSet.range_le_fullEnhancedSubcategory_iff]
+    intro y
+    rw [CategoryTheory.EnrichedFunctor.mapDGNerve_app]
+    -- Reduce the dg-nerve object wrapper to match the simplex-level object formula.
+    erw [CategoryTheory.EnrichedFunctor.mapDGNerveSimplex_obj, inclusion_obj]
+    exact (y.obj 0).property
+  inv :=
+    { app n := ↾fun x ↦ x.1.liftDGFullSubcategory
+        ((dgNerve.mem_fullEnhancedSubcategory_obj_iff_forall_fin x.1).1 x.2)
+      naturality _ _ α := by
+        ext x
+        exact x.1.liftDGFullSubcategory_map _ α.unop.toOrderHom }
+  hom_inv_id := by
+    ext n x
+    -- Normalize component composition and the subtype lift before using the action lemma.
+    change ((inclusion (R := R)).mapDGNerve.app n x).liftDGFullSubcategory _ = x
+    simp only [CategoryTheory.EnrichedFunctor.mapDGNerve_app]
+    exact x.liftDGFullSubcategory_mapDGNerveSimplex_inclusion
+  inv_hom_id := by
+    ext n x
+    apply Subtype.ext
+    -- Normalize component composition and the subtype lift before using the action lemma.
+    change (inclusion (R := R)).mapDGNerve.app n (x.1.liftDGFullSubcategory _) = x.1
+    exact (CategoryTheory.EnrichedFunctor.mapDGNerve_app (inclusion (R := R))
+      (Δ := n) _).trans (x.1.mapDGNerveSimplex_inclusion_liftDGFullSubcategory _)
 
 /-- The comparison identifies the inclusion of the full enhanced subcategory with the
 dg nerve of the enriched inclusion. -/
@@ -155,16 +162,26 @@ dg nerve of the enriched inclusion. -/
 lemma dgNerveIso_hom_ι :
     (dgNerveIso R P).hom ≫ SSet.Subcomplex.ι _ =
       (inclusion (R := R) (P := P)).mapDGNerve := by
-  ext n x
-  exact (CategoryTheory.EnrichedFunctor.mapDGNerve_app _ x).symm
+  dsimp only [dgNerveIso]
+  exact SSet.Subcomplex.lift_ι _ _
+
+/-- The inverse comparison identifies the dg inclusion with the full enhanced inclusion. -/
+@[reassoc (attr := simp)]
+lemma dgNerveIso_inv_mapDGNerve :
+    (dgNerveIso R P).inv ≫ (inclusion (R := R) (P := P)).mapDGNerve =
+      SSet.Subcomplex.ι _ := by
+  rw [Iso.inv_comp_eq]
+  exact (dgNerveIso_hom_ι R P).symm
 
 /-- On simplices, the forward comparison applies the enriched inclusion. -/
 @[simp]
 lemma dgNerveIso_hom_app_coe (n : SimplexCategoryᵒᵖ)
     (x : (dgNerve R (DGFullSubcategory P)).obj n) :
     dsimp% ((dgNerveIso R P).hom.app n x).1 =
-      (inclusion (R := R) (P := P)).mapDGNerveSimplex x :=
-  (rfl)
+      (inclusion (R := R) (P := P)).mapDGNerveSimplex x := by
+  dsimp only [dgNerveIso]
+  rw [SSet.Subcomplex.lift_app_coe]
+  exact CategoryTheory.EnrichedFunctor.mapDGNerve_app _ x
 
 /-- The inverse comparison lifts the objects and retains every coherence. -/
 @[simp]
@@ -172,7 +189,8 @@ lemma dgNerveIso_inv_app (n : SimplexCategoryᵒᵖ)
     (x : ((dgNerve R C).fullEnhancedSubcategory
       (fun v ↦ P (v.obj 0))).obj n) :
     dsimp% (dgNerveIso R P).inv.app n x =
-      x.1.liftDGFullSubcategory ((dgNerve.mem_fullEnhancedSubcategory_iff x.1).1 x.2) :=
+      x.1.liftDGFullSubcategory
+        ((dgNerve.mem_fullEnhancedSubcategory_obj_iff_forall_fin x.1).1 x.2) :=
   (rfl)
 
 /-- The nerve of a full dg inclusion is fully faithful on right mapping spaces. -/
