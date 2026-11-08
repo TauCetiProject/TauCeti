@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 
 /-!
 # Smooth compactly supported maps in parabolic Hölder spaces
@@ -65,64 +66,6 @@ namespace TauCeti.ParabolicC2HolderSpace
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {α : ℝ≥0}
 
--- These shortcuts keep nested operator-space instance search shallow.
-private local instance : NormedAddCommGroup (E →L[ℝ] F) := inferInstance
-private local instance : NormedSpace ℝ (E →L[ℝ] F) := inferInstance
-private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
-private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
-
-private theorem hasFDerivAt_comp_spatial_coords {g : E × ℝ → F} (hg : ContDiff ℝ 1 g)
-    (z : E × ℝ) (t : ℝ) (x : E) :
-    HasFDerivAt (fun y ↦ g (y - z.1, t - z.2))
-      ((fderiv ℝ g (x - z.1, t - z.2)).comp (ContinuousLinearMap.inl ℝ E ℝ)) x := by
-  simpa [Function.comp_def] using (hg.differentiable (by simp) _).hasFDerivAt.comp x
-    ((hasFDerivAt_prodMk_left (x - z.1) (t - z.2)).comp x
-      ((hasFDerivAt_id x).sub_const z.1))
-
-/-- The spatial first and second derivative fields and the time derivative field of a compactly
-supported `C³` function on ordinary space-time are compactly supported, of the expected
-smoothness, and compute the derivatives of every translate of the function. -/
-private theorem exists_derivative_fields {f : E × ℝ → F} (hf : ContDiff ℝ 3 f)
-    (hs : HasCompactSupport f) :
-    ∃ (fx : E × ℝ → E →L[ℝ] F) (fxx : E × ℝ → E →L[ℝ] E →L[ℝ] F) (ft : E × ℝ → F),
-      ContDiff ℝ 2 fx ∧ HasCompactSupport fx ∧ ContDiff ℝ 1 fxx ∧ HasCompactSupport fxx ∧
-      ContDiff ℝ 2 ft ∧ HasCompactSupport ft ∧
-      (∀ (z : E × ℝ) (t : ℝ) (x : E),
-        HasFDerivAt (fun y ↦ f (y - z.1, t - z.2)) (fx (x - z.1, t - z.2)) x) ∧
-      (∀ (z : E × ℝ) (t : ℝ) (x : E),
-        HasFDerivAt (fun y ↦ fx (y - z.1, t - z.2)) (fxx (x - z.1, t - z.2)) x) ∧
-      (∀ (z : E × ℝ) (x : E) (t : ℝ),
-        HasDerivAt (fun s : ℝ ↦ f (x - z.1, s - z.2)) (ft (x - z.1, t - z.2)) t) := by
-  -- Restrict the ordinary derivatives to spatial directions and to the unit time direction.
-  let ι : E →L[ℝ] E × ℝ := ContinuousLinearMap.inl ℝ E ℝ
-  let R : (E × ℝ →L[ℝ] F) →L[ℝ] E →L[ℝ] F := ι.precomp F
-  let S : (E × ℝ →L[ℝ] E →L[ℝ] F) →L[ℝ] E →L[ℝ] E →L[ℝ] F :=
-    ι.precomp (E →L[ℝ] F)
-  let fx : E × ℝ → E →L[ℝ] F := R ∘ fderiv ℝ f
-  have hfx : ContDiff ℝ 2 fx :=
-    (R.contDiff (n := 2)).comp (hf.fderiv_right (by norm_num))
-  have hsfx : HasCompactSupport fx := (hs.fderiv ℝ).comp_left (map_zero R)
-  let fxx : E × ℝ → E →L[ℝ] E →L[ℝ] F := S ∘ fderiv ℝ fx
-  have hfxx : ContDiff ℝ 1 fxx :=
-    (S.contDiff (n := 1)).comp (hfx.fderiv_right (by norm_num))
-  have hsfxx : HasCompactSupport fxx :=
-    (hsfx.fderiv ℝ).comp_left (map_zero S)
-  let ft : E × ℝ → F := (ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)) ∘ fderiv ℝ f
-  have hft : ContDiff ℝ 2 ft :=
-    ((ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)).contDiff (n := 2)).comp
-      (hf.fderiv_right (by norm_num))
-  have hsft : HasCompactSupport ft :=
-    (hs.fderiv ℝ).comp_left (map_zero (ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)))
-  refine ⟨fx, fxx, ft, hfx, hsfx, hfxx, hsfxx, hft, hsft, fun z t x ↦ ?_, fun z t x ↦ ?_,
-    fun z x t ↦ ?_⟩
-  · simpa [fx, R, ι, Function.comp_def] using
-      hasFDerivAt_comp_spatial_coords (hf.of_le (by norm_num)) z t x
-  · simpa [fxx, S, ι, Function.comp_def] using
-      hasFDerivAt_comp_spatial_coords (hfx.of_le (by norm_num)) z t x
-  · simpa [ft, Function.comp_def] using
-      ((hf.differentiable (by simp) _).hasFDerivAt.comp t
-        ((hasFDerivAt_const (x - z.1) t).prodMk ((hasFDerivAt_id t).sub_const z.2))).hasDerivAt
-
 /-- Compactly supported `C³` functions on ordinary space-time have a common
 order-two parabolic Hölder norm bound on all translated closed slabs. -/
 theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
@@ -132,7 +75,7 @@ theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
         (∀ p, g p = f ((p : ParabolicSpaceTime E).space - z.1,
           (p : ParabolicSpaceTime E).time - z.2)) ∧ ‖g‖ ≤ C := by
   obtain ⟨fx, fxx, ft, hfx, hsfx, hfxx, hsfxx, hft, hsft, hdx, hdxx, hdt⟩ :=
-    exists_derivative_fields hf hs
+    exists_derivative_fields_of_contDiff_three hf hs
   -- All four field bounds are fixed before translating or selecting a slab.
   obtain ⟨C₀, hC₀, hu⟩ :=
     exists_norm_le_holderSpace_comp_coords hα (hf.of_le (by norm_num)) hs
