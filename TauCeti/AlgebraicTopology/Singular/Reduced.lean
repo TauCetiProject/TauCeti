@@ -416,6 +416,19 @@ instance free_singularHomology_zero [Module.Free k M] :
   classical
   exact .of_equiv (X.singularHomology₀Iso M ≪≫ coprodIsoDirectSum _).toLinearEquiv.symm
 
+/-- The zeroth reduced singular homology with coefficients in a free module is free: it is zero
+for the empty space, and otherwise a direct sum of copies of the coefficient module, one for each
+path component other than that of a chosen point. -/
+instance free_reducedSingularHomology_zero [Module.Free k M] :
+    Module.Free k ((reducedSingularHomologyFunctor M 0).obj X) := by
+  classical
+  rcases isEmpty_or_nonempty X with hX | hX
+  · have : Subsingleton ((reducedSingularHomologyFunctor M 0).obj X) :=
+      ModuleCat.isZero_iff_subsingleton.mp (isZero_reducedSingularHomologyFunctor_of_isEmpty M X 0)
+    infer_instance
+  · exact .of_equiv (reducedSingularHomology₀Iso M (Classical.arbitrary X) ≪≫
+      coprodIsoDirectSum _).toLinearEquiv.symm
+
 /-- The zeroth homology of the singular chain complex with free module coefficients is free.
 Mathlib's `singularHomologyFunctor` is the composite of the singular-chain functor with
 `HomologicalComplex.homologyFunctor`; evaluating that composite gives this chain-homology
@@ -460,10 +473,6 @@ theorem finrank_singularHomology_eq_finrank_reducedSingularHomology_add [StrongR
         if q = 0 then Module.finrank k M else 0 := by
   cases q with
   | zero =>
-    classical
-    have : Module.Free k ((reducedSingularHomologyFunctor M 0).obj X) :=
-      .of_equiv (reducedSingularHomology₀Iso M (Classical.arbitrary X) ≪≫
-        coprodIsoDirectSum _).toLinearEquiv.symm
     rw [(singularHomology₀LinearEquiv M (Classical.arbitrary X)).finrank_eq,
       Module.finrank_prod, ite_eq_left rfl]
   | succ q =>
