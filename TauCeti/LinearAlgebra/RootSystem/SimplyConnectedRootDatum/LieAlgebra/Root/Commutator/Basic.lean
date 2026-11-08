@@ -36,8 +36,10 @@ The division by two is exact in `ℤ`: by Chevalley's theorem `N_{α,β} = ±(r 
 `N_{α,α+β} = ±(r + 2)` for `r` the largest integer with `β - rα` a root. So the formulas hold
 over every commutative ring, in every characteristic. Together with the case `-β = α`, which is
 not a commutator relation, these cover every pair of roots in the simply laced types and every
-pair in the types `B`, `C` and `F₄` up to exchanging `α` and `β`. The remaining pairs of type
-`G₂` are treated by the straightening relations in the `G2` subdirectory of this one.
+pair in the types `B`, `C` and `F₄` up to exchanging `α` and `β`. In type `G₂` they do not cover
+every pair: the `G2` subdirectory of this one gives straightening relations for the short–long
+pairs whose `α`-string through `β` has four roots, and the short–short pairs whose sum is a root,
+for which `2α + β` and `α + 2β` are both roots, are not treated here.
 
 The proofs transport the integral exponential identities
 `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and
@@ -72,23 +74,6 @@ noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} {α β γ δ : Fin t.numRoots}
 
-/-- A root sum `γ = α + β` makes the roots `α` and `β` linearly independent, so a combination
-`a α + b β` with natural coefficients and `a ≠ 0` does not vanish. -/
-private theorem ne_zero_of_eq_nsmul_root_add_nsmul_root
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    {a b : ℕ} (ha : a ≠ 0) {w : Fin t.rank → ℤ}
-    (hw : w = a • (t.simplyConnectedRootDatum ht).root α +
-      b • (t.simplyConnectedRootDatum ht).root β) :
-    w ≠ 0 := by
-  have := t.isReduced_simplyConnectedRootDatum ht
-  rintro rfl
-  rw [← natCast_zsmul, ← natCast_zsmul] at hw
-  have h := (LinearIndependent.pair_iff.1
-    ((t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩) _ _
-      hw.symm).1
-  omega
-
 /-- The root sums met in the two-factor commutator formula: for `γ = α + β` and `δ = 2α + β`,
 none of `α + δ`, `β + γ` and `β + δ` is a root or zero, provided `3α + β` and `α + 2β` are not
 roots. -/
@@ -110,12 +95,10 @@ private theorem root_add_notMem_range_and_ne_zero_of_root_eq_two_nsmul_add
   have hαδ : P.root α + P.root δ = 3 • P.root α + P.root β := by rw [hδ]; module
   have hβγ : P.root β + P.root γ = P.root α + 2 • P.root β := by rw [hγ]; module
   have hβδ : P.root β + P.root δ = 2 • P.root γ := by rw [hδ, hγ]; module
-  refine ⟨⟨hαδ ▸ hα, ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 3) (b := 1)
-      three_ne_zero (by rw [hαδ, one_nsmul])⟩,
-    ⟨hβγ ▸ hβ, ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 1) (b := 2) one_ne_zero
-      (by rw [hβγ, one_nsmul])⟩,
-    ⟨hβδ ▸ P.nsmul_notMem_range_root, ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 2)
-      (b := 2) two_ne_zero (by rw [hβδ, hγ]; module)⟩⟩
+  have hne := P.nsmul_root_add_nsmul_root_ne_zero_of_add_mem_range_root ⟨γ, hγ⟩
+  refine ⟨⟨hαδ ▸ hα, by simpa only [hαδ, one_nsmul] using hne 3 1 three_ne_zero⟩,
+    ⟨hβγ ▸ hβ, by simpa only [hβγ, one_nsmul] using hne 1 2 one_ne_zero⟩,
+    ⟨hβδ ▸ P.nsmul_notMem_range_root, by rw [hβδ, hγ, smul_add]; exact hne 2 2 two_ne_zero⟩⟩
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
@@ -163,14 +146,15 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add
   have hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β := by
     rw [hγ]; module
+  have := t.isReduced_simplyConnectedRootDatum ht
+  have hne :=
+    (t.simplyConnectedRootDatum ht).nsmul_root_add_nsmul_root_ne_zero_of_add_mem_range_root ⟨γ, hγ⟩
   refine commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
     (lie_chevalleySystem_eq_zero (hαγ ▸ hα)
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 2) (b := 1) two_ne_zero
-        (by rw [hαγ, one_nsmul])))
+      (by simpa only [hαγ, one_nsmul] using hne 2 1 two_ne_zero))
     (lie_chevalleySystem_eq_zero (hβγ ▸ hβ)
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 1) (b := 2) one_ne_zero
-        (by rw [hβγ, one_nsmul]))) A u v
+      (by simpa only [hβγ, one_nsmul] using hne 1 2 one_ne_zero)) A u v
 
 /-- **The two-factor Chevalley commutator formula.** If `γ = α + β` and `δ = 2α + β` are roots
 while `3α + β` and `α + 2β` are not, then over every commutative ring of values

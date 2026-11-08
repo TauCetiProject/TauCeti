@@ -34,26 +34,6 @@ noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} {α β γ : Fin t.numRoots}
 
-private theorem two_nsmul_add_notMem_range_of_pairingIn_eq_zero
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (horth : (t.simplyConnectedRootDatum ht).pairingIn ℤ β α = 0) :
-    2 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
-      Set.range (t.simplyConnectedRootDatum ht).root := by
-  have := t.isReduced_simplyConnectedRootDatum ht
-  let P := t.simplyConnectedRootDatum ht
-  have hsum : P.root α + P.root β ∈ Set.range P.root := ⟨γ, hγ⟩
-  have hli := P.linearIndependent_of_add_mem_range_root' hsum
-  have htop := (P.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
-    hsum horth).2
-  rintro ⟨δ, hδ⟩
-  have hδ' : P.root δ = P.root β + (2 : ℕ) • P.root α := by
-    rw [hδ]
-    module
-  have : 2 ≤ P.chainTopCoeff α β :=
-    (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hli).1 ⟨δ, hδ'⟩
-  omega
-
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
   (M : AddSubgroup V)
@@ -75,12 +55,14 @@ theorem commutatorElement_chevalleyRootSubgroup_of_pairingIn_eq_zero
       chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) := by
-  have hβα : (t.simplyConnectedRootDatum ht).pairingIn ℤ α β = 0 :=
-    (t.simplyConnectedRootDatum ht).pairingIn_eq_zero_iff.mp horth
+  have := t.isReduced_simplyConnectedRootDatum ht
+  let P := t.simplyConnectedRootDatum ht
+  have hβα : P.pairingIn ℤ α β = 0 := P.pairingIn_eq_zero_iff.mp horth
   refine commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil hγ
-    (two_nsmul_add_notMem_range_of_pairingIn_eq_zero hγ horth) ?_ A u v
+    (P.two_nsmul_root_add_root_notMem_range_of_pairingIn_eq_zero ⟨γ, hγ⟩ horth) ?_ A u v
   rw [add_comm]
-  exact two_nsmul_add_notMem_range_of_pairingIn_eq_zero (hγ.trans (add_comm _ _)) hβα
+  exact P.two_nsmul_root_add_root_notMem_range_of_pairingIn_eq_zero
+    ⟨γ, hγ.trans (add_comm _ _)⟩ hβα
 
 /-- In characteristic two, orthogonal root subgroups with a root sum commute. -/
 theorem commute_chevalleyRootSubgroup_of_pairingIn_eq_zero_of_char_two

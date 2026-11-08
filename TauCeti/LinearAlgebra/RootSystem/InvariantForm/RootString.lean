@@ -23,6 +23,8 @@ integrality of Chevalley structure constants.
   two roots is a root.
 * `RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero`:
   orthogonal roots whose sum is a root have one string step in each direction.
+* `RootPairing.two_nsmul_root_add_root_notMem_range_of_pairingIn_eq_zero`: for orthogonal roots
+  whose sum is a root, `2α + β` is not a root.
 * `RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero`: orthogonal roots
   whose sum is a root have equal squared length under any invariant form.
 * `RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq`: along a root string,
@@ -59,6 +61,32 @@ theorem chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
   have hbound := P.chainBotCoeff_add_chainTopCoeff_le_three (i := α) (j := β)
   have hpos := P.one_le_chainTopCoeff_of_root_add_mem h
   rw [horth] at hdiff
+  omega
+
+omit [Finite I] in
+/-- If the sum of two roots is a root, the roots are linearly independent, so a combination
+`a α + b β` with natural coefficients and `a ≠ 0` does not vanish. -/
+theorem nsmul_root_add_nsmul_root_ne_zero_of_add_mem_range_root
+    (P : RootPairing I R M N) [P.IsReduced] {α β : I}
+    (h : P.root α + P.root β ∈ Set.range P.root) (a b : ℕ) (ha : a ≠ 0) :
+    a • P.root α + b • P.root β ≠ 0 := by
+  intro hw
+  rw [← Nat.cast_smul_eq_nsmul R a, ← Nat.cast_smul_eq_nsmul R b] at hw
+  exact ha (Nat.cast_eq_zero.1
+    (LinearIndependent.pair_iff.1 (P.linearIndependent_of_add_mem_range_root' h) _ _ hw).1)
+
+/-- If the sum of two orthogonal roots `α` and `β` is a root, then `2α + β` is not a root. -/
+theorem two_nsmul_root_add_root_notMem_range_of_pairingIn_eq_zero
+    (P : RootPairing I R M N) [P.IsCrystallographic] [P.IsReduced] {α β : I}
+    (h : P.root α + P.root β ∈ Set.range P.root) (horth : P.pairingIn ℤ β α = 0) :
+    2 • P.root α + P.root β ∉ Set.range P.root := by
+  have htop := (P.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero h horth).2
+  rintro ⟨δ, hδ⟩
+  have hδ' : P.root δ = P.root β + (2 : ℕ) • P.root α := by
+    rw [hδ, add_comm]
+  have : 2 ≤ P.chainTopCoeff α β :=
+    (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff
+      (P.linearIndependent_of_add_mem_range_root' h)).1 ⟨δ, hδ'⟩
   omega
 
 end
