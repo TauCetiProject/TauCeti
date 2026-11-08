@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Algebra.Order.Group
 import Mathlib.Topology.Homeomorph.Lemmas
@@ -22,11 +21,11 @@ A nonempty compact subset of an open interval lies in the interior of a smaller 
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
 
-The image of a half-infinite real interval under a continuous strictly monotone map is determined
+The image of a half-infinite interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
 when the limit is finite.
 A continuous strictly increasing function on a compact interval has a continuous inverse on
-its range, extended to the whole line by clamping.
+its range, extended to the whole codomain by clamping.
 
 ## Main results
 
