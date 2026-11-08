@@ -14,8 +14,8 @@ import TauCeti.RingTheory.AdicCompletion.DerivedComplete
 These examples exercise derived `p`-completeness over the `p`-adic integers. The ring `ℤ_[p]` and
 every product of copies of it are derived `p`-complete, but the countable direct sum is not,
 although each of its summands is. Derived completeness is therefore not a condition that can be
-tested summand by summand. The same holds for these modules placed in degree zero of the derived
-category `D(ℤ_[p])`.
+tested summand by summand. Placed in a single degree of the derived category `D(ℤ_[p])`, `ℤ_[p]`
+is derived `p`-complete (degree zero) and `⊕_ℕ ℤ_[p]` is not (degree one).
 -/
 
 universe w
@@ -57,7 +57,7 @@ variable [HasDerivedCategory.{w} (ModuleCat.{0} ℤ_[p])]
 example : derivedComplete (Ideal.span {(p : ℤ_[p])})
     ((singleFunctor (ModuleCat ℤ_[p]) 0).obj (.of ℤ_[p] ℤ_[p])) := by
   rw [← PadicInt.maximalIdeal_eq_span_p]
-  exact derivedComplete_singleFunctor_of_isAdicComplete _ 0
+  exact derivedComplete_singleFunctor_of_isAdicComplete
 
 -- `⊕_ℕ ℤ_[p]`, placed in degree one, is not derived `p`-complete in `D(ℤ_[p])`.
 example : ¬derivedComplete (Ideal.span {(p : ℤ_[p])})
