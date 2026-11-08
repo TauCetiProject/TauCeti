@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Green.Comparison.Area.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Embedding
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-public import TauCeti.MeasureTheory.Integral.RangeTransport
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
@@ -148,7 +147,9 @@ theorem integralTopForm_mpullback_area_eq_integral_image
     ⟨e.continuous.measurable, by
       change Measure.map e b.addHaar = _
       rw [b.map_addHaar e, hb, basisOneI_addHaar]⟩
-  obtain ⟨hgi', hint⟩ := hmp.integrableOn_range_and_setIntegral_range (f := f) g hgi
-  exact ⟨hgi', hge.trans hint⟩
+  -- The range of `e.symm ∘ f` is the preimage under `e` of the range of `f`.
+  rw [Set.range_comp, ContinuousLinearEquiv.image_symm_eq_preimage] at hgi hge
+  exact ⟨(hmp.integrableOn_comp_preimage (MeasurableEquiv.measurableEmbedding _)).mp hgi,
+    hge.trans (hmp.setIntegral_preimage_emb (MeasurableEquiv.measurableEmbedding _) g _)⟩
 
 end TauCeti.Green
