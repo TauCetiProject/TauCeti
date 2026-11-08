@@ -9,12 +9,9 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import TauCeti.Analysis.Complex.Polynomial.ImaginaryAxis
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
-import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
-import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Algebra.Polynomial.Semiconj
 import TauCeti.Analysis.Normed.Algebra.Exponential
-import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Analysis.Normed.Operator.Exponential
 
@@ -57,7 +54,7 @@ and transferred to real operators through the isometric complexification
   at the eigenvalues `μ` of `N` (`ContinuousLinearMap.spectrum_exp`). These lie in the open unit
   disc;
 * by Gelfand's formula the powers of `exp N` are bounded
-  (`TauCeti.exists_norm_pow_le_of_spectralRadius_lt_one`). Writing `t = n + s` with `n` a natural
+  (`norm_pow_le_mul_pow_of_gelfandRadius_lt`). Writing `t = n + s` with `n` a natural
   number and `0 ≤ s < 1` bounds `exp (t • N) = (exp N) ^ n * exp (s • N)` uniformly in `t ≥ 0`,
   and `exp (t • T) = exp (-β t) * exp (t • N)`.
 
@@ -142,9 +139,10 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
     rw [← NNReal.coe_lt_coe, coe_nnnorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
       NNReal.coe_one, Real.exp_lt_one_iff]
     exact hrroots μ hrμ
-  obtain ⟨C, hC⟩ := TauCeti.exists_norm_pow_le_of_spectralRadius_lt_one
-    (spectrum.spectralRadius_lt_of_forall_lt _ hspec)
-  have hC0 : 1 ≤ C := by simpa using hC 0
+  have hρ := spectrum.spectralRadius_lt_of_forall_lt _ hspec
+  rw [spectrum.spectralRadius_eq_gelfandRadius, ENNReal.coe_one, ENNReal.ofReal_lt_one] at hρ
+  obtain ⟨C, hC0, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt _ hρ
+  simp only [one_pow, mul_one] at hC
   -- A bound for `exp (t • N)`, uniform in `t ≥ 0`.
   have hNt (t : ℝ) (ht : 0 ≤ t) : ‖exp ((t : ℂ) • N)‖ ≤ C * Real.exp ‖N‖ := by
     have hs0 : 0 ≤ t - ⌊t⌋₊ := sub_nonneg.mpr (Nat.floor_le ht)
