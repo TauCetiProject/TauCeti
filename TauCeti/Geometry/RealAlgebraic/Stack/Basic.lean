@@ -392,7 +392,7 @@ theorem isPreconnected_sectorSet [PreconnectedSpace X] (hc : ∀ i, Continuous (
     (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) :
     IsPreconnected (sectorSet θ j) := by
   obtain ⟨σ, hσ, hσj⟩ := exists_continuous_forall_mem_sectorSet hc hθ j
-  exact isPreconnected_of_isPreconnected_preimage_prodMk hσ hσj fun x ↦
+  exact isPreconnected_of_isPreconnected_preimage_prodMk_of_continuous hσ hσj fun x ↦
     (ordConnected_preimage_mk_sectorSet θ j x).isPreconnected
 
 /-- Over a connected base, each sector of a stack of continuous, pointwise strictly ordered real
