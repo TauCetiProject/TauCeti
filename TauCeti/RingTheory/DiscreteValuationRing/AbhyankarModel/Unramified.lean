@@ -194,10 +194,7 @@ theorem formallyUnramified_abhyankarModelKummerHom
     simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
       AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes,
       ← IsScalarTower.algebraMap_apply A (abhyankarModel ϖ u e d) S]
-  obtain ⟨_, hrank⟩ := abhyankarModel_free ϖ u (Nat.pos_of_ne_zero he.neZero_natCast.out)
-    (Nat.pos_of_ne_zero hd)
-  have : Module.Finite B D :=
-    Module.finite_of_finrank_pos (hrank ▸ Nat.pos_of_ne_zero (mul_ne_zero he.neZero_natCast.out hd))
+  have : Algebra.FiniteType B D := inferInstance
   have : Algebra.EssFiniteType A D := .comp A B D
   have : Algebra.EssFiniteType A S := .comp A D S
   have : Algebra.EssFiniteType R S := .of_comp A R S
