@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.MarkovChain.EntranceLimits
 public import TauCeti.Probability.MarkovChain.ReturnGaps
+public import TauCeti.Probability.Process.Occupation
 public import TauCeti.Probability.Process.ReturnGapRenewal
 public import TauCeti.Probability.Renewal.StrongLaw
 
@@ -19,6 +20,10 @@ The reciprocal is taken in `ℝ≥0∞` before conversion to `ℝ`. Thus both tr
 states and recurrent states with infinite mean have limiting frequency zero.
 The expectations have the same limit by bounded convergence. These assertions
 also transfer to arbitrary realizations with the specified path law.
+
+For a chain started from a point mass, the expected number of visits to any target state
+at times one through `n` is the sum of the corresponding transition probabilities.
+This identity requires neither recurrence nor countability.
 
 The recurrent case consumes the independent return-gap laws and identifies their
 renewal count with positive-time visits. The renewal strong law then gives the
@@ -47,8 +52,23 @@ open scoped ENNReal NNReal
 
 namespace ProbabilityTheory.Kernel
 
-variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
-  {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+  (κ : Kernel α α) [IsMarkovKernel κ]
+
+/-- The expected number of visits to `y` at times one through `n`, starting from `x`,
+is the sum of the corresponding transition probabilities. -/
+theorem integral_visitCount_succ_markovChainLaw_dirac (x y : α) (n : ℕ) :
+    (∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ)
+      ∂markovChainLaw (Measure.dirac x) κ) =
+      ∑ i ∈ Finset.range n, ((κ ^ (i + 1)) x).real {y} := by
+  rw [integral_visitCount (fun i (ω : ℕ → α) => ω (i + 1))
+    (fun i => measurable_pi_apply (i + 1))]
+  apply Finset.sum_congr rfl
+  intro i hi
+  simp only [Measure.real, Measure.markovChainLaw_setOf_apply_eq_comp,
+    Measure.dirac_bind (κ ^ (i + 1)).measurable]
+
+variable [Countable α] {κ} {y : α}
 
 private theorem IsRecurrent.ae_tendsto_visitCount_succ_div (hy : κ.IsRecurrent y) :
     ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ,

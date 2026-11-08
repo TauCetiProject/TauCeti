@@ -202,6 +202,75 @@ theorem integral_eval_smul_resolvent (hΓ : IsIn Γ (resolventSet ℂ a))
       ← Algebra.smul_def]
     rw [integral_smul, integral_pow_smul_resolvent hΓ hwind, smul_comm]
 
+/-- Integrating the resolvent identity over a cycle `Γ₂` that winds once around `z` evaluates the
+part of the double integrand carrying the resolvent at the point of `Γ₂`. -/
+private theorem integral_div_sub_smul_smul_resolvent {U : Set ℂ} (hU : IsOpen U) {g : ℂ → ℂ}
+    (hg : DifferentiableOn ℂ g U) {Γ₂ : Cycle} (c : ℂ) {z : ℂ} (hzU : z ∈ U)
+    (hzR : z ∈ resolventSet ℂ a) (hΓ₂U : IsIn Γ₂ U) (hR₂ : IsIn Γ₂ (resolventSet ℂ a))
+    (hU₂ : IsNullHomologous Γ₂ U) (hz₂ : z ∉ trace Γ₂) (hw₂ : windingNumber z Γ₂ = 1) :
+    integral (fun w ↦ (c / (w - z)) • (g w • resolvent a w)) Γ₂ =
+      (2 * π * I * g z) • (c • resolvent a z) -
+        (c • resolvent a z) * integral (fun w ↦ g w • resolvent a w) Γ₂ := by
+  have hsub : ∀ w ∈ trace Γ₂, w - z ≠ 0 := fun w hw ↦ sub_ne_zero.mpr fun h ↦ hz₂ (h ▸ hw)
+  have hg₂ : ContinuousOn g (trace Γ₂) := hg.continuousOn.mono (isIn_iff.mp hΓ₂U)
+  have hgR₂ : ContinuousOn (fun w ↦ g w • resolvent a w) (trace Γ₂) :=
+    hg₂.smul (continuousOn_resolvent hR₂)
+  have hgz : ContinuousOn (fun w ↦ g w / (w - z)) (trace Γ₂) :=
+    hg₂.div (continuousOn_id.sub continuousOn_const) hsub
+  have hBz : ContinuousOn (fun w ↦ (c / (w - z)) • (g w • resolvent a w)) (trace Γ₂) :=
+    (continuousOn_const.div (continuousOn_id.sub continuousOn_const) hsub).smul hgR₂
+  have hmul := integral_comp_comm (f := fun w ↦ g w • resolvent a w)
+    (fun _ ↦ intervalIntegrable_of_mem_support hgR₂)
+    (ContinuousLinearMap.mul ℂ A (c • resolvent a z))
+  simp only [ContinuousLinearMap.mul_apply'] at hmul
+  have hsplit : integral (fun w ↦ (c • resolvent a z) * (g w • resolvent a w)) Γ₂ =
+      integral (fun w ↦ (g w / (w - z)) • (c • resolvent a z)) Γ₂ -
+        integral (fun w ↦ (c / (w - z)) • (g w • resolvent a w)) Γ₂ := by
+    rw [← integral_sub (f := fun w ↦ (g w / (w - z)) • (c • resolvent a z))
+      (g := fun w ↦ (c / (w - z)) • (g w • resolvent a w)) (hgz.smul continuousOn_const) hBz]
+    refine integral_congr fun w hw ↦ ?_
+    have hres : resolvent a z * resolvent a w =
+        (w - z)⁻¹ • (resolvent a z - resolvent a w) := by
+      rw [spectrum.resolvent_sub_resolvent_eq_smul_mul hzR (isIn_iff.mp hR₂ hw), smul_smul,
+        inv_mul_cancel₀ (hsub w hw), one_smul]
+    rw [smul_mul_smul_comm, hres]
+    module
+  rw [← hmul, hsplit, integral_smul_const,
+    cauchyIntegralFormula_nullHomologous hU hg hΓ₂U hU₂ hzU hz₂, hw₂, mul_one, sub_sub_cancel]
+
+/-- Integrating the part of the double integrand carrying the resolvent at the point of `Γ₂` over
+`Γ₂` first and `Γ₁` second gives zero, since `Γ₁` does not wind around any point of `Γ₂`. -/
+private theorem integral_integral_div_sub_smul_smul_resolvent {U : Set ℂ} (hU : IsOpen U)
+    {f g : ℂ → ℂ} (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U) {Γ₁ Γ₂ : Cycle}
+    (hΓ₁U : IsIn Γ₁ U) (hΓ₂U : IsIn Γ₂ U) (hR₂ : IsIn Γ₂ (resolventSet ℂ a))
+    (hU₁ : IsNullHomologous Γ₁ U) (h₁₂ : Disjoint (trace Γ₁) (trace Γ₂))
+    (hw₁ : ∀ w ∈ trace Γ₂, windingNumber w Γ₁ = 0) :
+    integral (fun z ↦ integral (fun w ↦ (f z / (w - z)) • (g w • resolvent a w)) Γ₂) Γ₁ = 0 := by
+  have hf₁ : ContinuousOn f (trace Γ₁) := hf.continuousOn.mono (isIn_iff.mp hΓ₁U)
+  have hg₂ : ContinuousOn g (trace Γ₂) := hg.continuousOn.mono (isIn_iff.mp hΓ₂U)
+  have hgR₂ : ContinuousOn (fun w ↦ g w • resolvent a w) (trace Γ₂) :=
+    hg₂.smul (continuousOn_resolvent hR₂)
+  have hne : ∀ p ∈ trace Γ₁ ×ˢ trace Γ₂, p.2 - p.1 ≠ 0 := fun p hp ↦
+    sub_ne_zero.mpr fun h ↦ disjoint_left.mp h₁₂ (mem_prod.mp hp).1 (h ▸ (mem_prod.mp hp).2)
+  have hcont : ContinuousOn (Function.uncurry fun z w ↦ (f z / (w - z)) • (g w • resolvent a w))
+      (trace Γ₁ ×ˢ trace Γ₂) :=
+    ((hf₁.comp continuousOn_fst fun _ hp ↦ (mem_prod.mp hp).1).div
+      (continuousOn_snd.sub continuousOn_fst) hne).smul
+      (hgR₂.comp continuousOn_snd fun _ hp ↦ (mem_prod.mp hp).2)
+  rw [integral_integral_swap hcont]
+  have hzero : ∀ w ∈ trace Γ₂, integral (fun z ↦ (f z / (w - z)) • (g w • resolvent a w)) Γ₁ =
+      (0 : ℂ) • (g w • resolvent a w) := by
+    intro w hw
+    have hw₁' : w ∉ trace Γ₁ := disjoint_right.mp h₁₂ hw
+    have hcauchy : integral (fun z ↦ f z / (w - z)) Γ₁ = 0 := by
+      rw [integral_congr (g := fun z ↦ (-1 : ℂ) • (f z / (z - w))) fun z _ ↦ by
+          simp only [smul_eq_mul, ← neg_sub z w, div_neg, neg_one_mul], integral_smul,
+        cauchyIntegralFormula_nullHomologous hU hf hΓ₁U hU₁ (isIn_iff.mp hΓ₂U hw) hw₁',
+        hw₁ w hw]
+      simp
+    rw [← hcauchy, ← integral_smul_const]
+  rw [integral_congr hzero, integral_smul, zero_smul]
+
 /-- **Multiplicativity of resolvent integrals over nested cycles.** Let `f` and `g` be holomorphic
 on an open set `U`, and let `Γ₁` and `Γ₂` be cycles in `U \ σ(a)` that are null-homologous in `U`,
 with disjoint traces, such that `Γ₂` winds once around each point of `Γ₁` and `Γ₁` does not wind
@@ -225,69 +294,22 @@ theorem integral_smul_resolvent_mul_integral_smul_resolvent {U : Set ℂ} (hU : 
     isIn_iff.mpr fun z hz ↦ spectrum.notMem_iff.mp (isIn_iff.mp h₁ hz).2
   have hR₂ : IsIn Γ₂ (resolventSet ℂ a) :=
     isIn_iff.mpr fun w hw ↦ spectrum.notMem_iff.mp (isIn_iff.mp h₂ hw).2
-  have hf₁ : ContinuousOn f (trace Γ₁) := hf.continuousOn.mono (isIn_iff.mp hΓ₁U)
   have hg₁ : ContinuousOn g (trace Γ₁) := hg.continuousOn.mono (isIn_iff.mp hΓ₁U)
-  have hg₂ : ContinuousOn g (trace Γ₂) := hg.continuousOn.mono (isIn_iff.mp hΓ₂U)
   have hfR₁ : ContinuousOn (fun z ↦ f z • resolvent a z) (trace Γ₁) :=
-    hf₁.smul (continuousOn_resolvent hR₁)
-  have hgR₂ : ContinuousOn (fun w ↦ g w • resolvent a w) (trace Γ₂) :=
-    hg₂.smul (continuousOn_resolvent hR₂)
+    (hf.continuousOn.mono (isIn_iff.mp hΓ₁U)).smul (continuousOn_resolvent hR₁)
   -- The product is a double integral over both cycles, which the first resolvent identity splits
   -- into two parts; Fubini's theorem for cycles and Cauchy's integral formula evaluate each.
   set I₂ := integral (fun w ↦ g w • resolvent a w) Γ₂
-  -- The part of the double integrand carrying the resolvent at the point `w` of `Γ₂`.
-  set B : ℂ → ℂ → A := fun z w ↦ (f z / (w - z)) • (g w • resolvent a w) with hB
   -- Integrating out `w`: by the resolvent identity and Cauchy's formula over `Γ₂`, around which
   -- every point of `Γ₁` has winding number one.
-  have hinner : ∀ z ∈ trace Γ₁, integral (B z) Γ₂ =
-      (2 * π * I * g z) • (f z • resolvent a z) - (f z • resolvent a z) * I₂ := by
-    intro z hz
-    have hz₂ : z ∉ trace Γ₂ := disjoint_left.mp h₁₂ hz
-    have hsub : ∀ w ∈ trace Γ₂, w - z ≠ 0 := fun w hw ↦ sub_ne_zero.mpr fun h ↦ hz₂ (h ▸ hw)
-    have hgz : ContinuousOn (fun w ↦ g w / (w - z)) (trace Γ₂) :=
-      hg₂.div (continuousOn_id.sub continuousOn_const) hsub
-    have hBz : ContinuousOn (B z) (trace Γ₂) :=
-      (continuousOn_const.div (continuousOn_id.sub continuousOn_const) hsub).smul hgR₂
-    have hmul := integral_comp_comm (f := fun w ↦ g w • resolvent a w)
-      (fun _ ↦ intervalIntegrable_of_mem_support hgR₂)
-      (ContinuousLinearMap.mul ℂ A (f z • resolvent a z))
-    simp only [ContinuousLinearMap.mul_apply'] at hmul
-    have hsplit : integral (fun w ↦ (f z • resolvent a z) * (g w • resolvent a w)) Γ₂ =
-        integral (fun w ↦ (g w / (w - z)) • (f z • resolvent a z)) Γ₂ - integral (B z) Γ₂ := by
-      rw [← integral_sub (f := fun w ↦ (g w / (w - z)) • (f z • resolvent a z)) (g := B z)
-        (hgz.smul continuousOn_const) hBz]
-      refine integral_congr fun w hw ↦ ?_
-      have hres : resolvent a z * resolvent a w =
-          (w - z)⁻¹ • (resolvent a z - resolvent a w) := by
-        rw [spectrum.resolvent_sub_resolvent_eq_smul_mul (isIn_iff.mp hR₁ hz)
-          (isIn_iff.mp hR₂ hw), smul_smul, inv_mul_cancel₀ (hsub w hw), one_smul]
-      simp only [hB]
-      rw [smul_mul_smul_comm, hres]
-      module
-    rw [← hmul, hsplit, integral_smul_const,
-      cauchyIntegralFormula_nullHomologous hU hg hΓ₂U hU₂ (isIn_iff.mp hΓ₁U hz) hz₂, hw₂ z hz,
-      mul_one, sub_sub_cancel]
+  have hinner : ∀ z ∈ trace Γ₁,
+      integral (fun w ↦ (f z / (w - z)) • (g w • resolvent a w)) Γ₂ =
+        (2 * π * I * g z) • (f z • resolvent a z) - (f z • resolvent a z) * I₂ := fun z hz ↦
+    integral_div_sub_smul_smul_resolvent hU hg (f z) (isIn_iff.mp hΓ₁U hz)
+      (isIn_iff.mp hR₁ hz) hΓ₂U hR₂ hU₂ (disjoint_left.mp h₁₂ hz) (hw₂ z hz)
   -- Integrating out `z` first instead gives zero, by Cauchy's formula over `Γ₁`, which does not
   -- wind around any point of `Γ₂`.
-  have hB₀ : integral (fun z ↦ integral (B z) Γ₂) Γ₁ = 0 := by
-    have hne : ∀ p ∈ trace Γ₁ ×ˢ trace Γ₂, p.2 - p.1 ≠ 0 := fun p hp ↦
-      sub_ne_zero.mpr fun h ↦ disjoint_left.mp h₁₂ (mem_prod.mp hp).1 (h ▸ (mem_prod.mp hp).2)
-    have hcont : ContinuousOn (Function.uncurry B) (trace Γ₁ ×ˢ trace Γ₂) :=
-      ((hf₁.comp continuousOn_fst fun _ hp ↦ (mem_prod.mp hp).1).div
-        (continuousOn_snd.sub continuousOn_fst) hne).smul
-        (hgR₂.comp continuousOn_snd fun _ hp ↦ (mem_prod.mp hp).2)
-    rw [integral_integral_swap hcont]
-    have hzero : ∀ w ∈ trace Γ₂, integral (fun z ↦ B z w) Γ₁ = (0 : ℂ) • (g w • resolvent a w) := by
-      intro w hw
-      have hw₁' : w ∉ trace Γ₁ := disjoint_right.mp h₁₂ hw
-      have hcauchy : integral (fun z ↦ f z / (w - z)) Γ₁ = 0 := by
-        rw [integral_congr (g := fun z ↦ (-1 : ℂ) • (f z / (z - w))) fun z _ ↦ by
-            simp only [smul_eq_mul, ← neg_sub z w, div_neg, neg_one_mul], integral_smul,
-          cauchyIntegralFormula_nullHomologous hU hf hΓ₁U hU₁ (isIn_iff.mp hΓ₂U hw) hw₁',
-          hw₁ w hw]
-        simp
-      rw [← hcauchy, ← integral_smul_const]
-    rw [integral_congr hzero, integral_smul, zero_smul]
+  have hB₀ := integral_integral_div_sub_smul_smul_resolvent hU hf hg hΓ₁U hΓ₂U hR₂ hU₁ h₁₂ hw₁
   -- Comparing the two evaluations of the double integral gives the identity.
   have hI₁ := integral_comp_comm (f := fun z ↦ f z • resolvent a z)
     (fun _ ↦ intervalIntegrable_of_mem_support hfR₁) ((ContinuousLinearMap.mul ℂ A).flip I₂)

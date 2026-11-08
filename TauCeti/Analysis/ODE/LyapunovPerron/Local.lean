@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Calculus.ContDiff.UniformOn
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
-public import TauCeti.Analysis.ODE.LyapunovPerron.Graph
+public import TauCeti.Analysis.ODE.LyapunovPerron.Perturbation
 import TauCeti.Analysis.ODE.LyapunovPerron.Smooth
 import Mathlib.Analysis.ODE.Transform
 
@@ -84,6 +84,11 @@ the derivative of `N` does, and it is `C^n` near the equilibrium when `N` is uni
   `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image`:
   the corresponding graph and local-set characterizations for backward solutions, for a given
   small `ρ` and for some `ρ`.
+
+Uniform perturbation bounds for both local graph maps require control of the remainder only
+on their common ball of confinement. Uniform convergence of small remainders there implies
+uniform convergence of the graph maps. These statements concern graph values; they do not
+assert convergence of derivatives.
 
 ## References
 
@@ -567,6 +572,96 @@ theorem exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
     hsmall hN0 hP hAP hρ⟩
 
 end LocalUnstable
+
+section Perturbation
+
+variable {A P : X →L[ℝ] X} {K α ε η : ℝ≥0} {N M : X → X}
+  (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
+    ‖NormedSpace.exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+  (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
+    ‖NormedSpace.exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+
+section Local
+
+variable {r : ℝ} (hr : 0 ≤ r)
+  (hNr : LipschitzOnWith ε N (closedBall 0 r))
+  (hMr : LipschitzOnWith η M (closedBall 0 r))
+  (hsmallN : 2 * K * (ε * 2) < α) (hsmallM : 2 * K * (η * 2) < α)
+
+/-- Uniformly close remainders on a common ball give uniformly close local stable graphs.
+No bound outside the ball is required. -/
+theorem dist_localStableGraphMap_le_of_norm_sub_le
+    {d : ℝ} (hNM : ∀ z ∈ closedBall 0 r, ‖N z - M z‖ ≤ d) (ξ : X) :
+    dist (localStableGraphMap A P N r hs hu hr hNr hsmallN ξ)
+      (localStableGraphMap A P M r hs hu hr hMr hsmallM ξ) ≤
+        (2 * K * d / α) / (1 - 2 * K * (ε * 2) / α) := by
+  have hα' : 0 < α := lt_of_le_of_lt (by positivity) hsmallN
+  exact dist_lyapunovPerronGraphMap_le_of_norm_sub_le hs hu hα'
+    (hNr.comp_radialRetraction hr) (hMr.comp_radialRetraction hr) hsmallN hsmallM
+    (fun z ↦ hNM _ (TauCeti.radialRetraction_mem_closedBall hr z)) ξ
+
+/-- Uniformly close remainders on a common ball give uniformly close local unstable graphs,
+by applying the stable estimate to the time-reversed vector fields. -/
+theorem dist_localUnstableGraphMap_le_of_norm_sub_le
+    {d : ℝ} (hNM : ∀ z ∈ closedBall 0 r, ‖N z - M z‖ ≤ d) (ξ : X) :
+    dist (localUnstableGraphMap A P N r hs hu hr hNr hsmallN ξ)
+      (localUnstableGraphMap A P M r hs hu hr hMr hsmallM ξ) ≤
+        (2 * K * d / α) / (1 - 2 * K * (ε * 2) / α) := by
+  unfold localUnstableGraphMap
+  exact dist_localStableGraphMap_le_of_norm_sub_le _ _ hr hNr.neg hMr.neg
+    hsmallN hsmallM (fun z hz ↦ by
+      simpa only [Pi.neg_apply, neg_sub_neg, norm_sub_rev] using hNM z hz) ξ
+
+end Local
+
+section UniformConvergence
+
+variable {ι : Type*} {l : Filter ι} {F : ι → X → X} {ηs : ι → ℝ≥0}
+  {r : ℝ} (hr : 0 ≤ r) (hNr : LipschitzOnWith ε N (closedBall 0 r))
+  (hF : ∀ i, LipschitzOnWith (ηs i) (F i) (closedBall 0 r))
+  (hsmallN : 2 * K * (ε * 2) < α) (hsmallF : ∀ i, 2 * K * (ηs i * 2) < α)
+
+/-- Uniform convergence of small nonlinear remainders on the ball of confinement implies
+uniform convergence of the local stable graph maps. The approximating Lipschitz constants
+need not share a uniform reserve below the contraction threshold. -/
+theorem tendstoUniformly_localStableGraphMap
+    (hFN : TendstoUniformlyOn F N l (closedBall 0 r)) :
+    TendstoUniformly
+      (fun i ↦ localStableGraphMap A P (F i) r hs hu hr (hF i) (hsmallF i))
+      (localStableGraphMap A P N r hs hu hr hNr hsmallN) l := by
+  have hα' : (0 : ℝ) < α := by exact_mod_cast lt_of_le_of_lt (by positivity) hsmallN
+  have hsmall : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmallN
+  let C : ℝ := (2 * K / α) / (1 - 2 * K * ((ε : ℝ) * 2) / α)
+  have hC : 0 ≤ C := by
+    dsimp only [C]
+    exact div_nonneg (by positivity) (sub_nonneg.2 ((div_le_one hα').2 hsmall.le))
+  refine Metric.tendstoUniformly_iff.2 fun e he ↦ ?_
+  have hd : 0 < e / (C + 1) := div_pos he (by positivity)
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1 hFN _ hd] with i hi ξ
+  have hbound := dist_localStableGraphMap_le_of_norm_sub_le hs hu hr hNr (hF i)
+    hsmallN (hsmallF i) (fun z hz ↦ by simpa only [dist_eq_norm] using (hi z hz).le) ξ
+  have hCe : C * (e / (C + 1)) < e := by
+    have h := mul_lt_mul_of_pos_right (show C < C + 1 by linarith) hd
+    simpa only [mul_div_cancel₀ e (show C + 1 ≠ 0 by positivity)] using h
+  calc
+    _ ≤ (2 * K * (e / (C + 1)) / α) / (1 - 2 * K * (ε * 2) / α) := hbound
+    _ = C * (e / (C + 1)) := by dsimp only [C]; ring
+    _ < e := hCe
+
+/-- Uniform convergence of small nonlinear remainders on the ball of confinement implies
+uniform convergence of the local unstable graph maps. -/
+theorem tendstoUniformly_localUnstableGraphMap
+    (hFN : TendstoUniformlyOn F N l (closedBall 0 r)) :
+    TendstoUniformly
+      (fun i ↦ localUnstableGraphMap A P (F i) r hs hu hr (hF i) (hsmallF i))
+      (localUnstableGraphMap A P N r hs hu hr hNr hsmallN) l := by
+  unfold localUnstableGraphMap
+  exact tendstoUniformly_localStableGraphMap _ _ hr hNr.neg (fun i ↦ (hF i).neg)
+    hsmallN hsmallF hFN.neg
+
+end UniformConvergence
+
+end Perturbation
 
 end ContinuousLinearMap
 

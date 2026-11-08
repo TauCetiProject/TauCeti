@@ -50,21 +50,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {γ : ℝ → M} {s : Set ℝ} {t : ℝ}
   {U V W : ∀ r, TangentSpace I (γ r)}
 
-/-- Simultaneous coordinate regularity and the covariant curvature product rule. -/
-private theorem curvatureTensor_alongCurveWithin_aux
-    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
-    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ
-      (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) (γ t)) s t ∧
-      ∀ (_hu : UniqueDiffWithinAt ℝ s t),
-      alongCurveWithin cov γ (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) s t =
-      cov.derivCurvatureTensor cov (γ t) (curveVelocityWithin I γ s t) (U t) (V t) (W t) +
-        cov.curvatureTensor (γ t) (alongCurveWithin cov γ U s t) (V t) (W t) +
-        cov.curvatureTensor (γ t) (U t) (alongCurveWithin cov γ V s t) (W t) +
-        cov.curvatureTensor (γ t) (U t) (V t) (alongCurveWithin cov γ W s t) := by
-  -- Cache the iterated operator-space instances, as in the smooth curvature API.
+/-- Curvature, read in the trivialization of the tangent bundle at `x₀`, is a trilinear map `A x`
+depending differentiably on the base point `x`. -/
+private theorem exists_curvatureTensor_coordinates (x₀ : M) :
+    let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
+    let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
+    let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
+    let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
+    ∃ A : M → E →L[ℝ] E →L[ℝ] E →L[ℝ] E,
+      MDifferentiableAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] E) A x₀ ∧
+      ∀ x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet, ∀ a b c : TangentSpace I x,
+        (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x
+            (cov.curvatureTensor x a b c) =
+          A x ((trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x a)
+            ((trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x b)
+            ((trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x c) := by
   let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
   let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
   let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
@@ -79,63 +79,44 @@ private theorem curvatureTensor_alongCurveWithin_aux
   let _ : ∀ x : M, NormedSpace ℝ
       (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
     fun x ↦ inferInstance
-  let _ : ∀ x : M, AddCommMonoid
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ (inferInstance : NormedAddCommGroup
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)).toAddCommMonoid
-  let e := trivializationAt E (TangentSpace I) (γ t)
-  have he : γ t ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
   let A : M → E →L[ℝ] E →L[ℝ] E →L[ℝ] E := fun x ↦
     inCoordinates E (TangentSpace I) (E →L[ℝ] E →L[ℝ] E)
       (fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)
-      (γ t) x (γ t) x (cov.curvatureTensorCLM (V := TangentSpace I)
+      x₀ x x₀ x (cov.curvatureTensorCLM (V := TangentSpace I)
         (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) x)
   have hR := contMDiff_curvatureTensorCLM (F := E) (V := fun x : M ↦ TangentSpace I x)
     (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) cov
-  have hA : MDifferentiableAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] E) A (γ t) :=
-    ((mdifferentiableAt_hom_bundle _).1 (hR.mdifferentiableAt (by simp))).2
-  have hAγ : DifferentiableWithinAt ℝ (fun r ↦ A (γ r)) s t :=
-    (hA.comp_mdifferentiableWithinAt t hγ).differentiableWithinAt
-  have hread (x : M) (hx : x ∈ e.baseSet) (a b c : TangentSpace I x) :
-      e.continuousLinearMapAt ℝ x (cov.curvatureTensor x a b c) =
-        A x (e.continuousLinearMapAt ℝ x a) (e.continuousLinearMapAt ℝ x b)
-          (e.continuousLinearMapAt ℝ x c) := by
-    have hx' : x ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet := hx
-    dsimp only [A]
-    rw [inCoordinates_apply_eq₂ (F₁ := E) (E₁ := TangentSpace I)
-      (F₂ := E) (E₂ := TangentSpace I) (F₃ := E →L[ℝ] E)
-      (E₃ := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) hx' hx'
-      (by rw [hom_trivializationAt_baseSet]; exact ⟨hx', hx'⟩),
-      Trivialization.linearMapAt_def_of_mem _ (by
-        rw [hom_trivializationAt_baseSet]; exact ⟨hx', hx'⟩)]
-    simp [hom_trivializationAt_apply, inCoordinates,
-      (trivializationAt E (TangentSpace I) (γ t)).symmL_apply hx']
-    simp only [e, Trivialization.symm_linearMapAt _ hx']
-  have hsmooth : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ
-      (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) (γ t)) s t := by
-    refine (((hAγ.clm_apply hU).clm_apply hV).clm_apply hW).congr_of_eventuallyEq ?_ ?_
-    · filter_upwards [hγ.continuousWithinAt.preimage_mem_nhdsWithin
-        (e.open_baseSet.mem_nhds he)] with r hr
-      simpa only [sectionCoord_apply] using hread (γ r) hr (U r) (V r) (W r)
-    · simpa only [sectionCoord_apply] using hread (γ t) he (U t) (V t) (W t)
-  refine ⟨hsmooth, fun hu ↦ ?_⟩
-  let C := e.continuousLinearMapAt ℝ (γ t)
-  have hreadT (a b c : TangentSpace I (γ t)) :
-      C (cov.curvatureTensor (γ t) a b c) = A (γ t) (C a) (C b) (C c) :=
-    hread (γ t) he a b c
-  let G := christoffelMap (Module.finBasis ℝ E)
-    (cov.isCovariantDerivativeOn (s := e.baseSet)) (γ t)
-  let z := derivWithin (extChartAt I (γ t) ∘ γ) s t
-  have hD (Q : ∀ r, TangentSpace I (γ r)) :
-      C (alongCurveWithin cov γ Q s t) =
-        derivWithin (sectionCoord (F := E) γ Q (γ t)) s t + G (C (Q t)) z := by
-    rw [alongCurveWithin_apply, e.continuousLinearMapAt_symmL he,
-      alongCurveInChartWithin_apply, sectionCoord_apply]
-  -- The ordinary product rule in the fixed model fibre differentiates arbitrary input fields.
-  have hDR (Q₁ Q₂ Q₃ : ∀ r, TangentSpace I (γ r))
-      (h₁ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₁ (γ t)) s t)
-      (h₂ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₂ (γ t)) s t)
-      (h₃ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₃ (γ t)) s t) :
+  refine ⟨A, ((mdifferentiableAt_hom_bundle _).1 (hR.mdifferentiableAt (by simp))).2,
+    fun x hx a b c ↦ ?_⟩
+  dsimp only [A]
+  rw [inCoordinates_apply_eq₂ (F₁ := E) (E₁ := TangentSpace I)
+    (F₂ := E) (E₂ := TangentSpace I) (F₃ := E →L[ℝ] E)
+    (E₃ := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) hx hx
+    (by rw [hom_trivializationAt_baseSet]; exact ⟨hx, hx⟩),
+    Trivialization.linearMapAt_def_of_mem _ (by
+      rw [hom_trivializationAt_baseSet]; exact ⟨hx, hx⟩)]
+  simp [hom_trivializationAt_apply, inCoordinates,
+    (trivializationAt E (TangentSpace I) x₀).symmL_apply hx]
+  simp only [Trivialization.symm_linearMapAt _ hx]
+
+/-- Coordinate reading `A` of the curvature at `γ t` together with the product rule for it in the
+model fibre, including the Christoffel term, for arbitrary differentiable input fields. -/
+private theorem exists_coordinates_alongCurveWithin_curvatureTensor
+    {C : TangentSpace I (γ t) →L[ℝ] E}
+    (hC : C = (trivializationAt E (TangentSpace I) (γ t)).continuousLinearMapAt ℝ (γ t))
+    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t) :
+    let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
+    let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
+    let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
+    let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
+    ∃ A : M → E →L[ℝ] E →L[ℝ] E →L[ℝ] E,
+      (∀ a b c : TangentSpace I (γ t),
+        C (cov.curvatureTensor (γ t) a b c) =
+          A (γ t) (C a) (C b) (C c)) ∧
+      ∀ (Q₁ Q₂ Q₃ : ∀ r, TangentSpace I (γ r))
+        (_h₁ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₁ (γ t)) s t)
+        (_h₂ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₂ (γ t)) s t)
+        (_h₃ : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q₃ (γ t)) s t),
       C (alongCurveWithin cov γ
           (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) s t) =
         derivWithin (fun r ↦ A (γ r)) s t (C (Q₁ t)) (C (Q₂ t)) (C (Q₃ t)) +
@@ -145,26 +126,87 @@ private theorem curvatureTensor_alongCurveWithin_aux
             (derivWithin (sectionCoord (F := E) γ Q₂ (γ t)) s t) (C (Q₃ t)) +
           A (γ t) (derivWithin (sectionCoord (F := E) γ Q₁ (γ t)) s t)
             (C (Q₂ t)) (C (Q₃ t)) +
-          G (A (γ t) (C (Q₁ t)) (C (Q₂ t)) (C (Q₃ t))) z := by
-    have h := ((hAγ.hasDerivWithinAt.clm_apply h₁.hasDerivWithinAt).clm_apply
-      h₂.hasDerivWithinAt).clm_apply h₃.hasDerivWithinAt
-    have hnear : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
-      hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds he)
-    have hEq : (fun r ↦ A (γ r) (sectionCoord (F := E) γ Q₁ (γ t) r)
-        (sectionCoord (F := E) γ Q₂ (γ t) r) (sectionCoord (F := E) γ Q₃ (γ t) r)) =ᶠ[𝓝[s] t]
-        sectionCoord (F := E) γ
-          (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) (γ t) := by
-      filter_upwards [hnear] with r hr
-      simpa only [sectionCoord_apply] using (hread (γ r) hr (Q₁ r) (Q₂ r) (Q₃ r)).symm
-    have hpoint : sectionCoord (F := E) γ
-        (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) (γ t) t =
-        A (γ t) (sectionCoord (F := E) γ Q₁ (γ t) t)
-          (sectionCoord (F := E) γ Q₂ (γ t) t) (sectionCoord (F := E) γ Q₃ (γ t) t) := by
-      simpa only [sectionCoord_apply] using hread (γ t) he (Q₁ t) (Q₂ t) (Q₃ t)
-    have hd := (h.congr_of_eventuallyEq hEq.symm hpoint).derivWithin hu
-    rw [hD, hd, hread (γ t) he]
-    simp only [sectionCoord_apply, add_apply, C]
-    abel
+          christoffelMap (Module.finBasis ℝ E)
+            (cov.isCovariantDerivativeOn
+              (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
+            (A (γ t) (C (Q₁ t)) (C (Q₂ t)) (C (Q₃ t)))
+            (derivWithin (extChartAt I (γ t) ∘ γ) s t) := by
+  intro _ _ _ _
+  subst hC
+  obtain ⟨A, hA, hread⟩ := exists_curvatureTensor_coordinates cov (γ t)
+  have he : γ t ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
+    mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
+  have hAγ : DifferentiableWithinAt ℝ (fun r ↦ A (γ r)) s t :=
+    (hA.comp_mdifferentiableWithinAt t hγ).differentiableWithinAt
+  refine ⟨A, hread (γ t) he, fun Q₁ Q₂ Q₃ h₁ h₂ h₃ ↦ ?_⟩
+  have h := ((hAγ.hasDerivWithinAt.clm_apply h₁.hasDerivWithinAt).clm_apply
+    h₂.hasDerivWithinAt).clm_apply h₃.hasDerivWithinAt
+  have hnear : ∀ᶠ r in 𝓝[s] t,
+      γ r ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
+    hγ.continuousWithinAt.preimage_mem_nhdsWithin
+      ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds he)
+  have hEq : (fun r ↦ A (γ r) (sectionCoord (F := E) γ Q₁ (γ t) r)
+      (sectionCoord (F := E) γ Q₂ (γ t) r) (sectionCoord (F := E) γ Q₃ (γ t) r)) =ᶠ[𝓝[s] t]
+      sectionCoord (F := E) γ
+        (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) (γ t) := by
+    filter_upwards [hnear] with r hr
+    simpa only [sectionCoord_apply] using (hread (γ r) hr (Q₁ r) (Q₂ r) (Q₃ r)).symm
+  have hpoint : sectionCoord (F := E) γ
+      (fun r ↦ cov.curvatureTensor (γ r) (Q₁ r) (Q₂ r) (Q₃ r)) (γ t) t =
+      A (γ t) (sectionCoord (F := E) γ Q₁ (γ t) t)
+        (sectionCoord (F := E) γ Q₂ (γ t) t) (sectionCoord (F := E) γ Q₃ (γ t) t) := by
+    simpa only [sectionCoord_apply] using hread (γ t) he (Q₁ t) (Q₂ t) (Q₃ t)
+  have hd := (h.congr_of_eventuallyEq hEq.symm hpoint).derivWithin hu
+  rw [continuousLinearMapAt_alongCurveWithin cov rfl, hd, hread (γ t) he]
+  simp only [sectionCoord_apply, add_apply]
+  abel
+
+
+/-- Curvature applied to three fields with differentiable coordinate readings again has
+a differentiable coordinate reading. No unique-derivative hypothesis is needed here. -/
+theorem differentiableWithinAt_sectionCoord_curvatureTensor
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ
+      (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) (γ t)) s t := by
+  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
+  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
+  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
+  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
+  obtain ⟨A, hA, hread⟩ := exists_curvatureTensor_coordinates cov (γ t)
+  have he : γ t ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
+    mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
+  have hAγ : DifferentiableWithinAt ℝ (fun r ↦ A (γ r)) s t :=
+    (hA.comp_mdifferentiableWithinAt t hγ).differentiableWithinAt
+  refine (((hAγ.clm_apply hU).clm_apply hV).clm_apply hW).congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hγ.continuousWithinAt.preimage_mem_nhdsWithin
+      ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds he)] with r hr
+    simpa only [sectionCoord_apply] using hread (γ r) hr (U r) (V r) (W r)
+  · simpa only [sectionCoord_apply] using hread (γ t) he (U t) (V t) (W t)
+
+
+
+/-- The covariant product rule for curvature along a differentiable curve:
+`D(R(U,V)W) = (∇_γ' R)(U,V)W + R(DU,V)W + R(U,DV)W + R(U,V)DW`.
+Only differentiability within the parameter set at the tested parameter is required. -/
+theorem alongCurveWithin_curvatureTensor
+    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    alongCurveWithin cov γ (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) s t =
+      cov.derivCurvatureTensor cov (γ t) (curveVelocityWithin I γ s t) (U t) (V t) (W t) +
+        cov.curvatureTensor (γ t) (alongCurveWithin cov γ U s t) (V t) (W t) +
+        cov.curvatureTensor (γ t) (U t) (alongCurveWithin cov γ V s t) (W t) +
+        cov.curvatureTensor (γ t) (U t) (V t) (alongCurveWithin cov γ W s t) := by
+  let C := (trivializationAt E (TangentSpace I) (γ t)).continuousLinearMapAt ℝ (γ t)
+  obtain ⟨A, hreadT, hDR⟩ :=
+    exists_coordinates_alongCurveWithin_curvatureTensor cov (C := C) rfl hu hγ
+  have hD := continuousLinearMapAt_alongCurveWithin cov (s := s) (C := C) rfl
+  have he : γ t ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
+    mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
   -- Smooth ambient extensions identify the model-fibre coefficient with the native ∇R.
   obtain ⟨X, hX, hXt⟩ := exists_contMDiff_section_eq I E ∞ (U t)
   obtain ⟨Y, hY, hYt⟩ := exists_contMDiff_section_eq I E ∞ (V t)
@@ -188,39 +230,14 @@ private theorem curvatureTensor_alongCurveWithin_aux
   rw [hDR _ _ _ (hcoord X hX) (hcoord Y hY) (hcoord Z hZ)] at hn
   simp only [hpull X hX, hpull Y hY, hpull Z hZ, hreadT, hD,
     hXt, hYt, hZt, map_add, add_apply] at hn
-  apply Function.LeftInverse.injective (f := C) (g := e.symmL ℝ (γ t))
-    (e.symmL_continuousLinearMapAt he)
+  apply Function.LeftInverse.injective (f := C)
+    (g := (trivializationAt E (TangentSpace I) (γ t)).symmL ℝ (γ t))
+    ((trivializationAt E (TangentSpace I) (γ t)).symmL_continuousLinearMapAt he)
   rw [hDR U V W hU hV hW]
   simp only [map_add, hreadT, hD]
   rw [hn]
   simp only [add_apply]
   abel
-
-/-- Curvature applied to three fields with differentiable coordinate readings again has
-a differentiable coordinate reading. No unique-derivative hypothesis is needed here. -/
-theorem differentiableWithinAt_sectionCoord_curvatureTensor
-    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
-    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ
-      (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) (γ t)) s t :=
-  (curvatureTensor_alongCurveWithin_aux cov hγ hU hV hW).1
-
-/-- The covariant product rule for curvature along a differentiable curve:
-`D(R(U,V)W) = (∇_γ' R)(U,V)W + R(DU,V)W + R(U,DV)W + R(U,V)DW`.
-Only differentiability within the parameter set at the tested parameter is required. -/
-theorem alongCurveWithin_curvatureTensor
-    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hU : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ U (γ t)) s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
-    alongCurveWithin cov γ (fun r ↦ cov.curvatureTensor (γ r) (U r) (V r) (W r)) s t =
-      cov.derivCurvatureTensor cov (γ t) (curveVelocityWithin I γ s t) (U t) (V t) (W t) +
-        cov.curvatureTensor (γ t) (alongCurveWithin cov γ U s t) (V t) (W t) +
-        cov.curvatureTensor (γ t) (U t) (alongCurveWithin cov γ V s t) (W t) +
-        cov.curvatureTensor (γ t) (U t) (V t) (alongCurveWithin cov γ W s t) :=
-  (curvatureTensor_alongCurveWithin_aux cov hγ hU hV hW).2 hu
 
 /-- Parallel curvature maps three parallel fields along a curve to a parallel field.
 No metric compatibility or torsion assumption is needed. -/
