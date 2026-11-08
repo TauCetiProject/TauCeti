@@ -129,6 +129,19 @@ end ProbabilityTheory
 
 namespace TauCeti.Probability
 
+/-- The natural-number total of the canonical countable independent Poisson family
+with summable rates has Poisson law. Almost surely only finitely many counts are nonzero. -/
+theorem map_tsum_nat_infinitePi_poissonMeasure {ι : Type*} [Countable ι]
+    {r : ι → ℝ≥0} (hr : Summable r) :
+    (Measure.infinitePi (fun i => poissonMeasure (r i))).map
+      (fun x : ι → ℕ => ∑' i, x i) = poissonMeasure (∑' i, r i) := by
+  have hind : iIndepFun (fun i (x : ι → ℕ) => x i)
+      (Measure.infinitePi (fun i => poissonMeasure (r i))) :=
+    iIndepFun_infinitePi (X := fun _ => (id : ℕ → ℕ)) fun _ => measurable_id
+  exact (hind.hasLaw_tsum_poissonMeasure
+    (fun i => (measurePreserving_eval_infinitePi
+      (fun i => poissonMeasure (r i)) i).hasLaw) hr).map_eq
+
 /-- The total of the canonical countable independent Poisson family has Poisson law,
 with the sum taken in the extended nonnegative reals. In particular the total is finite
 almost surely, even if infinitely many rates are positive. -/
