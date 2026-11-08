@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Geometry.Diffeomorphism.Evaluation.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Differential
 public import TauCeti.Topology.Homeomorph.Family
 

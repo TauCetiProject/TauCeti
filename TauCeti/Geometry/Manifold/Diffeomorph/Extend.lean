@@ -23,6 +23,15 @@ For a compact set in the source, its image is closed in a Hausdorff ambient mani
 submanifold. These results transplant diffeomorphisms constructed in coordinates to the ambient
 manifold while keeping control of where points move.
 
+When the open part is the source of an extended chart, the extension has an explicit formula,
+`TauCeti.chartExtend`: a map `f` of the model space which fixes every point outside a compact
+subset `K` of the interior of the chart target, and maps `K` into itself, is read through the chart
+on the chart source and extended by the identity elsewhere. The formula makes the dependence on
+`f` visible: a family of such maps depending `C^n`-smoothly on a parameter gives a family of
+self-maps of the manifold depending `C^n`-smoothly on the parameter
+(`TauCeti.contMDiff_chartExtend`). A diffeomorphism of the model space supported in `K` extends to
+the diffeomorphism `Diffeomorph.chartExtend` of the manifold.
+
 The underlying homeomorphism is supplied by
 `Topology.IsOpenEmbedding.exists_homeomorph_extend`. Smoothness follows locally: on the open
 image, cancel the coordinate local diffeomorphism; away from the closed set, the extension is
@@ -115,5 +124,197 @@ theorem exists_extend_of_isCompact (Λ : U ≃ₘ^n⟮I, I⟯ U) {K : Set U}
       ∀ y ∉ Subtype.val '' K, Φ y = y :=
   TauCeti.isLocalDiffeomorph_subtype_val.exists_diffeomorph_extend_of_isCompact
     U.isOpen.isOpenEmbedding_subtypeVal Λ hK hΛ
+
+end Diffeomorph
+
+/-! ### Extension through a chart -/
+
+namespace TauCeti
+
+section ChartExtend
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The extension by the identity of a map `f` of the model space through the extended chart at
+`x`: a point `z` of the chart source goes to `(extChartAt I x).symm (f (extChartAt I x z))`, and
+every other point is fixed. -/
+noncomputable def chartExtend (f : E → E) (x : M) (z : M) : M :=
+  letI := Classical.dec (z ∈ (extChartAt I x).source)
+  if z ∈ (extChartAt I x).source then (extChartAt I x).symm (f (extChartAt I x z)) else z
+
+variable {I} {f g : E → E} {x z : M} {K : Set E}
+
+/-- On the chart source, the extension of `f` is `f` read through the chart. -/
+theorem chartExtend_of_mem (hz : z ∈ (extChartAt I x).source) :
+    chartExtend I f x z = (extChartAt I x).symm (f (extChartAt I x z)) := by
+  simp only [chartExtend, hz, ↓reduceIte]
+
+/-- Off the chart source, the extension of `f` is the identity. -/
+theorem chartExtend_of_notMem (hz : z ∉ (extChartAt I x).source) : chartExtend I f x z = z := by
+  simp only [chartExtend, hz, ↓reduceIte]
+
+/-- On the chart, the extension of `f` reads as `f`. -/
+theorem chartExtend_extChartAt_symm {p : E} (hp : p ∈ (extChartAt I x).target) :
+    chartExtend I f x ((extChartAt I x).symm p) = (extChartAt I x).symm (f p) := by
+  rw [chartExtend_of_mem ((extChartAt I x).map_target hp), (extChartAt I x).right_inv hp]
+
+/-- The extension of a map fixing every point outside `K` fixes every point outside the preimage
+of `K` under the chart. -/
+theorem chartExtend_eq_self (hf : ∀ p ∉ K, f p = p) (hz : z ∉ (extChartAt I x).symm '' K) :
+    chartExtend I f x z = z := by
+  by_cases hs : z ∈ (extChartAt I x).source
+  · have hK : extChartAt I x z ∉ K := fun h ↦ hz ⟨_, h, (extChartAt I x).left_inv hs⟩
+    rw [chartExtend_of_mem hs, hf _ hK, (extChartAt I x).left_inv hs]
+  · exact chartExtend_of_notMem hs
+
+/-- The extension of the identity is the identity. -/
+@[simp]
+theorem chartExtend_id : chartExtend I id x = id := by
+  ext z
+  by_cases hs : z ∈ (extChartAt I x).source
+  · rw [chartExtend_of_mem hs, id, id, (extChartAt I x).left_inv hs]
+  · exact chartExtend_of_notMem hs
+
+/-- Extension through a chart is compatible with composition, for maps fixing every point outside
+a subset `K` of the chart target and mapping `K` into itself. -/
+theorem chartExtend_comp (hKt : K ⊆ (extChartAt I x).target) (hg : ∀ p ∉ K, g p = p)
+    (hgK : MapsTo g K K) : chartExtend I f x ∘ chartExtend I g x = chartExtend I (f ∘ g) x := by
+  ext z
+  by_cases hs : z ∈ (extChartAt I x).source
+  · rw [Function.comp_apply, chartExtend_of_mem (f := g) hs, chartExtend_of_mem (f := f ∘ g) hs]
+    by_cases hK : extChartAt I x z ∈ K
+    · rw [chartExtend_extChartAt_symm (hKt (hgK hK)), Function.comp_apply]
+    · rw [hg _ hK, (extChartAt I x).left_inv hs, chartExtend_of_mem hs, Function.comp_apply,
+        hg _ hK]
+  · rw [Function.comp_apply, chartExtend_of_notMem hs, chartExtend_of_notMem hs,
+      chartExtend_of_notMem hs]
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] {n : ℕ∞ω}
+
+/-- **Smooth dependence of the extension through a chart on parameters.** Let `Φ q`, for `q` in a
+manifold `P`, be maps of the model space depending jointly `C^n`-smoothly on `q` and the point,
+each fixing every point outside a compact subset `K` of the interior of the chart target and
+mapping `K` into itself. Then their extensions through the chart at `x` depend jointly
+`C^n`-smoothly on `q` and the point of `M`. -/
+theorem contMDiff_chartExtend [T2Space M] [IsManifold I n M] {Φ : P → E → E}
+    (hΦ : ContMDiff (I'.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun q : P × E ↦ Φ q.1 q.2) (hK : IsCompact K)
+    (hKt : K ⊆ interior (extChartAt I x).target) (hΦK : ∀ q, MapsTo (Φ q) K K)
+    (hΦ' : ∀ q, ∀ p ∉ K, Φ q p = p) :
+    ContMDiff (I'.prod I) I n fun q : P × M ↦ chartExtend I (Φ q.1) x q.2 := by
+  rintro ⟨q₀, z₀⟩
+  have hKt' : K ⊆ (extChartAt I x).target := hKt.trans interior_subset
+  by_cases hz₀ : z₀ ∈ (extChartAt I x).symm '' K
+  · -- Near the moving points, the extension is `Φ` read through the chart.
+    obtain ⟨p₀, hp₀, rfl⟩ := hz₀
+    have hs := (extChartAt I x).map_target (hKt' hp₀)
+    have hsymm : ContMDiffAt 𝓘(𝕜, E) I n (extChartAt I x).symm (Φ q₀ p₀) :=
+      (contMDiffOn_extChartAt_symm x).contMDiffAt
+        (mem_interior_iff_mem_nhds.1 (hKt (hΦK q₀ hp₀)))
+    have hchart : ContMDiffAt (I'.prod I) (I'.prod 𝓘(𝕜, E)) n
+        (fun q : P × M ↦ (q.1, extChartAt I x q.2)) (q₀, (extChartAt I x).symm p₀) :=
+      contMDiffAt_fst.prodMk ((contMDiffAt_extChartAt'
+        (by rwa [← extChartAt_source (I := I)])).comp _ contMDiffAt_snd)
+    have hΦc : ContMDiffAt (I'.prod I) 𝓘(𝕜, E) n
+        (fun q : P × M ↦ Φ q.1 (extChartAt I x q.2)) (q₀, (extChartAt I x).symm p₀) :=
+      (hΦ _).comp _ hchart
+    refine (hsymm.comp_of_eq hΦc (congrArg (Φ q₀)
+      ((extChartAt I x).right_inv (hKt' hp₀)))).congr_of_eventuallyEq ?_
+    filter_upwards [(isOpen_extChartAt_source x).mem_nhds hs |> prod_mem_nhds Filter.univ_mem]
+      with q hq
+    exact chartExtend_of_mem hq.2
+  · -- Away from the compact set of moving points, the extension is the projection.
+    have hL : IsClosed ((extChartAt I x).symm '' K) :=
+      (hK.image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hKt')).isClosed
+    refine contMDiffAt_snd.congr_of_eventuallyEq ?_
+    filter_upwards [hL.isOpen_compl.mem_nhds hz₀ |> prod_mem_nhds Filter.univ_mem] with q hq
+    exact chartExtend_eq_self (hΦ' q.1) hq.2
+
+end ChartExtend
+
+/-- An injective map fixing every point outside `K` maps `K` into itself. -/
+private theorem mapsTo_of_eq_self {α : Type*} {f : α → α} (hf : Function.Injective f) {K : Set α}
+    (h : ∀ p ∉ K, f p = p) : MapsTo f K K := by
+  have hs : SurjOn f Kᶜ Kᶜ := fun p hp ↦ ⟨p, hp, h p hp⟩
+  simpa using hs.mapsTo_compl hf
+
+end TauCeti
+
+namespace Diffeomorph
+
+open TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] {n : ℕ∞ω} [IsManifold I n M]
+  {K : Set E}
+
+/-- **The extension of a diffeomorphism of the model space through a chart.** A `C^n`
+diffeomorphism `φ` of the model space fixing every point outside a compact subset `K` of the
+interior of the target of the extended chart at `x` extends to a `C^n` diffeomorphism of `M`: it
+reads as `φ` through the chart (`Diffeomorph.chartExtend_extChartAt_symm`) and fixes every point
+outside the preimage of `K` under the chart (`Diffeomorph.chartExtend_eq_self`). Its inverse is
+the extension of `φ.symm`. -/
+noncomputable def chartExtend (φ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E) (x : M) (hK : IsCompact K)
+    (hKt : K ⊆ interior (extChartAt I x).target) (hφ : ∀ p ∉ K, φ p = p) :
+    M ≃ₘ^n⟮I, I⟯ M :=
+  have hφ' : ∀ p ∉ K, φ.symm p = p := fun p hp ↦
+    (congrArg φ.symm (hφ p hp)).symm.trans (φ.symm_apply_apply p)
+  have hKt' : K ⊆ (extChartAt I x).target := hKt.trans interior_subset
+  -- A single map is the constant family over the parameter manifold `𝕜`.
+  have hsmooth (ψ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E) (hψ : ∀ p ∉ K, ψ p = p) :
+      ContMDiff I I n (TauCeti.chartExtend I ψ x) :=
+    (contMDiff_chartExtend (I' := 𝓘(𝕜, 𝕜)) (Φ := fun _ ↦ ψ) (ψ.contMDiff.comp contMDiff_snd) hK
+      hKt (fun _ ↦ mapsTo_of_eq_self ψ.injective hψ) fun _ ↦ hψ).comp
+        ((contMDiff_const (c := (0 : 𝕜))).prodMk contMDiff_id)
+  { toFun := TauCeti.chartExtend I φ x
+    invFun := TauCeti.chartExtend I φ.symm x
+    left_inv := fun z ↦ by
+      rw [← Function.comp_apply (f := TauCeti.chartExtend I φ.symm x),
+        chartExtend_comp hKt' hφ (mapsTo_of_eq_self φ.injective hφ),
+        show ⇑φ.symm ∘ ⇑φ = id from funext φ.symm_apply_apply, chartExtend_id, id]
+    right_inv := fun z ↦ by
+      rw [← Function.comp_apply (f := TauCeti.chartExtend I φ x),
+        chartExtend_comp hKt' hφ' (mapsTo_of_eq_self φ.symm.injective hφ'),
+        show ⇑φ ∘ ⇑φ.symm = id from funext φ.apply_symm_apply, chartExtend_id, id]
+    contMDiff_toFun := hsmooth φ hφ
+    contMDiff_invFun := hsmooth φ.symm hφ' }
+
+variable {φ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E} {x : M} {hK : IsCompact K}
+  {hKt : K ⊆ interior (extChartAt I x).target} {hφ : ∀ p ∉ K, φ p = p}
+
+/-- The extension of `φ` through the chart is `TauCeti.chartExtend` of `φ`. -/
+@[simp]
+theorem coe_chartExtend : ⇑(φ.chartExtend x hK hKt hφ) = TauCeti.chartExtend I φ x := (rfl)
+
+/-- The extension of `φ` through the chart reads as `φ` on the chart. -/
+theorem chartExtend_extChartAt_symm {p : E} (hp : p ∈ (extChartAt I x).target) :
+    φ.chartExtend x hK hKt hφ ((extChartAt I x).symm p) = (extChartAt I x).symm (φ p) :=
+  TauCeti.chartExtend_extChartAt_symm hp
+
+/-- The extension of `φ` through the chart fixes every point outside the preimage of `K`. -/
+theorem chartExtend_eq_self {z : M} (hz : z ∉ (extChartAt I x).symm '' K) :
+    φ.chartExtend x hK hKt hφ z = z :=
+  TauCeti.chartExtend_eq_self hφ hz
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
+
+/-- **Smooth families of extensions through a chart.** The extensions through the chart at `x` of
+a family `τ q`, `q ∈ P`, of diffeomorphisms of the model space depending jointly `C^n`-smoothly on
+`q` and the point, each fixing every point outside `K`, depend jointly `C^n`-smoothly on `q` and
+the point of `M`. -/
+theorem contMDiff_chartExtend {τ : P → E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E}
+    (hτ : ContMDiff (I'.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun q : P × E ↦ τ q.1 q.2)
+    (hτK : ∀ q, ∀ p ∉ K, τ q p = p) :
+    ContMDiff (I'.prod I) I n fun q : P × M ↦ (τ q.1).chartExtend x hK hKt (hτK q.1) q.2 :=
+  TauCeti.contMDiff_chartExtend hτ hK hKt (fun q ↦ mapsTo_of_eq_self (τ q).injective (hτK q))
+    hτK
 
 end Diffeomorph

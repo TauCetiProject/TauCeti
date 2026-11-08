@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Diffeomorphism.Sphere
 import Mathlib.Algebra.Category.ModuleCat.Abelian
 import Mathlib.Algebra.Category.ModuleCat.Colimits
 import TauCeti.AlgebraicTopology.Singular.Sphere
-import TauCeti.Geometry.Diffeomorphism.Evaluation
+import TauCeti.Geometry.Diffeomorphism.Evaluation.Basic
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.Topology.Algebra.OrthogonalGroup
 

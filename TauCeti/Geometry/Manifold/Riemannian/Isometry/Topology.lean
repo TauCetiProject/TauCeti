@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 public import TauCeti.Geometry.Diffeomorphism.Inversion
-public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Geometry.Diffeomorphism.Evaluation.Basic
 
 /-!
 # The Whitney topology on Riemannian isometries
