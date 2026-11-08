@@ -367,6 +367,23 @@ theorem isMinimal_iff_cartanCenter_le_corootSpan :
     rw [inf_eq_left.mpr h] at hi
     omega
 
+/-- A finite-dimensional realization of a nonsingular matrix is minimal exactly when the
+simple coroots span its ambient space. -/
+theorem isMinimal_iff_corootSpan_eq_top [DecidableEq I] (hA : IsUnit A) :
+    R.IsMinimal ↔ R.corootSpan = ⊤ := by
+  classical
+  have hrank := Matrix.rank_of_isUnit A hA
+  rw [R.isMinimal_iff, hrank]
+  constructor
+  · intro h
+    apply Submodule.eq_top_of_finrank_eq
+    rw [R.finrank_corootSpan]
+    omega
+  · intro h
+    have hd := R.finrank_corootSpan
+    rw [h, finrank_top] at hd
+    omega
+
 end FiniteDimensional
 
 section Transport
@@ -451,8 +468,7 @@ omit [Fintype I] in
 all simple roots and coroots. Unlike the singular minimal case, the coroots form a basis. -/
 theorem existsUnique_equiv_of_corootSpan_eq_top (S : CartanRealization A H')
     (hR : R.corootSpan = ⊤) (hS : S.corootSpan = ⊤) :
-    ∃! e : H ≃ₗ[K] H', (∀ i, e (R.coroot i) = S.coroot i) ∧
-      ∀ i h, S.root i (e h) = R.root i h := by
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
   let b := Basis.mk R.coroot_linearIndependent (le_of_eq hR.symm)
   let c := Basis.mk S.coroot_linearIndependent (le_of_eq hS.symm)
   have hb (i : I) : b i = R.coroot i := Basis.mk_apply _ _ i
@@ -460,18 +476,32 @@ theorem existsUnique_equiv_of_corootSpan_eq_top (S : CartanRealization A H')
   let e := b.equiv c (Equiv.refl I)
   have he (i : I) : e (R.coroot i) = S.coroot i := by
     simpa only [hb, hc, Equiv.refl_apply] using b.equiv_apply i c (Equiv.refl I)
-  refine ⟨e, ⟨he, ?_⟩, ?_⟩
-  · intro i h
-    have hf : (S.root i).comp e.toLinearMap = R.root i := by
+  refine ⟨e, (R.map e).ext (fun i => he i) (fun i => ?_), ?_⟩
+  · have hf : (S.root i).comp e.toLinearMap = R.root i := by
       apply b.ext
       intro j
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hb, he, root_coroot]
-    exact LinearMap.congr_fun hf h
+    ext h
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+      map_root_apply] using (LinearMap.congr_fun hf (e.symm h)).symm
   · intro f hf
     apply LinearEquiv.toLinearMap_injective
     apply b.ext
     intro i
-    simpa only [LinearEquiv.coe_coe, hb] using (hf.1 i).trans (he i).symm
+    have hfc : f (R.coroot i) = S.coroot i :=
+      congrArg (fun T : CartanRealization A H' => T.coroot i) hf
+    simpa only [LinearEquiv.coe_coe, hb] using hfc.trans (he i).symm
+
+/-- Minimal realizations of a nonsingular matrix have a unique root- and coroot-preserving
+isomorphism. Singular matrices need not have uniqueness. -/
+theorem existsUnique_equiv_of_isMinimal [DecidableEq I]
+    (S : CartanRealization A H') (hA : IsUnit A) (hR : R.IsMinimal) (hS : S.IsMinimal) :
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
+  let := hR.finiteDimensional
+  let := hS.finiteDimensional
+  exact R.existsUnique_equiv_of_corootSpan_eq_top S
+    ((R.isMinimal_iff_corootSpan_eq_top hA).mp hR)
+    ((S.isMinimal_iff_corootSpan_eq_top hA).mp hS)
 
 end Transport
 
