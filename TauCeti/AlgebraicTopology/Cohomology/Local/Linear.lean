@@ -68,6 +68,7 @@ theorem singularCohomologyMap_continuousLinearMap_compl_zero (f : E →L[ℝ] E)
 /-- **The antipodal map acts by `-1` in odd dimension.** For `E` of odd finite dimension, `x ↦ -x`
 acts as `-1` on `Hᵈ(E, E ∖ {0}; R, N)` in every degree `d`, by the sign of
 `det (-1) = (-1) ^ finrank E = -1`. -/
+@[simp]
 theorem singularCohomologyMap_neg_complZeroPairIso_hom (d : ℕ) (hodd : Odd (finrank ℝ E)) :
     TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
       (ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E).complZeroPairIso.hom d = -𝟙 _ := by
