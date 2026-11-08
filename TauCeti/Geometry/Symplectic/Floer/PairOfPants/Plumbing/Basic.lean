@@ -11,8 +11,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Action
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 import TauCeti.Geometry.Symplectic.Floer.Pullback
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # Plumbing pair-of-pants perturbation data along a neck
@@ -84,6 +82,12 @@ loop is at most the sum of the actions of the three input loops plus that consta
   the sum of bounds for the six end Hamiltonians of the two pairs of pants, uniformly in `L`;
   `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le` is the
   case of a symplectic vector space.
+* `TauCeti.Floer.contDiffAt_plumbedPerturbation_prod`,
+  `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation`: for a vector space target, `L > 4` and
+  period-one `C¹` Hamiltonians, the glued datum is `C¹` jointly in the domain and target points,
+  also in the real coordinates.
+* `TauCeti.Floer.preimage_plumbedTruncation`: in the real coordinates, the truncation `Σ_R` is
+  the union of its receiving part and the image of its inserted part under the plumbing chart.
 * `TauCeti.SymplecticForm.integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction`:
   the energy identity on the truncation `Σ_R` of the plumbed sphere, for a symplectic vector space
   target.
@@ -105,7 +109,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart hasFDerivAt_realChart)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart det_fderiv_realChart_nonneg)
 
 namespace TauCeti.Floer
 
@@ -438,11 +442,16 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (ω : Symple
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hBa hBb u
 
+end TauCeti.SymplecticForm
 
-omit [FiniteDimensional ℝ V] in
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {Ha Hb : Puncture → ℝ → V → ℝ}
+  {q : Puncture} {L : ℝ}
+
 /-- At points other than the four punctures, the plumbed perturbation of `C¹` Hamiltonians is
 `C¹` jointly in the domain and target points. -/
-private theorem contDiffAt_plumbedPerturbation_prod (hq : q ≠ inf)
+theorem contDiffAt_plumbedPerturbation_prod (hq : q ≠ inf)
     (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
     (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1)
@@ -461,28 +470,9 @@ private theorem contDiffAt_plumbedPerturbation_prod (hq : q ≠ inf)
     exact h
   exact h'.contDiffAt
 
-/-! ### The energy identity on the plumbed four-punctured sphere -/
-
-/-- The plumbing chart preserves orientation: its derivative is multiplication by the complex
-number `ψ'`, whose real determinant is `|ψ'|²`. -/
-private theorem det_fderiv_realChart_plumbingMap_nonneg (q : Puncture) (L : ℝ) (z : ℝ × ℝ) :
-    0 ≤ (fderiv ℝ (realChart (q.plumbingMap L)) z).det := by
-  rw [(hasFDerivAt_realChart (q.hasDerivAt_plumbingMap L _)).fderiv]
-  -- The determinant is invariant under the conjugation by `ℂ ≃ ℝ × ℝ`.
-  have hconj := LinearMap.det_conj
-    (((ContinuousLinearMap.toSpanSingleton ℂ (q.plumbingFactor L)).restrictScalars ℝ :
-      ℂ →L[ℝ] ℂ) : ℂ →ₗ[ℝ] ℂ) Complex.equivRealProdCLM.toLinearEquiv
-  rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp,
-    ContinuousLinearMap.toLinearMap_comp]
-  -- The linear maps underlying `ℂ ≃L[ℝ] ℝ × ℝ` as a continuous linear map and as a linear
-  -- equivalence agree only definitionally, so `rw` does not see `hconj` in the goal.
-  erw [hconj]
-  simp [LinearMap.det_restrictScalars, Algebra.norm_complex_apply, Complex.normSq_nonneg]
-
-omit [FiniteDimensional ℝ V] in
 /-- In the real coordinates, the plumbed perturbation of `C¹` Hamiltonians is `C¹` at the points
 of the four-punctured sphere. -/
-private theorem contDiffAt_uncurry_plumbedPerturbation (hq : q ≠ inf)
+theorem contDiffAt_uncurry_plumbedPerturbation (hq : q ≠ inf)
     (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
     (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
@@ -500,7 +490,7 @@ private theorem contDiffAt_uncurry_plumbedPerturbation (hq : q ≠ inf)
 receiving pair of pants inside the circle `Re z = L/2` of the end `q`, together with the image
 under the plumbing chart of the part of the truncation of the inserted pair of pants outside the
 circle `Re z = -L/2` of its end at `∞`. -/
-private theorem preimage_plumbedTruncation (hq : q ≠ inf) (L R : ℝ) :
+theorem preimage_plumbedTruncation (hq : q ≠ inf) (L R : ℝ) :
     Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R =
       (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
         {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}) ∪
@@ -520,6 +510,16 @@ private theorem preimage_plumbedTruncation (hq : q ≠ inf) (L R : ℝ) :
     · exact Or.inl h
     · refine Or.inr ⟨Complex.equivRealProdCLM.symm w, hw, ?_⟩
       rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+end TauCeti.Floer
+
+namespace TauCeti.SymplecticForm
+
+open Floer MeasureTheory
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture} {L : ℝ}
+
+/-! ### The energy identity on the plumbed four-punctured sphere -/
 
 /-- The two parts of the truncated plumbed sphere meet in the circle `Re z = L/2` of the end `q`,
 which is a null set. -/
@@ -705,7 +705,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
         (u ∘ realChart (q.plumbingMap L)) w := by
     rw [ω.integral_floerEnergyDensity_image hBm (injective_realChart_plumbingMap q L).injOn
       (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
-      (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w)
+      (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _))
       (fun w hw ↦ (hu.differentiableOn two_ne_zero _ (hBψ hw)).differentiableAt
         (hS₄o.mem_nhds (hBψ hw)))
       (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]
@@ -724,7 +724,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
         w ((u ∘ realChart (q.plumbingMap L)) w) := by
     rw [ω.integral_hamiltonianCurvature_image hBm (injective_realChart_plumbingMap q L).injOn
       (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
-      (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w)
+      (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _))
       (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
       (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]
     exact setIntegral_congr_fun hBm fun w hw ↦ by

@@ -54,6 +54,8 @@ maps on the plumbed sphere is computed.
   `ℂ ∖ {0, 1, ψ_{q,L}(1)}`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_image_inter`: the two pieces overlap
   exactly in the image of the neck `-L < Re z < 0`.
+* `TauCeti.ThricePuncturedSphere.Puncture.mem_plumbedTruncation_iff`: membership in the
+  truncation `Σ_R`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
@@ -324,6 +326,16 @@ theorem plumbedTruncation_def (q : Puncture) (L R : ℝ) :
       (truncation R ∩ {w | (q.endCoord w).re ≤ L / 2}) ∪
         q.plumbingMap L '' (truncation R ∩ {w | -(L / 2) ≤ (inf.endCoord w).re}) :=
   (rfl)
+
+/-- A point lies in the truncated plumbed sphere if it lies in the part `Re z ≤ L / 2` of the end
+`q` of the receiving truncation, or it is the image under the plumbing map of a point in the part
+`Re z ≥ -L / 2` of the end at `∞` of the inserted truncation. -/
+@[simp]
+theorem mem_plumbedTruncation_iff {q : Puncture} {L R : ℝ} {w : ℂ} :
+    w ∈ q.plumbedTruncation L R ↔
+      (w ∈ truncation R ∧ (q.endCoord w).re ≤ L / 2) ∨
+        ∃ w' ∈ truncation R, -(L / 2) ≤ (inf.endCoord w').re ∧ q.plumbingMap L w' = w := by
+  simp only [plumbedTruncation_def, mem_union, mem_inter_iff, mem_ofPred_eq, mem_image, and_assoc]
 
 /-- The truncated plumbed sphere lies in the plumbed four-punctured sphere
 `ℂ ∖ {0, 1, ψ_{q,L}(1)}`. -/
