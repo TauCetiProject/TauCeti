@@ -126,7 +126,9 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
       ∑ᶠ t, ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t))) : ℤ) -
         sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t)))) := by
   obtain ⟨a, b, hab, hout, ha, hb⟩ := exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym
-    (ker_eq_bot_of_mul_norm_le hα hminus) (ker_eq_bot_of_mul_norm_le hα hplus) hbot htop
+    (LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hminus v)))
+    (LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v)))
+    hbot htop
   have hnd {s : ℝ} (hs : s ∉ Ioo a b) : ((innerSL ℝ).comp (A s)).toBilinForm.Nondegenerate :=
     nondegenerate_toBilinForm_innerSL_comp_iff.2 (hout s hs)
   have hcross := sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm hab
