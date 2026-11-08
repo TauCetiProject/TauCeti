@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.WeakOperatorTopology
-public import Mathlib.Analysis.LocallyConvex.HahnBanach
-public import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
+public import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
 public import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
@@ -21,7 +20,8 @@ changing the norm topology on the original operator space.
 
 The two topologies have the same continuous linear functionals: every functional continuous for
 pointwise convergence is a finite sum `T ↦ ∑ x ∈ s, g x (T x)` of continuous functionals of
-values (`PointwiseConvergenceCLM.exists_finset_sum_eq`), hence weak-operator continuous, and
+values (`PointwiseConvergenceCLM.exists_finset_sum_eq`, in
+`TauCeti.Analysis.LocallyConvex.PointwiseConvergence`), hence weak-operator continuous, and
 conversely (`ContinuousLinearMapWOT.exists_finset_sum_eq`). On a Hilbert space, writing each
 `g x` as an inner product gives the usual finite sums of matrix coefficients. By locally convex
 separation, a convex set of operators therefore has the same closure in both topologies
@@ -74,49 +74,6 @@ theorem isClosed_image_ofCLM_centralizer (s : Set (E →L[𝕜] E)) :
   exact isClosed_centralizer _
 
 end Set
-
-namespace PointwiseConvergenceCLM
-
-variable {𝕜₁ 𝕜 E F : Type*} [NormedField 𝕜₁] [RCLike 𝕜] {σ : 𝕜₁ →+* 𝕜} [AddCommGroup E]
-    [TopologicalSpace E] [Module 𝕜₁ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- **Continuous functionals in the strong operator topology.** A linear functional on operators
-which is continuous for the topology of pointwise convergence is a finite sum of functionals
-`T ↦ g x (T x)`, each a continuous functional on `F` applied to the value at a vector `x`. -/
-theorem exists_finset_sum_eq (φ : StrongDual 𝕜 (E →SLₚₜ[σ] F)) :
-    ∃ (s : Finset E) (g : E → StrongDual 𝕜 F), ∀ T : E →SLₚₜ[σ] F,
-      φ T = ∑ x ∈ s, g x (T x) := by
-  classical
-  obtain ⟨s, C, -, hC⟩ := Seminorm.bound_of_continuous PointwiseConvergenceCLM.withSeminorms
-    ((normSeminorm 𝕜 𝕜).comp (φ : (E →SLₚₜ[σ] F) →ₗ[𝕜] 𝕜)) (continuous_norm.comp φ.continuous)
-  -- `Φ T` records the values of `T` on `s`; the sup norm of `Φ T` controls `φ T`.
-  let Φ : (E →SLₚₜ[σ] F) →ₗ[𝕜] (s → F) :=
-    { toFun T x := T x, map_add' _ _ := rfl, map_smul' _ _ := rfl }
-  have hbound (T : E →SLₚₜ[σ] F) : ‖φ T‖ ≤ C * ‖Φ T‖ := by
-    refine (hC T).trans ?_
-    rw [smul_apply, NNReal.smul_def, smul_eq_mul]
-    gcongr
-    exact Seminorm.finset_sup_apply_le (norm_nonneg _) fun x hx ↦ norm_le_pi_norm (Φ T) ⟨x, hx⟩
-  have hker : LinearMap.ker Φ ≤ LinearMap.ker (φ : (E →SLₚₜ[σ] F) →ₗ[𝕜] 𝕜) := fun T hT ↦ by
-    simpa [LinearMap.mem_ker.mp hT] using hbound T
-  -- Hence `φ` factors through `Φ`, and the factor extends to `s → F` by Hahn–Banach.
-  let f : Module.Dual 𝕜 (LinearMap.range Φ) :=
-    (LinearMap.ker Φ).liftQ _ hker ∘ₗ Φ.quotKerEquivRange.symm.toLinearMap
-  have hf (T : E →SLₚₜ[σ] F) : f ⟨Φ T, LinearMap.mem_range_self Φ T⟩ = φ T := by
-    simp [f, LinearMap.quotKerEquivRange_symm_apply_image]
-  obtain ⟨G, hG, -⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm
-    (LinearMap.range Φ) f (p := C • normSeminorm 𝕜 (s → F))
-    (continuous_norm.const_smul (C : ℝ)) (by
-      rintro ⟨-, T, rfl⟩
-      simpa [hf, NNReal.smul_def] using hbound T)
-  refine ⟨s, fun x ↦ if hx : x ∈ s then G ∘L ContinuousLinearMap.single 𝕜 (fun _ : s ↦ F) ⟨x, hx⟩
-    else 0, fun T ↦ ?_⟩
-  rw [← hf, ← hG, ← Finset.sum_coe_sort s]
-  simp only [Finset.coe_mem, dite_true]
-  -- The coordinates of `Φ T` are the values `T x`, by definition of `Φ`.
-  exact (ContinuousLinearMap.sum_comp_single 𝕜 (fun _ ↦ F) G (Φ T)).symm
-
-end PointwiseConvergenceCLM
 
 namespace ContinuousLinearMapWOT
 
