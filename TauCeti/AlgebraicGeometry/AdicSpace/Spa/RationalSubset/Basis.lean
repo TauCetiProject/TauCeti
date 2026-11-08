@@ -114,6 +114,7 @@ section TopologicalRing
 
 variable [IsTopologicalRing A]
 
+omit [IsTopologicalRing A] in
 /-- An open numerator ideal is admissible for the extended ideal of every pair of definition.
 This is Wedhorn Lemma 6.6 applied to the inclusion of the numerator span into the span obtained
 after adjoining the denominator. -/
@@ -121,8 +122,13 @@ theorem isAdmissible_extendedIdealOfDefinition_of_isOpen_span (P : PairOfDefinit
     {T : Finset A} {s : A} (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
     IsAdmissible P.extendedIdealOfDefinition T s := by
   rw [isAdmissible_iff]
-  refine (P.isOpen_iff_le_radical _).mp hT |>.trans (Ideal.radical_mono ?_)
-  exact Ideal.span_mono (Set.subset_insert s (T : Set A))
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp (hT.mem_nhds (Submodule.zero_mem _))
+  have hpow : P.extendedIdealOfDefinition ^ n ≤ Ideal.span (T : Set A) := by
+    rw [P.extendedIdealOfDefinition_pow, Ideal.span_le]
+    exact hn
+  have hrad : P.extendedIdealOfDefinition ≤ (Ideal.span (T : Set A)).radical :=
+    fun x hx ↦ ⟨n, hpow (Ideal.pow_mem_pow hx n)⟩
+  exact hrad.trans (Ideal.radical_mono (Ideal.span_mono (Set.subset_insert s (T : Set A))))
 
 /-- An admissible numerator set becomes an open numerator ideal after adjoining its denominator.
 The rational subset itself is unchanged by this operation. -/
