@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
@@ -94,15 +95,7 @@ private theorem coe_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) :
 private theorem fourier_apply_smul_ne_zero_of_fourier_dilate_ne_zero {R : ℝ} (hR : 0 < R)
     (f : 𝓢(E, F)) {ξ : E} (hξ : (𝓕 (dilate R hR f) : 𝓢(E, F)) ξ ≠ 0) :
     (𝓕 f : 𝓢(E, F)) (R • ξ) ≠ 0 := by
-  let A : E ≃L[ℝ] E :=
-    (LinearEquiv.smulOfNeZero ℝ E R⁻¹ (inv_ne_zero hR.ne')).toContinuousLinearEquiv
-  have hadj : ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) ξ = R • ξ := by
-    refine ext_inner_left ℝ fun w => ?_
-    have hw : A.symm w = R • w := A.symm_apply_eq.2 (inv_smul_smul₀ hR.ne' w).symm
-    rw [ContinuousLinearMap.adjoint_inner_right, ContinuousLinearEquiv.coe_coe, hw,
-      real_inner_smul_left, real_inner_smul_right]
-  have h : (𝓕 (dilate R hR f) : 𝓢(E, F)) ξ = 𝓕 (⇑f ∘ ⇑A) ξ := by rw [fourier_coe]; rfl
-  rw [h, ContinuousLinearEquiv.fourier_comp, hadj] at hξ
+  rw [fourier_coe, coe_dilate, TauCeti.fourier_comp_smul _ (inv_ne_zero hR.ne'), inv_inv] at hξ
   exact right_ne_zero_of_smul hξ
 
 private theorem eLpNorm_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) (p : ℝ≥0∞) :
@@ -218,9 +211,9 @@ theorem exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset (k : ℕ) {p 
   have ha : 0 < a := by positivity
   have hexp : a⁻¹ * R ^ (finrank ℝ E / p.toReal) =
       R ^ ((k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹)) := by
-    rw [show (k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹) =
-        k + finrank ℝ E / p.toReal - finrank ℝ E / q.toReal by ring, ha_def,
-      Real.rpow_sub hR, Real.rpow_add hR, Real.rpow_natCast, inv_pow]
+    have hsplit : (k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹) =
+        k + finrank ℝ E / p.toReal - finrank ℝ E / q.toReal := by ring
+    rw [hsplit, ha_def, Real.rpow_sub hR, Real.rpow_add hR, Real.rpow_natCast, inv_pow]
     field_simp
   calc eLpNorm (iteratedFDeriv ℝ k f) q
       = ENNReal.ofReal a⁻¹ * (ENNReal.ofReal a * eLpNorm (iteratedFDeriv ℝ k f) q) := by
@@ -251,29 +244,6 @@ theorem exists_eLpNorm_le_of_support_fourier_subset {p q : ℝ≥0∞} (hp : 1 �
     (ae_of_all _ fun x => norm_iteratedFDeriv_zero)] at h
 
 /-! ### The reverse Bernstein inequality on an annulus -/
-
-omit [CompleteSpace F] in
-/-- The frequencies of a line derivative of a Schwartz function are among those of the
-function. -/
-private theorem support_fourier_lineDerivOp_subset (f : 𝓢(E, F)) (v : E) :
-    Function.support ⇑(𝓕 (∂_{v} f) : 𝓢(E, F)) ⊆ Function.support ⇑(𝓕 f : 𝓢(E, F)) := by
-  intro ξ hξ h0
-  have hv : (inner ℝ · v : E → ℝ).HasTemperateGrowth := by fun_prop
-  rw [Function.mem_support, fourier_lineDerivOp_eq, smul_apply, smulLeftCLM_apply_apply hv,
-    h0] at hξ
-  simp at hξ
-
-omit [CompleteSpace F] in
-/-- The frequencies of an iterated line derivative of a Schwartz function are among those of the
-function. -/
-private theorem support_fourier_iteratedLineDerivOp_subset (f : 𝓢(E, F)) {n : ℕ}
-    (m : Fin n → E) :
-    Function.support ⇑(𝓕 (∂^{m} f) : 𝓢(E, F)) ⊆ Function.support ⇑(𝓕 f : 𝓢(E, F)) := by
-  induction n with
-  | zero => rw [iteratedLineDerivOp_fin_zero]
-  | succ n ih =>
-    rw [iteratedLineDerivOp_succ_left]
-    exact (support_fourier_lineDerivOp_subset _ _).trans (ih _)
 
 /-- A Schwartz function with frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ` is a sum of Fourier
 multipliers with Schwartz symbols applied to its partial derivatives: on the annulus, the
@@ -338,17 +308,18 @@ private theorem exists_eLpNorm_le_sum_eLpNorm_lineDerivOp (θ : ℝ) {p : ℝ≥
       Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} →
         eLpNorm f p ≤ C * ∑ i, eLpNorm ⇑(∂_{stdOrthonormalBasis ℝ E i} f : 𝓢(E, F)) p := by
   obtain ⟨σ, hσ⟩ := exists_eq_sum_fourierMultiplierCLM_lineDerivOp (E := E) (F := F) θ
-  choose C hC using fun i => exists_eLpNorm_convolution_le (F := F) (𝓕⁻ (σ i)) hp le_rfl
+  -- Each multiplier is bounded on `Lᵖ` by the `L¹` norm of its Schwartz kernel `𝓕⁻ σᵢ`.
+  have hfin (i : Fin (finrank ℝ E)) : eLpNorm (𝓕⁻ (σ i : E → ℂ)) 1 ≠ ∞ := by
+    rw [← fourierInv_coe]
+    exact ((𝓕⁻ (σ i) : 𝓢(E, ℂ)).memLp 1).eLpNorm_ne_top
+  let C (i : Fin (finrank ℝ E)) : ℝ≥0 := (eLpNorm (𝓕⁻ (σ i : E → ℂ)) 1).toNNReal
   refine ⟨∑ i, C i, fun f hf => ?_⟩
   set b := stdOrthonormalBasis ℝ E
   have h (i : Fin (finrank ℝ E)) :
       eLpNorm ⇑(fourierMultiplierCLM F (σ i) (∂_{b i} f)) p ≤
         C i * eLpNorm ⇑(∂_{b i} f : 𝓢(E, F)) p := by
-    rw [fourierMultiplierCLM_eq_convolution,
-      show ⇑(convolution (lsmul ℂ ℂ) (𝓕⁻ (σ i)) (∂_{b i} f)) =
-          ⇑(𝓕⁻ (σ i) : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] ⇑(∂_{b i} f : 𝓢(E, F))
-        from funext (convolution_apply _ _ _)]
-    exact hC i _ (∂_{b i} f).continuous.aestronglyMeasurable
+    rw [ENNReal.coe_toNNReal (hfin i)]
+    exact eLpNorm_fourierMultiplierCLM_le _ _ hp
   let g (i : Fin (finrank ℝ E)) : E → F := ⇑(fourierMultiplierCLM F (σ i) (∂_{b i} f))
   have h1 : eLpNorm f p = eLpNorm (∑ i, g i) p := by
     conv_lhs => rw [hσ f hf]
