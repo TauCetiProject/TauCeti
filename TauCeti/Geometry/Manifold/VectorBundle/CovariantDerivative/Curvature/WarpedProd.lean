@@ -60,76 +60,6 @@ variable
     (fun p : M × N ↦ TangentSpace (I.prod J) p)]
   {f : M → ℝ}
 
-omit
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-  [RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p)]
-  [IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F)
-    (fun p : M × N ↦ TangentSpace (I.prod J) p)] in
-/-- Horizontal and vertical lifts of smooth vector fields on a product manifold commute. -/
-private theorem mlieBracket_prodVectorField_horizontal_vertical
-    {X : Π x : M, TangentSpace I x} {V : Π y : N, TangentSpace J y}
-    (hX : CMDiff ∞ (T% X)) (hV : CMDiff ∞ (T% V)) (p : M × N) :
-    mlieBracket (I.prod J) (prodVectorField X 0) (prodVectorField 0 V) p = 0 := by
-  have h0M : CMDiff ∞ (T% (0 : Π x : M, TangentSpace I x)) :=
-    contMDiff_zeroSection ℝ (TangentSpace I)
-  have h0N : CMDiff ∞ (T% (0 : Π y : N, TangentSpace J y)) :=
-    contMDiff_zeroSection ℝ (TangentSpace J)
-  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
-  have : IsManifold J (minSmoothness ℝ 2) N := .of_le (n := ∞) (by simp)
-  apply (tangentSpaceProdEquiv p).injective
-  rw [mlieBracket_prodVectorField (hX.mdifferentiableAt (by simp))
-    (h0M.mdifferentiableAt (by simp)) (h0N.mdifferentiableAt (by simp))
-    (hV.mdifferentiableAt (by simp))]
-  simp only [map_zero, tangentSpaceProdEquiv_prodVectorField, mlieBracket_zero_right,
-    mlieBracket_zero_left, Pi.zero_apply, Prod.mk_zero_zero]
-
-/-- On a horizontal section `W`, the Levi-Civita connection of the warped product differs from
-the base connection only by the factor `W f / f` on the vertical component. -/
-private theorem IsWarpedProduct.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField_zero
-    (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (W : Π x : M, TangentSpace I x) (hW : CMDiff ∞ (T% W)) (q : M × N)
-    (u : TangentSpace (I.prod J) q) :
-    tangentSpaceProdEquiv q
-        ((leviCivitaConnection (I.prod J) (M × N)) (prodVectorField W 0) q u) =
-      (leviCivitaConnection I M W q.1 (tangentSpaceProdEquiv q u).1,
-        (mvfderiv I f q.1 (W q.1) / f q.1) • (tangentSpaceProdEquiv q u).2) := by
-  have h0N : CMDiff ∞ (T% (0 : Π y : N, TangentSpace J y)) :=
-    contMDiff_zeroSection ℝ (TangentSpace J)
-  simpa [(leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero] using
-    h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField
-      (hf.mdifferentiableAt (by simp)) (hW.mdifferentiableAt (by simp))
-      (h0N.mdifferentiableAt (by simp)) u
-
-/-- The scalar identity behind the mixed curvature of a warped product: for the base
-Levi-Civita connection `D`, `(Y f / f) (X f / f) + X (Y f / f) - (D_X Y) f / f = Hess f(X,Y) / f`
-where `f` does not vanish. -/
-private theorem hessian_div_eq_mvfderiv_add
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {Y : Π x : M, TangentSpace I x} (hY : CMDiff ∞ (T% Y))
-    (x : M) (hf₀ : f x ≠ 0) (X : Π x : M, TangentSpace I x) :
-    (mvfderiv I f x (Y x) / f x) * (mvfderiv I f x (X x) / f x) +
-        mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) x (X x) -
-        mvfderiv I f x (leviCivitaConnection I M Y x (X x)) / f x =
-      hessian I f x (X x) (Y x) / f x := by
-  have hdY : ContMDiff I 𝓘(ℝ) ∞ (fun x ↦ mvfderiv I f x (Y x)) :=
-    (hf.contMDiff_mvfderiv_apply (m := ∞) (by simp)).comp hY
-  rw [hessian_apply_eq_mvfderiv_sub x (hf.of_le (by simp)).contMDiffAt X Y
-    (hY.mdifferentiableAt (by simp))]
-  have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) x (X x) =
-      -(f x ^ 2)⁻¹ * mvfderiv I f x (X x) := by
-    simpa only [Function.comp_def, fderiv_inv, ContinuousLinearMap.toSpanSingleton_apply,
-      smul_eq_mul, mul_comm] using
-      (mvfderiv_comp_apply_of_differentiableAt
-        (differentiableAt_inv hf₀) (hf.mdifferentiableAt (by simp)) (X x))
-  simp only [div_eq_mul_inv]
-  rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) (hdY.mdifferentiableAt (by simp))
-    ((hf.mdifferentiableAt (by simp)).inv hf₀)]
-  simp only [add_apply, smul_apply, smul_eq_mul, hinv]
-  field_simp [hf₀]
-  ring
-
 private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     {X Y : Π x : M, TangentSpace I x} {V : Π y : N, TangentSpace J y}
@@ -151,7 +81,10 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
   have hXY := D.contMDiff_apply hX hY
   -- On horizontal sections the connection has no horizontal/vertical correction except
   -- `∇_V Y = (Y f / f) V`.
-  have hh := h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField_zero hf
+  have hh (W : Π x : M, TangentSpace I x) (hW : CMDiff ∞ (T% W)) (q : M × N)
+      (u : TangentSpace (I.prod J) q) :=
+    h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField_zero (p := q)
+      (hf.mdifferentiableAt (by simp)) (hW.mdifferentiableAt (by simp)) u
   have hv (q : M × N) : cov (prodVectorField 0 V) q (prodVectorField X 0 q) =
       (mvfderiv I f q.1 (X q.1) / f q.1) • prodVectorField 0 V q := by
     apply (tangentSpaceProdEquiv q).injective
@@ -174,8 +107,11 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
     apply (tangentSpaceProdEquiv q).injective
     rw [tangentSpaceProdEquiv_prodVectorField]
     simpa using hh _ hY q (prodVectorField X 0 q)
+  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold J (minSmoothness ℝ 2) N := .of_le (n := ∞) (by simp)
   -- Horizontal and vertical lifts commute.
-  have hbracket := mlieBracket_prodVectorField_horizontal_vertical (J := J) hX hV p
+  have hbracket := mlieBracket_prodVectorField_horizontal_vertical (p := p)
+    (hX.mdifferentiableAt (by simp)) (hV.mdifferentiableAt (by simp))
   -- The derivative of `Y f / f` and the two connection corrections combine into `Hess f / f`.
   have hcoeff := hessian_div_eq_mvfderiv_add (I := I) hf hY p.1 hf₀ X
   -- Substitute these three derivatives in the definition of curvature.
