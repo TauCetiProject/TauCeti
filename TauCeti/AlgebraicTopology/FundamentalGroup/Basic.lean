@@ -50,6 +50,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   induced-map range contained in any target subgroup.
 * `TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton`: the same triviality for the
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
+* `TauCeti.subsingleton_fundamentalGroup_iff`: the fundamental group at a basepoint is trivial
+  exactly when every loop there is nullhomotopic.
 * `TauCeti.simplyConnectedSpace_of_subsingleton_fundamentalGroup`: a path-connected space whose
   fundamental group at one basepoint is trivial is simply connected.
 -/
@@ -249,6 +251,21 @@ theorem FundamentalGroup.map_range_le_of_simplyConnectedSpace [SimplyConnectedSp
     (_root_.FundamentalGroup.map f a₀).range ≤ H :=
   FundamentalGroup.map_range_le_of_subsingleton f H
 
+/-- **The fundamental group is trivial exactly when every loop is nullhomotopic**: the fundamental
+group at `x` is a subsingleton if and only if every loop at `x` is homotopic, relative to its
+endpoints, to the constant loop. -/
+theorem subsingleton_fundamentalGroup_iff {x : X} :
+    Subsingleton (_root_.FundamentalGroup X x) ↔ ∀ γ : Path x x, γ.Homotopic (Path.refl x) := by
+  refine ⟨fun _ γ ↦ ?_, fun h ↦ ⟨fun g g' ↦ ?_⟩⟩
+  · simpa using (FundamentalGroup.map_range_eq_bot_iff (ContinuousMap.id X) x).1
+      (FundamentalGroup.map_range_eq_bot_of_subsingleton _) γ
+  -- Every element is the class of a loop, and every loop is in the class of the constant loop.
+  have key (g : _root_.FundamentalGroup X x) :
+      g = _root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)) := by
+    rw [← FundamentalGroup.fromPath_mk_out g]
+    exact congrArg _ (Quotient.sound (h _))
+  rw [key g, key g']
+
 /-- **A path-connected space with a trivial fundamental group is simply connected.** It suffices
 that the fundamental group at a single basepoint is trivial. -/
 theorem simplyConnectedSpace_of_subsingleton_fundamentalGroup [PathConnectedSpace X] (x : X)
@@ -257,7 +274,6 @@ theorem simplyConnectedSpace_of_subsingleton_fundamentalGroup [PathConnectedSpac
   have : Subsingleton (_root_.FundamentalGroup X y) :=
     (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath
       (PathConnectedSpace.somePath x y)).symm.injective.subsingleton
-  simpa using (FundamentalGroup.map_range_eq_bot_iff (ContinuousMap.id X) y).1
-    (FundamentalGroup.map_range_eq_bot_of_subsingleton _) γ
+  exact subsingleton_fundamentalGroup_iff.1 this γ
 
 end TauCeti
