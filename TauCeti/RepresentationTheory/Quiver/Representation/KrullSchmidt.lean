@@ -8,6 +8,8 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 public import TauCeti.CategoryTheory.Adjunction.Additive
+public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
+public import TauCeti.RepresentationTheory.Quiver.Representation.HomDifferential
 
 /-!
 # The Krull-Schmidt theorem for quiver representations
@@ -54,6 +56,8 @@ sum of all the summands for that `p`.
 * `TauCeti.QuiverRep.card_iso_eq_card_iso_of_iso_biproduct`: the number of summands isomorphic to a
   fixed representation is the same in any two such decompositions, so the multiplicity of an
   indecomposable summand is an invariant.
+* `TauCeti.QuiverRep.isKrullSchmidt_isFinDim`: the pointwise finite-dimensional representations
+  form a Krull-Schmidt category.
 
 ## References
 
@@ -162,6 +166,21 @@ theorem eq_of_iso_biproduct_fin {M : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim 
     (eP : M ≅ ⨁ P) (eR : M ≅ ⨁ R) (hP : ∀ i, Indecomposable (P i))
     (hR : ∀ j, Indecomposable (R j)) : m = n := by
   simpa using card_eq_card_of_iso_biproduct hM eP eR hP hR
+
+/-! ### Pointwise finite-dimensional representations form a Krull-Schmidt category -/
+
+/-- **Pointwise finite-dimensional representations of a finite quiver form a Krull-Schmidt
+category**: every such representation is a finite biproduct of indecomposable ones
+(`TauCeti.QuiverRep.exists_indecomposable_iso_biproduct`), whose endomorphism rings are local by
+Fitting's lemma (`TauCeti.isLocalRing_end_of_indecomposable`), since their endomorphisms form a
+finite-dimensional space (`TauCeti.QuiverRep.finiteDimensional_hom`). -/
+instance isKrullSchmidt_isFinDim :
+    IsKrullSchmidt (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :=
+  isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct (IsFinDim.{u, v, w, t} k Q) fun M hM ↦ by
+    obtain ⟨n, P, hP, hPfin, e⟩ := exists_indecomposable_iso_biproduct M hM
+    refine ⟨n, P, fun i ↦ ?_, e⟩
+    have := finiteDimensional_hom (hPfin i) (hPfin i)
+    exact _root_.TauCeti.isLocalRing_end_of_indecomposable (R := k) (hP i)
 
 end QuiverRep
 

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
+public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 public import TauCeti.RingTheory.KrullSchmidt.DirectSum
 
 /-!
@@ -39,6 +41,8 @@ biproduct with the external direct sum of the carriers of the summands, together
 * `TauCeti.card_iso_eq_card_iso_of_iso_biproduct`: the number of summands isomorphic to a fixed
   object is the same in any two such decompositions, so the multiplicity of an indecomposable
   summand is an invariant.
+* `TauCeti.isKrullSchmidt_isFiniteLength`: the finite-length modules form a Krull-Schmidt
+  category.
 
 ## Implementation notes
 
@@ -148,5 +152,21 @@ theorem eq_of_iso_biproduct_fin {X : ModuleCat.{v} A} [IsNoetherian A X] [IsArti
     (eP : X ≅ biproduct P) (eQ : X ≅ biproduct Q)
     (hP : ∀ i, Indecomposable (P i)) (hQ : ∀ j, Indecomposable (Q j)) : m = n := by
   simpa using card_eq_card_of_iso_biproduct eP eQ hP hQ
+
+/-! ### Finite-length modules form a Krull-Schmidt category -/
+
+/-- **Finite-length modules form a Krull-Schmidt category.** A module of finite length is a finite
+biproduct of indecomposable modules (`TauCeti.exists_indecomposable_iso_biproduct`), which have
+finite length and hence local endomorphism rings by Fitting's lemma
+(`TauCeti.indecomposable_iff_isLocalRing_end`). -/
+instance isKrullSchmidt_isFiniteLength :
+    IsKrullSchmidt (ModuleCat.isFiniteLength.{v} A).FullSubcategory :=
+  isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct _ fun X hX ↦ by
+    have := (isFiniteLength_iff_isNoetherian_isArtinian.1 ((X.isFiniteLength_iff).1 hX)).2
+    obtain ⟨n, P, hP, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct X
+    -- Each summand is a retract of `X`, so it has finite length.
+    refine ⟨n, P, fun i ↦ (indecomposable_iff_isLocalRing_end (P i) ?_).1 (hP i), ⟨e⟩⟩
+    exact ((P i).isFiniteLength_iff).1 ((ModuleCat.isFiniteLength A).prop_of_retract
+      ⟨biproduct.ι P i ≫ e.inv, e.hom ≫ biproduct.π P i, by simp⟩ hX)
 
 end TauCeti
