@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
-import TauCeti.Algebra.Order.Pi
-import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.Algebra.Monoid
@@ -26,12 +23,14 @@ constructs such data for any finite set of input ends.
 An input end is given by a center `c` and a nonzero scale `a`: its end lift is
 `z ↦ c + a φ₀(z)`, where `φ₀(z) = exp (-2πz) / 2` is the end lift of the input end at `0` of the
 pair of pants `ℂ ∖ {0, 1}`. The datum `TauCeti.Floer.inputEndPerturbation c a H` is the pushforward
-along the affine map `w ↦ c + a w` of the pair-of-pants datum whose only nonzero Hamiltonian is
-`H` at the input `0`. In the coordinates `(s, t)` of the moved end it is `β(s - 1) H(t) dt`, and it
-vanishes off the disc `‖w - c‖ < ‖a‖ exp (-2π) / 2`. For finitely many input ends with centers
-`c i`, scales `a i` and period-one Hamiltonians `H i`, and an output Hamiltonian `Hout` at `∞`,
-`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` is the sum of the input data and the
-negative plane datum `TauCeti.Floer.negativePlanePerturbation Hout` of the output end.
+along the affine map `w ↦ c + a w` of the positive plane datum
+`TauCeti.Floer.positivePlanePerturbation H`, the pair-of-pants datum whose only nonzero
+Hamiltonian is `H` at the input `0`. In the coordinates `(s, t)` of the moved end it is
+`β(s - 1) H(t) dt`, and it vanishes off the disc `‖w - c‖ < ‖a‖ exp (-2π) / 2`. For finitely many
+input ends with centers `c i`, scales `a i` and period-one Hamiltonians `H i`, and an output
+Hamiltonian `Hout` at `∞`, `TauCeti.Floer.puncturedSpherePerturbation c a H Hout` is the sum of the
+input data and the negative plane datum `TauCeti.Floer.negativePlanePerturbation Hout` of the
+output end.
 
 Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)` on which the output datum vanishes. Then:
@@ -80,24 +79,22 @@ section InputEnd
 variable {H : ℝ → M → ℝ} {c a : ℂ}
 
 /-- The datum of an input end with center `c` and scale `a`: the pushforward
-`v ↦ K((w - c) / a)(v / a)` along the affine map `w ↦ c + a w` of the pair-of-pants datum `K`
-whose only nonzero Hamiltonian is `H`, at the input `0`. Its end lift is `z ↦ c + a φ₀(z)`, where
-`φ₀` is the end lift of the input `0`, and in the coordinates `(s, t)` of that end lift it is
-`β(s - 1) H(t) dt` (`inputEndPerturbation_cylindricalEndLift_of_pos`). -/
+`v ↦ K((w - c) / a)(v / a)` along the affine map `w ↦ c + a w` of the positive plane datum `K` of
+`H`, the pair-of-pants datum whose only nonzero Hamiltonian is `H`, at the input `0`. Its end lift
+is `z ↦ c + a φ₀(z)`, where `φ₀` is the end lift of the input `0`, and in the coordinates `(s, t)`
+of that end lift it is `β(s - 1) H(t) dt` (`inputEndPerturbation_cylindricalEndLift_of_pos`). -/
 def inputEndPerturbation (c a : ℂ) (H : ℝ → M → ℝ) (w : ℂ) (x : M) : ℂ →L[ℝ] ℝ :=
-  (pairOfPantsPerturbation (Pi.single zero H) ((w - c) / a) x).comp
-    (ContinuousLinearMap.mul ℝ ℂ a⁻¹)
+  (positivePlanePerturbation H ((w - c) / a) x).comp (ContinuousLinearMap.mul ℝ ℂ a⁻¹)
 
 theorem inputEndPerturbation_apply (c a : ℂ) (H : ℝ → M → ℝ) (w : ℂ) (x : M) (v : ℂ) :
     inputEndPerturbation c a H w x v =
-      pairOfPantsPerturbation (Pi.single zero H) ((w - c) / a) x (a⁻¹ * v) :=
+      positivePlanePerturbation H ((w - c) / a) x (a⁻¹ * v) :=
   (rfl)
 
-/-- The pullback of the input end datum along the affine map `w ↦ c + a w` is the pair-of-pants
-datum of `H` at the input `0`. -/
+/-- The pullback of the input end datum along the affine map `w ↦ c + a w` is the positive plane
+datum of `H`. -/
 theorem inputEndPerturbation_add_mul (ha : a ≠ 0) (w : ℂ) (x : M) (v : ℂ) :
-    inputEndPerturbation c a H (c + a * w) x (a * v) =
-      pairOfPantsPerturbation (Pi.single zero H) w x v := by
+    inputEndPerturbation c a H (c + a * w) x (a * v) = positivePlanePerturbation H w x v := by
   rw [inputEndPerturbation_apply, add_sub_cancel_left, mul_div_cancel_left₀ _ ha,
     inv_mul_cancel_left₀ ha]
 
@@ -109,8 +106,7 @@ theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
   rcases eq_or_ne a 0 with rfl | ha
   · ext v
     simp [inputEndPerturbation_apply]
-  · rw [inputEndPerturbation, pairOfPantsPerturbation_single_zero,
-      positivePlanePerturbation_eq_zero_of_le_norm ?_ x,
+  · rw [inputEndPerturbation, positivePlanePerturbation_eq_zero_of_le_norm ?_ x,
       ContinuousLinearMap.zero_comp]
     rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
     linarith
@@ -122,9 +118,7 @@ theorem inputEndPerturbation_cylindricalEndLift_of_pos (hH : Periodic H 1) (ha :
     inputEndPerturbation c a H (c + a * zero.cylindricalEndLift z) x
         (a * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H z.im x) := by
-  rw [inputEndPerturbation_add_mul ha]
-  simpa using pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single zero H)
-    (q := zero) (by simpa using hH) (z := z) (by simpa using hz) x v
+  rw [inputEndPerturbation_add_mul ha, positivePlanePerturbation_cylindricalEndLift_of_pos hH hz]
 
 end InputEnd
 
@@ -157,7 +151,7 @@ theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture →
         H zero (zero.endCoord w).im x) • zero.endAngularForm w := by
     ext v
     rw [inputEndPerturbation_apply, sub_zero, div_one, inv_one, one_mul,
-      pairOfPantsPerturbation_single]
+      ← pairOfPantsPerturbation_single_zero, pairOfPantsPerturbation_single]
   -- The input end at `1` is the image of the input end at `0` under `w ↦ 1 - w`.
   have hc : zero.endCoord ((w - 1) / -1) = one.endCoord w := by
     rw [endCoord_def, endCoord_def, endCenter_zero, endCenter_one, endScale_zero, endScale_one]
@@ -167,7 +161,8 @@ theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture →
       (smoothTransition (one.endSign * (one.endCoord w).re - 1) *
         H one (one.endCoord w).im x) • one.endAngularForm w := by
     ext v
-    rw [inputEndPerturbation_apply, pairOfPantsPerturbation_single, hc]
+    rw [inputEndPerturbation_apply, ← pairOfPantsPerturbation_single_zero,
+      pairOfPantsPerturbation_single, hc]
     simp only [smul_apply, endAngularForm_apply, endSign_zero, endSign_one, endCenter_zero,
       endCenter_one, div_neg, div_one, sub_zero, mul_neg, neg_neg, inv_neg]
     congr 2
@@ -319,36 +314,16 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
       (fun p : (ℂ × ℂ) × (ℂ × M) => (p.2.1 - p.1.1) / p.1.2) ((c, a), (w, x)) :=
     hcoord.contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1)) ((c, a), (w, x))
       (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
-  rcases lt_or_ge (Real.exp (-(2 * π)) / 2) ‖(w - c) / a‖ with hlt | hle
-  · -- Off the support of the datum it vanishes on a neighborhood.
-    refine (contMDiffAt_const (c := (0 : ℂ →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
-    filter_upwards [hcoordM.continuousAt.norm.eventually (lt_mem_nhds hlt)] with p hp
-    rw [inputEndPerturbation, pairOfPantsPerturbation_single_zero,
-      positivePlanePerturbation_eq_zero_of_le_norm hp.le,
-      ContinuousLinearMap.zero_comp]
-  · -- On its support the rescaled point lies in the pair of pants.
-    have hw₀ : (w - c) / a ≠ 0 := div_ne_zero (sub_ne_zero.2 hw) ha
-    have hw₁ : (w - c) / a ≠ 1 := by
-      intro h
-      rw [h, norm_one] at hle
-      linarith [exp_neg_two_pi_lt_one]
-    have hinv : ContDiffAt ℝ n (fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (c, a) :=
-      (ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp (c, a)
-        ((contDiffAt_inv ℝ ha).comp (c, a) contDiffAt_snd)
-    have hmul : ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℂ) n
-        (fun p : (ℂ × ℂ) × (ℂ × M) => ContinuousLinearMap.mul ℝ ℂ p.1.2⁻¹) ((c, a), (w, x)) :=
-      ContMDiffAt.comp (g := fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (f := Prod.fst)
-        ((c, a), (w, x)) hinv.contMDiffAt contMDiffAt_fst
-    -- The family that is `H` at `0` and zero elsewhere is periodic and `C^n` at every end.
-    have hP : ∀ r, Periodic ((Pi.single zero H : Puncture → ℝ → M → ℝ) r) 1 :=
-      Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH
-    have hS : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n
-        (uncurry ((Pi.single zero H : Puncture → ℝ → M → ℝ) r)) :=
-      Pi.forall_single_of zero (p := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
-        contMDiff_const hHs
-    exact ((contMDiffAt_pairOfPantsPerturbation hP hS ⟨(w - c) / a, hw₀, hw₁⟩ x).comp
-      ((c, a), (w, x))
-      (hcoordM.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
+  have hinv : ContDiffAt ℝ n (fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (c, a) :=
+    (ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp (c, a)
+      ((contDiffAt_inv ℝ ha).comp (c, a) contDiffAt_snd)
+  have hmul : ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℂ) n
+      (fun p : (ℂ × ℂ) × (ℂ × M) => ContinuousLinearMap.mul ℝ ℂ p.1.2⁻¹) ((c, a), (w, x)) :=
+    ContMDiffAt.comp (g := fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (f := Prod.fst)
+      ((c, a), (w, x)) hinv.contMDiffAt contMDiffAt_fst
+  exact ((contMDiffAt_positivePlanePerturbation hH hHs
+    (div_ne_zero (sub_ne_zero.2 hw) ha) x).comp ((c, a), (w, x))
+    (hcoordM.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
@@ -421,8 +396,8 @@ variable {H : ℝ → V → ℝ} {c a : ℂ}
 variable [FiniteDimensional ℝ V]
 
 /-- On the image under the affine chart of the plane without its origin, the integrated curvature
-of the input end datum is that of the pair-of-pants datum of `H` at the input `0`, along the
-reparametrized map. -/
+of the input end datum is that of the positive plane datum of `H`, along the reparametrized
+map. -/
 private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation
     (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0)
     (u : ℝ × ℝ → V) :
@@ -432,10 +407,9 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ =
       ∫⁻ w in {z | Complex.equivRealProdCLM.symm z ≠ 0}, ‖ω.hamiltonianCurvature
-        (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z)
-          x 1)
-        (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z)
-          x Complex.I) w ((u ∘ realChart (c + a * ·)) w)‖ₑ := by
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) w
+        ((u ∘ realChart (c + a * ·)) w)‖ₑ := by
   set S := {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0}
   have hSm : MeasurableSet S :=
     (measurableSet_singleton 0).compl.preimage Complex.equivRealProdCLM.symm.continuous.measurable
@@ -446,11 +420,11 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
     refine (contDiffAt_inputEndPerturbation_prod hH hHs ha ?_ y).differentiableAt one_ne_zero
     rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact fun h => hw (by simpa [ha] using h)
-  -- The pullback of the datum along the affine chart is the pair-of-pants datum.
+  -- The pullback of the datum along the affine chart is the positive plane datum.
   have hpull (v : ℝ × ℝ) : perturbationPullback (realChart (c + a * ·))
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      fun w x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm w) x
+      fun w x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm w) x
         (Complex.equivRealProdCLM.symm v) := by
     funext w x
     rw [perturbationPullback_realChart _
@@ -491,11 +465,6 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
   have hN : volume ({Complex.equivRealProdCLM c} : Set (ℝ × ℝ)) = 0 := by
     rw [Measure.volume_eq_prod]
     exact (Set.toFinite _).measure_zero _
-  have hP := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (Pi.abs_single_apply_apply_le_single zero hB) (u ∘ realChart (c + a * ·))
-  simp only [Fintype.sum_apply_single ENNReal.ofReal_zero] at hP
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -506,7 +475,8 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
         setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation ω hH hHs
           ha u]
     _ ≤ _ := setLIntegral_le_lintegral _ _
-    _ ≤ _ := hP
+    _ ≤ _ := ω.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le hH hHs hB
+        (u ∘ realChart (c + a * ·))
 
 variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ}
 
