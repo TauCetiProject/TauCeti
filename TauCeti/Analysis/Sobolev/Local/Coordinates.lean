@@ -17,8 +17,7 @@ membership. These criteria allow scalar local estimates to be applied to vector-
 without choosing compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
-They also show that testing one basis is equivalent to testing every basis. Continuous linear
-changes of codomain preserve and reflect both local classes.
+They also show that testing one basis is equivalent to testing every basis.
 
 ## References
 
@@ -35,39 +34,6 @@ namespace TauCeti
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
   {p : ENNReal} {U : Set ℂ} {Ω : Opens ℂ} {k : ℕ} {f : ℂ → F}
-
-/-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
-@[simp]
-theorem _root_.ContinuousLinearEquiv.memLpLoc_comp_iff (e : F ≃L[ℝ] G) :
-    MemLpLoc p U (fun z => e (f z)) ↔ MemLpLoc p U f := by
-  constructor
-  · intro h
-    simpa only [ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] using
-      h.clm_comp e.symm.toContinuousLinearMap
-  · exact fun h => h.clm_comp e.toContinuousLinearMap
-
-/-- A continuous linear change of codomain preserves and reflects every local weak
-Sobolev order. -/
-@[simp]
-theorem _root_.ContinuousLinearEquiv.memWkpLoc_comp_iff (e : F ≃L[ℝ] G) :
-    MemWkpLoc p Ω k (fun z => e (f z)) ↔ MemWkpLoc p Ω k f := by
-  cases k with
-  | zero =>
-    simpa only [memWkpLoc_zero_iff] using
-      (e.memLpLoc_comp_iff (p := p) (U := (Ω : Set ℂ)) (f := f))
-  | succ k =>
-    constructor
-    · intro h
-      have : CompleteSpace G := h.completeSpace
-      have : CompleteSpace F :=
-        (e.isUniformEmbedding.isUniformInducing.completeSpace_congr e.surjective).mpr inferInstance
-      simpa only [ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] using
-        h.clm_comp e.symm.toContinuousLinearMap
-    · intro h
-      have : CompleteSpace F := h.completeSpace
-      have : CompleteSpace G :=
-        (e.isUniformEmbedding.isUniformInducing.completeSpace_congr e.surjective).mp inferInstance
-      exact h.clm_comp e.toContinuousLinearMap
 
 variable {ι : Type*} [Finite ι]
 
