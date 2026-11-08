@@ -45,6 +45,8 @@ The application to the trajectory operator `d/ds - A` on `W^{1,p}(ℝ, X)` is in
 ## Main declarations
 
 * `ContinuousLinearMap.greenIntegral`: the whole-line Green integral of a dichotomy.
+* `ContinuousLinearMap.greenIntegral_smul`, `ContinuousLinearMap.greenIntegral_add`: linearity in
+  the forcing term (additivity for continuous bounded forcing terms under a dichotomy).
 * `ContinuousLinearMap.enorm_greenIntegral_le`: the pointwise bound by the kernel
   `K exp (-α |t - s|)`.
 * `ContinuousLinearMap.eLpNorm_greenIntegral_le`: the bound `‖G g‖_{Lᵖ} ≤ 2 K / α ‖g‖_{Lᵖ}`.
@@ -109,6 +111,75 @@ private theorem integrableOn_exp_neg_smul_apply_Iic
       _ = K * M * Real.exp (α * s) := by ring_nf
   exact (h₀.union (hcont.integrableOn_Icc (a := 0) (b := c))).mono_set fun s hs' ↦
     (le_or_gt s 0).elim Or.inl fun h ↦ Or.inr ⟨h.le, hs'⟩
+
+/-- Under the forward exponential estimate, the stable integrand of the Green integral of a
+continuous forcing term bounded by `M` is integrable on `(-∞, t]`. -/
+private theorem integrableOn_greenIntegral_stable
+    (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+    (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s, ‖g s‖ ≤ M) (t : ℝ) :
+    IntegrableOn (fun s ↦ exp ((t - s) • A) (P (g s))) (Iic t) := by
+  have hpull (s : ℝ) : exp ((t - s) • A) (P (g s)) = exp (t • A) (exp ((-s) • A) (P (g s))) := by
+    simp only [← ContinuousLinearMap.exp_add_smul_apply, sub_eq_add_neg]
+  simp only [hpull]
+  exact (exp (t • A)).integrable_comp (integrableOn_exp_neg_smul_apply_Iic hs hα hg hgM t)
+
+/-! ### Linearity in the forcing term -/
+
+omit [CompleteSpace X] in
+/-- The Green integral of the zero forcing term vanishes. -/
+@[simp]
+theorem greenIntegral_zero (t : ℝ) : greenIntegral A P 0 t = 0 := by
+  simp [greenIntegral_def]
+
+omit [CompleteSpace X] in
+/-- The Green integral is homogeneous in its forcing term. -/
+@[simp]
+theorem greenIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
+    greenIntegral A P (c • g) t = c • greenIntegral A P g t := by
+  simp only [greenIntegral_def, Pi.smul_apply, map_smul, ← smul_sub, integral_smul]
+
+omit [CompleteSpace X] in
+/-- The Green integral commutes with negation of the forcing term. -/
+@[simp]
+theorem greenIntegral_neg (g : ℝ → X) (t : ℝ) :
+    greenIntegral A P (-g) t = -greenIntegral A P g t := by
+  simpa using greenIntegral_smul (A := A) (P := P) (-1) g t
+
+section Additivity
+
+variable {g₁ g₂ : ℝ → X} {M₁ M₂ : ℝ}
+  (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+  (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+  (hα : 0 < α) (hg₁ : Continuous g₁) (hg₁M : ∀ s, ‖g₁ s‖ ≤ M₁) (hg₂ : Continuous g₂)
+  (hg₂M : ∀ s, ‖g₂ s‖ ≤ M₂)
+include hs hu hα hg₁ hg₁M hg₂ hg₂M
+
+/-- Under an exponential dichotomy, the Green integral is additive on continuous bounded forcing
+terms. -/
+theorem greenIntegral_add (t : ℝ) :
+    greenIntegral A P (g₁ + g₂) t = greenIntegral A P g₁ t + greenIntegral A P g₂ t := by
+  have hstable (s : ℝ) : exp ((t - s) • A) (P ((g₁ + g₂) s)) =
+      exp ((t - s) • A) (P (g₁ s)) + exp ((t - s) • A) (P (g₂ s)) := by
+    simp only [Pi.add_apply, map_add]
+  have hunstable (s : ℝ) : exp ((t - s) • A) ((g₁ + g₂) s - P ((g₁ + g₂) s)) =
+      exp ((t - s) • A) (g₁ s - P (g₁ s)) + exp ((t - s) • A) (g₂ s - P (g₂ s)) := by
+    simp only [Pi.add_apply, map_add, map_sub]
+    abel
+  simp only [greenIntegral_def, hstable, hunstable]
+  rw [integral_add (integrableOn_greenIntegral_stable hs hα hg₁ hg₁M t)
+      (integrableOn_greenIntegral_stable hs hα hg₂ hg₂M t),
+    integral_add (integrableOn_lyapunovPerron_unstable hu hα t hg₁.continuousOn fun s _ ↦ hg₁M s)
+      (integrableOn_lyapunovPerron_unstable hu hα t hg₂.continuousOn fun s _ ↦ hg₂M s)]
+  abel
+
+/-- Under an exponential dichotomy, the Green integral commutes with subtraction of continuous
+bounded forcing terms. -/
+theorem greenIntegral_sub (t : ℝ) :
+    greenIntegral A P (g₁ - g₂) t = greenIntegral A P g₁ t - greenIntegral A P g₂ t := by
+  rw [sub_eq_add_neg, greenIntegral_add hs hu hα hg₁ hg₁M hg₂.neg (M₂ := M₂) (by simpa using hg₂M),
+    greenIntegral_neg, sub_eq_add_neg]
+
+end Additivity
 
 /-- The Green integral differs from the Lyapunov--Perron integral by the free solution
 `exp (t A) c` with `c = ∫_{s ≤ 0} exp (-s A) (P (g s)) ds`. -/
