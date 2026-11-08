@@ -27,7 +27,7 @@ public section
 
 namespace TauCeti
 
-variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
   {i : N →+ V}
 
 /-- A finite rational-normal presentation, with arbitrary real affine offsets. -/
@@ -88,11 +88,7 @@ theorem mem_carrier_ofFinite {ι : Type*} [Finite ι] {g : ι → (V →ᴬ[ℝ]
   classical
   let _ := Fintype.ofFinite ι
   dsimp only [carrier, ofFinite, Set.mem_ofPred_eq]
-  constructor
-  · intro hx j
-    simpa using hx ((Fintype.equivFin ι) j)
-  · intro hx j
-    exact hx _
+  exact (Fintype.equivFin ι).symm.forall_congr_right (q := fun j => g j x ≤ 0)
 
 /-- Finite reindexing has rational offsets exactly when the original family does. -/
 @[simp]
@@ -103,11 +99,8 @@ theorem hasRationalOffsets_ofFinite_iff {ι : Type*} [Finite ι]
   classical
   let _ := Fintype.ofFinite ι
   dsimp only [HasRationalOffsets, ofFinite]
-  constructor
-  · intro ho j
-    simpa using ho ((Fintype.equivFin ι) j)
-  · intro ho j
-    exact ho _
+  exact (Fintype.equivFin ι).symm.forall_congr_right
+    (q := fun j => ∃ q : ℚ, g j 0 = (q : ℝ))
 
 /-- Intersect two presentations by retaining both families of inequalities. -/
 noncomputable def inter (P Q : RationalAffinePolyhedron h) : RationalAffinePolyhedron h :=
@@ -170,7 +163,8 @@ theorem hasRationalOffsets_empty (h : TauCeti.Toric.IsIntegralLattice i) :
   intro j
   exact ⟨1, by simp [empty]⟩
 
-variable {N' W : Type*} [AddCommGroup N'] [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable {N' W : Type*} [AddCommGroup N'] [AddCommGroup W] [Module ℝ W]
+  [TopologicalSpace W]
   {i' : N' →+ W} {h' : TauCeti.Toric.IsIntegralLattice i'}
 
 /-- Pull back a presentation along an affine map with rational linear part.
@@ -285,7 +279,8 @@ theorem inter {P Q : Set V} (hP : IsRationalNormalPolyhedron h P)
   obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp hQ
   exact isRationalNormalPolyhedron_iff.mpr ⟨P.inter Q, P.carrier_inter Q⟩
 
-variable {N' W : Type*} [AddCommGroup N'] [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable {N' W : Type*} [AddCommGroup N'] [AddCommGroup W] [Module ℝ W]
+  [TopologicalSpace W]
   {i' : N' →+ W} {h' : TauCeti.Toric.IsIntegralLattice i'}
 
 /-- Rational-normal polyhedra pull back along affine maps with rational linear part. -/

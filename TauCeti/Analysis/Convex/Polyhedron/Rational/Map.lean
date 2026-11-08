@@ -41,14 +41,9 @@ def image (P : RationalAffinePolyhedron h) (e : Toric.IntegralAffineEquiv h h') 
 @[simp]
 theorem carrier_image (P : RationalAffinePolyhedron h) (e : Toric.IntegralAffineEquiv h h') :
     (P.image e).carrier = e '' P.carrier := by
-  rw [image, carrier_preimage]
-  ext y
-  simp only [Set.mem_preimage, Toric.IntegralAffineEquiv.toContinuousAffineMap_apply]
-  constructor
-  · intro hy
-    exact ⟨e.symm y, hy, by simp⟩
-  · rintro ⟨x, hx, rfl⟩
-    simpa using hx
+  rw [image, carrier_preimage, Set.preimage_congr e.symm.toContinuousAffineMap_apply]
+  simpa only [Toric.IntegralAffineEquiv.symm_toAffineEquiv] using
+    e.toAffineEquiv.preimage_symm P.carrier
 
 end RationalAffinePolyhedron
 
