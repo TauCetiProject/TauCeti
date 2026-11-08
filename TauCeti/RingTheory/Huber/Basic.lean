@@ -479,7 +479,7 @@ theorem le_powerBoundedSubring [NonarchimedeanRing A] (P : PairOfDefinition A) :
 
 /-- The image of a pair of definition along an open quotient map `f : A →+* B`: its ring of
 definition is the image of `A₀` and its ideal of definition is the image of `I`. -/
-def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+def map {B : Type*} [CommRing B] [TopologicalSpace B]
     (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) : PairOfDefinition B := by
   let A₀ : Subring B := P.ringOfDefinition.map f
   let f₀ : P.ringOfDefinition →+* A₀ :=
@@ -507,7 +507,7 @@ def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
 image of the original one. -/
 @[simp]
 theorem map_ringOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
+    (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
     (P.map f hf).ringOfDefinition = P.ringOfDefinition.map f :=
   (rfl)
 
@@ -515,7 +515,7 @@ theorem map_ringOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
 under the map `A₀ → f(A₀)` induced by `f`. -/
 @[simp]
 theorem map_idealOfDefinition {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B)
+    [TopologicalSpace B] (P : PairOfDefinition A) (f : A →+* B)
     (hf : IsOpenQuotientMap f) :
     (P.map f hf).idealOfDefinition = P.idealOfDefinition.map
       ((f.comp P.ringOfDefinition.subtype).codRestrict
@@ -528,7 +528,7 @@ theorem map_idealOfDefinition {B : Type*} [CommRing B]
 `P.idealImage n` under `f`. -/
 @[simp]
 theorem map_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
+    (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
     (n : ℕ) :
     (P.map f hf).idealImage n = (P.idealImage n).map (f : A →+ B) := by
   set f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=

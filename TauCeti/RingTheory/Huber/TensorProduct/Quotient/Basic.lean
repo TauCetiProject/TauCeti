@@ -63,7 +63,7 @@ namespace TauCeti.Huber
 variable {A B C B' C' : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing B'] [CommRing C']
   [Algebra A B] [Algebra A C] [Algebra A B'] [Algebra A C']
   [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C] [TopologicalSpace B']
-  [TopologicalSpace C'] [IsTopologicalRing B'] [IsTopologicalRing C']
+  [TopologicalSpace C']
   {φ : B →+* B'} {ψ : C →+* C'}
   (hφA : φ.comp (algebraMap A B) = algebraMap A B')
   (hψA : ψ.comp (algebraMap A C) = algebraMap A C')
@@ -152,6 +152,7 @@ theorem idealImage_map (n : ℕ) :
 end TensorDatum
 
 variable [IsTopologicalRing A] [IsTopologicalRing B] [IsTopologicalRing C]
+  [IsTopologicalRing B'] [IsTopologicalRing C']
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
   [IsAdicHom (algebraMap A B')] [IsAdicHom (algebraMap A C')]
 
