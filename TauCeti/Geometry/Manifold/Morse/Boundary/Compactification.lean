@@ -241,8 +241,8 @@ theorem ncard_morseBrokenTrajectoryPairs (hdf : MDifferentiable 𝓘(ℝ, E) �
       rw [heq.1]
       exact (hX.flow.apply_mem_stableSet_iff _).2 hz₁'.1.2
     exact Prod.ext rfl (Prod.ext
-      (hX.eq_of_flow_eq_of_value_eq hdf (hne hpq) hz₁.1 heq.1 (hz₁.2.trans hz₁'.2.symm))
-      (hX.eq_of_flow_eq_of_value_eq hdf (hne hqr) hz₂.1 heq.2 (hz₂.2.trans hz₂'.2.symm)))
+      (hX.eq_of_flow_eq_of_value_eq (hne hpq) hz₁.1 heq.1 (hz₁.2.trans hz₁'.2.symm))
+      (hX.eq_of_flow_eq_of_value_eq (hne hqr) hz₂.1 heq.2 (hz₂.2.trans hz₂'.2.symm)))
   · intro w hw
     obtain ⟨x, hx, t₁, t₂, ht₁, ht₂⟩ :=
       hX.exists_mem_morseBrokenTrajectorySet_of_mem_morseBrokenTrajectoryPairs hdf hw
@@ -250,11 +250,11 @@ theorem ncard_morseBrokenTrajectoryPairs (hdf : MDifferentiable 𝓘(ℝ, E) �
     obtain ⟨hpq', hqr', hz₁, hz₂⟩ := mem_morseBrokenTrajectorySet'.1 hx
     -- The level points of the two components are the given pair.
     refine ⟨x, hx, Prod.ext ?_ ?_⟩
-    · refine hX.eq_of_flow_eq_of_value_eq hdf (hne hpq')
+    · refine hX.eq_of_flow_eq_of_value_eq (hne hpq')
         (hX.flow.isInvariant_unstableSet_inter_stableSet _ _ _ hz₁.1) (t := -τ₁ x) (t' := t₁)
         ?_ ((hτ₁ x hx).trans hyc.symm)
       rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply, ht₁]
-    · refine hX.eq_of_flow_eq_of_value_eq hdf (hne hqr')
+    · refine hX.eq_of_flow_eq_of_value_eq (hne hqr')
         (hX.flow.isInvariant_unstableSet_inter_stableSet _ _ _ hz₂.1) (t := -τ₂ x) (t' := t₂)
         ?_ ((hτ₂ x hx).trans hzc.symm)
       rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply, ht₂]
