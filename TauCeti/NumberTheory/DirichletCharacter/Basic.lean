@@ -90,8 +90,11 @@ namespace DirichletCharacter
 
 /-- A nonprincipal Dirichlet character sums to zero over a full period. -/
 theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
-    [NeZero N] (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
+    (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
     ∑ n ∈ Finset.range N, χ n = 0 := by
+  rcases N.eq_zero_or_pos with rfl | hN
+  · simp
+  have : NeZero N := ⟨hN.ne'⟩
   calc
     _ = ∑ a : ZMod N, χ a := by
       exact Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
@@ -173,11 +176,17 @@ theorem factorsThrough_gcd_of_changeLevel_factorsThrough {R : Type*} [CommMonoid
 This is `factorsThrough_gcd_of_changeLevel_factorsThrough` at the gcd
 `gcd (N, L N / p) = gcd (p, L) · (N / p) = N / p`. -/
 theorem factorsThrough_div_of_changeLevel_factorsThrough {R : Type*} [CommMonoidWithZero R]
-    {N p L : ℕ} [NeZero N] [NeZero L] (hpN : p ∣ N) (hpL : Nat.Coprime p L)
+    {N p L : ℕ} (hpN : p ∣ N) (hpL : Nat.Coprime p L)
     {ψ : DirichletCharacter R N}
     (hfac : (changeLevel (Nat.dvd_mul_left N L) ψ).FactorsThrough (L * N / p)) :
     ψ.FactorsThrough (N / p) := by
-  have : NeZero (L * N) := ⟨mul_ne_zero (NeZero.ne L) (NeZero.ne N)⟩
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simpa using FactorsThrough.same_level ψ
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · rw [Nat.coprime_zero_right] at hpL
+    subst hpL
+    simpa using FactorsThrough.same_level ψ
+  have : NeZero (L * N) := ⟨(Nat.mul_pos hL hN).ne'⟩
   have hgcd : Nat.gcd N (L * N / p) = N / p := by
     rw [Nat.mul_div_assoc L hpN]
     calc Nat.gcd N (L * (N / p)) = Nat.gcd (p * (N / p)) (L * (N / p)) := by
