@@ -251,7 +251,7 @@ theorem maslovIndex_eq_degree {U V : unitaryGroup n ℂ} (γ : Path U V)
       spectralAngleSum (souriau U : Matrix n n ℂ) := by
     rw [h]
   rw [maslovIndex, hs, sub_self, sub_zero, Circle.angleChange_congr (detSouriauPath γ)
-      ((detSouriauPath γ).cast rfl (congrArg detCircle h)) fun _ => rfl,
+      ((detSouriauPath γ).cast rfl (congrArg detCircle h)) fun _ => by simp,
     Circle.angleChange_eq_degree_mul]
   field_simp
 
@@ -264,13 +264,37 @@ theorem maslovIndex_eq_two_mul_degree {U : unitaryGroup n ℂ} (γ : Path U U) :
   push_cast
   ring
 
+/-- If `φ / π` is not an integer, then `-e^{2iφ} = e^{iψ}` for the angle
+`ψ = 2φ - π - 2π⌊φ / π⌋`, which lies in `(-π, π)`, so `ψ` is the argument of `-e^{2iφ}`. -/
+private theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / Real.pi ≠ k) :
+    arg (-Complex.exp (↑(2 * φ) * Complex.I)) =
+      2 * φ - Real.pi - 2 * Real.pi * ⌊φ / Real.pi⌋ := by
+  set x := φ / Real.pi with hx
+  have hlt : (⌊x⌋ : ℝ) < x := lt_of_le_of_ne (Int.floor_le x) fun h => hφ _ h.symm
+  have hlt' : x < ⌊x⌋ + 1 := Int.lt_floor_add_one x
+  set ψ := 2 * φ - Real.pi - 2 * Real.pi * ⌊x⌋ with hψ
+  have hφx : φ = x * Real.pi := by rw [hx]; field_simp
+  have hψlo : -Real.pi < ψ := by
+    rw [hψ, hφx]; nlinarith [Real.pi_pos]
+  have hψhi : ψ < Real.pi := by
+    rw [hψ, hφx]; nlinarith [Real.pi_pos]
+  have hneg : -Complex.exp (↑(2 * φ) * Complex.I) = Complex.exp (↑ψ * Complex.I) := by
+    have h2φ : (2 * φ : ℝ) = ψ + Real.pi + ⌊x⌋ * (2 * Real.pi) := by rw [hψ]; ring
+    rw [h2φ]
+    push_cast
+    rw [add_mul, add_mul, Complex.exp_add, Complex.exp_add, Complex.exp_pi_mul_I,
+      show ((⌊x⌋ : ℂ) * (2 * Real.pi)) * Complex.I = ⌊x⌋ * (2 * Real.pi * Complex.I) by ring,
+      Complex.exp_int_mul_two_pi_mul_I]
+    ring
+  rw [hneg, Complex.arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
+
 /-- For `x = φ / π`, the difference `x - angleOffset (e^{2iφ})` is the half-integer
 `(⌊x⌋ + ⌈x⌉) / 2`: it is `⌊x⌋ + 1/2` if `x` is not an integer and `x` if it is. -/
 private theorem div_pi_sub_angleOffset (φ : ℝ) :
-    φ / Real.pi - (if Complex.exp (↑(2 * φ) * Complex.I) = 1 then 0 else
-      arg (-Complex.exp (↑(2 * φ) * Complex.I)) / (2 * Real.pi)) =
+    φ / Real.pi - angleOffset (Complex.exp (↑(2 * φ) * Complex.I)) =
       ((⌊φ / Real.pi⌋ + ⌈φ / Real.pi⌉ : ℤ) : ℝ) / 2 := by
-  have hπ : Real.pi ≠ 0 := Real.pi_ne_zero
+  -- If `φ / π` is an integer then `e^{2iφ} = 1` and the offset vanishes; otherwise
+  -- `⌈φ / π⌉ = ⌊φ / π⌋ + 1` and the offset comes from `arg_neg_exp_of_div_pi_ne`.
   by_cases hφ : ∃ k : ℤ, φ / Real.pi = k
   · obtain ⟨k, hk⟩ := hφ
     have hexp : Complex.exp (↑(2 * φ) * Complex.I) = 1 := by
@@ -281,42 +305,24 @@ private theorem div_pi_sub_angleOffset (φ : ℝ) :
       push_cast
       ring
     rw [hk, Int.floor_intCast, Int.ceil_intCast]
-    simp only [hexp, ↓reduceIte]
+    simp only [angleOffset, hexp, ↓reduceIte]
     push_cast
     ring
   · simp only [not_exists] at hφ
-    set x := φ / Real.pi with hx
-    have hfrac : x ≠ ⌊x⌋ := fun h => hφ _ h
-    have hceil : ⌈x⌉ = ⌊x⌋ + 1 :=
-      (Int.ceil_eq_floor_add_one_iff_notMem x).2 fun ⟨k, hk⟩ => hφ k hk.symm
-    have hlt : (⌊x⌋ : ℝ) < x := lt_of_le_of_ne (Int.floor_le x) (Ne.symm hfrac)
-    have hlt' : x < ⌊x⌋ + 1 := Int.lt_floor_add_one x
-    -- `-e^{2iφ} = e^{iψ}` with `ψ = 2φ - π - 2π⌊x⌋ ∈ (-π, π)`.
-    set ψ := 2 * φ - Real.pi - 2 * Real.pi * ⌊x⌋ with hψ
-    have hφx : φ = x * Real.pi := by rw [hx]; field_simp
-    have hψlo : -Real.pi < ψ := by
-      rw [hψ, hφx]; nlinarith [Real.pi_pos]
-    have hψhi : ψ < Real.pi := by
-      rw [hψ, hφx]; nlinarith [Real.pi_pos]
-    have hneg : -Complex.exp (↑(2 * φ) * Complex.I) = Complex.exp (↑ψ * Complex.I) := by
-      have h2φ : (2 * φ : ℝ) = ψ + Real.pi + ⌊x⌋ * (2 * Real.pi) := by rw [hψ]; ring
-      rw [h2φ]
+    have harg := arg_neg_exp_of_div_pi_ne hφ
+    have hceil : ⌈φ / Real.pi⌉ = ⌊φ / Real.pi⌋ + 1 :=
+      (Int.ceil_eq_floor_add_one_iff_notMem _).2 fun ⟨k, hk⟩ => hφ k hk.symm
+    have hne : Complex.exp (↑(2 * φ) * Complex.I) ≠ 1 := fun h1 => by
+      rw [h1, Complex.arg_neg_one] at harg
+      refine hφ (⌊φ / Real.pi⌋ + 1) ?_
+      rw [div_eq_iff Real.pi_ne_zero]
       push_cast
-      rw [add_mul, add_mul, Complex.exp_add, Complex.exp_add, Complex.exp_pi_mul_I,
-        show ((⌊x⌋ : ℂ) * (2 * Real.pi)) * Complex.I = ⌊x⌋ * (2 * Real.pi * Complex.I) by ring,
-        Complex.exp_int_mul_two_pi_mul_I]
-      ring
-    have hne : Complex.exp (↑(2 * φ) * Complex.I) ≠ 1 := by
-      intro h1
-      have : Complex.exp (↑ψ * Complex.I) = -1 := by rw [← hneg, h1]
-      have harg := congrArg arg this
-      rw [Complex.arg_exp_mul_I, Complex.arg_neg_one,
-        (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩] at harg
-      exact hψhi.ne harg
-    have harg : arg (-Complex.exp (↑(2 * φ) * Complex.I)) = ψ := by
-      rw [hneg, Complex.arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
-    simp only [hne, ↓reduceIte]
-    rw [harg, hceil, hψ, hφx]
+      linarith
+    simp only [angleOffset, hne, ↓reduceIte]
+    rw [harg, hceil]
+    set x := φ / Real.pi with hx
+    have hφx : φ = x * Real.pi := by rw [hx]; field_simp
+    rw [hφx]
     push_cast
     field_simp
     ring
@@ -363,6 +369,7 @@ theorem maslovIndex_eq_sum_of_diagonal {U V : unitaryGroup n ℂ} (γ : Path U V
   rw [hsplit, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [← div_pi_sub_angleOffset (φ j 1), ← div_pi_sub_angleOffset (φ j 0)]
+  simp only [angleOffset]
   ring
 
 /-- **Normalization.** The half-turn `t ↦ e^{iπt} ℝⁿ`, framed by `t ↦ e^{iπt} I`, has Maslov

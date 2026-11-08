@@ -163,10 +163,9 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 theorem continuous_sum {α : Type*} [CommRing α] [StarRing α] [TopologicalSpace α] :
     Continuous (sum : unitaryGroup n α × unitaryGroup m α →* unitaryGroup (n ⊕ m) α) := by
   refine continuous_induced_rng.2 ?_
-  rw [show (Subtype.val ∘ sum : unitaryGroup n α × unitaryGroup m α → Matrix (n ⊕ m) (n ⊕ m) α) =
-    fun p => fromBlocks (p.1 : Matrix n n α) 0 0 p.2 from funext coe_sum]
-  exact Continuous.matrix_fromBlocks (continuous_subtype_val.comp continuous_fst) continuous_const
-    continuous_const (continuous_subtype_val.comp continuous_snd)
+  simpa only [Function.comp_def, coe_sum] using
+    Continuous.matrix_fromBlocks (continuous_subtype_val.comp continuous_fst) continuous_const
+      continuous_const (continuous_subtype_val.comp continuous_snd)
 
 /-- The determinant of a block-diagonal sum of unitary matrices is the product of the
 determinants. -/
