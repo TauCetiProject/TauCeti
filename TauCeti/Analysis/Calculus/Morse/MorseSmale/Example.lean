@@ -244,8 +244,8 @@ private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one {z : Euclide
     rw [hessianQuadraticForm_cosAddHalfSq, hc] at this
     norm_num at this
   have h2 : morseIndex cosAddHalfSq z ≠ 2 := fun h ↦ by
-    have := (hnd.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank.2
-      (by rw [h, finrank_euclideanSpace_fin])) e₁ (by simp)
+    have := ((neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
+      (f := cosAddHalfSq) (x := z)).2 (by rw [h, finrank_euclideanSpace_fin])) e₁ (by simp)
     rw [neg_apply, hessianQuadraticForm_cosAddHalfSq, hc] at this
     norm_num at this
   have hle : morseIndex cosAddHalfSq z ≤ 2 := by

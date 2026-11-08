@@ -356,15 +356,13 @@ theorem IsNondegenerateCriticalPoint.hessianQuadraticForm_posDef_iff_morseIndex_
     h.hessianQuadraticForm_nondegenerate.radical_eq_bot, morseIndex_def]
   simp only [eq_self, and_true]
 
-/-- At a nondegenerate critical point, the Hessian is negative-definite exactly when the Morse
-index is the dimension of the ambient space. -/
-theorem IsNondegenerateCriticalPoint.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
-    [FiniteDimensional ℝ E] (h : IsNondegenerateCriticalPoint f x) :
+/-- The negated Hessian is positive-definite exactly when the Morse index is the dimension of the
+ambient space. -/
+theorem neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank [FiniteDimensional ℝ E] :
     (-hessianQuadraticForm f x).PosDef ↔ morseIndex f x = Module.finrank ℝ E := by
-  rw [QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot,
-    QuadraticMap.radical_neg, h.hessianQuadraticForm_nondegenerate.radical_eq_bot, sigNeg_neg]
-  simp only [eq_self, and_true]
-  have hsum := h.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
+  have hsum := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := hessianQuadraticForm f x)
+  rw [QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot, QuadraticMap.radical_neg,
+    sigNeg_neg, ← Submodule.finrank_eq_zero (R := ℝ), morseIndex_def]
   omega
 
 /-- At a nondegenerate critical point, the Hessian quadratic form has a diagonal normal form with
