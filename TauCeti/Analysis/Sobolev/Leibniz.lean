@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Calculus.LineDeriv.Measurable
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The product rule for weak derivatives
@@ -232,24 +234,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {v : E} {μ : Measure E} [μ.IsAddHaarMeasure] {u u' : E → F} {ψ : E → ℝ}
   {K : ℝ≥0}
-
-omit [FiniteDimensional ℝ E] in
-/-- Multiplying an integrable function by the directional derivative of a Lipschitz function
-keeps it integrable. -/
-private theorem integrable_lineDeriv_smul_of_lipschitzWith {ν : Measure E} {g : E → F}
-    (hψ : LipschitzWith K ψ) (hg : Integrable g ν) :
-    Integrable (fun x => lineDeriv ℝ ψ x v • g x) ν :=
-  hg.bdd_smul (K * ‖v‖) (measurable_lineDeriv hψ.continuous).aestronglyMeasurable
-    (Eventually.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hψ)
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- A continuous factor keeps an integrable function integrable when the function vanishes off a
-compact set. -/
-private theorem integrable_continuous_smul_of_forall_notMem_eq_zero {s : Set E}
-    (hs : IsCompact s) {w : E → F} (hw : Integrable w μ) (hw0 : ∀ x ∉ s, w x = 0)
-    {f : E → ℝ} (hf : Continuous f) : Integrable (fun x => f x • w x) μ :=
-  (hw.integrableOn.continuousOn_smul hf.continuousOn hs).integrable_of_forall_notMem_eq_zero
-    fun x hx => by simp [hw0 x hx]
 
 /-- The Leibniz identity against a test function, for the mollification of the Lipschitz factor
 by a bump `ρ`, which is smooth. -/

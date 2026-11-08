@@ -110,6 +110,8 @@ compact support.
 Compact localization adapts Mathlib's `LocallyIntegrable.integrableOn_nhds_isCompact` to
 an open domain and uses `compact_open_separated_add_right` for the translation neighborhood.
 Dilation rests on Mathlib's `map_addHaar_smul`, which computes the image of a Haar measure.
+A continuous real factor keeps an integrable function integrable when the function vanishes off a
+compact set (`MeasureTheory.integrable_continuous_smul_of_forall_notMem_eq_zero`).
 -/
 
 public section
@@ -503,3 +505,23 @@ theorem integrable_smul_right_of_hasCompactSupport (hf : LocallyIntegrableOn f s
   exact hf.integrableOn_compact_subset hgs h'g
 
 end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory
+
+section CompactlySupportedSmul
+
+variable {E F : Type*} [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [T2Space E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure E}
+
+/-- A continuous factor keeps an integrable function integrable when the function vanishes off a
+compact set. -/
+theorem integrable_continuous_smul_of_forall_notMem_eq_zero {s : Set E}
+    (hs : IsCompact s) {w : E → F} (hw : Integrable w μ) (hw0 : ∀ x ∉ s, w x = 0)
+    {f : E → ℝ} (hf : Continuous f) : Integrable (fun x => f x • w x) μ :=
+  (hw.integrableOn.continuousOn_smul hf.continuousOn hs).integrable_of_forall_notMem_eq_zero
+    fun x hx => by simp [hw0 x hx]
+
+end CompactlySupportedSmul
+
+end MeasureTheory
