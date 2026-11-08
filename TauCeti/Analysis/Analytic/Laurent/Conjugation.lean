@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Complex.Basic
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Complex.RemovableSingularity
 
 /-!
 # Conjugation of Laurent unit germs
@@ -30,7 +32,7 @@ for CAD construction*, J. Symbolic Comput. 92 (2019), §4.
 
 public section
 
-open Filter Set Topology ComplexConjugate
+open Filter Metric Set Topology ComplexConjugate
 
 namespace AnalyticAt
 
@@ -118,3 +120,39 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
   exact hext p.1 hp.1 hp.2
 
 end AnalyticAt
+
+namespace AnalyticOnNhd
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Global form of `AnalyticAt.laurent_eq_of_conj`: if two Laurent forms with real analytic
+nowhere vanishing units on `U × ball 0 ρ` are interchanged by conjugation on the punctured
+product, for a continuous self-map `τ` of the nonempty open set `U`, then their exponents agree
+and their units are interchanged on the whole product, including the hyperplane. -/
+theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {m n : ℤ} {τ : E → E} {U : Set E} {ρ : ℝ}
+    (hU : IsOpen U) (hρ : 0 < ρ) (hne : U.Nonempty) (hτ : ContinuousOn τ U)
+    (hτU : MapsTo τ U U) (hu : AnalyticOnNhd ℝ u (U ×ˢ ball 0 ρ))
+    (hu0 : ∀ b ∈ U ×ˢ ball 0 ρ, u b ≠ 0) (hv : AnalyticOnNhd ℝ v (U ×ˢ ball 0 ρ))
+    (hv0 : ∀ b ∈ U ×ˢ ball 0 ρ, v b ≠ 0)
+    (heq : ∀ b ∈ U ×ˢ (ball 0 ρ \ {0}),
+      b.2 ^ m * u b = conj ((conj b.2) ^ n * v (τ b.1, conj b.2))) :
+    m = n ∧ ∀ b ∈ U ×ˢ ball 0 ρ, u b = conj (v (τ b.1, conj b.2)) := by
+  obtain ⟨hκ, hκT, -⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj (ρ := ρ) hτ hτU
+  obtain ⟨x₀, hx₀⟩ := hne
+  have hmn : m = n := by
+    refine (AnalyticAt.laurent_eq_of_conj (hu _ ⟨hx₀, mem_ball_self hρ⟩)
+      (hu0 _ ⟨hx₀, mem_ball_self hρ⟩)
+      (hv _ ⟨hτU hx₀, mem_ball_self hρ⟩) (hv0 _ ⟨hτU hx₀, mem_ball_self hρ⟩)
+      (hτ.continuousAt (hU.mem_nhds hx₀)) ?_).1
+    filter_upwards [(hU.prod isOpen_ball).mem_nhds
+      (x := (x₀, (0 : ℂ))) ⟨hx₀, mem_ball_self hρ⟩] with b hb hb0
+    exact heq b ⟨hb.1, hb.2, hb0⟩
+  refine ⟨hmn, TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
+    hu.continuousOn
+    (Complex.continuous_conj.comp_continuousOn (hv.continuousOn.comp hκ hκT)) ?_⟩
+  intro b hb
+  have h := heq b hb
+  rw [← hmn, map_mul, map_zpow₀, Complex.conj_conj] at h
+  exact mul_left_cancel₀ (zpow_ne_zero _ hb.2.2) h
+
+end AnalyticOnNhd

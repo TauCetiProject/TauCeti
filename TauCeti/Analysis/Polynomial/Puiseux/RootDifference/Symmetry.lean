@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.RootDifference
 public import TauCeti.Analysis.Polynomial.Conjugation
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Normed.Module.Connected
 
 /-!
@@ -43,21 +44,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {d n a c : ℕ} {R R' : ℝ}
   {u v : E × ℂ → ℂ} {τ : E → E}
 
-omit [NormedSpace ℂ E] [FiniteDimensional ℂ E] [SimplyConnectedSpace U] in
-/-- The parameter involution composed with conjugation of the punctured disc is continuous on the
-product with the disc and maps it, and its punctured version, to themselves. -/
-private lemma conj_param_continuousOn_mapsTo (hτ : ContinuousOn τ U)
-    (hτU : MapsTo τ U U) :
-    ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') ∧
-      MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') (U ×ˢ ball 0 R') ∧
-      MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 R' \ {0}))
-        (U ×ˢ (ball 0 R' \ {0})) := by
-  have hconjBall : MapsTo conj (ball (0 : ℂ) R') (ball 0 R') := by
-    intro z hz
-    simpa only [mem_ball_zero_iff, Complex.norm_conj] using hz
-  exact ⟨hτ.prodMap Complex.continuous_conj.continuousOn, hτU.prodMap hconjBall,
-    hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩⟩
-
 omit [FiniteDimensional ℂ E] in
 /-- The conjugation symmetry of the punctured root branches is carried by a unique involutive
 permutation of the labels. -/
@@ -78,7 +64,7 @@ private lemma existsUnique_involutive_perm_root_conj (hR' : 0 < R') (hn : n ≠ 
   have hST : S ⊆ U ×ˢ ball (0 : ℂ) R' := prod_mono subset_rfl sdiff_subset
   have hq : MapsTo q S (U ×ˢ (ball 0 R \ {0})) :=
     (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
-  obtain ⟨hκ, -, hκS⟩ := conj_param_continuousOn_mapsTo hτ hτU
+  obtain ⟨hκ, -, hκS⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj hτ hτU
   have hroot (b : E × ℂ) (hb : b ∈ S) (z : ℂ) :
       (F (q b)).IsRoot z ↔ ∃ i, r i b = z := by
     have hl : (F (q b)).coeff d ≠ 0 := by
@@ -102,51 +88,6 @@ private lemma existsUnique_involutive_perm_root_conj (hR' : 0 < R') (hn : n ≠ 
     (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
-
-omit [FiniteDimensional ℂ E] in
-/-- Conjugation symmetry of the Laurent exponents and units of the root differences, given the
-conjugation symmetry of the roots under the permutation `σ`. -/
-private lemma exponent_unit_conj_symmetry (hU : IsOpen U) (hR' : 0 < R')
-    (hτ : ContinuousOn τ U) (hτU : MapsTo τ U U) {r : Fin d → E × ℂ → ℂ}
-    {e : (i j : Fin d) → i ≠ j → ℤ} {w : (i j : Fin d) → i ≠ j → E × ℂ → ℂ}
-    (hwa : ∀ i j hij, AnalyticOnNhd ℂ (w i j hij) (U ×ˢ ball 0 R'))
-    (hw0 : ∀ i j hij, ∀ b ∈ U ×ˢ ball 0 R', w i j hij b ≠ 0)
-    (hwform : ∀ i j hij, ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
-      r i b - r j b = b.2 ^ e i j hij * w i j hij b)
-    {σ : Equiv.Perm (Fin d)}
-    (hσ : ∀ i b, b ∈ U ×ˢ (ball 0 R' \ {0}) → r (σ i) b = conj (r i (τ b.1, conj b.2))) :
-    ∀ i j hij, e (σ i) (σ j) (σ.injective.ne hij) = e i j hij ∧
-      ∀ b ∈ U ×ˢ ball 0 R',
-        w (σ i) (σ j) (σ.injective.ne hij) b = conj (w i j hij (τ b.1, conj b.2)) := by
-  let S := U ×ˢ (ball (0 : ℂ) R' \ {0})
-  let κ : E × ℂ → E × ℂ := fun b ↦ (τ b.1, conj b.2)
-  obtain ⟨hκ, hκT, hκS⟩ := conj_param_continuousOn_mapsTo hτ hτU
-  obtain ⟨x₀⟩ : Nonempty U := inferInstance
-  -- Compare Laurent forms at x₀ and τ x₀. Neither parameter must be fixed by τ.
-  have heq (i j : Fin d) (hij : i ≠ j) (b : E × ℂ) (hb : b ∈ S) :
-      b.2 ^ e (σ i) (σ j) (σ.injective.ne hij) * w (σ i) (σ j) (σ.injective.ne hij) b =
-        conj ((conj b.2) ^ e i j hij * w i j hij (κ b)) := by
-    rw [← hwform (σ i) (σ j) (σ.injective.ne hij) b hb,
-      ← hwform i j hij (κ b) (hκS hb), hσ i b hb, hσ j b hb, map_sub]
-  have hexp (i j : Fin d) (hij : i ≠ j) :
-      e (σ i) (σ j) (σ.injective.ne hij) = e i j hij := by
-    apply (AnalyticAt.laurent_eq_of_conj
-      ((hwa (σ i) (σ j) (σ.injective.ne hij) _ ⟨x₀.2, mem_ball_self hR'⟩).restrictScalars
-        (𝕜 := ℝ)) (hw0 _ _ _ _ ⟨x₀.2, mem_ball_self hR'⟩)
-      ((hwa i j hij _ ⟨hτU x₀.2, mem_ball_self hR'⟩).restrictScalars (𝕜 := ℝ))
-      (hw0 _ _ _ _ ⟨hτU x₀.2, mem_ball_self hR'⟩)
-      (hτ.continuousAt (hU.mem_nhds x₀.2)) ?_).1
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds
-      (x := (x₀.1, (0 : ℂ))) ⟨x₀.2, mem_ball_self hR'⟩] with b hb hb0
-    exact heq i j hij b ⟨hb.1, hb.2, hb0⟩
-  refine fun i j hij ↦ ⟨hexp i j hij, ?_⟩
-  refine TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
-    (hwa _ _ _).continuousOn
-    (Complex.continuous_conj.comp_continuousOn ((hwa i j hij).continuousOn.comp hκ hκT)) ?_
-  intro b hb
-  have h := heq i j hij b hb
-  rw [hexp i j hij, map_mul, map_zpow₀, Complex.conj_conj] at h
-  exact mul_left_cancel₀ (zpow_ne_zero _ hb.2.2) h
 
 /-- Construct nonmonic Puiseux branches with global Laurent difference units respecting
 conjugation. The unique conjugation permutation preserves the difference exponents and
@@ -194,7 +135,7 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit_conj
   choose e w hwa hw0 hwform using hdiff
   obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := existsUnique_involutive_perm_root_conj hR' hn hR hu0 hlead
     hτ hτU hττ hconj hra hr
-  obtain ⟨hκ, hκT, hκS⟩ := conj_param_continuousOn_mapsTo hτ hτU
+  obtain ⟨hκ, hκT, hκS⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj hτ hτU
   have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2)))
       (U ×ˢ ball 0 R') := by
     refine TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
@@ -203,7 +144,17 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit_conj
     intro b hb
     simp only [(hg (σ i)).2 hb, (hg i).2 (hκS hb), hσ i b hb, map_mul, map_pow,
       Complex.conj_conj]
-  have hsymm := exponent_unit_conj_symmetry hU hR' hτ hτU hwa hw0 hwform hσ
+  have hsymm (i j : Fin d) (hij : i ≠ j) :
+      e (σ i) (σ j) (σ.injective.ne hij) = e i j hij ∧
+        ∀ b ∈ U ×ˢ ball 0 R',
+          w (σ i) (σ j) (σ.injective.ne hij) b =
+            conj (w i j hij (τ b.1, conj b.2)) := by
+    obtain ⟨x₀⟩ : Nonempty U := inferInstance
+    refine AnalyticOnNhd.laurent_eq_of_conj hU hR' ⟨x₀, x₀.2⟩ hτ hτU
+      ((hwa _ _ _).restrictScalars (𝕜 := ℝ)) (hw0 _ _ _) ((hwa i j hij).restrictScalars (𝕜 := ℝ))
+      (hw0 i j hij) fun b hb ↦ ?_
+    rw [← hwform (σ i) (σ j) (σ.injective.ne hij) b hb,
+      ← hwform i j hij (τ b.1, conj b.2) (hκS hb), hσ i b hb, hσ j b hb, map_sub]
   refine ⟨r, g, hra, hg, hr, σ, ⟨hσσ, hσ, hgfull, e, w, fun i j hij ↦ ?_⟩, ?_⟩
   · exact ⟨hwa i j hij, hw0 i j hij, hwform i j hij, (hsymm i j hij).1, (hsymm i j hij).2⟩
   · intro σ' hσ'
