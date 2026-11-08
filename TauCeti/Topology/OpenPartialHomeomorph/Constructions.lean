@@ -139,8 +139,9 @@ theorem subtypeCoord_apply (x : s) :
 parametrization. -/
 theorem subtypeCoord_parametrization_apply {x : s}
     (hx : x ∈ (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source) :
-    ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.1 :=
-  hslice hx x.2
+    ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.1 := by
+  rw [subtypeCoord_apply]
+  exact hslice (by simpa only [subtypeCoord_source, Set.mem_preimage] using hx) x.2
 
 /-- On its target, the inverse of `subtypeCoord` is the ambient inverse evaluated on the
 parametrized slice. -/
