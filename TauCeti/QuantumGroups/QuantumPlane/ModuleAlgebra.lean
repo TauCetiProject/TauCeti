@@ -126,12 +126,6 @@ private theorem fOp_eOp_basis (j k : ℕ) :
   · simp [eOp_basis]
   simp [fOp_basis, eOp_basis, smul_smul]
 
-/-- Two bilinear maps on the quantum plane agree when they agree on pairs of monomials. -/
-private theorem bilin_eq {Φ Ψ : QuantumPlane q →ₗ[ℂ] QuantumPlane q →ₗ[ℂ] QuantumPlane q}
-    (h : ∀ i j, Φ (basis q i) (basis q j) = Ψ (basis q i) (basis q j)) (a b : QuantumPlane q) :
-    Φ a b = Ψ a b := by
-  rw [LinearMap.ext_basis (basis q) (basis q) h]
-
 /-- Multiples of basis monomials agree when their coefficients and their indices agree; this
 leaves the index arithmetic to `omega`. -/
 private theorem smul_basis_congr {c c' : ℂ} {i j i' j' : ℕ} (hc : c = c') (hi : i = i')
@@ -305,54 +299,52 @@ private theorem kInv_smul_basis_mul_basis (i j m n : ℕ) :
   smul_basis_mul_basis_of_weight (inv_ne_zero Fact.out)
     (fun i j => by rw [kInv_smul_basis, inv_zpow', neg_sub]) i j m n
 
+/-- A twisted Leibniz rule `u (a b) = A(a) B(b) + C(a) D(b)` holds for all `a` and `b` once it
+holds on pairs of monomials, since both sides are bilinear in `a` and `b`. -/
+private theorem smul_mul_of_basis {u : UqSl2 q} (A B C D : Module.End ℂ (QuantumPlane q))
+    (h : ∀ i j m n : ℕ, u • (basis q (i, j) * basis q (m, n)) =
+      A (basis q (i, j)) * B (basis q (m, n)) + C (basis q (i, j)) * D (basis q (m, n)))
+    (a b : QuantumPlane q) : u • (a * b) = A a * B b + C a * D b := by
+  have hext : (LinearMap.mul ℂ _).compr₂ (rep q u) =
+      (LinearMap.mul ℂ _).compl₁₂ A B + (LinearMap.mul ℂ _).compl₁₂ C D :=
+    LinearMap.ext_basis (basis q) (basis q) fun ⟨i, j⟩ ⟨m, n⟩ => by
+      simpa only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
+        LinearMap.mul_apply', ← smul_def] using h i j m n
+  simpa only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
+    LinearMap.mul_apply', ← smul_def] using LinearMap.congr_fun₂ hext a b
+
 /-- The twisted Leibniz rule `E (a b) = E(a) b + K(a) E(b)`, from `ΔE = E ⊗ 1 + K ⊗ E`. -/
 theorem e_smul_mul (a b : QuantumPlane q) :
     e q • (a * b) = (e q • a) * b + (k q • a) * (e q • b) := by
-  have h := bilin_eq (Φ := (LinearMap.mul ℂ _).compr₂ (rep q (e q)))
-    (Ψ := (LinearMap.mul ℂ _).compl₁₂ (rep q (e q)) LinearMap.id +
-      (LinearMap.mul ℂ _).compl₁₂ (rep q (k q)) (rep q (e q)))
-    (fun ⟨i, j⟩ ⟨m, n⟩ => by
-      simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.add_apply,
-        LinearMap.mul_apply', LinearMap.id_apply, ← smul_def]
-      exact e_smul_basis_mul_basis i j m n) a b
-  simpa only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.add_apply,
-    LinearMap.mul_apply', LinearMap.id_apply, smul_def] using h
+  simpa only [LinearMap.id_apply, ← smul_def] using
+    smul_mul_of_basis (rep q (e q)) LinearMap.id (rep q (k q)) (rep q (e q))
+      (fun i j m n => by
+        simpa only [LinearMap.id_apply, ← smul_def] using e_smul_basis_mul_basis i j m n) a b
 
 /-- The twisted Leibniz rule `F (a b) = F(a) K⁻¹(b) + a F(b)`, from `ΔF = F ⊗ K⁻¹ + 1 ⊗ F`. -/
 theorem f_smul_mul (a b : QuantumPlane q) :
     f q • (a * b) = (f q • a) * (kInv q • b) + a * (f q • b) := by
-  have h := bilin_eq (Φ := (LinearMap.mul ℂ _).compr₂ (rep q (f q)))
-    (Ψ := (LinearMap.mul ℂ _).compl₁₂ (rep q (f q)) (rep q (kInv q)) +
-      (LinearMap.mul ℂ _).compl₁₂ LinearMap.id (rep q (f q)))
-    (fun ⟨i, j⟩ ⟨m, n⟩ => by
-      simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.add_apply,
-        LinearMap.mul_apply', LinearMap.id_apply, ← smul_def]
-      exact f_smul_basis_mul_basis i j m n) a b
-  simpa only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.add_apply,
-    LinearMap.mul_apply', LinearMap.id_apply, smul_def] using h
+  simpa only [LinearMap.id_apply, ← smul_def] using
+    smul_mul_of_basis (rep q (f q)) (rep q (kInv q)) LinearMap.id (rep q (f q))
+      (fun i j m n => by
+        simpa only [LinearMap.id_apply, ← smul_def] using f_smul_basis_mul_basis i j m n) a b
 
 /-- `K` acts on the quantum plane by algebra automorphisms: `K (a b) = K(a) K(b)`. -/
 theorem k_smul_mul (a b : QuantumPlane q) : k q • (a * b) = (k q • a) * (k q • b) := by
-  have h := bilin_eq (Φ := (LinearMap.mul ℂ _).compr₂ (rep q (k q)))
-    (Ψ := (LinearMap.mul ℂ _).compl₁₂ (rep q (k q)) (rep q (k q)))
-    (fun ⟨i, j⟩ ⟨m, n⟩ => by
-      simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.mul_apply',
-        ← smul_def]
-      exact k_smul_basis_mul_basis i j m n) a b
-  simpa only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.mul_apply',
-    smul_def] using h
+  simpa only [LinearMap.zero_apply, mul_zero, add_zero, ← smul_def] using
+    smul_mul_of_basis (rep q (k q)) (rep q (k q)) 0 0
+      (fun i j m n => by
+        simpa only [LinearMap.zero_apply, mul_zero, add_zero, ← smul_def] using
+          k_smul_basis_mul_basis i j m n) a b
 
 /-- `K⁻¹` acts on the quantum plane by algebra automorphisms: `K⁻¹ (a b) = K⁻¹(a) K⁻¹(b)`. -/
 theorem kInv_smul_mul (a b : QuantumPlane q) :
     kInv q • (a * b) = (kInv q • a) * (kInv q • b) := by
-  have h := bilin_eq (Φ := (LinearMap.mul ℂ _).compr₂ (rep q (kInv q)))
-    (Ψ := (LinearMap.mul ℂ _).compl₁₂ (rep q (kInv q)) (rep q (kInv q)))
-    (fun ⟨i, j⟩ ⟨m, n⟩ => by
-      simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.mul_apply',
-        ← smul_def]
-      exact kInv_smul_basis_mul_basis i j m n) a b
-  simpa only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.mul_apply',
-    smul_def] using h
+  simpa only [LinearMap.zero_apply, mul_zero, add_zero, ← smul_def] using
+    smul_mul_of_basis (rep q (kInv q)) (rep q (kInv q)) 0 0
+      (fun i j m n => by
+        simpa only [LinearMap.zero_apply, mul_zero, add_zero, ← smul_def] using
+          kInv_smul_basis_mul_basis i j m n) a b
 
 /-- Every element of `UqSl2 q` acts on the unit of the quantum plane through the counit. -/
 theorem smul_one_eq_counit_smul (u : UqSl2 q) :
