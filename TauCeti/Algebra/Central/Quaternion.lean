@@ -217,14 +217,9 @@ theorem isEmpty_algEquiv_matrix (n : Type*) [Fintype n] [DecidableEq n] :
       rw [Matrix.mul_apply, Matrix.mul_apply, Fintype.sum_subsingleton _ i,
         Fintype.sum_subsingleton _ i, mul_comm]
     have hH (x y : ℍ[R]) : x * y = y * x := f.injective (by rw [map_mul, map_mul, hcomm])
-    have h2 : (2 : R) = 0 := by
-      have := congrArg QuaternionAlgebra.imK (hH ⟨0, 1, 0, 0⟩ ⟨0, 0, 1, 0⟩)
-      simp only [QuaternionAlgebra.imK_mul] at this
-      linear_combination this
-    have hx : (⟨1, 1, 0, 0⟩ : ℍ[R]) * ⟨1, 1, 0, 0⟩ = 0 := by
-      ext <;> simp
-      linear_combination h2
-    have := congrArg QuaternionAlgebra.re (mul_self_eq_zero.mp hx)
+    have := congrArg QuaternionAlgebra.imI
+      ((forall_mul_comm_iff_im_eq_zero _root_.Quaternion.isLeftRegular_two).mp
+        (hH ⟨0, 1, 0, 0⟩))
     simp at this
   · -- Two distinct diagonal matrix units are nonzero with vanishing product; pulling them back
     -- along `f` contradicts the absence of zero divisors in `ℍ[R]`.
