@@ -138,11 +138,11 @@ theorem cubicCandidate_injective : Function.Injective cubicCandidate := by
 /-- A monic cubic is the candidate polynomial of its coefficients. -/
 theorem eq_cubicCandidate_of_monic {f : ℤ[X]} (hm : f.Monic) (hd : f.natDegree = 3) :
     f = cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0) := by
-  have h := Polynomial.eq_X_pow_three_add_of_monic
+  have h := Polynomial.Monic.eq_X_pow_three_add_of_natDegree_eq_three
     (monic_cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0))
     (natDegree_cubicCandidate (f.coeff 2, f.coeff 1, f.coeff 0))
   simp only [coeff_two_cubicCandidate, coeff_one_cubicCandidate, coeff_zero_cubicCandidate] at h
-  exact (Polynomial.eq_X_pow_three_add_of_monic hm hd).trans h.symm
+  exact (Polynomial.Monic.eq_X_pow_three_add_of_natDegree_eq_three hm hd).trans h.symm
 
 /-- There are exactly `98` candidates. -/
 theorem card_cubicCandidates : cubicCandidates.card = 98 := by
