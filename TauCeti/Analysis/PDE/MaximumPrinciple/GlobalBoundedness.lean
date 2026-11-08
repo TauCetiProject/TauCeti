@@ -144,15 +144,14 @@ private theorem toReal_eLpNorm_posPartAbove_le
     rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] at this
   -- Hölder's inequality on the superlevel set `{u > l}`, off which `w` vanishes.
   set A := {x | l < W1p.value u x}
-  have hA : MeasurableSet A :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
   have hwA : ∀ᵐ x ∂ν, x ∉ A → W1p.value w x = 0 := by
     filter_upwards [hval] with x hx hxA
     rw [hx, max_eq_right (sub_nonpos.2 (not_lt.1 hxA))]
-  have hholder := (le_abs_self _).trans <|
-    MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs hf hwLp hA
+  have hholder := (Real.le_norm_self _).trans <|
+    MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs hf hwLp
       (measure_ne_top ν A) hwA
+  simp only [smul_eq_mul] at hholder
   -- Absorb one factor of `‖w‖_{Lˢ}`.
   set W := (eLpNorm (W1p.value w) s ν).toReal
   set F := (eLpNorm f r ν).toReal
