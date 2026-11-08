@@ -15,9 +15,9 @@ import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
 -- `Mathlib.MeasureTheory.Constructions.BorelSpace.Order` is imported privately: it is used only
 -- for `LowerSemicontinuous.measurable`, inside the proof of `TauCeti.measurable_maximalFunction`.
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
--- `Mathlib.MeasureTheory.Covering.Vitali` is imported privately: the covering lemma appears only
--- inside the proof of `TauCeti.mul_measure_le_of_forall_exists_ball`.
-import Mathlib.MeasureTheory.Covering.Vitali
+-- `TauCeti.MeasureTheory.Covering.Vitali` is imported privately: its Vitali summation lemma
+-- appears only inside the proof of `TauCeti.mul_measure_le_of_forall_exists_ball`.
+import TauCeti.MeasureTheory.Covering.Vitali
 
 /-!
 # The Hardy–Littlewood maximal function
@@ -49,11 +49,10 @@ whole space and the averages defining `M f` collapse to `‖f‖ₑ`.
 The weak-type bound is the Vitali covering argument, isolated here as
 `TauCeti.mul_measure_le_of_forall_exists_ball`: if every point of a set `S` is the centre of a ball
 of radius at most `R` on which `∫⁻ g` is at least `t` times the measure of the ball, then
-`t * μ S ≤ 4 ^ n * ∫⁻ g`. Mathlib's
-`Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall` extracts a pairwise disjoint
-subfamily of those balls whose fourfold enlargements still cover `S`; the enlargement costs the
-factor `4 ^ n` because a Haar measure scales a ball of radius `r` by `r ^ n`, and disjointness turns
-the sum of the integrals over the selected balls into a single integral over their union.
+`t * μ S ≤ 4 ^ n * ∫⁻ g`. It is a case of `TauCeti.exists_superset_setLIntegral_le`, which
+extracts a pairwise disjoint subfamily of those balls whose fourfold enlargements still cover `S`
+and sums the ball-wise estimates over it; the enlargement costs the factor `4 ^ n` because a Haar
+measure scales a ball of radius `r` by `r ^ n`.
 
 Applying this to `S = {x | t < M f x}` needs a uniform bound on the radii it selects, and that is
 where finiteness of `∫⁻ ‖f‖ₑ` enters: a ball whose average exceeds `t` has measure less than
@@ -246,9 +245,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
 
 /-- Enlarging a ball by the factor `4` multiplies its measure by `4 ^ n`: the dimensional cost of
 the Vitali enlargement. -/
-private theorem addHaar_closedBall_four_mul (μ : Measure E) [μ.IsAddHaarMeasure] (x : E) {r : ℝ}
-    (hr : 0 < r) : μ (closedBall x (4 * r)) = 4 ^ finrank ℝ E * μ (ball x r) := by
-  rw [Measure.addHaar_closedBall μ x (by linarith : (0 : ℝ) ≤ 4 * r),
+private theorem addHaar_ball_four_mul (μ : Measure E) [μ.IsAddHaarMeasure] (x : E) {r : ℝ}
+    (hr : 0 < r) : μ (ball x (4 * r)) = 4 ^ finrank ℝ E * μ (ball x r) := by
+  rw [Measure.addHaar_ball_of_pos μ x (by positivity : (0 : ℝ) < 4 * r),
     Measure.addHaar_ball_of_pos μ x hr, ← mul_assoc, mul_pow,
     ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 4 ^ finrank ℝ E),
     ENNReal.ofReal_pow (by norm_num : (0 : ℝ) ≤ 4)]
@@ -264,37 +263,17 @@ theorem mul_measure_le_of_forall_exists_ball {S : Set E} {R : ℝ} {g : E → �
     (hS : ∀ x ∈ S, ∃ r ∈ Ioc 0 R, t * μ (ball x r) ≤ ∫⁻ y in ball x r, g y ∂μ) :
     t * μ S ≤ 4 ^ finrank ℝ E * ∫⁻ y, g y ∂μ := by
   choose! r hr hle using hS
-  obtain ⟨u, hu, hdisj, hcov⟩ :=
-    Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall S id r R
-      (fun x hx => (hr x hx).2) 4 (by norm_num)
-  simp only [id_eq] at hdisj hcov
-  have hcount : u.Countable :=
-    hdisj.countable_of_nonempty_interior fun x hx =>
-      ⟨x, ball_subset_interior_closedBall (mem_ball_self (hr x (hu hx)).1)⟩
-  have : Countable u := hcount.to_subtype
-  -- The fourfold enlargements of the selected balls cover `S`.
-  have hsub : S ⊆ ⋃ b ∈ u, closedBall b (4 * r b) := fun x hx => by
-    obtain ⟨b, hb, hball⟩ := hcov x hx
-    exact mem_biUnion hb (hball (mem_closedBall_self (hr x hx).1.le))
-  -- The selected balls are pairwise disjoint, so the integrals over them add up to at most `∫⁻ g`.
-  have hdisj' : Pairwise (Function.onFun Disjoint fun b : u => ball (b : E) (r b)) :=
-    fun b b' hbb' =>
-      (hdisj b.2 b'.2 (Subtype.coe_injective.ne hbb')).mono ball_subset_closedBall
-        ball_subset_closedBall
-  calc t * μ S
-      ≤ t * ∑' b : u, μ (closedBall (b : E) (4 * r b)) := by
-        gcongr
-        exact (measure_mono hsub).trans (measure_biUnion_le μ hcount _)
-    _ = ∑' b : u, t * μ (closedBall (b : E) (4 * r b)) := ENNReal.tsum_mul_left.symm
-    _ ≤ ∑' b : u, 4 ^ finrank ℝ E * ∫⁻ y in ball (b : E) (r b), g y ∂μ := by
-        refine _root_.tsum_le_tsum fun b => ?_
-        rw [addHaar_closedBall_four_mul μ _ (hr b (hu b.2)).1, mul_left_comm]
-        gcongr
-        exact hle b (hu b.2)
-    _ = 4 ^ finrank ℝ E * ∑' b : u, ∫⁻ y in ball (b : E) (r b), g y ∂μ := ENNReal.tsum_mul_left
-    _ = 4 ^ finrank ℝ E * ∫⁻ y in ⋃ b : u, ball (b : E) (r b), g y ∂μ := by
-        rw [lintegral_iUnion (fun b => measurableSet_ball) hdisj']
-    _ ≤ 4 ^ finrank ℝ E * ∫⁻ y, g y ∂μ := mul_le_mul_right (setLIntegral_le_lintegral _ _) _
+  -- On each enlarged ball, `∫⁻ t = t * μ (B(x, 4 r x)) = 4 ^ n * t * μ (B(x, r x))`.
+  obtain ⟨U, -, hSU, hU⟩ := exists_superset_setLIntegral_le (μ := μ) (S := univ)
+    (G := fun _ => t) (F := fun y => 4 ^ finrank ℝ E * g y) hr (fun _ _ => subset_univ _)
+    fun x hx => by
+      rw [setLIntegral_const, lintegral_const_mul' _ _ (by simp),
+        addHaar_ball_four_mul μ x (hr x hx).1, mul_left_comm]
+      gcongr
+      exact hle x hx
+  calc t * μ S ≤ t * μ U := by gcongr
+    _ = ∫⁻ _ in U, t ∂μ := (setLIntegral_const _ _).symm
+    _ ≤ _ := by simpa [lintegral_const_mul' _ _ (by simp : (4 : ℝ≥0∞) ^ finrank ℝ E ≠ ⊤)] using hU
 
 /-- The superlevel sets of the maximal function are open: enlarging the radius slightly keeps the
 average of `‖f‖ₑ` above `t`, at every nearby centre. -/
