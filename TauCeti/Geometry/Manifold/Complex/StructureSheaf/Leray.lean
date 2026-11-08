@@ -32,7 +32,7 @@ sheaf cohomology by `CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCoho
 
 ## Main results
 
-* `TauCeti.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph`: an open `W` of a
+* `Homeomorph.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph`: an open `W` of a
   complex manifold biholomorphic to a complex manifold `Y` with Čech `H¹(Y, 𝒪) = 0` has
   `H¹(W, 𝒪) = 0`.
 * `TauCeti.subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball`: `H¹(W, 𝒪) = 0` for a
@@ -153,7 +153,7 @@ open holomorphicStructureSheafModules in
 complex manifold `X` and `φ : W ≃ₜ Y` a homeomorphism onto a complex manifold `Y`, holomorphic
 with holomorphic inverse. If the structure sheaf of `Y` has vanishing degree one Čech cohomology,
 then the sheaf cohomology `H¹(W, 𝒪)` of the structure sheaf of `X` vanishes. -/
-theorem subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph
+theorem _root_.Homeomorph.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph
     (hφ : ContMDiff I J ω φ) (hφ' : ContMDiff J I ω φ.symm)
     (h : IsZero ((Topology.cechCohomology (TopCat.of Y) (ModuleCat.{0} ℂ) 1).obj
       (holomorphicStructureSheafModules J Y).obj)) :
@@ -189,7 +189,7 @@ theorem subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
   have he₂ : ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) ω e.symm e.target :=
     ((contMDiffOn_symm_of_mem_maximalAtlas he).mdifferentiableOn one_ne_zero).contMDiffOn
       e.open_target
-  refine subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph (Y := D) φ ?_ ?_
+  refine φ.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph (Y := D) ?_ ?_
     (isZero_cechCohomology_one_holomorphicStructureSheafModules_eball c R)
   · rw [← ContMDiff.subtypeVal_comp_iff]
     exact he₁.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2.1
