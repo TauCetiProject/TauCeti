@@ -81,6 +81,7 @@ theorem exactAt_complex_succ (n : ℕ) : r.complex.ExactAt (n + 1) := by
 
 /-- A relative projective resolution for the canonical abelian exact structure is a projective
 resolution in Mathlib's sense, with the same spliced complex and augmentation. -/
+@[expose]
 noncomputable def toProjectiveResolution : CategoryTheory.ProjectiveResolution (r.Z 0) where
   complex := r.complex
   projective n := r.projective_X n
@@ -99,13 +100,11 @@ noncomputable def toProjectiveResolution : CategoryTheory.ProjectiveResolution (
       exact r.exactAt_complex_succ n⟩
 
 /-- The abelian realization retains the original spliced complex. -/
-noncomputable def toProjectiveResolutionComplexIso : r.toProjectiveResolution.complex ≅
-    r.complex := Iso.refl _
+@[simp]
+theorem toProjectiveResolution_complex : r.toProjectiveResolution.complex = r.complex := (rfl)
 
-/-- The comparison of complexes identifies the abelian augmentation with the original one. -/
-@[reassoc (attr := simp)]
-theorem toProjectiveResolutionComplexIso_hom_comp_augmentation :
-    r.toProjectiveResolutionComplexIso.hom ≫ r.augmentation = r.toProjectiveResolution.π := by
-  simp [toProjectiveResolutionComplexIso, toProjectiveResolution]
+/-- The abelian realization retains the original augmentation. -/
+@[simp]
+theorem toProjectiveResolution_π : r.toProjectiveResolution.π = r.augmentation := (rfl)
 
 end TauCeti.ExactStructure.ProjectiveResolution

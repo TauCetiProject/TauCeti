@@ -136,6 +136,8 @@ noncomputable def horseshoe : Horseshoe f g where
   ι_π := by ext n; simp [middleι, middleπ]
   ι_augmentation := by simpa [middleι] using (block r₁ r₃ f g zero hS 0).inl_π
   π_augmentation := by simpa [middleπ] using (block r₁ r₃ f g zero hS 0).π_w.symm
+  -- Evaluation gives definitionally the standard biproduct short complex:
+  -- `middle.X n` is the biproduct, and `middleι.f n`/`middleπ.f n` are its inclusion/projection.
   split n := ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩
 
 namespace Horseshoe
@@ -147,6 +149,7 @@ variable {r₁ r₃ f g} (h : Horseshoe f g)
 
 /-- Transport the prescribed horseshoe along a conflation-exact functor preserving projectives.
 In particular the internal shift and its inverse transport a graded horseshoe. -/
+@[expose]
 noncomputable def map : Horseshoe
     ((r₁.mapZIso hF hP 0).hom ≫ F.map f)
     (F.map g ≫ (r₃.mapZIso hF hP 0).inv) where
@@ -180,24 +183,19 @@ noncomputable def map : Horseshoe
 /-- Transport retains the chosen middle resolution, rather than choosing a new horseshoe. -/
 @[simp] theorem map_resolution : (h.map hF hP).resolution = h.resolution.map hF hP := (rfl)
 
-/-- The middle complex of the transported horseshoe is the image of the original middle complex. -/
-noncomputable def mapResolutionComplexIso : (h.map hF hP).resolution.complex ≅
-    (F.mapHomologicalComplex _).obj h.resolution.complex :=
-  h.resolution.mapComplexIso hF hP
-
 /-- The transported injection is the image of the original injection. -/
-@[reassoc (attr := simp)]
-theorem map_ι_comp_mapResolutionComplexIso_hom :
-    (h.map hF hP).ι ≫ (h.mapResolutionComplexIso hF hP).hom =
+@[reassoc, simp]
+theorem map_ι_comp_mapComplexIso_hom :
+    (h.map hF hP).ι ≫ (h.resolution.mapComplexIso hF hP).hom =
       (r₁.mapComplexIso hF hP).hom ≫ (F.mapHomologicalComplex _).map h.ι := by
-  simp [map, mapResolutionComplexIso]
+  simp [map]
 
 /-- The transported projection is the image of the original projection. -/
 @[reassoc (attr := simp)]
 theorem map_π_comp_mapComplexIso_hom :
     (h.map hF hP).π ≫ (r₃.mapComplexIso hF hP).hom =
-      (h.mapResolutionComplexIso hF hP).hom ≫ (F.mapHomologicalComplex _).map h.π := by
-  simp [map, mapResolutionComplexIso]
+      (h.resolution.mapComplexIso hF hP).hom ≫ (F.mapHomologicalComplex _).map h.π := by
+  simp [map]
 
 end Horseshoe
 

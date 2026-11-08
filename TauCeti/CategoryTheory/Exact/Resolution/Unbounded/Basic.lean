@@ -163,9 +163,7 @@ theorem mapXIso_hom_comp_π (n : ℕ) :
 theorem mapXIso_inv_comp_π (n : ℕ) :
     (r.mapXIso hF hP n).inv ≫ (r.map hF hP).π n =
       F.map (r.π n) ≫ (r.mapZIso hF hP n).inv := by
-  apply (cancel_mono (r.mapZIso hF hP n).hom).1
-  rw [Category.assoc, ← mapXIso_hom_comp_π, Iso.inv_hom_id_assoc]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  simp [mapXIso, mapZIso, map]
 
 /-- Transport respects the admissible factorizations of the differentials. -/
 @[reassoc (attr := simp)]
