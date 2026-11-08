@@ -29,8 +29,6 @@ Mathlib's Geck construction to the rational scalar extensions of the pinned data
   `DynkinType.instIsReducedTypeCSimplyConnectedRootDatum`: reducedness in every rank.
 * `DynkinType.instIsReducedF4SimplyConnectedRootDatum` and
   `DynkinType.instIsReducedG2SimplyConnectedRootDatum`: reducedness of the exceptional data.
-* `DynkinType.isReduced_simplyConnectedRootDatum_of_not_isSimplyLaced`: the uniform theorem for
-  every valid non-simply-laced Dynkin type.
 
 ## References
 
@@ -87,28 +85,5 @@ instance instIsReducedTypeCSimplyConnectedRootDatum (n : ℕ) :
 /-- The pinned simply connected root datum of type `F₄` is reduced. -/
 instance instIsReducedF4SimplyConnectedRootDatum : f4SimplyConnectedRootDatum.IsReduced :=
   RootPairing.isReduced_of_abs_pairing_le_two _ abs_pairing_f4SimplyConnectedRootDatum_le_two
-
-/-- The pinned simply connected root datum of every valid non-simply-laced Dynkin type is
-reduced. -/
-theorem isReduced_simplyConnectedRootDatum_of_not_isSimplyLaced (t : DynkinType) (ht : t.Valid)
-    (hs : ¬ t.IsSimplyLaced) : (t.simplyConnectedRootDatum ht).IsReduced := by
-  cases t with
-  | A n => simp at hs
-  | B n =>
-      rw [simplyConnectedRootDatum_B]
-      exact instIsReducedTypeBSimplyConnectedRootDatum n
-  | C n =>
-      rw [simplyConnectedRootDatum_C]
-      exact instIsReducedTypeCSimplyConnectedRootDatum n
-  | D n => simp at hs
-  | E6 => simp at hs
-  | E7 => simp at hs
-  | E8 => simp at hs
-  | F4 =>
-      rw [simplyConnectedRootDatum_F4]
-      exact instIsReducedF4SimplyConnectedRootDatum
-  | G2 =>
-      rw [simplyConnectedRootDatum_G2]
-      exact instIsReducedG2SimplyConnectedRootDatum
 
 end TauCeti.DynkinType
