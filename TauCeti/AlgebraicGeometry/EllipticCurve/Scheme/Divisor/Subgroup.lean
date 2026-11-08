@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Divisor.FormalPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.FormalPoint
-import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
+import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.RingTheory.FormalGroup.CharP
 
 /-!
