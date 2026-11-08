@@ -111,9 +111,8 @@ private theorem measureLpMultiplicationOperator_continuous {m : α → ℝ≥0}
       (fun t : ℝ≥0 => eLpNorm
         ((fun a => Real.exp (-((t : ℝ) * m a)) • f a) -
           (fun a => Real.exp (-((s : ℝ) * m a)) • f a)) p μ) (𝓝 s) (𝓝 0) := by
-    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto
-      (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp
-      (.of_forall fun t => by fun_prop) (by fun_prop) (Lp.memLp f) (C := 2)
+    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto hp (.of_forall fun t => by fun_prop)
+      (Lp.memLp f) (C := 2)
     · filter_upwards with t
       filter_upwards with a
       have hbound (u : ℝ≥0) : ‖Real.exp (-((u : ℝ) * m a)) • f a‖ₑ ≤ ‖f a‖ₑ := by

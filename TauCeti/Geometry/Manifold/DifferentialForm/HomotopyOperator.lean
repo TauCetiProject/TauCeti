@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Icc
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!

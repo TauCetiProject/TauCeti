@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Surface

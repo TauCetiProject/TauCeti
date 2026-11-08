@@ -724,47 +724,33 @@ private theorem eq_cutColumn_of_mem {u v : GridState n}
   rw [((hH P).mp hP).2] at hmem
   exact (Prod.mk.inj (Finset.mem_singleton.mp hmem)).1
 
+open GridHexagonCompositeDecomposition in
 include hcol hturn hXcol hXnext hH hcut in
-/-- **Unpaired composites are pentagon partners.** Let the `X`-marking of column `a` lie in the
-rows from `s'` up to the turn row `s` of `C`, and that of column `b` in the rows from `s` up to
-`s'`, and let the hexagons with corners in the rows `s` and `s'` be counted by their markings. A
-counted hexagon composite with a mixed-side overlap whose recut underlies no counted composite is
-then the partner of a pentagon pair, made of a counted pentagon of `G` turning in row `s` and a
-counted pentagon of `G.swapColumns a b` at a column turn `C'` of the column `a` turning in row
-`s'`: either both pentagons turn on the same side of the replaced grid line and the pair recuts
-the composite, or they turn on opposite sides and the pair has the rectangles of the composite. -/
-theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n}
-    {F : GridHexagonCompositeDecomposition a C.turnRow s' x z}
-    (hF : F ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
-      (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z))
+/-- The case of `exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff` in which the composite is a
+hexagon followed by a rectangle. -/
+private theorem exists_pentagonPair_of_hasMixedSideOverlap_of_inl {x z : GridState n}
+    {F : GridHexagonRectangleDecomposition a C.turnRow s' x z}
+    (hF : (Sum.inl F : GridHexagonCompositeDecomposition a C.turnRow s' x z) ∈
+      (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z))
     (hnot : ∀ F' : GridHexagonCompositeDecomposition a C.turnRow s' x z,
       F' ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
         (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z) →
-      ¬F.toRectangleDecomposition.IsRecut F'.toRectangleDecomposition)
-    (hmixed : F.toRectangleDecomposition.HasMixedSideOverlap) :
-    ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      (D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
-        D.second ∈ ((G.swapColumns a b).pentagons C' D.middle z).disjSum
-          ((G.swapColumns a b).initialPentagons C' D.middle z)) ∧
-      (D.first.isLeft = D.second.isLeft ∧
-          D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition ∨
-        D.first.isLeft ≠ D.second.isLeft ∧
-          D.toRectangleDecomposition = F.toRectangleDecomposition) := by
-  suffices h : (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+      ¬(toRectangleDecomposition (.inl F)).IsRecut F'.toRectangleDecomposition)
+    (hmixed : (toRectangleDecomposition (.inl F)).HasMixedSideOverlap) :
+    (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
       G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
-        D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition) ∨
+        D.toRectangleDecomposition.IsRecut (toRectangleDecomposition (.inl F))) ∨
       ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
         G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
-          D.toRectangleDecomposition = F.toRectangleDecomposition by
-    rcases h with ⟨D, hD, hside, hD'⟩ | ⟨D, hD, hside, hD'⟩
-    exacts [⟨D, hD, Or.inl ⟨hside, hD'⟩⟩, ⟨D, hD, Or.inr ⟨hside, hD'⟩⟩]
+          D.toRectangleDecomposition = toRectangleDecomposition (.inl F) := by
   obtain ⟨hone, hside⟩ := (GridRectangleDecomposition.hasMixedSideOverlap_iff _).mp hmixed
   obtain ⟨h1, h2⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
-  have hfalse : ∀ E, F.toRectangleDecomposition.IsRecut E → ¬HasHexagonPiece C s' E :=
+  have hfalse : ∀ E, (toRectangleDecomposition (.inl F)).IsRecut E → ¬HasHexagonPiece C s' E :=
     fun _ hE => G.not_hasHexagonPiece_of_isRecut C hH hcut hF hnot hE
-  -- Split by the order of the hexagon and the rectangle and by the kind of hexagon; in each of
-  -- the four cases, the orientation of the common side decides between the lemmas above.
-  rcases F with ⟨m, P | P, S⟩ | ⟨m, S, P | P⟩
+  -- Split by the kind of hexagon; in each case, the orientation of the common side decides
+  -- between the lemmas above.
+  rcases F with ⟨m, P | P, S⟩
   · obtain ⟨hP, hS⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
       (Finset.inl_mem_disjSum.mp hF)
     rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl] at hone hside h1 h2 hfalse ⊢
@@ -797,6 +783,34 @@ theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n
         hfalse hcommon P.left_eq P.lower_mem P.upper_mem hX)
     · exact Or.inl (G.exists_sameSide_of_initial_first C C' hcol hturn hXcol hXnext _ hone h1 h2
         hfalse (fun c _ hb hc => hb (hX c hc)) hcommon P.left_eq P.lower_mem P.upper_mem)
+
+open GridHexagonCompositeDecomposition in
+include hcol hturn hXcol hXnext hH hcut in
+/-- The case of `exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff` in which the composite is a
+rectangle followed by a hexagon. -/
+private theorem exists_pentagonPair_of_hasMixedSideOverlap_of_inr {x z : GridState n}
+    {F : GridRectangleHexagonDecomposition a C.turnRow s' x z}
+    (hF : (Sum.inr F : GridHexagonCompositeDecomposition a C.turnRow s' x z) ∈
+      (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z))
+    (hnot : ∀ F' : GridHexagonCompositeDecomposition a C.turnRow s' x z,
+      F' ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z) →
+      ¬(toRectangleDecomposition (.inr F)).IsRecut F'.toRectangleDecomposition)
+    (hmixed : (toRectangleDecomposition (.inr F)).HasMixedSideOverlap) :
+    (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+        D.toRectangleDecomposition.IsRecut (toRectangleDecomposition (.inr F))) ∨
+      ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+        G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+          D.toRectangleDecomposition = toRectangleDecomposition (.inr F) := by
+  obtain ⟨hone, hside⟩ := (GridRectangleDecomposition.hasMixedSideOverlap_iff _).mp hmixed
+  obtain ⟨h1, h2⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
+  have hfalse : ∀ E, (toRectangleDecomposition (.inr F)).IsRecut E → ¬HasHexagonPiece C s' E :=
+    fun _ hE => G.not_hasHexagonPiece_of_isRecut C hH hcut hF hnot hE
+  -- Split by the kind of hexagon; in each case, the orientation of the common side decides
+  -- between the lemmas above.
+  rcases F with ⟨m, S, P | P⟩
   · obtain ⟨hS, hP⟩ := (GridTwoStepDecomposition.mem_decompositionsOf _ _ _).mp
       (Finset.inr_mem_disjSum.mp hF)
     rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr] at hone hside h1 h2 hfalse ⊢
@@ -831,5 +845,45 @@ theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n
         hfalse (fun c _ hb hc => hb (hX c hc)) hcommon P.left_eq P.lower_mem P.upper_mem)
     · exact Or.inr (G.exists_mixed_of_initial_second C C' hcol hturn hXcol hXnext _ hone h1 h2
         hfalse hcommon P.left_eq P.lower_mem P.upper_mem hX)
+
+include hcol hturn hXcol hXnext hH hcut in
+/-- **Unpaired composites are pentagon partners.** Let the `X`-marking of column `a` lie in the
+rows from `s'` up to the turn row `s` of `C`, and that of column `b` in the rows from `s` up to
+`s'`, and let the hexagons with corners in the rows `s` and `s'` be counted by their markings. A
+counted hexagon composite with a mixed-side overlap whose recut underlies no counted composite is
+then the partner of a pentagon pair, made of a counted pentagon of `G` turning in row `s` and a
+counted pentagon of `G.swapColumns a b` at a column turn `C'` of the column `a` turning in row
+`s'`: either both pentagons turn on the same side of the replaced grid line and the pair recuts
+the composite, or they turn on opposite sides and the pair has the rectangles of the composite. -/
+theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n}
+    {F : GridHexagonCompositeDecomposition a C.turnRow s' x z}
+    (hF : F ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+      (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z))
+    (hnot : ∀ F' : GridHexagonCompositeDecomposition a C.turnRow s' x z,
+      F' ∈ (GridTwoStepDecomposition.decompositionsOf H G.unblockedRectangles x z).disjSum
+        (GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles H x z) →
+      ¬F.toRectangleDecomposition.IsRecut F'.toRectangleDecomposition)
+    (hmixed : F.toRectangleDecomposition.HasMixedSideOverlap) :
+    ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+      (D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
+        D.second ∈ ((G.swapColumns a b).pentagons C' D.middle z).disjSum
+          ((G.swapColumns a b).initialPentagons C' D.middle z)) ∧
+      (D.first.isLeft = D.second.isLeft ∧
+          D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition ∨
+        D.first.isLeft ≠ D.second.isLeft ∧
+          D.toRectangleDecomposition = F.toRectangleDecomposition) := by
+  suffices h : (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+        D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition) ∨
+      ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
+        G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+          D.toRectangleDecomposition = F.toRectangleDecomposition by
+    rcases h with ⟨D, hD, hside, hD'⟩ | ⟨D, hD, hside, hD'⟩
+    exacts [⟨D, hD, Or.inl ⟨hside, hD'⟩⟩, ⟨D, hD, Or.inr ⟨hside, hD'⟩⟩]
+  rcases F with F | F
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inl C C' hcol hturn hXcol hXnext hH hcut
+      hF hnot hmixed
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inr C C' hcol hturn hXcol hXnext hH hcut
+      hF hnot hmixed
 
 end TauCeti.GridDiagram
