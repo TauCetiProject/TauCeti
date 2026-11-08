@@ -185,10 +185,13 @@ theorem torusPointMap_injective [Finite ι] {K : Type*} [Field K] [Infinite K] :
 divisible**, for instance over an algebraically closed field. The units form a divisible, hence
 injective, `ℤ`-module, so every character of the source lattice, read as a homomorphism into the
 units, extends along `φ`. -/
-theorem torusPointMap_surjective_of_injective [Finite ι] [RootableBy Rˣ ℕ]
+theorem torusPointMap_surjective_of_injective [RootableBy Rˣ ℕ]
     {φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)} (hφ : Function.Injective φ) :
     Function.Surjective (torusPointMap (R := R) φ) := by
   classical
+  -- An injective map into a finite-rank lattice has a finite source.
+  have : Finite ι := ((Pi.linearIndependent_single_one ι ℤ).map' φ
+    (LinearMap.ker_eq_bot.mpr hφ)).finite_of_isNoetherian
   have := Fintype.ofFinite ι
   intro s
   let : DivisibleBy (Additive Rˣ) ℕ :=
