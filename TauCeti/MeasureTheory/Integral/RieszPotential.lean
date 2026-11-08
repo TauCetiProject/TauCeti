@@ -164,6 +164,25 @@ theorem setLIntegral_enorm_sub_rpow_le {κ : ℝ} (hκ : 0 < κ) (hκ1 : κ ≤ 
       congr 1
       field_simp
 
+/-- Raising `(κ'⁻¹ ω ^ (1 - κ')) m ^ κ'`, `κ' = (κ - δ) / (1 - δ)`, to the power `1 - δ` gives
+`((1 - δ) / (κ - δ)) ^ (1 - δ) ω ^ (1 - κ) m ^ (κ - δ)`. -/
+private theorem ofReal_mul_rpow_rpow_one_sub_eq {κ δ ω : ℝ} {m : ℝ≥0∞} (hω : 0 ≤ ω)
+    (hκ : δ ≤ κ) (hδ1 : δ < 1) :
+    (ENNReal.ofReal (((κ - δ) / (1 - δ))⁻¹ * ω ^ (1 - (κ - δ) / (1 - δ))) *
+        m ^ ((κ - δ) / (1 - δ))) ^ (1 - δ) =
+      ENNReal.ofReal (((1 - δ) / (κ - δ)) ^ (1 - δ) * ω ^ (1 - κ)) * m ^ (κ - δ) := by
+  have hexp : (κ - δ) / (1 - δ) * (1 - δ) = κ - δ := by field_simp [(sub_pos.2 hδ1).ne']
+  have hexp' : (1 - (κ - δ) / (1 - δ)) * (1 - δ) = 1 - κ := by
+    field_simp [(sub_pos.2 hδ1).ne']
+    ring
+  have hκδ : 0 ≤ κ - δ := sub_nonneg.2 hκ
+  have hδ1' : 0 < 1 - δ := sub_pos.2 hδ1
+  have hq : 0 ≤ (κ - δ) / (1 - δ) := div_nonneg hκδ hδ1'.le
+  rw [ENNReal.mul_rpow_of_nonneg _ _ (by linarith), ← ENNReal.rpow_mul, hexp,
+    ENNReal.ofReal_rpow_of_nonneg (mul_nonneg (inv_nonneg.2 hq) (Real.rpow_nonneg hω _))
+      (by linarith),
+    Real.mul_rpow (inv_nonneg.2 hq) (Real.rpow_nonneg hω _), ← Real.rpow_mul hω, hexp', inv_div]
+
 /-- **Riesz potentials on sets of finite measure map `Lᵖ` to `L^q`** (Gilbarg–Trudinger,
 Lemma 7.12). Let `1 ≤ p ≤ q < ∞`, let `δ = 1/p - 1/q` and let `δ < κ ≤ 1`. For a measurable
 `Ω` and `f` almost everywhere measurable on `Ω`, the potential
@@ -230,16 +249,7 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
         ring
       · field_simp
     _ = _ := by
-      have hexp : κ' * (1 - δ) = κ - δ := by
-        simp only [κ']
-        field_simp [(sub_pos.2 hδ1).ne']
-      have hexp' : (1 - κ') * (1 - δ) = 1 - κ := by
-        simp only [κ']
-        field_simp [(sub_pos.2 hδ1).ne']
-        ring
-      rw [ENNReal.mul_rpow_of_nonneg _ _ (by linarith), ← ENNReal.rpow_mul, hexp,
-        ENNReal.ofReal_rpow_of_nonneg (by positivity) (by linarith),
-        Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hω.le, hexp', inv_div]
+      rw [ofReal_mul_rpow_rpow_one_sub_eq hω.le hκ.le hδ1, mul_assoc]
 
 omit [Nontrivial E] in
 /-- The integral of the Riesz kernel `‖y - x‖ ^ (1 - n)` in `x` over a measurable set `A` is at
