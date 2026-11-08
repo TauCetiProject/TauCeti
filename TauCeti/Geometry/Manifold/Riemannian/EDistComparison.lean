@@ -19,8 +19,9 @@ is the infimum over `C¹` paths only. This file proves that the two infima agree
 
 The bridge is corner smoothing. Each piece of a piecewise `C¹` path is first reparametrized
 affinely onto `[0, 1]`, which changes neither its endpoints nor its length, and then flattened
-near its endpoints by `TauCeti.exists_contMDiff_pathELength_eq`; the flattened pieces can be
-concatenated with `TauCeti.exists_contMDiff_pathELength_eq_add` while staying globally `C¹`.
+near its endpoints by `TauCeti.Manifold.exists_contMDiff_pathELength_eq`; the flattened pieces
+can be concatenated with `TauCeti.Manifold.exists_contMDiff_pathELength_eq_add` while staying
+globally `C¹`.
 Iterating over the partition replaces a broken path by a `C¹` path with the same endpoints and
 exactly the same length, so neither infimum can be smaller than the other.
 
@@ -118,8 +119,8 @@ finite ordered partition is replaced by a globally `C¹` path on `[0, 1]` with t
 whose length is the sum of the lengths of the pieces.
 
 The induction concatenates the smoothed pieces one at a time with
-`TauCeti.exists_contMDiff_pathELength_eq_add`, which is available precisely because each smoothed
-piece is constant near its endpoints. -/
+`TauCeti.Manifold.exists_contMDiff_pathELength_eq_add`, which is available precisely because each
+smoothed piece is constant near its endpoints. -/
 private theorem exists_contMDiff_pathELength_eq_sum (γ : ℝ → M) :
     ∀ (k : ℕ) (τ : Fin (k + 2) → ℝ), (∀ i : Fin (k + 1), τ i.castSucc ≤ τ i.succ) →
       (∀ i : Fin (k + 1), ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc (τ i.castSucc) (τ i.succ))) →
@@ -132,20 +133,20 @@ private theorem exists_contMDiff_pathELength_eq_sum (γ : ℝ → M) :
   induction k with
   | zero =>
       intro τ hτ hγ
-      obtain ⟨η, hη, hη₀, hη₁, hlen, hmaps⟩ :=
-        exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0)
+      obtain ⟨η, hη, hη₀, hη₁, hlen, -, -, hmaps⟩ :=
+        exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0) one_ne_zero
       exact ⟨η, hη, by simpa using hη₀, by simpa using hη₁, by simpa using hlen,
         by simpa using hmaps⟩
   | succ k ih =>
       intro τ hτ hγ
-      obtain ⟨α, hα, hα₀, hα₁, hαlen, hαmaps⟩ :=
-        exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0)
+      obtain ⟨α, hα, hα₀, hα₁, hαlen, -, -, hαmaps⟩ :=
+        exists_contMDiff_pathELength_eq_of_le (hτ 0) (hγ 0) one_ne_zero
       obtain ⟨β, hβ, hβ₀, hβ₁, hβlen, hβmaps⟩ := ih (fun i ↦ τ i.succ)
         (fun i ↦ by simpa only [Fin.succ_castSucc] using hτ i.succ)
         (fun i ↦ by simpa only [Fin.succ_castSucc] using hγ i.succ)
       obtain ⟨η, hη, hη₀, hη₁, hηlen, -, -, hηmaps⟩ :=
-        TauCeti.exists_contMDiff_pathELength_eq_add hα.contMDiffOn hβ.contMDiffOn
-          (hα₁.trans hβ₀.symm)
+        exists_contMDiff_pathELength_eq_add hα.contMDiffOn hβ.contMDiffOn
+          (hα₁.trans hβ₀.symm) one_ne_zero
       refine ⟨η, hη, ?_, ?_, ?_, ?_⟩
       · rw [hη₀, hα₀, Fin.castSucc_zero]
       · rw [hη₁, hβ₁, Fin.succ_last]
