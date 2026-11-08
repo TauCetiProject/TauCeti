@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import TauCeti.Geometry.Symplectic.Cayley.Smooth
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -21,8 +21,8 @@ The construction cuts off the local field in the Cayley chart of the background 
 not by averaging almost complex structures. The convexity of the compatible Cayley ball
 preserves compatibility. A cutoff whose topological support lies in the open set makes the
 result smooth even where the prescribed field is not defined smoothly.
-The coordinate smoothness argument follows the tangent-bundle Cayley path construction in
-`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath`, but requires regularity only
+The coordinate smoothness argument uses the pointwise tangent-bundle Cayley formula lemma in
+`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath`, requiring regularity only
 on the open region where the local field is used.
 
 ## Main results
@@ -54,36 +54,41 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (hK : ∀ x ∈ U, (h₀.isNondegenerate.symplecticFormAt x).Compatible (K x))
   (ρ : M → ℝ) (hρ : ∀ x, ρ x ∈ Icc 0 1)
 
-private def cutoffField (x : M) : AlmostComplexStructure E := by
-  classical
-  exact if hx : x ∈ U then
-    ((h₀.compatibleAt x).cayleyEquiv.symm
+open Classical in
+private def cutoffField (x : M) : AlmostComplexStructure E :=
+  if hx : x ∈ U then
+    ((h₀.compatibleAt x).compatibleCayleyEquiv.symm
       ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-        (h₀.compatibleAt x).smul_cayley_mem_cayleyBall (hK x hx).tames (hρ x)⟩).val
+        (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩).val
   else J₀.almostComplexStructureAt x
+
+private theorem cutoffField_of_mem {x : M} (hx : x ∈ U) :
+    cutoffField h₀ K hK ρ hρ x =
+      ((h₀.compatibleAt x).compatibleCayleyEquiv.symm
+        ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
+          (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩).val :=
+  dite_eq_left hx
+
+private theorem cutoffField_of_notMem {x : M} (hx : x ∉ U) :
+    cutoffField h₀ K hK ρ hρ x = J₀.almostComplexStructureAt x :=
+  dite_eq_right hx
 
 private theorem cayley_cutoffField {x : M} (hx : x ∈ U) :
     (J₀.almostComplexStructureAt x).cayley (cutoffField (E := E) h₀ K hK ρ hρ x) =
       ρ x • (J₀.almostComplexStructureAt x).cayley (K x) := by
-  erw [cutoffField, dite_eq_left hx]
-  have h := congrArg Subtype.val ((h₀.compatibleAt x).cayleyEquiv.apply_symm_apply
-    ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-      (h₀.compatibleAt x).smul_cayley_mem_cayleyBall (hK x hx).tames (hρ x)⟩)
-  rw [SymplecticForm.Compatible.cayleyEquiv_apply_coe] at h
-  exact h
+  rw [cutoffField_of_mem h₀ K hK ρ hρ hx]
+  simpa only [SymplecticForm.Compatible.compatibleCayleyEquiv_apply_coe] using
+    congrArg Subtype.val ((h₀.compatibleAt x).compatibleCayleyEquiv.apply_symm_apply
+      ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
+        (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩)
 
 private theorem compatible_cutoffField (x : M) :
     (h₀.isNondegenerate.symplecticFormAt x).Compatible
       (cutoffField (E := E) h₀ K hK ρ hρ x) := by
   by_cases hx : x ∈ U
-  · have ht : (h₀.isNondegenerate.symplecticFormAt x).Tames
-        (cutoffField (E := E) h₀ K hK ρ hρ x) := by
-      erw [cutoffField, dite_eq_left hx]
-      exact Subtype.property _
-    rw [← (h₀.compatibleAt x).cayley_mem_compatibleCayleyBall_iff ht,
-      cayley_cutoffField h₀ K hK ρ hρ hx]
-    exact (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)
-  · erw [cutoffField, dite_eq_right hx]
+  · rw [cutoffField_of_mem h₀ K hK ρ hρ hx]
+    exact Subtype.property _
+  · rw [cutoffField_of_notMem h₀ K hK ρ hρ hx]
     exact h₀.compatibleAt x
 
 private theorem cutoffField_eq_background {x : M} (hx : ρ x = 0) :
@@ -92,7 +97,7 @@ private theorem cutoffField_eq_background {x : M} (hx : ρ x = 0) :
   · apply (h₀.compatibleAt x).eq_of_cayley_eq
       (compatible_cutoffField h₀ K hK ρ hρ x).tames (h₀.compatibleAt x).tames
     simp [cayley_cutoffField h₀ K hK ρ hρ hxU, hx]
-  · erw [cutoffField, dite_eq_right hxU]
+  · exact cutoffField_of_notMem h₀ K hK ρ hρ hxU
 
 private theorem cutoffField_eq_local {x : M} (hxU : x ∈ U) (hx : ρ x = 1) :
     cutoffField h₀ K hK ρ hρ x = K x := by
@@ -104,11 +109,26 @@ private theorem cutoffField_formula {x : M} (hx : x ∈ U) :
     LinearMap.toContinuousLinearMap (cutoffField h₀ K hK ρ hρ x).toLinearMap =
       cayleyPathFormula (ρ x) (J₀.toEndomorphism x)
         (LinearMap.toContinuousLinearMap (K x).toLinearMap) := by
-  erw [cutoffField, dite_eq_left hx]
-  exact SymplecticForm.Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley
-    (V := E) (h₀.compatibleAt x)
-    (hK x hx).tames (hρ x) (J₀.almostComplexStructureAt_toLinearMap x).symm
-    (LinearMap.coe_toContinuousLinearMap _)
+  have hf : cutoffField h₀ K hK ρ hρ x =
+      ((h₀.compatibleAt x).cayleyEquiv.symm
+        ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
+          (h₀.compatibleAt x).smul_cayley_mem_cayleyBall (hK x hx).tames (hρ x)⟩).val := by
+    refine (cutoffField_of_mem h₀ K hK ρ hρ hx).trans ?_
+    apply AlmostComplexStructure.toLinearMap_injective
+    exact (SymplecticForm.Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap
+      (V := TangentSpace I x) (h₀.compatibleAt x)
+      ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
+        (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩).trans
+      (SymplecticForm.Compatible.cayleyEquiv_symm_apply_toLinearMap
+        (V := TangentSpace I x) (h₀.compatibleAt x)
+        ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
+          (h₀.compatibleAt x).smul_cayley_mem_cayleyBall (hK x hx).tames (hρ x)⟩).symm
+  exact (congrArg (fun J : AlmostComplexStructure E ↦
+    LinearMap.toContinuousLinearMap J.toLinearMap) hf).trans
+    (SymplecticForm.Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley
+      (V := E) (h₀.compatibleAt x) (hK x hx).tames (hρ x)
+      (J₀.almostComplexStructureAt_toLinearMap x).symm
+      (LinearMap.coe_toContinuousLinearMap _))
 
 private theorem contMDiffAt_cutoffField_of_mem (hU : IsOpen U)
     (hs : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
@@ -120,50 +140,21 @@ private theorem contMDiffAt_cutoffField_of_mem (hU : IsOpen U)
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         x (LinearMap.toContinuousLinearMap (cutoffField h₀ K hK ρ hρ x).toLinearMap)) x₀ := by
-  -- Work in the tangent frame at `x₀`. Both Cayley inverse denominators are units.
-  rw [contMDiffAt_hom_bundle]
-  constructor
-  · exact contMDiffAt_id
-  · let e := trivializationAt E (TangentSpace I) x₀
-    let coord : (x : M) → (TangentSpace I x →L[ℝ] TangentSpace I x) → E →L[ℝ] E :=
-      fun x A ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I)
-        x₀ x x₀ x A
-    have hconj {x : M} (hx : x ∈ e.baseSet) (A : TangentSpace I x →L[ℝ] TangentSpace I x) :
-        coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A := by
-      simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hx hx,
-        ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
-    have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
-    have hinner : ContMDiffAt I 𝓘(ℝ, ℝ × (E →L[ℝ] E) × (E →L[ℝ] E)) ∞
-        (fun x ↦ (ρ x, coord x (J₀.toEndomorphism x),
-          coord x (LinearMap.toContinuousLinearMap (K x).toLinearMap))) x₀ :=
-      (hsρ x₀).prodMk_space
-        (((contMDiffAt_hom_bundle _).1 (J₀.toEndomorphism.contMDiff x₀)).2.prodMk_space
-          ((contMDiffAt_hom_bundle _).1 ((hs x₀ hx).contMDiffAt (hU.mem_nhds hx))).2)
-    -- Both inverse denominators are units, and conjugation into a tangent frame preserves
-    -- the Cayley expression. This gives smoothness without differentiating a moving frame.
-    let φ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
-    have hu₁ : IsUnit (1 - coord x₀ (J₀.toEndomorphism x₀) *
-        coord x₀ (LinearMap.toContinuousLinearMap (K x₀).toLinearMap)) := by
-      rw [hconj hx₀, hconj hx₀, ← map_mul, ← map_one φ, ← map_sub]
-      exact (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
-        (h₀.compatibleAt x₀).tames
-        (hK x₀ hx).tames (J₀.almostComplexStructureAt_toLinearMap x₀).symm
-        (LinearMap.coe_toContinuousLinearMap _)).map φ
-    have hu₂ : IsUnit (1 - ρ x₀ • cayleyFormula (coord x₀ (J₀.toEndomorphism x₀))
-        (coord x₀ (LinearMap.toContinuousLinearMap (K x₀).toLinearMap))) := by
-      rw [hconj hx₀, hconj hx₀, ← map_cayleyFormula, ← map_smul, ← map_one φ, ← map_sub]
-      exact (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-        (h₀.compatibleAt x₀) (hK x₀ hx).tames
-        (hρ x₀) (J₀.almostComplexStructureAt_toLinearMap x₀).symm
-        (LinearMap.coe_toContinuousLinearMap _)).map φ
-    refine ((contDiffAt_cayleyPathFormula hu₁ hu₂).comp_contMDiffAt
-      (f := fun x ↦ (ρ x, coord x (J₀.toEndomorphism x),
-        coord x (LinearMap.toContinuousLinearMap (K x).toLinearMap)))
-      hinner).congr_of_eventuallyEq ?_
-    filter_upwards [hU.mem_nhds hx, e.open_baseSet.mem_nhds hx₀] with x hxU hxe
-    erw [Function.comp_apply, cutoffField_formula h₀ K hK ρ hρ hxU]
-    rw [hconj hxe, hconj hxe]
-    exact (hconj hxe _).trans (map_cayleyPathFormula _ _ _ _)
+  have hs' := ContMDiffAt.cayleyPathFormula_hom_bundle contMDiffAt_id (hsρ x₀)
+    (J₀.toEndomorphism.contMDiff x₀) ((hs x₀ hx).contMDiffAt (hU.mem_nhds hx))
+    (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
+      (h₀.compatibleAt x₀).tames (hK x₀ hx).tames
+      (J₀.almostComplexStructureAt_toLinearMap x₀).symm
+      (LinearMap.coe_toContinuousLinearMap _))
+    (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
+      (h₀.compatibleAt x₀) (hK x₀ hx).tames (hρ x₀)
+      (J₀.almostComplexStructureAt_toLinearMap x₀).symm
+      (LinearMap.coe_toContinuousLinearMap _))
+  refine hs'.congr_of_eventuallyEq ?_
+  filter_upwards [hU.mem_nhds hx] with x hxU
+  exact congrArg (fun L : E →L[ℝ] E ↦ TotalSpace.mk'
+    (E →L[ℝ] E) (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x L)
+    (cutoffField_formula h₀ K hK ρ hρ hxU)
 
 private theorem contMDiffAt_cutoffField (hU : IsOpen U)
     (hs : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
@@ -183,6 +174,8 @@ private theorem contMDiffAt_cutoffField (hU : IsOpen U)
     filter_upwards [hz] with x hx
     rw [cutoffField_eq_background h₀ K hK ρ hρ hx,
       SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
+    -- Converting a continuous linear map to a linear map and back is definitionally the
+    -- original map; here it is read on `TangentSpace I x = E`.
     congr 1
 
 include h₀ hK hρ in
