@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Excision
-public import TauCeti.Geometry.Manifold.Complex.SquaredDistance
 public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.ScalarComposition
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
