@@ -121,8 +121,8 @@ private theorem classifyingMap_compatible (F : FormalGroupAdicSystem I)
     {m n : ℕ} (h : m ≤ n) :
     (Ideal.Quotient.factorPow I h).comp (LazardRing.lift ⟨F.formalGroup n, inferInstance⟩) =
       LazardRing.lift ⟨F.formalGroup m, inferInstance⟩ := by
-  apply LazardRing.hom_ext
-  rw [← FormalGroup.map_comp, LazardRing.map_lift, LazardRing.map_lift, F.map_eq h]
+  rw [← LazardRing.lift_map]
+  exact congrArg LazardRing.lift (Subtype.ext (F.map_eq h))
 
 /-- The commutative formal group law over the completion realizing a compatible system. -/
 def limit (F : FormalGroupAdicSystem I) : FormalGroup (AdicCompletion I R) :=
@@ -216,6 +216,7 @@ theorem map_id (F : FormalGroupAdicSystem I) :
   simp
 
 /-- Successive coefficient extensions of systems agree with their composite. -/
+@[simp]
 theorem map_comp (F : FormalGroupAdicSystem I) (f : R →+* S) (hf : I ≤ J.comap f)
     (g : S →+* T) (hg : J ≤ K.comap g) :
     (F.map f hf).map g hg = F.map (g.comp f) (hf.trans (Ideal.comap_mono hg)) := by
