@@ -49,6 +49,8 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   every place other than the place at infinity, for an arbitrary Weierstrass curve.
 * `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
   coordinate ring exactly when it is the place at infinity.
+* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an
+  equality of sets.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
 
 ## Roadmap
@@ -385,6 +387,22 @@ theorem pointEquivDegreeOnePlace_symm_ofPrime {x y : F} (h : W.Equation x y) :
   apply (pointEquivDegreeOnePlace W).injective
   apply Subtype.ext
   simp
+
+end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve.Affine
+
+open TauCeti
+
+variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
+
+/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
+sets, the shape `Divisor.degreeZeroClassGroupEquiv`
+consumes. -/
+theorem setOf_exists_notMem_integers_eq_singleton_infinity :
+    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
+        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
+  Set.ext fun _ ↦ by simp
 
 end WeierstrassCurve.Affine
 
