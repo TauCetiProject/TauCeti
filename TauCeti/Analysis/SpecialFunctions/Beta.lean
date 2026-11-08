@@ -410,7 +410,7 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0))]
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self)]
   exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu).symm) measurableSet_Ioo
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
@@ -513,7 +513,7 @@ theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0)),
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self),
     setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu),
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
