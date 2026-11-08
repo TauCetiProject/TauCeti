@@ -7,21 +7,33 @@ module
 
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.Dual.Defs
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.Pi
 
 /-!
-# Coordinates of opposite duals with respect to a basis
+# Duals of modules with a basis
 
 For a left module `M` over a possibly noncommutative semiring `R`, the dual
 `Hom_R(M, R)` is a left `Rᵐᵒᵖ`-module, with scalars acting on the values on the right.
 A basis of `M` indexed by `ι` identifies this dual with the coordinate module `ι → Rᵐᵒᵖ`,
 by evaluating a functional at the basis vectors. No finiteness is assumed.
 
+The linear dual of a finite free module over a commutative ring has the same rank as the module,
+since a finite basis identifies the module with its dual (`Module.Basis.toDualEquiv`). Over a
+field this is Mathlib's `Subspace.dual_finrank_eq`.
+
 ## Main definitions
 
 * `Module.Basis.oppositeDualEquiv`: a basis indexed by `ι` identifies the dual, as a module over
   the opposite semiring, with `ι → Rᵐᵒᵖ`.
+
+## Main results
+
+* `TauCeti.Module.dual_finrank_eq`: `finrank R (Dual R M) = finrank R M` for a finite free
+  module `M`.
 -/
 
 public section
@@ -51,3 +63,16 @@ theorem oppositeDualEquiv_symm_apply_self (b : Basis ι R M) (v : ι → Rᵐᵒ
   simp [oppositeDualEquiv]
 
 end Module.Basis
+
+namespace TauCeti.Module
+
+/-- A finite free module and its linear dual have the same rank. Over a field this is
+`Subspace.dual_finrank_eq`. -/
+@[simp]
+theorem dual_finrank_eq (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+    [Module.Free R M] [Module.Finite R M] :
+    Module.finrank R (Module.Dual R M) = Module.finrank R M := by
+  classical
+  exact (Module.Free.chooseBasis R M).toDualEquiv.finrank_eq.symm
+
+end TauCeti.Module
