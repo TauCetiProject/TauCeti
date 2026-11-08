@@ -54,7 +54,7 @@ variable {𝕜 E F}
 lemma alternatizeBilinCLM_apply (B : E →L[𝕜] E →L[𝕜] F) (v : Fin 2 → E) :
     alternatizeBilinCLM 𝕜 E F B v = B (v 0) (v 1) - B (v 1) (v 0) := by
   simp [alternatizeBilinCLM, ContinuousAlternatingMap.alternatizeUncurryFin_apply,
-    Fin.sum_univ_two, Fin.removeNth, Fin.succAbove, sub_eq_add_neg]
+    Fin.sum_univ_two, Fin.removeNth_apply, sub_eq_add_neg]
 
 /-- Alternating the one-form induced by a bilinear map is its bilinear alternatization. -/
 lemma alternatizeUncurryFin_ofSubsingletonLIE_comp (B : E →L[𝕜] E →L[𝕜] F) :
