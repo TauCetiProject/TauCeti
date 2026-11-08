@@ -603,9 +603,10 @@ theorem linearIndependent_serreH (h : IsSerreSystem R CM H E F)
 /-- Two homomorphisms out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
 @[ext]
 theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
-    (hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i))
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
     (hF : ∀ i, g₁ (serreF R CM i) = g₂ (serreF R CM i)) : g₁ = g₂ := by
+  have hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i) := fun i => by
+    rw [← lie_serreE_serreF_self, LieHom.map_lie, LieHom.map_lie, hE, hF]
   have hcomp : g₁.comp (serreMk R CM) = g₂.comp (serreMk R CM) := by
     refine FreeLieAlgebra.hom_ext fun g => ?_
     cases g with
@@ -618,19 +619,17 @@ theorem serre_hom_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
 /-- Two equivalences out of `Matrix.ToLieAlgebra R CM` agreeing on the generators are equal. -/
 @[ext]
 theorem serre_equiv_ext {g₁ g₂ : Matrix.ToLieAlgebra R CM ≃ₗ⁅R⁆ L}
-    (hH : ∀ i, g₁ (serreH R CM i) = g₂ (serreH R CM i))
     (hE : ∀ i, g₁ (serreE R CM i) = g₂ (serreE R CM i))
     (hF : ∀ i, g₁ (serreF R CM i) = g₂ (serreF R CM i)) : g₁ = g₂ :=
   LieEquiv.ext fun x =>
-    DFunLike.congr_fun (serre_hom_ext (g₁ := g₁.toLieHom) (g₂ := g₂.toLieHom) hH hE hF) x
+    DFunLike.congr_fun (serre_hom_ext (g₁ := g₁.toLieHom) (g₂ := g₂.toLieHom) hE hF) x
 
 /-- `TauCeti.serreLift` is the unique homomorphism sending the generators to a given Serre
 system. -/
 theorem eq_serreLift {h : IsSerreSystem R CM H E F} {g : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ L}
-    (hH : ∀ i, g (serreH R CM i) = H i) (hE : ∀ i, g (serreE R CM i) = E i)
-    (hF : ∀ i, g (serreF R CM i) = F i) : g = serreLift h :=
-  serre_hom_ext (fun i => by rw [hH, serreLift_serreH]) (fun i => by rw [hE, serreLift_serreE])
-    fun i => by rw [hF, serreLift_serreF]
+    (hE : ∀ i, g (serreE R CM i) = E i) (hF : ∀ i, g (serreF R CM i) = F i) :
+    g = serreLift h :=
+  serre_hom_ext (fun i => by rw [hE, serreLift_serreE]) fun i => by rw [hF, serreLift_serreF]
 
 /-- A Serre system whose raising and lowering families generate the ambient Lie algebra presents
 it: the homomorphism it determines is surjective. -/
@@ -649,7 +648,7 @@ identity. -/
 @[simp]
 theorem serreLift_eq_id :
     serreLift (isSerreSystem_serre R CM) = LieHom.id :=
-  serre_hom_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+  serre_hom_ext (fun i => by simp) fun i => by simp
 
 /-- The generators `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` generate
 `Matrix.ToLieAlgebra R CM` as a Lie subalgebra. -/
