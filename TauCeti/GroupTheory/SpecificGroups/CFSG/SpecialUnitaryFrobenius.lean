@@ -9,7 +9,8 @@ public import TauCeti.FieldTheory.Finite.Frobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.SpecialLinearFrobenius
 public import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.GraphAutomorphism
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.IsotropicPoints
+import TauCeti.FieldTheory.Finite.PowAddSelf
 
 /-!
 # The finite-field descent of the graph-twisted Frobenius of the special linear group
@@ -38,6 +39,15 @@ matrix `Q` relative to `x ↦ x ^ q` (`mem_fixedSubgroup_galoisFieldTwistedFrobe
 `Qᵀ = (-1) ^ r • Q`, this form is Hermitian for even `r` or in characteristic two, and
 skew-Hermitian otherwise. It is `TauCeti.ValidLieTypeIndex.unitaryForm`, Mathlib's sesquilinear map
 `Matrix.toLinearMapₛₗ₂'` of Gram matrix `Q`, and `SU_{r+1}(q)` preserves it.
+
+For `ε = (-1) ^ r`, the trace `t ↦ t + ε t ^ q` of the field with `q²` elements is onto the
+elements `s` with `s ^ q = ε s` and has a nonzero kernel element
+(`TauCeti.FiniteField.exists_add_neg_one_pow_mul_pow_eq` and
+`TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero`). These are the hypotheses
+of `Matrix.isPretransitive_isotropicPoints` and
+`Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`, so `SU_{r+1}(q)` acts transitively on
+the isotropic points of projective space and, in positive rank, an element fixing all of them is
+central.
 
 The field with `q²` elements and its embedding come from `CFSG/Frobenius.lean`, and the entrywise
 description of the special linear matrices with coordinates in it from
@@ -68,6 +78,10 @@ description of the special linear matrices with coordinates in it from
 * `TauCeti.ValidLieTypeIndex.unitaryForm_mulVec_mulVec`: `SU_{r+1}(q)` preserves the form.
 * `TauCeti.ValidLieTypeIndex.unitaryForm_single_single`: the coordinate vectors off the middle
   coordinate are isotropic.
+* `TauCeti.ValidLieTypeIndex.isPretransitive_isotropicPoints_galoisField`: `SU_{r+1}(q)` acts
+  transitively on its isotropic points.
+* `TauCeti.ValidLieTypeIndex.mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField`: in
+  positive rank, an element of `SU_{r+1}(q)` fixing every isotropic point is central.
 * `TauCeti.ValidLieTypeIndex.specialLinear_map_extensionGaloisFieldEmbedding_fixedSubgroup`: the
   coefficient extension carries the finite fixed subgroup onto the fixed subgroup over the closure.
 
@@ -277,6 +291,90 @@ theorem unitaryForm_single_single {i : Fin (r + 1)} (hi : i ≠ i.rev) :
   simp only [hi, ↓reduceIte]
 
 end UnitaryForm
+
+/-! ### The action on isotropic points -/
+
+section IsotropicPoints
+
+variable {r : ℕ}
+
+/-- The field with `q²` elements has `q²` elements, with `q = p ^ e`. -/
+private theorem natCard_galoisField :
+    Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) =
+      (d.characteristic ^ d.fieldExponent) ^ 2 := by
+  rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul]
+
+/-- The trace `t ↦ t + (-1) ^ r σ(t)` is onto the elements `s` with `σ(s) = (-1) ^ r s`. -/
+private theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
+    {s : GaloisField d.characteristic (d.fieldExponent * 2)}
+    (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = (-1) ^ r * s) :
+    ∃ t, t + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent t = s := by
+  simp_rw [iterateFrobenius_def] at hs ⊢
+  exact FiniteField.exists_add_neg_one_pow_mul_pow_eq natCard_galoisField r hs
+
+/-- The trace `t ↦ t + (-1) ^ r σ(t)` has a nonzero kernel element. -/
+private theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
+    ∃ a ≠ (0 : GaloisField d.characteristic (d.fieldExponent * 2)),
+      a + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent a = 0 := by
+  simp_rw [iterateFrobenius_def]
+  exact FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero natCard_galoisField r
+
+/-- **`SU_{r+1}(q)` acts transitively on its isotropic points.** The special isometry group of
+the form `B(x, y) = σ(x)ᵀ Q y`, with `σ : x ↦ x ^ q` and `Q` the signed reversal matrix, acts
+transitively on the isotropic points of the projective space of `𝔽_{q²} ^ (r + 1)`. -/
+instance isPretransitive_isotropicPoints_galoisField :
+    MulAction.IsPretransitive
+      ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+        Matrix (Fin (r + 1)) (Fin (r + 1))
+          (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
+        (iterateFrobenius _ d.characteristic d.fieldExponent))
+      ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+        Matrix (Fin (r + 1)) (Fin (r + 1))
+          (GaloisField d.characteristic (d.fieldExponent * 2))).isotropicPoints
+        (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
+  isPretransitive_isotropicPoints involutive_iterateFrobenius_galoisField
+    transpose_map_typeAGraphConjugator_galoisField
+    (by rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]) (isUnits_det_units _).ne_zero
+    (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
+    exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero
+
+/-- In positive rank `r`, the coordinate vector `e₀` gives an isotropic point. -/
+instance nonempty_isotropicPoints_galoisField [NeZero r] :
+    Nonempty ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+      Matrix (Fin (r + 1)) (Fin (r + 1))
+        (GaloisField d.characteristic (d.fieldExponent * 2))).isotropicPoints
+      (iterateFrobenius _ d.characteristic d.fieldExponent)) := by
+  have h0 : (0 : Fin (r + 1)) ≠ Fin.rev 0 := by
+    rw [Fin.rev_zero, ne_eq, Fin.ext_iff, Fin.val_zero, Fin.val_last]
+    exact (NeZero.ne r).symm
+  have hiso := unitaryForm_single_single (d := d) h0
+  rw [unitaryForm_apply] at hiso
+  exact ⟨⟨_, (mk_mem_isotropicPoints_iff (Pi.single_ne_zero_iff.mpr one_ne_zero)).mpr hiso⟩⟩
+
+/-- **An element of `SU_{r+1}(q)` fixing every isotropic point is central**, in positive rank `r`.
+Here `SU_{r+1}(q)` is the special isometry group of the form `B(x, y) = σ(x)ᵀ Q y`, with
+`σ : x ↦ x ^ q` and `Q` the signed reversal matrix. -/
+theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField [NeZero r]
+    {g : (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+      Matrix (Fin (r + 1)) (Fin (r + 1))
+        (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
+      (iterateFrobenius _ d.characteristic d.fieldExponent)}
+    (hg : ∀ p : (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+      Matrix (Fin (r + 1)) (Fin (r + 1))
+        (GaloisField d.characteristic (d.fieldExponent * 2))).isotropicPoints
+      (iterateFrobenius _ d.characteristic d.fieldExponent), g • p = p) :
+    g ∈ Subgroup.center
+      ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+        Matrix (Fin (r + 1)) (Fin (r + 1))
+          (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
+        (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
+  mem_center_specialIsometryGroup_of_forall_smul_eq involutive_iterateFrobenius_galoisField
+    transpose_map_typeAGraphConjugator_galoisField
+    (by rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]) (isUnits_det_units _).ne_zero
+    (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
+    exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero hg
+
+end IsotropicPoints
 
 /-! ### Descent to the closure -/
 
