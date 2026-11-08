@@ -370,41 +370,6 @@ private theorem stasheffDiff_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (�
   refine sum_congr rfl fun x _ => ?_
   split_ifs <;> simp
 
-omit [DecidableEq X] in
-/-- Along the path obtained by inserting `v` after `xₗ`, contracting the `l`-th pair of entries
-gives the entries of the contracted tuple along `x`, with the entry `F_{l} xₗ v * F_{l+1} v xₗ₊₁`
-in position `l`. -/
-private theorem contractNth_insertNth {n : ℕ} (l : Fin n) (F : Fin (n + 1) → Matrix X X A)
-    (x : Fin (n + 1) → X) (v : X) :
-    Fin.contractNth l.castSucc (· * ·) (fun k => F k
-        (Fin.insertNth (α := fun _ => X) l.succ.castSucc v x k.castSucc)
-        (Fin.insertNth (α := fun _ => X) l.succ.castSucc v x k.succ)) =
-      Function.update (fun k => Fin.contractNth l.castSucc (· * ·) F k (x k.castSucc) (x k.succ))
-        l (F l.castSucc (x l.castSucc) v * F l.succ v (x l.succ)) := by
-  funext k
-  rcases lt_trichotomy (k : ℕ) l with h | h | h
-  · rw [Fin.contractNth_apply_of_lt _ _ _ _ h, Function.update_of_ne (Fin.ne_of_lt h),
-      Fin.contractNth_apply_of_lt _ _ _ _ h]
-    have h₁ : k.castSucc.castSucc < l.succ.castSucc := Fin.lt_def.mpr (by simp; omega)
-    have h₂ : k.succ.castSucc < l.succ.castSucc := Fin.lt_def.mpr (by simp; omega)
-    rw [← Fin.succAbove_of_castSucc_lt _ _ h₁, Fin.succ_castSucc k,
-      ← Fin.succAbove_of_castSucc_lt _ _ h₂, Fin.insertNth_apply_succAbove,
-      Fin.insertNth_apply_succAbove]
-  · have hk : k = l := Fin.ext h
-    subst hk
-    rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Function.update_self]
-    have h₁ : k.castSucc.castSucc < k.succ.castSucc := Fin.lt_def.mpr (by simp)
-    rw [← Fin.succAbove_of_castSucc_lt _ _ h₁, Fin.succ_castSucc k,
-      ← Fin.succAbove_of_le_castSucc k.succ.castSucc k.succ le_rfl, Fin.insertNth_apply_same,
-      Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
-  · rw [Fin.contractNth_apply_of_gt _ _ _ _ h, Function.update_of_ne (Fin.ne_of_gt h),
-      Fin.contractNth_apply_of_gt _ _ _ _ h]
-    have h₁ : l.succ.castSucc ≤ k.castSucc.castSucc := Fin.le_def.mpr (by simp; omega)
-    have h₂ : l.succ.castSucc ≤ k.succ.castSucc := Fin.le_def.mpr (by simp; omega)
-    rw [← Fin.succ_castSucc k, ← Fin.succAbove_of_le_castSucc _ _ h₁,
-      ← Fin.succAbove_of_le_castSucc _ _ h₂, Fin.insertNth_apply_succAbove,
-      Fin.insertNth_apply_succAbove]
-
 /-- The product terms of the matrix module are sums over paths. -/
 private theorem stasheffMul_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
     ungradedStasheffMul (Mm.matrixAct X) n F φ z = ∑ x : Fin (n + 1) → X,
@@ -432,14 +397,21 @@ private theorem stasheffMul_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ
     refine sum_congr rfl fun x _ => ?_
     have hp₀ : l.succ.castSucc ≠ 0 := by simp [Fin.ext_iff]
     have hpl : l.succ.castSucc ≠ Fin.last (n + 1) := (Fin.castSucc_lt_last _).ne
-    simp only [Fin.insertNthEquiv_apply, contractNth_insertNth,
+    simp only [Fin.insertNthEquiv_apply, Fin.contractNth_castSucc_insertNth_succ_castSucc (f := F),
       Fin.insertNth_apply_zero_of_ne_zero hp₀, Fin.insertNth_apply_last_of_ne_last hpl]
     split_ifs
     · have hx : (fun k => Fin.contractNth l.castSucc (· * ·) F k (x k.castSucc) (x k.succ)) =
-          Function.update (fun k => Fin.contractNth l.castSucc (· * ·) F k (x k.castSucc)
-            (x k.succ)) l (∑ v, F l.castSucc (x l.castSucc) v * F l.succ v (x l.succ)) := by
-        rw [eq_comm, Function.update_eq_self_iff, Fin.contractNth_apply_of_eq _ _ _ _ rfl,
-          Matrix.mul_apply]
+          Function.update (fun k => F (l.succ.succAbove k) (x k.castSucc) (x k.succ)) l
+            (∑ v, F l.castSucc (x l.castSucc) v * F l.succ v (x l.succ)) := by
+        funext k
+        rcases eq_or_ne k l with rfl | hk
+        · rw [Function.update_self, Fin.contractNth_apply_of_eq _ _ _ _ rfl, Matrix.mul_apply]
+        · rw [Function.update_of_ne hk]
+          rcases hk.lt_or_gt with h | h
+          · rw [Fin.contractNth_apply_of_lt _ _ _ _ h,
+              Fin.succAbove_of_castSucc_lt _ _ (by simpa using h.le)]
+          · rw [Fin.contractNth_apply_of_gt _ _ _ _ h,
+              Fin.succAbove_of_le_castSucc _ _ (by simpa using h)]
       conv_lhs => rw [hx]
       rw [MultilinearMap.map_update_sum, LinearMap.sum_apply]
     · simp
