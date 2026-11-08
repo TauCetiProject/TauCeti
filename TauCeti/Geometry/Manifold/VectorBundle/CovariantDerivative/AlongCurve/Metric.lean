@@ -43,6 +43,9 @@ the same theorem.
   `CovariantDerivative.IsMetricCompatible.deriv_inner_alongCurve` as consequences.
 * `CovariantDerivative.IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero`: parallel fields
   along a curve have constant inner product.
+* `CovariantDerivative.IsMetricCompatible.eq_of_alongCurveWithin_eq_zero` and
+  `CovariantDerivative.IsMetricCompatible.eq_of_alongCurve_eq_zero`: parallel fields that agree at
+  one parameter agree on the whole preconnected parameter set.
 
 ## References
 
@@ -461,6 +464,57 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
     (𝕜 := ℝ) (f := fun r ↦ inner ℝ (V r) (W r))
     (fun t ht ↦ (hderiv t ht).differentiableWithinAt) (fun t ht ↦ ?_) ha hb
   simpa using (hderiv t ht).hasFDerivWithinAt.fderivWithin (hs t ht)
+
+/-- **Uniqueness of parallel fields.** On a preconnected parameter set with unique derivatives,
+two parallel tangent fields along a differentiable curve that agree at one parameter agree at
+every parameter of the set. -/
+theorem IsMetricCompatible.eq_of_alongCurveWithin_eq_zero
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s)
+    (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s) {V W : ∀ r, TangentSpace I (γ r)}
+    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
+    (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0)
+    {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
+  have hVV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hV hV₀ hV₀ hb ha
+  have hVW := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hW hV₀ hW₀ hb ha
+  have hWV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hW hV hW₀ hV₀ hb ha
+  have hWW := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hW hW hW₀ hW₀ hb ha
+  apply sub_eq_zero.mp
+  apply (inner_self_eq_zero (𝕜 := ℝ)).mp
+  rw [inner_sub_left, inner_sub_right, inner_sub_right, hVV, hVW, hWV, hWW, hinit]
+  ring
+
+/-- **Uniqueness of parallel fields**, for the unrestricted covariant derivative: two parallel
+tangent fields along a differentiable curve that agree at one parameter agree on the whole
+preconnected parameter set. -/
+theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s)
+    (hγ : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) {V W : ∀ r, TangentSpace I (γ r)}
+    (hV : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hW : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hV₀ : ∀ t ∈ s, alongCurve cov γ V t = 0)
+    (hW₀ : ∀ t ∈ s, alongCurve cov γ W t = 0)
+    {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
+  have hγcoord (t : ℝ) (ht : t ∈ s) : DifferentiableAt ℝ (extChartAt I (γ t) ∘ γ) t :=
+    ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))).comp t
+      (hγ t ht)).differentiableAt
+  have hrestrict (Y : ∀ r, TangentSpace I (γ r))
+      (hY : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ Y (γ t)) t)
+      (hY₀ : ∀ t ∈ s, alongCurve cov γ Y t = 0) (t : ℝ) (ht : t ∈ s) :
+      alongCurveWithin cov γ Y s t = 0 := by
+    rw [alongCurveWithin_subset cov γ Y (Set.subset_univ s) (hs t ht)
+      (hY t ht).differentiableWithinAt (hγcoord t ht).differentiableWithinAt,
+      alongCurveWithin_univ, hY₀ t ht]
+  exact hcov.eq_of_alongCurveWithin_eq_zero hs hconn
+    (fun t ht ↦ (hγ t ht).mdifferentiableWithinAt)
+    (fun t ht ↦ (hV t ht).differentiableWithinAt)
+    (fun t ht ↦ (hW t ht).differentiableWithinAt)
+    (hrestrict V hV hV₀) (hrestrict W hW hW₀) ha hb hinit
 
 end Riemannian
 

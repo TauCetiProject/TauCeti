@@ -48,6 +48,8 @@ ambient covariant derivative.
   scalar homogeneity; each has an unrestricted counterpart.
 * `CovariantDerivative.alongCurveWithin_zero`: the zero-field law, with
   `CovariantDerivative.alongCurve_zero` its unrestricted case.
+* `CovariantDerivative.alongCurveWithin_sum` and `CovariantDerivative.alongCurve_sum`: additivity
+  over finite sums of fields with differentiable coordinate readings.
 * `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
   ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
   case; `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt` and
@@ -453,5 +455,37 @@ theorem alongCurve_comp (φ : 𝕜 → 𝕜) {t : 𝕜} (hφ : DifferentiableAt 
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← derivWithin_univ]
   exact alongCurveWithin_comp cov γ V φ hφ.differentiableWithinAt (Set.mapsTo_univ φ Set.univ)
     hγ.differentiableWithinAt hV.differentiableWithinAt
+
+/-! ### Finite sums -/
+
+/-- Covariant differentiation within a parameter set commutes with finite sums of fields having
+differentiable coordinate readings. -/
+theorem alongCurveWithin_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r))
+    {s : Set 𝕜} {t : 𝕜}
+    (hW : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) s t) :
+    alongCurveWithin cov γ (fun r ↦ ∑ i ∈ A, W i r) s t =
+      ∑ i ∈ A, alongCurveWithin cov γ (W i) s t := by
+  classical
+  induction A using Finset.induction_on with
+  | empty => simp
+  | @insert i A hi ih =>
+    have hWA : ∀ j ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W j) (γ t)) s t :=
+      fun j hj ↦ hW j (Finset.mem_insert_of_mem hj)
+    have hsum : DifferentiableWithinAt 𝕜
+        (sectionCoord (F := E) γ (fun r ↦ ∑ j ∈ A, W j r) (γ t)) s t := by
+      rw [sectionCoord_sum]
+      exact DifferentiableWithinAt.fun_sum hWA
+    rw [show (fun r ↦ ∑ j ∈ insert i A, W j r) =
+      (fun r ↦ W i r + ∑ j ∈ A, W j r) from funext fun r ↦ Finset.sum_insert hi,
+      alongCurveWithin_add cov γ (W i) _ s (hW i (Finset.mem_insert_self i A)) hsum, ih hWA,
+      Finset.sum_insert hi]
+
+/-- Covariant differentiation along a curve commutes with finite sums of fields having
+differentiable coordinate readings. -/
+theorem alongCurve_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r)) {t : 𝕜}
+    (hW : ∀ i ∈ A, DifferentiableAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) t) :
+    alongCurve cov γ (fun r ↦ ∑ i ∈ A, W i r) t = ∑ i ∈ A, alongCurve cov γ (W i) t := by
+  simpa only [alongCurveWithin_univ] using
+    alongCurveWithin_sum cov γ A W (s := Set.univ) fun i hi ↦ (hW i hi).differentiableWithinAt
 
 end CovariantDerivative
