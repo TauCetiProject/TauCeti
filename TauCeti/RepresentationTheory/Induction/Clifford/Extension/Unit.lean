@@ -18,12 +18,10 @@ endomorphism division algebra, not just the ground field. Multiplicity modules
 and inertia quotients may be infinite.
 
 The reconstructed action restricted to the normal subgroup acts only on the
-representation factor. The public formula
-`FDRep.cliffordReconstructionRepresentation_restrict_tmul` supplies the action
-hypothesis for `FDRep.balancedTensorUnitEquiv A _
-(cliffordReconstructionRepresentation_restrict_tmul A s hs U)`, the
-ground-field-linear unit comparison needed to invert reconstruction. Its
-computation and inverse rules are the general `FDRep.balancedTensorUnit*` API.
+representation factor. `FDRep.cliffordReconstructionUnitEquiv` specializes the
+general `FDRep.balancedTensorUnitEquiv` using the existing normal-subgroup action
+formula. It is the ground-field-linear unit comparison needed to invert
+reconstruction.
 
 ## References
 
@@ -55,15 +53,27 @@ attribute [local instance] endModule
 
 private local instance : IsScalarTower k (End A) V := (F).endModule_isScalarTower A
 
-/-- The reconstructed action restricted along the normal-subgroup inclusion acts
-only on the representation factor, in the `Rep` carrier view used by the balanced
-tensor–Hom unit. -/
-theorem cliffordReconstructionRepresentation_restrict_tmul (n : N) (m : M) (x : V) :
-    ρ n (BalancedTensorProduct.tmul k (End A) (N := V) m x) =
-      BalancedTensorProduct.tmul k (End A) (N := V) m ((V).ρ n x) := by
-  -- The native tensor formula uses the FDRep carrier, rather than its Rep view.
-  erw [MonoidHom.comp_apply, cliffordReconstructionRepresentation_inclusion_tmul]
-  rw [FDRep.forget₂_ρ]
-  rfl
+variable [Simple A]
+
+/-- The ground-field-linear tensor–Hom unit recovering the multiplicity module
+from Clifford reconstruction restricted to the normal subgroup. -/
+def cliffordReconstructionUnitEquiv : M ≃ₗ[k] Representation.IntertwiningMap (V).ρ ρ :=
+  balancedTensorUnitEquiv A ρ (cliffordReconstructionRepresentation_inclusion_tmul A s hs U)
+
+/-- The Clifford unit equivalence sends a multiplicity vector to its tensoring map. -/
+@[simp]
+theorem cliffordReconstructionUnitEquiv_apply (m : M) :
+    cliffordReconstructionUnitEquiv A s hs U m =
+      balancedTensorUnit A ρ (cliffordReconstructionRepresentation_inclusion_tmul A s hs U) m :=
+  balancedTensorUnitEquiv_apply A ρ
+    (cliffordReconstructionRepresentation_inclusion_tmul A s hs U) m
+
+/-- The inverse Clifford unit is the inverse of the general balanced tensor–Hom unit. -/
+@[simp]
+theorem cliffordReconstructionUnitEquiv_symm_apply
+    (f : Representation.IntertwiningMap (V).ρ ρ) :
+    (cliffordReconstructionUnitEquiv A s hs U).symm f =
+      (balancedTensorUnitEquiv A ρ
+        (cliffordReconstructionRepresentation_inclusion_tmul A s hs U)).symm f := (rfl)
 
 end FDRep

@@ -57,8 +57,17 @@ variable (ρ : Representation k G
     (BalancedTensorProduct k (End A) M ((forget₂ (FDRep k G) (Rep k G)).obj A)))
   (hρ : ∀ (g : G) (m : M) (x : (forget₂ (FDRep k G) (Rep k G)).obj A),
     ρ g (BalancedTensorProduct.tmul k (End A) m x) =
-      BalancedTensorProduct.tmul k (End A) m
-        (((forget₂ (FDRep k G) (Rep k G)).obj A).ρ g x))
+      BalancedTensorProduct.tmul k (End A)
+        (N := (forget₂ (FDRep k G) (Rep k G)).obj A) m (A.ρ g x))
+
+omit [IsScalarTower k (End A)ᵐᵒᵖ M] in
+include hρ in
+private theorem balancedTensor_action (g : G) (m : M) (x : V) :
+    ρ g (BalancedTensorProduct.tmul k (End A) m x) =
+      BalancedTensorProduct.tmul k (End A) m ((V).ρ g x) := by
+  -- Rewriting the forgotten action changes its carrier view; reflexivity bridges it.
+  rw [hρ, FDRep.forget₂_ρ]
+  rfl
 
 /-- Tensoring with a multiplicity vector gives an intertwiner into any balanced
 tensor representation whose action is on the representation factor alone. -/
@@ -68,7 +77,7 @@ def balancedTensorUnit : M →ₗ[k] Representation.IntertwiningMap (V).ρ ρ wh
       isIntertwining' := fun g => by
         ext x
         simpa only [LinearMap.comp_apply, BalancedTensorProduct.mk_apply] using
-          (hρ g m x).symm }
+          (balancedTensor_action A ρ hρ g m x).symm }
   map_add' m m' := by
     ext x
     simp [BalancedTensorProduct.mk_apply]
@@ -101,7 +110,8 @@ private theorem unit_coordinates_action (g : G) (z : E) :
       BalancedTensorProduct.map LinearMap.id ((V).ρ g) (fun _ _ => rfl) hg := by
     apply BalancedTensorProduct.hom_ext
     intro m x
-    simpa only [BalancedTensorProduct.map_tmul, LinearMap.id_apply] using hρ g m x
+    simpa only [BalancedTensorProduct.map_tmul, LinearMap.id_apply] using
+      balancedTensor_action A ρ hρ g m x
   rw [hmap]
   exact LinearMap.congr_fun (b.balancedTensorProductEquiv_map ((V).ρ g) hg) z
 
