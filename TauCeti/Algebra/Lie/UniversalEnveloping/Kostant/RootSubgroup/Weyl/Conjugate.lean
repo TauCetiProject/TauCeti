@@ -125,7 +125,7 @@ For `x = eᵢ` this recovers `n x_i(u) n⁻¹ = x_j(-u)`
 theorem kostantWeylPoints_conj_baseChangeExp_weylAut {x : L}
     (hx : ∀ n, ∀ v ∈ M,
       Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) • v ∈ M)
-    (hxnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x))) (u : A) :
+    (u : A) :
     (kostantWeylPoints e h ρ M hM hi hj A).toLinearMap *
           baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) M hx u *
         (kostantWeylPoints e h ρ M hM hi hj A).symm.toLinearMap =
@@ -133,7 +133,7 @@ theorem kostantWeylPoints_conj_baseChangeExp_weylAut {x : L}
         (fun n => dividedPower_weylAut_smul_mem e h ρ M hM hi hj t hai haj n (hx n)) u := by
   rw [kostantWeylPoints_toLinearMap, kostantWeylPoints_symm_toLinearMap,
     kostantWeylRestrict_eq_integralUnitRestrict,
-    baseChange_integralUnitRestrict_conj_baseChangeExp (R := A) _ M _ _ _ _ hxnil u]
+    baseChange_integralUnitRestrict_conj_baseChangeExp (R := A) _ M _ _ _ _ u]
   exact baseChangeExp_congr (apply_ι_weylAut_eq_weylUnit_conj e ρ hi hj t hai haj x).symm M _ _ u
 
 end TauCeti.UniversalEnvelopingAlgebra
