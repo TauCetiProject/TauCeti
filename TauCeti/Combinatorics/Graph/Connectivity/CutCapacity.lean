@@ -16,10 +16,14 @@ This file defines the capacity of a cut in a weighted multigraph. Parallel edges
 separately and loops never contribute. Aggregating the weights of all edges with the same unordered
 pair of distinct ends therefore preserves every cut capacity.
 
+For a simple graph, the multigraph cut capacity of `Graph.ofSimpleGraph G` agrees with
+`TauCeti.pairCutCapacity` when pair capacities vanish away from the edges of `G`.
+
 ## Main definitions
 
 * `Graph.edgeCutCapacity`: the capacity of a cut in a weighted multigraph.
 * `Graph.pairCapacity`: aggregation of multigraph edge weights by their distinct ends.
+* `SimpleGraph.ofSimpleGraphCapacity`: restriction of pair capacities to actual edges.
 
 ## Main result
 
@@ -29,6 +33,8 @@ pair of distinct ends therefore preserves every cut capacity.
 * `Graph.isSubmodular_edgeCutCapacity`: an edge-capacity function nonnegative on nonloop edges has
   a submodular cut function.
 * `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
+* `SimpleGraph.edgeCutCapacity_eq_pairCutCapacity`: the simple-graph and multigraph cut-capacity
+  interfaces agree.
 -/
 
 public section
@@ -212,3 +218,109 @@ theorem isSymmSubmodular_edgeCutCapacity [Fintype G.vertexSet] [Fintype G.edgeSe
   ⟨G.edgeCutCapacity_compl c, G.isSubmodular_edgeCutCapacity c hc⟩
 
 end Graph
+
+namespace SimpleGraph
+
+variable {V K : Type*} (G : SimpleGraph V)
+
+/-- The vertex set of the multigraph realization of a finite simple graph is finite. -/
+noncomputable instance instFintypeOfSimpleGraphVertexSet [Fintype V] :
+    Fintype (Graph.ofSimpleGraph G).vertexSet :=
+  Fintype.ofFinite _
+
+/-- The edge set of the multigraph realization of a finite simple graph is finite. -/
+noncomputable instance instFintypeOfSimpleGraphEdgeSet [Fintype V] :
+    Fintype (Graph.ofSimpleGraph G).edgeSet :=
+  Fintype.ofFinite _
+
+/-- Restrict capacities on unordered vertex pairs to the actual edges of
+`Graph.ofSimpleGraph G`. -/
+def ofSimpleGraphCapacity (c : Sym2 V → K) : (Graph.ofSimpleGraph G).edgeSet → K :=
+  fun e ↦ c e.1
+
+@[simp]
+theorem ofSimpleGraphCapacity_apply (c : Sym2 V → K)
+    (e : (Graph.ofSimpleGraph G).edgeSet) : G.ofSimpleGraphCapacity c e = c e.1 :=
+  (rfl)
+
+/-- Include a vertex of a simple graph in the full vertex set of `Graph.ofSimpleGraph G`. -/
+def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
+  ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
+
+@[simp]
+theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).1 = x :=
+  (rfl)
+
+/-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
+def toOfSimpleGraphFinset (S : Finset V) :
+    Finset (Graph.ofSimpleGraph G).vertexSet :=
+  S.map ⟨G.toOfSimpleGraphVertex,
+    fun _ _ h ↦ congrArg Subtype.val h⟩
+
+@[simp]
+theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
+    G.toOfSimpleGraphVertex x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
+  rw [toOfSimpleGraphFinset]
+  exact Finset.mem_map' _
+
+@[simp]
+theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
+    Subtype.val '' (G.toOfSimpleGraphFinset S : Set (Graph.ofSimpleGraph G).vertexSet) =
+      (S : Set V) := by
+  rw [toOfSimpleGraphFinset, Finset.coe_map, Set.image_image]
+  trans id '' (S : Set V)
+  · apply Set.image_congr
+    intro x _
+    exact G.toOfSimpleGraphVertex_val x
+  · exact Set.image_id _
+
+@[simp]
+theorem toOfSimpleGraphFinset_map_val
+    (S : Finset (Graph.ofSimpleGraph G).vertexSet) :
+    G.toOfSimpleGraphFinset (S.map ⟨Subtype.val, Subtype.val_injective⟩) = S := by
+  rw [toOfSimpleGraphFinset, Finset.map_map]
+  have h :
+      (⟨Subtype.val, Subtype.val_injective⟩ :
+          (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
+        ⟨G.toOfSimpleGraphVertex, fun _ _ h ↦ congrArg Subtype.val h⟩ =
+          Function.Embedding.refl _ := by
+    ext x
+    rfl
+  rw [h, Finset.map_refl]
+
+/-- The multigraph cut capacity of `Graph.ofSimpleGraph G` agrees with pair cut capacity when
+capacities vanish away from the edges of `G`. -/
+theorem edgeCutCapacity_eq_pairCutCapacity [Fintype V] [AddCommMonoid K]
+    (c : Sym2 V → K) (hc : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0)
+    (S : Finset V) :
+    (Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c)
+        (G.toOfSimpleGraphFinset S) =
+      TauCeti.pairCutCapacity c S := by
+  classical
+  rw [Graph.edgeCutCapacity_def, TauCeti.pairCutCapacity_def]
+  rw [image_val_toOfSimpleGraphFinset]
+  calc
+    (∑ e : (Graph.ofSimpleGraph G).edgeSet,
+        if e.1 ∈ (Graph.ofSimpleGraph G).edgeCut (S : Set V) then
+          G.ofSimpleGraphCapacity c e else 0) =
+        ∑ p ∈ Finset.univ.filter (· ∈ G.edgeSet), if p.Crosses (S : Set V) then c p else 0 := by
+      simp only [ofSimpleGraphCapacity]
+      rw [← Finset.sum_subtype
+        (Finset.univ.filter (· ∈ (Graph.ofSimpleGraph G).edgeSet)) (by simp)
+        (fun p ↦ if p ∈ (Graph.ofSimpleGraph G).edgeCut (S : Set V) then
+            c p else 0)]
+      rw [Graph.edgeSet_ofSimpleGraph]
+      apply Finset.sum_congr (by ext p; simp)
+      intro e heG
+      rw [G.mem_edgeCut_ofSimpleGraph_iff_crosses (by simpa using heG)]
+    _ = ∑ p : Sym2 V, if p.Crosses (S : Set V) then c p else 0 := by
+      rw [Finset.sum_filter]
+      apply Finset.sum_congr rfl
+      intro p _
+      by_cases hp : p ∈ G.edgeSet
+      · simp [hp]
+      · by_cases hcross : p.Crosses (S : Set V)
+        · simp [hp, hcross, hc p hcross.not_isDiag hp]
+        · simp [hp, hcross]
+
+end SimpleGraph
