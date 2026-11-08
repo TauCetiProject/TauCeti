@@ -70,6 +70,7 @@ open _root_.ContinuousCohomology
 variable {K L : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
 
+omit [Invertible (2 : K)] in
 /-- A square root of the unramified class does not lie in `K`, since `Δ` is not a square. -/
 private theorem not_mem_range_of_sq_eq_unramified [Field L] [Algebra K L] {x : L} {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
@@ -80,7 +81,7 @@ private theorem not_mem_range_of_sq_eq_unramified [Field L] [Algebra K L] {x : L
   have hc0 : c ≠ 0 := by
     rintro rfl
     exact Δ.ne_zero (by rw [← hc]; ring)
-  exact not_isSquare_of_unramified_class (isUnit_of_invertible (2 : K)).ne_zero hΔ
+  exact not_isSquare_of_unramified_class hΔ
     ⟨Units.mk0 c hc0, Units.ext (by rw [Units.val_mul, Units.val_mk0, ← hc]; ring)⟩
 
 variable [Field L] [Algebra K L] [FiniteDimensional K L]
