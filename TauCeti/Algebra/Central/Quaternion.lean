@@ -50,7 +50,7 @@ than excluding it.
 * `TauCeti.Quaternion.instIsCentral`: `ℍ[R]` is a central `R`-algebra when `R` has no zero divisors
   and `2 ≠ 0` in `R`; in particular `ℍ[ℝ]` is a central `ℝ`-algebra.
 * `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: when `R` is nontrivial and `ℍ[R]` has no zero
-  divisors, `ℍ[R]` is not isomorphic to a matrix algebra of size at least two, so over a field
+  divisors, `ℍ[R]` is not isomorphic to a matrix algebra of any size, so over a field
   for which `ℍ[R]` is a division ring its Brauer class is nontrivial.
 
 ## Implementation notes
@@ -198,23 +198,42 @@ theorem forall_mul_sub_eq_zero_iff : (∀ y, c * (y * x - x * y) = 0) ↔ c = 0 
 variable (R) [Nontrivial R]
 
 /-- **The Hamilton quaternions are not split once they have no zero divisors**: `ℍ[R]` is then not
-isomorphic, as an `R`-algebra, to a matrix algebra of size at least two, since such a matrix algebra
-has nonzero zero divisors. This applies in particular over a linearly ordered commutative ring.
+isomorphic, as an `R`-algebra, to any matrix algebra `Matrix n n R`. For `n` with at least two
+elements such a matrix algebra has nonzero zero divisors; for `n` with at most one element it is
+commutative, whereas a commutative `ℍ[R]` forces `2 = 0` in `R` and then `(1 + i) ^ 2 = 0`. This
+applies in particular over a linearly ordered commutative ring.
 
 Together with `TauCeti.Quaternion.instIsCentral` and the simplicity of a division ring this says,
 for a field `R` over which `ℍ[R]` is a division ring, that the Brauer class of `ℍ[R]` is
 nontrivial; over `ℝ` it is the nonidentity element of the Brauer group. -/
-theorem isEmpty_algEquiv_matrix (n : Type*) [Fintype n] [DecidableEq n] [Nontrivial n] :
+theorem isEmpty_algEquiv_matrix (n : Type*) [Fintype n] [DecidableEq n] :
     IsEmpty (ℍ[R] ≃ₐ[R] Matrix n n R) := by
   refine ⟨fun f ↦ ?_⟩
-  -- Two distinct diagonal matrix units are nonzero with vanishing product; pulling them back
-  -- along `f` contradicts the absence of zero divisors in `ℍ[R]`.
-  obtain ⟨i, j, hij⟩ := exists_pair_ne n
-  have h : f.symm (Matrix.single i i 1) * f.symm (Matrix.single j j 1) = 0 := by
-    rw [← map_mul, Matrix.single_mul_single_of_ne _ _ _ _ hij, map_zero]
-  rcases mul_eq_zero.mp h with h | h
-  · simpa using congr_fun₂ ((map_eq_zero_iff _ f.symm.injective).mp h) i i
-  · simpa using congr_fun₂ ((map_eq_zero_iff _ f.symm.injective).mp h) j j
+  rcases subsingleton_or_nontrivial n with hn | hn
+  · -- At most one index: the matrix algebra, hence `ℍ[R]`, is commutative.
+    have hcomm (a b : Matrix n n R) : a * b = b * a := by
+      ext i j
+      obtain rfl := Subsingleton.elim i j
+      rw [Matrix.mul_apply, Matrix.mul_apply, Fintype.sum_subsingleton _ i,
+        Fintype.sum_subsingleton _ i, mul_comm]
+    have hH (x y : ℍ[R]) : x * y = y * x := f.injective (by rw [map_mul, map_mul, hcomm])
+    have h2 : (2 : R) = 0 := by
+      have := congrArg QuaternionAlgebra.imK (hH ⟨0, 1, 0, 0⟩ ⟨0, 0, 1, 0⟩)
+      simp only [QuaternionAlgebra.imK_mul] at this
+      linear_combination this
+    have hx : (⟨1, 1, 0, 0⟩ : ℍ[R]) * ⟨1, 1, 0, 0⟩ = 0 := by
+      ext <;> simp
+      linear_combination h2
+    have := congrArg QuaternionAlgebra.re (mul_self_eq_zero.mp hx)
+    simp at this
+  · -- Two distinct diagonal matrix units are nonzero with vanishing product; pulling them back
+    -- along `f` contradicts the absence of zero divisors in `ℍ[R]`.
+    obtain ⟨i, j, hij⟩ := exists_pair_ne n
+    have h : f.symm (Matrix.single i i 1) * f.symm (Matrix.single j j 1) = 0 := by
+      rw [← map_mul, Matrix.single_mul_single_of_ne _ _ _ _ hij, map_zero]
+    rcases mul_eq_zero.mp h with h | h
+    · simpa using congr_fun₂ ((map_eq_zero_iff _ f.symm.injective).mp h) i i
+    · simpa using congr_fun₂ ((map_eq_zero_iff _ f.symm.injective).mp h) j j
 
 end NoZeroDivisors
 
