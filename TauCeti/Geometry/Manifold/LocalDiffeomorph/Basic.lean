@@ -71,9 +71,8 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
   maximal-atlas chart is a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
   along a local diffeomorphism to a maximal-atlas chart.
-* `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: between boundaryless
-  manifolds, the pulled back chart can be chosen so that coordinate expressions of `g ∘ f` agree
-  with those of `g`.
+* `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: the pulled back chart can
+  be chosen so that coordinate expressions of `g ∘ f` agree with those of `g`.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
@@ -417,12 +416,12 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq {N' : T
   filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
   simp [hfΦ hy]
 
-/-- Between boundaryless manifolds, a chart `c` of the maximal `C^n` atlas of `N'` at `f x` pulls
-back along a `C^n` local diffeomorphism `f` at `x` to a chart `e` of the maximal `C^n` atlas of `M`
-at `x` with the same extended coordinates at `x`, in which the coordinate expression of every
-`g ∘ f` is the coordinate expression of `g` in `c`. -/
+/-- A chart `c` of the maximal `C^n` atlas of `N'` at `f x` pulls back along a `C^n` local
+diffeomorphism `f` at `x` to a chart `e` of the maximal `C^n` atlas of `M` at `x` with the same
+extended coordinates at `x`, in which the coordinate expression of every `g ∘ f` is the coordinate
+expression of `g` in `c`. -/
 theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq {N' Y : Type*}
-    [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] [I.Boundaryless] {f : M → N'}
+    [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] {f : M → N'}
     {x : M} (hf : IsLocalDiffeomorphAt I I n f x) {c : OpenPartialHomeomorph N' H}
     (hc : c ∈ IsManifold.maximalAtlas I n N') (hfx : f x ∈ c.source) :
     ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧ e.extend I x = c.extend I (f x) ∧
@@ -435,10 +434,19 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq 
       with y hy hye hyc
     exact ⟨hye, hyc, by simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, hy]⟩
   refine ⟨e, he, hx, hext.self_of_nhds.2.2, fun g ↦ ?_⟩
-  rw [← e.map_extend_nhds_of_boundaryless hx, Filter.EventuallyEq, Filter.eventually_map]
-  filter_upwards [hext] with y ⟨hye, hyc, hy⟩
-  simp only [Function.comp_apply, e.extend_left_inv hye]
-  rw [hy, c.extend_left_inv hyc]
+  -- In the model space `H`, the coordinate expression of `g ∘ f` in `e` is that of `g` in `c`.
+  have hH : ∀ᶠ h in 𝓝 (e x), (g ∘ f) (e.symm h) = g (c.symm h) := by
+    rw [← e.map_nhds_eq hx, Filter.eventually_map]
+    filter_upwards [hext] with y ⟨hye, hyc, hy⟩
+    have hy' : e y = c (f y) :=
+      I.injective (by simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply] using hy)
+    rw [Function.comp_apply, e.left_inv hye, hy', c.left_inv hyc]
+  -- Transport this along the continuous map `I.symm`, which is how the extended charts invert.
+  have hI : Filter.Tendsto I.symm (𝓝 (e.extend I x)) (𝓝 (e x)) := by
+    simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, I.left_inv] using
+      I.continuous_symm.continuousAt (x := e.extend I x) |>.tendsto
+  filter_upwards [hI.eventually hH] with w hw
+  simpa only [OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply] using hw
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/
