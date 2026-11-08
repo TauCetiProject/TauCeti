@@ -61,7 +61,10 @@ bound `1 / (q (q + q')) < |ξ - p / q|`.
 
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
-weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
+weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`. For a
+nonpositive exponent `p` and points at distance at most `1`, the weight `(1 + ‖x‖) ^ p` at `x`
+is at most `2 ^ (-p)` times the weight at `y`; this compares a weight on a unit interval with its
+value at an endpoint.
 
 The Japanese bracket power `(1 + ‖ξ‖ ^ 2) ^ (r / 2)` is comparable to `‖ξ‖ ^ r` for `1 ≤ ‖ξ‖`, and
 bounded below by `(1 + R ^ 2) ^ (-|r| / 2)` on the ball `‖ξ‖ ≤ R`. These comparisons turn
@@ -106,6 +109,8 @@ function that does not need a derivative.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
+* `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one`:
+  `(1 + ‖x‖) ^ p ≤ 2 ^ (-p) (1 + ‖y‖) ^ p` for `p ≤ 0` and `‖y - x‖ ≤ 1`.
 * `TauCeti.norm_rpow_le_one_add_norm_sq_rpow`: `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`
   for `1 ≤ ‖ξ‖`.
 * `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
@@ -430,6 +435,21 @@ theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
     1 + ‖x + y‖ ≤ (1 + ‖x‖) * (1 + ‖y‖) := by
   nlinarith [norm_add_le x y, norm_nonneg x, norm_nonneg y,
     mul_nonneg (norm_nonneg x) (norm_nonneg y)]
+
+/-- For a nonpositive exponent `p` and points at distance at most `1`, the weight
+`(1 + ‖x‖) ^ p` is bounded by `2 ^ (-p)` times its value at `y`. -/
+theorem one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one {E : Type*} [SeminormedAddGroup E]
+    {p : ℝ} (hp : p ≤ 0) {x y : E} (h : ‖y - x‖ ≤ 1) :
+    (1 + ‖x‖) ^ p ≤ (2 : ℝ) ^ (-p) * (1 + ‖y‖) ^ p := by
+  have hy : ‖y‖ ≤ 1 + ‖x‖ := (norm_le_norm_sub_add y x).trans (by gcongr)
+  have hbase : (1 + ‖y‖) / 2 ≤ 1 + ‖x‖ := by
+    linarith [norm_nonneg x]
+  calc
+    (1 + ‖x‖) ^ p ≤ ((1 + ‖y‖) / 2) ^ p :=
+      Real.rpow_le_rpow_of_nonpos (by positivity) hbase hp
+    _ = (2 : ℝ) ^ (-p) * (1 + ‖y‖) ^ p := by
+      rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
+      ring
 
 /-- Away from the origin, a power `‖ξ‖ ^ r` is bounded by a multiple of the Japanese bracket
 power: for `1 ≤ ‖ξ‖`, `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
