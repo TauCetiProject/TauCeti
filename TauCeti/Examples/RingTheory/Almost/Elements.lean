@@ -13,14 +13,16 @@ import TauCeti.RingTheory.Almost.Elements
 These examples test the functor of almost elements `TauCeti.Almost.Module.elements S`, the functor
 `TauCeti.Almost.Module.shriek S` and their adjunctions with almostification:
 
-* the unit `x ↦ (1 ↦ x)^a` sends `1 : ℤ` to the identity of `ℤ^a` for the classical setup, and the
-  unit of `adjElements` is a natural isomorphism for the classical setup;
+* the unit `x ↦ (1 ↦ x)^a` sends a scalar `r` to `r • 𝟙` of `V^a`, in particular `1 : ℤ` to the
+  identity of `ℤ^a` for the classical setup, and the unit of `adjElements` is a natural isomorphism
+  for the classical setup;
 * for every setup with `m ≠ V`, the unit `V ⧸ m → ((V ⧸ m)^a)_*` is not injective, although it is an
   almost isomorphism: almost elements of `N^a` are not elements of `N`;
 * for the zero setup every module of almost elements and every `M_!` is zero, so `(ℤ^a)_!` is not
   isomorphic to `ℤ`, while for the classical setup the counit `(N^a)_! → N` is an isomorphism;
-* `(N^a)_! ≅ m~ ⊗[V] N`, and the category of almost modules is complete, cocomplete and has enough
-  injectives.
+* `(N^a)_! ≅ m~ ⊗[V] N`, so `(V^a)_! ≅ m~`, and under this isomorphism the counit is the action
+  map;
+* the category of almost modules is complete, cocomplete and has enough injectives.
 
 ## References
 
@@ -33,6 +35,15 @@ open CategoryTheory Limits TensorProduct TauCeti.Almost TauCeti.Almost.BasicSetu
 variable {V : Type*} [CommRing V]
 
 /-! ### Almost elements -/
+
+-- The unit `V → (V^a)_* = Hom(V^a, V^a)` sends `r` to `r • 𝟙`.
+example (S : BasicSetup V) (r : V) :
+    ((adjElements S).unit.app (ModuleCat.of V V)).hom r =
+      (r • 𝟙 _ : (toAlmost S).obj (ModuleCat.of V V) ⟶ (toAlmost S).obj (ModuleCat.of V V)) := by
+  have h : ModuleCat.ofHom (LinearMap.toSpanSingleton V V r) = r • 𝟙 (ModuleCat.of V V) := by
+    ext
+    simp
+  rw [adjElements_unit_app_hom_apply, h, Functor.map_smul, CategoryTheory.Functor.map_id]
 
 -- For the classical setup on `ℤ`, the unit sends `1` to the identity of `ℤ^a`, which is nonzero.
 example : ((adjElements (classical ℤ)).unit.app (ModuleCat.of ℤ ℤ)).hom (1 : ℤ) =
@@ -85,6 +96,21 @@ example (S : BasicSetup V) : IsIso (adjElements S).counit :=
 noncomputable example (S : BasicSetup V) (N : ModuleCat V) :
     (shriek S).obj ((toAlmost S).obj N) ≅ ModuleCat.of V (S.tilde ⊗[V] N) :=
   (toAlmostCompShriekIso S).app N
+
+-- The left adjoint sends `V^a` to `m~ ⊗[V] V ≅ m~`.
+noncomputable example (S : BasicSetup V) :
+    (shriek S).obj ((toAlmost S).obj (ModuleCat.of V V)) ≅ ModuleCat.of V S.tilde :=
+  (toAlmostCompShriekIso S).app _ ≪≫ (TensorProduct.rid V S.tilde).toModuleIso
+
+-- Under `(N^a)_! ≅ m~ ⊗[V] N`, the counit is the action map: over the classical setup on `ℤ`,
+-- it sends `(2 ⊗ 3) ⊗ 5` to `30`.
+example : ((toAlmostCompShriekIso (classical ℤ)).inv.app (ModuleCat.of ℤ ℤ) ≫
+    (adjShriek (classical ℤ)).counit.app (ModuleCat.of ℤ ℤ)).hom
+      (((⟨2, by simp⟩ : (classical ℤ).ideal) ⊗ₜ (⟨3, by simp⟩ : (classical ℤ).ideal)) ⊗ₜ
+        (5 : ℤ)) = (30 : ℤ) := by
+  rw [adjShriek_counit_app, Iso.inv_hom_id_app_assoc, ModuleCat.hom_ofHom, tildeAct_tmul,
+    tildeMul_tmul, smul_eq_mul]
+  norm_num
 
 -- For the zero setup, `M_!` is zero for every almost module `M`.
 example (M : Module (zero V)) : IsZero ((shriek (zero V)).obj M) :=

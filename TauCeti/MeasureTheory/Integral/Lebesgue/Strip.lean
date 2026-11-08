@@ -9,7 +9,9 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
+import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
 
 /-!
 # Lebesgue integrals over a strip by exhaustion
@@ -21,10 +23,14 @@ integral of an `ℝ≥0∞`-valued function over `[-n, n] × T` is `ENNReal.ofRe
 real function `F` with limits `A₁` at `-∞` and `A₂` at `∞`, then its integral over the whole strip
 is `ENNReal.ofReal (A₂ - A₁)` (`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto`). Since
 `ENNReal.ofReal` truncates at zero, this is `A₂ - A₁` when `A₁ ≤ A₂` and `0` otherwise.
+Likewise the half-strip `[b, ∞) × T` is exhausted by the rectangles `[b, b + n] × T`: if the
+integral over `[b, b + n] × T` is `ENNReal.ofReal (F(b + n) - F(b))` and `F` tends to `L` at `∞`,
+then the integral over the half-strip is `ENNReal.ofReal (L - F(b))`
+(`TauCeti.setLIntegral_Ici_prod_eq_ofReal_of_tendsto`).
 
 This is the passage from the energy identity on finite rectangles to the energy of a
 holomorphic strip or a Floer cylinder, whose energy is the difference of the limiting actions at
-its two ends.
+its two ends, and of a Floer half-cylinder.
 
 The strip is also the union of the disjoint translates of a period rectangle
 `(a, a + c] × T`. A function on the strip that is periodic in the first variable has the same
@@ -33,6 +39,13 @@ each period rectangle vanishes, and hence so does its integral over the whole st
 (`TauCeti.setLIntegral_univ_prod_eq_zero_of_periodic`). For the energy density of a Floer cylinder
 this says that a finite-energy cylinder invariant under a nontrivial translation has zero
 energy.
+
+Finally, a function with finite integral over a set `E` has small integral over the parts of `E`
+far out along the strip: its integrals over sets that eventually lie in `E` and outside every band
+`|z.1| < R` tend to zero (`TauCeti.tendsto_setLIntegral_of_eventually_subset`). Applied to
+windows `[a + s_k, b + s_k] × T` with `|s_k| → ∞`, this says that a half-cylinder of finite energy
+carries less and less energy over its translated windows, since such windows eventually lie
+outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`).
 -/
 
 public section
@@ -60,10 +73,8 @@ theorem tendsto_setLIntegral_Icc_neg_prod {β : Type*} [MeasurableSpace β]
     (μ : Measure (ℝ × β)) (T : Set β) (f : ℝ × β → ℝ≥0∞) :
     Tendsto (fun n : ℕ ↦ ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ) atTop
       (𝓝 (∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ)) := by
-  rw [← iUnion_Icc_neg_prod, setLIntegral_iUnion_of_directed _
-    (monotone_Icc_neg_prod T).directed_le]
-  exact tendsto_atTop_iSup fun _ _ hmn ↦
-    lintegral_mono' (Measure.restrict_mono (monotone_Icc_neg_prod T hmn) le_rfl) le_rfl
+  rw [← iUnion_Icc_neg_prod]
+  exact tendsto_setLIntegral_of_monotone (monotone_Icc_neg_prod T)
 
 /-- **Integrals over a strip by exhaustion.** If the integral of `f` over each rectangle
 `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))`, where `F` tends to `A₁` at `-∞` and to `A₂` at
@@ -79,6 +90,30 @@ theorem setLIntegral_univ_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpac
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     ((htop.comp tendsto_natCast_atTop_atTop).sub
       (hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)))
+
+/-- **Integrals over a half-strip by exhaustion.** If the integral of `f` over each rectangle
+`[b, b + n] × T` is `ENNReal.ofReal (F(b + n) - F(b))`, where `F` tends to `L` at `∞`, then the
+integral of `f` over the half-strip `[b, ∞) × T` is `ENNReal.ofReal (L - F(b))`, that is
+`L - F(b)` truncated at zero. -/
+theorem setLIntegral_Ici_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {F : ℝ → ℝ} {b L : ℝ}
+    (hE : ∀ n : ℕ, ∫⁻ z in Icc b (b + n) ×ˢ T, f z ∂μ = ENNReal.ofReal (F (b + n) - F b))
+    (htop : Tendsto F atTop (𝓝 L)) :
+    ∫⁻ z in Ici b ×ˢ T, f z ∂μ = ENNReal.ofReal (L - F b) := by
+  set R : ℕ → Set (ℝ × β) := fun n ↦ Icc b (b + n) ×ˢ T
+  have hmono : Monotone R := fun m n hmn ↦
+    prod_mono (Icc_subset_Icc le_rfl (by simpa using hmn)) le_rfl
+  have hunion : ⋃ n, R n = Ici b ×ˢ T := by
+    refine (iUnion_subset fun n ↦ Set.prod_mono Icc_subset_Ici_self le_rfl).antisymm fun z hz ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge (z.1 - b)
+    exact mem_iUnion.2 ⟨n, ⟨hz.1, by linarith⟩, hz.2⟩
+  -- The integrals over the rectangles increase to the integral over the half-strip.
+  have hlim := tendsto_setLIntegral_of_monotone (μ := μ) (f := f) hmono
+  rw [hunion] at hlim
+  refine tendsto_nhds_unique hlim ?_
+  simp only [R, hE]
+  exact (ENNReal.continuous_ofReal.tendsto _).comp
+    ((htop.comp (tendsto_atTop_add_const_left _ b tendsto_natCast_atTop_atTop)).sub_const _)
 
 /-- A function on the strip `ℝ × T`, periodic in the first variable with period `c` and with
 finite integral over the strip, has zero integral over each period rectangle `(a, a + c] × T`:
@@ -141,5 +176,63 @@ theorem setLIntegral_univ_prod_eq_zero_of_periodic {β : Type*} [MeasurableSpace
   rw [hunion]
   refine (lintegral_iUnion_le _ _).trans (le_of_eq ?_)
   simp [setLIntegral_Ioc_prod_eq_zero_of_periodic hT hμ hf hfin]
+
+/-- If `|s_i| → ∞` and the translated window `[a + s_i, b + s_i] × T` eventually lies in `E`, then
+it eventually lies in `E` and outside the band `|z.1| < R`, for every `R`. These windows are thus
+sets to which `TauCeti.tendsto_setLIntegral_of_eventually_subset` applies. -/
+theorem eventually_Icc_add_prod_subset_inter {ι β : Type*} {l : Filter ι} {s : ι → ℝ}
+    {T : Set β} {E : Set (ℝ × β)} {a b : ℝ} (hs : Tendsto s l (cocompact ℝ))
+    (hW : ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E) (R : ℝ) :
+    ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E ∩ {z | R ≤ |z.1|} := by
+  filter_upwards [hW,
+    hs.eventually (isCompact_closedBall (0 : ℝ) (R + |a| + |b|)).compl_mem_cocompact]
+    with i hi hsi z hz
+  refine ⟨hi hz, ?_⟩
+  have hsi' : R + |a| + |b| < |s i| := by
+    simpa [Metric.mem_closedBall, Real.dist_eq] using hsi
+  have h₁ : |z.1 - s i| ≤ |a| + |b| := by
+    obtain ⟨⟨h₁, h₂⟩, -⟩ := hz
+    refine abs_le.2 ⟨?_, ?_⟩ <;>
+      linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
+  have h₂ : |s i| ≤ |z.1| + |z.1 - s i| := by
+    simpa using abs_sub z.1 (z.1 - s i)
+  exact (by linarith : R ≤ |z.1|)
+
+/-- **Integrals over sets escaping along the strip.** If `f` has finite integral over `E`, then its
+integrals over sets `A i` that eventually lie in `E` and outside every band `|z.1| < R` tend to
+zero. For the energy density of a half-cylinder of finite energy, this says that the energy over
+a window translated towards the end tends to zero. No measurability of `f`, `E` or `A i` is
+assumed. -/
+theorem tendsto_setLIntegral_of_eventually_subset {ι β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {E : Set (ℝ × β)} {f : ℝ × β → ℝ≥0∞}
+    (hE : ∫⁻ z in E, f z ∂μ ≠ ∞) {l : Filter ι} {A : ι → Set (ℝ × β)}
+    (hA : ∀ R : ℝ, ∀ᶠ i in l, A i ⊆ E ∩ {z | R ≤ |z.1|}) :
+    Tendsto (fun i ↦ ∫⁻ z in A i, f z ∂μ) l (𝓝 0) := by
+  set ν := (μ.restrict E).withDensity f
+  set C : ℕ → Set (ℝ × β) := fun n ↦ {z | (n : ℝ) ≤ |z.1|}
+  have hC (n : ℕ) : MeasurableSet (C n) :=
+    measurableSet_le measurable_const (continuous_abs.measurable.comp measurable_fst)
+  have hν (n : ℕ) : ν (C n) = ∫⁻ z in C n ∩ E, f z ∂μ := by
+    rw [withDensity_apply _ (hC n), Measure.restrict_restrict (hC n)]
+  -- The integrals over `E` outside the bands `|z.1| < n` decrease to zero.
+  have hlim : Tendsto (fun n ↦ ν (C n)) atTop (𝓝 0) := by
+    have hanti : Antitone C := fun m n hmn z (hz : (n : ℝ) ≤ |z.1|) ↦
+      show (m : ℝ) ≤ |z.1| from le_trans (by exact_mod_cast hmn) hz
+    have hfin : ν (C 0) ≠ ∞ := by
+      rw [hν]
+      exact ne_top_of_le_ne_top hE (lintegral_mono_set inter_subset_right)
+    have hempty : ⋂ n, C n = ∅ := by
+      refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+      obtain ⟨n, hn⟩ := exists_nat_gt |z.1|
+      exact (mem_iInter.1 hz n).not_gt hn
+    have h := tendsto_measure_iInter_atTop (fun n ↦ (hC n).nullMeasurableSet) hanti ⟨0, hfin⟩
+    rwa [hempty, measure_empty] at h
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε ↦ ?_
+  obtain ⟨n, hn⟩ := eventually_atTop.1 (ENNReal.tendsto_nhds_zero.1 hlim ε hε)
+  filter_upwards [hA n] with i hi
+  calc ∫⁻ z in A i, f z ∂μ ≤ ∫⁻ z in C n ∩ E, f z ∂μ :=
+        lintegral_mono_set fun z hz ↦ ⟨(hi hz).2, (hi hz).1⟩
+    _ = ν (C n) := (hν n).symm
+    _ ≤ ε := hn n le_rfl
 
 end TauCeti

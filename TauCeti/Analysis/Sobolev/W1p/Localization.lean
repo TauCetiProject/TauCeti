@@ -27,6 +27,11 @@ unity. For `p < ∞`, localizing the restriction of a `W^{1,p}_0(Ω)` function t
 vanishing off a compact subset of `V` restricts to `W^{1,p}_0(Ω ∩ V)`
 (`TauCeti.W1p.restrictL_mem_w1p0Submodule_of_isCompact`).
 
+For any set with compact closure in `Ω` and finite `p`,
+`TauCeti.W1p.exists_zeroBoundaryLocalization` supplies a bounded cutoff operator into a
+zero-boundary Sobolev space on a finite-measure interior domain, preserving values on that set.
+No Sobolev embedding inequality or comparison with the dimension is assumed.
+
 The construction reuses `TauCeti.W1p.contDiffSMulL` and zero extension of the ambient
 value-gradient jet; admissibility follows from
 `TauCeti.HasWeakFDerivOn.indicator_of_isClosed`. The localization argument is the one in
@@ -37,7 +42,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set TopologicalSpace
+open MeasureTheory Metric Set TopologicalSpace
 open scoped ContDiff ENNReal Gradient
 
 namespace TauCeti
@@ -248,5 +253,45 @@ theorem W1p.restrictL_mem_w1p0Submodule_of_isCompact {V : Opens E} {K : Set E}
   by_cases hxK : x ∈ K
   · rw [hψK x hxK, one_smul]
   · rw [h4 hxK, smul_zero]
+
+/-- For finite `p`, one cutoff realizes restriction on `V` as a bounded linear map into a
+zero-boundary Sobolev space on a finite-measure interior domain. -/
+theorem W1p.exists_zeroBoundaryLocalization (hp : p ≠ (∞ : ℝ≥0∞)) {V : Set E}
+    (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
+    ∃ U : Opens E, μ U ≠ (∞ : ℝ≥0∞) ∧ V ⊆ U ∧
+      ∃ T : W1p μ Ω p →L[ℝ] W1p0 μ U p,
+        ∀ u, W1p.value (T u).1 =ᵐ[μ.restrict V] W1p.value u := by
+  obtain ⟨ψ, M, hψ, -, hψ1, hψc, hψΩ, hM, hψM, hgM⟩ :=
+    hVc.exists_contDiff_cutoff_with_bounds Ω.isOpen hVΩ
+  obtain ⟨R, hR⟩ := (hVc.union hψc).isBounded.subset_ball (0 : E)
+  let U : Opens E := Ω ⊓ ⟨ball 0 R, isOpen_ball⟩
+  have hKU : tsupport ψ ⊆ U := fun x hx ↦ ⟨hψΩ hx, hR (Or.inr hx)⟩
+  have hVU : V ⊆ U := fun x hx ↦ ⟨hVΩ (subset_closure hx), hR (Or.inl (subset_closure hx))⟩
+  let T : W1p μ Ω p →L[ℝ] W1p μ U p :=
+    (W1p.restrictL inf_le_left).comp
+      (W1p.contDiffSMulL ψ hψ hM (fun x _ ↦ hψM x) (fun x _ ↦ hgM x))
+  have hTval (u : W1p μ Ω p) :
+      W1p.value (T u) =ᵐ[μ.restrict U] fun x ↦ ψ x * W1p.value u x := by
+    filter_upwards [W1p.value_restrictL_ae (U := U) inf_le_left
+      (W1p.contDiffSMul ψ hψ hM (fun x _ ↦ hψM x) (fun x _ ↦ hgM x) u),
+      ae_restrict_of_ae_restrict_of_subset (show (U : Set E) ⊆ Ω from fun _ hx ↦ hx.1)
+        (W1p.value_contDiffSMul_ae hψ hM (fun x _ ↦ hψM x) (fun x _ ↦ hgM x) u)]
+      with x h1 h2
+    simpa only [T, ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply, smul_eq_mul]
+      using h1.trans h2
+  have hTzero (u : W1p μ Ω p) : T u ∈ w1p0Submodule μ U p := by
+    apply W1p.mem_w1p0Submodule_of_isCompact hp hψc hKU
+    filter_upwards [hTval u] with x hx hxs
+    simp [hx, image_eq_zero_of_notMem_tsupport hxs]
+  have hTrep (u : W1p μ Ω p) :
+      W1p.value (T u) =ᵐ[μ.restrict V] W1p.value u := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hVU (hTval u),
+      ae_restrict_of_ae_restrict_of_subset subset_closure
+        (ae_restrict_mem hVc.measurableSet)] with x hx hxV
+    rw [hx, show ψ x = 1 from interior_subset (hψ1 hxV), one_mul]
+  refine ⟨U, measure_ne_top_of_subset (fun _ hx ↦ hx.2) measure_ball_lt_top.ne, hVU,
+    T.codRestrict (w1p0Submodule μ U p).toSubmodule (fun u ↦ hTzero u), ?_⟩
+  exact hTrep
+
 
 end TauCeti

@@ -53,7 +53,12 @@ class Hydration(unittest.TestCase):
         self.assertEqual(list((self.project / ".lake").iterdir()), [])
 
     def test_complete_payload_publishes_once_and_preserves_existing_packages(self):
-        self.assertTrue(hydrate(self.project, self.source)["hit"])
+        result = hydrate(self.project, self.source)
+        self.assertTrue(result["hit"])
+        self.assertEqual(set(result["stage_seconds"]), {
+            "identity", "payload_digest", "extraction", "git_checks", "publication", "cleanup"})
+        self.assertTrue(all(value >= 0 for value in result["stage_seconds"].values()))
+        self.assertGreaterEqual(result["seconds"], sum(result["stage_seconds"].values()))
         self.assertEqual((self.project / ".lake/packages/mathlib/source").read_text(), "trusted fixture")
         self.assertFalse(hydrate(self.project, self.source)["hit"])
         self.assertEqual((self.project / ".lake/packages/mathlib/source").read_text(), "trusted fixture")
@@ -68,7 +73,10 @@ class Hydration(unittest.TestCase):
                 if change == "digest": metadata["payload_sha256"] = "0"*64
                 (self.source / "manifest.json").write_text(json.dumps(metadata))
                 if change == "missing": (self.source / "manifest.json").unlink()
-                self.assertFalse(hydrate(self.project, self.source)["hit"])
+                result = hydrate(self.project, self.source)
+                self.assertFalse(result["hit"])
+                self.assertIn("identity", result["stage_seconds"])
+                self.assertNotIn("extraction", result["stage_seconds"])
                 self.assert_clean()
 
     def test_escaping_tar_member_cleans_partial_tree(self):
@@ -80,7 +88,11 @@ class Hydration(unittest.TestCase):
             archive.addfile(member, io.BytesIO(b"x"))
         payload.write_bytes(subprocess.check_output(["zstd", "-c"], input=raw.getvalue()))
         self.seal()
-        self.assertFalse(hydrate(self.project, self.source)["hit"])
+        result = hydrate(self.project, self.source)
+        self.assertFalse(result["hit"])
+        self.assertIn("extraction", result["stage_seconds"])
+        self.assertIn("cleanup", result["stage_seconds"])
+        self.assertNotIn("publication", result["stage_seconds"])
         self.assert_clean()
         self.assertFalse((self.root / "escape").exists())
 

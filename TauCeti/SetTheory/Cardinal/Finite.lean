@@ -17,7 +17,8 @@ arise as restricted-product-like objects, for instance a cohomology group of a p
 in which only finitely many factors contribute.
 
 The file also compares the ranges of two maps `f` and `f'` with `e' ∘ f = f' ∘ e`, where `e` is
-surjective and `e'` is injective: `e'` maps the range of `f` bijectively onto the range of `f'`.
+surjective and `e'` is injective on the range of `f`: `e'` maps the range of `f` bijectively onto
+the range of `f'`.
 For instance, two linear maps intertwined by linear equivalences on the source and on the target
 have ranges of the same cardinality; this is a counting step of exact-sequence arguments.
 
@@ -26,7 +27,7 @@ have ranges of the same cardinality; this is a counting step of exact-sequence a
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
 * `Nat.card_range_eq_card_range_of_comp_eq`: `Nat.card (Set.range f) = Nat.card (Set.range f')`
-  when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective.
+  when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective on the range of `f`.
 -/
 
 public section
@@ -47,12 +48,12 @@ theorem card_pi_eq_prod_of_card_eq_one {ι : Type*} {X : ι → Type*} (s : Fins
     Nat.card_unique (α := ∀ i : {i // i ∉ s}, X i), mul_one, Nat.card_pi]
   exact Finset.prod_coe_sort s fun i ↦ Nat.card (X i)
 
-/-- Two maps `f` and `f'` with `e' ∘ f = f' ∘ e`, where `e` is surjective and `e'` is injective,
-have ranges of the same cardinality. -/
+/-- Two maps `f` and `f'` with `e' ∘ f = f' ∘ e`, where `e` is surjective and `e'` is injective
+on the range of `f`, have ranges of the same cardinality. -/
 theorem card_range_eq_card_range_of_comp_eq {α β γ δ : Type*} {f : α → β} {f' : γ → δ}
-    {e : α → γ} {e' : β → δ} (he : Function.Surjective e) (he' : Function.Injective e')
+    {e : α → γ} {e' : β → δ} (he : Function.Surjective e) (he' : Set.InjOn e' (Set.range f))
     (h : e' ∘ f = f' ∘ e) :
     Nat.card (Set.range f) = Nat.card (Set.range f') := by
-  rw [← he.range_comp f', ← h, Set.range_comp, Nat.card_image_of_injective he']
+  rw [← he.range_comp f', ← h, Set.range_comp, Nat.card_image_of_injOn he']
 
 end Nat

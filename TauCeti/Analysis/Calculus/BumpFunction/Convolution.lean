@@ -71,6 +71,24 @@ theorem tendsto_rOut_shrinking (hR : 0 < R) :
   simp only [rOut_shrinking]
   exact tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
 
+/-- On a relatively compact open subdomain, a shrinking sequence of normalized bump kernels
+has every translated support inside the ambient open domain. -/
+theorem exists_seq_sub_tsupport_subset {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {W Ω : TopologicalSpace.Opens E}
+    (hWc : IsCompact (closure (W : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω) :
+    ∃ φ : ℕ → ContDiffBump (0 : E),
+      Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) ∧
+      ∀ n x, x ∈ (W : Set E) → ∀ y ∈ tsupport ((φ n).normed μ), x - y ∈ Ω := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hWc.exists_cthickening_subset_open Ω.isOpen hWΩ
+  refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, ?_⟩
+  intro n x hx y hy
+  rw [(shrinking hδ n).tsupport_normed_eq, mem_closedBall, dist_zero_right,
+    rOut_shrinking] at hy
+  refine hδΩ (mem_cthickening_of_dist_le _ x δ _ (subset_closure hx) ?_)
+  rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+  exact hy.trans (div_le_self hδ.le (by simp))
+
 /-- `ContDiffBump.shrinking hR n` is `ContDiffBump.shrinking hR 0` rescaled by the factor `n + 1`,
 so all the bumps of the sequence are rescalings of one kernel. -/
 theorem shrinking_apply_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

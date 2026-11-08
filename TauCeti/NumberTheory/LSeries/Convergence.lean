@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.NumberTheory.AbelSummation
 public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.NumberTheory.LSeries.Dirichlet
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Ordinary convergence of a Dirichlet series, and its abscissa
@@ -64,6 +64,9 @@ The statements and their proofs are modelled on Mathlib's treatment of the absci
 convergence in `Mathlib/NumberTheory/LSeries/Convergence.lean`; the reduction of a coefficient
 sequence to one vanishing at `0` is the device used by `LSeriesSummable_of_sum_norm_bigO` in
 `Mathlib/NumberTheory/LSeries/SumCoeff.lean`.
+The Abel-summation proof of `TauCeti.LSeriesConverges_of_sum_isBigO` adapts the proof of
+`LSeries_eq_mul_integral` in `Mathlib/NumberTheory/LSeries/SumCoeff.lean`, extended to arbitrary
+real `r`.
 -/
 
 public section
@@ -111,78 +114,30 @@ private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ}
     rcases eq_or_ne s 0 with rfl | hs0
     · simpa [hg] using hasDerivAt_const (x := t) (c := (1 : ℂ))
     · exact hasDerivAt_ofReal_cpow_const ht (neg_ne_zero.mpr hs0)
-  have hg_diff : ∀ t ∈ Set.Ici (1 : ℝ), DifferentiableAt ℝ g t := fun t ht ↦
-    (hderiv t (zero_lt_one.trans_le ht).ne').differentiableAt
-  have hderiv' : ∀ t : ℝ, t ≠ 0 → deriv g t = -s * (t : ℂ) ^ (-s - 1) := fun t ht ↦
-    (hderiv t ht).deriv
   have hg_int : LocallyIntegrableOn (deriv g) (Set.Ici 1) := by
     refine ContinuousOn.locallyIntegrableOn ?_ measurableSet_Ici
     refine ContinuousOn.congr (f := fun t : ℝ ↦ -s * (t : ℂ) ^ (-s - 1)) ?_
-      fun t ht ↦ hderiv' t (zero_lt_one.trans_le ht).ne'
+      fun t ht ↦ (hderiv t (zero_lt_one.trans_le ht).ne').deriv
     exact fun t ht ↦ (continuousAt_const.mul
       (Complex.continuousAt_ofReal_cpow_const t (-s - 1)
         (Or.inr (zero_lt_one.trans_le ht).ne'))).continuousWithinAt
-  have hnorm_g : ∀ t : ℝ, 0 < t → ‖g t‖ = t ^ (-s.re) := fun t ht ↦ by
-    rw [hg, Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.neg_re]
-  -- A nonnegative constant in the hypothesis on the partial sums.
-  obtain ⟨C, _, hCw⟩ := hO.exists_nonneg
-  have hC : ∀ᶠ n : ℕ in atTop, ‖∑ k ∈ Icc 0 n, f k‖ ≤ C * (n : ℝ) ^ r := by
-    filter_upwards [hCw.bound] with n hn
-    rwa [Real.norm_of_nonneg (Real.rpow_nonneg (Nat.cast_nonneg n) r)] at hn
   -- The boundary term of Abel summation tends to zero, since `Re s > r`.
-  have h_lim : Tendsto (fun n : ℕ ↦ g n * ∑ k ∈ Icc 0 n, f k) atTop (𝓝 0) := by
-    have hz : Tendsto (fun n : ℕ ↦ C * (n : ℝ) ^ (-(s.re - r))) atTop (𝓝 0) := by
-      simpa using (((tendsto_rpow_neg_atTop (by linarith : 0 < s.re - r)).comp
-        tendsto_natCast_atTop_atTop).const_mul C)
-    refine squeeze_zero_norm' ?_ hz
-    filter_upwards [hC, eventually_gt_atTop 0] with n hn hn0
-    have hn0' : (0 : ℝ) < n := by exact_mod_cast hn0
-    rw [norm_mul, hnorm_g n hn0']
-    calc (n : ℝ) ^ (-s.re) * ‖∑ k ∈ Icc 0 n, f k‖
-        ≤ (n : ℝ) ^ (-s.re) * (C * (n : ℝ) ^ r) := by gcongr
-      _ = C * (n : ℝ) ^ (-(s.re - r)) := by
-          have hexp : -(s.re - r) = -s.re + r := by ring
-          rw [hexp, Real.rpow_add hn0']
-          ring
-  -- The integrand of Abel summation has an integrable majorant.
-  have hg_dom : (fun t ↦ deriv g t * ∑ k ∈ Icc 0 ⌊t⌋₊, f k) =O[atTop]
-      fun t : ℝ ↦ t ^ (r - s.re - 1) := by
-    have hderivO : (fun t : ℝ ↦ deriv g t) =O[atTop] fun t : ℝ ↦ t ^ (-s.re - 1) := by
-      refine Asymptotics.IsBigO.of_bound ‖s‖ ?_
-      filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-      rw [hderiv' t ht.ne', norm_mul, norm_neg,
-        Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re,
-        Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)]
-    have hsumO : (fun t : ℝ ↦ ∑ k ∈ Icc 0 ⌊t⌋₊, f k) =O[atTop]
-        fun t : ℝ ↦ t ^ r := by
-      have hfloor : Asymptotics.IsEquivalent atTop (fun t : ℝ ↦ (⌊t⌋₊ : ℝ))
-          (fun t ↦ max t 0) :=
-        Asymptotics.isEquivalent_nat_floor.congr_right
-          ((eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ (max_eq_left ht).symm)
-      refine (hO.comp_tendsto tendsto_nat_floor_atTop).trans
-        ((hfloor.rpow fun t ↦ le_max_right t 0).isBigO.congr' EventuallyEq.rfl ?_)
-      filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-      simp [max_eq_left ht]
-    refine (hderivO.mul hsumO).congr' EventuallyEq.rfl ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-    rw [← Real.rpow_add ht]
-    congr 1
-    ring
-  have hg_int' : IntegrableAtFilter (fun t : ℝ ↦ t ^ (r - s.re - 1)) atTop :=
-    ⟨Set.Ioi 1, Ioi_mem_atTop 1, integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one⟩
+  have h_lim : Tendsto (fun n : ℕ ↦ g n * ∑ k ∈ Icc 0 n, f k) atTop (𝓝 0) :=
+    (Asymptotics.IsBigO.mul_atTop_rpow_natCast_of_isBigO_rpow (-s.re) r _
+      (Asymptotics.isBigO_norm_left.mp
+        (norm_ofReal_cpow_eventually_eq_atTop _).isBigO.natCast_atTop) hO
+      (by linarith : -s.re + r ≤ -(s.re - r))).trans_tendsto
+      ((tendsto_rpow_neg_atTop (by linarith)).comp tendsto_natCast_atTop_atTop)
+  -- The partial sums along ⌊t⌋₊ are O(t ^ r), giving a bound for the Abel-summation integrand.
   have key := tendsto_sum_mul_atTop_nhds_one_sub_integral₀ f hf
-    hg_diff hg_int h_lim hg_dom hg_int'
+    (fun t ht ↦ (hderiv t (zero_lt_one.trans_le ht).ne').differentiableAt) hg_int h_lim
+    ((isBigO_deriv_ofReal_cpow_const_atTop (-s)).mul_atTop_rpow_of_isBigO_rpow _ r
+      (r - s.re - 1) hO.comp_natFloor_rpow (by rw [Complex.neg_re]; linarith))
+    (integrableAtFilter_rpow_atTop_iff.mpr (by linarith))
   -- Read the conclusion back as the partial sums of the Dirichlet series.
-  have hpt : ∀ k : ℕ, g k * f k = LSeries.term f s k := fun k ↦ by
-    rcases eq_or_ne k 0 with rfl | hk
-    · simp [hf]
-    · simp only [hg, Complex.ofReal_natCast, LSeries.term_of_ne_zero hk, Complex.cpow_neg,
-        div_eq_inv_mul]
-  have final : Tendsto (fun n : ℕ ↦ ∑ k ∈ Icc 0 n, LSeries.term f s k) atTop
-      (𝓝 (0 - ∫ t in Set.Ioi 1, deriv g t * ∑ k ∈ Icc 0 ⌊t⌋₊, f k)) :=
-    key.congr fun n ↦ Finset.sum_congr rfl fun k _ ↦ hpt k
-  exact ⟨_, (tendsto_add_atTop_iff_nat 1).mp
-    (by simpa only [Nat.range_succ_eq_Icc_zero] using final)⟩
+  refine ⟨_, (tendsto_add_atTop_iff_nat 1).mp (key.congr fun n ↦ ?_)⟩
+  rw [Nat.range_succ_eq_Icc_zero]
+  exact Finset.sum_congr rfl fun k _ ↦ by simp [hg, LSeries.term_def₀ hf, mul_comm]
 
 /-- **Ordinary convergence from a bound on the partial sums of the coefficients.**  If
 `∑_{1 ≤ k ≤ n} f k` is `O(n ^ r)`, then the Dirichlet series of `f` converges at
