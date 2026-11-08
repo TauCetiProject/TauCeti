@@ -80,36 +80,6 @@ theorem lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero
   have := two_mul_structureConstant_ediv_two_of_chainBotCoeff_eq_zero hγ hδ hbot
   linear_combination -t.structureConstant ht α β * this
 
-/-- If the `α`-string through `β` starts at `β` and has two further roots, the reverse
-`β`-string through `α` has top coefficient one. -/
-theorem chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
-    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2) :
-    (t.simplyConnectedRootDatum ht).chainTopCoeff β α = 1 := by
-  let P := t.simplyConnectedRootDatum ht
-  let : P.IsReduced := t.isReduced_simplyConnectedRootDatum ht
-  have hli : LinearIndependent ℤ ![P.root α, P.root β] :=
-    P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
-  have hli' : LinearIndependent ℤ ![P.root β, P.root α] :=
-    LinearIndependent.pair_symm_iff.mp hli
-  have hbot' : P.chainBotCoeff β α = 0 :=
-    (P.chainBotCoeff_comm_of_root_add_mem ⟨γ, hγ⟩).symm.trans hbot
-  have hne : P.root α ≠ P.root β := by
-    intro h
-    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := 1) (by simpa using h)).1
-  have hneg : P.root α ≠ -P.root β := by
-    intro h
-    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
-  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' α β hne hneg
-  have hp := P.chainBotCoeff_sub_chainTopCoeff hli
-  have hp' := P.chainTopCoeff_sub_chainBotCoeff hli'
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hpair
-  rw [hbot, htop] at hp
-  rw [hbot'] at hp'
-  omega
-
 private theorem doubleString_brackets
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
@@ -127,8 +97,8 @@ private theorem doubleString_brackets
   have hli' : LinearIndependent ℤ ![P.root β, P.root α] :=
     LinearIndependent.pair_symm_iff.mp hli
   -- The two string bounds and reducedness exclude the three unwanted root sums.
-  have hrev := chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
-    hγ hbot htop
+  have hrev := P.chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    hbot htop
   have hn (a b : ℤ) (hb : b ≠ 0) : a • P.root α + b • P.root β ≠ 0 :=
     fun hz ↦ hb (LinearIndependent.pair_iff.mp hli a b hz).2
   have hthree : P.root β + 3 • P.root α ∉ Set.range P.root := by

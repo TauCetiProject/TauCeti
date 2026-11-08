@@ -21,6 +21,8 @@ integrality of Chevalley structure constants.
   quadratic along integral root relations `γ = β + n • α`.
 * `RootPairing.chainBotCoeff_comm_of_root_add_mem`: `chainBotCoeff` is symmetric when the sum of
   two roots is a root.
+* `RootPairing.chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two`: the reverse
+  of a root string with bottom coefficient zero and top coefficient two has top coefficient one.
 * `RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero`: orthogonal roots
   whose sum is a root have equal squared length under any invariant form.
 * `RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq`: along a root string,
@@ -361,6 +363,33 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpair
   rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     rcases h with ⟨h, h'⟩ <;> omega
+
+/-- If the `i`-string through `j` starts at `j` and has two further roots, the reverse
+`j`-string through `i` has top coefficient one. -/
+theorem chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two {i j : I}
+    (hbot : P.chainBotCoeff i j = 0) (htop : P.chainTopCoeff i j = 2) :
+    P.chainTopCoeff j i = 1 := by
+  have hadd : P.root i + P.root j ∈ range P.root := by
+    by_contra h
+    have := P.chainTopCoeff_eq_zero_iff.mpr (Or.inr (by simpa only [add_comm] using h))
+    omega
+  have hli := P.linearIndependent_of_add_mem_range_root' hadd
+  have hli' := LinearIndependent.pair_symm_iff.mp hli
+  have hbot' : P.chainBotCoeff j i = 0 :=
+    (P.chainBotCoeff_comm_of_root_add_mem hadd).symm.trans hbot
+  have hne : P.root i ≠ P.root j := by
+    intro h
+    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := 1) (by simpa using h)).1
+  have hneg : P.root i ≠ -P.root j := by
+    intro h
+    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
+  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' i j hne hneg
+  have hp := P.chainBotCoeff_sub_chainTopCoeff hli
+  have hp' := P.chainTopCoeff_sub_chainBotCoeff hli'
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hpair
+  rw [hbot, htop] at hp
+  rw [hbot'] at hp'
+  omega
 
 /-- Two orthogonal roots whose sum is a root have the same squared length in every invariant
 form. -/
