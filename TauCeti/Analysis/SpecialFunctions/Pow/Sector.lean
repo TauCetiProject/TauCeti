@@ -21,7 +21,7 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
   referring to the discontinuous argument function on the target side.
 * `TauCeti.cpow_inv_re_pos_of_arg_mem_sector` maps an open sector into the right half-plane.
 * `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
-  by a cone inequality, for `0 < β < 2`.
+  by a cone inequality, for `0 ≤ β ≤ 2`.
 -/
 
 public section
@@ -54,14 +54,16 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
   · rw [div_lt_iff₀ hβ]
     linarith [harg.2]
 
-/-- In the closed upper half-plane with `0 < β < 2`, the power `z ^ β`, rotated by
+/-- In the closed upper half-plane with `0 ≤ β ≤ 2`, the power `z ^ β`, rotated by
 `exp (-(β π / 2) i)`, lies in the cone of real part at least `cos (β π / 2)` times the norm. -/
-theorem cos_mul_norm_le_re_exp_mul_cpow {z : ℂ} {β : ℝ} (hβ : 0 < β) (hβ2 : β < 2)
+theorem cos_mul_norm_le_re_exp_mul_cpow {z : ℂ} {β : ℝ} (hβ : 0 ≤ β) (hβ2 : β ≤ 2)
     (hz : 0 ≤ z.im) :
     Real.cos (β * Real.pi / 2) * ‖z ^ (β : ℂ)‖ ≤
       (exp ((-(β * Real.pi / 2) : ℝ) * Complex.I) * z ^ (β : ℂ)).re := by
+  rcases hβ.eq_or_lt with rfl | hβ
+  · simp
   set θ : ℝ := β * Real.pi / 2 with hθdef
-  have hθ : 0 ≤ θ ∧ θ < Real.pi := by
+  have hθ : 0 ≤ θ ∧ θ ≤ Real.pi := by
     constructor <;> nlinarith [Real.pi_pos]
   set u : ℂ := exp ((-θ : ℝ) * Complex.I)
   set P : ℂ := z ^ (β : ℂ)
@@ -71,7 +73,7 @@ theorem cos_mul_norm_le_re_exp_mul_cpow {z : ℂ} {β : ℝ} (hβ : 0 < β) (hβ
       nlinarith [arg_nonneg_iff.mpr hz, arg_le_pi z]
   have hcos : Real.cos θ ≤ Real.cos (z.arg * β - θ) := by
     simpa only [Real.cos_abs] using
-      Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ.2.le harg
+      Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ.2 harg
   have hure : u.re = Real.cos θ := by
     simpa only [Real.cos_neg] using exp_ofReal_mul_I_re (-θ)
   have huim : u.im = -Real.sin θ := by

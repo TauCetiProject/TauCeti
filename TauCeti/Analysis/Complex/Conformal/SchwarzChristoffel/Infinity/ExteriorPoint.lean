@@ -110,7 +110,7 @@ private theorem exists_eventually_cone_schwarzChristoffelPrimitive
     (by rwa [Complex.norm_real, Real.norm_of_nonneg hβ.le])
   have hcone : c * ‖P‖ ≤ (u * P).re := by
     have h : c * ‖z ^ (β : ℂ)‖ ≤ (u * z ^ (β : ℂ)).re :=
-      cos_mul_norm_le_re_exp_mul_cpow hβ hβhigh hzH.le
+      cos_mul_norm_le_re_exp_mul_cpow hβ.le hβhigh.le hzH.le
     have hPnorm : ‖P‖ = ‖z ^ (β : ℂ)‖ / β := by
       simp only [P, norm_div, Complex.norm_real, Real.norm_of_nonneg hβ.le]
     have hmulP : u * P = u * z ^ (β : ℂ) / (β : ℂ) := by
