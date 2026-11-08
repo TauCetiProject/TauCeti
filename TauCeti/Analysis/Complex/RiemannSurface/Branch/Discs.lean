@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Topology.OpenPartialHomeomorph.Preimage
 
 /-!
 # Discs above a branch value
@@ -40,38 +41,6 @@ open Filter Function IsManifold Metric Set Topology
 open scoped Manifold
 
 namespace TauCeti.RiemannSurface
-
-section Helpers
-
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y}
-
-/-- The preimage of a set `S` of target-chart coordinates is the union of the source sets `T x`
-carried to `S` by the `m x`-th power maps, when every point over `S` lies in a source chart.
-The ball and closed ball statements of `exists_disjoint_power_charts` are instances. -/
-private theorem preimage_eq_iUnion {ι : Type*} {e' : OpenPartialHomeomorph Y ℂ} {y : Y}
-    {e : ι → OpenPartialHomeomorph X ℂ} {m : ι → ℕ} {S : Set ℂ} {T : ι → Set ℂ}
-    (hT : ∀ x, T x ⊆ (e x).target)
-    (hiff : ∀ x, ∀ w ∈ (e x).target, w ∈ T x ↔ e' y + w ^ m x ∈ S)
-    (hpow : ∀ x, ∀ z ∈ (e x).source, f z ∈ e'.source ∧ e' (f z) - e' y = e x z ^ m x)
-    (hfull : ∀ z, f z ∈ e'.source ∧ e' (f z) ∈ S → z ∈ ⋃ x, (e x).source) :
-    f ⁻¹' (e'.source ∩ e' ⁻¹' S) = ⋃ x, (e x).symm '' T x := by
-  ext z
-  constructor
-  · intro hz
-    obtain ⟨x, hx⟩ := mem_iUnion.mp (hfull z hz)
-    refine mem_iUnion.mpr ⟨x, e x z, ?_, (e x).left_inv hx⟩
-    refine (hiff x _ ((e x).map_source hx)).2 ?_
-    rw [← (hpow x z hx).2, add_sub_cancel]
-    exact hz.2
-  · intro hz
-    obtain ⟨x, w, hw, rfl⟩ := mem_iUnion.mp hz
-    have hwt := hT x hw
-    have h := hpow x ((e x).symm w) ((e x).map_target hwt)
-    refine ⟨h.1, ?_⟩
-    rw [mem_preimage, eq_add_of_sub_eq' h.2, (e x).right_inv hwt]
-    exact (hiff x w hwt).1 hw
-
-end Helpers
 
 variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
@@ -138,10 +107,10 @@ theorem exists_disjoint_power_charts
     Metric.mem_nhds_iff.mp ((e x).open_target.mem_nhds (hex x ▸ (e x).map_source (hxe x)))
   choose R hR hRsub using hrad
   -- A common target radius fits inside every powered source radius and the omitted-sheet gap.
-  obtain ⟨η, hη, hηsub⟩ := Metric.mem_nhds_iff.mp (show ∀ᶠ δ : ℝ in 𝓝 0,
-      δ < ε ∧ ∀ x : f ⁻¹' {y}, δ < R x ^ localMultiplicity f x from
+  have hsmall : ∀ᶠ δ : ℝ in 𝓝 0, δ < ε ∧ ∀ x : f ⁻¹' {y}, δ < R x ^ localMultiplicity f x :=
     (eventually_lt_nhds hε).and (eventually_all.mpr fun x ↦
-      eventually_lt_nhds (pow_pos (hR x) _)))
+      eventually_lt_nhds (pow_pos (hR x) _))
+  obtain ⟨η, hη, hηsub⟩ := Metric.mem_nhds_iff.mp hsmall
   obtain ⟨δ, hδ, hδsmall⟩ : ∃ δ : ℝ, 0 < δ ∧
       δ < ε ∧ ∀ x : f ⁻¹' {y}, δ < R x ^ localMultiplicity f x :=
     ⟨η / 2, half_pos hη, hηsub (by
@@ -154,22 +123,30 @@ theorem exists_disjoint_power_charts
   have hrsub (x : f ⁻¹' {y}) : closedBall (0 : ℂ) (r x) ⊆ (e x).target :=
     (closedBall_subset_ball (lt_of_pow_lt_pow_left₀ (localMultiplicity f x) (hR x).le
       (by rw [hrpow]; exact hδsmall.2 x))).trans (hRsub x)
+  -- The coordinate of a point of the chart `e x` determines that of its image in the target chart.
+  have hcoord (x : f ⁻¹' {y}) (w : ℂ) (hw : w ∈ (e x).target) :
+      e' (f ((e x).symm w)) = e' y + w ^ localMultiplicity f x := by
+    have h := (hpow x _ ((e x).map_target hw)).2
+    rwa [(e x).right_inv hw, sub_eq_iff_eq_add'] at h
   have hfull {z : X} (hz : f z ∈ e'.source ∧ e' (f z) ∈ closedBall (e' y) δ) :
       z ∈ ⋃ x, (e x).source :=
     hεU hz.1 (closedBall_subset_ball hδsmall.1 hz.2)
   exact ⟨δ, e, r, hδ, (closedBall_subset_ball hδsmall.1).trans hεt,
     fun x ↦ ⟨he x, hxe x, hex x, (hsub x).trans inter_subset_right, hr x, hrpow x, hrsub x,
       hpow x⟩, hedisj,
-    preimage_eq_iUnion (fun x ↦ ball_subset_closedBall.trans (hrsub x))
-      (fun x w _ ↦ by
-        rw [mem_ball_zero_iff, mem_ball_iff_norm, add_sub_cancel_left, norm_pow, ← hrpow x]
+    OpenPartialHomeomorph.preimage_eq_iUnion_symm_image
+      (fun x ↦ ball_subset_closedBall.trans (hrsub x))
+      (fun x w hwt ↦ by
+        simp only [hcoord x w hwt, mem_inter_iff, mem_preimage, mem_ball_iff_norm, sub_zero,
+          add_sub_cancel_left, norm_pow, ← hrpow x, (hpow x _ ((e x).map_target hwt)).1, true_and]
         exact (pow_lt_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).symm)
-      hpow fun z hz ↦ hfull ⟨hz.1, ball_subset_closedBall hz.2⟩,
-    preimage_eq_iUnion hrsub
-      (fun x w _ ↦ by
-        rw [mem_closedBall_zero_iff, mem_closedBall_iff_norm, add_sub_cancel_left, norm_pow,
-          ← hrpow x]
+      fun z hz ↦ hfull ⟨hz.1, ball_subset_closedBall hz.2⟩,
+    OpenPartialHomeomorph.preimage_eq_iUnion_symm_image hrsub
+      (fun x w hwt ↦ by
+        simp only [hcoord x w hwt, mem_inter_iff, mem_preimage, mem_closedBall_iff_norm,
+          sub_zero, add_sub_cancel_left, norm_pow, ← hrpow x,
+          (hpow x _ ((e x).map_target hwt)).1, true_and]
         exact (pow_le_pow_iff_left₀ (norm_nonneg _) (hr x).le (hm x)).symm)
-      hpow fun z hz ↦ hfull hz⟩
+      fun z hz ↦ hfull hz⟩
 
 end TauCeti.RiemannSurface
