@@ -172,7 +172,7 @@ private lemma neg_mul_I_mul_resolventTransform_quadratic_eq_zero (y : ℝ≥0) {
 /-- If the quadratic polynomial built from `P` equals `X ^ n * G` and the truncation error
 `(i t) ^ n * (P(w(t)) - Q(t))` tends to `0`, then `G(w(t))` tends to `0` along
 `w(t) = (i t)⁻¹` as `t → +∞`: subtract the resolvent quadratic equation. -/
-private theorem tendsto_aeval_inv_mul_I_eq_zero (y : ℝ≥0) (n : ℕ) (P G : ℝ[X])
+private theorem tendsto_aeval_inv_mul_I_atTop_zero (y : ℝ≥0) (n : ℕ) (P G : ℝ[X])
     (hFG : Polynomial.C (y : ℝ) * Polynomial.X * P ^ 2 +
       (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) * P + 1 = Polynomial.X ^ n * G)
     (hrem : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n *
@@ -249,7 +249,7 @@ private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
   have hrem : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n * (S t - Q t)) atTop (𝓝 0) :=
     tendsto_mul_I_pow_mul_aeval_trunc_momentSeries y n
   have hG_zero : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 0) :=
-    tendsto_aeval_inv_mul_I_eq_zero y n P G hFG hrem
+    tendsto_aeval_inv_mul_I_atTop_zero y n P G hFG hrem
   rw [hEG]
   exact ofReal_eq_zero.1 (tendsto_nhds_unique hG_lim hG_zero)
 
