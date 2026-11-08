@@ -182,10 +182,10 @@ theorem dvd_eval_sub_eval (p : MvPolynomial σ R) {d : R} {x t : σ → R}
   | C a => simp
   | add p q hp hq => simpa [add_sub_add_comm] using dvd_add hp hq
   | mul_X p i hp =>
-    rw [map_mul, map_mul, eval_X, eval_X,
-      show eval x p * x i - eval t p * t i = (eval x p - eval t p) * x i + eval t p * (x i - t i) by
-        ring]
-    exact dvd_add (dvd_mul_of_dvd_left hp _) (dvd_mul_of_dvd_right (h i) _)
+    convert dvd_add (dvd_mul_of_dvd_left hp (x i)) (dvd_mul_of_dvd_right (h i) (eval t p))
+      using 1
+    simp only [map_mul, eval_X]
+    ring
 
 /-- **Taylor's estimate in several variables.** If `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ` for
 every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an error divisible by
@@ -213,11 +213,11 @@ theorem mul_dvd_eval_sub_eval_sub_sum_pderiv [Fintype σ] (p : MvPolynomial σ R
       simp only [apply_ite (eval t), map_one, map_zero, mul_ite, ite_mul, mul_one, mul_zero,
         zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, mul_assoc]
       ring
-    rw [hsum, show eval x' (p * X i) - eval x (p * X i) - (t i * S + eval t p * (x' i - x i)) =
-        (eval x' p - eval x p - S) * x' i + S * (x' i - t i) +
-          (eval x p - eval t p) * (x' i - x i) by simp only [map_mul, eval_X]; ring]
-    exact dvd_add (dvd_add (dvd_mul_of_dvd_left hp _) (mul_comm d e ▸ mul_dvd_mul hS hx'i))
-      (mul_dvd_mul (dvd_eval_sub_eval p hx) (hxx' i))
+    convert dvd_add (dvd_add (dvd_mul_of_dvd_left hp (x' i)) (mul_dvd_mul hx'i hS))
+      (mul_dvd_mul (dvd_eval_sub_eval p hx) (hxx' i)) using 1
+    rw [hsum]
+    simp only [map_mul, eval_X]
+    ring
 
 end CommRing
 

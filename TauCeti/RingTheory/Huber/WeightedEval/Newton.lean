@@ -171,10 +171,12 @@ private theorem pow_dvd_evalOD_sub
     ϖ ^ (n + k + 1) ∣ evalOD P hF hF₀ x' i - evalOD P hF hF₀ x i -
       (jacobianOD P hF hF₀ t *ᵥ (x' - x)) i := by
   refine P.ringOfDefinition.coe_mem_smul_iff_dvd.mp ?_
-  rw [show n + k + 1 = k + 1 + n by omega]
   convert weightedEval_sub_weightedEval_sub_sum_mem_pow_smul P hϖ (hF i) (hF₀ i) hn hx hxx'
     using 1
-  simp [evalOD, jacobianOD, Matrix.mulVec, dotProduct]
+  · congr 1
+    push_cast
+    ring
+  · simp [evalOD, jacobianOD, Matrix.mulVec, dotProduct]
 
 /-- The scaled inverse of the Jacobian matrix over `C` is one over `A₀`. -/
 private theorem mul_jacobianOD_eq
