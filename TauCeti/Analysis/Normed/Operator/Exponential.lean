@@ -8,8 +8,15 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.Analysis.Normed.Algebra.GelfandFormula
+import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.FieldTheory.IsAlgClosed.Spectrum
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Analysis.Normed.Algebra.Exponential
+import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Exponentials of bounded operators
@@ -28,6 +35,8 @@ space. The norm bounds for exponentials in a general normed algebra live in
   `exp (-B)`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
+  the spectrum of `N` under the exponential.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
   `exp (t • B) x - x = ∫₀ᵗ exp (u • B) (B x) du` for the orbits of a real bounded operator.
 * `ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt`: a continuous function on `[0, ∞)`
@@ -105,6 +114,38 @@ theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] 
   exact hop.unique hscalar
 
 end Operator
+
+section FiniteDimensional
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
+
+open Polynomial in
+/-- **Spectral mapping for the exponential in finite dimension.** For an operator `N` on a
+finite-dimensional complex normed space, the spectrum of `exp N` is the image of the spectrum of
+`N` under the exponential. -/
+theorem _root_.ContinuousLinearMap.spectrum_exp (N : V →L[ℂ] V) :
+    spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
+  have := FiniteDimensional.complete ℂ V
+  -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
+  -- spectrum consists of the values `P (μ)` at the eigenvalues `μ` of `N`, and an eigenvector for
+  -- `μ` shows `P (μ) = exp μ`.
+  refine subset_antisymm (fun z hz ↦ ?_)
+    (Set.image_subset_iff.mpr fun μ hμ ↦ spectrum.exp_mem_exp N hμ)
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · simp [spectrum.of_subsingleton] at hz
+  obtain ⟨P, hP⟩ := exists_aeval_eq_exp (𝕜 := ℂ) N
+  rw [← hP, spectrum.map_polynomial_aeval_of_nonempty _ _ (spectrum.nonempty N)] at hz
+  obtain ⟨μ, hμ, rfl⟩ := hz
+  refine ⟨μ, hμ, ?_⟩
+  rw [ContinuousLinearMap.spectrum_eq, ← Module.End.hasEigenvalue_iff_mem_spectrum] at hμ
+  obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
+  -- `P (N)` acts on the eigenvector `v` by `P (μ)`, and `exp N` by `exp μ`.
+  have h := Module.End.aeval_apply_of_hasEigenvector (p := P) hv
+  rw [← ContinuousLinearMap.toLinearMap_aeval, ContinuousLinearMap.coe_coe, hP,
+    ContinuousLinearMap.exp_apply_of_apply_eq_smul N (Module.End.mem_eigenspace_iff.mp hv.1)] at h
+  exact smul_left_injective ℂ hv.2 h
+
+end FiniteDimensional
 
 section Real
 
