@@ -70,7 +70,7 @@ private theorem matrixMap_negative (u : Multiplicative A) :
 private theorem matrixMap_coroot (s : Aˣ) :
     D.matrixMap A (kostantCoordinateCocharacter D.lattice D.basis D.weight A i s) =
       (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :=
-  D.matrix_kostantCoordinateCocharacter i A s
+  D.basisMatrix_kostantCoordinateCocharacter i A s
 
 private theorem matrixMap_weyl :
     D.matrixMap A (kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h

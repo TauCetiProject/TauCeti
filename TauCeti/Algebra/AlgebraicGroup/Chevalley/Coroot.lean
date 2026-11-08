@@ -112,7 +112,7 @@ theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : A
 
 /-- The coordinate cocharacter on lattice automorphisms is the simple coroot in the weight
 basis. -/
-theorem matrix_kostantCoordinateCocharacter (i : Fin t.rank) (A : Type v) [CommRing A]
+theorem basisMatrix_kostantCoordinateCocharacter (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) :
     Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
       (kostantCoordinateCocharacter D.lattice D.basis D.weight A i s) =
@@ -161,7 +161,7 @@ theorem coe_simpleCorootPoints_eq_root_word (i : Fin t.rank) (A : Type v) [CommR
       D.representation D.lattice D.representation_mem_lattice
       D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight,
     coe_kostantToralRootSubgroupPoints] at hm
-  simp only [MulEquiv.toMonoidHom_eq_coe, D.matrix_kostantCoordinateCocharacter] at hm
+  simp only [MulEquiv.toMonoidHom_eq_coe, D.basisMatrix_kostantCoordinateCocharacter] at hm
   exact (eq_mul_inv_iff_mul_eq.mpr hm.symm)
 
 end
