@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
@@ -52,6 +52,13 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
   `TauCeti.Manifold.SobolevH1.toLp_injective`.
 * `TauCeti.Manifold.SobolevH1.inner_ofSmooth_right`: Green's identity on `H¹(M)`.
 * `TauCeti.Manifold.SobolevH1.dirichletForm`: the Dirichlet form.
+
+## Implementation notes
+
+The pre-completion inner product space `TauCeti.Manifold.PreSobolevH1`, a type synonym of the
+smooth functions carrying the `H¹` inner product before taking the completion, follows the
+pattern of Mathlib's `PositiveLinearMap.PreGNS` and `PositiveLinearMap.GNS` in
+`Mathlib/Analysis/CStarAlgebra/GelfandNaimarkSegal.lean`.
 
 ## References
 
@@ -264,22 +271,12 @@ theorem norm_toLp_le (w : SobolevH1 I M) : ‖toLp w‖ ≤ ‖w‖ := by
     simp only [← sq]
     exact le_add_of_nonneg_right (integral_nonneg fun x ↦ by positivity)
 
-/-- The `L²` pairing of a square integrable function with a continuous function, as an
-integral. -/
-private theorem inner_toLp_continuousMap (f : Lp ℝ 2 (riemannianVolume I M)) (g : C(M, ℝ)) :
-    ⟪f, ContinuousMap.toLp 2 (riemannianVolume I M) ℝ g⟫_ℝ =
-      ∫ x, f x * g x ∂riemannianVolume I M := by
-  rw [L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I M) g] with x hx
-  rw [hx]
-  simp [mul_comm]
-
 /-- The `L²` inner product of the value of `w ∈ H¹(M)` with a smooth function `φ` is
 `∫ w φ dV`. -/
 theorem inner_toLp_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯) :
     ⟪toLp w, toLp (ofSmooth φ)⟫_ℝ = ∫ x, toLp w x * φ x ∂riemannianVolume I M := by
-  rw [toLp_ofSmooth, inner_toLp_continuousMap, ContinuousMap.coe_ofClass]
+  rw [toLp_ofSmooth, L2.inner_toLp_continuousMap]
+  simp only [ContinuousMap.coe_ofClass, conj_trivial, mul_comm (φ _)]
 
 /-! ### The Dirichlet form -/
 
@@ -319,6 +316,7 @@ theorem norm_sq_eq_dirichletForm_add (w : SobolevH1 I M) :
     sub_add_cancel]
 
 /-- The Dirichlet form vanishes against the constant function `1`. -/
+@[simp]
 theorem dirichletForm_ofSmooth_one (w : SobolevH1 I M) :
     dirichletForm w (ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) = 0 := by
   refine induction_on w (isClosed_eq (by fun_prop) continuous_const) fun u ↦ ?_
@@ -358,18 +356,16 @@ smooth function `φ`, `⟪w, φ⟫_{H¹} = ∫ w (φ - Δφ) dV`, where `Δ = di
 theorem inner_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯) :
     ⟪w, ofSmooth φ⟫_ℝ =
       ∫ x, toLp w x * (φ x - laplaceBeltrami I φ x) ∂riemannianVolume I M := by
-  rw [inner_ofSmooth_right_eq_inner, inner_toLp_continuousMap]
-  simp only [subLaplaceBeltrami, ContinuousMap.coe_mk]
+  rw [inner_ofSmooth_right_eq_inner, L2.inner_toLp_continuousMap]
+  simp only [subLaplaceBeltrami, ContinuousMap.coe_mk, conj_trivial, mul_comm (_ - _)]
 
 /-- **The value map is injective.** An element of `H¹(M)` whose value in `L²(M)` vanishes is
 zero, so `H¹(M)` is a subspace of `L²(M)`. -/
 theorem toLp_injective : Function.Injective (toLp (I := I) (M := M)) := by
   refine (injective_iff_map_eq_zero toLp).2 fun w hw ↦ ?_
-  -- By Green's identity `w` is orthogonal to every smooth function, hence to itself.
-  have h (v : SobolevH1 I M) : ⟪w, v⟫_ℝ = 0 := by
-    refine induction_on v (isClosed_eq (by fun_prop) continuous_const) fun φ ↦ ?_
-    rw [inner_ofSmooth_right_eq_inner, hw, inner_zero_left]
-  exact inner_self_eq_zero.1 (h w)
+  -- By Green's identity `w` is orthogonal to the dense set of smooth functions.
+  refine denseRange_ofSmooth.eq_zero_of_inner_left ℝ fun φ ↦ ?_
+  rw [inner_ofSmooth_right_eq_inner, hw, inner_zero_left]
 
 /-- **The Dirichlet form against a smooth function.** On a closed manifold with a `C¹` metric,
 `D(w, φ) = ∫ w Δ⁺φ dV` for `w ∈ H¹(M)` and a smooth function `φ`, where `Δ⁺ = -div grad` is the
@@ -378,8 +374,8 @@ theorem dirichletForm_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ
     dirichletForm w (ofSmooth φ) =
       ∫ x, toLp w x * -laplaceBeltrami I φ x ∂riemannianVolume I M := by
   rw [dirichletForm_apply, inner_ofSmooth_right_eq_inner, toLp_ofSmooth, ← inner_sub_right,
-    ← map_sub, inner_toLp_continuousMap]
-  simp [subLaplaceBeltrami]
+    ← map_sub, L2.inner_toLp_continuousMap]
+  simp [subLaplaceBeltrami, mul_comm]
 
 end Green
 
