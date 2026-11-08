@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.RankOne
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Hom
 import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -28,7 +28,9 @@ asserted. In particular the construction applies in dimension zero as well.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4–5
   (induced tensor frames and geodesic frames).
 * `normalOrthonormalFrame` supplies the tangent frame and its central parallelism;
-  `CovariantDerivative.hom` supplies the induced endomorphism connection.
+  `CovariantDerivative.hom` supplies the induced endomorphism connection, and the general
+  metric comparisons `CovariantDerivative.IsMetricCompatible.inner_hom_apply_eq_mvfderiv_inner`
+  and `CovariantDerivative.IsMetricCompatible.hom_rankOne_eq_zero` specialise to the centre.
 -/
 
 public noncomputable section
@@ -170,15 +172,10 @@ theorem inner_hom_eq_mvfderiv_inner_normalOrthonormalFrame (h : IsNormalDomain I
   have he (k : ι) : MDiffAt (T% (normalOrthonormalFrame I M p U b k)) p :=
     ((h.contMDiffOn_normalOrthonormalFrame b k).contMDiffAt
       (h.isOpen_image.mem_nhds h.self_mem_image)).mdifferentiableAt (by simp)
-  have hp := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-    (fun _ ↦ v) (he i) (hA.clm_bundle_apply (he j))
-  have hhom := CovariantDerivative.hom_apply (leviCivitaConnection I M)
-    (leviCivitaConnection I M) hA (he j) v
-  simp only [h.normalOrthonormalFrame_self b,
-    h.leviCivitaConnection_normalOrthonormalFrame_self b,
-    zero_apply, map_zero, sub_zero, inner_zero_left, zero_add] at hp hhom
-  rw [hhom]
-  exact hp.symm
+  simpa only [h.normalOrthonormalFrame_self b] using
+    (isMetricCompatible_leviCivitaConnection I).inner_hom_apply_eq_mvfderiv_inner hA (he i)
+      (he j) (h.leviCivitaConnection_normalOrthonormalFrame_self b i)
+      (h.leviCivitaConnection_normalOrthonormalFrame_self b j) v
 
 /-- The induced Hom connection of every normal matrix unit vanishes at the centre. -/
 @[simp]
@@ -186,27 +183,16 @@ theorem hom_normalEndomorphismFrame_self (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (ij : ι × ι) :
     ((leviCivitaConnection I M).hom (leviCivitaConnection I M))
       (normalEndomorphismFrame I M p U b ij) p = 0 := by
-  have hA := ((h.contMDiffOn_normalEndomorphismFrame b ij).contMDiffAt
-    (h.isOpen_image.mem_nhds h.self_mem_image)).mdifferentiableAt (by simp)
-  apply ContinuousLinearMap.ext
-  intro v
-  apply ContinuousLinearMap.coe_injective
-  apply b.toBasis.ext
-  intro j
-  apply b.repr.injective
-  ext i
-  simp only [OrthonormalBasis.coe_toBasis, b.repr_apply_apply,
-    ContinuousLinearMap.coe_coe, zero_apply,
-    inner_zero_right]
-  rw [h.inner_hom_eq_mvfderiv_inner_normalOrthonormalFrame b hA v i j]
-  have hc : (fun q ↦ ⟪normalOrthonormalFrame I M p U b i q,
-      normalEndomorphismFrame I M p U b ij q (normalOrthonormalFrame I M p U b j q)⟫) =ᶠ[𝓝 p]
-      fun _ ↦ (if ij.2 = j then 1 else 0) * (if i = ij.1 then 1 else 0) := by
-    filter_upwards [h.isOpen_image.mem_nhds h.self_mem_image] with q hq
-    simp only [normalEndomorphismFrame_apply, real_inner_smul_right,
-      orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hq)]
-  rw [mvfderiv, hc.mfderiv_eq]
-  simp
+  have he (k : ι) : CMDiffAt 1 (T% (normalOrthonormalFrame I M p U b k)) p :=
+    ((h.contMDiffOn_normalOrthonormalFrame b k).contMDiffAt
+      (h.isOpen_image.mem_nhds h.self_mem_image)).of_le (by simp)
+  exact (isMetricCompatible_leviCivitaConnection I).hom_rankOne_eq_zero
+    (V := fun q : M ↦ TangentSpace I q) (F := E) (W := fun q : M ↦ TangentSpace I q) (G := E)
+    (fiberNorm := fun q ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I q)))
+    (targetNorm := fun q ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I q)))
+    (he ij.1) (he ij.2)
+    (h.leviCivitaConnection_normalOrthonormalFrame_self b ij.1)
+    (h.leviCivitaConnection_normalOrthonormalFrame_self b ij.2)
 
 end IsNormalDomain
 
