@@ -183,6 +183,13 @@ theorem isMaximal_of_mem_normalizedFactors {P I : Ideal B} (hP : P ∈ normalize
   have hPp := prime_of_normalized_factor P hP
   (isPrime_of_prime hPp).isMaximal (by simpa using hPp.ne_zero)
 
+/-- Every prime factor of an ideal in a Dedekind domain is a maximal ideal. -/
+theorem isMaximal_of_mem_factors {J P : Ideal B}
+    (hP : P ∈ UniqueFactorizationMonoid.factors J) : P.IsMaximal :=
+  Ideal.IsPrime.isMaximal
+    (isPrime_of_prime (UniqueFactorizationMonoid.prime_of_factor P hP))
+    (UniqueFactorizationMonoid.prime_of_factor P hP).ne_zero
+
 end NormalizedFactors
 
 section Injective

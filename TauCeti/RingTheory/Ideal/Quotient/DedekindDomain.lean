@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Group.Pi.Units
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+
 /-!
 # Lifting units between ideal quotients of a Dedekind domain
 
@@ -26,16 +28,9 @@ public section
 
 open Ideal.Quotient
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-
-/-- Every prime factor of an ideal in a Dedekind domain is a maximal ideal. -/
-theorem Ideal.isMaximal_of_mem_factors {J P : Ideal R}
-    (hP : P ∈ UniqueFactorizationMonoid.factors J) : P.IsMaximal :=
-  Ideal.IsPrime.isMaximal
-    (Ideal.isPrime_of_prime (UniqueFactorizationMonoid.prime_of_factor P hP))
-    (UniqueFactorizationMonoid.prime_of_factor P hP).ne_zero
-
 namespace TauCeti
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 /-- Reduction between ideal quotients of a Dedekind domain is surjective on units when the source
 ideal is nonzero. No finiteness assumption on the residue fields is needed. -/
