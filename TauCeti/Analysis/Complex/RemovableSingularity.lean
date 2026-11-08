@@ -47,7 +47,7 @@ it, are shown to be analytic across it.
 
 public section
 
-open Complex ComplexConjugate Filter Function Metric Real Set Topology
+open Complex Filter Function Metric Real Set Topology
 
 namespace TauCeti
 
@@ -60,26 +60,6 @@ theorem eqOn_prod_of_eqOn_prod_diff_singleton {X Y : Type*} [TopologicalSpace X]
   refine h.of_subset_closure h₁ h₂ (prod_mono subset_rfl sdiff_subset) ?_
   rw [closure_prod_eq, sdiff_eq]
   exact prod_mono subset_closure ((dense_compl_singleton c).open_subset_closure_inter hs)
-
-/-- Two analytic extensions across the hyperplane `z = 0` of conjugation-related branches are
-conjugation-related on the whole ball, provided the branches are on the punctured ball. -/
-theorem eqOn_conj_comp_of_eqOn_punctured {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {U : Set E} {R' : ℝ} {k : ℕ} {τ : E → E}
-    {g₁ g₂ r₁ r₂ : E × ℂ → ℂ} (hg₁ : AnalyticOnNhd ℂ g₁ (U ×ˢ ball 0 R'))
-    (hg₂ : AnalyticOnNhd ℂ g₂ (U ×ˢ ball 0 R'))
-    (he₁ : EqOn g₁ (fun b ↦ b.2 ^ k * r₁ b) (U ×ˢ (ball 0 R' \ {0})))
-    (he₂ : EqOn g₂ (fun b ↦ b.2 ^ k * r₂ b) (U ×ˢ (ball 0 R' \ {0})))
-    (hκ : ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R'))
-    (hκT : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') (U ×ˢ ball 0 R'))
-    (hκS : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 R' \ {0}))
-      (U ×ˢ (ball 0 R' \ {0})))
-    (hr : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), r₂ b = conj (r₁ (τ b.1, conj b.2))) :
-    EqOn g₂ (fun b ↦ conj (g₁ (τ b.1, conj b.2))) (U ×ˢ ball 0 R') := by
-  refine eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
-    hg₂.continuousOn
-    (Complex.continuous_conj.comp_continuousOn (hg₁.continuousOn.comp hκ hκT)) ?_
-  intro b hb
-  simp only [he₂ hb, he₁ (hκS hb), hr b hb, map_mul, map_pow, Complex.conj_conj]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V × ℂ → E} {U : Set V} {s : Set ℂ}

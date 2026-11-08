@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Factorization
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
+import TauCeti.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Polynomial.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Normed.Module.Connected
@@ -36,6 +37,50 @@ construction*, Journal of Symbolic Computation 92 (2019), §4, Corollary 4.2.
 public section
 
 open Filter Function Metric Polynomial Set Topology ComplexConjugate
+
+namespace TauCeti
+
+/-- Two Laurent branches of conjugation-related roots, at paired base points `x` and `τ x`, have
+the same exponent and conjugation-related unit germs near `(x, 0)`, including on the hyperplane
+`z = 0`. The branch `r₂` has Laurent form `z ^ n * W₂` near `(x, 0)` and `r₁` has form
+`z ^ m * W₁` near `(τ x, 0)`, with `r₂ b = conj (r₁ (τ b.1, conj b.2))` off the hyperplane. -/
+theorem exponent_eq_and_unit_conj {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {r₁ r₂ W₁ W₂ : E × ℂ → ℂ} {m n : ℤ} {τ : E → E} {x : E} (hτ : ContinuousAt τ x)
+    (hW₂a : AnalyticAt ℂ W₂ (x, 0)) (hW₂0 : W₂ (x, 0) ≠ 0)
+    (hW₁a : AnalyticAt ℂ W₁ (τ x, 0)) (hW₁0 : W₁ (τ x, 0) ≠ 0)
+    (hform₂ : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 → r₂ b = b.2 ^ n * W₂ b)
+    (hform₁ : ∀ᶠ b in 𝓝 (τ x, (0 : ℂ)), b.2 ≠ 0 → r₁ b = b.2 ^ m * W₁ b)
+    (hr : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 → r₂ b = conj (r₁ (τ b.1, conj b.2))) :
+    n = m ∧ ∀ᶠ b in 𝓝 (x, (0 : ℂ)), W₂ b = conj (W₁ (τ b.1, conj b.2)) := by
+  have hκt : Tendsto (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (𝓝 (x, (0 : ℂ))) (𝓝 (τ x, (0 : ℂ))) := by
+    simpa only [Prod.map_def, map_zero] using
+      hτ.tendsto.prodMap_nhds (Complex.continuous_conj.tendsto (0 : ℂ))
+  refine hW₂a.restrictScalars (𝕜 := ℝ) |>.laurent_eq_of_conj hW₂0
+    (hW₁a.restrictScalars (𝕜 := ℝ)) hW₁0 hτ ?_
+  filter_upwards [hform₂, hr, hκt.eventually hform₁] with b h₂ h₃ h₁ hb0
+  rw [← h₂ hb0, h₃ hb0, h₁ (by simpa only [ne_eq, map_eq_zero] using hb0)]
+
+/-- Two analytic extensions across the hyperplane `z = 0` of conjugation-related branches are
+conjugation-related on the whole ball, provided the branches are on the punctured ball. -/
+theorem eqOn_conj_comp_of_eqOn_punctured {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {U : Set E} {R' : ℝ} {k : ℕ} {τ : E → E}
+    {g₁ g₂ r₁ r₂ : E × ℂ → ℂ} (hg₁ : AnalyticOnNhd ℂ g₁ (U ×ˢ ball 0 R'))
+    (hg₂ : AnalyticOnNhd ℂ g₂ (U ×ˢ ball 0 R'))
+    (he₁ : EqOn g₁ (fun b ↦ b.2 ^ k * r₁ b) (U ×ˢ (ball 0 R' \ {0})))
+    (he₂ : EqOn g₂ (fun b ↦ b.2 ^ k * r₂ b) (U ×ˢ (ball 0 R' \ {0})))
+    (hκ : ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R'))
+    (hκT : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') (U ×ˢ ball 0 R'))
+    (hκS : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 R' \ {0}))
+      (U ×ˢ (ball 0 R' \ {0})))
+    (hr : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), r₂ b = conj (r₁ (τ b.1, conj b.2))) :
+    EqOn g₂ (fun b ↦ conj (g₁ (τ b.1, conj b.2))) (U ×ˢ ball 0 R') := by
+  refine eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
+    hg₂.continuousOn
+    (Complex.continuous_conj.comp_continuousOn (hg₁.continuousOn.comp hκ hκT)) ?_
+  intro b hb
+  simp only [he₂ hb, he₁ (hκS hb), hr b hb, map_mul, map_pow, Complex.conj_conj]
+
+end TauCeti
 
 namespace TauCeti.Polynomial
 
@@ -122,9 +167,17 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
-  have hcompat (x : U) (i : Fin d) := exponent_eq_and_unit_conj hU hR' hτ hτU
-    (fun i y hy ↦ hWa i _ ⟨hy, mem_ball_self hR'⟩) (fun i y hy ↦ hW0 i _ ⟨hy, mem_ball_self hR'⟩)
-    hform hσ x.2 i
+  have hcompat (x : U) (i : Fin d) := exponent_eq_and_unit_conj
+    (r₁ := r i) (r₂ := r (σ i)) (W₁ := W i) (W₂ := W (σ i)) (m := e i) (n := e (σ i))
+    (hτ.continuousAt (hU.mem_nhds x.2))
+    (hWa (σ i) _ ⟨x.2, mem_ball_self hR'⟩) (hW0 (σ i) _ ⟨x.2, mem_ball_self hR'⟩)
+    (hWa i _ ⟨hτU x.2, mem_ball_self hR'⟩) (hW0 i _ ⟨hτU x.2, mem_ball_self hR'⟩)
+    ((hform x.1 x.2).mono fun _ h hb ↦ h.2 hb (σ i))
+    ((hform (τ x.1) (hτU x.2)).mono fun _ h hb ↦ h.2 hb i)
+    (by
+      filter_upwards [(hU.prod isOpen_ball).mem_nhds
+        (x := (x.1, (0 : ℂ))) ⟨x.2, mem_ball_self hR'⟩] with b hb hb0
+      exact hσ i b ⟨hb.1, hb.2, hb0⟩)
   exact ⟨R', hR', hfit, r, g, hra, hg, hr, σ, hσσ, hσ,
     fun i ↦ eqOn_conj_comp_of_eqOn_punctured (hg i).1 (hg (σ i)).1 (hg i).2 (hg (σ i)).2 hκ hκT
       hκS (hσ i),
