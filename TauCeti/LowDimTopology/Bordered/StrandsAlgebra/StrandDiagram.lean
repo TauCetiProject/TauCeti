@@ -196,6 +196,35 @@ theorem apply_eq_none_of_notMem_source {φ : StrandDiagram α} {i : α} (h : i �
     φ i = none :=
   Option.eq_none_iff_forall_ne_some.2 fun j hj ↦ h (mem_source.2 ⟨j, hj⟩)
 
+/-- The end point of the strand starting at a point of the source. -/
+theorem getD_mem {φ : StrandDiagram α} {i : α} (hi : i ∈ φ.source) : (φ i).getD i ∈ φ i := by
+  obtain ⟨j, hj⟩ := mem_source.1 hi
+  rw [Option.mem_def] at hj ⊢
+  simp [hj]
+
+/-- The strand starting at a point of the source goes upwards. -/
+theorem le_getD {φ : StrandDiagram α} {i : α} (hi : i ∈ φ.source) : i ≤ (φ i).getD i :=
+  φ.le_of_mem (getD_mem hi)
+
+/-- The end points of a diagram are the images of its starting points. -/
+theorem target_eq_image (φ : StrandDiagram α) :
+    φ.target = φ.source.image fun i ↦ (φ i).getD i := by
+  ext j
+  simp only [mem_target, Finset.mem_image]
+  refine ⟨fun ⟨i, hi⟩ ↦ ⟨i, mem_source.2 ⟨j, hi⟩, ?_⟩, fun ⟨i, hi, hj⟩ ↦ ⟨i, hj ▸ getD_mem hi⟩⟩
+  rw [Option.mem_def] at hi
+  simp [hi]
+
+/-- Distinct strands of a diagram end at distinct points. -/
+theorem injOn_getD (φ : StrandDiagram α) : Set.InjOn (fun i ↦ (φ i).getD i) φ.source :=
+  fun i hi j hj h ↦ by
+    have h : (φ i).getD i = (φ j).getD j := h
+    exact φ.toPEquiv.inj (getD_mem hi) (h ▸ getD_mem hj)
+
+/-- A diagram has as many end points as starting points. -/
+theorem card_target (φ : StrandDiagram α) : #φ.target = #φ.source := by
+  rw [target_eq_image, card_image_of_injOn φ.injOn_getD]
+
 @[simp]
 theorem source_idOn (s : Finset α) : (idOn s).source = s := by
   ext i
