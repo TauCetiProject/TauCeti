@@ -489,6 +489,18 @@ theorem poissonBracket_const_smul_right (c : ℝ) (x : M) :
   simp only [poissonBracket_def, hamiltonianVectorField_const_smul c x,
     ← SmoothForm.bilinFormAt_apply, map_smul]
 
+/-- The Poisson bracket is homogeneous in its first argument: `{c f, g} = c {f, g}`. -/
+@[simp]
+theorem poissonBracket_const_mul_left (c : ℝ) (x : M) :
+    σ.poissonBracket (fun y ↦ c * f y) g x = c * σ.poissonBracket f g x :=
+  poissonBracket_const_smul_left c x
+
+/-- The Poisson bracket is homogeneous in its second argument: `{f, c g} = c {f, g}`. -/
+@[simp]
+theorem poissonBracket_const_mul_right (c : ℝ) (x : M) :
+    σ.poissonBracket f (fun y ↦ c * g y) x = c * σ.poissonBracket f g x :=
+  poissonBracket_const_smul_right c x
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
