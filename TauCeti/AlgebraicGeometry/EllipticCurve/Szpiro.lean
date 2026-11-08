@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Conductor
 public import TauCeti.NumberTheory.AbcConjecture
-import TauCeti.Algebra.Order.Ring.MaxPow
+import TauCeti.Algebra.Order.Monoid.MaxPow
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.RingTheory.Radical.NatInt
