@@ -47,7 +47,7 @@ Every face of a finitely generated cone is exposed by a nonnegative linear funct
 including cones with lineality and the full face. The construction uses Tucker’s theorem over
 an arbitrary linearly ordered field. Over real normed spaces it gives
 Mathlib’s continuous-functional `IsExposed` predicate; conversely, any nonempty exposed subset
-of a real cone is a cone face.
+of a cone over a linearly ordered field with an arbitrary topology is a cone face.
 
 The finite-generation exposure results are adapted from
 `Mei/Geometry/Convex/Cone/Face/Exposed.lean` at Mei commit `7f1e4c7`.
@@ -237,18 +237,19 @@ end PointedCone.IsFaceOf
 
 namespace IsExposed
 
-variable {V : Type*} [AddCommGroup V] [TopologicalSpace V] [Module ℝ V]
-  {C : PointedCone ℝ V} {S : Set V}
+variable {K V : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [TopologicalSpace K] [AddCommGroup V] [TopologicalSpace V] [Module K V]
+  {C : PointedCone K V} {S : Set V}
 
 /-- Every nonempty exposed subset of a pointed cone is the carrier of a cone face.
 No finite-generation or closedness assumption is needed in this direction. -/
-theorem exists_isFaceOf_coe_eq (hS : IsExposed ℝ (C : Set V) S) (hne : S.Nonempty) :
-    ∃ F : PointedCone ℝ V, F.IsFaceOf C ∧ (F : Set V) = S := by
+theorem exists_isFaceOf_coe_eq (hS : IsExposed K (C : Set V) S) (hne : S.Nonempty) :
+    ∃ F : PointedCone K V, F.IsFaceOf C ∧ (F : Set V) = S := by
   obtain ⟨l, hl⟩ := hS hne
   have hzero (x : V) (hx : x ∈ S) : l x = 0 := by
     have hm : x ∈ {x ∈ C | ∀ y ∈ C, l y ≤ l x} := hl ▸ hx
     have h₀ := hm.2 0 C.zero_mem
-    have h₂ := hm.2 (2 • x) (C.smul_mem (by norm_num : (0 : ℝ) ≤ 2) hm.1)
+    have h₂ := hm.2 (2 • x) (C.smul_mem (by norm_num : (0 : K) ≤ 2) hm.1)
     simp only [map_zero] at h₀
     simp only [map_smul, smul_eq_mul] at h₂
     linarith
@@ -256,7 +257,7 @@ theorem exists_isFaceOf_coe_eq (hS : IsExposed ℝ (C : Set V) S) (hne : S.Nonem
   have hnonpos (x : V) (hx : x ∈ C) : l x ≤ 0 := by
     have hm : p ∈ {x ∈ C | ∀ y ∈ C, l y ≤ l x} := hl ▸ hp
     simpa only [hzero p hp] using hm.2 x hx
-  let f : Module.Dual ℝ V := -l.toLinearMap
+  let f : Module.Dual K V := -l.toLinearMap
   have hf : ∀ x ∈ C, 0 ≤ f x := fun x hx => neg_nonneg.mpr (hnonpos x hx)
   refine ⟨C ⊓ PointedCone.ofSubmodule (LinearMap.ker f),
     PointedCone.isFaceOf_inf_ker hf, ?_⟩
