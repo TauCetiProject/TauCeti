@@ -45,8 +45,6 @@ for even series, and the explicit polynomials `K₁`, `K₂` and `K₃`.
 * `PowerSeries.aeval_multiset_esymm_multiplicativeSequence`: the same, coefficientwise.
 * `PowerSeries.aeval_multiset_esymm_add_multiplicativeSequence`: the Whitney formula: on the
   union of two families of roots, `Kₖ` is the convolution of the values of `K` on each family.
-* `PowerSeries.coeff_multiset_prod_rescale_C_mul_rescale`: replacing `Q(t)` by `a Q(b t)`
-  multiplies the coefficient of `tᵏ` in `∏_{x ∈ s} Q(x t)` by `a ^ |s| bᵏ`.
 * `PowerSeries.multiplicativeSequence_one_left`: on a single root, `Kₖ(e₁) = qₖ e₁ᵏ`.
 * `PowerSeries.multiplicativeSequence_zero_right`: `K₀ = Q(0) ^ n`.
 * `PowerSeries.aeval_snoc_zero_multiplicativeSequence`: setting `eₙ₊₁ = 0` in the polynomial for
@@ -99,17 +97,6 @@ theorem isSymmetric_coeff_prod_rescale_X {σ : Type*} [Fintype σ] (Q : PowerSer
   rw [coeff_map, RingHom.coe_coe] at h
   simp only [h, MvPolynomial.rename_X]
   exact congrArg (coeff k) (Equiv.prod_comp e fun i => rescale (MvPolynomial.X i) _)
-
-/-- **Homogeneity of `∏ Q(x t)`**: replacing `Q(t)` by `a Q(b t)` multiplies the coefficient of
-`tᵏ` in `∏_{x ∈ s} Q(x t)` by `a ^ |s| bᵏ`. -/
-theorem coeff_multiset_prod_rescale_C_mul_rescale (a b : R) (Q : PowerSeries R) (s : Multiset R)
-    (k : ℕ) :
-    coeff k (s.map fun x => rescale x (C a * rescale b Q)).prod =
-      a ^ s.card * b ^ k * coeff k (s.map fun x => rescale x Q).prod := by
-  have h : (s.map fun x => rescale x (C a * rescale b Q)).prod =
-      C (a ^ s.card) * rescale b (s.map fun x => rescale x Q).prod := by
-    simp [Multiset.prod_map_mul, map_multiset_prod, Multiset.map_map, rescale_rescale, mul_comm]
-  rw [h, coeff_C_mul, coeff_rescale, mul_assoc]
 
 end CommSemiring
 
