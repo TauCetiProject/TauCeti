@@ -73,7 +73,7 @@ theorem eVariationOn_eq_pathELength_open
         ‖(fderivWithin ℝ (Subtype.val ∘ γ) (Icc a b) t : ℝ → F) 1‖ₑ
       rw [fderivWithin_derivWithin]
     _ = Manifold.pathELength 𝓘(ℝ, F) γ a b :=
-      (Manifold.pathELength_subtypeVal_comp (hγ.mdifferentiableOn one_ne_zero)).symm
+      Manifold.pathELength_subtypeVal_comp.symm
 
 /-- **Lower semicontinuity on an open submanifold.** Let `γᵢ` be eventually `C¹` on a fixed compact
 interval and converge pointwise there to a differentiable path `γ`. For the restricted Riemannian
@@ -87,7 +87,7 @@ theorem pathELength_le_liminf_open
       liminf (fun i ↦ Manifold.pathELength 𝓘(ℝ, F) (γi i) a b) l := by
   let : IsContinuousRiemannianBundle F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
     ⟨⟨_, (riemannianMetricVectorSpace F).contMDiff.continuous, fun _ _ _ ↦ rfl⟩⟩
-  rw [Manifold.pathELength_subtypeVal_comp hγ]
+  rw [Manifold.pathELength_subtypeVal_comp]
   have hconv' : ∀ t ∈ Icc a b,
       Tendsto (fun i ↦ (γi i t : F)) l (𝓝 (γ t : F)) := fun t ht ↦
     continuous_subtype_val.continuousAt.tendsto.comp (hconv t ht)
@@ -102,7 +102,7 @@ theorem pathELength_le_liminf_open
         hconv'
     _ = liminf (fun i ↦ Manifold.pathELength 𝓘(ℝ, F) (γi i) a b) l :=
       liminf_congr (hγi.mono fun i hi ↦
-        (Manifold.pathELength_subtypeVal_comp (hi.mdifferentiableOn one_ne_zero)).symm)
+        Manifold.pathELength_subtypeVal_comp.symm)
 
 /-- **Lower semicontinuity under uniform convergence on an open submanifold.** Let `γᵢ` be
 eventually `C¹` on a fixed compact interval, converge uniformly there to a differentiable path `γ`,
