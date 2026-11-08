@@ -42,8 +42,8 @@ the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
 nonempty space with vanishing reduced zeroth homology is path-connected.
 
-With coefficients in a module `M`, the splitting shows that `H_q(X; M)` of a nonempty space is
-free or finitely generated when the reduced homology in degree `q` is and `M` is, and that its
+With coefficients in a module `M`, the splitting shows that `H_q(X; M)` is free or finitely
+generated when the reduced homology in degree `q` is and `M` is, and that for nonempty `X` its
 rank is that of the reduced homology, plus the rank of `M` in degree zero
 (`ModuleCat.finrank_singularHomology_eq_finrank_reducedSingularHomology_add`). The zeroth
 homology `H₀(X; M)` itself is a direct sum of copies of `M`, so it is free whenever `M` is
@@ -248,16 +248,21 @@ lemma isZero_reducedSingularHomologyFunctor_zero (X : TopCat.{w}) [PathConnected
     IsZero ((reducedSingularHomologyFunctor R 0).obj X) :=
   isZero_kernel_of_mono (X.singularHomology₀ε R)
 
+omit [HasKernels C] in
+/-- The zeroth singular homology of the empty space vanishes. -/
+lemma isZero_singularHomologyFunctor_zero_of_isEmpty (X : TopCat.{w}) [IsEmpty X] :
+    IsZero (((singularHomologyFunctor C 0).obj R).obj X) := by
+  have hπ : IsEmpty (ZerothHomotopy X) :=
+    ⟨fun c ↦ ZerothHomotopy.rec (motive := fun _ ↦ False) (fun x ↦ isEmptyElim x) c⟩
+  exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun c ↦ isEmptyElim c)).of_iso
+    (X.singularHomology₀Iso R)
+
 /-- The reduced singular homology of the empty space vanishes in every degree. -/
 lemma isZero_reducedSingularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
     IsZero ((reducedSingularHomologyFunctor R n).obj X) := by
   cases n with
   | zero =>
-    have hπ : IsEmpty (ZerothHomotopy X) :=
-      ⟨fun c ↦ ZerothHomotopy.rec (motive := fun _ ↦ False) (fun x ↦ isEmptyElim x) c⟩
-    have h₀ : IsZero (((singularHomologyFunctor C 0).obj R).obj X) :=
-      ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun c ↦ isEmptyElim c)).of_iso
-        (X.singularHomology₀Iso R)
+    have h₀ := isZero_singularHomologyFunctor_zero_of_isEmpty R X
     rw [reducedSingularHomologyFunctor_zero_obj, IsZero.iff_id_eq_zero,
       ← cancel_mono (kernel.ι (X.singularHomology₀ε R))]
     exact h₀.eq_of_tgt _ _
@@ -411,6 +416,19 @@ instance free_singularHomology_zero [Module.Free k M] :
   classical
   exact .of_equiv (X.singularHomology₀Iso M ≪≫ coprodIsoDirectSum _).toLinearEquiv.symm
 
+/-- The zeroth reduced singular homology with coefficients in a free module is free: it is zero
+for the empty space, and otherwise a direct sum of copies of the coefficient module, one for each
+path component other than that of a chosen point. -/
+instance free_reducedSingularHomology_zero [Module.Free k M] :
+    Module.Free k ((reducedSingularHomologyFunctor M 0).obj X) := by
+  classical
+  rcases isEmpty_or_nonempty X with hX | hX
+  · have : Subsingleton ((reducedSingularHomologyFunctor M 0).obj X) :=
+      ModuleCat.isZero_iff_subsingleton.mp (isZero_reducedSingularHomologyFunctor_of_isEmpty M X 0)
+    infer_instance
+  · exact .of_equiv (reducedSingularHomology₀Iso M (Classical.arbitrary X) ≪≫
+      coprodIsoDirectSum _).toLinearEquiv.symm
+
 /-- The zeroth homology of the singular chain complex with free module coefficients is free.
 Mathlib's `singularHomologyFunctor` is the composite of the singular-chain functor with
 `HomologicalComplex.homologyFunctor`; evaluating that composite gives this chain-homology
@@ -420,30 +438,34 @@ instance free_singularChainComplex_homology_zero [Module.Free k M] :
   inferInstanceAs (Module.Free k
     (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X))
 
-variable [Nonempty X]
-
-/-- The singular homology of a nonempty space with coefficients in a free module is free in each
-degree in which its reduced homology is. -/
+/-- The singular homology of a space with coefficients in a free module is free in each degree in
+which its reduced homology is. -/
 theorem free_singularHomology_of_free_reducedSingularHomology (q : ℕ)
     [Module.Free k ((reducedSingularHomologyFunctor M q).obj X)] [Module.Free k M] :
     Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) := by
   cases q with
-  | zero => exact .of_equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
+  | zero => infer_instance
   | succ q => exact .of_equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv
 
-/-- The singular homology of a nonempty space with coefficients in a finitely generated module is
-finitely generated in each degree in which its reduced homology is. -/
+/-- The singular homology of a space with coefficients in a finitely generated module is finitely
+generated in each degree in which its reduced homology is. -/
 theorem finite_singularHomology_of_finite_reducedSingularHomology (q : ℕ)
     [Module.Finite k ((reducedSingularHomologyFunctor M q).obj X)] [Module.Finite k M] :
     Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) := by
   cases q with
-  | zero => exact .equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
+  | zero =>
+    rcases isEmpty_or_nonempty X with hX | hX
+    · have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X) :=
+        ModuleCat.isZero_iff_subsingleton.mp (isZero_singularHomologyFunctor_zero_of_isEmpty M X)
+      infer_instance
+    · exact .equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
   | succ q => exact .equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv
+
+variable [Nonempty X]
 
 /-- The rank of the singular homology of a nonempty space is the rank of its reduced homology,
 plus the rank of the coefficient module in degree zero. -/
 theorem finrank_singularHomology_eq_finrank_reducedSingularHomology_add [StrongRankCondition k]
-    [Module.Free k ((reducedSingularHomologyFunctor M 0).obj X)]
     [Module.Finite k ((reducedSingularHomologyFunctor M 0).obj X)]
     [Module.Free k M] [Module.Finite k M] (q : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) =
