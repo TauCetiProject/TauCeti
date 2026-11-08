@@ -69,22 +69,20 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E}
 
-/-- For a bump `ρ` of radius at most `r`, pairing a distribution with vanishing derivatives with a
-mollification of `ψ` gives the integral of `ψ` times the constant value of the regularization on
-`ball x r`. -/
+/-- For a bump `ρ` whose closed ball of radius `ρ.rOut` translates `ball x r` into `Ω`, pairing a
+distribution with vanishing derivatives with a mollification of `ψ` gives the integral of `ψ` times
+the constant value of the regularization on `ball x r`. -/
 private theorem apply_mollify_eq_integral_smul_translatePairing (μ : Measure E)
     [μ.IsAddHaarMeasure] {T : 𝓓'(Ω, F)} (hT : ∀ v : E, ∂_{v} T = 0) {x : E} {r : ℝ}
-    (hr : ball x (2 * r) ⊆ Ω) {ρ : ContDiffBump (0 : E)} (hρ : ρ.rOut ≤ r)
+    {ρ : ContDiffBump (0 : E)} (hρr : closedBall (0 : E) ρ.rOut + ball x r ⊆ (Ω : Set E))
     {ρ' : 𝓓((⊤ : Opens E), ℝ)} (hρ' : (ρ' : E → ℝ) = ρ.normed μ) {ψ : 𝓓(Ω, ℝ)}
     (hψ : tsupport ψ ⊆ ball x r) (h : closedBall (0 : E) ρ.rOut + tsupport ψ ⊆ (Ω : Set E)) :
     T (TestFunction.mollify ψ μ ρ h) = (∫ y, ψ y ∂μ) • T.translatePairing ρ' x := by
   have htsupp : tsupport ρ' = closedBall 0 ρ.rOut := by
     rw [hρ']
     exact ρ.tsupport_normed_eq
-  have hU (y : E) (hy : y ∈ ball x r) : MapsTo (· + y) (tsupport ρ') Ω := fun z hz => by
-    have h := add_mem_add (htsupp ▸ hz : z ∈ closedBall (0 : E) ρ.rOut) hy
-    rw [closedBall_add_ball ρ.rOut_pos.le (pos_of_mem_ball hy), zero_add] at h
-    exact hr (ball_subset_ball (by linarith [ρ.rOut_pos]) h)
+  have hU (y : E) (hy : y ∈ ball x r) : MapsTo (· + y) (tsupport ρ') Ω := fun z hz =>
+    hρr (add_mem_add (htsupp ▸ hz : z ∈ closedBall (0 : E) ρ.rOut) hy)
   have hflip : (lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip = lsmul ℝ ℝ := by
     ext
     simp
@@ -121,14 +119,14 @@ private theorem apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero (μ : Measu
     div_le_self hr0.le (by linarith [n.cast_nonneg (α := ℝ)])
   have hlim : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+  have hball (n : ℕ) : closedBall (0 : E) (ρ n).rOut + ball x r ⊆ (Ω : Set E) := by
+    rw [closedBall_add_ball (ρ n).rOut_pos.le hr0, zero_add]
+    exact (ball_subset_ball (by linarith [hle n])).trans hr
   have hsub {ψ : 𝓓(Ω, ℝ)} (hψ : tsupport ψ ⊆ ball x r) (n : ℕ) :
-      closedBall (0 : E) (ρ n).rOut + tsupport ψ ⊆ (Ω : Set E) := by
-    rintro _ ⟨z, hz, y, hy, rfl⟩
-    have h := add_mem_add hz (hψ hy)
-    rw [closedBall_add_ball (ρ n).rOut_pos.le (pos_of_mem_ball (hψ hy)), zero_add] at h
-    exact hr (ball_subset_ball (by linarith [hle n]) h)
+      closedBall (0 : E) (ρ n).rOut + tsupport ψ ⊆ (Ω : Set E) :=
+    (add_subset_add_left hψ).trans (hball n)
   have hmoll (n : ℕ) {ψ : 𝓓(Ω, ℝ)} (hψ : tsupport ψ ⊆ ball x r) :=
-    apply_mollify_eq_integral_smul_translatePairing μ hT hr (hle n) (ρ' := bump (ρ n)) rfl hψ
+    apply_mollify_eq_integral_smul_translatePairing μ hT (hball n) (ρ' := bump (ρ n)) rfl hψ
       (hsub hψ n)
   have hTφ : Tendsto (fun n => (∫ y, φ y ∂μ) • T.translatePairing (bump (ρ n)) x) atTop
       (𝓝 (T φ)) :=
