@@ -181,7 +181,7 @@ def coordinateSimplexHalfSpaceChart (v : Option (Option ι)) :
     simp only [mem_ofPred_eq] at hq
     rw [dite_eq_left hq]
     simp only [coordinateSimplexHalfSpaceChartSource, mem_ofPred_eq,
-      halfSpaceMap_symm_apply, coordinateSimplexChartSwap_involutive]
+      halfSpaceMap_symm_apply, coordinateSimplexChartSwap_coordinateSimplexChartSwap]
     simpa only [halfSpaceMap_symm_apply, coordinateSimplexChartSwap_none] using hq
   left_inv' x hx := by
     simp only [dite_eq_left (source_to_target v x hx), Homeomorph.symm_apply_apply]
@@ -237,7 +237,7 @@ theorem coe_coordinateSimplexHalfSpaceChart_symm_apply (v : Option (Option ι))
 theorem exists_mem_coordinateSimplexHalfSpaceChartSource
     (x : coordinateSimplex (Option ι)) :
     ∃ v, x ∈ coordinateSimplexHalfSpaceChartSource v := by
-  exact (sum_lt_one_or_exists_pos_of_mem_coordinateSimplex _ x.2).elim
+  exact (sum_lt_one_or_exists_pos x.1).elim
     (fun h => ⟨none, by simpa using h⟩) (fun ⟨j, h⟩ => ⟨some j, by simpa using h⟩)
 
 /-- In a vertex chart the geometric simplex boundary is exactly height zero. -/
