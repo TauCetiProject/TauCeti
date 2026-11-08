@@ -429,12 +429,14 @@ affine open `U` induces an isomorphism of residue fields at a point `u` over the
 `Γ(S, U)` as soon as `κ(s) ≅ κ(u)`. -/
 theorem IsAffineOpen.isIso_residueFieldMap_spec_algebraMap_comp_fromSpec {S : Scheme.{u}}
     {U : S.Opens} (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R]
-    [Algebra Γ(S, U) R] (u : Spec ↧R) [u.asIdeal.IsPrime]
+    [Algebra Γ(S, U) R] (u : Spec ↧R)
     [u.asIdeal.LiesOver (hU.primeIdealOf ⟨s, hs⟩).asIdeal]
-    (hres : Function.Bijective (Ideal.ResidueField.mapₐ (hU.primeIdealOf ⟨s, hs⟩).asIdeal
-      u.asIdeal (Algebra.ofId _ _) (u.asIdeal.over_def _))) :
+    (hres : haveI := u.isPrime
+      Function.Bijective (Ideal.ResidueField.mapₐ (hU.primeIdealOf ⟨s, hs⟩).asIdeal
+        u.asIdeal (Algebra.ofId _ _) (u.asIdeal.over_def _))) :
     IsIso ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec).residueFieldMap
       u) := by
+  have := u.isPrime
   -- the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
   have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
     (u.asIdeal.over_def _)).mpr hres
