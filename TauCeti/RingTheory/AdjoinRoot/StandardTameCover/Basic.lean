@@ -68,7 +68,7 @@ henselian regular local ring and `f` a local equation of the divisor.
 ## Main results
 
 * `TauCeti.standardTameCover_free`: for `e ≥ 1` the cover is free of rank `e`.
-* `TauCeti.standardTameCover_finite`: if `e` is invertible, the cover is a finite `A`-module.
+* For `e ≠ 0` the cover is a finite `A`-module (an instance).
 * `TauCeti.isFiniteProductOfStandardTameCovers_iff`: unfolding of the predicate.
 * `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`: transport along `A`-algebra
   isomorphisms.
@@ -245,14 +245,10 @@ theorem standardTameCover_etale {f : A} {e : ℕ} (hf : IsUnit f) (he : IsUnit (
   have := hmonic.isStandardEtale_adjoinRoot (separable_X_pow_sub_C_unit hf.unit he)
   infer_instance
 
-/-- If `e` is invertible in `A`, the standard cover `A[x]/(x^e − f)` is a finite `A`-module: for
-`e ≠ 0` the polynomial `x ^ e - f` is monic, and for `e = 0` the ring `A` is trivial. -/
-theorem standardTameCover_finite (f : A) {e : ℕ} (he : IsUnit (e : A)) :
-    Module.Finite A (standardTameCover A f e) := by
-  rcases eq_or_ne e 0 with rfl | he₀
-  · have : Subsingleton A := subsingleton_of_zero_eq_one (by simpa using he)
-    exact (monic_of_subsingleton (X ^ 0 - C f)).finite_adjoinRoot
-  · exact (monic_X_pow_sub_C f he₀).finite_adjoinRoot
+/-- For `e ≠ 0` the standard cover `A[x]/(x^e − f)` is a finite `A`-module, since `x ^ e - f` is
+monic. -/
+instance (f : A) (e : ℕ) [NeZero e] : Module.Finite A (standardTameCover A f e) :=
+  (monic_X_pow_sub_C f (NeZero.ne e)).finite_adjoinRoot
 
 section Maps
 

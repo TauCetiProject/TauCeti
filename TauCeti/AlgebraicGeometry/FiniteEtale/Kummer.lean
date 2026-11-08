@@ -95,7 +95,13 @@ variable (n : ℕ) (hn : IsUnit (n : R))
 in `R`, as a finite étale `R`-algebra. -/
 noncomputable abbrev kummerAlgebra : CommAlgCat.FiniteEtale.{u} R :=
   haveI := standardTameCover_etale (A := R) t.isUnit hn
-  haveI := standardTameCover_finite (t : R) hn
+  haveI : Module.Finite R (standardTameCover R (t : R) n) := by
+    rcases eq_or_ne n 0 with rfl | hn₀
+    · -- For `n = 0` the ring `R` is trivial, since `0` is invertible in it.
+      have : Subsingleton R := subsingleton_of_zero_eq_one (by simpa using hn)
+      exact (monic_of_subsingleton _).finite_adjoinRoot
+    · have : NeZero n := ⟨hn₀⟩
+      infer_instance
   CommAlgCat.FiniteEtale.of R (standardTameCover R (t : R) n)
 
 /-- **The Kummer cover** `Spec R[x]/(x ^ n - t) ⟶ Spec R` of degree `n` along a unit `t`, as a
@@ -111,6 +117,25 @@ theorem kummerCover_def : kummerCover t n hn = (spec R).obj (op (kummerAlgebra t
   (rfl)
 
 end Cover
+
+section SpecMap
+
+variable {n m k : ℕ} {hn : IsUnit (n : R)} {hm : IsUnit (m : R)} {hk : IsUnit (k : R)}
+
+/-- The morphism of Kummer covers that `spec R` attaches to a morphism of Kummer algebras. -/
+private noncomputable def kummerSpecMap (f : kummerAlgebra t n hn ⟶ kummerAlgebra t m hm) :
+    kummerCover t m hm ⟶ kummerCover t n hn :=
+  (spec R).map f.op
+
+private theorem kummerSpecMap_id : kummerSpecMap t (𝟙 (kummerAlgebra t n hn)) = 𝟙 _ :=
+  (spec R).map_id _
+
+private theorem kummerSpecMap_comp (f : kummerAlgebra t n hn ⟶ kummerAlgebra t m hm)
+    (g : kummerAlgebra t m hm ⟶ kummerAlgebra t k hk) :
+    kummerSpecMap t g ≫ kummerSpecMap t f = kummerSpecMap t (f ≫ g) :=
+  ((spec R).map_comp _ _).symm
+
+end SpecMap
 
 section Map
 
@@ -129,14 +154,14 @@ private theorem kummerAlgebraMap_hom_hom (h : n ∣ m) :
 algebras by `x_n ↦ x_m ^ (m / n)`; on points, it raises an `m`-th root of `t` to the power
 `m / n`. -/
 noncomputable def kummerCoverMap (h : n ∣ m) : kummerCover t m hm ⟶ kummerCover t n hn :=
-  (spec R).map (kummerAlgebraMap t hn hm h).op
+  kummerSpecMap t (kummerAlgebraMap t hn hm h)
 
 /-- The map of Kummer covers of `n ∣ n` is the identity. -/
 @[simp]
 theorem kummerCoverMap_refl : kummerCoverMap t hn hn (dvd_refl n) = 𝟙 _ := by
   have : kummerAlgebraMap t hn hn (dvd_refl n) = 𝟙 _ := by
     ext : 2
-    rw [kummerAlgebraMap_hom_hom, ObjectProperty.FullSubcategory.id_hom, CommAlgCat.hom_id]
+    simp only [kummerAlgebraMap_hom_hom, ObjectProperty.FullSubcategory.id_hom, CommAlgCat.hom_id]
     rcases eq_or_ne n 0 with rfl | hn₀
     · -- For `n = 0` the ring `R` is trivial, and so is the Kummer algebra.
       have : Subsingleton R := subsingleton_of_zero_eq_one (by simpa using hn)
@@ -144,9 +169,7 @@ theorem kummerCoverMap_refl : kummerCoverMap t hn hn (dvd_refl n) = 𝟙 _ := by
       exact AlgHom.ext fun _ ↦ Subsingleton.elim _ _
     · have : NeZero n := ⟨hn₀⟩
       exact standardTameCoverAlgHomOfDvd_refl (t : R)
-  rw [kummerCoverMap, this, op_id, (spec R).map_id]
-  -- `kummerCover t n hn` is by definition `(spec R).obj (op (kummerAlgebra t n hn))`.
-  rfl
+  rw [kummerCoverMap, this, kummerSpecMap_id]
 
 /-- The maps between Kummer covers are compatible with composition. -/
 @[reassoc (attr := simp)]
@@ -156,9 +179,8 @@ theorem kummerCoverMap_comp {k : ℕ} (hk : IsUnit (k : R)) (h₁ : n ∣ m) (h�
   have : kummerAlgebraMap t hn hm h₁ ≫ kummerAlgebraMap t hm hk h₂ =
       kummerAlgebraMap t hn hk (h₁.trans h₂) := by
     ext : 2
-    rw [ObjectProperty.FullSubcategory.comp_hom, CommAlgCat.hom_comp, kummerAlgebraMap_hom_hom,
-      kummerAlgebraMap_hom_hom, kummerAlgebraMap_hom_hom, standardTameCoverAlgHomOfDvd_comp]
-  exact ((spec R).map_comp _ _).symm.trans (congrArg (fun f ↦ (spec R).map f.op) this)
+    simp [kummerAlgebraMap_hom_hom, standardTameCoverAlgHomOfDvd_comp]
+  rw [kummerCoverMap, kummerCoverMap, kummerCoverMap, kummerSpecMap_comp, this]
 
 end Map
 
@@ -181,35 +203,28 @@ noncomputable def kummerCoverDeck (ζ : rootsOfUnity n R) :
     kummerCover t n hn ≅ kummerCover t n hn :=
   (spec R).mapIso (kummerAlgebraDeck t hn ζ).op
 
+private theorem kummerCoverDeck_hom (ζ : rootsOfUnity n R) :
+    (kummerCoverDeck t hn ζ).hom = kummerSpecMap t (kummerAlgebraDeck t hn ζ).hom :=
+  (rfl)
+
 /-- The deck transformation of the root of unity `1` is the identity. -/
 @[simp]
 theorem kummerCoverDeck_one : kummerCoverDeck t hn 1 = Iso.refl _ := by
   have : kummerAlgebraDeck t hn 1 = Iso.refl _ := by
     ext : 3
-    rw [kummerAlgebraDeck_hom_hom_hom, map_one, Iso.refl_hom,
-      ObjectProperty.FullSubcategory.id_hom, CommAlgCat.hom_id]
-    exact AlgHom.ext AlgEquiv.one_apply
+    exact AlgHom.ext fun x ↦ by simp [kummerAlgebraDeck_hom_hom_hom]
   ext : 1
-  rw [kummerCoverDeck, this, Functor.mapIso_hom, Iso.op_hom, Iso.refl_hom, op_id,
-    (spec R).map_id]
-  -- `kummerCover t n hn` is by definition `(spec R).obj (op (kummerAlgebra t n hn))`.
-  rfl
+  rw [kummerCoverDeck_hom, this, Iso.refl_hom, kummerSpecMap_id, Iso.refl_hom]
 
 /-- The deck transformations compose according to the multiplication of roots of unity. -/
 theorem kummerCoverDeck_mul (ζ ξ : rootsOfUnity n R) :
     kummerCoverDeck t hn (ζ * ξ) = kummerCoverDeck t hn ζ ≪≫ kummerCoverDeck t hn ξ := by
   have : kummerAlgebraDeck t hn (ζ * ξ) = kummerAlgebraDeck t hn ξ ≪≫ kummerAlgebraDeck t hn ζ := by
     ext : 3
-    rw [Iso.trans_hom, ObjectProperty.FullSubcategory.comp_hom, CommAlgCat.hom_comp,
-      kummerAlgebraDeck_hom_hom_hom, kummerAlgebraDeck_hom_hom_hom, kummerAlgebraDeck_hom_hom_hom,
-      map_mul]
-    exact AlgHom.ext (AlgEquiv.mul_apply _ _)
+    exact AlgHom.ext fun x ↦ by simp [kummerAlgebraDeck_hom_hom_hom]
   ext : 1
-  rw [Iso.trans_hom, kummerCoverDeck, kummerCoverDeck, kummerCoverDeck, this, Functor.mapIso_hom,
-    Functor.mapIso_hom, Functor.mapIso_hom, Iso.op_hom, Iso.op_hom, Iso.op_hom, Iso.trans_hom,
-    op_comp, (spec R).map_comp]
-  -- The two sides differ only in writing `kummerCover t n hn` for its definition.
-  rfl
+  rw [Iso.trans_hom, kummerCoverDeck_hom, kummerCoverDeck_hom, kummerCoverDeck_hom,
+    kummerSpecMap_comp, this, Iso.trans_hom]
 
 /-- For `n ∣ m`, the map of Kummer covers from degree `m` to degree `n` intertwines the deck
 transformation of an `m`-th root of unity `ζ` with that of the `n`-th root of unity
@@ -222,14 +237,10 @@ theorem kummerCoverDeck_hom_comp_kummerCoverMap {m : ℕ} (hm : IsUnit (m : R)) 
   have : kummerAlgebraMap t hn hm h ≫ (kummerAlgebraDeck t hm ζ).hom =
       (kummerAlgebraDeck t hn ξ).hom ≫ kummerAlgebraMap t hn hm h := by
     ext : 2
-    rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
-      CommAlgCat.hom_comp, CommAlgCat.hom_comp, kummerAlgebraMap_hom_hom,
-      kummerAlgebraDeck_hom_hom_hom, kummerAlgebraDeck_hom_hom_hom,
+    simp [kummerAlgebraMap_hom_hom, kummerAlgebraDeck_hom_hom_hom,
       standardTameCoverAut_comp_standardTameCoverAlgHomOfDvd (t : R) h ζ ξ hξ]
-  rw [kummerCoverDeck, kummerCoverDeck, Functor.mapIso_hom, Functor.mapIso_hom, Iso.op_hom,
-    Iso.op_hom, kummerCoverMap]
-  exact ((spec R).map_comp _ _).symm.trans <|
-    (congrArg (fun f ↦ (spec R).map f.op) this).trans ((spec R).map_comp _ _)
+  rw [kummerCoverDeck_hom, kummerCoverDeck_hom, kummerCoverMap, kummerSpecMap_comp,
+    kummerSpecMap_comp, this]
 
 end Deck
 
