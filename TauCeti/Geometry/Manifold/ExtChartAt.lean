@@ -153,11 +153,16 @@ theorem _root_.ModelWithCorners.extendCoordChange_apply {e e' : OpenPartialHomeo
 omit [ChartedSpace H M] in
 /-- Near a point in a chart overlap, changing coordinates and then applying the inverse of the
 second extended chart agrees with the inverse of the first extended chart. -/
-theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq [I.Boundaryless]
+theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq
     {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
     (e'.extend I).symm ∘ I.extendCoordChange e e' =ᶠ[𝓝 (I (e x))] (e.extend I).symm := by
-  filter_upwards [I.extendCoordChange_source_mem_nhds hx hx'] with y hy
-  exact (e'.extend I).left_inv hy.2
+  have hc : ContinuousAt (fun y : E ↦ e.symm (I.symm y)) (I (e x)) := by
+    have := e.continuousAt_symm (show I.symm (I (e x)) ∈ e.target by
+      rw [I.left_inv]; exact e.map_source hx)
+    exact this.comp (I.continuous_symm.continuousAt (x := I (e x)))
+  filter_upwards [hc.preimage_mem_nhds (e'.open_source.mem_nhds (show e.symm (I.symm (I (e x)))
+    ∈ e'.source by rw [I.left_inv, e.left_inv hx]; exact hx'))] with y hy
+  exact (e'.extend I).left_inv ⟨by simpa using hy, by simp⟩
 
 open Set in
 omit [ChartedSpace H M] in
