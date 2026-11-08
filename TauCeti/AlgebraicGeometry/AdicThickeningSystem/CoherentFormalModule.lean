@@ -16,10 +16,12 @@ A *coherent formal module* on an adic thickening system `𝔛 = (X n, ι n)` is 
 modules: a finitely presented `𝒪_{X n}`-module `F n` on every level, together with isomorphisms
 `ι n ^* F (n + 1) ≅ F n` identifying each level with the reduction of the next one. Morphisms are
 families of linear maps `F n ⟶ G n` compatible with these isomorphisms. For the formal completion
-`X/V(I)` of a scheme `X` along `V(I)`, this is the category of coherent modules on `X/V(I)` used in
-the theorem on formal functions and in Grothendieck's existence theorem (Stacks, Section 30.23):
-the systems `(F n)` with `F n` a finitely presented module on `V(I ^ (n + 1))` and
-`F (n + 1) / I ^ (n + 1) F (n + 1) ≅ F n`.
+`X/V(I)` of a scheme `X` along `V(I)`, these are the systems `(F n)` with `F n` a finitely
+presented module on `V(I ^ (n + 1))` and `F (n + 1) / I ^ (n + 1) F (n + 1) ≅ F n`. When `X` is
+locally Noetherian, finitely presented and coherent modules agree, and this recovers the category
+`Coh(X, I)` of coherent modules on `X/V(I)` used in the theorem on formal functions and in
+Grothendieck's existence theorem (Stacks, Section 30.23); for general `X` the definition packages
+finitely presented systems.
 
 The category `CoherentFormalModule 𝔛` is preadditive, with sums and differences of morphisms
 computed levelwise. The *completion functor*
@@ -36,6 +38,9 @@ required to be finitely presented rather than merely coherent.
   finitely presented modules on the levels of an adic thickening system.
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Hom`: compatible families of
   linear maps, making `CoherentFormalModule 𝔛` a preadditive category.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.isoMk`: an isomorphism of
+  coherent formal modules from compatible levelwise isomorphisms; a morphism is an isomorphism iff
+  it is one at every level (`CoherentFormalModule.isIso_iff_forall_isIso_app`).
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
   finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
 
@@ -109,6 +114,62 @@ theorem Hom.transitionIso_inv_naturality {M N : CoherentFormalModule 𝔛} (f : 
       f.app n ≫ (N.transitionIso n).inv := by
   rw [Iso.inv_comp_eq, ← Category.assoc, ← f.naturality, Category.assoc, Iso.hom_inv_id,
     Category.comp_id]
+
+/-- Construct an isomorphism of coherent formal modules from levelwise isomorphisms compatible with
+the reduction isomorphisms. -/
+def isoMk {M N : CoherentFormalModule 𝔛} (e : ∀ n, M.obj n ≅ N.obj n)
+    (h : ∀ n, (Scheme.Modules.pullback (𝔛.ι n)).map (e (n + 1)).hom ≫ (N.transitionIso n).hom =
+      (M.transitionIso n).hom ≫ (e n).hom := by cat_disch) : M ≅ N where
+  hom :=
+    { app n := (e n).hom
+      naturality := h }
+  inv :=
+    { app n := (e n).inv
+      naturality n := by
+        rw [Iso.eq_comp_inv, Category.assoc, ← h, ← Functor.map_comp_assoc, Iso.inv_hom_id,
+          CategoryTheory.Functor.map_id, Category.id_comp] }
+
+@[simp]
+theorem isoMk_hom_app {M N : CoherentFormalModule 𝔛} (e : ∀ n, M.obj n ≅ N.obj n)
+    (h : ∀ n, (Scheme.Modules.pullback (𝔛.ι n)).map (e (n + 1)).hom ≫ (N.transitionIso n).hom =
+      (M.transitionIso n).hom ≫ (e n).hom) (n : ℕ) :
+    (isoMk e h).hom.app n = (e n).hom :=
+  (rfl)
+
+@[simp]
+theorem isoMk_inv_app {M N : CoherentFormalModule 𝔛} (e : ∀ n, M.obj n ≅ N.obj n)
+    (h : ∀ n, (Scheme.Modules.pullback (𝔛.ι n)).map (e (n + 1)).hom ≫ (N.transitionIso n).hom =
+      (M.transitionIso n).hom ≫ (e n).hom) (n : ℕ) :
+    (isoMk e h).inv.app n = (e n).inv :=
+  (rfl)
+
+/-- The component isomorphism at level `n` induced by an isomorphism of coherent formal modules. -/
+def appIso {M N : CoherentFormalModule 𝔛} (e : M ≅ N) (n : ℕ) : M.obj n ≅ N.obj n where
+  hom := e.hom.app n
+  inv := e.inv.app n
+  hom_inv_id := by rw [← comp_app, e.hom_inv_id, id_app]
+  inv_hom_id := by rw [← comp_app, e.inv_hom_id, id_app]
+
+@[simp]
+theorem appIso_hom {M N : CoherentFormalModule 𝔛} (e : M ≅ N) (n : ℕ) :
+    (appIso e n).hom = e.hom.app n :=
+  (rfl)
+
+@[simp]
+theorem appIso_inv {M N : CoherentFormalModule 𝔛} (e : M ≅ N) (n : ℕ) :
+    (appIso e n).inv = e.inv.app n :=
+  (rfl)
+
+instance isIso_app_of_isIso {M N : CoherentFormalModule 𝔛} (f : M ⟶ N) [IsIso f] (n : ℕ) :
+    IsIso (f.app n) :=
+  (appIso (asIso f) n).isIso_hom
+
+/-- A morphism of coherent formal modules is an isomorphism if and only if each levelwise component
+is an isomorphism of modules. -/
+theorem isIso_iff_forall_isIso_app {M N : CoherentFormalModule 𝔛} (f : M ⟶ N) :
+    IsIso f ↔ ∀ n, IsIso (f.app n) :=
+  ⟨fun _ n ↦ inferInstance, fun h ↦
+    ⟨(isoMk (fun n ↦ @asIso _ _ _ _ (f.app n) (h n)) f.naturality).inv, by ext; simp, by ext; simp⟩⟩
 
 /-! ### The preadditive structure -/
 
