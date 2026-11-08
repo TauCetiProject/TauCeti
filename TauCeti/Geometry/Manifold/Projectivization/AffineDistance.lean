@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Morse.ScalarComposition
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 public import TauCeti.Topology.Algebra.Projectivization.AffineDistance
 public import TauCeti.Topology.Algebra.Projectivization.ZeroLocus
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Relative homology of a projective variety modulo a neighbourhood of a hyperplane section

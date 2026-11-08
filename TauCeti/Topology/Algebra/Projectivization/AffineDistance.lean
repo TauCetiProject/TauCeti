@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Group.Indicator
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.Algebra.Projectivization
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Reciprocal affine distance on projective space
@@ -57,15 +58,6 @@ public section
 
 open Metric Set
 open scoped LinearAlgebra.Projectivization
-
-namespace TauCeti
-
-/-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
-theorem inv_one_add_norm_sub_sq_le_one {F : Type*} [SeminormedAddCommGroup F] (x a : F) :
-    (1 + ‖x - a‖ ^ 2)⁻¹ ≤ 1 :=
-  inv_le_one_of_one_le₀ (le_add_of_nonneg_right (by positivity))
-
-end TauCeti
 
 namespace Projectivization
 
