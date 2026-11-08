@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Geometry.Sphere.Circle
+import TauCeti.Topology.Closure
 import TauCeti.Topology.JordanCurve.Separation
 import TauCeti.Topology.Path.Arc
 
@@ -61,8 +62,7 @@ open Function Metric Module Set Topology
 
 namespace TauCeti
 
-variable {E F X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [TopologicalSpace X]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
 
 /-- The closure of one complementary arc of a pair of distinct points of the circle is the closed
 arc, and it is a closed one-dimensional disc whose boundary sphere corresponds to the two points. -/
@@ -157,16 +157,6 @@ theorem exists_closure_homeomorph_closedBall_sphere [NormedSpace ℝ F] (hE : fi
   · rw [← Φ.preimage_closure, hAcl, preimage_union, hpair]
   · rw [← Φ.preimage_closure, hBcl, preimage_union, hpair]
 
-/-- If an open set `N` around a point `y₀` of the closure of `B` lies in `A ∪ {y₀}`, with `A`
-disjoint from `B` and `y₀ ∉ B`, we have a contradiction: `N` meets `B`. -/
-private theorem false_of_subset_union_singleton {A B N : Set X} {y₀ : X} (hN : IsOpen N)
-    (hy₀N : y₀ ∈ N) (hy₀ : y₀ ∈ closure B) (hNA : N ⊆ A ∪ {y₀}) (hAB : Disjoint A B)
-    (hy₀B : y₀ ∉ B) : False := by
-  obtain ⟨y, hyN, hyB⟩ := mem_closure_iff_nhds.1 hy₀ N (hN.mem_nhds hy₀N)
-  rcases hNA hyN with hyA | rfl
-  · exact disjoint_left.1 hAB hyA hyB
-  · exact hy₀B hyB
-
 omit [NormedSpace ℝ E] in
 /-- The collar clause of the one-dimensional Schoenflies theorem: if the complement of the zero
 slice `Σ` of a continuous injection `β : S⁰ × [-1, 1] → S¹` is split into open sets `A` and `B`
@@ -245,12 +235,12 @@ private theorem collar_mapsTo [NormedSpace ℝ F] (hF : finrank ℝ F = 2)
   -- If both arcs were on the same side, `g 0` could not be adherent to the other side.
   rcases hside isPreconnected_Ioc hIoc (fun h ↦ lt_irrefl _ h.1) with hP | hP <;>
   rcases hside isPreconnected_Ico hIco (fun h ↦ lt_irrefl _ h.2) with hM | hM
-  · exact (false_of_subset_union_singleton hN h0N (hBcl ▸ Or.inr h0S) (hNsub hP hM) hdisj
-      fun h ↦ h0AB (Or.inr h)).elim
+  · exact (not_subset_union_singleton_of_mem_closure hN h0N (hBcl ▸ Or.inr h0S) hdisj
+      (fun h ↦ h0AB (Or.inr h)) (hNsub hP hM)).elim
   · exact Or.inl ⟨hP, hM⟩
   · exact Or.inr ⟨hP, hM⟩
-  · exact (false_of_subset_union_singleton hN h0N (hAcl ▸ Or.inr h0S) (hNsub hP hM) hdisj.symm
-      fun h ↦ h0AB (Or.inl h)).elim
+  · exact (not_subset_union_singleton_of_mem_closure hN h0N (hAcl ▸ Or.inr h0S) hdisj.symm
+      (fun h ↦ h0AB (Or.inl h)) (hNsub hP hM)).elim
 
 /-- **The generalized Schoenflies theorem in dimension one.** Let `β : S⁰ × [-1, 1] → S¹` be a
 continuous injection, where `S⁰` is the unit sphere of a one-dimensional real normed space `E` and
