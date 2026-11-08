@@ -10,7 +10,10 @@ public import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts.BinaryProducts
 public import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
-# Binary coproducts of commutative monoid objects
+# Commutative monoid objects: isomorphisms and binary coproducts
+
+A homomorphism of commutative monoid objects is an isomorphism as soon as its underlying morphism
+is, so the forgetful functor `CommMon C ⥤ C` reflects isomorphisms.
 
 In a symmetric monoidal category `C`, the tensor product `A ⊗ B` of two commutative monoid
 objects is again a commutative monoid object. It is their coproduct in `CommMon C`: the
@@ -21,6 +24,8 @@ quasicoherent algebras on a scheme it is dual to the fibre product of their rela
 
 ## Main declarations
 
+* `CategoryTheory.CommMon.instReflectsIsomorphismsForget`: the forgetful functor `CommMon C ⥤ C`
+  reflects isomorphisms;
 * `CategoryTheory.CommMon.tensorObj`: the tensor product of commutative monoid objects;
 * `CategoryTheory.CommMon.inl`, `CategoryTheory.CommMon.inr`: the two inclusions;
 * `CategoryTheory.CommMon.desc`: the homomorphism out of the tensor product induced by a pair;
@@ -42,6 +47,12 @@ namespace CategoryTheory
 universe u v
 
 namespace CommMon
+
+/-- A homomorphism of commutative monoid objects whose underlying morphism is an isomorphism is
+an isomorphism. -/
+instance instReflectsIsomorphismsForget {C : Type u} [Category.{v} C] [MonoidalCategory C]
+    [BraidedCategory C] : (forget C).ReflectsIsomorphisms :=
+  inferInstanceAs (forget₂Mon C ⋙ Mon.forget C).ReflectsIsomorphisms
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [SymmetricCategory C]
 
