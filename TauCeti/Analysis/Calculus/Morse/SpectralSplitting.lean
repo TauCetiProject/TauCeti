@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 -- projection; the public API exposes the resulting continuous linear map.
 import Mathlib.Analysis.Normed.Module.Complemented
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
+import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 
 /-!
 # Spectral splitting at a Morse critical point
@@ -164,47 +165,6 @@ theorem disjoint_unstableLinearSubspace_stableLinearSubspace (hf : ContDiffAt �
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric
     |>.disjoint_negativeSpectralSubspace_positiveSpectralSubspace rfl
 
-/-- In the Hessian eigenbasis, the number of negative eigenvalues, counted with multiplicity, is
-the Morse index. -/
-theorem morseIndex_eq_ncard_hessianOperator_eigenvalues_neg (hf : ContDiffAt ℝ 2 f x) :
-    morseIndex f x =
-      {i | hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvalues rfl i < 0}.ncard := by
-  let hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
-  let b := hT.eigenvectorBasis rfl
-  have horth : (QuadraticMap.associated (hessianQuadraticForm f x)).IsOrthoᵢ b := by
-    rw [LinearMap.isOrthoᵢ_def]
-    intro i j hij
-    rw [associated_hessianQuadraticForm hf, ContinuousLinearMap.toBilinForm_apply,
-      ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i j]
-    simp [hij]
-  have hequiv : QuadraticMap.Equivalent (hessianQuadraticForm f x)
-      (QuadraticMap.weightedSumSquares ℝ fun i ↦ hessianQuadraticForm f x (b i)) :=
-    ⟨QuadraticForm.isometryEquivWeightedSumSquares (hessianQuadraticForm f x) b.toBasis horth⟩
-  have hweights : (fun i ↦ hessianQuadraticForm f x (b i)) = hT.eigenvalues rfl := by
-    funext i
-    rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i i]
-    simp
-  rw [hweights] at hequiv
-  rw [morseIndex_def]
-  simpa only [hT] using
-    QuadraticForm.sigNeg_of_equiv_weightedSumSquares hequiv
-
-/-- The dimension of the unstable linear subspace at a `C²` point is its Morse index. -/
-@[simp]
-theorem finrank_unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x) :
-    Module.finrank ℝ hf.unstableLinearSubspace = morseIndex f x := by
-  rw [unstableLinearSubspace,
-    hf.isSelfAdjoint_hessianOperator.isSymmetric.finrank_negativeSpectralSubspace,
-    hf.morseIndex_eq_ncard_hessianOperator_eigenvalues_neg]
-
 /-- The unstable linear subspace is the point-spectral subspace of the Hessian for the negative
 eigenvalues. -/
 theorem unstableLinearSubspace_eq_pointSpectralSubspace (hf : ContDiffAt ℝ 2 f x) :
@@ -228,12 +188,31 @@ theorem stableLinearSubspace_eq_pointSpectralSubspace (hf : ContDiffAt ℝ 2 f x
   simp only [mem_Ioi, subset_def, Finset.mem_coe, mem_ofPred_eq]
 
 /-- The Morse index at a `C²` point is the dimension of the point-spectral subspace of the
-Hessian for the negative eigenvalues. -/
+Hessian for the negative eigenvalues. This is Sylvester's law of inertia read spectrally,
+`InnerProductSpace.finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`, for the second
+derivative. -/
 theorem morseIndex_eq_finrank_pointSpectralSubspace (hf : ContDiffAt ℝ 2 f x) :
     morseIndex f x =
       Module.finrank ℝ
         (Module.End.pointSpectralSubspace (hessianOperator f x : E →ₗ[ℝ] E) (Iio 0)) := by
-  rw [← hf.unstableLinearSubspace_eq_pointSpectralSubspace, hf.finrank_unstableLinearSubspace]
+  rw [morseIndex_def, hessianQuadraticForm_def, hessianOperator_eq_continuousLinearMapOfBilin,
+    finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin
+      (hf.isSymmSndFDerivAt (by norm_num))]
+
+/-- The dimension of the unstable linear subspace at a `C²` point is its Morse index. -/
+@[simp]
+theorem finrank_unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x) :
+    Module.finrank ℝ hf.unstableLinearSubspace = morseIndex f x := by
+  rw [hf.unstableLinearSubspace_eq_pointSpectralSubspace,
+    hf.morseIndex_eq_finrank_pointSpectralSubspace]
+
+/-- In the Hessian eigenbasis, the number of negative eigenvalues, counted with multiplicity, is
+the Morse index. -/
+theorem morseIndex_eq_ncard_hessianOperator_eigenvalues_neg (hf : ContDiffAt ℝ 2 f x) :
+    morseIndex f x =
+      {i | hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvalues rfl i < 0}.ncard := by
+  rw [← hf.finrank_unstableLinearSubspace, unstableLinearSubspace,
+    hf.isSelfAdjoint_hessianOperator.isSymmetric.finrank_negativeSpectralSubspace]
 
 /-- When the Hessian is injective, the unstable and stable linear subspaces are complementary,
 so the tangent space is their direct sum. Injectivity excludes the zero eigenspace; at a

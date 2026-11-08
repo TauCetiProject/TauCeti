@@ -296,9 +296,8 @@ theorem pointSpectralSubspace_conj {E' : Type*} [AddCommGroup E'] [Module 𝕜 E
   have h (μ : ℝ) :
       (e.conj A).eigenspace (μ : 𝕜) = (A.eigenspace (μ : 𝕜)).map (e : E →ₗ[𝕜] E') := by
     ext x
-    rw [Submodule.mem_map_equiv, mem_eigenspace_iff, mem_eigenspace_iff, LinearEquiv.conj_apply,
-      LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      ← e.symm.injective.eq_iff, e.symm_apply_apply, map_smul]
+    rw [Submodule.mem_map_equiv, mem_eigenspace_iff, mem_eigenspace_iff]
+    simp [LinearEquiv.conj_apply, ← e.symm.injective.eq_iff]
   simp only [pointSpectralSubspace, Submodule.map_iSup, h]
 
 /-- For an injective endomorphism, also selecting the eigenvalue `0` does not change a

@@ -44,6 +44,8 @@ No inner product instance on the algebraic dual is installed.
   continuously on the sesquilinear form.
 * `InnerProductSpace.ker_continuousLinearMapOfBilin`: the Riesz operator of a form has the kernel
   of the form.
+* `InnerProductSpace.continuousLinearMapOfBilin_neg`: the Riesz operator of `-B` is the negative
+  of that of `B`.
 * `InnerProductSpace.adjoint_continuousLinearMapOfBilin`: over `ℝ`, the adjoint of the Riesz
   operator represents the transposed form.
 * `InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin` and
@@ -115,6 +117,12 @@ theorem ker_continuousLinearMapOfBilin (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
   ext u
   simp [continuousLinearMapOfBilin]
 
+/-- The Fréchet–Riesz operator of the negative of a form is the negative of its Riesz operator. -/
+@[simp]
+theorem continuousLinearMapOfBilin_neg (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
+    continuousLinearMapOfBilin (-B) = -continuousLinearMapOfBilin B :=
+  ContinuousLinearMap.comp_neg _ _
+
 /-- Evaluating functionals at each other's Riesz representatives is conjugate-symmetric:
 `β(α♯) = conj (α(β♯))`. Over `ℝ` this says `β(α♯) = α(β♯)`. -/
 theorem apply_toDual_symm_eq_conj (α β : StrongDual 𝕜 E) :
@@ -173,11 +181,8 @@ theorem isUnit_continuousLinearMapOfBilin [FiniteDimensional ℝ F] {B : F →L[
   refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr
     ((LinearMap.isUnit_iff_ker_eq_bot _).mpr ?_)
   rw [LinearMap.ker_eq_bot]
-  intro v w hvw
-  apply hB
-  ext u
-  rw [← continuousLinearMapOfBilin_apply, ← continuousLinearMapOfBilin_apply]
-  exact congrArg (inner ℝ · u) hvw
+  exact LinearMap.ker_eq_bot.mp
+    ((ker_continuousLinearMapOfBilin B).trans (LinearMap.ker_eq_bot.mpr hB))
 
 end Real
 
