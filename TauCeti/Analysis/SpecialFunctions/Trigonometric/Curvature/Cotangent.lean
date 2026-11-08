@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature
-public import Mathlib.Analysis.Calculus.Deriv.Slope
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Basic
 
 /-!
 # Logarithmic derivatives of constant-curvature model functions
@@ -49,18 +48,9 @@ theorem hasDerivAt_curvatureCotangent {κ t : ℝ} (ht : curvatureSine κ t ≠ 
   ring
 
 /-- Ordinary derivative form of the model Riccati equation. -/
-theorem deriv_curvatureCotangent {κ t : ℝ} (ht : curvatureSine κ t ≠ 0) :
+@[simp] theorem deriv_curvatureCotangent {κ t : ℝ} (ht : curvatureSine κ t ≠ 0) :
     deriv (curvatureCotangent κ) t = -curvatureCotangent κ t ^ 2 - κ :=
   (hasDerivAt_curvatureCotangent ht).deriv
-
-/-- The curvature sine has unit first-order scale at its origin. -/
-theorem tendsto_curvatureSine_div_zero (κ : ℝ) :
-    Tendsto (fun t ↦ curvatureSine κ t / t) (𝓝[≠] 0) (𝓝 1) := by
-  have heq : (fun t ↦ curvatureSine κ t / t) = slope (curvatureSine κ) 0 := by
-    ext t
-    simp only [slope_def_field, curvatureSine_zero_right, sub_zero]
-  rw [heq]
-  simpa only [curvatureCosine_zero_right] using (hasDerivAt_curvatureSine κ 0).tendsto_slope
 
 /-- The rescaled model logarithmic derivative tends to one at its singular origin. -/
 theorem tendsto_mul_curvatureCotangent_zero (κ : ℝ) :
@@ -75,22 +65,6 @@ theorem tendsto_mul_curvatureCotangent_zero (κ : ℝ) :
     rw [curvatureCotangent_def, Pi.div_apply, div_div_eq_mul_div]
     ring
   · norm_num
-
-/-- The model cosine is positive before the spherical half-radius. -/
-theorem curvatureCosine_pos {κ t : ℝ} (ht : 0 ≤ t)
-    (hbound : 0 < κ → t < π / (2 * √κ)) : 0 < curvatureCosine κ t := by
-  rcases lt_trichotomy 0 κ with hκ | rfl | hκ
-  · rw [curvatureCosine_of_pos hκ]
-    apply cos_pos_of_mem_Ioo
-    have hs : 0 < √κ := sqrt_pos.mpr hκ
-    have hb := (lt_div_iff₀ (mul_pos (by norm_num) hs)).mp (hbound hκ)
-    constructor
-    · have := mul_nonneg hs.le ht
-      linarith [pi_pos]
-    · nlinarith
-  · simp
-  · rw [curvatureCosine_of_neg hκ]
-    exact cosh_pos _
 
 /-- The model logarithmic derivative is positive in the squared-distance convexity range. -/
 theorem curvatureCotangent_pos {κ t : ℝ} (ht : 0 < t)
@@ -115,11 +89,6 @@ theorem curvatureCotangent_of_neg {κ : ℝ} (hκ : κ < 0) (t : ℝ) :
   rw [curvatureCotangent_def, curvatureCosine_of_neg hκ,
     curvatureSine_of_neg hκ, div_div_eq_mul_div]
   ring
-
-/-- The hyperbolic model written with the positive curvature-bound magnitude. -/
-theorem curvatureCotangent_neg_of_pos {k : ℝ} (hk : 0 < k) (t : ℝ) :
-    curvatureCotangent (-k) t = √k * (cosh (√k * t) / sinh (√k * t)) := by
-  simpa only [neg_neg] using curvatureCotangent_of_neg (neg_neg_of_pos hk) t
 
 /-- The model logarithmic derivative is smooth on its regular domain. -/
 theorem contDiffOn_curvatureCotangent (κ : ℝ) :
