@@ -48,23 +48,45 @@ open Filter MeasureTheory Topology Set Metric Function
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
 /-- **Dominated convergence away from one point.** Suppose `K i` is eventually a.e.-strongly
-measurable, `w` is a.e.-strongly measurable, and `K i` is eventually dominated by `K₀` and
-converges to it away from a point `x₀` with `μ {x₀} = 0`. If `K₀ * w` is integrable, then the
-integrals of `K i * w` converge to the integral of `K₀ * w`.
+measurable, and `K i` is eventually dominated by `K₀` and converges to it away from a point
+`x₀` with `μ {x₀} = 0`. If `K₀ * w` is integrable, then the integrals of `K i * w` converge to the
+integral of `K₀ * w`. The weight `w` needs no measurability hypothesis: `K₀` is an a.e. limit of
+measurable functions, and `K i * w` agrees a.e. with `K i * (K₀ * w / K₀)`, because `K i`
+vanishes where `K₀` does.
 
 The exceptional point is useful for regularizations of singular kernels. The statement is for an
 arbitrary countably generated filter and an arbitrary measure space.
 -/
 theorem tendsto_integral_mul_of_dominated_away {ι : Type*} {l : Filter ι}
     [l.IsCountablyGenerated] {x₀ : α} (hx₀ : μ {x₀} = 0) {K : ι → α → ℝ} {K₀ w : α → ℝ}
-    (hw : AEStronglyMeasurable w μ) (hK : ∀ᶠ i in l, AEStronglyMeasurable (K i) μ)
+    (hK : ∀ᶠ i in l, AEStronglyMeasurable (K i) μ)
     (hint : Integrable (fun x ↦ K₀ x * w x) μ)
     (hle : ∀ᶠ i in l, ∀ x ≠ x₀, |K i x| ≤ |K₀ x|)
     (hlim : ∀ x ≠ x₀, Tendsto (fun i ↦ K i x) l (𝓝 (K₀ x))) :
     Tendsto (fun i ↦ ∫ x, K i x * w x ∂μ) l (𝓝 (∫ x, K₀ x * w x ∂μ)) := by
   have hae : ∀ᵐ x ∂μ, x ≠ x₀ := compl_mem_ae_iff.2 hx₀
+  rcases eq_or_neBot l with rfl | hl
+  · exact tendsto_bot
+  -- The limit `K₀` is a.e.-strongly measurable, being an a.e. limit along a sequence.
+  have hK₀ : AEStronglyMeasurable K₀ μ := by
+    obtain ⟨u, hu⟩ := exists_seq_tendsto l
+    obtain ⟨N, hN⟩ := eventually_atTop.1 (hu.eventually hK)
+    refine aestronglyMeasurable_of_tendsto_ae atTop (f := fun n ↦ K (u (n + N)))
+      (fun n ↦ hN _ (Nat.le_add_left N n)) ?_
+    filter_upwards [hae] with x hx
+    exact (hlim x hx).comp (hu.comp (tendsto_add_atTop_nat N))
+  -- Where `K₀ = 0` the family vanishes, so `K i * w = K i * (K₀ * w / K₀)` a.e.
+  have hmeas : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ K i x * w x) μ := by
+    filter_upwards [hK, hle] with i hi hle'
+    refine (hi.mul (hint.aemeasurable.div hK₀.aemeasurable).aestronglyMeasurable).congr ?_
+    filter_upwards [hae] with x hx
+    by_cases h0 : K₀ x = 0
+    · have : K i x = 0 := abs_nonpos_iff.1 (by simpa [h0] using hle' x hx)
+      simp [this]
+    · change K i x * (K₀ x * w x / K₀ x) = K i x * w x
+      rw [mul_div_cancel_left₀ _ h0]
   refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖K₀ x * w x‖)
-    (hK.mono fun _ hi ↦ hi.mul hw) ?_ hint.norm ?_
+    hmeas ?_ hint.norm ?_
   · filter_upwards [hle] with i hi
     filter_upwards [hae] with x hx
     simp only [norm_mul, Real.norm_eq_abs]
@@ -100,7 +122,7 @@ on `closedBall x r` and vanishing off `ball x (r + h)`. If `g` is integrable on
 integral of `g` over `f ⁻¹' closedBall x r` as `h → 0⁺`. -/
 theorem tendsto_integral_smul_of_cutoff {E G : Type*} [PseudoMetricSpace E] [MeasurableSpace E]
     [OpensMeasurableSpace E] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : α → E}
-    (hf : Measurable f) {g : α → G} (hg : AEStronglyMeasurable g μ) {x : E} {r δ : ℝ}
+    (hf : Measurable f) {g : α → G} {x : E} {r δ : ℝ}
     (hδ : 0 < δ) (hint : IntegrableOn g (f ⁻¹' closedBall x (r + δ)) μ)
     {ψ : ℝ → E → ℝ} (hψm : ∀ h, 0 < h → Measurable (ψ h))
     (hψle : ∀ h, 0 < h → ∀ y, |ψ h y| ≤ 1)
@@ -114,8 +136,18 @@ theorem tendsto_integral_smul_of_cutoff {E G : Type*} [PseudoMetricSpace E] [Mea
   refine tendsto_integral_filter_of_dominated_convergence
     ((f ⁻¹' closedBall x (r + δ)).indicator fun y => ‖g y‖) ?_ ?_
     (IntegrableOn.integrable_indicator hint.norm (measurableSet_closedBall.preimage hf)) ?_
-  · filter_upwards [self_mem_nhdsWithin] with h hh
-    exact ((hψm h hh).comp hf).aestronglyMeasurable.smul hg
+  · filter_upwards [Ioc_mem_nhdsGT hδ] with h hh
+    have hψS : ∀ y ∉ f ⁻¹' closedBall x (r + δ), ψ h (f y) = 0 := fun y hy =>
+      hψ0 h hh.1 (f y) fun h' => hy (ball_subset_closedBall
+        (ball_subset_ball (by linarith [hh.2]) h'))
+    have hind : (fun y => ψ h (f y) • g y) =
+        (f ⁻¹' closedBall x (r + δ)).indicator fun y => ψ h (f y) • g y := by
+      ext y
+      by_cases hy : y ∈ f ⁻¹' closedBall x (r + δ)
+      · rw [indicator_of_mem hy]
+      · rw [indicator_of_notMem hy, hψS y hy, zero_smul]
+    rw [hind, aestronglyMeasurable_indicator_iff (measurableSet_closedBall.preimage hf)]
+    exact ((hψm h hh.1).comp hf).aestronglyMeasurable.smul hint.aestronglyMeasurable
   -- The cutoffs are bounded by one and vanish off `closedBall x (r + δ)` once `h ≤ δ`.
   · filter_upwards [Ioc_mem_nhdsGT hδ] with h hh
     refine .of_forall fun y => ?_
