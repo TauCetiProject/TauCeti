@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 import Mathlib.RingTheory.Finiteness.Projective
+import TauCeti.Logic.Function.Basic
 
 /-!
 # Scalar extension of linear-map spaces
@@ -26,22 +27,6 @@ it on pure tensors.
 public section
 
 open TensorProduct
-
-namespace Function
-
-/-- A map `Φ` that is a retract of a bijection `Φ'` is bijective: if `a`, `b` embed the source
-and target of `Φ` into those of `Φ'` with retractions `c`, `d`, `Φ'` restricts to `Φ` along them
-in both directions. -/
-theorem bijective_of_retract {A B A' B' : Type*} {Φ : A → B} {Φ' : A' → B'} {a : A → A'}
-    {c : A' → A} {b : B → B'} {d : B' → B} (hΦ' : Bijective Φ')
-    (ha : ∀ z, Φ' (a z) = b (Φ z)) (hb : ∀ z, Φ (c z) = d (Φ' z)) (hc : ∀ z, c (a z) = z)
-    (hd : ∀ g, d (b g) = g) : Bijective Φ :=
-  ⟨fun z z' h ↦ by rw [← hc z, ← hc z', hΦ'.1 ((ha z).trans (h ▸ (ha z').symm))],
-    fun g ↦ by
-      obtain ⟨z, hz⟩ := hΦ'.2 (b g)
-      exact ⟨c z, by rw [hb, hz, hd]⟩⟩
-
-end Function
 
 namespace LinearMap
 
