@@ -325,8 +325,7 @@ private theorem exists_setAverage_norm_gradient_sub_le {α : ℝ≥0} (hα : 0 <
         volume.real (ball x t) := by
     rw [div_eq_inv_mul, ← smul_eq_mul, ← setAverage_eq]
     exact sq_setAverage_norm_le_setAverage_norm_sq (measure_ball_pos volume x ht).ne'
-      measure_ball_lt_top.ne (((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hsub
-        measure_ball_lt_top.ne).sub (integrableOn_const measure_ball_lt_top.ne))
+      measure_ball_lt_top.ne
       ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hsub
         measure_ball_lt_top.ne (⨍ z in ball x t, W1p.gradient u z))
   have hψ := hdec hG hu hball t ht htR
