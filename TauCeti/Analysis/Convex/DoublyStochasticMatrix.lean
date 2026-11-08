@@ -11,6 +11,7 @@ public import Mathlib.Order.Monotone.Monovary
 
 import Mathlib.Algebra.Order.Rearrangement
 import Mathlib.Analysis.Convex.Birkhoff
+import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
 # Inequalities under doubly stochastic averaging
@@ -31,6 +32,8 @@ combinatorial core of the von Neumann trace inequality.
 
 ## Main results
 
+* `average_permMatrix_mem_doublyStochastic`: the average of the permutation matrices over a
+  nonempty finite set of permutations is doubly stochastic.
 * `ConvexOn.sum_map_mulVec_le_of_mem_doublyStochastic`: for a doubly stochastic `M` and a convex
   `φ`, `∑ i, φ ((M *ᵥ x) i) ≤ ∑ i, φ (x i)`.
 * `Monovary.dotProduct_mulVec_le_of_mem_doublyStochastic`: for a doubly stochastic `M` and
@@ -46,6 +49,31 @@ combinatorial core of the von Neumann trace inequality.
 public section
 
 open Finset Matrix
+
+/-- The average of the permutation matrices over a nonempty finite set of permutations is doubly
+stochastic. -/
+theorem average_permMatrix_mem_doublyStochastic {R n : Type*} [Fintype n] [DecidableEq n]
+    [Semifield R] [LinearOrder R] [IsStrictOrderedRing R] (s : Finset (Equiv.Perm n))
+    (hs : s.Nonempty) :
+    ∑ σ ∈ s, (s.card : R)⁻¹ • σ.permMatrix R ∈ doublyStochastic R n := by
+  have hcard : (s.card : R) ≠ 0 := by exact_mod_cast hs.card_pos.ne'
+  -- Check the average's marginal sums directly: Convex.sum_mem requires a field.
+  apply mem_doublyStochastic_iff_sum.2
+  simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
+  refine ⟨?_, ?_, ?_⟩
+  · intro i j
+    exact Finset.sum_nonneg fun σ _ ↦
+      mul_nonneg (by positivity) (σ.permMatrix_nonneg i j)
+  · intro i
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, sum_row_of_mem_doublyStochastic
+      (permMatrix_mem_doublyStochastic (R := R))]
+    simp [hcard]
+  · intro j
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, sum_col_of_mem_doublyStochastic
+      (permMatrix_mem_doublyStochastic (R := R))]
+    simp [hcard]
 
 variable {𝕜 β n : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup β]
   [PartialOrder β] [IsOrderedAddMonoid β] [Module 𝕜 β] [IsStrictOrderedModule 𝕜 β]
