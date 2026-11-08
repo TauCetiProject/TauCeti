@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 /-!
 # The absolute ramification index of a mixed-characteristic local field
@@ -181,9 +182,11 @@ theorem charP_residueField : CharP 𝓀[K] p := by
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/
 theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] [FinitePadicExtension L p] [Algebra K L]
-    [IsScalarTower ℚ_[p] K L] [ValuativeExtension K L] :
+    [IsScalarTower ℚ_[p] K L] :
     absoluteRamificationIndex L p =
       ramificationIndex K L * absoluteRamificationIndex K p := by
+  have : ValuativeExtension K L :=
+    ⟨fun {a b} ↦ (IsScalarTower.toAlgHom ℚ_[p] K L).valuativeExtension.vle_iff_vle⟩
   simpa only [absoluteRamificationIndex, Nat.mul_comm] using
     ramificationIndex_tower (K := ℚ_[p]) (L := K) L
 
