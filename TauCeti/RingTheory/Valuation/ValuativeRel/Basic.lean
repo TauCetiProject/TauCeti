@@ -27,6 +27,9 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
   of itself.
 * `TauCeti.valuation_le_one_of_sub_sq_le_one`: if an integral element differs from a square by
   an integral element, then the square root is integral.
+* `TauCeti.isUnit_sq_sub_four_mul_of_valuation_two`: the discriminant `t² - 4c` of integral
+  coefficients `t = 2b/π^e`, `c = (b² - u)/π^{2e}` is a unit when `2` has valuation `π ^ e`
+  and `u` has valuation `1`.
 * `TauCeti.one_add_pow_ne_zero_of_valuation_lt_one`: a positive power of an element of valuation
   less than one cannot equal `-1`.
 * `TauCeti.valuation_lt_one_iff_mem_image_maximalIdeal`: in a field, the elements of valuation
@@ -97,6 +100,27 @@ theorem valuation_le_one_of_sub_sq_le_one {u ξ : K} (hu : valuation K u ≤ 1)
     (hξ : valuation K (u - ξ ^ 2) ≤ 1) : valuation K ξ ≤ 1 := by
   rw [← pow_le_one_iff two_ne_zero, ← map_pow]
   simpa using (valuation K).map_sub_le hu hξ
+
+/-- The discriminant `t² - 4c` of the integral coefficients `t = 2b/π^e`, `c = (b² - u)/π^{2e}`
+is a unit, when `2` has valuation `π ^ e` and `u` has valuation `1`. -/
+theorem isUnit_sq_sub_four_mul_of_valuation_two {K : Type*} [Field K] [ValuativeRel K]
+    {π : (valuation K).integer} {u b : K} {e : ℕ} (hπ0 : (π : K) ≠ 0) (hu : valuation K u = 1)
+    (hv2 : valuation K 2 = valuation K (π : K) ^ e) {t c : (valuation K).integer}
+    (ht : (t : K) = 2 * b / (π : K) ^ e) (hc : (c : K) = (b ^ 2 - u) / (π : K) ^ (2 * e)) :
+    IsUnit (t ^ 2 - 4 * c) := by
+  have hvπ : valuation K (π : K) ≠ 0 := (Valuation.ne_zero_iff _).mpr hπ0
+  refine (Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))).mpr ?_
+  have hval : ((t ^ 2 - 4 * c : (valuation K).integer) : K) = 2 ^ 2 * u / ((π : K) ^ e) ^ 2 := by
+    have h4 : (((4 : (valuation K).integer)) : K) = 4 :=
+      map_ofNat (algebraMap (valuation K).integer K) 4
+    simp only [AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, MulMemClass.coe_mul, h4, ht, hc]
+    have := pow_ne_zero e hπ0
+    field_simp
+    ring
+  rw [Algebra.algebraMap_ofSubsemiring_apply, hval, map_div₀, map_mul, hu, mul_one]
+  simp only [map_pow, hv2]
+  exact div_self (pow_ne_zero _ (pow_ne_zero _ hvπ))
 
 /-- A positive power of an element of valuation less than one cannot equal `-1`. -/
 theorem one_add_pow_ne_zero_of_valuation_lt_one {x : K} (hx : valuation K x < 1)

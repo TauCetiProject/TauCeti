@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Field.Basic
+import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -19,7 +21,9 @@ ring, a nonzero `a` is separated from its inverse unless it is a square root of 
 `x`, `u` of `-1` in a division ring are conjugate by the unit `1 - u * x` unless `u = -x`, that is
 unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational functions
 `x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
-relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`.
+relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`. A square root in a field extension of a
+non-square of the base field does not lie in the base field
+(`TauCeti.not_mem_range_algebraMap_of_sq_eq_of_not_isSquare`).
 -/
 
 public section
@@ -79,6 +83,15 @@ theorem inv_sq_div_one_sub_inv_cube_eq_neg_sub (x : K) :
     (x⁻¹) ^ 2 / (1 - x⁻¹) ^ 3 = -(x ^ 2 / (1 - x) ^ 3) - x / (1 - x) ^ 2 := by
   rw [inv_sq_div_one_sub_inv_cube]
   linear_combination div_one_sub_sq_add_sq_div_one_sub_cube x
+
+/-- A square root in an extension field of an element that is not a square in `K` does not lie
+in `K`. -/
+theorem not_mem_range_algebraMap_of_sq_eq_of_not_isSquare {L : Type*} [Field L] [Algebra K L]
+    {u : K} (hsq : ¬IsSquare u) {x : L} (hx2 : x ^ 2 = algebraMap K L u) :
+    x ∉ Set.range (algebraMap K L) := by
+  rintro ⟨y, rfl⟩
+  rw [← map_pow, (algebraMap K L).injective.eq_iff] at hx2
+  exact hsq ⟨y, by simpa only [sq] using hx2.symm⟩
 
 end TauCeti
 
