@@ -53,15 +53,8 @@ theorem support_multivariateHypergeometricMeasure (K : ι → ℕ) (n : ℕ) :
     (multivariateHypergeometricMeasure K n).support =
       {k | ∑ i, k i = n ∧ ∀ i, k i ≤ K i} := by
   ext k
-  simp only [mem_ofPred_eq]
-  rw [← multivariateHypergeometricMeasure_singleton_ne_zero_iff K n k,
-    Measure.mem_support_iff_forall]
-  constructor
-  · intro h
-    exact (h {k} (isOpen_discrete _ |>.mem_nhds (mem_singleton k))).ne'
-  · intro h U hU
-    exact (pos_iff_ne_zero.mpr h).trans_le
-      (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
+  simp only [Measure.mem_support_iff_measure_singleton_ne_zero,
+    multivariateHypergeometricMeasure_singleton_ne_zero_iff, mem_ofPred_eq]
 
 /-- Arbitrary labels of a multivariate hypergeometric sample have support equal to the labels of
 admissible count vectors. No injectivity of the labels or validity of the sample size is needed. -/

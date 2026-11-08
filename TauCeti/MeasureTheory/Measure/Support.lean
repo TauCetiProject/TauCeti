@@ -8,14 +8,17 @@ module
 public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
-# Topological support under scalar multiplication and continuous maps
+# Topological support on discrete spaces, under scalar multiplication and continuous maps
 
-This file identifies the support of a nonzero scalar multiple of a measure and the support of a
-pushforward by a continuous map. It also shows that pushing a measure forward along a
-homeomorphism transports its topological support onto the image of the original support.
+This file characterizes support on discrete spaces by nonzero singleton masses, and identifies
+the support of a nonzero scalar multiple of a measure and of a pushforward by a continuous map.
+It also shows that pushing a measure forward along a homeomorphism transports its topological
+support onto the image of the original support.
 
-## Main result
+## Main results
 
+* `MeasureTheory.Measure.mem_support_iff_measure_singleton_ne_zero` — on a discrete space,
+  membership in the support is equivalent to nonzero singleton mass.
 * `MeasureTheory.Measure.support_smul_measure` — multiplying a measure by a nonzero scalar
   preserves its support.
 * `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
@@ -32,6 +35,18 @@ open Set
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- On a discrete space, a point is in the support exactly when its singleton has nonzero mass. -/
+theorem mem_support_iff_measure_singleton_ne_zero {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [DiscreteTopology X] {μ : Measure X} {x : X} :
+    x ∈ μ.support ↔ μ {x} ≠ 0 := by
+  rw [mem_support_iff_forall]
+  constructor
+  · intro h
+    exact (h {x} (isOpen_discrete _ |>.mem_nhds (mem_singleton x))).ne'
+  · intro h U hU
+    exact (pos_iff_ne_zero.mpr h).trans_le
+      (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-- Multiplying a measure by a nonzero `ℝ≥0∞` scalar preserves its topological support. -/
 theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
