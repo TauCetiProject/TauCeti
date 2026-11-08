@@ -40,8 +40,6 @@ as a `ℤ`-module: `AddSubgroup.index_range_nsmul` gives `n ^ finrank ℤ M`. Th
 * `AddEquiv.map_ker_nsmulAddMonoidHom` and `AddEquiv.index_range_nsmulAddMonoidHom`: an additive
   equivalence carries `G[n]` to `H[n]` and preserves the index of `n • G`. The first is the kernel
   counterpart of Mathlib's `AddEquiv.map_range_nsmulAddMonoidHom`.
-* `MulEquiv.injective_pow_iff` and its additive form `AddEquiv.injective_nsmul_iff`: taking `n`-th
-  powers is injective on one side of an equivalence exactly when it is injective on the other.
 
 The exact count, not merely finiteness of the index, is what turns an index computation into a rank
 computation: solved for the rank, `(G : nG) = n ^ finrank ℤ G * Nat.card G[n]` converts a bound on
@@ -132,14 +130,7 @@ theorem index_range_pow_mul_card_ker (U : Subgroup G) [U.FiniteIndex] (n : ℕ) 
   have hBA : (U.map φG).relIndex φG.range = C.index := by
     rw [φG.range_eq_map, relIndex_map_map, top_sup_eq, relIndex_top_right, sup_comm]
   have hrBU : (U.map φG).relIndex U = φU.range.index := by
-    have h : (U.map φG).subgroupOf U = φU.range := by
-      ext u
-      constructor
-      · rintro ⟨w, hw, hwu⟩
-        exact ⟨⟨w, hw⟩, Subtype.ext hwu⟩
-      · rintro ⟨w, rfl⟩
-        exact ⟨w, w.2, rfl⟩
-    rw [relIndex, h]
+    rw [relIndex, subgroupOf_map_powMonoidHom_eq_range]
   -- compute the index of `Uⁿ` in `G` through `Gⁿ` and through `U ≤ C`, then cancel `(G : C)`
   have hA : φG.range.index = φU.range.index * U.relIndex C := by
     refine mul_left_cancel₀ hCne ?_
@@ -151,21 +142,6 @@ theorem index_range_pow_mul_card_ker (U : Subgroup G) [U.FiniteIndex] (n : ℕ) 
   rw [hA, mul_assoc, relIndex_sup_ker_mul_card_ker U n, mul_comm]
 
 end Subgroup
-
-namespace MulEquiv
-
-/-- Taking `n`-th powers is injective on `M` exactly when it is injective on `N`, for a
-multiplicative equivalence `M ≃* N`, since the equivalence commutes with it. -/
-@[to_additive /-- Multiplication by `n` is injective on `M` exactly when it is injective on `N`,
-for an additive equivalence `M ≃+ N`, since the equivalence commutes with it. -/]
-theorem injective_pow_iff {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N) (n : ℕ) :
-    Function.Injective (fun x : M ↦ x ^ n) ↔ Function.Injective (fun y : N ↦ y ^ n) := by
-  have h : (fun y : N ↦ y ^ n) = e ∘ (fun x : M ↦ x ^ n) ∘ e.symm := by
-    ext y
-    simp
-  rw [h, EquivLike.comp_injective, EquivLike.injective_comp]
-
-end MulEquiv
 
 namespace AddEquiv
 
