@@ -42,8 +42,9 @@ noncomputable def frobeniusPowers : IntermediateField k F := by
 /-- The underlying subfield is Mathlib's field range of iterated Frobenius. -/
 theorem frobeniusPowers_toSubfield :
     letI : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
-    (frobeniusPowers k F p n).toSubfield = (iterateFrobenius F p n).fieldRange :=
-  (rfl)
+    (frobeniusPowers k F p n).toSubfield = (iterateFrobenius F p n).fieldRange := by
+  unfold frobeniusPowers
+  exact Subfield.toIntermediateField_toSubfield _ _
 
 /-- Membership in the Frobenius power subfield means being a `p^n`-th power in `F`. -/
 @[simp]
