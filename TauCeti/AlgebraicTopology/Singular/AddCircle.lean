@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 public import TauCeti.Topology.Homotopy.Homotopic.Translation
 public import TauCeti.Topology.Instances.AddCircle.Cover
+import Mathlib.Analysis.Convex.PathConnected
 
 /-!
 # The integral class of a positive circuit of an additive circle
@@ -53,13 +54,6 @@ theorem fundamentalClass_def :
     fundamentalClass p = H₁AddEquivHomology _
       (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1)) := (rfl)
 
-/-- The straight path in `ℝ` from `x` to `y`. -/
-private def segmentPath (x y : ℝ) : Path x y where
-  toFun t := (1 - (t : ℝ)) * x + t * y
-  source' := by simp
-  target' := by simp
-  continuous_toFun := by fun_prop
-
 /-- Winding `a + b` times around a circle is homologous to winding `a` times and then `b` times:
 in the universal cover the two paths have the same endpoints. -/
 private theorem loopClass_zsmulLoop_add (a b : ℤ) :
@@ -68,17 +62,18 @@ private theorem loopClass_zsmulLoop_add (a b : ℤ) :
         loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 b) := by
   rw [← loopClass_trans, loopClass_eq_iff]
   let y : ℝ := ((a + b : ℤ) : ℝ) * p
-  let L : Path (0 : ℝ) y := (segmentPath 0 ((a : ℝ) * p)).trans (segmentPath ((a : ℝ) * p) y)
+  let L : Path (0 : ℝ) y := (Path.segment 0 ((a : ℝ) * p)).trans (Path.segment ((a : ℝ) * p) y)
   let π : C(ℝ, AddCircle p) := ⟨(↑), by fun_prop⟩
-  have hhom : Path.Homotopic ((segmentPath 0 y).map π.continuous)
+  have hhom : Path.Homotopic ((Path.segment 0 y).map π.continuous)
       (L.map π.continuous) :=
-    (SimplyConnectedSpace.paths_homotopic (segmentPath 0 y) L).map π
+    (SimplyConnectedSpace.paths_homotopic (Path.segment 0 y) L).map π
   have h1 : (zsmulLoop p 0 (a + b)).toContinuousMap =
-      ((segmentPath 0 y).map π.continuous).toContinuousMap := by
+      ((Path.segment 0 y).map π.continuous).toContinuousMap := by
     refine ContinuousMap.ext fun t ↦ ?_
-    change zsmulLoop p 0 (a + b) t = π (segmentPath 0 y t)
+    change zsmulLoop p 0 (a + b) t = π (Path.segment 0 y t)
     rw [zsmulLoop_apply]
-    simp only [π, segmentPath, y, ContinuousMap.coe_mk, Path.coe_mk_mk]
+    simp only [π, Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul, y,
+      ContinuousMap.coe_mk]
     rw [← coe_zsmul, ← coe_add]
     congr 1
     simp only [zsmul_eq_mul]
@@ -93,13 +88,15 @@ private theorem loopClass_zsmulLoop_add (a b : ℤ) :
       rw [← zsmul_eq_mul, coe_zsmul, coe_period, smul_zero]
     split_ifs with ht
     · rw [zsmulLoop_apply]
-      simp only [π, segmentPath, ContinuousMap.coe_mk, Path.coe_mk_mk]
+      simp only [π, Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul,
+        ContinuousMap.coe_mk]
       rw [← coe_zsmul, ← coe_add]
       congr 1
       simp only [zsmul_eq_mul]
       ring
     · rw [zsmulLoop_apply]
-      simp only [π, segmentPath, ContinuousMap.coe_mk, Path.coe_mk_mk]
+      simp only [π, Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul,
+        ContinuousMap.coe_mk]
       rw [← coe_zsmul, ← coe_add]
       have : (1 - (2 * (t : ℝ) - 1)) * ((a : ℝ) * p) + (2 * (t : ℝ) - 1) * y =
           (a : ℝ) * p + (b • ((2 * (t : ℝ) - 1) * p) + 0) := by
