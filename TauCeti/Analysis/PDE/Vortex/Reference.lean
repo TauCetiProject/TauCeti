@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Distribution.Sobolev
+public import TauCeti.Analysis.Distribution.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 
 /-!
@@ -31,6 +33,8 @@ their derivatives are bounded (`exists_norm_iteratedFDeriv_referenceSection_le`,
 for `1 < p < ∞`, multiplication by the reference section or by a coefficient of the reference
 connection maps each integer-order Bessel-potential space `H^{k,p}(ℂ; F)` into itself
 (`memSobolev_smulLeftCLM_referenceSection`, `memSobolev_smulLeftCLM_referenceConnection_apply`).
+The same holds for a real-linear coordinate of the reference section acting on pointwise real
+representatives (`comp_referenceSection_mul_mem_realSobolevFunctions`).
 These are the products of reference coefficients with Sobolev increments in the vortex equations
 and gauge action on the affine field space.
 
@@ -246,6 +250,18 @@ theorem exists_norm_iteratedFDeriv_referenceSection_le (f : ContDiffBump (0 : �
     (fun t ht z _ ↦ by rw [zpow_zero, one_smul, phase_smul m ht])
     (fun _ hz ↦ referenceSection_eq_phase f m (rOut_le_norm_sq f hz)) n le_rfl
 
+/-- A real-linear functional of the reference section has iterated derivatives bounded uniformly
+through every finite order. -/
+theorem exists_bound_iteratedFDeriv_comp_referenceSection (f : ContDiffBump (0 : ℝ))
+    (m : ℕ) (L : ℂ →L[ℝ] ℝ) (k : ℕ) :
+    ∃ M ≥ 0, ∀ j ≤ k, ∀ z, ‖iteratedFDeriv ℝ j (L ∘ referenceSection f m) z‖ ≤ M := by
+  choose C hC using exists_norm_iteratedFDeriv_referenceSection_le f m
+  refine ⟨‖L‖ * ∑ j ∈ Finset.range (k + 1), |C j|, by positivity, fun j hj z ↦ ?_⟩
+  refine (L.norm_iteratedFDeriv_comp_left
+    ((contDiff_referenceSection f m).contDiffAt) (by exact_mod_cast le_top)).trans ?_
+  refine mul_le_mul_of_nonneg_left ((hC j z).trans ((le_abs_self _).trans ?_)) (norm_nonneg _)
+  exact Finset.single_le_sum (fun i _ ↦ abs_nonneg (C i)) (Finset.mem_range.2 (by omega))
+
 /-- Every iterated derivative of the reference connection is bounded. -/
 theorem exists_norm_iteratedFDeriv_referenceConnection_le (f : ContDiffBump (0 : ℝ)) (m n : ℕ) :
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceConnection f m) z‖ ≤ C := by
@@ -306,6 +322,16 @@ theorem memSobolev_smulLeftCLM_referenceConnection_apply (hp : 1 < p) (hp_top : 
   hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
     (hasTemperateGrowth_referenceConnection_apply f m v)
     fun n _ ↦ exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n v
+
+/-- **Multiplication by a real-linear coordinate of the reference section preserves real
+`H^{k,p}` functions**, for `1 < p < ∞` and every natural order `k`. -/
+theorem comp_referenceSection_mul_mem_realSobolevFunctions (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (f : ContDiffBump (0 : ℝ)) (m : ℕ) (L : ℂ →L[ℝ] ℝ) (k : ℕ) {g : ℂ → ℝ}
+    (hg : g ∈ realSobolevFunctions ℂ k p) :
+    (L ∘ referenceSection f m) * g ∈ realSobolevFunctions ℂ k p := by
+  obtain ⟨M, hM, hbound⟩ := exists_bound_iteratedFDeriv_comp_referenceSection f m L k
+  exact mul_mem_realSobolevFunctions_natCast hp hp_top k
+    (L.contDiff.comp (contDiff_referenceSection f m)) hM hbound hg
 
 end Sobolev
 

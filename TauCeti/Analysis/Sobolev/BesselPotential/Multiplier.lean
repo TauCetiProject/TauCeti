@@ -21,7 +21,8 @@ background which is not itself integrable.
 
 The result uses the whole-space equality `W^{k,p}_0 = W^{k,p}`, the bounded multiplier
 `TauCeti.Wkp0.contDiffSMulL`, and the weak-derivative/Bessel-potential comparison. It provides
-an actual `Lᵖ` representative of the product, not merely a distributional existence statement.
+an actual `Lᵖ` representative of the product, not merely a distributional existence statement;
+`mul_mem_realSobolevFunctions_natCast` restates it for pointwise representatives.
 Only derivatives through the specified integer order are required to be bounded. No bound in
 the Bessel-potential norm, or statement for noninteger orders, is asserted here.
 
@@ -74,5 +75,19 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
     exact ⟨v₀.val, Filter.Eventually.of_forall fun x ↦ (hvval x).symm⟩
   · filter_upwards [hv, hw] with x hvx hwx
     rw [hvx, hwx]
+
+/-- A smooth real coefficient whose derivatives through order `k` are bounded preserves the
+pointwise representatives of real integer-order `H^{k,p}` functions, for `1 < p < ∞`. The
+coefficient need not decay or be integrable. -/
+theorem mul_mem_realSobolevFunctions_natCast {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ⊤) (k : ℕ) {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+    (hbound : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ M) {g : E → ℝ}
+    (hg : g ∈ realSobolevFunctions E k p) : ψ * g ∈ realSobolevFunctions E k p := by
+  obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.1 hg
+  obtain ⟨w, hwS, hw⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
+    hp hp_top k hψ hM hbound (mem_realSobolevSubmodule.2 huS)
+  refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hwS) ?_
+  filter_upwards [hw, hu] with x hx hx₁
+  rw [hx, hx₁, Pi.mul_apply]
 
 end TemperedDistribution

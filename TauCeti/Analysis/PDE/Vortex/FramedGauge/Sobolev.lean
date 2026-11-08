@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.Wkp.ContDiffRepresentative
@@ -269,27 +267,6 @@ theorem gaugeForm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s) {u : ℂ
 
 /-! ### The action on the affine field space -/
 
-/-- A real-linear functional of the reference section has iterated derivatives bounded uniformly
-through every finite order. -/
-private theorem exists_bound_iteratedFDeriv_comp_referenceSection (f : ContDiffBump (0 : ℝ))
-    (m : ℕ) (L : ℂ →L[ℝ] ℝ) (k : ℕ) :
-    ∃ M ≥ 0, ∀ j ≤ k, ∀ z, ‖iteratedFDeriv ℝ j (L ∘ referenceSection f m) z‖ ≤ M := by
-  choose C hC using exists_norm_iteratedFDeriv_referenceSection_le f m
-  refine ⟨‖L‖ * ∑ j ∈ Finset.range (k + 1), |C j|, by positivity, fun j hj z ↦ ?_⟩
-  refine (L.norm_iteratedFDeriv_comp_left
-    ((contDiff_referenceSection f m).contDiffAt) (by exact_mod_cast le_top)).trans ?_
-  refine mul_le_mul_of_nonneg_left ((hC j z).trans ((le_abs_self _).trans ?_)) (norm_nonneg _)
-  exact Finset.single_le_sum (fun i _ ↦ abs_nonneg (C i)) (Finset.mem_range.2 (by omega))
-
-/-- Multiplication by a section coordinate of the reference field preserves integer-order
-Sobolev functions. -/
-private theorem referenceField_mul_mem_realSobolevFunctions (f : ContDiffBump (0 : ℝ)) (m : ℕ)
-    (L : ℂ →L[ℝ] ℝ) (k : ℕ) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2) :
-    (L ∘ referenceSection f m) * g ∈ realSobolevFunctions ℂ k 2 := by
-  obtain ⟨M, hM, hbound⟩ := exists_bound_iteratedFDeriv_comp_referenceSection f m L k
-  exact mul_mem_realSobolevFunctions_natCast k (L.contDiff.comp (contDiff_referenceSection f m))
-    hM hbound hg
-
 /-- **The Sobolev gauge action preserves the affine field space.** For `k ≥ 2`, the charge-one
 action `(a, α) ↦ (a - u⁻¹ du, u α)` of `u ∈ G_(k+1)` maps `A_m^k` into itself. -/
 theorem gaugeTransform_mem_framedFieldSpace {k : ℕ} (hk : 1 < k) {hs : 1 < (k : ℝ) + 1}
@@ -310,10 +287,13 @@ theorem gaugeTransform_mem_framedFieldSpace {k : ℕ} (hk : 1 < k) {hs : 1 < (k 
     (lt_add_one (k : ℝ)).le
   replace hA := hmono hA
   replace hB := hmono hB
-  have hσA := referenceField_mul_mem_realSobolevFunctions f m ((1 / 2 : ℝ) • reCLM) k hA
-  have hσB := referenceField_mul_mem_realSobolevFunctions f m ((1 / 2 : ℝ) • reCLM) k hB
-  have hτA := referenceField_mul_mem_realSobolevFunctions f m ((1 / 2 : ℝ) • imCLM) k hA
-  have hτB := referenceField_mul_mem_realSobolevFunctions f m ((1 / 2 : ℝ) • imCLM) k hB
+  have href (L : ℂ →L[ℝ] ℝ) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2) :
+      (L ∘ referenceSection f m) * g ∈ realSobolevFunctions ℂ k 2 :=
+    comp_referenceSection_mul_mem_realSobolevFunctions (by norm_num) (by norm_num) f m L k hg
+  have hσA := href ((1 / 2 : ℝ) • reCLM) hA
+  have hσB := href ((1 / 2 : ℝ) • reCLM) hB
+  have hτA := href ((1 / 2 : ℝ) • imCLM) hA
+  have hτB := href ((1 / 2 : ℝ) • imCLM) hB
   intro i
   fin_cases i
   · convert sub_mem (hx 0) (hω 1) using 1
