@@ -78,12 +78,10 @@ theorem IsFinitelyPresentedFunctor.exists_exact_preadditiveYoneda_map
   have hk : weakKernel.ι (biprod.desc u f) ≫ biprod.fst ≫ u =
       (-(weakKernel.ι (biprod.desc u f) ≫ biprod.snd)) ≫ f := by
     have h : weakKernel.ι (biprod.desc u f) ≫ (biprod.fst ≫ u + biprod.snd ≫ f) = 0 := by
-      rw [← biprod.desc_eq, weakKernel.condition]
-    rw [Preadditive.comp_add] at h
-    rw [Preadditive.neg_comp, Category.assoc, ← sub_eq_zero, sub_neg_eq_add, h]
+      simp [← biprod.desc_eq]
+    simpa [eq_neg_iff_add_eq_zero] using h
   refine ⟨weakKernel (biprod.desc u f), weakKernel.ι (biprod.desc u f) ≫ biprod.fst, ?_, ?_⟩
-  · rw [← Category.assoc, ← Functor.map_comp, Category.assoc, hk, Functor.map_comp,
-      Category.assoc, hfp, comp_zero]
+  · simpa [hfp] using congrArg (preadditiveYoneda.map · ≫ p) hk
   · rw [exact_preadditiveYoneda_map_iff]
     intro V z hz
     obtain ⟨x, hx⟩ := hS (z ≫ u) hz
@@ -107,7 +105,7 @@ theorem IsFinitelyPresentedFunctor.of_isLimit_kernelFork {φ : F ⟶ G} {c : Ker
   have hι : Mono c.ι := Fork.IsLimit.mono hc
   rw [exact_preadditiveYoneda_map_iff] at hwS hw'S
   refine isFinitelyPresentedFunctor_def.2 ⟨W', W, w', r,
-    by rw [← cancel_mono c.ι, Category.assoc, hr, hw', zero_comp], ?_, ?_⟩
+    (cancel_mono c.ι).1 (by simp [hr, hw']), ?_, ?_⟩
   · -- Pointwise: lift `c.ι t` along `p` to some `y : V ⟶ Y`, which is killed by `p ≫ φ` and so
     -- factors as `x ≫ w`; then `r` sends `x` to `t`, as `c.ι` is injective.
     rw [NatTrans.epi_iff_epi_app]
@@ -115,10 +113,8 @@ theorem IsFinitelyPresentedFunctor.of_isLimit_kernelFork {φ : F ⟶ G} {c : Ker
     rw [AddCommGrpCat.epi_iff_surjective]
     intro t
     obtain ⟨y, hy⟩ := (AddCommGrpCat.epi_iff_surjective (p.app V)).1 inferInstance (c.ι.app V t)
-    have hφ : (p ≫ φ).app V y = 0 := by
-      rw [NatTrans.comp_app, ConcreteCategory.comp_apply, hy, ← ConcreteCategory.comp_apply,
-        ← NatTrans.comp_app, KernelFork.condition]
-      simp
+    have hφ : (p ≫ φ).app V y = 0 :=
+      (congrArg (φ.app V) hy).trans congr($(KernelFork.condition c).app V t)
     obtain ⟨x, rfl⟩ := hwS (V := V.unop) y hφ
     refine ⟨x, (AddCommGrpCat.mono_iff_injective (c.ι.app V)).1 inferInstance ?_⟩
     -- Both sides of `hr`, evaluated at `x`, unfold to `c.ι (r x)` and `p (x ≫ w)`.
@@ -149,15 +145,13 @@ theorem hasWeakKernels_of_isClosedUnderKernels
       (isFinitelyPresentedFunctor_preadditiveYoneda_obj Y)
       (isFinitelyPresentedFunctor_preadditiveYoneda_obj Z)).isFinitelyGeneratedFunctor
     obtain ⟨w, hw⟩ := preadditiveYoneda.map_surjective (q ≫ kernel.ι _)
-    have hwg : w ≫ g = 0 := preadditiveYoneda.map_injective (by
-      rw [Functor.map_comp, hw, Category.assoc, kernel.condition, comp_zero, Functor.map_zero])
+    have hwg : w ≫ g = 0 := preadditiveYoneda.map_injective (by simp [hw])
     refine HasWeakLimit.mk ⟨KernelFork.ofι w hwg, Fork.IsWeakLimit.mk' _ fun s ↦ ?_⟩
     -- `(-, s.ι)` factors through the kernel of `(-, g)`, and lifts along the epimorphism `q`.
     have hl := exists_preadditiveYoneda_map_comp_eq q
-      (kernel.lift _ (preadditiveYoneda.map s.ι) (by
-        rw [← Functor.map_comp, KernelFork.condition, Functor.map_zero]))
+      (kernel.lift _ (preadditiveYoneda.map s.ι) (by simp [← Functor.map_comp]))
     refine ⟨hl.choose, preadditiveYoneda.map_injective ?_⟩
-    rw [Fork.ι_ofι, Functor.map_comp, hw, ← Category.assoc, hl.choose_spec, kernel.lift_ι]
+    simp [hw, reassoc_of% hl.choose_spec]
 
 /-- **The Freyd-Auslander criterion.** A preadditive category `C` with binary biproducts has weak
 kernels exactly when the finitely presented functors `Cᵒᵖ ⥤ AddCommGrpCat` are closed under
