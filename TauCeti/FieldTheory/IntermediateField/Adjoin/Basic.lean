@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 import Mathlib.FieldTheory.Minpoly.Field
 
@@ -71,5 +72,20 @@ theorem adjoin_range_comp_some_sup_adjoin_singleton {α K F : Type*} [Field K] [
     [Algebra K F] (r : Option α → F) :
     adjoin K (Set.range (r ∘ some)) ⊔ adjoin K {r none} = adjoin K (Set.range r) := by
   rw [← adjoin_union, Set.union_singleton, ← Option.range_eq]
+
+open scoped IntermediateField
+
+/-- If `L = K(0)` then `[L : K] = 1`. -/
+theorem finrank_eq_one_of_adjoin_zero_eq_top {K L : Type*} [Field K] [Field L] [Algebra K L]
+    (hgen : K⟮(0 : L)⟯ = ⊤) : Module.finrank K L = 1 := by
+  rw [adjoin_zero] at hgen
+  exact bot_eq_top_iff_finrank_eq_one.mp hgen
+
+/-- If `L = K(y)` with `y ^ n = 0` and `n ≠ 0`, then `[L : K] = 1`. -/
+theorem finrank_eq_one_of_adjoin_eq_top_of_pow_eq_zero {K L : Type*} [Field K] [Field L]
+    [Algebra K L] {y : L} {n : ℕ} (hn : n ≠ 0) (hgen : K⟮y⟯ = ⊤) (hy : y ^ n = 0) :
+    Module.finrank K L = 1 := by
+  rw [pow_eq_zero_iff hn] at hy
+  exact finrank_eq_one_of_adjoin_zero_eq_top (hy ▸ hgen)
 
 end IntermediateField
