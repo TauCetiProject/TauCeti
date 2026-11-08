@@ -165,6 +165,7 @@ theorem lieSubalgebra_identityComponent (I : HopfIdeal k H) :
     exact LieSubalgebra.mem_top _
 
 /-- A smooth closed subgroup and its identity component have the same Krull dimension. -/
+@[simp]
 theorem ringKrullDim_quotient_identityComponent_of_smooth (I : HopfIdeal k H)
     [Algebra.Smooth k (H ⧸ I.toIdeal)] :
     ringKrullDim (H ⧸ I.identityComponent.toIdeal) = ringKrullDim (H ⧸ I.toIdeal) := by
