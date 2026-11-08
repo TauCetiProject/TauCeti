@@ -22,6 +22,8 @@ on the groups or on the representations.
 * `Rep.indMap_add`: inducing an intertwiner along `φ` is additive, and `Rep.indFunctor_additive`:
   the same fact as a `CategoryTheory.Functor.Additive` instance for `Rep.indFunctor`.
 * `Rep.indMap_smul` and `Rep.indFunctor_linear`: induction is linear over the coefficient ring.
+* `Representation.IndV.mk_one_injective`: the generator map `a ↦ ⟦1 ⊗ a⟧` is injective for a
+  subgroup.
 -/
 
 public section
@@ -78,3 +80,39 @@ instance indFunctor_linear {k : Type u} {G : Type v} {H : Type w} [CommRing k] [
   map_smul f r := indMap_smul φ r f
 
 end Rep
+
+namespace Representation
+
+/-- **Induction from a subgroup is faithful on coefficients**: the map `a ↦ ⟦1 ⊗ a⟧` from a
+representation `A` of a subgroup `S` into the carrier `(k[G] ⊗ A)_S` of its induced representation
+is injective. A retraction sends `⟦g ⊗ a⟧` to `ρ(g⁻¹) a` for `g ∈ S`, and to `0` otherwise. -/
+theorem IndV.mk_one_injective {k : Type u} {G : Type v} [CommRing k] [Group G] (S : Subgroup G)
+    {A : Type w} [AddCommGroup A] [Module k A] (ρ : Representation k S A) :
+    Function.Injective (IndV.mk S.subtype ρ 1) := by
+  classical
+  let r : IndV S.subtype ρ →ₗ[k] A :=
+    Coinvariants.lift _
+      (TensorProduct.lift <| (Finsupp.lift (A →ₗ[k] A) k G fun h =>
+        if hh : h ∈ S then ρ ⟨h, hh⟩⁻¹ else 0) ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap)
+      fun g => by
+        ext h x
+        simp only [LinearMap.coe_comp, Function.comp_apply, MonoidAlgebra.lsingle_apply]
+        simp only [tprod_apply, MonoidHom.coe_comp, Subgroup.coe_subtype, Function.comp_apply,
+          TensorProduct.AlgebraTensorModule.curry_apply, LinearMap.restrictScalars_self,
+          TensorProduct.curry_apply, LinearMap.coe_comp, TensorProduct.map_tmul,
+          ofMulAction_single, smul_eq_mul, TensorProduct.lift.tmul, LinearEquiv.coe_coe,
+          MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single, Finsupp.lift_apply,
+          smul_dite, smul_zero, zero_smul, dite_eq_ite, ite_self, Finsupp.sum_single_index,
+          one_smul]
+        by_cases hh : h ∈ S
+        · have hgh : (g : G) * h ∈ S := S.mul_mem g.2 hh
+          have : (⟨(g : G) * h, hgh⟩ : S) = g * ⟨h, hh⟩ := rfl
+          simp [hh, hgh, this]
+        · have hgh : (g : G) * h ∉ S := fun H => hh (by simpa using S.mul_mem (S.inv_mem g.2) H)
+          simp [hh, hgh]
+  have hr : ∀ x, r (IndV.mk S.subtype ρ 1 x) = x := fun x => by
+    have : (⟨1, S.one_mem⟩ : S) = 1 := rfl
+    simp [r, IndV.mk, this]
+  exact Function.LeftInverse.injective hr
+
+end Representation
