@@ -77,29 +77,25 @@ def oneillT (x : M) :
 @[simp]
 theorem oneillA_starProjection_orthogonal_ker (x : M) (u : TangentSpace I x) :
     h.oneillA x ((mfderiv I J f x).kerᗮ.starProjection u) = h.oneillA x u := by
-  simp [oneillA, Submodule.starProjection_eq_self_iff.mpr
-    (Submodule.starProjection_apply_mem (mfderiv I J f x).ker u)]
+  simp [oneillA, Submodule.starProjection_eq_self_iff.mpr]
 
 /-- The horizontal tensor vanishes on vertical first arguments. -/
 @[simp]
 theorem oneillA_starProjection_ker (x : M) (u : TangentSpace I x) :
     h.oneillA x ((mfderiv I J f x).ker.starProjection u) = 0 := by
-  simp [oneillA, Submodule.starProjection_eq_self_iff.mpr
-    (Submodule.starProjection_apply_mem (mfderiv I J f x).ker u)]
+  simp [oneillA, Submodule.starProjection_eq_self_iff.mpr]
 
 /-- The vertical tensor ignores the horizontal part of its first argument. -/
 @[simp]
 theorem oneillT_starProjection_ker (x : M) (u : TangentSpace I x) :
     h.oneillT x ((mfderiv I J f x).ker.starProjection u) = h.oneillT x u := by
-  simp [oneillT, Submodule.starProjection_eq_self_iff.mpr
-    (Submodule.starProjection_apply_mem (mfderiv I J f x).ker u)]
+  simp [oneillT, Submodule.starProjection_eq_self_iff.mpr]
 
 /-- The vertical tensor vanishes on horizontal first arguments. -/
 @[simp]
 theorem oneillT_starProjection_orthogonal_ker (x : M) (u : TangentSpace I x) :
     h.oneillT x ((mfderiv I J f x).kerᗮ.starProjection u) = 0 := by
-  simp [oneillT, Submodule.starProjection_eq_self_iff.mpr
-    (Submodule.starProjection_apply_mem (mfderiv I J f x).ker u)]
+  simp [oneillT, Submodule.starProjection_eq_self_iff.mpr]
 
 section Evaluation
 
@@ -107,21 +103,33 @@ variable [FiniteDimensional ℝ F] [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
   {Y : Π x : M, TangentSpace I x} {x : M}
 
+local instance : IsManifold I (1 + 1) M := by
+  rw [one_add_one_eq_two]
+  infer_instance
+
+include h in
+private theorem mdifferentiableAt_starProjections (x : M) :
+    MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] E))
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y)
+        y (mfderiv I J f y).ker.starProjection) x ∧
+    MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] E))
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y)
+        y (mfderiv I J f y).kerᗮ.starProjection) x :=
+  ⟨(h.contMDiff_starProjection_ker (n := 1) (by simp)).mdifferentiable (by simp) x,
+    (h.contMDiff_starProjection_orthogonal_ker (n := 1) (by simp)).mdifferentiable (by simp) x⟩
+
 private theorem oneillAux_apply (hY : MDiffAt (T% Y) x) (u : TangentSpace I x) :
     h.oneillAux x u (Y x) =
       (mfderiv I J f x).kerᗮ.starProjection
         (leviCivitaConnection I M (fun y ↦ (mfderiv I J f y).ker.starProjection (Y y)) x u) +
       (mfderiv I J f x).ker.starProjection
         (leviCivitaConnection I M (fun y ↦ (mfderiv I J f y).kerᗮ.starProjection (Y y)) x u) := by
-  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
-  have hV := (h.contMDiff_starProjection_ker (n := 1) (by simp)).mdifferentiable (by simp) x
-  have hH := (h.contMDiff_starProjection_orthogonal_ker (n := 1)
-    (by simp)).mdifferentiable (by simp) x
+  obtain ⟨hV, hH⟩ := h.mdifferentiableAt_starProjections x
   simp only [oneillAux, add_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.compL_apply, hom_apply _ _ hV hY, hom_apply _ _ hH hY, map_sub]
-  simp [Submodule.starProjection_eq_self_iff.mpr
-    (Submodule.starProjection_apply_mem (mfderiv I J f x).ker
-      (leviCivitaConnection I M Y x u))]
+  simp [Submodule.starProjection_eq_self_iff.mpr]
 
 /-- The defining formula `A_X Y = v ∇_(hX)(hY) + h ∇_(hX)(vY)`.
 Only differentiability of `Y` at the evaluated point is needed. -/
@@ -150,10 +158,7 @@ theorem oneillT_apply (hY : MDiffAt (T% Y) x) (u : TangentSpace I x) :
 private theorem inner_oneillAux_add_inner (hY : MDiffAt (T% Y) x)
     {Z : Π x : M, TangentSpace I x} (hZ : MDiffAt (T% Z) x) (u : TangentSpace I x) :
     ⟪h.oneillAux x u (Y x), Z x⟫_ℝ + ⟪Y x, h.oneillAux x u (Z x)⟫_ℝ = 0 := by
-  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
-  have hV := (h.contMDiff_starProjection_ker (n := 1) (by simp)).mdifferentiable (by simp) x
-  have hH := (h.contMDiff_starProjection_orthogonal_ker (n := 1)
-    (by simp)).mdifferentiable (by simp) x
+  obtain ⟨hV, hH⟩ := h.mdifferentiableAt_starProjections x
   have hzero (U W : Π y : M, TangentSpace I y) :
       (fun y ↦ ⟪(mfderiv I J f y).ker.starProjection (U y),
         (mfderiv I J f y).kerᗮ.starProjection (W y)⟫_ℝ) = fun _ ↦ 0 := by
@@ -203,12 +208,14 @@ variable [FiniteDimensional ℝ F] [IsManifold I ∞ M] [IsManifold J ∞ N] [T2
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
+local instance : IsManifold I (∞ + 1) M := by
+  simpa using (inferInstance : IsManifold I ∞ M)
+
 private theorem contMDiff_oneillAux :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)
         x (h.oneillAux x)) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have hV := h.contMDiff_starProjection_ker (n := ∞) (by simp)
   have hH := h.contMDiff_starProjection_orthogonal_ker (n := ∞) (by simp)
   have hDV := contMDiff_hom (leviCivitaConnection I M) (leviCivitaConnection I M) hV
@@ -227,7 +234,6 @@ theorem contMDiff_oneillA :
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)
         x (h.oneillA x)) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   apply (TauCeti.Manifold.contMDiff_hom_iff _).mpr
   intro X hX
   exact ((h.contMDiff_oneillAux).clm_bundle_apply
@@ -240,7 +246,6 @@ theorem contMDiff_oneillT :
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)
         x (h.oneillT x)) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   apply (TauCeti.Manifold.contMDiff_hom_iff _).mpr
   intro X hX
   exact ((h.contMDiff_oneillAux).clm_bundle_apply
