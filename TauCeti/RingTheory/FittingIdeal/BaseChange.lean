@@ -161,41 +161,6 @@ theorem minorsIdeal_baseChange [Projective R F] [Module.Finite R F] (N : Submodu
   rw [baseChange_eq_span, map_coe]
   exact (TensorProduct.isBaseChange R F S).minorsIdeal_span_image N p
 
-section Field
-
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-
-/-- Over a field, the ideal of `p × p` minors of a finite-dimensional subspace `U` vanishes exactly
-when `U` has dimension less than `p`. -/
-@[simp]
-theorem minorsIdeal_eq_bot_iff_finrank_lt (U : Submodule K V) [FiniteDimensional K U] {p : ℕ} :
-    U.minorsIdeal p = ⊥ ↔ finrank K U < p := by
-  refine ⟨fun h ↦ ?_, fun h ↦ le_bot_iff.1 <| minorsIdeal_le_iff.2 fun f v hv ↦ ?_⟩
-  · -- `p` vectors of a basis of `U` and extensions of their coordinate functionals give the
-    -- identity matrix as a minor
-    by_contra! hp
-    let b := Module.finBasis K U
-    choose g hg using fun j : Fin p ↦ LinearMap.exists_extend (b.coord (Fin.castLE hp j))
-    have hdet : (Matrix.of fun i j ↦ g j (b (Fin.castLE hp i) : V)) = 1 := by
-      ext i j
-      have := congr($(hg j) (b (Fin.castLE hp i)))
-      simp only [LinearMap.comp_apply, Submodule.subtype_apply] at this
-      simp [this, Matrix.one_apply, Finsupp.single_apply]
-    have := det_mem_minorsIdeal (N := U) g (v := fun i ↦ (b (Fin.castLE hp i) : V))
-      fun i ↦ (b _).2
-    rw [h, hdet, Matrix.det_one, Ideal.mem_bot] at this
-    exact one_ne_zero this
-  · -- more than `dim U` vectors of `U` are dependent, so the rows of the minor are dependent
-    have hdep : ¬LinearIndependent K (fun i ↦ (⟨v i, hv i⟩ : U)) := fun hli ↦
-      h.not_ge (by simpa using hli.fintype_card_le_finrank)
-    obtain ⟨c, hc, i, hi⟩ := Fintype.not_linearIndependent_iff.1 hdep
-    rw [Ideal.mem_bot, ← Matrix.exists_vecMul_eq_zero_iff]
-    refine ⟨c, fun h0 ↦ hi (congrFun h0 i), funext fun j ↦ ?_⟩
-    have := congr(f j ($hc : V))
-    simpa [Matrix.vecMul, dotProduct, map_sum, mul_comm] using this
-
-end Field
-
 end Submodule
 
 namespace TauCeti

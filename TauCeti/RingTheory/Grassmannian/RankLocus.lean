@@ -31,8 +31,10 @@ of finite projective modules commute with base change (`IsBaseChange.minorsIdeal
 the rank conditions are closed conditions on the Grassmannian, and they cut out closed subschemes
 of the Grassmannian scheme (`Module.Grassmannian.schemeRankLocus`). Over a field `K`, the ideal
 vanishes exactly when the image of `K ⊗[R] F` in `Q` has dimension at most `s`
-(`Module.Grassmannian.rankLocus_eq_bot_iff`), that is, when
-`dim (K ⊗[R] F) ≤ s + dim ((K ⊗[R] F) ⊓ N)`
+(`Module.Grassmannian.rankLocus_eq_bot_iff`). Write `F.baseChange K` for the image of
+`K ⊗[R] F → K ⊗[R] M`; this map need not be injective, so `F.baseChange K` is in general a
+quotient of `K ⊗[R] F`. When `F.baseChange K` is finite-dimensional, the condition is
+`dim (F.baseChange K) ≤ s + dim (F.baseChange K ⊓ N)`
 (`Module.Grassmannian.rankLocus_eq_bot_iff_finrank_inf`).
 
 For the subspaces `F_j` of a complete flag in `M`, these are the incidence conditions
@@ -51,7 +53,8 @@ For the subspaces `F_j` of a complete flag in `M`, these are the incidence condi
 * `Module.Grassmannian.rankLocus_eq_bot_iff`: over a field, `N.rankLocus F s` vanishes exactly
   when the image of `K ⊗[R] F` in the quotient has dimension at most `s`.
 * `Module.Grassmannian.rankLocus_eq_bot_iff_finrank_inf`: the same condition in terms of the
-  dimension of the intersection of `N` with `K ⊗[R] F`.
+  dimension of the intersection of `N` with `F.baseChange K`, the image of `K ⊗[R] F` in
+  `K ⊗[R] M`.
 
 ## References
 
@@ -169,11 +172,13 @@ theorem rankLocus_eq_bot_iff (N : G(k, K ⊗[R] M; K)) (F : Submodule R M) (s : 
     N.rankLocus F s = ⊥ ↔ finrank K ((F.baseChange K).map N.toSubmodule.mkQ) ≤ s := by
   rw [rankLocus_def, Submodule.minorsIdeal_eq_bot_iff_finrank_lt, Nat.lt_succ_iff]
 
-/-- **The rank locus over a field, by intersection dimensions.** For `M` finite over `R` and a point
-`N` of `G(k, K ⊗[R] M; K)` over a field `K`, the ideal `N.rankLocus F s` vanishes exactly when
-`dim (K ⊗[R] F) ≤ s + dim ((K ⊗[R] F) ⊓ N)`. -/
-theorem rankLocus_eq_bot_iff_finrank_inf [Module.Finite R M] (N : G(k, K ⊗[R] M; K))
-    (F : Submodule R M) (s : ℕ) :
+/-- **The rank locus over a field, by intersection dimensions.** For a point `N` of
+`G(k, K ⊗[R] M; K)` over a field `K` and a submodule `F` of `M` whose base change
+`F.baseChange K` (the image of `K ⊗[R] F → K ⊗[R] M`, which need not be injective) is
+finite-dimensional, the ideal `N.rankLocus F s` vanishes exactly when
+`dim (F.baseChange K) ≤ s + dim (F.baseChange K ⊓ N)`. -/
+theorem rankLocus_eq_bot_iff_finrank_inf (N : G(k, K ⊗[R] M; K)) (F : Submodule R M)
+    [FiniteDimensional K (F.baseChange K)] (s : ℕ) :
     N.rankLocus F s = ⊥ ↔
       finrank K (F.baseChange K) ≤ s + finrank K (F.baseChange K ⊓ N.toSubmodule : Submodule K _)
     := by
