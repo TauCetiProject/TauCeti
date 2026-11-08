@@ -117,10 +117,12 @@ theorem mvfderiv_trace_eq_trace_hom (cov : CovariantDerivative I F V)
     trace_eq_sum_localFrameCoeff I b hx]
   simp only [ContinuousLinearMap.coe_coe, localFrameCoeff_hom cov cov b b hx hx hA,
     Finset.sum_sub_distrib, Finset.sum_add_distrib]
-  rw [Finset.sum_comm (f := fun i k ↦
-    e.localFrameCoeff I b k x (A x (e.localFrame b i x)) *
-      e.localFrameCoeff I b i x (cov (e.localFrame b k) x v))]
-  simp only [mul_comm]
-  ring
+  -- The `Γ A` and `A Γ` terms cancel: their diagonal sums agree after swapping the order
+  -- of summation and commuting the two factors.
+  have hswap (a g : Fin (finrank 𝕜 F) → Fin (finrank 𝕜 F) → 𝕜) :
+      ∑ i, ∑ k, a k i * g i k = ∑ i, ∑ k, g k i * a i k := by
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
+  rw [hswap, add_sub_cancel_right]
 
 end CovariantDerivative
