@@ -182,22 +182,13 @@ theorem embeddingRealMod0MeasureIso_invFun (α) [MeasurableSpace α] [StandardBo
     (embeddingRealMod0MeasureIso α μ).invFun = (measurableEmbedding_embeddingReal α).invFun :=
   (rfl)
 
-/-- A mod-zero isomorphism into `ℝ` carrying the unit interval measure takes values in the unit
-interval almost everywhere. -/
-theorem Mod0MeasureIso.ae_toFun_mem_unitInterval {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    (e : Mod0MeasureIso α ℝ μ (volume.restrict (Set.Icc (0 : ℝ) 1))) :
-    ∀ᵐ x ∂μ, e.toFun x ∈ I := by
-  have hempty : (I : Set ℝ)ᶜ ∩ Set.Icc (0 : ℝ) 1 = ∅ := by
-    ext y
-    simp only [Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_Icc]
-    grind
-  have hnull : (volume.restrict (Set.Icc (0 : ℝ) 1)) (I : Set ℝ)ᶜ = 0 := by
-    rw [Measure.restrict_apply measurableSet_Icc.compl, hempty, measure_empty]
-  have hpre : {x | e.toFun x ∉ I} = e.toFun ⁻¹' (I : Set ℝ)ᶜ := by
-    ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_compl_iff]
-  rw [ae_iff, hpre]
-  exact e.measurePreserving.preimage_null hnull
+/-- A map into `ℝ` carrying `μ` to the unit interval measure takes values in the unit interval
+almost everywhere. -/
+theorem _root_.MeasureTheory.MeasurePreserving.ae_mem_unitInterval {α : Type*}
+    [MeasurableSpace α] {μ : Measure α} {f : α → ℝ}
+    (hf : MeasurePreserving f μ (volume.restrict (Set.Icc (0 : ℝ) 1))) :
+    ∀ᵐ x ∂μ, f x ∈ I :=
+  hf.quasiMeasurePreserving.ae (ae_restrict_mem measurableSet_Icc)
 
 /-- A mod-zero isomorphism into `ℝ` carrying the unit interval measure gives measure-preserving
 maps in both directions between the space and the unit interval: the forward map clipped to the
@@ -223,7 +214,7 @@ theorem mod0MeasureIso_to_unitInterval
     dsimp [g]
     exact e.measurable_invFun.comp measurable_subtype_coe
   have hclip_id : ∀ᵐ x ∂μ, max (0 : ℝ) (min 1 (e.toFun x)) = e.toFun x := by
-    filter_upwards [e.ae_toFun_mem_unitInterval] with x hx
+    filter_upwards [e.measurePreserving.ae_mem_unitInterval] with x hx
     grind
   have hgf : (g ∘ f) =ᵐ[μ] id := by
     filter_upwards [hclip_id, e.left_inv_ae] with x hx hx'
