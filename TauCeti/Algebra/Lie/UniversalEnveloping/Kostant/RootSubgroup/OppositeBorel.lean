@@ -173,7 +173,7 @@ indexed by `S` move weights strictly towards the beginning of an ordered weight 
 indexed by `S'` strictly towards its end.
 
 Both groups are upper unitriangular, the first in the given order and the second in the reversed
-order, so no finiteness of the Cartan index type is needed. -/
+order. -/
 theorem kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_eq_bot [Finite η]
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) (S S' : Set ι)
     (hα : ∀ i ∈ S, ∀ j, ⁅h j, e i⁆ = (α i j : ℚ) • e i)
