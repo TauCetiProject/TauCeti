@@ -571,8 +571,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
     exact (contDiff_negativePlanePerturbation_apply hH hHs v).contDiffOn
   have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D) (T := T)
     isOpen_univ hu.contDiffOn (hK 1) (hK Complex.I) hD (subset_univ D)
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet hTD (hK₀ 1) (hK₀ Complex.I)
+    hTD (hK₀ 1) (hK₀ Complex.I)
   beta_reduce at h
   linarith
 
@@ -776,10 +775,10 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
     lt_norm_of_mem_truncation_of_notMem_annulus hρ (hz.1.resolve_left hz.2) hz.2
   have hP : IsOpen P := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
   have h₁ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D ∪ T) (T := T)
-    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP hTc.isClosed.measurableSet
+    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP
     subset_union_right (fun z hz => hK₀ 1 (hDT hz)) (fun z hz => hK₀ Complex.I (hDT hz))
   have h₂ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D ∪ T) (T := D)
-    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP hDc.isClosed.measurableSet
+    hP hu (hK 1) (hK Complex.I) (hDc.union hTc) hDP
     subset_union_left (fun z hz => hK₀ 1 (hTD hz)) (fun z hz => hK₀ Complex.I (hTD hz))
   beta_reduce at h₁ h₂
   linarith
