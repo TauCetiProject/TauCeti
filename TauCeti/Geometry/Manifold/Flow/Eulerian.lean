@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 
 /-!
 # The Eulerian velocity field of a smooth family of diffeomorphisms
@@ -142,16 +143,9 @@ theorem contMDiff_eulerianField [IsManifold I 1 M] {m n : ℕ∞ω} (hmn : m + 1
       (fun p : ℝ × M ↦ (⟨p.2, eulerianField I φ p.1 p.2⟩ : TangentBundle I M)) := by
   have hn : 1 ≤ n := le_trans (by simp) hmn
   -- The Eulerian field is the derivative of `(u, x) ↦ φ_u x` in the direction `(1, 0)` at the
-  -- point `(t, φ_t⁻¹ y)`, and this direction field along `(t, y) ↦ (t, φ_t⁻¹ y)` is `C^m`.
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent m
-      (fun s : ℝ ↦ (⟨s, (1 : ℝ)⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  have hzero : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent m
-      (fun p : ℝ × M ↦ (⟨(φ p.1).symm p.2, (0 : E)⟩ : TangentBundle I M)) :=
-    (Bundle.contMDiff_zeroSection ℝ (TangentSpace I)).comp hφ'
-  have hdir := (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I)
-    (M' := M)).comp ((hclock.comp contMDiff_fst).prodMk hzero)
-  refine ((hφ.contMDiff_tangentMap hmn).comp hdir).congr fun p ↦ ?_
+  -- point `(t, φ_t⁻¹ y)`, and this velocity is `C^m` along `(t, y) ↦ (t, φ_t⁻¹ y)`.
+  refine ((Manifold.contMDiff_mfderiv_apply_one_zero hφ hmn).comp
+    (contMDiff_fst.prodMk hφ')).congr fun p ↦ ?_
   have hdiff : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I (fun q : ℝ × M ↦ φ q.1 q.2)
       (p.1, (φ p.1).symm p.2) :=
     (hφ _).mdifferentiableAt (zero_lt_one.trans_le hn).ne'
