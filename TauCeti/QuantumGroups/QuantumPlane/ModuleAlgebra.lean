@@ -24,7 +24,9 @@ quantum plane `ℂ⟨x, y⟩ / (x y - q y x)`, with `x` of weight `q` and `y` of
 * `F (y^j x^k) = [k]_q y^(j + 1) x^(k - 1)`,
 
 where `[r]_q` is the symmetric quantum integer, so that `E` vanishes on `x^k` and `F` on `y^j`.
-On the generators, `E y = x`, `F x = y`, `E x = F y = 0`, `K x = q x` and `K y = q⁻¹ y`.
+On the generators, always `E x = F y = 0`, `K x = q x` and `K y = q⁻¹ y`; when `q - q⁻¹ ≠ 0`
+(so that `[1]_q = 1`), also `E y = x` and `F x = y`. At `q = ±1` instead `[1]_q = 0`, so
+`E y = F x = 0`.
 
 This action makes the quantum plane a module algebra for the Hopf structure
 `ΔE = E ⊗ 1 + K ⊗ E`, `ΔF = F ⊗ K⁻¹ + 1 ⊗ F`, `ΔK = K ⊗ K` of `TauCeti.UqSl2.Hopf`: the
