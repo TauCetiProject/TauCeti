@@ -17,9 +17,9 @@ Each is the topological core of a step that a boundary argument would otherwise 
 a concrete space. The list is open-ended; nothing below depends on how many entries it has.
 
 Also recorded here is the sublevel-set lemma `TauCeti.exists_isOpen_subset_pos_forall_frontier_le`:
-if a continuous `w` lies below `u` on the frontier of an open set `Ω` and above it at a point of
-`Ω`, then `{u < w}` is an open subset of `Ω` whose closure lies in `Ω` and on whose frontier
-`w ≤ u`.
+if `u` and `w` are continuous on the closure of an open set `Ω`, `w` lies below `u` on the frontier
+of `Ω` and above it at a point of `Ω`, then `Ω ∩ {u < w}` is an open subset of `Ω` whose closure
+lies in `Ω` and on whose frontier `w ≤ u`.
 
 ## A connected set that straddles a set meets its frontier
 
@@ -246,7 +246,7 @@ section SublevelBetween
 variable {X : Type*} [TopologicalSpace X] {Ω : Set X} {u : X → ℝ}
 
 /-- Let `u` and `w` be continuous on the closure of an open set `Ω` with `w < u` on its frontier,
-and `u x₀ < w x₀` at some `x₀ ∈ Ω`. Then `{u < w}` is an open subset `G` of `Ω` containing `x₀`,
+and `u x₀ < w x₀` at some `x₀ ∈ Ω`. Then `G = Ω ∩ {u < w}` is an open subset of `Ω` containing `x₀`,
 and the closure of `G` lies in `Ω` and `w ≤ u` on the frontier of `G`. -/
 theorem exists_isOpen_subset_pos_forall_frontier_le (hΩo : IsOpen Ω) {w : X → ℝ}
     (huc : ContinuousOn u (closure Ω)) (hwc : ContinuousOn w (closure Ω))

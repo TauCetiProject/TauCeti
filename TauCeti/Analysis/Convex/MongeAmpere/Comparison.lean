@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Extrema
-import TauCeti.Analysis.Convex.FunctionTopology
+import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.Convex.MongeAmpere.Affine
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.Frontier
@@ -193,8 +193,10 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
     hGo hGΩ hGb hfrG hpos ⟨x₀, hx₀G⟩
   -- Compare `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`.
   have hεpos : 0 < 1 + ε := by positivity
-  refine false_of_subset_of_ball_subset μ ?_ hMA
-    (mongeAmpereMeasure_ite_mul_add_of_pos μ hεpos b) hSu hSw hsub hball ?_
+  obtain ⟨c, η, hη, hcη⟩ := hball
+  refine Measure.false_of_subset_of_pos μ ?_ hMA
+    (mongeAmpereMeasure_ite_mul_add_of_pos μ hεpos b) hSu hSw hsub
+    ((measure_ball_pos μ c hη).trans_le (measure_mono hcη)) ?_
   · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
     exact one_lt_pow₀ (by linarith) finrank_pos.ne'
   · refine ((measure_mono subset_closure).trans_lt ?_).ne

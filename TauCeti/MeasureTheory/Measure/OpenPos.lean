@@ -37,8 +37,9 @@ almost everywhere means everywhere.
 * `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
-* `TauCeti.false_of_subset_of_ball_subset`: a measure `MA_w = r • MA_v` with `r > 1` cannot be
-  dominated by `MA_v` on a set whose subset of measure `MA_w G` contains a ball.
+* `MeasureTheory.Measure.false_of_subset_of_pos`: if `MA_u ≤ MA_v` and `MA_w = r • MA_v` with
+  `r > 1` and `MA_v G < ∞`, then `MA_u G = μ Su` and `MA_w G = μ Sw` with `Sw ⊆ Su` and
+  `0 < μ Su` are impossible.
 -/
 
 public section
@@ -126,30 +127,26 @@ theorem _root_.MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [Topolog
     ae μ = ⊤ :=
   ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
 
-section BallComparison
+end TauCeti
 
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] (μ : Measure X) [μ.IsOpenPosMeasure]
+namespace MeasureTheory.Measure
 
-open Metric in
-/-- A contradiction from a ball inside a set of large measure: let `μ` be positive on open sets and
-`MA_u ≤ MA_v`, `MA_w = r • MA_v` measures with `r > 1`, and `G` a set with `MA_v G < ∞`. If
-`MA_u G = μ S_u` and `MA_w G = μ S_w` with `S_w ⊆ S_u` and `S_u` containing a ball, then `False`. -/
-theorem false_of_subset_of_ball_subset {G Su Sw : Set X} {MAu MAv MAw : Measure X}
+variable {X : Type*} [MeasurableSpace X]
+
+/-- A contradiction from a set of large measure: let `MAu ≤ MAv` and `MAw = r • MAv` be measures
+with `r > 1`, and `G` a set with `MAv G < ∞`. If `MAu G = μ Su` and `MAw G = μ Sw` with `Sw ⊆ Su`
+and `0 < μ Su`, then `False`. -/
+theorem false_of_subset_of_pos (μ : Measure X) {G Su Sw : Set X} {MAu MAv MAw : Measure X}
     {r : ℝ≥0∞} (hr : 1 < r) (hMA : MAu ≤ MAv) (hwMA : MAw = r • MAv) (hSu : MAu G = μ Su)
-    (hSw : MAw G = μ Sw) (hsub : Sw ⊆ Su) (hball : ∃ c, ∃ η > 0, ball c η ⊆ Su)
-    (hfin : MAv G ≠ ∞) : False := by
-  obtain ⟨c, η, hη, hcη⟩ := hball
+    (hSw : MAw G = μ Sw) (hsub : Sw ⊆ Su) (hpos : 0 < μ Su) (hfin : MAv G ≠ ∞) : False := by
   have h₁ : r * MAv G ≤ μ Su := by
     rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
     exact measure_mono hsub
   have h₂ : μ Su ≤ MAv G := hSu ▸ Measure.le_iff'.1 hMA G
-  have h₃ : 0 < μ Su := (measure_ball_pos μ c hη).trans_le (measure_mono hcη)
-  have := ENNReal.mul_lt_mul_left (h₃.trans_le h₂).ne' hfin hr
+  have := ENNReal.mul_lt_mul_left (hpos.trans_le h₂).ne' hfin hr
   rw [one_mul] at this
   exact (this.trans_le (h₁.trans h₂)).false
 
-end BallComparison
-
-end TauCeti
+end MeasureTheory.Measure
 
 end
