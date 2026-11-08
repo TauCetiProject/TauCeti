@@ -123,7 +123,7 @@ theorem continuousAt_scalarCurvature_compTime_affine [I.Boundaryless] (q₀ : �
     trivial
   -- It remains to check the continuity of the Gram matrix and of its first and second
   -- derivatives, which near `(q₀, (x₀, 0))` are those of the coefficients `F i j`.
-  obtain ⟨h₀, h₁, h₂⟩ := TauCeti.continuousAt_jets_of_eqOn_contDiffOn b
+  obtain ⟨h₀, h₁, h₂⟩ := Module.Basis.continuousAt_jets_of_eqOn_contDiffOn b
     (fun q z ↦ (G.compTime (hφ q)).toNondegenerateMetric.chartMetric (x₀, 0) z) F hV hw₀
     (fun i j ↦ (hF i j).of_le (by norm_cast))
     fun r hr i j ↦ by simp only [F, hK r.1 hr.2]
