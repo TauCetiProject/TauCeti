@@ -137,6 +137,21 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)]
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
 
+include hM hnil in
+/-- The all-root Kostant form preserves any subgroup stable under the simple-generator form
+in a representation in which the simple root generators act nilpotently.
+The Cartan generators are unchanged. -/
+theorem kostantForm_chevalleySystem_smul_mem :
+    ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
+      ∀ v ∈ M, ρ u • v ∈ M := by
+  apply kostantForm_apply_mem
+    (t.chevalleySystem ht) (t.lieBasis ht).h ρ M.toIntSubmodule
+  · intro γ n v hv
+    rw [Associative.map_dividedPower]
+    exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n v hv
+  · intro i n v hv
+    exact hM _ (ringChoose_mem_kostantForm _ _ i n) v hv
+
 /-! ## The root subgroups -/
 
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
@@ -164,6 +179,18 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
   rw [chevalleyRootSubgroup, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
+
+/-- The all-root Kostant parameter is the Chevalley root subgroup on any lattice stable under
+both Kostant forms. -/
+theorem kostantRootSubgroupParam_chevalleySystem
+    (hAll : ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
+      ∀ v ∈ M, ρ u v ∈ M)
+    (γ : Fin t.numRoots) (A : CommAlgCat ℤ) :
+    kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M hAll γ
+        (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) A =
+      chevalleyRootSubgroup ρ M hM hnil γ A := by
+  refine MonoidHom.ext fun u => Units.ext <| LinearMap.ext fun z => ?_
+  rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
 
 /-- A bracket `⁅e_α, e_β⁆ = c • e_γ` with `e_γ` commuting with both root vectors gives the
 one-factor Chevalley commutator formula over every commutative value ring. -/
