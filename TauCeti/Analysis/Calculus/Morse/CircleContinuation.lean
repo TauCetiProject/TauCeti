@@ -7,19 +7,18 @@ module
 
 public import Mathlib.Analysis.ODE.ExistUnique
 public import Mathlib.Analysis.ODE.Gronwall
-public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 
 /-!
 # The parameter field of a continuation of `δ cos (2 (θ - r))` on the circle
 
-On the circle with angle `θ`, the functions `f_r(θ) = δ cos (2 (θ - r))` have maxima at
-`r + j π` and minima at `r + π / 2 + j π`, and their negative gradient for the metric `dθ²` is
-`2 δ sin (2 (θ - r)) ∂_θ`. A path `t ↦ r(t)` of rotations gives the continuation family `f_{r(t)}`,
-and its positive parameter field on the cylinder `(θ, t)`, `0 < t < 1`, is
+On the circle with angle `θ`, the functions `f_r(θ) = δ cos (2 (θ - r))` have, for `δ > 0`,
+maxima at `r + j π` and minima at `r + π / 2 + j π`, and their negative gradient for the metric
+`dθ²` is `2 δ sin (2 (θ - r)) ∂_θ`. A path `t ↦ r(t)` of rotations gives the continuation family
+`f_{r(t)}`, and its positive parameter field on the cylinder `(θ, t)`, `0 < t < 1`, is
 
 `W = 2 δ sin (2 (θ - r(t))) ∂_θ + t (1 - t²) ∂_t`
 
@@ -36,7 +35,7 @@ back into a trajectory of `W`. It proves the three dynamical facts about this eq
 counterexamples.
 
 * **Drift bound.** Along any trajectory, between the levels `a` and `b` of `t` the angle moves by
-  at most `2 δ ∫_a^b (t (1 - t²))⁻¹ dt`, whatever the path `r`
+  at most `2 |δ| ∫_a^b (t (1 - t²))⁻¹ dt`, whatever the path `r`
   (`TauCeti.abs_sub_le_integral_of_hasDerivWithinAt_circleContinuationSlope`). On the window
   `1/6 ≤ t ≤ 5/6` containing all variation of the paths, this makes the transition map move every
   lifted angle by less than `π / 12` once `2 δ T < π / 12`.
@@ -116,33 +115,8 @@ theorem hasDerivAt_circleContinuationField {δ : ℝ} {r Θ τ : ℝ → ℝ} {s
   rw [hv]
   exact (hΘ.comp s hτ).prodMk hτ
 
-/-- An antiderivative of `(t (1 - t²))⁻¹` on `0 < t < 1`. -/
-private noncomputable def baseTime (t : ℝ) : ℝ := log t - log (1 - t ^ 2) / 2
-
-private theorem hasDerivAt_baseTime {t : ℝ} (h₀ : 0 < t) (h₁ : t < 1) :
-    HasDerivAt baseTime (t * (1 - t ^ 2))⁻¹ t := by
-  have h2 : 0 < 1 - t ^ 2 := by nlinarith
-  have hd : HasDerivAt (fun t : ℝ ↦ 1 - t ^ 2) (-(2 * t)) t := by
-    simpa using (hasDerivAt_pow 2 t).const_sub 1
-  have h := (hasDerivAt_log h₀.ne').sub ((hd.log h2.ne').div_const 2)
-  unfold baseTime
-  refine h.congr_deriv ?_
-  field_simp
-  ring
-
-private theorem integral_inv_baseSpeed {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) :
-    ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ = baseTime b - baseTime a := by
-  have hmem : ∀ t ∈ uIcc a b, 0 < t ∧ t < 1 := fun t ht ↦ by
-    rw [uIcc_of_le hab] at ht
-    exact ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t ht ↦ hasDerivAt_baseTime (hmem t ht).1 (hmem t ht).2) ?_
-  refine ContinuousOn.intervalIntegrable fun t ht ↦ ?_
-  have hc : ContinuousAt (fun t : ℝ ↦ t * (1 - t ^ 2)) t := by fun_prop
-  exact (hc.inv₀ (baseSpeed_pos (hmem t ht).1 (hmem t ht).2).ne').continuousWithinAt
-
 /-- The slope is bounded by `2 |δ| / (t (1 - t²))`. -/
-private theorem abs_circleContinuationSlope_le (δ : ℝ) (r : ℝ → ℝ) {t : ℝ} (h₀ : 0 < t)
+theorem abs_circleContinuationSlope_le (δ : ℝ) (r : ℝ → ℝ) {t : ℝ} (h₀ : 0 < t)
     (h₁ : t < 1) (θ : ℝ) :
     |circleContinuationSlope δ r t θ| ≤ 2 * |δ| * (t * (1 - t ^ 2))⁻¹ := by
   have hm := baseSpeed_pos h₀ h₁
@@ -159,23 +133,18 @@ theorem abs_sub_le_integral_of_hasDerivWithinAt_circleContinuationSlope {δ : �
     (hΘ : ∀ t ∈ Icc a b, HasDerivWithinAt Θ (circleContinuationSlope δ r t (Θ t)) (Icc a b) t) :
     |Θ b - Θ a| ≤ 2 * |δ| * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ := by
   have hmem : ∀ t ∈ Icc a b, 0 < t ∧ t < 1 := fun t ht ↦ ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩
-  rw [integral_inv_baseSpeed ha hab hb]
-  have key := image_norm_le_of_norm_deriv_right_le_deriv_boundary'
-    (f := fun t ↦ Θ t - Θ a) (B := fun t ↦ 2 * |δ| * (baseTime t - baseTime a))
-    (f' := fun t ↦ circleContinuationSlope δ r t (Θ t))
-    (B' := fun t ↦ 2 * |δ| * (t * (1 - t ^ 2))⁻¹)
-    (fun t ht ↦ ((hΘ t ht).continuousWithinAt.sub continuousWithinAt_const))
-    (fun t ht ↦ ((hΘ t (Ico_subset_Icc_self ht)).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE_of_mem ht)).sub_const _)
-    (by simp)
-    (fun t ht ↦ ((hasDerivAt_baseTime (hmem t ht).1 (hmem t ht).2).continuousAt.sub
-      continuousAt_const).const_mul _ |>.continuousWithinAt)
-    (fun t ht ↦ (((hasDerivAt_baseTime (hmem t (Ico_subset_Icc_self ht)).1
-      (hmem t (Ico_subset_Icc_self ht)).2).sub_const _).const_mul _).hasDerivWithinAt)
-    (fun t ht ↦ abs_circleContinuationSlope_le δ r (hmem t (Ico_subset_Icc_self ht)).1
-      (hmem t (Ico_subset_Icc_self ht)).2 _)
-    (right_mem_Icc.2 hab)
-  simpa using key
+  have hd : ∀ t ∈ Ioo a b, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t := fun t ht ↦
+    (hΘ t (Ioo_subset_Icc_self ht)).hasDerivAt (Icc_mem_nhds ht.1 ht.2)
+  have hB : ContinuousOn (fun t : ℝ ↦ (t * (1 - t ^ 2))⁻¹) (Icc a b) := fun t ht ↦ by
+    have hc : ContinuousAt (fun t : ℝ ↦ t * (1 - t ^ 2)) t := by fun_prop
+    exact (hc.inv₀ (baseSpeed_pos (hmem t ht).1 (hmem t ht).2).ne').continuousWithinAt
+  rw [← intervalIntegral.integral_const_mul, ← Real.norm_eq_abs]
+  refine norm_sub_le_integral_of_norm_deriv_le_of_le hab (fun t ht ↦ (hΘ t ht).continuousWithinAt)
+    (fun t ht ↦ (hd t ht).differentiableAt.differentiableWithinAt)
+    (Eventually.of_forall fun t ht ↦ ?_) ((continuousOn_const.mul hB).intervalIntegrable_of_Icc hab)
+  rw [(hd t ht).deriv, Real.norm_eq_abs]
+  exact abs_circleContinuationSlope_le δ r (hmem t (Ioo_subset_Icc_self ht)).1
+    (hmem t (Ioo_subset_Icc_self ht)).2 _
 
 /-- Along a solution of `Θ' = circleContinuationSlope δ (π ρ) t (Θ t)` on `[a, b] ⊆ (0, 1)`, the
 relative angle `ψ = Θ - π ρ` has right derivative `2 δ sin (2 ψ) / (t (1 - t²)) - π ρ'`. -/
@@ -284,7 +253,7 @@ theorem mem_Icc_of_hasDerivWithinAt_circleContinuationSlope {δ : ℝ} {ρ ρ' �
     sub_le_pi_div_two_of_hasDerivWithinAt_circleContinuationSlope ha hb hδ0 hρ hρ' hΘ h₀.2 t ht⟩
 
 /-- The slope is `4 |δ| / (t (1 - t²))`-Lipschitz in the angle. -/
-private theorem dist_circleContinuationSlope_le (δ : ℝ) (r : ℝ → ℝ) {t : ℝ} (h₀ : 0 < t)
+theorem dist_circleContinuationSlope_le (δ : ℝ) (r : ℝ → ℝ) {t : ℝ} (h₀ : 0 < t)
     (h₁ : t < 1) (θ θ' : ℝ) :
     dist (circleContinuationSlope δ r t θ) (circleContinuationSlope δ r t θ') ≤
       4 * |δ| * (t * (1 - t ^ 2))⁻¹ * dist θ θ' := by
@@ -298,7 +267,7 @@ private theorem dist_circleContinuationSlope_le (δ : ℝ) (r : ℝ → ℝ) {t 
     _ = _ := by ring
 
 /-- Changing `δ` changes the slope by at most `2 |δ - δ'| / (t (1 - t²))`. -/
-private theorem dist_circleContinuationSlope_sub_le (δ δ' : ℝ) (r : ℝ → ℝ) {t : ℝ} (h₀ : 0 < t)
+theorem dist_circleContinuationSlope_sub_le (δ δ' : ℝ) (r : ℝ → ℝ) {t : ℝ} (h₀ : 0 < t)
     (h₁ : t < 1) (θ : ℝ) :
     dist (circleContinuationSlope δ r t θ) (circleContinuationSlope δ' r t θ) ≤
       2 * |δ - δ'| * (t * (1 - t ^ 2))⁻¹ := by
@@ -400,7 +369,7 @@ private theorem exists_hasDerivWithinAt_circleContinuationSlope (δ : ℝ) {ρ :
   (isPicardLindelof_circleContinuationSlope δ hρ).exists_eq_forall_mem_Icc_hasDerivWithinAt₀
 
 /-- The angular velocity vanishes where `sin (2 (θ - r t)) = 0`. -/
-private theorem circleContinuationSlope_eq_zero {δ : ℝ} {r : ℝ → ℝ} {t θ : ℝ}
+theorem circleContinuationSlope_eq_zero {δ : ℝ} {r : ℝ → ℝ} {t θ : ℝ}
     (h : sin (2 * (θ - r t)) = 0) : circleContinuationSlope δ r t θ = 0 := by
   simp [circleContinuationSlope_def, h]
 
@@ -620,21 +589,22 @@ theorem hasFDerivAt_circleContinuationField {δ : ℝ} {r : ℝ → ℝ} {r' θ 
   refine (h₁.prodMk h₂).congr_fderiv ?_
   ext <;> simp <;> ring
 
-/-- The minimum `π / 2` of the source function `δ cos (2 θ)` is a zero of the parameter field of
-the half-turn path `π ρ`. -/
+/-- The critical point `π / 2` of the source function `δ cos (2 θ)`, a minimum for `δ > 0`, is a
+zero of the parameter field of the half-turn path `π ρ`. -/
 theorem circleContinuationField_pi_div_two_zero {δ : ℝ} {ρ : ℝ → ℝ} (h0 : ρ 0 = 0) :
     circleContinuationField δ (fun t ↦ π * ρ t) (π / 2, 0) = 0 := by
   simp [h0, mul_div_cancel₀ _ (two_ne_zero' ℝ)]
 
-/-- The maximum `π` of the target function `δ cos (2 (θ - π))` is a zero of the parameter field
-of the half-turn path `π ρ`. -/
+/-- The critical point `π` of the target function `δ cos (2 (θ - π))`, a maximum for `δ > 0`, is a
+zero of the parameter field of the half-turn path `π ρ`. -/
 theorem circleContinuationField_pi_one {δ : ℝ} {ρ : ℝ → ℝ} (h1 : ρ 1 = 1) :
     circleContinuationField δ (fun t ↦ π * ρ t) (π, 1) = 0 := by
   simp [h1]
 
-/-- **The source minimum has index one.** If `ρ 0 = 0` and `ρ' 0 = 0`, the linearization of the
-parameter field of the half-turn path at the source minimum `(π / 2, 0)` is `diag(-4 δ, 1)`: for
-`δ > 0` the angle direction is contracting and the parameter direction expanding. -/
+/-- **For `δ > 0` the source minimum has index one.** If `ρ 0 = 0` and `ρ' 0 = 0`, the
+linearization of the parameter field of the half-turn path at the source minimum `(π / 2, 0)` is
+`diag(-4 δ, 1)`: for `δ > 0` the angle direction is contracting and the parameter direction
+expanding. -/
 theorem hasFDerivAt_circleContinuationField_pi_div_two_zero {δ : ℝ} {ρ : ℝ → ℝ}
     (hρ : HasDerivAt ρ 0 0) (h0 : ρ 0 = 0) :
     HasFDerivAt (circleContinuationField δ (fun t ↦ π * ρ t))
@@ -643,9 +613,10 @@ theorem hasFDerivAt_circleContinuationField_pi_div_two_zero {δ : ℝ} {ρ : ℝ
   refine (hasFDerivAt_circleContinuationField (hρ.const_mul π)).congr_fderiv ?_
   ext <;> simp [h0, mul_div_cancel₀ _ (two_ne_zero' ℝ)]
 
-/-- **The target maximum has index one.** If `ρ 1 = 1` and `ρ' 1 = 0`, the linearization of the
-parameter field of the half-turn path at the target maximum `(π, 1)` is `diag(4 δ, -2)`: for
-`δ > 0` the angle direction is expanding and the parameter direction contracting. -/
+/-- **For `δ > 0` the target maximum has index one.** If `ρ 1 = 1` and `ρ' 1 = 0`, the
+linearization of the parameter field of the half-turn path at the target maximum `(π, 1)` is
+`diag(4 δ, -2)`: for `δ > 0` the angle direction is expanding and the parameter direction
+contracting. -/
 theorem hasFDerivAt_circleContinuationField_pi_one {δ : ℝ} {ρ : ℝ → ℝ} (hρ : HasDerivAt ρ 0 1)
     (h1 : ρ 1 = 1) :
     HasFDerivAt (circleContinuationField δ (fun t ↦ π * ρ t))
