@@ -28,10 +28,9 @@ for the determinant lines `det f = det (ker f) ⊗ (det (coker f))^*` (`LinearMa
 choice of bases or complements (`LinearMap.detLineCompEquiv`). This is
 `TauCeti.detLineSixTermEquiv` for that sequence.
 
-For Fredholm operators this is the composition law of determinant lines. It is how orientations of
-the determinant lines of two operators, for instance of the linearized operators along two
-pieces of a broken trajectory or of a change of trivialization, orient the determinant line of
-their composite.
+For Fredholm operators this is the composition law of determinant lines: orientations of the
+determinant lines of `f` and `g` orient the determinant line of `g ∘ f`, for instance when an
+operator is composed with a change of trivialization.
 
 ## Main declarations
 
@@ -68,7 +67,7 @@ def detLineCompEquiv : (g ∘ₗ f).detLine ≃ₗ[K] f.detLine ⊗[K] g.detLine
   have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
   TauCeti.detLineSixTermEquiv (Submodule.inclusion_injective (ker_le_ker_comp f g))
     (f.exact_inclusion_kerCompToKer g) (f.exact_kerCompToKer_kerToCoker g)
-    (f.exact_kerToCoker_cokerToCokerComp g) (exact_mapQ_range_factor f g)
+    (f.exact_kerToCoker_cokerToCokerComp g) (f.exact_cokerToCokerComp_factor g)
     (Submodule.factor_surjective _)
 
 /-- **The value of `LinearMap.detLineCompEquiv` on exterior products.** Choose `u`, a family of

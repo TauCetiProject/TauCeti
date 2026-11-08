@@ -498,18 +498,18 @@ theorem detLineSixTermEquiv_tmul (u : Fin (finrank K A₁) → A₁)
   have h₁ : (Module.Invertible.rightCancelEquiv _
       (Module.Invertible.linearEquiv K (detLine K A₃))).symm β = (β ⊗ₜ γ₀') ⊗ₜ γ₀ := by
     rw [LinearEquiv.symm_apply_eq]
-    simp [Module.Invertible.linearEquiv, hγ₀']
+    simp [hγ₀']
   have h₂ : (Module.Invertible.leftCancelEquiv _
       (Module.Invertible.linearEquiv K (detLine K A₄))).symm φ = ψ ⊗ₜ (δ ⊗ₜ φ) := by
     rw [LinearEquiv.symm_apply_eq]
-    simp [Module.Invertible.linearEquiv, hψ]
+    simp [hψ]
   simp only [detLineSixTermEquiv, LinearEquiv.trans_apply, LinearEquiv.rTensor_tmul,
     LinearEquiv.lTensor_tmul, h₁, h₂, TensorProduct.congr_tmul, hE₁, hE₂]
   simp only [TensorProduct.tmul_smul, TensorProduct.tensorTensorTensorComm_tmul,
     TensorProduct.rightComm_tmul, TensorProduct.leftComm_tmul, TensorProduct.assoc_tmul,
     TensorProduct.assoc_symm_tmul, LinearEquiv.rTensor_tmul, TensorProduct.lid_tmul,
-    Module.Invertible.linearEquiv, LinearEquiv.ofBijective_apply, contractLeft_apply, map_smul,
-    LinearEquiv.trans_apply, LinearEquiv.lTensor_tmul, TensorProduct.congr_tmul]
+    Module.Invertible.linearEquiv_tmul, map_smul, LinearEquiv.trans_apply,
+    LinearEquiv.lTensor_tmul, TensorProduct.congr_tmul]
   -- Cancel the scalars: `ι₀' ι • X = γ₀' γ • α` and `γ₀' γ • γ₀ = γ`.
   rw [← apply_smul_eq_self_of_finrank_eq_one (finrank_detLine K A₃) hγ₀' γ]
   simp only [TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', smul_smul]
