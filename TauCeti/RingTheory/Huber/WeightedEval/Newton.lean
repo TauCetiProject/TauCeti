@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Map
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PDeriv
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
+import TauCeti.RingTheory.Subring.SpanSingleton
 
 /-!
 # Newton's method for restricted power series with integral coefficients
@@ -126,9 +127,8 @@ theorem weightedEval_sub_weightedEval_sub_sum_mem_pow_smul {ϖ : P.ringOfDefinit
   have hq' := congrArg ((↑) : P.ringOfDefinition → C) hq
   simp only [MvPolynomial.eval_monomial, Finsupp.prod_pow, one_mul] at hq'
   push_cast at hq'
-  simp only [weightedEvalTerm_def, RingHom.id_apply, smul_eq_mul]
-  rw [pow_add, mul_left_comm, ← hq', mul_sub, mul_sub, Finset.mul_sum]
-  simp only [mul_assoc]
+  simp only [weightedEvalTerm_def, RingHom.id_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum]
+  linear_combination -(MvPowerSeries.coeff μ F * hq')
 
 section Newton
 
@@ -141,6 +141,14 @@ private noncomputable def evalOD
     (x : Fin N → P.ringOfDefinition) (i : Fin N) : P.ringOfDefinition :=
   ⟨weightedEval (RingHom.id C) (fun l ↦ (x l : C)) (F i),
     weightedEval_mem_ringOfDefinition P (hF i) (hF₀ i) x⟩
+
+/-- `F` vanishes at `u ∈ A₀^N` exactly when its evaluation on `A₀^N` does. -/
+private theorem evalOD_eq_zero_iff
+    (hF : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (F i))
+    (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
+    (u : Fin N → P.ringOfDefinition) : evalOD P hF hF₀ u = 0 ↔
+      ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C)) (F i) = 0 := by
+  simp [funext_iff, evalOD, Subtype.ext_iff]
 
 /-- The Jacobian matrix of `F` at `t`, as a matrix over `A₀`. -/
 private noncomputable def jacobianOD
@@ -162,7 +170,7 @@ private theorem pow_dvd_evalOD_sub
     (hn : k + 1 ≤ n) (hxx' : ∀ i, ϖ ^ n ∣ x' i - x i) (i : Fin N) :
     ϖ ^ (n + k + 1) ∣ evalOD P hF hF₀ x' i - evalOD P hF hF₀ x i -
       (jacobianOD P hF hF₀ t *ᵥ (x' - x)) i := by
-  refine P.coe_mem_smul_iff_dvd.mp ?_
+  refine P.ringOfDefinition.coe_mem_smul_iff_dvd.mp ?_
   rw [show n + k + 1 = k + 1 + n by omega]
   convert weightedEval_sub_weightedEval_sub_sum_mem_pow_smul P hϖ (hF i) (hF₀ i) hn hx hxx'
     using 1
@@ -207,7 +215,8 @@ theorem pow_dvd_sub_of_weightedEval_eq_zero (hϖ : IsUnit (ϖ : C))
     (fun _ _ h ↦ Subtype.ext (hϖ.mul_left_cancel (congrArg Subtype.val h)))
     (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
     (fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ x x' hx n hn hxx')
-    (fun i ↦ P.coe_mem_smul_iff_dvd.mp (ht i)) hu (funext fun i ↦ Subtype.ext (hFu i : _)) i
+    (fun i ↦ P.ringOfDefinition.coe_mem_smul_iff_dvd.mp (ht i)) hu
+    ((evalOD_eq_zero_iff P hF hF₀ u).mpr hFu) i
 
 /-- **Newton's method for restricted series with integral coefficients.** Let `C` be Hausdorff,
 let `ϖ ∈ A₀` be a pseudouniformiser, and let `M` be an integral matrix with `M J(t) = ϖᵏ`, where
@@ -225,13 +234,10 @@ theorem existsUnique_weightedEval_eq_zero [T0Space C] (hϖ : IsPseudoUniformizer
     ∃! u : Fin N → P.ringOfDefinition, (∀ i, ϖ ^ (k + 1) ∣ u i - t i) ∧
       ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C)) (F i) = 0 := by
   have := P.isAdicComplete_span_singleton ϖ hϖ
-  have hzero (u : Fin N → P.ringOfDefinition) : evalOD P hF hF₀ u = 0 ↔
-      ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C)) (F i) = 0 := by
-    simp [funext_iff, evalOD, Subtype.ext_iff]
-  simpa only [hzero] using IsAdicComplete.existsUnique_eq_zero_of_mul_eq_pow_smul
+  simpa only [evalOD_eq_zero_iff] using IsAdicComplete.existsUnique_eq_zero_of_mul_eq_pow_smul
     (fun _ _ h ↦ Subtype.ext (hϖ.isUnit.mul_left_cancel (congrArg Subtype.val h)))
     (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
-    (fun i ↦ P.coe_mem_smul_iff_dvd.mp (ht i))
+    (fun i ↦ P.ringOfDefinition.coe_mem_smul_iff_dvd.mp (ht i))
     fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ.isUnit x x' hx n hn hxx'
 
 end Newton

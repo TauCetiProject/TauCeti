@@ -497,15 +497,6 @@ theorem mem_smul_of_hasSum [IsTopologicalRing A] (P : PairOfDefinition A) {c : A
     rwa [← hfi, smul_eq_mul, Units.inv_mul_cancel_left]
   · rw [smul_eq_mul, Units.mul_inv_cancel_left]
 
-/-- Membership of an element of `A₀` in `c A₀` is divisibility by `c` in `A₀`. -/
-theorem coe_mem_smul_iff_dvd (P : PairOfDefinition A) {c y : P.ringOfDefinition} :
-    (y : A) ∈ (c : A) • (P.ringOfDefinition : Set A) ↔ c ∣ y := by
-  constructor
-  · rintro ⟨r, hr, h⟩
-    exact ⟨⟨r, hr⟩, Subtype.ext (by simpa using h.symm)⟩
-  · rintro ⟨r, rfl⟩
-    exact ⟨r, r.2, by simp⟩
-
 /-- The image of a pair of definition along an open quotient map `f : A →+* B`: its ring of
 definition is the image of `A₀` and its ideal of definition is the image of `I`. -/
 def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
