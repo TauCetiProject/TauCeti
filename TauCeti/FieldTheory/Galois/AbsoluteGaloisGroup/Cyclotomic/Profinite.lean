@@ -33,13 +33,17 @@ namespace TauCeti
 
 variable (K : Type*) [Field K] [CharZero K]
 
-/-- The continuous cyclotomic character on all roots of unity of a characteristic-zero field. -/
+/-- The continuous cyclotomic character of the absolute Galois group of a characteristic-zero
+field `K`, recording its action on all roots of unity in `AlgebraicClosure K` with normalization
+`σ ζ = ζ ^ χ_n(σ)` at each finite level `n`. -/
 noncomputable def profiniteCyclotomicCharacter :
     Field.absoluteGaloisGroup K →ₜ* (Additive zHat)ˣ :=
   ⟨zHat.unitsLift
     (fun n : ℕ+ ↦ (modularCyclotomicCharacter (AlgebraicClosure K)
       (HasEnoughRootsOfUnity.natCard_rootsOfUnity _ n)).comp
         (MulSemiringAction.toRingAut Gal(AlgebraicClosure K/K) (AlgebraicClosure K)))
+    -- The action map `MulSemiringAction.toRingAut` on algebra automorphisms is
+    -- definitionally `AlgEquiv.toRingEquiv`, so the finite compatibility lemma applies.
     (fun _ _ h σ ↦ modularCyclotomicCharacter.unitsMap h _ _ σ.toRingEquiv),
     zHat.continuous_unitsLift _ _ (fun _ ↦ modularCyclotomicCharacter.continuous _)⟩
 
@@ -50,16 +54,25 @@ theorem map_toZMod_profiniteCyclotomicCharacter (n : ℕ+)
     Units.map (zHat.toZMod n) (profiniteCyclotomicCharacter K σ) =
       modularCyclotomicCharacter (AlgebraicClosure K)
         (HasEnoughRootsOfUnity.natCard_rootsOfUnity _ n) σ.toRingEquiv :=
+  -- Composition evaluates at `toRingAut … σ`, definitionally `σ.toRingEquiv`.
   zHat.map_toZMod_unitsLift _ _ n σ
+
+/-- The underlying profinite integer of the cyclotomic character reduces to the finite character. -/
+@[simp]
+theorem toZMod_coe_profiniteCyclotomicCharacter (n : ℕ+)
+    (σ : Field.absoluteGaloisGroup K) :
+    zHat.toZMod n (profiniteCyclotomicCharacter K σ : Additive zHat) =
+      (modularCyclotomicCharacter (AlgebraicClosure K)
+        (HasEnoughRootsOfUnity.natCard_rootsOfUnity _ n) σ.toRingEquiv : ZMod n) :=
+  -- As above, `toRingAut … σ` is definitionally `σ.toRingEquiv`.
+  zHat.toZMod_coe_unitsLift _ _ n σ
 
 /-- The finite power equation fixes the normalization of the profinite cyclotomic character. -/
 theorem profiniteCyclotomicCharacter_spec (n : ℕ+) (σ : Field.absoluteGaloisGroup K)
     (ζ : AlgebraicClosure K) (hζ : ζ ^ (n : ℕ) = 1) :
     σ.toRingEquiv ζ =
       ζ ^ (zHat.toZMod n (profiniteCyclotomicCharacter K σ : Additive zHat)).val := by
-  have h := congrArg Units.val (map_toZMod_profiniteCyclotomicCharacter K n σ)
-  simp only [Units.coe_map, MonoidHom.coe_ofClass] at h
-  rw [h]
+  rw [toZMod_coe_profiniteCyclotomicCharacter]
   exact modularCyclotomicCharacter.spec (AlgebraicClosure K)
     (HasEnoughRootsOfUnity.natCard_rootsOfUnity _ n) σ.toRingEquiv
     (rootsOfUnity.mkOfPowEq ζ hζ).property

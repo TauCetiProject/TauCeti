@@ -57,6 +57,8 @@ theorem continuous {K L : Type*} [Field K] [Field L] [Algebra K L] {n : ℕ} [Ne
   have heq : (modularCyclotomicCharacter L hn).comp
       (MulSemiringAction.toRingAut Gal(L/K) L) = hζ.autToPow K := by
     ext g
+    -- The action map `MulSemiringAction.toRingAut` on algebra automorphisms is
+    -- definitionally `AlgEquiv.toRingEquiv`, the coercion used by the comparison lemma.
     exact congrArg Units.val (hζ.autToPow_eq_modularCyclotomicCharacter n K g).symm
   rw [heq]
   exact (hζ.autToPow K).continuous_of_isOpen_ker hζ.isOpen_ker_autToPow
