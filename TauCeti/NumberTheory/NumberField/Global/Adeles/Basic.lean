@@ -128,6 +128,37 @@ theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
   (InfiniteAdeleRing.homeomorphMixedSpace K).symm.continuous.congr fun x ↦
     InfiniteAdeleRing.homeomorphMixedSpace_symm_apply K x
 
+/-- Every infinite adele can be translated by the image of an algebraic integer into the closed
+fundamental parallelepiped of the Minkowski lattice. -/
+theorem InfiniteAdeleRing.exists_sub_algebraMap_integer_mem_parallelepiped [NumberField K]
+    (z : InfiniteAdeleRing K) :
+    ∃ y : 𝓞 K, InfiniteAdeleRing.ringEquiv_mixedSpace K
+      (z - algebraMap K (InfiniteAdeleRing K) (algebraMap (𝓞 K) K y))
+      ∈ parallelepiped (mixedEmbedding.latticeBasis K) := by
+  classical
+  let b := mixedEmbedding.latticeBasis K
+  let e := InfiniteAdeleRing.ringEquiv_mixedSpace K
+  -- The lattice correction is the Minkowski embedding of an algebraic integer `y`.
+  have hfloor : ((ZSpan.floor b (e z) :
+      Submodule.span ℤ (Set.range b)) : mixedEmbedding.mixedSpace K) ∈
+      mixedEmbedding.integerLattice K := by
+    rw [← mixedEmbedding.span_latticeBasis K]
+    exact (ZSpan.floor b (e z)).property
+  obtain ⟨y, hy⟩ := hfloor
+  have hy' : mixedEmbedding K (algebraMap (𝓞 K) K y) =
+      ((ZSpan.floor b (e z) : Submodule.span ℤ (Set.range b)) :
+        mixedEmbedding.mixedSpace K) := by
+    simpa using hy
+  have hey : e (algebraMap K (InfiniteAdeleRing K) (algebraMap (𝓞 K) K y)) =
+      ((ZSpan.floor b (e z) : Submodule.span ℤ (Set.range b)) :
+        mixedEmbedding.mixedSpace K) :=
+    (InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp
+      (K := K) (x := algebraMap (𝓞 K) K y)).symm.trans hy'
+  refine ⟨y, ?_⟩
+  rw [map_sub, hey, ← ZSpan.fract_apply]
+  exact ZSpan.fundamentalDomain_subset_parallelepiped b
+    (ZSpan.fract_mem_fundamentalDomain b (e z))
+
 /-- The norm of the Minkowski mixed-space image of an infinite adele is its norm: the product over
 the infinite places of the local absolute values, squared at the complex places.
 
