@@ -23,7 +23,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
-    source = source.replace("!contains", "not contains").replace(".labels.*.name", ".label_names")
+    source = source.replace("!contains", "not contains").replace("!(", "not (").replace(".labels.*.name", ".label_names")
     github = SimpleNamespace(repository="TauCetiProject/TauCeti", run_attempt=attempt, run_id=42, event_name=event, event=SimpleNamespace(
         action=action, label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
@@ -81,7 +81,10 @@ class PickerWorkflow(unittest.TestCase):
         for action in ("labeled", "unlabeled"):
             self.assertFalse(expression(condition, action=action))
             self.assertTrue(expression(condition, action=action, label="self-tested"))
-            self.assertTrue(expression(condition, action=action, labels=("self-tested",)))
+            self.assertFalse(expression(condition, action=action, labels=("self-tested",)))
+            self.assertFalse(expression(condition, action=action, label="full-lint"))
+            for label in ("full-lint", "lint-repair"):
+                self.assertTrue(expression(condition, action=action, label=label, labels=("self-tested",)))
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
         self.assertTrue(expression(condition))
 

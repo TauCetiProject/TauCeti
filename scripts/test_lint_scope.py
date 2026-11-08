@@ -767,7 +767,7 @@ class PrBuildWiringTest(unittest.TestCase):
         condition = pr_build["jobs"]["pick-runner"]["if"]
         self.assertIn("github.event.label.name == 'self-tested'", condition)
         self.assertIn("contains(github.event.pull_request.labels.*.name, 'self-tested')", condition)
-        self.assertNotIn("'full-lint'", condition)
+        self.assertIn('contains(fromJSON(', condition)
         self.assertIn("workflow_dispatch", pr_build[True])
         wf = yaml.safe_load((ROOT / ".github" / "workflows" / "full-lint-label.yml").read_text())
         self.assertEqual(wf[True]["pull_request_target"]["types"], ["labeled"])

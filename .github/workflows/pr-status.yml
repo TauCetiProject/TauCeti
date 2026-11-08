@@ -97,10 +97,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@45edf20ce758d58b193d78e7cfeaaf56a0b8207c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@cc55ea7cbd272d688189c09230497d6a9f9ff101
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 45edf20ce758d58b193d78e7cfeaaf56a0b8207c
+          tools-ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
