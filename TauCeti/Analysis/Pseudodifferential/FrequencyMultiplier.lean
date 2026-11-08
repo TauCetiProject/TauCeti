@@ -214,42 +214,6 @@ end Frequency
 
 section Examples
 
-/-- A real scalar coefficient `g` times a fixed operator `T` is `T` composed with `g` through the
-continuous linear map `t ↦ t • T`. -/
-private theorem ofReal_smul_eq_comp {g : CoordinateSpace n → ℝ} (T : V →L[ℂ] W) :
-    (fun ξ ↦ (g ξ : ℂ) • T) = (1 : ℝ →L[ℝ] ℝ).smulRight T ∘ g := by
-  funext ξ
-  simp [Complex.coe_smul]
-
-/-- A smooth real scalar coefficient times a fixed operator is smooth. -/
-private theorem contDiff_ofReal_smul {g : CoordinateSpace n → ℝ} (hg : ContDiff ℝ ∞ g)
-    (T : V →L[ℂ] W) : ContDiff ℝ ∞ (fun ξ ↦ (g ξ : ℂ) • T) := by
-  rw [ofReal_smul_eq_comp]
-  exact ((1 : ℝ →L[ℝ] ℝ).smulRight T).contDiff.comp hg
-
-/-- Real scalar coefficients with symbol estimates give operator-valued ones. -/
-private theorem exists_norm_iteratedFDeriv_ofReal_smul_le
-    {g : CoordinateSpace n → ℝ} (hg : ContDiff ℝ ∞ g) (T : V →L[ℂ] W)
-    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k g ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
-    (k : ℕ) : ∃ C, ∀ ξ,
-      ‖iteratedFDeriv ℝ k (fun ξ ↦ (g ξ : ℂ) • T) ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) := by
-  rw [ofReal_smul_eq_comp]
-  set L : ℝ →L[ℝ] V →L[ℂ] W := (1 : ℝ →L[ℝ] ℝ).smulRight T
-  obtain ⟨C, hC⟩ := hbound k
-  refine ⟨‖L‖ * max C 0, fun ξ ↦ ?_⟩
-  calc ‖iteratedFDeriv ℝ k (L ∘ g) ξ‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ k g ξ‖ :=
-        L.norm_iteratedFDeriv_comp_left hg.contDiffAt (mod_cast le_top)
-    _ ≤ ‖L‖ * (max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2)) :=
-        mul_le_mul_of_nonneg_left ((hC ξ).trans
-          (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))) (norm_nonneg L)
-    _ = ‖L‖ * max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) := (mul_assoc _ _ _).symm
-
-/-- The Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` is smooth. -/
-private theorem contDiff_besselWeight (s : ℝ) :
-    ContDiff ℝ ∞ (fun ξ : CoordinateSpace n ↦ (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2)) :=
-  (contDiff_const.add ((contDiff_norm_sq ℝ).comp (contDiff_const_smul _))).rpow_const_of_ne
-    fun ξ ↦ (show (0 : ℝ) < 1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2 by positivity).ne'
-
 /-- The Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` satisfies the symbol estimates of order `s`. -/
 private theorem exists_norm_iteratedFDeriv_besselWeight_le (s : ℝ) (k : ℕ) :
     ∃ C, ∀ ξ : CoordinateSpace n,
@@ -266,9 +230,14 @@ Mathlib's Bessel potential `TemperedDistribution.besselPotential`
 (`TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`). -/
 def besselPotential (s : ℝ) : Symbol n V V s :=
   ofFrequency (fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
-    (contDiff_ofReal_smul (contDiff_besselWeight s) _)
-    (exists_norm_iteratedFDeriv_ofReal_smul_le (contDiff_besselWeight s) _
-      (exists_norm_iteratedFDeriv_besselWeight_le s))
+    ((Complex.ofRealCLM.contDiff.comp (contDiff_one_add_norm_smul_sq_rpow _ _)).smul
+      contDiff_const)
+    fun k ↦ by
+      simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
+        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow
+          (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
+          ((contDiff_one_add_norm_smul_sq_rpow _ _).of_le (mod_cast le_top))
+          (exists_norm_iteratedFDeriv_besselWeight_le s k)
 
 @[simp]
 theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
@@ -304,9 +273,13 @@ a uniform symbol of order `1` (`TauCeti.Symbol.isUniform_ofInner`). It is not a 
 order `m < 1` (`TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`). -/
 def ofInner (v : CoordinateSpace n) : Symbol n V V 1 :=
   ofFrequency (fun ξ ↦ ((⟪ξ, v⟫ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
-    (contDiff_ofReal_smul (g := fun ξ ↦ ⟪ξ, v⟫) (contDiff_id.inner ℝ contDiff_const) _)
-    (exists_norm_iteratedFDeriv_ofReal_smul_le (g := fun ξ ↦ ⟪ξ, v⟫)
-      (contDiff_id.inner ℝ contDiff_const) _ (exists_norm_iteratedFDeriv_inner_le v))
+    ((Complex.ofRealCLM.contDiff.comp (contDiff_id.inner ℝ contDiff_const)).smul contDiff_const)
+    fun k ↦ by
+      simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
+        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow
+          (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V)) (g := fun ξ ↦ ⟪ξ, v⟫)
+          ((contDiff_id.inner ℝ contDiff_const).of_le (mod_cast le_top))
+          (exists_norm_iteratedFDeriv_inner_le v k)
 
 @[simp]
 theorem coefficient_ofInner (v : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :

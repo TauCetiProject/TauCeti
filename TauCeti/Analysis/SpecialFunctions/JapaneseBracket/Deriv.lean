@@ -40,9 +40,11 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
   `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
-* `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
+* `TauCeti.exists_one_add_norm_smul_sq_rpow_le`, `TauCeti.contDiff_one_add_norm_smul_sq_rpow`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
-  rescaled argument `c x` and its derivative bounds.
+  rescaled argument `c x`, its smoothness and its derivative bounds.
+* `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow`: composing on the
+  left with a continuous linear map preserves bracket bounds on derivatives.
 
 ## References
 
@@ -51,6 +53,8 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 -/
 
 public section
+
+open scoped ContDiff
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -109,6 +113,21 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
     _ = k.choose i * C i * ‖L‖ * (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
         rw [← hexp]
         ring
+
+/-- Composing on the left with a continuous linear map `L` preserves a bracket bound
+`‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ρ`, with the constant multiplied by `‖L‖`. -/
+theorem exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (L : F →L[ℝ] G) {g : E → F} {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ}
+    (hgk : ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ) :
+    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ := by
+  obtain ⟨C, hC⟩ := hgk
+  refine ⟨‖L‖ * max C 0, fun x ↦ ?_⟩
+  calc ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ k g x‖ :=
+        L.norm_iteratedFDeriv_comp_left hg.contDiffAt le_rfl
+    _ ≤ ‖L‖ * (max C 0 * (1 + ‖x‖ ^ 2) ^ ρ) :=
+        mul_le_mul_of_nonneg_left ((hC x).trans
+          (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))) (norm_nonneg L)
+    _ = ‖L‖ * max C 0 * (1 + ‖x‖ ^ 2) ^ ρ := (mul_assoc _ _ _).symm
 
 end ContinuousLinearMap
 
@@ -200,6 +219,12 @@ theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le (v : E) (r 
   exact (innerSL ℝ v).exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
     ((contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun x ↦ by positivity)
     fun i _ ↦ exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le r i
+
+/-- The rescaled bracket power `(1 + ‖c x‖ ^ 2) ^ r` is smooth. -/
+theorem contDiff_one_add_norm_smul_sq_rpow (c r : ℝ) :
+    ContDiff ℝ ∞ (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) :=
+  (contDiff_const.add ((contDiff_norm_sq ℝ).comp (contDiff_const_smul c))).rpow_const_of_ne
+    fun x ↦ (show (0 : ℝ) < 1 + ‖c • x‖ ^ 2 by positivity).ne'
 
 /-- **Derivative bounds for a rescaled bracket power.** For `c ≠ 0`, every real `r` and every
 `k`, `‖D^k (1 + ‖c x‖ ^ 2) ^ r‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r - k / 2)`. -/
