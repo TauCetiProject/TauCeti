@@ -16,10 +16,10 @@ import TauCeti.Analysis.Convex.Topology
 /-!
 # Sharp Lipschitz representatives on convex domains
 
-The precise representative of a real `W^{1,∞}` function on a convex open set is Lipschitz
-with constant at most the essential supremum of its weak gradient. In particular the
-whole-space representative has this bound. Neither boundedness of the domain nor boundary
-regularity is needed.
+The precise representative of a real `W^{1,∞}` function on an open set is Lipschitz on
+each convex subset, with constant at most the essential supremum of its weak gradient.
+In particular the whole-space representative has this bound. Neither boundedness of the
+domain nor boundary regularity is needed.
 
 Local continuity comes from the interior Morrey theorem. Mollification on a neighborhood of
 each segment gives the sharp constant, without assuming that smooth functions are dense in
@@ -28,7 +28,6 @@ the `W^{1,∞}` norm.
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §5.8.2.
-* G. Leoni, *A First Course in Sobolev Spaces*, Chapter 7.
 -/
 
 public section
@@ -86,17 +85,17 @@ private theorem W1p.norm_fderiv_convolution_indicator_le (u : W1p μ Ω ∞)
           mul_le_mul_of_nonneg_left hy (ρ.nonneg_normed y)
     _ = ‖W1p.gradient u‖ := by rw [integral_mul_const, ρ.integral_normed, one_mul]
 
-/-- On a convex open set the precise representative of a `W^{1,∞}` class is Lipschitz,
-with the sharp bound given by the essential supremum of its weak gradient. -/
+/-- On any convex subset of its open domain the precise representative of a `W^{1,∞}`
+class is Lipschitz, with the sharp bound given by the essential supremum of its weak gradient. -/
 theorem W1p.lipschitzOnWith_preciseRepresentative_of_convex (u : W1p μ Ω ∞)
-    (hΩ : Convex ℝ (Ω : Set E)) :
-    LipschitzOnWith ‖W1p.gradient u‖₊ (preciseRepresentative μ (W1p.value u)) Ω := by
+    {s : Set E} (hs : Convex ℝ s) (hsΩ : s ⊆ Ω) :
+    LipschitzOnWith ‖W1p.gradient u‖₊ (preciseRepresentative μ (W1p.value u)) s := by
   let f := (Ω : Set E).indicator (preciseRepresentative μ (W1p.value u))
   have hf := W1p.memLp_indicator_preciseRepresentative u
   have hc := W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u
   refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
   obtain ⟨δ, hδ, hδΩ⟩ := (isCompact_segment ℝ x y).exists_cthickening_subset_open Ω.isOpen
-    (hΩ.segment_subset hx hy)
+    ((hs.segment_subset hx hy).trans hsΩ)
   let ρ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hδ
   have hsupp (n : ℕ) (z : E) (hz : z ∈ segment ℝ x y)
       (w : E) (hw : w ∈ tsupport ((ρ n).normed μ)) : z - w ∈ Ω := by
@@ -131,13 +130,14 @@ theorem W1p.lipschitzOnWith_preciseRepresentative_of_convex (u : W1p μ Ω ∞)
       exact W1p.norm_fderiv_convolution_indicator_le u (ρ n) (hsupp n z hz)
     · exact right_mem_segment ℝ x y
     · exact left_mem_segment ℝ x y
-  exact le_of_tendsto ((hlim x hx).dist (hlim y hy)) (Eventually.of_forall hle)
+  exact le_of_tendsto ((hlim x (hsΩ hx)).dist (hlim y (hsΩ hy)))
+    (Eventually.of_forall hle)
 
 /-- On the whole space the precise representative of a `W^{1,∞}` class is globally
 Lipschitz with constant at most the essential supremum of its weak gradient. -/
 theorem W1p.lipschitzWith_preciseRepresentative (u : W1p μ ⊤ ∞) :
     LipschitzWith ‖W1p.gradient u‖₊ (preciseRepresentative μ (W1p.value u)) := by
   rw [← lipschitzOnWith_univ]
-  exact W1p.lipschitzOnWith_preciseRepresentative_of_convex u convex_univ
+  exact W1p.lipschitzOnWith_preciseRepresentative_of_convex u convex_univ subset_rfl
 
 end TauCeti
