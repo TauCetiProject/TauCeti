@@ -35,6 +35,8 @@ a compact set which converge pointwise.
 * `TauCeti.tendsto_intervalIntegral_comp_of_tendsto`: for continuous `Φ`, the integrals
   `∫_{t₁}^{t₂} Φ(t, y_i(t)) dt` converge when the `y_i` stay in a compact set and converge
   pointwise.
+* `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
+  shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 -/
 
 public section
@@ -171,5 +173,25 @@ theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι
       (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
   exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk (hy i))).aestronglyMeasurable
     measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
+
+/-- **Integrals over shrinking shells vanish.** If `w` is measurable and `η k` tends to `0`,
+then the integral of an integrable `f` over the shells `{0 < w < η k}` tends to `0`, by dominated
+convergence: the indicator of the `k`th shell tends to `0` at every point. -/
+theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure α} {f : α → F} (hf : Integrable f μ)
+    {w : α → ℝ} (hw : Measurable w) {η : ℕ → ℝ} (hηlim : Tendsto η atTop (𝓝 0)) :
+    Tendsto (fun k ↦ ∫ x in w ⁻¹' Ioo 0 (η k), f x ∂μ) atTop (𝓝 0) := by
+  have hmeas (k : ℕ) : MeasurableSet (w ⁻¹' Ioo 0 (η k)) := hw measurableSet_Ioo
+  have h := tendsto_integral_of_dominated_convergence (μ := μ) (fun x ↦ ‖f x‖)
+    (F := fun k x ↦ (w ⁻¹' Ioo 0 (η k)).indicator f x) (f := fun _ ↦ (0 : F))
+    (fun k ↦ hf.aestronglyMeasurable.indicator (hmeas k)) hf.norm
+    (fun k ↦ .of_forall fun x ↦ norm_indicator_le_norm_self f x) (.of_forall fun x ↦ ?_)
+  · simpa only [integral_indicator (hmeas _), integral_zero] using h
+  · by_cases hx : 0 < w x
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [hηlim.eventually (gt_mem_nhds hx)] with k hk
+      exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
+    · refine tendsto_const_nhds.congr fun k => ?_
+      exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
 
 end TauCeti
