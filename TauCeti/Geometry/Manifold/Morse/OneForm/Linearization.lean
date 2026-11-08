@@ -79,9 +79,8 @@ theorem IsPrimitiveOn.surjective_sectionLinearization_iff [FiniteDimensional ℝ
       IsManifoldNondegenerateCriticalPoint I f x := by
   rw [hf.surjective_sectionLinearization_iff_surjective_criticalHessian hxU hf₂ hx,
     isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
-  have hcrit : mvfderiv I f x = 0 := by
-    have hd := mextDeriv_ofFunction_apply_eq_zero_iff.mp ((hf.mextDeriv_eq x hxU).trans hx)
-    exact mvfderiv_eq_zero_iff.mpr hd
+  have hcrit : mvfderiv I f x = 0 :=
+    mem_criticalPoints.mp ((hf.eq_zero_iff_mem_criticalPoints hxU).1 hx)
   exact ⟨fun h ↦ ⟨hf₂, hcrit, ContinuousLinearMap.isInvertible_of_surjective (E := E) h⟩,
     fun h ↦ h.2.2.surjective⟩
 
