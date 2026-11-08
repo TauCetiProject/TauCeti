@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-import Mathlib.Algebra.Order.Group.Pointwise.Interval
 
 /-!
 # Affine bijections of horizontal strips
