@@ -18,7 +18,8 @@ This file proves Gaussian integration by parts for any mean and variance, for te
 values in a Banach space. For a differentiable test function, it assumes only that the derivative
 and the centered first moment are integrable; integrability of the function itself follows.
 Real-valued and standard-normal forms are recorded as corollaries.
-It also records the identity for affine test functions.
+It also records the identity for bounded continuously differentiable test functions composed
+with affine maps.
 -/
 
 public section
