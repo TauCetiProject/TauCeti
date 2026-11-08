@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Topology.MetricSpace.ProperSpace
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 
 /-!
@@ -323,20 +324,12 @@ theorem exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq {W G : Type*} [NormedAddC
     ∀ k ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k f ξ‖ ≤ C := by
   obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_mul_zpow_of_smul_eq hm hhom
   intro k hk
-  -- On the compact ball of radius `max R 1` the derivative is continuous, hence bounded.
-  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : W) (max R 1)).exists_bound_of_continuousOn
-    ((hf.continuous_iteratedFDeriv (mod_cast hk)).continuousOn (s := closedBall 0 (max R 1)))
-  refine ⟨max C A, fun ξ ↦ ?_⟩
-  by_cases hξ : ‖ξ‖ ≤ max R 1
-  · exact (hC ξ (mem_closedBall_zero_iff.2 hξ)).trans (le_max_left _ _)
-  -- Outside it `f = m` near `ξ`, and `‖ξ‖ ^ (d - k) ≤ 1` because `‖ξ‖ ≥ 1`.
-  rw [not_le] at hξ
-  have hfm' : f =ᶠ[𝓝 ξ] m := by
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
-      ((le_max_left R 1).trans_lt hξ)] with x hx using hfm x hx
+  -- Outside the ball of radius `max R 1`, `f = m` and `‖ξ‖ ^ (d - k) ≤ 1` because `‖ξ‖ ≥ 1`.
+  refine (hf.of_le (mod_cast hk)).exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm (R := max R 1)
+    (C := A)
+    (fun ξ hξ ↦ hfm ξ ((le_max_left R 1).trans_lt hξ)) (fun ξ hξ ↦ ?_)
   have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans ((le_max_right R 1).trans_lt hξ))
-  rw [hfm'.iteratedFDeriv ℝ k |>.eq_of_nhds]
-  refine (hA k hk ξ hξ0).trans ((mul_le_of_le_one_right A.2 ?_).trans (le_max_right _ _))
+  refine (hA k hk ξ hξ0).trans (mul_le_of_le_one_right A.2 ?_)
   exact zpow_le_one_of_nonpos₀ ((le_max_right R 1).trans hξ.le) (by omega)
 
 end TauCeti
