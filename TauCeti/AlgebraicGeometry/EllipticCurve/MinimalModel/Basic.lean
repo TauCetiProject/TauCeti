@@ -344,6 +344,23 @@ instance isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
   isMinimal_of_valuation_Δ_eq_of_isMinimal_smul R (C.baseChange K) rfl
     (valuation_Δ_baseChange_smul R W C)
 
+/-- **Minimality is invariant under a change of variables defined over `R`**: such a change is
+invertible over `R`, so it preserves integrality and the discriminant valuation in both
+directions. -/
+@[simp]
+theorem isMinimal_baseChange_smul_iff (W : WeierstrassCurve K) (C : VariableChange R) :
+    IsMinimal R (C.baseChange K • W) ↔ IsMinimal R W := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨V, hV⟩ := (inferInstance : IsIntegral R (C.baseChange K • W))
+    have : IsIntegral R W := ⟨C⁻¹ • V, by
+      have hinv : C⁻¹.baseChange K = (C.baseChange K)⁻¹ :=
+        map_inv (VariableChange.mapHom (algebraMap R K)) C
+      rw [WeierstrassCurve.baseChange, ← map_variableChange, ← VariableChange.baseChange, hinv,
+        ← WeierstrassCurve.baseChange, ← hV, inv_smul_smul]⟩
+    exact isMinimal_of_valuation_Δ_eq_of_isMinimal_smul R (C.baseChange K)⁻¹ (inv_smul_smul _ _)
+      (valuation_Δ_baseChange_smul R W C).symm
+  · exact isMinimal_baseChange_smul R W C
+
 /-- **Reduction commutes with a change of variables defined over `R`**: the reduction of `C • W`
 is the reduction of `W` transformed by the residue of `C`. -/
 theorem reduction_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
@@ -353,19 +370,19 @@ theorem reduction_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
 
 /-- **Multiplicative reduction is invariant under a change of variables defined over `R`.** -/
 @[simp]
-theorem hasMultiplicativeReduction_baseChange_smul_iff (W : WeierstrassCurve K) [IsMinimal R W]
+theorem hasMultiplicativeReduction_baseChange_smul_iff (W : WeierstrassCurve K)
     (C : VariableChange R) :
     (C.baseChange K • W).HasMultiplicativeReduction R ↔ W.HasMultiplicativeReduction R := by
   simp only [hasMultiplicativeReduction_iff, valuation_Δ_baseChange_smul,
-    valuation_c₄_baseChange_smul, isMinimal_baseChange_smul, ‹IsMinimal R W›, true_and]
+    valuation_c₄_baseChange_smul, isMinimal_baseChange_smul_iff]
 
 /-- **Additive reduction is invariant under a change of variables defined over `R`.** -/
 @[simp]
-theorem hasAdditiveReduction_baseChange_smul_iff (W : WeierstrassCurve K) [IsMinimal R W]
+theorem hasAdditiveReduction_baseChange_smul_iff (W : WeierstrassCurve K)
     (C : VariableChange R) :
     (C.baseChange K • W).HasAdditiveReduction R ↔ W.HasAdditiveReduction R := by
   simp only [hasAdditiveReduction_iff, valuation_Δ_baseChange_smul,
-    valuation_c₄_baseChange_smul, isMinimal_baseChange_smul, ‹IsMinimal R W›, true_and]
+    valuation_c₄_baseChange_smul, isMinimal_baseChange_smul_iff]
 
 /-- **Split multiplicative reduction is invariant under a change of variables defined over `R`**:
 the node polynomial of the integral model changes by an affine substitution and a unit scalar, so
@@ -373,7 +390,7 @@ it splits over the residue field for both equations or for neither. Unlike
 `HasSplitMultiplicativeReduction.of_isMinimal_smul`, this needs no ellipticity. -/
 @[simp]
 theorem hasSplitMultiplicativeReduction_baseChange_smul_iff (W : WeierstrassCurve K)
-    [IsMinimal R W] (C : VariableChange R) :
+    (C : VariableChange R) :
     (C.baseChange K • W).HasSplitMultiplicativeReduction R ↔
       W.HasSplitMultiplicativeReduction R := by
   simp only [hasSplitMultiplicativeReduction_iff, hasMultiplicativeReduction_baseChange_smul_iff,
