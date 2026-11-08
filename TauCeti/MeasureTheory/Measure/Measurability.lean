@@ -9,10 +9,11 @@ public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
--- Non-public: measurability of the sections `ν.map (Prod.mk a)` and Weierstrass approximation are
--- used inside proofs only.
+-- Non-public: measurability of the sections `ν.map (Prod.mk a)`, Weierstrass approximation and
+-- integrability of continuous maps on compact spaces are used inside proofs only.
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.Topology.ContinuousMap.Weierstrass
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # Measurability of measure-valued maps
@@ -157,11 +158,6 @@ open scoped BoundedContinuousFunction NNReal
 
 namespace MeasureTheory
 
-/-- A continuous function on a compact interval is integrable against any finite measure. -/
-private lemma integrable_of_continuous_Icc {l u : ℝ} {ν : Measure ↥(Set.Icc l u)}
-    [IsFiniteMeasure ν] {f : ↥(Set.Icc l u) → ℝ} (hf : Continuous f) : Integrable f ν :=
-  hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
-
 /-- If the moments `a ↦ ∫ x, x ^ n ∂ν a` of a family of finite measures on `[l, u]` are
 measurable, then so is `a ↦ ∫ x, g x ∂ν a` for every continuous `g`. -/
 theorem measurable_integral_continuousMap_Icc_of_measurable_integral_pow {α : Type*} {l u : ℝ}
@@ -176,7 +172,7 @@ theorem measurable_integral_continuousMap_Icc_of_measurable_integral_pow {α : T
       funext a
       simp_rw [Polynomial.eval_eq_sum_range]
       rw [integral_finsetSum _ fun i _ =>
-        integrable_of_continuous_Icc
+        Continuous.integrable_of_compactSpace
           (f := fun x : ↥(Set.Icc l u) => p.coeff i * ((x : ℝ)) ^ i) (by fun_prop)]
       simp_rw [integral_const_mul]
     rw [hrw]
@@ -197,9 +193,9 @@ theorem measurable_integral_continuousMap_Icc_of_measurable_integral_pow {α : T
       (f := fun n a => ∫ x, (q n).eval ((x : ℝ)) ∂(ν a)) (fun n => hpoly (q n)) ?_
     rw [tendsto_pi_nhds]
     intro a
-    have hgint : Integrable (fun x => g x) (ν a) := integrable_of_continuous_Icc g.continuous
+    have hgint : Integrable (fun x => g x) (ν a) := g.continuous.integrable_of_compactSpace
     have hqint : ∀ n, Integrable (fun x : ↥(Set.Icc l u) => (q n).eval ((x : ℝ))) (ν a) :=
-      fun n => integrable_of_continuous_Icc ((q n).continuous.comp continuous_subtype_val)
+      fun n => ((q n).continuous.comp continuous_subtype_val).integrable_of_compactSpace
     have key : ∀ n : ℕ, ‖(∫ x, (q n).eval ((x : ℝ)) ∂(ν a)) - ∫ x, g x ∂(ν a)‖
         ≤ (1 / ((n : ℝ) + 1)) * (ν a).real Set.univ := by
       intro n
