@@ -94,18 +94,16 @@ theorem exists_remainder (N : ℕ) :
       a.toSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (a.term j).coefficient p := by
   obtain ⟨χ₀, h₀⟩ := a.exists_remainder'
   obtain ⟨r₀, hr₀⟩ := h₀ N
-  -- The truncated expansions for `χ₀` and `χ` differ by `∑_{j<N} (χ₀ - χ)(ξ) a_{m-j}`, which
-  -- vanishes at frequencies of norm at least `2` and is therefore a symbol of every order.
-  let f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun p =>
-    ∑ j ∈ Finset.range N,
-      ((cutoffSymbol χ₀ (a.term j)).coefficient p - (cutoffSymbol χ (a.term j)).coefficient p)
-  have hf : ContDiff ℝ ∞ f := ContDiff.sum fun j _ =>
-    (Symbol.contDiff_coefficient _).sub (Symbol.contDiff_coefficient _)
-  have hf2 : ∀ x ξ, 2 ≤ ‖ξ‖ → f (x, ξ) = 0 := fun x ξ hξ => by
-    simp [f, χ₀.apply_eq_one_of_two_le_norm hξ, χ.apply_eq_one_of_two_le_norm hξ]
-  refine ⟨r₀ + Symbol.ofBoundedFrequencySupport f hf 2 hf2, fun p => ?_⟩
-  simp only [Symbol.coefficient_add, Pi.add_apply, hr₀, f, coefficient_cutoffSymbol,
-    Symbol.coefficient_ofBoundedFrequencySupport, Finset.sum_sub_distrib]
+  -- The truncated expansions for `χ₀` and `χ` differ by `∑_{j<N} (χ₀ - χ)(ξ) a_{m-j}`, a sum of
+  -- smoothing symbols.
+  choose s hs using fun j =>
+    Symbol.isSmoothing_iff.1 (isSmoothing_cutoffSymbol_sub_cutoffSymbol χ₀ χ (a.term j)) (m - N)
+  refine ⟨r₀ + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
+  have hsum : (∑ j ∈ Finset.range N, s j).coefficient p =
+      ∑ j ∈ Finset.range N, (s j).coefficient p :=
+    map_sum (AddMonoidHom.mk' (fun b : Symbol n V W (m - N) => b.coefficient p) fun _ _ => rfl) _ _
+  simp only [Symbol.coefficient_add, Pi.add_apply, hsum, hr₀, hs, Symbol.coefficient_sub,
+    Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
   abel
 
 /-- The remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol after `N` terms, a symbol of
