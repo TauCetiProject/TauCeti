@@ -43,7 +43,7 @@ instance isScalarTower_baseStalk :
     IsScalarTower R (X.presheaf.stalk x) (M.presheaf.stalk x) :=
   IsScalarTower.of_compHom _ _ _
 
-@[simp]
+/-- A base-ring element acts on a module stalk through its image in the local ring. -/
 lemma base_smul_stalk_def (r : R) (m : M.presheaf.stalk x) :
     r • m = X.baseRingToStalk R x r • m :=
   (rfl)

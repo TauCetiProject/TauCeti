@@ -26,6 +26,13 @@ and base change. The base action on a stalk is through the canonical map
 relative-flatness condition. The base-ring action and its compatibility with the
 local-ring and section-ring actions are provided by `Modules.BaseStalk`.
 
+On sections `Γ(M, U)`, `R` acts through `Scheme.baseRingToStructurePresheaf` via
+`Scheme.Modules.sectionsBaseModule`, the module structure used by
+`(Scheme.Modules.sectionsBasePresheafFunctor R).obj M` at `U`. Callers must activate
+this instance locally with
+`attribute [local instance] AlgebraicGeometry.Scheme.Modules.sectionsBaseModule`
+to state and use the flatness criteria below.
+
 ## References
 
 * The Stacks Project, Section 17.17 (Tag 05NC), flat modules on ringed spaces.
