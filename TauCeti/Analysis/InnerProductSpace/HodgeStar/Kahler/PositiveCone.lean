@@ -16,7 +16,8 @@ Let `V` be a finite-dimensional real inner product space with an almost complex 
 A two-vector `F ∈ ⋀² V` represents the two-form `F(v, w) = ⟪F, v ∧ w⟫`. It is of type `(1,1)`
 when this form is `J`-invariant, `F(J v, J w) = F(v, w)`; it is **positive** when in addition
 `F(v, J v) ≥ 0` for every `v`. For an orthogonal `J` the invariance is the vanishing of the
-derivation action `D_J F` of `J` on two-vectors (`exteriorPower.lieMap 2 J`); without
+derivation action `D_J F` of `J` on two-vectors (`exteriorPower.lieMap 2 J`,
+`TauCeti.AlmostComplexStructure.forall_inner_ιMulti_apply_eq_iff`); without
 orthogonality the two conditions differ, since the form transforms by the adjoint of `J`. The
 positive `(1,1)`-forms form a closed pointed cone `TauCeti.AlmostComplexStructure.positiveCone J`,
 which contains the Kähler form `ω` when `J` is orthogonal. Every positive form pairs
@@ -60,7 +61,6 @@ on the positive cone, and `‖P‖ ≤ ⟪ω, P⟫` there. Hence every two-form 
 
 In the namespace `TauCeti.AlmostComplexStructure`:
 
-* `forall_inner_ιMulti_apply_eq_iff`: for orthogonal `J`, `F` is `J`-invariant iff `D_J F = 0`.
 * `kahlerForm_mem_positiveCone`: `ω` is a positive `(1,1)`-form.
 * `inner_kahlerForm_nonneg_of_mem_positiveCone`: positive forms pair nonnegatively with `ω`.
 * `lieMap_eq_zero_iff`: `F` is of type `(1,1)` iff `F - F⁻ = c ω`.
@@ -119,26 +119,6 @@ theorem mem_positiveCone {J : AlmostComplexStructure V} {F : ⋀[ℝ]^2 V} :
     F ∈ J.positiveCone ↔ (∀ v w, ⟪F, ιMulti ℝ 2 ![J v, J w]⟫ = ⟪F, ιMulti ℝ 2 ![v, w]⟫) ∧
       ∀ v, 0 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫ :=
   Iff.rfl
-
-/-- **`J`-invariance of a form is `D_J F = 0`** for an orthogonal `J`: the two-form of `F`
-satisfies `F(J v, J w) = F(v, w)` for all `v, w` iff the derivation action of `J` kills `F`. -/
-theorem forall_inner_ιMulti_apply_eq_iff {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {F : ⋀[ℝ]^2 V} :
-    (∀ v w, ⟪F, ιMulti ℝ 2 ![J v, J w]⟫ = ⟪F, ιMulti ℝ 2 ![v, w]⟫) ↔
-      lieMap 2 J.toLinearMap F = 0 := by
-  have hneg (v w : V) : ⟪F, ιMulti ℝ 2 ![v, -w]⟫ = -⟪F, ιMulti ℝ 2 ![v, w]⟫ := by
-    have h : ![v, -w] = Function.update ![v, w] 1 (-w) := by
-      ext i; fin_cases i <;> rfl
-    rw [h, (ιMulti ℝ 2).map_update_neg, inner_neg_right]
-    exact congrArg (-⟪F, ιMulti ℝ 2 ·⟫) (Function.update_eq_self 1 ![v, w])
-  have hD (v w : V) : ⟪lieMap 2 J.toLinearMap F, ιMulti ℝ 2 ![v, w]⟫ =
-      -(⟪F, ιMulti ℝ 2 ![J v, w]⟫ + ⟪F, ιMulti ℝ 2 ![v, J w]⟫) := by
-    rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti, inner_add_right]
-  refine ⟨fun h ↦ ext_inner_ιMulti_two fun v w ↦ ?_, fun h v w ↦ ?_⟩
-  · rw [hD, inner_zero_left, ← h v (J w), apply_apply, hneg, add_neg_cancel, neg_zero]
-  · have := hD v (J w)
-    rw [h, inner_zero_left, apply_apply, hneg] at this
-    linarith
 
 /-- **The Kähler form is a positive `(1,1)`-form**, since `ω(v, J v) = ‖J v‖²`. -/
 theorem kahlerForm_mem_positiveCone {J : AlmostComplexStructure V}

@@ -22,7 +22,8 @@ Let `V` be a finite-dimensional real inner product space and `J` an almost compl
 `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`, and `‖ω‖² = dim V / 2`. In dimension four, in a unitary frame
 `e₁, e₂ = J e₁, e₃, e₄ = J e₃`, it is `ω = e₁ ∧ e₂ + e₃ ∧ e₄`. The endomorphism `J` acts on
 two-forms as a derivation `D_J (u ∧ w) = J u ∧ w + u ∧ J w` (`exteriorPower.lieMap 2 J`),
-which is skew-adjoint and kills `ω`.
+which is skew-adjoint and kills `ω`. A two-vector `F` is killed by `D_J` exactly when its form
+`F(v, w) = ⟪F, v ∧ w⟫` is `J`-invariant.
 
 Conversely, if a two-vector `F` and an almost complex structure `J` satisfy
 `⟪u, v⟫ = ⟪F, u ∧ J v⟫`, then `J` is the contraction `u ↦ u ⌟ F`
@@ -55,6 +56,8 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
 * `lieMap_kahlerForm`: `D_J ω = 0`.
+* `forall_inner_ιMulti_apply_eq_iff`: the form of `F` is `J`-invariant,
+  `F(J v, J w) = F(v, w)`, iff `D_J F = 0`.
 * `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
   contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
   two-vector (`kahlerForm_eq_of_inner_eq`).
@@ -146,6 +149,25 @@ theorem lieMap_kahlerForm :
   refine ext_inner_ιMulti_two fun u w ↦ ?_
   rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
   simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
+
+/-- **`J`-invariance of a form is `D_J F = 0`** for an orthogonal `J`: the two-form of `F`
+satisfies `F(J v, J w) = F(v, w)` for all `v, w` iff the derivation action of `J` kills `F`. -/
+theorem forall_inner_ιMulti_apply_eq_iff {F : ⋀[ℝ]^2 V} :
+    (∀ v w, ⟪F, ιMulti ℝ 2 ![J v, J w]⟫ = ⟪F, ιMulti ℝ 2 ![v, w]⟫) ↔
+      exteriorPower.lieMap 2 J.toLinearMap F = 0 := by
+  have hneg (v w : V) : ⟪F, ιMulti ℝ 2 ![v, -w]⟫ = -⟪F, ιMulti ℝ 2 ![v, w]⟫ := by
+    have h : ![v, -w] = Function.update ![v, w] 1 (-w) := by
+      ext i; fin_cases i <;> rfl
+    rw [h, (ιMulti ℝ 2).map_update_neg, inner_neg_right]
+    exact congrArg (-⟪F, ιMulti ℝ 2 ·⟫) (Function.update_eq_self 1 ![v, w])
+  have hD (v w : V) : ⟪lieMap 2 J.toLinearMap F, ιMulti ℝ 2 ![v, w]⟫ =
+      -(⟪F, ιMulti ℝ 2 ![J v, w]⟫ + ⟪F, ιMulti ℝ 2 ![v, J w]⟫) := by
+    rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti, inner_add_right]
+  refine ⟨fun h ↦ ext_inner_ιMulti_two fun v w ↦ ?_, fun h v w ↦ ?_⟩
+  · rw [hD, inner_zero_left, ← h v (J w), apply_apply, hneg, add_neg_cancel, neg_zero]
+  · have := hD v (J w)
+    rw [h, inner_zero_left, apply_apply, hneg] at this
+    linarith
 
 end Orthogonal
 
