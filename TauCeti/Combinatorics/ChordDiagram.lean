@@ -455,12 +455,12 @@ end TauCeti.IsPerfectMatching
 
 /-- **A single boundary cycle is invariant under reflection.** For an involution `σ` of `Fin n`,
 the boundary traversal of the diagram reflected in `Fin.rev` is a single cycle through every
-point exactly when that of `σ` is: reflection conjugates the inverse traversal by
-`Fin.revPerm * σ`. -/
+point exactly when that of `σ` is. -/
 theorem Function.Involutive.isCycleOn_finRotate_mul_permCongr_revPerm_iff {n : ℕ}
     {σ : Perm (Fin n)} (hinv : Function.Involutive σ) :
     (finRotate n * Fin.revPerm.permCongr σ).IsCycleOn Set.univ ↔
       (finRotate n * σ).IsCycleOn Set.univ := by
+  -- Reflection conjugates the inverse traversal by `Fin.revPerm * σ`.
   set g := Fin.revPerm * σ
   have hconj : finRotate n * Fin.revPerm.permCongr σ = g * (finRotate n * σ)⁻¹ * g⁻¹ := by
     rw [eq_mul_inv_iff_mul_eq, eq_mul_inv_iff_mul_eq]
