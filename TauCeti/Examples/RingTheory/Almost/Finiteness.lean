@@ -128,7 +128,8 @@ variable {O : Type*} [CommRing O] [IsDomain O] [ValuationRing O] (h : ¬ (maxima
 example : (ofValuationRing h).AlmostFP (ofValuationRing h).ideal ∧
     ¬ Module.FinitePresentation O (ofValuationRing h).ideal := by
   constructor
-  · rw [almostFP_iff_epsilon (isFilteredPrincipal_of_preValuationRing _)]
+  · rw [almostFP_iff_forall_mem_exists_finitePresentation
+      (isFilteredPrincipal_of_preValuationRing _)]
     intro ε hε
     let f := LinearMap.toSpanSingleton O (ofValuationRing h).ideal ⟨ε, hε⟩
     refine ⟨O, inferInstance, inferInstance, inferInstance, f, ?_, ?_⟩
@@ -144,7 +145,6 @@ example : (ofValuationRing h).AlmostFP (ofValuationRing h).ideal ∧
       apply Subtype.ext
       simp [f, mul_comm]
   · intro hfp
-    have := hfp
     have hnot : ¬ Module.Finite O (ofValuationRing h).ideal := by
       rwa [Module.Finite.iff_fg, ofValuationRing_ideal]
     exact hnot inferInstance
