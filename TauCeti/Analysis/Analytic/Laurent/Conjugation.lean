@@ -118,3 +118,38 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
   exact hext p.1 hp.1 hp.2
 
 end AnalyticAt
+
+namespace AnalyticAt
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Conjugation matches Laurent forms of functions.** Let `D₁` and `D₂` be functions of
+`E × ℂ` with Laurent forms `p.2 ^ m * w₁ p` and `p.2 ^ n * w₂ p` off the hyperplane `p.2 = 0`,
+where `w₁`, `w₂` are analytic and nonvanishing at `(x₀, 0)`. If `D₁` is the conjugate of `D₂`
+along `(x, y) ↦ (τ x, conj y)` off the hyperplane, where `τ` is continuous at and fixes `x₀`,
+then `m = n` and, near `(x₀, 0)`, `w₁` is the conjugate of `w₂` pulled back along that map. -/
+theorem laurent_eq_of_conj_of_fixed {D₁ D₂ w₁ w₂ : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ : E → E}
+    (hw₁ : AnalyticAt ℂ w₁ (x₀, 0)) (hw₁0 : w₁ (x₀, 0) ≠ 0)
+    (hw₂ : AnalyticAt ℂ w₂ (x₀, 0)) (hw₂0 : w₂ (x₀, 0) ≠ 0)
+    (hτ : ContinuousAt τ x₀) (hτ0 : τ x₀ = x₀)
+    (hform₁ : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), w₁ p ≠ 0 ∧ (p.2 ≠ 0 → D₁ p = p.2 ^ m * w₁ p))
+    (hform₂ : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), w₂ p ≠ 0 ∧ (p.2 ≠ 0 → D₂ p = p.2 ^ n * w₂ p))
+    (hD : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 → D₁ p = conj (D₂ (τ p.1, conj p.2))) :
+    m = n ∧ ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), w₁ p = conj (w₂ (τ p.1, conj p.2)) := by
+  let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
+  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
+    simpa only [T, Prod.map_def, hτ0, map_zero] using hτ.tendsto.prodMap_nhds
+      (Complex.continuous_conj.tendsto (0 : ℂ))
+  have hrelation : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
+      p.2 ^ m * w₁ p = conj ((conj p.2) ^ n * w₂ (T p)) := by
+    filter_upwards [hform₁, hTt.eventually hform₂, hD] with p hp hTp hDp hp0
+    have hTp0 : (T p).2 ≠ 0 := by simpa [T] using hp0
+    calc _ = D₁ p := (hp.2 hp0).symm
+      _ = conj (D₂ (T p)) := hDp hp0
+      _ = conj ((T p).2 ^ n * w₂ (T p)) := congrArg conj (hTp.2 hTp0)
+      _ = _ := by simp [T, map_mul, map_zpow₀]
+  exact (hw₁.restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj hw₁0
+    (by simpa only [hτ0] using hw₂.restrictScalars (𝕜 := ℝ))
+    (by simpa only [hτ0] using hw₂0) hτ hrelation
+
+end AnalyticAt

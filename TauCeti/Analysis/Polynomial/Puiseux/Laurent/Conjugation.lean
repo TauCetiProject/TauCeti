@@ -67,22 +67,12 @@ theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ}
   have hform' : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),
       (∀ i, w i p ≠ 0) ∧ (p.2 ≠ 0 → ∀ i, r i p = p.2 ^ e i * w i p) := by
     simpa only [sub_zero] using hform
-  let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
-    simpa only [T, Prod.map_def, hτ0, map_zero] using hτ.tendsto.prodMap_nhds
-      (Complex.continuous_conj.tendsto (0 : ℂ))
-  have hconj (i : Fin d) : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
-      p.2 ^ e (σ i) * w (σ i) p =
-        conj ((conj p.2) ^ e i * w i (τ p.1, conj p.2)) := by
-    filter_upwards [hform', hTt.eventually hform', hσ]
-      with p hp hTp hsp hp0
-    have hTp0 : (T p).2 ≠ 0 := by simpa [T] using hp0
-    rw [← hp.2 hp0 (σ i), hsp hp0 i, hTp.2 hTp0 i]
   have hcompat (i : Fin d) : e (σ i) = e i ∧
       ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), w (σ i) p = conj (w i (τ p.1, conj p.2)) :=
-    ((hw (σ i)).restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj (hw0 (σ i))
-      (by simpa only [hτ0] using (hw i).restrictScalars (𝕜 := ℝ))
-      (by simpa only [hτ0] using hw0 i) hτ (hconj i)
+    AnalyticAt.laurent_eq_of_conj_of_fixed (hw (σ i)) (hw0 (σ i)) (hw i) (hw0 i) hτ hτ0
+      (hform'.mono fun p hp ↦ ⟨hp.1 (σ i), fun h ↦ hp.2 h (σ i)⟩)
+      (hform'.mono fun p hp ↦ ⟨hp.1 i, fun h ↦ hp.2 h i⟩)
+      (by filter_upwards [hσ] with p hp hp0; exact hp hp0 i)
   have hall : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),
       ∀ i, w (σ i) p = conj (w i (τ p.1, conj p.2)) := by
     rw [eventually_all]
