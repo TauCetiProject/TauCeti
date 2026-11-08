@@ -27,7 +27,7 @@ regularization.
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
 
-It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`, and how
+It also records how to remove a term `ε * C` from a bound valid for every `ε ∈ (0, δ₀]`, and how
 to transfer bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
@@ -42,6 +42,8 @@ and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 
 ## Main results
 
+* `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
+  `a ≤ m`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
   `f + εw` to `f` when `w` is bounded above.
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
@@ -63,19 +65,28 @@ public section
 
 namespace TauCeti
 
+/-- If `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then `a ≤ m`. No sign assumption on `C` is
+needed. -/
+theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a m C δ₀ : α} (hδ₀ : 0 < δ₀)
+    (h : ∀ ε ∈ Set.Ioc 0 δ₀, a ≤ m + ε * C) : a ≤ m := by
+  by_cases hC : 0 < C
+  · by_contra! ham
+    have hε := h (min δ₀ ((a - m) / (2 * C))) ⟨lt_min hδ₀ (by positivity), min_le_left _ _⟩
+    have hle : min δ₀ ((a - m) / (2 * C)) * C ≤ (a - m) / 2 :=
+      calc min δ₀ ((a - m) / (2 * C)) * C ≤ (a - m) / (2 * C) * C := by
+            gcongr
+            exact min_le_right _ _
+        _ = (a - m) / 2 := by field_simp
+    linarith
+  · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
+    nlinarith
+
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
 theorem le_of_forall_pos_mul_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m := by
-  by_cases hC : 0 < C
-  · by_contra! ham
-    have hε := h ((a - m) / (2 * C)) (by positivity)
-    have heq : (a - m) / (2 * C) * C = (a - m) / 2 := by field_simp
-    rw [heq] at hε
-    linarith
-  · have hε := h 1 one_pos
-    simp only [one_mul] at hε
-    linarith
+    {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m :=
+  le_of_forall_mem_Ioc_mul_le one_pos fun ε hε ↦ h ε hε.1
 
 /-- For `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most `2 / b`. -/
 theorem one_div_add_one_div_le_two_div {α : Type*} [Field α] [LinearOrder α]
