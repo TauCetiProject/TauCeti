@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.Group.Subgroup.Finite
-public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 
 /-!
 # Bounded representatives for cyclic extensions
