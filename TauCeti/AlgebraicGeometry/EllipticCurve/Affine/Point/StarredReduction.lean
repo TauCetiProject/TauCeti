@@ -43,7 +43,7 @@ forces `X` to reduce to a root of the residue cubic. From the normal form of Ste
 ## Main results
 
 * `WeierstrassCurve.sq_dvd_and_dvd_cubic_of_equation`: over a domain with a prime `ϖ`, on the
-  normal form of Step 6 of Tate's algorithm, a solution `(ϖ X, y)` with `ϖ ∣ y` has `ϖ² ∣ y`, and
+  normal form of Step 6 of Tate's algorithm, a solution `(ϖ X, y)` has `ϖ² ∣ y`, and
   `X` is a root of the residue cubic modulo `ϖ`.
 * `WeierstrassCurve.pow_six_dvd_a₆_of_equation`: over a domain with a prime `ϖ`, a solution with
   both coordinates divisible by `ϖ` on the normal form of Step 10 of Tate's algorithm gives
