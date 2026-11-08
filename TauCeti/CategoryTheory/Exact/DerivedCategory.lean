@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Acyclic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
-public import Mathlib.CategoryTheory.Localization.Triangulated
 public import Mathlib.Algebra.Homology.HomotopyCategory.Triangulated
 public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
 
@@ -41,8 +40,8 @@ it does not change the quotient (Bühler, Remark 10.5).
 
 * The bounded acyclic objects form a triangulated subcategory.
 * `Dᵇ(E)` is a triangulated category and `Q` is a triangulated functor.
-* `TauCeti.ExactStructure.BoundedDerivedCategory.isZero_Q_obj_of_acyclicBounded`: bounded acyclic
-  complexes become zero in `Dᵇ(E)`.
+* Bounded acyclic complexes become zero in `Dᵇ(E)`, by the general
+  `ObjectProperty.TrWLocalization.isZero_obj`.
 
 ## References
 
@@ -169,12 +168,6 @@ instance : (Q E).IsTriangulated :=
 
 instance : IsTriangulated E.BoundedDerivedCategory :=
   Triangulated.Localization.isTriangulated (Q E) E.acyclicBounded.trW
-
-variable {E} in
-/-- A bounded acyclic complex is zero in the bounded derived category. -/
-lemma isZero_Q_obj_of_acyclicBounded {X : HomotopyCategory.Bounded C}
-    (hX : E.acyclicBounded X) : IsZero ((Q E).obj X) :=
-  ObjectProperty.TrWLocalization.isZero_obj E.acyclicBounded (Q E) hX
 
 end BoundedDerivedCategory
 
