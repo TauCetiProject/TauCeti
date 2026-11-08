@@ -398,6 +398,11 @@ private theorem related_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
     intro x y
     simpa using (hg (g⁻¹ x) (g⁻¹ y)).symm
 
+private theorem related_fixed {g : Equiv.Perm (Fin 275)} {s : Fin 275}
+    (hg : g ∈ McL) (hs : g s = s) (x : Fin 275) :
+    related s (g x) = related s x := by
+  simpa only [hs] using related_apply hg s x
+
 private def stabilizerWords : Fin 275 → ℕ := fun i ↦
   (#[
     #[1, 1, 11449781, 1, 227179, 15851, 351191, 88797, 1, 1, 2026357, 3634927, 1, 1, 1, 1,
@@ -563,14 +568,11 @@ private theorem mem_orbit_fixing_zero_one_iff (x : Fin 275) :
   constructor
   · rintro ⟨g, rfl⟩
     have hgfix := (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mp g.property.2
-    have hg0 : (g : Equiv.Perm (Fin 275)) 0 = 0 := hgfix 0 (by simp)
     have hg1 : (g : Equiv.Perm (Fin 275)) 1 = 1 := hgfix 1 (by simp)
-    have h0 := related_apply g.property.1 0 2
-    have h1 := related_apply g.property.1 1 2
-    have h02 : related 0 2 = true := by decide +kernel
-    have h12 : related 1 2 = false := by decide +kernel
-    rw [hg0, h02] at h0
-    rw [hg1, h12] at h1
+    have h0 := (related_fixed g.property.1 (hgfix 0 (by simp)) 2).trans
+      (by decide +kernel : related 0 2 = true)
+    have h1 := (related_fixed g.property.1 hg1 2).trans
+      (by decide +kernel : related 1 2 = false)
     refine ⟨h0, h1, ?_⟩
     -- Subgroup scalar multiplication is evaluation of the underlying permutation.
     simpa only [subgroup_smul_def, Equiv.Perm.smul_def, hg1] using
@@ -579,9 +581,7 @@ private theorem mem_orbit_fixing_zero_one_iff (x : Fin 275) :
     obtain ⟨hg0, hg1, hg2⟩ := twoPointWords_apply x h0 h1 hx
     have hfix : wordValue (twoPointWords x) ∈
         fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)) := by
-      simp only [mem_fixingSubgroup_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
-        forall_eq_or_imp, forall_eq, Equiv.Perm.smul_def]
-      exact ⟨hg0, hg1⟩
+      simpa [mem_fixingSubgroup_iff] using And.intro hg0 hg1
     exact ⟨⟨wordValue (twoPointWords x), wordValue_mem _, hfix⟩, hg2⟩
 
 /-- The exact orbit of `2` under the pointwise stabilizer of `{0, 1}` in the ATLAS model. -/
@@ -658,26 +658,19 @@ private theorem mem_orbit_fixing_zero_one_two_iff (x : Fin 275) :
   constructor
   · rintro ⟨g, rfl⟩
     have hgfix := (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mp g.property.2
-    have hg0 : (g : Equiv.Perm (Fin 275)) 0 = 0 := hgfix 0 (by simp)
-    have hg1 : (g : Equiv.Perm (Fin 275)) 1 = 1 := hgfix 1 (by simp)
-    have hg2 : (g : Equiv.Perm (Fin 275)) 2 = 2 := hgfix 2 (by simp)
-    have h0 := related_apply g.property.1 0 3
-    have h1 := related_apply g.property.1 1 3
-    have h2 := related_apply g.property.1 2 3
-    have h03 : related 0 3 = false := by decide +kernel
-    have h13 : related 1 3 = false := by decide +kernel
-    have h23 : related 2 3 = true := by decide +kernel
-    rw [hg0, h03] at h0
-    rw [hg1, h13] at h1
-    rw [hg2, h23] at h2
+    have h0 := (related_fixed g.property.1 (hgfix 0 (by simp)) 3).trans
+      (by decide +kernel : related 0 3 = false)
+    have h1 := (related_fixed g.property.1 (hgfix 1 (by simp)) 3).trans
+      (by decide +kernel : related 1 3 = false)
+    have h2 := (related_fixed g.property.1 (hgfix 2 (by simp)) 3).trans
+      (by decide +kernel : related 2 3 = true)
+    -- Subgroup scalar multiplication is evaluation of the underlying permutation.
     simpa only [subgroup_smul_def, Equiv.Perm.smul_def] using And.intro h0 (And.intro h1 h2)
   · rintro ⟨h0, h1, h2⟩
     obtain ⟨hg0, hg1, hg2, hg3⟩ := threePointWords_apply x h0 h1 h2
     have hfix : wordValue (threePointWords x) ∈
         fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)) := by
-      simp only [mem_fixingSubgroup_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
-        forall_eq_or_imp, forall_eq, Equiv.Perm.smul_def]
-      exact ⟨hg0, hg1, hg2⟩
+      simpa [mem_fixingSubgroup_iff] using And.intro hg0 (And.intro hg1 hg2)
     refine ⟨⟨wordValue (threePointWords x), wordValue_mem _, hfix⟩, ?_⟩
     simpa only [subgroup_smul_def, Equiv.Perm.smul_def] using hg3
 
