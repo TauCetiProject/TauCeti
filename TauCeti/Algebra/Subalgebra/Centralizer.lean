@@ -63,7 +63,7 @@ def centralizerSubalgebraOrderIso :
       {T : Subalgebra R A // S ≤ T ∧ T ≤ centralizer R (S : Set A)} where
   toFun T := ⟨(T.restrictScalars R).map (centralizer R (S : Set A)).val,
     fun s hs ↦ mem_map.mpr ⟨algebraMap S _ ⟨s, hs⟩,
-      (mem_restrictScalars R).mpr (T.algebraMap_mem _), rfl⟩,
+      (mem_restrictScalars R).mpr (T.algebraMap_mem _), coe_algebraMap_centralizer S ⟨s, hs⟩⟩,
     map_le.mpr fun c _ ↦ c.property⟩
   invFun T :=
     { (T.val.comap (centralizer R (S : Set A)).val).toSubsemiring with
