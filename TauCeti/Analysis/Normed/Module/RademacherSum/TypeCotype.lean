@@ -9,16 +9,17 @@ public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 public import TauCeti.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
 
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Rademacher type and cotype
 
 A seminormed group `E` has *(Rademacher) type `p` with constant `C`* if every finite family
-`y` in `E` satisfies `R₂(y) ≤ C (∑ i, ‖yᵢ‖ ^ p) ^ (1 / p)`, and *cotype `q` with constant `C`* if
-`(∑ i, ‖yᵢ‖ ^ q) ^ (1 / q) ≤ C R₂(y)`, where `R₂(y) = (𝔼_ε ‖∑ i, εᵢ yᵢ‖²)^(1/2)` is the
-Rademacher second moment. The `ℓᵖ` norms of the family are written as norms of
-`WithLp.toLp p y`, so that `p = ∞` is the maximum of the norms. Type and cotype measure how far
+`y` in `E` satisfies `R₂(y) ≤ C ‖y‖ₚ`, and *cotype `q` with constant `C`* if
+`‖y‖_q ≤ C R₂(y)`, where `R₂(y) = (𝔼_ε ‖∑ i, εᵢ yᵢ‖²)^(1/2)` is the Rademacher second moment.
+The `ℓᵖ` norms of the family are written as norms of `WithLp.toLp p y`: for `0 < p < ∞` this is
+`(∑ i, ‖yᵢ‖ ^ p) ^ (1 / p)`, for `p = ∞` it is the maximum of the norms, and for `p = 0` it is
+the number of members of nonzero norm. Type and cotype measure how far
 the average of the signed sums of a family may stray from that of an orthogonal family: since
 distinct signs are orthogonal on average, inner product spaces have type `2` and cotype `2` with
 constant `1`. The
@@ -63,13 +64,17 @@ variable {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
 
 variable (E) in
 /-- `E` has *Rademacher type `p` with constant `C`* if every finite family `y` in `E` satisfies
-`R₂(y) ≤ C ‖y‖ₚ`, where `‖y‖ₚ = (∑ i, ‖yᵢ‖ ^ p) ^ (1 / p)` is the `ℓᵖ` norm of the family. -/
+`R₂(y) ≤ C ‖y‖ₚ`, where `‖y‖ₚ = ‖WithLp.toLp p y‖` is the `ℓᵖ` norm of the family:
+`(∑ i, ‖yᵢ‖ ^ p) ^ (1 / p)` for `0 < p < ∞`, the largest `‖yᵢ‖` for `p = ∞`, and the number of
+`yᵢ` of nonzero norm for `p = 0`. -/
 def HasType (p : ℝ≥0∞) (C : ℝ≥0) : Prop :=
   ∀ (n : ℕ) (y : Fin n → E), rademacherSecondMoment y ≤ C * ‖WithLp.toLp p y‖
 
 variable (E) in
 /-- `E` has *Rademacher cotype `q` with constant `C`* if every finite family `y` in `E` satisfies
-`‖y‖_q ≤ C R₂(y)`, where `‖y‖_q = (∑ i, ‖yᵢ‖ ^ q) ^ (1 / q)` is the `ℓ^q` norm of the family. -/
+`‖y‖_q ≤ C R₂(y)`, where `‖y‖_q = ‖WithLp.toLp q y‖` is the `ℓ^q` norm of the family:
+`(∑ i, ‖yᵢ‖ ^ q) ^ (1 / q)` for `0 < q < ∞`, the largest `‖yᵢ‖` for `q = ∞`, and the number of
+`yᵢ` of nonzero norm for `q = 0`. -/
 def HasCotype (q : ℝ≥0∞) (C : ℝ≥0) : Prop :=
   ∀ (n : ℕ) (y : Fin n → E), ‖WithLp.toLp q y‖ ≤ C * rademacherSecondMoment y
 
@@ -87,9 +92,8 @@ theorem hasCotype_iff :
   Iff.rfl
 
 /-- A type constant may be enlarged. -/
-theorem HasType.mono_const [Fact (1 ≤ p)] (h : HasType E p C) (hC : C ≤ C') :
-    HasType E p C' := fun n y ↦
-  (h n y).trans (mul_le_mul_of_nonneg_right (NNReal.coe_le_coe.2 hC) (norm_nonneg _))
+theorem HasType.mono_const (h : HasType E p C) (hC : C ≤ C') : HasType E p C' := fun n y ↦
+  (h n y).trans (mul_le_mul_of_nonneg_right (NNReal.coe_le_coe.2 hC) (PiLp.norm_nonneg' _))
 
 /-- A cotype constant may be enlarged. -/
 theorem HasCotype.mono_const (h : HasCotype E q C) (hC : C ≤ C') : HasCotype E q C' :=
@@ -216,35 +220,7 @@ end InnerProductSpace
 
 /-! ### Bounds on the exponents -/
 
-/-- If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`. -/
-private theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
-    (h : ∀ n : ℕ, ((n : ℝ) + 1) ^ a ≤ C * ((n : ℝ) + 1) ^ b) : a ≤ b := by
-  by_contra hab
-  push Not at hab
-  have ht : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1) ^ (a - b)) atTop atTop :=
-    (tendsto_rpow_atTop (sub_pos.2 hab)).comp
-      (tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
-  obtain ⟨n, hn⟩ := (ht.eventually_gt_atTop C).exists
-  have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
-  have := h n
-  rw [Real.rpow_sub hpos, lt_div_iff₀ (Real.rpow_pos_of_pos hpos _)] at hn
-  linarith
-
 variable [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-
-/-- The `ℓᵖ` norm of `n + 1` copies of a vector `y`. -/
-private theorem norm_toLp_const_succ (n : ℕ) (y : E) :
-    ‖WithLp.toLp p (fun _ : Fin (n + 1) ↦ y)‖ = ((n : ℝ) + 1) ^ (p⁻¹).toReal * ‖y‖ :=
-  (PiLp.norm_toLp_const' (p := p) (ι := Fin (n + 1)) y).trans (by simp)
-
-/-- The Rademacher second moment of `n + 1` copies of a vector `y` is `√(n + 1) ‖y‖`. -/
-private theorem rademacherSecondMoment_const_succ [NormedSpace ℝ E] (n : ℕ) (y : E) :
-    rademacherSecondMoment (fun _ : Fin (n + 1) ↦ y) = ((n : ℝ) + 1) ^ (1 / 2 : ℝ) * ‖y‖ := by
-  have h := rademacherSecondMoment_smul_const (fun _ : Fin (n + 1) ↦ (1 : ℝ)) y
-  simp only [one_smul] at h
-  rw [h, rademacherSecondMoment_eq_norm_toLp_two ℝ]
-  congr 1
-  exact (PiLp.norm_toLp_const' (p := 2) (ι := Fin (n + 1)) (1 : ℝ)).trans (by simp)
 
 /-- A nonzero real normed space has no Rademacher type `p > 2`: the family of `n` copies of a
 nonzero vector has `R₂ = √n ‖y‖` but `ℓᵖ` norm `n ^ (1 / p) ‖y‖`. -/
@@ -253,9 +229,10 @@ theorem HasType.le_two {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [N
   obtain ⟨y, hy⟩ := exists_ne (0 : G)
   have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
   have key : (1 / 2 : ℝ) ≤ (p⁻¹).toReal := le_of_forall_rpow_le_mul_rpow (C := C) fun n ↦ by
-    have := h (n + 1) fun _ ↦ y
-    rw [rademacherSecondMoment_const_succ, norm_toLp_const_succ, ← mul_assoc] at this
-    exact le_of_mul_le_mul_right this hy'
+    have := h (n + 1) (Function.const _ y)
+    rw [PiLp.norm_toLp_const', ← Function.const_def, rademacherSecondMoment_const,
+      ← mul_assoc] at this
+    simpa [Real.sqrt_eq_rpow] using le_of_mul_le_mul_right this hy'
   have hp : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (zero_lt_one.trans_le Fact.out).ne'
   rw [← ENNReal.inv_le_inv, ← ENNReal.ofReal_toReal hp]
   calc (2 : ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 2) := by
@@ -269,9 +246,10 @@ theorem HasCotype.two_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] 
   obtain ⟨y, hy⟩ := exists_ne (0 : G)
   have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
   have key : (q⁻¹).toReal ≤ 1 / 2 := le_of_forall_rpow_le_mul_rpow (C := C) fun n ↦ by
-    have := h (n + 1) fun _ ↦ y
-    rw [rademacherSecondMoment_const_succ, norm_toLp_const_succ, ← mul_assoc] at this
-    exact le_of_mul_le_mul_right this hy'
+    have := h (n + 1) (Function.const _ y)
+    rw [PiLp.norm_toLp_const', ← Function.const_def, rademacherSecondMoment_const,
+      ← mul_assoc] at this
+    simpa [Real.sqrt_eq_rpow] using le_of_mul_le_mul_right this hy'
   have hq : q⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (zero_lt_one.trans_le Fact.out).ne'
   rw [← ENNReal.inv_le_inv, ← ENNReal.ofReal_toReal hq]
   calc ENNReal.ofReal (q⁻¹).toReal ≤ ENNReal.ofReal (1 / 2) := ENNReal.ofReal_le_ofReal key

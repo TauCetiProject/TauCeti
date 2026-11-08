@@ -10,11 +10,11 @@ public import Mathlib.Analysis.Normed.Lp.PiLp
 /-!
 # Comparisons of finite product norms and distances
 
-The finite `Lᵖ` norm respects coordinatewise bounds on norms, including when the two
-families have different target spaces. This compares scalar evaluations of a vector
-family with the vector family's `Lᵖ` norm. For constant fibres we deduce the bound for
-the image of a family under a map of bounded growth, the norm of a family of multiples
-of one vector, and the invariance of the norm under reindexing.
+The finite `Lᵖ` norm is nonnegative for every exponent and respects coordinatewise bounds on
+norms, including when the two families have different target spaces. This compares scalar
+evaluations of a vector family with the vector family's `Lᵖ` norm. For constant fibres we
+deduce the bound for the image of a family under a map of bounded growth, the norm of a family
+of multiples of one vector, and the invariance of the norm under reindexing.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
@@ -65,6 +65,17 @@ theorem norm_mono [∀ i, SeminormedAddGroup (E i)] [∀ i, Norm (F i)]
     gcongr
     · exact Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _
     · exact h _
+
+/-- The finite `Lᵖ` norm is nonnegative for every exponent, including `p < 1`, where `PiLp p E`
+carries a norm but no seminormed group structure. -/
+protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) : 0 ≤ ‖x‖ := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · rw [norm_eq_card]
+    positivity
+  · rw [norm_eq_ciSup]
+    exact Real.iSup_nonneg fun i ↦ norm_nonneg _
+  · rw [norm_eq_sum hp]
+    exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
 
 variable [∀ i, SeminormedAddCommGroup (E i)]
 

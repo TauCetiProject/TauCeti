@@ -19,9 +19,11 @@ and cotype are defined. Being a finite average, it needs neither completeness, n
 measure space.
 
 We prove that `R₂` is absolutely homogeneous, invariant under reindexing and under padding the
-family with zeros, and compute it on families of multiples of one vector. It lies between the
-largest norm `‖yᵢ‖` and the sum `∑ i, ‖yᵢ‖`. In an inner product space distinct signs are
+family with zeros, and compute it on families of multiples of one vector. It is at most the sum
+`∑ i, ‖yᵢ‖`, and in a real normed space at least the largest norm `‖yᵢ‖`; this lower bound can
+fail in seminormed groups with `2`-torsion. In an inner product space distinct signs are
 orthogonal on average, so `R₂(y)` is exactly the `ℓ²` norm `(∑ i, ‖yᵢ‖²)^(1/2)` of the family.
+In particular `n` copies of a vector `y` of a real normed space have `R₂ = √n ‖y‖`.
 
 ## Main declarations
 
@@ -30,9 +32,10 @@ orthogonal on average, so `R₂(y)` is exactly the `ℓ²` norm `(∑ i, ‖yᵢ
 * `TauCeti.rademacherSecondMoment_sumElim_zero`: invariance under padding with zeros.
 * `TauCeti.rademacherSecondMoment_smul_const`: `R₂(aᵢ • y) = R₂(a) ‖y‖`.
 * `TauCeti.norm_le_rademacherSecondMoment` and `TauCeti.rademacherSecondMoment_le_sum_norm`:
-  `‖yᵢ‖ ≤ R₂(y) ≤ ∑ i, ‖yᵢ‖`.
+  `‖yᵢ‖ ≤ R₂(y) ≤ ∑ i, ‖yᵢ‖`, the lower bound in real normed spaces.
 * `TauCeti.rademacherSecondMoment_eq_norm_toLp_two`: in an inner product space `R₂(y)` is the
   `ℓ²` norm of `y`.
+* `TauCeti.rademacherSecondMoment_const`: `card ι` copies of `y` have `R₂ = √(card ι) ‖y‖`.
 
 ## References
 
@@ -247,5 +250,14 @@ theorem rademacherSecondMoment_eq_norm_toLp_two (y : ι → H) :
   rw [rademacherSecondMoment, expect_norm_sum_units_smul_sq 𝕜, PiLp.norm_eq_of_L2]
 
 end InnerProductSpace
+
+/-- In a real normed space the Rademacher second moment of `card ι` copies of a vector `y` is
+`√(card ι) ‖y‖`. -/
+theorem rademacherSecondMoment_const [NormedSpace ℝ E] (y : E) :
+    rademacherSecondMoment (fun _ : ι ↦ y) = √(Fintype.card ι) * ‖y‖ := by
+  have h := rademacherSecondMoment_smul_const (fun _ : ι ↦ (1 : ℝ)) y
+  simp only [one_smul] at h
+  rw [h, rademacherSecondMoment_eq_norm_toLp_two ℝ, PiLp.norm_eq_of_L2]
+  simp
 
 end TauCeti
