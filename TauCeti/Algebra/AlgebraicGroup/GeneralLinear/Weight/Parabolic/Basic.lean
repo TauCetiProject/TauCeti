@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
@@ -322,6 +323,16 @@ noncomputable def weightParabolicPoints (A : Type v) [CommRing A] [Algebra R A] 
   (CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
     (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A)).map
       (pointsMulEquiv N).toMonoidHom
+
+/-- The weight-parabolic matrix subgroup is the generic Hopf-ideal point subgroup for
+its defining ideal. This identifies the two public presentations without unfolding them. -/
+theorem weightParabolicPoints_eq_hopfIdealPointsSubgroup
+    (A : Type v) [CommRing A] [Algebra R A] :
+    weightParabolicPoints R w A =
+      hopfIdealPointsSubgroup N (weightParabolicDefiningHopfIdeal R w) A := by
+  ext g
+  rw [weightParabolicPoints, Subgroup.mem_map_equiv,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff, mem_hopfIdealPointsSubgroup_iff]
 
 /-- A matrix belongs to the weight parabolic precisely when all entries increasing the
 weight vanish. This holds over nonreduced value algebras as well. -/
