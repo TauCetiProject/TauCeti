@@ -26,7 +26,9 @@ scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres 
 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
-centered at zero lie on the same line exactly when they are equal or antipodal.
+centered at zero lie on the same line exactly when they are equal or antipodal. The interior of
+the closed annulus `closedBall y R \ ball y r` with nonzero radii is the open annulus
+`ball y R \ closedBall y r` (`TauCeti.interior_closedBall_sdiff_ball`).
 
 The normalization lemmas compute the norm of `R⁻¹ • z` when `R ≥ 0` and characterize the unit
 norm conditions for `R⁻¹ • z` when `R > 0`.
@@ -120,6 +122,14 @@ theorem compl_singleton_inter_compl_singleton_neg_eq (p : Metric.sphere (0 : E) 
       ({x | (x : E) ∉ ℝ ∙ (p : E)} : Set (Metric.sphere (0 : E) 1)) := by
   ext x
   simp [not_or]
+
+/-- In a real normed space, the interior of the closed annulus `closedBall y R \ ball y r` with
+nonzero radii is the open annulus `ball y R \ closedBall y r`. -/
+theorem interior_closedBall_sdiff_ball (y : E) {r R : ℝ} (hr : r ≠ 0) (hR : R ≠ 0) :
+    interior (Metric.closedBall y R \ Metric.ball y r) =
+      Metric.ball y R \ Metric.closedBall y r := by
+  rw [sdiff_eq, interior_inter, interior_compl, closure_ball y hr, interior_closedBall y hR,
+    sdiff_eq]
 
 end Sphere
 

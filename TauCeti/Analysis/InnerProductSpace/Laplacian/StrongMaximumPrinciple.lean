@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.HopfLemma
-import TauCeti.Analysis.InnerProductSpace.TouchingBall
+import TauCeti.Analysis.Normed.Module.Ball.Touching
 import TauCeti.Topology.Connected.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 

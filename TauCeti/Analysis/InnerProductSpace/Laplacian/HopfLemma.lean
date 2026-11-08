@@ -9,7 +9,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Analysis.InnerProductSpace.TouchingBall
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Slope

@@ -9,6 +9,9 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.InnerProductSpace.TouchingBall
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Normed.Module.Ball.Touching
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 import TauCeti.Topology.Connected.Basic
 
 /-!
