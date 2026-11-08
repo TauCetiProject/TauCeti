@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
+public import Mathlib.Combinatorics.Quiver.Path.Decomposition
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
 public import Mathlib.Data.List.Chain
@@ -349,6 +350,7 @@ theorem IsPath.source_ne_target_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s t
   cases p with
   | nil => simp at he
   | @cons z _ p e' =>
+    -- The path recursor exposes the final arrow through its local quiver instance.
     change Q z t at e'
     intro hxt
     apply hp.target_notMem_vertices_of_cons
@@ -383,14 +385,9 @@ theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsP
 theorem exists_mem_arrows_source_mem_target_notMem {C : Set V} {s t : V}
     (p : ArrowWalk Q s t) (hs : s ∈ C) (ht : t ∉ C) :
     ∃ x y, ∃ e : Q x y, ⟨x, y, e⟩ ∈ p.arrows ∧ x ∈ C ∧ y ∉ C := by
-  induction p with
-  | nil => exact absurd hs ht
-  | @cons x y p e ih =>
-    change Q x y at e
-    by_cases hx : x ∈ C
-    · exact ⟨x, y, e, by simp, hx, ht⟩
-    · obtain ⟨u, v, a, ha, hu, hv⟩ := ih hx
-      exact ⟨u, v, a, by simpa [arrows_cons] using Or.inl ha, hu, hv⟩
+  obtain ⟨x, hx, y, hy, e, p₁, p₂, rfl⟩ :=
+    @Quiver.Path.exists_mem_notMem_hom_path_path_of_notMem_mem V ⟨Q⟩ s t p C hs ht
+  exact ⟨x, y, e, by simp [arrows_comp, Quiver.Hom.toPath], hx, hy⟩
 
 /-- A walk that traverses a specified arrow splits into the part before that arrow, the arrow
 itself, and the part after it. -/
