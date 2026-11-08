@@ -237,9 +237,9 @@ private theorem exists_isMorse_of_seminorms (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯
       (f := fun y ↦ F (r + 1 + 1) y - F (r + 1) y) fun h ↦ (hFsupp (r + 1) h).1.2 hx)
   obtain ⟨hgm, hgs⟩ := isMorse_tsupport_of_stages L f F g hgF hFinv
   subst hF0
-  exact ⟨g, fun i ↦ seminorm_sub_lt_of_stages L (p i) (hA i) (hp0 i) (ht i) hw
+  exact ⟨g, fun i ↦ L.seminorm_sub_lt_of_stages (p i) (hA i) (hp0 i) (ht i) hw
       (fun N ↦ sum_half_pow_succ_le_one N) F g hgF hsupp fun r hi ↦ (hFQ r).1 i hi,
-    hgm, abs_sub_lt_of_stages L hε₀ hw (fun N ↦ sum_half_pow_succ_le_one N) F g hgF hsupp
+    hgm, L.abs_sub_lt_of_stages hε₀ hw (fun N ↦ sum_half_pow_succ_le_one N) F g hgF hsupp
       fun r ↦ (hFQ r).2, hgs⟩
 
 open ContMDiffMap in
