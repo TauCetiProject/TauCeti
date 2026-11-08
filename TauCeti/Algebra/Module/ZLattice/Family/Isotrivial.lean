@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.Manifold
+public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousLinearEquiv
 
 /-!
 # Trivializing a torus family by linear identifications of its lattices
@@ -123,14 +124,6 @@ noncomputable def torusFamilyLinearDiffeomorphProd :
       (AddAction.orbitRel.Quotient Λ (Y × E)) (Y × AddAction.orbitRel.Quotient L F) n := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  have hsymm : ContMDiff I 𝓘(𝕜, F →L[𝕜] E) n
-      (fun y ↦ ((A y).symm : F →L[𝕜] E)) := by
-    have heq : (fun y ↦ ((A y).symm : F →L[𝕜] E)) =
-        ContinuousLinearMap.inverse ∘ fun y ↦ (A y : E →L[𝕜] F) := by
-      ext1 y
-      simp
-    rw [heq]
-    exact fun y ↦ ContDiffAt.comp_contMDiffAt (contDiffAt_map_inverse (A y)) (hA y)
   refine
     { toEquiv := torusFamilyLinearEquivProd P L
         (fun y ↦ (A y).toLinearEquiv.restrictScalars ℤ) hL
@@ -154,7 +147,8 @@ noncomputable def torusFamilyLinearDiffeomorphProd :
     rw [← (isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, F))).contMDiff_comp_prodMap_iff
       Quotient.mk_surjective le_rfl, heq]
     exact (isLocalDiffeomorph_torusFamily_mk P hinj hP).contMDiff.comp
-      (contMDiff_fst.prodMk ((hsymm.comp contMDiff_fst).clm_apply contMDiff_snd))
+      (contMDiff_fst.prodMk
+        ((hA.continuousLinearEquiv_symm.comp contMDiff_fst).clm_apply contMDiff_snd))
 
 /-- The product diffeomorphism is the equivalence induced by the linear identifications. -/
 @[simp] theorem torusFamilyLinearDiffeomorphProd_toEquiv :
