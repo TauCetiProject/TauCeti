@@ -267,21 +267,10 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long {α β γ δ ε ζ : Fin G2.n
   obtain ⟨hik, hil, hlk⟩ := three_step_brackets hγ hδ hε hζ
   have hij := lie_chevalleySystem_eq_structureConstant_zsmul hγ
   obtain ⟨him, hio, hjk, hlm, hko, hlo, hmo⟩ := short_long_vanishing ht hγ hδ hε hζ
-  -- Extend stability from simple generators to the all-root Kostant form.
-  have hstable := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hall : ∀ z ∈ kostantForm (G2.chevalleySystem ht) (G2.lieBasis ht).h,
-      ∀ w ∈ M, ρ z w ∈ M := by
-    intro z hz w hw
-    apply kostantForm_apply_mem (G2.chevalleySystem ht) (G2.lieBasis ht).h ρ
-      M.toIntSubmodule _ _ z hz hw
-    · intro i n y hy
-      rw [Associative.map_dividedPower]
-      exact hstable i n y hy
-    · intro i n y hy
-      exact hM _ (ringChoose_mem_kostantForm _ _ i n) y hy
   let hroot := isNilpotent_apply_ι_chevalleySystem ρ hnil
   have hcollection := kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul'
-    (G2.chevalleySystem ht) (G2.lieBasis ht).h ρ M hall hij hik hil hlk
+    (G2.chevalleySystem ht) (G2.lieBasis ht).h ρ M
+    (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) hij hik hil hlk
     him hio hjk hlm hko hlo hmo (hroot α) (hroot β) (hroot γ) (hroot δ) (hroot ε) (hroot ζ)
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
