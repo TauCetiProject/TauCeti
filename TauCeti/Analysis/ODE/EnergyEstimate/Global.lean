@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
 public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Interpolation
 import TauCeti.Analysis.Normed.Group.Basic
@@ -205,21 +206,6 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
 
 /-! ### Hyperbolic limits -/
 
-/-- For real numbers with `U ≤ 2 Z + 2 MA² Y` and `c / 2 * Y ≤ a Z + b W`, where `a, b ≥ 0`,
-`c > 0` and `Z, W ≥ 0`, the sum `U + Y` is at most `(2 + (2 MA² + 1) (2 / c) (a + b)) (Z + W)`. -/
-private theorem add_le_mul_add_mul_of_le_of_le {U Y Z W MA a b c : ℝ} (hc : 0 < c)
-    (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
-    (hX : U ≤ 2 * Z + 2 * MA ^ 2 * Y) (hY : c / 2 * Y ≤ a * Z + b * W) :
-    U + Y ≤ (2 + (2 * MA ^ 2 + 1) * (2 / c) * (a + b)) * Z +
-      (2 + (2 * MA ^ 2 + 1) * (2 / c) * (a + b)) * W := by
-  have hY' : Y ≤ 2 / c * (a * Z + b * W) := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    linarith
-  have hk : 0 ≤ (2 * MA ^ 2 + 1) * (2 / c) := by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : ℝ) ≤ 2 * MA ^ 2 + 1),
-    mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
-    mul_nonneg (mul_nonneg hk ha) hZ, mul_nonneg (mul_nonneg hk hb) hW]
-
 /-- **The trajectory estimate for hyperbolic limits on test paths.** Let `A` be a continuous
 family of operators whose limits `A±` at `±∞` have Lyapunov forms. Then there are `R > 0` and
 `C ≥ 0` with
@@ -280,6 +266,6 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
   have hZ : 0 ≤ ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   have hW : 0 ≤ ∫ s in Icc (-R) R, ‖u s‖ ^ 2 :=
     setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity
-  exact add_le_mul_add_mul_of_le_of_le hc (by positivity) (by positivity) hZ hW hX hY
+  exact TauCeti.add_le_mul_add_mul_of_le_of_le hc (by positivity) (by positivity) hZ hW hX hY
 
 end TauCeti
