@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Star
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Units
-import TauCeti.Analysis.Calculus.FDeriv.Pi
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Topology.Compactness.Normed
 
 /-!

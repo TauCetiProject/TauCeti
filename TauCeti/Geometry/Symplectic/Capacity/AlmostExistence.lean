@@ -114,6 +114,22 @@ private theorem exists_isCompleteVectorField_eq_hamiltonianVectorField (hσ : σ
   · simp only [Pi.smul_apply', ψ, Real.smoothTransition.one_of_one_le
       ((one_le_div (show 0 < b - m by linarith)).2 (show b - m ≤ b - F x by linarith)), one_smul]
 
+/-- **A regular level carries no rest points of the cut-off flow.** If `v` agrees with the
+Hamiltonian vector field `X_F` on `{F ≤ m}`, `s ≤ m` is a regular value of `F`, and `x₀` lies on
+the level `s`, then the orbit of `x₀` under the flow of `v` is not constant. -/
+private theorem not_forall_globalFlow_eq_self (hσ : σ.IsNondegenerate) {s m : ℝ}
+    (hs : IsRegularValue I 𝓘(ℝ) F s) {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hcomplete : IsCompleteVectorField v) (hsm : s ≤ m)
+    (hvX : ∀ x, F x ≤ m → v x = σ.hamiltonianVectorField F x) {x₀ : M} (hx₀ : F x₀ = s) :
+    ¬ ∀ t, globalFlow v hv hcomplete t x₀ = x₀ := fun hfix ↦ by
+  refine hσ.hamiltonianVectorField_ne_zero (hs.isRegularPoint hx₀) ?_
+  -- The orbit of `x₀` is a constant integral curve of `v`, so `v x₀ = 0`.
+  have h₀ := isMIntegralCurve_globalFlow hv hcomplete x₀
+  rw [show (fun t ↦ globalFlow v hv hcomplete t x₀) = fun _ ↦ x₀ from funext hfix] at h₀
+  rw [← hvX x₀ (hx₀.trans_le hsm)]
+  exact isMIntegralCurve_const_iff.1 h₀
+
 /-- **A closed characteristic on a limiting level.** Let `F` be `C²`, `s` a regular value of `F`
 and `{F ≤ b}` compact for some `b > s`. If levels of `F` arbitrarily close to `s` carry closed
 characteristics, contractible in `M`, of period at most `K`, then so does the level `s`. -/
@@ -159,16 +175,8 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
     tendsto_nhds_unique
       ((hF.continuous.tendsto _).comp ((ϕ.continuous_toFun t).tendsto x₀ |>.comp hxlim))
       (hc.congr' (hϕγ.mono fun c h ↦ by simp [h t, hlev c t]))
-  have hvX₀ (t : ℝ) : v (ϕ t x₀) = σ.hamiltonianVectorField F (ϕ t x₀) :=
-    hvX _ ((hlev₀ t).trans_le (by linarith))
-  have hrest : ¬ ∀ t, ϕ t x₀ = x₀ := fun hfix ↦ by
-    have hx₀ : F x₀ = s := by simpa [hfix 0] using hlev₀ 0
-    refine hσ.hamiltonianVectorField_ne_zero (hs.isRegularPoint hx₀) ?_
-    -- The orbit of `x₀` is a constant integral curve of `v`, so `v x₀ = 0`.
-    have h₀ := isMIntegralCurve_globalFlow hv hcomplete x₀
-    rw [show (fun t ↦ globalFlow v hv hcomplete t x₀) = fun _ ↦ x₀ from funext hfix] at h₀
-    rw [← hvX x₀ (hx₀.trans_le hsm.le)]
-    exact isMIntegralCurve_const_iff.1 h₀
+  have hrest : ¬ ∀ t, ϕ t x₀ = x₀ := not_forall_globalFlow_eq_self hσ hs hv hcomplete hsm.le hvX
+    (by simpa using hlev₀ 0)
   -- The limit period is positive, since fast periodic orbits accumulate at rest points.
   have hT₀ : 0 < T₀ := by
     refine (ge_of_tendsto hTlim (Eventually.of_forall fun c ↦ (hT c).le)).lt_of_ne fun h₀ ↦
@@ -182,7 +190,7 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
     le_of_tendsto hTlim (.of_forall hTK), fun t ↦ ?_, fun t ↦ ?_, ?_, hlev₀,
     (⟨fun y ↦ ⟨y, mem_univ y⟩, by fun_prop⟩ : C(M, univ)).comp g₀, hg₀.comp_right _,
     fun t ↦ by simp [hg₀x]⟩
-  · rw [← hvX₀ t]
+  · rw [← hvX _ ((hlev₀ t).trans_le hsm.le)]
     exact isMIntegralCurve_globalFlow hv hcomplete x₀ t
   · simp only [ϕ.map_add, hfix₀]
   · by_contra! hcon
