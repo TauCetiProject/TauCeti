@@ -233,6 +233,37 @@ theorem continuousOn_normalSpaceTrivialization_coordChangeL
   intro x hx
   exact d₀.coordChangeL f hn d₁ hx
 
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
+  [FiniteDimensional 𝕜 P] in
+/-- If a continuous map `g` sends `x` into the base set of a normal chart datum, then `g y` stays
+in that base set for all `y` near `x`. -/
+private theorem NormalChartData.eventually_proj_mem_baseSet
+    {f : SmoothEmbedding I J n M N} {hn : n ≠ 0} {x₀ : M}
+    (d : NormalChartData (P := P) f hn x₀) {X : Type*} [TopologicalSpace X] {g : X → M}
+    (hg : Continuous g) {x : X} (hx : g x ∈ d.baseSet) : ∀ᶠ y in 𝓝 x, g y ∈ d.baseSet :=
+  hg.continuousAt.eventually_mem (d.isOpen_baseSet.mem_nhds hx)
+
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
+  [FiniteDimensional 𝕜 P] in
+/-- On the base set of a normal chart datum, lifting a normal coordinate through the complement
+and the ambient tangent trivialization at the centre, then taking the normal class, returns the
+original normal vector. -/
+private theorem NormalChartData.normalClass_symm_complement_trivialization
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    {x₀ : M} (d : NormalChartData (P := P) f hn x₀)
+    {q : TotalSpace P (fun x => f.NormalSpace x hn)} (hq : q.proj ∈ d.baseSet) :
+    f.normalClass q.proj hn ((trivializationAt V (TangentSpace J) (f x₀)).symm (f q.proj)
+      (d.complement ((d.trivialization f hn) q).2)) = q.snd := by
+  have heq := normalSpaceTrivializationOfComplement_apply f hn x₀
+    d.baseSet d.isOpen_baseSet d.subset_charts d.complement d.invertible
+    (d.continuous_coordinate_apply f hn) q hq
+  have heq' : (d.trivialization f hn q).2 = f.normalSpaceEquivOfComplement hn
+      (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement
+      (d.invertible q.proj hq) q.2 := congrArg Prod.snd heq
+  rw [heq', ← f.normalSpaceEquivOfComplement_symm_apply hn
+    (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement (d.invertible q.proj hq),
+    ContinuousLinearEquiv.symm_apply_apply]
+
 omit [FiniteDimensional 𝕜 V] in
 private theorem NormalChartData.contMDiffOn_coordChangeL {m : ℕ∞ω}
     [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
