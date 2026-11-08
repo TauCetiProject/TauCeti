@@ -626,7 +626,7 @@ private theorem isDyckPattern_stepsOf (p : DyckWord) :
     rfl
   le_two_mul_ups n hn := by
     have h1 := p.count_D_le_count_U n
-    have h2 := TauCeti.DyckWord.count_U_add_count_D (p.toList.take n)
+    have h2 := List.count_U_add_count_D (p.toList.take n)
     have h3 := p.two_mul_semilength_eq_length
     rw [List.length_take] at h2
     rw [← count_take_U]
@@ -671,7 +671,7 @@ private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : D
     rw [← hl] at h1
     rw [hs.ups_eq] at h1
     rw [List.take_of_length_le (by omega)] at h1
-    have h2 := TauCeti.DyckWord.count_U_add_count_D l
+    have h2 := List.count_U_add_count_D l
     omega
   count_D_le_count_U n := by
     set l := List.ofFn fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D with hl
@@ -680,9 +680,9 @@ private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : D
     rw [← hl] at h1
     rw [hs.ups_eq] at h1
     rw [List.take_of_length_le (by omega)] at h1
-    have h2 := TauCeti.DyckWord.count_U_add_count_D l
+    have h2 := List.count_U_add_count_D l
     rcases le_total n (2 * k) with hn | hn
-    · have h3 := TauCeti.DyckWord.count_U_add_count_D (l.take n)
+    · have h3 := List.count_U_add_count_D (l.take n)
       have h4 := count_U_ofFn (k := k) (s := s) (n := n) hn
       rw [← hl] at h4
       have h5 := hs.le_two_mul_ups n hn

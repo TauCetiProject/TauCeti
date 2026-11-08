@@ -13,7 +13,7 @@ public import Mathlib.Combinatorics.Enumerative.DyckWord
 
 public section
 
-namespace TauCeti.DyckWord
+namespace List
 
 /-- The numbers of `U` and `D` steps in a list sum to its length. -/
 theorem count_U_add_count_D (l : List DyckStep) :
@@ -22,4 +22,4 @@ theorem count_U_add_count_D (l : List DyckStep) :
   | nil => simp
   | cons a l ih => cases a <;> simp <;> omega
 
-end TauCeti.DyckWord
+end List
