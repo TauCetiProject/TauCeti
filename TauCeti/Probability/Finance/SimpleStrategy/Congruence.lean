@@ -48,17 +48,6 @@ namespace TauCeti.Finance
 variable {Ω : Type*} {τ ρ : ℕ → ℝ} {n m : ℕ}
   {a b : ℕ → Ω → ℝ} {X Y : ℝ → Ω → ℝ}
 
-/-- Elementary gains only inspect the price at the clipped endpoints of the grid.
-No order condition on the grid is needed for this identity. -/
-theorem simpleGains_congr_price {ι : Type*} [LinearOrder ι] {τ : ℕ → ι}
-    {X Y : ι → Ω → ℝ} {t : ι} (ω : Ω)
-    (hXY : ∀ j ≤ n, X (min (τ j) t) ω = Y (min (τ j) t) ω) :
-    simpleGains τ n a X t ω = simpleGains τ n a Y t ω := by
-  rw [simpleGains_def, simpleGains_def]
-  refine sum_congr rfl fun j hj ↦ ?_
-  have hj := mem_range.mp hj
-  rw [hXY _ hj, hXY _ (by omega)]
-
 private theorem simpleGains_polynomial_eq_integral (p : Polynomial ℝ) {c t : ℝ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hc : c ≤ τ 0) (ω : Ω) :
     simpleGains τ n a (fun x _ ↦ p.eval x) t ω =
