@@ -35,6 +35,9 @@ open scoped Topology ContDiff
 are the winding gauges of the degree-`m` reference fields; they are not framed. -/
 def unitPhase (w : ℂ) : Circle := Circle.exp (arg w)
 
+/-- The unit phase is `1` at the origin. -/
+@[simp] theorem unitPhase_zero : unitPhase 0 = 1 := by simp [unitPhase]
+
 /-- Away from the origin the unit phase is `w / |w|`. -/
 theorem coe_unitPhase {w : ℂ} (hw : w ≠ 0) : (unitPhase w : ℂ) = w / (‖w‖ : ℂ) := by
   rw [unitPhase, Circle.coe_exp, TauCeti.Contour.div_norm_eq_exp_arg_mul_I hw]
