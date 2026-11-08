@@ -39,6 +39,9 @@ the reduced word of `g` is positive definite, and in particular so is `g ↦ r ^
 * `FreeGroup.prod_geodesicEdges` and `FreeGroup.card_geodesicEdges`: products over geodesic
   edges are products over the letters of the reduced word, and `#(geodesicEdges g) = norm g`.
 * `FreeGroup.card_symmDiff_geodesicEdges`: `#(geodesicEdges g ∆ geodesicEdges h) = norm (g⁻¹ * h)`.
+* `FreeGroup.geodesicEdges_subset_iff` and `FreeGroup.mem_geodesicEdges_iff`: a vertex, or an
+  edge, lies on the geodesic from `1` to `g` exactly when it (each endpoint) satisfies the
+  equality case of the triangle inequality for the word metric.
 * `FreeGroup.posSemidef_prod_map_toWord_inv_mul` and `FreeGroup.posSemidef_pow_norm_inv_mul`:
   Haagerup's positive-definite functions on free groups.
 
@@ -145,7 +148,8 @@ theorem geodesicEdges_mul_of (g : FreeGroup α) (a : α) :
     have hinv : mk [(a, false)] = (of a)⁻¹ := by simp [of, inv_mk, invRev]
     have hg : h * mk [(a, false)] = g := by simp [h, hinv]
     have hw : (h * mk [(a, false)]).toWord = h.toWord ++ [(a, false)] := by
-      rw [hg, show h.toWord = g.toWord.dropLast by simp [h, of, toWord_mul_mk_eq, hlast]]
+      have hh : h.toWord = g.toWord.dropLast := by simp [h, of, toWord_mul_mk_eq, hlast]
+      rw [hg, hh]
       exact (List.dropLast_append_getLast? _ hlast).symm
     obtain ⟨hins, hnot⟩ := geodesicEdges_mul_mk_singleton hw
     have he : letterEdge h (a, false) = (g, a) := by simp [letterEdge, hg]
@@ -232,6 +236,48 @@ theorem card_symmDiff_geodesicEdges (g h : FreeGroup α) :
     #(symmDiff (geodesicEdges g) (geodesicEdges h)) = norm (g⁻¹ * h) := by
   rw [← card_geodesicEdges, geodesicEdges_inv_mul,
     card_image_of_injective _ ((mul_right_injective g⁻¹).prodMap Function.injective_id)]
+
+/-- The geodesic from `1` to `y` is contained in the geodesic from `1` to `g` exactly when `y`
+lies on the latter, that is, when `norm y + norm (y⁻¹ * g) = norm g`. -/
+theorem geodesicEdges_subset_iff {y g : FreeGroup α} :
+    geodesicEdges y ⊆ geodesicEdges g ↔ norm y + norm (y⁻¹ * g) = norm g := by
+  rw [← card_symmDiff_geodesicEdges, ← card_geodesicEdges y, ← card_geodesicEdges g,
+    Finset.symmDiff_def, card_union_of_disjoint disjoint_sdiff_sdiff, ← sdiff_eq_empty_iff_subset,
+    ← card_eq_zero]
+  have h₁ := card_sdiff_add_card_inter (geodesicEdges y) (geodesicEdges g)
+  have h₂ := card_sdiff_add_card_inter (geodesicEdges g) (geodesicEdges y)
+  rw [inter_comm] at h₂
+  omega
+
+/-- Both endpoints of an edge on the geodesic to `g` lie on that geodesic. -/
+private theorem geodesicEdges_subset_of_mem {g : FreeGroup α} {e : FreeGroup α × α}
+    (he : e ∈ geodesicEdges g) :
+    geodesicEdges e.1 ⊆ geodesicEdges g ∧ geodesicEdges (e.1 * of e.2) ⊆ geodesicEdges g := by
+  induction g using induction_on_reduced with
+  | one => simp at he
+  | mul_mk_singleton g x hw ih =>
+    obtain ⟨hins, -⟩ := geodesicEdges_mul_mk_singleton hw
+    rw [hins] at he ⊢
+    rcases mem_insert.1 he with rfl | he
+    · have h₁ : geodesicEdges g ⊆ insert (letterEdge g x) (geodesicEdges g) := subset_insert _ _
+      have h₂ : geodesicEdges (g * mk [x]) ⊆ insert (letterEdge g x) (geodesicEdges g) :=
+        hins.subset
+      rcases letterEdge_endpoints g x with ⟨e₁, e₂⟩ | ⟨e₁, e₂⟩ <;> rw [e₂, e₁]
+      · exact ⟨h₁, h₂⟩
+      · exact ⟨h₂, h₁⟩
+    · exact (ih he).imp (·.trans (subset_insert _ _)) (·.trans (subset_insert _ _))
+
+/-- An edge of the Cayley tree lies on the geodesic from `1` to `g` exactly when both of its
+endpoints `y` and `y * of a` lie on that geodesic, as measured by the word metric. -/
+theorem mem_geodesicEdges_iff {g y : FreeGroup α} {a : α} :
+    (y, a) ∈ geodesicEdges g ↔ norm y + norm (y⁻¹ * g) = norm g ∧
+      norm (y * of a) + norm ((y * of a)⁻¹ * g) = norm g := by
+  rw [← geodesicEdges_subset_iff, ← geodesicEdges_subset_iff]
+  refine ⟨geodesicEdges_subset_of_mem, fun ⟨h₁, h₂⟩ => ?_⟩
+  rw [geodesicEdges_mul_of] at h₂
+  by_cases h : (y, a) ∈ geodesicEdges y
+  · exact h₁ h
+  · exact h₂ (mem_symmDiff.2 (Or.inr ⟨mem_singleton_self _, h⟩))
 
 /-- **Haagerup's positive-definite functions on free groups.** For real weights `ρ a ∈ [-1, 1]`
 on the generators, the function sending `g` to the product of `ρ` over the letters of the reduced

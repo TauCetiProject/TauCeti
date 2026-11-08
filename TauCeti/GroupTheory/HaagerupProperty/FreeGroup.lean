@@ -70,7 +70,8 @@ theorem hasHaagerupProperty_freeGroup (ι : Type*) [Countable ι] :
       simp only [List.length_map] at this
       exact (this.trans hg.le)
     · have := List.le_sum_of_mem (List.mem_map_of_mem (f := fun x => n x.1 + 1) hx)
-      exact show n x.1 < N by omega
+      have hlt : n x.1 < N := by omega
+      simpa only [T, Set.mem_ofPred_eq] using hlt
   have hpow (r : ℝ) (g : FreeGroup ι) :
       r ^ W g = (g.toWord.map fun x => r ^ (n x.1 + 1)).prod := by
     simp only [W]
