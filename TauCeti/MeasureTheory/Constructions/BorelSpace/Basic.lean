@@ -6,9 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
-# Measurability through an inducing map, and pushforwards along proper maps
+# Borel measurability and proper pushforwards
 
 For an inducing map `f : α → β` between Borel spaces, the Borel σ-algebra of `α` is the
 pullback of the Borel σ-algebra of `β` along `f`. Hence a map `g` into `α` is measurable exactly
@@ -16,16 +17,14 @@ when `f ∘ g` is. Unlike `MeasurableEmbedding.measurable_comp_iff`, this needs 
 of the range of `f`: a topological embedding with non-measurable range still detects
 measurability of maps into its domain.
 
-Pushing a measure that is finite on compact sets forward along a proper map, such as a closed
-embedding, gives a measure that is finite on compact sets, because the preimage of a compact set is
-compact. This generalizes Mathlib's `MeasureTheory.Measure.IsFiniteMeasureOnCompacts.map` from
-homeomorphisms to proper maps.
+Pushforward along a proper map preserves finiteness on compact sets. In particular,
+proper embeddings and translations can transport locally finite measures.
 
 ## Main results
 
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
-* `IsProperMap.isFiniteMeasureOnCompacts_map`
+* `MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap`
 -/
 
 public section
@@ -44,16 +43,19 @@ theorem Topology.IsInducing.measurable_comp_iff {α β γ : Type*} [TopologicalS
     [MeasurableSpace α] [BorelSpace α] [TopologicalSpace β] [MeasurableSpace β] [BorelSpace β]
     [MeasurableSpace γ] {f : α → β} (hf : IsInducing f) {g : γ → α} :
     Measurable (f ∘ g) ↔ Measurable g := by
-  have hα : ‹MeasurableSpace α› = MeasurableSpace.comap f ‹MeasurableSpace β› := by
-    rw [BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.comap_borel]
-  rw [measurable_iff_comap_le, measurable_iff_comap_le, hα, MeasurableSpace.comap_comp]
+  rw [measurable_iff_comap_le, measurable_iff_comap_le, ← MeasurableSpace.comap_comp,
+    BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.comap_borel]
 
-/-- Pushing a measure that is finite on compact sets forward along a proper map gives a measure
-that is finite on compact sets. -/
-theorem IsProperMap.isFiniteMeasureOnCompacts_map {α β : Type*} [TopologicalSpace α]
-    [MeasurableSpace α] [OpensMeasurableSpace α] [TopologicalSpace β] [MeasurableSpace β]
-    [BorelSpace β] [T2Space β] {f : α → β} (hf : IsProperMap f) (μ : Measure α)
-    [IsFiniteMeasureOnCompacts μ] : IsFiniteMeasureOnCompacts (μ.map f) where
+namespace MeasureTheory.Measure
+
+/-- A proper continuous pushforward preserves finiteness on compact sets. -/
+theorem isFiniteMeasureOnCompacts_map_of_isProperMap {X Y : Type*}
+    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y] [T2Space Y]
+    (μ : Measure X) [IsFiniteMeasureOnCompacts μ] {f : X → Y} (hf : IsProperMap f) :
+    IsFiniteMeasureOnCompacts (μ.map f) where
   lt_top_of_isCompact K hK := by
     rw [Measure.map_apply hf.continuous.measurable hK.measurableSet]
     exact (hf.isCompact_preimage hK).measure_lt_top
+
+end MeasureTheory.Measure

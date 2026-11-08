@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Localiza
 public import Mathlib.CategoryTheory.Sites.IsSheafFor
 
 import TauCeti.CategoryTheory.Sites.IsSheafFor
+import TauCeti.Topology.Homeomorph.Inducing
 
 /-!
 # The sheaf condition for a family of opens of `Spa(A, A⁺)`
@@ -70,6 +71,25 @@ theorem eqToHom_apply_presentationLimitPresheaf_map_apply {V W : Opens ↥(spa A
   rw [Functor.comp_map, Functor.comp_map, presentationLimitPresheaf_map]
   exact Iso.hom_inv_id_apply
     (eqToIso (presentationLimitPresheaf_obj P Aplus (Opposite.op W)).symm) _
+
+/-- **Restriction to opens `V i ≤ W` is inducing on sections of the presentation-limit presheaf
+exactly when it is inducing on presentation limits.** The two spaces of sections are identified
+by the transports along `presentationLimitPresheaf_obj`. -/
+theorem isInducing_restrictionMap_iff_isInducing_presentationLimitMap {ι : Type*}
+    {W : Opens ↥(spa Aplus)} {V : ι → Opens ↥(spa Aplus)} (h : ∀ i, V i ≤ W) :
+    Topology.IsInducing (fun (x : (presentationLimitPresheaf P Aplus).obj (op W)) (i : ι) ↦
+      ((presentationLimitPresheaf P Aplus).map (homOfLE (h i)).op).hom.1 x) ↔
+    Topology.IsInducing (fun (x : presentationLimit (P := P) Aplus W) (i : ι) ↦
+      (presentationLimitMap (P := P) (h i)).hom.1 x) := by
+  let G := TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ _root_.TopCommRingCat TopCat
+  let e (V : Opens ↥(spa Aplus)) :
+      (presentationLimitPresheaf P Aplus).obj (op V) ≃ₜ presentationLimit (P := P) Aplus V :=
+    TopCat.homeoOfIso (G.mapIso (eqToIso (presentationLimitPresheaf_obj P Aplus (op V))))
+  have e_apply (V : Opens ↥(spa Aplus)) (x : (presentationLimitPresheaf P Aplus).obj (op V)) :
+      e V x = (eqToHom (presentationLimitPresheaf_obj P Aplus (op V))).hom.1 x := rfl
+  exact (e W).isInducing_pi_iff_of_homeomorph (fun i ↦ e (V i)) fun x i ↦ by
+    rw [e_apply, e_apply]
+    exact eqToHom_apply_presentationLimitPresheaf_map_apply P (h i) x
 
 /-- **The sheaf condition for a family of opens, read on presentation limits.** The
 presentation-limit presheaf of sets satisfies the sheaf condition for a family of opens `U i ≤ W`

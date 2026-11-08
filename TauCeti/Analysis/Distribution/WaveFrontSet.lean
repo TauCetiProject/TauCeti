@@ -447,7 +447,8 @@ theorem localFourier_ofFun_one_map_subtype (V : Submodule ℝ E) (φ : 𝓓(Ω, 
   have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
     V.isClosedEmbedding_subtype V.closed_of_finiteDimensional
   -- The pushed-forward measure is finite on compact sets, so constants are locally integrable.
-  have := hce.isProperMap.isFiniteMeasureOnCompacts_map MeasureTheory.volume
+  have := MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap MeasureTheory.volume
+    hce.isProperMap
   rw [localFourier,
     complexPairing_ofFun (f := 1) ((MeasureTheory.locallyIntegrable_const 1).locallyIntegrableOn _),
     hce.measurableEmbedding.integral_map, Real.fourier_eq]
