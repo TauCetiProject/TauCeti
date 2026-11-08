@@ -62,7 +62,11 @@ Finally, `Γ` is natural: an isometry of the quadratic forms that carries `o` to
 chirality element of `o` to that of `o'`. Hence a map of Clifford modules that intertwines the
 generators along an orientation-preserving isometry intertwines the chirality elements, and an
 equivalence doing so restricts to the positive half-spinors. These are the frame changes and
-`Spinᶜ` transformations under which the Seiberg–Witten equations are invariant.
+`Spinᶜ` transformations under which the Seiberg–Witten equations are invariant. The same holds for
+a semilinear map commuting with the generators whose twist fixes the real scalars, such as a
+conjugate-linear map of complex Clifford modules; a conjugate-linear isometric equivalence of
+Hermitian Clifford modules thus restricts to the positive half-spinors, as charge conjugation of
+spinors does.
 
 ## Main definitions
 
@@ -71,6 +75,9 @@ equivalence doing so restricts to the positive half-spinors. These are the frame
   of `Γ` acting on a Clifford module `ρ : CliffordAlgebra Q → End_K W`.
 * `CliffordAlgebra.positiveHalfSpinorsEquiv o ρ o' ρ' U hU`: the restriction `W⁺ ≃ W'⁺` of an
   equivalence of Clifford modules `U` that intertwines the chirality elements.
+* `CliffordAlgebra.positiveHalfSpinorsConjEquiv o ρ ρ' j hj`: the restriction `W⁺ ≃ W'⁺` of a
+  conjugate-linear isometric equivalence `j` of Hermitian Clifford modules commuting with the
+  generators.
 
 ## Main results
 
@@ -113,6 +120,8 @@ equivalence doing so restricts to the positive half-spinors. These are the frame
   forms sends the chirality element of `o` to that of the transported orientation.
 * `CliffordAlgebra.comp_chirality_eq_chirality_comp`: a map of Clifford modules intertwining the
   generators along an orientation-preserving linear isometry intertwines the chirality elements.
+* `CliffordAlgebra.map_mem_positiveHalfSpinors`: a semilinear map of Clifford modules commuting
+  with the generators, whose twist fixes the real scalars, preserves the positive half-spinors.
 
 ## References
 
@@ -684,5 +693,69 @@ theorem coe_positiveHalfSpinorsEquiv_symm_apply (U : W ≃ₗ[K] W')
   (rfl)
 
 end Naturality
+
+/-! ### Semilinear intertwiners -/
+
+section Semilinear
+
+variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W] [Module ℝ W]
+  [IsScalarTower ℝ K W] [AddCommGroup W'] [Module K W'] [Module ℝ W'] [IsScalarTower ℝ K W']
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W} {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End K W'}
+  {σ : K →+* K}
+
+variable {o} in
+/-- A semilinear map `U` of Clifford modules over the same quadratic space, whose twist `σ` fixes
+the real scalars and which commutes with the generators, `U (c(v) w) = c(v) (U w)`, maps positive
+half-spinors to positive half-spinors. For complex modules `U` can be conjugate-linear, as for
+charge conjugation of spinors. -/
+theorem map_mem_positiveHalfSpinors (hσ : ∀ r : ℝ, σ (algebraMap ℝ K r) = algebraMap ℝ K r)
+    {U : W →ₛₗ[σ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w)) {w : W}
+    (hw : w ∈ positiveHalfSpinors o ρ) : U w ∈ positiveHalfSpinors o ρ' := by
+  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q) hσ
+    (fun v ↦ LinearMap.ext (hU v)) (chirality Q o)
+  have hw' : U (ρ (chirality Q o) w) = ρ' (chirality Q o) (U w) := by
+    simpa [map_id] using LinearMap.congr_fun h w
+  rw [mem_positiveHalfSpinors] at hw ⊢
+  rw [← hw', hw]
+
+end Semilinear
+
+section Conjugate
+
+variable {W W' : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [NormedAddCommGroup W']
+  [InnerProductSpace ℂ W'] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+  (ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W') (j : W ≃ₗᵢ⋆[ℂ] W')
+  (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+
+/-- **Charge conjugation of positive half-spinors**: a conjugate-linear isometric equivalence `j`
+of Hermitian Clifford modules commuting with Clifford multiplication restricts to a
+conjugate-linear isometric equivalence `W⁺ ≃ W'⁺` of the positive half-spinors. -/
+def positiveHalfSpinorsConjEquiv :
+    positiveHalfSpinors o ρ ≃ₗᵢ⋆[ℂ] positiveHalfSpinors o ρ' where
+  toFun ψ := ⟨j ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
+    (U := j.toLinearEquiv.toLinearMap) hj ψ.2⟩
+  invFun ψ := ⟨j.symm ψ, map_mem_positiveHalfSpinors (fun r ↦ Complex.conj_ofReal r)
+    (U := j.symm.toLinearEquiv.toLinearMap)
+    (fun v w ↦ by rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, j.symm_apply_eq,
+      hj, j.apply_symm_apply]) ψ.2⟩
+  map_add' ψ φ := Subtype.ext <| by simp
+  map_smul' c ψ := Subtype.ext <| by simp [map_smulₛₗ]
+  left_inv ψ := Subtype.ext (j.symm_apply_apply ψ)
+  right_inv ψ := Subtype.ext (j.apply_symm_apply ψ)
+  norm_map' ψ := j.norm_map (ψ : W)
+
+/-- The restriction of `j` to the positive half-spinors is `j`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsConjEquiv_apply (ψ : positiveHalfSpinors o ρ) :
+    (positiveHalfSpinorsConjEquiv o ρ ρ' j hj ψ : W') = j ψ :=
+  (rfl)
+
+/-- The inverse of the restriction of `j` to the positive half-spinors is `j⁻¹`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsConjEquiv_symm_apply (ψ : positiveHalfSpinors o ρ') :
+    ((positiveHalfSpinorsConjEquiv o ρ ρ' j hj).symm ψ : W) = j.symm ψ :=
+  (rfl)
+
+end Conjugate
 
 end CliffordAlgebra
