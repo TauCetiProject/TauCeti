@@ -40,4 +40,17 @@ theorem exactAt_of_succ (X : ℕ → C) (d : ∀ n, X (n + 1) ⟶ X n)
         Category.id_comp, Category.comp_id] using (ChainComplex.of_d X d (n + 1)).symm)
       (by simp))).2 h
 
+/-- Exactness of the specified augmentation pair gives exactness at the augmentation of
+`ChainComplex.of`. -/
+theorem exact_of_d_zero (X : ℕ → C) (d : ∀ n, X (n + 1) ⟶ X n)
+    (zero : ∀ n, d (n + 1) ≫ d n = 0) {Y : C} (ε : X 0 ⟶ Y)
+    (hε : d 0 ≫ ε = 0) {hε' : (ChainComplex.of X d zero).d 1 0 ≫ ε = 0}
+    (h : (ShortComplex.mk (d 0) ε hε).Exact) :
+    (ShortComplex.mk ((ChainComplex.of X d zero).d 1 0) ε hε').Exact := by
+  exact (ShortComplex.exact_iff_of_iso
+    (S₁ := ShortComplex.mk ((ChainComplex.of X d zero).d 1 0) ε _)
+    (S₂ := ShortComplex.mk (d 0) ε hε)
+    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      (by simpa using (ChainComplex.of_d X d 0).symm) (by simp))).2 h
+
 end ChainComplex

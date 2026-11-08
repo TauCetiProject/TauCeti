@@ -133,13 +133,8 @@ noncomputable def toProjectiveResolution {X : C}
       by_cases hn : n ≤ r.length
       · exact hP _ (r.prop_term_of_le_length hn)
       · exact (r.isZero_term_of_length_lt (not_le.mp hn)).projective)
-    (by
-      exact (ShortComplex.exact_iff_of_iso
-        (S₁ := ShortComplex.mk (r.toChainComplex.d 1 0) r.aug
-          r.toChainComplex_d_one_zero_comp_aug)
-        (S₂ := ShortComplex.mk (r.d 0) r.aug r.d_comp_aug)
-        (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-          (by simpa using (r.toChainComplex_d 0).symm) (by simp))).2 r.exact_d_zero_aug)
+    (ChainComplex.exact_of_d_zero r.term r.d r.d_comp_d r.aug r.d_comp_aug
+      r.exact_d_zero_aug)
     r.exactAt_toChainComplex_succ
 
 /-- The terms of the projective resolution are the terms of the finite resolution. -/
@@ -162,6 +157,8 @@ theorem toProjectiveResolution_complex_d {X : C}
     (r.toProjectiveResolution hP).complex.d (n + 1) n =
       (r.toProjectiveResolutionXIso hP (n + 1)).hom ≫ r.d n ≫
         (r.toProjectiveResolutionXIso hP n).inv := by
+  -- Reduction identifies the endpoints of the identity term isomorphisms before simp can
+  -- apply category laws; rewriting just the complex projection leaves an ill-typed simp goal.
   simp [toProjectiveResolutionXIso, toProjectiveResolution, ChainComplex.toProjectiveResolution]
 
 /-- The augmentation of the projective resolution is that of the finite resolution, through the
@@ -170,6 +167,7 @@ identification of the degree-zero terms. -/
 theorem toProjectiveResolution_π_f_zero {X : C}
     (r : (ExactStructure.abelian C).FiniteResolution P X) :
     (r.toProjectiveResolution hP).π.f 0 = (r.toProjectiveResolutionXIso hP 0).hom ≫ r.aug := by
+  -- As above, the identity's endpoints need reduction before the augmentation lemma applies.
   simpa [toProjectiveResolutionXIso, toProjectiveResolution,
     ChainComplex.toProjectiveResolution] using
     ChainComplex.toSingle₀Equiv_symm_apply_f_zero (C := r.toChainComplex) r.aug

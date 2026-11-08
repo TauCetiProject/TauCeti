@@ -235,7 +235,7 @@ the two objects are the same syzygy or cosyzygy, so the isomorphism is an identi
 private noncomputable def conflationSequenceIso (X : C) :
     ∀ n, (conflationSequence hE X n).X₃ ≅ (conflationSequence hE X (n + 1)).X₁
   | .ofNat _ => Iso.refl _
-  | .negSucc 0 => hE.enoughProjectives.projectiveResolutionIso X
+  | .negSucc 0 => eqToIso (hE.enoughProjectives.projectiveResolution_Z_zero X)
   | .negSucc (_ + 1) => Iso.refl _
 
 private theorem conflation_conflationSequence (X : C) (n : ℤ) :

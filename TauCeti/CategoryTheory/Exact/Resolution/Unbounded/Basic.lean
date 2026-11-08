@@ -100,10 +100,14 @@ noncomputable abbrev complex : ChainComplex C ℕ :=
 theorem complex_d (n : ℕ) : r.complex.d (n + 1) n = r.d n :=
   ChainComplex.of_d _ _ n
 
+/-- The first differential of the spliced complex is killed by the augmentation. -/
+@[reassoc (attr := simp)]
+theorem complex_d_one_zero_comp_π : r.complex.d 1 0 ≫ r.π 0 = 0 := by
+  rw [complex_d, d_comp_π]
+
 /-- The augmentation from the spliced complex to the object in degree zero. -/
 noncomputable def augmentation : r.complex ⟶ (ChainComplex.single₀ C).obj (r.Z 0) :=
-  (ChainComplex.toSingle₀Equiv _ _).symm ⟨r.π 0, by
-    rw [complex_d, d_comp_π]⟩
+  (ChainComplex.toSingle₀Equiv _ _).symm ⟨r.π 0, r.complex_d_one_zero_comp_π⟩
 
 /-- The augmentation in degree zero is the first deflation. -/
 @[simp]
@@ -193,7 +197,7 @@ private noncomputable def resolutionSyzygy : ℕ → C
   | n + 1 => (h.projectivePresentation (resolutionSyzygy n)).K
 
 /-- Enough relative projectives give an unbounded projective resolution of every object.
-Its resolved object is identified with the original object by `projectiveResolutionIso`. -/
+Its resolved object is the original object, as stated by `projectiveResolution_Z_zero`. -/
 noncomputable def projectiveResolution : E.ProjectiveResolution where
   Z := h.resolutionSyzygy M
   X n := (h.projectivePresentation (h.resolutionSyzygy M n)).P
@@ -205,10 +209,6 @@ noncomputable def projectiveResolution : E.ProjectiveResolution where
 
 /-- The constructed resolution starts at the specified object. -/
 @[simp] theorem projectiveResolution_Z_zero : (h.projectiveResolution M).Z 0 = M := (rfl)
-
-/-- The constructed resolution resolves the specified object. -/
-noncomputable def projectiveResolutionIso : (h.projectiveResolution M).Z 0 ≅ M :=
-  Iso.refl _
 
 end EnoughProjectives
 

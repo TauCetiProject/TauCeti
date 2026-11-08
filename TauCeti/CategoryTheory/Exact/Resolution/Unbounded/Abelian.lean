@@ -78,14 +78,9 @@ resolution in Mathlib's sense, with the same spliced complex and augmentation. -
 -- Exposure identifies the domain of the augmentation in the dependent `π` lemma below.
 @[expose]
 noncomputable def toProjectiveResolution : CategoryTheory.ProjectiveResolution (r.Z 0) :=
-  r.complex.toProjectiveResolution (r.π 0)
-    (by rw [complex_d, d_comp_π]) r.projective_X
-    (by
-      exact (ShortComplex.exact_iff_of_iso
-        (S₁ := ShortComplex.mk (r.complex.d 1 0) (r.π 0) (by rw [complex_d, d_comp_π]))
-        (S₂ := ShortComplex.mk (r.d 0) (r.π 0) (r.d_comp_π 0))
-        (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-          (by simpa using (r.complex_d 0).symm) (by simp))).2 (r.exact_d_π 0))
+  r.complex.toProjectiveResolution (r.π 0) r.complex_d_one_zero_comp_π r.projective_X
+    (ChainComplex.exact_of_d_zero r.X r.d r.d_comp_d (r.π 0) (r.d_comp_π 0)
+      (r.exact_d_π 0))
     r.exactAt_complex_succ
 
 /-- The abelian realization retains the original spliced complex. -/
