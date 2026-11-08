@@ -78,8 +78,8 @@ theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain (β : Basis ι ℝ E)
   refine β.repr.injective (Finsupp.ext fun i ↦ ?_)
   obtain ⟨a, ha⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₁ i
   obtain ⟨b, hb⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₂ i
-  have h₁i := h₁ i
-  have h₂i := h₂ i
+  have h₁i := (ZSpan.mem_fundamentalDomain β).1 h₁ i
+  have h₂i := (ZSpan.mem_fundamentalDomain β).1 h₂ i
   simp only [map_sub, Finsupp.sub_apply, ← ha, ← hb, eq_intCast, Set.mem_Ico] at h₁i h₂i ⊢
   have h₃ : (a : ℝ) < b + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
   have h₄ : (b : ℝ) < a + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
