@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Topology.Separation.Regular
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.MeasureTheory.Function.Gluing
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Locality of weak derivatives
@@ -37,6 +38,9 @@ original cover is uncountable.
 * `hasWeakLineDerivOn_iSup_iff` and `hasWeakFDerivOn_iSup_iff`: open-cover locality.
 * `exists_hasWeakFDerivOn_iSup`: gluing local derivative fields up to almost-everywhere equality.
 * `exists_hasWeakFDerivOn_iff_locally`: local existence is equivalent to global existence.
+* `HasWeakFDerivOn.exists_open_memLp_indicator`: a compact subset of the domain has an open
+  neighborhood on which the weakly differentiable pair is integrable, with compactly supported
+  zero extension.
 
 ## Attribution
 
@@ -255,5 +259,38 @@ theorem HasWeakFDerivOn.sup [FiniteDimensional ℝ E] [OpensMeasurableSpace E]
     {V : Opens E} {U : E → E →L[ℝ] F} (hΩ : HasWeakFDerivOn μ Ω u U)
     (hV : HasWeakFDerivOn μ V u U) : HasWeakFDerivOn μ (Ω ⊔ V) u U := by
   exact hasWeakFDerivOn_iff.2 fun v ↦ (hΩ.hasWeakLineDerivOn v).sup (hV.hasWeakLineDerivOn v)
+
+section Cutoff
+
+open Metric
+
+variable [FiniteDimensional ℝ E] [BorelSpace E]
+
+/-- **The cutoff of a weakly differentiable pair.** If `u` has weak derivative `D` on the open
+set `V` and `K ⊆ V` is compact, there is an open neighbourhood `O ⊆ V` of `K`, containing the
+`δ`-balls around the points of `K`, on which `u` and `D` are integrable, so that their zero
+extensions from `O` are `L¹`, and the zero extension of `u` has compact support. -/
+theorem HasWeakFDerivOn.exists_open_memLp_indicator {V : Opens E} {u : E → F}
+    {D : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ V u D) {K : Set E} (hK : IsCompact K)
+    (hKV : K ⊆ V) :
+    ∃ δ > 0, ∃ O : Opens E, K ⊆ O ∧ (O : Set E) ⊆ V ∧ (∀ x ∈ K, ball x δ ⊆ O) ∧
+      MemLp u 1 (μ.restrict O) ∧ MemLp D 1 (μ.restrict O) ∧
+      MemLp ((O : Set E).indicator u) 1 μ ∧ MemLp ((O : Set E).indicator D) 1 μ ∧
+      HasCompactSupport ((O : Set E).indicator u) := by
+  obtain ⟨δ, hδ, hδV⟩ := hK.exists_cthickening_subset_open V.isOpen hKV
+  obtain ⟨O, hO⟩ : ∃ O : Opens E, (O : Set E) = thickening δ K := ⟨⟨_, isOpen_thickening⟩, rfl⟩
+  have hOV : (O : Set E) ⊆ cthickening δ K := hO ▸ thickening_subset_cthickening δ K
+  have hu : MemLp u 1 (μ.restrict O) := memLp_one_iff_integrable.2 <|
+    (h.locallyIntegrableOn.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
+  have hD : MemLp D 1 (μ.restrict O) := memLp_one_iff_integrable.2 <|
+    (h.locallyIntegrableOn_deriv.integrableOn_compact_subset hδV hK.cthickening).mono_set hOV
+  exact ⟨δ, hδ, O, hO ▸ self_subset_thickening hδ K, hOV.trans hδV,
+    fun x hx => hO ▸ ball_subset_thickening hx δ, hu, hD,
+    (memLp_indicator_iff_restrict (f := u) O.isOpen.measurableSet.nullMeasurableSet).2 hu,
+    (memLp_indicator_iff_restrict (f := D) O.isOpen.measurableSet.nullMeasurableSet).2 hD,
+    HasCompactSupport.intro' hK.cthickening isClosed_cthickening fun y hy =>
+      indicator_of_notMem (fun hyO => hy (hOV hyO)) u⟩
+
+end Cutoff
 
 end TauCeti
