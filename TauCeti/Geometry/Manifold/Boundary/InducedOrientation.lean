@@ -18,6 +18,10 @@ chart signs therefore constructs the actual boundary orientation. The model orie
 the outward-first convention, so the standard ambient orientation induces the negative standard
 orientation on the coordinate-zero boundary, including a zero-dimensional boundary.
 
+The outward-first characterization `TauCeti.boundaryOrientation_spec` can be read through any
+linear identification of the ambient tangent space, such as the derivative of the inclusion of a
+regular domain into a larger manifold (`TauCeti.boundaryOrientation_spec_of_linearEquiv`).
+
 On the zero-dimensional boundary of a one-manifold, the induced orientation at a point is a sign
 `Orientation.signBasis` against a basis indexed by `Fin 0`. That sign is `1` exactly when an
 outward tangent vector is positively oriented, and `-1` exactly when it is negatively oriented
@@ -169,6 +173,36 @@ theorem boundaryOrientation_spec
   apply Orientation.halfSpaceBoundaryOrientation_spec _ hv' b b'
   rw [mfderiv_subtypeVal_boundary] at hb'
   convert hb' using 1 <;> rfl
+
+/-- **Outward-first, read through a linear equivalence.** Let `D` identify the tangent space of
+`M` at a boundary point `x` with a real vector space `V`, carrying the tangent orientation of `o`
+at `x` to `ω`. If `D` carries some outward vector to `v`, then a basis `e` of the tangent space of
+the boundary at `x` is positively oriented for the boundary orientation exactly when `v`, followed
+by the images under `D` of the vectors of `e`, is positively oriented for `ω`. For `D` the
+derivative of a map into another manifold, such as the inclusion of a regular domain into its
+ambient manifold, this reads the boundary orientation in the target. -/
+theorem boundaryOrientation_spec_of_linearEquiv
+    (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1)))
+    (x : (𝓡∂ (n + 1)).boundary M) {V : Type*} [AddCommGroup V] [Module ℝ V]
+    (D : TangentSpace (𝓡∂ (n + 1)) (x : M) ≃ₗ[ℝ] V) {ω : _root_.Orientation ℝ V (Fin (n + 1))}
+    (hω : _root_.Orientation.map (Fin (n + 1)) D
+      (Manifold.Orientation.orientationAt o (x : M)) = ω)
+    {v : V} (hv : IsOutwardPointing (x : M) (D.symm v))
+    (e : Module.Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x))
+    (e' : Module.Basis (Fin (n + 1)) ℝ V)
+    (he' : ⇑e' = Fin.cons v (fun i ↦ D (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x (e i)))) :
+    e.orientation = Manifold.Orientation.orientationAt (boundaryOrientation o) x ↔
+      e'.orientation = ω := by
+  -- Pull `e'` back along `D`: it becomes the outward vector `D⁻¹ v` followed by the boundary basis.
+  have hcons : ⇑(e'.map D.symm) = Fin.cons (D.symm v) (fun i ↦
+      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x (e i)) := by
+    funext i
+    refine Fin.cases ?_ (fun i ↦ ?_) i <;> simp [he']
+  rw [boundaryOrientation_spec o x hv e _ hcons, Module.Basis.orientation_map, ← hω,
+    ← _root_.Orientation.map_symm]
+  exact Equiv.symm_apply_eq _
 
 /-- The induced boundary orientation at each point is the outward-first half-space orientation. -/
 theorem orientationAt_boundaryOrientation

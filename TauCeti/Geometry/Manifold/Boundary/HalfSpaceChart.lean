@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
@@ -20,6 +22,12 @@ the ambient charts, restricted to the half-space
 (`OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`), so smooth ambient transitions give
 a smooth atlas on `s`. This is how regular domains, such as the sublevels of a function at a
 regular value, become manifolds with boundary.
+
+Read in such a chart, the inclusion of `s` into `M` is the inverse of the ambient chart. So the
+inclusion is smooth, and composing it with the ambient chart gives the extended chart of `s`,
+whose derivative at its base point is the identity. Hence the derivative of the inclusion is
+invertible, also at the boundary points of `s`, where the inclusion is not a local
+diffeomorphism. This is what pulls orientations of `M` back to regular domains.
 
 The ambient `ℝⁿ⁺¹`-valued charts typically come from charts of a manifold with a boundaryless
 model, read in the model vector space and moved by a homeomorphism
@@ -36,6 +44,10 @@ half-space restrictions of them is a `C^m` manifold with boundary
   `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`.
 * `TauCeti.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
   restrictions of smoothly moved charts from the maximal atlas makes `s` a manifold with boundary.
+* `TauCeti.contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart` and
+  `TauCeti.isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart`: for such an atlas
+  the inclusion of `s` into `M` is `C^m`, and its derivative is invertible at every point of `s`,
+  including the boundary points.
 
 ## References
 
@@ -47,7 +59,7 @@ half-space restrictions of them is a `C^m` manifold with boundary
 public section
 
 open Function Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace OpenPartialHomeomorph
 
@@ -172,5 +184,104 @@ theorem isManifold_of_forall_mem_atlas_halfSpaceChart {m : ℕ∞ω} {n : ℕ} {
   exact contDiffOn_halfSpaceChart_symm_trans he₁ he₂ x₁ x₂ (hc₁.contDiffOn_comp_symm hc₂)
 
 end IsManifold
+
+section Inclusion
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+  {m : ℕ∞ω} {n : ℕ} {s : Set M} [ChartedSpace (EuclideanHalfSpace (n + 1)) s]
+
+/-- If the preferred chart of `s` at `x` is the half-space restriction of an ambient chart `e`,
+then near `x` the chart `e` reads the inclusion of `s` as the extended chart of `s` at `x`. -/
+private theorem comp_subtypeVal_eventuallyEq_extChartAt
+    {e : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1)))}
+    (he : ∀ w ∈ e.source, w ∈ s ↔ 0 ≤ e w 0) {x y : s}
+    (hx : chartAt (EuclideanHalfSpace (n + 1)) x = e.halfSpaceChart he y) :
+    e ∘ Subtype.val =ᶠ[𝓝 x] extChartAt (𝓡∂ (n + 1)) x := by
+  filter_upwards [(chartAt (EuclideanHalfSpace (n + 1)) x).open_source.mem_nhds
+    (mem_chart_source _ x)] with w hw
+  rw [hx, halfSpaceChart_source] at hw
+  rw [comp_apply, extChartAt_coe, comp_apply, hx, modelWithCornersEuclideanHalfSpace_toFun,
+    coe_halfSpaceChart_apply he y hw]
+
+/-- **The inclusion of a regular domain is smooth.** If every chart of `s` is the half-space
+restriction of a chart satisfying `OpenPartialHomeomorph.IsExtendTransChart` for `C^m`, then the
+inclusion of `s` into `M` is `C^m`. -/
+theorem contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart
+    (h : ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) s,
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ s ↔ 0 ≤ e' w 0) (x : s),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' x) :
+    ContMDiff (𝓡∂ (n + 1)) I m (Subtype.val : s → M) := by
+  intro x
+  obtain ⟨e, he, y, hce, hx⟩ := h _ (chart_mem_atlas _ x)
+  obtain ⟨c, Ψ, hc, -, hΨ, rfl⟩ := isExtendTransChart_iff.1 hce
+  have hsrc : (x : M) ∈ (c.extendTrans I Ψ).source := by
+    simpa [hx] using mem_chart_source (EuclideanHalfSpace (n + 1)) x
+  have heq := comp_subtypeVal_eventuallyEq_extChartAt he hx
+  -- Near `x`, the inclusion is the inverse of `e` applied to the extended chart of `s` at `x`.
+  have hval : (Subtype.val : s → M) =ᶠ[𝓝 x]
+      (c.extendTrans I Ψ).symm ∘ extChartAt (𝓡∂ (n + 1)) x := by
+    filter_upwards [heq, (chartAt (EuclideanHalfSpace (n + 1)) x).open_source.mem_nhds
+      (mem_chart_source _ x)] with w hw hws
+    rw [hx, halfSpaceChart_source] at hws
+    rw [comp_apply, ← hw, comp_apply, (c.extendTrans I Ψ).left_inv hws]
+  have hmem : extChartAt (𝓡∂ (n + 1)) x x ∈ (c.extendTrans I Ψ).target := by
+    rw [← heq.self_of_nhds]
+    exact (c.extendTrans I Ψ).map_source hsrc
+  exact (((contMDiffOn_extendTrans_symm c hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_target.mem_nhds hmem)).comp x
+      contMDiffAt_extChartAt).congr_of_eventuallyEq hval
+
+/-- **The derivative of the inclusion of a regular domain is invertible.** If every chart of `s`
+is the half-space restriction of a chart satisfying `OpenPartialHomeomorph.IsExtendTransChart` for
+`C^m`, with `1 ≤ m`, then the derivative of the inclusion of `s` into `M` is invertible at every
+point of `s`, including the boundary points. -/
+theorem isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart (hm : 1 ≤ m)
+    (h : ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) s,
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ s ↔ 0 ≤ e' w 0) (x : s),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' x) (x : s) :
+    (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x).IsInvertible := by
+  have hm0 : m ≠ 0 := ENat.one_le_iff_ne_zero_withTop.1 hm
+  have : IsManifold (𝓡∂ (n + 1)) m s := isManifold_of_forall_mem_atlas_halfSpaceChart h
+  have : IsManifold (𝓡∂ (n + 1)) 1 s := .of_le hm
+  obtain ⟨e, he, y, hce, hx⟩ := h _ (chart_mem_atlas _ x)
+  obtain ⟨c, Ψ, hc, hΨ, hΨ', rfl⟩ := isExtendTransChart_iff.1 hce
+  set φ := c.extendTrans I Ψ
+  have hsrc : (x : M) ∈ φ.source := by
+    simpa [φ, hx] using mem_chart_source (EuclideanHalfSpace (n + 1)) x
+  have hval : MDifferentiableAt (𝓡∂ (n + 1)) I (Subtype.val : s → M) x :=
+    (contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart h x).mdifferentiableAt hm0
+  have hφ : MDifferentiableAt I 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) φ x :=
+    ((contMDiffOn_extendTrans c hc hΨ).contMDiffAt
+      (φ.open_source.mem_nhds hsrc)).mdifferentiableAt hm0
+  have hφ' : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) I φ.symm (φ x) :=
+    ((contMDiffOn_extendTrans_symm c hc hΨ').contMDiffAt
+      (φ.open_target.mem_nhds (φ.map_source hsrc))).mdifferentiableAt hm0
+  -- The derivative `L` of `φ` is a left inverse of the derivative `D` of the inclusion, since
+  -- `φ` reads the inclusion as an extended chart, and the derivative `L'` of `φ⁻¹` is a left
+  -- inverse of `L`. Hence `D = L'` is a two-sided inverse of `L`.
+  set D := mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x
+  set L := mfderiv I 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) φ x
+  set L' := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) I φ.symm (φ x)
+  -- `EventuallyEq.mfderiv_eq` inserts `tangentSpaceCast` between the tangent spaces of the model
+  -- at two equal points; it is the identity on vectors, so the identities below close by `exact`.
+  have hLD (v : TangentSpace (𝓡∂ (n + 1)) x) : L (D v) = v := by
+    have h₁ := (comp_subtypeVal_eventuallyEq_extChartAt he hx).mfderiv_eq (I := 𝓡∂ (n + 1))
+      (I' := 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))))
+    rw [mfderiv_comp x hφ hval, mfderiv_extChartAt_self] at h₁
+    exact congrArg (· v) h₁
+  have hL'L (w : TangentSpace I (x : M)) : L' (L w) = w := by
+    have hid : φ.symm ∘ φ =ᶠ[𝓝 (x : M)] id :=
+      Filter.eventually_of_mem (φ.open_source.mem_nhds hsrc) fun w hw ↦ φ.left_inv hw
+    have h₂ := hid.mfderiv_eq (I := I) (I' := I)
+    rw [mfderiv_comp (x : M) hφ' hφ, mfderiv_id] at h₂
+    exact congrArg (· w) h₂
+  refine ⟨ContinuousLinearEquiv.equivOfInverse D L hLD fun w ↦ ?_, rfl⟩
+  -- `D` agrees with the left inverse `L'` of `L`, since `L ∘ D` is the identity.
+  exact (hL'L (D (L w))).symm.trans ((congrArg L' (hLD (L w))).trans (hL'L w))
+
+end Inclusion
 
 end TauCeti

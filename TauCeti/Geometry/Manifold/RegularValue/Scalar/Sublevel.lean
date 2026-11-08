@@ -66,6 +66,9 @@ as above.
   `TauCeti.mem_scalarRegularSublevelChartAt_target_iff_of_eq` and
   `TauCeti.coe_scalarRegularSublevelChartAt_symm_apply_of_eq`.
 * `TauCeti.isManifold_scalarRegularSublevel`: the sublevel is a `C^m` manifold with boundary.
+* `TauCeti.contMDiff_coe_scalarRegularSublevel` and
+  `TauCeti.isInvertible_mfderiv_coe_scalarRegularSublevel`: its inclusion into `M` is `C^m`, with
+  invertible derivative at every point, including the points of the level.
 * `TauCeti.boundary_scalarRegularSublevel` and `TauCeti.interior_scalarRegularSublevel`: its
   manifold boundary is the level `f⁻¹(a)`, and its manifold interior is `{x | f x < a}`.
 * `TauCeti.scalarRegularBandChartAt` and `TauCeti.scalarRegularBandChartedSpace`: the preferred
@@ -75,6 +78,9 @@ as above.
   `TauCeti.scalarRegularBandChartAt_apply_zero_of_eq_right` and their tangential, source, target
   and inverse companions.
 * `TauCeti.isManifold_scalarRegularBand`: the band is a `C^m` manifold with boundary.
+* `TauCeti.contMDiff_coe_scalarRegularBand` and
+  `TauCeti.isInvertible_mfderiv_coe_scalarRegularBand`: its inclusion into `M` is `C^m`, with
+  invertible derivative at every point.
 * `TauCeti.boundary_scalarRegularBand` and `TauCeti.interior_scalarRegularBand`: its manifold
   boundary is `f⁻¹(a) ∪ f⁻¹(b)`, and its manifold interior is `f⁻¹((a, b))`.
 
@@ -632,6 +638,20 @@ private theorem exists_scalarRegularSublevelChartAt_eq_halfSpaceChart {m : ℕ�
   · exact ⟨_, _, x, isExtendTransChart_restrFaceChart hm hfm _ isOpen_univ _,
       scalarRegularSublevelChartAt_of_eq _ hreg hn hx⟩
 
+/-- Every chart of the sublevel is the half-space restriction of a chart of `M` from its maximal
+atlas, read in `ℝⁿ⁺¹` by a smooth homeomorphism with smooth inverse. -/
+private theorem forall_mem_scalarRegularSublevelChartedSpace_atlas {m : ℕ∞ω} [IsManifold I m M]
+    (hm : 1 ≤ m) (hfm : ContMDiff I 𝓘(ℝ) m f) :
+    letI := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
+    ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) {x | f x ≤ a},
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ {x | f x ≤ a} ↔ 0 ≤ e' w 0) (y : {x | f x ≤ a}),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' y := by
+  rintro e he
+  rw [scalarRegularSublevelChartedSpace_atlas] at he
+  obtain ⟨x, rfl⟩ := he
+  exact exists_scalarRegularSublevelChartAt_eq_halfSpaceChart hreg hn hm hfm x
+
 /-- **A sublevel at a regular value is a manifold with boundary.** If `f` is `C^m`, `m ≥ 1`, and
 `a` is a regular value of `f`, then the sublevel `{x | f x ≤ a}` is a `C^m` manifold with boundary
 for its preferred atlas `TauCeti.scalarRegularSublevelChartedSpace`, modelled on the half-space
@@ -641,10 +661,30 @@ theorem isManifold_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M] (hm :
     letI := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
     IsManifold (𝓡∂ (n + 1)) m {x | f x ≤ a} := by
   let := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
-  refine isManifold_of_forall_mem_atlas_halfSpaceChart (I := I) fun e he ↦ ?_
-  rw [scalarRegularSublevelChartedSpace_atlas] at he
-  obtain ⟨x, rfl⟩ := he
-  exact exists_scalarRegularSublevelChartAt_eq_halfSpaceChart hreg hn hm hfm x
+  exact isManifold_of_forall_mem_atlas_halfSpaceChart
+    (forall_mem_scalarRegularSublevelChartedSpace_atlas hreg hn hm hfm)
+
+/-- **The inclusion of a regular sublevel is smooth.** If `f` is `C^m`, `m ≥ 1`, and `a` is a
+regular value of `f`, then the inclusion of the sublevel `{x | f x ≤ a}`, with its preferred
+atlas, into `M` is `C^m`. -/
+theorem contMDiff_coe_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
+    (hfm : ContMDiff I 𝓘(ℝ) m f) :
+    letI := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
+    ContMDiff (𝓡∂ (n + 1)) I m (Subtype.val : {x | f x ≤ a} → M) := by
+  let := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
+  exact contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart
+    (forall_mem_scalarRegularSublevelChartedSpace_atlas hreg hn hm hfm)
+
+/-- **The derivative of the inclusion of a regular sublevel is invertible.** If `f` is `C¹` and
+`a` is a regular value of `f`, then the derivative of the inclusion of the sublevel
+`{x | f x ≤ a}`, with its preferred atlas, into `M` is invertible at every point of the sublevel,
+including the points of the level `f⁻¹(a)`. -/
+theorem isInvertible_mfderiv_coe_scalarRegularSublevel [IsManifold I 1 M] (x : {x | f x ≤ a}) :
+    letI := scalarRegularSublevelChartedSpace hf hreg hn
+    (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → M) x).IsInvertible := by
+  let := scalarRegularSublevelChartedSpace hf hreg hn
+  exact isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart le_rfl
+    (forall_mem_scalarRegularSublevelChartedSpace_atlas hreg hn le_rfl hf) x
 
 /-- **The boundary of a sublevel at a regular value is the level.** If `f` is `C^m`, `m ≥ 1`, and
 `a` is a regular value of `f`, then the manifold boundary of the sublevel `{x | f x ≤ a}`, for its
@@ -1105,6 +1145,20 @@ private theorem exists_scalarRegularBandChartAt_eq_halfSpaceChart {m : ℕ∞ω}
       isExtendTransChart_interiorChart (isOpen_Ioo.preimage (hfm.of_le hm).continuous) hn _,
       scalarRegularBandChartAt_of_ne _ hn ha hb hxa hxb⟩
 
+/-- Every chart of the band is the half-space restriction of a chart of `M` from its maximal atlas,
+read in `ℝⁿ⁺¹` by a smooth homeomorphism with smooth inverse. -/
+private theorem forall_mem_scalarRegularBandChartedSpace_atlas {m : ℕ∞ω} [IsManifold I m M]
+    (hm : 1 ≤ m) (hfm : ContMDiff I 𝓘(ℝ) m f) (hab : a < b) :
+    letI := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
+    ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) (f ⁻¹' Icc a b),
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ f ⁻¹' Icc a b ↔ 0 ≤ e' w 0) (y : f ⁻¹' Icc a b),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' y := by
+  rintro e he
+  rw [scalarRegularBandChartedSpace_atlas] at he
+  obtain ⟨x, rfl⟩ := he
+  exact exists_scalarRegularBandChartAt_eq_halfSpaceChart hn ha hb hm hfm hab x
+
 /-- **A band between regular values is a manifold with boundary.** If `f` is `C^m`, `m ≥ 1`, and
 `a < b` are regular values of `f`, then the band `f⁻¹([a, b])` is a `C^m` manifold with boundary
 for its preferred atlas `TauCeti.scalarRegularBandChartedSpace`, modelled on the half-space
@@ -1114,10 +1168,31 @@ theorem isManifold_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 �
     letI := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
     IsManifold (𝓡∂ (n + 1)) m (f ⁻¹' Icc a b) := by
   let := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
-  refine isManifold_of_forall_mem_atlas_halfSpaceChart (I := I) fun e he ↦ ?_
-  rw [scalarRegularBandChartedSpace_atlas] at he
-  obtain ⟨x, rfl⟩ := he
-  exact exists_scalarRegularBandChartAt_eq_halfSpaceChart hn ha hb hm hfm hab x
+  exact isManifold_of_forall_mem_atlas_halfSpaceChart
+    (forall_mem_scalarRegularBandChartedSpace_atlas hn ha hb hm hfm hab)
+
+/-- **The inclusion of a band between regular values is smooth.** If `f` is `C^m`, `m ≥ 1`, and
+`a < b` are regular values of `f`, then the inclusion of the band `f⁻¹([a, b])`, with its preferred
+atlas, into `M` is `C^m`. -/
+theorem contMDiff_coe_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
+    (hfm : ContMDiff I 𝓘(ℝ) m f) (hab : a < b) :
+    letI := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
+    ContMDiff (𝓡∂ (n + 1)) I m (Subtype.val : f ⁻¹' Icc a b → M) := by
+  let := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
+  exact contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart
+    (forall_mem_scalarRegularBandChartedSpace_atlas hn ha hb hm hfm hab)
+
+/-- **The derivative of the inclusion of a band between regular values is invertible.** If `f` is
+`C¹` and `a < b` are regular values of `f`, then the derivative of the inclusion of the band
+`f⁻¹([a, b])`, with its preferred atlas, into `M` is invertible at every point of the band,
+including the points of the two levels. -/
+theorem isInvertible_mfderiv_coe_scalarRegularBand [IsManifold I 1 M] (hab : a < b)
+    (x : f ⁻¹' Icc a b) :
+    letI := scalarRegularBandChartedSpace hf hn ha hb hab
+    (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : f ⁻¹' Icc a b → M) x).IsInvertible := by
+  let := scalarRegularBandChartedSpace hf hn ha hb hab
+  exact isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart le_rfl
+    (forall_mem_scalarRegularBandChartedSpace_atlas hn ha hb le_rfl hf hab) x
 
 /-- **The boundary of a band between regular values is the union of its two levels.** If `f` is
 `C^m`, `m ≥ 1`, and `a < b` are regular values of `f`, then the manifold boundary of the band
