@@ -443,15 +443,32 @@ theorem continuousOn_ofReal_add_cpow_Ici {x : ℂ} (hx : x ∈ slitPlane) (s : �
   ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
     (ofReal_add_mem_slitPlane hx ht)).continuousWithinAt
 
-/-- For `x ∈ slitPlane ∪ {0}` and a complex exponent `s` with `0 < s.re`, the principal power
-`(t + x) ^ s` is continuous in the real variable `t ≥ 0`. -/
-theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℂ}
-    (hs : 0 < s.re) : ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun t ht => by
-  have hmem : 0 ≤ ((t : ℂ) + x).re ∨ ((t : ℂ) + x).im ≠ 0 :=
-    (mem_slitPlane_union_zero_iff.mp hx).imp
-      (fun h => by simp only [Complex.add_re, Complex.ofReal_re]; linarith [ht.out]) (by simp)
-  exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
-    (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
+/-- For any `x` and a complex exponent `s` with `0 < s.re`, the principal power `(t + x) ^ s` is
+continuous in the real variable `t ≥ 0`. -/
+theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} {s : ℂ} (hs : 0 < s.re) :
+    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun t _ => by
+  by_cases hmem : 0 ≤ ((t : ℂ) + x).re ∨ ((t : ℂ) + x).im ≠ 0
+  · exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
+      (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
+  -- Otherwise `t + x` is a negative real, and nearby `(u + x) ^ s` is `(-(u + x)) ^ s` times a
+  -- constant, whose base lies in the slit plane.
+  rw [not_or, not_le, not_not] at hmem
+  have him : x.im = 0 := by simpa using hmem.2
+  have hlt : t + x.re < 0 := by simpa using hmem.1
+  have heq : (fun u : ℝ => (((-(u + x.re) : ℝ) : ℂ) ^ s) * exp (Real.pi * I * s)) =ᶠ[𝓝 t]
+      fun u : ℝ => ((u : ℂ) + x) ^ s := by
+    filter_upwards [(isOpen_lt (f := fun u : ℝ => u + x.re) (by fun_prop)
+      continuous_const).mem_nhds hlt] with u hu
+    have hux : (u : ℂ) + x = ((u + x.re : ℝ) : ℂ) := Complex.ext (by simp) (by simp [him])
+    rw [hux, Complex.ofReal_cpow_of_nonpos (x := u + x.re) hu.le]
+    push_cast
+    rfl
+  have hg : ContinuousAt
+      (fun u : ℝ => (((-(u + x.re) : ℝ) : ℂ) ^ s) * exp (Real.pi * I * s)) t :=
+    (ContinuousAt.cpow
+      (by fun_prop : Continuous fun u : ℝ => (((-(u + x.re) : ℝ) : ℂ))).continuousAt
+      continuousAt_const (Complex.ofReal_mem_slitPlane.2 (by linarith))).mul continuousAt_const
+  exact (hg.congr heq).continuousWithinAt
 
 end TauCeti
 
@@ -488,15 +505,14 @@ theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
 
 /-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0` from the right, even when
 `x = 0` (as `re (1/2) > 0`). -/
-theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ}
-    (hx : x ∈ slitPlane ∪ {0}) (hy : y ≠ 0) :
+theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ} (hy : y ≠ 0) :
     ContinuousWithinAt
       (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) (Set.Ici 0) 0 := by
   have hc2 : ContinuousAt (fun t : ℝ => ((t : ℂ) + y)⁻¹) 0 :=
     (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + y).continuousAt.inv₀
       (by rwa [ofReal_zero, zero_add])
   exact (continuousWithinAt_const.mul
-    (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos hx (by norm_num) 0 Set.self_mem_Ici)).mul
+    (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos (by norm_num) 0 Set.self_mem_Ici)).mul
     hc2.continuousWithinAt
 
 /-- The derivative of `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` on `(0, ∞)`:
