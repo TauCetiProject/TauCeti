@@ -77,22 +77,6 @@ open scoped Pointwise
 variable {K : Type*} [Field K] [NumberField K] {m : ℕ} [NeZero m]
   [IsCyclotomicExtension {m} ℚ K] [HasEnoughRootsOfUnity (𝓞 K) m]
 
-/-- If `p` has valuation `exp (-1)` at `v` and the valuation at a prime `w` above `v` of the image
-of `x` is the `N`-th power of that of `p`, then `x` has valuation `exp (-N)` at `v`. -/
-private theorem intValuation_eq_exp_neg_of_intValuation_map_eq {L : Type*} [Field L]
-    [NumberField L] [Algebra K L] {v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)}
-    {w : IsDedekindDomain.HeightOneSpectrum (𝓞 L)} [w.asIdeal.LiesOver v.asIdeal] {x : 𝓞 K}
-    {p N : ℕ} (hvp : v.intValuation (p : 𝓞 K) = WithZero.exp (-1))
-    (hval : w.intValuation (algebraMap (𝓞 K) (𝓞 L) x) = w.intValuation (p : 𝓞 L) ^ N) :
-    v.intValuation x = WithZero.exp (-(N : ℤ)) := by
-  have he := (ramificationIdx_pos_of_isDedekindDomain' w.asIdeal v.ne_bot).ne'
-  have h1 := IsDedekindDomain.HeightOneSpectrum.intValuation_liesOver v w x
-  have h2 := IsDedekindDomain.HeightOneSpectrum.intValuation_liesOver v w (p : 𝓞 K)
-  rw [map_natCast (algebraMap (𝓞 K) (𝓞 L)), hvp] at h2
-  refine (pow_left_inj₀ zero_le zero_le he).1 ?_
-  rw [h1, hval, ← h2, ← pow_mul, mul_comm, pow_mul]
-  simp [← WithZero.exp_nsmul]
-
 /-- The valuation of `σ(Φ(P))` at `P`, computed through a prime `w` above `P` of a number field
 `L ⊇ K` whose ring of integers contains a primitive `p`-th root of unity `ζ` with
 `v_w(ζ - 1) = 1` and the `(N P - 1)`-th roots of unity. -/
@@ -157,7 +141,7 @@ private theorem intValuation_smul_stickelbergerPhi_of_liesOver (hm : 2 ≤ m) {p
     rw [v.intValuation_natCast_eq_exp_neg_ramificationIdx, ← hPdef,
       ramificationIdx_eq_of_not_dvd p K P hpm, Nat.cast_one]
   rw [← MulSemiringAction.toRingEquiv_apply_apply]
-  exact intValuation_eq_exp_neg_of_intValuation_map_eq hvp hval
+  exact IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_intValuation_map_eq hvp hval
 
 /-- **The valuation of the conjugates of `Φ(P)` at `P`.** Let `K` be the `m`-th cyclotomic field,
 `m ≥ 2`, and `v` a prime of `K` above a rational prime `p ∤ m`, of residue degree
