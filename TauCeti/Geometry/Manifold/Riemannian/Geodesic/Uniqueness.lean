@@ -58,7 +58,8 @@ theorem IsGeodesicCurveOn.curveVelocityLiftWithin_eqOn
   have hδlift := (isMIntegralCurveOn_curveVelocityLiftWithin_iff
     hδ.uniqueDiffOn hδ.contMDiffOn).2 hδ
   exact hγlift.eqOn_of_isPreconnected hδlift hs ha
-    (fun _ _ ↦ BoundarylessManifold.isInteriorPoint) contMDiff_one_geodesicSpray heq
+    (fun _ _ ↦ BoundarylessManifold.isInteriorPoint)
+    (fun _ _ ↦ contMDiff_one_geodesicSpray.contMDiffAt) heq
 
 /-- Geodesics with the same initial position and velocity agree on their preconnected
 parameter set. The initial parameter may be an endpoint. -/

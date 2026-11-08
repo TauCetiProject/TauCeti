@@ -13,11 +13,12 @@ import Mathlib.Topology.Connected.Clopen
 /-!
 # Uniqueness of integral curves on intervals with endpoints
 
-Integral curves of a C¹ vector field on a preconnected real parameter set agree everywhere
-if they agree once and the first curve stays in the manifold interior, including when the
-initial time is an endpoint. The local comparison
-uses one-sided derivatives and Grönwall's inequality in a fixed chart. It does not require
-an extension of either curve beyond its parameter set.
+Integral curves of a vector field on a preconnected real parameter set agree everywhere
+if they agree once and the first curve stays in the manifold interior, where the vector
+field is C¹, including when the initial time is an endpoint. The local comparison uses
+one-sided derivatives and Grönwall's inequality in a fixed chart. It does not require
+an extension of either curve beyond its parameter set, nor regularity of the vector field
+away from the first curve.
 
 This extends the open-interval uniqueness API to closed and half-open intervals. In
 particular it applies to velocity lifts of geodesic segments.
@@ -130,14 +131,14 @@ theorem eventuallyEq_of_isPreconnected
     (fun u hu ↦ (hlocal u hu).2.2.2) hlip
     ⟨min_le_left _ _, le_max_left _ _⟩ heq right_mem_uIcc
 
-/-- Integral curves of a C¹ vector field on a preconnected real parameter set are determined
+/-- Integral curves of a vector field on a preconnected real parameter set are determined
 by their value at any one parameter, including an endpoint, provided the first curve
-stays in the manifold interior. -/
+stays in the manifold interior and the vector field is C¹ at each of its points. -/
 theorem eqOn_of_isPreconnected [T2Space M]
     (hγ : IsMIntegralCurveOn γ v s) (hδ : IsMIntegralCurveOn δ v s)
     (hs : IsPreconnected s) (ht : t₀ ∈ s)
     (hinterior : ∀ t ∈ s, I.IsInteriorPoint (γ t))
-    (hv : CMDiff 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hv : ∀ t ∈ s, CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) (γ t))
     (heq : γ t₀ = δ t₀) : EqOn γ δ s := by
   let : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs
   have hcγ : Continuous (fun t : s ↦ γ t) := hγ.continuousOn.domRestrict
@@ -146,7 +147,7 @@ theorem eqOn_of_isPreconnected [T2Space M]
     rw [isOpen_iff_mem_nhds]
     intro t ht'
     have he := hγ.eventuallyEq_of_isPreconnected hδ hs t.property
-      (hinterior t t.property) hv.contMDiffAt ht'
+      (hinterior t t.property) (hv t t.property) ht'
     rw [nhds_subtype_eq_comap_nhdsWithin]
     exact Filter.preimage_mem_comap he
   have hall := IsClopen.eq_univ (s := {t : s | γ t = δ t})
