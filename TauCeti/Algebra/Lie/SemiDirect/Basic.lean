@@ -262,7 +262,7 @@ instance [IsSolvable K] [IsSolvable L] : IsSolvable (K ⋊⁅ψ⁆ L) := by
   have hker : IsSolvable (projr ψ).ker := by
     have h : IsSolvable (inl ψ).range := inferInstance
     rwa [IsExtension.exact (i := inl ψ) (p := projr ψ)] at h
-  exact isSolvable_of_isSolvable_ker_of_surjective (projr_surjective ψ) hker inferInstance
+  exact isSolvable_of_isSolvable_ker (f := projr ψ) hker inferInstance
 
 /-- The range of the inclusion of the right factor consists of the elements whose left component
 vanishes.  This is not a `simp` lemma: Mathlib's `LieHom.mem_range` is already `@[simp]` and
