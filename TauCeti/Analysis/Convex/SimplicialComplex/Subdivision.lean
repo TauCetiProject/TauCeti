@@ -271,7 +271,7 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
   have hPne : ∀ i, (P i).Nonempty := fun i => ⟨p i, intrinsicInterior_subset (hp i)⟩
   have hmeet {i j : ι} {x : E} (hxi : x ∈ intrinsicInterior ℝ (P i)) (hxj : x ∈ P j) :
       i = j ∨ Module.finrank ℝ (vectorSpan ℝ (P i)) < Module.finrank ℝ (vectorSpan ℝ (P j)) :=
-    TauCeti.eq_or_finrank_lt_of_mem_intrinsicInterior hPv hPne hri hfr hLi hxi hxj
+    TauCeti.eq_or_finrank_lt_of_mem_intrinsicInterior hPv hri hfr hLi hxi hxj
   have hLK : ∀ i, L.restrict (P i) ≤ K.restrict (P i) := fun i s hs =>
     mem_restrict_faces.2 ⟨(hKL ▸ restrict_le : L ≤ K) (mem_restrict_faces.1 hs).1,
       (mem_restrict_faces.1 hs).2⟩
@@ -301,7 +301,7 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
       have hi := i.2
       have hj := j.2
       rw [hKs]
-      rcases TauCeti.mem_intrinsicInterior_or_of_mem hPv hPne hri hfr hxi with
+      rcases TauCeti.mem_intrinsicInterior_or_of_mem hPv hri hfr hxi with
         h | h | ⟨k, hk, -, hxk⟩
       · rcases hmeet h hxj with h' | h' <;> [exact (hij h').elim; omega]
       · exact .inl h
