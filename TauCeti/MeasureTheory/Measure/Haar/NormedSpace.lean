@@ -30,7 +30,8 @@ controlled by the ratio of their radii raised to the dimension, the shell betwee
 has measure the difference of the powers of the radii, and the part of a ball outside a translate of
 itself is controlled by the distance between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
-homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing the
+homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`, and an
+invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
 to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
@@ -78,6 +79,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   unit ball.
 * `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
+* `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
+  an additive Haar measure to its multiple by `|det A|⁻¹`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of the ball written through that of the unit ball.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
@@ -377,6 +380,26 @@ theorem _root_.MeasureTheory.Measure.map_addHaar_homothety
   rw [hfun, ← Measure.map_map (measurable_const_add _) (measurable_const_smul _),
     map_addHaar_smul mu hr, Measure.map_smul _ (measurable_const_add _).aemeasurable,
     map_add_left_eq_self]
+
+/-- **Image of an additive Haar measure under an invertible affine map.** The image of `μ` under
+`x ↦ c + A x` is `μ` scaled by the reciprocal absolute determinant `|det A|⁻¹`. -/
+theorem _root_.MeasureTheory.Measure.map_affine_addHaar_eq_smul
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (A : E ≃L[ℝ] E) (c : E) :
+    μ.map (fun x => c + A x) =
+      ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ := by
+  have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
+  have hmapA : μ.map A = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ :=
+    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  calc
+    μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
+      (Measure.map_map (by fun_prop) (by fun_prop)).symm
+    _ = (ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ).map (fun y : E ↦ c + y) := by
+      rw [hmapA]
+    _ = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ := by
+      rw [Measure.map_smul _ ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable),
+        map_add_left_eq_self]
 
 /-- **The determinant is bounded by the operator norm**: `|det f| ≤ ‖f‖ ^ n` for a linear
 endomorphism `f` of a real normed space of finite dimension `n`. The image of the closed unit ball
