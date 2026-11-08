@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Nilpotent.Log
 /-!
 # The logarithm of an infinitesimal dual-number unit
 
-Over a commutative rational algebra, the finite logarithm of the dual-number unit
+Over a rational algebra, the finite logarithm of the dual-number unit
 `1 + ε` is `ε`. In particular, it is nonzero when the coefficient ring is nontrivial.
 -/
 
@@ -19,7 +19,7 @@ public section
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] [Algebra ℚ R]
+variable {R : Type*} [Ring R] [Algebra ℚ R]
 
 /-- The finite logarithm of the dual-number unit `1 + ε` is `ε`. -/
 theorem log_dualNumberUnit :

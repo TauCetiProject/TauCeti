@@ -17,7 +17,7 @@ The coordinatewise scalar action on dual numbers commutes with multiplication. T
 instances make bilinear multiplication and convolution available with that module structure.
 Dual numbers over an Artinian ring are also Artinian, using their product module structure, and
 they are a finite module over their coefficient ring.
-Multiplication by `ε` is exact over any semiring. Over a commutative ring, the element
+Multiplication by `ε` is exact over any semiring. Over any ring, the element
 `1 + ε` is a unit with inverse `1 - ε`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
 their value on `ε`. The dual numbers are free of rank two on the basis `1, ε`, so linear maps
@@ -40,7 +40,7 @@ end DualNumber
 namespace TauCeti
 
 /-- The unit `1 + ε` in the dual numbers, with inverse `1 - ε`. -/
-def dualNumberUnit (R : Type*) [CommRing R] : (DualNumber R)ˣ where
+def dualNumberUnit (R : Type*) [Ring R] : (DualNumber R)ˣ where
   val := 1 + DualNumber.eps
   inv := 1 - DualNumber.eps
   val_inv := by simp [mul_sub, add_mul, DualNumber.eps_mul_eps]
@@ -48,12 +48,12 @@ def dualNumberUnit (R : Type*) [CommRing R] : (DualNumber R)ˣ where
 
 /-- The underlying dual number of `dualNumberUnit` is `1 + ε`. -/
 @[simp]
-theorem coe_dualNumberUnit (R : Type*) [CommRing R] :
+theorem coe_dualNumberUnit (R : Type*) [Ring R] :
     (dualNumberUnit R : DualNumber R) = 1 + DualNumber.eps := (rfl)
 
 /-- The underlying dual number of the inverse of `dualNumberUnit` is `1 - ε`. -/
 @[simp]
-theorem coe_dualNumberUnit_inv (R : Type*) [CommRing R] :
+theorem coe_dualNumberUnit_inv (R : Type*) [Ring R] :
     (((dualNumberUnit R)⁻¹ : (DualNumber R)ˣ) : DualNumber R) = 1 - DualNumber.eps := (rfl)
 
 variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]

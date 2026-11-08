@@ -170,7 +170,7 @@ theorem contentIdeal_charpoly_paired_le_ker_laurentEval_dualNumberUnit
   simp [pow_two]
 
 /-- The infinitesimal point is excluded from the fixed reduced unipotent variety. -/
-theorem not_unipotentVarietyIdeal_le_ker_dualNumberUnit :
+theorem not_unipotentVarietyIdeal_le_ker_laurentEval_dualNumberUnit :
     ¬ HopfAlgebra.unipotentVarietyIdeal k k[T;T⁻¹] ≤
       RingHom.ker (laurentEval (dualNumberUnit k)) := by
   rw [unipotentVarietyIdeal_eq_span, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
