@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.MeasureTheory.Measure.MeasuredSets
-public import Mathlib.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.SetAlgebra
 
@@ -134,11 +133,8 @@ theorem exists_finset_prod_symmetric_measure_symmDiff_lt (μ : Measure X) [IsFin
       (μ.prod μ) (⋃₀ (I : Set (Set (X × X))) ∆ s) < ε := by
   obtain ⟨I, hIrect, _, _, hIapprox⟩ :=
     exists_finset_prod_measure_symmDiff_lt (μ.prod μ) hs (ENNReal.half_pos hε.ne')
-  have huMeas : MeasurableSet (⋃₀ (I : Set (Set (X × X)))) := by
-    refine MeasurableSet.sUnion I.finite_toSet.to_countable fun r hr => ?_
-    obtain ⟨a, ha, b, hb, rfl⟩ := hIrect r hr
-    exact ha.prod hb
-  have hswapError := Measure.measure_symmDiff_preimage_swap_of_preimage_swap_eq μ huMeas hs hsymm
+  have hswapError := Measure.measure_symmDiff_preimage_swap_of_preimage_swap_eq μ hsymm
+    (u := ⋃₀ (I : Set (Set (X × X))))
   obtain ⟨K, hKrect, hKdisj, hKbot, hKunion⟩ :=
     exists_finset_rect_of_mem_supClosure (union_preimage_swap_mem_supClosure hIrect)
   refine ⟨K, hKrect, hKdisj, hKbot, ?_, ?_⟩
