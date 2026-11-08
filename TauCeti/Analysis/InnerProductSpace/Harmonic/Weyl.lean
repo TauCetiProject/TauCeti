@@ -432,7 +432,7 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq [FiniteDimensional ℝ F]
     exact exists_harmonicOnNhd_ae_eq_real
       (hw.clm_comp (b.coord i).toContinuousLinearMap)
   choose h hh hae using hi
-  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum _ fun i _ =>
+  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum fun i _ =>
     (hh i).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i)), ?_⟩
   filter_upwards [ae_all_iff.2 hae] with x hx
   conv_lhs => rw [← b.sum_repr (w x)]
