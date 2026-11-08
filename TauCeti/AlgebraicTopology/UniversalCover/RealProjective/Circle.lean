@@ -151,6 +151,7 @@ def lineHomeomorphCircle : ℙ ℝ (Fin 2 → ℝ) ≃ₜ Circle :=
 
 /-- The homeomorphism of the projective line with the circle in homogeneous coordinates:
 `[x : y] ↦ (x + i y)² / (x² + y²)`. -/
+@[simp]
 theorem coe_lineHomeomorphCircle_mk (w : Fin 2 → ℝ) (hw : w ≠ 0) :
     (lineHomeomorphCircle (mk ℝ w hw) : ℂ) =
       (w 0 + w 1 * Complex.I) ^ 2 / (w 0 ^ 2 + w 1 ^ 2 : ℝ) := by

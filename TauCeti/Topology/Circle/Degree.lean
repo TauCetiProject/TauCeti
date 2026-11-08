@@ -46,6 +46,8 @@ which the Maslov index of a loop of totally real subspaces is defined.
   of the degrees, and reversing a loop negates its degree.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
 * `Circle.degree_map_pow`: the pointwise `n`-th power of a loop has `n` times its degree.
+* `Circle.degree_eq_two_of_forall`: for `a > 0` the loop
+  `t ↦ (a cos 2πt + i sin 2πt)² / (a² cos² 2πt + sin² 2πt)` has degree `2`.
 * `Circle.degree_inv`: the pointwise inverse of a loop has the opposite degree.
 * `Circle.degree_congr`: loops agreeing pointwise have the same degree.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
@@ -249,6 +251,66 @@ theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
       ih]
     push_cast
     ring
+
+/-- The numbers `a cos θ` and `sin θ` do not vanish together for `a ≠ 0`. -/
+private theorem mul_cos_sq_add_sin_sq_pos {a : ℝ} (ha : a ≠ 0) (θ : ℝ) :
+    0 < (a * cos θ) ^ 2 + sin θ ^ 2 := by
+  have h1 := cos_sq_add_sin_sq θ
+  rcases eq_or_ne (sin θ) 0 with hs | hs
+  · rw [hs] at h1 ⊢
+    rw [mul_pow, show cos θ ^ 2 = 1 by linarith]
+    positivity
+  · positivity
+
+/-- A loop in the circle with values `(a cos 2πt + i sin 2πt)² / (a² cos² 2πt + sin² 2πt)`,
+`a > 0`, has degree `2`: deforming `a` to `1` gives the loop `t ↦ exp(2πit)²`. -/
+theorem degree_eq_two_of_forall {x : Circle} (γ : Path x x) {a : ℝ} (ha : 0 < a)
+    (hγ : ∀ t : I, (γ t : ℂ) =
+      ((a * cos (2 * π * t) : ℝ) + (sin (2 * π * t) : ℝ) * Complex.I) ^ 2 /
+        ((a * cos (2 * π * t)) ^ 2 + sin (2 * π * t) ^ 2 : ℝ)) :
+    degree γ = 2 := by
+  -- Deform `a` linearly to `1`, through the positive numbers `b s = (1 - s) a + s`.
+  have hb (s : I) : 0 < (1 - (s : ℝ)) * a + s := by
+    rcases s.2.1.eq_or_lt with h | h
+    · simpa [← h] using ha
+    · nlinarith [mul_nonneg (sub_nonneg.2 s.2.2) ha.le]
+  let z : I × I → ℂ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * cos (2 * π * p.2) : ℝ) +
+    (sin (2 * π * p.2) : ℝ) * Complex.I
+  let N : I × I → ℝ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * cos (2 * π * p.2)) ^ 2 +
+    sin (2 * π * p.2) ^ 2
+  have hN (p : I × I) : 0 < N p := mul_cos_sq_add_sin_sq_pos (hb p.1).ne' _
+  have hzN (p : I × I) : ‖z p‖ ^ 2 = N p := by
+    simp only [z, N, Complex.sq_norm, Complex.normSq_add_mul_I]
+  have hzc : Continuous z := by fun_prop
+  have hNc : Continuous N := by fun_prop
+  let F : C(I × I, Circle) :=
+    { toFun p := ⟨z p ^ 2 / (N p : ℂ), mem_sphere_zero_iff_norm.2 (by
+        rw [norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg (hN p).le, hzN,
+          div_self (hN p).ne'])⟩
+      continuous_toFun := Continuous.subtype_mk ((hzc.pow 2).div
+        (Complex.continuous_ofReal.comp hNc) fun p ↦ Complex.ofReal_ne_zero.2 (hN p).ne') _ }
+  have hF (p : I × I) : (F p : ℂ) = z p ^ 2 / (N p : ℂ) := rfl
+  -- The loop `t ↦ exp(2πit)²`, of degree `2`.
+  let δ : Path (1 : Circle) 1 :=
+    { toFun t := exp (2 * π * t) ^ 2
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by simp }
+  have hδ : degree δ = 2 :=
+    degree_eq_of_sub_eq δ (θ := fun t ↦ 2 * π * t + 2 * π * t) (by fun_prop)
+      (fun t ↦ by simp [δ, exp_add, sq]) (by push_cast; ring)
+  refine (degree_eq_of_homotopy γ δ F (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans hδ
+  · refine coe_injective ?_
+    rw [hF, hγ t]
+    simp [z, N]
+  · refine coe_injective ?_
+    rw [hF]
+    simp only [z, N, δ, Path.coe_mk_mk, coe_pow, coe_exp, Set.Icc.coe_one, sub_self, zero_mul,
+      zero_add, one_mul, cos_sq_add_sin_sq, Complex.ofReal_one, div_one]
+    rw [Complex.ofReal_cos, Complex.ofReal_sin, ← Complex.exp_mul_I]
+  · refine coe_injective ?_
+    rw [hF, hF]
+    simp [z, N]
 
 /-- The pointwise inverse of a loop has the opposite degree. -/
 @[simp]

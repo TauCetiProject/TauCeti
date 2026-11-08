@@ -99,9 +99,10 @@ theorem projectivePlaneHeight_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     projectivePlaneHeight (mk ℝ v hv) = (v 1 ^ 2 + 2 * v 2 ^ 2) / (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) :=
   (rfl)
 
-/-- The nonzero homogeneous coordinates `(u₀ / √2, u₁, √(1 - u₀² / 2 - u₁²))` of the inverse of
-the top chart: they are nonzero everywhere, since the last one vanishes only when `(u₀, u₁) ≠ 0`. -/
-private theorem topChartInvVec_ne_zero (u : EuclideanSpace ℝ (Fin 2)) :
+/-- The homogeneous coordinates `(u₀ / √2, u₁, √(1 - u₀² / 2 - u₁²))` of the inverse of the top
+chart `TauCeti.projectivePlaneTopChart` are nonzero everywhere, since the last one vanishes only
+when `(u₀, u₁) ≠ 0`. -/
+theorem projectivePlaneTopChart_symm_coords_ne_zero (u : EuclideanSpace ℝ (Fin 2)) :
     ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))] ≠ 0 := by
   intro h
   have h0 : u 0 / √2 = 0 := congrFun h 0
@@ -164,7 +165,8 @@ open ellipse `u₀² / 2 + u₁² < 1`, and its inverse is
 def projectivePlaneTopChart :
     OpenPartialHomeomorph (ℙ ℝ (Fin 3 → ℝ)) (EuclideanSpace ℝ (Fin 2)) where
   toFun y := topChartPlane (affineChart 2 y)
-  invFun u := mk ℝ ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))] (topChartInvVec_ne_zero u)
+  invFun u := mk ℝ ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))]
+    (projectivePlaneTopChart_symm_coords_ne_zero u)
   source := affineOpen 2
   target := {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1}
   map_source' y _ := by
@@ -191,18 +193,21 @@ def projectivePlaneTopChart :
     have hsq : √(1 + a 0 ^ 2 + a 1 ^ 2) ≠ 0 := Real.sqrt_ne_zero'.2 hs
     ext i
     fin_cases i
-    · simp [topChartPlane_apply_zero, ha0]
+    · simp only [Fin.zero_eta, ha0, Pi.smul_apply, smul_eq_mul, topChartPlane_apply_zero,
+        Matrix.cons_val_zero]
       field_simp
-    · simp [topChartPlane_apply_one, ha1]
+    · simp only [Fin.mk_one, ha1, Pi.smul_apply, smul_eq_mul, topChartPlane_apply_one,
+        Matrix.cons_val_one, Matrix.cons_val_zero]
       field_simp
-    · simp [hr]
+    · simp only [Fin.reduceFinMk, Pi.smul_apply, smul_eq_mul, hr, Matrix.cons_val]
       field_simp
   right_inv' u hu := by
     have hρ : u 0 ^ 2 / 2 + u 1 ^ 2 < 1 := hu
     set r := √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))
     have hr : 0 < r := Real.sqrt_pos.2 (by linarith)
     have hr2 : r ^ 2 = 1 - (u 0 ^ 2 / 2 + u 1 ^ 2) := Real.sq_sqrt (by linarith)
-    set a := affineChart 2 (mk ℝ ![u 0 / √2, u 1, r] (topChartInvVec_ne_zero u))
+    set a := affineChart 2
+      (mk ℝ ![u 0 / √2, u 1, r] (projectivePlaneTopChart_symm_coords_ne_zero u))
     have ha0 : a 0 = u 0 / √2 / r := affineChart_two_mk_zero _ _
     have ha1 : a 1 = u 1 / r := affineChart_two_mk_one _ _
     have hs : √(1 + a 0 ^ 2 + a 1 ^ 2) = 1 / r := by
@@ -240,15 +245,15 @@ theorem projectivePlaneTopChart_apply_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
 
 /-- The inverse of the top chart in homogeneous coordinates:
 `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
-theorem projectivePlaneTopChart_symm_apply (u : EuclideanSpace ℝ (Fin 2))
-    (hu : ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))] ≠ 0) :
-    projectivePlaneTopChart.symm u = mk ℝ ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))] hu :=
+theorem projectivePlaneTopChart_symm_apply (u : EuclideanSpace ℝ (Fin 2)) :
+    projectivePlaneTopChart.symm u = mk ℝ ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))]
+      (projectivePlaneTopChart_symm_coords_ne_zero u) :=
   (rfl)
 
 /-- The chart sends the maximum `[0 : 0 : 1]` to the origin. -/
 theorem projectivePlaneTopChart_symm_zero :
     projectivePlaneTopChart.symm 0 = mk ℝ ![0, 0, 1] (by simp) := by
-  rw [projectivePlaneTopChart_symm_apply _ (topChartInvVec_ne_zero 0)]
+  rw [projectivePlaneTopChart_symm_apply]
   simp
 
 /-- **The normal form at the maximum.** In the top chart the height is
@@ -314,6 +319,14 @@ theorem projectivePlaneTopChartReflect_source :
     projectivePlaneTopChartReflect.source = affineOpen 2 := by
   simp [projectivePlaneTopChartReflect]
 
+/-- The reflected chart has the same target as the top chart, the ellipse `u₀² / 2 + u₁² < 1`. -/
+@[simp]
+theorem projectivePlaneTopChartReflect_target :
+    projectivePlaneTopChartReflect.target = {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1} := by
+  ext u
+  simp [projectivePlaneTopChartReflect, reflectFirst_symm_apply, reflectFirst_apply_zero,
+    reflectFirst_apply_one]
+
 /-- The first coordinate of the reflected chart is the negative of that of the top chart. -/
 @[simp]
 theorem projectivePlaneTopChartReflect_apply_zero (y : ℙ ℝ (Fin 3 → ℝ)) :
@@ -348,11 +361,9 @@ theorem projectivePlaneHeight_eq_of_mem_projectivePlaneTopChartReflect_source {y
 
 /-- The target of the reflected chart contains the closed ball of radius `√ε` for `ε < 1`. -/
 theorem closedBall_subset_projectivePlaneTopChartReflect_target {ε : ℝ} (hε : ε < 1) :
-    closedBall 0 √ε ⊆ projectivePlaneTopChartReflect.target := fun u hu ↦ by
-  refine ⟨mem_univ _, ?_⟩
-  have : ‖reflectFirst.symm u‖ = ‖u‖ := reflectFirst.symm.norm_map u
+    closedBall 0 √ε ⊆ projectivePlaneTopChartReflect.target := by
+  rw [projectivePlaneTopChartReflect_target]
   exact closedBall_subset_projectivePlaneTopChart_target hε
-    (mem_closedBall_zero_iff.2 (this.trans_le (mem_closedBall_zero_iff.1 hu)))
 
 /-! ### The attaching maps of the cell of the maximum -/
 
@@ -468,11 +479,15 @@ private theorem dropLast_addLast (w : Fin 2 → ℝ) : dropLast (addLast w) = w 
   ext i
   fin_cases i <;> rfl
 
+/-- A nonzero vector has a positive sum of squares. -/
+private theorem sum_sq_pos_of_ne_zero {n : ℕ} {v : Fin n → ℝ} (hv : v ≠ 0) :
+    0 < ∑ i, v i ^ 2 := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+  exact Finset.sum_pos' (fun j _ ↦ sq_nonneg (v j)) ⟨i, Finset.mem_univ i, sq_pos_of_ne_zero hi⟩
+
 private theorem sum_sq_pos {v : Fin 3 → ℝ} (hv : v ≠ 0) :
     0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
-  by_contra h
-  refine hv (funext fun i ↦ ?_)
-  fin_cases i <;> simp <;> nlinarith [sq_nonneg (v 0), sq_nonneg (v 1), sq_nonneg (v 2)]
+  simpa [Fin.sum_univ_three] using sum_sq_pos_of_ne_zero hv
 
 /-- A point lies below the maximum value `2` exactly when it is off the maximum `[0 : 0 : 1]`,
 that is, when its first two homogeneous coordinates do not both vanish. -/
@@ -598,9 +613,7 @@ private theorem projectivePlaneHeight_map_addLast_le_one (x : ℙ ℝ (Fin 2 →
     projectivePlaneHeight (map addLast addLast_injective x) ≤ 1 := by
   induction x using ind with | h w hw =>
   have hs : 0 < w 0 ^ 2 + w 1 ^ 2 := by
-    by_contra h
-    exact hw (funext fun i ↦ by
-      fin_cases i <;> simp <;> nlinarith [sq_nonneg (w 0), sq_nonneg (w 1)])
+    simpa [Fin.sum_univ_two] using sum_sq_pos_of_ne_zero hw
   rw [map_mk, projectivePlaneHeight_mk]
   simp only [addLast_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons]
@@ -673,21 +686,33 @@ private theorem projectivePlaneSublevelHomotopyEquiv_apply (hc₁ : 1 ≤ c) (hc
     projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = linearProjection dropLast y.1 :=
   (rfl)
 
+/-- A point `[x : y : z]` below the maximum value `2` has `(x, y) ≠ 0`. -/
+theorem coords_ne_zero_of_projectivePlaneHeight_lt_two {y : ℙ ℝ (Fin 3 → ℝ)}
+    (hy : projectivePlaneHeight y < 2) {v : Fin 3 → ℝ} {hv : v ≠ 0} (hyv : y = mk ℝ v hv) :
+    ![v 0, v 1] ≠ 0 := by
+  subst hyv
+  rw [← dropLast_apply]
+  exact (projectivePlaneHeight_mk_lt_two_iff v hv).1 hy
+
 /-- The projection of the sublevel onto the line in homogeneous coordinates:
 `[x : y : z] ↦ [x : y]`. -/
 theorem projectivePlaneSublevelHomotopyEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc₂ : c < 2)
     {y : {y | projectivePlaneHeight y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
-    (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) (hd : ![v 0, v 1] ≠ 0) :
-    projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = mk ℝ ![v 0, v 1] hd := by
-  rw [projectivePlaneSublevelHomotopyEquiv_apply, hy,
-    linearProjection_mk _ _ (by rwa [dropLast_apply])]
+    (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) :
+    projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = mk ℝ ![v 0, v 1]
+      (coords_ne_zero_of_projectivePlaneHeight_lt_two (lt_of_le_of_lt y.2 hc₂) hy) := by
+  have hd := coords_ne_zero_of_projectivePlaneHeight_lt_two (lt_of_le_of_lt y.2 hc₂) hy
+  rw [projectivePlaneSublevelHomotopyEquiv_apply]
+  refine (congrArg (linearProjection dropLast) hy).trans ?_
+  rw [linearProjection_mk _ _ (by rwa [dropLast_apply])]
   exact mk_eq_mk_of_eq (dropLast_apply v)
 
 /-- The homotopy inverse of the projection is the inclusion `[x : y] ↦ [x : y : 0]`. -/
 theorem coe_projectivePlaneSublevelHomotopyEquiv_symm_apply_mk (hc₁ : 1 ≤ c) (hc₂ : c < 2)
-    (w : Fin 2 → ℝ) (hw : w ≠ 0) (hw' : ![w 0, w 1, 0] ≠ 0) :
+    (w : Fin 2 → ℝ) (hw : w ≠ 0) :
     ((projectivePlaneSublevelHomotopyEquiv hc₁ hc₂).symm (mk ℝ w hw) : ℙ ℝ (Fin 3 → ℝ)) =
-      mk ℝ ![w 0, w 1, 0] hw' :=
+      mk ℝ ![w 0, w 1, 0]
+        (fun h ↦ hw (funext (Fin.forall_fin_two.2 ⟨congrFun h 0, congrFun h 1⟩))) :=
   (map_mk addLast addLast_injective w hw).trans
     (mk_eq_mk_of_eq (addLast_apply w))
 
@@ -723,14 +748,9 @@ theorem coe_projectivePlaneSublevelCircleEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc
     (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) :
     (projectivePlaneSublevelCircleEquiv hc₁ hc₂ y : ℂ) =
       (v 0 + v 1 * Complex.I) ^ 2 / (v 0 ^ 2 + v 1 ^ 2 : ℝ) := by
-  have hd : ![v 0, v 1] ≠ 0 := by
-    have h := y.2
-    rw [mem_ofPred_eq, hy] at h
-    simpa [dropLast_apply] using (projectivePlaneHeight_mk_lt_two_iff v hv).1 (h.trans_lt hc₂)
-  have h := coe_lineHomeomorphCircle_mk ![v 0, v 1] hd
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at h
-  rw [← h, projectivePlaneSublevelCircleEquiv_apply,
-    projectivePlaneSublevelHomotopyEquiv_apply_of_eq hc₁ hc₂ hy hd]
+  rw [projectivePlaneSublevelCircleEquiv_apply,
+    projectivePlaneSublevelHomotopyEquiv_apply_of_eq hc₁ hc₂ hy, coe_lineHomeomorphCircle_mk]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The point `[1 : 0 : 0]`, the minimum of the height, as a point of a sublevel. -/
 def projectivePlaneSublevelBase (hc : 0 ≤ c) : {y | projectivePlaneHeight y ≤ c} :=
@@ -742,23 +762,29 @@ theorem coe_projectivePlaneSublevelBase (hc : 0 ≤ c) :
     (projectivePlaneSublevelBase hc : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ ![1, 0, 0] (by simp) :=
   (rfl)
 
-private theorem core_ne_zero (θ : ℝ) : ![Real.cos θ, Real.sin θ, 0] ≠ 0 := fun h ↦ by
+/-- The homogeneous coordinates `(cos θ, sin θ, 0)` of the core circle
+`TauCeti.projectivePlaneCoreLoop` are nonzero. -/
+theorem projectivePlaneCoreLoop_coords_ne_zero (θ : ℝ) :
+    ![Real.cos θ, Real.sin θ, 0] ≠ 0 := fun h ↦ by
   have h0 : Real.cos θ = 0 := congrFun h 0
   have h1 : Real.sin θ = 0 := congrFun h 1
   simpa [h0, h1] using Real.cos_sq_add_sin_sq θ
 
 private theorem projectivePlaneHeight_core (θ : ℝ) :
-    projectivePlaneHeight (mk ℝ ![Real.cos θ, Real.sin θ, 0] (core_ne_zero θ)) =
-      Real.sin θ ^ 2 := by
+    projectivePlaneHeight
+      (mk ℝ ![Real.cos θ, Real.sin θ, 0] (projectivePlaneCoreLoop_coords_ne_zero θ)) =
+        Real.sin θ ^ 2 := by
   simp [Real.cos_sq_add_sin_sq]
 
 private theorem projectivePlaneHeight_core_le (hc : 1 ≤ c) (θ : ℝ) :
-    projectivePlaneHeight (mk ℝ ![Real.cos θ, Real.sin θ, 0] (core_ne_zero θ)) ≤ c := by
+    projectivePlaneHeight
+      (mk ℝ ![Real.cos θ, Real.sin θ, 0] (projectivePlaneCoreLoop_coords_ne_zero θ)) ≤ c := by
   rw [projectivePlaneHeight_core]
   exact (Real.sin_sq_le_one _).trans hc
 
 private theorem mk_core_pi :
-    mk ℝ ![Real.cos π, Real.sin π, 0] (core_ne_zero π) = mk ℝ ![1, 0, 0] (by simp) := by
+    mk ℝ ![Real.cos π, Real.sin π, 0] (projectivePlaneCoreLoop_coords_ne_zero π) =
+      mk ℝ ![1, 0, 0] (by simp) := by
   refine (mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨-1, ?_⟩
   ext i
   fin_cases i <;> simp
@@ -768,7 +794,8 @@ once from `[1 : 0 : 0]` back to `[-1 : 0 : 0] = [1 : 0 : 0]`. -/
 def projectivePlaneCoreLoop (hc : 1 ≤ c) :
     Path (projectivePlaneSublevelBase (zero_le_one.trans hc))
       (projectivePlaneSublevelBase (zero_le_one.trans hc)) where
-  toFun t := ⟨mk ℝ ![Real.cos (π * t), Real.sin (π * t), 0] (core_ne_zero _),
+  toFun t := ⟨mk ℝ ![Real.cos (π * t), Real.sin (π * t), 0]
+      (projectivePlaneCoreLoop_coords_ne_zero _),
     projectivePlaneHeight_core_le hc _⟩
   continuous_toFun := (continuous_mk (by fun_prop) _).subtype_mk _
   source' := Subtype.ext (by simp)
@@ -778,12 +805,7 @@ def projectivePlaneCoreLoop (hc : 1 ≤ c) :
 @[simp]
 theorem coe_projectivePlaneCoreLoop_apply (hc : 1 ≤ c) (t : I) :
     (projectivePlaneCoreLoop hc t : ℙ ℝ (Fin 3 → ℝ)) =
-      mk ℝ ![Real.cos (π * t), Real.sin (π * t), 0] (by
-        intro h
-        have h₂ := congrArg (fun v : Fin 3 → ℝ ↦ v 0 ^ 2 + v 1 ^ 2) h
-        simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Pi.zero_apply,
-          Real.cos_sq_add_sin_sq] at h₂
-        norm_num at h₂) :=
+      mk ℝ ![Real.cos (π * t), Real.sin (π * t), 0] (projectivePlaneCoreLoop_coords_ne_zero _) :=
   (rfl)
 
 /-- The core circle has degree `1` in the circle `TauCeti.projectivePlaneSublevelCircleEquiv`. -/
@@ -801,59 +823,6 @@ theorem degree_projectivePlaneCoreLoop_map (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
   congr 1
   push_cast
   ring
-
-private theorem sq_add_sq_pos {a : ℝ} (ha : a ≠ 0) (θ : ℝ) :
-    0 < (a * Real.cos θ) ^ 2 + Real.sin θ ^ 2 := by
-  have h1 := Real.cos_sq_add_sin_sq θ
-  rcases eq_or_ne (Real.sin θ) 0 with hs | hs
-  · rw [hs] at h1 ⊢
-    rw [mul_pow, show Real.cos θ ^ 2 = 1 by linarith]
-    positivity
-  · positivity
-
-/-- A loop in the circle with values `(a cos 2πt + i sin 2πt)² / (a² cos² 2πt + sin² 2πt)`,
-`a > 0`, has degree `2`: deforming `a` to `1` gives the loop `t ↦ exp(4πit)`. -/
-private theorem degree_eq_two_of_forall {x : Circle} (γ : Path x x) {a : ℝ} (ha : 0 < a)
-    (hγ : ∀ t : I, (γ t : ℂ) =
-      ((a * Real.cos (2 * π * t) : ℝ) + (Real.sin (2 * π * t) : ℝ) * Complex.I) ^ 2 /
-        ((a * Real.cos (2 * π * t)) ^ 2 + Real.sin (2 * π * t) ^ 2 : ℝ)) :
-    Circle.degree γ = 2 := by
-  -- Deform `a` linearly to `1`, through the positive numbers `b s = (1 - s) a + s`.
-  have hb (s : I) : 0 < (1 - (s : ℝ)) * a + s := by
-    rcases s.2.1.eq_or_lt with h | h
-    · simpa [← h] using ha
-    · nlinarith [mul_nonneg (sub_nonneg.2 s.2.2) ha.le]
-  let z : I × I → ℂ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * Real.cos (2 * π * p.2) : ℝ) +
-    (Real.sin (2 * π * p.2) : ℝ) * Complex.I
-  let N : I × I → ℝ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * Real.cos (2 * π * p.2)) ^ 2 +
-    Real.sin (2 * π * p.2) ^ 2
-  have hN (p : I × I) : 0 < N p := sq_add_sq_pos (hb p.1).ne' _
-  have hzN (p : I × I) : ‖z p‖ ^ 2 = N p := by
-    simp only [z, N, Complex.sq_norm, Complex.normSq_add_mul_I]
-  have hzc : Continuous z := by fun_prop
-  have hNc : Continuous N := by fun_prop
-  let F : C(I × I, Circle) :=
-    { toFun p := ⟨z p ^ 2 / (N p : ℂ), mem_sphere_zero_iff_norm.2 (by
-        rw [norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg (hN p).le, hzN,
-          div_self (hN p).ne'])⟩
-      continuous_toFun := Continuous.subtype_mk ((hzc.pow 2).div
-        (Complex.continuous_ofReal.comp hNc) fun p ↦ Complex.ofReal_ne_zero.2 (hN p).ne') _ }
-  have hF (p : I × I) : (F p : ℂ) = z p ^ 2 / (N p : ℂ) := rfl
-  let δ := Circle.expLoop.map (continuous_pow 2)
-  have hδ : Circle.degree δ = 2 := by simp [δ, Circle.degree_map_pow]
-  refine (Circle.degree_eq_of_homotopy γ δ F (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans hδ
-  · refine Circle.coe_injective ?_
-    rw [hF, hγ t]
-    simp [z, N]
-  · refine Circle.coe_injective ?_
-    rw [hF]
-    simp only [z, N, δ, Path.map_coe, Function.comp_apply, Circle.expLoop_apply, Circle.coe_pow,
-      Circle.coe_exp, Icc.coe_one, sub_self, zero_mul, zero_add, one_mul, Real.cos_sq_add_sin_sq,
-      Complex.ofReal_one, div_one]
-    rw [Complex.ofReal_cos, Complex.ofReal_sin, ← Complex.exp_mul_I]
-  · refine Circle.coe_injective ?_
-    rw [hF, hF]
-    simp [z, N]
 
 end Circle
 
@@ -889,7 +858,7 @@ private theorem coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingM
   set u := √ε • (w.down : EuclideanSpace ℝ (Fin 2))
   rw [coe_projectivePlaneSublevelCircleEquiv_apply_of_eq _ _
     ((coe_projectivePlaneAttachingMap_apply hε.le hε1 w).trans
-      (projectivePlaneTopChart_symm_apply u (topChartInvVec_ne_zero u)))]
+      (projectivePlaneTopChart_symm_apply u))]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, u, PiLp.smul_apply, smul_eq_mul]
   rw [show √ε * (w.down : EuclideanSpace ℝ (Fin 2)) 0 / √2 =
     √ε * ((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0) by ring,
@@ -903,7 +872,7 @@ theorem degree_projectivePlaneAttachingMap (hε : 0 < ε) (hε1 : ε < 1) :
       (projectivePlaneAttachingMap hε.le hε1).hom.continuous).map
       (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)).continuous) =
       2 := by
-  refine degree_eq_two_of_forall _ (a := (√2)⁻¹) (by positivity) fun t ↦ ?_
+  refine Circle.degree_eq_two_of_forall _ (a := (√2)⁻¹) (by positivity) fun t ↦ ?_
   rw [Path.map_coe, Path.map_coe, Function.comp_apply, Function.comp_apply,
     coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
     diskBoundaryTwoLoop_apply_zero, diskBoundaryTwoLoop_apply_one]

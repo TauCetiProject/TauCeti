@@ -237,6 +237,7 @@ def diskBoundaryTwoReflect : TopCat.diskBoundary.{0} 2 ≅ TopCat.diskBoundary.{
       continuous_invFun := continuous_diskBoundaryTwoReflectFun }
 
 /-- The reflection of `∂D²` is its own inverse. -/
+@[simp]
 theorem diskBoundaryTwoReflect_inv : diskBoundaryTwoReflect.inv = diskBoundaryTwoReflect.hom := by
   rfl
 
