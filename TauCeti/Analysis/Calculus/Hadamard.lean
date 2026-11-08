@@ -153,6 +153,14 @@ noncomputable def taylorRemainderFactor (n : ℕ) (f : E → F) (x y : E) :
     ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) ↦ E) F :=
   segmentAverage (fun t ↦ (n ! : ℝ)⁻¹ * (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x (y - x)
 
+/-- The order-`n` Taylor remainder factor is the weighted segment average of the `(n + 1)`-st
+iterated derivative with weight `(n!)⁻¹ (1 - t) ^ n`. -/
+theorem taylorRemainderFactor_def (n : ℕ) (f : E → F) (x y : E) :
+    taylorRemainderFactor n f x y =
+      segmentAverage (fun t ↦ (n ! : ℝ)⁻¹ * (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x
+        (y - x) :=
+  (rfl)
+
 /-- At the basepoint, the order-`n` Taylor remainder factor is `((n + 1)!)⁻¹` times the
 `(n + 1)`-st iterated derivative. -/
 @[simp]

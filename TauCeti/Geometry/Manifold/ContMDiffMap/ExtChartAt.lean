@@ -137,12 +137,17 @@ theorem exists_contMDiffMap_comp_extChartAt_symm_eventuallyEq
 /-- At an interior point `x`, the chart expression `f ∘ (extChartAt I x).symm` of a smooth
 function is smooth at `extChartAt I x x`. -/
 theorem contDiffAt_comp_extChartAt_symm
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
     {x : M} (hx : I.IsInteriorPoint x) (f : C^∞⟮I, M; ℝ⟯) :
     ContDiffAt ℝ ∞ (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_extChartAt_symm_eventuallyEq hx f
-  exact g.contMDiff.contDiff.contDiffAt.congr_of_eventuallyEq hg
+  -- At an interior point the chart target is a neighbourhood, so the chart inverse is smooth there.
+  have htarget : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) :=
+    mem_interior_iff_mem_nhds.mp (I.isInteriorPoint_iff.mp hx)
+  have hsymm := (contMDiffWithinAt_extChartAt_symm_target (n := ∞) x
+    (mem_extChartAt_target x)).contMDiffAt htarget
+  rw [← contMDiffAt_iff_contDiffAt]
+  exact f.contMDiff.contMDiffAt.comp _ hsymm
 
 end TauCeti
