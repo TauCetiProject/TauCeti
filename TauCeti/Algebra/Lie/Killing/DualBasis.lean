@@ -87,6 +87,7 @@ theorem sum_apply_lie_killingDualBasis_add_eq_zero {W : Type w} [AddCommGroup W]
 
 /-- **The bracket of `∑ᵢ xᵢ ⊗ yᵢ` vanishes**: `∑ᵢ ⁅xᵢ, yᵢ⁆ = 0` for a basis `x` and its Killing
 dual `y`. -/
+@[simp]
 theorem sum_lie_killingDualBasis_eq_zero {ι : Type*} [DecidableEq ι] [Fintype ι]
     (b : Module.Basis ι K L) :
     ∑ i, ⁅b i, killingDualBasis b i⁆ = 0 := by
