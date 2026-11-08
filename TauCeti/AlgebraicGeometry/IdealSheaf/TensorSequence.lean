@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
+public import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
 # Tensoring the exact sequence of a closed subscheme
@@ -22,7 +23,7 @@ sequence is used to prescribe restrictions of global sections, and in particular
 nonreduced effective divisors. No finiteness or regularity of the closed subscheme is needed.
 
 The exactness follows from dualizability: tensoring with a finite locally free sheaf is both
-a left and a right adjoint (`AlgebraicGeometry.Scheme.Modules.shortExact_map_tensorLeft`).
+a left and a right adjoint.
 
 ## References
 
@@ -43,8 +44,14 @@ variable {X : Scheme.{u}} (I : X.IdealSheafData)
 preserves short exactness. -/
 theorem shortExact_tensor_toPushforwardSubscheme (E : X.Modules)
     [E.IsLocallyFree] [E.IsFiniteType] :
-    ((ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft E)).ShortExact :=
-  Scheme.Modules.shortExact_map_tensorLeft E I.shortExact_toPushforwardSubscheme
+    ((ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft E)).ShortExact := by
+  let : ExactPairing ((ihom E).obj (𝟙_ X.Modules)) E :=
+    TauCeti.exactPairingOfIsIsoDualTensorIhom (Y := E)
+  let : ExactPairing E ((ihom E).obj (𝟙_ X.Modules)) :=
+    BraidedCategory.exactPairing_swap _ _
+  have : Limits.PreservesLimits (tensorLeft E) :=
+    (tensorLeftAdjunction E ((ihom E).obj (𝟙_ X.Modules))).rightAdjoint_preservesLimits
+  exact I.shortExact_toPushforwardSubscheme.map_of_exact (tensorLeft E)
 
 /-- Sections of a finite locally free sheaf restrict surjectively to a closed subscheme
 if first cohomology of its tensor product with the ideal sheaf vanishes. -/
