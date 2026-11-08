@@ -37,7 +37,7 @@ theorem essSurj_pullback_of_essSurj_baseChange (R S : Type u) [CommRing R] [Comm
   constructor
   intro X
   -- Synthesis does not find the exported instance for `spec (.of S)`; apply it explicitly.
-  have := instEssSurjOppositeFiniteEtaleCarrierSpecSpec (.of S)
+  have := essSurj_spec (.of S)
   obtain ⟨A, ⟨eA⟩⟩ := Functor.EssSurj.mem_essImage (spec (.of S)) X
   obtain ⟨B, ⟨eB⟩⟩ := Functor.EssSurj.mem_essImage
     (CommAlgCat.FiniteEtale.baseChange R S) A.unop
