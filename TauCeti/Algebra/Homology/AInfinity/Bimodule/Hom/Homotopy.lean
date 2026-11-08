@@ -47,12 +47,6 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 
 attribute [local instance] Comodule.cofree
 
-/-- The ground ring supplies additive inverses on the bar bicomodule, whose tensor
-construction initially exposes only an additive monoid. -/
-local instance {X : Type*} [AddCommMonoid X] [Module R X] :
-    AddCommGroup ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B) :=
-  Module.addCommMonoidToAddCommGroup R
-
 open AInfinityBimodule
 
 /-- A homotopy of bimodule morphisms is a degree-minus-one bar bicomodule map whose
