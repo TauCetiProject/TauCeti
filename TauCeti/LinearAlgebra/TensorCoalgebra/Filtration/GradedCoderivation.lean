@@ -105,7 +105,7 @@ theorem isHomogeneous_lengthProj (G : InternalGrading R M) (n : {n : ℕ // 0 < 
   intro D z hz
   rw [add_zero]
   refine gradedPiece_induction (motive := fun w ↦ lengthProj R M n w ∈ gradedPiece G D) hz
-    (fun k hk 𝒟 x hx hD ↦ ?_) (by rw [map_zero]; exact zero_mem _)
+    (fun k hk 𝒟 x hx hD ↦ ?_)
     (fun u v _ _ hu hv ↦ by rw [map_add]; exact add_mem hu hv)
     (fun c u _ hu ↦ by rw [map_smul]; exact Submodule.smul_mem _ c hu)
   by_cases h : (⟨k, hk⟩ : {n : ℕ // 0 < n}) = n

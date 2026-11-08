@@ -740,7 +740,7 @@ theorem isHomogeneous_zigzagBacktrackTaylor :
   intro D z hz
   refine gradedPiece_induction
     (motive := fun w ↦ zigzagBacktrackTaylor hns P a w ∈
-      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_ ?_
+      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_
   · intro m hm 𝒟 y hy hD
     by_cases h₃ : m = 3
     · subst h₃
@@ -762,8 +762,6 @@ theorem isHomogeneous_zigzagBacktrackTaylor :
       ring
     · rw [zigzagBacktrackTaylor_of_tprod_of_ne hns a hm h₃]
       exact zero_mem _
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv

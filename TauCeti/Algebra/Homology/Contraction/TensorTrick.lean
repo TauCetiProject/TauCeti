@@ -311,7 +311,7 @@ theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   refine gradedPiece_induction
-    (motive := fun w ↦ c.reducedTensorWordsHomotopy G w ∈ gradedPiece G (D + -1)) hz ?_ ?_ ?_ ?_
+    (motive := fun w ↦ c.reducedTensorWordsHomotopy G w ∈ gradedPiece G (D + -1)) hz ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     rw [c.reducedTensorWordsHomotopy_of_tprod G ⟨n, hn⟩ x]
     refine Submodule.sum_mem _ fun j hj ↦ ?_
@@ -327,8 +327,6 @@ theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
     · simpa [sub_eq_add_neg] using hh.map_mem (hx i)
     · simpa using G.koszulTwist_mem_piece (hx i) 1
     · simpa using hincl.map_mem (hproj.map_mem (hx i))
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv
