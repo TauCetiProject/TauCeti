@@ -12,8 +12,9 @@ import Mathlib.Tactic.Positivity
 /-!
 # Top regularity after moving vertices between matched cells
 
-Rebalancing a vertex partition keeps the pair coloring but changes the cells. Match the old
-cells injectively to the new cells, and suppose only vertices in `B` leave their matched cell.
+Rebalancing a vertex partition changes the cells while preserving pair colors up to injective
+relabeling. Match the old cells injectively to the new cells, and suppose only vertices in `B`
+leave their matched cell.
 A triple whose polyad is not preserved must meet `B`, so at most `3 |B| |V|²` triples move.
 Combining this count with support stability bounds the new irregular support by the old
 irregular support plus `(1 + 2 / η) 3 |B| |V|²`, independently of the palette size.
@@ -39,30 +40,29 @@ variable {κ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
   {H : Colored3Graph κ V} {δ ε η : ℝ} {r : ℕ}
 
 /-- Top regularity over most polyads survives moving only the vertices of `B` between matched
-cells. The new complex selects all polyads and keeps the pair coloring. The error charge is
-normalized by the original number of ordered injective triples; when that number is zero,
-both exceptional masses and the charge are zero. -/
-theorem TopRegularOverMostPolyads.of_vertexRepartition {C : TriadicComplex3 V} {ε₀ : ℝ}
+cells of polyad decompositions `C` and `D`, with pair colors preserved up to an injective
+relabeling `g`. The error charge is normalized by the original number of ordered injective
+triples; when that number is zero, both exceptional masses and the charge are zero. -/
+theorem TopRegularOverMostPolyads.of_vertexRepartition {C D : TriadicComplex3 V} {ε₀ : ℝ}
     (h : H.TopRegularOverMostPolyads C δ ε₀ r) (hC : C.IsPolyadDecomposition)
-    (P : Finpartition (univ : Finset V)) (f : C.skeleton.vertexPart.parts ↪ P.parts)
+    (hD : D.IsPolyadDecomposition)
+    (f : C.skeleton.vertexPart.parts ↪ D.skeleton.vertexPart.parts)
+    {g : Fin C.pairColorCount → Fin D.pairColorCount} (hg : Function.Injective g)
+    (hcolors : ∀ p, g (C.skeleton.pairColors.color p) = D.skeleton.pairColors.color p)
     (B : Finset V)
     (hcells : ∀ v ∉ B, (f ⟨C.skeleton.vertexPart.part v,
-      C.skeleton.vertexPart.part_mem.2 (mem_univ _)⟩ : Finset V) = P.part v)
+      C.skeleton.vertexPart.part_mem.2 (mem_univ _)⟩ : Finset V) = D.skeleton.vertexPart.part v)
     (hε : 0 < ε) (hη : 0 < η) (hbudget : δ + 2 * η + η / ε ≤ ε) :
-    H.TopRegularOverMostPolyads
-      ⟨C.pairColorCount, ⟨P, C.skeleton.pairColors⟩, univ⟩ ε
+    H.TopRegularOverMostPolyads D ε
       (ε₀ + (1 + 2 / η) * (3 * #B * (Fintype.card V : ℝ) ^ 2) /
         (Fintype.card V).descFactorial 3) r := by
   classical
-  let D : TriadicComplex3 V := ⟨C.pairColorCount, ⟨P, C.skeleton.pairColors⟩, univ⟩
-  have hD : D.IsPolyadDecomposition :=
-    D.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ mem_univ _
   rw [topRegularOverMostPolyads_iff] at h ⊢
   refine (exceptionalPolyadMass_le_of_injective hC hD
-    (Polyad3.map_injective f.injective Function.injective_id)
+    (Polyad3.map_injective f.injective hg)
     hε hη hbudget).trans (add_le_add h ?_)
   gcongr
   exact_mod_cast Polyad3.card_ofTriple_ne_map_le (S := C.skeleton) (T := D.skeleton)
-    f id (fun _ ↦ rfl) B hcells
+    f g hcolors B hcells
 
 end TauCeti.Colored3Graph
