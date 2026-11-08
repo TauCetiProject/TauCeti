@@ -137,6 +137,24 @@ instance : σ.toFunctor.Monoidal := inferInstanceAs
   (FreeMonoidal.lift σ.obj (fun g ↦ FreeMonoidal.homMk (σ.coupon g))).Monoidal
 
 @[simp]
+theorem toFunctor_ε : Functor.LaxMonoidal.ε σ.toFunctor = 𝟙 _ :=
+  FreeMonoidal.lift_ε _ _
+
+@[simp]
+theorem toFunctor_η : Functor.OplaxMonoidal.η σ.toFunctor = 𝟙 _ :=
+  FreeMonoidal.lift_η _ _
+
+@[simp]
+theorem toFunctor_μ (X Y : S.FreeMonoidal) :
+    Functor.LaxMonoidal.μ σ.toFunctor X Y = 𝟙 _ :=
+  FreeMonoidal.lift_μ _ _ X Y
+
+@[simp]
+theorem toFunctor_δ (X Y : S.FreeMonoidal) :
+    Functor.OplaxMonoidal.δ σ.toFunctor X Y = 𝟙 _ :=
+  FreeMonoidal.lift_δ _ _ X Y
+
+@[simp]
 theorem toFunctor_obj (X : S.FreeMonoidal) :
     σ.toFunctor.obj X = projectObj σ.obj X.as := by rfl
 
