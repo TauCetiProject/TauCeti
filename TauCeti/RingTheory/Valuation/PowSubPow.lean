@@ -13,9 +13,9 @@ import Mathlib.Tactic.FieldSimp
 /-!
 # The valuation of a difference of powers
 
-For a valuation `v` on a commutative ring and elements `x`, `y` with `v x ≤ c` and `v y ≤ c`,
-the factorization `x ^ n - y ^ n = (x - y) * ∑ j < n, x ^ j * y ^ (n - 1 - j)` and the
-ultrametric inequality give
+For a valuation `v` on a ring and elements `x`, `y` with `v x ≤ c` and `v y ≤ c`, the identity
+`x ^ (n + 1) - y ^ (n + 1) = x ^ n * (x - y) + (x ^ n - y ^ n) * y`, which needs no
+commutativity, and the ultrametric inequality give
 
 `v (x ^ n - y ^ n) ≤ v (x - y) * c ^ (n - 1)`.
 
@@ -33,30 +33,33 @@ public section
 
 namespace Valuation
 
-section CommRing
+section Ring
 
-variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommMonoidWithZero Γ₀]
+variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀]
 
 /-- If `v x ≤ c` and `v y ≤ c`, then `v (x ^ n - y ^ n) ≤ v (x - y) * c ^ (n - 1)`. -/
 theorem map_pow_sub_pow_le (v : Valuation R Γ₀) {x y : R} {c : Γ₀} (hx : v x ≤ c)
     (hy : v y ≤ c) (n : ℕ) :
     v (x ^ n - y ^ n) ≤ v (x - y) * c ^ (n - 1) := by
-  rw [← geom_sum₂_mul, map_mul, mul_comm]
-  gcongr
-  refine v.map_sum_le fun j hj => ?_
-  -- Each summand `x ^ j * y ^ (n - 1 - j)` has total degree `n - 1`.
-  calc v (x ^ j * y ^ (n - 1 - j)) ≤ c ^ j * c ^ (n - 1 - j) := by
-        simp only [map_mul, map_pow]
-        gcongr <;> exact zero_le
-    _ = c ^ (n - 1) := by
-        rw [← pow_add]
-        grind
-
-end CommRing
-
-section Ring
-
-variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rcases n with _ | n
+    · simp
+    simp only [Nat.add_sub_cancel] at ih ⊢
+    -- `x ^ (n + 2) - y ^ (n + 2) = x ^ (n + 1) * (x - y) + (x ^ (n + 1) - y ^ (n + 1)) * y`
+    -- holds without `x` and `y` commuting.
+    have heq : x ^ (n + 1 + 1) - y ^ (n + 1 + 1) =
+        x ^ (n + 1) * (x - y) + (x ^ (n + 1) - y ^ (n + 1)) * y := by
+      rw [pow_succ x (n + 1), pow_succ y (n + 1), mul_sub, sub_mul]
+      abel
+    rw [heq]
+    refine (v.map_add _ _).trans (max_le ?_ ?_)
+    · rw [map_mul, map_pow, mul_comm]
+      gcongr
+      exact zero_le
+    · rw [map_mul, pow_succ c, ← mul_assoc]
+      gcongr
 
 /-- Raising a principal unit to a natural power of valuation one preserves its distance
 from one. -/
