@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Regular.Category
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.Algebra.Module.Projective.Quotient
+import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.QuotSMulTop
 
 /-!
@@ -45,6 +46,10 @@ This is the change-of-rings step in the induction proving that every module over
 ring of dimension `d` has projective dimension at most `d`: there `x` is a parameter and
 `R ⧸ (x)` is regular of dimension `d - 1`.
 
+When `x` is not a unit, the module `R ⧸ (x)` attains the first bound: it is projective over
+`R ⧸ (x)`, and it has projective dimension exactly one over `R` because it is not flat, hence not
+projective.
+
 For the reduction, a projective presentation `0 → K → P → M → 0` stays short exact modulo `x`,
 because `x` is regular on `M`; the reduction of the projective module `P` is projective over
 `R ⧸ (x)`, and `x` is again regular on `K ⊆ P`, so induction on the projective dimension applies.
@@ -59,6 +64,8 @@ field has finite projective dimension is regular.
   projective dimension at most `n`, then it has projective dimension at most `n + 1` over `R`.
 * `ModuleCat.hasProjectiveDimensionLE_of_isScalarTower_quotient`: the same bound for an
   `R`-module carrying a compatible `R ⧸ (x)`-module structure.
+* `ModuleCat.projectiveDimension_quotient_span_singleton_eq_one`: if `x` is not a unit, then
+  `R ⧸ (x)` has projective dimension exactly one over `R`.
 * `ModuleCat.hasProjectiveDimensionLE_quotient_smul_top`: if `x` is regular on an `R`-module `M`
   of projective dimension at most `n`, then `M ⧸ x M` has projective dimension at most `n` over
   `R ⧸ (x)`.
@@ -161,6 +168,25 @@ theorem hasProjectiveDimensionLE_of_isScalarTower_quotient (hx : x ∈ nonZeroDi
     HasProjectiveDimensionLE (of R L) (n + 1) :=
   have := hasProjectiveDimensionLE_restrictScalars_quotient hx n (of (R ⧸ span {x}) L)
   hasProjectiveDimensionLT_of_iso (restrictScalarsAlgebraMapIso (S := R ⧸ span {x}) L) (n + 2)
+
+/-- The quotient `R ⧸ (x)` by a nonzerodivisor `x` that is not a unit has projective dimension
+exactly one over `R`: it is free over `R ⧸ (x)`, and it is not flat over `R`. -/
+theorem projectiveDimension_quotient_span_singleton_eq_one (hx : x ∈ nonZeroDivisors R)
+    (hx' : ¬ IsUnit x) : projectiveDimension (of R (Shrink.{v} (R ⧸ span {x}))) = 1 := by
+  have : Module.Projective (R ⧸ span {x}) (Shrink.{v} (R ⧸ span {x})) :=
+    .of_equiv (Shrink.linearEquiv (R ⧸ span {x}) (R ⧸ span {x})).symm
+  have : IsScalarTower R (R ⧸ span {x}) (Shrink.{v} (R ⧸ span {x})) :=
+    (equivShrink (R ⧸ span {x})).symm.isScalarTower R (R ⧸ span {x})
+  have : HasProjectiveDimensionLE (of (R ⧸ span {x}) (Shrink.{v} (R ⧸ span {x}))) 0 :=
+    projective_iff_hasProjectiveDimensionLT_one.mp inferInstance
+  refine le_antisymm ((projectiveDimension_le_iff _ 1).mpr
+    (hasProjectiveDimensionLE_of_isScalarTower_quotient hx 0 _))
+    ((projectiveDimension_ge_iff _ 1).mpr fun h ↦ ?_)
+  have := (IsProjective.iff_projective _).mpr (projective_iff_hasProjectiveDimensionLT_one.mpr h)
+  have := Module.Projective.of_equiv (Shrink.linearEquiv R (R ⧸ span {x}))
+  exact Module.Flat.not_quotient_of_mem_nonZeroDivisors
+    (fun h ↦ hx' (Ideal.span_singleton_eq_top.mp h)) hx (Ideal.mem_span_singleton_self x)
+    inferInstance
 
 /-- **Change of rings for projective dimension, by reduction.** If `x` is a nonzerodivisor of `R`
 which is regular on an `R`-module `M` of projective dimension at most `n`, then `M ⧸ x M` has
