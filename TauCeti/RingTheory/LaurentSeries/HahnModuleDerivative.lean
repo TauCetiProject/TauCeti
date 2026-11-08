@@ -284,9 +284,8 @@ theorem residuePairing_hahnModuleMap {W : Type*} [AddCommGroup W] [Module R W]
     (Φ : LinearMap.BilinForm R W) (u : V →ₗ[R] W) (x y : HahnModule ℤ R V) :
     residuePairing R Φ (u.hahnModuleMap x) (u.hahnModuleMap y) =
       residuePairing R (Φ.comp u u) x y := by
-  rw [residuePairing_apply, residuePairing_apply, LinearMap.hahnModuleMap_apply,
-    LinearMap.hahnModuleMap_apply, derivative_map, convolution_apply, convolution_apply,
-    convolutionAddMonoidHom_map_map]
+  simp only [residuePairing_apply, LinearMap.hahnModuleMap_apply, derivative_map,
+    convolution_apply, convolutionAddMonoidHom_map_map]
   -- Both sides extend the biadditive map `(v, w) ↦ Φ (u v) (u w)`.
   refine congrArg (fun Ψ ↦ (convolutionAddMonoidHom ℤ R Ψ x (derivative R y)).coeff (-1)) ?_
   ext v w

@@ -247,9 +247,8 @@ def hahnModuleMap (f : L →ₗ⁅R⁆ L') : HahnModule Γ R L →ₗ⁅HahnSeri
     ext a
     simp
   map_smul' c x := by
-    have hs : ((of R).symm (of R (((of R).symm x).map f))).support ⊆ ((of R).symm x).support := by
-      rw [Equiv.symm_apply_apply]
-      exact Function.support_comp_subset (map_zero f) _
+    have hs : ((of R).symm (of R (((of R).symm x).map f))).support ⊆ ((of R).symm x).support :=
+      HahnSeries.support_map_subset _ (f : ZeroHom L L')
     ext a
     rw [RingHom.id_apply, coeff_smul_right ((of R).symm x).isPWO_support hs]
     simp [coeff_smul, map_sum]

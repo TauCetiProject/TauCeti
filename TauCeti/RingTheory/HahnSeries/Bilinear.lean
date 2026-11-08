@@ -206,10 +206,8 @@ theorem convolutionAddMonoidHom_map_map {V' W' F G : Type*} [AddCommMonoid V'] [
   ext c
   simp only [coeff_convolutionAddMonoidHom, Equiv.symm_apply_apply, HahnSeries.map_coeff,
     AddMonoidHom.compl₂_apply, AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass]
-  have hg : (((of R).symm x).map g).support ⊆ ((of R).symm x).support :=
-    Function.support_comp_subset (map_zero g) _
-  have hh : (((of R).symm y).map h).support ⊆ ((of R).symm y).support :=
-    Function.support_comp_subset (map_zero h) _
+  have hg := HahnSeries.support_map_subset ((of R).symm x) (g : ZeroHom V V')
+  have hh := HahnSeries.support_map_subset ((of R).symm y) (h : ZeroHom W W')
   -- The terms outside the antidiagonal of the smaller supports vanish.
   refine sum_subset ((antidiagonal_mono_left hg).trans (antidiagonal_mono_right hh))
     fun ij hij hij' ↦ ?_
