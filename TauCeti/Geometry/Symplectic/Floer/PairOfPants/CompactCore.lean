@@ -89,10 +89,9 @@ theorem exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_
           add_zero]
       · refine (setLIntegral_mono' hD.measurableSet fun z hz ↦ ?_).trans
           (setLIntegral_le_lintegral _ _)
-        rw [heq, ω.hamiltonianCurvature_congr_of_eventuallyEq
+        rw [heq, ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero
           (Filter.eventually_of_mem (hU.mem_nhds (hDU hz)) (hzero 1))
-          (Filter.eventually_of_mem (hU.mem_nhds (hDU hz)) (hzero Complex.I))]
-        simp [hamiltonianCurvature_def]
+          (Filter.eventually_of_mem (hU.mem_nhds (hDU hz)) (hzero Complex.I)), zero_add]
     _ ≤ (∑ q, ENNReal.ofReal (B q)) + ENNReal.ofReal C :=
       add_le_add (ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u)
         (hbound p hp u hu)

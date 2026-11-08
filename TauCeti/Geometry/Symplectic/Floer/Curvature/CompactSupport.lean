@@ -64,44 +64,6 @@ theorem continuous_hamiltonianCurvature_family (ω : SymplecticForm V)
     (ω.continuous_apply_comp hXs hXt)).congr fun q ↦ by
       simp [hamiltonianCurvature_def, poissonBracket_def, uncurry]
 
-/-- If both components of a Hamiltonian one-form vanish off a closed domain set, its curvature
-also vanishes off that set. No differentiability assumption is needed. -/
-theorem hamiltonianCurvature_eq_zero_of_notMem (ω : SymplecticForm V)
-    {Ks Kt : ℝ × ℝ → V → ℝ} {D : Set (ℝ × ℝ)} (hD : IsClosed D)
-    (hs : ∀ z ∉ D, Ks z = 0) (ht : ∀ z ∉ D, Kt z = 0)
-    {z : ℝ × ℝ} (hz : z ∉ D) (x : V) : ω.hamiltonianCurvature Ks Kt z x = 0 := by
-  have h : ∀ᶠ w in 𝓝 z, w ∉ D := hD.isOpen_compl.mem_nhds hz
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
-    (h.mono fun w hw ↦ hs w hw) (h.mono fun w hw ↦ ht w hw)]
-  simp [hamiltonianCurvature_def]
-
-/-- Adding a perturbation supported in a closed set inside an open region where the original
-one-form vanishes adds their curvatures exactly: there are no mixed Poisson-bracket terms. -/
-theorem hamiltonianCurvature_add_of_eq_zero_on (ω : SymplecticForm V)
-    {Ks Kt δs δt : ℝ × ℝ → V → ℝ} {D U : Set (ℝ × ℝ)}
-    (hD : IsClosed D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hKs : ∀ z ∈ U, Ks z = 0) (hKt : ∀ z ∈ U, Kt z = 0)
-    (hδs : ∀ z ∉ D, δs z = 0) (hδt : ∀ z ∉ D, δt z = 0) (z : ℝ × ℝ) (x : V) :
-    ω.hamiltonianCurvature (fun w y ↦ Ks w y + δs w y) (fun w y ↦ Kt w y + δt w y) z x =
-      ω.hamiltonianCurvature Ks Kt z x + ω.hamiltonianCurvature δs δt z x := by
-  by_cases hz : z ∈ D
-  · have hs : Ks =ᶠ[𝓝 z] 0 := eventually_of_mem (hU.mem_nhds (hDU hz)) hKs
-    have ht : Kt =ᶠ[𝓝 z] 0 := eventually_of_mem (hU.mem_nhds (hDU hz)) hKt
-    have hsum := ω.hamiltonianCurvature_congr_of_eventuallyEq
-      (Ks := fun w y ↦ Ks w y + δs w y) (Kt := fun w y ↦ Kt w y + δt w y)
-      (Ks' := δs) (Kt' := δt)
-      (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw])
-    rw [hsum, ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
-    simp [hamiltonianCurvature_def]
-  · have hs : δs =ᶠ[𝓝 z] 0 := eventually_of_mem (hD.isOpen_compl.mem_nhds hz) hδs
-    have ht : δt =ᶠ[𝓝 z] 0 := eventually_of_mem (hD.isOpen_compl.mem_nhds hz) hδt
-    have hsum := ω.hamiltonianCurvature_congr_of_eventuallyEq
-      (Ks := fun w y ↦ Ks w y + δs w y) (Kt := fun w y ↦ Kt w y + δt w y)
-      (Ks' := Ks) (Kt' := Kt)
-      (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw])
-    rw [hsum, ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
-    simp [hamiltonianCurvature_def]
-
 /-- A jointly `C¹` family supported in a common compact domain set has a finite integrated
 curvature bound, uniform over compact parameter and target windows and over all maps into the
 target window. In particular the bound is independent of any truncation of the domain. -/
