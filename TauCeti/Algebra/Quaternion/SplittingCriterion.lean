@@ -175,7 +175,7 @@ theorem nonempty_algEquiv_matrix_tfae :
     have hb : (b : K) = (hu.unit : QuadraticAlgebra K (a : K) 0).norm * (1 : Kˣ) := by
       simp [hz]
     rw [hb]
-    exact ⟨((normMulEquiv _ _ hu.unit).trans
+    exact ⟨((normMulEquiv _ _ _ hu.unit).trans
       (_root_.QuaternionAlgebra.swapEquiv (a : K) ((1 : Kˣ) : K))).trans (oneEquivMatrix a)⟩
   tfae_have 3 → 4 := by
     rintro ⟨x, y, h⟩ hQ
