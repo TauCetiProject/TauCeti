@@ -63,6 +63,20 @@ private lemma nat_card_setOf_eq_sum {A : Type*} [Fintype A] (P : A → Prop) :
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter]
   simp [Set.mem_ofPred_eq]
 
+/-- Cancelling the left factor `w` in the defining condition of the fibre of the multiplicity. -/
+private lemma mk_mul_out_mul_eq_iff (Γ₂ Γ₃ : Subgroup G) (h w d : G)
+    (j : DecompQuotient Γ₂ Γ₃ h) :
+    ((w * ((j.out : G) * h) : G) : G ⧸ Γ₃) = (d : G ⧸ Γ₃) ↔
+      (((j.out : G) * h : G) : G ⧸ Γ₃) = ((w⁻¹ * d : G) : G ⧸ Γ₃) := by
+  simp only [QuotientGroup.eq, mul_inv_rev, mul_assoc]
+
+/-- The fibre of the multiplicity over a fixed first representative has at most one element. -/
+private lemma subsingleton_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
+    Subsingleton {j : DecompQuotient Γ₂ Γ₃ h | (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} :=
+  ⟨fun j₁ j₂ ↦ Subtype.ext (mk_out_mul_injective Γ₂ Γ₃ h
+    (((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₁.2).trans
+      ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₂.2).symm))⟩
+
 open Classical in
 /-- The fibre of the multiplicity over a fixed first representative: for fixed `w`, there is
 exactly one representative `τⱼ` with `w τⱼ h Γ₃ = d Γ₃` if `w⁻¹d ∈ Γ₂hΓ₃`, and none
@@ -70,16 +84,11 @@ otherwise. -/
 lemma nat_card_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
     Nat.card {j : DecompQuotient Γ₂ Γ₃ h | (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} =
       if w⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ then 1 else 0 := by
-  have hcond : ∀ j : DecompQuotient Γ₂ Γ₃ h,
-      ((w * ((j.out : G) * h) : G) : G ⧸ Γ₃) = (d : G ⧸ Γ₃) ↔
-        (((j.out : G) * h : G) : G ⧸ Γ₃) = ((w⁻¹ * d : G) : G ⧸ Γ₃) := by
-    intro j
-    simp only [QuotientGroup.eq, mul_inv_rev, mul_assoc]
+  have hcond := mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d
   split_ifs with hd
   · rw [Nat.card_eq_one_iff_unique]
     constructor
-    · exact ⟨fun j₁ j₂ ↦ Subtype.ext (mk_out_mul_injective Γ₂ Γ₃ h
-        (((hcond _).mp j₁.2).trans ((hcond _).mp j₂.2).symm))⟩
+    · exact subsingleton_fiber Γ₂ Γ₃ h w d
     · rw [doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hd
       obtain ⟨j, hj⟩ := hd
       rw [mem_leftCoset_iff] at hj
@@ -96,20 +105,40 @@ lemma nat_card_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
 /-- Shimura's multiplicity as a one-sided count: the second component of a pair in the fibre
 is determined by the first, so `m(g, h; d)` counts the representatives `σᵢ` with
 `(σᵢg)⁻¹d ∈ Γ₂hΓ₃`. -/
-theorem multiplicity_eq_card_filter (g h d : G) [Finite (DecompQuotient Γ₁ Γ₂ g)]
-    [Finite (DecompQuotient Γ₂ Γ₃ h)] :
+theorem multiplicity_eq_card_filter (g h d : G) :
     multiplicity Γ₁ Γ₂ Γ₃ g h d =
       Nat.card {i : DecompQuotient Γ₁ Γ₂ g | ((i.out : G) * g)⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃} := by
   classical
-  have : Fintype (DecompQuotient Γ₁ Γ₂ g) := Fintype.ofFinite _
-  have step1 : Nat.card {p : DecompQuotient Γ₁ Γ₂ g × DecompQuotient Γ₂ Γ₃ h |
-      ((p.1.out : G) * g * ((p.2.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} =
-      ∑ i : DecompQuotient Γ₁ Γ₂ g, Nat.card {j : DecompQuotient Γ₂ Γ₃ h |
-        ((i.out : G) * g * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} := by
-    exact nat_card_prod_setOf _
-  rw [multiplicity_def, step1, nat_card_setOf_eq_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [nat_card_fiber Γ₂ Γ₃ h ((i.out : G) * g) d]
+  have key : ∀ i : DecompQuotient Γ₁ Γ₂ g,
+      (∃ j : DecompQuotient Γ₂ Γ₃ h,
+        ((i.out : G) * g * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)) ↔
+        ((i.out : G) * g)⁻¹ * d ∈ doubleCoset h Γ₂ Γ₃ := by
+    intro i
+    have hfib := nat_card_fiber Γ₂ Γ₃ h ((i.out : G) * g) d
+    have := subsingleton_fiber Γ₂ Γ₃ h ((i.out : G) * g) d
+    constructor
+    · rintro ⟨j, hj⟩
+      by_contra hQ
+      simp only [hQ, ↓reduceIte, Nat.card_eq_zero] at hfib
+      rcases hfib with hE | hI
+      · exact hE.false ⟨j, hj⟩
+      · exact not_infinite_iff_finite.mpr inferInstance hI
+    · intro hQ
+      simp only [hQ, ↓reduceIte, Nat.card_eq_one_iff_unique] at hfib
+      obtain ⟨j, hj⟩ := hfib.2.some
+      exact ⟨j, hj⟩
+  rw [multiplicity_def]
+  refine Nat.card_congr (Equiv.ofBijective
+    (fun p ↦ ⟨p.1.1, (key p.1.1).mp ⟨p.1.2, p.2⟩⟩) ⟨?_, ?_⟩)
+  · rintro ⟨⟨i, j⟩, hp⟩ ⟨⟨i', j'⟩, hp'⟩ heq
+    obtain rfl : i = i' := congrArg Subtype.val heq
+    have := subsingleton_fiber Γ₂ Γ₃ h ((i.out : G) * g) d
+    obtain rfl : j = j' := congrArg Subtype.val (Subsingleton.elim (⟨j, hp⟩ : {j |
+      ((i.out : G) * g * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)}) ⟨j', hp'⟩)
+    rfl
+  · rintro ⟨i, hi⟩
+    obtain ⟨j, hj⟩ := (key i).mpr hi
+    exact ⟨⟨(i, j), hj⟩, rfl⟩
 
 /-- Acting on a decomposition quotient moves the chosen representative by an element of `H₁`
 that conjugates into `H₂`: `(u • i).out = u * i.out * c` with `k⁻¹ c k ∈ H₂`.
