@@ -276,11 +276,11 @@ section Field
 unity `ζ ^ j` scales the value of `P` by `(ζ ^ j) ^ a`, then the value of `P` at `x` is the sum of
 the values of its homogeneous components of degree congruent to `a` modulo `n`. -/
 theorem eval_eq_sum_homogeneousComponent_of_eval_smul {K : Type*} [Field K]
-    (P : MvPolynomial σ K) {n : ℕ} [NeZero (n : K)] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (a : ℤ)
+    (P : MvPolynomial σ K) {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (a : ℤ)
     (x : σ → K) (hx : ∀ j : ℕ, eval ((ζ ^ j) • x) P = (ζ ^ j) ^ a * eval x P) :
     eval x P = ∑ d ∈ (Finset.range (P.totalDegree + 1)).filter (fun d : ℕ => (n : ℤ) ∣ d - a),
       eval x (homogeneousComponent d P) := by
-  have : NeZero n := .of_neZero_natCast K
+  have : NeZero (n : K) := hζ.neZero'
   have hζ0 : ζ ≠ 0 := hζ.ne_zero (NeZero.ne n)
   have hn : (n : K) ≠ 0 := NeZero.ne _
   set E : ℕ → K := fun d => eval x (homogeneousComponent d P)
