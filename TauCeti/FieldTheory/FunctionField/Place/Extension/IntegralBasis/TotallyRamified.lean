@@ -40,7 +40,7 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [Algebra.IsSeparable F F']
+variable [Algebra.IsIntegral F F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 

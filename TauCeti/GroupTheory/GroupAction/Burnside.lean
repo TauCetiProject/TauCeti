@@ -68,45 +68,45 @@ theorem card_fixedBy_prod (g : G) :
     Nat.card (fixedBy (X × Y) g) = Nat.card (fixedBy X g) * Nat.card (fixedBy Y g) := by
   rw [fixedBy_prod, Nat.card_congr (Equiv.Set.prod _ _), Nat.card_prod]
 
-end Monoid
+variable {X Y}
 
-/-- The fixed points on a disjoint union are counted by the sum of the fixed-point counts. -/
-theorem card_fixedBy_sum {G X Y : Type*} [Monoid G] [MulAction G X] [MulAction G Y]
-    [Finite X] [Finite Y] (g : G) :
+/-- The fixed points on a disjoint union are counted by the sum of the fixed-point counts,
+provided both fixed-point sets are finite. -/
+theorem card_fixedBy_sum (g : G) [Finite (fixedBy X g)] [Finite (fixedBy Y g)] :
     Nat.card (fixedBy (X ⊕ Y) g) = Nat.card (fixedBy X g) + Nat.card (fixedBy Y g) := by
-  let e : fixedBy (X ⊕ Y) g ≃ fixedBy X g ⊕ fixedBy Y g :=
-    Equiv.subtypeSum.trans (Equiv.sumCongr
-      (Equiv.subtypeEquivRight fun x ↦ by simp [mem_fixedBy])
-      (Equiv.subtypeEquivRight fun y ↦ by simp [mem_fixedBy]))
-  rw [Nat.card_congr e, Nat.card_sum]
+  rw [← Nat.card_sum]
+  exact Nat.card_congr <| Equiv.subtypeSum.trans <| .sumCongr
+    (.subtypeEquivRight fun _ ↦ by simp [mem_fixedBy])
+    (.subtypeEquivRight fun _ ↦ by simp [mem_fixedBy])
 
 /-- The fixed-point count on a disjoint union, in simp normal form. -/
 @[simp]
-theorem ncard_fixedBy_sum {G X Y : Type*} [Monoid G] [MulAction G X] [MulAction G Y]
-    [Finite X] [Finite Y] (g : G) :
+theorem ncard_fixedBy_sum (g : G) [Finite (fixedBy X g)] [Finite (fixedBy Y g)] :
     (fixedBy (X ⊕ Y) g).ncard = (fixedBy X g).ncard + (fixedBy Y g).ncard := by
   simpa only [Nat.card_coe_set_eq] using card_fixedBy_sum g
 
 /-- For the fiberwise action on an indexed disjoint union, fixed-point counts add over the
-indices. The monoid fixes the index of each point. -/
-theorem card_fixedBy_sigma {G ι : Type*} [Monoid G] [Finite ι] (X : ι → Type*)
-    [∀ i, MulAction G (X i)] [∀ i, Finite (X i)] (g : G) :
+indices, provided each fixed-point set is finite. The monoid fixes the index of each point. -/
+theorem card_fixedBy_sigma {ι : Type*} [Finite ι] (X : ι → Type*) [∀ i, MulAction G (X i)]
+    (g : G) [∀ i, Finite (fixedBy (X i) g)] :
     Nat.card (fixedBy (Σ i, X i) g) = ∑ᶠ i, Nat.card (fixedBy (X i) g) := by
   have := Fintype.ofFinite ι
-  rw [finsum_eq_sum_of_fintype]
+  rw [finsum_eq_sum_of_fintype, ← Nat.card_sigma]
   have hset : fixedBy (Σ i, X i) g = Set.univ.sigma (fun i ↦ fixedBy (X i) g) := by
     ext ⟨i, x⟩
     simp [mem_fixedBy]
-  rw [hset, Nat.card_congr (Equiv.Set.sigma _ _), Nat.card_sigma]
-  exact (Finset.sum_subtype Finset.univ (by simp)
-    (fun i ↦ Nat.card (fixedBy (X i) g))).symm
+  rw [hset]
+  exact Nat.card_congr <| (Equiv.Set.sigma _ _).trans <|
+    .sigmaCongrLeft (β := fun i ↦ fixedBy (X i) g) (Equiv.Set.univ ι)
 
 /-- The fixed-point count on a fiberwise indexed disjoint union, in simp normal form. -/
 @[simp]
-theorem ncard_fixedBy_sigma {G ι : Type*} [Monoid G] [Finite ι] (X : ι → Type*)
-    [∀ i, MulAction G (X i)] [∀ i, Finite (X i)] (g : G) :
+theorem ncard_fixedBy_sigma {ι : Type*} [Finite ι] (X : ι → Type*) [∀ i, MulAction G (X i)]
+    (g : G) [∀ i, Finite (fixedBy (X i) g)] :
     (fixedBy (Σ i, X i) g).ncard = ∑ᶠ i, (fixedBy (X i) g).ncard := by
   simpa only [Nat.card_coe_set_eq] using card_fixedBy_sigma X g
+
+end Monoid
 
 variable [Group G] [MulAction G X] [MulAction G Y]
 
@@ -118,11 +118,9 @@ theorem sum_card_fixedBy_mul_card_fixedBy_eq_card_orbits_mul_card_group
     ∑ g : G, Nat.card (fixedBy X g) * Nat.card (fixedBy Y g) =
       Nat.card (orbitRel.Quotient G (X × Y)) * Nat.card G := by
   classical
-  have : Fintype (X × Y) := Fintype.ofFinite _
-  have : Fintype (orbitRel.Quotient G (X × Y)) := Fintype.ofFinite _
-  have : ∀ g : G, Fintype (fixedBy (X × Y) g) := fun _ => Fintype.ofFinite _
-  have hburnside := sum_card_fixedBy_eq_card_orbits_mul_card_group G (X × Y)
-  simp only [← Nat.card_eq_fintype_card] at hburnside
-  simpa only [card_fixedBy_prod] using hburnside
+  have := Fintype.ofFinite (X × Y)
+  have := Fintype.ofFinite (orbitRel.Quotient G (X × Y))
+  simpa only [← Nat.card_eq_fintype_card, card_fixedBy_prod] using
+    sum_card_fixedBy_eq_card_orbits_mul_card_group G (X × Y)
 
 end TauCeti

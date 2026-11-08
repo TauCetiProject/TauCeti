@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
@@ -27,6 +29,14 @@ on nonempty open sets.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `TauCeti.setIntegral_abs_eq_sub`: the integral of `|f|` over `s` is the integral of `f` over the
   part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
+* `TauCeti.integrableOn_sin_of_measure_ne_top`,
+  `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
+  exponential `exp (t x I)` are integrable on a set of finite measure.
+* `MeasureTheory.setIntegral_mul_le_mul_setIntegral_abs`: the pairing of an integrable `f` on `Ω`
+  with a function `g` bounded by `S` on `V ⊆ Ω` is at most `S ∫_Ω |f|`.
+* `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
+  over `A` is `ofReal` of the Bochner integral of `‖f‖ ^ 2`, and
+  `MeasureTheory.setLIntegral_enorm_sq_le_ofReal` the corresponding bound.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 -/
@@ -34,6 +44,7 @@ on nonempty open sets.
 public section
 
 open MeasureTheory Function Set
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -69,6 +80,71 @@ theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure �
     Measure.restrict_restrict₀ (hf.1.nullMeasurableSet_lt aestronglyMeasurable_const),
     inter_comm _ s, hneg]
 
+/-- Perturbing `g` by a constant `c` changes the `L¹` distance over `S` to `f` by at most
+the `L¹` norm of `c`. -/
+theorem integral_norm_add_const_sub_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {S : Set α} {g f : α → E} (c : E) (hS : μ S ≠ ⊤)
+    (hg : IntegrableOn g S μ) (hf : IntegrableOn f S μ) :
+    (∫ t in S, ‖g t + c - f t‖ ∂μ) ≤ (∫ t in S, ‖g t - f t‖ ∂μ) + ∫ _ in S, ‖c‖ ∂μ := by
+  have h1 : Integrable (fun t ↦ ‖g t - f t‖) (μ.restrict S) := (hg.sub hf).norm
+  rw [← integral_add h1 (integrableOn_const hS)]
+  refine integral_mono ((hg.add (integrableOn_const hS)).sub hf).norm
+    ((hg.sub hf).norm.add (integrableOn_const hS)) ?_
+  intro t
+  dsimp only
+  have he : g t + c - f t = (g t - f t) + c := by abel
+  rw [he]
+  exact norm_add_le _ _
+
+/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a finite set `Z`, and
+`g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the images
+`(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the transport
+identity `hpiece` for each piece. The integrand need only be integrable on `g '' s`, and the
+measure needs null singletons only to discard the seams. -/
+theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [Fintype ι]
+    {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D))) {g : M → E} {s : Set M}
+    (hg : InjOn g s) (μ : Measure E) [NullSingletonClass μ] {C : E → ℝ}
+    (hC : IntegrableOn C (g '' s) μ)
+    (c : ℝ) (V : ι → E → ℝ)
+    (hT : ∀ i, MeasurableSet ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s)))
+    (hpiece : ∀ i, c * ∫ y in (g ∘ Q i) '' (D ∩ Q i ⁻¹' s), C y ∂μ =
+      ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ) :
+    c * ∫ y in g '' s, C y ∂μ = ∑ i, ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ := by
+  have hpair : Pairwise (fun i k ↦ Disjoint ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s))
+      ((g ∘ Q k) '' (D ∩ Q k ⁻¹' s))) := fun i k hik ↦ by
+    simp only [image_comp, image_inter_preimage]
+    exact ((hdisj hik).mono inter_subset_left inter_subset_left).image hg inter_subset_right
+      inter_subset_right
+  have hcover : (⋃ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s)) = g '' (s \ Z) := by
+    simp only [image_comp, image_inter_preimage]
+    rw [← image_iUnion, ← iUnion_inter, himage]
+    congr 1
+    ext x
+    simp only [mem_inter_iff, mem_compl_iff, mem_sdiff]
+    tauto
+  have hsub : ∀ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s) ⊆ g '' s := fun i ↦ by
+    rw [image_comp, image_inter_preimage]
+    exact image_mono inter_subset_right
+  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ), ← hcover,
+    integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ hpiece i
+
+/-- The sine is integrable on a set of finite measure. -/
+theorem integrableOn_sin_of_measure_ne_top {ν : Measure ℝ} {s : Set ℝ} (hs : ν s ≠ ∞) :
+    IntegrableOn (fun x : ℝ ↦ Real.sin x) s ν := by
+  have : IsFiniteMeasure (ν.restrict s) := isFiniteMeasure_restrict.mpr hs
+  exact Integrable.of_bound (by fun_prop) 1
+    (ae_of_all _ fun x ↦ by simpa using Real.abs_sin_le_one x)
+
+/-- The unit-circle exponential `x ↦ exp (t x I)` is integrable on a set of finite measure. -/
+theorem integrableOn_exp_ofReal_mul_I_of_measure_ne_top {ν : Measure ℝ} {s : Set ℝ} (t : ℝ)
+    (hs : ν s ≠ ∞) :
+    IntegrableOn (fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I)) s ν := by
+  have : IsFiniteMeasure (ν.restrict s) := isFiniteMeasure_restrict.mpr hs
+  exact Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by
+    simpa using (Complex.norm_exp_ofReal_mul_I (t * x)).le)
+
 end TauCeti
 
 /-- A continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
@@ -85,3 +161,44 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
+
+namespace MeasureTheory
+
+/-- The pairing of an integrable function `f` on `Ω` with a function `g` bounded by `S` on
+`V ⊆ Ω` is at most `S ∫_Ω |f|`. -/
+theorem setIntegral_mul_le_mul_setIntegral_abs {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {V Ω : Set α} {f g : α → ℝ} {S : ℝ} (hVΩ : V ⊆ Ω)
+    (hf : IntegrableOn f Ω ν) (hS0 : 0 ≤ S) (hgS : ∀ᵐ x ∂ν.restrict V, |g x| ≤ S) :
+    ∫ x in V, f x * g x ∂ν ≤ S * ∫ x in Ω, |f x| ∂ν := by
+  have hbound : ∀ᵐ x ∂ν.restrict V, ‖f x * g x‖ ≤ S * |f x| := by
+    filter_upwards [hgS] with x hx
+    rw [Real.norm_eq_abs, abs_mul, mul_comm]
+    exact mul_le_mul_of_nonneg_right hx (abs_nonneg _)
+  have hfV : IntegrableOn f V ν := hf.mono_set hVΩ
+  have hΔV : IntegrableOn (fun x => S * |f x|) V ν := hfV.abs.const_mul S
+  calc _ ≤ ‖∫ x in V, f x * g x ∂ν‖ := Real.le_norm_self _
+    _ ≤ ∫ x in V, S * |f x| ∂ν := norm_integral_le_of_norm_le hΔV hbound
+    _ = S * ∫ x in V, |f x| ∂ν := integral_const_mul S _
+    _ ≤ S * ∫ x in Ω, |f x| ∂ν :=
+        mul_le_mul_of_nonneg_left (setIntegral_mono_set hf.abs
+          (ae_of_all _ fun _ => abs_nonneg _) (ae_of_all _ hVΩ)) hS0
+
+/-- The Lebesgue integral of `‖f‖ₑ ^ 2` over `A` is the `ENNReal.ofReal` of the Bochner integral of
+`‖f‖ ^ 2`, when `‖f‖ ^ 2` is integrable on `A`. -/
+theorem setLIntegral_enorm_sq_eq_ofReal_setIntegral {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {ν : Measure α} {A : Set α} {f : α → E}
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) :
+    ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν = ENNReal.ofReal (∫ x in A, ‖f x‖ ^ 2 ∂ν) := by
+  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => by positivity)]
+  refine lintegral_congr fun x => ?_
+  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
+/-- A bound on the Bochner integral of `‖f‖ ^ 2` over `A` bounds the Lebesgue integral of
+`‖f‖ₑ ^ 2`. -/
+theorem setLIntegral_enorm_sq_le_ofReal {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {ν : Measure α} {A : Set α} {f : α → E} {c : ℝ}
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) (h : ∫ x in A, ‖f x‖ ^ 2 ∂ν ≤ c) :
+    ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν ≤ ENNReal.ofReal c :=
+  (setLIntegral_enorm_sq_eq_ofReal_setIntegral hf).trans_le (ENNReal.ofReal_le_ofReal h)
+
+end MeasureTheory

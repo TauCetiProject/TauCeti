@@ -129,8 +129,8 @@ private theorem normedSpaceCore : NormedSpace.Core ℝ (CheegerSobolevSpace m) w
   norm_nonneg f := Real.sqrt_nonneg _
   norm_smul c f := by
     simpa only [squareRootSeminorm_apply, normSq, norm_def] using
-      map_smul_eq_mul (squareRootSeminorm normSq convexOn_normSq normSq_nonneg normSq_smul) c f
-  norm_triangle := sqrt_add_le_of_convexOn_smul_sq convexOn_normSq normSq_nonneg normSq_smul
+      map_smul_eq_mul (squareRootSeminorm normSq convexOn_normSq normSq_smul) c f
+  norm_triangle := sqrt_add_le_of_convexOn_smul_sq convexOn_normSq normSq_smul
   norm_eq_zero_iff f := by
     constructor
     · intro h

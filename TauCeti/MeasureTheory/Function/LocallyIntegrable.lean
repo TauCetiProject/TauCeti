@@ -98,6 +98,8 @@ everywhere there with a function that is locally integrable on the whole space a
   compactly supported function is integrable.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in an
   open set `U`, times a function continuous on `U`, is integrable.
+* `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
+  compactly supported function by a function continuous on `U`.
 
 ## Attribution
 
@@ -425,6 +427,16 @@ theorem Continuous.integrable_mul_of_continuousOn {R : Type*} [NormedRing R] {f 
     (hfU : tsupport f ⊆ U) (hg : ContinuousOn g U) : Integrable (fun x ↦ f x * g x) μ :=
   ((hf.continuousOn.mul hg).continuous_of_tsupport_subset hU
     (tsupport_mul_subset_left.trans hfU)).integrable_of_hasCompactSupport hcf.mul_right
+
+/-- The scalar multiple of a continuous compactly supported function `b`, whose support lies in an
+open set `U`, by a function `a` continuous on `U` is integrable, for any measure finite on compact
+sets. The function `a` need not be continuous, or even bounded, off `U`. -/
+theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [NormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {a : X → 𝕜} {b : X → F} {U : Set X}
+    (hb : Continuous b) (hbc : HasCompactSupport b) (hU : IsOpen U) (hbU : tsupport b ⊆ U)
+    (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ :=
+  ((ha.smul hb.continuousOn).continuous_of_tsupport_subset hU
+    ((tsupport_smul_subset_right _ _).trans hbU)).integrable_of_hasCompactSupport hbc.smul_left
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite

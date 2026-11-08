@@ -253,6 +253,23 @@ theorem finrank_inf_genWeightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
 
 end LieSubmodule
 
+namespace LieModule.Weight
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+
+/-- Consecutive weights on an ascending string differ by its step root. -/
+theorem coe_eq_add_of_coe_eq_add_natCast_smul_succ
+    (δ : Weight K H L) {α β γ : Weight K H L} {n : ℕ}
+    (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K))
+    (hδ : (δ : H → K) = (β : H → K) + ((n + 1 : ℕ) : K) • (α : H → K)) :
+    (δ : H → K) = (α : H → K) + γ := by
+  rw [hδ, hγ]
+  push_cast
+  module
+
+end LieModule.Weight
+
 namespace TauCeti
 
 open LieAlgebra LieModule LieAlgebra.IsKilling
