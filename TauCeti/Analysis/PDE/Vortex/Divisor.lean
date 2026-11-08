@@ -23,12 +23,12 @@ is the multiplicity of `z` in `D`. Since the exponent of such a factorization is
 (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), a field has at most one zero divisor
 (`TauCeti.Vortex.IsZeroDivisor.eq`), and its points are the zeros of `α`.
 
-Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, the
-section factors near every point as `(w - z) ^ n z * v w` with `v` of class `Cᵏ` at `z` and
-nonzero there (`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_mul`). If `α` does not vanish
-near infinity, only finitely many exponents are nonzero, so the zero divisor exists
-(`TauCeti.Vortex.exists_isZeroDivisor`), and its factors can be taken of class `Cᵏ`
-(`TauCeti.Vortex.IsZeroDivisor.exists_contDiffAt`).
+Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, a
+section that is not identically zero factors near every point as `(w - z) ^ n z * v w` with `v` of
+class `Cᵏ` at `z` and nonzero there (`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_mul`).
+If `α` does not vanish near infinity, only finitely many exponents are nonzero, so the zero
+divisor exists (`TauCeti.Vortex.exists_isZeroDivisor`), and its factors can be taken of class
+`Cᵏ` (`TauCeti.Vortex.IsZeroDivisor.exists_contDiffAt`).
 
 The degree-`m` end framing is `α(z) (z / |z|)⁻ᵐ → 1` at infinity; every continuous field of the
 affine space `A_m^s`, `s > 1`, has it (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`). The
@@ -73,6 +73,7 @@ theorem isZeroDivisor_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w := Iff.rfl
 
 /-- The vacuum has the empty zero divisor. -/
+@[simp]
 theorem isZeroDivisor_vacuumField : IsZeroDivisor vacuumField 0 := fun _ ↦
   ⟨fun _ ↦ 1, continuousAt_const, one_ne_zero, .of_forall fun _ ↦ by
     simp [sectionValue_apply, vacuumField_apply]⟩
@@ -96,6 +97,13 @@ theorem sectionValue_eq_zero_iff (hD : IsZeroDivisor x D) {z : ℂ} :
     sectionValue x z = 0 ↔ z ∈ D := by
   obtain ⟨v, -, hv₀, hfv⟩ := hD z
   simp [hfv.self_of_nhds, hv₀]
+
+/-- A section with a zero divisor is not identically zero: it does not vanish off the finitely
+many points of the divisor. -/
+theorem exists_sectionValue_ne_zero (hD : IsZeroDivisor x D) : ∃ w, sectionValue x w ≠ 0 := by
+  classical
+  obtain ⟨w, hw⟩ := Infinite.exists_notMem_finset D.toFinset
+  exact ⟨w, fun h ↦ hw (Multiset.mem_toFinset.2 (hD.sectionValue_eq_zero_iff.1 h))⟩
 
 /-- **The zero divisor of a framed field has degree `m`.** If the section has the degree-`m` end
 framing `α(z) (z / |z|)⁻ᵐ → 1`, its zero divisor has `m` points, counted with multiplicity. This
@@ -152,6 +160,7 @@ end IsZeroDivisor
 
 /-- **Gauge invariance of the zero divisor.** A continuous gauge transformation, in particular a
 framed gauge or a constant change of line frame, does not change the zero divisor. -/
+@[simp]
 theorem isZeroDivisor_gaugeTransform_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset ℂ}
     {u : ℂ → Circle} (hu : Continuous u) :
     IsZeroDivisor (gaugeTransform u x) D ↔ IsZeroDivisor x D := by
@@ -189,12 +198,12 @@ theorem exists_isZeroDivisor (htail : ∀ᶠ w in cocompact ℂ, sectionValue x 
 
 /-- The factors of the zero divisor can be chosen of class `Cᵏ`, the regularity of the
 connection coefficients. -/
-theorem IsZeroDivisor.exists_contDiffAt {D : Multiset ℂ} (hD : IsZeroDivisor x D)
-    (hne : ∃ w, sectionValue x w ≠ 0) (z : ℂ) :
+theorem IsZeroDivisor.exists_contDiffAt {D : Multiset ℂ} (hD : IsZeroDivisor x D) (z : ℂ) :
     ∃ v : ℂ → ℂ, ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w := by
   obtain ⟨n, v, hvc, hv₀, hvf⟩ :=
-    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol hne z
+    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol
+      hD.exists_sectionValue_ne_zero z
   obtain ⟨u, hu, hu₀, hfu⟩ := hD z
   have hcount : D.count z = n := eq_of_eventually_sub_pow_mul_eq hu hu₀ hvc.continuousAt hv₀ <| by
     filter_upwards [hfu, hvf] with w hwu hwv

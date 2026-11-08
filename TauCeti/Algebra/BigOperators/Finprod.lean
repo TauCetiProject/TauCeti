@@ -289,6 +289,7 @@ theorem IsLeftRegular.mul_finsum {ι R : Type*} [NonUnitalNonAssocSemiring R] {r
 
 /-- The multiplicities of the elements of a multiset, summed with `finsum` over the whole type,
 add up to its cardinality. This is the `finsum` form of `Multiset.toFinset_sum_count_eq`. -/
+@[simp]
 theorem Multiset.finsum_count_eq_card {α R : Type*} [DecidableEq α] [AddCommMonoidWithOne R]
     (s : Multiset α) : ∑ᶠ a, (s.count a : R) = Multiset.card s := by
   rw [finsum_eq_sum_of_support_subset _ (s := s.toFinset) fun a ha ↦ ?_, ← Nat.cast_sum,
