@@ -56,6 +56,8 @@ This monotonicity underlies the action filtration of the Floer complex.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_cylindrical`: the energy
+  density of a `C¹` map for a cylindrical perturbation is continuous.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`: the energy of a
   map over `[a, b] × [0, 1]` for a cylindrical perturbation.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`: the energy
@@ -113,6 +115,33 @@ section Energy
 
 variable [FiniteDimensional ℝ E]
 
+/-- **Continuity of the Floer energy density of a cylindrical perturbation.** For a jointly `C¹`
+time-dependent Hamiltonian `H` and a `C¹` map `u`, the Floer energy density of `u` for the
+cylindrical perturbation `K = H_t dt` is continuous on the whole plane: it is the symplectic area
+density `ω(∂_s u, ∂_t u)` plus the partial derivative `∂_s (H_t(u))`. -/
+theorem IsNondegenerate.continuous_floerEnergyDensity_cylindrical (hω : ω.IsNondegenerate)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
+    Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) := by
+  have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
+    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  -- The symplectic area density is continuous along the `C¹` map `u`.
+  let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
+    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
+  have harea_cont : Continuous area :=
+    ((ω.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
+      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
+  have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
+    contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
+  have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal :=
+    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  -- Pointwise, the energy density is the area density plus `d(K(u))`.
+  refine (harea_cont.add hdK).congr fun z ↦ ?_
+  rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
+    (contMDiffAt_const.mdifferentiableAt one_ne_zero)
+    ((hKt _).mdifferentiableAt one_ne_zero), hamiltonianCurvature_cylindrical]
+  simp [area]
+
 /-- **The energy identity for a cylindrical perturbation.** Let `H` be a `C¹` time-dependent
 Hamiltonian and `u` a `C¹` map, for a nondegenerate two-form on a finite-dimensional manifold.
 For the cylindrical perturbation `K = H_t dt`, the Floer energy of `u` over `[a, b] × [0, 1]` is
@@ -130,26 +159,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  -- The symplectic area density is the integrand of the rectangle integral.
-  let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area :=
-    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
-  have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
-    contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
-  have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal :=
-    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  -- Pointwise, the energy density is the area density plus `d(K(u))`.
-  have hpt (z : ℝ × ℝ) : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      area z + fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal := by
-    rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
-      (contMDiffAt_const.mdifferentiableAt one_ne_zero)
-      ((hKt _).mdifferentiableAt one_ne_zero), hamiltonianCurvature_cylindrical]
-    simp [area]
-  have hE : Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) :=
-    (harea_cont.add hdK).congr fun z ↦ (hpt z).symm
+  have hE := hω.continuous_floerEnergyDensity_cylindrical hH hu
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) isOpen_univ
     hu.contMDiffOn contMDiffOn_const hKt.contMDiffOn hab' (subset_univ _)
     (hE.continuousOn.integrableOn_compact isCompact_Icc)
