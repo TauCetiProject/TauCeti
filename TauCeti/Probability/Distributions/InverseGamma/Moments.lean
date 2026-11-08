@@ -154,7 +154,7 @@ theorem integrable_exp_mul_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (ht : t
 theorem not_integrable_exp_mul_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (ht : 0 < t) :
     ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x)) (inverseGammaMeasure a r) := by
   let _ := isProbabilityMeasure_inverseGammaMeasure ha hr
-  refine not_integrable_exp_mul_of_not_integrable_pow ⌈a⌉₊ measurable_id.aemeasurable
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈a⌉₊
     ((ae_pos_inverseGammaMeasure a r).mono fun _ hx ↦ hx.le) (fun hpow ↦ ?_) ht
   exact not_lt_of_ge (Nat.le_ceil a)
     ((integrable_pow_inverseGammaMeasure_iff ha hr ⌈a⌉₊).1 hpow)

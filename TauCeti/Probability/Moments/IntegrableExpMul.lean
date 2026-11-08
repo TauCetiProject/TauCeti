@@ -28,6 +28,8 @@ half-line law, which is `Set.Iic 0`.
 
 * `TauCeti.integrable_exp_mul_of_ge` — every nonpositive rate is integrable when `X` is bounded
   below;
+* `TauCeti.isFiniteMeasure_of_integrable_exp_mul` — a statistic bounded below with an integrable
+  exponential at a positive rate lives on a finite measure;
 * `TauCeti.not_integrable_exp_mul_of_not_integrable_rpow` and
   `TauCeti.not_integrable_exp_mul_of_not_integrable_pow` — no positive rate is integrable once a
   real, respectively natural, moment of `X` fails to exist;
@@ -56,7 +58,7 @@ theorem integrable_exp_mul_of_ge [IsFiniteMeasure μ] (t b : ℝ) (ht : t ≤ 0)
 
 /-- A statistic bounded below with an integrable exponential at a positive rate lives on a finite
 measure: the exponential is bounded below by a positive constant. -/
-private lemma isFiniteMeasure_of_integrable_exp_mul {b t : ℝ} (hb : ∀ᵐ ω ∂μ, b ≤ X ω)
+theorem isFiniteMeasure_of_integrable_exp_mul {b t : ℝ} (hb : ∀ᵐ ω ∂μ, b ≤ X ω)
     (ht : 0 < t) (hexp : Integrable (fun ω ↦ Real.exp (t * X ω)) μ) : IsFiniteMeasure μ := by
   have hc : Integrable (fun _ : Ω ↦ Real.exp (t * b)) μ :=
     hexp.mono' aestronglyMeasurable_const (hb.mono fun ω hω ↦ by
@@ -72,9 +74,7 @@ theorem not_integrable_exp_mul_of_not_integrable_rpow {b t : ℝ} (q : ℝ)
     (hmom : ¬ Integrable (fun ω ↦ X ω ^ q) μ) (ht : 0 < t) :
     ¬ Integrable (fun ω ↦ Real.exp (t * X ω)) μ := fun hexp ↦ by
   have := isFiniteMeasure_of_integrable_exp_mul hb ht hexp
-  have hX : AEMeasurable X μ := by
-    refine (hexp.aemeasurable.log.div_const t).congr (Filter.Eventually.of_forall fun ω ↦ ?_)
-    simp [Real.log_exp, ht.ne']
+  have hX : AEMeasurable X μ := Real.aemeasurable_of_aemeasurable_exp_mul ht.ne' hexp.aemeasurable
   exact hmom <| integrable_rpow_of_integrable_exp_mul ht.ne' hexp
     (integrable_exp_mul_of_ge (-t) b (neg_nonpos.mpr ht.le) hX hb) hq
 
@@ -82,10 +82,10 @@ theorem not_integrable_exp_mul_of_not_integrable_rpow {b t : ℝ} (q : ℝ)
 moment**, the natural-power form of
 `TauCeti.not_integrable_exp_mul_of_not_integrable_rpow`. -/
 theorem not_integrable_exp_mul_of_not_integrable_pow {b t : ℝ} (n : ℕ)
-    (hX : AEMeasurable X μ) (hb : ∀ᵐ ω ∂μ, b ≤ X ω)
-    (hmom : ¬ Integrable (fun ω ↦ X ω ^ n) μ) (ht : 0 < t) :
+    (hb : ∀ᵐ ω ∂μ, b ≤ X ω) (hmom : ¬ Integrable (fun ω ↦ X ω ^ n) μ) (ht : 0 < t) :
     ¬ Integrable (fun ω ↦ Real.exp (t * X ω)) μ := fun hexp ↦ by
   have := isFiniteMeasure_of_integrable_exp_mul hb ht hexp
+  have hX : AEMeasurable X μ := Real.aemeasurable_of_aemeasurable_exp_mul ht.ne' hexp.aemeasurable
   exact hmom <| integrable_pow_of_integrable_exp_mul ht.ne' hexp
     (integrable_exp_mul_of_ge (-t) b (neg_nonpos.mpr ht.le) hX hb) n
 
@@ -98,6 +98,6 @@ theorem integrableExpSet_eq_Iic_of_not_integrable_pow [IsFiniteMeasure μ] {b : 
   simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_Iic]
   refine ⟨fun h ↦ ?_, fun ht ↦ integrable_exp_mul_of_ge t b ht hX hb⟩
   by_contra ht
-  exact not_integrable_exp_mul_of_not_integrable_pow n hX hb hn (lt_of_not_ge ht) h
+  exact not_integrable_exp_mul_of_not_integrable_pow n hb hn (lt_of_not_ge ht) h
 
 end TauCeti
