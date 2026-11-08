@@ -27,6 +27,29 @@ public section
 open MeasureTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
+section Arithmetic
+
+variable {ι Ω E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι]
+  [TopologicalSpace E] {ℱ : Filtration ι m} {H K : ι → Ω → E}
+
+/-- The sum of two strongly predictable processes is strongly predictable. -/
+theorem MeasureTheory.IsStronglyPredictable.add [Add E] [ContinuousAdd E]
+    (hH : IsStronglyPredictable ℱ H) (hK : IsStronglyPredictable ℱ K) :
+    IsStronglyPredictable ℱ (fun t ω ↦ H t ω + K t ω) := by
+  -- Uncurrying respects pointwise addition; predictability is strong measurability.
+  unfold IsStronglyPredictable at *
+  exact hH.add hK
+
+/-- Multiplication by a constant preserves strong predictability. -/
+theorem MeasureTheory.IsStronglyPredictable.const_mul [Mul E] [ContinuousMul E]
+    (h : IsStronglyPredictable ℱ H) (c : E) :
+    IsStronglyPredictable ℱ (fun t ω ↦ c * H t ω) := by
+  -- Uncurrying respects pointwise multiplication; predictability is strong measurability.
+  unfold IsStronglyPredictable at *
+  exact h.const_mul c
+
+end Arithmetic
+
 -- Unlike floor sampling on half-open intervals, this samples strictly before every positive
 -- time, including partition nodes. The cells are therefore predictable rectangles `(s, t]`.
 private noncomputable def leftSample (n : ℕ) (t : ℝ≥0) : ℝ≥0 :=
