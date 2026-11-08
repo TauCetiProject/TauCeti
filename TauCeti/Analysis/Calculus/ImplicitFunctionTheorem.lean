@@ -454,6 +454,55 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {f : E → F} {g : E → G} {a : E} {n : ℕ∞ω}
 
+/-- **Slices of the implicit-function chart.**  Let `Φ` be the implicit-function chart
+`x ↦ (f x, P (x - a))` of a submersion `f` with complemented kernel, and let `g` be differentiable
+near `a` with derivative vanishing on the kernels of the derivative of `f`.  On a ball around
+`(f a, 0)` on which the chart has a `C¹` inverse, `g ∘ Φ.symm` has zero derivative along each slice
+`{y} × ker f'`, so it is constant on it. -/
+private theorem apply_symm_eq_of_forall_mem_ball {f' : E →L[𝕜] F}
+    (hfs : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented)
+    {Φ : OpenPartialHomeomorph E (F × f'.ker)}
+    (hΦ : Φ = hfs.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker) {ε : ℝ}
+    (hε : 0 < ε) (hball : ∀ p ∈ ball (f a, (0 : f'.ker)) ε, p ∈ Φ.target ∧
+      (ContDiffAt 𝕜 1 f (Φ.symm p) ∧ DifferentiableAt 𝕜 g (Φ.symm p) ∧
+        (fderiv 𝕜 f (Φ.symm p)).ker ≤ (fderiv 𝕜 g (Φ.symm p)).ker ∧
+        Φ.symm p ∈ hfs.implicitCoordSource hf' hker)) :
+    ∀ y ∈ ball (f a) ε, ∀ v ∈ ball (0 : f'.ker) ε,
+      g (Φ.symm (y, v)) = g (Φ.symm (y, 0)) := by
+  subst hΦ
+  set Φ := hfs.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
+  intro y hy v hv
+  have hmem : ∀ w ∈ ball (0 : f'.ker) ε, (y, w) ∈ ball (f a, (0 : f'.ker)) ε := fun w hw ↦ by
+    rw [← ball_prod_same]; exact ⟨hy, hw⟩
+  have hderiv : ∀ w ∈ ball (0 : f'.ker) ε,
+      DifferentiableAt 𝕜 (fun w ↦ Φ.symm (y, w)) w ∧
+        DifferentiableAt 𝕜 (fun w ↦ g (Φ.symm (y, w))) w ∧
+        fderiv 𝕜 (fun w ↦ g (Φ.symm (y, w))) w = 0 := by
+    intro w hw
+    obtain ⟨hpt, hfp, hgp, hkp, hsp⟩ := hball _ (hmem w hw)
+    have hsymm : ContDiffAt 𝕜 1 Φ.symm (y, w) :=
+      hfs.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hpt hsp
+        (hfp.differentiableAt one_ne_zero).hasFDerivAt hfp
+    have hs : DifferentiableAt 𝕜 (fun w ↦ Φ.symm (y, w)) w :=
+      (hsymm.differentiableAt one_ne_zero).comp w
+        (differentiableAt_const _ |>.prodMk differentiableAt_id)
+    refine ⟨hs, hgp.comp w hs, ?_⟩
+    -- The slice map stays in the level `f ⁻¹' {y}`, so its derivative lands in `ker df`.
+    have hlevel : (fun w ↦ f (Φ.symm (y, w))) =ᶠ[𝓝 w] fun _ ↦ y := by
+      filter_upwards [isOpen_ball.mem_nhds hw] with w' hw'
+      have := congrArg Prod.fst (Φ.right_inv (hball _ (hmem w' hw')).1)
+      rwa [hfs.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker] at this
+    have hf0 : (fderiv 𝕜 f (Φ.symm (y, w))).comp (fderiv 𝕜 (fun w ↦ Φ.symm (y, w)) w) = 0 := by
+      rw [← fderiv_fun_comp w (hfp.differentiableAt one_ne_zero) hs]
+      exact hlevel.fderiv_eq.trans (fderiv_const_apply y)
+    rw [fderiv_fun_comp w hgp hs]
+    ext u
+    exact hkp (LinearMap.mem_ker.2 (DFunLike.congr_fun hf0 u))
+  let : NormedSpace ℝ f'.ker := NormedSpace.restrictScalars ℝ 𝕜 _
+  exact isOpen_ball.is_const_of_fderiv_eq_zero (convex_ball _ _).isPreconnected
+    (fun w hw ↦ (hderiv w hw).2.1.differentiableWithinAt) (fun w hw ↦ (hderiv w hw).2.2) hv
+    (mem_ball_self hε)
+
 /-- **A function whose derivative kills the kernel of a submersion locally factors through it.**
 Let `f` be `C^n`, `n ≠ 0`, at `a`, with surjective derivative there whose kernel is complemented,
 and let `g` be `C^n` at `a`. If at every point near `a` the derivative of `g` vanishes on the kernel
@@ -494,39 +543,7 @@ theorem exists_eventuallyEq_comp_of_ker_fderiv_le (hf : ContDiffAt 𝕜 n f a)
     exact hcont.eventually hgood
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hW
   -- On each slice `{y} × ker f'` of the ball, `g ∘ Φ.symm` has zero derivative, so it is constant.
-  have hslice : ∀ y ∈ ball (f a) ε, ∀ v ∈ ball (0 : f'.ker) ε,
-      g (Φ.symm (y, v)) = g (Φ.symm (y, 0)) := by
-    intro y hy v hv
-    have hmem : ∀ w ∈ ball (0 : f'.ker) ε, (y, w) ∈ ball (f a, (0 : f'.ker)) ε := fun w hw ↦ by
-      rw [← ball_prod_same]; exact ⟨hy, hw⟩
-    have hderiv : ∀ w ∈ ball (0 : f'.ker) ε,
-        DifferentiableAt 𝕜 (fun w ↦ Φ.symm (y, w)) w ∧
-          DifferentiableAt 𝕜 (fun w ↦ g (Φ.symm (y, w))) w ∧
-          fderiv 𝕜 (fun w ↦ g (Φ.symm (y, w))) w = 0 := by
-      intro w hw
-      obtain ⟨hpt, hfp, hgp, hkp, hsp⟩ := hball (hmem w hw)
-      have hsymm : ContDiffAt 𝕜 1 Φ.symm (y, w) :=
-        hfs.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hpt hsp
-          (hfp.differentiableAt one_ne_zero).hasFDerivAt hfp
-      have hs : DifferentiableAt 𝕜 (fun w ↦ Φ.symm (y, w)) w :=
-        (hsymm.differentiableAt one_ne_zero).comp w
-          (differentiableAt_const _ |>.prodMk differentiableAt_id)
-      refine ⟨hs, hgp.comp w hs, ?_⟩
-      -- The slice map stays in the level `f ⁻¹' {y}`, so its derivative lands in `ker df`.
-      have hlevel : (fun w ↦ f (Φ.symm (y, w))) =ᶠ[𝓝 w] fun _ ↦ y := by
-        filter_upwards [isOpen_ball.mem_nhds hw] with w' hw'
-        have := congrArg Prod.fst (Φ.right_inv (hball (hmem w' hw')).1)
-        rwa [hfs.implicitToOpenPartialHomeomorphOfComplemented_fst hf' hker] at this
-      have hf0 : (fderiv 𝕜 f (Φ.symm (y, w))).comp (fderiv 𝕜 (fun w ↦ Φ.symm (y, w)) w) = 0 := by
-        rw [← fderiv_fun_comp w (hfp.differentiableAt one_ne_zero) hs]
-        exact hlevel.fderiv_eq.trans (fderiv_const_apply y)
-      rw [fderiv_fun_comp w hgp hs]
-      ext u
-      exact hkp (LinearMap.mem_ker.2 (DFunLike.congr_fun hf0 u))
-    let : NormedSpace ℝ f'.ker := NormedSpace.restrictScalars ℝ 𝕜 _
-    exact isOpen_ball.is_const_of_fderiv_eq_zero (convex_ball _ _).isPreconnected
-      (fun w hw ↦ (hderiv w hw).2.1.differentiableWithinAt) (fun w hw ↦ (hderiv w hw).2.2) hv
-      (mem_ball_self hε)
+  have hslice := apply_symm_eq_of_forall_mem_ball hfs hf' hker rfl hε fun p hp => hball hp
   refine ⟨fun y ↦ g (Φ.symm (y, 0)), ?_, ?_⟩
   · have hsymm := hfs.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm hf hf' hker
     rw [← hΦa] at hg
