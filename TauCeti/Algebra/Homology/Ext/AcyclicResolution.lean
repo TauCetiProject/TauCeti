@@ -42,6 +42,8 @@ gives zero exactly when it is a coboundary (`CochainComplex.extMk_succ_eq_zero_i
 * `CochainComplex.extMk_add`, `CochainComplex.extMk_zero`, `CochainComplex.extMk_neg` and
   `CochainComplex.extMk_sub`: `extMk` is additive in the cocycle.
 * `CochainComplex.mk₀_comp_extMk`: `extMk` is natural in `P`.
+* `CochainComplex.resolutionExtClass_comp_mk₀` and `CochainComplex.extMk_comp_mk₀`: the class of
+  the truncated resolution and `extMk` are natural in morphisms of resolutions.
 * `CochainComplex.extMk_surjective`, `CochainComplex.extMk_zero_eq_zero_iff` and
   `CochainComplex.extMk_succ_eq_zero_iff`: `extMk` identifies `Extⁿ(P, F)` with the cohomology
   of `Hom(P, K)`.
@@ -99,7 +101,39 @@ lemma resolutionExtClass_succ (n : ℕ) :
         (by omega) :=
   (rfl)
 
-variable {K} (P : C) (hP : ∀ j k, Subsingleton (Ext.{w} P (K.X j) (k + 1)))
+variable {K} {F' : C} {K' : CochainComplex C ℕ} (ι' : F' ⟶ K'.X 0) [Mono ι']
+  (hι₁ : ι' ≫ K'.d 0 1 = 0) (hι₁' : (ShortComplex.mk ι' (K'.d 0 1) hι₁).Exact)
+  (hK' : ∀ j, K'.ExactAt (j + 1)) {φ : F ⟶ F'} {ψ : K ⟶ K'} (hψ : ι ≫ ψ.f 0 = φ ≫ ι')
+
+include hψ in
+/-- The class of the truncated resolution is natural in morphisms of resolutions: for a chain map
+`ψ : K ⟶ K'` lifting `φ : F ⟶ F'`, pushing the class for `K` forward along `φ` gives the class for
+`K'` pulled back along the induced map `Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` of cycles. -/
+lemma resolutionExtClass_comp_mk₀ (n : ℕ) :
+    (K.resolutionExtClass ι hι hι' hK n).comp (Ext.mk₀ φ) (add_zero _) =
+      (Ext.mk₀ (HomologicalComplex.cyclesMap ψ (n + 1))).comp
+        (K'.resolutionExtClass ι' hι₁ hι₁' hK' n) (zero_add _) := by
+  induction n with
+  | zero =>
+    exact (K.shortExact_resolution_zero ι hι hι' hK).extClass_naturality
+      (K'.shortExact_resolution_zero ι' hι₁ hι₁' hK')
+      { τ₁ := φ
+        τ₂ := ψ.f 0
+        τ₃ := HomologicalComplex.cyclesMap ψ 1
+        comm₁₂ := hψ.symm
+        comm₂₃ := by simp [← cancel_mono (K'.iCycles 1)] }
+  | succ n ih =>
+    rw [resolutionExtClass_succ, resolutionExtClass_succ, Ext.comp_assoc_of_third_deg_zero, ih,
+      ← Ext.comp_assoc_of_second_deg_zero, (K.shortExact_resolution_succ hK n).extClass_naturality
+      (K'.shortExact_resolution_succ hK' n)
+      { τ₁ := HomologicalComplex.cyclesMap ψ (n + 1)
+        τ₂ := ψ.f (n + 1)
+        τ₃ := HomologicalComplex.cyclesMap ψ (n + 2)
+        comm₁₂ := by simp
+        comm₂₃ := by simp [← cancel_mono (K'.iCycles (n + 2))] }]
+    exact Ext.comp_assoc _ _ _ _ _ (by omega)
+
+variable (P : C) (hP : ∀ j k, Subsingleton (Ext.{w} P (K.X j) (k + 1)))
 
 include hP in
 /-- Composition with the class of the truncated resolution is bijective in positive degrees, when
@@ -241,6 +275,26 @@ lemma mk₀_comp_extMk {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0
       Ext.mk₀_comp_mk₀]
     congr 2
     simp [← cancel_mono (K.iCycles (n + 1))]
+
+include hψ in
+/-- The class of a cocycle is natural in morphisms of resolutions: for a chain map `ψ : K ⟶ K'`
+lifting `φ : F ⟶ F'`, pushing the class of `f : P ⟶ Kⁿ` forward along `φ` gives the class of the
+cocycle `f ≫ ψⁿ` of `Hom(P, K')`. -/
+lemma extMk_comp_mk₀ {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0) :
+    (K.extMk ι hι hι' hK f hf).comp (Ext.mk₀ φ) (add_zero n) =
+      K'.extMk ι' hι₁ hι₁' hK' (f ≫ ψ.f n)
+        (by rw [Category.assoc, ψ.comm, reassoc_of% hf, zero_comp]) := by
+  cases n with
+  | zero =>
+    rw [extMk_of_deg_zero, extMk_of_deg_zero, Ext.mk₀_comp_mk₀]
+    congr 1
+    simp [← cancel_mono ι', ← hψ, hι'.lift_f_assoc, hι₁'.lift_f]
+  | succ n =>
+    rw [extMk_of_deg_succ, extMk_of_deg_succ, Ext.comp_assoc_of_third_deg_zero,
+      resolutionExtClass_comp_mk₀ ι hι hι' hK ι' hι₁ hι₁' hK' hψ,
+      ← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀]
+    congr 2
+    simp
 
 include hP in
 /-- **Every class in `Extⁿ(P, F)` is the class of a cocycle** of `Hom(P, K)`, for a resolution
