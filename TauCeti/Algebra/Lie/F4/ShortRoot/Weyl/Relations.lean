@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Weyl.Basic
 public import Mathlib.GroupTheory.Coxeter.Basic
+import Mathlib.Tactic.FinCases
 
 /-!
 # Braid relations for the short-root F₄ Weyl representatives
@@ -61,12 +62,44 @@ private def negativeMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
 
 private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
+  -- Eliminate the sparse column sums instead of reducing dense matrix products.
+  intro i
+  ext r s
+  simp only [Matrix.mul_apply, positiveMatrix, negativeMatrix, weylMatrix, Matrix.of_apply,
+    sub_eq_add_neg, mul_add, mul_ite, mul_zero, mul_neg, Finset.sum_add_distrib,
+    Finset.sum_neg_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+    mul_one]
+  revert i r s
   decide +kernel
+
+-- Multiply by the sparse columns before checking the finite braid certificates.
+private theorem mul_weylMatrix_apply (M : Matrix (Fin 26) (Fin 26) ℤ)
+    (i : Fin 4) (a b : Fin 26) :
+    (M * weylMatrix i) a b = M a (weylTarget i b) * weylCoeff i b +
+      (if i = 2 then (if b = 13 then M a 13 else 0) else
+        if i = 3 then (if b = 12 then -(M a 13) else 0) else 0) := by
+  simp only [Matrix.mul_apply, weylMatrix, Matrix.of_apply, mul_add,
+    Finset.sum_add_distrib, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ,
+    ite_true]
+  congr 1
+  by_cases h₂ : i = 2 <;> by_cases h₃ : i = 3 <;>
+    simp [h₂, h₃, ite_and, Finset.sum_ite_eq']
 
 private theorem braid_certificate : ∀ i j : Fin 4,
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  decide +kernel
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp only [CoxeterSystem.braidWord, CoxeterMatrix.F₄, CoxeterSystem.alternatingWord,
+      Matrix.of_apply, Matrix.cons_val_zero', Matrix.cons_val_succ', List.concat_eq_append,
+      List.map_append, List.map_cons, List.map_nil,
+      List.prod_append, List.prod_cons, List.prod_nil, mul_one, one_mul]
+  all_goals
+    ext r s
+    simp only [mul_weylMatrix_apply]
+    simp only [weylMatrix, Matrix.of_apply]
+    revert r s
+    decide +kernel
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :

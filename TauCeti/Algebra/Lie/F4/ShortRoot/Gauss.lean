@@ -78,8 +78,10 @@ private def gaussPatterns : List (Fin 14 → ℤ) := [
 
 private theorem gaussEntries_mem (i : Fin 4) (hi : 2 ≤ i.val) (r s : Fin 26) :
     gaussEntries i r s ∈ gaussPatterns := by
+  -- Collapse each sum to its single supported column before kernel reduction.
   simp only [gaussEntries, Matrix.mul_apply, raisingMatrix_apply, loweringMatrix_apply,
-    raisingDividedSquareMatrix_apply, loweringDividedSquareMatrix_apply, Matrix.one_apply]
+    raisingDividedSquareMatrix_apply, loweringDividedSquareMatrix_apply, Matrix.one_apply,
+    mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   revert i r s
   decide +kernel
 
