@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Jet.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Jet
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AlongCurve
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
