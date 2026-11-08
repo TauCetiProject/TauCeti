@@ -18,6 +18,7 @@ characterization allows membership to be checked without choosing a presentation
 
 The boundary, barycentric subdivision and its prism operator preserve these submodules.
 They therefore give a chain complex with an injective inclusion into twisted singular chains.
+Nested support submodules give functorial inclusions between these small-chain complexes.
 For an open cover, every finite twisted chain becomes small after sufficiently many
 subdivisions. This supplies the smallness input to the local-coefficient excision argument;
 no natural choice of subdivision depth or chain retraction is asserted here.
@@ -97,6 +98,45 @@ lemma smallTwistedChains_mono {κ : Type*} (V : κ → Set X) (r : ι → κ)
   obtain ⟨i, hi⟩ := (TopCat.mem_smallSingularSubcomplex_iff X U σ.val).1 σ.property
   exact ιTwistedChainComplex_mem_smallTwistedChains L V
     ((TopCat.mem_smallSingularSubcomplex_iff X V σ.val).2 ⟨r i, hi.trans (h i)⟩) x
+
+/-- Chains subordinate to a family are sums of chains supported in individual members. -/
+lemma smallTwistedChains_eq_iSup (n : ℕ) :
+    smallTwistedChains L U n = ⨆ i, smallTwistedChains L (fun _ : Unit ↦ U i) n := by
+  apply le_antisymm
+  · simpa only [Submodule.comap_id] using
+      (smallTwistedChains_le_comap L U LinearMap.id
+        (⨆ i, smallTwistedChains L (fun _ : Unit ↦ U i) n) (by
+          intro σ hσ x
+          obtain ⟨i, hi⟩ := (TopCat.mem_smallSingularSubcomplex_iff X U σ).1 hσ
+          exact Submodule.mem_iSup_of_mem i
+            (ιTwistedChainComplex_mem_smallTwistedChains L _
+              ((TopCat.mem_smallSingularSubcomplex_iff X _ σ).2 ⟨(), hi⟩) x)))
+  · exact iSup_le fun i ↦ smallTwistedChains_mono L (fun _ : Unit ↦ U i) U
+      (fun _ ↦ i) (fun _ ↦ Set.Subset.rfl) n
+
+/-- Chains supported in the intersection are exactly the intersection of the two support
+submodules. -/
+lemma smallTwistedChains_inter (U V : Set X) (n : ℕ) :
+    smallTwistedChains L (fun _ : Unit ↦ U ∩ V) n =
+      smallTwistedChains L (fun _ : Unit ↦ U) n ⊓
+        smallTwistedChains L (fun _ : Unit ↦ V) n := by
+  ext c
+  simp only [Submodule.mem_inf, mem_smallTwistedChains_iff,
+    TopCat.mem_smallSingularSubcomplex_iff, Set.subset_inter_iff, exists_const]
+  constructor
+  · intro h
+    exact ⟨fun σ hσ ↦ h σ (by tauto), fun σ hσ ↦ h σ (by tauto)⟩
+  · rintro ⟨hU, hV⟩ σ hσ
+    by_cases hu : Set.range (X.toSSetObjEquiv _ σ) ⊆ U
+    · exact hV σ (by tauto)
+    · exact hU σ hu
+
+/-- Chains subordinate to a binary family are sums of chains supported in its members. -/
+lemma smallTwistedChains_bool (U V : Set X) (n : ℕ) :
+    smallTwistedChains L (Bool.rec U V) n =
+      smallTwistedChains L (fun _ : Unit ↦ U) n ⊔
+        smallTwistedChains L (fun _ : Unit ↦ V) n := by
+  rw [smallTwistedChains_eq_iSup, iSup_bool_eq, sup_comm]
 
 /-- The twisted singular boundary preserves chains subordinate to a family of subsets. -/
 lemma d_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.X (n + 1)}
@@ -314,5 +354,67 @@ lemma twistedChainComplexMap_mem_smallTwistedChains (r : ι → κ)
   exact ⟨r i, ((hf i).mono_left hi).image_subset⟩
 
 end Naturality
+
+section Inclusion
+
+variable {L U} {κ : Type*} {V : κ → Set X}
+
+/-- The inclusion between small-chain complexes when the support submodules are nested.
+This includes refinement maps without requiring a choice of a refining index. -/
+def smallTwistedChainComplexInclusion
+    (h : ∀ n, smallTwistedChains L U n ≤ smallTwistedChains L V n) :
+    smallTwistedChainComplex L U ⟶ smallTwistedChainComplex L V where
+  f n := eqToHom (smallTwistedChainComplex_X L U n) ≫
+    ModuleCat.ofHom (Submodule.inclusion (h n)) ≫
+      eqToHom (smallTwistedChainComplex_X L V n).symm
+  comm' i j hij := by
+    apply (cancel_mono ((smallTwistedChainComplexι L V).f j)).1
+    subst hij
+    rw [smallTwistedChainComplex_d, smallTwistedChainComplex_d,
+      smallTwistedChainComplexι_f]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    ext c
+    -- Restriction and submodule inclusion both evaluate in the ambient chain module.
+    rfl
+
+/-- A support inclusion preserves the underlying twisted chain. -/
+@[simp]
+lemma coe_smallTwistedChainComplexInclusion_f_apply
+    (h : ∀ n, smallTwistedChains L U n ≤ smallTwistedChains L V n) (n : ℕ)
+    (c : (smallTwistedChainComplex L U).X n) :
+    ((eqToHom (smallTwistedChainComplex_X L V n)).hom
+      (((smallTwistedChainComplexInclusion h).f n).hom c) : L.twistedChainComplex.X n) =
+      ((eqToHom (smallTwistedChainComplex_X L U n)).hom c : L.twistedChainComplex.X n) := (rfl)
+
+/-- After inclusion into ambient chains, a support inclusion is the original inclusion. -/
+@[reassoc (attr := simp)]
+lemma smallTwistedChainComplexInclusion_ι
+    (h : ∀ n, smallTwistedChains L U n ≤ smallTwistedChains L V n) :
+    smallTwistedChainComplexInclusion h ≫ smallTwistedChainComplexι L V =
+      smallTwistedChainComplexι L U := by
+  ext n : 1
+  dsimp only [smallTwistedChainComplexInclusion, HomologicalComplex.comp_f]
+  rw [smallTwistedChainComplexι_f, smallTwistedChainComplexι_f]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [← ModuleCat.ofHom_comp, Submodule.subtype_comp_inclusion]
+
+/-- Support inclusions compose as inclusions. -/
+@[reassoc (attr := simp)]
+lemma smallTwistedChainComplexInclusion_comp {μ : Type*} {W : μ → Set X}
+    (h : ∀ n, smallTwistedChains L U n ≤ smallTwistedChains L V n)
+    (k : ∀ n, smallTwistedChains L V n ≤ smallTwistedChains L W n) :
+    smallTwistedChainComplexInclusion h ≫ smallTwistedChainComplexInclusion k =
+      smallTwistedChainComplexInclusion (fun n ↦ (h n).trans (k n)) := by
+  apply (cancel_mono (smallTwistedChainComplexι L W)).1
+  simp
+
+/-- The support inclusion for a reflexive containment is the identity. -/
+@[simp]
+lemma smallTwistedChainComplexInclusion_refl :
+    smallTwistedChainComplexInclusion (L := L) (U := U) (fun _ ↦ le_rfl) = 𝟙 _ := by
+  apply (cancel_mono (smallTwistedChainComplexι L U)).1
+  simp
+
+end Inclusion
 
 end TauCeti.LocalCoefficientSystem
