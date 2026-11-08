@@ -39,7 +39,7 @@ open scoped NNReal ENNReal Topology
 
 namespace TauCeti
 
-variable {Ω : Type*} {X : ℝ≥0 → Ω → ℝ} {c C : ℝ} {n : ℕ} {t : ℝ≥0} {ω : Ω}
+variable {Ω : Type*} {X : ℝ≥0 → Ω → ℝ} {c : ℝ} {n : ℕ} {t : ℝ≥0} {ω : Ω}
 
 /-- First strict upper-level hit on the dyadic grid of mesh `2⁻ⁿ`, with infinity if no grid
 point hits. Time zero is included. -/
@@ -82,6 +82,16 @@ theorem gridLevelHit_le_iff :
       have hjk : j ≤ k := by simpa [hh] using hle k hk
       exact (div_le_div_of_nonneg_right (by exact_mod_cast hjk) (by positivity)).trans hkt
 
+/-- The sublevel event of a grid hit is the union of the strict upper-level sample events
+at grid points no later than the given time. -/
+theorem setOf_gridLevelHit_le_eq :
+    {ω | gridLevelHit X c n ω ≤ t} =
+      ⋃ k : ℕ, ⋃ (_ : (k : ℝ≥0) / 2 ^ n ≤ t),
+        {ω | c < X ((k : ℝ≥0) / 2 ^ n) ω} := by
+  ext ω
+  simp only [mem_iUnion, mem_ofPred, exists_prop]
+  exact gridLevelHit_le_iff
+
 /-- No grid hit occurs exactly when every grid sample is at most the level. -/
 @[simp]
 theorem gridLevelHit_eq_top_iff : gridLevelHit X c n ω = ⊤ ↔
@@ -110,13 +120,7 @@ theorem isStoppingTime_gridLevelHit {m : MeasurableSpace Ω} {ℱ : Filtration �
     (hX : StronglyAdapted ℱ X) (c : ℝ) (n : ℕ) :
     IsStoppingTime ℱ (gridLevelHit X c n) := by
   intro t
-  have he : {ω | gridLevelHit X c n ω ≤ t} =
-      ⋃ k : ℕ, ⋃ (_ : (k : ℝ≥0) / 2 ^ n ≤ t),
-        {ω | c < X ((k : ℝ≥0) / 2 ^ n) ω} := by
-    ext ω
-    simp only [mem_iUnion, mem_ofPred, exists_prop]
-    exact gridLevelHit_le_iff
-  rw [he]
+  rw [setOf_gridLevelHit_le_eq]
   exact MeasurableSet.iUnion fun k ↦ MeasurableSet.iUnion fun hk ↦
     ((hX _).mono (ℱ.mono hk)).measurable measurableSet_Ioi
 
@@ -129,13 +133,7 @@ theorem measurable_gridLevelHit {m : MeasurableSpace Ω}
   | top => simpa only [Iic_top, preimage_univ] using (MeasurableSet.univ :
       MeasurableSet (univ : Set Ω))
   | coe t =>
-    have he : gridLevelHit X c n ⁻¹' Iic (t : WithTop ℝ≥0) =
-        ⋃ k : ℕ, ⋃ (_ : (k : ℝ≥0) / 2 ^ n ≤ t),
-          {ω | c < X ((k : ℝ≥0) / 2 ^ n) ω} := by
-      ext ω
-      simp only [mem_preimage, mem_Iic, mem_iUnion, mem_ofPred, exists_prop]
-      exact gridLevelHit_le_iff
-    rw [he]
+    simp only [preimage, mem_Iic, setOf_gridLevelHit_le_eq]
     exact MeasurableSet.iUnion fun k ↦ MeasurableSet.iUnion fun _ ↦
       hX _ measurableSet_Ioi
 
@@ -157,13 +155,13 @@ theorem eventually_gridLevelHit_le (hc : ContinuousAt (fun s ↦ X s ω) t)
   exact_mod_cast Nat.floor_le (mul_nonneg t.2 (by positivity : (0 : ℝ) ≤ 2 ^ n))
 
 /-- For an almost-surely continuous process with measurable deterministic-time samples,
-the probability that a dyadic grid
-misses a strict lower level before a measurable higher-level barrier tends to zero.
+the probability that a dyadic grid misses a level before a measurable barrier tends to zero,
+provided the process is almost surely strictly above the level at every finite barrier time.
 A barrier value of infinity never counts as a miss. -/
 theorem tendsto_measure_gridLevelHit_miss {m : MeasurableSpace Ω} {P : Measure Ω}
     [IsFiniteMeasure P] (hX : ∀ t, Measurable (X t))
     (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω)) {σ : Ω → WithTop ℝ≥0}
-    (hσ : Measurable σ) (hlevel : ∀ᵐ ω ∂P, ∀ t : ℝ≥0, σ ω = t → C ≤ X t ω) (hcC : c < C) :
+    (hσ : Measurable σ) (hlevel : ∀ᵐ ω ∂P, ∀ t : ℝ≥0, σ ω = t → c < X t ω) :
     Tendsto (fun n ↦ P {ω | σ ω < gridLevelHit X c n ω}) atTop (𝓝 0) := by
   have hm (n : ℕ) : MeasurableSet {ω | σ ω < gridLevelHit X c n ω} :=
     measurableSet_lt hσ (measurable_gridLevelHit hX c n)
@@ -174,19 +172,20 @@ theorem tendsto_measure_gridLevelHit_miss {m : MeasurableSpace Ω} {P : Measure 
     | top => exact .of_forall fun n ↦ by simp
     | coe t =>
       filter_upwards [eventually_gridLevelHit_le (hcont.continuousAt)
-        (hcC.trans_le (hl t hs))] with n hn
+        (hl t hs)] with n hn
       simpa only [mem_ofPred, mem_empty_iff_false, iff_false, hs, not_lt] using hn
   simpa using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure
     atTop MeasurableSet.empty hm he
 
-/-- For any sequence of strict lower levels, choose successively finer dyadic grids whose
-probabilities of missing the higher-level barrier have finite sum. In particular,
-Borel–Cantelli applies to these misses. The levels need not be monotone. -/
+/-- For any sequence of levels almost surely strictly below the process at every finite
+barrier time, choose successively finer dyadic grids whose probabilities of missing the
+barrier have finite sum. In particular, Borel–Cantelli applies to these misses.
+The levels need not be monotone or bounded by a common upper level. -/
 theorem exists_gridLevelHit_summable_misses {m : MeasurableSpace Ω} {P : Measure Ω}
     [IsFiniteMeasure P] (hX : ∀ t, Measurable (X t))
     (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω)) {σ : Ω → WithTop ℝ≥0}
-    (hσ : Measurable σ) (hlevel : ∀ᵐ ω ∂P, ∀ t : ℝ≥0, σ ω = t → C ≤ X t ω)
-    {a : ℕ → ℝ} (ha : ∀ j, a j < C) :
+    (hσ : Measurable σ) {a : ℕ → ℝ}
+    (hlevel : ∀ j, ∀ᵐ ω ∂P, ∀ t : ℝ≥0, σ ω = t → a j < X t ω) :
     ∃ q : ℕ → ℕ, StrictMono q ∧
       (∑' j, P {ω | σ ω < gridLevelHit X (a j) (q j) ω}) < ∞ := by
   classical
@@ -194,7 +193,7 @@ theorem exists_gridLevelHit_summable_misses {m : MeasurableSpace Ω} {P : Measur
       P {ω | σ ω < gridLevelHit X (a j) n ω} ≤ (2⁻¹ : ℝ≥0∞) ^ j := by
     have hp : (0 : ℝ≥0∞) < (2⁻¹ : ℝ≥0∞) ^ j :=
       pos_iff_ne_zero.mpr (pow_ne_zero _ (by norm_num))
-    have hlim := tendsto_measure_gridLevelHit_miss hX hc hσ hlevel (ha j)
+    have hlim := tendsto_measure_gridLevelHit_miss hX hc hσ (hlevel j)
     obtain ⟨N, hN⟩ := eventually_atTop.mp (hlim.eventually (gt_mem_nhds hp))
     exact ⟨N, fun n hn ↦ (hN n hn).le⟩
   choose N hN using hsmall
