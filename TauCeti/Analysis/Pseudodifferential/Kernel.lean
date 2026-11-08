@@ -247,6 +247,16 @@ theorem inner_smul_quantizationKernel {a' : E × E → V →L[ℂ] W} {v : E}
   -- `2π K_{a'} = -c K_a`, and the claim follows by solving for `K_{a'}`.
   set z := x - y
   set c : ℂ := 2 * π * Complex.I * ⟪v, z⟫
+  -- The character `ζ ↦ 𝐞 ⟪ζ, z⟫` has line derivative `c 𝐞 ⟪ζ, z⟫` along `v`: Mathlib's derivative
+  -- of `ζ ↦ 𝐞 (-L ζ w)` with `L` the inner product and `w = -z`.
+  have hf (ζ : E) : HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, z⟫ : ℂ)) (c * 𝐞 ⟪ζ, z⟫) ζ v := by
+    convert (Real.differentiable_fourierChar_neg_bilinear_left (innerSL ℝ) (-z)
+      ζ).hasFDerivAt.hasLineDerivAt v using 1
+    · simp only [innerSL_apply_apply ℝ, inner_neg_right, neg_neg]
+    · rw [Real.fderiv_fourierChar_neg_bilinear_left_apply]
+      simp only [innerSL_apply_apply ℝ, inner_neg_right, neg_neg, Complex.ofReal_neg, c,
+        real_inner_comm z v]
+      ring
   -- Rescaling the frequency by `2π` multiplies the line derivative by `2π`.
   have hg (ζ : E) : HasLineDerivAt ℝ (fun ζ ↦ a (x, (2 * π) • ζ))
       ((2 * π) • a' (x, (2 * π) • ζ)) ζ v := by
@@ -269,14 +279,7 @@ theorem inner_smul_quantizationKernel {a' : E × E → V →L[ℂ] W} {v : E}
       exact smul_comm _ _ _))
     (hI.congr (ae_of_all _ fun ζ ↦ by
       simp only [ContinuousLinearMap.lsmul_apply, Circle.smul_def, z]))
-    (fun ζ _ ↦ by
-      convert (Real.differentiable_fourierChar_neg_bilinear_left (innerSL ℝ) (-z)
-        ζ).hasFDerivAt.hasLineDerivAt v using 1
-      · simp only [innerSL_apply_apply ℝ, inner_neg_right, neg_neg]
-      · rw [Real.fderiv_fourierChar_neg_bilinear_left_apply]
-        simp only [innerSL_apply_apply ℝ, inner_neg_right, neg_neg, Complex.ofReal_neg, c,
-          real_inner_comm z v]
-        ring) (fun ζ _ ↦ hg ζ)
+    (fun ζ _ ↦ hf ζ) (fun ζ _ ↦ hg ζ)
   simp only [ContinuousLinearMap.lsmul_apply] at hparts
   have hL : ∫ ζ, (𝐞 ⟪ζ, z⟫ : ℂ) • (2 * π) • a' (x, (2 * π) • ζ) =
       (2 * π) • quantizationKernel a' x y := by
