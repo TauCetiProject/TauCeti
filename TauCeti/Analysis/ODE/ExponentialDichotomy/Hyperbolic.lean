@@ -226,8 +226,7 @@ private theorem exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero {A P : E →L
   refine ⟨K, α, hK, hα, fun t ht w hw ↦ ?_⟩
   have hPw : P w = w := by
     obtain ⟨u, rfl⟩ := hw
-    change P (P u) = P u
-    rw [← mul_apply_eq_comp, hP.eq]
+    rw [coe_coe, ← mul_apply_eq_comp, hP.eq]
   let +nondep : NormedAlgebra ℚ (E →L[ℝ] E) := .restrictScalars ℚ ℝ _
   have hexp : exp (t • A) * P = exp (t • B) * P := by
     have hsc : SemiconjBy P (t • B) (t • A) :=
