@@ -18,12 +18,12 @@ of `K` act on level `m` by the Kummer automorphisms `t ^ (1 / m) ↦ η t ^ (1 /
 `η ^ (m / n) = 1`, and the fixed field of a primitive `(m / n)`-th root of unity is level `n`
 (`TauCeti.puiseuxField.levelKummer_mem_fixingSubgroup_restrict_iff` and
 `TauCeti.puiseuxField.fixedField_zpowers_levelKummer`). This file identifies the fixed field of
-all `(m / n)`-th roots of unity at once, the kernel of the power map `η ↦ η ^ (m / n)`.
+all `(m / n)`-th roots of unity at once, the kernel of the power map `η ↦ η ^ (m / n)`, and hence
+identifies the subgroup fixing level `n` with the `(m / n)`-th roots of unity.
 
 When `K` contains a primitive `m`-th root of unity, level `m` is a cyclic Galois extension of
-`K⸨X⸩` with group `μₘ(K)` (`TauCeti.puiseuxField.levelGalEquivRootsOfUnity`). The Galois
-correspondence then identifies the subgroup fixing level `n` with the `(m / n)`-th roots of unity,
-and since every intermediate field of level `m` is the level of its degree
+`K⸨X⸩` with group `μₘ(K)` (`TauCeti.puiseuxField.levelGalEquivRootsOfUnity`). Since every
+intermediate field of level `m` is then the level of its degree
 (`TauCeti.puiseuxField.eq_restrict_level_of_finrank_eq`), every intermediate field of level `m`
 over `K⸨X⸩` is a level `n` with `n ∣ m`. Ordering the positive integers by divisibility
 (`TauCeti.RamificationIndex`), this is an order isomorphism between the divisors of `m` and the
@@ -41,10 +41,12 @@ intermediate fields of level `m`.
   unity, the fixed field in level `m` of all `(m / n)`-th roots of unity is level `n`.
 * `TauCeti.puiseuxField.finrank_restrict_level`: level `n` has degree `n` over `K⸨X⸩` as an
   intermediate field of level `m`.
-* `TauCeti.puiseuxField.fixingSubgroup_restrict_level` and
-  `TauCeti.puiseuxField.mem_fixingSubgroup_restrict_level_iff`: with a primitive `m`-th root of
-  unity in `K`, the automorphisms of level `m` fixing level `n` are the Kummer automorphisms of the
+* `TauCeti.puiseuxField.fixingSubgroup_restrict_level`: if `K` has enough `(m / n)`-th roots of
+  unity, the automorphisms of level `m` fixing level `n` are the Kummer automorphisms of the
   `(m / n)`-th roots of unity.
+* `TauCeti.puiseuxField.mem_fixingSubgroup_restrict_level_iff`: with a primitive `m`-th root of
+  unity in `K`, an automorphism of level `m` fixes level `n` exactly when its root of unity `η`
+  satisfies `η ^ (m / n) = 1`.
 * `TauCeti.puiseuxField.exists_eq_restrict_level`: with a primitive `m`-th root of unity in `K`,
   every intermediate field of level `m` is a level `n` with `n ∣ m`.
 -/
@@ -77,6 +79,15 @@ theorem fixedField_map_ker_levelKummer (h : n ∣ m) [HasEnoughRootsOfUnity K ((
     exact fun η hη ↦ (levelKummer_mem_fixingSubgroup_restrict_iff h η).mpr
       ((mem_ker_rootsOfUnityPowOfDvd_iff _).mp hη)
 
+/-- **Fixing subgroups.** For `n ∣ m`, if `K` has enough `(m / n)`-th roots of unity, then the
+automorphisms of level `m` over `K⸨X⸩` fixing level `n` are the Kummer automorphisms of the
+`(m / n)`-th roots of unity. -/
+theorem fixingSubgroup_restrict_level (h : n ∣ m) [HasEnoughRootsOfUnity K ((m : ℕ) / n)] :
+    fixingSubgroup (restrict (level_le_level_of_dvd K h)) =
+      (rootsOfUnityPowOfDvd (M := K) (PNat.dvd_iff.mp h)).ker.map (levelKummer K m) := by
+  have : FiniteDimensional K⸨X⸩ (level K m) := (levelPowerBasis K m).finite
+  rw [← fixedField_map_ker_levelKummer h, fixingSubgroup_fixedField]
+
 /-- For `n ∣ m`, level `n` has degree `n` over `K⸨X⸩`, as an intermediate field of level `m`. -/
 theorem finrank_restrict_level (h : n ∣ m) :
     finrank K⸨X⸩ (restrict (level_le_level_of_dvd K h)) = n := by
@@ -96,23 +107,14 @@ section Galois
 
 variable [HasEnoughRootsOfUnity K m]
 
-/-- **Fixing subgroups.** For `n ∣ m`, if `K` contains a primitive `m`-th root of unity, then the
-automorphisms of level `m` over `K⸨X⸩` fixing level `n` are the Kummer automorphisms of the
-`(m / n)`-th roots of unity. -/
-theorem fixingSubgroup_restrict_level (h : n ∣ m) :
-    fixingSubgroup (restrict (level_le_level_of_dvd K h)) =
-      (rootsOfUnityPowOfDvd (M := K) (PNat.dvd_iff.mp h)).ker.map (levelKummer K m) := by
-  have : FiniteDimensional K⸨X⸩ (level K m) := (levelPowerBasis K m).finite
-  have : HasEnoughRootsOfUnity K ((m : ℕ) / n) :=
-    .of_dvd K (Nat.div_dvd_of_dvd (PNat.dvd_iff.mp h))
-  rw [← fixedField_map_ker_levelKummer h, fixingSubgroup_fixedField]
-
 /-- For `n ∣ m`, if `K` contains a primitive `m`-th root of unity, then an automorphism `σ` of
 level `m` over `K⸨X⸩` fixes level `n` exactly when the root of unity `η` attached to it satisfies
 `η ^ (m / n) = 1`. -/
 theorem mem_fixingSubgroup_restrict_level_iff (h : n ∣ m) (σ : Gal(level K m/K⸨X⸩)) :
     σ ∈ fixingSubgroup (restrict (level_le_level_of_dvd K h)) ↔
       ((levelGalEquivRootsOfUnity K m σ : Kˣ) : K) ^ ((m : ℕ) / n) = 1 := by
+  have : HasEnoughRootsOfUnity K ((m : ℕ) / n) :=
+    .of_dvd K (Nat.div_dvd_of_dvd (PNat.dvd_iff.mp h))
   have hk : levelKummer K m = (levelGalEquivRootsOfUnity K m).symm.toMonoidHom :=
     MonoidHom.ext fun η ↦ (levelGalEquivRootsOfUnity_symm_apply K m η).symm
   rw [fixingSubgroup_restrict_level h, hk, Subgroup.mem_map_equiv, MulEquiv.symm_symm,
