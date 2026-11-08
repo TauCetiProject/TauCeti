@@ -467,11 +467,8 @@ theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 
     rfl
   -- Near `t`, `g` is `g ∘ (↑)` after a local inverse of the quotient map, so `g ∘ (↑)` is not
   -- differentiable at `t` either, and both derivatives vanish by convention.
-  have hπ := isLocalDiffeomorph_coe p 1 t
-  have hgc : ¬MDifferentiableAt 𝓘(ℝ) I' (g ∘ (↑)) t := fun h ↦ hg <|
-    (h.comp_of_eq (t : AddCircle p) (hπ.mdifferentiableAt_localInverse one_ne_zero)
-      (hπ.localInverse_left_inv hπ.localInverse_mem_target)).congr_of_eventuallyEq
-      (hπ.localInverse_eventuallyEq_right.fun_comp g).symm
+  have hgc : ¬MDifferentiableAt 𝓘(ℝ) I' (g ∘ (↑)) t :=
+    ((isLocalDiffeomorph_coe p 1 t).mdifferentiableAt_comp_iff one_ne_zero).not.mpr hg
   rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgc]
   rfl
 

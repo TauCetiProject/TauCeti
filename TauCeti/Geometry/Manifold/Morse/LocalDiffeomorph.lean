@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+
 /-!
 # Critical points under local diffeomorphisms
 
@@ -71,10 +73,7 @@ theorem _root_.IsLocalDiffeomorphAt.mem_criticalPoints_comp_iff
       ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at this
   -- Near `π x`, `f` is `f ∘ π` after a local inverse of `π`, so `f ∘ π` is not differentiable at
   -- `x` either, and both derivatives vanish by convention.
-  have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := fun h ↦ hf <|
-    (h.comp_of_eq (π x) (hπ.mdifferentiableAt_localInverse hn0)
-      (hπ.localInverse_left_inv hπ.localInverse_mem_target)).congr_of_eventuallyEq
-      (hπ.localInverse_eventuallyEq_right.fun_comp f).symm
+  have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := (hπ.mdifferentiableAt_comp_iff hn0).not.mpr hf
   simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfπ]
 
 end Criticality
