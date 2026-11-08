@@ -1016,7 +1016,16 @@ theorem ofSetoid_ker_fst_parts :
   simp only [mem_image, mem_univ, true_and]
   exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩, fun ⟨A, hA⟩ ↦ ⟨(A, Classical.arbitrary β), hA⟩⟩
 
+/-- Every cell of the partition of `α × β` into the fibers of the first coordinate has
+`Fintype.card β` elements. -/
+theorem card_of_mem_ofSetoid_ker_fst_parts {B : Finset (α × β)}
+    (hB : B ∈ (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts) :
+    #B = Fintype.card β := by
+  obtain ⟨A, -, rfl⟩ := mem_image.1 (ofSetoid_ker_fst_parts (α := α) (β := β) ▸ hB)
+  simp
+
 /-- The partition of `α × β` into the fibers of the first coordinate has `Fintype.card α` cells. -/
+@[simp]
 theorem card_ofSetoid_ker_fst_parts :
     #(ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts = Fintype.card α := by
   rw [ofSetoid_ker_fst_parts, card_image_of_injective, card_univ]

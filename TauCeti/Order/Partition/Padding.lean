@@ -91,15 +91,12 @@ theorem IsEquipartition.exists_divisible_padding (hP : P.IsEquipartition) (hs : 
   have : Nonempty (Fin m) := ⟨⟨0, hmpos⟩⟩
   have hparts := Finpartition.ofSetoid_ker_fst_parts (α := P.parts) (β := Fin m)
   have hcard : ∀ B ∈ (ofSetoid (Setoid.ker (Prod.fst : P.parts × Fin m → P.parts))).parts,
-      #B = m := by
-    intro B hB
-    obtain ⟨A, -, rfl⟩ := mem_image.1 (hparts ▸ hB)
-    simp
+      #B = m := fun B hB ↦ by simpa using card_of_mem_ofSetoid_ker_fst_parts hB
   refine ⟨m, e, _, hmpos, hqm, ?_, ?_, hparts, hcard, ?_, ?_⟩
   · intro A B hA hB
     simp only [hcard A hA, hcard B hB]
     omega
-  · rw [Finpartition.card_ofSetoid_ker_fst_parts, Fintype.card_coe]
+  · simp
   · intro A x
     simpa only [mem_product, mem_singleton, mem_univ, and_true] using he A x
   · -- Rounding costs at most `q - 1` per cell; equitability costs strictly less than one.
