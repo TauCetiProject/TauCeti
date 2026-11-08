@@ -257,7 +257,11 @@ variable [CommSemiring R]
 /-- The homogeneous component in the total degree of a nonzero polynomial is nonzero. -/
 theorem homogeneousComponent_totalDegree_ne_zero (p : MvPolynomial σ R) (hp : p ≠ 0) :
     homogeneousComponent p.totalDegree p ≠ 0 := by
-  simpa only [weightInitialForm_def, weightedTotalDegree_one, homogeneousComponent] using
+  -- Mathlib defines ordinary homogeneous components as weighted components at weight one.
+  have component_eq : homogeneousComponent p.totalDegree p =
+      weightedHomogeneousComponent (1 : σ → ℕ) p.totalDegree p := rfl
+  rw [component_eq]
+  simpa only [weightInitialForm_def, weightedTotalDegree_one] using
     (weightInitialForm_eq_zero_iff (1 : σ → ℕ) p).not.mpr hp
 
 /-- The degree-one component of a polynomial in finitely many variables is the linear form whose
