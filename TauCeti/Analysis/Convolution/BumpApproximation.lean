@@ -28,26 +28,26 @@ namespace TauCeti
 open Filter MeasureTheory Topology
 open scoped Convolution
 
-variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {ι E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure]
 
 /-- Convolving a function that is continuous at `x` with normalized bumps of radius tending to zero
-converges uniformly to it on a neighbourhood filter of `x`. -/
+along a filter converges uniformly to it on a neighbourhood filter of `x`. -/
 theorem tendstoUniformlyOnFilter_convolution_normed [CompleteSpace F] {x : E}
     {g : E → F}
-    (hgm : AEStronglyMeasurable g mu) (hgx : ContinuousAt g x) {phi : ℕ → ContDiffBump (0 : E)}
-    (hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0)) :
+    {l : Filter ι} (hgm : AEStronglyMeasurable g mu) (hgx : ContinuousAt g x)
+    {phi : ι → ContDiffBump (0 : E)} (hphi : Tendsto (fun n => (phi n).rOut) l (𝓝 0)) :
     TendstoUniformlyOnFilter (fun n => g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu]
-      (phi n).normed mu) g atTop (𝓝 x) := by
-  have hconv : Tendsto (fun p : ℕ × E => (g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu]
-      (phi p.1).normed mu) p.2) (atTop ×ˢ 𝓝 x) (𝓝 (g x)) := by
+      (phi n).normed mu) g l (𝓝 x) := by
+  have hconv : Tendsto (fun p : ι × E => (g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu]
+      (phi p.1).normed mu) p.2) (l ×ˢ 𝓝 x) (𝓝 (g x)) := by
     simp only [convolution_flip]
     exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
       (Eventually.of_forall fun _ => hgm) (hgx.tendsto.comp tendsto_snd) tendsto_snd
-  have hdist : Tendsto (fun p : ℕ × E =>
+  have hdist : Tendsto (fun p : ι × E =>
       dist ((g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi p.1).normed mu) p.2) (g p.2))
-      (atTop ×ˢ 𝓝 x) (𝓝 0) := by
+      (l ×ˢ 𝓝 x) (𝓝 0) := by
     simpa only [dist_self, Function.comp_apply] using hconv.dist (hgx.tendsto.comp tendsto_snd)
   rw [Metric.tendstoUniformlyOnFilter_iff]
   intro ε hε
