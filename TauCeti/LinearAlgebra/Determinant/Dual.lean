@@ -35,8 +35,9 @@ cokernel of `f^*` have the dimensions of the cokernel and kernel of `f`
 (`LinearMap.finrank_ker_dualMap_eq_finrank_quotient_range`,
 `LinearMap.finrank_quotient_range_dualMap`), so `f^*` has index minus that of `f`.
 
-This is the dual comparison of determinant lines through which orientations of the determinant
-line of an operator are transported to the determinant line of its adjoint.
+This identifies the determinant line of the algebraic dual map `f^*`, on full algebraic duals
+over a field, with that of `f`. The comparison for the adjoint of a Fredholm operator between
+Banach or Hilbert spaces, on topological duals, is not provided here.
 
 ## Main declarations
 
