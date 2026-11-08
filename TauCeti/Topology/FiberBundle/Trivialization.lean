@@ -193,6 +193,11 @@ theorem symmEquivAt_apply (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.
     e.symmEquivAt hb v = e.symm b v :=
   (rfl)
 
+@[simp]
+theorem symmEquivAt_symm_apply (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.baseSet)
+    (p : E b) : (e.symmEquivAt hb).symm p = (e ⟨b, p⟩).2 :=
+  (rfl)
+
 end CoordChange
 
 end Bundle.Trivialization
