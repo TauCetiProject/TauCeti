@@ -89,7 +89,7 @@ theorem integral_norm_fderiv_one_sq_punctured_disc_le {u : ℂ → V}
     have hsub : A a ⊆ A r := fun z hz ↦ ⟨hr.2.le.trans hz.1, hz.2⟩
     have hmono := setIntegral_mono_set (hE.mono_set (hAsub hr.1))
       (ae_of_all _ fun _ ↦ sq_nonneg _) (Filter.Eventually.of_forall hsub)
-    have hbound := ω.integral_norm_fderiv_one_sq_annulus_le z₀ hg hr.1
+    have hbound := ω.integral_norm_fderiv_one_sq_annulus_le z₀ hg hr.1.le
       (hr.2.le.trans hab) hc (fun z hz ↦ hu z (hAsub hr.1 hz))
       (fun z hz ↦ hCR z (hAsub hr.1 hz)) (fun z hz ↦ htame z (hAsub hr.1 hz))
     have h := hmono.trans hbound
