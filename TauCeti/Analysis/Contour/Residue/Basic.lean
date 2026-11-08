@@ -14,7 +14,7 @@ import TauCeti.Order.WithBot
 /-!
 # The residue of a meromorphic function
 
-For `f : ℂ → E` valued in a complex normed space and `z₀ : ℂ`, the **residue**
+For `f : ℂ → E` valued in a complex Banach space and `z₀ : ℂ`, the **residue**
 `TauCeti.Contour.residue f z₀` is the order-`(−1)` Laurent coefficient of `f` at `z₀` — the
 quantity summed in Cauchy's residue theorem. It is built directly on Mathlib's
 `meromorphicOrderAt` / analytic-part API rather than a parallel order-of-vanishing notion: writing
@@ -24,7 +24,12 @@ index `−1 − n`, i.e. `((−1 − n)!)⁻¹ • iteratedDeriv (−1 − n) g 
 where `f` is analytic (`n ≥ 0`), and at a **simple pole** (`n = −1`) it is the leading Laurent
 coefficient `meromorphicTrailingCoeffAt f z₀ = lim_{z→z₀} (z − z₀) • f z`.
 
-As an unconditional value it is junk (`0`) when `f` is not meromorphic at `z₀`.
+As an unconditional value it is junk (`0`) when `f` is not meromorphic at `z₀`, and also when `E`
+is not complete. Without completeness, a function analytic at `z₀` need not be differentiable at
+nearby points, since its termwise-differentiated power series may converge outside `E`. Then
+`iteratedDeriv` no longer recovers its Taylor coefficients, so the formula above would not give
+the Laurent coefficient. This follows `MeasureTheory.integral`, which is likewise `0` for an
+incomplete codomain.
 
 ## Main definitions
 
@@ -36,8 +41,8 @@ As an unconditional value it is junk (`0`) when `f` is not meromorphic at `z₀`
   presentation `f =ᶠ[𝓝[≠] z₀] (· − z₀) ^ n • g` with `g` analytic, `g z₀ ≠ 0`, and `n < 0`, the
   residue is `((−1 − n)!)⁻¹ • iteratedDeriv (−1 − n) g z₀`, independently of the presentation.
 * `TauCeti.Contour.residue_eq_of_eventuallyEq_zpow_smul` — the same value from any presentation
-  `f =ᶠ[𝓝[≠] z₀] (· − z₀) ^ n • g` with `g` analytic and `n ≤ −1`, dropping `g z₀ ≠ 0` (for a
-  complete codomain).
+  `f =ᶠ[𝓝[≠] z₀] (· − z₀) ^ n • g` with `g` analytic and `n ≤ −1`, dropping `g z₀ ≠ 0` (so the
+  presentation exponent `n` need not be the meromorphic order of `f`).
 * `TauCeti.Contour.residue_add`, `TauCeti.Contour.residue_sub`, `TauCeti.Contour.residue_sum` —
   additivity of the residue, over functions meromorphic at `z₀`, including over finite sums. The
   hypotheses are essential: two functions that are not meromorphic can sum to one that is.
@@ -80,20 +85,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 `z₀` with a pole (`meromorphicOrderAt f z₀ = n < 0`), it is the Taylor coefficient
 `((−1 − n)!)⁻¹ • iteratedDeriv (−1 − n) g z₀` of the analytic part `g` (with
 `f z = (z − z₀) ^ n • g z` near `z₀`); it is `0` when `f` is analytic at `z₀` (`n ≥ 0`) and junk
-(`0`) when `f` is not meromorphic at `z₀`. See `residue_eq_of_order_lt_zero` for the characteristic
-value from an arbitrary presentation and `residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one`
-for the simple-pole value. -/
+(`0`) when `f` is not meromorphic at `z₀` or `E` is not complete. See
+`residue_eq_of_order_lt_zero` for the characteristic value from an arbitrary presentation and
+`residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one` for the simple-pole value. -/
 noncomputable def residue (f : ℂ → E) (z₀ : ℂ) : E :=
-  haveI : Decidable (MeromorphicAt f z₀ ∧ meromorphicOrderAt f z₀ < 0) := Classical.propDecidable _
-  if h : MeromorphicAt f z₀ ∧ meromorphicOrderAt f z₀ < 0 then
+  haveI : Decidable (CompleteSpace E ∧ MeromorphicAt f z₀ ∧ meromorphicOrderAt f z₀ < 0) :=
+    Classical.propDecidable _
+  if h : CompleteSpace E ∧ MeromorphicAt f z₀ ∧ meromorphicOrderAt f z₀ < 0 then
     ((-1 - (meromorphicOrderAt f z₀).untop₀).toNat.factorial : ℂ)⁻¹ •
       iteratedDeriv (-1 - (meromorphicOrderAt f z₀).untop₀).toNat
-        ((meromorphicOrderAt_ne_top_iff h.1).1 h.2.ne_top).choose z₀
+        ((meromorphicOrderAt_ne_top_iff h.2.1).1 h.2.2.ne_top).choose z₀
   else 0
 
 /-- Unfolding `residue` at a pole: the analytic part chosen by the definition presents `f` at its
 meromorphic order, and the residue is its Taylor coefficient at index `−1 − order`. -/
-private lemma exists_residue_eq_of_meromorphicOrderAt_lt_zero {f : ℂ → E} {z₀ : ℂ}
+private lemma exists_residue_eq_of_meromorphicOrderAt_lt_zero [CompleteSpace E] {f : ℂ → E} {z₀ : ℂ}
     (hf : MeromorphicAt f z₀) (hlt : meromorphicOrderAt f z₀ < 0) :
     ∃ g : ℂ → E, AnalyticAt ℂ g z₀ ∧ g z₀ ≠ 0 ∧
       f =ᶠ[𝓝[≠] z₀] (fun z ↦ (z - z₀) ^ (meromorphicOrderAt f z₀).untop₀ • g z) ∧
@@ -101,14 +107,14 @@ private lemma exists_residue_eq_of_meromorphicOrderAt_lt_zero {f : ℂ → E} {z
         iteratedDeriv (-1 - (meromorphicOrderAt f z₀).untop₀).toNat g z₀ := by
   have h := (meromorphicOrderAt_ne_top_iff hf).1 hlt.ne_top
   exact ⟨_, h.choose_spec.1, h.choose_spec.2.1, h.choose_spec.2.2,
-    by rw [residue, dite_eq_left ⟨hf, hlt⟩]⟩
+    by rw [residue, dite_eq_left ⟨‹_›, hf, hlt⟩]⟩
 
 /-- **Characteristic value of the residue at a pole.** If `f z = (z − z₀) ^ n • g z` near `z₀` (on
 the punctured neighborhood) with `g` analytic at `z₀`, `g z₀ ≠ 0`, and `n < 0`, then the residue is
 the Taylor coefficient of `g` at index `−1 − n`. This is the standard reduced analytic presentation;
 the order equality `meromorphicOrderAt f z₀ = n` is derived from it, and the value is independent of
 the chosen presentation `g`. -/
-theorem residue_eq_of_order_lt_zero {f g : ℂ → E} {z₀ : ℂ} {n : ℤ}
+theorem residue_eq_of_order_lt_zero [CompleteSpace E] {f g : ℂ → E} {z₀ : ℂ} {n : ℤ}
     (hlt : n < 0) (hg : AnalyticAt ℂ g z₀) (hg_ne : g z₀ ≠ 0)
     (hfg : f =ᶠ[𝓝[≠] z₀] fun z ↦ (z - z₀) ^ n • g z) :
     residue f z₀ = ((-1 - n).toNat.factorial : ℂ)⁻¹ • iteratedDeriv (-1 - n).toNat g z₀ := by
@@ -130,7 +136,13 @@ theorem residue_eq_of_order_lt_zero {f g : ℂ → E} {z₀ : ℂ} {n : ℤ}
 theorem residue_of_not_meromorphicAt {f : ℂ → E} {z₀ : ℂ} (h : ¬ MeromorphicAt f z₀) :
     residue f z₀ = 0 := by
   rw [residue, dite_eq_right]
-  exact fun h' ↦ absurd h'.1 h
+  exact fun h' ↦ absurd h'.2.1 h
+
+/-- If `E` is not complete, the residue of any `f : ℂ → E` is `0` by definition. -/
+theorem residue_of_not_completeSpace (hE : ¬ CompleteSpace E) (f : ℂ → E) (z₀ : ℂ) :
+    residue f z₀ = 0 := by
+  rw [residue, dite_eq_right]
+  exact fun h' ↦ absurd h'.1 hE
 
 /-- The residue vanishes at a point where `f` has nonnegative meromorphic order (in particular where
 `f` is analytic): there is no order-`(−1)` Laurent coefficient. -/
@@ -138,7 +150,7 @@ theorem residue_of_not_meromorphicAt {f : ℂ → E} {z₀ : ℂ} (h : ¬ Meromo
 theorem residue_eq_zero_of_meromorphicOrderAt_nonneg {f : ℂ → E} {z₀ : ℂ}
     (h : 0 ≤ meromorphicOrderAt f z₀) : residue f z₀ = 0 := by
   rw [residue, dite_eq_right]
-  exact fun h' ↦ absurd h'.2 h.not_gt
+  exact fun h' ↦ absurd h'.2.2 h.not_gt
 
 /-- The residue vanishes where `f` is analytic. -/
 @[simp]
@@ -150,6 +162,9 @@ theorem residue_eq_zero_of_analyticAt {f : ℂ → E} {z₀ : ℂ} (hf : Analyti
 agreeing near (but not necessarily at) `z₀` have the same residue. -/
 theorem residue_congr_nhdsNE {f g : ℂ → E} {z₀ : ℂ} (h : f =ᶠ[𝓝[≠] z₀] g) :
     residue f z₀ = residue g z₀ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · rw [residue_of_not_completeSpace hE, residue_of_not_completeSpace hE]
   have hord : meromorphicOrderAt f z₀ = meromorphicOrderAt g z₀ := meromorphicOrderAt_congr h
   rcases lt_or_ge (meromorphicOrderAt g z₀) 0 with hlt | hge
   · obtain ⟨g₀, hg₀, hg₀_ne, hgg₀, hres⟩ := exists_residue_eq_of_meromorphicOrderAt_lt_zero
@@ -164,8 +179,8 @@ coefficient `meromorphicTrailingCoeffAt f z₀`, i.e. `lim_{z→z₀} (z − z�
 coefficient at index `−1 − (−1) = 0` of the analytic part `g` is just `g z₀`, which is the trailing
 coefficient. -/
 @[simp]
-theorem residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one {f : ℂ → E} {z₀ : ℂ}
-    (hord : meromorphicOrderAt f z₀ = -1) :
+theorem residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one [CompleteSpace E] {f : ℂ → E}
+    {z₀ : ℂ} (hord : meromorphicOrderAt f z₀ = -1) :
     residue f z₀ = meromorphicTrailingCoeffAt f z₀ := by
   obtain ⟨g, hg, -, hfg, hres⟩ := exists_residue_eq_of_meromorphicOrderAt_lt_zero
     (meromorphicAt_of_meromorphicOrderAt_ne_zero (by rw [hord]; decide)) (by rw [hord]; decide)
@@ -285,12 +300,15 @@ theorem residue_add [CompleteSpace E] {f g : ℂ → E} {z₀ : ℂ} (hf : Merom
 
 /-- **Scaling of the residue.** The residue commutes with scalar multiplication.
 
-No meromorphy hypothesis is needed: the identity holds for every `f`, through the junk value where
-`f` is not meromorphic at `z₀`. Contrast `residue_add`, whose hypotheses are essential — two
-functions that are not meromorphic can sum to one that is. -/
+No meromorphy or completeness hypothesis is needed: the identity holds for every `f`, through the
+junk value where `f` is not meromorphic at `z₀` or `E` is not complete. Contrast `residue_add`,
+whose hypotheses are essential — two functions that are not meromorphic can sum to one that is. -/
 @[simp]
 theorem residue_const_smul {f : ℂ → E} {z₀ : ℂ} (c : ℂ) :
     residue (c • f) z₀ = c • residue f z₀ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · rw [residue_of_not_completeSpace hE, residue_of_not_completeSpace hE, smul_zero]
   rcases eq_or_ne c 0 with rfl | hc
   · rw [zero_smul, zero_smul]
     exact residue_eq_zero_of_analyticAt analyticAt_const
