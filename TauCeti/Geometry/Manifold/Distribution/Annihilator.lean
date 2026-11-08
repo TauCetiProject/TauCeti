@@ -12,6 +12,7 @@ import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 
 /-!
 # Local defining covectors for hyperplane distributions
@@ -55,70 +56,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {n : ℕ∞ω} [IsManifold I 1 M] [IsManifold I (n + 1) M]
   {k : ℕ} {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
-/-- A linear injection of a space of dimension `k` into a space of dimension `k + 1` has a left
-inverse and a nonzero covector annihilating its range. -/
-private theorem exists_leftInverse_ne_zero_comp_eq_zero {A : (Fin k → 𝕜) →L[𝕜] E}
-    (hA : Injective A) (hk : k + 1 = finrank 𝕜 E) :
-    ∃ (P : E →L[𝕜] (Fin k → 𝕜)) (a : E →L[𝕜] 𝕜), LeftInverse P A ∧ a ≠ 0 ∧ a ∘L A = 0 := by
-  obtain ⟨p, hp⟩ := A.toLinearMap.exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.mpr hA)
-  have hrank : finrank 𝕜 (LinearMap.range A.toLinearMap) = k := by
-    rw [LinearMap.finrank_range_of_inj hA, Module.finrank_pi, Fintype.card_fin]
-  have hlt : LinearMap.range A.toLinearMap < ⊤ := by
-    apply lt_of_le_of_ne le_top
-    intro h
-    have := congrArg (fun S : Submodule 𝕜 E ↦ finrank 𝕜 S) h
-    rw [hrank, finrank_top, ← hk] at this
-    omega
-  obtain ⟨a, ha, haA⟩ := (LinearMap.range A.toLinearMap).exists_le_ker_of_lt_top hlt
-  refine ⟨p.toContinuousLinearMap, a.toContinuousLinearMap, fun v ↦ LinearMap.congr_fun hp v,
-    fun hz ↦ ha (congrArg ContinuousLinearMap.toLinearMap hz), ?_⟩
-  ext c
-  exact haA (LinearMap.mem_range_self _ c)
-
-omit [FiniteDimensional 𝕜 E] [IsManifold I 1 M] [IsManifold I (n + 1) M] in
-/-- Near a point where a smooth family of injections `A y` of `Fin k → 𝕜` into `E` is compressed
-by a left inverse `P` to the identity and `a` is a nonzero covector killing `A x`, the covectors
-`a - a (A y) (P (A y))⁻¹ P` are smooth, nonzero, and kill `A y`, on an open neighborhood of `x`
-inside the domain of smoothness. -/
-private theorem exists_isOpen_contMDiffOn_sub_comp_inverse_comp {A : M → (Fin k → 𝕜) →L[𝕜] E}
-    {S : Set M} (hS : IsOpen S) {x : M} (hxS : x ∈ S)
-    (hA : ContMDiffOn I 𝓘(𝕜, (Fin k → 𝕜) →L[𝕜] E) n A S) {P : E →L[𝕜] (Fin k → 𝕜)}
-    (hP : LeftInverse P (A x)) {a : E →L[𝕜] 𝕜} (ha : a ≠ 0) (haA : a ∘L A x = 0) :
-    ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ W ⊆ S ∧
-      ContMDiffOn I 𝓘(𝕜, E →L[𝕜] 𝕜) n
-        (fun y ↦ a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P) W ∧
-      ∀ y ∈ W, (P ∘L A y).IsInvertible ∧ a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P ≠ 0 := by
-  -- The compressed frame is the identity at x, hence invertible on a neighborhood.
-  let Q : M → (Fin k → 𝕜) →L[𝕜] Fin k → 𝕜 := fun y ↦ P ∘L A y
-  have hQ : ContMDiffOn I 𝓘(𝕜, (Fin k → 𝕜) →L[𝕜] Fin k → 𝕜) n Q S :=
-    contMDiffOn_const.clm_comp hA
-  have hQx : Q x = 1 := ContinuousLinearMap.ext hP
-  -- Project the annihilator at x to the annihilators of the nearby frame images.
-  let c : M → E →L[𝕜] 𝕜 := fun y ↦ a - a ∘L A y ∘L (Q y).inverse ∘L P
-  have hcx : c x = a := by
-    dsimp only [c]
-    rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc, haA]
-    simp
-  have hQunit : ∀ᶠ y in 𝓝 x, (Q y).IsInvertible := by
-    have hi : (Q x).IsInvertible := by
-      rw [hQx]
-      exact ⟨ContinuousLinearEquiv.refl 𝕜 _, rfl⟩
-    exact (hQ.continuousOn.continuousAt (hS.mem_nhds hxS)).tendsto.eventually hi.eventually_nhds
-  obtain ⟨W, hWQ, hW, hxW⟩ := eventually_nhds_iff.mp hQunit
-  have hc : ContMDiffOn I 𝓘(𝕜, E →L[𝕜] 𝕜) n c (S ∩ W) := by
-    apply contMDiffOn_const.sub
-    exact ((contMDiffOn_const.clm_comp (hA.mono inter_subset_left)).clm_comp
-      (fun y hy ↦ (hWQ y hy.2).contDiffAt_map_inverse.comp_contMDiffWithinAt
-        ((hQ y hy.1).mono inter_subset_left))).clm_comp contMDiffOn_const
-  have hcn : ∀ᶠ y in 𝓝 x, c y ≠ 0 :=
-    (hc.continuousOn.continuousAt ((hS.inter hW).mem_nhds ⟨hxS, hxW⟩)).eventually_ne
-      (by rwa [hcx])
-  obtain ⟨Z, hZc, hZ, hxZ⟩ := eventually_nhds_iff.mp hcn
-  exact ⟨S ∩ W ∩ Z, (hS.inter hW).inter hZ, ⟨⟨hxS, hxW⟩, hxZ⟩,
-    inter_subset_left.trans inter_subset_left,
-    hc.mono inter_subset_left, fun y hy ↦ ⟨hWQ y hy.1.2, hZc y hy.2⟩⟩
-
 omit [CompleteSpace 𝕜] [IsManifold I (n + 1) M] in
 /-- At a point of a frame domain, a nonzero covector killing the frame operator pulls back along
 the trivialization to a nonzero covector whose kernel is the distribution. -/
@@ -148,8 +85,7 @@ private theorem ker_comp_continuousLinearMapAt_eq
       (Pi.single i (1 : 𝕜))
     have heval : (c ∘L e.continuousLinearMapAt 𝕜 y) (X i y) = c (e ⟨y, X i y⟩).2 :=
       congrArg c (e.continuousLinearMapAt_apply_of_mem 𝕜 hye (X i y))
-    change (c ∘L e.continuousLinearMapAt 𝕜 y) (X i y) = 0
-    rw [heval]
+    rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, heval]
     simpa [hAi, e] using congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
   exact Module.Dual.ker_eq_of_le_of_finrank_add_one _
     (fun hz ↦ hαy (ContinuousLinearMap.coe_injective hz)) hle
@@ -173,10 +109,10 @@ theorem IsContMDiffDistribution.exists_local_annihilator
   have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
   let A := IsSubbundleFrameOn.trivOperator 𝕜 E X x
   have hA := hX.contMDiffOn_trivOperator x
-  obtain ⟨P, a, hP, ha, haA⟩ := exists_leftInverse_ne_zero_comp_eq_zero
+  obtain ⟨P, a, hP, ha, haA⟩ := ContinuousLinearMap.exists_leftInverse_ne_zero_comp_eq_zero _
     (hX.isSubbundleFrameOn.injective_trivOperator hxV) hk
-  obtain ⟨W, hW, hxW, hWS, hc, hWc⟩ := exists_isOpen_contMDiffOn_sub_comp_inverse_comp
-    (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hA hP ha haA
+  obtain ⟨W, hW, hxW, hWS, hc, hWc⟩ := hA.exists_isOpen_contMDiffOn_sub_comp_inverse_comp
+    (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hP ha haA
   refine ⟨W,
     fun y ↦ (a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P) ∘L e.continuousLinearMapAt 𝕜 y, hW,
     hxW, ?_, fun y hy ↦ ?_⟩
