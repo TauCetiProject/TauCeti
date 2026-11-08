@@ -205,7 +205,7 @@ private theorem abs_integral_prod_mul_sub_le (E : Finset (Sym2 V)) (G : Sym2 V �
 /-- **One swap.** Adding the edge `e₀ ∈ E` to the set `D'` of edges taken from `U` changes the
 integral of the edge product by at most `‖U - W‖□`. -/
 private theorem abs_integral_hybrid_insert_sub_le (E : Finset (Sym2 V))
-    (hE : ∀ e ∈ E, ¬ e.IsDiag) (U W : Graphon Ω μ) (e₀ : Sym2 V) (D' : Finset (Sym2 V))
+    (U W : Graphon Ω μ) (e₀ : Sym2 V) (he₀ : ¬ e₀.IsDiag) (D' : Finset (Sym2 V))
     (he₀E : e₀ ∈ E) (he₀D' : e₀ ∉ D') :
     |(∫ x, ∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e
           ∂(Measure.pi fun _ : V => μ))
@@ -240,7 +240,7 @@ private theorem abs_integral_hybrid_insert_sub_le (E : Finset (Sym2 V))
       = fun x : V → Ω => (∏ e ∈ E.erase e₀, edgeFactor (if e ∈ D' then U else W) x e)
           * (edgeFactor U x e₀ - edgeFactor W x e₀) := funext key
   rw [hfun]
-  exact abs_integral_prod_mul_sub_le E _ U W e₀ (hE e₀ he₀E)
+  exact abs_integral_prod_mul_sub_le E _ U W e₀ he₀
 
 /-- **The telescope.** Swapping the edges in a subset `D` of `E` from `W` to `U`, one edge at a
 time, costs at most `‖U - W‖□` per swap. -/
@@ -255,7 +255,7 @@ private theorem abs_integral_hybrid_sub_le (E : Finset (Sym2 V)) (hE : ∀ e ∈
     intro hsub
     have he₀E : e₀ ∈ E := hsub (Finset.mem_insert_self e₀ D')
     have hD'E : D' ⊆ E := (Finset.subset_insert _ _).trans hsub
-    have hstep := abs_integral_hybrid_insert_sub_le E hE U W e₀ D' he₀E he₀D'
+    have hstep := abs_integral_hybrid_insert_sub_le E U W e₀ (hE e₀ he₀E) D' he₀E he₀D'
     have htri := abs_sub_le
       (∫ x, ∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e
         ∂(Measure.pi fun _ : V => μ))
