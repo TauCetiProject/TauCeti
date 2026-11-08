@@ -401,12 +401,12 @@ every `v ∈ W^{1,2}_0(Ω)` lies in `Lˢ(Ω)` with `s = (1/2 - δ)⁻¹`, and
 
 with `K > 0` depending only on `n`, `δ` and the normalization of `mu`. This is
 `TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt` at `p = 2`. -/
-private theorem exists_forall_eLpNorm_value_le_ofReal_mul_measureReal_rpow [Nonempty ι] {δ : ℝ}
+private theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [Nonempty ι] {δ : ℝ}
     (hδ0 : 0 < δ) (hδn : δ < (Fintype.card ι : ℝ)⁻¹) (hδ2 : δ < 2⁻¹) :
     ∃ K : ℝ, 0 < K ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}, mu Omega ≠ ∞ →
       ∀ v ∈ w1p0Submodule mu Omega 2,
         eLpNorm (W1p.value v) (Real.toNNReal (2⁻¹ - δ)⁻¹) (mu.restrict Omega) ≤
-          ENNReal.ofReal (K * mu.real Omega ^ ((Fintype.card ι : ℝ)⁻¹ - δ)) *
+          (Real.toNNReal (K * mu.real Omega ^ ((Fintype.card ι : ℝ)⁻¹ - δ)) : ℝ≥0∞) *
             ‖W1p.gradient v‖ₑ := by
   set n : ℕ := Fintype.card ι
   have hn0 : (0 : ℝ) < n := by exact_mod_cast Fintype.card_pos
@@ -432,35 +432,26 @@ private theorem exists_forall_eLpNorm_value_le_ofReal_mul_measureReal_rpow [None
     (by rwa [finrank_euclideanSpace]) hv
   rw [finrank_euclideanSpace] at hsob
   refine hsob.trans_eq ?_
-  rw [← ENNReal.ofReal_toReal hOmega, ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg
-    (by linarith), ← ENNReal.ofReal_mul hK.le, ← measureReal_def]
+  rw [ENNReal.ofNNReal_toNNReal, ← ENNReal.ofReal_toReal hOmega,
+    ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg (by linarith), ← ENNReal.ofReal_mul hK.le,
+    ← measureReal_def]
 
-/-- The Sobolev exponent `s = (1/2 - δ)⁻¹` used in the global bound: for `r > 1` with `n < 2 r`
-there are `δ` with `1/(2r) < δ < min (1/n) (1/2)`, and then `s = (1/2 - δ)⁻¹` satisfies
-`s (1 - 1/r) > 2` and `2/s = 1 - 2δ`. -/
-private theorem exists_sobolev_exponent {n : ℕ} {r : ℝ≥0} (hn0 : (0 : ℝ) < n) (hr : 1 < r)
-    (hrn : (n : ℝ) < 2 * r) :
+/-- The Sobolev exponents used in the scale-invariant bounds: for `0 ≤ θ < min (1/n) (1/2)` there
+are `δ` with `θ < δ < min (1/n) (1/2)`, and then `s = (1/2 - δ)⁻¹` satisfies `1/s = 1/2 - δ` and
+`s (1/2 - θ) > 1`. -/
+private theorem exists_sobolev_exponent {n : ℕ} {θ : ℝ} (hθ : 0 ≤ θ) (hθn : θ < (n : ℝ)⁻¹)
+    (hθ2 : θ < 2⁻¹) :
     ∃ δ : ℝ, 0 < δ ∧ δ < (n : ℝ)⁻¹ ∧ δ < 2⁻¹ ∧
-      2 < ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) * (1 - (r : ℝ)⁻¹) ∧
-      2 / ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) = 1 - 2 * δ := by
-  have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  have hlow : ((2 : ℝ) * r)⁻¹ < min (n : ℝ)⁻¹ 2⁻¹ :=
-    lt_min ((inv_lt_inv₀ (by positivity) hn0).2 hrn)
-      ((inv_lt_inv₀ (by positivity) two_pos).2 (by linarith))
-  obtain ⟨δ, hδ0, hδmin⟩ := exists_between hlow
+      ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ)⁻¹ = 2⁻¹ - δ ∧
+      1 < ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) * (2⁻¹ - θ) := by
+  obtain ⟨δ, hθδ, hδmin⟩ := exists_between (lt_min hθn hθ2)
   obtain ⟨hδn, hδ2⟩ := lt_min_iff.1 hδmin
-  have hδpos : 0 < δ := (inv_pos.2 (by positivity)).trans hδ0
-  have hs : ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ) = (2⁻¹ - δ)⁻¹ :=
-    Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
-  refine ⟨δ, hδpos, hδn, hδ2, ?_, ?_⟩
-  · rw [hs, ← div_eq_inv_mul, lt_div_iff₀ (by linarith)]
-    have : (r : ℝ)⁻¹ < 2 * δ := by
-      rw [mul_inv] at hδ0
-      linarith
-    linarith
-  · rw [hs]
-    field_simp
+  have hs : ((Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) : ℝ)⁻¹ = 2⁻¹ - δ := by
+    rw [Real.coe_toNNReal _ (inv_nonneg.2 (by linarith)), inv_inv]
+  refine ⟨δ, hθ.trans_lt hθδ, hδn, hδ2, hs, ?_⟩
+  have hs0 : (0 : ℝ) < (Real.toNNReal (2⁻¹ - δ)⁻¹ : ℝ≥0) := inv_pos.1 (by rw [hs]; linarith)
+  rw [← div_lt_iff₀' hs0, one_div, hs]
+  linarith
 
 /-- The exponent bookkeeping in the global bound: `(K m^(1/n - δ))² m^(1 - 1/r - 2/s) =
 K² m^(2/n - 1/r)` when `2/s = 1 - 2δ`. -/
@@ -519,28 +510,35 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast Fintype.card_pos
   have hn0 : (0 : ℝ) < n := by linarith
   have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
-  obtain ⟨δ, hδpos, hδn, hδ2, hrs, h2s⟩ := exists_sobolev_exponent hn0 hr hrn
+  -- The Sobolev exponent `s = (1/2 - δ)⁻¹`, with `1/(2r) < δ < min (1/n) (1/2)`.
+  obtain ⟨δ, hδpos, hδn, hδ2, hs, hθs⟩ := exists_sobolev_exponent (θ := ((2 : ℝ) * r)⁻¹)
+    (by positivity) ((inv_lt_inv₀ (by positivity) hn0).2 hrn)
+    ((inv_lt_inv₀ (by positivity) two_pos).2 (by linarith [show (1 : ℝ) < r from hr]))
   obtain ⟨K, hK, hsob⟩ :=
-    exists_forall_eLpNorm_value_le_ofReal_mul_measureReal_rpow (mu := mu) hδpos hδn hδ2
+    exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow (mu := mu) hδpos hδn hδ2
   set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
+  have hrs : 2 < (s : ℝ) * (1 - (r : ℝ)⁻¹) := by
+    rw [mul_inv] at hθs
+    linarith
+  have h2s : 2 / (s : ℝ) = 1 - 2 * δ := by
+    rw [div_eq_mul_inv, hs]
+    ring
   set E : ℝ := ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)
   refine ⟨2 ^ E * K ^ 2, by positivity, fun {Omega a c lam Lam gamma f u k} hk hOmega h ha hc
     hc_bound hc_nonneg hf hu hboundary => ?_⟩
   set m := mu.real (Omega : Set (EuclideanSpace ℝ ι))
   have hm : 0 ≤ m := measureReal_nonneg
-  set S : ℝ≥0 := ⟨K * m ^ ((n : ℝ)⁻¹ - δ), by positivity⟩
-  have hSval : (S : ℝ) = K * m ^ ((n : ℝ)⁻¹ - δ) := NNReal.coe_mk _ _
-  have hS : ∀ v ∈ w1p0Submodule mu Omega 2,
-      eLpNorm (W1p.value v) s (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ := fun v hv =>
-    (hsob hOmega v hv).trans_eq (by rw [← ENNReal.ofReal_coe_nnreal (p := S), hSval])
+  set S : ℝ≥0 := Real.toNNReal (K * m ^ ((n : ℝ)⁻¹ - δ))
+  have hSval : (S : ℝ) = K * m ^ ((n : ℝ)⁻¹ - δ) := Real.coe_toNNReal _ (by positivity)
   have hbound := h.ae_value_le_add_of_forall_eLpNorm_le ha hc hc_bound hc_nonneg hOmega
-    (zero_lt_one.trans hr) hrs hS hf hu hk hboundary
+    (zero_lt_one.trans hr) hrs (hsob hOmega) hf hu hk hboundary
   filter_upwards [hbound] with x hx
   refine hx.trans_eq ?_
   -- `S² |Ω| ^ (1 - 1/r - 2/s) = K² |Ω| ^ (2/n - 1/r)`.
   have hpow : (S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ)) =
-      K ^ 2 * m ^ (2 / (n : ℝ) - (r : ℝ)⁻¹) :=
-    sq_mul_rpow_eq hm hn0 hr0 hrn h2s
+      K ^ 2 * m ^ (2 / (n : ℝ) - (r : ℝ)⁻¹) := by
+    rw [hSval]
+    exact sq_mul_rpow_eq hm hn0 hr0 hrn h2s
   calc k + 2 ^ E * (S : ℝ) ^ 2 * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
         m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))
       = k + 2 ^ E * ((S : ℝ) ^ 2 * m ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ))) *
@@ -793,31 +791,20 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow_divergence [Nonempty ι] {q : �
   have hn0 : (0 : ℝ) < n := by exact_mod_cast Fintype.card_pos
   have hq0 : (0 : ℝ) < q := two_pos.trans hq
   -- The Sobolev exponent `s = (1/2 - δ)⁻¹`, with `1/q < δ < min (1/n) (1/2)`.
-  have hlow : (q : ℝ)⁻¹ < min (n : ℝ)⁻¹ 2⁻¹ :=
-    lt_min ((inv_lt_inv₀ hq0 hn0).2 hqn) ((inv_lt_inv₀ hq0 two_pos).2 hq)
-  obtain ⟨δ, hδ0, hδmin⟩ := exists_between hlow
-  obtain ⟨hδn, hδ2⟩ := lt_min_iff.1 hδmin
-  obtain ⟨K, hK, hsob⟩ := exists_forall_eLpNorm_value_le_ofReal_mul_measureReal_rpow (mu := mu)
-    ((inv_pos.2 hq0).trans hδ0) hδn hδ2
+  obtain ⟨δ, hδ0, hδn, hδ2, hs, hqs⟩ := exists_sobolev_exponent (θ := (q : ℝ)⁻¹)
+    (inv_nonneg.2 hq0.le) ((inv_lt_inv₀ hq0 hn0).2 hqn) ((inv_lt_inv₀ hq0 two_pos).2 hq)
+  obtain ⟨K, hK, hsob⟩ :=
+    exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow (mu := mu) hδ0 hδn hδ2
   set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
-  have hs : (s : ℝ)⁻¹ = 2⁻¹ - δ := by
-    rw [Real.coe_toNNReal _ (inv_nonneg.2 (by linarith)), inv_inv]
-  have hs0 : (0 : ℝ) < s := inv_pos.1 (hs ▸ sub_pos.2 hδ2)
-  have hqs : 1 < (s : ℝ) * (2⁻¹ - (q : ℝ)⁻¹) := by
-    rw [← div_lt_iff₀' hs0, one_div, hs]
-    linarith
   set E : ℝ := (s : ℝ) * (2⁻¹ - (q : ℝ)⁻¹) / ((s : ℝ) * (2⁻¹ - (q : ℝ)⁻¹) - 1)
   refine ⟨2 ^ E * K, by positivity, fun {Omega a c lam Lam gamma F u k} hk hOmega h ha hc
     hc_bound hc_nonneg hF hu hboundary => ?_⟩
   set m := mu.real (Omega : Set (EuclideanSpace ℝ ι))
   have hm : 0 ≤ m := measureReal_nonneg
-  set S : ℝ≥0 := ⟨K * m ^ ((n : ℝ)⁻¹ - δ), by positivity⟩
-  have hSval : (S : ℝ) = K * m ^ ((n : ℝ)⁻¹ - δ) := NNReal.coe_mk _ _
-  have hS : ∀ v ∈ w1p0Submodule mu Omega 2,
-      eLpNorm (W1p.value v) s (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ := fun v hv =>
-    (hsob hOmega v hv).trans_eq (by rw [← ENNReal.ofReal_coe_nnreal (p := S), hSval])
+  set S : ℝ≥0 := Real.toNNReal (K * m ^ ((n : ℝ)⁻¹ - δ))
+  have hSval : (S : ℝ) = K * m ^ ((n : ℝ)⁻¹ - δ) := Real.coe_toNNReal _ (by positivity)
   have hbound := h.ae_value_le_add_of_forall_eLpNorm_le_divergence ha hc hc_bound hc_nonneg
-    hOmega hq.le hqs hS hF hu hk hboundary
+    hOmega hq.le hqs (hsob hOmega) hF hu hk hboundary
   filter_upwards [hbound] with x hx
   refine hx.trans_eq ?_
   -- `S |Ω| ^ (1/2 - 1/q - 1/s) = K |Ω| ^ (1/n - 1/q)`.
