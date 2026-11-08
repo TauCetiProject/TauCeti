@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Group.Indicator
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.Algebra.Projectivization
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Reciprocal affine distance on projective space
@@ -152,8 +153,8 @@ theorem affineChartInvOneAddDistSq_nonneg (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) 
 /-- The reciprocal affine distance is at most `1`. -/
 theorem affineChartInvOneAddDistSq_le_one (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     affineChartInvOneAddDistSq i a x ≤ 1 :=
-  indicator_apply_le' (fun _ ↦ inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _)))
-    fun _ ↦ zero_le_one
+  indicator_apply_le' (fun _ ↦ dist_eq_norm (E := EuclideanSpace 𝕜 (Fin n)) _ a ▸
+    TauCeti.inv_one_add_norm_sub_sq_le_one _ a) fun _ ↦ zero_le_one
 
 /-- The reciprocal affine distance is positive exactly on the affine open. -/
 @[simp]
