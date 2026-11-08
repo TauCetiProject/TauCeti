@@ -142,8 +142,8 @@ private theorem fderiv_apply_toEuclideanCLM_inv_apply {Φ : EuclideanSpace ℝ �
   obtain ⟨M, hMD⟩ : ∃ M, toEuclideanCLM (𝕜 := ℝ) M = fderiv ℝ Φ x :=
     ⟨_, StarAlgEquiv.apply_symm_apply _ _⟩
   rw [← hMD, det_toEuclideanCLM] at hx
-  rw [← hMD, StarAlgEquiv.symm_apply_apply, ← mul_apply_eq_comp, ← map_mul,
-    mul_nonsing_inv _ (isUnit_iff_ne_zero.2 hx), map_one, one_apply_eq_self]
+  rw [← hMD, StarAlgEquiv.symm_apply_apply,
+    toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply hx]
 
 /-- Where `DΦ(x)` is invertible, the adjoint of the map of the inverse Jacobian matrix is a left
 inverse of `DΦ(x)*`. -/
@@ -167,10 +167,9 @@ theorem matrixBilinearForm_pullbackPrincipal {Φ : EuclideanSpace ℝ ι → Euc
       |(fderiv ℝ Φ x).det| * matrixBilinearForm (a (Φ x)) η ξ := by
   -- As operators, `a'(x) = J T a(Φ x) T*` with `T* DΦ(x)* = id`, where `T` is the map of `M⁻¹`.
   rw [pullbackPrincipal_apply, matrixBilinearForm_smul_apply, matrixBilinearForm_apply,
-    matrixBilinearForm_apply, ← inner_toEuclideanCLM, ← inner_toEuclideanCLM, map_mul, map_mul,
-    ← conjTranspose_eq_transpose_of_trivial, ← adjoint_toEuclideanCLM,
-    mul_apply_eq_comp, mul_apply_eq_comp,
-    ← ContinuousLinearMap.adjoint_inner_left, adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx,
+    matrixBilinearForm_apply, ← inner_toEuclideanCLM, ← inner_toEuclideanCLM,
+    ← conjTranspose_eq_transpose_of_trivial, inner_toEuclideanCLM_mul_mul_conjTranspose,
+    ← adjoint_toEuclideanCLM, adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx,
     adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx]
 
 /-- **The transformed drift on pulled-back covectors.** Where `DΦ(x)` is invertible,
