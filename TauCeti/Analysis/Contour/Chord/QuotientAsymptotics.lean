@@ -118,12 +118,6 @@ theorem exists_normalized_chord_bound_left
     (eventually_normalized_chord_close self_notMem_Iio h_deriv h_at hL hρ_pos)
   exact ⟨t₀ - c, sub_pos.mpr hc, fun t ht ↦ h ⟨by linarith [ht.1], ht.2⟩⟩
 
-/-- A complex number within `1/2` of `1` lies in the open right half-plane. -/
-private theorem re_pos_of_norm_sub_one_le_half {q : ℂ} (hq : ‖q - 1‖ ≤ 1 / 2) : 0 < q.re := by
-  have h := Complex.re_le_norm (1 - q)
-  rw [norm_sub_rev, Complex.sub_re, Complex.one_re] at h
-  linarith
-
 /-- **Chord quotient in the slit plane (algebraic core).** If the normalized chords at `a` and
 `b` lie in the open right half-plane and `a`, `b` lie on a common side of `t₀` — so that
 `(b - t₀) / (a - t₀) > 0` — then `(γ b - s) / (γ a - s) ∈ Complex.slitPlane`. -/
@@ -154,8 +148,8 @@ theorem exists_chord_quotient_mem_slitPlane_right
     exists_normalized_chord_bound_right h_deriv h_at hL (ρ := 1 / 2) (by norm_num)
   refine ⟨r, hr_pos, fun a b ha hab hb ↦ ?_⟩
   exact chord_quotient_mem_slitPlane
-    (re_pos_of_norm_sub_one_le_half (hr_close a ⟨ha, by linarith⟩))
-    (re_pos_of_norm_sub_one_le_half (hr_close b ⟨by linarith, hb⟩))
+    (re_pos_of_norm_sub_one_lt_one ((hr_close a ⟨ha, by linarith⟩).trans_lt (by norm_num)))
+    (re_pos_of_norm_sub_one_lt_one ((hr_close b ⟨by linarith, hb⟩).trans_lt (by norm_num)))
     (div_pos (by linarith) (by linarith))
 
 /-- **Chord quotients on a small left interval lie in the slit plane**: there is `r > 0` such
@@ -170,8 +164,8 @@ theorem exists_chord_quotient_mem_slitPlane_left
     exists_normalized_chord_bound_left h_deriv h_at hL (ρ := 1 / 2) (by norm_num)
   refine ⟨r, hr_pos, fun a b ha hab hb ↦ ?_⟩
   exact chord_quotient_mem_slitPlane
-    (re_pos_of_norm_sub_one_le_half (hr_close a ⟨ha, by linarith⟩))
-    (re_pos_of_norm_sub_one_le_half (hr_close b ⟨by linarith, hb⟩))
+    (re_pos_of_norm_sub_one_lt_one ((hr_close a ⟨ha, by linarith⟩).trans_lt (by norm_num)))
+    (re_pos_of_norm_sub_one_lt_one ((hr_close b ⟨by linarith, hb⟩).trans_lt (by norm_num)))
     (div_pos_of_neg_of_neg (by linarith) (by linarith))
 
 /-- Along the incoming side of a crossing with left derivative `L`, the boundary argument
@@ -253,7 +247,8 @@ theorem exists_chord_div_tangent_mem_slitPlane_right
   obtain ⟨r, hr_pos, hr_close⟩ :=
     exists_normalized_chord_bound_right h_deriv h_at hL (ρ := 1 / 2) (by norm_num)
   refine ⟨r, hr_pos, fun r' hr'_pos hr'_le ↦ ?_⟩
-  have hq := re_pos_of_norm_sub_one_le_half (hr_close (t₀ + r') ⟨by linarith, by linarith⟩)
+  have hq := re_pos_of_norm_sub_one_lt_one
+    ((hr_close (t₀ + r') ⟨by linarith, by linarith⟩).trans_lt (by norm_num))
   have hr' : ((r' : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr'_pos.ne'
   have h_eq : (γ (t₀ + r') - s) / L =
       ((r' : ℝ) : ℂ) * ((γ (t₀ + r') - s) / (L * ((t₀ + r' - t₀ : ℝ) : ℂ))) := by
@@ -272,7 +267,8 @@ theorem exists_neg_tangent_div_chord_mem_slitPlane_left
   obtain ⟨r, hr_pos, hr_close⟩ :=
     exists_normalized_chord_bound_left h_deriv h_at hL (ρ := 1 / 2) (by norm_num)
   refine ⟨r, hr_pos, fun r' hr'_pos hr'_le ↦ ?_⟩
-  have hq := re_pos_of_norm_sub_one_le_half (hr_close (t₀ - r') ⟨by linarith, by linarith⟩)
+  have hq := re_pos_of_norm_sub_one_lt_one
+    ((hr_close (t₀ - r') ⟨by linarith, by linarith⟩).trans_lt (by norm_num))
   have hr' : ((r' : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr'_pos.ne'
   have h_eq : (-L) / (γ (t₀ - r') - s) =
       1 / ((γ (t₀ - r') - s) / (L * ((t₀ - r' - t₀ : ℝ) : ℂ))) / ((r' : ℝ) : ℂ) := by
