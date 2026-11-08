@@ -35,36 +35,40 @@ noncomputable section
 
 namespace TauCeti.Manifold
 
-variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
 /-- An operation on sections which is additive on globally smooth sections takes equal values on
 two finite sums of globally smooth sections whenever it takes equal values on the summands.  The
 sums are again globally smooth.  The target needs only an addition, without any algebraic laws. -/
 theorem map_sum_eq_of_contMDiff_additive
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
     {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
-    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] [VectorBundle ℝ G W]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W]
     {A : Type*} [Add A] (Φ : (Π x : M, W x) → A)
-    (hadd : ∀ {s s' : Π x : M, W x}, CMDiff ∞ (T% s) → CMDiff ∞ (T% s') →
+    (hadd : ∀ {s s' : Π x : M, W x}, CMDiff n (T% s) → CMDiff n (T% s') →
       Φ (s + s') = Φ s + Φ s')
     {ι : Type*} (q : Finset ι) (u v : ι → Π x : M, W x)
-    (hu : ∀ i, CMDiff ∞ (T% (u i))) (hv : ∀ i, CMDiff ∞ (T% (v i)))
+    (hu : ∀ i, CMDiff n (T% (u i))) (hv : ∀ i, CMDiff n (T% (v i)))
     (huv : ∀ i, Φ (u i) = Φ (v i)) :
-    CMDiff ∞ (T% (∑ i ∈ q, u i)) ∧ CMDiff ∞ (T% (∑ i ∈ q, v i)) ∧
+    CMDiff n (T% (∑ i ∈ q, u i)) ∧ CMDiff n (T% (∑ i ∈ q, v i)) ∧
       Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
   classical
   induction q using Finset.induction_on with
   | empty =>
       simp only [Finset.sum_empty, and_true]
-      exact ⟨contMDiff_zeroSection ℝ W, contMDiff_zeroSection ℝ W⟩
+      exact ⟨contMDiff_zeroSection 𝕜 W, contMDiff_zeroSection 𝕜 W⟩
   | @insert i q hi ih =>
       simp only [Finset.sum_insert hi]
       refine ⟨(hu i).add_section ih.1, (hv i).add_section ih.2.1, ?_⟩
       rw [hadd (hu i) ih.1, hadd (hv i) ih.2.1, huv i, ih.2.2]
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- On a finite-rank smooth real vector bundle over a finite-dimensional Hausdorff manifold,
 a local operation which is additive and linear over globally smooth functions on globally
