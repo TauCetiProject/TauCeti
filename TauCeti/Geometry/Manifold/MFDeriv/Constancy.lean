@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
-public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -63,8 +61,8 @@ theorem eventuallyEq_const_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s)
         (hVopen.mem_nhds hcx.2))
   have hdiff : ∀ u ∈ U,
       DifferentiableWithinAt ℝ g (range I) u ∧ fderivWithin ℝ g (range I) u = 0 :=
-    fun u hu => differentiableWithinAt_fderivWithin_extChart_comp_eq_zero hf hs hzero hu.1 hu.2.1
-      hu.2.2
+    fun u hu => MDifferentiableAt.differentiableWithinAt_fderivWithin_extChart_comp_eq_zero hu.1
+      ((hf _ hu.2.1).mdifferentiableAt (hs.mem_nhds hu.2.1)) (hzero _ hu.2.1) hu.2.2
   -- The mean value theorem on a convex neighbourhood in the model range makes the coordinate
   -- expression constant there; chart injectivity recovers `f`.
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhdsWithin_iff.mp hU
