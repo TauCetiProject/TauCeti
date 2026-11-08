@@ -32,7 +32,9 @@ permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, a fiber-preserving permutation
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
-is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
+is a single cycle on each of its own orbits, the description of a single cycle through every
+point of a nontrivial finite type as a cycle moving every point
+(`Equiv.Perm.isCycleOn_univ_iff`), the transport of its cycles along an equivalence of
 types, the relabelling of a two-argument family invariant under a permutation of its first argument
 paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq`), transport of
 cycle quotients along conjugating equivalences, and the factorization of an invariant function
@@ -229,6 +231,18 @@ theorem isCycleOn_preimage_quotientMk (b : Quotient (SameCycle.setoid σ)) :
       exact sameCycle_comm
     rw [hfibre]
     exact σ.isCycleOn_setOf_sameCycle x
+
+/-- On a nontrivial finite type, a permutation is a single cycle through every point exactly when
+it is a cycle moving every point. -/
+theorem isCycleOn_univ_iff [Fintype α] [DecidableEq α] [Nontrivial α] {f : Equiv.Perm α} :
+    f.IsCycleOn _root_.Set.univ ↔ f.IsCycle ∧ f.support = Finset.univ := by
+  refine ⟨fun h => ⟨isCycle_iff_exists_isCycleOn.2
+      ⟨_, _root_.Set.nontrivial_univ, h, fun _ _ => _root_.Set.mem_univ _⟩,
+    Finset.eq_univ_of_forall fun x => mem_support.2 (h.apply_ne _root_.Set.nontrivial_univ
+      (_root_.Set.mem_univ x))⟩, fun ⟨hc, hs⟩ => ?_⟩
+  have huniv : {x | f x ≠ x} = _root_.Set.univ :=
+    _root_.Set.eq_univ_of_forall fun x => mem_support.1 (hs ▸ Finset.mem_univ x)
+  exact huniv ▸ hc.isCycleOn
 
 /-- A function invariant under a permutation that is a single cycle on each fibre of `g` factors
 through `g`. -/
