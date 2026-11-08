@@ -58,13 +58,16 @@ theorem IsPreconnected.forall_lt_of_lt (hs : IsPreconnected s) {f g : X → α}
 
 /-- A continuous function on a preconnected set which never takes a value in `Ioo a b`, where
 `a < b`, lies below `a` on the whole set or above `b` on the whole set. -/
-theorem IsPreconnected.forall_le_or_forall_ge [DenselyOrdered α] (hs : IsPreconnected s)
+theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
     {f : X → α} (hf : ContinuousOn f s) {a b : α} (hab : a < b) (h : ∀ x ∈ s, f x ∉ Ioo a b) :
     (∀ x ∈ s, f x ≤ a) ∨ ∀ x ∈ s, b ≤ f x := by
-  by_contra! hc
-  obtain ⟨⟨y, hy, hay⟩, ⟨z, hz, hzb⟩⟩ := hc
-  have hy' : b ≤ f y := not_lt.1 fun hlt ↦ h y hy ⟨hay, hlt⟩
-  have hz' : f z ≤ a := not_lt.1 fun hlt ↦ h z hz ⟨hlt, hzb⟩
-  obtain ⟨c, hac, hcb⟩ := exists_between hab
-  obtain ⟨x, hx, rfl⟩ := hs.intermediate_value hz hy hf ⟨hz'.trans hac.le, hcb.le.trans hy'⟩
-  exact h x hx ⟨hac, hcb⟩
+  have hcover : f '' s ⊆ Iic a ∪ Ici b := by
+    rintro _ ⟨x, hx, rfl⟩
+    rcases le_or_gt (f x) a with hxa | hax
+    · exact .inl hxa
+    · exact .inr (not_lt.1 fun hxb ↦ h x hx ⟨hax, hxb⟩)
+  have hdisj : f '' s ∩ (Iic a ∩ Ici b) = ∅ :=
+    eq_empty_of_forall_notMem fun y ⟨_, hya, hby⟩ ↦ (hab.trans_le hby).not_ge hya
+  exact (isPreconnected_iff_subset_of_disjoint_closed.1 (hs.image f hf) _ _ isClosed_Iic
+    isClosed_Ici hcover hdisj).imp (fun h x hx ↦ h (mem_image_of_mem f hx))
+    fun h x hx ↦ h (mem_image_of_mem f hx)
