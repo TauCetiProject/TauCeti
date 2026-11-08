@@ -220,19 +220,14 @@ private theorem lie_cartanDerivation_raisingDerivation :
   simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
     raisingDerivation_zero, raisingDerivation_one, ← LieHom.map_lie,
     lie_slDerivation_upperDerivation, ← map_zsmul]
-  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1
-  · ext i
-    fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · apply Subtype.ext
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
-  · ext i
-    fin_cases i <;> simp [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · apply Subtype.ext
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+  -- Each of the four equations is an equality of vectors or of `sl₃` matrices; check it entrywise.
+  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1 <;> first
+    | (apply Subtype.ext
+       ext i j
+       fin_cases i <;> fin_cases j <;>
+         norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply])
+    | (ext i
+       fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three])
 
 /-- `Fⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `-G₂ᵢⱼ`, for the Chevalley generators of
 `Der 𝕆`. -/
@@ -242,19 +237,14 @@ private theorem lie_cartanDerivation_loweringDerivation :
   simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
     loweringDerivation_zero, loweringDerivation_one, ← LieHom.map_lie,
     lie_slDerivation_lowerDerivation, ← map_neg, ← map_zsmul]
-  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1
-  · ext i
-    fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · apply Subtype.ext
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
-  · ext i
-    fin_cases i <;> simp [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · apply Subtype.ext
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+  -- Each of the four equations is an equality of vectors or of `sl₃` matrices; check it entrywise.
+  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1 <;> first
+    | (apply Subtype.ext
+       ext i j
+       fin_cases i <;> fin_cases j <;>
+         norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply])
+    | (ext i
+       fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three])
 
 /-- The exponents `-CMᵢⱼ` of the higher Serre relations of type `G₂` are `0`, `3`, `1` and `0`. -/
 private theorem toNat_neg_G₂ : (-CartanMatrix.G₂ 0 0).toNat = 0 ∧ (-CartanMatrix.G₂ 0 1).toNat = 3 ∧
@@ -272,13 +262,11 @@ theorem isSerreSystem :
   lie_H_E := lie_cartanDerivation_raisingDerivation
   lie_H_F := lie_cartanDerivation_loweringDerivation
   ad_pow_lie_E_E := by
-    simp only [Fin.forall_fin_two, toNat_neg_G₂.1, toNat_neg_G₂.2.1, toNat_neg_G₂.2.2.1,
-      toNat_neg_G₂.2.2.2, pow_zero, one_apply_eq_self, lie_self,
+    simp only [Fin.forall_fin_two, toNat_neg_G₂, pow_zero, one_apply_eq_self, lie_self,
       pow_one, LieAlgebra.ad_apply, ad_pow_raisingDerivation_zero,
       lie_raisingDerivation_one_lie_raisingDerivation_one_raisingDerivation_zero, and_self]
   ad_pow_lie_F_F := by
-    simp only [Fin.forall_fin_two, toNat_neg_G₂.1, toNat_neg_G₂.2.1, toNat_neg_G₂.2.2.1,
-      toNat_neg_G₂.2.2.2, pow_zero, one_apply_eq_self, lie_self,
+    simp only [Fin.forall_fin_two, toNat_neg_G₂, pow_zero, one_apply_eq_self, lie_self,
       pow_one, LieAlgebra.ad_apply, ad_pow_loweringDerivation_zero,
       lie_loweringDerivation_one_lie_loweringDerivation_one_loweringDerivation_zero, and_self]
 
