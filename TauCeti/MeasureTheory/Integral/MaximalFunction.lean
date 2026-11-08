@@ -512,12 +512,9 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
 theorem exists_eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E)
     [μ.IsAddHaarMeasure] {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ f : E → F, AEMeasurable (fun x => ‖f x‖ₑ) μ →
-      eLpNorm (maximalFunction μ f) p μ ≤ C * eLpNorm f p μ := by
-  refine ⟨((ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
-    4 ^ finrank ℝ E) ^ (1 / p.toReal)).toNNReal, fun f hf => ?_⟩
-  rw [ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)))]
-  exact eLpNorm_maximalFunction_le μ hf hp hp_top
+      eLpNorm (maximalFunction μ f) p μ ≤ C * eLpNorm f p μ :=
+  ⟨_, fun _ hf => (eLpNorm_maximalFunction_le μ hf hp hp_top).trans_eq
+    (congrArg (· * _) (ENNReal.coe_toNNReal (by finiteness)).symm)⟩
 
 end StrongType
 

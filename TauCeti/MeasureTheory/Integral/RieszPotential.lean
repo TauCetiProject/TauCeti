@@ -524,16 +524,17 @@ private theorem rieszPotential_le_add [Nontrivial E] [FiniteDimensional ℝ E]
         hedbergFarConst μ α p * ENNReal.ofReal (R ^ (α - finrank ℝ E / p)) * eLpNorm f p μ := by
   set g : ℤ → ℝ≥0∞ := fun k => ENNReal.ofReal ((R * 2 ^ k) ^ (α - finrank ℝ E)) *
     ∫⁻ y in ball x (2 * (R * 2 ^ k)), ‖f y‖ₑ ∂μ with hg
-  have hpow (k : ℤ) (s : ℝ) : (R * 2 ^ k) ^ s = R ^ s * (2 ^ s) ^ k := by
+  -- Both halves cross into `ℝ≥0∞` here: `c (R 2ᵏ) ^ s = c R ^ s (2 ^ s) ^ k`.
+  have hpow (c s : ℝ) (hc : 0 ≤ c) (k : ℤ) : ENNReal.ofReal (c * (R * 2 ^ k) ^ s) =
+      ENNReal.ofReal c * ENNReal.ofReal (R ^ s) * ENNReal.ofReal ((2 ^ s) ^ k) := by
     rw [Real.mul_rpow hR.le (by positivity), ← Real.rpow_intCast_mul (by norm_num),
-      mul_comm (k : ℝ), Real.rpow_mul_intCast (by norm_num)]
+      mul_comm (k : ℝ), Real.rpow_mul_intCast (by norm_num), ← mul_assoc,
+      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hc]
   have hnear (n : ℕ) : g (-(n + 1)) ≤
       ENNReal.ofReal (2 ^ finrank ℝ E) * μ (ball 0 1) * ENNReal.ofReal (R ^ α) *
         maximalFunction μ f x * ENNReal.ofReal (2 ^ α)⁻¹ ^ (n + 1) := by
     refine (ofReal_rpow_mul_setLIntegral_ball_le_maximalFunction (by positivity)).trans_eq ?_
-    rw [hpow, zpow_neg, ← inv_zpow,
-      ← Nat.cast_add_one, zpow_natCast,
-      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
+    rw [hpow _ _ (by positivity), zpow_neg, ← inv_zpow, ← Nat.cast_add_one, zpow_natCast,
       ENNReal.ofReal_pow (by positivity : (0 : ℝ) ≤ (2 ^ α)⁻¹)]
     ring
   have hfar (n : ℕ) : g n ≤
@@ -541,8 +542,7 @@ private theorem rieszPotential_le_add [Nontrivial E] [FiniteDimensional ℝ E]
         ENNReal.ofReal (R ^ (α - finrank ℝ E / p)) * eLpNorm f p μ *
           ENNReal.ofReal (2 ^ (α - finrank ℝ E / p)) ^ n := by
     refine (ofReal_rpow_mul_setLIntegral_ball_le_eLpNorm hf hp (by positivity)).trans_eq ?_
-    rw [hpow, zpow_natCast, ENNReal.ofReal_mul (by positivity),
-      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity)]
+    rw [hpow _ _ (by positivity), zpow_natCast, ENNReal.ofReal_pow (by positivity)]
     ring
   calc rieszPotential μ α f x ≤ ∑' k : ℤ, g k := rieszPotential_le_tsum hα hR
     _ = ∑' n : ℕ, g n + ∑' n : ℕ, g (-(n + 1)) := by
@@ -589,11 +589,25 @@ private theorem hedbergFarConst_ne_top [FiniteDimensional ℝ E] [μ.IsAddHaarMe
     (ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne))
     (ENNReal.inv_ne_top.2 (tsub_pos_of_lt hσ).ne')
 
+/-- The constant of Hedberg's inequality: the sum of the constants of the two halves of the
+splitting. -/
+private noncomputable def hedbergConst (μ : Measure E) (α : ℝ) (p : ℝ≥0) : ℝ≥0∞ :=
+  hedbergNearConst μ α + hedbergFarConst μ α p
+
+omit [BorelSpace E] in
+private theorem hedbergConst_ne_top [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] (hα : 0 < α)
+    {p : ℝ≥0} (hp : 1 ≤ p) (hαp : α * p < finrank ℝ E) : hedbergConst μ α p ≠ ∞ :=
+  ENNReal.add_ne_top.2 ⟨hedbergNearConst_ne_top hα, hedbergFarConst_ne_top hp hαp⟩
+
+omit [BorelSpace E] in
+private theorem hedbergConst_ne_zero [μ.IsAddHaarMeasure] {p : ℝ≥0} : hedbergConst μ α p ≠ 0 :=
+  fun h => hedbergNearConst_ne_zero (add_eq_zero.1 h).1
+
 /-- Hedberg's inequality with the explicit constant of the splitting. -/
 private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
     (hα : 0 < α) {p : ℝ≥0} (hp : 1 ≤ p) (hαp : α * p < finrank ℝ E) (f : E → F) (x : E) :
-    rieszPotential μ α f x ≤ (hedbergNearConst μ α + hedbergFarConst μ α p) *
-      maximalFunction μ f x ^ (1 - α * p / finrank ℝ E) *
+    rieszPotential μ α f x ≤
+      hedbergConst μ α p * maximalFunction μ f x ^ (1 - α * p / finrank ℝ E) *
         eLpNorm f p μ ^ (α * p / finrank ℝ E) := by
   have hp₀ : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp
   have hd : (0 : ℝ) < finrank ℝ E := (mul_pos hα hp₀).trans hαp
@@ -603,8 +617,7 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
   have hαd : α ≤ finrank ℝ E :=
     (le_mul_of_one_le_right hα.le (by exact_mod_cast hp)).trans hαp.le
   set θ := α * p / finrank ℝ E with hθ
-  have hC : hedbergNearConst μ α + hedbergFarConst μ α p ≠ 0 :=
-    (add_pos_of_pos_of_nonneg (pos_iff_ne_zero.2 hedbergNearConst_ne_zero) zero_le).ne'
+  have hC : hedbergConst μ α p ≠ 0 := hedbergConst_ne_zero
   set M := maximalFunction μ f x with hM_def
   set N := eLpNorm f p μ with hN_def
   -- If `M f (x) = 0`, every ball integral around `x` vanishes.
@@ -666,8 +679,9 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
       ≤ hedbergNearConst μ α * ENNReal.ofReal (R ^ α) * M +
           hedbergFarConst μ α p * ENNReal.ofReal (R ^ (α - finrank ℝ E / p)) * N :=
         rieszPotential_le_add hαd hf hp hR₀
-    _ = (hedbergNearConst μ α + hedbergFarConst μ α p) * M ^ (1 - θ) * N ^ θ := by
-        rw [mul_assoc (hedbergNearConst μ α), hnear, mul_assoc (hedbergFarConst μ α p), hfar]
+    _ = hedbergConst μ α p * M ^ (1 - θ) * N ^ θ := by
+        rw [mul_assoc (hedbergNearConst μ α), hnear, mul_assoc (hedbergFarConst μ α p), hfar,
+          hedbergConst]
         ring
 
 /-- **Hedberg's inequality**: for `0 < α`, `1 ≤ p` and `α p < n`, the Riesz potential is controlled
@@ -682,9 +696,8 @@ theorem rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow [FiniteDimen
     ∃ C : ℝ≥0, ∀ (f : E → F) (x : E), rieszPotential μ α f x ≤
       C * maximalFunction μ f x ^ (1 - α * p / finrank ℝ E) *
         eLpNorm f p μ ^ (α * p / finrank ℝ E) := by
-  refine ⟨(hedbergNearConst μ α + hedbergFarConst μ α p).toNNReal, fun f x => ?_⟩
-  rw [ENNReal.coe_toNNReal (ENNReal.add_ne_top.2
-    ⟨hedbergNearConst_ne_top hα, hedbergFarConst_ne_top hp hαp⟩)]
+  refine ⟨(hedbergConst μ α p).toNNReal, fun f x => ?_⟩
+  rw [ENNReal.coe_toNNReal (hedbergConst_ne_top hα hp hαp)]
   exact rieszPotential_le_hedbergConst hα hp hαp f x
 
 omit [BorelSpace E] in
@@ -703,14 +716,14 @@ private theorem eLpNorm_rieszPotential_le_mul [FiniteDimensional ℝ E] [μ.IsAd
     (hqp : (q : ℝ≥0∞) * ENNReal.ofReal (1 - α * p / finrank ℝ E) = p) (hq : q ≠ 0) {f : E → F}
     (hf : AEStronglyMeasurable f μ) {K : ℝ≥0∞}
     (hK : eLpNorm (maximalFunction μ f) p μ ≤ K * eLpNorm f p μ) :
-    eLpNorm (rieszPotential μ α f) q μ ≤ (hedbergNearConst μ α + hedbergFarConst μ α p) *
-      K ^ (1 - α * p / finrank ℝ E) * eLpNorm f p μ := by
+    eLpNorm (rieszPotential μ α f) q μ ≤
+      hedbergConst μ α p * K ^ (1 - α * p / finrank ℝ E) * eLpNorm f p μ := by
   have hd : (0 : ℝ) < finrank ℝ E :=
     (mul_pos hα (by exact_mod_cast zero_lt_one.trans_le hp)).trans hαp
   have hθ₀ : 0 < α * p / finrank ℝ E := by positivity
   have hθ₁ : 0 < 1 - α * p / finrank ℝ E := sub_pos.2 ((div_lt_one hd).2 hαp)
   set θ := α * p / finrank ℝ E with hθ
-  set C₀ := hedbergNearConst μ α + hedbergFarConst μ α p with hC₀
+  set C₀ := hedbergConst μ α p with hC₀
   set N := eLpNorm f p μ with hN
   have hM : AEStronglyMeasurable (maximalFunction μ f) μ :=
     (measurable_maximalFunction μ f).aestronglyMeasurable
@@ -781,17 +794,16 @@ theorem eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure E) [μ
   -- which keeps it nonzero, so that it also covers `‖f‖_p = ∞`.
   obtain ⟨K, hK⟩ := exists_eLpNorm_maximalFunction_le (F := F) μ (p := p)
     (by exact_mod_cast hp) ENNReal.coe_ne_top
-  set C₀ := hedbergNearConst μ α + hedbergFarConst μ α p
+  set C₀ := hedbergConst μ α p
   have hK₁ : ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E) ≠ 0 :=
     (ENNReal.rpow_pos (by positivity) (by simp)).ne'
   have hC : C₀ * ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E) ≠ ∞ :=
-    ENNReal.mul_ne_top (ENNReal.add_ne_top.2 ⟨hedbergNearConst_ne_top hα,
-      hedbergFarConst_ne_top hp.le hαp⟩) (ENNReal.rpow_ne_top_of_ne_zero (by positivity) (by simp))
+    ENNReal.mul_ne_top (hedbergConst_ne_top hα hp.le hαp)
+      (ENNReal.rpow_ne_top_of_ne_zero (by positivity) (by simp))
   refine ⟨(C₀ * ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E)).toNNReal, fun f => ?_⟩
   rw [ENNReal.coe_toNNReal hC]
   rcases eq_or_ne (eLpNorm f p μ) ∞ with hN | hN
-  · rw [hN, ENNReal.mul_top (mul_ne_zero (add_pos_of_pos_of_nonneg
-      (pos_iff_ne_zero.2 hedbergNearConst_ne_zero) zero_le).ne' hK₁)]
+  · rw [hN, ENNReal.mul_top (mul_ne_zero hedbergConst_ne_zero hK₁)]
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
   exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf
