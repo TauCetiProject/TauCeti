@@ -65,14 +65,7 @@ theorem IsSeparated.pushout_desc_iff [IsSeparated f] [IsSeparated g] :
       (inferInstance : IsClosedImmersion (pullback.diagonal p)))
   · intro hc
     have hc' := hclosed.mp hc
-    let 𝒰 : (pushout i j).OpenCover := Scheme.Cover.mkOfCovers Bool
-      (fun b ↦ if b then Y else X)
-      (fun b ↦ match b with | false => pushout.inl i j | true => pushout.inr i j)
-      (fun z ↦ by
-        rcases (Set.ext_iff.mp (Scheme.range_pushout_inl_union_range_pushout_inr i j) z).mpr
-          trivial with ⟨x, rfl⟩ | ⟨y, rfl⟩
-        exacts [⟨false, x, rfl⟩, ⟨true, y, rfl⟩])
-      (fun b ↦ by cases b <;> infer_instance)
+    let 𝒰 := Scheme.pushoutOpenCover i j
     have hfalse : 𝒰.f false ≫ p = f := pushout.inl_desc f g h
     have htrue : 𝒰.f true ≫ p = g := pushout.inr_desc f g h
     have : ∀ b, IsSeparated (𝒰.f b ≫ p) := by
@@ -96,21 +89,22 @@ theorem IsSeparated.pushout_desc_iff [IsSeparated f] [IsSeparated g] :
       exact this
     · exact (hne rfl).elim
 
+/-- A property local at the source passes to a morphism glued from two open pieces. -/
+theorem IsZariskiLocalAtSource.pushout_desc {P : MorphismProperty Scheme.{u}}
+    [IsZariskiLocalAtSource P] (hf : P f) (hg : P g) : P (pushout.desc f g h) := by
+  refine IsZariskiLocalAtSource.of_openCover (P := P)
+    (f := pushout.desc f g h) (Scheme.pushoutOpenCover i j) ?_
+  rintro (_ | _)
+  · exact (pushout.inl_desc f g h).symm ▸ hf
+  · exact (pushout.inr_desc f g h).symm ▸ hg
+
 /-- Local finite type passes to the morphism glued from two open pieces. -/
 theorem LocallyOfFiniteType.pushout_desc [LocallyOfFiniteType f] [LocallyOfFiniteType g] :
     LocallyOfFiniteType (pushout.desc f g h) := by
+  -- Instance search does not find this source-local instance through `HasRingHomProperty`.
   let : IsZariskiLocalAtSource @LocallyOfFiniteType :=
     HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.FiniteType)
-  refine IsZariskiLocalAtSource.of_openCover (P := @LocallyOfFiniteType)
-    (f := pushout.desc f g h) (Scheme.IsLocallyDirected.openCover (span i j)) ?_
-  rintro (_ | _ | _)
-  · -- The apex inclusion factors through the left chart.
-    have he : colimit.ι (span i j) WalkingSpan.zero ≫ pushout.desc f g h = i ≫ f := by
-      rw [← colimit.w (span i j) (WalkingSpan.Hom.fst), Category.assoc, pushout.inl_desc]
-      rfl
-    exact he.symm ▸ (inferInstance : LocallyOfFiniteType (i ≫ f))
-  · exact (pushout.inl_desc f g h).symm ▸ (inferInstance : LocallyOfFiniteType f)
-  · exact (pushout.inr_desc f g h).symm ▸ (inferInstance : LocallyOfFiniteType g)
+  exact IsZariskiLocalAtSource.pushout_desc i j f g h inferInstance inferInstance
 
 /-- Quasi-compactness passes to the morphism glued from two open pieces. In particular the
 gluing of two finite-type morphisms is finite type, with no condition on the base. -/
@@ -118,24 +112,21 @@ theorem QuasiCompact.pushout_desc [QuasiCompact f] [QuasiCompact g] :
     QuasiCompact (pushout.desc f g h) := by
   rw [quasiCompact_iff_forall_isAffineOpen]
   intro V hV
+  let 𝒰 := Scheme.pushoutOpenCover i j
+  have : Finite 𝒰.I₀ := inferInstanceAs (Finite Bool)
+  have hc : ∀ b, IsCompact ((𝒰.f b ≫ pushout.desc f g h) ⁻¹' (V : Set S)) := by
+    rintro (_ | _)
+    · exact (pushout.inl_desc f g h).symm ▸
+        QuasiCompact.isCompact_preimage (f := f) V V.isOpen hV.isCompact
+    · exact (pushout.inr_desc f g h).symm ▸
+        QuasiCompact.isCompact_preimage (f := g) V V.isOpen hV.isCompact
   have he : (pushout.desc f g h) ⁻¹' (V : Set S) =
-      (pushout.inl i j) '' (f ⁻¹' (V : Set S)) ∪
-        (pushout.inr i j) '' (g ⁻¹' (V : Set S)) := by
-    ext z
-    constructor
-    · intro hz
-      rcases (Set.ext_iff.mp (Scheme.range_pushout_inl_union_range_pushout_inr i j) z).mpr
-          trivial with ⟨x, rfl⟩ | ⟨y, rfl⟩
-      · exact Or.inl ⟨x, by simpa [← Scheme.Hom.comp_apply] using hz, rfl⟩
-      · exact Or.inr ⟨y, by simpa [← Scheme.Hom.comp_apply] using hz, rfl⟩
-    · rintro (⟨x, hx, rfl⟩ | ⟨y, hy, rfl⟩)
-      · simpa [← Scheme.Hom.comp_apply] using hx
-      · simpa [← Scheme.Hom.comp_apply] using hy
+      ⋃ b, (𝒰.f b) '' ((𝒰.f b ≫ pushout.desc f g h) ⁻¹' (V : Set S)) := by
+    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp,
+      Set.image_preimage_eq_inter_range]
+    rw [← Set.inter_iUnion, 𝒰.iUnion_range, Set.inter_univ]
   simp only [Scheme.Hom.coe_preimage]
   rw [he]
-  exact ((QuasiCompact.isCompact_preimage (f := f) V V.isOpen hV.isCompact).image
-    (pushout.inl i j).continuous).union
-      ((QuasiCompact.isCompact_preimage (f := g) V V.isOpen hV.isCompact).image
-        (pushout.inr i j).continuous)
+  exact isCompact_iUnion fun b ↦ (hc b).image (𝒰.f b).continuous
 
 end AlgebraicGeometry

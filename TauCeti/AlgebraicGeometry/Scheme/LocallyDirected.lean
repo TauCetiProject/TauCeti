@@ -25,6 +25,7 @@ the images of the `F j` in the colimit meet.
   the images of the `F k` mapping to both `F i` and `F j`.
 * `AlgebraicGeometry.Scheme.range_pushout_inl_union_range_pushout_inr`: a pushout of two open
   immersions is covered by the images of its two pieces.
+* `AlgebraicGeometry.Scheme.pushoutOpenCover`: the open cover by those two pieces.
 * `AlgebraicGeometry.Scheme.isPullback_pushout_of_isOpenImmersion`: those two pieces intersect
   in precisely the common open along which they were glued.
 
@@ -86,6 +87,32 @@ theorem range_pushout_inl_union_range_pushout_inr {W X Z : Scheme.{u}} (g : W �
     rfl
   · exact Or.inl ⟨q, rfl⟩
   · exact Or.inr ⟨q, rfl⟩
+
+/-- The open cover of a pushout of open immersions by its two pieces, indexed by `Bool`,
+with the left piece at `false` and the right piece at `true`. -/
+@[expose]
+noncomputable def pushoutOpenCover {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] : (pushout i j).OpenCover :=
+  Cover.mkOfCovers Bool
+    (fun b ↦ if b then Y else X)
+    (fun b ↦ match b with | false => pushout.inl i j | true => pushout.inr i j)
+    (fun z ↦ by
+      rcases (Set.ext_iff.mp (range_pushout_inl_union_range_pushout_inr i j) z).mpr
+        trivial with ⟨x, rfl⟩ | ⟨y, rfl⟩
+      exacts [⟨false, x, rfl⟩, ⟨true, y, rfl⟩])
+    (fun b ↦ by cases b <;> infer_instance)
+
+/-- The first chart of the pushout cover is its left inclusion. -/
+@[simp]
+theorem pushoutOpenCover_f_false {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] :
+    (pushoutOpenCover i j).f false = pushout.inl i j := rfl
+
+/-- The second chart of the pushout cover is its right inclusion. -/
+@[simp]
+theorem pushoutOpenCover_f_true {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] :
+    (pushoutOpenCover i j).f true = pushout.inr i j := rfl
 
 /-- The square defining the pushout of two open immersions is also cartesian: the two
 pieces intersect in precisely the open subscheme along which they were glued. -/
