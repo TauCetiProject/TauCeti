@@ -102,6 +102,36 @@ private theorem windingNumber_eq_of_dist_lt_of_le_dist {γ δ : ℝ → ℂ} {w 
   rw [hcoe] at hc hf
   exact hc.trans_le hf
 
+/-- Two piecewise-`C¹` curves with common endpoints that both stay within `ρ / 5` of curves
+`f₁` and `f₂` which are `ρ / 5` apart, with `γ₂` at distance more than `4 * ρ / 5` from `w`,
+have the same winding number about `w`: the adjacent step of the chain of approximants below. -/
+private theorem windingNumber_eq_of_dist_lt_of_dist_lt {γ₁ γ₂ : ℝ → ℂ} {f₁ f₂ : I → ℂ} {w : ℂ}
+    {ρ : ℝ} (hρ : 0 ≤ ρ) (hγ₁ : IsPiecewiseC1On γ₁ 0 1) (hγ₂ : IsPiecewiseC1On γ₂ 0 1)
+    (h₀ : γ₁ 0 = γ₂ 0) (h₁ : γ₁ 1 = γ₂ 1) (hclose₁ : ∀ t : I, dist (γ₁ t) (f₁ t) < ρ / 5)
+    (hclose₂ : ∀ t : I, dist (γ₂ t) (f₂ t) < ρ / 5) (hf : ∀ t : I, dist (f₁ t) (f₂ t) < ρ / 5)
+    (hfar : ∀ t : I, 4 * ρ / 5 < dist (γ₂ t) w) :
+    windingNumber γ₁ 0 1 w = windingNumber γ₂ 0 1 w := by
+  refine windingNumber_eq_of_dist_lt_of_le_dist (c := 3 * ρ / 5) hγ₁ hγ₂ h₀ h₁ (fun t => ?_)
+    (fun t => ?_)
+  · exact (dist_triangle4 (γ₁ t) (f₁ t) (f₂ t) (γ₂ t)).trans_lt
+      (by linarith [hclose₁ t, hf t, hclose₂ t, dist_comm (f₂ t) (γ₂ t)])
+  · linarith [hfar t, hρ]
+
+/-- A piecewise-`C¹` curve `γ` with the endpoints of a path `r` that stays within `ρ / 5` of `r`,
+where `r` stays at distance at least `ρ` from `w`, has the same winding number about `w` as
+`r.extend`: the endpoint step of the chain of approximants below. -/
+private theorem windingNumber_eq_extend_of_dist_lt {x y w : ℂ} {r : Path x y} {γ : ℝ → ℂ}
+    {ρ : ℝ} (hρ : 0 ≤ ρ) (hγ : IsPiecewiseC1On γ 0 1) (hr : IsPiecewiseC1On r.extend 0 1)
+    (h₀ : γ 0 = x) (h₁ : γ 1 = y) (hclose : ∀ t : I, dist (γ t) (r t) < ρ / 5)
+    (hfar : ∀ t : I, ρ ≤ dist (r t) w) :
+    windingNumber γ 0 1 w = windingNumber r.extend 0 1 w := by
+  refine windingNumber_eq_of_dist_lt_of_le_dist (c := ρ / 5) hγ hr
+    (by rw [Path.extend_zero, h₀]) (by rw [Path.extend_one, h₁]) (fun t => ?_) (fun t => ?_)
+  · rw [Path.extend_extends']
+    exact hclose t
+  · rw [Path.extend_extends']
+    linarith [hfar t, hρ]
+
 /-- **Homotopy invariance of the winding number off the curve.** Two piecewise-`C¹` paths with the
 same endpoints, joined through `ℂ \ {w}` by an arbitrary continuous path homotopy, have the same
 winding number about `w`. No differentiability of the homotopy is required. -/
@@ -137,52 +167,24 @@ theorem windingNumber_eq_of_pathHomotopy {x y w : ℂ} {p q : Path x y} (φ : p.
     linarith
   -- Consecutive approximants are close enough for the leash lemma.
   have hadjacent (k : Fin N) : windingNumber (γ k.succ) 0 1 w =
-      windingNumber (γ k.castSucc) 0 1 w := by
-    refine windingNumber_eq_of_dist_lt_of_le_dist (c := 3 * ρ / 5) (hγpw k.succ) (hγpw k.castSucc)
+      windingNumber (γ k.castSucc) 0 1 w :=
+    windingNumber_eq_of_dist_lt_of_dist_lt hρ.le (hγpw k.succ) (hγpw k.castSucc)
       ((hγzero k.succ).trans (hγzero k.castSucc).symm)
-      ((hγone k.succ).trans (hγone k.castSucc).symm) (fun t => ?_) (fun t => ?_)
-    · calc
-        dist (γ k.succ t) (γ k.castSucc t) ≤
-            dist (γ k.succ t) (φ (bernstein.z k.succ, t)) +
-              dist (φ (bernstein.z k.succ, t)) (γ k.castSucc t) := dist_triangle _ _ _
-        _ ≤ dist (γ k.succ t) (φ (bernstein.z k.succ, t)) +
-              (dist (φ (bernstein.z k.succ, t)) (φ (bernstein.z k.castSucc, t)) +
-                dist (φ (bernstein.z k.castSucc, t)) (γ k.castSucc t)) := by
-                  gcongr
-                  exact dist_triangle _ _ _
-        _ < 3 * ρ / 5 := by
-              rw [dist_comm (φ (bernstein.z k.castSucc, t)) (γ k.castSucc t)]
-              linarith [hγclose k.succ t, hstage k t, hγclose k.castSucc t]
-    · linarith [hγdist k.castSucc t]
+      ((hγone k.succ).trans (hγone k.castSucc).symm) (hγclose k.succ) (hγclose k.castSucc)
+      (hstage k) (hγdist k.castSucc)
   -- Chain the finitely many approximants from homotopy time `0` to time `1`.
   have hchain (k : Fin (N + 1)) : windingNumber (γ k) 0 1 w = windingNumber (γ 0) 0 1 w := by
     induction k using Fin.induction with
     | zero => rfl
     | succ k ih => exact (hadjacent k).trans ih
   -- The first and last approximants are close to the original endpoint paths.
-  have hstart : windingNumber (γ 0) 0 1 w = windingNumber p.extend 0 1 w := by
-    have hp_apply (t : I) : p.extend t = φ (0, t) := by
-      rw [Path.extend_extends' p t]
-      simp
-    refine windingNumber_eq_of_dist_lt_of_le_dist (c := ρ / 5) (hγpw 0) hp
-      (by rw [Path.extend_zero, hγzero]) (by rw [Path.extend_one, hγone])
-      (fun t => ?_) (fun t => ?_)
-    · rw [hp_apply t]
-      simpa using hγclose 0 t
-    · rw [hp_apply t]
-      linarith [hρle (0, t)]
-  have hend : windingNumber (γ (Fin.last N)) 0 1 w = windingNumber q.extend 0 1 w := by
-    have hq_apply (t : I) : q.extend t = φ (1, t) := by
-      rw [Path.extend_extends' q t]
-      simp
-    have hz : bernstein.z (Fin.last N) = (1 : I) := bernstein.z_last hN
-    refine windingNumber_eq_of_dist_lt_of_le_dist (c := ρ / 5) (hγpw (Fin.last N)) hq
-      (by rw [Path.extend_zero, hγzero]) (by rw [Path.extend_one, hγone])
-      (fun t => ?_) (fun t => ?_)
-    · rw [hq_apply t]
-      simpa [hz] using hγclose (Fin.last N) t
-    · rw [hq_apply t]
-      linarith [hρle (1, t)]
+  have hstart : windingNumber (γ 0) 0 1 w = windingNumber p.extend 0 1 w :=
+    windingNumber_eq_extend_of_dist_lt hρ.le (hγpw 0) hp (hγzero 0) (hγone 0)
+      (fun t => by simpa using hγclose 0 t) fun t => by simpa using hρle (0, t)
+  have hend : windingNumber (γ (Fin.last N)) 0 1 w = windingNumber q.extend 0 1 w :=
+    windingNumber_eq_extend_of_dist_lt hρ.le (hγpw (Fin.last N)) hq (hγzero _) (hγone _)
+      (fun t => by simpa [bernstein.z_last hN] using hγclose (Fin.last N) t)
+      fun t => by simpa using hρle (1, t)
   exact hstart.symm.trans ((hchain (Fin.last N)).symm.trans hend)
 
 /-- **A path homotopy avoiding `w` preserves the curve integral of the Cauchy kernel.** Two
