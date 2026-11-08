@@ -20,8 +20,6 @@ points with that ideal class group gives the points as degree-zero divisor class
 
 ## Main results
 
-* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an
-  equality of sets, which is the shape `Divisor.degreeZeroClassGroupEquiv` consumes.
 * `WeierstrassCurve.Affine.pointEquivDegreeZeroDivisorClass`: **the points of `W` are the
   degree-zero divisor classes of `F(W)`.**
 * `WeierstrassCurve.Affine.val_pointEquivDegreeZeroDivisorClass_some`: that equivalence sends an
@@ -44,25 +42,7 @@ namespace WeierstrassCurve.Affine
 open TauCeti AlgebraicGeometry IsDedekindDomain Polynomial
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
-
-/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
-sets. -/
-theorem setOf_exists_notMem_integers_eq_singleton_infinity :
-    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
-        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
-  Set.ext fun Q ↦ by
-    simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff, Place.mem_integers_iff, not_le]
-    constructor
-    · rintro ⟨r, hr⟩
-      by_contra hQ
-      exact absurd (Place.valuation_algebraMap_le_one_of_ne_infinity hQ r) (not_le.mpr hr)
-    · rintro rfl
-      refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
-      rw [Place.valuation_infinity,
-        ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField]
-      exact W.one_lt_infinityPlace_X
-
-variable [IsDedekindDomain W.CoordinateRing]
+  [IsDedekindDomain W.CoordinateRing]
 
 /-- **The ideal class of a point's place is the class Mathlib's `toClass` takes.** The place of a
 point has the point's ideal `⟨X - x, Y - y⟩` underneath it, and `XYIdeal'` is that ideal as an
@@ -95,7 +75,8 @@ noncomputable def pointEquivDegreeZeroDivisorClass :
     W.Point ≃+ (Divisor.degreeClass W.isFunctionField).ker :=
   (Point.toClassEquiv (W := W)).trans
     (Divisor.degreeZeroClassGroupEquiv W.CoordinateRing W.isFunctionField
-      W.setOf_exists_notMem_integers_eq_singleton_infinity (Place.degree_infinity (W := W))).symm
+      (Place.setOf_exists_notMem_integers_eq_singleton_infinity (W := W))
+      (Place.degree_infinity (W := W))).symm
 
 /-- **An affine point goes to the class of `(P) - (O)`.** This is the computation rule for
 `pointEquivDegreeZeroDivisorClass`, whose value is otherwise opaque. -/
@@ -106,7 +87,7 @@ theorem val_pointEquivDegreeZeroDivisorClass_some {x y : F} (h : W.Nonsingular x
       (Place.orderSystem W.isFunctionField).divisorClass
         (WeilDivisor.ofPoint (Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left)) -
           WeilDivisor.ofPoint (Place.infinity W)) := by
-  have hsingle := W.setOf_exists_notMem_integers_eq_singleton_infinity
+  have hsingle := Place.setOf_exists_notMem_integers_eq_singleton_infinity (W := W)
   have hinf : ∃ r : W.CoordinateRing,
       algebraMap W.CoordinateRing W.FunctionField r ∉ (Place.infinity W).integers := by
     rw [Set.ext_iff] at hsingle
