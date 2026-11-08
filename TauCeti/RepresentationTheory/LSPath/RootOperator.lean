@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Reflection
-public import TauCeti.Algebra.Module.Basic
 public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Algebra.Order.Group.MinMax
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 import TauCeti.LinearAlgebra.Reflection
 
 /-!
@@ -550,15 +550,28 @@ theorem reflectRecords_zero_cons (c : 𝕜) (l : List V) :
   rw [reflectRecords_cons_of_nonpos (min_le_of_left_le (by simpa using listMinHeight_nonpos l)),
     map_zero, sub_zero]
 
+/-- If the first segment of a nonempty path is reflected in part, its height is positive. -/
+private theorem zero_lt_apply_of_zero_lt_min_cons (w : V)
+    (h : 0 < min (f v + listMinHeight f (w :: l)) c) : 0 < f v := by
+  by_contra! hv
+  have := min_le_left (f v + listMinHeight f (w :: l)) c
+  have := listMinHeight_nonpos (f := f) (w :: l)
+  linarith
+
 /-- Merging `v` and `μ • v` when the first segment is reflected entirely and the second one in
 part. -/
-private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 < f v) (hμ : 0 < μ)
+private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 < f v)
     (h₂ : 0 < min (μ * f v + listMinHeight f l) (c - f v)) :
     normalize 𝕜 (reflectRecords f x c (v :: μ • v :: l)) =
       normalize 𝕜 (reflectRecords f x c ((1 + μ) • v :: l)) := by
   have hfμ : f (μ • v) = μ * f v := by simp
   have hf1μ : f ((1 + μ) • v) = (1 + μ) * f v := by simp
   have hl := listMinHeight_nonpos (f := f) l
+  have hμ : 0 < μ := by
+    by_contra! h
+    have := mul_nonpos_of_nonpos_of_nonneg h hfv.le
+    have := min_le_left (μ * f v + listMinHeight f l) (c - f v)
+    linarith
   have e₁ : min (f v + min 0 (μ * f v + listMinHeight f l)) c = f v := by
     simp only [min_def] at h₂ ⊢
     split_ifs at h₂ ⊢ <;> linarith
@@ -587,11 +600,12 @@ private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 <
 
 /-- Merging `v` and `μ • v` when the first segment is reflected in part and the second one is
 kept. -/
-private theorem normalize_reflectRecords_cons_smul_of_nonpos {μ : 𝕜} (hfv : 0 < f v)
+private theorem normalize_reflectRecords_cons_smul_of_nonpos {μ : 𝕜}
     (hμ : 0 ≤ μ) (h₁ : 0 < min (f v + listMinHeight f (μ • v :: l)) c)
     (h₂ : min (μ * f v + listMinHeight f l) (c - f v) ≤ 0) :
     normalize 𝕜 (reflectRecords f x c (v :: μ • v :: l)) =
       normalize 𝕜 (reflectRecords f x c ((1 + μ) • v :: l)) := by
+  have hfv := zero_lt_apply_of_zero_lt_min_cons _ h₁
   have hfμ : f (μ • v) = μ * f v := by simp
   have hf1μ : f ((1 + μ) • v) = (1 + μ) * f v := by simp
   have hl := listMinHeight_nonpos (f := f) l
@@ -657,19 +671,10 @@ private theorem normalize_reflectRecords_cons_cons (hvw : SameRay 𝕜 v w) (c :
   by_cases h₁ : 0 < min (f v + listMinHeight f (μ • v :: l)) c
   · have h₁' := h₁
     rw [listMinHeight_cons, hfμ] at h₁'
-    have hfv : 0 < f v := by
-      by_contra! h
-      have := min_le_left (f v + min 0 (μ * f v + listMinHeight f l)) c
-      have := min_le_left 0 (μ * f v + listMinHeight f l)
-      linarith
+    have hfv := zero_lt_apply_of_zero_lt_min_cons _ h₁
     by_cases h₂ : 0 < min (μ * f v + listMinHeight f l) (c - f v)
-    · have hμ0 : 0 < μ := by
-        rcases hμ.lt_or_eq with h | h
-        · exact h
-        · rw [← h, zero_mul, zero_add] at h₂
-          linarith [min_le_left (listMinHeight f l) (c - f v)]
-      exact normalize_reflectRecords_cons_smul_of_pos hfv hμ0 h₂
-    · exact normalize_reflectRecords_cons_smul_of_nonpos hfv hμ h₁ (not_lt.1 h₂)
+    · exact normalize_reflectRecords_cons_smul_of_pos hfv h₂
+    · exact normalize_reflectRecords_cons_smul_of_nonpos hμ h₁ (not_lt.1 h₂)
   · exact normalize_reflectRecords_cons_smul_of_cap_nonpos hμ (not_lt.1 h₁)
 
 /-- Reflecting the records commutes with the elementary moves, up to elementary moves. -/

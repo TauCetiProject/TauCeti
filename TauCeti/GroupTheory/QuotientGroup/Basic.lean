@@ -61,6 +61,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
+* `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
+  lies in the normal subgroup.
 -/
 
 public section
@@ -233,6 +235,13 @@ theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
     (q r : G ⧸ N) : q.out * r.out * (q * r).out⁻¹ ∈ N := by
   rw [← div_eq_mul_inv, ← QuotientGroup.eq_iff_div_mem, QuotientGroup.mk_mul,
     QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
+
+/-- The class of `s` in `G ⧸ N` is its own inverse when `s ^ 2 ∈ N`. -/
+theorem _root_.QuotientGroup.mk_inv_eq_self_of_sq_mem {N : Subgroup G} [N.Normal] {s : G}
+    (hs : s ^ 2 ∈ N) : (s : G ⧸ N)⁻¹ = s :=
+  inv_eq_of_mul_eq_one_right <| by
+    rw [← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff, ← sq]
+    exact hs
 
 section Finite
 

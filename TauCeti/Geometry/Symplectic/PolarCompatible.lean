@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Basic
 public import TauCeti.Analysis.InnerProductSpace.Polar.Isometry
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
@@ -37,6 +39,13 @@ every `π g` is complex linear. The compatible metric `ω(·, J ·)` is then `G`
 unitary representation on the complex vector space `(E, J)`; this is the linear input for the
 weight decomposition of the isotropy representation of a compact torus at a fixed point.
 
+Polar normalization can also be computed with the continuous functional calculus: if a bounded
+operator `A` represents `ω`, then `J = A (√(-A²))⁻¹`. Read through an arbitrary linear isomorphism
+`K : V ≃L W`, in which the inner product of `V` becomes a positive metric `g` on `W`, it becomes an
+expression in `g` and the form built from the metric change transport `(g♯)^(-1/2)`, the square
+root and inversion. Each of these depends smoothly on its argument, which is how polar
+normalizations of smooth families of forms and metrics on a manifold are shown to be smooth.
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.innerOperator ω`: the operator `A` with `⟪A u, v⟫ = ω u v`.
@@ -54,6 +63,10 @@ weight decomposition of the isotropy representation of a compact torus at a fixe
   `TauCeti.SymplecticForm.polarComplexStructure_transport`,
   `TauCeti.SymplecticForm.IsSymplectomorphism.polarComplexStructure_apply`: naturality under
   linear isometric equivalences.
+* `TauCeti.SymplecticForm.toContinuousLinearMap_polarComplexStructure`: polar normalization is
+  `A (√(-A²))⁻¹` for a bounded operator `A` representing `ω`.
+* `TauCeti.SymplecticForm.conjContinuousAlgEquiv_toContinuousLinearMap_polarComplexStructure`:
+  polar normalization read through a linear isomorphism, in terms of the metric change transport.
 * `TauCeti.SymplecticForm.exists_compatible_forall_isComplexLinearMap`: a symplectic continuous
   representation of a compact group preserves some compatible complex structure.
 
@@ -206,6 +219,60 @@ theorem polarComplexStructure_eq_of_apply_eq_inner (ω : SymplecticForm V)
         rw [hP, mul_one]
     _ = ω.innerOperator := ω.innerOperator.polarFactor_comp_operatorAbs
 
+/-! ### Polar normalization through the continuous functional calculus
+
+A bounded operator `A` with `⟪A u, v⟫ = ω u v` is the operator of `ω` read as a continuous linear
+map. It is invertible and skew-adjoint, so `-A²` is strictly positive, and the polar
+normalization is `A (√(-A²))⁻¹`, with the square root of the continuous functional calculus.
+In this form polar normalization is a composite of operations that depend smoothly on `A`. -/
+
+/-- A bounded operator representing a symplectic form through the inner product is invertible. -/
+theorem isUnit_of_forall_inner_apply_eq (ω : SymplecticForm V) {A : V →L[ℝ] V}
+    (hA : ∀ u v, ⟪A u, v⟫ = ω u v) : IsUnit A := by
+  refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2 ?_
+  rw [LinearMap.isUnit_iff_ker_eq_bot, (ω.eq_innerOperator_iff).2 hA, LinearMap.ker_eq_bot]
+  exact ω.innerOperator_injective
+
+/-- A bounded operator representing a symplectic form through the inner product is
+skew-adjoint. -/
+theorem adjoint_eq_neg_of_forall_inner_apply_eq (ω : SymplecticForm V) {A : V →L[ℝ] V}
+    (hA : ∀ u v, ⟪A u, v⟫ = ω u v) : ContinuousLinearMap.adjoint A = -A := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun u v ↦ ?_).symm
+  rw [neg_apply, inner_neg_left, hA, real_inner_comm, hA, ω.neg_eq]
+
+/-- For a bounded operator `A` representing a symplectic form through the inner product,
+`-A² = A† A` is strictly positive. -/
+theorem isStrictlyPositive_neg_mul_self (ω : SymplecticForm V) {A : V →L[ℝ] V}
+    (hA : ∀ u v, ⟪A u, v⟫ = ω u v) : IsStrictlyPositive (-(A * A)) := by
+  have hu := ω.isUnit_of_forall_inner_apply_eq hA
+  refine (hu.mul hu).neg.isStrictlyPositive ?_
+  rw [ContinuousLinearMap.nonneg_iff_isPositive, ← neg_mul,
+    ← ω.adjoint_eq_neg_of_forall_inner_apply_eq hA]
+  exact A.isPositive_adjoint_comp_self
+
+/-- **Polar normalization by the functional calculus.** If the bounded operator `A` represents
+`ω` through the inner product, `⟪A u, v⟫ = ω u v`, then the polar normalization of `ω` is
+`A (√(-A²))⁻¹`. -/
+theorem toContinuousLinearMap_polarComplexStructure (ω : SymplecticForm V) {A : V →L[ℝ] V}
+    (hA : ∀ u v, ⟪A u, v⟫ = ω u v) :
+    LinearMap.toContinuousLinearMap ω.polarComplexStructure.toLinearMap =
+      A * Ring.inverse (CFC.sqrt (-(A * A))) := by
+  have hA' : (A : V →ₗ[ℝ] V) = ω.innerOperator := (ω.eq_innerOperator_iff).2 hA
+  -- The modulus `|A| = √(A† A)` of the operator of `ω` is `√(-A²)`, and it is invertible.
+  have hP : LinearMap.toContinuousLinearMap ω.innerOperator.operatorAbs =
+      CFC.sqrt (-(A * A)) := by
+    rw [LinearMap.toContinuousLinearMap_operatorAbs, adjoint_innerOperator, ← hA']
+    refine congrArg CFC.sqrt (ContinuousLinearMap.ext fun v ↦ ?_)
+    simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
+      LinearMap.neg_apply, ContinuousLinearMap.coe_coe, neg_apply, mul_apply_eq_comp]
+  have hpos := ω.isStrictlyPositive_neg_mul_self hA
+  have hu : IsUnit (CFC.sqrt (-(A * A))) := (CFC.isUnit_sqrt_iff _ hpos.nonneg).2 hpos.isUnit
+  -- The polar factor is the canonical factor of `A` through the invertible modulus `√(-A²)`;
+  -- the remaining goal holds since composition is multiplication by definition.
+  rw [polarComplexStructure_toLinearMap, LinearMap.toContinuousLinearMap_polarFactor, hP,
+    ContinuousLinearMap.factorThru_eq_comp_inverse hu, ← hA']
+  rfl
+
 /-! ### Naturality -/
 
 /-- The operator of a symplectic form transported along a linear isometric equivalence `e` is
@@ -234,6 +301,96 @@ theorem IsSymplectomorphism.polarComplexStructure_apply {ω₁ : SymplecticForm 
   rw [← isSymplectomorphism_iff_transport_eq.mp h, polarComplexStructure_transport,
     AlmostComplexStructure.transport_apply]
   simp
+
+/-! ### Polar normalization in coordinates
+
+Read through a linear isomorphism `K : V ≃L W`, the inner product of `V` becomes a positive
+metric `g` on `W` and the symplectic form becomes a bilinear form `s`. The polar normalization
+of `ω` is then an explicit expression in `g` and `s`, built from the metric change transport
+`(g♯)^(-1/2)`, the continuous functional calculus and inversion. This is the form in which
+polar normalization of a family of forms and metrics, read in local coordinates, is seen to be
+smooth. -/
+
+section Coordinates
+
+open InnerProductSpace
+
+local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
+
+/-- For a positive metric `g` on `W` with metric change transport `R = (g♯)^(-1/2)`, the
+operator `A = R s♯ R` represents, through the inner product, the form `ω` read in a
+`g`-orthonormal frame. In particular `-A²` is strictly positive. -/
+theorem isStrictlyPositive_neg_mul_self_metricChangeTransport (ω : SymplecticForm W)
+    {g s : W →L[ℝ] W →L[ℝ] ℝ} (hg : IsStrictlyPositive g♯) (hs : ∀ c d, s c d = ω c d) :
+    IsStrictlyPositive (-(g.metricChangeTransport * s♯ * g.metricChangeTransport *
+      (g.metricChangeTransport * s♯ * g.metricChangeTransport))) := by
+  set R := g.metricChangeTransport
+  have hR := ContinuousLinearMap.nonneg_iff_isPositive.mp
+    (ContinuousLinearMap.isStrictlyPositive_metricChangeTransport hg).nonneg
+  -- `R` is invertible, and `R s♯ R` represents the form `(c, d) ↦ ω (R c) (R d)`.
+  let Φ : W ≃L[ℝ] W := ContinuousLinearEquiv.equivOfInverse' R (CFC.sqrt g♯)
+    (ContinuousLinearMap.metricChangeTransport_mul_sqrt hg)
+    (ContinuousLinearMap.sqrt_mul_metricChangeTransport hg)
+  refine (ω.transport Φ.toLinearEquiv.symm).isStrictlyPositive_neg_mul_self fun c d ↦ ?_
+  rw [transport_apply, LinearEquiv.symm_symm, mul_apply_eq_comp, mul_apply_eq_comp,
+    hR.inner_left_eq_inner_right, continuousLinearMapOfBilin_apply, hs]
+  simp only [ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.equivOfInverse'_apply,
+    Φ, R]
+
+/-- **Polar normalization in coordinates.** Let `K : V ≃L W` be any linear isomorphism, and read
+the inner product and the symplectic form of `V` through `K` as the bilinear forms `g` and `s`
+on `W`. With the metric change transport `R = (g♯)^(-1/2)` and `A = R s♯ R`, the polar
+normalization of `ω`, read through `K`, is `R A (√(-A²))⁻¹ R⁻¹`, where `R⁻¹ = √(g♯)`. Every
+operation on the right depends smoothly on `g` and `s`. -/
+theorem conjContinuousAlgEquiv_toContinuousLinearMap_polarComplexStructure
+    (ω : SymplecticForm V) (K : V ≃L[ℝ] W) {g s : W →L[ℝ] W →L[ℝ] ℝ}
+    (hg : ∀ c d, g c d = ⟪K.symm c, K.symm d⟫) (hs : ∀ c d, s c d = ω (K.symm c) (K.symm d)) :
+    K.conjContinuousAlgEquiv
+        (LinearMap.toContinuousLinearMap ω.polarComplexStructure.toLinearMap) =
+      g.metricChangeTransport *
+        (g.metricChangeTransport * s♯ * g.metricChangeTransport *
+          Ring.inverse (CFC.sqrt (-(g.metricChangeTransport * s♯ * g.metricChangeTransport *
+            (g.metricChangeTransport * s♯ * g.metricChangeTransport))))) * CFC.sqrt g♯ := by
+  set R := g.metricChangeTransport
+  set A := R * s♯ * R
+  -- `g` is the inner product of `V` read through `K`, so it is a positive metric on `W`.
+  have hgpos : IsStrictlyPositive g♯ :=
+    isStrictlyPositive_continuousLinearMapOfBilin_of_injective
+      (K := K.symm.toLinearEquiv.toLinearMap) K.symm.injective hg
+  have hR := ContinuousLinearMap.nonneg_iff_isPositive.mp
+    (ContinuousLinearMap.isStrictlyPositive_metricChangeTransport hgpos).nonneg
+  -- `Φ = K⁻¹ R` is a linear isometry from `W` onto `V`, with inverse `R⁻¹ K = √(g♯) K`.
+  let Φ₀ : W ≃L[ℝ] W := ContinuousLinearEquiv.equivOfInverse' R (CFC.sqrt g♯)
+    (ContinuousLinearMap.metricChangeTransport_mul_sqrt hgpos)
+    (ContinuousLinearMap.sqrt_mul_metricChangeTransport hgpos)
+  let Φ : W ≃ₗᵢ[ℝ] V := (Φ₀.trans K.symm).toLinearEquiv.isometryOfInner fun c d ↦ by
+    simp only [ContinuousLinearEquiv.trans_toLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm,
+      LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+      ← hg, ContinuousLinearMap.apply_metricChangeTransport_metricChangeTransport hgpos, Φ₀, R]
+  have hΦ (c : W) : Φ c = K.symm (R c) := rfl
+  have hΦsymm (v : V) : Φ.symm v = CFC.sqrt g♯ (K v) := rfl
+  -- The form `ω` read through `Φ` is represented by `A`, so its polar normalization is
+  -- `A (√(-A²))⁻¹`, and naturality carries it to the polar normalization of `ω`.
+  let ω' := ω.transport Φ.toLinearEquiv.symm
+  have hA : ∀ c d, ⟪A c, d⟫ = ω' c d := fun c d ↦ by
+    simp only [A, ω', transport_apply, mul_apply_eq_comp, LinearEquiv.symm_symm]
+    rw [hR.inner_left_eq_inner_right, continuousLinearMapOfBilin_apply, hs,
+      LinearIsometryEquiv.coe_toLinearEquiv, hΦ, hΦ]
+  have hJ (v : V) : ω.polarComplexStructure v = Φ (ω'.polarComplexStructure (Φ.symm v)) := by
+    rw [← transport_transport_symm ω Φ.toLinearEquiv, polarComplexStructure_transport,
+      AlmostComplexStructure.transport_apply, LinearIsometryEquiv.coe_toLinearEquiv,
+      LinearIsometryEquiv.coe_symm_toLinearEquiv]
+  have hP (c : W) :
+      ω'.polarComplexStructure c = (A * Ring.inverse (CFC.sqrt (-(A * A)))) c := by
+    rw [← toContinuousLinearMap_polarComplexStructure ω' hA, LinearMap.coe_toContinuousLinearMap']
+  ext c
+  rw [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  simp only [ContinuousLinearMap.comp_apply, mul_apply_eq_comp, ContinuousLinearEquiv.coe_coe,
+    LinearMap.coe_toContinuousLinearMap']
+  rw [hJ, hΦsymm, K.apply_symm_apply, hP, hΦ, K.apply_symm_apply, mul_apply_eq_comp]
+
+end Coordinates
 
 /-! ### Invariant compatible structures for compact groups -/
 

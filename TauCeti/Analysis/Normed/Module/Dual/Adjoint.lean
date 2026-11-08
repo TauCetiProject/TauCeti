@@ -27,6 +27,7 @@ This file proves the unconditional identities `ker T* = (range T)ᗮ`,
 `range T* ≤ (ker T)ᗮ` and, when functionals separate points of `F`, `ker T = (range T*)_⊥`.
 For a bounded operator between Banach spaces it then proves the **closed-range theorem**:
 `range T` is closed iff `range T*` is closed, in which case `range T* = (ker T)ᗮ`.
+It also proves that a bounded map between Banach spaces is bijective iff its transpose is.
 
 The reverse implication only needs the domain to be complete. It goes through the criterion
 that a map whose adjoint is bounded below is surjective: geometric Hahn–Banach shows that the
@@ -44,6 +45,7 @@ into `ℓ²` has dense proper range, while its adjoint is surjective.
 * `ContinuousLinearMap.surjective_of_norm_le_norm_comp`: a map whose adjoint is bounded below
   is surjective.
 * `ContinuousLinearMap.isClosed_range_precomp_iff`: the closed-range theorem.
+* `ContinuousLinearMap.bijective_precomp_iff`: a map is bijective iff its transpose is.
 
 ## References
 
@@ -235,6 +237,32 @@ theorem isClosed_range_precomp_iff [CompleteSpace F] (T : E →L[𝕜] F) :
     IsClosed ((precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).range :
       Set (StrongDual 𝕜 E)) ↔ IsClosed (T.range : Set F) :=
   ⟨T.isClosed_range_of_isClosed_range_precomp, T.isClosed_range_precomp_of_isClosed_range⟩
+
+/-- A bounded map between Banach spaces is bijective if and only if its Banach transpose
+is bijective. The transpose here is precomposition on the continuous dual, not the Hilbert
+adjoint. -/
+@[simp]
+theorem bijective_precomp_iff [CompleteSpace F] (T : E →L[𝕜] F) :
+    Bijective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔ Bijective T := by
+  constructor
+  · intro hT
+    refine ⟨fun x y hxy ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).mpr fun f ↦ ?_, ?_⟩
+    · obtain ⟨g, rfl⟩ := hT.2 f
+      simp only [precomp_apply, comp_apply]
+      exact congrArg g hxy
+    · -- The open mapping theorem bounds the inverse transpose; Hahn–Banach then gives
+      -- surjectivity of the original map on its complete domain.
+      let A : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E := precomp 𝕜 T
+      obtain ⟨K, hK⟩ := A.antilipschitz_of_injective_of_isClosed_range hT.1
+        (by rw [hT.2.range_eq]; exact isClosed_univ)
+      exact T.surjective_of_norm_le_norm_comp fun g ↦ A.bound_of_antilipschitz hK g
+  · intro hT
+    let e := ContinuousLinearEquiv.ofBijective T (LinearMap.ker_eq_bot.mpr hT.1)
+      (LinearMap.range_eq_top.mpr hT.2)
+    refine ⟨fun f g hfg ↦ ext fun y ↦ ?_, fun f ↦ ?_⟩
+    · obtain ⟨x, rfl⟩ := hT.2 y
+      exact DFunLike.congr_fun hfg x
+    · exact ⟨f.comp e.symm.toContinuousLinearMap, ext fun x ↦ by simp [e]⟩
 
 end Complete
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Convex.Segment
+import Mathlib.Tactic.Module
 
 /-!
 # Separating planar segments by a supporting line
@@ -162,3 +163,22 @@ theorem eq_left_of_mem_segment_of_im_le_of_lt {u v z : ℂ} {h : ℝ}
   simp [ht0, hs1]
 
 end TauCeti
+
+namespace Complex
+
+/-- A point on a later side lies strictly on the positive side of the line through an earlier side,
+when the rotated first side is real, the intermediate chord is strictly positive and the later
+side is nonnegative. -/
+theorem im_mul_lineMap_sub_pos (u Vi Vi' Vj Vj' : ℂ) (s t : ℝ) (ht : 0 ≤ t)
+    (hfirst : (u * (Vi' - Vi)).im = 0) (hmiddle : 0 < (u * (Vj - Vi')).im)
+    (hlast : 0 ≤ (u * (Vj' - Vj)).im) :
+    0 < (u * (AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s)).im := by
+  have hdecomp : AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s =
+      (1 - s) • (Vi' - Vi) + (Vj - Vi') + t • (Vj' - Vj) := by
+    simp only [AffineMap.lineMap_apply_module']
+    module
+  rw [hdecomp, mul_add, mul_add, Complex.add_im, Complex.add_im, mul_smul_comm, Complex.smul_im,
+    smul_eq_mul, mul_smul_comm, Complex.smul_im, smul_eq_mul, hfirst, mul_zero, zero_add]
+  exact add_pos_of_pos_of_nonneg hmiddle (mul_nonneg ht hlast)
+
+end Complex

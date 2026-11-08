@@ -145,6 +145,45 @@ theorem integrable_pow_of_abs_le_one [IsFiniteMeasure μ] {X : Ω → ℕ} (hX :
   filter_upwards with ω
   simpa only [Real.norm_eq_abs, abs_pow, norm_one] using pow_le_one₀ (abs_nonneg t) ht
 
+/-- For a probability law on `ℕ`, the error in the approximation
+`pgf id ν z ≈ 1 + (z - 1) * ν.real {1}` is bounded by twice the multiple-occurrence probability.
+The estimate holds on the entire interval `[-1, 1]`. -/
+theorem _root_.MeasureTheory.Measure.abs_pgf_sub_one_sub_mul_le
+    (ν : Measure ℕ) [IsProbabilityMeasure ν]
+    {z : ℝ} (hz : |z| ≤ 1) :
+    |pgf id ν z - 1 - (z - 1) * ν.real {1}| ≤ 2 * ν.real (Set.Ici 2) := by
+  let b : ℕ → ℝ := Set.indicator {1} (fun _ ↦ 1)
+  have hb : Integrable b ν := (integrable_const 1).indicator (measurableSet_singleton 1)
+  have hbint : ∫ k, b k ∂ν = ν.real {1} := by
+    dsimp only [b]
+    rw [integral_indicator (measurableSet_singleton 1)]
+    simp [measureReal_def]
+  have hp := integrable_pow_of_abs_le_one (μ := ν) aemeasurable_id hz
+  simp only [id_eq] at hp
+  have heq (k : ℕ) : z ^ k - 1 - (z - 1) * b k =
+      Set.indicator (Set.Ici 2) (fun k ↦ z ^ k - 1) k := by
+    rcases k with _ | _ | k
+    · simp [b]
+    · simp [b]
+    · simp [b]
+  have hint : pgf id ν z - 1 - (z - 1) * ν.real {1} =
+      ∫ k in Set.Ici 2, (z ^ k - 1) ∂ν := by
+    rw [← integral_indicator measurableSet_Ici]
+    simp_rw [← heq]
+    rw [integral_sub (f := fun k : ℕ ↦ z ^ k - 1)
+      (hp.sub (integrable_const 1)) (hb.const_mul _),
+      integral_sub hp (integrable_const 1), integral_const_mul]
+    simp [hbint, pgf_def]
+  rw [hint, ← Real.norm_eq_abs]
+  have hbound : ∀ k : ℕ, ‖z ^ k - 1‖ ≤ 2 := fun k ↦ by
+    calc
+      ‖z ^ k - 1‖ ≤ ‖z ^ k‖ + ‖(1 : ℝ)‖ := norm_sub_le _ _
+      _ ≤ 2 := by
+        simpa only [norm_pow, Real.norm_eq_abs, abs_one, one_add_one_eq_two, add_comm] using
+          add_le_add_right (pow_le_one₀ (n := k) (abs_nonneg z) hz) 1
+  simpa [mul_comm] using norm_integral_le_of_norm_le_const
+    (μ := ν.restrict (Set.Ici 2)) (C := (2 : ℝ)) (ae_of_all _ hbound)
+
 /-- The probability-generating function of a sum of two independent natural-number-valued random
 variables is the product of their generating functions whenever both factor integrands are
 integrable.

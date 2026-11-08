@@ -217,8 +217,9 @@ namespace TauCeti.NumberField.QuadraticForm
 invariants of `⟨1, a, -a⟩` does not depend on `a`: rank `3`, discriminant the class of `-1`,
 trivial Hasse sign at every finite place, and positive index `2` at every real place. -/
 theorem globalInvariants_weightedSumSquares_one_self_neg {K : Type*} [Field K] [NumberField K]
-    (a : Kˣ) (h : (weightedSumSquares K ![1, (a : K), -(a : K)]).Nondegenerate) :
-    _root_.QuadraticForm.globalInvariants (weightedSumSquares K ![1, (a : K), -(a : K)]) h =
+    (a : Kˣ) :
+    _root_.QuadraticForm.globalInvariants (weightedSumSquares K ![1, (a : K), -(a : K)])
+      (QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg a) =
       { rank := 3, discr := squareClass (-1), finiteHasse := 1,
         realPositiveIndex := fun _ => 2 } := by
   have he : (weightedSumSquares K ![1, (a : K), -(a : K)]).Equivalent
