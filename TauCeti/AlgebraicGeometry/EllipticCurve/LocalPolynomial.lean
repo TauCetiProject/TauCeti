@@ -8,6 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.LFunction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.SingularPointCount
+import Mathlib.Tactic.ComputeDegree
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
@@ -32,6 +35,8 @@ local polynomial is `1 − a T + q T²` at good reduction and `1 − a T` otherw
   invariants of the reduced model.
 * `WeierstrassCurve.HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff`: a
   multiplicative reduction is split exactly when the reduced model's node polynomial splits.
+* `WeierstrassCurve.false_of_isRoot_nodeQuadratic`: at nonsplit multiplicative reduction the monic
+  node quadratic has no root in `K`.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.frobeniusTrace_reduction_eq_one`,
   `WeierstrassCurve.HasMultiplicativeReduction.frobeniusTrace_reduction_eq_neg_one` and
   `WeierstrassCurve.HasAdditiveReduction.frobeniusTrace_reduction_eq_zero`: the trace of the
@@ -102,6 +107,31 @@ theorem HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff
   rw [hasSplitMultiplicativeReduction_iff, reduction, map_nodePolynomial, nodePolynomial_def,
     IsLocalRing.ResidueField.algebraMap_eq]
   exact ⟨fun hs ↦ ⟨h, hs⟩, fun ⟨_, hs⟩ ↦ hs⟩
+
+/-- The node quadratic `T² + a₁ T + n` of a curve with multiplicative but nonsplit reduction has no
+root `x` in `K`: such a root is integral over `R`, hence in `R`, and would split the reduced node
+polynomial. Here `n₀ : R` is the integral model of the constant term `n`. -/
+theorem false_of_isRoot_nodeQuadratic [W.HasMultiplicativeReduction R]
+    (h : ¬ W.HasSplitMultiplicativeReduction R) {n₀ : R}
+    (hn₀ : (W.integralModel R).c₄ * n₀ = (W.integralModel R).nodePolynomial.coeff 0)
+    (hn₀K : algebraMap R K n₀ = W.nodePolynomial.coeff 0 / W.c₄) {x : K}
+    (hx' : x ^ 2 + W.a₁ * x + W.nodePolynomial.coeff 0 / W.c₄ = 0) : False := by
+  set I := W.integralModel R
+  have hxint : _root_.IsIntegral R x := by
+    refine ⟨X ^ 2 + C I.a₁ * X + C n₀, by monicity!, ?_⟩
+    simp [eval₂_add, ← hx', hn₀K, I, integralModel_a₁_eq]
+  obtain ⟨x₀, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hxint
+  have hx₀ : x₀ ^ 2 + I.a₁ * x₀ + n₀ = 0 := IsFractionRing.injective R K (by
+    rw [map_zero, ← hx']; simp [I, integralModel_a₁_eq, hn₀K])
+  -- A root of the reduced monic quadratic splits it, hence the reduced node polynomial.
+  refine h ((HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff R
+    inferInstance).mp ?_)
+  rw [reduction, map_nodePolynomial, nodePolynomial_eq_C_mul I hn₀, Polynomial.map_mul,
+    Polynomial.map_C]
+  refine Splits.C_mul ?_ _
+  have hs := (splits_quadratic_iff_exists_root (one_ne_zero (α := IsLocalRing.ResidueField R))).2
+    ⟨IsLocalRing.residue R x₀, by simpa using congrArg (IsLocalRing.residue R) hx₀⟩
+  simpa using hs
 
 variable [Finite (IsLocalRing.ResidueField R)]
 
