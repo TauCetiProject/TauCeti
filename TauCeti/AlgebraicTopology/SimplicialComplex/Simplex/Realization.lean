@@ -328,10 +328,7 @@ theorem range_realization_coe_top :
   · rintro ⟨t, rfl⟩
     refine ⟨⟨t.weights, TauCeti.mem_standardGeometricComplex_space_iff.mpr
       ⟨fun i => t.nonneg i, t.total, ?_⟩⟩, rfl⟩
-    refine Finset.nonempty_iff_ne_empty.mpr fun h => ?_
-    have := t.total
-    rw [Finsupp.support_eq_empty.mp h] at this
-    simp at this
+    exact t.support_weights_nonempty
 
 /-- The realization of the standard one-simplex is homeomorphic to the unit interval. The zeroth
 vertex maps to `0` and the first vertex maps to `1`; see the two endpoint lemmas below. -/
