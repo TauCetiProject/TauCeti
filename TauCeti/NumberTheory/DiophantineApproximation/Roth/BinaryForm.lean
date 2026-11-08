@@ -72,21 +72,11 @@ open Filter Finset Height Polynomial Real Topology
 
 namespace TauCeti
 
-/-- If `|x| ≥ 2 (‖α‖ + 1) |y|`, then `‖x - α y‖ ≥ max(|x|, |y|) / 2`. -/
-private lemma half_max_abs_le_norm_sub_of_mul_le {α : ℂ} {x y : ℤ}
-    (hbig : 2 * (‖α‖ + 1) * |(y : ℝ)| ≤ |(x : ℝ)|) :
-    max |(x : ℝ)| |(y : ℝ)| / 2 ≤ ‖(x : ℂ) - α * y‖ := by
-  have hy₀ := abs_nonneg (y : ℝ)
-  have hMx : max |(x : ℝ)| |(y : ℝ)| = |(x : ℝ)| :=
-    max_eq_left (by nlinarith [norm_nonneg α])
-  have := norm_sub_norm_le (x : ℂ) (α * y)
-  rw [Complex.norm_intCast, norm_mul, Complex.norm_intCast] at this
-  rw [hMx]
-  nlinarith [norm_nonneg α]
-
-/-- The case `|x| < 2 (‖α‖ + 1) |y|` of the linear-form bound: apply the Roth bound `h` to the
-rational `x / y`. -/
-private lemma mul_max_abs_rpow_le_norm_sub_of_lt {α : ℂ} {κ c₀ : ℝ} (hκ : 2 < κ) (hc₀ : 0 < c₀)
+/-- The case `|x| < 2 (‖α‖ + 1) |y|` of the linear-form bound: if every rational `ξ ≠ α`
+satisfies the rational approximation bound `c₀ H(ξ) ^ (-κ) ≤ ‖ξ - α‖`, then at integers `x`, `y`
+with `|x| < 2 (‖α‖ + 1) |y|`, `x ≠ α y` and `max(|x|, |y|) ≥ 1`, the linear form satisfies
+`‖x - α y‖ ≥ c₀ / (2 (‖α‖ + 1)) max(|x|, |y|) ^ (1 - κ)`. -/
+private lemma mul_max_abs_rpow_le_norm_sub_of_lt {α : ℂ} {κ c₀ : ℝ} (hκ : 0 ≤ κ) (hc₀ : 0 ≤ c₀)
     (h : ∀ ξ : ℚ, (ξ : ℂ) ≠ α → c₀ * mulHeight₁ ξ ^ (-κ) ≤ ‖(ξ : ℂ) - α‖) {x y : ℤ}
     (hxy : (x : ℂ) - α * y ≠ 0) (hM : 1 ≤ max |(x : ℝ)| |(y : ℝ)|)
     (hsmall : |(x : ℝ)| < 2 * (‖α‖ + 1) * |(y : ℝ)|) :
@@ -118,7 +108,7 @@ private lemma mul_max_abs_rpow_le_norm_sub_of_lt {α : ℂ} {κ c₀ : ℝ} (hκ
     _ = |(y : ℝ)| * (c₀ * M ^ (-κ)) := by field_simp
     _ ≤ |(y : ℝ)| * ‖(ξ : ℂ) - α‖ := by
         gcongr
-        exact (mul_le_mul_of_nonneg_left hHκ hc₀.le).trans (h ξ hξα)
+        exact (mul_le_mul_of_nonneg_left hHκ hc₀).trans (h ξ hξα)
 
 /-- **Roth's theorem for a linear form.** If `α ∈ ℂ` is algebraic and `κ > 2`, then there is
 `c > 0` with `‖x - α y‖ ≥ c max(|x|, |y|) ^ (1 - κ)` for all integers `x`, `y` with `x ≠ α y`. -/
@@ -133,7 +123,9 @@ theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ
     by_contra! h0
     exact hxy (by simp [h0.1, h0.2])
   rcases le_or_gt (2 * (‖α‖ + 1) * |(y : ℝ)|) |(x : ℝ)| with hbig | hsmall
-  · have h1 := half_max_abs_le_norm_sub_of_mul_le (α := α) hbig
+  · have h1 := half_max_norm_le_norm_sub_of_mul_le α (x : ℂ) (y : ℂ)
+      (by simpa only [Complex.norm_intCast] using hbig)
+    simp only [Complex.norm_intCast] at h1
     have h2 : max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ max |(x : ℝ)| |(y : ℝ)| :=
       calc _ ≤ max |(x : ℝ)| |(y : ℝ)| ^ (1 : ℝ) :=
             rpow_le_rpow_of_exponent_le hM (by linarith)
@@ -143,9 +135,10 @@ theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ
           gcongr
           exact min_le_left _ _
       _ ≤ ‖(x : ℂ) - α * y‖ := by linarith
-  · refine le_trans ?_ (mul_max_abs_rpow_le_norm_sub_of_lt hκ hc₀ h hxy hM hsmall)
+  · refine le_trans ?_ (mul_max_abs_rpow_le_norm_sub_of_lt (by linarith) hc₀.le h hxy hM hsmall)
     gcongr
     exact min_le_right _ _
+
 /-- Let `ℓ.1 x + ℓ.2 y`, `ℓ ∈ T`, be pairwise non-proportional complex linear forms, each bounded
 below by `c max(|x|, |y|) ^ (1 - κ)` at the integer points where it does not vanish, for some
 `κ ≥ 0`. Then there is `c > 0` with `∏_{ℓ ∈ T} ‖ℓ.1 x + ℓ.2 y‖ ≥ c max(|x|, |y|) ^ (#T - κ)` at
