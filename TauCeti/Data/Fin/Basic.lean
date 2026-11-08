@@ -129,6 +129,8 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
+* `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
+  ends below it and never equals it drops below the level at some step.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
@@ -714,6 +716,23 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     have := Fin.succAbove_predAbove (p := l.castPred hl) (i := v)
       (by rwa [Fin.castSucc_castPred])
     rwa [Fin.castSucc_castPred] at this
+
+/-- A function on `Fin (k + 1)` that avoids the value `c`, starts above it and ends below it, drops
+below `c` at some step: there is `i` with `g i.succ < c < g i.castSucc`. -/
+theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : Fin (k + 1) → α}
+    {c : α} (hne : ∀ i, g i ≠ c)
+    (h0 : c < g 0) (hl : g (Fin.last k) < c) :
+    ∃ i : Fin k, g i.succ < c ∧ c < g i.castSucc := by
+  let S := Finset.univ.filter fun i ↦ c < g i
+  have hS : S.Nonempty := ⟨0, by simpa [S] using h0⟩
+  have hmS := S.max'_mem hS
+  have hm : S.max' hS ≠ Fin.last k := fun he ↦ by
+    rw [he] at hmS
+    exact (hl.trans (by simpa [S] using hmS)).false
+  obtain ⟨i, hi⟩ := Fin.exists_castSucc_eq.2 hm
+  refine ⟨i, lt_of_le_of_ne (not_lt.1 fun hlt ↦ ?_) (hne _), by simpa [S, hi] using hmS⟩
+  exact (Fin.castSucc_lt_succ : i.castSucc < i.succ).not_ge
+    (hi ▸ S.le_max' _ (by simpa [S] using hlt))
 
 end Fin
 

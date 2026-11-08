@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Breaking
 import Mathlib.Geometry.Manifold.Metrizable
+import TauCeti.Data.Fin.Basic
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 
@@ -68,21 +69,6 @@ public section
 
 open Filter Set Topology
 open scoped ContDiff Manifold
-
-/-- A function on `Fin (k + 1)` that avoids the value `c`, starts above it and ends below it, drops
-below `c` at some step: there is `i` with `g i.succ < c < g i.castSucc`. -/
-theorem Fin.exists_succ_lt_lt_castSucc {k : ℕ} {g : Fin (k + 1) → ℝ} {c : ℝ} (hne : ∀ i, g i ≠ c)
-    (h0 : c < g 0) (hl : g (Fin.last k) < c) : ∃ i : Fin k, g i.succ < c ∧ c < g i.castSucc := by
-  let S := Finset.univ.filter fun i ↦ c < g i
-  have hS : S.Nonempty := ⟨0, by simpa [S] using h0⟩
-  have hmS := S.max'_mem hS
-  have hm : S.max' hS ≠ Fin.last k := fun he ↦ by
-    rw [he] at hmS
-    exact (hl.trans (by simpa [S] using hmS)).false
-  obtain ⟨i, hi⟩ := Fin.exists_castSucc_eq.2 hm
-  refine ⟨i, lt_of_le_of_ne (not_lt.1 fun hlt ↦ ?_) (hne _), by simpa [S, hi] using hmS⟩
-  exact (Fin.castSucc_lt_succ : i.castSucc < i.succ).not_ge
-    (hi ▸ S.le_max' _ (by simpa [S] using hlt))
 
 namespace TauCeti
 
