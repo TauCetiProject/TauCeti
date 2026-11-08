@@ -45,7 +45,6 @@ exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
 
 ## Main results
 
-* `LieSubalgebra.exists_forall_root_apply_ne_zero`: some element of `H` is nonzero under every root.
 * `LieSubalgebra.engel_eq_cartan_iff_forall_root_apply_ne_zero`: an element has Engel
   subalgebra `H` exactly when every root is nonzero on it.
 * `LieSubalgebra.exists_engel_eq_cartan`: a Cartan subalgebra is the Engel subalgebra of one of its
@@ -75,17 +74,6 @@ open LieAlgebra LieModule Module
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
-
-/-- **A generic element of a Cartan subalgebra avoids every root hyperplane.** Since the root set
-is finite and each root is a nonzero linear functional, finite hyperplane avoidance over the
-infinite field `K` supplies one `h : H` on which every root is nonzero. -/
-theorem exists_forall_root_apply_ne_zero [Infinite K] [LieModule.LinearWeights K H L] :
-    ∃ h : H, ∀ α ∈ H.root, (α : H → K) h ≠ 0 := by
-  let f : H.root → Module.Dual K H := fun α ↦ (α.1 : H →ₗ[K] K)
-  obtain ⟨h, hh⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists f fun α ↦ by
-    simpa [f] using DFunLike.ne_iff.mp
-      (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root α))
-  exact ⟨h, fun α hα ↦ hh ⟨α, hα⟩⟩
 
 /-- An element of a Cartan subalgebra has Engel subalgebra equal to the Cartan subalgebra
 if and only if no root vanishes on it. The Cartan action is assumed triangularizable. -/

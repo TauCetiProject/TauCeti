@@ -46,6 +46,8 @@ and the product of these is `1 + ε ∑ τ_α ad e_α` because `ε² = 0`.
 
 ## Main results
 
+* `LieSubalgebra.exists_forall_root_apply_ne_zero`: some element of `H` is nonzero under every
+  root.
 * `LieSubalgebra.exists_rootExponentialPolynomialParametrization`: a polynomial family, in the
   coordinates of a basis of `L`, whose values all lie in `Int(L) · H` and whose Jacobian matrix
   is surjective at some point.
@@ -79,7 +81,7 @@ omit [LieAlgebra ℚ L] in
 Cartan subalgebra, span `L`. -/
 private theorem span_rootVectors_eq_top {κ : Type*} [Finite κ]
     (e : H.root → L) (he : ∀ α, e α ∈ rootSpace H α.1) (he0 : ∀ α, e α ≠ 0) (h₀ : H)
-    (hh₀ : ∀ α : H.root, Weight.toLinear K H L α.1 h₀ ≠ 0) (bH : Module.Basis κ K H) :
+    (hh₀ : ∀ α ∈ H.root, (α : H → K) h₀ ≠ 0) (bH : Module.Basis κ K H) :
     Submodule.span K (Set.range (Sum.elim (fun α ↦ ⁅e α, (h₀ : L)⁆) fun j ↦ (bH j : L))) = ⊤ := by
   have := Fintype.ofFinite κ
   rw [eq_top_iff, ← LieSubmodule.top_toSubmodule (R := K) (L := H) (M := L),
@@ -102,7 +104,7 @@ private theorem span_rootVectors_eq_top {κ : Type*} [Finite κ]
     have hbr : ⁅e α, (h₀ : L)⁆ = -(χ h₀) • e α := by
       rw [← lie_skew, ← LieSubalgebra.coe_bracket_of_module,
         lie_eq_smul_of_mem_rootSpace (he α) h₀, neg_smul]
-    have hχh₀ : χ h₀ ≠ 0 := by simpa using hh₀ α
+    have hχh₀ : χ h₀ ≠ 0 := hh₀ α α.2
     have he' : e α = (-(χ h₀))⁻¹ • ⁅e α, (h₀ : L)⁆ := by
       rw [hbr, smul_smul, inv_mul_cancel₀ (neg_ne_zero.mpr hχh₀), one_smul]
     rw [hz', he']
@@ -121,15 +123,18 @@ private theorem exists_nonzero_rootVectors :
   choose n hn using hnil
   exact ⟨e, he, he0, n, hn⟩
 
-omit [LieAlgebra ℚ L] [LieAlgebra.IsKilling K L] [IsTriangularizable K H L] in
-/-- A point of the Cartan subalgebra at which no root vanishes. -/
-private theorem exists_forall_root_ne_zero :
-    ∃ h₀ : H, ∀ α : H.root, Weight.toLinear K H L α.1 h₀ ≠ 0 :=
-  Module.Dual.exists_forall_ne_zero_of_forall_exists
-    (fun α : H.root ↦ Weight.toLinear K H L α.1) fun α ↦ by
-      by_contra! h
-      exact (Finset.mem_filter.mp α.2).2 ((Weight.coe_eq_zero_iff _).mp
-        (funext fun x ↦ by simpa using h x))
+omit [CharZero K] [LieAlgebra ℚ L] [LieAlgebra.IsKilling K L] [IsTriangularizable K H L] in
+/-- **A generic element of a Cartan subalgebra avoids every root hyperplane.** Since the root set
+is finite and each root is a nonzero linear functional, finite hyperplane avoidance over the
+infinite field `K` supplies one `h : H` on which every root is nonzero. -/
+theorem _root_.LieSubalgebra.exists_forall_root_apply_ne_zero [Infinite K]
+    [LieModule.LinearWeights K H L] :
+    ∃ h : H, ∀ α ∈ H.root, (α : H → K) h ≠ 0 := by
+  let f : H.root → Module.Dual K H := fun α ↦ (α.1 : H →ₗ[K] K)
+  obtain ⟨h, hh⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists f fun α ↦ by
+    simpa [f] using DFunLike.ne_iff.mp
+      (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root α))
+  exact ⟨h, fun α hα ↦ hh ⟨α, hα⟩⟩
 
 /-- **The root-exponential parametrization of the conjugates of a Cartan subalgebra.** Given a
 basis `b` of `L` and a basis `bH` of the splitting Cartan subalgebra `H`, there is a family of
@@ -155,7 +160,7 @@ theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι
   set c := fun j ↦ b.equivFun (bH j : L)
   refine ⟨expProdPoly l A d c, ?_, fun x ↦ ?_⟩
   · -- A point `h₀` of `H` at which no root vanishes.
-    obtain ⟨h₀, hh₀⟩ := exists_forall_root_ne_zero H
+    obtain ⟨h₀, hh₀⟩ := H.exists_forall_root_apply_ne_zero
     set s := bH.equivFun h₀
     have hs : ∑ j, s j • c j = b.equivFun (h₀ : L) := by
       conv_rhs => rw [← bH.sum_repr h₀]
