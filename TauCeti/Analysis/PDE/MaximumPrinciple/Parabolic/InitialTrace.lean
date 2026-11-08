@@ -78,6 +78,53 @@ variable {a : ℝ → EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : ℝ → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : ℝ → EuclideanSpace ℝ ι → ℝ}
   {u : ℝ → EuclideanSpace ℝ ι → ℝ} {T Lam β γ : ℝ}
 
+/-- **The forcing of `u - h`.** If `v = u - h`, with `h` a `C²` function with `|h| ≤ N`,
+`‖Dh‖ ≤ D₁` and `‖D²h‖ ≤ D₂`, then `P v` differs from `P u` by at most
+`(card ι)² Λ D₂ + β D₁ + |γ| N`, so `|P u| ≤ F` gives
+`|P v| ≤ F + (card ι)² Λ D₂ + β D₁ + |γ| N`. -/
+private theorem abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_sub_le
+    (haLam : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x i j, |a t x i j| ≤ Lam)
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
+    (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, |c t x| ≤ γ)
+    (hcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ContDiffAt ℝ 2 (u t) x) {F : ℝ}
+    (hP : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, |deriv (fun s ↦ u s x) t -
+      (∑ i, ∑ j, a t x i j * fderiv ℝ (fderiv ℝ (u t)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (u t) x (b t x) + c t x * u t x)| ≤ F)
+    {h : EuclideanSpace ℝ ι → ℝ} {N D₁ D₂ : ℝ} (hh : ContDiff ℝ 2 h) (hhN : ∀ x, |h x| ≤ N)
+    (hD₁ : ∀ x, ‖fderiv ℝ h x‖ ≤ D₁) (hD₂ : ∀ x, ‖fderiv ℝ (fderiv ℝ h) x‖ ≤ D₂)
+    {v : ℝ → EuclideanSpace ℝ ι → ℝ} (hv : ∀ t y, v t y = u t y - h y)
+    (hvt : ∀ t, v t = u t + (-1 : ℝ) • h) {t : ℝ} (htT : t ∈ Ioo 0 T)
+    (y : EuclideanSpace ℝ ι) :
+    |deriv (fun s ↦ v s y) t -
+      (∑ i, ∑ j, a t y i j * fderiv ℝ (fderiv ℝ (v t)) y (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (v t) y (b t y) + c t y * v t y)| ≤
+      F + Fintype.card ι ^ 2 * Lam * D₂ + β * D₁ + |γ| * N := by
+  have hderiv : deriv (fun s ↦ v s y) t = deriv (fun s ↦ u s y) t := by
+    simp only [hv]
+    exact deriv_sub_const (h y)
+  have hD₁0 : 0 ≤ D₁ := (norm_nonneg _).trans (hD₁ 0)
+  rw [hderiv, hv t y, hvt t,
+    sum_mul_fderiv_fderiv_add_fderiv_add_smul (hcd htT y) hh.contDiffAt]
+  have h2 := Matrix.abs_sum_sum_mul_apply_single_single_le (haLam htT y)
+    (fderiv ℝ (fderiv ℝ h) y)
+  have h1 : |fderiv ℝ h y (b t y)| ≤ D₁ * β := by
+    simpa only [Real.norm_eq_abs] using
+      (fderiv ℝ h y).le_of_opNorm_le (hD₁ y) (b t y) |>.trans
+        (mul_le_mul_of_nonneg_left (hb htT y) hD₁0)
+  have h0 : |c t y * h y| ≤ |γ| * N := by
+    rw [abs_mul]
+    exact mul_le_mul ((hc htT y).trans (le_abs_self γ)) (hhN y) (abs_nonneg _) (abs_nonneg _)
+  have hLam : Fintype.card ι ^ 2 * Lam * ‖fderiv ℝ (fderiv ℝ h) y‖ ≤
+      Fintype.card ι ^ 2 * Lam * D₂ := by
+    have hLam0 : 0 ≤ Fintype.card ι ^ 2 * Lam := by
+      rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+      · simp
+      · exact mul_nonneg (by positivity) ((abs_nonneg _).trans (haLam htT y i i))
+    exact mul_le_mul_of_nonneg_left (hD₂ y) hLam0
+  have hPu := hP htT y
+  rw [abs_le] at h2 h1 h0 hPu ⊢
+  constructor <;> nlinarith
+
 /-- **Comparison of a solution with a time-independent function.** Let the coefficients satisfy,
 for `0 < t < T`, `0 ≤ ξᵀ a(t, x) ξ`, `|aⁱʲ(t, x)| ≤ Λ`, `‖b(t, x)‖ ≤ β` and `|c(t, x)| ≤ γ`. Let
 `u` be continuous and bounded on `[0, T] × ℝⁿ`, `C²` in space and differentiable in time for
@@ -129,37 +176,13 @@ theorem abs_sub_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_ad
     refine ContinuousOn.congr ?_ fun p _ ↦ hv p.1 p.2
     exact (hcont.mono (prod_mono (Icc_subset_Icc_right ht₀.2) subset_rfl)).sub
       (hh.continuous.comp continuous_snd).continuousOn
-  have hD₂0 : 0 ≤ D₂ := (ContinuousLinearMap.opNorm_nonneg _).trans (hD₂ 0)
-  have hD₁0 : 0 ≤ D₁ := (norm_nonneg _).trans (hD₁ 0)
   -- The equation for `v`, with the forcing enlarged by the size of `P h`.
   have hPv : ∀ ⦃t⦄, t ∈ Ioo 0 t₀ → ∀ y, |deriv (fun s ↦ v s y) t -
       (∑ i, ∑ j, a t y i j * fderiv ℝ (fderiv ℝ (v t)) y (EuclideanSpace.single i 1)
         (EuclideanSpace.single j 1) + fderiv ℝ (v t) y (b t y) + c t y * v t y)| ≤
-      F + Fintype.card ι ^ 2 * Lam * D₂ + β * D₁ + |γ| * N := fun t ht y ↦ by
-    have htT := hsub ht
-    have hderiv : deriv (fun s ↦ v s y) t = deriv (fun s ↦ u s y) t := by
-      simp only [hv]
-      exact deriv_sub_const (h y)
-    rw [hderiv, sum_mul_fderiv_fderiv_add_fderiv_add_smul (hcd htT y) hh.contDiffAt, hv]
-    have h2 := Matrix.abs_sum_sum_mul_apply_single_single_le (haLam htT y)
-      (fderiv ℝ (fderiv ℝ h) y)
-    have h1 : |fderiv ℝ h y (b t y)| ≤ D₁ * β := by
-      simpa only [Real.norm_eq_abs] using
-        (fderiv ℝ h y).le_of_opNorm_le (hD₁ y) (b t y) |>.trans
-          (mul_le_mul_of_nonneg_left (hb htT y) hD₁0)
-    have h0 : |c t y * h y| ≤ |γ| * N := by
-      rw [abs_mul]
-      exact mul_le_mul ((hc htT y).trans (le_abs_self γ)) (hhN y) (abs_nonneg _) (abs_nonneg _)
-    have hLam : Fintype.card ι ^ 2 * Lam * ‖fderiv ℝ (fderiv ℝ h) y‖ ≤
-        Fintype.card ι ^ 2 * Lam * D₂ := by
-      have hLam0 : 0 ≤ Fintype.card ι ^ 2 * Lam := by
-        rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-        · simp
-        · exact mul_nonneg (by positivity) ((abs_nonneg _).trans (haLam htT y i i))
-      exact mul_le_mul_of_nonneg_left (hD₂ y) hLam0
-    have hPu := hP htT y
-    rw [abs_le] at h2 h1 h0 hPu ⊢
-    constructor <;> nlinarith
+      F + Fintype.card ι ^ 2 * Lam * D₂ + β * D₁ + |γ| * N := fun t ht y ↦
+    abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_sub_le haLam hb hc hcd hP hh hhN hD₁
+      hD₂ hv (fun _ ↦ rfl) (hsub ht) y
   have hb' : ∀ ⦃t⦄, t ∈ Ioo 0 t₀ → ∀ y, ‖b t y‖ ≤ |β| * (1 + ‖y‖) := fun t ht y ↦
     (hb (hsub ht) y).trans ((le_abs_self β).trans (le_mul_of_one_le_right (abs_nonneg β)
       (le_add_of_nonneg_right (norm_nonneg y))))
@@ -179,6 +202,43 @@ theorem abs_sub_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_ad
     (abs_nonneg γ) hvcont hvbdd.2
     hvbdd.1 hcd' hdiff' hPv (fun y ↦ by rw [hv]; exact hw y) ⟨ht₀.1.le, le_rfl⟩ x
   rwa [hv] at hbound
+
+/-- **Absorbing the powers of `ε` into `t₀ = ε²`.** With `ε = √t₀ ≤ √T` and `m ≥ 0`, the terms
+`w / ε²` and `w / ε` (with `w = ω(ε)` the modulus of continuity at scale `ε`) in the estimate
+produced by mollifying at scale `ε` are bounded by multiples of `w`, the factor `t₀` turning
+`ε⁻²` and `ε⁻¹` into constants. -/
+private theorem add_mul_le_mul_add_mul_of_sq_eq {T t₀ ε C₀ w M F m Lam β γ : ℝ} (hm : 0 ≤ m)
+    (hC₀ : 0 ≤ C₀) (hw0 : 0 ≤ w) (hM0 : 0 ≤ M) (hF0 : 0 ≤ F) (ht₀ : t₀ ∈ Ioc 0 T) (hε : 0 < ε)
+    (hεsq : ε ^ 2 = t₀) :
+    w + t₀ * (F + m * Lam * (C₀ * w / ε ^ 2) + β * (C₀ * w / ε) +
+      |γ| * (M + w)) ≤ (1 + (m * |Lam| * C₀ + |β| * C₀ * √T + |γ| * |T|)) * w +
+      (1 + |γ|) * (t₀ * (M + F)) := by
+  have hT : t₀ ≤ T := ht₀.2
+  have hsqrt : ε ≤ √T := (Real.le_sqrt' hε).2 (hεsq ▸ hT)
+  have hLam0 : m * Lam ≤ m * |Lam| :=
+    mul_le_mul_of_nonneg_left (le_abs_self Lam) hm
+  have h2 : t₀ * (m * Lam * (C₀ * w / ε ^ 2)) ≤
+      m * |Lam| * C₀ * w := by
+    have : t₀ * (m * Lam * (C₀ * w / ε ^ 2)) =
+        m * Lam * (C₀ * w) := by
+      rw [hεsq]
+      field_simp [ht₀.1.ne']
+    rw [this, mul_assoc _ C₀]
+    exact mul_le_mul_of_nonneg_right hLam0 (mul_nonneg hC₀ hw0)
+  have h1 : t₀ * (β * (C₀ * w / ε)) ≤ |β| * C₀ * √T * w := by
+    have : t₀ * (β * (C₀ * w / ε)) = ε * β * C₀ * w := by
+      rw [← hεsq]
+      field_simp
+    rw [this]
+    have hβ : ε * β ≤ √T * |β| :=
+      (mul_le_mul_of_nonneg_left (le_abs_self β) hε.le).trans
+        (mul_le_mul_of_nonneg_right hsqrt (abs_nonneg β))
+    nlinarith [mul_nonneg hC₀ hw0]
+  have h0 : t₀ * (|γ| * (M + w)) ≤ |γ| * |T| * w + |γ| * (t₀ * (M + F)) := by
+    have htT : t₀ ≤ |T| := hT.trans (le_abs_self T)
+    nlinarith [mul_le_mul_of_nonneg_left htT (mul_nonneg (abs_nonneg γ) hw0),
+      mul_nonneg (mul_nonneg (abs_nonneg γ) ht₀.1.le) hF0]
+  nlinarith [mul_nonneg ht₀.1.le hM0]
 
 /-- **Uniform attainment of the initial data by a modulus of continuity.** There is a constant
 `C`, depending only on `ι`, `T`, `Λ`, `β` and `γ`, with the following property. Let the
@@ -238,37 +298,11 @@ theorem exists_abs_sub_le_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add
     (fun y ↦ by linarith [abs_sub_abs_le_abs_sub (h y) (u 0 y), hhg y, hM y])
     hD₁ hD₂ (fun y ↦ by rw [abs_sub_comm]; exact hhg y) ht₀ x
   -- Absorb the powers of `ε` into `t₀ = ε²`.
-  have hLam0 : Fintype.card ι ^ 2 * Lam ≤ Fintype.card ι ^ 2 * |Lam| :=
-    mul_le_mul_of_nonneg_left (le_abs_self Lam) (by positivity)
   have hT : t₀ ≤ T := ht₀.2
-  have hsqrt : ε ≤ √T := Real.sqrt_le_sqrt hT
   have hexp : Real.exp (|γ| * t₀) ≤ Real.exp (|γ| * T) :=
     Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hT (abs_nonneg γ))
-  have h2 : t₀ * (Fintype.card ι ^ 2 * Lam * (C₀ * w / ε ^ 2)) ≤
-      Fintype.card ι ^ 2 * |Lam| * C₀ * w := by
-    have : t₀ * (Fintype.card ι ^ 2 * Lam * (C₀ * w / ε ^ 2)) =
-        Fintype.card ι ^ 2 * Lam * (C₀ * w) := by
-      rw [hεsq]
-      field_simp [ht₀.1.ne']
-    rw [this, mul_assoc _ C₀]
-    exact mul_le_mul_of_nonneg_right hLam0 (mul_nonneg hC₀ hw0)
-  have h1 : t₀ * (β * (C₀ * w / ε)) ≤ |β| * C₀ * √T * w := by
-    have : t₀ * (β * (C₀ * w / ε)) = ε * β * C₀ * w := by
-      rw [← hεsq]
-      field_simp
-    rw [this]
-    have hβ : ε * β ≤ √T * |β| :=
-      (mul_le_mul_of_nonneg_left (le_abs_self β) hε.le).trans
-        (mul_le_mul_of_nonneg_right hsqrt (abs_nonneg β))
-    nlinarith [mul_nonneg hC₀ hw0]
-  have h0 : t₀ * (|γ| * (M + w)) ≤ |γ| * |T| * w + |γ| * (t₀ * (M + F)) := by
-    have htT : t₀ ≤ |T| := hT.trans (le_abs_self T)
-    nlinarith [mul_le_mul_of_nonneg_left htT (mul_nonneg (abs_nonneg γ) hw0),
-      mul_nonneg (mul_nonneg (abs_nonneg γ) ht₀.1.le) hF0]
-  have hinner : w + t₀ * (F + Fintype.card ι ^ 2 * Lam * (C₀ * w / ε ^ 2) + β * (C₀ * w / ε) +
-      |γ| * (M + w)) ≤ (1 + K) * w + (1 + |γ|) * (t₀ * (M + F)) := by
-    simp only [K]
-    nlinarith [mul_nonneg ht₀.1.le hM0]
+  have hinner := add_mul_le_mul_add_mul_of_sq_eq (m := (Fintype.card ι : ℝ) ^ 2)
+    (Lam := Lam) (β := β) (γ := γ) (by positivity) hC₀ hw0 hM0 hF0 ht₀ hε hεsq
   have hinner0 : 0 ≤ (1 + K) * w + (1 + |γ|) * (t₀ * (M + F)) := by
     have := ht₀.1.le
     positivity
