@@ -18,11 +18,10 @@ factors and its comparison with the restricted tensor-induced total coinduced re
 The grading sums degrees first within each orbit and then over the double cosets. Its
 differential is the corresponding iterated slot sum.
 
-The orbit factors here use restrictions of the original coinduced resolution. They are not yet
-the coinduced resolutions of the conjugated coefficient modules. The augmented chain comparison
-constructed here is the first comparison needed to express the restricted norm as a product of
-orbitwise norms. In particular its augmentation applies the original augmentation in every
-factor, as recorded by `smoothTensorInducedMackeyIso_resolutionAugmentation`.
+The orbit factors are restrictions along `mackeyToH` of the original coinduced resolution,
+not the coinduced resolutions of the conjugated coefficient modules. This comparison feeds the
+double-coset formula for the Evens norm. Its augmentation applies the original augmentation in
+every factor, as recorded by `smoothTensorInducedMackeyIso_resolutionAugmentation`.
 
 We obtain the equivariant differential by conjugating the ambient differential along the smooth
 Mackey isomorphism, then identify it with the iterated slot sum by the algebraic chain identity.
@@ -82,14 +81,15 @@ theorem smoothTensorInducedMackeyIso_mem_resolutionPiece_iff (n : ℤ)
       smoothTensorInducedGradedResolutionPiece U hU s A n ↔
         z ∈ smoothTensorInducedMackeyResolutionPiece U V hU r t A n := by
   let B := (ofSmoothDiscrete R U).obj (smoothGradedResolutionFunctor.obj A)
+  have hB : B.ρ = A.obj.gradedResolutionRepresentation := by
+    ext g x
+    exact (ofSmoothDiscrete_obj_ρ_apply R U _ g x).trans
+      ((smoothGradedResolutionFunctor_obj_obj_ρ_apply A g x).trans
+        (A.obj.gradedResolutionTopRep_ρ_apply g x))
   have hρ (g : U) : LinearMap.IsHomogeneous (B.ρ g)
-      A.obj.gradedResolutionPiece A.obj.gradedResolutionPiece 0 :=
-    LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
-      rw [add_zero]
-      exact (congrArg (· ∈ A.obj.gradedResolutionPiece p)
-        ((ofSmoothDiscrete_obj_ρ_apply R U _ g x).trans
-          (smoothGradedResolutionFunctor_obj_obj_ρ_apply A g x))).mpr
-            (A.obj.gradedResolutionTopRep_ρ_mem p g x hx)
+      A.obj.gradedResolutionPiece A.obj.gradedResolutionPiece 0 := by
+    rw [hB]
+    exact A.obj.isHomogeneous_gradedResolutionRepresentation g
   exact (congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A n)
     (smoothTensorInducedMackeyIso_hom_apply U V hU r hr t s
       (smoothGradedResolutionFunctor.obj A) z)).to_iff.trans
@@ -125,42 +125,69 @@ theorem smoothTensorInducedMackeyResolutionDifferential_apply
     have hf : f.toLinearMap = A.obj.gradedResolutionDifferential :=
       (ofSmoothDiscrete_map_toLinearMap R U _).trans
         (LinearMap.ext (smoothGradedResolutionDifferential_hom_apply A))
-    exact (congrArg (· ∘ₗ B.ρ g) hf.symm).trans
-      ((f.isIntertwining' g).trans (congrArg (B.ρ g ∘ₗ ·) hf))
+    rw [← hf]
+    exact f.isIntertwining' g
   let e := smoothTensorInducedMackeyIso U V hU r hr t s
     (smoothGradedResolutionFunctor.obj A)
   let dz := PiTensorProduct.slotSum _ (fun D ↦
     PiTensorProduct.slotSum (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)
       (fun _ ↦ A.obj.gradedResolutionDifferential)) z
-  have he (x) := smoothTensorInducedMackeyIso_hom_apply U V hU r hr t s
-    (smoothGradedResolutionFunctor.obj A) x
-  have hc : e.inv.hom.hom (e.hom.hom.hom dz) = dz :=
-    congrArg (fun f ↦ f.hom.hom dz) e.hom_inv_id
   have hk : (smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
-      (e.hom.hom.hom z) = e.hom.hom.hom dz :=
-    (smoothTensorInducedGradedResolutionDifferential_apply U hU s A _).trans
-      ((congrArg (PiTensorProduct.slotSum (G ⧸ U)
-        (fun _ ↦ A.obj.gradedResolutionDifferential)) (he z)).trans
-          ((Subgroup.tensorInducedMackey_slotSum U V r hr t B.ρ s hd z).symm.trans
-            (he dz).symm))
-  exact (congrArg e.inv.hom.hom hk).trans hc
+      (e.hom.hom.hom z) = e.hom.hom.hom dz := by
+    dsimp only [dz]
+    -- The smooth/discrete presentations agree at semireducible transparency.
+    erw [smoothTensorInducedGradedResolutionDifferential_apply,
+      smoothTensorInducedMackeyIso_hom_apply, smoothTensorInducedMackeyIso_hom_apply]
+    exact (Subgroup.tensorInducedMackey_slotSum U V r hr t B.ρ s hd z).symm
+  -- Fix the carrier presentation of the transported composite before rewriting.
+  suffices e.inv.hom.hom
+      ((smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
+        (e.hom.hom.hom z)) = dz by exact this
+  rw [hk]
+  exact congrArg (fun f ↦ f.hom.hom dz) e.hom_inv_id
 
 omit [Fintype (G ⧸ U)] in
-include hr s in
 /-- The orbitwise action preserves the sum of the orbitwise total degrees. -/
 theorem smoothTensorInducedMackeyResolutionPiece_ρ_mem (n : ℤ) (g : V)
     (z : (smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.V)
     (hz : z ∈ smoothTensorInducedMackeyResolutionPiece U V hU r t A n) :
     ((smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.ρ g) z ∈
       smoothTensorInducedMackeyResolutionPiece U V hU r t A n := by
-  let : Fintype (G ⧸ U) := Fintype.ofFinite _
-  let e := smoothTensorInducedMackeyIso U V hU r hr t s
-    (smoothGradedResolutionFunctor.obj A)
-  exact (smoothTensorInducedMackeyIso_mem_resolutionPiece_iff U V hU r hr t s A n _).1
-    ((congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A n)
-      (e.hom.hom.hom.isIntertwining g z)).mpr
-        (smoothTensorInducedGradedResolutionPiece_ρ_mem U hU s A n g _
-          ((smoothTensorInducedMackeyIso_mem_resolutionPiece_iff U V hU r hr t s A n z).2 hz)))
+  let B := (ofSmoothDiscrete R U).obj (smoothGradedResolutionFunctor.obj A)
+  let M D := DiscreteRep.tensorInduced _ (U.isOpen_mackeySubgroup_subgroupOf V hU (r D))
+    (t D) (DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D)) B)
+  have hB : B.ρ = A.obj.gradedResolutionRepresentation := by
+    ext u x
+    exact (ofSmoothDiscrete_obj_ρ_apply R U _ u x).trans
+      ((smoothGradedResolutionFunctor_obj_obj_ρ_apply A u x).trans
+        (A.obj.gradedResolutionTopRep_ρ_apply u x))
+  have hM D : LinearMap.IsHomogeneous ((M D).ρ g)
+      (PiTensorProduct.totalDegreePiece _ (fun _ ↦ A.obj.gradedResolutionPiece))
+      (PiTensorProduct.totalDegreePiece _ (fun _ ↦ A.obj.gradedResolutionPiece)) 0 := by
+    have hρ u : LinearMap.IsHomogeneous
+        ((DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D)) B).ρ u)
+        A.obj.gradedResolutionPiece A.obj.gradedResolutionPiece 0 := by
+      have he :
+          (DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D)) B).ρ u =
+            B.ρ (mackeyToH (r D) U V u) :=
+        LinearMap.ext (DiscreteRep.res_ρ_apply _ _ B u)
+      rw [he, hB]
+      exact A.obj.isHomogeneous_gradedResolutionRepresentation _
+    have he : (M D).ρ g =
+        (DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D)) B).ρ.wreathTensor
+          _ (((mackeySubgroup (r D) U V).subgroupOf V).monomialHom (t D) g) := by
+      ext x
+      exact (DiscreteRep.tensorInduced_ρ_apply _ _ _ _ g x).trans
+        (Subgroup.tensorInducedRepresentation_apply _ _ _ g x)
+    rw [he]
+    exact Representation.isHomogeneous_wreathTensor _ hρ _
+  have he : ((smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.ρ g) z =
+      PiTensorProduct.map (fun D ↦ (M D).ρ g) z :=
+    (DiscreteRep.piTensorProduct_ρ_apply M g z).trans
+      (LinearMap.congr_fun (Representation.piTensorProduct_apply _ g) z)
+  have h := (PiTensorProduct.isHomogeneous_map hM).map_mem hz
+  rw [Finset.sum_const_zero, add_zero] at h
+  exact he.symm ▸ h
 
 omit [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))]
   [∀ D, Fintype (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)] in
@@ -229,7 +256,7 @@ The body is exposed so that each degree has its native subtype carrier, as for
     CochainComplex (TopRep.{max u v w} R V) ℕ :=
   (smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.gradedCochainComplex
     (smoothTensorInducedMackeyResolutionPiece U V hU r t A)
-    (smoothTensorInducedMackeyResolutionPiece_ρ_mem U V hU r hr t s A)
+    (smoothTensorInducedMackeyResolutionPiece_ρ_mem U V hU r t A)
     (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom
     (isHomogeneous_smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A)
     (smoothTensorInducedMackeyResolutionDifferential_sq U V hU r hr t s A hA)
@@ -291,28 +318,12 @@ theorem smoothTensorInducedMackeyIso_resolutionAugmentation
           (fun _ ↦ A.obj.gradedResolutionAugmentation)) z) =
       PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation)
         ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom z) := by
-  let f := (ofSmoothDiscrete R U).map (smoothGradedResolutionAugmentationApp A)
-  have hf : f.toLinearMap = A.obj.gradedResolutionAugmentation :=
-    (ofSmoothDiscrete_map_toLinearMap R U _).trans
-      (LinearMap.ext (smoothGradedResolutionAugmentationApp_hom_apply A))
-  have h := Subgroup.tensorInducedMackey_naturality U V r hr t
-    ((ofSmoothDiscrete R U).obj A).ρ f s z
-  have hmap : PiTensorProduct.map (fun _ : G ⧸ U ↦ f.toLinearMap) =
-      PiTensorProduct.map (fun _ : G ⧸ U ↦ A.obj.gradedResolutionAugmentation) :=
-    congrArg (fun f ↦ PiTensorProduct.map (fun _ : G ⧸ U ↦ f)) hf
-  have hinner : PiTensorProduct.map (fun D : DoubleCoset.Quotient (V : Set G) (U : Set G) ↦
-        PiTensorProduct.map (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ f.toLinearMap)) =
-      PiTensorProduct.map (fun D : DoubleCoset.Quotient (V : Set G) (U : Set G) ↦
-        PiTensorProduct.map (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦
-          A.obj.gradedResolutionAugmentation)) :=
-    congrArg (fun f ↦ PiTensorProduct.map (fun D : DoubleCoset.Quotient (V : Set G) (U : Set G) ↦
-      PiTensorProduct.map (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ f))) hf
-  exact (smoothTensorInducedMackeyIso_hom_apply U V hU r hr t s
-    (smoothGradedResolutionFunctor.obj A) _).trans
-      ((congrArg _ (LinearMap.congr_fun hinner.symm z)).trans
-        (h.trans ((LinearMap.congr_fun
-          (Representation.IntertwiningMap.tensorInduced_toLinearMap f s) _).trans
-            ((LinearMap.congr_fun hmap _).trans
-              (congrArg _ (smoothTensorInducedMackeyIso_hom_apply U V hU r hr t s A z).symm)))))
+  have hf : (smoothGradedResolutionAugmentationApp A).hom.hom.toLinearMap =
+      A.obj.gradedResolutionAugmentation :=
+    LinearMap.ext (smoothGradedResolutionAugmentationApp_hom_apply A)
+  have h := smoothTensorInducedMackeyIso_hom_naturality_apply U V hU r hr t s
+    (smoothGradedResolutionAugmentationApp A) z
+  rw [hf] at h
+  exact h
 
 end TauCeti
