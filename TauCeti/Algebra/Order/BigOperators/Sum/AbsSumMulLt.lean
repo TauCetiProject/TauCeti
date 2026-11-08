@@ -8,8 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Ring.Abs
-public import Mathlib.Basic.Real.Basic
-import Mathlib.Tactic.Linarith
 
 /-!
 # Weighted sums of bounded numbers
@@ -25,11 +23,11 @@ namespace TauCeti
 
 open Finset
 
-variable {ι : Type*} [Fintype ι]
+variable {ι R : Type*} [Fintype ι] [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- A weighted sum with total absolute weight at most one of numbers of absolute value less than
 `c` has absolute value less than `c`. -/
-theorem abs_sum_mul_lt_of_sum_abs_le_one {c : ℝ} (hc : 0 < c) (e x : ι → ℝ)
+theorem abs_sum_mul_lt_of_sum_abs_le_one {c : R} (hc : 0 < c) (e x : ι → R)
     (he : ∑ i, |e i| ≤ 1) (hx : ∀ i, |x i| < c) : |∑ i, e i * x i| < c := by
   by_cases hzero : ∀ i, e i = 0
   · simpa [hzero] using hc
@@ -43,6 +41,6 @@ theorem abs_sum_mul_lt_of_sum_abs_le_one {c : ℝ} (hc : 0 < c) (e x : ι → �
           ⟨j, mem_univ j, mul_lt_mul_of_pos_left (hx j) (abs_pos.mpr hj)⟩
       _ ≤ c := by
         rw [← sum_mul]
-        nlinarith
+        exact mul_le_of_le_one_left hc.le he
 
 end TauCeti
