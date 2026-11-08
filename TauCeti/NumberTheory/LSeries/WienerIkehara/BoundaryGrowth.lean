@@ -87,7 +87,7 @@ theorem tsum_norm_term_le_of_boundary (ha : 0 ≤ a)
   obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hG
   have hM0 : 0 ≤ M := le_trans (norm_nonneg _) (hM 1 ⟨le_rfl, one_le_two⟩)
   refine ⟨M + ‖A‖, by positivity, fun sigma h1 h2 ↦
-    ⟨summable_norm_term_of_nonneg ha (hsum sigma h1 h2), ?_⟩⟩
+    ⟨summable_norm_iff.mpr (hsum sigma h1 h2), ?_⟩⟩
   have hsub : (sigma : ℂ) - 1 = ((sigma - 1 : ℝ) : ℂ) := by push_cast; ring
   have hnorm : ‖A / ((sigma : ℂ) - 1)‖ = ‖A‖ / (sigma - 1) := by
     rw [hsub, norm_div, Complex.norm_real, Real.norm_of_nonneg (by linarith)]
