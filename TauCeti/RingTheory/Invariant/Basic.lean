@@ -320,9 +320,7 @@ theorem exists_comp_eq_of_comp_algebraMap_eq (f₁ f₂ : B →+* K)
     obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) d.1 d.2
     have := congr($h a)
     simp only [RingHom.comp_apply, ha] at this
-    change f₁ (g⁻¹ • d.1) = f₂ d.1
-    rw [d.2 g⁻¹]
-    exact this
+    simpa [d.2 g⁻¹, Algebra.algebraMap_ofSubsemiring_apply] using this
   have hker : RingHom.ker (f₁.comp (MulSemiringAction.toRingHom G B g⁻¹)) = RingHom.ker f₂ := by
     rw [hg]
     ext b
