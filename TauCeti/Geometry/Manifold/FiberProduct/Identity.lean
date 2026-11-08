@@ -35,12 +35,27 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 variable {E H X F G N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace G]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ F G}
-  [I.Boundaryless] [J.Boundaryless]
   [TopologicalSpace X] [ChartedSpace H X] [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} [IsManifold I n X] [IsManifold J n N] {f : X → N}
+
+/-- Every map is transverse to the identity in the second factor. -/
+theorem transverse_id_right (f : X → N) (p : X × N) :
+    (mfderiv I J f p.1).range ⊔
+      (((tangentSpaceCast J (id p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv J J id p.2)).range = ⊤ := by
+  simp [mfderiv_id]
+
+/-- Every map is transverse to the identity in the first factor. -/
+theorem transverse_id_left (f : X → N) (p : N × X) :
+    (mfderiv J J id p.1).range ⊔
+      (((tangentSpaceCast J (f p.2) (id p.1)).toContinuousLinearMap).comp
+        (mfderiv I J f p.2)).range = ⊤ := by
+  simp [mfderiv_id]
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [I.Boundaryless] [J.Boundaryless]
 
 /-- Base change of `f` along the identity is diffeomorphic to its domain by the first
 projection. The inverse is the graph map `x ↦ (x, f x)`. The fibre product carries its
@@ -48,13 +63,13 @@ chosen transverse atlas. -/
 noncomputable def transverseFiberProductIdRightDiffeomorph (hn : 1 ≤ n)
     (hf : ContMDiff I J n f) :
     letI := transverseFiberProductChartedSpace hn hf (contMDiff_id (I := J))
-      (by intro p _; simp [mfderiv_id])
+      (fun p _ ↦ transverse_id_right f p)
     {p : X × N // f p.1 = id p.2} ≃ₘ^n⟮
       𝓘(ℝ, Fin (finrank ℝ E + finrank ℝ F - finrank ℝ F) → ℝ), I⟯ X := by
   letI := transverseFiberProductChartedSpace hn hf (contMDiff_id (I := J))
-    (by intro p _; simp [mfderiv_id])
+    (fun p _ ↦ transverse_id_right f p)
   have hemb := isSmoothEmbedding_coe_transverseFiberProduct hn hf (contMDiff_id (I := J))
-    (by intro p _; simp [mfderiv_id])
+    (fun p _ ↦ transverse_id_right f p)
   refine
     { toFun := fun p ↦ p.1.1
       invFun := fun x ↦ ⟨(x, f x), rfl⟩
@@ -79,7 +94,7 @@ theorem transverseFiberProductIdRightDiffeomorph_apply (hn : 1 ≤ n)
 theorem transverseFiberProductIdRightDiffeomorph_symm_apply (hn : 1 ≤ n)
     (hf : ContMDiff I J n f) (x : X) :
     letI := transverseFiberProductChartedSpace hn hf (contMDiff_id (I := J))
-      (by intro p _; simp [mfderiv_id])
+      (fun p _ ↦ transverse_id_right f p)
     (transverseFiberProductIdRightDiffeomorph hn hf).symm x = ⟨(x, f x), rfl⟩ :=
   (rfl)
 
@@ -88,13 +103,13 @@ fibre product with the domain of `f`. Its inverse is `x ↦ (f x, x)`. -/
 noncomputable def transverseFiberProductIdLeftDiffeomorph (hn : 1 ≤ n)
     (hf : ContMDiff I J n f) :
     letI := transverseFiberProductChartedSpace hn (contMDiff_id (I := J)) hf
-      (by intro p _; simp [mfderiv_id])
+      (fun p _ ↦ transverse_id_left f p)
     {p : N × X // id p.1 = f p.2} ≃ₘ^n⟮
       𝓘(ℝ, Fin (finrank ℝ F + finrank ℝ E - finrank ℝ F) → ℝ), I⟯ X := by
   letI := transverseFiberProductChartedSpace hn (contMDiff_id (I := J)) hf
-    (by intro p _; simp [mfderiv_id])
+    (fun p _ ↦ transverse_id_left f p)
   have hemb := isSmoothEmbedding_coe_transverseFiberProduct hn (contMDiff_id (I := J)) hf
-    (by intro p _; simp [mfderiv_id])
+    (fun p _ ↦ transverse_id_left f p)
   refine
     { toFun := fun p ↦ p.1.2
       invFun := fun x ↦ ⟨(f x, x), rfl⟩
@@ -119,7 +134,7 @@ theorem transverseFiberProductIdLeftDiffeomorph_apply (hn : 1 ≤ n)
 theorem transverseFiberProductIdLeftDiffeomorph_symm_apply (hn : 1 ≤ n)
     (hf : ContMDiff I J n f) (x : X) :
     letI := transverseFiberProductChartedSpace hn (contMDiff_id (I := J)) hf
-      (by intro p _; simp [mfderiv_id])
+      (fun p _ ↦ transverse_id_left f p)
     (transverseFiberProductIdLeftDiffeomorph hn hf).symm x = ⟨(f x, x), rfl⟩ :=
   (rfl)
 
