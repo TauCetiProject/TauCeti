@@ -125,8 +125,9 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_criticalPoint_perturbation_m
       (by rwa [hright hy])
   refine ⟨(e.extend I).symm y, mem_image_of_mem _ hy, hgy, ?_, by rwa [hright hy], ?_, ?_⟩
   · rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he (hsource hy) hgy.contMDiffAt
-      hgy.mvfderiv_eq_zero, manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hx
-      h.contMDiffAt h.mvfderiv_eq_zero, hright hy]
+      (TauCeti.mem_criticalPoints.1 hgy.mem_criticalPoints),
+      manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hx h.contMDiffAt
+      (TauCeti.mem_criticalPoints.1 h.mem_criticalPoints), hright hy]
     exact hyind
   · simpa only [Function.comp_apply, e.extend_left_inv hx] using hval
   · rintro _ ⟨z, hz, rfl⟩ hcrit
