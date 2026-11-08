@@ -11,6 +11,7 @@ public import TauCeti.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Max
+import Mathlib.Tactic.Ring
 
 /-!
 # Sums and products over `Fin n`
@@ -30,6 +31,10 @@ monoid each of them is at most the total. These are the facts about the dominanc
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
 
 A product over the pairs `Fin 2 → α` is the double product over their two entries.
+
+A strictly increasing list `a` on `Fin (n + 1)` in a linearly ordered commutative ring telescopes:
+`a k` is `a 0` plus the gaps below `a k`, and a finset sum of values in the list is `a 0` times the
+cardinality plus the gaps times the numbers of elements above each threshold.
 -/
 
 public section
@@ -145,5 +150,48 @@ theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
     ∑ i : Fin n, z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ = ∑ j, z j := by
   simpa only [finSuccAboveEquiv_last_apply] using
     Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
+
+/-- Telescoping a strictly increasing list `a` in a linearly ordered additive group expresses `a k`
+as `a 0` plus the successive gaps below `a k`. -/
+theorem eq_add_sum_ite_sub_of_strictMono {R : Type*} [AddCommGroup R] [LinearOrder R] {n : ℕ}
+    {a : Fin (n + 1) → R} (ha : StrictMono a)
+    (k : Fin (n + 1)) : a k = a 0 +
+      ∑ j : Fin n, if a j.castSucc < a k then a j.succ - a j.castSucc else 0 := by
+  simp_rw [ha.lt_iff_lt]
+  refine Fin.cases ?_ (fun k ↦ ?_) k
+  · simp
+  · simp only [Fin.castSucc_lt_succ_iff]
+    rw [← Finset.sum_filter]
+    have heq : Finset.univ.filter (fun j : Fin n ↦ j ≤ k) = Finset.Iic k := by
+      ext j; simp
+    rw [heq, Fin.sum_Iic_sub]
+    rw [add_sub_cancel]
+
+/-- When a finite strictly increasing list in a linearly ordered commutative ring contains the
+values of `c` on a finset `b`, the sum of `c` over `b` is `a 0` times its cardinality plus the
+successive gaps times the number of elements above each threshold. -/
+theorem sum_eq_mul_card_add_sum_gap_mul_card_filter {R : Type*} [CommRing R] [LinearOrder R]
+    {n : ℕ} {a : Fin (n + 1) → R}
+    (ha : StrictMono a) {ι : Type*} {c : ι → R}
+    (b : Finset ι) (hc : ∀ i ∈ b, c i ∈ Set.range a) :
+    (∑ i ∈ b, c i) = a 0 * b.card +
+      ∑ j : Fin n, (a j.succ - a j.castSucc) *
+        (b.filter fun i ↦ a j.castSucc < c i).card := by
+  classical
+  have hci (i : ι) (hi : i ∈ b) : c i = a 0 +
+      ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0 := by
+    obtain ⟨k, hk⟩ := hc i hi
+    simpa only [hk] using eq_add_sum_ite_sub_of_strictMono ha k
+  calc
+    (∑ i ∈ b, c i) = ∑ i ∈ b, (a 0 +
+        ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0) :=
+      Finset.sum_congr rfl hci
+    _ = _ := by
+      rw [Finset.sum_add_distrib, Finset.sum_comm]
+      congr 1
+      · simp [mul_comm]
+      · refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [← Finset.sum_filter]
+        simp [mul_comm, sub_mul]
 
 end TauCeti

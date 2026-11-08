@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Twisted.Weight.Basic
+import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.LinearAlgebra.LinearIndependent.Filtration
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -88,47 +89,6 @@ private theorem localWeightBasis_card_filter {L : ι → Dual K V} {U : Submodul
   rw [card_eq_finrank_of_mem_localWeightBases hb] at h
   simpa only [not_le, add_comm, t] using h
 
-/-- Telescoping a strictly increasing list `a` expresses `a k` as `a 0` plus the successive gaps
-below `a k`. -/
-theorem eq_add_sum_ite_sub_of_strictMono {n : ℕ} {a : Fin (n + 1) → ℝ} (ha : StrictMono a)
-    (k : Fin (n + 1)) : a k = a 0 +
-      ∑ j : Fin n, if a j.castSucc < a k then a j.succ - a j.castSucc else 0 := by
-  simp_rw [ha.lt_iff_lt]
-  refine Fin.cases ?_ (fun k ↦ ?_) k
-  · simp
-  · simp only [Fin.castSucc_lt_succ_iff]
-    rw [← Finset.sum_filter]
-    have heq : Finset.univ.filter (fun j : Fin n ↦ j ≤ k) = Finset.Iic k := by
-      ext j; simp
-    rw [heq, Fin.sum_Iic_sub]
-    ring
-
-omit [Fintype ι] in
-/-- When a finite strictly increasing list contains all values of `c`, the sum of `c` over a
-finset is `a 0` times its cardinality plus the successive gaps times the number of elements
-above each threshold. -/
-theorem sum_eq_mul_card_add_sum_gap_mul_card_filter {n : ℕ} {a : Fin (n + 1) → ℝ}
-    (ha : StrictMono a) {c : ι → ℝ} (hc : range c ⊆ range a) (b : Finset ι) :
-    (∑ i ∈ b, c i) = a 0 * b.card +
-      ∑ j : Fin n, (a j.succ - a j.castSucc) *
-        (b.filter fun i ↦ a j.castSucc < c i).card := by
-  classical
-  have hci (i : ι) : c i = a 0 +
-      ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0 := by
-    obtain ⟨k, hk⟩ := hc (mem_range_self i)
-    simpa only [hk] using eq_add_sum_ite_sub_of_strictMono ha k
-  calc
-    (∑ i ∈ b, c i) = ∑ i ∈ b, (a 0 +
-        ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0) :=
-      Finset.sum_congr rfl fun i _ ↦ hci i
-    _ = _ := by
-      rw [Finset.sum_add_distrib, Finset.sum_comm]
-      congr 1
-      · simp [mul_comm]
-      · refine Finset.sum_congr rfl fun j _ ↦ ?_
-        rw [← Finset.sum_filter]
-        simp [mul_comm, sub_mul]
-
 /-- Every restricted dual basis has at least as many forms of weight above `r` as the dimension
 of the intersection of `U` with the common kernel of the forms of weight at most `r`. -/
 private theorem finrank_inf_iInf_ker_le_card_filter [Module.Finite K V] {L : ι → Dual K V}
@@ -163,7 +123,8 @@ theorem localWeight_eq_sum_finrank_inf_iInf_ker {L : ι → Dual K V}
   have hrank (j : Fin n) :=
     Dual.finrank_span_restrict_add_finrank_inf_iInf_ker L U
       {i | c i ≤ a j.castSucc}
-  have hsum := sum_eq_mul_card_add_sum_gap_mul_card_filter ha hc
+  have hsum := fun b ↦
+    sum_eq_mul_card_add_sum_gap_mul_card_filter ha b (fun i _ ↦ hc (mem_range_self i))
   apply le_antisymm
   -- A sublevel-adapted basis attains every lower bound simultaneously.
   · obtain ⟨b, hb, hspan⟩ := exists_localWeightBasis_spanning_sublevels hL c U
