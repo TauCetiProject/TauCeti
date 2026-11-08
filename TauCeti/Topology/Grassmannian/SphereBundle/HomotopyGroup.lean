@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup
 public import TauCeti.Topology.Grassmannian.SphereBundle
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberEmbedding
@@ -94,6 +93,15 @@ def specialOrthogonalSphereBoundary [Finite N] :
     (finiteOrthonormalFrame.isEmbedding_fromBlocksOne 1 n)
     range_fromBlocksOne_eq_preimage_specialOrthogonalSphereMap (e := ⟨1, rfl⟩)
     (map_one (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n))
+
+/-- The boundary map sends the class of the constant loop to the class of the constant loop. -/
+@[simp]
+theorem specialOrthogonalSphereBoundary_const [Finite N] :
+    specialOrthogonalSphereBoundary (n := n)
+        (⟦GenLoop.const⟧ : HomotopyGroup (Option N)
+          (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1) (specialOrthogonalSphereMap n 1)) =
+      ⟦GenLoop.const⟧ :=
+  TopCat.fibrationBoundaryOfIsEmbedding_const _ _ _ _
 
 /-- **Exactness at `π_k(SO(n))`.** A class of `SO(n)` is a boundary exactly when its image in
 `SO(1 + n)` is trivial. -/

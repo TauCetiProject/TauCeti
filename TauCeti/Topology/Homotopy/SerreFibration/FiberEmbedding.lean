@@ -23,13 +23,11 @@ for a topological embedding `j : F → E` whose range is the fibre `p⁻¹(b)`, 
 fibre map is `j` itself. The boundary map
 `∂ : π_{n+1}(B, b) → π_n(F, x)` (`TauCeti.TopCat.fibrationBoundaryOfIsEmbedding`) is the boundary
 map of `p` followed by the homeomorphism of the fibre with `F`
-(`TauCeti.TopCat.fiberHomeomorphOfIsEmbedding`). For `n ≥ 1` it is a group homomorphism
-(`TauCeti.TopCat.fibrationBoundaryOfIsEmbeddingHom`).
+(`TauCeti.TopCat.fiberHomeomorphOfIsEmbedding`, in `TauCeti.Topology.Category.TopCat.Fiber`). For
+`n ≥ 1` it is a group homomorphism (`TauCeti.TopCat.fibrationBoundaryOfIsEmbeddingHom`).
 
 ## Main definitions
 
-* `TauCeti.TopCat.fiberHomeomorphOfIsEmbedding`: an embedding onto the fibre is a homeomorphism
-  onto the fibre.
 * `TauCeti.TopCat.fibrationBoundaryOfIsEmbedding`: the boundary map `π_{n+1}(B, b) → π_n(F, x)`.
 
 ## Main results
@@ -58,24 +56,8 @@ namespace TauCeti.TopCat
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} {b : B} {F : Type*} [TopologicalSpace F]
   {j : C(F, E)} {N : Type*}
 
-/-- A topological embedding `j : F → E` whose range is the fibre `p⁻¹(b)` is a homeomorphism of
-`F` onto that fibre. -/
-def fiberHomeomorphOfIsEmbedding (hj : IsEmbedding j) (hjr : range j = p ⁻¹' {b}) :
-    F ≃ₜ p.fiber b :=
-  hj.toHomeomorph.trans (Homeomorph.setCongr hjr)
-
-@[simp]
-theorem coe_fiberHomeomorphOfIsEmbedding_apply (hj : IsEmbedding j) (hjr : range j = p ⁻¹' {b})
-    (y : F) : (fiberHomeomorphOfIsEmbedding hj hjr y : E) = j y :=
-  (rfl)
-
 variable (hp : serreFibrations p) (hj : IsEmbedding j) (hjr : range j = p ⁻¹' {b})
   {x : F} {e : p.fiber b} (hx : j x = e)
-
-include hx in
-/-- The homeomorphism of `F` with the fibre sends `x` to `e` when `j x = e`. -/
-theorem fiberHomeomorphOfIsEmbedding_apply_eq : fiberHomeomorphOfIsEmbedding hj hjr x = e :=
-  Subtype.ext ((coe_fiberHomeomorphOfIsEmbedding_apply hj hjr x).trans hx)
 
 /-- The **boundary map** `∂ : π_{n+1}(B, b) → π_n(F, x)` of a Serre fibration `p` whose fibre over
 `b` is the image of an embedding `j : F → E`, with `j x = e`: the boundary map of `p`
@@ -93,6 +75,14 @@ theorem fibrationBoundaryOfIsEmbedding_apply [Finite N] (a : HomotopyGroup (Opti
       (HomotopyGroup.homeomorphEquivOfEq (fiberHomeomorphOfIsEmbedding hj hjr)
         (fiberHomeomorphOfIsEmbedding_apply_eq hj hjr hx)).symm (fibrationBoundary hp e a) :=
   (rfl)
+
+/-- The boundary map sends the class of the constant loop to the class of the constant loop. -/
+@[simp]
+theorem fibrationBoundaryOfIsEmbedding_const [Finite N] :
+    fibrationBoundaryOfIsEmbedding hp hj hjr hx (⟦GenLoop.const⟧ : HomotopyGroup (Option N) B b) =
+      ⟦GenLoop.const⟧ :=
+  (congrArg _ (fibrationBoundary_const hp)).trans
+    ((HomotopyGroup.map_mk _ _ GenLoop.const).trans (congrArg _ (GenLoop.map_const _ _)))
 
 include hx in
 /-- The map induced by `j` on homotopy groups is the map induced by the fibre inclusion, read

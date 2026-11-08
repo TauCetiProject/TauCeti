@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.CommSq
 public import Mathlib.Topology.Category.TopCat.Basic
+public import Mathlib.Topology.Homeomorph.Lemmas
 
 import Mathlib.Data.Fintype.Sigma
 
@@ -17,6 +18,8 @@ The fibre `TopCat.Hom.fiber p b` of a morphism `p : E ⟶ B` over a point `b` is
 `p ⁻¹' {b}` with the subspace topology, and `TopCat.Hom.fiberι p b` is its inclusion into `E`.
 A commutative square from `p` to `p'`, such as a map of fibrations, induces maps between the
 fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal composition of squares.
+A topological embedding whose range is the fibre is a homeomorphism onto it
+(`TauCeti.TopCat.fiberHomeomorphOfIsEmbedding`).
 
 The names and the dot-notation shape follow Mathlib's scheme-theoretic fibres
 `AlgebraicGeometry.Scheme.Hom.fiber` and `AlgebraicGeometry.Scheme.Hom.fiberι`.
@@ -109,3 +112,28 @@ lemma fiberMap_comp_fiberMap (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g') 
     sq.fiberMap b ≫ sq'.fiberMap (g b) = (sq.horiz_comp sq').fiberMap b := (rfl)
 
 end CategoryTheory.CommSq
+
+namespace TauCeti.TopCat
+
+open Set Topology
+
+variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} {b : B} {F : Type*} [TopologicalSpace F]
+  {j : C(F, E)}
+
+/-- A topological embedding `j : F → E` whose range is the fibre `p⁻¹(b)` is a homeomorphism of
+`F` onto that fibre. -/
+noncomputable def fiberHomeomorphOfIsEmbedding (hj : IsEmbedding j) (hjr : range j = p ⁻¹' {b}) :
+    F ≃ₜ p.fiber b :=
+  hj.toHomeomorph.trans (Homeomorph.setCongr hjr)
+
+@[simp]
+theorem coe_fiberHomeomorphOfIsEmbedding_apply (hj : IsEmbedding j) (hjr : range j = p ⁻¹' {b})
+    (y : F) : (fiberHomeomorphOfIsEmbedding hj hjr y : E) = j y :=
+  (rfl)
+
+/-- The homeomorphism of `F` with the fibre sends `x` to `e` when `j x = e`. -/
+theorem fiberHomeomorphOfIsEmbedding_apply_eq (hj : IsEmbedding j) (hjr : range j = p ⁻¹' {b})
+    {x : F} {e : p.fiber b} (hx : j x = e) : fiberHomeomorphOfIsEmbedding hj hjr x = e :=
+  Subtype.ext ((coe_fiberHomeomorphOfIsEmbedding_apply hj hjr x).trans hx)
+
+end TauCeti.TopCat
