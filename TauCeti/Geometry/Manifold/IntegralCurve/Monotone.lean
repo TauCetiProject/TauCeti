@@ -24,7 +24,7 @@ further sign condition at the later points.
 These are the monotonicity statements behind the deformation of sublevels along descending
 vector fields, which are allowed to vanish away from the region being deformed.
 
-If instead `df(v) = 0` along an integral curve defined on an open preconnected set of times, then
+If instead `df(v) = 0` along an integral curve defined on a preconnected set of times, then
 `f` is constant along it. This is the conservation statement behind first integrals of a vector
 field.
 

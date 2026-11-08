@@ -84,7 +84,7 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `C^(n+1)` families of Hamiltonians, such as time-dependent ones.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
-  of energy along integral curves on open preconnected sets of times, with the global case
+  of energy along integral curves on preconnected sets of times, with the global case
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`:
   the dichotomy for the integral curves of `X_{G + f ∘ F}`.
