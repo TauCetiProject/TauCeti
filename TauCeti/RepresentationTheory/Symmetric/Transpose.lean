@@ -11,9 +11,11 @@ public import TauCeti.RepresentationTheory.Symmetric.Symmetrizer
 # The sign automorphism and the transposed tableau
 
 Transposing a `μ`-tableau `t` (`TauCeti.YoungTableau.transpose`) exchanges its rows and its
-columns, so it exchanges the row group and the column group of `t`. In the group algebra
-`R[Sₙ]` the **sign automorphism** `ε = TauCeti.signTwist`, `σ ↦ sgn(σ) σ`, turns the sum over a
-group into the signed sum over the same group and back. Together these give the identities
+columns, so it exchanges the row group and the column group of `t`
+(`TauCeti.YoungTableau.rowSubgroup_transpose`, `TauCeti.YoungTableau.colSubgroup_transpose`). In
+the group algebra `R[Sₙ]` the **sign automorphism** `ε = TauCeti.signTwist`, `σ ↦ sgn(σ) σ`, turns
+the sum over a group into the signed sum over the same group and back. Together these give the
+identities
 
 `ε(a_t) = b_(tᵗ)`, `ε(b_t) = a_(tᵗ)`, hence `ε(c_t) = b_(tᵗ) a_(tᵗ)`,
 
@@ -27,11 +29,8 @@ The labels of `tᵗ` are `Fin μᵗ.card`, not `Fin μ.card`; the two symmetric 
 by `Equiv.permCongrHom` along `finCongr (YoungDiagram.card_transpose μ)`, and the group algebras
 by `MonoidAlgebra.domCongr` of that isomorphism.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.YoungTableau.rowSubgroup_transpose`, `TauCeti.YoungTableau.colSubgroup_transpose`: the
-  row group of `tᵗ` is the column group of `t`, and the column group of `tᵗ` is the row group of
-  `t`.
 * `TauCeti.YoungTableau.signTwist_rowSymmetrizer`,
   `TauCeti.YoungTableau.signTwist_columnAntisymmetrizer` and
   `TauCeti.YoungTableau.signTwist_youngSymmetrizer`: `ε(a_t) = b_(tᵗ)`, `ε(b_t) = a_(tᵗ)` and
@@ -49,50 +48,6 @@ namespace TauCeti
 namespace YoungTableau
 
 variable {R : Type*} [CommRing R] {μ : YoungDiagram}
-
-/-! ## The row and column groups of the transposed tableau -/
-
-/-- A permutation of the labels of `tᵗ` preserves its rows exactly when, read on the labels of
-`t`, it preserves the columns of `t`.
-
-Not a `simp` lemma: `mem_rowSubgroup` and `rowIndex_transpose` already simplify the left-hand side
-to the pointwise condition on the columns of `t`. -/
-theorem mem_rowSubgroup_transpose {t : YoungTableau μ} {σ : Equiv.Perm (Fin μ.transpose.card)} :
-    σ ∈ rowSubgroup (transpose t) ↔
-      (finCongr (YoungDiagram.card_transpose μ)).permCongr σ ∈ colSubgroup t := by
-  simp only [mem_rowSubgroup, mem_colSubgroup, rowIndex_transpose, Equiv.permCongr_apply,
-    finCongr_apply, finCongr_symm]
-  exact ⟨fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ).symm k),
-    fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ) k)⟩
-
-/-- A permutation of the labels of `tᵗ` preserves its columns exactly when, read on the labels of
-`t`, it preserves the rows of `t`. As for `mem_rowSubgroup_transpose`, this is not a `simp`
-lemma. -/
-theorem mem_colSubgroup_transpose {t : YoungTableau μ} {σ : Equiv.Perm (Fin μ.transpose.card)} :
-    σ ∈ colSubgroup (transpose t) ↔
-      (finCongr (YoungDiagram.card_transpose μ)).permCongr σ ∈ rowSubgroup t := by
-  simp only [mem_rowSubgroup, mem_colSubgroup, colIndex_transpose, Equiv.permCongr_apply,
-    finCongr_apply, finCongr_symm]
-  exact ⟨fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ).symm k),
-    fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ) k)⟩
-
-/-- **Transposition turns the column group into the row group.** -/
-theorem rowSubgroup_transpose (t : YoungTableau μ) :
-    rowSubgroup (transpose t) = (colSubgroup t).map
-      (finCongr (YoungDiagram.card_transpose μ)).symm.permCongrHom.toMonoidHom := by
-  ext σ
-  rw [mem_rowSubgroup_transpose, Subgroup.mem_map_equiv, Equiv.permCongrHom_symm,
-    Equiv.symm_symm, Equiv.permCongrHom_coe]
-
-/-- **Transposition turns the row group into the column group.** -/
-theorem colSubgroup_transpose (t : YoungTableau μ) :
-    colSubgroup (transpose t) = (rowSubgroup t).map
-      (finCongr (YoungDiagram.card_transpose μ)).symm.permCongrHom.toMonoidHom := by
-  ext σ
-  rw [mem_colSubgroup_transpose, Subgroup.mem_map_equiv, Equiv.permCongrHom_symm,
-    Equiv.symm_symm, Equiv.permCongrHom_coe]
-
-/-! ## The sign automorphism on the symmetrizers -/
 
 /-- **The sign automorphism sends the row symmetrizer of `t` to the column antisymmetrizer of
 `tᵗ`**: `ε(a_t) = b_(tᵗ)`, the labels of `tᵗ` being read in `Fin μ.card`. -/
