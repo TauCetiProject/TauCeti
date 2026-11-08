@@ -91,7 +91,6 @@ private theorem inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_z
     {r : freeProP 2 (Fin n)} (hrX : r ∈ exponentSumKer 2 (Fin n) ⟨3, hn3⟩)
     (hrD : ∀ i : Fin n, i ≠ ⟨1, by omega⟩ → crossedHom χ (Pi.single i 1) r = 0)
     (φ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n))
-    (hφ : ∀ g, g⁻¹ * φ g ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
     (hφX : ∀ i, (of i)⁻¹ * φ (of i) ∈
       exponentSumKer 2 (Fin n) ⟨3, hn3⟩ ⊓ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1) :
     (φ (demushkinWordTwoEven 0 f n (freeProPGen 2 n)))⁻¹ * r ∈
@@ -106,9 +105,8 @@ private theorem inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_z
     ⟨demushkinWordTwoEven 0 f n (freeProPGen 2 n),
       demushkinWordTwoEven_mem_pLowerCentralSeries_one (dvd_zero 2) (by omega) n _⟩
   let X := exponentSumKer 2 (Fin n) i₃
-  replace hφX : ∀ i, (of i)⁻¹ * φ (of i) ∈ X := fun i ↦ (hφX i).1
   let ωφ : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 := fun i ↦
-      (⟨(of i)⁻¹ * φ (of i), hφ (of i)⟩ :
+      (⟨(of i)⁻¹ * φ (of i), (hφX i).2⟩ :
         pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
   have hφeq : φ = basisModification ωφ :=
     hom_ext fun i ↦ by rw [basisModification_of, mul_inv_cancel_left]
@@ -117,9 +115,10 @@ private theorem inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_z
       (i := i₃) (fun k hk ↦ by
         by_cases hk₁ : k = i₁
         · rw [hk₁, h₁, neg_one_sq]
-        · rw [hχ k hk₁ hk, one_pow]) (hφX j) (hφ (of j))
+        · rw [hχ k hk₁ hk, one_pow]) (hφX j).1 (hφX j).2
   have hφwX : φ w ∈ X :=
-    (φ.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem hφX _).2 (by simp [w, i₃])
+    (φ.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem (fun i ↦ (hφX i).1) _).2
+      (by simp [w])
   refine ⟨mul_mem (inv_mem hφwX) hrX, ?_⟩
   intro i hi
   have hφw : crossedHom χ (Pi.single i 1)
@@ -194,9 +193,9 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_forall_c
         (fun j ↦ by rw [basisModification_of, inv_mul_cancel_left]; exact (hω j).1) c).2 hc.1,
       (basisModification ω).toMonoidHom.map_pLowerCentralSeries_le
         (basisModification ω).continuous 1 (mem_map_of_mem _ hc.2)⟩
-  · intro φ hφ hφX
+  · intro φ _ hφX
     exact inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_zero hn3 hf h₁ h₃ hχ hrX
-      hrD φ hφ hφX
+      hrD φ hφX
   · intro m hm z hz
     have hzX : gradedMk 2 (freeProP 2 (Fin n)) (m + 1) z ∈
         gradedPieceOf 2 X (m + 1) :=
