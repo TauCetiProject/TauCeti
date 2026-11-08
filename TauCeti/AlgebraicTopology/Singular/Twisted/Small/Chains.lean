@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 
@@ -230,6 +231,18 @@ lemma twistedSubdivisionX_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainCo
   exact fun a _ ↦
     TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex X U hσ a
 
+/-- Every iterate of subdivision preserves small twisted chains. -/
+lemma iterate_twistedSubdivision_mem_smallTwistedChains {n : ℕ}
+    {c : L.twistedChainComplex.X n} (hc : c ∈ smallTwistedChains L U n) (N : ℕ) :
+    (((End.of (twistedSubdivisionChainMap L)) ^ N).asHom.f n).hom c ∈
+      smallTwistedChains L U n := by
+  induction N with
+  | zero => simpa using hc
+  | succ N hN =>
+    rw [HomologicalComplex.pow_f_succ, ModuleCat.hom_comp, LinearMap.comp_apply,
+      twistedSubdivisionChainMap_f]
+    exact twistedSubdivisionX_mem_smallTwistedChains L U hN
+
 /-- The subdivision prism preserves small twisted chains. -/
 lemma twistedPrismX_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.X n}
     (hc : c ∈ smallTwistedChains L U n) :
@@ -241,6 +254,18 @@ lemma twistedPrismX_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.
   apply twistedSingularChain_mem_smallTwistedChains
   exact fun a _ ↦
     TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex X U hσ a
+
+/-- The homotopy from the identity to an iterated subdivision preserves small twisted chains. -/
+lemma idPow_twistedSubdivisionHomotopy_hom_mem_smallTwistedChains {n : ℕ}
+    {c : L.twistedChainComplex.X n} (hc : c ∈ smallTwistedChains L U n) (N : ℕ) :
+    (((twistedSubdivisionHomotopy L).idPow N).hom n (n + 1)).hom c ∈
+      smallTwistedChains L U (n + 1) := by
+  rw [Homotopy.idPow_hom]
+  simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_comp,
+    LinearMap.comp_apply, twistedSubdivisionHomotopy_hom]
+  exact Submodule.sum_mem _ fun k _ ↦
+    twistedPrismX_mem_smallTwistedChains L U
+      (iterate_twistedSubdivision_mem_smallTwistedChains L U hc k)
 
 /-- For an open cover, a uniform number of subdivisions makes the whole coefficient fibre
 on a given singular simplex small. -/
