@@ -15,7 +15,9 @@ The characteristic equation for Mathlib's bundled coordinate evaluation lets use
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`). The scalar
 coordinate vectors are linearly independent, and vectors in their span vanish outside the
-corresponding indices. These algebraic facts hold over normed rings at every exponent.
+corresponding indices. These algebraic facts hold over normed rings at every exponent. In `ℓ²`,
+the squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of
+its coordinates (`lp.norm_sum_single_sq`).
 -/
 
 public section
@@ -66,5 +68,12 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
 end Single
+
+/-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
+squared norms of the coordinates. -/
+theorem norm_sum_single_sq {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [DecidableEq ι]
+    (f : ∀ i, E i) (s : Finset ι) :
+    ‖∑ i ∈ s, lp.single 2 i (f i)‖ ^ 2 = ∑ i ∈ s, ‖f i‖ ^ 2 := by
+  simpa [Real.rpow_two] using lp.norm_sum_single (E := E) (p := 2) (by norm_num) f s
 
 end lp

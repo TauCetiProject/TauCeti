@@ -20,6 +20,10 @@ seminorm is used to bound an integral, with no measurability side condition.
 
 Consequently a function in `Lᵖ` for `p ≠ 0` is finite almost everywhere
 (`MeasureTheory.MemLp.ae_enorm_lt_top`), including for `p = ∞`.
+
+The same identification gives monotone convergence for the seminorm: for a finite exponent
+`p`, the `Lᵖ` seminorm of the supremum of an increasing sequence of functions with values in
+`[0, ∞]` is the supremum of their seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`).
 -/
 
 public section
@@ -42,6 +46,29 @@ theorem lintegral_rpow_enorm_le_rpow_eLpNorm {p : ℝ≥0} (hp : p ≠ 0) (f : �
     exact le_top
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- **Monotone convergence for the `Lᵖ` seminorm.** For a finite exponent `p`, the `Lᵖ`
+seminorm of the pointwise supremum of an almost everywhere increasing sequence of almost
+everywhere measurable functions with values in `[0, ∞]` is the supremum of their `Lᵖ`
+seminorms. -/
+theorem eLpNorm_iSup_eq_iSup_eLpNorm {f : ℕ → α → ℝ≥0∞} (hf : ∀ n, AEMeasurable (f n) μ)
+    (hmono : ∀ᵐ x ∂μ, Monotone fun n ↦ f n x) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    eLpNorm (fun x ↦ ⨆ n, f n x) p μ = ⨆ n, eLpNorm (f n) p μ := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp only [eLpNorm_exponent_zero (AEMeasurable.iSup hf).aestronglyMeasurable,
+      eLpNorm_exponent_zero (hf _).aestronglyMeasurable, iSup_const]
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  simp_rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp
+      (AEMeasurable.iSup hf).aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp (hf _).aestronglyMeasurable, enorm_eq_self,
+    ENNReal.iSup_rpow_of_pos hr]
+  rw [lintegral_iSup' (fun n ↦ (hf n).pow_const _)
+    (hmono.mono fun x hx m n hmn ↦ ENNReal.rpow_le_rpow (hx hmn) hr.le),
+    ENNReal.iSup_rpow_of_pos (by positivity)]
+
+end MeasureTheory
 
 namespace MeasureTheory.MemLp
 
