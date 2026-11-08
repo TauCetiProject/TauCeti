@@ -298,7 +298,7 @@ private theorem map_withDensity_noncentralChiSquaredPDF (hs : 0 < s) :
         noncentralChiSquaredPDF_eq_ofReal, ENNReal.ofReal_mul (by positivity)]
     · simp [ht, noncentralChiPDF_of_nonpos (not_lt.mp ht)]
   have hchange := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
-    (f := noncentralChiSquaredPDF k (δ ^ 2)) measurableSet_Ioi (by fun_prop)
+    (f := noncentralChiSquaredPDF k (δ ^ 2)) measurableSet_Ioi
     (fun t _ ↦ (hderiv t).hasDerivWithinAt) hinj
   rw [himage] at hchange
   rw [hsource, ← hchange, Measure.map_map (by fun_prop) (by fun_prop), htarget]

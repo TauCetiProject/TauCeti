@@ -62,7 +62,7 @@ universe u
 section Universe
 
 variable {K : Type u} [Field K] [Invertible (2 : K)] {L : Type u} [Field L] [Algebra K L]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L] [Invertible (2 : L)]
+  [FiniteDimensional K L] [Invertible (2 : L)]
 
 /-- **Serre's formula for the Evens norm of a Kummer class** (Serre, Théorème 1′ at `n = 2`):
 for an orthogonal basis `y` of the twisted trace form `Tr_*⟨a⟩ : z ↦ Tr (a z²)` whose values

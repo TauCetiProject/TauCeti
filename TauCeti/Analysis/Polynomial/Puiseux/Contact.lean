@@ -87,7 +87,7 @@ theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
     exact congrFun (eq_of_continuous_mem_range
       (fun j ↦ ((hr j).mono hsub).domRestrict)
       (((hr i).comp hκ.continuousOn hκT).mono hsub).domRestrict
-      (fun b ↦ hinj b b.property) (hmem i) b₀ (hp i)) b
+      (fun b _ h ↦ hinj b b.property h) (hmem i) (hp i)) b
   have hpinj : Injective p := by
     intro i j hij
     apply hinj (κ b₀) (hκS b₀.property)

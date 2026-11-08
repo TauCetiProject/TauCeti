@@ -13,6 +13,12 @@ public import Mathlib.Analysis.Normed.Module.Bases
 The basis vectors of a generalized Schauder basis span a dense subspace whenever its summation
 filter is nontrivial, since every vector is a limit of finite coordinate projections.
 
+The coordinate functionals recover the coefficients of a finite sum of basis vectors, and of a
+basis series converging along any nontrivial summation filter below `atTop`, not only along the
+filter of the basis. Precomposing a continuous functional with a finite projection, or with an
+initial projection of a classical Schauder basis, gives a finite linear combination of
+coordinate functionals.
+
 An unconditional basis indexed by `ℕ` is also a classical Schauder basis: convergence along the
 net of all finite sets implies convergence along initial segments. The conversion
 `UnconditionalSchauderBasis.toSchauderBasis` keeps the basis vectors and coordinate functionals,
@@ -38,7 +44,45 @@ theorem dense_span [L.NeBot] : Dense (Submodule.span 𝕜 (range b) : Set X) := 
     exact Submodule.sum_mem _ fun i _ ↦
       Submodule.smul_mem _ _ (Submodule.subset_span (mem_range_self i)))
 
+/-- A coordinate of a finite sum over a set containing `i` is the prescribed coefficient of `i`. -/
+-- Normalize before the generic map-of-sum simp lemma expands the coordinate application.
+@[simp 1100]
+theorem coord_sum (a : β → 𝕜) {i : β} {s : Finset β} (hi : i ∈ s) :
+    b.coord i (∑ j ∈ s, a j • b j) = a i := by
+  classical
+  simp [map_sum, b.ortho, Pi.single_apply, hi]
+
+/-- Precomposition with a finite projection is a finite linear combination of coordinates. -/
+theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (A : Finset β) :
+    f.comp (b.proj A) = ∑ i ∈ A, f (b i) • b.coord i := by
+  ext x
+  simp [proj_apply, mul_comm]
+
+/-- Coordinates of a convergent basis series are its coefficients. The series may converge
+along any nontrivial summation filter `L'` below `atTop`, which need not be the filter `L` of the
+basis. -/
+theorem coord_eq_of_hasSum {L' : SummationFilter β} [L'.NeBot] [L'.LeAtTop] {a : β → 𝕜}
+    {x : X} (h : HasSum (fun i ↦ a i • b i) x L') (i : β) : b.coord i x = a i := by
+  classical
+  have h2 : HasSum (fun j ↦ b.coord i (a j • b j)) (a i) L' := by
+    have : (fun j ↦ b.coord i (a j • b j)) = Pi.single i (a i) := by
+      ext j; by_cases hj : j = i <;> simp [b.ortho, hj]
+    rw [this]; exact (hasSum_pi_single i (a i)).mono_left SummationFilter.le_atTop
+  exact (h.map (b.coord i) (b.coord i).continuous).unique h2
+
 end GeneralSchauderBasis
+
+namespace SchauderBasis
+
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  (b : SchauderBasis 𝕜 X)
+
+/-- Precomposition with an initial projection is a finite linear combination of coordinates. -/
+theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (n : ℕ) :
+    f.comp (b.proj n) = ∑ i ∈ Finset.range n, f (b i) • b.coord i := by
+  rw [proj, GeneralSchauderBasis.comp_proj_eq_sum]
+
+end SchauderBasis
 
 namespace UnconditionalSchauderBasis
 

@@ -37,6 +37,12 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
 * `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
+* `Real.one_add_tanh`, `Real.one_sub_tanh`, `Real.one_add_tanh_le` and `Real.one_sub_tanh_le` —
+  `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
+* `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
+  ends of the line.
+* `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
+  `x → ∞`.
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
   `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
   `cosh α * cosh θ ≠ 0`.
@@ -190,6 +196,30 @@ theorem _root_.Real.tendsto_tanh_atBot : Filter.Tendsto Real.tanh Filter.atBot (
   simpa [Function.comp_def, Real.tanh_neg] using
     (Real.tendsto_tanh_atTop.comp Filter.tendsto_neg_atBot_atTop).neg
 
+/-- `1 + tanh x = exp x / cosh x`, since `cosh x + sinh x = exp x`. -/
+theorem _root_.Real.one_add_tanh (x : ℝ) : 1 + Real.tanh x = Real.exp x / Real.cosh x := by
+  have := (Real.cosh_pos x).ne'
+  rw [Real.tanh_eq_sinh_div_cosh, ← Real.cosh_add_sinh]
+  field_simp
+
+/-- `1 - tanh x = exp (-x) / cosh x`, since `cosh x - sinh x = exp (-x)`. -/
+theorem _root_.Real.one_sub_tanh (x : ℝ) : 1 - Real.tanh x = Real.exp (-x) / Real.cosh x := by
+  have := (Real.cosh_pos x).ne'
+  rw [Real.tanh_eq_sinh_div_cosh, ← Real.cosh_sub_sinh]
+  field_simp
+
+/-- The hyperbolic tangent approaches `-1` exponentially fast:
+`1 + tanh x ≤ 2 * exp (2 * x)`. -/
+theorem _root_.Real.one_add_tanh_le (x : ℝ) : 1 + Real.tanh x ≤ 2 * Real.exp (2 * x) := by
+  rw [Real.one_add_tanh, div_le_iff₀ (Real.cosh_pos x), Real.cosh_eq]
+  have h : Real.exp (2 * x) * Real.exp (-x) = Real.exp x := by rw [← Real.exp_add]; ring_nf
+  nlinarith [mul_pos (Real.exp_pos (2 * x)) (Real.exp_pos x)]
+
+/-- The hyperbolic tangent approaches `1` exponentially fast:
+`1 - tanh x ≤ 2 * exp (-(2 * x))`. -/
+theorem _root_.Real.one_sub_tanh_le (x : ℝ) : 1 - Real.tanh x ≤ 2 * Real.exp (-(2 * x)) := by
+  simpa [Real.tanh_neg, sub_eq_add_neg] using Real.one_add_tanh_le (-x)
+
 /-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
 with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
 `(cosh α * cosh θ - sinh α * sinh θ) / (2 * cosh α * cosh θ)` by `Complex.cosh_sub`. -/
@@ -251,5 +281,39 @@ theorem _root_.Real.one_sub_exp_neg_div_le_exp (l : ℝ) :
     rw [hsq] at h
     rw [div_le_iff₀ hl]
     linarith
+
+/-- The hyperbolic cosine tends to infinity at `+∞`: it is at least `exp x / 2`. -/
+theorem _root_.Real.tendsto_cosh_atTop : Filter.Tendsto Real.cosh Filter.atTop Filter.atTop := by
+  refine Filter.tendsto_atTop_mono (fun x ↦ ?_) (Real.tendsto_exp_atTop.atTop_div_const two_pos)
+  rw [Real.cosh_eq]
+  linarith [Real.exp_pos (-x)]
+
+/-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
+theorem _root_.Real.tendsto_cosh_atBot : Filter.Tendsto Real.cosh Filter.atBot Filter.atTop := by
+  simpa [Function.comp_def] using Real.tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
+
+/-- The ratio `cosh (x - a) / cosh (x + a)` tends to `exp (-(2 * a))` as `x → ∞`. -/
+theorem _root_.Real.tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :
+    Filter.Tendsto (fun x ↦ Real.cosh (x - a) / Real.cosh (x + a)) Filter.atTop
+      (nhds (Real.exp (-(2 * a)))) := by
+  -- In terms of `t = exp (-x)`, the ratio is `(exp (-a) + exp a t²) / (exp a + exp (-a) t²)`.
+  set g : ℝ → ℝ := fun t ↦
+    (Real.exp (-a) + Real.exp a * t ^ 2) / (Real.exp a + Real.exp (-a) * t ^ 2)
+  have hg : ContinuousAt g 0 :=
+    ((continuous_const.add (continuous_const.mul (continuous_pow 2))).continuousAt).div
+      ((continuous_const.add (continuous_const.mul (continuous_pow 2))).continuousAt)
+      (by simp [(Real.exp_pos a).ne'])
+  have hg0 : g 0 = Real.exp (-(2 * a)) := by
+    simp only [g, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero, add_zero]
+    rw [← Real.exp_sub]
+    ring_nf
+  have heq : (fun x ↦ Real.cosh (x - a) / Real.cosh (x + a)) = g ∘ fun x ↦ Real.exp (-x) := by
+    funext x
+    have := Real.exp_pos x
+    have := Real.exp_pos a
+    simp only [g, Function.comp_apply, Real.cosh_eq, Real.exp_neg, Real.exp_sub, Real.exp_add]
+    field_simp
+  rw [heq, ← hg0]
+  exact hg.tendsto.comp Real.tendsto_exp_neg_atTop_nhds_zero
 
 end TauCeti

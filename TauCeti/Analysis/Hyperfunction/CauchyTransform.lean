@@ -310,9 +310,8 @@ theorem cauchyTransform_smul (c : ℂ) (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ))
 theorem cauchyTransform_delta (a : ℝ) (χ : 𝓓(Ω, ℝ)) {z : ℂ} (hz : z.im ≠ 0) :
     cauchyTransform (mapCLM ofRealCLM (delta a : 𝓓'(Ω, ℝ))) χ z =
       (2 * π * I)⁻¹ * (χ a / ((a : ℂ) - z)) := by
-  rw [cauchyTransform_of_im_ne_zero _ χ hz, complexPairing_apply]
-  simp only [mapCLM_apply, delta_apply, postcompCLM_apply, Function.comp_apply, ofRealCLM_apply,
-    reCLM_apply, imCLM_apply, mul_comm I, re_add_im, cauchyKernel_apply, pow_one]
+  rw [cauchyTransform_of_im_ne_zero _ χ hz, complexPairing_mapCLM_ofRealCLM_delta]
+  simp only [cauchyKernel_apply, pow_one]
 
 /-- **The normalization of the Cauchy transform.** For a cutoff with `χ(0) = 1`, the Cauchy
 transform of `δ₀` is `-(2πiz)⁻¹` on both half-planes. -/

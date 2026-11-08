@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import Mathlib.Analysis.Normed.Group.Quotient
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -39,6 +42,8 @@ the compact perturbations of Fredholm modules.
   submodule of its kernel is compact.
 * `IsCompactOperator.totallyBounded_image_closedBall`: a compact operator maps closed balls to
   totally bounded sets.
+* `ContinuousLinearMap.exists_finiteDimensional_quotient_norm_le`: a compact operator becomes
+  arbitrarily small after quotienting its target by a finite-dimensional subspace.
 * `isCompactOperator_of_totallyBounded_image_closedBall`: conversely, a linear map into a complete
   Hausdorff space that maps a closed ball of positive radius to a totally bounded set is compact.
 -/
@@ -169,3 +174,37 @@ theorem isCompactOperator_of_totallyBounded_image_closedBall [T2Space M₂] [Com
 end TotallyBounded
 
 end
+
+public section
+
+namespace ContinuousLinearMap
+
+open Metric Set
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A compact operator becomes arbitrarily small after quotienting its target by a
+finite-dimensional subspace. No finite-rank approximation hypothesis is required. -/
+theorem exists_finiteDimensional_quotient_norm_le (K : E →L[𝕜] F)
+    (hK : IsCompactOperator K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ W : Submodule 𝕜 F, FiniteDimensional 𝕜 W ∧ ‖W.mkQL.comp K‖ ≤ ε := by
+  classical
+  obtain ⟨s, -, hs, hcover⟩ :=
+    (hK.isCompact_closure_image_closedBall (f := K.toLinearMap) 1).finite_cover_balls hε
+  let W : Submodule 𝕜 F := Submodule.span 𝕜 s
+  refine ⟨W, FiniteDimensional.span_of_finite 𝕜 hs, ?_⟩
+  apply opNorm_le_of_unit_norm hε.le
+  intro x hx
+  have hxin : K x ∈ closure (K '' closedBall 0 1) :=
+    subset_closure ⟨x, by simpa [mem_closedBall, dist_zero_right] using hx.le, rfl⟩
+  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (hcover hxin)
+  have hyW : y ∈ W := Submodule.subset_span hy
+  have hqy : (Submodule.Quotient.mk y : F ⧸ W) = 0 := by simpa using hyW
+  calc
+    ‖(W.mkQL.comp K) x‖ = ‖W.mkQL (K x - y)‖ := by simp [hqy]
+    _ ≤ ‖K x - y‖ := Submodule.Quotient.norm_mk_le W _
+    _ ≤ ε := (by simpa [mem_ball, dist_eq_norm] using hxy : ‖K x - y‖ < ε).le
+
+end ContinuousLinearMap

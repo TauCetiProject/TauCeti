@@ -20,6 +20,8 @@ The linear-map conversion API preserves composition and recovers a continuous li
 forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
 source. `LinearMap.toContinuousLinearMap_comp` needs finite dimension on the source and
 intermediate space; the target may be any topological vector space.
+`Module.End.toContinuousLinearMap_apply` identifies the values of an endomorphism and its
+continuous version.
 
 A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
@@ -96,6 +98,19 @@ theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F)
   ContinuousLinearMap.ext fun _ ↦ rfl
 
 end LinearMap
+
+namespace Module.End
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- An endomorphism and its continuous version have the same values. -/
+@[simp]
+theorem toContinuousLinearMap_apply (f : E →ₗ[𝕜] E) (v : E) :
+    toContinuousLinearMap E f v = f v :=
+  rfl
+
+end Module.End
 
 namespace MultilinearMap
 

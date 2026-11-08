@@ -71,17 +71,16 @@ private theorem finsuppTwistEquiv_single (σ : Representation k G W) (g : G) (w 
 /-- The linear equivalence underlying regular-tensor untwisting. -/
 private def leftRegularTensorLinearEquiv (σ : Representation k G W) :
     MonoidAlgebra k G ⊗[k] W ≃ₗ[k] MonoidAlgebra k G ⊗[k] W :=
-  TauCeti.MonoidAlgebra.tensorEquivFinsupp (k := k) (G := G) (W := W) |>.trans <|
+  TauCeti.MonoidAlgebra.tensorEquivFinsupp k G W |>.trans <|
     (finsuppTwistEquiv σ).trans
-      (TauCeti.MonoidAlgebra.tensorEquivFinsupp (k := k) (G := G) (W := W)).symm
+      (TauCeti.MonoidAlgebra.tensorEquivFinsupp k G W).symm
 
 @[simp]
 private theorem leftRegularTensorLinearEquiv_single_tmul (σ : Representation k G W)
     (g : G) (r : k) (w : W) :
     leftRegularTensorLinearEquiv σ (MonoidAlgebra.single g r ⊗ₜ[k] w) =
       MonoidAlgebra.single g r ⊗ₜ[k] σ g⁻¹ w := by
-  apply (TauCeti.MonoidAlgebra.tensorEquivFinsupp
-    (k := k) (G := G) (W := W)).injective
+  apply (TauCeti.MonoidAlgebra.tensorEquivFinsupp k G W).injective
   simp [leftRegularTensorLinearEquiv, TauCeti.MonoidAlgebra.tensorEquivFinsupp_single_tmul,
     finsuppTwistEquiv_single]
 

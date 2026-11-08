@@ -199,6 +199,19 @@ private lemma HasPairingProductRuleWithinAt.finsetSum_right
   (HasPairingProductRuleWithinAt.finsetSum_left
     (hU := fun i hi ↦ (hU i hi).flip) hcoordU).of_flip
 
+/-- The product rule transfers along fields that agree near `t` within `s` and at `t`. -/
+private lemma HasPairingProductRuleWithinAt.congr_of_eventuallyEq
+    {V V' W W' : ∀ r, TangentSpace I (γ r)}
+    (h : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V W)
+    (hV : V =ᶠ[𝓝[s] t] V') (hW : W =ᶠ[𝓝[s] t] W') (hVt : V t = V' t) (hWt : W t = W' t) :
+    HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t) B V' W' := by
+  dsimp only [HasPairingProductRuleWithinAt] at h ⊢
+  have hpair : (fun r ↦ B (γ r) (V r) (W r)) =ᶠ[𝓝[s] t] fun r ↦ B (γ r) (V' r) (W' r) := by
+    filter_upwards [hV, hW] with r hVr hWr
+    rw [hVr, hWr]
+  refine (h.congr_of_eventuallyEq hpair.symm (by rw [hVt, hWt])).congr_deriv ?_
+  rw [alongCurveWithin_congr cov γ V hV hVt, alongCurveWithin_congr cov γ W hW hWt, hVt, hWt]
+
 end Linear
 
 variable {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
@@ -229,6 +242,42 @@ private theorem hasPairingProductRuleWithinAt_pullback
   convert hchain using 1
   rfl
 
+/-- The product rule along a curve for two fields that are finite combinations, with coefficients
+differentiable within `s` at `t`, of pullbacks of vector fields `X i` that are differentiable at
+`γ t` and whose pullbacks have differentiable coordinate readings. -/
+private theorem hasPairingProductRuleWithinAt_frameSum
+    (hdiff : ∀ ⦃Y Z : Π x : M, TangentSpace I x⦄, MDiffAt (T% Y) (γ t) →
+      MDiffAt (T% Z) (γ t) → MDiffAt (fun y ↦ b y (Y y) (Z y)) (γ t))
+    (hcompat : ∀ ⦃Y Z : Π x : M, TangentSpace I x⦄, MDiffAt (T% Y) (γ t) →
+      MDiffAt (T% Z) (γ t) → ∀ v : TangentSpace I (γ t),
+        mvfderiv I (fun y ↦ b y (Y y) (Z y)) (γ t) v =
+          b (γ t) (cov Y (γ t) v) (Z (γ t)) + b (γ t) (Y (γ t)) (cov Z (γ t) v))
+    (hu : UniqueDiffWithinAt ℝ s t)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    {ι : Type*} [Fintype ι] {X : ι → (x : M) → TangentSpace I x}
+    (hframe : ∀ i, MDiffAt (T% (X i)) (γ t))
+    (hcoordX : ∀ i, DifferentiableWithinAt ℝ
+      (sectionCoord (F := E) γ (fun r ↦ X i (γ r)) (γ t)) s t)
+    {aV aW : ι → ℝ → ℝ} (haV : ∀ i, DifferentiableWithinAt ℝ (aV i) s t)
+    (haW : ∀ i, DifferentiableWithinAt ℝ (aW i) s t) :
+    HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t)
+      (fun x ↦ (b x).toLinearMap₁₂)
+      (fun r ↦ ∑ i, aV i r • X i (γ r)) (fun r ↦ ∑ j, aW j r • X j (γ r)) := by
+  have hcoordTerm {a : ι → ℝ → ℝ} (ha : ∀ i, DifferentiableWithinAt ℝ (a i) s t) (i : ι) :
+      DifferentiableWithinAt ℝ
+        (sectionCoord (F := E) γ (fun r ↦ a i r • X i (γ r)) (γ t)) s t := by
+    rw [sectionCoord_smul]
+    exact (ha i).smul (hcoordX i)
+  have hterm (i j : ι) : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t)
+      (fun x ↦ (b x).toLinearMap₁₂) (fun r ↦ aV i r • X i (γ r))
+      (fun r ↦ aW j r • X j (γ r)) :=
+    ((hasPairingProductRuleWithinAt_pullback hdiff hcompat hu hγ (hframe i)
+      (hframe j)).smul_left (haV i) (hcoordX i)).smul_right (haW j) (hcoordX j)
+  refine HasPairingProductRuleWithinAt.finsetSum_left (A := Finset.univ) ?_
+    fun i _ ↦ hcoordTerm haV i
+  exact fun i _ ↦ HasPairingProductRuleWithinAt.finsetSum_right
+    (A := Finset.univ) (fun j _ ↦ hterm i j) fun j _ ↦ hcoordTerm haW j
+
 /-- **The product rule along a curve** for a pointwise bilinear pairing `b` of tangent vectors.
 Suppose that `b` pairs vector fields differentiable at `γ t` to a function differentiable at
 `γ t`, and that the covariant derivative satisfies the ambient product rule
@@ -252,114 +301,36 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
     HasDerivWithinAt (fun r ↦ b (γ r) (V r) (W r))
       (b (γ t) (alongCurveWithin cov γ V s t) (W t) +
         b (γ t) (V t) (alongCurveWithin cov γ W s t)) s t := by
-  classical
-  -- Choose a smooth local frame around the point of the curve.
+  -- Expand both fields in a smooth local frame around the point of the curve.
   let e := trivializationAt E (TangentSpace I) (γ t)
   let β := Module.finBasis ℝ E
-  let X : Fin (Module.finrank ℝ E) → (x : M) → TangentSpace I x :=
-    fun i ↦ e.localFrame β i
-  let aV : Fin (Module.finrank ℝ E) → ℝ → ℝ := fun i r ↦
-    β.coord i (sectionCoord (F := E) γ V (γ t) r)
-  let aW : Fin (Module.finrank ℝ E) → ℝ → ℝ := fun i r ↦
-    β.coord i (sectionCoord (F := E) γ W (γ t) r)
-  let U : Fin (Module.finrank ℝ E) → ∀ r, TangentSpace I (γ r) :=
-    fun i r ↦ aV i r • X i (γ r)
-  let Z : Fin (Module.finrank ℝ E) → ∀ r, TangentSpace I (γ r) :=
-    fun i r ↦ aW i r • X i (γ r)
   have hbase : γ t ∈ e.baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
-  have hframe (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (X i)) (γ t) := by
-    exact (((e.isLocalFrameOn_localFrame_baseSet I 1 β).contMDiffOn i).mdifferentiableOn
-      one_ne_zero).mdifferentiableAt (e.open_baseSet.mem_nhds hbase)
-  -- Coordinate coefficients and pulled-back frame fields are differentiable within the set.
-  have haV (i : Fin (Module.finrank ℝ E)) : DifferentiableWithinAt ℝ (aV i) s t := by
-    exact (LinearMap.toContinuousLinearMap (β.coord i)).differentiableAt
-      |>.comp_differentiableWithinAt t hV
-  have haW (i : Fin (Module.finrank ℝ E)) : DifferentiableWithinAt ℝ (aW i) s t := by
-    exact (LinearMap.toContinuousLinearMap (β.coord i)).differentiableAt
-      |>.comp_differentiableWithinAt t hW
-  have hcoordX (i : Fin (Module.finrank ℝ E)) :
-      DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (fun r ↦ X i (γ r)) (γ t)) s t := by
-    exact differentiableWithinAt_sectionCoord γ (fun r ↦ X i (γ r))
-      ((hframe i).comp_mdifferentiableWithinAt t hγ) hbase
-  have hcoordTerm (a : Fin (Module.finrank ℝ E) → ℝ → ℝ)
-      (ha : ∀ i, DifferentiableWithinAt ℝ (a i) s t)
-      (i : Fin (Module.finrank ℝ E)) :
-      DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (fun r ↦ a i r • X i (γ r)) (γ t)) s t := by
-    rw [sectionCoord_smul]
-    exact (ha i).smul (hcoordX i)
-  have hcoordU (i : Fin (Module.finrank ℝ E)) :
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (U i) (γ t)) s t :=
-    hcoordTerm aV haV i
-  have hcoordZ (i : Fin (Module.finrank ℝ E)) :
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (Z i) (γ t)) s t :=
-    hcoordTerm aW haW i
-  -- Apply metric compatibility termwise, then sum both frame expansions.
-  have hterm (i j : Fin (Module.finrank ℝ E)) :
-      HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t)
-        (fun x ↦ (b x).toLinearMap₁₂) (U i) (Z j) :=
-    ((hasPairingProductRuleWithinAt_pullback hdiff hcompat hu hγ (hframe i)
-      (hframe j)).smul_left (haV i) (hcoordX i)).smul_right (haW j) (hcoordX j)
-  have hsum : HasPairingProductRuleWithinAt (cov := cov) (s := s) (t := t)
-      (fun x ↦ (b x).toLinearMap₁₂) (fun r ↦ ∑ i, U i r) (fun r ↦ ∑ j, Z j r) := by
-    refine HasPairingProductRuleWithinAt.finsetSum_left
-      (A := Finset.univ) (U := U) (W := fun r ↦ ∑ j, Z j r) ?_ ?_
-    · intro i _
-      exact HasPairingProductRuleWithinAt.finsetSum_right
-        (A := Finset.univ) (hU := fun j _ ↦ hterm i j) (fun j _ ↦ hcoordZ j)
-    · exact fun i _ ↦ hcoordU i
-  dsimp only [HasPairingProductRuleWithinAt] at hsum
-  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] at hsum
-  -- The chosen frame expansion agrees with each original field near `t` and at `t` itself.
   have hnear : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hbase)
-  have frameExpansion (Q : ∀ r, TangentSpace I (γ r)) :
-      Q =ᶠ[𝓝[s] t] fun r ↦ ∑ i,
-        β.repr (sectionCoord (F := E) γ Q (γ t) r) i • X i (γ r) := by
-    filter_upwards [hnear] with r hr
-    calc
-      Q r = e.symmL ℝ (γ r) (sectionCoord (F := E) γ Q (γ t) r) := by
-        rw [sectionCoord_apply, e.symmL_continuousLinearMapAt (R := ℝ) hr]
-      _ = e.symmL ℝ (γ r)
-          (∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) r) i • β i) := by
-        rw [β.sum_repr]
-      _ = ∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) r) i • X i (γ r) := by
-        simp only [map_sum, map_smul, X, symmL_basis_eq_localFrame β hr]
-  have frameExpansionAt (Q : ∀ r, TangentSpace I (γ r)) :
-      Q t = ∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) t) i • X i (γ t) := by
-    calc
-      Q t = e.symmL ℝ (γ t) (sectionCoord (F := E) γ Q (γ t) t) := by
-        rw [sectionCoord_apply, e.symmL_continuousLinearMapAt (R := ℝ) hbase]
-      _ = e.symmL ℝ (γ t)
-          (∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) t) i • β i) := by
-        rw [β.sum_repr]
-      _ = ∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) t) i • X i (γ t) := by
-        simp only [map_sum, map_smul, X, symmL_basis_eq_localFrame β hbase]
-  have hVsum : V =ᶠ[𝓝[s] t] fun r ↦ ∑ i, U i r := by
-    simpa only [U, aV, β.coord_apply] using frameExpansion V
-  have hWsum : W =ᶠ[𝓝[s] t] fun r ↦ ∑ i, Z i r := by
-    simpa only [Z, aW, β.coord_apply] using frameExpansion W
-  have hVt : V t = ∑ i, U i t := by
-    simpa only [U, aV, β.coord_apply] using frameExpansionAt V
-  have hWt : W t = ∑ i, Z i t := by
-    simpa only [Z, aW, β.coord_apply] using frameExpansionAt W
-  have hpair : (fun r ↦ b (γ r) (V r) (W r)) =ᶠ[𝓝[s] t]
-      fun r ↦ b (γ r) (∑ i, U i r) (∑ j, Z j r) := by
-    filter_upwards [hVsum, hWsum] with r hVr hWr
-    rw [hVr, hWr]
-    rfl
-  have hDV : alongCurveWithin cov γ V s t =
-      alongCurveWithin cov γ (fun r ↦ ∑ i, U i r) s t :=
-    alongCurveWithin_congr cov γ V hVsum hVt
-  have hDW : alongCurveWithin cov γ W s t =
-      alongCurveWithin cov γ (fun r ↦ ∑ i, Z i r) s t :=
-    alongCurveWithin_congr cov γ W hWsum hWt
-  have hpairAt : b (γ t) (V t) (W t) = b (γ t) (∑ i, U i t) (∑ j, Z j t) := by
-    rw [hVt, hWt]
-  refine (hsum.congr_of_eventuallyEq hpair hpairAt).congr_deriv ?_
-  rw [hDV, hDW, hVt, hWt]
+  have hcoord (a : ∀ r, TangentSpace I (γ r))
+      (ha : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ a (γ t)) s t) (i : Fin _) :
+      DifferentiableWithinAt ℝ
+        (fun r ↦ β.coord i (sectionCoord (F := E) γ a (γ t) r)) s t :=
+    (LinearMap.toContinuousLinearMap (β.coord i)).differentiableAt.comp_differentiableWithinAt t ha
+  have hframe (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (e.localFrame β i)) (γ t) :=
+    (((e.isLocalFrameOn_localFrame_baseSet I 1 β).contMDiffOn i).mdifferentiableOn
+      one_ne_zero).mdifferentiableAt (e.open_baseSet.mem_nhds hbase)
+  have hcoordX (i : Fin (Module.finrank ℝ E)) : DifferentiableWithinAt ℝ
+      (sectionCoord (F := E) γ (fun r ↦ e.localFrame β i (γ r)) (γ t)) s t :=
+    differentiableWithinAt_sectionCoord γ (fun r ↦ e.localFrame β i (γ r))
+      ((hframe i).comp_mdifferentiableWithinAt t hγ) hbase
+  have hsum := hasPairingProductRuleWithinAt_frameSum (cov := cov) hdiff hcompat hu hγ hframe
+    hcoordX (hcoord V hV) (hcoord W hW)
+  simp only [β.coord_apply] at hsum
+  have hexp (Q : ∀ r, TangentSpace I (γ r)) (r : ℝ) (hr : γ r ∈ e.baseSet) :
+      ∑ i, β.repr (sectionCoord (F := E) γ Q (γ t) r) i • e.localFrame β i (γ r) = Q r := by
+    rw [sectionCoord_apply]
+    exact (β.eq_sum_repr_continuousLinearMapAt_smul_localFrame hr (Q r)).symm
+  refine HasPairingProductRuleWithinAt.congr_of_eventuallyEq hsum ?_ ?_ (hexp V t hbase)
+    (hexp W t hbase)
+  · filter_upwards [hnear] with r hr using hexp V r hr
+  · filter_upwards [hnear] with r hr using hexp W r hr
 
 end Pairing
 

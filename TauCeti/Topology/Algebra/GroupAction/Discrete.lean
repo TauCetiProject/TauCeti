@@ -53,16 +53,10 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 single open normal subgroup. -/
 theorem _root_.Set.Finite.exists_openNormalSubgroup_smul_eq_self {s : Set M} (hs : s.Finite) :
     ∃ U : OpenNormalSubgroup G, ∀ u ∈ U, ∀ m ∈ s, u • m = m := by
-  let V : Set G := ⋂ m ∈ s, (MulAction.stabilizer G m : Set G)
-  have hClopen : IsClopen V :=
-    hs.isClopen_biInter fun m _ ↦
-      ⟨(MulAction.stabilizer G m).isClosed_of_isOpen (stabilizer_isOpen G m),
-        stabilizer_isOpen G m⟩
-  have hOne : (1 : G) ∈ V := by simp [V]
-  obtain ⟨U, hU⟩ :=
-    IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one hClopen hOne
-  exact ⟨U, fun u hu m hm ↦
-    MulAction.mem_stabilizer_iff.mp (Set.mem_iInter₂.mp (hU hu) m hm)⟩
+  obtain ⟨U, hU⟩ := IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one
+    (hs.isClopen_biInter fun m _ ↦ OpenSubgroup.isClopen ⟨_, stabilizer_isOpen G m⟩)
+    (Set.mem_iInter₂.2 fun m _ ↦ one_mem (MulAction.stabilizer G m))
+  exact ⟨U, fun u hu m hm ↦ MulAction.mem_stabilizer_iff.1 (Set.mem_iInter₂.1 (hU hu) m hm)⟩
 
 /-- Every element of a discrete continuous action of a compact group is fixed by an open
 normal subgroup. -/
@@ -102,17 +96,12 @@ discrete space is locally constant: it is constant on the open neighbourhood `St
 of `g`. -/
 theorem isLocallyConstant_of_apply_mul (hU : IsOpen (U : Set G)) {k : G → M}
     (hk : ∀ (u : U) (g : G), k (u * g) = u • k g) : IsLocallyConstant k := by
-  rw [IsLocallyConstant.iff_eventually_eq]
-  intro g
-  let S : Set U := MulAction.stabilizer U (k g)
-  have hS : IsOpen S := stabilizer_isOpen U (k g)
-  have hopen : IsOpen ((fun u : U ↦ (u : G) * g) '' S) :=
-    ((isOpenMap_mul_right g).comp hU.isOpenMap_subtype_val) S hS
-  have hg : g ∈ (fun u : U ↦ (u : G) * g) '' S := ⟨1, by simp [S], by simp⟩
-  filter_upwards [hopen.mem_nhds hg] with x hx
-  obtain ⟨u, hu, rfl⟩ := hx
-  rw [hk]
-  exact hu
+  refine (IsLocallyConstant.iff_eventually_eq k).2 fun g ↦ ?_
+  have hopen : IsOpen ((fun u : U ↦ (u : G) * g) '' MulAction.stabilizer U (k g)) :=
+    (isOpenMap_mul_right g).comp hU.isOpenMap_subtype_val _ (stabilizer_isOpen U (k g))
+  filter_upwards [hopen.mem_nhds ⟨1, one_mem _, one_mul g⟩]
+  rintro _ ⟨u, hu, rfl⟩
+  exact (hk u g).trans (MulAction.mem_stabilizer_iff.1 hu)
 
 end SubgroupEquivariant
 
@@ -138,7 +127,7 @@ variable [TopologicalSpace G] [TopologicalSpace M] [DiscreteTopology M] [Continu
 theorem isOpen_ker_toPermHom [Finite M] :
     IsOpen ((MulAction.toPermHom G M).ker : Set G) := by
   rw [ker_toPermHom_eq_iInf_stabilizer, Subgroup.coe_iInf]
-  exact isOpen_iInter_of_finite fun m ↦ stabilizer_isOpen G m
+  exact isOpen_iInter_of_finite (stabilizer_isOpen G)
 
 /-- The open normal subgroup given by the kernel of a finite discrete action. -/
 def openActionKernel [Finite M] : OpenNormalSubgroup G where
@@ -185,11 +174,9 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
 discrete additive group with a continuous action. The additive group need not be commutative. -/
 theorem iSup_fixedPoints_openNormal_eq_top :
     (⨆ U : OpenNormalSubgroup G, FixedPoints.addSubgroup U.toSubgroup M) = ⊤ := by
-  rw [eq_top_iff]
-  intro m _
+  refine eq_top_iff.2 fun m _ ↦ ?_
   obtain ⟨U, hm⟩ := exists_openNormalSubgroup_smul_eq_self (G := G) m
-  apply (le_iSup (fun V : OpenNormalSubgroup G ↦ FixedPoints.addSubgroup V.toSubgroup M) U)
-  exact fun u ↦ hm u u.2
+  exact AddSubgroup.mem_iSup_of_mem U fun u ↦ hm u u.2
 
 end Exhaustion
 
