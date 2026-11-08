@@ -168,7 +168,7 @@ private theorem IsEffectiveCartier.exists_map_fiber_eq_span_singleton {I : X.Ide
     simp [c, m]
   have hI := h.comap c
   rw [← comap_comp, hc, comap_comp, comap_fromSpec_eq_ofIdealTop,
-    TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv] at hI
+    comap_ofIdealTop_map_ΓSpecIso_inv] at hI
   exact hI.exists_map_algebraMap_eq_span_singleton Q
 
 open Algebra.TensorProduct in
