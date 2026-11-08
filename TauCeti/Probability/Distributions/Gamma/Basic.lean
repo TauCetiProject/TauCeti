@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Moments.Basic
 import TauCeti.Probability.Moments.Determinacy
@@ -481,20 +482,6 @@ theorem gammaMeasure_conv_gammaMeasure {b : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
 
 /-! ### Scaling -/
 
-/-- Dividing the base of a real power by a positive number divides the power by the same power
-of that number, whatever the sign of the base. -/
-private lemma div_rpow_of_pos_right {c : ℝ} (hc : 0 < c) (r a : ℝ) (hGa : Real.Gamma a ≠ 0) :
-    (r / c) ^ a = r ^ a / c ^ a := by
-  rcases lt_trichotomy r 0 with hr | rfl | hr
-  · rw [Real.rpow_def_of_neg hr, Real.rpow_def_of_neg (div_neg_of_neg_of_pos hr hc),
-      Real.rpow_def_of_pos hc, Real.log_div hr.ne hc.ne', sub_mul, Real.exp_sub]
-    ring
-  · have ha : a ≠ 0 := by
-      rintro rfl
-      exact hGa Real.Gamma_zero
-    simp [Real.zero_rpow ha]
-  · exact Real.div_rpow hr.le hc.le a
-
 /-- Scaling a gamma density by `c > 0` divides its rate by `c`: the two densities differ by the
 Jacobian factor `c`. -/
 private lemma ofReal_mul_gammaPDF_const_mul {c : ℝ} (hc : 0 < c) (x : ℝ) :
@@ -507,7 +494,7 @@ private lemma ofReal_mul_gammaPDF_const_mul {c : ℝ} (hc : 0 < c) (x : ℝ) :
     · simp [hGa]
     have hca := (Real.rpow_pos_of_pos hc a).ne'
     have hrate : r / c * (c * x) = r * x := by field_simp
-    rw [Real.mul_rpow hc.le hx, div_rpow_of_pos_right hc r a hGa,
+    rw [Real.mul_rpow hc.le hx, Real.div_rpow_of_pos_right hc r a,
       hrate, Real.rpow_sub hc a 1, Real.rpow_one]
     field_simp
   · rw [gammaPDF_of_neg hx, gammaPDF_of_neg (mul_neg_of_pos_of_neg hc hx), mul_zero]
