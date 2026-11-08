@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.Closeds
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-public import TauCeti.Analysis.PDE.SeibergWitten.ZeroLocalization
+public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Localization
 
 import TauCeti.Topology.MetricSpace.Closeds
 
@@ -44,7 +44,8 @@ on compact sets away from `Z`, and the regions where `|α|` is small concentrate
 
 The statements are for an arbitrary metric space and an arbitrary filter, so they apply to the
 manifold with a distance inducing its topology, along any subsequence. The analytic input is the
-off-zero bound, taken as a hypothesis as in `TauCeti.Analysis.PDE.SeibergWitten.ZeroLocalization`.
+off-zero bound, taken as a hypothesis as in
+`TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Localization`.
 
 ## References
 
