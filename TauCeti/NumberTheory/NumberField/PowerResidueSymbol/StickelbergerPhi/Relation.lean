@@ -141,7 +141,9 @@ private theorem intValuation_smul_stickelbergerPhi_of_liesOver (hm : 2 ≤ m) {p
     rw [v.intValuation_natCast_eq_exp_neg_ramificationIdx, ← hPdef,
       ramificationIdx_eq_of_not_dvd p K P hpm, Nat.cast_one]
   rw [← MulSemiringAction.toRingEquiv_apply_apply]
-  exact IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_intValuation_map_eq hvp hval
+  refine IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_intValuation_map_eq
+    (w := w) (π := (p : 𝓞 K)) hvp ?_
+  rwa [map_natCast (algebraMap (𝓞 K) (𝓞 L))]
 
 /-- **The valuation of the conjugates of `Φ(P)` at `P`.** Let `K` be the `m`-th cyclotomic field,
 `m ≥ 2`, and `v` a prime of `K` above a rational prime `p ∤ m`, of residue degree
