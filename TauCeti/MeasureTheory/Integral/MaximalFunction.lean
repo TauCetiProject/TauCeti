@@ -111,7 +111,7 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module Set
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 section PseudoMetricSpace
 
@@ -135,6 +135,14 @@ theorem setLAverage_le_maximalFunction (μ : Measure X) (f : X → F) (x : X) (h
     ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ maximalFunction μ f x := by
   rw [maximalFunction_def]
   exact le_iSup₂ (f := fun r (_ : 0 < r) => ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ) r hr
+
+/-- The integral of `‖f‖ₑ` over a ball of finite measure is at most the measure of the ball times
+the maximal function at its centre. -/
+theorem setLIntegral_ball_le_measure_mul_maximalFunction (hr : 0 < r) (hμ : μ (ball x r) ≠ ∞) :
+    ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ μ (ball x r) * maximalFunction μ f x := by
+  rw [← measure_mul_setLAverage _ hμ]
+  gcongr
+  exact setLAverage_le_maximalFunction μ f x hr
 
 /-- A bound holding for every ball average bounds the maximal function: the elimination rule. -/
 theorem maximalFunction_le (h : ∀ r > 0, ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ a) :
