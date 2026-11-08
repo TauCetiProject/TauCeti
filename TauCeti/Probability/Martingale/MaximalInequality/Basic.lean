@@ -19,8 +19,9 @@ submartingale `f`, a time `T` and `ε : ℝ≥0`:
 
 * over any finite or countable set `F` of times `≤ T`,
   `ε P(∃ t ∈ F, ε ≤ f_t) ≤ E[f_T 1_{∃ t ∈ F, ε ≤ f_t}] ≤ E[f_T]`;
-* if every path is right-continuous before `T` (almost surely), and the time set is densely ordered
-  and separable (for instance `ℝ≥0`), `ε P(∃ t ≤ T, ε < f_t) ≤ E[f_T]`.
+* if every path is right-continuous before `T` (almost surely), and the time set is second
+  countable (for instance `ℝ≥0`),
+  `ε P(∃ t ≤ T, ε < f_t) ≤ E[f_T 1_{∃ t ≤ T, ε < f_t}] ≤ E[f_T]`.
 
 The event `{∃ t ≤ T, ε < f_t}` need not be measurable; `P` is applied to it as an outer measure.
 Under the same right-continuity hypothesis the running maximum `sup_{t ≤ T} f_t` is almost
@@ -135,13 +136,8 @@ theorem mul_measure_exists_mem_le_le_setIntegral_of_countable [IsFiniteMeasure �
     fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_left _ ht, h⟩,
     fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_right _ ht, h⟩⟩
   have hUnion : (⋃ F, A F) = {ω | ∃ t ∈ S, (ε : ℝ) ≤ f t ω} := by
-    ext ω
-    constructor
-    · intro h
-      obtain ⟨F, t, ht, h⟩ := mem_iUnion.1 h
-      exact ⟨t, t.2, h⟩
-    · rintro ⟨t, ht, h⟩
-      exact mem_iUnion.2 ⟨{⟨t, ht⟩}, ⟨t, ht⟩, Finset.mem_singleton_self _, h⟩
+    simpa [A, Set.ofPred_exists, Subtype.exists] using
+      (Set.iUnion_eq_iUnion_finset (fun t : S ↦ {ω | (ε : ℝ) ≤ f t ω})).symm
   rw [← hUnion, hdir.measure_iUnion, ENNReal.mul_iSup]
   apply iSup_le
   intro F
@@ -190,13 +186,12 @@ theorem mul_measure_exists_mem_lt_le_setIntegral_of_countable [IsFiniteMeasure �
 
 section ContinuousTime
 
-variable [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
+variable [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
 
 /-- **Event-refined Doob inequality in continuous time.** Almost surely right-continuous paths
 allow all times before the terminal time, retaining the same strict crossing event in the
 terminal expectation. The measure need not be complete and the filtration need not be usual. -/
-theorem mul_measure_exists_le_lt_le_setIntegral
-    [TopologicalSpace.SeparableSpace ι] [IsFiniteMeasure μ]
+theorem mul_measure_exists_le_lt_le_setIntegral [IsFiniteMeasure μ]
     (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t)
     (ε : ℝ≥0) :
@@ -216,10 +211,10 @@ theorem mul_measure_exists_le_lt_le_setIntegral
     (fun _ ht ↦ hST ht)
 
 /-- **Doob's maximal inequality in continuous time.** Let `f` be a nonnegative submartingale
-indexed by a densely ordered separable time set, such as `ℝ≥0`, whose paths are almost surely
+indexed by a second countable time set, such as `ℝ≥0`, whose paths are almost surely
 right-continuous at every time before `T`. Then `ε P(∃ t ≤ T, ε < f_t) ≤ E[f_T]`. -/
-theorem mul_measure_exists_le_lt_le [TopologicalSpace.SeparableSpace ι] [IsFiniteMeasure μ]
-    (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) {T : ι}
+theorem mul_measure_exists_le_lt_le [IsFiniteMeasure μ] (hf : Submartingale f ℱ μ)
+    (hnonneg : 0 ≤ f) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) (ε : ℝ≥0) :
     ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) :=
   (hf.mul_measure_exists_le_lt_le_setIntegral hnonneg hcont ε).trans
@@ -230,8 +225,8 @@ theorem mul_measure_exists_le_lt_le [TopologicalSpace.SeparableSpace ι] [IsFini
 nonnegative submartingale `f` whose paths are almost surely right-continuous before `T`,
 `E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. The integrand is almost everywhere measurable by
 `MeasureTheory.aemeasurable_iSup_le_ofReal`. -/
-theorem lintegral_iSup_sqrt_le [TopologicalSpace.SeparableSpace ι] [IsFiniteMeasure μ]
-    (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) {T : ι}
+theorem lintegral_iSup_sqrt_le [IsFiniteMeasure μ] (hf : Submartingale f ℱ μ)
+    (hnonneg : 0 ≤ f) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) :
     ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal √(f t ω) ∂μ ≤
       μ univ + 4 * ENNReal.ofReal (∫ ω, f T ω ∂μ) := by

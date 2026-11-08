@@ -45,8 +45,7 @@ variable {Ω ι : Type*} {m0 : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrde
 so no pathwise boundedness assumption or convention for an unattained real supremum is needed.
 The terminal expectation retains exactly the event that this supremum is at least `ε`. -/
 theorem mul_measure_le_iSup_le_setIntegral
-    [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
-    [TopologicalSpace.SeparableSpace ι]
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
     (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t)
     (ε : ℝ≥0) :

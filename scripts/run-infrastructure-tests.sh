@@ -48,6 +48,8 @@ python3 scripts/test_ci_live_progress.py
 python3 scripts/test_web_pins.py
 python3 scripts/test_attest_pr_config.py
 python3 scripts/test_prepare_pr_integration.py
+python3 scripts/test_ci_checkout_workflow.py
+python3 scripts/test_ci_checkout.py
 python3 scripts/test_profile_workflow.py
 python3 scripts/test_lake_cache_probe.py
 python3 scripts/test_lake_cache_get.py
