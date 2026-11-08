@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Module.Cone
-import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
 # Localization of the wave front set
@@ -38,13 +37,16 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 
 ## Main results
 
+* `Distribution.localFourier_eq_complexPairing_modulate`,
+  `Distribution.localFourier_eq_complexPairing_mul_modulate`: the localized Fourier transform as
+  the pairing with a modulated test function.
 * `Distribution.exists_norm_localFourier_le`: the localized Fourier transform of a distribution
   grows at most polynomially.
 * `Distribution.exists_hasSum_localFourier_of_eq_mul`: the localized Fourier transform with
   cutoff `φ g` is a rapidly decreasing superposition of translates of the one with cutoff `φ`.
-* `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: rapid decay of the
-  localized Fourier transform on an open cone `Γ` survives multiplication of the cutoff by a smooth
-  function, on any cone `Γ'` whose conic neighbourhoods `closedBall η (c ‖η‖)` lie in `Γ`.
+* `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: decay of each order
+  of the localized Fourier transform on a set `Γ` survives multiplication of the cutoff by a smooth
+  function, on any set `Γ'` whose conic neighbourhoods `closedBall η (c ‖η‖)` lie in `Γ`.
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
@@ -72,13 +74,35 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {Ω : Opens E}
 
 omit [FiniteDimensional ℝ E] in
-/-- Modulating the character `x ↦ 𝐞 (-⟪x, η⟫)` by `exp (2πi ⟪x, w⟫)` shifts its frequency
-to `η - w`. -/
-private theorem cexp_mul_fourierChar (x w η : E) :
-    cexp (2 * Real.pi * I * ⟪x, w⟫) * (𝐞 (-⟪x, η⟫) : ℂ) = 𝐞 (-⟪x, η - w⟫) := by
-  rw [Real.fourierChar_apply, Real.fourierChar_apply, ← Complex.exp_add, inner_sub_right]
-  congr 1
+/-- The localized Fourier transform of `T` with cutoff `φ` at `η` pairs `T` with the modulation by
+`-η` of any test function `f` supported in a compact set `K ⊆ Ω` that agrees with `φ`. -/
+theorem localFourier_eq_complexPairing_modulate (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)} {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) {f : 𝓓_{K}(E, ℂ)} (hf : ∀ x, f x = φ x) (η : E) :
+    T.localFourier φ η = T.complexPairing (ofSupportedIn hKΩ (f.modulate (-η))) := by
+  refine localFourier_eq T φ fun x ↦ ?_
+  simp only [coe_ofSupportedIn, ContDiffMapSupportedIn.modulate_apply, smul_eq_mul, hf]
+  rw [mul_comm, Real.fourierChar_apply, inner_neg_right]
+  congr 2
   push_cast
+  ring
+
+omit [FiniteDimensional ℝ E] in
+/-- If the cutoff `ψ` is `φ f` with `f` a test function supported in a compact set `K ⊆ Ω`, the
+localized Fourier transform of `T` with cutoff `ψ` at `η` pairs `T` with `φ` times the modulation
+of `f` by `-η`. -/
+theorem localFourier_eq_complexPairing_mul_modulate (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(Ω, ℂ)}
+    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) {f : 𝓓_{K}(E, ℂ)} (hψ : ∀ x, ψ x = φ x * f x)
+    (η : E) :
+    T.localFourier ψ η = T.complexPairing (TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ)
+      φ.contDiff (ofSupportedIn hKΩ (f.modulate (-η)))) := by
+  have hψK : support ψ ⊆ K := fun x hx ↦
+    f.support_subset (right_ne_zero_of_mul (a := φ x) (by rwa [← hψ]))
+  let ψK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset ψ.contDiff hψK
+  rw [localFourier_eq_complexPairing_modulate T hKΩ (f := ψK)
+    (fun _ ↦ by simp [ψK, ContDiffMapSupportedIn.coe_of_support_subset]) η]
+  congr 1
+  ext x
+  simp [ψK, ContDiffMapSupportedIn.coe_of_support_subset, TestFunction.bilinLeftCLM_apply, hψ]
   ring
 
 omit [FiniteDimensional ℝ E] in
@@ -98,13 +122,8 @@ theorem exists_norm_localFourier_le (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
   refine ⟨C, k, fun η ↦ ?_⟩
   have h : T.localFourier φ η = Λ (φK.modulate (-η)) := by
     rw [ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
-    refine localFourier_eq T φ fun x ↦ ?_
-    simp only [coe_ofSupportedIn, ContDiffMapSupportedIn.modulate_apply,
-      smul_eq_mul, φK, ContDiffMapSupportedIn.coe_of_support_subset]
-    rw [mul_comm, Real.fourierChar_apply, inner_neg_right]
-    congr 2
-    push_cast
-    ring
+    exact localFourier_eq_complexPairing_modulate T hKΩ
+      (fun _ ↦ by simp [φK, ContDiffMapSupportedIn.coe_of_support_subset]) η
   simpa [h] using hC (-η)
 
 /-- **The localized Fourier transform of a smooth multiple.** If the cutoff `ψ` is `φ g` with `g`
@@ -160,57 +179,50 @@ theorem exists_hasSum_localFourier_of_eq_mul (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(
     refine (hdecay.mul_left ‖(ZLattice.covolume L : ℂ)⁻¹‖).congr fun m ↦ ?_
     rw [norm_mul]
     ring
-  · -- Pair the expansion with `T`, after multiplying by `x ↦ φ x 𝐞 (-⟪x, η⟫)`.
-    have hw : ContDiff ℝ ∞ fun x ↦ φ x * TauCeti.fourierAtom η x :=
-      φ.contDiff.mul (TauCeti.contDiff_fourierAtom η)
+  · -- Pair the expansion with `T`, after modulating by `-η` and multiplying by `φ`.
     let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L
-      (TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) hw ∘L ofSupportedInCLM ℂ hKΩ)
+      (TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff ∘L
+        ofSupportedInCLM ℂ hKΩ ∘L ContDiffMapSupportedIn.modulateCLM (-η))
     have hΛ (h : 𝓓_{K}(E, ℂ)) : Λ h = T.complexPairing
-        (TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) hw (ofSupportedIn hKΩ h)) := by
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
+        (TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) φ.contDiff
+          (ofSupportedIn hKΩ (h.modulate (-η)))) := by
+      simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM,
+        ContDiffMapSupportedIn.modulateCLM_apply]
     have h1 : Λ f = T.localFourier ψ η := by
-      rw [hΛ, localFourier_eq T ψ fun x ↦ ?_]
-      simp only [TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-        coe_ofSupportedIn, ContDiffMapSupportedIn.coe_of_support_subset, f, hψ,
-        TauCeti.fourierAtom_eq_fourierChar]
+      rw [hΛ, localFourier_eq_complexPairing_mul_modulate T hKΩ (φ := φ) (f := f) fun x ↦ ?_]
       by_cases hx : φ x = 0
-      · simp [hx]
-      · simp only [hχ₁φ hx, ofReal_one]
-        ring
+      · simp [hψ, hx]
+      · simp [f, ContDiffMapSupportedIn.coe_of_support_subset, hψ, hχ₁φ hx]
     have h2 (m : ZLattice.dual L) (a : ℂ) :
         Λ (a • χ.modulate m) = a * T.localFourier φ (η - m) := by
-      rw [map_smul, smul_eq_mul, hΛ, localFourier_eq T φ (η := η - m) fun x ↦ ?_]
-      simp only [TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-        coe_ofSupportedIn, ContDiffMapSupportedIn.modulate_apply,
-        ContDiffMapSupportedIn.coe_of_support_subset, χ, smul_eq_mul,
-        TauCeti.fourierAtom_eq_fourierChar]
+      rw [map_smul, smul_eq_mul, hΛ, ContDiffMapSupportedIn.modulate_modulate,
+        localFourier_eq_complexPairing_mul_modulate T hKΩ (φ := φ) (f := χ) fun x ↦ ?_, neg_sub,
+        sub_eq_add_neg]
       by_cases hx : φ x = 0
       · simp [hx]
-      · simp only [hχ₂K₁ (hφK₁.trans interior_subset (subset_tsupport _ hx)), ofReal_one,
-          mul_one]
-        rw [← cexp_mul_fourierChar x m η]
-        ring
+      · simp [χ, ContDiffMapSupportedIn.coe_of_support_subset,
+          hχ₂K₁ (hφK₁.trans interior_subset (subset_tsupport _ hx))]
     have hmap := hexp.map Λ Λ.continuous
     rw [h1] at hmap
     convert hmap using 1
     ext m
     exact (h2 m _).symm
 
-/-- **Localization of rapid decay** (Hörmander I, Lemma 8.1.1). Suppose the localized Fourier
-transform of `T` with cutoff `φ` decays rapidly on a set `Γ`, and `Γ'` is a set such that for some
-`c > 0` the closed ball of radius `c ‖η‖` about every `η ∈ Γ'` lies in `Γ`. Then for every cutoff
-`ψ = φ g` with `g` smooth on `Ω`, the localized Fourier transform of `T` with cutoff `ψ` decays
-rapidly on `Γ'`. Each point `ξ` of an open cone `Γ` lies in an open cone `Γ'` of this kind
-(`IsOpen.exists_cone_closedBall_subset`). -/
+/-- **Localization of decay** (Hörmander I, Lemma 8.1.1). Suppose `(1 + ‖η‖) ^ N` times the
+localized Fourier transform of `T` with cutoff `φ` is bounded on a set `Γ`, and `Γ'` is a set such
+that for some `c > 0` the closed ball of radius `c ‖η‖` about every `η ∈ Γ'` lies in `Γ`. Then for
+every cutoff `ψ = φ g` with `g` smooth on `Ω`, `(1 + ‖η‖) ^ N` times the localized Fourier
+transform of `T` with cutoff `ψ` is bounded on `Γ'`. Each point `ξ` of an open cone `Γ` lies in
+an open cone `Γ'` of this kind (`IsOpen.exists_cone_closedBall_subset`). -/
 theorem exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul {T : 𝓓'(Ω, ℂ)}
     {φ ψ : 𝓓(Ω, ℂ)} {g : E → ℂ} (hg : ContDiffOn ℝ ∞ g Ω) (hψ : ∀ x, ψ x = φ x * g x)
     {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c) (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
-    (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C) (N : ℕ) :
+    {N : ℕ} (hdecay : ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C) :
     ∃ C, ∀ η ∈ Γ', (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
   obtain ⟨L, a, ha, hsum⟩ := exists_hasSum_localFourier_of_eq_mul T hg hψ
   obtain ⟨C₀, k, hF⟩ := exists_norm_localFourier_le T φ
   obtain ⟨C, hC⟩ := TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum
-    (v := fun m : L ↦ (m : E)) ha hF hc hΓ' hdecay N
+    (v := fun m : L ↦ (m : E)) ha hF hc hΓ' hdecay
   exact ⟨C, fun η hη ↦ hC η hη _ (hsum η)⟩
 
 /-- **Independence of the cutoff.** If `T` is microlocally smooth at `(x, ξ)`, then there are a
@@ -240,7 +252,7 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
       simp [θ, hz]
     · exact (ofRealCLM.contDiff.comp hχ).contDiffAt.mul (φ.contDiff.contDiffAt.fun_inv hy)
   refine exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul (hθ.mul ψ.contDiff).contDiffOn
-    (fun y ↦ ?_) hc hΓ' hdecay N
+    (fun y ↦ ?_) hc hΓ' (hdecay N)
   by_cases hψy : ψ y = 0
   · simp [hψy]
   · have hχy : χ y = 1 := interior_subset (hψ (subset_tsupport _ hψy))

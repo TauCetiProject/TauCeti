@@ -29,8 +29,9 @@ transform in a cone survives multiplication of the cutoff by a smooth function.
 
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
-* `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: rapid decay on `Γ'` of a superposition
-  of translates of a function decaying rapidly on `Γ`, with rapidly decreasing coefficients.
+* `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
+  superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
+  coefficients.
 
 ## References
 
@@ -95,21 +96,22 @@ variable {E : Type*} [NormedAddCommGroup E]
 
 /-- **Rapid decay of a discrete convolution on a smaller cone.** A superposition
 `∑ i, a i • F (η - v i)` of translates of a function `F` of polynomial growth, with coefficients
-`a i` rapidly decreasing in `‖v i‖`, decays rapidly on every set `Γ'` whose conic neighbourhoods
-`closedBall η (c ‖η‖)`, `c > 0`, lie in a set `Γ` on which `F` decays rapidly: for every `N` the
-quantity `(1 + ‖η‖) ^ N ‖∑ i, a i • F (η - v i)‖` is bounded on `Γ'`. -/
+`a i` rapidly decreasing in `‖v i‖`, decays on every set `Γ'` whose conic neighbourhoods
+`closedBall η (c ‖η‖)`, `c > 0`, lie in a set `Γ`, at every order `N` at which `F` decays on `Γ`:
+if `(1 + ‖η‖) ^ N ‖F η‖` is bounded on `Γ`, then `(1 + ‖η‖) ^ N ‖∑ i, a i • F (η - v i)‖` is
+bounded on `Γ'`. -/
 theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [NormedField 𝕜]
     [NormedAddCommGroup G] [NormedSpace 𝕜 G] {v : ι → E} {a : ι → 𝕜}
     (ha : ∀ j : ℕ, Summable fun i ↦ (1 + ‖v i‖) ^ j * ‖a i‖) {F : E → G} {C₀ : ℝ} {k : ℕ}
     (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c)
     (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
-    (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖F η‖ ≤ C) (N : ℕ) :
+    {N : ℕ} (hdecay : ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖F η‖ ≤ C) :
     ∃ C, ∀ η ∈ Γ', ∀ s, HasSum (fun i ↦ a i • F (η - v i)) s → (1 + ‖η‖) ^ N * ‖s‖ ≤ C := by
   have hC₀ : 0 ≤ C₀ := (norm_nonneg (F 0)).trans (by simpa using hF 0)
   set c' := min c (1 / 2)
   have hc' : 0 < c' := lt_min hc (by norm_num)
   have hc'1 : c' ≤ 1 / 2 := min_le_right _ _
-  obtain ⟨C₁, hC₁⟩ := hdecay N
+  obtain ⟨C₁, hC₁⟩ := hdecay
   set D := max (2 ^ N * C₁) (C₀ * c'⁻¹ ^ (N + k))
   have hD : 0 ≤ D := le_max_of_le_right (by positivity)
   refine ⟨D * ∑' i, (1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖, fun η hη s hs ↦ ?_⟩
