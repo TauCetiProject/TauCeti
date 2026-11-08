@@ -35,7 +35,36 @@ instance : LinearOrder (LineQuiver n) :=
   LinearOrder.lift' (OrientedQuiver.vertexEquiv (SimpleGraph.pathGraph n)
     (Orientation.ofLinearOrder _)).symm (Equiv.injective _)
 
-private theorem index_add_one_eq {i j : LineQuiver n} (e : i ⟶ j) :
+/-- Comparison in the line quiver is comparison of the underlying vertex indices. -/
+theorem le_iff (i j : LineQuiver n) :
+    i ≤ j ↔ (OrientedQuiver.vertexEquiv _ _).symm i ≤
+      (OrientedQuiver.vertexEquiv _ _).symm j := (Iff.rfl)
+
+/-- Strict comparison in the line quiver is strict comparison of the underlying indices. -/
+theorem lt_iff (i j : LineQuiver n) :
+    i < j ↔ (OrientedQuiver.vertexEquiv _ _).symm i <
+      (OrientedQuiver.vertexEquiv _ _).symm j := (Iff.rfl)
+
+/-- Inclusion of graph vertices into the line quiver preserves and reflects comparison. -/
+@[simp]
+theorem vertex_le_vertex_iff (i j : Fin n) :
+    OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _) i ≤
+      OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _) j ↔
+        i ≤ j := by
+  rw [le_iff]
+  simp only [OrientedQuiver.vertexEquiv_symm_vertex]
+
+/-- Inclusion of graph vertices preserves and reflects strict comparison. -/
+@[simp]
+theorem vertex_lt_vertex_iff (i j : Fin n) :
+    OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _) i <
+      OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _) j ↔
+        i < j := by
+  rw [lt_iff]
+  simp only [OrientedQuiver.vertexEquiv_symm_vertex]
+
+/-- An arrow in the line quiver increases the vertex index by one. -/
+theorem index_add_one_eq {i j : LineQuiver n} (e : i ⟶ j) :
     ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val + 1 =
       ((OrientedQuiver.vertexEquiv _ _).symm j : Fin n).val := by
   have e' : OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _)
@@ -50,6 +79,22 @@ private theorem index_add_one_eq {i j : LineQuiver n} (e : i ⟶ j) :
       ((OrientedQuiver.vertexEquiv _ _).symm j : Fin n).val :=
     (Orientation.mem_ofLinearOrder_iff _ _).mp h.2
   omega
+
+/-- An arrow exists exactly when the target index is the successor of the source index. -/
+@[simp]
+theorem nonempty_hom_iff (i j : LineQuiver n) :
+    Nonempty (i ⟶ j) ↔ ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val + 1 =
+      ((OrientedQuiver.vertexEquiv _ _).symm j : Fin n).val := by
+  refine ⟨fun ⟨e⟩ ↦ index_add_one_eq e, fun h ↦ ?_⟩
+  have hadj : (SimpleGraph.pathGraph n).Adj
+      ((OrientedQuiver.vertexEquiv _ _).symm i)
+      ((OrientedQuiver.vertexEquiv _ _).symm j) :=
+    SimpleGraph.pathGraph_adj.mpr (Or.inl h)
+  have hlt : ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val <
+      ((OrientedQuiver.vertexEquiv _ _).symm j : Fin n).val := by omega
+  have e := OrientedQuiver.arrow _ (Orientation.ofLinearOrder _) hadj
+    ((Orientation.mem_ofLinearOrder_iff _ _).mpr hlt)
+  exact ⟨by simpa only [← OrientedQuiver.vertexEquiv_apply, Equiv.apply_symm_apply] using e⟩
 
 private theorem nonempty_path_vertex (i j : Fin n) (hij : i ≤ j) :
     Nonempty (Quiver.Path
