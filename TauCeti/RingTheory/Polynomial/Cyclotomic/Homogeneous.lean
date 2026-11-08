@@ -117,8 +117,8 @@ theorem _root_.RingHom.map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b 
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
     homogeneousCyclotomic n (c * a) (c * b) = c ^ n.totient * homogeneousCyclotomic n a b := by
   rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← smul_eq_mul (c ^ _),
-    ← (isHomogeneous_homogenize _).eval_smul, Matrix.smul_cons, Matrix.smul_cons,
-    Matrix.smul_empty, smul_eq_mul, smul_eq_mul]
+    ← (isHomogeneous_homogenize _).eval_smul]
+  simp [Matrix.smul_cons]
 
 /-! ### Closed forms -/
 
@@ -170,9 +170,13 @@ theorem homogeneousCyclotomic_prime_pow {p : ℕ} (hp : p.Prime) (e : ℕ) (a b 
 palindromic. -/
 theorem homogeneousCyclotomic_comm {n : ℕ} (hn : n ≠ 1) (a b : R) :
     homogeneousCyclotomic n b a = homogeneousCyclotomic n a b := by
-  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← reflect_cyclotomic hn,
-    ← MvPolynomial.aeval_eq_eval, aeval_homogenize_reflect, reflect_cyclotomic hn,
-    ← MvPolynomial.aeval_eq_eval]
+  calc homogeneousCyclotomic n b a
+      = MvPolynomial.aeval ![b, a] ((cyclotomic n R).homogenize n.totient) := by
+        rw [homogeneousCyclotomic_def, MvPolynomial.aeval_eq_eval]
+    _ = MvPolynomial.aeval ![a, b] (((cyclotomic n R).reflect n.totient).homogenize n.totient) :=
+        (aeval_homogenize_reflect _ _ a b).symm
+    _ = homogeneousCyclotomic n a b := by
+        rw [reflect_cyclotomic hn, homogeneousCyclotomic_def, MvPolynomial.aeval_eq_eval]
 
 /-- `Φ_n(a, 0) = a ^ φ(n)`: only the leading monomial survives. -/
 @[simp]
