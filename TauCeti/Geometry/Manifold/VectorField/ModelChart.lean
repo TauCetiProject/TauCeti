@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Vector fields read in the charts of a manifold modelled on its own model space
@@ -212,17 +213,6 @@ section Glue
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M]
 
-/-- `x + (1 - smoothTransition x)` is at least `x`. -/
-private lemma le_add_one_sub_smoothTransition (x : ℝ) : x ≤ x + (1 - Real.smoothTransition x) := by
-  linarith [Real.smoothTransition.le_one x]
-
-/-- `x + (1 - smoothTransition x)` is nonzero for `x ≥ 0`. -/
-private lemma add_one_sub_smoothTransition_ne_zero {x : ℝ} (hx : 0 ≤ x) :
-    x + (1 - Real.smoothTransition x) ≠ 0 := by
-  rcases hx.eq_or_lt with h | h
-  · simp [← h]
-  · exact (h.trans_le (le_add_one_sub_smoothTransition x)).ne'
-
 /-- **A unit-speed descending field near a compact set of regular points.** If a compact set `K`
 contains no critical point of the smooth function `f`, there is a smooth vector field `X`, vanishing
 outside a compact set, along which `f` never increases, `df(X) ≤ 0`, and with `df(X) = -1` on an
@@ -250,8 +240,8 @@ theorem exists_vectorField_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘
   set d : M → ℝ := fun y ↦ g y + (1 - Real.smoothTransition (g y)) with hd
   set Y : (y : M) → TangentSpace 𝓘(ℝ, E) y := fun y ↦ ∑ i ∈ t, ((ρ i : M → ℝ) • s i) y with hY
   have hg0 : ∀ y, 0 ≤ g y := fun y ↦ Finset.sum_nonneg fun i _ ↦ (ρ i).nonneg
-  have hgd : ∀ y, g y ≤ d y := fun y ↦ le_add_one_sub_smoothTransition (g y)
-  have hd0 : ∀ y, d y ≠ 0 := fun y ↦ add_one_sub_smoothTransition_ne_zero (hg0 y)
+  have hgd : ∀ y, g y ≤ d y := fun y ↦ Real.smoothTransition.le_add_one_sub (g y)
+  have hd0 : ∀ y, d y ≠ 0 := fun y ↦ Real.smoothTransition.add_one_sub_ne_zero (hg0 y)
   have hgC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ g := ContMDiff.sum fun i _ ↦ (ρ i).contMDiff
   have hdC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ d :=
     hgC.add (contMDiff_const.sub (Real.smoothTransition.contDiff.contMDiff.comp hgC))
