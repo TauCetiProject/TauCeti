@@ -182,9 +182,9 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.integrable_pow_and_integral_pow_
     have hk : k ≤ 2 * k := by omega
     have hnorm2 : Integrable (fun x : ℝ => ‖x‖ ^ (2 * k)) (ν : Measure ℝ) := by
       simpa only [norm_pow] using (hint2 k).norm
-    have hnormk := integrable_norm_pow_of_le
-      (μ := (ν : Measure ℝ)) (f := id) (by fun_prop) hk hnorm2
-    change Integrable (fun x : ℝ => ‖x‖ ^ k) (ν : Measure ℝ) at hnormk
+    have hnormk : Integrable (fun x : ℝ => ‖x‖ ^ k) (ν : Measure ℝ) := by
+      simpa only [id_eq] using integrable_norm_pow_of_le
+        (μ := (ν : Measure ℝ)) (f := id) (by fun_prop) hk hnorm2
     have hnormpow : Integrable (fun x : ℝ => ‖x ^ k‖) (ν : Measure ℝ) := by
       simpa only [norm_pow] using hnormk
     exact (integrable_norm_iff (by fun_prop : AEStronglyMeasurable
@@ -274,6 +274,7 @@ theorem tendsto_of_tendsto_integral_pow_of_determined_moments
   have hlim_tail : ∀ k, Tendsto (fun n => ∫ x, x ^ k ∂(μtail n : Measure ℝ)) atTop
       (𝓝 (∫ x, x ^ k ∂(μ : Measure ℝ))) := by
     intro k
+    -- Unfold the shifted sequence so the limit is a composition with addition by `N`.
     change Tendsto
       (fun n => (fun j => ∫ x, x ^ k ∂(μn j : Measure ℝ)) (n + N)) atTop _
     exact (hlim k).comp (tendsto_add_atTop_nat N)
