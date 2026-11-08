@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
-import TauCeti.Algebra.Ring.Hom
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Unitary transvections

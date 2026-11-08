@@ -22,13 +22,9 @@ A ring homomorphism fixes natural number casts, so it preserves membership state
 controls denominators under ring endomorphisms that preserve a subring, as in integrality arguments
 for Hazewinkel's functional equation.
 
-A multiplicative map applied entrywise to a scalar multiple `c • v` of a family gives
-`f c • (f ∘ v)`.
-
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
-* `TauCeti.map_comp_smul`: `f ∘ (c • v) = f c • (f ∘ v)`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
@@ -45,11 +41,6 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
-
-/-- A multiplicative map applied entrywise to `c • v` gives `f c • (f ∘ v)`. -/
-theorem map_comp_smul {F M N ι : Type*} [Mul M] [Mul N] [FunLike F M N] [MulHomClass F M N]
-    (f : F) (c : M) (v : ι → M) : f ∘ (c • v) = f c • (f ∘ v) :=
-  funext fun _ ↦ map_mul f _ _
 
 end TauCeti
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
-import TauCeti.Algebra.Ring.Hom
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Matrix-vector multiplication
