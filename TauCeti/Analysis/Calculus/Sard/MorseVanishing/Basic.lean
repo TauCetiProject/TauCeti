@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Sard.MorseVanishing.Chart
+import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 public import TauCeti.Analysis.Calculus.Sard.MorseVanishing.Disk
 
 /-! # The Morse vanishing lemma
@@ -16,7 +17,8 @@ antilipschitz on the closed unit ball, such that *every* `C^k` function vanishin
 order `k` along the disk on each piece.
 
 The proof is A. P. Morse's double induction on the pair `(dimension, order)`, in the `C^k`
-formulation of A. Norton.  Nothing is ever restricted to a hypersurface, so no regularity is lost:
+formulation of A. Norton. Dimension reduction preserves the order of the vanishing-set
+decomposition; it does not apply lower-dimensional Sard to a derivative stratum:
 
 * order `0`, any dimension: uniform continuity on the compact body of a translated unit ball;
 * dimension `0`, any order: the whole space is a point, so the set is countable;
@@ -51,7 +53,7 @@ variable {n k : ℕ}
 
 /-- A piece of a decomposition together with the parameter dimension and the map of the disk
 carrying it. -/
-structure Piece (n : ℕ) where
+private structure Piece (n : ℕ) where
   /-- The subset carried by the parametrized disk. -/
   carrier : Set (Fin n → ℝ)
   /-- The dimension of the parameter space. -/
@@ -60,14 +62,14 @@ structure Piece (n : ℕ) where
   parametrization : (Fin dimension → ℝ) → (Fin n → ℝ)
 
 /-- The piece sits inside `A` and inside the body of its disk, and that disk is a disk. -/
-@[expose] def Carries (A : Set (Fin n → ℝ)) (q : Piece n) : Prop :=
+private def Carries (A : Set (Fin n → ℝ)) (q : Piece n) : Prop :=
   q.carrier ⊆ A ∧ q.carrier ⊆ q.parametrization '' closedBall (0 : Fin q.dimension → ℝ) 1 ∧
     ∃ κ : ℝ, IsDisk q.parametrization κ
 
 /-- `B` admits a Morse decomposition of order `k` **relative to** `A`: the pieces lie in `A`, and
 every `C^k` function vanishing on `A` is flat of order `k` along the disk on each piece.  The
 absolute statement is the case `B = A`. -/
-@[expose] def HasDecompRel (k : ℕ) (A B : Set (Fin n → ℝ)) : Prop :=
+private def HasDecompRel (k : ℕ) (A B : Set (Fin n → ℝ)) : Prop :=
   ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Piece n)), A₀.Countable ∧ P.Countable ∧
     B ⊆ A₀ ∪ ⋃ q ∈ P, q.carrier ∧ (∀ q ∈ P, Carries A q) ∧
     ∀ f : (Fin n → ℝ) → ℝ, ContDiff ℝ k f → (∀ x ∈ A, f x = 0) → ∀ q ∈ P,
@@ -76,7 +78,7 @@ absolute statement is the case `B = A`. -/
 namespace HasDecompRel
 
 /-- A relative Morse decomposition covers every subset of the set it covers. -/
-theorem mono_right {A B B' : Set (Fin n → ℝ)} (h : HasDecompRel k A B) (hB : B' ⊆ B) :
+private theorem mono_right {A B B' : Set (Fin n → ℝ)} (h : HasDecompRel k A B) (hB : B' ⊆ B) :
     HasDecompRel k A B' := by
   obtain ⟨A₀, P, hA₀, hP, hcov, hcar, hflat⟩ := h
   exact ⟨A₀, P, hA₀, hP, hB.trans hcov, hcar, hflat⟩
@@ -84,7 +86,7 @@ theorem mono_right {A B B' : Set (Fin n → ℝ)} (h : HasDecompRel k A B) (hB :
 end HasDecompRel
 
 /-- A countable union of relative decompositions is a relative decomposition. -/
-theorem hasDecompRel_iUnion {A : Set (Fin n → ℝ)} {ι : Type*} {I : Set ι}
+private theorem hasDecompRel_iUnion {A : Set (Fin n → ℝ)} {ι : Type*} {I : Set ι}
     {B : ι → Set (Fin n → ℝ)} (hI : I.Countable) (h : ∀ i ∈ I, HasDecompRel k A (B i)) :
     HasDecompRel k A (⋃ i ∈ I, B i) := by
   classical
@@ -104,7 +106,7 @@ theorem hasDecompRel_iUnion {A : Set (Fin n → ℝ)} {ι : Type*} {I : Set ι}
     exact hflat i f hf hf0 q hi
 
 /-- Two relative Morse decompositions over the same vanishing set can be united. -/
-theorem HasDecompRel.union {A B₁ B₂ : Set (Fin n → ℝ)} (h₁ : HasDecompRel k A B₁)
+private theorem HasDecompRel.union {A B₁ B₂ : Set (Fin n → ℝ)} (h₁ : HasDecompRel k A B₁)
     (h₂ : HasDecompRel k A B₂) : HasDecompRel k A (B₁ ∪ B₂) := by
   classical
   have hcov : B₁ ∪ B₂ ⊆ ⋃ i ∈ (univ : Set Bool), (fun b => if b then B₁ else B₂) i := by
@@ -119,7 +121,7 @@ theorem HasDecompRel.union {A B₁ B₂ : Set (Fin n → ℝ)} (h₁ : HasDecomp
 /-! ### The two bases of the double induction -/
 
 /-- Dimension zero: the whole space is a point, so every set is countable. -/
-theorem hasDecompRel_dim_zero (k : ℕ) (A : Set (Fin 0 → ℝ)) : HasDecompRel k A A := by
+private theorem hasDecompRel_dim_zero (k : ℕ) (A : Set (Fin 0 → ℝ)) : HasDecompRel k A A := by
   refine ⟨A, ∅, (Set.toFinite A).countable, countable_empty, fun x hx => Or.inl hx, ?_, ?_⟩
   · simp
   · simp
@@ -127,7 +129,7 @@ theorem hasDecompRel_dim_zero (k : ℕ) (A : Set (Fin 0 → ℝ)) : HasDecompRel
 /--
 Order zero, any dimension: uniform continuity on the compact body of a translated closed unit
 ball.  The disks are the translations `a ↦ c + a` with integer centres, which are isometries. -/
-theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel 0 A A := by
+private theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel 0 A A := by
   classical
   set P : Set (Piece n) :=
     Set.range
@@ -146,7 +148,7 @@ theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel 0 A A :
     rw [abs_le]
     constructor <;> linarith
   · rintro q ⟨c, rfl⟩
-    refine ⟨inter_subset_left, ?_, 1, ?_, zero_le_one, ?_⟩
+    refine ⟨inter_subset_left, ?_, 1, isDisk_iff.mpr ⟨?_, zero_le_one, ?_⟩⟩
     · intro x hx
       refine ⟨x - fun j => (c j : ℝ), ?_, by simp⟩
       rw [mem_closedBall_iff_norm, sub_zero]
@@ -154,7 +156,9 @@ theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel 0 A A :
     · exact contDiff_const.add contDiff_id
     · intro a _ b _
       simp
-  · rintro f hf hf0 q ⟨c, rfl⟩ ε hε
+  · rintro f hf hf0 q ⟨c, rfl⟩
+    apply flatAlong_iff.mpr
+    intro ε hε
     have hfc : Continuous f := contDiff_zero.mp hf
     obtain ⟨δ, hδ, hδspec⟩ :=
       Metric.uniformContinuousOn_iff_le.mp
@@ -167,11 +171,8 @@ theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel 0 A A :
     have hmem : ∀ t : ℝ, t ∈ Icc (0 : ℝ) 1 → cc + (a + t • (b - a)) ∈ closedBall cc 1 := by
       intro t ht
       rw [mem_closedBall_iff_norm]
-      have heq : cc + (a + t • (b - a)) - cc = (1 - t) • a + t • b := by module
-      rw [heq]
-      have : (1 - t) • a + t • b ∈ closedBall (0 : Fin n → ℝ) 1 :=
-        convex_closedBall (0 : Fin n → ℝ) 1 ha hb (by linarith [ht.2]) ht.1 (by ring)
-      simpa [mem_closedBall_iff_norm] using this
+      have hm := (convex_closedBall (0 : Fin n → ℝ) 1).add_smul_sub_mem ha hb ht
+      simpa only [mem_closedBall_iff_norm, add_sub_cancel_left, sub_zero] using hm
     have hpt : cc + (a + s • (b - a)) ∈ closedBall cc 1 := hmem s hs
     have ha' : cc + a ∈ closedBall cc 1 := by
       have := hmem 0 ⟨le_refl 0, zero_le_one⟩
@@ -195,7 +196,7 @@ theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel 0 A A :
 /-- Raising the order on the set where every `C^(k+1)` function vanishing on `A` is critical.
 The coordinates of the differential are `C^k` and vanish there, so the order-`k` decomposition
 makes them flat of order `k`, and the mean value step raises the order. -/
-theorem hasDecompRel_succ_of_critical {A U : Set (Fin n → ℝ)} (hUA : U ⊆ A)
+private theorem hasDecompRel_succ_of_critical {A U : Set (Fin n → ℝ)} (hUA : U ⊆ A)
     (hcrit : ∀ x ∈ U, ∀ f : (Fin n → ℝ) → ℝ, ContDiff ℝ (k + 1) f →
       (∀ y ∈ A, f y = 0) → fderiv ℝ f x = 0)
     (h : HasDecompRel k U U) : HasDecompRel (k + 1) A U := by
@@ -212,6 +213,7 @@ theorem hasDecompRel_succ_of_critical {A U : Set (Fin n → ℝ)} (hUA : U ⊆ A
     refine hflat _ (hfd.clm_apply contDiff_const) (fun x hx => ?_) q hq
     rw [hcrit x hx f hf hf0]
     simp
+  apply flatAlong_iff.mpr
   intro ε hε
   obtain ⟨δ, hδ, hδspec⟩ := abs_sub_le_of_flat_fderiv hdisk hdiff hcoord ε hε
   refine ⟨δ, hδ, ?_⟩
@@ -224,7 +226,7 @@ theorem hasDecompRel_succ_of_critical {A U : Set (Fin n → ℝ)} (hUA : U ⊆ A
 
 /-- Pushing a decomposition of the preimage forward along a `C^k` graph map.  The graph map is
 injective and `1`-antilipschitz, so every constant of the decomposition is preserved. -/
-theorem hasDecompRel_graph {A N : Set (Fin (n + 1) → ℝ)} (hk : 1 ≤ k) (i : Fin (n + 1))
+private theorem hasDecompRel_graph {A N : Set (Fin (n + 1) → ℝ)} (hk : 1 ≤ k) (i : Fin (n + 1))
     {θ : (Fin n → ℝ) → ℝ} (hθ : ContDiff ℝ k θ)
     (hN : ∀ x ∈ A, x ∈ N →
       x = Fin.insertNth (α := fun _ => ℝ) i (θ (Fin.removeNth i x)) (Fin.removeNth i x))
@@ -235,7 +237,7 @@ theorem hasDecompRel_graph {A N : Set (Fin (n + 1) → ℝ)} (hk : 1 ≤ k) (i :
   set Γ : (Fin n → ℝ) → (Fin (n + 1) → ℝ) :=
     fun y => Fin.insertNth (α := fun _ => ℝ) i (θ y) y with hΓdef
   have hΓinj : Function.Injective Γ := fun _ _ h ↦ (Fin.insertNth_injective2 h).2
-  have hΓk : ContDiff ℝ k Γ := contDiff_insertNth i hθ
+  have hΓk : ContDiff ℝ k Γ := hθ.finInsertNth i contDiff_id
   have hΓ1 : ContDiff ℝ 1 Γ := hΓk.of_le (by exact_mod_cast hk)
   have hΓanti : ∀ a b : Fin n → ℝ, ‖a - b‖ ≤ ‖Γ a - Γ b‖ := norm_sub_le_insertNth i θ
   obtain ⟨A₀, P, hA₀, hP, hcov, hcar, hflat⟩ := h
@@ -254,8 +256,9 @@ theorem hasDecompRel_graph {A N : Set (Fin (n + 1) → ℝ)} (hk : 1 ≤ k) (i :
     · obtain ⟨q', hq', hmq'⟩ := mem_iUnion₂.mp h1
       exact Or.inr (mem_iUnion₂.mpr ⟨_, ⟨q', hq', rfl⟩, ⟨_, hmq', hx.symm⟩⟩)
   · rintro q ⟨q', hq', rfl⟩
-    obtain ⟨h1, h2, κ, hd1, hd2, hd3⟩ := hcar q' hq'
-    refine ⟨?_, ?_, κ, ?_, hd2, ?_⟩
+    obtain ⟨h1, h2, κ, hdisk⟩ := hcar q' hq'
+    obtain ⟨hd1, hd2, hd3⟩ := isDisk_iff.mp hdisk
+    refine ⟨?_, ?_, κ, isDisk_iff.mpr ⟨?_, hd2, ?_⟩⟩
     · rintro _ ⟨y, hy, rfl⟩
       exact h1 hy
     · rintro _ ⟨y, hy, rfl⟩
@@ -268,8 +271,9 @@ theorem hasDecompRel_graph {A N : Set (Fin (n + 1) → ℝ)} (hk : 1 ≤ k) (i :
   · rintro f hf hf0 q ⟨q', hq', rfl⟩
     have hfΓ : ContDiff ℝ k (f ∘ Γ) := hf.comp hΓk
     have hflat' := hflat (f ∘ Γ) hfΓ (fun y hy => hf0 _ hy) q' hq'
+    apply flatAlong_iff.mpr
     intro ε hε
-    obtain ⟨δ, hδ, hδspec⟩ := hflat' ε hε
+    obtain ⟨δ, hδ, hδspec⟩ := (flatAlong_iff.mp hflat') ε hε
     refine ⟨δ, hδ, ?_⟩
     intro a ha b hb haS hbS hab s hs
     have hmem : ∀ c : Fin q'.dimension → ℝ,
@@ -287,7 +291,7 @@ theorem hasDecompRel_graph {A N : Set (Fin (n + 1) → ℝ)} (hk : 1 ≤ k) (i :
 
 /-- **The Morse vanishing lemma.**  Every subset of `Fin n → ℝ` has a Morse decomposition of
 every order.  Double induction on the order and then on the dimension; the order never drops. -/
-theorem hasDecompRel_self : ∀ (k n : ℕ) (A : Set (Fin n → ℝ)), HasDecompRel k A A := by
+private theorem hasDecompRel_self : ∀ (k n : ℕ) (A : Set (Fin n → ℝ)), HasDecompRel k A A := by
   intro k
   induction k with
   | zero => exact fun n A => hasDecompRel_order_zero A
@@ -335,5 +339,46 @@ theorem hasDecompRel_self : ∀ (k n : ℕ) (A : Set (Fin n → ℝ)), HasDecomp
         by_cases hxU : x ∈ U
         · exact Or.inl hxU
         · exact Or.inr ⟨hx, hxU⟩)
+
+/-- **The Morse criticality lemma.**  The set on which a `C^(k+1)` function is critical is covered
+by a countable set and countably many bounded pieces, on each of which the function has a uniform
+`o(‖y - x‖ ^ (k + 1))` modulus.  Neither the set nor the pieces are assumed measurable. -/
+theorem _root_.TauCeti.exists_cover_of_critical (A : Set (Fin n → ℝ)) {f : (Fin n → ℝ) → ℝ}
+    (hf : ContDiff ℝ (k + 1) f) (hA : ∀ x ∈ A, fderiv ℝ f x = 0) :
+    ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Set (Fin n → ℝ))), A₀.Countable ∧ P.Countable ∧
+      A ⊆ A₀ ∪ ⋃₀ P ∧
+      ∀ S ∈ P, Bornology.IsBounded S ∧ ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
+        ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → |f y - f x| ≤ ε * ‖y - x‖ ^ (k + 1) := by
+  classical
+  obtain ⟨A₀, P, hA₀, hP, hcov, hcar, hflat⟩ := MorseSard.hasDecompRel_self k n A
+  have hfd : ContDiff ℝ k (fderiv ℝ f) := hf.fderiv_right (by exact_mod_cast le_rfl)
+  have hdiff : Differentiable ℝ f := hf.differentiable (by simp)
+  refine ⟨A₀, (fun q : MorseSard.Piece n => q.carrier) '' P, hA₀, hP.image _, ?_, ?_⟩
+  · rw [sUnion_image]
+    exact hcov
+  · rintro S ⟨q, hq, rfl⟩
+    obtain ⟨hq1, hq2, κ, hdisk⟩ := hcar q hq
+    have hbody : IsCompact (q.parametrization '' closedBall (0 : Fin q.dimension → ℝ) 1) :=
+      (isCompact_closedBall _ _).image ((isDisk_iff.mp hdisk).1.continuous)
+    refine ⟨hbody.isBounded.subset hq2, ?_⟩
+    have hcoord : ∀ j : Fin n,
+        MorseSard.FlatAlong q.parametrization q.carrier k
+          fun x ↦ fderiv ℝ f x (Pi.single j (1 : ℝ)) := by
+      intro j
+      refine hflat _ (hfd.clm_apply contDiff_const) (fun x hx => ?_) q hq
+      rw [hA x hx]
+      simp
+    intro ε hε
+    obtain ⟨δ, hδ, hδspec⟩ := MorseSard.abs_sub_le_of_flat_fderiv hdisk hdiff hcoord ε hε
+    refine ⟨δ, hδ, ?_⟩
+    intro x hx y hy hxy
+    obtain ⟨a, ha, rfl⟩ := hq2 hx
+    obtain ⟨b, hb, rfl⟩ := hq2 hy
+    have hb' : a + (1 : ℝ) • (b - a) = b := by module
+    have hlt : ‖q.parametrization a - q.parametrization b‖ < δ := by rwa [norm_sub_rev]
+    have := hδspec a ha b hb hx hy hlt 1 ⟨zero_le_one, le_refl 1⟩
+    rw [hb'] at this
+    rw [norm_sub_rev]
+    exact this
 
 end TauCeti.MorseSard

@@ -30,6 +30,12 @@ points are the points whose coordinates are critical points of the summands.
 * `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
   which the summands are continuously differentiable.
 * `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
+
+The derivative of coordinate replacement is the identity derivative with one row replaced
+(`HasFDerivAt.update_self`). Its scalar instance is adapted from
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/CoordinateChange.lean`.
 -/
 
 public section
@@ -103,3 +109,20 @@ theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt 𝕜 1 (φ i)
 end SumCompEval
 
 end TauCeti
+
+/-- The derivative of a map that replaces one coordinate of its argument by a scalar or
+coordinate-valued function is obtained by replacing that row of the identity derivative. -/
+theorem HasFDerivAt.update_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {ι : Type*} [Finite ι] [DecidableEq ι] {E : ι → Type*}
+    [∀ j, NormedAddCommGroup (E j)] [∀ j, NormedSpace 𝕜 (E j)]
+    (i : ι) {w : (∀ j, E j) → E i} {w' : (∀ j, E j) →L[𝕜] E i} {x : ∀ j, E j}
+    (hw : HasFDerivAt w w' x) :
+    HasFDerivAt (fun x ↦ Function.update x i (w x))
+      (ContinuousLinearMap.pi (Function.update (fun j ↦
+        (ContinuousLinearMap.proj j : (∀ k, E k) →L[𝕜] E j)) i w')) x := by
+  let := Fintype.ofFinite ι
+  refine hasFDerivAt_pi'' fun j ↦ ?_
+  rw [ContinuousLinearMap.proj_pi]
+  rcases eq_or_ne j i with rfl | hji
+  · simpa using hw
+  · simpa [Function.update_apply, hji] using hasFDerivAt_apply (𝕜 := 𝕜) j x

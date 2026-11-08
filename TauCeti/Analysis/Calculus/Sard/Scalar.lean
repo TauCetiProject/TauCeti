@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Sard.MorseVanishing.Basic
 public import TauCeti.Analysis.Calculus.Sard.Oscillation
-import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Algebra.Module.LinearMap.DivisionRing
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.MeasureTheory.Measure.LocallyNull
@@ -38,47 +38,6 @@ namespace TauCeti
 
 variable {n k : ℕ}
 
-/-- **The Morse criticality lemma.**  The set on which a `C^(k+1)` function is critical is covered
-by a countable set and countably many bounded pieces, on each of which the function has a uniform
-`o(‖y - x‖ ^ (k + 1))` modulus.  Neither the set nor the pieces are assumed measurable. -/
-theorem exists_cover_of_critical (A : Set (Fin n → ℝ)) {f : (Fin n → ℝ) → ℝ}
-    (hf : ContDiff ℝ (k + 1) f) (hA : ∀ x ∈ A, fderiv ℝ f x = 0) :
-    ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Set (Fin n → ℝ))), A₀.Countable ∧ P.Countable ∧
-      A ⊆ A₀ ∪ ⋃₀ P ∧
-      ∀ S ∈ P, Bornology.IsBounded S ∧ ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
-        ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → |f y - f x| ≤ ε * ‖y - x‖ ^ (k + 1) := by
-  classical
-  obtain ⟨A₀, P, hA₀, hP, hcov, hcar, hflat⟩ := MorseSard.hasDecompRel_self k n A
-  have hfd : ContDiff ℝ k (fderiv ℝ f) := hf.fderiv_right (by exact_mod_cast le_rfl)
-  have hdiff : Differentiable ℝ f := hf.differentiable (by simp)
-  refine ⟨A₀, (fun q : MorseSard.Piece n => q.carrier) '' P, hA₀, hP.image _, ?_, ?_⟩
-  · rw [sUnion_image]
-    exact hcov
-  · rintro S ⟨q, hq, rfl⟩
-    obtain ⟨hq1, hq2, κ, hdisk⟩ := hcar q hq
-    have hbody : IsCompact (q.parametrization '' closedBall (0 : Fin q.dimension → ℝ) 1) :=
-      (isCompact_closedBall _ _).image (hdisk.1.continuous)
-    refine ⟨hbody.isBounded.subset hq2, ?_⟩
-    have hcoord : ∀ j : Fin n,
-        MorseSard.FlatAlong q.parametrization q.carrier k
-          fun x ↦ fderiv ℝ f x (Pi.single j (1 : ℝ)) := by
-      intro j
-      refine hflat _ (hfd.clm_apply contDiff_const) (fun x hx => ?_) q hq
-      rw [hA x hx]
-      simp
-    intro ε hε
-    obtain ⟨δ, hδ, hδspec⟩ := MorseSard.abs_sub_le_of_flat_fderiv hdisk hdiff hcoord ε hε
-    refine ⟨δ, hδ, ?_⟩
-    intro x hx y hy hxy
-    obtain ⟨a, ha, rfl⟩ := hq2 hx
-    obtain ⟨b, hb, rfl⟩ := hq2 hy
-    have hb' : a + (1 : ℝ) • (b - a) = b := by module
-    have hlt : ‖q.parametrization a - q.parametrization b‖ < δ := by rwa [norm_sub_rev]
-    have := hδspec a ha b hb hx hy hlt 1 ⟨zero_le_one, le_refl 1⟩
-    rw [hb'] at this
-    rw [norm_sub_rev]
-    exact this
-
 /-- **Sard's theorem for `C^n` real-valued functions on `Fin n → ℝ`.**  The critical set is not
 assumed measurable.  This is the sharp finite regularity: `C^n`, not `C^∞`. -/
 private theorem scalar_sard_pi : ∀ (n : ℕ) (u : (Fin n → ℝ) → ℝ), ContDiff ℝ n u →
@@ -96,33 +55,13 @@ private theorem scalar_sard_pi : ∀ (n : ℕ) (u : (Fin n → ℝ) → ℝ), Co
     refine (measure_biUnion_null_iff hP).mpr fun S hS => ?_
     exact volume_image_eq_zero_of_oscillation_pow (hmod S hS).1 (hmod S hS).2
 
-private theorem image_critical_comp_continuousLinearEquiv {E F : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (e : E ≃L[ℝ] F) (u : F → ℝ) :
-    u '' {x | fderiv ℝ u x = 0} = (u ∘ e) '' {y | fderiv ℝ (u ∘ e) y = 0} := by
-  ext z
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    refine ⟨e.symm x, ?_, by simp⟩
-    have hx0 : fderiv ℝ u x = 0 := hx
-    simp only [mem_ofPred_eq, e.comp_right_fderiv, e.apply_symm_apply, hx0,
-      ContinuousLinearMap.zero_comp]
-  · rintro ⟨y, hy, rfl⟩
-    refine ⟨e y, ?_, rfl⟩
-    ext v
-    have hzero : fderiv ℝ (u ∘ e) y = 0 := hy
-    rw [e.comp_right_fderiv] at hzero
-    have := congrArg (fun L : E →L[ℝ] ℝ ↦ L (e.symm v)) hzero
-    simpa using this
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {s : Set E}
 
 private theorem scalar_sard (hf : ContDiff ℝ (finrank ℝ E) f) :
     volume (f '' {x | fderiv ℝ f x = 0}) = 0 := by
   let e : (Fin (finrank ℝ E) → ℝ) ≃L[ℝ] E := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  rw [image_critical_comp_continuousLinearEquiv e f]
+  rw [e.image_vanishingFDeriv_comp f]
   exact scalar_sard_pi _ _ (hf.comp e.contDiff)
 
 /-- **Scalar Morse--Sard at the sharp finite regularity, on an arbitrary set.**
