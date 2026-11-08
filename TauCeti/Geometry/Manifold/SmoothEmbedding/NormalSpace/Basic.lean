@@ -96,6 +96,11 @@ instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     ContinuousSMul 𝕜 (f.NormalSpace x hn) :=
   inferInstanceAs (ContinuousSMul 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
 
+/-- The normal space of an embedding into a finite-dimensional manifold is finite-dimensional. -/
+instance [FiniteDimensional 𝕜 F] (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    FiniteDimensional 𝕜 (f.NormalSpace x hn) :=
+  inferInstanceAs (FiniteDimensional 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+
 /-- Project an ambient tangent vector to its normal class. -/
 noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
