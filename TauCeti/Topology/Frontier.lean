@@ -90,9 +90,9 @@ let alone a holomorphic map.
   lies on the image of the remainder and on the frontier of the image of the whole.
 * `TauCeti.frontier_inter_closure_eq_frontier_inter_frontier` — the frontier of a set meets the
   closure of a subset exactly where it meets that subset's frontier.
-* `TauCeti.frontier_image_subset_of_closure_subset` — for an open injective map whose image
-  closure adds at most a set `t`, the frontier of an image lies on the image of the frontier,
-  together with `t`.
+* `TauCeti.frontier_image_subset_of_closure_subset` — for an open map, injective on the closure of
+  a set, whose image closure adds at most a set `t`, the frontier of the image lies on the image
+  of the frontier, together with `t`.
 -/
 
 public section
@@ -127,12 +127,17 @@ theorem _root_.IsPreconnected.inter_frontier_nonempty (hS : IsPreconnected S)
 
 /-- **The connected component of a point in the complement of a set `F` stays inside any set
 containing the point whose frontier lies in `F`.** Otherwise the component, being preconnected,
-would meet both the set and its complement, hence its frontier, which lies in `F`. -/
-theorem connectedComponentIn_subset_of_frontier_subset {F : Set X} {x₀ : X} (hx₀F : x₀ ∈ Fᶜ)
-    (hs : x₀ ∈ V) (hfr : frontier V ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ V := by
+would meet both the set and its complement, hence its frontier, which lies in `F`. No hypothesis
+places the point outside `F`: for a point of `F` the component is empty. -/
+theorem connectedComponentIn_subset_of_frontier_subset {F : Set X} {x₀ : X} (hs : x₀ ∈ V)
+    (hfr : frontier V ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ V := by
   by_contra h
-  obtain ⟨p, hpC, hpf⟩ := isPreconnected_connectedComponentIn.inter_frontier_nonempty
-    ⟨x₀, mem_connectedComponentIn hx₀F, hs⟩ (Set.not_subset.mp h)
+  have hout := nonempty_of_not_subset h
+  -- the component is nonempty, so `x₀` lies outside `F` and hence in its own component
+  have hx₀ := mem_connectedComponentIn (connectedComponentIn_nonempty_iff.mp
+    (hout.mono sdiff_subset))
+  obtain ⟨p, hpC, hpf⟩ :=
+    isPreconnected_connectedComponentIn.inter_frontier_nonempty ⟨x₀, hx₀, hs⟩ hout
   exact connectedComponentIn_subset _ _ hpC (hfr hpf)
 
 end Straddle
@@ -172,8 +177,7 @@ theorem frontier_image_subset_image_union_frontier_image (hfs : IsOpen (f '' s))
   rcases hpΩ with hpin | hpfr
   · obtain ⟨w, hw, rfl⟩ := hpin
     rcases hcov hw with (hws | hwt) | hwu
-    · exact absurd ⟨mem_image_of_mem f hws, hp⟩
-        (eq_empty_iff_forall_notMem.mp hfs.inter_frontier_eq (f w))
+    · exact (hfs.inter_frontier_eq.subset ⟨mem_image_of_mem f hws, hp⟩).elim
     · obtain ⟨q, hqt, hqs⟩ := mem_closure_iff.mp hp.1 _ hft (mem_image_of_mem f hwt)
       exact absurd hqs (disjoint_right.mp hst hqt)
     · exact Or.inl (mem_image_of_mem f hwu)
@@ -213,7 +217,8 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {
   {t : Set Y}
 
 /-- **The frontier of an image lies on the image of the frontier, plus whatever the closure adds.**
-For an open injective `f` whose image closure satisfies `closure (f '' s) ⊆ f '' closure s ∪ t`,
+For an open map `f`, injective on `closure s`, whose image closure satisfies
+`closure (f '' s) ⊆ f '' closure s ∪ t`,
 
 > `frontier (f '' s) ⊆ f '' frontier s ∪ t`.
 
@@ -224,13 +229,13 @@ closure hypothesis, typically from a compactness statement about the image; it i
 point, but nothing in the argument needs that.
 
 Openness and injectivity are both used, and neither can be dropped: openness keeps the image of
-the interior inside the interior of the image, and injectivity is what turns a difference of
-images into the image of a difference. -/
-theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : Function.Injective f)
+the interior inside the interior of the image, and injectivity on `closure s` is what turns a
+difference of images into the image of a difference. -/
+theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : InjOn f (closure s))
     (hcl : closure (f '' s) ⊆ f '' closure s ∪ t) :
     frontier (f '' s) ⊆ f '' frontier s ∪ t := by
   refine (Set.sdiff_subset_sdiff hcl (hf.image_interior_subset s)).trans ?_
-  rw [Set.union_sdiff_distrib, ← Set.image_sdiff hfi]
+  rw [Set.union_sdiff_distrib, ← hfi.image_sdiff_subset interior_subset_closure]
   exact Set.union_subset_union_right _ Set.sdiff_subset
 
 end OpenInjectiveImage
