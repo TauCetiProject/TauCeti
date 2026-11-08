@@ -61,10 +61,8 @@ theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R
   refine ⟨⟨a • s.weights + b • t.weights, ?_, ?_⟩, rfl⟩
   · intro x
     simpa using add_nonneg (mul_nonneg ha (s.nonneg x)) (mul_nonneg hb (t.nonneg x))
-  · rw [Finsupp.sum_add_index' (by simp) (by simp), Finsupp.sum_smul_index' (by simp),
-      Finsupp.sum_smul_index' (by simp)]
-    rw [← Finsupp.smul_sum, ← Finsupp.smul_sum, s.total, t.total, smul_eq_mul, smul_eq_mul,
-      mul_one, mul_one, hab]
+  · simp [Finsupp.sum_add_index', Finsupp.sum_smul_index', ← Finsupp.mul_sum, s.total, t.total,
+      hab]
 
 end Convexity.StdSimplex
 
