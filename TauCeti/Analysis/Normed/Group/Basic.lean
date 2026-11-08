@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
@@ -20,6 +21,8 @@ An unbounded set stays unbounded after removing a closed ball, since a closed ba
 A bound on the norms of a set with two distinct points is positive, since one of the points is
 nonzero.
 
+A continuous function on `ℝ` with limits at `±∞` is bounded.
+
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
@@ -30,13 +33,16 @@ values there.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
   is unbounded.
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
+* `TauCeti.exists_forall_norm_le_of_tendsto` -- a continuous function `ℝ → F` with limits at `±∞`
+  is bounded.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 -/
 
 public section
 
-open Bornology Metric
+open Bornology Metric Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -70,5 +76,14 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
     Set.MapsTo f s (closedBall (f c) (2 * M)) := fun y hy => by
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
+
+/-- A continuous function `ℝ → F` into a normed group with limits at `±∞` is bounded. -/
+theorem exists_forall_norm_le_of_tendsto {F : Type*} [NormedAddCommGroup F] {A : ℝ → F}
+    {Aminus Aplus : F} (hA : Continuous A) (hbot : Tendsto A atBot (𝓝 Aminus))
+    (htop : Tendsto A atTop (𝓝 Aplus)) : ∃ M, ∀ s, ‖A s‖ ≤ M := by
+  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.mp
+    (hA.isBounded_range_iff_isBigO_atTop_atBot.mpr
+      ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩)
+  exact ⟨M, fun s ↦ hM _ (Set.mem_range_self s)⟩
 
 end TauCeti

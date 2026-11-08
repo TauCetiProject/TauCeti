@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
 public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Interpolation
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Global estimates for a first-order operator on the line
@@ -204,22 +205,8 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
 
 /-! ### Hyperbolic limits -/
 
-/-- A continuous family of operators with limits at `±∞` is uniformly bounded. -/
-theorem exists_forall_norm_le_of_tendsto (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
-    ∃ M, ∀ s, ‖A s‖ ≤ M := by
-  obtain ⟨a, ha⟩ := eventually_atBot.mp (hbot.norm.eventually (Iic_mem_nhds (lt_add_one ‖Aminus‖)))
-  obtain ⟨b, hb⟩ := eventually_atTop.mp (htop.norm.eventually (Iic_mem_nhds (lt_add_one ‖Aplus‖)))
-  obtain ⟨K, hK⟩ := (isCompact_Icc (a := a) (b := b)).exists_bound_of_continuousOn hA.continuousOn
-  refine ⟨max K (max (‖Aminus‖ + 1) (‖Aplus‖ + 1)), fun s ↦ ?_⟩
-  rcases lt_or_ge s a with hs | hs
-  · exact (mem_Iic.mp (ha s hs.le)).trans (le_max_of_le_right (le_max_left _ _))
-  rcases le_or_gt s b with hs' | hs'
-  · exact (hK s ⟨hs, hs'⟩).trans (le_max_left _ _)
-  · exact (mem_Iic.mp (hb s hs'.le)).trans (le_max_of_le_right (le_max_right _ _))
-
-/-- Solving the interior estimate for `∫ ‖u‖²` and substituting it into the derivative estimate
-bounds `∫ ‖u'‖² + ∫ ‖u‖²` by the two error terms. -/
+/-- For real numbers with `U ≤ 2 Z + 2 MA² Y` and `c / 2 * Y ≤ a Z + b W`, where `a, b ≥ 0`,
+`c > 0` and `Z, W ≥ 0`, the sum `U + Y` is at most `(2 + (2 MA² + 1) (2 / c) (a + b)) (Z + W)`. -/
 private theorem add_le_mul_add_mul_of_le_of_le {U Y Z W MA a b c : ℝ} (hc : 0 < c)
     (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
     (hX : U ≤ 2 * Z + 2 * MA ^ 2 * Y) (hY : c / 2 * Y ≤ a * Z + b * W) :
