@@ -58,8 +58,7 @@ theorem exists_forall_le_mul_exp_of_eventually_le {E : Type*} [NormedAddCommGrou
   · have hb := hM x (mem_closedBall_zero_iff.mpr hx.le)
     rw [Real.norm_eq_abs] at hb
     calc f x = f x * Real.exp (c * ‖x‖) * Real.exp (-(c * ‖x‖)) := by
-          rw [mul_assoc, ← Real.exp_add]
-          simp
+          rw [Real.exp_neg, mul_inv_cancel_right₀ (Real.exp_ne_zero _)]
       _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
           mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
 
@@ -79,8 +78,7 @@ theorem _root_.ContinuousOn.exists_forall_le_mul_exp_Ici_of_eventually_le
   · exact (hT t htT).trans (by gcongr; exact (le_max_left K B).trans (le_max_right _ _))
   · have hb : g t * Real.exp (c * t) ≤ B := hB (mem_image_of_mem _ ⟨ht, le_of_not_ge htT⟩)
     calc g t = (g t * Real.exp (c * t)) * Real.exp (-(c * t)) := by
-          rw [mul_assoc, ← Real.exp_add]
-          simp
+          rw [Real.exp_neg, mul_inv_cancel_right₀ (Real.exp_ne_zero _)]
       _ ≤ max 1 (max K B) * Real.exp (-(c * t)) := by
           gcongr
           exact hb.trans ((le_max_right K B).trans (le_max_right _ _))

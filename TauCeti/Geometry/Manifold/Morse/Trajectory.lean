@@ -139,9 +139,11 @@ private theorem eventually_edist_neg_mgradient
     eventually_ge_atTop (1 : ℝ)] with t ht ht1
   simp only [id_eq] at ht
   have hpoint : maximalIntegralCurve (-mgradient I f) (γ 1) (t - 1) = γ t := by
-    simpa using heq (x := t - 1) (by simp only [mem_Ioi]; linarith)
+    simpa only [comp_apply, sub_add_cancel] using
+      heq (x := t - 1) (by simp only [mem_Ioi]; linarith)
+  rw [← sub_eq_add_neg, hpoint, exp_neg_mul_sub, mul_one, ← mul_assoc] at ht
   rw [IsRiemannianManifold.out (I := I)]
-  simpa [← sub_eq_add_neg, hpoint, exp_neg_mul_sub, mul_assoc] using ht
+  exact ht
 
 /-- A prescribed forward negative-gradient curve converging to a nondegenerate critical point
 satisfies an exponential distance bound for every nonnegative time, not only eventually. The
