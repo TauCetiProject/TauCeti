@@ -184,6 +184,46 @@ theorem det_fst_comp_pos_iff_exists_path_of_norm_snd_lt [FiniteDimensional ℝ E
     rwa [← h₀, det_fst_comp_pos_iff_of_norm_snd_lt L.continuous hL 0 1, h₁, ← comp_assoc,
       fst_comp_inl, id_comp]
 
+/-- **Orientations of negative frames multiply.** Let `A` map the open negative cone
+`‖v‖ < ‖u‖` into itself and let `L` be a frame whose nonzero values lie in that cone. Then the
+orientation of the frame `A ∘ L` relative to `E` is the product of the orientations of `A ∘ inl`
+and of `L`: the sign of the determinant of the negative block of `A ∘ L` is the product of those
+of `A ∘ inl` and of `L`. Only the negative block of `A ∘ inl` enters, although the negative block
+of `A ∘ L` also involves the block of `A` from `F` to `E`. -/
+theorem sign_det_fst_comp_comp_of_norm_snd_lt [FiniteDimensional ℝ E] (A : E × F →L[ℝ] E × F)
+    (hA : ∀ z : E × F, ‖z.2‖ < ‖z.1‖ → ‖(A z).2‖ < ‖(A z).1‖) (L : E →L[ℝ] E × F)
+    (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) :
+    SignType.sign ((fst ℝ E F).comp (A.comp L)).det =
+      SignType.sign ((fst ℝ E F).comp (A.comp (inl ℝ E F))).det *
+        SignType.sign ((fst ℝ E F).comp L).det := by
+  -- The frames `A ∘ L.negativeContraction t` stay negative and join `A ∘ L` to
+  -- `A ∘ inl ∘ fst ∘ L`, whose negative block is the product of the two negative blocks.
+  have hfam (t : unitInterval) (u : E) (hu : u ≠ 0) :
+      ‖(A.comp (L.negativeContraction t) u).2‖ < ‖(A.comp (L.negativeContraction t) u).1‖ :=
+    hA _ (L.norm_snd_negativeContraction_lt hL (abs_le.2 ⟨by linarith [t.2.1], t.2.2⟩) hu)
+  have hpos := det_fst_comp_pos_iff_of_norm_snd_lt
+    (L := fun t : unitInterval ↦ A.comp (L.negativeContraction t))
+    ((compL ℝ E (E × F) (E × F) A).continuous.comp
+      (L.continuous_negativeContraction.comp continuous_subtype_val)) hfam 1 0
+  have hcomp : (fst ℝ E F).comp (A.comp (L.negativeContraction 0)) =
+      ((fst ℝ E F).comp (A.comp (inl ℝ E F))).comp ((fst ℝ E F).comp L) := by
+    ext u
+    simp
+  have hdet : (((fst ℝ E F).comp (A.comp (inl ℝ E F))).comp ((fst ℝ E F).comp L)).det =
+      ((fst ℝ E F).comp (A.comp (inl ℝ E F))).det * ((fst ℝ E F).comp L).det :=
+    LinearMap.det_comp _ _
+  simp only [Set.Icc.coe_one, negativeContraction_one, Set.Icc.coe_zero, hcomp, hdet] at hpos
+  rw [← sign_mul]
+  -- Both determinants are nonzero, and they have the same sign.
+  have h₁ := (A.comp L).det_fst_comp_ne_zero_of_norm_snd_lt fun u hu ↦ hA _ (hL u hu)
+  have h₂ : ((fst ℝ E F).comp (A.comp (inl ℝ E F))).det * ((fst ℝ E F).comp L).det ≠ 0 :=
+    mul_ne_zero ((A.comp (inl ℝ E F)).det_fst_comp_ne_zero_of_norm_snd_lt fun u hu ↦
+      hA _ (by simpa using hu)) (L.det_fst_comp_ne_zero_of_norm_snd_lt hL)
+  rcases h₁.lt_or_gt with h | h
+  · rw [sign_neg h, sign_neg ((h₂.lt_or_gt.resolve_right fun h' ↦
+      (hpos.2 h').not_gt h))]
+  · rw [sign_pos h, sign_pos (hpos.1 h)]
+
 end ContinuousLinearMap
 
 namespace Submodule
