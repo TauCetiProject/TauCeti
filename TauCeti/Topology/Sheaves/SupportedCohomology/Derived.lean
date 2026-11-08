@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 public import TauCeti.CategoryTheory.Abelian.Injective.Ext
+public import TauCeti.CategoryTheory.Abelian.RightDerived
 
 /-!
 # Derived supported sections and supported Ext groups
@@ -19,7 +20,7 @@ Thus supported Ext groups and derived supported sections are two computations of
 the same functor, rather than unrelated cohomology carriers.
 
 The construction uses `Closeds.supportedFreeModuleSheafHomEquiv` for the
-representation, `NatTrans.rightDerived` for its transport, and
+representation, `NatIso.rightDerived` for its transport, and
 `CategoryTheory.rightDerivedLinearCoyonedaIsoExt` for the injective-resolution
 computation of Ext. No flasqueness hypothesis on the coefficient sheaf is needed.
 
@@ -84,16 +85,9 @@ coefficient sheaf. The target evaluates the existing supported cohomology preshe
 def rightDerivedSupportedSubmoduleSectionsIso (n : ℕ) :
     (supportedSubmoduleSectionsFunctor (R := R) S W).rightDerived n ≅
       supportedModuleHPresheafFunctor (R := R) S n ⋙
-        (evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).obj (op W) := by
-  let e := supportedSubmoduleSectionsRepresentableIso (R := R) S W
-  let e' : ((linearCoyoneda R _).obj
-      (op ((S.supportedFreeModuleSheafFunctor R).obj W))).rightDerived n ≅
-        (supportedSubmoduleSectionsFunctor (R := R) S W).rightDerived n :=
-    { hom := e.hom.rightDerived n
-      inv := e.inv.rightDerived n
-      hom_inv_id := by rw [← NatTrans.rightDerived_comp, e.hom_inv_id, NatTrans.rightDerived_id]
-      inv_hom_id := by rw [← NatTrans.rightDerived_comp, e.inv_hom_id, NatTrans.rightDerived_id] }
-  exact e'.symm ≪≫ rightDerivedLinearCoyonedaIsoExt R
+        (evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).obj (op W) :=
+  (NatIso.rightDerived (supportedSubmoduleSectionsRepresentableIso (R := R) S W) n).symm ≪≫
+    rightDerivedLinearCoyonedaIsoExt R
     ((S.supportedFreeModuleSheafFunctor R).obj W) n
 
 /-- The derived comparison is the transport of the canonical derived Hom-to-Ext
@@ -104,12 +98,11 @@ lemma rightDerivedSupportedSubmoduleSectionsIso_hom_comp (n : ℕ) :
         (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W n).hom =
       (rightDerivedLinearCoyonedaIsoExt R
         ((S.supportedFreeModuleSheafFunctor R).obj W) n).hom := by
-  dsimp only [rightDerivedSupportedSubmoduleSectionsIso]
-  erw [Iso.trans_hom]
-  dsimp only [Iso.symm_hom]
-  erw [← Category.assoc, ← NatTrans.rightDerived_comp,
-    (supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom_inv_id,
-    NatTrans.rightDerived_id, Category.id_comp]
+  have h :=
+    (NatIso.rightDerived (supportedSubmoduleSectionsRepresentableIso S W) n).hom_inv_id_assoc
+      (rightDerivedLinearCoyonedaIsoExt R ((S.supportedFreeModuleSheafFunctor R).obj W) n).hom
+  rw [NatIso.rightDerived_hom] at h
+  exact h
 
 end
 
