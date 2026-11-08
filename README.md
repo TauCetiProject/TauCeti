@@ -125,9 +125,10 @@ Review bodies and inline review comments are not processed.
 | Allowed labels | Purpose |
 | --- | --- |
 | `dont-repair-in-queue` | Opt out of agent edits during queue integration; work needing repair is withdrawn instead. |
-| `hold`, `keep` | Existing explicit holds; protect against automatic queue housekeeping and pause automated admission. |
+| `hold` | Pause automated review, repair, and admission; protect against automatic housekeeping closure. |
+| `keep` | Protect against automatic housekeeping closure; also pause repair and admission, while allowing review. |
 | `mathlib-overlap` | Flag work adopting an overlapping Mathlib API. |
-| `bug`, `documentation`, `enhancement`, `question`, `help wanted`, `good first issue` | Describe the issue or PR and invite contributors. |
+| `documentation`, `enhancement`, `help wanted` | Describe the issue or PR and invite contributors. |
 
 A hold does not withdraw a contribution already admitted to staging or exempt a PR from
 the no-stacking policy. Generated CI, review, queue, and roadmap-attribution labels are

@@ -49,21 +49,21 @@ async function execute(body, initial = [], failure) {
 }
 
 test('exact standalone commands accept whitespace, CRLF, and multiword labels', async () => {
-  assert.deepEqual(await commands('  dont-repair-in-queue \r\n\t-help wanted\r\ngood first issue'), [
-    ['dont-repair-in-queue', true], ['help wanted', false], ['good first issue', true],
+  assert.deepEqual(await commands('  dont-repair-in-queue \r\n\t-help wanted\r\ndocumentation'), [
+    ['dont-repair-in-queue', true], ['help wanted', false], ['documentation', true],
   ]);
 });
 
 test('last instruction wins independently for each label', async () => {
-  assert.deepEqual(await commands('bug\nquestion\n-bug\n-question\nquestion'), [
-    ['bug', false], ['question', true],
+  assert.deepEqual(await commands('enhancement\ndocumentation\n-enhancement\n-documentation\ndocumentation'), [
+    ['enhancement', false], ['documentation', true],
   ]);
 });
 
 test('prose, quoted labels, case differences, and code remain inert', async () => {
   assert.deepEqual(await commands([
-    'please add bug', '!downstream-check bug', '> bug', '`bug`', 'BUG',
-    '- bug', 'help  wanted', 'bug, question', '$(touch /tmp/label-injection)',
+    'please add enhancement', '!downstream-check enhancement', '> enhancement', '`enhancement`', 'ENHANCEMENT',
+    '- enhancement', 'help  wanted', 'enhancement, documentation', '$(touch /tmp/label-injection)',
     '${{ secrets.APP_PRIVATE_KEY }}', 'process.exit(1)',
   ].join('\n')), []);
 });
@@ -74,6 +74,10 @@ test('authority and generated labels cannot be changed by comments', async () =>
     'ready-to-merge', '-bors-staging', 'on-hold', '-ci-failed',
     'roadmap/none', '-roadmap/Unknown',
   ].join('\n')), []);
+});
+
+test('retired default labels cannot be added or removed by comment', async () => {
+  assert.deepEqual(await commands('bug\n-bug\nquestion\n-question\ngood first issue\n-good first issue'), []);
 });
 
 test('repository-specific labels match the documented policies', async () => {
@@ -87,18 +91,18 @@ test('repository-specific labels match the documented policies', async () => {
 });
 
 test('add/remove preserves unrelated labels and targets the event issue or PR', async () => {
-  const { labels, calls } = await execute('dont-repair-in-queue\n-bug', ['bug', 'bors-staging']);
+  const { labels, calls } = await execute('dont-repair-in-queue\n-enhancement', ['enhancement', 'bors-staging']);
   assert.deepEqual([...labels].sort(), ['bors-staging', 'dont-repair-in-queue']);
   assert.equal(calls.length, 2);
 });
 
 test('absent removals are harmless; unexpected API failures are visible', async () => {
-  const { calls } = await execute('-bug\nquestion');
+  const { calls } = await execute('-enhancement\ndocumentation');
   assert.equal(calls.length, 2);
   for (const status of [403, 422, 500]) {
-    await assert.rejects(execute('-bug', [], status), { status });
+    await assert.rejects(execute('-enhancement', [], status), { status });
   }
-  await assert.rejects(execute('bug', [], 404), { status: 404 });
+  await assert.rejects(execute('enhancement', [], 404), { status: 404 });
 });
 
 test('unrecognized comments make no API calls', async () => {
