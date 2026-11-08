@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
@@ -23,6 +24,9 @@ differentiable Hamiltonian is constant along every integral curve of `X_H`
 (`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`). The linearization of
 `X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
+A Lipschitz bound `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on a ball gives the second-order Taylor bound
+`|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` there
+(`TauCeti.SymplecticForm.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le`).
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
@@ -218,6 +222,40 @@ theorem hamiltonianVectorField_sub (ω : SymplecticForm V) {F G : V → ℝ} {x 
   intro v
   rw [fderiv_sub hF hG]
   simp [map_sub]
+
+open Metric in
+/-- **Second-order Taylor bound for a Hamiltonian.** If the Hamiltonian vector field of a
+differentiable function `G` satisfies `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on the closed ball of
+radius `r` about `y₀`, then `|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` for
+`‖y - y₀‖ ≤ r`, where `‖ω‖` is the operator norm of the form. -/
+theorem abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le (ω : SymplecticForm V)
+    {G : V → ℝ} (hG : Differentiable ℝ G) {y₀ y : V} {L r : ℝ} (hL : 0 ≤ L)
+    (hX : ∀ z ∈ closedBall y₀ r,
+      ‖ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀‖ ≤ L * ‖z - y₀‖)
+    (hy : ‖y - y₀‖ ≤ r) :
+    |G y - G y₀ - fderiv ℝ G y₀ (y - y₀)| ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap‖ * L * ‖y - y₀‖ ^ 2 := by
+  set B := ‖ω.toBilinForm.toContinuousBilinearMap‖
+  -- On the ball of radius `‖y - y₀‖`, `dG(z) - dG(y₀) = ω(X_G(z) - X_G(y₀), ·)` is small.
+  have hball (z : V) (hz : z ∈ closedBall y₀ ‖y - y₀‖) :
+      ‖fderiv ℝ G z - fderiv ℝ G y₀‖ ≤ B * L * ‖y - y₀‖ := by
+    have hz' : ‖z - y₀‖ ≤ ‖y - y₀‖ := by simpa [dist_eq_norm] using hz
+    have hXz := (hX z (mem_closedBall.2 (by rw [dist_eq_norm]; exact hz'.trans hy))).trans
+      (mul_le_mul_of_nonneg_left hz' hL)
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+    rw [sub_apply, ← ω.apply_hamiltonianVectorField, ← ω.apply_hamiltonianVectorField,
+      Real.norm_eq_abs]
+    have h := ω.abs_apply_le_opNorm_mul_norm_mul_norm
+      (ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀) v
+    simp only [map_sub, LinearMap.sub_apply] at h
+    calc _ ≤ B * ‖ω.hamiltonianVectorField G z - ω.hamiltonianVectorField G y₀‖ * ‖v‖ := h
+      _ ≤ B * (L * ‖y - y₀‖) * ‖v‖ := by gcongr
+      _ = _ := by ring
+  have hyb : y ∈ closedBall y₀ ‖y - y₀‖ := by simp [dist_eq_norm]
+  have hmv := (convex_closedBall y₀ ‖y - y₀‖).norm_image_sub_le_of_norm_fderiv_le'
+    (fun z _ ↦ hG z) hball (mem_closedBall_self (norm_nonneg _)) hyb
+  rw [Real.norm_eq_abs] at hmv
+  exact hmv.trans_eq (by ring)
 
 section Continuity
 
