@@ -17,10 +17,8 @@ nonstationary point. Consequently they have a uniform positive lower bound on an
 without stationary points. This includes all covered closed orbits meeting that set, not merely
 primitive ones, and requires neither differentiability nor nondegeneracy.
 
-The local argument uses an interval of times at which nearby points do not return. A sufficiently
-small period would have an integer multiple in that interval, a contradiction. Compactness then
-makes the local bounds uniform. This supplies the period bound used before proving finiteness of
-isolated closed orbits in an action window.
+This supplies the period bound used before proving finiteness of isolated closed orbits in an
+action window.
 -/
 
 public section
@@ -34,6 +32,8 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] (ϕ : Flow ℝ X)
 /-- Near a nonstationary point, positive return times have a common positive lower bound. -/
 theorem exists_pos_period_le_nhds {x : X} (hx : ∃ s, ϕ s x ≠ x) :
     ∃ ε > 0, ∃ U ∈ 𝓝 x, ∀ y ∈ U, ∀ T > 0, ϕ T y = y → ε ≤ T := by
+  -- The local argument uses an interval of times at which nearby points do not return. A
+  -- sufficiently small period would have an integer multiple in that interval, a contradiction.
   obtain ⟨s, hs⟩ := hx
   have hopen : IsOpen {p : ℝ × X | ϕ p.1 p.2 ≠ p.2} :=
     isOpen_ne_fun ϕ.cont' continuous_snd
@@ -61,6 +61,7 @@ theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
     (hmove : ∀ x ∈ K, ∃ s, ϕ s x ≠ x) :
     ∃ ε > 0, ∀ x ∈ K, ∀ T > 0, ϕ T x = x → ε ≤ T := by
   classical
+  -- Compactness makes the local bounds uniform.
   choose ε hε U hU hbound using fun x : K ↦
     ϕ.exists_pos_period_le_nhds (hmove x x.2)
   obtain ⟨c, hc⟩ := hK.elim_nhds_subcover' (fun x hx ↦ U ⟨x, hx⟩)
