@@ -465,22 +465,17 @@ structure IsLowestDominant : Prop where
   norm_coeff_mul_pow_lt : ∀ m, m < s → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c
 
 /-- A series with a lowest dominant degree has bounded weighted coefficient norms. -/
-theorem IsLowestDominant.hasGaussNorm (hf : IsLowestDominant c s f) :
-    f.HasGaussNorm norm c := by
+theorem IsLowestDominant.hasGaussNorm (hf : IsLowestDominant c s f) : f.HasGaussNorm norm c := by
   by_contra h
   exact hf.gaussNorm_pos.ne' (by rw [PowerSeries.gaussNorm_eq, Real.iSup_of_not_bddAbove h])
 
 /-- The coefficient of a series in its lowest dominant degree is nonzero. -/
-theorem IsLowestDominant.coeff_ne_zero (hf : IsLowestDominant c s f) : f.coeff s ≠ 0 := by
-  intro h
-  have hpos := hf.gaussNorm_pos
-  rw [← hf.norm_coeff_mul_pow_eq, h, norm_zero, zero_mul] at hpos
-  exact hpos.false
+theorem IsLowestDominant.coeff_ne_zero (hf : IsLowestDominant c s f) : f.coeff s ≠ 0 := fun h ↦ by
+  simpa [← hf.norm_coeff_mul_pow_eq, h] using hf.gaussNorm_pos
 
 /-- A series with a lowest dominant degree is nonzero. -/
-theorem IsLowestDominant.ne_zero (hf : IsLowestDominant c s f) : f ≠ 0 := by
-  rintro rfl
-  exact hf.coeff_ne_zero (map_zero _)
+theorem IsLowestDominant.ne_zero (hf : IsLowestDominant c s f) : f ≠ 0 :=
+  fun h ↦ hf.coeff_ne_zero (by rw [h, map_zero])
 
 /-- The lowest dominant degree is unique. -/
 theorem IsLowestDominant.unique (hf : IsLowestDominant c s f) (hf' : IsLowestDominant c t f) :
@@ -495,6 +490,11 @@ norm is strictly below the Gauss norm. -/
 theorem IsLowestDominant.le_of_forall_lt (hf : IsLowestDominant c s f)
     (h : ∀ m, m < t → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) : t ≤ s :=
   not_lt.mp fun hst ↦ (h s hst).ne hf.norm_coeff_mul_pow_eq
+
+/-- A series distinguished of degree `0` has lowest dominant degree `0`. -/
+theorem IsDistinguished.isLowestDominant_zero (hf : IsDistinguished c 0 f) :
+    IsLowestDominant c 0 f :=
+  ⟨hf.gaussNorm_pos, hf.norm_coeff_mul_pow_eq, fun m hm ↦ absurd hm m.not_lt_zero⟩
 
 end SeminormedRing
 
