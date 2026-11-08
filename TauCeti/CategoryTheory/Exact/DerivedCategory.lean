@@ -29,8 +29,10 @@ it does not change the quotient (Bühler, Remark 10.5).
 
 ## Main definitions
 
-* `TauCeti.ExactStructure.boundedAcyclic`: the bounded acyclic objects of the homotopy category.
-* `TauCeti.ExactStructure.acyclicBounded`: the same objects in `Kᵇ(C)`.
+* `TauCeti.ExactStructure.boundedAcyclic`: the bounded acyclic objects of the homotopy category,
+  characterized by `TauCeti.ExactStructure.boundedAcyclic_iff`.
+* `TauCeti.ExactStructure.acyclicBounded`: the same objects in `Kᵇ(C)`
+  (`TauCeti.ExactStructure.acyclicBounded_iff`).
 * `TauCeti.ExactStructure.BoundedDerivedCategory`: the bounded derived category `Dᵇ(E)`, with
   the quotient functor `TauCeti.ExactStructure.BoundedDerivedCategory.Q`.
 
@@ -65,6 +67,18 @@ def boundedAcyclic : ObjectProperty (HomotopyCategory C (.up ℤ)) := fun X ↦
   ∃ K : CochainComplex C ℤ, CochainComplex.bounded C K ∧ E.acyclic K ∧
     Nonempty (X ≅ (HomotopyCategory.quotient C (.up ℤ)).obj K)
 
+/-- An object of the homotopy category is bounded acyclic exactly when it is isomorphic to the class
+of a bounded acyclic complex. -/
+theorem boundedAcyclic_iff (X : HomotopyCategory C (.up ℤ)) :
+    E.boundedAcyclic X ↔ ∃ K : CochainComplex C ℤ, CochainComplex.bounded C K ∧ E.acyclic K ∧
+      Nonempty (X ≅ (HomotopyCategory.quotient C (.up ℤ)).obj K) :=
+  Iff.rfl
+
+/-- The class of a bounded acyclic complex is bounded acyclic. -/
+theorem boundedAcyclic_quotient_obj {K : CochainComplex C ℤ} (hb : CochainComplex.bounded C K)
+    (ha : E.acyclic K) : E.boundedAcyclic ((HomotopyCategory.quotient C (.up ℤ)).obj K) :=
+  ⟨K, hb, ha, ⟨Iso.refl _⟩⟩
+
 instance : E.boundedAcyclic.IsClosedUnderIsomorphisms where
   of_iso e := fun ⟨K, hb, ha, ⟨e'⟩⟩ ↦ ⟨K, hb, ha, ⟨e.symm ≪≫ e'⟩⟩
 
@@ -88,6 +102,8 @@ instance : E.boundedAcyclic.IsTriangulatedClosed₃ where
       CochainComplex.bounded_mappingCone f hb₁ hb₂, E.acyclic_mappingCone f ha₁ ha₂,
       ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ T _ hT
         (HomotopyCategory.mappingCone_triangleh_distinguished f) e₁ e₂ ?_)⟩⟩
+    -- The goal is stated through the triangle of the mapping cone; its first morphism is the
+    -- class of `f`.
     change T.mor₁ ≫ e₂.hom = e₁.hom ≫ (HomotopyCategory.quotient C (.up ℤ)).map f
     rw [hf]
     simp
@@ -99,6 +115,12 @@ instance : E.boundedAcyclic.IsTriangulated where
 `Kᵇ(C)`. -/
 def acyclicBounded : ObjectProperty (HomotopyCategory.Bounded C) :=
   E.boundedAcyclic.inverseImage (HomotopyCategory.Bounded.ι C)
+
+/-- An object of `Kᵇ(C)` is acyclic exactly when its image in the homotopy category is. -/
+@[simp]
+theorem acyclicBounded_iff (X : HomotopyCategory.Bounded C) :
+    E.acyclicBounded X ↔ E.boundedAcyclic ((HomotopyCategory.Bounded.ι C).obj X) :=
+  Iff.rfl
 
 instance : E.acyclicBounded.IsTriangulated := by
   dsimp only [acyclicBounded]

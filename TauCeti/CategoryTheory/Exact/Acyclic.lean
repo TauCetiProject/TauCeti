@@ -33,7 +33,8 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 
 * `TauCeti.ExactStructure.AcyclicData`: a factorization of the differentials of a complex
   through conflations.
-* `TauCeti.ExactStructure.acyclic`: the acyclic complexes of an exact structure.
+* `TauCeti.ExactStructure.acyclic`: the acyclic complexes of an exact structure, characterized by
+  `TauCeti.ExactStructure.acyclic_iff`.
 
 ## Main results
 
@@ -81,6 +82,15 @@ structure AcyclicData (K : CochainComplex C ℤ) where
 a deflation followed by an inflation, `K.X n ↠ Z (n + 1) ↣ K.X (n + 1)`, such that every sequence
 `Z n ↣ K.X n ↠ Z (n + 1)` is a conflation. -/
 def acyclic : ObjectProperty (CochainComplex C ℤ) := fun K ↦ Nonempty (E.AcyclicData K)
+
+/-- A complex is acyclic exactly when it has acyclicity data. -/
+theorem acyclic_iff (K : CochainComplex C ℤ) : E.acyclic K ↔ Nonempty (E.AcyclicData K) :=
+  Iff.rfl
+
+variable {E} in
+/-- Acyclicity data make a complex acyclic. -/
+theorem AcyclicData.acyclic {K : CochainComplex C ℤ} (h : E.AcyclicData K) : E.acyclic K :=
+  ⟨h⟩
 
 namespace AcyclicData
 
@@ -157,7 +167,7 @@ noncomputable def shift {K : CochainComplex C ℤ} (h : E.AcyclicData K) (a : �
         K.d (n + a) j ≫ eqToHom (congrArg K.X hj) = K.d (n + a) j' := by
       subst hj; simp
     rw [CochainComplex.shiftFunctor_obj_d', Units.smul_def, Units.smul_def, Preadditive.zsmul_comp,
-      Category.assoc, key _ _ (show n + a + 1 = n + 1 + a by lia), reassoc_of% (h.fac (n + a)),
+      Category.assoc, key (n + a + 1) (n + 1 + a) (by lia), reassoc_of% (h.fac (n + a)),
       key' _ _ (by lia)]
 
 end AcyclicData
@@ -251,6 +261,7 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     rw [(sq (m + 1)).w, ← Category.assoc (e m), (hl m).w, Category.assoc]
     simp
   · refine E.conflation_of_iso ?_ (hglue m)
+    -- The two isomorphisms are given as anonymous structures, so their types are stated.
     exact ShortComplex.isoMk (Iso.refl _)
       (show K.X (m + 1) ⊞ L.X m ≅ (CochainComplex.mappingCone φ).X m from
       { hom := biprod.desc (-(inl φ).v (m + 1) m (by lia)) ((inr φ).f m)
