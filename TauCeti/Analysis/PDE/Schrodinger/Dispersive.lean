@@ -285,7 +285,7 @@ theorem eLpNorm_schrodingerPropagator_le_of_memLp {t : ℝ} (ht : t ≠ 0) {p q 
     (M₀ := c.toNNReal) (M₁ := 1) (fun g hg ↦ eLpNorm_schrodingerPropagator_le ht g hg)
     (by simpa using norm_schrodingerPropagator_le (E := E) (F := ℂ) t) hq f hf).trans_eq ?_
   rw [NNReal.one_rpow, mul_one, ← Real.toNNReal_rpow_of_nonneg (by positivity),
-    ← ENNReal.ofReal.eq_def, hc, ← Real.rpow_mul (by positivity)]
+    ENNReal.ofNNReal_toNNReal, hc, ← Real.rpow_mul (by positivity)]
   congr 3
   ring
 

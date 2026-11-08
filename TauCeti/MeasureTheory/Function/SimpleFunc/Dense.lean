@@ -38,6 +38,8 @@ measurable representative.
 * `MeasureTheory.SimpleFunc.denseRange_toLpTop` — simple functions are dense in real `L∞`.
 * `MeasureTheory.SimpleFunc.integrable_toLp` — the class in `Lᵖ`, `0 < p < ∞`, of a simple
   function is integrable.
+* `MeasureTheory.SimpleFunc.eLpNorm_eq_top_of_not_memLp` — a simple function outside `Lᵖ` for one
+  exponent `0 < p < ∞` has infinite `L^q` norm for every `0 < q < ∞`.
 -/
 
 public section
@@ -155,6 +157,16 @@ has support of finite measure. -/
 theorem integrable_toLp {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {f : SimpleFunc α E}
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : MemLp f p μ) : Integrable (hf.toLp f) μ :=
   ((memLp_iff_integrable hp0 hp).1 hf).congr hf.coeFn_toLp.symm
+
+/-- A simple function outside `Lᵖ` for one exponent `0 < p < ∞` has infinite `L^q` norm for every
+`0 < q < ∞`: by `MeasureTheory.SimpleFunc.memLp_iff`, membership of a simple function in `Lᵖ` does
+not depend on such an exponent. -/
+theorem eLpNorm_eq_top_of_not_memLp {E : Type*} [NormedAddCommGroup E] {p q : ℝ≥0∞}
+    {f : SimpleFunc α E} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq0 : q ≠ 0) (hq : q ≠ ∞)
+    (hf : ¬MemLp f p μ) : eLpNorm f q μ = ∞ := by
+  by_contra h
+  exact hf ((SimpleFunc.memLp_iff hp0 hp).2
+    ((SimpleFunc.memLp_iff hq0 hq).1 (MeasureTheory.memLp_iff.2 (Ne.lt_top h))))
 
 end SimpleFunc
 

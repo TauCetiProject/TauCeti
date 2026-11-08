@@ -645,24 +645,21 @@ private theorem eLpNorm_apply_toLp_le (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) {M
   obtain ⟨U, hU⟩ := exists_linearMap_eq_toLp (μ := μ) T
   -- A simple function outside `L²` has infinite `L¹` and `L²` norms, so the endpoint bounds hold
   -- trivially there.
-  have htop : ∀ (s : SimpleFunc α ℂ), ¬ MemLp s 2 μ → ∀ {r : ℝ≥0∞}, r ≠ 0 → r ≠ ∞ →
-      eLpNorm s r μ = ∞ := fun s hs r hr0 hrtop ↦ by
-    by_contra h
-    refine hs ((SimpleFunc.memLp_iff_integrable two_ne_zero ENNReal.ofNat_ne_top).2 ?_)
-    exact (SimpleFunc.memLp_iff_integrable hr0 hrtop).1 (memLp_iff.2 (lt_top_iff_ne_top.2 h))
   have key := eLpNorm_le_rpow_mul_rpow_mul_eLpNorm_of_ne_top (T := U) (μ := μ) le_top one_le_two
-    hθ hp hq hqtop (M₀ := M₀) (M₁ := M₁) (fun s ↦ ?_) (fun s ↦ ?_) s
+    hθ hp hq hqtop (M₀ := M₀) (M₁ := M₁) (fun g ↦ ?_) (fun g ↦ ?_) s
   · rwa [hU s hs] at key
-  · by_cases hs : MemLp s 2 μ
-    · rw [hU s hs]
-      exact (h₀ _ (SimpleFunc.integrable_toLp two_ne_zero ENNReal.ofNat_ne_top hs)).trans_eq
-        (by rw [eLpNorm_congr_ae hs.coeFn_toLp])
-    · rw [htop s hs one_ne_zero ENNReal.one_ne_top, ENNReal.mul_top (by exact_mod_cast hM₀)]
+  · by_cases hg : MemLp g 2 μ
+    · rw [hU g hg]
+      exact (h₀ _ (SimpleFunc.integrable_toLp two_ne_zero ENNReal.ofNat_ne_top hg)).trans_eq
+        (by rw [eLpNorm_congr_ae hg.coeFn_toLp])
+    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top one_ne_zero
+        ENNReal.one_ne_top hg, ENNReal.mul_top (by exact_mod_cast hM₀)]
       exact le_top
-  · by_cases hs : MemLp s 2 μ
-    · rw [hU s hs]
-      exact (eLpNorm_apply_le_of_norm_le T h₁ _).trans_eq (by rw [eLpNorm_congr_ae hs.coeFn_toLp])
-    · rw [htop s hs two_ne_zero ENNReal.ofNat_ne_top, ENNReal.mul_top (by exact_mod_cast hM₁)]
+  · by_cases hg : MemLp g 2 μ
+    · rw [hU g hg]
+      exact (eLpNorm_apply_le_of_norm_le T h₁ _).trans_eq (by rw [eLpNorm_congr_ae hg.coeFn_toLp])
+    · rw [SimpleFunc.eLpNorm_eq_top_of_not_memLp two_ne_zero ENNReal.ofNat_ne_top two_ne_zero
+        ENNReal.ofNat_ne_top hg, ENNReal.mul_top (by exact_mod_cast hM₁)]
       exact le_top
 
 /-- **Interpolation between the `L¹ → L^∞` and `L² → L²` bounds.** Let `T` be a bounded operator
@@ -704,8 +701,8 @@ theorem eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm (T : Lp ℂ 2 μ →L[ℂ] Lp
     simpa [t, ENNReal.toReal_inv] using this
   have hθ : 2 * t ∈ Set.Ioo (0 : ℝ) 1 := ⟨by positivity, by linarith⟩
   have hq' : q⁻¹ = ENNReal.ofReal (1 - 2 * t) * ∞⁻¹ + ENNReal.ofReal (2 * t) * 2⁻¹ := by
-    rw [ENNReal.inv_top, mul_zero, zero_add, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
-      mul_comm, ← mul_assoc, ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul, ht]
+    rw [ht, ENNReal.ofReal_mul zero_le_two]
+    simp [mul_right_comm _ (ENNReal.ofReal t), ENNReal.mul_inv_cancel]
   have hp' : p⁻¹ = ENNReal.ofReal (1 - 2 * t) * 1⁻¹ + ENNReal.ofReal (2 * t) * 2⁻¹ := by
     have h := inv_conjExponent_eq_of_inv_eq le_top one_le_two (Set.Ioo_subset_Icc_self hθ) hq'
     rwa [(ENNReal.HolderConjugate.top_one).conjExponent_eq,
