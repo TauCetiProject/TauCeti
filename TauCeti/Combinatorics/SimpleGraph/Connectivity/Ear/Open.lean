@@ -235,26 +235,20 @@ private theorem IsVertexConnected.exists_open_ear_of_not_mem_verts [Finite V]
       (Set.mem_toFinset.mpr (H.edge_vert heH.symm))
     have hx₀ : x ≠ u₀ := fun h ↦ hxU (h ▸ hu₀U)
     have hx₁ : x ≠ u₁ := fun h ↦ hxU (h ▸ hu₁U)
-    obtain ⟨q, r, -, -, hqr⟩ := hR.mem_support_iff_exists_append.mp hxR
-    have hp := hqr ▸ hR
-    rw [hqr, Walk.edges_append, List.mem_append] at he
+    -- An edge joining `u₀` to `u₁` forces the path `R` to be that single edge.
+    have key : s(u₀, u₁) ∈ R.edges → False := fun h ↦ by
+      have hxs : x ∈ (R.adj_of_mem_edges h).toWalk.support := hR.eq_adj_toWalk_of_mem_edges h ▸ hxR
+      simp only [Walk.support_cons, Walk.support_nil, List.mem_cons, List.not_mem_nil,
+        or_false] at hxs
+      exact hxs.elim hx₀ hx₁
     have hab := heH.ne
-    rcases he with he | he
-    · -- `u₁` lies on both parts.
-      have h1 : u₁ ∈ q.support := by
-        rcases ha with rfl | rfl <;> rcases hb with rfl | rfl
-        · exact absurd rfl hab
-        · exact q.snd_mem_support_of_mem_edges he
-        · exact q.fst_mem_support_of_mem_edges he
-        · exact absurd rfl hab
-      exact hp.ne_of_mem_support_of_append hx₁.symm h1 r.end_mem_support rfl
-    · have h0 : u₀ ∈ r.support := by
-        rcases ha with rfl | rfl <;> rcases hb with rfl | rfl
-        · exact absurd rfl hab
-        · exact r.fst_mem_support_of_mem_edges he
-        · exact r.snd_mem_support_of_mem_edges he
-        · exact absurd rfl hab
-      exact hp.ne_of_mem_support_of_append hx₀.symm q.start_mem_support h0 rfl
+    rcases ha with ha | ha <;> rcases hb with hb | hb
+    · exact hab (ha.trans hb.symm)
+    · rw [ha, hb] at he
+      exact key he
+    · rw [ha, hb, Sym2.eq_swap] at he
+      exact key he
+    · exact hab (ha.trans hb.symm)
 
 /-- **Single-step open ear existence.** In a `2`-vertex-connected simple graph on a finite vertex
 type, every proper subgraph `H ≠ ⊤` with at least two vertices admits an open ear. -/
