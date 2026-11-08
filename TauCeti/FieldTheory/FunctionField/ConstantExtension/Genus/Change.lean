@@ -42,16 +42,16 @@ common kernel contains `L(E) · k'`, of dimension `ℓ(E)`, with equality once e
 the chosen finite set is regular. Riemann's theorem in `F` and in `F'` evaluates
 `ℓ(Con E) - ℓ(E) = g(F / k) - g(F' / k')`.
 
+This is the δ-invariant formula for the genus change under inseparable base extension. Tate's
+theorem refines it: for a purely inseparable `k' / k` of degree `p`, the drop is divisible by
+`(p - 1) / 2`.
+
 When the genus does not drop, every place has `δ_P = 0`, so the integral-basis argument of the
 separable case applies at every place: `L(Con D) = L(D) · k'` and `ℓ(Con D) = ℓ(D)` for every
 divisor `D` of `F`. With the preservation of degrees, the conorm then carries the canonical class
 to the canonical class and is injective on divisor classes, as for a separable extension of
 constants. This applies to the function field of a smooth curve
 (`TauCeti.AlgebraicGeometry.dim_conorm_of_smooth`).
-
-This is the δ-invariant formula for the genus change under inseparable base extension. Tate's
-theorem refines it: for a purely inseparable `k' / k` of degree `p`, the drop is divisible by
-`(p - 1) / 2`.
 
 ## Main definitions
 
