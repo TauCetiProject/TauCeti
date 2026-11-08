@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Octonion.Derivation
 import TauCeti.Algebra.Lie.Sl2.Basic
+import TauCeti.LinearAlgebra.Matrix.Cartan.Basic
 
 /-!
 # Chevalley generators of type `G₂` in the derivations of the split octonions
@@ -246,11 +247,6 @@ private theorem lie_cartanDerivation_loweringDerivation :
     | (ext i
        fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three])
 
-/-- The exponents `-CMᵢⱼ` of the higher Serre relations of type `G₂` are `0`, `3`, `1` and `0`. -/
-private theorem toNat_neg_G₂ : (-CartanMatrix.G₂ 0 0).toNat = 0 ∧ (-CartanMatrix.G₂ 0 1).toNat = 3 ∧
-    (-CartanMatrix.G₂ 1 0).toNat = 1 ∧ (-CartanMatrix.G₂ 1 1).toNat = 0 := by
-  decide
-
 /-- **The Chevalley generators of `Der 𝕆` satisfy Serre's relations of type `G₂`**, for Mathlib's
 Cartan matrix `CartanMatrix.G₂`, over every commutative ring. -/
 theorem isSerreSystem :
@@ -262,12 +258,12 @@ theorem isSerreSystem :
   lie_H_E := lie_cartanDerivation_raisingDerivation
   lie_H_F := lie_cartanDerivation_loweringDerivation
   ad_pow_lie_E_E := by
-    simp only [Fin.forall_fin_two, toNat_neg_G₂, pow_zero, one_apply_eq_self, lie_self,
-      pow_one, LieAlgebra.ad_apply, ad_pow_raisingDerivation_zero,
+    simp only [Fin.forall_fin_two, CartanMatrix.toNat_neg_G₂, pow_zero, one_apply_eq_self,
+      lie_self, pow_one, LieAlgebra.ad_apply, ad_pow_raisingDerivation_zero,
       lie_raisingDerivation_one_lie_raisingDerivation_one_raisingDerivation_zero, and_self]
   ad_pow_lie_F_F := by
-    simp only [Fin.forall_fin_two, toNat_neg_G₂, pow_zero, one_apply_eq_self, lie_self,
-      pow_one, LieAlgebra.ad_apply, ad_pow_loweringDerivation_zero,
+    simp only [Fin.forall_fin_two, CartanMatrix.toNat_neg_G₂, pow_zero, one_apply_eq_self,
+      lie_self, pow_one, LieAlgebra.ad_apply, ad_pow_loweringDerivation_zero,
       lie_loweringDerivation_one_lie_loweringDerivation_one_loweringDerivation_zero, and_self]
 
 /-! ### The homomorphism from the Serre algebra -/
