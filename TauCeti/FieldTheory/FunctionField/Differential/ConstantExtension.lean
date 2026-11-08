@@ -91,18 +91,6 @@ private theorem isGreatest_cotrace_ratFuncWeilDifferential
         (mt (Place.restrict_ratFunc_eq_infty_iff hX _).mp hQ)]
     simp
 
-omit [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')] in
-/-- The trace form of a finite separable extension `k' / k` is nondegenerate: if
-`Tr (α c) = -Tr α` for every `α`, then `c = -1`. -/
-private theorem eq_neg_one_of_trace_mul_eq_neg
-    {c : k'} (htr : ∀ α : k', Algebra.trace k k' (α * c) = -Algebra.trace k k' α) : c = -1 := by
-  by_contra hne
-  obtain ⟨β, hβ⟩ := Algebra.trace_surjective k k' 1
-  have h1 := htr (β / (c + 1))
-  rw [div_mul_eq_mul_div, eq_neg_iff_add_eq_zero, ← map_add, ← add_div, ← mul_add_one,
-    mul_div_assoc, div_self (by rwa [Ne, add_eq_zero_iff_eq_neg]), mul_one, hβ] at h1
-  exact one_ne_zero h1
-
 /-- The cotrace of `η` is normalised at `P'_∞`: its local component at the place at infinity of
 `k'(X)`, evaluated at `X⁻¹`, equals `-1`. -/
 private theorem repartitionDualComponent_cotrace_ratFuncWeilDifferential
@@ -133,11 +121,16 @@ private theorem repartitionDualComponent_cotrace_ratFuncWeilDifferential
     have hsmul : α • (RatFunc.X : RatFunc k')⁻¹ =
         (RatFunc.X : RatFunc k)⁻¹ • algebraMap k' (RatFunc k') α := by
       rw [Algebra.smul_def, Algebra.smul_def, map_inv₀, hX, mul_comm]
+    -- Rewrite the trace of the component at `α X⁻¹` using the splitting over `P_∞`.
     rw [hsum, hsmul, map_smul,
-      trace_algebraMap_of_constantCompositum_eq_top isIntegrallyClosedIn_ratFunc h,
-      smul_eq_mul, ← Algebra.commutes, ← Algebra.smul_def, map_smul,
+      trace_algebraMap_of_constantCompositum_eq_top isIntegrallyClosedIn_ratFunc h, smul_eq_mul]
+    -- Move `α` back inside to evaluate `η` at `X⁻¹`, where it is `-1`.
+    rw [← Algebra.commutes, ← Algebra.smul_def, map_smul,
       repartitionDualComponent_ratFuncWeilDifferential_inv_X, smul_eq_mul, mul_neg_one]
-  exact eq_neg_one_of_trace_mul_eq_neg htr
+  -- The trace form of `k' / k` is nondegenerate and pairs `c + 1` trivially with every `α`.
+  have hpair (α : k') : Algebra.traceForm k k' (c + 1) α = 0 := by
+    rw [Algebra.traceForm_apply, mul_comm, mul_add, mul_one, map_add, htr, neg_add_cancel]
+  exact eq_neg_of_add_eq_zero_left ((traceForm_nondegenerate k k').1 _ hpair)
 
 /-- **The cotrace of `η` under a constant field extension is `η`**: for a finite separable
 extension `k' / k`, the cotrace from `k(X)` to `k'(X)` carries the canonical Weil differential `η`
