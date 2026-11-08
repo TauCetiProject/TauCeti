@@ -18,7 +18,7 @@ of a product exactly when the sum of the arguments lies in `(-π, π]`
 common instance: for two points of the open upper half-plane the arguments lie in `(0, π)`, so
 the argument of their quotient is the difference of their arguments. It also records that every
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
-A sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball about its
+A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
 the slit plane, and although it jumps across the negative real axis, a smooth `2π`-periodic function
 of the argument is smooth on the whole punctured plane: near the negative real axis it is computed
@@ -114,9 +114,9 @@ namespace TauCeti
 open Complex Metric Set
 
 /-- In polar coordinates about `v`, rotated and scaled by `b`, the open sector
-`{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by the punctured ball of radius `δ`, is
+`{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by the punctured ball of radius `δ`, is
 the image of an open rectangle. -/
-theorem image_polar_rectangle_eq {v b : ℂ} (hb : b ≠ 0) {δ α : ℝ} (hα : α ≤ Real.pi) :
+theorem image_polar_rectangle_eq {v b : ℂ} (hb : b ≠ 0) {δ α : ℝ} :
     (fun p : ℝ × ℝ => v + b * ((p.1 : ℂ) * (Complex.cos (p.2 : ℂ) + Complex.sin (p.2 : ℂ) * I))) ''
         (Ioo 0 (δ / ‖b‖) ×ˢ Ioo (-α) α) =
       {z | z ∈ ball v δ ∧ z ≠ v ∧ |((z - v) / b).arg| < α} := by
@@ -138,8 +138,11 @@ theorem image_polar_rectangle_eq {v b : ℂ} (hb : b ≠ 0) {δ α : ℝ} (hα :
     · beta_reduce at h
       rw [h, sub_self, norm_zero] at hnorm
       exact (mul_pos hb' hr).ne' hnorm.symm
-    · rw [hdiv, arg_mul_cos_add_sin_mul_I hr ⟨by linarith [hθ.1, hθ.2], by linarith [hθ.2]⟩]
-      exact abs_lt.mpr hθ
+    · rw [hdiv]
+      rcases le_or_gt α Real.pi with hα | hα
+      · rw [arg_mul_cos_add_sin_mul_I hr ⟨by linarith [hθ.1, hθ.2], by linarith [hθ.2]⟩]
+        exact abs_lt.mpr hθ
+      · exact (abs_arg_le_pi _).trans_lt hα
   · rintro ⟨hzb, hzv, harg⟩
     have hw : (z - v) / b ≠ 0 := div_ne_zero (sub_ne_zero.mpr hzv) hb
     refine ⟨(‖(z - v) / b‖, ((z - v) / b).arg), ⟨⟨norm_pos_iff.mpr hw, ?_⟩, abs_lt.mp harg⟩, ?_⟩
