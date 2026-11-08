@@ -63,7 +63,6 @@ integrability or compact support assumption on the function.
   these convolutions converge in `L¹(K)` on every compact set `K`.
 * `TauCeti.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors of a bilinear
   product of `Lᵖ` and `Lᵠ` functions converges in `L¹(W)` to the product of the limits.
-* `TauCeti.tendsto_setLIntegral_enorm_bilin_leibniz_normedBump_sub`: the same for the Leibniz sum.
 
 ## References
 
@@ -293,46 +292,6 @@ theorem tendsto_setLIntegral_enorm_bilin_normedBump_sub (B : F →L[ℝ] G →L[
     (tendsto_normedBumpLp (mu := mu) hq hφ (hV.toLp V))
     (fun n => normedBumpLp_ae_eq_convolution hp (φ n) hU)
     hUae (fun n => normedBumpLp_ae_eq_convolution hq (φ n) hV) hVae
-
-/-- Mollifying all four factors of the Leibniz sum by a shrinking normalized bump converges in
-`L¹(W)` to the Leibniz sum of the limits, when the limits are represented on `W` by the classes
-of the unmollified factors. -/
-theorem tendsto_setLIntegral_enorm_bilin_leibniz_normedBump_sub
-    (B : F →L[ℝ] G →L[ℝ] H)
-    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
-    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤) [CompleteSpace F] [CompleteSpace G]
-    {U U' : E → F} {V V' : E → G} (hU : MemLp U p mu) (hU' : MemLp U' p mu)
-    (hV : MemLp V q mu) (hV' : MemLp V' q mu)
-    {φ : ℕ → ContDiffBump (0 : E)} (hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0))
-    {W : Set E} (hWmu : mu W < ⊤) {f f' : E → F} {g g' : E → G}
-    (hUae : hU.toLp U =ᵐ[mu.restrict W] f) (hU'ae : hU'.toLp U' =ᵐ[mu.restrict W] f')
-    (hVae : hV.toLp V =ᵐ[mu.restrict W] g) (hV'ae : hV'.toLp V' =ᵐ[mu.restrict W] g') :
-    Tendsto (fun n => ∫⁻ x in W,
-      ‖(B ((((φ n).normed mu) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] U') x)
-          ((((φ n).normed mu) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] V) x) +
-        B ((((φ n).normed mu) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] U) x)
-          ((((φ n).normed mu) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] V') x)) -
-        (B (f' x) (g x) + B (f x) (g' x))‖ₑ ∂mu) atTop (𝓝 0) := by
-  have hA := tendsto_normedBumpLp (mu := mu) hp hφ (hU.toLp U)
-  have hA' := tendsto_normedBumpLp (mu := mu) hp hφ (hU'.toLp U')
-  have hC := tendsto_normedBumpLp (mu := mu) hq hφ (hV.toLp V)
-  have hC' := tendsto_normedBumpLp (mu := mu) hq hφ (hV'.toLp V')
-  have hAae (n : ℕ) := normedBumpLp_ae_eq_convolution hp (φ n) hU
-  have hA'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hp (φ n) hU'
-  have hCae (n : ℕ) := normedBumpLp_ae_eq_convolution hq (φ n) hV
-  have hC'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hq (φ n) hV'
-  let T := B.holderL mu p q r
-  have hT₁ := (T.continuous₂.tendsto (hU'.toLp U', hV.toLp V)).comp (hA'.prodMk_nhds hC)
-  have hT₂ := (T.continuous₂.tendsto (hU.toLp U, hV'.toLp V')).comp (hA.prodMk_nhds hC')
-  refine tendsto_setLIntegral_enorm_sub_of_tendsto_Lp hWmu (hT₁.add hT₂) ?_ ?_
-  · intro n
-    exact (Lp.coeFn_add _ _).trans
-      ((B.holderL_ae_eq_of_measure_le le_rfl _ _ (hA'ae n) (hCae n)).add
-        (B.holderL_ae_eq_of_measure_le le_rfl _ _ (hAae n) (hC'ae n)))
-  · refine Filter.EventuallyEq.trans (ae_restrict_of_ae (Lp.coeFn_add
-        (T (hU'.toLp U') (hV.toLp V)) (T (hU.toLp U) (hV'.toLp V')))) ?_
-    exact (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hU'ae hVae).add
-      (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hUae hV'ae)
 
 end Bilinear
 
