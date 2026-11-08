@@ -27,9 +27,9 @@ covers comparing a function with its derivative.
 * `TauCeti.eLpNorm_rpow_eq_lintegral`: for an a.e. measurable `ℝ≥0∞`-valued function, the `p`-th
   power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`; `TauCeti.eLpNorm_eq_lintegral_rpow` is
   the same identity solved for the seminorm.
-* `TauCeti.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm of an
-  `ℝ≥0∞`-valued function is subadditive under adding measures, with no measurability assumption
-  and at every `p : ℝ≥0∞`.
+* `TauCeti.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm is subadditive under
+  adding measures, with no measurability assumption, at every `p : ℝ≥0∞` and for functions into any
+  space with an extended norm.
 * `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal` and `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`:
   `ℝ≥0∞`-valued Fatou lemmas for the `Lᵖ` seminorm (for sequences at finite nonzero exponents, and
   along any countably generated filter at arbitrary `p : ℝ≥0∞`).
@@ -63,23 +63,28 @@ theorem eLpNorm_rpow_eq_lintegral {α : Type*} [MeasurableSpace α]
     ← lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
   simp
 
-/-- The `p`-th power of the `Lᵖ` seminorm of an `ℝ≥0∞`-valued function is subadditive under adding
-measures. For `p = 0` or `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No
-measurability is assumed: if the function is not almost everywhere measurable for one of the
-measures, its seminorm there is `∞`. -/
-theorem eLpNorm_add_measure_rpow_le {α : Type*} [MeasurableSpace α] {p : ℝ≥0∞}
-    (f : α → ℝ≥0∞) (μ ν : Measure α) :
+/-- The `p`-th power of the `Lᵖ` seminorm is subadditive under adding measures. For `p = 0` or
+`p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No measurability is assumed: if the
+function is not almost everywhere strongly measurable for one of the measures, its seminorm there
+is `∞`. Only a topology and an extended norm on the codomain are needed. -/
+theorem eLpNorm_add_measure_rpow_le {α : Type*} [MeasurableSpace α] {ε : Type*}
+    [TopologicalSpace ε] [ENorm ε] [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞}
+    (f : α → ε) (μ ν : Measure α) :
     eLpNorm f p (μ + ν) ^ p.toReal ≤ eLpNorm f p μ ^ p.toReal + eLpNorm f p ν ^ p.toReal := by
   by_cases hp0 : p = 0
   · simp [hp0]
   by_cases hp : p = ∞
   · simp [hp]
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  by_cases hm : AEMeasurable f μ ∧ AEMeasurable f ν
-  · rw [eLpNorm_rpow_eq_lintegral hp0 hp (hm.1.add_measure hm.2), lintegral_add_measure,
-      eLpNorm_rpow_eq_lintegral hp0 hp hm.1, eLpNorm_rpow_eq_lintegral hp0 hp hm.2]
-  · rcases not_and_or.1 hm with h | h <;>
-      simp [eLpNorm_of_not_aestronglyMeasurable fun h' ↦ h h'.aemeasurable, hr]
+  have hpow {m : Measure α} (h : AEStronglyMeasurable f m) :
+      eLpNorm f p m ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
+      inv_mul_cancel₀ hr.ne', ENNReal.rpow_one]
+  by_cases hm : AEStronglyMeasurable f μ ∧ AEStronglyMeasurable f ν
+  · rw [hpow (hm.1.add_measure hm.2), lintegral_add_measure, hpow hm.1, hpow hm.2]
+  · rcases not_and_or.1 hm with h | h
+    · simp [eLpNorm_of_not_aestronglyMeasurable h, hr]
+    · simp [eLpNorm_of_not_aestronglyMeasurable h, hr]
 
 /-- For a finite nonzero exponent, the `Lᵖ` seminorm of an a.e. measurable `ℝ≥0∞`-valued function
 is the `p`-th root of the integral of the `p`-th power of that function. -/
