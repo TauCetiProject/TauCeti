@@ -214,8 +214,8 @@ theorem continuous_powMap : Continuous (powMap m r) :=
 
 /-- For `0 ≤ r`, the principal `m`-th root `t ↦ t ^ (1 / m)` from the disc of radius `r ^ m`
 to the disc of radius `r`. It is a section of `TauCeti.rootsOfUnityBall.powMap`
-(`TauCeti.rootsOfUnityBall.powMap_rootMap`); it is not continuous along the negative real
-axis. -/
+(`TauCeti.rootsOfUnityBall.powMap_rootMap`). For `m = 1` it is the identity; for `m > 1` it is
+not continuous at the strictly negative real points of its domain. -/
 noncomputable def rootMap (hr : 0 ≤ r) (t : Metric.ball (0 : ℂ) (r ^ m)) : rootsOfUnityBall m r :=
   ⟨(t : ℂ) ^ ((m : ℂ)⁻¹), by
     have hm : (0 : ℝ) < m := Nat.cast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))

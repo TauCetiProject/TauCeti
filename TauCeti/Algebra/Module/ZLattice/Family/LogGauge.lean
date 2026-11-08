@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.CyclicQuotient
+public import TauCeti.Algebra.Module.ZLattice.Family.Gauge
+public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
 # The logarithmic gauge of a cyclic quotient of a family of tori
@@ -61,23 +64,6 @@ open MulAction Set Filter Topology Complex
 open scoped Real
 
 namespace TauCeti
-
-/-! ### Changing the branch of a logarithm -/
-
-section Branch
-
-variable {E : Type*} [AddCommGroup E] [Module ℂ E]
-
-/-- Two logarithms of the same number, divided by `2πi`, differ by an integer; so the vectors
-`(a / 2πi) • v` and `(b / 2πi) • v` differ by an integer multiple of `v`. -/
-theorem exists_div_two_pi_I_smul_eq_add_zsmul {a b : ℂ} (h : exp a = exp b) (v : E) :
-    ∃ k : ℤ, (a / (2 * π * I)) • v = (b / (2 * π * I)) • v + k • v := by
-  obtain ⟨k, hk⟩ := exp_eq_exp_iff_exists_int.1 h
-  refine ⟨k, ?_⟩
-  have h2 : (2 * π * I : ℂ) ≠ 0 := two_pi_I_ne_zero
-  rw [hk, ← Int.cast_smul_eq_zsmul ℂ, ← add_smul, add_div, mul_div_cancel_right₀ _ h2]
-
-end Branch
 
 variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ] {E : Type*} [AddCommGroup E]
   (P : Metric.ball (0 : ℂ) (r ^ m) → Λ →ₗ[ℤ] E)
@@ -210,40 +196,35 @@ theorem logTranslationMulAction_smul_mk_of_exp_two_pi_I_div_eq {ζ : rootsOfUnit
 pulled-back family `X` to the family `Y`. It is meaningful over `z ≠ 0`, where it does not depend
 on the branch of the logarithm (`TauCeti.torusFamilyLogGauge_mk_of_exp_eq`) and is invariant
 under the normalized action (`TauCeti.torusFamilyLogGauge_smul`); over `z = 0` it uses
-`log 0 = 0`. -/
+`log 0 = 0`. It is the translation gauge `TauCeti.torusFamilyGauge` by
+`-(log z / 2πi) • P (z ^ m) l`, followed by the base change `TauCeti.torusFamilyBaseChangeMap`
+along the power map. -/
 noncomputable def torusFamilyLogGauge :
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := periodAddAction P
     AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E) →
       AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) :=
-  letI := periodAddAction (powPullbackPeriod m r P)
-  letI := periodAddAction P
-  Quotient.lift (fun p ↦ Quotient.mk _ (rootsOfUnityBall.powMap m r p.1,
-      p.2 - (log (p.1 : ℂ) / (2 * π * I)) • P (rootsOfUnityBall.powMap m r p.1) l))
-    fun p q hpq ↦ by
-      obtain ⟨h1, h2⟩ := (mem_orbit_periodAddAction_iff _).1 (AddAction.orbitRel_apply.1 hpq)
-      rw [Quotient.eq, AddAction.orbitRel_apply, mem_orbit_periodAddAction_iff]
-      refine ⟨by rw [h1], ?_⟩
-      rw [h1, sub_sub_sub_cancel_right]
-      exact h2
+  torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r) ∘
+    torusFamilyGauge (powPullbackPeriod m r P)
+      fun z ↦ -((log (z : ℂ) / (2 * π * I)) • P (rootsOfUnityBall.powMap m r z) l)
 
 /-- The logarithmic gauge on representatives, with the principal logarithm. -/
 @[simp] theorem torusFamilyLogGauge_mk (z : rootsOfUnityBall m r) (e : E) :
     letI := periodAddAction (powPullbackPeriod m r P)
     torusFamilyLogGauge P l (Quotient.mk _ (z, e)) =
       Quotient.mk _ (rootsOfUnityBall.powMap m r z,
-        e - (log (z : ℂ) / (2 * π * I)) • P (rootsOfUnityBall.powMap m r z) l) := (rfl)
+        e - (log (z : ℂ) / (2 * π * I)) • P (rootsOfUnityBall.powMap m r z) l) := by
+  rw [sub_eq_add_neg]
+  exact (congrArg (torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r))
+    (torusFamilyGauge_mk _ _ z e)).trans (torusFamilyBaseChangeMap_mk _ _ _ _)
 
 /-- The logarithmic gauge lies over the power map `z ↦ z ^ m`. -/
 @[simp] theorem torusFamilyProjection_torusFamilyLogGauge
     (x : letI := periodAddAction (powPullbackPeriod m r P)
       AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :
     torusFamilyProjection P (torusFamilyLogGauge P l x) =
-      rootsOfUnityBall.powMap m r (torusFamilyProjection (powPullbackPeriod m r P) x) := by
-  induction x using Quotient.inductionOn with
-  | h p =>
-    obtain ⟨z, e⟩ := p
-    rw [torusFamilyLogGauge_mk, torusFamilyProjection_mk, torusFamilyProjection_mk]
+      rootsOfUnityBall.powMap m r (torusFamilyProjection (powPullbackPeriod m r P) x) :=
+  (torusFamilyProjection_baseChangeMap P _ _).trans (congrArg _ (torusFamilyProjection_gauge _ _ x))
 
 /-- **Independence of the branch.** Over `z ≠ 0`, the logarithmic gauge may be computed with any
 logarithm `L` of `z`: two branches differ by `2πi k`, which changes the result by the period
@@ -515,15 +496,6 @@ theorem coe_torusFamilyProjection_torusFamilyLogGaugeEquiv (q) :
 /-! ### The logarithmic gauge is a homeomorphism -/
 
 section Topology
-
-/-- A branch of the `m`-th root near `z₀ ^ m`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
-`m`-th root of every `t ≠ 0`. -/
-private theorem exp_log_add_inv_mul_log_div_pow {z₀ t : ℂ} (hz₀ : z₀ ≠ 0) (ht : t ≠ 0) :
-    exp (log z₀ + (m : ℂ)⁻¹ * log (t / z₀ ^ m)) ^ m = t := by
-  have hm : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  rw [← Complex.exp_nat_mul, mul_add, ← mul_assoc, mul_inv_cancel₀ hm, one_mul, Complex.exp_add,
-    Complex.exp_nat_mul, exp_log hz₀, exp_log (div_ne_zero ht (pow_ne_zero m hz₀)),
-    mul_div_cancel₀ _ (pow_ne_zero m hz₀)]
 
 variable [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℂ E]
   (hcont : ∀ l', Continuous fun t ↦ P t l')
