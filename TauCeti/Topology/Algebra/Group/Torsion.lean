@@ -71,7 +71,7 @@ variable {p : ℕ}
 /-- The continuous maps from a compact space into a discrete `p`-primary torsion group form a
 `p`-primary torsion group: such a map has finite image, so one power of `p` kills all its values
 at once. -/
-theorem _root_.IsAddPGroup.continuousMap {V : Type*} [AddCommGroup V] [TopologicalSpace V]
+theorem _root_.IsAddPGroup.continuousMap {V : Type*} [AddGroup V] [TopologicalSpace V]
     [DiscreteTopology V] (h : IsAddPGroup p V) (X : Type*)
     [TopologicalSpace X] [CompactSpace X] : IsAddPGroup p C(X, V) := by
   refine fun f ↦ ?_

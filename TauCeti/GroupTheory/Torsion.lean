@@ -222,9 +222,7 @@ theorem primaryComponent_eq_bot_of_injective_nsmul
 positive natural number. The hypothesis is used, since `0 ^ k • m = 0` holds for `k = 1` and
 every `m`. -/
 theorem _root_.IsAddPGroup.isAddTorsion {M : Type*} [AddGroup M] (h : IsAddPGroup p M)
-    (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ by
-    obtain ⟨k, hk⟩ := h m
-    exact isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨p ^ k, pow_pos (Nat.pos_of_ne_zero hp) k, hk⟩
+    (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ h.isOfFinAddOrder hp m
 
 /-- **A `p`-primary image of an element of finite order has a `p`-primary preimage.** For prime
 `p`, a homomorphism `f` of additive commutative monoids and an element `m` of finite order with
