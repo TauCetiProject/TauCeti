@@ -503,13 +503,12 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   have hneg : ∀ r ≤ 0, u r = g x := fun r hr => heatCauchyPotential_of_nonpos g hr x
   have hrate : ∀ r, 0 ≤ r → ‖u r - g x‖ ≤ H * Mα * r ^ β := fun r hr =>
     norm_heatCauchyPotential_sub_le hg hgc hr x
-  have hK : 0 ≤ H * Mα := by positivity
   rcases lt_or_gt_of_ne ha with ha | ha
   · rw [abs_of_neg ha]
     have hd : 0 < -a := neg_pos.2 ha
     have hX : 0 ≤ H * (|b - a| * (-a) ^ (β - 1)) := by positivity
     calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hK hneg hrate ha b
+          norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hneg hrate ha b
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by
         gcongr
@@ -531,7 +530,7 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
         linarith
       _ = _ := by ring
   · calc ‖u b - u a‖ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half hβ₀ hK hneg hrate ha hb
+          norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half hβ₀ hneg hrate ha hb
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
         gcongr
