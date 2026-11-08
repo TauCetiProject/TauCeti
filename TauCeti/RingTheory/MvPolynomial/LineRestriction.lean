@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.BigOperators
-public import TauCeti.RingTheory.MvPolynomial.Homogeneous
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Top coefficients of affine line restrictions
