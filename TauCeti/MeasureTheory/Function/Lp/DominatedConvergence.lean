@@ -81,7 +81,7 @@ theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace �
 /-- For a finite exponent `q`, the `Lᵖ` norm of a function on the unit interval `(t, t + 1)`
 tends to zero as `t` tends to infinity in either direction. -/
 theorem tendsto_eLpNorm_restrict_Ioo {F : Type*} [NormedAddCommGroup F] {μ : Measure ℝ}
-    {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞) {g : ℝ → F} (hg : MemLp g q μ) :
+    {q : ℝ≥0∞} (hq : q ≠ ∞) {g : ℝ → F} (hg : MemLp g q μ) :
     Tendsto (fun t ↦ eLpNorm g q (μ.restrict (Set.Ioo t (t + 1)))) (cocompact ℝ) (𝓝 0) := by
   have : (cocompact ℝ).IsCountablyGenerated := by
     rw [cocompact_eq_atBot_atTop]
@@ -90,10 +90,10 @@ theorem tendsto_eLpNorm_restrict_Ioo {F : Type*} [NormedAddCommGroup F] {μ : Me
   have hout (x : ℝ) : ∀ᶠ t in cocompact ℝ, x ∉ Set.Ioo t (t + 1) :=
     Filter.mem_of_superset (isCompact_Icc (a := x - 1) (b := x)).compl_mem_cocompact
       fun t ht hx ↦ ht ⟨by linarith [hx.2], hx.1.le⟩
-  have h := tendsto_eLpNorm_sub_of_ae_tendsto (m := μ) (l := cocompact ℝ) (C := 1) hq0 hq
+  have h := tendsto_eLpNorm_sub_of_ae_tendsto (m := μ) (l := cocompact ℝ) (C := 1) hq
     (f := fun t ↦ (Set.Ioo t (t + 1)).indicator g) (g := 0)
     (Eventually.of_forall fun t ↦ hg.aestronglyMeasurable.indicator measurableSet_Ioo)
-    aestronglyMeasurable_zero hg
+    hg
     (Eventually.of_forall fun t ↦ Eventually.of_forall fun x ↦ by
       rw [Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul]
       exact enorm_indicator_le_enorm_self _ x)

@@ -167,10 +167,9 @@ private theorem tendsto_cocompact_of_ae_eq (hp : p ≠ ∞) (hv : Continuous v)
   have hd := memLp_weakFDeriv_apply_one u
   rw [tendsto_zero_iff_norm_tendsto_zero]
   refine squeeze_zero (fun t ↦ norm_nonneg _) (norm_le_eLpNorm_Ioo_of_ae_eq hv hae) ?_
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   simpa using ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-    (tendsto_eLpNorm_restrict_Ioo hp0 hp hx)).add
-    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (tendsto_eLpNorm_restrict_Ioo hp0 hp hd))
+    (tendsto_eLpNorm_restrict_Ioo hp hx)).add
+    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (tendsto_eLpNorm_restrict_Ioo hp hd))
 
 /-! ### The embedding into `C₀(ℝ, F)` -/
 
