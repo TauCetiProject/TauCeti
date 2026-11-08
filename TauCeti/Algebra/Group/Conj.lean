@@ -184,10 +184,8 @@ theorem ncard_carrier_mk (g : G) :
 theorem ncard_carrier_mk_of_mem_center {M : Type*} [Monoid M] {g : M}
     (hg : g ∈ Submonoid.center M) : (ConjClasses.mk g).carrier.ncard = 1 := by
   refine Set.ncard_eq_one.mpr ⟨g, Set.eq_singleton_iff_unique_mem.mpr ⟨mem_carrier_mk, ?_⟩⟩
-  -- A unit conjugating `x` to the central `g` already conjugates `g` to itself, so `x = g`.
   intro x hx
-  obtain ⟨c, hc⟩ := mk_eq_mk_iff_isConj.mp (mem_carrier_iff_mk_eq.mp hx)
-  exact c.isUnit.mul_left_cancel (hc.eq.trans (Submonoid.mem_center_iff.mp hg c).symm)
+  exact (mk_eq_mk_iff_isConj.mp (mem_carrier_iff_mk_eq.mp hx)).eq_of_right_mem_center hg
 
 /-- **The size of a conjugacy class is the index of the centralizer of any of its members**, in
 `Nat.card` form.
