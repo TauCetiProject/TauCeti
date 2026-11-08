@@ -84,13 +84,6 @@ private theorem aeval_j_monomial (n : ℕ) (a : R) :
   ext τ
   simp [aeval_monomial]
 
-/-- Evaluating `C a * Xᵏ` at a Laurent series `L`, with `a` mapped to a constant Laurent series,
-gives the coefficients of `Lᵏ` scaled by `a`. -/
-private theorem coeff_eval₂_C_mul_X_pow (L : LaurentSeries ℂ) (a : R) (k : ℕ) (n : ℤ) :
-    (eval₂ (HahnSeries.C.comp (algebraMap R ℂ)) L (C a * X ^ k)).coeff n =
-      algebraMap R ℂ a * (L ^ k).coeff n := by
-  simp [Algebra.smul_def]
-
 /-- The Laurent `q`-coefficients of the powers of `j` are integers. -/
 private theorem exists_laurentQExpansion_j_pow_coeff_eq_intCast (k : ℕ) (n : ℤ) :
     ∃ m : ℤ, (UpperHalfPlane.laurentQExpansion 1 j ^ k).coeff n = m := by
@@ -156,8 +149,8 @@ theorem laurentQExpansion_aeval_j_coeff_mem (P : R[X]) (n : ℤ) :
     exact add_mem hp hq
   | monomial k a =>
     obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_pow_coeff_eq_intCast k n
-    rw [← C_mul_X_pow_eq_monomial, coeff_eval₂_C_mul_X_pow, hm]
-    exact mul_mem ⟨a, rfl⟩ ⟨m, map_intCast _ m⟩
+    refine ⟨a * m, ?_⟩
+    simp [← C_mul_X_pow_eq_monomial, Algebra.smul_def, hm]
 
 end Polynomial
 
@@ -232,7 +225,8 @@ theorem exists_natDegree_le_and_aeval_j_eq {f : ℍ → ℂ} (hf : MDiff f)
         (UpperHalfPlane.laurentQExpansion 1 f).coeff n -
           algebraMap R ℂ c * (UpperHalfPlane.laurentQExpansion 1 j ^ (N + 1)).coeff n := by
       rw [UpperHalfPlane.laurentQExpansion_sub one_pos hmer (meromorphicAt_cuspFunction_aeval_j Q),
-        laurentQExpansion_aeval_j, HahnSeries.coeff_sub, coeff_eval₂_C_mul_X_pow]
+        laurentQExpansion_aeval_j, HahnSeries.coeff_sub]
+      simp [Q, Algebra.smul_def]
     have hfN := (HahnSeries.le_orderTop_iff_forall.mp
       ((UpperHalfPlane.orderTop_laurentQExpansion one_pos hmer).symm ▸ hN))
     have hgN : ((-N : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction 1 g) 0 := by
