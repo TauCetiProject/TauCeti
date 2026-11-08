@@ -112,11 +112,11 @@ theorem spanFinrank_le_spanFinrank_map_mkQ_add_spanFinrank {p q : Submodule R M}
   obtain ⟨t, ht, htspan⟩ := (hq.map p.mkQ).exists_span_finset_card_eq_spanFinrank
   obtain ⟨s, hs, hsspan⟩ := hp.exists_span_finset_card_eq_spanFinrank
   let g : M ⧸ p → M := Function.surjInv p.mkQ_surjective
+  have hg : ∀ y, p.mkQ (g y) = y := Function.surjInv_eq p.mkQ_surjective
   -- generators of `p` together with lifts of generators of the image of `q` generate `q`
   have hspan : span R (s ∪ t.image g : Finset M) = q := by
     have hlift : (span R (t.image g : Set M)).map p.mkQ = q.map p.mkQ := by
-      rw [map_span, Finset.coe_image, ← Set.image_comp, Function.comp_surjInv, Set.image_id,
-        htspan]
+      simp [← htspan, ← span_image, Set.image_image, hg]
     have hsup := congrArg (comap p.mkQ) hlift
     rw [comap_map_mkQ, comap_map_mkQ, sup_eq_right.mpr hpq] at hsup
     rw [Finset.coe_union, span_union, hsspan, hsup]
