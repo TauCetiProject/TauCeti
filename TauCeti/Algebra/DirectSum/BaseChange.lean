@@ -13,8 +13,8 @@ public import TauCeti.Algebra.DirectSum.Internal
 
 Mathlib's `DirectSum.Decomposition.baseChange` extends an internal decomposition
 without flatness assumptions. Homogeneous projection of a pure tensor is the
-tensor of its homogeneous projection. This follows from Tau Ceti's
-`DirectSum.map_decompose_shift` applied to the additive map `x ↦ s ⊗ₜ x`.
+tensor of its homogeneous projection. This formula computes homogeneous components
+after scalar extension from the original components.
 
 Adapted from `Mei/Algebra/DirectSum/BaseChange.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
