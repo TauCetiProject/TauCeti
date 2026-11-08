@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
@@ -38,31 +39,6 @@ open scoped NumberField
 namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
-
-open scoped Classical in
-/-- In a number field of unit rank one, the norm of the logarithmic embedding of a unit `v` is the
-index of `⟨v⟩ ⊔ torsion` in the unit group times the regulator. -/
-theorem norm_logEmbedding_eq_index_mul_regulator (hr : rank K = 1) (v : (𝓞 K)ˣ) :
-    ‖logEmbedding K (Additive.ofMul v)‖ =
-      ((Subgroup.closure {v} ⊔ torsion K).index : ℝ) * regulator K := by
-  rw [norm_logEmbedding_eq_mult_abs_log hr v NumberField.Units.dirichletUnitTheorem.w₀,
-    mult_abs_log_eq_index_mul_regulator hr v NumberField.Units.dirichletUnitTheorem.w₀]
-
-/-- In a number field of unit rank one, some unit generates all units modulo torsion. -/
-theorem exists_closure_sup_torsion_eq_top_of_rank_eq_one (hr : rank K = 1) :
-    ∃ g : (𝓞 K)ˣ, Subgroup.closure {g} ⊔ torsion K = ⊤ := by
-  let i : Fin (rank K) := ⟨0, by omega⟩
-  refine ⟨fundSystem K i, ?_⟩
-  have hrange : Set.range (fundSystem K) = {fundSystem K i} := by
-    ext x
-    simp only [Set.mem_range, Set.mem_singleton_iff]
-    constructor
-    · rintro ⟨j, rfl⟩
-      congr 1
-      exact Fin.ext (by omega)
-    · rintro rfl
-      exact ⟨i, rfl⟩
-  simpa only [hrange] using closure_fundSystem_sup_torsion_eq_top (K := K)
 
 open scoped Classical in
 /-- A non-torsion unit in a rank-one number field generates all units modulo torsion exactly
