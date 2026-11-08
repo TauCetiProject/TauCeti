@@ -510,10 +510,9 @@ private lemma typeCRoot_false_mem (a b : Fin n) :
     AddSubmonoid.subset_closure ⟨c, by rw [typeCSimpleRoot_of_lt (h ▸ d.isLt), h]⟩
   by_cases hab : a < b
   · rw [typeCRoot_mk_of_lt hab, signedWeight_false, signedWeight_false]
-    exact AddSubmonoid.sub_mem_of_consecutive_sub_mem_fin _ (fun c : Fin n => weight n c) hS
-      hab.le
+    exact sub_mem_of_consecutive_sub_mem_fin (fun c : Fin n => weight n c) hS hab.le
   · rw [typeCRoot_mk_of_not_lt hab, signedWeight_false, signedWeight_false]
-    exact AddSubmonoid.add_mem_of_consecutive_sub_mem_fin _ (fun c : Fin n => weight n c) hS
+    exact add_mem_of_consecutive_sub_mem_fin (fun c : Fin n => weight n c) hS
       (fun c hc => AddSubmonoid.subset_closure ⟨c, typeCSimpleRoot_of_last hc⟩) a b
 
 private lemma typeCCoroot_false_mem (a b : Fin n) :

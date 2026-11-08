@@ -9,17 +9,20 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Constructions.Pi
 
 /-!
-# Topological support under products, scalar multiplication and continuous maps
+# Topological support on discrete spaces and under products, scalar multiplication and maps
 
-This file identifies the support of a nonzero scalar multiple of a measure and the support of a
-pushforward by a continuous map. It also shows that pushing a measure forward along a
-homeomorphism transports its topological support onto the image of the original support.
+This file identifies support pointwise on discrete spaces, the support of a nonzero scalar
+multiple of a measure, and the support of a pushforward by a continuous map. It also shows that
+pushing a measure forward along a homeomorphism transports its topological support onto the image
+of the original support.
 Finite products have the product of the supports of their factors. A measurable map that is
 continuous at a source support point sends that point into the support of the pushforward;
 global continuity is unnecessary for this inclusion.
 
 ## Main result
 
+* `MeasureTheory.Measure.support_eq_setOf_singleton_ne_zero` — on a discrete space, the support
+  consists exactly of the points with nonzero singleton mass.
 * `MeasureTheory.Measure.support_smul_measure` — multiplying a measure by a nonzero scalar
   preserves its support.
 * `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
@@ -36,6 +39,20 @@ open Set
 open scoped ENNReal Topology
 
 namespace MeasureTheory.Measure
+
+/-- On a discrete topological space, the support of a measure consists exactly of the points with
+nonzero singleton mass. -/
+theorem support_eq_setOf_singleton_ne_zero {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] (μ : Measure X) :
+    μ.support = {x | μ {x} ≠ 0} := by
+  ext x
+  rw [mem_support_iff_forall]
+  constructor
+  · intro hx
+    exact (hx {x} ((isOpen_discrete {x}).mem_nhds (Set.mem_singleton x))).ne'
+  · intro hx U hU
+    exact (pos_iff_ne_zero.mpr hx).trans_le
+      (measure_mono (Set.singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-- The support of a finite product of sigma-finite measures is the product of their supports.
 No compatibility between the topologies and measurable structures is needed. -/
