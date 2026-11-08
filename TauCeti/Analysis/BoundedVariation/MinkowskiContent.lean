@@ -382,19 +382,11 @@ private theorem eventually_volume_thickening_sdiff_le {w : E → ℝ} (hw : Cont
   have hband {x : E} (hx : x ∈ S) : |w x| ≤ η := abs_le.2 ⟨hx.1.le, by linarith [hx.2]⟩
   have hSK : S ⊆ {x | -δ ≤ w x} := fun x hx =>
     (neg_le_neg (hη₁'.trans hη₁δ)).trans hx.1.le
-  -- The `r`-neighbourhood of `s` lies in `s ∪ S`, since `‖Dw‖ ≤ 1 + ε` near the zero level.
-  have hsub : thickening r s \ s ⊆ S := by
-    rintro x ⟨hx, hxs⟩
-    obtain ⟨p, hp, hpx⟩ := mem_thickening_iff.1 hx
-    refine ⟨?_, lt_of_not_ge hxs⟩
-    have := lt_apply_add_of_norm_fderiv_le (hw.differentiable (by simp)) (L := 1 + ε)
-      (a := -η) (b := 0) (by linarith) (fun y hy1 hy2 => ?_) (hp : 0 ≤ w p) (z := x - p) ?_
-    · simpa using this
-    · have := (abs_lt.1 (hgrad (abs_le.2 ⟨by linarith, by linarith⟩))).2
-      linarith
-    · rw [← dist_eq_norm]
-      simp only [η, sub_neg_eq_add, zero_add]
-      exact mul_lt_mul_of_pos_left hpx (by linarith)
+  have hsub : thickening r s \ s ⊆ S :=
+    (hw.differentiable (by simp)).thickening_sdiff_subset_preimage_Ioo_of_norm_fderiv_le
+      (by linarith : (0 : ℝ) < 1 + ε) fun x h1 h2 => by
+        have := (abs_lt.1 (hgrad ((abs_le.2 ⟨h1, by linarith⟩).trans hη₁'))).2
+        linarith
   calc volume (thickening r s \ s) ≤ volume S := measure_mono hsub
     _ ≤ ENNReal.ofReal (η / (1 - 2 * ε)) * perimeter volume ⊤ s :=
         volume_preimage_Ioo_neg_le (hw.of_le (by simp)) hη hε2 ψ hψ1 hC hηC

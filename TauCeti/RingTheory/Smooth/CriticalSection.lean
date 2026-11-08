@@ -244,6 +244,41 @@ private theorem algebraMap_residueField_det_hessian_ne_zero {A A' W W' : Type*} 
   simp only [Matrix.det_mul, map_mul, h0, zero_mul, Matrix.det_one, map_one] at this
   exact zero_ne_one this
 
+/-- **Nondegeneracy of the quadratic part.** In the setting of
+`algebraMap_residueField_det_hessian_ne_zero` with two coordinates, suppose that `f` equals
+`h + a y₀² + b y₀ y₁ + c y₁²` in `W'` for some `h ∈ A'`, where `yᵢ = ∂ᵢ f`. Then the discriminant
+`b² - 4ac` is nonzero in `κ(P')`. Indeed, as `h` is constant along `A'`, the Hessian of `f` along
+`y` is that of the quadratic form. -/
+private theorem discrim_ne_zero_of_eq_algebraMap_add_quadratic {A A' W W' : Type*} [CommRing A]
+    [CommRing A'] [CommRing W] [CommRing W'] [Algebra A W] [Algebra A A'] [Algebra W W']
+    [Algebra A' W'] [Algebra A W'] [IsScalarTower A W W'] [IsScalarTower A A' W']
+    (bW : Basis (Fin 2) W Ω[W⁄A]) (bW' : Basis (Fin 2) W' Ω[W'⁄A']) (f : W)
+    (hbW' : ∀ i, bW' i = D A' W' (algebraMap W W' ((bW.coord i).compDer (D A W) f)))
+    (P' : Ideal W') [P'.IsPrime]
+    (hy : ∀ i, algebraMap W W' ((bW.coord i).compDer (D A W) f) ∈ P') (h : A') (a b c : W')
+    (hfQ : algebraMap W W' f = algebraMap A' W' h +
+      (a * algebraMap W W' ((bW.coord 0).compDer (D A W) f) ^ 2 +
+        b * algebraMap W W' ((bW.coord 0).compDer (D A W) f) *
+          algebraMap W W' ((bW.coord 1).compDer (D A W) f) +
+        c * algebraMap W W' ((bW.coord 1).compDer (D A W) f) ^ 2)) :
+    algebraMap W' P'.ResidueField (discrim a b c) ≠ 0 := by
+  set y : Fin 2 → W' := fun i ↦ algebraMap W W' ((bW.coord i).compDer (D A W) f)
+  set dW' : Fin 2 → Derivation A' W' W' := fun i ↦ (bW'.coord i).compDer (D A' W') with hdW'
+  have hQ : hessian dW' (algebraMap W W' f) =
+      hessian dW' (a * y 0 ^ 2 + b * y 0 * y 1 + c * y 1 ^ 2) := by
+    -- `hfQ` is stated with the unfolded coordinates; `rw [hfQ]` alone leaves the right-hand side
+    -- unfolded and no longer syntactically matching `y`, so restate it in terms of `y` (defeq).
+    rw [show algebraMap W W' f = algebraMap A' W' h +
+      (a * y 0 ^ 2 + b * y 0 * y 1 + c * y 1 ^ 2) from hfQ]
+    ext i j
+    simp only [hessian_apply, map_add, Derivation.map_algebraMap, zero_add]
+  have hbW'' (i : Fin 2) : bW' i = D A' W' (y i) := hbW' i
+  have hD' (i j : Fin 2) : dW' i (y j) = if i = j then 1 else 0 := by
+    simp [dW', ← hbW'', Finsupp.single_apply, eq_comm]
+  have hdet' := algebraMap_residueField_det_hessian_ne_zero bW bW' f hbW' P' hy
+  rw [← hdW', hQ] at hdet'
+  exact (algebraMap_residueField_det_hessian_ne_zero_iff hy hD' a b c).mp hdet'
+
 /-- **Second-order normal form at a nondegenerate critical point.** Let `W` be a smooth
 `A`-algebra, `bW` a basis of `Ω[W⁄A]` with dual partial derivatives `∂₀, ∂₁`, and `P` a prime of
 `W`. Let `f ∈ W` be critical at `P`, in the sense that `∂₀ f, ∂₁ f ∈ P`, with Hessian determinant
@@ -319,17 +354,7 @@ theorem exists_etale_eq_algebraMap_add_quadratic {A W : Type u} [CommRing A] [Co
     have := Ideal.ResidueField.map_comp_map P (RingHom.ker ψ₀) P' _ _
       ψ₀.comap_ker_eq_of_residueField.symm hP'₀
     exact this ▸ hκ.comp ψ₀.residueFieldMap_bijective
-  -- Along the coordinates `y`, the Hessian of `f` is that of the quadratic form, as `h ∈ A'`.
-  set dW' : Fin 2 → Derivation A' W' W' := fun i ↦ (bW'.coord i).compDer (D A' W') with hdW'
-  have hQ : hessian dW' (algebraMap W W' f) =
-      hessian dW' (a * y 0 ^ 2 + b * y 0 * y 1 + c * y 1 ^ 2) := by
-    rw [hfQ]
-    ext i j
-    simp only [hessian_apply, map_add, Derivation.map_algebraMap, zero_add]
-  have hdet' := algebraMap_residueField_det_hessian_ne_zero bW bW' f hbW'' P' hyP'
-  rw [← hdW', hQ] at hdet'
-  exact (algebraMap_residueField_det_hessian_ne_zero_iff hyP'
-    (fun i j ↦ by simp [dW', ← hbW'', Finsupp.single_apply, eq_comm]) a b c).mp hdet'
+  exact discrim_ne_zero_of_eq_algebraMap_add_quadratic bW bW' f hbW'' P' hyP' h a b c hfQ
 
 end CriticalPoint
 

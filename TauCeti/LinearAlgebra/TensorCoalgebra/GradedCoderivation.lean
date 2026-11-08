@@ -1166,7 +1166,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The co-Leibniz identity of a graded coderivation, with both terms written through
 `TensorProduct.map`. -/
-private theorem ReducedTensorWords.IsGradedCoderivation.deconcatenation_comp_eq {q : ℤ}
+theorem ReducedTensorWords.IsGradedCoderivation.deconcatenation_comp_eq {q : ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsGradedCoderivation G q b) :
     deconcatenation R M ∘ₗ b =

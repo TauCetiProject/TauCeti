@@ -36,7 +36,7 @@ scaffolding that localizes the principal-value analysis to one crossing per wind
 * `Contour.eq_of_mem_window_of_eq_of_lt_of_two_mul_lt` — the same, from the strict margins
   returned by `exists_common_window_radius_le`.
 * `Contour.exists_window_dist_lower_bound` — a positive lower bound for `‖γ t - s‖` on the two
-  closed half-windows excluding the crossing.
+  closed half-windows of a (possibly asymmetric) window excluding the crossing.
 * `Contour.exists_complement_windows_dist_lower_bound` — a positive lower bound for
   `‖γ t - s‖` on the complement of the open crossing windows in `[a, b]`.
 * `Contour.sorted_crossing_gluing_induction` — a generic invariant closed under piece
@@ -240,35 +240,36 @@ theorem eq_of_mem_window_of_eq_of_lt_of_two_mul_lt {α : Type*} {γ : ℝ → α
   exact eq_of_mem_window_of_eq_of_le_of_lt ⟨h_endpts.1.le, h_endpts.2.le⟩
     (fun t' ht' hne => by linarith [h_pairwise t' ht' hne]) h_complete ht h_eq
 
-/-- **Positive distance bound on the half-windows**: when the crossing is unique in its window,
-`‖γ t - s‖` is bounded below by a common `m > 0` on the two closed half-windows
-`[t_i - r, t_i - r']` and `[t_i + r', t_i + r]` excluding the crossing. -/
-theorem exists_window_dist_lower_bound {γ : ℝ → ℂ} {s : ℂ} {t_i r : ℝ}
-    (hγ_cont : ContinuousOn γ (Icc (t_i - r) (t_i + r)))
-    (h_unique : ∀ t ∈ Icc (t_i - r) (t_i + r), γ t = s → t = t_i)
-    {r' : ℝ} (hr'_pos : 0 < r') (hr'_le : r' ≤ r) :
+/-- **Positive distance bound on the half-windows**: when the crossing `t_i` is unique in the
+window `[l, u]`, `‖γ t - s‖` is bounded below by a common `m > 0` on the two closed half-windows
+`[l, t_i - r']` and `[t_i + r', u]` excluding the crossing. The window need not be symmetric about
+`t_i`. -/
+theorem exists_window_dist_lower_bound {γ : ℝ → ℂ} {s : ℂ} {l t_i u r' : ℝ}
+    (hγ_cont : ContinuousOn γ (Icc l u))
+    (h_unique : ∀ t ∈ Icc l u, γ t = s → t = t_i)
+    (hr'_pos : 0 < r') (hlr' : l ≤ t_i - r') (hr'u : t_i + r' ≤ u) :
     ∃ m > 0,
-      (∀ t ∈ Icc (t_i - r) (t_i - r'), m ≤ ‖γ t - s‖) ∧
-      (∀ t ∈ Icc (t_i + r') (t_i + r), m ≤ ‖γ t - s‖) := by
-  have h_sub_l : uIcc (t_i - r) (t_i - r') ⊆ Icc (t_i - r) (t_i + r) := by
-    rw [uIcc_of_le (by linarith)]
+      (∀ t ∈ Icc l (t_i - r'), m ≤ ‖γ t - s‖) ∧
+      (∀ t ∈ Icc (t_i + r') u, m ≤ ‖γ t - s‖) := by
+  have h_sub_l : uIcc l (t_i - r') ⊆ Icc l u := by
+    rw [uIcc_of_le hlr']
     exact Icc_subset_Icc le_rfl (by linarith)
-  have h_sub_r : uIcc (t_i + r') (t_i + r) ⊆ Icc (t_i - r) (t_i + r) := by
-    rw [uIcc_of_le (by linarith)]
+  have h_sub_r : uIcc (t_i + r') u ⊆ Icc l u := by
+    rw [uIcc_of_le hr'u]
     exact Icc_subset_Icc (by linarith) le_rfl
   obtain ⟨ml, hml_pos, hml⟩ := exists_curve_dist_lower_bound (hγ_cont.mono h_sub_l)
     fun t ht h_eq => by
       have h_t := h_unique t (h_sub_l ht) h_eq
-      rw [uIcc_of_le (by linarith)] at ht
+      rw [uIcc_of_le hlr'] at ht
       linarith [ht.2]
   obtain ⟨mr, hmr_pos, hmr⟩ := exists_curve_dist_lower_bound (hγ_cont.mono h_sub_r)
     fun t ht h_eq => by
       have h_t := h_unique t (h_sub_r ht) h_eq
-      rw [uIcc_of_le (by linarith)] at ht
+      rw [uIcc_of_le hr'u] at ht
       linarith [ht.1]
   refine ⟨min ml mr, lt_min hml_pos hmr_pos, fun t ht => ?_, fun t ht => ?_⟩
-  · exact (min_le_left _ _).trans (hml t (by rwa [uIcc_of_le (by linarith)]))
-  · exact (min_le_right _ _).trans (hmr t (by rwa [uIcc_of_le (by linarith)]))
+  · exact (min_le_left _ _).trans (hml t (by rwa [uIcc_of_le hlr']))
+  · exact (min_le_right _ _).trans (hmr t (by rwa [uIcc_of_le hr'u]))
 
 /-- **Positive distance bound off the crossing windows**: with every value-`s` parameter of
 `[a, b]` a listed crossing, `‖γ t - s‖` is bounded below by a positive `m` on the complement of
