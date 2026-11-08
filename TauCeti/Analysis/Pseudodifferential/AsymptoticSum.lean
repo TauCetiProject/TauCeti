@@ -75,24 +75,6 @@ theorem contDiff_cutoff_smul_coefficient (χ : FrequencyCutoff (CoordinateSpace 
     ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (t⁻¹ • p.2) • a.coefficient p :=
   ((χ.contDiff (n := ⊤)).comp (contDiff_snd.const_smul t⁻¹)).smul a.contDiff_coefficient
 
-/-- The symbol estimates of `a` bound the Fréchet derivatives in `ξ` of each position derivative
-`∂_x^α a(x, ξ)`: the `i`-th one is at most `G ⟨ξ⟩^(m - i)` for `x` in a compact set. -/
-private theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α : List (Fin n)) (i : ℕ) :
-    ∃ G, 0 ≤ G ∧ ∀ x ∈ K, ∀ ξ,
-      ‖iteratedFDeriv ℝ i (fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x) ξ‖ ≤
-        G * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2) := by
-  choose A hA0 hA using fun β : List (Fin n) => a.exists_bound K hK α β
-  refine ⟨∑ w : Fin i → Fin n, A (List.ofFn w), Finset.sum_nonneg fun w _ => hA0 _,
-    fun x hx ξ => ?_⟩
-  have hg : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x :=
-    (a.contDiff_coefficient.coordinateDeriv_fst α).comp (contDiff_prodMk_right x)
-  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hg _) ξ).trans ?_
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun w _ => ?_
-  have h := hA (List.ofFn w) x hx ξ
-  rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
-
 /-- Leibniz's rule bounds the mixed derivatives of `χ(ξ / t) a(x, ξ)` by the derivatives of the
 dilated cutoff and those of `∂_x^α a(x, ·)`. -/
 private theorem norm_mixedDeriv_cutoff_smul_le_sum (χ : FrequencyCutoff (CoordinateSpace n))
