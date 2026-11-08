@@ -29,8 +29,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 * `MeasureTheory.Measure.ae_eq_preimage_Ioc`,
   `MeasureTheory.Measure.measureReal_eq_sub_of_preimage_Ioo_subset` — for a law without atoms,
   endpoint conventions of an interval with extended bounds do not matter;
-* `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
-  measures with the same pushforward after squaring are equal.
+* `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric real
+  measures, one of them finite, with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
   undoes squaring.
 -/
@@ -125,13 +125,18 @@ theorem volume_Ioc_inter_Ioo_zero_one {a b : ℝ} (ha : 0 ≤ a) (hb : b ≤ 1) 
   rw [← Real.volume_Ioo]
   exact measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, ha.trans_lt ht.1, ht.2.trans_le hb⟩
 
-/-- Two reflection-invariant finite measures on `ℝ` are equal if their pushforwards under
-squaring are equal. -/
+/-- Two reflection-invariant measures on `ℝ`, one of them finite, are equal if their pushforwards
+under squaring are equal. The other is then finite as well, since squaring preserves total mass. -/
 theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [IsFiniteMeasure ν]
     (hμneg : μ.map (fun x : ℝ ↦ -x) = μ) (hνneg : ν.map (fun x : ℝ ↦ -x) = ν)
     (hsq : μ.map (fun x : ℝ ↦ x ^ 2) = ν.map (fun x : ℝ ↦ x ^ 2)) :
     μ = ν := by
+  have hmeas : Measurable fun x : ℝ ↦ x ^ 2 := by fun_prop
+  have : IsFiniteMeasure μ := by
+    have h : μ univ = ν univ := by
+      simpa [Measure.map_apply hmeas MeasurableSet.univ] using congr_arg (· univ) hsq
+    exact ⟨h ▸ measure_lt_top ν univ⟩
   apply Measure.ext_of_Iic
   intro x
   rw [← measureReal_eq_measureReal_iff]
