@@ -65,10 +65,11 @@ whole algebra.
   is trivial**.
 * `LieAlgebra.hasTrivialRadical_of_equiv`: triviality of the radical transfers along an
   isomorphism of Lie algebras.
-* `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Noetherian Lie algebra by
-  its radical has trivial radical**, with `LieAlgebra.radical_le_of_hasTrivialRadical_quotient`
-  and `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the
-  only solvable one, whose quotient has trivial radical.
+* `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Lie algebra with
+  solvable radical (for instance a Noetherian one) by its radical has trivial radical**, with
+  `LieAlgebra.radical_le_of_hasTrivialRadical_quotient` and
+  `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the only
+  solvable one, whose quotient has trivial radical.
 
 ## References
 
@@ -137,19 +138,21 @@ theorem isSolvable_of_isSolvable_map (h₁ : IsSolvable ↥(I ⊓ f.ker))
 
 /-- A surjective Lie homomorphism with solvable kernel carries the solvable radical onto the
 solvable radical. -/
-theorem radical_map_eq [IsNoetherian R L] (h : Function.Surjective f)
-    (hker : IsSolvable ↥f.ker) : (radical R L).map f = radical R L' := by
-  have hL' : IsNoetherian R L' :=
-    isNoetherian_of_surjective f.toLinearMap (LinearMap.range_eq_top.mpr h)
+theorem radical_map_eq (h : Function.Surjective f) (hker : IsSolvable ↥f.ker) :
+    (radical R L).map f = radical R L' := by
   have hmap : ∀ J : LieIdeal R L', (J.comap f).map f = J := fun J => by
     rw [map_comap_eq (f.isIdealMorphism_of_surjective h),
       f.idealRange_eq_top_of_surjective h, top_inf_eq]
-  refine le_antisymm ((LieIdeal.solvable_iff_le_radical R L' _).mp (isSolvable_map f _ h)) ?_
-  have hcomap : IsSolvable ↥((radical R L').comap f) :=
+  refine le_antisymm (map_le_iff_le_comap.mpr (sSup_le fun I hI => ?_)) ?_
+  · have : IsSolvable ↥I := hI
+    exact map_le_iff_le_comap.mp (le_sSup (isSolvable_map f I h))
+  refine sSup_le fun J hJ => ?_
+  have : IsSolvable ↥J := hJ
+  have hcomap : IsSolvable ↥(J.comap f) :=
     isSolvable_of_isSolvable_map f _ (le_solvable_ideal_solvable inf_le_right hker)
       (by rw [hmap]; infer_instance)
-  calc radical R L' = ((radical R L').comap f).map f := (hmap _).symm
-    _ ≤ (radical R L).map f := map_mono ((LieIdeal.solvable_iff_le_radical R L _).mp hcomap)
+  calc J = (J.comap f).map f := (hmap _).symm
+    _ ≤ (radical R L).map f := map_mono (le_sSup hcomap)
 
 /-! ### Ideals inside an ideal -/
 
@@ -260,11 +263,13 @@ theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ 
 
 variable (R L)
 
-/-- **The quotient of a Noetherian Lie algebra by its solvable radical has trivial radical.**
+/-- **The quotient of a Lie algebra with solvable radical by its radical has trivial radical.**
+The radical of a Noetherian Lie algebra is solvable (`LieAlgebra.radicalIsSolvable`), so this
+applies to every Noetherian Lie algebra.
 
 Over a field of characteristic zero, where `LieAlgebra.HasTrivialRadical` is equivalent to
 semisimplicity by Cartan's criterion, this says that `L ⧸ radical R L` is semisimple. -/
-instance hasTrivialRadical_quotient_radical [IsNoetherian R L] :
+instance hasTrivialRadical_quotient_radical [IsSolvable ↥(radical R L)] :
     HasTrivialRadical R (L ⧸ radical R L) where
   radical_eq_bot := by
     rw [← LieIdeal.radical_map_eq (radical R L).mkQ (radical R L).surjective_mkQ
@@ -275,19 +280,20 @@ variable {R L}
 
 /-- **The radical is the smallest ideal whose quotient has trivial radical.**  Its image in such a
 quotient is a solvable ideal, hence trivial. -/
-theorem radical_le_of_hasTrivialRadical_quotient [IsNoetherian R L] (I : LieIdeal R L)
-    [HasTrivialRadical R (L ⧸ I)] : radical R L ≤ I := by
-  have hbot : (radical R L).map I.mkQ = ⊥ :=
-    HasTrivialRadical.eq_bot_of_isSolvable
-      (hI := LieIdeal.isSolvable_map I.mkQ _ I.surjective_mkQ) _
-  rwa [LieIdeal.map_eq_bot_iff, I.mkQ_ker] at hbot
+theorem radical_le_of_hasTrivialRadical_quotient (I : LieIdeal R L)
+    [HasTrivialRadical R (L ⧸ I)] : radical R L ≤ I :=
+  sSup_le fun J hJ => by
+    have : IsSolvable ↥J := hJ
+    have hbot : J.map I.mkQ = ⊥ :=
+      HasTrivialRadical.eq_bot_of_isSolvable
+        (hI := LieIdeal.isSolvable_map I.mkQ _ I.surjective_mkQ) _
+    rwa [LieIdeal.map_eq_bot_iff, I.mkQ_ker] at hbot
 
 /-- **The radical is the unique solvable ideal whose quotient has trivial radical.** -/
 @[simp]
-theorem hasTrivialRadical_quotient_iff [IsNoetherian R L] (I : LieIdeal R L) [IsSolvable ↥I] :
+theorem hasTrivialRadical_quotient_iff (I : LieIdeal R L) [IsSolvable ↥I] :
     HasTrivialRadical R (L ⧸ I) ↔ I = radical R L :=
-  ⟨fun _ => le_antisymm ((LieIdeal.solvable_iff_le_radical R L I).mp ‹_›)
-      (radical_le_of_hasTrivialRadical_quotient I),
-    fun h => h ▸ hasTrivialRadical_quotient_radical R L⟩
+  ⟨fun _ => le_antisymm (le_sSup ‹_›) (radical_le_of_hasTrivialRadical_quotient I),
+    fun h => by subst h; exact hasTrivialRadical_quotient_radical R L⟩
 
 end LieAlgebra
