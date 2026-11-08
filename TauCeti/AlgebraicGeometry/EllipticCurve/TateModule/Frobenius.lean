@@ -16,8 +16,6 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Reduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
 -- Proof-only: local-field structures on finite subextensions, and descent of points to them.
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
--- Proof-only: at additive reduction, `E₀` has no torsion prime to the residue characteristic.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
 
 /-!
 # Torsion prime to `p` at good, multiplicative and additive reduction

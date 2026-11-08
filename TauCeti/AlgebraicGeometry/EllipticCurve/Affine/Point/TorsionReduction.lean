@@ -16,6 +16,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 -- Proof-only: the torsion of the nonsingular points of a singular cubic.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Singular
+-- Proof-only: integers outside `u` are nonzero in the residue field.
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 
 /-!
 # Torsion and reduction
@@ -497,14 +499,6 @@ section BadReduction
 
 variable [IsIntegral (u.valuation F).valuationSubring W] [W.IsElliptic] [DecidableEq F]
 
-omit [IsIntegral (u.valuation F).valuationSubring W] [W.IsElliptic] [DecidableEq F] in
-/-- An integer outside `u` is nonzero in the residue field of the valuation ring of `u`. -/
-private theorem natCast_ne_zero_residueField {n : ℕ} (hn : (n : A) ∉ u.asIdeal) :
-    (n : ResidueField (u.valuation F).valuationSubring) ≠ 0 := by
-  rw [← map_natCast (residue _), Ne, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
-  push_cast
-  rwa [← map_natCast (algebraMap A F), HeightOneSpectrum.valuation_lt_one_iff_mem]
-
 /-- **At bad reduction, nonsingular reduction has no torsion prime to `u` in its kernel**
 (Silverman AEC VII.3.1(b)): a point in `E₀(F)` killed by an integer `n ∉ u` that reduces to the
 point at infinity is the point at infinity. -/
@@ -535,7 +529,7 @@ theorem natCard_nonsingularReduction_inf_torsionBy_dvd (hΔ : u.valuation F W.Δ
     rw [map_Δ, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
     rwa [← integralModel_Δ_eq (u.valuation F).valuationSubring W,
       ValuationSubring.algebraMap_apply] at hΔ
-  have hnk := natCast_ne_zero_residueField (F := F) u hn
+  have hnk := (u.natCast_residueField_valuationSubring_eq_zero_iff (K := F) n).not.2 hn
   -- reduction is injective on the `n`-torsion with nonsingular reduction
   let ρ := (W.nonsingularReductionHom (u.valuation F)).comp
     (AddSubgroup.inclusion (inf_le_left (b := AddSubgroup.torsionBy W.Point n)))
@@ -572,8 +566,8 @@ theorem nonsingularReduction_inf_torsionBy_eq_bot
         AddSubgroup.torsionBy _ n := by
       have h0 : n • (⟨P, hP₀⟩ : W.nonsingularReduction (u.valuation F)) = 0 := Subtype.ext hnP
       rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, h0, _root_.map_zero]
-    rwa [torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero hΔ hc₄
-      (natCast_ne_zero_residueField (F := F) u hn), AddSubgroup.mem_bot] at hmem
+    have hnk := (u.natCast_residueField_valuationSubring_eq_zero_iff (K := F) n).not.2 hn
+    rwa [torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero hΔ hc₄ hnk, AddSubgroup.mem_bot] at hmem
   exact AddSubgroup.mem_bot.2
     (congrArg Subtype.val (eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero u hn hρ hnP))
 
