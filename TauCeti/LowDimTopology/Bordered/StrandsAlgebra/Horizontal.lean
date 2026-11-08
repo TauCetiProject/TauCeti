@@ -91,6 +91,7 @@ theorem mem_addHorizontal {φ : StrandDiagram α} {U : Finset α} {i j : α} :
       false_and, not_false_eq_true, true_and, false_or, Option.mem_def]
     grind
 
+@[simp]
 theorem addHorizontal_apply_of_mem (φ : StrandDiagram α) {U : Finset α} {i : α} (hi : i ∈ U) :
     φ.addHorizontal U i = some i := by
   simp [addHorizontal_apply, hi]
@@ -167,6 +168,7 @@ theorem target_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjo
     · exact ⟨j, Or.inl ⟨hj, rfl⟩⟩
 
 /-- On a point outside `U`, `φ.addHorizontal U` agrees with `φ` when `U` avoids the target. -/
+@[simp]
 theorem addHorizontal_apply_of_notMem {φ : StrandDiagram α} {U : Finset α}
     (ht : Disjoint φ.target U) {i : α} (hi : i ∉ U) : φ.addHorizontal U i = φ i := by
   ext j
