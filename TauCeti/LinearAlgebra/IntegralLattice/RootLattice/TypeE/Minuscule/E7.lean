@@ -46,10 +46,14 @@ private noncomputable def e7Basis : Basis (Fin 7) ℤ typeE₇RootLattice :=
         ext x
         rw [mem_typeE₇RootLattice_carrier_iff, mem_ofGramMatrix_basisFun_carrier_iff]))
 
-private theorem coe_e7Basis (i : Fin 7) : (e7Basis i : Fin 7 → ℚ) = typeE₇SimpleRoot i := by
-  simp only [e7Basis, Basis.map_apply, LinearEquiv.coe_ofEq_apply, ofGramMatrix.coe_basis]
+private theorem simpleRoot_eq_basisFun (i : Fin 7) :
+    typeE₇SimpleRoot i = Pi.basisFun ℚ (Fin 7) i := by
   ext j
   simp [typeE₇SimpleRoot_apply, Pi.basisFun_apply, Pi.single_apply]
+
+private theorem coe_e7Basis (i : Fin 7) : (e7Basis i : Fin 7 → ℚ) = typeE₇SimpleRoot i := by
+  simp only [e7Basis, Basis.map_apply, LinearEquiv.coe_ofEq_apply, ofGramMatrix.coe_basis,
+    simpleRoot_eq_basisFun]
 
 /-- The dual E₇ lattice identified with fundamental-weight coordinates by simple-root pairing. -/
 noncomputable def typeE₇DualWeightEquiv : typeE₇RootLattice.dualCarrier ≃ₗ[ℤ] (Fin 7 → ℤ) :=
@@ -191,13 +195,17 @@ private def e7Coordinates (w : Fin 7 → ℤ) (j : Fin 7) : ℚ :=
 
 private theorem e7Coordinates_pairing (w : Fin 7 → ℤ) (j : Fin 7) :
     ∑ i, (CartanMatrix.E 7 j i : ℚ) * e7Coordinates w i = w j := by
-  fin_cases j <;>
-    norm_num [e7Coordinates, e7TwiceInverse, Fin.sum_univ_succ, CartanMatrix.E] <;> ring
-
-private theorem simpleRoot_eq_basisFun (i : Fin 7) :
-    typeE₇SimpleRoot i = Pi.basisFun ℚ (Fin 7) i := by
-  ext j
-  simp [typeE₇SimpleRoot_apply, Pi.basisFun_apply, Pi.single_apply]
+  have h (k : Fin 7) :
+      ∑ i, (CartanMatrix.E 7 j i : ℚ) * e7TwiceInverse i k =
+        if j = k then 2 else 0 := by
+    have h := congrFun (congrFun cartanMatrix_E7_mul_e7TwiceInverse j) k
+    simp only [Matrix.mul_apply, Matrix.ofNat_apply] at h
+    exact_mod_cast h
+  calc
+    _ = (∑ k, (∑ i, (CartanMatrix.E 7 j i : ℚ) * e7TwiceInverse i k) * w k) / 2 := by
+      simp only [e7Coordinates, div_eq_mul_inv, Finset.mul_sum, Finset.sum_mul, mul_assoc]
+      rw [Finset.sum_comm]
+    _ = w j := by simp [h]
 
 private theorem e7Form_eq_ofGramMatrix :
     typeE₇RootLattice.form =
@@ -222,6 +230,14 @@ private theorem coe_eq_e7Coordinates (x : typeE₇RootLattice.dualCarrier) :
       e7Coordinates_pairing]
     simp
   exact fun y ↦ LinearMap.congr_fun h y
+
+/-- Rational simple-root coordinates of a dual vector with given fundamental-weight
+coordinates are obtained by applying half the integral twice-inverse Cartan matrix. -/
+theorem coe_typeE₇DualWeightEquiv_symm_apply (w : Fin 7 → ℤ) (j : Fin 7) :
+    (typeE₇DualWeightEquiv.symm w : Fin 7 → ℚ) j =
+      (∑ i, (e7TwiceInverse j i : ℚ) * w i) / 2 := by
+  simpa only [LinearEquiv.apply_symm_apply, e7Coordinates] using
+    congrFun (coe_eq_e7Coordinates (typeE₇DualWeightEquiv.symm w)) j
 
 private theorem norm_eq_e7Coordinates (x : typeE₇RootLattice.dualCarrier) :
     typeE₇RootLattice.form x x =

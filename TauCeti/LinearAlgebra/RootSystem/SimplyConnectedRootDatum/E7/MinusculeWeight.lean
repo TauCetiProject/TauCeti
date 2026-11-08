@@ -106,7 +106,7 @@ def e7MinusculeWeight : Fin 56 → Fin 7 → ℤ := ![
 
 /-- Twice the inverse of the type-`E₇` Cartan matrix in Bourbaki node order (Plate VI).
 Its integral entries allow finite checks of the weight-lattice quadratic form. -/
-@[expose] def e7TwiceInverse : Matrix (Fin 7) (Fin 7) ℤ := !![
+def e7TwiceInverse : Matrix (Fin 7) (Fin 7) ℤ := !![
   4, 4, 6, 8, 6, 4, 2;
   4, 7, 8, 12, 9, 6, 3;
   6, 8, 12, 16, 12, 8, 4;
@@ -114,6 +114,11 @@ Its integral entries allow finite checks of the weight-lattice quadratic form. -
   6, 9, 12, 18, 15, 10, 5;
   4, 6, 8, 12, 10, 8, 4;
   2, 3, 4, 6, 5, 4, 3]
+
+/-- The E₇ Cartan matrix times its integral twice-inverse is twice the identity. -/
+theorem cartanMatrix_E7_mul_e7TwiceInverse : CartanMatrix.E 7 * e7TwiceInverse = 2 := by
+  rw [CartanMatrix.E_seven_eq]
+  decide
 
 private theorem bounded_weights_exhaustion : ∀ w : Fin 7 → Fin 3,
     (∑ i, (∑ j, e7TwiceInverse i j * ((w j : ℤ) - 1)) * ((w i : ℤ) - 1)) = 3 →
