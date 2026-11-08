@@ -402,8 +402,7 @@ junk value `0` satisfies the bound too. -/
 theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormedRing A] [Module R A]
     [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ}
     (h : ∀ n, ‖a‖ ^ n * ‖coeff n F‖ ≤ c) : ‖F.evalScalar a‖ ≤ c := by
-  have hc : 0 ≤ c := (mul_nonneg (pow_nonneg (norm_nonneg a) 0) (norm_nonneg _)).trans (h 0)
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hc fun n ↦ ?_
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le fun n ↦ ?_
   -- `‖aⁿ‖ ≤ ‖a‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is treated separately
   cases n with
   | zero => simpa using h 0
