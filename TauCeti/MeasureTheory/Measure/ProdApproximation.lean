@@ -58,45 +58,20 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
 private theorem isSetSemiring_measurable_prod :
     IsSetSemiring
       (Set.image2 (· ×ˢ ·) {s : Set X | MeasurableSet s} {t : Set Y | MeasurableSet t}) where
-  empty_mem := by
-    refine ⟨∅, MeasurableSet.empty, Set.univ, MeasurableSet.univ, ?_⟩
-    simp
+  empty_mem := ⟨∅, .empty, univ, .univ, empty_prod⟩
   inter_mem := by
     rintro _ ⟨s, hs, t, ht, rfl⟩ _ ⟨u, hu, v, hv, rfl⟩
-    have hs : MeasurableSet s := by simpa only [Set.mem_ofPred_eq] using hs
-    have ht : MeasurableSet t := by simpa only [Set.mem_ofPred_eq] using ht
-    have hu : MeasurableSet u := by simpa only [Set.mem_ofPred_eq] using hu
-    have hv : MeasurableSet v := by simpa only [Set.mem_ofPred_eq] using hv
-    refine ⟨s ∩ u, hs.inter hu, t ∩ v, ht.inter hv, ?_⟩
-    ext
-    simp only [Set.mem_prod, Set.mem_inter_iff]
-    grind
+    exact ⟨s ∩ u, hs.inter hu, t ∩ v, ht.inter hv, prod_inter_prod.symm⟩
   sdiff_eq_sUnion' := by
     rintro _ ⟨s, hs, t, ht, rfl⟩ _ ⟨u, hu, v, hv, rfl⟩
-    have hs : MeasurableSet s := by simpa only [Set.mem_ofPred_eq] using hs
-    have ht : MeasurableSet t := by simpa only [Set.mem_ofPred_eq] using ht
-    have hu : MeasurableSet u := by simpa only [Set.mem_ofPred_eq] using hu
-    have hv : MeasurableSet v := by simpa only [Set.mem_ofPred_eq] using hv
-    let a : Set (X × Y) := (s \ u) ×ˢ t
-    let b : Set (X × Y) := (s ∩ u) ×ˢ (t \ v)
-    refine ⟨{a, b}, ?_, ?_, ?_⟩
-    · rw [Finset.coe_insert, Finset.coe_singleton, Set.insert_subset_iff,
-        Set.singleton_subset_iff]
-      exact ⟨⟨s \ u, hs.diff hu, t, ht, rfl⟩,
-        ⟨s ∩ u, hs.inter hu, t \ v, ht.diff hv, rfl⟩⟩
-    · rw [Finset.coe_insert, Finset.coe_singleton]
-      apply Set.pairwiseDisjoint_insert.2
-      refine ⟨Set.pairwiseDisjoint_singleton b id, ?_⟩
-      intro _ hy _
-      rw [Set.mem_singleton_iff] at hy
-      subst hy
-      apply Set.disjoint_left.2
-      intro p ha hb
-      simp only [a, b] at ha hb
-      exact ha.1.2 hb.1.2
-    · rw [Finset.coe_insert, Finset.coe_singleton, Set.sUnion_insert, Set.sUnion_singleton]
-      ext p
-      simp only [a, b, Set.mem_sdiff, Set.mem_prod, Set.mem_union, Set.mem_inter_iff]
+    refine ⟨{(s \ u) ×ˢ t, (s ∩ u) ×ˢ (t \ v)}, ?_, ?_, ?_⟩ <;> rw [Finset.coe_pair]
+    · exact pair_subset_iff.2
+        ⟨⟨s \ u, hs.diff hu, t, ht, rfl⟩, ⟨s ∩ u, hs.inter hu, t \ v, ht.diff hv, rfl⟩⟩
+    · refine pairwiseDisjoint_insert.2 ⟨pairwiseDisjoint_singleton _ _, fun _ hy _ => ?_⟩
+      rw [mem_singleton_iff.1 hy]
+      exact disjoint_left.2 fun _ ha hb => ha.1.2 hb.1.2
+    · ext
+      simp only [sUnion_pair, mem_sdiff, mem_prod, mem_union, mem_inter_iff]
       grind
 
 /-- A measurable subset of a product measurable space with a finite measure can be approximated in
@@ -111,32 +86,16 @@ theorem exists_finset_prod_measure_symmDiff_lt (ρ : Measure (X × Y)) [IsFinite
       (∀ r ∈ I, ∃ a : Set X, MeasurableSet a ∧ ∃ b : Set Y, MeasurableSet b ∧ r = a ×ˢ b) ∧
       (I : Set (Set (X × Y))).PairwiseDisjoint id ∧ ∅ ∉ I ∧
       ρ (⋃₀ (I : Set (Set (X × Y))) ∆ s) < ε := by
-  let C : Set (Set (X × Y)) :=
-    Set.image2 (· ×ˢ ·) {a : Set X | MeasurableSet a} {b : Set Y | MeasurableSet b}
-  have hC : IsSetSemiring C := isSetSemiring_measurable_prod
-  have hcover : ∃ D : Set (Set (X × Y)),
-      D.Countable ∧ D ⊆ C ∧ ρ (⋃₀ D)ᶜ = 0 := by
-    refine ⟨{Set.univ ×ˢ Set.univ}, Set.countable_singleton _, ?_, ?_⟩
-    · rintro r hr
-      rw [Set.mem_singleton_iff] at hr
-      subst r
-      exact ⟨Set.univ, MeasurableSet.univ, Set.univ, MeasurableSet.univ, rfl⟩
-    · simp
-  have hgenerate : Prod.instMeasurableSpace = MeasurableSpace.generateFrom C := by
-    exact generateFrom_prod.symm
-  obtain ⟨t, htC, ht⟩ := exists_measure_symmDiff_lt_of_generateFrom_isSetSemiring
-    hC hcover hgenerate hs hε
+  have hC := isSetSemiring_measurable_prod (X := X) (Y := Y)
+  obtain ⟨t, htC, ht⟩ := exists_measure_symmDiff_lt_of_generateFrom_isSetSemiring (μ := ρ) hC
+    ⟨{univ}, countable_singleton _,
+      singleton_subset_iff.2 ⟨univ, .univ, univ, .univ, univ_prod_univ⟩, by simp⟩
+    generateFrom_prod.symm hs hε
   obtain ⟨P, hPC⟩ := hC.mem_supClosure_iff.1 htC
-  refine ⟨P.parts, ?_, P.disjoint, P.bot_notMem, ?_⟩
-  · intro r hr
-    have hrect : r ∈ Set.image2 (· ×ˢ ·) {a : Set X | MeasurableSet a}
-        {b : Set Y | MeasurableSet b} := by
-      simpa only [C] using hPC hr
-    obtain ⟨a, ha, b, hb, rfl⟩ := hrect
+  refine ⟨P.parts, fun r hr => ?_, P.disjoint, P.bot_notMem, ?_⟩
+  · obtain ⟨a, ha, b, hb, rfl⟩ := hPC hr
     exact ⟨a, ha, b, hb, rfl⟩
-  · have hUnion : ⋃₀ (P.parts : Set (Set (X × Y))) = t :=
-      (Finset.sup_id_set_eq_sUnion P.parts).symm.trans P.sup_parts
-    simpa only [hUnion] using ht
+  · rwa [← Finset.sup_id_set_eq_sUnion, P.sup_parts]
 
 /-- A swap-invariant measurable subset of the square of a finite measure space can be approximated
 by a swap-invariant, pairwise-disjoint finite union of measurable rectangles.
