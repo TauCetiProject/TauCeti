@@ -99,8 +99,7 @@ section Carriers
 topology on it. -/
 
 variable (G : Type u) [Monoid G]
-  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
 /-- An element of a discrete `G`-module is invariant for the canonical object it names exactly
 when it lies in the explicit `H⁰(G, M) = M^G`. -/
@@ -152,8 +151,7 @@ end Carriers
 section Comparison
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
 /-- **Layer 3, degree zero against the canonical object.** The explicit `H⁰(G, M)` is Mathlib's
 `continuousCohomology 0` of the canonical object attached to `M`, as an isomorphism in
@@ -237,16 +235,15 @@ end Cocycle
 section Transport
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
 /-- **Layer 3, transport of the compatible-pair pullback in degree zero.** The comparison carries
 the explicit pullback `TauCeti.ContCohomology.explicitMap0` along a compatible pair to Mathlib's
 `ContinuousCohomology.map` along the same pair. The two transports below are its instances at the
 inclusion of a subgroup and at the identity of the group. -/
 theorem explicitH0Iso_map (H : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-    (N : Type u) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DiscreteTopology N] [DistribMulAction H N] (φ : H →ₜ* G) (f : M →+ N)
+    (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction H N] (φ : H →ₜ* G) (f : M →+ N)
     (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (x : H0 G M) :
     _root_.ContinuousCohomology.map φ
         (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m => hf h m) 0
@@ -288,8 +285,7 @@ coefficient map to the canonical one attached to the same equivariant homomorphi
 coefficient morphism is the compatible pair at the identity, by
 `TauCeti.ofDiscreteModulePair_id`. -/
 theorem explicitH0Iso_coeffMap (N : Type u) [AddCommGroup N] [TopologicalSpace N]
-    [IsTopologicalAddGroup N] [DiscreteTopology N] [DistribMulAction G N] (f : M →+[G] N)
-    (x : H0 G M) :
+    [DiscreteTopology N] [DistribMulAction G N] (f : M →+[G] N) (x : H0 G M) :
     TauCeti.ContinuousCohomology.coeffMap
         (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m => map_smul f g m) 0
         ((explicitH0IsoContinuousCohomology G M).hom x) =
