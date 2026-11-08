@@ -44,6 +44,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 
 * `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
   chart at `x` maps its target into the base set of the canonical trivialization at `x`.
+* `TangentBundle.mdifferentiableAt_trivializationAt_symm_apply` and
+  `TangentBundle.trivializationAt_symm_apply_self`: a vector field with constant coordinates in
+  the canonical trivialization at `x` is differentiable at `x` and takes the value `u` there.
 * `TauCeti.Manifold.mfderiv_atlas_eq_continuousLinearMapAt`: the derivative of an atlas chart
   is the actual continuous linear map of its tangent-core trivialization.
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
@@ -163,6 +166,21 @@ theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
     OpenPartialHomeomorph.subtypeRestr_source, Set.mem_preimage, Set.mem_univ, iff_true]
   exact y.property
 
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` is differentiable at `x`. -/
+theorem mdifferentiableAt_trivializationAt_symm_apply [IsManifold I 1 M] (x : M) (u : E) :
+    MDiffAt (T% (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
+      Π y : M, TangentSpace I y)) x := by
+  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt' x
+  have hext : (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
+      Π y : M, TangentSpace I y) =
+      FiberBundle.extend E ((trivializationAt E (TangentSpace I) x).symm x u) := by
+    funext y
+    simp only [FiberBundle.extend, Bundle.Trivialization.apply_mk_symm _ hx]
+  have h := FiberBundle.mdifferentiableAt_extend (I := I) E
+    ((trivializationAt E (TangentSpace I) x).symm x u)
+  rwa [← hext] at h
 
 end TangentBundle
 
@@ -210,6 +228,15 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` takes the value `u` at `x`. -/
+@[simp]
+theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
+    (trivializationAt E (TangentSpace I) x).symm x u = u := by
+  rw [← (trivializationAt E (TangentSpace I) x).symmL_apply (R := 𝕜)
+    (FiberBundle.mem_baseSet_trivializationAt' x) u]
+  exact symmL_trivializationAt_self x u
 
 /-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
 tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
