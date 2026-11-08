@@ -397,8 +397,9 @@ theorem _root_.Polynomial.roots_gcd_derivative_add_dedup (p : K[X]) :
       have hmem : x ∉ p.roots := fun h => hx ((mem_roots hp).mp h)
       rw [hm, zero_min, Multiset.count_dedup, ite_eq_right hmem]
 
-/-- For a split polynomial in characteristic zero, the number of distinct roots is the degree
-minus the degree of the gcd with the derivative. -/
+/-- For a split polynomial in characteristic zero, the number of distinct entries of `roots` is the
+degree minus the degree of the gcd with the derivative. The zero polynomial has empty `roots` and
+natural degree `0`, so the formula holds for it as well. -/
 theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits
     {p : K[X]} (hsplit : p.Splits) :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card := by
@@ -434,16 +435,18 @@ theorem _root_.Polynomial.natDegree_gcd_eq_card_aroots_inter {k : Type*} [Field 
 
 variable [CharZero K]
 
-/-- Over an algebraically closed field of characteristic zero, the number of distinct roots of a
-polynomial is its degree minus the degree of its gcd with its derivative. -/
+/-- Over an algebraically closed field of characteristic zero, the number of distinct entries of
+`roots` of a polynomial is its degree minus the degree of its gcd with its derivative. The zero
+polynomial has empty `roots` and natural degree `0`, so the formula holds for it as well. -/
 theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
     {p : K[X]} :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card :=
   natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits (IsAlgClosed.splits p)
 
-/-- The number of distinct roots of a polynomial over a field `k` in an algebraically
-closed field `K` of characteristic zero is its degree minus the degree of its gcd with its
-derivative, both taken over `k`. -/
+/-- The number of distinct entries of `aroots` of a polynomial over a field `k` in an
+algebraically closed field `K` of characteristic zero is its degree minus the degree of its gcd
+with its derivative, both taken over `k`. The zero polynomial has empty `aroots` and natural
+degree `0`, so the formula holds for it as well. -/
 theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset
     {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree =
