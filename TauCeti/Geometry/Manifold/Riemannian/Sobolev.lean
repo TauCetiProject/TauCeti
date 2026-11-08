@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # The Sobolev inequality on a closed Riemannian manifold
@@ -45,6 +46,9 @@ finitely many such neighbourhoods cover `M`.
   closed Riemannian manifold.
 * `TauCeti.Manifold.exists_eLpNorm_le_mul_eLpNorm_mgradient_two_add`: its form for `p = 2` and the
   critical exponent `2 n / (n - 2)`.
+* `TauCeti.Manifold.exists_integral_abs_rpow_rpow_le_mul_integral_mgradient_sq_add`: the same
+  inequality squared and written with integrals,
+  `(∫ |u| ^ p' dV) ^ (2 / p') ≤ K (∫ |∇u|² dV + ∫ u² dV)` for `p' = 2 n / (n - 2)`.
 
 ## References
 
@@ -193,5 +197,64 @@ theorem exists_eLpNorm_le_mul_eLpNorm_mgradient_two_add [CompactSpace M] (hn : 2
     rw [Real.coe_toNNReal _ (div_nonneg (by positivity) (by linarith)), NNReal.coe_ofNat]
     field_simp
   exact exists_eLpNorm_le_mul_eLpNorm_mgradient_add (I := I) (M := M) one_le_two (by omega) hp'
+
+/-- **The Sobolev inequality for `H¹` with integrals.** On a compact manifold without boundary of
+dimension `n > 2` with a continuous Riemannian metric, let `p' = 2 n / (n - 2)`. There is a constant
+`K > 0` such that `(∫ |u| ^ p' dV) ^ (2 / p') ≤ K (∫ |∇u|² dV + ∫ u² dV)` for every `C¹`
+function `u`. -/
+theorem exists_integral_abs_rpow_rpow_le_mul_integral_mgradient_sq_add [CompactSpace M]
+    (hn : 2 < finrank ℝ E) :
+    ∃ K, 0 < K ∧ ∀ u : M → ℝ, ContMDiff I 𝓘(ℝ) 1 u →
+      (∫ x, |u x| ^ (2 * finrank ℝ E / (finrank ℝ E - 2) : ℝ) ∂riemannianVolume I M) ^
+          (2 / (2 * finrank ℝ E / (finrank ℝ E - 2) : ℝ)) ≤
+        K * (∫ x, ‖mgradient I u x‖ ^ 2 ∂riemannianVolume I M +
+          ∫ x, u x ^ 2 ∂riemannianVolume I M) := by
+  obtain ⟨K, hK⟩ := exists_eLpNorm_le_mul_eLpNorm_mgradient_two_add (I := I) (M := M) hn
+  set p : ℝ := 2 * finrank ℝ E / (finrank ℝ E - 2)
+  have hn' : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
+  have hp : 0 < p := div_pos (by positivity) (by linarith)
+  refine ⟨2 * ((K : ℝ) + 1) ^ 2, by positivity, fun u hu ↦ ?_⟩
+  set A := ∫ x, |u x| ^ p ∂riemannianVolume I M
+  set B := ∫ x, ‖mgradient I u x‖ ^ 2 ∂riemannianVolume I M
+  set D := ∫ x, u x ^ 2 ∂riemannianVolume I M
+  have hA : 0 ≤ A := integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _
+  have hB : 0 ≤ B := integral_nonneg fun _ ↦ sq_nonneg _
+  have hD : 0 ≤ D := integral_nonneg fun _ ↦ sq_nonneg _
+  -- The Sobolev inequality in real numbers: `A ^ (1 / p) ≤ K (B ^ (1 / 2) + D ^ (1 / 2))`.
+  have hsob : A ^ p⁻¹ ≤ K * (B ^ (2 : ℝ)⁻¹ + D ^ (2 : ℝ)⁻¹) := by
+    have h := hK u hu
+    rw [hu.continuous.eLpNorm_eq_integral_rpow_norm (by simpa using hp) ENNReal.ofReal_ne_top,
+      (continuous_norm_mgradient hu).eLpNorm_eq_integral_rpow_norm two_ne_zero
+        ENNReal.ofNat_ne_top,
+      hu.continuous.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top] at h
+    simp only [ENNReal.toReal_ofReal hp.le, ENNReal.toReal_ofNat, Real.norm_eq_abs, abs_norm,
+      Real.rpow_two, sq_abs] at h
+    have hK' : (K : ℝ≥0∞) * (ENNReal.ofReal (B ^ (2 : ℝ)⁻¹) + ENNReal.ofReal (D ^ (2 : ℝ)⁻¹)) =
+        ENNReal.ofReal (K * (B ^ (2 : ℝ)⁻¹ + D ^ (2 : ℝ)⁻¹)) := by
+      rw [ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_coe_nnreal,
+        ENNReal.ofReal_add (by positivity) (by positivity)]
+    exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 (h.trans_eq hK')
+  have hsq (X : ℝ) (hX : 0 ≤ X) (q : ℝ) (hq : q ≠ 0) : (X ^ q⁻¹) ^ 2 = X ^ (2 / q) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hX]
+    congr 1
+    field_simp
+    norm_num
+  -- Squaring, with `(y + z) ^ 2 ≤ 2 (y ^ 2 + z ^ 2)`.
+  have h2 := pow_le_pow_left₀ (by positivity) hsob 2
+  rw [hsq A hA p hp.ne'] at h2
+  have hB2 := hsq B hB 2 two_ne_zero
+  have hD2 := hsq D hD 2 two_ne_zero
+  rw [div_self two_ne_zero, Real.rpow_one] at hB2 hD2
+  set y := B ^ (2 : ℝ)⁻¹
+  set z := D ^ (2 : ℝ)⁻¹
+  calc A ^ (2 / p) ≤ (K * (y + z)) ^ 2 := h2
+    _ ≤ ((K : ℝ) + 1) ^ 2 * (2 * (y ^ 2 + z ^ 2)) := by
+      rw [mul_pow]
+      gcongr
+      · linarith [K.coe_nonneg]
+      · nlinarith [sq_nonneg (y - z)]
+    _ = 2 * ((K : ℝ) + 1) ^ 2 * (B + D) := by
+      rw [hB2, hD2]
+      ring
 
 end TauCeti.Manifold
