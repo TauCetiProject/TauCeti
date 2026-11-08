@@ -97,6 +97,7 @@ theorem apply_eq_sum_eigenvalues (i j : ι) :
 
 /-- The eigenvectors of a Hermitian matrix are eigenvectors of the associated linear map on
 Euclidean space. -/
+@[simp]
 theorem toEuclideanLin_eigenvectorBasis (j : ι) :
     B.toEuclideanLin (hB.eigenvectorBasis j) = (hB.eigenvalues j : 𝕜) • hB.eigenvectorBasis j := by
   rw [← RCLike.real_smul_eq_coe_smul (K := 𝕜)]
