@@ -193,12 +193,12 @@ and `y`, for `x` in the closed simplex on `σ` and `y` in that on `τ`. -/
 private theorem sum_ite_mem_inter_le [DecidableEq ι] {σ τ : Finset ι} {x y : ι → ℝ}
     (hx : x ∈ coordSimplex σ) (hy : y ∈ coordSimplex τ) :
     (∑ i, if i ∈ σ ∩ τ then 0 else y i) ≤ Fintype.card ι * ‖x - y‖ := by
-  have h := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) =>
-    show (if i ∈ σ ∩ τ then 0 else y i) ≤ ‖x - y‖ by
-      split_ifs with hi
-      · exact norm_nonneg _
-      · exact coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)
-  simpa using h
+  have hpt : ∀ i ∈ (Finset.univ : Finset ι), (if i ∈ σ ∩ τ then 0 else y i) ≤ ‖x - y‖ := by
+    intro i _
+    split_ifs with hi
+    · exact norm_nonneg _
+    · exact coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)
+  simpa using Finset.sum_le_sum hpt
 
 /-- A nonnegative vector of total mass `1` that vanishes off `σ ∩ τ` lies in both closed
 simplices. -/
