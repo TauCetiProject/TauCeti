@@ -8,9 +8,9 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import TauCeti.Analysis.Calculus.FDeriv.Dimension
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
-import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # The constant rank theorem
@@ -39,8 +39,6 @@ their local structure of submanifolds of dimension `dim E - rank L`.
   `0` with derivative the identity there, such that `ψ ∘ f = Df(a) ∘ φ` near `a`.
 * `ContDiffOn.exists_openPartialHomeomorph_apply_eq_iff_mem_ker`: near `a`, the level set of `f`
   through `a` is the preimage under a chart `φ` of the kernel of `Df(a)`.
-* `HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq`: if `P ∘ g` agrees near `z` with a linear map
-  `L` and `Dg(z)` has rank at most that of `L`, then `Dg(z)` vanishes on `ker L`.
 
 ## Implementation notes
 
@@ -49,7 +47,7 @@ projection onto the range of `L` and `Q = 1 - T ∘ L` is a projection onto `ker
 is `φ x = T (f x - f a) + Q (x - a)`, whose derivative at `a` is the identity; it satisfies
 `L (φ x) = P (f x - f a)`. In this chart `g z = f (φ⁻¹ z) - f a` satisfies `P ∘ g = L`, so the
 derivative of `g` maps `E` onto the range of `L` after projecting with `P`; as it has rank at most
-`rank L`, its kernel is that of `L` (`LinearMap.ker_comp_eq_of_finrank_range_le`). Hence, by
+`rank L`, its kernel is that of `L` (`HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq`). Hence, by
 the mean value theorem along segments parallel to `ker L`
 (`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`), near `0` the value `g z` only depends on the
 component of `z` in `range (T ∘ L)` for the decomposition `E = range (T ∘ L) ⊕ ker L`, and the
@@ -68,36 +66,6 @@ public section
 
 open Filter Set Module
 open scoped Topology
-
-section NontriviallyNormedField
-
-variable {𝕂 : Type*} [NontriviallyNormedField 𝕂]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
-
-/-- If `P ∘ g` agrees near `z` with a continuous linear map `L`, and the derivative `D` of `g` at
-`z` has finite rank at most that of `L`, then `D` vanishes on the kernel of `L`: projecting the
-range of `D` with `P` does not lower its dimension, so it does not enlarge its kernel. -/
-theorem HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕂 G] {g : E → F} {D : E →L[𝕂] F}
-    [FiniteDimensional 𝕂 (LinearMap.range D.toLinearMap)]
-    {P : F →L[𝕂] G} {L : E →L[𝕂] G} {z : E} (hg : HasFDerivAt g D z)
-    (hPg : (fun w ↦ P (g w)) =ᶠ[𝓝 z] L)
-    (hrank : finrank 𝕂 (LinearMap.range D.toLinearMap) ≤
-      finrank 𝕂 (LinearMap.range L.toLinearMap))
-    {v : E} (hv : L v = 0) : D v = 0 := by
-  have hcomp : (P : F →ₗ[𝕂] G) ∘ₗ (D : E →ₗ[𝕂] F) = L := congrArg ContinuousLinearMap.toLinearMap
-    ((P.hasFDerivAt.comp z hg).unique (L.hasFDerivAt.congr_of_eventuallyEq hPg))
-  have hker := LinearMap.ker_comp_eq_of_finrank_range_le (D : E →ₗ[𝕂] F) (P : F →ₗ[𝕂] G)
-    (by rwa [hcomp])
-  rw [hcomp] at hker
-  have hv' : v ∈ LinearMap.ker (L : E →ₗ[𝕂] G) := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-    exact hv
-  rw [hker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hv'
-  exact hv'
-
-end NontriviallyNormedField
 
 variable {𝕂 : Type*} [RCLike 𝕂]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
