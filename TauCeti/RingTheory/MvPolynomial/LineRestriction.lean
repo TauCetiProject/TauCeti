@@ -27,6 +27,52 @@ open scoped BigOperators
 
 variable {σ R S : Type*} [CommSemiring R] [CommSemiring S]
 
+/-- Restriction to a line through the origin sends a monomial to a monomial of its total
+degree, with coefficient given by evaluation at the direction. -/
+theorem aeval_C_mul_X_monomial (v : σ → R) (d : σ →₀ ℕ) (r : R) :
+    aeval (fun i ↦ Polynomial.C (v i) * Polynomial.X) (monomial d r) =
+      Polynomial.monomial d.degree (eval v (monomial d r)) := by
+  simp only [aeval_monomial, Polynomial.algebraMap_apply, eval_monomial, Finsupp.prod,
+    mul_pow, ← map_pow, Finset.prod_mul_distrib, ← map_prod,
+    Finsupp.degree_apply]
+  rw [Finset.prod_pow_eq_pow_sum, ← mul_assoc, ← map_mul,
+    Algebra.algebraMap_self, RingHom.id_apply, Polynomial.C_mul_X_pow_eq_monomial]
+
+/-- The coefficient of a line restriction is the homogeneous component evaluated at its
+direction. -/
+@[simp]
+theorem coeff_aeval_C_mul_X (p : MvPolynomial σ R) (v : σ → R) (m : ℕ) :
+    (aeval (fun i ↦ Polynomial.C (v i) * Polynomial.X) p).coeff m =
+      eval v (homogeneousComponent m p) := by
+  classical
+  rw [p.as_sum]
+  simp only [map_sum, Polynomial.finsetSum_coeff]
+  simp only [aeval_C_mul_X_monomial, Polynomial.coeff_monomial,
+    homogeneousComponent_of_mem (isHomogeneous_monomial _ _)]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  by_cases h : d.degree = m
+  · simp [h]
+  · simp [h, Ne.symm h]
+
+/-- Evaluation of the affine-line restriction is evaluation at the corresponding point. -/
+@[simp]
+theorem eval_aeval_C_add_C_mul_X (p : MvPolynomial σ R) (a v : σ → R) (t : R) :
+    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).eval t =
+      eval (a + t • v) p := by
+  have heq :
+      (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).eval t =
+        aeval (fun i ↦ a i + v i * t) p := by
+    have h := comp_aeval_apply
+      (f := fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X)
+      (Polynomial.aeval t : Polynomial R →ₐ[R] R) p
+    simp only [map_add, map_mul, Polynomial.aeval_C, Polynomial.aeval_X,
+      Algebra.algebraMap_self, RingHom.id_apply] at h
+    simpa only [Polynomial.coe_aeval_eq_eval] using h
+  have hpoint : (fun i ↦ a i + v i * t) = a + t • v := by
+    funext i
+    simp [mul_comm]
+  rw [heq, aeval_eq_eval, hpoint]
+
 /-- Restriction to an affine line, after changing coefficients, has degree at most the original
 total degree. -/
 theorem natDegree_eval₂_C_add_C_mul_X_le (p : MvPolynomial σ R) (f : R →+* S)
@@ -79,57 +125,31 @@ section Shear
 
 variable {n : ℕ}
 
-/-- Read `p` as a polynomial in coordinate `i` after the shear that adds `a j` times that
-coordinate to each of the other coordinates. The coefficients are polynomials in those
-remaining coordinates, indexed by `i.succAbove`. -/
-noncomputable def shearToPolynomial (p : MvPolynomial (Fin (n + 1)) R)
-    (i : Fin (n + 1)) (a : Fin n → R) : Polynomial (MvPolynomial (Fin n) R) :=
-  eval₂Hom (Polynomial.C.comp C) (i.insertNth Polynomial.X
-    (fun j ↦ Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X)) p
+/-- The algebra homomorphism reading a polynomial in coordinate `i` after the shear that
+adds `a j` times that coordinate to each of the other coordinates. The coefficients are
+polynomials in those remaining coordinates, indexed by `i.succAbove`. -/
+noncomputable def shearToPolynomial (i : Fin (n + 1)) (a : Fin n → R) :
+    MvPolynomial (Fin (n + 1)) R →ₐ[R] Polynomial (MvPolynomial (Fin n) R) :=
+  aeval (i.insertNth Polynomial.X
+    (fun j ↦ Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X))
 
 /-- The substitution defining the sheared polynomial. -/
 theorem shearToPolynomial_def (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a : Fin n → R) :
-    p.shearToPolynomial i a = eval₂Hom (Polynomial.C.comp C) (i.insertNth Polynomial.X
+    shearToPolynomial i a p = eval₂Hom (Polynomial.C.comp C) (i.insertNth Polynomial.X
       (fun j ↦ Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X)) p :=
   (rfl)
-
-/-- Shearing a zero equation leaves it zero. -/
-@[simp]
-theorem shearToPolynomial_zero (i : Fin (n + 1)) (a : Fin n → R) :
-    (0 : MvPolynomial (Fin (n + 1)) R).shearToPolynomial i a = 0 := by
-  simp [shearToPolynomial_def]
-
-/-- Constant equations are unchanged by the shear. -/
-@[simp]
-theorem shearToPolynomial_C (c : R) (i : Fin (n + 1)) (a : Fin n → R) :
-    (C c : MvPolynomial (Fin (n + 1)) R).shearToPolynomial i a = Polynomial.C (C c) := by
-  simp [shearToPolynomial_def]
-
-/-- Shearing respects addition. -/
-@[simp]
-theorem shearToPolynomial_add (p q : MvPolynomial (Fin (n + 1)) R)
-    (i : Fin (n + 1)) (a : Fin n → R) :
-    (p + q).shearToPolynomial i a = p.shearToPolynomial i a + q.shearToPolynomial i a := by
-  simp [shearToPolynomial_def]
-
-/-- Shearing respects multiplication. -/
-@[simp]
-theorem shearToPolynomial_mul (p q : MvPolynomial (Fin (n + 1)) R)
-    (i : Fin (n + 1)) (a : Fin n → R) :
-    (p * q).shearToPolynomial i a = p.shearToPolynomial i a * q.shearToPolynomial i a := by
-  simp [shearToPolynomial_def]
 
 /-- The distinguished variable becomes the univariate polynomial variable. -/
 @[simp]
 theorem shearToPolynomial_X (i : Fin (n + 1)) (a : Fin n → R) :
-    (X i : MvPolynomial (Fin (n + 1)) R).shearToPolynomial i a = Polynomial.X := by
+    shearToPolynomial i a (X i : MvPolynomial (Fin (n + 1)) R) = Polynomial.X := by
   simp [shearToPolynomial_def]
 
 /-- Each remaining variable acquires its prescribed multiple of the distinguished variable. -/
 @[simp]
 theorem shearToPolynomial_X_succAbove (i : Fin (n + 1)) (a : Fin n → R) (j : Fin n) :
-    (X (i.succAbove j) : MvPolynomial (Fin (n + 1)) R).shearToPolynomial i a =
+    shearToPolynomial i a (X (i.succAbove j) : MvPolynomial (Fin (n + 1)) R) =
       Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X := by
   simp [shearToPolynomial_def]
 
@@ -138,7 +158,7 @@ original polynomial at the sheared point. -/
 @[simp]
 theorem eval₂_shearToPolynomial (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a y : Fin n → R) (t : R) :
-    Polynomial.eval₂ (eval y) t (p.shearToPolynomial i a) =
+    Polynomial.eval₂ (eval y) t (shearToPolynomial i a p) =
       eval (i.insertNth t (y + t • a)) p := by
   rw [shearToPolynomial_def, ← Polynomial.coe_eval₂RingHom, map_eval₂Hom]
   have hC : (Polynomial.eval₂RingHom (eval y) t).comp (Polynomial.C.comp C) =
@@ -166,7 +186,7 @@ private theorem shear_variables (i : Fin (n + 1)) (a : Fin n → R) :
 total degree. -/
 theorem natDegree_shearToPolynomial_le (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a : Fin n → R) :
-    (p.shearToPolynomial i a).natDegree ≤ p.totalDegree := by
+    (shearToPolynomial i a p).natDegree ≤ p.totalDegree := by
   rw [shearToPolynomial_def, shear_variables]
   exact p.natDegree_eval₂_C_add_C_mul_X_le C _ _
 
@@ -175,7 +195,7 @@ variables: it is the top homogeneous part evaluated at the direction `i.insertNt
 with 1 in coordinate `i` and `a` in the remaining coordinates. -/
 theorem coeff_shearToPolynomial_totalDegree (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a : Fin n → R) :
-    (p.shearToPolynomial i a).coeff p.totalDegree =
+    (shearToPolynomial i a p).coeff p.totalDegree =
       C (eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p)) := by
   rw [shearToPolynomial_def, shear_variables,
     coeff_eval₂_C_add_C_mul_X_of_totalDegree_le p C _ _ le_rfl]
@@ -188,7 +208,7 @@ distinguished coordinate equal to the original total degree. -/
 theorem natDegree_shearToPolynomial_eq_of_eval_ne_zero
     (p : MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) (a : Fin n → R)
     (ha : eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p) ≠ 0) :
-    (p.shearToPolynomial i a).natDegree = p.totalDegree := by
+    (shearToPolynomial i a p).natDegree = p.totalDegree := by
   apply Polynomial.natDegree_eq_of_le_of_coeff_ne_zero (p.natDegree_shearToPolynomial_le i a)
   simpa only [coeff_shearToPolynomial_totalDegree, ne_eq, C_eq_zero] using ha
 
@@ -197,7 +217,7 @@ evaluating the top homogeneous component. -/
 theorem leadingCoeff_shearToPolynomial_of_eval_ne_zero
     (p : MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) (a : Fin n → R)
     (ha : eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p) ≠ 0) :
-    (p.shearToPolynomial i a).leadingCoeff =
+    (shearToPolynomial i a p).leadingCoeff =
       C (eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p)) := by
   rw [Polynomial.leadingCoeff, p.natDegree_shearToPolynomial_eq_of_eval_ne_zero i a ha,
     coeff_shearToPolynomial_totalDegree]
