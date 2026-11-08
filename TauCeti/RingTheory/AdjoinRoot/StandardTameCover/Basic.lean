@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -59,11 +60,15 @@ henselian regular local ring and `f` a local equation of the divisor.
   the root is `A ⧸ (f)`.
 * `TauCeti.standardTameCoverAwayAlgEquiv`: the localization of the cover at `f` is the standard
   cover of `A_f` along the image of `f`.
+* `TauCeti.standardTameCoverAlgHomOfDvd`: for `e ∣ e'`, the map `A[x]/(x^e − f) → A[x]/(x^e' − f)`
+  sending `x` to `x ^ (e' / e)`.
+* `TauCeti.standardTameCoverAut`: the action `x ↦ ζ x` of the `e`-th roots of unity of `A` on
+  `A[x]/(x^e − f)`.
 
 ## Main results
 
 * `TauCeti.standardTameCover_free`: for `e ≥ 1` the cover is free of rank `e`.
-* For `e ≠ 0` the cover is a finite `A`-module (an instance).
+* `TauCeti.standardTameCover_finite`: if `e` is invertible, the cover is a finite `A`-module.
 * `TauCeti.isFiniteProductOfStandardTameCovers_iff`: unfolding of the predicate.
 * `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`: transport along `A`-algebra
   isomorphisms.
@@ -127,10 +132,6 @@ theorem standardTameCover_free [Nontrivial A] (f : A) (e : ℕ) (he : 1 ≤ e) :
   have hmonic : (X ^ e - C f).Monic := monic_X_pow_sub_C f (Nat.one_le_iff_ne_zero.mp he)
   refine ⟨hmonic.free_adjoinRoot, ?_⟩
   rw [(AdjoinRoot.powerBasis' hmonic).finrank, AdjoinRoot.powerBasis'_dim, natDegree_X_pow_sub_C]
-
-/-- For `e ≠ 0` the standard cover is a finite `A`-module, as `x ^ e - f` is monic. -/
-instance (f : A) (e : ℕ) [NeZero e] : Module.Finite A (standardTameCover A f e) :=
-  (monic_X_pow_sub_C f (NeZero.ne e)).finite_adjoinRoot
 
 variable {A}
 
@@ -243,6 +244,100 @@ theorem standardTameCover_etale {f : A} {e : ℕ} (hf : IsUnit f) (he : IsUnit (
     · exact monic_X_pow_sub_C _ he₀
   have := hmonic.isStandardEtale_adjoinRoot (separable_X_pow_sub_C_unit hf.unit he)
   infer_instance
+
+/-- If `e` is invertible in `A`, the standard cover `A[x]/(x^e − f)` is a finite `A`-module: for
+`e ≠ 0` the polynomial `x ^ e - f` is monic, and for `e = 0` the ring `A` is trivial. -/
+theorem standardTameCover_finite (f : A) {e : ℕ} (he : IsUnit (e : A)) :
+    Module.Finite A (standardTameCover A f e) := by
+  rcases eq_or_ne e 0 with rfl | he₀
+  · have : Subsingleton A := subsingleton_of_zero_eq_one (by simpa using he)
+    exact (monic_of_subsingleton (X ^ 0 - C f)).finite_adjoinRoot
+  · exact (monic_X_pow_sub_C f he₀).finite_adjoinRoot
+
+section Maps
+
+variable (f : A) {e e' : ℕ}
+
+/-- For `e ∣ e'`, the `A`-algebra map `A[x]/(x^e − f) → A[x]/(x^e' − f)` sending `x` to
+`x ^ (e' / e)`. -/
+noncomputable def standardTameCoverAlgHomOfDvd (h : e ∣ e') :
+    standardTameCover A f e →ₐ[A] standardTameCover A f e' :=
+  (AdjoinRoot.algHomEquiv _ _).symm ⟨AdjoinRoot.root _ ^ (e' / e), by
+    simp [← pow_mul, Nat.div_mul_cancel h]⟩
+
+/-- The map `standardTameCoverAlgHomOfDvd` sends the root `x` to `x ^ (e' / e)`. -/
+@[simp]
+theorem standardTameCoverAlgHomOfDvd_root (h : e ∣ e') :
+    standardTameCoverAlgHomOfDvd f h (AdjoinRoot.root _) = AdjoinRoot.root _ ^ (e' / e) :=
+  AdjoinRoot.algHomEquiv_symm_apply_root _
+
+/-- The map `standardTameCoverAlgHomOfDvd` of `e ∣ e` is the identity. -/
+@[simp]
+theorem standardTameCoverAlgHomOfDvd_refl [NeZero e] :
+    standardTameCoverAlgHomOfDvd f (dvd_refl e) = AlgHom.id A _ :=
+  AdjoinRoot.algHom_ext (by simp [Nat.div_self (Nat.pos_of_neZero e)])
+
+/-- The maps `standardTameCoverAlgHomOfDvd` are compatible with composition. -/
+theorem standardTameCoverAlgHomOfDvd_comp {e'' : ℕ} (h₁ : e ∣ e') (h₂ : e' ∣ e'') :
+    (standardTameCoverAlgHomOfDvd f h₂).comp (standardTameCoverAlgHomOfDvd f h₁) =
+      standardTameCoverAlgHomOfDvd f (h₁.trans h₂) :=
+  AdjoinRoot.algHom_ext (by simp [← pow_mul, Nat.div_mul_div h₂ h₁])
+
+/-- The `A`-algebra endomorphism `x ↦ ζ x` of `A[x]/(x^e − f)`, for an `e`-th root of unity `ζ`
+of `A`. -/
+private noncomputable def standardTameCoverMulAlgHom (ζ : rootsOfUnity e A) :
+    standardTameCover A f e →ₐ[A] standardTameCover A f e :=
+  (AdjoinRoot.algHomEquiv _ _).symm ⟨algebraMap A _ (ζ : Aˣ) * AdjoinRoot.root _, by
+    have hζ : ((ζ : Aˣ) : A) ^ e = 1 := by
+      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity e _).mp ζ.2, Units.val_one]
+    simp [mul_pow, ← map_pow (AdjoinRoot.of _), hζ]⟩
+
+private theorem standardTameCoverMulAlgHom_root (ζ : rootsOfUnity e A) :
+    standardTameCoverMulAlgHom f ζ (AdjoinRoot.root _) =
+      algebraMap A (standardTameCover A f e) (ζ : Aˣ) * AdjoinRoot.root _ :=
+  AdjoinRoot.algHomEquiv_symm_apply_root _
+
+private theorem standardTameCoverMulAlgHom_comp (ζ ξ : rootsOfUnity e A) :
+    (standardTameCoverMulAlgHom f ζ).comp (standardTameCoverMulAlgHom f ξ) =
+      standardTameCoverMulAlgHom f (ζ * ξ) :=
+  AdjoinRoot.algHom_ext (by
+    simp only [AlgHom.comp_apply, standardTameCoverMulAlgHom_root, map_mul, AlgHom.commutes,
+      Subgroup.coe_mul, Units.val_mul]
+    ring)
+
+private theorem standardTameCoverMulAlgHom_one :
+    standardTameCoverMulAlgHom f (1 : rootsOfUnity e A) = AlgHom.id A _ :=
+  AdjoinRoot.algHom_ext (by simp [standardTameCoverMulAlgHom_root])
+
+/-- The action of the `e`-th roots of unity of `A` on `A[x]/(x^e − f)` by the `A`-algebra
+automorphisms `x ↦ ζ x`. Over a field, this is Mathlib's `autAdjoinRootXPowSubC`. -/
+noncomputable def standardTameCoverAut :
+    rootsOfUnity e A →* (standardTameCover A f e ≃ₐ[A] standardTameCover A f e) where
+  toFun ζ := AlgEquiv.ofAlgHom (standardTameCoverMulAlgHom f ζ)
+    (standardTameCoverMulAlgHom f ζ⁻¹)
+    (by rw [standardTameCoverMulAlgHom_comp, mul_inv_cancel, standardTameCoverMulAlgHom_one])
+    (by rw [standardTameCoverMulAlgHom_comp, inv_mul_cancel, standardTameCoverMulAlgHom_one])
+  map_one' := AlgEquiv.ext fun x ↦ DFunLike.congr_fun (standardTameCoverMulAlgHom_one f) x
+  map_mul' ζ ξ := AlgEquiv.ext fun x ↦
+    (DFunLike.congr_fun (standardTameCoverMulAlgHom_comp f ζ ξ) x).symm
+
+/-- The automorphism `standardTameCoverAut f ζ` sends the root `x` to `ζ x`. -/
+@[simp]
+theorem standardTameCoverAut_root (ζ : rootsOfUnity e A) :
+    standardTameCoverAut f ζ (AdjoinRoot.root _) =
+      algebraMap A (standardTameCover A f e) (ζ : Aˣ) * AdjoinRoot.root _ :=
+  standardTameCoverMulAlgHom_root f ζ
+
+/-- For `e ∣ e'`, the map `x ↦ x ^ (e' / e)` intertwines the action of an `e'`-th root of unity
+`ζ` with that of the `e`-th root of unity `ζ ^ (e' / e)`. -/
+theorem standardTameCoverAut_comp_standardTameCoverAlgHomOfDvd (h : e ∣ e')
+    (ζ : rootsOfUnity e' A) (ξ : rootsOfUnity e A) (hξ : (ξ : Aˣ) = ζ ^ (e' / e)) :
+    (standardTameCoverAut f ζ : standardTameCover A f e' →ₐ[A] _).comp
+        (standardTameCoverAlgHomOfDvd f h) =
+      (standardTameCoverAlgHomOfDvd f h).comp (standardTameCoverAut f ξ) :=
+  AdjoinRoot.algHom_ext (by simp [mul_pow, hξ, -AdjoinRoot.algebraMap_eq])
+
+end Maps
 
 section Away
 
