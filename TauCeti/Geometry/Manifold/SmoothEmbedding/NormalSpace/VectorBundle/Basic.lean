@@ -237,7 +237,7 @@ omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
   [FiniteDimensional 𝕜 P] in
 /-- If a continuous map `g` sends `x` into the base set of a normal chart datum, then `g y` stays
 in that base set for all `y` near `x`. -/
-private theorem NormalChartData.eventually_proj_mem_baseSet
+private theorem NormalChartData.eventually_mem_baseSet
     {f : SmoothEmbedding I J n M N} {hn : n ≠ 0} {x₀ : M}
     (d : NormalChartData (P := P) f hn x₀) {X : Type*} [TopologicalSpace X] {g : X → M}
     (hg : Continuous g) {x : X} (hx : g x ∈ d.baseSet) : ∀ᶠ y in 𝓝 x, g y ∈ d.baseSet :=

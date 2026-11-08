@@ -86,7 +86,7 @@ theorem contMDiff_normalQuotientMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 
   have hc := (hq.comp p (contMDiffAt_proj ((f : M → N) *ᵖ (TangentSpace J)))).clm_apply
     ((a.contMDiffOn.contMDiffAt (a.open_source.mem_nhds hpa)).snd)
   apply hc.congr_of_eventuallyEq
-  filter_upwards [d.eventually_proj_mem_baseSet
+  filter_upwards [d.eventually_mem_baseSet
     (FiberBundle.continuous_proj V ((f : M → N) *ᵖ (TangentSpace J))) d.mem_baseSet] with q hq
   rw [normalQuotientMap_apply]
   simp only [e, NormalChartData.trivialization]
@@ -142,7 +142,7 @@ theorem exists_contMDiffOn_normalQuotientMap_rightInverse
           ((e.contMDiffOn (IB := I) (n := m) |>.contMDiffAt
             (e.open_source.mem_nhds hqe)).snd)
       apply hc.congr_of_eventuallyEq
-      filter_upwards [d.eventually_proj_mem_baseSet (FiberBundle.continuous_proj P _) hq]
+      filter_upwards [d.eventually_mem_baseSet (FiberBundle.continuous_proj P _) hq]
         with y hy
       simp only [a, Trivialization.pullback_apply, s, Pullback.lift_mk]
       rw [(trivializationAt V (TangentSpace J) (f p.proj)).apply_mk_symm
