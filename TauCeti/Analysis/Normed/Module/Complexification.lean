@@ -130,6 +130,9 @@ def ofReal [Zero X] (x : X) : Complexification X := ⟨x, 0⟩
 @[simp] theorem ofReal_re [Zero X] (x : X) : (ofReal x).re = x := (rfl)
 @[simp] theorem ofReal_im [Zero X] (x : X) : (ofReal x).im = 0 := (rfl)
 
+/-- The real embedding sends zero to zero. -/
+@[simp] theorem ofReal_zero [Zero X] : ofReal (0 : X) = 0 := (rfl)
+
 variable [AddCommGroup X] [Module ℝ X]
 
 /-- Complex scalars act by `(a + b i) • (x + i y) = (a x - b y) + i (b x + a y)`. -/
