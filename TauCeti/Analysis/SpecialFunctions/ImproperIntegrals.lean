@@ -124,7 +124,7 @@ theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
 
 /-- A remainder `E` that is interval integrable above `1` makes `t ^ (τ - 1) * E t` interval
 integrable on every interval `[a, b]` with `1 ≤ a ≤ b`. -/
-private lemma intervalIntegrable_rpow_sub_one_mul {E : ℝ → ℝ} (τ : ℝ)
+lemma intervalIntegrable_rpow_sub_one_mul {E : ℝ → ℝ} (τ : ℝ)
     (hE_int : ∀ x, 1 ≤ x → IntervalIntegrable E volume 1 x) {a b : ℝ} (ha : 1 ≤ a)
     (hab : a ≤ b) : IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume a b := by
   have hE' : IntervalIntegrable E volume a b := (hE_int b (ha.trans hab)).mono_set <| by
@@ -136,7 +136,7 @@ private lemma intervalIntegrable_rpow_sub_one_mul {E : ℝ → ℝ} (τ : ℝ)
 
 /-- If `|E t| ≤ c * t` on `[T, x]` with `1 ≤ T`, then `∫ t in T..x, t ^ (τ - 1) * E t` is bounded
 in absolute value by `c * ∫ t in T..x, t ^ τ`, computed explicitly. -/
-private lemma abs_integral_rpow_sub_one_mul_le {E : ℝ → ℝ} {τ c T x : ℝ} (hτ : -1 < τ)
+lemma abs_integral_rpow_sub_one_mul_le {E : ℝ → ℝ} {τ c T x : ℝ} (hτ : -1 < τ)
     (hT1 : 1 ≤ T) (hx : T ≤ x)
     (hint : IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume T x)
     (hbound : ∀ t, T ≤ t → |E t| ≤ c * t) :
@@ -200,14 +200,9 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
       ≤ M + |∫ t in T..x, t ^ (τ - 1) * E t| := abs_add_le _ _
     _ ≤ ε * x ^ (τ + 1) := by linarith
 
-/-- The weights `t ^ (-ε - 1)` are integrable on `(1, ∞)` for `ε > 0`. -/
-private lemma integrableOn_Ioi_rpow_neg_sub_one {ε : ℝ} (hε : 0 < ε) :
-    IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
-  integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
-
 /-- If `‖g t - L‖ ≤ c` beyond `T`, then `t ^ (-ε - 1) • (g t - L)` is integrable on `(1, ∞)`
 and its integral has norm at most `∫ t in Ioc 1 T, ‖g t - L‖ + c * ∫ t in Ioi 1, t ^ (-ε - 1)`. -/
-private lemma integrableOn_and_norm_integral_rpow_smul_sub_le {E : Type*}
+lemma integrableOn_and_norm_integral_rpow_smul_sub_le {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {L : E}
     {ε c T : ℝ} (hε : 0 < ε) (hc0 : 0 ≤ c)
     (hg : LocallyIntegrableOn g (Ici 1))
@@ -215,7 +210,8 @@ private lemma integrableOn_and_norm_integral_rpow_smul_sub_le {E : Type*}
     IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L)) (Ioi 1) ∧
       ‖∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)‖ ≤
         (∫ t in Ioc 1 T, ‖g t - L‖) + c * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) := by
-  have hw := integrableOn_Ioi_rpow_neg_sub_one hε
+  have hw : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
+    integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
   have hgL : IntegrableOn (fun t ↦ g t - L) (Ioc 1 T) :=
     ((hg.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
       Ioc_subset_Icc_self).sub (integrableOn_const (by simp))
@@ -287,8 +283,10 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
         fun t ↦ t ^ (-ε - 1) • (g t - L) + t ^ (-ε - 1) • L := by
       ext t
       rw [← smul_add, sub_add_cancel]
-    rw [this, integral_add hint ((integrableOn_Ioi_rpow_neg_sub_one hε).smul_const L),
-      integral_smul_const, smul_add, smul_smul, hw_eq hε, one_smul]
+    have hw : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
+      integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
+    rw [this, integral_add hint (hw.smul_const L), integral_smul_const,
+      smul_add, smul_smul, hw_eq hε, one_smul]
   rw [dist_eq_norm, hsplit, add_sub_cancel_right, norm_smul, Real.norm_of_nonneg hε.le]
   calc ε * ‖∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)‖
       ≤ ε * (K + δ / 2 * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1)) := by gcongr
