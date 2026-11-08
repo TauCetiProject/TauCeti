@@ -182,14 +182,6 @@ theorem embeddingRealMod0MeasureIso_invFun (α) [MeasurableSpace α] [StandardBo
     (embeddingRealMod0MeasureIso α μ).invFun = (measurableEmbedding_embeddingReal α).invFun :=
   (rfl)
 
-/-- A map into `ℝ` carrying `μ` to the unit interval measure takes values in the unit interval
-almost everywhere. -/
-theorem _root_.MeasureTheory.MeasurePreserving.ae_mem_unitInterval {α : Type*}
-    [MeasurableSpace α] {μ : Measure α} {f : α → ℝ}
-    (hf : MeasurePreserving f μ (volume.restrict (Set.Icc (0 : ℝ) 1))) :
-    ∀ᵐ x ∂μ, f x ∈ I :=
-  hf.quasiMeasurePreserving.ae (ae_restrict_mem measurableSet_Icc)
-
 /-- A mod-zero isomorphism into `ℝ` carrying the unit interval measure gives measure-preserving
 maps in both directions between the space and the unit interval: the forward map clipped to the
 unit interval, and the backward map composed with the coercion. Since the forward map takes
@@ -214,7 +206,8 @@ theorem mod0MeasureIso_to_unitInterval
     dsimp [g]
     exact e.measurable_invFun.comp measurable_subtype_coe
   have hclip_id : ∀ᵐ x ∂μ, max (0 : ℝ) (min 1 (e.toFun x)) = e.toFun x := by
-    filter_upwards [e.measurePreserving.ae_mem_unitInterval] with x hx
+    filter_upwards [e.measurePreserving.quasiMeasurePreserving.ae
+      (ae_restrict_mem measurableSet_Icc)] with x hx
     grind
   have hgf : (g ∘ f) =ᵐ[μ] id := by
     filter_upwards [hclip_id, e.left_inv_ae] with x hx hx'
