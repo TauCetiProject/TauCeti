@@ -171,10 +171,8 @@ theorem preadditiveYoneda_map_comp (hp : IsRepresentableProjectiveCover p) {P' :
     (e : P' ≅ P) : IsRepresentableProjectiveCover (preadditiveYoneda.map e.hom ≫ p) where
   epi := by have := hp.epi; infer_instance
   isIso_of_preadditiveYoneda_map_comp_eq φ hφ := by
-    have : IsIso (e.inv ≫ φ ≫ e.hom) := hp.isIso_of_preadditiveYoneda_map_comp_eq _ (by
-      rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc, hφ,
-        ← Category.assoc, ← Functor.map_comp, Iso.inv_hom_id, preadditiveYoneda.map_id,
-        Category.id_comp])
+    have : IsIso (e.inv ≫ φ ≫ e.hom) :=
+      hp.isIso_of_preadditiveYoneda_map_comp_eq _ (by simp [hφ])
     have hφe : φ = e.hom ≫ (e.inv ≫ φ ≫ e.hom) ≫ e.inv := by simp
     rw [hφe]
     infer_instance
@@ -247,17 +245,17 @@ theorem simple_comp_preadditiveYoneda_obj_quotientFunctor_jacobsonRadicalIdeal (
     have : IsSplitEpi h := by
       by_contra hse
       exact hy (hh ▸ (hrad h).2 (mem_jacobsonRadical_iff_not_isSplitEpi.2 hse))
+    -- `S_X` acts on the class of `g` by precomposition.
+    have hmap {W Z : C} (k : W ⟶ Z) (g : Z ⟶ X) :
+        (Q.op ⋙ preadditiveYoneda.obj (Q.obj X)).map k.op (Q.map g) = Q.map (k ≫ g) :=
+      (preadditiveYoneda_obj_map_apply _ _).trans (Q.map_comp k g).symm
     have hX : f.app (op X) (H.map (section_ h).op y) = Q.map (𝟙 X) := by
-      rw [NatTrans.naturality_apply, ← hh, Functor.comp_map, Functor.op_map]
-      refine (preadditiveYoneda_obj_map_apply _ _).trans ?_
-      rw [Quiver.Hom.unop_op, Quiver.Hom.unop_op, ← Q.map_comp, IsSplitEpi.id]
+      rw [NatTrans.naturality_apply, ← hh, hmap, IsSplitEpi.id]
     have (W : Cᵒᵖ) : Epi (f.app W) := by
       refine (AddCommGrpCat.epi_iff_surjective _).2 fun x ↦ ?_
       obtain ⟨k, rfl⟩ := Q.map_surjective x
       refine ⟨H.map k.op (H.map (section_ h).op y), ?_⟩
-      rw [NatTrans.naturality_apply, hX, Functor.comp_map, Functor.op_map]
-      refine (preadditiveYoneda_obj_map_apply _ _).trans ?_
-      rw [Quiver.Hom.unop_op, Quiver.Hom.unop_op, ← Q.map_comp, Category.comp_id]
+      rw [NatTrans.naturality_apply, hX, hmap, Category.comp_id]
     have : Epi f := NatTrans.epi_of_epi_app f
     exact isIso_of_mono_of_epi f
 
