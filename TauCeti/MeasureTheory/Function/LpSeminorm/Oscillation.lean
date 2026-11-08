@@ -86,13 +86,15 @@ theorem enorm_sub_le_div_of_eLpNorm_restrict_sub_le (hp : 1 ≤ p) {U W : Set X}
         · exact (eLpNorm_mono_measure _ (Measure.restrict_mono inter_subset_right le_rfl)).trans hb
 
 omit [TopologicalSpace X] in
-/-- **Moving the constant on a set of positive finite measure.** If `‖f - b‖_{Lᵖ(U)} ≤ c * G`
+/-- **Moving the constant on a set of finite measure.** If `‖f - b‖_{Lᵖ(U)} ≤ c * G`
 and `‖b - a‖ ≤ D * G`, then `‖f - a‖_{Lᵖ(U)} ≤ (c + D * μ U ^ (1 / p)) * G`. -/
 theorem eLpNorm_restrict_sub_le_of_enorm_sub_le (hp : 1 ≤ p) {U : Set X}
-    (h0 : μ U ≠ 0) (htop : μ U ≠ ∞) {f : X → F} {a b : F} {c D : ℝ≥0} {G : ℝ≥0∞}
+    (htop : μ U ≠ ∞) {f : X → F} {a b : F} {c D : ℝ≥0} {G : ℝ≥0∞}
     (hb : eLpNorm (fun x ↦ f x - b) p (μ.restrict U) ≤ c * G) (hab : ‖b - a‖ₑ ≤ D * G) :
     eLpNorm (fun x ↦ f x - a) p (μ.restrict U) ≤
       ↑(c + D * (μ U ^ (1 / p.toReal)).toNNReal) * G := by
+  rcases eq_or_ne (μ U) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
   have hconst : eLpNorm (fun _ ↦ b - a) p (μ.restrict U) =
       ‖b - a‖ₑ * μ U ^ (1 / p.toReal) := by
     rw [eLpNorm_const _ (zero_lt_one.trans_le hp).ne' (by simpa using h0),
@@ -163,7 +165,7 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
           fun _ hD f a G hP ↦ hD f a G (hP i hi) (hP j hj))
       (reflTransGen_inter_nonempty_of_isOpen_cover (t := (t : Set ι)) hV hcover hi₀ hx₀ hj hVj)
     exact ⟨_, fun f a G hP ↦ eLpNorm_restrict_sub_le_of_enorm_sub_le hp
-      ((hV j hj).measure_ne_zero μ hVj) (measure_ne_top _ _) (hP j hj) (hD f a G hP)⟩
+      (measure_ne_top _ _) (hP j hj) (hD f a G hP)⟩
   choose! D hD using hpiece
   refine ⟨∑ j ∈ t, D j, fun f a G hP ↦ ⟨a i₀, ?_⟩⟩
   have hU : (⋃ j ∈ t, V j) = univ :=
