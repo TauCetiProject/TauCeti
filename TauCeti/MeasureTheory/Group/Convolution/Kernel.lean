@@ -131,11 +131,10 @@ theorem eventually_approximateIdentityLp_ae_eq_zero {S : Set G} (hS : S ∈ 𝓝
   filter_upwards [μ.approximateIdentityLp_ae_eq_zero U] with x hx hxS
   exact hx fun hxU => hxS (hV (hU hxU))
 
-variable [μ.Regular]
-
 /-- The shrinking continuous kernels form a left approximate identity on Banach-valued `Lᵖ`
 for every `1 ≤ p < ∞`. -/
-theorem tendsto_approximateIdentityLp_convolutionL {E : Type*} [NormedAddCommGroup E]
+theorem tendsto_approximateIdentityLp_convolutionL [μ.InnerRegularCompactLTTop]
+    {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
     (f : Lp E p μ) :
     Tendsto (fun U => Lp.convolutionL μ p hp (μ.approximateIdentityLp U) f)
@@ -143,6 +142,8 @@ theorem tendsto_approximateIdentityLp_convolutionL {E : Type*} [NormedAddCommGro
   Lp.tendsto_convolutionL_left (μ.approximateIdentityLp_nonneg)
     (μ.integral_approximateIdentityLp)
     (fun _ hS => μ.eventually_approximateIdentityLp_ae_eq_zero hS) f
+
+variable [μ.Regular]
 
 /-- The same shrinking kernels form a right approximate identity on real `L¹`. -/
 theorem tendsto_convolutionL_approximateIdentityLp (f : Lp ℝ 1 μ) :
