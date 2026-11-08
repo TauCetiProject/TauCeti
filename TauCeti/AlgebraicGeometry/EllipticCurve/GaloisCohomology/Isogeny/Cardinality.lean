@@ -31,8 +31,9 @@ open WeierstrassCurve ContCohomology Hom
 variable {K : Type} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
 
+open scoped Classical in
 /-- Rational kernel points are exactly the Galois invariants of the geometric kernel. -/
-def Hom.kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine) [DecidableEq K] :
+def Hom.kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine) :
     f.pointMapHom.ker ≃+ H0 (AbsoluteGaloisGroup K) f.KerCoeff := by
   let ι : f.pointMapHom.ker →+ H0 (AbsoluteGaloisGroup K) f.KerCoeff :=
     { toFun P := ⟨⟨W₁.basePointCoeff P, by
@@ -54,9 +55,10 @@ def Hom.kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine) [Decida
     exact P.val.2
   exact ⟨⟨Q, hker⟩, Subtype.ext (Subtype.ext hQ)⟩
 
+open scoped Classical in
 /-- The kernel-invariant equivalence is the usual inclusion of rational points into `E(Kˢ)`. -/
 @[simp]
-theorem Hom.coe_kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine) [DecidableEq K]
+theorem Hom.coe_kerPointMapEquivInvariants (f : Hom W₁.toAffine W₂.toAffine)
     (P : f.pointMapHom.ker) :
     ((f.kerPointMapEquivInvariants P).val : W₁.PointCoeff) = W₁.basePointCoeff P := (rfl)
 
@@ -69,11 +71,9 @@ theorem natCard_kerCoeff_eq_degree
   have hmem (P : W₁.PointCoeff) :
       P ∈ ((ofIsogeny φ).pointCoeffMap : W₁.PointCoeff →+ W₂.PointCoeff).ker ↔
         W₁.pointCoeffEquiv.symm P ∈ ψ.toPointHom.ker := by
-    have h := Hom.pointCoeffEquiv_symm_pointCoeffMap (ofIsogeny φ) P
-    rw [Hom.mapSeparableClosure, Hom.ofIsogeny_map] at h
-    rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, AddMonoidHom.mem_ker]
-    -- The point map uses the base-change spelling of the curve, whereas `h` uses `map`.
-    erw [← Hom.pointMap_ofIsogeny_eq_toPointHom, ← h]
+    rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, AddMonoidHom.mem_ker,
+      ← Hom.mapSeparableClosure_ofIsogeny_pointMap,
+      ← Hom.pointCoeffEquiv_symm_pointCoeffMap]
     exact W₂.pointCoeffEquiv.symm.map_eq_zero_iff.symm
   rw [Nat.card_congr (Equiv.subtypeEquiv W₁.pointCoeffEquiv.symm.toEquiv hmem),
     ψ.card_ker_toPointHom_eq_degree]

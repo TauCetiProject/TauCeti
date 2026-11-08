@@ -37,9 +37,10 @@ open WeierstrassCurve ContCohomology ClassFieldTheory Hom
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
-  [DecidableEq K] (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
+  (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
 
 include hn in
+open scoped Classical in
 /-- Local duality computes second cohomology from the rational invariants of the dual kernel. -/
 theorem natCard_H2_kerCoeff :
     Nat.card (H2 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) =
@@ -61,6 +62,7 @@ section MixedCharacteristic
 
 variable (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p]
 
+open scoped Classical in
 /-- The order of first cohomology of an isogeny kernel over a finite extension of `ℚ_p`,
 including when the residue characteristic divides the kernel order. -/
 theorem natCard_H1_kerCoeff :
@@ -72,7 +74,7 @@ theorem natCard_H1_kerCoeff :
   have : NeZero φ.degree := ⟨φ.degree_pos.ne'⟩
   have hn : IsUnit (φ.degree : K) := isUnit_iff_ne_zero.2 (Nat.cast_ne_zero.2 (NeZero.ne _))
   have := (φ.isSeparable_dual_and_self_iff.2 hn.ne_zero).2
-  rw [natCard_H1_eq_mul p K φ.degree _ φ.degree_nsmul_kerCoeff_eq_zero,
+  rw [natCard_H1_eq_mul p K _,
     φ.natCard_H2_kerCoeff hn, φ.natCard_kerCoeff_eq_degree,
     Nat.card_congr (ofIsogeny φ).kerPointMapEquivInvariants.toEquiv]
 

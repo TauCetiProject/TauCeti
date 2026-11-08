@@ -92,6 +92,17 @@ abbrev mapSeparableClosure (f : Hom W₁.toAffine W₂.toAffine) :
   f.map (algebraMap K (SeparableClosure K))
 
 open scoped Classical in
+/-- The point map of an isogeny over `Kˢ` agrees with its base-changed point homomorphism. -/
+theorem mapSeparableClosure_ofIsogeny_pointMap (φ : Isogeny W₁.toAffine W₂.toAffine)
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
+    (P : (W₁⁄(SeparableClosure K)).toAffine.Point) :
+    (ofIsogeny φ).mapSeparableClosure.pointMap P =
+      (φ.baseChange (SeparableClosure K)).toPointHom P := by
+  have := isSeparable_map φ (algebraMap K (SeparableClosure K))
+  exact (congrArg (fun f ↦ f.pointMap P) (ofIsogeny_map φ _)).trans
+    (pointMap_ofIsogeny_eq_toPointHom (φ.map (algebraMap K (SeparableClosure K))) P)
+
+open scoped Classical in
 /-- **The action of a morphism over `K` on the points over `Kˢ`**, as a `G_K`-equivariant
 homomorphism `E₁(Kˢ) → E₂(Kˢ)`. Equivariance holds because the morphism is defined over `K`
 (`TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`). -/

@@ -28,16 +28,19 @@ open ContCohomology
 
 variable (p : ℕ) [Fact p.Prime] (K : Type) [Field K] [ValuativeRel K]
   [TopologicalSpace K] [IsNonarchimedeanLocalField K] [FinitePadicExtension K p]
-  (n : ℕ) [NeZero n] (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
   [Finite M]
 
-/-- Tate's local Euler characteristic formula for a finite discrete module killed by `n`,
+/-- Tate's local Euler characteristic formula for a finite discrete module,
 read in the explicit cohomology of the separable-closure Galois group. -/
-theorem natCard_H1_eq_mul (hM : ∀ x : M, n • x = 0) :
+theorem natCard_H1_eq_mul :
     Nat.card (H1 (AbsoluteGaloisGroup K) M) =
       Nat.card (H0 (AbsoluteGaloisGroup K) M) * Nat.card (H2 (AbsoluteGaloisGroup K) M) *
         p ^ (Module.finrank ℚ_[p] K * padicValNat p (Nat.card M)) := by
+  let n := Nat.card M
+  have : NeZero n := ⟨Nat.card_pos.ne'⟩
+  have hM (x : M) : n • x = 0 := card_nsmul_eq_zero'
   let : Module (ZMod n) M := AddCommGroup.zmodModule hM
   let : ContinuousSMul (ZMod n) M := ⟨continuous_of_discreteTopology⟩
   let B := ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup K) M
