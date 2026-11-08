@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
+-- Proof-only: a rational place forces the constant field to be exact.
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 
 /-!
 # Riemann--Roch in high degree
@@ -122,12 +124,12 @@ theorem dim_natCast_zsmul_ofPoint_of_genus_eq_one (hF : IsFunctionField k F)
 
 /-- On a genus-one function field, the Riemann--Roch space of `nP` at a rational place has
 dimension `n` for every positive natural number `n`. -/
-theorem dim_single_of_genus_eq_one (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) {P : Place k F}
-    (hP : P.degree = 1) {n : ℕ} (hn : 1 ≤ n) :
+theorem dim_single_of_genus_eq_one (hF : IsFunctionField k F) (hg : genus k F = 1)
+    {P : Place k F} (hP : P.degree = 1) {n : ℕ} (hn : 1 ≤ n) :
     dim (Finsupp.single P (n : ℤ) : Divisor k F) = n := by
   rw [WeilDivisor.single_eq_zsmul_ofPoint,
-    dim_natCast_zsmul_ofPoint_of_genus_eq_one hF hex hg hn, hP, Nat.mul_one]
+    dim_natCast_zsmul_ofPoint_of_genus_eq_one hF (P.isIntegrallyClosedIn_of_degree_eq_one hP) hg hn,
+    hP, Nat.mul_one]
 
 end Divisor
 
@@ -149,7 +151,7 @@ private theorem two_mul_genus_sub_one_le_sub_one_mul_degree (hF : IsFunctionFiel
 /-- If the Riemann--Roch dimensions of `(n - 1)P` and `nP` differ, there is a nonzero function
 with order exactly `-n` at `P` that is regular at every other place. -/
 theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
-    (hF : IsFunctionField k F) (P : Place k F) {n : ℕ}
+    (P : Place k F) {n : ℕ}
     (hdimlt : Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) <
       Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P)) :
     ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x := by
@@ -169,7 +171,6 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
         hnsub]
       omega
     · simp [E, D, WeilDivisor.coeff_ofPoint_of_ne hQP]
-  let _ := finiteDimensional_riemannRochSpace hF D
   have hfinranklt : Module.finrank k (riemannRochSpace E) <
       Module.finrank k (riemannRochSpace D) := by
     simpa only [← Divisor.dim_def, E, D] using hdimlt
@@ -200,7 +201,7 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
       mul_zero] at hxQ
     omega
 
-/-- For every place `P` and every positive `n` with `2g - 1 <= (n - 1) * deg P`, there is a
+/-- For every place `P` and natural number `n` with `2g - 1 <= (n - 1) * deg P`, there is a
 nonzero function with a pole of order exactly `n` at `P` and no other poles (Stichtenoth,
 Proposition 1.6.6).
 
@@ -208,8 +209,12 @@ The hypothesis is exactly what makes `(n - 1)P` a high-degree divisor, so the co
 Riemann--Roch spaces differ in dimension. -/
 theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_two_mul_genus_sub_one_le_sub_one_mul_degree
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (P : Place k F) {n : ℕ}
-    (hnpos : 0 < n) (hn : 2 * (genus k F : ℤ) - 1 ≤ ((n : ℤ) - 1) * P.degree) :
+    (hn : 2 * (genus k F : ℤ) - 1 ≤ ((n : ℤ) - 1) * P.degree) :
     ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x := by
+  rcases n.eq_zero_or_pos with rfl | hnpos
+  · refine ⟨1, one_ne_zero, ?_, fun Q _ ↦ ?_⟩
+    · simp
+    · simp
   let D : Divisor k F := (n : ℤ) • WeilDivisor.ofPoint P
   let E : Divisor k F := ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P
   have hnsub : ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 := by
@@ -239,7 +244,7 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_two_mul_genus_sub_one_le_s
       simp only [D, E, Divisor.degree_zsmul, Divisor.degree_ofPoint, hnsub]
       ring
     omega
-  exact P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt hF (by
+  exact P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt (by
     simpa only [E, D] using hdimlt)
 
 /-- For every place `P` and natural number `n >= 2g`, there is a nonzero function with order `-n`
@@ -253,17 +258,17 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg (hF : IsFunctionField k F)
     · simp
   · exact
       P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_two_mul_genus_sub_one_le_sub_one_mul_degree
-        hF hex hnpos (two_mul_genus_sub_one_le_sub_one_mul_degree hF hn hnpos)
+        hF hex (two_mul_genus_sub_one_le_sub_one_mul_degree hF hn hnpos)
 
-/-- For every place `P` and every positive `n` with `2g - 1 <= (n - 1) * deg P`, some function
+/-- For every place `P` and natural number `n` with `2g - 1 <= (n - 1) * deg P`, some function
 has pole divisor exactly `nP` (Stichtenoth, Proposition 1.6.6). -/
 theorem exists_poles_eq_natCast_zsmul_ofPoint_of_two_mul_genus_sub_one_le_sub_one_mul_degree
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (P : Place k F) {n : ℕ}
-    (hnpos : 0 < n) (hn : 2 * (genus k F : ℤ) - 1 ≤ ((n : ℤ) - 1) * P.degree) :
+    (hn : 2 * (genus k F : ℤ) - 1 ≤ ((n : ℤ) - 1) * P.degree) :
     ∃ z : Fˣ, Divisor.poles hF z = (n : ℤ) • WeilDivisor.ofPoint P := by
   obtain ⟨x, hx0, hxP, hxQ⟩ :=
     P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_two_mul_genus_sub_one_le_sub_one_mul_degree
-      hF hex hnpos hn
+      hF hex hn
   exact ⟨Units.mk0 x hx0, Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg hF hxP hxQ⟩
 
 /-- For every place `P` and `n >= 2g`, some function has pole divisor exactly `nP`
@@ -275,7 +280,7 @@ theorem exists_poles_eq_natCast_zsmul_ofPoint (hF : IsFunctionField k F)
   · exact ⟨1, WeilDivisor.ext fun Q ↦ by simp⟩
   · exact
       P.exists_poles_eq_natCast_zsmul_ofPoint_of_two_mul_genus_sub_one_le_sub_one_mul_degree
-        hF hex hnpos (two_mul_genus_sub_one_le_sub_one_mul_degree hF hn hnpos)
+        hF hex (two_mul_genus_sub_one_le_sub_one_mul_degree hF hn hnpos)
 
 end Place
 
