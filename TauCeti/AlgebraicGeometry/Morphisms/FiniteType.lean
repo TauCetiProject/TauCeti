@@ -66,7 +66,8 @@ theorem image_closedPoints_eq_range_inter_closedPoints :
   · rintro ⟨x, hx, rfl⟩
     exact ⟨⟨x, rfl⟩, f.closedPoints_subset_preimage_closedPoints hx⟩
   · rintro ⟨hyf, hy⟩
-    obtain ⟨x, hx, rfl⟩ := f.continuous.exists_isClosed_singleton_of_mem_range hy hyf
+    obtain ⟨x, hx, rfl⟩ := f.continuous.exists_isClosed_singleton_of_mem_range
+      (IsClosed.isLocallyClosed hy) hyf
     exact ⟨x, hx, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom
