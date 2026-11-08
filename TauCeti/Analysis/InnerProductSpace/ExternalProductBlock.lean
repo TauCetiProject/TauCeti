@@ -49,7 +49,7 @@ likewise for `σ_Q`, the external product therefore satisfies `A* A = A A* = ‖
 * `ContinuousLinearMap.norm_externalProductBlock_le`: `‖externalProductBlock A B‖ ≤ 2 (‖A‖ + ‖B‖)`.
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
-  function of the pair `(A, B)`, hence smooth over `ℂ`
+  function of the pair `(A, B)`, hence smooth over `ℝ`
   (`ContinuousLinearMap.contDiff_externalProductBlock`).
 
 ## References
