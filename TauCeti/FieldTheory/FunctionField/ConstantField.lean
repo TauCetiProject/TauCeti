@@ -56,7 +56,7 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   `F / k`, the base extension `k' / k` is algebraic, and finite once `F' / F` is (Stichtenoth,
   Definition 3.1.1).
 * `TauCeti.IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic`: the field of constants of
-  `F' / k'` cuts down along `F ⊆ F'` to the field of constants of `F / k`; for exact bases
+  `F' / k'` cuts down along `F ⊆ F'` to the field of constants of `F / k`; for exact `k`
   `TauCeti.IsFunctionField.algebraMap_mem_range_algebraMap_iff` reads this as `k' ∩ F = k`.
 * `TauCeti.algebraicClosure_ratFunc`: `k` is the field of constants of `k(x)`.
 
@@ -214,19 +214,18 @@ theorem IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic (hF : IsFunctionF
 
 /-- **The fields of constants of an extension of function fields are identified along the tower
 map `k → k'`** (Stichtenoth, Definition 3.1.1 and the remark following it).  Once `k` is the full
-field of constants of `F / k` and `k'` the full field of constants of `F' / k'`, a function of
-`F` is a constant of `F' / k'` exactly when it is already a constant of `F / k`: inside `F'` the
-two fields of constants meet in `k`, so `k → k'` is the induced inclusion of fields of
-constants. -/
+field of constants of `F / k`, a function of `F` is a constant of `F' / k'` exactly when it is
+already a constant of `F / k`: inside `F'` the two fields of constants meet in `k`, so `k → k'` is
+the induced inclusion of fields of constants.  Exactness of `k'` in `F'` is not needed. -/
 theorem IsFunctionField.algebraMap_mem_range_algebraMap_iff (hF : IsFunctionField k F)
-    (hF' : IsFunctionField k' F') (hk : IsIntegrallyClosedIn k F)
-    (hk' : IsIntegrallyClosedIn k' F') {a : F} :
+    (hF' : IsFunctionField k' F') (hk : IsIntegrallyClosedIn k F) {a : F} :
     algebraMap F F' a ∈ Set.range (algebraMap k' F') ↔ a ∈ Set.range (algebraMap k F) := by
-  rw [← IntermediateField.mem_bot (F := k'), ← IntermediateField.mem_bot (F := k),
-    ← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 hk',
-    ← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 hk]
-  simp only [mem_algebraicClosure_iff]
-  exact hF.isAlgebraic_algebraMap_iff_isAlgebraic hF'
+  refine ⟨fun ⟨b, hb⟩ ↦ ?_, fun ⟨c, hc⟩ ↦ ⟨algebraMap k k' c, ?_⟩⟩
+  · -- `a` is algebraic over `k'` (its image is a constant), hence over `k`, hence a constant
+    have h := (hF.isAlgebraic_algebraMap_iff_isAlgebraic hF').mp (hb ▸ isAlgebraic_algebraMap b)
+    exact hk.algebraMap_eq_of_integral h.isIntegral
+  · rw [← hc, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply,
+      IsScalarTower.algebraMap_apply k F F']
 
 end IsAlgebraic
 
