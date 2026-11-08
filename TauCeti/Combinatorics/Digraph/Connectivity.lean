@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Digraph.Menger
+public import TauCeti.Combinatorics.Digraph.ArrowWalk
 public import TauCeti.Combinatorics.Network.Connectivity.Basic
 
 /-!
@@ -35,48 +35,6 @@ namespace Digraph
 
 variable {V : Type u} (D : Digraph V)
 
-/-! ### Arrow deletion -/
-
-/-- Delete a set of arrows from a digraph.  Each arrow retains its ordered endpoints and the
-adjacency proof witnessing that it belongs to `D`. -/
-def deleteArrows (F : Set (Σ v w, D.AdjHom v w)) : Digraph V :=
-  D \ { Adj := fun v w ↦ ∃ e : D.AdjHom v w, ⟨v, w, e⟩ ∈ F }
-
-/-- An ordered pair is an arrow after deletion exactly when it was an arrow and was not selected.
--/
-@[simp]
-theorem deleteArrows_adj {F : Set (Σ v w, D.AdjHom v w)} {v w : V} :
-    (D.deleteArrows F).Adj v w ↔ ∃ e : D.AdjHom v w, ⟨v, w, e⟩ ∉ F := by
-  simp only [deleteArrows, sdiff_adj]
-  constructor
-  · rintro ⟨h, hF⟩
-    exact ⟨⟨h⟩, fun he ↦ hF ⟨⟨h⟩, he⟩⟩
-  · rintro ⟨e, hF⟩
-    refine ⟨e.down, ?_⟩
-    rintro ⟨e', he'⟩
-    apply hF
-    simpa only [Subsingleton.elim e' e] using he'
-
-/-- Deleting no arrows leaves a digraph unchanged. -/
-@[simp]
-theorem deleteArrows_empty : D.deleteArrows ∅ = D := by
-  ext v w
-  simp
-
-/-- Deleting every arrow leaves the empty digraph. -/
-@[simp]
-theorem deleteArrows_univ : D.deleteArrows Set.univ = ⊥ := by
-  ext v w
-  simp
-
-/-- Deleting a larger set of arrows gives a smaller digraph. -/
-theorem deleteArrows_anti {F F' : Set (Σ v w, D.AdjHom v w)} (hFF' : F ⊆ F') :
-    D.deleteArrows F' ≤ D.deleteArrows F := by
-  intro v w h
-  rw [deleteArrows_adj] at h ⊢
-  obtain ⟨e, he⟩ := h
-  exact ⟨e, fun hf ↦ he (hFF' hf)⟩
-
 /-! ### Arc connectivity -/
 
 variable {D} {k : ℕ} {s t : V}
@@ -88,7 +46,17 @@ theorem isArcReachable_iff : IsArcReachable D.AdjHom k s t ↔
       ReflTransGen (D.deleteArrows (F : Set _)).Adj s t := by
   rw [isArcReachable_def]
   refine forall_congr' fun F ↦ imp_congr_right fun _ ↦ ?_
-  rw [deleteArrows, reflTransGen_sdiff_iff]
+  have hdelete : D.deleteArrows (F : Set (Σ v w, D.AdjHom v w)) =
+      D \ { Adj := fun v w ↦ ∃ e : D.AdjHom v w,
+        (⟨v, w, e⟩ : Σ v w, D.AdjHom v w) ∈ (F : Set _) } := by
+    ext v w
+    simp only [deleteArrows_adj, sdiff_adj]
+    constructor
+    · rintro ⟨e, he⟩
+      exact ⟨e.down, fun ⟨e', he'⟩ ↦ he (by simpa only [Subsingleton.elim e' e] using he')⟩
+    · rintro ⟨h, hF⟩
+      exact ⟨⟨h⟩, fun he ↦ hF ⟨⟨h⟩, he⟩⟩
+  rw [hdelete, reflTransGen_sdiff_iff]
   have hset : (F : Set (Σ v w, D.AdjHom v w)) =
       {a | ∃ e : D.AdjHom a.1 a.2.1,
         (⟨a.1, a.2.1, e⟩ : Σ v w, D.AdjHom v w) ∈ (F : Set _)} := by
