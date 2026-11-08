@@ -58,8 +58,7 @@ private theorem sub_mul_le_norm_fst_sub_of_mem_subdifferential
   have hsplit (ℓ : (E × ℝ) →L[ℝ] ℝ) :
       ℓ (x - y) = ℓ (x.1 - y.1, 0) + (x.2 - y.2) * ℓ (0, 1) := by
     have heq : x - y = (x.1 - y.1, 0) + (x.2 - y.2) • (0, 1) := by ext <;> simp
-    rw [heq, map_add, map_smul]
-    rfl
+    rw [heq, map_add, map_smul, smul_eq_mul]
   rw [hsplit α, hsplit β] at hmono
   have hαbound : α (x.1 - y.1, 0) ≤ M * ‖x.1 - y.1‖ := by
     exact (le_abs_self _).trans <| (α.le_opNorm _).trans <| by
@@ -72,6 +71,26 @@ private theorem sub_mul_le_norm_fst_sub_of_mem_subdifferential
   have ha := mul_le_mul_of_nonneg_left hαa ht
   have hb := mul_le_mul_of_nonneg_left hbβ ht
   nlinarith
+
+/-- The symmetric height estimate for two points with separated bounded subgradients. -/
+private theorem mul_abs_sub_le_norm_fst_sub_of_mem_subdifferential
+    {x y : E × ℝ} {a b M : ℝ}
+    (hx : ∃ α β : (E × ℝ) →L[ℝ] ℝ,
+      α ∈ subdifferential (topDualPairing ℝ (E × ℝ)).flip f x ∧
+      β ∈ subdifferential (topDualPairing ℝ (E × ℝ)).flip f x ∧
+      ‖α‖ ≤ M ∧ ‖β‖ ≤ M ∧ α (0, 1) ≤ a ∧ b ≤ β (0, 1))
+    (hy : ∃ α β : (E × ℝ) →L[ℝ] ℝ,
+      α ∈ subdifferential (topDualPairing ℝ (E × ℝ)).flip f y ∧
+      β ∈ subdifferential (topDualPairing ℝ (E × ℝ)).flip f y ∧
+      ‖α‖ ≤ M ∧ ‖β‖ ≤ M ∧ α (0, 1) ≤ a ∧ b ≤ β (0, 1)) :
+    (b - a) * |x.2 - y.2| ≤ 2 * M * ‖x.1 - y.1‖ := by
+  obtain ⟨αx, βx, hαx, hβx, hαxM, hβxM, hαxa, hbβx⟩ := hx
+  obtain ⟨αy, βy, hαy, hβy, hαyM, hβyM, hαya, hbβy⟩ := hy
+  rcases le_total y.2 x.2 with h | h
+  · rw [abs_of_nonneg (sub_nonneg.mpr h)]
+    exact sub_mul_le_norm_fst_sub_of_mem_subdifferential hαx hβy hαxM hβyM hαxa hbβy h
+  · simpa only [abs_of_nonpos (sub_nonpos.mpr h), neg_sub, norm_sub_rev y.1 x.1] using
+      sub_mul_le_norm_fst_sub_of_mem_subdifferential hαy hβx hαyM hβxM hαya hbβx h
 
 /-- A set on which bounded subgradients have uniformly separated vertical components lies on a
 globally Lipschitz graph. The bound is quantitative and does not require a finite-dimensional
@@ -88,21 +107,14 @@ theorem exists_lipschitzWith_graph_of_subdifferential_separation
   let K : ℝ≥0 := 2 * M / NNReal.mk (b - a) (sub_nonneg.mpr hab.le)
   have hheight (x : E × ℝ) (hx : x ∈ s) (y : E × ℝ) (hy : y ∈ s) :
       dist x.2 y.2 ≤ K * dist x.1 y.1 := by
-    obtain ⟨αx, βx, hαx, hβx, hαxM, hβxM, hαxa, hbβx⟩ := hs x hx
-    obtain ⟨αy, βy, hαy, hβy, hαyM, hβyM, hαya, hbβy⟩ := hs y hy
+    have hbound := mul_abs_sub_le_norm_fst_sub_of_mem_subdifferential (hs x hx) (hs y hy)
     have hK : (K : ℝ) = 2 * M / (b - a) := by
       simp [K]
-    rw [hK, dist_eq_norm, Real.norm_eq_abs, div_mul_eq_mul_div,
-      le_div_iff₀ (sub_pos.mpr hab), dist_eq_norm]
-    rcases le_total y.2 x.2 with h | h
-    · rw [abs_of_nonneg (sub_nonneg.mpr h)]
-      nlinarith [sub_mul_le_norm_fst_sub_of_mem_subdifferential
-        hαx hβy hαxM hβyM hαxa hbβy h]
-    · rw [abs_of_nonpos (sub_nonpos.mpr h)]
-      have hbound := sub_mul_le_norm_fst_sub_of_mem_subdifferential
-        hαy hβx hαyM hβxM hαya hbβx h
-      rw [norm_sub_rev y.1 x.1] at hbound
-      nlinarith
+    rw [hK, Real.dist_eq, dist_eq_norm]
+    calc
+      |x.2 - y.2| ≤ (2 * M * ‖x.1 - y.1‖) / (b - a) :=
+        (le_div_iff₀ (sub_pos.mpr hab)).mpr (by nlinarith)
+      _ = 2 * M / (b - a) * ‖x.1 - y.1‖ := by ring
   let g : E → ℝ := fun u => (Function.invFunOn Prod.fst s u).2
   have hg (x : E × ℝ) (hx : x ∈ s) : g x.1 = x.2 := by
     have hex : ∃ y ∈ s, y.1 = x.1 := ⟨x, hx, rfl⟩
