@@ -38,6 +38,7 @@ first statement does not extend to `|c| < 1`.
 ## Main statements
 
 * `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`.
+* `ZLattice.basisSmul`: for `c ≠ 0`, a `ℤ`-basis `b` of `L` gives the `ℤ`-basis `c • b` of `c • L`.
 * `ZLattice.dual_smul`: `(c • L)^∨ = c⁻¹ • L^∨` for `c ≠ 0`.
 * `ZLattice.covolume_smul`, `ZLattice.det_smul`: `covolume (c • L) = |c|ⁿ covolume L` and
   `det (c • L) = c²ⁿ det L` for `c ≠ 0`.
@@ -122,6 +123,26 @@ instance [DiscreteTopology L] [IsZLattice ℝ L] (c : ℝ) [NeZero c] : IsZLatti
   span_top := by
     rw [smul_eq_comap L (NeZero.ne c)]
     exact IsZLattice.span_top
+
+section Basis
+
+variable {L} {ι : Type*}
+
+/-- For `c ≠ 0`, a `ℤ`-basis `b` of `L` scales to the `ℤ`-basis `c • b` of `c • L`. -/
+noncomputable def basisSmul (b : Basis ι ℤ L) {c : ℝ} (hc : c ≠ 0) :
+    Basis ι ℤ (c • L : Submodule ℤ E) :=
+  b.map ((L.equivMapOfInjective _ (smul_right_injective E hc)).trans
+    (LinearEquiv.ofEq _ _ pointwise_smul_def.symm))
+
+/-- The `i`-th vector of the scaled basis `basisSmul b hc` is `c • b i`. -/
+@[simp]
+theorem coe_basisSmul_apply (b : Basis ι ℤ L) {c : ℝ} (hc : c ≠ 0) (i : ι) :
+    (basisSmul b hc i : E) = c • (b i : E) := by
+  simp only [basisSmul, Basis.map_apply, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  -- `c • L` is by definition the image of `L` under `c • ·` (`Submodule.pointwise_smul_def`).
+  exact coe_equivMapOfInjective_apply _ _ _ _
+
+end Basis
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]

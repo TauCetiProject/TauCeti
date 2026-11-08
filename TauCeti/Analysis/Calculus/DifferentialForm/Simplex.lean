@@ -61,18 +61,36 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- **Stokes' theorem on the standard simplex.** For a `p`-form `ω` that is `C¹` on the standard
-simplex `Δᵖ⁺¹`, the integral of its exterior derivative over `Δᵖ⁺¹` is the alternating sum over
-`i` of the integrals over `Δᵖ` of its pullbacks along the face maps `simplexMapAmbient i.succAbove`,
-all forms being evaluated on the standard basis. -/
-theorem _root_.ContDiffOn.integral_extDerivWithin_fullSimplex {p : ℕ}
+omit [CompleteSpace F] in
+/-- The exterior derivative of a `C¹` form on the standard basis is the alternating sum of the
+coordinate derivatives of the coefficients `x ↦ ω x (j.removeNth e)`. -/
+private lemma extDerivWithin_fullSimplex_eq_sum {p : ℕ}
+    {ω : EuclideanSpace ℝ (Fin (p + 1)) → EuclideanSpace ℝ (Fin (p + 1)) [⋀^Fin p]→L[ℝ] F}
+    (hω : ContDiffOn ℝ 1 ω (fullSimplex (p + 1))) {x : EuclideanSpace ℝ (Fin (p + 1))}
+    (hx : x ∈ fullSimplex (p + 1)) :
+    extDerivWithin ω (fullSimplex (p + 1)) x (fun i ↦ EuclideanSpace.single i 1) =
+      ∑ j : Fin (p + 1), (-1 : ℝ) ^ (j : ℕ) •
+        fderivWithin ℝ (fun x ↦ ω x (j.removeNth fun i ↦ EuclideanSpace.single i 1))
+          (fullSimplex (p + 1)) x (EuclideanSpace.single j 1) := by
+  rw [extDerivWithin_apply ((hω.differentiableOn one_ne_zero) x hx)
+    (uniqueDiffOn_fullSimplex _ x hx)]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [← Int.cast_smul_eq_zsmul ℝ]
+  simp only [Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+/-- The integral of the exterior derivative over `Δᵖ⁺¹` as an alternating sum of differences of
+integrals of the coefficients `x ↦ ω x (j.removeNth e)` over two faces of `Δᵖ⁺¹`, each
+parametrized by `Δᵖ`. -/
+private lemma integral_extDerivWithin_fullSimplex_eq_sum {p : ℕ}
     {ω : EuclideanSpace ℝ (Fin (p + 1)) → EuclideanSpace ℝ (Fin (p + 1)) [⋀^Fin p]→L[ℝ] F}
     (hω : ContDiffOn ℝ 1 ω (fullSimplex (p + 1))) :
     ∫ x in fullSimplex (p + 1), extDerivWithin ω (fullSimplex (p + 1)) x
         (fun i ↦ EuclideanSpace.single i 1) =
-      ∑ i : Fin (p + 2), (-1 : ℝ) ^ (i : ℕ) • ∫ y in fullSimplex p,
-        ω (simplexMapAmbient i.succAbove y)
-          (fun k ↦ (simplexMapAmbient i.succAbove).contLinear (EuclideanSpace.single k 1)) := by
+      ∑ j : Fin (p + 1), (-1 : ℝ) ^ (j : ℕ) •
+        ((∫ y in fullSimplex p, ω (simplexMapAmbient (Fin.succAbove 0) y)
+            (j.removeNth fun i ↦ EuclideanSpace.single i 1)) -
+          ∫ y in fullSimplex p, ω (toLp 2 (j.insertNth 0 y.ofLp))
+            (j.removeNth fun i ↦ EuclideanSpace.single i 1)) := by
   set Δ := fullSimplex (p + 1)
   set e : Fin (p + 1) → EuclideanSpace ℝ (Fin (p + 1)) := fun i ↦ EuclideanSpace.single i 1
   set g : Fin (p + 1) → EuclideanSpace ℝ (Fin (p + 1)) → F := fun j x ↦ ω x (j.removeNth e)
@@ -94,55 +112,71 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_fullSimplex {p : ℕ}
       IntegrableOn (fun y ↦ g j (toLp 2 (j.insertNth 0 y.ofLp))) (fullSimplex p) := by
     simp_rw [← simplexMapAmbient_succAbove_succ]
     exact hint j (simplexMapAmbient _).continuous (mapsTo_simplexMapAmbient _)
-  have hzero (j : Fin (p + 1)) :
-      IntegrableOn (fun y ↦ g j (simplexMapAmbient (Fin.succAbove 0) y)) (fullSimplex p) :=
-    hint j (simplexMapAmbient _).continuous (mapsTo_simplexMapAmbient _)
   have hD (j : Fin (p + 1)) : IntegrableOn (fun x ↦ fderivWithin ℝ (g j) Δ x (e j)) Δ :=
     ((ContinuousLinearMap.apply ℝ F (e j)).continuous.comp_continuousOn
       ((hg j).continuousOn_fderivWithin hΔu le_rfl)).integrableOn_compact
         (isCompact_fullSimplex _)
-  -- The left-hand side: the exterior derivative is the alternating sum of the coordinate
-  -- derivatives of the coefficients `g j`, each of which is computed by
+  -- The exterior derivative is the alternating sum of the coordinate derivatives of the
+  -- coefficients `g j`, each of which is computed by
   -- `ContDiffOn.integral_fderivWithin_fullSimplex`.
-  have hext : ∀ x ∈ Δ, extDerivWithin ω Δ x e =
-      ∑ j : Fin (p + 1), (-1 : ℝ) ^ (j : ℕ) • fderivWithin ℝ (g j) Δ x (e j) := by
-    intro x hx
-    rw [extDerivWithin_apply ((hω.differentiableOn one_ne_zero) x hx) (hΔu x hx)]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← Int.cast_smul_eq_zsmul ℝ]
-    simp only [Int.cast_pow, Int.cast_neg, Int.cast_one]
-    rfl
-  have hLHS : ∫ x in Δ, extDerivWithin ω Δ x e =
-      ∑ j : Fin (p + 1), (-1 : ℝ) ^ (j : ℕ) •
-        ((∫ y in fullSimplex p, g j (simplexMapAmbient (Fin.succAbove 0) y)) -
-          ∫ y in fullSimplex p, g j (toLp 2 (j.insertNth 0 y.ofLp))) := by
-    rw [setIntegral_congr_fun (isCompact_fullSimplex _).isClosed.measurableSet hext,
-      integral_finsetSum _ fun j _ ↦ ?_]
-    · refine Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [integral_smul, ← setIntegral_toLp_insertNth_eq j (g j),
-        ← integral_sub (htop j) (hbot j)]
-      exact congrArg _ ((hg j).integral_fderivWithin_fullSimplex j)
-    · exact (hD j).smul _
-  -- The right-hand side: on the face opposite the origin the form evaluates on edge vectors, and
-  -- splits into the coefficients `g j` (`AlternatingMap.map_succ_sub_zero`); on the face opposite
-  -- `e_j` it is the coefficient `g j`.
-  have hface₀ (y : EuclideanSpace ℝ (Fin p)) :
-      ω (simplexMapAmbient (Fin.succAbove 0) y)
-          (fun k ↦ (simplexMapAmbient (Fin.succAbove 0)).contLinear (EuclideanSpace.single k 1)) =
-        ∑ j : Fin (p + 1), (-1 : ℝ) ^ (j : ℕ) • g j (simplexMapAmbient (Fin.succAbove 0) y) := by
-    simp_rw [contLinear_simplexMapAmbient_succAbove_zero]
-    exact AlternatingMap.map_succ_sub_zero (R := ℝ)
-      (ω (simplexMapAmbient (Fin.succAbove 0) y)).toAlternatingMap e
-  have hface (j : Fin (p + 1)) (y : EuclideanSpace ℝ (Fin p)) :
-      ω (simplexMapAmbient j.succ.succAbove y)
-          (fun k ↦ (simplexMapAmbient j.succ.succAbove).contLinear (EuclideanSpace.single k 1)) =
-        g j (toLp 2 (j.insertNth 0 y.ofLp)) := by
-    have h : (fun k ↦ (simplexMapAmbient j.succ.succAbove).contLinear
-        (EuclideanSpace.single k (1 : ℝ))) = j.removeNth e :=
-      funext fun k ↦ contLinear_simplexMapAmbient_succAbove_succ j k
-    rw [h, simplexMapAmbient_succAbove_succ]
-  rw [hLHS, Fin.sum_univ_succ (n := p + 1)]
-  simp_rw [hface₀, hface]
+  rw [setIntegral_congr_fun (isCompact_fullSimplex _).isClosed.measurableSet
+      fun x hx ↦ extDerivWithin_fullSimplex_eq_sum hω hx,
+    integral_finsetSum _ fun j _ ↦ ?_]
+  · refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [integral_smul, ← setIntegral_toLp_insertNth_eq j (g j),
+      ← integral_sub (htop j) (hbot j)]
+    exact congrArg _ ((hg j).integral_fderivWithin_fullSimplex j)
+  · exact (hD j).smul _
+
+omit [CompleteSpace F] in
+/-- On the face of `Δᵖ⁺¹` opposite the origin, the form evaluates on the edge vectors and splits
+into the coefficients `x ↦ ω x (j.removeNth e)` (`AlternatingMap.map_succ_sub_zero`). -/
+private lemma eval_face_zero {p : ℕ}
+    (ω : EuclideanSpace ℝ (Fin (p + 1)) → EuclideanSpace ℝ (Fin (p + 1)) [⋀^Fin p]→L[ℝ] F)
+    (y : EuclideanSpace ℝ (Fin p)) :
+    ω (simplexMapAmbient (Fin.succAbove 0) y)
+        (fun k ↦ (simplexMapAmbient (Fin.succAbove 0)).contLinear (EuclideanSpace.single k 1)) =
+      ∑ j : Fin (p + 1), (-1 : ℝ) ^ (j : ℕ) • ω (simplexMapAmbient (Fin.succAbove 0) y)
+        (j.removeNth fun i ↦ EuclideanSpace.single i 1) := by
+  simp_rw [contLinear_simplexMapAmbient_succAbove_zero]
+  exact AlternatingMap.map_succ_sub_zero (R := ℝ)
+    (ω (simplexMapAmbient (Fin.succAbove 0) y)).toAlternatingMap
+    fun i ↦ EuclideanSpace.single i 1
+
+omit [CompleteSpace F] in
+/-- On the face of `Δᵖ⁺¹` opposite `e_j`, the form evaluates to the coefficient
+`x ↦ ω x (j.removeNth e)` at the corresponding point of the face. -/
+private lemma eval_face_succ {p : ℕ}
+    (ω : EuclideanSpace ℝ (Fin (p + 1)) → EuclideanSpace ℝ (Fin (p + 1)) [⋀^Fin p]→L[ℝ] F)
+    (j : Fin (p + 1)) (y : EuclideanSpace ℝ (Fin p)) :
+    ω (simplexMapAmbient j.succ.succAbove y)
+        (fun k ↦ (simplexMapAmbient j.succ.succAbove).contLinear (EuclideanSpace.single k 1)) =
+      ω (toLp 2 (j.insertNth 0 y.ofLp)) (j.removeNth fun i ↦ EuclideanSpace.single i 1) := by
+  have h : (fun k ↦ (simplexMapAmbient j.succ.succAbove).contLinear
+      (EuclideanSpace.single k (1 : ℝ))) = j.removeNth fun i ↦ EuclideanSpace.single i 1 :=
+    funext fun k ↦ contLinear_simplexMapAmbient_succAbove_succ j k
+  rw [h, simplexMapAmbient_succAbove_succ]
+
+/-- **Stokes' theorem on the standard simplex.** For a `p`-form `ω` that is `C¹` on the standard
+simplex `Δᵖ⁺¹`, the integral of its exterior derivative over `Δᵖ⁺¹` is the alternating sum over
+`i` of the integrals over `Δᵖ` of its pullbacks along the face maps `simplexMapAmbient i.succAbove`,
+all forms being evaluated on the standard basis. -/
+theorem _root_.ContDiffOn.integral_extDerivWithin_fullSimplex {p : ℕ}
+    {ω : EuclideanSpace ℝ (Fin (p + 1)) → EuclideanSpace ℝ (Fin (p + 1)) [⋀^Fin p]→L[ℝ] F}
+    (hω : ContDiffOn ℝ 1 ω (fullSimplex (p + 1))) :
+    ∫ x in fullSimplex (p + 1), extDerivWithin ω (fullSimplex (p + 1)) x
+        (fun i ↦ EuclideanSpace.single i 1) =
+      ∑ i : Fin (p + 2), (-1 : ℝ) ^ (i : ℕ) • ∫ y in fullSimplex p,
+        ω (simplexMapAmbient i.succAbove y)
+          (fun k ↦ (simplexMapAmbient i.succAbove).contLinear (EuclideanSpace.single k 1)) := by
+  set Δ := fullSimplex (p + 1)
+  have hzero (j : Fin (p + 1)) : IntegrableOn (fun y ↦ ω (simplexMapAmbient (Fin.succAbove 0) y)
+      (j.removeNth fun i ↦ EuclideanSpace.single i 1)) (fullSimplex p) :=
+    (((ContinuousAlternatingMap.apply ℝ _ F _).continuous.comp_continuousOn
+      (hω.continuousOn.comp (simplexMapAmbient _).continuous.continuousOn
+        (mapsTo_simplexMapAmbient _)))).integrableOn_compact (isCompact_fullSimplex p)
+  rw [integral_extDerivWithin_fullSimplex_eq_sum hω, Fin.sum_univ_succ (n := p + 1)]
+  simp_rw [eval_face_zero, eval_face_succ]
   rw [integral_finsetSum _ fun j _ ↦ ?_]
   · simp only [integral_smul, Fin.val_zero, pow_zero, one_smul, Fin.val_succ, pow_succ,
       mul_neg_one, neg_smul, Finset.sum_neg_distrib, smul_sub, Finset.sum_sub_distrib]

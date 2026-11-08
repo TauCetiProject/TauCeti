@@ -40,7 +40,7 @@ theorem ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact [FiniteDimensional 
     (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
     ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ tsupport g ⊆ U ∧
       Function.support g ⊆ Function.support f ∧ ∀ x ∈ K, g =ᶠ[nhds x] f := by
-  obtain ⟨ψ, hψ, -, hψone, hψcpt, hψsupp⟩ := hK.exists_contDiff_cutoff hU hKU
+  obtain ⟨ψ, hψ, -, hψone, hψcpt, hψsupp⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hg : ContDiff ℝ n (fun x ↦ ψ x • f x) := by
     apply ContMDiff.contDiff
     refine contMDiff_of_tsupport fun x hx ↦ ?_
@@ -50,10 +50,8 @@ theorem ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact [FiniteDimensional 
   refine ⟨fun x ↦ ψ x • f x, hg, hψcpt.smul_right,
     (tsupport_smul_subset_left ψ f).trans hψsupp, Function.support_smul_subset_right ψ f, ?_⟩
   intro x hx
-  filter_upwards [isOpen_interior.mem_nhds (hψone hx)] with y hy
-  have hone : ψ y = 1 := by
-    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using interior_subset hy
-  simp only [hone, one_smul]
+  filter_upwards [hψone x hx] with y hy
+  simp only [hy, one_smul]
 
 /-- A function which is smooth on a neighbourhood of a point of a finite-dimensional real normed
 space agrees near that point with a compactly supported globally smooth function of the same

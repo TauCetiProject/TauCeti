@@ -18,6 +18,8 @@ the image of the final inclusion throughout. Inclusions are expressed as continu
 so the result also applies to subspaces represented by different but homeomorphic types; for
 subsets of one space, `ContinuousMap.HomotopicRel.exists_inter_deformation_trans` states it with
 set inclusions.
+A strong deformation retraction also determines every retraction onto the same subspace up to
+homotopy relative to that subspace (`ContinuousMap.HomotopicRel.of_leftInverse`).
 Strong deformation retractions of subsets also transport along homeomorphisms
 (`Homeomorph.exists_deformation_of_image_eq`).
 
@@ -77,6 +79,18 @@ theorem comp_retractions {i : C(Y, X)} {j : C(Z, Y)} {r : C(X, Y)} {s : C(Y, Z)}
         simpa only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, hr (j z),
           ContinuousMap.id_apply] using congrArg i (G.eq_fst t (mem_range_self z)) }
   exact ⟨H'.trans G'⟩
+
+/-- **Retractions onto a strong deformation retract are unique up to relative homotopy.** If the
+composite of `r'` with `i` is homotopic to the identity relative to `S`, then every left inverse
+`r` of `i` is homotopic to `r'` relative to `S`. No condition relating `S` to the range of `i` is
+needed. -/
+theorem of_leftInverse {i : C(Y, X)} {r r' : C(X, Y)} {S : Set X}
+    (h : (i.comp r').HomotopicRel (ContinuousMap.id X) S) (hr : LeftInverse r i) :
+    r'.HomotopicRel r S := by
+  -- Apply `r` to the homotopy from `i ∘ r'` to the identity; `r ∘ i ∘ r' = r'`.
+  have hri : r.comp i = ContinuousMap.id Y := ContinuousMap.ext hr
+  simpa only [← ContinuousMap.comp_assoc, hri, ContinuousMap.id_comp, ContinuousMap.comp_id] using
+    h.comp_continuousMap r
 
 variable {A B S : Set X} in
 /-- **Strong deformation retractions of subspaces compose.** Let `B ⊆ A` be subspaces, and let
@@ -223,13 +237,13 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
     by_cases hxk : x ∈ range k
     · obtain ⟨y, rfl⟩ := hxk
       exact (hGk t y).trans (congrArg k (H.eq_snd t hx))
-    · exact hG t x hxk
+    · exact hG t x (hkS hxk)
   have hG₀ (x : S) : (G (0, x) : X) ∈ T := by
     by_cases hxk : x ∈ range k
     · obtain ⟨y, rfl⟩ := hxk
       rw [hGk, ContinuousMap.HomotopyWith.coe_toContinuousMap, H.apply_zero]
       exact (r y).2
-    · rw [hG 0 x hxk]
+    · rw [hG 0 x (hkS hxk)]
       exact hVT ⟨x.2, hkS hxk⟩
   refine ⟨⟨fun x ↦ ⟨G (0, x), hG₀ x⟩, by fun_prop⟩,
     fun x ↦ Subtype.ext congr(Subtype.val $(hGT 0 (ContinuousMap.inclusion hTS x) x.2)), ⟨
@@ -240,6 +254,6 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
   by_cases hxk : x ∈ range k
   · obtain ⟨y, rfl⟩ := hxk
     exact (hGk 1 y).trans (congrArg k (H.apply_one y))
-  · exact hG 1 x hxk
+  · exact hG 1 x (hkS hxk)
 
 end Topology.IsOpenEmbedding

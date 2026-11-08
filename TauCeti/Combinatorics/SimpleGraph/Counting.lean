@@ -26,6 +26,8 @@ right-hand sides.
 ## Main results
 
 * `SimpleGraph.card_hom_le` bounds homomorphisms by all vertex maps.
+* `SimpleGraph.natCard_injective_inter_adjPreserving` counts injective homomorphisms by the
+  injective adjacency-preserving vertex maps.
 * `SimpleGraph.card_injective_hom_le` bounds injective homomorphisms by vertex embeddings.
 * `SimpleGraph.card_injective_hom_eq_sum_map_le` counts injective homomorphisms by the vertex
   embeddings whose mapped graph lies below the target.
@@ -63,6 +65,17 @@ theorem card_hom_eq_card_adjPreservingMaps (F : SimpleGraph V) (G : SimpleGraph 
   Nat.card_congr
     { toFun := fun φ => ⟨⇑φ, fun _ _ h => φ.map_rel h⟩
       invFun := fun ψ => ⟨ψ.1, fun {_ _} h => ψ.2 _ _ h⟩
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }
+
+/-- Injective adjacency-preserving vertex maps are counted by the injective homomorphisms. -/
+theorem natCard_injective_inter_adjPreserving (F : SimpleGraph V) (G : SimpleGraph W) :
+    Nat.card {f : V → W // f ∈ {f : V → W | Function.Injective f} ∩
+        {f : V → W | ∀ a b, F.Adj a b → G.Adj (f a) (f b)}} =
+      Nat.card {φ : F →g G // Function.Injective ⇑φ} :=
+  Nat.card_congr
+    { toFun := fun f => ⟨⟨f.1, fun {_ _} hab => f.2.2 _ _ hab⟩, f.2.1⟩
+      invFun := fun φ => ⟨⇑φ.1, φ.2, fun {_ _} hab => φ.1.map_rel hab⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl }
 

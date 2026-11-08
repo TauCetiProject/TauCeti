@@ -69,7 +69,7 @@ theorem tsum_lintegral_rootCount_eq (hn : 0 < n)
         n * μ (eisensteinSet K n) := by
   have := (countable_totallyRamifiedOfDegree hn (K := K)).to_subtype
   rw [← lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinSet μ L.2,
-    lintegral_congr_ae (ae_tsum_rootCount_eq hn μ)]
+    lintegral_congr_ae (ae_tsum_rootCount_eq μ)]
   simp
 
 /-- For Haar measure normalized on the integer box, the sum of root-count integrals is
