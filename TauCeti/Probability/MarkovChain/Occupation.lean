@@ -18,6 +18,10 @@ times spent at that state converges almost surely to the reciprocal extended mea
 The inverse is taken in `ℝ≥0∞` before conversion to `ℝ`; in particular the frequency is zero
 when the mean return time is infinite.
 
+For a chain started from a point mass, the expected number of visits to any target state
+at times one through `n` is the sum of the corresponding transition probabilities.
+This identity requires neither recurrence nor countability.
+
 The proof consumes the independent-excursion decomposition
 `TauCeti.Probability.iIndepFun_excursionProcess` and the renewal strong law. An excursion
 omits its closing return step, so its length plus one is the renewal increment. Visits at time

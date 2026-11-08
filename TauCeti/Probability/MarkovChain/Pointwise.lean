@@ -30,7 +30,8 @@ The recurrent-square criterion is also exposed with a zero Cesàro return-mass h
 without countability or an aperiodicity assumption on the original kernel.
 
 Only singleton convergence is asserted, not convergence in total variation to zero.
-All limits transfer to arbitrary realizations through their path laws.
+The infinite-mean decay theorem transfers to arbitrary realizations of the chain through
+their path laws.
 
 ## References
 

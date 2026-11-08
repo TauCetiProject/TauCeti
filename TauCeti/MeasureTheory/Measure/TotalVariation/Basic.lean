@@ -32,6 +32,8 @@ estimates into total-variation estimates.
 
 ## Main declarations
 
+* `MeasureTheory.abs_measureReal_sub_le_tvDist`: the real masses of a measurable event
+  differ by at most `tvDist μ ν`;
 * `MeasureTheory.etvDist_eq_posPart_univ_add_negPart_univ`: `etvDist μ ν` is the total mass of
   the positive part of the Jordan decomposition of `μ - ν` plus that of its negative part;
 * `MeasureTheory.etvDist_eq_iSup_sub_add_iSup_sub`: `etvDist μ ν` is the largest excess of `μ`
