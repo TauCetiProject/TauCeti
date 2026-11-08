@@ -25,7 +25,8 @@ the name records that this is the category of all modules containing Tau Ceti's
 The underlying category requires only a `k`-algebra. The scalar-field action on an object is
 restriction of scalars along `algebraMap k H`, exactly as for `FiniteHopfModuleCat`, so that the
 inclusion `FiniteHopfModuleCat.toHopfModuleCat` of finite-dimensional modules is the identity on
-underlying modules. It is fully faithful.
+underlying modules. It is fully faithful; `ObjectProperty.fullyFaithfulι` gives the
+`Functor.FullyFaithful` structure.
 
 ## Main declarations
 
@@ -104,20 +105,6 @@ theorem hom_id (M : HopfModuleCat k H) : (𝟙 M : M ⟶ M).hom = LinearMap.id :
 theorem hom_comp {M N P : HopfModuleCat k H} (f : M ⟶ N) (g : N ⟶ P) :
     (f ≫ g).hom = g.hom ∘ₗ f.hom := (rfl)
 
-/-- An `H`-linear equivalence gives an isomorphism of bundled modules. -/
-def _root_.LinearEquiv.toHopfModuleCatIso {M N : HopfModuleCat k H} (e : M ≃ₗ[H] N) : M ≅ N :=
-  LinearEquiv.toModuleIso (X₁ := M) (X₂ := N) e
-
-/-- The forward map of the bundled isomorphism is the original linear equivalence. -/
-@[simp]
-theorem _root_.LinearEquiv.toHopfModuleCatIso_hom_hom {M N : HopfModuleCat k H}
-    (e : M ≃ₗ[H] N) : e.toHopfModuleCatIso.hom.hom = e.toLinearMap := (rfl)
-
-/-- The inverse map of the bundled isomorphism is the inverse linear equivalence. -/
-@[simp]
-theorem _root_.LinearEquiv.toHopfModuleCatIso_inv_hom {M N : HopfModuleCat k H}
-    (e : M ≃ₗ[H] N) : e.toHopfModuleCatIso.inv.hom = e.symm.toLinearMap := (rfl)
-
 end Ring
 
 variable (k : Type u) [Field k] (H : Type v) [Ring H] [Algebra k H]
@@ -173,10 +160,6 @@ instance : (toHopfModuleCat k H).Faithful := inferInstanceAs (incl k H).Faithful
 instance : (toHopfModuleCat k H).Additive := inferInstanceAs (incl k H).Additive
 
 instance : (toHopfModuleCat k H).Linear k := inferInstanceAs ((incl k H).Linear k)
-
-/-- The inclusion is fully faithful. -/
-def fullyFaithfulToHopfModuleCat : (toHopfModuleCat k H).FullyFaithful :=
-  .ofFullyFaithful _
 
 /-- The inclusion followed by the forgetful functor of all modules is the forgetful functor of
 the finite-dimensional modules. -/

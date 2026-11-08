@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Monoidal
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.CategoryTheory.Monoidal.Linear
+public import TauCeti.Algebra.Bialgebra.Module.TensorProduct
 public import TauCeti.Algebra.Category.HopfModuleCat.Basic
 
 /-!
@@ -22,13 +24,10 @@ This is a tensor product over `k`, not over `H`: even when `H` is commutative, t
 `ModuleCat H` has a different monoidal structure, which is not used here.
 
 The coherence laws are pulled back along the faithful forgetful functor to `ModuleCat k` using
-`Monoidal.induced`, exactly as for the finite-dimensional modules of `FiniteHopfModuleCat`. The
-forgetful functor is therefore monoidal, and the structure is preadditive and `k`-linear.
-
-The inclusion `FiniteHopfModuleCat.toHopfModuleCat` of the finite-dimensional modules is a
-strict monoidal functor: its tensor and unit comparisons are identities. Together with
-`FiniteHopfModuleCat.fullyFaithfulToHopfModuleCat`, this identifies the monoidal category of
-finite-dimensional modules with a full monoidal subcategory of all modules.
+`Monoidal.induced`. The forgetful functor is therefore monoidal, and the structure is
+preadditive and `k`-linear. The finite-dimensional modules `FiniteHopfModuleCat k H` form a full
+monoidal subcategory, whose structure is installed in
+`TauCeti.Algebra.Category.FiniteHopfModuleCat.Monoidal`.
 
 ## Main declarations
 
@@ -36,9 +35,6 @@ finite-dimensional modules with a full monoidal subcategory of all modules.
 * `(TauCeti.HopfModuleCat.forgetToModule k H).Monoidal`: the forgetful functor is monoidal.
 * `TauCeti.HopfModuleCat.tensor_ext`, `tensorHom_tmul`, `associator_hom_tmul`,
   `leftUnitor_hom_tmul`, `rightUnitor_hom_tmul`: the monoidal structure on pure tensors.
-* `(TauCeti.FiniteHopfModuleCat.toHopfModuleCat k H).Monoidal`: the inclusion of
-  finite-dimensional modules is monoidal, with identity comparisons
-  (`FiniteHopfModuleCat.toHopfModuleCat_μ`, `FiniteHopfModuleCat.toHopfModuleCat_ε`).
 
 ## References
 
@@ -71,9 +67,9 @@ instance instMonoidalCategoryStruct : MonoidalCategoryStruct (HopfModuleCat k H)
   whiskerRight f _ := ofHom (tensorMap k H f.hom LinearMap.id)
   tensorHom f g := ofHom (tensorMap k H f.hom g.hom)
   tensorUnit := of (Trivial k H)
-  associator M N P := (assoc k H M N P).toHopfModuleCatIso
-  leftUnitor M := (lid k H M).toHopfModuleCatIso
-  rightUnitor M := (rid k H M).toHopfModuleCatIso
+  associator M N P := (assoc k H M N P).toModuleIso
+  leftUnitor M := (lid k H M).toModuleIso
+  rightUnitor M := (rid k H M).toModuleIso
 
 section Struct
 
@@ -93,28 +89,22 @@ theorem whiskerRight_hom (f : M ⟶ M') :
     (f ▷ N).hom = tensorMap k H f.hom LinearMap.id := (rfl)
 
 /-- The associator is the reassociation equivalence `BialgebraModule.assoc`. -/
-theorem associator_hom_hom : (α_ M N P).hom.hom = (assoc k H M N P).toLinearMap := 
-  LinearEquiv.toHopfModuleCatIso_hom_hom _
+theorem associator_hom_hom : (α_ M N P).hom.hom = (assoc k H M N P).toLinearMap := (rfl)
 
 /-- The inverse associator is the inverse reassociation equivalence. -/
-theorem associator_inv_hom : (α_ M N P).inv.hom = (assoc k H M N P).symm.toLinearMap := 
-  LinearEquiv.toHopfModuleCatIso_inv_hom _
+theorem associator_inv_hom : (α_ M N P).inv.hom = (assoc k H M N P).symm.toLinearMap := (rfl)
 
 /-- The left unitor is the left unit equivalence `BialgebraModule.lid`. -/
-theorem leftUnitor_hom_hom : (λ_ M).hom.hom = (lid k H M).toLinearMap := 
-  LinearEquiv.toHopfModuleCatIso_hom_hom _
+theorem leftUnitor_hom_hom : (λ_ M).hom.hom = (lid k H M).toLinearMap := (rfl)
 
 /-- The inverse left unitor is the inverse left unit equivalence. -/
-theorem leftUnitor_inv_hom : (λ_ M).inv.hom = (lid k H M).symm.toLinearMap := 
-  LinearEquiv.toHopfModuleCatIso_inv_hom _
+theorem leftUnitor_inv_hom : (λ_ M).inv.hom = (lid k H M).symm.toLinearMap := (rfl)
 
 /-- The right unitor is the right unit equivalence `BialgebraModule.rid`. -/
-theorem rightUnitor_hom_hom : (ρ_ M).hom.hom = (rid k H M).toLinearMap := 
-  LinearEquiv.toHopfModuleCatIso_hom_hom _
+theorem rightUnitor_hom_hom : (ρ_ M).hom.hom = (rid k H M).toLinearMap := (rfl)
 
 /-- The inverse right unitor is the inverse right unit equivalence. -/
-theorem rightUnitor_inv_hom : (ρ_ M).inv.hom = (rid k H M).symm.toLinearMap := 
-  LinearEquiv.toHopfModuleCatIso_inv_hom _
+theorem rightUnitor_inv_hom : (ρ_ M).inv.hom = (rid k H M).symm.toLinearMap := (rfl)
 
 /-- Morphisms out of a tensor product are determined by their values on pure tensors. -/
 @[ext]
@@ -239,47 +229,5 @@ theorem forgetToModule_ε :
       ModuleCat.ofHom (trivialEquiv k H).symm.toLinearMap := (rfl)
 
 end HopfModuleCat
-
-namespace FiniteHopfModuleCat
-
-variable (k : Type u) [Field k] (H : Type v) [Ring H] [Bialgebra k H]
-
-/-- The inclusion of finite-dimensional modules into all modules is strictly monoidal: the
-tensor product and unit of finite-dimensional modules are those of all modules. -/
-def coreMonoidalToHopfModuleCat : (toHopfModuleCat k H).CoreMonoidal where
-  εIso := Iso.refl _
-  μIso _ _ := Iso.refl _
-  μIso_hom_natural_left _ _ := (rfl)
-  μIso_hom_natural_right _ _ := (rfl)
-  associativity _ _ _ := by
-    simp only [Iso.refl_hom, id_whiskerRight, whiskerLeft_id, Category.id_comp, Category.comp_id]
-    exact HopfModuleCat.hom_ext
-      (FiniteHopfModuleCat.associator_hom_hom.trans HopfModuleCat.associator_hom_hom.symm)
-  left_unitality _ := by
-    simp only [Iso.refl_hom, id_whiskerRight, Category.id_comp]
-    exact HopfModuleCat.hom_ext
-      (HopfModuleCat.leftUnitor_hom_hom.trans FiniteHopfModuleCat.leftUnitor_hom_hom.symm)
-  right_unitality _ := by
-    simp only [Iso.refl_hom, whiskerLeft_id, Category.id_comp]
-    exact HopfModuleCat.hom_ext
-      (HopfModuleCat.rightUnitor_hom_hom.trans FiniteHopfModuleCat.rightUnitor_hom_hom.symm)
-
-/-- The inclusion of finite-dimensional modules into all modules is monoidal. -/
-instance : (toHopfModuleCat k H).Monoidal := (coreMonoidalToHopfModuleCat k H).toMonoidal
-
-variable {k H}
-
-/-- The tensor comparison of the inclusion of finite-dimensional modules is the identity. -/
-@[simp]
-theorem toHopfModuleCat_μ (M N : FiniteHopfModuleCat k H) :
-    Functor.LaxMonoidal.μ (toHopfModuleCat k H) M N = 𝟙 _ := by
-  simp [Functor.CoreMonoidal.toLaxMonoidal_μ, coreMonoidalToHopfModuleCat]
-
-/-- The unit comparison of the inclusion of finite-dimensional modules is the identity. -/
-@[simp]
-theorem toHopfModuleCat_ε : Functor.LaxMonoidal.ε (toHopfModuleCat k H) = 𝟙 _ := by
-  simp [Functor.CoreMonoidal.toLaxMonoidal_ε, coreMonoidalToHopfModuleCat]
-
-end FiniteHopfModuleCat
 
 end TauCeti
