@@ -26,8 +26,8 @@ in a linear complement and then translates the simplex to the chosen point.
   vector span is complementary to the direction of `A`, whose filled support meets `A` exactly at
   `p`, and which has `p` in its intrinsic interior.
 
-This is the local test object of the ScatteringDiagrams roadmap, §1.2 (generic paths): a small
-loop around a joint is the boundary of a small transverse triangle meeting the joint exactly once.
+For a subspace of codimension two, this gives a small transverse triangle meeting the subspace
+exactly once, whose boundary is a small loop around it.
 
 ## Attribution
 
