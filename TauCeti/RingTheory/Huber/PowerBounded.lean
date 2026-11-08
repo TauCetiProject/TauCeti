@@ -221,24 +221,28 @@ theorem IsPowerBounded.isTopologicallyNilpotent_mul {a b : R} (ha : IsPowerBound
 
 end CommMonoidWithZero
 
-section SeparatelyContinuousMul
+section ContinuousConstSMul
 
-variable {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [SeparatelyContinuousMul R]
+variable {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [ContinuousConstSMul Rᵐᵒᵖ R]
 
-/-- An element with a power-bounded positive power is power-bounded. Each of the finitely many
-powers `x ^ r` with `r < n` is absorbed into the neighbourhood supplied by the boundedness of the
-powers of `x ^ n`, by continuity of multiplication by `x ^ r`. -/
+/-- An element with a power-bounded positive power is power-bounded. -/
 theorem IsPowerBounded.of_pow {x : R} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBounded (x ^ n)) :
     IsPowerBounded x := by
+  -- Each of the finitely many powers `x ^ r` with `r < n` is absorbed into the neighbourhood
+  -- supplied by the boundedness of the powers of `x ^ n`, by continuity of multiplication by
+  -- `x ^ r`.
   rw [isPowerBounded_iff, isBounded_iff]
   intro U hU
   obtain ⟨V', hV', hV'U⟩ := isBounded_iff.mp (isPowerBounded_iff.mp hx) U hU
   have hV : ∀ r : Fin n, (· * x ^ (r : ℕ)) ⁻¹' V' ∈ 𝓝 (0 : R) := fun r ↦
-    (continuous_mul_const (x ^ (r : ℕ))).continuousAt.preimage_mem_nhds (by simpa using hV')
+    (continuous_const_smul (MulOpposite.op (x ^ (r : ℕ)))).continuousAt.preimage_mem_nhds
+      (by simpa using hV')
   refine ⟨⋂ r : Fin n, (· * x ^ (r : ℕ)) ⁻¹' V', Filter.iInter_mem.mpr hV, ?_⟩
   rintro _ ⟨v, hv, _, ⟨j, rfl⟩, rfl⟩
   have hj : v * x ^ j = (v * x ^ (j % n)) * (x ^ n) ^ (j / n) := by
     rw [mul_assoc, ← pow_mul, ← pow_add, Nat.mod_add_div]
+  -- `rintro` leaves the product as the beta-redex `(fun a b ↦ a * b) v ((fun k ↦ x ^ k) j)`,
+  -- which `rw [hj]` cannot match.
   change v * x ^ j ∈ U
   rw [hj]
   exact hV'U (Set.mul_mem_mul (Set.mem_iInter.mp hv ⟨j % n, Nat.mod_lt _ (Nat.pos_of_ne_zero hn)⟩)
@@ -249,7 +253,7 @@ theorem isPowerBounded_pow_iff {x : R} {n : ℕ} (hn : n ≠ 0) :
     IsPowerBounded (x ^ n) ↔ IsPowerBounded x :=
   ⟨IsPowerBounded.of_pow hn, fun h ↦ h.pow n⟩
 
-end SeparatelyContinuousMul
+end ContinuousConstSMul
 
 section HasDistribNeg
 
