@@ -48,12 +48,6 @@ namespace TopPair
 @[simp]
 lemma Hom.fst_id (P : TopPair.{w}) : Hom.fst (𝟙 P) = 𝟙 P.fst := rfl
 
-/-- The ambient component of a composite map of topological pairs is the composite of the
-ambient components. -/
-@[simp]
-lemma Hom.fst_comp {P Q S : TopPair.{w}} (f : P ⟶ Q) (g : Q ⟶ S) :
-    Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g := rfl
-
 /-- The inclusion of the subspace of a topological pair is a monomorphism, since an embedding is
 injective. -/
 instance (P : TopPair.{w}) : Mono P.map :=

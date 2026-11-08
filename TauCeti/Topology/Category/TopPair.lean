@@ -52,6 +52,12 @@ universe u
 
 namespace TopPair
 
+/-- The ambient component of a composite map of topological pairs is the composite of the
+ambient components. -/
+@[simp]
+lemma Hom.fst_comp {P Q S : TopPair.{u}} (f : P ⟶ Q) (g : Q ⟶ S) :
+    Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g := (rfl)
+
 /-- The topological pair `(t, s)` determined by nested subsets `s ⊆ t` of a topological space,
 with the inclusion of `s` into `t` as its embedding. -/
 abbrev ofInclusion {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) : TopPair.{u} :=

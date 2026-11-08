@@ -19,12 +19,12 @@ gives a chain homotopy equivalence
 
 for every subset `S` of `D`. The forward map appends the chosen path; the inverse
 appends its reversal. The cube formulas below identify the actual relative chain maps.
-In particular, `radialRelativeChainHomotopyEquiv` supplies this comparison over a
-characteristic disk, relative to its boundary, using radial paths from its centre.
+Applying `FiberHomotopyEquiv.relativeCubicalChainHomotopyEquiv` to
+`radialFiberHomotopyEquiv` supplies this comparison over a characteristic disk,
+relative to its boundary, using radial paths from its centre.
 
-This is a comparison of complexes of coefficient modules, not yet an identification
-with a shifted free module over loop chains. It retains the full product relative
-complex, including its loop coordinates.
+The comparison is of complexes of coefficient modules. The product side retains its
+loop coordinates and carries no loop-module structure here.
 
 ## References
 
@@ -47,7 +47,10 @@ variable {D X : Type u} [TopologicalSpace D] [TopologicalSpace X]
   (h₁ : ∀ d, (τ d).target = f d) (S : Set D) (R : Type u) [Ring R]
 
 /-- Appending a continuous family of paths gives a chain homotopy equivalence relative to
-any subset of the parameter space. -/
+any subset of the parameter space.
+
+The carrier-specialized wrapper supports the cube simp lemmas below: on the generic term,
+the hom/inv simp rules fire before the conversion of the pair's ambient-space wrapper. -/
 def relativeChainHomotopyEquiv :
     _root_.HomotopyEquiv
       ((TopPair.ofSubset (X := TopCat.of (D × MooreLoopSpace X b))
@@ -94,41 +97,5 @@ theorem relativeChainHomotopyEquiv_inv_f_cubicalChainOfCube {n : ℕ}
   -- As above, only the ambient-space wrapper of the pair differs.
   convert h using 1
   congr 1
-
-section Radial
-
-variable {V : Type u} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-  [ContinuousAdd V] [ContinuousSMul ℝ V] {T : Set V} {c : V}
-  (hT : StarConvex ℝ c T) (hc : c ∈ T) (χ : C(T, X))
-  (γ : MoorePathBetween X b (χ ⟨c, hc⟩))
-
-/-- The relative cubical-chain comparison for a map on a star-convex set, using a chosen
-path to its centre followed by radial paths. Taking `T` to be a characteristic disk and
-`A` its boundary gives the relative path-fibration cell comparison before the product
-complex is identified with shifted loop chains. -/
-def radialRelativeChainHomotopyEquiv (A : Set T) :
-    _root_.HomotopyEquiv
-      ((TopPair.ofSubset (X := TopCat.of (T × MooreLoopSpace X b))
-        ((ContinuousMap.fst : C(T × MooreLoopSpace X b, T)) ⁻¹' A)).cubicalChainComplex R)
-      ((TopPair.ofSubset (X := TopCat.of (MoorePathPullback χ b))
-        ((proj χ b) ⁻¹' A)).cubicalChainComplex R) :=
-  relativeChainHomotopyEquiv (radialPaths hT hc χ γ)
-    (source_radialPaths hT hc χ γ) (target_radialPaths hT hc χ γ) A R
-
-/-- The forward radial comparison is induced by appending the radial path family. -/
-@[simp]
-theorem radialRelativeChainHomotopyEquiv_hom (A : Set T) :
-    (radialRelativeChainHomotopyEquiv R hT hc χ γ A).hom =
-      (relativeChainHomotopyEquiv (radialPaths hT hc χ γ)
-        (source_radialPaths hT hc χ γ) (target_radialPaths hT hc χ γ) A R).hom := (rfl)
-
-/-- The inverse radial comparison is induced by appending the reversed radial path family. -/
-@[simp]
-theorem radialRelativeChainHomotopyEquiv_inv (A : Set T) :
-    (radialRelativeChainHomotopyEquiv R hT hc χ γ A).inv =
-      (relativeChainHomotopyEquiv (radialPaths hT hc χ γ)
-        (source_radialPaths hT hc χ γ) (target_radialPaths hT hc χ γ) A R).inv := (rfl)
-
-end Radial
 
 end TauCeti.MoorePathPullback
