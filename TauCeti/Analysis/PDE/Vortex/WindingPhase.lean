@@ -39,14 +39,12 @@ derivative decays by `TauCeti.Vortex.exists_norm_covariantDerivative_le_mul_exp`
 
 Every smooth field with the degree-`m` end framing `α (z / |z|)^(-m) → 1` is equivalent under the
 smooth framed gauge group to one normalized at its end
-(`TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`). More generally, a function `g`
-that is smooth near infinity and tends to one is made positive near infinity by a smooth framed
-gauge (`TauCeti.Vortex.exists_framedGaugeGroup_mul_eq_norm`); here `g = α (z / |z|)^(-m)`. The
-gauge is `v / |v|` for `v = 1 + χ (conj g - 1)`, with `χ` a cutoff equal to one outside a large
-disc, so no logarithm of the phase is chosen. Hence every smooth
-framed vortex has a framed-gauge representative which converges exponentially to the reference
-field (`TauCeti.Vortex.exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp`). This is
-the zeroth-order decay of the fields in the end trivialization; decay of their derivatives is not
+(`TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`): the smooth framed gauge making
+`g = α (z / |z|)^(-m)` positive near infinity (`TauCeti.Vortex.exists_framedGaugeGroup_mul_eq_norm`)
+does this, without choosing a logarithm of the phase. Hence every smooth framed vortex has a
+framed-gauge representative which converges exponentially to the reference field
+(`TauCeti.Vortex.exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp`). This is the
+zeroth-order decay of the fields in the end trivialization; decay of their derivatives is not
 treated here.
 
 ## Main definitions
@@ -60,8 +58,6 @@ treated here.
   the reference field to the vacuum outside the cutoff disc.
 * `TauCeti.Vortex.exists_norm_sub_referenceField_le_mul_exp`: a vortex normalized at its end
   converges exponentially to the reference field.
-* `TauCeti.Vortex.exists_framedGaugeGroup_mul_eq_norm`: a smooth framed gauge making a function
-  that tends to one positive near infinity.
 * `TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`: framed gauge normalization of the
   end phase.
 * `TauCeti.Vortex.exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp`: every smooth
@@ -146,8 +142,7 @@ theorem gaugeForm_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) (v : ℂ) :
   set U : ℂ → Circle := (fun _ ↦ windingPhase m z) * fun w ↦ Circle.exp (φ w)
   have heq : (fun w ↦ (windingPhase m w : ℂ)) =ᶠ[𝓝 z] fun w ↦ (U w : ℂ) := by
     filter_upwards [isOpen_ne.mem_nhds hz] with w hw
-    rw [windingPhase_eq_mul_exp m hz hw]
-    rfl
+    simp only [windingPhase_eq_mul_exp m hz hw, U, φ, Pi.mul_apply]
   have hconst : DifferentiableAt ℝ (fun _ : ℂ ↦ (windingPhase m z : ℂ)) z :=
     differentiableAt_const _
   have hexp : DifferentiableAt ℝ (fun w ↦ (Circle.exp (φ w) : ℂ)) z := by
@@ -168,20 +163,22 @@ the gauge transformation by the inverse winding phase takes the reference field
 theorem gaugeTransform_inv_windingPhase_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ)
     {z : ℂ} (hz : f.rOut ≤ ‖z‖ ^ 2) :
     gaugeTransform (windingPhase m)⁻¹ (referenceField f m) z = vacuumField z := by
-  have hz₀ : z ≠ 0 := by
-    rintro rfl
-    simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hz
-    exact (f.rOut_pos.trans_le hz).false
+  have hz₀ := ne_zero_of_rOut_le_norm_sq f hz
   have hn := Circle.re_sq_add_im_sq (windingPhase m z)
   have hsec : referenceSection f m z = windingPhase m z := by
     rw [referenceSection_eq_phase f m hz, coe_windingPhase m hz₀]
   have hform := gaugeForm_inv (differentiableAt_windingPhase m hz₀)
   rw [gaugeTransform_apply, referenceField_apply, hsec, vacuumField_apply]
   ext i
-  fin_cases i <;>
-    simp [referenceConnection_eq_angular f m hz, hform, gaugeForm_windingPhase m hz₀]
-  · linear_combination hn / 2
-  · ring
+  fin_cases i
+  · simp [referenceConnection_eq_angular f m hz, hform, gaugeForm_windingPhase m hz₀]
+  · simp [referenceConnection_eq_angular f m hz, hform, gaugeForm_windingPhase m hz₀]
+  · simp only [Fin.isValue, Fin.reduceFinMk, Matrix.cons_val, Pi.inv_apply, Circle.coe_inv,
+      inv_re, inv_im, Circle.normSq_coe, div_one]
+    linear_combination hn / 2
+  · simp only [Fin.isValue, Fin.reduceFinMk, Matrix.cons_val, Pi.inv_apply, Circle.coe_inv,
+      inv_re, inv_im, Circle.normSq_coe, div_one]
+    ring
 
 /-! ### Exponential convergence to the reference field -/
 
@@ -208,7 +205,7 @@ private theorem abs_mul_norm_le_norm_covariantDerivative {z : ℂ} (hz : z ≠ 0
     |gaugeTransform (windingPhase m)⁻¹ x z 0 * v.re +
         gaugeTransform (windingPhase m)⁻¹ x z 1 * v.im| * ‖sectionValue x z‖ ≤
       ‖covariantDerivative x z v‖ := by
-  have hu := differentiableAt_coe_inv (differentiableAt_windingPhase m hz)
+  have hu := Circle.differentiableAt_coe_inv (differentiableAt_windingPhase m hz)
   have hsx : DifferentiableAt ℝ (sectionValue x) z := by
     rw [funext (sectionValue_apply x)]
     exact (differentiableAt_const (2 : ℂ)).mul
@@ -249,10 +246,7 @@ private theorem norm_sub_referenceField_le (f : ContDiffBump (0 : ℝ)) {z : ℂ
     (hs_half : 1 / 2 ≤ ‖sectionValue x z‖) (hs_one : ‖sectionValue x z‖ ≤ 1) :
     ‖x z - referenceField f m z‖ ≤ 2 * ‖covariantDerivative x z 1‖ +
       2 * ‖covariantDerivative x z I‖ + (1 - ‖sectionValue x z‖ ^ 2) / 2 := by
-  have hz : z ≠ 0 := by
-    rintro rfl
-    simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hrOut
-    exact (f.rOut_pos.trans_le hrOut).false
+  have hz := ne_zero_of_rOut_le_norm_sq f hrOut
   set y := gaugeTransform (windingPhase m)⁻¹ x
   set s := ‖sectionValue x z‖
   -- The section coordinates of the end trivialization are `(|α| / 2, 0)`.
@@ -324,10 +318,7 @@ theorem exists_norm_sub_referenceField_le_mul_exp
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (max R (max 1 f.rOut)),
     hlim.eventually (lt_mem_nhds (by norm_num : (1 : ℝ) / 4 < 1))] with z hzR hz4
   have hR' : R < ‖z‖ := (le_max_left _ _).trans_lt hzR
-  have hrOut : f.rOut ≤ ‖z‖ ^ 2 := by
-    have h1 : 1 < ‖z‖ := ((le_max_left _ _).trans (le_max_right _ _)).trans_lt hzR
-    have : f.rOut < ‖z‖ := ((le_max_right _ _).trans (le_max_right _ _)).trans_lt hzR
-    nlinarith
+  have hrOut := rOut_le_norm_sq f ((le_max_right _ _).trans_lt hzR)
   have hnhds : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w :=
     Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hR')
       fun w hw ↦ hR (show R ≤ ‖w‖ from le_of_lt hw)
@@ -345,74 +336,6 @@ theorem exists_norm_sub_referenceField_le_mul_exp
 
 /-! ### Framed gauge normalization of the end phase -/
 
-/-- **A framed gauge making a function positive near infinity.** If `g : ℂ → ℂ` is smooth outside
-a compact set and tends to one at infinity, then some smooth framed gauge `u` satisfies
-`u g = |g|` outside a compact set. -/
-theorem exists_framedGaugeGroup_mul_eq_norm {g : ℂ → ℂ}
-    (hg : ∀ᶠ z in cocompact ℂ, ContDiffAt ℝ ∞ g z) (hgt : Tendsto g (cocompact ℂ) (𝓝 1)) :
-    ∃ u : framedGaugeGroup, ∀ᶠ z in cocompact ℂ, ((u : ℂ → Circle) z : ℂ) * g z = ‖g z‖ := by
-  obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
-    (cobounded_eq_cocompact (α := ℂ) ▸
-      hg.and (hgt.eventually (Metric.ball_mem_nhds 1 one_half_pos)))
-  set R := max R₀ 0
-  have hgR {z : ℂ} (hz : R < ‖z‖) : ContDiffAt ℝ ∞ g z ∧ 1 / 2 < (g z).re := by
-    obtain ⟨hc, h⟩ := hR₀ (show R₀ ≤ ‖z‖ from (le_max_left _ _).trans hz.le)
-    rw [dist_eq_norm] at h
-    have := abs_re_le_norm (g z - 1)
-    rw [sub_re, one_re] at this
-    exact ⟨hc, by linarith [abs_lt.1 (this.trans_lt h)]⟩
-  -- A cutoff `χ` vanishing on the disc of radius `R + 1` and equal to one outside radius `R + 2`.
-  let b : ContDiffBump (0 : ℂ) := ⟨R + 1, R + 2, by positivity, by linarith⟩
-  set χ : ℂ → ℝ := fun z ↦ 1 - b z
-  have hχ0 {z : ℂ} (hz : ‖z‖ ≤ R + 1) : χ z = 0 := by
-    simp only [χ, b.one_of_mem_closedBall (mem_closedBall_zero_iff.2 hz), sub_self]
-  have hχ1 {z : ℂ} (hz : R + 2 ≤ ‖z‖) : χ z = 1 := by
-    simp only [χ, b.zero_of_le_dist (by rwa [dist_zero_right]), sub_zero]
-  -- The unnormalized gauge `v = 1 + χ (conj g - 1)` is smooth with positive real part.
-  set v : ℂ → ℂ := fun z ↦ 1 + (χ z : ℂ) * (conj (g z) - 1)
-  have hv_re (z : ℂ) : 0 < (v z).re := by
-    simp only [v, add_re, one_re, re_ofReal_mul, sub_re, conj_re]
-    rcases le_or_gt ‖z‖ R with hz | hz
-    · rw [hχ0 (by linarith)]
-      norm_num
-    · nlinarith [(hgR hz).2, sub_nonneg.2 (b.le_one (x := z)), b.nonneg (x := z)]
-  have hv0 (z : ℂ) : v z ≠ 0 := fun h ↦ by simpa [h] using hv_re z
-  have hv : ContDiff ℝ ∞ v := by
-    refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
-    rcases lt_or_ge R ‖z‖ with hz | hz
-    · exact contDiffAt_const.add ((ofRealCLM.contDiff.comp
-        (contDiff_const.sub b.contDiff)).contDiffAt.mul
-        ((conjCLE.contDiff.contDiffAt.comp z (hgR hz).1).sub contDiffAt_const))
-    · refine (contDiffAt_const (c := (1 : ℂ))).congr_of_eventuallyEq ?_
-      filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds
-        (show ‖z‖ < R + 1 by linarith)] with w hw
-      simp [v, hχ0 (le_of_lt hw)]
-  -- The gauge `u = v / |v|`, written as `exp (i arg v)` to avoid a membership proof.
-  set u : ℂ → Circle := fun z ↦ Circle.exp (arg (v z))
-  have hu (z : ℂ) : (u z : ℂ) = v z / (‖v z‖ : ℂ) := by
-    simp only [u, Circle.coe_exp, exp_arg_mul_I (hv0 z)]
-  have hvt : Tendsto v (cocompact ℂ) (𝓝 1) := by
-    have h := ((continuous_conj.tendsto 1).comp hgt)
-    rw [map_one] at h
-    refine h.congr' ?_
-    filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (R + 2)] with z hz
-    simp [v, hχ1 hz]
-  have hmem : u ∈ framedGaugeGroup :=
-    exp_mem_framedGaugeGroup (contDiff_iff_contDiffAt.2 fun z ↦
-        (contDiffAt_arg (mem_slitPlane_iff.2 (Or.inl (hv_re z)))).comp z hv.contDiffAt)
-      (by simpa [arg_one, Function.comp_def] using ((continuousAt_arg (by simp)).tendsto).comp hvt)
-  refine ⟨⟨u, hmem⟩, ?_⟩
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (R + 2)] with z hz
-  have hvz : v z = conj (g z) := by simp [v, hχ1 hz]
-  have hgz : g z ≠ 0 := fun h ↦ by
-    have := (hgR (show R < ‖z‖ by linarith)).2
-    simp [h] at this
-    linarith
-  change (u z : ℂ) * g z = ‖g z‖
-  rw [hu z, hvz, Complex.norm_conj, div_mul_eq_mul_div, conj_mul',
-    div_eq_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hgz))]
-  ring
-
 /-- **Normalization of the end phase by a smooth framed gauge.** A smooth field whose section
 has the degree-`m` end framing `α (z / |z|)^(-m) → 1` is equivalent under the smooth framed gauge
 group to a field whose section is `|α|` times the winding phase outside a compact set. -/
@@ -420,11 +343,7 @@ theorem exists_framedGaugeGroup_sectionValue_smul_eq (hx : ContDiff ℝ ∞ x)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     ∃ u : framedGaugeGroup, ∀ᶠ z in cocompact ℂ,
       sectionValue (u • x) z = ‖sectionValue (u • x) z‖ * windingPhase m z := by
-  have hs : ContDiff ℝ ∞ (sectionValue x) := by
-    have hc (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (x z i : ℂ)) :=
-      ofRealCLM.contDiff.comp (contDiff_euclidean.1 hx i)
-    rw [funext (sectionValue_apply x)]
-    exact contDiff_const.mul ((hc 2).add ((hc 3).mul contDiff_const))
+  have hs := contDiff_sectionValue (contDiff_euclidean.1 hx 2) (contDiff_euclidean.1 hx 3)
   have hconj (z : ℂ) : conj (windingPhase m z : ℂ) * (windingPhase m z : ℂ) = 1 := by
     rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
   -- The end-trivialized section `α conj (z / |z|)^m` is smooth off the origin and tends to one.

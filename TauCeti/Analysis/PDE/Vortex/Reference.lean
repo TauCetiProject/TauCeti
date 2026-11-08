@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Smooth winding reference fields on the plane
@@ -23,8 +24,7 @@ The cutoff removes the angular singularity on a neighborhood of the origin.
 
 The end formulas, rotation laws and compact support of changes of cutoff are proved
 explicitly. The latter allows different references to define the same affine Sobolev
-space. These reference pairs are not asserted to solve the vortex equations. The winding phase
-`(z / |z|)^m` itself is smooth off the origin (`contDiffOn_div_norm_pow`).
+space. These reference pairs are not asserted to solve the vortex equations.
 
 Outside a disc the section is homogeneous of degree `0` and the connection of degree `-1`, so all
 their derivatives are bounded (`exists_norm_iteratedFDeriv_referenceSection_le`,
@@ -113,23 +113,18 @@ theorem referenceSection_eq_phase (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : �
     (hz : f.rOut ≤ ‖z‖ ^ 2) : referenceSection f m z = (z / (‖z‖ : ℂ)) ^ m := by
   simp [referenceSection, cutoff_eq_one f hz]
 
+/-- Points outside the cutoff disc are nonzero. -/
+theorem ne_zero_of_rOut_le_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ} (hz : f.rOut ≤ ‖z‖ ^ 2) :
+    z ≠ 0 := by
+  rintro rfl
+  simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hz
+  exact (f.rOut_pos.trans_le hz).false
+
 /-- The reference connection has the exact angular tail `-i m dθ`. -/
 theorem referenceConnection_eq_angular (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
     (hz : f.rOut ≤ ‖z‖ ^ 2) (v : ℂ) :
     referenceConnection f m z v = -(m : ℂ) * I * ((v / z).im : ℂ) := by
   simp [referenceConnection, cutoff_eq_one f hz, div_eq_mul_inv, mul_comm]
-
-/-- The winding phase `(z / ‖z‖)^m` is smooth away from the origin. -/
-theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
-    ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by
-  intro z hz
-  have hz : z ≠ 0 := hz
-  have hn : ContDiffAt ℝ N (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
-    ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
-  have hp : ContDiffAt ℝ N (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
-    simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
-      contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
-  exact (hp.pow m).contDiffWithinAt
 
 /-- The section is smooth even at the origin. -/
 theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
@@ -234,7 +229,7 @@ private theorem angular_smul (m : ℕ) (t : ℝ) (z : ℂ) :
   ring
 
 /-- Outside the disc of radius `max 1 f.rOut` the squared radius exceeds `f.rOut`. -/
-private theorem rOut_le_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ} (hz : max 1 f.rOut < ‖z‖) :
+theorem rOut_le_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ} (hz : max 1 f.rOut < ‖z‖) :
     f.rOut ≤ ‖z‖ ^ 2 := by
   have h1 : 1 < ‖z‖ := (le_max_left _ _).trans_lt hz
   nlinarith [le_max_right 1 f.rOut]
