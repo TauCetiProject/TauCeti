@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
-import TauCeti.Geometry.Manifold.DeRham.Euclidean
-import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
+import TauCeti.Geometry.Manifold.DeRham.Integration.Localization
 
 /-!
 # Top compactly supported cohomology of a connected oriented manifold
@@ -25,13 +24,14 @@ Surjectivity holds without connectedness
 has an open neighbourhood `U` diffeomorphic to `ℝⁿ`
 (`TauCeti.exists_opens_diffeomorph_euclideanSpace`), on which integration `H^n_c(U) → ℝ` is
 injective because `H^n_c(ℝⁿ)` is a line
-(`TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`). Hence two compactly supported
-top forms supported in `U` with the same integral have the same class in `H^n_c(M)`. Fix a class
-`e₀` of integral one. The points having an open neighbourhood all of whose compactly supported
-classes `y` satisfy `y = (∫_M y) • e₀` form an open set; its complement is open too, since two such
-Euclidean neighbourhoods that meet share a localized class of integral one. By connectedness every
-point has such a neighbourhood, and a partition of unity splits every compactly supported top form
-into finitely many forms supported in them. So every class is `(∫_M y) • e₀`.
+(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_of_diffeomorph_normedSpace`).
+Hence two compactly supported top forms supported in `U` with the same integral have the same
+class in `H^n_c(M)`. Fix a class `e₀` of integral one. The points having an open neighbourhood
+all of whose compactly supported classes `y` satisfy `y = (∫_M y) • e₀` form an open set; its
+complement is open too, since two such Euclidean neighbourhoods that meet share a localized class
+of integral one. By connectedness every point has such a neighbourhood, and a partition of unity
+splits every compactly supported top form into finitely many forms supported in them. So every
+class is `(∫_M y) • e₀`.
 
 The connectedness hypothesis cannot be dropped: on a disjoint union of two copies of `ℝⁿ`,
 `H^n_c` is two-dimensional.
@@ -113,15 +113,8 @@ private theorem exists_opens_injective_integral (o : Manifold.Orientation I M (F
   obtain ⟨U, hxU, ⟨Ψ⟩⟩ := exists_opens_diffeomorph_euclideanSpace (n := ⊤)
     (BoundarylessManifold.isInteriorPoint (I := I) (x := x))
   have : SigmaCompactSpace U := Ψ.toHomeomorph.isClosedEmbedding.sigmaCompactSpace
-  have : Nonempty U := ⟨⟨x, hxU⟩⟩
-  have hfin : finrank ℝ (compactlySupportedDeRhamCohomology I U n) = finrank ℝ ℝ := by
-    rw [← (equivOfDiffeomorph Ψ n).finrank_eq, finrank_self]
-    exact finrank_compactlySupportedDeRhamCohomology_normedSpace _
-      (by rw [finrank_euclideanSpace_fin, ← o.card_eq, Fintype.card_fin])
-  have : FiniteDimensional ℝ (compactlySupportedDeRhamCohomology I U n) :=
-    Module.finite_of_finrank_eq_succ (hfin.trans (finrank_self ℝ))
-  exact ⟨U, hxU, ‹_›,
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mpr (surjective_integral _)⟩
+  exact ⟨U, hxU, ‹_›, (bijective_integral_of_diffeomorph_normedSpace (o.restrict U)
+    ((toEuclidean (E := E)).toDiffeomorph.trans Ψ.symm)).injective⟩
 
 /-- **The top compactly supported cohomology of a connected manifold.** On a connected, oriented,
 boundaryless, Hausdorff, σ-compact finite-dimensional smooth manifold, integration
