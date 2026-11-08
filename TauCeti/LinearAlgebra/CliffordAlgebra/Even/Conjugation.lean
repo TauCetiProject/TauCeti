@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Ring.Action.ConjAct
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # Even-Clifford transport along a negative vector
@@ -32,6 +33,9 @@ same product up to sign.
 
 * `CliffordAlgebra.even_ι_bilin_add_swap`: the Clifford relation for the even generators,
   `ι(m) ι(e) + ι(e) ι(m) = polar Q m e`.
+* `CliffordAlgebra.even_ι_bilin_mul_self_of_isOrtho`,
+  `CliffordAlgebra.even_ι_bilin_comm_of_isOrtho`: the bivector of two orthogonal vectors
+  squares to the scalar `-Q x * Q y`, and two such bivectors sharing a vector anticommute.
 * `CliffordAlgebra.coe_evenEquivEvenNeg_prod_map_ι`: on a product of `2k` vectors,
   `evenEquivEvenNeg` is `(-1) ^ k` times the same product in the Clifford algebra of `-Q`.
 -/
@@ -131,6 +135,34 @@ theorem coe_conjugateNegativeIotaEven (e : M) (he : Q e = -1) (x : even Q) :
   conjugateNegativeIota_apply Q e he x
 
 variable {Q}
+
+omit [Invertible (2 : R)] in
+/-- The square of the even bivector of two orthogonal vectors is the scalar `-Q x * Q y`. -/
+theorem even_ι_bilin_mul_self_of_isOrtho {x y : M} (h : Q.IsOrtho x y) :
+    (even.ι Q).bilin x y * (even.ι Q).bilin x y = algebraMap R (even Q) (-(Q x * Q y)) := by
+  apply Subtype.ext
+  rw [Subalgebra.coe_mul, coe_even_ι_bilin, ι_mul_ι_mul_self_of_isOrtho h]
+  simp
+
+omit [Invertible (2 : R)] in
+/-- The even bivectors `x y` and `x z` anticommute when `x, y, z` are pairwise orthogonal. -/
+theorem even_ι_bilin_comm_of_isOrtho {x y z : M}
+    (h01 : Q.IsOrtho x y) (h02 : Q.IsOrtho x z) (h12 : Q.IsOrtho y z) :
+    (even.ι Q).bilin x z * (even.ι Q).bilin x y =
+      -((even.ι Q).bilin x y * (even.ι Q).bilin x z) := by
+  apply Subtype.ext
+  -- After subtype extensionality, expose the four Clifford generators represented by the two
+  -- even bivectors so the orthogonality commutation lemmas apply.
+  change (ι Q x * ι Q z) * (ι Q x * ι Q y) = -((ι Q x * ι Q y) * (ι Q x * ι Q z))
+  calc
+    _ = -((ι Q x * ι Q x) * (ι Q z * ι Q y)) :=
+      mul_ι_mul_ι_mul_comm_of_isOrtho (ι Q x) h02.symm (ι Q y)
+    _ = (ι Q x * ι Q x) * (ι Q y * ι Q z) := by
+      rw [ι_mul_ι_comm_of_isOrtho h12.symm]
+      simp
+    _ = -(-((ι Q x * ι Q x) * (ι Q y * ι Q z))) := by simp
+    _ = _ := by
+      rw [← mul_ι_mul_ι_mul_comm_of_isOrtho (ι Q x) h01.symm (ι Q z)]
 
 omit [Invertible (2 : R)] in
 /-- On a product of `2k` vectors, `evenEquivEvenNeg` is the same product in the Clifford algebra of

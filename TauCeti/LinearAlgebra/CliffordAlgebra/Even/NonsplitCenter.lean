@@ -50,57 +50,6 @@ universe u v
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [Invertible (2 : K)]
 
-/-- A regular quaternary quadratic form has three pairwise orthogonal anisotropic vectors. -/
-private lemma exists_orthogonal_triple
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 4) :
-    ∃ x y z : V, Q.IsOrtho x y ∧ Q.IsOrtho x z ∧ Q.IsOrtho y z ∧
-      Q x ≠ 0 ∧ Q y ≠ 0 ∧ Q z ≠ 0 := by
-  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  obtain ⟨B, horth, haniso⟩ := hQ.exists_orthogonal_basis
-  let n0 : Fin (finrank K V) := ⟨0, by omega⟩
-  let n1 : Fin (finrank K V) := ⟨1, by omega⟩
-  let n2 : Fin (finrank K V) := ⟨2, by omega⟩
-  exact ⟨B n0, B n1, B n2, horth n0 n1 (by simp [n0, n1]), horth n0 n2 (by simp [n0, n2]),
-    horth n1 n2 (by simp [n1, n2]), haniso n0, haniso n1, haniso n2⟩
-
-omit [Invertible (2 : K)] in
-/-- The square of the even bivector of two orthogonal vectors is the scalar `-Q x * Q y`. -/
-private lemma bilin_mul_self_of_isOrtho (Q : QuadraticForm K V) {x y : V} (h : Q.IsOrtho x y) :
-    (even.ι Q).bilin x y * (even.ι Q).bilin x y = algebraMap K (even Q) (-(Q x * Q y)) := by
-  apply Subtype.ext
-  rw [Subalgebra.coe_mul, coe_even_ι_bilin, ι_mul_ι_mul_self_of_isOrtho h]
-  simp
-
-omit [Invertible (2 : K)] in
-/-- The even bivectors `x y` and `x z` anticommute when `x, y, z` are pairwise orthogonal. -/
-private lemma bilin_comm_of_isOrtho (Q : QuadraticForm K V) {x y z : V}
-    (h01 : Q.IsOrtho x y) (h02 : Q.IsOrtho x z) (h12 : Q.IsOrtho y z) :
-    (even.ι Q).bilin x z * (even.ι Q).bilin x y =
-      -((even.ι Q).bilin x y * (even.ι Q).bilin x z) := by
-  apply Subtype.ext
-  -- After subtype extensionality, expose the four Clifford generators represented by the two
-  -- even bivectors so the orthogonality commutation lemmas apply.
-  change (ι Q x * ι Q z) * (ι Q x * ι Q y) = -((ι Q x * ι Q y) * (ι Q x * ι Q z))
-  calc
-    _ = -((ι Q x * ι Q x) * (ι Q z * ι Q y)) :=
-      mul_ι_mul_ι_mul_comm_of_isOrtho (ι Q x) h02.symm (ι Q y)
-    _ = (ι Q x * ι Q x) * (ι Q y * ι Q z) := by
-      rw [ι_mul_ι_comm_of_isOrtho h12.symm]
-      simp
-    _ = -(-((ι Q x * ι Q x) * (ι Q y * ι Q z))) := by simp
-    _ = _ := by
-      rw [← mul_ι_mul_ι_mul_comm_of_isOrtho (ι Q x) h01.symm (ι Q z)]
-
-omit [Invertible (2 : K)] in
-/-- Clifford reversal negates the even bivector of two orthogonal vectors. -/
-private lemma reverseEven_bilin_of_isOrtho (Q : QuadraticForm K V) {x y : V}
-    (h : Q.IsOrtho x y) :
-    reverseEven Q ((even.ι Q).bilin x y) = -(even.ι Q).bilin x y := by
-  rw [reverseEven_ι]
-  apply Subtype.ext
-  simp only [coe_even_ι_bilin]
-  exact ι_mul_ι_comm_of_isOrtho h.symm
-
 section Quaternary
 
 variable (Q : QuadraticForm K V)
@@ -184,13 +133,7 @@ private lemma exists_equiv_of_algHom_reverse_star (hQ : Q.Nondegenerate)
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let _ : IsScalarTower K 𝓩 (even Q) := Subalgebra.isScalarTower_centerAlgebra
   let _ := hfield.toField
-  have htwoE : (2 : 𝓩) ≠ 0 := by
-    intro h
-    have h' : algebraMap K 𝓩 (2 : K) = algebraMap K 𝓩 (0 : K) := by
-      simpa only [map_ofNat, map_zero] using h
-    exact (isUnit_of_invertible (2 : K)).ne_zero
-      (FaithfulSMul.algebraMap_injective K 𝓩 h')
-  let _ : Invertible (2 : 𝓩) := invertibleOfNonzero htwoE
+  let _ : Invertible (2 : 𝓩) := IsScalarTower.invertibleAlgebraCoeNat K 𝓩 2
   let _ : IsSimpleRing ℍ[𝓩,(a : 𝓩),0,(b : 𝓩)] :=
     TauCeti.QuaternionAlgebra.instIsSimpleRing a b
   let _ : Module.Finite 𝓩 (even Q) := finite_even_over_center Q
@@ -226,7 +169,7 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
       ∃ e : even Q ≃ₐ[Subalgebra.center K (even Q)]
           ℍ[Subalgebra.center K (even Q),(a : _),0,(b : _)],
         ∀ x, e (reverseEven Q x) = star (e x) := by
-  obtain ⟨x, y, z, hxy, hxz, hyz, hx, hy, hz⟩ := exists_orthogonal_triple Q hQ hV
+  obtain ⟨x, y, z, hxy, hxz, hyz, hx, hy, hz⟩ := hQ.exists_orthogonal_triple (by omega)
   let _ : IsScalarTower K (Subalgebra.center K (even Q)) (even Q) :=
     Subalgebra.isScalarTower_centerAlgebra
   let a : (Subalgebra.center K (even Q))ˣ :=
@@ -251,10 +194,10 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
     rfl
   obtain ⟨f, hf_star⟩ := exists_algHom_reverse_star Q hQ hV (a := a) (b := b)
     (i := (even.ι Q).bilin x y) (j := (even.ι Q).bilin x z)
-    (by rw [ha_smul]; exact bilin_mul_self_of_isOrtho Q hxy)
-    (by rw [hb_smul]; exact bilin_mul_self_of_isOrtho Q hxz)
-    (bilin_comm_of_isOrtho Q hxy hxz hyz) (reverseEven_bilin_of_isOrtho Q hxy)
-    (reverseEven_bilin_of_isOrtho Q hxz)
+    (by rw [ha_smul]; exact even_ι_bilin_mul_self_of_isOrtho hxy)
+    (by rw [hb_smul]; exact even_ι_bilin_mul_self_of_isOrtho hxz)
+    (even_ι_bilin_comm_of_isOrtho hxy hxz hyz) (reverseEven_even_ι_bilin_of_isOrtho hxy)
+    (reverseEven_even_ι_bilin_of_isOrtho hxz)
   obtain ⟨e, he⟩ := exists_equiv_of_algHom_reverse_star Q hQ hV hfield a b f hf_star
   exact ⟨a, b, e, he⟩
 
