@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.FreeGroup.Computability
 public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
 public import TauCeti.GroupTheory.ProperPower
+import TauCeti.Computability.Primrec.List
 
 /-!
 # Primitive-recursive proper-power membership
@@ -88,15 +89,6 @@ theorem isProperPower_mk_iff_exists_bounded_replicate {w : List (α × Bool)}
       exact (Group.isProperPower_conj_iff _ _).mpr
         (Group.isProperPower_pow _ hn)
 
-/-- A relation searched over all `n ≤ (f b).length`, for `f` primitive recursive, stays
-primitive recursive. -/
-private theorem primrecPred_exists_le_length {β γ : Type*} [Primcodable β] [Primcodable γ]
-    {f : β → List γ} {R : ℕ → β → Prop} (hf : Primrec f) (hR : PrimrecRel R) :
-    PrimrecPred fun b => ∃ n ≤ (f b).length, R n b :=
-  (hR.exists_mem_list.comp
-    (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp hf)))
-    Primrec.id).of_eq fun _ => by simp only [List.mem_range, Nat.lt_succ_iff, id_eq]
-
 /-- The relation saying that a word is a conjugate of a block repeated `n ≥ 2` times, with
 the conjugator and block given by two lengths, is primitive recursive. Once all three indices
 are fixed, the test uses only primitive-recursive list operations. -/
@@ -133,7 +125,7 @@ theorem primrecPred_isProperPower_mk [Primcodable α] :
       ∃ n ≤ p.1.length, 2 ≤ n ∧ p.1 = p.1.take p.2.1 ++
         (List.replicate n ((p.1.drop p.2.1).take p.2.2)).flatten ++
         invRev (p.1.take p.2.1) := by
-    exact primrecPred_exists_le_length Primrec.fst primrecRel_repeatedBlock
+    exact primrecRel_repeatedBlock.exists_le_length Primrec.fst
   have blockSize : PrimrecRel fun j (p : List (α × Bool) × ℕ) =>
       ∃ n ≤ p.1.length, 2 ≤ n ∧ p.1 = p.1.take p.2 ++
         (List.replicate n ((p.1.drop p.2).take j)).flatten ++
@@ -144,7 +136,7 @@ theorem primrecPred_isProperPower_mk [Primcodable α] :
       ∃ j ≤ p.1.length, ∃ n ≤ p.1.length, 2 ≤ n ∧ p.1 = p.1.take p.2 ++
         (List.replicate n ((p.1.drop p.2).take j)).flatten ++
         invRev (p.1.take p.2) := by
-    exact primrecPred_exists_le_length Primrec.fst blockSize
+    exact blockSize.exists_le_length Primrec.fst
   have conjugatorSize : PrimrecRel fun i (w : List (α × Bool)) =>
       ∃ j ≤ w.length, ∃ n ≤ w.length, 2 ≤ n ∧ w = w.take i ++
         (List.replicate n ((w.drop i).take j)).flatten ++ invRev (w.take i) :=
@@ -153,7 +145,7 @@ theorem primrecPred_isProperPower_mk [Primcodable α] :
       ∃ i ≤ w.length, ∃ j ≤ w.length, ∃ n ≤ w.length, 2 ≤ n ∧
         w = w.take i ++ (List.replicate n ((w.drop i).take j)).flatten ++
           invRev (w.take i) := by
-    exact primrecPred_exists_le_length Primrec.id conjugatorSize
+    exact conjugatorSize.exists_le_length Primrec.id
   have test := (Primrec.eq.comp (Primrec.id (α := List (α × Bool))) (Primrec.const [])).or search
   exact (test.comp primrec_reduce).of_eq fun w => by
     simp only [id_eq]
