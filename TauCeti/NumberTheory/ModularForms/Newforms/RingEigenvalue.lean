@@ -71,6 +71,8 @@ instead, so no normalisation and no coefficient formula is needed.
 public section
 
 
+open TauCeti
+
 namespace HeckeRing.GL2.EigenformAwayFromLevel
 
 variable {N : ℕ} [NeZero N] {k : ℤ} (f : EigenformAwayFromLevel N k)

@@ -15,8 +15,11 @@ If the topological support `tsupport f` of a function `f : α → β` is contain
 any `OpensMeasurableSpace`. Consequently `f =ᵐ[μ.restrict sᶜ] 0` without any measurability
 assumption on `s` or `f`.
 
+The file also records the total mass of a rescaled restriction.
+
 ## Main results
 
+* `MeasureTheory.Measure.smul_restrict_univ`: `(s • μ.restrict A) univ = s * μ A`.
 * `MeasureTheory.ae_restrict_compl_eq_zero_of_tsupport_subset`: if `tsupport f ⊆ s`, then
   `f =ᵐ[μ.restrict sᶜ] 0`.
 -/
@@ -24,6 +27,7 @@ assumption on `s` or `f`.
 public section
 
 open Set
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -34,5 +38,14 @@ theorem ae_restrict_compl_eq_zero_of_tsupport_subset {α β : Type*} [Measurable
   ae_restrict_of_ae_restrict_of_subset (compl_subset_compl.2 hf) <|
     ae_restrict_of_forall_mem (isClosed_tsupport f).isOpen_compl.measurableSet fun _ hx ↦
       image_eq_zero_of_notMem_tsupport hx
+
+namespace Measure
+
+/-- The total mass of the restriction to `A` of a measure, rescaled by `s`. -/
+theorem smul_restrict_univ {α : Type*} [MeasurableSpace α] (s : ℝ≥0∞) (μ : Measure α)
+    (A : Set α) : (s • μ.restrict A) univ = s * μ A := by
+  simp only [_root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter, smul_eq_mul]
+
+end Measure
 
 end MeasureTheory
