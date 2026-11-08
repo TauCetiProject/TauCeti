@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fin.Tuple.Sort
 public import Mathlib.Data.Finset.Sort
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
+import TauCeti.Data.Fin.Tuple.Sort
 
 /-!
 # Cells of an abstract simplicial complex
@@ -104,10 +105,7 @@ theorem exists_eq_vertexEmbedding_comp {g : Fin (n + 1) → ι} (hg : Function.I
     ∃ (c : RealizationCell K n) (σ : Equiv.Perm (Fin (n + 1))), g = c.vertexEmbedding ∘ σ := by
   let c : RealizationCell K n :=
     ⟨⟨Finset.univ.image g, hK⟩, by simp [Finset.card_image_of_injective _ hg]⟩
-  have hmono : StrictMono (g ∘ Tuple.sort g) :=
-    (Tuple.monotone_sort g).strictMono_of_injective (hg.comp (Tuple.sort g).injective)
-  have hsort : g ∘ Tuple.sort g = c.vertexEmbedding :=
-    Finset.orderEmbOfFin_unique c.2 (fun _ ↦ Finset.mem_image_of_mem g (Finset.mem_univ _)) hmono
+  have hsort : g ∘ Tuple.sort g = c.vertexEmbedding := Tuple.comp_sort_eq_orderEmbOfFin hg
   refine ⟨c, (Tuple.sort g).symm, ?_⟩
   rw [← hsort]
   ext i
