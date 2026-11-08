@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Hom
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basis
@@ -25,8 +25,9 @@ No finiteness hypothesis on the coalgebra or the comodule is required.
 The module structure is named, rather than a global instance: install
 `Comodule.convolutionModule` locally when using the module-side API. The order
 isomorphism `Subcomodule.convolutionSubmoduleOrderIso` transports simplicity to
-`IsSimpleModule`. This lets module-theoretic results, such as the Jacobson density
-theorem, apply to simple comodules and their matrix coefficients.
+`IsSimpleModule`, and `Subcomodule.isSimpleOrder_iff_isAtom` identifies the simple subcomodules
+with the atoms of the subcomodule lattice. This lets module-theoretic results, such as the
+Jacobson density theorem, apply to simple comodules and their matrix coefficients.
 
 This is a fully faithful passage to modules, not an equivalence with all modules over
 the convolution dual of an infinite-dimensional coalgebra.
@@ -266,5 +267,23 @@ theorem isSimpleModule_convolution_iff :
   exact Subcomodule.convolutionSubmoduleOrderIso.symm.isSimpleOrder_iff
 
 end TauCeti.Comodule
+
+namespace TauCeti.Subcomodule
+
+/-- A subcomodule is a simple comodule in its own right exactly when it is an atom of the lattice
+of subcomodules. -/
+theorem isSimpleOrder_iff_isAtom {S : Subcomodule R C M} :
+    IsSimpleOrder (Subcomodule R C S) ↔ IsAtom S := by
+  -- The inclusion identifies `S` with its convolution-dual submodule as convolution-dual modules.
+  have hrange : LinearMap.range (subtype S).toConvolutionLinearMap = S.toConvolutionSubmodule := by
+    ext x
+    simp
+  let e := (LinearEquiv.ofInjective _ fun _ _ h ↦ Subtype.ext (by simpa using h)).trans
+    (LinearEquiv.ofEq _ _ hrange)
+  rw [← Comodule.isSimpleModule_convolution_iff, ← convolutionSubmoduleOrderIso.isAtom_iff,
+    convolutionSubmoduleOrderIso_apply, ← isSimpleModule_iff_isAtom]
+  exact ⟨fun _ ↦ .congr e.symm, fun _ ↦ .congr (N := S.toConvolutionSubmodule) e⟩
+
+end TauCeti.Subcomodule
 
 end Ring
