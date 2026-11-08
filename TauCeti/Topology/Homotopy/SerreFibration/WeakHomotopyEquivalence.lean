@@ -125,16 +125,14 @@ private theorem surjective_map_option (hp : serreFibrations p) (hp' : serreFibra
   obtain ⟨z, hz⟩ := (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).2 hy0
   -- Then `x * (f z)⁻¹` lies over the trivial element, so it comes from the fibre of `p'`, and
   -- hence from the fibre of `p`.
-  have hw : HomotopyGroup.map p'.hom hx' (x * (HomotopyGroup.map f.hom hx z)⁻¹) =
-      ⟦GenLoop.const⟧ := by
-    rw [HomotopyGroup.mk_const_eq_one, ← HomotopyGroup.mapHom_apply, map_mul, map_inv,
-      HomotopyGroup.mapHom_apply, HomotopyGroup.mapHom_apply, map_proj_map sq e hx hx', hz, hy,
+  have hw : HomotopyGroup.map p'.hom hx' (x * (HomotopyGroup.map f.hom hx z)⁻¹) = 1 := by
+    rw [HomotopyGroup.map_mul, HomotopyGroup.map_inv, map_proj_map sq e hx hx', hz, hy,
       mul_inv_cancel]
-  obtain ⟨w, hw⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp').2 hw
+  obtain ⟨w, hw⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp').2
+    (hw.trans HomotopyGroup.mk_const_eq_one.symm)
   obtain ⟨v, rfl⟩ := (hfib.map_bijective (Option N) e).2 w
   refine ⟨HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e) v * z, ?_⟩
-  rw [← HomotopyGroup.mapHom_apply, map_mul, HomotopyGroup.mapHom_apply,
-    HomotopyGroup.mapHom_apply, map_map_fiberι sq e hx, hw, inv_mul_cancel_right]
+  rw [HomotopyGroup.map_mul, map_map_fiberι sq e hx, hw, inv_mul_cancel_right]
 
 /-- **Injectivity on positive-dimensional homotopy groups.** The map `f` is injective on
 `π_{n+1}`, at a point of the fibre over `b`. -/
@@ -150,12 +148,12 @@ private theorem injective_map_option (hp : serreFibrations p) (hp' : serreFibrat
   rw [HomotopyGroup.mapHom_apply] at hx1
   -- The projection of `x` to `B` is trivial, because `g` is injective, so `x` comes from the
   -- fibre of `p`.
-  have hpx : HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) x = ⟦GenLoop.const⟧ := by
+  have hpx : HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) x = 1 := by
     apply (hg.map_bijective (Option N) b).1
     rw [← map_proj_map sq e hx (Set.mem_singleton_iff.1 (sq.fiberMap b e).2), hx1,
-      ← HomotopyGroup.mk_const_eq_one, HomotopyGroup.map_mk, HomotopyGroup.map_mk,
-      GenLoop.map_const, GenLoop.map_const]
-  obtain ⟨w, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp).2 hpx
+      HomotopyGroup.map_one, HomotopyGroup.map_one]
+  obtain ⟨w, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp).2
+    (hpx.trans HomotopyGroup.mk_const_eq_one.symm)
   -- The image of `w` in the fibre of `p'` dies in `E'`, so it is a boundary, of an element which
   -- comes from `B` since `g` is surjective.
   obtain ⟨y', hy'⟩ : HomotopyGroup.map (sq.fiberMap b).hom rfl w ∈
