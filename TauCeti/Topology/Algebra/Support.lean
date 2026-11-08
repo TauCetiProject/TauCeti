@@ -25,6 +25,8 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `Homeomorph.tsupport_comp_symm_subset_interior_image`: support in the interior of a set is
   transported to support in the interior of its image, with multiplicative version
   `Homeomorph.mulTSupport_comp_symm_subset_interior_image`.
+* `TauCeti.continuous_smul_of_continuousOn_of_tsupport_subset`: a continuous function supported
+  in `U`, times a function continuous on `U`, is continuous.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
 -/
@@ -63,6 +65,29 @@ theorem tsupport_snd_smul_fst_subset [TopologicalSpace Y] (f : Y → R) (g : X �
     ((isClosed_tsupport _).prod (isClosed_tsupport _))
 
 end Prod
+
+/-- A function `b` continuous with topological support in `U`, times a function `a` continuous
+on `U`, is continuous. The function `a` need not be continuous off `U`, and `U` need not be
+open. -/
+theorem continuous_smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [TopologicalSpace Z]
+    [TopologicalSpace 𝕜] [Zero F] [TopologicalSpace F] [T2Space F] [SMulZeroClass 𝕜 F]
+    [ContinuousSMul 𝕜 F] {a : Z → 𝕜} {b : Z → F} {U : Set Z} (hb : Continuous b)
+    (hbU : tsupport b ⊆ U) (ha : ContinuousOn a U) : Continuous fun x ↦ a x • b x := by
+  have hzero : ∀ x ∈ Uᶜ, b x = 0 := fun x hx ↦
+    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hbU h)
+  refine continuous_iff_continuousAt.2 fun x ↦ ?_
+  by_cases hxU : x ∈ U
+  · rw [← continuousWithinAt_univ, ← Set.union_compl_self U, continuousWithinAt_union]
+    refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
+    by_cases hx : x ∈ closure Uᶜ
+    · have hbx : b x = 0 := Set.EqOn.closure hzero hb continuous_const hx
+      exact (continuousWithinAt_const (b := (0 : F))).congr
+        (fun y hy ↦ by simp [hzero y hy]) (by simp [hbx])
+    · exact continuousWithinAt_of_notMem_closure hx
+  · have hx : x ∉ tsupport b := fun h ↦ hxU (hbU h)
+    have hev : b =ᶠ[nhds x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
+    exact (continuousAt_const (y := (0 : F))).congr
+      (hev.mono fun y (hy : b y = 0) ↦ by simp [hy])
 
 end TauCeti
 
