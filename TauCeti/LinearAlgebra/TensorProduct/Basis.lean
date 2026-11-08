@@ -104,7 +104,7 @@ theorem tensor_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (z :
     rw [← LinearMap.rTensor_def, ← rTensor_mkQ, LinearMap.mem_ker]
     apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
     intro f
-    rw [map_zero, LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id]
+    rw [map_zero, LinearMap.tensorComponent_rTensor]
     simpa only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using h f
 
 end Submodule

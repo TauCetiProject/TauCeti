@@ -45,6 +45,15 @@ theorem convMul_eq_comp_tensorComponent (f g : WithConv (Module.Dual R C)) :
     simp [mul_comm]
   rw [← comp_assoc, hp, convMul_def, comp_assoc]
 
+/-- Successive contractions of a comultiplication on the right tensor factor are
+contraction by the convolution product. -/
+theorem tensorComponent_lTensor_comul {M : Type*} [AddCommMonoid M] [Module R M]
+    (f g : WithConv (Module.Dual R C)) (x : M ⊗[R] C) :
+    tensorComponent f.ofConv
+        ((tensorComponent g.ofConv).lTensor M (Coalgebra.comul.lTensor M x)) =
+      tensorComponent (f * g).ofConv x := by
+  simp [lTensor_def, convMul_eq_comp_tensorComponent, comp_assoc]
+
 end LinearMap
 
 namespace TauCeti.Comodule

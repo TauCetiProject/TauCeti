@@ -94,7 +94,7 @@ theorem eq_regularCoboundary_tensorComponent_monoidCoeff_one {b : V ⊗[R] Monoi
     ((TensorProduct.assoc R V (MonoidAlgebra R G) (MonoidAlgebra R G)).symm t)) hb
   rw [LinearMap.tensorComponent_assoc_symm, tensorComponent_monoidCoeff_comul_lTensor] at h
   simp only [LinearEquiv.symm_apply_apply, map_add, LinearMap.tensorComponent_tmul,
-    tensorComponent_rTensor_coact, monoidCoeff_apply, MonoidAlgebra.coeff_single,
+    LinearMap.tensorComponent_rTensor, monoidCoeff_apply, MonoidAlgebra.coeff_single,
     Finsupp.single_eq_same, one_smul] at h
   rw [regularCoboundary_apply]
   exact (eq_sub_iff_add_eq).mpr (by simpa only [add_comm] using h.symm)

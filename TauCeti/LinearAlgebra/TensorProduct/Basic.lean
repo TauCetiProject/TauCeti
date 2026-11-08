@@ -140,6 +140,13 @@ theorem tensorComponent_map {M' : Type x} {N' : Type y}
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul m n => simp
 
+/-- Taking a right tensor component commutes with a map on the left factor. -/
+@[simp]
+theorem tensorComponent_rTensor {M' : Type x} [AddCommMonoid M'] [Module R M']
+    (phi : N →ₗ[R] R) (f : M →ₗ[R] M') (t : M ⊗[R] N) :
+    tensorComponent phi (f.rTensor N t) = f (tensorComponent phi t) := by
+  simp [rTensor_def]
+
 section
 
 variable {R M N P : Type*} [CommSemiring R]
