@@ -109,10 +109,10 @@ theorem mapCells_ofTriple (f : S.vertexPart.parts → T.vertexPart.parts)
   · simpa using hcolors (coordPair x 0 2 (by decide))
   · simpa using hcolors (coordPair x 1 2 (by decide))
 
-open Classical in
 /-- If vertices outside `B` stay in their matched cells and pair colors are unchanged, at
 most `3 |B| |V|²` triples change their polyad data under the matching. -/
-theorem card_ofTriple_ne_mapCells_le (f : S.vertexPart.parts → T.vertexPart.parts)
+theorem card_ofTriple_ne_mapCells_le [DecidableEq κ]
+    (f : S.vertexPart.parts → T.vertexPart.parts)
     (hcolors : ∀ p, S.pairColors.color p = T.pairColors.color p) (B : Finset V)
     (hcells : ∀ v ∉ B, (f ⟨S.vertexPart.part v,
       S.vertexPart.part_mem.2 (mem_univ _)⟩ : Finset V) = T.vertexPart.part v) :
