@@ -88,7 +88,7 @@ theorem reachable_of_nonempty_arrowWalk (S : N.Subnetwork) {x y : ↥S.vertexSet
 theorem nonempty_arrowWalk_of_reachable (S : N.Subnetwork) {x y : V}
     (hx : x ∈ S.vertexSet) (hy : y ∈ S.vertexSet) (h : S.Reachable x y) :
     Nonempty (ArrowWalk S.Hom ⟨x, hx⟩ ⟨y, hy⟩) := by
-  change ReachableWithout S.arrowSetᶜ x y at h
+  rw [S.reachable_def] at h
   rw [reachableWithout_def] at h
   obtain ⟨p, hp⟩ := h
   replace hp : ∀ a ∈ p.arrows, a ∈ S.arrowSet := by
@@ -345,8 +345,7 @@ theorem arrowSet_top : (⊤ : N.Subnetwork).arrowSet = Set.univ :=
 @[simp]
 theorem reachable_top_iff {x y : V} :
     (⊤ : N.Subnetwork).Reachable x y ↔ Nonempty (ArrowWalk N.Hom x y) := by
-  change ReachableWithout (⊤ : N.Subnetwork).arrowSetᶜ x y ↔ _
-  rw [arrowSet_top, Set.compl_univ]
+  rw [reachable_def, arrowSet_top, Set.compl_univ]
   exact reachableWithout_empty_iff
 
 /-- The subnetwork induced by a set of ambient vertices. It retains every ambient arrow whose
@@ -582,8 +581,7 @@ theorem toSubnetwork_comp_right_le {s t x : V} (p : ArrowWalk N.Hom s t)
 /-- A walk gives reachability between its endpoints in the subnetwork that it traces. -/
 theorem reachable_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
     p.toSubnetwork.Reachable s t := by
-  change ReachableWithout p.toSubnetwork.arrowSetᶜ s t
-  rw [reachableWithout_def]
+  rw [p.toSubnetwork.reachable_def, reachableWithout_def]
   exact ⟨p, fun _ ha h ↦ h ha⟩
 
 /-- Every vertex on a walk is reachable from its source and can reach its target inside the
