@@ -160,7 +160,7 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_dist_smul_lt (hΓ : Γ.IsCofinite)
   have hdisp := Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self hAw y
   by_cases hsmall : 4 - t ^ 2 < 1 / 2
   · -- a small rotation: by the Margulis lemma `k` conjugates `g` to `g^{± 1}`, so it fixes `w`
-    refine hkw (smul_eq_self_of_abs_trace_sq_sub_four_add_lt hg hk hg₁ hgw y ?_)
+    refine hkw (smul_eq_self_of_cosh_dist hg hk hg₁ hgw y ?_)
     rw [abs_of_neg (by linarith : t ^ 2 - 4 < 0)]
     have h₁ := Real.one_le_cosh (dist (A • y) y)
     have h₂ := Real.one_le_cosh (dist (B • y) y)

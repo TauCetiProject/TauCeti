@@ -47,7 +47,7 @@ explicit radius `1 / 4`.
 
 * `Subgroup.conj_eq_or_conj_eq_inv_of_cosh_dist`: if
   `|tr² A - 4| + 4 (cosh δ_A cosh δ_B - 1) < 1`, then `B A B⁻¹ = A` or `B A B⁻¹ = A⁻¹`.
-* `Subgroup.smul_eq_self_of_abs_trace_sq_sub_four_add_lt`: in the same situation, if `A ≠ 1` fixes
+* `Subgroup.smul_eq_self_of_cosh_dist`: in the same situation, if `A ≠ 1` fixes
   a point `w`, then `B` fixes `w` as well.
 * `Subgroup.conj_eq_or_conj_eq_inv_of_dist_le`: **the Margulis lemma.** If `g, h ∈ Γ` both move
   `z` a distance at most `1 / 4` and `g` fixes no point of `ℍ`, then `h g h⁻¹ = g` or
@@ -131,7 +131,7 @@ theorem conj_eq_or_conj_eq_inv_of_dist_le [DiscreteTopology Γ] {g h : PSL(2, �
 /-- **Margulis step at an elliptic point.** In a discrete `Γ ≤ PSL(2, ℝ)`, if a nonidentity `A ∈ Γ`
 fixes `w` and `B ∈ Γ` is such that the Margulis inequality holds at some point `y`, then `B` fixes
 `w` as well, since it conjugates `A` to `A` or `A⁻¹`. -/
-theorem smul_eq_self_of_abs_trace_sq_sub_four_add_lt [DiscreteTopology Γ] {A B : SL(2, ℝ)}
+theorem smul_eq_self_of_cosh_dist [DiscreteTopology Γ] {A B : SL(2, ℝ)}
     (hg : (A : PSL(2, ℝ)) ∈ Γ) (hk : (B : PSL(2, ℝ)) ∈ Γ) (hg₁ : (A : PSL(2, ℝ)) ≠ 1) {w : ℍ}
     (hgw : (A : PSL(2, ℝ)) • w = w) (y : ℍ)
     (h : |(A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 - 4| +
