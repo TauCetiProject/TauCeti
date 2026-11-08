@@ -516,6 +516,7 @@ theorem equivOfDiffeomorph_extendByZeroTop (U : Opens M) (k : ℕ)
 /-- Extension by zero into `M` sends the class of a compactly supported closed form on `U` to the
 class of the pullback, along the identification of `M` with the open subset `⊤`, of its extension
 by zero to `⊤`. -/
+@[simp]
 theorem extendByZeroTop_mk (U : Opens M) (k : ℕ) (φ : compactlySupportedClosedForms I U k) :
     extendByZeroTop U k (mk I k φ) =
       mk I k (compactlySupportedClosedForms.mpullback (Diffeomorph.ofTop (⊤ : Opens M) rfl).symm
