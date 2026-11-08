@@ -13,6 +13,7 @@ import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
+import TauCeti.Topology.Algebra.Module.Cone
 
 /-!
 # The wave front set of a distribution
@@ -507,17 +508,6 @@ private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem_orthogona
           rw [mul_pow]; ring
       _ ≤ (1 + b) ^ N * C := by gcongr; exact hC _
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- An open set `Γ` containing `ξ` and closed under multiplication by positive reals contains
-`t • ξ + w` for all sufficiently large `t`, since `t • ξ + w = t • (ξ + t⁻¹ • w)` and
-`ξ + t⁻¹ • w` tends to `ξ`. -/
-private theorem eventually_smul_add_mem {Γ : Set E} (hΓ : IsOpen Γ) {ξ : E} (hξΓ : ξ ∈ Γ)
-    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) (w : E) : ∀ᶠ t : ℝ in atTop, t • ξ + w ∈ Γ := by
-  have hlim : Tendsto (fun t : ℝ => ξ + t⁻¹ • w) atTop (𝓝 ξ) := by
-    simpa using tendsto_const_nhds.add ((tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const w)
-  filter_upwards [hlim (hΓ.mem_nhds hξΓ), eventually_gt_atTop 0] with t ht ht0
-  simpa [smul_add, smul_smul, ht0.ne'] using hcone t ht0 _ ht
-
 /-- At a point of `V` the surface measure of `V` is not microlocally smooth in any nonzero
 direction `ξ ∈ Vᗮ`: every open cone around `ξ` contains the frequencies `t • ξ + w` for `w ∈ V`
 and `t` large, at which the localized Fourier transform takes the value `𝓕 (φ|_V) w`
@@ -541,7 +531,7 @@ private theorem not_isMicrolocallySmoothAt_ofFun_one_map_subtype (V : Submodule 
       simp only [id]
       linarith
     refine norm_le_zero_iff.1 (ge_of_tendsto ((tendsto_const_nhds (x := C)).div_atTop hgrow) ?_)
-    filter_upwards [eventually_smul_add_mem hΓ hξΓ hcone (w : E)] with t ht
+    filter_upwards [hΓ.eventually_smul_add_mem hξΓ hcone (w : E)] with t ht
     have hP : V.orthogonalProjectionOnto (t • ξ + (w : E)) = w := by
       rw [map_add, map_smul, (Submodule.orthogonalProjectionOnto_eq_zero_iff).2 hξ, smul_zero,
         zero_add, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
