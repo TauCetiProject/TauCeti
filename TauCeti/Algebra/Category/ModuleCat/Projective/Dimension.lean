@@ -140,23 +140,28 @@ theorem projective_projectiveShortComplex_X₁ [Small.{v} R] {M : ModuleCat.{v} 
 /-- **Dimension shifting along a projective presentation.** For a surjection `f : P → M` from a
 projective module, `M` has projective dimension at most `n + 1` exactly when `ker f` has
 projective dimension at most `n`. -/
-theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker [Small.{v} R] {P M : Type v}
+theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker {P M : Type v}
     [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
     {f : P →ₗ[R] M} (hf : Function.Surjective f) (n : ℕ) :
     HasProjectiveDimensionLE (ModuleCat.of R M) (n + 1) ↔
       HasProjectiveDimensionLE (ModuleCat.of R (LinearMap.ker f)) n :=
   (LinearMap.shortExact_shortComplexKer hf).hasProjectiveDimensionLT_X₃_iff n
-    ((IsProjective.iff_projective P).mp ‹_›)
+    (inferInstanceAs (Projective (ModuleCat.of R P)))
 
 /-- For a surjection `f` from a projective module onto a module `M` that is not projective, the
 projective dimension of `M` is one more than that of `ker f`. -/
-theorem _root_.LinearMap.projectiveDimension_ker_add_one [Small.{v} R] {P M : Type v}
+theorem _root_.LinearMap.projectiveDimension_ker_add_one {P M : Type v}
     [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
     {f : P →ₗ[R] M} (hf : Function.Surjective f) (hM : ¬ Module.Projective R M) :
     projectiveDimension (ModuleCat.of R (LinearMap.ker f)) + 1 =
       projectiveDimension (ModuleCat.of R M) :=
   ((LinearMap.shortExact_shortComplexKer hf).projectiveDimension_X₃_eq_succ_of_not_projective
-    ((IsProjective.iff_projective P).mp ‹_›) (mt (IsProjective.iff_projective M).mpr hM)).symm
+    (inferInstanceAs (Projective (ModuleCat.of R P))) fun hMp ↦ hM <| by
+      have : Epi (ModuleCat.ofHom f) := (ModuleCat.epi_iff_surjective _).mpr hf
+      let s := Projective.factorThru (𝟙 (ModuleCat.of R M)) (ModuleCat.ofHom f)
+      have hs : s ≫ ModuleCat.ofHom f = 𝟙 (ModuleCat.of R M) := Projective.factorThru_comp _ _
+      exact Module.Projective.of_split s.hom f
+        (by ext x; simpa using ConcreteCategory.congr_hom hs x)).symm
 
 /-- **Projective dimension along a projective resolution.** Along a resolution
 `⋯ → F₁ → F₀ → M → 0` of `M` by projective modules, exact everywhere, the image of
