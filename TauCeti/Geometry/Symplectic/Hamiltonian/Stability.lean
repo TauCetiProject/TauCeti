@@ -68,6 +68,6 @@ theorem eventually_forall_mem_of_strictLocalMin (ω : SymplecticForm V) {H : V �
   refine hy (γ '' T) (hT'.image γ fun t ht ↦ (hγ t ht).continuousAt.continuousWithinAt)
     ⟨t₀, ht₀, hγt₀⟩ ?_ (mem_image_of_mem γ ht)
   rintro _ ⟨t', ht', rfl⟩
-  rw [← hγt₀, ω.apply_eq_of_hasDerivAt_hamiltonianVectorField hT hT' hγ hHγ ht₀ ht']
+  rw [← hγt₀, ω.apply_eq_of_hasDerivAt_hamiltonianVectorField hT' hγ hHγ ht₀ ht']
 
 end TauCeti.SymplecticForm
