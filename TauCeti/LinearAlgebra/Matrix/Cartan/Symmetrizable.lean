@@ -240,12 +240,12 @@ theorem symmetrizedMatrix_sum :
 
 /-- Restricting a direct sum to the first summand recovers the first datum. -/
 @[simp]
-theorem sum_restrict_inl : (A.sum A').restrict Function.Embedding.inl = A := by
+theorem restrict_sum_inl : (A.sum A').restrict Function.Embedding.inl = A := by
   ext <;> simp
 
 /-- Restricting a direct sum to the second summand recovers the second datum. -/
 @[simp]
-theorem sum_restrict_inr : (A.sum A').restrict Function.Embedding.inr = A' := by
+theorem restrict_sum_inr : (A.sum A').restrict Function.Embedding.inr = A' := by
   ext <;> simp
 
 /-! ### Uniqueness of the symmetrizer of an indecomposable matrix -/
