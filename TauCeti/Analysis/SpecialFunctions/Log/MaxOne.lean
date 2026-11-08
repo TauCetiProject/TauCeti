@@ -23,7 +23,7 @@ public section
 namespace Real
 
 /-- The logarithm of `max 1 x` is nonnegative for every real `x`. -/
-theorem log_max_one_nonneg (x : ℝ) : 0 ≤ log (max 1 x) :=
+@[simp] theorem log_max_one_nonneg (x : ℝ) : 0 ≤ log (max 1 x) :=
   log_nonneg (le_max_left _ _)
 
 end Real
