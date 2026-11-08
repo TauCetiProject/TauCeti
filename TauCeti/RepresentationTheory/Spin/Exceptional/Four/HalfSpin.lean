@@ -40,7 +40,7 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticFor
 /-- The even half-spin subrepresentation is isomorphic to the standard representation of the first
 factor, when the first factor of `f` records the matrices of the even half-spin action in the
 basis `bplus`. -/
-private theorem nonempty_equiv_stdSLRep_fst_of_matrix_eq [Invertible (2 : K)]
+private theorem nonempty_equiv_stdSLRep_fst_of_matrix_eq
     (P : SpinPolarizationData Q) (hline : P.line = ⊥)
     (f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K ×
       Matrix.SpecialLinearGroup (Fin 2) K)
@@ -68,7 +68,7 @@ private theorem nonempty_equiv_stdSLRep_fst_of_matrix_eq [Invertible (2 : K)]
 /-- The odd half-spin subrepresentation is isomorphic to the standard representation of the second
 factor, when the second factor of `f` records the matrices of the odd half-spin action in the
 basis `bminus`. -/
-private theorem nonempty_equiv_stdSLRep_snd_of_matrix_eq [Invertible (2 : K)]
+private theorem nonempty_equiv_stdSLRep_snd_of_matrix_eq
     (P : SpinPolarizationData Q) (hline : P.line = ⊥)
     (f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K ×
       Matrix.SpecialLinearGroup (Fin 2) K)
