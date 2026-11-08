@@ -62,6 +62,8 @@ theorem TopRegularOverMostPolyads.of_repartition
   refine (exceptionalPolyadMass_le_of_injective hC hD
     (Polyad3.mapData_injective f.injective g.injective) hε hη hbudget).trans
       (add_le_add h ?_)
+  -- The density import changes the side goals of bare `gcongr`; stop at the cardinal
+  -- comparison explicitly so the proof is independent of automatic positivity discharge.
   gcongr (1 + 2 / η) * ?_ / _
   exact_mod_cast Polyad3.card_filter_ofTriple_ne_mapData_ofTriple_le f g B E hcell hcolor
 
