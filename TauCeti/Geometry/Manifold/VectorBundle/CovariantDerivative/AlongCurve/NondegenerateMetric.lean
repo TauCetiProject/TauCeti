@@ -74,7 +74,7 @@ metric: for two tangent fields along a differentiable real curve whose coordinat
 differentiable within `s` at `t`, `(d/dt) g(V, W) = g(D V / dt, W) + g(V, D W / dt)` within `s`
 at `t`. -/
 theorem IsMetricCompatible.hasDerivWithinAt_apply_alongCurveWithin (h : g.IsMetricCompatible cov)
-    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
     HasDerivWithinAt (fun r ↦ g (γ r) (V r) (W r))
@@ -82,16 +82,16 @@ theorem IsMetricCompatible.hasDerivWithinAt_apply_alongCurveWithin (h : g.IsMetr
         g (γ t) (V t) (alongCurveWithin cov γ W s t)) s t :=
   CovariantDerivative.hasDerivWithinAt_apply_alongCurveWithin
     (fun _ _ hY hZ ↦ g.mdifferentiableAt_apply hY hZ) (fun _ _ hY hZ v ↦ h.mvfderiv_eq hY hZ v)
-    hu hγ hV hW
+    hγ hV hW
 
 /-- The pairing `g(V, W)` of two tangent fields along a differentiable real curve, whose coordinate
 readings are differentiable within `s` at `t`, is differentiable within `s` at `t`. -/
 theorem IsMetricCompatible.differentiableWithinAt_apply (h : g.IsMetricCompatible cov)
-    (hu : UniqueDiffWithinAt ℝ s t) (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
     DifferentiableWithinAt ℝ (fun r ↦ g (γ r) (V r) (W r)) s t :=
-  (h.hasDerivWithinAt_apply_alongCurveWithin hu hγ hV hW).differentiableWithinAt
+  (h.hasDerivWithinAt_apply_alongCurveWithin hγ hV hW).differentiableWithinAt
 
 /-- The product rule along a curve for a covariant derivative compatible with a nondegenerate
 metric, as an identity for `derivWithin`. -/
@@ -102,7 +102,7 @@ theorem IsMetricCompatible.derivWithin_apply_alongCurveWithin (h : g.IsMetricCom
     derivWithin (fun r ↦ g (γ r) (V r) (W r)) s t =
       g (γ t) (alongCurveWithin cov γ V s t) (W t) +
         g (γ t) (V t) (alongCurveWithin cov γ W s t) :=
-  (h.hasDerivWithinAt_apply_alongCurveWithin hu hγ hV hW).derivWithin hu
+  (h.hasDerivWithinAt_apply_alongCurveWithin hγ hV hW).derivWithin hu
 
 /-- The product rule along a curve for a covariant derivative compatible with a nondegenerate
 metric, with unrestricted derivatives: `(d/dt) g(V, W) = g(D V / dt, W) + g(V, D W / dt)`. -/
@@ -114,7 +114,7 @@ theorem IsMetricCompatible.hasDerivAt_apply_alongCurve (h : g.IsMetricCompatible
       (g (γ t) (alongCurve cov γ V t) (W t) + g (γ t) (V t) (alongCurve cov γ W t)) t := by
   apply hasDerivWithinAt_univ.mp
   simpa only [alongCurveWithin_univ] using
-    h.hasDerivWithinAt_apply_alongCurveWithin uniqueDiffWithinAt_univ
+    h.hasDerivWithinAt_apply_alongCurveWithin (s := Set.univ)
       hγ.mdifferentiableWithinAt hV.differentiableWithinAt hW.differentiableWithinAt
 
 /-- The pairing `g(V, W)` of two tangent fields along a differentiable real curve, whose coordinate
@@ -150,7 +150,7 @@ theorem IsMetricCompatible.apply_eq_of_alongCurveWithin_eq_zero (h : g.IsMetricC
   have hderiv (t : ℝ) (ht : t ∈ s) :
       HasDerivWithinAt (fun r ↦ g (γ r) (V r) (W r)) 0 s t := by
     simpa only [hV₀ t ht, hW₀ t ht, map_zero, zero_apply, add_zero] using
-      h.hasDerivWithinAt_apply_alongCurveWithin (hs t ht) (hγ t ht) (hV t ht) (hW t ht)
+      h.hasDerivWithinAt_apply_alongCurveWithin (hγ t ht) (hV t ht) (hW t ht)
   refine hconn.ordConnected.convex.is_const_of_fderivWithin_eq_zero
     (𝕜 := ℝ) (f := fun r ↦ g (γ r) (V r) (W r))
     (fun t ht ↦ (hderiv t ht).differentiableWithinAt) (fun t ht ↦ ?_) ha hb
