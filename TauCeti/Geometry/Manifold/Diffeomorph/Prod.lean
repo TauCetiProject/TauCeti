@@ -77,7 +77,7 @@ variable (I J I' M N M' n)
 def prodAssocOfModels :
     ((M × N) × M') ≃ₘ^n⟮(I.prod J).prod I', I.prod (J.prod I')⟯ M × (N × M') where
   toEquiv := Equiv.prodAssoc M N M'
-  contMDiff_toFun := contMDiff_fst.fst.prodMk (contMDiff_fst.snd.prodMk contMDiff_snd)
+  contMDiff_toFun := contMDiff_prod_assoc
   contMDiff_invFun := (contMDiff_fst.prodMk contMDiff_snd.fst).prodMk contMDiff_snd.snd
 
 /-- Reassociation sends `((x, y), z)` to `(x, (y, z))`. -/
