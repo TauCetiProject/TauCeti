@@ -228,6 +228,17 @@ private lemma π_comp_map_eq_of_eq {κ : Type w} {W : κ → D} {m : ℕ} {b b' 
   subst h
   rw [Subsingleton.elim f f']
 
+omit [HasProducts A] in
+/-- An identity between composites with negated alternating sums, as in the prism formula
+(`cechComplexMapHomotopy_hom_π`), follows from the identities between the summands. -/
+private lemma neg_sum_zsmul_comp_eq_comp_neg_sum_zsmul {X Y Y' Z : A} {m : ℕ}
+    {f : Fin m → (X ⟶ Y)} {g : Y ⟶ Z} {f' : X ⟶ Y'} {g' : Fin m → (Y' ⟶ Z)}
+    (h : ∀ k, f k ≫ g = f' ≫ g' k) :
+    (-∑ k : Fin m, ((-1 : ℤ) ^ (k : ℕ)) • f k) ≫ g =
+      f' ≫ (-∑ k : Fin m, ((-1 : ℤ) ^ (k : ℕ)) • g' k) := by
+  simp only [Preadditive.neg_comp, Preadditive.comp_neg, Preadditive.sum_comp,
+    Preadditive.comp_sum, Preadditive.zsmul_comp, Preadditive.comp_zsmul, h]
+
 /-- The comparison along `G` carries the homotopy between the maps induced by two refinement maps
 `φ` and `ψ` (`cechComplexMapHomotopy`) for `Q` and the family `G ∘ U` to the corresponding
 homotopy for `G.op ⋙ Q` and the family `U`. -/
@@ -254,11 +265,7 @@ theorem cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom {κ : Type w} {V 
     (cechComplexMapHomotopy_hom_π Q _ _ j a =≫ _)).trans ?_
   refine Eq.trans ?_ ((Category.assoc _ _ _).trans
     (_ ≫= cechComplexMapHomotopy_hom_π (G.op ⋙ Q) φ ψ j a)).symm
-  refine (Preadditive.neg_comp _ _).trans ((congrArg Neg.neg ((Preadditive.sum_comp _ _ _).trans
-    ((Finset.sum_congr rfl fun k _ ↦ ?_).trans (Preadditive.comp_sum _ _ _).symm))).trans
-      (Preadditive.comp_neg _ _).symm)
-  refine (Preadditive.zsmul_comp _ _ _).trans ((congrArg _ ?_).trans
-    (Preadditive.comp_zsmul _ _ _).symm)
+  refine neg_sum_zsmul_comp_eq_comp_neg_sum_zsmul fun k ↦ ?_
   -- both sides restrict along morphisms in the thin category `D` from factors indexed by the
   -- same prism tuple
   refine ((Category.assoc _ _ _).trans (_ ≫= (Q.map_comp _ _).symm)).trans ?_

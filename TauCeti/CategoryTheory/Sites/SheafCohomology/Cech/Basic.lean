@@ -469,13 +469,19 @@ private lemma cechIsoCechNerve_hom_h_inv (φ ψ : FormalCoproduct.mk _ U ⟶ For
     (FormalCoproduct.cechIsoCechNerveApp_hom_π_assoc _ _ _ _ _)).trans ?_
   split_ifs <;> rfl
 
+/-- The restriction `Čⁿ⁺¹(V, P) ⟶ Čⁿ(U, P)` along `prismHom φ ψ k`, typed as a morphism between
+the terms of the Čech complexes so that it composes with their maps. -/
+private noncomputable def prismComponent (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    {n : ℕ} (k : Fin (n + 1)) :
+    ((cechComplexFunctor V).obj P).X (n + 1) ⟶ ((cechComplexFunctor U).obj P).X n :=
+  ((FormalCoproduct.evalOp C A).obj P).map (prismHom φ ψ k).op
+
 /-- The component `Čⁿ⁺¹(V, P) ⟶ Čⁿ(U, P)` of `cechComplexMapHomotopy P φ ψ` is `P` applied to the
 alternating sum of the morphisms `prismHom φ ψ k`, with an overall minus sign. -/
 private lemma cechComplexMapHomotopy_hom_eq
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) :
     (cechComplexMapHomotopy P φ ψ).hom (n + 1) n =
-      -∑ k : Fin (n + 1), ((-1 : ℤ) ^ (k : ℕ)) •
-        ((FormalCoproduct.evalOp C A).obj P).map (prismHom φ ψ k).op := by
+      -∑ k : Fin (n + 1), ((-1 : ℤ) ^ (k : ℕ)) • prismComponent P φ ψ k := by
   -- the homotopy is the chain homotopy of the simplicial homotopy, between two homotopies `0`
   -- and two isomorphisms whose components are identities
   have key : (cechComplexMapHomotopy P φ ψ).hom (n + 1) n =
@@ -514,9 +520,11 @@ theorem cechComplexMapHomotopy_hom_π (φ ψ : FormalCoproduct.mk _ U ⟶ Formal
           P.map (Pi.lift fun j : Fin (n + 2) ↦ Pi.π (fun l ↦ U (a l)) (k.predAbove j) ≫
             (if j ≤ k.castSucc then φ else ψ).φ (a (k.predAbove j))).op) := by
   rw [cechComplexMapHomotopy_hom_eq]
-  exact (Preadditive.neg_comp _ _).trans (congrArg Neg.neg ((Preadditive.sum_comp _ _ _).trans
-    (Finset.sum_congr rfl fun k _ ↦
-      (Preadditive.zsmul_comp _ _ _).trans (congrArg _ (Pi.lift_comp_π _ _)))))
+  -- the product is indexed by `Fin (n + 1) → ι` only up to unfolding, which blocks rewriting
+  -- with the preadditive lemmas, so they are applied by unification
+  refine (Preadditive.neg_comp _ _).trans (congrArg Neg.neg ?_)
+  refine (Preadditive.sum_comp _ _ _).trans (Finset.sum_congr rfl fun k _ ↦ ?_)
+  exact (Preadditive.zsmul_comp _ _ _).trans (congrArg _ (Pi.lift_comp_π _ _))
 
 /-- The homotopy `cechComplexMapHomotopy` is natural in the presheaf: its components commute with
 the maps of Čech complexes induced by a morphism of presheaves `α : P ⟶ Q`. -/
@@ -526,13 +534,10 @@ theorem cechComplexMapHomotopy_hom_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
     ((cechComplexFunctor V).map α).f i ≫ (cechComplexMapHomotopy Q φ ψ).hom i j =
       (cechComplexMapHomotopy P φ ψ).hom i j ≫ ((cechComplexFunctor U).map α).f j := by
   obtain rfl | h := eq_or_ne i (j + 1)
-  · rw [cechComplexMapHomotopy_hom_eq, cechComplexMapHomotopy_hom_eq]
-    refine (Preadditive.comp_neg _ _).trans ((congrArg Neg.neg ((Preadditive.comp_sum _ _ _).trans
-      ((Finset.sum_congr rfl fun k _ ↦ ?_).trans (Preadditive.sum_comp _ _ _).symm))).trans
-        (Preadditive.neg_comp _ _).symm)
-    exact (Preadditive.comp_zsmul _ _ _).trans ((congrArg _
-      (((FormalCoproduct.evalOp C A).map α).naturality _).symm).trans
-        (Preadditive.zsmul_comp _ _ _).symm)
+  · simp only [cechComplexMapHomotopy_hom_eq, Preadditive.comp_neg, Preadditive.neg_comp,
+      Preadditive.comp_sum, Preadditive.sum_comp, Preadditive.comp_zsmul, Preadditive.zsmul_comp]
+    exact congrArg Neg.neg (Finset.sum_congr rfl fun k _ ↦
+      congrArg _ (((FormalCoproduct.evalOp C A).map α).naturality _).symm)
   · have hji : ¬ (ComplexShape.up ℕ).Rel j i := fun h' ↦ h h'.symm
     rw [(cechComplexMapHomotopy Q φ ψ).zero i j hji, (cechComplexMapHomotopy P φ ψ).zero i j hji,
       comp_zero, zero_comp]
@@ -546,11 +551,11 @@ theorem cechComplexMapHomotopy_precomp_hom {ι' : Type w} {W : ι' → C}
     (cechComplexMapHomotopy P (χ ≫ φ) (χ ≫ ψ)).hom i j =
       (cechComplexMapHomotopy P φ ψ).hom i j ≫ (cechComplexMap P χ).f j := by
   obtain rfl | h := eq_or_ne i (j + 1)
-  · rw [cechComplexMapHomotopy_hom_eq, cechComplexMapHomotopy_hom_eq]
-    refine (congrArg Neg.neg ((Finset.sum_congr rfl fun k _ ↦ ?_).trans
-      (Preadditive.sum_comp _ _ _).symm)).trans (Preadditive.neg_comp _ _).symm
-    rw [← powerMap_prismHom, op_comp, Functor.map_comp]
-    exact (Preadditive.zsmul_comp _ _ _).symm
+  · simp only [cechComplexMapHomotopy_hom_eq, Preadditive.neg_comp, Preadditive.sum_comp,
+      Preadditive.zsmul_comp]
+    refine congrArg Neg.neg (Finset.sum_congr rfl fun k _ ↦ congrArg _ ?_)
+    rw [prismComponent, prismComponent, ← powerMap_prismHom, op_comp, Functor.map_comp]
+    rfl
   · have hji : ¬ (ComplexShape.up ℕ).Rel j i := fun h' ↦ h h'.symm
     rw [(cechComplexMapHomotopy P _ _).zero i j hji, (cechComplexMapHomotopy P φ ψ).zero i j hji,
       zero_comp]
@@ -564,11 +569,11 @@ theorem cechComplexMapHomotopy_postcomp_hom {κ' : Type w} {V' : κ' → C}
     (cechComplexMapHomotopy P (φ ≫ ω) (ψ ≫ ω)).hom i j =
       (cechComplexMap P ω).f i ≫ (cechComplexMapHomotopy P φ ψ).hom i j := by
   obtain rfl | h := eq_or_ne i (j + 1)
-  · rw [cechComplexMapHomotopy_hom_eq, cechComplexMapHomotopy_hom_eq]
-    refine (congrArg Neg.neg ((Finset.sum_congr rfl fun k _ ↦ ?_).trans
-      (Preadditive.comp_sum _ _ _).symm)).trans (Preadditive.comp_neg _ _).symm
-    rw [← prismHom_powerMap, op_comp, Functor.map_comp]
-    exact (Preadditive.comp_zsmul _ _ _).symm
+  · simp only [cechComplexMapHomotopy_hom_eq, Preadditive.comp_neg, Preadditive.comp_sum,
+      Preadditive.comp_zsmul]
+    refine congrArg Neg.neg (Finset.sum_congr rfl fun k _ ↦ congrArg _ ?_)
+    rw [prismComponent, prismComponent, ← prismHom_powerMap, op_comp, Functor.map_comp]
+    rfl
   · have hji : ¬ (ComplexShape.up ℕ).Rel j i := fun h' ↦ h h'.symm
     rw [(cechComplexMapHomotopy P _ _).zero i j hji, (cechComplexMapHomotopy P φ ψ).zero i j hji,
       comp_zero]
