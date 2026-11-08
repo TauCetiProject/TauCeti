@@ -76,6 +76,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative after an inverse chart, including derivatives within the model range.
 * `MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
   manifolds read in arbitrary preferred charts of the source and the target.
+* `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
+  arbitrary preferred charts, is `C^n` at interior points of the source chart target.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
   a normed source by composing its manifold derivative with the tangent chart.
 * `MDifferentiableAt.fderiv_extChartAt_comp_apply`: the same, with the manifold derivative of the
@@ -611,6 +613,36 @@ theorem _root_.MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm {f
   exact h
 
 end ManifoldCharts
+
+section InteriorCharts
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : WithTop ℕ∞}
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' n N]
+
+/-- A map between manifolds which is `C^n` at the point with coordinate `y` in the preferred chart
+at `β`, and sends it into the source of the preferred chart at `α`, is `C^n` at `y` when read in
+these charts, provided `y` lies in the interior of the chart target. -/
+theorem _root_.ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm {f : M → N} {β : M}
+    {α : N} {y : E} (hf : ContMDiffAt I I' n f ((extChartAt I β).symm y))
+    (hy : y ∈ interior (extChartAt I β).target)
+    (hfy : f ((extChartAt I β).symm y) ∈ (extChartAt I' α).source) :
+    ContDiffAt 𝕜 n (extChartAt I' α ∘ f ∘ (extChartAt I β).symm) y := by
+  have hfs : f ((extChartAt I β).symm y) ∈ (chartAt H' α).source := by
+    rwa [← extChartAt_source (I := I')]
+  have hβs : (extChartAt I β).symm y ∈ (chartAt H β).source := by
+    rw [← extChartAt_source (I := I)]
+    exact (extChartAt I β).map_target (interior_subset hy)
+  have h := ((contMDiffAt_iff_of_mem_source hβs hfs).1 hf).2
+  rw [(extChartAt I β).right_inv (interior_subset hy)] at h
+  exact h.contDiffAt (Filter.mem_of_superset (isOpen_interior.mem_nhds hy)
+    (interior_subset.trans (extChartAt_target_subset_range β)))
+
+end InteriorCharts
 
 section RCLikeCharts
 
