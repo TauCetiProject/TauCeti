@@ -33,9 +33,11 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
-perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and is invertible if it
-is also surjective
+(`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
+`1 ≤ ‖f‖ M` on a nontrivial space (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
+it stays nonzero under a sufficiently small perturbation
+(`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
+surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
 operator `A` on a normed space cancels against its inverse
@@ -178,6 +180,19 @@ theorem apply_add_ne_zero_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup 
   have hpos : 0 < ‖x‖ := norm_pos_iff.2 hx
   have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
   nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM.le]
+
+/-- On a nontrivial space, an operator bounded below, `‖x‖ ≤ M ‖f x‖`, satisfies
+`1 ≤ ‖f‖ M`. -/
+theorem one_le_opNorm_mul_of_forall_norm_le [Nontrivial E] {F : Type*}
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E →L[𝕜] F} {M : ℝ}
+    (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : 1 ≤ ‖f‖ * M := by
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  have hpos : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
+  refine le_of_mul_le_mul_right ?_ hpos
+  calc 1 * ‖x‖ ≤ M * ‖f x‖ := by rw [one_mul]; exact h x
+    _ ≤ M * (‖f‖ * ‖x‖) := by gcongr; exact f.le_opNorm x
+    _ = ‖f‖ * M * ‖x‖ := by ring
 
 /-- A surjective continuous linear map that is bounded below, `‖x‖ ≤ C * ‖L x‖`, is invertible.
 Neither space needs to be complete. -/
