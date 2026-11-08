@@ -56,6 +56,7 @@ theorem Algebra.norm_sub_norm_mem_of_sub_mem_map {I : Ideal R} {a b : S}
 /-- **An extended ideal is the unit ideal only if the ideal is.** If `S` is a nontrivial
 `R`-algebra that is free of finite rank, then `IS = S` exactly when `I = R`. The algebra need not
 be commutative. -/
+@[simp]
 theorem Ideal.map_algebraMap_eq_top_iff [Nontrivial S] {I : Ideal R} :
     I.map (algebraMap R S) = ⊤ ↔ I = ⊤ := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ Ideal.map_top _⟩
