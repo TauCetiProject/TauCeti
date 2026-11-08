@@ -32,7 +32,7 @@ namespace TauCeti
 
 /-- A standard tableau of skew shape `outer / inner`: a bijective labeling of the skew
 cells by consecutive labels starting at zero, strictly increasing in rows and columns. -/
-structure StandardSkewYoungTableau (inner outer : YoungDiagram) where
+structure SkewStandardYoungTableau (inner outer : YoungDiagram) where
   /-- The inner diagram is contained in the outer diagram. -/
   le : inner ≤ outer
   /-- The bijective labeling of the skew cells. -/
@@ -44,11 +44,11 @@ structure StandardSkewYoungTableau (inner outer : YoungDiagram) where
   col_strict' : ∀ (a b : ↥(outer.cells \ inner.cells)),
     a.1.2 = b.1.2 → a.1.1 < b.1.1 → labeling a < labeling b
 
-namespace StandardSkewYoungTableau
+namespace SkewStandardYoungTableau
 
 variable {inner outer : YoungDiagram}
 
-instance : FunLike (StandardSkewYoungTableau inner outer)
+instance : FunLike (SkewStandardYoungTableau inner outer)
     ↥(outer.cells \ inner.cells) (Fin (outer.card - inner.card)) where
   coe T := T.labeling
   coe_injective T U h := by
@@ -59,37 +59,37 @@ instance : FunLike (StandardSkewYoungTableau inner outer)
 
 /-- Evaluating the underlying labeling agrees with evaluating the tableau. -/
 @[simp]
-theorem labeling_apply (T : StandardSkewYoungTableau inner outer)
+theorem labeling_apply (T : SkewStandardYoungTableau inner outer)
     (c : ↥(outer.cells \ inner.cells)) : T.labeling c = T c :=
   (rfl)
 
 /-- Standard skew tableaux are determined by their labels on the skew cells. -/
 @[ext]
-theorem ext {T U : StandardSkewYoungTableau inner outer} (h : ∀ c, T c = U c) : T = U :=
+theorem ext {T U : SkewStandardYoungTableau inner outer} (h : ∀ c, T c = U c) : T = U :=
   DFunLike.ext T U h
 
 /-- Each label occurs exactly once. -/
-theorem bijective (T : StandardSkewYoungTableau inner outer) : Function.Bijective T :=
+theorem bijective (T : SkewStandardYoungTableau inner outer) : Function.Bijective T :=
   T.labeling.bijective
 
 /-- Labels increase along rows. -/
-theorem row_strict (T : StandardSkewYoungTableau inner outer)
+theorem row_strict (T : SkewStandardYoungTableau inner outer)
     (a b : ↥(outer.cells \ inner.cells)) (hi : a.1.1 = b.1.1) (hj : a.1.2 < b.1.2) :
     T a < T b :=
   T.row_strict' a b hi hj
 
 /-- Labels increase down columns. -/
-theorem col_strict (T : StandardSkewYoungTableau inner outer)
+theorem col_strict (T : SkewStandardYoungTableau inner outer)
     (a b : ↥(outer.cells \ inner.cells)) (hj : a.1.2 = b.1.2) (hi : a.1.1 < b.1.1) :
     T a < T b :=
   T.col_strict' a b hj hi
 
 /-- There are finitely many standard tableaux of a fixed skew shape. -/
-noncomputable instance : Fintype (StandardSkewYoungTableau inner outer) :=
+noncomputable instance : Fintype (SkewStandardYoungTableau inner outer) :=
   FunLike.fintype _
 
 /-- Forget standardness, retaining the numeric labels and filling all other cells by zero. -/
-def toSemistandard (T : StandardSkewYoungTableau inner outer) :
+def toSemistandard (T : SkewStandardYoungTableau inner outer) :
     SkewSemistandardYoungTableau inner outer where
   entry i j := if h : (i, j) ∈ outer.cells \ inner.cells then (T ⟨(i, j), h⟩).val else 0
   le := T.le
@@ -112,7 +112,7 @@ def toSemistandard (T : StandardSkewYoungTableau inner outer) :
 
 /-- Forgetting standardness preserves the entry on each skew cell. -/
 @[simp]
-theorem toSemistandard_apply (T : StandardSkewYoungTableau inner outer)
+theorem toSemistandard_apply (T : SkewStandardYoungTableau inner outer)
     (c : ↥(outer.cells \ inner.cells)) : T.toSemistandard c.1.1 c.1.2 = (T c).val := by
   rw [← SkewSemistandardYoungTableau.entry_eq_coe]
   exact dite_eq_left c.2
@@ -128,7 +128,7 @@ theorem toSemistandard_injective :
 
 /-- Each label below the size of the skew shape occurs once, and no other label occurs. -/
 @[simp]
-theorem content_toSemistandard (T : StandardSkewYoungTableau inner outer) (k : ℕ) :
+theorem content_toSemistandard (T : SkewStandardYoungTableau inner outer) (k : ℕ) :
     T.toSemistandard.content k = if k < outer.card - inner.card then 1 else 0 := by
   rw [SkewSemistandardYoungTableau.content_apply]
   by_cases hk : k < outer.card - inner.card
@@ -165,49 +165,45 @@ private theorem transposeCells_symm_apply (c : ↥(outer.cells \ inner.cells)) :
     ((transposeCells inner outer).symm c).1 = c.1.swap := (rfl)
 
 /-- Transposition exchanges rows and columns and retains the numeric labels. -/
-def transpose (T : StandardSkewYoungTableau inner outer) :
-    StandardSkewYoungTableau inner.transpose outer.transpose where
+def transpose (T : SkewStandardYoungTableau inner outer) :
+    SkewStandardYoungTableau inner.transpose outer.transpose where
   le := YoungDiagram.transpose_mono T.le
   labeling := (transposeCells inner outer).trans (T.labeling.trans
     (finCongr (by rw [YoungDiagram.card_transpose, YoungDiagram.card_transpose])))
   row_strict' a b hi hj := by
-    simpa only [Equiv.trans_apply, finCongr, Equiv.coe_fn_mk, Fin.cast_lt_cast,
-      labeling_apply] using
+    simpa only [Equiv.trans_apply, Fin.lt_def, finCongr_apply_coe, labeling_apply] using
       T.col_strict (transposeCells inner outer a) (transposeCells inner outer b) hi hj
   col_strict' a b hj hi := by
-    simpa only [Equiv.trans_apply, finCongr, Equiv.coe_fn_mk, Fin.cast_lt_cast,
-      labeling_apply] using
+    simpa only [Equiv.trans_apply, Fin.lt_def, finCongr_apply_coe, labeling_apply] using
       T.row_strict (transposeCells inner outer a) (transposeCells inner outer b) hj hi
 
 /-- Transposition keeps the label of the corresponding cell. -/
 @[simp]
-theorem transpose_apply_val (T : StandardSkewYoungTableau inner outer)
+theorem transpose_apply_val (T : SkewStandardYoungTableau inner outer)
     (c : ↥(outer.transpose.cells \ inner.transpose.cells)) :
     (T.transpose c).val = (T ⟨c.1.swap, by
       simpa only [Finset.mem_sdiff, YoungDiagram.mem_cells,
         YoungDiagram.mem_transpose] using c.2⟩).val :=
   (rfl)
 
-private def untranspose (T : StandardSkewYoungTableau inner.transpose outer.transpose) :
-    StandardSkewYoungTableau inner outer where
+private def untranspose (T : SkewStandardYoungTableau inner.transpose outer.transpose) :
+    SkewStandardYoungTableau inner outer where
   le := YoungDiagram.transpose_le_iff.mp T.le
   labeling := (transposeCells inner outer).symm.trans (T.labeling.trans
     (finCongr (by rw [YoungDiagram.card_transpose, YoungDiagram.card_transpose])))
   row_strict' a b hi hj := by
-    simpa only [Equiv.trans_apply, finCongr, Equiv.coe_fn_mk, Fin.cast_lt_cast,
-      labeling_apply] using
+    simpa only [Equiv.trans_apply, Fin.lt_def, finCongr_apply_coe, labeling_apply] using
       T.col_strict ((transposeCells inner outer).symm a)
         ((transposeCells inner outer).symm b) hi hj
   col_strict' a b hj hi := by
-    simpa only [Equiv.trans_apply, finCongr, Equiv.coe_fn_mk, Fin.cast_lt_cast,
-      labeling_apply] using
+    simpa only [Equiv.trans_apply, Fin.lt_def, finCongr_apply_coe, labeling_apply] using
       T.row_strict ((transposeCells inner outer).symm a)
         ((transposeCells inner outer).symm b) hj hi
 
 /-- Transposition is an equivalence between standard tableaux of transposed skew shapes. -/
 def transposeEquiv (inner outer : YoungDiagram) :
-    StandardSkewYoungTableau inner outer ≃
-      StandardSkewYoungTableau inner.transpose outer.transpose where
+    SkewStandardYoungTableau inner outer ≃
+      SkewStandardYoungTableau inner.transpose outer.transpose where
   toFun := transpose
   invFun := untranspose
   left_inv T := by
@@ -223,27 +219,27 @@ def transposeEquiv (inner outer : YoungDiagram) :
 
 /-- The forward transpose equivalence is transposition. -/
 @[simp]
-theorem transposeEquiv_apply (T : StandardSkewYoungTableau inner outer) :
+theorem transposeEquiv_apply (T : SkewStandardYoungTableau inner outer) :
     transposeEquiv inner outer T = T.transpose :=
   (rfl)
 
 /-- Applying the inverse transpose equivalence to a transposed tableau recovers it. -/
 @[simp]
-theorem transposeEquiv_symm_transpose (T : StandardSkewYoungTableau inner outer) :
+theorem transposeEquiv_symm_transpose (T : SkewStandardYoungTableau inner outer) :
     (transposeEquiv inner outer).symm T.transpose = T :=
   (transposeEquiv inner outer).symm_apply_apply T
 
 /-- Transposing the inverse transpose comparison recovers the original tableau. -/
 @[simp]
 theorem transpose_transposeEquiv_symm
-    (T : StandardSkewYoungTableau inner.transpose outer.transpose) :
+    (T : SkewStandardYoungTableau inner.transpose outer.transpose) :
     ((transposeEquiv inner outer).symm T).transpose = T :=
   (transposeEquiv inner outer).apply_symm_apply T
 
 /-- The inverse transpose equivalence swaps the coordinates and retains the labels. -/
 @[simp]
 theorem transposeEquiv_symm_apply_val
-    (T : StandardSkewYoungTableau inner.transpose outer.transpose)
+    (T : SkewStandardYoungTableau inner.transpose outer.transpose)
     (c : ↥(outer.cells \ inner.cells)) :
     (((transposeEquiv inner outer).symm T) c).val = (T ⟨c.1.swap, by
       simpa only [Finset.mem_sdiff, YoungDiagram.mem_cells,
@@ -256,7 +252,7 @@ private def botCells (outer : YoungDiagram) : ↥(outer.cells \ (⊥ : YoungDiag
 
 /-- Standard skew tableaux with empty inner diagram are exactly standard straight tableaux. -/
 def botEquiv (outer : YoungDiagram) :
-    StandardSkewYoungTableau ⊥ outer ≃ StandardYoungTableau outer where
+    SkewStandardYoungTableau ⊥ outer ≃ StandardYoungTableau outer where
   toFun T :=
     { toTableau := (botCells outer).symm.trans
         (T.labeling.trans (finCongr (by simp [YoungDiagram.card])))
@@ -289,8 +285,14 @@ def botEquiv (outer : YoungDiagram) :
 
 /-- The straight-shape comparison preserves each numeric label. -/
 @[simp]
-theorem botEquiv_apply_val (T : StandardSkewYoungTableau ⊥ outer) (c : ↥outer.cells) :
+theorem botEquiv_apply_val (T : SkewStandardYoungTableau ⊥ outer) (c : ↥outer.cells) :
     (botEquiv outer T c).val = (T ⟨c.1, by simp [c.2]⟩).val :=
+  (rfl)
+
+/-- The inverse straight-shape comparison preserves each numeric label. -/
+theorem botEquiv_symm_apply_val (T : StandardYoungTableau outer)
+    (c : ↥(outer.cells \ (⊥ : YoungDiagram).cells)) :
+    ((botEquiv outer).symm T c).val = (T ⟨c.1, (Finset.mem_sdiff.mp c.2).1⟩).val :=
   (rfl)
 
 /-- The semistandard tableau underlying the inverse straight-shape comparison has the
@@ -299,26 +301,25 @@ original numeric labels. -/
 theorem toSemistandard_botEquiv_symm_apply (T : StandardYoungTableau outer)
     (c : ↥outer.cells) :
     ((botEquiv outer).symm T).toSemistandard c.1.1 c.1.2 = (T c).val := by
-  rw [toSemistandard_apply _ ⟨c.1, by simp [c.2]⟩]
-  rfl
+  rw [toSemistandard_apply _ ⟨c.1, by simp [c.2]⟩, botEquiv_symm_apply_val]
 
 /-- The unique tableau on an empty skew shape has no labels. -/
-def empty (μ : YoungDiagram) : StandardSkewYoungTableau μ μ where
+def empty (μ : YoungDiagram) : SkewStandardYoungTableau μ μ where
   le := le_rfl
-  labeling := by
-    simp only [Finset.sdiff_self, Nat.sub_self]
-    exact Equiv.equivOfIsEmpty _ _
+  labeling :=
+    haveI : IsEmpty ↥(μ.cells \ μ.cells) := ⟨fun c => by simpa using c.2⟩
+    (Equiv.equivOfIsEmpty _ (Fin 0)).trans (finCongr (Nat.sub_self μ.card).symm)
   row_strict' a := False.elim (by simpa using a.2)
   col_strict' a := False.elim (by simpa using a.2)
 
 /-- An empty skew shape has only one standard tableau. -/
-instance (μ : YoungDiagram) : Unique (StandardSkewYoungTableau μ μ) where
+instance (μ : YoungDiagram) : Unique (SkewStandardYoungTableau μ μ) where
   default := empty μ
   uniq T := by
     apply ext
     intro c
     exact False.elim (by simpa using c.2)
 
-end StandardSkewYoungTableau
+end SkewStandardYoungTableau
 
 end TauCeti
