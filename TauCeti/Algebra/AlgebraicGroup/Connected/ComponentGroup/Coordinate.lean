@@ -189,14 +189,30 @@ theorem counit_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     eval_componentFunctionAlgHom H
       (1 : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) f
 
+omit [IsAlgClosed k] in
 /-- The component function algebra embeds in the coordinate ring. -/
 theorem componentFunctionAlgHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentFunctionAlgHom H) := by
-  intro f g hfg
-  funext C
-  obtain ⟨x, hx⟩ := rationalComponentMap_surjective H C
-  rw [← hx, ← eval_componentFunctionAlgHom H x f,
-    ← eval_componentFunctionAlgHom H x g, hfg]
+  classical
+  rw [injective_iff_map_eq_zero]
+  intro f hf
+  funext D
+  obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe D
+  have hD : PrimeSpectrum.connectedComponentsIdempotent D ≠ 0 := by
+    intro h0
+    have hmem := (PrimeSpectrum.mem_basicOpen_connectedComponentsIdempotent D x).mpr hx
+    simp [h0] at hmem
+  have hsum : algebraMap k H (f D) * PrimeSpectrum.connectedComponentsIdempotent D = 0 := by
+    have h := congrArg (fun a ↦ a * PrimeSpectrum.connectedComponentsIdempotent D) hf
+    simp only [componentFunctionAlgHom_apply, zero_mul, Finset.sum_mul] at h
+    rw [Finset.sum_eq_single D] at h
+    · simpa only [mul_assoc,
+        (PrimeSpectrum.isIdempotentElem_connectedComponentsIdempotent D).eq] using h
+    · intro C _ hCD
+      rw [mul_assoc, PrimeSpectrum.connectedComponentsIdempotent_mul_eq_zero hCD, mul_zero]
+    · simp
+  rw [← Algebra.smul_def, smul_eq_zero] at hsum
+  exact hsum.resolve_right hD
 
 /-- The coordinate algebra map representing projection to the finite constant group of connected
 components. -/
@@ -255,6 +271,7 @@ theorem componentCoordinateMap_indicator (H : FiniteTypeCommHopfAlgCat.{u, u} k)
         simp
       · simp
 
+omit [IsAlgClosed k] in
 /-- The component coordinate map is injective. -/
 theorem componentCoordinateMap_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentCoordinateMap H) :=
