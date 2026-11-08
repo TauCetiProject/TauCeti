@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Complete
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
@@ -551,24 +552,15 @@ theorem coe_timeDependentFlowMFDerivEquiv_symm (s t : ℝ) (x : M) :
     ((timeDependentFlowMFDerivEquiv hcomplete hn hX s t x).symm :
         TangentSpace I (timeDependentFlowOf X s t x) →L[ℝ] TangentSpace I x) =
       mfderiv I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) := by
-  have hn₀ : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   set e := timeDependentFlowMFDerivEquiv hcomplete hn hX s t x
-  -- The flow from `t` back to `s` undoes the flow from `s` to `t`, so by the chain rule its
-  -- differential at `φ_{s,t} x` is a left inverse of `e`.
-  have hcomp : mfderiv I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) ∘L
-      (e : TangentSpace I x →L[ℝ] TangentSpace I (timeDependentFlowOf X s t x)) =
-      ContinuousLinearMap.id ℝ (TangentSpace I x) := by
-    have hψ : MDifferentiableAt I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) :=
-      (timeDependentFlowDiffeomorph hcomplete hn hX t s).mdifferentiable hn₀ _
-    have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
-      (timeDependentFlowDiffeomorph hcomplete hn hX s t).mdifferentiable hn₀ _
-    rw [coe_timeDependentFlowMFDerivEquiv]
-    exact (hψ.hasMFDerivAt.comp x hφ.hasMFDerivAt).mfderiv.symm.trans
-      ((hasMFDerivAt_id x).congr_of_eventuallyEq_abuse (Filter.Eventually.of_forall
-        (timeDependentFlowDiffeomorph hcomplete hn hX s t).symm_apply_apply)).mfderiv
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have h := DFunLike.congr_fun hcomp (e.symm v)
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+  -- The differential of the inverse diffeomorphism undoes that of the flow, at `e.symm v`; the
+  -- diffeomorphism and its inverse unfold to the time maps.
+  have h : mfderiv I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x)
+      (mfderiv I I (timeDependentFlowOf X s t) x (e.symm v)) = e.symm v :=
+    (timeDependentFlowDiffeomorph hcomplete hn hX s t).mfderiv_symm_apply_mfderiv_apply
+      (by exact_mod_cast (zero_lt_one.trans_le hn).ne') x (e.symm v)
+  rw [← timeDependentFlowMFDerivEquiv_apply hcomplete hn hX s t,
     ContinuousLinearEquiv.apply_symm_apply] at h
   exact h.symm
 
