@@ -42,7 +42,8 @@ Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)`, the Schwartz-space form of
   frequency coefficient, with `TauCeti.fourier_quantizeFrequencyCLM_apply` and
   `TauCeti.quantizeSchwartzValue_comp_snd`.
 * `TauCeti.quantizeSchwartzValue_quantizeFrequencyCLM`: `Op(a) (b(D) u) = Op(a b) u`, and
-  `TauCeti.quantizeSchwartzValue_fourierMultiplierCLM` for Mathlib's scalar multipliers.
+  `TauCeti.quantizeSchwartzValue_fourierMultiplierCLM` for Mathlib's scalar multipliers, which
+  are frequency multipliers by `TauCeti.fourierMultiplierCLM_eq_quantizeFrequencyCLM`.
 * `TauCeti.quantizeFrequencyCLM_comp`: frequency multipliers compose by the pointwise product.
 * `TauCeti.quantizeFrequencyCLM_besselWeight`,
   `TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`: the Bessel weight
@@ -140,31 +141,25 @@ theorem quantizeFrequencyCLM_smul_id [CompleteSpace V] {g : E → ℂ} (hg : g.H
     quantizeSchwartzValue_eq_fourierMultiplierCLM hg]
 
 omit [CompleteSpace W] in
+/-- Mathlib's scalar Fourier multiplier `g(D)` in the frequency `ζ` is the multiplier with
+coefficient `g(ξ / 2π)` in the angular frequency `ξ = 2πζ`. -/
+theorem fourierMultiplierCLM_eq_quantizeFrequencyCLM [CompleteSpace V] {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) :
+    SchwartzMap.fourierMultiplierCLM V g =
+      quantizeFrequencyCLM (fun ξ ↦ g ((2 * π)⁻¹ • ξ) • ContinuousLinearMap.id ℂ V) := by
+  rw [quantizeFrequencyCLM_smul_id (by fun_prop)]
+  simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
+
+omit [CompleteSpace W] in
 /-- **Composition with a scalar Fourier multiplier on the right.** For Mathlib's multiplier
 `g(D)` in the frequency `ζ`, `Op(a) ∘ g(D) = Op(g(ξ / 2π) a)` in the angular frequency `ξ`. -/
 theorem quantizeSchwartzValue_fourierMultiplierCLM [CompleteSpace V] {g : E → ℂ}
     (hg : g.HasTemperateGrowth) (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
     quantizeSchwartzValue a (SchwartzMap.fourierMultiplierCLM V g u) x =
       quantizeSchwartzValue (fun p ↦ g ((2 * π)⁻¹ • p.2) • a p) u x := by
-  have hg' : (fun ξ : E ↦ g ((2 * π)⁻¹ • ξ)).HasTemperateGrowth := by fun_prop
-  have hmul : SchwartzMap.fourierMultiplierCLM V g =
-      quantizeFrequencyCLM (fun ξ ↦ g ((2 * π)⁻¹ • ξ) • ContinuousLinearMap.id ℂ V) := by
-    rw [quantizeFrequencyCLM_smul_id hg']
-    simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
-  rw [hmul, quantizeSchwartzValue_quantizeFrequencyCLM (by fun_prop)]
+  rw [fourierMultiplierCLM_eq_quantizeFrequencyCLM hg,
+    quantizeSchwartzValue_quantizeFrequencyCLM (by fun_prop)]
   simp
-
-/-- The left quantization of the Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular
-frequency `ξ` is Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency
-`ζ = ξ / 2π`. -/
-theorem quantizeSchwartzValue_besselWeight (s : ℝ) (u : 𝓢(E, V)) (x : E) :
-    quantizeSchwartzValue (fun p : E × E ↦
-        (((1 + ‖(2 * π)⁻¹ • p.2‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) u x =
-      SchwartzMap.fourierMultiplierCLM V
-        (fun ζ : E ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u x := by
-  rw [quantizeSchwartzValue_eq_fourierMultiplierCLM
-    (g := fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop)]
-  simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
 
 /-- **The Bessel weight quantizes to the Bessel multiplier.** The multiplier with coefficient
 `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency `ξ` is Mathlib's Fourier multiplier
@@ -172,9 +167,9 @@ theorem quantizeSchwartzValue_besselWeight (s : ℝ) (u : 𝓢(E, V)) (x : E) :
 theorem quantizeFrequencyCLM_besselWeight [CompleteSpace V] (s : ℝ) :
     quantizeFrequencyCLM (fun ξ : E ↦
         (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) =
-      SchwartzMap.fourierMultiplierCLM V (fun ζ : E ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) := by
-  ext u x
-  rw [← quantizeSchwartzValue_comp_snd (by fun_prop), quantizeSchwartzValue_besselWeight]
+      SchwartzMap.fourierMultiplierCLM V (fun ζ : E ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) :=
+  (fourierMultiplierCLM_eq_quantizeFrequencyCLM
+    (g := fun ζ : E ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop)).symm
 
 /-- **The Bessel weight quantizes to the Bessel potential.** As a tempered distribution, the
 multiplier with coefficient `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency `ξ` is Mathlib's
@@ -256,7 +251,9 @@ theorem quantizeSchwartzValue_besselPotential (s : ℝ) (u : 𝓢(CoordinateSpac
       SchwartzMap.fourierMultiplierCLM V
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u x := by
   rw [funext (coefficient_besselPotential (n := n) (V := V) s),
-    quantizeSchwartzValue_besselWeight]
+    quantizeSchwartzValue_eq_fourierMultiplierCLM
+      (g := fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop)]
+  simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
 
 /-- The linear function `⟪ξ, v⟫` satisfies the symbol estimates of order `1`. -/
 private theorem exists_norm_iteratedFDeriv_inner_le (v : CoordinateSpace n) (k : ℕ) :
