@@ -229,6 +229,6 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
         ring
       · field_simp
     _ = _ := by
-      rw [ENNReal.ofReal_mul_rpow_rpow_one_sub_eq hω hκ hδ1, mul_assoc]
+      rw [ENNReal.ofReal_mul_rpow_rpow_one_sub_eq hω.le hκ.le hδ1, mul_assoc]
 
 end TauCeti

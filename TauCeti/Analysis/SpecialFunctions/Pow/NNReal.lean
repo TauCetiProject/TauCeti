@@ -265,7 +265,7 @@ theorem le_two_rpow_mul_inv_rpow_mul {q : ℝ} {s a B : ℝ≥0∞} (hs : s ≠ 
 
 /-- Raising `(κ'⁻¹ ω ^ (1 - κ')) m ^ κ'`, `κ' = (κ - δ) / (1 - δ)`, to the power `1 - δ` gives
 `((1 - δ) / (κ - δ)) ^ (1 - δ) ω ^ (1 - κ) m ^ (κ - δ)`. -/
-theorem ofReal_mul_rpow_rpow_one_sub_eq {κ δ ω : ℝ} {m : ℝ≥0∞} (hω : 0 < ω) (hκ : δ < κ)
+theorem ofReal_mul_rpow_rpow_one_sub_eq {κ δ ω : ℝ} {m : ℝ≥0∞} (hω : 0 ≤ ω) (hκ : δ ≤ κ)
     (hδ1 : δ < 1) :
     (ENNReal.ofReal (((κ - δ) / (1 - δ))⁻¹ * ω ^ (1 - (κ - δ) / (1 - δ))) *
         m ^ ((κ - δ) / (1 - δ))) ^ (1 - δ) =
@@ -274,10 +274,13 @@ theorem ofReal_mul_rpow_rpow_one_sub_eq {κ δ ω : ℝ} {m : ℝ≥0∞} (hω :
   have hexp' : (1 - (κ - δ) / (1 - δ)) * (1 - δ) = 1 - κ := by
     field_simp [(sub_pos.2 hδ1).ne']
     ring
-  have hκδ : 0 < κ - δ := sub_pos.2 hκ
+  have hκδ : 0 ≤ κ - δ := sub_nonneg.2 hκ
+  have hδ1' : 0 < 1 - δ := sub_pos.2 hδ1
+  have hq : 0 ≤ (κ - δ) / (1 - δ) := div_nonneg hκδ hδ1'.le
   rw [ENNReal.mul_rpow_of_nonneg _ _ (by linarith), ← ENNReal.rpow_mul, hexp,
-    ENNReal.ofReal_rpow_of_nonneg (by positivity) (by linarith),
-    Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hω.le, hexp', inv_div]
+    ENNReal.ofReal_rpow_of_nonneg (mul_nonneg (inv_nonneg.2 hq) (Real.rpow_nonneg hω _))
+      (by linarith),
+    Real.mul_rpow (inv_nonneg.2 hq) (Real.rpow_nonneg hω _), ← Real.rpow_mul hω, hexp', inv_div]
 
 end ENNReal
 
