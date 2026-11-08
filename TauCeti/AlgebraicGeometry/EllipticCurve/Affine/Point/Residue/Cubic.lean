@@ -274,13 +274,8 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
   -- `X₁ − X₂` is a unit, so `x₁ ≠ x₂`
   have hu : IsUnit (X₁ - X₂) :=
     notMem_maximalIdeal.1 fun hm ↦ hX ((mem_maximalIdeal_iff_dvd hϖ).1 hm)
-  have hx : x₁ ≠ x₂ := by
-    intro hx
-    rw [hX₁, hX₂] at hx
-    have : X₁ - X₂ = 0 := by
-      rw [sub_eq_zero]
-      exact mul_left_cancel₀ hp.ne_zero (Subtype.val_injective hx)
-    exact hX (this ▸ dvd_zero ϖ)
+  have hx : x₁ ≠ x₂ := fun he ↦ hu.ne_zero <| sub_eq_zero.2 <|
+    mul_left_cancel₀ hp.ne_zero (Subtype.val_injective (hX₁ ▸ hX₂ ▸ he))
   have hxy : ¬(x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := fun hxy ↦ hx hxy.1
   have ha₁ : W.a₁ = ϖ * A₁ := by
     rw [← integralModel_a₁_eq v.valuationSubring W, hA₁]; simp
