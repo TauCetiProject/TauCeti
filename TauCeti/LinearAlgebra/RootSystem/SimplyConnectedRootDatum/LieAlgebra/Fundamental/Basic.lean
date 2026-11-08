@@ -143,6 +143,11 @@ instance instFiniteDimensionalFundamentalModule (i : Fin t.rank) :
   finiteDimensional_irreducibleQuotient_of_isDominantIntegral
     (t.isDominantIntegral_fundamentalWeight ht i)
 
+/-- The rational fundamental module is torsion-free over `ℤ`. -/
+instance instIsTorsionFreeFundamentalModule (i : Fin t.rank) :
+    Module.IsTorsionFree ℤ (t.fundamentalModule ht i) :=
+  Module.IsTorsionFree.trans ℚ
+
 /-- **The highest weight space of `L(ϖᵢ)` is a line**: its `ϖᵢ`-weight space is spanned by the
 highest weight vector `v⁺ᵢ`. -/
 theorem genWeightSpace_fundamentalModule_fundamentalWeight (i : Fin t.rank) :
@@ -216,6 +221,18 @@ theorem lie_lieBasis_f_fundamentalModuleGenerator_of_ne {i j : Fin t.rank} (hji 
 theorem lie_lieBasis_f_lie_lieBasis_f_fundamentalModuleGenerator (i : Fin t.rank) :
     ⁅(t.lieBasis ht).f i, ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆⁆ = 0 := by
   simpa [pow_two] using t.pow_toEnd_lieBasis_f_fundamentalModuleGenerator ht (k := 1) (by simp)
+
+/-- The raising operator sends the first lowering of the fundamental highest weight vector
+back to that vector, with coefficient one. -/
+@[simp]
+theorem lie_lieBasis_e_lie_lieBasis_f_fundamentalModuleGenerator (i : Fin t.rank) :
+    ⁅(t.lieBasis ht).e i, ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆⁆ =
+      t.fundamentalModuleGenerator ht i := by
+  have h := leibniz_lie ((t.lieBasis ht).e i) ((t.lieBasis ht).f i)
+    (t.fundamentalModuleGenerator ht i)
+  simpa only [(t.lieBasis ht).sl2 i |>.lie_e_f,
+    t.lie_lieBasis_e_fundamentalModuleGenerator ht, lie_zero, add_zero,
+    t.lie_lieBasis_h_fundamentalModuleGenerator_self ht] using h
 
 /-- `fᵢ v⁺ᵢ ≠ 0`: lowering the highest weight vector of `L(ϖᵢ)` by its own simple root does not
 give zero, since `v⁺ᵢ` is a primitive vector of weight `1` for the `sl₂`-triple `(hᵢ, eᵢ, fᵢ)`. -/
