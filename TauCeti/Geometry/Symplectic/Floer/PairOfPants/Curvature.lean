@@ -247,16 +247,6 @@ private theorem endSign_mul_re_endCoord_lt_one_of_mem_core {R : ℝ} {z : ℝ ×
   by_contra! h
   exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endPiece hz.1 h⟩)
 
-/-- The truncation is compact, hence measurable. -/
-private theorem isCompact_preimage_truncation (R : ℝ) :
-    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
-
-/-- The truncation lies in `S`. -/
-private theorem preimage_truncation_subset (R : ℝ) :
-    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal := fun _ hz =>
-  mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-
 end Floer
 
 /-! ### Manifold targets -/
@@ -473,7 +463,8 @@ private theorem integrableOn_truncation_hamiltonianCurvature (ω : SmoothTwoForm
         (MeasurableSet.iUnion fun q ↦ measurableSet_image_endPiece q R))
     exact (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
       (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
-      (preimage_truncation_subset R hz.1) (endSign_mul_re_endCoord_lt_one_of_mem_core hz) _).symm
+      (preimage_truncation_subset_thricePuncturedSphereReal R hz.1)
+      (endSign_mul_re_endCoord_lt_one_of_mem_core hz) _).symm
   · -- Change variables to the coordinates of the end, where the curvature is continuous on the
     -- compact closure of the end piece.
     set K : Set (ℝ × ℝ) :=
@@ -752,7 +743,7 @@ private theorem integrableOn_truncation_floerEnergyDensity (hω : ω.IsNondegene
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
       (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
   have hT := isCompact_preimage_truncation R
-  have hTS := preimage_truncation_subset R
+  have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
   -- The pulled-back components `K(u)` are `C¹` on `S`, so their derivatives are integrable over
   -- the compact truncation.
   have hd (v : ℂ) : ContDiffOn ℝ 1
@@ -808,7 +799,8 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (hω : ω.IsNondegenerat
     preimage_mono (truncation_mono (le_max_left R 1))
   exact ⟨(integrableOn_truncation_floerEnergyDensity hω hH hHs hu (le_max_right R 1)).mono_set hsub,
     ((continuousOn_symplecticArea ω isOpen_thricePuncturedSphereReal hu).mono
-      (preimage_truncation_subset R)).integrableOn_compact (isCompact_preimage_truncation R),
+      (preimage_truncation_subset_thricePuncturedSphereReal R)).integrableOn_compact
+      (isCompact_preimage_truncation R),
     (integrableOn_truncation_hamiltonianCurvature ω hH hHs hu.continuousOn
       (le_max_right R 1)).mono_set hsub⟩
 
@@ -870,11 +862,12 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (hω : ω
     setIntegral_eq_zero_of_forall_eq_zero fun z hz =>
       ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
         (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
-        (preimage_truncation_subset R hz.1) (endSign_mul_re_endCoord_lt_one_of_mem_core hz) _
+        (preimage_truncation_subset_thricePuncturedSphereReal R hz.1)
+        (endSign_mul_re_endCoord_lt_one_of_mem_core hz) _
   rw [setIntegral_truncation_eq_add_sum hR hE,
     setIntegral_truncation_eq_add_sum hR
       (((continuousOn_symplecticArea ω isOpen_thricePuncturedSphereReal hu).mono
-        (preimage_truncation_subset R)).integrableOn_compact (μ := volume)
+        (preimage_truncation_subset_thricePuncturedSphereReal R)).integrableOn_compact (μ := volume)
           (isCompact_preimage_truncation R)),
     setIntegral_truncation_eq_add_sum hR hcurv, hCE, hCR,
     Finset.sum_congr rfl fun q _ => integral_floerEnergyDensity_image_endPiece hω hH hHs hu hR q
@@ -1014,7 +1007,7 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
           z (u z))
         (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
   have hT := isCompact_preimage_truncation R
-  have hTS := preimage_truncation_subset R
+  have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
   have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl
