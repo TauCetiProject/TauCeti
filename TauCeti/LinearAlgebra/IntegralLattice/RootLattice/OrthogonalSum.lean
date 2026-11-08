@@ -53,6 +53,9 @@ Isotropic and Lagrangian subgroups of glue words correspond to those of the disc
   the glue-word isometry under signed permutations of identical components.
 * `TauCeti.DynkinType.piGlueAlphabetCongr`: the glue words of a family of components equal to a
   reindexing of `t`.
+* `TauCeti.DynkinType.piGlueAlphabetCongr_refl`, `TauCeti.DynkinType.piGlueAlphabetCongr_trans`:
+  reindexing glue words along the identity is the identity, and along a composite is reindexing
+  along each factor in turn.
 * `TauCeti.DynkinType.isNondegenerate_pi_glueAlphabet`,
   `TauCeti.DynkinType.natCard_pi_glueAlphabet`: the module of glue words is nondegenerate, of
   order `∏ i, |det (t i).cartanMatrix|`.
@@ -232,6 +235,28 @@ theorem piGlueAlphabetCongr_apply (w : ∀ i, (t i).glueAlphabet (ht i)) (k : κ
     (fun i ↦ ((t i).glueAlphabet (ht i)).quadratic) σ).apply_symm_apply w]
   rw [QuadraticMap.IsometryEquiv.piCongrLeft_apply_apply]
   -- `QuadraticMap.IsometryEquiv.pi` acts coordinatewise by definition.
+  rfl
+
+/-- Reindexing glue words along the identity equivalence is the identity. -/
+@[simp]
+theorem piGlueAlphabetCongr_refl (h : ∀ i, t (Equiv.refl ι i) = t i) :
+    piGlueAlphabetCongr t ht (Equiv.refl ι) h (hs := ht) = QuadraticMap.IsometryEquiv.refl _ := by
+  refine DFunLike.ext _ _ fun w ↦ funext fun i ↦ ?_
+  rw [piGlueAlphabetCongr_apply, FiniteQuadraticModule.Isometry.ofEq_apply]
+  -- A cast along an equality of a type with itself is the identity.
+  exact cast_eq _ _
+
+/-- Reindexing glue words along `σ` and then along `τ` is reindexing along `τ.trans σ`. -/
+theorem piGlueAlphabetCongr_trans {μ : Type*} [Fintype μ] {u : μ → DynkinType}
+    {hu : ∀ m, (u m).IsSimplyLaced} (τ : μ ≃ κ) (h' : ∀ m, s (τ m) = u m) :
+    (piGlueAlphabetCongr t ht σ h).trans (piGlueAlphabetCongr s hs τ h' (hs := hu)) =
+      piGlueAlphabetCongr t ht (τ.trans σ) fun m ↦
+        (congrArg t (τ.trans_apply σ m)).trans ((h (τ m)).trans (h' m)) := by
+  refine DFunLike.ext _ _ fun w ↦ funext fun m ↦ ?_
+  rw [QuadraticMap.IsometryEquiv.trans_apply, piGlueAlphabetCongr_apply, piGlueAlphabetCongr_apply,
+    piGlueAlphabetCongr_apply, FiniteQuadraticModule.Isometry.ofEq_apply,
+    FiniteQuadraticModule.Isometry.ofEq_apply, FiniteQuadraticModule.Isometry.ofEq_apply, cast_cast]
+  -- `τ.trans σ` applies `τ` and then `σ` by definition.
   rfl
 
 end OfEq
