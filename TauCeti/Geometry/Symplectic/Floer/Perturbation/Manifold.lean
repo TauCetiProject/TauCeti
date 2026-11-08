@@ -83,14 +83,9 @@ theorem hasDerivAt_floerOperator_add_smul_left (δK : ℝ × ℝ → M → ℝ) 
     (hδK : MDifferentiableAt I 𝓘(ℝ) (δK z) (u z)) (r : ℝ) :
     HasDerivAt (fun a : ℝ ↦ (ω.floerOperator J (fun w ↦ Ks w + a • δK w) Kt u z : E))
       (-ω.hamiltonianVectorField (δK z) (u z) : E) r := by
-  -- Instance search does not synthesize a norm on the tangent synonym; compute in E.
-  let v : E := ω.hamiltonianVectorField (δK z) (u z)
-  let b : E := ω.floerOperator J Ks Kt u z
-  have hd : HasDerivAt (fun a : ℝ ↦ b - a • v) (-v) r := by
-    simpa only [one_smul, id_eq, smul_neg, ← sub_eq_add_neg] using
-      ((hasDerivAt_id r).smul_const (-v)).const_add b
-  exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun a ↦
-    ω.floerOperator_add_smul_left J Ks Kt u δK z hKs hδK a)
+  simp only [floerOperator_def]
+  exact ((ω.hasDerivAt_hamiltonianVectorField_add_smul hKs hδK r).const_sub (F := E)
+    (TauCeti.Manifold.curveVelocity I (fun s ↦ u (s, z.2)) z.1 : E)).add_const (F := E) _
 
 variable [FiniteDimensional ℝ E] [T2Space M]
 
