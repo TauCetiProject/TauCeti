@@ -78,7 +78,7 @@ theorem comp_inter_Icc_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β →
 end eVariationOn
 
 /-- Constant extension of a path outside a closed interval preserves bounded variation. -/
-theorem BoundedVariationOn.iccExtend {α E : Type*} [LinearOrder α]
+theorem BoundedVariationOn.IccExtend {α E : Type*} [LinearOrder α]
     [TopologicalSpace E] [WeakPseudoEMetricSpace E] {f : α → E} {a b : α}
     (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b) :
     BoundedVariationOn (IccExtend hab (f ∘ Subtype.val)) univ := by
