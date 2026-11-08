@@ -215,12 +215,11 @@ theorem hasNondegenerateCriticalPointsOn_cosAddHalfSq :
     HasNondegenerateCriticalPointsOn cosAddHalfSq univ :=
   hasNondegenerateCriticalPointsOn_iff.2 fun _ _ hz ↦ isNondegenerateCriticalPoint_cosAddHalfSq hz
 
-/-- At a critical point with `cos x = -1`, the Morse index is `0`. -/
+/-- At a point with `cos x = -1`, the Morse index is `0`. -/
 private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
-    {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = -1) :
+    {z : EuclideanSpace ℝ (Fin 2)} (hc : Real.cos (z 0) = -1) :
     morseIndex cosAddHalfSq z = 0 := by
-  have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hz
-  refine hnd.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.1 fun u hu ↦ ?_
+  refine morseIndex_eq_zero_of_posDef fun u hu ↦ ?_
   rw [hessianQuadraticForm_cosAddHalfSq, hc]
   have hne : u 0 ≠ 0 ∨ u 1 ≠ 0 := by
     by_contra h
@@ -274,10 +273,7 @@ private theorem fderiv_cosAddHalfSq_onAxis {z : EuclideanSpace ℝ (Fin 2)}
 /-- At a point with `cos x = -1`, a minimum when it is critical, the Morse index is `0`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2)}
     (hc : Real.cos (z 0) = -1) : morseIndex cosAddHalfSq z = 0 := by
-  have hw : Real.cos (onAxis z 0) = -1 := by simpa using hc
-  rw [morseIndex_cosAddHalfSq_congr (w := onAxis z) (by rw [hc, hw]),
-    morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
-      (fderiv_cosAddHalfSq_onAxis (Or.inr hc)) hw]
+  exact morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one hc
 
 /-- At a point with `cos x = 1`, a saddle when it is critical, the Morse index is `1`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}

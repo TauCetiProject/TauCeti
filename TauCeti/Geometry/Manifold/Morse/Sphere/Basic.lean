@@ -183,7 +183,6 @@ space. -/
 theorem morseIndex_stereographicHeight_zero [FiniteDimensional ℝ F] :
     morseIndex stereographicHeight (0 : F) = finrank ℝ F := by
   have := FiniteDimensional.complete ℝ F
-  have h := isNondegenerateCriticalPoint_stereographicHeight_zero (F := F)
   rw [← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   intro w hw
   rw [neg_apply, hessianQuadraticForm_stereographicHeight_zero, neg_neg]
