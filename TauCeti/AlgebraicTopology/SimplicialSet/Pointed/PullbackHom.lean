@@ -44,6 +44,49 @@ open SSet.modelCategoryQuillen
 
 variable {A X E B : PointedSSet.{u}} (i : A ⟶ X) (p : E ⟶ B)
 
+/-- An unpointed lift of the corner square, whose two components are the prescribed based
+families, corestricts to a based lift: restriction to `A` fixes the basepoint. -/
+private lemma hasLift_of_unpointedLift
+    (P : MonoidalClosed.internalHom.PullbackObjObj i p) {K L : SSet.{u}} (j : K ⟶ L)
+    {a : K ⟶ (basedMaps X E).toSSet} {b : L ⟶ P.pt.right}
+    (sq : CommSq a j P.π.right b) (u : L ⟶ (CategoryTheory.ihom X.right).obj E.right)
+    (hu : j ≫ u = a ≫ (basedMaps X E).ι)
+    (hlA : u ≫ (MonoidalClosed.pre i.right).app E.right =
+      b ≫ P.fst.right ≫ (basedMaps A E).ι)
+    (hlB : u ≫ (CategoryTheory.ihom X.right).map p.right =
+      b ≫ P.snd.right ≫ (basedMaps X B).ι) : sq.HasLift := by
+  dsimp only [MonoidalClosed.internalHom] at P
+  have hfst := congrArg Under.Hom.right P.π_fst
+  have hsnd := congrArg Under.Hom.right P.π_snd
+  simp only [Under.comp_right] at hfst hsnd
+  let hP := P.isPullback.map (Under.forget (Δ[0] : SSet.{u}))
+  -- Restriction to A fixes the basepoint, so the unpointed lift lands in based maps.
+  have hl : SSet.Subcomplex.range u ≤ basedMaps X E := by
+    rw [range_le_basedMaps_iff, ← Under.w i, MonoidalClosed.pre_map, NatTrans.comp_app]
+    rw [← Category.assoc, hlA]
+    erw [Category.assoc, Category.assoc, basedMaps_ι_comp_pre, comp_pointRestriction]
+    exact comp_pointRestriction E b
+  -- Corestrict the lift and check its two equations through the subcomplex inclusions.
+  let l := SSet.Subcomplex.lift u hl
+  refine ⟨⟨l, ?_, ?_⟩⟩
+  · apply (cancel_mono (basedMaps X E).ι).1
+    dsimp only [l]
+    erw [Category.assoc, SSet.Subcomplex.lift_ι]
+    exact hu
+  · apply hP.hom_ext
+    · apply (cancel_mono (basedMaps A E).ι).1
+      dsimp only [Under.forget_map, l]
+      erw [Category.assoc, Category.assoc, reassoc_of% hfst, pre_right_comp_ι,
+        ← Category.assoc, SSet.Subcomplex.lift_ι]
+      erw [Category.assoc]
+      exact hlA
+    · apply (cancel_mono (basedMaps X B).ι).1
+      dsimp only [Under.forget_map, l]
+      erw [Category.assoc, Category.assoc, reassoc_of% hsnd, ihom_map_right_comp_ι,
+        ← Category.assoc, SSet.Subcomplex.lift_ι]
+      erw [Category.assoc]
+      exact hlB
+
 /-- Lifting for an unpointed corner transfers to the corresponding based corner.
 The prescribed restriction along a based map already fixes the basepoint. -/
 lemma hasLiftingProperty_pullbackObjObjπ
@@ -96,32 +139,7 @@ lemma hasLiftingProperty_pullbackObjObjπ
       b ≫ P.snd.right ≫ (basedMaps X B).ι := by
     erw [← Q.π_snd, ← Category.assoc, sq'.fac_right]
     exact Q.isPullback.lift_snd _ _ _
-  -- Restriction to A fixes the basepoint, so the unpointed lift lands in based maps.
-  have hl : SSet.Subcomplex.range sq'.lift ≤ basedMaps X E := by
-    rw [range_le_basedMaps_iff, ← Under.w i, MonoidalClosed.pre_map, NatTrans.comp_app]
-    rw [← Category.assoc, hlA]
-    erw [Category.assoc, Category.assoc, basedMaps_ι_comp_pre, comp_pointRestriction]
-    exact comp_pointRestriction E b
-  -- Corestrict the lift and check its two equations through the subcomplex inclusions.
-  let l := SSet.Subcomplex.lift sq'.lift hl
-  refine ⟨⟨l, ?_, ?_⟩⟩
-  · apply (cancel_mono (basedMaps X E).ι).1
-    dsimp only [l]
-    erw [Category.assoc, SSet.Subcomplex.lift_ι]
-    exact sq'.fac_left
-  · apply hP.hom_ext
-    · apply (cancel_mono (basedMaps A E).ι).1
-      dsimp only [Under.forget_map, l]
-      erw [Category.assoc, Category.assoc, reassoc_of% hfst, pre_right_comp_ι,
-        ← Category.assoc, SSet.Subcomplex.lift_ι]
-      erw [Category.assoc]
-      exact hlA
-    · apply (cancel_mono (basedMaps X B).ι).1
-      dsimp only [Under.forget_map, l]
-      erw [Category.assoc, Category.assoc, reassoc_of% hsnd, ihom_map_right_comp_ι,
-        ← Category.assoc, SSet.Subcomplex.lift_ι]
-      erw [Category.assoc]
-      exact hlB
+  exact hasLift_of_unpointedLift i p P j sq sq'.lift sq'.fac_left hlA hlB
 
 /-- The based pullback–hom corner of a monomorphism and a Kan fibration is a Kan
 fibration on underlying simplicial sets. -/

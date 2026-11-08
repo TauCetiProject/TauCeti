@@ -261,7 +261,9 @@ private theorem coverIntegral_choose_eq [FiniteDimensional ℝ E]
   subst t
   rfl
 
-private theorem signed_coefficient_integrable [FiniteDimensional ℝ E]
+/-- The signed coefficient of an integrable top form in a preferred chart is integrable for the
+Haar measure of any basis, when the chart sign is continuous. -/
+public theorem signed_coefficient_integrable [FiniteDimensional ℝ E]
     (l : Manifold.OrientationLift I M (Fin k)) {φ : RoughForm I M ℝ k}
     (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E) (α : M) :
     Integrable (φ.signedInChartAt b α (fun x ↦ l.signAt α x)) b.addHaar := by
