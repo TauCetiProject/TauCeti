@@ -22,6 +22,7 @@ empty matrices; an entrywise corollary follows from the operator-norm estimate.
 
 ## Main results
 
+* `Matrix.inv_sub_smul_one_sub_inv_sub_smul_one`: the algebraic resolvent identity.
 * `Matrix.IsHermitian.inv_sub_smul_one_sub_inv_sub_smul_one`: the joint resolvent identity.
 * `Matrix.IsHermitian.norm_inv_sub_smul_one_sub_inv_sub_smul_one_le_add`: a joint bound in terms
   of the sizes of the two perturbations.
@@ -42,6 +43,32 @@ noncomputable section
 
 open scoped Matrix.Norms.L2Operator
 
+namespace Matrix
+
+variable {α n : Type*} [CommRing α] [Fintype n] [DecidableEq n]
+  {A B : Matrix n n α} {z w : α}
+
+/-- The first resolvent identity for matrices with simultaneously invertible resolvents. -/
+theorem inv_sub_smul_one_sub_inv_sub_smul_one
+    (h : IsUnit (A - z • 1) ↔ IsUnit (B - w • 1)) :
+    (A - z • 1)⁻¹ - (B - w • 1)⁻¹ =
+      (A - z • 1)⁻¹ * ((B - A) + (z - w) • 1) * (B - w • 1)⁻¹ := by
+  have h' := Matrix.inv_sub_inv (A := A - z • 1) (B := B - w • 1) h
+  convert h' using 1
+  congr 2
+  rw [sub_smul]
+  abel
+
+/-- The first resolvent identity for a change of spectral parameter. -/
+theorem inv_sub_smul_one_sub_inv_sub_smul_one_eq
+    (h : IsUnit (A - z • 1) ↔ IsUnit (A - w • 1)) :
+    (A - z • 1)⁻¹ - (A - w • 1)⁻¹ =
+      (z - w) • ((A - z • 1)⁻¹ * (A - w • 1)⁻¹) := by
+  simpa [Matrix.mul_smul, Matrix.smul_mul] using
+    (inv_sub_smul_one_sub_inv_sub_smul_one (A := A) (B := A) (z := z) (w := w) h)
+
+end Matrix
+
 namespace Matrix.IsHermitian
 
 variable {𝕜 : Type*} [RCLike 𝕜] {n : Type*} [Fintype n] [DecidableEq n]
@@ -53,14 +80,9 @@ theorem inv_sub_smul_one_sub_inv_sub_smul_one
     (hz : RCLike.im z ≠ 0) (hw : RCLike.im w ≠ 0) :
     (A - z • 1)⁻¹ - (B - w • 1)⁻¹ =
       (A - z • 1)⁻¹ * ((B - A) + (z - w) • 1) * (B - w • 1)⁻¹ := by
-  have h := Matrix.inv_sub_inv
-    (A := A - z • 1) (B := B - w • 1)
+  exact Matrix.inv_sub_smul_one_sub_inv_sub_smul_one
     (iff_of_true (hA.isUnit_sub_smul_one_of_im_ne_zero hz)
       (hB.isUnit_sub_smul_one_of_im_ne_zero hw))
-  convert h using 1
-  congr 2
-  rw [sub_smul]
-  abel
 
 /-- Joint stability of the resolvent under matrix and spectral-parameter perturbations. -/
 theorem norm_inv_sub_smul_one_sub_inv_sub_smul_one_le
@@ -84,14 +106,12 @@ theorem norm_inv_sub_smul_one_sub_inv_sub_smul_one_le_add
     (hz : RCLike.im z ≠ 0) (hw : RCLike.im w ≠ 0) :
     ‖(A - z • 1)⁻¹ - (B - w • 1)⁻¹‖ ≤
       |RCLike.im z|⁻¹ * (‖B - A‖ + ‖z - w‖) * |RCLike.im w|⁻¹ := by
-  have hone : ‖(1 : Matrix n n 𝕜)‖ ≤ 1 := by
-    rw [← Matrix.diagonal_one, Matrix.l2_opNorm_diagonal]
-    exact (pi_norm_le_iff_of_nonneg zero_le_one).2 (fun i => by simp)
   have hmid : ‖(B - A) + (z - w) • (1 : Matrix n n 𝕜)‖ ≤ ‖B - A‖ + ‖z - w‖ := by
     calc
       _ ≤ ‖B - A‖ + ‖(z - w) • (1 : Matrix n n 𝕜)‖ := norm_add_le _ _
       _ = ‖B - A‖ + ‖z - w‖ * ‖(1 : Matrix n n 𝕜)‖ := by rw [norm_smul]
-      _ ≤ ‖B - A‖ + ‖z - w‖ := by nlinarith [norm_nonneg (z - w)]
+      _ ≤ ‖B - A‖ + ‖z - w‖ :=
+        add_le_add_right (mul_le_of_le_one_right (norm_nonneg _) Matrix.l2_opNorm_one_le) _
   exact (hA.norm_inv_sub_smul_one_sub_inv_sub_smul_one_le hB hz hw).trans (by
     gcongr)
 
@@ -117,8 +137,9 @@ theorem inv_sub_smul_one_sub_inv_sub_smul_one_eq
     (hA : A.IsHermitian) (hz : RCLike.im z ≠ 0) (hw : RCLike.im w ≠ 0) :
     (A - z • 1)⁻¹ - (A - w • 1)⁻¹ =
       (z - w) • ((A - z • 1)⁻¹ * (A - w • 1)⁻¹) := by
-  simpa [Matrix.mul_smul, Matrix.smul_mul] using
-    hA.inv_sub_smul_one_sub_inv_sub_smul_one hA hz hw
+  exact Matrix.inv_sub_smul_one_sub_inv_sub_smul_one_eq
+    (iff_of_true (hA.isUnit_sub_smul_one_of_im_ne_zero hz)
+      (hA.isUnit_sub_smul_one_of_im_ne_zero hw))
 
 /-- The resolvent is Lipschitz in the spectral parameter away from the real axis. -/
 theorem norm_inv_sub_smul_one_sub_inv_sub_smul_one_le_parameter
