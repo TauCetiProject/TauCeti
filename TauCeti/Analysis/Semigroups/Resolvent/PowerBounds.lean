@@ -107,6 +107,7 @@ private noncomputable def resolventMoment (S : StronglyContinuousSemigroup X) (n
     (lambda : ℝ) (x : X) : X :=
   ∫ t in Set.Ioi 0, (t ^ n * Real.exp (-(lambda * t))) • S.realOperator t x
 
+omit [CompleteSpace X] in
 /-- Differentiating a weighted Laplace moment introduces the next power of time and a minus
 sign. -/
 private theorem hasDerivAt_resolventMoment (hb : S.HasGrowthBound omega M) (n : ℕ)
