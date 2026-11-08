@@ -89,10 +89,9 @@ theorem rescaleEquiv_symm_coord_one (a b : R) (u : Rˣ) (h : a = (u : R) * b) :
 /-- Removing a unit factor preserves the scheme-theoretic nodal centre. -/
 @[simp]
 theorem map_jacobianIdeal_rescaleEquiv (a b : R) (u : Rˣ) (h : a = (u : R) * b) :
-    Ideal.map (rescaleEquiv a b u h : NodeAlgebra R a →+* NodeAlgebra R b)
-      (jacobianIdeal a) = jacobianIdeal b := by
+    Ideal.map (rescaleEquiv a b u h) (jacobianIdeal a) = jacobianIdeal b := by
   simp only [jacobianIdeal_def, Ideal.map_span, Set.image_insert_eq, Set.image_singleton,
-    RingHom.coe_coe, rescaleEquiv_coord_zero, rescaleEquiv_coord_one]
+    rescaleEquiv_coord_zero, rescaleEquiv_coord_one]
   simp only [Ideal.span_insert,
     Ideal.span_singleton_mul_left_unit (u.isUnit.map (algebraMap R (NodeAlgebra R b)))]
 
@@ -105,8 +104,7 @@ variable [IsDomain R] [IsDiscreteValuationRing R] {a π : R}
 theorem exists_equiv_pow_of_ne_zero (hπ : Irreducible π) (ha : a ≠ 0) :
     ∃ (n : ℕ) (e : NodeAlgebra R a ≃ₐ[R] NodeAlgebra R (π ^ n)),
       (a ∈ IsLocalRing.maximalIdeal R ↔ 0 < n) ∧
-        Ideal.map (e : NodeAlgebra R a →+* NodeAlgebra R (π ^ n))
-          (jacobianIdeal a) = jacobianIdeal (π ^ n) := by
+        Ideal.map e (jacobianIdeal a) = jacobianIdeal (π ^ n) := by
   obtain ⟨n, u, hu⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
   refine ⟨n, rescaleEquiv a (π ^ n) u hu, ?_, map_jacobianIdeal_rescaleEquiv ..⟩
   simp [hu, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
@@ -118,11 +116,10 @@ theorem exists_equiv_zero_or_pow (hπ : Irreducible π)
     (ha : a ∈ IsLocalRing.maximalIdeal R) :
     ∃ (b : R) (e : NodeAlgebra R a ≃ₐ[R] NodeAlgebra R b),
       (b = 0 ∨ ∃ n : ℕ, 0 < n ∧ b = π ^ n) ∧
-        Ideal.map (e : NodeAlgebra R a →+* NodeAlgebra R b)
-          (jacobianIdeal a) = jacobianIdeal b := by
+        Ideal.map e (jacobianIdeal a) = jacobianIdeal b := by
   by_cases ha0 : a = 0
   · subst a
-    exact ⟨0, AlgEquiv.refl, Or.inl rfl, by simp⟩
+    exact ⟨0, AlgEquiv.refl, Or.inl rfl, by simp [Ideal.map]⟩
   obtain ⟨n, e, hn, he⟩ := exists_equiv_pow_of_ne_zero hπ ha0
   exact ⟨π ^ n, e, Or.inr ⟨n, hn.mp ha, rfl⟩, he⟩
 
