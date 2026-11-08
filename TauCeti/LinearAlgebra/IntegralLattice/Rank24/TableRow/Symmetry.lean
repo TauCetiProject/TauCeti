@@ -68,35 +68,6 @@ variable (r : RootfulNiemeierType)
 
 /-! ### Glue symmetries of a row -/
 
-/-- Reindexing glue words along a product of type-preserving permutations reindexes along each
-factor in turn. -/
-private theorem piGlueAlphabetCongr_mul {g h : Equiv.Perm (Fin r.components.length)}
-    (hg : ∀ k, r.componentType (g k) = r.componentType k)
-    (hh : ∀ k, r.componentType (h k) = r.componentType k)
-    (hgh : ∀ k, r.componentType ((g * h) k) = r.componentType k) (w : r.glueModule) :
-    piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType (g * h) hgh
-        (hs := r.isSimplyLaced_componentType) w =
-      piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType h hh
-        (hs := r.isSimplyLaced_componentType)
-        (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
-          (hs := r.isSimplyLaced_componentType) w) := by
-  apply encodeGlueWord_injective r.componentType r.isSimplyLaced_componentType
-  rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn, encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
-  -- The digits of the word reindexed along `g` are those of `w` read along `g`.
-  have hd := List.ofFn_inj.mp ((encodeGlueWord_def _ _ _).symm.trans
-    (encodeGlueWord_piGlueAlphabetCongr_eq_ofFn _ _ r.isSimplyLaced_componentType g hg w))
-  exact congrArg List.ofFn (funext fun k ↦ (congrFun hd (h k)).symm)
-
-/-- Reindexing glue words along the identity permutation fixes them. -/
-private theorem piGlueAlphabetCongr_of_eq_one {g : Equiv.Perm (Fin r.components.length)}
-    (h1 : g = 1) (hg : ∀ k, r.componentType (g k) = r.componentType k) (w : r.glueModule) :
-    piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
-      (hs := r.isSimplyLaced_componentType) w = w := by
-  subst h1
-  apply encodeGlueWord_injective r.componentType r.isSimplyLaced_componentType
-  rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
-  exact (encodeGlueWord_def _ _ w).symm
-
 /-- **The glue symmetries of a row**: the permutations `g` of the component positions which map
 every component to one of the same type and preserve the glue subgroup `H_r`, in the sense that
 the glue word reading its label in position `k` from position `g k` lies in `H_r` exactly when the
@@ -106,9 +77,10 @@ def glueSymmetries : Subgroup (Equiv.Perm (Fin r.components.length)) where
     ∀ w : r.glueModule, piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w ∈
       r.glueSubgroup ↔ w ∈ r.glueSubgroup}
   one_mem' := ⟨fun _ ↦ rfl, fun w ↦
-    (congrArg (· ∈ r.glueSubgroup) (r.piGlueAlphabetCongr_of_eq_one rfl _ w)).to_iff⟩
+    (congrArg (· ∈ r.glueSubgroup) (DFunLike.congr_fun (piGlueAlphabetCongr_refl _ _ _) w)).to_iff⟩
   mul_mem' {g h} hg hh := ⟨fun k ↦ (hg.fst (h k)).trans (hh.fst k), fun w ↦
-    (congrArg (· ∈ r.glueSubgroup) (r.piGlueAlphabetCongr_mul hg.fst hh.fst _ w)).to_iff.trans
+    (congrArg (· ∈ r.glueSubgroup)
+      (DFunLike.congr_fun (piGlueAlphabetCongr_trans _ _ g hg.fst h hh.fst) w).symm).to_iff.trans
       ((hh.snd _).trans (hg.snd w))⟩
   inv_mem' {g} hg := by
     have hgi : ∀ k, r.componentType (g⁻¹ k) = r.componentType k := fun k ↦ by
@@ -117,9 +89,9 @@ def glueSymmetries : Subgroup (Equiv.Perm (Fin r.components.length)) where
     -- Write `w` as the reindexing of `v` along `g`, which the reindexing along `g⁻¹` undoes.
     obtain ⟨v, rfl⟩ := EquivLike.surjective (piGlueAlphabetCongr r.componentType
       r.isSimplyLaced_componentType g hg.fst (hs := r.isSimplyLaced_componentType)) w
-    have hv :=
-      (r.piGlueAlphabetCongr_mul hg.fst hgi (fun k ↦ (hg.fst _).trans (hgi k)) v).symm.trans
-        (r.piGlueAlphabetCongr_of_eq_one (mul_inv_cancel g) _ v)
+    have hv := DFunLike.congr_fun (piGlueAlphabetCongr_trans _ _ g hg.fst g⁻¹ hgi
+      (hs := r.isSimplyLaced_componentType) (hu := r.isSimplyLaced_componentType)) v
+    simp only [Equiv.Perm.inv_def, Equiv.symm_trans_self, piGlueAlphabetCongr_refl] at hv
     exact (congrArg (· ∈ r.glueSubgroup) hv).to_iff.trans (hg.snd v).symm
 
 /-- A permutation of the positions is a glue symmetry exactly when it preserves component types
