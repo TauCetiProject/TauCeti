@@ -196,8 +196,16 @@ the live documentation describes.
 ```bash
 lake exe cache get                 # Mathlib's oleans
 bash scripts/lake-cache-get.sh .   # Tau Ceti's own oleans
-lake build
+lake build --iofail
+lake test
+lake lint
 ```
+
+`lake test` runs the inexpensive local axiom checks on changed modules and the module-system
+check. `lake lint` runs source guards, source style, shim checks and changed-module environment
+and documentation lint. They calculate scope offline from local Git history, including edits
+and new files. Full transitive axiom and declaration-ownership audits remain in staging CI.
+Use `--iofail` explicitly: it rejects informational output as PR/staging builds do.
 
 Both fetches matter, and they come from different places. `lake exe cache get` is Mathlib's own
 cache and covers only Mathlib. Tau Ceti's oleans live in a separate public cache that
