@@ -217,6 +217,35 @@ noncomputable def _root_.ContinuousLinearMap.kerModelEquiv {n : ℕ} (T : E →L
   have := hfin
   ContinuousLinearEquiv.ofFinrankEq (by rw [hn, Module.finrank_fin_fun])
 
+/-- A surjective Fredholm map `D : E → F` of index `n` gives a linear homeomorphism
+`(Fin n → 𝕜) × F ≃ E` whose inverse has the kernel model coordinate of the chosen kernel
+projection as first component and `D` itself as second component. -/
+theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_symm_eq {n : ℕ}
+    (D : E →L[𝕜] F) (hFred : D.IsFredholm)
+    (hsurj : Function.Surjective D) (hindex : D.index = n) :
+    ∃ A : ((Fin n → 𝕜) × F) ≃L[𝕜] E,
+      (∀ x, (A.symm x).1 = D.kerModelEquiv hFred.finite_ker
+        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq D hsurj).2 hindex)
+        (Classical.choose hFred.closedComplemented_ker x)) ∧
+      ∀ x, (A.symm x).2 = D x := by
+  let K := D.kerModelEquiv hFred.finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq D hsurj).2 hindex)
+  let L := D.implicitCoordEquiv (LinearMap.range_eq_top.2 hsurj)
+    hFred.closedComplemented_ker
+  have hL (x : E) : L x = (D x, Classical.choose hFred.closedComplemented_ker x) :=
+    congrArg (fun T : E →L[𝕜] F × D.ker ↦ T x) (D.coe_implicitCoordEquiv _ _)
+  let A : ((Fin n → 𝕜) × F) ≃L[𝕜] E :=
+    ((K.symm.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans
+      (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans L.symm
+  -- Inverting the product equivalences puts the kernel coordinate first.
+  have hA_symm (x : E) : A.symm x = (K (L x).2, (L x).1) := by
+    simp only [A, ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
+      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodComm_symm,
+      ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.prodComm_apply,
+      ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.refl_apply,
+      Prod.fst_swap, Prod.snd_swap]
+  exact ⟨A, fun x ↦ by rw [hA_symm, hL], fun x ↦ by rw [hA_symm, hL]⟩
+
 /-- The chart of a regular level set, read in the model space `Fin n → 𝕜` through
 `ContinuousLinearMap.kerModelEquiv`. -/
 noncomputable def levelSetChartModel {n : ℕ} (hf : HasStrictFDerivAt f f' a)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Chart
 public import Mathlib.Geometry.Manifold.Immersion
+public import TauCeti.Analysis.Calculus.ContDiff.Shear
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -47,97 +48,6 @@ open Bundle Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
-
-section General
-
-variable {𝕜 V W Y : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {m : ℕ∞ω}
-
-/-- **A shear chart of a normed space**: given a linear homeomorphism `A : V × W ≃ Y`, a basepoint
-`c₀` and a map `g : V → W` which is `C^m` on an open set `U`, there is a partial homeomorphism of
-`Y`, `C^m` with `C^m` inverse, which sends `x` to `A (u, w - g u)`, where `(u, w) = A⁻¹ (x - c₀)`,
-and whose source is the set of points with `u ∈ U`. -/
-theorem exists_contDiffOn_shear (A : (V × W) ≃L[𝕜] Y) (c₀ : Y) {U : Set V}
-    (hU : IsOpen U) {g : V → W} (hg : ContDiffOn 𝕜 m g U) :
-    ∃ Ψ : OpenPartialHomeomorph Y Y, ContDiffOn 𝕜 m Ψ Ψ.source ∧ ContDiffOn 𝕜 m Ψ.symm Ψ.target ∧
-      (∀ x, x ∈ Ψ.source ↔ (A.symm (x - c₀)).1 ∈ U) ∧
-      ∀ x, Ψ x = A ((A.symm (x - c₀)).1, (A.symm (x - c₀)).2 - g (A.symm (x - c₀)).1) := by
-  have hminus : ContDiffOn 𝕜 m (fun p : V × W ↦ (p.1, p.2 - g p.1)) (Prod.fst ⁻¹' U) :=
-    contDiffOn_fst.prodMk (contDiffOn_snd.sub
-      (hg.comp contDiffOn_fst (fun _ hp ↦ hp)))
-  have hplus : ContDiffOn 𝕜 m (fun p : V × W ↦ (p.1, p.2 + g p.1)) (Prod.fst ⁻¹' U) :=
-    contDiffOn_fst.prodMk (contDiffOn_snd.add
-      (hg.comp contDiffOn_fst (fun _ hp ↦ hp)))
-  -- Subtract the smooth graph in the transverse coordinate.
-  let shear : OpenPartialHomeomorph (V × W) (V × W) :=
-    { toFun := fun p ↦ (p.1, p.2 - g p.1)
-      invFun := fun p ↦ (p.1, p.2 + g p.1)
-      source := Prod.fst ⁻¹' U
-      target := Prod.fst ⁻¹' U
-      map_source' := fun _ hp ↦ hp
-      map_target' := fun _ hp ↦ hp
-      left_inv' := fun p _ ↦ by simp
-      right_inv' := fun p _ ↦ by simp
-      open_source := hU.preimage continuous_fst
-      open_target := hU.preimage continuous_fst
-      continuousOn_toFun := hminus.continuousOn
-      continuousOn_invFun := hplus.continuousOn }
-  let affine := (Homeomorph.addRight (-c₀)).trans A.symm.toHomeomorph
-  let Ψ := (affine.toOpenPartialHomeomorph.trans shear).transHomeomorph A.toHomeomorph
-  have hΨ_apply (x : Y) : Ψ x =
-      A ((A.symm (x - c₀)).1, (A.symm (x - c₀)).2 - g (A.symm (x - c₀)).1) := by
-    simp only [Ψ, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-      OpenPartialHomeomorph.trans_apply, Homeomorph.toOpenPartialHomeomorph_apply,
-      affine, Homeomorph.trans_apply, Homeomorph.coe_addRight,
-      ContinuousLinearEquiv.coe_toHomeomorph, ← sub_eq_add_neg]
-    rfl
-  refine ⟨Ψ, ?_, ?_, fun x ↦ ?_, hΨ_apply⟩
-  · exact A.contDiff.comp_contDiffOn
-      (hminus.comp (A.symm.contDiff.comp (contDiff_id.add contDiff_const)).contDiffOn
-        (fun _ (hp : _ ∈ Ψ.source) ↦ hp.2))
-  · exact (A.contDiff.comp_contDiffOn
-      (hplus.comp A.symm.contDiff.contDiffOn (fun _ hp ↦ Set.mem_of_mem_inter_left hp))).add
-        contDiffOn_const
-  · simp [Ψ, affine, shear, ← sub_eq_add_neg]
-
-end General
-
-section Fredholm
-
-variable {𝕜 X F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] {n : ℕ}
-
-/-- A surjective Fredholm map `D : X → F` of index `n` gives a linear homeomorphism
-`(Fin n → 𝕜) × F ≃ X` whose inverse has the kernel model coordinate of the chosen kernel
-projection as first component and `D` itself as second component. -/
-theorem exists_continuousLinearEquiv_symm_eq (D : X →L[𝕜] F) (hFred : D.IsFredholm)
-    (hsurj : Function.Surjective D) (hindex : D.index = n) :
-    ∃ A : ((Fin n → 𝕜) × F) ≃L[𝕜] X,
-      (∀ x, (A.symm x).1 = D.kerModelEquiv hFred.finite_ker
-        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq D hsurj).2 hindex)
-        (Classical.choose hFred.closedComplemented_ker x)) ∧
-      ∀ x, (A.symm x).2 = D x := by
-  let K := D.kerModelEquiv hFred.finite_ker
-    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq D hsurj).2 hindex)
-  let L := D.implicitCoordEquiv (LinearMap.range_eq_top.2 hsurj)
-    hFred.closedComplemented_ker
-  have hL (x : X) : L x = (D x, Classical.choose hFred.closedComplemented_ker x) :=
-    congrArg (fun T : X →L[𝕜] F × D.ker ↦ T x) (D.coe_implicitCoordEquiv _ _)
-  let A : ((Fin n → 𝕜) × F) ≃L[𝕜] X :=
-    ((K.symm.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans
-      (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans L.symm
-  -- Inverting the product equivalences puts the kernel coordinate first.
-  have hA_symm (x : X) : A.symm x = (K (L x).2, (L x).1) := by
-    simp only [A, ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
-      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodComm_symm,
-      ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.prodComm_apply,
-      ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.refl_apply,
-      Prod.fst_swap, Prod.snd_swap]
-  exact ⟨A, fun x ↦ by rw [hA_symm, hL], fun x ↦ by rw [hA_symm, hL]⟩
-
-end Fredholm
 
 variable {𝕜 X M B F : Type*} {E : B → Type*}
   [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -316,7 +226,8 @@ theorem isImmersionOfComplement_coe_sectionZero :
   let := isManifold_sectionZero hf hFred hsurj hindex hb he hs
   intro z
   let χ := sectionZeroChartAt hf hFred hsurj hindex z
-  obtain ⟨A, hA₁, hA₂⟩ := exists_continuousLinearEquiv_symm_eq (D z) (hFred z) (hsurj z) (hindex z)
+  obtain ⟨A, hA₁, hA₂⟩ :=
+    ContinuousLinearMap.exists_continuousLinearEquiv_symm_eq (D z) (hFred z) (hsurj z) (hindex z)
   let g (u : Fin n → 𝕜) := D z (chartAt X z.1 (χ.symm u : M) - chartAt X z.1 z.1)
   have hg : ContDiffOn 𝕜 m g χ.target :=
     (D z).contDiff.comp_contDiffOn ((contMDiffOn_iff_contDiffOn.1
@@ -328,7 +239,7 @@ theorem isImmersionOfComplement_coe_sectionZero :
   -- Subtract the smooth graph in the transverse coordinate. This uses smoothness only
   -- along the zero manifold, rather than requiring smoothness off the zero set.
   obtain ⟨Ψ, hΨ, hΨ', hΨsrc, hΨ_apply⟩ :=
-    exists_contDiffOn_shear A (chartAt X z.1 z.1) χ.open_target hg
+    A.exists_contDiffOn_shear (chartAt X z.1 z.1) χ.open_target hg
   have hcoord (w : ↥{y | s y = 0}) : (A.symm (chartAt X z.1 w.1 - chartAt X z.1 z.1)).1 = χ w := by
     rw [hA₁]
     exact (sectionZeroChartAt_apply hf hFred hsurj hindex z w).symm
@@ -339,10 +250,10 @@ theorem isImmersionOfComplement_coe_sectionZero :
   apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
     continuous_subtype_val.continuousAt A χ ((chartAt X z.1).trans Ψ)
     (mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z)
-  · refine ⟨mem_chart_source X z.1, (hΨsrc _).2 ?_⟩
-    change (A.symm (chartAt X z.1 z.1 - chartAt X z.1 z.1)).1 ∈ χ.target
-    rw [sub_self, map_zero]
-    exact mem_sectionZeroChartAt_target hf hFred hsurj hindex hb he z
+  · have h₀ : (A.symm (chartAt X z.1 z.1 - chartAt X z.1 z.1)).1 ∈ χ.target := by
+      rw [sub_self, map_zero]
+      exact mem_sectionZeroChartAt_target hf hFred hsurj hindex hb he z
+    exact ⟨mem_chart_source X z.1, (hΨsrc _).2 h₀⟩
   · simpa only [sectionZeroChartedSpace_chartAt] using
       (IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, Fin n → 𝕜)) (n := m) z)
   · exact hc
