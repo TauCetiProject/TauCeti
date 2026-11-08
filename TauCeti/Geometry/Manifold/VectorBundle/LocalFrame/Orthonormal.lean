@@ -22,20 +22,21 @@ open scoped Manifold ContDiff
 
 namespace IsLocalFrameOn
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+variable {𝕜 : Type*} [RCLike 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace 𝕜 (V x)]
   [FiberBundle F V]
   {ι : Type*} [Finite ι] {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
   (hs : IsLocalFrameOn I F n s u) {x : M}
 
 /-- The coefficients of an orthonormal local frame are its metric duals. Only orthonormality
 at the point is needed. -/
-theorem coeff_eq_inner (hx : x ∈ u) (ho : Orthonormal ℝ (fun i ↦ s i x))
-    (i : ι) (v : V x) : hs.coeff i x v = inner ℝ (s i x) v := by
+theorem coeff_eq_inner (hx : x ∈ u) (ho : Orthonormal 𝕜 (fun i ↦ s i x))
+    (i : ι) (v : V x) : hs.coeff i x v = inner 𝕜 (s i x) v := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
   have hexp : v = ∑ j, hs.coeff j x v • s j x := by
