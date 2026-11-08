@@ -180,22 +180,20 @@ theorem valuation_algebraMap_le_one_of_ne_infinity {Q : Place F W.FunctionField}
     hQ (Q.eq_of_isEquiv (W.isEquiv_infinityPlace_of_one_lt (v := Q.valuation) hx))) r
 
 /-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
--- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
--- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Forwards, a place that is not the place at infinity is regular on the whole coordinate ring
+-- (`valuation_algebraMap_le_one_of_ne_infinity`); backwards, `x` has a pole at infinity.
 -- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
 -- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
 -- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
 @[simp]
-theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity
     (Q : Place F W.FunctionField) :
     (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
       Q = infinity W := by
   constructor
   · rintro ⟨r, hr⟩
-    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
-    · exact h
-    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
-        (by simpa using hr)
+    by_contra hQ
+    exact absurd (valuation_algebraMap_le_one_of_ne_infinity hQ r) (not_le.mpr hr)
   · rintro rfl
     refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
     rw [valuation_infinity,
