@@ -31,7 +31,7 @@ of an injective path from `p` to `q`, hence a closed one-dimensional disc with b
 The open arcs are read off Mathlib's `Circle.path`, which traces the arc from one point to another
 counterclockwise; that they are open, connected and disjoint and cover the complement of `{p, q}` is
 in `TauCeti/Topology/JordanCurve/Separation.lean`. The circle is then transported to the unit sphere
-of any two-dimensional real inner product space. The collar does govern how the two sides of `Σ`
+of any two-dimensional real normed space. The collar does govern how the two sides of `Σ`
 meet the two components: at each point of `S⁰` the two collar arcs lie in different components,
 since otherwise, by invariance of domain, the corresponding point of `Σ` would have a neighbourhood
 missing one component, whose closure contains `Σ`. Unlike for `m ≥ 2`, the two sides
@@ -43,7 +43,7 @@ component.
 
 * `TauCeti.exists_closure_homeomorph_closedBall_circle` and
   `TauCeti.exists_closure_homeomorph_closedBall_sphere`: two distinct points cut the circle, or the
-  unit sphere of a two-dimensional real inner product space, into two open connected sets whose
+  unit sphere of a two-dimensional real normed space, into two open connected sets whose
   closures are closed discs bounded by the two points.
 * `TauCeti.exists_closure_homeomorph_closedBall_of_finrank_eq_one`: **the generalized Schoenflies
   theorem in dimension one**, for a continuous injection `β : S⁰ × [-1, 1] → S¹`, including the
@@ -62,7 +62,7 @@ open Function Metric Module Set Topology
 namespace TauCeti
 
 variable {E F X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [TopologicalSpace X]
+  [NormedAddCommGroup F] [TopologicalSpace X]
 
 /-- The closure of one complementary arc of a pair of distinct points of the circle is the closed
 arc, and it is a closed one-dimensional disc whose boundary sphere corresponds to the two points. -/
@@ -117,11 +117,11 @@ theorem exists_closure_homeomorph_closedBall_circle {z w : Circle} (hzw : z ≠ 
   · rw [hBcl, ← compl_compl (range _), ← hA, hcompl hdisj.symm (union_comm _ _ ▸ hunion)]
 
 /-- **Two points cut a circle into two discs**, for the unit sphere `S¹` of a two-dimensional real
-inner product space: the complement of two distinct points `p` and `q` of `S¹` is the union of two
+normed space: the complement of two distinct points `p` and `q` of `S¹` is the union of two
 disjoint open connected sets, which are therefore its two connected components; the closure of
 each is it together with `p` and `q`, and is homeomorphic to the closed unit ball of a
 one-dimensional real normed space by a homeomorphism carrying `{p, q}` onto the unit sphere. -/
-theorem exists_closure_homeomorph_closedBall_sphere (hE : finrank ℝ E = 1)
+theorem exists_closure_homeomorph_closedBall_sphere [NormedSpace ℝ F] (hE : finrank ℝ E = 1)
     (hF : finrank ℝ F = 2) {p q : sphere (0 : F) 1} (hpq : p ≠ q) :
     ∃ A B : Set (sphere (0 : F) 1), IsOpen A ∧ IsOpen B ∧ IsConnected A ∧ IsConnected B ∧
       Disjoint A B ∧ A ∪ B = {p, q}ᶜ ∧ closure A = A ∪ {p, q} ∧ closure B = B ∪ {p, q} ∧
@@ -171,7 +171,7 @@ omit [NormedSpace ℝ E] in
 /-- The collar clause of the one-dimensional Schoenflies theorem: if the complement of the zero
 slice `Σ` of a continuous injection `β : S⁰ × [-1, 1] → S¹` is split into open sets `A` and `B`
 whose closures add exactly `Σ`, then the two collar arcs at each point lie on different sides. -/
-private theorem collar_mapsTo (hF : finrank ℝ F = 2)
+private theorem collar_mapsTo [InnerProductSpace ℝ F] (hF : finrank ℝ F = 2)
     {β : sphere (0 : E) 1 × Icc (-1 : ℝ) 1 → sphere (0 : F) 1} (hβ : Continuous β)
     (hinj : Injective β) {A B : Set (sphere (0 : F) 1)} (hAo : IsOpen A) (hBo : IsOpen B)
     (hdisj : Disjoint A B)
@@ -262,9 +262,10 @@ its zero slice `S⁰ × {0}`, a pair of points. Then:
 
 Unlike in higher dimensions, the two sides `β(S⁰ × (0, 1])` and `β(S⁰ × [-1, 0))` of the collar
 need not lie in different components. -/
-theorem exists_closure_homeomorph_closedBall_of_finrank_eq_one (hE : finrank ℝ E = 1)
-    (hF : finrank ℝ F = 2) {β : sphere (0 : E) 1 × Icc (-1 : ℝ) 1 → sphere (0 : F) 1}
-    (hβ : Continuous β) (hinj : Injective β) :
+theorem exists_closure_homeomorph_closedBall_of_finrank_eq_one [InnerProductSpace ℝ F]
+    (hE : finrank ℝ E = 1) (hF : finrank ℝ F = 2)
+    {β : sphere (0 : E) 1 × Icc (-1 : ℝ) 1 → sphere (0 : F) 1} (hβ : Continuous β)
+    (hinj : Injective β) :
     ∃ A B : Set (sphere (0 : F) 1), IsOpen A ∧ IsOpen B ∧ IsConnected A ∧ IsConnected B ∧
       Disjoint A B ∧ A ∪ B = (β '' (univ ×ˢ {t : ↥(Icc (-1 : ℝ) 1) | (t : ℝ) = 0}))ᶜ ∧
       closure A = A ∪ β '' (univ ×ˢ {t : ↥(Icc (-1 : ℝ) 1) | (t : ℝ) = 0}) ∧
