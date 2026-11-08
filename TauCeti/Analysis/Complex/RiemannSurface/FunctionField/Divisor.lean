@@ -43,10 +43,7 @@ open AlgebraicGeometry WeilDivisor
 /-- The sphere coordinate has a simple zero at zero. -/
 @[simp]
 theorem order_coordinate_zero : order ((0 : ℂ) : OnePoint ℂ) coordinate = 1 := by
-  have h : coordinate.finitePart = (affineChart : OnePoint ℂ → ℂ) := by
-    funext x
-    simp [finitePart_def]
-  rw [order_apply, h, meromorphicOrderAt_def]
+  rw [order_apply, finitePart_coordinate, meromorphicOrderAt_def]
   have hchart : (affineChart : OnePoint ℂ → ℂ) ∘ affineChart.symm = id := by
     funext z
     simp
@@ -56,18 +53,16 @@ theorem order_coordinate_zero : order ((0 : ℂ) : OnePoint ℂ) coordinate = 1 
 /-- The sphere coordinate has a simple pole at infinity. -/
 @[simp]
 theorem order_coordinate_infty : order (∞ : OnePoint ℂ) coordinate = -1 := by
-  have h : coordinate.finitePart = (affineChart : OnePoint ℂ → ℂ) := by
-    funext x
-    simp [finitePart_def]
-  rw [order_apply, h, meromorphicOrderAt_def, chartAt_infty,
+  rw [order_apply, finitePart_coordinate, meromorphicOrderAt_def, chartAt_infty,
     affineChart_comp_invChart_symm]
   rw [invChart_infty]
   simpa only [Pi.inv_def, id_eq, _root_.meromorphicOrderAt_id] using
     (_root_.meromorphicOrderAt_inv (f := (id : ℂ → ℂ)) (x := 0))
 
 /-- The coordinate's principal divisor is `[0] - [∞]`. -/
-theorem principalDivisor_coordinate (h : coordinate ≠ 0) :
-    (orderSystem (OnePoint ℂ)).principalDivisor (Additive.ofMul (Units.mk0 coordinate h)) =
+theorem principalDivisor_coordinate :
+    (orderSystem (OnePoint ℂ)).principalDivisor
+        (Additive.ofMul (Units.mk0 coordinate coordinate_ne_zero)) =
       ofPoint ((0 : ℂ) : OnePoint ℂ) - ofPoint (∞ : OnePoint ℂ) := by
   classical
   apply WeilDivisor.ext
@@ -86,6 +81,18 @@ variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X] [CompactSpace X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 Y] [ConnectedSpace Y] [CompactSpace Y]
+
+/-- A nonzero constant meromorphic function has zero principal divisor. -/
+@[simp]
+theorem principalDivisor_algebraMap {c : ℂ} (hc : c ≠ 0) :
+    (orderSystem X).principalDivisor
+        (Additive.ofMul (Units.mk0 (algebraMap ℂ (MeromorphicFunction X) c)
+          (by simpa using hc))) = 0 := by
+  apply WeilDivisor.ext
+  intro x
+  apply WithTop.coe_injective
+  rw [coe_coeff_principalDivisor_orderSystem]
+  simp [hc]
 
 /-- Principal divisors commute with pullback along a finite holomorphic map. -/
 theorem principalDivisor_comap (φ : FiniteHolomorphicMap X Y) (u : (MeromorphicFunction Y)ˣ) :
@@ -115,33 +122,27 @@ theorem degree_principalDivisor (u : Additive (MeromorphicFunction X)ˣ) :
       intro h
       apply u.toMul.ne_zero
       exact hc.symm.trans (by simp [h])
-    have hdiv : (orderSystem X).principalDivisor u = 0 := by
-      apply WeilDivisor.ext
-      intro x
-      apply WithTop.coe_injective
-      rw [coe_coeff_principalDivisor_orderSystem]
-      exact (congrArg (order x) hc.symm).trans (by simp [hc0])
+    have hu : Units.mk0 (algebraMap ℂ (MeromorphicFunction X) c) (by simpa using hc0) =
+        u.toMul := Units.ext hc
+    have hdiv := principalDivisor_algebraMap (X := X) hc0
+    rw [hu, ofMul_toMul] at hdiv
     simp [hdiv]
   · let φ : FiniteHolomorphicMap X (OnePoint ℂ) :=
       .ofMDifferentiable f.mdifferentiable (f.exists_apply_ne_of_notMem_range_algebraMap hc)
-    have hz : coordinate ≠ 0 := by
-      intro h
-      have := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g (1 : ℂ)) h
-      simp at this
     have hcomp : Units.map (comapₐ φ φ.holomorphic φ.nonconstant).toMonoidHom
-        (Units.mk0 coordinate hz) = u.toMul := by
+        (Units.mk0 coordinate coordinate_ne_zero) = u.toMul := by
       apply Units.ext
       apply MeromorphicFunction.ext
       intro x
       simp [φ, f, FiniteHolomorphicMap.coe_ofMDifferentiable]
-    have hd := principalDivisor_comap φ (Units.mk0 coordinate hz)
-    rw [hcomp, ofMul_toMul, principalDivisor_coordinate hz] at hd
+    have hd := principalDivisor_comap φ (Units.mk0 coordinate coordinate_ne_zero)
+    rw [hcomp, ofMul_toMul, principalDivisor_coordinate] at hd
     rw [hd, degree_divisorPullback]
     simp [map_sub, degree_ofPoint]
 
-/-- The order system has degree-zero principal divisors, with unit weight at every point. -/
-theorem orderSystem_isWeightedDegreeZero :
-    (orderSystem X).IsWeightedDegreeZero (fun _ ↦ 1) := by
+/-- The order system has unweighted-degree-zero principal divisors. -/
+theorem orderSystem_isUnweightedDegreeZero :
+    (orderSystem X).IsUnweightedDegreeZero := by
   intro u
   simpa only [weightedDegree_one_eq_degree] using degree_principalDivisor u
 
@@ -149,8 +150,7 @@ theorem orderSystem_isWeightedDegreeZero :
 theorem degree_eq_of_linearlyEquivalent {D E : WeilDivisor X}
     (h : (orderSystem X).LinearlyEquivalent D E) :
     WeilDivisor.degree D = WeilDivisor.degree E := by
-  simpa only [weightedDegree_one_eq_degree] using
-    (orderSystem X).weightedDegree_eq_of_linearlyEquivalent (fun _ ↦ 1)
-      orderSystem_isWeightedDegreeZero h
+  rw [← OrderSystem.unweightedDegreeClass_divisorClass orderSystem_isUnweightedDegreeZero D,
+    (orderSystem X).divisorClass_eq_iff.mpr h, OrderSystem.unweightedDegreeClass_divisorClass]
 
 end TauCeti.RiemannSurface.MeromorphicFunction
