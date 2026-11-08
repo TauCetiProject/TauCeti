@@ -333,7 +333,11 @@ theorem lift_generator (x : GeneratorTuple q A) (g : Generator) :
 @[ext high]
 theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
     (he : F (e q) = G (e q)) (hf : F (f q) = G (f q))
-    (hk : F (k q) = G (k q)) (hkInv : F (kInv q) = G (kInv q)) : F = G := by
+    (hk : F (k q) = G (k q)) : F = G := by
+  have hkInv : F (kInv q) = G (kInv q) :=
+    calc F (kInv q) = F (kInv q) * G (k q * kInv q) := by rw [k_mul_kInv, map_one, mul_one]
+      _ = (F (kInv q) * F (k q)) * G (kInv q) := by rw [map_mul, ← hk, mul_assoc]
+      _ = G (kInv q) := by rw [← map_mul, kInv_mul_k, map_one, one_mul]
   apply RingQuot.ringQuot_ext' ℂ F G
   apply FreeAlgebra.hom_ext
   funext g
@@ -440,7 +444,7 @@ def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where
         simpa only [map_sub, map_mul, map_smul] using
           congrArg F (e_mul_f_sub_f_mul_e (q := q)) }
   invFun := lift
-  left_inv F := hom_ext (by simp) (by simp) (by simp) (by simp)
+  left_inv F := hom_ext (by simp) (by simp) (by simp)
   right_inv x := by ext <;> simp
 
 /-- The tuple associated to an algebra map records its value on `E`. -/
