@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Units.Equiv
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
-import TauCeti.Algebra.Ring.Idempotent
+import TauCeti.Algebra.Ring.Idempotent.Basic
 
 /-!
 # Inverting one component of a unit
@@ -52,16 +52,14 @@ variable {R : Type*} [CommRing R] {e : R}
 the automorphism `u ↦ e u⁻¹ + (1 - e) u` of `Rˣ`. Under `R ≅ e R × (1 - e) R` it inverts the first
 component and fixes the second. It is its own inverse (`unitsInvPart_symm`). -/
 def unitsInvPart (he : IsIdempotentElem e) : Rˣ ≃* Rˣ :=
-  .mk' (Function.Involutive.toPerm
-    (fun u ↦ ⟨e * ↑u⁻¹ + (1 - e) * u, e * u + (1 - e) * ↑u⁻¹,
-      by rw [he.mul_add_one_sub_mul]; simp, by rw [he.mul_add_one_sub_mul]; simp⟩)
+  have hinv : Function.Involutive fun u : Rˣ ↦ (⟨e * ↑u⁻¹ + (1 - e) * u, e * u + (1 - e) * ↑u⁻¹,
+      by rw [he.mul_add_one_sub_mul]; simp, by rw [he.mul_add_one_sub_mul]; simp⟩ : Rˣ) :=
     fun u ↦ Units.ext <| by
       simp only [Units.inv_mk]
-      linear_combination 2 * (↑u - ↑u⁻¹ : R) * he.eq)
-    fun u v ↦ Units.ext <| by
-      simp only [Function.Involutive.toPerm, Equiv.coe_fn_mk, Units.val_mul, mul_inv_rev,
-        he.mul_add_one_sub_mul]
-      ring
+      linear_combination 2 * (↑u - ↑u⁻¹ : R) * he.eq
+  .mk' (hinv.toPerm _) fun u v ↦ Units.ext <| by
+    simp only [Function.Involutive.coe_toPerm, Units.val_mul, mul_inv_rev, he.mul_add_one_sub_mul]
+    ring
 
 /-- The value of `unitsInvPart` at a unit `u` is `e u⁻¹ + (1 - e) u`. -/
 theorem val_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :

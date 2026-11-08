@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Units
-public import TauCeti.Algebra.Ring.IdempotentUnits
+public import TauCeti.Algebra.Ring.Idempotent.Units
 public import TauCeti.Data.Nat.ExactDivisor
 public import Mathlib.Algebra.Group.Prod
 
