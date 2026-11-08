@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 import TauCeti.Topology.Algebra.Star.Unitary
 public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 
@@ -31,6 +32,7 @@ factor of the smooth Cartan decomposition.
 * `Unitary.instNormedAddCommGroupModel`, `Unitary.instNormedSpaceModel`: its inherited normed
   real vector-space structure.
 * `Unitary.IsLieGroupAtlas`: the smooth Lie-group and immersive-inclusion properties of an atlas.
+* `Unitary.isLieGroupAtlas_instChartedSpace`: these properties for the chosen native atlas.
 * `Unitary.instChartedSpace`, `Unitary.instIsManifold`, `Unitary.instLieGroup`: the native
   smooth Lie-group structure on unitary elements.
 * `Unitary.contMDiff_toUnits`, `Unitary.isImmersion_toUnits`: the inclusion into the units.
@@ -125,34 +127,39 @@ private theorem exists_nativeStructure :
                contMDiff_toUnits := hinc
                isImmersion_toUnits := hi
                lieGroup := ?_ }⟩
-  exact e.symm.pullback_lieGroup 𝓘(ℝ, 𝔩) ∞ fun u v ↦ by
-    simpa only [e, TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply] using
-      unitarySubgroupUnitsEquiv.symm.map_mul u v
+  have hφsymm : (φ.symm : 𝕂 → unitary R) = unitarySubgroupUnitsEquiv := by
+    funext u
+    simp only [φ, Homeomorph.coe_pullbackDiffeomorph_symm, Homeomorph.symm_symm, e,
+      TauCeti.unitarySubgroupUnitsHomeomorph_apply]
+  let f : 𝕂 ≃* unitary R := unitarySubgroupUnitsEquiv
+  exact IsLocalDiffeomorph.lieGroup f.toMonoidHom
+    (hφsymm ▸ φ.symm.isLocalDiffeomorph) f.surjective
 
 /-- The native atlas of the unitary group, induced by its closed embedding into the units. -/
 instance instChartedSpace : ChartedSpace 𝔩 (unitary R) :=
   Classical.choose (show ∃ c : ChartedSpace 𝔩 (unitary R), IsLieGroupAtlas c from by
     exact exists_nativeStructure (R := R))
 
-private theorem nativeStructure_spec : IsLieGroupAtlas (instChartedSpace (R := R)) :=
+/-- The chosen native unitary atlas has the smooth Lie-group and immersive-inclusion properties. -/
+theorem isLieGroupAtlas_instChartedSpace : IsLieGroupAtlas (instChartedSpace (R := R)) :=
   Classical.choose_spec (exists_nativeStructure (R := R))
 
 /-- The native unitary atlas is a smooth real manifold structure. -/
 instance instIsManifold : IsManifold (model R) ∞ (unitary R) :=
-  (nativeStructure_spec (R := R)).isManifold
+  (isLieGroupAtlas_instChartedSpace (R := R)).isManifold
 
 /-- The inclusion of unitary elements into the units is smooth. -/
 theorem contMDiff_toUnits : ContMDiff (model R) 𝓘(ℝ, R) ∞ (toUnits : unitary R → Rˣ) :=
-  (nativeStructure_spec (R := R)).contMDiff_toUnits
+  (isLieGroupAtlas_instChartedSpace (R := R)).contMDiff_toUnits
 
 /-- The inclusion of unitary elements into the units is an immersion. -/
 theorem isImmersion_toUnits :
     Manifold.IsImmersion (model R) 𝓘(ℝ, R) ∞ (toUnits : unitary R → Rˣ) :=
-  (nativeStructure_spec (R := R)).isImmersion_toUnits
+  (isLieGroupAtlas_instChartedSpace (R := R)).isImmersion_toUnits
 
 /-- The native unitary manifold has smooth multiplication and inversion. -/
 instance instLieGroup : LieGroup (model R) ∞ (unitary R) :=
-  (nativeStructure_spec (R := R)).lieGroup
+  (isLieGroupAtlas_instChartedSpace (R := R)).lieGroup
 
 /-- The vector-space model of the unitary group is finite-dimensional. -/
 instance finiteDimensional_model : FiniteDimensional ℝ 𝔩 := by
