@@ -715,6 +715,27 @@ theorem energyFormH1_sub {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   energyFormIntegral_sub _ _ _ _ _ _ _ _ _ (integrable_energyIntegrand_jetField hcoeff u v)
     (integrable_energyIntegrand_jetField hcoeff' u v)
 
+/-- Boundedness of the Sobolev energy form from upper bounds alone, holding almost everywhere on
+`Ω`. No lower ellipticity hypothesis is needed. -/
+theorem norm_energyFormH1_le_of_ae_bounds
+    (hLam : 0 ≤ Lam)
+    (ha_bound : ∀ᵐ x ∂mu.restrict Omega, ∀ eta xi : EuclideanSpace ℝ ι,
+      |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
+    (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma)
+    (u v : W1p mu Omega 2) :
+    ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) := by
+  have hconst : 0 ≤ Lam + beta + gamma := by linarith
+  have hmul : Integrable (fun x => ‖jetField u x‖ * ‖jetField v x‖) (mu.restrict Omega) :=
+    (memLp_jetField u).norm.integrable_mul (memLp_jetField v).norm
+  have key := norm_energyFormIntegral_le_of_bounds (μ := mu.restrict Omega)
+    (a := a) (b := b) (c := c) (U := jetField u) (V := jetField v)
+    hLam ha_bound hb_bound hc_bound (hmul.const_mul (Lam + beta + gamma))
+  refine key.trans ?_
+  rw [integral_const_mul]
+  exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
+
 /-- Boundedness of the Sobolev energy form from upper bounds alone. No lower ellipticity
 hypothesis is needed. -/
 theorem norm_energyFormH1_le_of_bounds
@@ -726,18 +747,10 @@ theorem norm_energyFormH1_le_of_bounds
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
     (u v : W1p mu Omega 2) :
-    ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) := by
+    ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) :=
   have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
-  have hconst : 0 ≤ Lam + beta + gamma := by linarith
-  have hmul : Integrable (fun x => ‖jetField u x‖ * ‖jetField v x‖) (mu.restrict Omega) :=
-    (memLp_jetField u).norm.integrable_mul (memLp_jetField v).norm
-  have key := norm_energyFormIntegral_le_of_bounds (μ := mu.restrict Omega)
-    (a := a) (b := b) (c := c) (U := jetField u) (V := jetField v)
-    hLam (hmem.mono fun x hx => ha_bound x hx) (hmem.mono hb_bound) (hmem.mono hc_bound)
-      (hmul.const_mul (Lam + beta + gamma))
-  refine key.trans ?_
-  rw [integral_const_mul]
-  exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
+  norm_energyFormH1_le_of_ae_bounds hLam (hmem.mono ha_bound) hbeta hgamma (hmem.mono hb_bound)
+    (hmem.mono hc_bound) u v
 
 /-- The operator norm of the bundled Sobolev energy form is controlled by the coefficient
 upper bounds. -/

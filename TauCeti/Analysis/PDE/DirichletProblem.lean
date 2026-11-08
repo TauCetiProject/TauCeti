@@ -424,11 +424,11 @@ theorem dirichletSolution_apply
           (w1p0Submodule mu Omega 2).toSubmodule.subtypeL g) : W1p mu Omega 2) +
         (hcoercive.solutionOfFunctionalCLM ℓ : W1p mu Omega 2) :=
     rfl
-  -- The Lax--Milgram solution is additive in the functional.
+  -- The Lax--Milgram solution map is linear in the functional.
   have hsub : ∀ x : StrongDual ℝ (W1p0 mu Omega 2), hcoercive.solutionOfFunctional ℓ -
-      hcoercive.solutionOfFunctional x = hcoercive.solutionOfFunctional (ℓ - x) := fun x =>
-    hcoercive.eq_solutionOfFunctional fun v => by
-      simp only [map_sub, sub_apply, IsCoercive.apply_solutionOfFunctional_eq]
+      hcoercive.solutionOfFunctional x = hcoercive.solutionOfFunctional (ℓ - x) := fun x => by
+    simpa only [IsCoercive.solutionOfFunctionalCLM_apply] using
+      (map_sub hcoercive.solutionOfFunctionalCLM ℓ x).symm
   rw [hdef]
   simp only [hA, IsCoercive.solutionOfFunctionalCLM_apply]
   calc _ = g + ((hcoercive.solutionOfFunctional ℓ : W1p mu Omega 2) -
@@ -592,13 +592,13 @@ theorem norm_dirichletSolution_le
 the problem for the coefficients `(a, b, c)`, whose energy form satisfies `C ‖w‖² ≤ a(w, w)` on
 `H¹₀(Ω)`, and let `u'` solve the problem with the same boundary values and the same forcing for
 the coefficients `(a', b', c')`: `u - u' ∈ H¹₀(Ω)` and `a(u, v) = a'(u', v)` for every
-`v ∈ H¹₀(Ω)`. If the coefficient differences are bounded on `Ω` by `Λ`, `β` and `γ`, in the
-sense of `TauCeti.PDE.norm_energyFormH1_le_of_bounds`, then
+`v ∈ H¹₀(Ω)`. If the coefficient differences are bounded almost everywhere on `Ω` by `Λ`, `β`
+and `γ`, in the sense of `TauCeti.PDE.norm_energyFormH1_le_of_ae_bounds`, then
 
 `‖u - u'‖_{H¹} ≤ (Λ + β + γ) ‖u'‖_{H¹} / C`.
 
 So, for a fixed coercivity constant, the solution depends Lipschitz continuously on the
-coefficients in the uniform norm. -/
+coefficients in `L^∞(Ω)`. -/
 theorem norm_sub_le_of_forall_energyFormH1_eq_energyFormH1
     {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c' : EuclideanSpace ℝ ι → ℝ} {Lam beta gamma : ℝ}
@@ -608,11 +608,11 @@ theorem norm_sub_le_of_forall_energyFormH1_eq_energyFormH1
     (hlower : ∀ w : W1p0 mu Omega 2,
       C * ‖w‖ ^ 2 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2))
     (hLam : 0 ≤ Lam)
-    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ eta xi : EuclideanSpace ℝ ι,
+    (ha_bound : ∀ᵐ x ∂mu.restrict Omega, ∀ eta xi : EuclideanSpace ℝ ι,
       |dotProduct eta (Matrix.mulVec (a x - a' x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
     (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x - b' x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x - c' x‖ ≤ gamma)
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x - b' x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x - c' x‖ ≤ gamma)
     {u u' : W1p mu Omega 2} (hu : u - u' ∈ w1p0Submodule mu Omega 2)
     (h : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u v = energyFormH1 a' b' c' u' v) :
     ‖u - u'‖ ≤ (Lam + beta + gamma) * ‖u'‖ / C := by
@@ -625,7 +625,7 @@ theorem norm_sub_le_of_forall_energyFormH1_eq_energyFormH1
         (w : W1p mu Omega 2) := by
     rw [energyFormH1_sub hcoeff hcoeff', ← h w]
     exact energyFormH1_sub_left hcoeff u (w : W1p mu Omega 2) u' |>.trans (by ring)
-  have hdiff := norm_energyFormH1_le_of_bounds hLam ha_bound hbeta hgamma hb_bound hc_bound u'
+  have hdiff := norm_energyFormH1_le_of_ae_bounds hLam ha_bound hbeta hgamma hb_bound hc_bound u'
     (w : W1p mu Omega 2)
   rw [Real.norm_eq_abs, Submodule.norm_coe] at hdiff
   rw [hw, le_div_iff₀ hC]
