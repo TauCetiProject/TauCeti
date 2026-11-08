@@ -16,6 +16,9 @@ this file gives the form for functions satisfying `MemLp f 2 μ`, which is how s
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
 For counting measure, singleton-supported vectors separate L² functions.
+
+Mathlib's `integral_inner` takes a constant vector out of the right slot of the integral of an
+inner product; `MeasureTheory.integral_inner_left` is the version for the left slot.
 -/
 
 public section
@@ -41,6 +44,12 @@ theorem MemLp.integrable_inner_toEuclideanLin {ι : Type*} [Fintype ι] [Decidab
     Integrable (fun x ↦ ⟪B.toEuclideanLin (f x), f x⟫_𝕜) μ :=
   (hf.continuousLinearMap_comp (LinearMap.toContinuousLinearMap B.toEuclideanLin)).integrable_inner
     hf
+
+/-- The integral of `⟪f x, c⟫` is the inner product of the integral of `f` with `c`. -/
+theorem integral_inner_left [CompleteSpace E] [NormedSpace ℝ E] {f : α → E}
+    (hf : Integrable f μ) (c : E) : ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
+  rw [← inner_conj_symm, ← integral_inner hf c, ← integral_conj]
+  simp_rw [inner_conj_symm]
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
