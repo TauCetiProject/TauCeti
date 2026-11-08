@@ -46,10 +46,8 @@ generates a maximal ideal of `T`.
 
 ## Main results
 
-* `TauCeti.Dagger.washnitzerAlgebra.comap_map_toTate_of_finite`: an ideal `J` of `W` of finite
-  codimension satisfies `J T ∩ W = J`.
-* `TauCeti.Dagger.washnitzerAlgebra.quotientMap_map_toTate_bijective`: for such `J`, the map
-  `W ⧸ J → T ⧸ J T` is bijective.
+* `TauCeti.Dagger.washnitzerAlgebra.quotientMap_map_toTate_bijective`: for every ideal `J` of
+  finite codimension, the map `W ⧸ J → T ⧸ J T` is bijective.
 * `TauCeti.Dagger.washnitzerAlgebra.faithfullyFlat_toTate`: `W → T` is faithfully flat.
 * `Ideal.comap_map_toTate`: every ideal `J` of `W` satisfies `J T ∩ W = J`.
 
@@ -167,7 +165,7 @@ private theorem exists_algHom_comp_toTate_eq (J : Ideal (W σ)) [Module.Finite K
 
 /-- **Finite quotients of the Monsky–Washnitzer algebra and of the Tate algebra agree.** An ideal
 `J` of `W` whose quotient is finite-dimensional over `K` satisfies `J T ∩ W = J`. -/
-theorem comap_map_toTate_of_finite (J : Ideal (W σ)) [Module.Finite K (W σ ⧸ J)] :
+private theorem comap_map_toTate_of_finite (J : Ideal (W σ)) [Module.Finite K (W σ ⧸ J)] :
     (J.map (toTate σ K)).comap (toTate σ K) = J := by
   refine le_antisymm (fun f hf ↦ ?_) Ideal.le_comap_map
   obtain ⟨ψ, hψ⟩ := exists_algHom_comp_toTate_eq J
