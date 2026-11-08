@@ -37,22 +37,6 @@ variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 variable {ι : Type*} [Finite ι]
 
-/-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
-codomain is needed. -/
-theorem _root_.Module.Basis.memLpLoc_iff (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
-  classical
-  let : Fintype ι := Fintype.ofFinite ι
-  constructor
-  · intro h i
-    exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
-  · intro h
-    have hs : MemLpLoc p U (fun z => ∑ i, b.repr (f z) i • b i) := by
-      apply MemLpLoc.sum
-      intro i _
-      exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
-    simpa only [b.sum_repr] using hs
-
 /-- Local Sobolev membership of every order can be tested in any finite basis.
 Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
 in the same Sobolev class. -/
@@ -70,5 +54,11 @@ theorem _root_.Module.Basis.memWkpLoc_iff (b : Module.Basis ι ℝ F) :
       intro i _
       exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs
+
+/-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
+codomain is needed. -/
+theorem _root_.Module.Basis.memLpLoc_iff (b : Module.Basis ι ℝ F) :
+    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
+  simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
 
 end TauCeti
