@@ -23,7 +23,9 @@ Marcinkiewicz interpolation theorem in the case of two finite endpoints; the cas
 Source and target exponents agree at both endpoints here: the hypotheses are weak type
 `(p₀, p₀)` and `(p₁, p₁)`, and the conclusion is strong type `(p, p)`. The off-diagonal theorem,
 which interpolates weak type `(p₀, q₀)` and `(p₁, q₁)` with `pᵢ ≤ qᵢ` into strong type `(p, q)`
-along the line `1 / q = (1 - θ) / q₀ + θ / q₁`, is not proved here.
+along the line `1 / q = (1 - θ) / q₀ + θ / q₁`, is
+`TauCeti.lintegral_rpow_le_of_rpow_mul_meas_lt_le_rpow` in
+`TauCeti.MeasureTheory.Integral.Marcinkiewicz.OffDiagonal`.
 
 ## The statements proved here
 

@@ -44,6 +44,10 @@ exchanged: the integral converges at infinity and diverges at the origin, so the
 `s < -1` and the value is `∞` exactly when the threshold is `0`. The two together are what the
 real interpolation method between two finite exponents integrates against, the first for the part
 of a function above a height and the second for the part below it.
+`TauCeti.lintegral_indicator_ofReal_mul_rpow_lt_le` and
+`TauCeti.lintegral_indicator_le_ofReal_mul_rpow_le` bound the same two integrals when the linear
+threshold `c * t` is replaced by a power `c * t ^ γ` of either sign; this is the height at which
+off-diagonal interpolation splits a function.
 
 The layer cake formula `∫⁻ u ^ p = p * ∫⁻ t in (0, ∞), ν {u > t} * t ^ (p - 1)` is in Mathlib as
 `MeasureTheory.lintegral_rpow_eq_lintegral_meas_lt_mul`, but only for a nonnegative *real-valued*
@@ -72,6 +76,9 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 * `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`: the integral over the complementary region,
   where `c * t` is at least `a`, evaluated to `c ^ (-(s + 1)) / (-(s + 1)) * a ^ (s + 1)` for
   `s < -1`.
+* `TauCeti.lintegral_indicator_ofReal_mul_rpow_lt_le` and
+  `TauCeti.lintegral_indicator_le_ofReal_mul_rpow_le`: the same two integrals cut off by the power
+  threshold `c * t ^ γ` instead of `c * t`, for either sign of `γ`.
 * `TauCeti.setLIntegral_Ioi_rpow_mul_ite_le`: an upper bound for the kernel `t ^ (-s - 1)`
   restricted by a linear threshold, with constant and linear weights.
 
@@ -262,6 +269,114 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
     ← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hs hbc) hnn,
     integral_Ioi_rpow_of_lt hs hbc, hreal, hab, ENNReal.ofReal_rpow_of_pos hb0,
     ← ENNReal.ofReal_mul hconst.le]
+
+/-- At a positive `t`, the power threshold `c * t ^ γ` is the `γ`-th power of the linear threshold
+`c ^ γ⁻¹ * t`. -/
+private theorem ofReal_mul_rpow_eq_ofReal_mul_rpow {c γ t : ℝ} (hc : 0 < c) (hγ : γ ≠ 0)
+    (ht : 0 < t) : ENNReal.ofReal (c * t ^ γ) = ENNReal.ofReal (c ^ γ⁻¹ * t) ^ γ := by
+  rw [ENNReal.ofReal_rpow_of_pos (by positivity), Real.mul_rpow (by positivity) ht.le,
+    Real.rpow_inv_rpow hc.le hγ]
+
+/-- Two cut-offs that agree at every positive `t` give the same integral over `(0, ∞)`. -/
+private theorem setLIntegral_Ioi_indicator_congr {S S' : Set ℝ}
+    (h : ∀ t : ℝ, 0 < t → (t ∈ S ↔ t ∈ S')) (g : ℝ → ℝ≥0∞) :
+    ∫⁻ t in Ioi (0 : ℝ), S.indicator g t = ∫⁻ t in Ioi (0 : ℝ), S'.indicator g t :=
+  setLIntegral_congr_fun measurableSet_Ioi fun t ht => by
+    by_cases hS : t ∈ S
+    · rw [indicator_of_mem hS, indicator_of_mem ((h t ht).1 hS)]
+    · rw [indicator_of_notMem hS, indicator_of_notMem (mt (h t ht).2 hS)]
+
+/-- The constant and the power of the level produced by the linear threshold `c ^ γ⁻¹ * t` and the
+level `a ^ γ⁻¹`, rewritten in terms of `c` and `a`. -/
+private theorem ofReal_rpow_inv_mul_rpow_inv_rpow {c γ : ℝ} (hc : 0 < c) (k : ℝ) (a : ℝ≥0∞) :
+    ENNReal.ofReal ((c ^ γ⁻¹) ^ (-(s + 1)) / k) * (a ^ γ⁻¹) ^ (s + 1) =
+      ENNReal.ofReal (c ^ (-((s + 1) / γ)) / k) * a ^ ((s + 1) / γ) := by
+  have h₁ : γ⁻¹ * -(s + 1) = -((s + 1) / γ) := by ring
+  have h₂ : γ⁻¹ * (s + 1) = (s + 1) / γ := by ring
+  rw [← Real.rpow_mul hc.le, ← ENNReal.rpow_mul, h₁, h₂]
+
+/-- The lower integral of `t ^ s` over `(0, ∞)`, cut off where the power threshold `c * t ^ γ`
+stays below a level `a : ℝ≥0∞`. For `0 < c` and `(s + 1) / γ > 0`,
+
+`∫⁻ t in (0, ∞), [c * t ^ γ < a] * t ^ s ≤ c ^ (-(s + 1) / γ) / |s + 1| * a ^ ((s + 1) / γ)`.
+
+For `γ > 0` the cut-off is the interval `(0, (a / c) ^ (1 / γ))` and `s > -1`; for `γ < 0` it is
+the half-line beyond that point and `s < -1`. The case `γ = 1` is
+`TauCeti.lintegral_indicator_ofReal_rpow_Ioi`. -/
+theorem lintegral_indicator_ofReal_mul_rpow_lt_le {c γ : ℝ} (hc : 0 < c)
+    (hsγ : 0 < (s + 1) / γ) (a : ℝ≥0∞) :
+    ∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | ENNReal.ofReal (c * t ^ γ) < a}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
+      ENNReal.ofReal (c ^ (-((s + 1) / γ)) / |s + 1|) * a ^ ((s + 1) / γ) := by
+  have hγ : γ ≠ 0 := by rintro rfl; simp at hsγ
+  have hc' : 0 < c ^ γ⁻¹ := Real.rpow_pos_of_pos hc _
+  rw [← ofReal_rpow_inv_mul_rpow_inv_rpow hc]
+  rcases hγ.lt_or_gt with hγ | hγ
+  · -- For `γ < 0` the cut-off is a half-line, where `s < -1`.
+    have hs : s + 1 < 0 := by
+      by_contra! h
+      exact (div_nonpos_of_nonneg_of_nonpos h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | a ^ γ⁻¹ < ENNReal.ofReal (c ^ γ⁻¹ * t)})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne ht,
+        ENNReal.rpow_inv_lt_iff_of_neg hγ]), abs_of_neg hs,
+      ← lintegral_indicator_le_ofReal_rpow_Ioi (by linarith) hc']
+    exact lintegral_mono fun t => indicator_le_indicator_of_subset
+      (ofPred_subset_ofPred.2 fun _ h => h.le)
+      (fun _ => zero_le) t
+  · -- For `γ > 0` the cut-off is a bounded interval, where `s > -1`.
+    have hs : 0 < s + 1 := by
+      by_contra! h
+      exact (div_nonpos_of_nonpos_of_nonneg h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | ENNReal.ofReal (c ^ γ⁻¹ * t) < a ^ γ⁻¹})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne' ht,
+        ENNReal.lt_rpow_inv_iff hγ]), abs_of_pos hs,
+      lintegral_indicator_ofReal_rpow_Ioi (by linarith) hc']
+
+/-- The lower integral of `t ^ s` over `(0, ∞)`, cut off where the power threshold `c * t ^ γ`
+has reached a level `a : ℝ≥0∞`. For `0 < c` and `(s + 1) / γ < 0`,
+
+`∫⁻ t in (0, ∞), [a ≤ c * t ^ γ] * t ^ s ≤ c ^ (-(s + 1) / γ) / |s + 1| * a ^ ((s + 1) / γ)`.
+
+This is the region complementary to `TauCeti.lintegral_indicator_ofReal_mul_rpow_lt_le`; the case
+`γ = 1` is `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`. -/
+theorem lintegral_indicator_le_ofReal_mul_rpow_le {c γ : ℝ} (hc : 0 < c)
+    (hsγ : (s + 1) / γ < 0) (a : ℝ≥0∞) :
+    ∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | a ≤ ENNReal.ofReal (c * t ^ γ)}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
+      ENNReal.ofReal (c ^ (-((s + 1) / γ)) / |s + 1|) * a ^ ((s + 1) / γ) := by
+  have hγ : γ ≠ 0 := by rintro rfl; simp at hsγ
+  have hc' : 0 < c ^ γ⁻¹ := Real.rpow_pos_of_pos hc _
+  rw [← ofReal_rpow_inv_mul_rpow_inv_rpow hc]
+  rcases hγ.lt_or_gt with hγ | hγ
+  · -- For `γ < 0` the region is a bounded interval, where `s > -1`. It differs from the strict
+    -- cut-off only at the single point where `c ^ γ⁻¹ * t` equals the level.
+    have hs : 0 < s + 1 := by
+      by_contra! h
+      exact (div_nonneg_of_nonpos h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | ENNReal.ofReal (c ^ γ⁻¹ * t) ≤ a ^ γ⁻¹})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne ht,
+        ENNReal.le_rpow_inv_iff_of_neg hγ]), abs_of_pos hs,
+      ← lintegral_indicator_ofReal_rpow_Ioi (by linarith) hc']
+    refine lintegral_mono_ae ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi,
+      ae_restrict_of_ae (Measure.ae_ne volume ((a ^ γ⁻¹).toReal / c ^ γ⁻¹))] with t ht hne
+    simp only [indicator_apply, mem_ofPred_eq]
+    split_ifs with h₁ h₂ h₂
+    · exact le_rfl
+    · refine absurd ?_ hne
+      have heq : ENNReal.ofReal (c ^ γ⁻¹ * t) = a ^ γ⁻¹ := le_antisymm h₁ (not_lt.1 h₂)
+      rw [← heq, ENNReal.toReal_ofReal (mul_pos hc' ht).le]
+      field_simp
+    · exact zero_le
+    · exact le_rfl
+  · -- For `γ > 0` the region is a half-line, where `s < -1`.
+    have hs : s + 1 < 0 := by
+      by_contra! h
+      exact (div_nonneg h hγ.le).not_gt hsγ
+    rw [setLIntegral_Ioi_indicator_congr (S' := {t | a ^ γ⁻¹ ≤ ENNReal.ofReal (c ^ γ⁻¹ * t)})
+      (fun t ht => by simp only [mem_ofPred_eq, ofReal_mul_rpow_eq_ofReal_mul_rpow hc hγ.ne' ht,
+        ENNReal.rpow_inv_le_iff hγ]), abs_of_neg hs,
+      lintegral_indicator_le_ofReal_rpow_Ioi (by linarith) hc']
 
 /-- The kernel `t ^ (-s - 1)`, integrated against the weight `a * r` over those `t ∈ (0, ∞)` with
 `r ≤ t * D`, is at most `D ^ s / s * a * r ^ (1 - s)`, for `0 < s` and `0 ≤ r`. For `0 < D` and
