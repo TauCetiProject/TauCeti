@@ -66,7 +66,8 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
   convex sets preserve the property.
 * `TauCeti.Real.mul_lintegral_add_mul_lintegral_le`: the inequality for the minimum on `ℝ`.
 * `TauCeti.Real.hasPrekopaLeindler_volume`: the **Prékopa–Leindler inequality** on `ℝ`.
-* `TauCeti.hasPrekopaLeindler_volume_pi`, `TauCeti.hasPrekopaLeindler_of_isAddHaarMeasure`,
+* `TauCeti.hasPrekopaLeindler_volume_pi`,
+  `MeasureTheory.Measure.hasPrekopaLeindler_of_isAddHaarMeasure`,
   `TauCeti.hasPrekopaLeindler_volume`: the inequality on `ι → ℝ`, for every additive Haar measure
   on a finite-dimensional real normed space, and for the volume of a finite-dimensional real inner
   product space.
@@ -240,17 +241,8 @@ inequality is homogeneous of degree one in the measure. -/
 theorem HasPrekopaLeindler.smul {mu : Measure E} {theta : ℝ}
     (hmu : mu.HasPrekopaLeindler theta) (hθ₀ : 0 ≤ theta) (hθ₁ : theta ≤ 1) (c : ℝ≥0∞) :
     (c • mu).HasPrekopaLeindler theta := by
-  intro f g h hf hg hh hfgh
-  have h1θ : 0 ≤ 1 - theta := by linarith
-  have hPL := hmu hf hg hh hfgh
-  simp only [lintegral_smul_measure, smul_eq_mul, ENNReal.rpow_eq_pow] at hPL ⊢
-  rw [ENNReal.mul_rpow_of_nonneg _ _ h1θ, ENNReal.mul_rpow_of_nonneg _ _ hθ₀]
-  calc c ^ (1 - theta) * (∫⁻ x, f x ∂mu) ^ (1 - theta) * (c ^ theta * (∫⁻ x, g x ∂mu) ^ theta)
-      = (c ^ (1 - theta) * c ^ theta) *
-        ((∫⁻ x, f x ∂mu) ^ (1 - theta) * (∫⁻ x, g x ∂mu) ^ theta) := by ring
-    _ = c * ((∫⁻ x, f x ∂mu) ^ (1 - theta) * (∫⁻ x, g x ∂mu) ^ theta) := by
-        rw [← ENNReal.rpow_add_of_nonneg _ _ h1θ hθ₀, sub_add_cancel, ENNReal.rpow_one]
-    _ ≤ c * ∫⁻ x, h x ∂mu := by gcongr
+  rw [← withDensity_const c]
+  exact hmu.withDensity hθ₀ hθ₁ measurable_const (TauCeti.logConcave_const c)
 
 /-- The restriction of a measure with the Prékopa–Leindler property at a weight `0 ≤ θ ≤ 1` to a
 measurable convex set has the Prékopa–Leindler property as well. -/
@@ -382,6 +374,10 @@ theorem hasPrekopaLeindler_volume_pi (ι : Type*) [Fintype ι] {θ : ℝ} (hθ�
   exact Measure.HasPrekopaLeindler.pi (fun _ ↦ Real.hasPrekopaLeindler_volume hθ₀ hθ₁)
     hf hg hh hfgh
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
 /-- The **Prékopa–Leindler inequality** for Haar measure: every additive Haar measure on a
 finite-dimensional real normed space has the Prékopa–Leindler property at every weight
 `0 ≤ θ ≤ 1`. -/
@@ -392,11 +388,15 @@ theorem hasPrekopaLeindler_of_isAddHaarMeasure {E : Type*} [NormedAddCommGroup E
   let ι := Fin (Module.finrank ℝ E)
   let e : E ≃L[ℝ] ι → ℝ := ContinuousLinearEquiv.ofFinrankEq (by simp [ι])
   have hmap : ((volume : Measure (ι → ℝ)).map e.symm).HasPrekopaLeindler θ :=
-    Measure.HasPrekopaLeindler.map (hasPrekopaLeindler_volume_pi ι hθ₀ hθ₁) e.symm
+    HasPrekopaLeindler.map (TauCeti.hasPrekopaLeindler_volume_pi ι hθ₀ hθ₁) e.symm
       (e.symm.continuous.measurable.measurePreserving _) fun x y ↦ by simp
-  rw [Measure.isAddLeftInvariant_eq_smul μ ((volume : Measure (ι → ℝ)).map e.symm),
+  rw [isAddLeftInvariant_eq_smul μ ((volume : Measure (ι → ℝ)).map e.symm),
     ENNReal.smul_def]
   exact fun {f g h} ↦ hmap.smul hθ₀ hθ₁ _
+
+end MeasureTheory.Measure
+
+namespace TauCeti
 
 /-- The **Prékopa–Leindler inequality** on a finite-dimensional real inner product space, such as
 `EuclideanSpace ℝ (Fin n)`: its volume has the Prékopa–Leindler property at every weight
@@ -404,7 +404,7 @@ theorem hasPrekopaLeindler_of_isAddHaarMeasure {E : Type*} [NormedAddCommGroup E
 theorem hasPrekopaLeindler_volume (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {θ : ℝ} (hθ₀ : 0 ≤ θ)
     (hθ₁ : θ ≤ 1) : (volume : Measure E).HasPrekopaLeindler θ :=
-  hasPrekopaLeindler_of_isAddHaarMeasure _ hθ₀ hθ₁
+  Measure.hasPrekopaLeindler_of_isAddHaarMeasure _ hθ₀ hθ₁
 
 end TauCeti
 
