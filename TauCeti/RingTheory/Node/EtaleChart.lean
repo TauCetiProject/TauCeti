@@ -174,31 +174,6 @@ private theorem det_D_eq {A S K : Type*} [CommRing A] [CommRing S] [Algebra A S]
       ψ u * (ψ v * ψ u) - ψ v * ψ a * ψ c := by
   simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, hB₀, hB₁, hp, hq]
 
-/-- If `W₁` is étale over a smooth `A`-algebra `W` and `d` is the determinant of the differentials
-`ds₁, dt₁` in a basis of `Ω[W₁⁄A]`, then after inverting `d` the map `A[X, Y] → W₁[1/d]` given by
-`X ↦ s₁` and `Y ↦ t₁` is étale. -/
-private theorem etale_aeval_localization_away_det {A W W₁ : Type*} [CommRing A] [CommRing W]
-    [CommRing W₁] [Algebra A W] [Algebra W W₁] [Algebra A W₁] [IsScalarTower A W W₁]
-    [Algebra.Smooth A W] [Algebra.Etale W W₁] (bW₁ : Module.Basis (Fin 2) W₁ Ω[W₁⁄A])
-    (s₁ t₁ d : W₁) (hd : d = bW₁.det ![D A W₁ s₁, D A W₁ t₁]) :
-    (aeval (R := A) ![algebraMap W₁ (Localization.Away d) s₁,
-      algebraMap W₁ (Localization.Away d) t₁]).toRingHom.Etale := by
-  subst hd
-  set d := bW₁.det ![D A W₁ s₁, D A W₁ t₁]
-  have : Algebra.Smooth A W₁ := .comp A W W₁
-  -- `ds, dt` is a basis of `Ω[W'⁄A]`: its determinant in the basis `dp, dq` is the unit `d`.
-  let bW' := kaehlerBasisOfFormallyEtale A W₁ (Localization.Away d) bW₁
-  have hdet : bW'.det ![D A (Localization.Away d) (algebraMap W₁ _ s₁),
-      D A (Localization.Away d) (algebraMap W₁ _ t₁)] = algebraMap W₁ (Localization.Away d) d := by
-    rw [← kaehlerBasisOfFormallyEtale_det_map]
-    congr 1
-    ext i
-    fin_cases i <;> simp
-  obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
-    (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
-  have : Algebra.Smooth A (Localization.Away d) := .comp A W₁ _
-  exact etale_aeval_of_basis _ (.mk hli hspan.ge) fun i ↦ by fin_cases i <;> simp
-
 section
 
 variable {A : Type u} {W : Type v} [CommRing A] [CommRing W] [Algebra A W]
@@ -261,16 +236,15 @@ theorem _root_.Module.Basis.exists_etale_mul_eq_quadratic_of_point [Algebra.Smoo
   let ψ : W' →ₐ[W] K := IsLocalization.Away.liftAlgHom d (f := ψ₁) hψd.isUnit
   have hψ (w : W₁) : ψ (algebraMap W₁ W' w) = ψ₁ w :=
     IsLocalization.Away.lift_eq d (g := ψ₁.toRingHom) hψd.isUnit w
-  let s := algebraMap W₁ W' s₁
-  let t := algebraMap W₁ W' t₁
   refine ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, ψ,
-    s, t, ?_, ?_, ?_, ?_⟩
+    algebraMap W₁ W' s₁, algebraMap W₁ W' t₁, ?_, ?_, ?_, ?_⟩
   · rw [hψ]
     simp [s₁, hψ₁, hp, hq]
   · rw [hψ]
     simp [t₁, hψ₁, hp, hq]
-  · simp only [s, t, ← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
-  exact etale_aeval_localization_away_det (W := W) bW₁ s₁ t₁ d rfl
+  · simp only [← map_mul, hst₁, ← IsScalarTower.algebraMap_apply]
+  have : Algebra.Smooth A W₁ := .comp A W W₁
+  exact etale_aeval_localization_away_det bW₁ s₁ t₁ d rfl
 
 /-- **A split nondegenerate binary quadratic form in étale coordinates is étale locally a product
 of étale coordinates.** Let `W` be a smooth `A`-algebra and `p, q ∈ W` elements whose

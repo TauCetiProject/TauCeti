@@ -51,6 +51,9 @@ the common zero locus `T ⧸ (aᵢ)` of such elements is then étale over `R`
   carries a basis to a basis;
 * `TauCeti.etale_aeval_of_basis`: a smooth algebra is étale over the polynomial ring on elements
   whose differentials form a basis of its differentials;
+* `TauCeti.etale_aeval_localization_away_det`: after inverting the determinant of two differentials
+  in a basis of the differentials of a smooth algebra, it is étale over the polynomial ring in two
+  variables on those two elements;
 * `Module.Basis.etale_quotient_span_range`: the common zero locus of such elements is étale over
   the base.
 
@@ -161,6 +164,29 @@ theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} [Finite ι] (a : 
   have : Algebra.FinitePresentation (MvPolynomial ι R) T :=
     .of_restrict_scalars_finitePresentation R _ _
   exact RingHom.etale_algebraMap.mpr ⟨inferInstance, inferInstance⟩
+
+/-- If `W₁` is smooth over `A` and `d` is the determinant of the differentials `ds₁, dt₁` in a
+basis of `Ω[W₁⁄A]`, then after inverting `d` the map `A[X, Y] → W₁[1/d]` given by `X ↦ s₁` and
+`Y ↦ t₁` is étale. -/
+theorem etale_aeval_localization_away_det {A W₁ : Type*} [CommRing A] [CommRing W₁]
+    [Algebra A W₁] [Algebra.Smooth A W₁] (bW₁ : Basis (Fin 2) W₁ Ω[W₁⁄A])
+    (s₁ t₁ d : W₁) (hd : d = bW₁.det ![D A W₁ s₁, D A W₁ t₁]) :
+    (MvPolynomial.aeval (R := A) ![algebraMap W₁ (Localization.Away d) s₁,
+      algebraMap W₁ (Localization.Away d) t₁]).toRingHom.Etale := by
+  subst hd
+  set d := bW₁.det ![D A W₁ s₁, D A W₁ t₁]
+  -- `ds, dt` is a basis of `Ω[W'⁄A]`: its determinant in the basis `dp, dq` is the unit `d`.
+  let bW' := kaehlerBasisOfFormallyEtale A W₁ (Localization.Away d) bW₁
+  have hdet : bW'.det ![D A (Localization.Away d) (algebraMap W₁ _ s₁),
+      D A (Localization.Away d) (algebraMap W₁ _ t₁)] = algebraMap W₁ (Localization.Away d) d := by
+    rw [← kaehlerBasisOfFormallyEtale_det_map]
+    congr 1
+    ext i
+    fin_cases i <;> simp
+  obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
+    (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
+  have : Algebra.Smooth A (Localization.Away d) := .comp A W₁ _
+  exact etale_aeval_of_basis _ (.mk hli hspan.ge) fun i ↦ by fin_cases i <;> simp
 
 end TauCeti
 
