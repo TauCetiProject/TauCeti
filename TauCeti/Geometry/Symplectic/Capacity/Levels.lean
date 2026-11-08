@@ -142,7 +142,7 @@ theorem IsNondegenerate.isContractibleHZAdmissible_comp (hσ : σ.IsNondegenerat
     · simpa only [hhigh b le_rfl] using hanti h
     · exact (hhigh r h).ge
   -- `μ` is constant off `(a, b)`, so `μ'` vanishes there.
-  have hzero := deriv_eq_zero_of_not_mem_Ioo (hμ.of_le (by simp)) hlow hhigh
+  have hzero := deriv_eq_zero_of_not_mem_Ioo hlow hhigh
   obtain ⟨x₀, hx₀⟩ := ha
   have hFc : Continuous F := hF.continuous
   -- The support of `μ ∘ F` lies in `{F ≤ b}`, since `μ` vanishes on `[b, ∞)`.

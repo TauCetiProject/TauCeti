@@ -76,7 +76,7 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
-* `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a `C¹` function constant on `(-∞, a]` and on `[b, ∞)` has
+* `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a function constant on `(-∞, a]` and on `[b, ∞)` has
   zero derivative outside `(a, b)`.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
@@ -470,26 +470,24 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
     exact (hK t htm.le).trans (le_max_right _ _)
 
-/-- A `C¹` function that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing derivative outside
-`(a, b)`. The derivative vanishes on the open rays by local constancy, and on their closures by
-continuity of the derivative. -/
-theorem deriv_eq_zero_of_not_mem_Ioo {μ : ℝ → ℝ} {a b c : ℝ} (hμ : ContDiff ℝ 1 μ)
+/-- A function that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing derivative outside
+`(a, b)`, with no regularity assumption. At a point of either closed ray the derivative, if it
+exists, equals the derivative along that ray, which is zero; where it does not exist the junk
+value is zero. -/
+theorem deriv_eq_zero_of_not_mem_Ioo {μ : ℝ → ℝ} {a b c : ℝ}
     (hlow : ∀ r ≤ a, μ r = μ a) (hhigh : ∀ r, b ≤ r → μ r = c) :
     ∀ r ∉ Ioo a b, deriv μ r = 0 := by
-  have hcl : IsClosed {x | deriv μ x = 0} :=
-    isClosed_eq (hμ.continuous_deriv le_rfl) continuous_const
-  have hlt : Iio a ⊆ {x | deriv μ x = 0} := fun r hr ↦ by
-    have : μ =ᶠ[nhds r] fun _ ↦ μ a :=
-      Filter.eventually_of_mem (Iio_mem_nhds hr) fun x hx ↦ hlow x hx.le
-    simpa using this.deriv_eq
-  have hgt : Ioi b ⊆ {x | deriv μ x = 0} := fun r hr ↦ by
-    have : μ =ᶠ[nhds r] fun _ ↦ c :=
-      Filter.eventually_of_mem (Ioi_mem_nhds hr) fun x hx ↦ hhigh x hx.le
-    simpa using this.deriv_eq
   intro r hr
+  by_cases hd : DifferentiableAt ℝ μ r
+  swap
+  · exact deriv_zero_of_not_differentiableAt hd
   rcases not_and_or.1 (by simpa only [mem_Ioo] using hr) with h | h
-  · exact (closure_Iio (a := a) ▸ closure_minimal hlt hcl) (not_lt.1 h)
-  · exact (closure_Ioi (a := b) ▸ closure_minimal hgt hcl) (not_lt.1 h)
+  · have hr' : r ≤ a := not_lt.1 h
+    exact (uniqueDiffOn_Iic a r hr').eq_deriv _ hd.hasDerivAt.hasDerivWithinAt
+      ((hasDerivWithinAt_const r (Iic a) (μ a)).congr (fun x hx ↦ hlow x hx) (hlow r hr'))
+  · have hr' : b ≤ r := not_lt.1 h
+    exact (uniqueDiffOn_Ici b r hr').eq_deriv _ hd.hasDerivAt.hasDerivWithinAt
+      ((hasDerivWithinAt_const r (Ici b) c).congr (fun x hx ↦ hhigh x hx) (hhigh r hr'))
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is
