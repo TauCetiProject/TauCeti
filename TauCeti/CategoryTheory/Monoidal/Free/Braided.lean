@@ -419,13 +419,13 @@ theorem liftCoupon_crossingInv (X Y : FreeMonoidalCategory S.Obj) :
   (rfl)
 
 @[simp]
-theorem lift_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
+theorem freeMonoidalLift_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map (crossing X Y) =
       (β_ (projectObj fo X.as) (projectObj fo Y.as)).hom :=
   FreeMonoidal.lift_map_coupon (S := S.withCrossings) fo (liftCoupon fo fc) (.crossing X.as Y.as)
 
 @[simp]
-theorem lift_map_crossingInv (X Y : S.withCrossings.FreeMonoidal) :
+theorem freeMonoidalLift_map_crossingInv (X Y : S.withCrossings.FreeMonoidal) :
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map (crossingInv X Y) =
       (β_ (projectObj fo X.as) (projectObj fo Y.as)).inv :=
   FreeMonoidal.lift_map_coupon (S := S.withCrossings) fo (liftCoupon fo fc)
@@ -447,27 +447,29 @@ theorem map_eq_map_of_homEquiv {X Y : S.withCrossings.FreeMonoidal} {f g : X ⟶
   | whiskerRight _ _ hf => rw [FreeMonoidal.lift_map_whiskerRight, hf,
       FreeMonoidal.lift_map_whiskerRight]
   | crossing_crossingInv X Y =>
-    simp only [Functor.map_comp, lift_map_crossing, lift_map_crossingInv, Functor.map_id]
+    simp only [Functor.map_comp, freeMonoidalLift_map_crossing, freeMonoidalLift_map_crossingInv,
+      Functor.map_id]
     exact (β_ (projectObj fo X.as) (projectObj fo Y.as)).hom_inv_id
   | crossingInv_crossing X Y =>
-    simp only [Functor.map_comp, lift_map_crossing, lift_map_crossingInv, Functor.map_id]
+    simp only [Functor.map_comp, freeMonoidalLift_map_crossing, freeMonoidalLift_map_crossingInv,
+      Functor.map_id]
     exact (β_ (projectObj fo X.as) (projectObj fo Y.as)).inv_hom_id
   | naturality_right X f =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, freeMonoidalLift_map_crossing]
     exact BraidedCategory.braiding_naturality_right _ _
   | naturality_left f Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, freeMonoidalLift_map_crossing]
     exact BraidedCategory.braiding_naturality_left _ _
   | hexagon_forward X Y Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_map_crossing,
+      FreeMonoidal.lift_map_whiskerRight, freeMonoidalLift_map_crossing,
       FreeMonoidal.lift_map_associator_hom]
     exact BraidedCategory.hexagon_forward _ _ _
   | hexagon_reverse X Y Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_map_crossing,
+      FreeMonoidal.lift_map_whiskerRight, freeMonoidalLift_map_crossing,
       FreeMonoidal.lift_map_associator_inv]
     exact BraidedCategory.hexagon_reverse _ _ _
 
