@@ -45,8 +45,6 @@ maximal ideal.
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
-* `LinearMap.trace_eq_sum_of_range_le_of_apply_single_eq`: the trace of an endomorphism whose
-  range lies in a free submodule `ι → R` is the trace of its matrix there.
 * `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
   idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
@@ -193,28 +191,6 @@ theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
   have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.range f)
   have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.ker f)
   exact (LinearMap.IsIdempotentElem.isProj_range f hf).trace
-
-/-- **The trace of an endomorphism with range in a free submodule.** Let `φ` be an injective
-linear map from `ι → R` to `M`, and let `L` be an endomorphism whose range lies in the range of `φ`
-and that sends the image under `φ` of the `j`-th standard basis vector of `ι → R` to `φ (a j)`.
-Then the trace of `L` is the trace `∑ j, a j j` of `a`. -/
-theorem trace_eq_sum_of_range_le_of_apply_single_eq {R M ι : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] [Fintype ι]
-    [DecidableEq ι] {φ : (ι → R) →ₗ[R] M} (hφ : Function.Injective φ) {L : M →ₗ[R] M}
-    (hL : LinearMap.range L ≤ LinearMap.range φ) {a : ι → ι → R}
-    (hLa : ∀ j, L (φ (Pi.single j 1)) = φ (a j)) : trace R M L = ∑ j, a j j := by
-  let ρ : M →ₗ[R] ι → R := (LinearEquiv.ofInjective φ hφ).symm.toLinearMap ∘ₗ
-    L.codRestrict (LinearMap.range φ) fun s ↦ hL ⟨s, rfl⟩
-  have hφρ : φ ∘ₗ ρ = L := LinearMap.ext fun s ↦ by
-    have h := congrArg Subtype.val
-      ((LinearEquiv.ofInjective φ hφ).apply_symm_apply ⟨L s, hL ⟨s, rfl⟩⟩)
-    rwa [LinearEquiv.ofInjective_apply] at h
-  have hmat : ρ ∘ₗ φ = Matrix.toLin' (Matrix.of fun l j ↦ a j l) := by
-    ext j l
-    have hj : ρ (φ (Pi.single j 1)) = a j := hφ (by rw [← LinearMap.comp_apply, hφρ, hLa])
-    simp [hj]
-  rw [← hφρ, LinearMap.trace_comp_comm', hmat, Matrix.trace_toLin'_eq]
-  simp [Matrix.trace]
 
 end LinearMap
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Trace.Basic
 public import Mathlib.RingTheory.TensorProduct.Quotient
-public import TauCeti.LinearAlgebra.Trace.Idempotent
+public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
