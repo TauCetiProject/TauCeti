@@ -13,8 +13,8 @@ public import Mathlib.LinearAlgebra.Projection
 # Directions of affine spans under affine maps
 
 The direction of the affine span of an image is the linear image of the original
-direction. This formula supports transport of transversality and codimension
-without requiring an invertible map or a nonempty set.
+direction (Mathlib's `AffineMap.map_vectorSpan`). This formula supports transport of
+transversality and codimension without requiring an invertible map or a nonempty set.
 A linear map whose kernel contains the direction of a set is constant on it.
 Equality of affine spans transfers tangency between level hyperplanes.
 Adding unrestricted coordinates preserves and reflects equality of affine spans.
@@ -28,8 +28,6 @@ the direction. The splitting uses Mathlib's `LinearMap.equivProdOfSurjectiveOfIs
 
 ## Main results
 
-* `AffineMap.direction_affineSpan_image`: affine maps transport the direction of an affine span by
-  their linear part.
 * `LinearMap.direction_affineSpan_preimage`: under a linear surjection, the direction of the affine
   span of the preimage of a nonempty set is the preimage of its direction.
 * `TauCeti.affineSpan_prod_univ_eq_iff` and `TauCeti.direction_affineSpan_prod_univ_eq_iff`:
@@ -80,19 +78,6 @@ theorem map_eq_zero_of_affineSpan_eq {K V : Type*} [Ring K] [AddCommGroup V] [Mo
     hheight _ hy, add_eq_left] using hh
 
 end LinearMap
-
-namespace AffineMap
-
-variable {k V V' P P' : Type*} [Ring k]
-  [AddCommGroup V] [Module k V] [AddTorsor V P]
-  [AddCommGroup V'] [Module k V'] [AddTorsor V' P']
-
-/-- Affine maps transport the direction of an affine span by their linear part. -/
-theorem direction_affineSpan_image (f : P →ᵃ[k] P') (s : Set P) :
-    (affineSpan k (f '' s)).direction = (affineSpan k s).direction.map f.linear := by
-  rw [← AffineSubspace.map_span, AffineSubspace.map_direction]
-
-end AffineMap
 
 namespace TauCeti
 
@@ -196,8 +181,13 @@ include hA in
 the preimage of the original supporting direction. -/
 theorem direction_affineSpan_preimage {S : Set V'} (hS : S.Nonempty) :
     (affineSpan K (A ⁻¹' S)).direction = (affineSpan K S).direction.comap A := by
-  have he := AffineMap.direction_affineSpan_image
-    (A.prodKerEquiv hA).symm.toLinearMap.toAffineMap (S ×ˢ (univ : Set (LinearMap.ker A)))
+  have he : (affineSpan K ((A.prodKerEquiv hA).symm.toLinearMap.toAffineMap ''
+      (S ×ˢ (univ : Set (LinearMap.ker A))))).direction =
+      (affineSpan K (S ×ˢ (univ : Set (LinearMap.ker A)))).direction.map
+        (A.prodKerEquiv hA).symm.toLinearMap.toAffineMap.linear := by
+    simpa only [direction_affineSpan] using
+      ((A.prodKerEquiv hA).symm.toLinearMap.toAffineMap.map_vectorSpan
+        (s := S ×ˢ (univ : Set (LinearMap.ker A)))).symm
   rw [LinearMap.coe_toAffineMap, LinearEquiv.coe_coe, A.image_prodKerEquiv_symm_prod_univ hA,
     TauCeti.direction_affineSpan_prod_univ hS] at he
   rw [he]
