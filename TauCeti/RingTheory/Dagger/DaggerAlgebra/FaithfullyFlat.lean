@@ -36,7 +36,8 @@ and compares `A` and `Â` locally at their classical points.
   (`TauCeti.Dagger.washnitzerAlgebra.faithfullyFlat_toTate`) becomes `τ`, and faithful flatness is
   stable under base change.
 * **Completed local rings.** For a maximal ideal `m` of `A`, the extended ideal `m Â` is the
-  maximal ideal of `Â` above `m`, and the quotients `A ⧸ m ^ k` and `Â ⧸ (m Â) ^ k` agree. Taking
+  maximal ideal of `Â` above `m`, so the residue fields of `A` at `m` and of `Â` at `m Â` agree,
+  and the quotients `A ⧸ m ^ k` and `Â ⧸ (m Â) ^ k` agree. Taking
   the inverse limit, `τ` induces an isomorphism of the `m`-adic completion of `A` with the
   `m Â`-adic completion of `Â`; more generally this holds for every ideal whose radical is maximal.
 * **Regularity.** At corresponding maximal ideals the localization of `τ` is a flat local
@@ -57,6 +58,8 @@ faithfully flat `τ`.
 * `TauCeti.Dagger.isMaximal_map_toCompletion` and
   `TauCeti.Dagger.map_comap_toCompletion_of_isMaximal`: maximal ideals of `A` and `Â` correspond by
   extension and contraction.
+* `TauCeti.Dagger.quotientMap_toCompletion_bijective`: the residue fields of `A` and `Â` at
+  corresponding maximal ideals agree.
 * `TauCeti.Dagger.adicCompletionAlgEquiv`: the completions of `A` and `Â` along an ideal of `A`
   with maximal radical and along its extension agree; for a maximal ideal these are the completed
   local rings.
@@ -192,6 +195,21 @@ theorem map_comap_toCompletion_of_isMaximal (m : Ideal (completion K A)) [hm : m
   have : (m.comap (toCompletion K A)).IsMaximal :=
     isAffinoidAlgebra_completion.comap_isMaximal _ m
   exact (isMaximal_map_toCompletion _).eq_of_le hm.ne_top Ideal.map_comap_le
+
+/-- **Residue fields of a dagger algebra and of its completion agree.** For a maximal ideal `m`
+of the completion `Â`, the induced map `A ⧸ (m ∩ A) → Â ⧸ m` is bijective. -/
+theorem quotientMap_toCompletion_bijective (m : Ideal (completion K A)) [m.IsMaximal] :
+    Function.Bijective (Ideal.quotientMapₐ m (toCompletion K A) le_rfl) := by
+  set p := m.comap (toCompletion K A)
+  have : p.IsMaximal := isAffinoidAlgebra_completion.comap_isMaximal _ m
+  have := IsDaggerAlgebra.finite_quotient_of_isMaximal K p
+  -- `m = p Â`, so this is the bijection `A ⧸ p → Â ⧸ p Â`.
+  have key : ∀ m' : Ideal (completion K A), m' = p.map (toCompletion K A) →
+      ∀ H : p ≤ m'.comap (toCompletion K A),
+        Function.Bijective (Ideal.quotientMapₐ m' (toCompletion K A) H) := by
+    rintro _ rfl -
+    exact quotientMap_map_toCompletion_bijective K p
+  exact key m (map_comap_toCompletion_of_isMaximal m).symm le_rfl
 
 variable (K) in
 /-- **Completed local rings of a dagger algebra and of its completion agree.** For an ideal `J` of
