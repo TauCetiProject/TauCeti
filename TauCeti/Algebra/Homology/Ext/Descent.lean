@@ -12,8 +12,9 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 /-!
 # Reduction criteria for descent of extensions
 
-For an exact functor, surjectivity on degree-one extensions passes from the summands to a
-coproduct. It also passes from the middle term of a short exact presentation to its quotient
+For an exact functor between abelian categories with enough injectives that preserves the
+coproduct, surjectivity on degree-one extensions passes from the summands to the coproduct.
+It also passes from the middle term of a short exact presentation to its quotient
 when the functor is surjective on Hom from the kernel and injective on Ext¹ from that kernel.
 Together these criteria reduce descent of extensions to a class of presenting objects.
 
