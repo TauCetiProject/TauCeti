@@ -62,7 +62,7 @@ that any group below is finite, perfect, or simple.
   numbered root subgroups.
 * `TauCeti.ReeG2LieIndex.rootGeneratorWeight_eq_root_simpleIndex` certifies that the carrier and
   index use the same Bourbaki numbering of the simple roots.
-* `TauCeti.ReeG2LieIndex.weightTorusPoints_conj_simpleRootSubgroup` states the corresponding
+* `TauCeti.ReeG2LieIndex.weightTorus_conj_simpleRootSubgroup` states the corresponding
   torus-conjugation equation on the index's numbered root subgroups.
 * `TauCeti.ReeG2LieIndex.frobenius_eq_primeFrobenius_pow` identifies the `q`-power Frobenius as
   the recorded iterate of the prime-field one.
@@ -144,24 +144,23 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
       (finCongr d.rank_eq_two i)
 
 /-- **The simple-root subgroups sit at the simple roots of the `G₂` root datum.** A point of the
-carrier's rank-two split weight torus conjugates the subgroup at node `i` to itself, rescaling its
-parameter by the value of the corresponding root of
+carrier's rank-indexed split weight torus conjugates the subgroup at node `i` to itself, rescaling
+its parameter by the value of the corresponding root of
 `TauCeti.DynkinType.G2.simplyConnectedRootDatum`. -/
 @[simp]
-theorem weightTorusPoints_conj_simpleRootSubgroup (i : Fin d.1.rank)
-    (s : Fin 2 → d.1.Closureˣ) (u : Multiplicative d.1.Closure) :
-    G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure s * d.simpleRootSubgroup i u *
-        (G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure s)⁻¹ =
+theorem weightTorus_conj_simpleRootSubgroup (i : Fin d.1.rank)
+    (s : Fin d.1.rank → d.1.Closureˣ) (u : Multiplicative d.1.Closure) :
+    d.weightTorus s * d.simpleRootSubgroup i u * (d.weightTorus s)⁻¹ =
       d.simpleRootSubgroup i
         (Multiplicative.ofAdd
-          ((torusCharacter s
+          ((torusCharacter (fun j => s ((finCongr d.rank_eq_two).symm j))
               ((DynkinType.G2.simplyConnectedRootDatum DynkinType.valid_G2).root
                 (DynkinType.G2.simpleIndex DynkinType.valid_G2
                   (finCongr d.rank_eq_two i))) : d.1.Closure) *
             Multiplicative.toAdd u)) := by
-  rw [simpleRootSubgroup_def]
+  rw [weightTorus_apply, simpleRootSubgroup_def]
   exact G2ShortRoot.PrimeField.weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex
-    DynkinType.valid_G2 _ _ s u
+    DynkinType.valid_G2 _ _ _ u
 
 /-! ## The Frobenius endomorphisms -/
 
