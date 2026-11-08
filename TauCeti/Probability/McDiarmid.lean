@@ -364,9 +364,13 @@ theorem hasSubgaussianMGF_of_bounded_differences_fin
 
 /-- The exponent in the two-sided tail bound for the variance proxy `n (q / n / 2)²` of a
 `q / n`-bounded-differences estimator is `-ε²n / (2q²)`. -/
-theorem neg_sq_div_two_mul_variance_proxy {q n : ℕ} {ε : ℝ} (hq : 0 < q) (hn : 0 < n) :
+theorem neg_sq_div_two_mul_variance_proxy {q n : ℕ} {ε : ℝ} :
     -(ε / 2) ^ 2 / (2 * (((n : ℝ≥0) * (Real.toNNReal ((q : ℝ) / (n : ℝ)) / 2) ^ 2 : ℝ≥0) : ℝ)) =
       -(ε ^ 2 * (n : ℝ)) / (2 * (q : ℝ) ^ 2) := by
+  rcases Nat.eq_zero_or_pos q with rfl | hq
+  · simp
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
   have hqR : (0 : ℝ) < q := by exact_mod_cast hq
   have hnR : (0 : ℝ) < n := by exact_mod_cast hn
   simp only [NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_div,

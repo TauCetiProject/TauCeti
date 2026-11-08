@@ -84,7 +84,7 @@ private theorem abs_integral_homDensityFin_exposedSample_sub_le {V : Type*} [Fin
 /-- The concentration bound when `F` has a vertex and `ε ≤ 1`: McDiarmid's inequality for the
 padded vertex exposure, centered at the finite-sample mean, together with the collision bias. -/
 private theorem sampleGraph_homDensityFin_concentration_of_card_pos {V : Type*} [Fintype V]
-    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {n : ℕ} {ε : ℝ} (hε : 0 < ε)
+    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {n : ℕ} {ε : ℝ}
     (hε1 : ε ≤ 1) (hq : 0 < Fintype.card V) (hn : 2 * (Fintype.card V : ℝ) ^ 2 ≤ ε * n) :
     (sampleGraph W n).real {G | ε ≤ |homDensityFin F G - homDensity F W|} ≤
       2 * Real.exp (-(ε ^ 2 * n) / (2 * (Fintype.card V : ℝ) ^ 2)) := by
@@ -117,9 +117,9 @@ private theorem sampleGraph_homDensityFin_concentration_of_card_pos {V : Type*} 
   rw [hν] at hsub
   rw [← map_exposedSample W n,
     map_measureReal_apply (measurable_exposedSample W) MeasurableSet.of_discrete,
-    ← Probability.neg_sq_div_two_mul_variance_proxy (ε := ε) hq hnpos]
+    ← Probability.neg_sq_div_two_mul_variance_proxy (ε := ε)]
   exact Probability.measureReal_abs_sub_ge_le_of_hasSubgaussianMGF (g := f) hsub
-    (abs_integral_homDensityFin_exposedSample_sub_le F W hnpos hVn hn) hε.le
+    (abs_integral_homDensityFin_exposedSample_sub_le F W hnpos hVn hn)
 
 /-- **Exponential concentration of a sampled homomorphism density.** Let `F` have `q` vertices.
 If `2q² ≤ εn`, then under the graphon sampling law `G(n, W)`,
@@ -129,7 +129,7 @@ If `2q² ≤ εn`, then under the graphon sampling law `G(n, W)`,
 The side condition is eventual in `n` for fixed `F` and positive `ε`; it absorbs the collision
 bias between the mean ordinary homomorphism density and the graphon density. -/
 theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
-    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {n : ℕ} {ε : ℝ} (hε : 0 < ε)
+    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {n : ℕ} {ε : ℝ} (_hε : 0 < ε)
     (hn : 2 * (Fintype.card V : ℝ) ^ 2 ≤ ε * n) :
     ((sampleGraph W n) {G | ε ≤ |homDensityFin F G - homDensity F W|}).toReal ≤
       2 * Real.exp (-(ε ^ 2 * n) / (2 * (Fintype.card V : ℝ) ^ 2)) := by
@@ -143,7 +143,7 @@ theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
         _ ≤ 2 * Real.exp (-(ε ^ 2 * n) / (2 * (Fintype.card V : ℝ) ^ 2)) := by
           rw [hcard]
           norm_num
-    · exact sampleGraph_homDensityFin_concentration_of_card_pos F W hε hε1 hq hn
+    · exact sampleGraph_homDensityFin_concentration_of_card_pos F W hε1 hq hn
   · have hset : {G : SimpleGraph (Fin n) | ε ≤ |homDensityFin F G - homDensity F W|} = ∅ := by
       refine Set.eq_empty_iff_forall_notMem.mpr fun G hG => ?_
       rw [Set.mem_ofPred_eq] at hG
