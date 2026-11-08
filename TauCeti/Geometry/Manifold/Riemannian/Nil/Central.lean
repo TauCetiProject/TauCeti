@@ -9,8 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Nil.Curvature
 -- The private coordinate calculation uses Nil's model-space implementation.
 import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Connected.TotallyDisconnected
 
 /-!

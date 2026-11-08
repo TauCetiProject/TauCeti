@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Curvature
 
 import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Connected.TotallyDisconnected
 -- The derivative bridge reads the inherited global model-space atlas.
 import all TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Basic
