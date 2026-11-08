@@ -111,48 +111,46 @@ theorem mem_coordinateSpanSubcomodule (b : Basis ι R M) (s : Set ι)
   rw [← Subcomodule.mem_toSubmodule,
     b.coordinateSpanSubcomodule_toSubmodule s h]
 
+/-- If a basis subset spans a subcomodule, its coefficient columns have no entries outside the
+subset. This direction needs no finiteness of the index type. -/
+theorem coordinateSpanIsStable_of_toSubmodule_eq_span (b : Basis ι R M) (s : Set ι)
+    (N : Subcomodule R C M) (hN : N.toSubmodule = Submodule.span R (b '' s)) :
+    b.coordinateSpanIsStable (C := C) s := by
+  unfold coordinateSpanIsStable
+  intro i hi j hj
+  have hbj : b j ∈ N := by
+    rw [← Subcomodule.mem_toSubmodule, hN]
+    exact Submodule.subset_span ⟨j, hj, rfl⟩
+  obtain ⟨t, ht⟩ := N.coact_mem hbj
+  rw [coefficientMatrix_apply, matrixCoefficient_def, ← ht]
+  have hcoord : (b.coord i).comp N.carrier.subtype = 0 := by
+    ext x
+    rw [LinearMap.zero_apply]
+    have hx : (x : M) ∈ Submodule.span R (b '' s) := hN ▸ x.2
+    have hisupport : i ∉ (b.repr (x : M)).support := by
+      intro his
+      exact hi ((b.mem_span_image.mp hx) his)
+    exact Finsupp.notMem_support_iff.mp hisupport
+  rw [TensorProduct.map_map, LinearMap.id_comp, hcoord,
+    TensorProduct.map_zero_left, LinearMap.zero_apply, map_zero]
+
 /-- A basis subset spans a subcomodule if and only if its coefficient columns have no entries
 outside the subset. -/
 theorem exists_subcomodule_toSubmodule_eq_span_iff_coordinateSpanIsStable [Finite ι]
     (b : Basis ι R M) (s : Set ι) :
     (∃ N : Subcomodule R C M, N.toSubmodule = Submodule.span R (b '' s)) ↔
-      b.coordinateSpanIsStable (C := C) s := by
-  let _ := Fintype.ofFinite ι
-  constructor
-  · rintro ⟨N, hN⟩
-    unfold coordinateSpanIsStable
-    intro i hi j hj
-    have hbj : b j ∈ N := by
-      rw [← Subcomodule.mem_toSubmodule, hN]
-      exact Submodule.subset_span ⟨j, hj, rfl⟩
-    obtain ⟨t, ht⟩ := N.coact_mem hbj
-    rw [coefficientMatrix_apply, matrixCoefficient_def, ← ht]
-    have hcoord : (b.coord i).comp N.carrier.subtype = 0 := by
-      ext x
-      rw [LinearMap.zero_apply]
-      have hx : (x : M) ∈ Submodule.span R (b '' s) := hN ▸ x.2
-      have hisupport : i ∉ (b.repr (x : M)).support := by
-        intro his
-        exact hi ((b.mem_span_image.mp hx) his)
-      exact Finsupp.notMem_support_iff.mp hisupport
-    rw [TensorProduct.map_map, LinearMap.id_comp, hcoord,
-      TensorProduct.map_zero_left, LinearMap.zero_apply, map_zero]
-  · intro h
-    exact ⟨b.coordinateSpanSubcomodule s h, b.coordinateSpanSubcomodule_toSubmodule s h⟩
+      b.coordinateSpanIsStable (C := C) s :=
+  ⟨fun ⟨N, hN⟩ => b.coordinateSpanIsStable_of_toSubmodule_eq_span s N hN,
+    fun h => ⟨b.coordinateSpanSubcomodule s h, b.coordinateSpanSubcomodule_toSubmodule s h⟩⟩
 
 /-- A coordinate subcomodule has zero coefficient in every row outside its indexing set
 and every column inside that set. -/
-theorem coefficient_eq_zero_of_coordinate_subcomodule [Finite ι]
+theorem coefficient_eq_zero_of_coordinate_subcomodule
     (bas : Basis ι R M) (s : Set ι) (N : Subcomodule R C M)
     (hcoord : N.toSubmodule = Submodule.span R (bas '' s))
     {a b : ι} (ha : a ∉ s) (hb : b ∈ s) :
-    coefficientMatrix (C := C) bas a b = 0 := by
-  have hex : ∃ N' : Subcomodule R C M, N'.toSubmodule = Submodule.span R (bas '' s) :=
-    ⟨N, hcoord⟩
-  have hstable : bas.coordinateSpanIsStable (C := C) s :=
-    (Module.Basis.exists_subcomodule_toSubmodule_eq_span_iff_coordinateSpanIsStable
-      (C := C) bas s).mp hex
-  exact (bas.coordinateSpanIsStable_iff (C := C) s).mp hstable a ha b hb
+    coefficientMatrix (C := C) bas a b = 0 :=
+  bas.coordinateSpanIsStable_of_toSubmodule_eq_span s N hcoord a ha b hb
 
 section WeightFiltration
 
