@@ -241,8 +241,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
       rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, H t (u (b, t))) -
         ∫ t in 0..1, H t (u (a, t)) := by
   rw [hω.integral_floerEnergyDensity_zero_left (Floer.contMDiff_uncurry_comp_snd hH) hu hab]
-  simp_rw [← ω.hamiltonianCurvature_zero_left, hamiltonianCurvature_cylindrical]
-  simp
+  simp [fderiv_cylindrical_apply_stdComplexLineReal]
 
 /-- **The energy of a Floer cylinder for an `s`-dependent perturbation.** Let `ω` be a
 nondegenerate weakly exact two-form on a finite-dimensional manifold, `G_z`, `z = (s, t)`, a `C¹`
@@ -299,8 +298,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_su
         contractibleLoopAction ω.1 H (fun t ↦ u (b, t)) := by
   rw [hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub_sub_integral hωe
     (Floer.contMDiff_uncurry_comp_snd hH) hu hper hab hv]
-  simp_rw [← ω.hamiltonianCurvature_zero_left, hamiltonianCurvature_cylindrical]
-  simp
+  simp [fderiv_cylindrical_apply_stdComplexLineReal]
 
 /-- **The energy of a Floer cylinder for an exact form.** Let `ω = dα` be a nondegenerate exact
 two-form on a finite-dimensional manifold, `H` a `C¹` time-dependent Hamiltonian, and `u` a `C²`
@@ -477,8 +475,8 @@ theorem
     funext fun t ↦ funext (Floer.continuationHomotopy_of_nonpos (z := (a, t)) ha)
   have hB : (fun t ↦ Floer.continuationHomotopy H₀ H₁ (b, t)) = H₁ :=
     funext fun t ↦ funext (Floer.continuationHomotopy_of_one_le (z := (b, t)) hb)
-  rwa [← Floer.continuationHomotopy_eq_linearHomotopy, hA, hB, smoothTransition.zero_of_nonpos ha,
-    smoothTransition.one_of_one_le hb, sub_zero, one_mul] at h
+  simpa [← Floer.continuationHomotopy_eq_linearHomotopy, hA, hB,
+    smoothTransition.zero_of_nonpos ha, smoothTransition.one_of_one_le hb] using h
 
 end Energy
 

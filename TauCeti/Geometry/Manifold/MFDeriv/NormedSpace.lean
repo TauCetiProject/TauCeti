@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Vanishing of the derivative of a vector-valued function
@@ -183,16 +182,11 @@ a partial derivative of the `C¹` map `(w, y) ↦ f w (u y)` on `F × F`. -/
 theorem continuous_fderiv_of_contMDiff {u : F → M} {f : F → M → F'}
     (hu : ContMDiff 𝓘(𝕜, F) I 1 u)
     (hf : ContMDiff (𝓘(𝕜, F).prod I) 𝓘(𝕜, F') 1 (Function.uncurry f)) :
-    Continuous fun y ↦ fderiv 𝕜 (fun w ↦ f w (u y)) y := by
-  have hΦ : ContDiff 𝕜 1 fun p : F × F ↦ f p.1 (u p.2) :=
-    contMDiff_iff_contDiff.mp
-      (hf.comp (contDiff_fst.contMDiff.prodMk (hu.comp contDiff_snd.contMDiff)))
-  have h (y : F) : fderiv 𝕜 (fun w ↦ f w (u y)) y =
-      (fderiv 𝕜 (fun p : F × F ↦ f p.1 (u p.2)) (y, y)).comp (ContinuousLinearMap.inl 𝕜 F F) :=
-    fderiv_slice_left (f := fun p : F × F ↦ f p.1 (u p.2)) (hΦ.differentiable one_ne_zero (y, y))
-  simp_rw [h]
-  exact ((hΦ.continuous_fderiv one_ne_zero).comp (continuous_id.prodMk continuous_id)).clm_comp
-    continuous_const
+    Continuous fun y ↦ fderiv 𝕜 (fun w ↦ f w (u y)) y :=
+  Continuous.fderiv_one (f := fun y w ↦ f w (u y))
+    (contMDiff_iff_contDiff.mp
+      (hf.comp (contDiff_snd.contMDiff.prodMk (hu.comp contDiff_fst.contMDiff))))
+    continuous_id
 
 /-- The derivative of a vector-valued function, read in the target space, commutes with
 multiplication by a constant scalar acting continuously on the target, such as a complex scalar on
