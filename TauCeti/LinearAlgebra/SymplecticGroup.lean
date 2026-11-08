@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
--- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
--- evaluates `det J`, but no statement mentions either.
+-- Non-public: `noncomm_ring` normalises the conjugation identities below, the Schur complement
+-- evaluates `det J`, and positive definiteness shows `1 + A Aᵀ` is invertible, but no statement
+-- mentions any of them.
+import Mathlib.Algebra.Order.Star.Real
+import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Tactic.NoncommRing
 
@@ -60,6 +64,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
+* `SymplecticGroup.isUnit_det_mul_J_add_J_mul`: for a real symplectic matrix `A`, the matrix
+  `A J + J A` is invertible.
 -/
 
 public section
@@ -236,5 +242,22 @@ theorem fromBlocks_diagonal_mem {A D : Matrix l l R} (hAD : Aᵀ * D = 1) :
     fromBlocks A 0 0 D ∈ symplecticGroup l R := by
   rw [fromBlocks_mem_iff]
   simp [hAD]
+
+/-- **For a real symplectic matrix `A`, the matrix `A J + J A` is invertible**:
+`(A J + J A) Aᵀ = J (1 + A Aᵀ)` and `1 + A Aᵀ` is positive definite. -/
+theorem isUnit_det_mul_J_add_J_mul {A : Matrix (l ⊕ l) (l ⊕ l) ℝ}
+    (hA : A ∈ symplecticGroup l ℝ) : IsUnit (A * J l ℝ + J l ℝ * A).det := by
+  have hsymp : A * J l ℝ * Aᵀ = J l ℝ := mem_iff.1 hA
+  have hkey : (A * J l ℝ + J l ℝ * A) * Aᵀ = J l ℝ * (1 + A * Aᵀ) := by
+    rw [add_mul, hsymp, mul_add, mul_one, Matrix.mul_assoc]
+  have hpos : (1 + A * Aᵀ).PosDef := by
+    simpa [conjTranspose_eq_transpose_of_trivial] using
+      PosDef.one.add_posSemidef (posSemidef_self_mul_conjTranspose A)
+  have h := congrArg Matrix.det hkey
+  rw [det_mul, det_mul] at h
+  have hne : (J l ℝ).det * (1 + A * Aᵀ).det ≠ 0 :=
+    mul_ne_zero (isUnit_det_J l ℝ).ne_zero hpos.det_pos.ne'
+  rw [← h] at hne
+  exact isUnit_iff_ne_zero.2 (left_ne_zero_of_mul hne)
 
 end SymplecticGroup

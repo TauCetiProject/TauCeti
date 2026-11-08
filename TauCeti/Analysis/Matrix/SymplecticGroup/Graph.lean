@@ -44,10 +44,10 @@ Conley–Zehnder index of symplectic paths is expressed as a Robbin–Salamon in
 The determinant of the frame is `det ((A₁₂ - A₂₁) + i (A₁₁ + A₂₂))` by a Schur complement
 (`TauCeti.GLSymplectic.det_graphFrame`), and its phase is the Maslov phase of the graph
 (`TauCeti.GLSymplectic.coe_graphPhase_eq_maslovPhase`). The realification of
-`(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)` is `A J + J A`. If `A J Aᵀ = J`, then
-`(A J + J A) Aᵀ = J (1 + A Aᵀ)` is invertible because `1 + A Aᵀ` is positive definite, so the frame
-is invertible. For a realified unitary matrix `A = U_ℝ` the
-complex matrix is `2 i U`, so the graph phase is `(-1)ⁿ (det U)² = (-1)ⁿ ρ(A)²`
+`(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)` is `A J + J A`, which is invertible when `A` is symplectic
+(`SymplecticGroup.isUnit_det_mul_J_add_J_mul`), so the frame is invertible. For a realified
+unitary matrix `A = U_ℝ` the complex matrix is `2 i U`, so the graph phase is
+`(-1)ⁿ (det U)² = (-1)ⁿ ρ(A)²`
 (`TauCeti.GLSymplectic.coe_graphPhase_inclusion`). A general loop is deformed to its loop of
 orthogonal polar factors through symplectic matrices, which changes no degree
 (`TauCeti.GLSymplectic.degree_map_inclusion_polarUnitary`).
@@ -126,27 +126,10 @@ private theorem realify_graphCore (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     simp [graphCore, J, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, toBlocks₁₁,
       toBlocks₁₂, toBlocks₂₁, toBlocks₂₂] <;> ring
 
-/-- For a symplectic matrix `A`, the matrix `A J + J A` is invertible:
-`(A J + J A) Aᵀ = J (1 + A Aᵀ)` and `1 + A Aᵀ` is positive definite. -/
-private theorem isUnit_det_mul_J_add_J_mul {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (hA : A ∈ symplecticGroup n ℝ) : IsUnit (A * J n ℝ + J n ℝ * A).det := by
-  have hsymp : A * J n ℝ * Aᵀ = J n ℝ := SymplecticGroup.mem_iff.1 hA
-  have hkey : (A * J n ℝ + J n ℝ * A) * Aᵀ = J n ℝ * (1 + A * Aᵀ) := by
-    rw [add_mul, hsymp, mul_add, mul_one, Matrix.mul_assoc]
-  have hpos : (1 + A * Aᵀ).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial] using
-      PosDef.one.add_posSemidef (posSemidef_self_mul_conjTranspose A)
-  have h := congrArg Matrix.det hkey
-  rw [det_mul, det_mul] at h
-  have hne : (J n ℝ).det * (1 + A * Aᵀ).det ≠ 0 :=
-    mul_ne_zero (isUnit_det_J n ℝ).ne_zero hpos.det_pos.ne'
-  rw [← h] at hne
-  exact isUnit_iff_ne_zero.2 (left_ne_zero_of_mul hne)
-
 /-- **The graph frame of a symplectic matrix is invertible.** -/
 theorem isUnit_det_graphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hA : A ∈ symplecticGroup n ℝ) :
     IsUnit (graphFrame A).det := by
-  have h := isUnit_det_mul_J_add_J_mul hA
+  have h := SymplecticGroup.isUnit_det_mul_J_add_J_mul hA
   rw [← realify_graphCore, det_realify] at h
   rw [det_graphFrame, isUnit_iff_ne_zero]
   intro h0
