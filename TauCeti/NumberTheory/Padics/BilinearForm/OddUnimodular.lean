@@ -260,12 +260,11 @@ private theorem exists_basis_orthogonal_span_singleton {B : BilinForm ℤ_[2] M}
 
 /-- The rank-one case of `exists_basis_iIsOrtho_apply_self_eq_aux`: rescale the basis vector. -/
 private theorem exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one {B : BilinForm ℤ_[2] M}
-    {b : Basis (Fin 1) ℤ_[2] M} (hbu : ∀ i, IsUnit (B (b i) (b i)))
-    {v : Fin 1 → ℤ_[2]} (hv : ∀ i, IsUnit (v i))
+    {b : Basis (Fin 1) ℤ_[2] M} {v : Fin 1 → ℤ_[2]} (hv : ∀ i, IsUnit (v i))
     (hP : PadicInt.toZModPow 3 (∏ i, B (b i) (b i)) = PadicInt.toZModPow 3 (∏ i, v i)) :
     ∃ c : Basis (Fin 1) ℤ_[2] M, B.iIsOrtho c ∧ ∀ i, B (c i) (c i) = v i := by
   simp only [Fin.prod_univ_succ, Fin.prod_univ_zero, mul_one] at hP
-  obtain ⟨s, hs, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hbu 0) (hv 0) hP
+  obtain ⟨s, hs, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hv 0) hP
   refine ⟨b.unitsSMul fun _ ↦ hs.unit, iIsOrtho_def.mpr fun i j hij ↦ ?_, fun i ↦ ?_⟩
   · exact (hij (Fin.ext (by omega))).elim
   · obtain rfl : i = 0 := Fin.ext (by omega)
@@ -314,12 +313,12 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   | succ n ih =>
   intro M _ _ B b hb hbu v hv hP hS
   rcases n with _ | m
-  · exact exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one hbu hv hP
+  · exact exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one hv hP
   -- Choose a vector representing some `vⱼ` with an odd complement, rescaled to represent `vⱼ`.
   obtain ⟨j, x, y, hxv, hyu, hxy⟩ := exists_toZModPow_three_apply_self_eq hb hbu hv hP hS
   have hxu : IsUnit (B x x) :=
     isUnit_iff_toZModPow_three_mul_self.mpr (hxv ▸ isUnit_iff_toZModPow_three_mul_self.mp (hv j))
-  obtain ⟨s, -, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq hxu (hv j) hxv
+  obtain ⟨s, -, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hv j) hxv
   set x' := s • x with hx'
   have hx'x' : B x' x' = v j := by
     simp only [hx', map_smul, LinearMap.smul_apply, smul_eq_mul, hsv]

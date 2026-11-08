@@ -466,7 +466,7 @@ private theorem eq_two_pow_and_exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} 
     exact h₃
   have hmem₃ : ∀ k, χ (freeProPGen 2 n 3) ∈ unitsPrincipal 2 k ↔ k ≤ g := fun k ↦
     mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one h₃g
-  obtain rfl := eq_of_topologicalClosure_zpowers_sup_zpowers_eq_unitsPlusMinus hf hg hV hnegf hmem₃
+  obtain rfl := eq_of_topologicalClosure_zpowers_sup_zpowers_eq_unitsPlusMinus hf hg hV hmem₃
   refine ⟨rfl, ?_⟩
   -- `χ(x₄)` topologically generates `U^(f)`, so `(-χ(x₂))⁻¹ ∈ U^(f)` is a `2`-adic power of it.
   have hgen : (zpowers (χ (freeProPGen 2 n 3))).topologicalClosure = unitsPrincipal 2 g :=

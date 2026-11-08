@@ -81,8 +81,8 @@ private theorem equivalent_toBilin'_diagonal_two_pow_mul_of_eight_dvd (ha : IsUn
     calc toZModPow 3 b = toZModPow 3 a * toZModPow 3 a * toZModPow 3 b := by rw [hAu, one_mul]
       _ = toZModPow 3 a * toZModPow 3 a * toZModPow 3 b' := by rw [mul_assoc, hAB, ← mul_assoc]
       _ = toZModPow 3 b' := by rw [hAu, one_mul]
-  obtain ⟨s, hs, rfl⟩ := exists_eq_sq_mul_of_toZModPow_three_eq ha ha' hA
-  obtain ⟨t, ht, rfl⟩ := exists_eq_sq_mul_of_toZModPow_three_eq hb hb' hB
+  obtain ⟨s, hs, rfl⟩ := exists_eq_sq_mul_of_toZModPow_three_eq ha' hA
+  obtain ⟨t, ht, rfl⟩ := exists_eq_sq_mul_of_toZModPow_three_eq hb' hB
   exact LinearMap.BilinForm.equivalent_toBilin'_diagonal_fin_two (x := s) (y := 0) (z := 0)
     (t := t) (by simpa using hs.mul ht) (by ring) (by ring) (by ring)
 
