@@ -132,14 +132,17 @@ lemma VariableChange.r_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsReg
     (C.u⁻¹.isUnit.pow 2).mul_right_eq_zero] at h
   exact h3.left (by simp only [mul_zero]; linear_combination h)
 
-/-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`, when `2` and `3` are
-non-zero-divisors. -/
+/-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`, when `2` is a
+non-zero-divisor. Only `3 * r = 0` is needed, which `a₂ = 0` gives. -/
 @[simp]
-lemma variableChange_a₄_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
+lemma variableChange_a₄_of_isShortNF (h2 : IsRegular (2 : R)) :
     (C • W).a₄ = C.u⁻¹ ^ 4 * W.a₄ := by
-  rw [variableChange_a₄, C.r_eq_zero_of_isShortNF W h2 h3, C.s_eq_zero_of_isShortNF W h2,
-    C.t_eq_zero_of_isShortNF W h2, W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
-  ring
+  have h := (C • W).a₂_of_isShortNF
+  rw [variableChange_a₂, W.a₁_of_isShortNF, W.a₂_of_isShortNF, C.s_eq_zero_of_isShortNF W h2,
+    (C.u⁻¹.isUnit.pow 2).mul_right_eq_zero] at h
+  rw [variableChange_a₄, C.s_eq_zero_of_isShortNF W h2, C.t_eq_zero_of_isShortNF W h2,
+    W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
+  linear_combination (C.u⁻¹ ^ 4 * C.r : R) * h
 
 /-- Between short normal forms, a change of variables scales `a₆` by `u⁻⁶`, when `2` and `3` are
 non-zero-divisors. -/
