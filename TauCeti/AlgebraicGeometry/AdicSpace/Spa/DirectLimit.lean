@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.DirectLimit
 public import TauCeti.RingTheory.Huber.Continuous.OfCofinal
-public import TauCeti.RingTheory.Huber.DirectLimit
 public import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
