@@ -134,23 +134,34 @@ private theorem pow_three_eq_two_of_mem_rootSet
     (by simpa only [map_ofNat] using hx)
   simpa only [map_ofNat] using h
 
+/-- A root of `X ^ 3 - 2` in a `ℚ`-algebra that is a field is nonzero. -/
+private theorem ne_zero_of_mem_rootSet
+    {L : Type*} [Field L] [Algebra ℚ L] {x : L}
+    (hx : x ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) : x ≠ 0 := by
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
+  rintro rfl
+  exact two_ne_zero (by simpa using (pow_three_eq_two_of_mem_rootSet hx).symm)
+
+/-- The quotient of two roots of `X ^ 3 - 2` has cube equal to `1`. -/
+private theorem div_pow_three_eq_one_of_mem_rootSet
+    {L : Type*} [Field L] [Algebra ℚ L] {x y : L}
+    (hx : x ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) (hy : y ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) :
+    (x / y) ^ 3 = 1 := by
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
+  rw [div_pow, pow_three_eq_two_of_mem_rootSet hx, pow_three_eq_two_of_mem_rootSet hy,
+    div_self two_ne_zero]
+
 /-- The quotient of two distinct roots of `X ^ 3 - 2` is a primitive cube root of unity. -/
 private theorem isPrimitiveRoot_div_of_mem_rootSet
     {L : Type*} [Field L] [Algebra ℚ L] {beta gamma : L}
     (hbeta : beta ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L)
     (hgamma : gamma ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) (hne : gamma ≠ beta) :
     IsPrimitiveRoot (gamma / beta) 3 := by
-  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
-  have hbeta3 := pow_three_eq_two_of_mem_rootSet hbeta
-  have hbeta0 : beta ≠ 0 := by
-    rintro rfl
-    exact two_ne_zero (by simpa using hbeta3.symm)
-  have hzeta3 : (gamma / beta) ^ 3 = 1 := by
-    rw [div_pow, pow_three_eq_two_of_mem_rootSet hgamma, hbeta3,
-      div_self two_ne_zero]
-  have hzeta1 : gamma / beta ≠ 1 := fun hz ↦ hne ((div_eq_one_iff_eq hbeta0).mp hz)
+  have hzeta1 : gamma / beta ≠ 1 := fun hz ↦
+    hne ((div_eq_one_iff_eq (ne_zero_of_mem_rootSet hbeta)).mp hz)
   exact isPrimitiveRoot_of_mem_nthRootsFinset (by decide)
-    ((mem_nthRootsFinset (by decide) _).mpr hzeta3) hzeta1
+    ((mem_nthRootsFinset (by decide) _).mpr
+      (div_pow_three_eq_one_of_mem_rootSet hgamma hbeta)) hzeta1
 
 /-- In the splitting field of `X ^ 3 - 2`, the quotient of a distinct root by a fixed root
 generates the field over any intermediate field containing that fixed root. -/
@@ -166,25 +177,18 @@ private theorem adjoin_div_eq_top_of_mem
   let _ : Algebra ℚ E := E.algebra'
   let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
   have hzeta := isPrimitiveRoot_div_of_mem_rootSet hbeta hgamma hne
-  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
-  have hbeta3 := pow_three_eq_two_of_mem_rootSet hbeta
-  have hbeta0 : beta ≠ 0 := by
-    rintro rfl
-    exact two_ne_zero (by simpa using hbeta3.symm)
   have htopE : IntermediateField.adjoin E ((X ^ 3 - 2 : ℚ[X]).rootSet L) = ⊤ :=
     IntermediateField.adjoin_eq_top_of_adjoin_eq_top ℚ
       (isSplittingField_iff_intermediateField.mp inferInstance).2
   apply top_unique
   rw [← htopE]
   refine IntermediateField.adjoin_le_iff.mpr fun delta hdelta ↦ ?_
-  have hmu : (delta / beta) ^ 3 = 1 := by
-    rw [div_pow, pow_three_eq_two_of_mem_rootSet hdelta, hbeta3,
-      div_self two_ne_zero]
+  have hmu := div_pow_three_eq_one_of_mem_rootSet hdelta hbeta
   have hbeta_mem : beta ∈ IntermediateField.adjoin E ({gamma / beta} : Set L) :=
     IntermediateField.algebraMap_mem _ (⟨beta, hbetaE⟩ : E)
   have := (IntermediateField.adjoin E ({gamma / beta} : Set L)).mul_mem hbeta_mem
     (hzeta.mem_adjoin_of_pow_eq_one hmu)
-  rwa [mul_div_cancel₀ delta hbeta0] at this
+  rwa [mul_div_cancel₀ delta (ne_zero_of_mem_rootSet hbeta)] at this
 
 private theorem isCyclotomicExtension_fixedField_stabilizer_root
     {L : Type*} [Field L] [Algebra ℚ L] [FiniteDimensional ℚ L]
@@ -240,8 +244,9 @@ private theorem exists_prime_liesOver_two_ramificationIdx_eq_three
   exact ⟨P0.1, P0.2.1, P0.2.2,
     ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two theta hmin P0.1⟩
 
-/-- A prime `P` of a cyclotomic Galois subextension above `2` with ramification index three is a
-prime above a ramified prime that does not ramify in the extension. -/
+/-- If `L / E` is `3`-cyclotomic and some prime of `𝓞 E` above `2` has ramification index three
+over `ℤ`, then some height-one prime of `E` above `2` lies in `primesAboveRamifiedPrimes ℚ L E`
+but not in `ramifiedPrimes E L`. -/
 private theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_of_isCyclotomic
     {L : Type*} [Field L] [NumberField L] [IsGalois ℚ L] (E : IntermediateField ℚ L)
     [IsGalois E L] (hcyc : IsCyclotomicExtension {3} E L) (P : Ideal (𝓞 E)) [P.IsPrime]
