@@ -463,6 +463,7 @@ theorem matchedIdem_mem_matchedAlgebra (s : Finset β) :
 variable {M} in
 /-- Multiplying `a(ρ, h)` on the left by `I(s)` keeps it exactly when `s` is the set of pairs at
 its left, those of the starting points of `ρ` together with `h`. -/
+@[simp]
 theorem matchedIdem_mul_horizontalCompletion (s : Finset β) {ρ : StrandDiagram α} {h : Finset β}
     (hρ : IsMatchedGenerator M ρ h) :
     (matchedIdem M s * horizontalCompletion M ρ h : StrandsAlgebra R α) =
@@ -483,6 +484,7 @@ theorem matchedIdem_mul_horizontalCompletion (s : Finset β) {ρ : StrandDiagram
 variable {M} in
 /-- Multiplying `a(ρ, h)` on the right by `I(t)` keeps it exactly when `t` is the set of pairs at
 its right, those of the end points of `ρ` together with `h`. -/
+@[simp]
 theorem horizontalCompletion_mul_matchedIdem {ρ : StrandDiagram α} {h : Finset β}
     (hρ : IsMatchedGenerator M ρ h) (t : Finset β) :
     (horizontalCompletion M ρ h * matchedIdem M t : StrandsAlgebra R α) =
