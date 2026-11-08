@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # The polynomial of an `SL(2, ℤ)`-invariant function over the cyclic `n`-isogenies
@@ -115,10 +116,7 @@ theorem roots_cyclicIsogenyPolynomial (f : ℍ → ℂ) (τ : ℍ) :
     (cyclicIsogenyPolynomial n f τ).roots =
       (primitiveReps (n : ℤ)).val.map
         fun A ↦ f (toGLReal (NeZero.ne (n : ℤ)) A • τ) := by
-  have h := roots_multiset_prod_X_sub_C ((primitiveReps (n : ℤ)).val.map
-    fun A ↦ f (toGLReal (NeZero.ne (n : ℤ)) A • τ))
-  rw [Multiset.map_map] at h
-  rwa [cyclicIsogenyPolynomial_def, Finset.prod_eq_multiset_prod]
+  rw [cyclicIsogenyPolynomial_def, roots_prod_X_sub_C_map]
 
 /-- **The polynomial over the cyclic `n`-isogenies of an `SL(2, ℤ)`-invariant function is
 `SL(2, ℤ)`-invariant**: it takes the same value at `γ τ` as at `τ`. -/
