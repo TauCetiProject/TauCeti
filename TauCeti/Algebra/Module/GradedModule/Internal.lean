@@ -755,8 +755,7 @@ end KoszulTwistMul
 
 section QuadraticTwist
 
-variable {R : Type u} {M : Type v}
-  [CommRing R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- The quadratic sign exponent attached to degree `p`, namely the generalized binomial
 coefficient `p choose 2`. -/
@@ -814,8 +813,9 @@ Koszul-signed opposite multiplication. -/
 noncomputable def quadraticTwist (G : InternalGrading R M) : M →ₗ[R] M :=
   DirectSum.coeLinearMap (fun p => G.piece p) ∘ₗ
     DirectSum.toModule R ℤ (⨁ p : ℤ, G.piece p)
-      (fun p => (((quadraticExponent p).negOnePow : ℤ) : R) •
-        DirectSum.lof R ℤ (fun p => G.piece p) p) ∘ₗ
+      (fun p => DirectSum.lof R ℤ (fun p => G.piece p) p ∘ₗ
+        Module.End.smulLeft (((quadraticExponent p).negOnePow : ℤ) : R)
+          (Set.intCast_mem_center R _)) ∘ₗ
     (DirectSum.decomposeLinearEquiv (ℳ := G.piece)).toLinearMap
 
 /-- On a homogeneous element of degree `p`, the quadratic twist is multiplication by
