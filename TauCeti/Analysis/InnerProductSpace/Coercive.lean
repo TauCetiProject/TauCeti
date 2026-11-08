@@ -229,6 +229,8 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
 
 end ContinuousLinearMap
 
+namespace ContinuousLinearMap
+
 section Real
 
 open Metric Set
@@ -258,14 +260,13 @@ theorem abs_increment_le_of_abs_expansion_le {A : E →L[ℝ] E} (hA : (A : E �
 /-- If `g` has, on `closedBall x r`, the increment from `x` of a quadratic centred at `x + z`, up
 to `δ ‖x' - x‖ ^ 2` with `δ` small relative to the coercivity constant `c` of `A` and `‖z‖ ≤ s * r`
 for `s < 1`, then `g` on the sphere exceeds `g (x + z)`. -/
-theorem lt_of_forall_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x z : E}
+theorem lt_on_sphere_of_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x z : E}
     {r s c δ : ℝ} (hc : 0 < c) (hcA : ∀ w, c * ‖w‖ ^ 2 ≤ ⟪A w, w⟫_ℝ) (hs : s < 1) (hr : 0 < r)
-    (hδ : δ = c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
+    (hδ0 : 0 ≤ δ) (hδ : δ ≤ c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
     (hincr : ∀ x' ∈ closedBall x r, |g x' - g x - (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 -
       ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2) :
     ∀ x' ∈ closedBall x r \ ball x r, g (x + z) < g x' := by
   have hη : 0 < 1 - s := sub_pos.2 hs
-  have hδ0 : 0 < δ := by rw [hδ]; positivity
   have hsr : s * r ≤ r := by nlinarith [norm_nonneg z]
   rintro x' ⟨hx', hx'b⟩
   have hnorm : ‖x' - x‖ = r := by
@@ -285,11 +286,15 @@ theorem lt_of_forall_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x z :
   have hq' : c * ((1 - s) * r) ^ 2 ≤ c * ‖x' - x - z‖ ^ 2 :=
     mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (mul_pos hη hr).le hηr 2) hc.le
   have hzr' : ‖z‖ ^ 2 ≤ r ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hz.trans hsr) 2
-  have hδz : δ * ‖z‖ ^ 2 ≤ δ * r ^ 2 := mul_le_mul_of_nonneg_left hzr' hδ0.le
-  have hδr : δ * r ^ 2 = c * ((1 - s) * r) ^ 2 / 8 := by rw [hδ]; ring
+  have hδz : δ * ‖z‖ ^ 2 ≤ δ * r ^ 2 := mul_le_mul_of_nonneg_left hzr' hδ0
+  have hδr : δ * r ^ 2 ≤ c * ((1 - s) * r) ^ 2 / 8 := by
+    have := mul_le_mul_of_nonneg_right hδ (sq_nonneg r)
+    linarith [this, show c * (1 - s) ^ 2 / 8 * r ^ 2 = c * ((1 - s) * r) ^ 2 / 8 by ring]
   have hpos : 0 < c * ((1 - s) * r) ^ 2 := by positivity
   rw [abs_le] at h₁ h₂
   rw [hnorm] at h₂
   linarith [h₁.2, h₂.1]
 
 end Real
+
+end ContinuousLinearMap

@@ -194,8 +194,9 @@ private theorem eventually_image_subset_subgradientImage_closedBall
       ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2 := fun x' hx' => by
     have hb := (hball ((mem_closedBall.1 hx').trans_lt hr.2)).1
     rw [norm_pow, norm_norm, Real.norm_eq_abs] at hb
-    exact abs_increment_le_of_abs_expansion_le hA.isSymmetric hb
-  have hlt := lt_of_forall_abs_increment_le hc hcA hs hr.1 rfl hz hincr
+    exact ContinuousLinearMap.abs_increment_le_of_abs_expansion_le hA.isSymmetric hb
+  have hlt := ContinuousLinearMap.lt_on_sphere_of_abs_increment_le hc hcA hs hr.1 hδ.le le_rfl hz
+    hincr
   exact mem_subgradientImage_closedBall_of_forall_lt hf hbot hKD
     (mem_closedBall.2 (by rw [dist_eq_norm, add_sub_cancel_left]; exact hz.trans hsr)) hlt
 
