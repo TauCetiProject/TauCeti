@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.GDelta.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Topology.Baire.Lemmas
-import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Algebra.Group.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.Analysis.Fredholm.NormalForm
@@ -19,6 +18,7 @@ import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Baire.Lindelof
 import TauCeti.Topology.Constructions.SumProd
+import TauCeti.Topology.Maps.Proper.CompactlyGenerated
 
 /-!
 # The Sard--Smale theorem
@@ -183,6 +183,235 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
       (Submodule.prodEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl)).trans
       D.surjective_fst_prod_iff
 
+omit [CompleteSpace F] in
+/-- **Normal-form regularity near the base point.** Near the base coordinate of the normal-form
+chart of a `C^k` map with Fredholm derivative, the chart, the obstruction and the map itself are
+all `C^k` and the chart has invertible derivative. -/
+private theorem eventually_mem_target_contDiffAt_normalForm
+    (pkg : ContinuousLinearMap.FredholmPackage T) (hT : HasStrictFDerivAt f T a) {k : ℕ}
+    (hk : 1 ≤ k) (hf : ContDiffAt ℝ (k : ℕ∞ω) f a) :
+    ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
+      y ∈ (pkg.normalFormOpenPartialHomeomorph hT).target ∧
+      ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionMap hT) y ∧
+      ContDiffAt ℝ (k : ℕ∞ω) (pkg.normalFormOpenPartialHomeomorph hT).symm y ∧
+      (∃ e : (pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E,
+        (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) =
+          fderiv ℝ (pkg.normalFormOpenPartialHomeomorph hT).symm y) ∧
+      ContDiffAt ℝ (k : ℕ∞ω) f ((pkg.normalFormOpenPartialHomeomorph hT).symm y) := by
+  have hk1 : (1 : ℕ∞ω) ≤ (k : ℕ∞ω) := by exact_mod_cast hk
+  have hk0 : ((k : ℕ∞ω)) ≠ 0 := by
+    intro h
+    exact absurd (h ▸ hk1) (by simp)
+  have hkω : ((k : ℕ∞ω)) ≠ ∞ := by simp
+  have : CompleteSpace pkg.decDom.X₀ := pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
+  have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
+  have : CompleteSpace pkg.decCodom.X₁ :=
+    ContinuousLinearMap.completeSpace_of_isInvertible
+      (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
+  set q := pkg.obstructionMap hT with hqdef
+  set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0) with hy₀def
+  have hy₀ : y₀ ∈ Φ.target := pkg.normalFormOpenPartialHomeomorph_self_mem_target hT
+  have hsymy₀ : Φ.symm y₀ = a := by
+    rw [hy₀def, hΦdef]
+    simpa only [Submodule.coe_projectionOntoL] using
+      pkg.normalFormOpenPartialHomeomorph_symm_self hT
+  have hqC : ContDiffAt ℝ (k : ℕ∞ω) q y₀ := pkg.contDiffAt_obstructionMap_self hT hf
+  have hsymC : ContDiffAt ℝ (k : ℕ∞ω) Φ.symm y₀ :=
+    pkg.contDiffAt_normalFormOpenPartialHomeomorph_symm_self hT hf
+  have h₄ : ∀ᶠ y in 𝓝 y₀, ∃ e : (pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E,
+      (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) = fderiv ℝ Φ.symm y := by
+    have hcont : ContinuousAt (fderiv ℝ Φ.symm) y₀ := hsymC.continuousAt_fderiv hk0
+    have hmem : Set.range ((↑) : ((pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E) →
+        ((pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E)) ∈ 𝓝 (fderiv ℝ Φ.symm y₀) := by
+      rw [(pkg.hasStrictFDerivAt_normalFormOpenPartialHomeomorph_symm_self hT).hasFDerivAt.fderiv]
+      exact ContinuousLinearEquiv.nhds _
+    exact hcont hmem
+  have h₅ : ∀ᶠ y in 𝓝 y₀, ContDiffAt ℝ (k : ℕ∞ω) f (Φ.symm y) := by
+    have hev := hf.eventually hkω
+    rw [← hsymy₀] at hev
+    exact hsymC.continuousAt hev
+  filter_upwards [Φ.open_target.mem_nhds hy₀, hqC.eventually hkω, hsymC.eventually hkω, h₄, h₅]
+    with y c₁ c₂ c₃ c₄ c₅ using ⟨c₁, c₂, c₃, c₄, c₅⟩
+
+omit [CompleteSpace F] in
+/-- On a set `V` of normal-form coordinates on which the obstruction is `C^k`, the image under `f`
+of the critical points whose chart image lies in `V` has empty interior. This is the fibrewise
+Morse--Sard step (the hypothesis `hslice`) applied to the obstruction slices. -/
+private theorem interior_image_inter_not_surjective_eq_empty
+    (pkg : ContinuousLinearMap.FredholmPackage T) (hT : HasStrictFDerivAt f T a) {k : ℕ}
+    (hslice : ∀ (X : Submodule ℝ E) (Y : Submodule ℝ F) [FiniteDimensional ℝ X]
+      [FiniteDimensional ℝ Y], finrank ℝ X = finrank ℝ T.ker →
+      finrank ℝ Y = finrank ℝ (F ⧸ T.range) → ∀ (g : X → Y) (V : Set X),
+      (∀ z ∈ V, ContDiffAt ℝ (k : ℕ∞ω) g z) →
+        interior (g '' (V ∩ {z | ¬ Surjective (fderiv ℝ g z)})) = ∅)
+    {V : Set (pkg.decCodom.X₁ × pkg.decDom.X₀)}
+    (hVt : ∀ y ∈ V, y ∈ (pkg.normalFormOpenPartialHomeomorph hT).target)
+    (hVq : ∀ y ∈ V, ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionMap hT) y)
+    (hcrit : ∀ x ∈ (pkg.normalFormOpenPartialHomeomorph hT).source ∩
+        (pkg.normalFormOpenPartialHomeomorph hT) ⁻¹' V,
+      (Surjective (fderiv ℝ f x) ↔ Surjective (fderiv ℝ
+        (pkg.obstructionSlice hT ((pkg.normalFormOpenPartialHomeomorph hT) x).1)
+        ((pkg.normalFormOpenPartialHomeomorph hT) x).2))) :
+    interior (f '' (((pkg.normalFormOpenPartialHomeomorph hT).source ∩
+      (pkg.normalFormOpenPartialHomeomorph hT) ⁻¹' V) ∩
+        {x | ¬ Surjective (fderiv ℝ f x)})) = ∅ := by
+  have : CompleteSpace pkg.decDom.X₀ := pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
+  have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
+  have : CompleteSpace pkg.decCodom.X₁ :=
+    ContinuousLinearMap.completeSpace_of_isInvertible
+      (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
+  have : FiniteDimensional ℝ pkg.decDom.X₀ := pkg.decDom.finite_X₀
+  have : FiniteDimensional ℝ pkg.decCodom.X₀ := pkg.decCodom.finite_X₀
+  have hker : finrank ℝ pkg.decDom.X₀ = finrank ℝ T.ker := by rw [pkg.ker_eq]
+  have hcoker : finrank ℝ pkg.decCodom.X₀ = finrank ℝ (F ⧸ T.range) := by
+    rw [pkg.range_eq]
+    exact (Submodule.quotientEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl).finrank_eq.symm
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
+  set q := pkg.obstructionMap hT with hqdef
+  set N : Set E := Φ.source ∩ Φ ⁻¹' V
+  have hNsymm : ∀ x ∈ N, Φ.symm (Φ x) = x := fun x hx ↦ Φ.left_inv hx.1
+  set Λ := Submodule.prodEquivOfIsTopCompl pkg.decCodom.X₁ pkg.decCodom.X₀
+    pkg.decCodom.isTopCompl with hΛdef
+  set A : Set (pkg.decCodom.X₁ × pkg.decCodom.X₀) :=
+    {p | p.2 ∈ pkg.obstructionSlice hT p.1 ''
+      ({z | (p.1, z) ∈ V} ∩
+        {z | ¬ Surjective (fderiv ℝ (pkg.obstructionSlice hT p.1) z)})} with hAdef
+  have hAint : interior A = ∅ := by
+    refine interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty fun p₁ ↦ ?_
+    -- The fibre of `A` over `p₁` is the image of the critical set of the slice at `p₁`.
+    have hfiber : Prod.mk p₁ ⁻¹' A = pkg.obstructionSlice hT p₁ ''
+        ({z | (p₁, z) ∈ V} ∩
+          {z | ¬ Surjective (fderiv ℝ (pkg.obstructionSlice hT p₁) z)}) := by
+      rw [hAdef]
+      simp only [preimage_ofPred_eq, ofPred_mem_eq]
+    rw [hfiber]
+    have hUC : ∀ z ∈ {z : pkg.decDom.X₀ | (p₁, z) ∈ V},
+        ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionSlice hT p₁) z := by
+      intro z hz
+      rw [funext (pkg.obstructionSlice_apply hT p₁), ← hqdef]
+      exact (hVq _ hz).comp z (contDiffAt_const.prodMk contDiffAt_id)
+    exact hslice _ _ hker hcoker _ _ hUC
+  have himg : f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆ Λ '' A := by
+    rintro _ ⟨x, ⟨hxN, hxc⟩, rfl⟩
+    have c₁ := hVt (Φ x) hxN.2
+    refine ⟨((Φ x).1, q (Φ x)), ⟨(Φ x).2, ⟨hxN.2, ?_⟩, ?_⟩, ?_⟩
+    · exact fun hs ↦ hxc ((hcrit x hxN).2 hs)
+    · rw [hqdef]
+      exact pkg.obstructionSlice_apply hT (Φ x).1 (Φ x).2
+    · rw [hΛdef, Submodule.prodEquivOfIsTopCompl_apply]
+      conv_rhs => rw [← hNsymm x hxN]
+      exact (pkg.apply_normalFormOpenPartialHomeomorph_symm hT c₁).symm
+  have h1 : interior (Λ '' A) = ∅ := by
+    have h2 := Λ.toHomeomorph.image_interior A
+    simp only [ContinuousLinearEquiv.coe_toHomeomorph] at h2
+    rw [← h2, hAint, Set.image_empty]
+  exact Set.eq_empty_of_subset_empty (h1 ▸ interior_mono himg)
+
+omit [CompleteSpace F] in
+/-- On an open set `V` of normal-form coordinates on which the obstruction is `C^k`, the regular
+points of `f` whose chart image lies in `V` form an open set. -/
+private theorem isOpen_inter_setOf_surjective_fderiv
+    (pkg : ContinuousLinearMap.FredholmPackage T) (hT : HasStrictFDerivAt f T a) {k : ℕ}
+    (hk : 1 ≤ k) {V : Set (pkg.decCodom.X₁ × pkg.decDom.X₀)} (hVopen : IsOpen V)
+    (hVq : ∀ y ∈ V, ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionMap hT) y)
+    (hcrit : ∀ x ∈ (pkg.normalFormOpenPartialHomeomorph hT).source ∩
+        (pkg.normalFormOpenPartialHomeomorph hT) ⁻¹' V,
+      (Surjective (fderiv ℝ f x) ↔ Surjective (fderiv ℝ
+        (pkg.obstructionSlice hT ((pkg.normalFormOpenPartialHomeomorph hT) x).1)
+        ((pkg.normalFormOpenPartialHomeomorph hT) x).2))) :
+    IsOpen {x | x ∈ (pkg.normalFormOpenPartialHomeomorph hT).source ∩
+      (pkg.normalFormOpenPartialHomeomorph hT) ⁻¹' V ∧ Surjective (fderiv ℝ f x)} := by
+  have hk0 : ((k : ℕ∞ω)) ≠ 0 := by
+    intro h
+    exact absurd (h ▸ (by exact_mod_cast hk : (1 : ℕ∞ω) ≤ (k : ℕ∞ω))) (by simp)
+  have : CompleteSpace pkg.decDom.X₀ := pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
+  have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
+  have : CompleteSpace pkg.decCodom.X₁ :=
+    ContinuousLinearMap.completeSpace_of_isInvertible
+      (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
+  have : FiniteDimensional ℝ pkg.decDom.X₀ := pkg.decDom.finite_X₀
+  have : FiniteDimensional ℝ pkg.decCodom.X₀ := pkg.decCodom.finite_X₀
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
+  set q := pkg.obstructionMap hT with hqdef
+  set ι := ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀ with hιdef
+  set N : Set E := Φ.source ∩ Φ ⁻¹' V
+  have hNopen : IsOpen N := Φ.isOpen_inter_preimage hVopen
+  -- The slice derivative is the restriction of the derivative of the obstruction.
+  have hsliceD : ∀ y ∈ V,
+      fderiv ℝ (pkg.obstructionSlice hT y.1) y.2 = (fderiv ℝ q y).comp ι := by
+    intro y hy
+    rw [hqdef, hιdef]
+    exact (pkg.hasFDerivAt_obstructionSlice hT
+      ((hVq y hy).differentiableAt hk0).hasFDerivAt).fderiv
+  have hWopen : IsOpen {y | y ∈ V ∧ Surjective ((fderiv ℝ q y).comp ι)} := by
+    rw [isOpen_iff_mem_nhds]
+    rintro y ⟨hyV, hys⟩
+    have hcont : ContinuousAt (fderiv ℝ q) y := (hVq y hyV).continuousAt_fderiv hk0
+    have hmap : ContinuousAt (fun y' ↦ (fderiv ℝ q y').comp ι) y :=
+      hcont.clm_comp continuousAt_const
+    filter_upwards [hVopen.mem_nhds hyV,
+      hmap (IsOpen.mem_nhds isOpen_setOf_surjective hys)] with y' d₁ d₂
+    exact ⟨d₁, d₂⟩
+  have heq : {x | x ∈ N ∧ Surjective (fderiv ℝ f x)} =
+      N ∩ (Φ.source ∩ Φ ⁻¹' {y | y ∈ V ∧ Surjective ((fderiv ℝ q y).comp ι)}) := by
+    ext x
+    constructor
+    · rintro ⟨hxN, hxs⟩
+      have h1 : Surjective ((fderiv ℝ q (Φ x)).comp ι) := by
+        rw [← hsliceD (Φ x) hxN.2]
+        exact (hcrit x hxN).1 hxs
+      exact ⟨hxN, hxN.1, hxN.2, h1⟩
+    · rintro ⟨hxN, -, -, hs⟩
+      have h2 : Surjective (fderiv ℝ (pkg.obstructionSlice hT (Φ x).1) (Φ x).2) := by
+        rw [hsliceD (Φ x) hxN.2]
+        exact hs
+      exact ⟨hxN, (hcrit x hxN).2 h2⟩
+  rw [heq]
+  exact hNopen.inter (Φ.isOpen_inter_preimage hWopen)
+
+/-- **Sard--Smale, locally, on an open set.** Let `N` be an open set around a point `a` where `f` is
+strictly differentiable with Fredholm derivative, such that `f` is continuous on `N`, the regular
+points in `N` form an open set and the image of the critical points in `N` has empty interior. Then
+inside any neighbourhood `U` of `a` there is a neighbourhood on which the critical values form a
+closed nowhere dense set. -/
+private theorem exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen
+    (hT : HasStrictFDerivAt f T a) (hFred : T.IsFredholm) {N U : Set E} (hNopen : IsOpen N)
+    (haN : a ∈ N) (hU : U ∈ 𝓝 a) (hcont : ∀ x ∈ N, ContinuousAt f x)
+    (hreg : IsOpen {x | x ∈ N ∧ Surjective (fderiv ℝ f x)})
+    (hint : interior (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = ∅) :
+    ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
+      IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
+  -- Smale's local properness, on a closed ball inside `N`.
+  obtain ⟨N₂, hN₂, hprop⟩ := hT.exists_mem_nhds_forall_isCompact_inter_preimage
+    hFred.isClosed_range hFred.finite_ker hFred.closedComplemented_ker
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
+    (Filter.inter_mem (Filter.inter_mem (hNopen.mem_nhds haN) hN₂) hU)
+  set N' : Set E := Metric.closedBall a (r / 2)
+  have hN'sub : N' ⊆ N ∩ N₂ ∩ U := (Metric.closedBall_subset_ball (by linarith)).trans hball
+  have hN'ball : N' ⊆ N ∩ N₂ := fun z hz ↦ (hN'sub hz).1
+  have hcritclosed : IsClosed (N' ∩ {x | ¬ Surjective (fderiv ℝ f x)}) := by
+    have heq : N' ∩ {x | ¬ Surjective (fderiv ℝ f x)} =
+        N' ∩ {x | x ∈ N ∧ Surjective (fderiv ℝ f x)}ᶜ := by
+      ext x
+      refine ⟨fun hx ↦ ⟨hx.1, fun hc ↦ hx.2 hc.2⟩, fun hx ↦ ⟨hx.1, fun hc ↦ hx.2 ⟨?_, hc⟩⟩⟩
+      exact (hN'ball hx.1).1
+    rw [heq]
+    exact Metric.isClosed_closedBall.inter hreg.isClosed_compl
+  -- Restricted to that closed critical locus, `f` has compact preimages of compact sets, so it is
+  -- a proper map and its image is closed.
+  have hclosedimg : IsClosed (f '' (N' ∩ {x | ¬ Surjective (fderiv ℝ f x)})) :=
+    hcritclosed.image_of_isCompact_inter_preimage
+      (fun x hx ↦ (hcont x (hN'ball hx.1).1).continuousWithinAt)
+      (fun z hz ↦ (hN'ball hz.1).2) hprop
+  refine ⟨N', Metric.closedBall_mem_nhds a (by linarith), fun z hz ↦ (hN'sub hz).2,
+    hclosedimg, ?_⟩
+  rw [hclosedimg.isNowhereDense_iff]
+  refine Set.eq_empty_of_subset_empty ?_
+  rw [← hint]
+  exact interior_mono (Set.image_mono
+    (Set.inter_subset_inter (fun z hz ↦ (hN'ball hz).1) (subset_refl _)))
+
 /-- **Sard--Smale, locally**, with the finite-dimensional input left as a hypothesis `hslice`: a
 Morse--Sard statement at regularity `C^k` for maps from a subspace of dimension `dim ker` of `E`
 to a subspace of dimension `dim coker` of `F`. The fibrewise step applies it to the obstruction
@@ -204,195 +433,43 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_
   have hk0 : ((k : ℕ∞ω)) ≠ 0 := by
     intro h
     exact absurd (h ▸ hk1) (by simp)
-  have hkω : ((k : ℕ∞ω)) ≠ ∞ := by simp
   have hT : HasStrictFDerivAt f T a := hf.hasStrictFDerivAt_fderiv hk0
   obtain ⟨pkg⟩ := hFred.nonempty_fredholmPackage
-  have : CompleteSpace pkg.decDom.X₀ := pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
-  have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
-  have : CompleteSpace pkg.decCodom.X₁ :=
-    ContinuousLinearMap.completeSpace_of_isInvertible
-      (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
-  have : FiniteDimensional ℝ pkg.decDom.X₀ := pkg.decDom.finite_X₀
-  have : FiniteDimensional ℝ pkg.decCodom.X₀ := pkg.decCodom.finite_X₀
-  have hker : finrank ℝ pkg.decDom.X₀ = finrank ℝ T.ker := by rw [pkg.ker_eq]
-  have hcoker : finrank ℝ pkg.decCodom.X₀ = finrank ℝ (F ⧸ T.range) := by
-    rw [pkg.range_eq]
-    exact (Submodule.quotientEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl).finrank_eq.symm
   set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
   set q := pkg.obstructionMap hT with hqdef
-  -- The inclusion of the inessential domain summand as the second normal-form factor.
-  set ι := ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀ with hιdef
-  set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0) with hy₀def
-  have hy₀ : y₀ ∈ Φ.target := pkg.normalFormOpenPartialHomeomorph_self_mem_target hT
   have ha : a ∈ Φ.source := pkg.mem_normalFormOpenPartialHomeomorph_source hT
-  have hΦa : Φ a = y₀ := by
+  have hΦa : Φ a = (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)) := by
     rw [hΦdef, pkg.normalFormOpenPartialHomeomorph_apply hT, pkg.normalFormMap_self]
-  have hsymy₀ : Φ.symm y₀ = a := by
-    rw [hy₀def, hΦdef]
-    simpa only [Submodule.coe_projectionOntoL] using
-      pkg.normalFormOpenPartialHomeomorph_symm_self hT
   -- A neighbourhood of the base coordinate on which the chart, the obstruction and the map are
   -- all as smooth as `f` and the chart has invertible derivative.
-  have hgood : ∀ᶠ y in 𝓝 y₀, y ∈ Φ.target ∧ ContDiffAt ℝ (k : ℕ∞ω) q y ∧
-      ContDiffAt ℝ (k : ℕ∞ω) Φ.symm y ∧
-      (∃ e : (pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E,
-        (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) = fderiv ℝ Φ.symm y) ∧
-      ContDiffAt ℝ (k : ℕ∞ω) f (Φ.symm y) := by
-    have hqC : ContDiffAt ℝ (k : ℕ∞ω) q y₀ := pkg.contDiffAt_obstructionMap_self hT hf
-    have hsymC : ContDiffAt ℝ (k : ℕ∞ω) Φ.symm y₀ :=
-      pkg.contDiffAt_normalFormOpenPartialHomeomorph_symm_self hT hf
-    have h₄ : ∀ᶠ y in 𝓝 y₀, ∃ e : (pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E,
-        (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) = fderiv ℝ Φ.symm y := by
-      have hcont : ContinuousAt (fderiv ℝ Φ.symm) y₀ := hsymC.continuousAt_fderiv hk0
-      have hmem : Set.range ((↑) : ((pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E) →
-          ((pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E)) ∈ 𝓝 (fderiv ℝ Φ.symm y₀) := by
-        rw [(pkg.hasStrictFDerivAt_normalFormOpenPartialHomeomorph_symm_self hT).hasFDerivAt.fderiv]
-        exact ContinuousLinearEquiv.nhds _
-      exact hcont hmem
-    have h₅ : ∀ᶠ y in 𝓝 y₀, ContDiffAt ℝ (k : ℕ∞ω) f (Φ.symm y) := by
-      have hev := hf.eventually hkω
-      rw [← hsymy₀] at hev
-      exact hsymC.continuousAt hev
-    filter_upwards [Φ.open_target.mem_nhds hy₀, hqC.eventually hkω, hsymC.eventually hkω, h₄, h₅]
-      with y c₁ c₂ c₃ c₄ c₅ using ⟨c₁, c₂, c₃, c₄, c₅⟩
-  rw [Filter.eventually_iff_exists_mem] at hgood
-  obtain ⟨V₀, hV₀, hV₀P⟩ := hgood
+  obtain ⟨V₀, hV₀, hV₀P⟩ := Filter.eventually_iff_exists_mem.1
+    (eventually_mem_target_contDiffAt_normalForm pkg hT hk hf)
   obtain ⟨V, hVV₀, hVopen, hy₀V⟩ := mem_nhds_iff.1 hV₀
   have hVP := fun y (hy : y ∈ V) ↦ hV₀P y (hVV₀ hy)
   set N : Set E := Φ.source ∩ Φ ⁻¹' V
   have hNopen : IsOpen N := Φ.isOpen_inter_preimage hVopen
   have haN : a ∈ N := ⟨ha, by rw [Set.mem_preimage, hΦa]; exact hy₀V⟩
-  have hNV : ∀ x ∈ N, Φ x ∈ V := fun x hx ↦ hx.2
   have hNsymm : ∀ x ∈ N, Φ.symm (Φ x) = x := fun x hx ↦ Φ.left_inv hx.1
   have hfN : ∀ x ∈ N, ContDiffAt ℝ (k : ℕ∞ω) f x := by
     intro x hx
-    have := (hVP (Φ x) (hNV x hx)).2.2.2.2
+    have := (hVP (Φ x) hx.2).2.2.2.2
     rwa [hNsymm x hx] at this
-  -- The slice derivative is the restriction of the derivative of the obstruction.
-  have hsliceD : ∀ y ∈ V,
-      fderiv ℝ (pkg.obstructionSlice hT y.1) y.2 = (fderiv ℝ q y).comp ι := by
-    intro y hy
-    rw [hqdef, hιdef]
-    exact (pkg.hasFDerivAt_obstructionSlice hT
-      ((hVP y hy).2.1.differentiableAt hk0).hasFDerivAt).fderiv
   -- Regularity of `f` on `N` is regularity of the finite-dimensional obstruction slice.
   have hcrit : ∀ x ∈ N, (Surjective (fderiv ℝ f x) ↔
       Surjective (fderiv ℝ (pkg.obstructionSlice hT (Φ x).1) (Φ x).2)) := by
     intro x hx
-    obtain ⟨c₁, c₂, c₃, c₄, c₅⟩ := hVP (Φ x) (hNV x hx)
+    obtain ⟨c₁, c₂, c₃, c₄, c₅⟩ := hVP (Φ x) hx.2
     have hiff := surjective_fderiv_iff_slice pkg hT c₁ (c₂.differentiableAt hk0) c₄
       (c₃.differentiableAt hk0) (c₅.differentiableAt hk0)
     rwa [hNsymm x hx] at hiff
+  have hVq : ∀ y ∈ V, ContDiffAt ℝ (k : ℕ∞ω) q y := fun y hy ↦ (hVP y hy).2.1
   -- The image of the critical set of `N` has empty interior, fibrewise by Morse--Sard.
-  set Λ := Submodule.prodEquivOfIsTopCompl pkg.decCodom.X₁ pkg.decCodom.X₀
-    pkg.decCodom.isTopCompl with hΛdef
-  set A : Set (pkg.decCodom.X₁ × pkg.decCodom.X₀) :=
-    {p | p.2 ∈ pkg.obstructionSlice hT p.1 ''
-      ({z | (p.1, z) ∈ V} ∩
-        {z | ¬ Surjective (fderiv ℝ (pkg.obstructionSlice hT p.1) z)})} with hAdef
-  have hAint : interior A = ∅ := by
-    refine interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty fun p₁ ↦ ?_
-    -- The fibre of `A` over `p₁` is the image of the critical set of the slice at `p₁`.
-    have hfiber : Prod.mk p₁ ⁻¹' A = pkg.obstructionSlice hT p₁ ''
-        ({z | (p₁, z) ∈ V} ∩
-          {z | ¬ Surjective (fderiv ℝ (pkg.obstructionSlice hT p₁) z)}) := by
-      rw [hAdef]
-      simp only [preimage_ofPred_eq, ofPred_mem_eq]
-    rw [hfiber]
-    have hUC : ∀ z ∈ {z : pkg.decDom.X₀ | (p₁, z) ∈ V},
-        ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionSlice hT p₁) z := by
-      intro z hz
-      rw [funext (pkg.obstructionSlice_apply hT p₁), ← hqdef]
-      exact ((hVP _ hz).2.1).comp z (contDiffAt_const.prodMk contDiffAt_id)
-    exact hslice _ _ hker hcoker _ _ hUC
-  have himg : f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆ Λ '' A := by
-    rintro _ ⟨x, ⟨hxN, hxc⟩, rfl⟩
-    obtain ⟨c₁, -, -, -, -⟩ := hVP (Φ x) (hNV x hxN)
-    refine ⟨((Φ x).1, q (Φ x)), ⟨(Φ x).2, ⟨hNV x hxN, ?_⟩, ?_⟩, ?_⟩
-    · exact fun hs ↦ hxc ((hcrit x hxN).2 hs)
-    · rw [hqdef]
-      exact pkg.obstructionSlice_apply hT (Φ x).1 (Φ x).2
-    · rw [hΛdef, Submodule.prodEquivOfIsTopCompl_apply]
-      conv_rhs => rw [← hNsymm x hxN]
-      exact (pkg.apply_normalFormOpenPartialHomeomorph_symm hT c₁).symm
-  have hNint : interior (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = ∅ := by
-    have h1 : interior (Λ '' A) = ∅ := by
-      have h2 := Λ.toHomeomorph.image_interior A
-      simp only [ContinuousLinearEquiv.coe_toHomeomorph] at h2
-      rw [← h2, hAint, Set.image_empty]
-    exact Set.eq_empty_of_subset_empty (h1 ▸ interior_mono himg)
+  have hNint := interior_image_inter_not_surjective_eq_empty pkg hT hslice
+    (fun y hy ↦ (hVP y hy).1) hVq hcrit
   -- The critical locus is relatively closed in `N`, again read off the finite-dimensional slice.
-  have hWopen : IsOpen {y | y ∈ V ∧ Surjective ((fderiv ℝ q y).comp ι)} := by
-    rw [isOpen_iff_mem_nhds]
-    rintro y ⟨hyV, hys⟩
-    have hcont : ContinuousAt (fderiv ℝ q) y := ((hVP y hyV).2.1).continuousAt_fderiv hk0
-    have hmap : ContinuousAt (fun y' ↦ (fderiv ℝ q y').comp ι) y :=
-      hcont.clm_comp continuousAt_const
-    filter_upwards [hVopen.mem_nhds hyV,
-      hmap (IsOpen.mem_nhds isOpen_setOf_surjective hys)] with y' d₁ d₂
-    exact ⟨d₁, d₂⟩
-  have hregopen : IsOpen {x | x ∈ N ∧ Surjective (fderiv ℝ f x)} := by
-    have heq : {x | x ∈ N ∧ Surjective (fderiv ℝ f x)} =
-        N ∩ (Φ.source ∩ Φ ⁻¹' {y | y ∈ V ∧ Surjective ((fderiv ℝ q y).comp ι)}) := by
-      ext x
-      constructor
-      · rintro ⟨hxN, hxs⟩
-        have h1 : Surjective ((fderiv ℝ q (Φ x)).comp ι) := by
-          rw [← hsliceD (Φ x) (hNV x hxN)]
-          exact (hcrit x hxN).1 hxs
-        exact ⟨hxN, hxN.1, hNV x hxN, h1⟩
-      · rintro ⟨hxN, -, -, hs⟩
-        have h2 : Surjective (fderiv ℝ (pkg.obstructionSlice hT (Φ x).1) (Φ x).2) := by
-          rw [hsliceD (Φ x) (hNV x hxN)]
-          exact hs
-        exact ⟨hxN, (hcrit x hxN).2 h2⟩
-    rw [heq]
-    exact hNopen.inter (Φ.isOpen_inter_preimage hWopen)
-  -- Smale's local properness, on a closed ball inside `N`.
-  obtain ⟨N₂, hN₂, hprop⟩ := hT.exists_mem_nhds_forall_isCompact_inter_preimage
-    hFred.isClosed_range hFred.finite_ker hFred.closedComplemented_ker
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
-    (Filter.inter_mem (Filter.inter_mem (hNopen.mem_nhds haN) hN₂) hU)
-  set N' : Set E := Metric.closedBall a (r / 2)
-  have hN'sub : N' ⊆ N ∩ N₂ ∩ U := (Metric.closedBall_subset_ball (by linarith)).trans hball
-  have hN'ball : N' ⊆ N ∩ N₂ := fun z hz ↦ (hN'sub hz).1
-  have hN'U : N' ⊆ U := fun z hz ↦ (hN'sub hz).2
-  have hN'nhds : N' ∈ 𝓝 a := Metric.closedBall_mem_nhds a (by linarith)
-  have hcritclosed : IsClosed (N' ∩ {x | ¬ Surjective (fderiv ℝ f x)}) := by
-    have heq : N' ∩ {x | ¬ Surjective (fderiv ℝ f x)} =
-        N' ∩ {x | x ∈ N ∧ Surjective (fderiv ℝ f x)}ᶜ := by
-      ext x
-      refine ⟨fun hx ↦ ⟨hx.1, fun hc ↦ hx.2 hc.2⟩, fun hx ↦ ⟨hx.1, fun hc ↦ hx.2 ⟨?_, hc⟩⟩⟩
-      exact (hN'ball hx.1).1
-    rw [heq]
-    exact Metric.isClosed_closedBall.inter hregopen.isClosed_compl
-  -- Restricted to that closed critical locus, `f` has compact preimages of compact sets, so it is
-  -- a proper map and its image is closed.
-  have hclosedimg : IsClosed (f '' (N' ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-    set S : Set E := N' ∩ {x | ¬ Surjective (fderiv ℝ f x)}
-    have hcontOn : ContinuousOn f S := fun x hx ↦
-      (hfN x (hN'ball hx.1).1).continuousAt.continuousWithinAt
-    have hpre : ∀ K : Set F, IsCompact K → IsCompact (S.domRestrict f ⁻¹' K) := by
-      intro K hK
-      rw [Subtype.isCompact_iff]
-      have himg : ((↑) : S → E) '' (S.domRestrict f ⁻¹' K) = S ∩ (N₂ ∩ f ⁻¹' K) := by
-        ext z
-        constructor
-        · rintro ⟨⟨z, hz⟩, hzK, rfl⟩
-          exact ⟨hz, (hN'ball hz.1).2, hzK⟩
-        · rintro ⟨hz, -, hzK⟩
-          exact ⟨⟨z, hz⟩, hzK, rfl⟩
-      rw [himg]
-      exact (hprop K hK).inter_left hcritclosed
-    have himgclosed := (isProperMap_iff_isCompact_preimage.2
-      ⟨hcontOn.domRestrict, fun K hK ↦ hpre K hK⟩).isClosedMap _ isClosed_univ
-    rwa [Set.image_univ, Set.range_domRestrict] at himgclosed
-  refine ⟨N', hN'nhds, hN'U, hclosedimg, ?_⟩
-  rw [hclosedimg.isNowhereDense_iff]
-  refine Set.eq_empty_of_subset_empty ?_
-  rw [← hNint]
-  exact interior_mono (Set.image_mono
-    (Set.inter_subset_inter (fun z hz ↦ (hN'ball hz).1) (subset_refl _)))
+  have hregopen := isOpen_inter_setOf_surjective_fderiv pkg hT hk hVopen hVq hcrit
+  exact exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen hT hFred hNopen haN hU
+    (fun x hx ↦ (hfN x hx).continuousAt) hregopen hNint
 
 /-- **Sard--Smale, locally.** Near a point where a sufficiently smooth map has Fredholm
 derivative there is a neighbourhood on which the critical values form a closed nowhere dense set.

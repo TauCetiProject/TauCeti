@@ -102,10 +102,10 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@17896050f9b622ce129a16e1abd59c0e8cfe0d6e
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 17896050f9b622ce129a16e1abd59c0e8cfe0d6e
           project-directory: fresh
 
       - name: Resolve the commit under test
@@ -242,10 +242,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@17896050f9b622ce129a16e1abd59c0e8cfe0d6e
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 17896050f9b622ce129a16e1abd59c0e8cfe0d6e
           project-directory: fresh
 
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances
