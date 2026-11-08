@@ -155,6 +155,13 @@ noncomputable def functionFieldMap (f : X ⟶ Y) [IsDominant f] :
   Y.presheaf.stalkSpecializes (specializes_of_eq f.genericPoint_eq_of_isDominant) ≫
     f.stalkMap (genericPoint X)
 
+/-- The pullback of rational functions along `f` is the map of stalks of `f` at the generic point of
+`X`, preceded by the identification of the stalk of `Y` at `f` of that point with `K(Y)`. -/
+theorem functionFieldMap_def (f : X ⟶ Y) [IsDominant f] :
+    f.functionFieldMap = Y.presheaf.stalkSpecializes
+      (specializes_of_eq f.genericPoint_eq_of_isDominant) ≫ f.stalkMap (genericPoint X) := by
+  rw [functionFieldMap]
+
 /-- **The pullback of rational functions describes the image of the generic point**: for a
 dominant morphism `f : X ⟶ Y` of irreducible schemes, the canonical morphism `Spec K(X) ⟶ X`
 followed by `f` is `Spec f^*` followed by the canonical morphism `Spec K(Y) ⟶ Y`. -/

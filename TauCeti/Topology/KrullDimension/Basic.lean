@@ -42,6 +42,8 @@ closed, since a proper specialization of such a point would have codimension at 
   the supremum of the codimensions of the points for the specialization preorder.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober T₀ space, the height
   of a point for the specialization preorder is the Krull dimension of its closure.
+* `TauCeti.topologicalKrullDim_eq_height_genericPoint`: the Krull dimension of an irreducible
+  quasi-sober T₀ space is the height of its generic point.
 * `TauCeti.topologicalKrullDim_closure_singleton_le_of_not_isMax`: on a quasi-sober T₀ space all
   of whose points have codimension at most `d + 1`, the closure of a point that is not the generic
   point of an irreducible component has dimension at most `d`.
@@ -140,6 +142,16 @@ theorem height_eq_topologicalKrullDim_closure_singleton {α : Type*} [Topologica
       fun {a b} ↦ IsInducing.subtypeVal.specializes_iff (x := b) (y := a)⟩
   rw [height_eq_krullDim_Iic, topologicalKrullDim,
     krullDim_eq_of_orderIso (RelIso.trans irreducibleSetEquivPoints e)]
+
+attribute [local instance] specializationPreorder in
+/-- On an irreducible quasi-sober T₀ topological space, the Krull dimension is the height of the
+generic point for the specialization preorder: the closure of the generic point is the whole
+space. -/
+theorem topologicalKrullDim_eq_height_genericPoint (α : Type*) [TopologicalSpace α]
+    [QuasiSober α] [T0Space α] [IrreducibleSpace α] :
+    topologicalKrullDim α = height (genericPoint α) := by
+  rw [height_eq_topologicalKrullDim_closure_singleton, isGenericPoint_def.1 (genericPoint_spec α),
+    (Homeomorph.Set.univ α).isHomeomorph.topologicalKrullDim_eq]
 
 attribute [local instance] specializationPreorder in
 /-- On a quasi-sober T₀ topological space all of whose points have codimension at most `d + 1`
