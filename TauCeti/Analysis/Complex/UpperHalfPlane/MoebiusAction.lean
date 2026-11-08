@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+import TauCeti.Algebra.Field.LinearFractional
 
 /-!
 # The Möbius-action conjugation at a positive determinant
@@ -70,7 +71,7 @@ public section
 
 open UpperHalfPlane
 
-open scoped MatrixGroups Pointwise
+open scoped MatrixGroups Pointwise ComplexConjugate
 
 namespace UpperHalfPlane
 
@@ -161,6 +162,29 @@ theorem num_sub_smul_mul_denom {g : GL (Fin 2) ℝ} (hg : 0 < (g : Matrix (Fin 2
   field_simp [denom_ne_zero g τ]
   simp only [num, denom, Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
   ring
+
+/-- **The displacement between two images under a matrix of positive determinant**: the
+displacement of `g • τ` from `g • z` is that of `τ` from `z` scaled by
+`det g / (denom g τ * denom g z)`. -/
+theorem coe_smul_sub_coe_smul {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) (z τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) - (g • z : ℍ) = g.det.val * ((τ : ℂ) - z) / (denom g τ * denom g z) := by
+  rw [coe_smul_of_det_pos hdet τ, div_sub' (denom_ne_zero g τ), mul_comm (denom g τ),
+    num_sub_smul_mul_denom (by rwa [← Matrix.GeneralLinearGroup.val_det_apply]) z τ, div_div,
+    mul_comm (denom g z), Matrix.GeneralLinearGroup.val_det_apply]
+
+/-- **The displacement from `conj (g • z)` under a matrix of positive determinant**: the
+displacement of `g • τ` from `conj (g • z)` is that of `τ` from `conj z` scaled by
+`det g / (denom g τ * conj (denom g z))`. Since `g` has real entries, its Möbius transformation
+carries `conj z` to `conj (g • z)`, and this is the difference formula at `conj z`. -/
+theorem coe_smul_sub_conj_smul {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) (z τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) - conj ((g • z : ℍ) : ℂ) =
+      g.det.val * ((τ : ℂ) - conj (z : ℂ)) / (denom g τ * conj (denom g z)) := by
+  have hj : conj (denom g z) ≠ 0 := (map_ne_zero _).mpr (denom_ne_zero g z)
+  have hjτ := denom_ne_zero g τ
+  rw [coe_smul_of_det_pos hdet, coe_smul_of_det_pos hdet, map_div₀]
+  simp only [num, denom, map_add, map_mul, Complex.conj_ofReal] at hj hjτ ⊢
+  rw [TauCeti.moebius_sub_moebius hj hjτ]
+  simp [Matrix.det_fin_two]
 
 /-- **An upper triangular element of `SL(2, ℝ)` acts on `ℍ` by a real affine map**: if
 `g = !![a, b; 0, a⁻¹]`, then `g • τ = a ^ 2 * τ + a * b`. This is the explicit form of Mathlib's
