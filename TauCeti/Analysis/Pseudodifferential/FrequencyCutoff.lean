@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Module.RCLike.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Frequency cutoffs
@@ -23,12 +26,16 @@ the symbol calculus needs:
 * `FrequencyCutoff.ofContDiffBump`: `1 - f` is a frequency cutoff for a smooth bump `f` with
   `1 ≤ f.rIn` and `f.rOut ≤ 2`, so frequency cutoffs exist whenever `E` has smooth bump functions
   (for instance in every inner product space and every finite-dimensional space);
-* the dilated cutoff `ξ ↦ χ(ξ / t)` vanishes for `‖ξ‖ ≤ t` and equals `1` for `‖ξ‖ ≥ 2 |t|`;
+* the dilated cutoff `ξ ↦ χ(ξ / t)` vanishes for `‖ξ‖ ≤ t` and, for `t ≠ 0`, equals `1` for
+  `‖ξ‖ ≥ 2 |t|`;
 * every iterated derivative of a cutoff vanishes on the closed unit ball, and every iterated
   derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
   annulus `1 ≤ ‖ξ‖ ≤ 2`;
 * on a proper space every iterated derivative of a cutoff is bounded, and the difference of two
-  cutoffs, as well as `1 - χ`, has compact support.
+  cutoffs, as well as `1 - χ`, has compact support;
+* on a proper space the dilated cutoffs `ξ ↦ χ(ξ / t)`, `t ≥ 1`, satisfy the symbol estimates of
+  order `0` uniformly in `t`
+  (`FrequencyCutoff.exists_norm_iteratedFDeriv_apply_inv_smul_le`).
 
 ## References
 
@@ -186,6 +193,48 @@ theorem exists_bound_iteratedFDeriv [ProperSpace E] (k : ℕ) :
   refine (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
     (HasCompactSupport.intro (isCompact_closedBall 0 2) fun ξ hξ ↦ ?_)
   exact χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by simpa using hξ : 2 < ‖ξ‖).le
+
+/-- The dilated cutoffs `ξ ↦ χ(ξ / t)`, `t ≥ 1`, on a proper space satisfy the symbol estimates
+of order `0` uniformly in `t`: the `k`-th derivative is of size `t⁻ᵏ` and supported in
+`t ≤ ‖ξ‖ ≤ 2 t` when `k > 0`. -/
+theorem exists_norm_iteratedFDeriv_apply_inv_smul_le [ProperSpace E] (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ ξ : E,
+      ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+  obtain ⟨B, hB⟩ := χ.exists_bound_iteratedFDeriv k
+  refine ⟨max B 1 * 5 ^ ((k : ℝ) / 2), by positivity, fun t ht ξ => ?_⟩
+  have ht0 : 0 < t := zero_lt_one.trans_le ht
+  have hnorm : ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ =
+      t⁻¹ ^ k * ‖iteratedFDeriv ℝ k χ (t⁻¹ • ξ)‖ := by
+    rw [iteratedFDeriv_comp_const_smul t⁻¹ χ.contDiff, norm_smul, norm_pow,
+      Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
+  have hB' : ‖iteratedFDeriv ℝ k χ (t⁻¹ • ξ)‖ ≤ max B 1 := (hB _).trans (le_max_left _ _)
+  rcases eq_or_ne k 0 with rfl | hk
+  · rw [norm_iteratedFDeriv_zero]
+    simp only [CharP.cast_eq_zero, neg_zero, zero_div, Real.rpow_zero, mul_one]
+    exact (χ.norm_le_one _).trans (le_max_right _ _)
+  by_cases h2 : 2 ≤ ‖t⁻¹ • ξ‖
+  · rw [hnorm, χ.iteratedFDeriv_eq_zero_of_two_le_norm hk h2, norm_zero, mul_zero]
+    positivity
+  -- Otherwise `‖ξ‖ < 2 t`, so `1 + ‖ξ‖² ≤ 5 t²` and `t⁻ᵏ ≤ 5 ^ (k / 2) ⟨ξ⟩⁻ᵏ`.
+  have hξ : ‖ξ‖ < 2 * t := by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht0.le), not_le, inv_mul_lt_iff₀ ht0] at h2
+    linarith
+  have h5 : 1 + ‖ξ‖ ^ 2 ≤ 5 * t ^ 2 := by nlinarith [norm_nonneg ξ]
+  have hpow : (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ 5 ^ ((k : ℝ) / 2) * t ^ k := by
+    calc (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ (5 * t ^ 2) ^ ((k : ℝ) / 2) :=
+          Real.rpow_le_rpow (by positivity) h5 (by positivity)
+      _ = 5 ^ ((k : ℝ) / 2) * t ^ k := by
+          rw [Real.mul_rpow (by norm_num) (by positivity), ← Real.rpow_eq_sq_rpow_div_two ht0.le,
+            Real.rpow_natCast]
+  have hinv : t⁻¹ ^ k ≤ 5 ^ ((k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+    rw [neg_div, Real.rpow_neg (by positivity), inv_pow, ← div_eq_mul_inv,
+      le_div_iff₀ (by positivity), mul_comm, mul_inv_le_iff₀ (by positivity)]
+    exact hpow
+  calc ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ ≤ t⁻¹ ^ k * max B 1 :=
+        hnorm.trans_le (mul_le_mul_of_nonneg_left hB' (by positivity))
+    _ ≤ 5 ^ ((k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) * max B 1 :=
+        mul_le_mul_of_nonneg_right hinv (by positivity)
+    _ = _ := by ring
 
 /-- If `f` is a smooth bump function centred at `0` with `1 ≤ f.rIn` and `f.rOut ≤ 2`, then
 `1 - f` is a frequency cutoff. -/

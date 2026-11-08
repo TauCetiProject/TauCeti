@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Data.Set.Finite.List
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Asymptotic summation of symbols
@@ -128,60 +127,6 @@ theorem isSmoothing_cutoff_sub {t : ℝ} (ht : t ≠ 0) : (cutoff χ t a - a).Is
         sub_self],
       coefficient_ofBoundedFrequencySupport _ _ _ _⟩
 
-/-- The dilated cutoffs `ξ ↦ χ(ξ / t)`, `t ≥ 1`, satisfy the symbol estimates of order `0`
-uniformly in `t`: the `k`-th derivative is of size `t⁻ᵏ` and supported in `t ≤ ‖ξ‖ ≤ 2 t` when
-`k > 0`. -/
-private theorem exists_norm_iteratedFDeriv_cutoff_le (k : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ ξ : CoordinateSpace n,
-      ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((0 - (k : ℝ)) / 2) := by
-  obtain ⟨B, hB⟩ := χ.exists_bound_iteratedFDeriv k
-  refine ⟨max B 1 * 5 ^ ((k : ℝ) / 2), by positivity, fun t ht ξ => ?_⟩
-  have ht0 : 0 < t := zero_lt_one.trans_le ht
-  let L : CoordinateSpace n →L[ℝ] CoordinateSpace n := t⁻¹ • ContinuousLinearMap.id ℝ _
-  have hL : ‖L‖ ≤ t⁻¹ := (norm_smul_le t⁻¹ (ContinuousLinearMap.id ℝ (CoordinateSpace n))).trans (by
-    rw [Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
-    exact mul_le_of_le_one_right (inv_nonneg.2 ht0.le) ContinuousLinearMap.norm_id_le)
-  -- The chain rule for the dilation `L = t⁻¹ • id`.
-  have hnorm : ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ ≤
-      ‖iteratedFDeriv ℝ k χ (L ξ)‖ * t⁻¹ ^ k := by
-    have hfun : (fun η => χ (t⁻¹ • η)) = χ ∘ L := by
-      funext η
-      simp [L]
-    rw [hfun, L.iteratedFDeriv_comp_right (χ.contDiff (n := k)) ξ le_rfl]
-    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-    exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hL k) (norm_nonneg _)
-  have hLξ : ‖L ξ‖ = t⁻¹ * ‖ξ‖ := by
-    simp [L, norm_smul, abs_of_pos ht0]
-  have hB' : ‖iteratedFDeriv ℝ k χ (L ξ)‖ ≤ max B 1 := (hB _).trans (le_max_left _ _)
-  rcases eq_or_ne k 0 with rfl | hk
-  · rw [norm_iteratedFDeriv_zero]
-    simp only [CharP.cast_eq_zero, sub_zero, zero_div, Real.rpow_zero, mul_one]
-    exact (χ.norm_le_one _).trans (le_max_right _ _)
-  by_cases h2 : 2 ≤ ‖L ξ‖
-  · rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hk h2, norm_zero, zero_mul] at hnorm
-    exact hnorm.trans (by positivity)
-  -- Otherwise `‖ξ‖ < 2 t`, so `1 + ‖ξ‖² ≤ 5 t²` and `t⁻ᵏ ≤ 5 ^ (k / 2) ⟨ξ⟩⁻ᵏ`.
-  have hξ : ‖ξ‖ < 2 * t := by
-    rw [hLξ, not_le, inv_mul_lt_iff₀ ht0] at h2
-    linarith
-  have h5 : 1 + ‖ξ‖ ^ 2 ≤ 5 * t ^ 2 := by nlinarith [norm_nonneg ξ]
-  have hpow : (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ 5 ^ ((k : ℝ) / 2) * t ^ k := by
-    calc (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ (5 * t ^ 2) ^ ((k : ℝ) / 2) :=
-          Real.rpow_le_rpow (by positivity) h5 (by positivity)
-      _ = 5 ^ ((k : ℝ) / 2) * t ^ k := by
-          rw [Real.mul_rpow (by norm_num) (by positivity), ← Real.rpow_eq_sq_rpow_div_two ht0.le,
-            Real.rpow_natCast]
-  have hinv : t⁻¹ ^ k ≤ 5 ^ ((k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((0 - (k : ℝ)) / 2) := by
-    rw [zero_sub, neg_div, Real.rpow_neg (by positivity), inv_pow, ← div_eq_mul_inv,
-      le_div_iff₀ (by positivity), mul_comm, mul_inv_le_iff₀ (by positivity)]
-    exact hpow
-  calc ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ ≤ max B 1 * t⁻¹ ^ k :=
-        hnorm.trans (mul_le_mul_of_nonneg_right hB' (by positivity))
-    _ ≤ max B 1 * (5 ^ ((k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((0 - (k : ℝ)) / 2)) :=
-        mul_le_mul_of_nonneg_left hinv (by positivity)
-    _ = _ := by ring
-
 /-- The mixed derivatives of the dilated cutoff `(x, ξ) ↦ χ(ξ / t) • id`, `t ≥ 1`, satisfy the
 symbol estimates of order `0` uniformly in `t`. -/
 private theorem exists_norm_mixedDeriv_cutoff_smul_id_le :
@@ -189,7 +134,7 @@ private theorem exists_norm_mixedDeriv_cutoff_smul_id_le :
       ‖mixedDeriv s u (fun p : CoordinateSpace n × CoordinateSpace n =>
           χ (t⁻¹ • p.2) • ContinuousLinearMap.id ℂ W) x ξ‖ ≤
         E u * (1 + ‖ξ‖ ^ 2) ^ ((0 - (u.length : ℝ)) / 2) := by
-  choose C hC0 hC using fun k => exists_norm_iteratedFDeriv_cutoff_le χ k
+  choose C hC0 hC using fun k => χ.exists_norm_iteratedFDeriv_apply_inv_smul_le k
   refine ⟨fun u => C u.length, fun u => hC0 _, fun t ht s u x ξ => ?_⟩
   have hg : ContDiff ℝ ∞ fun η : CoordinateSpace n => χ (t⁻¹ • η) :=
     χ.contDiff.comp (contDiff_const_smul t⁻¹)
@@ -210,7 +155,7 @@ private theorem exists_norm_mixedDeriv_cutoff_smul_id_le :
               ContinuousLinearMap.norm_id_le)
       _ ≤ ‖iteratedFDeriv ℝ u.length (fun η => χ (t⁻¹ • η)) ξ‖ :=
           norm_coordinateDeriv_le u (hg.of_le (by exact_mod_cast le_top)) ξ
-      _ ≤ _ := hC _ t ht ξ
+      _ ≤ _ := by rw [zero_sub]; exact hC _ t ht ξ
   · rw [coordinateDeriv_const _ hs, Pi.zero_apply, norm_zero]
     exact mul_nonneg (hC0 _) (by positivity)
 
