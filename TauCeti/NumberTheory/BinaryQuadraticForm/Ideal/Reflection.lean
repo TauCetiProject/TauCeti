@@ -244,13 +244,13 @@ end PosDef
 
 section Narrow
 
-variable (hD : D % 4 = 0 ∨ D % 4 = 1) (hpos : 0 < D)
+variable (hD : D % 4 = 0 ∨ D % 4 = 1)
 
 /-- **The opposite form represents the inverse narrow class.** -/
 theorem properClassToNarrowPic_mk_eq_inv_of_eq_reflected {f g : primitiveForms D}
     (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
-    properClassToNarrowPic D hD hpos (Quotient.mk'' g) =
-      (properClassToNarrowPic D hD hpos (Quotient.mk'' f))⁻¹ := by
+    properClassToNarrowPic D hD (Quotient.mk'' g) =
+      (properClassToNarrowPic D hD (Quotient.mk'' f))⁻¹ := by
   obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
   obtain ⟨g, hgm⟩ := g
   simp only at hg

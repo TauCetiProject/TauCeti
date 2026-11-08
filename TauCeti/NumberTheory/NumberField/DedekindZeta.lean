@@ -154,10 +154,8 @@ single pole, simple with residue `ρ`, at `s = 1`. -/
 theorem exists_differentiableOn_eq_dedekindZeta_sub : ∃ G : ℂ → ℂ,
     DifferentiableOn ℂ G {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} ∧
       ∀ s : ℂ, 1 < s.re → G s = dedekindZeta K s - dedekindZeta_residue K / (s - 1) := by
-  have hr : 0 ≤ 1 - 1 / (Module.finrank ℚ K : ℝ) :=
-    sub_nonneg.mpr (div_le_one_of_le₀ (Nat.one_le_cast.mpr Module.finrank_pos) (Nat.cast_nonneg _))
   obtain ⟨G, hG, hGζ⟩ := TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO _ _
-    hr (sub_le_self _ (by positivity)) (isBigO_sum_Icc_dedekindZetaCoeff_sub K)
+    (sub_le_self _ (by positivity)) (isBigO_sum_Icc_dedekindZetaCoeff_sub K)
     fun s hs ↦ (LSeriesSummable_dedekindZetaCoeff_iff K).mpr hs
   exact ⟨G, hG, fun s hs ↦ by rw [hGζ s hs, dedekindZeta_eq_LSeries_dedekindZetaCoeff]⟩
 

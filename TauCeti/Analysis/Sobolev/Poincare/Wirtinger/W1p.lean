@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
-import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
+import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
