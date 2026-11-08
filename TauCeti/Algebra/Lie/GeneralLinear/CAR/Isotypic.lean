@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.GeneralLinear.Isotypic
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.Casimir
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.WeightUniqueness
 import TauCeti.Algebra.Lie.GeneralLinear.Existence
-import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 
 /-!
@@ -57,87 +56,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 namespace IsGlHighestWeightVector
 
 variable {K : Type*} [Field K] [CharZero K] {N : ℕ}
-
-/-- The Casimir-type sum of the shifted coordinates `b i + 1/2` is the sum for the unshifted
-coordinates `b i` plus a constant independent of `b`. -/
-private theorem sum_shift_mul_eq (b : Fin N → ℕ) :
-    (∑ i : Fin N, ((b i : K) + (2 : K)⁻¹) *
-      ((b i : K) + (2 : K)⁻¹ + (N : K) - 1 - 2 * (i : K))) =
-      (∑ i : Fin N, (b i : K) * ((b i : K) + (N : K) - 2 * (i : K))) +
-        ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro i _
-  simp only [one_div]
-  ring
-
-/-- The coordinates of a CAR highest-weight vector, written as `a i + 1/2`, have prefix sums at
-most those of the reversed staircase. -/
-private theorem prefix_sum_le_rev {μ : Fin N → K}
-    {v : CliffordAlgebra (traceQuadraticForm K (Fin N))}
-    (hv : IsGlHighestWeightVector μ v) {a : Fin N → ℕ} (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹)
-    (k : ℕ) (hk : k < N) :
-    (∑ i : Fin k, (a (Fin.castLE hk.le i) : ℤ)) ≤
-      ∑ i : Fin k, ((Fin.rev (Fin.castLE hk.le i) : ℕ) : ℤ) := by
-  let s : Finset (Fin N) := Finset.univ.map (Fin.castLEEmb hk.le)
-  have hbound := sum_le_choose_two_add_card_mul_sub_of_lie_single_self_eq_smul
-    (K := K) (n := Fin N) (μ := μ) (a := a) (v := v) s hv.ne_zero
-    (fun i _ => hv.lie_single_self_eq_smul i) (fun i _ => hμ i)
-  have hnat : (∑ i : Fin k, a (Fin.castLE hk.le i)) ≤
-      ∑ i : Fin k, (Fin.rev (Fin.castLE hk.le i) : ℕ) := by
-    rw [Fin.sum_rev_castLE N k hk.le]
-    simpa [s] using hbound
-  exact_mod_cast hnat
-
-/-- The coordinates of a CAR highest-weight vector, written as `a i + 1/2`, sum to the sum of the
-reversed staircase. -/
-private theorem sum_eq_rev {μ : Fin N → K} {v : CliffordAlgebra (traceQuadraticForm K (Fin N))}
-    (hv : IsGlHighestWeightVector μ v) {a : Fin N → ℕ} (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) :
-    (∑ i : Fin N, (a i : ℤ)) = ∑ i : Fin N, ((Fin.rev i : ℕ) : ℤ) := by
-  have hsum' := sum_univ_eq_choose_two_of_lie_single_self_eq_smul
-    (K := K) (n := Fin N) (μ := μ) (a := a) (v := v) hv.ne_zero
-    hv.lie_single_self_eq_smul hμ
-  have hnat : (∑ i : Fin N, a i) = ∑ i : Fin N, (Fin.rev i : ℕ) := by
-    rw [hsum']
-    simpa using (Fin.sum_rev_castLE N N le_rfl).symm
-  exact_mod_cast hnat
-
-/-- The trace-form Casimir scalar of a CAR highest-weight vector, written in the coordinates
-`a i + 1/2`, agrees with that of the reversed staircase. -/
-private theorem casimir_sum_eq_rev {μ : Fin N → K}
-    {v : CliffordAlgebra (traceQuadraticForm K (Fin N))}
-    (hv : IsGlHighestWeightVector μ v) {a : Fin N → ℕ} (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) :
-    (∑ i : Fin N, (a i : ℤ) * ((a i : ℤ) + (N : ℤ) - 2 * (i : ℕ))) =
-      ∑ i : Fin N, ((Fin.rev i : ℕ) : ℤ) *
-        (((Fin.rev i : ℕ) : ℤ) + (N : ℤ) - 2 * (i : ℕ)) := by
-  have hfield :
-      (∑ i : Fin N, μ i * (μ i + (N : K) - 1 - 2 * (i : K))) =
-        ∑ i : Fin N, glHalfStaircase K N i *
-          (glHalfStaircase K N i + (N : K) - 1 - 2 * (i : K)) := by
-    have hcar := glCasimir_smul_of_isGlHighestWeightVector (K := K) hv
-    rw [representation_glCasimir_car_apply] at hcar
-    have hscalar := smul_left_injective K hv.ne_zero hcar
-    rw [glCasimir_eigenvalue_glHalfStaircase]
-    exact hscalar.symm
-  apply Int.cast_injective (α := K)
-  push_cast
-  have hleft : (∑ i : Fin N, μ i * (μ i + (N : K) - 1 - 2 * (i : K))) =
-      (∑ i : Fin N, (a i : K) * ((a i : K) + (N : K) - 2 * (i : K))) +
-        ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
-    rw [← sum_shift_mul_eq a]
-    exact Finset.sum_congr rfl fun i _ => by rw [hμ i]
-  have hrev (i : Fin N) : glHalfStaircase K N i = ((Fin.rev i : ℕ) : K) + (2 : K)⁻¹ := by
-    simpa only [one_div] using
-      (Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase (F := K) i).symm
-  have hright : (∑ i : Fin N, glHalfStaircase K N i *
-        (glHalfStaircase K N i + (N : K) - 1 - 2 * (i : K))) =
-      (∑ i : Fin N, ((Fin.rev i : ℕ) : K) *
-        (((Fin.rev i : ℕ) : K) + (N : K) - 2 * (i : K))) +
-        ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
-    rw [← sum_shift_mul_eq fun i => (Fin.rev i : ℕ)]
-    exact Finset.sum_congr rfl fun i _ => by rw [hrev i]
-  rw [hleft, hright] at hfield
-  exact add_right_cancel hfield
 
 /-- Every highest-weight vector in the left-regular CAR module has the half-shifted staircase
 weight `(N - 1/2, N - 3/2, ..., 1/2)`.

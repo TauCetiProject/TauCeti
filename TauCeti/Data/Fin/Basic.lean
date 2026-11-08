@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Fintype.Perm
 
 public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.CharZero.Defs
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Tuple.Basic
@@ -18,8 +20,10 @@ public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Order.SuccPred.IntervalSucc
 
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Group.Fin.Basic
 import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.Ring
 
 /-!
 # Basic results about finite ordinal types
@@ -201,6 +205,19 @@ theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
       intro x hx
       simp [Finset.mem_range.mp hx]
     _ = _ := Finset.sum_range_const_sub_succ N k hk
+
+/-- The Casimir-type sum of the shifted coordinates `b i + 1/2` is the sum for the unshifted
+coordinates `b i` plus a constant independent of `b`. -/
+theorem sum_shift_mul_eq {K : Type*} [Field K] [CharZero K] {N : ℕ} (b : Fin N → ℕ) :
+    (∑ i : Fin N, ((b i : K) + (2 : K)⁻¹) *
+      ((b i : K) + (2 : K)⁻¹ + (N : K) - 1 - 2 * (i : K))) =
+      (∑ i : Fin N, (b i : K) * ((b i : K) + (N : K) - 2 * (i : K))) +
+        ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro i _
+  simp only [one_div]
+  ring
 
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]

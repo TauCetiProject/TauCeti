@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.Fock
 
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.HighestWeight
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
@@ -258,6 +259,49 @@ theorem representation_glCasimir_car_apply (F : Type u) [Field F] [Invertible (2
       ((N : F) * (2 * (N : F) ^ 2 - 1) / 4) • c := by
   rw [representation_glCasimir_eq_carCasimirElement_mul, carCasimirElement_eq_scalar,
     Algebra.smul_def]
+
+namespace IsGlHighestWeightVector
+
+variable [CharZero K]
+
+/-- The trace-form Casimir scalar of a CAR highest-weight vector, written in the coordinates
+`a i + 1/2`, agrees with that of the reversed staircase. -/
+theorem casimir_sum_eq_rev {μ : Fin N → K}
+    {v : CliffordAlgebra (traceQuadraticForm K (Fin N))}
+    (hv : IsGlHighestWeightVector μ v) {a : Fin N → ℕ} (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) :
+    (∑ i : Fin N, (a i : ℤ) * ((a i : ℤ) + (N : ℤ) - 2 * (i : ℕ))) =
+      ∑ i : Fin N, ((Fin.rev i : ℕ) : ℤ) *
+        (((Fin.rev i : ℕ) : ℤ) + (N : ℤ) - 2 * (i : ℕ)) := by
+  have hfield :
+      (∑ i : Fin N, μ i * (μ i + (N : K) - 1 - 2 * (i : K))) =
+        ∑ i : Fin N, glHalfStaircase K N i *
+          (glHalfStaircase K N i + (N : K) - 1 - 2 * (i : K)) := by
+    have hcar := glCasimir_smul_of_isGlHighestWeightVector (K := K) hv
+    rw [representation_glCasimir_car_apply] at hcar
+    have hscalar := smul_left_injective K hv.ne_zero hcar
+    rw [glCasimir_eigenvalue_glHalfStaircase]
+    exact hscalar.symm
+  apply Int.cast_injective (α := K)
+  push_cast
+  have hleft : (∑ i : Fin N, μ i * (μ i + (N : K) - 1 - 2 * (i : K))) =
+      (∑ i : Fin N, (a i : K) * ((a i : K) + (N : K) - 2 * (i : K))) +
+        ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
+    rw [← Fin.sum_shift_mul_eq a]
+    exact Finset.sum_congr rfl fun i _ => by rw [hμ i]
+  have hrev (i : Fin N) : glHalfStaircase K N i = ((Fin.rev i : ℕ) : K) + (2 : K)⁻¹ := by
+    simpa only [one_div] using
+      (Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase (F := K) i).symm
+  have hright : (∑ i : Fin N, glHalfStaircase K N i *
+        (glHalfStaircase K N i + (N : K) - 1 - 2 * (i : K))) =
+      (∑ i : Fin N, ((Fin.rev i : ℕ) : K) *
+        (((Fin.rev i : ℕ) : K) + (N : K) - 2 * (i : K))) +
+        ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
+    rw [← Fin.sum_shift_mul_eq fun i => (Fin.rev i : ℕ)]
+    exact Finset.sum_congr rfl fun i _ => by rw [hrev i]
+  rw [hleft, hright] at hfield
+  exact add_right_cancel hfield
+
+end IsGlHighestWeightVector
 
 end
 
