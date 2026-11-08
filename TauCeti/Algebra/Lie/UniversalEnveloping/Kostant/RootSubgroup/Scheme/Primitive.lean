@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.Algebra.Module.Primitive
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Closed root subgroups detected by primitive strings
@@ -50,12 +51,16 @@ identity of the additive coordinate algebra is a point of `𝔾ₐ` over that al
 root-subgroup matrix there is the image of the generic matrix of `GL n` under the root-subgroup
 coordinate morphism. A matrix formula proved at every algebra-valued point is read on the
 coordinate morphism through this equation, which is the only place the universal point is
-handled. -/
+handled. The matrix on the right uses the canonical integral algebra structure on the symmetric
+algebra, rather than the one supplied by the bundled coordinate Hopf algebra. -/
 theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
     (GeneralLinear.genericMatrix ℤ n).map
         (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom =
+      let A : Type := AdditiveGroup.coordinateHopfAlgebra ℤ
+      letI : Algebra ℤ A := Ring.toIntAlgebra A
       (kostantRootSubgroupMatrix e h ρ M hM i hnil b
-        (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)))).val := by
+        (toConv (SymmetricAlgebra.lift
+          (LinearMap.toSpanSingleton ℤ A (SymmetricAlgebra.ι ℤ ℤ 1))))).val := by
   let f := kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b
   have hpoint : GeneralLinear.pointToGeneralLinear n
       (toConv ((toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))).ofConv.comp
@@ -70,9 +75,18 @@ theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
         (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))) := by
     simpa only [AlgHom.id_comp, WithConv.ofConv_toConv] using hpoint
   rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
-  simpa only [f] using congrArg
+  have hid : SymmetricAlgebra.lift
+      (LinearMap.toSpanSingleton ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)
+        (SymmetricAlgebra.ι ℤ ℤ 1)) = AlgHom.id ℤ _ := by
+    ext
+    simp
+  have hmatrix := congrArg
     (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
     hpoint'
+  -- This bridge compares the bundled algebra structure with the canonical integer algebra.
+  -- Both maps are identified explicitly by their value on the symmetric-algebra generator.
+  rw [← hid] at hmatrix
+  exact hmatrix
 
 local notation "op" => kostantRootOperator e h ρ M hM i
 
@@ -86,8 +100,10 @@ theorem map_genericMatrix_kostantRootSubgroupCoordinateMap_mulVec_repr_of_sq_eq_
       fun r => (b.repr m r : AdditiveGroup.coordinateHopfAlgebra ℤ) +
         SymmetricAlgebra.ι ℤ ℤ 1 * (b.repr (op m) r : AdditiveGroup.coordinateHopfAlgebra ℤ) := by
   classical
-  let A := AdditiveGroup.coordinateHopfAlgebra ℤ
-  let p := toConv (AlgHom.id ℤ A)
+  let A : Type := AdditiveGroup.coordinateHopfAlgebra ℤ
+  let : Algebra ℤ A := Ring.toIntAlgebra A
+  let p := toConv (SymmetricAlgebra.lift
+    (LinearMap.toSpanSingleton ℤ A (SymmetricAlgebra.ι ℤ ℤ 1)))
   have hsq' : (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ^ 2 • (m : V) = 0 := by
     have hm := congrArg Subtype.val hsq
     simpa only [coe_kostantRootOperator_apply, ZeroMemClass.coe_zero, pow_two,
@@ -104,17 +120,14 @@ theorem map_genericMatrix_kostantRootSubgroupCoordinateMap_mulVec_repr_of_sq_eq_
         Module.End.smul_def]
     simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one,
       mul_one, integralDividedPower_zero, one_apply_eq_self, hfirst,
-      AdditiveGroup.toAdd_gaPointsMulEquiv, p]
-    -- Evaluating the identity algebra homomorphism at the generator is definitionally itself.
-    rfl
+      AdditiveGroup.toAdd_gaPointsMulEquiv, p, SymmetricAlgebra.lift_ι_apply,
+      LinearMap.toSpanSingleton_apply, one_smul]
   rw [map_genericMatrix_eq_kostantRootSubgroupMatrix]
-  -- The universal-point formula uses the category object's integral algebra structure,
-  -- whereas matrix coordinates use the canonical one on the same symmetric algebra.
-  erw [coe_kostantRootSubgroupMatrix e h ρ M hM i hnil b p]
+  rw [coe_kostantRootSubgroupMatrix e h ρ M hM i hnil b p]
   have hrepr : (fun s => (b.repr m s : A)) = ⇑((b.baseChange A).repr (1 ⊗ₜ[ℤ] m)) := by
     ext s
     simp only [Module.Basis.baseChange_repr_tmul, zsmul_eq_mul, mul_one]
-  erw [hrepr, LinearMap.toMatrix_mulVec_repr, haction]
+  rw [hrepr, LinearMap.toMatrix_mulVec_repr, haction]
   ext r
   simp only [map_add, Finsupp.add_apply, Module.Basis.baseChange_repr_tmul,
     zsmul_eq_mul, mul_comm, one_mul]
@@ -133,12 +146,6 @@ theorem kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive (m : M)
       SymmetricAlgebra.ι ℤ ℤ 1 := by
     have hvec := map_genericMatrix_kostantRootSubgroupCoordinateMap_mulVec_repr_of_sq_eq_zero
       e h ρ M hM i hnil b m hsq
-    have heval (v : M) : ∑ r, (ℓ (b r) : AdditiveGroup.coordinateHopfAlgebra ℤ) *
-        b.repr v r = (ℓ v : AdditiveGroup.coordinateHopfAlgebra ℤ) := by
-      have hv := congrArg (fun v : M => (ℓ v : AdditiveGroup.coordinateHopfAlgebra ℤ))
-        (b.sum_repr v)
-      simpa only [map_sum, map_zsmul, zsmul_eq_mul, Int.cast_id, Int.cast_sum,
-        Int.cast_mul, mul_comm] using hv
     simp only [z, map_sum, map_zsmul]
     have hrow (r : Fin n) : ∑ s,
         (b.repr m s : AdditiveGroup.coordinateHopfAlgebra ℤ) *
@@ -149,6 +156,11 @@ theorem kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive (m : M)
         using congrFun hvec r
     simp only [zsmul_eq_mul, hrow, mul_add]
     rw [Finset.sum_add_distrib]
+    have heval (v : M) : ∑ r, (ℓ (b r) : AdditiveGroup.coordinateHopfAlgebra ℤ) *
+        b.repr v r = (ℓ v : AdditiveGroup.coordinateHopfAlgebra ℤ) := by
+      simpa [zsmul_eq_mul, mul_comm] using congrArg
+        (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra ℤ)
+        (b.apply_eq_sum_repr_zsmul ℓ v).symm
     rw [heval]
     congr 1
     calc
