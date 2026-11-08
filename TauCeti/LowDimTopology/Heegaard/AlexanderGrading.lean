@@ -292,8 +292,11 @@ theorem relativeAlexanderGrading_eq_zero_of_mem_hatDomains
 
 /-- **The hat differential preserves the Alexander grading.** When the periodic Alexander values
 vanish, a nonzero coefficient of the hat differential of a diagram with basepoints `w` and `z`
-joins generators of the same Alexander grading. For a doubly pointed diagram of a knot, this is
-the hat knot Floer differential. -/
+joins generators of the same Alexander grading. Here the hat differential is the count of
+domains avoiding the basepoints of `TauCeti.LowDimTopology.Heegaard.HatDifferential`. Only when
+the incidence data are realized by a genuine nice doubly pointed diagram of a knot whose regions
+have Euler characteristics `χ` is this count the hat knot Floer differential; that realization is
+not formalized here. -/
 theorem relativeAlexanderGrading_eq_zero_of_hatCoefficient_ne_zero
     (hA : H.periodicAlexanderValues w z = ⊥) (h : H.hatCoefficient χ x y ≠ 0) :
     H.relativeAlexanderGrading w z x y = 0 :=

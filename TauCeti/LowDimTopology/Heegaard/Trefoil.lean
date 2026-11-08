@@ -118,11 +118,11 @@ def trefoil (b : B → Fin 3) : HeegaardRegionSystem 1 (Fin 3) (Fin 3) B where
   alphaNext := finRotate 3
   alphaNext_isCycleOn i :=
     Set.eq_univ_of_forall (s := {_p : Fin 3 | (0 : Fin 1) = i}) (fun _ => Subsingleton.elim _ _) ▸
-      isCycleOn_finRotate 3
+      isCycleOn_finRotate
   betaNext := finRotate 3
   betaNext_isCycleOn i :=
     Set.eq_univ_of_forall (s := {_p : Fin 3 | (0 : Fin 1) = i}) (fun _ => Subsingleton.elim _ _) ▸
-      isCycleOn_finRotate 3
+      isCycleOn_finRotate
   alphaLeft j := if j = 1 then 1 else 0
   alphaRight j := if j = 2 then 2 else 0
   betaLeft j := if j = 2 then 2 else 0
