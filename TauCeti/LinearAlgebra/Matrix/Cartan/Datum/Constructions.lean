@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Datum.Basic
 
