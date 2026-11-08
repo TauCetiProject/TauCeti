@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Order.WithBot
 
