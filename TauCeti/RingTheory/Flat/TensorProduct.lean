@@ -39,7 +39,9 @@ power of `I`. Cover `L` by a free module `F` and let `G` be the preimage of `N`;
 `I F ⊗ M → F ⊗ M` is injective because `F` is flat, and two diagram chases replace the long exact
 `Tor` sequences of the textbook argument. Applied to `J ⧸ (J ⊓ Iⁿ)` inside `R ⧸ Iⁿ`, this shows
 that the kernel of `J ⊗[R] M → M` comes from `(J ⊓ Iⁿ) ⊗[R] M`, the step of the local criterion
-for flatness before the Artin–Rees lemma.
+for flatness before the Artin–Rees lemma. For any ideal `P` in place of `Iⁿ`, the same conclusion
+holds without the `Tor₁` hypothesis when `M ⧸ P M` is flat over `R ⧸ P`, since `J ⧸ (J ⊓ P)` and
+`R ⧸ P` are both killed by `P`.
 
 ## Main results
 
@@ -61,6 +63,8 @@ for flatness before the Artin–Rees lemma.
   `Ideal.subtype_rTensor_injective_of_smul_top_le` is the case `n = 1`.
 * `Ideal.mem_range_rTensor_inclusion_inf_pow`: under the same hypotheses, the kernel of
   `J ⊗[R] M → M` comes from `(J ⊓ I ^ n) ⊗[R] M`.
+* `Ideal.mem_range_rTensor_inclusion_inf_of_flat`: for an ideal `P` with `M ⧸ P M` flat over
+  `R ⧸ P`, the kernel of `J ⊗[R] M → M` comes from `(J ⊓ P) ⊗[R] M`.
 -/
 
 public section
@@ -334,6 +338,18 @@ theorem subtype_rTensor_injective_of_pow_smul_top_le
     rw [hsub, rTensor_comp, rTensor_comp, coe_comp, coe_comp]
     exact (ih le_sup_right).comp (h₀.comp (LinearEquiv.rTensor M _).injective)
 
+/-- For ideals `J` and `P`, if `(J ⧸ (J ⊓ P)) ⊗[R] M → (R ⧸ P) ⊗[R] M` is injective, then every
+element of the kernel of `J ⊗[R] M → M` comes from `(J ⊓ P) ⊗[R] M`. -/
+private theorem mem_range_rTensor_inclusion_inf_of_injective {J P : Ideal R}
+    (hN : Function.Injective ((Submodule.map P.mkQ J).subtype.rTensor M)) {t : J ⊗[R] M}
+    (ht : J.subtype.rTensor M t = 0) :
+    t ∈ range ((Submodule.inclusion (inf_le_left : J ⊓ P ≤ J)).rTensor M) := by
+  obtain ⟨q, hq, hexact, hqN⟩ := Submodule.exists_exact_codRestrict_mkQ J P
+    (f := Submodule.inclusion (inf_le_left : J ⊓ P ≤ J)) fun j ↦ by
+      simp [Submodule.range_inclusion]
+  refine (rTensor_exact M hexact hq t).mp (hN ?_)
+  rw [← rTensor_comp_apply, map_zero, hqN, rTensor_comp_apply, ht, map_zero]
+
 /-- Let `M ⧸ I M` be flat over `R ⧸ I` and `I ⊗[R] M → M` injective. For an ideal `J`, every
 element of the kernel of `J ⊗[R] M → M` comes from `(J ⊓ I ^ n) ⊗[R] M`. -/
 theorem mem_range_rTensor_inclusion_inf_pow (hI : Function.Injective (I.subtype.rTensor M))
@@ -342,18 +358,28 @@ theorem mem_range_rTensor_inclusion_inf_pow (hI : Function.Injective (I.subtype.
   -- `J ⧸ (J ⊓ Iⁿ)` is a submodule of `R ⧸ Iⁿ`, a module killed by `Iⁿ`.
   let P := I ^ n
   let N : Submodule R (R ⧸ P) := Submodule.map P.mkQ J
-  obtain ⟨q, hq, hexact, hqN⟩ := Submodule.exists_exact_codRestrict_mkQ J P
-    (f := Submodule.inclusion (inf_le_left : J ⊓ P ≤ J)) fun j ↦ by
-      simp [Submodule.range_inclusion]
   have hPN : P • ⊤ ≤ N := Submodule.smul_le.mpr fun r hr x _ ↦ by
     obtain ⟨x, rfl⟩ := P.mkQ_surjective x
     rw [← map_smul, Submodule.mkQ_apply, (Submodule.Quotient.mk_eq_zero P).mpr
       (by simpa [smul_eq_mul] using P.mul_mem_right x hr)]
     exact N.zero_mem
-  have hN := I.subtype_rTensor_injective_of_pow_smul_top_le hI n hPN
-  refine (rTensor_exact M hexact hq t).mp (hN ?_)
-  rw [← rTensor_comp_apply, map_zero, hqN, rTensor_comp_apply, ht, map_zero]
+  exact mem_range_rTensor_inclusion_inf_of_injective
+    (I.subtype_rTensor_injective_of_pow_smul_top_le hI n hPN) ht
 
 end
+
+/-- Let `M ⧸ P M` be flat over `R ⧸ P`. For an ideal `J`, every element of the kernel of
+`J ⊗[R] M → M` comes from `(J ⊓ P) ⊗[R] M`. -/
+theorem mem_range_rTensor_inclusion_inf_of_flat (P : Ideal R)
+    [Module.Flat (R ⧸ P) (M ⧸ P • (⊤ : Submodule R M))] {J : Ideal R} {t : J ⊗[R] M}
+    (ht : J.subtype.rTensor M t = 0) :
+    t ∈ range ((Submodule.inclusion (inf_le_left : J ⊓ P ≤ J)).rTensor M) := by
+  -- `J ⧸ (J ⊓ P)` is a submodule of `R ⧸ P`, and both are killed by `P`.
+  have hL : Module.IsTorsionBySet R (R ⧸ P) P :=
+    (Module.isTorsionBySet_quotient_iff P _).mpr fun x _ hr ↦ P.mul_mem_right x hr
+  have hN : Module.IsTorsionBySet R (Submodule.map P.mkQ J) P := fun x r ↦
+    Subtype.ext (hL (x := x.1) (a := r))
+  exact mem_range_rTensor_inclusion_inf_of_injective
+    (P.rTensor_injective_of_isTorsionBySet hN hL (Submodule.injective_subtype _)) ht
 
 end Ideal
