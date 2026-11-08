@@ -101,6 +101,38 @@ theorem splittingSymbolAut_pos {σ : Multiset (ℕ × ℕ)} (hσ : ∀ x ∈ σ,
       exact hσ x hx)
     (Finset.prod_pos fun _ _ => Nat.factorial_pos _)
 
+/-- The empty splitting symbol has one automorphism. -/
+@[simp]
+theorem splittingSymbolAut_zero : splittingSymbolAut 0 = 1 := by
+  simp [splittingSymbolAut]
+
+/-- A splitting symbol with a single factor `(f, e)` has `f` automorphisms. -/
+@[simp]
+theorem splittingSymbolAut_singleton (x : ℕ × ℕ) : splittingSymbolAut {x} = x.1 := by
+  simp [splittingSymbolAut]
+
+/-- The empty splitting symbol has the empty ramification partition. -/
+@[simp]
+theorem ramificationPartition_zero : ramificationPartition 0 = 0 := by
+  simp [ramificationPartition]
+
+/-- The ramification partition of a sum of splitting symbols is the sum of their ramification
+partitions. -/
+@[simp]
+theorem ramificationPartition_add (σ τ : Multiset (ℕ × ℕ)) :
+    ramificationPartition (σ + τ) = ramificationPartition σ + ramificationPartition τ := by
+  simp [ramificationPartition, Multiset.filter_add]
+
+/-- The ramification partition of a single factor `(f, e)` is `e - 1` repeated `f` times, or empty
+when the factor is unramified. -/
+@[simp]
+theorem ramificationPartition_singleton (x : ℕ × ℕ) :
+    ramificationPartition {x} = if x.2 ≤ 1 then 0 else Multiset.replicate x.1 (x.2 - 1) := by
+  rw [ramificationPartition, Multiset.singleton_bind]
+  split_ifs with h
+  · exact Multiset.filter_eq_nil.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
+  · exact Multiset.filter_eq_self.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
+
 /-- The parts of the ramification partition are the `e - 1 ≠ 0` for the factors `(f, e)` of `σ`
 with `f ≠ 0`. -/
 @[simp]
