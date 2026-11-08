@@ -203,6 +203,13 @@ lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
       (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
 
+/-- Pushing a simplex forward carries vertex transport to vertex transport in its image. -/
+lemma map_vertexTransport (f : X ⟶ Y) (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    (FundamentalGroupoid.map f.hom).map (vertexTransport α σ) =
+      vertexTransport α ((TopCat.toSSet.map f).app m σ) := by
+  simp only [vertexTransport_def]
+  exact map_pathTransport f σ _ _
+
 /-- Inverse vertex transport runs inside the original simplex from the reindexed initial
 vertex back to the original initial vertex. -/
 lemma inv_vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
@@ -1041,8 +1048,7 @@ def twistedChainsMap : twistedChains ((pullback f.hom).obj L) ⟶ twistedChains 
     refine Eq.trans ?_ (ιTwistedChains_map L α ((TopCat.toSSet.map f).app m σ)).symm
     exact congrArg (· ≫ ιTwistedChains L ((TopCat.toSSet.obj Y).map α
         ((TopCat.toSSet.map f).app m σ)))
-      (congrArg L.map (map_pathTransport f σ (toTopInitialVertex m.unop)
-        (toTop.map α.unop (toTopInitialVertex n.unop))))
+      (congrArg L.map (map_vertexTransport f α σ))
 
 /-- A continuous map sends the summand of a simplex `σ` of `X` identically onto the summand of its
 image simplex in `Y`. -/
