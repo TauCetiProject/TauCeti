@@ -43,8 +43,8 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
   rescaled argument `c x` and its derivative bounds.
-* `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow`: composing on the
-  left with a continuous linear map preserves bracket bounds on derivatives.
+* `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow`: composing
+  on the left with a continuous linear map preserves bracket bounds on derivatives.
 
 ## References
 
@@ -116,8 +116,9 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
 
 /-- Composing on the left with a continuous linear map `L` preserves a bracket bound
 `‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ρ`, with the constant multiplied by `‖L‖`. -/
-theorem exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (L : F →L[ℝ] G) {g : E → F} {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ}
+theorem exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (L : F →L[ℝ] G) {g : E → F} {k : ℕ}
+    (hg : ContDiff ℝ k g) {ρ : ℝ}
     (hgk : ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ) :
     ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ := by
   obtain ⟨C, hC⟩ := hgk
