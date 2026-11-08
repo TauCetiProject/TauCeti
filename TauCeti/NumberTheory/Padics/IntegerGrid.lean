@@ -126,12 +126,6 @@ theorem norm_prod_filter_not_dvd_sub_le (x : ℤ_[p]) {q : ℕ} (hq : p.Coprime 
   refine prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun r _ ↦ ?_
   simpa [g, mul_comm] using norm_prod_range_sub_add_mul_le x r (isUnit_natCast_of_coprime hq) _
 
-/-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
-theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :
-    ‖algebraMap ℚ_[p] K y‖ ≤ 1 := by
-  rw [norm_algebraMap', ← norm_def]
-  exact norm_le_one y
-
 end PadicInt
 
 namespace PowerSeries
