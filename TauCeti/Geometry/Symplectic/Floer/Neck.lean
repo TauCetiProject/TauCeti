@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Inserting a cylindrical neck into Hamiltonian perturbation data
@@ -289,29 +290,12 @@ theorem integral_abs_hamiltonianCurvature_neckStretch_le (ω : SymplecticForm V)
       rw [hf, neckCollapse_of_mem_Icc ⟨hz.1.1, hz.1.2.le⟩,
         ω.hamiltonianCurvature_eq_zero_of_cylindrical hKs hKt, abs_zero]
   -- After the neck, the stretched datum is the translate of the original one by `-L`.
-  set e : ℝ × ℝ → ℝ × ℝ := (· + (-L, 0))
-  have he : MeasurePreserving e := by
-    -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
-    have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-      rw [Measure.volume_eq_prod]
-      infer_instance
-    exact measurePreserving_add_right volume (-L, 0)
-  have hemb : MeasurableEmbedding e := measurableEmbedding_addRight (-L, 0)
-  have hpre : e ⁻¹' (Icc c b.1 ×ˢ I) = Icc (c + L) (b.1 + L) ×ˢ I := by
-    ext z
-    simp only [e, mem_preimage, mem_prod, mem_Icc, Prod.fst_add, Prod.snd_add, add_zero]
-    constructor <;> rintro ⟨⟨h, h'⟩, h''⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h''⟩
   have h₃ : ∫ z in Icc (c + L) (b.1 + L) ×ˢ I, f z ≤ ∫ z in Icc c b.1 ×ˢ I, M z := by
-    rw [← he.setIntegral_preimage_emb hemb M, hpre]
-    have hMe : IntegrableOn (M ∘ e) (Icc (c + L) (b.1 + L) ×ˢ I) := by
-      rw [← hpre, he.integrableOn_comp_preimage hemb]
-      exact hMi.mono_set subset_union_right
-    refine setIntegral_mono_on (hfi₂.mono_set subset_union_right) hMe hmeas fun z hz ↦ ?_
-    have hez : (neckCollapse c L z.1, z.2) = e z := by
-      ext <;> simp [e, neckCollapse_of_ge hL hz.1.1, sub_eq_add_neg]
-    have hz' : z ∈ e ⁻¹' (Icc c b.1 ×ˢ I) := hpre ▸ hz
-    rw [hf, hez]
-    exact hM (e z) (Or.inr hz') (u z)
+    refine setIntegral_Icc_prod_le_of_comp_add_le measurableSet_Icc
+      (hfi₂.mono_set subset_union_right) (hMi.mono_set subset_union_right) fun z hz ↦ ?_
+    rw [hf, Prod.fst_add, neckCollapse_of_ge hL (by linarith [hz.1.1]),
+      add_sub_cancel_right, Prod.snd_add, add_zero]
+    exact hM z (Or.inr hz) _
   linarith
 
 /-- **Uniform energy estimate for neck-stretching.** Under the hypotheses of
