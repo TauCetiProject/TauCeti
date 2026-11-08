@@ -89,9 +89,7 @@ theorem IsPrimitiveOn.mono (hg : IsPrimitiveOn φ g U) (hV : IsOpen V) (hVU : V 
 theorem IsPrimitiveOn.add_const (hg : IsPrimitiveOn φ g U) (c : F) :
     IsPrimitiveOn φ (fun y ↦ g y + c) U := by
   refine ⟨hg.isOpen, hg.mdifferentiableOn.add mdifferentiableOn_const, fun y hy ↦ ?_⟩
-  rw [mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
-    ((hg.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy))
-    (Eventually.of_forall fun _ ↦ rfl)]
+  rw [mextDeriv_ofFunction_eq_of_eventuallyEq_add_const (Eventually.of_forall fun _ ↦ rfl)]
   exact hg.mextDeriv_eq y hy
 
 /-- The sum of primitives of `φ` and `ψ` is a primitive of `φ + ψ` on the intersection. -/

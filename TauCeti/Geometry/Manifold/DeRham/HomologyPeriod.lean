@@ -225,7 +225,7 @@ theorem mem_exactForms_one_iff_homologyPeriodHom_eq_zero {φ : SmoothForm I M �
   have hb (y : M) : Joined (b y) y := Quotient.mk_out (s := pathSetoid M) y
   set f : M → ℝ := fun y ↦ pathClassIntegral (φ : RoughForm I M ℝ 1) (.mk (hb y).somePath)
   obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
-    (r := ((⊤ : ℕ∞) : WithTop ℕ∞)) (by simp) (φ := (φ : RoughForm I M ℝ 1)) (f := f) fun x ↦ by
+    (r := ((⊤ : ℕ∞) : WithTop ℕ∞)) (φ := (φ : RoughForm I M ℝ 1)) (f := f) fun x ↦ by
       -- Near `x`, `f` differs by a constant from a local primitive `g` of `φ`.
       obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn (r := ⊤) le_top
         φ.isSmoothForm hclosed x

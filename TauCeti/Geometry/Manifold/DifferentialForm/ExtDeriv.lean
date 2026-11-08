@@ -411,17 +411,24 @@ theorem mextDeriv_ofFunction_comp_of_hasDerivAt {f : M → ℝ} {g : ℝ → ℝ
   -- The derivative of a real function acts on a real number by multiplication.
   exact (ContinuousLinearMap.toSpanSingleton_apply _ _ _).trans (mul_comm _ _)
 
-/-- A function which near `x` differs by a constant from a function `g` differentiable at `x` has
-the same exterior derivative at `x` as `g`. -/
+/-- A function which near `x` differs by a constant from a function `g` has the same exterior
+derivative at `x` as `g`. -/
 theorem mextDeriv_ofFunction_eq_of_eventuallyEq_add_const {f g : M → F} {x : M} {c : F}
-    (hg : MDifferentiableAt I 𝓘(ℝ, F) g x) (hfg : ∀ᶠ y in 𝓝 x, f y = g y + c) :
+    (hfg : ∀ᶠ y in 𝓝 x, f y = g y + c) :
     mextDeriv (RoughForm.ofFunction I f) x = mextDeriv (RoughForm.ofFunction I g) x := by
-  rw [mextDeriv_ofFunction, mextDeriv_ofFunction,
-    Filter.EventuallyEq.mvfderiv_eq (f₁ := f) (f := (fun z ↦ z + c) ∘ g) hfg]
-  congr 1
-  ext v
-  rw [mvfderiv_comp_apply_of_differentiableAt (by fun_prop) hg, fderiv_add_const, fderiv_fun_id,
-    ContinuousLinearMap.id_apply]
+  rw [mextDeriv_ofFunction, mextDeriv_ofFunction]
+  by_cases hg : MDifferentiableAt I 𝓘(ℝ, F) g x
+  · rw [Filter.EventuallyEq.mvfderiv_eq (f₁ := f) (f := (fun z ↦ z + c) ∘ g) hfg]
+    congr 1
+    ext v
+    rw [mvfderiv_comp_apply_of_differentiableAt (by fun_prop) hg, fderiv_add_const, fderiv_fun_id,
+      ContinuousLinearMap.id_apply]
+  · -- Neither function is differentiable at `x`, so both derivatives vanish.
+    have hf : ¬MDifferentiableAt I 𝓘(ℝ, F) f x := fun hf ↦ hg <|
+      (hf.sub (mdifferentiableAt_const (c := c))).congr_of_eventuallyEq
+        (hfg.mono fun y h ↦ by simp [h])
+    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt hg]
 
 /-- The exterior derivative of the `0`-form of a function vanishes at a point exactly when the
 manifold derivative of the function does. -/
