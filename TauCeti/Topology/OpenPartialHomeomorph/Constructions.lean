@@ -17,7 +17,9 @@ inverse on open sets also give an open partial homeomorphism on their mutual res
 (`ContinuousOn.toOpenPartialHomeomorph`). Composing with an open partial homeomorphism preserves
 open embeddings whose ranges lie in its source (`OpenPartialHomeomorph.isOpenEmbedding_comp`).
 An open embedding of a nonempty open subset extends to an open partial homeomorphism with that
-source (`OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding`).
+source (`OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding`); a homeomorphism of nonempty
+open subsets extends to one with that source and target
+(`OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph`).
 Finite products of open partial homeomorphisms commute with inverses and composition
 (`OpenPartialHomeomorph.pi_symm`, `OpenPartialHomeomorph.pi_trans`), as for partial equivalences.
 
@@ -64,6 +66,17 @@ theorem exists_source_eq_of_isOpenEmbedding {U : Set X} (hU : IsOpen U) {g : U �
   have : Nonempty Y := ⟨g x⟩
   have hi := hU.isOpenEmbedding_subtypeVal
   exact ⟨(hg.toOpenPartialHomeomorph g).lift_openEmbedding hi, by simp, fun y ↦ by simp⟩
+
+/-- A homeomorphism between nonempty open subsets `U` of `X` and `V` of `Y` is the restriction of an
+open partial homeomorphism with source `U` and target `V`. -/
+theorem exists_source_eq_target_eq_of_homeomorph {U : Set X} {V : Set Y} (hU : IsOpen U)
+    (hV : IsOpen V) (e : U ≃ₜ V) (x : U) :
+    ∃ c : OpenPartialHomeomorph X Y, c.source = U ∧ c.target = V ∧ ∀ y : U, c y = e y := by
+  obtain ⟨c, hs, hc⟩ := exists_source_eq_of_isOpenEmbedding hU
+    (hV.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding) x
+  refine ⟨c, hs, ?_, hc⟩
+  rw [← c.image_source_eq_target, hs, image_eq_range, funext hc, range_comp,
+    e.surjective.range_eq, image_univ, Subtype.range_coe]
 
 open scoped Classical in
 /-- Restrict an open partial homeomorphism to a subtype represented by a parametrized coordinate
