@@ -41,6 +41,8 @@ structure ConflationRow (E : ExactStructure C) (A B : C) where
   /-- The row is a distinguished conflation. -/
   conflation : E.Conflation (ShortComplex.mk v w zero)
 
+attribute [reassoc (attr := simp)] ConflationRow.zero
+
 namespace ConflationRow
 
 variable {E : ExactStructure C} (S₁ S₃ : ShortComplex C)
@@ -60,6 +62,8 @@ structure ProjectiveStep (R : ConflationRow E S₁.X₃ S₃.X₃)
   π_w : π ≫ R.w = biprod.snd ≫ S₃.g
   v_ι : R'.v ≫ ι = S₁.f ≫ biprod.inl
   ι_snd : ι ≫ biprod.snd = R'.w ≫ S₃.f
+
+attribute [reassoc (attr := simp)] ProjectiveStep.zero
 
 variable {S₁ S₃}
 

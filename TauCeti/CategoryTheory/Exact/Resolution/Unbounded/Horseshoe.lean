@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.CategoryTheory.Exact.Resolution.Unbounded.Basic
 public import TauCeti.CategoryTheory.Exact.Resolution.ConflationRow
 
@@ -140,13 +141,8 @@ noncomputable def termIsoBiprod (n : ℕ) :
 /-- The termwise isomorphism sends the horseshoe injection to the left inclusion. -/
 @[reassoc (attr := simp)]
 theorem ι_f_termIsoBiprod_hom (n : ℕ) :
-    h.ι.f n ≫ (h.termIsoBiprod n).hom = biprod.inl := by
-  dsimp [termIsoBiprod, ShortComplex.Splitting.isoBinaryBiproduct]
-  apply biprod.hom_ext
-  · simp only [Category.assoc, biprod.lift_fst, biprod.inl_fst]
-    exact (h.split n).some.f_r
-  · simp only [Category.assoc, biprod.lift_snd, biprod.inl_snd]
-    exact congrArg (fun t => t.f n) h.ι_π
+    h.ι.f n ≫ (h.termIsoBiprod n).hom = biprod.inl :=
+  (h.split n).some.f_isoBinaryBiproduct_hom
 
 /-- The right projection after the termwise isomorphism is the horseshoe projection. -/
 @[reassoc (attr := simp)]
