@@ -38,34 +38,6 @@ open Module CliffordAlgebra
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 
-/-- The odd half-spin subrepresentation is isomorphic to the standard representation of the second
-factor, when the second factor of `f` records the matrices of the odd half-spin action in the
-basis `bminus`. -/
-private theorem nonempty_equiv_stdSLRep_snd_of_matrix_eq
-    (P : SpinPolarizationData Q) (hline : P.line = ⊥)
-    (f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K ×
-      Matrix.SpecialLinearGroup (Fin 2) K)
-    (bminus : Basis (Fin 2) K (spinMinus Q P))
-    (hfactor : ∀ g : spinGroup Q, ((f g).2 : Matrix (Fin 2) (Fin 2) K) =
-      LinearMap.toMatrix bminus bminus (spinMinusAction Q P hline (spinGroupToEven Q g))) :
-    Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
-      ((stdSLRep K 2).comp ((MonoidHom.snd _ _).comp f.toMonoidHom))) := by
-  let em : spinMinus Q P ≃ₗ[K] (spinMinusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm
-  refine ⟨Representation.Equiv.ofBasisAction _
-    ((stdSLRep K 2).comp ((MonoidHom.snd _ _).comp f.toMonoidHom)) em.symm bminus
-    (fun g ↦ spinMinusAction Q P hline (spinGroupToEven Q g)) ?_ ?_⟩
-  · intro g s
-    apply Subtype.ext
-    simpa only [em, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-      (coe_spinMinusAction_spinGroupToEven_apply P hline g (em.symm s)).symm
-  · intro g s
-    simp only [MonoidHom.comp_apply, MonoidHom.coe_snd, MulEquiv.coe_toMonoidHom,
-      stdSLRep_apply_apply]
-    rw [hfactor g]
-    exact LinearMap.toMatrix_mulVec_repr bminus bminus
-      (spinMinusAction Q P hline (spinGroupToEven Q g)) s
-
 /-- For a polarized quaternary quadratic space, there is an equivalence `Spin₄ ≅ SL₂ × SL₂`
 under which its even and odd half-spin subrepresentations are the standard representations of
 the first and second factors, respectively. The equivalence chooses bases of the half-spin spaces.
@@ -117,8 +89,8 @@ theorem
   refine ⟨hline, f, ?_, ?_⟩
   · exact nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline bplus
       ((MonoidHom.fst _ _).comp f.toMonoidHom) fun g ↦ congrArg Prod.fst (hmatrix g)
-  · exact nonempty_equiv_stdSLRep_snd_of_matrix_eq P hline f bminus
-      fun g ↦ congrArg Prod.snd (hmatrix g)
+  · exact nonempty_spinMinusSubrep_equiv_stdSLRep_of_matrix_action hline bminus
+      ((MonoidHom.snd _ _).comp f.toMonoidHom) fun g ↦ congrArg Prod.snd (hmatrix g)
 
 /-! The arbitrary-form endpoint below supplies the polarization used by the preceding theorem.
 It is kept here, beside the representation comparison, so callers do not need to reproduce the
