@@ -47,17 +47,12 @@ theorem support_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
     (multinomialMeasure n p).support =
       {k | (∑ i, k i = n) ∧ ∀ i, k i ≠ 0 → p.weights i ≠ 0} := by
   ext k
-  simp only [Set.mem_ofPred_eq]
-  rw [← multinomialMeasure_singleton_ne_zero_iff, Measure.mem_support_iff_forall]
-  constructor
-  · intro hk
-    exact (hk {k} ((isOpen_discrete _).mem_nhds (by simp))).ne'
-  · intro hk U hU
-    exact (pos_iff_ne_zero.mpr hk).trans_le
-      (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
+  simp only [Measure.mem_support_iff_measure_singleton_ne_zero,
+    multinomialMeasure_singleton_ne_zero_iff, Set.mem_ofPred_eq]
 
 /-- Applying labels to multinomial counts transports their finite support exactly, even when
 several count vectors have the same label. No closure of the image is needed. -/
+@[simp]
 theorem support_map_multinomialMeasure {E : Type*} [TopologicalSpace E] [T1Space E]
     [MeasurableSpace E] [BorelSpace E] (n : ℕ) (p : StdSimplex NNReal ι)
     (f : (ι → ℕ) → E) :
@@ -76,7 +71,6 @@ theorem support_map_multinomialMeasure {E : Type*} [TopologicalSpace E] [T1Space
 
 /-- The Euclidean multinomial law is supported on exactly the admissible integer count vectors.
 Zero-probability cells remain identically zero, including on the topological support. -/
-@[simp]
 theorem support_map_multinomialToEuclidean (n : ℕ) (p : StdSimplex NNReal ι) :
     ((multinomialMeasure n p).map multinomialToEuclidean).support =
       multinomialToEuclidean ''
