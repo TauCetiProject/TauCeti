@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.Algebra.Polynomial.OfFn
 
 /-!
 # Separating one variable of a multivariate polynomial
@@ -53,38 +54,26 @@ identically, which forces the relation to be trivial.
 
 public section
 
-namespace Polynomial
+namespace TauCeti
 
-open Module
+open MvPolynomial Finset
 
-/-- If a basis `b` of the span of finitely many vectors `Qⱼ` is given, the polynomials
-`∑ⱼ (b.repr Qⱼ k) Tʲ`, one for each basis index `k`, are linearly independent: a relation among
-them is a linear form on the span vanishing on every `Qⱼ`. -/
-theorem linearIndependent_ofFn_repr {K : Type*} [Field K] [DecidableEq K] {W : Type*}
-    [AddCommGroup W] [Module K W] {r N : ℕ}
-    (Q : Fin N → W) (b : Basis (Fin r) K (Submodule.span K (Set.range Q))) :
-    LinearIndependent K fun k : Fin r ↦
-      Polynomial.ofFn N fun j ↦ b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k := by
-  refine Fintype.linearIndependent_iff.2 fun a ha k ↦ ?_
-  set φ : Submodule.span K (Set.range Q) →ₗ[K] K := ∑ k, a k • b.coord k
-  have hφQ (j : Fin N) :
-      ∑ k, a k * b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k = 0 := by
-    have hac : ∑ k, a k • (fun j ↦
-        b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k) = 0 :=
-      Polynomial.injective_ofFn N (by simpa [map_sum] using ha)
-    simpa using congr_fun hac j
-  have hφ (x : W) (hx : x ∈ Submodule.span K (Set.range Q)) : φ ⟨x, hx⟩ = 0 := by
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨j, rfl⟩ := hx
-      simpa [φ, mul_comm] using hφQ j
-    | zero => exact map_zero φ
-    | add x y hx hy hφx hφy =>
-      exact (map_add φ ⟨x, hx⟩ ⟨y, hy⟩).trans (by rw [hφx, hφy, add_zero])
-    | smul r x hx hφx => exact (map_smul φ r ⟨x, hx⟩).trans (by rw [hφx, smul_zero])
-  simpa [φ, Finsupp.single_apply] using hφ _ (b k).2
+variable {R σ : Type*} [CommSemiring R]
 
-end Polynomial
+/-- Rewriting `∑ⱼ Qⱼ Xᵢʲ` along the expansions `Qⱼ = ∑ₖ cⱼₖ bₖ` of the coefficients in a family
+`b`, as `∑ₖ bₖ · gₖ(Xᵢ)` with `gₖ = ∑ⱼ cⱼₖ Tʲ`. -/
+theorem sum_mul_X_pow_eq_sum_mul_toMvPolynomial [DecidableEq R] {r N : ℕ} (i : σ)
+    (Q : Fin N → MvPolynomial σ R) (b : Fin r → MvPolynomial σ R) (c : Fin N → Fin r → R)
+    (hQb : ∀ j, Q j = ∑ k, c j k • b k) :
+    ∑ j, Q j * X i ^ (j : ℕ) = ∑ k, b k * (Polynomial.ofFn N fun j ↦ c j k).toMvPolynomial i := by
+  simp only [hQb, Polynomial.ofFn_eq_sum_monomial, ← Polynomial.C_mul_X_pow_eq_monomial,
+    map_sum, map_mul, map_pow, Polynomial.toMvPolynomial_C, Polynomial.toMvPolynomial_X, sum_mul,
+    mul_sum, smul_eq_C_mul]
+  rw [sum_comm]
+  refine sum_congr rfl fun j _ ↦ sum_congr rfl fun k _ ↦ ?_
+  ring
+
+end TauCeti
 
 namespace MvPolynomial
 
@@ -119,19 +108,6 @@ theorem exists_eq_sum_mul_X_pow (P : MvPolynomial σ R) (i : σ) :
     refine sum_congr rfl fun x hx ↦ ?_
     rw [← (mem_filter.1 hx).2, X_pow_eq_monomial, monomial_mul_monomial, mul_one,
       Finsupp.erase_add_single]
-
-/-- Rewriting `∑ⱼ Qⱼ Xᵢʲ` along the expansions `Qⱼ = ∑ₖ cⱼₖ bₖ` of the coefficients in a family
-`b`, as `∑ₖ bₖ · gₖ(Xᵢ)` with `gₖ = ∑ⱼ cⱼₖ Tʲ`. -/
-theorem sum_mul_X_pow_eq_sum_mul_toMvPolynomial [DecidableEq K] {r N : ℕ} (i : σ)
-    (Q : Fin N → MvPolynomial σ K) (b : Fin r → MvPolynomial σ K) (c : Fin N → Fin r → K)
-    (hQb : ∀ j, Q j = ∑ k, c j k • b k) :
-    ∑ j, Q j * X i ^ (j : ℕ) = ∑ k, b k * (Polynomial.ofFn N fun j ↦ c j k).toMvPolynomial i := by
-  simp only [hQb, Polynomial.ofFn_eq_sum_monomial, ← Polynomial.C_mul_X_pow_eq_monomial,
-    map_sum, map_mul, map_pow, Polynomial.toMvPolynomial_C, Polynomial.toMvPolynomial_X, sum_mul,
-    mul_sum, smul_eq_C_mul]
-  rw [sum_comm]
-  refine sum_congr rfl fun j _ ↦ sum_congr rfl fun k _ ↦ ?_
-  ring
 
 /-- **Separation of one variable** (Pottmeyer, Lemma 3.3.8). Over a field, a polynomial `P` is a
 sum `∑_{k < m} fₖ · gₖ(Xᵢ)` of `m ≤ deg_{Xᵢ} P + 1` products, where the `fₖ` are linearly
@@ -168,13 +144,14 @@ theorem exists_sum_mul_linearIndependent (P : MvPolynomial σ K) (i : σ) :
       x ∈ S :=
     (mem_restrictSupport_iff K).1 (hVS (b k).2) hx
   refine ⟨finrank K V, (finrank_range_le_card _).trans (by simp [N]), fun k ↦ b k, g,
-    b.linearIndependent.map' V.subtype V.ker_subtype, Polynomial.linearIndependent_ofFn_repr _ b,
+    b.linearIndependent.map' V.subtype V.ker_subtype, TauCeti.linearIndependent_ofFn_repr _ b,
     fun k hk ↦ ?_, fun k j ↦ ?_, fun k ↦ ?_, ?_⟩
   · obtain ⟨x, hx, hix⟩ := (mem_vars_iff_mem_support i).1 hk
     exact Finsupp.mem_support_iff.1 hix (hbS k hx).1
   · exact degreeOf_le_iff.2 fun x hx ↦ (hbS k hx).2 j
   · exact Nat.lt_succ_iff.1 (Polynomial.ofFn_natDegree_lt N.succ_pos _)
   · rw [hPQ]
-    exact sum_mul_X_pow_eq_sum_mul_toMvPolynomial i (fun j : Fin (N + 1) ↦ Q j) (fun k ↦ b k) c hQb
+    exact TauCeti.sum_mul_X_pow_eq_sum_mul_toMvPolynomial i (fun j : Fin (N + 1) ↦ Q j)
+      (fun k ↦ b k) c hQb
 
 end MvPolynomial
