@@ -505,39 +505,22 @@ theorem relIndex_map_powMonoidHom_two_eq_four_iff {A : Subgroup ℤ_[2]ˣ}
 nontrivial subgroup has a non-square. -/
 theorem relIndex_map_powMonoidHom_two_eq_one_iff {A : Subgroup ℤ_[2]ˣ} :
     (A.map (powMonoidHom 2)).relIndex A = 1 ↔ A = ⊥ := by
-  refine ⟨fun h ↦ by_contra fun hA' ↦ ?_, fun h ↦ h ▸ Subgroup.relIndex_eq_one.mpr bot_le⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ Subgroup.relIndex_eq_one.mpr bot_le⟩
   -- every element of `A` is the square of an element of `A`
-  have hsq : ∀ a ∈ A, ∃ b ∈ A, b ^ 2 = a := fun a ha ↦ by
-    obtain ⟨b, hb, rfl⟩ := Subgroup.relIndex_eq_one.mp h ha
-    exact ⟨b, hb, rfl⟩
-  have h3 : ∀ a ∈ A, a ∈ unitsPrincipal 2 3 := fun a ha ↦ by
-    obtain ⟨b, -, rfl⟩ := hsq a ha
+  have hle : A ≤ A.map (powMonoidHom 2) := Subgroup.relIndex_eq_one.mp h
+  have h3 : A ≤ unitsPrincipal 2 3 := fun a ha ↦ by
+    obtain ⟨b, -, rfl⟩ := hle ha
     rw [unitsPrincipal_three_eq_range_powMonoidHom_two]
     exact ⟨b, rfl⟩
-  -- squaring raises the exact level by one, so no element of `A` has a finite exact level
-  have key : ∀ g, ∀ a ∈ A, a ∈ unitsPrincipal 2 g → a ∉ unitsPrincipal 2 (g + 1) → False := by
-    intro g
-    induction g using Nat.strong_induction_on with
-    | _ g ih =>
-      intro a ha hg hg'
-      obtain ⟨b, hb, rfl⟩ := hsq a ha
-      have hb1 : b ≠ 1 := by
-        rintro rfl
-        exact hg' (by simp)
-      obtain ⟨k, hk, hk'⟩ := exists_mem_unitsPrincipal_and_notMem_succ (p := 2) hb1
-      have hk3 : 3 ≤ k := by
-        by_contra hlt
-        exact hk' (unitsPrincipal_antitone 2 (by omega) (h3 b hb))
-      have hnot := pow_pow_notMem_unitsPrincipal (p := 2) (by omega) (fun _ ↦ by omega) hk hk' 1
-      have hmem := pow_pow_mem_unitsPrincipal (p := 2) (by omega) hk 1
-      rw [pow_one] at hnot hmem
-      have hgk : g = k + 1 := by
-        refine le_antisymm (by_contra fun hlt ↦ hnot (unitsPrincipal_antitone 2 (by omega) hg))
-          (by_contra fun hlt ↦ hg' (unitsPrincipal_antitone 2 (by omega) hmem))
-      exact ih k (by omega) b hb hk hk'
-  obtain ⟨a, ha, ha1⟩ := A.bot_or_exists_ne_one.resolve_left hA'
-  obtain ⟨g, hg, hg'⟩ := exists_mem_unitsPrincipal_and_notMem_succ (p := 2) ha1
-  exact key g a ha hg hg'
+  -- squaring raises the level by one, so `A` lies in every principal unit group
+  have hk : ∀ k : ℕ, A ≤ unitsPrincipal 2 (k + 2) := fun k ↦ by
+    induction k with
+    | zero => exact h3.trans (unitsPrincipal_antitone 2 (by norm_num))
+    | succ k ih =>
+      exact hle.trans ((Subgroup.map_mono ih).trans_eq
+        (map_powMonoidHom_unitsPrincipal (by omega) fun _ ↦ by omega))
+  exact eq_bot_iff.2 ((le_iInf fun f ↦ (hk f).trans
+    (unitsPrincipal_antitone 2 (Nat.le_add_right f 2))).trans (iInf_unitsPrincipal_eq_bot 2).le)
 
 /-- **`(A : A²) ∈ {1, 2, 4}` for every closed subgroup `A ≤ ℤ_2ˣ`.** -/
 theorem relIndex_map_powMonoidHom_two_eq_one_or_two_or_four {A : Subgroup ℤ_[2]ˣ}
