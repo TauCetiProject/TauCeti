@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Polynomial.Coleman.Entire
 public import TauCeti.RingTheory.PowerSeries.Entire.Resultant
-public import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 
 /-!
 # Coleman's transform detects coprime polynomial factors of entire series
