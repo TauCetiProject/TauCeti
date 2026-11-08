@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Log
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Power growth of Schwarz--Christoffel primitives at infinity
@@ -205,7 +205,8 @@ private theorem norm_schwarzChristoffelPowerRemainder_sub_le (a e : ι → ℝ)
   have hmain :=
     norm_sub_le_integral_of_norm_deriv_le_of_le hδ1 hcont hdiff hfB hBi
   have hint : (∫ t in δ..1, B t) ≤ η / (S + 1) * ‖z‖ ^ (S + 1) :=
-    integral_mul_rpow_le (by simpa [S] using hsum) hη (norm_nonneg z) hδ0.le
+    (integral_const_mul_rpow_le (c := η * ‖z‖ ^ (S + 1)) (by simpa [S] using hsum)
+      (by have := hη; positivity) hδ0.le).trans_eq (by ring)
   simpa [Q, δ, S] using hmain.trans hint
 
 /-- **Power asymptotic at infinity.** If the total turning exponent is greater than `-1`,
