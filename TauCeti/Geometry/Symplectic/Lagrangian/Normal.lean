@@ -132,6 +132,13 @@ theorem quotientOrthogonalEquivDual_mk [FiniteDimensional ℝ V] (hg : Function.
     ω.quotientOrthogonalEquivDual hg (Submodule.Quotient.mk v) = ω.normalPairing g v :=
   (rfl)
 
+/-- The class corresponding to a functional `φ` is the class of any `v` with `ω(g ·, v) = φ`. -/
+theorem quotientOrthogonalEquivDual_symm_apply_eq_iff [FiniteDimensional ℝ V]
+    (hg : Function.Injective g) (φ : Dual ℝ W) (v : V) :
+    (ω.quotientOrthogonalEquivDual hg).symm φ = Submodule.Quotient.mk v ↔
+      ω.normalPairing g v = φ := by
+  rw [LinearEquiv.symm_apply_eq, quotientOrthogonalEquivDual_mk, eq_comm]
+
 variable {ω}
 
 /-! ### Isotropic subspaces -/
@@ -200,6 +207,23 @@ theorem IsLagrangian.quotientEquivDual_mk [FiniteDimensional ℝ V]
     (h : ω.IsLagrangian (LinearMap.range g)) (hg : Function.Injective g) (v : V) :
     h.quotientEquivDual hg (Submodule.Quotient.mk v) = ω.normalPairing g v :=
   (rfl)
+
+/-- As a linear map, the equivalence is the descended pairing. -/
+@[simp]
+theorem IsLagrangian.coe_quotientEquivDual [FiniteDimensional ℝ V]
+    (h : ω.IsLagrangian (LinearMap.range g)) (hg : Function.Injective g) :
+    (h.quotientEquivDual hg : (V ⧸ LinearMap.range g) →ₗ[ℝ] Dual ℝ W) =
+      h.isIsotropic.normalPairingQuotient :=
+  Submodule.linearMap_qext _ (LinearMap.ext fun v ↦ by
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, LinearEquiv.coe_coe,
+      quotientEquivDual_mk, IsIsotropic.normalPairingQuotient_mk])
+
+/-- The normal class corresponding to a functional `φ` is the class of any `v` with
+`ω(g ·, v) = φ`. -/
+theorem IsLagrangian.quotientEquivDual_symm_apply_eq_iff [FiniteDimensional ℝ V]
+    (h : ω.IsLagrangian (LinearMap.range g)) (hg : Function.Injective g) (φ : Dual ℝ W) (v : V) :
+    (h.quotientEquivDual hg).symm φ = Submodule.Quotient.mk v ↔ ω.normalPairing g v = φ := by
+  rw [LinearEquiv.symm_apply_eq, quotientEquivDual_mk, eq_comm]
 
 /-! ### The zero section of the linear cotangent model -/
 
