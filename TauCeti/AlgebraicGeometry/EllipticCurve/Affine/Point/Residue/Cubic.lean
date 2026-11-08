@@ -150,12 +150,11 @@ private theorem exists_yCoord_eq_and_dvd_cubic {ϖ : v.valuationSubring}
   obtain ⟨hp, h₁, h₃, -⟩ :=
     prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
   obtain ⟨m₃, m₄, m₆⟩ := mem_maximalIdeal_of_isTateTerminal_IStar_zero v hϖ h
-  obtain ⟨x, y, hxy, rfl, -, hy⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
+  obtain ⟨x, y, hxy, rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   rw [Point.xCoord_some] at hX
   obtain rfl := Subtype.val_injective hX
   obtain ⟨⟨Y, rfl⟩, hX⟩ := (integralModel v.valuationSubring W).sq_dvd_and_dvd_cubic_of_equation hp
     h₁ h₂ h₃ h₄ h₆ ((equation_integralModel_iff v).2 hxy.left)
-    ((mem_maximalIdeal_iff_dvd hϖ).1 hy)
   exact ⟨Y, Point.yCoord_some hxy, hX⟩
 
 /-- **At `I₀*`, a point with singular reduction has `x = ϖ X`, with the residue of `X` a root of the
