@@ -188,7 +188,7 @@ private theorem norm_schwarzChristoffelPowerRemainder_sub_le (a e : ι → ℝ)
   have hmain :=
     norm_sub_le_integral_of_norm_deriv_le_of_le hδ1 hcont hdiff hfB hBi
   have hint : (∫ t in δ..1, B t) ≤ η / (S + 1) * ‖z‖ ^ (S + 1) :=
-    integral_const_mul_rpow_le hsum hδ0 hη (Real.rpow_nonneg (norm_nonneg z) _)
+    integral_const_mul_rpow_le hsum hδ0.le hη (Real.rpow_nonneg (norm_nonneg z) _)
   simpa [Q, δ, S] using hmain.trans hint
 
 /-- For `z` in the upper half-plane with `R ≤ ‖z‖`, the power remainder `Q` satisfies
