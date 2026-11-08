@@ -41,13 +41,13 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti.WassersteinSpace
 
-/-- A coupling `π` that moves almost every point by less than `1` and is carried in its second
-marginal by a finite set `s` has no first-marginal mass at a point `a` lying at distance at least
-`1` from every point of `s`. -/
-theorem measure_fst_singleton_eq_zero_of_ae_edist_lt {α : Type*} [PseudoEMetricSpace α]
-    [MeasurableSpace α] [MeasurableSingletonClass α] {π : Measure (α × α)} {s : Finset α} {a : α}
-    (hdist : ∀ᵐ z ∂π, edist z.1 z.2 < 1) (hsnd : ∀ᵐ z ∂π, z.2 ∈ s)
-    (ha : ∀ x ∈ s, 1 ≤ edist a x) : π.fst {a} = 0 := by
+/-- A coupling `π` that moves almost every point by less than `r` and is carried in its second
+marginal by a set `s` has no first-marginal mass at a point `a` lying at distance at least `r`
+from every point of `s`. -/
+private theorem measure_fst_singleton_eq_zero_of_ae_edist_lt {α : Type*} [PseudoEMetricSpace α]
+    [MeasurableSpace α] [MeasurableSingletonClass α] {π : Measure (α × α)} {r : ℝ≥0∞}
+    {s : Set α} {a : α} (hdist : ∀ᵐ z ∂π, edist z.1 z.2 < r) (hsnd : ∀ᵐ z ∂π, z.2 ∈ s)
+    (ha : ∀ x ∈ s, r ≤ edist a x) : π.fst {a} = 0 := by
   rw [Measure.fst_apply (MeasurableSet.singleton _), measure_eq_zero_iff_ae_notMem]
   filter_upwards [hdist, hsnd] with z hzdist hzs hz
   exact (not_lt_of_ge (ha _ hzs)) ((mem_singleton_iff.mp hz) ▸ hzdist)
@@ -143,6 +143,6 @@ theorem not_dense_setOfPred_ae_mem_finset_top_baire :
   have hπfst : π.fst = μ :=
     hπ.fst_eq.trans (congrArg ProbabilityMeasure.toMeasure (coe_mk _ _))
   exact hμpos n (by simpa [hπfst] using
-    measure_fst_singleton_eq_zero_of_ae_edist_lt hdist hsnd hn)
+    measure_fst_singleton_eq_zero_of_ae_edist_lt (s := (s : Set (ℕ → ℕ))) hdist hsnd hn)
 
 end TauCeti.WassersteinSpace
