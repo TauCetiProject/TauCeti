@@ -17,11 +17,15 @@ structure `J` inducing the orientation, witnessed by a positively oriented unita
 `(e₀, e₁, e₂, e₃)`, `J e₀ = e₁` and `J e₂ = e₃`, and let `ω` be its Kähler form. Let `W` be a
 Hermitian Clifford module, `c(v) = ρ (ι Q v)` with `Q v = -‖v‖²`, and `W⁺` its positive
 half-spinors. Taubes writes a positive spinor as `ψ = α u₀ + β`, where `u₀` spans the
-`-2i`-eigenline of `c₂(ω)` in `W⁺`, the range of the projection `P_α`
-(`TauCeti.SeibergWitten.cliffordProjection`), and `β` lies in the complementary `2i`-eigenline.
+`-2i`-eigenspace of `c₂(ω)` in `W⁺`, the range of the projection `P_α`
+(`TauCeti.SeibergWitten.cliffordProjection`), and `β` lies in the complementary `2i`-eigenspace.
+When `W` is a spin module, so that `W⁺` has complex dimension two, both eigenspaces are lines: the
+canonical line and its complement. The results below hold on the eigenspaces of any Hermitian
+Clifford module.
 
-On the canonical line, Clifford multiplication turns `J` into multiplication by `i`: if
-`P_α ψ = ψ` then `c(J v) ψ = i c(v) ψ`, while on the complementary line `c(J v) β = -i c(v) β`.
+On the `-2i`-eigenspace, Clifford multiplication turns `J` into multiplication by `i`: if
+`P_α ψ = ψ` then `c(J v) ψ = i c(v) ψ`, while on the complementary eigenspace
+`c(J v) β = -i c(v) β`.
 Both follow from the commutator `⁅c₂(ω), c(v)⁆ = 2 c(J v)`
 (`TauCeti.AlmostComplexStructure.bivectorExterior_kahlerForm_lie_ι`) and the vanishing of the
 self-dual form `ω` on the negative half-spinors, where `c(v) ψ` lies. Consequently
@@ -52,7 +56,7 @@ plane vortex equations, in the convention `∂bar_a α = (∇₁ α + i ∇₂ �
 * `TauCeti.SeibergWitten.inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self`:
   `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`.
 * `TauCeti.SeibergWitten.sum_smul_ι_apply_of_cliffordProjection_apply_eq_self`: the Dirac symbol
-  on the canonical line in terms of the two `∂bar`-components.
+  on the canonical eigenspace in terms of the two `∂bar`-components.
 * `TauCeti.SeibergWitten.norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self`: its
   norm.
 * `TauCeti.SeibergWitten.sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self` and
@@ -90,7 +94,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
 
-/-! ### `J` acts by `±i` on the two lines -/
+/-! ### `J` acts by `±i` on the two eigenspaces -/
 
 omit [FiniteDimensional ℂ W] in
 include hQ hkl he h₀ h₂ in
@@ -105,24 +109,20 @@ private theorem two_smul_ι_apply_apply_of_bivectorExterior_apply {ψ : positive
   have hneg : ρ (chirality Q o) (ρ (ι Q v) ψ) = -ρ (ι Q v) ψ := by
     simpa using map_ι_apply_mem_eigenspace_chirality_neg o (ε := 1)
       (by simpa using mem_positiveHalfSpinors.1 ψ.2) v
-  -- The self-dual form `ω` annihilates it.
-  have hzero : ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q v) ψ) = 0 := by
-    have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he
-    have h : ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q v) ψ) =
-        -ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q v) ψ) := by
-      conv_lhs => rw [← bivectorExterior_mul_chirality_of_hodgeStar_eq_self o hQ hkl hω, map_mul,
-        mul_apply_eq_comp, hneg, map_neg]
-    rw [eq_neg_iff_add_eq_zero, ← two_smul ℂ, smul_eq_zero] at h
-    exact h.resolve_left two_ne_zero
-  have h := congrArg (fun a ↦ ρ a ψ)
-    (AlmostComplexStructure.bivectorExterior_kahlerForm_lie_ι hQ h₀ h₂ v)
+  -- The self-dual form `ω` annihilates it, for the Clifford action on `W` through `ρ`.
+  have hzero : ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q v) ψ) = 0 :=
+    letI := Module.compHom W ρ.toRingHom
+    bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self o hQ hkl
+      (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he) hneg
+  have h := congrArg (fun a ↦ ρ a ψ) (AlmostComplexStructure.bivectorExterior_kahlerForm_lie_ι hQ
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂) v)
   simp only [Ring.lie_def, map_sub, map_mul, LinearMap.sub_apply, mul_apply_eq_comp, hψ,
     hzero, map_smul, LinearMap.smul_apply] at h
   linear_combination (norm := module) -h
 
 include hQ hkl he h₀ h₂ in
-/-- **On the canonical line, Clifford multiplication turns `J` into `i`**: if `P_α ψ = ψ`, then
-`c(J v) ψ = i c(v) ψ`. -/
+/-- **On the canonical eigenspace, Clifford multiplication turns `J` into `i`**: if
+`P_α ψ = ψ`, then `c(J v) ψ = i c(v) ψ`. -/
 theorem ι_apply_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (v : V) :
     ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
@@ -131,8 +131,8 @@ theorem ι_apply_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpi
   linear_combination (norm := module) (2⁻¹ : ℂ) • h
 
 include hQ hkl he h₀ h₂ in
-/-- On the complementary line, Clifford multiplication turns `J` into `-i`: if `P_α β = 0`, then
-`c(J v) β = -i c(v) β`. -/
+/-- On the complementary eigenspace, Clifford multiplication turns `J` into `-i`: if
+`P_α β = 0`, then `c(J v) β = -i c(v) β`. -/
 theorem ι_apply_apply_of_cliffordProjection_apply_eq_zero {β : positiveHalfSpinors o ρ}
     (hβ : cliffordProjection o ρ J.kahlerForm β = 0) (v : V) :
     ρ (ι Q (J v)) β = -Complex.I • ρ (ι Q v) β := by
@@ -153,8 +153,8 @@ theorem ι_apply_apply_of_cliffordProjection_apply_eq_zero {β : positiveHalfSpi
 /-! ### The Hermitian structure of `v ↦ c(v) ψ` -/
 
 include hQ hkl he h₀ h₂ in
-/-- On the canonical line, `v ↦ c(v) ψ` is a complex-linear isometric map from `(V, J)` up to the
-factor `‖ψ‖`: `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`. -/
+/-- On the canonical eigenspace, `v ↦ c(v) ψ` is a complex-linear isometric map from `(V, J)` up
+to the factor `‖ψ‖`: `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`. -/
 theorem inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (v w : V) :
@@ -171,12 +171,12 @@ theorem inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self
     linarith
   apply Complex.ext <;> simp [hre, him, ← Complex.ofReal_pow]
 
-/-! ### The Dirac symbol on the canonical line -/
+/-! ### The Dirac symbol on the canonical eigenspace -/
 
 include hQ hkl he h₀ h₂ in
-/-- **Clifford multiplication of a complex covector on the canonical line**: if `P_α ψ = ψ`, then
-`∑ₖ x_k c(e_k) ψ = (x₀ + i x₁) c(e₀) ψ + (x₂ + i x₃) c(e₂) ψ`. Only the two `∂bar`-components
-`x₀ + i x₁` and `x₂ + i x₃` of the covector survive. -/
+/-- **Clifford multiplication of a complex covector on the canonical eigenspace**: if
+`P_α ψ = ψ`, then `∑ₖ x_k c(e_k) ψ = (x₀ + i x₁) c(e₀) ψ + (x₂ + i x₃) c(e₂) ψ`. Only the two
+`∂bar`-components `x₀ + i x₁` and `x₂ + i x₃` of the covector survive. -/
 theorem sum_smul_ι_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (x : Fin 4 → ℂ) :
     ∑ k, x k • ρ (ι Q (e k)) ψ =
@@ -189,7 +189,7 @@ theorem sum_smul_ι_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalf
   module
 
 include hQ hkl he h₀ h₂ in
-/-- The norm of the Dirac symbol on the canonical line:
+/-- The norm of the Dirac symbol on the canonical eigenspace:
 `‖∑ₖ x_k c(e_k) ψ‖² = (|x₀ + i x₁|² + |x₂ + i x₃|²) ‖ψ‖²`. -/
 theorem norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {ψ : positiveHalfSpinors o ρ}
@@ -209,8 +209,9 @@ theorem norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self
   ring
 
 include hQ hkl he h₀ h₂ in
-/-- **The Dirac symbol on the canonical line vanishes exactly on `∂bar`-closed covectors**: for
-`P_α ψ = ψ`, `∑ₖ x_k c(e_k) ψ = 0` if and only if `ψ = 0` or `x₀ + i x₁ = x₂ + i x₃ = 0`. -/
+/-- **The Dirac symbol on the canonical eigenspace vanishes exactly on `∂bar`-closed
+covectors**: for `P_α ψ = ψ`, `∑ₖ x_k c(e_k) ψ = 0` if and only if `ψ = 0` or
+`x₀ + i x₁ = x₂ + i x₃ = 0`. -/
 theorem sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (x : Fin 4 → ℂ) :
@@ -223,8 +224,8 @@ theorem sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
   tauto
 
 include hQ hkl he h₀ h₂ in
-/-- **The Dirac symbol on the canonical line sees only `∂bar`**: for `P_α ψ = ψ` and a real-linear
-complex covector `L`, such as a covariant derivative `∇_a α` at a point,
+/-- **The Dirac symbol on the canonical eigenspace sees only `∂bar`**: for `P_α ψ = ψ` and a
+real-linear complex covector `L`, such as a covariant derivative `∇_a α` at a point,
 `∑ₖ L(e_k) c(e_k) ψ = 0` if and only if `ψ = 0` or `L` is complex linear for `J`,
 `L (J v) = i L v`. -/
 theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self

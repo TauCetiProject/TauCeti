@@ -11,19 +11,21 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
-# The Clifford action of the Kähler form in dimension four
+# The Clifford action of the Kähler form
 
-Let `J` be an orthogonal complex structure on a real inner product space `V` of dimension four,
-with a unitary frame `(e₀, e₁, e₂, e₃)`, `J e₀ = e₁` and `J e₂ = e₃`, and Kähler two-vector
-`ω = e₀ ∧ e₁ + e₂ ∧ e₃` (`TauCeti.AlmostComplexStructure.kahlerForm`). For the quadratic form
-`Q v = -‖v‖²`, Clifford multiplication by two-forms `c₂ = CliffordAlgebra.bivectorExterior Q`
-sends `ω` to `c(e₀) c(e₁) + c(e₂) c(e₃)`, where `c = CliffordAlgebra.ι Q`.
+Let `J` be an orthogonal complex structure on a finite-dimensional real inner product space `V`,
+with Kähler two-vector `ω` (`TauCeti.AlmostComplexStructure.kahlerForm`). For the quadratic form
+`Q v = -‖v‖²`, write `c = CliffordAlgebra.ι Q` and `c₂ = CliffordAlgebra.bivectorExterior Q` for
+Clifford multiplication by vectors and by two-forms.
 
 The commutator of `c₂(ω)` with a generator is the Clifford image of `J`:
 `⁅c₂(ω), c(v)⁆ = 2 c(J v)`. On a Clifford module this is how the eigenspaces of `c₂(ω)` see `J`.
 For instance, on Taubes's canonical line, the `-2i`-eigenline of `c₂(ω)` in the positive
-half-spinors, `v ↦ c(v) u` turns `J` into multiplication by `i`
+half-spinors of a four-dimensional spin module, `v ↦ c(v) u` turns `J` into multiplication by `i`
 (`TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`).
+
+In dimension four, with a unitary frame `(e₀, e₁, e₂, e₃)`, `J e₀ = e₁` and `J e₂ = e₃`, the
+Kähler two-vector is `ω = e₀ ∧ e₁ + e₂ ∧ e₃`, and `c₂` sends it to `c(e₀) c(e₁) + c(e₂) c(e₃)`.
 
 ## Main results
 
@@ -47,23 +49,11 @@ open CliffordAlgebra exteriorPower
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-  {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
-  (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+  {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2) {J : AlmostComplexStructure V}
 
-omit [FiniteDimensional ℝ V] in
-include h₀ h₂ in
-/-- `J v` in a unitary frame: `J` rotates each of the planes `⟨e₀, e₁⟩` and `⟨e₂, e₃⟩` by a
-right angle. -/
-private theorem apply_eq_inner_smul (v : V) :
-    J v = ⟪e 0, v⟫ • e 1 - ⟪e 1, v⟫ • e 0 + ⟪e 2, v⟫ • e 3 - ⟪e 3, v⟫ • e 2 := by
-  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
-  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
-  have hv : J v = ∑ i, ⟪e i, v⟫ • J (e i) := by
-    conv_lhs => rw [← e.sum_repr' v]
-    simp [map_sum, map_smul]
-  rw [hv, Fin.sum_univ_four, h₀, h₁, h₂, h₃]
-  module
+section Frame
+
+variable {e : OrthonormalBasis (Fin 4) ℝ V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
 
 include hQ h₀ h₂ in
 /-- **The Clifford image of the Kähler form** in a unitary frame:
@@ -76,18 +66,35 @@ theorem bivectorExterior_kahlerForm :
     bivectorExterior_apply_ιMulti, bivector_eq_ι_mul_ι_of_isOrtho Q (hortho (by decide)),
     bivector_eq_ι_mul_ι_of_isOrtho Q (hortho (by decide))]
 
-include hQ h₀ h₂ in
-/-- **The Kähler form generates `J` in the Clifford algebra**: `⁅c₂(ω), c(v)⁆ = 2 c(J v)`. -/
-theorem bivectorExterior_kahlerForm_lie_ι (v : V) :
+end Frame
+
+include hQ in
+/-- **The Kähler form generates `J` in the Clifford algebra**: for an orthogonal `J`,
+`⁅c₂(ω), c(v)⁆ = 2 c(J v)`. -/
+theorem bivectorExterior_kahlerForm_lie_ι (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) :
     ⁅bivectorExterior Q J.kahlerForm, ι Q v⁆ = ι Q ((2 : ℝ) • J v) := by
   have hpolar (x y : V) : QuadraticMap.polar Q x y = -2 * ⟪x, y⟫ := by
     simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
     ring
-  rw [bivectorExterior_kahlerForm hQ h₀ h₂, Ring.lie_def, add_mul, mul_add, add_sub_add_comm,
-    ← Ring.lie_def, ← Ring.lie_def, ι_mul_ι_lie_ι, ι_mul_ι_lie_ι, ← map_add,
-    apply_eq_inner_smul h₀ h₂ v]
-  congr 1
-  simp only [hpolar]
-  module
+  rw [kahlerForm_def, map_smul, map_sum, Ring.lie_def, smul_mul_assoc, mul_smul_comm, ← smul_sub,
+    Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib]
+  simp only [← Ring.lie_def, bivectorExterior_apply_ιMulti, bivector_lie_ι, ← map_sum]
+  set b := stdOrthonormalBasis ℝ V
+  -- Expanding `ω = (1 / 2) ∑ᵢ bᵢ ∧ J bᵢ`, each `bᵢ ∧ J bᵢ` rotates `v` within `⟨bᵢ, J bᵢ⟩`.
+  have hsum : ∑ i, (QuadraticMap.polar Q (J (b i)) v • b i - QuadraticMap.polar Q (b i) v • J (b i))
+      = (4 : ℝ) • J v := by
+    have hJv : ∑ i, ⟪b i, J v⟫ • b i = J v := b.sum_repr' (J v)
+    have hv : ∑ i, ⟪b i, v⟫ • J (b i) = J v := by
+      conv_rhs => rw [← b.sum_repr' v]
+      simp [map_sum, map_smul]
+    calc _ = ∑ i, ((2 : ℝ) • (⟪b i, J v⟫ • b i) + (2 : ℝ) • (⟪b i, v⟫ • J (b i))) := by
+          refine Finset.sum_congr rfl fun i _ ↦ ?_
+          rw [hpolar, hpolar, inner_apply_left hJ]
+          module
+      _ = (4 : ℝ) • J v := by
+          rw [Finset.sum_add_distrib, ← Finset.smul_sum, ← Finset.smul_sum, hJv, hv]
+          module
+  rw [hsum, ← map_smul, smul_smul]
+  norm_num
 
 end TauCeti.AlmostComplexStructure
