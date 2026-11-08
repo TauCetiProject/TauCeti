@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Derivative
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # The induced boundary orientation
@@ -16,6 +17,12 @@ The normal coordinate of a half-space transition has strictly positive derivativ
 chart signs therefore constructs the actual boundary orientation. The model orientation uses
 the outward-first convention, so the standard ambient orientation induces the negative standard
 orientation on the coordinate-zero boundary, including a zero-dimensional boundary.
+
+On the zero-dimensional boundary of a one-manifold, the induced orientation at a point is a sign
+`Orientation.signBasis` against a basis indexed by `Fin 0`. That sign is `1` exactly when an
+outward tangent vector is positively oriented, and `-1` exactly when it is negatively oriented
+(`TauCeti.signBasis_orientationAt_boundaryOrientation_eq_one_iff`,
+`TauCeti.signBasis_orientationAt_boundaryOrientation_eq_neg_one_iff`).
 -/
 
 public section
@@ -193,5 +200,53 @@ theorem orientationAt_boundaryOrientation_model (n : ℕ)
       -(EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation := by
   rw [orientationAt_boundaryOrientation, Manifold.Orientation.orientationAt_model]
   exact Orientation.halfSpaceBoundaryOrientation_basisFun n
+
+end TauCeti
+
+namespace TauCeti
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 + 1)) M]
+  [IsManifold (𝓡∂ (0 + 1)) 1 M]
+
+local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 ((𝓡∂ (0 + 1)).boundary M) :=
+  isManifold_boundary M one_ne_zero
+
+/-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
+is `1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is
+positively oriented. -/
+theorem signBasis_orientationAt_boundaryOrientation_eq_one_iff
+    (o : Manifold.Orientation (𝓡∂ (0 + 1)) M (Fin 1)) (x : (𝓡∂ (0 + 1)).boundary M)
+    {v : TangentSpace (𝓡∂ (0 + 1)) (x : M)} (hv : IsOutwardPointing (x : M) v)
+    (b : Module.Basis (Fin 1) ℝ (TangentSpace (𝓡∂ (0 + 1)) (x : M))) (hb : b 0 = v)
+    (e : Module.Basis (Fin 0) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x)) :
+    Orientation.signBasis ((boundaryOrientation o).orientationAt x) e = 1 ↔
+      b.orientation = o.orientationAt (x : M) := by
+  rw [← boundaryOrientation_spec o x hv e b (by funext i; rw [Fin.fin_one_eq_zero i, hb]; rfl)]
+  rcases e.orientation_eq_or_eq_neg ((boundaryOrientation o).orientationAt x) with h | h <;>
+    rw [h]
+  · exact ⟨fun _ ↦ rfl, fun _ ↦ Orientation.signBasis_orientation e⟩
+  · rw [Orientation.signBasis_neg, Orientation.signBasis_orientation]
+    exact ⟨fun h' ↦ absurd h' (by decide), fun h' ↦ absurd h' (Module.Ray.ne_neg_self _)⟩
+
+/-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
+is `-1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is
+negatively oriented. -/
+theorem signBasis_orientationAt_boundaryOrientation_eq_neg_one_iff
+    (o : Manifold.Orientation (𝓡∂ (0 + 1)) M (Fin 1)) (x : (𝓡∂ (0 + 1)).boundary M)
+    {v : TangentSpace (𝓡∂ (0 + 1)) (x : M)} (hv : IsOutwardPointing (x : M) v)
+    (b : Module.Basis (Fin 1) ℝ (TangentSpace (𝓡∂ (0 + 1)) (x : M))) (hb : b 0 = v)
+    (e : Module.Basis (Fin 0) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x)) :
+    Orientation.signBasis ((boundaryOrientation o).orientationAt x) e = -1 ↔
+      b.orientation = -o.orientationAt (x : M) := by
+  have key := signBasis_orientationAt_boundaryOrientation_eq_one_iff o x hv b hb e
+  rcases Int.units_eq_one_or (Orientation.signBasis ((boundaryOrientation o).orientationAt x) e)
+    with h | h
+  · refine ⟨fun h' ↦ absurd (h.symm.trans h') (by decide), fun h' ↦ ?_⟩
+    exact absurd ((key.mp h).symm.trans h') (Module.Ray.ne_neg_self _)
+  · refine ⟨fun _ ↦ ?_, fun _ ↦ h⟩
+    have hne : o.orientationAt (x : M) ≠ b.orientation :=
+      fun he ↦ absurd (h.symm.trans (key.mpr he.symm)) (by decide)
+    rw [(b.orientation_ne_iff_eq_neg _).mp hne]
+    exact (neg_neg b.orientation).symm
 
 end TauCeti

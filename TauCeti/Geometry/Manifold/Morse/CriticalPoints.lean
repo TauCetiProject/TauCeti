@@ -16,7 +16,7 @@ import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
@@ -37,7 +37,8 @@ The critical set of a `C¹` function is closed, and a nondegenerate critical poi
 it, so a Morse function has finitely many critical points in every compact set; for a proper
 function bounded below, this applies to every sublevel set. A compact band between regular
 values therefore holds finitely many critical levels, along which properties of the band can be
-proved one level at a time.
+proved one level at a time. Above a regular value, the critical points in a compact band stay a
+positive distance away in value, so the band begins with a collar free of critical points.
 
 Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
 critical count is additive over a finite partition of `M` into open sets, such as its connected
@@ -64,6 +65,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
+* `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints`: a compact band starting at a regular
+  value begins with a collar free of critical points.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
 * `TauCeti.finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint`: a `C¹`
@@ -366,6 +369,24 @@ theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (cri
         isOpen_compl_singleton)
   · exact ⟨mem_extChartAt_source x, mem_extChartAt_target x,
       fun h0 ↦ hx ((hcrit x (mem_extChartAt_source x)).2 h0)⟩
+
+/-- **A regular value has a collar without critical points above it.** If `f` is `C¹`, `a < b`,
+the band `f⁻¹[a, b]` is compact and `a` is a regular value of `f`, then for some `a' ∈ (a, b]` the
+band `f⁻¹[a, a']` contains no critical point of `f`. -/
+theorem exists_mem_Ioc_forall_notMem_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) {a b : ℝ}
+    (hab : a < b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) :
+    ∃ a' ∈ Ioc a b, ∀ x ∈ criticalPoints I f, f x ∉ Icc a a' := by
+  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha
+  have hS : IsCompact (criticalPoints I f ∩ f ⁻¹' Icc a b) :=
+    hcompact.inter_left (isClosed_criticalPoints hf)
+  rcases (criticalPoints I f ∩ f ⁻¹' Icc a b).eq_empty_or_nonempty with hS₀ | hSne
+  · exact ⟨b, ⟨hab, le_rfl⟩, fun x hx hxab ↦ hS₀.subset ⟨hx, hxab⟩⟩
+  -- Stop halfway to the lowest critical value of the band, which lies strictly above `a`.
+  obtain ⟨p, ⟨hp, hpab⟩, hpmin⟩ := hS.exists_isMinOn hSne hf.continuous.continuousOn
+  have hap : a < f p := hpab.1.lt_of_ne fun h ↦ ha ⟨p, hp, h.symm⟩
+  refine ⟨(a + f p) / 2, ⟨by linarith, by linarith [hpab.2]⟩, fun x hx hxa ↦ ?_⟩
+  have hpx := isMinOn_iff.1 hpmin x ⟨hx, hxa.1, by linarith [hxa.2, hpab.2]⟩
+  linarith [hxa.2]
 
 /-- **Nondegenerate critical points in a compact set are finite in number.** If every critical
 point of a `C¹` function `f` in a compact set `K` is nondegenerate, then `K` contains only finitely

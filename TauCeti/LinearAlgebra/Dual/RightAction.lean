@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 
@@ -33,6 +34,8 @@ acts on the right of the dual of its left regular module by
 
 * `TauCeti.apply_apply_eq_apply_one_mul`: a map from `A` to its dual that is equivariant for the
   right `A`-actions is determined by its value at `1`; additivity is not assumed.
+* `LinearEquiv.isScalarTower_of_dual_regular`: a left `A`-module identified with the dual of the
+  right regular module, with action `(a • φ) x = φ (x * a)`, has compatible actions of `k` and `A`.
 
 ## Implementation notes
 
@@ -87,3 +90,18 @@ theorem apply_apply_eq_apply_one_mul {e : A → Module.Dual k A}
 end DomMulAct
 
 end TauCeti
+
+namespace LinearEquiv
+
+variable {k A Q : Type*} [CommSemiring k] [Semiring A] [Algebra k A] [AddCommMonoid Q]
+  [Module A Q] [Module k Q]
+
+/-- A left `A`-module identified with the dual of the right regular module, with action
+`(a • φ) x = φ (x * a)`, has compatible actions of `k` and `A`. -/
+theorem isScalarTower_of_dual_regular (e : Q ≃ₗ[k] Module.Dual k A)
+    (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) :
+    IsScalarTower k A Q :=
+  IsScalarTower.of_algebraMap_smul fun c q => e.injective <| LinearMap.ext fun x => by
+    simp [he, ← Algebra.commutes, ← Algebra.smul_def]
+
+end LinearEquiv
