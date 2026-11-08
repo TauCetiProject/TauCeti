@@ -42,7 +42,7 @@ original edges.
 
 ## Main results
 
-* `Graph.isRegularOfDegree_iff_incidenceCount_eq`: with finitely many edges, regularity is a
+* `Graph.isRegularOfDegree_iff_incidenceCount_eq`: with finite incidence sets, regularity is a
   condition on incidence counts.
 * `Graph.isRegularOfDegree_ofSimpleGraph_iff`: regularity agrees with Mathlib's for simple graphs.
 * `Graph.IsBipartition.exists_isRegularCompletion`: a finite bipartite multigraph whose degrees are
@@ -82,12 +82,13 @@ theorem IsRegularOfDegree.incidenceCount_eq (h : G.IsRegularOfDegree k) {x : α}
     (hx : x ∈ V(G)) : G.incidenceCount x = k := by
   rw [incidenceCount_def, Set.ncard_def, isRegularOfDegree_def.1 h x hx, ENat.toNat_natCast]
 
-/-- With finitely many edges, a multigraph is `k`-regular exactly when every actual vertex has
+/-- With finite incidence sets, a multigraph is `k`-regular exactly when every actual vertex has
 incidence count `k`. -/
-theorem isRegularOfDegree_iff_incidenceCount_eq [Finite E(G)] :
+theorem isRegularOfDegree_iff_incidenceCount_eq
+    (hfin : ∀ x ∈ V(G), (G.incidenceSet x).Finite) :
     G.IsRegularOfDegree k ↔ ∀ x ∈ V(G), G.incidenceCount x = k := by
   refine ⟨fun h _ hx ↦ h.incidenceCount_eq hx, fun h ↦ isRegularOfDegree_def.2 fun x hx ↦ ?_⟩
-  rw [← (G.finite_incidenceSet x).cast_ncard_eq, ← incidenceCount_def, h x hx]
+  rw [← (hfin x hx).cast_ncard_eq, ← incidenceCount_def, h x hx]
 
 /-- The multigraph of a locally finite simple graph is `k`-regular exactly when the simple graph
 is. -/
@@ -367,8 +368,8 @@ private theorem encard_inc_sideVertex [Finite E(G)] (S : Finset V(G)) (pad p : �
   cases v with
   | inl x =>
     simp only [sideVertex, Sum.elim_inl, Sum.inl.injEq, sideDegree, exists_eq_right']
-    rw [show {e | G.Inc e x.1.1} = G.incidenceSet x.1.1 by ext; simp, incidenceCount_def,
-      (G.finite_incidenceSet _).cast_ncard_eq]
+    have hincidenceSet : {e | G.Inc e x.1.1} = G.incidenceSet x.1.1 := rfl
+    rw [hincidenceSet, incidenceCount_def, (G.finite_incidenceSet _).cast_ncard_eq]
   | inr i => simp [sideVertex, sideDegree]
 
 /-- Together, the degree deficits of the vertices of a padded side and the degrees of its original
