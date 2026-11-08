@@ -466,7 +466,7 @@ private theorem exists_contDiffAt_delBarCoeff_eventually_eq_of_pi_of_eq_zero (q 
       intro z hz I hI
       have hzU := hWsub hz
       rw [hf', delBarCoeff_sub (fun j hj ↦ ?_) (fun j _ ↦ (hdγ hzU _).differentiableAt (by simp)),
-        hclosed z hzU I hI, delBarCoeff_delBarCoeff fun J _ ↦ (hγa hzU J).of_le (by simp),
+        hclosed z hzU I hI, delBarCoeff_delBarCoeff fun _ _ _ _ ↦ (hγa hzU _).of_le (by simp),
         sub_zero]
       have hcard : #(I.erase j) = q + 1 := by
         rw [Finset.card_erase_of_mem hj, hI]

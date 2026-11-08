@@ -165,10 +165,11 @@ private theorem conjWirtingerDeriv_delBarCoeff_apply {u : Finset ι → (ι → 
   rw [conjWirtingerDeriv_eq_sum_smul hD, _root_.sum_apply]
   simp only [_root_.smul_apply]
 
-/-- **`bar∂ bar∂ = 0`.** For a coordinate `(0,q)`-form whose coefficients indexed by subsets of `I`
-are `C²` at `z`, the coefficient of `d(conj z)_I` in `bar∂ bar∂ u` vanishes at `z`. -/
+/-- **`bar∂ bar∂ = 0`.** For a coordinate `(0,q)`-form whose coefficients indexed by `I` with two
+distinct elements removed are `C²` at `z`, the coefficient of `d(conj z)_I` in `bar∂ bar∂ u`
+vanishes at `z`. -/
 theorem delBarCoeff_delBarCoeff {u : Finset ι → (ι → ℂ) → F} {I : Finset ι} {z : ι → ℂ}
-    (hu : ∀ J ⊆ I, ContDiffAt ℝ 2 (u J) z) :
+    (hu : ∀ j ∈ I, ∀ i ∈ I.erase j, ContDiffAt ℝ 2 (u ((I.erase j).erase i)) z) :
     delBarCoeff (delBarCoeff u) I z = 0 := by
   -- The second derivatives `∂²u_{I \ {i,j}}/∂(conj z_j)∂(conj z_i)`, with their signs.
   set D : ι → ι → F := fun j i ↦ ((-1 : ℂ) ^ #{x ∈ I | x < j} *
@@ -178,8 +179,7 @@ theorem delBarCoeff_delBarCoeff {u : Finset ι → (ι → ℂ) → F} {I : Fins
   have hexp : delBarCoeff (delBarCoeff u) I z = ∑ j ∈ I, ∑ i ∈ I.erase j, D j i := by
     rw [delBarCoeff_def]
     refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [conjWirtingerDeriv_delBarCoeff_apply fun i hi ↦ hu _
-      (((I.erase j).erase_subset i).trans (I.erase_subset j)), Finset.smul_sum]
+    rw [conjWirtingerDeriv_delBarCoeff_apply (hu j hj), Finset.smul_sum]
     exact Finset.sum_congr rfl fun i _ ↦ by simp only [hD, mul_smul]
   -- Exchanging `i` and `j` changes the sign of `D j i`.
   have hanti {i j : ι} (hi : i ∈ I) (hj : j ∈ I) (hij : i ≠ j) : D i j = -D j i := by
@@ -187,8 +187,8 @@ theorem delBarCoeff_delBarCoeff {u : Finset ι → (ι → ℂ) → F} {I : Fins
           (Pi.single j 1)) z (Pi.single i 1) =
         conjWirtingerDeriv (fun y ↦ conjWirtingerDeriv (u ((I.erase j).erase i)) y
           (Pi.single i 1)) z (Pi.single j 1) := by
-      rw [Finset.erase_right_comm, conjWirtingerDeriv_conjWirtingerDeriv_comm (hu _
-        (((I.erase j).erase_subset i).trans (I.erase_subset j)))]
+      rw [Finset.erase_right_comm,
+        conjWirtingerDeriv_conjWirtingerDeriv_comm (hu j hj i (Finset.mem_erase.2 ⟨hij, hi⟩))]
     have hs : (-1 : ℂ) ^ #{x ∈ I | x < i} * (-1) ^ #{x ∈ I.erase i | x < j} =
         -((-1 : ℂ) ^ #{x ∈ I | x < j} * (-1) ^ #{x ∈ I.erase j | x < i}) :=
       Finset.neg_one_pow_card_filter_lt_mul_erase hi hj hij
