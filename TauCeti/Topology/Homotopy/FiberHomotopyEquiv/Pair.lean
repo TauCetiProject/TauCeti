@@ -51,12 +51,18 @@ def preimagePairCompHomotopy :
   have hS (t : unitInterval) (x : E) (hx : x ∈ p ⁻¹' S) :
       H (t, x) ∈ p ⁻¹' S := by
     simpa only [Set.mem_preimage, apply_homotopyWith H t x] using hx
-  convert TopPair.ofSubsetHomotopy
+  have hstart (h : Set.MapsTo (TopCat.ofHom (Φ.invFun.comp Φ.toFun))
+      (p ⁻¹' S) (p ⁻¹' S)) :
+      Φ.preimagePairMap S ≫ Φ.symm.preimagePairMap S =
+        TopPair.ofSubsetMap (TopCat.ofHom (Φ.invFun.comp Φ.toFun)) h := by
+    simp only [preimagePairMap, symm_toFun]
+    exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ h rfl
+  -- ofSubsetHomotopy has induced subset maps as endpoints, not a composite and an
+  -- identity in TopPair. Identify these endpoints explicitly before using it.
+  rw [hstart (fun x hx ↦ H.apply_zero x ▸ hS 0 x hx),
+    ← TopPair.ofSubsetMap_id (fun x hx ↦ H.apply_one x ▸ hS 1 x hx)]
+  exact TopPair.ofSubsetHomotopy
     (g₀ := TopCat.ofHom (Φ.invFun.comp Φ.toFun)) (g₁ := 𝟙 (TopCat.of E))
-    H.toHomotopy hS using 1 <;>
-    apply TopPair.hom_ext_of_fst
-  · simp only [TopPair.Hom.fst_comp, preimagePairMap_fst, symm_toFun]
-    exact (TopPair.ofSubsetMap_fst (X := TopCat.of E) _ _).symm
-  · exact (TopPair.ofSubsetMap_fst (X := TopCat.of E) _ _).symm
+    H.toHomotopy hS
 
 end TauCeti.FiberHomotopyEquiv

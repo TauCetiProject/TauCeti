@@ -47,10 +47,11 @@ variable {D X : Type u} [TopologicalSpace D] [TopologicalSpace X]
   (h₁ : ∀ d, (τ d).target = f d) (S : Set D) (R : Type u) [Ring R]
 
 /-- Appending a continuous family of paths gives a chain homotopy equivalence relative to
-any subset of the parameter space.
-
-The carrier-specialized wrapper supports the cube simp lemmas below: on the generic term,
-the hom/inv simp rules fire before the conversion of the pair's ambient-space wrapper. -/
+any subset of the parameter space. This is
+`FiberHomotopyEquiv.relativeCubicalChainHomotopyEquiv` of `fiberHomotopyEquiv τ h₀ h₁`,
+with the product and pullback pair carriers written explicitly. -/
+-- This carrier specialization gives the cube simp lemmas a normal head: the generic
+-- hom/inv simp rules otherwise fire before the ambient-carrier conversion.
 def relativeChainHomotopyEquiv :
     _root_.HomotopyEquiv
       ((TopPair.ofSubset (X := TopCat.of (D × MooreLoopSpace X b))
@@ -69,14 +70,9 @@ theorem relativeChainHomotopyEquiv_hom_f_cubicalChainOfCube {n : ℕ}
       TopPair.cubicalChainOfCube R
         (P := TopPair.ofSubset (X := TopCat.of (MoorePathPullback f b)) ((proj f b) ⁻¹' S))
         ((trivializationMap τ h₀ h₁).comp σ) := by
-  rw [relativeChainHomotopyEquiv, FiberHomotopyEquiv.relativeCubicalChainHomotopyEquiv_hom]
-  have h := TopPair.cubicalChainComplexMap_f_cubicalChainOfCube R
-    ((fiberHomotopyEquiv τ h₀ h₁).preimagePairMap S) σ
-  simp only [FiberHomotopyEquiv.preimagePairMap_fst, fiberHomotopyEquiv_toFun] at h
-  -- The cube lemma uses the ambient space of a pair, while `σ` uses the product carrier.
-  -- Converting compares the same compact-open map across those wrappers.
-  convert h using 1
-  congr 1
+  simpa only [relativeChainHomotopyEquiv, fiberHomotopyEquiv_toFun] using
+    (fiberHomotopyEquiv τ h₀ h₁).relativeCubicalChainHomotopyEquiv_hom_f_cubicalChainOfCube
+      S R σ
 
 /-- The inverse comparison sends a relative cube to the cube obtained by appending the
 reversed chosen paths, retaining the parameter and the resulting loop. -/
@@ -89,13 +85,8 @@ theorem relativeChainHomotopyEquiv_inv_f_cubicalChainOfCube {n : ℕ}
         (P := TopPair.ofSubset (X := TopCat.of (D × MooreLoopSpace X b))
           ((ContinuousMap.fst : C(D × MooreLoopSpace X b, D)) ⁻¹' S))
         ((trivializationInverse τ h₀ h₁).comp σ) := by
-  rw [relativeChainHomotopyEquiv, FiberHomotopyEquiv.relativeCubicalChainHomotopyEquiv_inv]
-  have h := TopPair.cubicalChainComplexMap_f_cubicalChainOfCube R
-    ((fiberHomotopyEquiv τ h₀ h₁).symm.preimagePairMap S) σ
-  simp only [FiberHomotopyEquiv.preimagePairMap_fst, FiberHomotopyEquiv.symm_toFun,
-    fiberHomotopyEquiv_invFun] at h
-  -- As above, only the ambient-space wrapper of the pair differs.
-  convert h using 1
-  congr 1
+  simpa only [relativeChainHomotopyEquiv, fiberHomotopyEquiv_invFun] using
+    (fiberHomotopyEquiv τ h₀ h₁).relativeCubicalChainHomotopyEquiv_inv_f_cubicalChainOfCube
+      S R σ
 
 end TauCeti.MoorePathPullback

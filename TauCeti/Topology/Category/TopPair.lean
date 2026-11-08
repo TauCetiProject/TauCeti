@@ -52,6 +52,10 @@ universe u
 
 namespace TopPair
 
+/-- The ambient component of the identity map of a topological pair is the identity. -/
+@[simp]
+lemma Hom.fst_id (P : TopPair.{u}) : Hom.fst (𝟙 P) = 𝟙 P.fst := (rfl)
+
 /-- The ambient component of a composite map of topological pairs is the composite of the
 ambient components. -/
 @[simp]

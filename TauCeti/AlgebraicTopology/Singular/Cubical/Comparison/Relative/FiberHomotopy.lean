@@ -60,4 +60,35 @@ theorem relativeCubicalChainHomotopyEquiv_inv :
     (Φ.relativeCubicalChainHomotopyEquiv S R).inv =
       TopPair.cubicalChainComplexMap R (Φ.symm.preimagePairMap S) := (rfl)
 
+/-- The forward relative comparison sends the chain of a cube to the chain of its
+composition with the specified map of total spaces. -/
+-- These cube formulas are not simp rules: the hom/inv projection rules above simplify
+-- their left sides first. Carrier-specialized comparisons can use them as simp rules.
+theorem relativeCubicalChainHomotopyEquiv_hom_f_cubicalChainOfCube {n : ℕ}
+    (σ : SingularCube E n) :
+    (Φ.relativeCubicalChainHomotopyEquiv S R).hom.f n
+        (TopPair.cubicalChainOfCube R σ) =
+      TopPair.cubicalChainOfCube R
+        (P := TopPair.ofSubset (X := TopCat.of E') (q ⁻¹' S))
+        (Φ.toFun.comp σ) := by
+  rw [relativeCubicalChainHomotopyEquiv_hom]
+  have h := TopPair.cubicalChainComplexMap_f_cubicalChainOfCube R (Φ.preimagePairMap S) σ
+  simp only [preimagePairMap_fst] at h
+  -- The pair's ambient space and E' have the same carrier, but composition packages
+  -- the compact-open map through different TopCat wrappers.
+  convert h using 1
+  congr 1
+
+/-- The inverse relative comparison sends the chain of a cube to the chain of its
+composition with the specified inverse map of total spaces. -/
+theorem relativeCubicalChainHomotopyEquiv_inv_f_cubicalChainOfCube {n : ℕ}
+    (σ : SingularCube E' n) :
+    (Φ.relativeCubicalChainHomotopyEquiv S R).inv.f n
+        (TopPair.cubicalChainOfCube R σ) =
+      TopPair.cubicalChainOfCube R
+        (P := TopPair.ofSubset (X := TopCat.of E) (p ⁻¹' S))
+        (Φ.invFun.comp σ) := by
+  simpa only [relativeCubicalChainHomotopyEquiv_hom, relativeCubicalChainHomotopyEquiv_inv,
+    symm_toFun] using Φ.symm.relativeCubicalChainHomotopyEquiv_hom_f_cubicalChainOfCube S R σ
+
 end TauCeti.FiberHomotopyEquiv
