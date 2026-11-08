@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.DirectedInverseSystem
+public import TauCeti.Algebra.Colimit.CommonStage
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.OfDirected
 
 /-!
@@ -69,24 +69,6 @@ variable [IsDirectedOrder ι] (hφt : ∀ i j (h : i ≤ j) a, φ j (t i j h a) 
   (hcover : ∀ x : L, ∃ i a, φ i a = x)
 
 include hφt hcover in
-/-- Finitely many elements of the colimit lift to a common stage. -/
-theorem exists_lift (S : Finset L) : ∃ i, ∃ g : L → A i, ∀ x ∈ S, φ i (g x) = x := by
-  classical
-  induction S using Finset.induction_on with
-  | empty =>
-    obtain ⟨i, -⟩ := hcover 0
-    exact ⟨i, 0, by simp⟩
-  | insert a S _ ih =>
-    obtain ⟨i, g, hg⟩ := ih
-    obtain ⟨j, b, rfl⟩ := hcover a
-    obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
-    refine ⟨k, fun x ↦ if x = φ j b then t j k hjk b else t i k hik (g x), fun x hx ↦ ?_⟩
-    by_cases hxa : x = φ j b
-    · simp only [hxa, ↓reduceIte, hφt]
-    · simp only [hxa, ↓reduceIte, hφt]
-      exact hg x ((Finset.mem_insert.mp hx).resolve_left hxa)
-
-include hφt hcover in
 /-- **The valuation spectrum of a colimit embeds into the product of the spectra of the
 stages.** If every element of `L` comes from some stage of a directed system with compatible
 maps `φᵢ : Aᵢ → L`, then `v ↦ (comap φᵢ v)ᵢ` is a topological embedding
@@ -97,7 +79,7 @@ theorem isEmbedding_pi_comap : IsEmbedding fun (v : Spv L) i ↦ comap (φ i) v 
     (continuous_pi fun i ↦ continuous_comap (φ i))) ?_⟩, fun v w h ↦ ?_⟩
   · rw [instTopologicalSpace_eq_generateFrom]
     refine le_generateFrom fun U ⟨x, y, hU⟩ ↦ ?_
-    obtain ⟨i, g, hg⟩ := exists_lift hφt hcover {x, y}
+    obtain ⟨i, g, hg⟩ := DirectLimit.exists_lift hφt hcover {x, y}
     obtain ⟨a, b, rfl, rfl⟩ : ∃ a b : A i, φ i a = x ∧ φ i b = y :=
       ⟨g x, g y, hg x (by simp), hg y (by simp)⟩
     refine isOpen_induced_iff.mpr ⟨(fun w : ∀ i, Spv (A i) ↦ w i) ⁻¹' basicOpen a b,
@@ -105,34 +87,13 @@ theorem isEmbedding_pi_comap : IsEmbedding fun (v : Spv L) i ↦ comap (φ i) v 
     rw [hU, ← comap_preimage_basicOpen]
     rfl
   · refine ext' fun x y ↦ ?_
-    obtain ⟨i, g, hg⟩ := exists_lift hφt hcover {x, y}
+    obtain ⟨i, g, hg⟩ := DirectLimit.exists_lift hφt hcover {x, y}
     obtain ⟨a, b, rfl, rfl⟩ : ∃ a b : A i, φ i a = x ∧ φ i b = y :=
       ⟨g x, g y, hg x (by simp), hg y (by simp)⟩
     rw [← comap_vle, ← comap_vle, congr_fun h i]
 
 variable [DirectedSystem A fun i j h ↦ t i j h]
   (hker : ∀ i (a b : A i), φ i a = φ i b → ∃ j, ∃ h : i ≤ j, t i j h a = t i j h b)
-
-include hφt hker in
-/-- Two pairs of elements of stages `i` and `j` with the same images in the colimit become equal
-at a common later stage. -/
-theorem exists_eq_eq_of_eq_eq {i j : ι} {a b : A i} {a' b' : A j}
-    (ha : φ i a = φ j a') (hb : φ i b = φ j b') :
-    ∃ k, ∃ (hik : i ≤ k) (hjk : j ≤ k),
-      t i k hik a = t j k hjk a' ∧ t i k hik b = t j k hjk b' := by
-  obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
-  have ha' : φ k (t i k hik a) = φ k (t j k hjk a') := by rw [hφt, hφt, ha]
-  have hb' : φ k (t i k hik b) = φ k (t j k hjk b') := by rw [hφt, hφt, hb]
-  obtain ⟨l, hkl, hal⟩ := hker k _ _ ha'
-  obtain ⟨l', hkl', hbl'⟩ := hker k _ _ hb'
-  obtain ⟨m, hlm, hl'm⟩ := directed_of (· ≤ ·) l l'
-  refine ⟨m, hik.trans (hkl.trans hlm), hjk.trans (hkl.trans hlm), ?_, ?_⟩
-  · have := congrArg (t l m hlm) hal
-    simp only [DirectedSystem.map_map (f := fun i j h ↦ t i j h)] at this
-    exact this
-  · have := congrArg (t l' m hl'm) hbl'
-    simp only [DirectedSystem.map_map (f := fun i j h ↦ t i j h)] at this
-    exact this
 
 include hφt hcover hker in
 /-- **The compatible families are exactly the pullbacks of points of the colimit.** For a
@@ -151,7 +112,7 @@ theorem range_pi_comap :
   have hcompat : ∀ i j (a b : A i) (a' b' : A j), φ i a = φ j a' → φ i b = φ j b' →
       (w i).toValuativeRel.vle a b → (w j).toValuativeRel.vle a' b' := by
     intro i j a b a' b' ha hb hab
-    obtain ⟨k, hik, hjk, hak, hbk⟩ := exists_eq_eq_of_eq_eq hφt hker ha hb
+    obtain ⟨k, hik, hjk, hak, hbk⟩ := DirectLimit.exists_eq_eq_of_eq_eq hφt hker ha hb
     rw [← hw i k hik, comap_vle, hak, hbk] at hab
     rwa [← hw j k hjk, comap_vle]
   exact ⟨ofDirected φ hcompat hdir fun x ↦ (hcover x).imp fun i ⟨a, ha⟩ ↦ ⟨a, ha⟩,

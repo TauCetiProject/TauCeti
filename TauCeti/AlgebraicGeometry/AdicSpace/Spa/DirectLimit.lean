@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.DirectLimit
 public import TauCeti.RingTheory.Huber.Continuous.OfCofinal
+public import TauCeti.RingTheory.Huber.DirectLimit
 public import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
@@ -21,7 +22,8 @@ of definition `(L₀, I)` whose ideal of definition `I` consists of images of to
 nilpotent elements of the stages. For a filtered colimit of Tate pairs with compatible rings of
 definition `A_{i,0}` containing a common pseudouniformiser `ϖ`, topologised so that
 `L₀ = colim A_{i,0}` is open with its `ϖ`-adic topology, this holds with `I = ϖ L₀`: an element
-`ϖ c` with `c` coming from `A_{j,0}` is the image of a topologically nilpotent element of `Aⱼ`.
+`ϖ c` with `c` coming from `A_{j,0}` is the image of a topologically nilpotent element of a
+later stage (`TauCeti.Huber.exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition`).
 
 Then a point of `Spv L` lies in `Spa(L, L⁺)` exactly when all its pullbacks lie in the
 `Spa(Aᵢ, Aᵢ⁺)` (`TauCeti.ValuationSpectrum.mem_spa_iff_forall_comap_mem_spa`). The key step is
@@ -112,7 +114,7 @@ theorem isContinuous_of_forall_isContinuous_comap [∀ i, ContinuousConstSMul (A
     obtain ⟨r, u, hr, hu, hru⟩ := v.valuation.exists_div_eq_of_unit (Units.mk0 γ hγ.ne')
     simp only [Units.val_mk0] at hru
     -- move `y`, a lift of `r` and a lift of `u` to a common stage `m`
-    obtain ⟨j, g, hg⟩ := exists_lift hφt hcover {r, u}
+    obtain ⟨j, g, hg⟩ := DirectLimit.exists_lift hφt hcover {r, u}
     obtain ⟨r', u', rfl, rfl⟩ : ∃ r' u' : A j, φ j r' = r ∧ φ j u' = u :=
       ⟨g r, g u, hg r (by simp), hg u (by simp)⟩
     obtain ⟨m, him, hjm⟩ := directed_of (· ≤ ·) i j
@@ -129,33 +131,6 @@ theorem isContinuous_of_forall_isContinuous_comap [∀ i, ContinuousConstSMul (A
       rw [← hru, map_div₀, embedding_restrict, embedding_restrict]
     rw [← map_pow, restrict_lt_iff_lt_embedding, hemb, map_pow, ← hyx]
     simpa only [comap_apply, hφt] using hn
-
-include hφt in
-/-- **The ideal of definition of a colimit of Tate rings consists of images of topologically
-nilpotent elements.** Let `Qᵢ ⊆ Aᵢ` be subrings of power-bounded elements preserved by the
-transition maps (for instance compatible rings of definition `A_{i,0}`), and let `(L₀, I)` be a
-pair of definition of `L` with `L₀` contained in the union of the images of the `Qᵢ` and
-`I = ϖ L₀` for the image of a topologically nilpotent `ϖ ∈ A_{i₀}`. Then every element of `I` is
-the image of a topologically nilpotent element of some stage. This is the hypothesis of
-`isContinuous_of_forall_isContinuous_comap` for a filtered colimit of Tate pairs. -/
-theorem exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition
-    (ht : ∀ i j (h : i ≤ j), Continuous (t i j h)) (Q : ∀ i, Subring (A i))
-    (hQ : ∀ i, ∀ c ∈ Q i, Huber.IsPowerBounded c)
-    (htQ : ∀ i j (h : i ≤ j), ∀ c ∈ Q i, t i j h c ∈ Q j)
-    (P : Huber.PairOfDefinition L) (hP : ∀ c ∈ P.ringOfDefinition, ∃ i, ∃ c' ∈ Q i, φ i c' = c)
-    {i₀ : ι} {ϖ : A i₀} (hϖ : IsTopologicallyNilpotent ϖ) {ϖ' : P.ringOfDefinition}
-    (hϖ' : (ϖ' : L) = φ i₀ ϖ) (hI : P.idealOfDefinition = Ideal.span {ϖ'})
-    {a : P.ringOfDefinition} (ha : a ∈ P.idealOfDefinition) :
-    ∃ i, ∃ y : A i, IsTopologicallyNilpotent y ∧ φ i y = a := by
-  rw [hI, Ideal.mem_span_singleton'] at ha
-  obtain ⟨c, rfl⟩ := ha
-  -- `c ϖ` with `c` the image of `c' ∈ Qⱼ` is the image of the product of the power-bounded `c'`
-  -- and the topologically nilpotent `ϖ` at a stage above `i₀` and `j`
-  obtain ⟨j, c', hc', hc'c⟩ := hP c c.2
-  obtain ⟨k, hjk, hi₀k⟩ := directed_of (· ≤ ·) j i₀
-  refine ⟨k, t j k hjk c' * t i₀ k hi₀k ϖ,
-    (hQ k _ (htQ j k hjk c' hc')).isTopologicallyNilpotent_mul (hϖ.map (ht i₀ k hi₀k)), ?_⟩
-  rw [map_mul, hφt, hφt, hc'c, ← hϖ', Subring.coe_mul]
 
 end Continuity
 
@@ -298,7 +273,7 @@ theorem exists_spaComap_preimage_rationalSubset (Aplus : ∀ i, Subring (A i))
   by_cases hT : Ideal.span (T : Set L) = ⊤
   · -- lift `s`, `T` and the coefficients of a relation `∑ cₓ x = 1`, then wait for the relation
     obtain ⟨c, -, hc⟩ := Submodule.mem_span_finset.mp (hT ▸ Submodule.mem_top : (1 : L) ∈ _)
-    obtain ⟨i, g, hg⟩ := exists_lift hφt hcover (insert s (T ∪ T.image c))
+    obtain ⟨i, g, hg⟩ := DirectLimit.exists_lift hφt hcover (insert s (T ∪ T.image c))
     have hgT : ∀ x ∈ T, φ i (g x) = x := fun x hx ↦ hg x (by simp [hx])
     have hgc : ∀ x ∈ T, φ i (g (c x)) = c x := fun x hx ↦
       hg _ (Finset.mem_insert_of_mem (Finset.mem_union_right _ (Finset.mem_image_of_mem c hx)))
@@ -315,7 +290,7 @@ theorem exists_spaComap_preimage_rationalSubset (Aplus : ∀ i, Subring (A i))
       refine sum_mem fun x hx ↦ ?_
       rw [map_mul]
       exact Ideal.mul_mem_left _ _ (Ideal.subset_span (Finset.mem_image_of_mem _ hx))
-  · obtain ⟨i, g, hg⟩ := exists_lift hφt hcover (insert s T)
+  · obtain ⟨i, g, hg⟩ := DirectLimit.exists_lift hφt hcover (insert s T)
     refine ⟨i, T.image g, g s, ?_, hg s (Finset.mem_insert_self _ _), fun h ↦ absurd h hT⟩
     rw [Finset.image_image]
     exact (Finset.image_congr fun x hx ↦ hg x (Finset.mem_insert_of_mem hx)).trans T.image_id
