@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Bipartition
+public import TauCeti.Combinatorics.Graph.Matching.Basic
 public import TauCeti.Combinatorics.Network.Menger.SetToSet
 
 /-!
@@ -86,6 +87,138 @@ theorem isCapacitatedMatching_def :
 @[simp]
 theorem isCapacitatedMatching_zero : G.IsCapacitatedMatching b 0 :=
   fun _ ↦ by simp
+
+/-! ### Ordinary matchings as unit-capacity matchings -/
+
+/-- The unit multiplicity of a finite set of actual edges: selected edges have multiplicity one
+and all other edges have multiplicity zero. -/
+noncomputable def matchingMultiplicity (M : Finset E(G)) : E(G) → ℕ := by
+  classical
+  exact fun e ↦ if e ∈ M then 1 else 0
+
+omit [Fintype E(G)] in
+@[simp]
+theorem matchingMultiplicity_eq_one_iff (M : Finset E(G)) (e : E(G)) :
+    G.matchingMultiplicity M e = 1 ↔ e ∈ M := by
+  classical
+  simp [matchingMultiplicity]
+
+omit [Fintype E(G)] in
+theorem matchingMultiplicity_ne_zero_iff (M : Finset E(G)) (e : E(G)) :
+    G.matchingMultiplicity M e ≠ 0 ↔ e ∈ M := by
+  classical
+  simp [matchingMultiplicity]
+
+omit [Fintype E(G)] in
+@[simp]
+theorem matchingMultiplicity_eq_zero_iff (M : Finset E(G)) (e : E(G)) :
+    G.matchingMultiplicity M e = 0 ↔ e ∉ M := by
+  classical
+  simp [matchingMultiplicity]
+
+/-- In a loopless multigraph, ordinary matchings are exactly unit-capacity multiset matchings
+whose multiplicities are the characteristic function of the selected edges. -/
+theorem isMatching_iff_isCapacitatedMatching_matchingMultiplicity [G.Loopless]
+    (M : Finset E(G)) :
+    G.IsMatching M ↔ G.IsCapacitatedMatching 1 (G.matchingMultiplicity M) := by
+  rw [isMatching_iff, isCapacitatedMatching_def]
+  constructor
+  · rintro ⟨_, huniq⟩ v
+    rw [Pi.one_apply, Finset.sum_le_one_iff]
+    intro e f he hf he0 hf0
+    have heM := (matchingMultiplicity_ne_zero_iff M e).1 he0
+    have hfM := (matchingMultiplicity_ne_zero_iff M f).1 hf0
+    obtain ⟨w, hw, heInc⟩ := (Graph.mem_incidentEdges G).1 he
+    obtain ⟨z, hz, hfInc⟩ := (Graph.mem_incidentEdges G).1 hf
+    simp only [mem_singleton] at hw hz
+    subst w
+    subst z
+    exact ⟨huniq v e heM heInc f hfM hfInc,
+      (matchingMultiplicity_eq_one_iff M e).2 heM⟩
+  · intro h
+    refine ⟨fun e _ ↦ G.edgeEnds_not_isDiag e, ?_⟩
+    intro v e heM heInc f hfM hfInc
+    have hv := h v
+    rw [Pi.one_apply, Finset.sum_le_one_iff] at hv
+    exact (hv e f
+      ((Graph.mem_incidentEdges G).2 ⟨v, by simp, heInc⟩)
+      ((Graph.mem_incidentEdges G).2 ⟨v, by simp, hfInc⟩)
+      ((matchingMultiplicity_ne_zero_iff M e).2 heM)
+      ((matchingMultiplicity_ne_zero_iff M f).2 hfM)).1
+
+/-- In a unit-capacity multiset matching, every actual edge has multiplicity at most one. -/
+theorem IsCapacitatedMatching.apply_le_one (hx : G.IsCapacitatedMatching 1 x) (e : E(G)) :
+    x e ≤ 1 := by
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  let u' : V(G) := ⟨u, huv.left_mem⟩
+  have he : e ∈ G.incidentEdges {u'} :=
+    (Graph.mem_incidentEdges G).2 ⟨u', by simp, huv.inc_left⟩
+  exact (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) he).trans (hx u')
+
+/-- The selected support of a unit-capacity edge multiplicity. -/
+noncomputable def unitSupport (x : E(G) → ℕ) : Finset E(G) := by
+  classical
+  exact Finset.univ.filter fun e ↦ x e = 1
+
+@[simp]
+theorem mem_unitSupport {x : E(G) → ℕ} {e : E(G)} :
+    e ∈ G.unitSupport x ↔ x e = 1 := by
+  classical
+  simp [unitSupport]
+
+/-- The unit multiplicity of the support of a unit-capacity multiset matching recovers its
+original multiplicity. -/
+theorem IsCapacitatedMatching.matchingMultiplicity_unitSupport
+    (hx : G.IsCapacitatedMatching 1 x) :
+    G.matchingMultiplicity (G.unitSupport x) = x := by
+  funext e
+  have hle := hx.apply_le_one e
+  by_cases h : x e = 1
+  · calc
+      G.matchingMultiplicity (G.unitSupport x) e = 1 :=
+        (matchingMultiplicity_eq_one_iff _ _).2 (mem_unitSupport.2 h)
+      _ = x e := h.symm
+  · have hz : x e = 0 := by omega
+    calc
+      G.matchingMultiplicity (G.unitSupport x) e = 0 :=
+        (matchingMultiplicity_eq_zero_iff _ _).2 (by simpa only [mem_unitSupport])
+      _ = x e := hz.symm
+
+/-- A unit-capacity multiset matching on a loopless graph determines an ordinary matching by
+taking the edges of multiplicity one. -/
+theorem IsCapacitatedMatching.isMatching_unitSupport [G.Loopless]
+    (hx : G.IsCapacitatedMatching 1 x) : G.IsMatching (G.unitSupport x) := by
+  rw [isMatching_iff_isCapacitatedMatching_matchingMultiplicity,
+    hx.matchingMultiplicity_unitSupport]
+  exact hx
+
+/-- Ordinary matchings in a finite loopless multigraph are equivalent to unit-capacity multiset
+matchings. The equivalence retains each selected edge identity as multiplicity one. -/
+@[expose] noncomputable def matchingEquivUnitCapacitated [G.Loopless] :
+    {M : Finset E(G) // G.IsMatching M} ≃
+      {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x} where
+  toFun M := ⟨G.matchingMultiplicity M,
+    (G.isMatching_iff_isCapacitatedMatching_matchingMultiplicity M).1 M.2⟩
+  invFun x := ⟨G.unitSupport x, x.2.isMatching_unitSupport⟩
+  left_inv M := by
+    apply Subtype.ext
+    ext e
+    simp only [mem_unitSupport, matchingMultiplicity_eq_one_iff]
+  right_inv x := by
+    apply Subtype.ext
+    exact x.2.matchingMultiplicity_unitSupport
+
+@[simp]
+theorem matchingEquivUnitCapacitated_apply [G.Loopless]
+    (M : {M : Finset E(G) // G.IsMatching M}) :
+    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = G.matchingMultiplicity M := by
+  rfl
+
+@[simp]
+theorem matchingEquivUnitCapacitated_symm_apply [G.Loopless]
+    (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
+    (G.matchingEquivUnitCapacitated.symm x : Finset E(G)) = G.unitSupport x := by
+  rfl
 
 namespace IsCapacitatedMatching
 

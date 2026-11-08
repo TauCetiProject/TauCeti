@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Basic
+public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Data.Sym.Sym2
 
 /-!
@@ -57,5 +58,13 @@ theorem mem_edgeEnds_iff (e : G.edgeSet) (x : G.vertexSet) :
     rw [Sym2.mem_iff_exists]
     let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
     exact ⟨y', (G.edgeEnds_eq_iff_isLink e x y').2 hxy⟩
+
+/-- In a loopless graph, the two ends of every actual edge are distinct. -/
+theorem edgeEnds_not_isDiag [G.Loopless] (e : G.edgeSet) : ¬(G.edgeEnds e).IsDiag := by
+  intro h
+  let x : G.vertexSet := (G.edgeEnds e).diagElem h
+  have hends : G.edgeEnds e = s(x, x) := by
+    simpa only [Sym2.diag] using (Sym2.diag_diagElem h).symm
+  exact G.not_isLoopAt e.1 x.1 ((G.edgeEnds_eq_iff_isLink e x x).1 hends)
 
 end Graph
