@@ -124,13 +124,14 @@ theorem preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff {Y X : C}
     rw [NatTrans.comp_app]
     refine (ConcreteCategory.comp_apply _ _ _).trans ?_
     rw [preadditiveYoneda_map_app_apply, preadditiveYonedaMap_app_apply, Category.id_comp]
-  have hzero : (0 : preadditiveYoneda.obj Y ⟶ G.op ⋙ preadditiveYoneda.obj (G.obj X)).app (op Y)
-      (𝟙 Y) = 0 := by
-    rw [NatTrans.app_zero]
-    exact AddMonoidHom.zero_apply _
+  -- Stated for an abstract element: `simp` cannot rewrite at `𝟙 Y`, whose type `Y ⟶ Y` is only
+  -- definitionally the carrier of `(-, Y)` at `op Y`.
+  have hzero (x : (preadditiveYoneda.obj Y).obj (op Y)) :
+      (0 : preadditiveYoneda.obj Y ⟶ G.op ⋙ preadditiveYoneda.obj (G.obj X)).app (op Y) x = 0 := by
+    simp
   refine ⟨fun h ↦ ?_, fun h ↦ preadditiveYoneda_obj_hom_ext ?_⟩
-  · exact key.symm.trans ((congrArg (fun α ↦ α.app (op Y) (𝟙 Y)) h).trans hzero)
-  · exact key.trans (h.trans hzero.symm)
+  · exact key.symm.trans ((congrArg (fun α ↦ α.app (op Y) (𝟙 Y)) h).trans (hzero _))
+  · exact key.trans (h.trans (hzero _).symm)
 
 end preadditiveYonedaMap
 

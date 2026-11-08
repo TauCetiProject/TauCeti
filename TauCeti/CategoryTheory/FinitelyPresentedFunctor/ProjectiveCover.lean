@@ -240,15 +240,16 @@ theorem simple_comp_preadditiveYoneda_obj_quotientFunctor_jacobsonRadicalIdeal (
     -- `h : Z ⟶ X`, hence the class of `𝟙 X`, which generates `S_X`.
     obtain ⟨Z, y, hy⟩ : ∃ (Z : Cᵒᵖ) (y : H.obj Z), f.app Z y ≠ 0 := by
       by_contra! h
-      exact hf (NatTrans.ext (funext fun Z ↦ AddCommGrpCat.ext (h Z)))
+      exact hf (by ext Z y; simp [h])
     obtain ⟨h, hh⟩ := Q.map_surjective (f.app Z y)
     have : IsSplitEpi h := by
       by_contra hse
       exact hy (hh ▸ (hrad h).2 (mem_jacobsonRadical_iff_not_isSplitEpi.2 hse))
     -- `S_X` acts on the class of `g` by precomposition.
     have hmap {W Z : C} (k : W ⟶ Z) (g : Z ⟶ X) :
-        (Q.op ⋙ preadditiveYoneda.obj (Q.obj X)).map k.op (Q.map g) = Q.map (k ≫ g) :=
-      (preadditiveYoneda_obj_map_apply _ _).trans (Q.map_comp k g).symm
+        (Q.op ⋙ preadditiveYoneda.obj (Q.obj X)).map k.op (Q.map g) = Q.map (k ≫ g) := by
+      rw [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, Q.map_comp]
+      exact preadditiveYoneda_obj_map_apply _ _
     have hX : f.app (op X) (H.map (section_ h).op y) = Q.map (𝟙 X) := by
       rw [NatTrans.naturality_apply, ← hh, hmap, IsSplitEpi.id]
     have (W : Cᵒᵖ) : Epi (f.app W) := by
