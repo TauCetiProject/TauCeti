@@ -163,6 +163,12 @@ theorem exists_comp_symm_sub_eq [DecidableEq α] {M : Type*} [AddCommGroup M]
     rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, h_exp]
     abel
 
+/-- If `σ` moves only points `≤ m`, every point in the cycle of a point `x` other than `x`
+itself is `≤ m`. -/
+theorem le_of_ne_of_forall_apply_ne_le [LE α] {m : α} (hle : ∀ x, σ x ≠ x → x ≤ m)
+    (h : σ.SameCycle x y) (hxy : x ≠ y) : y ≤ m :=
+  hle y fun hy => hxy (h.eq_of_right hy)
+
 end Equiv.Perm.SameCycle
 
 namespace TauCeti
