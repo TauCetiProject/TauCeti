@@ -30,6 +30,8 @@ unfolded by hand.
 * `UpperHalfPlane.num_sub_smul_mul_denom`: the difference formula
   `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))` for `det g > 0`, with the denominator of
   `g • z` cleared.
+* `UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero`: an upper triangular element
+  `!![a, b; 0, a⁻¹]` of `SL(2, ℝ)` acts on `ℍ` by `τ ↦ a ^ 2 * τ + a * b`.
 * `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
   negates the real part and preserves the imaginary part.
 * `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
@@ -159,6 +161,21 @@ theorem num_sub_smul_mul_denom {g : GL (Fin 2) ℝ} (hg : 0 < (g : Matrix (Fin 2
   field_simp [denom_ne_zero g τ]
   simp only [num, denom, Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
   ring
+
+/-- **An upper triangular element of `SL(2, ℝ)` acts on `ℍ` by a real affine map**: if
+`g = !![a, b; 0, a⁻¹]`, then `g • τ = a ^ 2 * τ + a * b`. This is the explicit form of Mathlib's
+`UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_eq_zero`. -/
+theorem coe_smul_of_apply_zero_one_eq_zero {g : SL(2, ℝ)} (hg : g 1 0 = 0) (τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) = (g 0 0 : ℂ) ^ 2 * τ + g 0 0 * g 0 1 := by
+  have hdet : (g 0 0 : ℂ) * g 1 1 = 1 := by
+    have h := g.det_coe
+    rw [Matrix.det_fin_two, hg, mul_zero, sub_zero] at h
+    exact_mod_cast h
+  have h11 : (g 1 1 : ℂ) ≠ 0 := right_ne_zero_of_mul_eq_one hdet
+  rw [coe_specialLinearGroup_apply, hg]
+  simp only [Algebra.algebraMap_self, RingHom.id_apply, Complex.ofReal_zero, zero_mul, zero_add]
+  field_simp
+  linear_combination (-((g 0 0 : ℂ) * τ + g 0 1)) * hdet
 
 end UpperHalfPlane
 
