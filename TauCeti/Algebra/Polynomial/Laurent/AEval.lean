@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
+public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
@@ -53,22 +54,29 @@ namespace TauCeti
 
 variable {G : Type*} [AddCommGroup G]
 
-/-- **An abelian group with an automorphism, as a `ℤ[T;T⁻¹]`-module.**  The underlying group is
-`G`, and the Laurent variable `T` acts by the automorphism `σ`.  Use `TauCeti.LaurentAEval.of` to
+/-- **An abelian group with an automorphism, as a `ℤ[T;T⁻¹]`-module.**  This is a copy of `G`,
+and the Laurent variable `T` acts by the automorphism `σ`.  Use `TauCeti.LaurentAEval.of` to
 move elements of `G` into it. -/
-@[expose, nolint unusedArguments]
-def LaurentAEval (_ : AddAut G) : Type _ := G
+structure LaurentAEval (σ : AddAut G) where
+  /-- An element of `G`, viewed in `TauCeti.LaurentAEval σ`; prefer `TauCeti.LaurentAEval.of`. -/
+  mk ::
+  /-- The underlying element of `G`; prefer `(TauCeti.LaurentAEval.of σ).symm`. -/
+  val : G
 
 namespace LaurentAEval
 
 variable (σ : AddAut G)
 
 instance : AddCommGroup (LaurentAEval σ) :=
-  inferInstanceAs (AddCommGroup G)
+  Equiv.addCommGroup ⟨val, mk, fun _ => rfl, fun _ => rfl⟩
 
 /-- The identification of `G` with the underlying group of `TauCeti.LaurentAEval σ`. -/
-def of : G ≃+ LaurentAEval σ :=
-  AddEquiv.refl _
+def of : G ≃+ LaurentAEval σ where
+  toFun := mk
+  invFun := val
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
 
 /-- The automorphism `σ` as a unit of the endomorphism ring of `TauCeti.LaurentAEval σ`. -/
 private noncomputable def unit : (Module.End ℤ (LaurentAEval σ))ˣ :=
