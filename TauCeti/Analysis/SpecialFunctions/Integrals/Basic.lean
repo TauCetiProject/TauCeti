@@ -27,6 +27,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
+* `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
+  `c ≥ 0` and `δ ≥ 0`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
   function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
@@ -97,6 +99,17 @@ theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0
   rw [hval]
   gcongr
   exact sub_le_self _ (Real.rpow_nonneg (hc.le.trans hcb) _)
+
+/-- For `-1 < T`, a nonnegative constant `c` and `0 ≤ δ`, the integral of `c * t ^ T` over
+`[δ, 1]` is at most `c / (T + 1)`. -/
+theorem integral_const_mul_rpow_le {T c δ : ℝ} (hT : -1 < T) (hc : 0 ≤ c) (hδ : 0 ≤ δ) :
+    (∫ t in δ..1, c * t ^ T) ≤ c / (T + 1) := by
+  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hT), Real.one_rpow]
+  have hδpow : 0 ≤ δ ^ (T + 1) := Real.rpow_nonneg hδ _
+  have hT1 : 0 < T + 1 := by linarith
+  calc
+    c * ((1 - δ ^ (T + 1)) / (T + 1)) ≤ c * (1 / (T + 1)) := by gcongr; linarith
+    _ = c / (T + 1) := by rw [mul_one_div]
 
 open MeasureTheory Real Set in
 open scoped Interval in
