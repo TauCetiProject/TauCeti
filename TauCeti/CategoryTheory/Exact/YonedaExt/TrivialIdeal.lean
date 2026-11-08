@@ -148,6 +148,7 @@ theorem EnoughProjectives.projectivelyTrivialIdeal_eq (h : E.EnoughProjectives) 
   exact ⟨P.P, P.isProjective, t, P.p, ht.symm⟩
 
 /-- **An object is relatively projective exactly when its identity is projectively trivial.** -/
+@[simp high]
 theorem id_mem_projectivelyTrivialIdeal_iff (X : C) :
     𝟙 X ∈ E.projectivelyTrivialIdeal.hom X X ↔ E.isProjective X := by
   refine ⟨fun h ↦ isProjective_iff.mpr fun Y' Y p hp g ↦ ?_, fun hX ↦ ?_⟩
@@ -232,6 +233,7 @@ theorem EnoughInjectives.injectivelyTrivialIdeal_eq (h : E.EnoughInjectives) :
   exact mem_injectivelyTrivialIdeal_iff.mp hf (E.isInflation_f P.conflation)
 
 /-- **An object is relatively injective exactly when its identity is injectively trivial.** -/
+@[simp high]
 theorem id_mem_injectivelyTrivialIdeal_iff (X : C) :
     𝟙 X ∈ E.injectivelyTrivialIdeal.hom X X ↔ E.isInjective X := by
   refine ⟨fun h ↦ isInjective_iff.mpr fun Y Y' i hi g ↦ ?_, fun hX ↦ ?_⟩
