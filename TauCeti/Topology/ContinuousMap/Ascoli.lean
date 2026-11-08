@@ -12,13 +12,16 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Real
 
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Topology.UniformSpace.Ascoli
 
 /-!
 # The Arzelà–Ascoli theorem in `C(X, Y)`
 
 Mathlib proves the Arzelà–Ascoli theorem for a family of functions viewed inside a space of
 uniform convergence on a family of compact sets
-(`ArzelaAscoli.isCompact_closure_of_isClosedEmbedding`).
+(`ArzelaAscoli.isCompact_closure_of_isClosedEmbedding`), and shows that an equicontinuous set of
+continuous maps that is compact for pointwise convergence is compact
+(`ArzelaAscoli.isCompact_of_equicontinuous`).
 This file states it directly for subsets of the space `C(X, Y)` of continuous maps with its
 compact-open topology, which is the space of continuous curves when `X` is a compact interval,
 and adds companion statements used for compactness and finite approximation of families of curves.
@@ -26,8 +29,9 @@ and adds companion statements used for compactness and finite approximation of f
 * An equicontinuous family in `C(X, Y)` whose values at each point lie in a common compact set has
   relatively compact range.
 * If `Y` is complete, it is enough that the values are totally bounded at the points of a dense
-  set `D ⊆ X`: equicontinuity spreads total boundedness from `D` to every point, and completeness
-  turns it into compactness of the closure.
+  set `D ⊆ X`: equicontinuity spreads total boundedness from `D` to every point
+  (`EquicontinuousWithinAt.totallyBounded_range_eval`), and completeness turns it into
+  compactness of the closure.
 * An equicontinuous family with pointwise totally bounded values has finite uniform
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a weakly locally compact domain, a compact subset of `C(X, Y)` is equicontinuous.
@@ -48,8 +52,6 @@ endpoints `eₙ` stay at distance at least `1` from each other
   set by members of the family.
 * `ContinuousMap.isClosedEmbedding_toUniformOnFunIsCompact`: `C(X, Y)` is a closed subspace of
   the space of functions with the topology of uniform convergence on compacts.
-* `EquicontinuousWithinAt.totallyBounded_range_eval`: equicontinuity spreads total boundedness of
-  the values from a set of points to the points of its closure.
 * `ArzelaAscoli.isCompact_closure_of_equicontinuous_of_totallyBounded`: for a complete target,
   total boundedness of the values at the points of a dense set suffices.
 * `IsCompact.equicontinuous`: a compact set of continuous maps on a weakly locally compact space
@@ -84,28 +86,36 @@ end ContinuousMap
 
 namespace ArzelaAscoli
 
-/-- **The Arzelà–Ascoli theorem in `C(X, Y)`.** On a space `X` whose topology is coherent with its
-compact sets (for instance a locally compact space), an equicontinuous family of continuous maps
+/-- **The Arzelà–Ascoli theorem in `C(X, Y)`.** An equicontinuous family of continuous maps
 whose values at each point lie in a common compact set has relatively compact range in the
-compact-open topology. -/
-theorem isCompact_closure_range_of_equicontinuous [CompactlyCoherentSpace X] [UniformSpace Y]
+compact-open topology. No assumption on the topology of `X` is needed. -/
+theorem isCompact_closure_range_of_equicontinuous [UniformSpace Y]
     {ι : Type*} {f : ι → C(X, Y)} (hf : Equicontinuous fun i ↦ ⇑(f i))
     (hfpt : ∀ x, ∃ Q, IsCompact Q ∧ ∀ i, f i x ∈ Q) : IsCompact (closure (range f)) := by
-  have hA : Equicontinuous fun g : range f ↦ ⇑(g : C(X, Y)) := by
-    rw [← comp_rangeSplitting f]
-    exact hf.comp (rangeSplitting f)
-  rw [isCompact_iff_compactSpace]
-  refine ArzelaAscoli.compactSpace_of_isClosedEmbedding (fun _ ↦ id)
-    (ContinuousMap.isClosedEmbedding_toUniformOnFunIsCompact.comp
-      isClosed_closure.isClosedEmbedding_subtypeVal)
-    (fun K _ ↦ (hA.closure' continuous_coeFun).equicontinuousOn K) ?_
-  intro _ _ x _
-  obtain ⟨Q, hQ, hfQ⟩ := hfpt x
-  -- Closing the compact bounds keeps them compact in a uniform space, without Hausdorffness.
-  have hpoint : closure (range f) ⊆ {g : C(X, Y) | g x ∈ closure Q} :=
-    closure_minimal (range_subset_iff.2 fun i ↦ subset_closure (hfQ i))
-      (isClosed_closure.preimage (continuous_eval_const x))
-  exact ⟨closure Q, hQ.closure, fun g ↦ hpoint g.2⟩
+  choose Q hQ hfQ using hfpt
+  -- The pointwise closure `P` of the family is equicontinuous, and compact by Tychonoff.
+  set P : Set (X → Y) := closure (range fun i ↦ ⇑(f i))
+  have hPeq : P.Equicontinuous := by
+    refine Set.Equicontinuous.closure ?_
+    rw [Set.Equicontinuous, ← comp_rangeSplitting (fun i ↦ ⇑(f i))]
+    exact hf.comp (rangeSplitting _)
+  have hP : IsCompact P :=
+    (isCompact_univ_pi fun x ↦ (hQ x).closure).of_isClosed_subset isClosed_closure
+      (closure_minimal (range_subset_iff.2 fun i x _ ↦ subset_closure (hfQ x i))
+        (isClosed_set_pi fun x _ ↦ isClosed_closure))
+  -- The continuous maps whose underlying functions lie in `P` form a compact set, since
+  -- pointwise and compact convergence agree on equicontinuous sets. It is closed and contains
+  -- the family, hence contains its closure.
+  set S : Set C(X, Y) := {g | ⇑g ∈ P}
+  have hS : IsCompact S := by
+    have himage : ContinuousMap.toFun '' S = P :=
+      Subset.antisymm (image_subset_iff.2 fun _ hg ↦ hg)
+        fun p hp ↦ ⟨⟨p, hPeq.continuous_of_mem hp⟩, hp, rfl⟩
+    exact ArzelaAscoli.isCompact_of_equicontinuous S (himage ▸ hP)
+      (hPeq.comp fun g : S ↦ (⟨⇑(g : C(X, Y)), g.2⟩ : P))
+  exact hS.of_isClosed_subset isClosed_closure (closure_minimal
+    (range_subset_iff.2 fun i ↦ subset_closure (mem_range_self i))
+    (isClosed_closure.preimage (continuous_pi continuous_eval_const)))
 
 end ArzelaAscoli
 
@@ -144,29 +154,13 @@ theorem EquicontinuousOn.exists_finite_approx_of_isCompact [UniformSpace Y]
   obtain ⟨_, ⟨j, hj, rfl⟩, hij⟩ := mem_iUnion₂.mp (htcover (mem_range_self i))
   exact ⟨j, hj, fun x hx ↦ hVU (hij ⟨x, hx⟩)⟩
 
-/-- Equicontinuity within `D` at a point `x` of the closure of `D` spreads total boundedness of
-the values from the points of `D` to `x`. -/
-theorem EquicontinuousWithinAt.totallyBounded_range_eval [UniformSpace Y] {ι : Type*}
-    {F : ι → X → Y} {D : Set X} {x : X} (hF : EquicontinuousWithinAt F D x) (hx : x ∈ closure D)
-    (hFD : ∀ x ∈ D, TotallyBounded (range fun i ↦ F i x)) :
-    TotallyBounded (range fun i ↦ F i x) := by
-  intro U hU
-  obtain ⟨V, hV, hVU⟩ := comp_mem_uniformity_sets hU
-  have := mem_closure_iff_nhdsWithin_neBot.mp hx
-  obtain ⟨x', hx', hx'D⟩ := ((hF V hV).and self_mem_nhdsWithin).exists
-  obtain ⟨t, ht, hcover⟩ := hFD x' hx'D V hV
-  refine ⟨t, ht, ?_⟩
-  rintro _ ⟨i, rfl⟩
-  obtain ⟨y, hy, hiy⟩ := mem_iUnion₂.mp (hcover ⟨i, rfl⟩)
-  exact mem_iUnion₂.mpr ⟨y, hy, hVU ⟨F i x', hx' i, hiy⟩⟩
-
 namespace ArzelaAscoli
 
 /-- **The Arzelà–Ascoli theorem in `C(X, Y)`, with a dense set of points.** For a complete
 target `Y`, an equicontinuous set of continuous maps whose values are totally bounded at
 the points of a dense set `D ⊆ X` has compact closure in the compact-open topology. -/
-theorem isCompact_closure_of_equicontinuous_of_totallyBounded [CompactlyCoherentSpace X]
-    [UniformSpace Y] [CompleteSpace Y] {A : Set C(X, Y)} {D : Set X} (hD : Dense D)
+theorem isCompact_closure_of_equicontinuous_of_totallyBounded [UniformSpace Y] [CompleteSpace Y]
+    {A : Set C(X, Y)} {D : Set X} (hD : Dense D)
     (hA : Equicontinuous fun f : A ↦ ⇑(f : C(X, Y)))
     (hAD : ∀ x ∈ D, TotallyBounded ((fun f : C(X, Y) ↦ f x) '' A)) : IsCompact (closure A) :=
   Subtype.range_coe (s := A) ▸ isCompact_closure_range_of_equicontinuous hA fun x ↦
