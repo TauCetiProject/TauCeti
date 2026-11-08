@@ -17,7 +17,8 @@ This file collects the rearrangements of such powers that these arguments need.
 * A power of `r` is a power of `r / R` times a power of `R`. So a bound `c R^a ≤ M` on a
   dimensionless constant gives `r^{2a} c² ≤ (r / R)^{2a} M²`, and a bound `c² R^{d+2a} ≤ V` gives
   `r^{2a} c² r^d ≤ V (r / R)^{d+2a}`.
-* Shrinking the outer radius by a factor `θ` multiplies `(r / R)^γ` by `θ^{-γ}`.
+* A power `(r / R)^γ` of the ratio splits as `R^{-γ} r^γ`, and shrinking the outer radius by a
+  factor `θ` multiplies it by `θ^{-γ}`.
 * A constant of the form `(R^{d/2+a} Q)²`, which is the natural scale of an `L²` quantity on a
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
   `0 ≤ c ≤ Q`.
@@ -46,6 +47,11 @@ theorem rpow_mul_mul_rpow_le {r R c V a d : ℝ} (hr : 0 < r) (hR : 0 < R)
     field_simp
   rw [h1, mul_comm V]
   gcongr
+
+/-- `(r / R)^γ = R^{-γ} r^γ`. -/
+theorem div_rpow_eq_rpow_neg_mul_rpow {r R γ : ℝ} (hr : 0 ≤ r) (hR : 0 < R) :
+    (r / R) ^ γ = R ^ (-γ) * r ^ γ := by
+  rw [div_rpow hr hR.le, rpow_neg hR.le, div_eq_inv_mul]
 
 /-- `(r / (θ R))^γ = θ^{-γ} (r / R)^γ`. -/
 theorem div_mul_rpow_eq {r θ R γ : ℝ} (hr : 0 ≤ r) (hθ : 0 < θ) (hR : 0 < R) :

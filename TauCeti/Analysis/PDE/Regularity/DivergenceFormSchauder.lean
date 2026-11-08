@@ -202,9 +202,8 @@ private theorem le_mul_add_mul_rpow_of_le_of_mul_rpow_le {A lam θ M Ka KG R V r
     mul_le_mul_of_nonneg_right ((Real.rpow_mul_sq_le hr hR hKa hM).trans
       (mul_le_mul_of_nonneg_right hrθR (sq_nonneg M))) hΦr
   have k2 : r ^ (2 * a) * (KG ^ 2 * r ^ d) ≤ V * R ^ (-β) * r ^ β := by
-    have hq : (r / R) ^ β = R ^ (-β) * r ^ β := by
-      rw [Real.div_rpow hr.le hR.le, Real.rpow_neg hR.le]
-      ring
+    have hq : (r / R) ^ β = R ^ (-β) * r ^ β :=
+      Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR
     refine (Real.rpow_mul_mul_rpow_le hr hR hV).trans ?_
     rw [mul_assoc, ← hq]
     exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge (div_pos hr hR)
@@ -226,9 +225,8 @@ private theorem le_mul_add_mul_rpow_of_le_of_le_mul_rpow
     (h1 : ψρ ≤ A * q * ψr + A * (r ^ (2 * a) * (Ka ^ 2 * Φr + KG ^ 2 * r ^ d) / lam ^ 2)) :
     ψρ ≤ A * (q + 0) * ψr +
       A * (M ^ 2 * L + 1) * V * R ^ (-(2 * a + β)) / lam ^ 2 * r ^ (2 * a + β) := by
-  have hq : (r / R) ^ (2 * a + β) = R ^ (-(2 * a + β)) * r ^ (2 * a + β) := by
-    rw [Real.div_rpow hr.le hR.le, Real.rpow_neg hR.le]
-    ring
+  have hq : (r / R) ^ (2 * a + β) = R ^ (-(2 * a + β)) * r ^ (2 * a + β) :=
+    Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR
   have hsplit : (r / R) ^ (2 * a) * (r / R) ^ β = (r / R) ^ (2 * a + β) := by
     rw [← Real.rpow_add (div_pos hr hR)]
   have k1 : r ^ (2 * a) * Ka ^ 2 * Φr ≤ M ^ 2 * L * V * (R ^ (-(2 * a + β)) * r ^ (2 * a + β)) := by
@@ -324,9 +322,8 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
   have hΦθR : ∫ x in ball z (θ * R), ‖W1p.gradient u x‖ ^ 2 ≤ V :=
     (monotoneOn_setIntegral_norm_gradient_sq u hball ⟨by positivity, hθR⟩ ⟨hR, le_rfl⟩ hθR).trans
       hΦR
-  have hq : (ρ / R) ^ β = R ^ (-β) * ρ ^ β := by
-    rw [Real.div_rpow hρ.le hR.le, Real.rpow_neg hR.le]
-    ring
+  have hq : (ρ / R) ^ β = R ^ (-β) * ρ ^ β :=
+    Real.div_rpow_eq_rpow_neg_mul_rpow hρ.le hR
   refine hit'.trans ?_
   rw [Real.div_mul_rpow_eq hρ.le hθ hR]
   have h1 := mul_le_mul_of_nonneg_left hΦθR (by positivity : (0 : ℝ) ≤ θ ^ (-β) * (ρ / R) ^ β)
@@ -428,9 +425,8 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
     (setIntegral_norm_gradient_sub_setAverage_sq_le u ((ball_subset_ball hθR).trans hball)).trans
       ((monotoneOn_setIntegral_norm_gradient_sq u hball ⟨by positivity, hθR⟩ ⟨hR, le_rfl⟩
         hθR).trans hΦR)
-  have hq : (ρ / R) ^ γ = R ^ (-γ) * ρ ^ γ := by
-    rw [Real.div_rpow hρ.le hR.le, Real.rpow_neg hR.le]
-    ring
+  have hq : (ρ / R) ^ γ = R ^ (-γ) * ρ ^ γ :=
+    Real.div_rpow_eq_rpow_neg_mul_rpow hρ.le hR
   refine hit'.trans ?_
   rw [Real.div_mul_rpow_eq hρ.le hθ hR]
   calc C₀ * (θ ^ (-γ) * (ρ / R) ^ γ *
@@ -531,7 +527,7 @@ private theorem setAverage_closedBall_norm_gradient_sub_le
       ← Real.sqrt_sq (by positivity : (0 : ℝ) ≤ (r / R) ^ κ), ← Real.sqrt_mul' _ (by positivity)]
     exact Real.sqrt_le_sqrt h3
   refine h4.trans_eq ?_
-  rw [Real.div_rpow hr.le hR.le, Real.rpow_neg hR.le]
+  rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le hR]
   ring
 
 /-- **Bounded averages from Campanato decay.** Let `κ > 0` and `θ ∈ (0, 1]`. If
