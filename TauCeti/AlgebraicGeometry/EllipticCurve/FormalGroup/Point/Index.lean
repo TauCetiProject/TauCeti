@@ -52,7 +52,7 @@ local notation "R_u" =>
   Valuation.valuationSubring
     (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
 
-local instance : IsLinearTopology O_u O_u :=
+local instance isLinearTopology_index : IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
 
 private local instance fact_isAdic_index : Fact (IsAdic m_u) :=
