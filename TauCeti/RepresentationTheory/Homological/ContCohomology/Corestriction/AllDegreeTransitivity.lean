@@ -178,8 +178,8 @@ private theorem coeffMap_transIso_inv_eq_map (n : ℕ) :
     isClosed_closure.isCompact φ).trans rfl
 
 omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
-/-- The four compatible pairs in the proof of `shapiroMap_trans` compare on an element of
-`Coind_V^G M` by evaluating `Coind_V^G M ≃ Coind_U^G (Coind_{V ⊓ U}^U M)` at `1` twice. -/
+/-- The five compatible pairs in the proof of `shapiroMap_trans` agree on `f : Coind_V^G M`: both
+sides equal `f 1`, obtained on the left by evaluating `e.symm f` at `1 : G` and then at `1 : U`. -/
 private theorem shapiroMap_trans_hom_apply (f : DiscreteCoind G V M) :
     let e := DiscreteCoind.transEquiv (A := M) (U := U) (V := V.subgroupOf U) (W := V)
       (Subgroup.map_subgroupOf_eq_of_le hVU) (Subgroup.subgroupOf_smul_eq U V M)
@@ -276,10 +276,9 @@ private theorem shapiroMap_trans_pairs_eq
   -- Fold the two expanded composites into the local compatible-pair abbreviations.
   change _root_.ContinuousCohomology.map φL qL n =
     _root_.ContinuousCohomology.map φR qR n
-  refine map_congr hφ ?_ n
-  subst φR
-  apply heq_of_eq
-  refine TopRep.hom_ext (DFunLike.ext _ _ hhom)
+  -- Composition in `TopRep` evaluates by composing the underlying homomorphisms, so `hhom`
+  -- compares `qL` and `qR` elementwise.
+  exact map_congr_of_hom_apply hφ qL qR hhom n
 
 omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 /-- **Shapiro's map is transitive.** For subgroups `V ≤ U` of a compact group `G`, the Shapiro
