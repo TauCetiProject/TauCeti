@@ -141,11 +141,11 @@ private theorem mul_im_eq_half_of_proper (D : ℤ) [Fact (¬ IsSquare D)]
   obtain ⟨M, N, hθrep⟩ := (QuadraticOrder.mem_toSubalgebra_iff D hD θ).mp hθorder
   obtain ⟨r, s, hgenrep⟩ :=
     (hmult (QuadraticOrder.generator D)).mp hgen_stable
-  -- Compare the integral order generators, with positivity fixing their orientation.
+  -- Compare the integral order generators, with positivity fixing their orientation: mutual
+  -- integral coordinates force the positive imaginary coefficient to be one half.
   exact QuadraticOrder.mul_im_eq_half_of_mutual_generators D a ha τ hτim
     M N r s hθrep hgenrep
 
--- Mutual integral coordinates force the positive imaginary coefficient to be one half.
 /-- Every proper fractional ideal of the nonsquare quadratic order is a positive rational
 multiple of the ideal of a primitive positive-leading form of the given discriminant. -/
 theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquare D)]
