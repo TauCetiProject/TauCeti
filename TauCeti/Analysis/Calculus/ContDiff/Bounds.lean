@@ -36,6 +36,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 
 * `ContDiffOn.exists_bound_iteratedFDerivWithin`: on a compact subset, the derivatives of order at
   most `n` of a `C^n` map are bounded by one constant.
+* `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
+  map that is `C^n` on an open set, with a nonnegative constant.
 * `ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le`: the linear bound on the
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
@@ -67,6 +69,16 @@ theorem ContDiffOn.exists_bound_iteratedFDerivWithin {u : E → F} {s K : Set E}
   refine ⟨A, fun i hi z hz ↦ ((Finset.single_le_sum (f := fun i ↦ ‖iteratedFDerivWithin 𝕜 i u s z‖)
     (fun _ _ ↦ norm_nonneg _) (Finset.mem_range_succ_iff.mpr hi)).trans (le_abs_self _)).trans ?_⟩
   simpa only [Real.norm_eq_abs] using hA z hz
+
+/-- On a compact subset `K` of an open set `s`, the derivatives of order at most `n` of a map that
+is `C^n` on `s` are bounded by a single nonnegative constant. -/
+theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen {u : E → F} {s K : Set E} {n : ℕ}
+    (hu : ContDiffOn 𝕜 n u s) (hs : IsOpen s) (hK : IsCompact K) (hKs : K ⊆ s) :
+    ∃ A, 0 ≤ A ∧ ∀ i ≤ n, ∀ z ∈ K, ‖iteratedFDeriv 𝕜 i u z‖ ≤ A := by
+  obtain ⟨A, hA⟩ := hu.exists_bound_iteratedFDerivWithin hs.uniqueDiffOn hK hKs
+  refine ⟨max A 0, le_max_right _ _, fun i hi z hz ↦ ?_⟩
+  rw [← iteratedFDerivWithin_of_isOpen i hs (hKs hz)]
+  exact (hA i hi z hz).trans (le_max_left _ _)
 
 /-- On a compact set `K`, the order-`n` derivative of `z ↦ L z (φ (τ z))` is bounded by a constant
 multiple of any common bound `δ` for the derivatives of `φ` of order at most `n` along `τ '' K`.
