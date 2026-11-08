@@ -43,7 +43,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {B : ℝ≥0 → Ω → ℝ} {n : ℕ} {τ : Fin (n + 1) → ℝ≥0}
 
 /-- Every Brownian increment has zero third moment. -/
-theorem integral_cube_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
+@[simp] theorem integral_cube_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
     ∫ ω, (B t ω - B s ω) ^ 3 ∂P = 0 := by
   have h := TauCeti.Probability.centralMoment_id_two_mul_add_one_gaussianReal
     0 (nndist (t : ℝ) (s : ℝ)) 1
@@ -70,7 +70,7 @@ theorem memLp_cube_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
   exact (hB.hasLaw_sub t s).memLp_comp h
 
 /-- The sum of cubic increments on any deterministic grid has mean zero. -/
-theorem integral_sum_cube_sub (hB : IsPreBrownianReal B P) :
+@[simp] theorem integral_sum_cube_sub (hB : IsPreBrownianReal B P) :
     ∫ ω, ∑ i : Fin n, (B (τ i.succ) ω - B (τ i.castSucc) ω) ^ 3 ∂P = 0 := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   rw [integral_finsetSum _ fun i _ => (hB.memLp_cube_sub _ _).integrable (by norm_num)]
