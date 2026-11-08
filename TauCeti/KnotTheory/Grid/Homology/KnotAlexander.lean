@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Alexander
-public import TauCeti.Algebra.Module.GradedModule.NonTorsionDegree
 
 /-!
 # The Alexander grading on knot grid homology over `R[U]`

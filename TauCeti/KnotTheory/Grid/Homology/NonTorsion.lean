@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
+public import TauCeti.Algebra.Module.GradedModule.NonTorsionDegree
 
 /-!
 # Non-torsion classes in unblocked grid homology from rectangle parity
