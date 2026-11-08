@@ -30,6 +30,17 @@ group (`ker_residueAction`); if `G` acts by automorphisms over a scheme `X`, thi
 the residue field of the image of `y` in `X`. Moving the point by `g` conjugates both groups by
 `g` (`decomposition_apply_eq_map_conj`, `inertia_apply_eq_map_conj`).
 
+Let `π : Y ⟶ X` be a `G`-invariant morphism and `x = π y`. Then `D_y` acts on `κ(y)` by
+automorphisms over `κ(x)` (`residueAlgAction σ π hπ y`). Suppose moreover that any two points of
+`Y` with values in a field and the same image in `X` differ by an element of `G`, as for the
+projection to the quotient by a finite group with an invariant affine open cover
+(`TauCeti.InvariantQuotient.asIso_hom_projection`,
+`TauCeti.InvariantQuotient.exists_comp_eq_of_comp_projection_eq`). Then every automorphism of
+`κ(y)` over `κ(x)` comes from `D_y` (`residueAlgAction_surjective`): if `τ` is one, the point
+`Spec κ(y) ⟶ Y` and its twist by `τ` have the same image in `X`, so they differ by an element of
+`G`, which then fixes `y` and acts on `κ(y)` by `τ`. Hence `D_y / I_y ≅ Aut(κ(y)/κ(x))`
+(`decompositionQuotientInertiaEquiv`).
+
 For a group acting on a commutative ring `A`, and so on `Spec A` by
 `TauCeti.AffineInvariantQuotient.specAction`, the decomposition and inertia groups of a prime
 `𝔭` are Mathlib's `MulAction.stabilizer G 𝔭` and `Ideal.inertia G 𝔭`
@@ -43,10 +54,26 @@ Galois extensions of rings available for affine Galois covers.
 * `decomposition σ y`: the decomposition group of `y`.
 * `inertia σ y`: the inertia group of `y`.
 * `residueAction σ y`: the action of the decomposition group on `κ(y)`.
+* `residueAlgAction σ π hπ y`: for `G` acting over `X`, the action of the decomposition group on
+  `κ(y)` by automorphisms over `κ(π y)`.
+* `decompositionQuotientInertiaEquiv σ π hπ horb y`: if points of `Y` with values in a field and
+  the same image in `X` differ by an element of `G`, the isomorphism
+  `D_y / I_y ≃* Aut(κ(y)/κ(π y))`.
+
+## Main results
+
+* `comp_eq_self_iff_mem_inertia`: the stabilizer of a point with values in a field is the inertia
+  group of its image point.
+* `ker_residueAction`, `ker_residueAlgAction`: the inertia group is the kernel of the action on
+  the residue field.
+* `residueAlgAction_surjective`: if points of `Y` with values in a field and the same image in `X`
+  differ by an element of `G`, the decomposition group surjects onto the automorphisms of `κ(y)`
+  over `κ(π y)`.
 
 ## References
 
-* A. Grothendieck, *Revêtements étales et groupe fondamental (SGA 1)*, Exposé V, §2.
+* A. Grothendieck, *Revêtements étales et groupe fondamental (SGA 1)*, Exposé V, §2,
+  Proposition 2.2.
 * N. Bourbaki, *Commutative Algebra*, Chapter V, §2, no. 2.
 -/
 
@@ -243,6 +270,109 @@ theorem residueFieldMap_comp_residueAction {X : Scheme.{u}} (π : Y ⟶ X) (y : 
   rw [← cancel_mono (X.fromSpecResidueField (π y)), Spec.map_comp, Category.assoc,
     Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField,
     SpecMap_residueAction_fromSpecResidueField_assoc, hπ']
+
+section Quotient
+
+variable {X : Scheme.{u}} (π : Y ⟶ X)
+
+/-- **Automorphisms of the residue extension come from the decomposition group.** Suppose that
+any two points of `Y` with values in a field and the same image in `X` differ by the action of an
+element of `G`, as for the projection to the quotient by a finite group
+(`TauCeti.InvariantQuotient.exists_comp_eq_of_comp_projection_eq`). Then every automorphism of
+`κ(y)` fixing the residue field of the image of `y` in `X` is induced by an element of the
+decomposition group of `y`. -/
+theorem exists_residueAction_eq
+    (horb : ∀ {K : Type u} [Field K] {x₁ x₂ : Spec (.of K) ⟶ Y}, x₁ ≫ π = x₂ ≫ π →
+      ∃ g : G, x₁ ≫ (σ g).asIso.hom = x₂)
+    (y : Y) (τ : Aut (Y.residueField y))
+    (hτ : π.residueFieldMap y ≫ τ.asIso.hom = π.residueFieldMap y) :
+    ∃ g : decomposition σ y, residueAction σ y g = τ := by
+  -- The point `Spec κ(y) ⟶ Y` and its twist by `τ` have the same image in `X`.
+  have h : Y.fromSpecResidueField y ≫ π =
+      (Spec.map τ.asIso.hom ≫ Y.fromSpecResidueField y) ≫ π := by
+    rw [Category.assoc, ← Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField,
+      ← Spec.map_comp_assoc, hτ]
+  obtain ⟨g, hg⟩ := horb (K := Y.residueField y) h
+  -- `horb` is stated for spectra `Spec (.of K)`; restate `hg` for `Spec κ(y)`, which is the same
+  -- scheme since `CommRingCat.of κ(y)` is `κ(y)` by structure eta.
+  replace hg : Y.fromSpecResidueField y ≫ (σ g).asIso.hom =
+      Spec.map τ.asIso.hom ≫ Y.fromSpecResidueField y := hg
+  have hgy : g⁻¹ ∈ decomposition σ y := by
+    obtain ⟨s⟩ : Nonempty (Spec (Y.residueField y)) := inferInstance
+    have := congr(($hg) s)
+    rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply,
+      Scheme.fromSpecResidueField_apply] at this
+    exact inv_mem ((mem_decomposition σ).mpr this)
+  refine ⟨⟨g⁻¹, hgy⟩, Aut.ext (Iso.ext (Scheme.eq_of_SpecMap_comp_fromSpecResidueField ?_))⟩
+  rw [SpecMap_residueAction_fromSpecResidueField, inv_inv, hg]
+
+/-- The **action of the decomposition group on the residue extension**. If `G` acts by
+automorphisms over `X`, the decomposition group of `y` acts on `κ(y)` by automorphisms over the
+residue field of the image of `y` in `X`, of which `κ(y)` is an algebra through the residue field
+map of `π`. This is `residueAction σ y` (`residueAlgAction_apply`). -/
+noncomputable def residueAlgAction (hπ : ∀ g : G, (σ g).asIso.hom ≫ π = π) (y : Y) :
+    letI := (π.residueFieldMap y).hom.toAlgebra
+    decomposition σ y →* (Y.residueField y ≃ₐ[X.residueField (π y)] Y.residueField y) :=
+  letI := (π.residueFieldMap y).hom.toAlgebra
+  { toFun g := AlgEquiv.ofRingEquiv (f := (residueAction σ y g).asIso.commRingCatIsoToRingEquiv)
+      fun a ↦ congr(($(residueFieldMap_comp_residueAction σ π y g (hπ g))).hom a)
+    map_one' := by ext; simp [Iso.commRingCatIsoToRingEquiv]
+    map_mul' g h := by ext; simp [Iso.commRingCatIsoToRingEquiv] }
+
+/-- An element of the decomposition group acts on the residue extension through
+`residueAction`. -/
+@[simp]
+theorem residueAlgAction_apply (hπ : ∀ g : G, (σ g).asIso.hom ≫ π = π) (y : Y)
+    (g : decomposition σ y) (a : Y.residueField y) :
+    residueAlgAction σ π hπ y g a = (residueAction σ y g).asIso.hom a :=
+  (rfl)
+
+/-- The inertia group is the kernel of the action of the decomposition group on the residue
+extension. -/
+theorem ker_residueAlgAction (hπ : ∀ g : G, (σ g).asIso.hom ≫ π = π) (y : Y) :
+    (residueAlgAction σ π hπ y).ker = (inertia σ y).subgroupOf (decomposition σ y) := by
+  rw [← ker_residueAction]
+  ext g
+  simp [MonoidHom.mem_ker, AlgEquiv.ext_iff, Aut.ext_iff, Iso.ext_iff, CommRingCat.hom_ext_iff,
+    RingHom.ext_iff]
+
+/-- **The decomposition group surjects onto the automorphisms of the residue extension**, when
+`G` acts by automorphisms over `X` and any two points of `Y` with values in a field and the same
+image in `X` differ by the action of an element of `G`. -/
+theorem residueAlgAction_surjective (hπ : ∀ g : G, (σ g).asIso.hom ≫ π = π)
+    (horb : ∀ {K : Type u} [Field K] {x₁ x₂ : Spec (.of K) ⟶ Y}, x₁ ≫ π = x₂ ≫ π →
+      ∃ g : G, x₁ ≫ (σ g).asIso.hom = x₂)
+    (y : Y) : Function.Surjective (residueAlgAction σ π hπ y) := by
+  let := (π.residueFieldMap y).hom.toAlgebra
+  intro τ
+  obtain ⟨g, hg⟩ := exists_residueAction_eq σ π horb y (.of τ.toRingEquiv.toCommRingCatIso)
+    (by ext a; exact τ.commutes a)
+  exact ⟨g, AlgEquiv.ext fun a ↦ by rw [residueAlgAction_apply, hg]; rfl⟩
+
+/-- **The decomposition group modulo the inertia group is the automorphism group of the residue
+extension**, when `G` acts by automorphisms over `X` and any two points of `Y` with values in a
+field and the same image in `X` differ by the action of an element of `G`. -/
+noncomputable def decompositionQuotientInertiaEquiv (hπ : ∀ g : G, (σ g).asIso.hom ≫ π = π)
+    (horb : ∀ {K : Type u} [Field K] {x₁ x₂ : Spec (.of K) ⟶ Y}, x₁ ≫ π = x₂ ≫ π →
+      ∃ g : G, x₁ ≫ (σ g).asIso.hom = x₂)
+    (y : Y) :
+    letI := (π.residueFieldMap y).hom.toAlgebra
+    decomposition σ y ⧸ (inertia σ y).subgroupOf (decomposition σ y) ≃*
+      (Y.residueField y ≃ₐ[X.residueField (π y)] Y.residueField y) :=
+  QuotientGroup.liftEquiv _ (residueAlgAction_surjective σ π hπ horb y)
+    (ker_residueAlgAction σ π hπ y).symm
+
+/-- The isomorphism `decompositionQuotientInertiaEquiv` sends the class of `g` to the action of
+`g` on the residue extension. -/
+@[simp]
+theorem decompositionQuotientInertiaEquiv_mk (hπ : ∀ g : G, (σ g).asIso.hom ≫ π = π)
+    (horb : ∀ {K : Type u} [Field K] {x₁ x₂ : Spec (.of K) ⟶ Y}, x₁ ≫ π = x₂ ≫ π →
+      ∃ g : G, x₁ ≫ (σ g).asIso.hom = x₂)
+    (y : Y) (g : decomposition σ y) :
+    decompositionQuotientInertiaEquiv σ π hπ horb y g = residueAlgAction σ π hπ y g := by
+  rw [decompositionQuotientInertiaEquiv, QuotientGroup.liftEquiv_mk]
+
+end Quotient
 
 section Affine
 
