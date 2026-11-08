@@ -167,7 +167,6 @@ end GeneratingSections
 section LocallyFree
 
 variable [HasPullbacks C]
-  [∀ X, (J.over X).HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   (M : SheafOfModules.{u} (ringCatSheaf R))
