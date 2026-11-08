@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Topology.Order.ProjIcc
@@ -33,6 +34,10 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.eLpNorm_primitive_le` and
+  `TauCeti.intervalIntegral.eLpNorm_primitive_le_mul_eLpNorm`: on a bounded interval `(a, b)`,
+  the primitive based at a point of `[a, b]` is bounded by the `L¹(a, b)` norm of `f`, so its
+  `Lᵖ(a, b)` norm is at most `(b - a) ^ (1 / p) ‖f‖₁`, and hence at most `(b - a) ‖f‖_p`.
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
   between a `C¹` real function `φ` and the primitive of an integrable `f`, which need not be
   differentiable anywhere:
@@ -43,7 +48,7 @@ used to identify weak derivatives on an interval with ordinary primitives.
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set Filter
 open scoped Interval
 
 namespace TauCeti
@@ -81,6 +86,63 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
+`(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`
+norm of `f`: the primitive is bounded by `∫ s in (a, b), ‖f s‖` at every point. -/
+theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b))
+    (ht₀ : t₀ ∈ Icc a b) :
+    eLpNorm (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b)) ≤
+      volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
+  have hf' : IntegrableOn f (Icc a b) := by rwa [integrableOn_Icc_iff_integrableOn_Ioo]
+  have hbound : ∀ᵐ t ∂volume.restrict (Ioo a b),
+      ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ioo a b, ‖f s‖ := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
+    -- The oriented interval between `t₀` and `t` lies in `[a, b]`.
+    have hsub : Ι t₀ t ⊆ Icc a b := uIoc_subset_uIcc.trans
+      (uIcc_subset_Icc ht₀ (Ioo_subset_Icc_self ht))
+    calc ‖∫ s in t₀..t, f s‖ ≤ ∫ s in Ι t₀ t, ‖f s‖ :=
+          _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
+      _ ≤ ∫ s in Icc a b, ‖f s‖ :=
+          setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
+            hsub.eventuallyLE
+      _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
+  have hm : AEStronglyMeasurable (fun t ↦ ∫ s in t₀..t, f s) (volume.restrict (Ioo a b)) :=
+    ((continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).mono
+      Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo
+  calc eLpNorm (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b))
+      ≤ volume.restrict (Ioo a b) univ ^ p.toReal⁻¹ *
+          ENNReal.ofReal (∫ s in Ioo a b, ‖f s‖) := eLpNorm_le_of_ae_bound hm hbound
+    _ = volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
+      rw [Measure.restrict_apply_univ, ofReal_integral_norm_eq_lintegral_enorm hf,
+        eLpNorm_one_eq_lintegral_enorm hf.aestronglyMeasurable]
+
+/-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s`, based at a point `t₀` of
+`[a, b]`, is at most `b - a` times the `Lᵖ(a, b)` norm of `f`, for `1 ≤ p ≤ ∞`. -/
+theorem eLpNorm_primitive_le_mul_eLpNorm {p : ENNReal} (hp : 1 ≤ p) {t₀ : ℝ}
+    (hf : IntegrableOn f (Ioo a b)) (ht₀ : t₀ ∈ Icc a b) :
+    eLpNorm (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b)) ≤
+      ENNReal.ofReal (b - a) * eLpNorm f p (volume.restrict (Ioo a b)) := by
+  rcases (ht₀.1.trans ht₀.2).eq_or_lt with rfl | hab
+  · simp
+  have hne : volume (Ioo a b) ≠ 0 := by simp [hab]
+  -- Hölder's inequality on the bounded interval turns the `L¹` bound into an `Lᵖ` bound.
+  calc eLpNorm (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b))
+      ≤ volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) :=
+        eLpNorm_primitive_le hf ht₀
+    _ ≤ volume (Ioo a b) ^ p.toReal⁻¹ * (eLpNorm f p (volume.restrict (Ioo a b)) *
+          volume (Ioo a b) ^ (1 / (1 : ENNReal).toReal - 1 / p.toReal)) := by
+        gcongr
+        simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hf.aestronglyMeasurable
+    _ = ENNReal.ofReal (b - a) * eLpNorm f p (volume.restrict (Ioo a b)) := by
+        -- The two powers of the interval length combine to its first power.
+        have hpow : volume (Ioo a b) ^ p.toReal⁻¹ *
+            volume (Ioo a b) ^ (1 / (1 : ENNReal).toReal - 1 / p.toReal) =
+              ENNReal.ofReal (b - a) := by
+          rw [← ENNReal.rpow_add _ _ hne measure_Ioo_lt_top.ne]
+          simp
+        rw [← hpow]
+        ring
 
 variable [CompleteSpace E]
 
