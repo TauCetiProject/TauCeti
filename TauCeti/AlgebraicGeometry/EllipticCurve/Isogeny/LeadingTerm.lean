@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Wronskian
-public import TauCeti.RingTheory.Valuation.LeadingTerm
+public import TauCeti.RingTheory.Valuation.RootMonic
 
 import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
 
@@ -34,17 +34,18 @@ which forces `deg N = deg D + 1`; the top coefficient of `w` is then `leadingCoe
 Consequently, over a field with a valuation `v`, an isogeny scales the value of the
 `x`-coordinate of a point close to the point at infinity by `v c⁻²`: there is a bound `R` such
 that every affine point `P = (x₀, y₀)` of `W₁` with `R < v x₀` has an affine image with
-`v (x(φ P)) · v c ² = v x₀`. Over a complete discretely valued field this says that `φ` carries
-the points of `W₁` at depth `k` in the kernel of reduction, for `k` large, to points of `W₂` at
-depth `k + v(c)`. This is the step at which the differential constant `|c|` enters the local
+`v (x(φ P)) · v c ² = v x₀`. Over a complete discretely valued field with uniformizer `π`, and for
+integral models of `W₁` and `W₂`, this says that `φ` carries the points of `W₁` at depth `k` in the
+kernel of reduction, for `k` large, to points of `W₂` at depth `k + ord(c)`, where
+`v c = v π ^ ord(c)`. This is the step at which the differential constant `|c|` enters the local
 factor `[E₂(K_v) : φ E₁(K_v)] / #E₁(K_v)[φ]` of Cassels' isogeny invariance of the
 Birch–Swinnerton-Dyer quotient at a place dividing `deg φ`.
 
 ## Main results
 
-* `TauCeti.Isogeny.degree_eq_natDegree_num_xRatFunc`: `deg φ = deg N`.
-* `TauCeti.Isogeny.natDegree_num_xRatFunc_eq_succ`: for separable `φ` and `2 ≠ 0`,
-  `deg N = deg D + 1`.
+* `TauCeti.Isogeny.natDegree_num_xRatFunc_eq_succ_of_eq_smul`: if `φ^*ω₂ = c ω₁` with `c ≠ 0`
+  and `2 ≠ 0`, then `deg N = deg D + 1`; `TauCeti.Isogeny.natDegree_num_xRatFunc_eq_succ` is the
+  same statement for separable `φ`.
 * `TauCeti.Isogeny.leadingCoeff_num_xRatFunc_mul_sq`: under the same hypotheses,
   `leadingCoeff N · c² = 1`.
 * `TauCeti.Isogeny.exists_valuation_xCoord_pointMap_mul_sq`: near the point at infinity, `φ`
@@ -67,13 +68,6 @@ namespace TauCeti.Isogeny
 
 variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic]
   [W₂.IsElliptic]
-
-/-- **The degree of an isogeny is the degree of the numerator of its `x`-coordinate**, since the
-numerator of `φ.xRatFunc` has larger degree than its denominator. -/
-theorem degree_eq_natDegree_num_xRatFunc (φ : Isogeny W₁ W₂) :
-    φ.degree = φ.xRatFunc.num.natDegree := by
-  rw [degree_eq_max_natDegree_xRatFunc,
-    max_eq_left (natDegree_denom_lt_natDegree_num_xRatFunc φ).le]
 
 omit [W₁.IsElliptic] [W₂.IsElliptic] in
 private theorem four_ne_zero_of_two_ne_zero (h2 : (2 : F) ≠ 0) : (4 : F) ≠ 0 := by
@@ -140,7 +134,7 @@ private theorem natDegree_and_leadingCoeff_rhs :
 
 /-- The numerator of `φ.xRatFunc` has degree one more than its denominator, when
 `φ^*ω₂ = c ω₁` with `c ≠ 0` and `2 ≠ 0` in `F`. -/
-private theorem natDegree_num_xRatFunc_eq_succ_of_eq_smul :
+theorem natDegree_num_xRatFunc_eq_succ_of_eq_smul :
     φ.xRatFunc.num.natDegree = φ.xRatFunc.denom.natDegree + 1 := by
   have had : φ.xRatFunc.denom.natDegree < φ.xRatFunc.num.natDegree :=
     natDegree_denom_lt_natDegree_num_xRatFunc φ
@@ -168,7 +162,7 @@ private theorem coeff_wronskian_xRatFunc :
     ring
   have hD'N : (derivative D * N).coeff (d + d) = d * N.leadingCoeff := by
     rcases Nat.eq_zero_or_pos d with h0 | h0
-    · rw [derivative_of_natDegree_zero h0, zero_mul, coeff_zero, h0, Nat.cast_zero, zero_mul]
+    · simp [derivative_of_natDegree_zero h0, h0]
     · have hdd : d + d = (d - 1) + (d + 1) := by omega
       rw [hdd, coeff_mul_add_eq_of_natDegree_le (natDegree_derivative_le D |>.trans le_rfl) hN.le,
         coeff_derivative, Nat.sub_add_cancel h0, ← hd, hD.coeff_natDegree, leadingCoeff, hN,
@@ -227,18 +221,18 @@ theorem exists_valuation_xCoord_pointMap_mul_sq [DecidableEq F] {Γ₀ : Type*}
     rw [← v.ne_zero_iff, hvD]
     exact pow_ne_zero _ hx0
   refine ⟨(pointMap_ofIsogeny_some_eq_zero_iff h).not.mpr hDx, ?_⟩
-  rw [xCoord_pointMap_ofIsogeny_some h hDx, map_div₀, hvD, hRN x ((le_max_left _ _).trans_lt hx),
-    hN, pow_succ]
   have hlc : v N.leadingCoeff * v c ^ 2 = 1 := by
     rw [← map_pow, ← map_mul, leadingCoeff_num_xRatFunc_mul_sq hc hc0 h2, v.map_one]
-  rw [mul_comm (v x ^ D.natDegree) (v x), ← mul_assoc, mul_div_assoc,
-    div_self (pow_ne_zero _ hx0), mul_one, mul_right_comm, hlc, one_mul]
+  have hpow : v x ^ (D.natDegree + 1) / v x ^ D.natDegree = v x := by
+    rw [pow_succ, mul_div_cancel_left₀ _ (pow_ne_zero _ hx0)]
+  rw [xCoord_pointMap_ofIsogeny_some h hDx, map_div₀, hvD, hRN x ((le_max_left _ _).trans_lt hx),
+    hN, mul_div_assoc, hpow, mul_right_comm, hlc, one_mul]
 
 end Separable
 
-/-- **The `x`-coordinate of a separable isogeny has a simple pole at infinity**: when `2 ≠ 0` in
-`F`, the numerator of `φ.xRatFunc` has degree one more than its denominator, so
-`deg φ = deg D + 1` for the denominator `D`. -/
+/-- **The numerator of `φ.xRatFunc` has degree one more than its denominator** for a separable
+isogeny `φ`, when `2 ≠ 0` in `F`. So `deg φ = deg D + 1` for the denominator `D`, and `x ∘ φ`, as a
+rational function of `x`, has a simple pole at infinity. -/
 theorem natDegree_num_xRatFunc_eq_succ (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (h2 : (2 : F) ≠ 0) :
     φ.xRatFunc.num.natDegree = φ.xRatFunc.denom.natDegree + 1 := by

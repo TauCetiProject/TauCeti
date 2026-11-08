@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Valuation.Basic
 
 import Mathlib.Algebra.Polynomial.Eval.Coeff
+import Mathlib.Algebra.Polynomial.Eval.Degree
+import Mathlib.Data.Finset.Order
 import Mathlib.Algebra.Polynomial.Monic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
@@ -20,19 +22,29 @@ import Mathlib.RingTheory.Valuation.Integers
 # Valuations of roots of monic polynomials
 
 Elementary estimates for a valuation `ν` on a ring: a product of two `ν`-integral
-elements that is a `ν`-unit has `ν`-unit factors, and for a monic polynomial `p` with
-`ν`-integral coefficients the leading term dominates at any `t` with `1 < ν t`, so that
-`ν (p.eval t) = ν t ^ p.natDegree`. Consequently, a root of such a polynomial has value at
+elements that is a `ν`-unit has `ν`-unit factors, and the leading term of a polynomial `p`
+dominates its value at `t` as soon as it dominates each lower term, so that
+`ν (p.eval t) = ν (leadingCoeff p) * ν t ^ p.natDegree`. For `p` monic with `ν`-integral
+coefficients this holds at any `t` with `1 < ν t`, so a root of such a polynomial has value at
 most one. These estimates do not require the ring to be commutative or the value monoid to
-have inverses. The last one, that at a root of a monic cubic with unit discriminant the
+have inverses. With values in a group with zero, the leading term of a polynomial that need not be
+monic dominates at any `t` with `1 ≤ ν t` at which each lower coefficient has value below
+`ν (leadingCoeff p) * ν t`, and so, over a division ring, at every `t` of large enough value.
+The last estimate, that at a root of a monic cubic with unit discriminant the
 derivative is a unit, is stated over a commutative ring with values in a group with zero, so that
 it can compute in the ring of integers `ν.integer`.
 
 ## Main results
 
 * `Valuation.eq_one_of_mul_eq_one`: if `ν a ≤ 1`, `ν b ≤ 1` and `ν (a * b) = 1`, then `ν a = 1`.
+* `Valuation.map_eval_eq_leadingCoeff_mul_pow`: the leading term of `p` dominates its value at `t`
+  when it dominates each lower term.
 * `Valuation.map_eval_eq_of_one_lt`: `ν (p.eval t) = ν t ^ p.natDegree` for monic `p` with
   `ν`-integral coefficients and `1 < ν t`.
+* `Valuation.map_eval_eq_leadingCoeff_mul_pow_of_one_le` and
+  `Valuation.exists_map_eval_eq_leadingCoeff_mul_pow`: the non-monic forms, at `t` with `1 ≤ ν t`
+  whose value is large compared with the lower coefficients, and over a division ring at every `t`
+  of large enough value.
 * `Valuation.le_one_of_root_monic`: a root of a monic polynomial with `ν`-integral coefficients
   has value at most one.
 * `Valuation.map_quadratic_eq_of_one_lt` and `Valuation.one_lt_map_sq_add_mul_sub_iff`:
@@ -76,26 +88,78 @@ lemma eq_one_of_mul_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hab : ν (a * b)
     _ ≤ ν a * 1 := by gcongr
     _ = ν a := mul_one _
 
+/-- **The leading term of a polynomial dominates its value when it dominates each lower term**:
+if `ν (p.coeff i) * ν t ^ i < ν (leadingCoeff p) * ν t ^ natDegree p` for every
+`i < natDegree p`, then `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. -/
+lemma map_eval_eq_leadingCoeff_mul_pow {p : L[X]}
+    (hp : ∀ i < p.natDegree, ν (p.coeff i) * ν t ^ i < ν p.leadingCoeff * ν t ^ p.natDegree) :
+    ν (p.eval t) = ν p.leadingCoeff * ν t ^ p.natDegree := by
+  set n := p.natDegree with hn
+  rcases Nat.eq_zero_or_pos n with h0 | h0
+  · simp [eval_eq_sum_range, ← hn, h0, leadingCoeff]
+  have heval : p.eval t = (∑ i ∈ Finset.range n, p.coeff i * t ^ i) + p.leadingCoeff * t ^ n := by
+    rw [eval_eq_sum_range, Finset.sum_range_succ]
+    rfl
+  have hlt : ν (∑ i ∈ Finset.range n, p.coeff i * t ^ i) < ν (p.leadingCoeff * t ^ n) := by
+    rw [map_mul, map_pow]
+    refine ν.map_sum_lt (zero_le.trans_lt (hp 0 h0)).ne' fun i hi ↦ ?_
+    rw [map_mul, map_pow]
+    exact hp i (Finset.mem_range.mp hi)
+  rw [heval, ν.map_add_eq_of_lt_right hlt, map_mul, map_pow]
+
 /-- If `p` is monic with coefficients that are integral for the valuation `ν` and `1 < ν t`,
 then the value of `p` at `t` is dominated by the leading term: `ν (p.eval t) = ν t ^ p.natDegree`.
 In particular, `p.eval t ≠ 0`. -/
 lemma map_eval_eq_of_one_lt {p : L[X]} (hp : p.Monic)
     (hcoeff : ∀ i < p.natDegree, ν (p.coeff i) ≤ 1) (ht : 1 < ν t) :
     ν (p.eval t) = ν t ^ p.natDegree := by
-  nontriviality Γ
-  set n := p.natDegree with _
-  have h0 : ν t ≠ 0 := (zero_lt_one.trans ht).ne'
-  have heval : p.eval t = (∑ i ∈ Finset.range n, p.coeff i * t ^ i) + t ^ n := by
-    rw [eval_eq_sum_range, Finset.sum_range_succ, hp.coeff_natDegree, one_mul]
-  have hlt : ν (∑ i ∈ Finset.range n, p.coeff i * t ^ i) < ν (t ^ n) := by
-    rw [map_pow]
-    refine ν.map_sum_lt (pow_ne_zero n h0) fun i hi ↦ ?_
-    rw [Finset.mem_range] at hi
-    calc ν (p.coeff i * t ^ i) ≤ 1 * ν t ^ i := by
-          rw [map_mul, map_pow]; gcongr; exact hcoeff i hi
+  have h := ν.map_eval_eq_leadingCoeff_mul_pow (p := p) (t := t) fun i hi ↦ by
+    rw [hp.leadingCoeff, ν.map_one, one_mul]
+    calc ν (p.coeff i) * ν t ^ i ≤ 1 * ν t ^ i := by gcongr; exact hcoeff i hi
       _ = ν t ^ i := one_mul _
-      _ < ν t ^ n := pow_lt_pow_right₀ ht hi
-  rw [heval, ν.map_add_eq_of_lt_right hlt, map_pow]
+      _ < ν t ^ p.natDegree := pow_lt_pow_right₀ ht hi
+  rwa [hp.leadingCoeff, ν.map_one, one_mul] at h
+
+section Group
+
+variable {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+
+/-- **The leading term of a polynomial dominates its value at a large argument**: if `ν t ≥ 1` and
+every coefficient of `p` below the leading one has value less than `ν (leadingCoeff p) * ν t`, then
+`ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. -/
+theorem map_eval_eq_leadingCoeff_mul_pow_of_one_le (ν : Valuation L Γ₀) {p : L[X]}
+    (ht : 1 ≤ ν t) (hp : ∀ i < p.natDegree, ν (p.coeff i) < ν p.leadingCoeff * ν t) :
+    ν (p.eval t) = ν p.leadingCoeff * ν t ^ p.natDegree := by
+  have ht0 : 0 < ν t := zero_lt_one.trans_le ht
+  refine ν.map_eval_eq_leadingCoeff_mul_pow fun i hi ↦ ?_
+  calc ν (p.coeff i) * ν t ^ i < ν p.leadingCoeff * ν t * ν t ^ i :=
+        mul_lt_mul_of_pos_right (hp i hi) (pow_pos ht0 i)
+    _ = ν p.leadingCoeff * ν t ^ (i + 1) := by rw [pow_succ', mul_assoc]
+    _ ≤ ν p.leadingCoeff * ν t ^ p.natDegree := by
+      gcongr ν p.leadingCoeff * ?_
+      exact pow_le_pow_right₀ ht hi
+
+/-- **The leading term of a polynomial dominates at every large enough argument**: over a division
+ring, there is a bound `R` such that `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`
+whenever `R < ν t`. -/
+theorem exists_map_eval_eq_leadingCoeff_mul_pow {K : Type*} [DivisionRing K] (ν : Valuation K Γ₀)
+    (p : K[X]) :
+    ∃ R : Γ₀, ∀ t : K, R < ν t → ν (p.eval t) = ν p.leadingCoeff * ν t ^ p.natDegree := by
+  obtain ⟨M, hM⟩ := ((Finset.range p.natDegree).image
+    fun i ↦ ν (p.coeff i) / ν p.leadingCoeff).exists_le
+  refine ⟨max 1 M, fun t ht ↦ ν.map_eval_eq_leadingCoeff_mul_pow_of_one_le
+    ((le_max_left _ _).trans ht.le) fun i hi ↦ ?_⟩
+  have hp : p ≠ 0 := by
+    rintro rfl
+    simp at hi
+  have hlc : 0 < ν p.leadingCoeff := by
+    rw [zero_lt_iff, ne_eq, ν.zero_iff, leadingCoeff_eq_zero]
+    exact hp
+  have hi' := (hM _ (Finset.mem_image_of_mem _ (Finset.mem_range.mpr hi))).trans_lt
+    ((le_max_right _ _).trans_lt ht)
+  rwa [div_lt_iff₀ hlc, mul_comm] at hi'
+
+end Group
 
 /-- A root of a monic polynomial whose coefficients have value at most one also has value
 at most one. -/
