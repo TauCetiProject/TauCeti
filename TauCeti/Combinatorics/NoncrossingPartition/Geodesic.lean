@@ -117,30 +117,6 @@ private theorem exists_isNoncrossing_formPerm_eq_of_isNoncrossingPerm {σ : Perm
       exacts [(hinc x w ((hpart hx).1 hw)).1 h hlt, (hinc x w ((hpart hx).1 hw)).2 h]
     · rw [P.formPerm_apply_of_notMem hx, hσ x hx]
 
-/-- `σ * swap p m` evaluates to `σ m` at `p`. -/
-private theorem mul_swap_apply_left_eq (σ : Perm α) (p m : α) : (σ * swap p m) p = σ m := by
-  rw [mul_apply, swap_apply_left]
-
-/-- `σ * swap p m` agrees with `σ` away from `p` and `m`. -/
-private theorem mul_swap_apply_of_ne_of_ne {σ : Perm α} {p m x : α} (hxp : x ≠ p) (hxm : x ≠ m) :
-    (σ * swap p m) x = σ x := by
-  rw [mul_apply, swap_apply_of_ne_of_ne hxp hxm]
-
-/-- Removing a point `m` from its cycle `σ p = m` by `σ * swap p m` does not change the cycle
-relation between points other than `m`. -/
-private theorem sameCycle_mul_swap_iff {σ : Perm α} {p m u v : α} (hσp : σ p = m) (hu : u ≠ m)
-    (hv : v ≠ m) : (σ * swap p m).SameCycle u v ↔ σ.SameCycle u v := by
-  have hm : (σ * swap p m) m = m := by rw [mul_apply, swap_apply_right, hσp]
-  have h := sameCycle_mul_swap_iff_of_apply_eq_self (a := p) hm hu hv
-  rw [mul_assoc, swap_mul_self, mul_one] at h
-  exact h.symm
-
-/-- The cycle through `x` is moved only to points at most `m`, when `σ` moves only points
-`≤ m`. -/
-private theorem le_of_sameCycle_of_ne {σ : Perm α} {m : α} (hle : ∀ x, σ x ≠ x → x ≤ m)
-    {x w : α} (h : σ.SameCycle x w) (hxw : x ≠ w) : w ≤ m :=
-  hle w fun hw => hxw (h.eq_of_right hw)
-
 /-- The increasing-order half of the reinsertion of a largest point `m` after `p = σ⁻¹ m`; see
 `isNoncrossingPerm_of_isNoncrossingPerm_mul_swap`. -/
 private theorem increasing_of_mul_swap {σ σ' : Perm α} {p m : α}
@@ -151,12 +127,12 @@ private theorem increasing_of_mul_swap {σ σ' : Perm α} {p m : α}
     (hK : ∀ u v, σ'.SameCycle u v → p < u → p < v) (x w : α) (hxw : σ.SameCycle x w) :
     (x < σ x → x < w → σ x ≤ w) ∧ (σ x ≤ x → σ x ≤ w ∧ w ≤ x) := by
   have hpm' : p < m := (hle p (by rw [hσp]; exact hpm.symm)).lt_of_ne hpm
-  have hσ'p : σ' p = σ m := by rw [hσ', mul_swap_apply_left_eq]
+  have hσ'p : σ' p = σ m := by rw [hσ', mul_apply, swap_apply_left]
   have hσ'x {x : α} (hxp : x ≠ p) (hxm : x ≠ m) : σ' x = σ x := by
-    rw [hσ', mul_swap_apply_of_ne_of_ne hxp hxm]
+    rw [hσ', mul_apply, swap_apply_of_ne_of_ne hxp hxm]
   have key {u v : α} (hu : u ≠ m) (hv : v ≠ m) : σ'.SameCycle u v ↔ σ.SameCycle u v := by
     rw [hσ']
-    exact sameCycle_mul_swap_iff hσp hu hv
+    exact sameCycle_mul_swap_iff_of_apply_eq hσp hu hv
   have hmp : σ.SameCycle p m := ⟨1, by simpa using hσp⟩
   by_cases hxm : x = m
   · -- The point `m` moves down to the first point of the cycle of `p` in `σ'`.
@@ -173,7 +149,7 @@ private theorem increasing_of_mul_swap {σ σ' : Perm α} {p m : α}
       exact not_lt.1 fun hlt => lt_irrefl p (hK _ _ h.symm hlt)
     have h := (hinc' p w ((key hpm hwm).2 (hmp.trans hxw))).2 (by rw [hσ'p]; exact hσm_le)
     rw [hσ'p] at h
-    exact ⟨h.1, le_of_sameCycle_of_ne hle hxw fun h => hwm h.symm⟩
+    exact ⟨h.1, hxw.le_of_ne_of_forall_apply_ne_le hle fun h => hwm h.symm⟩
   by_cases hxp : x = p
   · -- The point `p` moves up to `m`, and its cycle has no point between `p` and `m`.
     rw [hxp] at hxw ⊢
@@ -191,7 +167,8 @@ private theorem increasing_of_mul_swap {σ σ' : Perm α} {p m : α}
       · rw [hσ'x hxp hxm]
         by_cases hσxm : σ x = m
         · exact hσxm.le
-        · exact le_of_sameCycle_of_ne hle ((sameCycle_apply_left.2 hxw).symm) fun h => hσxm h.symm
+        · exact ((sameCycle_apply_left.2 hxw).symm).le_of_ne_of_forall_apply_ne_le hle
+            fun h => hσxm h.symm
       · have hpx := ((hinc' x p hxw').2 h).2
         exact absurd (hK x p hxw' (hpx.lt_of_ne fun h => hxp h.symm)) (lt_irrefl p)
     · exact hinc' x w ((key hxm hwm).2 hxw)
@@ -208,9 +185,9 @@ private theorem noncrossing_of_mul_swap {σ σ' : Perm α} {p m : α}
     σ.SameCycle a b := by
   have key {u v : α} (hu : u ≠ m) (hv : v ≠ m) : σ'.SameCycle u v ↔ σ.SameCycle u v := by
     rw [hσ']
-    exact sameCycle_mul_swap_iff hσp hu hv
+    exact sameCycle_mul_swap_iff_of_apply_eq hσp hu hv
   have hmp : σ.SameCycle p m := ⟨1, by simpa using hσp⟩
-  have hdm : d ≤ m := le_of_sameCycle_of_ne hle hbd (hbc.trans hcd).ne
+  have hdm : d ≤ m := hbd.le_of_ne_of_forall_apply_ne_le hle (hbc.trans hcd).ne
   have hcm : c ≠ m := (hcd.trans_le hdm).ne
   have hbm : b ≠ m := ((hbc.trans hcd).trans_le hdm).ne
   have ham : a ≠ m := ((hab.trans hbc).trans (hcd.trans_le hdm)).ne
