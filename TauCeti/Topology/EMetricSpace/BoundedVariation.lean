@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 
 /-!
@@ -12,7 +13,8 @@ public import Mathlib.Topology.EMetricSpace.BoundedVariation
 
 This file transfers eventual upper bounds on the total variations of a family of maps to a
 `liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
-composition with an antitone map on an interval.
+composition with an antitone map on an interval, and proves stability of bounded variation under
+subtraction.
 
 ## Main results
 
@@ -74,3 +76,37 @@ theorem comp_inter_Icc_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β →
     Equiv.image_eq_preimage_symm, toDual_symm_eq, ← preimage_inter, comp_ofDual] at this
 
 end eVariationOn
+
+section Subtraction
+
+variable {α E : Type*} [LinearOrder α] [SeminormedAddCommGroup E]
+  {f g : α → E} {s : Set α}
+
+/-- The variation of a difference is at most the sum of the variations. -/
+theorem eVariationOn.sub_le :
+    eVariationOn (f - g) s ≤ eVariationOn f s + eVariationOn g s := by
+  apply iSup_le
+  rintro ⟨n, u, hu, hus⟩
+  calc
+    _ ≤ ∑ i ∈ Finset.range n,
+        (edist (f (u (i + 1))) (f (u i)) + edist (g (u (i + 1))) (g (u i))) := by
+      apply Finset.sum_le_sum
+      intro i hi
+      simpa only [Pi.sub_apply, sub_eq_add_neg, edist_neg_neg] using
+        edist_add_add_le (f (u (i + 1))) (-g (u (i + 1))) (f (u i)) (-g (u i))
+    _ ≤ _ := by
+      rw [Finset.sum_add_distrib]
+      exact add_le_add (eVariationOn.sum_le hu hus) (eVariationOn.sum_le hu hus)
+
+/-- The difference of two bounded-variation functions has bounded variation. -/
+theorem BoundedVariationOn.sub (hf : BoundedVariationOn f s) (hg : BoundedVariationOn g s) :
+    BoundedVariationOn (f - g) s :=
+  ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hf, hg⟩) eVariationOn.sub_le
+
+/-- Local bounded variation is stable under subtraction. -/
+theorem LocallyBoundedVariationOn.sub
+    (hf : LocallyBoundedVariationOn f s) (hg : LocallyBoundedVariationOn g s) :
+    LocallyBoundedVariationOn (f - g) s :=
+  fun a b ha hb ↦ (hf a b ha hb).sub (hg a b ha hb)
+
+end Subtraction

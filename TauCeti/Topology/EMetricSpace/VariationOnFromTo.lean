@@ -14,7 +14,8 @@ public import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 Cumulative signed variation controls distances between values of a metric-valued function.
 In particular, the function is constant on each fibre of cumulative variation, allowing an
-arclength factorization even when the original curve has pauses.
+arclength factorization even when the original curve has pauses. For locally bounded-variation
+functions, continuity of cumulative variation is equivalent to continuity of the function.
 
 The file also records that cumulative variation only depends on the function on `s`
 (`variationOnFromTo.eq_of_eqOn`), and the antitone counterpart
@@ -23,7 +24,7 @@ The file also records that cumulative variation only depends on the function on 
 
 public section
 
-open Set
+open Filter Set
 
 namespace variationOnFromTo
 
@@ -85,6 +86,33 @@ theorem dist_le_abs_sub_variationOnFromTo (hf : LocallyBoundedVariationOn f s)
     exact (hf x y hx hy).dist_le ⟨hx, le_rfl, hxy⟩ ⟨hy, hxy, le_rfl⟩
   · rw [variationOnFromTo.eq_of_le _ _ hyx, abs_of_nonneg ENNReal.toReal_nonneg]
     exact (hf y x hy hx).dist_le ⟨hx, hyx, le_rfl⟩ ⟨hy, le_rfl, hyx⟩
+
+end LocallyBoundedVariationOn
+
+namespace LocallyBoundedVariationOn
+
+variable {α X : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+  [PseudoMetricSpace X] {f : α → X} {s : Set α}
+
+/-- Cumulative variation of a locally bounded-variation function is continuous at exactly the
+points where the original function is continuous, relative to the same set. -/
+theorem continuousWithinAt_variationOnFromTo_iff
+    (hf : LocallyBoundedVariationOn f s) {a x : α} (ha : a ∈ s) (hx : x ∈ s) :
+    ContinuousWithinAt (variationOnFromTo f s a) s x ↔ ContinuousWithinAt f s x := by
+  constructor
+  · intro h
+    apply tendsto_iff_dist_tendsto_zero.mpr
+    refine squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ dist_nonneg) ?_
+      (tendsto_iff_dist_tendsto_zero.mp h.tendsto)
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    simpa only [Real.dist_eq] using hf.dist_le_abs_sub_variationOnFromTo ha hy hx
+  · intro h
+    apply continuousWithinAt_iff_continuous_left'_right'.mpr
+    constructor
+    · simpa only [ContinuousWithinAt, dist_self, sub_zero] using
+        variationOnFromTo.tendsto_left ha hx hf (h.mono inter_subset_left)
+    · simpa only [ContinuousWithinAt, dist_self, add_zero] using
+        variationOnFromTo.tendsto_right ha hx hf (h.mono inter_subset_left)
 
 end LocallyBoundedVariationOn
 
