@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.Basic
-import Mathlib.Data.Set.Finite.Lemmas
+import Mathlib.Topology.Instances.Discrete
+import Mathlib.Topology.Order.Compact
 
 /-!
 # Attainment of a sequence minimum from a lower barrier
@@ -25,7 +26,7 @@ namespace Filter.Tendsto
 
 /-- A sequence above a convergent lower barrier attains its minimum, with value at
 most the barrier's limit, provided it has values at most that limit frequently. -/
-theorem exists_minimum_of_lower_bound {α : Type*} [LinearOrder α]
+theorem exists_le_and_forall_le_of_le {α : Type*} [LinearOrder α]
     [TopologicalSpace α] [OrderTopology α] {a b : ℕ → α} {c : α}
     (hb : Tendsto b atTop (𝓝 c)) (hba : ∀ n, b n ≤ a n)
     (ha : ∃ᶠ n in atTop, a n ≤ c) :
@@ -38,12 +39,9 @@ theorem exists_minimum_of_lower_bound {α : Type*} [LinearOrder α]
     obtain ⟨i, hi⟩ := h
     have htail : ∀ᶠ n in atTop, a i < a n :=
       (hb.eventually (eventually_gt_nhds hi)).mono fun n hn => hn.trans_le (hba n)
-    obtain ⟨N, hN⟩ := eventually_atTop.1 htail
-    obtain ⟨k, _, hmin⟩ := Set.exists_min_image (Set.Iic (max N i)) a (Set.finite_Iic _)
-      ⟨i, le_max_right N i⟩
-    refine ⟨k, (hmin i (le_max_right N i)).trans hi.le, fun m => ?_⟩
-    by_cases hm : m ≤ max N i
-    · exact hmin m hm
-    · exact (hmin i (le_max_right N i)).trans (hN m (by omega)).le
+    obtain ⟨k, hk⟩ := (continuous_of_discreteTopology (f := a)).exists_forall_le' i (by
+      rw [cocompact_eq_atTop]
+      exact htail.mono fun _ h => h.le)
+    exact ⟨k, (hk i).trans hi.le, hk⟩
 
 end Filter.Tendsto
