@@ -368,7 +368,8 @@ theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
       ‖2 * (π : ℂ) * A‖ * (ε / (2 * K)) := by
     rw [← mul_sub, norm_mul, norm_sub_rev]
     exact mul_le_mul_of_nonneg_left hL (norm_nonneg _)
-  have hsmall := div_mul_add_mul_div_le_half hε hK0 hK.ge
+  have hsmall := div_mul_add_mul_div_le_half (a := C * (1 + 2 * π ^ 2))
+    (b := ‖2 * (π : ℂ) * A‖) hε.le hK0 (by rw [hK]; linarith)
   rw [dist_eq_norm] at hmain ⊢
   rw [hsplit]
   calc
