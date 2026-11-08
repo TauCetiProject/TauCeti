@@ -64,7 +64,7 @@ theorem isIntegrallyClosedIn_plusSubring [IsTateRing (uniformTilt p B)]
     D.isIntegrallyClosedIn_map_of_ker_le q Ideal.Quotient.mk_surjective hker
   have hA : A ≤ A₀ := plusSubring_mono h h₀ h.le_powerBoundedSubring
   have hbounded : A ≤ powerBoundedSubring (uniformTilt p B) :=
-    fun _ hx ↦ mem_powerBoundedSubring.mpr ((isBounded_plusSubring h).isPowerBounded_of_mem hx)
+    plusSubring_le_powerBoundedSubring h
   let i := A.inclusion hA
   have hpI : (p : powerBoundedSubring B) ∈ I :=
     mem_topologicallyNilpotentIdeal.mpr (Fact.out : IsTopologicallyNilpotent (p : B))
@@ -79,13 +79,8 @@ theorem isIntegrallyClosedIn_plusSubring [IsTateRing (uniformTilt p B)]
   -- after reduction; then descend its integrality to the image of `B⁺` in that reduction.
   have hxpb : IsIntegral (powerBoundedSubring (uniformTilt p B)) x :=
     RingHom.IsIntegralElem.of_comp (f := A.inclusion hbounded) hx
-  have hx₀ : x ∈ A₀ := by
-    obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := uniformTilt p B)
-    have hsharp : IsPseudoUniformizer (coeff p B 0 ϖ) := isPseudoUniformizer_iff.mpr
-      ⟨isUnit_iff_coeff_zero.mp hϖ.isUnit,
-        isTopologicallyNilpotent_iff_coeff_zero.mp hϖ.isTopologicallyNilpotent⟩
-    exact mem_plusSubring_iff_coeff_zero.mpr ((mem_powerBoundedSubring_iff hsharp).mp
-      (mem_powerBoundedSubring.mpr (isPowerBounded_of_isIntegral hxpb)))
+  have hx₀ : x ∈ A₀ := powerBoundedSubring_le_plusSubring
+    (mem_powerBoundedSubring.mpr (isPowerBounded_of_isIntegral hxpb))
   let y : A₀ := ⟨x, hx₀⟩
   have hy : i.IsIntegralElem y :=
     RingHom.IsIntegralElem.of_map A₀.subtype_injective hx
@@ -105,8 +100,7 @@ theorem isRingOfIntegralElements_plusSubring [IsTateRing (uniformTilt p B)]
     IsRingOfIntegralElements (plusSubring p h) where
   isOpen := isOpen_plusSubring h
   isIntegrallyClosedIn := isIntegrallyClosedIn_plusSubring h
-  le_powerBoundedSubring := fun _ hx ↦ mem_powerBoundedSubring.mpr
-    ((isBounded_plusSubring h).isPowerBounded_of_mem hx)
+  le_powerBoundedSubring := plusSubring_le_powerBoundedSubring h
 
 end TauCeti.Perfectoid.uniformTilt
 
@@ -147,7 +141,7 @@ noncomputable def Hom.tilt {P : Pair B} {Q : Pair C} (f : Hom P Q) :
 
 /-- The underlying homomorphism of a tilted pair morphism acts coordinatewise. -/
 @[simp]
-theorem Hom.tilt_toRingHom {P : Pair B} {Q : Pair C} (f : Hom P Q) :
+theorem Hom.toRingHom_tilt {P : Pair B} {Q : Pair C} (f : Hom P Q) :
     (f.tilt (p := p)).toRingHom = uniformTilt.map f.toRingHom f.continuous_toRingHom := (rfl)
 
 /-- Tilting preserves the identity morphism of a Huber pair. -/
@@ -165,7 +159,7 @@ variable {D : Type*} [CommRing D] [UniformSpace D] [IsUniformAddGroup D]
 theorem Hom.tilt_comp {P : Pair B} {Q : Pair C} {R : Pair D} (g : Hom Q R) (f : Hom P Q) :
     (g.comp f).tilt (p := p) = (g.tilt (p := p)).comp (f.tilt (p := p)) := by
   apply Hom.ext
-  simpa only [Hom.tilt_toRingHom, Hom.toRingHom_comp] using
+  simpa only [Hom.toRingHom_tilt, Hom.toRingHom_comp] using
     uniformTilt.map_comp f.toRingHom f.continuous_toRingHom g.toRingHom g.continuous_toRingHom
 
 end TauCeti.Huber.Pair

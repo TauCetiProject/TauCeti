@@ -196,6 +196,7 @@ theorem isIntegrallyClosedIn_map_of_ker_le (S : Subring A) [IsIntegrallyClosedIn
   have heval : f (Polynomial.aeval a p) = 0 := by
     rw [Polynomial.aeval_def, Polynomial.hom_eval₂]
     rw [← hqb, ← hpq, Polynomial.eval₂_map]
+    -- Unfolding `RingHom.restrict` identifies `(S.map f).subtype.comp g` with `f.comp S.subtype`.
     rfl
   have hmem : Polynomial.aeval a p ∈ S := hker heval
   by_cases hdeg : p.natDegree = 0

@@ -147,6 +147,12 @@ theorem isBounded_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements 
     exact hTV n (Set.mul_mem_mul (Set.mem_iInter₂.mp hx n hn)
       (h.le_powerBoundedSubring (mem_plusSubring_iff.mp hy n)))
 
+/-- The integral tilt is contained in the power-bounded subring of the tilt. -/
+theorem plusSubring_le_powerBoundedSubring [NonarchimedeanAddGroup (uniformTilt p B)]
+    (h : IsRingOfIntegralElements Bplus) :
+    plusSubring p h ≤ powerBoundedSubring (uniformTilt p B) :=
+  fun _ hx ↦ mem_powerBoundedSubring.mpr ((isBounded_plusSubring h).isPowerBounded_of_mem hx)
+
 variable (p) in
 /-- The *sharp map* `x ↦ x♯ = x⁽⁰⁾` of the integral tilt, as a multiplicative map `B♭⁺ → B⁺`. It
 is not additive, only additive modulo `p` (`plusSharp_add_sub_mem`). -/
