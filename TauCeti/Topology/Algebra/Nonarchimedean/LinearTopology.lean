@@ -9,12 +9,14 @@ public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 
 /-!
-# A linear topology is nonarchimedean
+# A linear topology is nonarchimedean and compatible with multiplication
 
 If the neighbourhoods of zero of a topological module `M` over `R` have a basis of open
 submodules (`IsLinearTopology R M`), then every neighbourhood of zero contains an open additive
 subgroup, namely the underlying subgroup of an open submodule. So `M` is a nonarchimedean additive
-group, and a linearly topologized ring is a nonarchimedean ring.
+group, and a linearly topologized ring is a nonarchimedean ring. A ring that is linearly
+topologized on both sides, with topological additive group, is a topological ring, because open
+ideals absorb multiplication.
 
 These are theorems rather than instances: Tau Ceti has the converse instance
 `TauCeti.NonarchimedeanAddGroup.isLinearTopology` over a compact ring, and the two together would
@@ -24,7 +26,7 @@ form an instance loop.
 
 * `IsLinearTopology.nonarchimedeanAddGroup`: a linearly topologized module is a nonarchimedean
   additive group.
-* `IsLinearTopology.isTopologicalRing`: a linearly topologized commutative ring with topological
+* `IsLinearTopology.isTopologicalRing`: a two-sided linearly topologized ring with topological
   additive group is a topological ring.
 * `IsLinearTopology.nonarchimedeanRing`: a linearly topologized ring is a nonarchimedean ring.
 -/
@@ -35,11 +37,10 @@ open Topology
 
 namespace IsLinearTopology
 
-/-- **A linearly topologised commutative ring is a topological ring**, as soon as its additive group
-is topological. Multiplication tends to zero as either factor does, by
-`IsLinearTopology.tendsto_mul_zero_of_left` and `IsLinearTopology.tendsto_mul_zero_of_right`. -/
-theorem isTopologicalRing {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalAddGroup R]
-    [IsLinearTopology R R] : IsTopologicalRing R :=
+/-- **A two-sided linearly topologised ring is a topological ring**, as soon as its additive group
+is topological. For a commutative ring the `Rᵐᵒᵖ` hypothesis is supplied automatically. -/
+theorem isTopologicalRing {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalAddGroup R]
+    [IsLinearTopology R R] [IsLinearTopology Rᵐᵒᵖ R] : IsTopologicalRing R :=
   .of_addGroup_of_nhds_zero
     (tendsto_mul_zero_of_right (R := R) (f := 𝓝 0 ×ˢ 𝓝 0) Prod.fst Prod.snd Filter.tendsto_snd)
     (fun x₀ ↦ tendsto_mul_zero_of_right (R := R) (f := 𝓝 0) (fun _ ↦ x₀) id Filter.tendsto_id)
