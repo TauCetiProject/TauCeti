@@ -180,6 +180,47 @@ theorem reflTransGen_induce_compl_iff {X : Set V} {s t : ↥Xᶜ} :
 
 /-! ### Deleting arrows -/
 
+variable (D) in
+/-- Delete a set of arrows from a digraph.  Each arrow retains its ordered endpoints and the
+adjacency proof witnessing that it belongs to `D`. -/
+def deleteArrows (F : Set (Σ v w, D.AdjHom v w)) : Digraph V :=
+  D \ { Adj := fun v w ↦ ∃ e : D.AdjHom v w, ⟨v, w, e⟩ ∈ F }
+
+/-- An ordered pair is an arrow after deletion exactly when it was an arrow and was not selected.
+-/
+@[simp]
+theorem deleteArrows_adj {F : Set (Σ v w, D.AdjHom v w)} {v w : V} :
+    (D.deleteArrows F).Adj v w ↔ ∃ e : D.AdjHom v w, ⟨v, w, e⟩ ∉ F := by
+  simp only [deleteArrows, sdiff_adj]
+  constructor
+  · rintro ⟨h, hF⟩
+    exact ⟨⟨h⟩, fun he ↦ hF ⟨⟨h⟩, he⟩⟩
+  · rintro ⟨e, hF⟩
+    refine ⟨e.down, ?_⟩
+    rintro ⟨e', he'⟩
+    apply hF
+    simpa only [Subsingleton.elim e' e] using he'
+
+/-- Deleting no arrows leaves a digraph unchanged. -/
+@[simp]
+theorem deleteArrows_empty : D.deleteArrows ∅ = D := by
+  ext v w
+  simp
+
+/-- Deleting every arrow leaves the empty digraph. -/
+@[simp]
+theorem deleteArrows_univ : D.deleteArrows Set.univ = ⊥ := by
+  ext v w
+  simp
+
+/-- Deleting a larger set of arrows gives a smaller digraph. -/
+theorem deleteArrows_anti {F F' : Set (Σ v w, D.AdjHom v w)} (hFF' : F ⊆ F') :
+    D.deleteArrows F' ≤ D.deleteArrows F := by
+  intro v w h
+  rw [deleteArrows_adj] at h ⊢
+  obtain ⟨e, he⟩ := h
+  exact ⟨e, fun hf ↦ he (hFF' hf)⟩
+
 /-- Reachability after deleting the arrows of a digraph `E` is reachability along the adjacency
 arrow family of `D` without the arrows joining pairs adjacent in `E`. -/
 theorem reflTransGen_sdiff_iff {E : Digraph V} :
