@@ -78,9 +78,10 @@ open NumberField in
 /-- In a cyclotomic extension of level `m`, every prime above an ideal not containing `m`
 is unramified. -/
 theorem isUnramifiedAt_of_natCast_notMem {K : Type*} [Field K] [NumberField K]
-    (F : Type*) [Field F] [NumberField F] [Algebra K F] (m : ℕ)
+    (F : Type*) [Field F] [Algebra K F] (m : ℕ)
     [IsCyclotomicExtension {m} K F] {p : Ideal (𝓞 K)} (hm : (m : 𝓞 K) ∉ p)
     (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver p] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  have : NumberField F := IsCyclotomicExtension.numberField {m} K F
   by_contra hQ
   refine hm ((Ideal.mem_of_liesOver Q p _).mpr ?_)
   simpa using Ideal.le_of_dvd (dvd_differentIdeal_iff.mpr hQ)
