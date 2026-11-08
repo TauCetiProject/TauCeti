@@ -286,7 +286,7 @@ private theorem stasheffTerm_eq_zero
 /-- The Stasheff identities of the induced category on homogeneous morphisms `aᵢ ⟶ bᵢ`.  On a
 composable string, the Stasheff sum is a morphism `a (n - 1) ⟶ b 0`, which the map of total
 modules sends to the Stasheff sum of `𝒞`; on any other string every term vanishes. -/
-private theorem stasheffSum_inducedOperation_of_mem (hn : 0 < n)
+private theorem stasheffSum_inducedOperation_of_mem
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
     (hd : ∀ i < n, x i ∈ (totalGrading R (InducedQuiver C F)).piece (d i)) :
     stasheffSum (𝒞.inducedOperation F) d x n = 0 := by
@@ -304,7 +304,7 @@ private theorem stasheffSum_inducedOperation_of_mem (hn : 0 < n)
     have hmap : totalHomMap R F (stasheffSum (𝒞.inducedOperation F) d x n) = 0 := by
       rw [stasheffSum_def, map_sum]
       simp_rw [map_sum]
-      rw [← 𝒞.stasheff n hn d (fun i ↦ totalHomMap R F (x i)) fun i hi ↦ by
+      rw [← 𝒞.stasheff n d (fun i ↦ totalHomMap R F (x i)) fun i hi ↦ by
         rw [𝒞.grading_eq]
         exact totalHomMap_mem_totalGrading_piece (hd i hi), stasheffSum_def]
       exact Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦
@@ -359,7 +359,7 @@ private theorem stasheffSum_inducedOperation (n : ℕ) (hn : 0 < n) (d : ℕ →
     have hyg : (fun i : Fin n ↦ y i) = fun i ↦ homInclusion (s i) (t i) (g i) := funext hy
     rw [LinearMap.compMultilinearMap_apply, ← hyg,
       hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d y hyd,
-      stasheffSum_inducedOperation_of_mem hn hyab hyd, smul_zero]
+      stasheffSum_inducedOperation_of_mem hyab hyd, smul_zero]
     exact zero_mem _
   rwa [Submodule.mem_bot, LinearMap.compMultilinearMap_apply,
     hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d x hx,
