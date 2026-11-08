@@ -46,7 +46,7 @@ weights the level is controlled by the conductor:
   (`TauCeti.WeightSpace.norm_coord_inclusion_zpow_mul_lt_amiceRadius`). This includes the trivial
   finite-order character and the smallest level `h = k`;
 * if `κ` has exact conductor `p ^ (k + j + 1)`, then `‖T_κ‖ = r_j`
-  (`TauCeti.WeightSpace.norm_coord_eq_amiceRadius`), so the condition holds at level `k + i`
+  (`TauCeti.WeightSpace.norm_coord_eq_rpow`), so the condition holds at level `k + i`
   exactly when `j < i` (`TauCeti.WeightSpace.norm_coord_lt_amiceRadius_iff`): the conductor bound
   is sharp.
 
@@ -137,16 +137,6 @@ theorem norm_coord_inclusion_zpow_mul_lt_amiceRadius (m : ℤ) {ψ : WeightSpace
     (lt_of_le_of_lt ?_ zpow_neg_padicUnitsDepth_lt_amiceRadius_zero)
   exact zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_le) (by omega)
 
-/-- **The coordinate of a weight of exact conductor `p ^ (k + j + 1)`** is on the boundary of the
-level-`(k + j)` disc: `‖T_κ‖ = r_j`, where `q = p ^ k`. -/
-theorem norm_coord_eq_amiceRadius (κ : WeightSpace p K) {j : ℕ}
-    (h : unitsPrincipal p (padicUnitsDepth p + j + 1) ≤ κ.toMonoidHom.ker)
-    (h' : ¬unitsPrincipal p (padicUnitsDepth p + j) ≤ κ.toMonoidHom.ker) :
-    ‖κ.coord‖ = amiceRadius p j := by
-  rw [norm_coord_eq_rpow κ h h', amiceRadius_def]
-  push_cast [Nat.cast_sub hp.out.one_le]
-  ring_nf
-
 /-- **The analytic level of a weight of exact conductor `p ^ (k + j + 1)`**, where `q = p ^ k`:
 `‖T_κ‖ < r_i` exactly when `j < i`, so the weight satisfies the analyticity condition at level
 `k + i` exactly when `k + i` is at least the exponent `k + j + 1` of its conductor. -/
@@ -154,7 +144,12 @@ theorem norm_coord_lt_amiceRadius_iff (κ : WeightSpace p K) {i j : ℕ}
     (h : unitsPrincipal p (padicUnitsDepth p + j + 1) ≤ κ.toMonoidHom.ker)
     (h' : ¬unitsPrincipal p (padicUnitsDepth p + j) ≤ κ.toMonoidHom.ker) :
     ‖κ.coord‖ < amiceRadius p i ↔ j < i := by
-  rw [norm_coord_eq_amiceRadius κ h h', strictMono_amiceRadius.lt_iff_lt]
+  -- `norm_coord_eq_rpow` in radius notation: `‖T_κ‖ = r_j`.
+  have hr : ‖κ.coord‖ = amiceRadius p j := by
+    rw [norm_coord_eq_rpow κ h h', amiceRadius_def]
+    push_cast [Nat.cast_sub hp.out.one_le]
+    ring_nf
+  rw [hr, strictMono_amiceRadius.lt_iff_lt]
 
 end Field
 
