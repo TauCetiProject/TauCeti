@@ -471,14 +471,9 @@ theorem alongCurveWithin_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, Tan
   | @insert i A hi ih =>
     have hWA : ∀ j ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W j) (γ t)) s t :=
       fun j hj ↦ hW j (Finset.mem_insert_of_mem hj)
-    have hsum : DifferentiableWithinAt 𝕜
-        (sectionCoord (F := E) γ (fun r ↦ ∑ j ∈ A, W j r) (γ t)) s t := by
-      rw [sectionCoord_sum]
-      exact DifferentiableWithinAt.fun_sum hWA
-    rw [show (fun r ↦ ∑ j ∈ insert i A, W j r) =
-      (fun r ↦ W i r + ∑ j ∈ A, W j r) from funext fun r ↦ Finset.sum_insert hi,
-      alongCurveWithin_add cov γ (W i) _ s (hW i (Finset.mem_insert_self i A)) hsum, ih hWA,
-      Finset.sum_insert hi]
+    simp only [Finset.sum_insert hi]
+    rw [alongCurveWithin_add cov γ (W i) _ s (hW i (Finset.mem_insert_self i A))
+      (differentiableWithinAt_sectionCoord_sum γ hWA), ih hWA]
 
 /-- Covariant differentiation along a curve commutes with finite sums of fields having
 differentiable coordinate readings. -/

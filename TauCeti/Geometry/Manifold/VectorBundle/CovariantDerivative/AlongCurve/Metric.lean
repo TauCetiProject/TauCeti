@@ -152,18 +152,6 @@ private lemma HasPairingProductRuleWithinAt.smul_right
       (fun r ↦ f r • W r) :=
   (hW.flip.smul_left hf hcoordW).of_flip
 
-omit [FiniteDimensional ℝ E] [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
-/-- A finite sum of fields with differentiable coordinate readings again has a differentiable
-coordinate reading. -/
-private lemma differentiableWithinAt_sectionCoord_finsetSum
-    {ι : Type*} {A : Finset ι} {U : ι → ∀ r, TangentSpace I (γ r)}
-    (hU : ∀ i ∈ A,
-      DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (U i) (γ t)) s t) :
-    DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (fun r ↦ ∑ i ∈ A, U i r) (γ t)) s t := by
-  rw [sectionCoord_sum]
-  exact DifferentiableWithinAt.fun_sum hU
-
 /-- The product rule is preserved by a finite sum in its first field. -/
 private lemma HasPairingProductRuleWithinAt.finsetSum_left
     {ι : Type*} {A : Finset ι} {U : ι → ∀ r, TangentSpace I (γ r)}
@@ -185,7 +173,7 @@ private lemma HasPairingProductRuleWithinAt.finsetSum_left
         (fun i hi ↦ hcoordU i (Finset.mem_insert_of_mem hi))
       have hsum := ha_rule.add_left hA_rule
         (hcoordU a (Finset.mem_insert_self a A))
-        (differentiableWithinAt_sectionCoord_finsetSum
+        (differentiableWithinAt_sectionCoord_sum γ
           (fun i hi ↦ hcoordU i (Finset.mem_insert_of_mem hi)))
       simpa only [Finset.sum_insert ha, Pi.add_apply] using hsum
 
@@ -465,19 +453,34 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
     (fun t ht ↦ (hderiv t ht).differentiableWithinAt) (fun t ht ↦ ?_) ha hb
   simpa using (hderiv t ht).hasFDerivWithinAt.fderivWithin (hs t ht)
 
-/-- **Uniqueness of parallel fields.** On a preconnected parameter set with unique derivatives,
-two parallel tangent fields along a differentiable curve that agree at one parameter agree at
-every parameter of the set. -/
+/-- A preconnected set of reals containing two distinct points has unique derivatives. -/
+private lemma uniqueDiffOn_of_isPreconnected (hconn : IsPreconnected s) {a b : ℝ}
+    (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b) : UniqueDiffOn ℝ s := by
+  refine uniqueDiffOn_convex hconn.convex ⟨(a + b) / 2, interior_mono
+    (hconn.ordConnected.uIcc_subset ha hb) ?_⟩
+  rw [Set.uIcc, interior_Icc]
+  rcases hab.lt_or_gt with h | h
+  · simp only [min_eq_left h.le, max_eq_right h.le]
+    constructor <;> linarith
+  · simp only [min_eq_right h.le, max_eq_left h.le]
+    constructor <;> linarith
+
+/-- **Uniqueness of parallel fields.** On a preconnected parameter set, two parallel tangent
+fields along a differentiable curve that agree at one parameter agree at every parameter of the
+set. -/
 theorem IsMetricCompatible.eq_of_alongCurveWithin_eq_zero
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun x : M ↦ TangentSpace I x) cov)
-    (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s)
+    (hconn : IsPreconnected s)
     (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s) {V W : ∀ r, TangentSpace I (γ r)}
     (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
     (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
+  rcases eq_or_ne a b with rfl | hab
+  · exact hinit
+  have hs := uniqueDiffOn_of_isPreconnected hconn ha hb hab
   have hVV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hV hV₀ hV₀ hb ha
   have hVW := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hW hV₀ hW₀ hb ha
   have hWV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hW hV hW₀ hV₀ hb ha
@@ -493,13 +496,16 @@ preconnected parameter set. -/
 theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun x : M ↦ TangentSpace I x) cov)
-    (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s)
+    (hconn : IsPreconnected s)
     (hγ : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) {V W : ∀ r, TangentSpace I (γ r)}
     (hV : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
     (hW : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
     (hV₀ : ∀ t ∈ s, alongCurve cov γ V t = 0)
     (hW₀ : ∀ t ∈ s, alongCurve cov γ W t = 0)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
+  rcases eq_or_ne a b with rfl | hab
+  · exact hinit
+  have hs := uniqueDiffOn_of_isPreconnected hconn ha hb hab
   have hγcoord (t : ℝ) (ht : t ∈ s) : DifferentiableAt ℝ (extChartAt I (γ t) ∘ γ) t :=
     ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))).comp t
       (hγ t ht)).differentiableAt
@@ -510,7 +516,7 @@ theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
     rw [alongCurveWithin_subset cov γ Y (Set.subset_univ s) (hs t ht)
       (hY t ht).differentiableWithinAt (hγcoord t ht).differentiableWithinAt,
       alongCurveWithin_univ, hY₀ t ht]
-  exact hcov.eq_of_alongCurveWithin_eq_zero hs hconn
+  exact hcov.eq_of_alongCurveWithin_eq_zero hconn
     (fun t ht ↦ (hγ t ht).mdifferentiableWithinAt)
     (fun t ht ↦ (hV t ht).differentiableWithinAt)
     (fun t ht ↦ (hW t ht).differentiableWithinAt)
