@@ -37,8 +37,8 @@ meet the two components: at each point of `S⁰` the two collar arcs lie in diff
 since otherwise, by invariance of domain, the corresponding point of `Σ` would have a neighbourhood
 missing one component, whose closure contains `Σ`. Unlike for `m ≥ 2`, the two sides
 `β(S⁰ × (0, 1])` and `β(S⁰ × [-1, 0))` of the collar need not lie in different components: each
-side has two pieces, one at each point of `Σ`, and both pieces of one side may lie in the same
-component.
+side has two pieces, one at each point of `Σ`, and the two pieces of one side may lie in different
+components, so neither side need be contained in a single component.
 
 ## Main results
 
