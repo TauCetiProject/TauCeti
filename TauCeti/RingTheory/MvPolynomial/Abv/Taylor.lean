@@ -86,6 +86,7 @@ variable [Nontrivial R]
 
 namespace AbsoluteValue
 
+omit [Nontrivial R] in
 /-- **The jets of a polynomial.** If `P` has partial degrees `degreeOf i P ≤ L i` and
 coefficients of absolute value at most `B`, then every Hasse derivative of `P` satisfies
 `v((∂^d P)(a)) ≤ B ∏ i, (L i + 1) ∏ i, (2 max(v(a_i), 1)) ^ L i`. -/

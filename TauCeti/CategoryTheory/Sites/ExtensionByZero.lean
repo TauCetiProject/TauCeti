@@ -53,7 +53,7 @@ variable {P : Type u} [Preorder P] (U : P)
 
 namespace PresheafExtensionByZero
 
-variable {D : Type v} [Category.{w} D] [HasZeroObject D] [HasZeroMorphisms D]
+variable {D : Type v} [Category.{w} D] [HasZeroObject D]
 
 /-- The extension of a presheaf to an object of the ambient preorder. -/
 private def obj (F : (Over U)ᵒᵖ ⥤ D) (V : Pᵒᵖ) : D := by
@@ -62,9 +62,15 @@ private def obj (F : (Over U)ᵒᵖ ⥤ D) (V : Pᵒᵖ) : D := by
 
 /-- On an object below `U`, extension by zero recovers the original presheaf. -/
 private def objIso (F : (Over U)ᵒᵖ ⥤ D) {V : Pᵒᵖ} (h : V.unop ≤ U) :
-    obj U F V ≅ F.obj (op (Over.mk (homOfLE h))) := by
-  classical
-  exact eqToIso (by simp [obj, h])
+    obj U F V ≅ F.obj (op (Over.mk (homOfLE h))) :=
+  eqToIso (dite_eq_left h)
+
+private lemma isZero_obj (F : (Over U)ᵒᵖ ⥤ D) {V : Pᵒᵖ} (h : ¬ V.unop ≤ U) :
+    IsZero (obj U F V) := by
+  rw [obj, dite_eq_right h]
+  exact isZero_zero _
+
+variable [HasZeroMorphisms D]
 
 private def map (F : (Over U)ᵒᵖ ⥤ D) {V W : Pᵒᵖ} (f : V ⟶ W) :
     obj U F V ⟶ obj U F W := by
@@ -81,21 +87,13 @@ private def presheaf (F : (Over U)ᵒᵖ ⥤ D) : Pᵒᵖ ⥤ D where
   obj := obj U F
   map := map U F
   map_id V := by
-    classical
     by_cases h : V.unop ≤ U
     · have hi : (Over.homMk (U := Over.mk (homOfLE h))
-          (V := Over.mk (homOfLE h)) (𝟙 V.unop)).op = 𝟙 _ := by
-        apply Quiver.Hom.op_inj
-        ext
-        rfl
+          (V := Over.mk (homOfLE h)) (𝟙 V.unop)).op = 𝟙 _ :=
+        Quiver.Hom.unop_inj (Over.OverMorphism.ext (by simp))
       simp [map, objIso, obj, h, hi]
-    · have hz : IsZero (obj U F V) := by
-        rw [obj, dite_eq_right h]
-        exact isZero_zero _
-      exact hz.eq_of_src _ _
-  map_comp f g := by
-    classical
-    rename_i V W Z
+    · exact (isZero_obj U F h).eq_of_src _ _
+  map_comp {V W Z} f g := by
     by_cases h : V.unop ≤ U
     · have hW := le_trans (leOfHom f.unop) h
       have hZ := le_trans (leOfHom g.unop) hW
@@ -105,11 +103,9 @@ private def presheaf (F : (Over U)ᵒᵖ ⥤ D) : Pᵒᵖ ⥤ D where
             (V := Over.mk (homOfLE h)) f.unop).op ≫
           (Over.homMk (U := Over.mk (homOfLE hZ))
             (V := Over.mk (homOfLE hW)) g.unop).op := by
-        rw [← op_comp]
-        congr 1
-      simp [map, objIso, obj, h, hW, hc, Category.assoc]
-    · simp only [map, dite_eq_right h]
-      exact zero_comp.symm
+        rw [← op_comp, ← Over.homMk_comp]
+      simp [map, objIso, obj, h, hW, hc]
+    · simp [map, h]
 
 private def mapApp {F G : (Over U)ᵒᵖ ⥤ D} (α : F ⟶ G) (V : Pᵒᵖ) :
     obj U F V ⟶ obj U G V := by
@@ -123,44 +119,27 @@ def functor : ((Over U)ᵒᵖ ⥤ D) ⥤ (Pᵒᵖ ⥤ D) where
   obj := presheaf U
   map α :=
     { app := mapApp U α
-      naturality := by
-        intro V W f
-        classical
-        dsimp only [presheaf]
+      naturality V W f := by
         by_cases hV : V.unop ≤ U
         · have hW := le_trans (leOfHom f.unop) hV
-          simp [map, mapApp, hV, hW, Category.assoc]
-        · simp [map, mapApp, hV] }
+          simp [presheaf, map, mapApp, hV, hW]
+        · simp [presheaf, map, mapApp, hV] }
   map_id F := by
-    apply NatTrans.ext
-    funext V
-    classical
-    dsimp only [presheaf, NatTrans.id_app]
+    ext V
     by_cases h : V.unop ≤ U
-    · simp [mapApp, h]
-    · have hz : IsZero (obj U F V) := by
-        rw [obj, dite_eq_right h]
-        exact isZero_zero _
-      exact hz.eq_of_src _ _
+    · simp [presheaf, mapApp, h]
+    · exact (isZero_obj U F h).eq_of_src _ _
   map_comp α β := by
-    apply NatTrans.ext
-    funext V
-    classical
-    dsimp only [presheaf, NatTrans.comp_app]
-    by_cases h : V.unop ≤ U <;> simp [mapApp, h, Category.assoc]
+    ext V
+    by_cases h : V.unop ≤ U <;> simp [presheaf, mapApp, h]
 
 /-- Evaluating the extension below `U` is naturally isomorphic to evaluating the original
 presheaf. -/
 def evaluationIso {V : P} (h : V ≤ U) :
     functor (D := D) U ⋙ (evaluation Pᵒᵖ D).obj (op V) ≅
       (evaluation (Over U)ᵒᵖ D).obj (op (Over.mk (homOfLE h))) :=
-  NatIso.ofComponents (fun F ↦ objIso U F h) (by
-    intro F G α
-    classical
-    dsimp only [functor, presheaf, Functor.comp_map, evaluation_obj_map,
-      Functor.comp_obj, evaluation_obj_obj]
-    rw [mapApp, dite_eq_left h]
-    exact (Category.assoc _ _ _).trans (by simp))
+  NatIso.ofComponents (fun F ↦ objIso U F h) fun α ↦ by
+    simp [functor, presheaf, mapApp, h]
 
 private lemma evaluationIso_hom_app (F : (Over U)ᵒᵖ ⥤ D) {V : P} (h : V ≤ U) :
     (evaluationIso U h).hom.app F = (objIso U F h).hom :=
@@ -174,45 +153,35 @@ theorem map_comp_evaluationIso_hom_app (F : (Over U)ᵒᵖ ⥤ D) {V W : P} (hWV
       (evaluationIso U hV).hom.app F ≫
         F.map (Over.homMk (U := Over.mk (homOfLE (hWV.trans hV)))
           (V := Over.mk (homOfLE hV)) (homOfLE hWV)).op := by
-  classical
-  rw [evaluationIso_hom_app, evaluationIso_hom_app]
-  dsimp only [functor, presheaf]
-  rw [map, dite_eq_left hV]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  -- The two sides differ only in how their hom types are written, through `evaluation`.
-  rfl
+  simp [evaluationIso_hom_app, functor, presheaf, map, hV]
 
 /-- Extension by zero vanishes outside the lower interval. -/
 theorem isZero_obj_of_not_le (F : (Over U)ᵒᵖ ⥤ D) {V : P}
     (h : ¬ V ≤ U) : IsZero ((functor (D := D) U).obj F |>.obj (op V)) := by
-  classical
   dsimp only [functor, presheaf]
-  rw [obj, dite_eq_right h]
-  exact isZero_zero _
+  exact isZero_obj U F h
+
+private lemma isZero_functor_comp_evaluation {V : P} (h : ¬ V ≤ U) :
+    IsZero (functor (D := D) U ⋙ (evaluation Pᵒᵖ D).obj (op V)) :=
+  (Functor.isZero_iff _).mpr fun F ↦ isZero_obj_of_not_le U F h
 
 /-- Extension by zero preserves finite limits. -/
-instance [HasFiniteLimits D] : PreservesFiniteLimits (functor (D := D) U) := by
-  apply preservesFiniteLimits_of_evaluation
-  intro V
-  classical
-  by_cases h : V.unop ≤ U
-  · exact preservesFiniteLimits_of_natIso (evaluationIso U h).symm
-  · have hz : IsZero (functor (D := D) U ⋙ (evaluation Pᵒᵖ D).obj V) :=
-      (Functor.isZero_iff _).mpr (fun F ↦ isZero_obj_of_not_le U F h)
-    have := Functor.preservesLimitsOfSize_of_isZero _ hz
-    infer_instance
+instance [HasFiniteLimits D] : PreservesFiniteLimits (functor (D := D) U) :=
+  preservesFiniteLimits_of_evaluation _ fun V ↦ by
+    by_cases h : V.unop ≤ U
+    · exact preservesFiniteLimits_of_natIso (evaluationIso U h).symm
+    · have :=
+        Functor.preservesLimitsOfSize_of_isZero _ (isZero_functor_comp_evaluation (D := D) U h)
+      infer_instance
 
 /-- Extension by zero preserves finite colimits. -/
-instance [HasFiniteColimits D] : PreservesFiniteColimits (functor (D := D) U) := by
-  apply preservesFiniteColimits_of_evaluation
-  intro V
-  classical
-  by_cases h : V.unop ≤ U
-  · exact preservesFiniteColimits_of_natIso (evaluationIso U h).symm
-  · have hz : IsZero (functor (D := D) U ⋙ (evaluation Pᵒᵖ D).obj V) :=
-      (Functor.isZero_iff _).mpr (fun F ↦ isZero_obj_of_not_le U F h)
-    have := Functor.preservesColimitsOfSize_of_isZero _ hz
-    infer_instance
+instance [HasFiniteColimits D] : PreservesFiniteColimits (functor (D := D) U) :=
+  preservesFiniteColimits_of_evaluation _ fun V ↦ by
+    by_cases h : V.unop ≤ U
+    · exact preservesFiniteColimits_of_natIso (evaluationIso U h).symm
+    · have :=
+        Functor.preservesColimitsOfSize_of_isZero _ (isZero_functor_comp_evaluation (D := D) U h)
+      infer_instance
 
 private def restrictObjIso (F : (Over U)ᵒᵖ ⥤ D) (V : (Over U)ᵒᵖ) :
     obj U F (op V.unop.left) ≅ F.obj V :=
@@ -223,11 +192,10 @@ private def restrictHom {F : (Over U)ᵒᵖ ⥤ D} {G : Pᵒᵖ ⥤ D}
   app V := (restrictObjIso U F V).inv ≫ α.app (op V.unop.left)
   naturality V W f := by
     have h := α.naturality ((Over.forget U).op.map f)
-    dsimp only [presheaf, Functor.op_map, Functor.op_obj, Over.forget_map,
-      Over.forget_obj] at h
-    rw [map, dite_eq_left (leOfHom V.unop.hom)] at h
-    dsimp only [restrictObjIso, Functor.comp_map, Functor.op_map, Over.forget_map]
-    simp only [Category.assoc] at h ⊢
+    simp only [presheaf, map, Functor.op_obj, Over.forget_obj, dite_eq_left (leOfHom V.unop.hom),
+      Category.assoc] at h
+    -- `h` restates the goal with `Over.mk (homOfLE (leOfHom X.hom))` for `X`; these agree
+    -- by structure eta and proof irrelevance.
     exact ((Iso.eq_inv_comp _).mpr h).trans (Category.assoc _ _ _).symm
 
 private def extendApp {F : (Over U)ᵒᵖ ⥤ D} {G : Pᵒᵖ ⥤ D}
@@ -240,16 +208,10 @@ private def extendHom {F : (Over U)ᵒᵖ ⥤ D} {G : Pᵒᵖ ⥤ D}
     (α : F ⟶ (Over.forget U).op ⋙ G) : presheaf U F ⟶ G where
   app := extendApp U α
   naturality V W f := by
-    classical
-    dsimp only [presheaf]
     by_cases hV : V.unop ≤ U
     · have hW := le_trans (leOfHom f.unop) hV
-      simp only [map, extendApp, dite_eq_left hV, dite_eq_left hW, Category.assoc,
-        Iso.inv_hom_id_assoc]
-      exact congrArg ((objIso U F hV).hom ≫ ·)
-        (α.naturality (Over.homMk (U := Over.mk (homOfLE hW))
-          (V := Over.mk (homOfLE hV)) f.unop).op)
-    · simp only [map, extendApp, dite_eq_right hV, zero_comp]
+      simp [presheaf, map, extendApp, hV, hW]
+    · simp [presheaf, map, extendApp, hV]
 
 /-- Extension by zero is left adjoint to restriction to the lower interval. -/
 def adjunction : functor (D := D) U ⊣
@@ -259,18 +221,14 @@ def adjunction : functor (D := D) U ⊣
         { toFun := restrictHom U
           invFun := extendHom U
           left_inv α := by
-            apply NatTrans.ext
-            funext V
-            classical
+            ext V
             by_cases h : V.unop ≤ U
             · dsimp only [extendHom, restrictHom]
               simp only [extendApp, dite_eq_left h, restrictObjIso]
               exact (objIso U F h).hom_inv_id_assoc (α.app V)
             · exact (isZero_obj_of_not_le U F h).eq_of_src _ _
           right_inv α := by
-            apply NatTrans.ext
-            funext V
-            classical
+            ext V
             dsimp only [restrictHom, extendHom]
             simp only [extendApp, dite_eq_left (leOfHom V.unop.hom), restrictObjIso]
             exact (objIso U F (V := op V.unop.left) (leOfHom V.unop.hom)).inv_hom_id_assoc
@@ -280,16 +238,12 @@ def adjunction : functor (D := D) U ⊣
         -- Unfold the `Equiv.mk` above and read `presheaf U F` as `(functor U).obj F`. The two
         -- agree only by unfolding `functor`, so `simp` cannot rewrite the application.
         change extendHom U (α ≫ β) = (functor (D := D) U).map α ≫ extendHom U β
-        apply NatTrans.ext
-        funext V
-        classical
+        ext V
         by_cases h : V.unop ≤ U
-        · simp [extendHom, extendApp, functor, mapApp, presheaf, h, Category.assoc]
+        · simp [extendHom, extendApp, functor, mapApp, presheaf, h]
         · exact (isZero_obj_of_not_le U F h).eq_of_src _ _
-      homEquiv_naturality_right := by
-        intro F G G' α β
-        apply NatTrans.ext
-        funext V
+      homEquiv_naturality_right α β := by
+        ext V
         exact (Category.assoc _ _ _).symm }
 
 end PresheafExtensionByZero

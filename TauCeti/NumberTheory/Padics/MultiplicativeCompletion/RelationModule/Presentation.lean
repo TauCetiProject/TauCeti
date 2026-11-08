@@ -59,7 +59,8 @@ variable (p : ℕ) [Fact p.Prime] (K L : Type) [Field K] [Field L] [Algebra K L]
 include hφ in
 omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
   [Fintype ι] [DecidableEq ι] in
-private theorem presentation_ker_le_comap :
+/-- The kernel of the presentation map lies in the preimage of the Galois subgroup. -/
+theorem presentation_ker_le_comap :
     (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker ≤
       (galoisSubgroup K L j).toSubgroup.comap φ.toMonoidHom := by
   intro r hr

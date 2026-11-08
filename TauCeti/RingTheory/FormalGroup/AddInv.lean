@@ -40,6 +40,8 @@ a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
 
 ## Main results
 
+* `FormalGroup.coeff_subst_add_X_pow_mul_X`: perturbing the first entry of `F(f(X), X)`
+  by `X ^ m * r` changes its coefficient in degree `m` by `r(0)`.
 * `FormalGroup.hasSubst_subst_pair`: `F(x, y)` is substitutable for substitutable `x, y`.
 * `FormalGroup.subst_addInvX_X_eq_zero`: `F(i(X), X) = 0`.
 * `FormalGroup.val_neg_tautologicalPoint`: `-X = i(X)` in `F.Point Unit`.
@@ -86,7 +88,7 @@ theorem val_tautologicalPoint : F.tautologicalPoint.val = PowerSeries.X := (rfl)
 
 /-- Perturbing `f` by `X ^ m * r` in `F(f(X), X)` changes the coefficient of degree `m` by `r(0)`,
 and no coefficient of lower degree. -/
-private theorem coeff_subst_add_X_pow_mul_X {f : PowerSeries R}
+theorem coeff_subst_add_X_pow_mul_X {f : PowerSeries R}
     (hf : PowerSeries.constantCoeff f = 0) (r : PowerSeries R) {m n : ℕ} (hm : m ≠ 0)
     (hn : n ≤ m) :
     PowerSeries.coeff n (F.toPowerSeries.subst ![f + PowerSeries.X ^ m * r, PowerSeries.X]) =

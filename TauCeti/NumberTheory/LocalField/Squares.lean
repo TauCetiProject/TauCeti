@@ -269,6 +269,26 @@ theorem unitFiltration_le_range_powMonoidHom_two_iff (h2 : (2 : K) ≠ 0) {n : �
   exact not_unitFiltration_le_range_powMonoidHom_two h2
     ((unitFiltration_antitone (Nat.le_of_lt_succ hn)).trans h)
 
+/-- Two units whose difference has the valuation of `2` have the same normalized valuation as soon
+as one of them has normalized valuation below that of `2`. -/
+private theorem toAdd_normalizedValuation_eq_of_valuation_sub_eq_two (h2 : (2 : K) ≠ 0)
+    (a b : Kˣ) (hab : valuation K ((b : K) - a) = valuation K (2 : K))
+    (ha : (normalizedValuation K a).toAdd < natCastValuation K 2 h2) :
+    (normalizedValuation K a).toAdd = (normalizedValuation K b).toAdd := by
+  have htwo : (normalizedValuation K (Units.mk0 (2 : K) h2)).toAdd =
+      (natCastValuation K 2 h2 : ℤ) := toAdd_normalizedValuation_natCast K 2 h2
+  have hnle : ¬(normalizedValuation K (Units.mk0 (2 : K) h2)).toAdd ≤
+      (normalizedValuation K a).toAdd := by
+    rw [htwo]
+    exact not_le.mpr ha
+  rw [toAdd_normalizedValuation_le_iff_valuation_le] at hnle
+  have hvab : valuation K (b : K) = valuation K (a : K) := by
+    rw [show (b : K) = a + (b - a) by ring]
+    exact (valuation K).map_add_eq_of_lt_left (by
+      rw [hab]
+      simpa using lt_of_not_ge hnle)
+  exact (toAdd_normalizedValuation_eq_iff_valuation_eq a b).mpr hvab.symm
+
 /-- Below twice the valuation of two, a square cannot differ from one to exact odd order. -/
 theorem valuation_sq_sub_one_ne_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
     (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2) (ξ : K) :
@@ -306,39 +326,14 @@ theorem valuation_sq_sub_one_ne_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
   have hsmall : (normalizedValuation K x).toAdd < natCastValuation K 2 h2 ∨
       (normalizedValuation K y).toAdd < natCastValuation K 2 h2 := by
     omega
-  have htwo : (normalizedValuation K (Units.mk0 (2 : K) h2)).toAdd =
-      (natCastValuation K 2 h2 : ℤ) := toAdd_normalizedValuation_natCast K 2 h2
-  have hvaluation_two_lt (a : Kˣ)
-      (ha : (normalizedValuation K a).toAdd < natCastValuation K 2 h2) :
-      valuation K (2 : K) < valuation K (a : K) := by
-    have hnle : ¬(normalizedValuation K (Units.mk0 (2 : K) h2)).toAdd ≤
-        (normalizedValuation K a).toAdd := by
-      rw [htwo]
-      exact not_le.mpr ha
-    rw [toAdd_normalizedValuation_le_iff_valuation_le] at hnle
-    exact lt_of_not_ge hnle
-  have hadd_of_valuation_eq (a b : Kˣ)
-      (hab : valuation K (b : K) = valuation K (a : K)) :
-      (normalizedValuation K a).toAdd = (normalizedValuation K b).toAdd :=
-    le_antisymm
-      ((toAdd_normalizedValuation_le_iff_valuation_le a b).mpr hab.le)
-      ((toAdd_normalizedValuation_le_iff_valuation_le b a).mpr hab.ge)
   rcases hsmall with hxsmall | hysmall
-  · have hvlt := hvaluation_two_lt x hxsmall
-    have hxy : valuation K (y : K) = valuation K (x : K) := by
+  · have hxyadd := toAdd_normalizedValuation_eq_of_valuation_sub_eq_two h2 x y (by
       simp only [x, y, Units.val_mk0]
-      calc
-        valuation K (ξ + 1) = valuation K ((ξ - 1) + 2) := by congr 1; ring
-        _ = valuation K (ξ - 1) := (valuation K).map_add_eq_of_lt_left (by simpa [x] using hvlt)
-    have hxyadd := hadd_of_valuation_eq x y hxy
+      rw [show ξ + 1 - (ξ - 1) = 2 by ring]) hxsmall
     omega
-  · have hvlt := hvaluation_two_lt y hysmall
-    have hxy : valuation K (x : K) = valuation K (y : K) := by
+  · have hxyadd := toAdd_normalizedValuation_eq_of_valuation_sub_eq_two h2 y x (by
       simp only [x, y, Units.val_mk0]
-      calc
-        valuation K (ξ - 1) = valuation K ((ξ + 1) - 2) := by congr 1; ring
-        _ = valuation K (ξ + 1) := (valuation K).map_sub_eq_of_lt_left (by simpa [y] using hvlt)
-    have hxyadd := hadd_of_valuation_eq y x hxy
+      rw [show ξ - 1 - (ξ + 1) = -2 by ring, Valuation.map_neg]) hysmall
     omega
 
 /-- For `k < v_K(2)`, the unit represented by `1 + π^(2k+1)` is not a square. -/
