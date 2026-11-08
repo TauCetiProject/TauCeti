@@ -17,6 +17,7 @@ import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.Algebra.Lie.HighestWeight.Existence
 import TauCeti.Algebra.Lie.HighestWeight.Separation
 import TauCeti.Algebra.Lie.HighestWeight.Trivial
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 import TauCeti.Algebra.Lie.Submodule.Decomposition
 import TauCeti.Algebra.Lie.Quotient
@@ -242,14 +243,17 @@ theorem exists_invariant_notMem_of_isKilling [FiniteDimensional K M]
   rw [← LieSubmodule.mem_toSubmodule, LieSubmodule.coe_baseChange] at hm₀mem ⊢
   exact Submodule.baseChange_mono _ ((LieSubmodule.toSubmodule_le_toSubmodule _ _).2 hle) hm₀mem
 
+omit [FiniteDimensional K L] in
 variable (K L) in
 /-- **The input of the formal complete-reducibility argument holds in characteristic zero**: if
 `L` carries a finite-dimensional module into a proper irreducible Lie submodule `N` and acts
 nontrivially somewhere, the module has an invariant vector outside `N`. -/
 theorem hasInvariantOutsideIrreducible_of_isKilling :
     HasInvariantOutsideIrreducible.{w} K L :=
+  have := finite_of_isKilling (R := K) (L := L)
   fun N hN htriv _ _ ↦ exists_invariant_notMem_of_isKilling N hN htriv
 
+omit [FiniteDimensional K L] in
 /-- **Weyl's complete reducibility theorem.** Over a field of characteristic zero, every Lie
 submodule of a finite-dimensional module over a Lie algebra with nondegenerate Killing form has a
 complement, so the module is a direct sum of irreducibles.
@@ -261,6 +265,7 @@ theorem exists_isCompl_of_isKilling [FiniteDimensional K M] (N : LieSubmodule K 
   HasInvariantOutsideIrreducible.exists_isCompl
     (hasInvariantOutsideIrreducible_of_isKilling K L) N
 
+omit [FiniteDimensional K L] in
 variable (K L M) in
 /-- **The lattice form of Weyl's theorem**: the Lie submodules of a finite-dimensional module over
 a Lie algebra with nondegenerate Killing form form a complemented lattice. -/
@@ -268,6 +273,7 @@ theorem complementedLattice_lieSubmodule_of_isKilling [FiniteDimensional K M] :
     ComplementedLattice (LieSubmodule K L M) :=
   ⟨exists_isCompl_of_isKilling⟩
 
+omit [FiniteDimensional K L] in
 variable (K L M) in
 /-- **Weyl's theorem as a decomposition.** A finite-dimensional module over a Lie algebra with
 nondegenerate Killing form, over a field of characteristic zero, is the internal direct sum of a
@@ -285,12 +291,11 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 omit [IsKilling K L] [FiniteDimensional K L] in
 /-- **Weyl's theorem for an action through a quotient.** If an ideal `I` of `L` acts trivially on
-a finite-dimensional module `M` and the quotient `L ⧸ I` is finite-dimensional with nondegenerate
-Killing form, then every Lie submodule of `M` has a complement. This applies when `L` itself is not
-semisimple, for instance to a module of `L` on which its solvable radical acts trivially. -/
+a finite-dimensional module `M` and the quotient `L ⧸ I` has nondegenerate Killing form, then
+every Lie submodule of `M` has a complement. This applies when `L` itself is not semisimple, for
+instance to a module of `L` on which its solvable radical acts trivially. -/
 theorem _root_.LieSubmodule.exists_isCompl_of_le_ker [FiniteDimensional K M]
     (N : LieSubmodule K L M) {I : LieIdeal K L} [IsKilling K (L ⧸ I)]
-    [FiniteDimensional K (L ⧸ I)]
     (hI : I ≤ LieModule.ker K L M) : ∃ N' : LieSubmodule K L M, IsCompl N N' := by
   -- `L ⧸ I` acts on `M` through the induced representation, with the same submodules as `L`.
   let ρ : L ⧸ I →ₗ⁅K⁆ Module.End K M := I.liftQ (toEnd K L M) hI
