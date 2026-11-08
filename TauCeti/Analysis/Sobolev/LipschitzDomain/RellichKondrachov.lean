@@ -62,7 +62,7 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
       ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (W1p.restrictL le_top)) := by
     by_cases hp : p = ∞
     · subst p
-      exact W1p.isCompactOperator_valueL_restrictL_top hb
+      exact W1p.isCompactOperator_valueL_restrictL_top hb.isCompact_closure (subset_univ _)
     · exact W1p.isCompactOperator_valueL_restrictL hp hb.isCompact_closure (subset_univ _)
   -- The value map is the value of the restriction of the extension.
   have heq : W1p.valueL (mu := volume) (Omega := Ω) (p := p) =
