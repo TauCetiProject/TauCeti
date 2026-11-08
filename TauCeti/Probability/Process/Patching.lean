@@ -61,7 +61,7 @@ variable [MeasurableSpace ι] [TopologicalSpace E] [Nonempty E]
 /-- Patch compatible strongly progressive continuous stages on lifetimes tending almost surely
 to infinity. Agreement with all stages holds simultaneously in stage and time. Lifetimes need
 not be monotone or stopping times, and path continuity is only an almost-sure hypothesis. -/
-theorem exists_progressive_patch
+theorem exists_isStronglyProgressive_patch
     (hτ : ∀ᵐ ω ∂P, Tendsto (τ · ω) atTop (𝓝 ⊤))
     (hU : ∀ n, IsStronglyProgressive ℱ (U n))
     (hcont : ∀ n, ∀ᵐ ω ∂P, Continuous (U n · ω))
@@ -101,7 +101,7 @@ theorem exists_progressive_patch
 /-- Patch compatible stopped stages and recover their full stopped-process identities.
 Each stage is already stopped at its own lifetime. Compatibility is required only when the
 stage index increases, and all equalities are simultaneous in time. -/
-theorem exists_progressive_patch_stoppedProcess [Nonempty ι]
+theorem exists_isStronglyProgressive_patch_stoppedProcess [Nonempty ι]
     (hτ : ∀ᵐ ω ∂P, Tendsto (τ · ω) atTop (𝓝 ⊤))
     (hU : ∀ n, IsStronglyProgressive ℱ (U n))
     (hcont : ∀ n, ∀ᵐ ω ∂P, Continuous (U n · ω))
@@ -113,14 +113,14 @@ theorem exists_progressive_patch_stoppedProcess [Nonempty ι]
       ∀ t : ι, (t : WithTop ι) ≤ τ n ω → U m t ω = U n t ω := by
     filter_upwards [hcompat n m hnm] with ω hω t ht
     simpa only [stoppedProcess_eq_of_le ht] using hω t
-  obtain ⟨X, hp, hcc, ha⟩ := exists_progressive_patch hτ hU hcont hc
+  obtain ⟨X, hp, hcc, ha⟩ := exists_isStronglyProgressive_patch hτ hU hcont hc
   refine ⟨X, hp, hcc, fun n ↦ ?_⟩
   filter_upwards [ha, hcompat n n le_rfl] with ω hω hs t
   rw [← hs t]
-  -- The capped evaluation time is always finite, even for an infinite lifetime.
-  exact hω n _ (by
-    rw [WithTop.untopA_eq_untop
-      (ne_top_of_le_ne_top WithTop.coe_ne_top (min_le_left _ _)), WithTop.coe_untop]
-    exact min_le_right _ _)
+  rcases le_total (t : WithTop ι) (τ n ω) with ht | ht
+  · rw [stoppedProcess_eq_of_le ht, stoppedProcess_eq_of_le ht]
+    exact hω n t ht
+  · rw [stoppedProcess_eq_of_ge ht, stoppedProcess_eq_of_ge ht]
+    exact hω n _ (WithTop.coe_untopD_le _ _)
 
 end TauCeti
