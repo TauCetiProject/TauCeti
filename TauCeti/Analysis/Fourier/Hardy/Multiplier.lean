@@ -172,11 +172,9 @@ theorem existsUnique_hardyMultiplier_iff (T : HardySpace →L[ℂ] HardySpace) :
   · rintro ⟨a, rfl, _⟩
     exact (commute_toeplitz_fourierLp_one_iff a).mpr a.property
   · intro hT
-    have hz := (fourierLp_mem_hardyMultiplierAlgebra_iff 1).mpr (by norm_num)
     have hnorm (f : HardySpace) : ‖toeplitz (fourierLp (T := 1) ∞ 1) f‖ = ‖f‖ := by
-      rw [← Submodule.norm_coe, coe_toeplitz_of_mem_hardyMultiplierAlgebra hz]
-      exact Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one
-        (ae_norm_fourierLp_eq_one ∞ 1) f.val
+      simpa only [Submodule.norm_coe, Nat.cast_one] using
+        norm_toeplitz_fourierLp_natCast_apply 1 f
     have hinner := (LinearMap.norm_map_iff_inner_map_map
       (toeplitz (fourierLp (T := 1) ∞ 1))).mp hnorm
     obtain ⟨a, ha⟩ := (exists_toeplitz_eq_iff_inner_hardyBasis_succ T).mpr (by
