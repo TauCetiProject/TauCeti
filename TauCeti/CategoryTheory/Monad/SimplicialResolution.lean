@@ -42,8 +42,8 @@ Exposed so the source and target types of the recursive operators compute. -/
   | 0 => 𝟭 C
   | n + 1 => resolutionStage n ⋙ (G : C ⥤ C)
 
-lemma resolutionStage_zero : G.resolutionStage 0 = 𝟭 C := (rfl)
-lemma resolutionStage_succ (n : ℕ) :
+@[simp] lemma resolutionStage_zero : G.resolutionStage 0 = 𝟭 C := (rfl)
+@[simp] lemma resolutionStage_succ (n : ℕ) :
     G.resolutionStage (n + 1) = G.resolutionStage n ⋙ (G : C ⥤ C) := (rfl)
 
 /-- Apply the counit at position `i` in an iterated comonad. Degree zero is the
@@ -75,23 +75,22 @@ def resolutionDegeneracy : ∀ n, Fin (n + 1) →
     (G.resolutionDegeneracy (n + 1) i.succ).app X =
       G.map ((G.resolutionDegeneracy n i).app X) := (rfl)
 
--- Normalize the recursive operators, whiskering and componentwise composition uniformly
--- in the six identities; using a fixed list avoids naturality simplification erasing the
--- comparison before both sides have the same component types.
+-- Normalize components through the operator API, then reduce our recursive stage types
+-- (including implicit endpoints of morphisms). The separate dsimp step is necessary because
+-- simp cannot rewrite those dependent endpoints using the stage equalities.
+-- A fixed list avoids naturality simplification erasing the comparison prematurely.
 local macro "resolution_simpa" " using " h:term : tactic =>
   `(tactic| (have h' := $h
-             simp only [NatTrans.comp_app, NatTrans.id_app] at h' ⊢
-             dsimp only [resolutionFace, resolutionDegeneracy, resolutionStage, Fin.cases,
-               NatTrans.comp_app, NatTrans.id_app, NatTrans.vcomp, NatTrans.id,
-               whiskerLeft, whiskerRight,
-               Functor.comp_obj, Functor.comp_map, Functor.id_obj, Functor.id_map] at h' ⊢
-             simpa only [Fin.cases_zero, Fin.cases_succ, Fin.castSucc_zero,
+             simp only [NatTrans.comp_app, NatTrans.id_app, Fin.castSucc_zero,
                Fin.castSucc_succ, Fin.zero_eta, Fin.mk_one, ← Fin.succ_zero_eq_one,
-               Fin.induction_zero,
-               Fin.induction_succ, Functor.map_comp, Functor.map_id] using h'))
+               resolutionFace_zero_app, resolutionFace_succ_app,
+               resolutionDegeneracy_zero_app, resolutionDegeneracy_succ_app] at h' ⊢
+             dsimp only [resolutionStage, Functor.comp_obj, Functor.comp_map,
+               Functor.id_obj, Functor.id_map] at h' ⊢
+             simpa only [Functor.map_comp, Functor.map_id] using h'))
 
 /-- Two counits at different positions commute. This includes the augmentation identity. -/
-lemma resolutionFace_comp_resolutionFace : ∀ (n : ℕ) (i j : Fin (n + 1)), i ≤ j →
+@[reassoc] lemma resolutionFace_comp_resolutionFace : ∀ (n : ℕ) (i j : Fin (n + 1)), i ≤ j →
     G.resolutionFace (n + 1) j.succ ≫ G.resolutionFace n i =
       G.resolutionFace (n + 1) i.castSucc ≫ G.resolutionFace n j := by
   intro n
@@ -115,7 +114,7 @@ lemma resolutionFace_comp_resolutionFace : ∀ (n : ℕ) (i j : Fin (n + 1)), i 
           congrArg (fun f ↦ G.map (f.app X)) (ih i j (by simpa using h))
 
 /-- A degeneracy followed by an earlier face commutes past that face. -/
-lemma resolutionDegeneracy_comp_resolutionFace_of_le :
+@[reassoc] lemma resolutionDegeneracy_comp_resolutionFace_of_le :
     ∀ (n : ℕ) (i : Fin (n + 2)) (j : Fin (n + 1)),
     i ≤ j.castSucc →
     G.resolutionDegeneracy (n + 1) j.succ ≫ G.resolutionFace (n + 2) i.castSucc =
@@ -143,7 +142,8 @@ lemma resolutionDegeneracy_comp_resolutionFace_of_le :
           congrArg (fun f ↦ G.map (f.app X)) (ih i j (by simpa using h))
 
 /-- The first counit law cancels a duplicated position. -/
-@[simp] lemma resolutionDegeneracy_comp_resolutionFace_self : ∀ (n : ℕ) (i : Fin (n + 1)),
+@[simp, reassoc (attr := simp)] lemma resolutionDegeneracy_comp_resolutionFace_self :
+    ∀ (n : ℕ) (i : Fin (n + 1)),
     G.resolutionDegeneracy n i ≫ G.resolutionFace (n + 1) i.castSucc = 𝟙 _ := by
   intro n
   induction n with
@@ -160,7 +160,8 @@ lemma resolutionDegeneracy_comp_resolutionFace_of_le :
     | succ i => resolution_simpa using congrArg (fun f ↦ G.map (f.app X)) (ih i)
 
 /-- The second counit law cancels a duplicated position. -/
-@[simp] lemma resolutionDegeneracy_comp_resolutionFace_succ : ∀ (n : ℕ) (i : Fin (n + 1)),
+@[simp, reassoc (attr := simp)] lemma resolutionDegeneracy_comp_resolutionFace_succ :
+    ∀ (n : ℕ) (i : Fin (n + 1)),
     G.resolutionDegeneracy n i ≫ G.resolutionFace (n + 1) i.succ = 𝟙 _ := by
   intro n
   induction n with
@@ -177,7 +178,7 @@ lemma resolutionDegeneracy_comp_resolutionFace_of_le :
     | succ i => resolution_simpa using congrArg (fun f ↦ G.map (f.app X)) (ih i)
 
 /-- A degeneracy followed by a later face commutes past that face. -/
-lemma resolutionDegeneracy_comp_resolutionFace_of_gt :
+@[reassoc] lemma resolutionDegeneracy_comp_resolutionFace_of_gt :
     ∀ (n : ℕ) (i : Fin (n + 2)) (j : Fin (n + 1)),
     j.castSucc < i →
     G.resolutionDegeneracy (n + 1) j.castSucc ≫ G.resolutionFace (n + 2) i.succ =
@@ -205,7 +206,8 @@ lemma resolutionDegeneracy_comp_resolutionFace_of_gt :
           congrArg (fun f ↦ G.map (f.app X)) (ih i j (by simpa using h))
 
 /-- Comultiplications commute, using coassociativity at a repeated position. -/
-lemma resolutionDegeneracy_comp_resolutionDegeneracy : ∀ (n : ℕ) (i j : Fin (n + 1)), i ≤ j →
+@[reassoc] lemma resolutionDegeneracy_comp_resolutionDegeneracy :
+    ∀ (n : ℕ) (i j : Fin (n + 1)), i ≤ j →
     G.resolutionDegeneracy n j ≫ G.resolutionDegeneracy (n + 1) i.castSucc =
       G.resolutionDegeneracy n i ≫ G.resolutionDegeneracy (n + 1) j.succ := by
   intro n
@@ -231,6 +233,82 @@ lemma resolutionDegeneracy_comp_resolutionDegeneracy : ∀ (n : ℕ) (i j : Fin 
         resolution_simpa using
           congrArg (fun f ↦ G.map (f.app X)) (ih i j (by simpa using h))
 
+@[reassoc] lemma resolutionFace_comp_resolutionFace_app (n : ℕ) (i j : Fin (n + 1))
+    (h : i ≤ j) (X : C) :
+    (G.resolutionFace (n + 1) j.succ).app X ≫ (G.resolutionFace n i).app X =
+      (G.resolutionFace (n + 1) i.castSucc).app X ≫ (G.resolutionFace n j).app X :=
+  congr_app (G.resolutionFace_comp_resolutionFace n i j h) X
+
+@[reassoc] lemma resolutionDegeneracy_comp_resolutionFace_of_le_app (n : ℕ)
+    (i : Fin (n + 2)) (j : Fin (n + 1)) (h : i ≤ j.castSucc) (X : C) :
+    (G.resolutionDegeneracy (n + 1) j.succ).app X ≫
+        (G.resolutionFace (n + 2) i.castSucc).app X =
+      (G.resolutionFace (n + 1) i).app X ≫ (G.resolutionDegeneracy n j).app X :=
+  congr_app (G.resolutionDegeneracy_comp_resolutionFace_of_le n i j h) X
+
+-- Cancel before the component simp rules expand individual faces and degeneracies.
+@[simp↓, reassoc (attr := simp↓)]
+lemma resolutionDegeneracy_comp_resolutionFace_self_app
+    (n : ℕ) (i : Fin (n + 1)) (X : C) :
+    (G.resolutionDegeneracy n i).app X ≫ (G.resolutionFace (n + 1) i.castSucc).app X =
+      𝟙 ((G.resolutionStage (n + 1)).obj X) :=
+  congr_app (G.resolutionDegeneracy_comp_resolutionFace_self n i) X
+
+@[simp↓, reassoc (attr := simp↓)]
+lemma resolutionDegeneracy_comp_resolutionFace_succ_app
+    (n : ℕ) (i : Fin (n + 1)) (X : C) :
+    (G.resolutionDegeneracy n i).app X ≫ (G.resolutionFace (n + 1) i.succ).app X =
+      𝟙 ((G.resolutionStage (n + 1)).obj X) :=
+  congr_app (G.resolutionDegeneracy_comp_resolutionFace_succ n i) X
+
+@[reassoc] lemma resolutionDegeneracy_comp_resolutionFace_of_gt_app (n : ℕ)
+    (i : Fin (n + 2)) (j : Fin (n + 1)) (h : j.castSucc < i) (X : C) :
+    (G.resolutionDegeneracy (n + 1) j.castSucc).app X ≫
+        (G.resolutionFace (n + 2) i.succ).app X =
+      (G.resolutionFace (n + 1) i).app X ≫ (G.resolutionDegeneracy n j).app X :=
+  congr_app (G.resolutionDegeneracy_comp_resolutionFace_of_gt n i j h) X
+
+@[reassoc] lemma resolutionDegeneracy_comp_resolutionDegeneracy_app (n : ℕ)
+    (i j : Fin (n + 1)) (h : i ≤ j) (X : C) :
+    (G.resolutionDegeneracy n j).app X ≫ (G.resolutionDegeneracy (n + 1) i.castSucc).app X =
+      (G.resolutionDegeneracy n i).app X ≫ (G.resolutionDegeneracy (n + 1) j.succ).app X :=
+  congr_app (G.resolutionDegeneracy_comp_resolutionDegeneracy n i j h) X
+
+private abbrev resolutionQuiver : FreeSimplexQuiver ⥤q (C ⥤ C)ᵒᵖ where
+  obj n := op (G.resolutionStage (n.len + 1))
+  map f := match f with
+    | .δ i => (G.resolutionFace _ i).op
+    | .σ i => (G.resolutionDegeneracy _ i).op
+
+private abbrev resolutionPaths : Paths FreeSimplexQuiver ⥤ (C ⥤ C)ᵒᵖ :=
+  Paths.lift G.resolutionQuiver
+
+private lemma resolutionPaths_map {a b : FreeSimplexQuiver} (f : a ⟶ b) :
+    G.resolutionPaths.map ((Paths.of _).map f) = G.resolutionQuiver.map f :=
+  Paths.lift_toPath _ f
+
+private lemma resolutionPaths_respects : ∀ ⦃a b : Paths FreeSimplexQuiver⦄
+    (f g : a ⟶ b), FreeSimplexQuiver.homRel f g →
+      G.resolutionPaths.map f = G.resolutionPaths.map g := by
+  intro _ _ _ _ h
+  cases h
+  all_goals simp only [Functor.map_comp, Functor.map_id, resolutionPaths_map]
+  all_goals apply Quiver.Hom.unop_inj
+  case δ_comp_δ H => exact G.resolutionFace_comp_resolutionFace _ _ _ H
+  case δ_comp_σ_of_le H => exact G.resolutionDegeneracy_comp_resolutionFace_of_le _ _ _ H
+  case δ_comp_σ_self => exact G.resolutionDegeneracy_comp_resolutionFace_self _ _
+  case δ_comp_σ_succ => exact G.resolutionDegeneracy_comp_resolutionFace_succ _ _
+  case δ_comp_σ_of_gt H => exact G.resolutionDegeneracy_comp_resolutionFace_of_gt _ _ _ H
+  case σ_comp_σ H => exact G.resolutionDegeneracy_comp_resolutionDegeneracy _ _ _ H
+
+private abbrev resolutionPresentation : SimplexCategoryGenRel ⥤ (C ⥤ C)ᵒᵖ :=
+  Quotient.lift _ G.resolutionPaths (G.resolutionPaths_respects)
+
+private lemma resolutionPresentation_map {a b : FreeSimplexQuiver} (f : a ⟶ b) :
+    G.resolutionPresentation.map ((Quotient.functor _).map ((Paths.of _).map f)) =
+      G.resolutionQuiver.map f := by
+  rw [Quotient.lift_map_functor_map, resolutionPaths_map]
+
 /-- The simplicial resolution, functorial in its input object. Its `n`th term is `G^(n+1)`.
 The body is exposed so these term types compute in dependent statements. -/
 @[expose] noncomputable def simplicialResolution : C ⥤ SimplicialObject C :=
@@ -240,48 +318,45 @@ The body is exposed so these term types compute in dependent statements. -/
         map f := match f with
           | .δ i => (G.resolutionFace _ i).op
           | .σ i => (G.resolutionDegeneracy _ i).op })
-    (by
-      intro _ _ _ _ h
-      -- Reduce singleton paths before using the comonad identities. The path lift
-      -- computes through the presentation's named quiver object types.
-      cases h
-      all_goals repeat first
-        | erw [Functor.map_comp]
-        | erw [Paths.lift_toPath]
-        | erw [Functor.map_id]
-      all_goals apply Quiver.Hom.unop_inj
-      case δ_comp_δ H => exact G.resolutionFace_comp_resolutionFace _ _ _ H
-      case δ_comp_σ_of_le H => exact G.resolutionDegeneracy_comp_resolutionFace_of_le _ _ _ H
-      case δ_comp_σ_self => exact G.resolutionDegeneracy_comp_resolutionFace_self _ _
-      case δ_comp_σ_succ => exact G.resolutionDegeneracy_comp_resolutionFace_succ _ _
-      case δ_comp_σ_of_gt H => exact G.resolutionDegeneracy_comp_resolutionFace_of_gt _ _ _ H
-      case σ_comp_σ H =>
-        exact G.resolutionDegeneracy_comp_resolutionDegeneracy _ _ _ H)).leftOp.flip
+    (by exact G.resolutionPaths_respects)).leftOp.flip
 
 @[simp] lemma simplicialResolution_obj_obj (X : C) (n : ℕ) :
     ((G.simplicialResolution.obj X).obj (op (SimplexCategory.mk n))) =
       (G.resolutionStage (n + 1)).obj X := (rfl)
 
+-- The exposed construction inlines the quiver to keep its dependent term types public.
+-- This bridge identifies that inline lift with our private implementation, evaluating
+-- leftOp.flip by taking the unop natural transformation and its component at X.
+private lemma simplicialResolution_obj_map (X : C) {a b : SimplexCategoryᵒᵖ} (f : a ⟶ b) :
+    (G.simplicialResolution.obj X).map f =
+      (G.resolutionPresentation.map
+        (SimplexCategoryGenRel.fromSimplexCategory.map f.unop)).unop.app X := (rfl)
+
+private lemma resolutionPresentation_map_δ {n : ℕ} (i : Fin (n + 2)) :
+    G.resolutionPresentation.map (SimplexCategoryGenRel.δ i) =
+      (G.resolutionFace (n + 1) i).op :=
+  G.resolutionPresentation_map (FreeSimplexQuiver.δ i)
+
+private lemma resolutionPresentation_map_σ {n : ℕ} (i : Fin (n + 1)) :
+    G.resolutionPresentation.map (SimplexCategoryGenRel.σ i) =
+      (G.resolutionDegeneracy n i).op :=
+  G.resolutionPresentation_map (FreeSimplexQuiver.σ i)
+
 /-- Faces of the simplicial resolution are the iterated counits. -/
 @[simp] lemma simplicialResolution_δ (X : C) {n : ℕ} (i : Fin (n + 2)) :
     (G.simplicialResolution.obj X).δ i = (G.resolutionFace (n + 1) i).app X := by
-  dsimp only [simplicialResolution, SimplicialObject.δ, Functor.flip, Functor.leftOp]
-  -- The rewrites cross the definitional identification of presentation objects mk n
-  -- with the objects of the free path category used by Quotient.lift and Paths.lift.
-  erw [Functor.comp_map, SimplexCategoryGenRel.fromSimplexCategory_map_δ]
-  erw [Quotient.lift_map_functor_map, Paths.lift_toPath]
-  -- leftOp.flip evaluates the opposite natural transformation at X; unop cancels op.
-  rfl
+  simp only [SimplicialObject.δ, simplicialResolution_obj_map, Quiver.Hom.unop_op,
+    SimplexCategoryGenRel.fromSimplexCategory_map_δ]
+  -- fromSimplexCategory_obj identifies the implicit endpoints with the presentation's mk n.
+  exact congrArg (fun f ↦ f.unop.app X) (G.resolutionPresentation_map_δ i)
 
 /-- Degeneracies of the simplicial resolution are the iterated comultiplications. -/
 @[simp] lemma simplicialResolution_σ (X : C) {n : ℕ} (i : Fin (n + 1)) :
     (G.simplicialResolution.obj X).σ i = (G.resolutionDegeneracy n i).app X := by
-  dsimp only [simplicialResolution, SimplicialObject.σ, Functor.flip, Functor.leftOp]
-  -- As for faces, erw identifies the quotient's mk n with the free path objects.
-  erw [Functor.comp_map, SimplexCategoryGenRel.fromSimplexCategory_map_σ]
-  erw [Quotient.lift_map_functor_map, Paths.lift_toPath]
-  -- Evaluate at X and cancel the opposite on the natural transformation.
-  rfl
+  simp only [SimplicialObject.σ, simplicialResolution_obj_map, Quiver.Hom.unop_op,
+    SimplexCategoryGenRel.fromSimplexCategory_map_σ]
+  -- As for faces, fromSimplexCategory_obj identifies the implicit presentation endpoints.
+  exact congrArg (fun f ↦ f.unop.app X) (G.resolutionPresentation_map_σ i)
 
 /-- A morphism acts on each term by the corresponding iterate of the comonad. -/
 @[simp] lemma simplicialResolution_map_app {X Y : C} (f : X ⟶ Y) (n : ℕ) :

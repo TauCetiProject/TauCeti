@@ -82,6 +82,8 @@ with the original algebra serving as the zeroth iterate. -/
     (((polynomialSimplicialResolution R).obj B).δ (0 : Fin 2)).hom =
       MvPolynomial.aeval (id : MvPolynomial B R → MvPolynomial B R) := by
   rw [polynomialSimplicialResolution_δ, Comonad.resolutionFace_zero_app]
+  -- Reduce the stage in the dependent source and target types before applying the hom formula.
+  dsimp only [Comonad.resolutionStage, Functor.comp_obj, Functor.id_obj]
   exact polynomialComonad_ε_app_hom R ((polynomialComonad R).obj B)
 
 /-- The other face from degree one to degree zero renames variables by evaluation. -/
@@ -90,6 +92,7 @@ with the original algebra serving as the zeroth iterate. -/
       MvPolynomial.rename (R := R) (MvPolynomial.aeval (id : B → B)) := by
   rw [← Fin.succ_zero_eq_one, polynomialSimplicialResolution_δ,
     Comonad.resolutionFace_succ_app, Comonad.resolutionFace_zero_app]
+  dsimp only [Comonad.resolutionStage, Functor.id_obj]
   exact congrArg Hom.hom (polynomialComonad_map_ε_app R B)
 
 /-- The first degeneracy inserts a variable layer, sending `X b` to `X (X b)`. -/
@@ -97,6 +100,7 @@ with the original algebra serving as the zeroth iterate. -/
     (((polynomialSimplicialResolution R).obj B).σ (0 : Fin 1)).hom =
       MvPolynomial.rename (MvPolynomial.X : B → MvPolynomial B R) := by
   rw [polynomialSimplicialResolution_σ, Comonad.resolutionDegeneracy_zero_app]
+  dsimp only [Comonad.resolutionStage, Functor.id_obj]
   exact polynomialComonad_δ_app_hom R B
 
 end CommAlgCat
