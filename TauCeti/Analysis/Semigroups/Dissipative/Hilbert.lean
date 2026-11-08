@@ -84,8 +84,6 @@ theorem isDissipative_iff_real_inner_nonpos (A : X →ₗ.[ℝ] X) :
 
 namespace ContractionSemigroup
 
-variable [CompleteSpace X]
-
 /-- **The converse of the Lumer--Phillips theorem on a Hilbert space.** The generator of a
 contraction semigroup on a real Hilbert space satisfies `⟪A x, x⟫ ≤ 0` on its domain. -/
 theorem real_inner_generator_nonpos (S : ContractionSemigroup X)

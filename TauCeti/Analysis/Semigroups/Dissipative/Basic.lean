@@ -410,26 +410,46 @@ namespace ContractionSemigroup
 
 variable [CompleteSpace X]
 
+omit [CompleteSpace X] in
 /-- **Converse of the Lumer--Phillips theorem**: the generator of a contraction semigroup is
 dissipative.
 
-It is the `(ω, M) = (0, 1)` case of the resolvent-range inequality
-`StronglyContinuousSemigroup.norm_le_norm_smul_sub_generator`. Together with
+For `x` in the domain and `t > 0`, contractivity gives
+`‖lambda x - t⁻¹ (S t x - x)‖ ≥ (lambda + t⁻¹) ‖x‖ - t⁻¹ ‖S t x‖ ≥ lambda ‖x‖`, and the left side
+tends to `‖lambda x - A x‖` as `t → 0⁺`. Together with
 `StronglyContinuousSemigroup.smul_sub_generator_surjective` and the density of the generator
 domain, it shows that the hypotheses of the Lumer--Phillips generation theorem are also
 necessary. -/
 theorem isDissipative_generator (S : ContractionSemigroup X) :
     IsDissipative S.toStronglyContinuousSemigroup.generator := by
   intro lambda hlambda x
-  have h := S.toStronglyContinuousSemigroup.norm_le_norm_smul_sub_generator
-    S.hasGrowthBound (by simpa using hlambda) x
-  rw [sub_zero, one_div] at h
-  calc lambda * ‖(x : X)‖
-      ≤ lambda * (lambda⁻¹ *
-          ‖lambda • (x : X) - S.toStronglyContinuousSemigroup.generator x‖) := by
-        gcongr
-    _ = ‖lambda • (x : X) - S.toStronglyContinuousSemigroup.generator x‖ := by
-        rw [← mul_assoc, mul_inv_cancel₀ hlambda.ne', one_mul]
+  have hx : (x : X) ∈ S.toStronglyContinuousSemigroup.domain := by
+    rw [← S.toStronglyContinuousSemigroup.generator_domain]
+    exact x.property
+  have hlim := (S.toStronglyContinuousSemigroup.generator_tendsto ⟨(x : X), hx⟩).const_sub
+    (lambda • (x : X)) |>.norm
+  refine ge_of_tendsto hlim ?_
+  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+  have hS : ‖S.toStronglyContinuousSemigroup.realOperator t (x : X)‖ ≤ ‖(x : X)‖ :=
+    ((S.toStronglyContinuousSemigroup.realOperator t).le_opNorm _).trans
+      (by simpa using mul_le_mul_of_nonneg_right (S.contracting_real t ht.le) (norm_nonneg _))
+  have key : lambda • (x : X) - (1 / t) • (S.toStronglyContinuousSemigroup.realOperator t
+      (x : X) - (x : X)) = (lambda + 1 / t) • (x : X) -
+        (1 / t) • S.toStronglyContinuousSemigroup.realOperator t (x : X) := by
+    rw [smul_sub, add_smul]
+    abel
+  have h1 : (lambda + 1 / t) * ‖(x : X)‖ - 1 / t * ‖S.toStronglyContinuousSemigroup.realOperator
+      t (x : X)‖ ≤ ‖(lambda + 1 / t) • (x : X) -
+        (1 / t) • S.toStronglyContinuousSemigroup.realOperator t (x : X)‖ := by
+    have := norm_sub_norm_le ((lambda + 1 / t) • (x : X))
+      ((1 / t) • S.toStronglyContinuousSemigroup.realOperator t (x : X))
+    rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
+      Real.norm_of_nonneg (by positivity)] at this
+    exact this
+  simp only [key]
+  have : 1 / t * ‖S.toStronglyContinuousSemigroup.realOperator t (x : X)‖ ≤ 1 / t * ‖(x : X)‖ :=
+    by gcongr
+  nlinarith
 
 /-- **The generator of a contraction semigroup is m-dissipative.** This is the full converse of
 the Lumer--Phillips theorem apart from the density of the domain (which is
@@ -443,6 +463,7 @@ theorem isMDissipative_generator (S : ContractionSemigroup X) :
     (S.toStronglyContinuousSemigroup.smul_sub_generator_surjective S.hasGrowthBound
       (by norm_num))
 
+omit [CompleteSpace X] in
 /-- The a priori estimate for the generator of a contraction semigroup: a solution of
 `lambda x - A x = y` has `‖x‖ ≤ ‖y‖ / lambda`. -/
 theorem norm_le_of_smul_sub_generator_eq (S : ContractionSemigroup X) {lambda : ℝ}
