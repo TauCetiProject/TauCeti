@@ -51,8 +51,9 @@ theorem IsStarProjection.exists_isStarProjection_mul_mul_eq {q u a : A} (hq : Is
       _ = q := by rw [hqs, mul_one, hqq]
       _ ≤ 1 := hq.le_one
   have hcq : q * a * q * q = q * a * q := by rw [mul_assoc, hqq]
-  have hqc : q * (q * a * q) = q * a * q := by rw [← mul_assoc, ← mul_assoc, hqq]
-  generalize q * a * q = c at hc hcq hqc ⊢
+  generalize q * a * q = c at hc hcq ⊢
+  have hqc : q * c = c := (IsSelfAdjoint.of_nonneg hc.1).mul_eq_right_of_mul_eq_left
+    hq.isSelfAdjoint hcq
   have hcc : 0 ≤ c - c * c := sub_nonneg.mpr (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one
     hc.1 ((CStarAlgebra.norm_le_one_iff_of_nonneg c hc.1).mpr hc.2))
   have hd : IsSelfAdjoint (CFC.sqrt (c - c * c)) := (CFC.sqrt_nonneg _).isSelfAdjoint
