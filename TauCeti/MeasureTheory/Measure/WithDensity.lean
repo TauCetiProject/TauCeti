@@ -33,8 +33,9 @@ A map that is injective only on part of the line admits the same change of varia
 price of restricting Lebesgue measure to that part and inserting the absolute derivative into the
 weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
 
-Finally, a weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite
-measure finite.
+A measurable density defining a sigma-finite measure is finite almost everywhere for that
+weighted measure. A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps
+a finite measure finite.
 
 ## Main statements
 
@@ -337,6 +338,25 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
 end MeasureTheory
 
 namespace TauCeti.MeasureTheory
+
+/-- A measurable density defining a sigma-finite measure is finite almost everywhere for
+that weighted measure. No sigma-finiteness of the base measure is required. -/
+theorem ae_withDensity_ne_top_of_sigmaFinite {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f : α → ℝ≥0∞} (hf : Measurable f) [SigmaFinite (μ.withDensity f)] :
+    ∀ᵐ x ∂μ.withDensity f, f x ≠ ∞ := by
+  have hpieces : ∀ n, ∀ᵐ x ∂(μ.withDensity f).restrict
+      (spanningSets (μ.withDensity f) n), f x ≠ ∞ := by
+    intro n
+    have hs := measurableSet_spanningSets (μ.withDensity f) n
+    have hfinite : ∫⁻ x in spanningSets (μ.withDensity f) n, f x ∂μ ≠ ∞ := by
+      rw [← withDensity_apply _ hs]
+      exact (measure_spanningSets_lt_top (μ.withDensity f) n).ne
+    rw [restrict_withDensity hs]
+    exact (withDensity_absolutelyContinuous _ _).ae_le
+      ((ae_lt_top hf hfinite).mono fun _ h ↦ h.ne)
+  rw [← Measure.restrict_univ (μ := μ.withDensity f),
+    ← iUnion_spanningSets (μ.withDensity f)]
+  exact (ae_restrict_iUnion_iff _ _).2 hpieces
 
 open Set
 
