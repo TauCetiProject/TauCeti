@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Analysis.ODE.InitialCondition
+import TauCeti.Analysis.ODE.LocalFlow
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 
 /-!
 # Smooth dependence of the maximal integral curve near time zero
 
 Let `v` be a vector field on a separated boundaryless `C^1` manifold `M` modelled on a
-finite-dimensional space. This file shows that if `v` is `C^(n+1)` at `x₀`, then the maximal flow
+complete normed space. This file shows that if `v` is `C^(n+1)` at `x₀`, then the maximal flow
 `(x, t) ↦ maximalIntegralCurve v x t` is jointly `C^(n+1)` in the initial point and the time at
 `(x₀, 0)`. Together with
 `TauCeti.eventually_mem_maximalIntegralCurveInterval`, which puts a neighbourhood of `(x₀, 0)` in
@@ -43,7 +43,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
-  [FiniteDimensional ℝ E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
+  [CompleteSpace E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
 
 /- The proof applies `ODE.exists_contDiffAt_localFlow` to the vector field in the extended chart
 at `x₀`, then pulls the resulting coordinate flow back through the inverse chart. Fixed-chart
@@ -150,7 +150,7 @@ private theorem contMDiffAt_maximalIntegralCurve_nat (n : ℕ)
   exact hflow.congr_of_eventuallyEq h
 
 /-- **The maximal flow is `C^(n+1)` near time zero.** Suppose `v` is `C^(n+1)` at `x₀`, for `n`
-finite or infinite, on a separated boundaryless manifold modelled on a finite-dimensional space.
+finite or infinite, on a separated boundaryless manifold modelled on a complete normed space.
 Then the maximal flow
 `(x, t) ↦ maximalIntegralCurve v x t` is `C^(n+1)` jointly in the initial point and the time at
 `(x₀, 0)`. -/

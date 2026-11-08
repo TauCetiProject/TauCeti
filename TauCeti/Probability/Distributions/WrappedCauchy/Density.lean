@@ -130,13 +130,9 @@ private theorem continuous_wrappedCauchyPDFReal_of_pos (m : AddCircle (2 * π))
     {γ : ℝ≥0} (hγ : 0 < γ) : Continuous (wrappedCauchyPDFReal m γ) := by
   refine Continuous.congr ?_ (poissonKernel_eq_wrappedCauchyPDFReal m γ)
   have hnot : (Real.exp (-(γ : ℝ)) : ℂ) * (AddCircle.toCircle m : ℂ) ∉
-      Metric.sphere 0 |(1 : ℝ)| := by
-    intro hs
-    have hlt := wrappedCauchy_pole_mem_ball m hγ
-    rw [Metric.mem_ball, dist_zero_right] at hlt
-    rw [Metric.mem_sphere, dist_zero_right, abs_one] at hs
-    linarith
-  apply (continuousOn_poissonKernel_sphere (R := (1 : ℝ)) hnot).comp_continuous
+      Metric.sphere 0 1 :=
+    fun hs ↦ (wrappedCauchy_pole_mem_ball m hγ).ne (Metric.mem_sphere.1 hs)
+  apply (continuousOn_poissonKernel hnot).comp_continuous
     (by fun_prop)
   intro θ
   simp
@@ -201,8 +197,8 @@ theorem wrappedCauchyPDFReal_nonneg (m : AddCircle (2 * π)) (γ : ℝ≥0)
   rcases eq_or_ne γ 0 with rfl | hγ
   · simp
   · rw [← poissonKernel_eq_wrappedCauchyPDFReal]
-    apply poissonKernel_nonneg_on_sphere (R := (1 : ℝ))
-      (by simpa using wrappedCauchy_pole_mem_ball m (pos_iff_ne_zero.mpr hγ))
+    refine poissonKernel_nonneg
+      ((mem_ball_iff_norm.1 (wrappedCauchy_pole_mem_ball m (pos_iff_ne_zero.mpr hγ))).le.trans ?_)
     simp
 
 /-- At positive scale the wrapped Cauchy density is strictly positive at every circle point. -/

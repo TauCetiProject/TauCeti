@@ -268,6 +268,19 @@ theorem enorm_sub_le_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff 
   gcongr
   exact Measure.restrict_le_self
 
+/-- The Hölder constant of Morrey's inequality is nonnegative. -/
+private theorem morreyConstant_nonneg (n : ℕ) (m : ℝ) (p : ℝ≥0) (hm : 0 ≤ m)
+    (hp : (n : ℝ≥0) < p) :
+    0 ≤ 2 ^ (n + 1) / (n * m) * (n * m * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
+      2 ^ (1 - n / (p : ℝ)) := by
+  have hK : 0 ≤ (n * m * (p - 1) / (p - n) : ℝ) := by
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · simp [hn]
+    have hpn : (n : ℝ) < p := by exact_mod_cast hp
+    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+    exact div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
+  exact mul_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg hK _)) (by positivity)
+
 /-- **Morrey's inequality, Hölder form.** If `u` is `C¹` on the whole space, `p` exceeds the
 dimension `n` of the space, and the derivative of `u` lies in `Lᵖ`, then `u` is Hölder continuous
 of exponent `1 - n / p`, with constant
@@ -284,16 +297,7 @@ theorem holderWith_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff �
     rw [NNReal.coe_sub ((div_le_one (zero_le.trans_lt hp)).2 hp.le), NNReal.coe_one,
       NNReal.coe_div, NNReal.coe_natCast]
   have hα0 : 0 ≤ 1 - n / (p : ℝ) := hα ▸ NNReal.coe_nonneg _
-  have hK : 0 ≤ (n * μ.real (ball 0 1) * (p - 1) / (p - n) : ℝ) := by
-    rcases Nat.eq_zero_or_pos n with hn | hn
-    · simp [hn]
-    have hpn : (n : ℝ) < p := by exact_mod_cast hp
-    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-    exact div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
-  have hC : 0 ≤ 2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-      (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-        2 ^ (1 - n / (p : ℝ)) :=
-    mul_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg hK _)) (by positivity)
+  have hC := morreyConstant_nonneg n (μ.real (ball 0 1)) p measureReal_nonneg hp
   intro x y
   have hdist : edist x y ^ (1 - n / (p : ℝ)) =
       ENNReal.ofReal (‖x - y‖ ^ (1 - n / (p : ℝ))) := by

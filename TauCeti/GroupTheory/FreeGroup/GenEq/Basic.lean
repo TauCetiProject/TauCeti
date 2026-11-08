@@ -468,9 +468,10 @@ theorem prefixLength_injOn : Set.InjOn U.prefixLength (Set.Iic Ω.numItems) := b
   · rfl
   · exact absurd h (U.prefixLength_lt hij hi).ne'
 
-/-- The words of the bases of the basic equation of `μ`, for `ε(μ) = 1` and `ε(Δμ) = -1`, cannot
-overlap: an overlap would be a nonempty reduced word equal to its own formal inverse, and a base
-inside another one is too short. -/
+/-- A reduced substituted segment `h[a, b]` cannot equal the formal inverse of a substituted
+segment `h[c, d]` with `a ≤ c < b`: an overlap would be a nonempty reduced word equal to its own
+formal inverse, and a segment inside another one is too short. This is applied to the two bases of
+the basic equation of `μ`, for `ε(μ) = 1` and `ε(Δμ) = -1`, to show that they cannot overlap. -/
 private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItems) (hcd : c < d)
     (hd : d ≤ Ω.numItems) (hac : a ≤ c) (hcb : c < b)
     (hred : FreeGroup.IsReduced (substituteVars U.word (Ω.segment a b true)))

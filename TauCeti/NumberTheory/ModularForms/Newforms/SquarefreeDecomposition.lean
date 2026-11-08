@@ -329,15 +329,23 @@ theorem exists_qExpansion_coeff_eq_sum_primeFactors_of_squarefree (χ : (ZMod N)
       Finset.card_insert_of_notMem hql'] at hcard
     omega
 
+open scoped Pointwise in
+/-- For a prime `q ∣ l`, `V_q` raises level from `Γ₁(M l² / q)` to `Γ₁(M l²)`: the inclusion of
+`Γ₁(M l²)` in the `scaleGL q`-conjugate of `Γ₁(M l² / q)` that `CuspForm.levelRaise` takes. -/
+theorem Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors {M l q : ℕ} [NeZero q]
+    (hq : q ∈ l.primeFactors) :
+    ((Gamma1 (M * l ^ 2)).map (mapGL ℝ) : Subgroup (GL (Fin 2) ℝ)) ≤
+      ConjAct.toConjAct (scaleGL q)⁻¹ • ((Gamma1 (M * l ^ 2 / q)).map (mapGL ℝ)) :=
+  Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq (Nat.mul_div_cancel' (dvd_mul_of_dvd_right
+    ((Nat.dvd_of_mem_primeFactors hq).trans (dvd_pow_self l two_ne_zero)) M)))
+
 /-- The `n`-th coefficient of the sum of the level-raised peeled pieces: `a_{n/q}(F_q)` summed
 over the primes `q ∣ l` dividing `n`. -/
 private theorem qExpansion_coeff_sum_levelRaise {l : ℕ}
     (F : ∀ q ∈ l.primeFactors, CuspForm ((Gamma1 (M * l ^ 2 / q)).map (mapGL ℝ)) k) (n : ℕ) :
     (qExpansion 1 ⇑(∑ q ∈ l.primeFactors.attach,
         haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-        CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq
-          (Nat.mul_div_cancel' (dvd_mul_of_dvd_right
-            ((Nat.dvd_of_mem_primeFactors q.2).trans (dvd_pow_self l two_ne_zero)) M))))
+        CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
           (F q.1 q.2) : CuspForm ((Gamma1 (M * l ^ 2)).map (mapGL ℝ)) k)).coeff n =
       ∑ q ∈ l.primeFactors.attach,
         if q.1 ∣ n then (qExpansion 1 (F q.1 q.2)).coeff (n / q.1) else 0 := by
@@ -346,9 +354,7 @@ private theorem qExpansion_coeff_sum_levelRaise {l : ℕ}
       k).comp CuspForm.toModularFormₗ))
     (fun q : {x // x ∈ l.primeFactors} ↦
       haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-      CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq
-        (Nat.mul_div_cancel' (dvd_mul_of_dvd_right
-          ((Nat.dvd_of_mem_primeFactors q.2).trans (dvd_pow_self l two_ne_zero)) M))))
+      CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
         (F q.1 q.2)) l.primeFactors.attach
   simp only [LinearMap.comp_apply, ModularForm.qExpansionLinearMap_apply,
     CuspForm.toModularFormₗ_eq_coe, ModularFormClass.coe_modularForm] at hsum
@@ -375,9 +381,7 @@ theorem exists_coe_eq_sum_coe_levelRaise_of_squarefree [NeZero M] {l : ℕ}
           χ.comp (ZMod.unitsMap (Nat.dvd_mul_right M (l ^ 2)))) ∧
       ⇑Δ = ∑ q ∈ l.primeFactors.attach,
         haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-        ⇑(CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq
-          (Nat.mul_div_cancel' (dvd_mul_of_dvd_right
-            ((Nat.dvd_of_mem_primeFactors q.2).trans (dvd_pow_self l two_ne_zero)) M))))
+        ⇑(CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
           (F q.1 q.2)) := by
   obtain ⟨F, χ', hF, hχ', hcoeff⟩ :=
     exists_qExpansion_coeff_eq_sum_primeFactors_of_squarefree χ hΔ hsq hvan
@@ -388,9 +392,7 @@ theorem exists_coe_eq_sum_coe_levelRaise_of_squarefree [NeZero M] {l : ℕ}
     _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hM) Δ -
       ∑ q ∈ l.primeFactors.attach,
         haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
-        CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq
-          (Nat.mul_div_cancel' (dvd_mul_of_dvd_right
-            ((Nat.dvd_of_mem_primeFactors q.2).trans (dvd_pow_self l two_ne_zero)) M))))
+        CuspForm.levelRaise q.1 (Gamma1_map_le_conjAct_scaleGL_of_mem_primeFactors q.2)
           (F q.1 q.2) with hDdef
   -- its `q`-expansion vanishes: the coefficient identity of the decomposition
   have hD : qExpansion 1 D = 0 := by

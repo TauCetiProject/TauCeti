@@ -148,7 +148,7 @@ theorem volume_eq_smul_hausdorffMeasure (k : ℕ) :
     have hle : ω'⁻¹ • (volume : Measure (EuclideanSpace ℝ (Fin k))) ≤ μH[k] :=
       le_hausdorffMeasure _ _ 1 one_pos fun t _ => by
         rw [_root_.smul_apply, smul_eq_mul, ENNReal.inv_mul_le_iff hω0 hωtop, ENNReal.rpow_natCast]
-        refine (TauCeti.volume_le_ediam_div_two_pow_mul_volume_ball t).trans_eq ?_
+        refine (Measure.addHaar_le_ediam_div_two_pow_mul_addHaar_ball volume t).trans_eq ?_
         simp only [finrank_euclideanSpace_fin, ω', div_eq_mul_inv, mul_pow, ENNReal.inv_pow]
         ring
     rw [_root_.smul_apply, smul_eq_mul, ← ENNReal.inv_mul_le_iff hω0 hωtop]

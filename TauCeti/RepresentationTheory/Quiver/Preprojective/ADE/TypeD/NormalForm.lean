@@ -86,7 +86,7 @@ private theorem forkBranch_mem_span_normalForms (hn : 3 ≤ n)
     unfold forkUp forkDown
     simpa only [ite_mul, mul_assoc] using hmem
   have hn' : (DynkinType.D n).rank = dc + 3 := by rw [DynkinType.rank_D]; omega
-  have hG := diagramGraph_D_adj hn
+  have hG := fun i j => (diagramGraph_D_adj hn i j).1
   by_cases ht : dc + 2 ≤ t
   · have hzero := forkSpan_pow_eq_bot k (G := DG) hn' hG ht
     have hw0 : w = 0 := (Submodule.mem_bot ℤ).mp (hzero ▸ hw)
@@ -100,7 +100,7 @@ private theorem forkBranch_mem_span_normalForms (hn : 3 ≤ n)
   | succ t =>
     have hx := forkTurn_mul_self k (G := DG) hG (l := dc + 1) (by omega) (by omega)
     have hy := forkTurn_mul_self k (G := DG) hG (l := dc + 2) (by omega) (by omega)
-    have hw' := span_pair_pow_succ_le (R := ℤ) hx hy t hw
+    have hw' := (span_pair_pow_succ (R := ℤ) hx hy t).le hw
     obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hw'
     have hleft := hword true (t + 1) (by omega)
     have hright := hword false (t + 1) (by omega)
@@ -118,7 +118,7 @@ theorem signlessPreprojectiveMk_D_ofPath_mem_span_normalForms (hn : 3 ≤ n)
   have hcorner : e b * π (ofPath ⟨_, _, p⟩) = π (ofPath ⟨_, _, p⟩) := by
     rw [← map_mul, vertexIdempotent_mul_ofPath]
   have hnf := forkNormalForm_ofPath k (G := DG) (c := dc)
-    (by rw [DynkinType.rank_D]; omega) (diagramGraph_D_adj hn) p
+    (by rw [DynkinType.rank_D]; omega) (fun i j => (diagramGraph_D_adj hn i j).1) p
   rw [ForkNormalForm] at hnf
   simp only [vertexEquiv_symm_vertex, ← vertexIdempotent_eq_ofPath] at hnf
   rcases hnf with ⟨m, s, r, ε, hm, -, hs, hr, hz⟩ |

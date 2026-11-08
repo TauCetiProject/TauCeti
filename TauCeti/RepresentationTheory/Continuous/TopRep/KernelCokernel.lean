@@ -39,23 +39,10 @@ open CategoryTheory Limits
 
 variable {k G : Type*} [Ring k] [TopologicalSpace k] [Monoid G] {A B : TopRep k G} (f : A ⟶ B)
 
-/-- The operators of `A` preserve the kernel of a morphism out of `A`. -/
-theorem ρ_apply_mem_ker (g : G) (a : A) (ha : a ∈ f.hom.ker) :
-    A.ρ g a ∈ f.hom.ker := by
-  rw [LinearMap.mem_ker] at ha ⊢
-  simp only [ContinuousLinearMap.coe_coe, ContIntertwiningMap.toContinuousLinearMap_apply] at ha ⊢
-  rw [hom_comm_apply, ha, map_zero]
-
-/-- The operators of `B` preserve the range of a morphism into `B`. -/
-theorem ρ_apply_mem_range (g : G) (b : B) (hb : b ∈ f.hom.range) :
-    B.ρ g b ∈ f.hom.range := by
-  obtain ⟨a, rfl⟩ := hb
-  exact ⟨A.ρ g a, hom_comm_apply f g a⟩
-
 /-- The kernel of a morphism of continuous representations: the kernel of the underlying linear
 map with the subspace topology and the restricted action. -/
 abbrev ker : TopRep k G :=
-  .of (A.ρ.subrepresentation _ (ρ_apply_mem_ker f))
+  .of f.hom.kerRepresentation
 
 /-- The inclusion of the kernel of a morphism. -/
 def kerι : ker f ⟶ A :=
@@ -102,7 +89,7 @@ def isLimitKer : IsLimit (KernelFork.ofι (kerι f) (kerι_comp f)) :=
 /-- The cokernel of a morphism of continuous representations: the quotient by the range of the
 underlying linear map, with the quotient topology and the descended action. -/
 abbrev coker : TopRep k G :=
-  .of (B.ρ.quotient _ (ρ_apply_mem_range f))
+  .of f.hom.cokerRepresentation
 
 /-- The projection onto the cokernel of a morphism. -/
 def cokerπ : B ⟶ coker f :=
@@ -145,5 +132,49 @@ def isColimitCoker : IsColimit (CokernelCofork.ofπ (cokerπ f) (comp_cokerπ f)
       ext b
       induction b using Submodule.Quotient.induction_on
       exact congr($hm _))
+
+section NatCastSMul
+
+variable {k G : Type*} [CommRing k] [TopologicalSpace k] [Monoid G] (A : TopRep k G) (ℓ : ℕ)
+
+/-- Multiplication by the natural number `ℓ` on a continuous representation acts on the carrier as
+`a ↦ ℓ • a`. -/
+@[simp]
+theorem natCast_smul_id_apply (a : A.V) : ((ℓ : k) • 𝟙 A : A ⟶ A).hom a = ℓ • a := by
+  rw [hom_smul, ContIntertwiningMap.smul_apply, Nat.cast_smul_eq_nsmul]
+  -- the underlying map of `𝟙 A` is the identity of the carrier
+  rfl
+
+/-- The `ℓ`-torsion of a finite representation is strictly smaller than the representation when `ℓ`
+does not kill it. -/
+theorem card_ker_natCast_smul_id_lt [Finite A.V] (x : A.V) (hx : ℓ • x ≠ 0) :
+    Nat.card (ker ((ℓ : k) • 𝟙 A)).V < Nat.card A.V := by
+  set f : A ⟶ A := (ℓ : k) • 𝟙 A
+  exact Finite.card_subtype_lt (p := (· ∈ f.hom.ker)) (x := x) fun hmem ↦ hx <| by
+    rw [LinearMap.mem_ker] at hmem
+    exact (natCast_smul_id_apply A ℓ x).symm.trans hmem
+
+/-- The quotient of a finite representation by its `ℓ`-torsion is strictly smaller than the
+representation when a nonzero vector is killed by `ℓ`. -/
+theorem card_coker_kerι_natCast_smul_id_lt [Finite A.V] (y : A.V) (hy0 : y ≠ 0) (hy : ℓ • y = 0) :
+    Nat.card (coker (kerι ((ℓ : k) • 𝟙 A))).V < Nat.card A.V := by
+  have : Fintype A.V := Fintype.ofFinite _
+  set f : A ⟶ A := (ℓ : k) • 𝟙 A
+  set ι := kerι f
+  have hπ : Function.Surjective (cokerπ ι).hom := cokerπ_surjective ι
+  have hιπ : Function.Exact ι.hom (cokerπ ι).hom := exact_cokerπ ι
+  have : Finite (coker ι).V := .of_surjective _ hπ
+  have : Fintype (coker ι).V := Fintype.ofFinite _
+  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+  refine Fintype.card_lt_of_surjective_not_injective _ hπ fun hinj ↦ ?_
+  have hyker : y ∈ LinearMap.ker (f.hom : A.V →ₗ[k] A.V) := by
+    rw [LinearMap.mem_ker]
+    exact (natCast_smul_id_apply A ℓ y).trans hy
+  have hyι : (cokerπ ι).hom y = (cokerπ ι).hom 0 := by
+    rw [map_zero]
+    exact (hιπ y).2 ⟨⟨y, hyker⟩, kerι_apply f _⟩
+  exact hy0 (hinj hyι)
+
+end NatCastSMul
 
 end TopRep

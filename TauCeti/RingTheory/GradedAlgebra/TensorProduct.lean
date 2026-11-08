@@ -34,6 +34,8 @@ compatible with: the total-degree grading of the underlying tensor product of gr
 
 ## Main results
 
+* `TauCeti.gradedTensorHomOfMemZero_comm`: maps induced by degree-zero homomorphisms
+  intertwine the ordinary tensor flip with Mathlib's Koszul symmetry.
 * `TauCeti.tmul_mem_gradedTensorGrading`: degrees add on pure tensors.
 * `TauCeti.instGradedAlgebraGradedTensorGrading`: the graded tensor product of two internally
   `ℤ`-graded algebras is an internally `ℤ`-graded algebra.
@@ -322,6 +324,19 @@ theorem gradedTensorHomOfMemZero_mem (x : E ⊗[R] F) :
   | add x y hx hy => rw [map_add]; exact add_mem hx hy
   | tmul a b =>
     simpa using tmul_mem_gradedTensorGrading 𝒜 ℬ (hρ₁ a) (hρ₂ b)
+
+/-- The tensor homomorphism induced by two maps into degree zero intertwines the ordinary
+flip on its source with the Koszul symmetry on its target. -/
+theorem gradedTensorHomOfMemZero_comm (x : E ⊗[R] F) :
+    gradedTensorHomOfMemZero ρ₂ ρ₁ hρ₂ hρ₁ (TensorProduct.comm R E F x) =
+      GradedTensorProduct.comm 𝒜 ℬ (gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂ x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a b =>
+    rw [TensorProduct.comm_tmul, gradedTensorHomOfMemZero_tmul,
+      gradedTensorHomOfMemZero_tmul,
+      GradedTensorProduct.comm_coe_tmul_coe 𝒜 ℬ ⟨ρ₁ a, hρ₁ a⟩ ⟨ρ₂ b, hρ₂ b⟩]
+    simp
 
 end HomOfMemZero
 

@@ -52,14 +52,8 @@ holomorphic map `p_Q : Q → ℂ` induced by `z ↦ z ^ m`
 embedding theorem above, `ι` is a holomorphic embedding of the compact complex manifold `T₀ / C_m`
 onto `F`, of complex codimension one.
 
-Near every point of `Q` there are holomorphic coordinates `(u, w)`, valued in `D × E`, in which
-`p_Q = u ^ m` (`TauCeti.exists_partialDiffeomorph_torusFamilyCyclicQuotientProjection_eq_pow`):
-they are local inverses of the composite orbit map `D × E → X → Q`, a local biholomorphism along
-which `p_Q` is `(z, v) ↦ z ^ m`. More generally, for any invariant map `f` of the base, the map
-`X / Γ → Z` induced by `f` reads `f` of the first coordinate in such charts
-(`TauCeti.exists_partialDiffeomorph_torusFamilyAffineQuotientLift_eq`). Near a point of `F` the
-coordinate `u` vanishes exactly on `F`, so in these coordinates `F` is the slice `u = 0` and `p_Q`
-is the `m`-th power of its defining coordinate.
+The local equation `t = u ^ m` of `F` in the charts of `Q` is
+`TauCeti.torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow`.
 
 ## Main results
 
@@ -71,13 +65,8 @@ is the `m`-th power of its defining coordinate.
   orbit map `T_y → T_y / Γ` is a `C^n` local diffeomorphism.
 * `TauCeti.isSmoothEmbedding_orbitRelQuotientMap_torusFamilyFiberMulActionHom`: the map
   `T_y / Γ → X / Γ` is a `C^n` embedding.
-* `TauCeti.exists_partialDiffeomorph_torusFamilyAffineQuotientLift_eq`: near every point of
-  `X / Γ` there is a chart valued in `Y × E` in which the map induced by an invariant `f : Y → Z`
-  is `f` of the first coordinate.
 * `TauCeti.range_orbitRelQuotientMap_torusFamilyFiberMulActionHom_rootsOfUnityBall`: over the
   rotated disc, its image is the fibre over `0` of the map `X / C_m → ℂ` induced by `z ↦ z ^ m`.
-* `TauCeti.exists_partialDiffeomorph_torusFamilyCyclicQuotientProjection_eq_pow`: in suitable
-  local holomorphic coordinates `(u, w)` on `X / C_m`, that map is `u ^ m`.
 
 ## References
 
@@ -557,74 +546,5 @@ theorem range_orbitRelQuotientMap_torusFamilyFiberMulActionHom_rootsOfUnityBall
   exact congrArg range (funext fun v ↦ by rw [comp_apply, comp_apply, torusFamilyFiberMap_mk])
 
 end RotatedDisc
-
-section RotatedDiscChart
-
-variable {m : ℕ} [NeZero m] {r : ℝ}
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (P : rootsOfUnityBall m r → Λ →ₗ[ℤ] E) [∀ z, DiscreteTopology (LinearMap.range (P z))]
-  [∀ z, IsZLattice ℝ (LinearMap.range (P z))]
-  (hinj : ∀ z, Injective (P z)) {n : ℕ∞ω} (hP : ∀ l, ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun z ↦ P z l)
-  (R : rootsOfUnity m ℂ → rootsOfUnityBall m r → E →+ E)
-  (ρ : Representation ℤ (rootsOfUnity m ℂ) Λ)
-  (hequiv : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (l : Λ),
-    P (g • z) (ρ g l) = R g z (P z l))
-  (b : rootsOfUnity m ℂ → rootsOfUnityBall m r →
-    letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))
-  (hb : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
-    torusFamilyProjection P (b g z) = g • z)
-  (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
-  (hmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (v : E),
-    R (g * h) z v = R g (h • z) (R h z v))
-  (hbone : ∀ z : rootsOfUnityBall m r, b 1 z = Quotient.mk _ (z, 0))
-  (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
-    b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
-  (hR : ∀ g : rootsOfUnity m ℂ,
-    ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ, E) n fun p : rootsOfUnityBall m r × E ↦ R g p.1 p.2)
-  (hbc : letI := periodAddAction P
-    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-    ∀ g, ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (b g))
-  (hfree : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
-
-/-- **The local equation `t = u ^ m` of the cyclic quotient.** For a `C^n` family of tori `X → D`
-over the disc and a free `C^n` affine action of the `m`-th roots of unity lifting the rotations,
-every point of `Q = X / C_m` lies in the source of a `C^n` partial diffeomorphism
-`κ : Q → D × E` in which the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m`
-(`TauCeti.torusFamilyCyclicQuotientProjection`) reads `p_Q = u ^ m`, where `u` is the first
-coordinate of `κ`. With holomorphic data and `n = ω`, these are holomorphic coordinates on the
-complex manifold `Q`. On the source of `κ`, the coordinate `u` vanishes exactly on the multiple
-fibre `p_Q⁻¹(0)`, which is therefore the slice `u = 0`, with defining coordinate whose `m`-th power
-is `p_Q`. The coordinates are local inverses of the composite orbit map `D × E → X → Q`. -/
-theorem exists_partialDiffeomorph_torusFamilyCyclicQuotientProjection_eq_pow
-    (q : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-      orbitRel.Quotient (rootsOfUnity m ℂ)
-        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :
-    letI := periodAddAction P
-    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
-      (fun g ↦ (hbc g).continuous) hfree
-    ∃ κ : PartialDiffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E))
-        (orbitRel.Quotient (rootsOfUnity m ℂ)
-          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
-        (rootsOfUnityBall m r × E) n,
-      q ∈ κ.source ∧ ∀ x ∈ κ.source,
-        torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul x =
-          ((κ x).1 : ℂ) ^ m := by
-  let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  obtain ⟨κ, hq, hκ⟩ := exists_partialDiffeomorph_torusFamilyAffineQuotientLift_eq P hinj hP R ρ
-    hequiv b hb hone hmul hbone hbmul hR hbc hfree (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
-    (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) q
-  refine ⟨κ, hq, fun x hx ↦ ?_⟩
-  rw [← hκ x hx, torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift P R ρ hequiv
-    b hb hone hmul hbone hbmul]
-
-end RotatedDiscChart
 
 end TauCeti

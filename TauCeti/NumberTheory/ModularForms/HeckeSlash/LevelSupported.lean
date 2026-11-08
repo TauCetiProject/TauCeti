@@ -84,7 +84,7 @@ level-supported indices and not only at powers of one prime.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups ModularForm
 
