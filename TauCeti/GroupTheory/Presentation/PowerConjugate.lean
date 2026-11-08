@@ -46,8 +46,14 @@ def generatorSuffix {n : ℕ} (x : Fin n → G) (k : ℕ) : Subgroup G :=
 theorem generatorSuffix_def {n : ℕ} (x : Fin n → G) (k : ℕ) :
     generatorSuffix x k = Subgroup.closure (x '' {i | k ≤ (i : ℕ)}) := (rfl)
 
-/-- Membership of a generator in a suffix. -/
-theorem mem_generatorSuffix {n : ℕ} (x : Fin n → G) {k : ℕ} (i : Fin n)
+/-- A suffix subgroup lies in a subgroup exactly when each of its generators does. -/
+@[simp]
+theorem generatorSuffix_le_iff {n : ℕ} (x : Fin n → G) (k : ℕ) (H : Subgroup G) :
+    generatorSuffix x k ≤ H ↔ ∀ i : Fin n, k ≤ (i : ℕ) → x i ∈ H := by
+  simp [generatorSuffix_def, Subgroup.closure_le, Set.subset_def]
+
+/-- Each generator at or beyond the cut belongs to the suffix subgroup. -/
+theorem apply_mem_generatorSuffix {n : ℕ} (x : Fin n → G) {k : ℕ} (i : Fin n)
     (hi : k ≤ (i : ℕ)) : x i ∈ generatorSuffix x k :=
   Subgroup.subset_closure ⟨i, hi, rfl⟩
 
@@ -94,8 +100,8 @@ theorem generatorSuffix_succ {n : ℕ} (x : Fin (n + 1) → G) (k : ℕ) :
 theorem closure_range_eq_generatorSuffix_sup_zpowers {n : ℕ} (x : Fin (n + 1) → G) :
     Subgroup.closure (Set.range x) = generatorSuffix x 1 ⊔ Subgroup.zpowers (x 0) := by
   rw [Fin.range_fin_succ, Set.insert_eq, Subgroup.closure_union,
-    ← Subgroup.zpowers_eq_closure, sup_comm, generatorSuffix_succ, generatorSuffix_zero]
-  rfl
+    ← Subgroup.zpowers_eq_closure, sup_comm, generatorSuffix_succ, generatorSuffix_zero,
+    Fin.tail_def]
 
 -- The induction establishes finiteness before using it to turn one-sided conjugation
 -- into normalization. Its two conclusions are exposed separately below.
@@ -121,22 +127,14 @@ private theorem power_conjugate_bound {n : ℕ} (x : Fin n → G)
     have : Finite (generatorSuffix x 1) := heq ▸ htail.1
     have hnorm : x 0 ∈ Subgroup.normalizer (generatorSuffix x 1) := by
       apply Subgroup.mem_normalizer_fintype
-      intro g hg
-      rw [generatorSuffix_def] at hg
-      induction hg using Subgroup.closure_induction with
-      | mem g hg =>
-        obtain ⟨j, hj, rfl⟩ := hg
-        have hj' : 1 ≤ (j : ℕ) := by simpa only [Set.mem_ofPred_eq] using hj
-        simpa only [Fin.val_zero, zero_add, SetLike.mem_coe] using hconj 0 j (by
+      have h : (generatorSuffix x 1).map (MulAut.conj (x 0)).toMonoidHom ≤
+          generatorSuffix x 1 := by
+        rw [Subgroup.map_le_iff_le_comap, generatorSuffix_le_iff]
+        intro j hj
+        simpa using hconj 0 j (by
           simp only [Fin.lt_def, Fin.val_zero]
           omega)
-      | one => simp
-      | mul a b _ _ ha hb =>
-        rw [← MulAut.conj_apply, map_mul, MulAut.conj_apply, MulAut.conj_apply]
-        exact (generatorSuffix x 1).mul_mem ha hb
-      | inv a _ ha =>
-        rw [← MulAut.conj_apply, map_inv, MulAut.conj_apply]
-        exact (generatorSuffix x 1).inv_mem ha
+      exact fun g hg ↦ h ⟨g, hg, rfl⟩
     have hf := (generatorSuffix x 1).finite_sup_zpowers (hm 0) hnorm (hpow 0)
     have hc := (generatorSuffix x 1).card_sup_zpowers_le (hm 0) hnorm (hpow 0)
     rw [closure_range_eq_generatorSuffix_sup_zpowers]
