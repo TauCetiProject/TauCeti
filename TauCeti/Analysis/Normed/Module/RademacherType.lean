@@ -177,20 +177,13 @@ theorem rademacherNorm_le_sum_of_forall_norm_le {G : κ → Type*}
     rademacherNorm z ≤ ∑ k ∈ s, rademacherNorm (x k) := by
   -- The quadratic mean `M a = (𝔼_ε (a ε)²)^(1/2)` of a real function on the sign cube.
   let M : ((ι → ℤˣ) → ℝ) → ℝ := fun a ↦ √(𝔼 ε, a ε ^ 2)
+  -- Minkowski's inequality at exponent `2` for the sum, divided by `√(card)` for the average.
   have hM (a b : (ι → ℤˣ) → ℝ) : M (a + b) ≤ M a + M b := by
-    have hA : M a ^ 2 = 𝔼 ε, a ε ^ 2 := Real.sq_sqrt (expect_nonneg fun _ _ ↦ sq_nonneg _)
-    have hB : M b ^ 2 = 𝔼 ε, b ε ^ 2 := Real.sq_sqrt (expect_nonneg fun _ _ ↦ sq_nonneg _)
-    have hA0 : 0 ≤ M a := Real.sqrt_nonneg _
-    have hB0 : 0 ≤ M b := Real.sqrt_nonneg _
-    -- Cauchy–Schwarz for the average bounds the cross term.
-    have hab : 𝔼 ε, a ε * b ε ≤ M a * M b := by
-      refine (le_abs_self _).trans (abs_le_of_sq_le_sq ?_ (mul_nonneg hA0 hB0))
-      rw [mul_pow, hA, hB]
-      exact expect_mul_sq_le_sq_mul_sq univ a b
-    rw [Real.sqrt_le_left (add_nonneg hA0 hB0)]
-    calc 𝔼 ε, (a + b) ε ^ 2 = 𝔼 ε, a ε ^ 2 + 2 * 𝔼 ε, a ε * b ε + 𝔼 ε, b ε ^ 2 := by
-          simp_rw [Pi.add_apply, add_sq, expect_add_distrib, mul_expect, mul_assoc]
-      _ ≤ _ := by rw [← hA, ← hB]; nlinarith
+    have h := Real.Lp_add_le univ a b one_le_two
+    simp only [Real.rpow_two, sq_abs, ← Real.sqrt_eq_rpow] at h
+    simp only [M, Fintype.expect_eq_sum_div_card, Real.sqrt_div' _ (Nat.cast_nonneg _),
+      Pi.add_apply, ← add_div]
+    gcongr
   calc rademacherNorm z ≤ M (∑ k ∈ s, fun ε ↦ ‖∑ i, ε i • x k i‖) := by
         refine Real.sqrt_le_sqrt (expect_le_expect fun ε _ ↦ ?_)
         rw [Finset.sum_apply]
