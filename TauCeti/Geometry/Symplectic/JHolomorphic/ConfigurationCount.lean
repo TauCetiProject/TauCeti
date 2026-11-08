@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
+public import TauCeti.RingTheory.NovikovSeries.PowerSeries
 
 /-!
 # Weighted counts of compatible configurations of pseudoholomorphic curves
@@ -56,6 +57,20 @@ components of a configuration onto the ray. The count over all candidates agrees
 count in class `j • A₀` under the additional hypothesis that every configuration of that class
 consists of ray tori (`TauCeti.configurationCount_eq_of_forall_support_subset`).
 
+For the orbit tori of a surface mapping torus, which are pairwise disjoint and do not lie on a
+single ray, the counts are collected over all classes at once. If the candidates have positive
+period `N : H →+ ℝ`, for instance the symplectic area, with finitely many below each cutoff, then
+only finitely many classes below each cutoff have a nonzero count
+(`TauCeti.finite_setOf_configurationCount_ne_zero_lt`), so the counts are the coefficients of a
+Novikov series `∑_A Gr(A) e^A`, the generating series `TauCeti.configurationCountSeries`. Adding
+to a finite family of pairwise compatible candidates one more candidate `c` multiplies the
+generating series by its local series at `e ^ cls c`, so for finitely many candidates the counts
+are the coefficients of the product of their local series
+(`TauCeti.configurationCount_eq_coeff_prod_ofPowerSeries`). Below each cutoff only finitely many
+candidates matter, so for a pairwise compatible family the generating series is the infinite
+product `∏_c f c (e ^ cls c)` of the local series in the period topology
+(`TauCeti.hasProd_ofPowerSeries_configurationCountSeries`).
+
 The candidate images, their classes, labels and weights, the area bounds and the positivity of
 intersections are inputs here; the geometric theorems supplying them are separate.
 
@@ -68,6 +83,7 @@ intersections are inputs here; the geometric theorems supplying them are separat
 * `TauCeti.finite_compatibleConfigurations`: finiteness of the configurations of a class.
 * `TauCeti.configurationCount_zero`, `TauCeti.configurationCount_eq_zero_of_area_neg`: the
   counts in class zero and in classes of negative area.
+* `TauCeti.configurationCount_empty`: the counts with no candidates.
 * `TauCeti.configurationCount_eq_of_area_lt`: candidates of area larger than `ω A` do not
   contribute.
 * `TauCeti.configurationCount_eq_of_forall_support_subset`: the conditional comparison of the
@@ -78,6 +94,11 @@ intersections are inputs here; the geometric theorems supplying them are separat
   `TauCeti.configurationCount_eq_coeff_prod_expand`,
   `TauCeti.configurationCount_eq_coeff_rayTorusWeightSeries`,
   `TauCeti.mk_configurationCount_eq_tprod`: the ray count is computed by the ray series.
+* `TauCeti.configurationCountSeries`: the generating series of the counts of all classes, as a
+  Novikov series.
+* `TauCeti.configurationCount_eq_coeff_prod_ofPowerSeries`,
+  `TauCeti.hasProd_ofPowerSeries_configurationCountSeries`: for pairwise compatible candidates,
+  the generating series is the product of the local series.
 
 ## References
 
@@ -195,21 +216,32 @@ end Nonneg
 variable (hpos : ∀ c ∈ s, 0 < ω (cls c))
 include hpos
 
+/-- **Finiteness below an area bound.** If the candidates have positive area and only finitely
+many of them have area at most `C`, then only finitely many multiplicity assignments supported
+in the candidates have total area at most `C`. -/
+theorem finite_setOf_support_subset_area_le {C : ℝ} (hfin : {c ∈ s | ω (cls c) ≤ C}.Finite) :
+    {l : ι →₀ ℕ | ↑l.support ⊆ s ∧ ω (Finsupp.linearCombination ℕ cls l) ≤ C}.Finite := by
+  classical
+  refine (hfin.toFinset.finsupp fun c ↦ Finset.range (⌊C / ω (cls c)⌋₊ + 1)).finite_toSet.subset
+    fun l hl ↦ ?_
+  -- With no compatibility condition, `l` is a configuration in its own class.
+  have hl' : l ∈ compatibleConfigurations (fun _ _ ↦ True) cls s
+      (Finsupp.linearCombination ℕ cls l) := ⟨hl.1, fun _ _ _ _ _ ↦ trivial, rfl⟩
+  rw [Finset.mem_coe, Finset.mem_finsupp_iff]
+  have hnonneg : ∀ c ∈ s, 0 ≤ ω (cls c) := fun c hc ↦ (hpos c hc).le
+  refine ⟨fun c hc ↦ hfin.mem_toFinset.2
+    ⟨hl.1 hc, (area_le_of_mem_compatibleConfigurations hnonneg hl' hc).trans hl.2⟩,
+    fun c hc ↦ ?_⟩
+  rw [Finset.mem_range, Nat.lt_succ_iff]
+  exact Nat.le_floor ((le_div_iff₀ (hpos c (hfin.mem_toFinset.1 hc).1)).2
+    ((mul_area_le_of_mem_compatibleConfigurations hnonneg hl' c).trans hl.2))
+
 /-- **Finiteness of configurations.** If the candidates have positive area and only finitely
 many of them have area at most `ω A`, then there are only finitely many configurations in
 class `A`. -/
 theorem finite_compatibleConfigurations (hfin : {c ∈ s | ω (cls c) ≤ ω A}.Finite) :
-    (compatibleConfigurations r cls s A).Finite := by
-  classical
-  refine (hfin.toFinset.finsupp fun c ↦ Finset.range (⌊ω A / ω (cls c)⌋₊ + 1)).finite_toSet.subset
-    fun l hl ↦ ?_
-  rw [Finset.mem_coe, Finset.mem_finsupp_iff]
-  have hnonneg : ∀ c ∈ s, 0 ≤ ω (cls c) := fun c hc ↦ (hpos c hc).le
-  refine ⟨fun c hc ↦ hfin.mem_toFinset.2
-    ⟨hl.1 hc, area_le_of_mem_compatibleConfigurations hnonneg hl hc⟩, fun c hc ↦ ?_⟩
-  rw [Finset.mem_range, Nat.lt_succ_iff]
-  exact Nat.le_floor ((le_div_iff₀ (hpos c (hfin.mem_toFinset.1 hc).1)).2
-    (mul_area_le_of_mem_compatibleConfigurations hnonneg hl c))
+    (compatibleConfigurations r cls s A).Finite :=
+  (finite_setOf_support_subset_area_le hpos hfin).subset fun _ hl ↦ ⟨hl.1, by rw [hl.2.2]⟩
 
 /-- The empty configuration is the only configuration in class zero. -/
 theorem compatibleConfigurations_zero : compatibleConfigurations r cls s 0 = {0} := by
@@ -283,6 +315,19 @@ theorem configurationCount_eq_of_area_lt (hts : t ⊆ s) (h : ∀ c ∈ s, c ∉
     compatibleConfigurations_eq_of_area_lt hnonneg hts h]
 
 end Area
+
+/-- With no candidates, the empty configuration in class zero is the only configuration. -/
+@[simp]
+theorem configurationCount_empty [DecidableEq H] (A : H) :
+    configurationCount r cls w ∅ A = if A = 0 then 1 else 0 := by
+  split_ifs with hA
+  · rw [hA]
+    exact configurationCount_zero (ω := 0) fun _ hc ↦ hc.elim
+  · rw [configurationCount_def, finsum_mem_eq_zero_of_forall_eq_zero]
+    rintro l ⟨hl, -, hlA⟩
+    rw [Finsupp.support_eq_empty.1 (Finset.coe_eq_empty.1 (Set.subset_empty_iff.1 hl)),
+      map_zero] at hlA
+    exact absurd hlA.symm hA
 
 end Configuration
 
@@ -409,5 +454,192 @@ theorem mk_configurationCount_eq_tprod {w : ι → ℕ → ℤ} (hT : T.Pairwise
       (torusWeightSeries (σ c) (i c))), Finset.filter_true_of_mem fun c hc ↦ hsT hc]
 
 end Ray
+
+/-! ### The generating series in the Novikov completion -/
+
+section Series
+
+open NovikovSeries
+
+variable [AddCommMonoid H] {N : H →+ ℝ} {r : ι → ι → Prop} {cls : ι → H} {s : Set ι}
+
+section CommSemiring
+
+variable [CommSemiring R]
+
+/-- If the candidates have positive period `N` and only finitely many of them have period at most
+each cutoff, then below each cutoff only finitely many classes have a nonzero count. -/
+theorem finite_setOf_configurationCount_ne_zero_lt (hpos : ∀ c ∈ s, 0 < N (cls c))
+    (hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite) (w : ι → ℕ → R) (C : ℝ) :
+    {A | configurationCount r cls w s A ≠ 0 ∧ N A < C}.Finite := by
+  refine ((finite_setOf_support_subset_area_le hpos (hfin C)).image
+    (Finsupp.linearCombination ℕ cls)).subset fun A ⟨hA, hAC⟩ ↦ ?_
+  rw [configurationCount_def] at hA
+  obtain ⟨l, hl, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero hA
+  exact ⟨l, ⟨hl.1, by rw [hl.2.2]; exact hAC.le⟩, hl.2.2⟩
+
+variable (r cls) in
+/-- The **generating series of the configuration counts**: the Novikov series `∑_A Gr(A) e^A`
+whose coefficient at a class `A` is the weighted count of the compatible configurations in class
+`A`. The period `N`, for instance the symplectic area, or the period of the orbit for the orbit
+tori of a mapping torus, must be positive on the candidates, with finitely many candidates below
+each cutoff (`TauCeti.finite_setOf_configurationCount_ne_zero_lt`). -/
+noncomputable def configurationCountSeries (w : ι → ℕ → R) (hpos : ∀ c ∈ s, 0 < N (cls c))
+    (hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite) : NovikovSeries R H N where
+  coeff := configurationCount r cls w s
+  finite_lt := finite_setOf_configurationCount_ne_zero_lt hpos hfin w
+
+@[simp]
+theorem coeff_configurationCountSeries {w : ι → ℕ → R} {hpos : ∀ c ∈ s, 0 < N (cls c)}
+    {hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite} (A : H) :
+    (configurationCountSeries r cls w hpos hfin).coeff A = configurationCount r cls w s A :=
+  (rfl)
+
+variable {w : ι → ℕ → R} {f : ι → R⟦X⟧}
+
+/-- A configuration of `t`, together with a candidate `c` compatible with `t` and taken `k`
+times, is a configuration of `t ∪ {c}`. -/
+private theorem single_add_mem_compatibleConfigurations_insert {c : ι} {t : Set ι}
+    (ht : (insert c t).Pairwise r) {m : ι →₀ ℕ} {B : H}
+    (hm : m ∈ compatibleConfigurations r cls t B) (k : ℕ) :
+    Finsupp.single c k + m ∈ compatibleConfigurations r cls (insert c t) (k • cls c + B) := by
+  classical
+  have hsupp : ↑(Finsupp.single c k + m).support ⊆ insert c t := fun d hd ↦ by
+    rcases Finset.mem_union.1 (Finsupp.support_add hd) with hd | hd
+    · exact Or.inl (Finset.mem_singleton.1 (Finsupp.support_single_subset hd))
+    · exact Or.inr (hm.1 hd)
+  refine ⟨hsupp, ht.mono hsupp, ?_⟩
+  rw [map_add, Finsupp.linearCombination_single, hm.2.2]
+
+/-- Removing a candidate `c` from a configuration of `t ∪ {c}` leaves a configuration of `t`. -/
+private theorem erase_mem_compatibleConfigurations {c : ι} {t : Set ι}
+    (ht : (insert c t).Pairwise r) {l : ι →₀ ℕ} {A : H}
+    (hl : l ∈ compatibleConfigurations r cls (insert c t) A) :
+    l.erase c ∈ compatibleConfigurations r cls t (Finsupp.linearCombination ℕ cls (l.erase c)) := by
+  classical
+  have hsupp : ↑(l.erase c).support ⊆ t := fun d hd ↦ by
+    rw [Finset.mem_coe, Finsupp.support_erase, Finset.mem_erase] at hd
+    exact (hl.1 hd.2).resolve_left hd.1
+  exact ⟨hsupp, ht.mono (hsupp.trans (Set.subset_insert c t)), rfl⟩
+
+/-- **Adding one candidate.** Let `c` be a candidate, not in `t`, compatible with every candidate
+of the finite set `t`, and let its weights `w c k = [t ^ k] f c` come from a series with constant
+term `1`. If `b` is the generating series of the counts over `t`, then `f c (e ^ cls c) * b` is
+that of the counts over `t ∪ {c}`. -/
+private theorem coeff_ofPowerSeries_mul_eq_configurationCount_insert {c : ι} {t : Set ι}
+    (hct : c ∉ t) (ht : (insert c t).Pairwise r) (htfin : t.Finite)
+    (hpos : ∀ d ∈ insert c t, 0 < N (cls d)) (hw : ∀ k, w c k = coeff k (f c))
+    (hf : constantCoeff (f c) = 1) {b : NovikovSeries R H N}
+    (hb : ∀ B, b.coeff B = configurationCount r cls w t B) (A : H) :
+    (ofPowerSeries (cls c) (hpos c (Set.mem_insert c t)) (f c) * b).coeff A =
+      configurationCount r cls w (insert c t) A := by
+  classical
+  have hγ := hpos c (Set.mem_insert c t)
+  have hinj : Function.Injective fun k : ℕ ↦ k • cls c := fun k k' h ↦ by
+    have h' := congrArg N h
+    simp only [map_nsmul, nsmul_eq_mul] at h'
+    exact_mod_cast mul_right_cancel₀ hγ.ne' h'
+  have hfin (u : Set ι) (hu : u ⊆ insert c t) (B : H) :=
+    finite_compatibleConfigurations (r := r) (A := B) (fun d hd ↦ hpos d (hu hd))
+      (((htfin.insert c).subset hu).subset fun d hd ↦ hd.1)
+  have hw0 : w c 0 = 1 := by rw [hw, coeff_zero_eq_constantCoeff_apply, hf]
+  have hmc {m : ι →₀ ℕ} {B : H} (hm : m ∈ compatibleConfigurations r cls t B) : m c = 0 :=
+    Finsupp.notMem_support_iff.1 fun h ↦ hct (hm.1 h)
+  -- Adding `c` to a configuration of `t`, and splitting a configuration at `c`.
+  have hle {m : ι →₀ ℕ} (hm : m c = 0) (k : ℕ) : (Finsupp.single c k + m).erase c = m := by
+    rw [Finsupp.erase_add, Finsupp.erase_single, zero_add,
+      Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.2 hm)]
+  have hsplit (l : ι →₀ ℕ) : l c • cls c + Finsupp.linearCombination ℕ cls (l.erase c) =
+      Finsupp.linearCombination ℕ cls l := by
+    simpa only [Finsupp.linearCombination_apply] using
+      Finsupp.add_sum_erase' l c (fun i n ↦ n • cls i) fun _ ↦ zero_smul _ _
+  -- The coefficient of the product at `A` is regrouped along the map sending a configuration of
+  -- `t ∪ {c}` to the class of its `c`-part and the class of the rest.
+  let φ : (ι →₀ ℕ) → H × H := fun l ↦ (l c • cls c, Finsupp.linearCombination ℕ cls (l.erase c))
+  set L := (hfin (insert c t) le_rfl A).toFinset
+  rw [configurationCount_eq_sum (hfin (insert c t) le_rfl A),
+    coeff_mul_eq_sum (s := L.image φ) (fun p hp ↦ ?_) fun u v huv hu hv ↦ ?_]
+  · refine Finset.sum_image' _ fun l hl ↦ ?_
+    rw [coeff_ofPowerSeries_nsmul, hb, configurationCount_eq_sum (hfin t (Set.subset_insert c t) _),
+      Finset.mul_sum, ← hw]
+    refine Finset.sum_nbij' (fun m ↦ Finsupp.single c (l c) + m) (fun l' ↦ l'.erase c)
+      (fun m hm ↦ ?_) (fun l' hl' ↦ ?_) (fun m hm ↦ ?_) (fun l' hl' ↦ ?_) fun m hm ↦ ?_
+    · rw [Set.Finite.mem_toFinset] at hm
+      rw [Finset.mem_filter, Set.Finite.mem_toFinset]
+      refine ⟨?_, by simp [φ, hmc hm, hle (hmc hm), hm.2.2]⟩
+      rw [← (Set.Finite.mem_toFinset _).1 hl |>.2.2, ← hsplit]
+      exact single_add_mem_compatibleConfigurations_insert ht hm (l c)
+    · rw [Finset.mem_filter, Set.Finite.mem_toFinset] at hl'
+      rw [Set.Finite.mem_toFinset, ← (Prod.ext_iff.1 hl'.2).2]
+      exact erase_mem_compatibleConfigurations ht hl'.1
+    · rw [Set.Finite.mem_toFinset] at hm
+      exact hle (hmc hm) _
+    · rw [Finset.mem_filter] at hl'
+      rw [← hinj (Prod.ext_iff.1 hl'.2).1, Finsupp.single_add_erase]
+    · rw [Set.Finite.mem_toFinset] at hm
+      rw [Finsupp.prod_add_index_of_disjoint (Finset.disjoint_of_subset_left
+        Finsupp.support_single_subset (Finset.disjoint_singleton_left.2
+          (Finsupp.notMem_support_iff.2 (hmc hm)))), Finsupp.prod_single_index hw0]
+  · obtain ⟨l, hl, rfl⟩ := Finset.mem_image.1 hp
+    exact (hsplit l).trans ((Set.Finite.mem_toFinset _).1 hl).2.2
+  · -- A nonzero pair of coefficients comes from a configuration of `t ∪ {c}`.
+    obtain ⟨k, rfl⟩ : ∃ k : ℕ, k • cls c = u := by
+      by_contra h
+      exact hu (coeff_ofPowerSeries_of_forall_nsmul_ne hγ (fun k hk ↦ h ⟨k, hk⟩) _)
+    rw [hb, configurationCount_def] at hv
+    obtain ⟨m, hm, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero hv
+    refine Finset.mem_image.2 ⟨Finsupp.single c k + m, (Set.Finite.mem_toFinset _).2 ?_, ?_⟩
+    · rw [← huv]
+      exact single_add_mem_compatibleConfigurations_insert ht hm k
+    · simp [φ, hmc hm, hle (hmc hm), hm.2.2]
+
+/-- **Independent-component expansion over finitely many candidates.** Let the candidates of `s`
+be pairwise compatible, of positive period `N`, with weights `w c k = [t ^ k] f c` given by series
+`f c` with constant term `1`. For every finite family `T` of candidates, the count in class `A` of
+the configurations of candidates from `T` is the coefficient at `A` of the product
+`∏_{c ∈ T} f c (e ^ cls c)` of the local series at the monomials of the classes. -/
+theorem configurationCount_eq_coeff_prod_ofPowerSeries (hs : s.Pairwise r)
+    (hpos : ∀ c ∈ s, 0 < N (cls c)) (hw : ∀ c ∈ s, ∀ k, w c k = coeff k (f c))
+    (hf : ∀ c ∈ s, constantCoeff (f c) = 1) (T : Finset s) (A : H) :
+    configurationCount r cls w (Subtype.val '' (T : Set s)) A =
+      (∏ c ∈ T, ofPowerSeries (cls c) (hpos c c.2) (f c)).coeff A := by
+  classical
+  symm
+  induction T using Finset.induction_on generalizing A with
+  | empty => simp [configurationCount_empty]
+  | @insert c T hc ih =>
+    have hsub : insert (c : ι) (Subtype.val '' (T : Set s)) ⊆ s :=
+      Set.insert_subset c.2 (Set.image_subset_iff.2 fun e _ ↦ e.2)
+    rw [Finset.prod_insert hc, Finset.coe_insert, Set.image_insert_eq]
+    exact coeff_ofPowerSeries_mul_eq_configurationCount_insert
+      (fun h ↦ hc (Subtype.val_injective.mem_set_image.1 h)) (hs.mono hsub)
+      (T.finite_toSet.image _) (fun d hd ↦ hpos d (hsub hd)) (hw c c.2) (hf c c.2) ih A
+
+end CommSemiring
+
+variable [CommRing R] {w : ι → ℕ → R} {f : ι → R⟦X⟧}
+
+/-- **The generating series is the product of the local series.** Let the candidates of `s` be
+pairwise compatible, as distinct orbit tori of a mapping torus are, of positive period `N` and
+finitely many below each cutoff, with weights `w c k = [t ^ k] f c` given by series `f c` with
+constant term `1`. Then the generating series `∑_A Gr(A) e^A` of the configuration counts is the
+infinite product `∏_c f c (e ^ cls c)` over the candidates, in the period topology. -/
+theorem hasProd_ofPowerSeries_configurationCountSeries (hs : s.Pairwise r)
+    (hpos : ∀ c ∈ s, 0 < N (cls c)) (hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite)
+    (hw : ∀ c ∈ s, ∀ k, w c k = coeff k (f c)) (hf : ∀ c ∈ s, constantCoeff (f c) = 1) :
+    HasProd (fun c : s ↦ ofPowerSeries (cls c) (hpos c c.2) (f c))
+      (configurationCountSeries r cls w hpos hfin) := by
+  refine tendsto_nhds_iff.2 fun C ↦ ?_
+  -- Below the cutoff `C`, only the candidates of period less than `C` matter.
+  have hC : {c : s | N (cls c) < C}.Finite :=
+    ((hfin C).preimage Subtype.val_injective.injOn).subset fun c hc ↦ ⟨c.2, le_of_lt hc⟩
+  filter_upwards [Filter.eventually_ge_atTop hC.toFinset] with T hT A hA
+  rw [← configurationCount_eq_coeff_prod_ofPowerSeries hs hpos hw hf,
+    coeff_configurationCountSeries]
+  refine configurationCount_eq_of_area_lt (fun c hc ↦ (hpos c hc).le)
+    (Set.image_subset_iff.2 fun c _ ↦ c.2) fun c hc hcT ↦ hA.trans_le (not_lt.1 fun hcC ↦ hcT ?_)
+  exact ⟨⟨c, hc⟩, hT (hC.mem_toFinset.2 hcC), rfl⟩
+
+end Series
 
 end TauCeti
