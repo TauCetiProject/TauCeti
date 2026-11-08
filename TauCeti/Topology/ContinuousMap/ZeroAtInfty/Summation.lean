@@ -40,13 +40,15 @@ theorem norm_tsum_le {I E : Type*} [TopologicalSpace I] [SeminormedAddCommGroup 
   IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg f)
     (norm_coe_le_norm f)
 
+/-- A null family with values in a complete ultrametric seminormed group is unconditionally
+summable. -/
+theorem summable {I E : Type*} [TopologicalSpace I] [DiscreteTopology I]
+    [SeminormedAddCommGroup E] [IsUltrametricDist E] [CompleteSpace E]
+    (f : C₀(I, E)) : Summable f :=
+  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero f.tendsto_cofinite
+
 variable {I J R E F : Type*} [TopologicalSpace I] [DiscreteTopology I]
   [NormedAddCommGroup E] [IsUltrametricDist E] [CompleteSpace E]
-
-/-- A null family with values in a complete ultrametric normed group is unconditionally
-summable. -/
-theorem summable (f : C₀(I, E)) : Summable f :=
-  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero f.tendsto_cofinite
 
 variable (R) [Semiring R] [Module R E] [ContinuousConstSMul R E]
 
