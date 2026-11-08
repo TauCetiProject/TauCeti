@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
-public import TauCeti.RingTheory.MvPolynomial.LineRestriction
 public import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
 public import Mathlib.Topology.Algebra.MvPolynomial
 
