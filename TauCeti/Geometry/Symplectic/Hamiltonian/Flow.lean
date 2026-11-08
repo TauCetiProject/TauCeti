@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Dynamics.Flow.Variational
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.MeanValue
 
@@ -14,7 +15,8 @@ import Mathlib.Analysis.Calculus.MeanValue
 # Autonomous Hamiltonian flows
 
 A globally Lipschitz Hamiltonian vector field on a finite-dimensional symplectic vector space
-has a canonical global flow. The Hamiltonian is constant along each orbit. For a `C²`
+has a canonical global flow. This applies in particular to every `C²` Hamiltonian with compact
+support. The Hamiltonian is constant along each orbit. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating
 the pairing of two variations and using symmetry of the Hessian gives zero.
 
@@ -30,6 +32,18 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   (ω : SymplecticForm V) (H : V → ℝ) {K : ℝ≥0}
+
+/-- A `C²` Hamiltonian with compact support has a globally Lipschitz Hamiltonian vector field, so
+its flow `TauCeti.SymplecticForm.hamiltonianFlow` is defined for all times. -/
+theorem exists_lipschitzWith_hamiltonianVectorField (hH : ContDiff ℝ 2 H)
+    (hc : HasCompactSupport H) : ∃ K, LipschitzWith K (ω.hamiltonianVectorField H) := by
+  refine (ω.contDiff_hamiltonianVectorField (n := 1)
+    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport ?_
+    one_ne_zero
+  have h : ω.hamiltonianVectorField H =
+      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
+    funext (ω.hamiltonianVectorField_def H)
+  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
 
 /-- The autonomous Hamiltonian flow, defined for all real times when its vector field is
 globally Lipschitz. -/
