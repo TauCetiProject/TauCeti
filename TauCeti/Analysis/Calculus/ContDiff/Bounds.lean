@@ -45,6 +45,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: for `x` in a compact set
   and `ξ` in a ball, the derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
+* `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
+  ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 -/
 
 public section
@@ -161,3 +163,22 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {
     _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
         mul_le_mul_of_nonneg_left (TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
           (by positivity)
+
+/-- A `C^n` map which agrees outside a ball with a map whose order-`n` derivative is bounded
+there has a bounded order-`n` derivative: on the closed ball the derivative is continuous, and
+outside it the two derivatives coincide. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] {n : ℕ}
+    {f g : E → F} (hf : ContDiff 𝕜 n f) {R C : ℝ} (hfg : ∀ x, R < ‖x‖ → f x = g x)
+    (hg : ∀ x, R < ‖x‖ → ‖iteratedFDeriv 𝕜 n g x‖ ≤ C) :
+    ∃ C', ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C' := by
+  obtain ⟨C₀, hC₀⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv le_rfl).continuousOn
+  refine ⟨max C₀ C, fun x ↦ ?_⟩
+  by_cases hx : ‖x‖ ≤ R
+  · exact (hC₀ x (mem_closedBall_zero_iff.2 hx)).trans (le_max_left _ _)
+  rw [not_le] at hx
+  have hfg' : f =ᶠ[nhds x] g := by
+    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
+    exact hfg y hy
+  rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
+  exact (hg x hx).trans (le_max_right _ _)

@@ -76,6 +76,24 @@ theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
   ring
 
+/-- Two fields agree at a point when their connection coordinates and their sections agree
+there. -/
+theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (h₀ : x z 0 = y z 0) (h₁ : x z 1 = y z 1) (hs : sectionValue x z = sectionValue y z) :
+    x z = y z := by
+  have h₂ := congrArg re hs
+  have h₃ := congrArg im hs
+  simp only [sectionValue_apply, mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re,
+    I_im, re_ofNat, im_ofNat] at h₂ h₃
+  ext i
+  fin_cases i
+  · exact h₀
+  · exact h₁
+  · simp only [Fin.reduceFinMk, Fin.isValue]
+    linarith
+  · simp only [Fin.reduceFinMk, Fin.isValue]
+    linarith
+
 /-- The squared modulus `|α|² = 4 (p² + q²)` of the section in the real field coordinates. -/
 theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by

@@ -23,6 +23,8 @@ nonzero.
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
+A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -32,6 +34,7 @@ values there.
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
+* `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 -/
 
 public section
@@ -70,5 +73,10 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
     Set.MapsTo f s (closedBall (f c) (2 * M)) := fun y hy => by
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
+
+/-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
+theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
+    z + a ≠ 0 :=
+  fun h' ↦ h.ne' (by rw [eq_neg_of_add_eq_zero_left h', norm_neg])
 
 end TauCeti
