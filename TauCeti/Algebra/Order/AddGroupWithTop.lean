@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Order.AddGroupWithTop
 
 For a linearly ordered additive commutative group `G`, translating an element `x : WithTop G`
 by a finite `c : G` translates its finite lower bounds by the same amount. These are the
-`WithTop` versions of `le_sub_iff_add_le` and `sub_le_sub_iff_right`, which do not apply
+`WithTop` versions of `sub_le_iff_le_add` and `sub_le_sub_iff_right`, which do not apply
 directly since `WithTop G` is not a group.
 
 ## Main results
