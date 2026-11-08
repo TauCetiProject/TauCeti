@@ -86,12 +86,7 @@ theorem countdownInvariantMeasure_univ (μ : Measure ℕ) :
 
 /-- Each state has finite tail mass for finite reset laws, even with infinite first moment. -/
 instance (μ : Measure ℕ) [IsFiniteMeasure μ] : SigmaFinite μ.countdownInvariantMeasure := by
-  apply sigmaFinite_of_countable (S := Set.range (fun j : ℕ => ({j} : Set ℕ)))
-    (countable_range _)
-  · rintro s ⟨j, rfl⟩
-    simp
-  · ext j
-    simp
+  exact Measure.sigmaFinite_iff_measure_singleton_lt_top.mpr (fun j => by simp)
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
