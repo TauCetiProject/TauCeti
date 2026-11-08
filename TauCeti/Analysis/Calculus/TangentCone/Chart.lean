@@ -104,9 +104,12 @@ cone of `S` at `y` onto the tangent cone of `T` at `Φ y`. -/
 theorem image_tangentConeAt_eq_of_preimage_eq {Φ : E ≃ₜ F} {S : Set E} {T : Set F} {y : E}
     {A : E ≃L[𝕜] F} (hST : Φ ⁻¹' T = S) (hA : HasFDerivAt Φ (A : E →L[𝕜] F) y) :
     A '' tangentConeAt 𝕜 S y = tangentConeAt 𝕜 T (Φ y) := by
-  have h := image_tangentConeAt_eq_tangentConeAt_preimage_symm (S := S)
-    (e := Φ.toOpenPartialHomeomorph) (mem_univ y) hA
-  simpa [← hST, ← Set.preimage_comp] using h
+  have hA' : HasFDerivAt Φ.toOpenPartialHomeomorph (A : E →L[𝕜] F) y := by
+    rwa [Homeomorph.toOpenPartialHomeomorph_apply]
+  have h := image_tangentConeAt_eq_tangentConeAt_preimage_symm (S := S) (mem_univ y) hA'
+  subst hST
+  rwa [Homeomorph.toOpenPartialHomeomorph_symm_apply, Homeomorph.toOpenPartialHomeomorph_apply,
+    Homeomorph.preimage_symm, Φ.image_preimage] at h
 
 namespace IsSliceChart
 

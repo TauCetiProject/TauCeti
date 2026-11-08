@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Transversality
+import TauCeti.Dynamics.Flow.Variational
 
 /-!
 # The Morse–Smale condition for a negative-gradient flow
@@ -116,8 +117,10 @@ theorem IsMorseSmale.of_forall_exists_negativeGradientFlow {f : E → ℝ} {K : 
     IsMorseSmale f hf :=
   .of_forall fun _ _ _ hp hq hy ↦ by
     obtain ⟨t, ht⟩ := h hp hq hy
-    exact (span_tangentConeAt_sup_span_tangentConeAt_negativeGradientFlow_apply_eq_top_iff f hf
-      hfs (Flow.isInvariant_unstableSet _ _) (Flow.isInvariant_stableSet _ _) t _).1 ht
+    exact (_root_.Flow.span_tangentConeAt_sup_span_tangentConeAt_apply_eq_top_iff
+      (Flow.isInvariant_unstableSet _ _) (Flow.isInvariant_stableSet _ _)
+      (differentiable_negativeGradientFlow_apply f hf hfs (-t) _)
+      (differentiable_negativeGradientFlow_apply f hf hfs t _)).1 ht
 
 variable [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
 

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Dynamics.Flow.OfLipschitz
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Dynamics.Flow.Variational
 
 /-!
@@ -43,11 +42,6 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 * `TauCeti.hasDerivAt_fderiv_negativeGradientFlow`: the variational equation
   `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`.
 * `TauCeti.fderiv_negativeGradientFlow_apply_gradient`: `Dφₜ(x)(∇f x) = ∇f(φₜ x)`.
-* `TauCeti.isInvertible_fderiv_negativeGradientFlow_apply`: `Dφₜ(x)` is invertible.
-* `TauCeti.span_tangentConeAt_negativeGradientFlow_apply`: `Dφₜ(y)` carries the tangent space of a
-  flow-invariant set at `y` onto its tangent space at `φₜ y`.
-* `TauCeti.span_tangentConeAt_sup_span_tangentConeAt_negativeGradientFlow_apply_eq_top_iff`: hence
-  two flow-invariant sets are transverse at `φₜ y` if and only if they are at `y`.
 * `TauCeti.continuous_fderiv_negativeGradientFlow_neg`: `σ ↦ Dφ_{-σ}(φ_σ x)` is continuous.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
@@ -152,54 +146,6 @@ theorem neg_gradient_mem_tangentConeAt_of_isInvariant (f : E → ℝ) (hf : Lips
   simpa only [Flow.map_zero_apply] using
     (hasDerivAt_negativeGradientFlow_zero f hf y).mem_tangentConeAt (S := S)
       (Filter.Eventually.of_forall fun t ↦ hS t hy)
-
-/-- For a globally `C²` function, the derivative of each time-`t` map of the negative-gradient flow
-is invertible: the time-`(-t)` map inverts the time-`t` map. -/
-theorem isInvertible_fderiv_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
-    (hfs : ContDiff ℝ 2 f) (t : ℝ) (y : E) :
-    (fderiv ℝ (negativeGradientFlow f hf t) y).IsInvertible :=
-  (negativeGradientFlow f hf).isInvertible_fderiv
-    (differentiable_negativeGradientFlow_apply f hf hfs (-t) _)
-    (differentiable_negativeGradientFlow_apply f hf hfs t y)
-
-/-- **Tangent spaces of invariant sets along the flow.** For a globally `C²` function, the
-derivative of the time-`t` map of the negative-gradient flow carries the tangent space at `y` of a
-flow-invariant set onto its tangent space at `φ_t y`. -/
-theorem span_tangentConeAt_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
-    (hfs : ContDiff ℝ 2 f) {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S) (t : ℝ)
-    (y : E) :
-    Submodule.span ℝ (tangentConeAt ℝ S (negativeGradientFlow f hf t y)) =
-      (Submodule.span ℝ (tangentConeAt ℝ S y)).map
-        (fderiv ℝ (negativeGradientFlow f hf t) y : E →ₗ[ℝ] E) := by
-  set Φ := (negativeGradientFlow f hf).toHomeomorph t
-  have hΦ : ⇑Φ = negativeGradientFlow f hf t := funext (Flow.toHomeomorph_apply _ t)
-  obtain ⟨A, hA⟩ := isInvertible_fderiv_negativeGradientFlow_apply f hf hfs t y
-  have hAd : HasFDerivAt Φ (A : E →L[ℝ] E) y := by
-    rw [hΦ, hA]
-    exact (differentiable_negativeGradientFlow_apply f hf hfs t y).hasFDerivAt
-  -- `Φ` preserves `S`: its inverse is the time-`(-t)` map.
-  have hST : Φ ⁻¹' S = S := by
-    ext z
-    refine ⟨fun hz ↦ ?_, fun hz ↦ hS t hz⟩
-    simpa only [Φ, Flow.toHomeomorph_apply, ← Flow.map_add, neg_add_cancel,
-      Flow.map_zero_apply] using hS (-t) hz
-  rw [← hA, Submodule.map_span, ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
-    image_tangentConeAt_eq_of_preimage_eq hST hAd, hΦ]
-
-/-- **Transversality propagates along trajectories.** For a globally `C²` function and two
-flow-invariant sets `S` and `T`, their tangent spaces span `E` at `φ_t y` if and only if they span
-`E` at `y`. -/
-theorem span_tangentConeAt_sup_span_tangentConeAt_negativeGradientFlow_apply_eq_top_iff
-    (f : E → ℝ) (hf : LipschitzWith K (∇ f)) (hfs : ContDiff ℝ 2 f) {S T : Set E}
-    (hS : IsInvariant (negativeGradientFlow f hf) S)
-    (hT : IsInvariant (negativeGradientFlow f hf) T) (t : ℝ) (y : E) :
-    Submodule.span ℝ (tangentConeAt ℝ S (negativeGradientFlow f hf t y)) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ T (negativeGradientFlow f hf t y)) = ⊤ ↔
-      Submodule.span ℝ (tangentConeAt ℝ S y) ⊔ Submodule.span ℝ (tangentConeAt ℝ T y) = ⊤ := by
-  obtain ⟨A, hA⟩ := isInvertible_fderiv_negativeGradientFlow_apply f hf hfs t y
-  rw [span_tangentConeAt_negativeGradientFlow_apply f hf hfs hS,
-    span_tangentConeAt_negativeGradientFlow_apply f hf hfs hT, ← Submodule.map_sup, ← hA]
-  exact Submodule.map_eq_top_iff
 
 /-- **The derivative of the negative-gradient flow carries the gradient along**:
 `Dφₜ(x) (∇f x) = ∇f (φₜ x)`. -/

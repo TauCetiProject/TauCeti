@@ -8,9 +8,12 @@ module
 public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.Dynamics.Flow.OfLipschitz
 public import TauCeti.Dynamics.Flow.TimeDependent
+public import Mathlib.Analysis.Calculus.TangentCone.Defs
 -- Private: parametric integrals and the chain rule are used only inside proofs.
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Dynamics.Flow.Stable
 
 /-!
 # The variational equation of a flow
@@ -37,6 +40,10 @@ compute the first-order dependence of the flow on parameters of the vector field
   invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
 * `Flow.fderiv_apply_of_hasDerivAt`: the derivative of a flow carries its velocity field
   along.
+* `Flow.span_tangentConeAt_apply` and
+  `Flow.span_tangentConeAt_sup_span_tangentConeAt_apply_eq_top_iff`: `Dϕ_t(x)` carries the
+  tangent spaces of flow-invariant sets at `x` onto those at `ϕ t x`, so two invariant sets are
+  transverse at `ϕ t x` if and only if they are at `x`.
 * `TauCeti.continuous_fderiv_flowOfLipschitz`, `TauCeti.continuous_fderiv_flowOfLipschitz_neg`:
   for a `C¹` field, `τ ↦ Dφ_τ(x)` and its inverse `σ ↦ Dφ_{-σ}(φ_σ x)` are continuous.
 * `TauCeti.contDiff_timeDependentFlow` and `TauCeti.hasDerivAt_fderiv_timeDependentFlow`: the
@@ -225,6 +232,37 @@ theorem fderiv_apply_of_hasDerivAt {a b : E} (hx : HasDerivAt (fun s ↦ ϕ s x)
     funext fun s ↦ by rw [← ϕ.map_add, ← ϕ.map_add, add_comm]
   rw [h2] at h1
   exact h1.unique hy
+
+/-- **Tangent spaces of invariant sets along a flow.** When the time-`t` map is differentiable at
+`x` and the time-`(-t)` map at `ϕ t x`, the derivative `Dϕ_t(x)` carries the tangent space at `x`
+of a flow-invariant set onto its tangent space at `ϕ t x`. -/
+theorem span_tangentConeAt_apply {S : Set E} (hS : IsInvariant ϕ S)
+    (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x)) (ht : DifferentiableAt ℝ (ϕ t) x) :
+    Submodule.span ℝ (tangentConeAt ℝ S (ϕ t x)) =
+      (Submodule.span ℝ (tangentConeAt ℝ S x)).map (fderiv ℝ (ϕ t) x : E →ₗ[ℝ] E) := by
+  obtain ⟨A, hA⟩ := ϕ.isInvertible_fderiv hs ht
+  have hΦ : ⇑(ϕ.toHomeomorph t) = ϕ t := funext (ϕ.toHomeomorph_apply t)
+  have hAd : HasFDerivAt (ϕ.toHomeomorph t) (A : E →L[ℝ] E) x := by
+    rw [hΦ, hA]
+    exact ht.hasFDerivAt
+  have hST : ϕ.toHomeomorph t ⁻¹' S = S :=
+    Set.ext fun z ↦ by rw [Set.mem_preimage, hΦ]; exact hS.flow_apply_mem_iff t
+  rw [← hA, Submodule.map_span, ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
+    TauCeti.image_tangentConeAt_eq_of_preimage_eq hST hAd, hΦ]
+
+/-- **Transversality propagates along a flow.** When the time-`t` map is differentiable at `x`
+and the time-`(-t)` map at `ϕ t x`, the tangent spaces of two flow-invariant sets span `E` at
+`ϕ t x` if and only if they span `E` at `x`. -/
+theorem span_tangentConeAt_sup_span_tangentConeAt_apply_eq_top_iff {S T : Set E}
+    (hS : IsInvariant ϕ S) (hT : IsInvariant ϕ T) (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
+    (ht : DifferentiableAt ℝ (ϕ t) x) :
+    Submodule.span ℝ (tangentConeAt ℝ S (ϕ t x)) ⊔
+        Submodule.span ℝ (tangentConeAt ℝ T (ϕ t x)) = ⊤ ↔
+      Submodule.span ℝ (tangentConeAt ℝ S x) ⊔ Submodule.span ℝ (tangentConeAt ℝ T x) = ⊤ := by
+  obtain ⟨A, hA⟩ := ϕ.isInvertible_fderiv hs ht
+  rw [span_tangentConeAt_apply hS hs ht, span_tangentConeAt_apply hT hs ht, ← Submodule.map_sup,
+    ← hA]
+  exact Submodule.map_eq_top_iff
 
 end Flow
 
