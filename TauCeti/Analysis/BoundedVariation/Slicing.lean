@@ -8,10 +8,11 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Topology.Algebra.Order.LiminfLimsup
 import TauCeti.Analysis.BoundedVariation.Approximation
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
 import TauCeti.Analysis.Sobolev.WeakDeriv.Slicing
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Slicing functions of bounded variation along parallel lines
@@ -143,14 +144,12 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
       ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y * ∫ t : ℝ, w ((y : E) + t • e)) ≤
       totalVariationOn volume ⊤ w := by
   have hL := measurePreserving_orthogonalLineEquiv e he
-  have hLe : MeasurableEmbedding (orthogonalLineEquiv e he) :=
-    (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding
+  have hLe := (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding
   set L := orthogonalLineEquiv e he
   have hD : Continuous (fderiv ℝ w) := hw.continuous_fderiv one_ne_zero
   have hc : Continuous fun y : (ℝ ∙ e)ᗮ => √(1 - ‖φ y‖ ^ 2) :=
     Real.continuous_sqrt.comp (continuous_const.sub (φ.continuous.norm.pow 2))
-  have hc1 (y : (ℝ ∙ e)ᗮ) : √(1 - ‖φ y‖ ^ 2) ≤ 1 :=
-    Real.sqrt_le_one.mpr (by nlinarith [norm_nonneg (φ y)])
+  have hc1 (y) : √(1 - ‖φ y‖ ^ 2) ≤ 1 := Real.sqrt_le_one.mpr (by nlinarith [norm_nonneg (φ y)])
   -- The three integrands, in orthogonal line coordinates.
   set F : (ℝ ∙ e)ᗮ × ℝ → ℝ := fun p => √(1 - ‖φ p.1‖ ^ 2) * |fderiv ℝ w (L p) e|
   set G : (ℝ ∙ e)ᗮ × ℝ → ℝ := fun p => -fderiv ℝ w (L p) (φ p.1)
@@ -158,15 +157,13 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
   have hN : Integrable N (volume.prod volume) :=
     hL.integrable_comp_of_integrable
       (hD.norm.integrable_of_hasCompactSupport (hwc.fderiv (𝕜 := ℝ)).norm)
-  have hFle (p) : F p ≤ N p := by
-    calc F p ≤ 1 * |fderiv ℝ w (L p) e| := mul_le_mul_of_nonneg_right (hc1 p.1) (abs_nonneg _)
-      _ ≤ N p := by simpa [N, he] using (fderiv ℝ w (L p)).le_opNorm e
+  have hFle (p) : F p ≤ N p :=
+    (mul_le_mul_of_nonneg_right (hc1 p.1) (abs_nonneg _)).trans
+      (by simpa [N, he] using (fderiv ℝ w (L p)).le_opNorm e)
   have hF : Integrable F (volume.prod volume) :=
     hN.mono' ((hc.comp continuous_fst).mul
       ((hD.comp L.continuous).clm_apply continuous_const).abs).aestronglyMeasurable
-      (.of_forall fun p => by
-        rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-        exact hFle p)
+      (.of_forall fun p => (Real.norm_of_nonneg (by positivity)).trans_le (hFle p))
   have hFG (p) : F p + G p ≤ N p := sqrt_mul_abs_apply_sub_apply_le e he _ (hφ p.1)
   have hG : Integrable G (volume.prod volume) :=
     hN.mono' ((hD.comp L.continuous).clm_apply
@@ -195,11 +192,8 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
       ← hL.lintegral_comp_emb hLe]
     simp [N, ofReal_norm]
   rw [h₁, h₂, h₃]
-  rcases le_total 0 (∫ p, G p ∂(volume.prod volume)) with hG0 | hG0
-  · rw [← ENNReal.ofReal_add (integral_nonneg fun p => by positivity) hG0, ← integral_add hF hG]
-    exact ENNReal.ofReal_le_ofReal (integral_mono (hF.add hG) hN hFG)
-  · rw [ENNReal.ofReal_of_nonpos hG0, add_zero]
-    exact ENNReal.ofReal_le_ofReal (integral_mono hF hN hFle)
+  exact MeasureTheory.ofReal_integral_add_ofReal_integral_le hF hG hN
+    (.of_forall fun p => by positivity) (.of_forall hFle) (.of_forall hFG)
 
 /-- The line variations of an integrable function are bounded almost everywhere by an a.e.
 measurable function `G` whose weighted integral, together with the pairing of the line integrals
@@ -256,21 +250,11 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
       refine (lintegral_mono fun y => ?_).trans (lintegral_liminf_le' fun j => hcm.mul (hVm j))
       simpa only [liminf_const, Pi.mul_def] using
         ENNReal.le_liminf_mul (u := fun _ : ℕ => c y) (v := fun j => V j y) (f := atTop)
-    -- The pairings converge, so the defect `B - b j` tends to zero.
-    have hb : Tendsto (fun j => B - b j) atTop (𝓝 0) := by
-      have hBfinite : B ≠ ∞ := ENNReal.ofReal_ne_top
-      have h := ENNReal.Tendsto.sub tendsto_const_nhds
-        (ENNReal.continuous_ofReal.continuousAt.tendsto.comp hB) (Or.inl hBfinite)
-      rwa [tsub_self] at h
     calc (∫⁻ y, c y * liminf (fun j => V j y) atTop) + B ≤ liminf A atTop + B := by gcongr
-      _ = liminf (fun j => A j + B) atTop := (liminf_add_const atTop A B
-          (by isBoundedDefault) (by isBoundedDefault)).symm
-      _ ≤ liminf ((fun j => A j + b j) + fun j => B - b j) atTop :=
-          liminf_le_liminf (.of_forall fun j => by
-            rw [Pi.add_apply, add_assoc]
-            gcongr
-            exact le_add_tsub)
-      _ = liminf (fun j => A j + b j) atTop := ENNReal.liminf_add_of_right_tendsto_zero hb _
+      _ ≤ liminf (fun j => A j + b j) atTop :=
+          (add_le_add_right
+            (ENNReal.continuous_ofReal.continuousAt.tendsto.comp hB).liminf_eq.ge _).trans
+            (ENNReal.le_liminf_add A b)
       _ ≤ liminf (fun j => totalVariationOn volume ⊤ (w (σ j))) atTop :=
           liminf_le_liminf (.of_forall fun j =>
             lintegral_mul_totalVariationOn_line_add_le_of_contDiff (hw1 _) (hw _).2 e he φ hφ)

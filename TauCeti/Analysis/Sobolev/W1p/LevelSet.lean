@@ -72,6 +72,17 @@ theorem W1p.gradient_ae_eq_zero_on_level_set (hp : p ≠ ∞) (u : W1p mu Omega 
     simpa only [Pi.sub_apply, Pi.zero_apply, sub_zero, hpos, hneg, map_zero] using hx
   exact innerSL_inj.mp (hz.trans (map_zero _).symm)
 
+/-- At a level `k`, the jet of a Sobolev function has zero gradient almost everywhere on the
+level set of its value. -/
+theorem W1p.snd_ae_eq_zero_of_fst_eq (hp : p ≠ ∞) (u : W1p mu Omega p) (k : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, ((u : Sobolev1JetLp mu Omega p) x).fst = k →
+      ((u : Sobolev1JetLp mu Omega p) x).snd = 0 := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u,
+    W1p.gradient_ae_eq_zero_on_level_set hp u k] with x hv hg hz
+  intro hx
+  rw [← hg]
+  exact hz (hv.trans hx)
+
 /-- Weak gradients agree almost everywhere wherever the values agree, even if their
 coincidence set has empty interior. -/
 theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :

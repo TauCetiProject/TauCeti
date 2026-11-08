@@ -33,7 +33,11 @@ env:
 jobs:
   # Infrastructure regression suites run separately in infrastructure-tests.yml.
   build:
-    runs-on: ubuntu-latest
+    # Publish fresh dot-notation context before library execution. GitHub's hosted
+    # pool can queue this serialized publisher behind hours of ordinary PR work.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
     # Neither output reveals the secret's value or whether it is set, and neither is trusted
     # there: `staged` only decides whether that job runs at all, and `reported-toolchain` is
@@ -68,10 +72,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@17896050f9b622ce129a16e1abd59c0e8cfe0d6e
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+          tools-ref: 17896050f9b622ce129a16e1abd59c0e8cfe0d6e
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
