@@ -543,6 +543,13 @@ theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperM
     (mpullback f hf hp k φ : SmoothForm I M ℝ k) = SmoothForm.mpullback f hf φ :=
   (rfl)
 
+/-- The underlying rough form of the pullback of a compactly supported closed form is the rough
+pullback of its underlying rough form. -/
+theorem coe_coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) (k : ℕ)
+    (φ : compactlySupportedClosedForms I' M' k) :
+    (mpullback f hf hp k φ).1.1 = TauCeti.mpullback I I' f φ.1.1 :=
+  (congrArg Subtype.val (coe_mpullback f hf hp k φ)).trans (SmoothForm.coe_mpullback f hf _)
+
 /-- Pullback of compactly supported closed forms by the identity is the identity linear map. -/
 @[simp]
 theorem mpullback_id (k : ℕ) :

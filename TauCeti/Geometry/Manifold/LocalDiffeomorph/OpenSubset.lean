@@ -26,6 +26,8 @@ manifold is diffeomorphic to it through its inclusion.
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
+* `TopologicalSpace.Opens.sigmaCompactSpace_top`: the open subset `⊤` of a σ-compact space is
+  σ-compact.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 -/
@@ -108,6 +110,11 @@ theorem ofTop_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : U) :
     ofTop (I := I) (n := n) U hU x = x :=
   (rfl)
 
+/-- The diffeomorphism `Diffeomorph.ofTop` is the inclusion, as a function. -/
+theorem coe_ofTop {U : TopologicalSpace.Opens M} {hU : U = ⊤} :
+    ⇑(ofTop (I := I) (n := n) U hU) = Subtype.val :=
+  (rfl)
+
 /-- The inverse of `Diffeomorph.ofTop` sends a point to itself, viewed in `U`. -/
 @[simp]
 theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : M) :
@@ -115,6 +122,12 @@ theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : 
   (rfl)
 
 end Diffeomorph
+
+/-- The open subset `⊤` of a σ-compact space is σ-compact, so `Diffeomorph.ofTop ⊤ rfl` relates
+σ-compact manifolds. -/
+instance TopologicalSpace.Opens.sigmaCompactSpace_top {M : Type*} [TopologicalSpace M]
+    [SigmaCompactSpace M] : SigmaCompactSpace (⊤ : TopologicalSpace.Opens M) :=
+  IsClosed.sigmaCompactSpace (by simp)
 
 namespace TauCeti
 

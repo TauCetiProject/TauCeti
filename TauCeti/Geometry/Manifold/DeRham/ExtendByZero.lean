@@ -492,9 +492,11 @@ Extension by zero is defined between open subsets of `M`. To extend from an open
 
 section Top
 
-variable [IsManifold I ∞ M]
-
 namespace compactlySupportedDeRhamCohomology
+
+section
+
+variable [IsManifold I 2 M]
 
 /-- Extension by zero from an open subset `U` of a Hausdorff manifold `M` into `M` itself, on
 compactly supported cohomology: extension by zero to the open subset `⊤`, identified with `M`
@@ -531,11 +533,9 @@ theorem mk_mem_range_extendByZeroTop (U : Opens M) {k : ℕ}
     (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1.1 ⊆ U) :
     mk I k φ ∈ LinearMap.range (extendByZeroTop U k) := by
   let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
-  have hΦ : ⇑Φ = Subtype.val := funext Diffeomorph.ofTop_apply
   let ψ := compactlySupportedClosedForms.mpullback Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k φ
   have hψ : (ψ : SmoothForm I (⊤ : Opens M) ℝ k).1 = mpullback I I Φ φ.1.1 :=
-    (congrArg Subtype.val (compactlySupportedClosedForms.coe_mpullback _ _ _ k φ)).trans
-      (SmoothForm.coe_mpullback _ _ _)
+    compactlySupportedClosedForms.coe_coe_mpullback _ _ _ k φ
   have hψc := compactlySupportedClosedForms_le_compactlySupportedForms I k ψ.2
   -- The pullback of `φ` to `⊤` is supported in `U`, so it is an extension by zero from `U`.
   obtain ⟨χ, hχ⟩ := (compactlySupportedForms.mem_range_extendByZero_iff (le_top : U ≤ ⊤)
@@ -543,7 +543,7 @@ theorem mk_mem_range_extendByZeroTop (U : Opens M) {k : ℕ}
     dsimp only
     rw [hψ]
     refine (RoughForm.tsupport_mpullback_subset_preimage Φ.continuous _).trans fun x hx ↦ ?_
-    simpa [hΦ] using hφ hx
+    simpa [Φ, Diffeomorph.coe_ofTop] using hφ hx
   -- The form `χ` is closed, since its extension by zero is.
   have hdχ : compactlySupportedForms.mextDerivₗ I U k χ = 0 :=
     compactlySupportedForms.extendByZero_injective (le_top : U ≤ ⊤) (k + 1) <| by
@@ -561,16 +561,15 @@ theorem mk_mem_range_extendByZeroTop (U : Opens M) {k : ℕ}
   rw [compactlySupportedClosedForms.coe_extendByZero,
     ← compactlySupportedForms.coe_extendByZero (le_top : U ≤ ⊤), hχ]
 
+end
+
 /-- In the top degree, a submodule of `H^n_c(M)` containing the classes from every member of a
 family of open subsets covering `M` is everything: every class is a finite sum of extensions by zero
 from members of the family (`exists_sum_extendByZero`). -/
-theorem eq_top_of_forall_range_extendByZeroTop_le [FiniteDimensional ℝ E] [SigmaCompactSpace M]
-    {n : ℕ} (hn : Module.finrank ℝ E ≤ n)
+theorem eq_top_of_forall_range_extendByZeroTop_le [IsManifold I ∞ M] [FiniteDimensional ℝ E]
+    [SigmaCompactSpace M] {n : ℕ} (hn : Module.finrank ℝ E ≤ n)
     {K : Submodule ℝ (compactlySupportedDeRhamCohomology I M n)} (V : M → Opens M)
     (hxV : ∀ x, x ∈ V x) (hK : ∀ x, LinearMap.range (extendByZeroTop (V x) n) ≤ K) : K = ⊤ := by
-  have : SigmaCompactSpace (⊤ : Opens M) :=
-    (Diffeomorph.ofTop (⊤ : Opens M) rfl : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M).toHomeomorph.isClosedEmbedding
-      |>.sigmaCompactSpace
   refine eq_top_iff.mpr fun y _ ↦ ?_
   obtain ⟨s, d, hd⟩ := exists_sum_extendByZero V (fun _ ↦ le_top)
     (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxV x⟩) hn
