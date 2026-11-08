@@ -129,16 +129,15 @@ theorem exists_bijective_localizationAway (f : R →+* S) (hf : f.FiniteType)
     Localization.awayMap_injective_of_dvd f (dvd_mul_right a b) hinj,
     Localization.awayMap_surjective_of_dvd f (dvd_mul_left b a) hsurj⟩
 
-/-- If a finitely presented ring map becomes surjective after inverting `a`, then the kernel of the
-resulting map between the localizations away from `a` and `f a` is finitely generated. -/
-private theorem FinitePresentation.fg_ker_awayMap_of_surjective {f : R →+* S}
-    (hf : f.FinitePresentation) (a : R) (hsurj : Function.Surjective (Localization.awayMap f a)) :
-    (ker (Localization.awayMap f a)).FG := by
+/-- Localization away from an element preserves finitely presented ring maps. Unlike
+`RingHom.finitePresentation_localizationPreserves.away`, the source and target may live in
+different universes. -/
+theorem FinitePresentation.awayMap {f : R →+* S} (hf : f.FinitePresentation) (a : R) :
+    (Localization.awayMap f a).FinitePresentation := by
   classical
   let Ra := Localization.Away a
   let Sa := Localization.Away (f a)
   let fa : Ra →+* Sa := Localization.awayMap f a
-  let : Algebra Ra Sa := fa.toAlgebra
   have hRa : (algebraMap R Ra).FiniteType := .of_finitePresentation
     (finitePresentation_algebraMap.mpr (IsLocalization.Away.finitePresentation a))
   have hloc : (algebraMap S Sa).FinitePresentation :=
@@ -147,9 +146,7 @@ private theorem FinitePresentation.fg_ker_awayMap_of_surjective {f : R →+* S}
     convert hloc.comp hf using 1
     ext x
     simp [fa, Sa, IsLocalization.Away.map]
-  have hfa : fa.FinitePresentation := hcomp.of_comp_finiteType _ hRa
-  have : Algebra.FinitePresentation Ra Sa := hfa
-  exact Algebra.FinitePresentation.ker_fG_of_surjective (Algebra.ofId Ra Sa) hsurj
+  exact hcomp.of_comp_finiteType _ hRa
 
 /-- If the localized map is injective and the kernel of the map away from `a ∈ M` is finitely
 generated, one more denominator `t ∈ M` kills that whole kernel. -/
@@ -196,7 +193,12 @@ theorem exists_bijective_localizationAway_of_finitePresentation (f : R →+* S)
   classical
   -- First shrink so that the map is surjective. Its localized kernel is then finite.
   obtain ⟨a, ha, hsurj⟩ := f.exists_surjective_localizationAway (.of_finitePresentation hf) M h.2
-  have hker := hf.fg_ker_awayMap_of_surjective a hsurj
+  have hker : (ker (Localization.awayMap f a)).FG :=
+    letI := (Localization.awayMap f a).toAlgebra
+    haveI : Algebra.FinitePresentation (Localization.Away a) (Localization.Away (f a)) :=
+      hf.awayMap a
+    Algebra.FinitePresentation.ker_fG_of_surjective
+      (Algebra.ofId (Localization.Away a) (Localization.Away (f a))) hsurj
   -- One further denominator kills this finite kernel.
   obtain ⟨t, ht, hkill⟩ := exists_mem_mul_ker_awayMap_eq_zero f M ha hker h.1
   refine ⟨a * t, M.mul_mem ha ht, ?_,
