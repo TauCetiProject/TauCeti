@@ -1,0 +1,179 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
+public import Mathlib.Analysis.InnerProductSpace.LinearMap
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.ConnectionForm
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
+
+/-!
+# Connection operators in normal orthonormal frames
+
+The Levi-Civita derivative of a normal orthonormal frame in a fixed normal-coordinate
+vector field gives a smooth family of real connection coefficients. Their finite-rank
+operator on the initial tangent space encodes the coefficient equation for parallel
+transport along radial geodesics. Both the coefficients and the operator vanish at the
+centre of the normal neighbourhood. On the normal neighbourhood the coefficients are the
+connection one-forms `IsLocalFrameOn.connectionForm` of the normal orthonormal frame,
+evaluated on the normal-coordinate field
+(`IsNormalDomain.normalFrameConnectionCoefficient_eq_connectionForm`).
+-/
+
+public noncomputable section
+
+open Bundle CovariantDerivative Filter Set
+open scoped ContDiff InnerProductSpace Manifold Topology
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {ι : Type*} [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderBot ι]
+  {p : M} {U : Set (TangentSpace I p)}
+
+/-- The connection coefficient of a normal orthonormal frame in a normal-coordinate direction. -/
+def normalFrameConnectionCoefficient (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v : TangentSpace I p) (i j : ι) (q : M) : ℝ :=
+  ⟪leviCivitaConnection I M (normalOrthonormalFrame I M p U b j) q
+    (normalCoordinateField I M p U v q), normalOrthonormalFrame I M p U b i q⟫_ℝ
+
+/-- Connection coefficients are the inner products of the covariant frame derivatives. -/
+theorem normalFrameConnectionCoefficient_apply (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v : TangentSpace I p) (i j : ι) (q : M) :
+    normalFrameConnectionCoefficient (I := I) (U := U) b v i j q =
+      ⟪leviCivitaConnection I M (normalOrthonormalFrame I M p U b j) q
+        (normalCoordinateField I M p U v q), normalOrthonormalFrame I M p U b i q⟫_ℝ := by rfl
+
+/-- The normal-frame connection matrix, represented as an operator on the initial tangent space. -/
+def normalFrameConnectionOperator (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v : TangentSpace I p) (q : M) : TangentSpace I p →L[ℝ] TangentSpace I p :=
+  ∑ i, ∑ j, normalFrameConnectionCoefficient (I := I) (U := U) b v i j q •
+    InnerProductSpace.rankOne ℝ (b i) (b j)
+
+/-- The connection operator is the finite-rank sum of its geometric frame coefficients. -/
+theorem normalFrameConnectionOperator_apply (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v : TangentSpace I p) (q : M) :
+    normalFrameConnectionOperator (U := U) b v q =
+      ∑ i, ∑ j, normalFrameConnectionCoefficient (I := I) (U := U) b v i j q •
+        InnerProductSpace.rankOne ℝ (b i) (b j) := by rfl
+
+/-- The components of the connection operator recover the connection matrix acting on components. -/
+theorem inner_normalFrameConnectionOperator (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v : TangentSpace I p) (q : M) (k : ι) (a : TangentSpace I p) :
+    ⟪b k, normalFrameConnectionOperator (U := U) b v q a⟫_ℝ =
+      ∑ j, normalFrameConnectionCoefficient (U := U) b v k j q * ⟪b j, a⟫_ℝ := by
+  simp [normalFrameConnectionOperator_apply, inner_sum, real_inner_smul_right,
+    orthonormal_iff_ite.mp b.orthonormal]
+
+variable [I.Boundaryless] [T2Space M]
+
+namespace IsNormalDomain
+
+/-- Normal-frame connection coefficients are smooth throughout a normal neighbourhood. -/
+theorem contMDiffOn_normalFrameConnectionCoefficient (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) (i j : ι) :
+    ContMDiffOn I 𝓘(ℝ) ∞ (normalFrameConnectionCoefficient (U := U) b v i j)
+      (riemannianExp I M p '' U) := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hcov := contMDiffOn_leviCivitaConnection (I := I) (n := ∞) (m := ∞) (k := ∞)
+    h.isOpen_image (by simp) (by simp) (by simpa using h.contMDiffOn_normalOrthonormalFrame b j)
+  have hfield := hcov.clm_bundle_apply (h.contMDiffOn_normalCoordinateField v)
+  exact ContMDiffOn.inner_bundle (IB := I) (F := E)
+    (E := fun x : M ↦ TangentSpace I x) (b := id) hfield
+    (h.contMDiffOn_normalOrthonormalFrame b i)
+
+/-- Normal-frame connection coefficients vanish at the centre. -/
+theorem normalFrameConnectionCoefficient_self (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) (i j : ι) :
+    normalFrameConnectionCoefficient (U := U) b v i j p = 0 := by
+  rw [normalFrameConnectionCoefficient_apply,
+    h.leviCivitaConnection_normalOrthonormalFrame_self b j, zero_apply, inner_zero_left]
+
+/-- The connection operator is smooth on the normal neighbourhood. -/
+theorem contMDiffOn_normalFrameConnectionOperator (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) :
+    ContMDiffOn I 𝓘(ℝ, TangentSpace I p →L[ℝ] TangentSpace I p) ∞
+      (normalFrameConnectionOperator (U := U) b v) (riemannianExp I M p '' U) := by
+  have heq : normalFrameConnectionOperator (U := U) b v =
+      (fun q ↦ ∑ i, ∑ j, normalFrameConnectionCoefficient (I := I) (U := U) b v i j q •
+        InnerProductSpace.rankOne ℝ (b i) (b j)) := funext (normalFrameConnectionOperator_apply b v)
+  rw [heq]
+  have hsum {f : ι → M → (TangentSpace I p →L[ℝ] TangentSpace I p)}
+      (s : Finset ι) (hf : ∀ i ∈ s, ContMDiffOn I 𝓘(ℝ, TangentSpace I p →L[ℝ]
+        TangentSpace I p) ∞ (f i) (riemannianExp I M p '' U)) :
+      ContMDiffOn I 𝓘(ℝ, TangentSpace I p →L[ℝ] TangentSpace I p) ∞
+        (fun q ↦ ∑ i ∈ s, f i q) (riemannianExp I M p '' U) := by
+    induction s using Finset.induction_on with
+    | empty => simpa using contMDiffOn_const
+    | @insert i s hi ih =>
+      have hh := (hf i (Finset.mem_insert_self i s)).add
+        (ih (fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)))
+      convert hh using 1
+      ext q
+      simp only [Finset.sum_insert hi, Pi.add_apply]
+  exact hsum Finset.univ fun i _ ↦ hsum Finset.univ fun j _ ↦
+    (h.contMDiffOn_normalFrameConnectionCoefficient b v i j).smul contMDiffOn_const
+
+/-- Along a radial geodesic, the normal-frame connection operator has smooth coefficients. -/
+theorem contDiffOn_normalFrameConnectionOperator_radial (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) :
+    ContDiffOn ℝ ∞
+      (fun t : ℝ ↦ normalFrameConnectionOperator (U := U) b v (riemannianExp I M p (t • v)))
+      {t | t • v ∈ U} := by
+  rw [← contMDiffOn_iff_contDiffOn]
+  have hlin : ContMDiff 𝓘(ℝ) 𝓘(ℝ, TangentSpace I p) ∞ (fun t : ℝ ↦ t • v) :=
+    (contDiff_id.smul contDiff_const).contMDiff
+  exact (h.contMDiffOn_normalFrameConnectionOperator b v).comp
+    ((contMDiffOn_riemannianExp p).comp hlin.contMDiffOn
+      (fun t ht ↦ h.subset_expDomain ht)) (fun t ht ↦ mem_image_of_mem _ ht)
+
+/-- The normal-frame connection operator vanishes at the centre. -/
+theorem normalFrameConnectionOperator_self (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) :
+    normalFrameConnectionOperator (U := U) b v p = 0 := by
+  simp [normalFrameConnectionOperator_apply, h.normalFrameConnectionCoefficient_self]
+
+/-- On the normal neighbourhood, the normal-frame connection coefficient is the connection
+one-form of the normal orthonormal frame, with input index `j` and output index `i`, evaluated on
+the normal-coordinate field. -/
+theorem normalFrameConnectionCoefficient_eq_connectionForm (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (hs : IsLocalFrameOn I E 2 (normalOrthonormalFrame I M p U b) (riemannianExp I M p '' U))
+    (v : TangentSpace I p) (i j : ι) {q : M} (hq : q ∈ riemannianExp I M p '' U) :
+    normalFrameConnectionCoefficient (U := U) b v i j q =
+      hs.connectionForm (leviCivitaConnection I M) j i q ![normalCoordinateField I M p U v q] := by
+  rw [IsLocalFrameOn.connectionForm_apply,
+    hs.coeff_eq_inner hq (h.orthonormal_normalOrthonormalFrame b hq),
+    normalFrameConnectionCoefficient_apply, real_inner_comm]
+  rfl
+
+/-- The connection matrix of an orthonormal frame is skew-symmetric. -/
+theorem normalFrameConnectionCoefficient_add_swap (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) (i j : ι) {q : M}
+    (hq : q ∈ riemannianExp I M p '' U) :
+    normalFrameConnectionCoefficient (U := U) b v i j q +
+      normalFrameConnectionCoefficient (U := U) b v j i q = 0 := by
+  have hd (k : ι) : MDiffAt (T% (normalOrthonormalFrame I M p U b k)) q :=
+    ((h.contMDiffOn_normalOrthonormalFrame b k).contMDiffAt
+      (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp)
+  have heq : (fun x ↦ ⟪normalOrthonormalFrame I M p U b j x,
+      normalOrthonormalFrame I M p U b i x⟫_ℝ) =ᶠ[𝓝 q] fun _ ↦ if j = i then 1 else 0 := by
+    filter_upwards [h.isOpen_image.mem_nhds hq] with x hx
+    exact orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hx) j i
+  have hmetric := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+    (normalCoordinateField I M p U v) (hd j) (hd i)
+  rw [heq.mvfderiv_eq, mvfderiv_const, zero_apply] at hmetric
+  simpa only [normalFrameConnectionCoefficient_apply, real_inner_comm] using hmetric.symm
+
+end IsNormalDomain
+
+end TauCeti.Manifold
