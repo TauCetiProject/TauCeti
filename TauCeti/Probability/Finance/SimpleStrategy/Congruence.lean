@@ -20,8 +20,8 @@ path, for equality of the gains against **any** price path. Different grids, rep
 dates and empty strategies are allowed. No continuity, variation, measurability or
 moment hypothesis on the price is needed.
 
-`simpleGains_congr_of_ae_eq` is the finite-horizon statement.
-`simpleGains_congr` gives equality at all times from time-a.e. equality on the whole
+`simpleGains_congr_on_horizon_of_ae_eq` is the finite-horizon statement.
+`simpleGains_congr_of_ae_eq` gives equality at all times from time-a.e. equality on the whole
 line. The product-measure forms turn time-product-a.e. equality into equality
 of the gain processes outside one common sample-null set, either on a finite horizon
 or at all times. Thus elementary gains
@@ -73,12 +73,14 @@ private theorem simpleGains_polynomial_eq_integral (p : Polynomial ℝ) {c t : �
 /-- Equal holdings almost everywhere on the trading horizon give equal elementary gains,
 even with different grids and an arbitrary price path. The lower endpoint precedes both
 strategies; the upper endpoint is the time at which gains are compared. -/
-theorem simpleGains_congr_of_ae_eq {c t : ℝ}
+theorem simpleGains_congr_on_horizon_of_ae_eq {c t : ℝ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hρ : MonotoneOn ρ (Set.Iic m))
-    (hcτ : c ≤ τ 0) (hcρ : c ≤ ρ 0) (hct : c ≤ t) (ω : Ω)
+    (hcτ : c ≤ τ 0) (hcρ : c ≤ ρ 0) (ω : Ω)
     (hab : (fun u ↦ simpleHolding τ n a u ω) =ᵐ[volume.restrict (Ioc c t)]
       (fun u ↦ simpleHolding ρ m b u ω)) :
     simpleGains τ n a X t ω = simpleGains ρ m b X t ω := by
+  rcases lt_or_ge t c with htc | hct
+  · rw [simpleGains_of_le hτ (htc.le.trans hcτ), simpleGains_of_le hρ (htc.le.trans hcρ)]
   let nodes := (range (n + 1)).image (fun j ↦ min (τ j) t) ∪
     (range (m + 1)).image (fun j ↦ min (ρ j) t)
   let p : Polynomial ℝ := Lagrange.interpolate nodes id (fun x ↦ X x ω)
@@ -100,15 +102,13 @@ theorem simpleGains_congr_of_ae_eq {c t : ℝ}
 
 /-- Time-a.e. equal simple holdings have identical gains at every time, against any price.
 The exceptional time set can depend on the fixed sample `ω`. -/
-theorem simpleGains_congr (hτ : MonotoneOn τ (Set.Iic n))
+theorem simpleGains_congr_of_ae_eq (hτ : MonotoneOn τ (Set.Iic n))
     (hρ : MonotoneOn ρ (Set.Iic m))
     (ω : Ω) (hab : (fun u ↦ simpleHolding τ n a u ω) =ᵐ[volume]
       (fun u ↦ simpleHolding ρ m b u ω)) (t : ℝ) :
     simpleGains τ n a X t ω = simpleGains ρ m b X t ω := by
-  exact simpleGains_congr_of_ae_eq hτ hρ
-    ((min_le_left (min (τ 0) (ρ 0)) t).trans (min_le_left _ _))
-    ((min_le_left (min (τ 0) (ρ 0)) t).trans (min_le_right _ _))
-    (min_le_right _ _) ω (ae_restrict_of_ae hab)
+  exact simpleGains_congr_on_horizon_of_ae_eq hτ hρ
+    (min_le_left (τ 0) (ρ 0)) (min_le_right (τ 0) (ρ 0)) ω (ae_restrict_of_ae hab)
 
 /-- Equality for time-product measure on a finite horizon gives equality of gains throughout
 that horizon on one common sample-full event, not merely at each deterministic time. -/
@@ -123,7 +123,7 @@ theorem simpleGains_congr_on_horizon_of_ae_eq_prod
     (Measure.measurePreserving_swap.quasiMeasurePreserving.ae hab)
   filter_upwards [hswap] with ω hω
   intro t ht
-  exact simpleGains_congr_of_ae_eq hτ hρ hcτ hcρ ht.1 ω
+  exact simpleGains_congr_on_horizon_of_ae_eq hτ hρ hcτ hcρ ω
     (ae_restrict_of_ae_restrict_of_subset (Ioc_subset_Ioc_right ht.2) hω)
 
 /-- Time-product-a.e. equal simple holdings give gains equal simultaneously at every time
@@ -136,6 +136,6 @@ theorem simpleGains_congr_of_ae_eq_prod {mΩ : MeasurableSpace Ω} {P : Measure 
     ∀ᵐ ω ∂P, ∀ t, simpleGains τ n a X t ω = simpleGains ρ m b X t ω := by
   have hswap := Measure.ae_ae_of_ae_prod
     (Measure.measurePreserving_swap.quasiMeasurePreserving.ae hab)
-  exact hswap.mono fun ω hω t ↦ simpleGains_congr hτ hρ ω hω t
+  exact hswap.mono fun ω hω t ↦ simpleGains_congr_of_ae_eq hτ hρ ω hω t
 
 end TauCeti.Finance
