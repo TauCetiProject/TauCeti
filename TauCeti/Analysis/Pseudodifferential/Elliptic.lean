@@ -104,25 +104,25 @@ theorem isElliptic_castDegree_iff (h : m = m') {a : HomogeneousSymbol X E V W m}
 
 /-- The zero symbol is not elliptic as soon as there is a nonzero frequency and a nonzero
 vector. -/
-theorem not_isElliptic_zero [Nonempty X] [Nontrivial E] [Nontrivial V] :
+theorem not_isElliptic_zero [Nontrivial E] [Nontrivial V] :
     ¬(0 : HomogeneousSymbol X E V W m).IsElliptic := fun h ↦ by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : E)
-  have := (ContinuousLinearMap.isInvertible_zero_iff.1 (h (Classical.arbitrary X) ξ hξ)).1
+  have := (ContinuousLinearMap.isInvertible_zero_iff.1 (h 0 ξ hξ)).1
   exact not_subsingleton V this
 
 /-- Over a nontrivial frequency space, an elliptic homogeneous symbol identifies its two fibres
 by a continuous linear equivalence. -/
-theorem IsElliptic.nonempty_continuousLinearEquiv [Nonempty X] [Nontrivial E]
+theorem IsElliptic.nonempty_continuousLinearEquiv [Nontrivial E]
     {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) : Nonempty (V ≃L[ℂ] W) := by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : E)
-  obtain ⟨e, -⟩ := ha (Classical.arbitrary X) ξ hξ
+  obtain ⟨e, -⟩ := ha 0 ξ hξ
   exact ⟨e⟩
 
 /-- **Ellipticity forces equal ranks.** Over a nontrivial frequency space, the fibres of an
 elliptic homogeneous symbol have the same dimension. The hypothesis `Nontrivial E` is needed:
 over the zero frequency space every symbol is elliptic
 (`HomogeneousSymbol.isElliptic_of_subsingleton`). -/
-theorem IsElliptic.finrank_eq [Nonempty X] [Nontrivial E] {a : HomogeneousSymbol X E V W m}
+theorem IsElliptic.finrank_eq [Nontrivial E] {a : HomogeneousSymbol X E V W m}
     (ha : a.IsElliptic) : Module.finrank ℂ V = Module.finrank ℂ W :=
   ha.nonempty_continuousLinearEquiv.some.toLinearEquiv.finrank_eq
 
