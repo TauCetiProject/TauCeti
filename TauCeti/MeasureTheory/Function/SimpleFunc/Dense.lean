@@ -159,8 +159,7 @@ theorem integrable_toLp {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {f :
   ((memLp_iff_integrable hp0 hp).1 hf).congr hf.coeFn_toLp.symm
 
 /-- A simple function outside `Lᵖ` for one exponent `0 < p < ∞` has infinite `L^q` norm for every
-`0 < q < ∞`: by `MeasureTheory.SimpleFunc.memLp_iff`, membership of a simple function in `Lᵖ` does
-not depend on such an exponent. -/
+`0 < q < ∞`. -/
 theorem eLpNorm_eq_top_of_not_memLp {E : Type*} [NormedAddCommGroup E] {p q : ℝ≥0∞}
     {f : SimpleFunc α E} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq0 : q ≠ 0) (hq : q ≠ ∞)
     (hf : ¬MemLp f p μ) : eLpNorm f q μ = ∞ := by

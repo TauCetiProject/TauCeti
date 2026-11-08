@@ -39,8 +39,9 @@ inequality, both use an endpoint `∞`, which is why the exponents are not restr
 
 ## Operators on `L²`
 
-A bounded operator `T` on `L²` that also satisfies `‖T f‖_∞ ≤ M₀ ‖f‖₁` on integrable functions,
-such as a unitary group with a dispersive estimate, satisfies `‖T f‖_q ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖f‖_p`
+A bounded operator `T` on `L²` with `‖T‖ ≤ M₁` that also satisfies `‖T f‖_∞ ≤ M₀ ‖f‖₁` for
+integrable `f ∈ L²`, such as a unitary group with a dispersive estimate, satisfies
+`‖T f‖_q ≤ M₀ ^ (1 - θ) M₁ ^ θ ‖f‖_p`
 for conjugate exponents `p, q` with `2 ≤ q ≤ ∞`, `θ = 2 / q`, and every `f ∈ L² ∩ Lᵖ`
 (`ContinuousLinearMap.eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm`). On simple functions this is
 the theorem above, applied to a linear extension of `T` from the simple functions in `L²` to all
