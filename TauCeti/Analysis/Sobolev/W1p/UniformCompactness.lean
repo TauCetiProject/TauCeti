@@ -53,13 +53,10 @@ private theorem W1p.isCompact_closure_preciseRepresentative_unitBall {Omega : Op
       IsCompact (closure (f '' closedBall 0 1)) := by
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let f : W1p mu Omega ∞ → K →ᵇ ℝ := fun u =>
-    ⟨⟨fun x => preciseRepresentative mu (W1p.value u) x,
-      (by
+    BoundedContinuousFunction.mkOfCompact
+      ⟨fun x => preciseRepresentative mu (W1p.value u) x, by
         have hc := W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u
-        exact hc.comp_continuous continuous_subtype_val (fun x => hKΩ x.2))⟩,
-      ⟨2 * ‖W1p.value u‖, fun x y => (dist_le_norm_add_norm _ _).trans
-        (by linarith [W1p.norm_preciseRepresentative_le u (hKΩ x.2),
-          W1p.norm_preciseRepresentative_le u (hKΩ y.2)])⟩⟩
+        exact hc.comp_continuous continuous_subtype_val (fun x => hKΩ x.2)⟩
   refine ⟨f, fun _ _ => rfl, ?_⟩
   obtain ⟨C, hC, hdist⟩ := W1p.exists_dist_preciseRepresentative_le_top (mu := mu)
   obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKΩ
