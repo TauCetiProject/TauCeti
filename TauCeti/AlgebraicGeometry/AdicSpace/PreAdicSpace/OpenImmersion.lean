@@ -623,9 +623,8 @@ theorem restrictPreimage_comp_eq_of_chart {f : X ⟶ Y} {U : Opens X} {V : Opens
 /-- **Restricting a morphism that factors through an isomorphism over an open.** Let
 `f : X ⟶ Y`, let `V ⊆ Y` be open, and suppose `f` restricts over `V` to `q : Z' ⟶ Z`, up to the
 isomorphisms `eU : f⁻¹(V) ≅ Z'` and `eV : V ≅ Z`. For an open `R ⊆ Z`, let `v : R ⟶ Y` and
-`u : q⁻¹(R) ⟶ X` be the open immersions induced by the isomorphisms. Then `q` restricted over `R`
-is compatible with `u` and `v`, and the image of `u` is the preimage under `f` of the image of
-`v`. -/
+`u : q⁻¹(R) ⟶ X` be the open immersions induced by the isomorphisms. Then the image of `u`
+is the preimage under `f` of the image of `v`. -/
 theorem range_restrictPreimage_comp_eq_preimage_range {f : X ⟶ Y} {V : Opens Y}
     {Z Z' : PreAdicSpace.{u}} {eV : Y.restrict V.isOpenEmbedding ≅ Z}
     {eU : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding ≅ Z'} {q : Z' ⟶ Z}
@@ -634,14 +633,11 @@ theorem range_restrictPreimage_comp_eq_preimage_range {f : X ⟶ Y} {V : Opens Y
     let v := Z.ofRestrict R.isOpenEmbedding ≫ eV.inv ≫ Y.ofRestrict V.isOpenEmbedding
     let u := Z'.ofRestrict ((Opens.map q.base).obj R).isOpenEmbedding ≫ eU.inv ≫
       X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding
-    Set.range u.base = f.base ⁻¹' Set.range v.base ∧ q.restrictPreimage R ≫ v = u ≫ f := by
+    Set.range u.base = f.base ⁻¹' Set.range v.base := by
   intro v u
-  have w : q.restrictPreimage R ≫ v = u ≫ f := by
-    simp only [v, u, Category.assoc, Hom.restrictPreimage_ofRestrict_assoc, hfac,
-      Iso.inv_hom_id_assoc]
+  have w : q.restrictPreimage R ≫ v = u ≫ f := restrictPreimage_comp_eq_of_chart eU eV hfac R
   have : IsOpenImmersion eV.inv := @IsOpenImmersion.of_isIso _ _ eV.inv eV.isIso_inv
   have hinj := (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).isOpenEmbedding.injective
-  refine ⟨?_, w⟩
   ext x
   constructor
   · rintro ⟨z, rfl⟩
