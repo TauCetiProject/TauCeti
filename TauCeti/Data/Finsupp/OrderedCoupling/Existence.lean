@@ -36,10 +36,12 @@ variable {α β R : Type*} [LinearOrder α] [LinearOrder β]
   [AddCommMonoid R] [LinearOrder R] [IsOrderedCancelAddMonoid R]
   [Sub R] [OrderedSub R] [ExistsAddOfLE R]
 
-omit [LinearOrder α] [LinearOrder β] [Sub R] [OrderedSub R] [ExistsAddOfLE R] in
+omit [LinearOrder α] [LinearOrder β] [LinearOrder R] [IsOrderedCancelAddMonoid R] [Sub R]
+  [OrderedSub R] [ExistsAddOfLE R] in
 /-- Adding the least pair `(a, b)` with weight `c` to a staircase coupling of the residual
 marginals gives a staircase coupling of the original marginals. -/
-theorem exists_nonneg_isChain_mapDomain_of_residual [Preorder α] [Preorder β]
+theorem exists_nonneg_isChain_mapDomain_of_residual [Preorder α] [Preorder β] [PartialOrder R]
+    [IsOrderedAddMonoid R]
     {f f' : α →₀ R} {g g' : β →₀ R}
     {a : α} {b : β} {c : R} (hc : 0 ≤ c) (hfr : single a c + f' = f) (hgr : single b c + g' = g)
     (ha : ∀ x ∈ f.support, a ≤ x) (hb : ∀ y ∈ g.support, b ≤ y)

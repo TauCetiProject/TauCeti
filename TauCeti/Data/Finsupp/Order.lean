@@ -59,12 +59,13 @@ variable {α β R : Type*} [AddCommMonoid R] [LinearOrder R] [IsOrderedCancelAdd
   [Sub R] [OrderedSub R] [ExistsAddOfLE R]
 
 /-- A nonnegative finitely supported function of total mass zero vanishes. -/
-theorem eq_zero_of_sum_eq_zero_of_nonneg {ι M : Type*} [AddCommMonoid M] [LinearOrder M]
-    [IsOrderedCancelAddMonoid M] {f : ι →₀ M} (hf : 0 ≤ f)
+theorem eq_zero_of_sum_eq_zero_of_nonneg {ι M : Type*} [AddCommMonoid M] [PartialOrder M]
+    [IsOrderedAddMonoid M] {f : ι →₀ M} (hf : 0 ≤ f)
     (h : f.sum (fun _ r => r) = 0) : f = 0 := by
-  by_contra hne
-  exact (ne_of_gt (f.sum_pos (g := fun _ r => r) (fun i hi => lt_of_le_of_ne (hf i)
-    (mem_support_iff.mp hi).symm) hne)) h
+  ext i
+  by_cases hi : i ∈ f.support
+  · exact (Finset.sum_eq_zero_iff_of_nonneg (fun j _ => hf j)).mp h i hi
+  · simpa using hi
 
 /-- Subtracting the smaller of the weights at `a` and `b` from both marginals leaves nonnegative
 residuals with smaller supports, and equal masses. -/
