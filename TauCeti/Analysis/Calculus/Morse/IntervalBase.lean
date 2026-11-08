@@ -146,7 +146,7 @@ is `1`. -/
 @[simp]
 theorem morseIndex_intervalBasePotential_zero (hC : 0 < C) :
     morseIndex (intervalBasePotential C) 0 = 1 :=
-  (isNondegenerateCriticalPoint_intervalBasePotential_zero hC.ne').morseIndex_real_of_neg
+  morseIndex_real_of_neg
     (by rw [iteratedDeriv_two_intervalBasePotential]; linarith)
 
 /-- For `C > 0` the critical point `1` of the base potential is a local minimum: its Morse index
