@@ -46,7 +46,7 @@ theorem fixedBasisEquiv_addRight_trans (b : Module.Basis ι A V)
 theorem fixedBasisEquiv_symm_addRight_trans (b : Module.Basis ι A V)
     (e : Fin (n + 1) ≃ ι) (a : Fin (n + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ i, f (b (e i)) = a i • b (e (finRotate (n + 1) i))) (k : Fin (n + 1))
-    (w : (linearMap a (M := A)).fixedSubmodule) :
+    (w : (TauCeti.WeightedCycle.linearMap a (M := A)).fixedSubmodule) :
     (fixedBasisEquiv b ((Equiv.addRight k).trans e) (fun i ↦ a (i + k)) f
         (apply_eq_smul_addRight_trans b e a f h k)).symm (fixedRotateEquiv a k w) =
       (fixedBasisEquiv b e a f h).symm w := by

@@ -34,6 +34,36 @@ variable {G : Type*} [AddMonoid G] [TopologicalSpace G] [WeaklyLocallyCompactSpa
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
   [OpensMeasurableSpace (PontryaginDual (Multiplicative G))]
 
+omit [WeaklyLocallyCompactSpace G] in
+/-- Splitting the integral over a compact set `K` and its complement: the transform values at `x`
+and `g` differ by less than `ε` when the characters are `δ`-close on `K` with
+`δ * μ(K) ≤ ε / 4`, and `K` carries all but `ε / 8` of the mass. -/
+private theorem norm_transform_sub_lt (μ : FiniteMeasure (PontryaginDual (Multiplicative G)))
+    {K : Set (PontryaginDual (Multiplicative G))} (hKmeas : MeasurableSet K) {x g : G} {δ ε : ℝ}
+    (hx : ∀ χ ∈ K, ‖(χ (Multiplicative.ofAdd x) : ℂ) - (χ (Multiplicative.ofAdd g) : ℂ)‖ ≤ δ)
+    (htail : μ.toMeasure.real Kᶜ ≤ ε / 8) (hcenter' : δ * μ.toMeasure.real K ≤ ε / 4)
+    (hε : 0 < ε) :
+    ‖μ.pontryaginMeasureTransform x - μ.pontryaginMeasureTransform g‖ < ε := by
+  have hint (y : G) : Integrable
+      (fun χ : PontryaginDual (Multiplicative G) =>
+        (χ (Multiplicative.ofAdd y) : ℂ)) μ.toMeasure :=
+    PontryaginDual.integrable_coe_eval (Multiplicative.ofAdd y)
+  -- Split the integral of the difference into the small compact part and the bounded tail.
+  rw [FiniteMeasure.pontryaginMeasureTransform_apply,
+    FiniteMeasure.pontryaginMeasureTransform_apply, ← integral_sub (hint x) (hint g),
+    ← integral_add_compl (f := fun χ => (χ (Multiplicative.ofAdd x) : ℂ) -
+      (χ (Multiplicative.ofAdd g) : ℂ)) hKmeas ((hint x).sub (hint g))]
+  refine (norm_add_le _ _).trans_lt ?_
+  have hcenter := norm_setIntegral_le_of_norm_le_const
+    (measure_lt_top μ.toMeasure K) hx
+  have htail' : ‖∫ χ in Kᶜ, (χ (Multiplicative.ofAdd x) : ℂ) -
+      (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure‖ ≤ 2 * μ.toMeasure.real Kᶜ :=
+    norm_setIntegral_le_of_norm_le_const (measure_lt_top μ.toMeasure Kᶜ) fun χ _ => by
+      simpa only [Circle.norm_coe, one_add_one_eq_two] using
+        norm_sub_le (χ (Multiplicative.ofAdd x) : ℂ)
+          (χ (Multiplicative.ofAdd g) : ℂ)
+  linarith
+
 /-- The transform of a tight finite measure on the Pontryagin dual is continuous. Tightness is
 automatic for finite Radon measures and is the regularity needed when the dual is not metrizable. -/
 theorem _root_.MeasureTheory.FiniteMeasure.continuous_pontryaginMeasureTransform
@@ -56,29 +86,12 @@ theorem _root_.MeasureTheory.FiniteMeasure.continuous_pontryaginMeasureTransform
       ENNReal.toReal_mono ENNReal.ofReal_ne_top (hKmass μ.toMeasure (Set.mem_singleton _))
   let δ := ε / (4 * C)
   have hδ : 0 < δ := by dsimp [δ]; positivity
-  -- Joint evaluation and compactness give a common bound for all characters in K.
-  have heval : Continuous (fun p : G × PontryaginDual (Multiplicative G) =>
-      (p.2 (Multiplicative.ofAdd p.1) : ℂ)) :=
-    continuous_subtype_val.comp
-      ((continuous_eval (F := Multiplicative G →ₜ* Circle)).comp
-        (continuous_snd.prodMk (continuous_ofAdd.comp continuous_fst)))
-  have hnear : ∀ᶠ x in 𝓝 g, ∀ χ ∈ K,
-      ‖(χ (Multiplicative.ofAdd x) : ℂ) - (χ (Multiplicative.ofAdd g) : ℂ)‖ ≤ δ := by
-    apply hK.eventually_forall_of_forall_eventually
-    intro χ _
-    have hcont := (heval.sub
-      ((PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)).comp
-        continuous_snd)).norm
-    exact (hcont.continuousAt.eventually_lt continuousAt_const
-      (by simpa using hδ)).mono fun _ h => h.le
+  have hnear := continuous_ofAdd.continuousAt.eventually
+    (PontryaginDual.eventually_forall_norm_coe_eval_sub_le (Multiplicative.ofAdd g) hK hδ)
   filter_upwards [hnear] with x hx
   -- The ball basis expresses continuity through the distance between transform values.
   change dist (μ.pontryaginMeasureTransform x) (μ.pontryaginMeasureTransform g) < ε
   rw [dist_eq_norm]
-  have hint (y : G) : Integrable
-      (fun χ : PontryaginDual (Multiplicative G) =>
-        (χ (Multiplicative.ofAdd y) : ℂ)) μ.toMeasure :=
-    PontryaginDual.integrable_coe_eval (Multiplicative.ofAdd y)
   have hmass : μ.toMeasure.real K ≤ C := by
     exact (measureReal_mono (μ := μ.toMeasure) (Set.subset_univ K)).trans
       (by dsimp [C]; linarith)
@@ -86,21 +99,7 @@ theorem _root_.MeasureTheory.FiniteMeasure.continuous_pontryaginMeasureTransform
     calc
       δ * μ.toMeasure.real K ≤ δ * C := mul_le_mul_of_nonneg_left hmass hδ.le
       _ = ε / 4 := by dsimp [δ]; field_simp
-  -- Split the integral of the difference into the small compact part and the bounded tail.
-  rw [FiniteMeasure.pontryaginMeasureTransform_apply,
-    FiniteMeasure.pontryaginMeasureTransform_apply, ← integral_sub (hint x) (hint g),
-    ← integral_add_compl (f := fun χ => (χ (Multiplicative.ofAdd x) : ℂ) -
-      (χ (Multiplicative.ofAdd g) : ℂ)) hKmeas ((hint x).sub (hint g))]
-  refine (norm_add_le _ _).trans_lt ?_
-  have hcenter := norm_setIntegral_le_of_norm_le_const
-    (measure_lt_top μ.toMeasure K) hx
-  have htail' : ‖∫ χ in Kᶜ, (χ (Multiplicative.ofAdd x) : ℂ) -
-      (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure‖ ≤ 2 * μ.toMeasure.real Kᶜ :=
-    norm_setIntegral_le_of_norm_le_const (measure_lt_top μ.toMeasure Kᶜ) fun χ _ => by
-      simpa only [Circle.norm_coe, one_add_one_eq_two] using
-        norm_sub_le (χ (Multiplicative.ofAdd x) : ℂ)
-          (χ (Multiplicative.ofAdd g) : ℂ)
-  linarith
+  exact norm_transform_sub_lt μ hKmeas hx htail hcenter' hε
 
 end TauCeti
 

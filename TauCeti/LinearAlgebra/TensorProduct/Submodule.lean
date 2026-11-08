@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.RingTheory.Ideal.Operations
+public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 
 /-!
 # Scalar extension of images and powers of submodules
@@ -24,7 +25,9 @@ For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of 
 (`LinearMap.range_rTensor_inclusion_smul_le`).
 
 Multiplication of tensor products of submodules is compatible with multiplication in each
-factor (`Submodule.map₂_tmul_mul_le`).
+factor (`Submodule.map₂_tmul_mul_le`). If a scalar extension is finitely generated, some finitely
+generated submodule of the original module already spans that scalar extension
+(`Submodule.exists_fg_baseChange_eq_top`).
 -/
 
 public section
@@ -81,6 +84,30 @@ theorem _root_.LinearMap.baseChange_range (f : M →ₗ[R] N) :
   rw [← Submodule.map_top, baseChange_map, baseChange_top, Submodule.map_top]
 
 end Map
+
+section Finiteness
+
+variable {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M]
+
+/-- If a scalar extension is finitely generated, a finitely generated submodule of the original
+module already spans it. No flatness or faithfulness of the scalar extension is required. -/
+theorem exists_fg_baseChange_eq_top [Module.Finite A (A ⊗[R] M)] :
+    ∃ P : Submodule R M, P.FG ∧ P.baseChange A = ⊤ := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := A ⊗[R] M)
+  obtain ⟨P, hP, hPs⟩ := TensorProduct.exists_finite_submodule_right_of_setFinite
+    (s : Set (A ⊗[R] M)) s.finite_toSet
+  refine ⟨P, Module.Finite.iff_fg.mp hP, top_unique ?_⟩
+  rw [← hs, span_le]
+  intro x hx
+  obtain ⟨y, hy⟩ := hPs hx
+  rw [Submodule.baseChange, SetLike.mem_coe, LinearMap.mem_range]
+  refine ⟨y, ?_⟩
+  rw [LinearMap.baseChange_eq_lTensor]
+  exact hy
+
+end Finiteness
 
 section Inclusion
 

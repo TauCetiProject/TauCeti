@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Basis
+public import TauCeti.Analysis.Normed.Module.Bases.Orthonormal
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Triangular
 
 /-!
@@ -179,5 +180,25 @@ theorem amiceEquiv_apply (c : C₀(ℕ, E)) : amiceEquiv p h S c = amiceMap p h 
 @[simp]
 theorem norm_amiceMap (c : C₀(ℕ, E)) : ‖amiceMap p h S c‖ = ‖c‖ := by
   rw [← amiceEquiv_apply, LinearIsometryEquiv.norm_map]
+
+variable (p h) in
+/-- **Amice's theorem: surjectivity.** Every coefficient vector of `LA_h(E)` is the expansion of
+a series `∑ₙ e_{h,n} • cₙ` with `cₙ → 0`. -/
+theorem amiceMap_surjective : Function.Surjective (amiceMap p h S (E := E)) := fun v ↦
+  ⟨(amiceEquiv p h S).symm v, by rw [← amiceEquiv_apply, LinearIsometryEquiv.apply_symm_apply]⟩
+
+/-- The inverse of Amice's isomorphism sends Amice's vector `e_{h,n} • e` to the coordinate vector
+`single n e`. -/
+@[simp]
+theorem amiceEquiv_symm_amiceTerm (n : ℕ) (e : E) :
+    (amiceEquiv p h S).symm (amiceTerm p h n e) = ZeroAtInftyContinuousMap.single n e := by
+  rw [LinearIsometryEquiv.symm_apply_eq, amiceEquiv_apply, amiceMap_single]
+
+variable (p h) in
+/-- **Amice's basis theorem.** The disc expansions `amiceTerm p h n 1` of Amice's polynomials
+`e_{h,n}(x) = ⌊n / pʰ⌋! (x choose n)` form an orthonormal basis of `LA_h(ℤ_p)`. -/
+theorem isOrthonormalBasis_amiceTerm :
+    IsOrthonormalBasis ℤ_[p] fun n ↦ amiceTerm p h n (1 : ℤ_[p]) := by
+  simpa using (amiceEquiv p h ℤ_[p] (E := ℤ_[p])).symm.isOrthonormalBasis_symm_single
 
 end TauCeti.AnalyticStage

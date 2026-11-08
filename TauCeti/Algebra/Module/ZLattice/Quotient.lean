@@ -34,6 +34,10 @@ If `L ∩ V` is a full lattice in a subspace `V`, the map `V / (L ∩ V) → E /
 inclusion is a closed embedding, so the compact torus `V / (L ∩ V)` is identified with a closed
 subgroup of `E / L`.
 
+For a linear map `f : E → E'` carrying `L` into a subgroup `L'` of `E'`, the inclusion of `ker f`
+induces a map from `ker f / (L ∩ ker f)` into the kernel `f⁻¹(L') / L` of the induced map
+`E / L → E' / L'`.
+
 For `c : ℕ`, the lattice `cL` is `(c : ℝ) • L`, read in `L` through `Submodule.submoduleOf`. The
 quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite for `c ≠ 0`, and
 for `c ≠ 0` a `ℤ`-basis of `L` identifies it with `(ℤ / c)^n` by reducing coordinates modulo `c`.
@@ -47,6 +51,9 @@ for `c ≠ 0` a `ℤ`-basis of `L` identifies it with `(ℤ / c)^n` by reducing 
 * `Module.Basis.orbitRelQuotientLatticeEquiv`: the same circle coordinates on the orbit space.
 * `Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`: if `L ∩ V` is a full lattice in `V`,
   then `V / (L ∩ V) → E / L` is a closed embedding.
+* `Submodule.orbitRelQuotientToKerOrbitRelQuotientMap`: for a linear map `f` carrying `L` into
+  `L'`, the map `ker f / (L ∩ ker f) → f⁻¹(L') / L` into the kernel of the induced map
+  `E / L → E' / L'`, induced by the inclusion of `ker f`.
 * `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
   `L` of rank `n`; it is finite for `c ≠ 0`.
 * `Module.Basis.quotientSmulEquivPiZMod`: for `c ≠ 0`, the coordinates modulo `c` in a `ℤ`-basis
@@ -230,6 +237,55 @@ theorem Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype [DiscreteTopolog
 
 end Subtorus
 
+/-! ### The kernel inclusion -/
+
+section KernelInclusion
+
+variable {𝕜 : Type*} [NormedField 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {E' : Type*} [AddCommGroup E'] [Module 𝕜 E'] (L : Submodule ℤ E) {L' : Submodule ℤ E'}
+  (f : E →ₗ[𝕜] E') (h : L ≤ L'.comap (f.restrictScalars ℤ))
+
+/-- For a linear map `f : E → E'` carrying the subgroup `L ≤ E` into `L' ≤ E'`, the map
+`ker f / (L ∩ ker f) → f⁻¹(L') / L` induced by the inclusion of `ker f`: the map of orbit spaces
+induced by `(LinearMap.ker f).subtype`, with its codomain restricted to the kernel `f⁻¹(L') / L`
+of the map `E / L → E' / L'` induced by `f`.
+
+When `f` is a continuous real or complex linear map of finite-dimensional spaces, `L` is a full
+lattice and `L'` is discrete, its domain is the torus `ker f / (L ∩ ker f)` and its image is the
+identity component of the kernel (`Submodule.range_orbitRelQuotientMap_ker_subtype`). -/
+def Submodule.orbitRelQuotientToKerOrbitRelQuotientMap :
+    AddAction.orbitRel.Quotient (ZLattice.comap 𝕜 L (LinearMap.ker f).subtype) (LinearMap.ker f) →+
+      (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :=
+  ((ZLattice.comap 𝕜 L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+    ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl).codRestrict _ fun t ↦ by
+      induction t using _root_.Quotient.inductionOn with | h x => ?_
+      -- The composite sends the orbit of `x` to the orbit of `f x = 0`.
+      -- `Submodule.orbitRelQuotientMap_mk` applies to the inner map only through the unfolding
+      -- of `ZLattice.comap` (hence `le_rfl`), so it is used as a term rather than by `rw`.
+      refine AddMonoidHom.mem_ker.2 <|
+        (congrArg _ (Submodule.orbitRelQuotientMap_mk _ L _ le_rfl x)).trans ?_
+      simp [LinearMap.mem_ker.1 x.2]
+
+/-- Followed by the inclusion of the kernel into `E / L`,
+`Submodule.orbitRelQuotientToKerOrbitRelQuotientMap` is the map of quotients induced by the
+inclusion of `ker f`. -/
+theorem Submodule.coe_orbitRelQuotientToKerOrbitRelQuotientMap
+    (t : AddAction.orbitRel.Quotient (ZLattice.comap 𝕜 L (LinearMap.ker f).subtype)
+      (LinearMap.ker f)) :
+    (L.orbitRelQuotientToKerOrbitRelQuotientMap f h t : AddAction.orbitRel.Quotient L E) =
+      (ZLattice.comap 𝕜 L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+        ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl t :=
+  congrArg Subtype.val (AddMonoidHom.codRestrict_apply _ _ _ t)
+
+/-- The orbit of `x ∈ ker f` in `ker f / (L ∩ ker f)` is sent to the orbit of `x` in `E / L`. -/
+@[simp]
+theorem Submodule.coe_orbitRelQuotientToKerOrbitRelQuotientMap_mk (x : LinearMap.ker f) :
+    (L.orbitRelQuotientToKerOrbitRelQuotientMap f h (_root_.Quotient.mk _ x) :
+      AddAction.orbitRel.Quotient L E) = _root_.Quotient.mk _ (x : E) :=
+  Submodule.orbitRelQuotientMap_mk _ L _ le_rfl x
+
+end KernelInclusion
+
 /-! ### The quotient `L / cL` -/
 
 open Module Submodule
@@ -277,6 +333,17 @@ theorem _root_.Module.Basis.quotientSmulEquivPiZMod_mk {ι : Type*} [Finite ι] 
     b.quotientSmulEquivPiZMod c (Submodule.Quotient.mk v) i = (b.repr v i : ZMod c) := by
   rw [Module.Basis.quotientSmulEquivPiZMod, LinearEquiv.trans_apply, quotEquivOfEq_mk,
     LinearEquiv.restrictScalars_apply, Basis.equivFun_apply, ModN.basis_repr_mk]
+
+/-- The class in `L / cL` with coordinates `x` modulo `c` in `b` is the class of
+`∑ i, (x i).val • b i`, the combination of `b` with the least natural representatives of the
+coordinates. -/
+@[simp]
+theorem _root_.Module.Basis.quotientSmulEquivPiZMod_symm_apply {ι : Type*} [Fintype ι]
+    (b : Basis ι ℤ L) (c : ℕ) [NeZero c] (x : ι → ZMod c) :
+    (b.quotientSmulEquivPiZMod c).symm x = Submodule.Quotient.mk (∑ i, ((x i).val : ℤ) • b i) := by
+  refine (b.quotientSmulEquivPiZMod c).symm_apply_eq.mpr (funext fun i ↦ ?_)
+  rw [Module.Basis.quotientSmulEquivPiZMod_mk, b.repr_sum_self, Int.cast_natCast,
+    ZMod.natCast_zmod_val]
 
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 

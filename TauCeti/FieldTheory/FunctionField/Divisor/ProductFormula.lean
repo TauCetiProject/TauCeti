@@ -117,12 +117,10 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
         Divisor.principal hF (c i * x ^ (j : ℕ)) + (l • Divisor.poles hF x + C) := by
       rw [hkey]
       refine add_nonneg (add_nonneg (add_nonneg ?_ ?_) ?_) ?_
-      · exact WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_zeros hF (c i))
+      · exact Divisor.zeros_nonneg hF (c i)
       · exact sub_nonneg.mpr (hC i)
-      · exact nsmul_nonneg
-          (WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_zeros hF x)) _
-      · exact nsmul_nonneg
-          (WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF x)) _
+      · exact nsmul_nonneg (Divisor.zeros_nonneg hF x) _
+      · exact nsmul_nonneg (Divisor.poles_nonneg hF x) _
     have hval : ((c i * x ^ (j : ℕ) : Fˣ) : F) = (c i : F) * (x : F) ^ (j : ℕ) := by
       rw [Units.val_mul, Units.val_pow_eq_pow_val]
     rw [← hval]
@@ -152,19 +150,15 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
     simpa only [c, Units.val_mk0] using b.linearIndependent
   let B : Divisor k F := Divisor.poles hF (Units.mk0 x hx0)
   let C : Divisor k F := ∑ i, Divisor.poles hF (c i)
-  have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦
-    WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c i))
+  have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦ Divisor.poles_nonneg hF (c i)
   have hCi (i) : Divisor.poles hF (c i) ≤ C :=
-    Finset.single_le_sum
-      (fun j _ ↦ WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c j)))
-      (Finset.mem_univ i)
+    Finset.single_le_sum (fun j _ ↦ Divisor.poles_nonneg hF (c j)) (Finset.mem_univ i)
   have hlower (n : ℕ) :
       Module.finrank k⟮x⟯ F * (n + 1) ≤
         Divisor.dim (n • B + C) := by
     simpa only [B, Fintype.card_fin] using
       Divisor.card_mul_succ_le_dim_nsmul_poles_add hF (Units.mk0 x hx0) hx c hcLI hCi n
-  have hB : 0 ≤ B :=
-    WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF _)
+  have hB : 0 ≤ B := Divisor.poles_nonneg hF _
   have hBdeg : 0 ≤ Divisor.degree B := Divisor.degree_nonneg hB
   let d := (Divisor.degree B).toNat
   have hd : (d : ℤ) = Divisor.degree B := by
@@ -179,8 +173,7 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
   have hlow : Module.finrank k⟮x⟯ F * (n + 1) ≤ Divisor.dim E := by
     simpa only [E] using hlower n
   have hupp := Divisor.dim_le_degree_posPart_add_finrank hF E
-  rw [WeilDivisor.posPart_eq_self_iff_isEffective.mpr
-    (WeilDivisor.isEffective_iff_zero_le.mpr hE), Divisor.degree_add, map_nsmul] at hupp
+  rw [posPart_eq_self.mpr hE, Divisor.degree_add, map_nsmul] at hupp
   have hineq : ((Module.finrank k⟮x⟯ F * (n + 1) : ℕ) : ℤ) ≤
       (n : ℤ) * d + e + q := by
     calc
@@ -245,8 +238,8 @@ theorem finrank_adjoin_le_degree_of_mem_riemannRochSpace (hF : IsFunctionField k
     {W : Divisor k F} (hW : 0 ≤ W) {x : F} (hxW : x ∈ riemannRochSpace W)
     (hxt : Transcendental k x) :
     (Module.finrank k⟮x⟯ F : ℤ) ≤ degree W := by
-  have hdeg := degree_le_of_le ((poles_le_iff_mem_riemannRochSpace hF
-    (WeilDivisor.isEffective_iff_zero_le.mpr hW) (Units.mk0 x hxt.ne_zero)).mpr hxW)
+  have hdeg := degree_le_of_le
+    ((poles_le_iff_mem_riemannRochSpace hF hW (Units.mk0 x hxt.ne_zero)).mpr hxW)
   rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
 
 /-- **The product formula for an algebraic function field** (Stichtenoth, Theorem 1.4.11):
@@ -370,8 +363,7 @@ theorem riemannRochSpace_eq_bot_of_degree_neg (hF : IsFunctionField k F) {D : Di
   rw [riemannRochSpace_ne_bot_iff hF]
   rintro ⟨D', hD', hlin⟩
   have hmem : D' ∈ (Place.orderSystem hF).completeLinearSystem D :=
-    (Place.orderSystem hF).mem_completeLinearSystem.mpr
-      ⟨WeilDivisor.isEffective_iff_zero_le.mpr hD', hlin⟩
+    (Place.orderSystem hF).mem_completeLinearSystem.mpr ⟨hD', hlin⟩
   have hempty := (Place.orderSystem hF).completeLinearSystem_eq_empty_of_weightedDegree_neg
     (fun P ↦ by positivity) (Place.isWeightedDegreeZero_orderSystem hF)
     (by simpa only [Divisor.weightedDegree_placeDegree_eq_degree] using hD)
@@ -409,8 +401,7 @@ theorem Divisor.exists_mem_dim_sub_ofPoint_lt (hF : IsFunctionField k F) {D : Di
   have heq : riemannRochSpace (D - WeilDivisor.ofFinset T) = riemannRochSpace D :=
     riemannRochSpace_sub_ofFinset_eq fun P hP ↦
       Submodule.eq_of_le_of_finrank_le
-        (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.isEffective_iff_zero_le.mp
-          (WeilDivisor.isEffective_ofPoint P))))
+        (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.ofPoint_nonneg P)))
         (by rw [← Divisor.dim_def, ← Divisor.dim_def]; exact h P hP)
   have hne : riemannRochSpace (D - WeilDivisor.ofFinset T) ≠ ⊥ := by
     rw [heq, ← Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF]

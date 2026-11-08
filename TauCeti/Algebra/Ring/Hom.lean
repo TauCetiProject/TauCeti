@@ -22,12 +22,17 @@ A ring homomorphism fixes natural number casts, so it preserves membership state
 controls denominators under ring endomorphisms that preserve a subring, as in integrality arguments
 for Hazewinkel's functional equation.
 
+A ring homomorphism applied entrywise to a scalar multiple `c • v` of a family gives
+`f c • (f ∘ v)`.
+
 ## Main results
 
 * `MonoidHom.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
+
+* `RingHom.comp_smul`: `f ∘ (c • v) = f c • (f ∘ v)`.
 -/
 
 public section
@@ -62,3 +67,13 @@ theorem natCast_pow_mul_apply_mem {R S F : Type*} [Semiring R] [Semiring S]
   simpa only [map_mul, map_pow, map_natCast] using hf hx
 
 end Set.MapsTo
+
+namespace RingHom
+
+variable {R S ι : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+
+/-- A ring homomorphism applied entrywise to `c • v` gives `f c • (f ∘ v)`. -/
+theorem comp_smul (f : R →+* S) (c : R) (v : ι → R) : f ∘ (c • v) = f c • (f ∘ v) :=
+  funext fun _ ↦ map_mul f _ _
+
+end RingHom

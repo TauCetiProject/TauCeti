@@ -1159,14 +1159,28 @@ theorem checkerboardDiscriminantQuadraticIsometry_apply (hn : Even n) (x : ZMod 
       zmodTwoProdAddEquivCheckerboardDiscriminantGroup n hn x :=
   FiniteQuadraticModule.kleinFourIsometryOfGenerators_apply _ _ _ _ _ _ x
 
-/-- **The standard `(ℤ/2)²` model is nondegenerate**, since the discriminant form of a
-nondegenerate lattice is. -/
-theorem isNondegenerate_checkerboardStandardQuadraticModule (hn : Even n) :
-    (checkerboardStandardQuadraticModule n hn).IsNondegenerate :=
-  ((checkerboardDiscriminantQuadraticIsometry n hn).isNondegenerate_iff).mpr
-    (isNondegenerate_discriminantQuadraticModule _ _)
-
 end
+
+/-- **The standard `(ℤ/2)²` model is nondegenerate** for every even `n`. For `n > 0` this is because
+the discriminant form of a nondegenerate lattice is. The model depends on `n` only through `n / 8`
+in `AddCircle 1`, so the model at `n = 0` is the one at `n = 8`. -/
+theorem isNondegenerate_checkerboardStandardQuadraticModule (hn : Even n) :
+    (checkerboardStandardQuadraticModule n hn).IsNondegenerate := by
+  have key (m : ℕ) (hm : Even m) (hpos : 0 < m) :
+      (checkerboardStandardQuadraticModule m hm).IsNondegenerate := by
+    have : NeZero m := ⟨hpos.ne'⟩
+    exact ((checkerboardDiscriminantQuadraticIsometry m hm).isNondegenerate_iff).mpr
+      (isNondegenerate_discriminantQuadraticModule _ _)
+  rcases Nat.eq_zero_or_pos n with rfl | hpos
+  · have h8 : Even 8 := ⟨4, rfl⟩
+    have h :
+        checkerboardStandardQuadraticModule 0 hn = checkerboardStandardQuadraticModule 8 h8 := by
+      unfold checkerboardStandardQuadraticModule
+      congr 1
+      norm_num [AddCircle.coe_period]
+    rw [h]
+    exact key 8 h8 (by norm_num)
+  · exact key n hn hpos
 
 /-! ## The discriminant quadratic module of an odd-rank checkerboard lattice -/
 

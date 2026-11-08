@@ -25,6 +25,10 @@ is finite, by the general finiteness criterion for local power factorizations
 `TauCeti.finite_setOfPred_eq_zero_of_eventually_eq_pow_mul`. No curvature equation or
 analyticity of the coefficient is needed.
 
+there. The exponent of such a factorization is unique, already among factors that are only
+continuous at the point. For a solution on the plane that is nonzero outside a compact set,
+the zero set is finite. No curvature equation or analyticity of the coefficient is needed.
+
 The integrating factor comes from the Cauchy transform; the holomorphic zero
 factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
 
@@ -152,5 +156,27 @@ theorem finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : �
         isPreconnected_univ ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w) hne (mem_univ z))
   exact finite_setOfPred_eq_zero_of_eventually_eq_pow_mul
     (fun z ↦ ⟨v z, (hvc z).continuousAt, hv0 z, hvf z⟩) htail
+
+/-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
+`z`, is unique. -/
+theorem eq_of_eventually_sub_pow_mul_eq {z : ℂ} {m n : ℕ} {u v : ℂ → ℂ}
+    (hu : ContinuousAt u z) (hu₀ : u z ≠ 0) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, (w - z) ^ m * u w = (w - z) ^ n * v w) : m = n := by
+  wlog hmn : m < n generalizing m n u v
+  · rcases (not_lt.mp hmn).eq_or_lt with h' | h'
+    · exact h'.symm
+    · exact (this hv hv₀ hu hu₀ (h.mono fun w hw ↦ hw.symm) h').symm
+  exfalso
+  -- Off `z`, cancelling `(w - z) ^ m` gives `u w = (w - z) ^ (n - m) * v w`, which tends to `0`.
+  have hlim : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 (u z)) := by
+    refine (hu.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with w hw hwz
+    apply mul_left_cancel₀ (pow_ne_zero m (sub_ne_zero.mpr hwz))
+    rw [hw, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hmn.le]
+  have h0 : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 0) := by
+    have hc : ContinuousAt (fun w ↦ (w - z) ^ (n - m) * v w) z :=
+      ((continuousAt_id.sub continuousAt_const).pow _).mul hv
+    simpa [zero_pow (Nat.sub_ne_zero_of_lt hmn)] using hc.tendsto.mono_left nhdsWithin_le_nhds
+  exact hu₀ (tendsto_nhds_unique hlim h0)
 
 end TauCeti

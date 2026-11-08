@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # Morse–Bott critical submanifolds and the normal Hessian
@@ -40,6 +41,8 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold`: a smooth embedding into the critical set of a
   function which is `C²` along it.
+* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isLocallyConstant_comp`: a function is locally
+  constant along each of its critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.normalHessian`: the normal Hessian.
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: Morse–Bott critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff`:
@@ -103,6 +106,21 @@ structure IsNondegenerateCriticalSubmanifold (i : SmoothEmbedding J I n S M) (f 
     (criticalHessian I f (i s)).ker ≤ (mfderiv J I i s).toLinearMap.range
 
 variable {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
+
+include hn in
+/-- **A function is locally constant along a critical submanifold.** The differential of `f ∘ i`
+is `df ∘ di`, which vanishes because every point of the submanifold is critical. In particular `f`
+takes a single value, the critical value, on each connected component of `S`. -/
+theorem IsCriticalSubmanifold.isLocallyConstant_comp [IsManifold J 1 S]
+    (h : i.IsCriticalSubmanifold f) : IsLocallyConstant (f ∘ i) := by
+  have hf (s : S) : MDifferentiableAt I 𝓘(ℝ) f (i s) :=
+    (h.contMDiffAt s).mdifferentiableAt two_ne_zero
+  have hi (s : S) : MDifferentiableAt J I i s := (i.contMDiff s).mdifferentiableAt hn
+  refine MDifferentiable.isLocallyConstant_of_mfderiv_eq_zero (fun s ↦ (hf s).comp s (hi s))
+    fun s ↦ ?_
+  rw [mfderiv_comp s (hf s) (hi s),
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 (h.mem_criticalPoints s),
+    ContinuousLinearMap.zero_comp]
 
 namespace IsCriticalSubmanifold
 
@@ -226,14 +244,14 @@ its normal Hessian. -/
 theorem sigNeg_normalHessian (s : S) :
     sigNeg (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I f (i s) := by
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, h.toQuadraticMap_normalHessian hn s]
-  exact QuadraticForm.sigNeg_lift_of_eq_radical _ _ (h.radical_criticalHessian hn s).symm
+  exact QuadraticForm.sigNeg_lift _ _ (h.radical_criticalHessian hn s).ge
 
 /-- The positive index of inertia of the normal Hessian of a Morse–Bott critical submanifold is the
 Morse index of `-f`. -/
 theorem sigPos_normalHessian (s : S) :
     sigPos (h.normalHessian hn s).toQuadraticMap = manifoldMorseIndex I (-f) (i s) := by
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian, h.toQuadraticMap_normalHessian hn s]
-  exact QuadraticForm.sigPos_lift_of_eq_radical _ _ (h.radical_criticalHessian hn s).symm
+  exact QuadraticForm.sigPos_lift _ _ (h.radical_criticalHessian hn s).ge
 
 include hn in
 /-- **Index plus coindex is the codimension.** At each point of a Morse–Bott critical

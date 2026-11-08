@@ -94,8 +94,8 @@ private theorem exists_sub_mem_indexFiltration {p : ℤ} {g : P →₀ M} {k : P
   -- The coefficients on generators of index `p` are relative cycles of `f`.
   have htop (x : P) (hx : ind x = p) : dM (g x) = 0 ∧ f (g x) = dN (k x) := by
     refine ⟨?_, ?_⟩
-    · rw [← m.coefficientDifferential_apply_of_ind_eq hM hm hgp hx, hg, Finsupp.zero_apply]
-    · rw [← m.coefficientDifferential_apply_of_ind_eq hN hm hkp hx, ← hgk]
+    · rw [← m.coefficientDifferential_apply_of_eq hM hm hgp hx, hg, Finsupp.zero_apply]
+    · rw [← m.coefficientDifferential_apply_of_eq hN hm hkp hx, ← hgk]
       simp
   -- Choose relative boundaries for them, and zero elsewhere.
   have key (x : P) : ∃ (u : M) (v : N), (ind x = p → dM u = g x ∧ f u + dN v = k x) ∧
@@ -130,18 +130,18 @@ private theorem exists_sub_mem_indexFiltration {p : ℤ} {g : P →₀ M} {k : P
     intro x hx
     rw [hv]
     exact (hoff x (by omega)).2
-  have hDu := m.coefficientDifferential_mem_indexFiltration hM hm hup
-  have hDv := m.coefficientDifferential_mem_indexFiltration hN hm hvp
+  have hDu := m.coefficientDifferential_mem_rowFiniteIndexFiltration hM hm hup
+  have hDv := m.coefficientDifferential_mem_rowFiniteIndexFiltration hN hm hvp
   refine ⟨u, v, ?_, ?_⟩ <;> rw [mem_rowFiniteIndexFiltration_iff ind] <;> intro x hx <;>
     rcases lt_or_eq_of_le (show p ≤ ind x by omega) with hpx | hpx
   · rw [Finsupp.sub_apply, (mem_rowFiniteIndexFiltration_iff ind).mp hgp x hpx,
       (mem_rowFiniteIndexFiltration_iff ind).mp hDu x hpx, sub_zero]
-  · rw [Finsupp.sub_apply, m.coefficientDifferential_apply_of_ind_eq hM hm hup hpx.symm, hu,
+  · rw [Finsupp.sub_apply, m.coefficientDifferential_apply_of_eq hM hm hup hpx.symm, hu,
       ((hUV x).1 hpx.symm).1, sub_self]
   · simp [(mem_rowFiniteIndexFiltration_iff ind).mp hkp x hpx,
       (mem_rowFiniteIndexFiltration_iff ind).mp hDv x hpx, hu, hoff x hpx.ne']
   · rw [Finsupp.sub_apply, Finsupp.sub_apply,
-      m.coefficientDifferential_apply_of_ind_eq hN hm hvp hpx.symm, hv]
+      m.coefficientDifferential_apply_of_eq hN hm hvp hpx.symm, hv]
     simp only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
       LinearMap.coe_restrictScalars, DGRightModuleHom.coe_toLinearMap, hu]
     rw [← ((hUV x).1 hpx.symm).2]

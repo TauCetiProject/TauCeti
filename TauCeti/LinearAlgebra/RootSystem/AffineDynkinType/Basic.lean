@@ -393,6 +393,15 @@ theorem isBipartite_graph_E8 : E8.graph.IsBipartite :=
       simp only [nodes_E8]
       decide)⟩
 
+/-- The affine diagram `Dₙ` is bipartite: the path `0 - 1 - ⋯ - (n - 2)` is coloured by parity,
+and the leaves `n - 1` at node `1` and `n` at node `n - 3` take the other colour. -/
+theorem isBipartite_graph_D {n : ℕ} (hn : 4 ≤ n) : (D n).graph.IsBipartite := by
+  refine ⟨.mk (fun i ↦ ⟨if (i : ℕ) ≤ n - 2 then (i : ℕ) % 2 else if (i : ℕ) = n - 1 then 0
+    else n % 2, by split_ifs <;> omega⟩) fun {i j} h ↦ ?_⟩
+  have hij := (graph_D_adj hn (i := i) (j := j)).1 h
+  simp only [ne_eq, Fin.mk.injEq]
+  split_ifs <;> omega
+
 /-! ## The generalized Cartan matrix -/
 
 /-- The generalized Cartan matrix of an affine simply-laced diagram: `2I - A` for the adjacency

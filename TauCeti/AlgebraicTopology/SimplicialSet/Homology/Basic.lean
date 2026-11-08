@@ -15,9 +15,10 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 /-!
 # Simplicial chains with varying coefficients
 
-This file records how the coproduct inclusion associated to a simplex behaves under a morphism
-of coefficient objects, and how the degreewise components of the chain maps induced by maps of
-simplicial sets compose with each other and with changes of coefficients.  It also records that
+This file records how the coproduct inclusion associated to a simplex behaves under the
+simplicial operators and under a morphism of coefficient objects, and how the degreewise
+components of the chain maps induced by maps of simplicial sets compose with each other and with
+changes of coefficients.  It also records that
 simplicial chain modules with semisimple coefficients are semisimple, and those with projective
 coefficients are projective, both as modules and, for coefficients in any preadditive category
 with coproducts, as objects of that category.
@@ -88,6 +89,17 @@ lemma chainComplexMap_f_chainComplexFunctor_map_app_f {X Y : _root_.SSet.{w}} (f
 end TauCeti.SSet
 
 namespace SSet
+
+/-- The summand inclusion of a simplex `x`, followed by a simplicial operator of the simplicial
+object `[n] ↦ ∐_{X _⦋n⦌} R` whose chain complex is `X.chainComplex R`, is the summand inclusion of
+the image of `x`. -/
+@[reassoc]
+lemma ιChainComplex_map {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
+    {X : SSet.{w}} {R : C} {m n : ℕ} (x : X _⦋n⦌) (f : ⦋m⦌ ⟶ ⦋n⦌) :
+    X.ιChainComplex (R := R) x ≫
+        (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj X).map f.op =
+      X.ιChainComplex (X.map f.op x) := by
+  simp [ιChainComplex]
 
 /-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are
 semisimple. -/

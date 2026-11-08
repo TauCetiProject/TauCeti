@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Data.Nat.Factorization.PrimePow
 import Mathlib.Data.Nat.Log
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -67,10 +66,13 @@ degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the sam
 * `FormalGroup.height_eq_top_iff` and `FormalGroup.height_eq_natCast_iff`: `F` has height `⊤`
   exactly when `[p]_F = 0`, and height `h` exactly when `[p]_F` has order `p ^ h`.
 * `FormalGroup.one_le_height`: the height is at least one.
+* `FormalGroup.ne_zero_of_height_eq_natCast`: a finite height is nonzero.
 * `FormalGroup.height_eq_one_iff`: `F` has height one exactly when the coefficient of `Tᵖ` in
   `[p]_F` is nonzero.
 * `FormalGroup.coeff_nsmulSeries_eq_zero_of_lt_height`: below the height `h`, the `p`-series has
   no term of degree `pᵏ`, `k < h`.
+* `FormalGroup.coeff_nsmulSeries_ne_zero_of_height_eq`: at finite height `h`, the coefficient of
+  `T ^ (p ^ h)` in the `p`-series is nonzero.
 * `FormalGroup.height_map`: the height is invariant under extension of the base field.
 * `TauCeti.FormalGroupHom.order_nsmulSeries_eq`: over an integral domain, if there is a nonzero
   homomorphism from `F` to `G`, then `[n]_F` and `[n]_G` have the same order.
@@ -173,27 +175,12 @@ theorem exists_order_eq_pow_of_natCast_eq_zero {p : ℕ} (hp : p.Prime) (hpR : (
   have hn : f.order = n := (ENat.natCast_toNat (PowerSeries.order_eq_top.not.mpr hf0)).symm
   have ha : PowerSeries.coeff n f ≠ 0 := PowerSeries.coeff_order hf0
   have hd := F.coeff_mul_lazardGcd_eq_zero_of_le_order G hf hn.ge
-  -- `d_n` is a unit in `R` whenever it is prime to `p`
-  have hcoeff (hcop : (TauCeti.lazardGcd n).Coprime p) : PowerSeries.coeff n f = 0 := by
-    have : IsCoprime ((TauCeti.lazardGcd n : ℕ) : R) (p : R) := by
-      simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := R)
-    rw [hpR, isCoprime_zero_right] at this
-    exact this.mul_left_eq_zero.mp hd
   have hn0 : n ≠ 0 := fun h ↦ ha (by rw [h, PowerSeries.coeff_zero_eq_constantCoeff_apply, hf₀])
-  by_cases hn1 : n = 1
-  · exact ⟨0, by rw [hn, hn1, pow_zero]⟩
-  by_cases hpow : IsPrimePow n
-  · have hq := Nat.minFac_prime hn1
-    by_cases hqp : n.minFac = p
-    · exact ⟨n.factorization p, by rw [hn, ← hqp, hpow.minFac_pow_factorization_eq]⟩
-    · have hcop : (TauCeti.lazardGcd n).Coprime p := by
-        rw [TauCeti.lazardGcd_eq_minFac_of_isPrimePow hpow]
-        exact (Nat.coprime_primes hq hp).mpr hqp
-      exact absurd (hcoeff hcop) ha
-  · have hcop : (TauCeti.lazardGcd n).Coprime p := by
-      rw [TauCeti.lazardGcd_eq_one_of_not_isPrimePow (by omega) hpow]
-      exact Nat.coprime_one_left p
-    exact absurd (hcoeff hcop) ha
+  by_cases hpow : ∃ h, n = p ^ h
+  · obtain ⟨h, hh⟩ := hpow
+    exact ⟨h, by rw [hn, hh]⟩
+  -- otherwise `d_n` is a unit in `R`, so the leading coefficient of `f` vanishes
+  exact absurd ((TauCeti.isUnit_lazardGcd hp hpR hn0 hpow).mul_left_eq_zero.mp hd) ha
 
 /-- **The `p`-series has order a power of `p`** in characteristic `p`: if `p` is a prime with
 `p = 0` in `R` and `F` is commutative, then either `[p]_F = 0` or the first nonzero term of
@@ -253,6 +240,14 @@ theorem one_le_height [hp : Fact p.Prime] [CharP K p] [F.IsComm] : 1 ≤ F.heigh
   rw [(F.height_eq_natCast_iff).mpr hk]
   exact_mod_cast Nat.one_le_iff_ne_zero.mpr hk0
 
+/-- A commutative formal group law of finite height `h` over a field of characteristic `p` has
+`h ≠ 0`. -/
+theorem ne_zero_of_height_eq_natCast [hp : Fact p.Prime] [CharP K p] [F.IsComm] {h : ℕ}
+    (hF : F.height p = h) : h ≠ 0 := by
+  have := F.one_le_height (p := p)
+  rw [hF] at this
+  exact_mod_cast (Nat.one_le_iff_ne_zero.mp (by exact_mod_cast this))
+
 /-- A commutative formal group law over a field of characteristic `p` has height one exactly when
 the coefficient of `Tᵖ` in `[p]_F(T)` is nonzero. -/
 theorem height_eq_one_iff [hp : Fact p.Prime] [CharP K p] [F.IsComm] :
@@ -278,6 +273,11 @@ theorem coeff_nsmulSeries_eq_zero_of_lt_height [hp : Fact p.Prime] [CharP K p] [
   refine PowerSeries.coeff_of_lt_order _ ?_
   rw [F.height_eq_natCast_iff.mp hh.symm, Nat.cast_lt]
   exact Nat.pow_lt_pow_right hp.out.one_lt hk
+
+/-- The coefficient of `T ^ (p ^ h)` in `[p]_F(T)` is nonzero when `F` has height `h`. -/
+theorem coeff_nsmulSeries_ne_zero_of_height_eq [hp : Fact p.Prime] [CharP K p] [F.IsComm] {h : ℕ}
+    (hF : F.height p = h) : PowerSeries.coeff (p ^ h) (F.nsmulSeries p) ≠ 0 :=
+  (PowerSeries.order_eq_nat.mp (F.height_eq_natCast_iff.mp hF)).1
 
 /-- The height is invariant under extension of the base field. -/
 @[simp]
@@ -410,7 +410,7 @@ theorem coeff_nsmulSeries_homothety_smul_eq_one {K : Type*} [Field K] {p : ℕ} 
     (hu : (u : K) ^ (p ^ h - 1) = PowerSeries.coeff (p ^ h) (F.nsmulSeries p)) :
     PowerSeries.coeff (p ^ h) ((TauCeti.FormalCoordinate.homothety u • F).nsmulSeries p) = 1 := by
   set a := PowerSeries.coeff (p ^ h) (F.nsmulSeries p)
-  have ha : a ≠ 0 := (PowerSeries.order_eq_nat.mp (F.height_eq_natCast_iff.mp hF)).1
+  have ha : a ≠ 0 := F.coeff_nsmulSeries_ne_zero_of_height_eq hF
   have key := (smulIso (TauCeti.FormalCoordinate.homothety u) F).toHom
     |>.coeff_nsmulSeries_mul_coeff_one_pow hF
   simp only [smulIso_toHom_toPowerSeries, TauCeti.FormalCoordinate.toPowerSeries_homothety,

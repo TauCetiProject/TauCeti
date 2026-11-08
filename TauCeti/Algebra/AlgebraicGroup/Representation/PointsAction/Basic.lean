@@ -15,9 +15,11 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.LinearAlgebra.Semisimple
+public import Mathlib.LinearAlgebra.Unimodular
 import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
+import TauCeti.LinearAlgebra.Unimodular
 
 /-!
 # The points action of a comodule, by automorphisms
@@ -123,6 +125,17 @@ theorem basePointsRepresentation_mem (N : Subcomodule R H M)
   rw [basePointsRepresentation_apply, endOfPoint_tmul, one_smul,
     TensorProduct.lid_comm]
   exact N.rid_lTensor_coact_mem g.ofConv.toLinearMap hm
+
+/-- Acting by a base-valued point preserves unimodularity of vectors. -/
+@[simp]
+theorem isUnimodular_basePointsRepresentation_iff
+    (g : WithConv (H →ₐ[R] R)) (m : M) :
+    Module.IsUnimodular R (basePointsRepresentation (H := H) M g m) ↔
+      Module.IsUnimodular R m := by
+  simpa [Representation.asGroupHom_apply] using
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+      (Representation.asGroupHom
+        (basePointsRepresentation (R := R) (H := H) M) g)).isUnimodular_apply_iff (m := m)
 
 /-- A base-valued point acts on a vector of group-like weight `c` by the scalar `g c`. -/
 theorem basePointsRepresentation_apply_of_mem_weightSpace (g : WithConv (H →ₐ[R] R))

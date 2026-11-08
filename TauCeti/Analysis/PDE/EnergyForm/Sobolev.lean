@@ -338,7 +338,7 @@ theorem integrable_norm_jetField_snd_sq (u : W1p mu Omega 2) :
 /-- The squared value component of the Sobolev jet field is integrable. -/
 theorem integrable_jetField_fst_sq (u : W1p mu Omega 2) :
     Integrable (fun x => (jetField u x).1 ^ 2) (mu.restrict Omega) := by
-  simpa only [jetField_apply] using W1p.integrable_value_sq u
+  simpa only [jetField_apply] using (Lp.memLp (W1p.value u)).integrable_sq
 
 /-- The integral of the squared gradient component of a Sobolev jet is the squared `L²`
 gradient norm. -/
@@ -587,6 +587,22 @@ theorem energyFormH1_poincare_constant_pos (hlam : 0 < lam) (hbeta : 0 ≤ beta)
   have hD : 0 < 2 * lam * (P ^ 2 + 1) := by positivity
   refine div_pos ?_ hD
   nlinarith [mul_nonneg hbeta hP]
+
+/-- The smallness condition `βP < λ` survives replacing the drift bound `β` and the Poincaré
+constant `P` by their nonnegative parts, so the hypotheses `0 ≤ β` and `0 ≤ P` of
+`TauCeti.PDE.energyFormH1_poincare_constant_pos` may be dropped from its users. -/
+theorem max_mul_max_lt_of_mul_lt (hlam : 0 < lam) (hsmall : beta * P < lam) :
+    max beta 0 * max P 0 < lam := by
+  rcases max_choice beta 0 with hb | hb <;> rcases max_choice P 0 with hP | hP <;>
+    rw [hb, hP] <;> linarith
+
+/-- The ball form of `TauCeti.PDE.max_mul_max_lt_of_mul_lt`: `β(2R) < λ` gives
+`max β 0 * (2 * max R 0) < λ`. -/
+theorem max_mul_two_mul_max_lt_of_mul_two_mul_lt {R : ℝ} (hlam : 0 < lam)
+    (hsmall : beta * (2 * R) < lam) : max beta 0 * (2 * max R 0) < lam := by
+  have := max_mul_max_lt_of_mul_lt hlam hsmall
+  rwa [show max (2 * R) 0 = 2 * max R 0 by
+    rw [mul_max_of_nonneg _ _ zero_le_two, mul_zero]] at this
 
 /-- Convert a gradient-minus-value lower bound into a full `H¹`-norm lower bound using a
 Poincaré inequality. -/

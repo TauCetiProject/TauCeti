@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Manifold derivatives of continuous-linear-map applications
@@ -78,6 +79,16 @@ theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F �
   -- Both sides now read the derivative of `u` in the chart at `x`; Mathlib's
   -- `MDifferentiableAt.mvfderiv` is the identification of that chart derivative with `mvfderiv`.
   exact congrArg (c x).comp hu.mvfderiv.symm
+
+/-- Applying a differentiable family of continuous linear maps to a fixed vector commutes with the
+vector-valued manifold derivative: `d (fun z ↦ c z w) x v = (d c x v) w`. -/
+theorem mvfderiv_clm_apply_const {c : M → F →L[𝕜] F'}
+    (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F') c x) (w : F) (v : TangentSpace I x) :
+    mvfderiv I (fun z ↦ c z w) x v = mvfderiv I c x v w := by
+  have h := mvfderiv_comp_apply_of_differentiableAt (g := c) (x := x)
+    (ContinuousLinearMap.apply 𝕜 F' w).differentiableAt hc v
+  rw [ContinuousLinearMap.fderiv, ContinuousLinearMap.apply_apply] at h
+  exact h
 
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
 `L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative

@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.AdicCompletion.IdealIndependence
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicRing.Basic
 
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Away.Quotient
 
 /-!
@@ -78,6 +79,10 @@ topology, not on the chosen ideal of definition.
 * `TauCeti.AdicRing.CompletedAway.quotient_algHom_subsingleton`: there is at most one
   `A`-algebra homomorphism out of `A_{f} ⧸ I ^ n A_{f}`, so `quotientPowEquiv` is the unique
   isomorphism and, for `m ≤ n`, is compatible with the reduction from `I ^ n` to `I ^ m`.
+* `TauCeti.AdicRing.CompletedAway.algHom_ext_of_map_pow_eq_bot`,
+  `TauCeti.AdicRing.CompletedAway.algHom_ext_adicCompletion`: an `A`-algebra homomorphism out of
+  `A_{f}` is unique if its target is killed by a power of `I`, or is the adic completion of an
+  `A`-algebra `B` along an ideal containing `I B`; no continuity is required.
 * `TauCeti.AdicRing.CompletedAway.isUnit_algebraMap_iff`: `f` is a unit in `A_{g}` if and only if
   `g` lies in the radical of `f A + I`.
 * `TauCeti.AdicRing.CompletedAway.subsingleton_iff`: `A_{f}` is the zero ring if and only if `f`
@@ -131,6 +136,14 @@ instance : IsScalarTower A (Localization.Away f) (CompletedAway A f) :=
   inferInstanceAs (IsScalarTower A (Localization.Away f)
     (AdicCompletion ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
       (Localization.Away f)))
+
+/-- The completed localisation `A_{f}` is, by definition, the adic completion of `A_f` along
+`I A_f`; this is that identification as an isomorphism of `A_f`-algebras. -/
+noncomputable def equivAdicCompletion :
+    CompletedAway A f ≃ₐ[Localization.Away f]
+      AdicCompletion ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
+        (Localization.Away f) :=
+  AlgEquiv.refl
 
 /-- The completed localisation carries the adic topology of the extension `I A_{f}` of the chosen
 ideal of definition `I` of `A`. -/
@@ -368,6 +381,36 @@ instance quotient_algHom_subsingleton (n : ℕ) {B : Type*} [Semiring B] [Algebr
     (Ideal.Quotient.ringHom_ext (RingHom.ext fun a ↦ ?_))
   · exact congr($h y)
   · simp [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+
+variable {A f} in
+/-- An `A`-algebra homomorphism out of `A_{f}` into an `A`-algebra in which `I ^ n` vanishes is
+unique: it factors through `A_{f} ⧸ I ^ n A_{f}`, out of which there is at most one `A`-algebra
+homomorphism. No topology on the target is needed. -/
+theorem algHom_ext_of_map_pow_eq_bot {B : Type*} [Semiring B] [Algebra A B] {n : ℕ}
+    (h : (IsAdicRing.ideal A ^ n).map (algebraMap A B) = ⊥) (g₁ g₂ : CompletedAway A f →ₐ[A] B) :
+    g₁ = g₂ := by
+  have hker (g : CompletedAway A f →ₐ[A] B) (x : CompletedAway A f)
+      (hx : x ∈ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) : g x = 0 := by
+    rw [← Ideal.map_pow] at hx
+    exact (Ideal.map_eq_bot_iff_le_ker g).mp ((Ideal.map_map_algebraMap g _).trans h) hx
+  ext x
+  exact congr($(Subsingleton.elim (Ideal.Quotient.liftₐ _ g₁ (hker g₁))
+    (Ideal.Quotient.liftₐ _ g₂ (hker g₂))) (Ideal.Quotient.mk _ x))
+
+variable {A f} in
+/-- An `A`-algebra homomorphism out of `A_{f}` into the adic completion of an `A`-algebra `B` along
+an ideal containing `I B` is unique. -/
+theorem algHom_ext_adicCompletion {B : Type*} [CommRing B] [Algebra A B] {K : Ideal B}
+    (hK : (IsAdicRing.ideal A).map (algebraMap A B) ≤ K)
+    (g₁ g₂ : CompletedAway A f →ₐ[A] AdicCompletion K B) : g₁ = g₂ := by
+  -- modulo `K ^ n`, the two homomorphisms land in a ring in which `I ^ n` vanishes
+  refine AlgHom.ext fun x ↦ AdicCompletion.ext_evalₐ fun n ↦ ?_
+  have h : (IsAdicRing.ideal A ^ n).map (algebraMap A (B ⧸ K ^ n)) = ⊥ := by
+    rw [IsScalarTower.algebraMap_eq A B, ← Ideal.map_map, Ideal.Quotient.algebraMap_eq,
+      eq_bot_iff, ← Ideal.map_quotient_self (K ^ n), Ideal.map_pow]
+    exact Ideal.map_mono (Ideal.pow_right_mono hK n)
+  exact congr($(algHom_ext_of_map_pow_eq_bot h (((AdicCompletion.evalₐ K n).restrictScalars A).comp
+    g₁) (((AdicCompletion.evalₐ K n).restrictScalars A).comp g₂)) x)
 
 end Quotient
 

@@ -19,8 +19,9 @@ regularity of the local rings at every point of the open. In particular, a Noeth
 regular exactly when the local rings of its spectrum are regular. Open immersions identify local
 rings, so they preserve and reflect their regularity.
 
-More generally, an étale morphism `f : X ⟶ Y` induces at each point `x` a flat local
-homomorphism `𝒪_{Y, f x} ⟶ 𝒪_{X, x}` under which the maximal ideal of the source generates the
+More generally, a flat, formally unramified morphism `f : X ⟶ Y` locally of finite type (for
+instance an étale morphism) induces at each point `x` a flat local homomorphism
+`𝒪_{Y, f x} ⟶ 𝒪_{X, x}` under which the maximal ideal of the source generates the
 maximal ideal of the target, and which preserves and reflects Noetherianity
 (`AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_stalkMap_of_formallyUnramified`,
 `AlgebraicGeometry.Scheme.Hom.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
@@ -35,7 +36,7 @@ Noetherian local rings such a homomorphism both preserves and reflects regularit
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec_iff`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
-* `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_etale`
+* `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified`
 -/
 
 public section
@@ -115,11 +116,13 @@ end TauCeti
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Etale f] (x : X)
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [FormallyUnramified f] [LocallyOfFiniteType f]
+  (x : X)
 
-/-- An étale morphism `f : X ⟶ Y` preserves and reflects regularity of local rings: the local
-ring of `Y` at `f x` is regular exactly when the local ring of `X` at `x` is. -/
-theorem isRegularLocalRing_stalk_iff_of_etale :
+/-- A flat, formally unramified morphism `f : X ⟶ Y` locally of finite type (in particular an
+étale morphism) preserves and reflects regularity of local rings: the local ring of `Y` at `f x`
+is regular exactly when the local ring of `X` at `x` is. -/
+theorem isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified :
     IsRegularLocalRing (Y.presheaf.stalk (f x)) ↔ IsRegularLocalRing (X.presheaf.stalk x) := by
   let := (f.stalkMap x).hom.toAlgebra
   have := isLocalHom_stalkMap_toAlgebra f x

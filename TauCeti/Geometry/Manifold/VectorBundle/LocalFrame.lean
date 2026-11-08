@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.LinearAlgebra.Matrix.Basis
+import Mathlib.Geometry.Manifold.BumpFunction
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Local frames: duality with the coefficient functionals, and testing hom-bundle sections
@@ -37,6 +39,8 @@ a time.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
+* `Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame`: a fibre vector is the sum of
+  the local-frame vectors weighted by the coordinates of its reading in `e`.
 * `TauCeti.Manifold.basisAt_apply`: the basis `e.basisAt b hx` is the continuous inverse of `e`
   applied to `b`.
 * `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
@@ -46,6 +50,8 @@ a time.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
   maps, possibly along a base map, is `C^n` once its evaluations on a local frame of the source
   bundle are.
+* `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
+  the local frame of a trivialization agrees with a family of globally smooth sections.
 -/
 
 public section
@@ -107,6 +113,17 @@ vector. -/
 theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
   rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
+
+/-- A vector of the fibre over a point of the base set of a trivialization `e` is the sum of the
+local-frame vectors weighted by the coordinates of its reading in `e`. -/
+theorem _root_.Module.Basis.eq_sum_repr_continuousLinearMapAt_smul_localFrame [Fintype ι]
+    (hx : x ∈ e.baseSet) (v : V x) :
+    v = ∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • e.localFrame b i x := by
+  calc
+    v = e.symmL 𝕜 x (e.continuousLinearMapAt 𝕜 x v) := (e.symmL_continuousLinearMapAt hx v).symm
+    _ = e.symmL 𝕜 x (∑ i, b.repr (e.continuousLinearMapAt 𝕜 x v) i • b i) := by
+      rw [b.sum_repr]
+    _ = _ := by simp only [map_sum, map_smul, symmL_basis_eq_localFrame b hx]
 
 /-- The section with constant coordinates `v` in a trivialization `e` is `C^n` on the base set of
 `e`. -/
@@ -187,3 +204,31 @@ theorem contMDiffOn_hom_of_localFrame {f : N → M} {u : Set N} (hf : ContMDiffO
 end Hom
 
 end TauCeti.Manifold
+
+namespace Bundle.Trivialization
+
+/-- Near a point `x` of the base set of a trivialization `e` of a smooth real vector bundle over a
+finite-dimensional Hausdorff manifold, the local frame `e.localFrame b` agrees with a family of
+globally smooth sections. -/
+theorem exists_contMDiff_eventuallyEq_localFrame
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
+    {x : M} (hx : x ∈ e.baseSet) :
+    ∃ F : ι → Π y : M, W y, (∀ i, CMDiff ∞ (T% (F i))) ∧
+      ∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y := by
+  -- Cut the frame off by a smooth bump function equal to one near `x`, supported in `e.baseSet`.
+  have hnhds : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
+  obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
+  refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_⟩
+  · exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
+      (e.contMDiffOn_localFrame_baseSet _ b i)
+  · filter_upwards [ρ.eventuallyEq_one] with y hy
+    simp [hy]
+
+end Bundle.Trivialization

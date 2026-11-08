@@ -42,6 +42,11 @@ def fiberι (p : E ⟶ B) (b : B) : p.fiber b ⟶ E := TopCat.ofHom ⟨Subtype.v
 @[simp]
 lemma fiberι_apply (p : E ⟶ B) (b : B) (x : p.fiber b) : p.fiberι b x = x.1 := (rfl)
 
+/-- The morphism `p` sends every point of its fibre over `b` to `b`. -/
+@[simp]
+lemma apply_coe_fiber (p : E ⟶ B) (b : B) (x : p.fiber b) : p x.1 = b :=
+  x.2
+
 @[reassoc (attr := simp)]
 lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b := by
   ext x

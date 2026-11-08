@@ -29,6 +29,10 @@ For the Riemann sphere `OnePoint ℂ`, this identifies `PSL(2, ℂ)` with the or
 distinct points, which is how the automorphisms of a genus-zero domain are normalized by fixing
 `(0, 1, ∞)`.
 
+## Main definitions
+
+* `OnePoint.zeroOneInftyTriple`: the ordered triple `(0, 1, ∞)` of distinct points.
+
 ## Main results
 
 * `OnePoint.exists_smul_zero_one_infty_eq`: some element of `GL(2, K)` carries `0`, `1`, `∞` to
@@ -41,6 +45,10 @@ distinct points, which is how the automorphisms of a genus-zero domain are norma
   `OnePoint.existsUnique_psl_smul_zero_one_infty_eq`: exactly one element of `PSL(2, K)` carries
   `0`, `1`, `∞` to three pairwise distinct points, when every unit of `K` is a square and when `K`
   is algebraically closed.
+* `OnePoint.existsUnique_psl_smul_zeroOneInftyTriple_eq` and
+  `OnePoint.existsUnique_psl_smul_eq_of_injective`: over an algebraically closed field, exactly
+  one element of `PSL(2, K)` carries the ordered triple `(0, 1, ∞)`, or any ordered triple of
+  distinct points, to a given ordered triple of distinct points.
 
 ## References
 
@@ -52,13 +60,30 @@ distinct points, which is how the automorphisms of a genus-zero domain are norma
 
 public section
 
+open Function
 open scoped MatrixGroups
 
 namespace OnePoint
 
 open Matrix
 
-variable {K : Type*} [Field K] [DecidableEq K]
+variable {K : Type*} [Field K]
+
+variable (K) in
+/-- The ordered triple `(0, 1, ∞)` of distinct points of the projective line. -/
+def zeroOneInftyTriple : {p : Fin 3 → OnePoint K // Injective p} :=
+  ⟨![((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞], by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all⟩
+
+/-- The points of the ordered triple `(0, 1, ∞)`. -/
+@[simp]
+theorem coe_zeroOneInftyTriple :
+    ((zeroOneInftyTriple K : {p : Fin 3 → OnePoint K // Injective p}) : Fin 3 → OnePoint K) =
+      ![((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞] :=
+  (rfl)
+
+variable [DecidableEq K]
 
 /-- **`GL(2, K)` carries `0`, `1`, `∞` to any three pairwise distinct points** of the projective
 line. -/
@@ -178,5 +203,36 @@ theorem existsUnique_psl_smul_zero_one_infty_eq [IsAlgClosed K] {x y z : OnePoin
       g • (∞ : OnePoint K) = z :=
   existsUnique_psl_smul_zero_one_infty_eq_of_factor
     GeneralLinearGroup.exists_toGL_mul_scalar_eq hxy hxz hyz
+
+/-- **Sharp triple transitivity of `PSL(2, K)` on ordered triples.** Over an algebraically closed
+field, exactly one element of `PSL(2, K)` carries the ordered triple `(0, 1, ∞)` to a given ordered
+triple of distinct points of the projective line. -/
+theorem existsUnique_psl_smul_zeroOneInftyTriple_eq [IsAlgClosed K] {p : Fin 3 → OnePoint K}
+    (hp : Injective p) :
+    ∃! g : PSL(2, K), g • (zeroOneInftyTriple K : Fin 3 → OnePoint K) = p := by
+  obtain ⟨g, hg, hu⟩ := existsUnique_psl_smul_zero_one_infty_eq
+    (hp.ne (by decide : (0 : Fin 3) ≠ 1)) (hp.ne (by decide : (0 : Fin 3) ≠ 2))
+    (hp.ne (by decide : (1 : Fin 3) ≠ 2))
+  -- An equality of triples is the equality of their three points.
+  have key (h : PSL(2, K)) : h • (zeroOneInftyTriple K : Fin 3 → OnePoint K) = p ↔
+      h • ((0 : K) : OnePoint K) = p 0 ∧ h • ((1 : K) : OnePoint K) = p 1 ∧
+        h • (∞ : OnePoint K) = p 2 := by
+    rw [funext_iff]
+    refine ⟨fun hh ↦ ⟨by simpa using hh 0, by simpa using hh 1, by simpa using hh 2⟩, ?_⟩
+    rintro ⟨h0, h1, h2⟩ i
+    fin_cases i <;> simpa
+  exact ⟨g, (key g).2 hg, fun h hh ↦ hu h ((key h).1 hh)⟩
+
+/-- **`PSL(2, K)` acts simply transitively on ordered triples of distinct points.** Over an
+algebraically closed field, exactly one element of `PSL(2, K)` carries a given ordered triple of
+distinct points of the projective line to another. -/
+theorem existsUnique_psl_smul_eq_of_injective [IsAlgClosed K] {b p : Fin 3 → OnePoint K}
+    (hb : Injective b) (hp : Injective p) : ∃! g : PSL(2, K), g • b = p := by
+  obtain ⟨k, hk, -⟩ := existsUnique_psl_smul_zeroOneInftyTriple_eq hb
+  obtain ⟨l, hl, hu⟩ := existsUnique_psl_smul_zeroOneInftyTriple_eq hp
+  refine ExistsUnique.intro (l * k⁻¹) ?_ fun g hg ↦ ?_
+  · rw [mul_smul, ← hk, inv_smul_smul, hl]
+  · rw [eq_mul_inv_iff_mul_eq]
+    exact hu (g * k) (by simp only [mul_smul, hk, hg])
 
 end OnePoint

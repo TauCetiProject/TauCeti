@@ -10,6 +10,7 @@ public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Frontier
 
@@ -83,6 +84,9 @@ Carathéodory boundary correspondence in `TauCeti/Analysis/Complex/Conformal/Car
   with the relatively compact components of its complement is compact.
 * `TauCeti.exists_mem_not_isCompact_closure_connectedComponentIn_compl` — a set with noncompact
   closure meets a component of the complement of a compact set which again has noncompact closure.
+* `TauCeti.exists_isCompact_finite_connectedComponents_compl` — in a preconnected, locally
+  connected, locally compact Hausdorff space, every compact set has a compact neighbourhood whose
+  complement has finitely many components, none of them with compact closure.
 -/
 
 public section
@@ -237,11 +241,7 @@ theorem IsCompact.isCompact_setOf_isCompact_closure_connectedComponentIn_compl
     exact hBK ▸ hK.isClosed.isClosed_filledHull
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
   -- Finitely many components of `Kᶜ` cover the frontier of the compact neighbourhood `L`.
-  have hfrK : frontier L ⊆ Kᶜ := fun y hy hyK ↦ hy.2 (hKL hyK)
-  obtain ⟨F, hFL, hcover⟩ := (hL.of_isClosed_subset isClosed_frontier
-    hL.isClosed.frontier_subset).elim_nhds_subcover (connectedComponentIn Kᶜ)
-      fun y hy ↦ hK.isClosed.isOpen_compl.connectedComponentIn.mem_nhds
-        (mem_connectedComponentIn (hfrK hy))
+  obtain ⟨F, hF⟩ := TauCeti.exists_finset_connectedComponentIn_compl_eq hK.isClosed hL hKL
   classical
   refine (hL.union ((F.filter (· ∈ B)).isCompact_biUnion fun z hz ↦
     (Finset.mem_filter.1 hz).2)).of_isClosed_subset hB fun y hy ↦ ?_
@@ -252,28 +252,15 @@ theorem IsCompact.isCompact_setOf_isCompact_closure_connectedComponentIn_compl
   have hyC : y ∈ C := mem_connectedComponentIn fun hyK ↦ hyL (interior_subset (hKL hyK))
   by_cases hCfr : (C ∩ frontier L).Nonempty
   · -- A component meeting the frontier of `L` is one of the covering components.
-    obtain ⟨w, hwC, hwL⟩ := hCfr
-    obtain ⟨z, hzF, hwz⟩ := mem_iUnion₂.1 (hcover hwL)
-    have hCz : connectedComponentIn Kᶜ z = C :=
-      (connectedComponentIn_eq hwz).trans (connectedComponentIn_eq hwC).symm
+    obtain ⟨z, hzF, hCz⟩ := hF y hCfr
     refine mem_iUnion₂.2 ⟨z, Finset.mem_filter.2 ⟨hzF, ?_⟩, ?_⟩
     · simpa [B, hCz] using hy
     · exact subset_closure (hCz ▸ hyC)
   · -- Otherwise the component lies outside `L`, so it is clopen and contains a component of `X`.
     exfalso
-    have hCL : C ⊆ Lᶜ := isPreconnected_connectedComponentIn.subset_of_closure_inter_subset
-      hL.isClosed.isOpen_compl ⟨y, hyC, hyL⟩ fun w ⟨hw, hwC⟩ hwL ↦
-        hCfr ⟨w, hwC, subset_closure hwL, by rwa [← mem_compl_iff, ← closure_compl]⟩
-    have hfrC : frontier C = ∅ := by
-      refine eq_empty_of_forall_notMem fun w hw ↦ ?_
-      have hwK : w ∈ K := by
-        simpa using TauCeti.frontier_connectedComponentIn_subset_compl hK.isClosed.isOpen_compl
-          y hw
-      have hw' : w ∈ closure Lᶜ := closure_mono hCL (frontier_subset_closure hw)
-      rw [closure_compl] at hw'
-      exact hw' (hKL hwK)
     have hcomp : connectedComponent y ⊆ closure C :=
-      ((isClopen_iff_frontier_eq_empty.2 hfrC).connectedComponent_subset hyC).trans subset_closure
+      ((TauCeti.isClopen_connectedComponentIn_compl hK.isClosed hL.isClosed hKL hyL
+        hCfr).connectedComponent_subset hyC).trans subset_closure
     exact hX y (hy.of_isClosed_subset isClosed_connectedComponent hcomp)
 
 namespace TauCeti
@@ -288,6 +275,75 @@ theorem exists_mem_not_isCompact_closure_connectedComponentIn_compl [LocallyConn
   by_contra! h
   have hB := hL.isCompact_setOf_isCompact_closure_connectedComponentIn_compl hX
   exact hS (hB.of_isClosed_subset isClosed_closure (closure_minimal h hB.isClosed))
+
+/-- **Nested escaping points.** In a locally compact Hausdorff, locally connected space with no
+compact connected component, let `K n` be compact sets and let the component of `y` in `X \ K 0`
+have noncompact closure. Then there are points `z n` starting at `y` such that the component of
+`z n` in `X \ K n` has noncompact closure and contains `z (n + 1)`. -/
+theorem exists_seq_not_isCompact_closure_connectedComponentIn_compl [LocallyConnectedSpace X]
+    (hX : ∀ x : X, ¬IsCompact (connectedComponent x)) {K : ℕ → Set X} (hK : ∀ n, IsCompact (K n))
+    {y : X} (hy : ¬IsCompact (closure (connectedComponentIn (K 0)ᶜ y))) :
+    ∃ z : ℕ → X, z 0 = y ∧ ∀ n, ¬IsCompact (closure (connectedComponentIn (K n)ᶜ (z n))) ∧
+      z (n + 1) ∈ connectedComponentIn (K n)ᶜ (z n) := by
+  let P (n : ℕ) (y : X) : Prop := ¬IsCompact (closure (connectedComponentIn (K n)ᶜ y))
+  have step (n : ℕ) (y : X) (hy : P n y) : ∃ y' ∈ connectedComponentIn (K n)ᶜ y, P (n + 1) y' :=
+    exists_mem_not_isCompact_closure_connectedComponentIn_compl hX hy (hK (n + 1))
+  choose! next hnext_mem hnext using step
+  let z : ℕ → X := fun n ↦ Nat.rec y (fun n zn ↦ next n zn) n
+  have hz (n : ℕ) : P n (z n) := by
+    induction n with
+    | zero => exact hy
+    | succ n ih => exact hnext n (z n) ih
+  exact ⟨z, rfl, fun n ↦ ⟨hz n, hnext_mem n (z n) (hz n)⟩⟩
+
+/-- **Compact neighbourhoods with finitely many unbounded complementary components.** In a
+preconnected, locally connected, locally compact Hausdorff space, every compact set `K` lies in the
+interior of a compact set `L` such that `X \ L` has only finitely many connected components, none
+of which has compact closure. -/
+theorem exists_isCompact_finite_connectedComponents_compl [LocallyConnectedSpace X]
+    [PreconnectedSpace X] {K : Set X} (hK : IsCompact K) :
+    ∃ L : Set X, IsCompact L ∧ K ⊆ interior L ∧ Finite (ConnectedComponents ↥Lᶜ) ∧
+      ∀ x ∈ Lᶜ, ¬IsCompact (closure (connectedComponentIn Lᶜ x)) := by
+  -- In a compact space the whole space works.
+  by_cases hc : CompactSpace X
+  · refine ⟨univ, isCompact_univ, by simp, ?_, fun x hx ↦ absurd (mem_univ x) hx⟩
+    have : IsEmpty ↥(univ : Set X)ᶜ := ⟨fun x ↦ x.2 (mem_univ _)⟩
+    exact Finite.of_surjective _ ConnectedComponents.surjective_coe
+  have := not_compactSpace_iff.1 hc
+  -- Enlarge `K` by a point, so that the neighbourhood `L₀` below is nonempty.
+  obtain ⟨x₀⟩ := (Filter.cocompact X).nonempty_of_neBot
+  -- `L` is a compact neighbourhood `L₀` of `K` together with the components of `X \ L₀` with
+  -- compact closure. The other components of `X \ L₀` meet the compact frontier of a compact
+  -- neighbourhood `M` of `L₀`, which only finitely many components do.
+  obtain ⟨L₀, hL₀, hKL₀⟩ := exists_compact_superset (hK.insert x₀)
+  obtain ⟨M, hM, hL₀M⟩ := exists_compact_superset hL₀
+  set L := {x | IsCompact (closure (connectedComponentIn L₀ᶜ x))}
+  have hL : IsCompact L := hL₀.isCompact_setOf_isCompact_closure_connectedComponentIn_compl
+    not_isCompact_connectedComponent
+  have hL₀L : L₀ ⊆ L := fun _ ↦ isCompact_closure_connectedComponentIn_compl_of_mem
+  -- Outside `L`, the components of `X \ L` are the components of `X \ L₀`.
+  have hcomp (x : X) (hx : x ∈ Lᶜ) : connectedComponentIn Lᶜ x = connectedComponentIn L₀ᶜ x := by
+    refine (connectedComponentIn_mono x (compl_subset_compl.2 hL₀L)).antisymm
+      (isPreconnected_connectedComponentIn.subset_connectedComponentIn
+        (mem_connectedComponentIn fun h ↦ hx (hL₀L h)) fun y hy hyL ↦ hx ?_)
+    exact (congrArg (fun s ↦ IsCompact (closure s)) (connectedComponentIn_eq hy)).mpr hyL
+  refine ⟨L, hL, (subset_insert x₀ K).trans (hKL₀.trans (interior_mono hL₀L)), ?_,
+    fun x hx ↦ hcomp x hx ▸ hx⟩
+  -- Finitely many components of `X \ L₀` cover the frontier of `M`, and every component of
+  -- `X \ L` is one of them.
+  obtain ⟨F, hcover⟩ := exists_finset_connectedComponentIn_compl_eq hL₀.isClosed hM hL₀M
+  have hF (x : X) (hx : x ∈ Lᶜ) :
+      ∃ z ∈ F, connectedComponentIn L₀ᶜ z = connectedComponentIn L₀ᶜ x :=
+    hcover x (connectedComponentIn_compl_inter_frontier_nonempty hL₀.isClosed hM hL₀M
+      ⟨x₀, interior_subset (hKL₀ (mem_insert x₀ K))⟩ hx)
+  classical
+  refine Finite.of_surjective
+    (fun z : {z : F // (z : X) ∈ Lᶜ} ↦ ConnectedComponents.mk (⟨z.1, z.2⟩ : ↥Lᶜ)) ?_
+  rintro ⟨x, hx⟩
+  obtain ⟨z, hzF, hzx⟩ := hF x hx
+  have hzL : z ∈ Lᶜ := fun h ↦ hx ((congrArg (fun s ↦ IsCompact (closure s)) hzx).mp h)
+  exact ⟨⟨⟨z, hzF⟩, hzL⟩, (ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq hzL hx).2
+    (by rw [hcomp z hzL, hcomp x hx, hzx])⟩
 
 end TauCeti
 

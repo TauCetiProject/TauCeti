@@ -257,12 +257,12 @@ theorem IsNormal.comp_monoCLM (hT : IsNormal T) (h : Ω' ≤ Ω) :
     IsNormal (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
   cases k with
   | zero =>
-    rw [isNormal_finZero_iff, coe_comp, mass_comp_monoCLM h]
-    exact ne_top_of_le_ne_top hT localMass_le_mass
+    rw [isNormal_finZero_iff, coe_comp]
+    exact ne_top_of_le_ne_top hT (mass_comp_monoCLM_le h)
   | succ k =>
-    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp,
-      mass_comp_monoCLM h, mass_comp_monoCLM h]
-    exact ⟨ne_top_of_le_ne_top hT.1 localMass_le_mass, ne_top_of_le_ne_top hT.2 localMass_le_mass⟩
+    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    exact ⟨ne_top_of_le_ne_top hT.1 (mass_comp_monoCLM_le h),
+      ne_top_of_le_ne_top hT.2 (mass_comp_monoCLM_le h)⟩
 
 end Restriction
 

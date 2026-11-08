@@ -33,6 +33,9 @@ by the boost of the unit circle toward `i`. Boosting far enough carries a compac
 sphere avoiding `-v` into any open cap `⟪x, v⟫ > r` around `v` with `r < 1`
 (`IsCompact.eventually_forall_lt_inner_sphereBoost`).
 
+A boost depends smoothly on the rapidity and the point together, wherever its denominator does
+not vanish (`TauCeti.contDiffAt_sphereBoost`), in particular on `ℝ × Sⁿ`.
+
 At the repelling fixed point `-v`, the boost of rapidity `a` stretches every tangent vector by
 `eᵃ` (`TauCeti.fderiv_sphereBoost_neg_self_apply`): it maps the line `-v + s w` through `-v` in a
 tangent direction `w` to the line `-v + eᵃ s w`. Boosting thus rescales the velocity of a curve
@@ -51,6 +54,7 @@ through `-v` without moving the point.
 * `LinearIsometry.sphereBoost_map`: boosts commute with linear isometries.
 * `IsCompact.eventually_forall_lt_inner_sphereBoost`: large boosts carry a compact set
   avoiding `-v` into any open cap around `v`.
+* `TauCeti.contDiffAt_sphereBoost`: a boost is smooth jointly in the rapidity and the point.
 * `TauCeti.fderiv_sphereBoost_neg_self_apply`: at `-v`, the boost of rapidity `a` multiplies
   tangent vectors by `eᵃ`.
 
@@ -261,6 +265,21 @@ theorem differentiableAt_sphereBoost {v x : E} {a : ℝ} (hx : cosh a + sinh a *
   rw [show sphereBoost v a = fun y => (cosh a + sinh a * ⟪y, v⟫)⁻¹ •
       (y + (sinh a + (cosh a - 1) * ⟪y, v⟫) • v) from funext (sphereBoost_def v a)]
   exact (hD.inv hx).smul hN
+
+/-- A boost is `C^k` jointly in the rapidity and the point at every pair `(a, x)` where its
+denominator does not vanish, in particular wherever `x` lies on the unit sphere
+(`TauCeti.cosh_add_sinh_mul_inner_pos`). -/
+theorem contDiffAt_sphereBoost {v x : E} {a : ℝ} {k : WithTop ℕ∞}
+    (hx : cosh a + sinh a * ⟪x, v⟫ ≠ 0) :
+    ContDiffAt ℝ k (fun p : ℝ × E => sphereBoost v p.1 p.2) (a, x) := by
+  have hc : ContDiff ℝ k fun p : ℝ × E => cosh p.1 := contDiff_cosh.comp contDiff_fst
+  have hs : ContDiff ℝ k fun p : ℝ × E => sinh p.1 := contDiff_sinh.comp contDiff_fst
+  have hi : ContDiff ℝ k fun p : ℝ × E => ⟪p.2, v⟫ := contDiff_snd.inner ℝ contDiff_const
+  have hD : ContDiff ℝ k fun p : ℝ × E => cosh p.1 + sinh p.1 * ⟪p.2, v⟫ := hc.add (hs.mul hi)
+  have hN : ContDiff ℝ k fun p : ℝ × E =>
+      p.2 + (sinh p.1 + (cosh p.1 - 1) * ⟪p.2, v⟫) • v :=
+    contDiff_snd.add ((hs.add ((hc.sub contDiff_const).mul hi)).smul contDiff_const)
+  exact (hD.contDiffAt.inv hx).smul hN.contDiffAt
 
 /-- **The boost stretches tangent vectors at `-v` by `eᵃ`.** For a unit vector `v` and a vector
 `w` orthogonal to `v`, the derivative at `-v` of the boost of rapidity `a` toward `v` sends `w` to

@@ -20,7 +20,9 @@ The coordinates of a real basis `b` carry any additive Haar measure `μ` to Lebe
 
 It also records basic facts about lattices: a full lattice is the `ℤ`-span of a basis of
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
-the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete.
+the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
+so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
+equivalence.
 
 ## Main results
 
@@ -37,6 +39,9 @@ the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is a
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
+* `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
+  `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
+  full lattice, along a linear isometry equivalence is again one.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -153,6 +158,27 @@ instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
   comap_discreteTopology K L continuous_subtype_val V.injective_subtype
+
+section LinearIsometryEquiv
+
+variable {K : Type*} [NormedField K] {E F : Type*} [NormedAddCommGroup E] [NormedSpace K E]
+  [NormedAddCommGroup F] [NormedSpace K F] (L : Submodule ℤ E) [DiscreteTopology L]
+  (e : F ≃ₗᵢ[K] E)
+
+-- Mathlib states these instances for the map underlying a continuous linear equivalence; the
+-- map underlying a linear isometry equivalence is the same by definition, but instance search
+-- does not see through `LinearIsometryEquiv.toContinuousLinearEquiv`.
+/-- The pull-back of a discrete subgroup along a linear isometry equivalence is discrete. -/
+instance instDiscreteTopologyComapLinearIsometryEquiv :
+    DiscreteTopology (ZLattice.comap K L e.toLinearEquiv.toLinearMap) :=
+  inferInstanceAs (DiscreteTopology (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
+
+/-- The pull-back of a full lattice along a linear isometry equivalence is a full lattice. -/
+instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
+    IsZLattice K (ZLattice.comap K L e.toLinearEquiv.toLinearMap) :=
+  inferInstanceAs (IsZLattice K (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
+
+end LinearIsometryEquiv
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]

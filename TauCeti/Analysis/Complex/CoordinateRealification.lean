@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Module.Equiv.Fin
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Realification and complexification of complex and real coordinate operators
@@ -18,6 +19,12 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 `TauCeti.realCoords n` identifies `Fin n → ℂ` real-linearly with `Fin (n + n) → ℝ`, listing the
 real parts of the coordinates first and their imaginary parts second. It is the splitting
 `TauCeti.complexToRealPi` with its two coordinate blocks concatenated by `finSumFinEquiv`.
+
+`TauCeti.complexPiEquivRealPi n` identifies `Fin n → ℂ` real-linearly with `Fin (2 * n) → ℝ` by
+interleaving real and imaginary parts (`(z i).re` at `2 * i` and `(z i).im` at `2 * i + 1`), the
+sup-norm counterpart of `TauCeti.complexEuclideanRealLinearIsometryEquiv`. Under this ordering,
+vanishing from complex coordinate `d` onward corresponds to vanishing from real coordinate `2 * d`
+onward (`TauCeti.forall_two_mul_le_complexPiEquivRealPi_eq_zero_iff`).
 
 For a complex-linear operator `g` between complex coordinate spaces, `g.realifyCoords` is the
 same map read in these real coordinates; its matrix is the realification `Matrix.realify` of the
@@ -96,6 +103,70 @@ theorem realCoords_apply (n : ℕ) (v : Fin n → ℂ) :
       ((splitCoords (𝕜 := ℝ) n n w).1 i : ℂ) + ((splitCoords (𝕜 := ℝ) n n w).2 i : ℂ) * I := by
   obtain ⟨v, rfl⟩ := (realCoords n).surjective w
   rw [ContinuousLinearEquiv.symm_apply_apply, splitCoords_realCoords, re_add_im]
+
+/-- The continuous `ℝ`-linear equivalence `(Fin n → ℂ) ≃L[ℝ] Fin (2 * n) → ℝ` placing `(z i).re` at
+index `2 * i` and `(z i).im` at index `2 * i + 1` (the sup-norm counterpart of
+`TauCeti.complexEuclideanRealLinearIsometryEquiv`). Under this ordering, the subspace of the first
+`d` complex coordinates corresponds to the subspace of the first `2 * d` real coordinates. -/
+noncomputable def complexPiEquivRealPi (n : ℕ) : (Fin n → ℂ) ≃L[ℝ] Fin (2 * n) → ℝ :=
+  (ContinuousLinearEquiv.piCongrRight fun _ : Fin n ↦
+    equivRealProdCLM.trans (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm).trans
+    (piSigmaConstContinuousLinearEquiv ℝ ℝ
+      (((Equiv.sigmaEquivProd (Fin n) (Fin 2)).trans finProdFinEquiv).trans
+        (finCongr (Nat.mul_comm n 2))))
+
+/-- The inverse of `TauCeti.complexPiEquivRealPi` reconstructs the `i`-th complex coordinate from
+indices `2 * i` and `2 * i + 1`. -/
+@[simp]
+theorem complexPiEquivRealPi_symm_apply {n : ℕ} (y : Fin (2 * n) → ℝ) (i : Fin n) :
+    (complexPiEquivRealPi n).symm y i =
+      ⟨y ⟨2 * i.val, by omega⟩, y ⟨2 * i.val + 1, by omega⟩⟩ := by
+  let σ : (Σ _ : Fin n, Fin 2) ≃ Fin (2 * n) :=
+    (((Equiv.sigmaEquivProd (Fin n) (Fin 2)).trans finProdFinEquiv).trans
+      (finCongr (Nat.mul_comm n 2)))
+  have h0 : σ ⟨i, 0⟩ = ⟨2 * i.val, by omega⟩ := by
+    ext
+    simp [σ, finProdFinEquiv]
+  have h1 : σ ⟨i, 1⟩ = ⟨2 * i.val + 1, by omega⟩ := by
+    ext
+    simp [σ, finProdFinEquiv]
+    omega
+  apply Complex.ext <;>
+    simp [complexPiEquivRealPi, σ, piSigmaConstHomeomorph_symm_apply, h0, h1]
+
+/-- Even coordinates of `TauCeti.complexPiEquivRealPi` are real parts. -/
+@[simp]
+theorem complexPiEquivRealPi_apply_two_mul {n : ℕ} (z : Fin n → ℂ) (i : Fin n) :
+    complexPiEquivRealPi n z ⟨2 * i.val, by omega⟩ = (z i).re := by
+  have h := congrArg (fun w ↦ (w i).re) ((complexPiEquivRealPi n).symm_apply_apply z)
+  simpa only [complexPiEquivRealPi_symm_apply] using h
+
+/-- Odd coordinates of `TauCeti.complexPiEquivRealPi` are imaginary parts. -/
+@[simp]
+theorem complexPiEquivRealPi_apply_two_mul_add_one {n : ℕ} (z : Fin n → ℂ) (i : Fin n) :
+    complexPiEquivRealPi n z ⟨2 * i.val + 1, by omega⟩ = (z i).im := by
+  have h := congrArg (fun w ↦ (w i).im) ((complexPiEquivRealPi n).symm_apply_apply z)
+  simpa only [complexPiEquivRealPi_symm_apply] using h
+
+/-- Under `TauCeti.complexPiEquivRealPi`, the vanishing of real coordinates of index at least
+`2 * d` is equivalent to the vanishing of complex coordinates of index at least `d`. -/
+theorem forall_two_mul_le_complexPiEquivRealPi_eq_zero_iff {n d : ℕ} (z : Fin n → ℂ) :
+    (∀ j : Fin (2 * n), 2 * d ≤ j.val → complexPiEquivRealPi n z j = 0) ↔
+      ∀ i : Fin n, d ≤ i.val → z i = 0 := by
+  constructor
+  · intro hz i hi
+    apply Complex.ext
+    · simpa using hz ⟨2 * i.val, by omega⟩ (by dsimp; omega)
+    · simpa using hz ⟨2 * i.val + 1, by omega⟩ (by dsimp; omega)
+  · rintro hz ⟨j, hj⟩ hjd
+    dsimp at hjd
+    rcases Nat.even_or_odd' j with ⟨i, rfl | rfl⟩
+    · have hi : i < n := by omega
+      have hid : d ≤ i := by omega
+      simpa [hz ⟨i, hi⟩ hid] using complexPiEquivRealPi_apply_two_mul z ⟨i, hi⟩
+    · have hi : i < n := by omega
+      have hid : d ≤ i := by omega
+      simpa [hz ⟨i, hi⟩ hid] using complexPiEquivRealPi_apply_two_mul_add_one z ⟨i, hi⟩
 
 end TauCeti
 

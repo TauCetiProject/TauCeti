@@ -20,14 +20,15 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 This file records a zero-value rule for differentiating the pointwise application of a varying
 continuous linear map. At a zero of the vector-valued argument, the variation of the operator
 contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
-records the derivative of the application of a varying continuous linear map to a fixed vector
-(or of a varying bilinear map to two fixed vectors), the product rule for a varying bilinear map
-applied to two varying vectors, and the fact that the derivative of a field of symmetric bilinear
-maps takes symmetric values, and that a continuous linear map vanishing on a function near a point
-vanishes on its derivative there. Finally, a family of
-continuous linear maps out of a finite-dimensional space is differentiable, or has a given
-derivative in a scalar variable, within a set or at a point, exactly when each of its evaluations
-does; this is how derivatives of families of linear and bilinear maps are tested on vectors.
+records the derivative of the pairing `(x, φ) ↦ φ x` of a space with its continuous linear maps
+(in particular with its continuous dual), the derivative of the application of a varying continuous
+linear map to a fixed vector (or of a varying bilinear map to two fixed vectors), the product rule
+for a varying bilinear map applied to two varying vectors, and the fact that the derivative of a
+field of symmetric bilinear maps takes symmetric values. A continuous linear map vanishing on a
+function near a point vanishes on its derivative there. Finally, a family of continuous linear maps
+out of a finite-dimensional space is differentiable, or has a given derivative in a scalar variable,
+within a set or at a point, exactly when each of its evaluations does; this is how derivatives of
+families of linear and bilinear maps are tested on vectors.
 
 ## Main declarations
 
@@ -35,6 +36,8 @@ does; this is how derivatives of families of linear and bilinear maps are tested
   `u`, assuming only continuity of `c`.
 * `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
   `Dc(w) v`; `TauCeti.fderiv_clm_apply_const_apply₂` is the form for fields of bilinear maps.
+* `TauCeti.hasFDerivAt_pairing`: the derivative of the evaluation pairing `(x, φ) ↦ φ x` of a
+  space with its continuous linear maps, in particular with its continuous dual.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
 * `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
   near a point takes symmetric values there.
@@ -82,6 +85,17 @@ theorem _root_.HasFDerivWithinAt.clm_apply_of_eq_zero {c : E → F →L[𝕜] F'
   · funext y
     simp
   · simp
+
+/-- The derivative of the evaluation pairing `(x, φ) ↦ φ x` between a space and its continuous
+linear maps into `F` at `(x, φ)` is `(δx, δφ) ↦ φ δx + δφ x`. For `F = 𝕜` this is the pairing of a
+space with its continuous dual. -/
+theorem hasFDerivAt_pairing (z : E × (E →L[𝕜] F)) :
+    HasFDerivAt (fun z : E × (E →L[𝕜] F) ↦ z.2 z.1)
+      (z.2.comp (ContinuousLinearMap.fst 𝕜 E (E →L[𝕜] F)) +
+        (ContinuousLinearMap.apply 𝕜 F z.1).comp
+          (ContinuousLinearMap.snd 𝕜 E (E →L[𝕜] F))) z :=
+  (hasFDerivAt_snd.clm_apply hasFDerivAt_fst).congr_fderiv
+    (ContinuousLinearMap.ext fun u ↦ by simp)
 
 /-- Differentiating `y ↦ c y v` for a fixed vector `v` in the direction `w` gives the derivative
 of `c` in the direction `w`, applied to `v`. -/

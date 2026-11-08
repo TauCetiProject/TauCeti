@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Local.Orientation
+public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
@@ -23,51 +24,77 @@ is `+1` exactly when they read the orientation `o b` as the same orientation of 
 read off along any trivialization carrying `o b` to `ω`, or the negative of the class read off
 along one carrying `o b` to `-ω`, is a class of the fibre pair that depends only on `o b`.
 
-Over a compact base these fibre classes glue to a class of the Thom pair `(E, E₀)`
-(`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_of_compactSpace`):
-near each point the orientation reads as a constant orientation of `F` in the preferred
-trivialization, so the local
-classes over the trivializing sets obtained by pulling back `±g` agree on every fibre where two of
-the sets meet, and the Mayer–Vietoris gluing over finite trivializing covers
-(`TauCeti.exists_singularCohomology_thomPairOver_biUnion`) assembles them. When `g` generates
-`Hʳ(F, F ∖ {0})` the glued class is a Thom class. In particular **every oriented real vector bundle
-over a compact base has a Thom class with coefficients in any commutative ring**, integral
+These fibre classes glue to a class of the Thom pair `(E, E₀)` over an arbitrary base, and the
+glued class is unique
+(`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`): near each
+point the orientation reads as a constant orientation of `F` in the preferred trivialization, so
+the local classes over the trivializing sets obtained by pulling back `±g` agree on every fibre
+where two of the sets meet, and the gluing over arbitrary trivializing covers
+(`TauCeti.existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ`) assembles them uniquely.
+The glued class is `TauCeti.VectorBundleOrientation.thomClassOfModel`. When `g` generates
+`Hʳ(F, F ∖ {0})` it is a Thom class, the Thom class compatible with `o`. In particular **every
+oriented real vector bundle has a Thom class with coefficients in any commutative ring**, integral
 coefficients included (`TauCeti.VectorBundleOrientation.exists_isThomClass`). Without an
-orientation the existence is established (`TauCeti.exists_isThomClass_of_compactSpace`) for
-coefficient rings with a single unit, such as `ZMod 2`. For an oriented plane bundle the Euler
-class of this Thom class (`TauCeti.eulerClass`) is the Euler class in `H²(B; ℤ)`.
+orientation the existence and uniqueness are established
+(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`) for coefficient rings with a single
+unit, such as `ZMod 2`. For an oriented plane bundle the Euler class of this Thom class
+(`TauCeti.eulerClass`) is the Euler class in `H²(B; ℤ)`.
 
-A top-degree class over a compact base is determined by its fibre restrictions
-(`TauCeti.singularCohomology_thomPair_ext_of_compactSpace`), so the prescribed restrictions give
-uniqueness. The resulting named class `TauCeti.VectorBundleOrientation.thomClass o hι ω g`
-is normalized by both `ω` and `g`; no preferred model-fibre generator is fixed here.
+For a bundle of positive rank `n + 1` with integral coefficients, the generators of the fibre
+pairs can be named directly: an orientation of `F` selects a generator of `Hⁿ⁺¹(F, F ∖ {0}; ℤ)`
+(`Orientation.localCohomologyClass`), and its pull-back along the isomorphism of fibre pairs given
+by a linear trivialization does not depend on the trivialization
+(`Orientation.singularCohomologyMap_localCohomologyClass_map_eq`). The *Thom class* of the oriented
+bundle (`TauCeti.VectorBundleOrientation.thomClass`) is the class `U ∈ Hⁿ⁺¹(E, E₀; ℤ)` restricting
+to these generators on all fibres. It is characterized by its restrictions to the fibres
+(`TauCeti.VectorBundleOrientation.eq_thomClass_iff`), it is a Thom class in the sense of
+`TauCeti.IsThomClass` (`TauCeti.VectorBundleOrientation.isThomClass_thomClass`), and the opposite
+orientation has the opposite Thom class (`TauCeti.VectorBundleOrientation.thomClass_neg`). It lives
+in degree `n + 1`, the degree in which the fibre generators are indexed; `TauCeti.IsThomClass` is
+stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
+`finrank ℝ F = n + 1`. Integral coefficients are `ULift ℤ`, as for the fibre generators.
+
+## Main definitions
+
+* `TauCeti.VectorBundleOrientation.thomClassOfModel`: the class normalized by an orientation `ω`
+  of the model fibre and a class `g ∈ Hʳ(F, F ∖ {0})`.
+* `TauCeti.VectorBundleOrientation.thomClass`: the integral Thom class of an oriented real vector
+  bundle of positive rank.
 
 ## Main results
 
-* `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_of_compactSpace`:
-  over a compact base, there is a unique class of `Hʳ(E, E₀)` restricting on every fibre to the
-  class read off from `g` along trivializations carrying the orientation of the fibre to `ω`,
-  and to its negative along those carrying it to `-ω`.
-* `TauCeti.VectorBundleOrientation.exists_isThomClass`: an oriented real vector bundle over a
-  compact base has a Thom class with coefficients in any commutative ring.
-
-* `TauCeti.VectorBundleOrientation.thomClass`: the normalized class, with fibre restrictions
-  `singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq` and
-  `singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq_neg`.
-  The theorem `eq_thomClass_of_forall` characterizes it.
-* `TauCeti.VectorBundleOrientation.isThomClass_thomClass`: normalization by a generator gives a
-  Thom class.
 * In `Bundle.Trivialization`, the lemmas
   `singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq`,
   `singularCohomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg` and
   `singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq_neg` describe
   the effect of equal or opposite orientation readings in every degree.
+* `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`: there is a
+  unique class of `Hʳ(E, E₀)` restricting on every fibre to the class read off from `g` along
+  trivializations carrying the orientation of the fibre to `ω`, and to its negative along those
+  carrying it to `-ω`.
+* `TauCeti.VectorBundleOrientation.thomClassOfModel`: this class, with fibre restrictions
+  `singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq` and
+  `singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg`;
+  `eq_thomClassOfModel_of_forall` characterizes it, and `isThomClass_thomClassOfModel` shows that
+  normalization by a generator gives a Thom class.
+* `TauCeti.VectorBundleOrientation.exists_isThomClass`: an oriented real vector bundle has a Thom
+  class with coefficients in any commutative ring.
+* `TauCeti.VectorBundleOrientation.singularCohomologyMap_fiberThomPairMap_thomClass`: the integral
+  Thom class restricts on each fibre to the generator selected by the fibre orientation, read in
+  any linear trivialization.
+* `TauCeti.VectorBundleOrientation.eq_thomClass_iff`: this property characterizes it.
+* `TauCeti.VectorBundleOrientation.thomClass_neg`: reversing the orientation negates it.
+* `TauCeti.VectorBundleOrientation.singularCohomologyMap_pullbackThomPairMap_thomClass`: it is
+  natural under pullback of bundles.
+* `TauCeti.VectorBundleOrientation.singularCohomologyMap_negThomPairMap_thomClass`: in odd rank,
+  fibrewise negation carries it to the Thom class of the opposite orientation.
+* `TauCeti.VectorBundleOrientation.isThomClass_thomClass`: it is a Thom class.
 
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
   Princeton (1974), §10, Lemma 10.3 and the proof of Theorem 10.4 (the Thom class of an oriented
-  bundle, glued over a finite trivializing cover).
+  bundle, glued over finite trivializing covers and then over directed unions).
 * A. Hatcher, *Algebraic Topology*, Section 4.D, Theorem 4D.10 and its proof.
 -/
 
@@ -153,6 +180,8 @@ end Bundle.Trivialization
 
 namespace TauCeti.VectorBundleOrientation
 
+section ExistsThomClass
+
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
@@ -192,17 +221,46 @@ private theorem orientedFiberClass_eq (hι : Fintype.card ι = finrank ℝ F) (�
 
 variable [VectorBundle ℝ F E]
 
-/-- **The fibre classes of an oriented bundle glue over a compact base.** Let `o` be an orientation
-of a real vector bundle `E` over a compact base, with fibres of dimension `r = card ι`, `ω` an
-orientation of the model fibre `F` and `g ∈ Hʳ(F, F ∖ {0}; R, M)`, with `R` projective. There is a
-class of `Hʳ(E, E₀; R, M)` whose restriction to the fibre pair `(E_b, E_b ∖ {0})` is the pull-back
-of `g` along every linear trivialization carrying the orientation `o b` of `E_b` to `ω`, and the
-negative of that pull-back along every linear trivialization carrying `o b` to `-ω`. -/
-private theorem exists_singularCohomology_thomPair_fiber [CompactSpace B]
+omit [Module.Projective K R'] in
+/-- A class of `Hʳ(E, E₀)` restricts on every fibre to the class read off from `g` along
+trivializations carrying the fibre orientation to `ω`, and to its negative along those carrying it
+to `-ω`, exactly when it restricts to the oriented fibre class along every trivialization. -/
+private theorem fiber_eq_and_fiber_eq_neg_iff (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (ω : Orientation ℝ F ι)
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
+      (finrank ℝ F))
+    (u : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)) :
+    ((∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
+        e.mapOrientation ι hb (o b) = ω →
+          TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+            TopPair.singularCohomologyMap
+              (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g) ∧
+      ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
+        e.mapOrientation ι hb (o b) = -ω →
+          TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+            -TopPair.singularCohomologyMap
+              (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g) ↔
+      ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
+        TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+          orientedFiberClass ω g e hb (o b) := by
+  refine ⟨fun ⟨h₁, h₂⟩ e _ b hb ↦ ?_, fun h ↦ ⟨fun e _ b hb hω ↦ ?_, fun e _ b hb hω ↦ ?_⟩⟩
+  · rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with hω | hω
+    · simp [orientedFiberClass, hω, h₁ e b hb hω]
+    · simp [orientedFiberClass, hω, h₂ e b hb hω, (Module.Ray.ne_neg_self ω).symm]
+  · simp [h e b hb, orientedFiberClass, hω]
+  · simp [h e b hb, orientedFiberClass, hω, (Module.Ray.ne_neg_self ω).symm]
+
+/-- **The fibre classes of an oriented bundle glue uniquely.** Let `o` be an orientation of a real
+vector bundle `E`, with fibres of dimension `r = card ι`, `ω` an orientation of the model fibre `F`
+and `g ∈ Hʳ(F, F ∖ {0}; R, M)`, with `R` projective. There is a unique class of `Hʳ(E, E₀; R, M)`
+whose restriction to the fibre pair `(E_b, E_b ∖ {0})` is the pull-back of `g` along every linear
+trivialization carrying the orientation `o b` of `E_b` to `ω`, and the negative of that pull-back
+along every linear trivialization carrying `o b` to `-ω`. The base is arbitrary. -/
+theorem existsUnique_singularCohomology_thomPair_fiber
     (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι) (ω : Orientation ℝ F ι)
     (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
       (finrank ℝ F)) :
-    ∃ u : (thomPair F E).singularCohomology R' K M' (finrank ℝ F),
+    ∃! u : (thomPair F E).singularCohomology R' K M' (finrank ℝ F),
       (∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
         e.mapOrientation ι hb (o b) = ω →
           TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
@@ -235,62 +293,18 @@ private theorem exists_singularCohomology_thomPair_fiber [CompactSpace B]
         orientedFiberClass ω g (e c) (hWe c hx) (o x) := by
     rw [hu c x hx, orientedFiberClass, hWo' c x (hWe c hx) hx]
     split_ifs <;> simp
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover W hWo fun b _ ↦ mem_iUnion.2 ⟨b, hcW b⟩
-  obtain ⟨y, hy⟩ := exists_singularCohomology_thomPairOver_biUnion t (fun c _ ↦ hWo c)
-    (fun c _ ↦ ⟨e c, inferInstance, hWe c⟩) u fun c _ c' _ b hbc hbc' ↦ by
+  -- The local classes agree on overlaps, so they glue to a unique class over the whole base.
+  obtain ⟨v, hv, -⟩ := existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ W R' M'
+    (iUnion_eq_univ_iff.2 fun c ↦ ⟨c, hcW c⟩) hWo (fun c ↦ ⟨e c, inferInstance, hWe c⟩) u
+    fun c c' b hbc hbc' ↦ by
       rw [hux c b hbc, hux c' b hbc', orientedFiberClass_eq hι ω g (e c) (e c')]
-  let v := TopPair.singularCohomologyMap ((thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht)
-    _ y
-  -- On every fibre, `v` restricts to the oriented fibre class.
-  have hv (e' : Trivialization F (π F E)) [e'.IsLinear ℝ] (b : B) (hb : b ∈ e'.baseSet) :
+  have hv' (e' : Trivialization F (π F E)) [e'.IsLinear ℝ] (b : B) (hb : b ∈ e'.baseSet) :
       TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ v =
         orientedFiberClass ω g e' hb (o b) := by
-    obtain ⟨c, hct, hbc⟩ := mem_iUnion₂.1 (ht (mem_univ b))
-    -- The fibre over `b` factors through the Thom pair over the trivializing set `W c`.
-    rw [← TopPair.singularCohomologyMap_comp_apply,
-      fiberThomPairMap_comp_thomPairOverUnivIso_inv_comp_thomPairOverMap F E ht
-        (Finset.subset_set_biUnion_of_mem (f := W) hct) hbc,
-      TopPair.singularCohomologyMap_comp_apply,
-      hy c hct, hux c b hbc, orientedFiberClass_eq hι ω g (e c) e']
-  refine ⟨v, fun e' _ b hb h ↦ ?_, fun e' _ b hb h ↦ ?_⟩
-  · simp [hv e' b hb, orientedFiberClass, h]
-  · simp [hv e' b hb, orientedFiberClass, h, (Module.Ray.ne_neg_self ω).symm]
-
-section CompactBase
-
-variable [CompactSpace B]
-
-/-- **The Thom class of an oriented vector bundle over a compact base.** Let `o` be an orientation
-of the real vector bundle `E` of rank `r = card ι` over a compact base, `ω` an orientation of the
-model fibre `F` and `g` a class of `Hʳ(F, F ∖ {0}; R, M)`, `R` projective. There is a unique class
-`u ∈ Hʳ(E, E₀; R, M)` such that for every linear trivialization `e` and every point `b` of its base
-set, the restriction of `u` to the fibre pair `(E_b, E_b ∖ {0})` is the pull-back of `g` along the
-isomorphism `(E_b, E_b ∖ {0}) ≅ (F, F ∖ {0})` given by `e` if `e` reads `o b` as `ω`, and the
-pull-back of `-g` if `e` reads `o b` as `-ω`. -/
-theorem existsUnique_singularCohomology_thomPair_of_compactSpace
-    (o : VectorBundleOrientation F E ι) (hι : Fintype.card ι = finrank ℝ F)
-    (ω : Orientation ℝ F ι) {K : Type*} [CommRing K] {R' M' : ModuleCat.{w} K}
-    [Module.Projective K R']
-    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
-      (finrank ℝ F)) :
-    ∃! u : (thomPair F E).singularCohomology R' K M' (finrank ℝ F),
-      ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
-        (e.mapOrientation ι hb (o b) = ω →
-          TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
-            TopPair.singularCohomologyMap
-              (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g) ∧
-        (e.mapOrientation ι hb (o b) = -ω →
-          TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
-            -TopPair.singularCohomologyMap
-              (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g) := by
-  obtain ⟨u, hu₁, hu₂⟩ := exists_singularCohomology_thomPair_fiber hι o ω g
-  refine ⟨u, fun e _ b hb ↦ ⟨hu₁ e b hb, hu₂ e b hb⟩, fun v hv ↦ ?_⟩
-  refine singularCohomology_thomPair_ext_of_compactSpace fun b ↦ ?_
-  let e := trivializationAt F E b
-  have hb : b ∈ e.baseSet := mem_baseSet_trivializationAt F E b
-  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h
-  · rw [(hv e b hb).1 h, hu₁ e b hb h]
-  · rw [(hv e b hb).2 h, hu₂ e b hb h]
+    rw [hv b b (hcW b), hux b b (hcW b), orientedFiberClass_eq hι ω g (e b) e']
+  refine ⟨v, (fiber_eq_and_fiber_eq_neg_iff hι o ω g v).2 hv', fun w hw ↦
+    singularCohomology_thomPair_ext fun b ↦ ?_⟩
+  rw [(fiber_eq_and_fiber_eq_neg_iff hι o ω g w).1 hw (e b) b (hc b), hv' (e b) b (hc b)]
 
 section ThomClass
 
@@ -300,42 +314,42 @@ variable (o : VectorBundleOrientation F E ι) (hι : Fintype.card ι = finrank �
   (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
     (finrank ℝ F))
 
-/-- **The Thom class of an oriented vector bundle over a compact base**, normalized by an
+/-- **The Thom class of an oriented vector bundle**, normalized by an
 orientation `ω` of the model fibre `F` and a class `g ∈ Hʳ(F, F ∖ {0}; R, M)`: the unique class of
 `Hʳ(E, E₀; R, M)` whose restriction to the fibre pair over a point `b` of the base set of a linear
 trivialization `e` is the pull-back of `g` along `e` if `e` reads `o b` as `ω`, and of `-g` if `e`
 reads `o b` as `-ω`
-(`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_of_compactSpace`). When
+(`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`). When
 `g` generates `Hʳ(F, F ∖ {0}; K, K) ≅ K` it is a Thom class
-(`TauCeti.VectorBundleOrientation.isThomClass_thomClass`). -/
-def thomClass : (thomPair F E).singularCohomology R' K M' (finrank ℝ F) :=
-  (o.existsUnique_singularCohomology_thomPair_of_compactSpace hι ω g).exists.choose
+(`TauCeti.VectorBundleOrientation.isThomClass_thomClassOfModel`). -/
+def thomClassOfModel : (thomPair F E).singularCohomology R' K M' (finrank ℝ F) :=
+  (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose
 
 variable {hι ω g}
 
 /-- Over a point where a linear trivialization `e` reads the orientation as `ω`, the restriction
-of the Thom class `thomClass o hι ω g` to the fibre pair is the pull-back of `g` along `e`. -/
-theorem singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq
+of the Thom class `thomClassOfModel o hι ω g` to the fibre pair is the pull-back of `g` along
+  `e`. -/
+theorem singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq
     (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
     (h : e.mapOrientation ι hb (o b) = ω) :
-    TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClass hι ω g) =
+    TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClassOfModel hι ω g) =
       TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g :=
-  ((o.existsUnique_singularCohomology_thomPair_of_compactSpace hι ω g).exists.choose_spec
-    e b hb).1 h
+  (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose_spec.1 e b hb h
 
 /-- Over a point where a linear trivialization `e` reads the orientation as `-ω`, the restriction
-of the Thom class `thomClass o hι ω g` to the fibre pair is the pull-back of `-g` along `e`. -/
-theorem singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq_neg
+of the Thom class `thomClassOfModel o hι ω g` to the fibre pair is the pull-back of `-g` along
+  `e`. -/
+theorem singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg
     (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
     (h : e.mapOrientation ι hb (o b) = -ω) :
-    TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClass hι ω g) =
+    TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClassOfModel hι ω g) =
       -TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g :=
-  ((o.existsUnique_singularCohomology_thomPair_of_compactSpace hι ω g).exists.choose_spec
-    e b hb).2 h
+  (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose_spec.2 e b hb h
 
 /-- A class of `Hʳ(E, E₀; R, M)` whose fibre restrictions are those prescribed by `o`, `ω` and `g`
-is the Thom class `thomClass o hι ω g`. -/
-theorem eq_thomClass_of_forall {u : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)}
+is the Thom class `thomClassOfModel o hι ω g`. -/
+theorem eq_thomClassOfModel_of_forall {u : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)}
     (hu : ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
       (e.mapOrientation ι hb (o b) = ω →
         TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
@@ -345,20 +359,21 @@ theorem eq_thomClass_of_forall {u : (thomPair F E).singularCohomology R' K M' (f
         TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
           -TopPair.singularCohomologyMap
             (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g)) :
-    u = o.thomClass hι ω g :=
-  (o.existsUnique_singularCohomology_thomPair_of_compactSpace hι ω g).unique hu
-    (o.existsUnique_singularCohomology_thomPair_of_compactSpace hι ω g).exists.choose_spec
+    u = o.thomClassOfModel hι ω g :=
+  (existsUnique_singularCohomology_thomPair_fiber hι o ω g).unique
+    ⟨fun e _ b hb h ↦ (hu e b hb).1 h, fun e _ b hb h ↦ (hu e b hb).2 h⟩
+    (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose_spec
 
 end ThomClass
 
 /-- **The Thom class of an oriented bundle normalized by a generator is a Thom class**: if `g`
-generates `Hʳ(F, F ∖ {0}; K, K) ≅ K`, then `thomClass o hι ω g` restricts to a generator of
+generates `Hʳ(F, F ∖ {0}; K, K) ≅ K`, then `thomClassOfModel o hι ω g` restricts to a generator of
 `Hʳ(E_b, E_b ∖ {0}; K, K)` on every fibre. -/
-theorem isThomClass_thomClass (o : VectorBundleOrientation F E ι)
+theorem isThomClass_thomClassOfModel (o : VectorBundleOrientation F E ι)
     (hι : Fintype.card ι = finrank ℝ F) (ω : Orientation ℝ F ι) {K : Type w} [CommRing K]
     {g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
       (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hg : Submodule.span K {g} = ⊤) : IsThomClass F E (o.thomClass hι ω g) := by
+    (hg : Submodule.span K {g} = ⊤) : IsThomClass F E (o.thomClassOfModel hι ω g) := by
   refine isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩
   let e := trivializationAt F E b
   have hb : b ∈ e.baseSet := mem_baseSet_trivializationAt F E b
@@ -370,19 +385,18 @@ theorem isThomClass_thomClass (o : VectorBundleOrientation F E ι)
       (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op).toLinearEquiv
     exact L.span_singleton_apply_eq_top_iff.2 hg
   rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h
-  · rw [o.singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq e hb h]
+  · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb h]
     exact hge
-  · rw [o.singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq_neg e hb h,
+  · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg e hb h,
       ← Set.neg_singleton, Submodule.span_neg]
     exact hge
 
-end CompactBase
-
-/-- **An oriented real vector bundle over a compact base has a Thom class** with coefficients in
-any commutative ring `K`, in particular with integral coefficients: a class of
-`Hʳ(E, E₀; K, K)`, `r = dim F`, restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on
-every fibre. -/
-theorem exists_isThomClass [CompactSpace B] (hι : Fintype.card ι = finrank ℝ F)
+/-- **An oriented real vector bundle has a Thom class** with coefficients in any commutative ring
+`K`, in particular with integral coefficients: a class of `Hʳ(E, E₀; K, K)`, `r = dim F`,
+restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on every fibre. The base is arbitrary.
+The class compatible with the orientation is unique by
+`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`. -/
+theorem exists_isThomClass (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F E ι) (K : Type w) [CommRing K] :
     ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F),
       IsThomClass F E u := by
@@ -393,6 +407,215 @@ theorem exists_isThomClass [CompactSpace B] (hι : Fintype.card ι = finrank ℝ
   -- An orientation of the model fibre, from a basis indexed by `ι`.
   let ω : Orientation ℝ F ι :=
     ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
-  exact ⟨_, o.isThomClass_thomClass hι ω hg⟩
+  exact ⟨_, o.isThomClass_thomClassOfModel hι ω hg⟩
+
+end ExistsThomClass
+
+section ThomClass
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {n : ℕ} (o : VectorBundleOrientation F E (Fin (n + 1))) (hF : finrank ℝ F = n + 1)
+
+/-- A class of `Hⁿ⁺¹(E, E₀; ℤ)` restricting on every fibre to the generator selected by the fibre
+orientation, read in the trivialization at that point. -/
+private theorem exists_thomClass :
+    ∃ x : (thomPair F E).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
+        (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1),
+      ∀ b, TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ x =
+        TopPair.singularCohomologyMap ((trivializationAt F E b).continuousLinearEquivAt ℝ b
+          (FiberBundle.mem_baseSet_trivializationAt' b)).complZeroPairIso.hom (n + 1)
+          (((trivializationAt F E b).mapOrientation (Fin (n + 1))
+            (FiberBundle.mem_baseSet_trivializationAt' b) (o b)).localCohomologyClass hF) := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  refine (hF ▸ exists_singularCohomology_thomPair_fiber (F := F) (E := E)
+    (R := ModuleCat.of ℤ (ULift.{w} ℤ)) (k := ℤ) (M := ModuleCat.of ℤ (ULift.{w} ℤ))) _
+    fun c ↦ ?_
+  -- Near `c` the fibre orientations read in the trivialization `e` at `c` are a single
+  -- orientation `ω` of `F`; pull back the generator it selects along `e`.
+  let e := trivializationAt F E c
+  have hc : c ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' c
+  obtain ⟨t, ht, hto, hct⟩ := eventually_nhds_iff.1 (o.eventually_mapOrientation_eq' c)
+  obtain ⟨u, hu⟩ := e.exists_singularCohomology_thomPairOver_fiber ℝ (W := t ∩ e.baseSet)
+    inter_subset_right ((e.mapOrientation (Fin (n + 1)) hc (o c)).localCohomologyClass hF)
+  refine ⟨t ∩ e.baseSet, hto.inter e.open_baseSet, ⟨hct, hc⟩,
+    ⟨e, inferInstance, inter_subset_right⟩, u, fun b hb ↦ ?_⟩
+  have hω : e.mapOrientation (Fin (n + 1)) hb.2 (o b) = e.mapOrientation (Fin (n + 1)) hc (o c) :=
+    ht b hb.1 hb.2
+  rw [hu b hb, ← hω, Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
+
+/-- **The integral Thom class of an oriented vector bundle.** For an orientation `o` of a real
+vector bundle `E` over an arbitrary base, with model fibre `F` of dimension `n + 1`, this is the
+class `U ∈ Hⁿ⁺¹(E, E₀; ℤ)` whose restriction to the fibre pair `(E_b, E_b ∖ {0})` over every
+point `b` is the generator of `Hⁿ⁺¹(E_b, E_b ∖ {0}; ℤ)` selected by the orientation `o b`: the
+pull-back, along any linear trivialization at `b`, of the generator of `Hⁿ⁺¹(F, F ∖ {0}; ℤ)`
+selected by `o b` read in that trivialization
+(`TauCeti.VectorBundleOrientation.singularCohomologyMap_fiberThomPairMap_thomClass`). This
+property determines it (`TauCeti.VectorBundleOrientation.eq_thomClass_iff`). -/
+def thomClass :
+    (thomPair F E).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1) :=
+  (exists_thomClass o hF).choose
+
+/-- The Thom class of an oriented bundle restricts on the fibre pair over every point `b` to the
+generator of `Hⁿ⁺¹(E_b, E_b ∖ {0}; ℤ)` selected by the orientation of `E_b`, read in any linear
+trivialization `e` at `b`. -/
+theorem singularCohomologyMap_fiberThomPairMap_thomClass (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
+    TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClass hF) =
+      TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom
+        (n + 1) ((e.mapOrientation (Fin (n + 1)) hb (o b)).localCohomologyClass hF) :=
+  ((exists_thomClass o hF).choose_spec b).trans <| by
+    rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
+    exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
+
+/-- **Uniqueness of the Thom class.** A class of `Hⁿ⁺¹(E, E₀; ℤ)` is the Thom class of the oriented
+bundle exactly when it restricts on every fibre to the generator selected by the fibre
+orientation, read in a linear trivialization at that point. -/
+theorem eq_thomClass_iff
+    (u : (thomPair F E).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1)) :
+    u = o.thomClass hF ↔ ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B)
+      (hb : b ∈ e.baseSet), TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+        TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom
+          (n + 1) ((e.mapOrientation (Fin (n + 1)) hb (o b)).localCohomologyClass hF) := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  refine ⟨fun h e _ b hb ↦ h ▸ o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb,
+    fun h ↦ (hF ▸ fun u v ↦ singularCohomology_thomPair_ext (F := F) (E := E)
+      (R := ModuleCat.of ℤ (ULift.{w} ℤ)) (k := ℤ) (M := ModuleCat.of ℤ (ULift.{w} ℤ)) (x := u)
+      (y := v)) u _ fun b ↦ ?_⟩
+  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
+  rw [h _ b hb, o.singularCohomologyMap_fiberThomPairMap_thomClass hF _ hb]
+
+/-- Reversing the orientation negates the Thom class. -/
+@[simp]
+theorem thomClass_neg : (-o).thomClass hF = -o.thomClass hF := by
+  symm
+  refine (eq_thomClass_iff (-o) hF _).2 fun e _ b hb ↦ ?_
+  rw [map_neg, o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb, neg_apply,
+    Trivialization.mapOrientation_neg, Orientation.localCohomologyClass_neg, map_neg]
+
+/-- **Naturality of the Thom class.** Pulling the Thom class of an oriented bundle `E` back along
+the map of Thom pairs `(f*E, (f*E)₀) ⟶ (E, E₀)` covering a continuous map `f : B' → B` gives the
+Thom class of the pulled-back orientation of `f*E`. -/
+theorem singularCohomologyMap_pullbackThomPairMap_thomClass {B' : Type w} [TopologicalSpace B']
+    (f : C(B', B)) :
+    TopPair.singularCohomologyMap (pullbackThomPairMap F E f) (n + 1) (o.thomClass hF) =
+      (o.pullback f).thomClass hF := by
+  refine ((eq_thomClass_iff (o.pullback f) hF _).2 fun e _ b' hb' ↦ ?_)
+  -- Restricted to the fibre over `b'`, the pulled-back class is the Thom class of `E` on the fibre
+  -- over `f b'`, read in the preferred trivialization at `f b'`; the reading does not depend on
+  -- the trivialization.
+  -- Term-mode steps: the zero of the fibres of `f*E` enters the Thom pair of `f*E` through
+  -- `pullbackThomPairMap` and through the vector bundle structure of `f*E` as two instances that
+  -- agree only up to unfolding, so `rw` cannot match the composite.
+  refine (TopPair.singularCohomologyMap_comp_apply _ _ _ _).symm.trans <|
+    (congrArg (fun φ ↦ TopPair.singularCohomologyMap φ (n + 1) (o.thomClass hF))
+      (fiberThomPairMap_comp_pullbackThomPairMap F E f b')).trans ?_
+  refine (o.singularCohomologyMap_fiberThomPairMap_thomClass hF (trivializationAt F E (f b'))
+    (FiberBundle.mem_baseSet_trivializationAt' (f b'))).trans ?_
+  rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply, pullback_apply]
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o (f b')) _ _ hF
+
+/-- **Fibrewise negation in odd rank reverses the Thom class.** For an oriented bundle of odd rank
+`n + 1`, pulling the Thom class back along `v ↦ -v` gives the Thom class of the opposite
+orientation. -/
+theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
+    TopPair.singularCohomologyMap (negThomPairMap F E) (n + 1) (o.thomClass hF) =
+      (-o).thomClass hF := by
+  refine ((eq_thomClass_iff (-o) hF _).2 fun e _ b hb ↦ ?_)
+  let t := e.continuousLinearEquivAt ℝ b hb
+  -- On the fibre over `b`, negation is `t⁻¹ ∘ (x ↦ -x) ∘ t`.
+  have hφ : fiberThomPairMap F E b ≫ negThomPairMap F E =
+      t.complZeroPairIso.hom ≫ (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom ≫
+        t.complZeroPairIso.inv ≫ fiberThomPairMap F E b := by
+    refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
+    have h₁ : TopPair.Hom.fst t.complZeroPairIso.inv
+        (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
+          (TopPair.Hom.fst t.complZeroPairIso.hom x)) = (-1 : ℝ) • x := by
+      have h : t.symm (-t x) = (-1 : ℝ) • x := by
+        simpa using t.symm_apply_apply ((-1 : ℝ) • x)
+      simp only [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
+        ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply]
+      exact h
+    -- The ambient map of a composite of maps of pairs is the composite of the ambient maps. After
+    -- `TopPair.Hom.fst_comp`, `ConcreteCategory.comp_apply` and `ContinuousMap.comp_apply` do not
+    -- fire: the intermediate objects are `TopPair.ofSubset` carriers that agree with the types of
+    -- the composed maps only after unfolding. So `change` states the iterated applications.
+    change TopPair.Hom.fst (negThomPairMap F E) (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
+      TopPair.Hom.fst (fiberThomPairMap F E b) (TopPair.Hom.fst t.complZeroPairIso.inv
+        (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
+          (TopPair.Hom.fst t.complZeroPairIso.hom x)))
+    rw [h₁]
+    exact (congrArg _ (fiberThomPairMap_fst_apply F E b x)).trans
+      ((negThomPairMap_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b _).symm)
+  rw [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  simp only [TopPair.singularCohomologyMap_comp_apply]
+  -- Restriction: on the fibre over `b`, the Thom class is the generator selected through `t`.
+  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb]
+  -- The inverse of `t` cancels against `t`.
+  rw [← TopPair.singularCohomologyMap_comp_apply t.complZeroPairIso.inv, Iso.inv_hom_id,
+    TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
+  -- Antipodal action: `x ↦ -x` acts by the sign of `det (-1) = (-1) ^ (n + 1) = -1`.
+  have hdet : ((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F).det = -1 := by
+    have hneg : (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : F →ₗ[ℝ] F) =
+        (-1 : ℝ) • LinearMap.id := by
+      ext; simp
+    rw [ContinuousLinearMap.det, hneg, LinearMap.det_smul, LinearMap.det_id, mul_one, hF,
+      hn.add_one.neg_one_pow]
+  have : FiniteDimensional ℝ F := .of_finrank_eq_succ hF
+  have hf : Set.MapsTo ((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) ({0}ᶜ : Set F)
+      {0}ᶜ :=
+    (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).mapsTo_compl_zero
+  have hneg : (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom =
+      TopPair.ofSubsetMap
+        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : C(F, F))) hf :=
+    ContinuousLinearEquiv.complZeroPairIso_hom _
+  -- The determinant-sign action, stated with the `ℤ`-linear structure used by the Thom class.
+  have hact : TopPair.singularCohomologyMap (R := ModuleCat.of ℤ (ULift.{w} ℤ)) (k := ℤ)
+      (M := ModuleCat.of ℤ (ULift.{w} ℤ))
+      (TopPair.ofSubsetMap
+        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : C(F, F))) hf)
+      (n + 1) = -𝟙 _ := by
+    refine (singularCohomologyMap_continuousLinearMap_compl_zero
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) (ModuleCat.of ℤ (ULift.{w} ℤ)) _ hf (n + 1)).trans ?_
+    simp [hdet]
+    -- The two sides differ only in the `ℤ`-linear structure on the hom groups used to negate.
+    rfl
+  rw [hneg, hact]
+  -- Sign cleanup: the generator selected by the opposite orientation is the negative one.
+  simp [t, Trivialization.mapOrientation_neg, Orientation.localCohomologyClass_neg]
+
+/-- **The Thom class of an oriented bundle is a Thom class**: transported to the degree
+`finrank ℝ F = n + 1`, it restricts to a generator of the integral cohomology of every fibre
+pair. -/
+theorem isThomClass_thomClass :
+    IsThomClass F E (hF ▸ o.thomClass hF :
+      (thomPair F E).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
+        (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ F)) := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  -- Transport along `finrank ℝ F = d` commutes with the fibre restrictions.
+  have key {d : ℕ} (hd : finrank ℝ F = d)
+      (x : (thomPair F E).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
+        (ModuleCat.of ℤ (ULift.{w} ℤ)) d)
+      (hx : ∀ b, Submodule.span ℤ
+        {(TopPair.singularCohomologyMap (fiberThomPairMap F E b) d x)} = ⊤) :
+      IsThomClass F E (hd ▸ x : (thomPair F E).singularCohomology
+        (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ F)) := by
+    subst hd
+    exact isThomClass_iff.2 ⟨inferInstance, hx⟩
+  refine key hF _ fun b ↦ ?_
+  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
+  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF _ hb]
+  -- An isomorphism of pairs induces a linear isomorphism in cohomology, carrying generators to
+  -- generators.
+  exact ((TopPair.singularCohomologyFunctor (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
+    (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1)).mapIso
+      ((trivializationAt F E b).continuousLinearEquivAt ℝ b hb).complZeroPairIso.op
+    ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 (Orientation.span_localCohomologyClass _ _)
+
+end ThomClass
 
 end TauCeti.VectorBundleOrientation

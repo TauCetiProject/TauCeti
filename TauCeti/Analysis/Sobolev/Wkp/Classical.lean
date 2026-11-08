@@ -14,6 +14,10 @@ A smooth representative of a weak Sobolev function has classical derivatives equ
 everywhere to its recorded weak derivatives. The nested iterated-gradient fields have exactly
 the same pointwise norms as Mathlib's multilinear derivatives. Consequently smooth Sobolev
 representatives satisfy the integrability hypotheses of classical higher-order cutoff estimates.
+Conversely, a function that is `Cᵏ` on the domain and whose classical derivatives through order
+`k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
+whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
+(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`).
 
 The weak-to-classical identification uses `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`; the norm
 comparison uses Mathlib's `norm_iteratedFDeriv_fderiv` and the Riesz isometry. These are the
@@ -209,6 +213,95 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
           ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
             (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet) ?_
         exact .of_forall fun x => norm_iteratedGradientChain f k x
+
+/-- The `Lᵖ` norm of the value of a Sobolev function is the `Lᵖ` seminorm of any representative
+that is continuous on the domain. -/
+private theorem Wkp.norm_value_eq_lpNorm_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
+    {f : E → ℝ} (hf : ContDiffOn ℝ k f Omega)
+    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
+  rw [Lp.norm_def, lpNorm]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+    ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
+      Omega.isOpen.measurableSet) ?_
+  filter_upwards [hu] with x hx
+  rw [hx, norm_iteratedFDeriv_zero]
+
+/-- **The Sobolev norm of a `Cᵏ` representative.** If `u ∈ W^{k,p}(Ω)` is represented by a
+function `f` that is `Cᵏ` on `Ω`, then `‖u‖` is at most the sum of the `Lᵖ` seminorms of the
+classical derivatives of `f` of orders `0` through `k`. -/
+theorem Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn :
+    ∀ (k : ℕ) (u : Wkp mu Omega p k) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
+      (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f →
+      ‖u‖ ≤ ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) p (mu.restrict Omega)
+  | 0, u, f, hf, hu => by
+      rw [Finset.sum_range_one, ← norm_value_eq_lpNorm_of_contDiffOn 0 u hf hu, value_zero]
+  | 1, u, f, hf, hu => by
+      have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 u
+      rw [Finset.sum_range_succ, Finset.sum_range_one,
+        ← norm_value_eq_lpNorm_of_contDiffOn 1 u hf hu, value_one,
+        ← norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf hu, iteratedGradient_zero]
+      simpa only [lowerOrder_zero, iteratedGradient_zero] using h
+  | k + 2, u, f, hf, hu => by
+      have hlow := norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn (k + 1) (lowerOrder (k + 1) u)
+        (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2)))
+        (by simpa only [value_succ] using hu)
+      have hhigh := norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k + 1) u hf hu
+      have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (k + 1) u
+      rw [Finset.sum_range_succ _ (k + 2)]
+      linarith
+
+/-- **`Cᵏ` functions with `Lᵖ` derivatives are Sobolev functions.** If `f` is `Cᵏ` on the open set
+`Ω` and its classical derivatives of orders `0` through `k` lie in `Lᵖ(Ω)`, then `f` represents an
+element of `W^{k,p}(Ω)`. Nothing is assumed about `f` at the boundary of `Ω`. -/
+theorem Wkp.exists_value_ae_eq_of_contDiffOn :
+    ∀ (k : ℕ) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega)) →
+      ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f
+  | 0, f, hf, hmem => by
+      have hv : MemLp f p (mu.restrict Omega) :=
+        (hmem 0 le_rfl).congr_norm (hf.continuousOn.aestronglyMeasurable
+          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+      exact ⟨hv.toLp f, by rw [value_zero]; exact hv.coeFn_toLp⟩
+  | 1, f, hf, hmem => by
+      have hv : MemLp f p (mu.restrict Omega) :=
+        (hmem 0 (by simp)).congr_norm (hf.continuousOn.aestronglyMeasurable
+          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+      have hg : MemLp (gradient f) p (mu.restrict Omega) :=
+        (hmem 1 le_rfl).congr_norm
+          (((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn
+            (hf.continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl)).aestronglyMeasurable
+              Omega.isOpen.measurableSet)
+          (.of_forall fun x => by rw [norm_iteratedFDeriv_one, norm_gradient_eq_norm_fderiv])
+      obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn hf hv hg
+      let v : Wkp mu Omega p 1 := u
+      exact ⟨v, by rw [value_one]; exact hu⟩
+  | k + 2, f, hf, hmem => by
+      obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn (k + 1)
+        (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2)))
+        fun i hi => hmem i (by omega)
+      have hs : ContDiffOn ℝ 1 (iteratedGradientChain f k) Omega := fun x hx =>
+        (contDiffAt_iteratedGradientChain (hf.contDiffAt (Omega.isOpen.mem_nhds hx)) k
+          (by exact_mod_cast (by omega : 1 + k + 1 ≤ k + 2))).contDiffWithinAt
+      have hc' : ContinuousOn (fderiv ℝ (iteratedGradientChain f k)) Omega :=
+        hs.continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl
+      have hc : ContinuousOn (iteratedGradientChain f (k + 1)) Omega := by
+        rw [iteratedGradientChain_succ]
+        exact hc'
+      have hD : MemLp (iteratedGradientChain f (k + 1)) p (mu.restrict Omega) :=
+        (hmem (k + 2) le_rfl).congr_norm (hc.aestronglyMeasurable Omega.isOpen.measurableSet)
+          (.of_forall fun x => (norm_iteratedGradientChain f (k + 1) x).symm)
+      have hweak : HasWeakFDerivOn mu Omega (iteratedGradient k u) (hD.toLp _) :=
+        ((hasWeakFDerivOn_of_differentiableOn
+          (hs.continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet)
+          (hc'.locallyIntegrableOn Omega.isOpen.measurableSet)
+          fun x hx => (hs.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt
+            (by simp)).congr_ae
+          (iteratedGradient_ae_eq_of_contDiffOn k u
+            (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2))) hu).symm).congr_ae_deriv
+          (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
+      exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
 
 end Sobolev
 

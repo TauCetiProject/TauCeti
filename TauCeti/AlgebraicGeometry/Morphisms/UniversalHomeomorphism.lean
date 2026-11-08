@@ -169,6 +169,20 @@ theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjecti
   exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, hinj, hsurj⟩
 
+/-- Being a universal homeomorphism is local on the target. -/
+instance isUniversalHomeomorphism_isZariskiLocalAtTarget :
+    IsZariskiLocalAtTarget @IsUniversalHomeomorphism.{u} := by
+  have : @IsUniversalHomeomorphism.{u} = (@UniversallyClosed.{u} ⊓ @UniversallyInjective.{u} ⊓
+      @Surjective.{u} : MorphismProperty Scheme.{u}) := by
+    ext X Y f
+    exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).trans
+      and_assoc.symm
+  rw [this]
+  -- Instance search does not find the infimum instance unaided, so the precoverage is given.
+  have := MorphismProperty.IsLocalAtTarget.inf (K := Scheme.zariskiPrecoverage)
+    @UniversallyClosed.{u} @UniversallyInjective.{u}
+  exact MorphismProperty.IsLocalAtTarget.inf (K := Scheme.zariskiPrecoverage) _ _
+
 /-- `Spec.map φ` is a universal homeomorphism iff `φ` is integral, precomposition by `φ` is
 injective on maps from `S` into every field, and `PrimeSpectrum.comap φ.hom` is surjective. -/
 theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :

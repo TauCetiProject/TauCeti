@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
 import TauCeti.Probability.Distributions.Gamma.Poisson
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Negative-multinomial distributions
@@ -28,6 +28,27 @@ The mass calculation follows the scalar Gamma–Poisson calculation in
 `TauCeti.Probability.Distributions.Gamma.Poisson`: the Poisson product shifts the Gamma shape by
 the total count, while the weights' normalization makes the combined rate one.
 
+## Main definitions
+
+* `negativeMultinomialWeightReal` and `negativeMultinomialWeight`: the real and extended
+  nonnegative masses, given by the Gamma quotient at nonzero shape and by the indicator of the
+  zero count vector at shape zero.
+* `negativeMultinomialMeasure`: the law on count vectors `ι → ℕ`, totalized in the shape `r`, the
+  success weight `p₀` and the category weights `p`.
+
+## Main results
+
+* `isProbabilityMeasure_negativeMultinomialMeasure`: the law is a probability measure for
+  `0 ≤ r`, `0 < p₀` and `p₀ + ∑ i, p i = 1`.
+* `negativeMultinomialMeasure_singleton` and `negativeMultinomialMeasure_real_singleton`: its
+  singleton masses are the negative-multinomial masses.
+* `negativeMultinomialMeasure_eq_sum_dirac`: the law is the weighted sum of its Dirac masses.
+* `negativeMultinomialMeasure_singleton_ne_zero_iff`: its exact support, at positive shape the
+  count vectors vanishing on the zero-weight categories, at shape zero the zero count vector.
+* `negativeMultinomialMeasure_zero` and `negativeMultinomialMeasure_eq_zero_of_invalid`: shape
+  zero gives the point mass at zero, and parameters outside the range give the zero measure.
+* `measurable_negativeMultinomialMeasure`: the law is jointly measurable in all parameters.
+
 ## References
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley (1997).
@@ -44,7 +65,16 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The real negative-multinomial mass. At shape zero it is the mass of the zero vector. -/
+/-- The real negative-multinomial mass of the count vector `k`, for shape `r`, success weight `p₀`
+and category weights `p`. At nonzero shape it is the Gamma-quotient expression
+`Γ(r + ∑ i, k i) / (Γ(r) * ∏ i, (k i)!) * p₀ ^ r * ∏ i, p i ^ k i`, with a real power `p₀ ^ r`.
+At shape zero it is `1` at `k = 0` and `0` elsewhere: the mass function of the point mass at the
+zero count vector.
+
+For `0 ≤ r`, `0 < p₀` and `p₀ + ∑ i, p i = 1` it is the singleton mass of
+`negativeMultinomialMeasure r p₀ p` (`negativeMultinomialMeasure_real_singleton`). For other
+parameters it is given by the same two branches but is not a probability mass in general (for
+`r < 0` it can be negative), while the law is the zero measure there. -/
 def negativeMultinomialWeightReal (r p₀ : ℝ) (p : ι → ℝ≥0) (k : ι → ℕ) : ℝ :=
   if r = 0 then if k = 0 then 1 else 0
   else Real.Gamma (r + ∑ i, (k i : ℝ)) / (Real.Gamma r * ∏ i, ((k i).factorial : ℝ)) *

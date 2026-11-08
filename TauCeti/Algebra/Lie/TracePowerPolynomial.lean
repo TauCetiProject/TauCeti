@@ -279,7 +279,7 @@ theorem isNilpotent_toEnd_of_forall_lift_eval_eq_zero (M : Type*) [AddCommGroup 
   -- a homogeneous element of positive degree lies in the irrelevant ideal
   have hirr := HomogeneousIdeal.mem_irrelevant_of_mem _ hm
     (tracePowerPolynomial_mem_homogeneousSubmodule (R := K) (L := L) (M := M) m)
-  rwa [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv, RingHom.mem_ker] at hirr
+  exact mem_irrelevant_iff_algebraMapInv_eq_zero.mp hirr
 
 end Nilpotent
 

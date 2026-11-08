@@ -40,6 +40,8 @@ set be integrated.
   completing any s-finite Borel measure;
 * `TauCeti.nullMeasurable_cTransform`: the transform itself is null-measurable for each s-finite
   Borel measure;
+* `TauCeti.nullMeasurable_cTransform_ite`: the same for the transform of a real potential
+  restricted to a measurable set;
 * the corresponding three results with `cTransformSymm` in their names;
 * `TauCeti.analyticSet_setOf_cTransformExtended_lt` and
   `TauCeti.nullMeasurable_cTransformExtended`: analytic sublevels and completion measurability
@@ -159,6 +161,20 @@ theorem nullMeasurable_cTransform (μ : Measure Y) [SFinite μ]
     NullMeasurable (cTransform c φ) μ :=
   measurable_of_Iio fun a =>
     nullMeasurableSet_setOf_cTransform_lt μ a (h measurableSet_Iio)
+
+/-- The `c`-transform of a real potential `φ`, restricted to a measurable set `A` (and `⊥` outside
+it), is null measurable for every s-finite Borel measure on the target. -/
+theorem nullMeasurable_cTransform_ite (μ : Measure Y) [SFinite μ] (hc : Measurable c)
+    {φ : X → ℝ} (hφ : Measurable φ) {A : Set X} [DecidablePred (· ∈ A)] (hA : MeasurableSet A) :
+    NullMeasurable (cTransform c fun x ↦ if x ∈ A then (φ x : EReal) else ⊥) μ := by
+  refine nullMeasurable_cTransform μ ?_
+  have heq : (fun z : X × Y ↦ (c z : EReal) - if z.1 ∈ A then (φ z.1 : EReal) else ⊥) =
+      fun z ↦ if z.1 ∈ A then ((c z - φ z.1 : ℝ) : EReal) else ⊤ := by
+    funext z
+    by_cases hz : z.1 ∈ A <;> simp [hz, EReal.coe_sub]
+  rw [heq]
+  exact Measurable.ite (hA.preimage measurable_fst)
+    (measurable_coe_real_ereal.comp (hc.sub (hφ.comp measurable_fst))) measurable_const
 
 /-- A symmetric `c`-transform with Borel defining integrand is measurable for the completion of
 every s-finite Borel measure on the source. -/

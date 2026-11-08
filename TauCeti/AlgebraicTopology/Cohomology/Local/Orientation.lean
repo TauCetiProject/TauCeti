@@ -33,7 +33,10 @@ opposite orientation selects the opposite generator, and a continuous linear equ
 (`Orientation.singularCohomologyMap_localCohomologyClass`), so an orientation-preserving
 automorphism fixes it. These are the normalized fibre values of the integral Thom class of an
 oriented real vector bundle, read in local trivializations: on the overlap of two trivializations,
-the fibre transition is such an automorphism.
+the fibre transition is such an automorphism. Accordingly, for an orientation of a topological
+vector space `V` that need not be normed, pulling back along `f : V ≃L[ℝ] F` the generator selected
+by the transported orientation does not depend on `f`
+(`Orientation.singularCohomologyMap_localCohomologyClass_map_eq`).
 
 ## References
 
@@ -301,5 +304,28 @@ theorem singularCohomologyMap_localCohomologyClass (f : F ≃L[ℝ] G)
   rw [eq_localCohomologyClass_iff, TopPair.singularKronecker_naturality, ModuleCat.hom_comp,
     LinearMap.comp_apply, ← LocalOrientation.coe_map, ← localOrientation_map f ω hF hG]
   exact (ω.map _ f.toLinearEquiv).kronecker_localCohomologyClass hG
+
+/-- **The selected generator read through a linear equivalence.** Let `ω` be an orientation of a
+real topological vector space `V`, not necessarily normed. Pulling back, along a continuous linear
+equivalence `f : V ≃L[ℝ] F` onto a normed space of dimension `n + 1`, the generator of
+`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` selected by the transported orientation `ω.map f` gives a class of
+`Hⁿ⁺¹(V, V ∖ {0}; ℤ)` that does not depend on `f`. This is how an orientation of a fibre of a
+vector bundle selects a generator through any trivialization. -/
+theorem singularCohomologyMap_localCohomologyClass_map_eq {V : Type w} [TopologicalSpace V]
+    [AddCommMonoid V] [Module ℝ V] (ω : Orientation ℝ V (Fin (n + 1))) (f f' : V ≃L[ℝ] F)
+    (hF : finrank ℝ F = n + 1) :
+    TopPair.singularCohomologyMap f.complZeroPairIso.hom (n + 1)
+        ((ω.map _ f.toLinearEquiv).localCohomologyClass hF) =
+      TopPair.singularCohomologyMap f'.complZeroPairIso.hom (n + 1)
+        ((ω.map _ f'.toLinearEquiv).localCohomologyClass hF) := by
+  -- `f'` is `f` followed by the automorphism `h = f⁻¹ ≫ f'` of `F`, which carries the generator
+  -- selected by `ω.map f'` back to the one selected by `ω.map f`.
+  obtain ⟨h, rfl⟩ : ∃ h : F ≃L[ℝ] F, f' = f.trans h := ⟨f.symm.trans f', by ext; simp⟩
+  have hmap : ω.map _ (f.trans h).toLinearEquiv =
+      (ω.map _ f.toLinearEquiv).map _ h.toLinearEquiv :=
+    Orientation.map_trans f.toLinearEquiv h.toLinearEquiv ω
+  rw [hmap, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom,
+    TopPair.singularCohomologyMap_comp_apply,
+    singularCohomologyMap_localCohomologyClass h _ hF hF]
 
 end Orientation

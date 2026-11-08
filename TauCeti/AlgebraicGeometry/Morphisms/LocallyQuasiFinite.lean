@@ -28,6 +28,10 @@ the codimension of its image, and the dimension of the source is at most that of
 
 * `AlgebraicGeometry.LocallyQuasiFinite.of_formallyUnramified`: a formally unramified morphism
   locally of finite type is locally quasi-finite.
+* `AlgebraicGeometry.Scheme.Hom.QuasiFiniteAt.finite_residueField`: the residue field extension
+  at a point where a morphism is quasi-finite is finite;
+  `AlgebraicGeometry.Scheme.Hom.finite_residueField` is the instance for a locally
+  quasi-finite morphism.
 * `AlgebraicGeometry.Scheme.Hom.strictMono`: a locally quasi-finite morphism
   is strictly monotone for the specialization order.
 * `AlgebraicGeometry.Scheme.Hom.coheight_le_coheight_apply`: under a locally quasi-finite morphism
@@ -44,6 +48,7 @@ the codimension of its image, and the dimension of the source is at most that of
 
 ## References
 
+* The Stacks Project, Tag 00PK (a quasi-finite ring map has finite residue field extensions).
 * The strict monotonicity is a scheme form of `Pcf.height_eq_one_of_liesOver_heightOne` in
   T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -69,6 +74,43 @@ instance (priority := low) LocallyQuasiFinite.of_formallyUnramified {X Y : Schem
   have htype := htype.finiteType_appLE hU hV e
   algebraize [(f.appLE U V e).hom]
   exact RingHom.quasiFinite_algebraMap.mpr inferInstance
+
+/-- **Residue field extensions at a quasi-finite point are finite.** If `f` is quasi-finite at
+`x`, then `κ(x)` is a finite extension of `κ(f x)`. Stacks, Lemma 00PK. The proof is adapted from
+that of Mathlib's `Algebra.IsSeparable` instance for `f.residueFieldMap x` in
+`Mathlib/AlgebraicGeometry/Morphisms/FormallyUnramified.lean`. -/
+theorem Scheme.Hom.QuasiFiniteAt.finite_residueField {X Y : Scheme.{u}} {f : X ⟶ Y} {x : X}
+    (hx : f.QuasiFiniteAt x) :
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    Module.Finite (Y.residueField (f x)) (X.residueField x) := by
+  -- `κ(f x) ⟶ κ(x)` is the map of residue fields of the stalk map, a quasi-finite local
+  -- homomorphism of local rings, so `IsLocalRing.ResidueField.finite_of_quasiFinite` applies.
+  algebraize [(f.stalkMap x).hom]
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
+  -- The scheme residue fields are the residue fields of the stalks, and the two algebra
+  -- structures agree on the surjection from the stalk, as in Mathlib.
+  suffices h : Module.Finite
+      (IsLocalRing.ResidueField <| Y.presheaf.stalk (f x))
+      (IsLocalRing.ResidueField <| X.presheaf.stalk x) by
+    convert! h
+    congr 1
+    refine Algebra.algebra_ext _ _ fun r ↦ ?_
+    obtain ⟨r, rfl⟩ := IsLocalRing.residue_surjective r
+    rfl
+  have : Algebra.QuasiFinite (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+    rw [← RingHom.quasiFinite_algebraMap, RingHom.algebraMap_toAlgebra]
+    exact hx
+  infer_instance
+
+/-- **Residue field extensions of a locally quasi-finite morphism are finite.** If `f` is locally
+quasi-finite, then `κ(x)` is a finite extension of `κ(f x)` at every point `x`. Stacks,
+Lemma 00PK. -/
+instance Scheme.Hom.finite_residueField {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [LocallyQuasiFinite f] (x : X) :
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    Module.Finite (Y.residueField (f x)) (X.residueField x) :=
+  (f.quasiFiniteAt x).finite_residueField
 
 /-- A locally quasi-finite morphism is strictly monotone for the specialization order. -/
 theorem Scheme.Hom.strictMono {X Y : Scheme.{u}} (f : X ⟶ Y)

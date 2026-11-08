@@ -56,7 +56,7 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 1 M]
   [BoundarylessManifold I M]
@@ -252,6 +252,14 @@ theorem globalFlowDiffeomorph_apply {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n 
       globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete t x := by
   rw [← Diffeomorph.coe_toEquiv, globalFlowDiffeomorph, Homeomorph.coe_toEquiv,
     Flow.toHomeomorph_apply]
+
+omit hv in
+/-- As a function, `globalFlowDiffeomorph` is the time-`t` map of the flow. -/
+theorem coe_globalFlowDiffeomorph {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hvn : ContMDiff I I.tangent n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (t : ℝ) :
+    ⇑(globalFlowDiffeomorph hcomplete hn hvn t) =
+      globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete t :=
+  funext (globalFlowDiffeomorph_apply hcomplete hn hvn t)
 
 omit hv in
 /-- The inverse of `globalFlowDiffeomorph` at time `t` is the time-`(-t)` map of the flow. -/

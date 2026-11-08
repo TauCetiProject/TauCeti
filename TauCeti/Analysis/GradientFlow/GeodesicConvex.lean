@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.GradientFlow.Slope
+public import TauCeti.Analysis.GradientFlow.RelaxedSlope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
+import TauCeti.Topology.Instances.EReal
 
 /-!
 # Geodesic convexity of energies
@@ -42,7 +43,8 @@ The inequality `≤` holds for every energy (`TauCeti.descendingSlope_le_iSup`);
 gives `≥`, by comparing `φ` with its convexity bound near `x` along a geodesic towards `y`. As a
 supremum of lower semicontinuous functions, the descending slope of a lower semicontinuous
 geodesically convex energy is lower semicontinuous on its effective domain `{x | φ x ≠ ⊤}`
-(`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`).
+(`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`), so it is also the relaxed
+slope there (`TauCeti.GeodesicallyConvex.relaxedSlope_eq_descendingSlope`).
 
 The three notions are stable under the usual operations, as far as each allows. Convexity along a
 fixed curve passes to sums (adding the parameters), to nonnegative multiples, to pointwise suprema
@@ -69,6 +71,8 @@ curve need no such assumption.
 * `TauCeti.ConvexAlongGeodesics.geodesicallyConvex`: in a geodesic space, convexity along every
   geodesic implies geodesic convexity.
 * `TauCeti.ConvexAlong.apply_ne_top`: the effective domain is convex along a curve of convexity.
+* `TauCeti.ConvexAlong.apply_add_le_of_forall_le`: an `m`-convex energy grows at least like
+  `(m / 2) d(γ 0, γ 1)²` away from a minimum at the start of the curve.
 * `TauCeti.ConvexAlong.add`, `TauCeti.ConvexAlong.const_mul`, `TauCeti.ConvexAlong.iSup` and
   `TauCeti.ConvexAlong.of_tendsto`: convexity along a curve is stable under sums, nonnegative
   multiples, suprema and pointwise limits; `TauCeti.ConvexAlongGeodesics.add`,
@@ -84,6 +88,8 @@ curve need no such assumption.
 * `TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`: the descending slope of a
   lower semicontinuous `m`-geodesically convex energy is lower semicontinuous on its effective
   domain.
+* `TauCeti.GeodesicallyConvex.relaxedSlope_eq_descendingSlope`: for such an energy the relaxed
+  and the descending slopes agree on the effective domain.
 
 ## References
 
@@ -198,6 +204,39 @@ theorem ConvexAlong.reverse (h : ConvexAlong m φ γ) : ConvexAlong m φ fun t �
   rw [add_comm, dist_comm, mul_right_comm (m / 2) t]
   exact h'
 
+/-- **Quadratic growth away from a minimum along a curve of convexity.** If `φ` is `m`-convex
+along `γ` and its smallest value along `γ` on `[0, 1]` is attained at `γ 0`, then
+`φ (γ 0) + (m / 2) d(γ 0, γ 1)² ≤ φ (γ 1)`. Comparing `φ (γ 0)` with the convexity bound at time
+`t` and letting `t → 0` gives the inequality; `m` may be negative. -/
+theorem ConvexAlong.apply_add_le_of_forall_le (h : ConvexAlong m φ γ)
+    (hmin : ∀ t ∈ Icc (0 : ℝ) 1, φ (γ 0) ≤ φ (γ t)) :
+    φ (γ 0) + ((m / 2 * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) ≤ φ (γ 1) := by
+  set D := dist (γ 0) (γ 1) ^ 2
+  have h₁ := hmin 1 (right_mem_Icc.2 zero_le_one)
+  induction hb : φ (γ 1) using EReal.rec with
+  | top => exact le_top
+  | bot =>
+    rw [hb, le_bot_iff] at h₁
+    simp [h₁]
+  | coe b =>
+    induction ha : φ (γ 0) using EReal.rec with
+    | bot => simp
+    | top => simp [ha, hb] at h₁
+    | coe a =>
+      -- For `t ∈ (0, 1)`, dividing the convexity bound at time `t` by `t` gives
+      -- `a + (m / 2) (1 - t) D ≤ b`.
+      have key : ∀ t ∈ Ioo (0 : ℝ) 1, a + m / 2 * (1 - t) * D ≤ b := by
+        intro t ht
+        have h' := (hmin t (Ioo_subset_Icc_self ht)).trans (h t (Ioo_subset_Icc_self ht))
+        rw [ha, hb] at h'
+        have h'' : a ≤ (1 - t) * a + t * b - m / 2 * t * (1 - t) * D := by exact_mod_cast h'
+        exact le_of_mul_le_mul_left (by linarith) ht.1
+      have hlim : Tendsto (fun t : ℝ ↦ a + m / 2 * (1 - t) * D) (𝓝[>] 0)
+          (𝓝 (a + m / 2 * D)) := by
+        have : Continuous fun t : ℝ ↦ a + m / 2 * (1 - t) * D := by fun_prop
+        simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+      exact_mod_cast le_of_tendsto hlim (eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) key)
+
 /-- **Sum of convex energies.** If `φ` is `m`-convex and `ψ` is `m'`-convex along the same curve,
 then `φ + ψ` is `(m + m')`-convex along it. -/
 theorem ConvexAlong.add (hφ : ConvexAlong m φ γ) (hψ : ConvexAlong m' ψ γ) :
@@ -220,9 +259,7 @@ theorem ConvexAlong.const_mul (h : ConvexAlong m φ γ) {c : ℝ} (hc : 0 ≤ c)
         (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)) :=
       mul_le_mul_of_nonneg_left (h t ht) hc'
     _ = _ := by
-      rw [EReal.mul_sub_of_nonneg_of_ne_top hc' (EReal.coe_ne_top _),
-        EReal.left_distrib_of_nonneg_of_ne_top hc' (EReal.coe_ne_top _), mul_left_comm,
-        mul_left_comm (c : EReal) (t : EReal), ← EReal.coe_mul]
+      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc]
       congr 2
       ring
 
@@ -233,10 +270,8 @@ theorem ConvexAlong.iSup {ι : Sort*} {φs : ι → X → EReal} (h : ∀ i, Con
   intro t ht
   simp only [iSup_apply]
   refine iSup_le fun i ↦ (h i t ht).trans ?_
-  exact EReal.sub_le_sub (add_le_add
-    (mul_le_mul_of_nonneg_left (le_iSup (fun i ↦ φs i (γ 0)) i)
-      (EReal.coe_nonneg.2 (sub_nonneg.2 ht.2)))
-    (mul_le_mul_of_nonneg_left (le_iSup (fun i ↦ φs i (γ 1)) i) (EReal.coe_nonneg.2 ht.1))) le_rfl
+  exact EReal.coe_mul_add_coe_mul_sub_le_of_le (le_iSup (fun i ↦ φs i (γ 0)) i)
+    (le_iSup (fun i ↦ φs i (γ 1)) i) (sub_nonneg.2 ht.2) ht.1 _
 
 /-- **Convexity along a curve passes to pointwise limits.** If the energies `φs i` are eventually
 `m`-convex along `γ` and converge to `φ` at every point `γ t`, `t ∈ [0, 1]`, and the endpoint
@@ -246,24 +281,10 @@ theorem ConvexAlong.of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {φs : ι 
     (hφ : ∀ t ∈ Icc (0 : ℝ) 1, Tendsto (fun i ↦ φs i (γ t)) l (𝓝 (φ (γ t))))
     (h₀ : φ (γ 0) ≠ ⊤) (h₁ : φ (γ 1) ≠ ⊤) : ConvexAlong m φ γ := by
   intro t ht
-  have hs : 0 ≤ 1 - t := sub_nonneg.2 ht.2
-  have hmul {s : ℝ} {u : ι → EReal} {a : EReal} (hu : Tendsto u l (𝓝 a)) :
-      Tendsto (fun i ↦ (s : EReal) * u i) l (𝓝 ((s : EReal) * a)) :=
-    EReal.Tendsto.const_mul hu (.inl (EReal.coe_ne_bot s)) (.inl (EReal.coe_ne_top s))
-  have hadd {u v : ι → EReal} {a b : EReal} (hu : Tendsto u l (𝓝 a)) (hv : Tendsto v l (𝓝 b))
-      (ha : a ≠ ⊤) (hb : b ≠ ⊤) : Tendsto (fun i ↦ u i + v i) l (𝓝 (a + b)) :=
-    (EReal.continuousAt_add (.inl ha) (.inr hb)).tendsto.comp (hu.prodMk_nhds hv)
-  have hne {c : ℝ} (hc : 0 ≤ c) {d : EReal} (hd : d ≠ ⊤) : (c : EReal) * d ≠ ⊤ := by
-    simp [EReal.mul_ne_top, hc, hd]
-  have ha := hne hs h₀
-  have hb := hne ht.1 h₁
-  -- The right-hand sides of the convexity inequalities for `φs i` converge to the one for `φ`.
-  have hR := hadd (hadd (hmul (hφ 0 (left_mem_Icc.2 zero_le_one)))
-    (hmul (hφ 1 (right_mem_Icc.2 zero_le_one))) ha hb)
-    (tendsto_const_nhds (x := ((-(m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2) : ℝ) : EReal)))
-    (EReal.add_ne_top ha hb) (EReal.coe_ne_top _)
-  simp only [EReal.coe_neg, ← sub_eq_add_neg] at hR
-  exact le_of_tendsto_of_tendsto (hφ t ht) hR (h.mono fun i hi ↦ hi t ht)
+  exact le_of_tendsto_of_tendsto (hφ t ht)
+    (EReal.tendsto_coe_mul_add_coe_mul_sub (hφ 0 (left_mem_Icc.2 zero_le_one))
+      (hφ 1 (right_mem_Icc.2 zero_le_one)) h₀ h₁ (sub_nonneg.2 ht.2) ht.1 _)
+    (h.mono fun i hi ↦ hi t ht)
 
 /-- **Restriction to a piece of a geodesic.** If `φ` is `m`-convex along geodesics, then along a
 geodesic segment `γ` between two points of its effective domain, `φ` is also `m`-convex along the
@@ -299,11 +320,9 @@ theorem GeodesicallyConvex.add_convexAlongGeodesics (hφ : GeodesicallyConvex m 
 /-- **Positive multiple of a geodesically convex energy.** If `φ` is `m`-geodesically convex and
 `c > 0`, then `c φ` is `(c m)`-geodesically convex. -/
 theorem GeodesicallyConvex.const_mul (h : GeodesicallyConvex m φ) {c : ℝ} (hc : 0 < c) :
-    GeodesicallyConvex (c * m) fun x ↦ (c : EReal) * φ x := by
-  have hne {d : EReal} (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
-    rintro rfl
-    exact hd (EReal.coe_mul_top_of_pos hc)
-  exact fun _ _ hx hy ↦ (h (hne hx) (hne hy)).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.const_mul hc.le⟩
+    GeodesicallyConvex (c * m) fun x ↦ (c : EReal) * φ x := fun _ _ hx hy ↦
+  (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy)).imp
+    fun _ hγ ↦ ⟨hγ.1, hγ.2.const_mul hc.le⟩
 
 /-- **Nonnegative multiple of an energy convex along geodesics.** If `φ` is `m`-convex along
 geodesics and `c ≥ 0`, then `c φ` is `(c m)`-convex along geodesics. For `c = 0` this is the zero
@@ -313,10 +332,9 @@ theorem ConvexAlongGeodesics.const_mul (h : ConvexAlongGeodesics m φ) {c : ℝ}
   rcases hc.eq_or_lt with rfl | hc
   · intro _ _ _ _ _ _ t _
     simp
-  have hne {d : EReal} (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
-    rintro rfl
-    exact hd (EReal.coe_mul_top_of_pos hc)
-  exact fun _ _ hx hy _ hγ ↦ (h (hne hx) (hne hy) hγ).const_mul hc.le
+  exact fun _ _ hx hy _ hγ ↦
+    (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy) hγ).const_mul
+      hc.le
 
 /-- **Supremum of energies convex along geodesics.** The pointwise supremum of a family of
 energies, each `m`-convex along geodesics, is `m`-convex along geodesics. -/
@@ -518,6 +536,13 @@ theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : Geodesic
               ring
           _ ≤ (φ x - s + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal :=
               EReal.toENNReal_le_toENNReal (add_le_add_left (EReal.sub_le_sub hhx' le_rfl) _)
+
+/-- **The relaxed slope of a lower semicontinuous geodesically convex energy is its descending
+slope** at every point of its effective domain `{x | φ x ≠ ⊤}`. -/
+theorem GeodesicallyConvex.relaxedSlope_eq_descendingSlope (hφ : GeodesicallyConvex m φ)
+    (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) (hx : φ x ≠ ⊤) :
+    relaxedSlope φ x = descendingSlope φ x :=
+  TauCeti.relaxedSlope_eq_descendingSlope hx (hφ.lowerSemicontinuousOn_descendingSlope hlsc x hx)
 
 end MetricSpace
 

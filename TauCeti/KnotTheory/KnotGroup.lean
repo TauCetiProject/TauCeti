@@ -85,7 +85,7 @@ namespace TauCeti
 namespace SmoothCircleEmbedding
 
 open Set Metric Module
-open scoped Manifold ContDiff ContinuousMap
+open scoped _root_.Manifold ContDiff ContinuousMap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}

@@ -11,10 +11,9 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
-import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.Henselian
 
@@ -89,66 +88,45 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
     {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
     (h : Nat.card (AddSubgroup.torsionBy (W⁄L).toAffine.Point n) = n ^ 2) :
     n ≤ s.componentCount := by
-  -- The valuation ring `A` of `L` is a discrete valuation ring, and the adic valuation of its
-  -- maximal ideal `u` has valuation ring `B = A` again.
+  -- Over the valuation ring `A = 𝒪[L]` the integral model of `W⁄L` is that of `W`, and `ϖ` is
+  -- still a uniformiser, since `L/K` is unramified. `A` is `𝒪[L]` packaged as a valuation
+  -- subring: its underlying subring is `Valuation.integer (valuation L)` by definition, so the
+  -- `𝒪[L]` facts below (its Henselian structure and algebra, `maximalIdeal_eq` for its uniformiser
+  -- and `algebraMap_integerRing_dvd_iff`) apply to `A` as they stand.
   set A := (valuation L).valuationSubring
-  have : IsDiscreteValuationRing A := inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
-  set u := IsDiscreteValuationRing.maximalIdeal A
-  set B := (u.valuation L).valuationSubring
-  have hB : B = A := Place.valuationSubring_valuation_maximalIdeal A
-  have hequiv : (u.valuation L).IsEquiv (valuation L) :=
-    (Valuation.isEquiv_iff_valuationSubring _ _).2 hB
-  have : HenselianLocalRing B := hB ▸ inferInstanceAs (HenselianLocalRing 𝒪[L])
-  -- The integral model of `W` over `𝒪[K]` gives one of `W⁄L` over `B`.
-  have hKB (r : 𝒪[K]) : algebraMap K L r ∈ B := by
-    rw [hB, ← TauCeti.coe_algebraMap_integerRing]
-    exact (algebraMap 𝒪[K] 𝒪[L] r).2
-  let : Algebra 𝒪[K] B :=
-    (((algebraMap K L).comp (algebraMap 𝒪[K] K)).codRestrict B hKB).toAlgebra
-  have hRS : (algebraMap B L).comp (algebraMap 𝒪[K] B) =
-      (algebraMap K L).comp (algebraMap 𝒪[K] K) := rfl
-  have := IsIntegral.baseChange hRS W
-  have hmodel := integralModel_baseChange hRS W
-  -- Divisibility by powers of `ϖ` is read off valuations, which `L` and `K` compare alike.
-  have hf (k : ℕ) (x : 𝒪[K]) :
-      algebraMap 𝒪[K] B ϖ ^ k ∣ algebraMap 𝒪[K] B x ↔ ϖ ^ k ∣ x := by
-    rw [← map_pow, (Valuation.valuationSubring.integers _).dvd_iff_le,
-      (Valuation.integer.integers _).dvd_iff_le, hequiv.le_iff_le]
-    exact Valuation.HasExtension.val_map_le_iff (vR := valuation K) (vA := valuation L) _ _
-  -- Since `L/K` is unramified, `ϖ` is still a uniformiser of `B`.
-  have hϖB : maximalIdeal B = Ideal.span {algebraMap 𝒪[K] B ϖ} := by
-    have : IsDiscreteValuationRing B := hB ▸ inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
-    refine Irreducible.maximalIdeal_eq ?_
-    let e : B ≃+* 𝒪[L] := RingEquiv.subringCongr (congrArg ValuationSubring.toSubring hB)
-    have he : e (algebraMap 𝒪[K] B ϖ) = algebraMap 𝒪[K] 𝒪[L] ϖ := by
-      ext
-      rfl
-    exact (MulEquiv.irreducible_iff e.toMulEquiv).1 (he ▸ IsUnramified.irreducible_algebraMap hϖ)
-  -- Tate's algorithm stops at `s` on the integral model over `B`.
-  have hsB : (integralModel B (W⁄L)).IsTateTerminal (algebraMap 𝒪[K] B ϖ) s := by
+  have : HenselianLocalRing A := inferInstanceAs (HenselianLocalRing 𝒪[L])
+  let : Algebra 𝒪[K] A := inferInstanceAs (Algebra 𝒪[K] 𝒪[L])
+  have hmodel := integralModel_baseChange (R := 𝒪[K]) (S := A) (L := L)
+    (RingHom.ext coe_algebraMap_integerRing) W
+  have hϖA : maximalIdeal A = Ideal.span {algebraMap 𝒪[K] A ϖ} :=
+    (IsUnramified.irreducible_algebraMap hϖ).maximalIdeal_eq
+  -- Tate's algorithm stops at `s` on the integral model over `A`: divisibility by powers of `ϖ`
+  -- is the same in `𝒪[K]` and in `A`.
+  have hsA : (integralModel A (W⁄L)).IsTateTerminal (algebraMap 𝒪[K] A ϖ) s := by
     rw [hmodel]
-    exact (isTateTerminal_map_iff _ hf).2 hs
-  -- The reduction over `B` is singular, since `ϖ` divides the discriminant.
-  have hΔ : u.valuation L (W⁄L).Δ < 1 := by
-    have hint := Valuation.valuationSubring.integers (u.valuation L)
-    have hdvd : algebraMap 𝒪[K] B ϖ ∣ (integralModel B (W⁄L)).Δ := by
+    refine (isTateTerminal_map_iff _ fun k x ↦ ?_).2 hs
+    rw [← map_pow]
+    exact algebraMap_integerRing_dvd_iff
+  -- The reduction over `A` is singular, since `ϖ` divides the discriminant.
+  have hΔ : valuation L (W⁄L).Δ < 1 := by
+    have hint := Valuation.valuationSubring.integers (valuation L)
+    have hdvd : algebraMap 𝒪[K] A ϖ ∣ (integralModel A (W⁄L)).Δ := by
       rw [hmodel, map_Δ]
       exact map_dvd _ ((hs.dvd_Δ_iff hϖ.prime).2 hs₀)
-    have hunit : ¬ IsUnit (algebraMap 𝒪[K] B ϖ) :=
-      (mem_maximalIdeal _).1 (hϖB ▸ Ideal.mem_span_singleton_self _)
-    rw [← integralModel_Δ_eq B (W⁄L)]
+    have hunit : ¬ IsUnit (algebraMap 𝒪[K] A ϖ) :=
+      (mem_maximalIdeal _).1 (hϖA ▸ Ideal.mem_span_singleton_self _)
+    rw [← integralModel_Δ_eq A (W⁄L)]
     exact (hint.le_of_dvd hdvd).trans_lt <| lt_of_le_of_ne (hint.2 _)
       (mt hint.isUnit_iff_valuation_eq_one.2 hunit)
-  -- `n` is nonzero in the residue field of `L`, so it lies outside `u`.
-  have hn' : (n : A) ∉ u.asIdeal := by
-    have hnL : (n : 𝓀[L]) ≠ 0 := by
-      rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[L]),
-        map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
-    rwa [← map_natCast (residue 𝒪[L]), ne_eq, residue_eq_zero_iff] at hnL
-  have hfin := Affine.finiteIndex_nonsingularReduction_of_isTateTerminal (u.valuation L) hϖB hsB
-  exact (Nat.le_of_dvd (Nat.pos_of_ne_zero hfin.index_ne_zero)
-    (Affine.Point.dvd_index_nonsingularReduction u hΔ hn' h)).trans
-    (Affine.index_nonsingularReduction_le_componentCount (u.valuation L) hϖB hsB)
+  -- At the maximal ideal of `A`, whose adic valuation is equivalent to that of `L`, full
+  -- `n`-torsion makes `n` divide the index of `E₀(L)`.
+  have hequiv := isEquiv_valuation_maximalPrime L
+  have hdvd := Affine.Point.dvd_index_nonsingularReduction (maximalPrime L)
+    (hequiv.lt_one_iff_lt_one.2 hΔ) (natCast_notMem_maximalPrime hn) h
+  rw [Affine.nonsingularReduction_congr _ hequiv] at hdvd
+  have hfin := Affine.finiteIndex_nonsingularReduction_of_isTateTerminal (valuation L) hϖA hsA
+  exact (Nat.le_of_dvd (Nat.pos_of_ne_zero hfin.index_ne_zero) hdvd).trans
+    (Affine.index_nonsingularReduction_le_componentCount (valuation L) hϖA hsA)
 
 end FiniteExtension
 
@@ -156,8 +134,8 @@ section Galois
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] (W : WeierstrassCurve K) [W.IsElliptic] [IsMinimal 𝒪[K] W]
+  [DecidableEq (AlgebraicClosure K)]
 
-open scoped Classical in
 /-- **An unramified Tate module forces good reduction** (Néron, Ogg, Shafarevich; Silverman AEC
 VII.7.1). Let `W` be an elliptic curve over a nonarchimedean local field `K`, given by a minimal
 equation, and let `ℓ` be a prime different from the residue characteristic of `K`. If the inertia
@@ -167,6 +145,11 @@ theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [F
     (hℓ : (ℓ : 𝓀[K]) ≠ 0)
     (h : ∀ σ ∈ inertiaSubgroup K, W.tateModuleGaloisRepresentation ℓ σ = 1) :
     W.HasGoodReduction 𝒪[K] := by
+  -- The division fields and their torsion counts below are stated with the classical decidable
+  -- equality on `K^{alg}`; decidable equality is unique, so we may replace ours by it.
+  obtain rfl : ‹DecidableEq (AlgebraicClosure K)› = fun a b ↦ Classical.propDecidable (a = b) :=
+    Subsingleton.elim _ _
+  classical
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   -- Tate's algorithm stops at some symbol `s` on the integral model of `C • W`, for a change of
   -- variables `C` over `𝒪[K]`.
@@ -214,7 +197,6 @@ theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [F
   exact (Nat.lt_pow_self (Fact.out : ℓ.Prime).one_lt).not_ge
     (le_componentCount_of_natCard_torsionBy_eq (L := M) hϖ hs hs₀ hn hcard)
 
-open scoped Classical in
 /-- **The criterion of Néron, Ogg and Shafarevich** (Silverman AEC VII.7.1). Let `W` be an elliptic
 curve over a nonarchimedean local field `K`, given by a minimal equation, and let `ℓ` be a prime
 different from the residue characteristic of `K`. Then `W` has good reduction exactly when the

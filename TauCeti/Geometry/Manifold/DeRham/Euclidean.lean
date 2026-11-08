@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
@@ -92,23 +92,13 @@ open scoped ContDiff Manifold Topology
 namespace TauCeti
 
 /-- For every orientation `o` of a finite-dimensional real normed space `E` of dimension `n`,
-integration `H^n_c(E) → ℝ` is nonzero: the class of a bump form has integral `±1`. -/
+integration `H^n_c(E) → ℝ` is nonzero: the class of a bump form has integral one. -/
 private theorem compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
     (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
     ∃ v, compactlySupportedDeRhamCohomology.integral o v ≠ 0 := by
-  have hn : Fintype.card (Fin n) = finrank ℝ E := o.card_eq
-  let b := Module.finBasisOfFinrankEq ℝ E (by simpa using hn.symm)
-  obtain ⟨φ₀, hφ₀⟩ := b.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one hn
-  refine ⟨compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) n φ₀, ?_⟩
-  -- `o` is the constant orientation of `b` or its opposite, so the integral is `±1`.
-  rw [compactlySupportedDeRhamCohomology.integral_mk]
-  rcases Manifold.Orientation.eq_or_eq_neg o (Manifold.Orientation.model b.orientation hn)
-    with rfl | rfl
-  · rw [hφ₀]
-    exact one_ne_zero
-  · rw [integralTopForm_neg, hφ₀]
-    norm_num
+  obtain ⟨v, hv⟩ := compactlySupportedDeRhamCohomology.surjective_integral o 1
+  exact ⟨v, hv.trans_ne one_ne_zero⟩
 
 section InnerProductSpace
 
@@ -194,8 +184,8 @@ private theorem mem_exactCompactlySupportedForms_top {k : ℕ} (hk : 0 < k)
   obtain ⟨ρ, hρ, hρU, hρc⟩ := exists_cutoff_compl_closedBall (E := E) R
   rcases j with _ | j
   · -- In degree one, `η` is a function, constant on the connected set `U`.
-    have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp <|
-      isPreconnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
+    have : PathConnectedSpace U := isPathConnected_iff_pathConnectedSpace.mp <|
+      isPathConnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
     have hUc : IsCompact {x : (⊤ : Opens E) | (x : E) ∉ U} := by
       let Φ : (⊤ : Opens E) ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E := Diffeomorph.ofTop _ rfl
       have : {x : (⊤ : Opens E) | (x : E) ∉ U} = Φ ⁻¹' closedBall 0 R := by

@@ -68,6 +68,8 @@ points.
   `TauCeti.Toric.IsDelzant.isConnected_ker_facetTorusHom`: the kernel of `π` is connected.
 * `TauCeti.Toric.surjective_facetTorusHom`, `TauCeti.Toric.IsDelzant.surjective_facetTorusHom`:
   `π` is surjective.
+* `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
+  subtorus of a lattice basis of normals trivially.
 
 ## References
 
@@ -191,6 +193,47 @@ theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
   obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
   obtain ⟨t, rfl⟩ := surjective_linearCombination_real hi hu v
   exact ⟨_, facetTorusHom_coe i u p t⟩
+
+/-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
+the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel
+of `(ℝ / pℤ)^ι → V / p i(N)` whose coordinates outside `s` vanish is zero. -/
+theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
+    (hs : ∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) {θ : ι → AddCircle p}
+    (hθ : θ ∈ (facetTorusHom i u p).ker) (hθs : ∀ j ∉ s, θ j = 0) : θ = 0 := by
+  classical
+  obtain ⟨b, hb⟩ := hs
+  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
+  -- Lift `θ` to angles supported in `s`.
+  set t' : ι → ℝ := fun j ↦ if j ∈ s then t j else 0 with ht'
+  have hθt' : θ = fun j ↦ (t' j : AddCircle p) := funext fun j ↦ by
+    by_cases hj : j ∈ s
+    · simp [t', hj, ht]
+    · simp [t', hj, hθs j hj]
+  rw [hθt', AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff] at hθ
+  obtain ⟨n, hn⟩ := hθ
+  -- Comparing coefficients in the real basis `i (u j)`, `j ∈ s`, of `V` gives `t j ∈ pℤ`.
+  have hcoeff : ∀ j : s, t j = p * b.repr n j := by
+    have hli := hi.linearIndependent_basis b
+    simp only [hb] at hli
+    have hsum : ∑ j : s, (t j - p * b.repr n j) • i (u j) = 0 := by
+      have h1 : Fintype.linearCombination ℝ (fun j ↦ i (u j)) t' = ∑ j : s, t j • i (u j) := by
+        rw [Fintype.linearCombination_apply]
+        simp only [t', ite_smul, zero_smul]
+        rw [← Finset.sum_filter]
+        exact Finset.sum_subtype _ (by simp) fun j ↦ t j • i (u j)
+      have h2 : (p • i) n = ∑ j : s, (p * b.repr n j) • i (u j) := by
+        conv_lhs => rw [← b.sum_repr n]
+        simp only [AddMonoidHom.smul_apply, map_sum, map_zsmul, hb, mul_smul,
+          Int.cast_smul_eq_zsmul]
+        exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
+      simp only [sub_smul, Finset.sum_sub_distrib, ← h1, ← h2, hn, sub_self]
+    intro j
+    exact sub_eq_zero.1 (Fintype.linearIndependent_iff.1 hli _ hsum j)
+  funext j
+  by_cases hj : j ∈ s
+  · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
+    exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
+  · exact hθs j hj
 
 /-! ### Delzant polytopes -/
 

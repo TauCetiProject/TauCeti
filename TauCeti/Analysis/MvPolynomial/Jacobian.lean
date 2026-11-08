@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.RingTheory.MvPolynomial.Jacobian
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 
 /-!
 # Analytic derivatives of multivariate polynomial families

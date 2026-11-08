@@ -34,9 +34,10 @@ Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `
 converts between the two usual forms of an approximation `x ≈ m / q`.
 
 It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + y δ) / b` when
-`(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, and the comparison
+`(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
-profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`.
+profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 
 ## Main results
 
@@ -52,6 +53,7 @@ profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`.
   `(1 - δ) b ≤ a ≤ b` of the denominator with `δ ≤ 1 / 2` and `|x - y| ≤ e`.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
+* `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 -/
 
 public section
@@ -154,6 +156,14 @@ theorem two_mul_div_add_sq_le_mul {α : Type*} [Field α] [LinearOrder α] [IsSt
   rw [div_mul_div_comm, mul_comm r, ← mul_assoc, mul_div_mul_right _ _ hr.ne',
     div_le_div_iff₀ (by positivity) (by positivity)]
   nlinarith [mul_le_mul hρ hρ hr.le (hr.le.trans hρ)]
+
+/-- If `0 ≤ b` and `a ≤ (1 + b)⁻¹`, then `a * b ≤ 1`. -/
+theorem mul_le_one_of_le_inv_one_add {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b : α} (hb : 0 ≤ b) (ha : a ≤ (1 + b)⁻¹) :
+    a * b ≤ 1 := by
+  refine (mul_le_mul_of_nonneg_right ha hb).trans ?_
+  rw [inv_mul_eq_div, div_le_one (add_pos_of_pos_of_nonneg zero_lt_one hb)]
+  exact le_add_of_nonneg_left zero_le_one
 
 end TauCeti
 

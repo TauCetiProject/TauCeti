@@ -46,6 +46,8 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
 
 * `CochainComplex.cokernelFiltrationFunctorMapIso`: the cokernel of a transition map of the
   functor of a filtration is the cokernel of the inclusion of subcomplexes.
+* `CochainComplex.cokernelFiltrationFunctorMapIsoOfIsColimit`: when the pieces of a filtration
+  are represented by monomorphisms `X p ⟶ K`, that cokernel is any cokernel of `X p ⟶ X (p + 1)`.
 * `CochainComplex.spectralObjectHIso`: `H^n(f)` is the cohomology of the mapping cone of
   `F.map f`.
 * `CochainComplex.spectralObjectHIsoCokernel`: for a monomorphism `F.map f`, `H^n(f)` is the
@@ -439,5 +441,70 @@ lemma spectralSequenceFirstPageXIsoCokernel_eq (pq : ℤ × ℤ) (i₁ i₂ : �
   (rfl)
 
 end SpectralSequence
+
+section Stages
+
+variable {K : CochainComplex C ℤ} (F : ℤ → Subobject K) (hF : Monotone F)
+  {X : ℤ → CochainComplex C ℤ} (ι : ∀ p, X p ⟶ K) [∀ p, Mono (ι p)]
+  (hFι : ∀ p, F p = Subobject.mk (ι p))
+
+/-- When each piece `F p` of a filtration is represented by a monomorphism `ι p : X p ⟶ K`, the
+object of the functor of the filtration at `p` is `X p`. -/
+noncomputable def filtrationFunctorObjIsoOfEqMk (p : ℤ) :
+    (filtrationFunctor F hF).obj p ≅ X p :=
+  filtrationFunctorObjIso F hF p ≪≫
+    eqToIso (congrArg (fun S : Subobject K ↦ (S : CochainComplex C ℤ))
+      ((filtrationEInt_coe F p).trans (hFι p))) ≪≫
+    Subobject.underlyingIso (ι p)
+
+/-- The identification `CochainComplex.filtrationFunctorObjIsoOfEqMk` is compatible with the
+inclusions into the filtered complex. -/
+@[reassoc (attr := simp)]
+lemma filtrationFunctorObjIsoOfEqMk_hom_comp (p : ℤ) :
+    (filtrationFunctorObjIsoOfEqMk F hF ι hFι p).hom ≫ ι p = filtrationFunctorArrow F hF p := by
+  simp only [filtrationFunctorObjIsoOfEqMk, Iso.trans_hom, eqToIso.hom, Category.assoc,
+    Subobject.underlyingIso_hom_comp_eq_mk]
+  exact congrArg _ (Subobject.arrow_congr _ _ ((filtrationEInt_coe F p).trans (hFι p)))
+
+/-- Under `CochainComplex.filtrationFunctorObjIsoOfEqMk`, the transition map `F_p ⟶ F_{p+1}` of
+the functor of the filtration is any map `X p ⟶ X (p + 1)` compatible with the inclusions. -/
+@[reassoc]
+lemma filtrationFunctor_map_comp_objIsoOfEqMk_hom (p : ℤ) (f : X p ⟶ X (p + 1))
+    (hf : f ≫ ι (p + 1) = ι p) :
+    (filtrationFunctor F hF).map (homOfLE (coe_le_coe_of_eq_add_one (rfl : p = p) rfl)) ≫
+        (filtrationFunctorObjIsoOfEqMk F hF ι hFι (p + 1)).hom =
+      (filtrationFunctorObjIsoOfEqMk F hF ι hFι p).hom ≫ f := by
+  rw [← cancel_mono (ι (p + 1))]
+  simp only [Category.assoc, filtrationFunctorObjIsoOfEqMk_hom_comp, hf,
+    filtrationFunctor_map_comp_arrow]
+
+/-- When each piece `F p` of a filtration is represented by a monomorphism `ι p : X p ⟶ K`, the
+graded piece `F_{p+1}/F_p`, the cokernel of the transition map of the functor of the filtration,
+is the target of any cokernel `g` of a map `X p ⟶ X (p + 1)` compatible with the inclusions. -/
+noncomputable def cokernelFiltrationFunctorMapIsoOfIsColimit (p : ℤ) (f : X p ⟶ X (p + 1))
+    (hf : f ≫ ι (p + 1) = ι p) {Q : CochainComplex C ℤ} (g : X (p + 1) ⟶ Q) (hfg : f ≫ g = 0)
+    (hg : IsColimit (CokernelCofork.ofπ g hfg)) :
+    cokernel ((filtrationFunctor F hF).map
+      (homOfLE (coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≅ Q :=
+  cokernel.mapIso _ f (filtrationFunctorObjIsoOfEqMk F hF ι hFι p)
+      (filtrationFunctorObjIsoOfEqMk F hF ι hFι (p + 1))
+      (filtrationFunctor_map_comp_objIsoOfEqMk_hom F hF ι hFι p f hf) ≪≫
+    (colimit.isColimit _).coconePointUniqueUpToIso hg
+
+/-- The isomorphism `CochainComplex.cokernelFiltrationFunctorMapIsoOfIsColimit` identifies the
+cokernel projection with `g`. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelFiltrationFunctorMapIsoOfIsColimit_hom (p : ℤ) (f : X p ⟶ X (p + 1))
+    (hf : f ≫ ι (p + 1) = ι p) {Q : CochainComplex C ℤ} (g : X (p + 1) ⟶ Q) (hfg : f ≫ g = 0)
+    (hg : IsColimit (CokernelCofork.ofπ g hfg)) :
+    cokernel.π _ ≫ (cokernelFiltrationFunctorMapIsoOfIsColimit F hF ι hFι p f hf g hfg hg).hom =
+      (filtrationFunctorObjIsoOfEqMk F hF ι hFι (p + 1)).hom ≫ g := by
+  rw [cokernelFiltrationFunctorMapIsoOfIsColimit, Iso.trans_hom, ← Category.assoc,
+    cokernel.mapIso_hom, cokernel.π_desc, Category.assoc]
+  congr 1
+  exact IsColimit.comp_coconePointUniqueUpToIso_hom (colimit.isColimit _) hg
+    WalkingParallelPair.one
+
+end Stages
 
 end CochainComplex

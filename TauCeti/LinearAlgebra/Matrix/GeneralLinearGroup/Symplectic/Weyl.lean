@@ -36,6 +36,8 @@ the signed permutation group, the Weyl group of the standard symplectic torus.
   reflection in `2e_i`.
 * `positiveLongRootWeylElement_mul_diagonal_mul_inv`: the long-root reflection inverts one
   diagonal-torus coordinate.
+* `positiveLongRootWeylElement_inv_mul_diagonal_mul` and
+  `negativeLongRootWeylElement_inv_mul_diagonal_mul`: the same action, with the inverse on the left.
 * `positiveLongRootWeylElement_mem_normalizer_diagonalTorus` and
   `negativeLongRootWeylElement_mem_normalizer_diagonalTorus`: both long-root representatives belong
   to the normalizer of the paired diagonal torus.
@@ -573,6 +575,20 @@ theorem negativeLongRootWeylElement_mul_diagonal_mul_inv
   rw [← positiveLongRootWeylElement_inv, ← hconj,
     ← positiveLongRootWeylElement_inv]
   group
+
+/-- Conjugation by the long-root Weyl representative, written with the inverse on the left as in a
+right action on the torus, inverts the corresponding coordinate of the paired diagonal torus. -/
+theorem positiveLongRootWeylElement_inv_mul_diagonal_mul (i : Fin m) (t : Fin m → Rˣ) :
+    (positiveLongRootWeylElement i)⁻¹ * diagonal t * positiveLongRootWeylElement i =
+      diagonal (Function.update t i (t i)⁻¹) := by
+  rw [positiveLongRootWeylElement_inv, negativeLongRootWeylElement_mul_diagonal_mul_inv]
+
+/-- Conjugation by the opposite long-root representative, written with the inverse on the left,
+has the same reflection action on the paired diagonal torus. -/
+theorem negativeLongRootWeylElement_inv_mul_diagonal_mul (i : Fin m) (t : Fin m → Rˣ) :
+    (negativeLongRootWeylElement i)⁻¹ * diagonal t * negativeLongRootWeylElement i =
+      diagonal (Function.update t i (t i)⁻¹) := by
+  rw [negativeLongRootWeylElement_inv, positiveLongRootWeylElement_mul_diagonal_mul_inv]
 
 /-- The long-root Weyl representative normalizes the paired diagonal torus. -/
 theorem positiveLongRootWeylElement_mem_normalizer_diagonalTorus (i : Fin m) :

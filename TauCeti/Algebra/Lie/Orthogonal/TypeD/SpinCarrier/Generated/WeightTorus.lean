@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.Positive.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
@@ -189,3 +190,16 @@ theorem map_baseChange_weightTorusDefiningIdeal :
 end
 
 end TauCeti.TypeDSpinCarrier.Generated
+
+namespace TauCeti.TypeDSpinCarrier
+universe u v
+variable (n : ℕ) (hn : 4 ≤ n) (R : Type u) [CommRing R]
+/-- The weight-torus differential is injective over every commutative coefficient algebra. -/
+theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
+    (B : Type v) [CommRing B] [Algebra R B] :
+    Function.Injective
+      (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom) :=
+  derivationCompLieHom_injective_of_surjective _
+    (Generated.generatedWeightTorusCoordinateMap_surjective n hn R)
+
+end TauCeti.TypeDSpinCarrier

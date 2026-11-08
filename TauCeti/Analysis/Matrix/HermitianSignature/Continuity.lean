@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.HermitianSignature.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import Mathlib.Analysis.Matrix.Normed
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Local constancy of the Hermitian signature
@@ -28,7 +29,10 @@ in `TauCeti.exists_congruence_of_symmetric_family`.
 This stability result applies in particular to signature functions of Seifert matrices
 away from their singular parameters. Through Gram matrices, it also gives local constancy of the
 negative index of a continuous family of symmetric bilinear forms on a finite-dimensional real
-space at a nondegenerate member.
+space at a nondegenerate member, and hence constancy along a preconnected set of nondegenerate
+members. At a degenerate member the negative index can jump, but only
+upwards: a negative-definite subspace stays negative-definite under small perturbations, so the
+negative index of any continuous family of bilinear forms is lower semicontinuous.
 
 ## References
 
@@ -152,6 +156,29 @@ theorem eventually_sigNeg_toBilinForm_eq_of_continuousAt {X : Type*} [Topologica
     (hHermitian hsymm.self_of_nhds) (hsymm.mono fun _ ↦ hHermitian) hA hdet
   filter_upwards [hindex] with y hy
   simpa only [A, LinearMap.BilinForm.sigNeg_toMatrix] using hy
+
+/-- **The negative index is lower semicontinuous.** Along a family of continuous bilinear forms
+on a finite-dimensional real space, continuous at `x`, the negative index at nearby parameters is
+at least the negative index at `x`. Neither symmetry nor nondegeneracy is required. -/
+theorem eventually_sigNeg_toBilinForm_le_of_continuousAt {X : Type*} [TopologicalSpace X]
+    {V : X → E →L[ℝ] E →L[ℝ] ℝ} {x : X} (hc : ContinuousAt V x) :
+    ∀ᶠ y in 𝓝 x,
+      sigNeg (V x).toBilinForm.toQuadraticMap ≤ sigNeg (V y).toBilinForm.toQuadraticMap := by
+  -- A maximal negative-definite subspace `W` for `V x` stays negative-definite for the forms
+  -- near `V x`, by openness of strict diagonal positivity of the negated restrictions to `W`.
+  obtain ⟨W, hW, hneg⟩ :=
+    exists_finrank_eq_sigNeg_and_negDef (V x).toBilinForm.toQuadraticMap
+  let C : X → W →L[ℝ] W →L[ℝ] ℝ := fun y ↦ -(V y).bilinearComp W.subtypeL W.subtypeL
+  have hC : ContinuousAt C x := by
+    refine continuousAt_clm_apply.2 fun v ↦ continuousAt_clm_apply (f := fun y ↦ C y v) |>.2
+      fun w ↦ ?_
+    simpa [C] using ((hc.clm_apply continuousAt_const).clm_apply continuousAt_const).neg
+  have hCx : C x ∈ {b : W →L[ℝ] W →L[ℝ] ℝ | ∀ w, w ≠ 0 → 0 < b w w} := fun w hw ↦ by
+    simpa [C] using hneg w (by simpa using hw)
+  filter_upwards [hC.eventually (TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds hCx)]
+    with y hy
+  rw [← hW]
+  exact le_sigNeg_of_negDef _ fun w hw ↦ by simpa [C] using hy w hw
 
 /-- **The negative index is constant between crossings.** Along a family of symmetric continuous
 bilinear forms, continuous and nondegenerate on a preconnected set `s`, the negative index takes

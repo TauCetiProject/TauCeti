@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Hom
-public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 
 /-!
 # Coherent comparison of transport under morphisms of lifts
@@ -16,6 +15,9 @@ prescribed fibers. These identifications preserve the units and compositors, so 
 assemble into a strong transformation of the transport pseudofunctors, with identity
 components on the prescribed categories. The inverse cells give an inverse strong
 transformation, with invertible modifications comparing both composites to identities.
+The transport comparisons respect identity and composition of lift morphisms up to invertible
+modifications. Compatible modifications give equal transport transformations, inducing the
+functor `Hom.transportFunctor` on each category of lift morphisms.
 
 The comparison is the existing `EquivariantGroupoidLift.Hom.transportIso`, constructed
 from the joint strong transformation and its prescribed-fiber isomorphisms. The
@@ -34,7 +36,7 @@ open CategoryTheory Bicategory
 
 variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
   {actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
-  {L L' : EquivariantGroupoidLift Γ actions} (φ : L.Hom L')
+  {L L' L'' : EquivariantGroupoidLift Γ actions} (φ : L.Hom L')
 
 private lemma inverseFiberIso_hom_app_comp_map_unitInv (p : Γ) (Y : L.jointFiber p)
     {Z : L'.jointFiber p} (f : (φ.jointFunctor p).obj Y ⟶ Z) :
@@ -232,5 +234,90 @@ lemma transportInvHomIso_hom_as_app (b : LocallyDiscrete Γ) :
 lemma transportInvHomIso_inv_as_app (b : LocallyDiscrete Γ) :
     φ.transportInvHomIso.inv.as.app b = (λ_ (𝟙 (fiber actions b.as))).inv :=
   (rfl)
+
+/-- Transport comparisons determine the induced strong transformation, whose components
+are fixed identity functors. -/
+lemma transportHom_congr {φ ψ : L.Hom L'}
+    (h : ∀ (p q : Γ) (g : p ⟶ q), φ.transportIso g = ψ.transportIso g) :
+    φ.transportHom = ψ.transportHom := by
+  -- Only the naturality cells vary in this identity-component construction.
+  unfold transportHom
+  congr 1
+  funext p q g
+  rw [h p.as q.as g.as]
+
+/-- Normalization preserves the identity morphism up to an invertible modification
+with identity components. -/
+noncomputable def idTransportHomIso (L : EquivariantGroupoidLift Γ actions) :
+    Iso (C := L.transportPseudofunctor ⟶ L.transportPseudofunctor)
+      (id L).transportHom (𝟙 L.transportPseudofunctor) :=
+  Pseudofunctor.StrongTrans.isoMk (fun _ ↦ Iso.refl _) fun g ↦ by
+    simp only [categoryStruct_id_naturality_hom]
+    exact Cat.rightUnitor_trans_leftUnitor_symm_id_modification
+      (Cat.Hom.isoMk ((id L).transportIso g.as)) fun X ↦ by simp
+
+/-- Normalization preserves composition up to an invertible modification with inverse
+left unitor components. -/
+noncomputable def compTransportHomIso (φ : L.Hom L') (ψ : L'.Hom L'') :
+    Iso (C := L.transportPseudofunctor ⟶ L''.transportPseudofunctor)
+      (φ.comp ψ).transportHom (φ.transportHom ≫ ψ.transportHom) :=
+  Pseudofunctor.StrongTrans.isoMk (fun _ ↦ (λ_ _).symm) fun g ↦ by
+    simp only [categoryStruct_comp_naturality_hom]
+    exact Cat.rightUnitor_trans_leftUnitor_symm_trans_modification
+      (Cat.Hom.isoMk (φ.transportIso g.as)) (Cat.Hom.isoMk (ψ.transportIso g.as))
+      (Cat.Hom.isoMk ((φ.comp ψ).transportIso g.as)) fun X ↦ by
+        simp [comp_transportIso]
+
+@[simp]
+lemma idTransportHomIso_hom_as_app (L : EquivariantGroupoidLift Γ actions)
+    (b : LocallyDiscrete Γ) :
+    (idTransportHomIso L).hom.as.app b = 𝟙 (𝟙 (fiber actions b.as)) := (rfl)
+
+@[simp]
+lemma idTransportHomIso_inv_as_app (L : EquivariantGroupoidLift Γ actions)
+    (b : LocallyDiscrete Γ) :
+    (idTransportHomIso L).inv.as.app b = 𝟙 (𝟙 (fiber actions b.as)) := (rfl)
+
+@[simp]
+lemma compTransportHomIso_hom_as_app (φ : L.Hom L') (ψ : L'.Hom L'')
+    (b : LocallyDiscrete Γ) :
+    (compTransportHomIso φ ψ).hom.as.app b = (λ_ (𝟙 (fiber actions b.as))).inv := (rfl)
+
+@[simp]
+lemma compTransportHomIso_inv_as_app (φ : L.Hom L') (ψ : L'.Hom L'')
+    (b : LocallyDiscrete Γ) :
+    (compTransportHomIso φ ψ).inv.as.app b = (λ_ (𝟙 (fiber actions b.as))).hom := (rfl)
+
+namespace Hom₂
+
+variable {φ ψ : L.Hom L'} (Θ : φ ⟶ ψ)
+
+include Θ in
+/-- Compatible modifications identify the coherent transport transformations strictly:
+their components are identities and their naturality cells coincide. -/
+lemma transportHom_eq : φ.transportHom = ψ.transportHom := by
+  exact transportHom_congr fun _ _ g ↦ Θ.transportIso_eq g
+
+end Hom₂
+
+/-- Normalization on a category of morphisms of lifts. A compatible modification is sent to
+the identity-component modification between the induced coherent transport comparisons. -/
+noncomputable def transportFunctor (L L' : EquivariantGroupoidLift Γ actions) :
+    L.Hom L' ⥤ (L.transportPseudofunctor ⟶ L'.transportPseudofunctor) where
+  obj φ := φ.transportHom
+  map Θ := eqToHom Θ.transportHom_eq
+  map_id φ := by simp
+  map_comp Θ Ξ := by simp
+
+@[simp]
+lemma transportFunctor_obj (L L' : EquivariantGroupoidLift Γ actions) (φ : L.Hom L') :
+    (transportFunctor L L').obj φ = φ.transportHom := (rfl)
+
+@[simp]
+lemma transportFunctor_map (L L' : EquivariantGroupoidLift Γ actions)
+    {φ ψ : L.Hom L'} (Θ : φ ⟶ ψ) :
+    (transportFunctor L L').map Θ =
+      eqToHom ((transportFunctor_obj L L' φ).trans
+        (Θ.transportHom_eq.trans (transportFunctor_obj L L' ψ).symm)) := (rfl)
 
 end TauCeti.EquivariantGroupoidLift.Hom

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Uniqueness
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Convex.Jensen

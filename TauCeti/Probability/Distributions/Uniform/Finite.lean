@@ -106,20 +106,13 @@ end Finset
 
 namespace TauCeti.Probability
 
-/-- Every point of a nonempty finite type has mass the reciprocal of the cardinality under the
-uniform law. -/
-@[simp]
-theorem uniformOn_univ_apply_singleton [Fintype α] (a : α) :
-    uniformOn (Set.univ : Set α) {a} = (Fintype.card α : ℝ≥0∞)⁻¹ := by
-  simpa using Finset.uniformOn_coe_finset_apply_singleton (Finset.univ : Finset α) a
-
 /-- The cdf after assigning real labels to a uniform sample from a nonempty finite type is the
 proportion of labels no larger than the cutoff. Equal labels are counted with their full
 multiplicity. -/
 theorem cdf_map_uniformOn_univ [Fintype α] [Nonempty α] (label : α → ℝ) (x : ℝ) :
     cdf ((uniformOn (Set.univ : Set α)).map label) x =
       ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
-  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  rw [Measure.cdf_map _ label (measurable_of_finite label).aemeasurable]
   have hpreimage : label ⁻¹' Set.Iic x =
       (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
     ext i

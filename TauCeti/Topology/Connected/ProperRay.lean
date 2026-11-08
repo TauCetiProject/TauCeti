@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.FilledHull
 
@@ -65,11 +66,6 @@ compact set has noncompact closure. -/
 private def Escapes (n : ℕ) (y : X) : Prop :=
   ¬IsCompact (closure (connectedComponentIn (CompactExhaustion.choice X n)ᶜ y))
 
-omit [LocallyPathConnectedSpace X] in
-private lemma Escapes.notMem {n : ℕ} {y : X} (h : Escapes n y) :
-    y ∉ CompactExhaustion.choice X n := fun hy ↦ h <| by
-  simp [connectedComponentIn_eq_empty (notMem_compl_iff.2 hy)]
-
 omit [T2Space X] [LocallyPathConnectedSpace X] in
 private lemma Escapes.mono {m n : ℕ} {y : X} (h : Escapes n y) (hmn : m ≤ n) : Escapes m y :=
   fun hc ↦ h <| hc.of_isClosed_subset isClosed_closure <| closure_mono <|
@@ -82,22 +78,12 @@ private lemma exists_path_seq (hX : ∀ x : X, ¬IsCompact (connectedComponent x
     ∃ z : ℕ → X, z 0 = y ∧ ∀ k, ∃ γ : Path (z k) (z (k + 1)),
       range γ ⊆ (CompactExhaustion.choice X (m + k))ᶜ := by
   set K := CompactExhaustion.choice X
-  have step (n : ℕ) (y : X) (hy : Escapes n y) :
-      ∃ y' ∈ connectedComponentIn (K n)ᶜ y, Escapes (n + 1) y' :=
-    exists_mem_not_isCompact_closure_connectedComponentIn_compl hX hy (K.isCompact (n + 1))
-  choose! next hnext_mem hnext using step
-  let z : ℕ → X := fun k ↦ Nat.rec y (fun k zk ↦ next (m + k) zk) k
-  have hz : ∀ k, Escapes (m + k) (z k) := fun k ↦ by
-    induction k with
-    | zero => exact hy
-    | succ k ih => simpa [z, ← add_assoc] using hnext _ _ ih
-  refine ⟨z, rfl, fun k ↦ ?_⟩
-  have hopen : IsOpen (connectedComponentIn (K (m + k))ᶜ (z k)) :=
-    (K.isCompact _).isClosed.isOpen_compl.connectedComponentIn
+  obtain ⟨z, hz0, hz⟩ := exists_seq_not_isCompact_closure_connectedComponentIn_compl hX
+    (K := fun k ↦ K (m + k)) (fun k ↦ K.isCompact _) hy
+  refine ⟨z, hz0, fun k ↦ ?_⟩
   have hjoin : JoinedIn (connectedComponentIn (K (m + k))ᶜ (z k)) (z k) (z (k + 1)) :=
-    ((hopen.isConnected_iff_isPathConnected).1
-      (isConnected_connectedComponentIn_iff.2 (hz k).notMem)).joinedIn _
-      (mem_connectedComponentIn (hz k).notMem) _ (hnext_mem _ _ (hz k))
+    (K.isCompact _).isClosed.isOpen_compl.joinedIn_of_mem_connectedComponentIn
+      (notMem_of_not_isCompact_closure_connectedComponentIn_compl (hz k).1) (hz k).2
   exact ⟨hjoin.somePath, range_subset_iff.2 fun t ↦
     connectedComponentIn_subset _ _ (hjoin.somePath_mem t)⟩
 
@@ -112,7 +98,8 @@ private lemma exists_path_seq_of_mem (hX : ∀ x : X, ¬IsCompact (connectedComp
   · -- Start at `x` itself, past the last compact set it escapes.
     classical
     have hbound : ∀ n, Escapes n x → n ≤ K.find x := fun n hn ↦
-      le_of_lt <| not_le.1 fun h ↦ hn.notMem (K.mem_iff_find_le.2 h)
+      le_of_lt <| not_le.1 fun h ↦
+        notMem_of_not_isCompact_closure_connectedComponentIn_compl hn (K.mem_iff_find_le.2 h)
     obtain ⟨n₀, hn₀⟩ := hx
     set m := Nat.findGreatest (Escapes · x) (K.find x)
     have hm : Escapes m x := Nat.findGreatest_spec (P := (Escapes · x)) (hbound n₀ hn₀) hn₀

@@ -60,6 +60,11 @@ determined by `F` as soon as `W ≠ M` (`TauCeti.IsLinearAtInfinity.unique`).
   `r(ψ_t x) = e^t r(x)` on the cylindrical end, for `t ≥ 0`.
 * `TauCeti.IsLiouvilleCompletion.log_liouvilleRadialCoordinate_flowOf`:
   `log r(ψ_t x) = log r(x) + t` on the cylindrical end, also for times `t < 0` that stay on it.
+
+* `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_flowOf_of_notMem`: the same identity
+  for all `t`, as long as both `x` and `ψ_t x` lie outside the Liouville domain.
+* `TauCeti.IsLiouvilleCompletion.flowOf_notMem_of_one_lt_exp_mul`: the Liouville flow `ψ_t`
+  keeps a point `x` of the cylindrical end outside the Liouville domain when `e^t r(x) > 1`.
 * `TauCeti.IsLiouvilleCompletion.continuous_liouvilleRadialCoordinate`,
   `TauCeti.IsLiouvilleCompletion.isCompact_setOf_liouvilleRadialCoordinate_le`: `r` is continuous
   with compact sublevel sets.
@@ -276,6 +281,39 @@ theorem log_liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
   rw [h.liouvilleRadialCoordinate_flowOf hZ hy hs, Real.log_exp] at ht ⊢
   rw [h.flowOf_flowOf hZ, h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith), Real.log_exp,
     add_comm]
+
+/-- The Liouville flow multiplies the radial coordinate by `e^t` between two points of the
+cylindrical end, also for negative times. -/
+theorem liouvilleRadialCoordinate_flowOf_of_notMem (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) (htx : flowOf Z t x ∉ W) :
+    liouvilleRadialCoordinate Z W (flowOf Z t x) =
+      Real.exp t * liouvilleRadialCoordinate Z W x := by
+  rcases le_or_gt 0 t with ht | ht
+  · exact h.liouvilleRadialCoordinate_flowOf_of_notMem_interior hZ
+      (fun hi ↦ hx (interior_subset hi)) ht
+  · have := h.liouvilleRadialCoordinate_flowOf_of_notMem_interior hZ
+      (fun hi ↦ htx (interior_subset hi)) (neg_nonneg.2 ht.le)
+    rw [h.flowOf_flowOf hZ, neg_add_cancel, h.flowOf_zero hZ] at this
+    rw [this, ← mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_mul]
+
+/-- The Liouville flow `ψ_t` keeps a point `x` of the cylindrical end outside the Liouville domain
+as long as `e^t r(x) > 1`, also for negative times. -/
+theorem flowOf_notMem_of_one_lt_exp_mul (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W)
+    (htx : 1 < Real.exp t * liouvilleRadialCoordinate Z W x) : flowOf Z t x ∉ W := by
+  intro hmem
+  rcases le_or_gt 0 t with ht | ht
+  · -- For `t ≥ 0`, `r(ψ_t x) = e^t r(x) > 1`, while `r = 1` on the Liouville domain.
+    have := h.liouvilleRadialCoordinate_flowOf_of_notMem_interior hZ
+      (fun hi ↦ hx (interior_subset hi)) ht
+    rw [(h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hmem] at this
+    linarith
+  · -- For `t < 0`, the backward flow `ψ_{-(-t)}` brings `x` into the domain, so `r(x) ≤ e^{-t}`.
+    have hle := (h.liouvilleRadialCoordinate_le_exp_iff hZ (neg_nonneg.2 ht.le)).2
+      (by rwa [neg_neg])
+    have := mul_le_mul_of_nonneg_left hle (Real.exp_pos t).le
+    rw [← Real.exp_add, add_neg_cancel, Real.exp_zero] at this
+    linarith
 
 /-- **The boundary point of a Liouville trajectory.** If `x` lies outside the interior of the
 Liouville domain, then flowing `x` backwards for time `log r(x)` lands on the boundary. -/

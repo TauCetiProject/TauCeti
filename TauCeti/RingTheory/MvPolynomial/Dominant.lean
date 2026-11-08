@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Monad
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import TauCeti.RingTheory.MvPolynomial.DirectionalOrder
-public import TauCeti.RingTheory.MvPolynomial.Jacobian
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley

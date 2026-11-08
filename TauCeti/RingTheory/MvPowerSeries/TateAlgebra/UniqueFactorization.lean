@@ -80,14 +80,8 @@ private theorem uniqueFactorizationMonoid_option {σ : Type*} [Finite σ]
   have hωp : Prime ω := UniqueFactorizationMonoid.irreducible_iff_prime.mp
     (hω.irreducible_of_irreducible_polynomialToRestricted zero_lt_one hm
       (hassoc.symm.irreducible hf))
-  -- So `S ⧸ (ι ω) ≃ R[Y] ⧸ (ω)` is a domain, and `ι ω` is prime.
-  have : IsDomain (Polynomial R ⧸ Ideal.span {ω}) :=
-    (Ideal.Quotient.isDomain_iff_prime _).mpr
-      ((Ideal.span_singleton_prime hωp.ne_zero).mpr hωp)
-  have : IsDomain (S ⧸ Ideal.span {ι ω}) :=
-    (hω.polynomialQuotientEquiv zero_lt_one hm).symm.toMulEquiv.isDomain _
-  exact hassoc.prime ((Ideal.span_singleton_prime (hassoc.symm.irreducible hf).ne_zero).mp
-    ((Ideal.Quotient.isDomain_iff_prime _).mp this))
+  -- So `ι ω` is prime by the quotient comparison, and so is `g`.
+  exact hassoc.prime ((hω.prime_polynomialToRestricted_iff zero_lt_one hm).mpr hωp)
 
 /-- **Tate algebras are unique factorisation domains.** Over a complete nonarchimedean field `K`,
 the Tate algebra `K⟨X₁, …, Xₙ⟩` in finitely many variables is a unique factorisation domain. -/

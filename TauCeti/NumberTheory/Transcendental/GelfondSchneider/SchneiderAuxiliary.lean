@@ -129,7 +129,7 @@ variable {K : Type*} [CommRing K]
 
 /-- One term of Schneider's value `y_{uv}`, multiplied by `m ^ N` with `i + u j + v j ≤ N`, is an
 algebraic integer when `m α`, `m β` and `m γ` are. -/
-private theorem isIntegral_intCast_pow_mul_schneider_term {m : ℤ} {α β γ : K}
+theorem isIntegral_intCast_pow_mul_schneider_term {m : ℤ} {α β γ : K}
     (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
     (hγ : IsIntegral ℤ ((m : K) * γ)) {i j u v N : ℕ} (h : i + u * j + v * j ≤ N) :
     IsIntegral ℤ ((m : K) ^ N * (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j)))) := by
@@ -185,7 +185,7 @@ private theorem house_pow_le_of_le {x : K} {X : ℝ} (hx : house x ≤ X) (n : �
 /-- The house bound for an entry of Schneider's linear system: if `x`, `z`, `w` have house at
 most `H` and `y` has house at most `L H`, then for `i ≤ D` and `i + s + t ≤ n` the entry
 `x ^ (n - (i + s + t)) y ^ i z ^ s w ^ t` has house at most `L ^ D H ^ n`. -/
-private theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x ≤ H)
+theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x ≤ H)
     (hy : house y ≤ L * H) (hz : house z ≤ H) (hw : house w ≤ H) (hL : 1 ≤ L) (hH : 0 ≤ H)
     {i s t n D : ℕ} (hi : i ≤ D) (hn : i + s + t ≤ n) :
     house (x ^ (n - (i + s + t)) * y ^ i * (z ^ s * w ^ t)) ≤ L ^ D * H ^ n := by

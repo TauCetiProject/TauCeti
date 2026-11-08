@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Coordinates of tangent fields along curves
@@ -26,6 +28,8 @@ coordinates is preserved.
   differ by the tangent coordinate change.
 * `TauCeti.Manifold.sectionCoord_eventuallyEq_coordChange`: the same relation near a parameter
   whose image lies in both base sets.
+* `TauCeti.Manifold.derivWithin_sectionCoord_eq`: the derivative along the curve of the chart
+  reading of a tangent field in a fixed chart, by the product rule for the coordinate change.
 * `ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv`: the differential of a map `C^n`
   (`2 ≤ n`) at `γ t` preserves differentiability of tangent fields along curves in local
   coordinates.
@@ -73,6 +77,43 @@ theorem sectionCoord_eventuallyEq_coordChange {x y : M} {s : Set 𝕜} {r : 𝕜
     hγ.preimage_mem_nhdsWithin
       ((trivializationAt E (TangentSpace I) y).open_baseSet.mem_nhds hy)] with q hqx hqy
   exact sectionCoord_coordChange γ V hqx hqy
+
+section CoordChangeDeriv
+
+variable [IsManifold I 2 M]
+
+/-- The derivative along the curve of the reading of `V` in the chart at `x`, where the base set
+of the trivialization at `x` contains `γ t`: the product rule for the reading in the chart at `γ t`
+and the tangent coordinate change, whose inhomogeneous term is the derivative of the coordinate
+change applied to the fixed vector `V t` in the chart at `γ t`. -/
+theorem derivWithin_sectionCoord_eq {x : M} {s : Set 𝕜} {t : 𝕜}
+    (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) (hu : UniqueDiffWithinAt 𝕜 s t)
+    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
+    derivWithin (sectionCoord (F := E) γ V x) s t
+      = mvfderiv I (fun z ↦ tangentCoordChange I (γ t) x z
+          (sectionCoord (F := E) γ V (γ t) t)) (γ t) (curveVelocityWithin I γ s t)
+        + tangentCoordChange I (γ t) x (γ t)
+            (derivWithin (sectionCoord (F := E) γ V (γ t)) s t) := by
+  have hγ' : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (curveVelocityWithin I γ s t)) :=
+    hasMFDerivWithinAt_curveVelocityWithin hγ
+  have hc0 : γ t ∈ (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
+  have hxsrc : γ t ∈ (extChartAt I x).source := by rwa [extChartAt_source]
+  have hAmd : MDifferentiableAt I 𝓘(𝕜, E →L[𝕜] E) (tangentCoordChange I (γ t) x) (γ t) := by
+    have : IsManifold I (1 + 1) M := inferInstanceAs (IsManifold I 2 M)
+    exact (contMDiffAt_tangentCoordChange (I := I) (n := 1) (x := γ t) (y := x)
+      hxsrc).mdifferentiableAt one_ne_zero
+  have hAderiv : HasDerivWithinAt (fun r ↦ tangentCoordChange I (γ t) x (γ r))
+      (mvfderiv I (tangentCoordChange I (γ t) x) (γ t) (curveVelocityWithin I γ s t)) s t :=
+    hasDerivWithinAt_comp_curve hAmd hγ'
+  rw [mvfderiv_clm_apply_const hAmd]
+  exact ((hAderiv.clm_apply hV.hasDerivWithinAt).congr_of_eventuallyEq
+    (sectionCoord_eventuallyEq_coordChange γ V hγ.continuousWithinAt hc0 hx)
+    (sectionCoord_coordChange γ V hc0 hx)).derivWithin hu
+
+end CoordChangeDeriv
 
 /-! ### Transport by the differential of a map -/
 

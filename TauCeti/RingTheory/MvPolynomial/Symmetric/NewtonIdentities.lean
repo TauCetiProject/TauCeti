@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 public import TauCeti.Algebra.Algebra.NatCast
+import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Data.Multiset.Fintype
+import Mathlib.Tactic.Ring
 
 /-!
-# Newton's identities for a multiset
+# Newton's identities for a multiset and the variation of Newton coefficients
 
 Mathlib states Newton's identities, `MvPolynomial.mul_esymm_eq_sum`, for the elementary symmetric
 and power-sum polynomials in a finite type of variables. This file evaluates them at the elements
@@ -23,12 +26,40 @@ Consequently, if `(card s)!` is invertible in the scalars, any subalgebra contai
 This is how a statement about boundedly many power sums of the translates of an element under a
 finite group, as in Noether's bound on the degrees of generating invariants, controls all of them.
 
+Newton's recursion `j b_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} M_k` defines numbers `b₀ = 1, b₁, …`
+from any sequence `M₁, M₂, …`, its *Newton coefficients*; for the power sums of a multiset they
+are its elementary symmetric functions. The last section computes how they vary with the `M_k`.
+Writing `δ` for a variation, for instance a derivative or a `\bar∂`-operator obeying the Leibniz
+rule, the generating function identity `∑ (-1)ʲ b_j tʲ = exp (-∑ M_k tᵏ / k)` predicts
+
+`δ b_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} δM_k / k`.
+
+`TauCeti.newton_variation_eq_sum` proves this without power series or exponentials: if `c_j`
+satisfies the recursion obtained by applying the Leibniz rule to Newton's recursion, with
+`δM_k = k e_k`, then `c_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} e_k`. The variations live in a
+module in which division by positive integers is unique, as derivatives of scalar functions
+over a field of characteristic zero do. The same
+recursion shows that the Newton coefficients are homogeneous: rescaling `M_k ↦ gᵏ M_k`, as a
+change of frame `W ↦ g W` does to the moments `M_k = ∫ Wᵏ`, rescales `b_j ↦ gʲ b_j`
+(`TauCeti.newton_eq_pow_mul`). These identities are the algebra behind the equation satisfied by
+the Newton coefficients of the moments of a family of measures in Taubes's analysis of
+Seiberg–Witten solutions near a pseudoholomorphic curve.
+
 ## Main results
 
 * `Multiset.mul_esymm_eq_sum`: **Newton's identities** for the elements of a multiset.
 * `Multiset.esymm_mem_of_sum_map_pow_mem`: the elementary symmetric functions of `s` lie in every
   subalgebra containing its first `card s` power sums.
 * `Multiset.sum_map_pow_mem_of_sum_map_pow_mem`: so do all the power sums of `s`.
+* `TauCeti.newton_variation_eq_sum`: the variation of the Newton coefficients of a sequence.
+* `TauCeti.newton_eq_pow_mul`: homogeneity of the Newton coefficients.
+
+## References
+
+* I. G. Macdonald, *Symmetric Functions and Hall Polynomials*, 2nd ed., Oxford (1995), Ch. I,
+  §2.
+* C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  J. Amer. Math. Soc. 9 (1996), 845–918.
 -/
 
 public section
@@ -109,5 +140,89 @@ theorem _root_.Multiset.sum_map_pow_mem_of_sum_map_pow_mem (s : Multiset S)
     (s.esymm_mem_of_sum_map_pow_mem hs hT _)) (ih _ (by omega))
 
 end Subalgebra
+
+section Variation
+
+variable {A N : Type*} [CommRing A]
+
+/-- **The variation of the Newton coefficients.** Let `b` satisfy Newton's recursion
+`i b_i = ∑_{k=1}^{i} (-1)^(k-1) b_{i-k} M_k` for `i < j`, and let `c` satisfy the recursion
+obtained from it by the Leibniz rule, `c₀ = 0` and
+
+`i c_i = ∑_{k=1}^{i} (-1)^(k-1) (M_k c_{i-k} + b_{i-k} δM_k)`,  `δM_k = k e_k`,
+
+for `i ≤ j`. Then `c_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} e_k`, that is
+`δ b_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} δM_k / k`. -/
+theorem newton_variation_eq_sum [AddCommGroup N] [Module A N] [HasUniqueDiv N]
+    {b M : ℕ → A} {c e : ℕ → N} {j : ℕ}
+    (hb : ∀ i < j, (i : A) * b i = ∑ k ∈ Icc 1 i, (-1) ^ (k - 1) * b (i - k) * M k)
+    (hc₀ : c 0 = 0)
+    (hc : ∀ i ≤ j, (i : A) • c i =
+      ∑ k ∈ Icc 1 i, (-1 : A) ^ (k - 1) • (M k • c (i - k) + (k : A) • b (i - k) • e k)) :
+    c j = ∑ k ∈ Icc 1 j, ((-1) ^ (k - 1) * b (j - k)) • e k := by
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+  rcases Nat.eq_zero_or_pos j with rfl | hj
+  · simp [hc₀]
+  -- The lower `c_i` are given by the claimed formula.
+  have hlow : ∀ k ∈ Icc 1 j, c (j - k) =
+      ∑ i ∈ Icc 1 (j - k), ((-1) ^ (i - 1) * b (j - k - i)) • e i := fun k hk ↦ by
+    rw [mem_Icc] at hk
+    exact ih _ (by omega) (fun i hi ↦ hb i (by omega)) (fun i hi ↦ hc i (by omega))
+  -- Newton's recursion at `j - k` rewrites `(j - k) b_{j-k}` as a sum against the `M_i`.
+  have hnewton : ∀ k ∈ Icc 1 j, ((j - k : ℕ) : A) * b (j - k) =
+      ∑ i ∈ Icc 1 (j - k), (-1) ^ (i - 1) * b (j - k - i) * M i := fun k hk ↦ by
+    rw [mem_Icc] at hk
+    exact hb _ (by omega)
+  -- Both double sums run over the pairs `(k, i)` with `1 ≤ k`, `1 ≤ i` and `k + i ≤ j`.
+  have hswap : ∑ k ∈ Icc 1 j, (-1 : A) ^ (k - 1) • M k • c (j - k) =
+      ∑ k ∈ Icc 1 j, ((-1) ^ (k - 1) * (((j - k : ℕ) : A) * b (j - k))) • e k := by
+    have hl : ∑ k ∈ Icc 1 j, (-1 : A) ^ (k - 1) • M k • c (j - k) = ∑ k ∈ Icc 1 j,
+        (-1 : A) ^ (k - 1) • M k • ∑ i ∈ Icc 1 (j - k), ((-1) ^ (i - 1) * b (j - k - i)) • e i :=
+      sum_congr rfl fun k hk ↦ by rw [hlow k hk]
+    have hr : ∑ k ∈ Icc 1 j, ((-1) ^ (k - 1) * (((j - k : ℕ) : A) * b (j - k))) • e k =
+        ∑ k ∈ Icc 1 j, ((-1) ^ (k - 1) *
+          ∑ i ∈ Icc 1 (j - k), (-1) ^ (i - 1) * b (j - k - i) * M i) • e k :=
+      sum_congr rfl fun k hk ↦ by rw [hnewton k hk]
+    rw [hl, hr]
+    simp only [smul_sum, sum_smul, smul_smul, mul_sum]
+    rw [sum_comm' (t' := Icc 1 j) (s' := fun i ↦ Icc 1 (j - i))
+      (fun k i ↦ by simp only [mem_Icc]; omega)]
+    refine sum_congr rfl fun k _ ↦ sum_congr rfl fun i _ ↦ ?_
+    rw [Nat.sub_right_comm]
+    congr 1
+    ring
+  refine nsmul_right_injective hj.ne' ?_
+  simp only [← Nat.cast_smul_eq_nsmul A]
+  simp only [smul_add, sum_add_distrib, hc j le_rfl, smul_sum]
+  rw [hswap, ← sum_add_distrib]
+  refine sum_congr rfl fun k hk ↦ ?_
+  rw [mem_Icc] at hk
+  rw [smul_smul, smul_smul, smul_smul, ← add_smul, Nat.cast_sub hk.2]
+  congr 1
+  ring
+
+/-- **Homogeneity of the Newton coefficients.** If `b` and `b'` both start at `1` and satisfy
+Newton's recursion for `M` and for the rescaled sequence `k ↦ gᵏ M_k` respectively, up to `j`,
+then `b'_j = gʲ b_j`. -/
+theorem newton_eq_pow_mul [HasUniqueDiv A] {b b' M : ℕ → A} (g : A) {j : ℕ} (hb₀ : b 0 = 1)
+    (hb'₀ : b' 0 = 1)
+    (hb : ∀ i ≤ j, (i : A) * b i = ∑ k ∈ Icc 1 i, (-1) ^ (k - 1) * b (i - k) * M k)
+    (hb' : ∀ i ≤ j, (i : A) * b' i = ∑ k ∈ Icc 1 i, (-1) ^ (k - 1) * b' (i - k) * (g ^ k * M k)) :
+    b' j = g ^ j * b j := by
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+  rcases Nat.eq_zero_or_pos j with rfl | hj
+  · simp [hb₀, hb'₀]
+  refine nsmul_right_injective hj.ne' ?_
+  simp only [nsmul_eq_mul]
+  rw [hb' j le_rfl, mul_left_comm, hb j le_rfl, mul_sum]
+  refine sum_congr rfl fun k hk ↦ ?_
+  rw [mem_Icc] at hk
+  rw [ih (j - k) (by omega) (fun i hi ↦ hb i (by omega)) (fun i hi ↦ hb' i (by omega)),
+    ← pow_sub_mul_pow g hk.2]
+  ring
+
+end Variation
 
 end TauCeti

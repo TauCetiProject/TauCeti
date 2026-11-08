@@ -8,7 +8,10 @@ module
 public import Mathlib.Data.Set.PowersetCard
 
 /-!
-# Coercions and enumerations of fixed-cardinality subsets
+# Maps, coercions and enumerations of fixed-cardinality subsets
+
+`Set.powersetCard.map_injective` shows that vertex embeddings induce injective maps on
+fixed-cardinality subsets.
 
 `Set.powersetCard.coe_ofSingleton` identifies the finite set underlying the singleton
 equivalence. It lets computations with fixed-cardinality subsets use the usual singleton API.
@@ -20,6 +23,13 @@ equivalence. It lets computations with fixed-cardinality subsets use the usual s
 public section
 
 namespace Set.powersetCard
+
+/-- An embedding induces an injective map on fixed-cardinality subsets. -/
+theorem map_injective {α β : Type*} (n : ℕ) (f : α ↪ β) :
+    Function.Injective (map n f) := by
+  intro s t h
+  apply Subtype.ext
+  simpa only [val_map, Finset.map_inj] using congrArg Subtype.val h
 
 /-- The finite set underlying the singleton equivalence is the singleton itself. -/
 @[simp]

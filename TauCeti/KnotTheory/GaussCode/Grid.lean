@@ -5,282 +5,344 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.Dist
 public import TauCeti.KnotTheory.GaussCode.Basic
-public import TauCeti.KnotTheory.Grid.Diagram.Components
-public import TauCeti.KnotTheory.Grid.Diagram.Crossing
+public import TauCeti.KnotTheory.Grid.TorusLink.Crossings
+public import TauCeti.KnotTheory.Grid.Unknot.Crossings
 
 /-!
 # The Gauss code of a grid knot
 
-A grid diagram `G` is drawn as a planar link diagram (`TauCeti.GridDiagram.crossings`), with
-vertical segments oriented from `X` to `O`, horizontal segments from `O` to `X`, and vertical
-segments crossing over horizontal ones. When `G` represents a knot (`TauCeti.GridDiagram.IsKnot`),
-traversing this diagram from a base point and recording the crossings in the order met gives a
-based oriented Gauss code, `TauCeti.GridDiagram.gaussCode`. It joins the grid presentation of a
-knot to its diagram presentations: `TauCeti.BasedOrientedGaussCode.toOrientedPDCode` turns it into
-an oriented PD-code.
+A grid diagram `G` of grid number `n` is drawn in the plane as follows (Ozsváth–Stipsicz–Szabó,
+Section 3.1). In each column a vertical segment joins the `X`-marking to the `O`-marking, and in
+each row a horizontal segment joins the `O`-marking to the `X`-marking; the link is oriented from
+`X` to `O` along the columns and from `O` to `X` along the rows, which is the traversal recorded
+by `TauCeti.GridDiagram.componentPerm`. Wherever a vertical segment meets a horizontal one away
+from the markings, the vertical segment crosses over the horizontal one. This file reads off the
+diagram of a knot grid as a based oriented Gauss code, the grid-to-diagram correspondence of the
+knot presentations.
 
-The base point is the `X` marking of a chosen column `c₀`. From there the traversal runs along the
-vertical segment of `c₀` to its `O` marking, then along the horizontal segment of that row to the
-next `X` marking, and so on: step `t` runs along the vertical segment of the column
-`TauCeti.GridDiagram.IsKnot.traversal hG c₀ t = componentPerm ^ t c₀` and then along the
-horizontal segment of the row of its `O` marking. Number the segments in this order, the vertical
-segment of step `t` as `2 t` and the horizontal one as `2 t + 1`. A crossing in the square
-`(c, r)` is visited twice (`TauCeti.GridDiagram.CrossingVisit`):
+* **Crossings and signs.** The crossings of the planar diagram
+  (`TauCeti.GridDiagram.crossings`) and their signs (`TauCeti.GridDiagram.crossingSign`) are
+  defined in `TauCeti.KnotTheory.Grid.Diagram.Crossings`.
+* **The traversal.** For a knot grid, start at the `X`-marking of a column `c₀`. The traversal
+  runs along the vertical segment of `c₀` to its `O`-marking, along the horizontal segment of that
+  row to its `X`-marking, in the column `componentPerm c₀`, and so on. If `c` is reached after
+  `k` steps of the component permutation (`TauCeti.GridDiagram.IsKnot.traversalIndex`, defined in
+  `TauCeti.KnotTheory.Grid.Diagram.Components`), then the vertical segment of column `c` is the
+  segment number `2 k` of the traversal and the horizontal segment leaving its `O`-marking the
+  segment number `2 k + 1`. A crossing is passed twice, once on
+  its vertical segment, over, and once on its horizontal segment, under; the time of a pass
+  (`TauCeti.GridDiagram.IsKnot.visitTime`) is the index of its segment together with the distance
+  travelled along that segment, ordered lexicographically. Distinct passes have distinct times
+  (`TauCeti.GridDiagram.IsKnot.visitTime_injective`).
 
-* over, along the vertical segment of column `c`, at distance `|r - X c|` from its start;
-* under, along the horizontal segment of row `r`, at distance `|c - O.transpose r|` from its start.
+Listing the passes by increasing time (`TauCeti.GridDiagram.IsKnot.visitEquiv`) gives the based
+oriented Gauss code `TauCeti.GridDiagram.IsKnot.gaussCode`, built with
+`TauCeti.BasedOrientedGaussCode.ofPerfectMatching`; its writhe is the sum of the crossing signs
+(`TauCeti.GridDiagram.IsKnot.writhe_gaussCode`). It can be passed on to an oriented PD-code by
+`TauCeti.BasedOrientedGaussCode.toOrientedPDCode`. The construction adapts that of
+`Polygon.gaussCode` in `TauCeti.KnotTheory.GaussCode.Polygon.Basic`, the Gauss code of a projected
+polygonal knot, whose crossing passes are likewise listed by increasing time.
 
-The visits are met in the lexicographic order of their segment index and their distance along the
-segment (`TauCeti.GridDiagram.CrossingVisit.position`). The code records at each visit whether it
-passes over, and gives each crossing its sign `TauCeti.GridDiagram.crossingSign`
-(`TauCeti.GridDiagram.gaussCode_over`, `TauCeti.GridDiagram.gaussCode_sign_visit`). So its writhe
-is the sum of the crossing signs of the grid (`TauCeti.GridDiagram.gaussCode_writhe`).
+Two families of grids check the conventions. The standard unknot grids have no crossings at all
+(`TauCeti.GridDiagram.crossings_unknot`), so their Gauss code is the crossing-free code
+(`TauCeti.GridDiagram.sigma_mk_gaussCode_unknot`). Every crossing of the standard torus link grid
+`TauCeti.GridDiagram.torusLink p q` is negative (`TauCeti.GridDiagram.crossingSign_torusLink`), so
+the writhe of its Gauss code is minus the number of crossings; on the `5 × 5` trefoil grid there
+are three crossings and the writhe is `-3`
+(`TauCeti.GridDiagram.writhe_gaussCode_torusLink_one_two`). These are the signs of the left-handed
+trefoil, the mirror of the positive torus knot, consistent with the value `τ = -1` of that grid.
 
-That this diagram is planar, and that grid moves change it by Reidemeister moves (Cromwell's
-theorem), are not proved here.
+That the based code depends on the base column only through a cyclic rotation, and that grid moves
+change the code by Reidemeister moves, are not proved here.
 
 ## Main definitions
 
-* `TauCeti.GridDiagram.CrossingVisit hG c₀`: the visits of the traversal from `c₀` to the
-  crossings of a knot grid, ordered along the traversal.
-* `TauCeti.GridDiagram.CrossingVisit.position`: the segment index and the distance along the
-  segment of a visit.
-* `TauCeti.GridDiagram.visitOrderIso hG c₀`: the visits, enumerated in the order met.
-* `TauCeti.GridDiagram.gaussCode hG c₀`: the based oriented Gauss code of a knot grid.
+* `TauCeti.GridDiagram.IsKnot.visitTime`: the time at which the traversal passes a crossing.
+* `TauCeti.GridDiagram.IsKnot.visitEquiv`: the passes of the traversal, in order.
+* `TauCeti.GridDiagram.IsKnot.gaussCode`: the based oriented Gauss code of a knot grid.
 
 ## Main results
 
-* `TauCeti.GridDiagram.gaussCode_visit_eq_visit_iff`: two visits carry the same crossing label
-  exactly when they visit the same crossing of the grid.
-* `TauCeti.GridDiagram.visitOrderIso_partner`: the partner of a visit is the other visit of its
-  crossing.
-* `TauCeti.GridDiagram.gaussCode_visit_lt_visit_iff`: crossings are numbered in the order of
-  their first visits.
-* `TauCeti.GridDiagram.gaussCode_over`: a visit passes over exactly when it runs along a vertical
-  segment.
-* `TauCeti.GridDiagram.gaussCode_sign_visit`: the sign of a crossing label is the crossing sign of
-  the grid.
-* `TauCeti.GridDiagram.gaussCode_writhe`: the writhe of the code is the sum of the crossing signs
-  of the grid.
+* `TauCeti.GridDiagram.IsKnot.strictMono_visitTime_visitEquiv`: the passes are listed in the order
+  of the traversal.
+* `TauCeti.GridDiagram.IsKnot.gaussCode_over`,
+  `TauCeti.GridDiagram.IsKnot.gaussCode_visit_eq_visit_iff`,
+  `TauCeti.GridDiagram.IsKnot.gaussCode_sign_visit`: the over passes are the vertical ones, two
+  passes share a crossing label exactly when they pass the same crossing, and the sign of a
+  crossing label is the sign of its crossing.
+* `TauCeti.GridDiagram.IsKnot.gaussCode_visit_lt_visit_iff`: crossings are labelled in the order
+  of their first passes.
+* `TauCeti.GridDiagram.IsKnot.writhe_gaussCode`: the writhe is the sum of the crossing signs.
+* `TauCeti.GridDiagram.sigma_mk_gaussCode_unknot`: the unknot grids have the crossing-free code.
+* `TauCeti.GridDiagram.writhe_gaussCode_torusLink`: the writhe of a torus knot grid is minus its
+  number of crossings.
+* `TauCeti.GridDiagram.writhe_gaussCode_torusLink_one_two`: the trefoil grid has writhe `-3`.
 
 ## References
 
 * P. Ozsváth, A. Stipsicz, Z. Szabó, *Grid Homology for Knots and Links*, AMS Mathematical
-  Surveys and Monographs 208 (2015), Section 3.1, for the planar diagram of a grid diagram.
+  Surveys and Monographs 208, 2015, Section 3.1, for the planar diagram of a grid diagram.
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 1, for
   Gauss codes and crossing signs.
 -/
 
 public section
 
+noncomputable section
+
+open Set Function
+
 namespace TauCeti
 
 namespace GridDiagram
 
-variable {n : ℕ} {G : GridDiagram n}
+variable {n : ℕ}
 
-/-- A visit of the traversal from the column `c₀` of a knot grid to one of its crossings: the
-crossing, and whether the visit runs along the vertical segment of the crossing, passing over, or
-along its horizontal segment, passing under. The visits are ordered along the traversal, by
-`TauCeti.GridDiagram.CrossingVisit.position`. -/
-@[ext]
-structure CrossingVisit (hG : G.IsKnot) (c₀ : Fin n) where
-  /-- The crossing visited, as the square `(c, r)` at whose centre it lies. -/
-  crossing : G.crossings
-  /-- Whether the visit runs along the vertical segment of the crossing, passing over. -/
-  isOver : Bool
+/-! ### The traversal of a knot grid -/
 
-namespace CrossingVisit
+variable {G : GridDiagram n} (hG : G.IsKnot) (c₀ : Fin n)
 
-variable {hG : G.IsKnot} {c₀ : Fin n}
+/-- The **time** at which the traversal of a knot grid, starting at the `X`-marking of column
+`c₀`, passes a crossing `p`: vertically (`b = true`) or horizontally (`b = false`). It is the
+pair, ordered lexicographically, of the index of the segment carrying the pass and the distance
+travelled along that segment. The vertical segment of column `c`, run from its `X`-marking to its
+`O`-marking, has index `2 k`, and the horizontal segment leaving that `O`-marking has index
+`2 k + 1`, where `k` is the traversal index of `c`. -/
+def IsKnot.visitTime (v : G.crossings × Bool) : ℕ ×ₗ ℕ :=
+  if v.2 then toLex (2 * hG.traversalIndex c₀ v.1.1.1,
+    max (G.X v.1.1.1 : ℕ) v.1.1.2 - min (G.X v.1.1.1 : ℕ) v.1.1.2)
+  else toLex (2 * hG.traversalIndex c₀ (G.O.transpose v.1.1.2) + 1,
+    max (G.O.transpose v.1.1.2 : ℕ) v.1.1.1 - min (G.O.transpose v.1.1.2 : ℕ) v.1.1.1)
 
-/-- A visit is a crossing together with the strand, vertical or horizontal, along which it is
-visited. -/
-def equivProd (hG : G.IsKnot) (c₀ : Fin n) : CrossingVisit hG c₀ ≃ G.crossings × Bool where
-  toFun v := (v.crossing, v.isOver)
-  invFun p := ⟨p.1, p.2⟩
-
-instance : Fintype (CrossingVisit hG c₀) :=
-  Fintype.ofEquiv _ (equivProd hG c₀).symm
-
-/-- Every crossing is visited twice. -/
-theorem card_eq (hG : G.IsKnot) (c₀ : Fin n) :
-    Fintype.card (CrossingVisit hG c₀) = 2 * G.crossings.card := by
-  rw [Fintype.card_congr (equivProd hG c₀), Fintype.card_prod, Fintype.card_coe,
-    Fintype.card_bool, mul_comm]
-
-/-- Summing over the visits counts every crossing twice. -/
-theorem sum_crossing {M : Type*} [AddCommMonoid M] (f : Fin n × Fin n → M) :
-    ∑ v : CrossingVisit hG c₀, f v.crossing.1 = 2 • ∑ p ∈ G.crossings, f p := by
-  rw [← (equivProd hG c₀).symm.sum_comp, Fintype.sum_prod_type, ← Finset.sum_coe_sort G.crossings,
-    Finset.smul_sum]
-  simp [equivProd]
-
-/-- The **position** of a visit along the traversal from `c₀`: the index of the segment it runs
-along, followed by the distance travelled along that segment. The vertical segment of the column
-reached at step `t` of the traversal has index `2 t` and starts at the `X` marking of that column;
-the horizontal segment of the row of its `O` marking has index `2 t + 1` and starts at that `O`
-marking. -/
-noncomputable def position (v : CrossingVisit hG c₀) : ℕ ×ₗ ℕ :=
-  if v.isOver then
-    toLex (2 * (hG.traversal c₀).symm v.crossing.1.1,
-      Nat.dist v.crossing.1.2 (G.X v.crossing.1.1))
-  else
-    toLex (2 * (hG.traversal c₀).symm (G.O.transpose v.crossing.1.2) + 1,
-      Nat.dist v.crossing.1.1 (G.O.transpose v.crossing.1.2))
-
-/-- The over-visit of the crossing `(c, r)` runs along the vertical segment of column `c`, at
-distance `|r - X c|` from its start. -/
+/-- The time of the vertical pass of a crossing in column `c`: the segment of index `2 k`, at the
+distance of the crossing from the `X`-marking of column `c`. -/
 @[simp]
-theorem position_mk_true (p : G.crossings) :
-    position (⟨p, true⟩ : CrossingVisit hG c₀) =
-      toLex (2 * ((hG.traversal c₀).symm p.1.1 : ℕ), Nat.dist p.1.2 (G.X p.1.1)) := by
-  simp [position]
+theorem IsKnot.visitTime_true (p : G.crossings) :
+    hG.visitTime c₀ (p, true) =
+      toLex (2 * hG.traversalIndex c₀ p.1.1,
+        max (G.X p.1.1 : ℕ) p.1.2 - min (G.X p.1.1 : ℕ) p.1.2) :=
+  (rfl)
 
-/-- The under-visit of the crossing `(c, r)` runs along the horizontal segment of row `r`, at
-distance `|c - O.transpose r|` from its start. -/
+/-- The time of the horizontal pass of a crossing in row `r`: the segment of index `2 k + 1`
+leaving the `O`-marking of row `r`, at the distance of the crossing from that marking. -/
 @[simp]
-theorem position_mk_false (p : G.crossings) :
-    position (⟨p, false⟩ : CrossingVisit hG c₀) =
-      toLex (2 * ((hG.traversal c₀).symm (G.O.transpose p.1.2) : ℕ) + 1,
-        Nat.dist p.1.1 (G.O.transpose p.1.2)) := by
-  simp [position]
+theorem IsKnot.visitTime_false (p : G.crossings) :
+    hG.visitTime c₀ (p, false) =
+      toLex (2 * hG.traversalIndex c₀ (G.O.transpose p.1.2) + 1,
+        max (G.O.transpose p.1.2 : ℕ) p.1.1 - min (G.O.transpose p.1.2 : ℕ) p.1.1) :=
+  (rfl)
 
-/-- Distinct visits have distinct positions: a segment index determines the column of a vertical
-segment or the row of a horizontal one, and a distance along the segment determines the point of
-the segment. -/
-theorem position_injective : Function.Injective (position (hG := hG) (c₀ := c₀)) := by
-  -- A segment index determines the step of the traversal, hence the column or row.
-  have hτ {a b : Fin n} (h : ((hG.traversal c₀).symm a : ℕ) = (hG.traversal c₀).symm b) : a = b :=
-    (hG.traversal c₀).symm.injective (Fin.ext h)
-  -- Two points strictly between `a` and `b` at the same distance from `a` are equal.
-  have hdist {a b x y : Fin n} (hx : x ∈ Set.uIoo a b) (hy : y ∈ Set.uIoo a b)
-      (h : Nat.dist x a = Nat.dist y a) : x = y := by
-    rw [Fin.mem_uIoo_iff_val] at hx hy
-    unfold Nat.dist at h
-    ext
-    omega
-  rintro ⟨⟨⟨c, r⟩, hp⟩, _ | _⟩ ⟨⟨⟨c', r'⟩, hp'⟩, _ | _⟩ h <;>
-    simp only [position_mk_true, position_mk_false, toLex_inj, Prod.mk.injEq] at h
-  · rw [mem_crossings, isCrossing_iff] at hp hp'
-    have hr : r = r' := by
-      have := hτ (by omega : ((hG.traversal c₀).symm (G.O.transpose r) : ℕ) =
-        (hG.traversal c₀).symm (G.O.transpose r'))
-      rw [← G.O.apply_transpose_apply r, this, G.O.apply_transpose_apply]
-    subst hr
-    obtain rfl := hdist hp.2 hp'.2 h.2
+/-- **Distinct passes happen at distinct times.** -/
+theorem IsKnot.visitTime_injective : Injective (hG.visitTime c₀) := by
+  rintro ⟨⟨⟨c, r⟩, hp⟩, b⟩ ⟨⟨⟨c', r'⟩, hp'⟩, b'⟩ h
+  have hx := (G.mem_crossings.mp hp)
+  have hx' := (G.mem_crossings.mp hp')
+  rw [isCrossing_iff] at hx hx'
+  cases b <;> cases b' <;>
+    simp only [visitTime_true, visitTime_false, toLex_inj, Prod.mk.injEq] at h
+  · -- Two horizontal passes: the rows, then the columns along the row agree.
+    obtain ⟨h₁, h₂⟩ := h
+    have hrow : G.O.transpose r = G.O.transpose r' :=
+      hG.traversalIndex_injective c₀ (by omega)
+    obtain rfl : r = r' := by
+      rw [← G.O.apply_transpose_apply r, hrow, G.O.apply_transpose_apply]
+    have hc := hx.2
+    have hc' := hx'.2
+    simp only [mem_uIoo, Fin.lt_def] at hc hc'
+    obtain rfl : c = c' := Fin.ext (by omega)
     rfl
   · omega
   · omega
-  · rw [mem_crossings, isCrossing_iff] at hp hp'
-    obtain rfl : c = c' := hτ (by omega)
-    obtain rfl := hdist hp.1 hp'.1 h.2
+  · -- Two vertical passes: the columns, then the rows along the column agree.
+    obtain ⟨h₁, h₂⟩ := h
+    obtain rfl : c = c' := hG.traversalIndex_injective c₀ (by omega)
+    have hr := hx.1
+    have hr' := hx'.1
+    simp only [mem_uIoo, Fin.lt_def] at hr hr'
+    obtain rfl : r = r' := Fin.ext (by omega)
     rfl
 
-/-- The visits are ordered along the traversal, by their positions. -/
-noncomputable instance : LinearOrder (CrossingVisit hG c₀) :=
-  LinearOrder.lift' position position_injective
+/-! ### The Gauss code -/
 
-/-- One visit comes before another exactly when its position does. -/
-theorem lt_iff_position_lt {v w : CrossingVisit hG c₀} : v < w ↔ v.position < w.position :=
-  Iff.rfl
+/-- The times of all passes of the traversal. -/
+private def crossingTimes : Finset (ℕ ×ₗ ℕ) :=
+  Finset.univ.image (hG.visitTime c₀)
 
-/-- One visit comes no later than another exactly when its position does. -/
-theorem le_iff_position_le {v w : CrossingVisit hG c₀} : v ≤ w ↔ v.position ≤ w.position :=
-  Iff.rfl
+/-- The passes of the traversal are in bijection with their times. -/
+private def visitTimeEquiv : G.crossings × Bool ≃ crossingTimes hG c₀ :=
+  Equiv.ofBijective (fun v => ⟨hG.visitTime c₀ v, Finset.mem_image_of_mem _ (Finset.mem_univ v)⟩)
+    ⟨fun _ _ h => hG.visitTime_injective c₀ (congrArg Subtype.val h), by
+      rintro ⟨t, ht⟩
+      obtain ⟨v, -, rfl⟩ := Finset.mem_image.mp ht
+      exact ⟨v, rfl⟩⟩
 
-end CrossingVisit
+private theorem coe_visitTimeEquiv (v : G.crossings × Bool) :
+    (visitTimeEquiv hG c₀ v : ℕ ×ₗ ℕ) = hG.visitTime c₀ v :=
+  rfl
 
-/-- The two visits of each crossing, paired. -/
-private def visitMatching (hG : G.IsKnot) (c₀ : Fin n) : PerfectMatching (CrossingVisit hG c₀) :=
-  .mk ⟨fun v ↦ ⟨v.crossing, !v.isOver⟩, fun v ↦ ⟨v.crossing, !v.isOver⟩,
-      fun v ↦ CrossingVisit.ext rfl (Bool.not_not v.isOver),
-      fun v ↦ CrossingVisit.ext rfl (Bool.not_not v.isOver)⟩
-    (fun v ↦ CrossingVisit.ext rfl (Bool.not_not v.isOver))
-    (fun v h ↦ Bool.not_ne_self v.isOver (congrArg CrossingVisit.isOver h))
+private theorem card_crossingTimes :
+    Fintype.card (crossingTimes hG c₀) = 2 * G.crossings.card := by
+  rw [← Fintype.card_congr (visitTimeEquiv hG c₀), Fintype.card_prod, Fintype.card_coe,
+    Fintype.card_bool, Nat.mul_comm]
 
-private theorem visitMatching_apply (hG : G.IsKnot) (c₀ : Fin n) (v : CrossingVisit hG c₀) :
-    (visitMatching hG c₀).val v = ⟨v.crossing, !v.isOver⟩ := by
-  rw [visitMatching, PerfectMatching.val_mk, Equiv.coe_fn_mk]
+variable (G) in
+/-- The perfect matching exchanging the two passes of each crossing. -/
+private def passPartner : PerfectMatching (G.crossings × Bool) :=
+  PerfectMatching.mk
+    { toFun v := (v.1, !v.2)
+      invFun v := (v.1, !v.2)
+      left_inv v := by simp
+      right_inv v := by simp }
+    (fun v => by simp) (fun v h => Bool.not_ne_self v.2 (congrArg Prod.snd h))
 
-/-- The **Gauss code of a knot grid**, read from the base point at the `X` marking of the column
-`c₀`: the visits of the traversal to the crossings of the planar diagram, in the order met, with a
-visit over exactly when it runs along a vertical segment, and with the crossing signs of the grid.
-Crossings are labelled in the order of their first visits. -/
-noncomputable def gaussCode (hG : G.IsKnot) (c₀ : Fin n) :
-    BasedOrientedGaussCode G.crossings.card :=
-  BasedOrientedGaussCode.ofPerfectMatching (CrossingVisit.card_eq hG c₀) (visitMatching hG c₀)
-    CrossingVisit.isOver (fun v ↦ by rw [visitMatching_apply])
-    (fun v ↦ G.crossingSign v.crossing.1.1 v.crossing.1.2)
+private theorem passPartner_apply (v : G.crossings × Bool) :
+    (passPartner G).val v = (v.1, !v.2) := by
+  rw [passPartner, PerfectMatching.val_mk]
+  -- The underlying function of the equivalence built in `passPartner` is `v ↦ (v.1, !v.2)`.
+  rfl
 
-/-- The visits of the traversal from `c₀` of a knot grid to its crossings, enumerated in the order
-met: the `i`-th visit of `TauCeti.GridDiagram.gaussCode hG c₀`. -/
-noncomputable def visitOrderIso (hG : G.IsKnot) (c₀ : Fin n) :
-    Fin (2 * G.crossings.card) ≃o CrossingVisit hG c₀ :=
-  Fintype.orderIsoFinOfCardEq _ (CrossingVisit.card_eq hG c₀)
+/-- The **based oriented Gauss code of a knot grid**, read from the traversal starting at the
+`X`-marking of the column `c₀`. Its visits are the passes of the traversal through the crossings
+of the planar diagram, in the order of their times, the vertical passes over and the horizontal
+ones under; the sign of a crossing is `TauCeti.GridDiagram.crossingSign`. Crossings are labelled
+in the order of their first passes. -/
+def IsKnot.gaussCode : BasedOrientedGaussCode G.crossings.card :=
+  BasedOrientedGaussCode.ofPerfectMatching (card_crossingTimes hG c₀)
+    (PerfectMatching.congr (visitTimeEquiv hG c₀) (passPartner G))
+    (fun t => ((visitTimeEquiv hG c₀).symm t).2)
+    (fun t => by simp [passPartner_apply])
+    (fun t => G.crossingSign ((visitTimeEquiv hG c₀).symm t).1)
 
-variable (hG : G.IsKnot) (c₀ : Fin n)
+/-- The passes of the traversal of a knot grid, listed in the order in which the traversal from
+the `X`-marking of column `c₀` meets them. The `i`-th visit of
+`TauCeti.GridDiagram.IsKnot.gaussCode` is the pass `visitEquiv i`. -/
+def IsKnot.visitEquiv : Fin (2 * G.crossings.card) ≃ G.crossings × Bool :=
+  (Fintype.orderIsoFinOfCardEq _ (card_crossingTimes hG c₀)).toEquiv.trans
+    (visitTimeEquiv hG c₀).symm
 
-/-- **The over/under convention.** A visit passes over exactly when it runs along a vertical
-segment. -/
+private theorem visitTime_visitEquiv (i : Fin (2 * G.crossings.card)) :
+    hG.visitTime c₀ (hG.visitEquiv c₀ i) =
+      (Fintype.orderIsoFinOfCardEq _ (card_crossingTimes hG c₀) i : ℕ ×ₗ ℕ) := by
+  rw [IsKnot.visitEquiv, Equiv.trans_apply, ← coe_visitTimeEquiv, Equiv.apply_symm_apply]
+  -- Both sides are the value of the `i`-th element of `crossingTimes`; the coercion of an order
+  -- isomorphism to an equivalence does not change the function.
+  rfl
+
+/-- **The passes are listed in the order of the traversal**: the time of the `i`-th pass increases
+with `i`. -/
+theorem IsKnot.strictMono_visitTime_visitEquiv :
+    StrictMono fun i => hG.visitTime c₀ (hG.visitEquiv c₀ i) := fun i j hij => by
+  simp only [visitTime_visitEquiv]
+  exact Subtype.coe_lt_coe.mpr ((Fintype.orderIsoFinOfCardEq _ _).strictMono hij)
+
+/-- The pass at the `i`-th visit comes before the pass at the `j`-th exactly when `i < j`. -/
+theorem IsKnot.visitTime_visitEquiv_lt_visitTime_visitEquiv_iff
+    {i j : Fin (2 * G.crossings.card)} :
+    hG.visitTime c₀ (hG.visitEquiv c₀ i) < hG.visitTime c₀ (hG.visitEquiv c₀ j) ↔ i < j :=
+  (hG.strictMono_visitTime_visitEquiv c₀).lt_iff_lt
+
+/-- The traversal passes over a crossing exactly on its vertical segment. -/
 @[simp]
-theorem gaussCode_over (i : Fin (2 * G.crossings.card)) :
-    (gaussCode hG c₀).over i = (visitOrderIso hG c₀ i).isOver := by
-  rw [gaussCode, visitOrderIso, BasedOrientedGaussCode.ofPerfectMatching_over]
+theorem IsKnot.gaussCode_over (i : Fin (2 * G.crossings.card)) :
+    (hG.gaussCode c₀).over i = (hG.visitEquiv c₀ i).2 := by
+  rw [IsKnot.gaussCode, BasedOrientedGaussCode.ofPerfectMatching_over]
+  -- Both sides read the pass at the `i`-th time, which is how `visitEquiv` is defined.
+  rfl
 
-/-- The partner of a visit is the other visit of the same crossing. -/
+/-- The partner of a visit is the other pass through the same crossing. -/
 @[simp]
-theorem visitOrderIso_partner (i : Fin (2 * G.crossings.card)) :
-    visitOrderIso hG c₀ ((gaussCode hG c₀).partner.val i) =
-      ⟨(visitOrderIso hG c₀ i).crossing, !(visitOrderIso hG c₀ i).isOver⟩ := by
-  rw [visitOrderIso, gaussCode,
-    BasedOrientedGaussCode.orderIsoFinOfCardEq_ofPerfectMatching_partner, visitMatching_apply]
+theorem IsKnot.visitEquiv_gaussCode_partner (i : Fin (2 * G.crossings.card)) :
+    hG.visitEquiv c₀ ((hG.gaussCode c₀).partner.val i) =
+      ((hG.visitEquiv c₀ i).1, !(hG.visitEquiv c₀ i).2) := by
+  rw [IsKnot.visitEquiv, Equiv.trans_apply, OrderIso.coe_toEquiv, IsKnot.gaussCode,
+    BasedOrientedGaussCode.orderIsoFinOfCardEq_ofPerfectMatching_partner,
+    PerfectMatching.congr_val_apply, Equiv.symm_apply_apply, passPartner_apply]
+  -- The left side is the pass at the `i`-th time with its direction flipped, as on the right.
+  rfl
 
-/-- Two visits carry the same crossing label exactly when they visit the same crossing of the
-grid. -/
-theorem gaussCode_visit_eq_visit_iff (i j : Fin (2 * G.crossings.card)) :
-    (gaussCode hG c₀).visit i = (gaussCode hG c₀).visit j ↔
-      (visitOrderIso hG c₀ i).crossing = (visitOrderIso hG c₀ j).crossing := by
-  rw [BasedOrientedGaussCode.visit_eq_iff, ← (visitOrderIso hG c₀).injective.eq_iff,
-    ← (visitOrderIso hG c₀).injective.eq_iff, visitOrderIso_partner]
-  generalize visitOrderIso hG c₀ i = v
-  generalize visitOrderIso hG c₀ j = w
-  rcases v with ⟨p, _ | _⟩ <;> rcases w with ⟨q, _ | _⟩ <;> simp [CrossingVisit.ext_iff, eq_comm]
+/-- **Two visits carry the same crossing label exactly when they pass the same crossing.** -/
+theorem IsKnot.gaussCode_visit_eq_visit_iff {i j : Fin (2 * G.crossings.card)} :
+    (hG.gaussCode c₀).visit i = (hG.gaussCode c₀).visit j ↔
+      (hG.visitEquiv c₀ i).1 = (hG.visitEquiv c₀ j).1 := by
+  rw [BasedOrientedGaussCode.visit_eq_iff]
+  constructor
+  · rintro (rfl | rfl)
+    · rfl
+    · rw [hG.visitEquiv_gaussCode_partner]
+  · intro h
+    by_cases hb : (hG.visitEquiv c₀ i).2 = (hG.visitEquiv c₀ j).2
+    · exact .inl ((hG.visitEquiv c₀).injective (Prod.ext h hb)).symm
+    · refine .inr ((hG.visitEquiv c₀).injective ?_)
+      rw [hG.visitEquiv_gaussCode_partner]
+      exact Prod.ext h.symm (by cases h₁ : (hG.visitEquiv c₀ i).2 <;> simp_all)
 
-/-- **Crossings are numbered in the order of their first visits.** The crossing met at visit `i`
-has a smaller label than the one met at visit `j` exactly when the first visit to the first
-crossing comes before the first visit to the second. -/
-theorem gaussCode_visit_lt_visit_iff (i j : Fin (2 * G.crossings.card)) :
-    (gaussCode hG c₀).visit i < (gaussCode hG c₀).visit j ↔
-      min (visitOrderIso hG c₀ i) (visitOrderIso hG c₀ ((gaussCode hG c₀).partner.val i)) <
-        min (visitOrderIso hG c₀ j) (visitOrderIso hG c₀ ((gaussCode hG c₀).partner.val j)) := by
-  rw [visitOrderIso_partner, visitOrderIso_partner, gaussCode, visitOrderIso,
-    BasedOrientedGaussCode.ofPerfectMatching_visit_lt_visit_iff, visitMatching_apply,
-    visitMatching_apply]
+/-- **Crossings are labelled in the order of their first passes.** The crossing met at the `i`-th
+visit has a smaller label than the one met at the `j`-th visit exactly when the earlier of the two
+passes through the first crossing comes before the earlier of the two passes through the
+second. -/
+theorem IsKnot.gaussCode_visit_lt_visit_iff (i j : Fin (2 * G.crossings.card)) :
+    (hG.gaussCode c₀).visit i < (hG.gaussCode c₀).visit j ↔
+      min (hG.visitTime c₀ (hG.visitEquiv c₀ i))
+          (hG.visitTime c₀ (hG.visitEquiv c₀ ((hG.gaussCode c₀).partner.val i))) <
+        min (hG.visitTime c₀ (hG.visitEquiv c₀ j))
+          (hG.visitTime c₀ (hG.visitEquiv c₀ ((hG.gaussCode c₀).partner.val j))) := by
+  simp only [visitTime_visitEquiv]
+  rw [IsKnot.gaussCode, BasedOrientedGaussCode.ofPerfectMatching_visit_lt_visit_iff,
+    BasedOrientedGaussCode.orderIsoFinOfCardEq_ofPerfectMatching_partner,
+    BasedOrientedGaussCode.orderIsoFinOfCardEq_ofPerfectMatching_partner,
+    ← (Subtype.mono_coe _).map_min, ← (Subtype.mono_coe _).map_min, Subtype.coe_lt_coe]
 
-/-- **The sign of a crossing.** The sign of the crossing label met at visit `i` is the crossing
-sign of the grid at the crossing visited. -/
-theorem gaussCode_sign_visit (i : Fin (2 * G.crossings.card)) :
-    (gaussCode hG c₀).sign ((gaussCode hG c₀).visit i) =
-      G.crossingSign (visitOrderIso hG c₀ i).crossing.1.1
-        (visitOrderIso hG c₀ i).crossing.1.2 := by
-  rw [gaussCode, visitOrderIso, BasedOrientedGaussCode.ofPerfectMatching_sign_visit _ _ _ _ _
-    (fun v ↦ by rw [visitMatching_apply]) i]
+/-- **The sign of a crossing label is the sign of its crossing.** -/
+theorem IsKnot.gaussCode_sign_visit (i : Fin (2 * G.crossings.card)) :
+    (hG.gaussCode c₀).sign ((hG.gaussCode c₀).visit i) =
+      G.crossingSign (hG.visitEquiv c₀ i).1 := by
+  rw [IsKnot.gaussCode, BasedOrientedGaussCode.ofPerfectMatching_sign_visit]
+  · -- The sign at the `i`-th time is that of the crossing of the pass `visitEquiv i`.
+    rfl
+  · intro t
+    simp [passPartner_apply]
 
-/-- The writhe of the Gauss code of a knot grid is the sum of the crossing signs of the grid. -/
-theorem gaussCode_writhe :
-    (gaussCode hG c₀).writhe = ∑ p ∈ G.crossings, (G.crossingSign p.1 p.2 : ℤ) := by
-  -- Sum the signs over all visits in two ways: every crossing label (`sum_sign_visit`), and every
-  -- crossing of the grid, is visited exactly twice.
-  have hgrid : ∑ i, ((gaussCode hG c₀).sign ((gaussCode hG c₀).visit i) : ℤ) =
-      2 • ∑ p ∈ G.crossings, (G.crossingSign p.1 p.2 : ℤ) := by
-    simp only [gaussCode_sign_visit]
-    exact ((visitOrderIso hG c₀).toEquiv.sum_comp _).trans
-      (CrossingVisit.sum_crossing fun p ↦ (G.crossingSign p.1 p.2 : ℤ))
-  rw [nsmul_eq_mul, Nat.cast_ofNat] at hgrid
-  exact mul_left_cancel₀ two_ne_zero ((gaussCode hG c₀).sum_sign_visit.symm.trans hgrid)
+/-- **The writhe of the Gauss code of a knot grid is the sum of the signs of its crossings.** -/
+theorem IsKnot.writhe_gaussCode :
+    (hG.gaussCode c₀).writhe = ∑ p ∈ G.crossings, (G.crossingSign p : ℤ) := by
+  set D := hG.gaussCode c₀
+  -- Summing the sign of the crossing met at each of the `2 m` visits counts every crossing twice,
+  -- both when the visits are read as Gauss-code labels and when they are read as passes.
+  have hcode := D.sum_sign_visit
+  have hgrid :
+      ∑ i, (D.sign (D.visit i) : ℤ) = 2 * ∑ p ∈ G.crossings, (G.crossingSign p : ℤ) := by
+    simp only [D, hG.gaussCode_sign_visit]
+    rw [(hG.visitEquiv c₀).sum_comp (fun v => (G.crossingSign v.1 : ℤ)), Fintype.sum_prod_type,
+      ← Finset.sum_coe_sort G.crossings, Finset.mul_sum]
+    simp [two_mul]
+  omega
+
+/-! ### Unknot and torus link grids -/
+
+/-- **The Gauss code of an unknot grid is the crossing-free code**, from every base column. -/
+theorem sigma_mk_gaussCode_unknot (n : ℕ) (c₀ : Fin (n + 2)) :
+    (⟨_, (isKnot_unknot n).gaussCode c₀⟩ : Σ m, BasedOrientedGaussCode m) =
+      ⟨0, BasedOrientedGaussCode.empty⟩ := by
+  generalize (isKnot_unknot n).gaussCode c₀ = D
+  revert D
+  rw [card_crossings_unknot]
+  intro D
+  rw [D.eq_empty]
+
+/-- The writhe of the Gauss code of a torus knot grid is minus its number of crossings. -/
+theorem writhe_gaussCode_torusLink {p q : ℕ} (h : (torusLink p q).IsKnot)
+    (c₀ : Fin (p + 1 + (q + 1))) :
+    (h.gaussCode c₀).writhe = -((torusLink p q).crossings.card : ℤ) := by
+  rw [h.writhe_gaussCode, Finset.sum_congr rfl fun x hx => by
+    rw [crossingSign_torusLink p q hx]]
+  simp
+
+/-- **The writhe of the trefoil grid is `-3`**, from every base column. -/
+theorem writhe_gaussCode_torusLink_one_two (c₀ : Fin (1 + 1 + (2 + 1))) :
+    (isKnot_torusLink_one_two.gaussCode c₀).writhe = -3 := by
+  rw [writhe_gaussCode_torusLink, card_crossings_torusLink_one_two]
+  norm_num
 
 end GridDiagram
 

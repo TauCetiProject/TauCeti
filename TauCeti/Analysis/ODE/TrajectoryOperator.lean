@@ -21,7 +21,12 @@ both the value and its weak derivative. No new Sobolev carrier is introduced.
 `1 + ‖A‖`, and changing the coefficient changes the operator by at most the `L∞` distance
 between coefficients. Solving `D_A u = f` is equivalent to the weak ordinary differential
 equation `u' = f - A u`. For differentiable representatives with locally integrable derivative,
-the operator agrees almost everywhere with the classical expression `u' + A u`.
+the operator agrees almost everywhere with the classical expression `u' + A u`. In particular,
+for a path in `W^{1,2}(ℝ, F)` with a `C¹` representative `φ`, the squared norms of the path, of
+its weak derivative and of its image under `D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`
+(`TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
+`TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral` and
+`TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
 
 On the line, for a path with a `C¹` representative `φ`, the squared norm of `D_A u` is the
 integral of `‖φ' + A φ‖²` (`TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
@@ -257,18 +262,12 @@ theorem trajectoryOperator_apply_ae_eq_deriv_add
     with s hs hd hs'
   rw [hs, hd, hs', fderiv_apply_one_eq_deriv]
 
-end TauCeti.WeakDerivStep
+/-! ### Norms of a path with a `C¹` representative -/
 
-/-! ### The norm of `D_A` on a path with a `C¹` representative on the line -/
+section Smooth
 
-namespace TauCeti.WeakDerivStep
-
-open MeasureTheory TopologicalSpace
-open scoped ENNReal
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {u : WeakDerivStep volume ⊤ 2
-    (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → F}
+variable {u : WeakDerivStep volume ⊤ 2
+  (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → F}
   {A : ℝ → F →L[ℝ] F}
 
 /-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
@@ -286,5 +285,7 @@ theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
       filter_upwards [hTu, hAL] with s hs hAs
       rw [hs, hAs])]
   simp
+
+end Smooth
 
 end TauCeti.WeakDerivStep

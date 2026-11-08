@@ -14,7 +14,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.RegularValue
-import TauCeti.Geometry.Manifold.Submersion
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # The manifold structure of a family of tori
@@ -61,6 +61,8 @@ use the `𝕜`-structure; for a complex space `E` these are its real and complex
 
 ## Main results
 
+* `TauCeti.exists_torusFamilyProjection_symm_eq_of_mem_atlas`: every chart of `(Y × E)/Λ` reads
+  the projection `p` as its first coordinate followed by the inverse of a chart of `Y`.
 * `TauCeti.contMDiffConstVAdd_periodAddAction`: `C^n` periods give `C^n` period translations.
 * `TauCeti.isManifold_torusFamily`: `(Y × E)/Λ` is a `C^n` manifold.
 * `TauCeti.isLocalDiffeomorph_torusFamily_mk`: the orbit map `q` is a `C^n` local
@@ -139,6 +141,30 @@ noncomputable def torusFamilyChartedSpace :
   haveI := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
   haveI := isCancelVAdd_periodAddAction P hinj
   AddAction.instChartedSpaceQuotient
+
+/-- **Charts of a family of tori are adapted to the projection.** Every chart `e` of the atlas of
+`(Y × E)/Λ` reads the projection to `Y` as the first coordinate followed by the inverse of a chart
+of `Y`: there is a point `y` such that `p (e.symm (u, v)) = (chartAt H y).symm u` on the target
+of `e`. -/
+theorem exists_torusFamilyProjection_symm_eq_of_mem_atlas
+    {e : letI := periodAddAction P
+      OpenPartialHomeomorph (AddAction.orbitRel.Quotient Λ (Y × E)) (ModelProd H E)}
+    (he : letI := periodAddAction P
+      letI := torusFamilyChartedSpace (H := H) P hcont hinj
+      e ∈ atlas (ModelProd H E) (AddAction.orbitRel.Quotient Λ (Y × E))) :
+    ∃ y : Y, ∀ w ∈ e.target, w.1 ∈ (chartAt H y).target ∧
+      torusFamilyProjection P (e.symm w) = (chartAt H y).symm w.1 := by
+  let _ := periodAddAction P
+  have := continuousConstVAdd_periodAddAction P hcont
+  have := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
+  have := isCancelVAdd_periodAddAction P hinj
+  obtain ⟨z, hz⟩ := exists_symm_eq_addQuotientMk_of_mem_atlas_addQuotient he
+  refine ⟨z.1, fun w hw ↦ ?_⟩
+  obtain ⟨hwz, hw⟩ := hz w hw
+  simp only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_target] at hwz
+  rw [hw, torusFamilyProjection_mk, prodChartedSpace_chartAt,
+    OpenPartialHomeomorph.prod_symm_apply]
+  exact ⟨hwz.1, rfl⟩
 
 end Quotient
 

@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
-public import Mathlib.Analysis.InnerProductSpace.Calculus
-public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.Calculus.DifferentialForm.Exact
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -56,13 +54,6 @@ function theorem the generated map is a local canonical transformation. On gener
 the invertibility of the mixed Hessian does not give this: for a nonreflexive `V`, `W = V'` and
 `S(q, Q) = Q(q)`, the mixed Hessian is the identity of `V'`, while the generated map
 `(q, p) ↦ (p, -ι q)`, with `ι : V → V''` the canonical embedding, is not surjective.
-
-On a real Hilbert space, the free-particle generating function `S(q, Q) = -‖q - Q‖² / (2t)`
-(`TauCeti.freeParticleGeneratingFunction`) with `t ≠ 0` generates the map `(q, p) ↦ (q + t p♯, p)`,
-where `p♯` is the Riesz representative of `p`: the motion of a free particle of unit mass for time
-`t`
-(`TauCeti.cotangentGeneratingTarget_freeParticleGeneratingFunction_eq_cotangentGeneratingSource` and
-`TauCeti.cotangentGeneratedMap_freeParticleGeneratingFunction_eventuallyEq`).
 
 ## References
 
@@ -577,131 +568,5 @@ theorem eventually_isInvertible_fderiv_cotangentGeneratedMap [FiniteDimensional 
     hdim).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ by simp⟩
 
 end Generated
-
-/-! ### The free particle -/
-
-section FreeParticle
-
-open InnerProductSpace
-open scoped RealInnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E]
-
-/-- The generating function `S(q, Q) = -‖q - Q‖² / (2t)` of the free motion for time `t` of a
-particle of unit mass. -/
-def freeParticleGeneratingFunction (t : ℝ) (x : E × E) : ℝ :=
-  -‖x.1 - x.2‖ ^ 2 / (2 * t)
-
-theorem freeParticleGeneratingFunction_apply (t : ℝ) (x : E × E) :
-    freeParticleGeneratingFunction t x = -‖x.1 - x.2‖ ^ 2 / (2 * t) :=
-  (rfl)
-
-variable [InnerProductSpace ℝ E]
-
-theorem contDiff_freeParticleGeneratingFunction {n : WithTop ℕ∞} (t : ℝ) :
-    ContDiff ℝ n (freeParticleGeneratingFunction (E := E) t) :=
-  ((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).neg.div_const _
-
-/-- The derivative of the free-particle generating function, as a function of the base point. -/
-private theorem fderiv_freeParticleGeneratingFunction_eq_linearMap (t : ℝ) :
-    fderiv ℝ (freeParticleGeneratingFunction (E := E) t) =
-      ⇑((-t⁻¹) • (precomp ℝ (fst ℝ E E - snd ℝ E E)).comp
-        ((innerSL ℝ : E →L[ℝ] StrongDual ℝ E).comp (fst ℝ E E - snd ℝ E E))) := by
-  funext y
-  set L := fst ℝ E E - snd ℝ E E
-  have h : HasFDerivAt (fun y ↦ ‖L y‖ ^ 2) (2 • (innerSL ℝ (L y)).comp L) y :=
-    HasFDerivAt.norm_sq L.hasFDerivAt
-  have hS : freeParticleGeneratingFunction (E := E) t = fun y ↦ -(2 * t)⁻¹ * ‖L y‖ ^ 2 := by
-    funext y
-    simp [freeParticleGeneratingFunction_apply, L, div_eq_inv_mul]
-  rw [hS, (h.const_mul _).fderiv]
-  refine ContinuousLinearMap.ext fun u ↦ ?_
-  simp only [_root_.smul_apply, coe_comp, Function.comp_apply, precomp_apply,
-    innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
-  ring
-
-/-- The derivative of `S(q, Q) = -‖q - Q‖² / (2t)` applied to a variation `(δq, δQ)`. -/
-theorem fderiv_freeParticleGeneratingFunction (t : ℝ) (y u : E × E) :
-    fderiv ℝ (freeParticleGeneratingFunction t) y u =
-      -t⁻¹ * ⟪y.1 - y.2, u.1 - u.2⟫ := by
-  simp only [fderiv_freeParticleGeneratingFunction_eq_linearMap, _root_.smul_apply, coe_comp,
-    Function.comp_apply, precomp_apply, _root_.sub_apply, coe_fst', coe_snd', innerSL_apply_apply,
-    smul_eq_mul]
-
-/-- The mixed Hessian of the free-particle generating function is `t⁻¹ ⟪δQ, δq⟫`. -/
-theorem cotangentMixedHessian_freeParticleGeneratingFunction_apply_apply (t : ℝ) (x : E × E)
-    (b a : E) : cotangentMixedHessian (freeParticleGeneratingFunction t) x b a = t⁻¹ * ⟪b, a⟫ := by
-  rw [cotangentMixedHessian_apply_apply, fderiv_freeParticleGeneratingFunction_eq_linearMap,
-    ContinuousLinearMap.fderiv]
-  simp only [_root_.smul_apply, coe_comp, Function.comp_apply, precomp_apply, _root_.sub_apply,
-    coe_fst', coe_snd', innerSL_apply_apply, smul_eq_mul, zero_sub, sub_zero, inner_neg_left,
-    mul_neg, neg_mul, neg_neg]
-
-variable [CompleteSpace E]
-
-/-- The source projection of the free-particle generating function: `p = (Q - q)♭ / t`, where
-`v♭ = ⟪v, ·⟫`. -/
-@[simp]
-theorem cotangentGeneratingSource_freeParticleGeneratingFunction (t : ℝ) (q Q : E) :
-    cotangentGeneratingSource (freeParticleGeneratingFunction t) (q, Q) =
-      (q, t⁻¹ • toDual ℝ E (Q - q)) := by
-  ext a
-  · simp
-  · simp only [cotangentGeneratingSource_snd_apply, fderiv_freeParticleGeneratingFunction,
-      _root_.smul_apply, smul_eq_mul, sub_zero, toDual_apply_apply]
-    rw [← neg_sub Q q, inner_neg_left]
-    ring
-
-/-- The target projection of the free-particle generating function: `P = (Q - q)♭ / t`. -/
-@[simp]
-theorem cotangentGeneratingTarget_freeParticleGeneratingFunction (t : ℝ) (q Q : E) :
-    cotangentGeneratingTarget (freeParticleGeneratingFunction t) (q, Q) =
-      (Q, t⁻¹ • toDual ℝ E (Q - q)) := by
-  ext b
-  · simp
-  · simp only [cotangentGeneratingTarget_snd_apply, fderiv_freeParticleGeneratingFunction,
-      _root_.smul_apply, smul_eq_mul, zero_sub, toDual_apply_apply]
-    rw [← neg_sub Q q, inner_neg_left, inner_neg_right, neg_neg]
-    ring
-
-variable {t : ℝ}
-
-/-- For `t ≠ 0` the mixed Hessian of the free-particle generating function is invertible: it is
-`t⁻¹` times the Riesz isomorphism. -/
-theorem isInvertible_cotangentMixedHessian_freeParticleGeneratingFunction (ht : t ≠ 0)
-    (x : E × E) : (cotangentMixedHessian (freeParticleGeneratingFunction t) x).IsInvertible := by
-  let e : E ≃L[ℝ] StrongDual ℝ E := (toDual ℝ E).toContinuousLinearEquiv
-  refine ⟨(Units.mk0 t⁻¹ (inv_ne_zero ht)) • e,
-    ContinuousLinearMap.ext fun b ↦ ContinuousLinearMap.ext fun a ↦ ?_⟩
-  simpa [e] using (cotangentMixedHessian_freeParticleGeneratingFunction_apply_apply t x b a).symm
-
-/-- **The free particle.** The generating function `-‖q - Q‖² / (2t)` relates `(q, p)` to
-`(q + t p♯, p)`, where `p♯` is the Riesz representative of `p`. -/
-theorem cotangentGeneratingTarget_freeParticleGeneratingFunction_eq_cotangentGeneratingSource
-    (ht : t ≠ 0) (x : E × E) :
-    cotangentGeneratingTarget (freeParticleGeneratingFunction t) x =
-      ((cotangentGeneratingSource (freeParticleGeneratingFunction t) x).1 +
-          t • (toDual ℝ E).symm (cotangentGeneratingSource (freeParticleGeneratingFunction t) x).2,
-        (cotangentGeneratingSource (freeParticleGeneratingFunction t) x).2) := by
-  obtain ⟨q, Q⟩ := x
-  have h : (toDual ℝ E).symm (t⁻¹ • toDual ℝ E (Q - q)) = t⁻¹ • (Q - q) :=
-    ext_inner_right ℝ fun a ↦ by simp [real_inner_smul_left]
-  rw [cotangentGeneratingSource_freeParticleGeneratingFunction,
-    cotangentGeneratingTarget_freeParticleGeneratingFunction, h, smul_smul, mul_inv_cancel₀ ht,
-    one_smul, add_sub_cancel]
-
-/-- **The map generated by the free-particle generating function** is, near
-each point, the free motion `(q, p) ↦ (q + t p♯, p)`. -/
-theorem cotangentGeneratedMap_freeParticleGeneratingFunction_eventuallyEq (ht : t ≠ 0)
-    {x₀ : E × E} (hS : ContDiffAt ℝ 2 (freeParticleGeneratingFunction t) x₀)
-    (hM : (cotangentMixedHessian (freeParticleGeneratingFunction t) x₀).IsInvertible) :
-    cotangentGeneratedMap hS hM
-      =ᶠ[𝓝 (cotangentGeneratingSource (freeParticleGeneratingFunction t) x₀)]
-        fun y ↦ (y.1 + t • (toDual ℝ E).symm y.2, y.2) := by
-  filter_upwards [eventually_cotangentGeneratingSource_cotangentGeneratingBranch hS hM] with y hy
-  rw [cotangentGeneratedMap_def, Function.comp_apply,
-    cotangentGeneratingTarget_freeParticleGeneratingFunction_eq_cotangentGeneratingSource ht, hy]
-
-end FreeParticle
 
 end TauCeti

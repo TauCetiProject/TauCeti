@@ -190,17 +190,14 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
     rw [← hFcx]
     exact ((analyticAt_comp_iff_of_deriv_ne_zero hFa hFderiv).mp
       (analyticAt_id.congr hGleft.symm)).differentiableAt
-  have hGmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) G (c' y) := hGdiff.mdifferentiableAt
   have hinner : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (G ∘ c') y :=
-    hGmd.comp y (mdifferentiableAt_of_mem_maximalAtlas (chart_mem_maximalAtlas (f x))
-      (hfx ▸ hc'fx))
+    hGdiff.mdifferentiableAt.comp y (mdifferentiableAt_of_mem_maximalAtlas
+      (chart_mem_maximalAtlas (f x)) (hfx ▸ hc'fx))
   have hGcy : G (c' y) = c x := by simp only [G, c'.left_inv (hfx ▸ hc'fx), x]
-  have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (c.symm ∘ G ∘ c') y := by
-    have hsymm : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) c.symm (G (c' y)) := by
-      simpa only [hGcy] using
-        mdifferentiableAt_symm_of_mem_maximalAtlas (chart_mem_maximalAtlas x)
-          (c.map_source hcx)
-    exact hsymm.comp y hinner
+  have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (c.symm ∘ G ∘ c') y :=
+    (by simpa only [hGcy] using
+      mdifferentiableAt_symm_of_mem_maximalAtlas (chart_mem_maximalAtlas x) (c.map_source hcx) :
+      MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) c.symm (G (c' y))).comp y hinner
   refine hcomp.congr_of_eventuallyEq ?_
   filter_upwards [c'.open_source.mem_nhds (hfx ▸ hc'fx),
     (hhomeo.homeomorph f).symm.continuous.continuousAt.eventually
