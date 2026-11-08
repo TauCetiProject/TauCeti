@@ -608,6 +608,7 @@ lemma derivationMulEquivTangentKer_apply_snd
     derivationToTrivSqZeroExtEquivLift_apply_snd]
 
 /-- The first component of the dual-number tangent point of a derivation is the counit. -/
+@[simp]
 lemma fstHom_comp_derivationMulEquivTangentKer
     (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
     (fstHom R (CounitAlgebra R A B) (CounitAlgebra R A B)).toLinearMap ∘ₗ
@@ -617,6 +618,7 @@ lemma fstHom_comp_derivationMulEquivTangentKer
   exact fst_apply_of_mem_tangentKer (derivationMulEquivTangentKer R A B d).2 x
 
 /-- The second component of the dual-number tangent point of a derivation is the derivation. -/
+@[simp]
 lemma sndHom_comp_derivationMulEquivTangentKer
     (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
     (sndHom (CounitAlgebra R A B) (CounitAlgebra R A B)).restrictScalars R ∘ₗ
