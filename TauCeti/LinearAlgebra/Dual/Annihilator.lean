@@ -30,8 +30,9 @@ namespace Submodule
 
 /-- A functional factoring through the quotient `V ⧸ U` annihilates `U`. -/
 theorem comp_mkQ_mem_dualAnnihilator {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-    (U : Submodule R V) (ψ : Module.Dual R (V ⧸ U)) : ψ ∘ₗ U.mkQ ∈ U.dualAnnihilator :=
-  (U.dualQuotEquivDualAnnihilator ψ).2
+    (U : Submodule R V) (ψ : Module.Dual R (V ⧸ U)) : ψ ∘ₗ U.mkQ ∈ U.dualAnnihilator := by
+  rw [← U.range_dualMap_mkQ_eq, ← LinearMap.dualMap_apply']
+  exact LinearMap.mem_range_self _ ψ
 
 section IsCompl
 
