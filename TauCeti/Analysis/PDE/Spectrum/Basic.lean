@@ -647,7 +647,7 @@ theorem le_of_isDirichletEigenvalue_of_subset_ball
     (fun _x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   exact le_of_isDirichletEigenvalue hcoeff
     (isCoercive_energyFormH1L0 hcoeff
-      (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
+      (energyFormH1_poincare_constant_pos hbeta (by linarith) hsmall)
       (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
         hc_nonneg hball w.2))
     (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
