@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.Pseudodifferential.OutputSupport
 import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -76,122 +77,6 @@ namespace Symbol
 
 variable {n : ℕ} {m m' : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
-
-/-! ### The Fourier transform in the position of a function of two variables
-
-The results of this section are stated for an abstract complex normed target `G` rather than for
-`V →L[ℂ] W`: for the latter, the instance searches for the measurability and the norms of
-`CoordinateSpace n →L[ℝ] G`-valued functions time out. -/
-
-section FourierSlice
-
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-  {f : CoordinateSpace n × CoordinateSpace n → G}
-  {K : Set (CoordinateSpace n)}
-
-/-- The Fourier transform `f̂(θ, ξ)` of the position slices `y ↦ f(y, ξ)` of a continuous function
-vanishing for positions outside a compact set is jointly continuous in `(θ, ξ)`. -/
-private theorem continuous_fourier_slice (hf : Continuous f) (hK : IsCompact K)
-    (hfK : ∀ y ∉ K, ∀ η, f (y, η) = 0) :
-    Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ 𝓕 (fun y ↦ f (y, q.2)) q.1 := by
-  simp only [Real.fourier_eq]
-  refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall q₀.2 1)).exists_bound_of_continuousOn
-    hf.continuousOn
-  have hnhds : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in nhds q₀,
-      q.2 ∈ Metric.closedBall q₀.2 1 :=
-    (continuous_snd.tendsto q₀).eventually (Metric.closedBall_mem_nhds _ one_pos)
-  refine continuousAt_of_dominated (bound := K.indicator fun _ ↦ C)
-    (Filter.Eventually.of_forall fun q ↦ ((Real.continuous_fourierChar.comp
-      (by fun_prop)).smul (hf.comp (by fun_prop))).aestronglyMeasurable)
-    ?_ ((integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne))
-    (ae_of_all _ fun y ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
-      (hf.comp (by fun_prop))).continuousAt)
-  filter_upwards [hnhds] with q hq
-  refine ae_of_all _ fun y ↦ ?_
-  rw [Circle.norm_smul]
-  by_cases hy : y ∈ K
-  · rw [Set.indicator_of_mem hy]
-    exact hC _ (Set.mk_mem_prod hy hq)
-  · rw [Set.indicator_of_notMem hy, hfK y hy, norm_zero]
-
-/-- **Differentiation of `f̂(θ, ξ)` in the frequency.** For a `C¹` function `f` vanishing for
-positions outside a compact set, the Fourier transform of the position slices is differentiable in
-the frequency, with partial derivatives the Fourier transforms of the partial derivatives:
-`∂_{ξ_j} f̂(θ, ξ) = (∂_{ξ_j} f)^(θ, ξ)`. -/
-private theorem hasFDerivAt_fourier_slice (hf : ContDiff ℝ 1 f) (hK : IsCompact K)
-    (hfK : ∀ y ∉ K, ∀ η, f (y, η) = 0) (θ ξ : CoordinateSpace n) :
-    HasFDerivAt (fun η ↦ 𝓕 (fun y ↦ f (y, η)) θ)
-      (∑ j, (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
-        (𝓕 (fun y ↦ coordinateDeriv [j] (fun η ↦ f (y, η)) ξ) θ)) ξ := by
-  -- The phase factor, as a real-linear map, so that no complex scalars act on derivatives.
-  set e : CoordinateSpace n → G →L[ℝ] G := fun y ↦
-    ContinuousLinearMap.lsmul ℝ ℂ (𝐞 (-⟪y, θ⟫) : ℂ) with he_def
-  have he : Continuous e := (ContinuousLinearMap.lsmul ℝ ℂ).continuous.comp
-    (continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop)))
-  have he_norm (y : CoordinateSpace n) : ‖e y‖ ≤ 1 :=
-    (ContinuousLinearMap.opNorm_lsmul_apply_le _).trans (by simp)
-  -- The partial derivative of `f` in the frequency is jointly continuous.
-  have hD : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
-      fderiv ℝ (fun η ↦ f (q.1, η)) q.2 :=
-    (ContDiff.fderiv (f := fun (q : CoordinateSpace n × CoordinateSpace n) η ↦ f (q.1, η))
-      (hf.comp ((contDiff_fst.comp contDiff_fst).prodMk contDiff_snd)) contDiff_snd
-      (n := 0) (by simp)).continuous
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall ξ 1)).exists_bound_of_continuousOn
-    hD.continuousOn
-  have hdiff (y η : CoordinateSpace n) : HasFDerivAt (fun η ↦ e y (f (y, η)))
-      ((e y).comp (fderiv ℝ (fun η ↦ f (y, η)) η)) η :=
-    (e y).hasFDerivAt.comp η
-      ((hf.comp (contDiff_prodMk_right y)).differentiable one_ne_zero η).hasFDerivAt
-  have hcont (η : CoordinateSpace n) : Continuous fun y ↦ e y (f (y, η)) :=
-    he.clm_apply (hf.continuous.comp (continuous_id.prodMk continuous_const))
-  have hcont' : Continuous fun y ↦ (e y).comp (fderiv ℝ (fun η ↦ f (y, η)) ξ) :=
-    he.clm_comp (hD.comp (continuous_id.prodMk continuous_const))
-  have hsupp (η : CoordinateSpace n) : HasCompactSupport fun y ↦ e y (f (y, η)) :=
-    HasCompactSupport.intro hK fun y hy ↦ by simp [hfK y hy]
-  have hzero (y : CoordinateSpace n) (hy : y ∉ K) (η : CoordinateSpace n) :
-      fderiv ℝ (fun η ↦ f (y, η)) η = 0 := by
-    have h0 : (fun η ↦ f (y, η)) = 0 := funext fun η ↦ hfK y hy η
-    simp [h0]
-  have hsupp' : HasCompactSupport fun y ↦ (e y).comp (fderiv ℝ (fun η ↦ f (y, η)) ξ) :=
-    HasCompactSupport.intro hK fun y hy ↦ by simp [hzero y hy]
-  have key := hasFDerivAt_integral_of_dominated_of_fderiv_le (μ := volume)
-    (F := fun η y ↦ e y (f (y, η)))
-    (F' := fun η y ↦ (e y).comp (fderiv ℝ (fun η ↦ f (y, η)) η))
-    (bound := K.indicator fun _ ↦ C) (Metric.ball_mem_nhds ξ one_pos)
-    (Filter.Eventually.of_forall fun η ↦ (hcont η).aestronglyMeasurable)
-    ((hcont ξ).integrable_of_hasCompactSupport (hsupp ξ)) hcont'.aestronglyMeasurable
-    (ae_of_all _ fun y η hη ↦ ?_)
-    ((integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne))
-    (ae_of_all _ fun y η _ ↦ hdiff y η)
-  · have hF : (fun η ↦ 𝓕 (fun y ↦ f (y, η)) θ) = fun η ↦ ∫ y, e y (f (y, η)) := by
-      funext η
-      simp only [Real.fourier_eq, Circle.smul_def, he_def, ContinuousLinearMap.lsmul_apply]
-    rw [hF]
-    convert key using 1
-    refine ContinuousLinearMap.ext fun h ↦ ?_
-    have hint := hcont'.integrable_of_hasCompactSupport (μ := volume) hsupp'
-    rw [ContinuousLinearMap.integral_apply hint]
-    conv_rhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
-    simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply, map_sum,
-      map_smul, EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply,
-      ContinuousLinearMap.comp_apply, PiLp.proj_apply]
-    rw [integral_finsetSum (f := fun j y ↦
-      h j • e y (fderiv ℝ (fun η ↦ f (y, η)) ξ (EuclideanSpace.single j 1))) _
-      fun j _ ↦ (hint.apply_continuousLinearMap _).smul (h j)]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [integral_smul]
-    congr 1
-    simp only [Real.fourier_eq, Circle.smul_def, coordinateDeriv_cons, coordinateDeriv_nil, he_def,
-      ContinuousLinearMap.lsmul_apply]
-  · refine ((e y).opNorm_comp_le _).trans ?_
-    by_cases hy : y ∈ K
-    · rw [Set.indicator_of_mem hy]
-      exact (mul_le_of_le_one_left (norm_nonneg _) (he_norm y)).trans
-        (hC _ (Set.mk_mem_prod hy (Metric.ball_subset_closedBall hη)))
-    · simp [hzero y hy, Set.indicator_of_notMem hy]
-
-end FourierSlice
 
 /-! ### The Fourier transform of a symbol in the position -/
 
@@ -983,13 +868,20 @@ theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V
 
 /-- The constant symbol `1` is a left identity for the composition: `1 # b = b`. On the level of
 coefficients this is the Fourier inversion formula `∫ 𝐞 ⟪θ, x⟫ b̂(θ, ξ) dθ = b(x, ξ)`. -/
-theorem coefficient_const_id_sharp [CompleteSpace V] [CompleteSpace W] {b : Symbol n V W m'}
+theorem coefficient_const_id_sharp [CompleteSpace W] {b : Symbol n V W m'}
     (hb : b.HasCompactSpatialSupport) :
     ((const (ContinuousLinearMap.id ℂ W)).sharp hb).coefficient = b.coefficient := by
-  have hid : (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient =
-      fun _ ↦ ContinuousLinearMap.id ℂ W := funext (coefficient_const _)
-  refine (coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq hb fun u _ x ↦ ?_).symm
-  rw [hid, quantizeSchwartzValue_id, HasCompactSupport.toSchwartzMap_toFun]
+  funext ⟨x, ξ⟩
+  set f := (hb.hasCompactSupport_slice ξ).toSchwartzMap (b.contDiff_coefficient_slice ξ)
+  have hf : (fun y ↦ b.coefficient (y, ξ)) = ⇑f :=
+    (funext (HasCompactSupport.toSchwartzMap_toFun _ _)).symm
+  have hinv : 𝓕⁻ (𝓕 ⇑f) = ⇑f := f.continuous.fourierInv_fourier_eq f.integrable
+    (by rw [← SchwartzMap.fourier_coe]; exact (𝓕 f).integrable)
+  calc ((const (ContinuousLinearMap.id ℂ W)).sharp hb).coefficient (x, ξ) = 𝓕⁻ (𝓕 ⇑f) x := by
+        rw [coefficient_sharp, Real.fourierInv_eq, ← hf]
+        refine integral_congr_ae (ae_of_all _ fun θ ↦ ?_)
+        simp [coefficient_const, Circle.smul_def]
+    _ = b.coefficient (x, ξ) := by rw [hinv, ← hf]
 
 end Sharp
 
