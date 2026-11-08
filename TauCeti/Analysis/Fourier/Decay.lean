@@ -39,6 +39,8 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `(1 + ‖v‖) ^ k`.
 * `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
   derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `TauCeti.fourier_fderiv_apply`: the Fourier transform of the directional derivative `∂_v f` of a
+  `C¹` compactly supported function is `2πi ⟪w, v⟫ 𝓕 f w`.
 * `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
   frequency is the Fourier transform `𝓕 f ((2π)⁻¹ ξ)`.
 * `TauCeti.integrable_exp_neg_inner_smul`: multiplying an integrable function by the phase
@@ -114,6 +116,20 @@ theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : Con
     rw [hw, mul_zero, zero_pow hN, zero_mul]
     exact integral_nonneg fun _ ↦ norm_nonneg _
   · exact le_of_mul_le_mul_right (heq ▸ hle) (lt_of_le_of_ne (by positivity) (Ne.symm h))
+
+open MeasureTheory Real in
+open scoped RealInnerProductSpace in
+/-- **The Fourier transform of a directional derivative.** For a `C¹` function `f` with compact
+support, the Fourier transform of `x ↦ ∂_v f(x)` at `w` is `2πi ⟪w, v⟫ 𝓕 f w`. -/
+theorem fourier_fderiv_apply (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (v w : V) :
+    𝓕 (fun x ↦ fderiv ℝ f x v) w = ((2 * π * Complex.I * ⟪w, v⟫ : ℂ)) • 𝓕 f w := by
+  have hfi : Integrable f := hf.continuous.integrable_of_hasCompactSupport hfc
+  have hf' : Integrable (fderiv ℝ f) :=
+    (hf.continuous_fderiv one_ne_zero).integrable_of_hasCompactSupport (hfc.fderiv (𝕜 := ℝ))
+  rw [← Real.fourier_continuousLinearMap_apply hf', Real.fourier_fderiv hfi
+    (hf.differentiable one_ne_zero) hf']
+  simp only [VectorFourier.fourierSMulRight_apply, neg_apply, smul_neg, neg_smul, neg_neg]
+  rw [← Complex.coe_smul, smul_smul, innerSL_apply_apply]
 
 open Real in
 open scoped RealInnerProductSpace in
