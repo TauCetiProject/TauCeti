@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
+import Mathlib.NumberTheory.SumTwoSquares
 import TauCeti.NumberTheory.LegendreSymbol.NormForm
 import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
@@ -51,8 +52,9 @@ some prime `p ≡ 3 (mod 4)` divides `d`.
   `NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one`: `N(z) = A² - d·B²` for `d ≢ 1`.
 * `TauCeti.NumberField.isSquare_neg_one_of_norm_eq_neg_one`: an algebraic integer of norm `-1`
   makes `-1` a square modulo every prime dividing `d`.
-* `TauCeti.NumberField.norm_ne_neg_one_of_prime_dvd`: if a prime `p ≡ 3 (mod 4)` divides `d`, no
-  algebraic integer has norm `-1`.
+* `TauCeti.NumberField.norm_ne_neg_one_of_mod_four_eq_three_of_dvd`: if a natural number
+  `p ≡ 3 (mod 4)` divides `d` (so some prime factor of `p` is `≡ 3 (mod 4)`), no algebraic
+  integer has norm `-1`.
 -/
 
 public section
@@ -481,11 +483,22 @@ theorem isSquare_neg_one_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d
   rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym.eq_one_iff p (by simp)] at h
   exact_mod_cast h
 
-/-- **No algebraic integer has norm `-1` when a prime `p ≡ 3 (mod 4)` divides the radicand**,
-since `-1` is not a square modulo such a prime. In particular no unit of `𝓞 K` has norm `-1`. -/
-theorem norm_ne_neg_one_of_prime_dvd (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) {p : ℕ} [Fact p.Prime]
-    (hp : p % 4 = 3) (hpd : (p : ℤ) ∣ d) (z : 𝓞 K) : Algebra.norm ℚ (z : K) ≠ -1 := fun hz =>
-  ZMod.exists_sq_eq_neg_one_iff.mp (isSquare_neg_one_of_norm_eq_neg_one hmin hgen hsf hpd hz) hp
+/-- **No algebraic integer has norm `-1` when a natural number `p ≡ 3 (mod 4)` divides the
+radicand**: such a `p` is squarefree, so it has a prime factor `q ≡ 3 (mod 4)`, and `-1` is not a
+square modulo `q`. In particular no unit of `𝓞 K` has norm `-1`. -/
+theorem norm_ne_neg_one_of_mod_four_eq_three_of_dvd (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) {p : ℕ}
+    (hp : p % 4 = 3) (hpd : (p : ℤ) ∣ d) (z : 𝓞 K) : Algebra.norm ℚ (z : K) ≠ -1 := fun hz => by
+  have hsqf : Squarefree p := Int.squarefree_natCast.mp (hsf.squarefree_of_dvd hpd)
+  obtain ⟨q, hq, hq3⟩ : ∃ q ∈ p.primeFactors, q % 4 = 3 := by
+    by_contra h
+    push Not at h
+    exact (ZMod.isSquare_neg_one_iff' hsqf).mp
+      ((ZMod.isSquare_neg_one_iff_forall_mem_primeFactors_mod_four_ne_three hsqf).mpr h) dvd_rfl hp
+  have : Fact q.Prime := ⟨Nat.prime_of_mem_primeFactors hq⟩
+  have hqd : (q : ℤ) ∣ d :=
+    (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_primeFactors hq)).trans hpd
+  exact ZMod.exists_sq_eq_neg_one_iff.mp (isSquare_neg_one_of_norm_eq_neg_one hmin hgen hsf hqd hz)
+    hq3
 
 end TauCeti.NumberField
