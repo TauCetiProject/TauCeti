@@ -130,15 +130,15 @@ def integralIdealsAwayConductorEquiv :
   toFun I := ⟨I.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     rw [mem_integralIdealsPrimeTo_conductorModulus_iff]
     refine ⟨fun h => I.2.1 ?_,
-      map_sup_eq_top_of_coprime_comap (S := O.toRingOfIntegers.toSubring) I.2.2⟩
+      Ideal.map_sup_eq_top_of_coprime_comap I.2.2⟩
     exact (comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers I.2.2).symm.trans
         ((congrArg (Ideal.comap O.toRingOfIntegers.toSubring.subtype) h).trans
           (Ideal.comap_bot_of_injective _ Subtype.val_injective))⟩
   invFun J := ⟨J.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     have hJ := (O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.2
-    refine ⟨fun h => hJ.1 ?_, comap_sup_eq_top_of_le (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers hJ.2⟩
+    refine ⟨fun h => hJ.1 ?_, (comap_sup_comap_eq_top_iff (S := O.toRingOfIntegers.toSubring)
+      O.conductor_le_toRingOfIntegers).mpr hJ.2⟩
     exact (map_comap_of_coprime (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers hJ.2).symm.trans
         ((congrArg (Ideal.map O.toRingOfIntegers.toSubring.subtype) h).trans Ideal.map_bot)⟩
