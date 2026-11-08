@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Finite.Prod
+public import Mathlib.Basic.Finite.Sigma
+public import Mathlib.Data.Fintype.Powerset
 public import Mathlib.Data.Set.Lattice.Bounded
 public import TauCeti.Combinatorics.Network.Basic
 public import TauCeti.Combinatorics.Network.Walk
@@ -57,6 +60,11 @@ theorem ext {S T : N.Subnetwork} (hV : S.vertexSet = T.vertexSet)
   cases hV
   cases hA
   rfl
+
+/-- A network with finitely many vertices and arrows has finitely many subnetworks. -/
+instance [Finite V] [∀ v w, Finite (N.Hom v w)] : Finite N.Subnetwork :=
+  Finite.of_injective (fun S : N.Subnetwork ↦ (S.vertexSet, S.arrowSet)) fun _ _ h ↦
+    Subnetwork.ext (congrArg Prod.fst h) (congrArg Prod.snd h)
 
 /-- The arrow family of a subnetwork, indexed by its selected vertex subtype. -/
 abbrev Hom (S : N.Subnetwork) (x y : ↥S.vertexSet) :=
