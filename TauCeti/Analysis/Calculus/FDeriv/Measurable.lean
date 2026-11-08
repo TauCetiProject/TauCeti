@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 
 /-!
 # Joint measurability of the applied derivative
@@ -16,9 +17,14 @@ Mathlib proves that the derivative `fderiv 𝕜 f` of an arbitrary function is m
 vector, so that `fun_prop` can prove the measurability of expressions such as
 `x ↦ fderiv 𝕜 f x (g x)` for a measurable `g`.
 
+An arbitrary function is continuous on its regular set `{x | fderiv 𝕜 f x ≠ 0}`, which is
+measurable, so the regular part of the preimage of a measurable set is measurable.
+
 ## Main results
 
 * `TauCeti.measurable_fderiv_apply`: the map `(x, y) ↦ fderiv 𝕜 f x y` is measurable.
+* `TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero`: the regular part
+  `f⁻¹(I) ∩ {Df ≠ 0}` of the preimage of a measurable set is measurable.
 -/
 
 public section
@@ -40,5 +46,25 @@ theorem measurable_fderiv_apply (f : E → F) : Measurable fun p : E × E ↦ fd
   borelize (E →L[𝕜] F)
   exact (continuous_fst.clm_apply continuous_snd).measurable2
     ((measurable_fderiv 𝕜 f).comp measurable_fst) measurable_snd
+
+variable {𝕜}
+
+omit [SecondCountableTopology E] in
+/-- The regular part `f⁻¹(I) ∩ {Df ≠ 0}` of the preimage of a measurable set is measurable, for
+every function `f`: the function is continuous on its regular set, which is measurable. -/
+theorem measurableSet_preimage_inter_setOf_fderiv_ne_zero {f : E → F} {I : Set F}
+    (hI : MeasurableSet I) : MeasurableSet (f ⁻¹' I ∩ {x | fderiv 𝕜 f x ≠ 0}) := by
+  classical
+  have hR : MeasurableSet {x | fderiv 𝕜 f x ≠ 0} :=
+    (measurableSet_singleton 0).compl.preimage (measurable_fderiv 𝕜 f)
+  have hk : Measurable ({x | fderiv 𝕜 f x ≠ 0}.piecewise f 0) :=
+    ContinuousOn.measurable_piecewise
+      (fun x hx ↦ (differentiableAt_of_fderiv_ne_zero hx).continuousAt.continuousWithinAt)
+      continuousOn_const hR
+  convert (hk hI).inter hR using 1
+  ext x
+  simp only [Set.mem_inter_iff, Set.mem_preimage, and_congr_left_iff]
+  intro hx
+  rw [Set.piecewise_eq_of_mem _ _ _ hx]
 
 end TauCeti
