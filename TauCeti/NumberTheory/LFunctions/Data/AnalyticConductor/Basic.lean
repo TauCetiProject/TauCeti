@@ -68,8 +68,9 @@ theorem conductor_mul_three_pow_degree_le (d : AnalyticLFunctionData) (s : ℂ) 
 /-- The analytic conductor is always at least one, including for degree-zero data. -/
 theorem one_le_analyticConductorAt (d : AnalyticLFunctionData) (s : ℂ) :
     1 ≤ d.analyticConductorAt s := by
+  have hNat : 1 ≤ (d.conductor : ℕ) := d.conductor.pos
   have hN : (1 : ℝ) ≤ d.conductor := by
-    exact_mod_cast (show 1 ≤ (d.conductor : ℕ) from d.conductor.pos)
+    exact_mod_cast hNat
   have hpow : (1 : ℝ) ≤ 3 ^ d.degree := one_le_pow₀ (by norm_num)
   exact (one_le_mul_of_one_le_of_one_le hN hpow).trans (d.conductor_mul_three_pow_degree_le s)
 
