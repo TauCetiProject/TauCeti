@@ -259,6 +259,7 @@ theorem deletion_mono (h : K ≤ L) : deletion K σ ≤ deletion L σ :=
 
 omit [DecidableEq ι] in
 /-- If no face contains `v`, deleting `v` changes nothing. -/
+@[simp]
 theorem deletion_singleton_eq_of_forall_notMem {v : ι}
     (hempty : ∀ σ ∈ K, v ∉ σ) : deletion K {v} = K := by
   apply SetLike.ext
@@ -290,6 +291,7 @@ theorem insert_mem_deletion_of_notMem {v w : ι} (hwσ : w ∉ σ)
 
 omit [DecidableEq ι] in
 /-- Deleting a face `σ` containing `v` does not affect a subsequent deletion of `v`. -/
+@[simp]
 theorem deletion_deletion_singleton_of_mem {v : ι} (hvσ : v ∈ σ) :
     deletion (deletion K σ) {v} = deletion K {v} := by
   apply SetLike.ext
