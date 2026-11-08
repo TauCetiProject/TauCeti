@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Transversality
-import TauCeti.Dynamics.Flow.Variational
+import TauCeti.Dynamics.Flow.TangentCone
 
 /-!
 # The Morse–Smale condition for a negative-gradient flow
