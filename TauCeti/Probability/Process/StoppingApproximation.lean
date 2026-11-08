@@ -166,9 +166,10 @@ theorem dyadicCeilTime_eq_top_iff (n : ℕ) (u : WithTop ℝ≥0) :
 
 /-- Right-continuous stopped values converge along any random times tending from above to a
 finite random time. No measurability hypothesis is needed for this pathwise assertion. -/
-theorem tendsto_stoppedValue_of_tendsto_of_le {α Ω E : Type*} [TopologicalSpace E]
-    (X : ℝ≥0 → Ω → E) {l : Filter α} {σ : α → Ω → WithTop ℝ≥0}
-    {τ : Ω → WithTop ℝ≥0} {ω : Ω} (hτ : τ ω ≠ ⊤)
+theorem tendsto_stoppedValue_of_tendsto_of_le {α Ω E ι : Type*} [TopologicalSpace E]
+    [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [Nonempty ι]
+    (X : ι → Ω → E) {l : Filter α} {σ : α → Ω → WithTop ι}
+    {τ : Ω → WithTop ι} {ω : Ω} (hτ : τ ω ≠ ⊤)
     (hσ : Tendsto (fun a => σ a ω) l (𝓝 (τ ω))) (hle : ∀ᶠ a in l, τ ω ≤ σ a ω)
     (hX : ContinuousWithinAt (fun t => X t ω) (Ici (τ ω).untopA) (τ ω).untopA) :
     Tendsto (fun a => stoppedValue X (σ a) ω) l (𝓝 (stoppedValue X τ ω)) := by
@@ -201,8 +202,8 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
   have hmin : Tendsto (fun n => min (t : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)))
       atTop (𝓝 (min (t : WithTop ℝ≥0) (τ ω))) :=
     tendsto_const_nhds.min (tendsto_dyadicCeilTime (τ ω))
-  simpa only [stoppedProcess, stoppedValue, Function.comp_def] using
-    tendsto_stoppedValue_of_tendsto_of_le X
+  simp only [stoppedProcess_eq_stoppedValue_apply]
+  exact tendsto_stoppedValue_of_tendsto_of_le X
       (σ := fun n ω => min (t : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)))
       (τ := fun ω => min (t : WithTop ℝ≥0) (τ ω)) (ω := ω) hfinite hmin
       (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
