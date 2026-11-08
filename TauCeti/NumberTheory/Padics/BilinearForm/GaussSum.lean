@@ -111,12 +111,14 @@ theorem sum_stdAddChar_dotProduct_map_pow_smul_mulVec (A : Matrix ι ι ℤ_[p])
     ring
   have hmap : (castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m))).comp (toZModPow (i + m)) =
       toZModPow (p := p) m := zmod_cast_comp_toZModPow m (i + m) (by omega)
+  have hmap_smul : ((p : ℤ_[p]) ^ i • A).map (toZModPow (i + m)) =
+      (p ^ i : ZMod (p ^ (i + m))) • A.map (toZModPow (i + m)) := by
+    ext
+    simp
   have hx (x : ι → ZMod (p ^ (i + m))) :
       x ⬝ᵥ ((p : ℤ_[p]) ^ i • A).map (toZModPow (i + m)) *ᵥ x =
         (p ^ i : ZMod (p ^ (i + m))) * (x ⬝ᵥ A.map (toZModPow (i + m)) *ᵥ x) := by
-    rw [show ((p : ℤ_[p]) ^ i • A).map (toZModPow (i + m)) =
-        (p ^ i : ZMod (p ^ (i + m))) • A.map (toZModPow (i + m)) by ext; simp,
-      Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
+    rw [hmap_smul, Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
   have hy (x : ι → ZMod (p ^ (i + m))) :
       castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x ⬝ᵥ A.map (toZModPow (i + m)) *ᵥ x) =
         (fun a ↦ castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x a)) ⬝ᵥ

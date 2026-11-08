@@ -291,11 +291,6 @@ theorem IsModular.isPerfPair_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroD
     simpa using LinearMap.congr_fun₂ (hC.trans hC'.symm) x y)
   exact this ▸ hperf
 
-/-- A form `C` is symmetric when `a • C` is, for a non-zero-divisor `a`. -/
-theorem IsSymm.of_smul (ha : a ∈ nonZeroDivisors R) {C : BilinForm R M} (hC : (a • C).IsSymm) :
-    C.IsSymm :=
-  ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa using hC.eq x y)⟩
-
 /-- **Divisibility in a modular form.** If `B` is `a`-modular, with `a` and `r` non-zero-divisors,
 and `a * r` divides `B x y` for every `y`, then `x` is `r` times a vector. -/
 theorem IsModular.exists_eq_smul_of_forall_dvd (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)
