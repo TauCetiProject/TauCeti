@@ -8,12 +8,16 @@ module
 public import Mathlib.LinearAlgebra.Contraction
 
 /-!
-# Rank-one induction for maps out of a finite projective module
+# The range of `dualTensorHom`
 
-For a finite projective module `M`, the map `dualTensorHom : Dual R M ⊗[R] N → (M →ₗ[R] N)` is
-an isomorphism (`dualTensorHomEquiv`), so every linear map out of `M` is a finite sum of rank-one
-maps `φ.smulRight n`; the identification of the rank-one forms is
-`dualTensorHom_tmul_eq_smulRight`. This gives an induction principle,
+The range of `dualTensorHom : Dual R M ⊗[R] N → (M →ₗ[R] N)` consists of the linear maps of finite
+rank in the strong sense: `mem_range_dualTensorHom_iff` identifies it with the maps that factor
+through a finite free module `Rⁿ`. Since it is a submodule, such maps are closed under sums and
+scalar multiples, which is not evident from the factorisations themselves.
+
+For a finite projective module `M`, `dualTensorHom` is an isomorphism (`dualTensorHomEquiv`), so
+every linear map out of `M` is a finite sum of rank-one maps `φ.smulRight n`; the identification of
+the rank-one forms is `dualTensorHom_tmul_eq_smulRight`. This gives an induction principle,
 `LinearMap.induction_on_smulRight`, for properties of such maps that are closed under addition.
 -/
 
@@ -31,6 +35,27 @@ theorem dualTensorHom_tmul_eq_smulRight (φ : Dual R M) (n : N) :
     dualTensorHom R M N (φ ⊗ₜ n) = φ.smulRight n := by
   ext
   simp
+
+/-- A linear map lies in the range of `dualTensorHom` if and only if it factors through a finite
+free module `Rⁿ`. -/
+theorem mem_range_dualTensorHom_iff {f : M →ₗ[R] N} :
+    f ∈ LinearMap.range (dualTensorHom R M N) ↔
+      ∃ (n : ℕ) (u : M →ₗ[R] Fin n → R) (v : (Fin n → R) →ₗ[R] N), v ∘ₗ u = f := by
+  constructor
+  · rintro ⟨t, rfl⟩
+    obtain ⟨s, rfl⟩ := TensorProduct.exists_finset t
+    refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).1.1,
+      Fintype.linearCombination R fun i ↦ (s.equivFin.symm i).1.2, LinearMap.ext fun x ↦ ?_⟩
+    simp only [LinearMap.comp_apply, LinearMap.pi_apply, Fintype.linearCombination_apply,
+      map_sum, LinearMap.sum_apply, dualTensorHom_apply]
+    rw [← Finset.sum_coe_sort s]
+    exact Fintype.sum_equiv s.equivFin.symm _ (fun i ↦ i.1.1 x • i.1.2) fun _ ↦ rfl
+  · rintro ⟨n, u, v, rfl⟩
+    refine ⟨∑ i, (LinearMap.proj i ∘ₗ u) ⊗ₜ v (Pi.single i 1), LinearMap.ext fun x ↦ ?_⟩
+    rw [map_sum, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.pi_apply_eq_sum_univ v (u x)]
+    simp_rw [dualTensorHom_apply, LinearMap.comp_apply, LinearMap.proj_apply]
+    congr! with i _ j
+    simp [Pi.single_apply, eq_comm]
 
 namespace LinearMap
 
