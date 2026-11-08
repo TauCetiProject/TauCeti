@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import Mathlib.RingTheory.Noetherian.Defs
 
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.RingTheory.FiniteType
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Geometry.Manifold.Complex.Analytic
@@ -23,11 +22,10 @@ The ring `𝒪_{X, x}` of germs of holomorphic functions at a point of a finite-
 manifold without boundary is Noetherian. In a chart this is the ring of convergent power series
 in `n` variables, and the proof is the classical induction on `n` through Weierstrass preparation.
 
-For `n = 0` the stalk is `ℂ`. For the inductive step on `E × ℂ`, an ideal other than `0` and the
-unit ideal contains a nonzero germ `f` vanishing at `p`. Its restriction to some line through `p`
-does not vanish identically
-(`AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`). After a linear change
-of coordinates taking the last axis to that line, `f` is regular in the last variable, so by
+For `n = 0` the stalk is `ℂ`. For the inductive step on `E × ℂ`, a nonzero ideal contains a nonzero
+germ `f`. Its restriction to some line through `p` does not vanish identically, so after a linear
+change of coordinates taking the last axis to that line, `f` is regular in the last variable
+(`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`). Then by
 Weierstrass preparation the quotient `𝒪_{E × ℂ, p} ⧸ (f)` is a finite module over the Noetherian
 ring `𝒪_{E, p.1}` (`TauCeti.holomorphicStructureSheaf.finite_quotientMk_comp_stalkPrecomp_fst`).
 An ideal containing `f` is then finitely generated (`Ideal.fg_of_le_of_finite_quotient`).
@@ -72,13 +70,12 @@ private theorem isNoetherianRing_stalk_of_finrank_eq_zero [FiniteDimensional ℂ
   refine isNoetherianRing_of_ringEquiv ℂ (RingEquiv.ofBijective (eval 𝓘(ℂ, V) V x)
     ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, eval_surjective _ _ x⟩).symm
   obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
-  apply toFilterGerm_nhds_injective x
-  rw [hφ, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+  refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
   refine Eventually.of_forall fun y ↦ ?_
   rw [hV' y, ← eval_eq_of_toFilterGerm_eq (hφ _ le_rfl), hs, Pi.zero_apply]
 
 /-- If the holomorphic stalks of `V` are Noetherian, so are those of `V × ℂ`: an ideal containing
-a nonzero nonunit germ is finitely generated because, after a linear change of coordinates making
+a nonzero germ is finitely generated because, after a linear change of coordinates making
 the germ regular in the last variable, the quotient by the germ is finite over a stalk of `V` by
 Weierstrass preparation. -/
 private theorem isNoetherianRing_stalk_prod [FiniteDimensional ℂ V]
@@ -86,45 +83,17 @@ private theorem isNoetherianRing_stalk_prod [FiniteDimensional ℂ V]
     (p : V × ℂ) :
     IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V × ℂ) (V × ℂ)).presheaf.stalk p) := by
   refine (isNoetherianRing_iff_ideal_fg _).2 fun I ↦ ?_
-  rcases eq_or_ne I ⊤ with rfl | hI
-  · exact ⟨{1}, by simp⟩
   rcases eq_or_ne I ⊥ with rfl | hI₀
   · exact Submodule.fg_bot
   obtain ⟨f, hfI, hf⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI₀
   obtain ⟨F, hF, hfF⟩ := exists_analyticAt_toFilterGerm_eq p f
-  have hFp : F p = 0 := by
-    rw [← eval_eq_of_toFilterGerm_eq (hfF _ le_rfl)]
-    simpa using fun hu ↦ hI (I.eq_top_of_isUnit_mem hfI hu)
-  -- Some line through `p` meets the zero set of `F` in a discrete set; its direction `v` is
-  -- nonzero since `F p = 0`.
-  obtain ⟨v, hv⟩ : ∃ v, ¬(fun t : ℂ ↦ F (p + t • v)) =ᶠ[𝓝 0] 0 := by
-    by_contra! h
-    refine hf (toFilterGerm_nhds_injective p ?_)
-    rw [hfF _ le_rfl, map_zero, ← Germ.coe_zero, Germ.coe_eq]
-    exact hF.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul.2 h
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    exact hv (Eventually.of_forall fun t ↦ by simp [hFp])
-  -- Move to linear coordinates in which `v` is the last axis.
-  obtain ⟨L, hL⟩ := SeparatingDual.exists_continuousLinearEquiv_apply_eq (R := ℂ)
-    (x := ((0 : V), (1 : ℂ))) (by simp) hv0
-  obtain ⟨⟨x₀, w₀⟩, rfl⟩ : ∃ q, L q = p := ⟨L.symm p, L.apply_symm_apply p⟩
+  -- In suitable linear coordinates, `F` is regular in the last variable.
+  obtain ⟨L, ⟨x₀, w₀⟩, rfl, hslice⟩ := hF.exists_continuousLinearEquiv_analyticOrderAt_ne_top
+    ((eq_zero_iff_of_toFilterGerm_eq (hfF _ le_rfl)).not.1 hf)
   let σ := RingEquiv.ofBijective _ (L.holomorphicStalkPullback_bijective (x₀, w₀))
   have hσf : toFilterGerm 𝓘(ℂ, V × ℂ) (V × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (σ f) = ↑(F ∘ L) := by
     simp only [σ, RingEquiv.ofBijective_apply, toFilterGerm_stalkPullback, hfF _ le_rfl,
       Germ.coe_compTendsto]
-  -- The vertical slice of `σ f` is the restriction of `F` to the line through `p` along `v`.
-  have hslice : analyticOrderAt (fun w ↦ F (L (x₀, w))) w₀ ≠ ⊤ := by
-    rw [Ne, analyticOrderAt_eq_top]
-    refine fun h ↦ hv ?_
-    have ht : Tendsto (fun t : ℂ ↦ w₀ + t) (𝓝 0) (𝓝 w₀) := by
-      have : Continuous fun t : ℂ ↦ w₀ + t := by fun_prop
-      simpa using this.tendsto 0
-    filter_upwards [ht.eventually h] with t ht
-    have hLt : L (x₀, w₀ + t) = L (x₀, w₀) + t • v := by
-      rw [← hL, ← L.map_smul, ← L.map_add]
-      simp
-    simpa [hLt] using ht
   have hπ : ContMDiff 𝓘(ℂ, V × ℂ) 𝓘(ℂ, V) ω Prod.fst := contMDiff_iff_contDiff.2 contDiff_fst
   have hfin := finite_quotientMk_comp_stalkPrecomp_fst hπ
     ((map_residue_verticalPowerSeries_ne_zero_iff hσf).2 hslice)

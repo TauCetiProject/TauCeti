@@ -136,8 +136,7 @@ theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
         (Ideal.mem_iInf.1 hs (m + 1)) (hφ _ le_rfl) v
   have h0 : φ ∘ e.symm =ᶠ[𝓝 (e x)] 0 :=
     hφe.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul.2 hline_zero
-  apply toFilterGerm_nhds_injective x
-  rw [hφ _ le_rfl, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+  refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
   filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually h0] with y hys hy0
   simpa only [Function.comp_apply, e.left_inv hys, Pi.zero_apply] using hy0
 

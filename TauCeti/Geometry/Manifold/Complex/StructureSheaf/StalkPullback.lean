@@ -146,11 +146,9 @@ theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), Cont
   refine ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, fun s ↦ ?_⟩
   · -- A germ whose composition with `f` vanishes near `a` vanishes near `f a = f (g (f a))`.
     obtain ⟨u, -, hu⟩ := exists_toFilterGerm_eq (f a) s
-    apply toFilterGerm_nhds_injective (f a)
-    have h0 := congrArg (toFilterGerm I X a (𝓝 a) le_rfl) hs
-    rw [toFilterGerm_stalkPullback, hu, Germ.coe_compTendsto, map_zero, ← Germ.coe_zero,
-      Germ.coe_eq] at h0
-    rw [hu, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+    have h0 := (eq_zero_iff_of_toFilterGerm_eq (f := u ∘ f) (by
+      rw [toFilterGerm_stalkPullback, hu, Germ.coe_compTendsto])).1 hs
+    refine (eq_zero_iff_of_toFilterGerm_eq (hu _ le_rfl)).2 ?_
     filter_upwards [hfg, hg_tendsto.eventually h0] with y hy hy0
     simpa [hy] using hy0
   · -- A germ `u` at `a` is the pullback of the germ `u ∘ g` at `f a`.

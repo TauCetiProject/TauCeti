@@ -21,7 +21,9 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 
 * `toFilterGerm_germ`: the germ of a section is the germ of any function agreeing with it on
   the domain of the section;
-* `toFilterGerm_nhds_injective`: a holomorphic germ is determined by its germ along `𝓝 x`;
+* `toFilterGerm_nhds_injective`: a holomorphic germ is determined by its germ along `𝓝 x`; in
+  particular it vanishes exactly when a representative vanishes near `x`
+  (`eq_zero_iff_of_toFilterGerm_eq`);
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
@@ -193,6 +195,13 @@ theorem toFilterGerm_nhds_injective (x : X) :
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (Opens.inclusion hWU y)).symm.trans
     (ht y y.2).1
 
+/-- A holomorphic germ vanishes exactly when a function with the same germ along `𝓝 x` vanishes
+near `x`. -/
+theorem eq_zero_iff_of_toFilterGerm_eq {x : X}
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (h : toFilterGerm I X x (𝓝 x) le_rfl s = f) : s = 0 ↔ f =ᶠ[𝓝 x] 0 := by
+  rw [← (toFilterGerm_nhds_injective x).eq_iff, h, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+
 /-- At a point which is not isolated, a holomorphic germ is determined by its germ on the
 punctured neighbourhoods of the point, by continuity. -/
 theorem toFilterGerm_nhdsNE_injective (x : X) [(𝓝[≠] x).NeBot] :
@@ -202,8 +211,7 @@ theorem toFilterGerm_nhdsNE_injective (x : X) [(𝓝[≠] x).NeBot] :
   obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq x s
   have hc : ContinuousAt f x := hf.self_of_nhds.continuousAt
   rw [hfs, ← Germ.coe_zero, Germ.coe_eq] at hs
-  apply toFilterGerm_nhds_injective x
-  rw [hfs, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+  refine (eq_zero_iff_of_toFilterGerm_eq (hfs _ le_rfl)).2 ?_
   exact (hc.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE (g := fun _ ↦ 0) continuousAt_const).1 hs
 
 /-- A function has a holomorphic germ at `x` with the same germ along `𝓝 x` exactly when it is

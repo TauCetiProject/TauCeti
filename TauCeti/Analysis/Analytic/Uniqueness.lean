@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.RCLike.Basic
 
 -- Proof-only: the identity principle
--- `AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero` and its analytic inputs.
+-- `AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero` and its analytic inputs, and
+-- `SeparatingDual.exists_continuousLinearEquiv_apply_eq` for the change of coordinates.
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Convex.PathConnected
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.Convex
 
@@ -30,7 +33,7 @@ containing `0` and `1`, so it vanishes at `1`, that is at `y`.
 In several complex variables this is the first step of putting a nonzero germ in general position:
 some direction `v` has a restriction that does not vanish identically, and in linear coordinates
 whose last axis is `v` the germ becomes regular in the last variable, as Weierstrass preparation
-requires.
+requires (`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`).
 
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
 lives.
@@ -39,6 +42,8 @@ lives.
 
 * `AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`: an analytic function
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
+* `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
+  coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
 
 ## References
 
@@ -96,5 +101,38 @@ theorem AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul 
     ((e.analyticAt _).comp hf).eventuallyEq_zero_of_forall_eventuallyEq_zero_comp_add_smul
       fun v ↦ (h v).mono fun t ht ↦ by simp [ht]
   exact he.mono fun y hy ↦ UniformSpace.Completion.coe_injective F (by simpa [e] using hy)
+
+/-- **General position in the last variable.** A function analytic at `p` on `E × 𝕜` that does not
+vanish near `p` becomes regular in the last variable after a linear change of coordinates: there
+are a continuous linear automorphism `L` and a point `q` with `L q = p` such that
+`t ↦ f (L (q.1, t))` has finite analytic order at `q.2`. The last axis is sent to a direction along
+which the restriction of `f` does not vanish identically. -/
+theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E × 𝕜 → F}
+    {p : E × 𝕜} (hf : AnalyticAt 𝕜 f p) (hf0 : ¬f =ᶠ[𝓝 p] 0) :
+    ∃ (L : (E × 𝕜) ≃L[𝕜] E × 𝕜) (q : E × 𝕜), L q = p ∧
+      analyticOrderAt (fun t ↦ f (L (q.1, t))) q.2 ≠ ⊤ := by
+  obtain ⟨v, hv⟩ : ∃ v, ¬(fun t : 𝕜 ↦ f (p + t • v)) =ᶠ[𝓝 0] 0 := by
+    by_contra! h
+    exact hf0 (hf.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul.2 h)
+  rcases eq_or_ne v 0 with rfl | hv0
+  · -- The trivial direction only occurs when `f p ≠ 0`, and then any coordinates work.
+    refine ⟨.refl 𝕜 _, p, rfl, fun h ↦ hv (Eventually.of_forall fun t ↦ ?_)⟩
+    simpa using (analyticOrderAt_eq_top.1 h).self_of_nhds
+  -- Move to linear coordinates in which `v` is the last axis.
+  obtain ⟨L, hL⟩ := SeparatingDual.exists_continuousLinearEquiv_apply_eq (R := 𝕜)
+    (x := ((0 : E), (1 : 𝕜))) (by simp) hv0
+  obtain ⟨⟨x₀, w₀⟩, rfl⟩ : ∃ q, L q = p := ⟨L.symm p, L.apply_symm_apply p⟩
+  refine ⟨L, (x₀, w₀), rfl, ?_⟩
+  -- The vertical slice is the restriction of `f` to the line through `p` along `v`.
+  rw [Ne, analyticOrderAt_eq_top]
+  refine fun h ↦ hv ?_
+  have ht : Tendsto (fun t : 𝕜 ↦ w₀ + t) (𝓝 0) (𝓝 w₀) := by
+    have : Continuous fun t : 𝕜 ↦ w₀ + t := by fun_prop
+    simpa using this.tendsto 0
+  filter_upwards [ht.eventually h] with t ht
+  have hLt : L (x₀, w₀ + t) = L (x₀, w₀) + t • v := by
+    rw [← hL, ← L.map_smul, ← L.map_add]
+    simp
+  simpa [hLt] using ht
 
 end
