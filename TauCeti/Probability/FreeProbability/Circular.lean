@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.Probability.FreeProbability.Distribution.Star
 public import TauCeti.Probability.FreeProbability.Semicircular.System
@@ -127,8 +127,11 @@ theorem IsSemicircularSystem.isCircular [StarModule ℂ A] {s : Fin 2 → A}
       1 * !![q, q; Complex.I * q, -Complex.I * q] = !![0, 1; 1, 0] := by
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply] <;>
-      ring_nf <;> simp only [Complex.I_sq] <;> ring_nf <;> exact hq
+      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
+    · linear_combination q ^ 2 * Complex.I_sq
+    · linear_combination hq - q ^ 2 * Complex.I_sq
+    · linear_combination hq - q ^ 2 * Complex.I_sq
+    · linear_combination q ^ 2 * Complex.I_sq
   rw [hv, hC] at h'
   exact h'
 
@@ -136,7 +139,7 @@ namespace IsCircular
 
 /-- The normalized real and imaginary parts of a circular element are a variance-one
 semicircular system. -/
-theorem real_imag (h : IsCircular φ c) :
+theorem isSemicircularSystem_real_imag (h : IsCircular φ c) :
     IsSemicircularSystem φ
       ![(Real.sqrt 2 : ℂ)⁻¹ • (c + Star.star c),
         (-Complex.I * (Real.sqrt 2 : ℂ)⁻¹) • (c - Star.star c)]
@@ -157,28 +160,30 @@ theorem real_imag (h : IsCircular φ c) :
       !![0, 1; 1, 0] * !![q, -Complex.I * q; q, Complex.I * q] = 1 := by
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply] <;>
-      ring_nf <;> (try simp only [Complex.I_sq]) <;> (try ring_nf) <;> exact hq
+      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
+    · linear_combination hq
+    · linear_combination hq - 2 * q ^ 2 * Complex.I_sq
   rw [hv, hC] at h'
   exact h'
 
 /-- The normalized real and imaginary parts of a circular element are freely independent. -/
-theorem real_imag_free (h : IsCircular φ c) :
+theorem isFreelyIndependentElements_real_imag (h : IsCircular φ c) :
     IsFreelyIndependentElements φ
       ![(Real.sqrt 2 : ℂ)⁻¹ • (c + Star.star c),
         (-Complex.I * (Real.sqrt 2 : ℂ)⁻¹) • (c - Star.star c)] :=
-  h.real_imag.isFreelyIndependentElements_iff.2 fun _ _ hij => Matrix.one_apply_ne hij
+  h.isSemicircularSystem_real_imag.isFreelyIndependentElements_iff.2
+    fun _ _ hij => Matrix.one_apply_ne hij
 
 end IsCircular
 
 /-- Circularity is equivalent to the variance-one semicircular-system condition on the
 normalized real and imaginary parts. Their freeness follows from diagonal covariance. -/
-theorem isCircular_iff_real_imag [StarModule ℂ A] :
+theorem isCircular_iff_isSemicircularSystem_real_imag [StarModule ℂ A] :
     IsCircular φ c ↔ IsSemicircularSystem φ
       ![(Real.sqrt 2 : ℂ)⁻¹ • (c + star c),
         (-Complex.I * (Real.sqrt 2 : ℂ)⁻¹) • (c - star c)]
       (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
-  refine ⟨IsCircular.real_imag, fun h => ?_⟩
+  refine ⟨IsCircular.isSemicircularSystem_real_imag, fun h => ?_⟩
   let q : ℂ := (Real.sqrt 2 : ℂ)⁻¹
   have hq : q ^ 2 * 2 = 1 := circular_normalization
   have hs : ∀ i : Fin 2,
