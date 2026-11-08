@@ -376,6 +376,68 @@ theorem poissonBracket_fun_sum_right (ω : SymplecticForm V) {ι : Type*} {s : F
     ω.poissonBracket F (fun y ↦ ∑ i ∈ s, G i y) x = ∑ i ∈ s, ω.poissonBracket F (G i) x := by
   simp only [poissonBracket_eq_fderiv, ω.hamiltonianVectorField_fun_sum hG, map_sum]
 
+omit [FiniteDimensional ℝ V] in
+/-- If two combinations `a F + b G` and `c F + d G` with `a d - b c ≠ 0` are differentiable at a
+point, then so are `F` and `G`: they are recovered by inverting the coefficient matrix. -/
+private theorem differentiableAt_of_differentiableAt_comb {F G : V → ℝ} {x : V} {a b c d : ℝ}
+    (hdet : a * d - b * c ≠ 0) (hA : DifferentiableAt ℝ (fun y ↦ a * F y + b * G y) x)
+    (hB : DifferentiableAt ℝ (fun y ↦ c * F y + d * G y) x) :
+    DifferentiableAt ℝ F x ∧ DifferentiableAt ℝ G x := by
+  have hi : (a * d - b * c) * (a * d - b * c)⁻¹ = 1 := mul_inv_cancel₀ hdet
+  constructor
+  · have : F = fun y ↦ (d / (a * d - b * c)) * (a * F y + b * G y) +
+        (-b / (a * d - b * c)) * (c * F y + d * G y) := by
+      funext y
+      simp only [div_eq_mul_inv]
+      linear_combination (-(F y)) * hi
+    rw [this]
+    exact (hA.const_mul _).add (hB.const_mul _)
+  · have : G = fun y ↦ (-c / (a * d - b * c)) * (a * F y + b * G y) +
+        (a / (a * d - b * c)) * (c * F y + d * G y) := by
+      funext y
+      simp only [div_eq_mul_inv]
+      linear_combination (-(G y)) * hi
+    rw [this]
+    exact (hA.const_mul _).add (hB.const_mul _)
+
+/-- The Poisson bracket of two combinations `a F + b G` and `c F + d G` is `a d - b c` times
+`{F, G}`, with no differentiability hypothesis: where a combination is not differentiable its
+Hamiltonian field is zero, and then `{F, G}` or the bracket of the combinations vanishes too. -/
+theorem poissonBracket_comb (ω : SymplecticForm V) (F G : V → ℝ) (a b c d : ℝ) (x : V) :
+    ω.poissonBracket (fun y ↦ a * F y + b * G y) (fun y ↦ c * F y + d * G y) x =
+      (a * d - b * c) * ω.poissonBracket F G x := by
+  by_cases hdet : a * d - b * c = 0
+  · rw [hdet, zero_mul]
+    by_cases hab : a = 0 ∧ b = 0
+    · obtain ⟨rfl, rfl⟩ := hab
+      simp
+    · have hs : 0 < a ^ 2 + b ^ 2 := by
+        by_contra h
+        exact hab ⟨by nlinarith [sq_nonneg a, sq_nonneg b], by nlinarith [sq_nonneg a, sq_nonneg b]⟩
+      have hB : (fun y ↦ c * F y + d * G y) =
+          fun y ↦ ((c * a + d * b) / (a ^ 2 + b ^ 2)) * (a * F y + b * G y) := by
+        funext y
+        field_simp
+        linear_combination (G y * a - F y * b) * hdet
+      rw [hB, poissonBracket_const_mul_right, poissonBracket_self, mul_zero]
+  · by_cases hFG : DifferentiableAt ℝ F x ∧ DifferentiableAt ℝ G x
+    · simp only [poissonBracket_def, ω.hamiltonianVectorField_const_mul_add_const_mul hFG.1 hFG.2]
+      exact ω.apply_smul_add_smul _ _ _ _ _ _
+    · have hzero : ∀ H : V → ℝ, ¬ DifferentiableAt ℝ H x → ω.hamiltonianVectorField H x = 0 :=
+        fun H hH ↦ by
+          rw [hamiltonianVectorField_eq_zero_iff, fderiv_zero_of_not_differentiableAt hH]
+      have hRHS : ω.poissonBracket F G x = 0 := by
+        rw [poissonBracket_def]
+        by_cases hF : DifferentiableAt ℝ F x
+        · simp [hzero G fun hG ↦ hFG ⟨hF, hG⟩]
+        · simp [hzero F hF]
+      rw [hRHS, mul_zero, poissonBracket_def]
+      by_cases hA : DifferentiableAt ℝ (fun y ↦ a * F y + b * G y) x
+      · have hB : ¬ DifferentiableAt ℝ (fun y ↦ c * F y + d * G y) x :=
+          fun hB ↦ hFG (differentiableAt_of_differentiableAt_comb hdet hA hB)
+        simp [hzero _ hB]
+      · simp [hzero _ hA]
+
 end PoissonBracket
 
 end TauCeti.SymplecticForm
