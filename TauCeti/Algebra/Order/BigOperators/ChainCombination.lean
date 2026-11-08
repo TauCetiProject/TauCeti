@@ -11,6 +11,8 @@ public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.BigOperators.Finset.Erase
+import TauCeti.Algebra.Order.BigOperators.Sum.Erase
 import TauCeti.Order.Chain
 
 /-!
@@ -32,19 +34,6 @@ open Finset
 
 namespace TauCeti
 
-/-- In a finite nonempty subset on which the vectors `C a` are pairwise comparable, one of them
-dominates all the others. -/
-theorem exists_forall_le_of_forall_comparable {α β : Type*}
-    (C : α → β → ℕ) {B : Finset α}
-    (hC : ∀ a ∈ B, ∀ b ∈ B, C a ≤ C b ∨ C b ≤ C a) (hB : B.Nonempty) :
-    ∃ t ∈ B, ∀ a ∈ B, C a ≤ C t := by
-  have hchain : IsChain (· ≤ ·) (C '' (B : Set α)) := by
-    rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ -
-    exact hC a ha b hb
-  obtain ⟨_, ⟨t, ht, rfl⟩, hgreat⟩ :=
-    hchain.exists_isGreatest (B.finite_toSet.image C) ((coe_nonempty.mpr hB).image C)
-  exact ⟨t, ht, fun a ha => hgreat ⟨a, ha, rfl⟩⟩
-
 /-- If `C t' < C t` coordinatewise on a finite index type, the differences sum to at least `1`. -/
 theorem one_le_sum_sub_of_lt {β : Type*} [Fintype β] {c d : β → ℕ} (h : c < d) :
     1 ≤ ∑ i, ((d i : ℝ) - c i) := by
@@ -55,22 +44,6 @@ theorem one_le_sum_sub_of_lt {β : Type*} [Fintype β] {c d : β → ℕ} (h : c
     _ ≤ ∑ i, ((d i : ℝ) - c i) :=
         single_le_sum (f := fun i => (d i : ℝ) - c i)
           (fun i _ => sub_nonneg.mpr (Nat.cast_le.mpr (h.le i))) (mem_univ i₀)
-
-/-- Merging the coefficient of `t` into that of `t'` does not change the combination of a
-vector `f`, once `f t` is replaced by `f t'`. -/
-private theorem sum_erase_merge_mul {α : Type*} [DecidableEq α] {A : Finset α} {t t' : α}
-    (ht'A' : t' ∈ A.erase t) (v : α → ℝ) (f : α → ℝ) :
-    ∑ a ∈ A.erase t, (v a + if a = t' then v t else 0) * f a =
-      ∑ a ∈ A.erase t, v a * f a + v t * f t' := by
-  simp [add_mul, Finset.sum_add_distrib, ht'A']
-
-/-- The merged coefficients also sum to zero. -/
-private theorem sum_erase_merge_eq_zero {α : Type*} [DecidableEq α] {A : Finset α} {t t' : α}
-    (ht'A' : t' ∈ A.erase t) (htA : t ∈ A) {v : α → ℝ} (hv : ∑ a ∈ A, v a = 0) :
-    ∑ a ∈ A.erase t, (v a + if a = t' then v t else 0) = 0 := by
-  have h := sum_erase_merge_mul ht'A' v fun _ => 1
-  simp only [mul_one] at h
-  rw [h, sum_erase_add A v htA, hv]
 
 /-- Coordinatewise, the vector of the maximum `t` exceeds that of the second largest `t'` by `0`
 or `1`. -/
@@ -98,8 +71,9 @@ private theorem forall_erase_eq_of_lt {α β : Type*} [DecidableEq α] {C : α �
   · have h₂ : C t i ≤ C a i := h'.1 i
     omega
 
-/-- Removing the maximum `t` and merging its coefficient into that of `t'` changes the
-`i`-th coordinate of the combination by `|v t|` times the gap between `t` and `t'`. -/
+/-- Removing the maximum `t` and merging its coefficient into that of `t'` decreases the absolute
+value of the `i`-th coordinate of the combination by `|v t|` times the gap between the `i`-th
+coordinates of `t` and `t'`. -/
 private theorem abs_sum_mul_eq {α β : Type*} [DecidableEq α] {C : α → β → ℕ} {A : Finset α}
     {t t' : α}
     (hC : ∀ a ∈ A, ∀ b ∈ A, (C a ≤ C b ∧ C b ≤ C a + 1) ∨ (C b ≤ C a ∧ C a ≤ C b + 1))
@@ -116,25 +90,10 @@ private theorem abs_sum_mul_eq {α β : Type*} [DecidableEq α] {C : α → β �
     have hrest : ∑ a ∈ A.erase t, v a * C a i + v t * C t' i = 0 := by
       rw [← sum_erase_merge_mul ht'A' v fun a => (C a i : ℝ),
         sum_congr rfl fun a ha => by rw [hagree a ha], ← Finset.sum_mul,
-        sum_erase_merge_eq_zero ht'A' htA hv, zero_mul]
+        (sum_erase_merge ht'A' htA v).trans hv, zero_mul]
     rw [h, Nat.cast_add, Nat.cast_one, add_sub_cancel_left, mul_one, hrest, abs_zero, zero_add]
     congr 1
     linarith
-
-/-- Merging the coefficient of `t` into that of `t'` costs `|v t|` once on the left. -/
-private theorem sum_abs_erase_le {α : Type*} [DecidableEq α] {A : Finset α} {t t' : α}
-    (ht'A' : t' ∈ A.erase t) (v : α → ℝ) :
-    ∑ a ∈ A.erase t, |v a| ≤
-      ∑ a ∈ A.erase t, |v a + if a = t' then v t else 0| + |v t| := by
-  have hpt (a : α) : |v a| ≤ |v a + if a = t' then v t else 0| + if a = t' then |v t| else 0 := by
-    split_ifs with h
-    · subst h
-      simpa using abs_sub (v a + v t) (v t)
-    · simp
-  calc ∑ a ∈ A.erase t, |v a|
-      ≤ ∑ a ∈ A.erase t, (|v a + if a = t' then v t else 0| + if a = t' then |v t| else 0) :=
-        sum_le_sum fun a _ => hpt a
-    _ = _ := by simp [Finset.sum_add_distrib, ht'A']
 
 /-- Let the vectors `C a`, for `a ∈ A`, of natural numbers be distinct and pairwise comparable,
 with each coordinate differing by at most one between any two of them. Then a combination of them
@@ -154,7 +113,7 @@ theorem sum_abs_le_two_mul_sum_abs_sum_mul {α β : Type*} [Fintype β]
   · simp
   -- Every nonempty part of `A` has a vector dominating all the others in it.
   have hmax : ∀ B ⊆ A, B.Nonempty → ∃ t ∈ B, ∀ a ∈ B, C a ≤ C t := fun B hBA hB =>
-    exists_forall_le_of_forall_comparable C
+    Finset.exists_forall_le_of_forall_comparable C
       (fun a ha b hb => (hC a (hBA ha) b (hBA hb)).imp And.left And.left) hB
   obtain ⟨t, htA, ht⟩ := hmax A subset_rfl hne
   rcases (A.erase t).eq_empty_or_nonempty with hA' | hA'
@@ -167,7 +126,7 @@ theorem sum_abs_le_two_mul_sum_abs_sum_mul {α β : Type*} [Fintype β]
   have hIH := ih (A.erase t) (erase_ssubset htA)
     (fun a ha b hb => hC a (mem_of_mem_erase ha) b (mem_of_mem_erase hb))
     (fun a ha b hb => hinj a (mem_of_mem_erase ha) b (mem_of_mem_erase hb))
-    (fun a => v a + if a = t' then v t else 0) (sum_erase_merge_eq_zero ht'A' htA hv)
+    (fun a => v a + if a = t' then v t else 0) ((sum_erase_merge ht'A' htA v).trans hv)
   -- The vectors of `t` and `t'` differ somewhere, so `t` exceeds `t'` by at least `1` in total.
   have hgap := one_le_sum_sub_of_lt <| lt_of_le_of_ne (ht t' (mem_of_mem_erase ht'A'))
     fun h => (ne_of_mem_erase ht'A') (hinj t' (mem_of_mem_erase ht'A') t htA h)
