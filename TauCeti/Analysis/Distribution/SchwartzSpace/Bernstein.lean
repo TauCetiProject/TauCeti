@@ -13,6 +13,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
+import TauCeti.Analysis.Sobolev.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
@@ -74,7 +75,7 @@ public section
 namespace SchwartzMap
 
 open MeasureTheory ContinuousLinearMap Module Metric LineDeriv
-open scoped ENNReal NNReal FourierTransform Convolution
+open scoped ENNReal NNReal FourierTransform Convolution Pointwise
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -91,12 +92,12 @@ private theorem coe_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) :
     ⇑(dilate R hR f) = fun x => f (R⁻¹ • x) :=
   rfl
 
-/-- A frequency of the dilation `f (R⁻¹ • ·)` at `ξ` is a frequency of `f` at `R • ξ`. -/
-private theorem fourier_apply_smul_ne_zero_of_fourier_dilate_ne_zero {R : ℝ} (hR : 0 < R)
-    (f : 𝓢(E, F)) {ξ : E} (hξ : (𝓕 (dilate R hR f) : 𝓢(E, F)) ξ ≠ 0) :
-    (𝓕 f : 𝓢(E, F)) (R • ξ) ≠ 0 := by
-  rw [fourier_coe, coe_dilate, TauCeti.fourier_comp_smul _ (inv_ne_zero hR.ne'), inv_inv] at hξ
-  exact right_ne_zero_of_smul hξ
+/-- The frequencies of the dilation `f (R⁻¹ • ·)` are those of `f`, scaled by `R⁻¹`. -/
+private theorem support_fourier_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) :
+    Function.support ⇑(𝓕 (dilate R hR f) : 𝓢(E, F)) =
+      R⁻¹ • Function.support ⇑(𝓕 f : 𝓢(E, F)) := by
+  rw [fourier_coe, fourier_coe, coe_dilate,
+    TauCeti.support_fourier_comp_smul _ (inv_ne_zero hR.ne')]
 
 private theorem eLpNorm_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) (p : ℝ≥0∞) :
     eLpNorm (dilate R hR f) p = ENNReal.ofReal (R ^ (finrank ℝ E / p.toReal)) * eLpNorm f p := by
@@ -107,14 +108,8 @@ private theorem eLpNorm_iteratedFDeriv_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E
     eLpNorm (iteratedFDeriv ℝ k (dilate R hR f)) p =
       ENNReal.ofReal (R⁻¹ ^ k * R ^ (finrank ℝ E / p.toReal)) *
         eLpNorm (iteratedFDeriv ℝ k f) p := by
-  have h : iteratedFDeriv ℝ k ⇑(dilate R hR f) =
-      R⁻¹ ^ k • fun x => iteratedFDeriv ℝ k f (R⁻¹ • x) := by
-    rw [coe_dilate, iteratedFDeriv_comp_const_smul R⁻¹ (f.smooth k)]
-    rfl
-  rw [h]
-  refine (eLpNorm_const_smul _ _ _ _).trans ?_
-  rw [Measure.eLpNorm_comp_inv_smul volume _ hR.ne' p, abs_of_pos hR, ← mul_assoc,
-    Real.enorm_of_nonneg (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+  rw [coe_dilate, Measure.eLpNorm_iteratedFDeriv_comp_inv_smul volume (f.smooth k) hR.ne' p,
+    abs_of_pos hR, Real.rpow_sub hR, Real.rpow_natCast, inv_pow, div_eq_inv_mul]
 
 variable [CompleteSpace F]
 
@@ -201,10 +196,11 @@ theorem exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset (k : ℕ) {p 
   refine ⟨C, fun {R} hR f hf => ?_⟩
   -- The dilation `f (R⁻¹ • ·)` has its frequencies in the closed unit ball.
   have hgsupp : Function.support ⇑(𝓕 (dilate R hR f) : 𝓢(E, F)) ⊆ closedBall 0 1 := by
-    intro ξ hξ
-    have h := hf (fourier_apply_smul_ne_zero_of_fourier_dilate_ne_zero hR f hξ)
-    rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg hR.le] at h
-    exact mem_closedBall_zero_iff.2 ((mul_le_iff_le_one_right hR).1 h)
+    rw [support_fourier_dilate]
+    rintro _ ⟨ξ, hξ, rfl⟩
+    have h := mem_closedBall_zero_iff.1 (hf hξ)
+    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hR.le]
+    exact inv_mul_le_one_of_le₀ h hR.le
   have hmain := hC _ hgsupp
   rw [eLpNorm_iteratedFDeriv_dilate, eLpNorm_dilate] at hmain
   set a : ℝ := R⁻¹ ^ k * R ^ (finrank ℝ E / q.toReal) with ha_def
@@ -245,6 +241,27 @@ theorem exists_eLpNorm_le_of_support_fourier_subset {p q : ℝ≥0∞} (hp : 1 �
 
 /-! ### The reverse Bernstein inequality on an annulus -/
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- A function `m` smooth away from the origin agrees on the annulus `1 ≤ ‖ξ‖ ≤ θ` with a Schwartz
+function, namely a finite sum of its Littlewood–Paley pieces. -/
+private theorem exists_eqOn_annulus_of_contDiffOn {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {m : E → G} (hm : ContDiffOn ℝ (⊤ : ℕ∞) m {0}ᶜ) (θ : ℝ) :
+    ∃ σ : 𝓢(E, G), Set.EqOn σ m {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} := by
+  let φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+  have hφ : φ.rOut = 2 := rfl
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt θ (one_lt_two : (1 : ℝ) < 2)
+  refine ⟨∑ j ∈ Finset.Ioc (-1 : ℤ) N, φ.littlewoodPaleyPiece hm j, fun ξ hξ => ?_⟩
+  -- On the annulus the cutoff `φ (2^{-N} ·) - φ (2 ·)` is `1`.
+  have h1 : φ (((2 : ℝ) ^ (N : ℤ))⁻¹ • ξ) = 1 := by
+    refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
+    rw [norm_smul, zpow_natCast, norm_inv, norm_pow, Real.norm_two]
+    exact inv_mul_le_one_of_le₀ (hξ.2.trans hN.le) (by positivity)
+  have h0 : φ (((2 : ℝ) ^ (-1 : ℤ))⁻¹ • ξ) = 0 := by
+    refine φ.zero_of_le_dist ?_
+    rw [dist_zero_right, norm_smul, zpow_neg_one, inv_inv, Real.norm_two, hφ]
+    linarith [hξ.1]
+  rw [sum_apply, φ.sum_littlewoodPaleyPiece_Ioc hm (by omega), h1, h0, sub_zero, one_smul]
+
 /-- A Schwartz function with frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ` is a sum of Fourier
 multipliers with Schwartz symbols applied to its partial derivatives: on the annulus, the
 symbols agree with `⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)`, and `∑ᵢ ⟪bᵢ, ξ⟫ ⟪ξ, bᵢ⟫ / ‖ξ‖² = 1`. -/
@@ -253,29 +270,13 @@ private theorem exists_eq_sum_fourierMultiplierCLM_lineDerivOp (θ : ℝ) :
       Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} →
         f = ∑ i, fourierMultiplierCLM F (σ i) (∂_{stdOrthonormalBasis ℝ E i} f) := by
   let b := stdOrthonormalBasis ℝ E
-  let φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hφ : φ.rOut = 2 := rfl
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt θ (one_lt_two : (1 : ℝ) < 2)
   let m (i : Fin (finrank ℝ E)) (ξ : E) : ℂ :=
     (2 * Real.pi * Complex.I)⁻¹ * ((inner ℝ (b i) ξ / ‖ξ‖ ^ 2 : ℝ) : ℂ)
   have hm (i : Fin (finrank ℝ E)) : ContDiffOn ℝ (⊤ : ℕ∞) (m i) {0}ᶜ := by
     refine contDiffOn_const.mul (Complex.ofRealCLM.contDiff.comp_contDiffOn ?_)
     exact (innerSL ℝ (b i)).contDiff.contDiffOn.div (contDiff_norm_sq ℝ).contDiffOn
       fun ξ hξ => pow_ne_zero 2 (norm_ne_zero_iff.2 hξ)
-  let σ (i : Fin (finrank ℝ E)) : 𝓢(E, ℂ) :=
-    ∑ j ∈ Finset.Ioc (-1 : ℤ) N, φ.littlewoodPaleyPiece (hm i) j
-  -- On the annulus the cutoff `φ (2^{-N} ·) - φ (2 ·)` is `1`, so `σ i = m i` there.
-  have hσ (i : Fin (finrank ℝ E)) {ξ : E} (hξ : 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ) : σ i ξ = m i ξ := by
-    have h1 : φ (((2 : ℝ) ^ (N : ℤ))⁻¹ • ξ) = 1 := by
-      refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
-      rw [norm_smul, zpow_natCast, norm_inv, norm_pow, Real.norm_two]
-      exact inv_mul_le_one_of_le₀ (hξ.2.trans hN.le) (by positivity)
-    have h0 : φ (((2 : ℝ) ^ (-1 : ℤ))⁻¹ • ξ) = 0 := by
-      refine φ.zero_of_le_dist ?_
-      rw [dist_zero_right, norm_smul, zpow_neg_one, inv_inv, Real.norm_two, hφ]
-      linarith [hξ.1]
-    simp only [σ, sum_apply]
-    rw [φ.sum_littlewoodPaleyPiece_Ioc (hm i) (by omega), h1, h0, sub_zero, one_smul]
+  choose σ hσ using fun i => exists_eqOn_annulus_of_contDiffOn (hm i) θ
   refine ⟨σ, fun f hf => ?_⟩
   have hv (v : E) : (inner ℝ · v : E → ℝ).HasTemperateGrowth := by fun_prop
   have key : 𝓕 f = 𝓕 (∑ i, fourierMultiplierCLM F (σ i) (∂_{b i} f)) := by
@@ -418,11 +419,11 @@ theorem exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset (k : 
   -- The dilation `f (R⁻¹ • ·)` has its frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ`.
   have hgsupp : Function.support ⇑(𝓕 (dilate R hR f) : 𝓢(E, F)) ⊆
       {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} := by
-    intro ξ hξ
-    obtain ⟨h1, h2⟩ := hf (fourier_apply_smul_ne_zero_of_fourier_dilate_ne_zero hR f hξ)
-    rw [norm_smul, Real.norm_of_nonneg hR.le] at h1 h2
-    exact ⟨(le_mul_iff_one_le_right hR).1 h1, (mul_le_mul_iff_of_pos_left hR).1
-      (by linarith)⟩
+    rw [support_fourier_dilate]
+    rintro _ ⟨ξ, hξ, rfl⟩
+    obtain ⟨h1, h2⟩ := hf hξ
+    refine ⟨?_, ?_⟩ <;> rw [norm_smul, norm_inv, Real.norm_of_nonneg hR.le]
+    exacts [(le_inv_mul_iff₀ hR).2 (by linarith), (inv_mul_le_iff₀ hR).2 (by linarith)]
   have hmain := hC _ hgsupp
   rw [eLpNorm_iteratedFDeriv_dilate, eLpNorm_dilate, ENNReal.ofReal_mul (by positivity)] at hmain
   have h0 : ENNReal.ofReal (R ^ (finrank ℝ E / p.toReal)) ≠ 0 := by
