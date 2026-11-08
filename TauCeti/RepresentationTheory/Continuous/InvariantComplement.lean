@@ -100,6 +100,35 @@ theorem apply_mem_orthogonal (hπ : IsUnitary π) (hW : ∀ g, ∀ v ∈ W, π g
   rw [hπ.inner_map_right]
   exact hv _ (hW g⁻¹ u hu)
 
+/-- The orthogonal complement of the invariant vectors of a unitary representation is stable
+under the action. -/
+theorem apply_mem_orthogonal_invariants (hπ : IsUnitary π) (g : G) {v : V}
+    (hv : v ∈ π.invariantsᗮ) : π g v ∈ π.invariantsᗮ :=
+  hπ.apply_mem_orthogonal (fun g w hw ↦ by simpa [hw g] using hw) g hv
+
+/-- The restriction of a unitary representation to the orthogonal complement of its invariant
+vectors. -/
+def invariantsOrthogonal (hπ : IsUnitary π) : ContRepresentation 𝕜 G π.invariantsᗮ :=
+  π.subrepresentation π.invariantsᗮ (fun g _ hv ↦ hπ.apply_mem_orthogonal_invariants g hv)
+
+/-- The restricted action on the invariant complement agrees with the ambient action. -/
+@[simp]
+theorem coe_invariantsOrthogonal_apply (hπ : IsUnitary π) (g : G) (v : π.invariantsᗮ) :
+    ((hπ.invariantsOrthogonal g v : π.invariantsᗮ) : V) = π g (v : V) :=
+  coe_subrepresentation_apply g v
+
+/-- The restriction to the orthogonal complement of the invariant vectors has no nonzero
+invariant vectors. -/
+@[simp]
+theorem invariants_invariantsOrthogonal (hπ : IsUnitary π) :
+    hπ.invariantsOrthogonal.invariants = ⊥ := by
+  apply le_antisymm _ bot_le
+  intro v hv
+  have hmem : (v : V) ∈ π.invariants := mem_invariants_subrepresentation.mp hv
+  have hzero : (v : V) = 0 :=
+    (Submodule.disjoint_def.mp (Submodule.orthogonal_disjoint π.invariants)) _ hmem v.property
+  exact (Submodule.mem_bot 𝕜).mpr (Subtype.ext hzero)
+
 /-- **Invariant complements.** For a unitary representation of a group, the orthogonal complement
 of an invariant submodule is again invariant. -/
 theorem orthogonal_mem_invtSubmodule (hπ : IsUnitary π)
