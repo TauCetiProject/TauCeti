@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
-import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # The small-chain theorem with local coefficients
@@ -42,44 +41,6 @@ namespace TauCeti.LocalCoefficientSystem
 variable {R : Type u} [Ring R] {X : TopCat.{v}}
   (L : LocalCoefficientSystem.{u, v, max v w} R X) {ι : Type*} (U : ι → Set X)
 
-private lemma iterate_mem_small {n : ℕ} {c : L.twistedChainComplex.X n}
-    (hc : c ∈ smallTwistedChains L U n) (N : ℕ) :
-    (((End.of (twistedSubdivisionChainMap L)) ^ N).asHom.f n).hom c ∈
-      smallTwistedChains L U n := by
-  induction N with
-  | zero => simpa using hc
-  | succ N hN =>
-    rw [HomologicalComplex.pow_f_succ, ModuleCat.hom_comp, LinearMap.comp_apply,
-      twistedSubdivisionChainMap_f]
-    exact twistedSubdivisionX_mem_smallTwistedChains L U hN
-
-private lemma iteratedPrism_mem_small {n : ℕ} {c : L.twistedChainComplex.X n}
-    (hc : c ∈ smallTwistedChains L U n) (N : ℕ) :
-    (((twistedSubdivisionHomotopy L).idPow N).hom n (n + 1)).hom c ∈
-      smallTwistedChains L U (n + 1) := by
-  rw [Homotopy.idPow_hom]
-  simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_comp,
-    LinearMap.comp_apply, twistedSubdivisionHomotopy_hom]
-  exact Submodule.sum_mem _ fun k _ ↦
-    twistedPrismX_mem_smallTwistedChains L U (iterate_mem_small L U hc k)
-
-private lemma cycle_sub_iterate_eq_boundary {n : ℕ} (N : ℕ)
-    (c : L.twistedChainComplex.X n) (hc : L.twistedChainComplex.d n (n - 1) c = 0) :
-    L.twistedChainComplex.d (n + 1) n
-        (((twistedSubdivisionHomotopy L).idPow N).hom n (n + 1) c) =
-      c - ((End.of (twistedSubdivisionChainMap L)) ^ N).asHom.f n c := by
-  cases n with
-  | zero =>
-    have h := ((twistedSubdivisionHomotopy L).idPow N).comm_zero_apply c
-    simp only [HomologicalComplex.id_f, ModuleCat.id_apply] at h
-    exact eq_sub_iff_add_eq.mpr h.symm
-  | succ n =>
-    have hc' : L.twistedChainComplex.d (n + 1) n c = 0 := hc
-    have h := ((twistedSubdivisionHomotopy L).idPow N).comm_succ_apply n c
-    rw [hc', map_zero, zero_add] at h
-    simp only [HomologicalComplex.id_f, ModuleCat.id_apply] at h
-    exact eq_sub_iff_add_eq.mpr h.symm
-
 /-- **The small-chain theorem with local coefficients.** The canonical inclusion of twisted
 singular chains subordinate to an open cover induces isomorphisms on homology in every degree,
 including degree zero. Coefficient fibres may be arbitrary modules over an arbitrary ring. -/
@@ -98,7 +59,7 @@ theorem quasiIso_smallTwistedChainComplexι (hU : ∀ i, IsOpen (U i))
   have liftSmall {k : ℕ} (c : C.X k) (hc : c ∈ smallTwistedChains L U k) :
       ∃ a : S.X k, j.f k a = c := by
     rw [← range_smallTwistedChainComplexι_f L U k] at hc
-    exact hc
+    exact LinearMap.mem_range.1 hc
   constructor
   · -- Subdivide an ambient cycle, retaining its prism as the boundary correction.
     intro c hc
@@ -110,7 +71,8 @@ theorem quasiIso_smallTwistedChainComplexι (hU : ∀ i, IsOpen (U i))
       rw [← HomologicalComplex.Hom.comm_apply, ha,
         HomologicalComplex.Hom.comm_apply, hc, map_zero, map_zero]
     exact ⟨a, hcycle, ((twistedSubdivisionHomotopy L).idPow N).hom n (n + 1) c,
-      ha ▸ cycle_sub_iterate_eq_boundary L N c hc⟩
+      ha ▸ (by simpa only [HomologicalComplex.id_f, ModuleCat.id_apply] using
+        ((twistedSubdivisionHomotopy L).idPow N).d_hom_apply_of_d_eq_zero c hc)⟩
   · -- Subdivide a filling, then correct its boundary by the small cycle's prism.
     intro a ha b hb
     obtain ⟨N, hN⟩ := exists_iterate_twistedSubdivision_small L U hU hcov b
@@ -118,15 +80,17 @@ theorem quasiIso_smallTwistedChainComplexι (hU : ∀ i, IsOpen (U i))
     obtain ⟨b', hb'⟩ := liftSmall (s.f (n + 1) b) (hN N le_rfl)
     have hsmall : j.f n a ∈ smallTwistedChains L U n := by
       rw [← range_smallTwistedChainComplexι_f L U n]
-      exact ⟨a, rfl⟩
+      exact LinearMap.mem_range_self _ a
     obtain ⟨p, hp⟩ := liftSmall
       (((twistedSubdivisionHomotopy L).idPow N).hom n (n + 1) (j.f n a))
-      (iteratedPrism_mem_small L U hsmall N)
+      (idPow_twistedSubdivisionHomotopy_hom_mem_smallTwistedChains L U hsmall N)
     have hcycle : C.d n (n - 1) (j.f n a) = 0 := by
       rw [HomologicalComplex.Hom.comm_apply, ha, map_zero]
     refine ⟨b' + p, hj n ?_⟩
     rw [← HomologicalComplex.Hom.comm_apply, map_add, map_add, hb', hp,
-      HomologicalComplex.Hom.comm_apply, hb, cycle_sub_iterate_eq_boundary L N _ hcycle]
+      HomologicalComplex.Hom.comm_apply, hb,
+      ((twistedSubdivisionHomotopy L).idPow N).d_hom_apply_of_d_eq_zero _ hcycle,
+      HomologicalComplex.id_f, ModuleCat.id_apply]
     abel
 
 end TauCeti.LocalCoefficientSystem
