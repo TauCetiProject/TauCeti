@@ -88,7 +88,7 @@ theorem dixonFunction_eq_zero (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (h_null : IsNullHomologous γ a b U) (w : ℂ) : dixonFunction f U γ a b w = 0 := by
   have h_entire :=
-    differentiable_dixonFunction hU hf hγ_cont hγU hderiv_int hclosed hP hγ_diff h_null
+    differentiable_dixonFunction hU hf hγ_cont hγU hderiv_int hP hγ_diff h_null
   exact h_entire.apply_eq_of_tendsto_cocompact w
     (dixonFunction_tendsto_zero hf.continuousOn hγ_cont hγU hderiv_int hclosed hP hγ_diff)
 
