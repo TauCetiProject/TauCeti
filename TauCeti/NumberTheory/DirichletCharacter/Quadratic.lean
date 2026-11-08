@@ -18,6 +18,8 @@ several: multiplying finitely many characters, and lifting a character to a mult
 * `MulChar.isQuadratic_prod`: a finite product of quadratic characters is quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel`: lifting a quadratic character to a multiple of
   its level leaves it quadratic.
+* `DirichletCharacter.isQuadratic_changeLevel_iff`: at a nonzero target level, a lifted
+  character is quadratic exactly when the original character is quadratic.
 -/
 
 public section
@@ -60,5 +62,20 @@ theorem isQuadratic_changeLevel {R : Type*} [CommRing R]
   · rw [← ha.unit_spec, changeLevel_eq_cast_of_dvd]
     exact hχ _
   · exact Or.inl (MulChar.map_nonunit _ ha)
+
+/-- Lifting to a nonzero multiple of the level preserves and reflects being quadratic. -/
+@[simp]
+theorem isQuadratic_changeLevel_iff {R : Type*} [CommRing R]
+    {n m : ℕ} [NeZero m] {χ : DirichletCharacter R n} (h : n ∣ m) :
+    (changeLevel h χ).IsQuadratic ↔ χ.IsQuadratic := by
+  refine ⟨?_, fun hχ ↦ isQuadratic_changeLevel hχ h⟩
+  intro hχ a
+  by_cases ha : IsUnit a
+  · obtain ⟨u, hu⟩ := ZMod.unitsMap_surjective h ha.unit
+    have hv := hχ (u : ZMod m)
+    rw [changeLevel_eq_cast_of_dvd] at hv
+    rw [← ha.unit_spec, ← hu, ZMod.unitsMap_val]
+    exact hv
+  · exact Or.inl (MulChar.map_nonunit χ ha)
 
 end DirichletCharacter
