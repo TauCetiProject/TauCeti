@@ -495,31 +495,6 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : SmoothTw
   by_contra! h
   exact hzA (mem_iUnion.2 ⟨q, mem_image_endPiece hzT h⟩)
 
-/-- Along a map which is `C¹` on an open set `U` of the plane, the symplectic area density
-`ω(∂_s u, ∂_t u)` is continuous on `U`. -/
-private theorem continuousOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {u : ℝ × ℝ → M}
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) :
-    ContinuousOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) U := by
-  -- The coordinate derivatives are continuous tangent fields along `u` on `U`.
-  have hv (e : ℝ × ℝ) : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I.tangent 0
-      (fun w ↦ Bundle.TotalSpace.mk' E (u w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w e)) U :=
-    contMDiffOn_zero_iff.2 fun z hz ↦
-      (((hu.contMDiffAt (hU.mem_nhds hz)).continuousAt_tangentMap le_rfl).comp
-        ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
-          (continuous_id.prodMk continuous_const).continuousAt)).continuousWithinAt
-  have h := ContMDiffOn.continuousAlternatingMap_bundle_apply
-    (v := fun i ↦ ![fun w ↦ mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineReal,
-      fun w ↦ mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineImag] i)
-    ((SmoothForm.contMDiff ω |>.of_le (by simp)).comp_contMDiffOn (hu.of_le zero_le_one))
-    (fun i ↦ by fin_cases i <;> exact hv _)
-  refine ((continuous_snd.comp (Bundle.Trivial.homeomorphProd M ℝ).continuous).comp_continuousOn
-    (contMDiffOn_zero_iff.1 h)).congr fun z _ ↦ ?_
-  rw [SmoothBundleForm.eval₂_apply]
-  refine congrArg (ω.1 (u z)) (funext fun i ↦ ?_)
-  fin_cases i <;> rfl
-
 section Energy
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
@@ -756,8 +731,10 @@ private theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPertu
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) T := by
   have hmem : MapsTo (fun w ↦ (w, u w)) thricePuncturedSphereReal
       (thricePuncturedSphereReal ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := ((ω.continuousOn_eval₂_mfderiv isOpen_thricePuncturedSphereReal hu).mono
-    hTS).integrableOn_compact (μ := volume) hT
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
+    isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  replace harea := (harea.mono hTS).integrableOn_compact (μ := volume) hT
   -- Each pulled-back component `K(u)` is `C¹` on `S`, so its derivative is continuous on `S`.
   have hd (v : ℂ) (e : ℝ × ℝ) : IntegrableOn (fun z ↦ fderiv ℝ
       (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) v) z e) T := by
@@ -821,8 +798,10 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   have hTS : T ⊆ thricePuncturedSphereReal := fun z hz =>
     mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
   have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation hH hHs hu hT hTS
-  have harea := ((ω.continuousOn_eval₂_mfderiv isOpen_thricePuncturedSphereReal hu).mono
-    hTS).integrableOn_compact (μ := volume) hT
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
+    isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  replace harea := (harea.mono hTS).integrableOn_compact (μ := volume) hT
   have hcurv := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
     hu.continuousOn).mono_set hTS
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
