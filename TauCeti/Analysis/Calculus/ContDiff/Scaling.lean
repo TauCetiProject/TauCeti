@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 
 /-!
 # Derivative bounds for expanding cutoffs
@@ -18,8 +19,8 @@ an arbitrary constant `c`.
 
 This estimate is shared by the Sobolev and Schwartz-space cutoff approximations. It is
 extracted from the derivative scaling argument in
-`TauCeti/Analysis/Distribution/SchwartzSpace/Cutoff.lean`, using Mathlib's
-`ContinuousLinearEquiv.iteratedFDerivWithin_comp_right`.
+`TauCeti/Analysis/Distribution/SchwartzSpace/Cutoff.lean`, using
+`ContinuousLinearEquiv.norm_iteratedFDeriv_comp_right_le`.
 -/
 
 public section
@@ -46,13 +47,11 @@ theorem norm_iteratedFDeriv_comp_inv_smul_sub_const_le {χ : E → F} {i : ℕ} 
   rw [iteratedFDeriv_succ_eq_comp_right]
   simp only [fderiv_sub_const]
   -- Scaling by `R⁻¹` is a continuous linear equivalence, so no smoothness of `χ` is needed.
-  rw [← iteratedFDeriv_succ_eq_comp_right, ← hgχ, ← iteratedFDerivWithin_univ,
-    ← Set.preimage_univ (f := g), g.iteratedFDerivWithin_comp_right χ uniqueDiffOn_univ
-      (Set.mem_univ _), iteratedFDerivWithin_univ]
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, div_eq_mul_inv]
-  exact mul_le_mul (hB _) ((pow_le_of_le_one (norm_nonneg _) (hg.trans
-    (inv_le_one_of_one_le₀ hR)) hi).trans hg) (by positivity) ((norm_nonneg _).trans (hB 0))
+  rw [← iteratedFDeriv_succ_eq_comp_right, ← hgχ]
+  refine (g.norm_iteratedFDeriv_comp_right_le χ x (n + 1)).trans ?_
+  rw [div_eq_mul_inv, mul_comm B]
+  exact mul_le_mul ((pow_le_of_le_one (norm_nonneg _) (hg.trans
+    (inv_le_one_of_one_le₀ hR)) hi).trans hg) (hB _) (norm_nonneg _) (inv_pos.2 hR0).le
 
 /-- For any derivative order and `R ≥ 1`, subtracting a constant from an expanding cutoff
 gives a derivative bound `B + ‖c‖`, where `B` bounds that derivative of the cutoff. -/
