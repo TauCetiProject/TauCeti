@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 
 /-!
@@ -228,14 +229,14 @@ theorem integrable_gaugeFixedGradientDensity (hx : Continuous x) (hy : ContDiff 
     (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
   · simp only [funext (gaugeFixedGradientDensity_def x y)]
     fun_prop
-  · simp [gaugeFixedGradientDensity_def, fderiv_component_apply (hy.differentiable one_ne_zero z),
+  · simp [gaugeFixedGradientDensity_def, fderiv_piLp_apply (hy.differentiable one_ne_zero z),
       fderiv_of_notMem_tsupport ℝ hz, image_eq_zero_of_notMem_tsupport hz]
 
 /-- The Jacobian form of the two partial derivatives of a compactly supported `C¹` variation is
 integrable. -/
 private theorem integrable_jacobianForm_fderiv (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y) :
     Integrable (fun z ↦ jacobianForm (fderiv ℝ y z 1) (fderiv ℝ y z I)) μ := by
-  have hdi (z : ℂ) := fderiv_component_apply (hy.differentiable one_ne_zero z)
+  have hdi (z : ℂ) := fderiv_piLp_apply (hy.differentiable one_ne_zero z)
   have hdy (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
     (((contDiff_piLp 2).1 hy i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   refine Continuous.integrable_of_hasCompactSupport ?_
@@ -255,7 +256,7 @@ private theorem integral_weitzenbockRemainder (hx : ContDiff ℝ 1 x) (hy : Cont
   have hyi := (contDiff_piLp 2).1 hy₁
   have hy0 {z : ℂ} (hz : z ∉ tsupport y) (i : Fin 4) : y z i = 0 := by
     simp [image_eq_zero_of_notMem_tsupport hz]
-  have hdi (z : ℂ) := fderiv_component_apply (hy₁.differentiable one_ne_zero z)
+  have hdi (z : ℂ) := fderiv_piLp_apply (hy₁.differentiable one_ne_zero z)
   set J : ℂ → ℝ := fun z ↦ 2 * jacobianForm (fderiv ℝ y z 1) (fderiv ℝ y z I) with hJ
   set W₁ : ℂ → ℝ := fun w ↦ 2 * y w 0 * (x w 2 * y w 3 - x w 3 * y w 2) -
       2 * y w 1 * (x w 2 * y w 2 + x w 3 * y w 3) - x w 1 * (y w 2 ^ 2 + y w 3 ^ 2) with hW₁

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -135,15 +134,6 @@ private theorem sectionValue_eq_ofRealCLM (x : ℂ → EuclideanSpace ℝ (Fin 4
       (ofRealCLM ∘ fun w ↦ x w 3) w * I) := by
   funext w
   simp only [sectionValue_apply, Function.comp_apply, ofRealCLM_apply]
-
-/-- The partial derivatives of a real coordinate of a field differentiable at `z` are the
-coordinates of the partial derivatives of the field. -/
-theorem fderiv_component_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
-    (hx : DifferentiableAt ℝ x z) (i : Fin 4) (v : ℂ) :
-    fderiv ℝ (fun w ↦ x w i) z v = fderiv ℝ x z v i := by
-  rw [(hasFDerivWithinAt_univ.1 ((hasFDerivWithinAt_piLp 2).1
-    hx.hasFDerivAt.hasFDerivWithinAt i)).fderiv]
-  rfl
 
 /-- The squared modulus `|α|² = 4 (p² + q²)` is as regular as the real coordinates of the
 section. -/
