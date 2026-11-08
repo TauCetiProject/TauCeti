@@ -188,8 +188,10 @@ integral of `u : α → ℝ≥0∞` is controlled by its `L^r` integral at the c
 On a finite measure space this is the nesting `L^r ⊆ L¹`; for a general `μ` it is only the
 displayed inequality, which does not by itself give that inclusion.  No finiteness is assumed, and
 the bound is not vacuous when `μ univ = ∞`: arithmetic in `ℝ≥0∞` makes the right-hand side `0`
-rather than `∞` whenever `∫⁻ ‖f‖ₑ ^ r = 0`, and the inequality still holds there because `f` then
-vanishes almost everywhere. -/
+rather than `∞` whenever `∫⁻ ‖f‖ₑ ^ r = 0`, and the inequality still holds there: the proof
+replaces `u` by a measurable minorant `g ≤ u` with the same lower integral, and
+`∫⁻ g ^ r ≤ ∫⁻ u ^ r = 0` forces the measurable function `g` to vanish almost everywhere.
+(`u` itself need not vanish almost everywhere when it is not measurable.) -/
 theorem rpow_lintegral_le_measure_univ_rpow_mul {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {u : α → ℝ≥0∞} {r : ℝ} (hr : 1 ≤ r) :
     (∫⁻ x, u x ∂μ) ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := by
