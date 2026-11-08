@@ -42,36 +42,9 @@ namespace TauCeti.ProjValMeasure
 variable {X H : Type*} [MeasurableSpace X]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-/-- Pointwise Young-type bound on a polarized spectral measure by a weighted sum of the two
-diagonal measures, for nonzero vectors. -/
-theorem norm_polarizedComplexMeasure_apply_le (P : ProjValMeasure X H) {ψ ξ : H} (hψz : ψ ≠ 0)
-    (hξz : ξ ≠ 0) (B : Set X) (hB : MeasurableSet B) :
-    ‖P.polarizedComplexMeasure ψ ξ B‖ ≤
-      (‖ξ‖ / (2 * ‖ψ‖)) * (P.diag ψ).real B + (‖ψ‖ / (2 * ‖ξ‖)) * (P.diag ξ).real B := by
-  have hψ : 0 < ‖ψ‖ := norm_pos_iff.mpr hψz
-  have hξ : 0 < ‖ξ‖ := norm_pos_iff.mpr hξz
-  let T := P.proj B hB
-  have hcs : ‖P.polarizedComplexMeasure ψ ξ B‖ ≤ ‖T ψ‖ * ‖T ξ‖ := by
-    rw [P.polarizedComplexMeasure_apply ψ ξ B hB]
-    rw [P.inner_proj_eq_inner_proj_proj B hB ψ ξ]
-    exact norm_inner_le_norm _ _
-  have hy :
-      ‖T ψ‖ * ‖T ξ‖ ≤
-        (‖ξ‖ / (2 * ‖ψ‖)) * ‖T ψ‖ ^ 2 + (‖ψ‖ / (2 * ‖ξ‖)) * ‖T ξ‖ ^ 2 := by
-    have hYoung := two_mul_le_add_mul_sq
-      (a := ‖T ψ‖) (b := ‖T ξ‖)
-      (ε := ‖ξ‖ / ‖ψ‖) (div_pos hξ hψ)
-    have hscale :
-        (‖ξ‖ / ‖ψ‖) * ‖T ψ‖ ^ 2 + (‖ξ‖ / ‖ψ‖)⁻¹ * ‖T ξ‖ ^ 2 =
-          2 * ((‖ξ‖ / (2 * ‖ψ‖)) * ‖T ψ‖ ^ 2 + (‖ψ‖ / (2 * ‖ξ‖)) * ‖T ξ‖ ^ 2) := by
-      field_simp [ne_of_gt hψ, ne_of_gt hξ]
-    nlinarith only [hYoung, hscale]
-  rw [P.norm_sq_proj_apply B hB ψ, P.norm_sq_proj_apply B hB ξ] at hy
-  exact hcs.trans hy
-
 /-- The sharp variation bound for nonzero vectors. -/
-theorem polarizedComplexMeasure_variation_univ_le_of_ne_zero (P : ProjValMeasure X H) {ψ ξ : H}
-    (hψz : ψ ≠ 0) (hξz : ξ ≠ 0) :
+private theorem polarizedComplexMeasure_variation_univ_le_of_ne_zero
+    (P : ProjValMeasure X H) {ψ ξ : H} (hψz : ψ ≠ 0) (hξz : ξ ≠ 0) :
     (P.polarizedComplexMeasure ψ ξ).variation Set.univ ≤
       ENNReal.ofReal (‖ψ‖ * ‖ξ‖) := by
   have hψ : 0 < ‖ψ‖ := norm_pos_iff.mpr hψz
@@ -90,7 +63,7 @@ theorem polarizedComplexMeasure_variation_univ_le_of_ne_zero (P : ProjValMeasure
     intro B hB
     have hbound : ‖P.polarizedComplexMeasure ψ ξ B‖ ≤ m.real B := by
       rw [hm B, ha, hb]
-      exact P.norm_polarizedComplexMeasure_apply_le hψz hξz B hB
+      exact P.norm_polarizedComplexMeasure_apply_le B hB
     simpa only [measureReal_def, ofReal_norm] using
       (ENNReal.ofReal_le_of_le_toReal hbound)
   have hmass : m.real Set.univ = ‖ψ‖ * ‖ξ‖ := by
@@ -116,6 +89,7 @@ theorem polarizedComplexMeasure_variation_univ_le (P : ProjValMeasure X H) (ψ �
     rw [P.polarizedComplexMeasure_zero_right, VectorMeasure.variation_zero]
     simp
   exact P.polarizedComplexMeasure_variation_univ_le_of_ne_zero hψz hξz
+
 /-- The variation of a polarized complex measure is finite. -/
 instance instIsFiniteMeasurePolarizedVariation (P : ProjValMeasure X H) (ψ ξ : H) :
     IsFiniteMeasure (P.polarizedComplexMeasure ψ ξ).variation := by
