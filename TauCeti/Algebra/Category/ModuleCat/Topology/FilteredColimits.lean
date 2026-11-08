@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Topology.Basic
 public import TauCeti.Algebra.Category.Grp.FilteredColimits
 
 /-!
-# Recognising filtered colimits of topological modules with discrete apex
+# Recognising colimits of topological modules with discrete apex
 
-A cocone on a filtered diagram of topological modules whose apex is **discrete** is colimiting as
+A cocone on a diagram of topological modules whose apex is **discrete** is colimiting as
 soon as its legs are jointly surjective and any two elements with the same image in the apex
 already have a common image somewhere deeper in the diagram.
 
@@ -31,7 +31,7 @@ continuous cohomology, whose apex is the discrete continuous cohomology of a com
 The criterion is `TauCeti.AddCommGrpCat.isColimitOfJointlySurjective` read through the forgetful
 functors to `ModuleCat R` and `AddCommGrpCat`. The descended additive map is `R`-linear because
 every element of the apex comes from some stage of the diagram, and it is continuous because the
-apex is discrete.
+apex is discrete. No filteredness or universe bounds on the index category are needed.
 -/
 
 public section
@@ -45,10 +45,10 @@ universe u v w
 namespace TopModuleCat
 
 variable {R : Type*} [Ring R] [TopologicalSpace R]
-  {J : Type u} [Category.{w} J] [IsFilteredOrEmpty J] [UnivLE.{u, v}] [UnivLE.{w, v}]
+  {J : Type u} [Category.{w} J]
   {F : J ⥤ _root_.TopModuleCat.{v} R}
 
-/-- A cocone on a filtered diagram of topological modules whose apex is discrete is colimiting as
+/-- A cocone on a diagram of topological modules whose apex is discrete is colimiting as
 soon as its legs are jointly surjective and any two elements with the same image in the apex have a
 common image somewhere deeper in the diagram. -/
 noncomputable def isColimitOfJointlySurjective (t : Cocone F) [DiscreteTopology t.pt]
