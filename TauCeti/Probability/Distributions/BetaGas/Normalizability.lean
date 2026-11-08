@@ -160,18 +160,20 @@ theorem gaussianBetaGasPartitionFunction_pos (n : ℕ) {β : ℝ} (hβ : 0 < β)
 theorem integrable_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     Integrable (gaussianBetaGasDensity n β)
       (Measure.pi fun _ : Fin n => (volume : Measure ℝ)) := by
-  convert (integrable_gaussianBetaGasWeight n hβ).div_const
-    (gaussianBetaGasPartitionFunction n β) using 1
-  funext x
-  exact gaussianBetaGasDensity_def n β x
+  rw [gaussianBetaGasDensity_eq_betaGasDensity]
+  apply integrable_betaGasDensity
+  rw [← gaussianBetaGasWeight_eq_betaGasWeight]
+  exact integrable_gaussianBetaGasWeight n hβ
 
 /-- The Gaussian beta-gas density integrates to one for positive inverse temperature. -/
 @[simp]
 theorem integral_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     (∫ x, gaussianBetaGasDensity n β x
       ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1 := by
-  simp only [gaussianBetaGasDensity_def, integral_div, ← gaussianBetaGasPartitionFunction_def]
-  exact div_self (gaussianBetaGasPartitionFunction_pos n hβ).ne'
+  rw [gaussianBetaGasDensity_eq_betaGasDensity]
+  apply integral_betaGasDensity
+  rw [← gaussianBetaGasPartitionFunction_eq_betaGasPartitionFunction]
+  exact gaussianBetaGasPartitionFunction_pos n hβ
 
 /-- The normalized Gaussian beta-gas measure has total mass one. -/
 theorem isProbabilityMeasure_gaussianBetaGasMeasure (n : ℕ) {β : ℝ} (hβ : 0 < β) :
@@ -196,11 +198,19 @@ theorem gaussianBetaGasMeasure_apply (n : ℕ) {β : ℝ} (hβ : 0 < β)
 
 /-- Integrate a function against the Gaussian beta-gas measure. -/
 theorem integral_gaussianBetaGasMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) (f : (Fin n → ℝ) → E) :
+    (n : ℕ) (β : ℝ) (f : (Fin n → ℝ) → E) :
     ∫ x, f x ∂gaussianBetaGasMeasure n β =
       ∫ x, gaussianBetaGasDensity n β x • f x
         ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ) := by
   rw [gaussianBetaGasMeasure_eq_betaGasMeasure, gaussianBetaGasDensity_eq_betaGasDensity]
-  exact integral_betaGasMeasure n hβ (V := fun t => t ^ 2 / 2) (by fun_prop) f
+  apply integral_betaGasMeasure
+  have hdens : betaGasDensity n β (fun t => t ^ 2 / 2) =
+      fun x => betaGasWeight n β (fun t => t ^ 2 / 2) x /
+        betaGasPartitionFunction n β (fun t => t ^ 2 / 2) := by
+    funext x
+    exact betaGasDensity_def n β _ x
+  rw [hdens]
+  exact ((measurable_betaGasWeight n β (V := fun t => t ^ 2 / 2)
+    (by fun_prop)).div_const _).aemeasurable
 
 end TauCeti.Probability
