@@ -59,7 +59,7 @@ noncomputable def equivProductOfSq (s : ℤ) (hs : s ≠ 0) :
 noncomputable def algEquivProdOfIntSq (s : ℤ) (hs : s ≠ 0) :
     QuadraticAlgebra ℚ ((s ^ 2 : ℤ) : ℚ) 0 ≃ₐ[ℚ] ℚ × ℚ := by
   letI : Invertible (2 : ℚ) := invertibleOfNonzero (by decide)
-  exact TauCeti.QuadraticAlgebra.algEquivProdOfSq (Units.mk0 (s : ℚ) (by exact_mod_cast hs))
+  exact QuadraticAlgebra.algEquivProdOfSq (Units.mk0 (s : ℚ) (by exact_mod_cast hs))
     (by simp)
 
 /-- The rational splitting evaluates at the opposite integer roots. -/
@@ -68,7 +68,7 @@ noncomputable def algEquivProdOfIntSq (s : ℤ) (hs : s ≠ 0) :
     algEquivProdOfIntSq s hs z = (z.re + s * z.im, z.re - s * z.im) := by
   let : Invertible (2 : ℚ) := invertibleOfNonzero (by decide)
   unfold algEquivProdOfIntSq
-  exact _root_.QuadraticAlgebra.algEquivProdOfSq_apply _ _ _
+  exact QuadraticAlgebra.algEquivProdOfSq_apply _ _ _
 
 private theorem coe_shift (s : ℤ) :
     (((s ^ 2 - s) / 2 : ℤ) : ℚ) = ((s : ℚ) ^ 2 - s) / 2 := by
