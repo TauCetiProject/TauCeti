@@ -68,7 +68,7 @@ open scoped BigOperators
 
 namespace TauCeti
 
-variable {ι κ : Type*}
+variable {ι κ 𝕜 : Type*}
 
 /-! ### Orthogonality on the sign cube -/
 
@@ -171,24 +171,24 @@ theorem rademacherNorm_add_le (x y : ι → E) :
 
 /-- The Rademacher norm is absolutely homogeneous. -/
 @[simp]
-theorem rademacherNorm_smul [NormedSpace ℝ E] (c : ℝ) (y : ι → E) :
-    rademacherNorm (c • y) = |c| * rademacherNorm y := by
+theorem rademacherNorm_smul [NormedField 𝕜] [NormedSpace 𝕜 E] (c : 𝕜) (y : ι → E) :
+    rademacherNorm (c • y) = ‖c‖ * rademacherNorm y := by
   have hsum (ε : ι → ℤˣ) : ∑ i, ε i • (c • y) i = c • ∑ i, ε i • y i := by
     simp [smul_sum, smul_comm (ε _) c]
-  simp_rw [rademacherNorm_def, rademacherSecondMoment_def, hsum, norm_smul, Real.norm_eq_abs,
-    mul_pow, sq_abs, ← mul_expect, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs]
+  simp_rw [rademacherNorm_def, rademacherSecondMoment_def, hsum, norm_smul, mul_pow,
+    ← mul_expect, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (norm_nonneg c)]
 
 /-- A bounded operator multiplies the Rademacher norm by at most its norm. -/
-theorem rademacherNorm_continuousLinearMap_comp_le [NormedSpace ℝ E] [NormedSpace ℝ F]
-    (T : E →L[ℝ] F) (y : ι → E) :
+theorem rademacherNorm_continuousLinearMap_comp_le [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] (T : E →L[𝕜] F) (y : ι → E) :
     rademacherNorm (T ∘ y) ≤ ‖T‖ * rademacherNorm y :=
   rademacherNorm_le_mul_of_forall_norm_le (norm_nonneg T) fun ε ↦ by
     simpa [Units.smul_def, map_sum, map_zsmul] using T.le_opNorm (∑ i, ε i • y i)
 
 /-- A linear isometry preserves the Rademacher norm. -/
 @[simp]
-theorem rademacherNorm_linearIsometry_comp [NormedSpace ℝ E] [NormedSpace ℝ F]
-    (f : E →ₗᵢ[ℝ] F) (y : ι → E) :
+theorem rademacherNorm_linearIsometry_comp [Semiring 𝕜] [Module 𝕜 E] [Module 𝕜 F]
+    (f : E →ₗᵢ[𝕜] F) (y : ι → E) :
     rademacherNorm (f ∘ y) = rademacherNorm y := by
   have hsum (ε : ι → ℤˣ) : ∑ i, ε i • (f ∘ y) i = f (∑ i, ε i • y i) := by
     simp [Units.smul_def, map_sum, map_zsmul]
@@ -295,18 +295,12 @@ theorem hasCotype_iff : HasCotype q C E ↔
     ∀ ⦃n : ℕ⦄ (y : Fin n → E), (∑ i, ‖y i‖ ^ q) ^ (1 / q) ≤ C * rademacherNorm y :=
   Iff.rfl
 
-/-- The `ℓᵖ` expression of `n` copies of `t ≥ 0` is `n ^ (1 / p) * t`. -/
-private theorem rpow_sum_const_rpow (n : ℕ) {t : ℝ} (ht : 0 ≤ t) (hp : p ≠ 0) :
-    (∑ _ : Fin n, t ^ p) ^ (1 / p) = (n : ℝ) ^ (1 / p) * t := by
-  rw [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul,
-    Real.mul_rpow n.cast_nonneg (Real.rpow_nonneg ht p), one_div, Real.rpow_rpow_inv ht hp]
-
-/-- A zero vector space has every type, with every constant. -/
+/-- A zero vector space has every nonzero exponent as a type, with every constant. -/
 theorem hasType_of_subsingleton [Subsingleton E] (hp : p ≠ 0) : HasType p C E := fun n y ↦ by
   rw [Subsingleton.elim y 0]
   simp [Real.zero_rpow hp, Real.zero_rpow (inv_ne_zero hp)]
 
-/-- A zero vector space has every cotype, with every constant. -/
+/-- A zero vector space has every nonzero exponent as a cotype, with every constant. -/
 theorem hasCotype_of_subsingleton [Subsingleton E] (hq : q ≠ 0) : HasCotype q C E := fun n y ↦ by
   rw [Subsingleton.elim y 0]
   simp [Real.zero_rpow hq, Real.zero_rpow (inv_ne_zero hq)]
@@ -327,7 +321,8 @@ theorem mono (h : HasType p C E) (hCD : C ≤ D) : HasType p D E := fun _ y ↦
 theorem one_le [Nontrivial E] (h : HasType p C E) (hp : p ≠ 0) : 1 ≤ C := by
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   have := h (fun _ : Fin 1 ↦ v)
-  rw [rademacherNorm_of_unique, rpow_sum_const_rpow 1 (norm_nonneg v) hp] at this
+  rw [rademacherNorm_of_unique, Real.Lp_const_of_nonneg univ (norm_nonneg v) hp,
+    card_univ, Fintype.card_fin] at this
   simp only [Nat.cast_one, Real.one_rpow, one_mul] at this
   exact (le_mul_iff_one_le_left (norm_pos_iff.2 hv)).1 this
 
@@ -338,32 +333,33 @@ private theorem nonneg_or_subsingleton (h : HasType p C E) (hp : p ≠ 0) :
     (fun (_ : Nontrivial E) ↦ zero_le_one.trans (h.one_le hp)) id
 
 /-- Type passes to any space isometrically embedded in `E`, with the same constant. -/
-theorem linearIsometry [NormedSpace ℝ E] [NormedSpace ℝ F] (h : HasType p C E)
-    (f : F →ₗᵢ[ℝ] E) : HasType p C F := fun _ y ↦ by
+theorem linearIsometry [Semiring 𝕜] [Module 𝕜 E] [Module 𝕜 F]
+    (h : HasType p C E) (f : F →ₗᵢ[𝕜] E) : HasType p C F := fun _ y ↦ by
   simpa using h (f ∘ y)
 
 /-- Type passes to subspaces, with the same constant. -/
-theorem submodule [NormedSpace ℝ E] (h : HasType p C E) (K : Submodule ℝ E) : HasType p C K :=
+theorem submodule [Ring 𝕜] [Module 𝕜 E] (h : HasType p C E) (K : Submodule 𝕜 E) :
+    HasType p C K :=
   h.linearIsometry K.subtypeₗᵢ
 
 /-- Type passes along an isomorphism `U`, with the constant multiplied by `‖U‖ ‖U⁻¹‖`. -/
-theorem continuousLinearEquiv [NormedSpace ℝ E] [NormedSpace ℝ F] (h : HasType p C E)
-    (hp : 0 < p) (U : E ≃L[ℝ] F) :
-    HasType p (‖(U : E →L[ℝ] F)‖ * ‖(U.symm : F →L[ℝ] E)‖ * C) F := by
+theorem continuousLinearEquiv [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F]
+    (h : HasType p C E) (hp : 0 < p) (U : E ≃L[𝕜] F) :
+    HasType p (‖(U : E →L[𝕜] F)‖ * ‖(U.symm : F →L[𝕜] E)‖ * C) F := by
   rcases h.nonneg_or_subsingleton hp.ne' with hC | hE
   · intro n y
-    have hx := Real.Lp_le_mul_Lp_of_nonneg univ hp (norm_nonneg (U.symm : F →L[ℝ] E))
+    have hx := Real.Lp_le_mul_Lp_of_nonneg univ hp (norm_nonneg (U.symm : F →L[𝕜] E))
       (fun i _ ↦ norm_nonneg ((U.symm ∘ y) i))
-      (fun i _ ↦ by simpa using (U.symm : F →L[ℝ] E).le_opNorm (y i))
+      (fun i _ ↦ by simpa using (U.symm : F →L[𝕜] E).le_opNorm (y i))
     calc rademacherNorm y
-        ≤ ‖(U : E →L[ℝ] F)‖ * rademacherNorm (U.symm ∘ y) := by
-          -- `U ∘ U.symm ∘ y = y`, once the coercion of `U` to `E →L[ℝ] F` is unfolded
+        ≤ ‖(U : E →L[𝕜] F)‖ * rademacherNorm (U.symm ∘ y) := by
+          -- `U ∘ U.symm ∘ y = y`, once the coercion of `U` to `E →L[𝕜] F` is unfolded
           simpa [Function.comp_def] using
-            rademacherNorm_continuousLinearMap_comp_le (U : E →L[ℝ] F) (U.symm ∘ y)
-      _ ≤ ‖(U : E →L[ℝ] F)‖ * (C * (∑ i, ‖(U.symm ∘ y) i‖ ^ p) ^ (1 / p)) := by
+            rademacherNorm_continuousLinearMap_comp_le (U : E →L[𝕜] F) (U.symm ∘ y)
+      _ ≤ ‖(U : E →L[𝕜] F)‖ * (C * (∑ i, ‖(U.symm ∘ y) i‖ ^ p) ^ (1 / p)) := by
           gcongr
           exact h _
-      _ ≤ ‖(U : E →L[ℝ] F)‖ * (C * (‖(U.symm : F →L[ℝ] E)‖ * (∑ i, ‖y i‖ ^ p) ^ (1 / p))) := by
+      _ ≤ ‖(U : E →L[𝕜] F)‖ * (C * (‖(U.symm : F →L[𝕜] E)‖ * (∑ i, ‖y i‖ ^ p) ^ (1 / p))) := by
           gcongr
       _ = _ := by ring
   · have : Subsingleton F := U.symm.toEquiv.subsingleton
@@ -411,7 +407,8 @@ theorem mono (h : HasCotype q C E) (hCD : C ≤ D) : HasCotype q D E := fun _ y 
 theorem one_le [Nontrivial E] (h : HasCotype q C E) (hq : q ≠ 0) : 1 ≤ C := by
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   have := h (fun _ : Fin 1 ↦ v)
-  rw [rademacherNorm_of_unique, rpow_sum_const_rpow 1 (norm_nonneg v) hq] at this
+  rw [rademacherNorm_of_unique, Real.Lp_const_of_nonneg univ (norm_nonneg v) hq,
+    card_univ, Fintype.card_fin] at this
   simp only [Nat.cast_one, Real.one_rpow, one_mul] at this
   exact (le_mul_iff_one_le_left (norm_pos_iff.2 hv)).1 this
 
@@ -422,31 +419,32 @@ private theorem nonneg_or_subsingleton (h : HasCotype q C E) (hq : q ≠ 0) :
     (fun (_ : Nontrivial E) ↦ zero_le_one.trans (h.one_le hq)) id
 
 /-- Cotype passes to any space isometrically embedded in `E`, with the same constant. -/
-theorem linearIsometry [NormedSpace ℝ E] [NormedSpace ℝ F] (h : HasCotype q C E)
-    (f : F →ₗᵢ[ℝ] E) : HasCotype q C F := fun _ y ↦ by
+theorem linearIsometry [Semiring 𝕜] [Module 𝕜 E] [Module 𝕜 F]
+    (h : HasCotype q C E) (f : F →ₗᵢ[𝕜] E) : HasCotype q C F := fun _ y ↦ by
   simpa using h (f ∘ y)
 
 /-- Cotype passes to subspaces, with the same constant. -/
-theorem submodule [NormedSpace ℝ E] (h : HasCotype q C E) (K : Submodule ℝ E) : HasCotype q C K :=
+theorem submodule [Ring 𝕜] [Module 𝕜 E] (h : HasCotype q C E) (K : Submodule 𝕜 E) :
+    HasCotype q C K :=
   h.linearIsometry K.subtypeₗᵢ
 
 /-- Cotype passes along an isomorphism `U`, with the constant multiplied by `‖U‖ ‖U⁻¹‖`. -/
-theorem continuousLinearEquiv [NormedSpace ℝ E] [NormedSpace ℝ F] (h : HasCotype q C E)
-    (hq : 0 < q) (U : E ≃L[ℝ] F) :
-    HasCotype q (‖(U : E →L[ℝ] F)‖ * ‖(U.symm : F →L[ℝ] E)‖ * C) F := by
+theorem continuousLinearEquiv [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F]
+    (h : HasCotype q C E) (hq : 0 < q) (U : E ≃L[𝕜] F) :
+    HasCotype q (‖(U : E →L[𝕜] F)‖ * ‖(U.symm : F →L[𝕜] E)‖ * C) F := by
   rcases h.nonneg_or_subsingleton hq.ne' with hC | hE
   · intro n y
-    have hyx := Real.Lp_le_mul_Lp_of_nonneg univ hq (norm_nonneg (U : E →L[ℝ] F))
+    have hyx := Real.Lp_le_mul_Lp_of_nonneg univ hq (norm_nonneg (U : E →L[𝕜] F))
       (fun i _ ↦ norm_nonneg (y i)) fun i _ ↦ by
-        -- `y i = U (U.symm (y i))`, once the coercion of `U` to `E →L[ℝ] F` is unfolded
-        simpa using (U : E →L[ℝ] F).le_opNorm (U.symm (y i))
-    have hR := rademacherNorm_continuousLinearMap_comp_le (U.symm : F →L[ℝ] E) y
+        -- `y i = U (U.symm (y i))`, once the coercion of `U` to `E →L[𝕜] F` is unfolded
+        simpa using (U : E →L[𝕜] F).le_opNorm (U.symm (y i))
+    have hR := rademacherNorm_continuousLinearMap_comp_le (U.symm : F →L[𝕜] E) y
     calc (∑ i, ‖y i‖ ^ q) ^ (1 / q)
-        ≤ ‖(U : E →L[ℝ] F)‖ * (∑ i, ‖(U.symm ∘ y) i‖ ^ q) ^ (1 / q) := hyx
-      _ ≤ ‖(U : E →L[ℝ] F)‖ * (C * rademacherNorm (U.symm ∘ y)) := by
+        ≤ ‖(U : E →L[𝕜] F)‖ * (∑ i, ‖(U.symm ∘ y) i‖ ^ q) ^ (1 / q) := hyx
+      _ ≤ ‖(U : E →L[𝕜] F)‖ * (C * rademacherNorm (U.symm ∘ y)) := by
           gcongr
           exact h _
-      _ ≤ ‖(U : E →L[ℝ] F)‖ * (C * (‖(U.symm : F →L[ℝ] E)‖ * rademacherNorm y)) := by
+      _ ≤ ‖(U : E →L[𝕜] F)‖ * (C * (‖(U.symm : F →L[𝕜] E)‖ * rademacherNorm y)) := by
           gcongr
           exact hR
       _ = _ := by ring
@@ -512,8 +510,8 @@ theorem not_hasType_of_two_lt [NormedSpace ℝ E] [Nontrivial E] (hp : 2 < p) :
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   have key (n : ℕ) : (n : ℝ) ^ (1 / 2 : ℝ) ≤ C * (n : ℝ) ^ (1 / p) := by
     have := h (fun _ : Fin n ↦ v)
-    rw [rademacherNorm_const, rpow_sum_const_rpow n (norm_nonneg v) (by positivity),
-      Fintype.card_fin, Real.sqrt_eq_rpow, ← mul_assoc] at this
+    rw [rademacherNorm_const, Real.Lp_const_of_nonneg univ (norm_nonneg v) (by positivity),
+      card_univ, Fintype.card_fin, Real.sqrt_eq_rpow, ← mul_assoc] at this
     exact le_of_mul_le_mul_right this (norm_pos_iff.2 hv)
   have := Real.le_of_forall_natCast_rpow_le_mul_rpow key
   have : (1 / p : ℝ) < 1 / 2 := one_div_lt_one_div_of_lt two_pos hp
@@ -525,8 +523,8 @@ theorem not_hasCotype_of_lt_two [NormedSpace ℝ E] [Nontrivial E] (hq0 : 0 < q)
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   have key (n : ℕ) : (n : ℝ) ^ (1 / q) ≤ C * (n : ℝ) ^ (1 / 2 : ℝ) := by
     have := h (fun _ : Fin n ↦ v)
-    rw [rademacherNorm_const, rpow_sum_const_rpow n (norm_nonneg v) hq0.ne',
-      Fintype.card_fin, Real.sqrt_eq_rpow, ← mul_assoc] at this
+    rw [rademacherNorm_const, Real.Lp_const_of_nonneg univ (norm_nonneg v) hq0.ne',
+      card_univ, Fintype.card_fin, Real.sqrt_eq_rpow, ← mul_assoc] at this
     exact le_of_mul_le_mul_right this (norm_pos_iff.2 hv)
   have := Real.le_of_forall_natCast_rpow_le_mul_rpow key
   have : (1 / 2 : ℝ) < 1 / q := one_div_lt_one_div_of_lt hq0 hq

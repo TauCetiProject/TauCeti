@@ -54,6 +54,8 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
 * `Real.Lq_le_Lp_of_nonneg`: the same for finite sums of nonnegative reals.
 * `Real.Lp_le_mul_Lp_of_nonneg`: termwise domination `0 ≤ f i ≤ c * g i` bounds the finite
   `ℓᵖ` expression of `f` by `c` times that of `g`.
+* `Real.Lp_const_of_nonneg`: the finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is
+  `#s ^ (1 / p) * t`.
 
 ## References
 
@@ -224,5 +226,11 @@ theorem Lp_le_mul_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f g : ι → ℝ} {
         rw [Finset.sum_congr rfl fun i hi ↦ mul_rpow hc.le (hg i hi), ← Finset.mul_sum,
           mul_rpow (rpow_nonneg hc.le p) (Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hg i hi) p),
           ← rpow_mul hc.le, mul_one_div_cancel hp.ne', rpow_one]
+
+/-- The finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is `#s ^ (1 / p) * t`. -/
+theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ t) (hp : p ≠ 0) :
+    (∑ _i ∈ s, t ^ p) ^ (1 / p) = (s.card : ℝ) ^ (1 / p) * t := by
+  rw [Finset.sum_const, nsmul_eq_mul, mul_rpow s.card.cast_nonneg (rpow_nonneg ht p), one_div,
+    rpow_rpow_inv ht hp]
 
 end Real
