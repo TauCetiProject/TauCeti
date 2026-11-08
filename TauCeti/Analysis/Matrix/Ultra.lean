@@ -267,7 +267,7 @@ theorem norm_det_sub_le {ι R : Type*} [Fintype ι] [DecidableEq ι]
   simp only [Matrix.det_apply, ← Finset.sum_sub_distrib, ← smul_sub]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun σ _ ↦ ?_
   rw [norm_units_zsmul]
-  simpa using norm_prod_sub_prod_le (s := Finset.univ) hM hε
+  simpa using norm_prod_sub_prod_le (s := Finset.univ) hε
     (fun i _ ↦ hA (σ i) i) (fun i _ ↦ hB (σ i) i) (fun i _ ↦ hAB (σ i) i)
 
 /-- Principal minors are Lipschitz on entrywise bounded sets, independently of the choice of
