@@ -227,10 +227,8 @@ private theorem reachableAvoiding_blockCutGraph_block_block_of_mem (B C : G.Bloc
 equal, or the shared vertex is a cut vertex adjacent to both. -/
 theorem blockCutGraph_reachable_block_block_of_mem (B C : G.BlockVertex) {x : V}
     (hxB : x ∈ (B : Set V)) (hxC : x ∈ (C : Set V)) :
-    G.blockCutGraph.Reachable (.inl B) (.inl C) := by
-  rw [reachable_iff_nonempty_arrowWalk]
-  exact reachableAvoiding_empty_iff.mp <| by
-    simpa using reachableAvoiding_blockCutGraph_block_block_of_mem B C hxB hxC ∅ (by simp)
+    G.blockCutGraph.Reachable (.inl B) (.inl C) :=
+  (reachableAvoiding_blockCutGraph_block_block_of_mem B C hxB hxC ∅ (by simp)).reachable
 
 /-- In a finite graph, a walk of `G` avoiding a set of cut vertices lifts to reachability between
 any blocks containing its endpoints, while avoiding the corresponding cut-vertex nodes. -/
@@ -255,9 +253,7 @@ theorem Reachable.blockCutGraph_reachable_block_block [Finite V] {x y : V} (h : 
     (B C : G.BlockVertex) (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V)) :
     G.blockCutGraph.Reachable (.inl B) (.inl C) := by
   obtain ⟨p⟩ := h
-  rw [reachable_iff_nonempty_arrowWalk]
-  exact reachableAvoiding_empty_iff.mp <| by
-    simpa using p.reachableAvoiding_blockCutGraph B C hxB hyC ∅ (by simp)
+  exact (p.reachableAvoiding_blockCutGraph B C hxB hyC ∅ (by simp)).reachable
 
 /-- In a finite graph, every vertex of the block--cut graph is reachable from a block containing
 a vertex of the component it determines. -/

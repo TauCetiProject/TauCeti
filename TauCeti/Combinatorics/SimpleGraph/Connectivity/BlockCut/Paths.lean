@@ -35,27 +35,6 @@ namespace SimpleGraph
 
 variable {V : Type u} {G : SimpleGraph V}
 
-/-- Avoiding one vertex along the adjacency arrow family is the existence of a simple-graph walk
-whose support avoids that vertex. -/
-private theorem reachableAvoiding_singleton_adjHom_iff {s t x : V} :
-    ReachableAvoiding G.AdjHom {x} s t ↔ ∃ p : G.Walk s t, x ∉ p.support := by
-  rw [reachableAvoiding_adjHom_iff]
-  constructor
-  · rintro ⟨p, hp⟩
-    exact ⟨p, fun hx ↦ hp x hx rfl⟩
-  · rintro ⟨p, hp⟩
-    exact ⟨p, fun v hv hvx ↦ hp (hvx ▸ hv)⟩
-
-/-- A walk avoiding a vertex can be shortened to a path avoiding that vertex. -/
-private theorem exists_isPath_notMem_support_iff {s t x : V} :
-    (∃ p : G.Walk s t, p.IsPath ∧ x ∉ p.support) ↔ ∃ p : G.Walk s t, x ∉ p.support := by
-  classical
-  constructor
-  · rintro ⟨p, -, hp⟩
-    exact ⟨p, hp⟩
-  · rintro ⟨p, hp⟩
-    exact ⟨p.bypass, p.bypass_isPath, fun hx ↦ hp (p.support_bypass_subset_support hx)⟩
-
 /-- **Block--cut path correspondence.** For vertices `a` and `b` in blocks `B` and `C`, neither
 equal to a cut vertex `c`, the original graph has an `a`--`b` walk avoiding `c` exactly when the
 block--cut forest has a `B`--`C` walk avoiding its vertex corresponding to `c`. -/
