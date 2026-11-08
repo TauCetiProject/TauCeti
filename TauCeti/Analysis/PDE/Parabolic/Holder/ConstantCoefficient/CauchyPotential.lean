@@ -46,15 +46,6 @@ private def transportedCauchyL (hT : 0 < T)
   (compSpatialL α ℝ hT e.symm.toContinuousLinearMap).comp
     ((heatCauchyPotentialL hT le_rfl).comp (CkHolderSpace.compLinearL e.toContinuousLinearMap))
 
-private theorem transportedCauchyL_apply (hT : 0 < T)
-    (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι) (g) (x) (t : Icc 0 T) :
-    transportedCauchyL (α := α) hT e g (slabMk x t) =
-      heatCauchyPotential (CkHolderSpace.compLinearL e.toContinuousLinearMap g)
-        t (e.symm x) := by
-  simp only [transportedCauchyL, ContinuousLinearMap.comp_apply, compSpatialL_apply,
-    heatCauchyPotentialL_apply, slabSpaceMap_slabMk, time_slabMk, space_slabMk,
-    ContinuousLinearEquiv.coe_coe]
-
 private theorem spatialTrace_transportedCauchyL (hT : 0 < T)
     (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι) (g) :
     (transportedCauchyL (α := α) hT e g).spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ = g := by
@@ -73,21 +64,9 @@ private theorem operator_transportedCauchyL [DecidableEq ι] (hT : 0 < T) (hα :
           (euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (A i j)) 0 0 u)) (g) :
     euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (A i j)) 0 0
       (transportedCauchyL hT e g) = 0 := by
-  have hinv : compSpatialL α ℝ hT e.toContinuousLinearMap (transportedCauchyL hT e g) =
-      heatCauchyPotentialL hT le_rfl (CkHolderSpace.compLinearL e.toContinuousLinearMap g) := by
-    ext p
-    obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-    simp only [compSpatialL_apply, slabSpaceMap_slabMk, transportedCauchyL_apply,
-      heatCauchyPotentialL_apply, time_slabMk, space_slabMk,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
-  have h := he (transportedCauchyL hT e g)
-  rw [hinv, euclideanParabolicOperatorL_heatCauchyPotentialL hα hT le_rfl] at h
-  ext p
-  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-  have hp := congrArg (fun f ↦ f (slabMk (e.symm x) t)) h
-  simpa only [HolderSpace.zero_apply, HolderSpace.compLipschitzL_apply,
-    slabSpaceMap_slabMk, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply] using hp.symm
+  rw [transportedCauchyL, ContinuousLinearMap.comp_apply,
+    euclideanParabolicOperatorL_compSpatialL_symm_eq hα e he, ContinuousLinearMap.comp_apply,
+    euclideanParabolicOperatorL_heatCauchyPotentialL hα hT le_rfl, map_zero]
 
 private theorem norm_transportedCauchyL_le (hT : 0 < T)
     (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι) {K : ℝ} (hK : 1 ≤ K)
@@ -103,11 +82,7 @@ private theorem norm_transportedCauchyL_le (hT : 0 < T)
     exact mul_le_mul (pow_le_pow_left₀ (by positivity) (max_le hK he) 2)
       (max_le (Real.one_le_rpow hK (by positivity))
         (Real.rpow_le_rpow (norm_nonneg _) he (by positivity))) (by positivity) (by positivity)
-  have hR : ‖compSpatialL α ℝ hT e.symm.toContinuousLinearMap‖ ≤ K ^ 2 * K ^ (α : ℝ) := by
-    refine (norm_compSpatialL_le α ℝ hT _).trans ?_
-    exact mul_le_mul (pow_le_pow_left₀ (by positivity) (max_le hei hK) 2)
-      (Real.rpow_le_rpow (by positivity) (max_le hei hK) (by positivity))
-      (by positivity) (by positivity)
+  have hR := norm_compSpatialL_le_of_norm_le α ℝ hT hK hei
   have hH := norm_heatCauchyPotentialL_le (α := α) (E := EuclideanSpace ℝ ι) (F := ℝ) hT le_rfl
   have h := (ContinuousLinearMap.opNorm_comp_le (compSpatialL α ℝ hT e.symm.toContinuousLinearMap)
       ((heatCauchyPotentialL hT le_rfl).comp
@@ -141,16 +116,9 @@ theorem exists_solutionOperator_euclideanParabolicOperatorL_const [DecidableEq �
   have hK : 1 ≤ K := le_max_left _ _
   have hK₀ : 0 ≤ K := zero_le_one.trans hK
   refine ⟨D * H * D, by positivity, fun A hA hA' T hT ↦ ?_⟩
-  obtain ⟨e, he₁, he₂, he⟩ :=
-    exists_continuousLinearEquiv_euclideanParabolicOperatorL_compSpatialL_eq
+  obtain ⟨e, hen, hein, he⟩ :=
+    exists_continuousLinearEquiv_norm_le_euclideanParabolicOperatorL_compSpatialL_eq
       (hab := hT) hα hlam hA hA'
-  have hen : ‖e.toContinuousLinearMap‖ ≤ K := ContinuousLinearMap.opNorm_le_bound _ hK₀ fun x ↦
-    (he₂ x).trans (mul_le_mul_of_nonneg_right
-      ((le_max_left _ _).trans (le_max_right _ _)) (norm_nonneg x))
-  have hein : ‖e.symm.toContinuousLinearMap‖ ≤ K :=
-    ContinuousLinearMap.opNorm_le_bound _ hK₀ fun x ↦
-      (he₁ x).trans (mul_le_mul_of_nonneg_right
-        ((le_max_right _ _).trans (le_max_right _ _)) (norm_nonneg x))
   refine ⟨transportedCauchyL hT e, norm_transportedCauchyL_le hT e hK hen hein,
     fun g u ↦ ⟨fun hu ↦ ?_, fun hu ↦ hu ▸
       ⟨operator_transportedCauchyL hT hα e A he g, spatialTrace_transportedCauchyL hT e g⟩⟩⟩
