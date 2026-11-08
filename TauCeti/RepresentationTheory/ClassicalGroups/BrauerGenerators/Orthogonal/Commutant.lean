@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Equivariance
 
+import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
+
 /-!
 # The commutant of the orthogonal group on the tensor square
 
@@ -163,7 +165,9 @@ private theorem exists_eq_add_smul_diagProj (h2 : (2 : K) ≠ 0) {a₀ a₁ : Fi
     ∃ q r p y : K, M = q • (permToBrauer 1).orthogonalActionMatrix K (Fin n) +
       r • (permToBrauer (Equiv.swap (0 : Fin 2) 1)).orthogonalActionMatrix K (Fin n) +
       p • (capCup (0 : Fin 2) 1).orthogonalActionMatrix K (Fin n) + y • diagProj K n := by
-  have htrans := exists_perm_apply_eq_of_ne ha
+  have htrans : ∀ c d : Fin n, c ≠ d → ∃ σ : Equiv.Perm (Fin n), σ a₀ = c ∧ σ a₁ = d :=
+    fun _ _ hcd ↦ MulAction.is_two_pretransitive_iff.mp
+      (Equiv.Perm.isMultiplyPretransitive (Fin n) 2) ha hcd
   have hmove := @apply_eq_apply_of_perm_apply _ _ _ _ hM
   -- The value of `M` on each pattern of indices is its value at a pattern built from `a₀, a₁`.
   set x := M ![a₀, a₀] ![a₀, a₀]
