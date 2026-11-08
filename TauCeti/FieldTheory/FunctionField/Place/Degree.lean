@@ -35,7 +35,7 @@ a genuine positive natural number.
 * `TauCeti.Place.linearIndependent_over_adjoin_of_linearIndependent_residue`: the heart of the
   matter. If `x` has nonzero order at `P`, then elements of `𝒪_P` whose residues are linearly
   independent over `k` are themselves linearly independent over `k(x)`.
-* `TauCeti.Place.finiteDimensional_residueField_of_ord_ne_zero` and
+* `TauCeti.Place.finiteDimensional_residueField_of_finiteDimensional_adjoin` and
   `TauCeti.Place.finiteDimensional_residueField`: the residue field of a place of an algebraic
   function field is a finite extension of the constants.
 * `TauCeti.Place.degree_le_finrank_over_adjoin`: `deg P ≤ [F : k(x)]` for every `x` with
@@ -51,7 +51,7 @@ a genuine positive natural number.
 * `TauCeti.Place.isSeparable_residueField_of_perfectField`: over a perfect field of constants every
   residue field is separable over the constants.
 * `TauCeti.Place.separable_of_ord_aeval_pos`: if the residue field of `P` is separable over `k`,
-  an irreducible `q` with `q(z)` vanishing at `P`, for `z` regular at `P`, is separable.
+  an irreducible `q` with `q(z)` vanishing at `P` is separable.
 
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
@@ -210,11 +210,23 @@ theorem rank_residueField_le_finrank_over_adjoin {x : F} (hx : P.ord x ≠ 0)
 
 variable (P) in
 /-- The residue field of a place is a finite extension of the constants as soon as `F` is finite
-over `k(x)` for a single `x` of nonzero order at `P` (Stichtenoth, Proposition 1.1.15). -/
-theorem finiteDimensional_residueField_of_ord_ne_zero {x : F} (hx : P.ord x ≠ 0)
-    [FiniteDimensional k⟮x⟯ F] : FiniteDimensional k P.ResidueField :=
-  Module.rank_lt_aleph0_iff.mp
-    ((rank_residueField_le_finrank_over_adjoin P hx).trans_lt Cardinal.natCast_lt_aleph0)
+over `k(x)` for a single `x` (Stichtenoth, Proposition 1.1.15). Such an `x` is transcendental,
+because a field carrying a place is not algebraic over `k`, so a uniformizer of `P` is a parameter
+of nonzero order. -/
+theorem finiteDimensional_residueField_of_finiteDimensional_adjoin {x : F}
+    [FiniteDimensional k⟮x⟯ F] : FiniteDimensional k P.ResidueField := by
+  obtain ⟨t, ht⟩ := P.exists_isUniformizer
+  rw [P.isUniformizer_iff_ord_eq_one] at ht
+  have htt : Transcendental k t := P.transcendental_of_ord_ne_zero (by omega)
+  have hxt : Transcendental k x := fun hx ↦ htt (by
+    have : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx.isIntegral
+    have : FiniteDimensional k F := Module.Finite.trans k⟮x⟯ F
+    exact Algebra.IsAlgebraic.isAlgebraic t)
+  have : FiniteDimensional k⟮t⟯ F :=
+    (IsFunctionField.of_finiteDimensional_adjoin hxt).finiteDimensional_adjoin htt
+  exact Module.rank_lt_aleph0_iff.mp
+    ((rank_residueField_le_finrank_over_adjoin P (x := t) (by omega)).trans_lt
+      Cardinal.natCast_lt_aleph0)
 
 variable (P) in
 /-- The residue field of a place of an algebraic function field is a finite extension of the
@@ -222,11 +234,9 @@ constants (Stichtenoth, Proposition 1.1.15). This is what makes `TauCeti.Place.d
 genuine invariant rather than a junk value. -/
 theorem finiteDimensional_residueField (hF : IsFunctionField k F) :
     FiniteDimensional k P.ResidueField := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [P.isUniformizer_iff_ord_eq_one] at ht
-  have : FiniteDimensional k⟮t⟯ F :=
-    hF.finiteDimensional_adjoin (P.transcendental_of_ord_ne_zero (by omega))
-  exact P.finiteDimensional_residueField_of_ord_ne_zero (x := t) (by omega)
+  obtain ⟨x, hx⟩ := hF.exists_transcendental
+  have := hF.finiteDimensional_adjoin hx
+  exact P.finiteDimensional_residueField_of_finiteDimensional_adjoin (x := x)
 
 variable (P) in
 /-- **Stichtenoth, Proposition 1.1.15**: the degree of a place is bounded by `[F : k(x)]` for
@@ -276,13 +286,45 @@ theorem isSeparable_residueField_of_perfectField [PerfectField k] (hF : IsFuncti
   have := P.finiteDimensional_residueField hF
   inferInstance
 
+/-- **A polynomial in a function with a pole at `P` has the order of its leading term**: if `z`
+has a pole at `P`, a nonzero polynomial `q ∈ k[X]` of positive degree has
+`ord_P (q(z)) = deg q * ord_P z`, since the term of top degree has strictly least order. -/
+theorem ord_aeval_eq_natDegree_mul_of_ord_neg {z : F} (hz : P.ord z < 0) {q : k[X]} (hq : q ≠ 0)
+    (hdeg : 0 < q.natDegree) : P.ord (aeval z q) = q.natDegree * P.ord z := by
+  have hz0 : z ≠ 0 := fun h ↦ by simp [h] at hz
+  have hterm : ∀ i, q.coeff i ≠ 0 → P.ord (q.coeff i • z ^ i) = i * P.ord z := fun i hi ↦ by
+    rw [Algebra.smul_def, P.ord_mul (by simpa using hi) (pow_ne_zero _ hz0), ord_algebraMap,
+      ord_pow, zero_add]
+  have hlead : q.coeff q.natDegree • z ^ q.natDegree ≠ 0 := by
+    simpa [hz0] using leadingCoeff_ne_zero.mpr hq
+  rw [aeval_eq_sum_range, P.ord_sum_eq_of_forall_lt (s := Finset.range (q.natDegree + 1))
+    (f := fun i ↦ q.coeff i • z ^ i) (j := q.natDegree) (by simp) hlead fun i hi hij ↦ ?_,
+    hterm _ (leadingCoeff_ne_zero.mpr hq)]
+  have hi' : i < q.natDegree := by
+    have := Finset.mem_range.mp hi
+    omega
+  rw [hterm _ (leadingCoeff_ne_zero.mpr hq)]
+  by_cases hc : q.coeff i = 0
+  · simp only [hc, zero_smul, ord_zero]
+    exact mul_neg_of_pos_of_neg (by exact_mod_cast hdeg) hz
+  · rw [hterm i hc]
+    exact mul_lt_mul_of_neg_right (by exact_mod_cast hi') hz
+
 /-- **A polynomial vanishing at a separable value is separable**: if the residue field of `P` is
-separable over `k`, `z` is regular at `P`, and `q(z)` vanishes at `P` for an irreducible
-`q ∈ k[X]`, then `q` is separable. Up to a unit, `q` is the minimal polynomial over `k` of the
-value of `z` at `P`. -/
+separable over `k` and `q(z)` vanishes at `P` for an irreducible `q ∈ k[X]`, then `q` is
+separable. The function `z` is then regular at `P`, since a pole of `z` would give `q(z)` a pole.
+Up to a unit, `q` is the minimal polynomial over `k` of the value of `z` at `P`. -/
 theorem separable_of_ord_aeval_pos [Algebra.IsSeparable k P.ResidueField]
-    {z : F} (hz : 0 ≤ P.ord z) {q : k[X]} (hq : Irreducible q) (hqz : 0 < P.ord (aeval z q)) :
+    {z : F} {q : k[X]} (hq : Irreducible q) (hqz : 0 < P.ord (aeval z q)) :
     q.Separable := by
+  have hz : 0 ≤ P.ord z := by
+    by_contra hneg
+    have h := ord_aeval_eq_natDegree_mul_of_ord_neg (not_le.mp hneg) hq.ne_zero
+      (natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible hq))
+    have := mul_neg_of_pos_of_neg
+      (by exact_mod_cast natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible hq) :
+        (0 : ℤ) < q.natDegree) (not_le.mp hneg)
+    omega
   set z' : P.integers := ⟨z, P.mem_integers_iff_ord_nonneg.mpr hz⟩
   have hcoe : (aeval z' q : F) = aeval z q := (aeval_algebraMap_apply F z' q).symm
   have hne : (aeval z' q : F) ≠ 0 := fun h ↦ by
