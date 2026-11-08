@@ -71,8 +71,8 @@ private theorem gradedBracket_mem_of_mem_gradedBracketSpan_of_forall_mem {k : �
   rw [basisModificationDelta_smul, hb] at h
   simpa only [hc, mul_zero, Finset.sum_const_zero, zero_smul, zero_add] using h
 
-/-- Brackets `[π^{k+1} ∂_{x₀} ρ, u]`: write `u = Σ_j b_j ∂_j ρ` and drop the term at `j = x₀`,
-which is `b_{x₀} • [π^{k+1} ∂_{x₀} ρ, ∂_{x₀} ρ] = 0`. -/
+/-- For every `u ∈ gr_0(F)`, the bracket `[π^{k+1} ∂_{x₀} ρ, u]` lies in any submodule `W`
+containing all `δ_ρ(ω)` with `ω_{x₀} ∈ C_{k+1}(F)`. -/
 private theorem gradedBracket_gradedPowIter_degreeOneDeriv_mem_of_forall_mem {k : ℕ}
     {ρ : gradedPiece p (freeProP p X) 1}
     (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
@@ -85,6 +85,8 @@ private theorem gradedBracket_gradedPowIter_degreeOneDeriv_mem_of_forall_mem {k 
     gradedBracket p (freeProP p X) (k + 1) 0
       (gradedPowIter p (freeProP p X) (k + 1) (degreeOneDeriv p X x₀ ρ)) u ∈ W := by
   cases nonempty_fintype X
+  -- Write `u = Σ_j b_j ∂_j ρ` and drop the term at `j = x₀`, which is
+  -- `b_{x₀} • [π^{k+1} ∂_{x₀} ρ, ∂_{x₀} ρ] = 0`.
   obtain ⟨b, hb⟩ := (mem_span_range_iff_exists_fun (ZMod p)).mp (hρ ▸ Submodule.mem_top (x := u))
   have hδ : basisModificationDelta p X (Nat.le_add_left 1 k) ρ
       ((fun i ↦ b i • gradedPowIter p (freeProP p X) (k + 1) (degreeOneDeriv p X x₀ ρ)) -
@@ -102,8 +104,8 @@ private theorem gradedBracket_gradedPowIter_degreeOneDeriv_mem_of_forall_mem {k 
   rw [Pi.sub_apply, Pi.single_eq_same, sub_self]
   exact zero_mem _
 
-/-- Brackets `[u, ∂_{x₀} ρ]` for every `u ∈ gr_{k+1}(F)`: decompose `u = c + t` with
-`c ∈ C_{k+1}(F)` and `t` in the span of the `π^{k+1} x`. -/
+/-- For every `u ∈ gr_{k+1}(F)`, the bracket `[u, ∂_{x₀} ρ]` lies in any submodule `W` containing
+all `δ_ρ(ω)` with `ω_{x₀} ∈ C_{k+1}(F)`. -/
 private theorem gradedBracket_degreeOneDeriv_mem_of_forall_mem {k : ℕ}
     {ρ : gradedPiece p (freeProP p X) 1}
     (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
@@ -114,6 +116,7 @@ private theorem gradedBracket_degreeOneDeriv_mem_of_forall_mem {k : ℕ}
         basisModificationDelta p X (Nat.le_add_left 1 k) ρ ω ∈ W)
     (u : gradedPiece p (freeProP p X) (k + 1)) :
     gradedBracket p (freeProP p X) (k + 1) 0 u (degreeOneDeriv p X x₀ ρ) ∈ W := by
+  -- Decompose `u = c + t` with `c ∈ C_{k+1}(F)` and `t` in the span of the `π^{k+1} x`.
   have hbracket : ∀ c ∈ gradedBracketSpan p (freeProP p X) k,
       ∀ z : gradedPiece p (freeProP p X) 0,
         gradedBracket p (freeProP p X) (k + 1) 0 c z ∈ W := fun c hc' z ↦
