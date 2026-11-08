@@ -369,6 +369,13 @@ theorem glHeightMatrix_apply (i j : n) :
     glHeightMatrix R n i j = if i = j then (glHeightLabel n i : R) else 0 := by
   simp [glHeightMatrix, diagonal_apply]
 
+/-- The height operator is the integer combination of the diagonal matrix units given by its
+labels. -/
+theorem glHeightMatrix_eq_sum_single :
+    glHeightMatrix R n = ∑ i, glHeightLabel n i • (single i i 1 : Matrix n n R) := by
+  rw [glHeightMatrix, ← sum_single_eq_diagonal]
+  simp only [smul_single, zsmul_eq_mul, mul_one]
+
 variable (R n) in
 /-- Evaluate a diagonal weight on the height operator. The result is an eigenvalue of that operator
 on any vector of the given weight. This is linear in the weight, though its values need not lie
@@ -396,14 +403,7 @@ omit [LieModule R (Matrix n n R) M] in
 theorem lie_glHeightMatrix_eq_smul {mu : n → R} {v : M}
     (hv : ∀ i : n, ⁅(single i i 1 : Matrix n n R), v⁆ = mu i • v) :
     ⁅glHeightMatrix R n, v⁆ = glHeight R n mu • v := by
-  have hH : glHeightMatrix R n = ∑ i, glHeightLabel n i • (single i i 1 : Matrix n n R) := by
-    ext a b
-    by_cases hab : a = b
-    · subst hab
-      simp [glHeightMatrix_apply, Matrix.sum_apply, single_apply]
-    · have : ∀ c, ¬(c = a ∧ c = b) := fun c ⟨h₁, h₂⟩ => hab (h₁.symm.trans h₂)
-      simp [glHeightMatrix_apply, Matrix.sum_apply, hab, this]
-  rw [hH, sum_lie, glHeight_apply, Finset.sum_smul]
+  rw [glHeightMatrix_eq_sum_single, sum_lie, glHeight_apply, Finset.sum_smul]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [zsmul_lie, hv, ← Int.cast_smul_eq_zsmul R, ← mul_smul, mul_comm]
 
