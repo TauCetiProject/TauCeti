@@ -109,13 +109,10 @@ theorem coe_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
 /-- The winding phase is smooth off the origin. -/
 theorem contDiffAt_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n (fun w ↦ (windingPhase m w : ℂ)) z := by
-  have hg : ContDiff ℝ n fun θ : ℝ ↦ (Circle.exp (m * θ) : ℂ) := by
-    simp only [Circle.coe_exp]
-    exact ((ofRealCLM.contDiff.comp (contDiff_const.mul contDiff_id)).mul contDiff_const).cexp
-  have hper : Function.Periodic (fun θ : ℝ ↦ (Circle.exp (m * θ) : ℂ)) (2 * Real.pi) := by
-    intro θ
-    simp only [Circle.exp_natCast_mul, Circle.exp_add_two_pi]
-  exact hg.contDiffAt_comp_arg hper hz
+  refine ((contDiffOn_div_norm_pow m).contDiffAt (isOpen_compl_singleton.mem_nhds hz))
+    |>.congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_compl_singleton.mem_nhds hz] with w hw
+  exact coe_windingPhase m hw
 
 /-- The winding phase is differentiable off the origin. -/
 theorem differentiableAt_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
@@ -211,10 +208,7 @@ private theorem abs_mul_norm_le_norm_covariantDerivative {z : ℂ} (hz : z ≠ 0
     |gaugeTransform (windingPhase m)⁻¹ x z 0 * v.re +
         gaugeTransform (windingPhase m)⁻¹ x z 1 * v.im| * ‖sectionValue x z‖ ≤
       ‖covariantDerivative x z v‖ := by
-  have hu : DifferentiableAt ℝ (fun w ↦ (((windingPhase m)⁻¹ w : Circle) : ℂ)) z := by
-    simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
-      Complex.conjCLE_apply] using
-      conjCLE.differentiableAt.comp z (differentiableAt_windingPhase m hz)
+  have hu := differentiableAt_coe_inv (differentiableAt_windingPhase m hz)
   have hsx : DifferentiableAt ℝ (sectionValue x) z := by
     rw [funext (sectionValue_apply x)]
     exact (differentiableAt_const (2 : ℂ)).mul
@@ -403,16 +397,10 @@ theorem exists_framedGaugeGroup_mul_eq_norm {g : ℂ → ℂ}
     refine h.congr' ?_
     filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (R + 2)] with z hz
     simp [v, hχ1 hz]
-  have hmem : u ∈ framedGaugeGroup := by
-    refine (mem_framedGaugeGroup u).2 ⟨?_, ?_⟩
-    · simp only [hu, div_eq_mul_inv]
-      exact hv.mul ((ofRealCLM.contDiff.comp (hv.norm ℝ hv0)).inv
-        fun z ↦ ofReal_ne_zero.2 (norm_ne_zero_iff.2 (hv0 z)))
-    · have harg := ((continuousAt_arg (by simp)).tendsto).comp hvt
-      rw [arg_one] at harg
-      have h := (Circle.exp.continuous.tendsto 0).comp harg
-      rw [Circle.exp_zero] at h
-      exact h
+  have hmem : u ∈ framedGaugeGroup :=
+    exp_mem_framedGaugeGroup (contDiff_iff_contDiffAt.2 fun z ↦
+        (contDiffAt_arg (mem_slitPlane_iff.2 (Or.inl (hv_re z)))).comp z hv.contDiffAt)
+      (by simpa [arg_one, Function.comp_def] using ((continuousAt_arg (by simp)).tendsto).comp hvt)
   refine ⟨⟨u, hmem⟩, ?_⟩
   filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (R + 2)] with z hz
   have hvz : v z = conj (g z) := by simp [v, hχ1 hz]

@@ -23,7 +23,8 @@ The cutoff removes the angular singularity on a neighborhood of the origin.
 
 The end formulas, rotation laws and compact support of changes of cutoff are proved
 explicitly. The latter allows different references to define the same affine Sobolev
-space. These reference pairs are not asserted to solve the vortex equations.
+space. These reference pairs are not asserted to solve the vortex equations. The winding phase
+`(z / |z|)^m` itself is smooth off the origin (`contDiffOn_div_norm_pow`).
 
 Outside a disc the section is homogeneous of degree `0` and the connection of degree `-1`, so all
 their derivatives are bounded (`exists_norm_iteratedFDeriv_referenceSection_le`,
@@ -119,7 +120,7 @@ theorem referenceConnection_eq_angular (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z
   simp [referenceConnection, cutoff_eq_one f hz, div_eq_mul_inv, mul_comm]
 
 /-- The winding phase `(z / ‖z‖)^m` is smooth away from the origin. -/
-private theorem contDiffOn_phase (m : ℕ) {N : WithTop ℕ∞} :
+theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
     ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by
   intro z hz
   have hz : z ≠ 0 := hz
@@ -140,7 +141,7 @@ theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     filter_upwards [cutoff_eventuallyEq_zero f] with z hz
     simp [referenceSection, hz]
   · exact (ofRealCLM.contDiff.comp (contDiff_cutoff f)).contDiffAt.mul
-      ((contDiffOn_phase m).contDiffAt (isOpen_compl_singleton.mem_nhds hz))
+      ((contDiffOn_div_norm_pow m).contDiffAt (isOpen_compl_singleton.mem_nhds hz))
 
 /-- The connection is a smooth map into the space of one-forms, including at the origin. -/
 theorem contDiff_referenceConnection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
@@ -242,7 +243,7 @@ private theorem rOut_le_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ} (hz : max
 theorem exists_norm_iteratedFDeriv_referenceSection_le (f : ContDiffBump (0 : ℝ)) (m n : ℕ) :
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceSection f m) z‖ ≤ C :=
   exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq (d := 0) le_rfl
-    ((contDiff_referenceSection f m).of_le (by exact_mod_cast le_top)) (contDiffOn_phase m)
+    ((contDiff_referenceSection f m).of_le (by exact_mod_cast le_top)) (contDiffOn_div_norm_pow m)
     (fun t ht z _ ↦ by rw [zpow_zero, one_smul, phase_smul m ht])
     (fun _ hz ↦ referenceSection_eq_phase f m (rOut_le_norm_sq f hz)) n le_rfl
 

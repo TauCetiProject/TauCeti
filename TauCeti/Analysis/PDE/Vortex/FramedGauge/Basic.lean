@@ -197,15 +197,19 @@ theorem gaugeForm_one (z : ℂ) : gaugeForm 1 z = 0 := by
   ext v
   simp
 
+/-- The inverse of a differentiable gauge is differentiable. -/
+theorem differentiableAt_coe_inv {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) :
+    DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
+    Complex.conjCLE_apply] using conjCLE.differentiableAt.comp z hu
+
 /-- The logarithmic derivative of the inverse gauge is the negative of the logarithmic
 derivative. -/
 theorem gaugeForm_inv {u : ℂ → Circle} {z : ℂ}
     (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) :
     gaugeForm u⁻¹ z = -gaugeForm u z := by
-  have hinv : DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
-    simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
-      Complex.conjCLE_apply] using conjCLE.differentiableAt.comp z hu
-  have h := gaugeForm_mul hu hinv
+  have h := gaugeForm_mul hu (differentiableAt_coe_inv hu)
   rw [mul_inv_cancel, gaugeForm_one] at h
   exact eq_neg_of_add_eq_zero_right h.symm
 
