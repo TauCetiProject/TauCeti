@@ -29,7 +29,8 @@ semiring satisfying the strong rank condition. Consequently, the rank of a produ
 `f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. The dimension of the range
 of a linear map is unchanged by composing on the left with an injective map and on the right with a
 surjective one. Conjugating an endomorphism by a linear equivalence preserves the dimension of its
-kernel.
+kernel. The kernel of a surjection from a finite-dimensional space has dimension the difference of
+the dimensions.
 -/
 
 public section
@@ -175,6 +176,20 @@ theorem finrank_range_comp_comp {V : Type*} [AddCommMonoid V] [Module 𝕜 V] (A
     finrank 𝕜 (range (A ∘ₗ L ∘ₗ B)) = finrank 𝕜 (range L) := by
   rw [range_comp, range_comp_of_range_eq_top _ (range_eq_top.2 hB)]
   exact (Submodule.equivMapOfInjective _ hA _).finrank_eq.symm
+
+end LinearMap
+
+namespace LinearMap
+
+/-- **Rank–nullity for a surjection**: the kernel of a surjective linear map from a
+finite module has dimension the difference of the dimensions. -/
+theorem finrank_ker_eq_sub_of_surjective {K : Type*} {M : Type v} {N : Type*} [Ring K]
+    [HasRankNullity.{v} K] [StrongRankCondition K] [AddCommGroup M] [Module K M]
+    [Module.Finite K M] [AddCommGroup N] [Module K N] (f : M →ₗ[K] N) (hf : Function.Surjective f) :
+    Module.finrank K (ker f) = Module.finrank K M - Module.finrank K N := by
+  have h := (ker f).finrank_quotient_add_finrank
+  rw [(f.quotKerEquivOfSurjective hf).finrank_eq] at h
+  omega
 
 end LinearMap
 
