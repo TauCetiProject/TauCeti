@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.Probability.Moments.Mixture
 
 /-!
@@ -45,6 +46,8 @@ variable on a probability space.
   nonnegativity of its variance.
 * `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
   composition with a measure-preserving measurable embedding.
+* `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
+  L² convergence on a probability space.
 * `TauCeti.Probability.evariance_integral_prod_le` and
   `TauCeti.Probability.evariance_prod_le`: product-variance bounds for averages and products.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
@@ -55,8 +58,27 @@ variable on a probability space.
 
 public section
 
-open MeasureTheory ProbabilityTheory Set
-open scoped NNReal RealInnerProductSpace
+open Filter MeasureTheory ProbabilityTheory Set
+open scoped NNReal RealInnerProductSpace Topology
+
+namespace ProbabilityTheory
+
+/-- The variance is continuous under L² convergence on a probability space. -/
+theorem tendsto_variance_of_tendsto_eLpNorm_sub {α ι : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsProbabilityMeasure μ] {f : α → ℝ} {g : ι → α → ℝ} {l : Filter ι}
+    (hf : MemLp f 2 μ) (hg : ∀ i, MemLp (g i) 2 μ)
+    (ht : Tendsto (fun i ↦ eLpNorm (g i - f) 2 μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ variance (g i) μ) l (𝓝 (variance f μ)) := by
+  have hmean : Tendsto (fun i ↦ ∫ x, g i x ∂μ) l (𝓝 (∫ x, f x ∂μ)) := by
+    apply tendsto_integral_of_L1' f (.of_forall fun i ↦ (hg i).integrable one_le_two)
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ht
+      (fun _ ↦ bot_le) (fun _ ↦ eLpNorm_le_eLpNorm_of_exponent_le one_le_two)
+  have hsecond := tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub hf hg ht
+  simp only [Real.norm_eq_abs, sq_abs] at hsecond
+  simp_rw [variance_eq_sub (hg _), variance_eq_sub hf]
+  exact hsecond.sub (hmean.pow 2)
+
+end ProbabilityTheory
 
 namespace MeasureTheory.MemLp
 
