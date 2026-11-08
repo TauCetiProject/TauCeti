@@ -20,7 +20,7 @@ Hamilton equations `q' = ∂H/∂p`, `p' = -∂H/∂q`.
 
 The characteristic contraction equation determines the field uniquely. Since `dH(X_H) = 0`, a
 differentiable Hamiltonian is constant along every integral curve of `X_H`
-(`TauCeti.SymplecticForm.apply_eq_of_hasDerivAt_hamiltonianVectorField`). The linearization of
+(`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`). The linearization of
 `X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
@@ -107,18 +107,19 @@ theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → �
   rw [← ω.apply_hamiltonianVectorField H x, ω.self_eq_zero]
 
 /-- **Conservation of energy.** A Hamiltonian is constant along every integral curve of its
-Hamiltonian vector field on a preconnected open set of times, provided it is differentiable at
-every point of the curve. -/
-theorem apply_eq_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
-    {γ : ℝ → V} {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s)
-    (hγ : ∀ t ∈ s, HasDerivAt γ (ω.hamiltonianVectorField H (γ t)) t)
+Hamiltonian vector field on a preconnected set of times, provided it is differentiable at
+every point of the curve; the curve need only have its derivative within the set of times. -/
+theorem apply_eq_of_hasDerivWithinAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    {γ : ℝ → V} {s : Set ℝ} (hs' : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivWithinAt γ (ω.hamiltonianVectorField H (γ t)) s t)
     (hH : ∀ t ∈ s, DifferentiableAt ℝ H (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     H (γ t) = H (γ t₀) := by
-  have hd (t : ℝ) (ht : t ∈ s) : HasDerivAt (H ∘ γ) 0 t := by
-    simpa using (hH t ht).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
-  exact hs.is_const_of_deriv_eq_zero hs'
-    (fun t ht ↦ (hd t ht).differentiableAt.differentiableWithinAt) (fun t ht ↦ (hd t ht).deriv)
-    ht ht₀
+  have hd (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (H ∘ γ) 0 s t := by
+    simpa using (hH t ht).hasFDerivAt.comp_hasDerivWithinAt t (hγ t ht)
+  have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := H ∘ γ) (f' := fun _ ↦ 0)
+    (C := 0) (fun x hx ↦ hd x hx) (fun _ _ ↦ by simp)
+    (isPreconnected_iff_ordConnected.1 hs').convex ht₀ ht
+  simpa [sub_eq_zero] using h
 
 /-- For a `J`-invariant symplectic form, `J X_H(x)` is the gradient of `H` at `x` for the
 bilinear form `g = ω(·, J ·)`: `g(J X_H(x), w) = dH(x) w`. -/
@@ -238,39 +239,25 @@ theorem continuous_hamiltonianVectorField_comp (ω : SymplecticForm V)
 
 end Continuity
 
-/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
-space, the Hamiltonian vector fields `X_{K z}` evaluated along a map continuous on `U` vary
-continuously on `U`. -/
-theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {u : W → V} {U : Set W}
-    (hU : IsOpen U) (hu : ContinuousOn u U)
-    (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
-    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U := by
-  have hmem {z : W} (hz : z ∈ U) : (z, u z) ∈ U ×ˢ (Set.univ : Set V) := ⟨hz, Set.mem_univ _⟩
-  have hD : ContinuousOn (fun z ↦ fderiv ℝ (Function.uncurry K) (z, u z)) U :=
-    (hK.continuousOn_fderiv_of_isOpen (hU.prod isOpen_univ) le_rfl).comp
-      (continuousOn_id.prodMk hu) fun _ hz ↦ hmem hz
-  -- The target derivative of `K` along `u` is a restriction of its joint derivative.
-  exact ω.continuousOn_hamiltonianVectorField_comp <|
-    (hD.clm_comp (continuousOn_const (c := ContinuousLinearMap.inr ℝ W V))).congr
-      fun _ hz ↦ fderiv_slice_right (f := Function.uncurry K) <|
-        (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
-          ((hU.prod isOpen_univ).mem_nhds (hmem hz))
-
-/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
-space, the Hamiltonian vector field `X_{K z}(x)` is continuous jointly in the parameter `z ∈ U` and
-the point `x`. -/
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over a set `U` of the parameter space,
+the Hamiltonian vector field `X_{K z}(x)` is continuous jointly in the parameter `z ∈ U` and the
+point `x`. -/
 theorem continuousOn_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {U : Set W} (hU : IsOpen U)
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {U : Set W}
     (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
     ContinuousOn (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) (U ×ˢ Set.univ) := by
-  -- View `(z, x) ↦ K z` as a family over the parameter space `W × V`, evaluated at `x`.
-  have hK' : ContDiffOn ℝ 1 (Function.uncurry fun p : W × V ↦ K p.1)
-      ((U ×ˢ Set.univ) ×ˢ Set.univ) :=
-    hK.comp (contDiff_fst.fst.prodMk contDiff_snd).contDiffOn
-      fun _ hq ↦ ⟨hq.1.1, Set.mem_univ _⟩
-  exact ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (hU.prod isOpen_univ)
-    continuousOn_snd hK'
+  refine ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp_continuousOn ?_
+  exact (hK.fderiv_right (n := 0) isOpen_univ).continuousOn
+
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over a set `U` of the parameter space,
+the Hamiltonian vector fields `X_{K z}` evaluated along a map continuous on `U` vary continuously
+on `U`. -/
+theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {u : W → V} {U : Set W}
+    (hu : ContinuousOn u U) (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
+    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U :=
+  (ω.continuousOn_uncurry_hamiltonianVectorField hK).comp (continuousOn_id.prodMk hu)
+    fun _ hz ↦ ⟨hz, Set.mem_univ _⟩
 
 /-- For a jointly `C¹` family of Hamiltonians `K z`, the Hamiltonian vector field `X_{K z}(x)` is
 continuous jointly in the parameter `z` and the point `x`. -/
@@ -278,7 +265,7 @@ theorem continuous_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGrou
     [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ}
     (hK : ContDiff ℝ 1 (Function.uncurry K)) :
     Continuous (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) := by
-  have h := ω.continuousOn_uncurry_hamiltonianVectorField isOpen_univ hK.contDiffOn
+  have h := ω.continuousOn_uncurry_hamiltonianVectorField (U := Set.univ) hK.contDiffOn
   rw [Set.univ_prod_univ] at h
   exact continuousOn_univ.1 h
 
