@@ -130,11 +130,12 @@ theorem norm_coeff_mul_pow_le (f : HasGaussNorm.subring R R₀) (n : ℕ) :
     ‖coeff n (f : R⟦X⟧)‖ * R₀ ^ n ≤ ‖f‖ :=
   le_gaussNorm norm R₀ _ (HasGaussNorm.mem_subring.mp f.2) n
 
-/-- The norm of a bounded series is bounded by a nonnegative `r` exactly when every weighted
-coefficient norm `‖aₙ‖ R₀ⁿ` is. -/
-theorem norm_le_iff {f : HasGaussNorm.subring R R₀} {r : ℝ} (hr : 0 ≤ r) :
+/-- The norm of a bounded series is bounded by `r` exactly when every weighted coefficient norm
+`‖aₙ‖ R₀ⁿ` is. -/
+theorem norm_le_iff {f : HasGaussNorm.subring R R₀} {r : ℝ} :
     ‖f‖ ≤ r ↔ ∀ n, ‖coeff n (f : R⟦X⟧)‖ * R₀ ^ n ≤ r := by
   refine ⟨fun h n ↦ (norm_coeff_mul_pow_le f n).trans h, fun h ↦ ?_⟩
+  have hr : 0 ≤ r := (mul_nonneg (norm_nonneg _) (by simp)).trans (h 0)
   rw [norm_eq_gaussNorm, gaussNorm_eq]
   exact Real.iSup_le h hr
 
@@ -200,7 +201,7 @@ instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ ?_⟩
   rw [dist_eq_norm]
-  refine ((norm_le_iff (half_pos hε).le).mpr fun n ↦ ?_).trans_lt (half_lt_self hε)
+  refine (norm_le_iff.mpr fun n ↦ ?_).trans_lt (half_lt_self hε)
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_mk]
   exact hN k hk n
 

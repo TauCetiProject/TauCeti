@@ -206,7 +206,7 @@ private theorem mem_of_coefficient_hasSum {π : O} (hπ : π ≠ 0) (hπ1 : ‖(
   refine mem_weakCompletionSet_iff.mpr ⟨c, Q, hdeg, fun k ↦ ?_⟩
   rw [MvPolynomial.aeval_X_left]
   apply eval_eq_of_norm_sub_le hπ hπ1
-  apply (MvPowerSeries.norm_le_iff (pow_nonneg (norm_nonneg _) k)).mpr
+  apply MvPowerSeries.norm_le_iff.mpr
   intro t
   -- Coefficientwise convergence suffices: every tail coefficient is bounded by ‖π‖^k.
   have htail : HasSum (fun j ↦ (π : K) ^ (j + k) * ((Q (j + k)).coeff t : K))

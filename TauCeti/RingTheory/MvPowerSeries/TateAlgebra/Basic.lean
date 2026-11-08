@@ -161,9 +161,9 @@ theorem prod_pow_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
 
 omit [IsUltrametricDist R] hc in
 /-- A sequence of families that is uniformly Cauchy in the weighted coefficient norms
-`‖A k t‖ * w t` converges to a coefficientwise limit uniformly in these weighted norms. No decay,
-boundedness or positivity hypothesis on the weights is needed: at an index with a nonpositive
-weight the estimate is trivial. -/
+`‖A k t‖ * w t` has a family `a` approximating it uniformly in these weighted norms; at indices
+with positive weight `a t` is the coefficientwise limit. No decay, boundedness or positivity
+hypothesis on the weights is needed. -/
 theorem _root_.TauCeti.MvPowerSeries.exists_weighted_uniform_limit {ι E : Type*}
     [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
     (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
@@ -292,6 +292,21 @@ theorem norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le
     · exact h t ht
   · exact norm_constantCoeff_le f
 
+/-- A real function tending to `0` along `cofinite` that is nonnegative somewhere attains its
+supremum. -/
+private theorem exists_forall_le_of_tendsto_cofinite {α : Type*} {v : α → ℝ}
+    (hv : Tendsto v cofinite (𝓝 0)) {a : α} (ha : 0 ≤ v a) : ∃ t, ∀ s, v s ≤ v t := by
+  by_cases h : ∀ s, v s ≤ v a
+  · exact ⟨a, h⟩
+  obtain ⟨s₁, hs₁⟩ := not_forall.mp h
+  have hfin : {s | v s₁ ≤ v s}.Finite := by
+    simpa [eventually_cofinite] using hv.eventually (gt_mem_nhds (ha.trans_lt (not_le.mp hs₁)))
+  obtain ⟨t, ht, htmax⟩ := hfin.toFinset.exists_max_image v ⟨s₁, by simp⟩
+  refine ⟨t, fun s ↦ ?_⟩
+  by_cases hs : v s₁ ≤ v s
+  · exact htmax s (by simpa using hs)
+  · exact (not_le.mp hs).le.trans (by simpa using ht)
+
 /-- **The norm gap of a restricted series.** The weighted coefficient norms of a nonzero
 restricted series that are smaller than its norm are bounded by a constant smaller than its
 norm: only finitely many of them exceed half the norm. -/
@@ -322,20 +337,7 @@ theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
     ∃ t, AchievesGaussNorm norm c (f : MvPowerSeries σ R) t := by
   set v : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
   have hv : Tendsto v cofinite (𝓝 0) := f.2
-  have hv0 : 0 ≤ v 0 := by simp [v]
-  -- A function tending to `0` along `cofinite` with `0 ≤ v 0` attains its supremum.
-  have hmax : ∃ t, ∀ s, v s ≤ v t := by
-    by_cases h : ∀ s, v s ≤ v 0
-    · exact ⟨0, h⟩
-    obtain ⟨s₁, hs₁⟩ := not_forall.mp h
-    have hfin : {s | v s₁ ≤ v s}.Finite := by
-      simpa [eventually_cofinite] using hv.eventually (gt_mem_nhds (hv0.trans_lt (not_le.mp hs₁)))
-    obtain ⟨t, ht, htmax⟩ := hfin.toFinset.exists_max_image v ⟨s₁, by simp⟩
-    refine ⟨t, fun s ↦ ?_⟩
-    by_cases hs : v s₁ ≤ v s
-    · exact htmax s (by simpa using hs)
-    · exact (not_le.mp hs).le.trans (by simpa using ht)
-  obtain ⟨t, ht⟩ := hmax
+  obtain ⟨t, ht⟩ := exists_forall_le_of_tendsto_cofinite hv (a := 0) (by simp [v])
   exact ⟨t, le_antisymm (le_ciSup ⟨v t, by rintro _ ⟨s, rfl⟩; exact ht s⟩ t) (ciSup_le ht)⟩
 
 /-- A strict bound on the norm is exactly a strict bound on every weighted coefficient norm,
@@ -474,6 +476,11 @@ instance [CompleteSpace R] : CompleteSpace
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_apply (a : MvPowerSeries σ R) t]
   exact hN k hk t
 
+/-- A proper multiple of an exponent is larger in every monomial order. -/
+private theorem toSyn_lt_toSyn_add (m : MonomialOrder σ) (k : σ →₀ ℕ) {s : σ →₀ ℕ} (hs : s ≠ 0) :
+    m.toSyn k < m.toSyn (k + s) :=
+  m.toSyn_strictMono (lt_add_of_pos_right k (pos_iff_ne_zero.mpr hs))
+
 omit [IsUltrametricDist R] in
 /-- A nonzero restricted series has a largest exponent, for a monomial order `m`, achieving its
 Gauss norm: at all larger exponents the weighted coefficient norm is smaller. This tie breaking
@@ -490,13 +497,8 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
     have h := hf.eventually (gt_mem_nhds hi_pos)
     simpa only [eventually_cofinite, not_lt] using h
   let S := hfinite.toFinset
-  have hi_mem : i ∈ S := by simp [S]
-  obtain ⟨j, hj, hmax⟩ := S.exists_max_image a ⟨i, hi_mem⟩
-  have hbound (t) : a t ≤ a j := by
-    by_cases ht : t ∈ S
-    · exact hmax t ht
-    · have ht' : a t < a i := by simpa [S] using ht
-      exact ht'.le.trans (hmax i hi_mem)
+  obtain ⟨j, hbound⟩ := exists_forall_le_of_tendsto_cofinite (v := a) hf hi_pos.le
+  have hj : j ∈ S := by simpa [S] using hbound i
   have heq : a j = gaussNorm norm c f := by
     rw [gaussNorm]
     exact (ciSup_eq_of_forall_le_of_forall_lt_exists_gt hbound fun _ h ↦ ⟨j, h⟩).symm
@@ -509,7 +511,7 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
   refine lt_of_le_of_ne (hbound t) fun h ↦ ?_
   have ht_mem : t ∈ T := by
     simp only [T, Finset.mem_filter]
-    exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
+    exact ⟨by simpa [S] using (hbound i).trans_eq h.symm, h⟩
   exact (not_le_of_gt ht) (hnmax t ht_mem)
 
 omit [IsUltrametricDist R] in
@@ -552,11 +554,9 @@ theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : Monomial
     obtain ⟨s, -⟩ := Finsupp.ne_iff.mp (show k ≠ 0 from fun h0 ↦ by
       simp only [h0, map_zero] at hk
       exact absurd hk (not_lt_of_ge (m.zero_le _)))
-    refine (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le).trans_lt
-      (hmax (k + Finsupp.single s 1) ?_)
-    rw [map_add]
-    exact lt_add_of_pos_right _ (m.toSyn_lt_iff_ne_zero.mpr
-      ((m.toSyn_eq_zero_iff _).not.mpr (Finsupp.single_ne_zero.mpr one_ne_zero)))
+    exact (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le).trans_lt
+      (hmax (k + Finsupp.single s 1)
+        (toSyn_lt_toSyn_add m k (Finsupp.single_ne_zero.mpr one_ne_zero)))
   -- Every summand at this exponent has the same positive weight.
   have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
       i.prod (c · ^ ·) * j.prod (c · ^ ·) := by
@@ -607,12 +607,8 @@ theorem IsRestricted.exists_norm_coeff_mul_norm_coeff_lt [DecidableEq σ] {f g :
   let m : MonomialOrder σ := MonomialOrder.lex
   obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max m hf0
   obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max m hg0
-  -- A proper multiple is larger in every monomial order.
-  have hlt (k s : σ →₀ ℕ) (hs : s ≠ 0) : m.toSyn k < m.toSyn (k + s) := by
-    rw [map_add]
-    exact lt_add_of_pos_right _
-      (m.toSyn_lt_iff_ne_zero.mpr ((m.toSyn_eq_zero_iff s).not.mpr hs))
-  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (hlt i s hs), fun s hs ↦ hjmax _ (hlt j s hs),
+  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (toSyn_lt_toSyn_add m i hs),
+    fun s hs ↦ hjmax _ (toSyn_lt_toSyn_add m j hs),
     fun p hp hne ↦ hf.norm_coeff_mul_norm_coeff_lt m hg hi himax hj hjmax hp hne⟩
 
 /-- The Gauss norm of a product of restricted series is the product of their Gauss norms when
