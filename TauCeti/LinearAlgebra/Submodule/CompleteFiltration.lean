@@ -67,6 +67,15 @@ theorem pow_apply_mem_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ
     rw [pow_succ', mul_apply_eq_comp, ← add_assoc]
     exact hT _ ⟨_, ih, rfl⟩
 
+/-- If a family of submodules starts at the whole semimodule and vanishes at order `r`,
+any endomorphism raising its order by one has zero `r`-th power. The family need not
+be decreasing, and the coefficient semiring need not admit subtraction. -/
+theorem pow_eq_zero_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1))
+    (hzero : F 0 = ⊤) {r : ℕ} (hr : F r = ⊥) : T ^ r = 0 := by
+  ext x
+  have hx := pow_apply_mem_of_map_le hT (show x ∈ F 0 by rw [hzero]; trivial) r
+  simpa only [Nat.zero_add, hr, Submodule.mem_bot, LinearMap.zero_apply] using hx
+
 end Module.End
 
 variable [Ring R] [AddCommGroup M] [Module R M]
