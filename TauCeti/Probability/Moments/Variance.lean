@@ -50,6 +50,9 @@ variable on a probability space.
   L² convergence on a finite measure space.
 * `TauCeti.Probability.evariance_integral_prod_le` and
   `TauCeti.Probability.evariance_prod_le`: product-variance bounds for averages and products.
+* `TauCeti.Probability.variance_weighted_coordinate_sum` and
+  `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
+  bounds for weighted sums of pairwise independent variables.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
   random variable with nonzero variance has strictly positive expectation.
 * `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
@@ -213,6 +216,42 @@ theorem evariance_fun_comp {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpac
 end MeasureTheory.MeasurePreserving
 
 namespace TauCeti.Probability
+
+/-- The variance of a weighted sum of pairwise independent square-integrable variables. -/
+theorem variance_weighted_coordinate_sum {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι]
+    {P : Measure Ω} {X : ι → Ω → ℝ} (a : ι → ℝ) (hX : ∀ i, MemLp (X i) 2 P)
+    (hindep : Pairwise fun i j ↦ IndepFun (X i) (X j) P) :
+    Var[fun ω ↦ ∑ i, a i * X i ω; P] =
+      ∑ i, a i ^ 2 * Var[X i; P] := by
+  have heq : (fun ω ↦ ∑ i, a i * X i ω) =
+      ∑ i, (fun ω ↦ a i * X i ω) := by
+    ext ω
+    simp only [Finset.sum_apply]
+  rw [heq, IndepFun.variance_sum
+    (fun i _ ↦ (hX i).const_mul _) (by
+      intro i _ j _ hij
+      exact (hindep hij).comp (by fun_prop) (by fun_prop))]
+  simp only [variance_const_mul]
+
+/-- Chebyshev's bound for a weighted sum of pairwise independent variables. -/
+theorem measure_weighted_coordinate_sum_sub_mean_ge
+    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
+    [IsProbabilityMeasure P] {X : ι → Ω → ℝ} (a : ι → ℝ)
+    (hX : ∀ i, MemLp (X i) 2 P)
+    (hindep : Pairwise fun i j ↦ IndepFun (X i) (X j) P)
+    {ε : ℝ} (hε : 0 < ε) :
+    P {ω | ε ≤ |(∑ i, a i * X i ω) -
+        ∫ ω, ∑ i, a i * X i ω ∂P|} ≤
+      ENNReal.ofReal ((∑ i, a i ^ 2 * Var[X i; P]) / ε ^ 2) := by
+  have hmem : MemLp (fun ω ↦ ∑ i, a i * X i ω) 2 P := by
+    have h := memLp_finsetSum' (Finset.univ : Finset ι)
+      (fun i _ ↦ (hX i).const_mul (a i))
+    convert h using 1
+    ext ω
+    simp only [Finset.sum_apply]
+  have h := meas_ge_le_variance_div_sq hmem hε
+  rw [variance_weighted_coordinate_sum a hX hindep] at h
+  exact h
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
   [SFinite ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
