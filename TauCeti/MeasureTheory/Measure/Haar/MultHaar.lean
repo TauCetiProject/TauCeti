@@ -81,6 +81,14 @@ theorem multHaar_Icc {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     simp [Real.log_le_iff_le_exp ha, Real.le_log_iff_exp_le (ha.trans_le hab)]
   rw [← map_volume_exp, map_apply Real.measurable_exp measurableSet_Icc, hpre, Real.volume_Icc]
 
+/-- `dt / t` gives an interval `[a, b)` with `0 < a ≤ b` mass `log b - log a`. -/
+theorem multHaar_Ico {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    multHaar (Ico a b) = ENNReal.ofReal (Real.log b - Real.log a) := by
+  have hpre : Real.exp ⁻¹' Ico a b = Ico (Real.log a) (Real.log b) := by
+    ext u
+    simp [Real.log_le_iff_le_exp ha, Real.lt_log_iff_exp_lt (ha.trans_le hab)]
+  rw [← map_volume_exp, map_apply Real.measurable_exp measurableSet_Ico, hpre, Real.volume_Ico]
+
 /-- `dt / t` gives the interval `[1, e]` mass one. -/
 @[simp]
 theorem multHaar_Icc_one_exp_one : multHaar (Icc 1 (Real.exp 1)) = 1 := by
