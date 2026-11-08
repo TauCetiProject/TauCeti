@@ -172,6 +172,11 @@ private theorem eventually_rOut_lt_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ
     (hz : f.rOut < ‖z‖ ^ 2) : ∀ᶠ w in 𝓝 z, f.rOut < ‖w‖ ^ 2 :=
   (isOpen_lt continuous_const (by fun_prop : Continuous fun w : ℂ ↦ ‖w‖ ^ 2)).mem_nhds hz
 
+/-- Off the origin, the amplitude `exp (-m log r)` of the winding reference is `r⁻ᵐ`. -/
+private theorem exp_neg_mul_log {r : ℝ} (hr : 0 < r) (m : ℕ) :
+    Real.exp (-(m * Real.log r)) = (r ^ m)⁻¹ := by
+  rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hr m)]
+
 /-- Off the disc of squared radius `f.rOut`, the reference field is `(-i m dθ, (z / |z|) ^ m)`: its
 connection coefficients are `b₁ = m Im z / |z|²` and `b₂ = -m Re z / |z|²`. -/
 theorem referenceField_eq_of_rOut_le (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
@@ -180,16 +185,7 @@ theorem referenceField_eq_of_rOut_le (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z :
       ((z / (‖z‖ : ℂ)) ^ m).re / 2, ((z / (‖z‖ : ℂ)) ^ m).im / 2] := by
   rw [referenceField_apply, referenceConnection_eq_angular f m hz,
     referenceConnection_eq_angular f m hz, referenceSection_eq_phase f m hz]
-  congr 1
-  simp only [div_eq_mul_inv, one_re, one_im, inv_im, inv_re, mul_im, mul_re, I_re, I_im, ofReal_re,
-    ofReal_im, neg_re, neg_im, natCast_re, natCast_im, normSq_eq_norm_sq]
-  ext i
-  fin_cases i <;>
-    simp only [mul_zero, neg_zero, mul_one, sub_self, add_zero, neg_mul, mul_neg, one_mul,
-      zero_mul, neg_neg, zero_add, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta, Fin.mk_one,
-      Fin.reduceFinMk, Fin.isValue, Matrix.cons_val, Matrix.cons_val_zero, Matrix.cons_val_one,
-      neg_inj] <;>
-    ring
+  simp [div_im, ← normSq_eq_norm_sq, mul_div_assoc, neg_div]
 
 /-- Off the disc of squared radius `f.rOut`, the reference field is the field
 `amplitudeField u (· ^ m)` reconstructed from the holomorphic factor `z ^ m` and the amplitude
@@ -200,29 +196,20 @@ theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) 
     referenceField f m =ᶠ[𝓝 z] amplitudeField (fun w ↦ -(m * Real.log ‖w‖)) (· ^ m) := by
   filter_upwards [eventually_rOut_lt_norm_sq f hz] with w hw
   have hn := norm_pos_of_rOut_lt f hw
-  -- The derivative of `m log |w|` is `v ↦ m ⟪w, v⟫ / |w|² = m Re (v / w)`.
-  have hd (v : ℂ) : fderiv ℝ (fun w : ℂ ↦ m * Real.log ‖w‖) w v = m * (v / w).re := by
+  -- The derivative of `m log |w|` is `v ↦ m ⟪w, v⟫ / |w|²`.
+  have hd (v : ℂ) : fderiv ℝ (fun w : ℂ ↦ m * Real.log ‖w‖) w v =
+      m * (w.re * v.re + w.im * v.im) / ‖w‖ ^ 2 := by
     rw [((hasFDerivAt_log_norm_of_ne (norm_pos_iff.1 hn)).const_mul (m : ℝ)).fderiv]
-    simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul, Complex.inner,
-      div_re, normSq_eq_norm_sq, mul_re, conj_re, conj_im]
+    simp only [smul_apply, coe_innerSL_apply, Complex.inner, mul_re, conj_re, conj_im,
+      smul_eq_mul]
     ring
-  rw [referenceField_eq_of_rOut_le f m (le_of_lt hw)]
+  have hs : (w / (‖w‖ : ℂ)) ^ m = (Real.exp (-(m * Real.log ‖w‖)) : ℂ) * w ^ m := by
+    rw [exp_neg_mul_log hn, div_pow, div_eq_inv_mul]
+    push_cast
+    rfl
+  rw [referenceField_eq_of_rOut_le f m hw.le, hs, re_ofReal_mul, im_ofReal_mul]
   ext i
-  fin_cases i
-  · simp [hd, div_re, normSq_eq_norm_sq, mul_div_assoc]
-  · simp [hd, normSq_eq_norm_sq, mul_div_assoc]
-  · simp only [Fin.reduceFinMk, amplitudeField_apply_two]
-    rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hn m), div_pow, ← ofReal_pow,
-      div_ofReal_re]
-    simp only [ofReal_pow, Fin.isValue, Matrix.cons_val, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true, div_left_inj']
-    ring
-  · simp only [Fin.reduceFinMk, amplitudeField_apply_three]
-    rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hn m), div_pow, ← ofReal_pow,
-      div_ofReal_im]
-    simp only [ofReal_pow, Fin.isValue, Matrix.cons_val, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true, div_left_inj']
-    ring
+  fin_cases i <;> simp [hd, amplitudeField_apply_two, amplitudeField_apply_three]
 
 /-- **The reference field is a vortex off a disc.** Off the disc of squared radius `f.rOut`, where
 the reference field is `(-i m dθ, (z / |z|) ^ m)`, it solves the plane vortex equation: the
@@ -235,10 +222,9 @@ theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {
       (norm_pos_iff.1 hn)).const_smul (c := (m : ℝ))).neg
   rw [equation_congr_nhds (referenceField_eventuallyEq_amplitudeField f m hz),
     equation_amplitudeField_eq_zero_iff hu.1 (differentiableAt_pow m), hu.2.eq_of_nhds,
-    norm_pow, show 2 * -(m * Real.log ‖z‖) = -Real.log ((‖z‖ ^ m) ^ 2) by
-      rw [Real.log_pow, Real.log_pow]; push_cast; ring,
-    Real.exp_neg, Real.exp_log (by positivity), inv_mul_cancel₀ (by positivity)]
-  simp
+    two_mul, Real.exp_add, exp_neg_mul_log hn, norm_pow]
+  field_simp
+  norm_num
 
 /-- **The vortex defect of the reference field is compactly supported.** It vanishes off the disc
 of squared radius `f.rOut`. With `contDiff_equation` and `contDiff_referenceField`, it is a smooth
