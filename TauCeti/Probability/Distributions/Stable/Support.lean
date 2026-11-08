@@ -257,19 +257,12 @@ half-line `[d, ∞)` starting at its `S₁` location `d`. -/
 @[simp]
 theorem support_stableMeasure_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s) (m : ℝ) :
     (stableMeasure α 1 s m).support = Ici (stableS1Location α 1 s m) := by
-  have hs' : (0 : ℝ) < s := hs
-  rw [support_stableMeasure_eq_image hs,
-    support_standardStableMeasure_one_of_lt_one hα,
-    stableS1Location_of_ne_one hα.2.ne, stableS1Location_of_ne_one hα.2.ne]
-  ext z
-  simp only [mem_image, mem_Ici, NNReal.coe_one]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    nlinarith
-  · intro hz
-    refine ⟨(z - m) / s, ?_, by field_simp; ring⟩
-    rw [le_div_iff₀ hs']
-    linarith
+  rw [support_stableMeasure_eq_image hs, support_standardStableMeasure_one_of_lt_one hα,
+    ← image_image (m + ·) ((s : ℝ) * ·), image_mul_left_Ici (NNReal.coe_pos.2 hs),
+    image_const_add_Ici, stableS1Location_of_ne_one hα.2.ne, stableS1Location_of_ne_one hα.2.ne]
+  congr 1
+  push_cast
+  ring
 
 /-- Below shape one, a positive-scale stable law of skewness `-1` has topological support the
 half-line `(-∞, d]` ending at its `S₁` location `d`. -/
