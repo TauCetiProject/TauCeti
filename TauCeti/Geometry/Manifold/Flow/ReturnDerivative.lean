@@ -35,8 +35,8 @@ derivative `w ↦ w + dτ_p(w) • v p` of `z ↦ flowOf v (τ z) z` for a time 
 
 Derivatives of transitions compose as the transitions do (`TauCeti.mfderiv_flowTransition_comp`).
 If the flow carries `p` to `q` at time `T`, the transition `h` from the section through `p` to a
-section through `q` therefore intertwines the derivatives of the return branches,
-`Dh ∘ DP_p = DP_q ∘ Dh` (`TauCeti.mfderiv_flowTransition_semiconj`). The derivative
+section through `q` therefore intertwines the linearized return maps,
+`Dh ∘ DP_p = DP_q ∘ Dh` (`TauCeti.returnDerivative_comp_mfderiv_flowTransition`). The derivative
 `Dh` is not invertible, as it kills `v p`, so this does not by itself conjugate `DP_p` to `DP_q`.
 The reverse transition `h'` repairs this: `Dh' ∘ Dh` and `Dh ∘ Dh'` are the derivatives of the
 time-`0` transitions onto the two sections, which `DP_p` and `DP_q` absorb. Hence
@@ -84,9 +84,8 @@ return branch need not be the first return to the section.
   source section, the derivative of the reverse transition is a left inverse.
 * `TauCeti.hasEigenvalue_normalReturnDerivative_iff`: the normal return derivative and the
   linearized return map have the same nonzero eigenvalues.
-* `TauCeti.mfderiv_flowTransition_semiconj`: transitions intertwine the derivatives of
-  return germs; `TauCeti.returnDerivative_comp_mfderiv_flowTransition` is the same for the
-  linearized return maps, as an identity of linear maps.
+* `TauCeti.returnDerivative_comp_mfderiv_flowTransition`: transitions intertwine the linearized
+  return maps.
 * `TauCeti.charpoly_returnDerivative_eq`: the characteristic polynomial of the linearized return
   map is independent of the section and the base point.
 * `TauCeti.hasEigenvalue_returnDerivative_iff`: so are its eigenvalues.
@@ -371,17 +370,6 @@ variable (hT : (T, p) ∈ flowDomain v) (hq : flowOf v T p = q) (hP : (T₀, p) 
   (hg' : ContMDiffAt I 𝓘(ℝ) 1 g' q) (hg'v : mvfderiv I g' q (v q) ≠ 0)
 include hT hq hP hp hg hgv hg' hg'v
 
-/-- **Transitions intertwine the derivatives of return germs.** If the flow carries `p` to `q` at
-time `T` and `p` returns to itself at time `T₀`, then the derivative `Dh` of the transition from a
-section through `p` to a section through `q` satisfies `Dh ∘ DP_p = DP_q ∘ Dh`, where `P_p` and
-`P_q` are the return branches at time `T₀` of these sections. -/
-theorem mfderiv_flowTransition_semiconj :
-    mfderiv I I (flowTransition v g' T p) p ∘L mfderiv I I (flowTransition v g T₀ p) p =
-      mfderiv I I (flowTransition v g' T₀ q) q ∘L mfderiv I I (flowTransition v g' T p) p := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
-  rw [mfderiv_flowTransition_comp hv hP hp hg hgv hT hq hg' hg'v,
-    mfderiv_flowTransition_comp hv hT hq hg' hg'v hQ hq' hg' hg'v, add_comm]
-
 /-- **The characteristic polynomial of a return derivative is independent of the section and of
 the base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time
 `T₀`, then the linearized return maps at time `T₀` of sections through `p` and through `q` have
@@ -416,7 +404,11 @@ theorem charpoly_returnDerivative_eq :
     conv_lhs => rw [← hA, ← hh'h]
     refine (ContinuousLinearMap.comp_assoc _ _ _).trans ?_
     congr 1
-    exact mfderiv_flowTransition_semiconj hv hT hq hP hp hg hgv hg' hg'v
+    -- Both sides are the derivative of the transition at time `T₀ + T = T + T₀`.
+    have hp₀ := mfderiv_flowTransition_comp hv hP hp hg hgv hT hq hg' hg'v
+    have hq₀ := mfderiv_flowTransition_comp hv hT hq hg' hg'v hQ hq' hg' hg'v
+    rw [add_comm] at hq₀
+    exact hp₀.trans hq₀.symm
   have hBeq : mfderiv I I (flowTransition v g' T₀ q) q =
       (mfderiv I I (flowTransition v g' T₀ q) q ∘L mfderiv I I (flowTransition v g' T p) p) ∘L
         mfderiv I I (flowTransition v g (-T) q) q := by
@@ -471,9 +463,13 @@ theorem returnDerivative_comp_mfderiv_flowTransition :
     returnDerivative v g' T₀ q ∘ₗ (show TangentSpace I p →L[ℝ] TangentSpace I q from
       mfderiv I I (flowTransition v g' T p) p).toLinearMap =
     (show TangentSpace I p →L[ℝ] TangentSpace I q from
-      mfderiv I I (flowTransition v g' T p) p).toLinearMap ∘ₗ returnDerivative v g T₀ p :=
-  have h := mfderiv_flowTransition_semiconj hv hT hq hP hp hg hgv hg' hg'v
-  LinearMap.ext fun w ↦ (DFunLike.congr_fun h w).symm
+      mfderiv I I (flowTransition v g' T p) p).toLinearMap ∘ₗ returnDerivative v g T₀ p := by
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  -- Both sides are derivatives of the transition at time `T + T₀ = T₀ + T`.
+  have hq₀ := mfderiv_flowTransition_comp hv hT hq hg' hg'v hQ hq' hg' hg'v
+  have hp₀ := mfderiv_flowTransition_comp hv hP hp hg hgv hT hq hg' hg'v
+  rw [add_comm] at hp₀
+  exact LinearMap.ext fun w ↦ (DFunLike.congr_fun hq₀ w).trans (DFunLike.congr_fun hp₀ w).symm
 
 /-- **The nonzero generalized eigenspaces of linearized return maps do not depend on the section or
 the base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time
