@@ -55,7 +55,7 @@ arbitrary initial time is recovered by translating the parameter with
 * `isMIntegralCurveOn_maximalIntegralCurve`: the maximal curve is an integral curve of `v` on the
   maximal interval, with `maximalIntegralCurve_zero` giving its value at `0`; it is a global
   integral curve when that interval is all of `ℝ`
-  (`isMIntegralCurve_maximalIntegralCurve_of_eq_univ`).
+  (`TauCeti.isMIntegralCurve_maximalIntegralCurve_of_eq_univ`).
 * `IsMIntegralCurve.maximalIntegralCurve_eq`: a global integral curve is the maximal integral
   curve through its initial point.
 * `IsMIntegralCurveOn.eqOn_maximalIntegralCurve` and
@@ -281,6 +281,8 @@ theorem isMIntegralCurveOn_maximalIntegralCurve
   exact (hγ.congr (hγ.eqOn_maximalIntegralCurve hv h0 hx)).isMIntegralCurveAt
     (Ioo_mem_nhds ht.1 ht.2)
 
+namespace TauCeti
+
 /-- If the maximal interval of existence is all of `ℝ`, the maximal integral curve is a global
 integral curve of `v`. -/
 theorem isMIntegralCurve_maximalIntegralCurve_of_eq_univ
@@ -289,6 +291,8 @@ theorem isMIntegralCurve_maximalIntegralCurve_of_eq_univ
     IsMIntegralCurve (maximalIntegralCurve v x) v := by
   rw [isMIntegralCurve_iff_isMIntegralCurveOn, ← h]
   exact isMIntegralCurveOn_maximalIntegralCurve hv
+
+end TauCeti
 
 /-- **A global integral curve is the maximal integral curve through its initial point.** -/
 theorem IsMIntegralCurve.maximalIntegralCurve_eq
@@ -426,7 +430,7 @@ theorem isMIntegralCurve_maximalIntegralCurve [CompleteSpace E] [CompactSpace M]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     IsMIntegralCurve (maximalIntegralCurve v x) v := by
   have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
-  exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
+  exact TauCeti.isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
     (maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv h0 isCompact_univ
       (fun _ _ ↦ mem_univ _))
 
@@ -438,7 +442,7 @@ theorem maximalIntegralCurveInterval_eq_univ_iff
     maximalIntegralCurveInterval v x = univ ↔ ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ v := by
   refine ⟨fun h ↦ ⟨maximalIntegralCurve v x, maximalIntegralCurve_zero (h ▸ mem_univ 0), ?_⟩,
     fun ⟨γ, hx, hγ⟩ ↦ eq_univ_of_forall fun t ↦ ?_⟩
-  · exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv h
+  · exact TauCeti.isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv h
   · have habs := abs_nonneg t
     refine (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).subset_maximalIntegralCurveInterval
       ⟨by linarith, by linarith⟩ hx ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
