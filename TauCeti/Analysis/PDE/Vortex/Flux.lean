@@ -365,7 +365,8 @@ theorem HasZeroDivisor.integral_one_sub_normSq_eq_mul_card {D : Multiset ℂ}
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * Multiset.card D := by
-  rw [integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim (hasZeroDivisor_iff.1 hD),
+  rw [integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim
+    (TauCeti.hasZeroDivisor_iff.1 (hasZeroDivisor_iff.1 hD)),
     Multiset.finsum_count_eq_card]
 
 /-- **The flux is the degree of the zero divisor.** For a `C²` vortex on the whole plane with
@@ -378,7 +379,8 @@ theorem HasZeroDivisor.integral_curvature_eq_neg_mul_card {D : Multiset ℂ}
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     ∫ z, curvature x z = -(2 * π * Multiset.card D) := by
-  rw [integral_curvature_eq_neg_mul_finsum hb₁ hb₂ hp hq hsol hlim (hasZeroDivisor_iff.1 hD),
+  rw [integral_curvature_eq_neg_mul_finsum hb₁ hb₂ hp hq hsol hlim
+    (TauCeti.hasZeroDivisor_iff.1 (hasZeroDivisor_iff.1 hD)),
     Multiset.finsum_count_eq_card]
 
 /-- **The flux identity for a framed plane vortex, modulus form.** Let `x` be a `C²` vortex on the

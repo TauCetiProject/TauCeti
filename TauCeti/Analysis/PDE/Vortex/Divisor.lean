@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Analysis.PDE.Vortex.Zeros
 public import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 public import Mathlib.Data.Sym.Basic
-import Mathlib.Data.Finsupp.Multiset
 
 /-!
 # The zero divisor of a framed plane vortex
@@ -27,7 +26,8 @@ Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficie
 section that is not identically zero factors near every point as `(w - z) ^ n z * v w` with `v` of
 class `Cᵏ` at `z` and nonzero there (`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_mul`).
 If `α` does not vanish near infinity, only finitely many exponents are nonzero, so the zero
-divisor exists (`TauCeti.Vortex.exists_hasZeroDivisor`), and its factors can be taken of class
+divisor exists (`TauCeti.Vortex.exists_hasZeroDivisor`, from the general
+`TauCeti.exists_hasZeroDivisor_of_eventually_eq_pow_mul`), and its factors can be taken of class
 `Cᵏ` (`TauCeti.Vortex.HasZeroDivisor.exists_contDiffAt`).
 
 The degree-`m` end framing is `α(z) (z / |z|)⁻ᵐ → 1` at infinity; every continuous field of the
@@ -63,7 +63,7 @@ namespace TauCeti.Vortex
 /-- `D` is the **zero divisor** of the field `x`: it is the zero divisor of the section `α`, so
 near every point `z` the section factors as `α(w) = (w - z) ^ D(z) v(w)` with `v` continuous at
 `z` and nonzero there, where `D(z)` is the multiplicity of `z` in the multiset `D`. -/
-@[expose] def HasZeroDivisor (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ) : Prop :=
+def HasZeroDivisor (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ) : Prop :=
   TauCeti.HasZeroDivisor (sectionValue x) D
 
 /-- Unfolding `HasZeroDivisor`: the zero divisor of the field is that of its section. -/
@@ -72,9 +72,10 @@ theorem hasZeroDivisor_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multise
 
 /-- The vacuum has the empty zero divisor. -/
 @[simp]
-theorem hasZeroDivisor_vacuumField : HasZeroDivisor vacuumField 0 := fun _ ↦
-  ⟨fun _ ↦ 1, continuousAt_const, one_ne_zero, .of_forall fun _ ↦ by
-    simp [sectionValue_apply, vacuumField_apply]⟩
+theorem hasZeroDivisor_vacuumField : HasZeroDivisor vacuumField 0 :=
+  hasZeroDivisor_iff.2 <| TauCeti.hasZeroDivisor_iff.2 fun _ ↦
+    ⟨fun _ ↦ 1, continuousAt_const, one_ne_zero, .of_forall fun _ ↦ by
+      simp [sectionValue_apply, vacuumField_apply]⟩
 
 namespace HasZeroDivisor
 
@@ -83,31 +84,42 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D D' : Multiset ℂ}
 /-- **Uniqueness of the zero divisor.** A field has at most one zero divisor, so the assignment
 of its zero divisor to a field is well defined. -/
 theorem unique (hD : HasZeroDivisor x D) (hD' : HasZeroDivisor x D') : D = D' :=
-  TauCeti.HasZeroDivisor.unique hD hD'
+  (hasZeroDivisor_iff.1 hD).unique (hasZeroDivisor_iff.1 hD')
+
+/-- The multiplicity of `z` in the zero divisor is the exponent of any local factorization
+`α(w) = (w - z) ^ n v(w)` of the section with `v` continuous at `z` and nonzero there. -/
+theorem count_eq_of_eventually_eq_pow_mul (hD : HasZeroDivisor x D) {z : ℂ} {n : ℕ}
+    {v : ℂ → ℂ} (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
+    (h : ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * v w) : D.count z = n :=
+  (hasZeroDivisor_iff.1 hD).count_eq_of_eventually_eq_pow_mul hv hv₀ h
 
 /-- The zeros of the section are the points of the zero divisor. -/
 theorem sectionValue_eq_zero_iff (hD : HasZeroDivisor x D) {z : ℂ} :
     sectionValue x z = 0 ↔ z ∈ D :=
-  TauCeti.HasZeroDivisor.apply_eq_zero_iff hD
+  (hasZeroDivisor_iff.1 hD).apply_eq_zero_iff
+
+/-- A field with a zero divisor has a section that is not identically zero. -/
+theorem exists_sectionValue_ne_zero (hD : HasZeroDivisor x D) : ∃ w, sectionValue x w ≠ 0 :=
+  (hasZeroDivisor_iff.1 hD).exists_ne_zero
 
 /-- **The zero divisor of a framed field has degree `m`.** If the section has the end framing
 `α(z) (z / |z|)⁻ᵐ → 1`, the zero divisor has `m` points, counted with multiplicity. -/
 theorem card_eq (hD : HasZeroDivisor x D) {m : ℕ}
     (hm : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     Multiset.card D = m :=
-  TauCeti.HasZeroDivisor.card_eq hD hm
+  (hasZeroDivisor_iff.1 hD).card_eq hm
 
 /-- **Translation law.** The pullback by `z ↦ z + a` moves the zero divisor by `-a`. -/
 theorem translateField (hD : HasZeroDivisor x D) (a : ℂ) :
     HasZeroDivisor (Vortex.translateField a x) (D.map (· - a)) := by
   rw [hasZeroDivisor_iff, funext (sectionValue_translateField a x)]
-  exact TauCeti.HasZeroDivisor.comp_add hD a
+  exact (hasZeroDivisor_iff.1 hD).comp_add a
 
 /-- **Rotation law.** The pullback by `z ↦ u z` rotates the zero divisor by `u⁻¹`. -/
 theorem rotateField (hD : HasZeroDivisor x D) (u : Circle) :
     HasZeroDivisor (Vortex.rotateField u x) (D.map ((u : ℂ)⁻¹ * ·)) := by
   rw [hasZeroDivisor_iff, funext (sectionValue_rotateField u x)]
-  exact TauCeti.HasZeroDivisor.comp_const_mul hD (Circle.coe_ne_zero u)
+  exact (hasZeroDivisor_iff.1 hD).comp_const_mul (Circle.coe_ne_zero u)
 
 end HasZeroDivisor
 
@@ -118,6 +130,7 @@ theorem hasZeroDivisor_gaugeTransform_iff {x : ℂ → EuclideanSpace ℝ (Fin 4
     {u : ℂ → Circle} (hu : Continuous u) :
     HasZeroDivisor (gaugeTransform u x) D ↔ HasZeroDivisor x D := by
   have hc : Continuous fun z ↦ (u z : ℂ) := continuous_subtype_val.comp hu
+  rw [hasZeroDivisor_iff, hasZeroDivisor_iff]
   refine ⟨fun h ↦ h.of_eq_mul (u := fun z ↦ (u z : ℂ)⁻¹)
     (hc.inv₀ fun z ↦ Circle.coe_ne_zero _)
     (fun z ↦ inv_ne_zero (Circle.coe_ne_zero _)) fun z ↦ ?_,
@@ -139,15 +152,10 @@ coefficients, `k ≥ 1`, satisfying the holomorphicity rows does not vanish near
 has a zero divisor. -/
 theorem exists_hasZeroDivisor (htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0) :
     ∃ D, HasZeroDivisor x D := by
-  classical
   choose n v hvc hv₀ hvf using
     exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol htail.exists
-  have hmult : ∀ z, ∃ u : ℂ → ℂ, ContinuousAt u z ∧ u z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * u w :=
-    fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
-  refine ⟨Finsupp.toMultiset (Finsupp.ofSupportFinite n
-    (finite_support_of_eventually_eq_pow_mul hmult htail)), fun z ↦ ?_⟩
-  simpa only [Finsupp.count_toMultiset, Finsupp.ofSupportFinite_coe] using hmult z
+  simpa only [hasZeroDivisor_iff] using exists_hasZeroDivisor_of_eventually_eq_pow_mul
+    (fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩) htail
 
 /-- The factors of the zero divisor can be chosen of class `Cᵏ`, the regularity of the
 connection coefficients. -/
@@ -156,7 +164,7 @@ theorem HasZeroDivisor.exists_contDiffAt {D : Multiset ℂ} (hD : HasZeroDivisor
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w := by
   obtain ⟨n, v, hvc, hv₀, hvf⟩ :=
     exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol
-      hD.exists_ne_zero z
+      hD.exists_sectionValue_ne_zero z
   exact ⟨v, hvc, hv₀, hD.count_eq_of_eventually_eq_pow_mul hvc.continuousAt hv₀ hvf ▸ hvf⟩
 
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a

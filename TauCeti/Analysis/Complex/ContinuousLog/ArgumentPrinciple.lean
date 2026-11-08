@@ -10,6 +10,7 @@ import TauCeti.Analysis.Complex.AtInfinity
 import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Algebra.BigOperators.Finprod
+import Mathlib.Data.Finsupp.Multiset
 
 /-!
 # Zero multiplicities and the winding degree at infinity
@@ -41,12 +42,13 @@ In particular the end framing of such a section determines its total number of z
 with multiplicity, and that number is the degree of the framing.
 
 When the multiplicities are those of a multiset `D`, it is the zero divisor of `f`
-(`TauCeti.HasZeroDivisor f D`). A function has at most one zero divisor
-(`TauCeti.HasZeroDivisor.unique`), its points are the zeros of `f`, multiplication by a continuous
-nowhere-vanishing function does not change it, and under the degree-`m` end framing it has
-degree `m` (`TauCeti.HasZeroDivisor.card_eq`). Precomposing `f` with a translation or a nonzero
-scaling moves the divisor accordingly (`TauCeti.HasZeroDivisor.comp_add`,
-`TauCeti.HasZeroDivisor.comp_const_mul`).
+(`TauCeti.HasZeroDivisor f D`). It exists when `f` has local power factorizations and no zeros
+near infinity (`TauCeti.exists_hasZeroDivisor_of_eventually_eq_pow_mul`). A function has at most
+one zero divisor (`TauCeti.HasZeroDivisor.unique`), its points are the zeros of `f`,
+multiplication by a continuous nowhere-vanishing function does not change it, and under the
+degree-`m` end framing it has degree `m` (`TauCeti.HasZeroDivisor.card_eq`). Precomposing `f`
+with a translation or a nonzero scaling moves the divisor accordingly
+(`TauCeti.HasZeroDivisor.comp_add`, `TauCeti.HasZeroDivisor.comp_const_mul`).
 -/
 
 public section
@@ -279,13 +281,25 @@ theorem finsum_eq_of_tendsto_mul_inv_pow
 /-- `D` is the **zero divisor** of `f`: near every point `z`, `f` factors as
 `f w = (w - z) ^ D(z) * v w` with `v` continuous at `z` and nonzero there, where `D(z)` is the
 multiplicity of `z` in the multiset `D`. -/
-@[expose] def HasZeroDivisor (f : ℂ → ℂ) (D : Multiset ℂ) : Prop :=
+def HasZeroDivisor (f : ℂ → ℂ) (D : Multiset ℂ) : Prop :=
   ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, f w = (w - z) ^ D.count z * v w
 
 /-- Unfolding `HasZeroDivisor`: the local factorizations of the function. -/
 theorem hasZeroDivisor_iff {D : Multiset ℂ} :
     HasZeroDivisor f D ↔ ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, f w = (w - z) ^ D.count z * v w := Iff.rfl
+
+/-- **Existence of the zero divisor.** A function with a local power factorization at every
+point, and with no zeros near infinity, has a zero divisor: its multiplicities have finite
+support. -/
+theorem exists_hasZeroDivisor_of_eventually_eq_pow_mul
+    (hn : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * v w)
+    (htail : ∀ᶠ w in cocompact ℂ, f w ≠ 0) : ∃ D, HasZeroDivisor f D := by
+  classical
+  refine ⟨Finsupp.toMultiset (Finsupp.ofSupportFinite n
+    (finite_support_of_eventually_eq_pow_mul hn htail)), hasZeroDivisor_iff.2 fun z ↦ ?_⟩
+  simpa only [Finsupp.count_toMultiset, Finsupp.ofSupportFinite_coe] using hn z
 
 namespace HasZeroDivisor
 
