@@ -76,7 +76,7 @@ connected manifold the kernel of `dlog` itself is the constants
 * `TauCeti.exists_homologyPeriodHom_mlogDeriv_eq_int_mul`: the periods of `dlog u` on `H₁(M; ℤ)`
   lie in `2πiℤ`.
 * `TauCeti.circlePeriodHom`: the period homomorphism of smooth circle-valued maps, characterized
-  by `TauCeti.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom`.
+  by `ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom`.
 * `TauCeti.circlePeriodHom_eq_one_iff`, `TauCeti.exists_mlogDeriv_coe_eq`,
   `TauCeti.mem_range_circlePeriodHom_iff`: the kernel and the image of the period homomorphism.
 
@@ -287,14 +287,14 @@ theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
 /-- The integers `n(c)` with `∫_c dlog u = 2πi n(c)`, for a smooth circle-valued map `u`. -/
 private def circlePeriod (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
     ((singularChains ℤ).obj (.of M)).homology 1 → ℤ := fun c ↦
-  (exists_homologyPeriodHom_mlogDeriv_eq_int_mul ((contMDiff_coe_circle u).of_le (by simp))
+  (exists_homologyPeriodHom_mlogDeriv_eq_int_mul (u.contMDiff_coe_circle.of_le (by simp))
     (fun x ↦ Circle.coe_ne_zero (u x)) c).choose
 
 /-- The defining property of `circlePeriod`. -/
 private theorem homologyPeriodHom_mlogDeriv_eq_circlePeriod (u : C^∞⟮I, M; 𝓡 1, Circle⟯)
     (c : ((singularChains ℤ).obj (.of M)).homology 1) :
     homologyPeriodHom (mlogDeriv I fun x ↦ (u x : ℂ)) c = circlePeriod u c * (2 * π * Complex.I) :=
-  (exists_homologyPeriodHom_mlogDeriv_eq_int_mul ((contMDiff_coe_circle u).of_le (by simp))
+  (exists_homologyPeriodHom_mlogDeriv_eq_int_mul (u.contMDiff_coe_circle.of_le (by simp))
     (fun x ↦ Circle.coe_ne_zero (u x)) c).choose_spec
 
 variable (I M) in
@@ -324,18 +324,18 @@ def circlePeriodHom :
     refine congrArg Multiplicative.ofAdd (AddMonoidHom.ext fun c ↦ ?_)
     refine Complex.intCast_mul_two_pi_I_injective ?_
     have hs (w : C^∞⟮I, M; 𝓡 1, Circle⟯) := isSmoothForm_mlogDeriv (n := 1)
-      ((contMDiff_coe_circle w).of_le (by simp)) fun x ↦ Circle.coe_ne_zero (w x)
+      (w.contMDiff_coe_circle.of_le (by simp)) fun x ↦ Circle.coe_ne_zero (w x)
     have hc (w : C^∞⟮I, M; 𝓡 1, Circle⟯) := mextDeriv_mlogDeriv
-      ((contMDiff_coe_circle w).of_le (by simp)) fun x ↦ Circle.coe_ne_zero (w x)
+      (w.contMDiff_coe_circle.of_le (by simp)) fun x ↦ Circle.coe_ne_zero (w x)
     simp only [AddMonoidHom.coe_mk, ZeroHom.coe_mk, toAdd_ofAdd,
       AddMonoidHom.add_apply, Int.cast_add, add_mul,
-      ← homologyPeriodHom_mlogDeriv_eq_circlePeriod, mlogDeriv_coe_mul,
+      ← homologyPeriodHom_mlogDeriv_eq_circlePeriod, ContMDiffMap.mlogDeriv_coe_mul,
       homologyPeriodHom_add (hs u) (hc u) (hs v) (hc v)]
 
 /-- **The periods of `dlog u`.** The integral of `dlog u` over a singular `1`-cycle `c` is `2πi`
 times the period of the smooth circle-valued map `u` on `c`. -/
-theorem homologyPeriodHom_mlogDeriv_eq_circlePeriodHom (u : C^∞⟮I, M; 𝓡 1, Circle⟯)
-    (c : ((singularChains ℤ).obj (.of M)).homology 1) :
+theorem _root_.ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom
+    (u : C^∞⟮I, M; 𝓡 1, Circle⟯) (c : ((singularChains ℤ).obj (.of M)).homology 1) :
     homologyPeriodHom (mlogDeriv I fun x ↦ (u x : ℂ)) c =
       (Multiplicative.toAdd (circlePeriodHom I M u) c : ℂ) * (2 * π * Complex.I) :=
   homologyPeriodHom_mlogDeriv_eq_circlePeriod u c
@@ -360,7 +360,7 @@ function `f`. -/
 private theorem exists_eq_circleExp_of_homologyPeriodHom_eq_zero
     {u : C^∞⟮I, M; 𝓡 1, Circle⟯} (h : homologyPeriodHom (mlogDeriv I fun x ↦ (u x : ℂ)) = 0) :
     ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ, ℝ) ∞ f ∧ ∀ x, u x = Circle.exp (f x) := by
-  have hu := contMDiff_coe_circle u
+  have hu := u.contMDiff_coe_circle
   have hu₀ (x : M) : (u x : ℂ) ≠ 0 := Circle.coe_ne_zero (u x)
   have hφ := isSmoothForm_mlogDeriv (n := ∞) (hu.of_le (by simp)) hu₀
   have hclosed := mextDeriv_mlogDeriv (hu.of_le (by simp)) hu₀
@@ -402,10 +402,10 @@ theorem circlePeriodHom_eq_one_iff {u : C^∞⟮I, M; 𝓡 1, Circle⟯} :
       homologyPeriodHom (mlogDeriv I fun x ↦ (u x : ℂ)) = 0 := by
     rw [← toAdd_eq_zero]
     refine ⟨fun h ↦ AddMonoidHom.ext fun c ↦ ?_, fun h ↦ AddMonoidHom.ext fun c ↦ ?_⟩
-    · rw [homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, h]
+    · rw [u.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, h]
       simp
     · refine Complex.intCast_mul_two_pi_I_injective ?_
-      simpa [h] using (homologyPeriodHom_mlogDeriv_eq_circlePeriodHom u c).symm
+      simpa [h] using (u.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom c).symm
   rw [hper]
   refine ⟨exists_eq_circleExp_of_homologyPeriodHom_eq_zero, fun ⟨f, hf, huf⟩ ↦ ?_⟩
   have hg : ContMDiff I 𝓘(ℝ, ℂ) 2 fun x ↦ (f x : ℂ) * Complex.I :=
@@ -479,16 +479,16 @@ theorem mem_range_circlePeriodHom_iff
       mextDeriv φ = 0 ∧ (∀ x v, (φ x v).re = 0) ∧
       ∀ c, homologyPeriodHom φ c = (Multiplicative.toAdd n c : ℂ) * (2 * π * Complex.I) := by
   refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun ⟨φ, hφ, hclosed, hre, hper⟩ ↦ ?_⟩
-  · have hc := contMDiff_coe_circle u
+  · have hc := u.contMDiff_coe_circle
     have hu₀ (x : M) : (u x : ℂ) ≠ 0 := Circle.coe_ne_zero (u x)
     refine ⟨_, isSmoothForm_mlogDeriv (n := ∞) (hc.of_le (by simp)) hu₀,
       mextDeriv_mlogDeriv (hc.of_le (by simp)) hu₀,
       fun x v ↦ re_mlogDeriv_apply_eq_zero ((hc x).mdifferentiableAt (by simp))
         (Eventually.of_forall fun y ↦ Circle.norm_coe (u y)) v, fun c ↦ ?_⟩
-    rw [homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu]
+    rw [u.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu]
   · obtain ⟨u, hu⟩ := exists_mlogDeriv_coe_eq hφ hclosed hre fun c ↦ ⟨_, hper c⟩
     refine ⟨u, Multiplicative.toAdd.injective ?_⟩
     refine AddMonoidHom.ext fun c ↦ Complex.intCast_mul_two_pi_I_injective ?_
-    simp only [← homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu, hper]
+    simp only [← ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu, hper]
 
 end TauCeti

@@ -54,8 +54,8 @@ in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
 * `TauCeti.isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero`,
   `TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`: an imaginary logarithmic derivative forces
   locally constant modulus.
-* `TauCeti.mlogDeriv_coe_mul`, `TauCeti.mlogDeriv_coe_eq_zero_iff`: `dlog` on smooth circle-valued
-  maps turns products into sums, and its kernel is the constants.
+* `ContMDiffMap.mlogDeriv_coe_mul`, `TauCeti.mlogDeriv_coe_eq_zero_iff`: `dlog` on smooth
+  circle-valued maps turns products into sums, and its kernel is the constants.
 
 ## References
 
@@ -311,17 +311,17 @@ section Circle
 attribute [local instance] finrank_real_complex_fact'
 
 /-- The complex values of a smooth circle-valued map form a smooth function. -/
-theorem contMDiff_coe_circle (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+theorem _root_.ContMDiffMap.contMDiff_coe_circle (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
     ContMDiff I 𝓘(ℝ, ℂ) ∞ fun x ↦ (u x : ℂ) :=
   (contMDiff_coe_sphere.of_le le_top).comp u.contMDiff
 
 /-- `dlog` turns products of smooth circle-valued maps into sums. -/
-theorem mlogDeriv_coe_mul (u v : C^∞⟮I, M; 𝓡 1, Circle⟯) :
+theorem _root_.ContMDiffMap.mlogDeriv_coe_mul (u v : C^∞⟮I, M; 𝓡 1, Circle⟯) :
     mlogDeriv I (fun x ↦ ((u * v) x : ℂ)) =
       mlogDeriv I (fun x ↦ (u x : ℂ)) + mlogDeriv I (fun x ↦ (v x : ℂ)) := by
   funext x
-  have hu := ((contMDiff_coe_circle u) x).mdifferentiableAt (by simp)
-  have hv := ((contMDiff_coe_circle v) x).mdifferentiableAt (by simp)
+  have hu := (u.contMDiff_coe_circle x).mdifferentiableAt (by simp)
+  have hv := (v.contMDiff_coe_circle x).mdifferentiableAt (by simp)
   exact mlogDeriv_mul hu hv (Circle.coe_ne_zero _) (Circle.coe_ne_zero _)
 
 /-- **The kernel of `dlog` on circle-valued maps is the constants.** On a preconnected manifold, a
@@ -335,7 +335,7 @@ theorem mlogDeriv_coe_eq_zero_iff [IsManifold I 1 M] [PreconnectedSpace M]
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
   · exact ⟨1, isEmptyElim⟩
   · exact ⟨u x₀, fun x ↦ Circle.ext <| MDifferentiable.apply_eq_of_mfderiv_eq_zero
-      ((contMDiff_coe_circle u).mdifferentiable (by simp)) hd x x₀⟩
+      (u.contMDiff_coe_circle.mdifferentiable (by simp)) hd x x₀⟩
 
 end Circle
 
