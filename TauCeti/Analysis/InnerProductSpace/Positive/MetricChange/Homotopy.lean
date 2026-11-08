@@ -43,28 +43,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
 
-/-- The composition correction varies continuously with two continuous positive metrics,
-with values in the native unitary group of the operator algebra. -/
-theorem _root_.Continuous.metricChangeCompositionCorrection [CompleteSpace E]
-    {X : Type*} [TopologicalSpace X] {h k : X → E →L[ℝ] E →L[ℝ] ℝ}
-    (hh : Continuous h) (hk : Continuous k)
-    (hpos : ∀ x, IsStrictlyPositive (h x)♯) (kpos : ∀ x, IsStrictlyPositive (k x)♯) :
-    Continuous fun x ↦ Unitary.linearIsometryEquiv.symm
-      ((h x).metricChangeCompositionCorrection (k x) (hpos x) (kpos x)) := by
-  have hT := continuousOn_metricChangeTransport.comp_continuous hh hpos
-  have hP : Continuous fun x ↦
-      (k x).bilinearComp (h x).metricChangeTransport (h x).metricChangeTransport := by
-    exact (flipₗᵢ ℝ E E ℝ).continuous.comp
-      (((flipₗᵢ ℝ E E ℝ).continuous.comp (hk.clm_comp hT)).clm_comp hT)
-  have hPT := continuousOn_metricChangeTransport.comp_continuous hP fun x ↦
-    isStrictlyPositive_bilinearComp_metricChangeTransport (h x) (k x) (hpos x) (kpos x)
-  have hS := continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous hk
-    fun x ↦ (kpos x).nonneg
-  apply Topology.IsInducing.subtypeVal.continuous_iff.2
-  refine ((hS.mul hT).mul hPT).congr fun x ↦ ?_
-  ext u
-  simp [Unitary.coe_symm_linearIsometryEquiv_apply]
-
 variable [FiniteDimensional ℝ E]
 
 /-- The canonical path from the identity to the discrepancy between successive transport

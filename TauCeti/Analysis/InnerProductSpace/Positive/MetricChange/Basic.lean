@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.UnitInterval
 
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
@@ -328,23 +329,36 @@ end InnerProductSpace
 
 namespace ContinuousLinearMap
 
-/-- Positive-definite real bilinear forms form a convex set. -/
-theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [FiniteDimensional ℝ E] :
+/-- Real bilinear forms with strictly positive Riesz operators form a convex set. -/
+theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpace E] :
     Convex ℝ {h : E →L[ℝ] E →L[ℝ] ℝ | IsStrictlyPositive h♯} := by
   intro h hh k hk a b ha hb hab
-  obtain ⟨hsym, hpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hh
-  obtain ⟨ksym, kpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hk
-  apply isStrictlyPositive_continuousLinearMapOfBilin_iff.2
-  refine ⟨fun u v ↦ by simp [hsym u v, ksym u v], fun u hu ↦ ?_⟩
-  simp only [add_apply, smul_apply, smul_eq_mul]
-  have hp := hpos u hu
-  have kp := kpos u hu
+  have heq : (a • h + b • k)♯ = a • h♯ + b • k♯ := by
+    ext u
+    apply ext_inner_right ℝ
+    intro v
+    simp [inner_add_left, inner_smul_left, continuousLinearMapOfBilin_apply]
+  rw [Set.mem_ofPred_eq, heq]
   rcases lt_or_eq_of_le ha with ha | rfl
-  · exact add_pos_of_pos_of_nonneg (mul_pos ha hp) (mul_nonneg hb kp.le)
-  · simp_all
+  · have hp : 0 ≤ a • h♯ + b • k♯ :=
+      add_nonneg (smul_nonneg ha.le hh.nonneg) (smul_nonneg hb hk.nonneg)
+    -- Mathlib's strict-positivity addition lemma is for complex C⋆-algebras;
+    -- complexification preserves the spectrum of our self-adjoint real operator.
+    let Φ := complexifyL2StarAlgHom E
+    have hΦ : IsStrictlyPositive (Φ (a • h♯ + b • k♯)) := by
+      rw [map_add]
+      exact ((IsStrictlyPositive.smul ha hh).isUnit.map Φ |>.isStrictlyPositive
+        (map_nonneg Φ (smul_nonneg ha.le hh.nonneg))).add_nonneg
+          (map_nonneg Φ (smul_nonneg hb hk.nonneg))
+    refine IsStrictlyPositive.iff_of_unital.mpr ⟨hp, ?_⟩
+    rw [← spectrum.zero_notMem_iff ℝ, ← spectrum_complexifyL2 hp.isSelfAdjoint]
+    simpa only [Φ, complexifyL2StarAlgHom_apply] using
+      (spectrum.zero_notMem_iff ℝ).mpr hΦ.isUnit
+  · have hb1 : b = 1 := by simpa using hab
+    simpa [hb1] using hk
 
 /-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
-theorem isStrictlyPositive_lineMap [FiniteDimensional ℝ E] (h k : E →L[ℝ] E →L[ℝ] ℝ)
+theorem isStrictlyPositive_lineMap [CompleteSpace E] (h k : E →L[ℝ] E →L[ℝ] ℝ)
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) :
     IsStrictlyPositive (AffineMap.lineMap h k (t : ℝ))♯ := by
   rw [AffineMap.lineMap_apply_module]
