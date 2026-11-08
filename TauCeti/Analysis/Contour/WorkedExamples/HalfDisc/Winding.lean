@@ -128,8 +128,9 @@ theorem windingNumber_halfDiscBoundary_eq_one {s : ℂ} (him : 0 < s.im) (hs : �
             (halfDiscBoundary R t - s)⁻¹ * deriv (halfDiscBoundary R) t :=
     intervalIntegral.integral_add_adjacent_intervals (hint.mono_set hsub₁) (hint.mono_set hsub₂)
   -- The diameter and the lower arc have the same logarithmic value; the arcs add up to the circle.
-  have hlower := integral_circleMap_index_lower_arc hR.le him
-  have hcircle := integral_circleMap_index_arcs_eq hs
+  have hlower := integral_circleMap_index_lower_arc (c := 0) hR.le (by simpa using him)
+  simp only [zero_add, zero_sub] at hlower
+  have hcircle := integral_circleMap_index_arcs_eq (c := 0) (by simpa using hs)
   -- Assemble: the diameter and the lower arc cancel, leaving the full circle.
   rw [← hsplit, integral_halfDiscBoundary_index_diameter hR.le him,
     integral_halfDiscBoundary_arc (fun z => (z - s)⁻¹) R]
