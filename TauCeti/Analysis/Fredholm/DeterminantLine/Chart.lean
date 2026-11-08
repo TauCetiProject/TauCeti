@@ -11,6 +11,7 @@ import Mathlib.Topology.Instances.Matrix
 import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Kernel charts of Fredholm determinant lines
@@ -172,9 +173,8 @@ private theorem coe_detLineCongr_detLineShortExactEquiv_nested
       ExteriorAlgebra.ιMulti 𝕜 _ (Fin.append
         (fun i ↦ q' (((T.coprod D₂).kerSection q (b i)).1, ι ((T.coprod D₂).kerSection q (b i)).2))
         (fun j ↦ q' (v j))) := by
-  rw [LinearEquiv.coe_detLineCongr, TauCeti.coe_detLineShortExactEquiv_tmul_eq_map_mul,
-    LinearEquiv.coe_detLineCongr, exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.map_apply_ιMulti,
-    map_mul, ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.map_apply_ιMulti,
+  rw [LinearEquiv.coe_detLineCongr, TauCeti.coe_detLineShortExactEquiv_tmul_eq_map_mul]
+  simp only [LinearEquiv.coe_detLineCongr, exteriorPower.ιMulti_apply_coe,
     ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.ιMulti_mul_ιMulti]
   congr 1
   refine funext fun i ↦ Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) i <;> simp
@@ -231,13 +231,8 @@ private theorem detLineCongr_detLineShortExactEquiv_ne_zero
   have ha := (LinearEquiv.map_ne_zero_iff (kerEquivOfProd _ q h).toLinearEquiv.detLineCongr).2
     ((exteriorPower.ιMulti_ne_zero_iff _).2 b.linearIndependent)
   have hc := (exteriorPower.ιMulti_ne_zero_iff _).2 c.linearIndependent
-  -- Two nonzero vectors of lines have nonzero tensor product.
-  have htm := ((FiniteDimensional.basisSingleton Unit (TauCeti.finrank_detLine 𝕜 _) _
-    ha).tensorProduct
-    (FiniteDimensional.basisSingleton Unit (TauCeti.finrank_detLine 𝕜 _) _ hc)).ne_zero ((), ())
-  rw [Module.Basis.tensorProduct_apply, FiniteDimensional.basisSingleton_apply,
-    FiniteDimensional.basisSingleton_apply] at htm
-  exact (LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2 htm)
+  exact (LinearEquiv.map_ne_zero_iff _).2
+    ((LinearEquiv.map_ne_zero_iff _).2 (TauCeti.tmul_ne_zero ha hc))
 
 end Nested
 
