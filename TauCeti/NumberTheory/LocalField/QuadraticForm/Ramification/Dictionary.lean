@@ -143,7 +143,7 @@ theorem isSquare_mul_of_defectExponent_eq_two_mul (h2 : (2 : K) ≠ 0) {u w : K�
       push_cast [h4K]
       field_simp
       ring
-    have h := isSquare_of_eq_one_add_four_mul h2 hprod
+    have h := isSquare_of_eq_one_add_four_mul hprod
       (hprod ▸ valuation_one_add_four_mul h2 he _)
       (by rw [map_add, map_add, map_mul, map_mul, h4]; simpa using hsum)
     simpa using h.mul (IsSquare.sq (ξ * η))
