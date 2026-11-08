@@ -117,10 +117,8 @@ private lemma map_sq_map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
     infer_instance
   -- The chi-squared coordinate is positive almost everywhere, so squaring the ratio may cancel
   -- its square-root denominator.
-  have hpos : ∀ᵐ z ∂μ, 0 < z.2 := by
-    apply Measure.quasiMeasurePreserving_snd.ae
-    rw [chiSquaredMeasure_eq_gammaMeasure hν]
-    exact ae_pos_gammaMeasure (ν / 2) (1 / 2)
+  have hpos : ∀ᵐ z ∂μ, 0 < z.2 :=
+    Measure.quasiMeasurePreserving_snd.ae (ae_pos_chiSquaredMeasure hν)
   have hratio_sq :
       (fun z ↦ (ratio z) ^ 2) =ᵐ[μ] fun z ↦ z.1 ^ 2 / 1 / (z.2 / ν) := by
     filter_upwards [hpos] with z hz
