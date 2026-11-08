@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Barrier
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
-import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.Regularity.Hessian.Classical
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.MeasureTheory.Function.Lp.Indicator
