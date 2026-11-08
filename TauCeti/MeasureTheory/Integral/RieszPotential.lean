@@ -44,6 +44,8 @@ Sobolev embedding of `W^{1,n}_0(Ω)`.
 * `TauCeti.setLIntegral_le_setLIntegral_closedBall_of_antitone`: balls maximise the integrals of
   radially nonincreasing kernels among sets of no larger measure.
 * `TauCeti.setLIntegral_enorm_sub_rpow_le`: the kernel bound.
+* `TauCeti.setLIntegral_enorm_sub_rpow_le_finrank`: the same bound for the kernel of exponent
+  `1 - n`, in terms of the dimension `n`.
 * `TauCeti.eLpNorm_setLIntegral_enorm_sub_rpow_mul_le`: the `Lᵖ`-`L^q` bound for the potential.
 
 ## References
@@ -238,5 +240,24 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
       rw [ENNReal.mul_rpow_of_nonneg _ _ (by linarith), ← ENNReal.rpow_mul, hexp,
         ENNReal.ofReal_rpow_of_nonneg (by positivity) (by linarith),
         Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hω.le, hexp', inv_div]
+
+omit [Nontrivial E] in
+/-- The integral of the Riesz kernel `‖y - x‖ ^ (1 - n)` in `x` over a measurable set `A` is at
+most `n μ(B(0, 1)) ^ (1 - 1/n) μ(A) ^ (1/n)`, where `n` is the dimension. In dimension zero both
+sides vanish. -/
+theorem setLIntegral_enorm_sub_rpow_le_finrank {A : Set E} (hA : MeasurableSet A) (y : E) :
+    ∫⁻ x in A, ‖y - x‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ ≤
+      ENNReal.ofReal (finrank ℝ E * μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹)) *
+        μ A ^ (finrank ℝ E : ℝ)⁻¹ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have h0 : (fun x : E => ‖y - x‖ₑ ^ (1 - (finrank ℝ E : ℝ))) = 0 := funext fun x => by
+      rw [Subsingleton.elim (y - x) 0, enorm_zero, ENNReal.zero_rpow_of_pos
+        (by simp [finrank_zero_of_subsingleton]), Pi.zero_apply]
+    rw [h0, lintegral_zero_fun]
+    exact bot_le
+  have hn : (0 : ℝ) < finrank ℝ E := Nat.cast_pos.2 finrank_pos
+  have h := setLIntegral_enorm_sub_rpow_le (μ := μ) (inv_pos.2 hn)
+    (inv_le_one_of_one_le₀ (Nat.one_le_cast.2 finrank_pos)) hA y
+  rwa [inv_inv, mul_sub, mul_inv_cancel₀ hn.ne', mul_one] at h
 
 end TauCeti
