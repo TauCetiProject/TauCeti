@@ -278,6 +278,11 @@ theorem hasGradientAt_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProdu
   ext v
   simp
 
+/-- The gradient of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • (x - x₀)`. -/
+theorem gradient_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (x₀ x : E) : ∇ (fun y : E => ‖y - x₀‖ ^ 2) x = (2 : ℝ) • (x - x₀) :=
+  (hasGradientAt_norm_sq_sub x₀ x).gradient
+
 /-- The chain rule for the gradient of a real function composed with a real profile. -/
 theorem _root_.HasDerivAt.comp_hasGradientAt {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [CompleteSpace E] {f : ℝ → ℝ} {f' : ℝ} {g : E → ℝ} {g' x : E}

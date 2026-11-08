@@ -482,7 +482,7 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
     Real.smoothTransition.deriv_deriv_of_neg hτ
   refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩
   have hD0 := sq_sub_sq_pos_of_lt hr hrR
-  have hD' := sub_sq_le_sq_sub_sq hr hrR
+  have hD' := sub_sq_le_sq_sub_sq hr hrR.le
   have hRD := div_sq_sub_sq_le_one_div_sub hr hrR
   have hRD2 := sq_div_sq_sub_sq_sq_le_one_div_sub_sq hr hrR
   have hRr : 0 < R - r := sub_pos.2 hrR
@@ -493,13 +493,13 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
   set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D) with hc'
   have hcd : ∀ τ, HasDerivAt c (c' τ) τ := fun τ =>
-    ((((hS1.differentiable (by simp)) _).hasDerivAt_comp_sub_div (R ^ 2) D τ).const_mul
-      (-(2 / D))).congr_deriv (by simp only [c']; field_simp)
+    ((((hS1.differentiable (by simp)) _).hasDerivAt.comp_sub_div (A := R ^ 2) (D := D)
+      (τ := τ)).const_mul (-(2 / D))).congr_deriv (by simp only [c']; field_simp)
   have hgrad : ∇ (fun y : E => Real.smoothTransition ((R ^ 2 - ‖y - x₀‖ ^ 2) / D)) =
       fun y => c (‖y - x₀‖ ^ 2) • (y - x₀) := by
     funext x
-    have hd := ((hS.differentiable (by simp)) ((R ^ 2 - ‖x - x₀‖ ^ 2) / D)).hasDerivAt_comp_sub_div
-      (R ^ 2) D (‖x - x₀‖ ^ 2)
+    have hd := ((hS.differentiable (by simp)) ((R ^ 2 - ‖x - x₀‖ ^ 2) / D)).hasDerivAt.comp_sub_div
+      (A := R ^ 2) (D := D) (τ := ‖x - x₀‖ ^ 2)
     refine (HasDerivAt.comp_hasGradientAt (g := fun y : E => ‖y - x₀‖ ^ 2) hd
       (hasGradientAt_norm_sq_sub x₀ x)).gradient.trans ?_
     rw [smul_smul]

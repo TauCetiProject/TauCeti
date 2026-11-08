@@ -15,19 +15,19 @@ import Mathlib.Tactic.Linarith
 # Affine reparametrizations of a real profile
 
 For a real profile `φ`, the function `τ ↦ φ ((A - τ) / D)` has derivative
-`φ' ((A - τ) / D) * (-1 / D)` (`DifferentiableAt.hasDerivAt_comp_sub_div`). If `φ` vanishes on the
+`φ' ((A - τ) / D) * (-1 / D)` (`HasDerivAt.comp_sub_div`). If `φ` vanishes on the
 negative half-line, then `φ ((A - τ) / D) = 0` for `τ > A` (`TauCeti.comp_sub_div_eq_zero_of_lt`).
 -/
 
 public section
 
-/-- The derivative of `τ ↦ φ ((A - τ) / D)`, for `φ` differentiable at `(A - τ) / D`. -/
-theorem _root_.DifferentiableAt.hasDerivAt_comp_sub_div {φ : ℝ → ℝ} (A D τ : ℝ)
-    (hφ : DifferentiableAt ℝ φ ((A - τ) / D)) :
-    HasDerivAt (fun τ => φ ((A - τ) / D)) (deriv φ ((A - τ) / D) * (-1 / D)) τ := by
+/-- The derivative of `τ ↦ φ ((A - τ) / D)`, for `φ` with derivative `φ'` at `(A - τ) / D`. -/
+theorem _root_.HasDerivAt.comp_sub_div {φ : ℝ → ℝ} {φ' : ℝ} {A D τ : ℝ}
+    (hφ : HasDerivAt φ φ' ((A - τ) / D)) :
+    HasDerivAt (fun τ => φ ((A - τ) / D)) (φ' * (-1 / D)) τ := by
   have h1 : HasDerivAt (fun τ : ℝ => (A - τ) / D) (-1 / D) τ := by
     simpa using ((hasDerivAt_id τ).const_sub A).div_const D
-  exact hφ.hasDerivAt.comp τ h1
+  exact hφ.comp τ h1
 
 namespace TauCeti
 
