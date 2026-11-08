@@ -10,7 +10,6 @@ public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 import TauCeti.Analysis.BoundedVariation.Compactness
 import TauCeti.Analysis.BoundedVariation.Dilation
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
-import TauCeti.Analysis.BoundedVariation.Translation
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
