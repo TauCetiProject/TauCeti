@@ -72,7 +72,7 @@ open scoped Manifold
 
 namespace TauCeti
 
-local instance {n : ℕ} {X : Type*} [TopologicalSpace X]
+local instance regularSublevelOrientation_isManifold {n : ℕ} {X : Type*} [TopologicalSpace X]
     [ChartedSpace (EuclideanHalfSpace (n + 1)) X] [IsManifold (𝓡∂ (n + 1)) 1 X] :
     IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary X) :=
   isManifold_boundary X one_ne_zero
