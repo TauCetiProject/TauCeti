@@ -5,18 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
-public import TauCeti.Algebra.Homology.Ext.Basic
+public import TauCeti.Algebra.Homology.Ext.Map.Adjunction
 
 /-!
 # `Ext` groups are invariant under an additive equivalence
 
-Mathlib's `CategoryTheory.Adjunction.extEquiv` promotes an adjunction `F ⊣ G` between exact
-functors to an additive equivalence `Extⁿ(F X, Y) ≃+ Extⁿ(X, G Y)`.  For an equivalence `e` this
-specialises, along `CategoryTheory.Equivalence.toAdjunction` and the transport of the target along
-the unit isomorphism from `TauCeti.extAddEquivOfIso`, to the invariance of `Ext` under `e`, which
-Mathlib does not state in this form.  (`CategoryTheory.Abelian.Ext.mapExactFunctor` is shown
-bijective only under a projective- or injective-object hypothesis.)
+An additive equivalence `e` induces an additive equivalence on `Ext` groups via
+`e.functor.mapExtAddHom`, whose underlying map is
+`CategoryTheory.Abelian.Ext.mapExactFunctor`. Bijectivity follows from
+`CategoryTheory.Adjunction.mapExt_bijective_of_isIso_unit_app` applied to `e.toAdjunction`.
+That criterion uses Mathlib's `CategoryTheory.Adjunction.extEquiv`.
 
 ## Main definitions
 
@@ -43,29 +41,26 @@ universe w w' v v' u u' t
 variable {C : Type u} [Category.{v} C] [Abelian C] {D : Type u'} [Category.{v'} D] [Abelian D]
   [HasExt.{w} C] [HasExt.{w'} D]
 
-/-- **`Ext` groups are invariant under an additive equivalence.**  The equivalence `e` carries
-`Extⁿ(X, Y)` isomorphically onto `Extⁿ(e X, e Y)`.  This is `CategoryTheory.Adjunction.extEquiv`
-for the adjunction `e.functor ⊣ e.inverse`, with the target transported along the unit
-isomorphism. -/
+/-- **`Ext` groups are invariant under an additive equivalence.** The additive equivalence
+`Extⁿ(X, Y) ≃+ Extⁿ(e X, e Y)` has underlying map
+`CategoryTheory.Abelian.Ext.mapExactFunctor` for `e.functor`. -/
 noncomputable def _root_.CategoryTheory.Equivalence.extAddEquiv
     (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
     Ext.{w} X Y n ≃+ Ext.{w'} (e.functor.obj X) (e.functor.obj Y) n :=
-  (extAddEquivOfIso (Iso.refl X) (e.unitIso.app Y) n).trans e.toAdjunction.extEquiv.symm
+  AddEquiv.ofBijective (e.functor.mapExtAddHom X Y n)
+    (e.toAdjunction.mapExt_bijective_of_isIso_unit_app X Y n)
 
 @[simp]
 theorem _root_.CategoryTheory.Equivalence.extAddEquiv_apply
     (e : C ≌ D) [e.functor.Additive] {X Y : C} {n : ℕ}
     (α : Ext.{w} X Y n) :
-    e.extAddEquiv X Y n α = α.mapExactFunctor e.functor := by
-  simp [Equivalence.extAddEquiv, Adjunction.extEquiv_symm_apply, Ext.mapExactFunctor_comp,
-    Ext.mapExactFunctor_mk₀]
+    e.extAddEquiv X Y n α = α.mapExactFunctor e.functor := (rfl)
 
-/-- The forward functor of an additive equivalence is bijective on `Ext` groups, since
-`CategoryTheory.Equivalence.extAddEquiv` is `CategoryTheory.Abelian.Ext.mapExactFunctor`. -/
+/-- The forward functor of an additive equivalence induces a bijection on `Ext` groups. -/
 theorem _root_.CategoryTheory.Equivalence.mapExtAddHom_bijective
     (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
     Function.Bijective (e.functor.mapExtAddHom.{w, w'} X Y n) :=
-  (funext e.extAddEquiv_apply).subst (motive := Function.Bijective) (e.extAddEquiv X Y n).bijective
+  e.toAdjunction.mapExt_bijective_of_isIso_unit_app X Y n
 
 /-- **The `R`-linear refinement of `CategoryTheory.Equivalence.extAddEquiv`.**  For an `R`-linear
 equivalence of `R`-linear abelian categories, `Extⁿ(X, Y)` and `Extⁿ(e X, e Y)` are isomorphic as
