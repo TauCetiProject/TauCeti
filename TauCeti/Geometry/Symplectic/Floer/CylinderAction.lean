@@ -43,7 +43,7 @@ rewrites the right-hand side as a difference of actions of the two loops, in two
 
 For a solution of the Floer equation and almost complex structures tamed by `ω`, the energy
 density is nonnegative
-(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_cylindrical_nonneg`), so for a weakly
+(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`), so for a weakly
 exact form the contractible action of the loops decreases along a Floer cylinder
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction`).
 This monotonicity underlies the action filtration of the Floer complex.
@@ -64,11 +64,13 @@ along a solution the action at `s = b` is at most the action at `s = a` minus th
   monotone, the action decreases along the cylinder
   (`SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_of_monotone`);
 * **general homotopies shift it by at most a Hofer-type bound**: for the continuation homotopy
-  `G = H₀ + β(s) (H₁ - H₀)` (`TauCeti.Floer.continuationHomotopy`) with `H₀ - H₁ ≤ h`,
-  `A_{H₁}(γ_b) ≤ A_{H₀}(γ_a) + ∫₀¹ h`, whatever the length of the cylinder
+  `G = H₀ + β(s) (H₁ - H₀)` (`TauCeti.Floer.continuationHomotopy`) and a cylinder over
+  `[a, b] × [0, 1]` with `a ≤ 0` and `1 ≤ b`, if `H₀ - H₁ ≤ h` for an integrable `h` on `[0, 1]`,
+  then `A_{H₁}(γ_b) ≤ A_{H₀}(γ_a) + ∫₀¹ h`, whatever the length of the cylinder
   (`IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_continuationHomotopy`).
-  With `h(t) = sup_x (H₀ - H₁)(t, x)` this is the shift `∫₀¹ sup_x (H₀ - H₁) dt` of the filtration
-  by continuation maps.
+  When `h(t) = sup_x (H₀ - H₁)(t, x)` is finite and integrable on `[0, 1]`, for instance on a
+  compact manifold, this is the shift `∫₀¹ sup_x (H₀ - H₁) dt` of the filtration by continuation
+  maps.
 
 These are the manifold-target, capped-action versions of the estimates of
 `TauCeti.Geometry.Symplectic.Floer.Continuation` for a symplectic vector space. The curvature
@@ -160,17 +162,6 @@ theorem IsNondegenerate.floerEnergyDensity_zero_left_nonneg (hω : ω.IsNondegen
     0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) G u z :=
   floerEnergyDensity_nonneg hω hJ <|
     (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ u z J).2 (by simpa using hfloer)
-
-/-- The Floer energy density of a solution of `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the
-cylindrical perturbation `K = H_t dt` is nonnegative when `J` is tamed by `ω` at `u z`. -/
-theorem IsNondegenerate.floerEnergyDensity_cylindrical_nonneg (hω : ω.IsNondegenerate)
-    {z : ℝ × ℝ} {J : AlmostComplexStructure (TangentSpace I (u z))}
-    (hJ : (hω.symplecticFormAt (u z)).Tames J)
-    (hfloer : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
-      J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
-        ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z :=
-  hω.floerEnergyDensity_zero_left_nonneg hJ hfloer
 
 /-! ### The energy identity for perturbations without `ds` component -/
 
@@ -338,7 +329,7 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
       contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) := by
   have h := hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub hωe hH hu hper hab hv
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ hω.floerEnergyDensity_cylindrical_nonneg (hJ z hz) (hfloer z hz)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (G := fun w ↦ H w.2) (hJ z hz) (hfloer z hz)
   linarith
 
 /-! ### Continuation cylinders and the action filtration -/
@@ -443,12 +434,14 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_
 
 /-- **The action shift of a continuation cylinder.** Let `ω` be a nondegenerate weakly exact
 two-form on a finite-dimensional manifold, and `H₀` and `H₁` `C¹` time-dependent Hamiltonians with
-`H₀ - H₁ ≤ h` on `[0, 1]`, uniformly on the manifold. Let `u` be a `C²` map, `1`-periodic in its
-second coordinate, whose loop at `s = b` bounds a cap, solving the Floer equation
+`H₀ - H₁ ≤ h` on `[0, 1]`, uniformly on the manifold, for a function `h` integrable on `[0, 1]`.
+Let `u` be a `C²` map, `1`-periodic in its second coordinate, whose loop at `s = b` bounds a cap,
+solving the Floer equation
 `∂_s u + J (∂_t u - X_{G_z}(u)) = 0` on `[a, b] × [0, 1]`, with `a ≤ 0` and `1 ≤ b`, for the
 continuation homotopy `G` from `H₀` to `H₁` and almost complex structures tamed by `ω`. Then
-`A_{H₁}(u(b, ·)) ≤ A_{H₀}(u(a, ·)) + ∫₀¹ h`. Taking `h(t) = sup_x (H₀ - H₁)(t, x)`, continuation
-cylinders shift the action filtration by at most `∫₀¹ sup_x (H₀ - H₁) dt`; when `H₀ ≤ H₁`, they
+`A_{H₁}(u(b, ·)) ≤ A_{H₀}(u(a, ·)) + ∫₀¹ h`. When `h(t) = sup_x (H₀ - H₁)(t, x)` is finite and
+integrable on `[0, 1]` (for instance when `M` is compact), continuation cylinders shift the action
+filtration by at most `∫₀¹ sup_x (H₀ - H₁) dt`; when `H₀ ≤ H₁`, taking `h = 0` shows that they
 preserve it. -/
 theorem
     IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_continuationHomotopy
