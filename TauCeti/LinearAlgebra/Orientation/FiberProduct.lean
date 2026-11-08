@@ -137,6 +137,30 @@ theorem fiberProduct_neg_base :
     fiberProduct h ox oy (-ot) hx hy ht hq = -fiberProduct h ox oy ot hx hy ht hq := by
   simp only [fiberProduct, shortExactLeft_neg_right]
 
+/-- Scaling the orientation of the first factor by a unit scales the fibre product orientation. -/
+@[simp]
+theorem fiberProduct_units_smul_left (u : Kˣ) :
+    fiberProduct h (u • ox) oy ot hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq := by
+  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
+  · simp only [Module.Ray.units_smul_of_neg u hu, fiberProduct_neg_left]
+  · simp only [Module.Ray.units_smul_of_pos u hu]
+
+/-- Scaling the orientation of the second factor by a unit scales the fibre product orientation. -/
+@[simp]
+theorem fiberProduct_units_smul_right (u : Kˣ) :
+    fiberProduct h ox (u • oy) ot hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq := by
+  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
+  · simp only [Module.Ray.units_smul_of_neg u hu, fiberProduct_neg_right]
+  · simp only [Module.Ray.units_smul_of_pos u hu]
+
+/-- Scaling the orientation of the base by a unit scales the fibre product orientation. -/
+@[simp]
+theorem fiberProduct_units_smul_base (u : Kˣ) :
+    fiberProduct h ox oy (u • ot) hx hy ht hq = u • fiberProduct h ox oy ot hx hy ht hq := by
+  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
+  · simp only [Module.Ray.units_smul_of_neg u hu, fiberProduct_neg_base]
+  · simp only [Module.Ray.units_smul_of_pos u hu]
+
 /-- Exchanging the factors of a fibre product: the exchange `X × Y ≃ Y × X` restricts to an
 isomorphism of the fibre product of `α` and `β` with that of `β` and `α`, and it carries the fibre
 product orientation of `ox`, `oy` to `(-1) ^ (dim X · dim Y + dim T · (dim X + dim Y) + dim T)`
@@ -165,19 +189,13 @@ theorem map_fiberProduct_comm :
     ext; simp
   have hneg : map (Fin t) (LinearEquiv.neg K) ot = (-1 : Kˣ) ^ t • ot := by
     rw [map_linearEquiv_neg ot (by rw [Fintype.card_fin, ht]), ht]
-  rw [shortExact_fiberProduct, hneg, shortExact_units_smul_right,
-    map_reindex, map_units_smul, map_prodComm_prod, smul_smul, reindex_units_smul,
-    ← reindex_trans, hfin] at hnat
-  -- The left side of `hnat` is now expressed through the product orientation of `oy` and `ox`,
-  -- which the defining identity of `oq'` relates to `oq'`.
-  have hdef := shortExact_fiberProduct h' oy ox ot hy hx ht (hq.trans (add_comm x y)) hQ'
-  rw [reindex_units_smul] at hdef
-  have hinv (v : Orientation K (Y × X) (Fin (q + t))) : (-1 : Kˣ) ^ t • (-1 : Kˣ) ^ t • v = v := by
-    simp [smul_smul, ← mul_pow]
-  rw [← (shortExact_inj_left (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h'
-    hQ' ht ot), shortExact_units_smul_left, hdef,
-    ← hinv (shortExact _ _ h' (map (Fin q) σ oq) ot _ ht), ← hnat]
-  simp only [smul_smul, ← pow_add]
+  -- Solve `hnat` for the subspace-first orientation of `σ oq`, then compare with the defining
+  -- identity of `oq'`.
+  rw [hneg, shortExact_units_smul_right, eq_comm, smul_eq_iff_eq_inv_smul] at hnat
+  rw [← shortExact_inj_left (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h'
+    hQ' ht ot, hnat, shortExact_units_smul_left, shortExact_fiberProduct, shortExact_fiberProduct]
+  simp only [map_reindex, map_units_smul, map_prodComm_prod, reindex_units_smul, ← reindex_trans,
+    hfin, smul_smul, ← inv_pow, inv_neg_one, ← pow_add]
   -- The two exponents differ by the even number `2 * (x * t)`.
   congr 1
   rw [show x * y + t * (x + y) + t + x * t = t + (y * t + x * y) + 2 * (x * t) by ring,
