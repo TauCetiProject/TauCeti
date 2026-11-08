@@ -134,13 +134,8 @@ theorem sub_single_mem_supported [AddCommGroup M] [Module R M] {s : Set α} (v :
     (hv : ∀ j ∈ v.support, j ∈ s ∨ j = k) :
     v - single k (v k) ∈ supported M R s := by
   classical
-  refine (mem_supported R _).2 fun j hj ↦ ?_
-  rw [Finset.mem_coe, mem_support_iff, sub_apply] at hj
-  by_cases hjk : j = k
-  · subst hjk
-    simp at hj
-  · rw [single_eq_of_ne hjk, sub_zero] at hj
-    exact (hv j (mem_support_iff.2 hj)).resolve_right hjk
+  rw [← erase_eq_sub_single, mem_supported, support_erase]
+  exact fun j hj ↦ (hv j (Finset.mem_of_mem_erase hj)).resolve_right (Finset.ne_of_mem_erase hj)
 
 /-- A linear map sending every basis vector `single j x` with `j ∈ s` into `supported N R t` maps
 `supported M R s` into `supported N R t`. -/
