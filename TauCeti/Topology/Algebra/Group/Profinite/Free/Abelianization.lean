@@ -378,29 +378,4 @@ lemma abelianizationEquiv_padicPow_class (r : freeProP p X) (l : ℤ_[p]) :
 
 end freeProP
 
-namespace IsProP
-
-/-- The closed normal closure of `r` lies in the preimage of the closed subgroup of `p`-adic powers
-of the class of `r` in the topological abelianization. -/
-lemma normalClosure_topologicalClosure_le_comap_range_padicPowHom {p : ℕ} [Fact p.Prime]
-    {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-    [TotallyDisconnectedSpace G]
-    (hG : IsProP p G)
-    (r : G) :
-    (Subgroup.normalClosure {r}).topologicalClosure ≤
-      ((hG.topologicalAbelianization_self.padicPowHom
-        (r : TopologicalAbelianization G) :
-          Multiplicative ℤ_[p] →* TopologicalAbelianization G).range).comap
-            (QuotientGroup.mk' (commutator G).topologicalClosure) := by
-  have hF := hG.topologicalAbelianization_self
-  refine Subgroup.topologicalClosure_minimal _ (Subgroup.normalClosure_le_normal ?_) ?_
-  · rw [Set.singleton_subset_iff, SetLike.mem_coe, Subgroup.mem_comap, MonoidHom.mem_range]
-    exact ⟨ofAdd 1, by
-      rw [MonoidHom.coe_ofClass, hF.padicPowHom_ofAdd_one, QuotientGroup.mk'_apply]⟩
-  · rw [Subgroup.coe_comap, MonoidHom.coe_range, MonoidHom.coe_ofClass]
-    exact ((isCompact_range (hF.padicPowHom _).continuous).isClosed).preimage
-      continuous_quot_mk
-
-end IsProP
-
 end TauCeti
