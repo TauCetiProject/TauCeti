@@ -224,6 +224,17 @@ theorem natCast_localMultiplicity (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt �
   rw [← localMultiplicity_eq_zero_iff hf, localMultiplicity_def, analyticOrderNatAt, htop,
     ENat.toNat_top]
 
+/-- The preferred-chart representative of a holomorphic, locally nonconstant map is itself
+locally nonconstant. -/
+theorem not_eventuallyConst_chartAt_comp_comp_chartAt_symm
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hnc : ¬ EventuallyConst f (𝓝 x)) :
+    ¬ EventuallyConst ((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
+      (𝓝 (chartAt ℂ x x)) := by
+  simp only [eventuallyConst_iff_analyticOrderAt_sub_eq_top, comp_apply,
+    (chartAt ℂ x).left_inv (mem_chart_source ℂ x), ← natCast_localMultiplicity hf hnc]
+  simp
+
 /-! ### Composition -/
 
 /-- **Multiplicativity of the local multiplicity.** The local multiplicity of a composition of
