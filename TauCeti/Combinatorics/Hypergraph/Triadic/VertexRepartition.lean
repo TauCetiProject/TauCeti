@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.Polyad.MapCells
 public import TauCeti.Combinatorics.Hypergraph.Triadic.PairRecoloring
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Positivity
@@ -59,10 +58,11 @@ theorem TopRegularOverMostPolyads.of_vertexRepartition {C : TriadicComplex3 V} {
   have hD : D.IsPolyadDecomposition :=
     D.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ mem_univ _
   rw [topRegularOverMostPolyads_iff] at h ⊢
-  refine (exceptionalPolyadMass_le_of_injective hC hD (Polyad3.mapCells_injective f.injective)
+  refine (exceptionalPolyadMass_le_of_injective hC hD
+    (Polyad3.map_injective f.injective Function.injective_id)
     hε hη hbudget).trans (add_le_add h ?_)
   gcongr
-  exact_mod_cast Polyad3.card_ofTriple_ne_mapCells_le (S := C.skeleton) (T := D.skeleton)
-    f (fun _ ↦ rfl) B hcells
+  exact_mod_cast Polyad3.card_ofTriple_ne_map_le (S := C.skeleton) (T := D.skeleton)
+    f id (fun _ ↦ rfl) B hcells
 
 end TauCeti.Colored3Graph
