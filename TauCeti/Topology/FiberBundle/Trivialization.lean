@@ -27,6 +27,8 @@ fibre bundle continuous.
   space lies over a finite union of preferred trivializing base sets.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
+* `Bundle.Trivialization.isOpen_sheet`: for a trivialization with discrete fibre of a continuous
+  map, the sheet of a given index over an open subset of the base set is open.
 -/
 
 public section
@@ -188,5 +190,25 @@ theorem iUnion_symm_apply {i : ι} {p : B × F} (hp : p.1 ∈ (e i).baseSet) :
   iUnionInv_eq e hd hp
 
 end DisjointUnion
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+/-- For a trivialization `tq` of a continuous map `q` with discrete fibre, the sheet of index `j`
+over an open set `V` inside the base set, the set of points lying over `V` with fibre coordinate
+`j`, is open. -/
+theorem isOpen_sheet {Z B J : Type*} [TopologicalSpace Z] [TopologicalSpace B]
+    [TopologicalSpace J] [DiscreteTopology J] {q : Z → B} (tq : Trivialization J q)
+    (hq : Continuous q) {V : Set B} (hVopen : IsOpen V) (hVsub : V ⊆ tq.baseSet) (j : J) :
+    IsOpen {f : Z | q f ∈ V ∧ (tq f).2 = j} := by
+  have hW : {f : Z | q f ∈ V ∧ (tq f).2 = j} =
+      q ⁻¹' V ∩ (tq.source ∩ (fun f => (tq f).2) ⁻¹' {j}) := by
+    ext f
+    exact ⟨fun h => ⟨h.1, tq.mem_source.mpr (hVsub h.1), h.2⟩, fun h => ⟨h.1, h.2.2⟩⟩
+  rw [hW]
+  exact (hVopen.preimage hq).inter
+    ((continuous_snd.comp_continuousOn tq.continuousOn_toFun).isOpen_inter_preimage
+      tq.open_source (isOpen_discrete {j}))
 
 end Bundle.Trivialization

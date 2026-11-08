@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Covering.Basic
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # A map of covering spaces with locally connected target is a covering map
@@ -71,19 +72,6 @@ private theorem sheetIndex_symm_eq (hg : Continuous g) (hqg : ∀ e, q (g e) = p
   exact hVconn.constant (hsnd.comp h1 fun v hv => symm_mem_source_of_comp_eq hqg tp tq hVsub i hv)
     hv hx₀
 
-/-- The `q`-sheet of index `j` over an open set `V` inside the base set of `tq` is open. -/
-private theorem isOpen_sheet (hq : Continuous q) {J : Type*} [TopologicalSpace J]
-    [DiscreteTopology J] (tq : Trivialization J q) {V : Set X} (hVopen : IsOpen V)
-    (hVsub : V ⊆ tq.baseSet) (j : J) : IsOpen {f : F | q f ∈ V ∧ (tq f).2 = j} := by
-  have hW : {f : F | q f ∈ V ∧ (tq f).2 = j} =
-      q ⁻¹' V ∩ (tq.source ∩ (fun f => (tq f).2) ⁻¹' {j}) := by
-    ext f
-    exact ⟨fun h => ⟨h.1, tq.mem_source.mpr (hVsub h.1), h.2⟩, fun h => ⟨h.1, h.2.2⟩⟩
-  rw [hW]
-  exact (hVopen.preimage hq).inter
-    ((continuous_snd.comp_continuousOn tq.continuousOn_toFun).isOpen_inter_preimage
-      tq.open_source (isOpen_discrete {j}))
-
 /-- Whether `g e` lies in the `q`-sheet of index `j` over `V` is read off the sheet index of `p`
 at `e`. -/
 private theorem comp_mem_sheet_iff (hg : Continuous g) (hqg : ∀ e, q (g e) = p e) {I J : Type*}
@@ -136,7 +124,7 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
     (I := {i : I // (tq (g (tp.toOpenPartialHomeomorph.symm (q f₀, i)))).2 = (tq f₀).2}) ?_
   set j₀ : J := (tq f₀).2 with _₀
   set W : Set F := {f | q f ∈ V ∧ (tq f).2 = j₀}
-  have hWopen : IsOpen W := isOpen_sheet hq tq hVopen (fun v hv => (hVsub hv).2) j₀
+  have hWopen : IsOpen W := tq.isOpen_sheet hq hVopen (fun v hv => (hVsub hv).2) j₀
   have hgW := comp_mem_sheet_iff hg hqg tp tq hVconn hVsub hf₀V j₀
   refine ⟨inferInstance, W, ⟨hf₀V, rfl⟩, hWopen, hWopen.preimage hg,
     { toFun := fun e => (⟨g e.1, e.2⟩, ⟨(tp e.1).2, (hgW e.1).mp e.2 |>.2⟩)
