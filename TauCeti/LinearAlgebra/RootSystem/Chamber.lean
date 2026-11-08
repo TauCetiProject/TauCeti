@@ -68,8 +68,9 @@ Weyl-invariant.
 The chamber definitions use a preorder on the coefficient ring. Each closure lemma assumes
 only the monotonicity of addition or multiplication it needs. Reflection sign changes and
 nonnegative coroot expansions use only ordered addition; strict positivity of the expansions
-also uses a partial order. The orbit-maximization argument needs a linear order on a
-characteristic-zero integral domain, but no compatibility of the order with multiplication.
+also uses a partial order. The orbit-maximization argument needs a linear order compatible with
+addition on an integral domain, which is then of characteristic zero, but no compatibility of the
+order with multiplication.
 
 The maximization argument is proved as `exists_mem_dominantChamber_of_finite_weylGroup`, which
 does not require the roots to span: it assumes `Finite P.weylGroup` directly, together with
@@ -213,15 +214,21 @@ theorem ofIdx_smul_notMem_dominantChamber {i : ι} (hi : i ∈ b.support) {x : M
     neg_nonneg] at h
   exact hx.not_ge h
 
-/-- No simple reflection fixes a point of the open dominant chamber: it would otherwise stay in
-the closed dominant chamber. -/
+omit [IsOrderedAddMonoid R] in
+/-- No simple reflection fixes a point of the open dominant chamber: it would otherwise move `x`
+by a multiple of the simple root `αᵢ`, whose coefficient `⟨x, αᵢ^∨⟩` is positive, and the simple
+roots are linearly independent. -/
 theorem ofIdx_smul_ne_of_mem_openDominantChamber {i : ι} (hi : i ∈ b.support) {x : M}
     (hx : x ∈ openDominantChamber P b) :
     RootPairing.weylGroup.ofIdx P i • x ≠ x := by
   intro hfix
-  refine ofIdx_smul_notMem_dominantChamber P b hi (hx i hi) ?_
-  rw [hfix]
-  exact openDominantChamber_subset_dominantChamber P b hx
+  have hsmul : P.coroot' i x • P.root i = 0 := by
+    rw [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
+      RootPairing.reflection_apply, sub_eq_self] at hfix
+    exact hfix
+  have hzero := linearIndependent_iff'.mp b.linearIndepOn_root {⟨i, hi⟩} (fun _ ↦ P.coroot' i x)
+    (by simpa using hsmul) ⟨i, hi⟩ (Finset.mem_singleton_self _)
+  exact (hx i hi).ne' hzero
 
 end Reflections
 
@@ -268,11 +275,16 @@ section FiniteWeylGroup
 
 variable [LinearOrder R] [IsOrderedAddMonoid R] [Finite P.weylGroup]
 
+omit [CharZero R] in
 /-- **Every weight is Weyl-conjugate into the closed dominant chamber**, for a crystallographic
 reduced pairing with finitely many roots whose Weyl group is finite. Maximizing `posCorootSum`
 along the orbit produces the dominant representative. -/
 theorem exists_mem_dominantChamber_of_finite_weylGroup (x : M) :
     ∃ w : P.weylGroup, w • x ∈ dominantChamber P b := by
+  -- A nontrivial linearly ordered additive group is torsion free, so the ring has characteristic
+  -- zero.
+  have : CharZero R := ⟨fun {m n} h ↦ IsAddTorsionFree.nsmul_left_injective
+    (one_ne_zero : (1 : R) ≠ 0) (by simpa only [nsmul_one] using h)⟩
   obtain ⟨w, hw⟩ := Finite.exists_max fun w : P.weylGroup ↦ posCorootSum P b (w • x)
   refine ⟨w, fun i hi ↦ ?_⟩
   have hsmul : (RootPairing.weylGroup.ofIdx P i * w) • x = P.reflection i (w • x) := by
@@ -282,12 +294,14 @@ theorem exists_mem_dominantChamber_of_finite_weylGroup (x : M) :
   rw [sub_le_self_iff, two_mul, ← two_nsmul] at hle
   exact (nsmul_nonneg_iff (by decide : 2 ≠ 0)).mp hle
 
+omit [CharZero R] in
 /-- Every Weyl orbit meets the closed dominant chamber. -/
 theorem orbit_inter_dominantChamber_nonempty (x : M) :
     (MulAction.orbit P.weylGroup x ∩ dominantChamber P b).Nonempty := by
   obtain ⟨w, hw⟩ := exists_mem_dominantChamber_of_finite_weylGroup P b x
   exact ⟨w • x, ⟨w, rfl⟩, hw⟩
 
+omit [CharZero R] in
 /-- **The Weyl translates of the closed dominant chamber cover the weight space.** -/
 theorem iUnion_smul_dominantChamber_eq_univ :
     ⋃ w : P.weylGroup, w • dominantChamber P b = (univ : Set M) := by
@@ -298,6 +312,7 @@ theorem iUnion_smul_dominantChamber_eq_univ :
 
 end FiniteWeylGroup
 
+omit [CharZero R] in
 /-- **Every weight is Weyl-conjugate into the closed dominant chamber.** Together with the
 uniqueness of that representative this says the closed dominant chamber is a fundamental domain
 for the Weyl group. -/
