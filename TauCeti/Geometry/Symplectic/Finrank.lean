@@ -112,19 +112,29 @@ theorem even_finrank_genEigenspace_zero_of_anticommute (J : AlmostComplexStructu
   J.even_finrank_of_forall_mem fun _ hv ↦ by
     simpa using Module.End.mapsTo_genEigenspace_neg_of_anticommute h 0 k hv
 
-/-- A maximal totally real subspace `L` of a finite-dimensional almost complex module has real
-dimension equal to the complex dimension of the ambient module: `L` is "half-dimensional".
+/-- A maximal totally real subspace `L` of an almost complex module has real dimension equal to
+the complex dimension of the ambient module: `L` is "half-dimensional". (An infinite-dimensional
+module has both dimensions `0`, since `L` and `J L` span it.)
 
 For a Heegaard diagram of genus `g`, this is the statement that the totally real tori `T_α`,
 `T_β` are `g`-dimensional inside the `g`-complex-dimensional symmetric product `Sym^g(Σ)`
 (Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2). -/
-theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal [FiniteDimensional ℝ V]
+theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal
     {J : AlmostComplexStructure V} {L : Submodule ℝ V}
     (hL : IsMaximalTotallyReal J.toLinearMap L) :
     Module.finrank ℝ L = J.complexFinrank := by
-  have h := hL.two_mul_finrank_eq (J.injective.comp L.subtype_injective)
   have h' := J.finrank_real_eq_two_mul_complexFinrank
-  omega
+  by_cases hV : Module.Finite ℝ V
+  · have h := hL.two_mul_finrank_eq (J.injective.comp L.subtype_injective)
+    omega
+  · have hL0 : Module.finrank ℝ L = 0 := by
+      by_contra hne
+      have : Module.Finite ℝ L := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero hne)
+      have : Module.Finite ℝ (L ⊔ L.map J.toLinearMap : Submodule ℝ V) := inferInstance
+      rw [hL.isCompl.sup_eq_top] at this
+      exact hV (Module.Finite.equiv (Submodule.topEquiv (R := ℝ) (M := V)))
+    rw [Module.finrank_of_not_finite hV] at h'
+    omega
 
 /-- An odd-dimensional real module admits no almost complex structure. -/
 theorem isEmpty_of_odd_finrank (h : Odd (Module.finrank ℝ V)) :
