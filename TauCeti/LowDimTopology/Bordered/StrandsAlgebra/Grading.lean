@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.Algebra.Order.Field.Rat
@@ -149,6 +148,14 @@ theorem pointMultiplicity_apply (p : α) (δ : α → ℤ) :
     pointMultiplicity p δ = -∑ y ∈ ({y | y < p} : Finset α), (δ y : ℚ) - δ p / 2 :=
   (rfl)
 
+/-- The multiplicity `m(β, p)` is a half-integer. -/
+theorem exists_pointMultiplicity_eq (p : α) (δ : α → ℤ) :
+    ∃ k : ℤ, pointMultiplicity p δ = k / 2 :=
+  ⟨-2 * ∑ y ∈ ({y | y < p} : Finset α), δ y - δ p, by
+    rw [pointMultiplicity_apply]
+    push_cast
+    ring⟩
+
 /-- The bilinear form `L(β₁, β₂) = m(β₂, ∂β₁)` of Lipshitz, Ozsváth and Thurston, which
 defines the product of the grading group. -/
 def linking : (α → ℤ) →+ (α → ℤ) →+ ℚ where
@@ -230,12 +237,9 @@ theorem lambda_mem_center : (lambda : StrandGradingGroup α) ∈ Subgroup.center
 /-- The form `L` takes half-integral values. -/
 theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
     ∃ k : ℤ, linking δ₁ δ₂ = k / 2 := by
-  refine ⟨∑ p, δ₁ p * (-2 * ∑ y ∈ ({y | y < p} : Finset α), δ₂ y - δ₂ p), ?_⟩
-  simp only [linking_apply, pointMultiplicity_apply, div_eq_mul_inv]
-  push_cast
-  rw [Finset.sum_mul]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  ring
+  choose k hk using fun p ↦ exists_pointMultiplicity_eq p δ₂
+  refine ⟨∑ p, δ₁ p * k p, ?_⟩
+  simp [linking_apply, hk, div_eq_mul_inv, Finset.sum_mul, mul_assoc]
 
 /-- The grading group `G'(n)` of Lipshitz, Ozsváth and Thurston, for `α = Fin n`: the subgroup of
 the elements with half-integral Maslov component and boundary of total sum zero. -/
@@ -429,14 +433,9 @@ theorem grading_boundary (φ : StrandDiagram α) : φ.grading.boundary = φ.boun
 /-- The Maslov component of the grading of a diagram is a half-integer. -/
 theorem exists_maslov_grading_eq (φ : StrandDiagram α) :
     ∃ k : ℤ, φ.grading.maslov = k / 2 := by
-  refine ⟨2 * φ.inversionCount + ∑ s ∈ φ.source,
-    (2 * ∑ y ∈ ({y | y < s} : Finset α), φ.boundary y + φ.boundary s), ?_⟩
-  have h : ∀ s ∈ φ.source,
-      (-∑ y ∈ ({y | y < s} : Finset α), (φ.boundary y : ℚ) - φ.boundary s / 2) =
-        -((2 * ∑ y ∈ ({y | y < s} : Finset α), (φ.boundary y : ℚ) + φ.boundary s) / 2) :=
-    fun s _ ↦ by ring
-  simp only [grading_maslov, pointMultiplicity_apply]
-  rw [Finset.sum_congr rfl h, Finset.sum_neg_distrib]
+  choose k hk using fun s ↦ exists_pointMultiplicity_eq s φ.boundary
+  refine ⟨2 * φ.inversionCount - ∑ s ∈ φ.source, k s, ?_⟩
+  simp only [grading_maslov, hk]
   push_cast
   simp only [div_eq_mul_inv, ← Finset.sum_mul]
   ring
