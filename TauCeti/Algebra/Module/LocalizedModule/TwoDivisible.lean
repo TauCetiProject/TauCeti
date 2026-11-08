@@ -131,21 +131,18 @@ theorem odd_addOrderOf_of_smul_eq_zero {M : Type*} [AddCommGroup M]
     rintro rfl
     exact ha (IsLocalization.mk'_zero _)
   have hzx : z • x = 0 := by
-    rw [← Int.cast_smul_eq_zsmul (Localization.Away (2 : ℤ)) z x,
-      ← eq_intCast (algebraMap ℤ (Localization.Away (2 : ℤ))) z,
-      ← IsLocalization.mk'_spec (Localization.Away (2 : ℤ)) z s, mul_comm, mul_smul, hx,
-      smul_zero]
+    simpa [mul_smul, hx, Int.cast_smul_eq_zsmul] using
+      congr($(IsLocalization.mk'_spec' (Localization.Away (2 : ℤ)) z s) • x).symm
   have hpos : 0 < addOrderOf x :=
     (isOfFinAddOrder_iff_zsmul_eq_zero.2 ⟨z, hz, hzx⟩).addOrderOf_pos
   rw [Nat.odd_iff, ← Nat.two_dvd_ne_zero]
   rintro ⟨m, hm⟩
   -- If the order were `2 m`, then `m • x` would be killed by the unit `2`, so `m • x = 0`.
-  have h2 : IsUnit (algebraMap ℤ (Localization.Away (2 : ℤ)) 2) :=
-    IsLocalization.Away.algebraMap_isUnit 2
+  have h2 : IsUnit (2 : Localization.Away (2 : ℤ)) := by
+    simpa using IsLocalization.Away.algebraMap_isUnit (S := Localization.Away (2 : ℤ)) (2 : ℤ)
   have hmx : m • x = 0 := by
     apply h2.smul_left_cancel.1
-    rw [smul_zero, eq_intCast, Int.cast_smul_eq_zsmul, ← natCast_zsmul, smul_smul,
-      ← Nat.cast_ofNat, ← Nat.cast_mul, ← hm, natCast_zsmul, addOrderOf_nsmul_eq_zero]
+    simp [ofNat_smul_eq_nsmul, ← mul_nsmul', ← hm]
   have := Nat.le_of_dvd (by omega) (addOrderOf_dvd_of_nsmul_eq_zero hmx)
   omega
 

@@ -37,7 +37,8 @@ The proof assembles the special cases already known.
   (`TauCeti.groupHomology.isZero_groupHomology_of_directed`).
 * `ℤ[1/2]` is a principal ideal domain (`Localization.isPrincipalIdealRing`), so a finitely
   generated `ℤ[1/2]`-module is the product of its torsion submodule and a free module
-  `ℤ[1/2]ʳ`, by the splitting behind the structure theorem.
+  `ℤ[1/2]ʳ`, by the splitting of the torsion-free quotient used in the proof of Mathlib's
+  structure theorem `Module.equiv_free_prod_directSum`.
 * Every element of the torsion submodule has odd order
   (`TauCeti.odd_addOrderOf_of_smul_eq_zero`), which is a unit of `k`, so its positive-degree
   homology vanishes (`groupHomology.subsingleton_of_forall_isUnit_orderOf`).
@@ -50,9 +51,13 @@ The groups and coefficients live in `Type`, as for the computation of the homolo
 
 ## Main results
 
-* `TauCeti.IsUniquelyTwoDivisible.subsingleton_groupHomology`: `Hₙ₊₁(A, k) = 0`.
-* `TauCeti.IsUniquelyTwoDivisible.subsingleton_classifyingSpace_singularHomology`:
-  `Hₙ₊₁(K(A, 1); k) = 0`.
+* `TauCeti.subsingleton_groupHomology_of_module_localizationAway_two`: `Hₙ₊₁(A, k) = 0` for a
+  `ℤ[1/2]`-module `A`.
+* `TauCeti.subsingleton_classifyingSpace_singularHomology_of_module_localizationAway_two`:
+  `Hₙ₊₁(K(A, 1); k) = 0` for a `ℤ[1/2]`-module `A`.
+* `TauCeti.IsUniquelyTwoDivisible.subsingleton_groupHomology` and
+  `TauCeti.IsUniquelyTwoDivisible.subsingleton_classifyingSpace_singularHomology`: the same
+  statements for a uniquely two-divisible group `A`.
 
 ## References
 
@@ -120,7 +125,8 @@ private theorem subsingleton_groupHomology_pi_localizationAway_two (h2 : (2 : k)
         (subsingleton_groupHomology_localizationAway_two k h2) ih n)
 
 /-- A finitely generated `ℤ[1/2]`-module has no group homology in positive degrees with trivial
-coefficients in which `2 = 0`: it is the product of its torsion submodule and a free module. -/
+coefficients in which `2 = 0`: it is the product of its torsion submodule and a free module. The
+splitting follows the proof of Mathlib's `Module.equiv_free_prod_directSum`. -/
 private theorem subsingleton_groupHomology_of_finite (h2 : (2 : k) = 0) (M : Type)
     [AddCommGroup M] [Module (Localization.Away (2 : ℤ)) M]
     [Module.Finite (Localization.Away (2 : ℤ)) M] (n : ℕ) :
@@ -142,9 +148,12 @@ private theorem subsingleton_groupHomology_of_finite (h2 : (2 : k) = 0) (M : Typ
       (subsingleton_groupHomology_of_isTorsion k h2 T (Submodule.torsion_isTorsion))
       (subsingleton_groupHomology_pi_localizationAway_two k h2 r) n)
 
-/-- A `ℤ[1/2]`-module has no group homology in positive degrees with trivial coefficients in which
-`2 = 0`: it is the directed union of its finitely generated submodules. -/
-private theorem subsingleton_groupHomology_of_module (h2 : (2 : k) = 0) (M : Type)
+variable {k}
+
+/-- **A `ℤ[1/2]`-module is mod-two acyclic.** A `ℤ[1/2]`-module has no group homology in positive
+degrees with trivial coefficients in a commutative semisimple ring `k` in which `2 = 0`, for
+instance `𝔽₂`: it is the directed union of its finitely generated submodules. -/
+theorem subsingleton_groupHomology_of_module_localizationAway_two (h2 : (2 : k) = 0) (M : Type)
     [AddCommGroup M] [Module (Localization.Away (2 : ℤ)) M] (n : ℕ) :
     Subsingleton (groupHomology (Rep.trivial k (Multiplicative M) k) (n + 1)) := by
   rw [← ModuleCat.isZero_iff_subsingleton]
@@ -166,7 +175,16 @@ private theorem subsingleton_groupHomology_of_module (h2 : (2 : k) = 0) (M : Typ
     exact isZero_res_subtype_trivial_of_mulEquiv k (G := Multiplicative (N F)) e
       (subsingleton_groupHomology_of_finite k h2 _ n)
 
-variable {k}
+/-- **`K(A, 1)` is mod-two acyclic for a `ℤ[1/2]`-module `A`.** The Eilenberg--MacLane space
+`K(A, 1) = B(Multiplicative A)` of a `ℤ[1/2]`-module `A` has the homology of a point with
+coefficients in a commutative semisimple ring `k` in which `2 = 0`, for instance `𝔽₂`:
+`Hₙ₊₁(K(A, 1); k) = 0`. -/
+theorem subsingleton_classifyingSpace_singularHomology_of_module_localizationAway_two
+    (h2 : (2 : k) = 0) (A : Type) [AddCommGroup A] [Module (Localization.Away (2 : ℤ)) A]
+    (n : ℕ) : Subsingleton (((singularChains k).obj
+      (TopCat.of (classifyingSpace (Multiplicative A)))).homology (n + 1)) :=
+  have := subsingleton_groupHomology_of_module_localizationAway_two h2 A n
+  (classifyingSpaceSingularHomologyIsoGroupHomology k _ (n + 1)).toLinearEquiv.toEquiv.subsingleton
 
 /-- **A uniquely two-divisible group is mod-two acyclic.** If multiplication by two is bijective on
 the abelian group `A`, then the group homology of `A` with trivial coefficients in a commutative
@@ -176,7 +194,7 @@ theorem IsUniquelyTwoDivisible.subsingleton_groupHomology {A : Type} [AddCommGro
     (hA : IsUniquelyTwoDivisible A) (h2 : (2 : k) = 0) (n : ℕ) :
     Subsingleton (groupHomology (Rep.trivial k (Multiplicative A) k) (n + 1)) :=
   letI := hA.localizationAwayTwoModule
-  subsingleton_groupHomology_of_module k h2 A n
+  subsingleton_groupHomology_of_module_localizationAway_two h2 A n
 
 /-- **`K(A, 1)` is mod-two acyclic for a uniquely two-divisible group `A`.** If multiplication by
 two is bijective on the abelian group `A`, then the Eilenberg--MacLane space
@@ -186,8 +204,8 @@ theorem IsUniquelyTwoDivisible.subsingleton_classifyingSpace_singularHomology {A
     [AddCommGroup A] (hA : IsUniquelyTwoDivisible A) (h2 : (2 : k) = 0) (n : ℕ) :
     Subsingleton (((singularChains k).obj
       (TopCat.of (classifyingSpace (Multiplicative A)))).homology (n + 1)) :=
-  have := hA.subsingleton_groupHomology h2 n
-  (classifyingSpaceSingularHomologyIsoGroupHomology k _ (n + 1)).toLinearEquiv.toEquiv.subsingleton
+  letI := hA.localizationAwayTwoModule
+  subsingleton_classifyingSpace_singularHomology_of_module_localizationAway_two h2 A n
 
 end
 
