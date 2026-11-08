@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Wronskian
 public import TauCeti.RingTheory.Valuation.RootMonic
 
 import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.Polynomial.Wronskian
 
 /-!
@@ -69,11 +70,6 @@ namespace TauCeti.Isogeny
 
 variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic]
   [W₂.IsElliptic]
-
-omit [W₁.IsElliptic] [W₂.IsElliptic] in
-private theorem four_ne_zero_of_two_ne_zero (h2 : (2 : F) ≠ 0) : (4 : F) ≠ 0 := by
-  convert mul_ne_zero h2 h2 using 1
-  norm_num
 
 section Separable
 
