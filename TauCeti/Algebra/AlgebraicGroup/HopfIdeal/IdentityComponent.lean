@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Characteristic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.RationalPoint
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
@@ -19,7 +20,8 @@ For a closed subgroup `N` of an affine group `G`, `HopfIdeal.identityComponent` 
 `N°` as a closed subgroup of `G`. Its quotient coordinate algebra is canonically isomorphic
 to the coordinate algebra obtained by taking the identity component inside `N`.
 
-The identity component has the same tangent Lie algebra as `N`. When `G` and `N` are reduced,
+The identity component has the same tangent Lie algebra as `N`, and hence the same dimension
+when `N` is smooth. When `G` and `N` are reduced,
 normality of `N` implies normality of `N°` in `G`: the identity component is characteristic
 in `N`, and normality can be tested on rational points. All statements are over an
 algebraically closed field; no connectedness of the ambient group is required.
@@ -161,6 +163,15 @@ theorem lieSubalgebra_identityComponent (I : HopfIdeal k H) :
     apply (derivationComp_mem_lieSubalgebra_comapOfSurjective_iff _ _ _ _).mpr
     rw [lieSubalgebra_identityComponentHopfIdeal_eq_top]
     exact LieSubalgebra.mem_top _
+
+/-- A smooth closed subgroup and its identity component have the same Krull dimension. -/
+@[simp]
+theorem ringKrullDim_quotient_identityComponent_of_smooth (I : HopfIdeal k H)
+    [Algebra.Smooth k (H ⧸ I.toIdeal)] :
+    ringKrullDim (H ⧸ I.identityComponent.toIdeal) = ringKrullDim (H ⧸ I.toIdeal) := by
+  let _ := I.smooth_identityComponent
+  rw [ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth,
+    lieSubalgebra_identityComponent, ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth]
 
 end
 
