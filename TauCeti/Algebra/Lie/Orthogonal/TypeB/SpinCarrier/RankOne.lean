@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix
 public import TauCeti.Algebra.Lie.Sl2.Integration
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.RankOne
 import Mathlib.LinearAlgebra.Matrix.Integer
 
 /-!
@@ -134,11 +134,9 @@ private theorem rankOneMatrix_mem_of_root_mem {H : Subgroup (GL (Fin (dimension 
     (hinr : ∀ t : K, (rootSubgroupPoints n (.inr i) K (Multiplicative.ofAdd t) :
       GL (Fin (dimension n)) K) ∈ H)
     (g : SL(2, K)) : rankOneMatrix n K i g ∈ H := by
-  apply (rankOneMatrix n K i).mem_of_sl2_upper_lower_mem
-  · intro t
-    simpa only [rankOneMatrix_upper_transvection] using hinl t
-  · intro t
-    simpa only [rankOneMatrix_lower_transvection] using hinr t
+  exact (rankOneMatrix n K i).sl2_range_le_of_transvection_mem
+    (fun t ↦ by simpa only [rankOneMatrix_upper_transvection] using hinl t)
+    (fun t ↦ by simpa only [rankOneMatrix_lower_transvection] using hinr t) ⟨g, rfl⟩
 
 /-- Over a field, the rank-one action lands in the type-B spin carrier. -/
 def rankOnePoints : SL(2, K) →* points n K :=
@@ -184,22 +182,13 @@ numbered root families. -/
 theorem range_rankOnePoints :
     (rankOnePoints n i K).range =
       (rootSubgroupPoints n (.inl i) K).range ⊔ (rootSubgroupPoints n (.inr i) K).range := by
-  apply le_antisymm
-  · rintro _ ⟨g, rfl⟩
-    rw [← Subgroup.mem_map_iff_mem (points n K).subtype_injective,
-      Subgroup.subtype_apply, coe_rankOnePoints]
-    apply rankOneMatrix_mem_of_root_mem n i K
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.mem_sup_left ⟨_, rfl⟩, rfl⟩
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.mem_sup_right ⟨_, rfl⟩, rfl⟩
-  · apply sup_le
-    · rintro _ ⟨t, rfl⟩
-      exact ⟨Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1)
-        (Multiplicative.toAdd t), by simp⟩
-    · rintro _ ⟨t, rfl⟩
-      exact ⟨Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0)
-        (Multiplicative.toAdd t), by simp⟩
+  rw [(rankOnePoints n i K).sl2_range_eq_closure, Subgroup.closure_union]
+  congr 1 <;> rw [← Subgroup.closure_eq (rootSubgroupPoints n _ K).range] <;>
+    congr 1 <;>
+    simpa only [Function.comp_def, rankOnePoints_upper_transvection,
+      rankOnePoints_lower_transvection, MonoidHom.coe_range] using
+      (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
+        (rootSubgroupPoints n _ K)
 
 end
 
