@@ -51,18 +51,22 @@ variable {k D M N : Type*} [Field k] [DivisionRing D] [Algebra k D]
   [AddCommGroup M] [Module k M] [Module Dᵐᵒᵖ M] [IsScalarTower k Dᵐᵒᵖ M]
   [AddCommGroup N] [Module k N] [Module D N] [IsScalarTower k D N]
 
-/-- The ground-field dimension of a balanced tensor product over a division algebra.
-Only the first factor needs to be finite over the division algebra; the second
-factor may be infinite-dimensional over the ground field. -/
+/-- The ground-field dimension of a balanced tensor product is the right dimension
+of the first factor over the division algebra times the ground-field dimension of
+the second factor. Neither factor needs to be finite-dimensional. -/
 @[simp]
-theorem finrank [Module.Finite Dᵐᵒᵖ M] :
+theorem finrank_eq_mul :
     Module.finrank k (BalancedTensorProduct k D M N) =
       Module.finrank Dᵐᵒᵖ M * Module.finrank k N := by
-  let b := Module.finBasis Dᵐᵒᵖ M
-  -- Use the cardinal rank formula because the finite basis and `N` may have different universes.
-  rw [(b.balancedTensorProductEquiv (k := k) (N := N)).finrank_eq]
+  classical
+  let b := Module.Free.chooseBasis Dᵐᵒᵖ M
+  -- Use the cardinal rank formula because the basis and `N` may have different universes.
+  rw [(b.balancedTensorProductEquiv (k := k) (N := N)).finrank_eq,
+    Module.finrank_eq_nat_card_basis b]
   exact (congrArg Cardinal.toNat
-    (rank_finsupp k N (Fin (Module.finrank Dᵐᵒᵖ M)))).trans (by simp [Module.finrank])
+    (rank_finsupp k N (Module.Free.ChooseBasisIndex Dᵐᵒᵖ M))).trans
+      (by simp only [Module.finrank, Cardinal.toNat_mul, Cardinal.toNat_lift,
+        Cardinal.toNat_mk])
 
 /-- Tensoring with a nonzero finite-dimensional left module detects whether a
 right module over a division algebra is finite-dimensional over that algebra.

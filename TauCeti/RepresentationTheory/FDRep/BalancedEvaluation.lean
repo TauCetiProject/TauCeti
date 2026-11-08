@@ -190,10 +190,10 @@ theorem finite_balancedTensorProduct_iff :
 
 /-- The dimension of a balanced multiplicity tensor counts copies of the simple
 representation using dimension over its endomorphism division algebra. -/
-theorem finrank_balancedTensorProduct [Module.Finite (End S)ᵐᵒᵖ M] :
+theorem finrank_balancedTensorProduct :
     Module.finrank k (BalancedTensorProduct k (End S) M ((R).obj S)) =
       Module.finrank (End S)ᵐᵒᵖ M * Module.finrank k S := by
   let : IsScalarTower k (End S) ((R).obj S) := (F).endModule_isScalarTower S
-  exact BalancedTensorProduct.finrank
+  exact BalancedTensorProduct.finrank_eq_mul
 
 end FDRep

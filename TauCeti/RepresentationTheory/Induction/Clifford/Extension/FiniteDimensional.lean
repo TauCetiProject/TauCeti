@@ -11,8 +11,10 @@ public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstr
 # Finite-dimensional Clifford reconstruction
 
 A finite-dimensional right-commutant multiplicity module reconstructs to a
-finite-dimensional representation of the inertia group. If the prescribed
-normal-subgroup representation `A` is simple, the converse holds as well, and
+finite-dimensional representation of the inertia group. For finiteness reflection
+when the prescribed normal-subgroup representation `A` is simple, see
+`FDRep.finite_balancedTensorProduct_iff`. For simple `A`, the bundled reconstruction
+satisfies
 
 `dim_k reconstruction = dim_{End(A)ᵐᵒᵖ} multiplicity * dim_k A`.
 
@@ -48,11 +50,12 @@ tensor carrier, so the existing pure-tensor action lemmas apply directly. -/
 noncomputable abbrev cliffordReconstructionFDRep : FDRep k (inertia A) :=
   FDRep.of (cliffordReconstructionRepresentation A s hs U)
 
-/-- The dimension of bundled reconstruction over an arbitrary coefficient field. -/
+/-- For simple `A`, bundled reconstruction has ground-field dimension
+`finrank (End A)ᵐᵒᵖ M * finrank k A`. Multiplicity is counted over the full
+endomorphism division algebra, not over the ground field. -/
 theorem finrank_cliffordReconstructionFDRep [Simple A] :
     Module.finrank k (cliffordReconstructionFDRep A s hs U) =
       Module.finrank (End A)ᵐᵒᵖ M * Module.finrank k A := by
-  let : Module.Finite (End A)ᵐᵒᵖ M := Module.Finite.of_restrictScalars_finite k _ _
   exact finrank_balancedTensorProduct A
 
 end FDRep
