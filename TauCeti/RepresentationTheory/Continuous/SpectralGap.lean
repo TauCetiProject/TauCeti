@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.AlmostInvariant
-public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
 
 /-!
 # Spectral gap of a representation
@@ -47,45 +47,6 @@ theorem hasSpectralGap_def (ρ : ContRepresentation 𝕜 G V) :
     ρ.HasSpectralGap ↔ ∃ (F : Finset G) (C : ℝ), 0 < C ∧
       ∀ v ∈ ρ.invariantsᗮ, ‖v‖ ^ 2 ≤ C * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
   Iff.rfl
-
-namespace IsUnitary
-
-variable {ρ : ContRepresentation 𝕜 G V}
-
-/-- The restriction of a unitary representation to the orthogonal complement of its invariant
-vectors. -/
-def invariantsOrthogonal (hρ : ρ.IsUnitary) : ContRepresentation 𝕜 G ρ.invariantsᗮ :=
-  ρ.subrepresentation ρ.invariantsᗮ (fun g _ hv ↦ by
-    rw [Submodule.mem_orthogonal]
-    intro w hw
-    rw [← hw g, hρ.inner_map_map]
-    exact hv w hw)
-
-/-- The action on the orthogonal complement is the original action on underlying vectors. -/
-@[simp]
-theorem coe_invariantsOrthogonal_apply (hρ : ρ.IsUnitary) (g : G) (v : ρ.invariantsᗮ) :
-    (hρ.invariantsOrthogonal g v : V) = ρ g v :=
-  coe_subrepresentation_apply _ _
-
-/-- The orthogonal-complement representation is unitary. -/
-theorem isUnitary_invariantsOrthogonal (hρ : ρ.IsUnitary) :
-    hρ.invariantsOrthogonal.IsUnitary :=
-  hρ.subrepresentation _
-
-/-- Removing the invariant subspace leaves no nonzero invariant vectors. -/
-@[simp]
-theorem invariants_invariantsOrthogonal (hρ : ρ.IsUnitary) :
-    hρ.invariantsOrthogonal.invariants = ⊥ := by
-  apply eq_bot_iff.mpr
-  intro v hv
-  have hfixed : (v : V) ∈ ρ.invariants := by
-    intro g
-    simpa only [coe_invariantsOrthogonal_apply] using congrArg Subtype.val (hv g)
-  have hzero : (v : V) = 0 :=
-    (Submodule.disjoint_def.mp ρ.invariants.orthogonal_disjoint) v hfixed v.property
-  exact Subtype.ext hzero
-
-end IsUnitary
 
 /-- Spectral gap means that the representation on the orthogonal complement of the invariant
 vectors has no almost invariant vectors. Equivalently, the trivial representation is not weakly
