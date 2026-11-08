@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
-# Intermediate fields of a cyclic Galois extension
+# Cyclic Galois extensions
 
 In a finite Galois extension `L/F` with cyclic Galois group, an intermediate field is determined
 by its degree over `F`: a cyclic group has at most one subgroup of each index, and the Galois
@@ -19,6 +19,8 @@ correspondence identifies `[E : F]` with the index of the fixing subgroup of `E`
 
 * `IntermediateField.eq_of_finrank_eq_of_isCyclic`: intermediate fields of a finite cyclic Galois
   extension with the same degree are equal.
+* `TauCeti.exists_pow_lt_finrank_eq`: if `g` generates the Galois group of a finite extension, every
+  automorphism is `g ^ p` for some `p` below the degree.
 -/
 
 public section
@@ -39,3 +41,18 @@ theorem eq_of_finrank_eq_of_isCyclic [FiniteDimensional F L] [IsGalois F L]
   rwa [← finrank_eq_fixingSubgroup_index, ← finrank_eq_fixingSubgroup_index]
 
 end IntermediateField
+
+namespace TauCeti
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
+
+/-- If `g` generates the Galois group of a finite Galois extension `L / K`, then every element of
+the group is `g ^ p` for some `p` below the degree. -/
+theorem exists_pow_lt_finrank_eq {g : L ≃ₐ[K] L}
+    (hg : ∀ σ, σ ∈ Subgroup.zpowers g) (hord : orderOf g = Module.finrank K L)
+    (τ : L ≃ₐ[K] L) : ∃ p < Module.finrank K L, τ = g ^ p := by
+  classical
+  obtain ⟨p, hp, hpτ⟩ := Finset.mem_image.1 (mem_zpowers_iff_mem_range_orderOf.1 (hg τ))
+  exact ⟨p, hord ▸ Finset.mem_range.1 hp, hpτ.symm⟩
+
+end TauCeti

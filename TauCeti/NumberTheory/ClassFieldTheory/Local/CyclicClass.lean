@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.Kummer.Cyclic
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.Basic
 import TauCeti.Algebra.Group.Pow
+import TauCeti.FieldTheory.Galois.Cyclic
 import TauCeti.RingTheory.Norm.Complex
 import TauCeti.RingTheory.Norm.Equiv
 
