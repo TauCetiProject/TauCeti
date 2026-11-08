@@ -37,6 +37,7 @@ homeomorphically onto the open `n`-cells (`TauCeti.iUnionOpenCellHomeomorph`), i
 * `TauCeti.sigmaDiskPair ι n`: the pair `∐ᵢ (Dⁿ, Sⁿ⁻¹)`.
 * `TauCeti.sigmaRadialHomotopy ι n`: the radial deformation of `∐ᵢ Dⁿ`, which fixes the boundary
   spheres and pushes the shells `2⁻¹ ≤ ‖y‖ ≤ 1` onto them.
+* `TauCeti.sigmaCellMap C n`: the characteristic maps of the `n`-cells, as one map `∐ⱼ Dⁿ ⟶ X`.
 * `TauCeti.characteristicPairMap C n`: the characteristic maps of the `n`-cells, as a map of pairs
   `∐ⱼ (Dⁿ, Sⁿ⁻¹) ⟶ (Xⁿ, Xⁿ⁻¹)`.
 * `TauCeti.isIso_singularHomologyMap_characteristicPairMap`: it induces isomorphisms on relative
@@ -133,19 +134,33 @@ lemma sigmaRadialHomotopy_apply_of_norm_eq_one (t : I) {p : Σ _ : ι, closedBal
   Sigma.ext rfl (heq_of_eq (Subtype.ext
     (radialPush_of_norm_eq_one (by norm_num) (by norm_num) _ hp)))
 
+/-- `TauCeti.sigmaRadialHomotopy` does not decrease the norm of the disk coordinate. -/
+lemma norm_le_norm_sigmaRadialHomotopy (t : I) (p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :
+    ‖(p.2 : Fin n → ℝ)‖ ≤ ‖((sigmaRadialHomotopy ι n (t, p)).2 : Fin n → ℝ)‖ :=
+  norm_le_norm_radialPush (by norm_num) (by norm_num) _ (mem_closedBall_zero_iff.1 p.2.2)
+
+/-- At time `1`, `TauCeti.sigmaRadialHomotopy` pushes the shells `2⁻¹ ≤ ‖y‖ ≤ 1` onto the
+boundary spheres. -/
+lemma norm_sigmaRadialHomotopy_one {p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1}
+    (hp : 2⁻¹ ≤ ‖(p.2 : Fin n → ℝ)‖) : ‖((sigmaRadialHomotopy ι n (1, p)).2 : Fin n → ℝ)‖ = 1 :=
+  norm_radialPush_one (by norm_num) hp
+
+/-- The boundary spheres of the disks of `∐ᵢ Dⁿ` lie in the shells `2⁻¹ ≤ ‖y‖ ≤ 1`. -/
+lemma sigma_sphere_subset_shell :
+    {p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 | ‖(p.2 : Fin n → ℝ)‖ = 1} ⊆
+      {p | 2⁻¹ ≤ ‖(p.2 : Fin n → ℝ)‖} :=
+  fun _ hp ↦ (show (2 : ℝ)⁻¹ ≤ 1 by norm_num).trans_eq (Eq.symm hp)
+
 private lemma mapsTo_sphere_shell :
     MapsTo (𝟙 (TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1)))
-      {p | ‖(p.2 : Fin n → ℝ)‖ = 1} {p | 2⁻¹ ≤ ‖(p.2 : Fin n → ℝ)‖} := by
-  intro p (hp : ‖(p.2 : Fin n → ℝ)‖ = 1)
-  change 2⁻¹ ≤ ‖(p.2 : Fin n → ℝ)‖  -- the identity of `TopCat` applied to `p` is `p`
-  rw [hp]
-  norm_num
+      {p | ‖(p.2 : Fin n → ℝ)‖ = 1} {p | 2⁻¹ ≤ ‖(p.2 : Fin n → ℝ)‖} :=
+  fun _ hp ↦ sigma_sphere_subset_shell ι n hp
 
 private lemma mapsTo_shell_sphere :
     MapsTo (TopCat.ofHom (X := TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1))
       (Y := TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1)) ((sigmaRadialPush ι n).curry 1))
       {p | 2⁻¹ ≤ ‖(p.2 : Fin n → ℝ)‖} {p | ‖(p.2 : Fin n → ℝ)‖ = 1} :=
-  fun _ hp ↦ norm_radialPush_one (by norm_num) hp
+  fun _ hp ↦ norm_sigmaRadialHomotopy_one ι n hp
 
 /-- The inclusion of pairs `∐ᵢ (Dⁿ, Sⁿ⁻¹) ⟶ ∐ᵢ (Dⁿ, shell)`. -/
 private def sigmaDiskPairToShellPair : sigmaDiskPair ι n ⟶ sigmaShellPair ι n :=
@@ -186,9 +201,7 @@ private lemma isIso_singularHomologyMap_sigmaDiskPairToShellPair
     -- As above, restate the goal on the deformation itself.
     change 2⁻¹ ≤ ‖((sigmaRadialHomotopy ι n (σ t, p)).2 : Fin n → ℝ)‖
     rw [mem_ofPred_eq] at hp
-    rw [coe_sigmaRadialHomotopy_apply]
-    exact hp.trans <| norm_le_norm_radialPush (by norm_num) (by norm_num) _
-      (mem_closedBall_zero_iff.1 p.2.2)
+    exact hp.trans (norm_le_norm_sigmaRadialHomotopy ι n _ p)
 
 /-- The inclusion of the open balls into the disks, as a map of pairs
 `∐ᵢ (open ball, open shell) ⟶ ∐ᵢ (Dⁿ, shell)`. -/
@@ -236,13 +249,24 @@ end DiskPair
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
 
-/-- The characteristic maps of the `n`-cells of a relative CW complex, assembled into a map from
-the disjoint union of their closed unit balls to the `n`-skeleton `Xⁿ = skeletonLT C (n + 1)`. -/
+/-- The characteristic maps of the `n`-cells of a relative CW complex, assembled into one map
+`∐ⱼ Dⁿ ⟶ X` from the disjoint union of the closed unit balls of `Fin n → ℝ`, one for each
+`n`-cell. -/
+@[expose] def sigmaCellMap (n : ℕ) : C(Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1, X) where
+  toFun q := map n q.1 q.2
+  continuous_toFun := continuous_sigma fun i ↦ (continuousOn n i).domRestrict
+
+omit [T2Space X] in
+@[simp]
+lemma sigmaCellMap_apply (n : ℕ) (q : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1) :
+    sigmaCellMap C n q = map n q.1 q.2 :=
+  (rfl)
+
+/-- `TauCeti.sigmaCellMap`, with its values in the `n`-skeleton `Xⁿ = skeletonLT C (n + 1)`. -/
 private def sigmaCharacteristicMap (n : ℕ) :
     C(Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1, skeletonLT C ((n + 1 : ℕ) : ℕ∞)) where
-  toFun p := ⟨map n p.1 p.2, map_mem_skeletonLT_succ p.1 (mem_closedBall_zero_iff.1 p.2.2)⟩
-  continuous_toFun := continuous_sigma fun i ↦
-    ((continuousOn n i).domRestrict).subtype_mk _
+  toFun p := ⟨sigmaCellMap C n p, map_mem_skeletonLT_succ p.1 (mem_closedBall_zero_iff.1 p.2.2)⟩
+  continuous_toFun := (sigmaCellMap C n).continuous.subtype_mk _
 
 /-- **The characteristic maps of the `n`-cells, as a map of pairs** `∐ⱼ (Dⁿ, Sⁿ⁻¹) ⟶ (Xⁿ, Xⁿ⁻¹)`
 from `TauCeti.sigmaDiskPair` to the skeletal pair `TauCeti.skeletonPair C n`.  The boundary

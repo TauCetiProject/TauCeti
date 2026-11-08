@@ -15,7 +15,7 @@ Let `p : E ⟶ B` be a Serre fibration and `C ⊆ B` a relative CW complex with 
 `Xⁿ = skeletonLT C (n + 1)`. The terms `Hₖ(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` of the first page of the spectral
 sequence of the filtration `Eₙ = p⁻¹(Xⁿ)` are computed over the `n`-cells. Pull `p` back along the
 characteristic maps of the `n`-cells, assembled into one map `χ : ∐ⱼ Dⁿ ⟶ B`
-(`TauCeti.TopCat.sigmaCellMap`), to get a Serre fibration `P ⟶ ∐ⱼ Dⁿ`; let `∂P` be its part over
+(`TauCeti.sigmaCellMap`), to get a Serre fibration `P ⟶ ∐ⱼ Dⁿ`; let `∂P` be its part over
 the boundary spheres. The projection of `P` to `E` is a map of pairs
 `(P, ∂P) ⟶ (p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` (`TauCeti.TopCat.cellPullbackPairMap`), and it induces
 isomorphisms on relative singular homology in every degree
@@ -37,9 +37,6 @@ balls onto the open cells (`TauCeti.iUnionOpenCellHomeomorph`).
 
 ## Main definitions and results
 
-* `TauCeti.TopCat.isZero_singularHomology_preimage_of_homotopyRel`: if `S ⊆ B` deforms into
-  `A ⊆ S` relative to `A`, then `(p⁻¹(S), p⁻¹(A))` has vanishing relative homology.
-* `TauCeti.TopCat.sigmaCellMap`: the characteristic maps of the `n`-cells, as one map `∐ⱼ Dⁿ ⟶ B`.
 * `TauCeti.TopCat.cellPullbackPair`: the pair `(P, ∂P)` of the pullback of `p` to the disks of the
   `n`-cells, relative to the part over their boundary spheres.
 * `TauCeti.TopCat.preimageSkeletonPair`: the pair `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))`.
@@ -72,53 +69,14 @@ namespace TopCat
 
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B}
 
-/-- **A Serre fibration over a deformation has acyclic preimage pair.** Let `p : E ⟶ B` be a Serre
-fibration and `A ⊆ S ⊆ B`. If the identity of `S` is homotopic, relative to `A`, to a map with
-values in `A`, then `Hₘ(p⁻¹(S), p⁻¹(A); R) = 0` in every degree `m`. -/
-theorem isZero_singularHomology_preimage_of_homotopyRel (hp : serreFibrations p) {A S : Set B}
-    (hAS : A ⊆ S) {g : C(S, S)} (H : (ContinuousMap.id S).HomotopyRel g (Subtype.val ⁻¹' A))
-    (hg : ∀ x, (g x : B) ∈ A) (R : Type u) [Ring R] (m : ℕ) :
-    IsZero ((TopPair.ofInclusion (X := E) (preimage_mono (f := p) hAS)).singularHomology
-      (ModuleCat.of R R) m) := by
-  let A' : Set (_root_.TopCat.of S) := Subtype.val ⁻¹' A
-  have h₀ (b : _root_.TopCat.of S) : ∃ a ∈ A', Joined b a :=
-    ⟨g b, hg b, ⟨{ toFun t := H (t, b), source' := by simp, target' := by simp }⟩⟩
-  have h (k : ℕ) (_ : k + 1 < m + 1) (a : A') :
-      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A', a⟩) := by
-    refine RelHomotopyGroup.subsingleton_of_homotopyRel (g := g) ?_ fun x ↦ ?_
-    · rw [TopPair.range_ofSubset_map]
-      exact H
-    · rw [TopPair.range_ofSubset_map]
-      exact hg x
-  have hz := isZero_singularHomology_preimage_of_relHomotopyGroup
-    (mem_serreFibrations_restrictPreimage hp S) h₀ h R (Nat.lt_succ_self m)
-  -- The preimage pair of the restriction of `p` over `S` is the pair `(p⁻¹(S), p⁻¹(A))`.
-  exact hz.of_iso (asIso (TopPair.singularHomologyMap
-    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hAS)).hom
-    (ModuleCat.of R R) m)).symm
-
 section Cells
 
 variable [T2Space B] {C D : Set B} [RelCWComplex C D]
 
-variable (C) in
-/-- The characteristic maps of the `n`-cells of `C`, assembled into one map `∐ⱼ Dⁿ ⟶ B` from the
-disjoint union of the closed unit balls of `Fin n → ℝ`, one for each `n`-cell. -/
-def sigmaCellMap (n : ℕ) :
-    _root_.TopCat.of (Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1) ⟶ B :=
-  _root_.TopCat.ofHom
-    ⟨fun q ↦ map n q.1 q.2, continuous_sigma fun i ↦ (continuousOn n i).domRestrict⟩
-
-omit [T2Space B] in
-@[simp]
-lemma sigmaCellMap_apply (n : ℕ) (q : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1) :
-    sigmaCellMap C n q = map n q.1 q.2 :=
-  (rfl)
-
 variable (p C) in
-/-- The total space `P` of the pullback of `p` along `TauCeti.TopCat.sigmaCellMap C n`: the pairs
-`(q, e)` of a point `q` of the disk of an `n`-cell and a point `e` of `E` over its image. Its
-projection to the disks is the Serre fibration `TopCat.pullbackFst (sigmaCellMap C n) p` when `p`
+/-- The total space `P` of the pullback of `p` along `TauCeti.sigmaCellMap C n`: the pairs `(q, e)`
+of a point `q` of the disk of an `n`-cell and a point `e` of `E` over its image. Its projection to
+the disks is the Serre fibration `TopCat.pullbackFst (TopCat.ofHom (sigmaCellMap C n)) p` when `p`
 is one. -/
 abbrev cellPullback (n : ℕ) : _root_.TopCat.{u} :=
   _root_.TopCat.of
@@ -149,8 +107,8 @@ lemma cellPullback_mem_preimage_skeletonLT_of_norm_eq_one {n : ℕ} {x : cellPul
   exact cellFrontier_subset_skeletonLT n _ ⟨_, mem_sphere_zero_iff_norm.2 hx, rfl⟩
 
 variable (p C) in
-/-- **The projection of the pullback to the disks of the `n`-cells**, as a map of pairs
-`(P, ∂P) ⟶ (p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))`, `(q, e) ↦ e`. -/
+/-- **The projection to `E`** `(q, e) ↦ e` from the pullback `P` of `p` to the disks of the
+`n`-cells, as a map of pairs `(P, ∂P) ⟶ (p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))`. -/
 def cellPullbackPairMap (n : ℕ) : cellPullbackPair p C n ⟶ preimageSkeletonPair p C n :=
   TopPair.ofHom (_root_.TopCat.ofHom ⟨fun x ↦ ⟨x.1.2, cellPullback_mem_preimage_skeletonLT x⟩,
       by fun_prop⟩)
@@ -185,30 +143,17 @@ private abbrev preimageNeighborhoodPair (n : ℕ) : TopPair.{u} :=
   TopPair.ofInclusion (X := E)
     (preimage_mono (f := p) (skeletonNeighborhood_subset_skeletonLT_succ C n))
 
-omit [T2Space B] in
-private lemma sphere_subset_shell (n : ℕ) :
-    {q : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1 | ‖(q.2 : Fin n → ℝ)‖ = 1} ⊆
-      {q | 2⁻¹ ≤ ‖(q.2 : Fin n → ℝ)‖} :=
-  fun _ hq ↦ (show (2 : ℝ)⁻¹ ≤ 1 by norm_num).trans_eq (Eq.symm hq)
-
 variable (C) in
 /-- The radial deformation of the shells of the disks onto the boundary spheres, relative to the
 spheres. -/
 private def shellHomotopyRel (n : ℕ) :
     (ContinuousMap.id {q : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1 |
       2⁻¹ ≤ ‖(q.2 : Fin n → ℝ)‖}).HomotopyRel
-      ⟨fun q ↦ ⟨sigmaRadialHomotopy (cell C n) n (1, q.1), by
-        -- Membership in the shells is a bound on the norm of the disk coordinate.
-        change 2⁻¹ ≤ ‖((sigmaRadialHomotopy (cell C n) n (1, q.1)).2 : Fin n → ℝ)‖
-        rw [coe_sigmaRadialHomotopy_apply, norm_radialPush_one (by norm_num) q.2]
-        norm_num⟩, by fun_prop⟩
+      ⟨fun q ↦ ⟨sigmaRadialHomotopy (cell C n) n (1, q.1),
+        sigma_sphere_subset_shell _ n (norm_sigmaRadialHomotopy_one _ n q.2)⟩, by fun_prop⟩
       (Subtype.val ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}) where
-  toFun z := ⟨sigmaRadialHomotopy (cell C n) n (z.1, z.2.1), by
-    -- Membership in the shells is a bound on the norm of the disk coordinate.
-    change 2⁻¹ ≤ ‖((sigmaRadialHomotopy (cell C n) n (z.1, z.2.1)).2 : Fin n → ℝ)‖
-    rw [coe_sigmaRadialHomotopy_apply]
-    exact z.2.2.trans (norm_le_norm_radialPush (by norm_num) (by norm_num) _
-      (mem_closedBall_zero_iff.1 z.2.1.2.2))⟩
+  toFun z := ⟨sigmaRadialHomotopy (cell C n) n (z.1, z.2.1),
+    z.2.2.trans (norm_le_norm_sigmaRadialHomotopy _ n z.1 z.2.1)⟩
   continuous_toFun := by fun_prop
   map_zero_left q := Subtype.ext ((sigmaRadialHomotopy (cell C n) n).apply_zero q.1)
   map_one_left q := rfl
@@ -246,7 +191,7 @@ omit [T2Space B] in
 private lemma cellPullbackSphere_subset_shell (n : ℕ) :
     {x : cellPullback p C n | ‖(x.1.1.2 : Fin n → ℝ)‖ = 1} ⊆
       {x | 2⁻¹ ≤ ‖(x.1.1.2 : Fin n → ℝ)‖} :=
-  fun _ hx ↦ sphere_subset_shell n hx
+  fun _ hx ↦ sigma_sphere_subset_shell _ n hx
 
 variable (p C) in
 /-- The inclusion `(P, ∂P) ⟶ (P, P over the shells)`. -/
@@ -322,45 +267,85 @@ private lemma isIso_singularHomologyMap_cellPullbackOpenShellPairToShellPair (n 
         ⟨⟨x, hx.le⟩, rfl⟩
     · exact Or.inr fun (x : cellPullback p C n) (hx : ‖(x.1.1.2 : Fin n → ℝ)‖ < 1) ↦ ⟨⟨x, hx⟩, rfl⟩
 
+omit [T2Space B] in
+/-- A point of the pullback over an open ball lies over an open `n`-cell. -/
+private lemma cellPullback_mem_preimage_iUnion_openCell {n : ℕ}
+    (x : {x : cellPullback p C n // ‖(x.1.1.2 : Fin n → ℝ)‖ < 1}) :
+    x.1.1.2 ∈ p ⁻¹' ⋃ j : cell C n, openCell (C := C) n j := by
+  rw [mem_preimage, ← x.1.2, sigmaCellMap_apply]
+  exact mem_iUnion.2 ⟨x.1.1.1.1, x.1.1.1.2, mem_ball_zero_iff.2 x.2, rfl⟩
+
+/-- Through `TauCeti.iUnionOpenCellHomeomorph`, a point of `E` over an open `n`-cell lies over the
+image of a point of the open balls. -/
+private lemma sigmaCellMap_iUnionOpenCellHomeomorph_symm {n : ℕ}
+    (e : (p ⁻¹' ⋃ j : cell C n, openCell (C := C) n j : Set E)) :
+    sigmaCellMap C n (Sigma.map id (fun _ ↦ inclusion ball_subset_closedBall)
+      ((iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e.1, e.2⟩)) = p e.1 := by
+  have := congrArg Subtype.val ((iUnionOpenCellHomeomorph (C := C) n).apply_symm_apply ⟨p e.1, e.2⟩)
+  rwa [iUnionOpenCellHomeomorph_apply] at this
+
 variable (p C) in
-/-- On the part of the pullback over the open balls, the projection to `E` is an embedding: it is a
-homeomorphism onto the part of `E` over the open `n`-cells, with inverse read through
+/-- The projection `(q, e) ↦ e` is a homeomorphism from the part of the pullback over the open balls
+onto the part of `E` over the open `n`-cells, with inverse read through
 `TauCeti.iUnionOpenCellHomeomorph`. -/
+private def cellPullbackOpenHomeomorph (n : ℕ) :
+    {x : cellPullback p C n // ‖(x.1.1.2 : Fin n → ℝ)‖ < 1} ≃ₜ
+      (p ⁻¹' ⋃ j : cell C n, openCell (C := C) n j : Set E) where
+  toFun x := ⟨x.1.1.2, cellPullback_mem_preimage_iUnion_openCell x⟩
+  invFun e := ⟨⟨(Sigma.map id (fun _ ↦ inclusion ball_subset_closedBall)
+      ((iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e.1, e.2⟩), e.1),
+    sigmaCellMap_iUnionOpenCellHomeomorph_symm e⟩,
+    mem_ball_zero_iff.1 ((iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e.1, e.2⟩).2.2⟩
+  left_inv := by
+    rintro ⟨⟨⟨⟨j, y⟩, e⟩, hye⟩, hy⟩
+    have hs (h) : (iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e, h⟩ =
+        ⟨j, y, mem_ball_zero_iff.2 hy⟩ := by
+      rw [Homeomorph.symm_apply_eq]
+      exact Subtype.ext (by rw [iUnionOpenCellHomeomorph_apply]; exact hye.symm)
+    refine Subtype.ext (Subtype.ext (Prod.ext ?_ rfl))
+    dsimp only
+    rw [hs]
+    rfl
+  right_inv _ := rfl
+  continuous_toFun := (continuous_snd.comp (continuous_subtype_val.comp
+    continuous_subtype_val)).subtype_mk _
+  continuous_invFun := by
+    have hs : Continuous fun e : (p ⁻¹' ⋃ j : cell C n, openCell (C := C) n j : Set E) ↦
+        (iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e.1, e.2⟩ :=
+      (iUnionOpenCellHomeomorph (C := C) n).symm.continuous.comp
+        ((p.hom.continuous.comp continuous_subtype_val).subtype_mk _)
+    refine Continuous.subtype_mk (Continuous.subtype_mk (Continuous.prodMk ?_
+      continuous_subtype_val) _) _
+    exact (continuous_sigma_map.2 fun _ ↦ continuous_inclusion ball_subset_closedBall).comp hs
+
+private lemma coe_cellPullbackOpenHomeomorph_apply (n : ℕ)
+    (x : {x : cellPullback p C n // ‖(x.1.1.2 : Fin n → ℝ)‖ < 1}) :
+    (cellPullbackOpenHomeomorph p C n x : E) = x.1.1.2 :=
+  (rfl)
+
+private lemma coe_cellPullbackOpenShellPairMap_fst_apply (n : ℕ)
+    (x : {x : cellPullback p C n // ‖(x.1.1.2 : Fin n → ℝ)‖ < 1}) :
+    (ConcreteCategory.hom (Y := _root_.TopCat.of
+      (p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)))
+      (TopPair.Hom.fst (cellPullbackOpenShellPairToShellPair p C n ≫
+        cellPullbackShellPairMap p C n)) x).1 = x.1.1.2 :=
+  (rfl)
+
+variable (p C) in
+/-- On the part of the pullback over the open balls, the projection to `E` is an embedding, through
+`cellPullbackOpenHomeomorph`. -/
 private lemma isEmbedding_cellPullbackOpenShellPairMap (n : ℕ) :
     IsEmbedding (TopPair.Hom.fst
       (cellPullbackOpenShellPairToShellPair p C n ≫ cellPullbackShellPairMap p C n)) := by
   refine (IsEmbedding.of_comp_iff (IsEmbedding.subtypeVal
     (p := (· ∈ p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B))))).1 ?_
-  let h := iUnionOpenCellHomeomorph (C := C) n
-  let V : Set E := p ⁻¹' ⋃ j : cell C n, openCell (C := C) n j
-  let f : {x : cellPullback p C n // ‖(x.1.1.2 : Fin n → ℝ)‖ < 1} → V := fun x ↦
-    ⟨x.1.1.2, by
-      rw [mem_preimage, ← x.1.2, sigmaCellMap_apply]
-      exact mem_iUnion.2 ⟨x.1.1.1.1, x.1.1.1.2, mem_ball_zero_iff.2 x.2, rfl⟩⟩
-  let g : V → {x : cellPullback p C n // ‖(x.1.1.2 : Fin n → ℝ)‖ < 1} := fun e ↦
-    ⟨⟨(Sigma.map id (fun _ ↦ inclusion ball_subset_closedBall) (h.symm ⟨p e.1, e.2⟩), e.1), by
-      have := congrArg Subtype.val (h.apply_symm_apply ⟨p e.1, e.2⟩)
-      rwa [iUnionOpenCellHomeomorph_apply] at this⟩, mem_ball_zero_iff.1 (h.symm ⟨p e.1, e.2⟩).2.2⟩
-  have hg : Continuous g := by
-    have hs : Continuous fun e : V ↦ h.symm ⟨p e.1, e.2⟩ :=
-      h.symm.continuous.comp ((p.hom.continuous.comp continuous_subtype_val).subtype_mk _)
-    refine Continuous.subtype_mk (Continuous.subtype_mk (Continuous.prodMk ?_
-      continuous_subtype_val) _) _
-    exact (continuous_sigma_map.2 fun _ ↦ continuous_inclusion ball_subset_closedBall).comp hs
-  have hgf : Function.LeftInverse g f := by
-    rintro ⟨⟨⟨⟨j, y⟩, e⟩, hye⟩, hy⟩
-    have hs : h.symm ⟨p e, (f ⟨⟨⟨⟨j, y⟩, e⟩, hye⟩, hy⟩).2⟩ = ⟨j, y, mem_ball_zero_iff.2 hy⟩ := by
-      rw [Homeomorph.symm_apply_eq]
-      exact Subtype.ext (by rw [iUnionOpenCellHomeomorph_apply]; exact hye.symm)
-    refine Subtype.ext (Subtype.ext (Prod.ext ?_ rfl))
-    dsimp only [g, f]
-    rw [hs]
-    rfl
-  have hf : IsEmbedding (Subtype.val ∘ f) := IsEmbedding.subtypeVal.comp
-    (hgf.isEmbedding hg ((continuous_snd.comp (continuous_subtype_val.comp
-      continuous_subtype_val)).subtype_mk _))
-  -- On ambient points, the projection followed by the inclusion into `E` is `x ↦ x.1.1.2`.
-  exact hf
+  have h : Subtype.val ∘ ⇑(ConcreteCategory.hom (TopPair.Hom.fst
+      (cellPullbackOpenShellPairToShellPair p C n ≫ cellPullbackShellPairMap p C n))) =
+      Subtype.val ∘ cellPullbackOpenHomeomorph p C n :=
+    funext fun x ↦ (coe_cellPullbackOpenShellPairMap_fst_apply n x).trans
+      (coe_cellPullbackOpenHomeomorph_apply n x).symm
+  rw [h]
+  exact IsEmbedding.subtypeVal.comp (cellPullbackOpenHomeomorph p C n).isEmbedding
 
 variable (p C) in
 /-- **Excision of the part over `Xⁿ⁻¹`** from `(p⁻¹(Xⁿ), p⁻¹(N))`, read through the projection of
@@ -421,11 +406,9 @@ private lemma isIso_singularHomologyMap_cellPullbackPairToShellPair (n k : ℕ) 
       (ModuleCat.of R R) k) := by
   -- The part of the pullback over the shells, relative to the part over the spheres, is acyclic.
   have hz (m : ℕ) := isZero_singularHomology_preimage_of_homotopyRel
-    (mem_serreFibrations_pullbackFst hp (sigmaCellMap C n)) (sphere_subset_shell n)
-    (shellHomotopyRel C n) (fun q ↦ by
-      -- Membership in the spheres is the norm of the disk coordinate.
-      change ‖((sigmaRadialHomotopy (cell C n) n (1, q.1)).2 : Fin n → ℝ)‖ = 1
-      rw [coe_sigmaRadialHomotopy_apply, norm_radialPush_one (by norm_num) q.2]) R m
+    (mem_serreFibrations_pullbackFst hp (_root_.TopCat.ofHom (sigmaCellMap C n)))
+    (sigma_sphere_subset_shell _ n) (shellHomotopyRel C n)
+    (fun q ↦ norm_sigmaRadialHomotopy_one _ n q.2) R m
   have := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero
     (TopTriple.ofSubset (X := cellPullback p C n) (cellPullbackSphere_subset_shell p C n)) _ k
     (hz k) fun m _ ↦ hz m
