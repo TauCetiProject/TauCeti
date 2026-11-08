@@ -365,22 +365,21 @@ protected theorem IsOptimalCoupling.const_mul (h : IsOptimalCoupling c π μ ν)
   rw [lintegral_const_mul' a c ha, lintegral_const_mul' a c ha]
   exact mul_le_mul_of_nonneg_left (h.lintegral_le hσ) (by positivity)
 
-/-- Every coupling out of a Dirac measure is optimal, because there is only one. -/
-theorem IsCoupling.isOptimalCoupling_dirac_left (hc : Measurable c)
+/-- Every coupling out of a Dirac measure is optimal, because there is only one. No measurability
+of the cost is needed. -/
+theorem IsCoupling.isOptimalCoupling_dirac_left
     {x : X} (hπ : IsCoupling π (Measure.dirac x) ν) :
-    IsOptimalCoupling c π (Measure.dirac x) ν where
-  toIsCoupling := hπ
-  lintegral_eq := by
-    have := hπ.isProbabilityMeasure_right
-    rw [hπ.eq_map_prodMk, lintegral_map hc measurable_prodMk_left, transportCost_dirac_left hc]
+    IsOptimalCoupling c π (Measure.dirac x) ν :=
+  isOptimalCoupling_iff.2 ⟨hπ, fun _ hσ ↦ by rw [hπ.eq_map_prodMk, hσ.eq_map_prodMk]⟩
 
-/-- Every coupling into a Dirac measure is optimal, because there is only one. -/
-theorem IsCoupling.isOptimalCoupling_dirac_right (hc : Measurable c)
+/-- Every coupling into a Dirac measure is optimal, because there is only one. No measurability
+of the cost is needed. -/
+theorem IsCoupling.isOptimalCoupling_dirac_right
     {y : Y} (hπ : IsCoupling π μ (Measure.dirac y)) :
     IsOptimalCoupling c π μ (Measure.dirac y) := by
   have hπ' : IsOptimalCoupling (fun z : Y × X ↦ c z.swap) (π.map Prod.swap)
       (Measure.dirac y) μ :=
-    hπ.swap.isOptimalCoupling_dirac_left (hc.comp measurable_swap)
+    hπ.swap.isOptimalCoupling_dirac_left
   have hπ'' := hπ'.swap
   have hmap : (π.map Prod.swap).map Prod.swap = π :=
     MeasurableEquiv.map_map_symm (ν := π) MeasurableEquiv.prodComm
