@@ -94,7 +94,7 @@ theorem difference_self (c : RightConnection (E := E) D) : difference c c = 0 :=
   ext x
   simp
 
-theorem difference_neg (c c' : RightConnection (E := E) D) :
+theorem neg_difference (c c' : RightConnection (E := E) D) :
     -difference c c' = difference c' c := by
   ext x
   simp
