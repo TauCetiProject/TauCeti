@@ -89,6 +89,13 @@ private theorem iUnion_Ioc_prod_eq_Ioi_prod {u : ℕ → ι}
   rw [← iUnion_prod_const, iUnion_Ioc_eq_Ioi_self_iff.mpr
     (fun x _ => (hu.eventually (eventually_ge_atTop x)).exists)]
 
+/-- If a predictable measure has a null initial slice, every subset slice is null. -/
+theorem measure_singleton_bot_prod_eq_zero
+    (μ : @Measure (ι × Ω) ℱ.predictable)
+    (hzero : μ ({⊥} ×ˢ (univ : Set Ω)) = 0) (A : Set Ω) :
+    μ ({⊥} ×ˢ A) = 0 :=
+  measure_mono_null (prod_mono_right (subset_univ A)) hzero
+
 variable [(atTop : Filter ι).IsCountablyGenerated]
 
 /-- A countable subfamily of the elementary predictable sets covers the whole space. -/
@@ -151,11 +158,11 @@ theorem ae_eq_zero_of_setIntegral_Ioc_prod_eq_zero
   apply ℱ.ae_eq_zero_of_setIntegral_elementarySets_eq_zero μ
   · rintro _ (⟨A, _, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
     · exact IntegrableOn.of_measure_zero
-        (measure_mono_null (prod_mono_right (subset_univ A)) hzero)
+        (ℱ.measure_singleton_bot_prod_eq_zero μ hzero A)
     · exact hf s t A hA
   · rintro _ (⟨A, _, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
     · exact setIntegral_measure_zero _
-        (measure_mono_null (prod_mono_right (subset_univ A)) hzero)
+        (ℱ.measure_singleton_bot_prod_eq_zero μ hzero A)
     · exact hrect s t A hA
 
 /-- Indicators of elementary predictable sets have dense real linear span in L² of any
@@ -186,7 +193,7 @@ theorem topologicalClosure_span_indicatorConstLp_Ioc_prod_eq_top
   let : MeasurableSpace (ι × Ω) := ℱ.predictable
   have helem : ∀ u ∈ ℱ.elementarySets, μ u ≠ ∞ := by
     rintro _ (⟨A, _, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
-    · exact (measure_mono_null (prod_mono_right (subset_univ A)) hzero).trans_ne
+    · exact (ℱ.measure_singleton_bot_prod_eq_zero μ hzero A).trans_ne
         ENNReal.zero_ne_top
     · exact hfin s t A hA
   apply top_unique
@@ -198,7 +205,7 @@ theorem topologicalClosure_span_indicatorConstLp_Ioc_prod_eq_top
         (measurableSet_predictable_singleton_bot_prod hA)
         (helem _ (Or.inl ⟨A, hA, rfl⟩)) (1 : ℝ) = 0 := by
       apply norm_eq_zero.mp
-      simp [norm_indicatorConstLp, measure_mono_null (prod_mono_right (subset_univ A)) hzero,
+      simp [norm_indicatorConstLp, ℱ.measure_singleton_bot_prod_eq_zero μ hzero A,
         measureReal_def]
     rw [hz]
     exact Submodule.zero_mem _
