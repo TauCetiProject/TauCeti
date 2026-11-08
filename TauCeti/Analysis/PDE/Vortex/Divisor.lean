@@ -10,18 +10,18 @@ public import TauCeti.Analysis.PDE.Vortex.Zeros
 public import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 public import Mathlib.Data.Sym.Basic
 import Mathlib.Data.Finsupp.Multiset
-import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # The zero divisor of a framed plane vortex
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has section
 `α = 2 (p + i q)` (`TauCeti.Vortex.sectionValue`). A multiset `D` of points of the plane is the
-zero divisor of `x` (`TauCeti.Vortex.IsZeroDivisor x D`) when near every point `z` the section
-factors as `α(w) = (w - z) ^ D(z) v(w)`, with `v` continuous at `z` and nonzero there; here `D(z)`
-is the multiplicity of `z` in `D`. Since the exponent of such a factorization is unique
-(`TauCeti.eq_of_eventually_sub_pow_mul_eq`), a field has at most one zero divisor
-(`TauCeti.Vortex.IsZeroDivisor.eq`), and its points are the zeros of `α`.
+zero divisor of `x` (`TauCeti.Vortex.IsZeroDivisor x D`) when it is the zero divisor of `α` in
+the sense of `TauCeti.IsZeroDivisor`: near every point `z` the section factors as
+`α(w) = (w - z) ^ D(z) v(w)`, with `v` continuous at `z` and nonzero there; here `D(z)` is the
+multiplicity of `z` in `D`. The general theory applies: a field has at most one zero divisor
+(`TauCeti.IsZeroDivisor.unique`), and its points are the zeros of `α`
+(`TauCeti.IsZeroDivisor.apply_eq_zero_iff`).
 
 Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, a
 section that is not identically zero factors near every point as `(w - z) ^ n z * v w` with `v` of
@@ -33,7 +33,7 @@ divisor exists (`TauCeti.Vortex.exists_isZeroDivisor`), and its factors can be t
 The degree-`m` end framing is `α(z) (z / |z|)⁻ᵐ → 1` at infinity; every continuous field of the
 affine space `A_m^s`, `s > 1`, has it (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`). The
 topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end
-framing forces the zero divisor to have degree `m` (`TauCeti.Vortex.IsZeroDivisor.card_eq`).
+framing forces the zero divisor to have degree `m` (`TauCeti.IsZeroDivisor.card_eq`).
 Hence the zeros of a framed degree-`m` vortex section, counted with multiplicity, form a point of
 `Sym ℂ m` (`TauCeti.Vortex.exists_sym_isZeroDivisor`). Only the holomorphicity rows are used; the
 curvature equation is not needed. The identification of the degree with the flux
@@ -60,17 +60,15 @@ open scoped ContDiff
 
 namespace TauCeti.Vortex
 
-/-- `D` is the **zero divisor** of the section `α` of the field `x`: near every point `z`, the
-section factors as `α(w) = (w - z) ^ D(z) v(w)` with `v` continuous at `z` and nonzero there,
-where `D(z)` is the multiplicity of `z` in the multiset `D`. -/
+/-- `D` is the **zero divisor** of the field `x`: it is the zero divisor of the section `α`, so
+near every point `z` the section factors as `α(w) = (w - z) ^ D(z) v(w)` with `v` continuous at
+`z` and nonzero there, where `D(z)` is the multiplicity of `z` in the multiset `D`. -/
 def IsZeroDivisor (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ) : Prop :=
-  ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
-    ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w
+  TauCeti.IsZeroDivisor (sectionValue x) D
 
-/-- Unfolding `IsZeroDivisor`: the local factorizations of the section. -/
+/-- Unfolding `IsZeroDivisor`: the zero divisor of the field is that of its section. -/
 theorem isZeroDivisor_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset ℂ} :
-    IsZeroDivisor x D ↔ ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w := Iff.rfl
+    IsZeroDivisor x D ↔ TauCeti.IsZeroDivisor (sectionValue x) D := Iff.rfl
 
 /-- The vacuum has the empty zero divisor. -/
 @[simp]
@@ -80,57 +78,7 @@ theorem isZeroDivisor_vacuumField : IsZeroDivisor vacuumField 0 := fun _ ↦
 
 namespace IsZeroDivisor
 
-variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {D D' : Multiset ℂ}
-
-/-- The multiplicity of `z` in the zero divisor is the exponent of any local factorization
-`α(w) = (w - z) ^ n v(w)` of the section with `v` continuous at `z` and nonzero there. -/
-theorem count_eq_of_eventually_eq_pow_mul (hD : IsZeroDivisor x D) {z : ℂ} {n : ℕ} {v : ℂ → ℂ}
-    (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
-    (h : ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * v w) : D.count z = n := by
-  obtain ⟨u, hu, hu₀, hfu⟩ := hD z
-  refine eq_of_eventually_sub_pow_mul_eq hu hu₀ hv hv₀ ?_
-  filter_upwards [hfu, h] with w hwu hwv
-  rw [← hwu, ← hwv]
-
-/-- **Uniqueness of the zero divisor.** The multiplicities are the exponents of the local
-factorizations of the section, which are unique. -/
-theorem eq (hD : IsZeroDivisor x D) (hD' : IsZeroDivisor x D') : D = D' := by
-  refine Multiset.ext.2 fun z ↦ ?_
-  obtain ⟨v, hv, hv₀, hfv⟩ := hD' z
-  exact hD.count_eq_of_eventually_eq_pow_mul hv hv₀ hfv
-
-/-- The zeros of the section are the points of its zero divisor. -/
-theorem sectionValue_eq_zero_iff (hD : IsZeroDivisor x D) {z : ℂ} :
-    sectionValue x z = 0 ↔ z ∈ D := by
-  obtain ⟨v, -, hv₀, hfv⟩ := hD z
-  simp [hfv.self_of_nhds, hv₀]
-
-/-- A section with a zero divisor is not identically zero: it does not vanish off the finitely
-many points of the divisor. -/
-theorem exists_sectionValue_ne_zero (hD : IsZeroDivisor x D) : ∃ w, sectionValue x w ≠ 0 := by
-  classical
-  obtain ⟨w, hw⟩ := Infinite.exists_notMem_finset D.toFinset
-  exact ⟨w, fun h ↦ hw (Multiset.mem_toFinset.2 (hD.sectionValue_eq_zero_iff.1 h))⟩
-
-/-- **The zero divisor of a framed field has degree `m`.** If the section has the degree-`m` end
-framing `α(z) (z / |z|)⁻ᵐ → 1`, its zero divisor has `m` points, counted with multiplicity. This
-is the topological argument principle. -/
-theorem card_eq (hD : IsZeroDivisor x D) {m : ℕ}
-    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    Multiset.card D = m := by
-  rw [← finsum_eq_of_tendsto_mul_inv_pow (n := fun z ↦ D.count z) hD hframe]
-  simpa using (Multiset.finsum_count_eq_card (R := ℕ) D).symm
-
-/-- Multiplying the section by a continuous nowhere-vanishing function preserves the zero
-divisor. -/
-theorem of_sectionValue_eq_mul (hD : IsZeroDivisor x D) {g : ℂ → ℂ} (hg : Continuous g)
-    (hg₀ : ∀ z, g z ≠ 0) (hxy : ∀ z, sectionValue y z = g z * sectionValue x z) :
-    IsZeroDivisor y D := fun z ↦ by
-  obtain ⟨v, hv, hv₀, hfv⟩ := hD z
-  refine ⟨fun w ↦ g w * v w, hg.continuousAt.mul hv, mul_ne_zero (hg₀ z) hv₀, ?_⟩
-  filter_upwards [hfv] with w hw
-  rw [hxy, hw]
-  ring
+variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset ℂ}
 
 /-- **Translation law.** The pullback by `z ↦ z + a` moves the zero divisor by `-a`. -/
 theorem translateField (hD : IsZeroDivisor x D) (a : ℂ) :
@@ -172,10 +120,10 @@ theorem isZeroDivisor_gaugeTransform_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)
     {u : ℂ → Circle} (hu : Continuous u) :
     IsZeroDivisor (gaugeTransform u x) D ↔ IsZeroDivisor x D := by
   have hc : Continuous fun z ↦ (u z : ℂ) := continuous_subtype_val.comp hu
-  refine ⟨fun h ↦ h.of_sectionValue_eq_mul (g := fun z ↦ (u z : ℂ)⁻¹)
+  refine ⟨fun h ↦ h.of_eq_mul (u := fun z ↦ (u z : ℂ)⁻¹)
     (hc.inv₀ fun z ↦ Circle.coe_ne_zero _)
     (fun z ↦ inv_ne_zero (Circle.coe_ne_zero _)) fun z ↦ ?_,
-    fun h ↦ h.of_sectionValue_eq_mul hc (fun z ↦ Circle.coe_ne_zero _)
+    fun h ↦ h.of_eq_mul hc (fun z ↦ Circle.coe_ne_zero _)
       (sectionValue_gaugeTransform u x)⟩
   rw [sectionValue_gaugeTransform, inv_mul_cancel_left₀ (Circle.coe_ne_zero _)]
 
@@ -210,7 +158,7 @@ theorem IsZeroDivisor.exists_contDiffAt {D : Multiset ℂ} (hD : IsZeroDivisor x
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w := by
   obtain ⟨n, v, hvc, hv₀, hvf⟩ :=
     exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol
-      hD.exists_sectionValue_ne_zero z
+      hD.exists_ne_zero z
   exact ⟨v, hvc, hv₀, hD.count_eq_of_eventually_eq_pow_mul hvc.continuousAt hv₀ hvf ▸ hvf⟩
 
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a

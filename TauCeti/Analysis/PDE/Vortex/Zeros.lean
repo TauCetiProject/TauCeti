@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity
+import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 
 /-!
 # Isolated zeros and local multiplicities of plane vortex sections
