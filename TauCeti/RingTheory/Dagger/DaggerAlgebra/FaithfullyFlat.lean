@@ -101,12 +101,12 @@ private theorem map_toCompletion_eq (J : Ideal A) :
     J.map (toCompletion K A) =
       ((J.comap (presentation K A)).map (washnitzerAlgebra.toTate _ K)).map
         (Ideal.Quotient.mk _) := by
+  -- `τ ∘ π = mk ∘ ι` on `W_n`, and `J` is the image of its preimage under `π`.
+  have h : (toCompletion K A).toRingHom.comp (presentation K A).toRingHom =
+      (Ideal.Quotient.mk _).comp (washnitzerAlgebra.toTate _ K).toRingHom :=
+    RingHom.ext fun f ↦ toCompletion_presentation f
   conv_lhs => rw [← Ideal.map_comap_of_surjective _ (presentation_surjective K A) J]
-  rw [← Ideal.map_coe (toCompletion K A), ← Ideal.map_coe (presentation K A), Ideal.map_map,
-    ← Ideal.map_coe (washnitzerAlgebra.toTate _ K) (J.comap (presentation K A)), Ideal.map_map]
-  congr 1
-  ext f
-  simp
+  simpa [← Ideal.map_map, Ideal.map_coe] using congrArg (Ideal.map · (J.comap (presentation K A))) h
 
 /-- The ideal `I T_n` defining `Â` lies in `J' T_n` for the preimage `J'` of any ideal of `A`. -/
 private theorem map_ker_le_map_comap (J : Ideal A) :
@@ -172,12 +172,22 @@ theorem quotientMap_map_toCompletion_bijective (J : Ideal A) [Module.Finite K (A
     (Ideal.Quotient.mk _ t)
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
   refine ⟨Ideal.Quotient.mk _ (presentation K A f), ?_⟩
-  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq] at hx
-  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq,
-    toCompletion_presentation, ← map_sub, map_toCompletion_eq,
+  simp only [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq] at hx ⊢
+  rw [toCompletion_presentation, ← map_sub, map_toCompletion_eq,
     Ideal.mem_quotient_iff_mem (map_ker_le_map_comap J)]
   simpa using hx
 
+variable (K) in
+/-- The bijection `A ⧸ J → Â ⧸ J Â` of `quotientMap_map_toCompletion_bijective`, for any ideal of
+`Â` equal to `J Â`. -/
+private theorem quotientMap_toCompletion_bijective_of_eq {J : Ideal A} [Module.Finite K (A ⧸ J)]
+    {J' : Ideal (completion K A)} (h : J' = J.map (toCompletion K A))
+    (H : J ≤ J'.comap (toCompletion K A).toRingHom) :
+    Function.Bijective (Ideal.quotientMap J' (toCompletion K A).toRingHom H) := by
+  subst h
+  exact quotientMap_map_toCompletion_bijective K J
+
+variable (K) in
 /-- **Maximal ideals extend to maximal ideals of the completion.** For a maximal ideal `m` of a
 dagger algebra `A`, the ideal `m Â` of the completion is maximal. -/
 theorem isMaximal_map_toCompletion (m : Ideal A) [hm : m.IsMaximal] :
@@ -194,22 +204,17 @@ theorem map_comap_toCompletion_of_isMaximal (m : Ideal (completion K A)) [hm : m
     (m.comap (toCompletion K A)).map (toCompletion K A) = m := by
   have : (m.comap (toCompletion K A)).IsMaximal :=
     isAffinoidAlgebra_completion.comap_isMaximal _ m
-  exact (isMaximal_map_toCompletion _).eq_of_le hm.ne_top Ideal.map_comap_le
+  exact (isMaximal_map_toCompletion K _).eq_of_le hm.ne_top Ideal.map_comap_le
 
 /-- **Residue fields of a dagger algebra and of its completion agree.** For a maximal ideal `m`
 of the completion `Â`, the induced map `A ⧸ (m ∩ A) → Â ⧸ m` is bijective. -/
 theorem quotientMap_toCompletion_bijective (m : Ideal (completion K A)) [m.IsMaximal] :
     Function.Bijective (Ideal.quotientMapₐ m (toCompletion K A) le_rfl) := by
-  set p := m.comap (toCompletion K A)
-  have : p.IsMaximal := isAffinoidAlgebra_completion.comap_isMaximal _ m
-  have := IsDaggerAlgebra.finite_quotient_of_isMaximal K p
-  -- `m = p Â`, so this is the bijection `A ⧸ p → Â ⧸ p Â`.
-  have key : ∀ m' : Ideal (completion K A), m' = p.map (toCompletion K A) →
-      ∀ H : p ≤ m'.comap (toCompletion K A),
-        Function.Bijective (Ideal.quotientMapₐ m' (toCompletion K A) H) := by
-    rintro _ rfl -
-    exact quotientMap_map_toCompletion_bijective K p
-  exact key m (map_comap_toCompletion_of_isMaximal m).symm le_rfl
+  have : (m.comap (toCompletion K A)).IsMaximal := isAffinoidAlgebra_completion.comap_isMaximal _ m
+  have := IsDaggerAlgebra.finite_quotient_of_isMaximal K (m.comap (toCompletion K A))
+  -- `m = (m ∩ A) Â`, so this is the bijection `A ⧸ (m ∩ A) → Â ⧸ (m ∩ A) Â`.
+  exact quotientMap_toCompletion_bijective_of_eq K (map_comap_toCompletion_of_isMaximal m).symm
+    le_rfl
 
 variable (K) in
 /-- **Completed local rings of a dagger algebra and of its completion agree.** For an ideal `J` of
@@ -221,12 +226,7 @@ noncomputable def adicCompletionAlgEquiv (J : Ideal A) [J.radical.IsMaximal] :
     AdicCompletion.mapₐ_bijective _ _ fun n ↦ by
       have := IsDaggerAlgebra.finite_quotient_pow_of_isMaximal_radical K J n
       -- `(J Â) ^ n = J ^ n Â`, so this is the bijection `A ⧸ J ^ n → Â ⧸ J ^ n Â`.
-      have key : ∀ J' : Ideal (completion K A), J' = (J ^ n).map (toCompletion K A) →
-          ∀ H : J ^ n ≤ J'.comap (toCompletion K A).toRingHom,
-            Function.Bijective (Ideal.quotientMap J' (toCompletion K A).toRingHom H) := by
-        rintro _ rfl -
-        exact quotientMap_map_toCompletion_bijective K (J ^ n)
-      exact key _ (Ideal.map_pow _ _ _).symm _
+      exact quotientMap_toCompletion_bijective_of_eq K (Ideal.map_pow (toCompletion K A) J n).symm _
 
 /-- The comparison of completed local rings is the map of adic completions induced by `τ`. -/
 @[simp]
@@ -257,12 +257,14 @@ private theorem isRegularLocalRing_localization_iff (m : Ideal (completion K A))
   have : Module.Flat (Localization.AtPrime p) (Localization.AtPrime m) :=
     (faithfullyFlat_toCompletion (K := K) (A := A)).flat.localRingHom m p rfl
   refine isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq ?_
-  have hφ : φ.comp (algebraMap A (Localization.AtPrime p)) =
+  have hφ : (algebraMap (Localization.AtPrime p) (Localization.AtPrime m)).comp
+      (algebraMap A (Localization.AtPrime p)) =
       (algebraMap (completion K A) (Localization.AtPrime m)).comp (toCompletion K A).toRingHom :=
     RingHom.ext fun a ↦ Localization.localRingHom_to_map p m _ rfl a
+  -- Both maximal ideals are extended from `p`, and `p Â = m`.
   rw [← Localization.AtPrime.map_eq_maximalIdeal, ← Localization.AtPrime.map_eq_maximalIdeal,
-    RingHom.algebraMap_toAlgebra, Ideal.map_map, hφ, ← Ideal.map_map, AlgHom.toRingHom_eq_coe,
-    Ideal.map_coe, map_comap_toCompletion_of_isMaximal]
+    Ideal.map_map, hφ, ← Ideal.map_map]
+  simp [Ideal.map_coe]
 
 /-- **A dagger algebra is regular iff its completion is.** The completion `Â` of a dagger algebra
 `A` is a regular ring if and only if `A` is. -/
