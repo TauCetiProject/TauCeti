@@ -136,6 +136,11 @@ def mk : spinGroup Q × Circle →* spinCGroup Q hQ :=
 theorem mk_apply (p : spinGroup Q × Circle) : mk Q hQ p = (p : spinCGroup Q hQ) :=
   (rfl)
 
+/-- The underlying function of `mk` is the quotient projection. This is not a simp lemma:
+simplifying partially applied `mk` would prevent representative lemmas from matching. -/
+theorem coe_mk : ⇑(mk Q hQ) = QuotientGroup.mk :=
+  (rfl)
+
 /-- Every element of `Spinᶜ(Q)` is a class `[s, z]`. -/
 theorem mk_surjective : Function.Surjective (mk Q hQ) :=
   QuotientGroup.mk'_surjective _
