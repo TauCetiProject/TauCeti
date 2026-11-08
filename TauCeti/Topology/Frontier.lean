@@ -100,6 +100,8 @@ let alone a holomorphic map.
 
 * `IsPreconnected.inter_frontier_nonempty` — a preconnected set meeting both a set and its
   complement meets the frontier of that set.
+* `IsPreconnected.subset_of_disjoint_frontier` — a preconnected set that meets a set and misses its
+  frontier lies in that set.
 * `TauCeti.frontier_image_subset_image_union_frontier_image` — for a set split into two sides with
   disjoint open images plus a remainder, the frontier of the image of the side lying in that set
   lies on the image of the remainder and on the frontier of the image of the whole.
@@ -147,6 +149,14 @@ theorem _root_.IsPreconnected.inter_frontier_nonempty (hS : IsPreconnected S)
     exact hxV (interior_subset (h hxS))
   · obtain ⟨x, hxS, hxV⟩ := h₁
     exact h hxS (subset_closure hxV)
+
+/-- A preconnected set that meets `V` and misses its frontier lies in `V`: otherwise it would
+straddle `V` and so meet `frontier V`. -/
+theorem _root_.IsPreconnected.subset_of_disjoint_frontier (hS : IsPreconnected S)
+    (hdisj : Disjoint S (frontier V)) (hmeet : (S ∩ V).Nonempty) : S ⊆ V := by
+  by_contra h
+  obtain ⟨p, hpS, hpf⟩ := hS.inter_frontier_nonempty hmeet (Set.not_subset.mp h)
+  exact hdisj.le_bot ⟨hpS, hpf⟩
 
 /-- **The connected component of a point in the complement of a set `F` stays inside any set
 containing the point whose frontier lies in `F`.** Otherwise the component, being preconnected,

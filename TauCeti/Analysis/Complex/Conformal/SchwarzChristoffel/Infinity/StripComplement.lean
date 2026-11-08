@@ -117,6 +117,8 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_one
   have hext : (⟨R + 1, (lo + hi) / 2⟩ : ℂ) ∉ closure U :=
     hband _ ((le_max_right R₁ R₂).trans_lt (lt_add_one R)) (by dsimp only; linarith)
       (by dsimp only; linarith)
-  exact ⟨R, fun w hwR => mem_iff_im_lt_or_lt_im_of_frontier_eq hUo hgap hline hext hwR⟩
+  exact ⟨R, fun w hwR => mem_iff_im_lt_or_lt_im_of_frontier_eq hUo hgap hline
+    (z := ⟨R + 1, (lo + hi) / 2⟩) (lt_add_one R) (by dsimp only; linarith)
+    (by dsimp only; linarith) (fun h => hext (subset_closure h)) hwR⟩
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.Convex
-import TauCeti.Topology.Connected.Basic
+import TauCeti.Topology.Frontier
 
 /-!
 # Affine bijections of horizontal strips
@@ -36,13 +36,13 @@ theorem bijOn_ofReal_mul_add_horizontalStrip {s : ℝ} (hs : 0 < s) (c : ℂ) (l
     fun w => by simp [hs]
 
 /-- If the frontier of an open set `U ⊆ ℂ` is, to the right of `R`, exactly the two horizontal
-lines at heights `lo` and `hi`, and a point of the band between them far to the right is not in the
-closure of `U`, then every point of `U` to the right of `R` lies strictly below or strictly above
-the band. -/
-theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
-    (hgap : lo < hi) (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
-    (hext : (⟨R + 1, (lo + hi) / 2⟩ : ℂ) ∉ closure U) {w : ℂ} (hwR : R < w.re) (hwU : w ∈ U) :
-    w.im < lo ∨ hi < w.im := by
+lines at heights `lo` and `hi`, and a point `z` of the band between them to the right of `R` is not
+in `U`, then every point of `U` to the right of `R` lies strictly below or strictly above the
+band. -/
+private theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
+    (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo)) {z : ℂ}
+    (hzR : R < z.re) (hzlo : lo < z.im) (hzhi : z.im < hi) (hz : z ∉ U) {w : ℂ} (hwR : R < w.re)
+    (hwU : w ∈ U) : w.im < lo ∨ hi < w.im := by
   have hne : w ∉ frontier U := by
     rw [hUo.frontier_eq]
     exact fun h => h.2 hwU
@@ -56,18 +56,18 @@ theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R h
       · exact hv.2.2.ne h
       · exact hv.2.1.ne' h)
     ⟨w, ⟨hwR, lt_of_le_of_ne hw.1 (Ne.symm hne.2), lt_of_le_of_ne hw.2 hne.1⟩, hwU⟩
-  exact hext (subset_closure (hS ⟨lt_add_one R,
-    -- membership in the half-spaces unfolds to inequalities between the coordinates
-    by simp only [mem_ofPred_eq]; linarith, by simp only [mem_ofPred_eq]; linarith⟩))
+  exact hz (hS ⟨hzR, hzlo, hzhi⟩)
 
-/-- Under the hypotheses of `im_lt_or_lt_im_of_mem_of_frontier_eq`, to the right of `R` the open
-set `U` is exactly the set of points strictly below or strictly above the band. -/
+/-- If the frontier of an open set `U ⊆ ℂ` is, to the right of `R`, exactly the two horizontal
+lines at heights `lo < hi`, and a point `z` of the band between them to the right of `R` is not in
+`U`, then to the right of `R` the set `U` is exactly the set of points strictly below or strictly
+above the band. -/
 theorem mem_iff_im_lt_or_lt_im_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
     (hgap : lo < hi) (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
-    (hext : (⟨R + 1, (lo + hi) / 2⟩ : ℂ) ∉ closure U) {w : ℂ} (hwR : R < w.re) :
-    w ∈ U ↔ w.im < lo ∨ hi < w.im := by
+    {z : ℂ} (hzR : R < z.re) (hzlo : lo < z.im) (hzhi : z.im < hi) (hz : z ∉ U) {w : ℂ}
+    (hwR : R < w.re) : w ∈ U ↔ w.im < lo ∨ hi < w.im := by
   have hout {w : ℂ} (hwR : R < w.re) (hwU : w ∈ U) : w.im < lo ∨ hi < w.im :=
-    im_lt_or_lt_im_of_mem_of_frontier_eq hUo hgap hline hext hwR hwU
+    im_lt_or_lt_im_of_mem_of_frontier_eq hUo hline hzR hzlo hzhi hz hwR hwU
   -- Each line lies in the closure of `U`, so points of `U` come close to it.
   have hnear (h : ℝ) (hh : h = hi ∨ h = lo) :
       ∃ u ∈ U, R < u.re ∧ |u.im - h| < (hi - lo) / 2 := by
