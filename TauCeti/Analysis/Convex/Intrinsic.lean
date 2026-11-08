@@ -23,7 +23,7 @@ A nonempty convex subset of `t` whose intrinsic interior misses that of `t`, suc
 of the intrinsic frontier of `t`, has strictly smaller dimension
 (`TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`): equal dimensions would force
 equal affine spans, and the intrinsic interior is monotone on sets with a common affine span
-(`TauCeti.intrinsicInterior_mono_of_affineSpan_eq`). Consequently, in a family of nonempty convex
+(`TauCeti.intrinsicInterior_mono_of_affineSpan_eq`). Consequently, in a family of convex
 cells with pairwise disjoint intrinsic interiors whose intrinsic frontiers are covered by a set
 `S` and the smaller cells, every point of a cell lies in `S` or in the intrinsic interior of a
 cell contained in it (`TauCeti.mem_intrinsicInterior_or_of_mem`), and the intrinsic interior of a
@@ -323,21 +323,17 @@ lemma add_mem_intrinsicFrontier_iff (v : (affineSpan ℝ C).direction) :
       v ∈ frontier {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} := by
   by_cases hc : c ∈ affineSpan ℝ C
   swap
-  · have hempty : {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} = ∅ := by
-      ext w
-      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
-      intro hw
-      refine hc ?_
-      simpa [vadd_eq_add] using
-        AffineSubspace.vadd_mem_of_mem_direction (neg_mem w.2) (subset_affineSpan ℝ C hw)
+  · -- A displacement `w` in the direction with `c + w` in the span puts `c` in the span.
+    have key (w : (affineSpan ℝ C).direction) (h : c + (w : E) ∈ affineSpan ℝ C) :
+        c ∈ affineSpan ℝ C := by
+      have := AffineSubspace.vadd_mem_of_mem_direction (neg_mem w.2) h
+      rwa [vadd_eq_add, show -(w : E) + (c + w) = c by abel] at this
+    have hempty : {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun w hw ↦ hc (key w (subset_affineSpan ℝ C hw))
     rw [hempty, frontier_empty]
     simp only [Set.mem_empty_iff_false, iff_false]
     rintro ⟨y, -, hy⟩
-    refine hc ?_
-    have h := AffineSubspace.vadd_mem_of_mem_direction (neg_mem v.2) y.2
-    rw [vadd_eq_add, hy] at h
-    convert h using 1
-    simp
+    exact hc (key v (hy ▸ y.2))
   let cA : affineSpan ℝ C := ⟨c, hc⟩
   let : Nonempty (affineSpan ℝ C) := ⟨cA⟩
   let e := Homeomorph.vaddConst cA
