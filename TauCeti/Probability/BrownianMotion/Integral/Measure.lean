@@ -50,14 +50,19 @@ theorem timeMeasure_def (T : ℝ≥0) :
     timeMeasure T = (Measure.comap ((↑) : ℝ≥0 → ℝ) volume).restrict (Ioc 0 T) :=
   (rfl)
 
+/-- The mass of a measurable time set is the real Lebesgue mass of its part in `(0,T]`. -/
+theorem timeMeasure_apply {T : ℝ≥0} {s : Set ℝ≥0} (hs : MeasurableSet s) :
+    timeMeasure T s = volume (((↑) : ℝ≥0 → ℝ) '' (s ∩ Ioc 0 T)) := by
+  rw [timeMeasure_def, Measure.restrict_apply hs,
+    NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_apply]
+
 /-- The mass of a time interval contained in the horizon is its length. -/
 @[simp]
 theorem timeMeasure_Ioc {s t T : ℝ≥0} (ht : t ≤ T) :
     timeMeasure T (Ioc s t) = ENNReal.ofReal ((t : ℝ) - s) := by
-  rw [timeMeasure_def, Measure.restrict_eq_self _ (Ioc_subset_Ioc (zero_le : (0 : ℝ≥0) ≤ s) ht),
-    Measure.comap_apply _ NNReal.coe_injective
-      (fun _ h => NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_image.mpr h)
-      _ measurableSet_Ioc, NNReal.image_coe_Ioc, Real.volume_Ioc]
+  rw [timeMeasure_apply measurableSet_Ioc,
+    inter_eq_self_of_subset_left (Ioc_subset_Ioc (zero_le : (0 : ℝ≥0) ≤ s) ht),
+    NNReal.image_coe_Ioc, Real.volume_Ioc]
 
 /-- Finite-horizon Lebesgue time has total mass `T`. -/
 @[simp]
