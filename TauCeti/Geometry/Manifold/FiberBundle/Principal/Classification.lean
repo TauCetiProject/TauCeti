@@ -218,22 +218,6 @@ end Glued
 
 section Transition
 
-/-- The equivalence between `G` and the fibre over a point of the base set of a trivialization,
-given by the inverse of the trivialization. -/
-private noncomputable def symmEquivAt {P : B → Type*} [TopologicalSpace (TotalSpace G P)]
-    [∀ b, Nonempty (P b)] (e : Trivialization G (π G P)) {b : B} (hb : b ∈ e.baseSet) :
-    G ≃ P b where
-  toFun := e.symm b
-  invFun p := (e ⟨b, p⟩).2
-  left_inv v := by simp [e.apply_mk_symm hb]
-  right_inv := e.symm_apply_apply_mk hb
-
-omit [Group G] in
-private theorem symmEquivAt_apply {P : B → Type*} [TopologicalSpace (TotalSpace G P)]
-    [∀ b, Nonempty (P b)] (e : Trivialization G (π G P)) {b : B} (hb : b ∈ e.baseSet) (v : G) :
-    symmEquivAt e hb v = e.symm b v :=
-  rfl
-
 variable {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
   [ContMDiffFiberBundle n G P IB IG]
@@ -284,8 +268,8 @@ theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
     hindex hcoc.continuousOn hcoc.contMDiffOn
   have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   -- The fibre equivalence given by the chart chosen at each base point.
-  refine ⟨fun b ↦ symmEquivAt (e (indexAt b)) (hindex' b), fun b v g ↦ ?_, fun x ↦ ?_⟩
-  · simp only [symmEquivAt_apply, (e (indexAt b)).symm_apply_mul (hindex' b)]
+  refine ⟨fun b ↦ (e (indexAt b)).symmEquivAt (hindex' b), fun b v g ↦ ?_, fun x ↦ ?_⟩
+  · simp only [Trivialization.symmEquivAt_apply, (e (indexAt b)).symm_apply_mul (hindex' b)]
   obtain ⟨⟨b₀, v₀⟩, rfl⟩ := (homeomorph G Z.Fiber).surjective x
   set β := indexAt b₀
   have : MemTrivializationAtlas (Z.localTriv β) := ⟨mem_range_self β⟩
@@ -307,11 +291,11 @@ theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
   have hα := hindex' b
   -- The glued chart `β` reads `(e α).coordChange (e β) b v`, which `(e β)⁻¹` sends to `(e α)⁻¹ v`.
   rw [fiberwiseMap_homeomorph (E := Z.Fiber) (E' := P)
-    fun b ↦ symmEquivAt (e (indexAt b)) (hindex' b)]
+    fun b ↦ (e (indexAt b)).symmEquivAt (hindex' b)]
   simp only [Homeomorph.symm_apply_apply, FiberBundleCore.localTriv_apply, Z,
     fiberBundleCoreOfGroupCocycle_coordChange, fiberBundleCoreOfGroupCocycle_indexAt, smul_eq_mul,
     ← (e (indexAt b)).coordChange_eq_mul (e β) hα hy,
-    (e (indexAt b)).symm_mk_coordChange (e β) hα hy, symmEquivAt_apply]
+    (e (indexAt b)).symm_mk_coordChange (e β) hα hy, Trivialization.symmEquivAt_apply]
 
 variable {Q : B → Type*} [TopologicalSpace (TotalSpace G Q)] [∀ b, TopologicalSpace (Q b)]
   [FiberBundle G Q] [∀ b, MulAction Gᵐᵒᵖ (Q b)] [PrincipalBundle G Q]

@@ -15,7 +15,8 @@ preferred trivialization at the base point `v₀.proj`, so it can be read in tha
 A compact subset of the total space lies over finitely many preferred trivializing base sets.
 An arbitrary family of trivializations over pairwise disjoint open base sets glues to one
 trivialization over their union, with the same forward and inverse maps on each constituent.
-Finally, the inverse of a trivialization undoes a coordinate change into it.
+Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
+of its base set it is an equivalence between the model fibre and the fibre.
 
 ## Main results
 
@@ -25,6 +26,8 @@ Finally, the inverse of a trivialization undoes a coordinate change into it.
   space lies over a finite union of preferred trivializing base sets.
 * `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
   from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
+* `Bundle.Trivialization.symmEquivAt`: the inverse of a trivialization as an equivalence between
+  the model fibre and the fibre over a point of its base set.
 -/
 
 public section
@@ -175,6 +178,20 @@ theorem symm_mk_coordChange (e₁ e₂ : Trivialization F (π F E)) {b : B} (h�
     e₂.toOpenPartialHomeomorph.symm (b, e₁.coordChange e₂ b v) = ⟨b, e₁.symm b v⟩ := by
   rw [e₁.mk_coordChange e₂ h₁ h₂, e₂.symm_apply_apply
     (e₂.mem_source.2 (by rwa [e₁.proj_symm_apply' h₁])), e₁.mk_symm h₁]
+
+/-- The equivalence between the model fibre and the fibre over a point of the base set of a
+trivialization, given by the inverse of the trivialization. -/
+noncomputable def symmEquivAt (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.baseSet) :
+    F ≃ E b where
+  toFun := e.symm b
+  invFun p := (e ⟨b, p⟩).2
+  left_inv v := by simp [e.apply_mk_symm hb]
+  right_inv := e.symm_apply_apply_mk hb
+
+@[simp]
+theorem symmEquivAt_apply (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.baseSet) (v : F) :
+    e.symmEquivAt hb v = e.symm b v :=
+  (rfl)
 
 end CoordChange
 
