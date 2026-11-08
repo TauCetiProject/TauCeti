@@ -84,8 +84,7 @@ noncomputable def realCliffordSpinEmbeddedLieSubgroupData (n : ℕ) :
     TauCeti.Lie.EmbeddedLieSubgroupData
       𝓘(ℝ, CliffordAlgebra (realCliffordForm n 0))
       (SpinUnitsRange(n)) (SpinLieModel(n)) :=
-  Classical.choice (by
-    apply TauCeti.Lie.nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
+  TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed (by
     simpa only [MonoidHom.coe_range] using
       isClosed_range_spinGroup_toUnits (realCliffordForm n 0)
         (nondegenerate_realCliffordForm n 0))
@@ -97,8 +96,7 @@ noncomputable def realCliffordSpecialOrthogonalEmbeddedLieSubgroupData (n : ℕ)
     TauCeti.Lie.EmbeddedLieSubgroupData
       𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)
       (SpecialOrthogonalUnitsRange(n)) (SpecialOrthogonalLieModel(n)) :=
-  Classical.choice (by
-    apply TauCeti.Lie.nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
+  TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed (by
     rw [MonoidHom.coe_range]
     exact QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm n)
 
@@ -143,24 +141,6 @@ private theorem coe_specialOrthogonalAmbientCoordinateLieEquiv_apply
       TauCeti.Lie.unitsLieAlgebraLieEquiv x := by
   unfold specialOrthogonalAmbientCoordinateLieEquiv
   rfl
-
-/-- The closed real Spin carrier's canonical model is finite-dimensional. -/
-noncomputable instance realCliffordSpinLieModelFiniteDimensional (n : ℕ) :
-    FiniteDimensional ℝ (SpinLieModel(n)) := by
-  let _ : FiniteDimensional ℝ
-      (LeftInvariantDerivation 𝓘(ℝ, CliffordAlgebra (realCliffordForm n 0))
-        (CliffordAlgebra (realCliffordForm n 0))ˣ) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  exact FiniteDimensional.finiteDimensional_submodule _
-
-/-- The closed real special-orthogonal carrier's canonical model is finite-dimensional. -/
-noncomputable instance realCliffordSpecialOrthogonalLieModelFiniteDimensional (n : ℕ) :
-    FiniteDimensional ℝ (SpecialOrthogonalLieModel(n)) := by
-  let _ : FiniteDimensional ℝ
-      (LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)
-        (Matrix (Fin n) (Fin n) ℝ)ˣ) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  exact FiniteDimensional.finiteDimensional_submodule _
 
 /-- The charted-space structure on the closed real Spin carrier selected by Cartan's theorem. -/
 noncomputable instance realCliffordSpinUnitsRangeChartedSpace (n : ℕ) :
