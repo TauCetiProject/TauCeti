@@ -373,17 +373,12 @@ theorem ContMDiffWithinAt.clm_bundle_inverse
     rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂]
     exact ContinuousLinearMap.isInvertible_equiv.comp
       (hx.comp ContinuousLinearMap.isInvertible_equiv)
-  -- Near `x`, the inverse in coordinates is the inverse of the coordinate expression, and
+  -- The inverse in coordinates is the inverse of the coordinate expression, and
   -- inversion is smooth at an invertible map.
-  have hev : ∀ᶠ m in 𝓝[s] x, b m ∈ (trivializationAt F₁ E₁ (b x)).baseSet ∧
-      b m ∈ (trivializationAt F₂ E₂ (b x)).baseSet :=
-    hϕ.1.continuousWithinAt.preimage_mem_nhdsWithin <| Filter.inter_mem
-      ((trivializationAt F₁ E₁ (b x)).open_baseSet.mem_nhds h₁)
-      ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)
   have hcomp := (hinv.contDiffAt_map_inverse (n := n)).contMDiffAt.comp_contMDiffWithinAt x hϕ.2
-  refine hcomp.congr_of_eventuallyEq ?_ (ContinuousLinearMap.inCoordinates_inverse (ϕ x) h₁ h₂)
-  filter_upwards [hev] with m hm
-  exact ContinuousLinearMap.inCoordinates_inverse (ϕ m) hm.1 hm.2
+  exact hcomp.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun m ↦ ContinuousLinearMap.inCoordinates_inverse (ϕ m))
+    (ContinuousLinearMap.inCoordinates_inverse (ϕ x))
 
 /-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending `C^n` on `m`, over a base map
 `b : M → B`, with `ϕ x` invertible. Then the fibrewise inverses `(ϕ m).inverse` depend `C^n` on
