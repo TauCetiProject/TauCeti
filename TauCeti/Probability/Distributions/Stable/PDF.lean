@@ -180,7 +180,8 @@ theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) 
     abs_of_pos (NNReal.coe_pos.2 hs), smul_eq_mul]
   field_simp
 
-/-- The norm of the stable density is bounded by `Γ(1/α) / (π α s)`. -/
+/-- For valid shapes and positive scale, the norm of the stable density is at most
+`Γ(1/α) / (π α s)`. -/
 theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) (m x : ℝ) :
     ‖stablePDFReal α β s m x‖ ≤ Real.Gamma α⁻¹ / (π * α * s) := by
   rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x)]
