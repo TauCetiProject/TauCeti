@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Expand
+import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 
 /-!
 # Four-twist multiplicity weights of square-zero pseudoholomorphic tori
@@ -356,18 +357,13 @@ signs. The bifurcation analysis producing the label changes is separate. The ray
 `TauCeti.rayTorusWeightSeries_insert_eq_update_castSucc` and
 `TauCeti.rayTorusWeightSeries_insert_eq_update_succ`. -/
 
-/-- `f_(+,0)(t ^ 2) = 1 / (1 - t ^ 2)`. -/
-private theorem expand_two_torusWeightSeries_true_zero_mul :
-    expand 2 two_ne_zero (torusWeightSeries true 0) * (1 - X ^ 2) = 1 := by
-  simpa using congr(expand 2 two_ne_zero $torusWeightSeries_true_zero_mul)
-
 /-- `1 / (1 - t) = (1 + t) / (1 - t ^ 2)`. -/
 private theorem torusWeightSeries_true_zero_eq :
     torusWeightSeries true 0 =
       torusWeightSeries true 1 * expand 2 two_ne_zero (torusWeightSeries true 0) := by
   refine (isUnit_iff_constantCoeff.2 (by simp) : IsUnit (1 - X : ℤ⟦X⟧)).mul_right_cancel ?_
-  rw [torusWeightSeries_true_zero_mul, torusWeightSeries_true_one]
-  linear_combination -expand_two_torusWeightSeries_true_zero_mul
+  rw [torusWeightSeries_true_zero_mul, torusWeightSeries_true_one, torusWeightSeries_true_zero]
+  linear_combination -expand_mk_one_mul_one_sub_X_pow (R := ℤ) 2 two_ne_zero
 
 /-- `1 + t = (1 + t) / (1 + t ^ 2) · (1 + t ^ 2)`. -/
 private theorem torusWeightSeries_true_one_eq :
@@ -380,9 +376,9 @@ private theorem torusWeightSeries_true_two_eq :
     torusWeightSeries true 2 =
       torusWeightSeries true 3 * expand 2 two_ne_zero (torusWeightSeries true 0) := by
   refine (isUnit_iff_constantCoeff.2 (by simp) : IsUnit (1 + X ^ 2 : ℤ⟦X⟧)).mul_right_cancel ?_
-  rw [torusWeightSeries_true_two_mul]
-  linear_combination -(1 + X) * expand_two_torusWeightSeries_true_zero_mul -
-    expand 2 two_ne_zero (torusWeightSeries true 0) * torusWeightSeries_true_three_mul
+  rw [torusWeightSeries_true_two_mul, torusWeightSeries_true_zero]
+  linear_combination -(1 + X) * expand_mk_one_mul_one_sub_X_pow (R := ℤ) 2 two_ne_zero -
+    expand 2 two_ne_zero (mk 1) * torusWeightSeries_true_three_mul
 
 /-- **Period-doubling identity** of the local series: for `j ∈ {0, 1, 2}`,
 `f_(σ, j)(t) = f_(σ, j + 1)(t) f_(σ, j % 2)(t ^ 2)`, the indices `j`, `j + 1` and `j % 2` being
@@ -481,9 +477,10 @@ theorem rayTorusWeightSeries_insert [DecidableEq ι] {s : Finset ι} {c : ι} (h
 /-- **Birth and death** on the ray: adjoining two tori `c` and `d` of the same class, with the
 same index and opposite determinant signs, does not change the ray series. -/
 theorem rayTorusWeightSeries_insert_insert [DecidableEq ι] {s : Finset ι} {c d : ι} (hc : c ∉ s)
-    (hd : d ∉ s) (hcd : c ≠ d) {m : ι → ℕ+} (hm : m d = m c) {σ : ι → Bool} (hσ : σ d = !σ c)
+    (hd : d ∉ s) {m : ι → ℕ+} (hm : m d = m c) {σ : ι → Bool} (hσ : σ d = !σ c)
     {i : ι → Fin 4} (hi : i d = i c) :
     rayTorusWeightSeries (insert c (insert d s)) m σ i = rayTorusWeightSeries s m σ i := by
+  have hcd : c ≠ d := ne_of_apply_ne σ (by simp [hσ])
   rw [rayTorusWeightSeries_insert (by simp [hcd, hc]), rayTorusWeightSeries_insert hd, ← mul_assoc,
     hm, hσ, hi, ← map_mul, torusWeightSeries_mul_not, map_one, one_mul]
 
