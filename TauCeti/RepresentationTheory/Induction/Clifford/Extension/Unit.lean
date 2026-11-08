@@ -17,9 +17,13 @@ space of its reconstructed representation. The tensor is balanced over the full
 endomorphism division algebra, not just the ground field. Multiplicity modules
 and inertia quotients may be infinite.
 
-This is the ground-field-linear unit comparison needed to invert reconstruction.
-It specializes `FDRep.balancedTensorUnit` and its bijectivity: the reconstructed
-action restricted to the normal subgroup acts only on the representation factor.
+The reconstructed action restricted to the normal subgroup acts only on the
+representation factor. The public formula
+`FDRep.cliffordReconstructionRepresentation_restrict_tmul` supplies the action
+hypothesis for `FDRep.balancedTensorUnitEquiv A _
+(cliffordReconstructionRepresentation_restrict_tmul A s hs U)`, the
+ground-field-linear unit comparison needed to invert reconstruction. Its
+computation and inverse rules are the general `FDRep.balancedTensorUnit*` API.
 
 ## References
 
@@ -51,59 +55,15 @@ attribute [local instance] endModule
 
 private local instance : IsScalarTower k (End A) V := (F).endModule_isScalarTower A
 
-private theorem reconstruction_restrict_tmul (n : N) (m : M) (x : V) :
+/-- The reconstructed action restricted along the normal-subgroup inclusion acts
+only on the representation factor, in the `Rep` carrier view used by the balanced
+tensor–Hom unit. -/
+theorem cliffordReconstructionRepresentation_restrict_tmul (n : N) (m : M) (x : V) :
     ρ n (BalancedTensorProduct.tmul k (End A) (N := V) m x) =
       BalancedTensorProduct.tmul k (End A) (N := V) m ((V).ρ n x) := by
   -- The native tensor formula uses the FDRep carrier, rather than its Rep view.
   erw [MonoidHom.comp_apply, cliffordReconstructionRepresentation_inclusion_tmul]
   rw [FDRep.forget₂_ρ]
   rfl
-
-/-- The canonical multiplicity map sends `m` to the normal-subgroup intertwiner
-`x ↦ m ⊗ x` in the reconstructed representation. -/
-def cliffordReconstructionUnit : M →ₗ[k] Representation.IntertwiningMap (V).ρ ρ :=
-  balancedTensorUnit A ρ (reconstruction_restrict_tmul A s hs U)
-
-/-- The unit comparison evaluates to the pure balanced tensor. -/
-@[simp]
-theorem cliffordReconstructionUnit_apply (m : M) (x : V) :
-    cliffordReconstructionUnit A s hs U m x =
-      BalancedTensorProduct.tmul k (End A) (N := V) m x :=
-  balancedTensorUnit_apply A ρ (reconstruction_restrict_tmul A s hs U) m x
-
-variable [Simple A]
-
-/-- Reconstructing from a multiplicity module and then taking normal-subgroup
-multiplicities recovers the original ground-field vector space, even for infinite modules. -/
-theorem cliffordReconstructionUnit_bijective :
-    Function.Bijective (cliffordReconstructionUnit A s hs U) :=
-  balancedTensorUnit_bijective A ρ (reconstruction_restrict_tmul A s hs U)
-
-/-- The canonical ground-field-linear unit comparison for Clifford reconstruction. -/
-def cliffordReconstructionUnitEquiv :
-    M ≃ₗ[k] Representation.IntertwiningMap (V).ρ ρ :=
-  balancedTensorUnitEquiv A ρ (reconstruction_restrict_tmul A s hs U)
-
-/-- The unit equivalence sends a multiplicity vector to tensoring with that vector. -/
-@[simp]
-theorem cliffordReconstructionUnitEquiv_apply (m : M) :
-    cliffordReconstructionUnitEquiv A s hs U m =
-      cliffordReconstructionUnit A s hs U m :=
-  balancedTensorUnitEquiv_apply A ρ (reconstruction_restrict_tmul A s hs U) m
-
-/-- The inverse unit equivalence recovers a vector from its tensoring intertwiner. -/
-@[simp]
-theorem cliffordReconstructionUnitEquiv_symm_unit (m : M) :
-    (cliffordReconstructionUnitEquiv A s hs U).symm
-      (cliffordReconstructionUnit A s hs U m) = m :=
-  balancedTensorUnitEquiv_symm_unit A ρ (reconstruction_restrict_tmul A s hs U) m
-
-/-- Tensoring with the recovered multiplicity vector gives the original intertwiner. -/
-@[simp]
-theorem cliffordReconstructionUnit_equiv_symm
-    (f : Representation.IntertwiningMap (V).ρ ρ) :
-    cliffordReconstructionUnit A s hs U
-      ((cliffordReconstructionUnitEquiv A s hs U).symm f) = f :=
-  balancedTensorUnit_equiv_symm A ρ (reconstruction_restrict_tmul A s hs U) f
 
 end FDRep

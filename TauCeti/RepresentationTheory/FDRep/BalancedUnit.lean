@@ -93,20 +93,17 @@ local notation "e" => b.balancedTensorProductEquiv (k := k) (N := V)
 include hρ in
 private theorem unit_coordinates_action (g : G) (z : E) :
     e (ρ g z) = Finsupp.mapRange ((V).ρ g) (map_zero _) (e z) := by
-  induction z using BalancedTensorProduct.induction_on with
-  | ht m x =>
-    ext i
-    have hn := ((balancedTensorUnit A ρ hρ m).isIntertwining _ _ g x).symm
-    simp only [balancedTensorUnit_apply] at hn
-    rw [hn]
-    simp only [Module.Basis.balancedTensorProductEquiv_tmul_apply, Finsupp.mapRange_apply]
+  have hg (a : End A) (x : V) : (V).ρ g (a • x) = a • (V).ρ g x := by
     simp only [(F).endModule_smul, Functor.comp_map, Rep.forget₂_moduleCat_map,
       ModuleCat.hom_ofHom]
-    exact (((R).map (unop (b.repr m i)).asHom).hom.isIntertwining _ _ g x)
-  | ha x y hx hy =>
-    ext i
-    simpa only [map_add, Finsupp.mapRange_apply, Finsupp.add_apply] using
-      congrArg (fun z => z i) (congrArg₂ (· + ·) hx hy)
+    exact (((R).map a.asHom).hom.isIntertwining _ _ g x).symm
+  have hmap : ρ g =
+      BalancedTensorProduct.map LinearMap.id ((V).ρ g) (fun _ _ => rfl) hg := by
+    apply BalancedTensorProduct.hom_ext
+    intro m x
+    simpa only [BalancedTensorProduct.map_tmul, LinearMap.id_apply] using hρ g m x
+  rw [hmap]
+  exact LinearMap.congr_fun (b.balancedTensorProductEquiv_map ((V).ρ g) hg) z
 
 private def unitCoordinate (f : Representation.IntertwiningMap (V).ρ ρ) (i : ι) : End A :=
   End.of (forget₂HomLinearEquiv A A ((Rep.homLinearEquiv V V).symm
