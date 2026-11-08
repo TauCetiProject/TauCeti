@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Martingale.MaximalInequality
 
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
 /-!
 # Uniform approximation of martingales
 
@@ -19,7 +18,7 @@ limits of elementary stochastic integrals.
 
 The approximants need only have almost surely right-continuous paths. No completion or
 right continuity of the filtration is assumed. The path-error events are measured by outer
-measure, so no literal measurability of an uncountable supremum is asserted. The norm
+measure, so no literal measurability of an uncountable supremum is asserted. The imported norm
 estimate uses Mathlib's conditional Jensen inequality `norm_condExp_le`.
 
 ## References
@@ -35,27 +34,10 @@ noncomputable section
 open Filter Set Topology
 open scoped ENNReal NNReal
 
-namespace MeasureTheory.Martingale
+namespace MeasureTheory
 
-variable {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] [IsFiniteMeasure μ]
-
-/-- **Doob's weak maximal inequality for the norm of a martingale.** A terminal L¹
-bound controls the outer probability of a uniform path error. -/
-theorem mul_measure_exists_le_norm_lt_le [LinearOrder ι] [TopologicalSpace ι]
-    [OrderTopology ι] [SecondCountableTopology ι] {ℱ : Filtration ι mΩ}
-    {M : ι → Ω → E} (hM : Martingale M ℱ μ) {T : ι}
-    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ M u ω) (Ioi t) t)
-    (ε : ℝ≥0) :
-    ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < ‖M t ω‖} ≤
-      ENNReal.ofReal (∫ ω, ‖M T ω‖ ∂μ) := by
-  have hnorm : Submartingale (fun t ω ↦ ‖M t ω‖) ℱ μ := by
-    refine ⟨fun t ↦ (hM.stronglyAdapted t).norm, fun s t hst ↦ ?_,
-      fun t ↦ (hM.integrable t).norm⟩
-    filter_upwards [norm_condExp_le (m := ℱ s) (M t), hM.condExp_ae_eq hst] with ω h₁ h₂
-    simpa only [h₂] using h₁
-  exact hnorm.mul_measure_exists_le_lt_le (fun _ _ ↦ norm_nonneg _)
-    (hcont.mono fun ω hω t ht ↦ (hω t ht).norm) ε
 
 /-- Martingale approximants which are terminally L¹-Cauchy have a subsequence whose
 uniform increment errors at horizon `n` exceed `2⁻ⁿ` with outer probability at most `2⁻ⁿ`.
@@ -73,40 +55,26 @@ theorem exists_strictMono_summable_uniform_errors {ℱ : Filtration ℝ≥0 mΩ}
       ∀ T : ℝ≥0, (∑' n, μ {ω | ∃ t ≤ T,
         (2 : ℝ)⁻¹ ^ n < ‖M (φ (n + 1)) t ω - M (φ n) t ω‖}) < ∞ := by
   -- Select terminal errors smaller than the product of the desired path threshold
-  -- and probability bound. A monotone majorant makes one subsequence work at all horizons.
+  -- and probability bound. Mathlib's extraction lemma handles all integer horizons.
   have hsmall (k : ℕ) := Metric.cauchySeq_iff.1 (hCauchy k)
     ((2 : ℝ)⁻¹ ^ k * (2 : ℝ)⁻¹ ^ k) (by positivity)
   choose N hN using hsmall
-  obtain ⟨φ, hφmono, hφN⟩ : ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ n, N n ≤ φ n := by
-    let φ : ℕ → ℕ := fun n ↦ n + (Finset.range (n + 1)).sup N
-    refine ⟨φ, strictMono_nat_of_lt_succ fun n ↦ ?_, fun n ↦ ?_⟩
-    · have hsup : (Finset.range (n + 1)).sup N ≤ (Finset.range (n + 1 + 1)).sup N :=
-        Finset.sup_mono (Finset.range_mono (by omega))
-      dsimp [φ]
-      omega
-    · exact (Finset.le_sup (f := N) (Finset.mem_range.2 (Nat.lt_succ_self n))).trans
-        (Nat.le_add_left _ _)
+  obtain ⟨φ, hφmono, hφN⟩ :=
+    Filter.extraction_forall_of_eventually fun n ↦ eventually_ge_atTop (N n)
   have hbound (n : ℕ) : μ {ω | ∃ t ≤ (n : ℝ≥0),
       (2 : ℝ)⁻¹ ^ n < ‖M (φ (n + 1)) t ω - M (φ n) t ω‖} ≤
         (2 : ℝ≥0∞)⁻¹ ^ n := by
     have hdist := hN n (φ (n + 1)) ((hφN n).trans (hφmono.monotone (Nat.le_succ n)))
       (φ n) (hφN n)
-    rw [dist_eq_norm, ← Integrable.toL1_sub, Integrable.norm_toL1] at hdist
-    simp only [edist_zero_right] at hdist
-    rw [← integral_norm_eq_lintegral_enorm
-        (((hM (φ (n + 1))).integrable n).sub ((hM (φ n)).integrable n)).aestronglyMeasurable]
-      at hdist
-    have hmax := ((hM (φ (n + 1))).sub (hM (φ n))).mul_measure_exists_le_norm_lt_le
-      (T := (n : ℝ≥0)) (by
-        filter_upwards [hcont (φ (n + 1)), hcont (φ n)] with ω h₁ h₂ t _
-        exact (h₁ t).sub (h₂ t)) ((2 : ℝ≥0)⁻¹ ^ n)
-    have hlt : ENNReal.ofReal (∫ ω, ‖M (φ (n + 1)) n ω - M (φ n) n ω‖ ∂μ) ≤
-        ((2 : ℝ≥0)⁻¹ ^ n : ℝ≥0∞) * (2 : ℝ≥0∞)⁻¹ ^ n := by
-      refine (ENNReal.ofReal_le_ofReal hdist.le).trans_eq ?_
-      rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity) n,
-        ENNReal.ofReal_inv_of_pos (by norm_num)]
-      norm_num
-    exact (ENNReal.mul_le_mul_iff_right (by positivity) (by finiteness)).1 (hmax.trans hlt)
+    rw [dist_eq_norm, ← Integrable.toL1_sub, L1.norm_of_fun_eq_integral_norm] at hdist
+    simpa only [ENNReal.coe_pow, ENNReal.coe_inv (by norm_num : (2 : ℝ≥0) ≠ 0),
+      ENNReal.coe_ofNat, NNReal.coe_pow, NNReal.coe_inv, NNReal.coe_ofNat, Pi.sub_apply] using
+      ((hM (φ (n + 1))).sub (hM (φ n))).measure_exists_le_norm_lt_le
+        (T := (n : ℝ≥0)) (by
+          filter_upwards [hcont (φ (n + 1)), hcont (φ n)] with ω h₁ h₂ t _
+          exact (h₁ t).sub (h₂ t))
+        (ε := (2 : ℝ≥0)⁻¹ ^ n) (δ := (2 : ℝ≥0)⁻¹ ^ n) (by positivity)
+        (by simpa using hdist.le)
   refine ⟨φ, hφmono, hbound, fun T ↦ ?_⟩
   -- On a fixed horizon only finitely many indices precede its integer ceiling.
   have hmajor : ∀ᶠ n : ℕ in atTop,
@@ -125,4 +93,4 @@ theorem exists_strictMono_summable_uniform_errors {ℱ : Filtration ℝ≥0 mΩ}
   rw [ENNReal.tsum_geometric]
   norm_num
 
-end MeasureTheory.Martingale
+end MeasureTheory
