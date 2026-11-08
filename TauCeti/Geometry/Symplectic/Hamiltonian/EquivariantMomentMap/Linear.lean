@@ -107,7 +107,7 @@ theorem fundamentalLinearMap_mem_skewAdjointLieSubalgebra
     (hω : ∀ (g : G) (u w : V), ω (g • u) (g • w) = ω u w) (ξ : GroupLieAlgebra I G) :
     fundamentalLinearMap I G V ξ ∈ skewAdjointLieSubalgebra ω.toBilinForm := by
   refine (LinearMap.mem_skewAdjointSubmodule _).2 fun u w ↦ ?_
-  have h := apply_fundamentalLinearMap_left ω.toBilinForm.toContinuousBilinearMap
+  have h := ω.toBilinForm.toContinuousBilinearMap.apply_fundamentalLinearMap_left
     (fun g u w ↦ by simpa using hω g u w) ξ u w
   simp only [LinearMap.toContinuousBilinearMap_apply] at h
   rw [h, Pi.neg_apply, map_neg]

@@ -21,8 +21,8 @@ representation `g ↦ (v ↦ g • v)`.
 This file bundles these endomorphisms as a linear map from the Lie algebra to `V →ₗ V`
 (`TauCeti.fundamentalLinearMap`). If the action preserves a continuous bilinear map `B`, then
 every `ξ_V` is skew for `B`, `B (ξ_V u) w = -B u (ξ_V w)`
-(`TauCeti.apply_fundamentalLinearMap_left`): this is the derivative at the identity of
-`B (g • u) (g • w) = B u w`. For a symplectic form it places `ξ_V` in the symplectic Lie algebra,
+(`ContinuousLinearMap.apply_fundamentalLinearMap_left`): this is the derivative at the identity
+of `B (g • u) (g • w) = B u w`. For a symplectic form it places `ξ_V` in the symplectic Lie algebra,
 which is the input for the quadratic moment map of a linear symplectic representation.
 
 ## Main definitions
@@ -34,8 +34,8 @@ which is the input for the quadratic moment map of a linear symplectic represent
 
 * `TauCeti.fundamentalLinearMap_apply_eq_fundamentalVectorField`: `fundamentalLinearMap I G V ξ`
   is the fundamental vector field `ξ_V`, read in `V`.
-* `TauCeti.apply_fundamentalLinearMap_left`: an action preserving a continuous bilinear map acts
-  infinitesimally by skew maps.
+* `ContinuousLinearMap.apply_fundamentalLinearMap_left`: an action preserving a continuous
+  bilinear map acts infinitesimally by skew maps.
 
 ## References
 
@@ -50,14 +50,14 @@ noncomputable section
 
 open scoped Manifold
 
-namespace TauCeti
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   [DistribMulAction G V] [SMulCommClass G 𝕜 V] [ContMDiffSMul I 𝓘(𝕜, V) 1 G V]
+
+namespace TauCeti
 
 variable (I G V) in
 /-- For a linear action of `G` on `V`, the linear map sending `ξ` in the Lie algebra to the
@@ -100,6 +100,12 @@ theorem fundamentalLinearMap_apply_eq_fundamentalVectorField (ξ : GroupLieAlgeb
   rw [fundamentalLinearMap_apply, mvfderiv_apply_eq_mfderiv_apply, fundamentalVectorField_apply]
   exact (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) v _).symm
 
+end TauCeti
+
+namespace ContinuousLinearMap
+
+open TauCeti
+
 /-- **Linear actions preserving a bilinear map act infinitesimally by skew maps.** If every element
 of `G` preserves a continuous bilinear map `B`, that is `B (g • u) (g • w) = B u w`, then each
 `ξ_V` is skew for `B`: `B (ξ_V u) w = -B u (ξ_V w)`. This is the derivative at the identity of the
@@ -131,4 +137,4 @@ theorem apply_fundamentalLinearMap_left {F : Type*} [NormedAddCommGroup F] [Norm
   rw [zero_apply, add_comm] at hzero
   exact eq_neg_of_add_eq_zero_left hzero.symm
 
-end TauCeti
+end ContinuousLinearMap
