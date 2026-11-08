@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Localization.Submodule
 import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.IntegralClosure.Pi
+import TauCeti.RingTheory.IntegralClosure.Transfer
 
 /-!
 # Nagata rings
@@ -122,13 +123,12 @@ private theorem finite_integralClosure_fractionRing_quotient [IsNagata R] (S : T
   have : Algebra.EssFiniteType R' L := .comp R' (S ⧸ q) L
   have : Algebra.EssFiniteType (FractionRing R') L := .of_comp R' (FractionRing R') L
   have := IsJapanese.finite_integralClosure (R := R') (FractionRing R') L
-  -- `R'` is integral over `R`, so the integral closures of `R` and of `R'` in `L` agree.
+  -- `R'` is integral over `R`, so the integral closure of `R'` in `L` is that of `R`.
+  have : IsIntegralClosure (integralClosure R' L) R L :=
+    TauCeti.IsIntegralClosure.tower_bot (A := R')
   have : Module.Finite R (integralClosure R' L) := .trans R' _
-  let f : integralClosure R' L →ₗ[R] integralClosure R L :=
-    { toFun x := ⟨x, isIntegral_trans (A := R') _ x.2⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-  exact .of_surjective f fun y ↦ ⟨⟨y, y.2.tower_top⟩, rfl⟩
+  exact .equiv
+    (IsIntegralClosure.equiv R (integralClosure R' L) L (integralClosure R L)).toLinearEquiv
 
 /-- **Finiteness of integral closures over a Nagata ring.** For a Nagata ring `R` and a reduced
 `R`-algebra `S` essentially of finite type, the integral closure of `R` in `S` is a finite
