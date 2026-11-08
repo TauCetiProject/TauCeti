@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
-import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import TauCeti.Analysis.Polynomial.CoeffBound
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
+import TauCeti.NumberTheory.NumberField.Units.Conjugate
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
 
 /-!
@@ -107,21 +107,6 @@ theorem mem_unitCandidates_iff (f : ℤ[X]) (B : ℝ) :
           |(f.coeff (Module.finrank ℚ K - k) : ℝ)| ≤
             (Module.finrank ℚ K - 1).choose (k - 1) * B + (Module.finrank ℚ K - 1).choose k :=
   Set.Finite.mem_toFinset _
-
-/-- The conjugates of a unit of a number field of unit rank one, other than its value at a real
-place where it exceeds `1`, have absolute value at most `1`. -/
-private theorem norm_le_one_of_mem_roots_erase (hr : rank K = 1) {w : InfinitePlace K}
-    (hw : w.IsReal) (v : (𝓞 K)ˣ) (hw1 : 1 < w v) {z : ℂ}
-    (hz : z ∈ ((minpoly ℚ (v : K)).map (algebraMap ℚ ℂ)).roots.erase (embedding w v)) :
-    ‖z‖ ≤ 1 := by
-  have hintQ : IsIntegral ℚ (v : K) := IsIntegral.of_finite ℚ _
-  rw [(minpoly.irreducible hintQ).separable.map |> nodup_roots |>.mem_erase_iff] at hz
-  obtain ⟨φ, rfl⟩ := (mem_roots_map_minpoly_iff _ _).mp hz.2
-  have hne : InfinitePlace.mk φ ≠ w := by
-    intro hφ
-    have hreal : ComplexEmbedding.IsReal φ := isReal_of_mk_isReal (hφ.symm ▸ hw)
-    exact hz.1 (DFunLike.congr_fun (hφ ▸ embedding_mk_eq_of_isReal hreal).symm _)
-  exact (lt_one_of_rank_eq_one_of_ne_of_one_lt hr hne hw1).le
 
 /-- Every unit generating `K` over `ℚ` whose value at a real infinite place lies in `(1, B]`
 has its minimal polynomial in `unitCandidates K B` when the unit rank is one. -/
