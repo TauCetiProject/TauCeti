@@ -518,7 +518,7 @@ private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional
   -- At every source point the derivative is invertible, so smoothness of the global forward map
   -- bootstraps the homeomorphism's inverse to `C∞` on the entire fixed target neighborhood.
   have hψsymmSmooth : ContDiffOn ℝ ∞ ψ.symm ψ.target := by
-    refine ψ.contDiffOn_symm_of_isInvertible_fderiv hψsmooth (fun x hx => ?_) (by simp)
+    refine ψ.contDiffOn_symm_of_isInvertible_fderiv hψsmooth (fun x hx => ?_)
     rw [hsrc] at hx
     obtain ⟨A, hA⟩ := hx.2.2
     rw [hψF]
