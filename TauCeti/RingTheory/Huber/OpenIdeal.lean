@@ -154,6 +154,19 @@ theorem le_radical_of_isOpen (P : PairOfDefinition A) {a : Ideal A} (ha : IsOpen
   obtain ⟨n, hn⟩ := P.exists_pow_le_of_isOpen ha
   exact fun _ hx ↦ ⟨n, hn (Ideal.pow_mem_pow hx n)⟩
 
+/-- The powers of an open ideal of a Huber ring are neighbourhoods of zero, without continuity of
+addition. -/
+theorem pow_mem_nhds_zero (P : PairOfDefinition A) {a : Ideal A} (ha : IsOpen (a : Set A))
+    (n : ℕ) : ((a ^ n : Ideal A) : Set A) ∈ nhds (0 : A) := by
+  obtain ⟨m, hm⟩ := P.exists_pow_le_of_isOpen ha
+  refine Filter.mem_of_superset (P.hasBasis_nhds_zero.mem_of_mem (i := m * n) trivial) ?_
+  intro x hx
+  have hx' : x ∈ P.extendedIdealOfDefinition ^ (m * n) := by
+    rw [P.extendedIdealOfDefinition_pow]
+    exact Ideal.subset_span hx
+  rw [pow_mul] at hx'
+  exact Ideal.pow_right_mono hm n hx'
+
 variable [SeparatelyContinuousAdd A]
 
 /-- Wedhorn Lemma 6.6: an ideal of a Huber ring is open exactly when it contains a power of the
@@ -647,8 +660,8 @@ itself.
 The hypothesis on `f(I)` holds when `f` maps neighbourhoods of zero to neighbourhoods of zero, the
 hypothesis of `TauCeti.Huber.IsBounded.image`, and for every homomorphism out of a Tate ring
 (`TauCeti.Huber.IsBounded.image_of_isTateRing`). -/
-theorem IsBounded.image_of_isOpen_map_extendedIdealOfDefinition [SeparatelyContinuousAdd B]
-    [SeparatelyContinuousMul B] {S : Set A} (hS : IsBounded S)
+theorem IsBounded.image_of_isOpen_map_extendedIdealOfDefinition [SeparatelyContinuousMul B]
+    {S : Set A} (hS : IsBounded S)
     (P : PairOfDefinition A) (Q : PairOfDefinition B) {f : A →+* B} (hf : ContinuousAt f 0)
     (hP : IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B)) :
     IsBounded (f '' S) := by
@@ -671,7 +684,7 @@ theorem IsBounded.image_of_isOpen_map_extendedIdealOfDefinition [SeparatelyConti
         Set.image_image]
       simp [T]
     rw [← hspan, Ideal.map_pow]
-    exact (Q.isOpen_pow hP p).mem_nhds (zero_mem _)
+    exact Q.pow_mem_nhds_zero hP p
   refine isBounded_iff.mpr fun W hW ↦ ?_
   obtain ⟨r, -, hr⟩ := Q.hasBasis_nhds_zero.mem_iff.mp hW
   obtain ⟨n, hn⟩ := Q.exists_forall_mem_idealImage_exists_sum_eq T hT r
@@ -690,7 +703,7 @@ theorem IsBounded.image_of_isOpen_map_extendedIdealOfDefinition [SeparatelyConti
 /-- **A continuous homomorphism of Huber rings that maps an ideal of definition to an open ideal
 preserves power-boundedness.** This is
 `TauCeti.Huber.IsBounded.image_of_isOpen_map_extendedIdealOfDefinition` for the set of powers. -/
-theorem IsPowerBounded.map_of_isOpen_map_extendedIdealOfDefinition [SeparatelyContinuousAdd B]
+theorem IsPowerBounded.map_of_isOpen_map_extendedIdealOfDefinition
     [SeparatelyContinuousMul B] {a : A} (ha : IsPowerBounded a)
     (P : PairOfDefinition A) (Q : PairOfDefinition B) {f : A →+* B} (hf : ContinuousAt f 0)
     (hP : IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B)) :
