@@ -120,6 +120,8 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     f.toAdditive hf F hF x
   refine (DFunLike.congr_fun heN _).trans (hnat.trans ?_)
   rw [DFunLike.congr_fun heM x]
+  -- `groupCohomology.functor` is defined with `map := groupCohomology.map (MonoidHom.id _)`, so
+  -- the two sides agree by unfolding the functor's `map` field.
   rfl
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
