@@ -302,7 +302,12 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
         b (γ t) (V t) (alongCurveWithin cov γ W s t)) s t := by
   by_cases hu : UniqueDiffWithinAt ℝ s t
   swap
-  · exact HasFDerivWithinAt.of_not_accPt (mt AccPt.uniqueDiffWithinAt hu)
+  · -- Without unique derivatives, every function has every derivative.
+    simpa using (HasFDerivWithinAt.of_not_accPt (f := fun r ↦ b (γ r) (V r) (W r))
+      (f' := ContinuousLinearMap.toSpanSingleton ℝ
+        (b (γ t) (alongCurveWithin cov γ V s t) (W t) +
+          b (γ t) (V t) (alongCurveWithin cov γ W s t)))
+      (mt AccPt.uniqueDiffWithinAt hu)).hasDerivWithinAt
   -- Expand both fields in a smooth local frame around the point of the curve.
   let e := trivializationAt E (TangentSpace I) (γ t)
   let β := Module.finBasis ℝ E
@@ -396,10 +401,8 @@ theorem IsMetricCompatible.derivWithin_inner_alongCurveWithin
         inner ℝ (V t) (alongCurveWithin cov γ W s t) := by
   by_cases hu : UniqueDiffWithinAt ℝ s t
   · exact (hcov.hasDerivWithinAt_inner_alongCurveWithin hγ hV hW).derivWithin hu
-  · have h0 (Q : ∀ r, TangentSpace I (γ r)) : alongCurveWithin cov γ Q s t = 0 := by
-      simp [alongCurveWithin_apply, alongCurveInChartWithin_apply,
-        derivWithin_zero_of_not_uniqueDiffWithinAt hu]
-    simp [derivWithin_zero_of_not_uniqueDiffWithinAt hu, h0]
+  · simp [derivWithin_zero_of_not_uniqueDiffWithinAt hu,
+      alongCurveWithin_of_not_uniqueDiffWithinAt cov γ _ hu]
 
 /-- The unrestricted product rule for a metric-compatible covariant derivative acting on two
 differentiable tangent fields along a differentiable real curve. -/
@@ -458,22 +461,12 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
     (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
     inner ℝ (V a) (W a) = inner ℝ (V b) (W b) := by
-  by_cases hab : a = b
-  · rw [hab]
-  have hsub : Set.uIcc a b ⊆ s := hconn.ordConnected.uIcc_subset ha hb
-  have hlt : min a b < max a b := min_lt_max.2 hab
-  have hs : UniqueDiffOn ℝ s := by
-    refine uniqueDiffOn_convex hconn.ordConnected.convex ⟨(min a b + max a b) / 2, ?_⟩
-    refine interior_mono (Set.Ioo_subset_Icc_self.trans hsub) ?_
-    rw [interior_Ioo]
-    constructor <;> linarith
   have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (fun r ↦ inner ℝ (V r) (W r)) 0 s t := by
     simpa only [hV₀ t ht, hW₀ t ht, inner_zero_left, inner_zero_right, add_zero] using
       hcov.hasDerivWithinAt_inner_alongCurveWithin (hγ t ht) (hV t ht) (hW t ht)
-  refine hconn.ordConnected.convex.is_const_of_fderivWithin_eq_zero
-    (𝕜 := ℝ) (f := fun r ↦ inner ℝ (V r) (W r))
-    (fun t ht ↦ (hderiv t ht).differentiableWithinAt) (fun t ht ↦ ?_) ha hb
-  simpa using (hderiv t ht).hasFDerivWithinAt.fderivWithin (hs t ht)
+  have h := hconn.ordConnected.convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f' := fun _ ↦ 0) (C := 0) hderiv (fun _ _ ↦ by simp) ha hb
+  simpa [sub_eq_zero, eq_comm] using h
 
 end Riemannian
 

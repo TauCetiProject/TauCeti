@@ -156,6 +156,14 @@ theorem continuousLinearMapAt_alongCurveWithin
       _ (mem_baseSet_trivializationAt E (TangentSpace I) (γ t)),
     alongCurveInChartWithin_apply, sectionCoord_apply]
 
+/-- The junk value of the along-curve candidate: it vanishes where the parameter set does not have
+unique derivatives, because `derivWithin` is then `0`. -/
+theorem alongCurveWithin_of_not_uniqueDiffWithinAt {s : Set 𝕜} {t : 𝕜}
+    (hu : ¬UniqueDiffWithinAt 𝕜 s t) : alongCurveWithin cov γ V s t = 0 := by
+  simp [alongCurveWithin_apply, alongCurveInChartWithin_apply,
+    derivWithin_zero_of_not_uniqueDiffWithinAt hu]
+  rfl
+
 /-- At a zero of a field, its covariant derivative is its ordinary coordinate derivative
 in the canonical tangent trivialization at that point. -/
 theorem alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero {s : Set 𝕜} {t : 𝕜}
