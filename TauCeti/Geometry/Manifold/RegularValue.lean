@@ -238,14 +238,16 @@ theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
         exact ha.symm.trans hb⟩
       have : Subsingleton (TangentSpace J (f (g p))) :=
         (isRegularPoint_iff.1 hf).subsingleton
-      exact isRegularPoint_iff.2 fun _ ↦ ⟨0, Subsingleton.elim (α := TangentSpace J (f (g p))) _ _⟩
+      exact isRegularPoint_iff.2
+        (Function.surjective_to_subsingleton (β := TangentSpace J (f (g p))) _)
   · -- Without differentiability of `f`, regularity makes the target tangent space trivial.
     rw [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hfd] at hf
     have : Subsingleton (TangentSpace J (f (g p))) := ⟨fun a b ↦ by
       obtain ⟨_, ha⟩ := hf a
       obtain ⟨_, hb⟩ := hf b
       exact ha.symm.trans hb⟩
-    exact isRegularPoint_iff.2 fun _ ↦ ⟨0, Subsingleton.elim (α := TangentSpace J (f (g p))) _ _⟩
+    exact isRegularPoint_iff.2
+      (Function.surjective_to_subsingleton (β := TangentSpace J (f (g p))) _)
 
 end Composition
 
