@@ -98,7 +98,7 @@ theorem exists_contDiffOn_continuousOn_closure_laplacian_eq {α : ℝ≥0} (hα 
     obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hfb
     have : IsFiniteMeasure (volume.restrict (B : Set E)) :=
       isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-    exact memLp_indicator_of_continuousOn_of_norm_le hΩ.measurableSet hfc.neg
+    exact memLp_indicator_of_continuousOn_of_norm_le hΩ.measurableSet (measure_ne_top _ _) hfc.neg
       (fun x hx => by simpa using hM _ (mem_image_of_mem f hx))
   -- The weak solution of `-Δw = h` in `H¹₀(B)`.
   obtain ⟨u, hu'⟩ := exists_energyFormH1_eq_integral_of_subset_ball (z := 0) (R := R) subset_rfl
