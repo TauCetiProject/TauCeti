@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -22,12 +23,12 @@ transform is the point mass at the frequency `ξ / 2π`. This file makes the ide
 Schwartz inputs whose Fourier transforms concentrate at that point. For a Schwartz function `φ`
 and a nonzero `ε`, the *cut-off exponential*
 
-`TauCeti.cutoffExponential φ ε ξ v : y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v`
+`SchwartzMap.cutoffExponential φ ε ξ v : y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v`
 
 is a Schwartz function with Fourier transform `|ε|⁻ⁿ 𝓕 φ (ε⁻¹ (ζ - ξ / 2π)) v`, an approximate
-identity at `ξ / 2π` as `ε → 0` (`TauCeti.fourier_cutoffExponential`). Hence
+identity at `ξ / 2π` as `ε → 0` (`SchwartzMap.fourier_cutoffExponential`). Hence
 
-`exp(-i ⟪x, ξ⟫) Op(a) (cutoffExponential φ ε ξ v) (x) → φ(0) a(x, ξ) v` as `ε → 0`,
+`exp(-i ⟪x, ξ⟫) Op(a) (φ.cutoffExponential ε ξ v) (x) → φ(0) a(x, ξ) v` as `ε → 0`,
 
 as soon as `ζ ↦ a(x, ζ)` is a.e. strongly measurable, continuous at `ξ` and of polynomial growth
 (`TauCeti.tendsto_quantizeSchwartzValue_cutoffExponential`). For a symbol `a` and `φ(0) = 1`
@@ -37,7 +38,7 @@ the full quantization: no quotient by smoothing operators is involved.
 
 The proof changes variables `ζ = ξ / 2π + ε η` in the quantization integral, which gives the
 exact formula
-`Op(a) (cutoffExponential φ ε ξ v) (x) = ∫ exp(2πi ⟪ξ / 2π + ε η, x⟫) a(x, ξ + 2πε η) (𝓕 φ η) v dη`
+`Op(a) (φ.cutoffExponential ε ξ v) (x) = ∫ exp(2πi ⟪ξ / 2π + ε η, x⟫) a(x, ξ + 2πε η) (𝓕 φ η) v dη`
 (`TauCeti.quantizeSchwartzValue_cutoffExponential`), and then lets `ε → 0` by dominated
 convergence. Peetre's inequality bounds the integrand by a multiple of
 `⟨2π η⟩ ^ |m| ‖𝓕 φ η‖` for `|ε| ≤ 1`, and `∫ 𝓕 φ = φ(0)` by Fourier inversion.
@@ -63,57 +64,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
   {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
 
-/-! ### Cut-off exponentials -/
-
-/-- The *cut-off exponential* `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` of the angular frequency `ξ`, a
-Schwartz function for `ε ≠ 0`. As `ε → 0` it tends to the exponential `exp(i ⟪y, ξ⟫) φ(0) v`
-locally uniformly, while its Fourier transform concentrates at `ξ / 2π`. For `ε = 0` it is `0`
-by convention. -/
-def cutoffExponential (φ : 𝓢(E, ℂ)) (ε : ℝ) (ξ : E) (v : V) : 𝓢(E, V) :=
-  if hε : ε = 0 then 0 else
-    SchwartzMap.postcompCLM (ContinuousLinearMap.toSpanSingleton ℂ v)
-      (SchwartzMap.smulLeftCLM ℂ (fun y : E ↦ Complex.exp (⟪y, ξ⟫ * Complex.I))
-        (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
-          (ContinuousLinearEquiv.smulLeft (Units.mk0 ε hε) : E ≃L[ℝ] E) φ))
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The values of a cut-off exponential: `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` for `ε ≠ 0`. -/
-theorem cutoffExponential_apply (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E) (v : V) (y : E) :
-    cutoffExponential φ ε ξ v y = (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ (ε • y)) • v := by
-  have hg : (fun y : E ↦ Complex.exp (⟪y, ξ⟫ * Complex.I)).HasTemperateGrowth :=
-    Complex.hasTemperateGrowth_exp_mul_I.comp
-      (by fun_prop : (inner ℝ · ξ : E → ℝ).HasTemperateGrowth)
-  simp [cutoffExponential, hε, SchwartzMap.smulLeftCLM_apply_apply hg]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The exponential factor `exp(i ⟪y, ξ⟫)` is the Fourier character at the frequency `ξ / 2π`. -/
-private lemma exp_inner_mul_I (y ξ : E) :
-    Complex.exp (⟪y, ξ⟫ * Complex.I) = 𝐞 ⟪y, (2 * π)⁻¹ • ξ⟫ := by
-  rw [Real.fourierChar_apply, inner_smul_right]
-  congr 2
-  push_cast
-  field_simp
-
-/-- **The Fourier transform of a cut-off exponential** is the rescaled Fourier transform of the
-cutoff, translated to the frequency `ξ / 2π`:
-`𝓕 (cutoffExponential φ ε ξ v) ζ = |ε|⁻ⁿ 𝓕 φ (ε⁻¹ (ζ - ξ / 2π)) v`. -/
-theorem fourier_cutoffExponential [CompleteSpace V] (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E)
-    (v : V) (ζ : E) :
-    𝓕 (cutoffExponential φ ε ξ v) ζ =
-      |ε ^ finrank ℝ E|⁻¹ • (𝓕 φ (ε⁻¹ • (ζ - (2 * π)⁻¹ • ξ)) • v) := by
-  -- Modulation by `exp(i ⟪y, ξ⟫)` translates the Fourier transform by `ξ / 2π`.
-  have hmod (y : E) : 𝐞 (-⟪y, ζ⟫) • cutoffExponential φ ε ξ v y =
-      𝐞 (-⟪y, ζ - (2 * π)⁻¹ • ξ⟫) • (φ (ε • y) • v) := by
-    rw [cutoffExponential_apply φ hε, exp_inner_mul_I, inner_sub_right, neg_sub,
-      ← neg_add_eq_sub, AddChar.map_add_eq_mul, Circle.smul_def, Circle.smul_def, Circle.coe_mul,
-      smul_smul, smul_smul, mul_assoc]
-  have hconst (w : E) : 𝓕 (fun z : E ↦ φ z • v) w = 𝓕 φ w • v := by
-    simp only [Real.fourier_eq, SchwartzMap.fourier_coe, ← smul_assoc]
-    exact integral_smul_const _ v
-  calc 𝓕 (cutoffExponential φ ε ξ v) ζ = 𝓕 (fun y ↦ φ (ε • y) • v) (ζ - (2 * π)⁻¹ • ξ) := by
-        simp only [SchwartzMap.fourier_coe, Real.fourier_eq, hmod]
-    _ = _ := by rw [fourier_comp_smul (fun z ↦ φ z • v) hε, hconst]
-
 /-! ### The quantization of a cut-off exponential -/
 
 /-- **Quantization of a cut-off exponential.** After the change of frequency
@@ -121,13 +71,13 @@ theorem fourier_cutoffExponential [CompleteSpace V] (φ : 𝓢(E, ℂ)) {ε : �
 `∫ exp(2πi ⟪ξ / 2π + ε η, x⟫) a(x, ξ + 2πε η) (𝓕 φ η) v dη`. -/
 theorem quantizeSchwartzValue_cutoffExponential [CompleteSpace V] (a : E × E → V →L[ℂ] W)
     (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E) (v : V) (x : E) :
-    quantizeSchwartzValue a (cutoffExponential φ ε ξ v) x =
+    quantizeSchwartzValue a (φ.cutoffExponential ε ξ v) x =
       ∫ η, 𝐞 ⟪(2 * π)⁻¹ • ξ + ε • η, x⟫ • a (x, ξ + (2 * π * ε) • η) (𝓕 φ η • v) := by
   set c : E := (2 * π)⁻¹ • ξ
-  set F : E → W := fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 (cutoffExponential φ ε ξ v) ζ)
+  set F : E → W := fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 (φ.cutoffExponential ε ξ v) ζ)
   have hscale : |ε ^ finrank ℝ E| * |ε ^ finrank ℝ E|⁻¹ = 1 :=
     mul_inv_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hε))
-  calc quantizeSchwartzValue a (cutoffExponential φ ε ξ v) x = ∫ ζ, F ζ :=
+  calc quantizeSchwartzValue a (φ.cutoffExponential ε ξ v) x = ∫ ζ, F ζ :=
         quantizeSchwartzValue_def _ _ _
     _ = ∫ ζ, F (c + ζ) := (integral_add_left_eq_self F c).symm
     _ = |ε ^ finrank ℝ E| • ∫ η, F (c + ε • η) := by
@@ -140,7 +90,7 @@ theorem quantizeSchwartzValue_cutoffExponential [CompleteSpace V] (a : E × E �
           rw [smul_add, smul_inv_smul₀ two_pi_pos.ne', smul_smul]
         have hc : ε⁻¹ • (c + ε • η - (2 * π)⁻¹ • ξ) = η := by
           rw [add_sub_cancel_left, inv_smul_smul₀ hε]
-        simp only [F, fourier_cutoffExponential φ hε, hc, h2π,
+        simp only [F, SchwartzMap.fourier_cutoffExponential φ hε, hc, h2π,
           ContinuousLinearMap.map_smul_of_tower, Circle.smul_def]
         rw [smul_comm (|ε ^ finrank ℝ E|) ((𝐞 _ : ℂ)), smul_smul, hscale, one_smul]
 
@@ -236,7 +186,7 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential
     (hmeas : AEStronglyMeasurable (fun ζ ↦ a (x, ζ))) (hcont : ContinuousAt (fun ζ ↦ a (x, ζ)) ξ)
     (hC : ∀ ζ, ‖a (x, ζ)‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) (φ : 𝓢(E, ℂ)) (v : V) :
     Tendsto (fun ε ↦ Complex.exp (-(⟪x, ξ⟫ * Complex.I)) •
-        quantizeSchwartzValue a (cutoffExponential φ ε ξ v) x) (𝓝[≠] 0)
+        quantizeSchwartzValue a (φ.cutoffExponential ε ξ v) x) (𝓝[≠] 0)
       (𝓝 (φ 0 • a (x, ξ) v)) := by
   have hint : ∫ η, 𝓕 φ η = φ 0 := by
     calc ∫ η, 𝓕 φ η = ∫ η, 𝐞 ⟪η, (0 : E)⟫ • 𝓕 φ η := by simp
@@ -245,10 +195,16 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential
   have hlim : Complex.exp (-(⟪x, ξ⟫ * Complex.I)) •
       ∫ η, 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ • a (x, ξ) (𝓕 φ η • v) = φ 0 • a (x, ξ) v := by
     have hv : Integrable fun η ↦ 𝓕 φ η • v := (𝓕 φ).integrable.smul_const v
-    simp_rw [Circle.smul_def]
-    rw [real_inner_comm x, ← exp_inner_mul_I, integral_smul, (a (x, ξ)).integral_comp_comm hv,
-      integral_smul_const, hint, smul_smul, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero,
-      one_smul, map_smul]
+    -- Pull the phase and `a (x, ξ)` out of the integral, and use `∫ 𝓕 φ = φ 0`.
+    have hpull : ∫ η, 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ • a (x, ξ) (𝓕 φ η • v) =
+        𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ • a (x, ξ) (φ 0 • v) := by
+      simp_rw [Circle.smul_def]
+      rw [integral_smul, (a (x, ξ)).integral_comp_comm hv, integral_smul_const, hint]
+    -- The phase `exp(i ⟪x, ξ⟫)` cancels against `exp(-i ⟪x, ξ⟫)`.
+    have hphase : Complex.exp (-(⟪x, ξ⟫ * Complex.I)) * 𝐞 ⟪(2 * π)⁻¹ • ξ, x⟫ = 1 := by
+      rw [real_inner_comm x, ← exp_inner_mul_I_eq_fourierChar, ← Complex.exp_add]
+      simp
+    rw [hpull, Circle.smul_def, smul_smul, hphase, one_smul, map_smul]
   rw [← hlim]
   refine ((tendsto_integral_cutoffExponential hmeas hcont hC φ v).mono_left
     nhdsWithin_le_nhds).const_smul _ |>.congr' ?_
@@ -268,7 +224,7 @@ quantization: for a Schwartz `φ` with `φ(0) = 1`,
 theorem tendsto_quantizeSchwartzValue_cutoffExponential (a : Symbol n V W m)
     (x ξ : CoordinateSpace n) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : φ 0 = 1) (v : V) :
     Tendsto (fun ε ↦ Complex.exp (-(⟪x, ξ⟫ * Complex.I)) •
-        quantizeSchwartzValue a.coefficient (cutoffExponential φ ε ξ v) x) (𝓝[≠] 0)
+        quantizeSchwartzValue a.coefficient (φ.cutoffExponential ε ξ v) x) (𝓝[≠] 0)
       (𝓝 (a.coefficient (x, ξ) v)) := by
   obtain ⟨C, hC⟩ := a.exists_norm_coefficient_le {x} isCompact_singleton
   simpa [hφ] using TauCeti.tendsto_quantizeSchwartzValue_cutoffExponential
