@@ -100,13 +100,12 @@ theorem isMorseSmale_congr (f : E → ℝ) {K K' : ℝ≥0} (hf : LipschitzWith 
   unfold IsMorseSmale
   rw [negativeGradientFlow_congr f hf hf']
 
-variable [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
-
 /-- **One point per trajectory suffices.** For a `C²` function, the Morse–Smale condition holds as
 soon as, on the trajectory through each point `y` of `W^u(p) ∩ W^s(q)`, the unstable set of `p` and
 the stable set of `q` are transverse at some point `φ_t y`: transversality propagates along
 trajectories. -/
-theorem IsMorseSmale.of_forall_exists_negativeGradientFlow (hfs : ContDiff ℝ 2 f)
+theorem IsMorseSmale.of_forall_exists_negativeGradientFlow {f : E → ℝ} {K : ℝ≥0}
+    {hf : LipschitzWith K (∇ f)} (hfs : ContDiff ℝ 2 f)
     (h : ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p → IsNondegenerateCriticalPoint f q →
       y ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q → ∃ t,
@@ -117,8 +116,10 @@ theorem IsMorseSmale.of_forall_exists_negativeGradientFlow (hfs : ContDiff ℝ 2
     IsMorseSmale f hf :=
   .of_forall fun _ _ _ hp hq hy ↦ by
     obtain ⟨t, ht⟩ := h hp hq hy
-    exact (span_tangentConeAt_unstableSet_sup_stableSet_negativeGradientFlow_apply_eq_top_iff
-      hfs hf t).1 ht
+    exact (span_tangentConeAt_sup_span_tangentConeAt_negativeGradientFlow_apply_eq_top_iff f hf
+      hfs (Flow.isInvariant_unstableSet _ _) (Flow.isInvariant_stableSet _ _) t _).1 ht
+
+variable [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
 
 /-- **The Morse index drops along trajectories.** For a `C²` Morse–Smale function, a trajectory of
 the negative-gradient flow from a nondegenerate critical point `p` to a different nondegenerate
