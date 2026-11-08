@@ -209,6 +209,7 @@ noncomputable def scToralDiagramAutPointsHom (A : Type v) [CommRing A] :
   map_mul' g h := t.scToralDiagramAutPoints_mul ht g.property h.property A
 
 /-- Evaluation of the bundled point action is the diagram point automorphism. -/
+@[simp]
 theorem scToralDiagramAutPointsHom_apply (A : Type v) [CommRing A] (g : t.diagramSymmetry) :
     t.scToralDiagramAutPointsHom ht A g = t.scToralDiagramAutPoints ht g.property A :=
   (rfl)
