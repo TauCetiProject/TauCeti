@@ -31,6 +31,8 @@ compatible with these augmentations.
 
 ## Main results
 
+* `TauCeti.cubicalChainAlgHom_apply_eq_cubicalChainPushforward`: the induced homomorphism is the
+  push-forward of chains `TauCeti.cubicalChainPushforward`.
 * `TauCeti.cubicalChainDGAlgHom_id`, `TauCeti.cubicalChainDGAlgHom_comp`: functoriality.
 * `TauCeti.cubicalChainAugmentation_comp_dgAlgHom`: compatibility with the augmentations.
 
@@ -77,31 +79,30 @@ theorem cubicalChainAlgHom_lof (φ : G →ₜ* G') (n : ℕ) (y : NormalizedCubi
   rw [DirectSum.lof_eq_of]
   exact DirectSum.toAddMonoid_of _ _ _
 
+/-- The induced algebra homomorphism is the push-forward of chains along `φ`. -/
+theorem cubicalChainAlgHom_apply_eq_cubicalChainPushforward (φ : G →ₜ* G')
+    (a : normalizedCubicalChainAlgebra G R) :
+    cubicalChainAlgHom R φ a = cubicalChainPushforward R φ.toContinuousMap a := by
+  induction a using DirectSum.induction_on with
+  | zero => rw [map_zero, map_zero]
+  | of n y => rw [← DirectSum.lof_eq_of R, cubicalChainAlgHom_lof, cubicalChainPushforward_lof]
+  | add a b ha hb => rw [map_add, map_add, ha, hb]
+
 /-- The induced algebra homomorphism preserves the cohomological degree. -/
 theorem cubicalChainAlgHom_mem (φ : G →ₜ* G') {i : ℤ} {a : normalizedCubicalChainAlgebra G R}
     (ha : a ∈ cubicalChainGrading G R i) :
     cubicalChainAlgHom R φ a ∈ cubicalChainGrading G' R i := by
-  rcases (mem_cubicalChainGrading_iff G R).1 ha with rfl | ⟨n, y, hn, rfl⟩
-  · rw [map_zero]
-    exact zero_mem _
-  · rw [cubicalChainAlgHom_lof]
-    exact (mem_cubicalChainGrading_iff G' R).2 (Or.inr ⟨n, _, hn, rfl⟩)
+  rw [cubicalChainAlgHom_apply_eq_cubicalChainPushforward]
+  exact cubicalChainPushforward_mem φ.toContinuousMap ha
 
 /-- The induced algebra homomorphism commutes with the differentials. -/
 theorem cubicalChainDifferential_cubicalChainAlgHom (φ : G →ₜ* G')
     (a : normalizedCubicalChainAlgebra G R) :
     cubicalChainDifferential G' R (cubicalChainAlgHom R φ a) =
       cubicalChainAlgHom R φ (cubicalChainDifferential G R a) := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | of n y =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainAlgHom_lof]
-    rcases n with _ | k
-    · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, map_zero]
-    · rw [cubicalChainDifferential_lof_succ, cubicalChainDifferential_lof_succ,
-        cubicalChainAlgHom_lof, ← LinearMap.comp_apply (boundary G' R k), ← map_boundary,
-        LinearMap.comp_apply]
-  | add a b ha hb => rw [map_add, map_add, ha, hb, map_add, map_add]
+  rw [cubicalChainAlgHom_apply_eq_cubicalChainPushforward,
+    cubicalChainAlgHom_apply_eq_cubicalChainPushforward,
+    cubicalChainDifferential_cubicalChainPushforward]
 
 variable (R) in
 /-- The **morphism of DG algebras** `C^□_*(G; R) → C^□_*(G'; R)` induced by a continuous monoid
@@ -118,6 +119,12 @@ theorem cubicalChainDGAlgHom_lof (φ : G →ₜ* G') (n : ℕ) (y : NormalizedCu
     cubicalChainDGAlgHom R φ (cubicalChainLof G R n y) =
       cubicalChainLof G' R n (map R φ.toContinuousMap n y) :=
   cubicalChainAlgHom_lof φ n y
+
+/-- The induced DG algebra morphism is the push-forward of chains along `φ`. -/
+theorem cubicalChainDGAlgHom_apply_eq_cubicalChainPushforward (φ : G →ₜ* G')
+    (a : normalizedCubicalChainAlgebra G R) :
+    cubicalChainDGAlgHom R φ a = cubicalChainPushforward R φ.toContinuousMap a :=
+  cubicalChainAlgHom_apply_eq_cubicalChainPushforward φ a
 
 /-- Two DG algebra morphisms out of `C^□_*(G; R)` agree if they agree on chains of each
 dimension. -/

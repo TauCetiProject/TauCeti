@@ -31,6 +31,8 @@ chain bimodules of paths that change the basepoint of a DG local system.
 * `TauCeti.cubicalChainPairing H K R f`: the pairing `C_*(X) × C_*(Y) → C_*(Z)` induced by `f`.
 * `TauCeti.cubicalChainTensorHom f hf hfG hfK`: the morphism of DG bimodules
   `C_*(X) ⊗_{C_*(H)} C_*(Y) → C_*(Z)` induced by a balanced equivariant map.
+* `TauCeti.cubicalChainCross R f`: the pairing `(a, b) ↦ f_* (a × b)` on the direct sums of
+  chains of spaces carrying no monoid action.
 
 ## Main results
 
@@ -40,6 +42,8 @@ chain bimodules of paths that change the basepoint of a DG local system.
 * `TauCeti.cubicalChainPairing_smul_left`, `TauCeti.cubicalChainPairing_op_smul_right`: the
   pairing of an equivariant map is equivariant.
 * `TauCeti.cubicalChainTensorHom_tmul`: the induced morphism is the pairing on pure tensors.
+* `TauCeti.cubicalChainPushforward_cubicalChainCross`: the push-forward along a multiplicative
+  evaluation turns the pairing into the Pontryagin product.
 
 ## References
 
@@ -223,6 +227,75 @@ theorem cubicalChainModuleDifferential_cubicalChainPairing (f : C(X × Y, Z)) {i
     abel
 
 end Pairing
+
+section Cross
+
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+  (R : Type*) [CommRing R]
+
+/-- The **pairing of chains induced by a map** `f : X × Y → Z`: the push-forward of the cross
+product, `(a, b) ↦ f_* (a × b)`. It is the pairing `TauCeti.cubicalChainPairing` of the chain
+modules, on spaces carrying no monoid action. -/
+def cubicalChainCross (f : C(X × Y, Z)) :
+    normalizedCubicalChainAlgebra X R →ₗ[R] normalizedCubicalChainAlgebra Y R →ₗ[R]
+      normalizedCubicalChainAlgebra Z R :=
+  ((cubicalChainPairing PUnit.{1} PUnit.{1} R f).compl₁₂
+      (cubicalChainModuleEquiv X PUnit.{1} R).symm.toLinearMap
+      (cubicalChainModuleEquiv Y PUnit.{1} R).symm.toLinearMap).compr₂
+    (cubicalChainModuleEquiv Z PUnit.{1} R).toLinearMap
+
+variable {R}
+
+/-- The pairing of homogeneous chains is the push-forward of their cross product. -/
+@[simp]
+theorem cubicalChainCross_lof_lof (f : C(X × Y, Z)) {p q : ℕ} (a : NormalizedCubicalChain X R p)
+    (b : NormalizedCubicalChain Y R q) :
+    cubicalChainCross R f (cubicalChainLof X R p a) (cubicalChainLof Y R q b) =
+      cubicalChainLof Z R (p + q) (map R f (p + q) (crossProduct X Y R p q a b)) := by
+  simp [cubicalChainCross]
+
+/-- The pairing adds cohomological degrees. -/
+theorem cubicalChainCross_mem (f : C(X × Y, Z)) {i j : ℤ} {a : normalizedCubicalChainAlgebra X R}
+    {b : normalizedCubicalChainAlgebra Y R} (ha : a ∈ cubicalChainGrading X R i)
+    (hb : b ∈ cubicalChainGrading Y R j) :
+    cubicalChainCross R f a b ∈ cubicalChainGrading Z R (i + j) := by
+  have h := cubicalChainPairing_mem (H := PUnit.{1}) (K := PUnit.{1}) (R := R) f
+    (m := (cubicalChainModuleEquiv X PUnit.{1} R).symm a)
+    (n := (cubicalChainModuleEquiv Y PUnit.{1} R).symm b)
+    (mem_cubicalChainModuleGrading.2 (by rwa [LinearEquiv.apply_symm_apply]))
+    (mem_cubicalChainModuleGrading.2 (by rwa [LinearEquiv.apply_symm_apply]))
+  exact mem_cubicalChainModuleGrading.1 h
+
+/-- **Push-forward along a multiplicative evaluation.** If evaluation maps `qX`, `qY` and `qZ`
+into a topological monoid satisfy `qZ (f (x, y)) = qX x * qY y`, then pushing the pairing induced
+by `f` forward along `qZ` gives the Pontryagin product of the push-forwards. -/
+theorem cubicalChainPushforward_cubicalChainCross {G : Type*} [Monoid G] [TopologicalSpace G]
+    [ContinuousMul G] (f : C(X × Y, Z)) {qX : C(X, G)} {qY : C(Y, G)} {qZ : C(Z, G)}
+    (hq : ∀ x y, qZ (f (x, y)) = qX x * qY y) (a : normalizedCubicalChainAlgebra X R)
+    (b : normalizedCubicalChainAlgebra Y R) :
+    cubicalChainPushforward R qZ (cubicalChainCross R f a b) =
+      cubicalChainPushforward R qX a * cubicalChainPushforward R qY b := by
+  -- On chains, pushing forward along `qZ ∘ f` is pushing forward along `mul ∘ (qX × qY)`.
+  have hmap : ∀ n, map R qZ n ∘ₗ map R f n = map R (mulMap G) n ∘ₗ map R (qX.prodMap qY) n :=
+    fun n ↦ by
+      rw [← NormalizedCubicalChain.map_comp, ← NormalizedCubicalChain.map_comp]
+      congr 1
+      exact ContinuousMap.ext fun z ↦ by simpa using hq z.1 z.2
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | add a a' ha ha' => rw [map_add, LinearMap.add_apply, map_add, ha, ha', map_add, add_mul]
+  | of p a =>
+    induction b using DirectSum.induction_on with
+    | zero => simp
+    | add b b' hb hb' => rw [map_add, map_add, hb, hb', map_add, mul_add]
+    | of q b =>
+      rw [← DirectSum.lof_eq_of R, ← DirectSum.lof_eq_of R]
+      simp only [cubicalChainCross_lof_lof, cubicalChainPushforward_lof, cubicalChainLof_mul,
+        mul_def]
+      rw [← map_crossProduct]
+      exact congrArg (cubicalChainLof G R (p + q)) (LinearMap.congr_fun (hmap (p + q)) _)
+
+end Cross
 
 section Equivariance
 
