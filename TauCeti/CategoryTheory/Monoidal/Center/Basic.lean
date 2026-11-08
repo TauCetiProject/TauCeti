@@ -25,7 +25,9 @@ contracting `U ⊗ X ⊗ V` against the unit does not depend on which way `X` is
 * `CategoryTheory.HalfBraiding.naturality_inv`: naturality of the inverse of a half-braiding;
 * `CategoryTheory.HalfBraiding.inv_whiskerRight_comp_whiskerLeft`: for `g : U ⊗ V ⟶ 𝟙_ C`,
   contracting `U ⊗ X ⊗ V` with `g` after moving `X` to the left of `U` agrees with doing so after
-  moving `X` to the right of `V`.
+  moving `X` to the right of `V`;
+* `CategoryTheory.Center.braiding_hom_f'` and `CategoryTheory.Center.braiding_inv_f'`: the
+  braiding of the centre is computed by the half-braiding of its first factor.
 
 ## References
 
@@ -97,5 +99,23 @@ theorem inv_whiskerRight_comp_whiskerLeft {U V : C} (g : U ⊗ V ⟶ 𝟙_ C) :
     _ = _ := by rw [← comp_whiskerRight, Iso.inv_hom_id, id_whiskerRight]; monoidal
 
 end HalfBraiding
+
+namespace Center
+
+/-- The braiding of the centre has underlying morphism the half-braiding of its first factor.
+Mathlib's `CategoryTheory.Center.braiding_hom_f` states this for the auxiliary definition
+`CategoryTheory.Center.braiding`; this form is stated for the braiding `β_` of the braided
+category `Center C`, so that `simp` applies to it. -/
+@[simp]
+theorem braiding_hom_f' (X Y : Center C) : (β_ X Y).hom.f = (X.2.β Y.1).hom :=
+  braiding_hom_f X Y
+
+/-- The inverse braiding of the centre has underlying morphism the inverse half-braiding of its
+first factor. -/
+@[simp]
+theorem braiding_inv_f' (X Y : Center C) : (β_ X Y).inv.f = (X.2.β Y.1).inv :=
+  braiding_inv_f X Y
+
+end Center
 
 end CategoryTheory
