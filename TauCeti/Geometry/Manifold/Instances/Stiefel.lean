@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
+public import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
@@ -55,6 +55,9 @@ manifold structure.
 * `TauCeti.isCompact_stiefel`: the Stiefel manifold is compact.
 * `TauCeti.contMDiff_coe_stiefel` and `TauCeti.contMDiff_stiefelProj`: the inclusion into
   `Fin k → E` and the projections to the unit sphere are smooth.
+* `TauCeti.injective_mfderiv_coe_stiefel`: the inclusion is an immersion.
+* `ContMDiff.codRestrict_stiefel`: smooth maps with orthonormal values are smooth maps into
+  the Stiefel manifold.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
 
@@ -260,6 +263,25 @@ theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
   rw [h.mfderiv]
   exact (LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)).trans
     (Submodule.range_subtype _)
+
+variable {E k} in
+/-- The differential of the inclusion of the Stiefel manifold into the space of `k`-families is
+injective. -/
+theorem injective_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
+    Injective (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
+      ((↑) : stiefel E k → Fin k → E) v) :=
+  injective_mfderiv_coe_levelSet _ _ _ _ v
+
+variable {E k} in
+/-- **Maps into the Stiefel manifold.** A `C^r` map into the space of `k`-families whose values
+are orthonormal is a `C^r` map into the Stiefel manifold. -/
+theorem _root_.ContMDiff.codRestrict_stiefel [FiniteDimensional ℝ E] {E' H M : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H] {I : ModelWithCorners ℝ E' H}
+    [TopologicalSpace M] [ChartedSpace H M] {r : ℕ∞ω} {g : M → Fin k → E}
+    (hg : ContMDiff I 𝓘(ℝ, Fin k → E) r g) (hgk : ∀ x, g x ∈ stiefel E k) :
+    ContMDiff I 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) r
+      (fun x ↦ (⟨g x, hgk x⟩ : stiefel E k)) :=
+  ContMDiff.codRestrict_levelSet _ _ _ _ hg hgk
 
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/

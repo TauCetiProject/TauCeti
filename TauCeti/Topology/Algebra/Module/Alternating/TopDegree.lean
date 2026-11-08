@@ -12,9 +12,10 @@ public import Mathlib.LinearAlgebra.Determinant
 # Top-degree continuous alternating forms
 
 Top-degree scalar-valued continuous alternating forms over a commutative ring are determined
-by their basis coefficient, which vanishes only for the zero form. Pullback by a continuous
-linear endomorphism multiplies that coefficient by its determinant. Above the top degree,
-continuous alternating maps on a finite-dimensional space over a division ring vanish. No
+by their basis coefficient, which vanishes only for the zero form. Pullback by a linear
+endomorphism multiplies that coefficient, and the form itself, by its determinant. Above the
+top degree, continuous alternating maps on a finite-dimensional space over a division ring
+vanish. No
 compatibility between the topology and the module structure is required for those statements.
 -/
 
@@ -40,6 +41,15 @@ theorem compContinuousLinearMap_apply_basis [Finite ι] (ω : E [⋀^ι]→L[R] 
   let : Fintype ι := Fintype.ofFinite ι
   rw [compContinuousLinearMap_apply, apply_eq_det_mul ω b]
   simp only [← ContinuousLinearMap.coe_coe A, b.det_comp, b.det_self, mul_one]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- Pullback of a top-degree alternating form by a linear endomorphism multiplies it by the
+determinant: `ω (A ∘ v) = det A * ω v`. -/
+theorem apply_comp_eq_det_mul [Finite ι] (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E)
+    (A : E →ₗ[R] E) (v : ι → E) : ω (A ∘ v) = A.det * ω v := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  rw [apply_eq_det_mul ω b, apply_eq_det_mul ω b v, b.det_comp, mul_assoc]
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- A top-degree alternating form vanishes on a basis exactly when it is zero. -/

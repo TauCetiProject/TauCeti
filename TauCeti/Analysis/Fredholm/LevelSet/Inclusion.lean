@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
 
@@ -27,6 +28,8 @@ the inclusion and compute its critical points.
 
 * `TauCeti.injective_mfderiv_coe_levelSet` and `TauCeti.range_mfderiv_coe_levelSet`: the
   differential of the inclusion is injective, with range `ker (D z)`.
+* `ContMDiff.codRestrict_levelSet`: a smooth map into `E` with values in the level set is a smooth
+  map into the level set.
 
 ## References
 
@@ -39,7 +42,7 @@ public section
 namespace TauCeti
 
 open Set
-open scoped Manifold
+open scoped ContDiff Manifold
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
@@ -76,5 +79,36 @@ theorem range_mfderiv_coe_levelSet (z : ↥{x | f x = c}) :
   rw [(hasMFDerivAt_coe_levelSet hf hFred hsurj hindex z).mfderiv]
   exact (LinearMap.range_comp_of_range_eq_top (D z.1).ker.subtype
     K.symm.toLinearEquiv.range).trans (D z.1).ker.range_subtype
+
+/-- **Maps into a regular level set.** A `C^m` map into `E` with values in the level set is a
+`C^m` map into the level set. Each preferred chart is an affine map of `E` restricted to the level
+set (`TauCeti.levelSetChartAt_apply`), so in charts the map is that affine map composed with the
+given map. -/
+theorem _root_.ContMDiff.codRestrict_levelSet {E' H M : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E' H} [TopologicalSpace M]
+    [ChartedSpace H M] {m : ℕ∞ω} {g : M → E} (hg : ContMDiff I 𝓘(𝕜, E) m g)
+    (hgc : ∀ x, f (g x) = c) :
+    letI := levelSetChartedSpace hf hFred hsurj hindex
+    ContMDiff I 𝓘(𝕜, Fin n → 𝕜) m (fun x ↦ (⟨g x, hgc x⟩ : ↥{x | f x = c})) := by
+  let _ := levelSetChartedSpace hf hFred hsurj hindex
+  intro x
+  rw [contMDiffAt_iff_target]
+  refine ⟨(hg.continuous.subtype_mk _).continuousAt, ?_⟩
+  set z : ↥{x | f x = c} := ⟨g x, hgc x⟩
+  set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+      (hindex z.1 z.2))
+  set P := Classical.choose (hFred z.1 z.2).closedComplemented_ker
+  -- Read in the chart at `z`, the map is `y ↦ K (P (g y - g x))`.
+  have hchart : (extChartAt 𝓘(𝕜, Fin n → 𝕜) z ∘ fun y ↦ (⟨g y, hgc y⟩ : ↥{x | f x = c})) =
+      fun y ↦ ((K : ↥(D z.1).ker →L[𝕜] Fin n → 𝕜).comp P) (g y - g x) := by
+    funext y
+    rw [Function.comp_apply, extChartAt_coe, modelWithCornersSelf_coe, Function.comp_apply,
+      id_eq, levelSetChartedSpace_chartAt, levelSetChartAt_apply, levelSetChart_apply]
+    rfl
+  rw [hchart]
+  have hA : ContDiff 𝕜 m fun v : E ↦ ((K : ↥(D z.1).ker →L[𝕜] Fin n → 𝕜).comp P) (v - g x) :=
+    ((K : ↥(D z.1).ker →L[𝕜] Fin n → 𝕜).comp P).contDiff.comp (contDiff_id.sub contDiff_const)
+  exact ((contMDiff_iff_contDiff.2 hA).comp hg).contMDiffAt
 
 end TauCeti
