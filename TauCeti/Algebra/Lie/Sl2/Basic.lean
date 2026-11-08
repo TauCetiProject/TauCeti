@@ -89,10 +89,10 @@ Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, 
 `Mathlib/Algebra/Lie/Classical.lean`, it is a local instance here.
 
 Linear independence of a triple is the eigenvector argument of
-`Module.End.eigenvectors_linearIndependent'`, so it asks what that theorem asks — a domain of
-characteristic zero and a torsion-free Lie algebra — rather than a field: the eigenvalues `2`, `-2`
-and `0` need only be distinct, not invertible. The presentation `TauCeti.lieHomOfSl2Basis` needs
-neither, being a bilinearity argument over an arbitrary commutative ring.
+`Module.End.eigenvectors_linearIndependent'`, so it asks what that theorem asks — a domain in
+which `2` is nonzero and a torsion-free Lie algebra — rather than a field: the eigenvalues `2`,
+`-2` and `0` need only be distinct, not invertible. The presentation `TauCeti.lieHomOfSl2Basis`
+needs neither, being a bilinearity argument over an arbitrary commutative ring.
 
 The `sl (Fin 2) R` results are stated for an arbitrary pair `i ≠ j` of indices in `Fin 2`, not just
 for `(0, 1)`: the opposite pair gives the opposite triple `(-h, f, e)`, and both are standard.
