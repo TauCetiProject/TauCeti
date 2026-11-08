@@ -76,12 +76,14 @@ theorem eventually_lt_hittingAfter_Ici (hf : Continuous (fun t ↦ X t ω))
   exact WithTop.coe_le_coe.2 (le_of_not_gt fun hvb ↦
     (hn.trans_le hv.2).not_ge (hmax ⟨bot_le, hvb.le⟩))
 
-/-- Strict upper-level hits of a continuous path can be computed from any dense family of
+open scoped Classical in
+/-- Hits of an open set by a continuous path can be computed from any dense family of
 sampling times. In particular, a countable dense family suffices. -/
-theorem hittingAfter_Ioi_eq_iInf {κ : Type*} (hf : Continuous (fun t ↦ X t ω))
-    {d : κ → ℝ≥0} (hd : DenseRange d) (c : ℝ) :
-    hittingAfter X (Ioi c) 0 ω =
-      ⨅ k, if c < X (d k) ω then (d k : WithTop ℝ≥0) else ⊤ := by
+theorem hittingAfter_eq_iInf_of_isOpen {E κ : Type*} [TopologicalSpace E]
+    {X : ℝ≥0 → Ω → E} (hf : Continuous (fun t ↦ X t ω)) {U : Set E} (hU : IsOpen U)
+    {d : κ → ℝ≥0} (hd : DenseRange d) :
+    hittingAfter X U 0 ω =
+      ⨅ k, if X (d k) ω ∈ U then (d k : WithTop ℝ≥0) else ⊤ := by
   classical
   rw [hittingAfter_eq_iInf]
   apply le_antisymm
@@ -94,13 +96,13 @@ theorem hittingAfter_Ioi_eq_iInf {κ : Type*} (hf : Continuous (fun t ↦ X t ω
     obtain ⟨v, htv, hvb⟩ := WithTop.lt_iff_exists_coe_btwn.1 hb
     have htv' : t < v := WithTop.coe_lt_coe.1 htv
     obtain ⟨k, hk⟩ := hd.exists_mem_open
-      ((isOpen_Iio (a := v)).inter (isOpen_Ioi.preimage hf)) ⟨t, htv', ht.2⟩
+      ((isOpen_Iio (a := v)).inter (hU.preimage hf)) ⟨t, htv', ht.2⟩
     have hkv : (d k : WithTop ℝ≥0) ≤ (v : WithTop ℝ≥0) :=
       WithTop.coe_le_coe.2 hk.1.le
-    have hsample : (⨅ j, if c < X (d j) ω then (d j : WithTop ℝ≥0) else ⊤) ≤
+    have hsample : (⨅ j, if X (d j) ω ∈ U then (d j : WithTop ℝ≥0) else ⊤) ≤
         (d k : WithTop ℝ≥0) := by
       calc
-        _ ≤ (if c < X (d k) ω then (d k : WithTop ℝ≥0) else ⊤) := iInf_le _ k
+        _ ≤ (if X (d k) ω ∈ U then (d k : WithTop ℝ≥0) else ⊤) := iInf_le _ k
         _ = (d k : WithTop ℝ≥0) := ite_eq_left hk.2
     exact hsample.trans_lt (hkv.trans_lt hvb)
 
@@ -123,7 +125,10 @@ theorem hittingAfter_Ici_eq_iSup_iInf {κ : Type*} (hf : Continuous (fun t ↦ X
     hittingAfter X (Ici c) 0 ω =
       ⨆ n, ⨅ k, if θ n < X (d k) ω then (d k : WithTop ℝ≥0) else ⊤ := by
   classical
-  simp_rw [← hf.hittingAfter_Ioi_eq_iInf hd]
+  have hsample (a : ℝ) : hittingAfter X (Ioi a) 0 ω =
+      ⨅ k, if a < X (d k) ω then (d k : WithTop ℝ≥0) else ⊤ := by
+    simpa only [mem_Ioi] using hf.hittingAfter_eq_iInf_of_isOpen (U := Ioi a) isOpen_Ioi hd
+  simp_rw [← hsample]
   apply le_antisymm
   · refine le_of_tendsto (hf.tendsto_hittingAfter_Ici (fun n ↦ (hθc n).le) hθ) ?_
     exact Eventually.of_forall fun n ↦
