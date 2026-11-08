@@ -27,12 +27,16 @@ in the normal case.
 * `Subgroup.normalizerQuotientMk`: the canonical map `N(H) →* N(H) / H`.
 * `Subgroup.normalizerQuotientLift`: the universal property for maps out of
   `N(H) / H` into any monoid.
+* `Subgroup.normalizerQuotientLift_injective_iff_centralizer_le`: the centralizer-kernel
+  criterion for a faithful lift.
 * `Subgroup.normalizerQuotientToQuotientOfNormal`: when `H` is normal in `G`,
   the natural map `N(H) / H →* G / H`.
 * `Subgroup.normalizerQuotientEquivQuotientOfNormal`: when `H` is normal in `G`,
   the normalizer quotient is canonically isomorphic to `G / H`.
 * `Subgroup.normalizerQuotientMulAut`: for a commutative `H`, conjugation by the normalizer
   descends to an action of `N(H) / H` on `H` by automorphisms.
+* `Subgroup.normalizerQuotientMulAut_injective_iff`: the action is faithful exactly when
+  the centralizer of `H` is contained in `H`.
 
 -/
 
@@ -134,6 +138,21 @@ lemma normalizerQuotientLift_injective_iff (H : Subgroup G)
       ∀ g : normalizer (H : Set G), φ g = 1 ↔ (g : G) ∈ H := by
   rw [QuotientGroup.injective_lift_iff, SetLike.ext_iff]
   simp only [mem_subgroupOf, MonoidHom.mem_ker, iff_comm]
+
+/-- When a homomorphism from the normalizer has the centralizer as its kernel, its
+normalizer-quotient lift is faithful exactly when the centralizer is contained in the subgroup. -/
+lemma normalizerQuotientLift_injective_iff_centralizer_le (H : Subgroup G)
+    (φ : normalizer (H : Set G) →* M)
+    (hφ : ∀ g : normalizer (H : Set G), (g : G) ∈ H → φ g = 1)
+    (hker : ∀ g : normalizer (H : Set G), φ g = 1 ↔ (g : G) ∈ centralizer (H : Set G)) :
+    Function.Injective (H.normalizerQuotientLift φ hφ) ↔ centralizer (H : Set G) ≤ H := by
+  rw [normalizerQuotientLift_injective_iff]
+  simp_rw [hker]
+  constructor
+  · intro h g hg
+    exact (h ⟨g, centralizer_le_normalizer _ hg⟩).mp hg
+  · intro h g
+    exact ⟨fun hg ↦ h hg, fun hg ↦ (hker g).mp (hφ g hg)⟩
 
 /-- The quotient equality criterion for representatives in the normalizer, stated in the
 ambient group `G`. -/
@@ -271,6 +290,15 @@ lemma coe_normalizerQuotientMulAut_mk_apply (g : normalizer (H : Set G)) (k : H)
     ((H.normalizerQuotientMulAut (g : H.normalizerQuotient) k : H) : G) = g * k * (g : G)⁻¹ := by
   simp only [normalizerQuotientMulAut, normalizerQuotientLift, QuotientGroup.lift_mk,
     normalizerMonoidHom_apply_apply_coe]
+
+/-- Conjugation by the normalizer quotient of a commutative subgroup is faithful exactly
+when its centralizer is contained in the subgroup. -/
+lemma normalizerQuotientMulAut_injective_iff :
+    Function.Injective H.normalizerQuotientMulAut ↔ centralizer (H : Set G) ≤ H := by
+  rw [normalizerQuotientMulAut]
+  apply normalizerQuotientLift_injective_iff_centralizer_le
+  intro g
+  rw [← MonoidHom.mem_ker, normalizerMonoidHom_ker, mem_subgroupOf]
 
 end MulAut
 
