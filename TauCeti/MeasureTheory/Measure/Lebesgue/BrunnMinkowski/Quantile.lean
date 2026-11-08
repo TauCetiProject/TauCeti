@@ -33,8 +33,10 @@ moreover bounded and Borel, the derivative of the volume below a hyperplane is t
 hyperplane section, which is positive at the height of an interior point. The inverse function
 theorem then shows that at every level `τ ∈ Ioo 0 1` the quantile `z` has derivative
 `volume s / volume {y ∈ (ℝ ∙ e)ᗮ | y + z τ • e ∈ s}`.
-For a bounded Borel set `s`, inverse transform sampling shows that the average of the quantile
-over the levels is the mean height, that is, the height of the centroid of `s`.
+For an arbitrary bounded set `s` of positive volume, measurable or not, inverse transform sampling
+shows that the average of the quantile over the levels is the mean height, that is, the height of
+the centroid of `s`; here `volume[|s]` is the conditional measure of `volume` on `s`, which
+is supported on a measurable hull of `s`.
 
 This volume-fraction parametrization of heights is the change of variables in the
 Kneser–Süss proof of the equality case of the Brunn–Minkowski inequality for convex bodies:
@@ -269,10 +271,10 @@ theorem _root_.Convex.hasDerivAt_quantile_map_inner_cond (hs : Convex ℝ s)
     ((continuousOn_quantile ν hcont (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)).continuousAt
       (isOpen_Ioo.mem_nhds hτ)) hcdf hne hloc
 
-/-- The quantile function of the height law of a bounded Borel set of positive volume is
-integrable on the levels `Ioo 0 1`. -/
+/-- The quantile function of the height law of an arbitrary bounded set of positive volume
+(measurable or not) is integrable on the levels `Ioo 0 1`. -/
 theorem integrableOn_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s)
-    (hsm : MeasurableSet s) (hs0 : volume s ≠ 0) :
+    (hs0 : volume s ≠ 0) :
     IntegrableOn ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile (Ioo 0 1) := by
   set ν := (volume[|s]).map fun x ↦ ⟪e, x⟫
   have := cond_isProbabilityMeasure_of_finite hs0 hsb.measure_lt_top.ne
@@ -280,14 +282,15 @@ theorem integrableOn_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded 
   obtain ⟨C, hC⟩ := hsb.exists_norm_le
   have hν : Integrable id ν :=
     (integrable_map_measure aestronglyMeasurable_id hm.aemeasurable).2
-      ((integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC).const_inner e)
+      ((integrable_cond_of_norm_le aestronglyMeasurable_id hC).const_inner e)
   exact (integrableOn_quantile_iff ν).2 hν
 
 /-- **The mean height.** The average over the levels `Ioo 0 1` of the quantile function of the
-height `⟪e, x⟫` of a point `x` drawn uniformly from a bounded Borel set `s` of positive volume is
-the height of the centroid `∫ x, x ∂(volume[|s])` of `s`. -/
+height `⟪e, x⟫` of a point `x` drawn from the conditional measure `volume[|s]` of an arbitrary
+bounded set `s` of positive volume (measurable or not) is the height of the centroid
+`∫ x, x ∂(volume[|s])`. -/
 theorem setIntegral_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s)
-    (hsm : MeasurableSet s) (hs0 : volume s ≠ 0) :
+    (hs0 : volume s ≠ 0) :
     ∫ τ in Ioo 0 1, ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ =
       ⟪e, ∫ x, x ∂(volume[|s])⟫ := by
   set ν := (volume[|s]).map fun x ↦ ⟪e, x⟫
@@ -297,6 +300,6 @@ theorem setIntegral_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s
   calc ∫ τ in Ioo 0 1, ν.quantile τ = ∫ y, y ∂ν := setIntegral_quantile_eq_integral ν
     _ = ∫ x, ⟪e, x⟫ ∂(volume[|s]) := integral_map hm.aemeasurable aestronglyMeasurable_id
     _ = ⟪e, ∫ x, x ∂(volume[|s])⟫ := integral_inner
-          (integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC) e
+          (integrable_cond_of_norm_le aestronglyMeasurable_id hC) e
 
 end TauCeti
