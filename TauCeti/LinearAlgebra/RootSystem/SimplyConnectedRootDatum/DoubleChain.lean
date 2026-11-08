@@ -139,8 +139,8 @@ theorem root_add_middle_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
     simp [hz] at heval
 
 omit h in
-/-- The sum of the initial long root and the last root of a double chain is twice its middle
-root, and hence is neither a root nor zero. This also holds in type `G₂`. -/
+/-- The sum of the roots `β` and `δ` in a double chain is twice the root `γ`, and hence is
+neither a root nor zero. This also holds in type `G₂`. -/
 theorem root_add_last_notMem_of_root_eq_add {α β γ δ : Fin t.numRoots}
     (hγ : (P).root γ = (P).root α + (P).root β)
     (hδ : (P).root δ = (P).root α + (P).root γ) :
