@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Flat
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Flat
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Flat
 
 /-!
