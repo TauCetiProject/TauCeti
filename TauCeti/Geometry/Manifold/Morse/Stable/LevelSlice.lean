@@ -172,7 +172,7 @@ theorem bijOn_flow_levelCrossingTime_midpoint (hf : MDifferentiable 𝓘(ℝ, E)
     BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c z) z)
       ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
       ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = c}) :=
-  Flow.bijOn_levelCrossingTime hf.continuous.continuousOn
+  Flow.bijOn_flow_levelCrossingTime hf.continuous.continuousOn
     (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy)
     (fun _ hy ↦ (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf hab
       hy).exists)

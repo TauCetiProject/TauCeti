@@ -49,7 +49,7 @@ level. They use neither smoothness nor transversality.
 * `Flow.continuousOn_levelCrossingTime`: the crossing time is continuous on `C`.
 * `Flow.levelCrossingTime_flow`: flowing for time `t` subtracts `t` from the crossing time.
 * `Flow.isProperMap_restrict_pair`: time translation on `C` is a proper action.
-* `Flow.bijOn_levelCrossingTime`: following the flow is a bijection between two level slices.
+* `Flow.bijOn_flow_levelCrossingTime`: following the flow is a bijection between two level slices.
 
 ## References
 
@@ -362,7 +362,7 @@ include hf hanti hex in
 /-- **Following the flow is a bijection between level slices.** Sending a point of the slice
 `C ∩ {f = c}` to the point of its orbit on the level `c'` is a bijection onto `C ∩ {f = c'}`;
 this is `Flow.levelSliceHomeomorph` read on the underlying sets. -/
-theorem bijOn_levelCrossingTime
+theorem bijOn_flow_levelCrossingTime
     (hex' : ∀ x ∈ unstableSet φ p ∩ stableSet φ q, ∃ t, f (φ t x) = c') :
     BijOn (fun x ↦ φ (levelCrossingTime φ f c' x) x)
       ((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})

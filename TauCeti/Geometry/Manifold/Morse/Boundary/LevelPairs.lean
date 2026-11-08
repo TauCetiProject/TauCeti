@@ -43,8 +43,8 @@ This is not proved here.
 
 ## Main declarations
 
-* `TauCeti.SeparatesIntermediateLevels`: the levels `c₂ < c₁` separate the critical values of
-  the intermediate index between `f r` and `f p`.
+* `TauCeti.SeparatesIntermediateLevels`: every critical value of the intermediate index strictly
+  between `f r` and `f p` lies strictly between `c₂` and `c₁`.
 * `TauCeti.SeparatesIntermediateLevels.value_mem_Ioo_of_mem_unstableSet_inter_stableSet`: along
   a broken trajectory from `p` through `q` to `r`, separating levels satisfy `c₂ < f q < c₁`.
 
