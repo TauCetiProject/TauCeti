@@ -33,14 +33,15 @@ variable {E F : Type*}
 
 /-- If `f` is `C^{k+1}` on a convex set `s` with `‖D^{k+1} f‖ ≤ M` there, and the derivatives of
 order `1 ≤ i ≤ k` vanish at `x ∈ s`, then for every `j ≤ k` the derivative of order `k - j` moves
-by at most `M * ‖y - x‖ ^ (j + 1)` between `x` and `y ∈ s`. Each step of the descending induction
-is one application of the mean value inequality along the segment from `x` to `y`. -/
+by at most `M * ‖y - x‖ ^ (j + 1)` between `x` and `y ∈ s`. -/
 theorem norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero {M : ℝ} {x : E}
     (hf : ∀ y ∈ s, ContDiffAt ℝ (k + 1 : ℕ) f y) (hs : Convex ℝ s) (hx : x ∈ s)
     (hM : ∀ y ∈ s, ‖iteratedFDeriv ℝ (k + 1) f y‖ ≤ M)
     (hzero : ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
     ∀ j ≤ k, ∀ y ∈ s, ‖iteratedFDeriv ℝ (k - j) f y - iteratedFDeriv ℝ (k - j) f x‖
       ≤ M * ‖y - x‖ ^ (j + 1) := by
+  -- Descending induction on the order: each step is one application of the mean value
+  -- inequality along the segment from `x` to `y`.
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x hx)
   have hdiff : ∀ i ≤ k, ∀ y ∈ s, DifferentiableAt ℝ (iteratedFDeriv ℝ i f) y := fun i hi y hy ↦
     (hf y hy).differentiableAt_iteratedFDeriv (mod_cast Nat.lt_succ_of_le hi)
@@ -74,15 +75,14 @@ theorem norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero {M : ℝ} {x : E}
 
 /-- **The Taylor-type estimate at a flat point.** If `f` is `C^{k+1}` on a convex set `s` whose
 `(k+1)`-st derivative is bounded by `M`, and if all iterated derivatives of order `1 ≤ i ≤ k`
-vanish at `x ∈ s`, then `f` moves points of `s` by at most `M * ‖y - x‖ ^ (k + 1)`.
-
-No factorials appear because the bound is obtained by applying the mean value inequality `k + 1`
-times rather than by integrating a Taylor remainder. -/
+vanish at `x ∈ s`, then `f` moves points of `s` by at most `M * ‖y - x‖ ^ (k + 1)`. -/
 theorem norm_sub_le_pow_of_iteratedFDeriv_eq_zero {M : ℝ} {x y : E}
     (hf : ∀ z ∈ s, ContDiffAt ℝ (k + 1 : ℕ) f z) (hs : Convex ℝ s) (hx : x ∈ s) (hy : y ∈ s)
     (hM : ∀ z ∈ s, ‖iteratedFDeriv ℝ (k + 1) f z‖ ≤ M)
     (hzero : ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
     ‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1) := by
+  -- No factorials appear because the bound comes from applying the mean value inequality `k + 1`
+  -- times rather than from integrating a Taylor remainder.
   have key := norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero hf hs hx hM hzero k le_rfl y hy
   rw [Nat.sub_self] at key
   rwa [iteratedFDeriv_zero_eq_comp, comp_apply, comp_apply, ← LinearIsometryEquiv.map_sub,
