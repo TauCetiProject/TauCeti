@@ -97,13 +97,13 @@ abbrev preimageSkeletonPair (n : ℕ) : TopPair.{u} :=
 /-- A point of the pullback lies over the `n`-skeleton. -/
 lemma cellPullback_mem_preimage_skeletonLT {n : ℕ} (x : cellPullback p C n) :
     x.1.2 ∈ p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) := by
-  rw [mem_preimage, ← x.2]
+  rw [mem_preimage, ← x.2, sigmaCellMap_apply]
   exact map_mem_skeletonLT_succ _ (mem_closedBall_zero_iff.1 x.1.1.2.2)
 
 /-- A point of the pullback over a boundary sphere lies over the `(n - 1)`-skeleton. -/
 lemma cellPullback_mem_preimage_skeletonLT_of_norm_eq_one {n : ℕ} {x : cellPullback p C n}
     (hx : ‖(x.1.1.2 : Fin n → ℝ)‖ = 1) : x.1.2 ∈ p ⁻¹' (skeletonLT C n : Set B) := by
-  rw [mem_preimage, ← x.2]
+  rw [mem_preimage, ← x.2, sigmaCellMap_apply]
   exact cellFrontier_subset_skeletonLT n _ ⟨_, mem_sphere_zero_iff_norm.2 hx, rfl⟩
 
 variable (p C) in
@@ -282,6 +282,7 @@ private lemma sigmaCellMap_iUnionOpenCellHomeomorph_symm {n : ℕ}
     sigmaCellMap C n (Sigma.map id (fun _ ↦ inclusion ball_subset_closedBall)
       ((iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e.1, e.2⟩)) = p e.1 := by
   have := congrArg Subtype.val ((iUnionOpenCellHomeomorph (C := C) n).apply_symm_apply ⟨p e.1, e.2⟩)
+  rw [sigmaCellMap_apply]
   rwa [iUnionOpenCellHomeomorph_apply] at this
 
 variable (p C) in
@@ -301,6 +302,7 @@ private def cellPullbackOpenHomeomorph (n : ℕ) :
     have hs (h) : (iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e, h⟩ =
         ⟨j, y, mem_ball_zero_iff.2 hy⟩ := by
       rw [Homeomorph.symm_apply_eq]
+      rw [sigmaCellMap_apply] at hye
       exact Subtype.ext (by rw [iUnionOpenCellHomeomorph_apply]; exact hye.symm)
     refine Subtype.ext (Subtype.ext (Prod.ext ?_ rfl))
     dsimp only
@@ -396,7 +398,8 @@ private lemma isIso_singularHomologyMap_cellPullbackOpenShellPairMap (n k : ℕ)
       refine Or.inr fun (x : p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)) hx ↦ ?_
       obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
       · exact (hx hx').elim
-      · exact ⟨⟨⟨⟨⟨j, y, mem_closedBall_zero_iff.2 hy.le⟩, x.1⟩, hxy⟩, hy⟩, rfl⟩
+      · exact ⟨⟨⟨⟨⟨j, y, mem_closedBall_zero_iff.2 hy.le⟩, x.1⟩,
+          (sigmaCellMap_apply C n _).trans hxy⟩, hy⟩, rfl⟩
 
 include hp
 

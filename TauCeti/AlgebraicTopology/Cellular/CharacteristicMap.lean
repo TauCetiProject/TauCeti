@@ -252,7 +252,7 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [
 /-- The characteristic maps of the `n`-cells of a relative CW complex, assembled into one map
 `∐ⱼ Dⁿ ⟶ X` from the disjoint union of the closed unit balls of `Fin n → ℝ`, one for each
 `n`-cell. -/
-@[expose] def sigmaCellMap (n : ℕ) : C(Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1, X) where
+def sigmaCellMap (n : ℕ) : C(Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1, X) where
   toFun q := map n q.1 q.2
   continuous_toFun := continuous_sigma fun i ↦ (continuousOn n i).domRestrict
 
