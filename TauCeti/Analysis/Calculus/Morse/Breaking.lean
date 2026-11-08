@@ -120,7 +120,7 @@ private theorem eventually_closedBall (h : IsNondegenerateCriticalPoint f x) :
   · rw [hgradfun]
     exact ((InnerProductSpace.toDual ℝ E).symm.continuous.continuousAt.comp
       ((hball y (hsub y hy)).1.continuousAt_fderiv two_ne_zero)).continuousWithinAt
-  · rw [← norm_eq_zero, ← norm_gradient_eq_norm_fderiv, hy0, norm_zero]
+  · rwa [← gradient_eq_zero_iff]
 
 /-- **Small balls isolate a nondegenerate critical point in forward time.** For every sufficiently
 small `r > 0`, a negative gradient trajectory staying in `closedBall x r` at all nonnegative times

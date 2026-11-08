@@ -42,6 +42,7 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
+* `TauCeti.gradient_eq_zero_iff`: `∇ f x = 0 ↔ fderiv 𝕜 f x = 0`.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
   supported.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
@@ -116,6 +117,11 @@ does. -/
 @[simp]
 theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
+
+/-- The gradient vanishes exactly where the Fréchet derivative does: `toDual` is injective. -/
+@[simp]
+theorem gradient_eq_zero_iff : ∇ f x = 0 ↔ fderiv 𝕜 f x = 0 := by
+  rw [gradient, map_eq_zero_iff _ (toDual 𝕜 F).symm.injective]
 
 /-- The gradient of a compactly supported function is compactly supported, as is its Fréchet
 derivative (`HasCompactSupport.fderiv`). -/
