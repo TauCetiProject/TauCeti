@@ -32,7 +32,8 @@ local stable and unstable manifolds near a hyperbolic equilibrium.
 * `LinearMap.IsSymmetric.exists_exponential_bounds_spectralSubspaces`: a symmetric operator has
   a common positive contraction rate on its two strict spectral subspaces.
 * `ContinuousLinearMap.IsIdempotentElem.exists_projection_exponential_bounds`: exponential
-  bounds on the range and kernel of an idempotent operator give bounds in projection form.
+  bounds, with a common constant and rate, on the range and kernel of an idempotent operator give
+  bounds in projection form.
 
 ## References
 
@@ -156,47 +157,56 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 namespace IsIdempotentElem
 
-/-- If an idempotent operator `P` has exponential flow bounds on its range and kernel, then it
-has the projection-form bounds used by the Lyapunov--Perron construction. The common constant
-absorbs the operator norms of `P` and `1 - P`. -/
-theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) (halpha : 0 < alpha)
+/-- If an idempotent operator `P` has exponential flow bounds on its range and kernel, with a
+common constant `C` and rate `alpha`, then it has the projection-form bounds used by the
+Lyapunov--Perron construction. The common constant absorbs `C` and the operator norms of `P` and
+`1 - P`. -/
+theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) {C : ℝ} (hC : 0 < C)
+    (halpha : 0 < alpha)
     (hs : ∀ (t : ℝ), 0 ≤ t → ∀ w ∈ P.range,
-      ‖exp (t • A) w‖ ≤ Real.exp (-alpha * t) * ‖w‖)
+      ‖exp (t • A) w‖ ≤ C * Real.exp (-alpha * t) * ‖w‖)
     (hu : ∀ (t : ℝ), t ≤ 0 → ∀ w ∈ P.ker,
-      ‖exp (t • A) w‖ ≤ Real.exp (alpha * t) * ‖w‖) :
+      ‖exp (t • A) w‖ ≤ C * Real.exp (alpha * t) * ‖w‖) :
     ∃ (K rate : ℝ≥0), 0 < K ∧ 0 < rate ∧
       (∀ t : ℝ, 0 ≤ t → ∀ v : X,
         ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-rate * t) * ‖v‖) ∧
       (∀ t : ℝ, t ≤ 0 → ∀ v : X,
         ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (rate * t) * ‖v‖) := by
-  let K : ℝ≥0 := ‖P‖₊ + ‖ContinuousLinearMap.id ℝ X - P‖₊ + 1
+  let M : ℝ≥0 := ‖P‖₊ + ‖ContinuousLinearMap.id ℝ X - P‖₊ + 1
   let rate : ℝ≥0 := ⟨alpha, halpha.le⟩
-  have hP_le : ‖P‖ ≤ (K : ℝ) := by
-    dsimp only [K]
+  have hP_le : ‖P‖ ≤ (M : ℝ) := by
+    dsimp only [M]
     push_cast
     nlinarith [norm_nonneg (ContinuousLinearMap.id ℝ X - P)]
-  have hPc_le : ‖ContinuousLinearMap.id ℝ X - P‖ ≤ (K : ℝ) := by
-    dsimp only [K]
+  have hPc_le : ‖ContinuousLinearMap.id ℝ X - P‖ ≤ (M : ℝ) := by
+    dsimp only [M]
     push_cast
     nlinarith [norm_nonneg P]
-  have hK : 0 < K := by
-    dsimp only [K]
-    positivity
+  have hK : 0 < C.toNNReal * M := by
+    dsimp only [M]
+    exact mul_pos (Real.toNNReal_pos.mpr hC) (by positivity)
   have hrate : 0 < rate := by
     exact_mod_cast halpha
-  refine ⟨K, rate, hK, hrate, ?_, ?_⟩
+  have hKC : ((C.toNNReal * M : ℝ≥0) : ℝ) = C * M := by
+    rw [NNReal.coe_mul, Real.coe_toNNReal _ hC.le]
+  have hrate_eq : (rate : ℝ) = alpha := rfl
+  refine ⟨C.toNNReal * M, rate, hK, hrate, ?_, ?_⟩
   · intro t ht v
     have hPv : P v ∈ P.range := ⟨v, rfl⟩
-    exact norm_exp_smul_apply_le_mul_norm_of_le (hs t ht (P v) hPv) (P.le_opNorm v)
-      (Real.exp_nonneg _) hP_le
+    have := norm_exp_smul_apply_le_mul_norm_of_le (hs t ht (P v) hPv) (P.le_opNorm v)
+      (by positivity) hP_le
+    rw [hKC, hrate_eq]
+    linarith
   · intro t ht v
     have hvP : v - P v ∈ P.ker := by
       have hPP : P (P v) = P v := by rw [← mul_apply_eq_comp, hP.eq]
       simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hPP, sub_self]
     have hop : ‖v - P v‖ ≤ ‖ContinuousLinearMap.id ℝ X - P‖ * ‖v‖ := by
       simpa using (ContinuousLinearMap.id ℝ X - P).le_opNorm v
-    exact norm_exp_smul_apply_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop
-      (Real.exp_nonneg _) hPc_le
+    have := norm_exp_smul_apply_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop
+      (by positivity) hPc_le
+    rw [hKC, hrate_eq]
+    linarith
 
 end IsIdempotentElem
 
