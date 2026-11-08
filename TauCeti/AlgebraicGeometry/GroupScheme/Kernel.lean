@@ -11,7 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
+public import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Kernel
 
 /-!
@@ -61,19 +61,6 @@ namespace TauCeti.GroupScheme
 open AlgebraicGeometry
 
 universe u
-
-/-- Pullback of group schemes along an arbitrary base morphism preserves finite limits. In
-particular, it preserves kernels. -/
-noncomputable instance pullbackMapGrp_preservesFiniteLimits {S T : Scheme.{u}} (s : T ⟶ S) :
-    PreservesFiniteLimits (Over.pullback s).mapGrp where
-  preservesFiniteLimits J _ _ := by
-    have : PreservesLimitsOfShape J ((Over.pullback s).mapGrp ⋙ Grp.forget (Over T)) := by
-      -- Forgetting the group structure after the lifted pullback functor is definitionally the
-      -- same functor as first forgetting and then applying pullback in the over category.
-      change PreservesLimitsOfShape J (Grp.forget (Over S) ⋙ Over.pullback s)
-      infer_instance
-    exact preservesLimitsOfShape_of_reflects_of_preserves
-      (Over.pullback s).mapGrp (Grp.forget (Over T))
 
 /-- The canonical isomorphism from the base change of a scheme-theoretic kernel to the kernel of
 the base-changed homomorphism. -/
