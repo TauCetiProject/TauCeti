@@ -38,8 +38,8 @@ the direction. The splitting uses Mathlib's `LinearMap.equivProdOfSurjectiveOfIs
 * `LinearMap.map_eq_zero_of_affineSpan_eq`: equality of affine spans transfers tangency between
   level hyperplanes.
 
-These transport wall directions and the transversality condition of the ScatteringDiagrams
-roadmap, §1.2 (generic paths), along affine maps, linear surjections and products.
+These transport affine directions, and hence transversality of a segment to a wall, along
+affine maps, linear surjections and products.
 
 ## Attribution
 
