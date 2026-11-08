@@ -41,6 +41,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
+* `TauCeti.intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow` — interval integrability of a product
+  of two power singularities `|x - p| ^ α * |x - q| ^ β` with exponents greater than `-1`;
 * `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion at both
   endpoints of the unit interval;
 * `TauCeti.integral_rpow_mul_one_sub_rpow` — Euler's beta integral,
@@ -158,6 +160,48 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between `p < q` when both exponents are greater than `-1`. This reduces to Euler's beta integral. -/
+private theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt {p q α β : ℝ} (hpq : p < q)
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  let L := q - p
+  have hL : 0 < L := sub_pos.mpr hpq
+  have hbeta : IntervalIntegrable (fun t : ℝ ↦ t ^ α * (1 - t) ^ β) volume 0 1 := by
+    simpa only [add_sub_cancel_right] using
+      intervalIntegrable_rpow_mul_one_sub_rpow (a := α + 1) (b := β + 1)
+        (by linarith) (by linarith) (u := 0) (v := 1) (by simp) (by simp)
+  have hscaled : IntervalIntegrable
+      (fun x : ℝ ↦ (x / L) ^ α * (1 - x / L) ^ β) volume 0 L := by
+    have h := hbeta.comp_mul_right (c := L⁻¹)
+    simpa [div_eq_mul_inv, hL.ne'] using h
+  have hshifted : IntervalIntegrable
+      (fun x : ℝ ↦ ((x - p) / L) ^ α * (1 - (x - p) / L) ^ β) volume p q := by
+    have h := hscaled.comp_sub_right p
+    simpa [L] using h
+  refine (hshifted.const_mul (L ^ (α + β))).congr fun x hx ↦ ?_
+  rw [uIoc_of_le hpq.le] at hx
+  have hxp : 0 < x - p := sub_pos.mpr hx.1
+  have hqx : 0 ≤ q - x := sub_nonneg.mpr hx.2
+  have hone : 1 - (x - p) / L = (q - x) / L := by
+    field_simp [hL.ne']
+    ring
+  rw [abs_of_pos hxp, abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub, hone,
+    Real.div_rpow hxp.le hL.le, Real.div_rpow hqx hL.le, div_eq_mul_inv]
+  rw [Real.rpow_add hL]
+  field_simp [(Real.rpow_pos_of_pos hL _).ne']
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between any two endpoints `p` and `q` when both exponents are greater than `-1`. -/
+theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow {p q α β : ℝ}
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  rcases lt_trichotomy p q with hpq | rfl | hqp
+  · exact intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hpq hα hβ
+  · exact IntervalIntegrable.refl
+  · have h := (intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hqp hβ hα).symm
+    simpa only [mul_comm] using h
 
 /-- If the beta integrand is interval integrable on the unit interval, then its exponent at the
 left endpoint is greater than `-1`. -/
