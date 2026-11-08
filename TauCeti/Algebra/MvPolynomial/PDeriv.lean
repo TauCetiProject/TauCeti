@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 
+import TauCeti.Algebra.MvPolynomial.Eval
+
 /-!
 # Partial derivatives of multivariate polynomials: chain rule, degree and coefficients
 
@@ -40,7 +42,6 @@ approximately invertible Jacobian.
   an additive submonoid.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
-* `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
 * `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's estimate
   `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
 -/
@@ -174,18 +175,6 @@ end CommSemiring
 section CommRing
 
 variable {R σ : Type*} [CommRing R]
-
-/-- The values of a polynomial at points that agree modulo `d` agree modulo `d`. -/
-theorem dvd_eval_sub_eval (p : MvPolynomial σ R) {d : R} {x t : σ → R}
-    (h : ∀ i, d ∣ x i - t i) : d ∣ eval x p - eval t p := by
-  induction p using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simpa [add_sub_add_comm] using dvd_add hp hq
-  | mul_X p i hp =>
-    convert dvd_add (dvd_mul_of_dvd_left hp (x i)) (dvd_mul_of_dvd_right (h i) (eval t p))
-      using 1
-    simp only [map_mul, eval_X]
-    ring
 
 /-- **Taylor's estimate in several variables.** If `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ` for
 every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an error divisible by

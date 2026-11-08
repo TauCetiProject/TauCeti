@@ -22,8 +22,9 @@ restricted power series in `N` variables with coefficients in `A₀`, evaluated 
 by `TauCeti.Huber.weightedEval`. This file proves the multivariable Newton–Hensel lemma for such
 series, with a Jacobian matrix that is only invertible up to a power of `ϖ`.
 
-The values of `F` at points of `A₀^N` lie in `A₀`, because `A₀` is open, hence closed, and
-contains every term of the evaluation. More precisely, Taylor's estimate holds termwise: if
+The values of `F` at points of `A₀^N` lie in `A₀`
+(`TauCeti.Huber.weightedEval_mem_ringOfDefinition`). More precisely, Taylor's estimate holds
+termwise: if
 `x ≡ t mod ϖᵃ` and `x' ≡ x mod ϖᵇ` with `a ≤ b`, then
 `F(x') - F(x) - ∑ⱼ ∂ⱼF(t) (x'ⱼ - xⱼ)` lies in `ϖ^(a + b) A₀`. Each term of this sum is a
 coefficient of `F` times the corresponding estimate for a monomial
@@ -40,8 +41,6 @@ the Jacobian matrix `(∂ⱼFᵢ(t))`, if `M J(t) = ϖᵏ` for an integral matri
 
 ## Main results
 
-* `TauCeti.Huber.weightedEval_mem_ringOfDefinition`: a restricted series with coefficients in
-  `A₀` takes values in `A₀` on `A₀^N`.
 * `TauCeti.Huber.weightedEval_sub_weightedEval_sub_sum_mem_pow_smul`: Taylor's estimate
   `F(x') - F(x) - ∑ⱼ ∂ⱼF(t) (x'ⱼ - xⱼ) ∈ ϖ^(a + b) A₀`.
 * `TauCeti.Huber.existsUnique_weightedEval_eq_zero`: Newton's method, the existence and
@@ -65,20 +64,6 @@ variable {C : Type*} [CommRing C]
 
 variable [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [CompleteSpace C]
   (P : PairOfDefinition C) {N : ℕ}
-
-/-- **A restricted series with integral coefficients takes integral values** at integral points:
-if the coefficients of `F` lie in the ring of definition `A₀`, then so does `F(x)` for every
-`x ∈ A₀^N`. -/
-theorem weightedEval_mem_ringOfDefinition {F : MvPowerSeries (Fin N) C}
-    (hF : IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) F)
-    (hF₀ : ∀ ν, MvPowerSeries.coeff ν F ∈ P.ringOfDefinition) (x : Fin N → P.ringOfDefinition) :
-    weightedEval (RingHom.id C) (fun i ↦ (x i : C)) F ∈ P.ringOfDefinition := by
-  have := P.toNonarchimedeanRing
-  simpa using P.mem_smul_of_hasSum isUnit_one
-    (hasSum_weightedEval_of_forall_isPowerBounded continuous_id.continuousAt
-      (fun i ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (x i).2) hF)
-    fun ν ↦ by
-      simpa using mul_mem (hF₀ ν) (prod_mem fun i _ ↦ pow_mem (x i).2 (ν i))
 
 /-- **Taylor's estimate for restricted series with integral coefficients.** Let `ϖ ∈ A₀` be a
 unit of `C`. If `x ≡ t mod ϖᵃ` and `x' ≡ x mod ϖᵇ` in `A₀^N` with `a ≤ b`, then the gradient of
