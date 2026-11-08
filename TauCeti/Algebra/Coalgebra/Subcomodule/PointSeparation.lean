@@ -70,12 +70,10 @@ private theorem apply_matrixCoefficient_comp_mkQ_eq_zero (N : Submodule k M)
     (g : C →ₐ[k] K) {m : M}
     (hg : Comodule.endOfPoint M g (1 ⊗ₜ[k] m) ∈ N.baseChange K) (φ : (M ⧸ N) →ₗ[k] k) :
     g (Comodule.matrixCoefficient (R := k) (C := C) (φ.comp N.mkQ) m) = 0 := by
-  obtain ⟨y, hy⟩ := hg
   have hyq : N.mkQ.baseChange K (Comodule.endOfPoint M g (1 ⊗ₜ[k] m)) = 0 := by
-    rw [← hy, ← LinearMap.comp_apply, ← LinearMap.baseChange_comp]
-    have hcomp : N.mkQ.comp N.subtype = 0 := by
-      simpa using (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero
-    rw [hcomp, LinearMap.baseChange_zero, LinearMap.zero_apply]
+    rw [LinearMap.baseChange_eq_lTensor, ← LinearMap.mem_ker, lTensor_mkQ]
+    obtain ⟨y, hy⟩ := hg
+    exact ⟨y, by rw [← LinearMap.baseChange_eq_lTensor]; exact hy⟩
   have heval := congrArg
     (fun t ↦ TauCeti.Module.Dual.baseChangeEvaluation
       (R := k) (M := M ⧸ N) (A := K) (1 ⊗ₜ[k] φ) t) hyq
