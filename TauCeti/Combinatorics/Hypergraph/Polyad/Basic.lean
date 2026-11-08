@@ -18,7 +18,8 @@ three canonically oriented role pairs. Its support is computed from this data: i
 role-ordered injective triples in the chosen cells whose coordinate pairs have the chosen colors.
 Thus a polyad carries no independently chosen support. Conversely, an injective triple determines
 the unique polyad `Polyad3.ofTriple` whose support contains it, so the supports of distinct
-polyads are disjoint.
+polyads are disjoint and split every finite set of injective triples
+(`Polyad3.sum_card_inter_support`).
 
 The three pair supports expose the colored bigraphs whose arbitrary subgraphs form subpolyads.
 The `faceKey` convention translates colors indexed by role pairs to the omitted-coordinate
@@ -405,6 +406,16 @@ theorem pairwise_disjoint_support :
   intro P Q hPQ
   refine disjoint_left.2 fun x hP hQ ↦ hPQ ?_
   rw [mem_support_iff_eq_ofTriple.1 hP, mem_support_iff_eq_ofTriple.1 hQ]
+
+/-- The polyad supports over a lower skeleton partition the injective triples, so they split
+every finite set of injective triples. -/
+theorem sum_card_inter_support [Fintype κ] (s : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ P : Polyad3 S, #(s ∩ P.support) = #s := by
+  classical
+  rw [card_eq_sum_card_fiberwise (s := s) (f := ofTriple S) (t := univ) fun _ _ ↦ mem_univ _]
+  refine sum_congr rfl fun P _ ↦ congrArg card ?_
+  ext x
+  rw [mem_inter, mem_filter, mem_support_iff_eq_ofTriple, eq_comm]
 
 end Polyad3
 

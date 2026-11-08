@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
-public import TauCeti.Probability.MarkovChain.StrongMarkov
+public import TauCeti.Probability.MarkovChain.StrongMarkov.Basic
 public import TauCeti.Probability.Process.SuccessiveVisits
 
 /-!

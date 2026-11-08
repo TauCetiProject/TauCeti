@@ -90,10 +90,8 @@ carrier modules. The `Rep k H` layer is not, and cannot be: `Rep.{w} k G` is mon
 
 ## References
 
-This is the projection formula of Layer 0 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, whose `Suggested.lean`
-records it as `indProjection`. See J.-P. Serre, *Linear Representations of Finite Groups*, §3.3,
-and C. W. Curtis, I. Reiner, *Methods of Representation Theory, Vol. I*, §10.
+* J.-P. Serre, *Linear Representations of Finite Groups*, §3.3.
+* C. W. Curtis, I. Reiner, *Methods of Representation Theory, Vol. I*, §10.
 -/
 
 public section
@@ -166,8 +164,14 @@ noncomputable def indProjectionLEquiv :
 /-- `TauCeti.indProjectionLEquiv` is `TauCeti.indProjectionHom` in the forward direction. -/
 @[simp]
 theorem indProjectionLEquiv_apply (x : IndV φ (ρ.tprod (τ.comp φ))) :
-    indProjectionLEquiv φ ρ τ x = indProjectionHom φ ρ τ x := by
-  simp [indProjectionLEquiv]
+    indProjectionLEquiv φ ρ τ x = indProjectionHom φ ρ τ x :=
+  (rfl)
+
+/-- `TauCeti.indProjectionLEquiv` is `TauCeti.indProjectionInv` in the backward direction. -/
+@[simp]
+theorem indProjectionLEquiv_symm_apply (y : IndV φ ρ ⊗[k] B) :
+    (indProjectionLEquiv φ ρ τ).symm y = indProjectionInv φ ρ τ y :=
+  (rfl)
 
 /-- The projection formula as an equivalence of representations. Equivariance is the computation
 `(h h₁⁻¹)⁻¹ = h₁ h⁻¹`: translating the group coordinate on the induced side by `h₁⁻¹` on the right
@@ -180,8 +184,8 @@ noncomputable def indProjectionEquiv :
       conv_rhs => rw [LinearMap.comp_apply, LinearMap.comp_apply]
       rw [LinearEquiv.coe_coe, indProjectionLEquiv_apply, indProjectionLEquiv_apply,
         Representation.tprod_apply, Representation.ind_mk, indProjectionHom_apply_mk,
-        indProjectionHom_apply_mk, TensorProduct.map_tmul, Representation.ind_mk, mul_inv_rev,
-        inv_inv, map_mul, mul_apply_eq_comp]
+        indProjectionHom_apply_mk]
+      simp
 
 end Linear
 
@@ -222,10 +226,9 @@ theorem indProjection_hom_naturality_left {X X' : Rep.{u} k G} (f : X ⟶ X') (Y
     simp [Rep.indMap]
   conv_lhs => rw [LinearMap.comp_apply]
   conv_rhs => rw [LinearMap.comp_apply]
-  rw [Representation.IntertwiningMap.toLinearMap_apply,
-    Representation.IntertwiningMap.toLinearMap_apply, Rep.hom_comp, Rep.hom_comp,
-    Representation.IntertwiningMap.comp_apply, Representation.IntertwiningMap.comp_apply,
-    hmap, indProjection_hom_hom_apply, indProjection_hom_hom_apply]
+  simp only [Representation.IntertwiningMap.toLinearMap_apply, Rep.hom_comp,
+    Representation.IntertwiningMap.comp_apply]
+  rw [hmap, indProjection_hom_hom_apply, indProjection_hom_hom_apply]
   simp [Rep.indMap]
 
 /-- The projection formula is natural in the right tensor factor, the `Rep k H` argument. -/
@@ -240,10 +243,9 @@ theorem indProjection_hom_naturality_right (X : Rep.{u} k G) {Y Y' : Rep.{u} k H
     simp [Rep.indMap]
   conv_lhs => rw [LinearMap.comp_apply]
   conv_rhs => rw [LinearMap.comp_apply]
-  rw [Representation.IntertwiningMap.toLinearMap_apply,
-    Representation.IntertwiningMap.toLinearMap_apply, Rep.hom_comp, Rep.hom_comp,
-    Representation.IntertwiningMap.comp_apply, Representation.IntertwiningMap.comp_apply,
-    hmap, indProjection_hom_hom_apply, indProjection_hom_hom_apply]
+  simp only [Representation.IntertwiningMap.toLinearMap_apply, Rep.hom_comp,
+    Representation.IntertwiningMap.comp_apply]
+  rw [hmap, indProjection_hom_hom_apply, indProjection_hom_hom_apply]
   simp [← Rep.hom_comm_apply]
 
 /-- The projection formula as a natural isomorphism in the left tensor factor: the functors

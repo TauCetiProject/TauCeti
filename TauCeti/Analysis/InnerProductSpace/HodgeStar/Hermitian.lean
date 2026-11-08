@@ -61,6 +61,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `isLeast_inner_ιMulti_image_sphere`, `isGreatest_inner_ιMulti_image_sphere`: the extreme
   eigenvalues `⟪ω, F⟫ / 2 ∓ ‖F⁻‖ / √2` of the Hermitian part of `F`.
 * `norm_le_of_forall_le_inner_ιMulti`: a lower bound on the Hermitian part bounds `‖F⁻‖`.
+* `forall_le_inner_ιMulti_iff`: `B ≥ -K ⟪·, ·⟫` holds exactly when `‖F⁻‖ ≤ √2 (⟪ω, F⟫ / 2 + K)`.
 
 ## References
 
@@ -335,6 +336,23 @@ theorem norm_le_of_forall_le_inner_ιMulti {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeS
   rw [hs]
   gcongr
   linarith
+
+include h₀ h₂ in
+/-- **Lower bounds on the Hermitian part are bounds on the anti-self-dual part**: with `F⁻ = μ`
+the anti-self-dual part of `F`, `F(v, J v) ≥ -K ‖v‖²` holds for every `v` if and only if
+`‖F⁻‖ ≤ √2 (⟪ω, F⟫ / 2 + K)`. -/
+theorem forall_le_inner_ιMulti_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ)
+    (hF : o.hodgeStar hkl (F - μ) = F - μ) {K : ℝ} :
+    (∀ v, -K * ‖v‖ ^ 2 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫) ↔
+      ‖μ‖ ≤ √2 * (⟪J.kahlerForm, F⟫ / 2 + K) := by
+  refine ⟨norm_le_of_forall_le_inner_ιMulti hkl he h₀ h₂ hμ hF, fun hK v ↦ ?_⟩
+  have h := abs_inner_ιMulti_sub_le hkl he h₀ h₂ hμ hF v
+  have h2 : (0 : ℝ) < √2 := by positivity
+  have hle : ‖μ‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 + K := by
+    rw [div_le_iff₀ h2, mul_comm]
+    exact hK
+  have hv := sq_nonneg ‖v‖
+  nlinarith [neg_abs_le (⟪F, ιMulti ℝ 2 ![v, J v]⟫ - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2)]
 
 end Frame
 

@@ -115,7 +115,7 @@ private theorem exists_pos_le_degree (hF : IsFunctionField k F) (c : ℤ) :
   have hpos : (1 : ℤ) ≤ Divisor.degree (n • WeilDivisor.ofPoint P) :=
     hdeg ▸ le_trans (by exact_mod_cast le_max_left 1 c.toNat) hle
   have hnonneg : (0 : Divisor k F) ≤ n • WeilDivisor.ofPoint P :=
-    nsmul_nonneg (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) n
+    nsmul_nonneg (WeilDivisor.ofPoint_nonneg P) n
   refine ⟨n • WeilDivisor.ofPoint P, lt_of_le_of_ne hnonneg fun h ↦ ?_, hdeg ▸ hcn.trans hle⟩
   rw [← h, Divisor.degree_zero] at hpos
   omega

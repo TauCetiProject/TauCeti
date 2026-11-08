@@ -16,6 +16,10 @@ which has a global `C¹` left inverse is a `C^n` embedding
 (`ContMDiff.isSmoothEmbedding_of_leftInverse`): it is an immersion by
 `ContMDiff.isImmersion_of_leftInverse`, and a continuous left inverse makes it a topological
 embedding. For example, a smooth section of a smooth fibre bundle is a smooth embedding.
+
+In particular, the inclusion of a point, read as a constant map from a trivial model space, is a
+smooth embedding (`TauCeti.isSmoothEmbedding_const_of_subsingleton`). This exhibits a point as a
+zero-dimensional embedded submanifold.
 -/
 
 public section
@@ -41,3 +45,11 @@ theorem ContMDiff.isSmoothEmbedding_of_leftInverse [FiniteDimensional 𝕜 E'] {
     Manifold.IsSmoothEmbedding I J n f :=
   ⟨hf.isImmersion_of_leftInverse hn (fun _ ↦ (hg _).mdifferentiableAt one_ne_zero) hgf,
     hgf.isEmbedding hg.continuous hf.continuous⟩
+
+/-- The inclusion of a point `y`, read as a constant map from a trivial model space, is a `C^n`
+embedding for `1 ≤ n`: the constant map back to the unique point of the source is a smooth left
+inverse. -/
+theorem TauCeti.isSmoothEmbedding_const_of_subsingleton [FiniteDimensional 𝕜 E'] [Subsingleton E]
+    (hn : 1 ≤ n) (y : N) : Manifold.IsSmoothEmbedding 𝓘(𝕜, E) J n (fun _ : E ↦ y) :=
+  contMDiff_const.isSmoothEmbedding_of_leftInverse hn (contMDiff_const (c := (0 : E)))
+    fun _ ↦ Subsingleton.elim _ _

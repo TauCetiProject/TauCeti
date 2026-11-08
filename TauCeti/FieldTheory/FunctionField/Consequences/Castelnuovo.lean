@@ -174,11 +174,11 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
     by_cases hP : (P : Place k F) = P₀
     · simp only [u, hP, ↓reduceIte]
       exact one_mem_riemannRochSpace_iff.mpr
-        (add_nonneg hB0 (Finset.sum_nonneg fun Q _ ↦ WeilDivisor.zero_le_ofPoint _))
+        (add_nonneg hB0 (Finset.sum_nonneg fun Q _ ↦ WeilDivisor.ofPoint_nonneg _))
     · simp only [u, hP, ↓reduceIte]
       refine riemannRochSpace_mono (add_le_add le_rfl ?_) (hwL _ (hdeg P ((hS P).mp P.2)))
       exact Finset.single_le_sum (f := fun P : Place k F ↦ WeilDivisor.ofPoint (P.restrict k F₂))
-        (fun _ _ ↦ WeilDivisor.zero_le_ofPoint _) (Finset.mem_erase.mpr ⟨hP, P.2⟩)
+        (fun _ _ ↦ WeilDivisor.ofPoint_nonneg _) (Finset.mem_erase.mpr ⟨hP, P.2⟩)
   have hdegA : Divisor.degree A = genus k F₂ + (Module.finrank F₁ F - 1 : ℕ) := by
     rw [hAdef, Divisor.degree_add, hBdeg, map_sum, Finset.sum_congr rfl fun P hP ↦ by
       rw [Divisor.degree_ofPoint, hdeg P ((hS P).mp (Finset.mem_of_mem_erase hP))],
