@@ -50,11 +50,15 @@ for this lower-integral estimate; applications to `L²` also require measurabili
 theorem lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    (hs : 0 < s) (μ σ p : ℝ) (hA : 0 ≤ A)
+    (hs : 0 < s) (μ σ p : ℝ)
     (hC : ∀ x > 0, ∀ t : ℝ≥0, t ≤ T → |C x t| ≤ A * (1 + x ^ p)) :
     ∫⁻ ω, ⨆ t ≤ T,
       ENNReal.ofReal (C (geometricBrownianMotion s μ σ W t ω) t ^ 2) ∂P < ∞ := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hA : 0 ≤ A := by
+    have hg : |C 1 0| ≤ A * (1 + 1) := by
+      simpa using hC 1 one_pos 0 (by positivity)
+    linarith [abs_nonneg (C 1 0)]
   have hmax := hW.lintegral_iSup_rpow_geometricBrownianMotion_lt_top hcont hs.le μ σ (p * 2)
   have hbound (ω : Ω) (t : ℝ≥0) (ht : t ≤ T) :
       C (geometricBrownianMotion s μ σ W t ω) t ^ 2 ≤
@@ -88,7 +92,7 @@ sampled value must be a.e. strongly measurable, but the time need not be a stopp
 theorem memLp_price_geometricBrownianMotion_randomTime
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    (hs : 0 < s) (μ σ p : ℝ) (hA : 0 ≤ A)
+    (hs : 0 < s) (μ σ p : ℝ)
     (hC : ∀ x > 0, ∀ t : ℝ≥0, t ≤ T → |C x t| ≤ A * (1 + x ^ p))
     {τ : Ω → ℝ≥0} (hτ : ∀ᵐ ω ∂P, τ ω ≤ T)
     (hm : AEStronglyMeasurable
@@ -99,7 +103,7 @@ theorem memLp_price_geometricBrownianMotion_randomTime
   rw [hasFiniteIntegral_iff_norm]
   simp only [Real.norm_eq_abs, abs_sq]
   refine lt_of_le_of_lt (lintegral_mono_ae ?_)
-    (hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top hcont hs μ σ p hA hC)
+    (hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top hcont hs μ σ p hC)
   filter_upwards [hτ] with ω hω
   exact le_iSup₂ (f := fun t _ ↦
     ENNReal.ofReal (C (geometricBrownianMotion s μ σ W t ω) t ^ 2)) (τ ω) hω
@@ -110,7 +114,7 @@ when applied to the coefficient `s * ∂C/∂s`. -/
 theorem memLp_price_geometricBrownianMotion_prod
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
-    (hs : 0 < s) (μ σ p : ℝ) (hA : 0 ≤ A)
+    (hs : 0 < s) (μ σ p : ℝ)
     (hC : ∀ x > 0, ∀ t : ℝ≥0, t ≤ T → |C x t| ≤ A * (1 + x ^ p))
     {ν : Measure ℝ≥0} [IsFiniteMeasure ν] (hν : ∀ᵐ t ∂ν, t ≤ T)
     (hm : AEStronglyMeasurable
@@ -122,7 +126,7 @@ theorem memLp_price_geometricBrownianMotion_prod
   refine ⟨hm.pow 2, ?_⟩
   rw [hasFiniteIntegral_iff_norm]
   simp only [Real.norm_eq_abs, abs_sq]
-  have hmax := hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top hcont hs μ σ p hA hC
+  have hmax := hW.lintegral_iSup_sq_price_geometricBrownianMotion_lt_top hcont hs μ σ p hC
   calc
     _ ≤ ∫⁻ z : ℝ≥0 × Ω, ⨆ t ≤ T,
         ENNReal.ofReal (C (geometricBrownianMotion s μ σ W t z.2) t ^ 2) ∂ν.prod P := by
