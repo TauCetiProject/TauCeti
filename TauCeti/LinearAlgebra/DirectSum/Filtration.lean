@@ -27,6 +27,8 @@ open DirectSum
 
 namespace DirectSum
 
+section Injective
+
 variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] {Q : ℕ → Type*}
   [∀ j, AddCommGroup (Q j)] [∀ j, Module R (Q j)]
 
@@ -77,6 +79,13 @@ theorem toModule_injective_of_filtration (N : ℕ → Submodule R M) (hN : Monot
   refine (key (d.support.sup id + 1) d fun j hj ↦ ?_).2 hd
   exact Nat.lt_succ_of_le (Finset.le_sup (f := id) hj)
 
+end Injective
+
+section Surjective
+
+variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] {Q : ℕ → Type*}
+  [∀ j, AddCommMonoid (Q j)] [∀ j, Module R (Q j)]
+
 /-- The sum of maps `f j : Q j → M` out of the pieces of a direct sum is surjective when the
 filtration `N` of `M` starts at `⊥`, is exhaustive, and every element of `N (J + 1)` is congruent
 modulo `N J` to a value of `f J`. -/
@@ -97,5 +106,7 @@ theorem toModule_surjective_of_filtration (N : ℕ → Submodule R M) (h0 : N 0 
     have hof : DirectSum.toModule R ℕ M f (DirectSum.of Q J q) = f J q :=
       DirectSum.toModule_lof R J q
     rw [map_add, hd, hof, sub_add_cancel]
+
+end Surjective
 
 end DirectSum
