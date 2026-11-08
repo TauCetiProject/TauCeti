@@ -202,7 +202,7 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
   · -- Two points in the same cell differ by an integer vector on which every form is `< 2 / 3`.
     funext i
     refine RingOfIntegers.eq_zero_of_abs_stdBasis_repr_le fun r ↦ ?_
-    have hcell := TauCeti.abs_sub_lt_two_thirds_of_natFloor_eq
+    have hcell := TauCeti.abs_sub_lt_inv_of_natFloor_mul_eq (t := 3 / 2) (by norm_num)
       (by linarith [(abs_le.mp (hL hx (i, r))).1]) (by linarith [(abs_le.mp (hL hy (i, r))).1])
       (congr_fun hxy (i, r))
     have hsub : ∑ j, ((x - y) j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r =

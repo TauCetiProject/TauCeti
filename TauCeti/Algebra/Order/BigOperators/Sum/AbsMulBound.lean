@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Ring.Abs
+public import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 
 /-!
 # Bounding a linear form on a box
@@ -31,10 +31,8 @@ coordinates have absolute value at most `B`, has absolute value at most `#s * (B
 theorem abs_sum_mul_le_card_mul_mul {s : Finset ι} {x c : ι → R} {A B : R}
     (hc : ∀ i ∈ s, |c i| ≤ A) (hx : ∀ i ∈ s, |x i| ≤ B) :
     |∑ i ∈ s, x i * c i| ≤ #s * (B * A) := by
-  refine (abs_sum_le_sum_abs _ _).trans ?_
-  rw [← nsmul_eq_mul]
-  refine sum_le_card_nsmul s _ _ fun i hi ↦ ?_
-  rw [abs_mul]
-  exact mul_le_mul (hx i hi) (hc i hi) (abs_nonneg _) ((abs_nonneg _).trans (hx i hi))
+  simpa only [nsmul_eq_mul] using abs_sum_le_card_nsmul (B := B * A) fun i hi ↦ by
+    rw [abs_mul]
+    exact mul_le_mul (hx i hi) (hc i hi) (abs_nonneg _) ((abs_nonneg _).trans (hx i hi))
 
 end Finset
