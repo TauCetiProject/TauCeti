@@ -15,6 +15,7 @@ preferred trivialization at the base point `v₀.proj`, so it can be read in tha
 A compact subset of the total space lies over finitely many preferred trivializing base sets.
 An arbitrary family of trivializations over pairwise disjoint open base sets glues to one
 trivialization over their union, with the same forward and inverse maps on each constituent.
+Finally, the inverse of a trivialization undoes a coordinate change into it.
 
 ## Main results
 
@@ -22,6 +23,8 @@ trivialization over their union, with the same forward and inverse maps on each 
   the base set of the trivialization at `v₀.proj`.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
+* `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
+  from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
 -/
 
 public section
@@ -159,5 +162,20 @@ theorem iUnion_symm_apply {i : ι} {p : B × F} (hp : p.1 ∈ (e i).baseSet) :
   iUnionInv_eq e hd hp
 
 end DisjointUnion
+
+section CoordChange
+
+variable {B F : Type*} {E : B → Type*} [TopologicalSpace B] [TopologicalSpace F]
+  [TopologicalSpace (TotalSpace F E)] [∀ x, Nonempty (E x)]
+
+/-- Reading a coordinate change from `e₁` to `e₂` back through `e₂` gives the point of the fibre
+that `e₁` sends to the original fibre coordinate. -/
+theorem symm_mk_coordChange (e₁ e₂ : Trivialization F (π F E)) {b : B} (h₁ : b ∈ e₁.baseSet)
+    (h₂ : b ∈ e₂.baseSet) (v : F) :
+    e₂.toOpenPartialHomeomorph.symm (b, e₁.coordChange e₂ b v) = ⟨b, e₁.symm b v⟩ := by
+  rw [e₁.mk_coordChange e₂ h₁ h₂, e₂.symm_apply_apply
+    (e₂.mem_source.2 (by rwa [e₁.proj_symm_apply' h₁])), e₁.mk_symm h₁]
+
+end CoordChange
 
 end Bundle.Trivialization

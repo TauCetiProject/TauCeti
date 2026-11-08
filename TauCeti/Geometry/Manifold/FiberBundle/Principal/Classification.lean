@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.FiberBundle.GroupCocycle
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal.Equivariant
 public import TauCeti.Geometry.Manifold.NonabelianCechH1
+public import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # The classification of principal bundles by nonabelian Čech `H¹`
@@ -112,11 +113,9 @@ theorem IsContMDiffCohomologous.of_equivariant (φ : B → G → G)
       (contMDiffOn_trivialization_symm (Z.localTriv i)).comp
         (contMDiff_id.prodMk contMDiff_const).contMDiffOn fun b hb ↦
           (Z.localTriv i).mem_target.2 (by simpa [Z] using hb)
-    have h₂ := (contMDiffOn_trivialization (Z'.localTriv i)).comp (hφs.comp_contMDiffOn h₁)
+    exact contMDiffOn_trivialization_snd_comp (Z'.localTriv i) (hφs.comp_contMDiffOn h₁)
       fun b hb ↦ by
         simpa [Z, Z', fiberwiseMap_homeomorph (E := Z.Fiber) (E' := Z'.Fiber) φ] using hb
-    simp only [Function.comp_def] at h₂
-    exact contMDiff_snd.comp_contMDiffOn h₂
   have hk_eq (i : ι) (b : B) : k i b = c' (indexAt b) i b * φ b 1 * c i (indexAt b) b := by
     simp only [hk_def, FiberBundleCore.localTriv_symm_apply, Homeomorph.symm_apply_apply,
       fiberwiseMap_homeomorph (E := Z.Fiber) (E' := Z'.Fiber) φ, FiberBundleCore.localTriv_apply,
@@ -192,12 +191,8 @@ theorem NonabelianCechH1.mk_eq_one_iff_exists_section :
     -- Near `b₀`, the section has coordinate `(h (indexAt b₀) b)⁻¹` in the chart at `b₀`.
     refine ((hh (indexAt b₀)).contMDiffAt ((hU _).mem_nhds (hindex b₀))).inv.congr_of_eventuallyEq
       ?_
-    -- The trivialization of a glued bundle at a base point is the chart chosen there.
-    have htriv : trivializationAt G Z.Fiber b₀ = Z.localTriv (indexAt b₀) :=
-      congrArg Z.localTriv (congrFun (fiberBundleCoreOfGroupCocycle_indexAt U c hc.mul_eq G hU
-        indexAt hindex hc.continuousOn) b₀)
     filter_upwards [(hU _).mem_nhds (hindex b₀)] with b hb
-    simp [htriv, Z, hch _ _ b ⟨hindex b, hb⟩]
+    simp [trivializationAt_fiberBundleCoreOfGroupCocycle, hch _ _ b ⟨hindex b, hb⟩]
   · rintro ⟨s, hs⟩
     have := contMDiffFiberBundle_fiberBundleCoreOfGroupCocycle n IB IG G U c hc.mul_eq hU indexAt
       hindex hc.continuousOn hc.contMDiffOn
@@ -205,10 +200,10 @@ theorem NonabelianCechH1.mk_eq_one_iff_exists_section :
     set k : ι → B → G := fun i b ↦ (Z.localTriv i ⟨b, s b⟩).2 with hk_def
     have hk (i : ι) : ContMDiffOn IB IG n (k i) (U i) := by
       have : MemTrivializationAtlas (Z.localTriv i) := ⟨mem_range_self i⟩
-      have h₁ := (contMDiffOn_trivialization (Z.localTriv i)).comp hs.contMDiffOn
+      have h₁ := contMDiffOn_trivialization_snd_comp (Z.localTriv i) hs.contMDiffOn
         fun b hb ↦ by simpa [Z] using hb
-      simp only [Function.comp_def, Z, Homeomorph.symm_apply_apply] at h₁
-      exact contMDiff_snd.comp_contMDiffOn h₁
+      simp only [Z, Homeomorph.symm_apply_apply] at h₁
+      exact h₁
     refine ⟨fun i b ↦ (k i b)⁻¹, fun i ↦ (hk i).inv, fun i j b hb ↦ ?_⟩
     have h1 : c i j b = c (indexAt b) j b * (c (indexAt b) i b)⁻¹ :=
       hc.eq_mul_inv ⟨⟨hindex b, hb.1⟩, hb.2⟩
@@ -222,6 +217,22 @@ end Glued
 /-! ### The transition cocycle of a principal bundle -/
 
 section Transition
+
+/-- The equivalence between `G` and the fibre over a point of the base set of a trivialization,
+given by the inverse of the trivialization. -/
+private noncomputable def symmEquivAt {P : B → Type*} [TopologicalSpace (TotalSpace G P)]
+    [∀ b, Nonempty (P b)] (e : Trivialization G (π G P)) {b : B} (hb : b ∈ e.baseSet) :
+    G ≃ P b where
+  toFun := e.symm b
+  invFun p := (e ⟨b, p⟩).2
+  left_inv v := by simp [e.apply_mk_symm hb]
+  right_inv := e.symm_apply_apply_mk hb
+
+omit [Group G] in
+private theorem symmEquivAt_apply {P : B → Type*} [TopologicalSpace (TotalSpace G P)]
+    [∀ b, Nonempty (P b)] (e : Trivialization G (π G P)) {b : B} (hb : b ∈ e.baseSet) (v : G) :
+    symmEquivAt e hb v = e.symm b v :=
+  rfl
 
 variable {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
@@ -273,15 +284,8 @@ theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
     hindex hcoc.continuousOn hcoc.contMDiffOn
   have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   -- The fibre equivalence given by the chart chosen at each base point.
-  let ψ : ∀ b, G ≃ P b := fun b ↦
-    { toFun := (e (indexAt b)).symm b
-      invFun := fun p ↦ (e (indexAt b) ⟨b, p⟩).2
-      left_inv := fun v ↦ by simp [(e (indexAt b)).apply_mk_symm (hindex' b)]
-      right_inv := fun p ↦ (e (indexAt b)).symm_apply_apply_mk (hindex' b) p }
-  have hψ_apply (b : B) (v : G) : ψ b v = (e (indexAt b)).symm b v := rfl
-  have hψ (b : B) (v g : G) : ψ b (v * g) = op g • ψ b v :=
-    (e (indexAt b)).symm_apply_mul (hindex' b) v g
-  refine ⟨ψ, hψ, fun x ↦ ?_⟩
+  refine ⟨fun b ↦ symmEquivAt (e (indexAt b)) (hindex' b), fun b v g ↦ ?_, fun x ↦ ?_⟩
+  · simp only [symmEquivAt_apply, (e (indexAt b)).symm_apply_mul (hindex' b)]
   obtain ⟨⟨b₀, v₀⟩, rfl⟩ := (homeomorph G Z.Fiber).surjective x
   set β := indexAt b₀
   have : MemTrivializationAtlas (Z.localTriv β) := ⟨mem_range_self β⟩
@@ -301,13 +305,13 @@ theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
   simp only [mem_preimage, Homeomorph.symm_apply_apply, FiberBundleCore.mem_localTriv_source, Z,
     fiberBundleCoreOfGroupCocycle_localTriv_baseSet, ← heU] at hy
   have hα := hindex' b
-  rw [fiberwiseMap_homeomorph (E := Z.Fiber) (E' := P) fun b ↦ ψ b]
-  simp only [Homeomorph.symm_apply_apply, FiberBundleCore.localTriv_apply, Z,
-    fiberBundleCoreOfGroupCocycle_coordChange, fiberBundleCoreOfGroupCocycle_indexAt, smul_eq_mul]
   -- The glued chart `β` reads `(e α).coordChange (e β) b v`, which `(e β)⁻¹` sends to `(e α)⁻¹ v`.
-  rw [← (e (indexAt b)).coordChange_eq_mul (e β) hα hy, (e (indexAt b)).mk_coordChange (e β) hα hy,
-    (e β).symm_apply_apply ((e β).mem_source.2 (by rwa [(e (indexAt b)).proj_symm_apply' hα])),
-    ← (e (indexAt b)).mk_symm hα, hψ_apply]
+  rw [fiberwiseMap_homeomorph (E := Z.Fiber) (E' := P)
+    fun b ↦ symmEquivAt (e (indexAt b)) (hindex' b)]
+  simp only [Homeomorph.symm_apply_apply, FiberBundleCore.localTriv_apply, Z,
+    fiberBundleCoreOfGroupCocycle_coordChange, fiberBundleCoreOfGroupCocycle_indexAt, smul_eq_mul,
+    ← (e (indexAt b)).coordChange_eq_mul (e β) hα hy,
+    (e (indexAt b)).symm_mk_coordChange (e β) hα hy, symmEquivAt_apply]
 
 variable {Q : B → Type*} [TopologicalSpace (TotalSpace G Q)] [∀ b, TopologicalSpace (Q b)]
   [FiberBundle G Q] [∀ b, MulAction Gᵐᵒᵖ (Q b)] [PrincipalBundle G Q]
@@ -357,26 +361,20 @@ theorem NonabelianCechH1.mk_coordChange_eq_mk_coordChange_iff_exists_equivariant
   · rintro ⟨χ, hχ, hχs⟩
     refine ⟨fun b ↦ (ψ b).symm.trans ((χ b).trans (ψ' b)), fun b g p ↦ ?_, ?_⟩
     · simp [hψsymm, hχ, hψ']
-    · refine (hψ's.comp (hχs.comp hψinv)).congr fun x ↦ ?_
-      obtain ⟨p, rfl⟩ := (homeomorph G P).surjective x
-      simp only [Function.comp_apply, Equiv.coe_trans,
-        fiberwiseMap_homeomorph (E := P) (E' := Q),
-        fiberwiseMap_homeomorph (E := P) (E' := Z.Fiber) fun b ↦ (ψ b).symm,
-        fiberwiseMap_homeomorph (E := Z.Fiber) (E' := Z'.Fiber) fun b ↦ χ b,
-        fiberwiseMap_homeomorph (E := Z'.Fiber) (E' := Q) fun b ↦ ψ' b]
+    · -- The fibrewise map of the composite is the composite of the fibrewise maps.
+      convert hψ's.comp (hχs.comp hψinv) using 1
+      exact (fiberwiseMap_comp (E := P) (E' := Z.Fiber) (E'' := Q) (fun b ↦ (χ b).trans (ψ' b))
+        fun b ↦ (ψ b).symm).trans (congrArg (· ∘ _)
+          (fiberwiseMap_comp (E := Z.Fiber) (E' := Z'.Fiber) (E'' := Q) (fun b ↦ ψ' b) fun b ↦ χ b))
   · rintro ⟨φ, hφ, hφs⟩
     refine ⟨fun b ↦ (ψ b).trans ((φ b).trans (ψ' b).symm), fun b p g ↦ ?_, ?_⟩
     · simp [hψ, hφ, hψ'symm]
-    · refine (hψ'inv.comp (hφs.comp hψs)).congr fun x ↦ ?_
-      obtain ⟨p, rfl⟩ := (homeomorph G Z.Fiber).surjective x
-      rw [fiberwiseMap_homeomorph (E := Z.Fiber) (E' := Z'.Fiber)
-        fun b ↦ (ψ b).trans ((φ b).trans (ψ' b).symm)]
-      simp only [Function.comp_apply, Equiv.coe_trans,
-        fiberwiseMap_homeomorph (E := Z.Fiber) (E' := P) fun b ↦ ψ b,
-        fiberwiseMap_homeomorph (E := P) (E' := Q) fun b ↦ φ b,
-        fiberwiseMap_homeomorph (E := Q) (E' := Z'.Fiber) fun b ↦ (ψ' b).symm]
-      -- The two sides are the same composite, applied to the fibre coordinate.
-      rfl
+    · -- The fibrewise map of the composite is the composite of the fibrewise maps.
+      convert hψ'inv.comp (hφs.comp hψs) using 1
+      exact (fiberwiseMap_comp (E := Z.Fiber) (E' := P) (E'' := Z'.Fiber)
+        (fun b ↦ (φ b).trans (ψ' b).symm) fun b ↦ ψ b).trans (congrArg (· ∘ _)
+          (fiberwiseMap_comp (E := P) (E' := Q) (E'' := Z'.Fiber) (fun b ↦ (ψ' b).symm)
+            fun b ↦ φ b))
 
 end Transition
 
