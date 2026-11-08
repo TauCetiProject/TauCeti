@@ -9,12 +9,12 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Parabolic.Geometry
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Borel
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.TitsSystem
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
-import TauCeti.FieldTheory.IsAlgClosed.Units
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -80,17 +80,16 @@ theorem exists_antitone_eq_weightParabolicDefiningHopfIdeal
     rw [← UpperTriangular.hopfIdealPointsSubgroup_eq k (n + 1)]
     exact hopfIdealPointsSubgroup_le_of_le (n + 1) hIB K
   obtain ⟨w, hw, hP⟩ := exists_antitone_weightParabolicPoints_eq K hB
-  refine ⟨w, hw, ?_⟩
+  -- Membership in a weight parabolic does not depend on the base ring.
+  replace hP : weightParabolicPoints k w K = hopfIdealPointsSubgroup (n + 1) I K := by
+    rw [← hP]
+    ext
+    simp only [mem_weightParabolicPoints_iff]
   -- The `K`-points of `I` and of the weight parabolic coincide; both quotients are reduced.
-  have := (smoothCommHopfAlgProperty_iff _).mp
-    (smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra k w)
-  have := isReduced_of_smooth k (weightParabolicCoordinateHopfAlgebra k w)
-  refine HopfIdeal.eq_of_quotientPointsSubgroup_eq (K := K) (SetLike.ext fun g ↦ ?_)
+  refine ⟨w, hw, HopfIdeal.eq_of_quotientPointsSubgroup_eq (K := K) (SetLike.ext fun g ↦ ?_)⟩
   have hg := SetLike.ext_iff.mp hP (pointsMulEquiv (n + 1) g)
-  rw [mem_hopfIdealPointsSubgroup_iff, MulEquiv.symm_apply_apply,
-    ← CommHopfAlgCat.mem_quotientPointsSubgroup_iff, mem_weightParabolicPoints_iff] at hg
-  rw [← hg, mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular]
-  simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual]
+  rwa [mem_hopfIdealPointsSubgroup_iff, pointsMulEquiv_mem_weightParabolicPoints_iff,
+    MulEquiv.symm_apply_apply, ← CommHopfAlgCat.mem_quotientPointsSubgroup_iff, Iff.comm] at hg
 
 /-- **Characterization of the reduced closed overgroups of `B` in `GLₙ₊₁`.** A closed subgroup
 scheme of `GLₙ₊₁` is reduced and contains the upper-triangular subgroup exactly when it is the
@@ -102,10 +101,7 @@ theorem isReduced_and_le_upperTriangular_definingHopfIdeal_iff
       ∃ w : Fin (n + 1) → ℤ, Antitone w ∧ I = weightParabolicDefiningHopfIdeal k w := by
   refine ⟨fun ⟨_, hIB⟩ ↦ exists_antitone_eq_weightParabolicDefiningHopfIdeal hIB, ?_⟩
   rintro ⟨w, hw, rfl⟩
-  have := (smoothCommHopfAlgProperty_iff _).mp
-    (smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra k w)
-  exact ⟨isReduced_of_smooth k _,
-    weightParabolicDefiningHopfIdeal_le_upperTriangular_definingHopfIdeal k hw⟩
+  exact ⟨inferInstance, weightParabolicDefiningHopfIdeal_le_upperTriangular_definingHopfIdeal k hw⟩
 
 /-- A reduced closed subgroup scheme of `GLₙ₊₁` containing the upper-triangular subgroup is
 parabolic; in particular it is smooth. -/

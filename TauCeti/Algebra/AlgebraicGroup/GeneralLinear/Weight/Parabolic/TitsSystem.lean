@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Parabolic.Classification
+import TauCeti.Order.Fin.Antitone
 
 /-!
 # Weight parabolics and the standard general-linear Tits system
@@ -97,32 +98,6 @@ theorem upperTriangularGroup_le_weightParabolicPoints {A : Type v} [CommRing A]
   exact (UpperTriangularGroup.mem_iff.mp hg)
     (lt_of_not_ge fun h ↦ (not_lt_of_ge (hw h)) hij)
 
-/-- For every set `S` of adjacent coordinate pairs there is a decreasing weight whose adjacent
-coordinates have equal weight exactly at `S`: subtract one at each step not in `S`. -/
-private theorem exists_antitone_forall_eq_iff {n : ℕ} (S : Set (Fin n)) :
-    ∃ w : Fin (n + 1) → ℤ, Antitone w ∧ ∀ i : Fin n, w i.castSucc = w i.succ ↔ i ∈ S := by
-  classical
-  let c (i : Fin (n + 1)) : Finset (Fin n) := Finset.univ.filter fun j ↦ (j : ℕ) < i ∧ j ∉ S
-  have hc {i i' : Fin (n + 1)} (h : i ≤ i') : c i ⊆ c i' := fun j hj ↦ by
-    simp only [c, Finset.mem_filter, Finset.mem_univ, true_and] at hj ⊢
-    exact ⟨hj.1.trans_le (Fin.le_iff_val_le_val.mp h), hj.2⟩
-  refine ⟨fun i ↦ -((c i).card : ℤ), fun i i' h ↦ by simpa using Finset.card_le_card (hc h),
-    fun i ↦ ?_⟩
-  simp only [neg_inj, Nat.cast_inj]
-  constructor
-  · -- If `i ∉ S`, then `i` is counted at `i.succ` but not at `i.castSucc`.
-    intro h
-    by_contra hi
-    have hlt : c i.castSucc ⊂ c i.succ :=
-      (Finset.ssubset_iff_of_subset (hc (Fin.castSucc_le_succ i))).mpr ⟨i, by simp [c, hi]⟩
-    exact (Finset.card_lt_card hlt).ne h
-  · intro hi
-    congr 1
-    ext j
-    simp only [c, Finset.mem_filter, Finset.mem_univ, true_and, Fin.val_succ, Fin.val_castSucc]
-    refine ⟨fun ⟨hj, hjS⟩ ↦ ⟨by omega, hjS⟩, fun ⟨hj, hjS⟩ ↦ ⟨?_, hjS⟩⟩
-    exact lt_of_le_of_ne (by omega) fun h ↦ hjS (Fin.ext h ▸ hi)
-
 section Field
 
 variable (k : Type u) [Field k] [Nontrivial kˣ] {n : ℕ} (w : Fin (n + 1) → ℤ)
@@ -200,7 +175,7 @@ theorem exists_antitone_weightParabolicPoints_eq {H : Subgroup (GL (Fin (n + 1))
     ∃ w : Fin (n + 1) → ℤ, Antitone w ∧ weightParabolicPoints k w k = H := by
   rw [← glTitsSystem_subgroupB k n] at hH
   -- Select the adjacent transpositions lying in `H`.
-  obtain ⟨w, hw, hwS⟩ := exists_antitone_forall_eq_iff
+  obtain ⟨w, hw, hwS⟩ := Fin.exists_antitone_castSucc_eq_succ_iff_mem
     {i : Fin n | permutationGL (k := k) (Equiv.swap i.castSucc i.succ) ∈ H}
   have hBw : (glTitsSystem k n).subgroupB ≤ weightParabolicPoints k w k := by
     rw [glTitsSystem_subgroupB]
