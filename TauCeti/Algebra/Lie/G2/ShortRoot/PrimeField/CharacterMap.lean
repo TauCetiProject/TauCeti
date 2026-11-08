@@ -17,14 +17,12 @@ characters back by `TauCeti.DynkinType.g2SpecialIsogeny.weightMap`. Its torus ac
 root datum, with the short node first. The character matrix is therefore
 `!![0, 3; 1, 0]`, not its transpose.
 
-The pullback for every iterate, including the odd powers defining the Ree Steinberg maps,
-follows from `(isCharacterMap_specialIsogeny A).pow n` using `TauCeti.IsCharacterMap.pow`.
-These are comparisons on the existing represented carrier; no identification with a canonical
+The comparison uses the torus equation
+`TauCeti.G2ShortRoot.PrimeField.specialIsogeny_weightTorusPoints`.
+For iterates, including the odd powers defining the Ree Steinberg maps, apply
+`(isCharacterMap_specialIsogeny A).pow n` using `TauCeti.IsCharacterMap.pow`.
+The comparison is on the existing represented carrier; no identification with a canonical
 Chevalley–Demazure group is asserted.
-
-The construction uses the torus equation of
-`TauCeti.G2ShortRoot.PrimeField.specialIsogeny_weightTorusPoints` and the contravariant
-composition and power laws `TauCeti.IsCharacterMap.comp` and `TauCeti.IsCharacterMap.pow`.
 
 ## References
 
