@@ -111,13 +111,11 @@ theorem exists_isHamiltonianVectorField_lie (hσ : σ.IsClosed)
   let g : C^∞⟮I, M; ℝ⟯ := ⟨fun x ↦ SmoothBundleForm.eval₂ σ x (Y' x) (X' x),
     SmoothForm.contMDiff_apply σ Y'.contMDiff X'.contMDiff⟩
   refine ⟨SmoothForm.ofFunction g, ?_⟩
-  have hg : (fun y ↦ (SmoothForm.ofFunction g).1 y 0) = g :=
-    funext fun y ↦ by rw [SmoothForm.coe_ofFunction, RoughForm.ofFunction_apply]
   -- The bracket of the sections is the Lie bracket of the underlying vector fields.
   have hbr : ⇑((LieAlgebroid.tangent I M).sectionsEquiv ⁅X, Y⁆) = mlieBracket I X' Y' :=
     funext fun x ↦ by
       rw [LieAlgebroid.sectionsEquiv_lie, LieAlgebroid.tangent_bracket_apply]
-  rw [hbr, hg]
+  rw [hbr, SmoothForm.ofFunction_apply_zero]
   exact isHamiltonianVectorField_mlieBracket hσ hX hY
 
 variable (σ) in
@@ -147,15 +145,8 @@ the identification of `TauCeti.SmoothTwoForm.symplecticLieSubalgebra` with the s
 `TauCeti.SmoothTwoForm.symplecticVectorFields` on which the class map
 `TauCeti.SmoothTwoForm.interiorClass` is defined. -/
 def symplecticLieSubalgebraEquiv (hσ : σ.IsClosed) :
-    σ.symplecticLieSubalgebra hσ ≃ₗ[ℝ] σ.symplecticVectorFields where
-  toFun X := ⟨(LieAlgebroid.tangent I M).sectionsEquiv X, X.2⟩
-  invFun X := ⟨(LieAlgebroid.tangent I M).sectionsEquiv.symm X, by
-    rw [mem_symplecticLieSubalgebra_iff, LinearEquiv.apply_symm_apply]
-    exact X.2⟩
-  map_add' X Y := by ext1; exact map_add _ _ _
-  map_smul' c X := by ext1; exact LinearMapClass.map_smul_of_tower _ c _
-  left_inv X := by ext1; exact LinearEquiv.symm_apply_apply _ _
-  right_inv X := by ext1; exact LinearEquiv.apply_symm_apply _ _
+    σ.symplecticLieSubalgebra hσ ≃ₗ[ℝ] σ.symplecticVectorFields :=
+  ((LieAlgebroid.tangent I M).sectionsEquiv.restrictScalars ℝ).ofSubmodule' σ.symplecticVectorFields
 
 /-- The symplectic vector field of an element of the Lie algebra of symplectic vector fields is the
 underlying smooth vector field. -/
@@ -165,6 +156,24 @@ theorem coe_symplecticLieSubalgebraEquiv_apply (hσ : σ.IsClosed)
     (σ.symplecticLieSubalgebraEquiv hσ X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) =
       (LieAlgebroid.tangent I M).sectionsEquiv X :=
   (rfl)
+
+/-- The element of the Lie algebra of symplectic vector fields corresponding to a symplectic vector
+field has that field as its underlying smooth vector field. -/
+@[simp]
+theorem coe_symplecticLieSubalgebraEquiv_symm_apply (hσ : σ.IsClosed)
+    (X : σ.symplecticVectorFields) :
+    ((σ.symplecticLieSubalgebraEquiv hσ).symm X : (LieAlgebroid.tangent I M).Sections) =
+      (LieAlgebroid.tangent I M).sectionsEquiv.symm X :=
+  (rfl)
+
+/-- Two elements of the Lie algebra of symplectic vector fields are equal when their underlying
+vector fields agree at every point. -/
+@[ext]
+theorem symplecticLieSubalgebra.ext {hσ : σ.IsClosed} {X Y : σ.symplecticLieSubalgebra hσ}
+    (h : ∀ x, (LieAlgebroid.tangent I M).sectionsEquiv (X : (LieAlgebroid.tangent I M).Sections) x =
+      (LieAlgebroid.tangent I M).sectionsEquiv (Y : (LieAlgebroid.tangent I M).Sections) x) :
+    X = Y :=
+  Subtype.ext <| (LieAlgebroid.tangent I M).sectionsEquiv.injective <| ContMDiffSection.ext h
 
 /-! ### The Lie ideal of Hamiltonian vector fields -/
 
@@ -262,9 +271,23 @@ theorem poissonLieAlgebraEquiv_lie_apply {hσ : σ.IsSymplectic} (f g : σ.Poiss
       σ.poissonBracket (σ.poissonLieAlgebraEquiv hσ f) (σ.poissonLieAlgebraEquiv hσ g) x :=
   (rfl)
 
+/-- The bracket of the Poisson Lie algebra is the Poisson bracket `{f, g} = σ(X_f, X_g)`, as an
+equality of functions. -/
+theorem coe_poissonLieAlgebraEquiv_lie {hσ : σ.IsSymplectic} (f g : σ.PoissonLieAlgebra hσ) :
+    ⇑(σ.poissonLieAlgebraEquiv hσ ⁅f, g⁆) =
+      σ.poissonBracket (σ.poissonLieAlgebraEquiv hσ f) (σ.poissonLieAlgebraEquiv hσ g) :=
+  (rfl)
+
 namespace PoissonLieAlgebra
 
 variable {hσ : σ.IsSymplectic}
+
+omit [FiniteDimensional ℝ E] in
+/-- Two elements of the Poisson Lie algebra are equal when they agree as functions. -/
+@[ext]
+theorem ext {f g : σ.PoissonLieAlgebra hσ}
+    (h : ∀ x, σ.poissonLieAlgebraEquiv hσ f x = σ.poissonLieAlgebraEquiv hσ g x) : f = g :=
+  (σ.poissonLieAlgebraEquiv hσ).injective <| ContMDiffMap.ext h
 
 omit [FiniteDimensional ℝ E] in
 /-- A smooth function is differentiable at every point. -/
@@ -272,33 +295,41 @@ private theorem mdifferentiableAt (f : σ.PoissonLieAlgebra hσ) (x : M) :
     MDifferentiableAt I 𝓘(ℝ) (σ.poissonLieAlgebraEquiv hσ f) x :=
   (σ.poissonLieAlgebraEquiv hσ f).contMDiff.mdifferentiableAt (by simp)
 
+omit [FiniteDimensional ℝ E] in
+/-- A smooth function is `C^2`. -/
+private theorem contMDiff_two (f : σ.PoissonLieAlgebra hσ) :
+    ContMDiff I 𝓘(ℝ) 2 (σ.poissonLieAlgebraEquiv hσ f) :=
+  (σ.poissonLieAlgebraEquiv hσ f).contMDiff.of_le (by simp)
+
 /-- The Poisson bracket makes the smooth functions a Lie ring: bilinearity and antisymmetry hold
 pointwise, and the Leibniz rule is the Jacobi identity of the Poisson bracket
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket`). -/
 instance instLieRing : LieRing (σ.PoissonLieAlgebra hσ) where
-  add_lie f g k := (σ.poissonLieAlgebraEquiv hσ).injective <| ContMDiffMap.ext fun x ↦ by
+  add_lie f g k := by
+    ext x
     simp only [poissonLieAlgebraEquiv_lie_apply, map_add, ContMDiffMap.coe_add, Pi.add_apply,
       poissonBracket_add_left (mdifferentiableAt f x) (mdifferentiableAt g x)]
-  lie_add f g k := (σ.poissonLieAlgebraEquiv hσ).injective <| ContMDiffMap.ext fun x ↦ by
+  lie_add f g k := by
+    ext x
     simp only [poissonLieAlgebraEquiv_lie_apply, map_add, ContMDiffMap.coe_add, Pi.add_apply,
       poissonBracket_add_right (mdifferentiableAt g x) (mdifferentiableAt k x)]
-  lie_self f := (σ.poissonLieAlgebraEquiv hσ).injective <| ContMDiffMap.ext fun x ↦ by
+  lie_self f := by
+    ext x
     simp only [poissonLieAlgebraEquiv_lie_apply, poissonBracket_self, map_zero,
       ContMDiffMap.coe_zero, Pi.zero_apply]
-  leibniz_lie f g k := (σ.poissonLieAlgebraEquiv hσ).injective <| ContMDiffMap.ext fun x ↦ by
-    have hc (u : σ.PoissonLieAlgebra hσ) : ContMDiff I 𝓘(ℝ) 2 (σ.poissonLieAlgebraEquiv hσ u) :=
-      (σ.poissonLieAlgebraEquiv hσ u).contMDiff.of_le (by simp)
-    have hfun (u v : σ.PoissonLieAlgebra hσ) : ⇑(σ.poissonLieAlgebraEquiv hσ ⁅u, v⁆) =
-        σ.poissonBracket (σ.poissonLieAlgebraEquiv hσ u) (σ.poissonLieAlgebraEquiv hσ v) :=
-      funext (poissonLieAlgebraEquiv_lie_apply u v)
-    simp only [map_add, ContMDiffMap.coe_add, Pi.add_apply, poissonLieAlgebraEquiv_lie_apply, hfun]
-    rw [hσ.isNondegenerate.poissonBracket_poissonBracket hσ.isClosed (hc f) (hc g) (hc k),
+  leibniz_lie f g k := by
+    ext x
+    simp only [map_add, ContMDiffMap.coe_add, Pi.add_apply, poissonLieAlgebraEquiv_lie_apply,
+      coe_poissonLieAlgebraEquiv_lie]
+    rw [hσ.isNondegenerate.poissonBracket_poissonBracket hσ.isClosed (contMDiff_two f)
+        (contMDiff_two g) (contMDiff_two k),
       ← neg_poissonBracket σ (σ.poissonBracket _ _) (σ.poissonLieAlgebraEquiv hσ g)]
     ring
 
 /-- The Poisson Lie algebra is a real Lie algebra. -/
 instance instLieAlgebra : LieAlgebra ℝ (σ.PoissonLieAlgebra hσ) where
-  lie_smul c f g := (σ.poissonLieAlgebraEquiv hσ).injective <| ContMDiffMap.ext fun x ↦ by
+  lie_smul c f g := by
+    ext x
     simp only [poissonLieAlgebraEquiv_lie_apply, map_smul, ContMDiffMap.coe_smul,
       poissonBracket_const_smul_right, Pi.smul_apply]
 
@@ -317,11 +348,8 @@ private theorem negHamiltonian_apply (hσ : σ.IsSymplectic) (f : σ.PoissonLieA
     (LieAlgebroid.tangent I M).sectionsEquiv
         (negHamiltonian hσ f : (LieAlgebroid.tangent I M).Sections) x =
       -σ.hamiltonianVectorField (σ.poissonLieAlgebraEquiv hσ f) x := by
-  have hf : (fun y ↦ (SmoothForm.ofFunction (σ.poissonLieAlgebraEquiv hσ f)).1 y 0) =
-      σ.poissonLieAlgebraEquiv hσ f :=
-    funext fun y ↦ by rw [SmoothForm.coe_ofFunction, RoughForm.ofFunction_apply]
-  rw [negHamiltonian, ← coe_symplecticLieSubalgebraEquiv_apply, LinearEquiv.apply_symm_apply,
-    IsNondegenerate.coe_negHamiltonianₗ, hf]
+  rw [negHamiltonian, coe_symplecticLieSubalgebraEquiv_symm_apply, LinearEquiv.apply_symm_apply,
+    IsNondegenerate.coe_negHamiltonianₗ, SmoothForm.ofFunction_apply_zero]
 
 variable (σ) in
 /-- **The Lie algebra homomorphism `f ↦ -X_f`** from the Poisson Lie algebra of a symplectic form to
@@ -330,29 +358,25 @@ its symplectic vector fields. That it preserves brackets is `X_{{f, g}} = -[X_f,
 def negHamiltonianLieHom (hσ : σ.IsSymplectic) :
     σ.PoissonLieAlgebra hσ →ₗ⁅ℝ⁆ σ.symplecticLieSubalgebra hσ.isClosed where
   toFun := negHamiltonian hσ
-  map_add' f g := Subtype.ext <| (LieAlgebroid.tangent I M).sectionsEquiv.injective <|
-    ContMDiffSection.ext fun x ↦ by
-      simp [negHamiltonian_apply, add_comm, hamiltonianVectorField_add
-        (PoissonLieAlgebra.mdifferentiableAt f x) (PoissonLieAlgebra.mdifferentiableAt g x)]
-  map_smul' c f := Subtype.ext <| (LieAlgebroid.tangent I M).sectionsEquiv.injective <|
-    ContMDiffSection.ext fun x ↦ by
-      rw [SetLike.val_smul, LinearMapClass.map_smul_of_tower]
-      simp [negHamiltonian_apply]
-  map_lie' {f g} := Subtype.ext <| (LieAlgebroid.tangent I M).sectionsEquiv.injective <|
-    ContMDiffSection.ext fun x ↦ by
-      have hc (u : σ.PoissonLieAlgebra hσ) : ContMDiff I 𝓘(ℝ) 2 (σ.poissonLieAlgebraEquiv hσ u) :=
-        (σ.poissonLieAlgebraEquiv hσ u).contMDiff.of_le (by simp)
-      have hfun : ⇑(σ.poissonLieAlgebraEquiv hσ ⁅f, g⁆) =
-          σ.poissonBracket (σ.poissonLieAlgebraEquiv hσ f) (σ.poissonLieAlgebraEquiv hσ g) :=
-        funext (poissonLieAlgebraEquiv_lie_apply f g)
-      have hneg : ∀ u, ⇑((LieAlgebroid.tangent I M).sectionsEquiv
-          (negHamiltonian hσ u : (LieAlgebroid.tangent I M).Sections)) =
-          -σ.hamiltonianVectorField (σ.poissonLieAlgebraEquiv hσ u) :=
-        fun u ↦ funext (negHamiltonian_apply hσ u)
-      rw [LieSubalgebra.coe_bracket, LieAlgebroid.sectionsEquiv_lie,
-        LieAlgebroid.tangent_bracket_apply, hneg, hneg, hneg, hfun,
-        hσ.isNondegenerate.hamiltonianVectorField_poissonBracket hσ.isClosed (hc f) (hc g),
-        Pi.neg_apply, Pi.neg_apply, neg_neg, mlieBracket_neg_left, mlieBracket_neg_right, neg_neg]
+  map_add' f g := by
+    ext x
+    simp [negHamiltonian_apply, add_comm, hamiltonianVectorField_add
+      (PoissonLieAlgebra.mdifferentiableAt f x) (PoissonLieAlgebra.mdifferentiableAt g x)]
+  map_smul' c f := by
+    ext x
+    rw [SetLike.val_smul, LinearMapClass.map_smul_of_tower]
+    simp [negHamiltonian_apply]
+  map_lie' {f g} := by
+    ext x
+    have hneg : ∀ u, ⇑((LieAlgebroid.tangent I M).sectionsEquiv
+        (negHamiltonian hσ u : (LieAlgebroid.tangent I M).Sections)) =
+        -σ.hamiltonianVectorField (σ.poissonLieAlgebraEquiv hσ u) :=
+      fun u ↦ funext (negHamiltonian_apply hσ u)
+    rw [LieSubalgebra.coe_bracket, LieAlgebroid.sectionsEquiv_lie,
+      LieAlgebroid.tangent_bracket_apply, hneg, hneg, hneg, coe_poissonLieAlgebraEquiv_lie,
+      hσ.isNondegenerate.hamiltonianVectorField_poissonBracket hσ.isClosed
+        (PoissonLieAlgebra.contMDiff_two f) (PoissonLieAlgebra.contMDiff_two g)]
+    simp [mlieBracket_neg_left, mlieBracket_neg_right]
 
 /-- The vector field of `f ↦ -X_f` is the negated Hamiltonian vector field. -/
 @[simp]
@@ -380,38 +404,27 @@ theorem mem_ker_negHamiltonianLieHom_iff (hσ : σ.IsSymplectic) {f : σ.Poisson
   · intro h x
     rw [h, ZeroMemClass.coe_zero, map_zero, ContMDiffSection.coe_zero, Pi.zero_apply]
   · intro h
-    exact Subtype.ext <| (LieAlgebroid.tangent I M).sectionsEquiv.injective <|
-      ContMDiffSection.ext fun x ↦ by simp [h x]
+    ext x
+    simp [h x]
 
 /-- **The range of `f ↦ -X_f`** is the Lie ideal of Hamiltonian vector fields. -/
 theorem range_negHamiltonianLieHom (hσ : σ.IsSymplectic) :
     (σ.negHamiltonianLieHom hσ).range = (σ.hamiltonianLieIdeal hσ.isClosed).toLieSubalgebra := by
   ext X
-  rw [LieHom.mem_range, LieIdeal.mem_toLieSubalgebra, mem_hamiltonianLieIdeal_iff]
+  rw [LieHom.mem_range, LieIdeal.mem_toLieSubalgebra,
+    mem_hamiltonianLieIdeal_iff_interiorClass_eq_zero,
+    hσ.isNondegenerate.exact_negHamiltonianₗ_interiorClass _, Set.mem_range]
   constructor
   · rintro ⟨f, rfl⟩
-    -- `-X_f` is the Hamiltonian vector field of `-f`.
-    refine ⟨SmoothForm.ofFunction (σ.poissonLieAlgebraEquiv hσ (-f)), ?_⟩
-    have hX : ⇑((LieAlgebroid.tangent I M).sectionsEquiv
-        (σ.negHamiltonianLieHom hσ f : (LieAlgebroid.tangent I M).Sections)) =
-        σ.hamiltonianVectorField (σ.poissonLieAlgebraEquiv hσ (-f)) :=
-      funext fun x ↦ by
-        rw [negHamiltonianLieHom_apply, map_neg, ContMDiffMap.coe_neg, hamiltonianVectorField_neg]
-    have hf : (fun y ↦ (SmoothForm.ofFunction (σ.poissonLieAlgebraEquiv hσ (-f))).1 y 0) =
-        σ.poissonLieAlgebraEquiv hσ (-f) :=
-      funext fun y ↦ by rw [SmoothForm.coe_ofFunction, RoughForm.ofFunction_apply]
-    rw [hX, hf]
-    exact hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField _
+    exact ⟨_, (symplecticLieSubalgebraEquiv_negHamiltonianLieHom hσ f).symm⟩
   · rintro ⟨φ, hφ⟩
-    -- A Hamiltonian vector field of the smooth function `g` is `-X_{-g}`.
-    have hg : ContMDiff I 𝓘(ℝ) ∞ (fun y ↦ φ.1 y 0) :=
-      isSmoothForm_ofFunction_iff.1 (by rw [← RoughForm.eq_ofFunction]; exact φ.isSmoothForm)
-    let g : C^∞⟮I, M; ℝ⟯ := ⟨_, hg⟩
-    refine ⟨(σ.poissonLieAlgebraEquiv hσ).symm (-g), Subtype.ext <|
-      (LieAlgebroid.tangent I M).sectionsEquiv.injective <| ContMDiffSection.ext fun x ↦ ?_⟩
-    rw [negHamiltonianLieHom_apply, LinearEquiv.apply_symm_apply, ContMDiffMap.coe_neg,
-      hamiltonianVectorField_neg, neg_neg, ContMDiffMap.coeFn_mk]
-    exact congr_fun (hσ.isNondegenerate.isHamiltonianVectorField_iff_eq.1 hφ).symm x
+    -- Every smooth `0`-form is the form of a smooth function.
+    let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ φ.1 y 0,
+      isSmoothForm_ofFunction_iff.1 (by rw [← RoughForm.eq_ofFunction]; exact φ.isSmoothForm)⟩
+    have hg : SmoothForm.ofFunction g = φ :=
+      Subtype.ext <| (SmoothForm.coe_ofFunction g).trans (RoughForm.eq_ofFunction φ.1).symm
+    refine ⟨(σ.poissonLieAlgebraEquiv hσ).symm g, (σ.symplecticLieSubalgebraEquiv _).injective ?_⟩
+    rw [symplecticLieSubalgebraEquiv_negHamiltonianLieHom, LinearEquiv.apply_symm_apply, hg, hφ]
 
 end SmoothTwoForm
 
