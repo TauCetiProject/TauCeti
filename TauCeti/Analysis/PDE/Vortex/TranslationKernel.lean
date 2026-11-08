@@ -142,6 +142,11 @@ theorem sectionValue_covariantTranslation (hp : DifferentiableAt ℝ (fun w ↦ 
     hcastp, hcastq, fderiv_const_apply]
   apply Complex.ext <;> simp <;> ring
 
+/-- A real-linear functional on the complex plane, evaluated in the real frame `(1, I)`. -/
+private theorem clm_apply_eq_re_mul_add_im_mul (L : ℂ →L[ℝ] ℝ) (v : ℂ) :
+    L v = v.re * L 1 + v.im * L I := by
+  simpa using LinearMap.apply_eq_re_smul_one_add_im_smul_I (L : ℂ →ₗ[ℝ] ℝ) v
+
 /-- The covariant translation is the translation velocity `∂_v x` corrected by the
 infinitesimal gauge transformation by the connection component `b(v) = b₁ v₁ + b₂ v₂`. -/
 theorem covariantTranslation_eq_fderiv_add_gaugeDirection (hx : DifferentiableAt ℝ x z)
@@ -153,15 +158,13 @@ theorem covariantTranslation_eq_fderiv_add_gaugeDirection (hx : DifferentiableAt
   have hdi (i : Fin 4) (u : ℂ) : fderiv ℝ x z u i = fderiv ℝ (fun w ↦ x w i) z u := by
     have h := ((EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp z hx.hasFDerivAt).fderiv
     exact (congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L u) h).symm
-  have hlin (i : Fin 4) : fderiv ℝ (fun w ↦ x w i) z v =
-      v.re * fderiv ℝ (fun w ↦ x w i) z 1 + v.im * fderiv ℝ (fun w ↦ x w i) z I := by
-    simpa using LinearMap.apply_eq_re_smul_one_add_im_smul_I
-      (fderiv ℝ (fun w ↦ x w i) z : ℂ →ₗ[ℝ] ℝ) v
   ext i
   fin_cases i
-  · simp (disch := fun_prop) [hdi, curvature_apply, fderiv_fun_add, fderiv_mul_const, hlin 0]
+  · simp (disch := fun_prop) [hdi, curvature_apply, fderiv_fun_add, fderiv_mul_const,
+      clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 0) z) v]
     ring
-  · simp (disch := fun_prop) [hdi, curvature_apply, fderiv_fun_add, fderiv_mul_const, hlin 1]
+  · simp (disch := fun_prop) [hdi, curvature_apply, fderiv_fun_add, fderiv_mul_const,
+      clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 1) z) v]
     ring
   · simp [hdi]
     ring
@@ -175,31 +178,56 @@ private theorem curvature_eventuallyEq (hsol : ∀ᶠ w in 𝓝 z, equation x w 
     rw [curvature_apply, curvature_eq_of_equation_eq_zero hw]
     ring
 
+/-- At a point where the vortex equation holds nearby, the derivative of the first connection
+component `-v₂ κ` of the covariant translation, computed from `κ = |φ|² / 2 - 1 / 8`. -/
+private theorem fderiv_covariantTranslation_apply_zero
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) (v u : ℂ) :
+    fderiv ℝ (fun w ↦ covariantTranslation x v w 0) z u =
+      -v.im * (x z 2 * fderiv ℝ (fun w ↦ x w 2) z u + x z 3 * fderiv ℝ (fun w ↦ x w 3) z u) := by
+  have h : (fun w ↦ covariantTranslation x v w 0) =ᶠ[𝓝 z]
+      fun w ↦ -v.im * (2⁻¹ * (x w 2 ^ 2 + x w 3 ^ 2) - 8⁻¹) :=
+    (curvature_eventuallyEq hsol).mono fun w hw ↦ by simp [hw]
+  rw [h.fderiv_eq]
+  simp (disch := fun_prop) [fderiv_const_mul, fderiv_sub_const, fderiv_fun_add, fderiv_fun_pow]
+  ring
+
+/-- At a point where the vortex equation holds nearby, the derivative of the second connection
+component `v₁ κ` of the covariant translation, computed from `κ = |φ|² / 2 - 1 / 8`. -/
+private theorem fderiv_covariantTranslation_apply_one
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) (v u : ℂ) :
+    fderiv ℝ (fun w ↦ covariantTranslation x v w 1) z u =
+      v.re * (x z 2 * fderiv ℝ (fun w ↦ x w 2) z u + x z 3 * fderiv ℝ (fun w ↦ x w 3) z u) := by
+  have h : (fun w ↦ covariantTranslation x v w 1) =ᶠ[𝓝 z]
+      fun w ↦ v.re * (2⁻¹ * (x w 2 ^ 2 + x w 3 ^ 2) - 8⁻¹) :=
+    (curvature_eventuallyEq hsol).mono fun w hw ↦ by simp [hw]
+  rw [h.fderiv_eq]
+  simp (disch := fun_prop) [fderiv_const_mul, fderiv_sub_const, fderiv_fun_add, fderiv_fun_pow]
+  ring
+
+/-- The two holomorphicity rows `∇₁ φ + i ∇₂ φ = 0` of the vortex equation, written out in the
+real coordinates `φ = p + i q`. -/
+private theorem holomorphicity_rows_of_equation_eq_zero (h : equation x z = 0) :
+    fderiv ℝ (fun w ↦ x w 2) z 1 - fderiv ℝ (fun w ↦ x w 3) z I -
+        x z 0 * x z 3 - x z 1 * x z 2 = 0 ∧
+      fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
+        x z 0 * x z 2 - x z 1 * x z 3 = 0 :=
+  ⟨by rw [← equation_apply_one, h, PiLp.zero_apply],
+    by rw [← equation_apply_two, h, PiLp.zero_apply]⟩
+
 /-- **The gauge-fixing row.** At a point where the vortex equation holds nearby, the covariant
 translations satisfy the pointwise gauge-fixing condition `d₀* y_v = 0` there. -/
 theorem gaugeAdjoint_covariantTranslation_of_equation_eq_zero
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) (v : ℂ) :
     gaugeAdjoint x (covariantTranslation x v) z = 0 := by
-  have hκ := curvature_eventuallyEq hsol
-  have h0 : (fun w ↦ covariantTranslation x v w 0) =ᶠ[𝓝 z]
-      fun w ↦ -v.im * ((2⁻¹ * (x w 2 ^ 2 + x w 3 ^ 2) - 8⁻¹)) :=
-    hκ.mono fun w hw ↦ by simp [hw]
-  have h1 : (fun w ↦ covariantTranslation x v w 1) =ᶠ[𝓝 z]
-      fun w ↦ v.re * ((2⁻¹ * (x w 2 ^ 2 + x w 3 ^ 2) - 8⁻¹)) :=
-    hκ.mono fun w hw ↦ by simp [hw]
-  have he1 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 1) hsol.self_of_nhds
-  have he2 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 2) hsol.self_of_nhds
-  simp only [equation_apply_one, equation_apply_two, PiLp.zero_apply] at he1 he2
-  have hlin (i : Fin 4) : fderiv ℝ (fun w ↦ x w i) z v =
-      v.re * fderiv ℝ (fun w ↦ x w i) z 1 + v.im * fderiv ℝ (fun w ↦ x w i) z I := by
-    simpa using LinearMap.apply_eq_re_smul_one_add_im_smul_I
-      (fderiv ℝ (fun w ↦ x w i) z : ℂ →ₗ[ℝ] ℝ) v
-  rw [gaugeAdjoint_def, h0.fderiv_eq, h1.fderiv_eq]
-  simp (disch := fun_prop) only [fderiv_const_mul, fderiv_sub_const,
-    fderiv_fun_add, fderiv_fun_pow, covariantTranslation_apply_two,
-    covariantTranslation_apply_three, hlin 2, hlin 3]
-  simp
+  obtain ⟨he1, he2⟩ := holomorphicity_rows_of_equation_eq_zero hsol.self_of_nhds
+  rw [gaugeAdjoint_def, fderiv_covariantTranslation_apply_zero hp hq hsol,
+    fderiv_covariantTranslation_apply_one hp hq hsol]
+  simp only [covariantTranslation_apply_two, covariantTranslation_apply_three,
+    clm_apply_eq_re_mul_add_im_mul _ v]
+  -- What remains is a combination of the two holomorphicity rows at `z`.
   linear_combination (v.re * x z 2 - v.im * x z 3) * he2 +
     (-(v.re * x z 3) - v.im * x z 2) * he1
 
@@ -216,14 +244,8 @@ theorem linearizedEquation_covariantTranslation_of_equation_eq_zero
   have hdq := (hq.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
   have hsp := hp.isSymmSndFDerivAt (by norm_num)
   have hsq := hq.isSymmSndFDerivAt (by norm_num)
-  have hκ := curvature_eventuallyEq hsol
-  have h0 : (fun w ↦ covariantTranslation x v w 0) =ᶠ[𝓝 z]
-      fun w ↦ -v.im * ((2⁻¹ * (x w 2 ^ 2 + x w 3 ^ 2) - 8⁻¹)) :=
-    hκ.mono fun w hw ↦ by simp [hw]
-  have h1 : (fun w ↦ covariantTranslation x v w 1) =ᶠ[𝓝 z]
-      fun w ↦ v.re * ((2⁻¹ * (x w 2 ^ 2 + x w 3 ^ 2) - 8⁻¹)) :=
-    hκ.mono fun w hw ↦ by simp [hw]
-  -- Differentiate the two holomorphicity rows of the equation along `v`.
+  obtain ⟨he1, he2⟩ := holomorphicity_rows_of_equation_eq_zero hsol.self_of_nhds
+  -- The derivatives along `v` of the two holomorphicity rows of the equation vanish.
   have hrow (i : Fin 3) : fderiv ℝ (fun w ↦ equation x w i) z v = 0 := by
     have he : (fun w ↦ equation x w i) =ᶠ[𝓝 z] fun _ ↦ 0 :=
       hsol.mono fun w hw ↦ by simp [hw]
@@ -231,55 +253,32 @@ theorem linearizedEquation_covariantTranslation_of_equation_eq_zero
     simp
   have hr1 := hrow 1
   have hr2 := hrow 2
-  simp (disch := fun_prop) only [equation_apply_one, equation_apply_two,
-    fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul,
-    fderiv_clm_apply hdp (differentiableAt_const _),
-    fderiv_clm_apply hdq (differentiableAt_const _),
-    add_apply, sub_apply, smul_apply, smul_eq_mul, fderiv_const_apply,
-    ContinuousLinearMap.comp_zero, zero_add,
-    ContinuousLinearMap.flip_apply] at hr1 hr2
-  have he1 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 1) hsol.self_of_nhds
-  have he2 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 2) hsol.self_of_nhds
-  simp only [equation_apply_one, equation_apply_two, PiLp.zero_apply] at he1 he2
-  have hlin (i : Fin 4) : fderiv ℝ (fun w ↦ x w i) z v =
-      v.re * fderiv ℝ (fun w ↦ x w i) z 1 + v.im * fderiv ℝ (fun w ↦ x w i) z I := by
-    simpa using LinearMap.apply_eq_re_smul_one_add_im_smul_I
-      (fderiv ℝ (fun w ↦ x w i) z : ℂ →ₗ[ℝ] ℝ) v
-  have r0 : linearizedEquation x (covariantTranslation x v) z 0 = 0 := by
-    simp only [linearizedEquation_apply_zero]
-    rw [h0.fderiv_eq, h1.fderiv_eq]
-    simp (disch := fun_prop) only [fderiv_const_mul, fderiv_sub_const,
-      fderiv_fun_add, fderiv_fun_pow, covariantTranslation_apply_two,
-      covariantTranslation_apply_three, hlin 2, hlin 3]
-    simp
-    ring
-  have r1 : linearizedEquation x (covariantTranslation x v) z 1 = 0 := by
-    simp (disch := fun_prop) only [linearizedEquation_apply_one, covariantTranslation_apply_zero,
-      covariantTranslation_apply_one, covariantTranslation_apply_two,
-      covariantTranslation_apply_three, fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul,
-      fderiv_clm_apply hdp (differentiableAt_const _),
-      fderiv_clm_apply hdq (differentiableAt_const _),
-      add_apply, sub_apply, smul_apply, smul_eq_mul, fderiv_const_apply,
-      ContinuousLinearMap.comp_zero, zero_apply, zero_add,
-      ContinuousLinearMap.flip_apply, hsp.eq _ v, hsq.eq _ v, curvature_apply]
-    simp only [hlin 0, hlin 1] at hr1 hr2 ⊢
-    simp
-    linear_combination hr1 - (x z 0 * v.re + x z 1 * v.im) * he2
-  have r2 : linearizedEquation x (covariantTranslation x v) z 2 = 0 := by
-    simp (disch := fun_prop) only [linearizedEquation_apply_two, covariantTranslation_apply_zero,
-      covariantTranslation_apply_one, covariantTranslation_apply_two,
-      covariantTranslation_apply_three, fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul,
-      fderiv_clm_apply hdp (differentiableAt_const _),
-      fderiv_clm_apply hdq (differentiableAt_const _),
-      add_apply, sub_apply, smul_apply, smul_eq_mul, fderiv_const_apply,
-      ContinuousLinearMap.comp_zero, zero_apply, zero_add,
-      ContinuousLinearMap.flip_apply, hsp.eq _ v, hsq.eq _ v, curvature_apply]
-    simp only [hlin 0, hlin 1] at hr1 hr2 ⊢
-    simp
-    linear_combination hr2 + (x z 0 * v.re + x z 1 * v.im) * he1
   ext i
   fin_cases i
-  exacts [r0, r1, r2]
+  -- Row `0`: the curvature equation gives `dκ = p dp + q dq`, which cancels the section terms.
+  · simp only [Fin.zero_eta, linearizedEquation_apply_zero, PiLp.zero_apply,
+      fderiv_covariantTranslation_apply_zero hp' hq' hsol,
+      fderiv_covariantTranslation_apply_one hp' hq' hsol, covariantTranslation_apply_two,
+      covariantTranslation_apply_three, clm_apply_eq_re_mul_add_im_mul _ v]
+    ring
+  -- Rows `1` and `2`: after expanding, using the symmetry of second derivatives, each row is
+  -- the derivative of the corresponding holomorphicity row along `v`, corrected by `b(v)` times
+  -- the other holomorphicity row.
+  all_goals
+    simp (disch := fun_prop) only [equation_apply_one, equation_apply_two,
+      linearizedEquation_apply_one, linearizedEquation_apply_two, covariantTranslation_apply_zero,
+      covariantTranslation_apply_one, covariantTranslation_apply_two,
+      covariantTranslation_apply_three, fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul,
+      fderiv_clm_apply hdp (differentiableAt_const _),
+      fderiv_clm_apply hdq (differentiableAt_const _),
+      add_apply, sub_apply, smul_apply, smul_eq_mul, fderiv_const_apply,
+      ContinuousLinearMap.comp_zero, zero_apply, zero_add,
+      ContinuousLinearMap.flip_apply, hsp.eq _ v, hsq.eq _ v, curvature_apply, Fin.reduceFinMk,
+      PiLp.zero_apply] at hr1 hr2 ⊢
+    simp only [clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 0) z) v,
+      clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 1) z) v] at hr1 hr2 ⊢
+  · linear_combination hr1 - (x z 0 * v.re + x z 1 * v.im) * he2
+  · linear_combination hr2 + (x z 0 * v.re + x z 1 * v.im) * he1
 
 /-- **Covariant translations are in the kernel of the gauge-fixed operator.** At a point where
 the vortex equation holds nearby, `L_x y_v = 0` for every real tangent vector `v`. -/
