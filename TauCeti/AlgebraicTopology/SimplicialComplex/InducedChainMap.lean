@@ -161,6 +161,7 @@ theorem tupleChain_vertexEmbedding_comp (c : RealizationCell K n)
   rw [tupleChain_comp_perm, tupleChain_vertexEmbedding]
 
 /-- The chain of a tuple with a repeated vertex vanishes. -/
+@[simp]
 theorem tupleChain_eq_zero_of_not_injective {g : Fin (n + 1) → ι} (hg : ¬Function.Injective g) :
     tupleChain (K := K) R g = 0 := by
   ext c
@@ -169,6 +170,7 @@ theorem tupleChain_eq_zero_of_not_injective {g : Fin (n + 1) → ι} (hg : ¬Fun
   exact hg (injective_of_det_incidence_ne_zero fun h' ↦ h (by rw [h', Int.cast_zero]))
 
 /-- The chain of a tuple whose vertices do not span a face vanishes. -/
+@[simp]
 theorem tupleChain_eq_zero_of_image_notMem {g : Fin (n + 1) → ι} (hg : Finset.univ.image g ∉ K) :
     tupleChain (K := K) R g = 0 := by
   ext c
@@ -266,7 +268,16 @@ theorem map_single (c : RealizationCell K n) (r : R) :
     map R f n (single c r) = r • tupleChain R (f ∘ c.vertexEmbedding) :=
   linearCombination_single R r c
 
+/-- A simplicial map increasing on a cell sends a multiple of that cell to the same multiple of
+its image cell, without a change of sign. -/
+theorem map_single_of_strictMonoOn (c : RealizationCell K n)
+    (hc : StrictMonoOn f (↑c.1.1 : Set ι)) (r : R) :
+    map R f n (single c r) = single (c.map f hc.injOn) r := by
+  rw [map_single, ← RealizationCell.vertexEmbedding_map c f hc, tupleChain_vertexEmbedding,
+    smul_single, smul_eq_mul, mul_one]
+
 /-- The induced map sends the chain of a vertex tuple to the chain of its image tuple. -/
+@[simp]
 theorem map_tupleChain {g : Fin (n + 1) → ι} (hg : Finset.univ.image g ∈ K) :
     map R f n (tupleChain R g) = tupleChain R (f ∘ g) := by
   by_cases hinj : Function.Injective g

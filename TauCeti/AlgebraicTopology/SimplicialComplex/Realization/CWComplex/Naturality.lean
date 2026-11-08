@@ -37,23 +37,6 @@ open AbstractSimplicialComplex PreAbstractSimplicialComplex.SimplicialMap
 
 universe u v
 
-namespace TauCeti.OrderedSimplicialChain
-
-variable {ι κ : Type u} [LinearOrder ι] [LinearOrder κ]
-  {K : AbstractSimplicialComplex ι} {L : AbstractSimplicialComplex κ} {R : Type v} [Ring R]
-  (f : PreAbstractSimplicialComplex.SimplicialMap
-    K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-
-/-- A simplicial map increasing on a cell sends a multiple of that cell to the same multiple of
-its image cell, without a change of sign. -/
-theorem map_single_of_strictMonoOn {n : ℕ} (c : RealizationCell K n)
-    (hc : StrictMonoOn f (↑c.1.1 : Set ι)) (r : R) :
-    map R f n (single c r) = single (c.map f hc.injOn) r := by
-  rw [map_single, ← RealizationCell.vertexEmbedding_map c f hc, tupleChain_vertexEmbedding,
-    smul_single, smul_eq_mul, mul_one]
-
-end TauCeti.OrderedSimplicialChain
-
 namespace PreAbstractSimplicialComplex.SimplicialMap
 
 open TauCeti
