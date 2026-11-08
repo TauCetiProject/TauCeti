@@ -91,20 +91,13 @@ private theorem operator_transportedDuhamelL [DecidableEq ι] (hα₀ : 0 < α) 
     (f) :
     euclideanParabolicOperatorL hα₁.le (fun i j ↦ HolderSpace.const (A i j)) 0 0
       (transportedDuhamelL hα₀ hα₁ hT e f) = f := by
-  have hinv : compSpatialL α ℝ hT e.toContinuousLinearMap (transportedDuhamelL hα₀ hα₁ hT e f) =
-      heatDuhamelPotentialL hα₀ hα₁ hT (HolderSpace.compLipschitzL _
-        (lipschitzWith_slabSpaceMap e.toContinuousLinearMap.lipschitzWith) f) := by
-    ext p
-    obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-    simp only [transportedDuhamelL, ContinuousLinearMap.comp_apply, compSpatialL_apply,
-      slabSpaceMap_slabMk, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
-  have h := he (transportedDuhamelL hα₀ hα₁ hT e f)
-  rw [hinv, euclideanParabolicOperatorL_heatDuhamelPotentialL] at h
+  rw [transportedDuhamelL, ContinuousLinearMap.comp_apply,
+    euclideanParabolicOperatorL_compSpatialL_symm_eq hα₁.le e he, ContinuousLinearMap.comp_apply,
+    euclideanParabolicOperatorL_heatDuhamelPotentialL]
   ext p
   obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-  have hp := congrArg (fun w ↦ w (slabMk (e.symm x) t)) h
-  simpa only [HolderSpace.compLipschitzL_apply, slabSpaceMap_slabMk,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using hp.symm
+  simp only [HolderSpace.compLipschitzL_apply, slabSpaceMap_slabMk,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
 
 private theorem norm_transportedDuhamelL_le (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
     (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι) {K : ℝ} (hK : 1 ≤ K)
@@ -113,11 +106,7 @@ private theorem norm_transportedDuhamelL_le (hα₀ : 0 < α) (hα₁ : α < 1) 
       (K ^ 2 * K ^ (α : ℝ)) * ‖heatDuhamelPotentialL (E := EuclideanSpace ℝ ι) (F := ℝ)
         hα₀ hα₁ hT‖ * K ^ (α : ℝ) := by
   have hK₀ : 0 ≤ K := zero_le_one.trans hK
-  have hR : ‖compSpatialL α ℝ hT e.symm.toContinuousLinearMap‖ ≤ K ^ 2 * K ^ (α : ℝ) := by
-    refine (norm_compSpatialL_le α ℝ hT _).trans ?_
-    exact mul_le_mul (pow_le_pow_left₀ (by positivity) (max_le hei hK) 2)
-      (Real.rpow_le_rpow (by positivity) (max_le hei hK) (by positivity))
-      (by positivity) (by positivity)
+  have hR := norm_compSpatialL_le_of_norm_le α ℝ hT hK hei
   have hJ : ‖HolderSpace.compLipschitzL (α := α) (Y := ℝ) _
       (lipschitzWith_slabSpaceMap (a := 0) (b := T)
         e.toContinuousLinearMap.lipschitzWith)‖ ≤ K ^ (α : ℝ) := by
@@ -174,16 +163,9 @@ theorem exists_solutionOperator_euclideanParabolicOperatorL_const_prod [Decidabl
   refine ⟨C₀ + K ^ 2 * K ^ (α : ℝ) * CD * K ^ (α : ℝ), by positivity,
     fun A hA hA' T hT ↦ ?_⟩
   obtain ⟨L₀, hL₀, hL₀u⟩ := hhom A hA hA' T hT
-  obtain ⟨e, he₁, he₂, he⟩ :=
-    exists_continuousLinearEquiv_euclideanParabolicOperatorL_compSpatialL_eq
+  obtain ⟨e, hen, hein, he⟩ :=
+    exists_continuousLinearEquiv_norm_le_euclideanParabolicOperatorL_compSpatialL_eq
       (hab := hT) hα₁.le hlam hA hA'
-  have hen : ‖e.toContinuousLinearMap‖ ≤ K := ContinuousLinearMap.opNorm_le_bound _ hK₀ fun x ↦
-    (he₂ x).trans (mul_le_mul_of_nonneg_right
-      ((le_max_left _ _).trans (le_max_right _ _)) (norm_nonneg x))
-  have hein : ‖e.symm.toContinuousLinearMap‖ ≤ K :=
-    ContinuousLinearMap.opNorm_le_bound _ hK₀ fun x ↦
-      (he₁ x).trans (mul_le_mul_of_nonneg_right
-        ((le_max_right _ _).trans (le_max_right _ _)) (norm_nonneg x))
   set D := transportedDuhamelL hα₀ hα₁ hT e
   set P := euclideanParabolicOperatorL hα₁.le (fun i j ↦ HolderSpace.const (A i j)) 0 0
   set t₀ : Icc (0 : ℝ) T := ⟨0, left_mem_Icc.2 hT.le⟩
@@ -198,7 +180,7 @@ theorem exists_solutionOperator_euclideanParabolicOperatorL_const_prod [Decidabl
             hα₀ hα₁ hT‖ * K ^ (α : ℝ)
           ≤ K ^ 2 * K ^ (α : ℝ) * (CD * (1 + T)) * K ^ (α : ℝ) := by gcongr
         _ = _ := by ring
-    refine (D.norm_coprod_le L₀).trans ?_
+    refine (D.opNorm_coprod_le L₀).trans ?_
     calc ‖D‖ + ‖L₀‖ ≤ K ^ 2 * K ^ (α : ℝ) * CD * K ^ (α : ℝ) * (1 + T) + C₀ * (1 + T) :=
           add_le_add hD (hL₀.trans (le_mul_of_one_le_right hC₀ hT1))
       _ = _ := by ring
@@ -207,30 +189,29 @@ theorem exists_solutionOperator_euclideanParabolicOperatorL_const_prod [Decidabl
     · -- Subtracting the Duhamel part leaves a solution of the homogeneous problem.
       rintro ⟨hPu, htru⟩
       have h := (hL₀u g (u - D f)).1 ⟨by rw [map_sub, hPu, hPD, sub_self], by
-        rw [← spatialTraceL_apply, map_sub, spatialTraceL_apply, spatialTraceL_apply, htru,
-          htrD, sub_zero]⟩
+        simp [htru, htrD]⟩
       rw [← h, add_sub_cancel]
     · rintro rfl
       have h := (hL₀u g (L₀ g)).2 rfl
-      refine ⟨by rw [map_add, h.1, hPD, add_zero], ?_⟩
-      rw [← spatialTraceL_apply, map_add, spatialTraceL_apply, spatialTraceL_apply, h.2, htrD,
-        zero_add]
+      exact ⟨by rw [map_add, h.1, hPD, add_zero], by simp [h.2, htrD]⟩
 
 /-- **The constant-coefficient Cauchy problem is well posed.** For `0 < α < 1`, a matrix `A`
-with `lam ‖ξ‖² ≤ ξᵀ A ξ ≤ Lam ‖ξ‖²`, `0 < lam`, and a horizon `T > 0`, the map
+with `lam ‖ξ‖² ≤ ξᵀ A ξ`, `0 < lam`, and a horizon `T > 0`, the map
 `u ↦ (∂ₜu - ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu, u(·, 0))` from `C_b^{2+α,1+α/2}(ℝⁿ × [0, T])` to
 `C_b^{α,α/2}(ℝⁿ × [0, T]) × C_b^{2,α}(ℝⁿ)` is bijective. -/
 theorem bijective_euclideanParabolicOperatorL_const_prod_spatialTraceL [DecidableEq ι]
-    (hα₀ : 0 < α) (hα₁ : α < 1) {A : Matrix ι ι ℝ} {lam Lam : ℝ} (hlam : 0 < lam)
+    (hα₀ : 0 < α) (hα₁ : α < 1) {A : Matrix ι ι ℝ} {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2)
     (hT : (0 : ℝ) < T) :
     Function.Bijective
       ((euclideanParabolicOperatorL hα₁.le (fun i j ↦ HolderSpace.const (A i j)) 0 0).prod
         (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)) := by
+  -- Every fixed matrix satisfies an upper ellipticity bound, so the uniform theorem applies.
   obtain ⟨_, _, hC⟩ :=
-    exists_solutionOperator_euclideanParabolicOperatorL_const_prod (ι := ι) hα₀ hα₁ hlam
-  obtain ⟨L, -, hL⟩ := hC A hA hA' T hT
+    exists_solutionOperator_euclideanParabolicOperatorL_const_prod (ι := ι) hα₀ hα₁
+      (Lam := ‖PDE.matrixBilinearForm A‖) hlam
+  obtain ⟨L, -, hL⟩ :=
+    hC A hA (PDE.toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A) T hT
   refine ⟨fun u v huv ↦ ?_, fun fg ↦ ⟨L fg, ?_⟩⟩
   · simp only [ContinuousLinearMap.prod_apply, spatialTraceL_apply, Prod.mk.injEq] at huv
     exact ((hL _ _ u).1 ⟨rfl, rfl⟩).trans ((hL _ _ v).1 ⟨huv.1.symm, huv.2.symm⟩).symm

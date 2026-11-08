@@ -766,11 +766,7 @@ theorem ParabolicC2HolderSpace.euclideanParabolicOperatorL_heatDuhamelPotentialL
     euclideanParabolicOperatorL hα₁.le (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
       (heatDuhamelPotentialL hα₀ hα₁ hT f) = f := by
   ext p
-  rw [euclideanParabolicOperatorL_apply, timeDerivL_heatDuhamelPotentialL_eq_laplacian_add,
-    InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _
-      (EuclideanSpace.basisFun ι ℝ)]
-  simp only [(heatDuhamelPotentialL hα₀ hα₁ hT f).iteratedFDeriv_two_apply,
-    slabMk_space_slabTime]
-  simp [Matrix.one_apply]
+  rw [euclideanParabolicOperatorL_one_apply, timeDerivL_heatDuhamelPotentialL_eq_laplacian_add,
+    add_sub_cancel_left]
 
 end TauCeti
