@@ -36,6 +36,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [CompactSpace M]
 
+omit [FiniteDimensional ℝ E] in
 /-- A continuous weight and a C1 map from a compact manifold give genuine intrinsic
 integrability of the pulled-back weighted planar area, including at corners. -/
 theorem _root_.Module.Basis.integrableTopForm_mpullback_areaForm (b : Module.Basis (Fin 2) ℝ E)
