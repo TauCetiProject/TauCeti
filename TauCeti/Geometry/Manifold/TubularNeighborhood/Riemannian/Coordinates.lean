@@ -203,8 +203,8 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
     simp only [R, vectorBundleRadialPartialDiffeomorphOfRadius_apply,
       TotalSpace.radialMap_zeroSection, vectorBundleScalarDiffeomorph_apply]
     exact congrArg (fun v : ν x => (⟨x, v⟩ : TotalSpace P ν)) (smul_zero (r x))
-  change Ψ (R _) = _
-  rw [hRzero]
+  have hΦ : ∀ p, ((Φ p : W) : N) = Ψ (R p) := fun p => rfl
+  rw [hΦ, hRzero]
   exact (congrFun hΨ _).trans (f.normalExp_zeroSection hn x)
 
 omit [ENat.LEInfty m] [IsManifold I (m + 1) M] in
