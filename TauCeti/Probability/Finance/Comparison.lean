@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Algebra.Order.Interval.Set.Group
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
 import TauCeti.Probability.Finance.LogSpot
 
@@ -72,15 +74,6 @@ namespace TauCeti.Finance
 
 variable {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ} {C₁ C₂ : ℝ → ℝ → ℝ} {T Λ R A : ℝ}
 
-/-- Reversing time keeps `0 < t < T`. -/
-private theorem sub_mem_Ioo_of_mem {τ : ℝ} (hτ : τ ∈ Ioo 0 T) : T - τ ∈ Ioo 0 T :=
-  ⟨by linarith [hτ.2], by linarith [hτ.1]⟩
-
-/-- A `C²` function is differentiable near the point. -/
-private theorem eventually_differentiableAt_of_contDiffAt_two {f : ℝ → ℝ} {x : ℝ}
-    (hf : ContDiffAt ℝ 2 f x) : ∀ᶠ z in 𝓝 x, DifferentiableAt ℝ f z :=
-  (hf.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt (by norm_num)
-
 /-- The derivative of a `C²` function is differentiable. -/
 private theorem differentiableAt_deriv_of_contDiffAt_two {f : ℝ → ℝ} {x : ℝ}
     (hf : ContDiffAt ℝ 2 f x) : DifferentiableAt ℝ (deriv f) x :=
@@ -102,7 +95,7 @@ private theorem contDiffAt_reversed_div_one_add_exp {C : ℝ → ℝ → ℝ}
     (hcd : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → ContDiffAt ℝ 2 (fun x ↦ C x t) s)
     {τ : ℝ} (hτ : τ ∈ Ioo 0 T) (y : ℝ) :
     ContDiffAt ℝ 2 (fun y ↦ C (exp y) (T - τ) / (1 + exp y)) y :=
-  ((hcd (exp_pos y) (sub_mem_Ioo_of_mem hτ)).comp y contDiff_exp.contDiffAt).div
+  ((hcd (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)).comp y contDiff_exp.contDiffAt).div
     (contDiffAt_const.add contDiff_exp.contDiffAt) (by positivity : 0 < 1 + exp y).ne'
 
 /-- In weighted log-spot coordinates and reversed time, `C(e^y, T - τ) / (1 + e^y)` is
@@ -111,7 +104,7 @@ private theorem differentiableAt_reversed_div_one_add_exp {C : ℝ → ℝ → �
     (hdiff : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → DifferentiableAt ℝ (fun u ↦ C s u) t)
     {τ : ℝ} (hτ : τ ∈ Ioo 0 T) (y : ℝ) :
     DifferentiableAt ℝ (fun τ' ↦ C (exp y) (T - τ') / (1 + exp y)) τ :=
-  ((hdiff (exp_pos y) (sub_mem_Ioo_of_mem hτ)).comp τ
+  ((hdiff (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)).comp τ
     ((differentiableAt_const T).sub differentiableAt_id)).div_const _
 
 /-- The first-order coefficient `r + σ² / 2 · (e^y - 1) / (e^y + 1)` in weighted log-spot
@@ -124,8 +117,8 @@ private theorem abs_rate_add_mul_le
   have hq : |(exp y - 1) / (exp y + 1)| ≤ 1 := by
     rw [abs_div, abs_of_pos (by positivity : 0 < exp y + 1), div_le_one (by positivity), abs_le]
     constructor <;> linarith [exp_pos y]
-  have h1 := (hσ (exp_pos y) (sub_mem_Ioo_of_mem hτ)).trans (le_abs_self Λ)
-  have h2 := (hr (sub_mem_Ioo_of_mem hτ)).trans (le_abs_self R)
+  have h1 := (hσ (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)).trans (le_abs_self Λ)
+  have h2 := (hr (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)).trans (le_abs_self R)
   have h3 : 0 ≤ σ (exp y) (T - τ) ^ 2 / 2 := by positivity
   calc |r (T - τ) + σ (exp y) (T - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1))|
       ≤ |r (T - τ)| + σ (exp y) (T - τ) ^ 2 / 2 * 1 := by
@@ -173,12 +166,12 @@ theorem le_of_pde_le_of_terminal_le
     (Lam := |Λ| / 2) (β := |R| + |Λ| / 2) (γ := |R|)
     (fun τ _ y ↦ by positivity)
     (fun τ hτ y ↦ by
-      have h1 := (hσ (exp_pos y) (sub_mem_Ioo_of_mem hτ)).trans (le_abs_self Λ)
+      have h1 := (hσ (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)).trans (le_abs_self Λ)
       nlinarith [abs_nonneg Λ, sq_nonneg y])
     (fun τ hτ y ↦ abs_rate_add_mul_le hσ hr hτ y)
     (fun τ hτ y ↦ by
       have h1 := (neg_le_abs (r (T - τ))).trans
-        ((hr (sub_mem_Ioo_of_mem hτ)).trans (le_abs_self R))
+        ((hr (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)).trans (le_abs_self R))
       rw [div_le_iff₀ (hψ y)]
       nlinarith [mul_nonneg (abs_nonneg R) (exp_pos y).le])
     (continuousOn_reversed_div_one_add_exp hC₁) (continuousOn_reversed_div_one_add_exp hC₂)
@@ -195,15 +188,16 @@ theorem le_of_pde_le_of_terminal_le
     (fun τ hτ y ↦ by
       rw [deriv_comp_const_sub (f := fun t ↦ C₁ (exp y) t / (1 + exp y)),
         deriv_comp_const_sub (f := fun t ↦ C₂ (exp y) t / (1 + exp y))]
-      have hc₁ := hcd₁ (exp_pos y) (sub_mem_Ioo_of_mem hτ)
+      have hc₁ := hcd₁ (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)
       have h₁ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
-        (eventually_differentiableAt_of_contDiffAt_two hc₁)
+        (hc₁.eventually_differentiableAt (by norm_num))
         (differentiableAt_deriv_of_contDiffAt_two hc₁)
-      have hc₂ := hcd₂ (exp_pos y) (sub_mem_Ioo_of_mem hτ)
+      have hc₂ := hcd₂ (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)
       have h₂ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
-        (eventually_differentiableAt_of_contDiffAt_two hc₂)
+        (hc₂.eventually_differentiableAt (by norm_num))
         (differentiableAt_deriv_of_contDiffAt_two hc₂)
-      have h := div_le_div_of_nonneg_right (hpde (exp_pos y) (sub_mem_Ioo_of_mem hτ)) (hψ y).le
+      have h := div_le_div_of_nonneg_right
+        (hpde (exp_pos y) (Set.sub_mem_Ioo_zero_iff_right.mpr hτ)) (hψ y).le
       linear_combination h + h₂ - h₁)
     (fun y ↦ by
       simp only [sub_zero]
