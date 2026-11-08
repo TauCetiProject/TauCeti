@@ -32,7 +32,11 @@ concurrency:
   cancel-in-progress: true
 jobs:
   shadow:
-    runs-on: ubuntu-24.04
+    # Keep unbounded/long-running research and maintenance off the hosted
+    # capacity shared by small automation and roadmap merge builds.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
     timeout-minutes: 60
     env:
       BWRAP_VER: 0.9.0-1build1
