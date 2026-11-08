@@ -23,7 +23,7 @@ A smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` i
   (`TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`).
 
 Their quantizations, Mathlib's Bessel potential and the derivative `-i ∂_v`, are identified in
-`TauCeti.Analysis.Pseudodifferential.FrequencyMultiplier`.
+`TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier`.
 
 ## References
 
