@@ -12,10 +12,11 @@ import TauCeti.Data.Set.Lattice
 /-!
 # Limits of maps squeezing a nested sequence of compact sets
 
-Let `K₀ ⊇ K₁ ⊇ ⋯` be sets in a metric space and `G k` maps which stabilize outside `K (k + 1)` from
-`k` on and squeeze `K (k + 1)` to diameter less than `1 / (k + 1)`. These results show that the
-images `G k '' K (k + 1)` shrink to a point `q`, and that a map equal to `q` on `⋂ i, K i` and to
-`G k` outside `K (k + 1)` is continuous when the `K i` are closed and sandwiched between open sets.
+Let `K₀ ⊇ K₁ ⊇ ⋯` be sets in a topological space and `G k` maps into a metric space which
+stabilize outside `K (k + 1)` from `k` on and squeeze `K (k + 1)` to diameter less than
+`1 / (k + 1)`. These results show that the images `G k '' K (k + 1)` shrink to a point `q`, and that
+a map equal to `q` on `⋂ i, K i` and to `G k` outside `K (k + 1)` is continuous when the `K i` are
+closed and sandwiched between open sets.
 
 ## Main results
 
@@ -29,18 +30,18 @@ public section
 
 open Set Metric Filter Topology
 
-variable {M : Type*} [MetricSpace M]
+variable {α β : Type*} [TopologicalSpace α] [MetricSpace β]
 
 namespace TauCeti
 
 /-- The nested images `G k '' K (k + 1)` of compact sets with diameters tending to `0` shrink to a
 point `q`, and every `G m x` with `m ≥ k` and `x ∈ K (k + 1)` lies within `1 / (k + 1)` of `q`. -/
-theorem exists_mem_image_and_dist_lt {K : ℕ → Set M} (hK : ∀ i, IsCompact (K i))
-    (hKsucc : ∀ i, K (i + 1) ⊆ K i) (hKne : ∀ i, (K i).Nonempty) {G : ℕ → M → M}
+theorem exists_mem_image_and_dist_lt {K : ℕ → Set α} (hK : ∀ i, IsCompact (K i))
+    (hKsucc : ∀ i, K (i + 1) ⊆ K i) (hKne : ∀ i, (K i).Nonempty) {G : ℕ → α → β}
     (hG : ∀ k, Continuous (G k))
     (hGimg : ∀ k m, k ≤ m → G m '' K (k + 1) = G k '' K (k + 1))
     (hGdiam : ∀ k, diam (G k '' K (k + 1)) < 1 / ((k : ℝ) + 1)) :
-    ∃ q : M, (∀ k, q ∈ G k '' K (k + 1)) ∧
+    ∃ q : β, (∀ k, q ∈ G k '' K (k + 1)) ∧
       ∀ k m, k ≤ m → ∀ x ∈ K (k + 1), dist (G m x) q < 1 / ((k : ℝ) + 1) := by
   have hScpt (k : ℕ) : IsCompact (G k '' K (k + 1)) := (hK _).image (hG k)
   have hSanti (k : ℕ) : G (k + 1) '' K (k + 1 + 1) ⊆ G k '' K (k + 1) := by
@@ -57,9 +58,9 @@ theorem exists_mem_image_and_dist_lt {K : ℕ → Set M} (hK : ∀ i, IsCompact 
 `K (i + 1) ⊆ U i ⊆ K i`, and let `G k` be continuous maps such that all `G m` with `m ≥ k` lie
 within `1 / (k + 1)` of `q` on `K (k + 1)`. A map `g` which is constant `q` on `⋂ i, K i` and
 agrees with `G k` outside `K (k + 1)`, for every `k`, is continuous. -/
-theorem continuous_of_eq_of_notMem {U K : ℕ → Set M} (hU : ∀ i, IsOpen (U i))
+theorem continuous_of_eq_of_notMem {U K : ℕ → Set α} (hU : ∀ i, IsOpen (U i))
     (hK : ∀ i, IsClosed (K i)) (hKU : ∀ i, K (i + 1) ⊆ U i) (hUK : ∀ i, U i ⊆ K i)
-    {G : ℕ → M → M} (hG : ∀ k, Continuous (G k)) {q : M} {g : M → M}
+    {G : ℕ → α → β} (hG : ∀ k, Continuous (G k)) {q : β} {g : α → β}
     (hdist : ∀ k m, k ≤ m → ∀ x ∈ K (k + 1), dist (G m x) q < 1 / ((k : ℝ) + 1))
     (hgX : ∀ x ∈ ⋂ i, K i, g x = q) (hgG : ∀ k x, x ∉ K (k + 1) → g x = G k x) :
     Continuous g := by
