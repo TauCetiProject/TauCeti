@@ -281,6 +281,13 @@ theorem coe_specialOrthogonalStabilizerHomeomorph_apply (m : ℕ)
       SpecialOrthogonalGroup.fromBlocksOne ℝ r m B :=
   (rfl)
 
+variable (r) in
+/-- The block embedding `B ↦ diag(1_r, B)` of `SO(m)` in `SO(r + m)` is a topological
+embedding. -/
+theorem isEmbedding_fromBlocksOne (m : ℕ) :
+    IsEmbedding (SpecialOrthogonalGroup.fromBlocksOne ℝ r m) :=
+  IsEmbedding.subtypeVal.comp (specialOrthogonalStabilizerHomeomorph r m).isEmbedding
+
 end finiteOrthonormalFrame
 
 end TauCeti

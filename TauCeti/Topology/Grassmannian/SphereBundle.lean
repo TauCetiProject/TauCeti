@@ -114,6 +114,15 @@ theorem specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff
     (WithLp.toLp_injective 2).eq_iff, OneMemClass.coe_one, ← mulVec_single_one,
     ← mulVec_single_one, one_mulVec, show Fin.castAdd n (0 : Fin 1) = 0 from Fin.ext (by simp)]
 
+/-- The fibre of `A ↦ A e₀` over `e₀` is the range of the block embedding `B ↦ diag(1, B)`. -/
+theorem range_fromBlocksOne_eq_preimage_specialOrthogonalSphereMap :
+    range (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n) =
+      specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1} := by
+  ext A
+  rw [mem_preimage, mem_singleton_iff,
+    specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff, MonoidHom.mem_range,
+    mem_range]
+
 /-- For `n ≥ 1`, every unit vector of `ℝ^(1 + n)` is `A e₀` for some `A ∈ SO(1 + n)`. -/
 theorem surjective_specialOrthogonalSphereMap [NeZero n] :
     Function.Surjective (specialOrthogonalSphereMap n) :=
