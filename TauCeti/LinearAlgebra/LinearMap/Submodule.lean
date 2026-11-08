@@ -41,7 +41,10 @@ theorem eq_bot_or_eq_top_of_comp_mem (N : Submodule k (V →ₗ[k] W))
   refine N.eq_top_iff'.mpr fun F ↦ ?_
   obtain ⟨z, rfl⟩ := (dualTensorHomEquiv k V W).surjective F
   induction z using TensorProduct.inductionOn with
-  | tmul φ w => exact hrank φ w
+  | tmul φ w =>
+    convert hrank φ w using 1
+    ext
+    simp
   | add a b ha hb => simpa using N.add_mem ha hb
 
 end Submodule
