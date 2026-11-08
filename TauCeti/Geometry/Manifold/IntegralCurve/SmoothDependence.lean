@@ -45,19 +45,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
   [CompleteSpace E] [T2Space M] {v : (x : M) → TangentSpace I x} {x₀ : M}
 
-omit [BoundarylessManifold I M] [CompleteSpace E] [T2Space M] in
-/-- A curve in the extended chart at `x₀` that solves the coordinate equation and stays in the
-interior of the chart target on an open set `s` is an integral curve of `v` on `s` once pulled back
-through the inverse chart. -/
-private theorem isMIntegralCurveOn_extChartAt_symm_comp {Φ : ℝ → E} {s : Set ℝ} (hs : IsOpen s)
-    (hderiv : ∀ t ∈ s, HasDerivAt Φ ((tangentCoordChange I ((extChartAt I x₀).symm (Φ t)) x₀
-      ((extChartAt I x₀).symm (Φ t))) (v ((extChartAt I x₀).symm (Φ t)))) t)
-    (htarget : ∀ t ∈ s, Φ t ∈ interior (extChartAt I x₀).target) :
-    IsMIntegralCurveOn ((extChartAt I x₀).symm ∘ Φ) v s :=
-  IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ IsMIntegralCurveAt.of_extChartAt_symm
-    (by filter_upwards [hs.mem_nhds ht] with s hs using htarget s hs)
-    (by filter_upwards [hs.mem_nhds ht] with s hs using hderiv s hs)
-
 /- The proof applies `ODE.exists_contDiffAt_localFlow` to the vector field in the extended chart
 at `x₀`, then pulls the resulting coordinate flow back through the inverse chart. Fixed-chart
 uniqueness identifies these local curves with the maximal integral curves. Thus the maximal flow
@@ -100,7 +87,7 @@ private theorem exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm {n : �
   have hcurve : ∀ x ∈ φ.source, pa (φ x) →
       IsMIntegralCurveOn (φ.symm ∘ Φ (φ x)) v (Ioo (-ε) ε) ∧ (φ.symm ∘ Φ (φ x)) 0 = x :=
     fun x hx hpax ↦
-    ⟨isMIntegralCurveOn_extChartAt_symm_comp isOpen_Ioo (fun t ht ↦ (hab hpax (hIoo t ht)).1)
+    ⟨IsMIntegralCurveOn.of_extChartAt_symm isOpen_Ioo (fun t ht ↦ (hab hpax (hIoo t ht)).1)
       fun t ht ↦ (hab hpax (hIoo t ht)).2.1, by simp [hΦ0, φ.left_inv hx]⟩
   have hx : ∀ᶠ x in 𝓝 x₀, x ∈ φ.source ∧ pa (φ x) :=
     Filter.Eventually.and (extChartAt_source_mem_nhds (I := I) x₀)
