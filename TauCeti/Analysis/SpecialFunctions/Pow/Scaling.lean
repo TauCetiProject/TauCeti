@@ -21,8 +21,6 @@ This file collects the rearrangements of such powers that these arguments need.
 * A constant of the form `(R^{d/2+a} Q)²`, which is the natural scale of an `L²` quantity on a
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
   `0 ≤ c ≤ Q`.
-* For `a > 0`, every term `θ^a c` can be made at most a given `ε > 0` by a choice of
-  `θ ∈ (0, 1]`.
 -/
 
 public section
@@ -69,23 +67,5 @@ theorem sq_mul_rpow_add_two_mul_le {R c Q d a : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
     rw [← rpow_mul_natCast hR.le, Nat.cast_two, add_mul, div_mul_cancel₀ _ two_ne_zero, mul_comm]
   rw [h, mul_pow, mul_comm]
   gcongr
-
-/-- For `a > 0` and `ε > 0` there is `θ ∈ (0, 1]` with `θ^a c ≤ ε`. -/
-theorem exists_rpow_mul_le {a c ε : ℝ} (ha : 0 < a) (hε : 0 < ε) :
-    ∃ θ : ℝ, 0 < θ ∧ θ ≤ 1 ∧ θ ^ a * c ≤ ε := by
-  obtain ⟨x, hx⟩ : ∃ x, x = ε / (|c| + 1) := ⟨_, rfl⟩
-  have hx0 : 0 < x := hx ▸ by positivity
-  refine ⟨min 1 (x ^ a⁻¹), lt_min one_pos (rpow_pos_of_pos hx0 _), min_le_left _ _, ?_⟩
-  have hθx : (min 1 (x ^ a⁻¹)) ^ a ≤ x := by
-    calc (min 1 (x ^ a⁻¹)) ^ a ≤ (x ^ a⁻¹) ^ a :=
-          rpow_le_rpow (by positivity) (min_le_right _ _) ha.le
-      _ = x := rpow_inv_rpow hx0.le ha.ne'
-  have hxc : x * |c| ≤ ε := by
-    rw [hx, div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-    nlinarith [abs_nonneg c]
-  calc (min 1 (x ^ a⁻¹)) ^ a * c ≤ (min 1 (x ^ a⁻¹)) ^ a * |c| :=
-        mul_le_mul_of_nonneg_left (le_abs_self c) (by positivity)
-    _ ≤ x * |c| := mul_le_mul_of_nonneg_right hθx (abs_nonneg c)
-    _ ≤ ε := hxc
 
 end Real

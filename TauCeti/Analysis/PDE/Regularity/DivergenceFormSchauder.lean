@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
 public import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -293,8 +294,9 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
   obtain ⟨β, hβdef⟩ : ∃ β : ℝ, β = (n : ℝ) + 1 - α := ⟨_, rfl⟩
   have hβ : β < (n : ℝ) + 1 := by linarith
   obtain ⟨ε₀, C₀, hε₀, hC₀, hit⟩ := exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hA hβ hβ
-  obtain ⟨θ, hθ, hθ1, hε⟩ := Real.exists_rpow_mul_le (c := M ^ 2 / lam ^ 2)
+  obtain ⟨θ, hθ, hθ1, hε⟩ := Real.exists_pos_le_one_mul_rpow_le (M ^ 2 / lam ^ 2)
     (by positivity : (0 : ℝ) < 2 * α) hε₀
+  rw [mul_comm] at hε
   rw [← mul_div_assoc] at hε
   refine ⟨θ, C₀ * (θ ^ (-β) + A / lam ^ 2), hθ, hθ1, by positivity, ?_⟩
   intro Omega u a G s z R V Ka KG h hz haK hGK hu hball hR hM hV hΦR ρ hρ hρθ
