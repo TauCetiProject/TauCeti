@@ -68,9 +68,10 @@ denominator of the sum of a dyadic series of ratio `2 ^ (-α)`.
 
 Rescaling a power bound from radius `R` to radius `ρ` uses the exponent identities
 `(x ^ y) ^ 2 * x ^ z = x ^ (2 y + z)` and `(ρ / R) ^ β * R ^ γ = R ^ (γ - β) * ρ ^ β`. A smallness
-condition `c r ^ α ≤ ε` on a radius `r ≤ R / 2` is met by `r = min (R / 2) ((ε / c) ^ (1 / α))`,
-and then `r ^ (-q) ≤ 2 ^ q R ^ (-q) + (c / ε) ^ (q / α)`. This is how a scale-invariant estimate
-proved under a smallness condition is turned into one on every scale.
+condition `c r ^ α ≤ ε` on a radius `r ≤ R / 2` is met by `r = min (R / 2) ((ε / c) ^ (1 / α))`
+if `c > 0` and by `r = R / 2` if `c = 0`, and then
+`r ^ (-q) ≤ 2 ^ q R ^ (-q) + (c / ε) ^ (q / α)`. This is how a scale-invariant estimate proved
+under a smallness condition is turned into one on every scale.
 
 ## Main results
 
@@ -239,7 +240,7 @@ theorem div_rpow_mul_rpow {ρ R : ℝ} (hρ : 0 ≤ ρ) (hR : 0 < R) (β γ : �
 
 /-- **Choosing a small radius.** Let `α, ε, R > 0` and `c ≥ 0`. Some `r > 0` with `2 r ≤ R`
 satisfies the smallness condition `c r ^ α ≤ ε` and `r ^ (-q) ≤ 2 ^ q R ^ (-q) + (c / ε) ^ (q / α)`:
-take `r = min (R / 2) ((ε / c) ^ (1 / α))`. -/
+take `r = min (R / 2) ((ε / c) ^ (1 / α))` if `c > 0` and `r = R / 2` if `c = 0`. -/
 theorem exists_mul_rpow_le_and_rpow_neg_le {α c ε R : ℝ} (hα : 0 < α) (hc : 0 ≤ c) (hε : 0 < ε)
     (hR : 0 < R) (q : ℝ) :
     ∃ r, 0 < r ∧ 2 * r ≤ R ∧ c * r ^ α ≤ ε ∧
