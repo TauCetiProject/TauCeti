@@ -26,7 +26,8 @@ therefore differs from the open ball by a null set. A set inside a closed ball w
 ball of the same radius likewise agrees with it up to a null set. In a nontrivial space, concentric
 balls are ordered by measure as by radius, so the points `x` whose centered ball of radius `‖x‖` has
 measure below `m` form a set of measure `m`. The ratio of the measures of two closed balls is
-controlled by the ratio of their radii raised to the dimension, the shell between concentric balls
+controlled by the ratio of their radii raised to the dimension, also for the restriction of the
+measure to a set of positive density in the balls, the shell between concentric balls
 has measure the difference of the powers of the radii, and the part of a ball outside a translate of
 itself is controlled by the distance between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
@@ -65,6 +66,11 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
+* `MeasureTheory.Measure.addHaar_real_restrict_closedBall_div_le`,
+  `MeasureTheory.Measure.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall`: for the restriction
+  of the measure to a set `s` with density at least `c > 0` in a closed ball, the ratio of the
+  measures of nearby balls is at most `2ⁿ / c`, and the measure of a ball of radius `r` is at
+  least `c rⁿ` times that of the unit ball.
 * `MeasureTheory.Measure.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball`: the closed ball
   of radius `c r` has `cⁿ` times the measure of the open ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
@@ -302,6 +308,50 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_div_le
   rw [mu.addHaar_real_closedBall x hR, mu.addHaar_real_closedBall y hr.le,
     mul_div_mul_right _ _ hball.ne', div_le_iff₀ (by positivity), ← mul_pow]
   exact pow_le_pow_left₀ hR hRr _
+
+/-- If a set `s` has density at least `c > 0` in `closedBall y ε`, in the sense that
+`c μ(closedBall y ε) ≤ μ(closedBall y ε ∩ s)`, then for `0 ≤ r ≤ 2 ε` a closed ball of radius `r`
+has at most `2ⁿ / c` times the `μ.restrict s`-measure of `closedBall y ε`, whatever its centre,
+where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_restrict_closedBall_div_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {s : Set E} {c : NNReal} {ε r : ℝ} (hc : 0 < c) (hε : 0 < ε) (hr : 0 ≤ r)
+    (hrε : r ≤ 2 * ε) (hd : (c : ENNReal) * mu (closedBall y ε) ≤ mu (closedBall y ε ∩ s)) :
+    (mu.restrict s).real (closedBall x r) / (mu.restrict s).real (closedBall y ε) ≤
+      2 ^ finrank ℝ E / c := by
+  have hy : 0 < mu.real (closedBall y ε) :=
+    ENNReal.toReal_pos (measure_closedBall_pos mu y hε).ne' measure_closedBall_lt_top.ne
+  have hden : c * mu.real (closedBall y ε) ≤ (mu.restrict s).real (closedBall y ε) := by
+    rw [measureReal_restrict_apply measurableSet_closedBall, measureReal_def, measureReal_def,
+      ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
+    exact ENNReal.toReal_mono
+      ((measure_mono Set.inter_subset_left).trans_lt measure_closedBall_lt_top).ne hd
+  have hnum : (mu.restrict s).real (closedBall x r) ≤ mu.real (closedBall x r) :=
+    ENNReal.toReal_mono measure_closedBall_lt_top.ne (Measure.restrict_apply_le _ _)
+  calc (mu.restrict s).real (closedBall x r) / (mu.restrict s).real (closedBall y ε)
+      ≤ mu.real (closedBall x r) / (c * mu.real (closedBall y ε)) :=
+        div_le_div₀ measureReal_nonneg hnum (mul_pos (NNReal.coe_pos.2 hc) hy) hden
+    _ = mu.real (closedBall x r) / mu.real (closedBall y ε) / c := by rw [mul_comm, div_div]
+    _ ≤ 2 ^ finrank ℝ E / c := by
+        gcongr
+        exact mu.addHaar_real_closedBall_div_le x y hε hr hrε
+
+/-- If a set `s` has density at least `c` in `closedBall x r`, `r > 0`, in the sense that
+`c μ(closedBall x r) ≤ μ(closedBall x r ∩ s)`, then the `μ.restrict s`-measure of the ball is at
+least `c rⁿ μ(closedBall 0 1)`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.Measure.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {s : Set E} {c : NNReal} {r : ℝ} (hr : 0 < r)
+    (hd : (c : ENNReal) * mu (closedBall x r) ≤ mu (closedBall x r ∩ s)) :
+    ENNReal.ofReal (c * r ^ (finrank ℝ E : ℝ) * mu.real (closedBall 0 1)) ≤
+      mu.restrict s (closedBall x r) := by
+  rw [Measure.restrict_apply measurableSet_closedBall]
+  refine le_trans (le_of_eq ?_) hd
+  rw [mu.addHaar_closedBall' x hr.le, ← Real.rpow_natCast, ENNReal.ofReal_mul (by positivity),
+    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, mul_assoc, measureReal_def,
+    ENNReal.ofReal_toReal measure_closedBall_lt_top.ne]
 
 /-- The closed ball of radius `c r`, for `c ≥ 0` and `r > 0`, has `cⁿ` times the real measure of
 the open ball of radius `r` with the same centre, where `n` is the dimension. -/
