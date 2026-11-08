@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -26,6 +27,8 @@ precomposition with the derivative of that map.
   of its derivative.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
+* `TauCeti.fderiv_comp_add_smul`: the derivative of `w ↦ f (c + a • w)` is `a` times that of `f`
+  at `c + a • w`.
 -/
 
 public section
@@ -65,5 +68,12 @@ theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     {f : E → ℝ} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
   rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
+
+/-- **The chain rule for an affine change of variables.** The derivative of `w ↦ f (c + a • w)`
+at `w` is `a` times the derivative of `f` at `c + a • w`. Like `fderiv_comp_smul`, this needs no
+differentiability of `f`. -/
+theorem fderiv_comp_add_smul (f : E → F) (c : E) (a : 𝕜) (w : E) :
+    fderiv 𝕜 (fun w ↦ f (c + a • w)) w = a • fderiv 𝕜 f (c + a • w) := by
+  rw [_root_.fderiv_comp_smul (f := fun y ↦ f (c + y)), fderiv_comp_add_left]
 
 end TauCeti
