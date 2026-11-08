@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Hom
-public import Mathlib.GroupTheory.FiniteAbelian.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.GroupTheory.Finiteness
+public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.Basic.Real.Basic
-import Mathlib.Algebra.Order.Archimedean.Real.Basic
-import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Data.Fintype.Pi
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Order.Interval.Finset.Defs
-import Mathlib.Data.Int.Interval
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+import Mathlib.RingTheory.TensorProduct.Finite
+import Mathlib.Topology.MetricSpace.Bounded
+import TauCeti.Algebra.Module.ZLattice.LiftBaseChange
 
 /-!
 # Elements of a finitely generated abelian group with bounded real pairings
@@ -41,10 +41,10 @@ the pairing of `[θ]` with the class of the curve. That de Rham comparison is no
 
 ## Implementation notes
 
-By the structure theorem `H ≃+ ℤⁿ × T` with `T` finite
-(`AddCommGroup.equiv_free_prod_directSum_zmod`). Each coordinate `ℤⁿ → ℤ` of the free part,
-viewed as a real-valued homomorphism, is a finite real combination of the `θ i`, so it is bounded
-on a window, whose free coordinates therefore range over a finite box.
+Real-valued homomorphisms on `H` are the real linear functionals on `ℝ ⊗[ℤ] H`, a
+finite-dimensional space, so finitely many of the `θ i` already span. Evaluation at these has
+injective real extension `ℝ ⊗[ℤ] H → ℝᵇ`, and a window lies in the preimage of a bounded box, so
+it is finite by `LinearMap.finite_preimage_of_injective_liftBaseChange`.
 
 ## References
 
@@ -66,45 +66,34 @@ theorem finite_setOf_forall_abs_apply_le (θ : ι → H →+ ℝ)
     (hθ : Submodule.span ℝ (range θ) = ⊤) (C : ι → ℝ) :
     {A : H | ∀ i, |θ i A| ≤ C i}.Finite := by
   classical
-  obtain ⟨n, κ, _, p, hp, e, ⟨φ⟩⟩ := AddCommGroup.equiv_free_prod_directSum_zmod H
-  -- The torsion part of the structure theorem is finite.
-  have : ∀ i, NeZero (p i ^ e i) := fun i ↦ ⟨pow_ne_zero _ (hp i).ne_zero⟩
-  have : Finite (DirectSum κ fun i ↦ ZMod (p i ^ e i)) :=
-    Finite.of_equiv _ DFinsupp.equivFunOnFintype.symm
-  -- The coordinates of the free part, as real-valued homomorphisms.
-  let g (j : Fin n) : H →+ ℝ :=
-    (Int.castAddHom ℝ).comp ((Finsupp.applyAddHom j).comp
-      ((AddMonoidHom.fst _ _).comp φ.toAddMonoidHom))
-  have hg (j : Fin n) (A : H) : g j A = ((φ A).1 j : ℝ) := rfl
-  -- Each coordinate is a finite combination of the `θ i`, hence bounded on the window.
-  have hbound (j : Fin n) : ∃ K : ℕ, ∀ A : H, (∀ i, |θ i A| ≤ C i) → |(φ A).1 j| ≤ K := by
-    obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1
-      (hθ ▸ Submodule.mem_top : g j ∈ Submodule.span ℝ (range θ))
-    refine ⟨⌈∑ i ∈ c.support, |c i| * C i⌉₊, fun A hA ↦ ?_⟩
-    have hA' : |((φ A).1 j : ℝ)| ≤ ∑ i ∈ c.support, |c i| * C i := by
-      have hsum : g j A = ∑ i ∈ c.support, c i * θ i A := by
-        rw [← hc]
-        simp [Finsupp.sum]
-      rw [← hg, hsum]
-      refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-      rw [abs_mul]
-      exact mul_le_mul_of_nonneg_left (hA i) (abs_nonneg _)
-    exact_mod_cast hA'.trans (Nat.le_ceil _)
-  choose K hK using hbound
-  -- The window maps injectively into a finite box times the torsion part.
-  let box : Set ((Fin n → ℤ) × DirectSum κ fun i ↦ ZMod (p i ^ e i)) :=
-    (univ.pi fun j ↦ Icc (-(K j : ℤ)) (K j)) ×ˢ univ
-  have hbox : box.Finite := (Finite.pi fun j ↦ finite_Icc _ _).prod finite_univ
-  let ψ : H → (Fin n → ℤ) × DirectSum κ fun i ↦ ZMod (p i ^ e i) :=
-    fun A ↦ (⇑(φ A).1, (φ A).2)
-  have hψ : ψ.Injective := by
-    intro A B h
-    apply φ.injective
-    simp only [ψ, Prod.mk.injEq] at h
-    exact Prod.ext (DFunLike.coe_injective h.1) h.2
-  refine (hbox.preimage hψ.injOn).subset fun A hA ↦ ?_
-  simp only [box, ψ, mem_preimage, mem_prod, mem_pi, mem_univ, forall_const, and_true]
-  exact fun j ↦ abs_le.1 (hK j A hA)
+  -- Real-valued homomorphisms on `H` are the real linear functionals on `ℝ ⊗[ℤ] H`.
+  let Ψ : (H →+ ℝ) ≃ₗ[ℝ] Module.Dual ℝ (TensorProduct ℤ ℝ H) :=
+    (addMonoidHomLequivInt ℝ).trans (LinearMap.liftBaseChangeEquiv ℝ)
+  have : FiniteDimensional ℝ (H →+ ℝ) := Ψ.symm.finiteDimensional
+  -- A finite linearly independent subfamily `b` of the `θ i` still spans.
+  obtain ⟨b, hbθ, hbspan, hb⟩ := exists_linearIndependent ℝ (range θ)
+  have : Fintype b := hb.setFinite.fintype
+  choose c hc using fun f : b ↦ hbθ f.2
+  -- Evaluation at `b` has injective real extension, since `b` spans the dual of `ℝ ⊗[ℤ] H`.
+  let l : H →ₗ[ℤ] b → ℝ := LinearMap.pi fun f ↦ (f : H →+ ℝ).toIntLinearMap
+  have hl : Function.Injective (l.liftBaseChange ℝ) := by
+    refine (injective_iff_map_eq_zero _).2 fun x hx ↦
+      (Module.forall_dual_apply_eq_zero_iff ℝ x).1 fun φ ↦ ?_
+    have hΨ (f : b) (y : TensorProduct ℤ ℝ H) : Ψ f y = l.liftBaseChange ℝ y f := by
+      induction y using TensorProduct.inductionOn <;> simp_all [Ψ, l]
+    have hx' (g : H →+ ℝ) (hg : g ∈ Submodule.span ℝ b) : Ψ g x = 0 := by
+      induction hg using Submodule.span_induction with
+      | mem f hf => simpa [hx] using hΨ ⟨f, hf⟩ x
+      | zero => simp
+      | add => simp_all
+      | smul => simp_all
+    simpa using hx' (Ψ.symm φ) (by simp [hbspan, hθ])
+  refine (l.finite_preimage_of_injective_liftBaseChange hl
+    (Bornology.IsBounded.pi fun f ↦ Metric.isBounded_Icc (-C (c f)) (C (c f)))).subset
+    fun A hA ↦ ?_
+  simp only [mem_preimage, mem_pi, mem_univ, forall_const, mem_Icc]
+  intro f
+  simpa [l, hc] using abs_le.1 (hA (c f))
 
 /-- **Finitely many classes below an area cutoff.** In a finitely generated abelian group `H`,
 let the real-valued homomorphisms `θ i` span `H →+ ℝ`, and let `σ : H →+ ℝ` and `K i ≥ 0`. Then
