@@ -91,18 +91,16 @@ theorem tendsto_sum_tagged_Ioc {ι : Type*} {l : Filter ι} {a b : ℝ}
   let C := ‖B‖ * μ.variation.real (Ioc a b)
   have hC : 0 ≤ C := by positivity
   have hfi : μ.IntegrableOn f (Ioc a b) := by
-    simpa [VectorMeasure.IntegrableOn, VectorMeasure.Integrable,
-      variation_restrict measurableSet_Ioc, MeasureTheory.IntegrableOn] using
-      (hf.integrableOn_Icc (μ := μ.variation)).mono_set Ioc_subset_Icc_self
+    apply (integrable_indicator_iff measurableSet_Ioc).1
+    exact (MeasureTheory.integrable_indicator_iff measurableSet_Ioc).2
+      ((hf.integrableOn_Icc (μ := μ.variation)).mono_set Ioc_subset_Icc_self)
   apply Metric.tendsto_nhds.2
   intro ε hε
   obtain ⟨d, hd, hosc⟩ := Metric.uniformContinuousOn_iff.1
     (isCompact_Icc.uniformContinuousOn_of_continuous hf) (ε / (C + 1)) (by positivity)
   filter_upwards [hδ.eventually (gt_mem_nhds hd)] with k hk
   have hcell (i : ℕ) (hi : i ≤ n k) : τ k i ∈ Icc a b := by
-    constructor
-    · simpa [h₀ k] using hτ k (Nat.zero_le i)
-    · simpa [hn k] using hτ k hi
+    simpa only [h₀ k, hn k] using (hτ k).mapsTo_Icc ⟨Nat.zero_le i, hi⟩
   have hosc' (i : ℕ) (hi : i < n k) (x : ℝ)
       (hx : x ∈ Ioc (τ k i) (τ k (i + 1))) : ‖f (ξ k i) - f x‖ ≤ ε / (C + 1) := by
     have ht := hξ k i hi
@@ -127,9 +125,8 @@ theorem tendsto_sum_tagged_Ioc {ι : Type*} {l : Filter ι} {a b : ℝ}
       ring
     _ < ε := by
       have hC₁ : 0 < C + 1 := by positivity
-      have := div_mul_cancel₀ ε (ne_of_gt hC₁)
-      have : 0 < ε / (C + 1) := by positivity
-      nlinarith
+      rw [div_mul_eq_mul_div, div_lt_iff₀ hC₁]
+      nlinarith [hε]
 
 end MeasureTheory.VectorMeasure
 
@@ -152,9 +149,7 @@ theorem BoundedVariationOn.tendsto_sum_tagged_sub
       B (f (ξ k i)) (g (τ k (i + 1)) - g (τ k i))) l
         (𝓝 (∫ᵛ x in Ioc a b, f x ∂[B; hg.vectorMeasure])) := by
   have hcell (k : ι) (i : ℕ) (hi : i ≤ n k) : τ k i ∈ Icc a b := by
-    constructor
-    · simpa [h₀ k] using hτ k (Nat.zero_le i)
-    · simpa [hn k] using hτ k hi
+    simpa only [h₀ k, hn k] using (hτ k).mapsTo_Icc ⟨Nat.zero_le i, hi⟩
   have heq (k : ι) :
       (∑ i ∈ Finset.range (n k),
         B (f (ξ k i)) (hg.vectorMeasure (Ioc (τ k i) (τ k (i + 1))))) =
