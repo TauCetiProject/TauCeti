@@ -47,15 +47,10 @@ theorem continuous_hamiltonianCurvature_family (ω : SymplecticForm V)
       (v : ℝ × ℝ) :
       Continuous (fun q : (P × (ℝ × ℝ)) × V ↦
         fderiv ℝ (fun z ↦ K q.1.1 z q.2) q.1.2 v) := by
-    have hd (q : (P × (ℝ × ℝ)) × V) :
-        fderiv ℝ (fun z ↦ K q.1.1 z q.2) q.1.2 v =
-          fderiv ℝ (fun q : (P × (ℝ × ℝ)) × V ↦ K q.1.1 q.1.2 q.2) q ((0, v), 0) := by
-      have h := (hK.differentiable one_ne_zero q).hasFDerivAt.comp
-        (f := fun z : ℝ × ℝ ↦ ((q.1.1, z), q.2)) q.1.2
-        (((hasFDerivAt_const (𝕜 := ℝ) q.1.1 q.1.2).prodMk
-          (hasFDerivAt_id q.1.2)).prodMk (hasFDerivAt_const q.2 q.1.2))
-      exact congrArg (fun L ↦ L v) h.fderiv
-    exact ((hK.continuous_fderiv one_ne_zero).clm_apply continuous_const).congr fun q ↦ (hd q).symm
+    have hK' : ContDiff ℝ 1 (uncurry fun (q : (P × (ℝ × ℝ)) × V) z ↦
+        K q.1.1 z q.2) :=
+      hK.comp ((contDiff_fst.fst.fst.prodMk contDiff_snd).prodMk contDiff_fst.snd)
+    exact (Continuous.fderiv_one hK' continuous_fst.snd).clm_apply continuous_const
   have hXs := ω.continuous_uncurry_hamiltonianVectorField
     (K := fun p : P × (ℝ × ℝ) ↦ Ks p.1 p.2) hKs
   have hXt := ω.continuous_uncurry_hamiltonianVectorField
