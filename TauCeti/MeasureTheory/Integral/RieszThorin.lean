@@ -10,7 +10,9 @@ import Mathlib.Analysis.Complex.Hadamard
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.MeasureTheory.Function.Lp.Operator.Extension
 import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 
 /-!
 # The Riesz–Thorin interpolation theorem
@@ -594,20 +596,6 @@ open TauCeti
 variable {α β : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α}
   {ν : Measure β}
 
-/-- An operator norm bound on `L²` is the bound `‖T f‖₂ ≤ M ‖f‖₂` in `eLpNorm` form. -/
-private theorem eLpNorm_apply_le_of_norm_le (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) {M : ℝ≥0}
-    (hT : ‖T‖ ≤ M) (f : Lp ℂ 2 μ) : eLpNorm (T f) 2 ν ≤ M * eLpNorm f 2 μ := by
-  rw [← Lp.enorm_def, ← Lp.enorm_def]
-  refine T.le_of_opENorm_le ?_ f
-  rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
-  exact ENNReal.ofReal_le_ofReal hT
-
-/-- A simple function in `L²` is integrable. -/
-private theorem integrable_toLp_of_simpleFunc {s : SimpleFunc α ℂ} (hs : MemLp s 2 μ) :
-    Integrable (hs.toLp s) μ :=
-  ((SimpleFunc.memLp_iff_integrable two_ne_zero ENNReal.ofNat_ne_top).1 hs).congr
-    hs.coeFn_toLp.symm
-
 /-- The restriction of `T` to the simple functions in `L²` extends to a linear map on all simple
 functions, as the Riesz–Thorin theorem requires. -/
 private theorem exists_linearMap_eq_toLp (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) :
@@ -624,12 +612,12 @@ private theorem exists_linearMap_eq_toLp (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν)
         have h : T ((a + b).2.toLp (↑(a + b) : SimpleFunc α ℂ)) =
             T (a.2.toLp a) + T (b.2.toLp b) := by
           rw [← map_add, ← MemLp.toLp_add]
-          rfl
+          exact congrArg T (MemLp.toLp_congr _ _ (by simp))
         exact congrArg (fun u : Lp ℂ 2 ν ↦ (u : β →ₘ[ν] ℂ)) h
       map_smul' := fun c a ↦ by
         have h : T ((c • a).2.toLp (↑(c • a) : SimpleFunc α ℂ)) = c • T (a.2.toLp a) := by
           rw [← map_smul, ← MemLp.toLp_const_smul]
-          rfl
+          exact congrArg T (MemLp.toLp_congr _ _ (by simp))
         exact congrArg (fun u : Lp ℂ 2 ν ↦ (u : β →ₘ[ν] ℂ)) h }
   obtain ⟨U, hU⟩ := LinearMap.exists_extend T₀
   exact ⟨U, fun s hs ↦ LinearMap.congr_fun hU ⟨s, hs⟩⟩
@@ -649,7 +637,8 @@ private theorem eLpNorm_apply_toLp_le (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) {M
     simp
   rcases eq_or_ne M₀ 0 with rfl | hM₀
   · exact hzero ENNReal.top_ne_zero (nonpos_iff_eq_zero.1
-      ((h₀ _ (integrable_toLp_of_simpleFunc hs)).trans_eq (by simp)))
+      ((h₀ _ (SimpleFunc.integrable_toLp two_ne_zero ENNReal.ofNat_ne_top hs)).trans_eq
+        (by simp)))
   rcases eq_or_ne M₁ 0 with rfl | hM₁
   · exact hzero two_ne_zero (nonpos_iff_eq_zero.1
       ((eLpNorm_apply_le_of_norm_le T h₁ _).trans_eq (by simp)))
@@ -666,7 +655,7 @@ private theorem eLpNorm_apply_toLp_le (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) {M
   · rwa [hU s hs] at key
   · by_cases hs : MemLp s 2 μ
     · rw [hU s hs]
-      exact (h₀ _ (integrable_toLp_of_simpleFunc hs)).trans_eq
+      exact (h₀ _ (SimpleFunc.integrable_toLp two_ne_zero ENNReal.ofNat_ne_top hs)).trans_eq
         (by rw [eLpNorm_congr_ae hs.coeFn_toLp])
     · rw [htop s hs one_ne_zero ENNReal.one_ne_top, ENNReal.mul_top (by exact_mod_cast hM₀)]
       exact le_top
@@ -675,53 +664,6 @@ private theorem eLpNorm_apply_toLp_le (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν) {M
       exact (eLpNorm_apply_le_of_norm_le T h₁ _).trans_eq (by rw [eLpNorm_congr_ae hs.coeFn_toLp])
     · rw [htop s hs two_ne_zero ENNReal.ofNat_ne_top, ENNReal.mul_top (by exact_mod_cast hM₁)]
       exact le_top
-
-/-- A bound for `T` from `Lᵖ` to `L^q`, `1 ≤ p < ∞`, on simple functions in `L²` passes to every
-`f ∈ L² ∩ Lᵖ`. The simple approximants of `f` converge to `f` both in `L²` and in `Lᵖ`, so their
-images converge to `T f` in `L²`, hence almost everywhere along a subsequence, and Fatou's lemma
-bounds `‖T f‖_q`. -/
-private theorem eLpNorm_apply_le_of_forall_simpleFunc (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν)
-    {p q : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) {C : ℝ≥0∞} (hC : C ≠ ∞)
-    (h : ∀ (s : SimpleFunc α ℂ) (hs : MemLp s 2 μ), eLpNorm (T (hs.toLp s)) q ν ≤
-      C * eLpNorm s p μ)
-    (f : Lp ℂ 2 μ) (hf : MemLp f p μ) : eLpNorm (T f) q ν ≤ C * eLpNorm f p μ := by
-  have hfm := (Lp.aestronglyMeasurable f).aemeasurable
-  set φ := hfm.mk f
-  have hφ : Measurable φ := hfm.measurable_mk
-  have hfφ : (f : α → ℂ) =ᵐ[μ] φ := hfm.ae_eq_mk
-  have hφ2 : MemLp φ 2 μ := (Lp.memLp f).ae_eq hfφ
-  have hφp : MemLp φ p μ := hf.ae_eq hfφ
-  set s : ℕ → SimpleFunc α ℂ := fun n ↦ SimpleFunc.approxOn φ hφ (Set.range φ ∪ {0}) 0
-    (by simp) n
-  have hs2 : ∀ n, MemLp (s n) 2 μ := SimpleFunc.memLp_approxOn_range hφ hφ2
-  -- The approximants converge to `f` in `L²`, so their images converge to `T f` in `L²`.
-  have hφf : hφ2.toLp φ = f := by
-    rw [← Lp.toLp_coeFn f (Lp.memLp f), MemLp.toLp_eq_toLp_iff]
-    exact hfφ.symm
-  have hT : Tendsto (fun n ↦ T ((hs2 n).toLp (s n))) atTop (nhds (T f)) := by
-    have := SimpleFunc.tendsto_approxOn_range_Lp ENNReal.ofNat_ne_top hφ hφ2
-    rw [hφf] at this
-    exact (T.continuous.tendsto f).comp this
-  obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hT).exists_seq_tendsto_ae
-  -- The approximants also converge to `f` in `Lᵖ`.
-  have hsp : Tendsto (fun k ↦ C * (eLpNorm f p μ + eLpNorm (⇑(s (ns k)) - φ) p μ)) atTop
-      (nhds (C * (eLpNorm f p μ + 0))) :=
-    ENNReal.Tendsto.const_mul (tendsto_const_nhds.add
-      ((SimpleFunc.tendsto_approxOn_range_Lp_eLpNorm hp hφ hφp.eLpNorm_lt_top).comp
-        hns.tendsto_atTop)) (Or.inr hC)
-  calc eLpNorm (T f) q ν
-      ≤ atTop.liminf fun k ↦ eLpNorm (T ((hs2 (ns k)).toLp (s (ns k)))) q ν :=
-        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun _ ↦ Lp.aestronglyMeasurable _) _
-          (Lp.aestronglyMeasurable _) hae
-    _ ≤ atTop.liminf fun k ↦ C * (eLpNorm f p μ + eLpNorm (⇑(s (ns k)) - φ) p μ) := by
-        refine liminf_le_liminf (Eventually.of_forall fun k ↦ (h _ _).trans ?_)
-        gcongr
-        calc eLpNorm (s (ns k)) p μ = eLpNorm (φ + (⇑(s (ns k)) - φ)) p μ := by
-              rw [add_sub_cancel]
-          _ ≤ eLpNorm φ p μ + eLpNorm (⇑(s (ns k)) - φ) p μ :=
-              eLpNorm_add_le hp1
-          _ = eLpNorm f p μ + eLpNorm (⇑(s (ns k)) - φ) p μ := by rw [eLpNorm_congr_ae hfφ]
-    _ = C * eLpNorm f p μ := by rw [hsp.liminf_eq, add_zero]
 
 /-- **Interpolation between the `L¹ → L^∞` and `L² → L²` bounds.** Let `T` be a bounded operator
 on `L²` with `‖T‖ ≤ M₁`, such that `‖T f‖_∞ ≤ M₀ ‖f‖₁` for every integrable `f ∈ L²`. For
@@ -773,7 +715,7 @@ theorem eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm (T : Lp ℂ 2 μ →L[ℂ] Lp
   have hptop : p ≠ ∞ := by
     rw [← ENNReal.inv_ne_zero, hp']
     exact (lt_of_lt_of_le (ENNReal.mul_pos (by simpa using hθ.1) (by simp)) le_add_self).ne'
-  exact eLpNorm_apply_le_of_forall_simpleFunc T hp1 hptop ENNReal.coe_ne_top
+  exact eLpNorm_apply_le_of_forall_simpleFunc ENNReal.ofNat_ne_top T hp1 hptop ENNReal.coe_ne_top
     (eLpNorm_apply_toLp_le T h₀ h₁ hθ hp' hq' hqtop) f hf
 
 end ContinuousLinearMap
