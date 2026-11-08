@@ -724,8 +724,7 @@ theorem contDiff_quantizeSchwartzValue (a : Symbol n V W m) (u : 𝓢(Coordinate
         ∑ j, h j •
           fderiv ℝ (quantizeSchwartzValue a.coefficient u) x (EuclideanSpace.single j 1) := by
       funext x
-      conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
-      simp
+      exact (fderiv ℝ (quantizeSchwartzValue a.coefficient u) x).apply_eq_sum_single h
     rw [hsum]
     exact ContDiff.sum fun j _ ↦ (hj j).const_smul (h j)
 

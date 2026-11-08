@@ -297,6 +297,16 @@ theorem HasCompactSpatialSupport.smul {a : Symbol n V W m} (ha : a.HasCompactSpa
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
 
+theorem HasCompactSpatialSupport.neg {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) :
+    (-a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
+
+theorem HasCompactSpatialSupport.sub {a b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
 end Module
 
 section Inclusion
@@ -332,6 +342,14 @@ theorem HasCompactSpatialSupport.inclusion {a : Symbol n V W m} (ha : a.HasCompa
     (h : m ≤ m') : (inclusion h a).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by rw [coefficient_inclusion, hKa x hx ξ]⟩
+
+/-- A symbol whose coefficient is that of a symbol with compact spatial support, possibly of a
+different order, has compact spatial support. -/
+theorem HasCompactSpatialSupport.of_coefficient_eq {a : Symbol n V W m} {b : Symbol n V W m'}
+    (ha : a.HasCompactSpatialSupport) (h : b.coefficient = a.coefficient) :
+    b.HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by rw [h, hKa x hx ξ]⟩
 
 end Inclusion
 
