@@ -34,7 +34,10 @@ section FixedVectors
 variable {R G V : Type*} [Semiring R] [Group G] [AddCommMonoid V] [Module R V]
   (ρ : Representation R G V) {H : Subgroup G}
 
-/-- The image of an `H`-fixed vector under `ρ` depends only on the left coset `aH`. -/
+/-- The image of an `H`-fixed vector under `ρ` depends only on the left coset `aH`.
+
+This adapts Mathlib's `Representation.apply_eq_of_coe_eq`, which assumes `ρ` is trivial on all
+of `H`, to a single `H`-fixed vector; the proof follows the same argument. -/
 theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
     (hx : ∀ h : H, ρ h x = x) {a b : G}
     (hab : (a : G ⧸ H) = (b : G ⧸ H)) : ρ a x = ρ b x := by
