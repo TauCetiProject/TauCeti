@@ -235,7 +235,8 @@ private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
   have hmain := norm_sub_le_integral_of_norm_deriv_le_of_le hδ.2.le hcont hdiff
     (.of_forall fun t ht => hderiv_le t (Ioo_subset_Icc_self ht)) hBi
   have hBint : (∫ t in δ..1, B t) ≤ ε / (T + 1) * ‖z - q‖ ^ (T + 1) :=
-    integral_const_mul_rpow_le (by simpa [T] using he) hδ.1.le hε (Real.rpow_nonneg hnorm.le _)
+    (integral_const_mul_rpow_le (c := ε * ‖z - q‖ ^ (T + 1)) (by simpa [T] using he)
+      (mul_nonneg hε (Real.rpow_nonneg hnorm.le _)) hδ.1.le).trans_eq (by ring)
   simpa [γ, R, q, T] using hmain.trans hBint
 
 /-- The corner remainder is bounded by an arbitrarily small multiple of the leading power. -/
