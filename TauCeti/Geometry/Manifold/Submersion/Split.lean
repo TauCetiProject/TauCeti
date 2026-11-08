@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Split differentials and submersion normal forms

@@ -30,7 +30,8 @@ semiring satisfying the strong rank condition. Consequently, the rank of a produ
 of a linear map is unchanged by composing on the left with an injective map and on the right with a
 surjective one, and composing on the left with a map that does not lower the dimension of the range
 does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
-dimension of its kernel.
+dimension of its kernel. The kernel of a surjection from a finite-dimensional space has dimension
+the difference of the dimensions.
 -/
 
 public section
@@ -196,6 +197,20 @@ theorem ker_comp_eq_of_finrank_range_le {K V V₂ V₃ : Type*} [DivisionRing K]
     simpa [P'] using mem_ker.1 hv
   rw [hker, Submodule.mem_bot] at hAv
   exact congrArg Subtype.val hAv
+
+end LinearMap
+
+namespace LinearMap
+
+/-- **Rank–nullity for a surjection**: the kernel of a surjective linear map from a
+finite-dimensional space has dimension the difference of the dimensions. -/
+theorem finrank_ker_eq_sub_of_surjective {K M N : Type*} [DivisionRing K] [AddCommGroup M]
+    [Module K M] [FiniteDimensional K M] [AddCommGroup N] [Module K N] (f : M →ₗ[K] N)
+    (hf : Function.Surjective f) :
+    Module.finrank K (ker f) = Module.finrank K M - Module.finrank K N := by
+  have h := f.finrank_range_add_finrank_ker
+  rw [range_eq_top.2 hf, finrank_top] at h
+  omega
 
 end LinearMap
 
