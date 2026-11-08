@@ -28,8 +28,8 @@ representations. It is distinct from acyclicity of the underlying undirected gra
 
 * `TauCeti.Quiver.IsAcyclic.eq_of_paths`: vertices joined by paths in both directions are equal.
 * `TauCeti.Quiver.IsAcyclic.vertices_nodup`: paths in an acyclic quiver visit no vertex twice.
-* `TauCeti.Quiver.IsAcyclic.of_prefunctor`: a quiver admitting a prefunctor to an acyclic quiver
-  is acyclic.
+* `Prefunctor.isAcyclic_of_codomain`: a quiver admitting a prefunctor to an acyclic quiver is
+  acyclic.
 -/
 
 public section
@@ -155,13 +155,13 @@ theorem of_isEmpty_hom [∀ a b : V, IsEmpty (a ⟶ b)] :
   | nil => rfl
   | cons _ e => exact isEmptyElim e
 
+end Quiver.IsAcyclic
+
 /-- A quiver admitting a prefunctor to an acyclic quiver is acyclic. No injectivity is needed,
 since a prefunctor preserves path lengths. -/
-theorem of_prefunctor {W : Type*} [Quiver W] (F : V ⥤q W) (hW : Quiver.IsAcyclic W) :
-    Quiver.IsAcyclic V :=
+theorem _root_.Prefunctor.isAcyclic_of_codomain {W : Type*} [Quiver W] (F : V ⥤q W)
+    (hW : Quiver.IsAcyclic W) : Quiver.IsAcyclic V :=
   Quiver.isAcyclic_iff_forall_length_eq_zero.mpr fun _ p ↦
     (F.length_mapPath p).symm.trans (hW.length_eq_zero _)
-
-end Quiver.IsAcyclic
 
 end TauCeti
