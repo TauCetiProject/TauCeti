@@ -134,6 +134,35 @@ namespace TauCeti.Huber
 
 open UniformSpace
 
+/-- The image under a ring map `π : D → B` of the weights `algebraMap A D '' V i`, followed by the
+trivial weights, is the corresponding weight family `φ '' V i`, followed by the trivial weights,
+whenever `π` restricts to `φ` on `A`. -/
+theorem image_append_algebraMap_weights {A B D : Type*} [CommRing A] [CommRing B] [CommRing D]
+    [Algebra A D] {φ : A →+* B} {m n : ℕ} (V : Fin m → Set A) (π : D →+* B)
+    (hπφ : ∀ a, π (algebraMap A D a) = φ a) (i : Fin (m + n)) :
+    π '' (Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D))) i =
+      Fin.append (fun i ↦ φ '' V i) (fun _ ↦ ({1} : Set B)) i :=
+  Fin.addCases
+    (fun j ↦ by
+      simp only [Fin.append_left, Set.image_image]
+      exact Set.image_congr fun a _ ↦ hπφ a)
+    (fun j ↦ by simp) i
+
+/-- The image under `algebraMap A D` of the weights `Fin.append T (Fin.append V 1)` after the `T`
+block is `algebraMap A D '' V i`, followed by the trivial weights. -/
+theorem image_algebraMap_append_append_weights {A D : Type*} [CommRing A] [CommRing D]
+    [Algebra A D] {k m n : ℕ} (T : Fin k → Set A) (V : Fin m → Set A) (j : Fin (m + n)) :
+    algebraMap A D '' (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A))) (Fin.natAdd k j) =
+      Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D)) j :=
+  Fin.addCases (fun i ↦ by simp) (fun i ↦ by simp) j
+
+/-- Appending `T`, `V` and the trivial weights keeps all weight sets finite. -/
+theorem finite_append_append_weights {A : Type*} [One A] {k m n : ℕ} {T : Fin k → Set A}
+    {V : Fin m → Set A} (hT : ∀ i, (T i).Finite) (hV : ∀ i, (V i).Finite) :
+    ∀ i, (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A)) i).Finite := fun i ↦
+  Fin.addCases (fun j ↦ by simpa using hT j)
+    (fun j ↦ Fin.addCases (fun l ↦ by simpa using hV l) (fun _ ↦ by simp) j) i
+
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   {B : Type*} [CommRing B] [TopologicalSpace B]
 
