@@ -65,8 +65,9 @@ polynomial in the Morse inequalities.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
-* `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints`: a compact band starting at a regular
-  value begins with a collar free of critical points.
+* `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints` and
+  `TauCeti.exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero`: a compact band starting at a regular
+  value begins with a compact collar free of critical points.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
 * `TauCeti.finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint`: a `C¹`
@@ -435,6 +436,19 @@ theorem exists_mem_Ioc_forall_notMem_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 
   refine ⟨(a + f p) / 2, ⟨by linarith, by linarith [hpab.2]⟩, fun x hx hxa ↦ ?_⟩
   have hpx := isMinOn_iff.1 hpmin x ⟨hx, hxa.1, by linarith [hxa.2, hpab.2]⟩
   linarith [hxa.2]
+
+/-- **A regular value has a compact collar without critical points above it.** If `f` is `C¹`,
+`a < b`, the band `f⁻¹[a, b]` is compact and `a` is a regular value of `f`, then for some
+`a' ∈ (a, b]` the band `f⁻¹[a, a']` is compact and `f` has nonzero derivative on it. This is the
+form of `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints` consumed by the gradient-like flow. -/
+theorem exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero (hf : ContMDiff I 𝓘(ℝ) 1 f) {a b : ℝ}
+    (hab : a < b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) :
+    ∃ a' ∈ Ioc a b, IsCompact (f ⁻¹' Icc a a') ∧
+      ∀ x, a ≤ f x → f x ≤ a' → mfderiv I 𝓘(ℝ) f x ≠ 0 := by
+  obtain ⟨a', ha', h⟩ := exists_mem_Ioc_forall_notMem_criticalPoints hf hab hcompact ha
+  exact ⟨a', ha', hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
+    (preimage_mono (Icc_subset_Icc_right ha'.2)), fun x hxa hxb h0 ↦
+      h x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h0) ⟨hxa, hxb⟩⟩
 
 /-- **Nondegenerate critical points in a compact set are finite in number.** If every critical
 point of a `C¹` function `f` in a compact set `K` is nondegenerate, then `K` contains only finitely
