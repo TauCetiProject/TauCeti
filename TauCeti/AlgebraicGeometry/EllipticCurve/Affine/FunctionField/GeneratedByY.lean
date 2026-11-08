@@ -102,13 +102,6 @@ theorem adjoin_genericY_eq_top :
   rintro _ ⟨w, rfl⟩
   exact algebraMap_mem_adjoin_genericY W' L w
 
-/-- Rescaling the generic `y`-coordinate by a nonzero element of `L` does not change the field it
-generates over `L`: `L⟮y · c⟯ = F(W)`. -/
-theorem adjoin_genericY_mul_algebraMap_eq_top {c : L} (hc : c ≠ 0) :
-    IntermediateField.adjoin L {W'.genericY * algebraMap L W'.FunctionField c} = ⊤ := by
-  rw [IntermediateField.adjoin_simple_mul_algebraMap _ _ hc]
-  exact adjoin_genericY_eq_top W' L
-
 section Minpoly
 
 variable (L : Type*) [Field L] [Algebra F[X] L] [IsFractionRing F[X] L]

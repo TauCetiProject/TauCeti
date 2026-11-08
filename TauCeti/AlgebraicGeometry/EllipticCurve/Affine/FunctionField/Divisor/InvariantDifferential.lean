@@ -173,8 +173,10 @@ private theorem differentExponent_le_of_ord_neg (P : Place F W.FunctionField)
     rw [P.mem_integers_iff_ord_nonneg, P.ord_inv]
     omega
   have hgen : (RatFunc F)⟮y * x⁻¹ ^ 2⟯ = ⊤ := by
-    have h := adjoin_genericY_mul_algebraMap_eq_top W (RatFunc F)
-      (pow_ne_zero 2 (inv_ne_zero RatFunc.X_ne_zero))
+    have h : IntermediateField.adjoin (RatFunc F)
+        {genericY W * algebraMap (RatFunc F) W.FunctionField (RatFunc.X⁻¹ ^ 2)} = ⊤ := by
+      rw [IntermediateField.adjoin_simple_mul_algebraMap _ _
+        (pow_ne_zero 2 (inv_ne_zero RatFunc.X_ne_zero)), adjoin_genericY_eq_top]
     rwa [map_pow, map_inv₀, hX] at h
   have hu := two_mul_genericY_mul_add_algebraMap_eq W (RatFunc F) (t := RatFunc.X⁻¹)
     (by rw [map_inv₀, hX]) hx0
