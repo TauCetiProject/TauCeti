@@ -368,11 +368,16 @@ finite place `v` of `K` outside the support of a modulus `𝔪` and a uniformize
 class of the idele with component `π` at `v` and `1` elsewhere has the ray class of the prime `v`:
 this idele is congruent to one modulo `𝔪`, and its fractional ideal is `v`. -/
 theorem rayClassQuotient_ofAdicCompletion_of_isUniformizer {v : HeightOneSpectrum (𝓞 K)}
-    (hv : v ∉ 𝔪.support) {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π)
+    {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π)
     (I : idealsPrimeTo 𝔪)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     rayClassQuotient 𝔪 (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π) = rayClassMk 𝔪 I := by
+  -- `I` has multiplicity one at `v`, so `v` is outside the support of `𝔪`.
+  have hv : v ∉ 𝔪.support := fun h ↦ by
+    have := NumberFieldArithmetic.mem_idealsAway_iff.1 I.2 v h
+    rw [hI, FractionalIdeal.count_self] at this
+    exact one_ne_zero this
   -- The idele concentrated at `v` is trivial at the places of `𝔪`.
   have hmem : IdeleGroup.ofAdicCompletion (𝓞 K) K v π ∈ ideleCongrOneSubgroup 𝔪 := by
     refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v' hv' ↦ ?_, fun w _ ↦ ?_⟩
