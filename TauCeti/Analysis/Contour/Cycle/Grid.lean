@@ -106,7 +106,7 @@ private theorem sum_shared_edges {M : Type*} [AddCommMonoid M] (S : Finset (ℤ 
       ∑ t ∈ S ×ˢ Finset.univ with neighbour t.1 t.2 ∈ S, G t := by
   have hinv (t : (ℤ × ℤ) × Fin 4) :
       (neighbour (neighbour t.1 t.2) (t.2 + 2), t.2 + 2 + 2) = t := by
-    rw [neighbour_neighbour, add_assoc, show (2 + 2 : Fin 4) = 0 from rfl, add_zero]
+    simp [neighbour_neighbour, add_assoc]
   refine Finset.sum_nbij' (fun t ↦ (neighbour t.1 t.2, t.2 + 2))
     (fun t ↦ (neighbour t.1 t.2, t.2 + 2)) (fun t ht ↦ ?_) (fun t ht ↦ ?_)
     (fun t _ ↦ hinv t) (fun t _ ↦ hinv t) fun t _ ↦ (h t).symm
@@ -208,8 +208,7 @@ private theorem exists_offGrid_mem_ball (δ : ℝ) (z : ℂ) {r : ℝ} (hr : 0 <
     calc ‖(t : ℂ) + t * I‖ ≤ ‖(t : ℂ)‖ + ‖(t : ℂ) * I‖ := norm_add_le _ _
       _ = 2 * t := by simp [abs_of_pos htr.1]; ring
       _ < r := by linarith [htr.2]
-  · linarith [show (z + (t + t * I)).re = z.re + t by simp]
-  · linarith [show (z + (t + t * I)).im = z.im + t by simp]
+  all_goals simp at h ⊢; linarith
 
 /-- A point off the grid lines lies on no grid edge: each edge stays on a horizontal or a
 vertical grid line. -/
@@ -426,15 +425,17 @@ theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBou
       ∃ w ∈ ball z r, Cycle.windingNumber z Γ = if w ∈ gridCover δ K then 1 else 0 := by
     obtain ⟨w, hw, hwoff⟩ := exists_offGrid_mem_ball δ z hr
     refine ⟨w, hw, ?_⟩
+    have hballΓ : ball z r ⊆ (Cycle.trace Γ)ᶜ := fun x hx hxΓ ↦ hball hx (htrace hxΓ)
     rw [← hind hwoff, Cycle.windingNumber_eq_of_mem_connectedComponentIn
       ((convex_ball z r).isPreconnected.subset_connectedComponentIn (mem_ball_self hr)
-        (show ball z r ⊆ (Cycle.trace Γ)ᶜ from fun x hx hxΓ ↦ hball hx (htrace hxΓ)) hw)]
+        hballΓ hw)]
   refine ⟨Γ, Cycle.isIn_iff.2 fun x hx ↦ hU (htrace hx), Cycle.isNullHomologous_iff.2 fun z hz ↦ ?_,
     fun z hz ↦ ?_⟩
   · obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
       (isCompact_gridCover hδ hK).isClosed.isOpen_compl z hz
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx hxU ↦ hball hx (hU hxU).1
-    simp [hzw, show w ∉ gridCover δ K from hball hw]
+    have hwG : w ∉ gridCover δ K := hball hw
+    simp [hzw, hwG]
   · obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_interior.inter hUclosed.isOpen_compl) z
       ⟨subset_interior_gridCover hδ hz, fun h ↦ (hU h).2 hz⟩
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx ↦ (hball hx).2
