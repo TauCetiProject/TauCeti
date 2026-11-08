@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Finite
+import TauCeti.Data.Finset.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -82,6 +83,8 @@ universal property of the induced module, is proved in
 * `TauCeti.TypeAHeckeAlgebra.ShuffleMask.exists_isShufflePath` and
   `TauCeti.TypeAHeckeAlgebra.ShuffleMask.IsShufflePath.length_eq`: every mask is reached by a
   shuffle path, of the length of the mask.
+* `TauCeti.TypeAHeckeAlgebra.ShuffleMask.IsShufflePath.prod_map_eq`: products along shuffle paths
+  do not depend on the path, in any monoid in which the images of distant letters commute.
 * `ShuffleMask.IsShufflePath.shuffleRep_prod_val_inv_unitT_single_initial`: the inverse generators
   along a shuffle path act monomially on the initial mask.
 * `ShuffleMask.IsShufflePath.shuffleRep_prod_T_single_initial_apply_self` and
@@ -131,12 +134,7 @@ theorem swap_swap (a b : Fin (k + l)) (S : ShuffleMask k l) : (S.swap a b).swap 
 the mask. -/
 theorem swap_eq_self {a b : Fin (k + l)} {S : ShuffleMask k l} (h : a ∈ S.1 ↔ b ∈ S.1) :
     S.swap a b = S :=
-  Subtype.ext <| Finset.ext fun x ↦ by
-    rw [mem_swap, Equiv.swap_apply_def]
-    split_ifs with hxa hxb
-    · rw [hxa, h]
-    · rw [hxb, h]
-    · rfl
+  Subtype.ext ((Finset.map_swap_eq_self_iff a b S.1).2 h)
 
 /-- Exchanging two disjoint pairs of positions gives the same mask in either order. -/
 theorem swap_swap_comm {a b c d : Fin (k + l)} (h : [a, b, c, d].Nodup) (S : ShuffleMask k l) :
@@ -266,6 +264,25 @@ theorem restIndex_lt_sub_one {S : ShuffleMask k l} {a b : Fin (k + l)} (hab : a 
   have := restIndex_add_two_le hab le_rfl ha hb
   omega
 
+/-- Below a selected position `a` with a later selected position `b`, there are at most `k - 2`
+selected positions. The number of selected positions before `a` is `a - S.restIndex a`. -/
+theorem sub_restIndex_add_two_le {S : ShuffleMask k l} {a b : Fin (k + l)} (hab : a < b)
+    (ha : a ∈ S.1) (hb : b ∈ S.1) : (a : ℕ) - S.restIndex a + 2 ≤ k := by
+  have h₁ : #{x ∈ S.1 | x < a} + S.restIndex a = a := by
+    rw [restIndex_def, ← card_union_of_disjoint (disjoint_filter_filter disjoint_compl_right),
+      ← filter_union, union_compl]
+    have := Fin.card_filter_val_lt (n := k + l) (m := a)
+    simp only [Fin.val_fin_lt] at this
+    omega
+  have h₂ : insert a (insert b {x ∈ S.1 | x < a}) ⊆ S.1 := by
+    intro x
+    simp only [mem_insert, mem_filter]
+    rintro (rfl | rfl | ⟨hx, -⟩) <;> assumption
+  have h₃ := card_le_card h₂
+  rw [card_insert_of_notMem (by simp [hab.ne]), card_insert_of_notMem (by simp [hab.asymm]),
+    S.2] at h₃
+  omega
+
 /-- The **length** of a mask `S`: the number of pairs of a rest position and a later selected
 position. It is the length of the shortest permutation of the positions carrying the initial mask
 onto `S`, the minimal-length representative of the coset of `S_k × S_l` in `S_(k + l)`
@@ -335,6 +352,17 @@ theorem exists_notMem_mem_of_ne_initial {S : ShuffleMask k l} (hS : S ≠ initia
   rw [mem_initial]
   omega
 
+/-- A mask other than the initial one has a rest position `strand γ` followed by a selected
+position. -/
+theorem exists_strand_notMem_strandSucc_mem {S : ShuffleMask k l} (hS : S ≠ initial) :
+    ∃ γ : Fin (k + l - 1), BraidGroup.strand γ ∉ S.1 ∧ BraidGroup.strandSucc γ ∈ S.1 := by
+  obtain ⟨a, b, hab, ha, hb⟩ := exists_notMem_mem_of_ne_initial hS
+  obtain ⟨γ, rfl, rfl⟩ : ∃ γ : Fin (k + l - 1),
+      BraidGroup.strand γ = a ∧ BraidGroup.strandSucc γ = b :=
+    ⟨⟨a, by have := b.isLt; omega⟩, Fin.ext (BraidGroup.val_strand _),
+      Fin.ext ((BraidGroup.val_strandSucc _).trans hab.symm)⟩
+  exact ⟨γ, ha, hb⟩
+
 /-- Only the initial mask has length `0`. -/
 @[simp]
 theorem length_eq_zero_iff {S : ShuffleMask k l} : S.length = 0 ↔ S = initial := by
@@ -381,6 +409,98 @@ theorem exists_isShufflePath (S : ShuffleMask k l) : ∃ w, IsShufflePath w S :=
       ⟨⟨a, by have := b.isLt; omega⟩, Fin.ext (BraidGroup.val_strand _),
         Fin.ext ((BraidGroup.val_strandSucc _).trans hab.symm)⟩
     exact ⟨i :: w, by simpa using hw.cons (i := i) (by simpa using hb) (by simpa using ha)⟩
+
+/-- The two ways a word can be a shuffle path: the empty word reaching the initial mask, or a
+letter moving a selected position forward, after a shuffle path to the previous mask. -/
+private theorem IsShufflePath.eq_nil_or_exists {w : List (Fin (k + l - 1))} {S : ShuffleMask k l}
+    (h : IsShufflePath w S) :
+    (w = [] ∧ S = initial) ∨ ∃ i w₁ S₁, w = i :: w₁ ∧ IsShufflePath w₁ S₁ ∧
+      BraidGroup.strand i ∈ S₁.1 ∧ BraidGroup.strandSucc i ∉ S₁.1 ∧
+      S = S₁.swap (BraidGroup.strand i) (BraidGroup.strandSucc i) := by
+  cases h with
+  | nil => exact .inl ⟨rfl, rfl⟩
+  | cons h ha hb => exact .inr ⟨_, _, _, rfl, h, ha, hb, rfl⟩
+
+/-- Two different letters ending shuffle paths to the same mask `S` move selected positions of
+`S` past different rest positions. They are distant letters, and the masks before them have a
+common predecessor, reached by a shuffle path `w` followed by either letter. -/
+private theorem exists_isShufflePath_cons_cons {i j : Fin (k + l - 1)} (hij : i ≠ j)
+    {S S₁ S₂ : ShuffleMask k l} (ha : BraidGroup.strand i ∈ S₁.1)
+    (hb : BraidGroup.strandSucc i ∉ S₁.1) (hS₁ : S = S₁.swap (BraidGroup.strand i)
+      (BraidGroup.strandSucc i))
+    (hc : BraidGroup.strand j ∈ S₂.1) (hd : BraidGroup.strandSucc j ∉ S₂.1)
+    (hS₂ : S = S₂.swap (BraidGroup.strand j) (BraidGroup.strandSucc j)) :
+    ((i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) ∧
+      ∃ w, IsShufflePath (j :: w) S₁ ∧ IsShufflePath (i :: w) S₂ := by
+  set a := BraidGroup.strand i
+  set b := BraidGroup.strandSucc i
+  set c := BraidGroup.strand j
+  set d := BraidGroup.strandSucc j
+  have ha' : a ∉ S.1 := by rwa [hS₁, mem_swap, Equiv.swap_apply_left]
+  have hb' : b ∈ S.1 := by rwa [hS₁, mem_swap, Equiv.swap_apply_right]
+  have hc' : c ∉ S.1 := by rwa [hS₂, mem_swap, Equiv.swap_apply_left]
+  have hd' : d ∈ S.1 := by rwa [hS₂, mem_swap, Equiv.swap_apply_right]
+  have hbc : (b : ℕ) ≠ c := fun h ↦ hc' (Fin.ext h ▸ hb')
+  have had : (a : ℕ) ≠ d := fun h ↦ ha' (Fin.ext h ▸ hd')
+  have hval : (i : ℕ) ≠ j := fun h ↦ hij (Fin.ext h)
+  simp only [a, b, c, d, BraidGroup.val_strand, BraidGroup.val_strandSucc] at hbc had
+  have hnd : [a, b, c, d].Nodup := by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, Fin.ext_iff, a, b, c, d,
+      BraidGroup.val_strand, BraidGroup.val_strandSucc, List.nodup_nil, or_false,
+      not_false_eq_true, and_true]
+    omega
+  have hnd' := hnd
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hnd'
+  obtain ⟨⟨-, hac, had⟩, ⟨hbc, hbd⟩, -, -⟩ := hnd'
+  refine ⟨by omega, ?_⟩
+  obtain ⟨w, hw⟩ := exists_isShufflePath ((S.swap a b).swap c d)
+  refine ⟨w, ?_, ?_⟩
+  · have := hw.cons (i := j)
+      (by rwa [mem_swap, Equiv.swap_apply_left, mem_swap,
+        Equiv.swap_apply_of_ne_of_ne (Ne.symm had) (Ne.symm hbd)])
+      (by rwa [mem_swap, Equiv.swap_apply_right, mem_swap,
+        Equiv.swap_apply_of_ne_of_ne (Ne.symm hac) (Ne.symm hbc)])
+    rwa [swap_swap, hS₁, swap_swap] at this
+  · rw [swap_swap_comm hnd] at hw
+    have := hw.cons (i := i)
+      (by rwa [mem_swap, Equiv.swap_apply_left, mem_swap, Equiv.swap_apply_of_ne_of_ne hbc hbd])
+      (by rwa [mem_swap, Equiv.swap_apply_right, mem_swap, Equiv.swap_apply_of_ne_of_ne hac had])
+    rwa [swap_swap, hS₂, swap_swap] at this
+
+/-- **Shuffle paths are unique up to distant commutations.** In a monoid in which the images of
+distant letters commute, any two shuffle paths to the same mask have the same product. -/
+theorem IsShufflePath.prod_map_eq {M : Type*} [Monoid M] {g : Fin (k + l - 1) → M}
+    (hg : ∀ i j : Fin (k + l - 1), (i : ℕ) + 2 ≤ j → Commute (g i) (g j))
+    {w w' : List (Fin (k + l - 1))} {S : ShuffleMask k l} (h : IsShufflePath w S)
+    (h' : IsShufflePath w' S) : (w.map g).prod = (w'.map g).prod := by
+  induction hn : w.length generalizing w w' S with
+  | zero =>
+    have hw' : w'.length = 0 := by rw [h'.length_eq, ← h.length_eq, hn]
+    rw [List.length_eq_zero_iff.1 hn, List.length_eq_zero_iff.1 hw']
+  | succ n ih =>
+    obtain ⟨rfl, -⟩ | ⟨i, w₁, S₁, rfl, h₁, ha, hb, hS₁⟩ := h.eq_nil_or_exists
+    · simp at hn
+    have hlen := length_swap_of_mem_of_notMem (by simp) ha hb
+    obtain ⟨rfl, hS⟩ | ⟨j, w₂, S₂, rfl, h₂, hc, hd, hS₂⟩ := h'.eq_nil_or_exists
+    · rw [← hS₁, hS, length_initial] at hlen
+      omega
+    have hlen' := length_swap_of_mem_of_notMem (by simp) hc hd
+    rw [List.length_cons, add_left_inj, h₁.length_eq] at hn
+    rw [← hS₁] at hlen
+    rw [← hS₂] at hlen'
+    simp only [List.map_cons, List.prod_cons]
+    by_cases hij : i = j
+    · subst hij
+      obtain rfl : S₁ = S₂ := by
+        simpa using congrArg (swap (BraidGroup.strand i) (BraidGroup.strandSucc i))
+          (hS₁.symm.trans hS₂)
+      rw [ih h₁ h₂ (by rw [h₁.length_eq, hn])]
+    obtain ⟨hdist, w₃, h₃₁, h₃₂⟩ := exists_isShufflePath_cons_cons hij ha hb hS₁ hc hd hS₂
+    rw [ih h₁ h₃₁ (by rw [h₁.length_eq, hn]), ih h₂ h₃₂ (by rw [h₂.length_eq]; omega)]
+    simp only [List.map_cons, List.prod_cons, ← mul_assoc]
+    rcases hdist with h | h
+    · rw [(hg i j h).eq]
+    · rw [(hg j i h).eq]
 
 end ShuffleMask
 
