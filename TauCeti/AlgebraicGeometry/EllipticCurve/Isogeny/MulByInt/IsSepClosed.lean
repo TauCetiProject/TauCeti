@@ -24,10 +24,10 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
   `#E[n] = n ²`, in the kernel and the torsion-subgroup forms.
 * `WeierstrassCurve.natCard_torsionBy`: the same count read on `W.toAffine.Point` itself,
   rather than on the trivial base change `W⁄K`.
-* `WeierstrassCurve.torsionMapAlong_bijective`: the `N`-torsion does not grow from one separably
-  closed field to another.
+* `WeierstrassCurve.torsionMapAlong_bijective`: the `N`-torsion does not grow from a separably
+  closed field to any field with a field map from it.
 * `WeierstrassCurve.torsionMapAlong_bijective_of_natCard`: nor from any field already having all
-  `N²` points of `E[N]` to a separably closed one.
+  `N²` points of `E[N]` to any field with a field map from it.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`,
   `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
   `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: `E[ℓ] ≅ (ZMod ℓ) ²` at a prime.
