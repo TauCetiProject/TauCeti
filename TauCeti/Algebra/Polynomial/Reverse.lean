@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Taylor
 
@@ -50,6 +51,9 @@ is nonzero.
 Finally, reflecting the difference `p(X) - p(X - a)` at a bound on the degree of `p`, its first
 coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top terms cancel and
 the subleading term is read off from the Taylor expansion of `p` at `-a`.
+
+Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
+of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
 -/
 
 public section
@@ -343,5 +347,14 @@ theorem coeff_reflect_sub_comp_X_sub_C [CommRing R] (p : R[X]) {N : ℕ} (hp : p
   rw [coeff_reflect, revAt_le (by omega), show N - (N - p.natDegree + 1) = p.natDegree - 1 by
     omega, coeff_sub, h]
   ring
+
+/-- Translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ` of `p` to
+the root `a` of `(taylor τ p).reflect d`, for nonzero `a`, when `natDegree p ≤ d`. -/
+theorem isRoot_reflect_taylor_iff {K : Type*} [Semifield K] {p : K[X]} {d : ℕ}
+    (hp : p.natDegree ≤ d) (τ : K) {a : K} (ha : a ≠ 0) :
+    ((taylor τ p).reflect d).IsRoot a ↔ p.IsRoot (a⁻¹ + τ) := by
+  let : Invertible a⁻¹ := invertibleOfNonzero (inv_ne_zero ha)
+  have h := eval₂_reflect_eq_zero_iff (RingHom.id K) a⁻¹ d (taylor τ p) (by simpa using hp)
+  simpa [IsRoot.def, eval₂_id, taylor_apply, eval_comp] using h
 
 end Polynomial

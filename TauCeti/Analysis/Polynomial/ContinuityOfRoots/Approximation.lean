@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
 /-!
@@ -30,19 +31,6 @@ Springer (2006), §5.1 (continuity of polynomial roots).
 public section
 
 open Filter Polynomial Topology
-
-namespace Polynomial
-
-/-- Translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ` of `p` to
-the root `a` of `(taylor τ p).reflect d`, for nonzero `a`, when `natDegree p ≤ d`. -/
-theorem isRoot_reflect_taylor_iff {K : Type*} [Field K] {p : K[X]} {d : ℕ}
-    (hp : p.natDegree ≤ d) (τ : K) {a : K} (ha : a ≠ 0) :
-    ((taylor τ p).reflect d).IsRoot a ↔ p.IsRoot (a⁻¹ + τ) := by
-  let : Invertible a⁻¹ := invertibleOfNonzero (inv_ne_zero ha)
-  have h := eval₂_reflect_eq_zero_iff (RingHom.id K) a⁻¹ d (taylor τ p) (by simpa using hp)
-  simpa [IsRoot.def, eval₂_id, taylor_apply, eval_comp] using h
-
-end Polynomial
 
 namespace TauCeti
 
