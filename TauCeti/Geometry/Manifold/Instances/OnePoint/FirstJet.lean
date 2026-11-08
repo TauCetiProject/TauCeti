@@ -134,7 +134,6 @@ namespace OnePoint
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
 /-- **The dilation `z ↦ a z` has derivative `a` at `0`.** -/
-@[simp]
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       ((0 : 𝕜) : OnePoint 𝕜) v = (a * v : 𝕜) := by
@@ -146,7 +145,6 @@ theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero (a : 𝕜ˣ) (v : 𝕜) :
 
 /-- **The dilation `z ↦ a z` has derivative `a⁻¹` at `∞`**, read in the inverted chart, in which
 it is `w ↦ a⁻¹ w`. -/
-@[simp]
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       (∞ : OnePoint 𝕜) v = (((a⁻¹ : 𝕜ˣ) : 𝕜) * v : 𝕜) := by
@@ -161,6 +159,7 @@ theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty (a : 𝕜ˣ) (v : 𝕜) :
 
 /-- **The coordinate of an element fixing `0` and `∞` is its first jet at `0`**: the unit `a`
 attached to it by `OnePoint.pglFixingZeroInftyEquiv` is its derivative at `0`. -/
+@[simp]
 theorem mfderiv_smul_zero_eq_pglFixingZeroInftyEquiv
     (g : fixingSubgroup PGL(2, 𝕜) {((0 : 𝕜) : OnePoint 𝕜), (∞ : OnePoint 𝕜)}) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (g : PGL(2, 𝕜)) • x) ((0 : 𝕜) : OnePoint 𝕜) v =
@@ -170,6 +169,7 @@ theorem mfderiv_smul_zero_eq_pglFixingZeroInftyEquiv
 
 /-- The derivative at `∞` of an element fixing `0` and `∞`, read in the inverted chart, is the
 inverse of its derivative at `0`. -/
+@[simp]
 theorem mfderiv_smul_infty_eq_pglFixingZeroInftyEquiv
     (g : fixingSubgroup PGL(2, 𝕜) {((0 : 𝕜) : OnePoint 𝕜), (∞ : OnePoint 𝕜)}) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (g : PGL(2, 𝕜)) • x) (∞ : OnePoint 𝕜) v =
