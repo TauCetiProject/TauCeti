@@ -53,7 +53,8 @@ private theorem integralEquivProductModel_apply (s : ℤ)
 noncomputable def equivProductOfSq (s : ℤ) (hs : s ≠ 0) :
     toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega) ≃ₐ[ℤ] productSubalgebra s :=
   (equivToSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)).symm.trans
-    ((integralEquivProductModel s).trans (equivProductSubalgebra s hs))
+    ((integralEquivProductModel s).trans
+      (equivProductSubalgebra s (IsRegular.of_ne_zero hs).left))
 
 /-- The rational quadratic algebra of a nonzero integer square splits at its two roots. -/
 noncomputable def algEquivProdOfIntSq (s : ℤ) (hs : s ≠ 0) :
