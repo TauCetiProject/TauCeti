@@ -151,13 +151,8 @@ theorem smul_function_of_normedAlgebra_oneTmulLinearMap (f : C^n⟮IB, B; 𝓘(�
     (s : Cₛ^n⟮IB; F, E⟯) :
     f • oneTmulLinearMap IB F n E s =
       oneTmulLinearMap IB F n E (f.re • s) + ITmulLinearMap IB F n E (f.im • s) := by
-  ext x
-  simp only [smul_apply_of_normedAlgebra, oneTmulLinearMap_apply, coe_add, Pi.add_apply,
-    smul_apply, ContMDiffMap.re_apply, ContMDiffMap.im_apply, ITmulLinearMap_apply,
-    TensorProduct.tmul_smul, TensorProduct.smul_tmul']
-  rw [← TensorProduct.add_tmul]
-  congr 1
-  apply Complex.ext <;> simp
+  rw [smul_eq_re_smul_add_im_smul_I_smul, I_smul_oneTmulLinearMap, oneTmulLinearMap_smul_function,
+    ITmulLinearMap_smul_function]
 
 /-- The identification of `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` carries the real
 function action on the second tensor factor to the real function action on sections of
