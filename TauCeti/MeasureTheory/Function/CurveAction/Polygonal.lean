@@ -182,15 +182,15 @@ theorem isPolygonalOnInterval_of_eqOn_polygonalInterpolation {f : ℝ → E} (hN
 `a + N * h = b`, depend continuously on the sequence: they are the values of a continuous map
 `C(ℕ → E, C(Icc a b, E))`. -/
 theorem exists_continuousMap_IccExtend_eqOn_polygonalInterpolation [TopologicalSpace E]
-    [ContinuousAdd E] [ContinuousSMul ℝ E] {b : ℝ} (hab : a < b) (N : ℕ) (hNh : a + N * h = b) :
+    [ContinuousAdd E] [ContinuousSMul ℝ E] {b : ℝ} (hab : a ≤ b) (N : ℕ) (hNh : a + N * h = b) :
     ∃ Φ : C(ℕ → E, C(Icc a b, E)),
-      ∀ x : ℕ → E, EqOn (IccExtend hab.le (Φ x)) (polygonalInterpolation a h N x)
+      ∀ x : ℕ → E, EqOn (IccExtend hab (Φ x)) (polygonalInterpolation a h N x)
         (Icc a (a + N * h)) := by
   have hc : Continuous fun q : (ℕ → E) × Icc a b ↦ polygonalInterpolation a h N q.1 q.2 := by
     fun_prop
   refine ⟨ContinuousMap.curry ⟨_, hc⟩, fun x t ht ↦ ?_⟩
   rw [hNh] at ht
-  rw [IccExtend_of_mem hab.le _ ht, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
+  rw [IccExtend_of_mem hab _ ht, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
 
 end Module
 

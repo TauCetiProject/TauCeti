@@ -140,7 +140,8 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_le (hp : p ≠ ∞)
   have hmatch (j : ℕ) : (π j).snd = (π (j + 1)).fst := by
     rw [(hπ j).snd_eq, (hπ (j + 1)).fst_eq, Nat.cast_succ]
   set P := Measure.chainMeasure (X := fun _ ↦ E) π
-  obtain ⟨Φ, hΦeq⟩ := exists_continuousMap_IccExtend_eqOn_polygonalInterpolation (E := E) hab N hNh
+  obtain ⟨Φ, hΦeq⟩ :=
+    exists_continuousMap_IccExtend_eqOn_polygonalInterpolation (E := E) hab.le N hNh
   have hΦ : Measurable Φ := Φ.continuous.measurable
   refine ⟨P.map Φ, (Measure.isProbabilityMeasure_map_iff hΦ.aemeasurable).2 inferInstance, ?_,
     fun k hk ↦ ?_, ?_⟩
