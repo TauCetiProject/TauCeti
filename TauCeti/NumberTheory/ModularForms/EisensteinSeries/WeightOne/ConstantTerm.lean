@@ -75,7 +75,7 @@ theorem qExpansion_normalizedCharE1MF_coeff_zero (huv : u * v ∣ N)
       -((if v = 1 then ψ.generalizedBernoulli 1 else 0) +
         if u = 1 then φ.generalizedBernoulli 1 else 0) / 2 := by
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ.inv
+  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφ.inv
     (isPrimitive_stdAddChar v)
   rw [normalizedCharE1MF_def, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N),
