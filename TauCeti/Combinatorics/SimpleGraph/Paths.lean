@@ -32,6 +32,8 @@ This file collects general facts about paths and cycles in a simple graph, compl
   avoids `T`.
 * `SimpleGraph.Walk.IsCycle.exists_eq_append_append`: a cycle with fewer vertices of `T` outside
   `F` than in `F` has an arc between two distinct vertices of `F` whose interior avoids `T`.
+* `SimpleGraph.exists_isPath_notMem_support_iff`: every walk avoiding one vertex can be shortened
+  to a path avoiding it.
 -/
 
 public section
@@ -243,3 +245,19 @@ theorem IsCycle.exists_eq_append_append [DecidableEq V] {F T : Finset V} {r : V}
   omega
 
 end SimpleGraph.Walk
+
+namespace SimpleGraph
+
+variable {V : Type u} {G : SimpleGraph V} {s t : V}
+
+/-- A walk avoiding a vertex can be shortened to a path avoiding that vertex. -/
+theorem exists_isPath_notMem_support_iff {x : V} :
+    (∃ p : G.Walk s t, p.IsPath ∧ x ∉ p.support) ↔ ∃ p : G.Walk s t, x ∉ p.support := by
+  classical
+  constructor
+  · rintro ⟨p, -, hp⟩
+    exact ⟨p, hp⟩
+  · rintro ⟨p, hp⟩
+    exact ⟨p.bypass, p.bypass_isPath, fun hx ↦ hp (p.support_bypass_subset_support hx)⟩
+
+end SimpleGraph

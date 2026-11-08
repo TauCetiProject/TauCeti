@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.BlockCut.Basic
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.ArrowWalk
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 
 /-!
@@ -23,6 +24,10 @@ forest, and that its connected components correspond to those of `G`.
 * `SimpleGraph.blockCutGraph_reachable_iff`: for a finite vertex type, two vertices of the
   block--cut graph are reachable from each other exactly when they determine the same component
   of `G`.  Finiteness ensures that every vertex and every edge of `G` lies in a block.
+* `SimpleGraph.Walk.reachableAvoiding_blockCutGraph`: a walk in `G` avoiding a set of cut vertices
+  lifts to reachability in the block--cut graph avoiding the corresponding cut-vertex nodes.
+* `SimpleGraph.Walk.exists_walk_notMem_support_of_blockCutGraph`: a block--cut walk avoiding a
+  cut-vertex node projects to a walk in `G` avoiding that cut vertex.
 * `SimpleGraph.blockCutComponentEquiv`: hence the components of the block--cut graph and of `G`
   are in canonical bijection.
 * `SimpleGraph.blockCutGraph_isTree_iff`: the block--cut graph of a finite graph is a tree
@@ -35,6 +40,7 @@ Springer, 2017, Lemma 3.1.4.
 public section
 
 open Set
+open TauCeti
 
 universe u
 
@@ -101,6 +107,23 @@ private theorem exists_walk_notMem_support_of_blockCutGraph_walk {x y : G.BlockC
       subst ha
       exact ih hq' (blockCutCarrier_inl C ▸ (G.blockCutGraph_adj_cutVertex_block w C).1 h) hb hac
     · simp at h
+
+/-- A walk between two block vertices in the block--cut graph that avoids a cut vertex projects
+to a walk between any chosen vertices of the blocks other than that cut vertex, while avoiding
+the corresponding original vertex. -/
+theorem Walk.exists_walk_notMem_support_of_blockCutGraph {B C : G.BlockVertex}
+    (q : G.blockCutGraph.Walk (.inl B) (.inl C)) {c : G.CutVertex} {a b : V}
+    (hq : (.inr c : G.BlockCutVertex) ∉ q.support) (ha : a ∈ (B : Set V))
+    (hb : b ∈ (C : Set V)) (hac : a ≠ c) (hbc : b ≠ c) :
+    ∃ p : G.Walk a b, (c : V) ∉ p.support := by
+  apply exists_walk_notMem_support_of_blockCutGraph_walk q
+  · intro w hw hwc
+    have : w = c := Subtype.ext hwc
+    exact hq (this ▸ hw)
+  · exact blockCutCarrier_inl B ▸ ha
+  · exact blockCutCarrier_inl C ▸ hb
+  · exact hac
+  · exact hbc
 
 /-- **The block--cut graph is a forest.** No finiteness is needed. -/
 theorem blockCutGraph_isAcyclic : G.blockCutGraph.IsAcyclic := by
@@ -182,19 +205,47 @@ theorem Reachable.blockCutVertexComponent_eq {x y : G.BlockCutVertex}
   | nil => rfl
   | cons h _ ih => exact (blockCutVertexComponent_eq_of_adj h).trans ih
 
+/-- Two blocks sharing a vertex outside a set of cut vertices are mutually reachable in the
+block--cut graph without visiting the corresponding cut-vertex nodes. -/
+private theorem reachableAvoiding_blockCutGraph_block_block_of_mem (B C : G.BlockVertex) {x : V}
+    (hxB : x ∈ (B : Set V)) (hxC : x ∈ (C : Set V)) (S : Set G.CutVertex)
+    (hxS : ∀ c ∈ S, (c : V) ≠ x) :
+    ReachableAvoiding G.blockCutGraph.AdjHom (Sum.inr '' S) (.inl B) (.inl C) := by
+  by_cases hBC : (B : Set V) = C
+  · rw [Subtype.ext hBC]
+    exact .refl (by simp)
+  · let c : G.CutVertex := ⟨x, B.2.isCutVertex_of_ne C.2 hBC hxB hxC⟩
+    have hcS : (.inr c : G.BlockCutVertex) ∉ Sum.inr '' S := by
+      rintro ⟨s, hs, hsc⟩
+      apply hxS s hs
+      simpa [c] using congrArg Subtype.val (Sum.inr.inj hsc)
+    exact ((ReachableAvoiding.refl (by simp)).tail
+      ⟨(G.blockCutGraph_adj_block_cutVertex B c).2 hxB⟩ hcS).tail
+      ⟨(G.blockCutGraph_adj_cutVertex_block c C).2 hxC⟩ (by simp)
+
 /-- Two blocks sharing a vertex are reachable from each other in the block--cut graph: they are
 equal, or the shared vertex is a cut vertex adjacent to both. -/
 theorem blockCutGraph_reachable_block_block_of_mem (B C : G.BlockVertex) {x : V}
     (hxB : x ∈ (B : Set V)) (hxC : x ∈ (C : Set V)) :
-    G.blockCutGraph.Reachable (.inl B) (.inl C) := by
-  by_cases hBC : (B : Set V) = C
-  · rw [Subtype.ext hBC]
-  · let c : G.CutVertex := ⟨x, B.2.isCutVertex_of_ne C.2 hBC hxB hxC⟩
-    have hB : G.blockCutGraph.Adj (.inl B) (.inr c) :=
-      (G.blockCutGraph_adj_block_cutVertex B c).2 hxB
-    have hC : G.blockCutGraph.Adj (.inr c) (.inl C) :=
-      (G.blockCutGraph_adj_cutVertex_block c C).2 hxC
-    exact hB.reachable.trans hC.reachable
+    G.blockCutGraph.Reachable (.inl B) (.inl C) :=
+  (reachableAvoiding_blockCutGraph_block_block_of_mem B C hxB hxC ∅ (by simp)).reachable
+
+/-- In a finite graph, a walk of `G` avoiding a set of cut vertices lifts to reachability between
+any blocks containing its endpoints, while avoiding the corresponding cut-vertex nodes. -/
+theorem Walk.reachableAvoiding_blockCutGraph [Finite V] {x y : V} (p : G.Walk x y)
+    (B C : G.BlockVertex) (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V))
+    (S : Set G.CutVertex) (hp : ∀ c ∈ S, (c : V) ∉ p.support) :
+    ReachableAvoiding G.blockCutGraph.AdjHom (Sum.inr '' S) (.inl B) (.inl C) := by
+  induction p generalizing B with
+  | nil =>
+      exact reachableAvoiding_blockCutGraph_block_block_of_mem B C hxB hyC S fun c hc hcx ↦
+        hp c hc (by simpa using hcx)
+  | cons h _ ih =>
+    -- Pass through the block containing the first edge.
+    obtain ⟨D, hD, hxzD⟩ := h.exists_isBlock_superset_pair
+    exact (reachableAvoiding_blockCutGraph_block_block_of_mem B ⟨D, hD⟩ hxB
+      (hxzD (by simp)) S fun c hc hcx ↦ hp c hc (by simp [hcx])).trans
+      (ih ⟨D, hD⟩ (hxzD (by simp)) hyC fun c hc hcp ↦ hp c hc (by simp [hcp]))
 
 /-- In a finite graph, if `x` and `y` are reachable in `G`, then any block containing `x` and any
 block containing `y` are reachable in the block--cut graph. -/
@@ -202,13 +253,7 @@ theorem Reachable.blockCutGraph_reachable_block_block [Finite V] {x y : V} (h : 
     (B C : G.BlockVertex) (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V)) :
     G.blockCutGraph.Reachable (.inl B) (.inl C) := by
   obtain ⟨p⟩ := h
-  induction p generalizing B with
-  | nil => exact blockCutGraph_reachable_block_block_of_mem B C hxB hyC
-  | cons h _ ih =>
-    -- Pass through the block containing the first edge.
-    obtain ⟨D, hD, hxzD⟩ := h.exists_isBlock_superset_pair
-    exact (blockCutGraph_reachable_block_block_of_mem B ⟨D, hD⟩ hxB (hxzD (by simp))).trans
-      (ih ⟨D, hD⟩ (hxzD (by simp)) hyC)
+  exact (p.reachableAvoiding_blockCutGraph B C hxB hyC ∅ (by simp)).reachable
 
 /-- In a finite graph, every vertex of the block--cut graph is reachable from a block containing
 a vertex of the component it determines. -/
