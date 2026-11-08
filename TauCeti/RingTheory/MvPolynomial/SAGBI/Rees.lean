@@ -171,14 +171,6 @@ theorem exists_finsupp_sum_eq_of_aeval_eq_zero_of_mem_weightFiltration
       · exact (hdeg₁ j x hx).le
       · exact (hdeg₂ j x hx).trans n.le_succ
 
-/-- A lifted relation `r - Q`, with `r` weighted homogeneous of weight `e` and `Q` of weight less
-than `e`, has weight at most `e`. -/
-private theorem sub_mem_weightFiltration {r Q : MvPolynomial ι R} {e : ℕ}
-    (hr : r.IsWeightedHomogeneous d e) (hQ : Q ∈ weightFiltrationLT R d e) :
-    r - Q ∈ weightFiltration R d e :=
-  sub_mem (mem_weightFiltration_iff.2 fun _ hx ↦ (hr (mem_support_iff.1 hx)).le)
-    (weightFiltrationLT_le_weightFiltration e hQ)
-
 /-- **The Rees presentation.** Let each `c i` have weight at most `d i` with component `g i` of
 weight `d i`, let polynomials `r j`, weighted homogeneous of weight `e j`, generate the kernel of
 `aeval g`, and let `Q j` be polynomials of weight less than `e j` with
@@ -194,7 +186,10 @@ theorem ker_weightReesAeval_eq_span
     RingHom.ker (weightReesAeval c d) =
       Ideal.span (Set.range fun j ↦ weightHomogenization R d (e j) (r j - Q j)) := by
   classical
-  have hF (j : J) := sub_mem_weightFiltration (hr j) (hQ j)
+  have hF (j : J) : r j - Q j ∈ weightFiltration R d (e j) := by
+    rw [← weightFiltrationLT_sup_weightedHomogeneousSubmodule]
+    exact sub_mem (Submodule.mem_sup_right ((mem_weightedHomogeneousSubmodule R d _ _).2 (hr j)))
+      (Submodule.mem_sup_left (hQ j))
   refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 ?_)
   · -- Decompose `f` by the weight `weight d x + k` of its monomials `Y^x tᵏ`: its part of weight
     -- `n` is the homogenization in degree `n` of the coefficient of `tⁿ` in `weightReesHom R d f`.
@@ -248,16 +243,6 @@ theorem X_mul_mem_span_weightHomogenization_iff
     map_mul, weightReesAeval_X]
   exact ⟨fun h ↦ Polynomial.isRegular_X.left (h.trans (mul_zero _).symm),
     fun h ↦ by rw [h, mul_zero]⟩
-
-/-- **The special fibre of a homogenized lifted relation.** If `r` is weighted homogeneous of
-weight `e` and `Q` has weight less than `e`, then setting `t = 0` in the homogenization of `r - Q`
-in degree `e` gives `r`. Setting `t = 1` gives `r - Q` (`eval_one_weightHomogenization`). -/
-theorem coeff_zero_weightHomogenization_sub {r Q : MvPolynomial ι R} {e : ℕ}
-    (hr : r.IsWeightedHomogeneous d e) (hQ : Q ∈ weightFiltrationLT R d e) :
-    (weightHomogenization R d e (r - Q)).coeff 0 = r := by
-  rw [coeff_zero_weightHomogenization (sub_mem_weightFiltration hr hQ), map_sub,
-    weightedHomogeneousComponent_eq_self hr, weightedHomogeneousComponent_eq_zero' (w := d)
-      (n := e) (φ := Q) fun x hx ↦ (mem_weightFiltrationLT_iff.1 hQ x hx).ne, sub_zero]
 
 variable {a : ι → σ →₀ ℕ} {u v : J → ι →₀ ℕ}
 
