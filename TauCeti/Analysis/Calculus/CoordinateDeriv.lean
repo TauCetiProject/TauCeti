@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
+import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -52,6 +53,14 @@ symbol calculus.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
+* `ContinuousLinearMap.apply_prod_eq_sum_single`,
+  `ContinuousLinearMap.norm_le_sum_norm_apply_prod_single`: a real-linear map on `ℝⁿ × ℝⁿ` in
+  terms of its values on the coordinate vectors, and the resulting norm bound.
+* `DifferentiableAt.fderiv_apply_single_zero`, `DifferentiableAt.fderiv_apply_zero_single`: the
+  derivative of a function of two variables on a coordinate vector is a coordinate derivative of
+  a slice.
+* `TauCeti.contDiff_succ_of_contDiff_fderiv_apply_single`: a differentiable function on
+  `ℝⁿ × ℝⁿ` whose coordinate partial derivatives are `C^k` is `C^(k + 1)`.
 -/
 
 public section
@@ -600,5 +609,98 @@ theorem _root_.ContinuousLinearMap.mixedDeriv_of_bilinear (B : F →L[ℝ] G →
   exact List.map_congr_left fun t ht => B.coordinateDeriv_of_bilinear (hsa t ht) (hsb t ht) x
 
 end Leibniz
+
+/-! ### Linear maps and derivatives in coordinates -/
+
+section Coordinates
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A real-linear map on `ℝⁿ × ℝⁿ` is determined by its values on the coordinate vectors. -/
+theorem _root_.ContinuousLinearMap.apply_prod_eq_sum_single
+    (L : CoordinateSpace n × CoordinateSpace n →L[ℝ] F)
+    (h : CoordinateSpace n × CoordinateSpace n) :
+    L h = ∑ j, h.1 j • L (EuclideanSpace.single j 1, 0) +
+      ∑ j, h.2 j • L (0, EuclideanSpace.single j 1) := by
+  have hsplit : L h = L.comp (ContinuousLinearMap.inl ℝ _ _) h.1 +
+      L.comp (ContinuousLinearMap.inr ℝ _ _) h.2 := by
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, ← map_add,
+      ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply, Prod.mk_add_mk, add_zero,
+      zero_add]
+  rw [hsplit]
+  congr 1
+  · conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h.1]
+    simp
+  · conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h.2]
+    simp
+
+/-- The norm of a real-linear map on `ℝⁿ × ℝⁿ` is at most the sum of the norms of its values on
+the coordinate vectors. -/
+theorem _root_.ContinuousLinearMap.norm_le_sum_norm_apply_prod_single
+    (L : CoordinateSpace n × CoordinateSpace n →L[ℝ] F) :
+    ‖L‖ ≤ ∑ j, ‖L (EuclideanSpace.single j 1, 0)‖ + ∑ j, ‖L (0, EuclideanSpace.single j 1)‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
+  rw [L.apply_prod_eq_sum_single, add_mul, Finset.sum_mul, Finset.sum_mul]
+  refine (norm_add_le _ _).trans (add_le_add ((norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun j _ ↦ ?_)) ((norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)))
+  · rw [norm_smul, mul_comm]
+    gcongr
+    exact (PiLp.norm_apply_le h.1 j).trans (norm_fst_le h)
+  · rw [norm_smul, mul_comm]
+    gcongr
+    exact (PiLp.norm_apply_le h.2 j).trans (norm_snd_le h)
+
+/-- The norm of a real-linear map on `ℝⁿ` is at most the sum of the norms of its values on the
+coordinate vectors. -/
+theorem _root_.ContinuousLinearMap.norm_le_sum_norm_apply_single (L : CoordinateSpace n →L[ℝ] F) :
+    ‖L‖ ≤ ∑ j, ‖L (EuclideanSpace.single j 1)‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
+  conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
+  simp only [map_sum, map_smul, EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply]
+  rw [Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [norm_smul, mul_comm]
+  gcongr
+  exact PiLp.norm_apply_le h j
+
+/-- The derivative of a function on `ℝⁿ × ℝⁿ` on the coordinate vectors of the first factor is the
+coordinate derivative of the slice in the first variable. -/
+theorem _root_.DifferentiableAt.fderiv_apply_single_zero
+    {f : CoordinateSpace n × CoordinateSpace n → F}
+    {p : CoordinateSpace n × CoordinateSpace n} (hf : DifferentiableAt ℝ f p) (j : Fin n) :
+    fderiv ℝ f p (EuclideanSpace.single j 1, 0) =
+      coordinateDeriv [j] (fun y ↦ f (y, p.2)) p.1 := by
+  have h : HasFDerivAt (fun y ↦ f (y, p.2)) ((fderiv ℝ f p).comp (.inl ℝ _ _)) p.1 :=
+    hf.hasFDerivAt.comp p.1 (hasFDerivAt_prodMk_left p.1 p.2)
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, h.fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.inl_apply]
+
+/-- The derivative of a function on `ℝⁿ × ℝⁿ` on the coordinate vectors of the second factor is
+the coordinate derivative of the slice in the second variable. -/
+theorem _root_.DifferentiableAt.fderiv_apply_zero_single
+    {f : CoordinateSpace n × CoordinateSpace n → F}
+    {p : CoordinateSpace n × CoordinateSpace n} (hf : DifferentiableAt ℝ f p) (j : Fin n) :
+    fderiv ℝ f p (0, EuclideanSpace.single j 1) =
+      coordinateDeriv [j] (fun η ↦ f (p.1, η)) p.2 := by
+  have h : HasFDerivAt (fun η ↦ f (p.1, η)) ((fderiv ℝ f p).comp (.inr ℝ _ _)) p.2 :=
+    hf.hasFDerivAt.comp p.2 (hasFDerivAt_prodMk_right p.1 p.2)
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, h.fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.inr_apply]
+
+/-- A differentiable function on `ℝⁿ × ℝⁿ` whose derivatives along the coordinate vectors are
+`C^k` is `C^(k + 1)`. -/
+theorem contDiff_succ_of_contDiff_fderiv_apply_single
+    {f : CoordinateSpace n × CoordinateSpace n → F}
+    {k : ℕ} (hf : Differentiable ℝ f)
+    (h₁ : ∀ j, ContDiff ℝ k fun p ↦ fderiv ℝ f p (EuclideanSpace.single j 1, 0))
+    (h₂ : ∀ j, ContDiff ℝ k fun p ↦ fderiv ℝ f p (0, EuclideanSpace.single j 1)) :
+    ContDiff ℝ (k + 1) f := by
+  rw [contDiff_succ_iff_fderiv]
+  refine ⟨hf, by simp, contDiff_clm_apply_iff.2 fun h ↦ ?_⟩
+  simp_rw [(fderiv ℝ f _).apply_prod_eq_sum_single h]
+  exact (ContDiff.sum fun j _ ↦ (h₁ j).const_smul _).add
+    (ContDiff.sum fun j _ ↦ (h₂ j).const_smul _)
+
+end Coordinates
 
 end TauCeti
