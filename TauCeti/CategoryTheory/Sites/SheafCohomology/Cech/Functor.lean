@@ -262,7 +262,7 @@ theorem cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom {κ : Type w} {V 
     Q.obj (op (G.obj (∏ᶜ fun l ↦ U (a l))))) _ _ fun a ↦ ?_
   refine ((Category.assoc _ _ _).trans (_ ≫= cechComplexCompIso_hom_f_π G U Q hG j a)).trans ?_
   refine ((Category.assoc _ _ _).symm.trans
-    (cechComplexMapHomotopy_hom_π Q _ _ j a =≫ _)).trans ?_
+    (cechComplexMapHomotopy_hom_π_assoc Q _ _ j a _)).trans ?_
   refine Eq.trans ?_ ((Category.assoc _ _ _).trans
     (_ ≫= cechComplexMapHomotopy_hom_π (G.op ⋙ Q) φ ψ j a)).symm
   refine neg_sum_zsmul_comp_eq_comp_neg_sum_zsmul fun k ↦ ?_
