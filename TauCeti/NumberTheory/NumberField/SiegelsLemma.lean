@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.House
-import TauCeti.Algebra.Order.BigOperators.Sum.AbsMulBound
+import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -178,13 +178,13 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
     rw [mem_Icc] at hx
     exact ⟨hx.1 j, hx.2 j⟩
   have hL {x : β → ℤ} (hx : x ∈ T) (p : α × index K) : |L x p| ≤ n * A * B := by
-    have h := Finset.abs_sum_mul_le_card_mul_mul (s := Finset.univ) (x := fun j ↦ (x j : ℝ))
-      (B := (B : ℝ)) (fun j _ ↦ hc p j) fun j _ ↦ by
-        obtain ⟨h₀, h₁⟩ := hT hx j
-        rw [abs_of_nonneg (by exact_mod_cast h₀)]
-        exact_mod_cast h₁
-    rw [Finset.card_univ] at h
-    exact h.trans_eq (by ring)
+    refine (Finset.abs_sum_le_card_nsmul (s := Finset.univ) (B := (B : ℝ) * A)
+      fun j _ ↦ ?_).trans_eq (by simp [n]; ring)
+    obtain ⟨h₀, h₁⟩ := hT hx j
+    rw [abs_mul]
+    refine mul_le_mul ?_ (hc p j) (abs_nonneg _) (by positivity)
+    rw [abs_of_nonneg (by exact_mod_cast h₀)]
+    exact_mod_cast h₁
   have hmaps (x : β → ℤ) (hx : x ∈ T) : f x ∈ S := by
     simp only [S, Fintype.mem_piFinset, mem_range, Nat.lt_succ_iff]
     intro p
@@ -202,9 +202,10 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
   · -- Two points in the same cell differ by an integer vector on which every form is `< 2 / 3`.
     funext i
     refine RingOfIntegers.eq_zero_of_abs_stdBasis_repr_le fun r ↦ ?_
-    have hcell := TauCeti.abs_sub_lt_inv_of_natFloor_mul_eq (t := 3 / 2) (by norm_num)
+    have hcell := TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq (t := 3 / 2) (by norm_num)
       (by linarith [(abs_le.mp (hL hx (i, r))).1]) (by linarith [(abs_le.mp (hL hy (i, r))).1])
       (congr_fun hxy (i, r))
+    rw [add_sub_add_right_eq_sub] at hcell
     have hsub : ∑ j, ((x - y) j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r =
         L x (i, r) - L y (i, r) := by
       simp [L, c, sub_mul, sum_sub_distrib]
