@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.MeasurableTangent
 public import TauCeti.Analysis.Calculus.FDeriv.ImageCone
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 
@@ -83,33 +83,9 @@ theorem CountablyRectifiable.exists_measurable_cover_forall_infDist_le
       ∀ n, ∀ y ∈ T n, ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
         ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ T n, dist z y < r →
           infDist (z - y) (P : Set V) ≤ ε * dist z y := by
-  classical
-  obtain ⟨A, F, hAm, hbi, hcover⟩ := hs.exists_bilipschitz_cover
-  choose K L hLip hAnti using hbi
-  let S (n : ℕ) := F n '' A n
-  have hSm (n : ℕ) : MeasurableSet (S n) :=
-    (hAm n).image_of_continuousOn_injOn (hLip n).continuous.continuousOn
-      (injOn_iff_injective.mpr (hAnti n).injective)
-  let G (n : ℕ) : Set V := {y | ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
-    ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ S n, dist z y < r →
-      infDist (z - y) (P : Set V) ≤ ε * dist z y}
-  have hgood (n : ℕ) : ∀ᵐ y ∂(μHE[k] : Measure V).restrict (S n), y ∈ G n := by
-    apply (ae_restrict_iff' (hSm n)).mpr
-    simpa only [finrank_euclideanSpace_fin, G, S, mem_ofPred_eq] using
-      (hLip n).lipschitzOnWith.ae_exists_submodule_forall_infDist_le (hAnti n)
-  -- Choose measurable full-measure subsets where cone containment holds pointwise.
-  choose B hBae hBm hBG using fun n ↦ (hgood n).exists_measurable_mem
-  let T (n : ℕ) := S n ∩ B n
-  have hST (n : ℕ) : S n ≤ᵐ[μHE[k]] T n := by
-    filter_upwards [(ae_restrict_iff' (hSm n)).mp (hBae n)] with y hy hys
-    exact ⟨hys, hy hys⟩
-  refine ⟨T, fun n ↦ (hSm n).inter (hBm n), ?_, ?_⟩
-  · apply ae_le_set.mp
-    exact (ae_le_set.mpr hcover).trans (Filter.EventuallySubset.countable_iUnion hST)
-  · intro n y hy
-    obtain ⟨P, hdim, hP⟩ := hBG n y hy.2
-    exact ⟨P, hdim, fun ε hε ↦ by
-      obtain ⟨r, hr, hcone⟩ := hP ε hε
-      exact ⟨r, hr, fun z hz ↦ hcone z hz.1⟩⟩
+  obtain ⟨T, Q, hTm, _, hcover, hcone⟩ := hs.exists_measurable_cover_tangent_projection
+  refine ⟨T, hTm, hcover, fun n y hy ↦ ?_⟩
+  obtain ⟨P, hdim, _, hP⟩ := hcone n y hy
+  exact ⟨P, hdim, hP⟩
 
 end TauCeti

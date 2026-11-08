@@ -41,13 +41,13 @@ open Filter Metric MeasureTheory Set
 open scoped ENNReal NNReal Topology
 
 /-- On a bi-Lipschitz patch, the plane with pointwise cone containment can be chosen with
-Borel measurable orthogonal projection. The parametrization is globally Lipschitz, while
-its inverse is only required to be Lipschitz on the Borel parameter domain. -/
-theorem LipschitzWith.exists_measurable_tangent_projection
+Borel measurable orthogonal projection. The parametrization and its inverse are only
+required to be Lipschitz on the Borel parameter domain and its image, respectively. -/
+theorem LipschitzOnWith.exists_measurable_tangent_projection
     {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
     [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V] [BorelSpace V]
-    {f : U → V} {s : Set U} {K L : ℝ≥0} (hf : LipschitzWith K f)
+    {f : U → V} {s : Set U} {K L : ℝ≥0} (hf : LipschitzOnWith K f s)
     (hs : MeasurableSet s) (hi : AntilipschitzWith L (s.domRestrict f)) :
     ∃ Q : V → V →L[ℝ] V, Measurable Q ∧
       ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V), y ∈ f '' s →
@@ -55,35 +55,43 @@ theorem LipschitzWith.exists_measurable_tangent_projection
           Q y = P.starProjection ∧
           ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ f '' s, dist z y < r →
             infDist (z - y) (P : Set V) ≤ ε * dist z y := by
-  have he : MeasurableEmbedding (s.domRestrict f) :=
-    hf.continuous.continuousOn.measurableEmbedding hs (injOn_iff_injective.mpr hi.injective)
-  let A : s → V →L[ℝ] V := fun x ↦ (fderiv ℝ f x).range.starProjection
+  obtain ⟨g, hg, hfg⟩ := hf.extend_finite_dimension
+  have himage : f '' s = g '' s := image_congr hfg
+  have hi' : AntilipschitzWith L (s.domRestrict g) := by
+    intro x y
+    simpa only [domRestrict_apply, ← hfg x.property, ← hfg y.property] using hi x y
+  rw [himage]
+  have he : MeasurableEmbedding (s.domRestrict g) :=
+    hg.continuous.continuousOn.measurableEmbedding hs (injOn_iff_injective.mpr hi'.injective)
+  let A : s → V →L[ℝ] V := fun x ↦ (fderiv ℝ g x).range.starProjection
   obtain ⟨Q, hQm, hQ⟩ := he.exists_measurable_extend (g := A)
-    (((measurable_fderiv ℝ f).starProjection_range).comp measurable_subtype_coe)
+    (((measurable_fderiv ℝ g).starProjection_range).comp measurable_subtype_coe)
     (fun _ ↦ ⟨0⟩)
   refine ⟨Q, hQm, ?_⟩
   have hgood : ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V),
-      y ∉ f '' {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}ᶜ :=
+      y ∉ g '' {x | DifferentiableAt ℝ g x ∧ (fderiv ℝ g x).normDet ≠ 0}ᶜ :=
     ae_iff.mpr (by simpa only [not_not, ofPred_mem_eq] using
-      hf.euclideanHausdorffMeasure_image_compl_setOf_regular)
+      hg.euclideanHausdorffMeasure_image_compl_setOf_regular)
   filter_upwards [hgood] with y hy hyimage
   obtain ⟨x, hx, rfl⟩ := hyimage
-  have hxreg : DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0 := by
+  have hxreg : DifferentiableAt ℝ g x ∧ (fderiv ℝ g x).normDet ≠ 0 := by
     by_contra h
     exact hy ⟨x, h, rfl⟩
-  refine ⟨(fderiv ℝ f x).range, LinearMap.finrank_range_of_inj
-    (((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hxreg.2), ?_, ?_⟩
+  refine ⟨(fderiv ℝ g x).range, LinearMap.finrank_range_of_inj
+    (((fderiv ℝ g x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hxreg.2), ?_, ?_⟩
   · exact congrFun hQ ⟨x, hx⟩
   · intro ε hε
-    exact hxreg.1.hasFDerivAt.hasFDerivWithinAt.exists_pos_forall_infDist_range_le hx hi hε
+    exact hxreg.1.hasFDerivAt.hasFDerivWithinAt.exists_pos_forall_infDist_range_le hx hi' hε
 
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E : Set V}
 
-/-- Measurable patch projections, with cone containment everywhere on each patch. -/
-private theorem CountablyRectifiable.exists_measurable_cover_tangent_projection
+/-- A countably rectifiable set admits a countable Borel cover up to a Hausdorff-null set,
+with measurable projection fields and pointwise cone containment on each piece. The pieces
+may extend beyond the original set. -/
+theorem CountablyRectifiable.exists_measurable_cover_tangent_projection
     (hE : CountablyRectifiable k E) :
     ∃ (T : ℕ → Set V) (Q : ℕ → V → V →L[ℝ] V),
       (∀ n, MeasurableSet (T n)) ∧ (∀ n, Measurable (Q n)) ∧
@@ -95,7 +103,8 @@ private theorem CountablyRectifiable.exists_measurable_cover_tangent_projection
   classical
   obtain ⟨A, f, hAm, hbi, hcover⟩ := hE.exists_bilipschitz_cover
   choose K L hLip hAnti using hbi
-  have hex (n : ℕ) := (hLip n).exists_measurable_tangent_projection (hAm n) (hAnti n)
+  have hex (n : ℕ) :=
+    (hLip n).lipschitzOnWith.exists_measurable_tangent_projection (hAm n) (hAnti n)
   simp only [finrank_euclideanSpace_fin] at hex
   choose Q hQm hQ using hex
   let S (n : ℕ) := f n '' A n
