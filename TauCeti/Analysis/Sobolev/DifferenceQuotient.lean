@@ -107,7 +107,17 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
       · rw [ht x hx, hwS hx]
       · simp [image_eq_zero_of_notMem_tsupport hx]
     simp_rw [hpt]
-    exact integral_inv_smul_sub_comp_mul_eq hw φ.continuous φ.hasCompactSupport t v
+    have key := integral_comp_add_sub_mul_eq hw φ.continuous φ.hasCompactSupport (t • v)
+    calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
+        = ∫ y, t⁻¹ * ((φ (y - t • v) - φ y) * w y) ∂μ := by
+          congr 1 with y
+          simp only [smul_eq_mul, smul_neg, sub_eq_add_neg]
+          ring
+      _ = t⁻¹ * ∫ x, (w (x + t • v) - w x) * φ x ∂μ := by rw [integral_const_mul, key]
+      _ = ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
+          rw [← integral_const_mul]
+          congr 1 with x
+          ring
   refine Tendsto.congr' hEq ?_
   -- The one-sided limits are Mathlib's dominated convergence for a Lipschitz function.
   rw [← nhdsLT_sup_nhdsGT]

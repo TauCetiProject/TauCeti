@@ -31,7 +31,7 @@ continuous test function can be moved onto the test function, by translation inv
 
 ## Main declarations
 
-* `TauCeti.integral_inv_smul_sub_comp_mul_eq`: moving a translation of an integrable function
+* `TauCeti.integral_comp_add_sub_mul_eq`: moving a translation of an integrable function
   onto a compactly supported continuous test function inside an integral.
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
@@ -125,35 +125,34 @@ end SMulSet
 
 section Translation
 
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E] [BorelSpace E]
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddRightInvariant]
 
-/-- Translating the test function instead of the integrable function `w`: the integral of
-`t⁻¹ • (φ (· + t • -v) - φ) * w` equals that of `t⁻¹ * (w (· + t • v) - w) * φ`. -/
-theorem integral_inv_smul_sub_comp_mul_eq {w φ : E → ℝ} (hw : Integrable w μ)
-    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (t : ℝ) (v : E) :
-    ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
-      ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
+/-- Moving a translation from the integrable function `w` onto the compactly supported continuous
+test function `φ` inside an integral:
+`∫ (w (· + a) - w) * φ = ∫ (φ (· - a) - φ) * w`. -/
+theorem integral_comp_add_sub_mul_eq {w φ : E → ℝ} (hw : Integrable w μ)
+    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (a : E) :
+    ∫ x, (w (x + a) - w x) * φ x ∂μ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
   obtain ⟨M, hM⟩ := hφ.bounded_above_of_compact_support hφc
-  have h1 : Integrable (fun x => w (x + t • v) * φ x) μ :=
-    (hw.comp_add_right (t • v)).mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
+  have h1 : Integrable (fun x => w (x + a) * φ x) μ :=
+    (hw.comp_add_right a).mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
   have h2 : Integrable (fun x => w x * φ x) μ :=
     hw.mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
-  have h3 : Integrable (fun x => w x * φ (x + t • -v)) μ :=
-    hw.mul_bdd (hφ.comp (continuous_id.add continuous_const)).aestronglyMeasurable
+  have h3 : Integrable (fun x => w x * φ (x - a)) μ :=
+    hw.mul_bdd (hφ.comp (continuous_id.sub continuous_const)).aestronglyMeasurable
       (ae_of_all _ fun x => hM _)
-  calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
-      = t⁻¹ * (∫ y, w y * φ (y + t • -v) ∂μ - ∫ y, w y * φ y ∂μ) := by
-        rw [← integral_sub h3 h2, ← integral_const_mul]
-        congr 1 with y
-        simp only [smul_eq_mul]
-        ring
-    _ = t⁻¹ * (∫ x, w (x + t • v) * φ x ∂μ - ∫ y, w y * φ y ∂μ) := by
-        rw [← integral_add_right_eq_self (fun y => w y * φ (y + t • -v)) (t • v)]
-        simp
-    _ = ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
-        rw [← integral_sub h1 h2, ← integral_const_mul]
+  calc ∫ x, (w (x + a) - w x) * φ x ∂μ
+      = ∫ x, w (x + a) * φ x ∂μ - ∫ y, w y * φ y ∂μ := by
+        rw [← integral_sub h1 h2]
         congr 1 with x
+        ring
+    _ = ∫ y, w y * φ (y - a) ∂μ - ∫ y, w y * φ y ∂μ := by
+        rw [← integral_add_right_eq_self (fun y => w y * φ (y - a)) a]
+        simp
+    _ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
+        rw [← integral_sub h3 h2]
+        congr 1 with y
         ring
 
 end Translation
