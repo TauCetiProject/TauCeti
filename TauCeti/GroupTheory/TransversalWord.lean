@@ -492,28 +492,26 @@ theorem lWord_indexTwoTransversal_mk_one_of_mem (s : G) {γ : G} (hγ : γ ∈ U
     lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ = γ := by
   rw [lWord_mk_one_of_mem U _ hγ, Subgroup.indexTwoTransversal_mk_one, inv_one, one_mul, mul_one]
 
-/-- At the coset of `s`, the transversal word of `U.indexTwoTransversal s` on an element `γ` of a
-subgroup `U` of index two is the conjugate `s⁻¹ * γ * s`. -/
+/-- At the coset of `s`, the transversal word of `U.indexTwoTransversal s` on an element `γ` of
+the subgroup `U` is the conjugate `s⁻¹ * γ * s`, for `s ∉ U`. -/
 @[simp]
-theorem lWord_indexTwoTransversal_mk_of_mem (hU : U.index = 2) {s : G} (hs : s ∉ U) {γ : G}
-    (hγ : γ ∈ U) :
+theorem lWord_indexTwoTransversal_mk_of_mem {s : G} (hs : s ∉ U) {γ : G} (hγ : γ ∈ U) :
     lWord U (U.indexTwoTransversal s) (QuotientGroup.mk s) γ = s⁻¹ * γ * s := by
-  have hcoset : γ⁻¹ • (QuotientGroup.mk s : G ⧸ U) = QuotientGroup.mk s := by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq]
-    have h : (γ⁻¹ * s)⁻¹ * s = s⁻¹ * γ * s := by group
-    rw [h]
-    exact (Subgroup.normal_of_index_eq_two hU).conj_mem' γ hγ s
-  rw [lWord_def, hcoset, Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs)]
+  have hne : γ⁻¹ • (QuotientGroup.mk s : G ⧸ U) ≠ QuotientGroup.mk 1 := by
+    rw [MulAction.Quotient.smul_mk, smul_eq_mul]
+    exact mk_ne_mk_one_of_notMem fun h => hs (by simpa using U.mul_mem hγ h)
+  rw [lWord_def, Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs),
+    Subgroup.indexTwoTransversal_of_ne s hne]
 
 /-- At the trivial coset, the transversal word of `U.indexTwoTransversal s` on an element `γ`
-outside a subgroup `U` of index two is `γ * s`. -/
+outside the subgroup `U` is `γ * s`. -/
 @[simp]
-theorem lWord_indexTwoTransversal_mk_one_of_notMem (hU : U.index = 2) {s : G} (hs : s ∉ U)
-    {γ : G} (hγ : γ ∉ U) :
+theorem lWord_indexTwoTransversal_mk_one_of_notMem (s : G) {γ : G} (hγ : γ ∉ U) :
     lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ = γ * s := by
-  rw [lWord_def, smul_mk_one_of_notMem_of_index_two hU hs (mt U.inv_mem_iff.1 hγ),
+  rw [lWord_def, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one,
     Subgroup.indexTwoTransversal_mk_one,
-    Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs), inv_one, one_mul]
+    Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem (mt U.inv_mem_iff.1 hγ)),
+    inv_one, one_mul]
 
 /-- At the coset of `s`, the transversal word of `U.indexTwoTransversal s` on an element `γ`
 outside a subgroup `U` of index two is `s⁻¹ * γ`. -/
