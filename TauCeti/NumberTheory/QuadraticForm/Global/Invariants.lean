@@ -238,7 +238,8 @@ theorem embedding_of_isReal_neg_iff_odd (hI : I.IsAdmissible) {d : Kˣ}
     rw [← RingHom.squareClassMap_apply, hd, ← discrAtRealPlace_def, hI.discrAtRealPlace_eq]
   have hpos : 0 < (u : ℝ) ↔ Even (I.realNegativeIndex w) := by
     rw [← Units.squareClass_eq_zero_iff_pos, h, nsmul_squareClass_neg_one_eq_zero_iff_even]
-  rw [← hu, ← Nat.not_even_iff_odd, ← hpos, not_lt, u.ne_zero.le_iff_lt]
+  rw [← hu, ← Nat.not_even_iff_odd, ← hpos]
+  simp [u.ne_zero.le_iff_lt]
 
 end IsAdmissible
 

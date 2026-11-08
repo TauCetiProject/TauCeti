@@ -144,8 +144,9 @@ private theorem realHasse_complementLine (hI : I.IsAdmissible) (hd : squareClass
         simpa using ⟨hcn, mul_neg_of_neg_of_pos hcn hdp⟩
     have hch : (m + 1).choose 2 = m.choose 2 + m := by
       rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
-    have hsq : (-1 : ℤˣ) ^ m * (-1) ^ m = 1 := by rw [← mul_pow, Int.units_mul_self, one_pow]
-    rw [hm, Nat.add_sub_cancel, hsymb, hch, pow_add, mul_assoc, hsq, mul_one]
+    rw [hm, hsymb, hch]
+    simp only [Nat.add_sub_cancel, pow_add, mul_assoc, ← mul_pow, Int.units_mul_self, one_pow,
+      mul_one]
 
 /-- The real discriminant condition holds for the complementary system. -/
 private theorem discrAtRealPlace_complementLine (hI : I.IsAdmissible)
@@ -240,10 +241,10 @@ private theorem globalInvariants_prod_complementLine (hd : squareClass d = I.dis
         squareClass (v.unitAtFinitePlace x) :=
       (RingHom.squareClassMap_apply _ x).trans (congrArg squareClass (Units.ext (by simp)))
     rw [_root_.QuadraticForm.finiteHasse_prod _ (nondegenerate_presentedForm _) Q' hQ', hv, hLd,
-      hQd, _root_.QuadraticForm.finiteHasse_eq_one_of_finrank_le_one _ _ hL1, one_mul, hloc,
-      hloc, hilbertSymbolOnSquareClasses_squareClass]
+      hQd, _root_.QuadraticForm.finiteHasse_eq_one_of_finrank_le_one _ _ hL1, hloc, hloc,
+      hilbertSymbolOnSquareClasses_squareClass]
     -- The symbol `(c, c d)_v` is a sign, so it cancels against itself.
-    simp only [complementLine, mul_assoc, Int.units_mul_self, mul_one]
+    simp only [complementLine, one_mul, mul_assoc, Int.units_mul_self, mul_one]
   · have hw := congrFun (congrArg GlobalFormInvariants.realPositiveIndex hQI) w
     rw [_root_.QuadraticForm.globalInvariants_realPositiveIndex] at hw ⊢
     rw [_root_.QuadraticForm.realPositiveIndex_prod, hw, presentedForm_eq_weightedSumSquares_coe,
