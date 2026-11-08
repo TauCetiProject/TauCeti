@@ -101,17 +101,9 @@ include hf hab hφ hφ0 hφf
 noncomputable def sublevelNDRPair : NDRPair {x | f x ≤ a} where
   control := ⟨fun x ↦ projIcc 0 1 zero_le_one (2 * (f x - a) / (b - a)), by fun_prop⟩
   control_eq_zero_iff x := by
-    have hba := sub_pos.2 hab
-    rw [ContinuousMap.coe_mk, ← Subtype.coe_inj, coe_projIcc, Icc.coe_zero, mem_ofPred_eq]
-    constructor
-    · intro h
-      rcases min_le_iff.1 (h ▸ le_max_right 0 _ : min 1 (2 * (f x - a) / (b - a)) ≤ 0)
-        with h1 | h1
-      · linarith
-      · have := (div_le_iff₀ hba).1 h1
-        linarith
-    · intro h
-      exact max_eq_left (min_le_of_right_le (div_nonpos_of_nonpos_of_nonneg (by linarith) hba.le))
+    rw [ContinuousMap.coe_mk, projIcc_eq_zero, div_le_iff₀ (sub_pos.2 hab), zero_mul,
+      mem_ofPred_eq]
+    constructor <;> intro h <;> linarith
   deformation := ⟨fun p ↦ φ (p.1 * max 0 (min (f p.2 - a) (b - f p.2))) p.2,
     (hφ.comp (by fun_prop : Continuous fun p : I × X ↦
       ((p.1 : ℝ) * max 0 (min (f p.2 - a) (b - f p.2)), p.2))).congr fun _ ↦ rfl⟩
@@ -175,12 +167,8 @@ theorem hasHomotopyExtensionProperty_range_sublevelInclusion_of_apply_eq_sub {c 
     (hac : a ≤ c) : HasHomotopyExtensionProperty (range (sublevelInclusion f a c hac)) := by
   have hrange : range (sublevelInclusion f a c hac) =
       ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ c}) := by
-    ext y
-    constructor
-    · rintro ⟨x, rfl⟩
-      rw [mem_preimage, coe_sublevelInclusion_apply]
-      exact x.2
-    · exact fun hy ↦ ⟨⟨y, hy⟩, Subtype.ext (coe_sublevelInclusion_apply f hac _)⟩
+    rw [sublevelInclusion_eq_inclusion]
+    exact range_inclusion (sublevel_mono f hac)
   rw [hrange]
   exact ((sublevelNDRPair hf hab φ hφ hφ0 hφf).restrict fun t y hy ↦
     (apply_sublevelNDRPair_deformation_le hf hab φ hφ hφ0 hφf t y).trans
