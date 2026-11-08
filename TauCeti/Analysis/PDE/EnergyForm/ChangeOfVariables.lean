@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 
+import TauCeti.Analysis.Calculus.FDeriv.InvOn
+
 /-!
 # Divergence-form equations under a change of variables
 
@@ -239,12 +241,12 @@ theorem energyFormH1_pullback_compL (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ
   rw [jetField_apply, jetField_apply, jetField_apply, jetField_apply, hv, hgv, hw, hgw,
     hΨΦ hy]
   rw [smul_eq_mul, pullbackPrincipalCoeff_def, pullbackDriftCoeff_def, pullbackDensity_apply,
-    ← Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+    ← toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
       hΦΨ hΨΦ hy]
   refine energyIntegrand_pullback ?_ _ _ _ _ _ _ _ _
-  rw [Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+  rw [toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
       hΦΨ hΨΦ hy,
-    Wkp.fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ
+    fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ
       hΨΦ hy]
 
 /-- **Weak solutions under a change of variables.** Let `Φ` be a change of variables of order one
@@ -286,7 +288,7 @@ theorem matrixBilinearForm_pullbackPrincipalCoeff (hΦ : DifferentiableOn ℝ Φ
         (ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y)) ξ) := by
   rw [pullbackPrincipalCoeff_def, matrixBilinearForm_smul_apply,
     matrixBilinearForm_mul_mul_transpose,
-    Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
+    toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
 
 /-- The transported drift at `y ∈ U` is `|det DΦ(y)| DΨ(Φ y) b(Φ y)`. -/
 theorem pullbackDriftCoeff_eq (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
@@ -294,7 +296,7 @@ theorem pullbackDriftCoeff_eq (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo 
     (hΨΦ : LeftInvOn Ψ Φ U) (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
     {y : EuclideanSpace ℝ ι} (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
     pullbackDriftCoeff Φ b y = |(fderiv ℝ Φ y).det| • fderiv ℝ Ψ (Φ y) (b (Φ y)) := by
-  rw [pullbackDriftCoeff_def, Wkp.toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
+  rw [pullbackDriftCoeff_def, toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
 
 /-- The lower ellipticity bound of the transported principal coefficient at `y ∈ U`:
 `κ λ / L² ‖ξ‖² ≤ ξᵀ a_Φ(y) ξ`, since `‖ξ‖ ≤ L ‖DΨ(Φ y)ᵀ ξ‖` and `κ ≤ |det DΦ(y)|`. -/
@@ -308,7 +310,7 @@ private theorem pullbackPrincipalCoeff_lower_bound {a : EuclideanSpace ℝ ι �
   -- `ξ = DΦ(y)ᵀ DΨ(Φ y)ᵀ ξ`, because `DΨ(Φ y) ∘ DΦ(y) = id`.
   have hξ : ‖ξ‖ ≤ L * ‖S ξ‖ := by
     have hST : fderiv ℝ Ψ (Φ y) ∘L fderiv ℝ Φ y = ContinuousLinearMap.id ℝ _ := by
-      have h := Wkp.fderiv_comp_fderiv_eq_id_of_invOn hΨ.differentiableOn hΨ.mapsTo
+      have h := fderiv_comp_fderiv_eq_id_of_invOn hΨ.differentiableOn hΨ.mapsTo
         hΦ.differentiableOn hΨΦ hΦΨ (hΦ.mapsTo hy)
       rwa [hΨΦ hy] at h
     have h : ContinuousLinearMap.adjoint (fderiv ℝ Φ y) (S ξ) = ξ := by
@@ -382,7 +384,7 @@ theorem UniformlyEllipticOn.pullbackPrincipalCoeff [Nonempty ι]
   obtain ⟨y₀, hy₀⟩ := hU
   have hLL' : 1 ≤ L * L' := by
     have h := ContinuousLinearMap.opNorm_comp_le (fderiv ℝ Φ y₀) (fderiv ℝ Ψ (Φ y₀))
-    rw [Wkp.fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
+    rw [fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
         hΦΨ hΨΦ hy₀,
       ContinuousLinearMap.norm_id] at h
     exact h.trans (mul_le_mul (hΦ.norm_fderiv_le y₀ hy₀) (hΨ.norm_fderiv_le _ (hΦ.mapsTo hy₀))
