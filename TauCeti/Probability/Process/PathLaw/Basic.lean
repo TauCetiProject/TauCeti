@@ -157,19 +157,22 @@ open Classical ProbabilityTheory in
 state lies outside the conditioning set have zero mass, including when the conditioning event
 itself has zero mass. -/
 theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ : Measure Ω}
-    {X : ℕ → Ω → α} {S : Set α} (hX : ∀ i, AEMeasurable (X i) μ)
-    (hs : NullMeasurableSet {ω | X 0 ω ∈ S} μ)
-    (n : ℕ) (w : Fin (n + 1) → α) :
+    {X : ℕ → Ω → α} {S : Set α} (hX : ∀ i, AEMeasurable (X i) μ) (n : ℕ) (w : Fin (n + 1) → α) :
     prefixLaw μ[|{ω | X 0 ω ∈ S}] X (n + 1) {w} =
       (μ {ω | X 0 ω ∈ S})⁻¹ *
         (if w 0 ∈ S then prefixLaw μ X (n + 1) {w} else 0) := by
   let s : Set Ω := {ω | X 0 ω ∈ S}
   have hac : μ[|s] ≪ μ := cond_absolutelyContinuous
   have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => (hX i).mono_ac hac
-  -- `ProbabilityTheory.cond_apply` asks for a measurable conditioning event; this is its
-  -- null-measurable form
+  -- `ProbabilityTheory.cond_apply` asks for a measurable conditioning event; instead the
+  -- set of paths is null measurable, being a finite intersection of coordinate preimages
+  have hpath : NullMeasurableSet {ω | ∀ i : Fin (n + 1), X i.val ω = w i} (μ.restrict s) := by
+    rw [Set.ofPred_forall]
+    exact (NullMeasurableSet.iInter fun i =>
+      (hX i.val).nullMeasurableSet_preimage (measurableSet_singleton (w i))).mono_ac
+        Measure.restrict_le_self.absolutelyContinuous
   rw [prefixLaw_singleton_eq_measure hXcond, ProbabilityTheory.cond, _root_.smul_apply,
-    Measure.restrict_apply₀' hs, smul_eq_mul, Set.inter_comm,
+    Measure.restrict_apply₀ hpath, smul_eq_mul, Set.inter_comm,
     prefixLaw_singleton_eq_measure hX]
   split_ifs with hw
   · congr 1
@@ -179,7 +182,9 @@ theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ :
     constructor
     · exact And.right
     · intro hp
-      exact ⟨(hp 0).symm ▸ hw, hp⟩
+      refine ⟨?_, hp⟩
+      have h0 : X 0 ω = w 0 := hp 0
+      simpa only [s, Set.mem_ofPred_eq, h0] using hw
   · have hempty : s ∩ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} = ∅ := by
       apply Set.eq_empty_of_forall_notMem
       intro ω hω

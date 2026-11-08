@@ -11,13 +11,13 @@ public import Mathlib.Probability.ConditionalProbability
 /-!
 # Conditioning Markov exchangeability on the initial state
 
-Conditioning on a null-measurable initial-state event scales the mass of every finite path
+Conditioning on an initial-state event scales the mass of every finite path
 starting there and gives zero mass to paths starting elsewhere
 (`TauCeti.Probability.prefixLaw_singleton_cond_initial_mem`). Hence it preserves Markov
 exchangeability. The conditional path-mass formula gives the same mass to paths with the same
 initial state and transition counts, establishing Markov exchangeability of the conditional law.
-Null-measurability is all that is asked of the event, so conditioning on a single initial state
-needs no hypothesis beyond the a.e. measurability that Markov exchangeability already bundles.
+No measurability is asked of the event, so conditioning on a single initial state needs no
+hypothesis beyond the a.e. measurability that Markov exchangeability already bundles.
 
 ## References
 
@@ -36,9 +36,8 @@ namespace TauCeti.Probability
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   {μ : Measure Ω} {X : ℕ → Ω → α} {a : α} {S : Set α}
 
-/-- Conditioning on a null-measurable initial-state event preserves Markov exchangeability. -/
-theorem MarkovExchangeable.cond_initial_mem (h : MarkovExchangeable μ X)
-    (hs : NullMeasurableSet {ω | X 0 ω ∈ S} μ) :
+/-- Conditioning on an initial-state event preserves Markov exchangeability. -/
+theorem MarkovExchangeable.cond_initial_mem (h : MarkovExchangeable μ X) :
     MarkovExchangeable (μ[|{ω | X 0 ω ∈ S}]) X := by
   classical
   let _ : Countable α := h.countable
@@ -48,16 +47,14 @@ theorem MarkovExchangeable.cond_initial_mem (h : MarkovExchangeable μ X)
     obtain ⟨f, hf, heq⟩ := h.aemeasurable i
     exact ⟨f, hf, heq.filter_mono hac.ae_le⟩
   refine MarkovExchangeable.intro hX fun n u v huv hcount => ?_
-  rw [prefixLaw_singleton_cond_initial_mem h.aemeasurable hs n u,
-    prefixLaw_singleton_cond_initial_mem h.aemeasurable hs n v,
+  rw [prefixLaw_singleton_cond_initial_mem h.aemeasurable n u,
+    prefixLaw_singleton_cond_initial_mem h.aemeasurable n v,
     huv, h.prefixLaw_singleton_eq n u v huv hcount]
 
 /-- Conditioning on an initial state preserves Markov exchangeability. -/
 theorem MarkovExchangeable.cond_initial (h : MarkovExchangeable μ X) :
     MarkovExchangeable (μ[|{ω | X 0 ω = a}]) X := by
-  have := h.measurableSingletonClass
-  simpa only [Set.mem_singleton_iff] using
-    h.cond_initial_mem ((h.aemeasurable 0).nullMeasurableSet_preimage (measurableSet_singleton a))
+  simpa only [Set.mem_singleton_iff] using h.cond_initial_mem (S := {a})
 
 end TauCeti.Probability
 
