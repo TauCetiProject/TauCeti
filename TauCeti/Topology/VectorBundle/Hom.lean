@@ -65,20 +65,30 @@ variable {𝕜 B F₁ F₂ M : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
 /-- Inverse Hom-frame coordinates conjugate a model operator by the inverse target frame and
-forward source frame. No square identity or equality of the two model fibres is required. -/
+forward source frame. No square identity or equality of the two model fibres is required, and
+both sides vanish outside the common base set. -/
 theorem Bundle.Trivialization.continuousLinearMap_symmL
     (e₁ : Trivialization F₁ (TotalSpace.proj : TotalSpace F₁ E₁ → B))
     (e₂ : Trivialization F₂ (TotalSpace.proj : TotalSpace F₂ E₂ → B))
     [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₂]
-    {x : B} (hx : x ∈ e₁.baseSet ∩ e₂.baseSet) (A : F₁ →L[𝕜] F₂) :
+    (x : B) (A : F₁ →L[𝕜] F₂) :
     (e₁.continuousLinearMap (RingHom.id 𝕜) e₂).symmL 𝕜 x A =
       (e₂.symmL 𝕜 x).comp (A.comp (e₁.continuousLinearMapAt 𝕜 x)) := by
-  rw [Trivialization.symmL_apply (R := 𝕜)
-    (e := e₁.continuousLinearMap (RingHom.id 𝕜) e₂) (by simpa only
-      [Trivialization.baseSet_continuousLinearMap] using hx)]
-  -- The Hom trivialization and its native pretrivialization share the inverse fibre map.
-  convert! Bundle.Pretrivialization.continuousLinearMap_symm_apply'
-    (RingHom.id 𝕜) e₁ e₂ hx A using 1
+  by_cases hx : x ∈ e₁.baseSet ∩ e₂.baseSet
+  · rw [Trivialization.symmL_apply (R := 𝕜)
+      (e := e₁.continuousLinearMap (RingHom.id 𝕜) e₂) (by simpa only
+        [Trivialization.baseSet_continuousLinearMap] using hx)]
+    -- The Hom trivialization and its native pretrivialization share the inverse fibre map.
+    convert! Bundle.Pretrivialization.continuousLinearMap_symm_apply'
+      (RingHom.id 𝕜) e₁ e₂ hx A using 1
+  · rw [Trivialization.symmL_apply_of_notMem (R := 𝕜)
+      (e := e₁.continuousLinearMap (RingHom.id 𝕜) e₂) (by simpa only
+        [Trivialization.baseSet_continuousLinearMap] using hx)]
+    ext v
+    by_cases h₁ : x ∈ e₁.baseSet
+    · have h₂ : x ∉ e₂.baseSet := fun h₂ ↦ hx ⟨h₁, h₂⟩
+      simp [Trivialization.symmL_apply_of_notMem _ h₂]
+    · simp [Trivialization.continuousLinearMapAt, Trivialization.coe_linearMapAt, h₁]
 
 
 namespace TauCeti

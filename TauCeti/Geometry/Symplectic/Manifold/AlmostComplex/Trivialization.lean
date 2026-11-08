@@ -90,7 +90,7 @@ def almostComplexStructure (he : e.baseSet = univ) (A : M → E →L[ℝ] E)
     have hx : x ∈ e.baseSet := he.symm ▸ mem_univ x
     ext v
     simp only [ContMDiffSection.coeFn_mk, sectionFromCoordinates_apply,
-      Trivialization.continuousLinearMap_symmL e e ⟨hx, hx⟩,
+      Trivialization.continuousLinearMap_symmL e e x,
       ContinuousLinearMap.comp_apply, neg_apply, ContinuousLinearMap.id_apply]
     rw [e.continuousLinearMapAt_symmL hx, hAA, map_neg,
       e.symmL_continuousLinearMapAt hx]
@@ -101,9 +101,8 @@ theorem almostComplexStructure_apply (he : e.baseSet = univ) (A : M → E →L[�
     (x : M) (v : TangentSpace I x) :
     almostComplexStructure e he A hA hAA x v =
       e.symmL ℝ x (A x (e.continuousLinearMapAt ℝ x v)) := by
-  have hx : x ∈ e.baseSet := he.symm ▸ mem_univ x
   simp only [almostComplexStructure, ContMDiffSection.coeFn_mk, sectionFromCoordinates_apply,
-    Trivialization.continuousLinearMap_symmL e e ⟨hx, hx⟩, ContinuousLinearMap.comp_apply]
+    Trivialization.continuousLinearMap_symmL e e x, ContinuousLinearMap.comp_apply]
 
 /-- Reading a reconstructed structure recovers the entire coordinate field. -/
 @[simp]
