@@ -23,7 +23,8 @@ The formulas include zero trials and probability vectors on simplex faces.
 * `TauCeti.Probability.support_multinomialMeasure`: exact native support.
 * `TauCeti.Probability.support_map_multinomialMeasure`: support after applying arbitrary labels
   in a T₁ Borel space; labels need not be injective.
-* `TauCeti.Probability.support_map_multinomialToEuclidean`: exact Euclidean support.
+* `TauCeti.Probability.support_map_multinomialToEuclidean_multinomialMeasure`: exact Euclidean
+  support.
 
 ## References
 
@@ -70,7 +71,8 @@ theorem support_map_multinomialMeasure {E : Type*} [TopologicalSpace E] [T1Space
 
 /-- The Euclidean multinomial law is supported on exactly the admissible integer count vectors.
 Zero-probability cells remain identically zero, including on the topological support. -/
-theorem support_map_multinomialToEuclidean (n : ℕ) (p : StdSimplex NNReal ι) :
+theorem support_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
+    (p : StdSimplex NNReal ι) :
     ((multinomialMeasure n p).map multinomialToEuclidean).support =
       multinomialToEuclidean ''
         {k | (∑ i, k i = n) ∧ ∀ i, k i ≠ 0 → p.weights i ≠ 0} :=
