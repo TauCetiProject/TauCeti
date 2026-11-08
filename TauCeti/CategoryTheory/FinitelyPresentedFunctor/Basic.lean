@@ -92,6 +92,13 @@ theorem isFinitelyGeneratedFunctor_def :
     IsFinitelyGeneratedFunctor F ↔ ∃ (Y : C) (p : preadditiveYoneda.obj Y ⟶ F), Epi p :=
   Iff.rfl
 
+/-- A functor is finitely presented exactly when there is an exact sequence
+`(-, X) ⟶ (-, Y) ⟶ F ⟶ 0` whose first map is `(-, f)` for a morphism `f` of `C`. -/
+theorem isFinitelyPresentedFunctor_def :
+    IsFinitelyPresentedFunctor F ↔ ∃ (X Y : C) (f : X ⟶ Y) (p : preadditiveYoneda.obj Y ⟶ F)
+      (h : preadditiveYoneda.map f ≫ p = 0), Epi p ∧ (ShortComplex.mk _ _ h).Exact :=
+  Iff.rfl
+
 /-- A functor is finitely presented exactly when it is the cokernel of `(-, f)` for a morphism
 `f` of `C`. -/
 theorem isFinitelyPresentedFunctor_iff_exists_isColimit :
