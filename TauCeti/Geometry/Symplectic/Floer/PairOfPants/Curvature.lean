@@ -451,29 +451,6 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
   rw [hβ, mul_zero, zero_mul] at key
   exact (mul_eq_zero.1 key).resolve_left (det_fderiv_endChart_pos q w).ne'
 
-
-/-- The symplectic area density of a map which is `C¹` on `S` is continuous on `S`: it is the
-pullback `u^*ω` within the open set `S`, evaluated on the coordinate vectors. -/
-private theorem continuousOn_symplecticArea (ω : SmoothTwoForm I M) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) :
-    ContinuousOn (fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)) thricePuncturedSphereReal := by
-  have hS := isOpen_thricePuncturedSphereReal
-  have hpb := (ω.contMDiff.of_le (by simp)).contMDiffOn.mpullbackWithin_form (m := 0) hu
-    (by simp) (mapsTo_univ _ _) hS.uniqueMDiffOn
-  have hc : ContinuousOn _ thricePuncturedSphereReal := fun z hz ↦
-    (RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace (hpb z hz)).continuousWithinAt
-  refine ((ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) ℝ
-    ![stdComplexLineReal, stdComplexLineImag]).continuous.comp_continuousOn hc).congr
-      fun z hz ↦ ?_
-  have h := mpullback_apply_pair (I := 𝓘(ℝ, ℝ × ℝ)) (I' := I) u ω.1 z stdComplexLineReal
-    stdComplexLineImag
-  rw [← mpullbackWithin_eq_mpullback (hS.uniqueMDiffOn z hz)
-    ((hu.contMDiffAt (hS.mem_nhds hz)).mdifferentiableAt one_ne_zero)] at h
-  rw [SmoothBundleForm.eval₂_apply]
-  exact h.symm
-
 /-- The curvature term along a map continuous on `S` is integrable over every truncation `S_R`
 with `R ≥ 1`: it vanishes on the core, and in the coordinates of each end it is the continuous
 function `±β'(±s - 1) H_q(t, u)`. -/
@@ -790,7 +767,8 @@ private theorem integrableOn_truncation_floerEnergyDensity (hω : ω.IsNondegene
       continuousOn_const
   have hderiv := (((hcont Complex.I stdComplexLineReal).sub
     (hcont 1 stdComplexLineImag)).mono hTS).integrableOn_compact (μ := volume) hT
-  have harea := ((continuousOn_symplecticArea ω hu).mono hTS).integrableOn_compact (μ := volume) hT
+  have harea := ((continuousOn_symplecticArea ω isOpen_thricePuncturedSphereReal hu).mono
+    hTS).integrableOn_compact (μ := volume) hT
   -- By the pointwise energy identity the energy density is `u^*ω + d(K(u)) - R_K(u)`.
   refine ((harea.add hderiv).sub (integrableOn_truncation_hamiltonianCurvature ω hH hHs
     hu.continuousOn hR)).congr_fun (fun z hz ↦ ?_) hT.isClosed.measurableSet
@@ -829,8 +807,8 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (hω : ω.IsNondegenerat
       Complex.equivRealProdCLM.symm ⁻¹' truncation (max R 1) :=
     preimage_mono (truncation_mono (le_max_left R 1))
   exact ⟨(integrableOn_truncation_floerEnergyDensity hω hH hHs hu (le_max_right R 1)).mono_set hsub,
-    ((continuousOn_symplecticArea ω hu).mono (preimage_truncation_subset R)).integrableOn_compact
-      (isCompact_preimage_truncation R),
+    ((continuousOn_symplecticArea ω isOpen_thricePuncturedSphereReal hu).mono
+      (preimage_truncation_subset R)).integrableOn_compact (isCompact_preimage_truncation R),
     (integrableOn_truncation_hamiltonianCurvature ω hH hHs hu.continuousOn
       (le_max_right R 1)).mono_set hsub⟩
 
@@ -895,8 +873,9 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (hω : ω
         (preimage_truncation_subset R hz.1) (endSign_mul_re_endCoord_lt_one_of_mem_core hz) _
   rw [setIntegral_truncation_eq_add_sum hR hE,
     setIntegral_truncation_eq_add_sum hR
-      (((continuousOn_symplecticArea ω hu).mono (preimage_truncation_subset R)).integrableOn_compact
-        (μ := volume) (isCompact_preimage_truncation R)),
+      (((continuousOn_symplecticArea ω isOpen_thricePuncturedSphereReal hu).mono
+        (preimage_truncation_subset R)).integrableOn_compact (μ := volume)
+          (isCompact_preimage_truncation R)),
     setIntegral_truncation_eq_add_sum hR hcurv, hCE, hCR,
     Finset.sum_congr rfl fun q _ => integral_floerEnergyDensity_image_endPiece hω hH hHs hu hR q
       (hE.mono_set (hAT q)) (hcurv.mono_set (hAT q)),
