@@ -110,8 +110,8 @@ private theorem exteriorAlgebraCoact_coassoc_algHom :
     | add x y hx hy => simp only [map_add, hx, hy]
   simp only [AlgHom.comp_toLinearMap, LinearMap.coe_comp, Function.comp_apply,
     AlgHom.toLinearMap_apply, AlgEquiv.coe_toAlgHom, exteriorAlgebraCoact_ι, hassoc, coassoc_apply,
-    Algebra.TensorProduct.map_rTensor (AlgHom.id R _), AlgHom.toLinearMap_id, LinearMap.id_comp,
-    Bialgebra.toLinearMap_comulAlgHom]
+    Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor (AlgHom.id R _), AlgHom.toLinearMap_id,
+    LinearMap.id_comp, Bialgebra.toLinearMap_comulAlgHom]
 
 /-- Coassociativity of the coaction of the exterior algebra. -/
 theorem exteriorAlgebraCoact_coassoc :
@@ -135,9 +135,10 @@ theorem exteriorAlgebraCoact_counit :
     apply ExteriorAlgebra.hom_ext
     ext m
     simp only [AlgHom.comp_toLinearMap, LinearMap.coe_comp, Function.comp_apply,
-      AlgHom.toLinearMap_apply, exteriorAlgebraCoact_ι, Algebra.TensorProduct.map_rTensor,
-      AlgHom.toLinearMap_id, LinearMap.id_comp, Bialgebra.toLinearMap_counitAlgHom,
-      lTensor_counit_coact, LinearMap.rTensor_tmul, Algebra.TensorProduct.includeLeft_apply]
+      AlgHom.toLinearMap_apply, exteriorAlgebraCoact_ι,
+      Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor, AlgHom.toLinearMap_id,
+      LinearMap.id_comp, Bialgebra.toLinearMap_counitAlgHom, lTensor_counit_coact,
+      LinearMap.rTensor_tmul, Algebra.TensorProduct.includeLeft_apply]
   have h' : Coalgebra.counit.lTensor (ExteriorAlgebra R M) ∘ₗ
       (exteriorAlgebraCoact R H M).toLinearMap =
       (Algebra.TensorProduct.includeLeft (R := R) (A := ExteriorAlgebra R M)
