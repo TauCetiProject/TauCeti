@@ -132,6 +132,27 @@ theorem linearMap_eq_zero (h : IsIsotypicOfType R M N)
     exact False.elim (hne ⟨e.trans (h (LinearMap.range f)).some⟩)
   · exact hzero
 
+/-- A direct sum of copies of an isotypic module has the same simple type.
+No semisimplicity or finiteness assumption on the summands is required. -/
+theorem finsupp (h : IsIsotypicOfType R M N) (ι : Type*) :
+    IsIsotypicOfType R (ι →₀ M) N := by
+  classical
+  intro T hT
+  have := IsSimpleModule.nontrivial R T
+  obtain ⟨x, hx⟩ := exists_ne (0 : T)
+  obtain ⟨i, hi⟩ : ∃ i, (x : ι →₀ M) i ≠ 0 := by
+    by_contra! h
+    apply hx
+    exact Subtype.ext (Finsupp.ext h)
+  let f : T →ₗ[R] M := (Finsupp.lapply i).comp T.subtype
+  have hf : f ≠ 0 := by
+    intro hf
+    exact hi (LinearMap.congr_fun hf x)
+  have hinj := f.injective_or_eq_zero.resolve_right hf
+  let e := LinearEquiv.ofInjective f hinj
+  have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
+  exact ⟨e.trans (h (LinearMap.range f)).some⟩
+
 end IsIsotypicOfType
 
 namespace IsSemisimpleModule
