@@ -59,7 +59,7 @@ theorem finiteInvAt_torsionWeilBrauerPairing (v : HeightOneSpectrum (𝓞 K))
   exact ((W⁄(v.adicCompletion K)).toRatAddCircle_localTateWeilPairing m _ _ _).symm
 
 /-- The local Tate pairings of restrictions of two global classes vanish at all but finitely
-many finite places. This also holds for the `ZMod m`-valued pairings, before embedding in `ℚ/ℤ`. -/
+many finite places. -/
 theorem hasFiniteSupport_localTateWeilPairing_torsionRes
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K)) :
