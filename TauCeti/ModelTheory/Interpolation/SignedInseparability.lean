@@ -85,6 +85,11 @@ theorem symm (h : SignedInseparable Γ Δ R K) :
   exact entails_iff.2 fun M _ _ hM => by
     simpa only [SentenceInf.realize_not, not_not] using (entails_iff.1 hΔ) M hM
 
+/-- Swapping the theories and flipping the budget is an involutive equivalence. -/
+theorem symm_iff : SignedInseparable Δ Γ (fun s => R (!s)) K ↔
+    SignedInseparable Γ Δ R K :=
+  ⟨fun h => by simpa only [Bool.not_not] using h.symm, symm⟩
+
 /-- The left theory of an inseparable pair is satisfiable. -/
 theorem isSatisfiable_left (h : SignedInseparable Γ Δ R K) : Γ.IsSatisfiable := by
   rw [isSatisfiable_iff_not_entails_bot]
@@ -130,7 +135,7 @@ without producing a signed separator. -/
 theorem exists_insert_right (h : SignedInseparable Γ Δ R K) (φs : ℕ → L[[γ]].Sentenceω)
     (hφs : Δ.Entails (.iSup φs)) : ∃ k, SignedInseparable Γ (insert (φs k) Δ) R K := by
   obtain ⟨k, hk⟩ := h.symm.exists_insert_left φs hφs
-  exact ⟨k, by simpa only [Bool.not_not] using hk.symm⟩
+  exact ⟨k, symm_iff.1 hk⟩
 
 /-- An implication on the left admits either its false antecedent or its true consequent as an
 inseparability-preserving extension. -/
