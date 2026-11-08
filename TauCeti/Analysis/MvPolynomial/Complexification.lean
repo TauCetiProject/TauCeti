@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.MvPolynomial.DirectionalOrder
 public import TauCeti.Analysis.Analytic.Complexification.Basic
 public import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
+import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Topology.Algebra.MvPolynomial
 
 /-!
@@ -222,3 +223,29 @@ theorem exists_complexification_dense_open_directions_eval_add_smul_eq_pow_mul [
   simpa only [sub_zero, smul_eq_mul] using hsh z (hsub hz)
 
 end MvPolynomial
+
+namespace Polynomial
+
+/-- The coefficients of a polynomial with multivariate coefficients, mapped by evaluating the
+coefficients through a ring homomorphism at a point, are the evaluations of the mapped
+coefficients. -/
+theorem coeff_map_eval₂Hom {R S σ : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
+    (p : Polynomial (MvPolynomial σ R)) (x : σ → S) (i : ℕ) :
+    (p.map (MvPolynomial.eval₂Hom f x)).coeff i =
+      MvPolynomial.eval x ((p.coeff i).map f) := by
+  simp only [coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
+
+/-- The coefficients of a real multivariate polynomial complexified and evaluated along a family
+of points are analytic when every coordinate of the family is analytic. -/
+theorem analyticOnNhd_coeff_map_eval₂Hom {σ E : Type*} [Finite σ] [NormedAddCommGroup E]
+    [NormedSpace ℂ E] (p : Polynomial (MvPolynomial σ ℝ)) {f : E → σ → ℂ} {S : Set E}
+    (hf : ∀ j, AnalyticOnNhd ℂ (fun z ↦ f z j) S) (i : ℕ) :
+    AnalyticOnNhd ℂ
+      (fun z ↦ (p.map (MvPolynomial.eval₂Hom Complex.ofRealHom (f z))).coeff i) S := by
+  have := Fintype.ofFinite σ
+  intro z hz
+  simp only [coeff_map_eval₂Hom]
+  simpa only [MvPolynomial.aeval_eq_eval] using
+    AnalyticAt.aeval_mvPolynomial (fun j ↦ hf j z hz) ((p.coeff i).map Complex.ofRealHom)
+
+end Polynomial
