@@ -45,53 +45,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : ℕ∞ω} [IsManifold I n M]
 
-/-- All source-chart derivatives of a vector-valued map, with compact-open topology in each
-component. Unlike the compact chart jet, a component is defined on the entire chart target. -/
-def chartJet : C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
-    ∀ (x : M) (m : {m : ℕ // m ≤ n}),
-      C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F) :=
-  LinearMap.pi fun x ↦ LinearMap.pi fun m ↦ chartIteratedFDerivLinearMap x m m.2
-
-/-- Each component of the chart jet is the native chart derivative. -/
-@[simp]
--- Normalize the dependent coercion's chart target, as for `chartIteratedFDerivLinearMap_apply`.
-theorem chartJet_apply (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : {m : ℕ // m ≤ n}) :
-    DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
-      ∀ (x : M) (m : {m : ℕ // m ≤ n}),
-        C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F))
-      chartJet f x m = chartIteratedFDeriv f x m m.2 :=
-  chartIteratedFDerivLinearMap_apply _ _ _ _
-
-/-- The chart jet induces exactly the existing manifold weak Whitney topology. -/
-theorem isInducing_chartJet :
-    IsInducing (chartJet (I := I) (M := M) (F := F) (n := n)) := by
-  refine ⟨le_antisymm ?_ ?_⟩
-  · apply continuous_iff_le_induced.mp
-    exact continuous_pi fun x ↦ continuous_pi fun m ↦
-      (continuous_chartIteratedFDeriv x m m.2).congr fun f ↦ (chartJet_apply f x m).symm
-  · rw [← continuous_id_iff_le]
-    let _ := TopologicalSpace.induced (chartJet (I := I) (M := M) (F := F) (n := n))
-      inferInstance
-    apply continuous_manifoldWeakWhitney_iff_chartIteratedFDeriv.mpr
-    intro x m hm
-    exact (((continuous_apply (⟨m, hm⟩ : {m : ℕ // m ≤ n})).comp
-      ((continuous_apply x).comp
-        (continuous_induced_dom (f := chartJet (I := I) (M := M) (F := F) (n := n))))).congr
-      fun f ↦ chartJet_apply f x ⟨m, hm⟩)
-
-/-- Chart derivatives determine a vector-valued map, already through their zeroth entries. -/
-theorem chartJet_injective :
-    Function.Injective (chartJet (I := I) (M := M) (F := F) (n := n)) := by
-  intro f g h
-  ext x
-  have hx := congrArg (fun j ↦ j x ⟨0, by simp⟩ ⟨extChartAt I x x,
-    mem_extChartAt_target x⟩ 0) h
-  rw [chartJet_apply f x ⟨0, by simp⟩, chartJet_apply g x ⟨0, by simp⟩] at hx
-  let z : (extChartAt I x).target := ⟨extChartAt I x x, mem_extChartAt_target x⟩
-  have hf := chartIteratedFDeriv_zero_apply f x z 0
-  have hg := chartIteratedFDeriv_zero_apply g x z 0
-  simpa only [z, extChartAt_to_inv] using hf.symm.trans (hx.trans hg)
-
 section Limits
 
 variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [I.Boundaryless]

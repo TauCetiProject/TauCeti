@@ -166,4 +166,21 @@ theorem chartIteratedFDeriv_sub
       (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm f)
         (chartIteratedFDerivLinearMap_apply x m hm g)))
 
+/-- All source-chart derivatives of a vector-valued map, with compact-open topology in each
+component. Unlike the compact chart jet, a component is defined on the entire chart target. -/
+noncomputable def chartJet : C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+    ∀ (x : M) (m : {m : ℕ // m ≤ n}),
+      C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F) :=
+  LinearMap.pi fun x ↦ LinearMap.pi fun m ↦ chartIteratedFDerivLinearMap x m m.2
+
+/-- Each component of the chart jet is the native chart derivative. -/
+@[simp]
+-- Normalize the dependent coercion's chart target, as for `chartIteratedFDerivLinearMap_apply`.
+theorem chartJet_apply (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : {m : ℕ // m ≤ n}) :
+    DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+      ∀ (x : M) (m : {m : ℕ // m ≤ n}),
+        C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F))
+      chartJet f x m = chartIteratedFDeriv f x m m.2 :=
+  chartIteratedFDerivLinearMap_apply _ _ _ _
+
 end ContMDiffMap
