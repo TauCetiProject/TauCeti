@@ -361,19 +361,31 @@ theorem measurable_measure_symmDiff_setOf_lt (m : Measure α) [SFinite m] {f g :
     (hf.measurable_mk.comp measurable_fst)).symmDiff
     (measurableSet_lt measurable_snd (hg.measurable_mk.comp measurable_fst)))
 
-/-- **A superlevel set with small boundary.** Let `p` be an almost everywhere nonnegative function
-and let `q i`, for `i ∈ K`, be finitely many functions whose total `L¹` distance to `p` is less
-than `ε` times the integral of `p`. Then at some level `t > 0` the superlevel set `{p > t}` has
-total boundary `∑ i ∈ K, m ({q i > t} ∆ {p > t})` less than `ε` times its measure. -/
+/-- **A superlevel set with small boundary.** Let `p` be an almost everywhere measurable real
+function and let `q i`, for `i ∈ K`, be finitely many functions whose total `L¹` distance to `p`
+is less than `ε` times the integral of `p`. Then at some level `t > 0` the superlevel set `{p > t}`
+has total boundary `∑ i ∈ K, m ({q i > t} ∆ {p > t})` less than `ε` times its measure. -/
 theorem exists_pos_sum_measure_symmDiff_lt_mul_measure (m : Measure α) [SFinite m] {ι : Type*}
     (K : Finset ι) {p : α → ℝ} {q : ι → α → ℝ} (hp : AEMeasurable p m)
-    (hq : ∀ i ∈ K, AEMeasurable (q i) m) (hp₀ : 0 ≤ᵐ[m] p) {ε : ℝ≥0∞}
+    (hq : ∀ i ∈ K, AEMeasurable (q i) m) {ε : ℝ≥0∞}
     (h : ∑ i ∈ K, ∫⁻ x, ‖q i x - p x‖ₑ ∂m < ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m) :
     ∃ t > 0, ∑ i ∈ K, m ({x | t < q i x} ∆ {x | t < p x}) < ε * m {x | t < p x} := by
   by_contra! hle
   refine h.not_ge ?_
+  have hlay : ∫⁻ x, ENNReal.ofReal (p x) ∂m = ∫⁻ t in Ioi 0, m {x | t < p x} := by
+    have h1 := lintegral_eq_lintegral_meas_lt (f := fun x ↦ max (p x) 0) m
+      (ae_of_all _ fun x ↦ le_max_right _ _) (hp.max aemeasurable_const)
+    have h2 (x : α) : ENNReal.ofReal (max (p x) 0) = ENNReal.ofReal (p x) := by
+      simp [ENNReal.ofReal_max]
+    simp only [h2] at h1
+    rw [h1]
+    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+    have ht' : 0 < t := ht
+    congr 1
+    ext x
+    simp [lt_max_iff, ht'.not_gt]
   calc ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m = ε * ∫⁻ t in Ioi 0, m {x | t < p x} := by
-        rw [lintegral_eq_lintegral_meas_lt m hp₀ hp]
+        rw [hlay]
     _ ≤ ∫⁻ t in Ioi 0, ε * m {x | t < p x} := lintegral_const_mul_le _ _
     _ ≤ ∫⁻ t in Ioi 0, ∑ i ∈ K, m ({x | t < q i x} ∆ {x | t < p x}) :=
         setLIntegral_mono' measurableSet_Ioi hle
