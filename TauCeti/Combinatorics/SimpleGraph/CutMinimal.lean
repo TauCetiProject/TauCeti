@@ -30,15 +30,6 @@ namespace SimpleGraph
 
 variable {V : Type*}
 
-/-- The complete-graph cut of `S ∆ T` is the symmetric difference of the cuts of `S` and `T`. -/
-theorem top_between_symmDiff (S T : Set V) :
-    (⊤ : SimpleGraph V).between (S ∆ T) (S ∆ T)ᶜ =
-      (⊤ : SimpleGraph V).between S Sᶜ ∆ (⊤ : SimpleGraph V).between T Tᶜ := by
-  ext u v
-  simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
-    Set.mem_sdiff, sup_adj, sdiff_adj]
-  tauto
-
 section Finite
 
 /-- Every cut contains at most as many edges of `G` as non-edges of `G`. -/
