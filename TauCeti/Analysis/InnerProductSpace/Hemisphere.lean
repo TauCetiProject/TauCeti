@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Topology.Order.ProjIcc
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Extension
 import TauCeti.Data.Set.InjOnUnion
@@ -33,12 +34,18 @@ after the radial extension of the matching homeomorphism (`Homeomorph.radialExte
 how a manifold built from two discs, such as one carrying a Morse function with exactly two
 critical points, is recognized as a sphere.
 
+Every point of the unit sphere is `√(1 - t²) • u + t • p` for a point `u` of the equator and a
+height `t ∈ [-1, 1]`, and this latitude parametrization is injective off the poles `p` and `-p`
+(`TauCeti.latitude`).
+
 ## Main definitions
 
 * `TauCeti.hemisphereHomeomorph p`: the closed hemisphere around `p` is homeomorphic to the closed
   unit ball of `(ℝ ∙ p)ᗮ`.
 * `TauCeti.equatorInclusion p`: for any vector `p` and radius `r`, the inclusion of the sphere
   of radius `r` in `(ℝ ∙ p)ᗮ` into the sphere of radius `r` in `E`.
+* `TauCeti.latitude p u t`: the point `√(1 - t²) • u + t • p` of the unit sphere at height `t`
+  over the point `u` of the equator, with `t` clamped to `[-1, 1]`.
 
 ## Main results
 
@@ -50,6 +57,8 @@ critical points, is recognized as a sphere.
 * `TauCeti.isometry_equatorInclusion`: the equator inclusion preserves distances.
 * `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`: two closed discs glued along their
   boundary spheres form a sphere.
+* `TauCeti.exists_latitude_eq` and `TauCeti.eq_and_eq_of_latitude_eq`: the latitude map is
+  surjective, and injective off the poles.
 
 ## References
 
@@ -86,6 +95,16 @@ private lemma sub_inner_smul_mem_closedBall (x : sphere (0 : E) 1) :
       norm_eq_of_mem_sphere p, hx]
     ring
 
+/-- A vector `y` orthogonal to `p`, lifted by `t` in the direction of `p`, lands on the unit
+sphere when `‖y‖² + t² = 1`. -/
+private lemma norm_add_smul_eq_one {y : E} (hy : y ∈ (ℝ ∙ (p : E))ᗮ) {t : ℝ}
+    (h : ‖y‖ ^ 2 + t ^ 2 = 1) : ‖y + t • (p : E)‖ = 1 := by
+  have hyp : ⟪y, (p : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 hy
+  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, norm_add_sq_real,
+    real_inner_smul_right, hyp, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
+    norm_eq_of_mem_sphere p]
+  linarith
+
 /-- Lifting a point `y` of the closed unit ball of `(ℝ ∙ p)ᗮ` by `√(1 - ‖y‖²)` in the direction
 of `p` lands on the unit sphere, with inner product `√(1 - ‖y‖²)` against `p`. -/
 private lemma add_sqrt_smul_mem_sphere (y : closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1) :
@@ -99,11 +118,9 @@ private lemma add_sqrt_smul_mem_sphere (y : closedBall (0 : (ℝ ∙ (p : E))ᗮ
     exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 (y : (ℝ ∙ (p : E))ᗮ).2
   have hy : ‖(y : (ℝ ∙ (p : E))ᗮ)‖ ^ 2 ≤ 1 :=
     pow_le_one₀ (norm_nonneg _) (mem_closedBall_zero_iff.1 y.2)
-  refine ⟨?_, by rw [inner_add_left, real_inner_smul_left, hyp, hp, zero_add, mul_one]⟩
-  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, norm_add_sq_real,
-    real_inner_smul_right, hyp, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
-    Real.sq_sqrt (by linarith),
-    norm_eq_of_mem_sphere p, Submodule.norm_coe]
+  refine ⟨norm_add_smul_eq_one p (y : (ℝ ∙ (p : E))ᗮ).2 ?_,
+    by rw [inner_add_left, real_inner_smul_left, hyp, hp, zero_add, mul_one]⟩
+  rw [Submodule.norm_coe, Real.sq_sqrt (by linarith)]
   ring
 
 /-- **The closed hemisphere around `p` is a disc.** For a point `p` of the unit sphere of a real
@@ -236,6 +253,143 @@ theorem frontier_setOf_inner_nonneg :
       inner_sub_left, hx, hp]
     have hpos : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
     nlinarith
+
+/-! ### The latitude map -/
+
+section Latitude
+
+/-- The point of the unit sphere at height `t` over a point `u` of the equator orthogonal to `p`,
+`√(1 - t²) • u + t • p`, with `t` clamped to `[-1, 1]`: the pole `p` for `t ≥ 1` and `-p` for
+`t ≤ -1`. -/
+def latitude (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : ℝ) : sphere (0 : E) 1 :=
+  ⟨√(1 - (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ) ^ 2) • ((u : (ℝ ∙ (p : E))ᗮ) : E) +
+      (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ) • (p : E), by
+    set s : ℝ := (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ)
+    have hs : s ∈ Icc (-1 : ℝ) 1 := (projIcc (-1 : ℝ) 1 (by norm_num) t).2
+    refine mem_sphere_zero_iff_norm.2 (norm_add_smul_eq_one p
+      (Submodule.smul_mem _ _ (u : (ℝ ∙ (p : E))ᗮ).2) ?_)
+    rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), Submodule.norm_coe,
+      norm_eq_of_mem_sphere u, mul_one, Real.sq_sqrt (by nlinarith [hs.1, hs.2])]
+    ring⟩
+
+/-- The latitude map is continuous. -/
+theorem continuous_latitude {X : Type*} [TopologicalSpace X]
+    {u : X → sphere (0 : (ℝ ∙ (p : E))ᗮ) 1} {t : X → ℝ} (hu : Continuous u) (ht : Continuous t) :
+    Continuous fun x ↦ latitude p (u x) (t x) := by
+  refine Continuous.subtype_mk ?_ _
+  have hs : Continuous fun x ↦ (projIcc (-1 : ℝ) 1 (by norm_num) (t x) : ℝ) :=
+    continuous_subtype_val.comp (continuous_projIcc.comp ht)
+  fun_prop
+
+/-- For `t ∈ [-1, 1]`, the latitude map is `√(1 - t²) • u + t • p`. -/
+theorem coe_latitude_of_mem (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) {t : ℝ}
+    (ht : t ∈ Icc (-1 : ℝ) 1) :
+    (latitude p u t : E) = √(1 - t ^ 2) • ((u : (ℝ ∙ (p : E))ᗮ) : E) + t • (p : E) := by
+  simp [latitude, projIcc_of_mem _ ht]
+
+/-- For `t ≥ 1`, the latitude map is the pole `p`. -/
+theorem latitude_of_one_le (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) {t : ℝ} (ht : 1 ≤ t) :
+    latitude p u t = p := by
+  ext1
+  simp [latitude, projIcc_of_right_le _ ht]
+
+/-- For `t ≤ -1`, the latitude map is the pole `-p`. -/
+theorem latitude_of_le_neg_one (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) {t : ℝ}
+    (ht : t ≤ -1) : latitude p u t = -p := by
+  ext1
+  simp [latitude, projIcc_of_le_left _ ht]
+
+/-- The height of a point of the latitude map is the clamped parameter. -/
+theorem inner_latitude (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : ℝ) :
+    ⟪(latitude p u t : E), (p : E)⟫ = projIcc (-1 : ℝ) 1 (by norm_num) t := by
+  have hu : ⟪((u : (ℝ ∙ (p : E))ᗮ) : E), (p : E)⟫ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (u : (ℝ ∙ (p : E))ᗮ).2
+  simp [latitude, inner_add_left, inner_smul_left, hu]
+
+/-- A parameter whose clamp to `[-1, 1]` lies in `(-1, 1)` is its own clamp. -/
+private theorem eq_of_coe_projIcc_eq {s t : ℝ} (h : (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ) = s)
+    (hs : s ∈ Ioo (-1 : ℝ) 1) : t = s := by
+  have ht : t ∈ Icc (-1 : ℝ) 1 := by
+    refine ⟨not_lt.1 fun ht ↦ hs.1.ne ?_, not_lt.1 fun ht ↦ hs.2.ne' ?_⟩
+    · rwa [projIcc_of_le_left _ ht.le] at h
+    · rwa [projIcc_of_right_le _ ht.le] at h
+  rwa [projIcc_of_mem _ ht] at h
+
+/-- The latitude map hits the equator exactly at height `0`. -/
+theorem inner_latitude_eq_zero_iff (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : ℝ) :
+    ⟪(latitude p u t : E), (p : E)⟫ = 0 ↔ t = 0 := by
+  rw [inner_latitude]
+  refine ⟨fun h ↦ eq_of_coe_projIcc_eq h ⟨by norm_num, by norm_num⟩, ?_⟩
+  rintro rfl
+  rw [projIcc_of_mem _ ⟨by norm_num, by norm_num⟩]
+
+/-- The latitude map hits a pole exactly when the parameter lies outside `(-1, 1)`. -/
+theorem latitude_mem_pair_iff (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : ℝ) :
+    latitude p u t ∈ ({p, -p} : Set (sphere (0 : E) 1)) ↔ t ∉ Ioo (-1 : ℝ) 1 := by
+  refine ⟨fun h ht ↦ ?_, fun ht ↦ ?_⟩
+  · have hp : ⟪(p : E), (p : E)⟫ = 1 := by simp
+    have hinner := inner_latitude p u t
+    rw [projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at hinner
+    rcases h with h | h <;> rw [h] at hinner
+    · exact ht.2.ne (hinner.symm.trans hp)
+    · rw [coe_neg_sphere, inner_neg_left, hp] at hinner
+      exact ht.1.ne hinner
+  · rcases le_or_gt t (-1) with h | h
+    · exact Or.inr (latitude_of_le_neg_one p u h)
+    · exact Or.inl (latitude_of_one_le p u (not_lt.1 fun h' ↦ ht ⟨h, h'⟩))
+
+/-- Off the poles, the latitude map is injective. -/
+theorem eq_and_eq_of_latitude_eq {u u' : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1} {t t' : ℝ}
+    (ht : t ∈ Ioo (-1 : ℝ) 1) (h : latitude p u t = latitude p u' t') : u = u' ∧ t = t' := by
+  have htt : t = t' := by
+    have h₁ := inner_latitude p u t
+    rw [h, inner_latitude, projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at h₁
+    exact (eq_of_coe_projIcc_eq h₁ ht).symm
+  subst htt
+  refine ⟨?_, rfl⟩
+  have hpos : 0 < √(1 - t ^ 2) := Real.sqrt_pos.2 (by nlinarith [ht.1, ht.2])
+  have h₂ := congrArg Subtype.val h
+  rw [coe_latitude_of_mem p u (Ioo_subset_Icc_self ht),
+    coe_latitude_of_mem p u' (Ioo_subset_Icc_self ht), add_left_inj] at h₂
+  exact Subtype.ext (Subtype.ext (smul_right_injective E hpos.ne' h₂))
+
+/-- Every point of the unit sphere is a point of the latitude map with parameter in `[-1, 1]`; the
+poles are reached over any given point `u₀` of the equator. -/
+theorem exists_latitude_eq (u₀ : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (z : sphere (0 : E) 1) :
+    ∃ u t, t ∈ Icc (-1 : ℝ) 1 ∧ latitude p u t = z := by
+  set s := ⟪(z : E), (p : E)⟫ with hs_def
+  have hzn : ‖(z : E)‖ = 1 := by simp
+  have hpn : ‖(p : E)‖ = 1 := by simp
+  have hs : |s| ≤ 1 := by simpa [hzn, hpn] using abs_real_inner_le_norm (z : E) (p : E)
+  rcases eq_or_ne s 1 with h1 | h1
+  · refine ⟨u₀, 1, ⟨by norm_num, le_rfl⟩, ?_⟩
+    rw [latitude_of_one_le p u₀ le_rfl]
+    exact (Subtype.ext ((inner_eq_one_iff_of_norm_eq_one hzn hpn).1 h1)).symm
+  rcases eq_or_ne s (-1) with h2 | h2
+  · refine ⟨u₀, -1, ⟨le_rfl, by norm_num⟩, ?_⟩
+    rw [latitude_of_le_neg_one p u₀ le_rfl]
+    ext1
+    rw [coe_neg_sphere]
+    have hpn' : ‖-(p : E)‖ = 1 := by rw [norm_neg, hpn]
+    refine ((inner_eq_one_iff_of_norm_eq_one (𝕜 := ℝ) hzn hpn').1 ?_).symm
+    rw [inner_neg_right, ← hs_def, h2, neg_neg]
+  -- Away from the poles, `z` is `w + s • p` with `w ⟂ p` of norm `√(1 - s²)`.
+  have hs' : s ∈ Ioo (-1 : ℝ) 1 := by
+    rw [abs_le] at hs
+    exact ⟨lt_of_le_of_ne hs.1 (Ne.symm h2), lt_of_le_of_ne hs.2 h1⟩
+  obtain ⟨hw, hwn⟩ := sub_inner_smul_mem_closedBall p z
+  set w : E := (z : E) - s • (p : E)
+  have hpos : 0 < √(1 - s ^ 2) := Real.sqrt_pos.2 (by nlinarith [hs'.1, hs'.2])
+  have hwn' : ‖w‖ = √(1 - s ^ 2) := by rw [← hwn, Real.sqrt_sq (norm_nonneg _)]
+  let u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
+    ⟨⟨(√(1 - s ^ 2))⁻¹ • w, Submodule.smul_mem _ _ hw⟩, by
+        rw [mem_sphere_zero_iff_norm, ← Submodule.norm_coe, Submodule.coe_mk, norm_smul, hwn',
+          Real.norm_of_nonneg (inv_nonneg.2 hpos.le), inv_mul_cancel₀ hpos.ne']⟩
+  refine ⟨u, s, Ioo_subset_Icc_self hs', Subtype.ext ?_⟩
+  rw [coe_latitude_of_mem p u (Ioo_subset_Icc_self hs')]
+  simp [u, w, smul_smul, mul_inv_cancel₀ hpos.ne']
+
+end Latitude
 
 /-! ### Two discs glued along their boundary spheres -/
 

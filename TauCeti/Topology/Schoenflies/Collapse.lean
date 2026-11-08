@@ -11,8 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Topology.ContinuousMap.Defs
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 import Mathlib.Analysis.Normed.Module.Connected
-import Mathlib.Topology.Order.ProjIcc
 import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
+import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Geometry.Manifold.LocallyFlat.Separation
 
 /-!
@@ -64,162 +64,13 @@ open scoped RealInnerProductSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (p : sphere (0 : F) 1)
 
-/-! ### The latitude map -/
-
-/-- The point of the unit sphere at height `t` over a point `u` of the equator orthogonal to `p`,
-with `t` clamped to `[-1, 1]`: the pole `p` for `t ≥ 1` and `-p` for `t ≤ -1`. -/
-private noncomputable def latitude (u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) (t : ℝ) :
-    sphere (0 : F) 1 :=
-  ⟨√(1 - (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ) ^ 2) • ((u : (ℝ ∙ (p : F))ᗮ) : F) +
-      (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ) • (p : F), by
-    set s : ℝ := (projIcc (-1 : ℝ) 1 (by norm_num) t : ℝ)
-    have hs : s ∈ Icc (-1 : ℝ) 1 := (projIcc (-1 : ℝ) 1 (by norm_num) t).2
-    have h1 : 0 ≤ 1 - s ^ 2 := by nlinarith [hs.1, hs.2]
-    have hu : ⟪((u : (ℝ ∙ (p : F))ᗮ) : F), (p : F)⟫ = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (u : (ℝ ∙ (p : F))ᗮ).2
-    have hun : ‖((u : (ℝ ∙ (p : F))ᗮ) : F)‖ = 1 := by rw [Submodule.norm_coe]; simp
-    have hpn : ‖(p : F)‖ = 1 := by simp
-    have hsq := norm_add_sq_eq_norm_sq_add_norm_sq_real
-      (x := √(1 - s ^ 2) • ((u : (ℝ ∙ (p : F))ᗮ) : F)) (y := s • (p : F))
-      (by rw [real_inner_smul_left, real_inner_smul_right, hu, mul_zero, mul_zero])
-    rw [norm_smul, norm_smul, hun, hpn, Real.norm_of_nonneg (Real.sqrt_nonneg _),
-      Real.norm_eq_abs] at hsq
-    rw [mem_sphere_zero_iff_norm]
-    refine (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 ?_
-    nlinarith [Real.sq_sqrt h1, sq_abs s]⟩
-
-private theorem continuous_latitude {X : Type*} [TopologicalSpace X]
-    {u : X → sphere (0 : (ℝ ∙ (p : F))ᗮ) 1} {t : X → ℝ} (hu : Continuous u) (ht : Continuous t) :
-    Continuous fun x ↦ latitude p (u x) (t x) := by
-  refine Continuous.subtype_mk ?_ _
-  have hs : Continuous fun x ↦ (projIcc (-1 : ℝ) 1 (by norm_num) (t x) : ℝ) :=
-    continuous_subtype_val.comp (continuous_projIcc.comp ht)
-  fun_prop
-
-private theorem coe_latitude_of_mem (u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) {t : ℝ}
-    (ht : t ∈ Icc (-1 : ℝ) 1) :
-    (latitude p u t : F) = √(1 - t ^ 2) • ((u : (ℝ ∙ (p : F))ᗮ) : F) + t • (p : F) := by
-  simp [latitude, projIcc_of_mem _ ht]
-
-private theorem latitude_of_one_le (u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) {t : ℝ} (ht : 1 ≤ t) :
-    latitude p u t = p := by
-  ext1
-  simp [latitude, projIcc_of_right_le _ ht]
-
-private theorem latitude_of_le_neg_one (u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) {t : ℝ}
-    (ht : t ≤ -1) : latitude p u t = -p := by
-  ext1
-  simp [latitude, projIcc_of_le_left _ ht]
-
-/-- The height of a point of the latitude map is the clamped parameter. -/
-private theorem inner_latitude (u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) (t : ℝ) :
-    ⟪(latitude p u t : F), (p : F)⟫ = projIcc (-1 : ℝ) 1 (by norm_num) t := by
-  have hu : ⟪((u : (ℝ ∙ (p : F))ᗮ) : F), (p : F)⟫ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (u : (ℝ ∙ (p : F))ᗮ).2
-  simp [latitude, inner_add_left, inner_smul_left, hu]
-
-private theorem inner_latitude_eq_zero_iff (u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) (t : ℝ) :
-    ⟪(latitude p u t : F), (p : F)⟫ = 0 ↔ t = 0 := by
-  rw [inner_latitude]
-  rcases le_or_gt t (-1) with ht | ht
-  · simp [projIcc_of_le_left _ ht]
-    linarith
-  rcases le_or_gt 1 t with ht' | ht'
-  · simp [projIcc_of_right_le _ ht']
-    linarith
-  · simp [projIcc_of_mem _ ⟨ht.le, ht'.le⟩]
-
-/-- The latitude map hits a pole exactly when the parameter lies outside `(-1, 1)`. -/
-private theorem latitude_mem_pair_iff (u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) (t : ℝ) :
-    latitude p u t ∈ ({p, -p} : Set (sphere (0 : F) 1)) ↔ t ∉ Ioo (-1 : ℝ) 1 := by
-  refine ⟨fun h ht ↦ ?_, fun ht ↦ ?_⟩
-  · have hp : ⟪(p : F), (p : F)⟫ = 1 := by simp
-    have hinner := inner_latitude p u t
-    rw [projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at hinner
-    rcases h with h | h <;> rw [h] at hinner
-    · exact ht.2.ne (hinner.symm.trans hp)
-    · rw [coe_neg_sphere, inner_neg_left, hp] at hinner
-      exact ht.1.ne hinner
-  · rcases le_or_gt t (-1) with h | h
-    · exact Or.inr (latitude_of_le_neg_one p u h)
-    · exact Or.inl (latitude_of_one_le p u (not_lt.1 fun h' ↦ ht ⟨h, h'⟩))
-
-/-- Off the poles, the latitude map is injective. -/
-private theorem latitude_injOn {u u' : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1} {t t' : ℝ}
-    (ht : t ∈ Ioo (-1 : ℝ) 1) (h : latitude p u t = latitude p u' t') : u = u' ∧ t = t' := by
-  have htt : t = t' := by
-    have h₁ := inner_latitude p u t
-    rw [h, inner_latitude, projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at h₁
-    have ht' : t' ∈ Icc (-1 : ℝ) 1 := by
-      rcases le_or_gt t' (-1) with h' | h'
-      · simp only [projIcc_of_le_left _ h'] at h₁
-        exact absurd h₁.symm ht.1.ne'
-      rcases le_or_gt 1 t' with h'' | h''
-      · simp only [projIcc_of_right_le _ h''] at h₁
-        exact absurd h₁ ht.2.ne'
-      exact ⟨h'.le, h''.le⟩
-    rw [projIcc_of_mem _ ht'] at h₁
-    exact h₁.symm
-  subst htt
-  refine ⟨?_, rfl⟩
-  have hpos : 0 < √(1 - t ^ 2) := Real.sqrt_pos.2 (by nlinarith [ht.1, ht.2])
-  have h₂ := congrArg Subtype.val h
-  rw [coe_latitude_of_mem p u (Ioo_subset_Icc_self ht),
-    coe_latitude_of_mem p u' (Ioo_subset_Icc_self ht), add_left_inj] at h₂
-  exact Subtype.ext (Subtype.ext (smul_right_injective F hpos.ne' h₂))
-
-/-- Every point of the unit sphere is a point of the latitude map with parameter in `[-1, 1]`; the
-poles are reached over any given point `u₀` of the equator. -/
-private theorem exists_latitude_eq (u₀ : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1) (z : sphere (0 : F) 1) :
-    ∃ u t, t ∈ Icc (-1 : ℝ) 1 ∧ latitude p u t = z := by
-  set s := ⟪(z : F), (p : F)⟫ with hs_def
-  have hzn : ‖(z : F)‖ = 1 := by simp
-  have hpn : ‖(p : F)‖ = 1 := by simp
-  have hs : |s| ≤ 1 := by simpa [hzn, hpn] using abs_real_inner_le_norm (z : F) (p : F)
-  rcases eq_or_ne s 1 with h1 | h1
-  · refine ⟨u₀, 1, ⟨by norm_num, le_rfl⟩, ?_⟩
-    rw [latitude_of_one_le p u₀ le_rfl]
-    exact (Subtype.ext ((inner_eq_one_iff_of_norm_eq_one hzn hpn).1 h1)).symm
-  rcases eq_or_ne s (-1) with h2 | h2
-  · refine ⟨u₀, -1, ⟨le_rfl, by norm_num⟩, ?_⟩
-    rw [latitude_of_le_neg_one p u₀ le_rfl]
-    ext1
-    rw [coe_neg_sphere]
-    have hpn' : ‖-(p : F)‖ = 1 := by rw [norm_neg, hpn]
-    refine ((inner_eq_one_iff_of_norm_eq_one (𝕜 := ℝ) hzn hpn').1 ?_).symm
-    rw [inner_neg_right, ← hs_def, h2, neg_neg]
-  -- Away from the poles, `z` is `w + s • p` with `w ⟂ p` of norm `√(1 - s²)`.
-  have hs' : s ∈ Ioo (-1 : ℝ) 1 := by
-    rw [abs_le] at hs
-    exact ⟨lt_of_le_of_ne hs.1 (Ne.symm h2), lt_of_le_of_ne hs.2 h1⟩
-  set w : F := (z : F) - s • (p : F)
-  have hw : ⟪w, (p : F)⟫ = 0 := by simp [w, inner_sub_left, inner_smul_left, ← hs_def]
-  have hwn : ‖w‖ = √(1 - s ^ 2) := by
-    have hsq := norm_add_sq_eq_norm_sq_add_norm_sq_real (x := w) (y := s • (p : F))
-      (by simp [inner_smul_right, hw])
-    rw [show w + s • (p : F) = z by simp [w], hzn, norm_smul, hpn, Real.norm_eq_abs] at hsq
-    rw [← Real.sqrt_sq (norm_nonneg w)]
-    congr 1
-    nlinarith [sq_abs s]
-  have hpos : 0 < √(1 - s ^ 2) := Real.sqrt_pos.2 (by nlinarith [hs'.1, hs'.2])
-  let u : sphere (0 : (ℝ ∙ (p : F))ᗮ) 1 :=
-    ⟨⟨(√(1 - s ^ 2))⁻¹ • w,
-      Submodule.smul_mem _ _ (Submodule.mem_orthogonal_singleton_iff_inner_left.2 hw)⟩, by
-        rw [mem_sphere_zero_iff_norm, ← Submodule.norm_coe, Submodule.coe_mk, norm_smul, hwn,
-          Real.norm_of_nonneg (inv_nonneg.2 hpos.le), inv_mul_cancel₀ hpos.ne']⟩
-  refine ⟨u, s, Ioo_subset_Icc_self hs', Subtype.ext ?_⟩
-  rw [coe_latitude_of_mem p u (Ioo_subset_Icc_self hs')]
-  simp [u, w, smul_smul, mul_inv_cancel₀ hpos.ne']
-
-/-! ### The collapse -/
-
 variable {E : Type*} [NormedAddCommGroup E] [Nonempty (sphere (0 : E) 1)]
   {σ : sphere (0 : E) 1 → sphere (0 : F) 1} {b : sphere (0 : E) 1 × ℝ → sphere (0 : F) 1}
   (hb : IsBicollar σ b) (e : sphere (0 : E) 1 ≃ₜ sphere (0 : (ℝ ∙ (p : F))ᗮ) 1)
   (A : Set (sphere (0 : F) 1))
 
-/-- The collapse map: the latitude map read through the bicollar `b` on its image, and the pole
-`p` on `A` and `-p` elsewhere off that image. -/
+/-- The collapse map: the latitude map (`TauCeti.latitude`) read through the bicollar `b` on its
+image, and the pole `p` on `A` and `-p` elsewhere off that image. -/
 private noncomputable def collapse (y : sphere (0 : F) 1) : sphere (0 : F) 1 := by
   classical
   exact if y ∈ range b then
@@ -333,7 +184,7 @@ private theorem injOn_collapse : InjOn (collapse p hb e A) (collapse p hb e A �
   obtain ⟨⟨x, t⟩, ⟨-, ht⟩, rfl⟩ := hy
   obtain ⟨⟨x', t'⟩, -, rfl⟩ := hy'
   rw [collapse_apply, collapse_apply] at hyy
-  obtain ⟨hxx, htt⟩ := latitude_injOn p ht hyy
+  obtain ⟨hxx, htt⟩ := eq_and_eq_of_latitude_eq p ht hyy
   dsimp only at hxx htt
   rw [e.injective hxx, htt]
 
