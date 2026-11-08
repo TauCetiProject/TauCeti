@@ -10,7 +10,6 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Holder.Interpolation
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecificLimits.Absorption
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The interior Schauder estimate in scaled form

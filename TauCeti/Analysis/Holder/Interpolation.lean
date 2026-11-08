@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Interpolation inequalities for derivatives
@@ -394,18 +395,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g
   have hMε : ε * (M / ε) = M := mul_div_cancel₀ M hε.ne'
   nlinarith
 
-/-- For `u` of class `C²` on an open set `U ⊇ s`, the first and second Fréchet derivatives are
-derivatives within `s`. -/
-private theorem hasFDerivWithinAt_fderiv_and_fderiv_fderiv {U s : Set E} {u : E → F}
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) :
-    (∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y) ∧
-      (∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y) := by
-  refine ⟨fun y hy => ?_, fun y hy => ?_⟩
-  · exact ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt (by norm_num)).hasFDerivAt
-      |>.hasFDerivWithinAt
-  · exact (((hu.contDiffAt (hU.mem_nhds (hsU hy))).fderiv_right (m := 1)
-      (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt.hasFDerivWithinAt
-
 /-- **Interpolation of the gradient of a `C²` function on a ball.** Let `u` be `C²` on an open set
 `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. Then
 `‖Du(x)‖ ≤ M / ε + H ε^(1 + α)` at every centre `x` of a closed ball of radius `ε > 0` in `s`. -/
@@ -414,7 +403,11 @@ theorem norm_fderiv_le_of_contDiffOn {U s : Set E} {u : E → F} (hU : IsOpen U)
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x ε ⊆ s) :
     ‖fderiv ℝ u x‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) := by
-  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hu hsU
+  have hd1 : ∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y := fun y hy =>
+    ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt (by norm_num)).hasFDerivAt
+      |>.hasFDerivWithinAt
+  have hd2 : ∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y :=
+    fun y hy => ((hu.contDiffAt (hU.mem_nhds (hsU hy))).hasFDerivAt_fderiv le_rfl).hasFDerivWithinAt
   have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_subset hd1 hd2 hM hε hxs
 
@@ -427,7 +420,11 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn {U s : Set E} {u : E → F} (hU
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x (2 * ε) ⊆ s) :
     ‖iteratedFDeriv ℝ 2 u x‖ ≤ 2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) := by
-  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hu hsU
+  have hd1 : ∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y := fun y hy =>
+    ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt (by norm_num)).hasFDerivAt
+      |>.hasFDerivWithinAt
+  have hd2 : ∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y :=
+    fun y hy => ((hu.contDiffAt (hU.mem_nhds (hsU hy))).hasFDerivAt_fderiv le_rfl).hasFDerivWithinAt
   have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset hd1 hd2 hM hε hxs
