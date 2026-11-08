@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.Convex
-import TauCeti.Analysis.Complex.Univalence
+import TauCeti.Analysis.Calculus.Deriv.InjOn
 
 /-!
 # An exponent criterion for Schwarz--Christoffel univalence
