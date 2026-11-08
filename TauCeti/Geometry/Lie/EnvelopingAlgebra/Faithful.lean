@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic
 public import TauCeti.Geometry.Lie.EnvelopingAlgebra.Basic
 public import TauCeti.Geometry.Lie.Exponential.LocalInverse
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
