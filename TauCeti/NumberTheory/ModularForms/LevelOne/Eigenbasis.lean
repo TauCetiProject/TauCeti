@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 public import TauCeti.LinearAlgebra.Trace.Submodule
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.CoefficientFormula
 public import TauCeti.NumberTheory.ModularForms.LevelOne.Hecke
 public import TauCeti.NumberTheory.ModularForms.Newforms.OrthogonalBasis
@@ -359,16 +360,6 @@ theorem qExpansion_coeff_one_E_ne_zero {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) :
     one_pos one_mem_strictPeriods_SL (by omega) fun m hm ↦ ?_)
   rw [E_qExpansion_coeff hk hk2 m, ite_eq_right hm.ne', h1, zero_mul]
 
-/-- The prime-power recurrence for the divisor power sum: `σ_j(p^{m+1}) = p^j σ_j(p^m) + 1`. -/
-private lemma sigma_prime_pow_succ {j p : ℕ} (hp : p.Prime) (m : ℕ) :
-    (σ j (p ^ (m + 1)) : ℂ) = (p : ℂ) ^ j * (σ j (p ^ m) : ℂ) + 1 := by
-  rw [ArithmeticFunction.sigma_apply_prime_pow hp, ArithmeticFunction.sigma_apply_prime_pow hp,
-    Nat.cast_sum, Nat.cast_sum, Finset.sum_range_succ', Finset.mul_sum]
-  simp only [Nat.zero_mul, pow_zero, Nat.cast_one, Nat.cast_pow]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Nat.succ_mul, pow_add, mul_comm]
-
 /-- A level-one form `F` whose Fourier coefficients are `σ_{k-1}(m)` for `m ≥ 1` is an eigenvector
 of the Hecke operator `Tₙ` on the trivial-character space, with eigenvalue `σ_{k-1}(n)`: the
 coefficients are multiplicative and satisfy the prime-power recurrence. -/
@@ -392,12 +383,15 @@ private lemma heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul_of_coeff {k : 
       ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime huv, Nat.cast_mul]
   · intro p hp r
     have hk1 : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
+    have hs (m : ℕ) :
+        (σ (k - 1) (p ^ (m + 1)) : ℂ) = (p : ℂ) ^ (k - 1) * σ (k - 1) (p ^ m) + 1 := by
+      exact_mod_cast ArithmeticFunction.sigma_prime_pow_succ hp m
     have hp1 : (σ (k - 1) p : ℂ) = (p : ℂ) ^ (k - 1) + 1 := by
-      simpa [ArithmeticFunction.sigma_one] using sigma_prime_pow_succ (j := k - 1) hp 0
+      simpa [ArithmeticFunction.sigma_one] using hs 0
     rw [hpos (pow_ne_zero _ hp.ne_zero), hpos hp.ne_zero, hpos (pow_ne_zero _ hp.ne_zero),
       hpos (pow_ne_zero _ hp.ne_zero), DirichletCharacter.level_one (MulChar.ofUnitHom 1),
       MulChar.one_apply (isUnit_of_subsingleton _), one_mul, hk1, zpow_natCast,
-      sigma_prime_pow_succ hp (r + 1), sigma_prime_pow_succ hp r, hp1]
+      hs (r + 1), hs r, hp1]
     ring
 
 /-- **The normalized Eisenstein series `E_k` is a Hecke eigenform** with eigenvalue `σ_{k-1}(n)` at
