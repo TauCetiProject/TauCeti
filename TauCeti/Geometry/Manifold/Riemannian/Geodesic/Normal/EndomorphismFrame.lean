@@ -83,7 +83,9 @@ theorem contMDiffOn_normalEndomorphismFrame (h : IsNormalDomain I M p U)
   have h₂ := (h.contMDiffOn_normalOrthonormalFrame b ij.2).contMDiffAt
     (h.isOpen_image.mem_nhds hq)
   exact (ContMDiffAt.rankOne_bundle (V := fun q : M ↦ TangentSpace I q) (F := E)
+    (W := fun q : M ↦ TangentSpace I q) (F' := E)
     (fiberNorm := fun q ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I q)))
+    (targetNorm := fun q ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I q)))
     h₁ h₂).contMDiffWithinAt
 
 /-- The normal endomorphism frame is the basis of matrix units induced by the
@@ -155,7 +157,7 @@ theorem coeff_normalEndomorphismFrame (h : IsNormalDomain I M p U)
 /-- At the centre of a geodesic frame, ordinary derivatives of the matrix entries
 of an endomorphism are the entries of its induced covariant derivative.
 Only differentiability of the endomorphism section at the centre is required. -/
-theorem inner_hom_eq_mvfderiv_normalFrame (h : IsNormalDomain I M p U)
+theorem inner_hom_eq_mvfderiv_inner_normalOrthonormalFrame (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p))
     {A : Π q : M, TangentSpace I q →L[ℝ] TangentSpace I q}
     (hA : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] E))
@@ -196,7 +198,7 @@ theorem hom_normalEndomorphismFrame_self (h : IsNormalDomain I M p U)
   simp only [OrthonormalBasis.coe_toBasis, b.repr_apply_apply,
     ContinuousLinearMap.coe_coe, zero_apply,
     inner_zero_right]
-  rw [h.inner_hom_eq_mvfderiv_normalFrame b hA v i j]
+  rw [h.inner_hom_eq_mvfderiv_inner_normalOrthonormalFrame b hA v i j]
   have hc : (fun q ↦ ⟪normalOrthonormalFrame I M p U b i q,
       normalEndomorphismFrame I M p U b ij q (normalOrthonormalFrame I M p U b j q)⟫) =ᶠ[𝓝 p]
       fun _ ↦ (if ij.2 = j then 1 else 0) * (if i = ij.1 then 1 else 0) := by

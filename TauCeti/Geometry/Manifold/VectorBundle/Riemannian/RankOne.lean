@@ -11,11 +11,12 @@ import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
-# Rank-one endomorphisms of a Riemannian bundle
+# Rank-one maps out of a Riemannian bundle
 
-The rank-one endomorphism `v ↦ ⟪τ, v⟫ • σ` depends smoothly on two sections
-`σ` and `τ` of a finite-rank Riemannian bundle. This provides smooth matrix units
-from orthonormal local frames, with the native Hom-bundle topology.
+The rank-one map `v ↦ ⟪τ, v⟫ • σ` depends smoothly on a section `τ` of a finite-rank
+Riemannian bundle `V` and a section `σ` of an arbitrary normed vector bundle `W`, as a section
+of the Hom bundle from `V` to `W`. Taking `W = V`, this provides smooth matrix units from
+orthonormal local frames, with the native Hom-bundle topology.
 
 The construction is Mathlib's `InnerProductSpace.rankOne`; smoothness uses the
 bundle inner product and the total-space criterion for smooth homomorphisms.
@@ -34,13 +35,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [fiberNorm : ∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   {n : ℕ∞ω} [IsContMDiffRiemannianBundle I n F V]
-  {σ τ : Π x : M, V x} {x : M}
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
+  [targetNorm : ∀ x, NormedAddCommGroup (W x)] [∀ x, NormedSpace ℝ (W x)]
+  [FiberBundle F' W] [VectorBundle ℝ F' W]
+  {σ : Π x : M, W x} {τ : Π x : M, V x} {x : M}
 
-/-- Rank-one endomorphisms formed from two `C^n` sections are `C^n` at the same point. -/
+/-- Rank-one maps `v ↦ ⟪τ, v⟫ • σ` formed from `C^n` sections `σ` of `W` and `τ` of the
+Riemannian bundle `V` are `C^n` sections of the Hom bundle from `V` to `W` at the same point. -/
 theorem ContMDiffAt.rankOne_bundle (hσ : CMDiffAt n (T% σ) x)
     (hτ : CMDiffAt n (T% τ) x) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, F →L[ℝ] F)) n
-      (fun y ↦ TotalSpace.mk' (F →L[ℝ] F) y (rankOne ℝ (σ y) (τ y))) x := by
+    ContMDiffAt I (I.prod 𝓘(ℝ, F →L[ℝ] F')) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) y
+        (rankOne ℝ (σ y) (τ y))) x := by
   apply (TauCeti.contMDiffAt_hom_bundle_iff _ x).2
   intro v
   have hp : ContMDiffAt (I.prod 𝓘(ℝ, F)) I n
