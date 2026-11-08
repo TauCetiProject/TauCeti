@@ -81,7 +81,7 @@ theorem sum_indexTwoTransversal_smul_lWord [AddCommMonoid M] [DistribMulAction G
   have h2 : (⟨lWord U (U.indexTwoTransversal s) (QuotientGroup.mk s) γ,
       lWord_mem U _ (Subgroup.indexTwoTransversal_mk hU hs) _ _⟩ : U) =
       ⟨s⁻¹ * γ * s, (Subgroup.normal_of_index_eq_two hU).conj_mem' γ hγ s⟩ :=
-    Subtype.ext (lWord_indexTwoTransversal_mk_of_mem hU hs hγ)
+    Subtype.ext (lWord_indexTwoTransversal_mk_of_mem hs hγ)
   rw [sum_quotient_eq_add_of_index_two hU hs, h1, h2,
     Subgroup.indexTwoTransversal_mk_one, one_smul,
     Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs)]
