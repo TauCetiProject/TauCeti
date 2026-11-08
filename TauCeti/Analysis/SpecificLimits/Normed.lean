@@ -59,13 +59,31 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
 
 /-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
 theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] [CompleteSpace E]
-    {f : ℕ → E} {C ρ : ℝ} (hρ₀ : 0 ≤ ρ) (hρ : ρ < 1) (h : ∀ k, ‖f (k + 1)‖ ≤ C * ρ ^ k * ‖f k‖) :
+    {f : ℕ → E} {C ρ : ℝ} (hρ : ρ < 1) (h : ∀ k, ‖f (k + 1)‖ ≤ C * ρ ^ k * ‖f k‖) :
     Summable f := by
-  have ht : Filter.Tendsto (fun k : ℕ ↦ C * ρ ^ k) Filter.atTop (nhds 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ₀ hρ).const_mul C
-  refine summable_of_ratio_norm_eventually_le (r := 1 / 2) (by norm_num) ?_
-  filter_upwards [(tendsto_order.1 ht).2 (1 / 2) (by norm_num)] with k hk
-  exact (h k).trans (mul_le_mul_of_nonneg_right hk.le (norm_nonneg _))
+  rcases le_or_gt 0 ρ with hρ₀ | hρ₀
+  · have ht : Filter.Tendsto (fun k : ℕ ↦ C * ρ ^ k) Filter.atTop (nhds 0) := by
+      simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ₀ hρ).const_mul C
+    refine summable_of_ratio_norm_eventually_le (r := 1 / 2) (by norm_num) ?_
+    filter_upwards [(tendsto_order.1 ht).2 (1 / 2) (by norm_num)] with k hk
+    exact (h k).trans (mul_le_mul_of_nonneg_right hk.le (norm_nonneg _))
+  · -- For `ρ < 0` the factors `C ρᵏ` and `C ρᵏ⁺¹` cannot both be positive, so `‖f n‖` dies out.
+    have hstep (k : ℕ) (hk : C * ρ ^ k ≤ 0) : ‖f (k + 1)‖ ≤ 0 :=
+      (h k).trans (mul_nonpos_of_nonpos_of_nonneg hk (norm_nonneg _))
+    have hzero (j : ℕ) (hj : ‖f j‖ ≤ 0) (n : ℕ) : ‖f (j + n)‖ ≤ 0 := by
+      induction n with
+      | zero => exact hj
+      | succ n ih =>
+        have h1 := h (j + n)
+        rw [← add_assoc]
+        rwa [le_antisymm ih (norm_nonneg _), mul_zero] at h1
+    obtain ⟨j, hj2, hj⟩ : ∃ j ≤ 2, ‖f j‖ ≤ 0 := by
+      rcases le_or_gt C 0 with hC | hC
+      · exact ⟨1, by norm_num, hstep 0 (by simpa using hC)⟩
+      · exact ⟨2, le_rfl, hstep 1 (by simpa using mul_neg_of_pos_of_neg hC hρ₀ |>.le)⟩
+    refine Summable.of_norm_bounded_eventually_nat (g := fun _ ↦ 0) summable_zero ?_
+    filter_upwards [Filter.eventually_ge_atTop 2] with n hn
+    simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
 
 variable {K : Type*} [NormedField K]
 

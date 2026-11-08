@@ -271,7 +271,6 @@ is summable, by the ratio test in both directions. -/
 private theorem summable_tateThetaCoefficients_residueClass [CompleteSpace K] (q c : Kˣ)
     (hq : ‖(q : K)‖ < 1) {d : ℕ} (hd : 0 < d) (a : tateThetaCoefficients q c d) (u : Kˣ) (r : ℤ) :
     Summable (fun k : ℤ ↦ a.val (r + d * k) * ↑(u ^ (r + d * k))) := by
-  have hρ₀ : 0 ≤ ‖(q : K)‖ ^ d := by positivity
   have hρ : ‖(q : K)‖ ^ d < 1 := pow_lt_one₀ (norm_nonneg _) hq hd.ne'
   have hA : 0 < ‖(c : K)‖ * ‖(q : K)‖ ^ r * ‖(u : K)‖ ^ d := by
     have := norm_pos_iff.mpr c.ne_zero
@@ -281,12 +280,12 @@ private theorem summable_tateThetaCoefficients_residueClass [CompleteSpace K] (q
   have hρ' : 0 < ‖(q : K)‖ ^ d := pow_pos (norm_pos_iff.mpr q.ne_zero) d
   refine Summable.of_nat_of_neg_add_one ?_ ?_
   · refine summable_of_norm_succ_le_mul_pow
-      (C := ‖(c : K)‖ * ‖(q : K)‖ ^ r * ‖(u : K)‖ ^ d) hρ₀ hρ fun k ↦ le_of_eq ?_
+      (C := ‖(c : K)‖ * ‖(q : K)‖ ^ r * ‖(u : K)‖ ^ d) hρ fun k ↦ le_of_eq ?_
     rw [Nat.cast_succ, tateThetaCoefficients_term_add_one, norm_mul,
       norm_tateThetaCoefficients_factor, zpow_natCast]
   · refine summable_of_norm_succ_le_mul_pow
       (C := (‖(c : K)‖ * ‖(q : K)‖ ^ r * ‖(u : K)‖ ^ d)⁻¹ * (‖(q : K)‖ ^ d) ^ 2)
-      hρ₀ hρ fun k ↦ le_of_eq ?_
+      hρ fun k ↦ le_of_eq ?_
     have hstep := congrArg norm
       (tateThetaCoefficients_term_add_one q c d a u r (-((k : ℤ) + 2)))
     have hk : -((k : ℤ) + 2) + 1 = -((k : ℤ) + 1) := by ring
