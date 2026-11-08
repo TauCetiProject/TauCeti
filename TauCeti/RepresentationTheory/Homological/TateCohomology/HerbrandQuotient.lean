@@ -380,7 +380,7 @@ private theorem exists_hexagon_natCard {S : ShortComplex (Rep R G)} (hS : S.Shor
       rw [← SetLike.coe_sort_coe, coe_range, ← SetLike.coe_sort_coe, coe_range]
       refine Nat.card_range_eq_card_range_of_comp_eq
         (periodicHomologyIsoOdd S.X₂ g hj).toLinearEquiv.surjective
-        (periodicHomologyIsoOdd S.X₃ g hj).toLinearEquiv.injective ?_
+        (periodicHomologyIsoOdd S.X₃ g hj).toLinearEquiv.injective.injOn ?_
       have h := congrArg ModuleCat.Hom.hom (homologyMap_comp_periodicHomologyIsoOdd g S.g hj)
       rw [ModuleCat.hom_comp, ModuleCat.hom_comp] at h
       exact congrArg DFunLike.coe h

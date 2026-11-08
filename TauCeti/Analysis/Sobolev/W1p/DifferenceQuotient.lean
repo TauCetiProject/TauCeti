@@ -130,6 +130,41 @@ theorem W1p.gradient_differenceQuotient_ae {Omega V : Opens E} (hV : V ≤ Omega
 
 /-! ### Difference-quotient estimates -/
 
+/-- **The local translation estimate for a test function**, as an element of `W^{1,p}(ℝⁿ)`: the
+smooth estimate `ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply` for the value and the
+weak gradient of its jet. -/
+private theorem eLpNorm_value_ofTestFunctionₗ_comp_add_sub_le (phi : 𝓓((⊤ : Opens E), ℝ)) (h : E)
+    {K T : Set E} (hT : MeasurableSet T) (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
+    eLpNorm (fun x ↦ W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) (x + h) -
+      W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) x) p (mu.restrict K) ≤
+      eLpNorm (fun x ↦ ⟪h, W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi) x⟫_ℝ) p
+        (mu.restrict T) := by
+  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
+    simp only [Opens.coe_top, Measure.restrict_univ]
+  have hq : Tendsto (· + h) (ae mu) (ae mu) :=
+    (measurePreserving_add_right mu h).quasiMeasurePreserving.tendsto_ae
+  have hvalue : ⇑(W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi)) =ᵐ[mu] (phi : E → ℝ) := by
+    rw [W1p.value_ofTestFunctionₗ]
+    exact (testFunctionLp_apply_ae p phi).filter_mono (ae_mono htop.ge)
+  have hgrad : ⇑(W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi)) =ᵐ[mu]
+      fun x ↦ ∇ (phi : E → ℝ) x := by
+    rw [W1p.gradient_ofTestFunctionₗ]
+    exact (gradientTestFunctionLp_apply_ae p phi).filter_mono (ae_mono htop.ge)
+  have hL : eLpNorm (fun x ↦ W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) (x + h) -
+      W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) x) p (mu.restrict K) =
+      eLpNorm (fun x ↦ (phi : E → ℝ) (x + h) - phi x) p (mu.restrict K) := by
+    refine eLpNorm_congr_ae (ae_restrict_of_ae ?_)
+    filter_upwards [hvalue, hq.eventually hvalue] with x h1 h2
+    rw [h1, h2]
+  have hR : eLpNorm (fun x ↦ ⟪h, W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi) x⟫_ℝ) p
+      (mu.restrict T) = eLpNorm (fun x ↦ fderiv ℝ (phi : E → ℝ) x h) p (mu.restrict T) := by
+    refine eLpNorm_congr_ae (ae_restrict_of_ae ?_)
+    filter_upwards [hgrad] with x hx
+    rw [hx, real_inner_comm, inner_gradient_left]
+  rw [hL, hR]
+  have hphi : ContDiff ℝ 1 (phi : E → ℝ) := phi.contDiff.of_le (by simp)
+  exact hphi.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply Fact.out h hT hKT
+
 /-- **The local translation estimate on `W^{1,p}(ℝⁿ)`.** If `T` is measurable and every segment
 `[x, x + h]` with `x ∈ K` lies in `T`, then
 
@@ -145,8 +180,6 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
   let _ : nu.IsAddHaarMeasure := by
     rw [htop]
     infer_instance
-  have hq : Tendsto (· + h) (ae mu) (ae mu) :=
-    (measurePreserving_add_right mu h).quasiMeasurePreserving.tendsto_ae
   -- Both sides are extended norms of continuous linear images of `w`.
   set A : W1p mu ⊤ p →L[ℝ] Lp ℝ p (nu.restrict K) :=
     (LpToLpRestrictCLM E ℝ ℝ nu p K).comp
@@ -182,28 +215,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     exact isClosed_le A.continuous.enorm B.continuous.enorm
   -- Pass the smooth estimate to all of `W^{1,p}(ℝⁿ)` by density of test functions.
   refine w1p0Submodule_subset_of_isClosed hclosed (fun phi ↦ ?_) (W1p.mem_w1p0Submodule_top hp w)
-  -- The estimate for a single test function is the smooth estimate.
-  have hvalue : ⇑(W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi)) =ᵐ[mu] (phi : E → ℝ) := by
-    rw [W1p.value_ofTestFunctionₗ]
-    exact (testFunctionLp_apply_ae p phi).filter_mono (ae_mono htop.ge)
-  have hgrad : ⇑(W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi)) =ᵐ[mu]
-      fun x ↦ ∇ (phi : E → ℝ) x := by
-    rw [W1p.gradient_ofTestFunctionₗ]
-    exact (gradientTestFunctionLp_apply_ae p phi).filter_mono (ae_mono htop.ge)
-  have hL : eLpNorm (fun x ↦ W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) (x + h) -
-      W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) x) p (mu.restrict K) =
-      eLpNorm (fun x ↦ (phi : E → ℝ) (x + h) - phi x) p (mu.restrict K) := by
-    refine eLpNorm_congr_ae (ae_restrict_of_ae ?_)
-    filter_upwards [hvalue, hq.eventually hvalue] with x h1 h2
-    rw [h1, h2]
-  have hR : eLpNorm (fun x ↦ ⟪h, W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi) x⟫_ℝ) p
-      (mu.restrict T) = eLpNorm (fun x ↦ fderiv ℝ (phi : E → ℝ) x h) p (mu.restrict T) := by
-    refine eLpNorm_congr_ae (ae_restrict_of_ae ?_)
-    filter_upwards [hgrad] with x hx
-    rw [hx, real_inner_comm, inner_gradient_left]
-  rw [Set.mem_ofPred_eq, hL, hR]
-  have hphi : ContDiff ℝ 1 (phi : E → ℝ) := phi.contDiff.of_le (by simp)
-  exact hphi.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply Fact.out h hT hKT
+  exact eLpNorm_value_ofTestFunctionₗ_comp_add_sub_le phi h hT hKT
 
 /-- **The local translation estimate on `W^{1,p}(Ω)`.** Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, and
 let `K` be compact. If every segment `[x, x + h]` with `x ∈ K` lies in a set `T ⊆ Ω`, then

@@ -24,6 +24,9 @@ boundary sphere is spread over the outer shell of a disk, as in cell reattachmen
 * `TauCeti.TopCat.diskRadialPush_diskBoundaryInclusion`: it fixes the boundary sphere.
 * `TauCeti.TopCat.norm_diskRadialPush_one`: at the end it sends the shell `r ≤ ‖x‖` into the
   boundary sphere.
+* `TauCeti.TopCat.coe_diskRadialPush_one_of_norm_le`,
+  `TauCeti.TopCat.coe_diskRadialPush_one_of_le_norm`: its end map is `x ↦ r⁻¹ • x` on the ball
+  of radius `r` and `x ↦ x / ‖x‖` on the shell `r ≤ ‖x‖`.
 -/
 
 public section
@@ -71,5 +74,19 @@ theorem diskRadialPush_diskBoundaryInclusion (hr : 0 < r) (hr1 : r ≤ 1) (t : I
 theorem norm_diskRadialPush_one (hr : 0 < r) {x : TopCat.disk.{u} n} (hx : r ≤ ‖x.down.1‖) :
     ‖(diskRadialPush n hr.le (1, x)).down.1‖ = 1 := by
   rw [coe_diskRadialPush_apply_down, norm_radialPush_one hr hx]
+
+/-- At the end, the radial push on the disk sends a point `x` of the ball of radius `r` to
+`r⁻¹ • x`. -/
+theorem coe_diskRadialPush_one_of_norm_le (hr : 0 ≤ r) {x : TopCat.disk.{u} n}
+    (hx : ‖x.down.1‖ ≤ r) : (diskRadialPush n hr (1, x)).down.1 = r⁻¹ • x.down.1 := by
+  rw [coe_diskRadialPush_apply_down, radialPush_one, radialRetraction_of_norm_le hx]
+
+/-- At the end, the radial push on the disk sends a point `x` of the shell `r ≤ ‖x‖` to
+`x / ‖x‖`. -/
+theorem coe_diskRadialPush_one_of_le_norm (hr : 0 < r) {x : TopCat.disk.{u} n}
+    (hx : r ≤ ‖x.down.1‖) :
+    (diskRadialPush n hr.le (1, x)).down.1 = ‖x.down.1‖⁻¹ • x.down.1 := by
+  rw [coe_diskRadialPush_apply_down, radialPush_one, radialRetraction_of_le_norm hx, smul_smul,
+    div_eq_mul_inv, inv_mul_cancel_left₀ hr.ne']
 
 end TauCeti.TopCat

@@ -21,6 +21,10 @@ commutative ring, every leading block minor is a unit exactly when the block per
 is trivial. This criterion detects which weight-block permutations can occur in the
 open set admitting block lower-diagonal-upper factorization.
 
+The version `eqOn_range_of_det_toSquareBlockProp_le_ne_zero` starts with an injective map
+on a family of weights rather than a permutation of the block labels. Nonzero leading minors
+force the occurring weights to be stable under this map, so it induces a permutation of them.
+
 The weight-space application is the big-cell argument in R. Steinberg, *Lectures on
 Chevalley Groups*, Chapter 5, Theorem 7: a Weyl representative permutes weight spaces,
 and its leading weight-block minors can all be invertible only if it fixes every weight.
@@ -88,5 +92,63 @@ theorem isUnit_det_toSquareBlockProp_le_iff_eq_one [Nontrivial R]
     exact hsupport i j fun hij => hi (hij ▸ hj))
   rw [hdet] at hM
   exact isUnit_of_mul_isUnit_left hM
+
+/-- A map injective on the occurring weights fixes every occurring weight if all leading
+weight-block minors are nonzero and `M i j = 0` whenever `wt i ≠ f (wt j)`. Thus `M` carries
+the weight-`μ` block into the weight-`f μ` block. The equivalence `r` supplies an ordering
+of the distinct weights, not of the individual basis vectors. -/
+theorem eqOn_range_of_det_toSquareBlockProp_le_ne_zero {W : Type*}
+    (M : Matrix n n R) (wt : n → W) (f : W → W)
+    (hf : Set.InjOn f (Set.range wt)) (r : Set.range wt ≃ α)
+    (hsupport : ∀ i j, wt i ≠ f (wt j) → M i j = 0)
+    (hminor : ∀ a, (M.toSquareBlockProp fun i => r ⟨wt i, Set.mem_range_self i⟩ ≤ a).det ≠ 0) :
+    Set.EqOn f id (Set.range wt) := by
+  classical
+  have hstable : Set.MapsTo f (Set.range wt) (Set.range wt) := by
+    rintro _ ⟨j, rfl⟩
+    by_contra h
+    exact hminor (r ⟨wt j, Set.mem_range_self j⟩)
+      (det_eq_zero_of_column_eq_zero ⟨j, le_rfl⟩ fun i =>
+        hsupport i j fun hij => h ⟨i, hij⟩)
+  let g : Set.range wt → Set.range wt := fun w => ⟨f w, hstable w.property⟩
+  have hg : Function.Injective g := fun x y hxy =>
+    Subtype.ext (hf x.property y.property (congrArg Subtype.val hxy))
+  let σ : Equiv.Perm α := r.symm.trans
+    ((Equiv.ofBijective g ⟨hg, Finite.surjective_of_injective hg⟩).trans r)
+  have hσ_apply (w : Set.range wt) : σ (r w) = r (g w) := by
+    simp only [σ, Equiv.trans_apply, Equiv.symm_apply_apply]
+    rfl
+  have hσ : σ = 1 := eq_one_of_det_toSquareBlockProp_le_ne_zero M
+    (fun i => r ⟨wt i, Set.mem_range_self i⟩)
+    (r.surjective.comp Set.rangeFactorization_surjective) σ (fun i j hij => by
+      apply hsupport i j
+      intro hw
+      apply hij
+      rw [hσ_apply]
+      exact congrArg r (Subtype.ext hw)) hminor
+  intro w hw
+  have heq : r (g ⟨w, hw⟩) = r ⟨w, hw⟩ := by
+    rw [← hσ_apply, hσ]
+    rfl
+  exact congrArg Subtype.val (r.injective heq)
+
+/-- For an invertible matrix with `M i j = 0` whenever `wt i ≠ f (wt j)`, where `f` is
+injective on the occurring weights, all leading weight-block minors are units exactly when
+`f` fixes every occurring weight. The equivalence `r` orders the distinct weights. -/
+theorem isUnit_det_toSquareBlockProp_le_iff_eqOn_range [Nontrivial R] {W : Type*}
+    (M : Matrix n n R) (hM : IsUnit M.det) (wt : n → W) (f : W → W)
+    (hf : Set.InjOn f (Set.range wt)) (r : Set.range wt ≃ α)
+    (hsupport : ∀ i j, wt i ≠ f (wt j) → M i j = 0) :
+    (∀ a, IsUnit (M.toSquareBlockProp fun i => r ⟨wt i, Set.mem_range_self i⟩ ≤ a).det) ↔
+      Set.EqOn f id (Set.range wt) := by
+  refine ⟨fun h => eqOn_range_of_det_toSquareBlockProp_le_ne_zero M wt f hf r hsupport
+    (fun a => (h a).ne_zero), ?_⟩
+  intro hfix
+  exact (isUnit_det_toSquareBlockProp_le_iff_eq_one M hM
+    (fun i => r ⟨wt i, Set.mem_range_self i⟩)
+    (r.surjective.comp Set.rangeFactorization_surjective) 1 (fun i j hij => by
+      apply hsupport i j
+      rw [hfix (Set.mem_range_self j)]
+      exact fun h => hij (congrArg r (Subtype.ext h)))).mpr rfl
 
 end Matrix

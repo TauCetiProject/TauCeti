@@ -31,7 +31,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
 * `Ideal.image_fintypeLinearCombination_pi`: linear combinations with coefficients in an ideal
   give precisely the ideal multiple of the span.
-* `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • I = I`.
+* `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • ⊤ = ⊤` as a
+  module over `R`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
   are coprime.
 * `Ideal.mem_span_pair_sq`: the elements of `(u, v)²` are the binary quadratic forms in `u, v`.
@@ -112,8 +113,8 @@ theorem smul_top_eq_comap_mul (I J : Ideal R) :
   simp only [Submodule.mem_smul_top_iff, Submodule.mem_comap, Submodule.coe_subtype,
     Ideal.smul_eq_mul, mul_comm J I]
 
-/-- If `I * I = I`, then `I • I = I`: every element of `I` is a sum of products of two elements
-of `I`. -/
+/-- If `I * I = I`, then `I • ⊤ = ⊤` for the module `⊤ : Submodule R I`: every element of `I` is a
+sum of products of two elements of `I`, so `I` expands itself. -/
 theorem smul_top_eq_top_of_isIdempotentElem {I : Ideal R} (hI : IsIdempotentElem I) :
     I • (⊤ : Submodule R I) = ⊤ := by
   apply Submodule.map_injective_of_injective I.injective_subtype
@@ -175,8 +176,8 @@ theorem smul_top_eq_top_of_pi (I : Ideal R) (h : I • (⊤ : Submodule R (∀ i
 
 end Pi
 
-/-- The linear-combination map carries the cube of a two-sided ideal onto the ideal multiple
-of the submodule spanned by the family. -/
+/-- The linear-combination map carries the tuples with all coefficients in a two-sided ideal `J`
+onto the ideal multiple `J • span v` of the submodule spanned by the family. -/
 theorem image_fintypeLinearCombination_pi {R M ι : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] [Fintype ι] (J : Ideal R) [J.IsTwoSided] (v : ι → M) :
     Fintype.linearCombination R v '' Set.univ.pi (fun _ ↦ (J : Set R)) =

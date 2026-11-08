@@ -201,9 +201,15 @@ unselected elements lie in the complement:
 `C(i + j, i) * C(i, r) * C(j, s) = C(i + j, r + s) * C(r + s, r) * C(i + j - (r + s), j - s)`.
 
 In particular `C(i + j, r + s)` divides `C(i + j, i) * C(i, r) * C(j, s)`. -/
-theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hr : r ≤ i) (hs : s ≤ j) :
+theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hs : s ≤ j) :
     (i + j).choose i * i.choose r * j.choose s =
       (i + j).choose (r + s) * (r + s).choose r * (i + j - (r + s)).choose (j - s) := by
+  rcases le_or_gt r i with hr | hr
+  swap
+  · rw [choose_eq_zero_of_lt hr, Nat.mul_zero, Nat.zero_mul]
+    rcases le_or_gt (r + s) (i + j) with h | h
+    · rw [choose_eq_zero_of_lt (by omega : i + j - (r + s) < j - s), Nat.mul_zero]
+    · rw [choose_eq_zero_of_lt h, Nat.zero_mul, Nat.zero_mul]
   rw [choose_mul hr, choose_symm_of_eq_add (by omega : i + j - r = i - r + j), Nat.mul_assoc,
     choose_mul hs, ← Nat.mul_assoc, choose_mul (Nat.le_add_right r s),
     Nat.add_sub_cancel_left, Nat.sub_sub]
