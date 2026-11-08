@@ -184,6 +184,11 @@ theorem symm_invFun {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) :
     Φ.symm.invFun = Φ.toFun :=
   (rfl)
 
+@[simp]
+theorem symm_symm {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) :
+    Φ.symm.symm = Φ :=
+  (rfl)
+
 /-- A homeomorphism `e : E ≃ₜ E'` commuting with the projections to `B` is a fibre homotopy
 equivalence. -/
 def ofHomeomorph {p : C(E, B)} {q : C(E', B)} (e : E ≃ₜ E')
