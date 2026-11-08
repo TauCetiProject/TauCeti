@@ -14,6 +14,10 @@ For maps between topological vector spaces over a nontrivially normed field, if 
 `f y - f x` lie in a closed subspace `S` for `y` near `x`, that is, if `f` takes its values in the
 affine subspace `f x + S` near `x`, then its derivative at `x` takes values in `S`. This is what
 shows that the Lie bracket of two vector fields tangent to a fixed subspace is again tangent to it.
+
+The general form `HasFDerivWithinAt.apply_mem_of_eventually_sub_mem` only asks for the increments
+to lie in `S` for `y` near `x` within a set `s`, and concludes that the derivative within `s` maps
+the tangent cone of `s` at `x` into `S`.
 -/
 
 public section
@@ -29,15 +33,24 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [ContinuousAdd F] [ContinuousSMul 𝕜 F]
   {f : E → F} {f' : E →L[𝕜] F} {x : E} {S : Submodule 𝕜 F}
 
+/-- If `f` has derivative `f'` within `s` at `x` and its increments `f y - f x` lie in the closed
+subspace `S` for `y` near `x` within `s`, then `f'` maps the tangent cone of `s` at `x` into `S`. -/
+theorem _root_.HasFDerivWithinAt.apply_mem_of_eventually_sub_mem {s : Set E} {v : E}
+    (hf : HasFDerivWithinAt f f' s x) (hS : IsClosed (S : Set F))
+    (hfS : ∀ᶠ y in 𝓝[s] x, f y - f x ∈ S) (hv : v ∈ tangentConeAt 𝕜 s x) : f' v ∈ S := by
+  obtain ⟨_, l, _, c, d, hd₀, hds, hcd⟩ := exists_fun_of_mem_tangentConeAt hv
+  have hd : Tendsto (fun n ↦ x + d n) l (𝓝[s] x) :=
+    tendsto_nhdsWithin_iff.2 ⟨by simpa using tendsto_const_nhds.add hd₀, hds⟩
+  refine hS.mem_of_tendsto (hf.lim hd₀ hds hcd) ?_
+  filter_upwards [hd.eventually hfS] with n hn
+  exact S.smul_mem (c n) hn
+
 /-- If `f` has derivative `f'` at `x` and its increments `f y - f x` lie in the closed subspace `S`
 for `y` near `x`, then `f'` takes values in `S`. -/
 theorem _root_.HasFDerivAt.apply_mem_of_eventually_sub_mem (hf : HasFDerivAt f f' x)
-    (hS : IsClosed (S : Set F)) (hfS : ∀ᶠ y in 𝓝 x, f y - f x ∈ S) (v : E) : f' v ∈ S := by
-  refine hS.mem_of_tendsto (hf.lim v tendsto_norm_cobounded_atTop) ?_
-  have hsmall : Tendsto (fun c : 𝕜 ↦ x + c⁻¹ • v) (Bornology.cobounded 𝕜) (𝓝 x) := by
-    simpa using tendsto_const_nhds.add ((tendsto_inv₀_cobounded (α := 𝕜)).smul_const v)
-  filter_upwards [hsmall.eventually hfS] with c hc
-  exact S.smul_mem c hc
+    (hS : IsClosed (S : Set F)) (hfS : ∀ᶠ y in 𝓝 x, f y - f x ∈ S) (v : E) : f' v ∈ S :=
+  (hf.hasFDerivWithinAt (s := Set.univ)).apply_mem_of_eventually_sub_mem hS
+    (nhdsWithin_le_nhds hfS) (by simp)
 
 /-- If the increments `f y - f x` lie in the closed subspace `S` for `y` near `x`, then the
 derivative of `f` at `x` takes values in `S`. -/
