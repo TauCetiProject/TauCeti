@@ -228,6 +228,14 @@ theorem rayClassQuotient_mk_of_mem {x : IdeleGroup (𝓞 K) K} (hx : x ∈ idele
     ideleToRayClassFun_eq 1 (by simpa using hx), ideleRayClass_apply]
   simp_rw [map_one, one_mul]
 
+/-- The ordinary ideal class of an idele is its ray class at the trivial modulus. -/
+@[simp]
+theorem oneEquivClassGroup_rayClassQuotient_mk (x : IdeleGroup (𝓞 K) K) :
+    oneEquivClassGroup (rayClassQuotient (Modulus.one K) x) =
+      FiniteAdeleRing.toClassGroup (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K x) := by
+  rw [rayClassQuotient_mk_of_mem (by simp), oneEquivClassGroup_rayClassMk,
+    FiniteAdeleRing.toClassGroup_apply]
+
 /-- The class of an idele is the class of its product with a principal idele. -/
 private theorem mk_eq_mk_unitEmbedding_mul (x : IdeleGroup (𝓞 K) K) (α : Kˣ) :
     (x : IdeleClassGroup (𝓞 K) K) =
