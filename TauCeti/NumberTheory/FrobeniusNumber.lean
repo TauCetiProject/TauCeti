@@ -31,6 +31,12 @@ namespace Nat
 
 variable {s : Set ℕ}
 
+/-- Taking the additive submonoid closure does not change the gcd of a set. -/
+@[simp]
+theorem setGcd_closure (s : Set ℕ) : setGcd (AddSubmonoid.closure s) = setGcd s :=
+  dvd_antisymm (setGcd_mono AddSubmonoid.subset_closure)
+    (dvd_setGcd_iff.mpr fun _ hn ↦ setGcd_dvd_of_mem_closure hn)
+
 /-- A set of natural numbers closed under addition contains every sufficiently large multiple
 of its gcd. When `s` has no nonzero element, `Nat.setGcd s = 0` and the statement is vacuous. -/
 theorem eventually_mem_of_setGcd_dvd (hs : ∀ a ∈ s, ∀ b ∈ s, a + b ∈ s) :
