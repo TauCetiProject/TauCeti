@@ -140,7 +140,7 @@ theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq
     ∃ g : E → F, ContDiffOn ℝ 1 g Omega ∧ u =ᵐ[mu.restrict Omega] g ∧
       ∀ x ∈ Omega, HasFDerivAt g (U x) x := by
   let := h.completeSpace
-  obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_locally Omega.isOpen (n := 1) fun x hx => by
+  obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_locally (n := 1) fun x hx => by
     obtain ⟨r, hr, hrO⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
     have hBO : ball x r ⊆ Omega := ball_subset_closedBall.trans hrO
     have hu : IntegrableOn u (ball x r) mu :=
