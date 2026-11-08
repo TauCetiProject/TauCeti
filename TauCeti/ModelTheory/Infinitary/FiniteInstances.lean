@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.ConstantInstances
-import Mathlib.Data.Set.Finite.Lemmas
+import TauCeti.Data.Set.Finite
 
 /-!
 # Projecting finite sets of instances
@@ -25,30 +25,6 @@ elimination used to refute non-isolated types in the omitting types theorem.
 public section
 
 universe u v w wγ
-
-namespace TauCeti
-
-/-- A finite family of finite tuples in `γ`, together with one more tuple, factor through a single
-injective enumeration `b : Fin m ↪ γ`: each entry of each tuple is `b` of some index. -/
-theorem exists_embedding_fin_comp_eq {γ : Type*} {ι : Type*} [Finite ι] {k : ι → ℕ}
-    (d : ∀ x, Fin (k x) → γ) {n : ℕ} (c : Fin n → γ) :
-    ∃ (m : ℕ) (b : Fin m ↪ γ) (f : Fin n → Fin m) (g : ∀ x, Fin (k x) → Fin m),
-      (∀ i, b (f i) = c i) ∧ ∀ x i, b (g x i) = d x i := by
-  let F : Set γ := Set.range c ∪ ⋃ x, Set.range (d x)
-  have hF : F.Finite :=
-    (Set.finite_range c).union (Set.finite_iUnion fun x => Set.finite_range (d x))
-  obtain ⟨m, b, hb⟩ := hF.fin_embedding
-  have hc (i : Fin n) : ∃ j, b j = c i := by
-    rw [← Set.mem_range, hb]
-    exact Or.inl ⟨i, rfl⟩
-  have hd' (x : ι) (i : Fin (k x)) : ∃ j, b j = d x i := by
-    rw [← Set.mem_range, hb]
-    exact Or.inr (Set.mem_iUnion.2 ⟨x, i, rfl⟩)
-  choose f hf using hc
-  choose g hg using hd'
-  exact ⟨m, b, f, g, hf, hg⟩
-
-end TauCeti
 
 namespace FirstOrder.Language.Fragment.FormationClosed
 

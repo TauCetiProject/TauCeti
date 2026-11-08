@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Basic.Finite.Sigma
+import Mathlib.Data.Set.Finite.Lattice
+import Mathlib.Data.Set.Finite.Lemmas
+import Mathlib.Data.Set.Finite.Range
 
 /-!
 # Finite subsets of a set as finsets of the subtype
@@ -16,6 +19,9 @@ number of elements (`Set.Finite.exists_finset_subtype_image_val_eq`). This is th
 finite set of elements of a subgroup, a submodule or any other set-like structure as a `Finset` of
 that structure, which is the form the generation and rank statements over a `Finset` of a subgroup
 take.
+
+A finite family of finite tuples in a type factors through one injective enumeration of the
+entries (`TauCeti.exists_embedding_fin_comp_eq`).
 -/
 
 public section
@@ -48,3 +54,26 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
   exact ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, fun j ↦ (e.symm j).2.2,
     fun i a ha ↦ ⟨e ⟨i, a, ha⟩, by simp,
       congrArg (fun x : (i : ι) × T i ↦ (x.2 : A)) (e.symm_apply_apply _)⟩⟩
+
+namespace TauCeti
+
+/-- A finite family of finite tuples in `γ`, together with one more tuple, factor through a single
+injective enumeration `b : Fin m ↪ γ`: each entry of each tuple is `b` of some index. -/
+theorem exists_embedding_fin_comp_eq {γ : Type*} {ι : Type*} [Finite ι] {k : ι → ℕ}
+    (d : ∀ x, Fin (k x) → γ) {n : ℕ} (c : Fin n → γ) :
+    ∃ (m : ℕ) (b : Fin m ↪ γ) (f : Fin n → Fin m) (g : ∀ x, Fin (k x) → Fin m),
+      (∀ i, b (f i) = c i) ∧ ∀ x i, b (g x i) = d x i := by
+  let F : Set γ := Set.range c ∪ ⋃ x, Set.range (d x)
+  have hF : F.Finite :=
+    (Set.finite_range c).union (Set.finite_iUnion fun x => Set.finite_range (d x))
+  obtain ⟨m, b, hb⟩ := hF.fin_embedding
+  obtain ⟨f, hf⟩ := Set.range_subset_range_iff_exists_comp.mp
+    (show Set.range c ⊆ Set.range b from hb ▸ Set.subset_union_left)
+  have hd (x : ι) : ∃ g : Fin (k x) → Fin m, d x = b ∘ g :=
+    Set.range_subset_range_iff_exists_comp.mp
+      (show Set.range (d x) ⊆ Set.range b from
+        hb ▸ (Set.subset_iUnion (fun x => Set.range (d x)) x).trans Set.subset_union_right)
+  choose g hg using hd
+  exact ⟨m, b, f, g, fun i => (congrFun hf i).symm, fun x i => (congrFun (hg x) i).symm⟩
+
+end TauCeti
