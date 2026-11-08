@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Polynomial.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 import TauCeti.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.Complex.RemovableSingularity
 
 /-!
 # Conjugation-compatible nonmonic Puiseux branches
