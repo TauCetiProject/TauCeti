@@ -304,14 +304,27 @@ theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) {x : ℝ} (hx : 1 ≤ x
   funext t
   ring
 
-/-- The partial sums of `c`, minus a linear function, are interval integrable above `1`, being a
-step function minus a continuous function. -/
-theorem intervalIntegrable_sum_Icc_sub_mul (c : ℕ → ℝ) (κ : ℝ) {x : ℝ} (hx : 1 ≤ x) :
+/-- The partial sums of `c`, minus a linear function, are interval integrable from `1` to any
+`x`, being a step function minus a continuous function. -/
+theorem intervalIntegrable_sum_Icc_sub_mul (c : ℕ → ℝ) (κ x : ℝ) :
     IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t) volume 1 x := by
   have hS_int : IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) volume 1 x := by
-    refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
-    simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
-      (continuous_const (y := (1 : ℝ))).integrableOn_Icc
+    rcases le_total 1 x with hx | hx
+    · refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
+      simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
+        (continuous_const (y := (1 : ℝ))).integrableOn_Icc
+    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_)
+      have hA : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc (min x 0) 0) := by
+        refine (integrableOn_zero (μ := volume) (s := Icc (min x 0) 0)).congr_fun
+          (fun t ht ↦ ?_) measurableSet_Icc
+        simp [Nat.floor_eq_zero.mpr (by linarith [ht.2] : t < 1)]
+      have hB : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc 0 1) := by
+        simpa using integrableOn_mul_sum_Icc c (m := 1) le_rfl
+          (continuous_const (y := (1 : ℝ))).integrableOn_Icc
+      refine (hA.union hB).mono_set fun t ht ↦ ?_
+      rcases le_total t 0 with h | h
+      · exact Or.inl ⟨(min_le_left _ _).trans ht.1, h⟩
+      · exact Or.inr ⟨h, ht.2⟩
   exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
 
 /-- The Abel-summation identity `sum_Icc_rpow_mul_eq`, with the partial sums `S t` split as
@@ -324,7 +337,7 @@ theorem sum_Icc_rpow_mul_eq_div_add_integral_sub_mul {c : ℕ → ℝ} {κ τ : 
           (∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t)) / x ^ (τ + 1)) -
         τ * κ / (τ + 1) + τ * κ / (τ + 1) * (x ^ (τ + 1))⁻¹ =
       (x ^ (τ + 1))⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n := by
-  have hE_int := intervalIntegrable_sum_Icc_sub_mul c κ hx
+  have hE_int := intervalIntegrable_sum_Icc_sub_mul c κ x
   set S : ℝ → ℝ := fun t ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n
   set E : ℝ → ℝ := fun t ↦ S t - κ * t with hE
   have hτ1 : τ + 1 ≠ 0 := fun h ↦ hτ (by linarith)
@@ -363,7 +376,7 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
       (𝓝 (κ / (τ + 1))) := by
   have hτ1 : 0 < τ + 1 := by linarith
   have hI := (isLittleO_integral_rpow_sub_one_mul hτ
-    (fun x hx ↦ intervalIntegrable_sum_Icc_sub_mul c κ hx)
+    (fun x _ ↦ intervalIntegrable_sum_Icc_sub_mul c κ x)
     ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mpr
       (by simpa [div_eq_mul_inv, mul_comm] using h))).tendsto_div_nhds_zero
   have hpow : Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹) atTop (𝓝 0) :=
