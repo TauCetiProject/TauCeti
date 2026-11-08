@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -335,31 +335,19 @@ theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncu
     (hlim : TendstoUniformlyOn x x₀ l (Icc 0 1))
     (hdlim : TendstoUniformlyOn (fun i ↦ deriv (x i)) (deriv x₀) l (Icc 0 1)) :
     Tendsto (fun i ↦ ω.hamiltonianAction H (x i)) l (𝓝 (ω.hamiltonianAction H x₀)) := by
-  rcases l.eq_or_neBot with rfl | hl
-  · simp
-  -- The triples `(t, x(t), x'(t))` converge uniformly on `[0, 1]` to a continuous limit, whose
-  -- image is compact, so composing with a continuous integrand preserves uniform convergence.
-  have hid : TendstoUniformlyOn (fun (_ : ι) (t : ℝ) ↦ t) id l (Icc 0 1) :=
-    fun u hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
-  have hxx : TendstoUniformlyOn (fun i t ↦ (x i t, deriv (x i) t)) (fun t ↦ (x₀ t, deriv x₀ t)) l
-      (Icc 0 1) := fun u hu ↦ tendsto_diag.eventually (hlim.prodMk hdlim u hu)
-  have hP : TendstoUniformlyOn (fun i t ↦ (t, x i t, deriv (x i) t))
-      (fun t ↦ (t, x₀ t, deriv x₀ t)) l (Icc 0 1) := fun u hu ↦
-    tendsto_diag.eventually (hid.prodMk hxx u hu)
-  have hPc : ∀ᶠ i in l, ContinuousOn (fun t ↦ (t, x i t, deriv (x i) t)) (Icc 0 1) :=
-    (hx.and hdx).mono fun i hi ↦ continuousOn_id.prodMk (hi.1.prodMk hi.2)
-  have hconv (g : ℝ × V × V → ℝ) (hg : Continuous g) :
-      Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, g (t, x i t, deriv (x i) t)) l
-        (𝓝 (∫ t in (0 : ℝ)..1, g (t, x₀ t, deriv x₀ t))) := by
-    refine TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn ?_ ?_ <;>
-      rw [uIcc_of_le zero_le_one]
-    · exact hPc.mono fun _ hi ↦ hg.comp_continuousOn hi
-    · exact (isCompact_Icc.image_of_continuousOn (hP.continuousOn hPc.frequently))
-        |>.comp_tendstoUniformlyOn (fun _ _ ↦ hg.continuousAt) hP
-  simp only [hamiltonianAction_def, loopArea_def]
-  exact (tendsto_const_nhds.mul (hconv (fun p : ℝ × V × V ↦ ω p.2.1 p.2.2)
-    (ω.continuous_apply_comp continuous_snd.fst continuous_snd.snd))).add
-    (hconv (fun p : ℝ × V × V ↦ H p.1 p.2.1) (hH.comp (continuous_fst.prodMk continuous_snd.fst)))
+  -- The pairs `(x(t), x'(t))` converge uniformly on `[0, 1]`, so the integrands of the symplectic
+  -- area and of the Hamiltonian term, continuous functions of `t` and of the pair, converge.
+  rw [← uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)] at hx hdx hlim hdlim
+  have hP := hlim.prodMk_same hdlim
+  have hPc : ∀ᶠ i in l, ContinuousOn (fun t ↦ (x i t, deriv (x i) t)) (uIcc 0 1) :=
+    (hx.and hdx).mono fun i hi ↦ hi.1.prodMk hi.2
+  have hg1 : Continuous (uncurry fun (_ : ℝ) (p : V × V) ↦ ω p.1 p.2) :=
+    ω.continuous_apply_comp continuous_snd.fst continuous_snd.snd
+  have hg2 : Continuous (uncurry fun t (p : V × V) ↦ H t p.1) :=
+    hH.comp (continuous_fst.prodMk continuous_snd.fst)
+  simpa only [hamiltonianAction_def, loopArea_def] using
+    (tendsto_const_nhds.mul (hP.tendsto_intervalIntegral_comp hg1 hPc)).add
+      (hP.tendsto_intervalIntegral_comp hg2 hPc)
 
 end Continuity
 
