@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
-import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
-import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 
 /-!
 # Powers of the vanishing ideal of a point and jets
@@ -34,22 +32,18 @@ with multiplication by functions, depends only on the `m`-jet at `x` of its argu
   `f ∈ I_x ^ n` if and only if the iterated derivatives of order `k < n` of `f` in the chart at
   `x` vanish at `x`.
 * `TauCeti.mem_smoothVanishingIdeal_pow_iff`: the same at every point of a boundaryless manifold.
-* `TauCeti.mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero`: a function vanishing near `x`
-  lies in every power of `I_x`.
 * `TauCeti.apply_eq_of_mem_differentialOperators_of_iteratedFDeriv_eq`: a differential operator of
   order at most `m` on smooth functions takes the same value at `x` on two functions with the same
   `m`-jet at `x`.
 
 ## Implementation notes
 
-Near an interior point every smooth function agrees with a smooth function on the model space
-composed with a globally smooth localized chart. The higher-order Hadamard lemma
-(`ContMDiffMap.exists_hadamard_coords_of_iteratedFDeriv_eq_zero`) writes a function on the model
-space with vanishing jet as a combination of products of relative coordinate functions, and
-pulling back along the localized chart gives an element of `I_x ^ n` up to a function vanishing
-near `x`. Conversely, orders of vanishing add under multiplication
+The higher-order Hadamard lemma for the vanishing ideal,
+`TauCeti.mem_smoothVanishingIdeal_pow_of_iteratedFDeriv_eq_zero`, gives one direction.
+Conversely, orders of vanishing add under multiplication
 (`TauCeti.iteratedFDeriv_mul_eq_zero_of_lt_add`); this direction only uses smoothness of chart
-expressions at `x`, so it holds without finite-dimensionality or the Hausdorff property.
+expressions at `x`, so it holds without finite-dimensionality, the Hausdorff property or a smooth
+manifold structure on `M`.
 
 ## References
 
@@ -72,9 +66,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- At an interior point `x`, a function in the `n`-th power of the vanishing ideal at `x` has
 vanishing iterated derivatives of every order `k < n` at `x` in the chart at `x`. -/
 theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow
-    [IsManifold I ∞ M] {x : M} (hx : I.IsInteriorPoint x) {n : ℕ} {f : C^∞⟮I, M; ℝ⟯}
+    {x : M} (hx : I.IsInteriorPoint x) {n : ℕ} {f : C^∞⟮I, M; ℝ⟯}
     (hf : f ∈ smoothVanishingIdeal I x ^ n) {k : ℕ} (hk : k < n) :
     iteratedFDeriv ℝ k (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  have hs (g : C^∞⟮I, M; ℝ⟯) : ContDiffAt ℝ ∞ (g ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+    g.contMDiff.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx
   induction n generalizing f k with
   | zero => omega
   | succ n ih =>
@@ -82,8 +78,8 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
     induction hf using Submodule.mul_induction_on' with
     | mem_mul_mem g hg h hh =>
       -- The chart expressions of both factors are smooth at `x`, and orders of vanishing add.
-      refine iteratedFDeriv_mul_eq_zero_of_lt_add (contDiffAt_comp_extChartAt_symm hx g)
-        (contDiffAt_comp_extChartAt_symm hx h) (m := n) (n := 1) (fun i hi ↦ ih hg hi)
+      refine iteratedFDeriv_mul_eq_zero_of_lt_add (hs g) (hs h) (m := n) (n := 1)
+        (fun i hi ↦ ih hg hi)
         (fun i hi ↦ ?_) hk (by exact_mod_cast le_top)
       obtain rfl : i = 0 := by omega
       ext v
@@ -93,72 +89,10 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
           (g ∘ (extChartAt I x).symm) + (h ∘ (extChartAt I x).symm) := by
         ext; simp
       rw [hsum, iteratedFDeriv_add_apply
-        ((contDiffAt_comp_extChartAt_symm hx g).of_le (by exact_mod_cast le_top))
-        ((contDiffAt_comp_extChartAt_symm hx h).of_le (by exact_mod_cast le_top)), hg, hh,
+        ((hs g).of_le (by exact_mod_cast le_top)) ((hs h).of_le (by exact_mod_cast le_top)), hg, hh,
         add_zero]
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
-
-/-- A smooth function vanishing on a neighbourhood of `x` lies in every power of the vanishing
-ideal at `x`. -/
-theorem mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero {x : M} {f : C^∞⟮I, M; ℝ⟯}
-    (hf : (f : M → ℝ) =ᶠ[𝓝 x] 0) (n : ℕ) : f ∈ smoothVanishingIdeal I x ^ n := by
-  obtain ⟨b, -, hb⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hf).mem_iff.mp hf
-  let χ : C^∞⟮I, M; ℝ⟯ := ⟨b, b.contMDiff⟩
-  have hχ : ⇑χ = b := ContMDiffMap.coeFn_mk _ _
-  -- `f = (1 - χ) * f` with `1 - χ ∈ I_x`, so `f` lies in `I_x * I_x ^ n` whenever it lies in
-  -- `I_x ^ n`.
-  have hfac : f = (1 - χ) * f := by
-    ext y
-    by_cases hy : b y = 0
-    · simp [hχ, hy]
-    · simp [show f y = 0 from hb hy]
-  have h1 : 1 - χ ∈ smoothVanishingIdeal I x := by simp [hχ]
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [hfac, pow_succ']
-    exact Ideal.mul_mem_mul h1 ih
-
-/-- **The higher-order Hadamard lemma for the vanishing ideal.** At an interior point `x`, a
-smooth function whose iterated derivatives of every order `k < n` vanish at `x` in the chart at
-`x` lies in the `n`-th power of the vanishing ideal at `x`. -/
-theorem mem_smoothVanishingIdeal_pow_of_iteratedFDeriv_eq_zero {x : M}
-    (hx : I.IsInteriorPoint x) {n : ℕ} {f : C^∞⟮I, M; ℝ⟯}
-    (hf : ∀ k < n, iteratedFDeriv ℝ k (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0) :
-    f ∈ smoothVanishingIdeal I x ^ n := by
-  -- Near `x`, write `f` as a smooth function `g` of a globally smooth localized chart `F`.
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
-  have hFx : F x = extChartAt I x x := hF.eq_of_nhds
-  have hfg := comp_extChartAt_symm_eventuallyEq_of_eventuallyEq hx hF hg
-  -- The higher-order Hadamard lemma factors `g` through products of `n` relative coordinates;
-  -- pulling back by `F` gives an element of `I_x ^ n`.
-  let b := Module.finBasis ℝ E
-  obtain ⟨a, -, ha⟩ := ContMDiffMap.exists_hadamard_coords_of_iteratedFDeriv_eq_zero g (F x) b
-    (n := n) fun k hk ↦ by rw [hFx, ← (hfg.iteratedFDeriv ℝ k).eq_of_nhds, hf k hk]
-  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
-      ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub contMDiff_const⟩
-  have hc (i) (y : M) : c i y = b.coord i (F y) - b.coord i (F x) := rfl
-  let p : C^∞⟮I, M; ℝ⟯ := ∑ σ, (a σ).comp F * ∏ j, c (σ j)
-  have hp : p ∈ smoothVanishingIdeal I x ^ n := by
-    refine Ideal.sum_mem _ fun σ _ ↦ Ideal.mul_mem_left _ _ ?_
-    simpa using Ideal.prod_mem_prod (s := Finset.univ)
-      (I := fun _ : Fin n ↦ smoothVanishingIdeal I x) (x := fun j ↦ c (σ j)) fun j _ ↦ by simp [hc]
-  -- The remainder `f - p` vanishes near `x`.
-  have hfp : f - p ∈ smoothVanishingIdeal I x ^ n := by
-    refine mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero ?_ n
-    filter_upwards [hg] with y hy
-    -- Evaluate `p` at `y` through the evaluation ring homomorphism, which is evaluation.
-    have hev (q : C^∞⟮I, M; ℝ⟯) : ContMDiffMap.evalRingHom y q = q y := rfl
-    have hpy : p y = ∑ σ, a σ (F y) * ∏ j, (b.coord (σ j) (F y) - b.coord (σ j) (F x)) := by
-      rw [← hev p]
-      simp only [p, map_sum, map_mul, map_prod]
-      simp only [hev, ContMDiffMap.comp_apply, hc]
-    rw [Pi.zero_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hpy, ← ha (F y), hy,
-      Function.comp_apply, sub_self]
-  simpa using add_mem hfp hp
 
 /-- At an interior point `x` of a finite-dimensional Hausdorff real manifold, a smooth function
 lies in the ideal `I_x ^ n` generated by the products of `n` smooth functions vanishing at `x` if
@@ -197,8 +131,10 @@ theorem apply_eq_of_mem_differentialOperators_of_iteratedFDeriv_eq
         (u ∘ (extChartAt I x).symm) - (v ∘ (extChartAt I x).symm) := by
       ext; simp
     rw [hcomp, iteratedFDeriv_sub_apply
-      ((contDiffAt_comp_extChartAt_symm hx u).of_le (by exact_mod_cast le_top))
-      ((contDiffAt_comp_extChartAt_symm hx v).of_le (by exact_mod_cast le_top)),
+      ((u.contMDiff.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx).of_le
+        (by exact_mod_cast le_top))
+      ((v.contMDiff.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx).of_le
+        (by exact_mod_cast le_top)),
       huv k (Nat.lt_succ_iff.mp hk), sub_self]
   -- For the module of functions over itself, `I • ⊤ = I`.
   have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)

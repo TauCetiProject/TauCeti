@@ -27,8 +27,8 @@ chart. These two steps reduce local statements about smooth functions to the mod
 * `TauCeti.comp_extChartAt_symm_eventuallyEq_of_eventuallyEq`: if a function agrees with `g ∘ F`
   near an interior point, for `F` with the germ of the chart, then its chart expression agrees
   with `g` near the image of that point.
-* `TauCeti.contDiffAt_comp_extChartAt_symm`: the chart expression of a smooth function is smooth
-  at the image of an interior point.
+* `ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint`: the chart expression of a map
+  into a normed space which is `C^n` at an interior point is `C^n` at the image of that point.
 -/
 
 public section
@@ -119,20 +119,20 @@ theorem comp_extChartAt_symm_eventuallyEq_of_eventuallyEq
   simp only [Function.comp_apply] at hz hFz ⊢
   rw [hz, hFz, (extChartAt I x).right_inv hzt]
 
-/-- At an interior point `x`, the chart expression `f ∘ (extChartAt I x).symm` of a smooth
-function is smooth at `extChartAt I x x`. -/
-theorem contDiffAt_comp_extChartAt_symm
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-    {x : M} (hx : I.IsInteriorPoint x) (f : C^∞⟮I, M; ℝ⟯) :
-    ContDiffAt ℝ ∞ (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  -- At an interior point the chart target is a neighbourhood, so the chart inverse is smooth there.
-  have htarget : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) :=
-    mem_interior_iff_mem_nhds.mp (I.isInteriorPoint_iff.mp hx)
-  have hsymm := (contMDiffWithinAt_extChartAt_symm_target (n := ∞) x
-    (mem_extChartAt_target x)).contMDiffAt htarget
-  rw [← contMDiffAt_iff_contDiffAt]
-  exact f.contMDiff.contMDiffAt.comp _ hsymm
+/-- At an interior point `x`, a map into a normed space which is `C^n` at `x` has a `C^n`
+coordinate expression in the preferred extended chart at `x`. This is the interior-point
+counterpart of `ContMDiffAt.contDiffAt_comp_extChartAt_symm`, which assumes a boundaryless
+manifold. -/
+theorem _root_.ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M → F} {x : M} {n : WithTop ℕ∞}
+    (hf : ContMDiffAt I 𝓘(𝕜, F) n f x) (hx : I.IsInteriorPoint x) :
+    ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+  -- At an interior point the range of `I` is a neighbourhood of the chart image of `x`.
+  contMDiffAt_iff_contDiffAt.mp
+    ((contMDiffAt_iff_source.mp hf).contMDiffAt (mem_interior_iff_mem_nhds.mp hx))
 
 end TauCeti
