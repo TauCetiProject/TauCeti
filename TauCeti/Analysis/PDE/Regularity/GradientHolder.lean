@@ -122,15 +122,6 @@ private theorem oscConst_nonneg (n : ℕ) (κ : ℝ) : 0 ≤ oscConst n κ := by
   unfold oscConst
   positivity
 
-/-- `(t^a)² t^b = t^{2a+b}` for `t > 0`. -/
-private theorem rpow_sq_mul_rpow_eq {t : ℝ} (ht : 0 < t) (a b : ℝ) :
-    (t ^ a) ^ 2 * t ^ b = t ^ (2 * a + b) := by
-  rw [← Real.rpow_natCast, ← Real.rpow_mul ht.le, ← Real.rpow_add ht, Nat.cast_ofNat, mul_comm a]
-
-/-- `(t^a)² = t^{2a}` for `t > 0`. -/
-private theorem rpow_sq_eq {t : ℝ} (ht : 0 < t) (a : ℝ) : (t ^ a) ^ 2 = t ^ (2 * a) := by
-  simpa using rpow_sq_mul_rpow_eq ht a 0
-
 /-- The measure `ω` of the unit ball of `ℝ^{n+1}`. -/
 private def unitBallVolume (n : ℕ) : ℝ :=
   volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
@@ -152,7 +143,7 @@ private theorem two_mul_rpow_sq_div_mul_measureReal_ball_eq (x : EuclideanSpace 
     2 * (t ^ a) ^ 2 / lam ^ 2 * (K ^ 2 * volume.real (ball x t)) =
       2 * unitBallVolume n * (K / lam) ^ 2 * t ^ ((n : ℝ) + 1 + 2 * a) := by
   rw [measureReal_ball_eq x ht, show (n : ℝ) + 1 + 2 * a = 2 * a + (n + 1 : ℕ) by push_cast; ring,
-    ← rpow_sq_mul_rpow_eq ht, Real.rpow_natCast, div_pow]
+    ← Real.rpow_sq_mul_rpow ht, Real.rpow_natCast, div_pow]
   ring
 
 /-- Assembling a comparison estimate: if `X ≤ 4 A Y + (4 B + 2) E` with the decay constants
@@ -396,17 +387,11 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le {A β : �
   exact add_le_add_left (mul_le_mul_of_nonneg_left hψR
     (Real.rpow_nonneg (div_nonneg hρ.le (hρ.trans_le hρR).le) β)) _
 
-/-- Rescaling from `B_R` to `B_ρ`: `(ρ / R)^β R^γ = R^{γ-β} ρ^β`. -/
-private theorem div_rpow_mul_rpow_eq {ρ R : ℝ} (hρ : 0 ≤ ρ) (hR : 0 < R) (β γ : ℝ) :
-    (ρ / R) ^ β * R ^ γ = R ^ (γ - β) * ρ ^ β := by
-  rw [Real.div_rpow hρ hR.le, Real.rpow_sub hR]
-  field_simp
-
 /-- Squaring `N ≤ M R^{(n+1)/2+α}` gives `N² ≤ M² R^{n+1+2α}`. -/
 private theorem sq_le_mul_rpow_of_le {N M R α : ℝ} (hR : 0 < R) (hN : 0 ≤ N)
     (h : N ≤ M * R ^ (((n : ℝ) + 1) / 2 + α)) : N ^ 2 ≤ M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α) := by
   have h2 : (R ^ (((n : ℝ) + 1) / 2 + α)) ^ 2 = R ^ ((n : ℝ) + 1 + 2 * α) := by
-    rw [rpow_sq_eq hR]
+    rw [← Real.rpow_mul_natCast hR.le]
     ring_nf
   rw [← h2, ← mul_pow]
   exact pow_le_pow_left₀ hN h 2
@@ -531,7 +516,7 @@ private theorem exists_setIntegral_norm_sq_le (hα : 0 < α) (κ : ℝ) :
       (sq_le_mul_rpow_of_le hR (norm_nonneg _) hM1)
   have hρR' : (ρ / R) ^ ((n : ℝ) + 1 - α) * R ^ ((n : ℝ) + 1 + 2 * α) =
       R ^ (3 * (α : ℝ)) * ρ ^ ((n : ℝ) + 1 - α) := by
-    rw [div_rpow_mul_rpow_eq hρ.le hR,
+    rw [Real.div_rpow_mul_rpow hρ.le hR,
       show (n : ℝ) + 1 + 2 * α - ((n : ℝ) + 1 - α) = 3 * α by ring]
   have h1 : (ρ / R) ^ ((n : ℝ) + 1 - α) * φ R ≤
       M ^ 2 * R ^ (3 * (α : ℝ)) * ρ ^ ((n : ℝ) + 1 - α) := by
@@ -587,7 +572,7 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_energy_le {β : 
         gcongr
         exact sq_le_mul_rpow_of_le hR (norm_nonneg _) hM1
     _ = C₄ * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α - β) * ρ ^ β + oscConst n κ * (B * ρ ^ β)) := by
-        rw [div_rpow_mul_rpow_eq hρ.le hR]
+        rw [Real.div_rpow_mul_rpow hρ.le hR]
         ring
     _ ≤ _ := by nlinarith [mul_nonneg hC₄ (mul_nonneg hA hX), mul_nonneg hC₄ hY]
 
@@ -627,10 +612,10 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_small (hα : 0 <
     intro t ht htR
     have hφ := hmorrey h hsmall hM1 hM2 t ht htR
     have hR3 : R ^ (3 * (α : ℝ)) = (R ^ (α : ℝ)) ^ 2 * R ^ (α : ℝ) := by
-      rw [rpow_sq_mul_rpow_eq hR]
+      rw [Real.rpow_sq_mul_rpow hR]
       ring_nf
     have ht1 : (t ^ (α : ℝ)) ^ 2 * t ^ ((n : ℝ) + 1 - α) = t ^ ((n : ℝ) + 1 + α) := by
-      rw [rpow_sq_mul_rpow_eq ht]
+      rw [Real.rpow_sq_mul_rpow ht]
       ring_nf
     have ht2 : t ^ ((n : ℝ) + 1 + 2 * α) ≤ R ^ (α : ℝ) * t ^ ((n : ℝ) + 1 + α) := by
       rw [show (n : ℝ) + 1 + 2 * α = α + ((n : ℝ) + 1 + α) by ring, Real.rpow_add ht]
@@ -694,7 +679,7 @@ private theorem exists_norm_preciseRepresentative_gradient_le (hα : 0 < α) (h�
   intro Omega u a G lam Lam Ka KG z R M h hsmall hM1 hM2 hR
   have hM := (nonneg_and_div_sq_le_sq h.elliptic.pos hM2).1
   have hRθ : (R ^ (θ : ℝ)) ^ 2 = R ^ (α : ℝ) := by
-    rw [rpow_sq_eq hR, hθα]
+    rw [← Real.rpow_mul_natCast hR.le, hθα]
     ring_nf
   -- The mean oscillation of `∇u` on `closedBall z t` is `O(t^{α/2})`.
   have hosc : ∀ t, 0 < t → t ≤ R →
@@ -706,7 +691,7 @@ private theorem exists_norm_preciseRepresentative_gradient_le (hα : 0 < α) (h�
     refine (hcamp h hsmall hM1 hM2 t ht htR).trans_eq ?_
     rw [mul_pow, mul_pow, Real.sq_sqrt hC₂, hRθ, hθα]
     ring_nf
-  have hb := norm_preciseRepresentative_le_of_setAverage_norm_sub_le (W1p.gradient u)
+  have hb := Lp.norm_preciseRepresentative_le_of_setAverage_norm_sub_le (W1p.gradient u)
     (NNReal.coe_pos.2 hθ) hR h.subset hosc
   rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one] at hb
   -- `R^{-(n+1)/2-θ} ‖∇u‖ ≤ M R^θ`.
@@ -877,7 +862,7 @@ private theorem exists_dist_preciseRepresentative_gradient_le_of_small (hα : 0 
     rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one]
     refine (hsharp (hFD z (hS z hz)) hsmall hM1 hM2 (hbd z hz) t ht htR).trans_eq ?_
     rw [mul_pow, Real.sq_sqrt hC₅]
-  have h := dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le (W1p.gradient u)
+  have h := Lp.dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le (W1p.gradient u)
     (NNReal.coe_pos.2 hα) hR (by positivity) (fun z hz => (hFD z (hS z hz)).subset) hosc hx hy
   rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one] at h
   have hgrad : R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖ ≤ M := by
@@ -892,43 +877,6 @@ private theorem exists_dist_preciseRepresentative_gradient_le_of_small (hα : 0 
     _ = _ := by ring
 
 end Passes
-
-/-- **The choice of radius.** Let `α, δ, λ, R > 0` and `p = q / α`. Some `r > 0` with `2 r ≤ R`
-satisfies the smallness condition `K_a r^α ≤ δ λ` and `r^{-q} ≤ 2^q R^{-q} + δ^{-p} (K_a / λ)^p`. -/
-private theorem exists_mul_rpow_le_and_rpow_neg_le {α Ka : ℝ≥0} (hα : 0 < α) {δ lam R q p : ℝ}
-    (hδ : 0 < δ) (hlam : 0 < lam) (hR : 0 < R) (hp : q / α = p) :
-    ∃ r, 0 < r ∧ 2 * r ≤ R ∧ Ka * r ^ (α : ℝ) ≤ δ * lam ∧
-      r ^ (-q) ≤ 2 ^ q * R ^ (-q) + δ ^ (-p) * (Ka / lam) ^ p := by
-  have hα' : (0 : ℝ) < α := hα
-  have hR2 : (R / 2) ^ (-q) = 2 ^ q * R ^ (-q) := by
-    rw [Real.div_rpow hR.le zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
-  rcases eq_or_ne Ka 0 with hKa0 | hKa0
-  · refine ⟨R / 2, by positivity, by linarith,
-      by rw [hKa0, NNReal.coe_zero, zero_mul]; positivity, ?_⟩
-    rw [hR2]
-    exact le_add_of_nonneg_right (by positivity)
-  · have hKa : (0 : ℝ) < Ka := by positivity
-    obtain ⟨X, hX⟩ : ∃ X : ℝ, X = (δ * lam / Ka) ^ (α : ℝ)⁻¹ := ⟨_, rfl⟩
-    have hX0 : 0 < X := hX ▸ by positivity
-    have hXα : X ^ (α : ℝ) = δ * lam / Ka := by
-      rw [hX, Real.rpow_inv_rpow (by positivity) hα'.ne']
-    have hXq : X ^ (-q) = δ ^ (-p) * (Ka / lam) ^ p := by
-      rw [hX, ← Real.rpow_mul (by positivity), show (α : ℝ)⁻¹ * -q = -p by
-        rw [← hp]; field_simp, Real.rpow_neg (by positivity), ← Real.inv_rpow (by positivity),
-        inv_div, show (Ka : ℝ) / (δ * lam) = δ⁻¹ * (Ka / lam) by field_simp,
-        Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow hδ.le,
-        ← Real.rpow_neg hδ.le]
-    refine ⟨min (R / 2) X, lt_min (by positivity) hX0, by linarith [min_le_left (R / 2) X], ?_,
-      ?_⟩
-    · calc (Ka : ℝ) * min (R / 2) X ^ (α : ℝ) ≤ Ka * X ^ (α : ℝ) := by
-            gcongr
-            exact min_le_right _ _
-        _ = δ * lam := by rw [hXα]; field_simp
-    · rcases min_choice (R / 2) X with h | h <;> rw [h]
-      · rw [hR2]
-        exact le_add_of_nonneg_right (by positivity)
-      · rw [hXq]
-        exact le_add_of_nonneg_left (by positivity)
 
 /-- **Interior Hölder continuity of the gradient for `-div(a ∇u) = -div G`.** Let `0 < α < 1` and
 `κ ∈ ℝ`. There is a constant `C`, depending only on `n`, `α` and `κ`, such that the following
@@ -990,7 +938,11 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
       _ ≤ (KG / lam + r ^ (-q) * ‖W1p.gradient u‖) * r ^ q := by
           gcongr
           exact le_add_of_nonneg_left (by positivity)
-  obtain ⟨r, hr, hrR, hKa, hrq⟩ := exists_mul_rpow_le_and_rpow_neg_le (Ka := Ka) hα hδ hlam hR hp
+  obtain ⟨r, hr, hrR, hKa, hrq⟩ := Real.exists_mul_rpow_le_and_rpow_neg_le
+    (NNReal.coe_pos.2 hα) Ka.coe_nonneg (mul_pos hδ hlam) hR q
+  rw [hp, show (Ka : ℝ) / (δ * lam) = δ⁻¹ * (Ka / lam) by field_simp,
+    Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow hδ.le, ← Real.rpow_neg hδ.le]
+    at hrq
   refine HolderOnWith.of_dist_le fun x hx y hy => (key r hr hrR hKa x hx y hy).trans ?_
   refine (mul_le_mul_of_nonneg_right ?_ (by positivity)).trans
     (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity))

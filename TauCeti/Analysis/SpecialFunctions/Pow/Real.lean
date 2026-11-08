@@ -66,6 +66,12 @@ with the corresponding integral of `q`-th powers.
 For `α > 0`, the ratio `2 ^ (-α)` is less than `1`, so `1 - 2 ^ (-α)` is positive. This is the
 denominator of the sum of a dyadic series of ratio `2 ^ (-α)`.
 
+Rescaling a power bound from radius `R` to radius `ρ` uses the exponent identities
+`(x ^ y) ^ 2 * x ^ z = x ^ (2 y + z)` and `(ρ / R) ^ β * R ^ γ = R ^ (γ - β) * ρ ^ β`. A smallness
+condition `c r ^ α ≤ ε` on a radius `r ≤ R / 2` is met by `r = min (R / 2) ((ε / c) ^ (1 / α))`,
+and then `r ^ (-q) ≤ 2 ^ q R ^ (-q) + (c / ε) ^ (q / α)`. This is how a scale-invariant estimate
+proved under a smallness condition is turned into one on every scale.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -91,6 +97,10 @@ denominator of the sum of a dyadic series of ratio `2 ^ (-α)`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
 * `Real.one_sub_two_rpow_neg_pos`: `0 < 1 - 2 ^ (-α)` for `0 < α`.
+* `Real.rpow_sq_mul_rpow`: `(x ^ y) ^ 2 * x ^ z = x ^ (2 * y + z)` for `0 < x`.
+* `Real.div_rpow_mul_rpow`: `(ρ / R) ^ β * R ^ γ = R ^ (γ - β) * ρ ^ β` for `0 ≤ ρ` and `0 < R`.
+* `Real.exists_mul_rpow_le_and_rpow_neg_le`: a radius `0 < r ≤ R / 2` with `c r ^ α ≤ ε` and
+  `r ^ (-q) ≤ 2 ^ q R ^ (-q) + (c / ε) ^ (q / α)`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -214,6 +224,49 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
 /-- For `α > 0`, `1 - 2^(-α)` is positive: the dyadic series of ratio `2^(-α)` converges. -/
 theorem one_sub_two_rpow_neg_pos {α : ℝ} (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
   sub_pos.2 (rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))
+
+/-- `(x ^ y) ^ 2 * x ^ z = x ^ (2 * y + z)` for `0 < x`. -/
+theorem rpow_sq_mul_rpow {x : ℝ} (hx : 0 < x) (y z : ℝ) :
+    (x ^ y) ^ 2 * x ^ z = x ^ (2 * y + z) := by
+  rw [← rpow_mul_natCast hx.le, ← rpow_add hx, Nat.cast_ofNat, mul_comm y]
+
+/-- Rescaling from radius `R` to radius `ρ`: `(ρ / R) ^ β * R ^ γ = R ^ (γ - β) * ρ ^ β` for
+`0 ≤ ρ` and `0 < R`. -/
+theorem div_rpow_mul_rpow {ρ R : ℝ} (hρ : 0 ≤ ρ) (hR : 0 < R) (β γ : ℝ) :
+    (ρ / R) ^ β * R ^ γ = R ^ (γ - β) * ρ ^ β := by
+  rw [div_rpow hρ hR.le, rpow_sub hR]
+  field_simp
+
+/-- **Choosing a small radius.** Let `α, ε, R > 0` and `c ≥ 0`. Some `r > 0` with `2 r ≤ R`
+satisfies the smallness condition `c r ^ α ≤ ε` and `r ^ (-q) ≤ 2 ^ q R ^ (-q) + (c / ε) ^ (q / α)`:
+take `r = min (R / 2) ((ε / c) ^ (1 / α))`. -/
+theorem exists_mul_rpow_le_and_rpow_neg_le {α c ε R : ℝ} (hα : 0 < α) (hc : 0 ≤ c) (hε : 0 < ε)
+    (hR : 0 < R) (q : ℝ) :
+    ∃ r, 0 < r ∧ 2 * r ≤ R ∧ c * r ^ α ≤ ε ∧
+      r ^ (-q) ≤ 2 ^ q * R ^ (-q) + (c / ε) ^ (q / α) := by
+  have hR2 : (R / 2) ^ (-q) = 2 ^ q * R ^ (-q) := by
+    rw [div_rpow hR.le zero_le_two, rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
+  rcases hc.eq_or_lt with rfl | hc
+  · refine ⟨R / 2, by positivity, by linarith, by rw [zero_mul]; exact hε.le, ?_⟩
+    rw [hR2]
+    exact le_add_of_nonneg_right (by positivity)
+  · obtain ⟨X, hX⟩ : ∃ X : ℝ, X = (ε / c) ^ α⁻¹ := ⟨_, rfl⟩
+    have hX0 : 0 < X := hX ▸ by positivity
+    have hXα : X ^ α = ε / c := by rw [hX, rpow_inv_rpow (by positivity) hα.ne']
+    have hXq : X ^ (-q) = (c / ε) ^ (q / α) := by
+      rw [hX, ← rpow_mul (by positivity), show α⁻¹ * -q = -(q / α) by ring,
+        rpow_neg (by positivity), ← inv_rpow (by positivity), inv_div]
+    refine ⟨min (R / 2) X, lt_min (by positivity) hX0, by linarith [min_le_left (R / 2) X], ?_,
+      ?_⟩
+    · calc c * min (R / 2) X ^ α ≤ c * X ^ α := by
+            gcongr
+            exact min_le_right _ _
+        _ = ε := by rw [hXα]; field_simp
+    · rcases min_choice (R / 2) X with h | h <;> rw [h]
+      · rw [hR2]
+        exact le_add_of_nonneg_right (by positivity)
+      · rw [hXq]
+        exact le_add_of_nonneg_left (by positivity)
 
 /-- The limit of the ratio `D ^ n / (n ω (D ^ n - ρ ^ n))` as `D → ∞` is `(n ω)⁻¹`, for every real
 `ρ` and `n ≠ 0`. -/

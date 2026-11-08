@@ -44,7 +44,8 @@ the Hölder bound.
 
 ## Main declarations
 
-All declarations are in the `TauCeti.MeasureTheory` namespace.
+All declarations are in the `TauCeti.MeasureTheory` namespace, except the two statements about an
+element `f` of `Lp F 2 (μ.restrict s)`, which are in `MeasureTheory.Lp`.
 
 * `setAverage_norm_sub_setAverage_le_of_holderOnWith`: the mean oscillation of an `α`-Hölder
   function on a ball of radius `r` is at most a multiple of `r^α`.
@@ -53,9 +54,12 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `norm_setAverage_closedBall_sub_preciseRepresentative_le`: the rate of that convergence.
 * `dist_preciseRepresentative_le_of_setAverage_norm_sub_le`: the local Hölder estimate between
   two points, from mean oscillation bounds on balls of radius comparable to their distance.
-* `dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le`: the Hölder estimate on a set
-  `S` for `f ∈ L²(s)`, from mean oscillation bounds on balls of radius at most `R` centred in `S`,
-  with an extra term `R^{-n/2-α} ‖f‖_{L²(s)}` for distant points.
+* `MeasureTheory.Lp.norm_preciseRepresentative_le_of_setAverage_norm_sub_le`: a bound on the
+  precise representative of `f ∈ L²(s)` at `x`, from mean oscillation bounds on balls around `x`
+  and `‖f‖_{L²(s)}`.
+* `MeasureTheory.Lp.dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le`: the Hölder
+  estimate on a set `S` for `f ∈ L²(s)`, from mean oscillation bounds on balls of radius at most
+  `R` centred in `S`, with an extra term `R^{-n/2-α} ‖f‖_{L²(s)}` for distant points.
 * `holderWith_preciseRepresentative_of_setAverage_norm_sub_le`: **Campanato's theorem** on the
   whole space.
 * `exists_holderWith_ae_eq_iff_forall_setAverage_norm_sub_le`: a locally integrable function
@@ -382,8 +386,9 @@ theorem setAverage_norm_sub_le_of_setIntegral_norm_sub_sq_le {s : Set E} {t : �
 `0 < t ≤ R`, then
 `‖f*(x)‖ ≤ (2ⁿ / (1 - 2^(-α)) · M + ω^{-1/2} R^{-n/2-α} ‖f‖_{L²(s)}) R^α`, where `f*` is the
 precise representative, `n` is the dimension and `ω` is the measure of the unit ball. -/
-theorem norm_preciseRepresentative_le_of_setAverage_norm_sub_le {s : Set E}
-    (f : Lp F 2 (μ.restrict s)) (hα : 0 < α) {R : ℝ} (hR : 0 < R) (hball : ball x R ⊆ s)
+theorem _root_.MeasureTheory.Lp.norm_preciseRepresentative_le_of_setAverage_norm_sub_le
+    {s : Set E} (f : Lp F 2 (μ.restrict s)) (hα : 0 < α) {R : ℝ} (hR : 0 < R)
+    (hball : ball x R ⊆ s)
     (hosc : ∀ t, 0 < t → t ≤ R →
       ⨍ y in closedBall x t, ‖f y - ⨍ z in closedBall x t, f z ∂μ‖ ∂μ ≤ M * t ^ α) :
     ‖preciseRepresentative μ (f : E → F) x‖ ≤
@@ -431,8 +436,8 @@ theorem norm_preciseRepresentative_le_of_setAverage_norm_sub_le {s : Set E}
 `‖f*(x) - f*(y)‖ ≤ c (M + R^{-n/2-α} ‖f‖_{L²(s)}) dist x y ^ α` for `x, y ∈ S`, where `n` is the
 dimension and `c = 2 · 2^α (2ⁿ / (1 - 2^(-α)) + ω^{-1/2})`, with `ω` the measure of the unit
 ball. -/
-theorem dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le {s S : Set E}
-    (f : Lp F 2 (μ.restrict s)) (hα : 0 < α) {R : ℝ} (hR : 0 < R) (hM : 0 ≤ M)
+theorem _root_.MeasureTheory.Lp.dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le
+    {s S : Set E} (f : Lp F 2 (μ.restrict s)) (hα : 0 < α) {R : ℝ} (hR : 0 < R) (hM : 0 ≤ M)
     (hball : ∀ z ∈ S, ball z R ⊆ s)
     (hosc : ∀ z ∈ S, ∀ t, 0 < t → t ≤ R →
       ⨍ y in closedBall z t, ‖f y - ⨍ w in closedBall z t, f w ∂μ‖ ∂μ ≤ M * t ^ α)
@@ -468,7 +473,7 @@ theorem dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le {s S : Se
   · -- Distant points: both values are controlled by averages over balls of radius `R`.
     have hbound : ∀ z ∈ S, ‖preciseRepresentative μ (f : E → F) z‖ ≤
         (cα + ω') * (M + a) * R ^ α := fun z hz ↦ by
-      refine (norm_preciseRepresentative_le_of_setAverage_norm_sub_le f hα hR (hball z hz)
+      refine (Lp.norm_preciseRepresentative_le_of_setAverage_norm_sub_le f hα hR (hball z hz)
         (hosc z hz)).trans ?_
       rw [← hcαdef, ← hω', ← ha]
       refine mul_le_mul_of_nonneg_right ?_ (by positivity)
