@@ -48,7 +48,9 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
 * `TauCeti.Place.valuation_algebraMap_le_one_of_ne_infinity`: the coordinate ring is regular at
   every place other than the place at infinity, for an arbitrary Weierstrass curve.
 * `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
-  coordinate ring exactly when it is the place at infinity.
+  coordinate ring exactly when it is the place at infinity, for an arbitrary Weierstrass curve.
+* `TauCeti.Place.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an equality
+  of sets, which is the shape `Divisor.degreeZeroClassGroupEquiv` consumes.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
 
 ## Roadmap
@@ -180,27 +182,32 @@ theorem valuation_algebraMap_le_one_of_ne_infinity {Q : Place F W.FunctionField}
     hQ (Q.eq_of_isEquiv (W.isEquiv_infinityPlace_of_one_lt (v := Q.valuation) hx))) r
 
 /-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
--- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
--- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Forwards, a place other than the place at infinity is regular on the coordinate ring
+-- (`valuation_algebraMap_le_one_of_ne_infinity`); backwards, `x` has a pole at infinity.
 -- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
 -- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
 -- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
 @[simp]
-theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity
     (Q : Place F W.FunctionField) :
     (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
       Q = infinity W := by
   constructor
   · rintro ⟨r, hr⟩
-    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
-    · exact h
-    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
-        (by simpa using hr)
+    by_contra hQ
+    exact absurd (valuation_algebraMap_le_one_of_ne_infinity hQ r) (not_le.mpr hr)
   · rintro rfl
     refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
     rw [valuation_infinity,
       ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField]
     exact W.one_lt_infinityPlace_X
+
+/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
+sets. -/
+theorem setOf_exists_notMem_integers_eq_singleton_infinity :
+    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
+        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {infinity W} :=
+  Set.ext fun _ ↦ by simp
 
 /-- The place at infinity is rational: its residue field has degree one over the base field. -/
 @[simp]
