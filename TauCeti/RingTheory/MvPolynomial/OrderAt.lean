@@ -409,11 +409,10 @@ theorem coe_aeval_eq_subst (h : σ → MvPolynomial τ R) (q : MvPolynomial σ R
   rw [MvPowerSeries.subst_coe]
   simpa using comp_aeval_apply (coeToMvPowerSeries.algHom R) q (f := h)
 
-/-- **The lowest-degree component of a substitution.** If `q` has order at least `n` and the
-polynomials `h i` have no constant terms, the degree-`n` component of `q(h)` is the degree-`n`
-component of `q` evaluated at the linear parts of the `h i`. -/
-theorem homogeneousComponent_aeval_of_le_order [Finite σ] {q : MvPolynomial σ R} {n : ℕ}
-    (hq : n ≤ (q : MvPowerSeries σ R).order) {h : σ → MvPolynomial τ R}
+/-- The case of finitely many variables of `homogeneousComponent_aeval_of_le_order`, by power-series
+substitution. -/
+private theorem homogeneousComponent_aeval_of_le_order_of_finite [Finite σ] {q : MvPolynomial σ R}
+    {n : ℕ} (hq : n ≤ (q : MvPowerSeries σ R).order) {h : σ → MvPolynomial τ R}
     (hh : ∀ i, constantCoeff (h i) = 0) :
     homogeneousComponent n (aeval h q) =
       aeval (fun i ↦ homogeneousComponent 1 (h i)) (homogeneousComponent n q) := by
@@ -422,6 +421,24 @@ theorem homogeneousComponent_aeval_of_le_order [Finite σ] {q : MvPolynomial σ 
     MvPowerSeries.homogeneousComponent_subst_of_le_order hq
       (MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦ by simp [hh i]) fun i ↦ by simp [hh i]]
   simp only [coe_homogeneousComponent]
+
+/-- **The lowest-degree component of a substitution.** If `q` has order at least `n` and the
+polynomials `h i` have no constant terms, the degree-`n` component of `q(h)` is the degree-`n`
+component of `q` evaluated at the linear parts of the `h i`. -/
+theorem homogeneousComponent_aeval_of_le_order {q : MvPolynomial σ R} {n : ℕ}
+    (hq : n ≤ (q : MvPowerSeries σ R).order) {h : σ → MvPolynomial τ R}
+    (hh : ∀ i, constantCoeff (h i) = 0) :
+    homogeneousComponent n (aeval h q) =
+      aeval (fun i ↦ homogeneousComponent 1 (h i)) (homogeneousComponent n q) := by
+  -- `q` involves only finitely many variables: reduce to the finite case by renaming.
+  obtain ⟨s, q, rfl⟩ := exists_finset_rename q
+  have hq' : n ≤ (q : MvPowerSeries s R).order := by
+    refine MvPowerSeries.nat_le_order fun d hd ↦ ?_
+    have := MvPowerSeries.coeff_of_lt_order (d := d.mapDomain (↑)) (lt_of_lt_of_le
+      (by simpa only [degree_mapDomain] using (Nat.cast_lt (α := ℕ∞)).2 hd) hq)
+    simpa [coeff_rename_mapDomain _ Subtype.val_injective] using this
+  rw [aeval_rename, ← rename_homogeneousComponent, aeval_rename]
+  exact homogeneousComponent_aeval_of_le_order_of_finite hq' fun i ↦ hh i
 
 end SubstitutionRing
 
