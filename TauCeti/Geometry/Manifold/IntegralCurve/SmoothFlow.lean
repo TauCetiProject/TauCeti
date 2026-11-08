@@ -67,7 +67,9 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
   let w : E → E := fun z ↦ (trivializationAt E (TangentSpace I) a
     (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2
   let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
-  have hws : ContDiffOn ℝ ∞ w W := contDiffOn_trivializationAt_extChartAt_symm v a hv
+  have hws : ContDiffOn ℝ ∞ w W :=
+    haveI : IsManifold I (∞ + 1) M := inferInstanceAs (IsManifold I ∞ M)
+    contDiffOn_trivializationAt_extChartAt_symm (n := ∞) v a hv
   have haTarget : extChartAt I a a ∈ (extChartAt I a).target := mem_extChartAt_target a
   have hsymmV : (extChartAt I a).symm ⁻¹' V ∈ nhds (extChartAt I a a) := by
     apply (continuousAt_extChartAt_symm'' haTarget).preimage_mem_nhds

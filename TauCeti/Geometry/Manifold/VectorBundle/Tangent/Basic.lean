@@ -328,18 +328,24 @@ end Extend
 
 section TrivializationCoordinates
 
-/-- If a tangent vector field is smooth on `V`, then its coordinate expression in the preferred
-trivialization of the tangent bundle at `a`, read through the inverse extended chart, is smooth on
+/-- If a tangent vector field is `C^n` on `V`, then its coordinate expression in the preferred
+trivialization of the tangent bundle at `a`, read through the inverse extended chart, is `C^n` on
 the interior points of the chart target which lie over `V`. -/
-theorem contDiffOn_trivializationAt_extChartAt_symm [IsManifold I ∞ M]
-    (v : (x : M) → TangentSpace I x) (a : M) {V : Set M}
-    (hv : ContMDiffOn I I.tangent ∞ (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V) :
-    ContDiffOn 𝕜 ∞ (fun z ↦ (trivializationAt E (TangentSpace I) a
+theorem contDiffOn_trivializationAt_extChartAt_symm {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    (v : (x : M) → TangentSpace I x) (a : M) {V : Set M} :
+    haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+    ContMDiffOn I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V →
+    ContDiffOn 𝕜 n (fun z ↦ (trivializationAt E (TangentSpace I) a
       (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2)
       (interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
+  have _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+  have _ : IsManifold I n M := IsManifold.of_le (n := n + 1) le_self_add
+  have _ : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  intro hv
   let e := trivializationAt E (TangentSpace I) a
   let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
-  have hsection : ContMDiffOn (modelWithCornersSelf 𝕜 E) I.tangent ∞
+  have hsection : ContMDiffOn (modelWithCornersSelf 𝕜 E) I.tangent n
       ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
       W := hv.comp
     ((contMDiffOn_extChartAt_symm a).mono (inter_subset_left.trans interior_subset))

@@ -265,6 +265,8 @@ private theorem IsMIntegralCurveOn.eventuallyEq_of_contDiffOn_extChartAt
   filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
   exact φ.injOn (hγsrc r hrJ) hrδsrc hr
 
+namespace TauCeti
+
 /-- A curve in the model space which stays in the interior of the chart target and solves the
 coordinate equation of a vector field on an open set of times gives an integral curve of the
 field on the manifold, after applying the inverse extended chart. -/
@@ -293,6 +295,8 @@ theorem isMIntegralCurveOn_extChartAt_symm_comp {M : Type*} [TopologicalSpace M]
           TangentBundle I M)).2 = _
       exact TangentBundle.coe_chartAt_snd
     simpa only [hw_eq] using hderiv r hr
+
+end TauCeti
 
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which
 take the same value at one time of that interval agree on it, as soon as one of them stays in a
