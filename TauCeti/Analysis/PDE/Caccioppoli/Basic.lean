@@ -96,7 +96,7 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
         rw [Real.norm_eq_abs, abs_pow]
         exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2)
   have hI2 : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq w).bdd_mul hgrad2 (c := M ^ 2) (Filter.Eventually.of_forall
+    (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul hgrad2 (c := M ^ 2) (Filter.Eventually.of_forall
       fun x => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
         exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)
@@ -144,7 +144,7 @@ theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
       G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
   have hleft : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2)
       (mu.restrict Omega) :=
-    (W1p.integrable_value_sq w).bdd_mul
+    (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul
       ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := G ^ 2)
       (Filter.Eventually.of_forall fun x => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
@@ -176,7 +176,7 @@ theorem W1p.setIntegral_sq_mul_value_sq_le (w : W1p mu Omega 2) {ψ : EuclideanS
     ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
   rw [← setIntegral_indicator hS]
-  refine integral_mono_ae ((W1p.integrable_value_sq w).bdd_mul (hψ.pow 2) (c := 1)
+  refine integral_mono_ae ((Lp.memLp (W1p.value w)).integrable_sq.bdd_mul (hψ.pow 2) (c := 1)
     (Filter.Eventually.of_forall fun x => by
       rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
       exact hψ1 x)) (hg.indicator hS) ?_
@@ -238,14 +238,14 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
     (W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG measurableSet_ball htsR
-      (W1p.integrable_value_sq w) (Eventually.of_forall fun x => le_rfl)).trans_eq
+      (Lp.memLp (W1p.value w)).integrable_sq (Eventually.of_forall fun x => le_rfl)).trans_eq
       (by rw [inter_eq_right.2 hball])
   -- `ψ² ≤ 1` on `B(x₀, R)`, and `ψ` vanishes off it.
   have hzeroth : ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
     (W1p.setIntegral_sq_mul_value_sq_le w hψ.continuous.aestronglyMeasurable (fun x => by
       obtain ⟨h0, h1⟩ := hrange (mem_range_self x)
-      exact pow_le_one₀ h0 h1) measurableSet_ball htsR (W1p.integrable_value_sq w)
+      exact pow_le_one₀ h0 h1) measurableSet_ball htsR (Lp.memLp (W1p.value w)).integrable_sq
       (Eventually.of_forall fun x => le_rfl)).trans_eq (by rw [inter_eq_right.2 hball])
   calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
       ≤ A * (G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu)
