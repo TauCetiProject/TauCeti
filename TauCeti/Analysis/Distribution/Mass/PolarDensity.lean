@@ -101,7 +101,6 @@ private theorem exists_measurable_dual_density (hT : HasLocallyFiniteMass T) :
       |S i ψ| ≤ C * ‖(ψ : E →ᵇ ℝ)‖ := by
     have hL : HasLocallyFiniteMass (S i) :=
       hT.comp_of_norm_apply_le (L := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)))
-        (fun ψ => by simpa only [postcompCLM_apply] using tsupport_comp_subset (map_zero _) _)
         continuous_const (b := fun _ => ‖b i‖) fun ψ x => by simp [norm_smul, mul_comm]
     intro K hK hKΩ
     obtain ⟨C, -, hC⟩ := hasLocallyFiniteMass_def.1 hL K hK hKΩ
