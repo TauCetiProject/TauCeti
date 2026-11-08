@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fin.Tuple.Sort
 public import Mathlib.Data.Finset.Sort
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 
@@ -12,12 +13,13 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 # Cells of an abstract simplicial complex
 
 An `n`-cell of an abstract simplicial complex is a face with `n + 1` vertices.  For a linearly
-ordered vertex type, every cell has a canonical increasing enumeration.  This file also defines
-the codimension-one cell obtained by deleting an enumerated vertex and proves the semisimplicial
-face identity.  The codimension-one cells are classified by the vertex deleted from the original
-face.  Finally, a cell whose vertices all precede a vertex `v`, and to which `v` can be adjoined,
-has a cone with `v` as its last vertex; its faces are the original cell and the cones on the
-faces of the original cell.
+ordered vertex type, every cell has a canonical increasing enumeration, and every tuple of
+distinct vertices spanning a face permutes the increasing enumeration of that face's cell.  This
+file also defines the codimension-one cell obtained by deleting an enumerated vertex and proves
+the semisimplicial face identity.  The codimension-one cells are classified by the vertex deleted
+from the original face.  Finally, a cell whose vertices all precede a vertex `v`, and to which `v`
+can be adjoined, has a cone with `v` as its last vertex; its faces are the original cell and the
+cones on the faces of the original cell.
 
 ## Main definitions
 
@@ -89,6 +91,26 @@ theorem vertexEmbedding_vertex (v : ι) (i : Fin 1) : (vertex K v).vertexEmbeddi
 theorem eq_vertex (c : RealizationCell K 0) : c = vertex K (c.vertexEmbedding 0) :=
   Subtype.ext (Subtype.ext (Finset.eq_singleton_iff_unique_mem.mpr ⟨c.vertexEmbedding_mem 0,
     fun _ hw ↦ Finset.card_le_one.mp c.2.le _ hw _ (c.vertexEmbedding_mem 0)⟩))
+
+/-- A tuple of distinct vertices spanning a face is a permuted increasing enumeration of the
+cell it spans. -/
+theorem exists_eq_vertexEmbedding_comp {g : Fin (n + 1) → ι} (hg : Function.Injective g)
+    (hK : Finset.univ.image g ∈ K) :
+    ∃ (c : RealizationCell K n) (σ : Equiv.Perm (Fin (n + 1))), g = c.vertexEmbedding ∘ σ := by
+  let c : RealizationCell K n :=
+    ⟨⟨Finset.univ.image g, hK⟩, by simp [Finset.card_image_of_injective _ hg]⟩
+  have hc : Finset.univ.image c.vertexEmbedding = Finset.univ.image g := c.image_vertexEmbedding
+  have hmono : StrictMono (g ∘ Tuple.sort g) :=
+    (Tuple.monotone_sort g).strictMono_of_injective (hg.comp (Tuple.sort g).injective)
+  have hsort : g ∘ Tuple.sort g = c.vertexEmbedding := by
+    refine (hmono.range_inj_of_wellFoundedLT c.strictMono_vertexEmbedding).mp ?_
+    rw [(Tuple.sort g).surjective.range_comp]
+    simpa only [Finset.coe_image, Finset.coe_univ, Set.image_univ] using
+      congrArg (fun s : Finset ι ↦ (s : Set ι)) hc.symm
+  refine ⟨c, (Tuple.sort g).symm, ?_⟩
+  rw [← hsort]
+  ext i
+  simp
 
 /-- The codimension-one face obtained by deleting the `j`-th vertex in the increasing
 enumeration of a simplicial cell. -/
