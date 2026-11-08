@@ -9,13 +9,17 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
-# `Lᵖ` convergence gives `L¹` convergence on a finite measure space
+# Comparison of `Lᵖ` seminorms
 
 On a finite measure space, Mathlib's exponent comparison
 `eLpNorm_le_eLpNorm_mul_rpow_measure_univ` bounds the `L¹` seminorm by the `Lᵖ` seminorm (for
 `1 ≤ p`) times a finite constant. This file packages that comparison as a convergence statement
 whose conclusion is the Bochner integral `∫ ‖f i‖ ∂μ`, the form in which `L¹` convergence of a
 difference `f i = W i - a` is usually consumed.
+
+On an arbitrary measure space, a common bound for the `Lᵖ` seminorm and the essential supremum
+also bounds every intermediate `Lᵠ` seminorm (`MeasureTheory.eLpNorm_le_of_exponent_le`).
+This comparison is useful for embeddings of real interpolation spaces.
 
 ## Main declarations
 
@@ -63,3 +67,57 @@ theorem tendsto_integral_norm_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGr
 end MeasureTheory
 
 end TauCeti
+
+namespace MeasureTheory
+
+variable {α E : Type*} [MeasurableSpace α] [SeminormedAddCommGroup E]
+  {μ : Measure α} {f : α → E} {p q : ℝ≥0∞}
+
+/-- If both the `Lᵖ` seminorm and the essential supremum are at most one, every larger-exponent
+`Lᵠ` seminorm is at most one, even on an infinite measure space. -/
+theorem eLpNorm_le_one_of_exponent_le (hf : AEStronglyMeasurable f μ) (hp : 0 < p)
+    (hpq : p ≤ q) (hfp : eLpNorm f p μ ≤ 1) (hf1 : ∀ᵐ x ∂μ, ‖f x‖ₑ ≤ 1) :
+    eLpNorm f q μ ≤ 1 := by
+  by_cases hq : q = ∞
+  · subst q
+    rw [eLpNorm_exponent_top hf]
+    exact eLpNormEssSup_le_of_ae_enorm_bound hf1
+  have hp' : p ≠ ∞ := ne_top_of_le_ne_top hq hpq
+  have hq0 : q ≠ 0 := (hp.trans_le hpq).ne'
+  have hint : (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ≤ 1 := by
+    rw [eLpNorm_eq_eLpNorm' hp.ne' hp' hf] at hfp
+    rw [lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp.ne' hp')]
+    exact ENNReal.rpow_le_one hfp ENNReal.toReal_nonneg
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq hf]
+  apply ENNReal.rpow_le_one _ (by positivity)
+  refine (lintegral_mono_ae ?_).trans hint
+  filter_upwards [hf1] with x hx
+  exact ENNReal.rpow_le_rpow_of_exponent_ge hx (ENNReal.toReal_mono hq hpq)
+
+/-- A common positive bound for the `Lᵖ` seminorm and the essential supremum bounds every
+`Lᵠ` seminorm with `p ≤ q`. No finiteness assumption on the measure is needed. -/
+theorem eLpNorm_le_of_exponent_le
+    (hf : AEStronglyMeasurable f μ) (hp : 0 < p) (hpq : p ≤ q) {M : ℝ} (hM : 0 < M)
+    (hfp : eLpNorm f p μ ≤ ENNReal.ofReal M) (hfM : ∀ᵐ x ∂μ, ‖f x‖ ≤ M) :
+    eLpNorm f q μ ≤ ENNReal.ofReal M := by
+  have hnorm : ∀ r, eLpNorm (M⁻¹ • fun x => ‖f x‖) r μ =
+      (ENNReal.ofReal M)⁻¹ * eLpNorm f r μ := by
+    intro r
+    rw [eLpNorm_const_smul, eLpNorm_congr_enorm_ae hf.norm hf
+      (Filter.Eventually.of_forall fun x => enorm_norm (f x)),
+      Real.enorm_of_nonneg (by positivity), ENNReal.ofReal_inv_of_pos hM]
+  have hscaled : eLpNorm (M⁻¹ • fun x => ‖f x‖) p μ ≤ 1 := by
+    rw [hnorm]
+    exact (mul_le_mul_right hfp _).trans_eq
+      (ENNReal.inv_mul_cancel (ENNReal.ofReal_ne_zero_iff.2 hM) ENNReal.ofReal_ne_top)
+  have hbound : ∀ᵐ x ∂μ, ‖(M⁻¹ • fun x => ‖f x‖) x‖ₑ ≤ 1 := by
+    filter_upwards [hfM] with x hx
+    rw [Pi.smul_apply, ← ofReal_norm, norm_smul, norm_norm,
+      Real.norm_of_nonneg (by positivity), ENNReal.ofReal_le_one]
+    exact (inv_mul_le_iff₀ hM).2 (by simpa using hx)
+  have h := eLpNorm_le_one_of_exponent_le (hf.norm.const_smul _) hp hpq hscaled hbound
+  rw [hnorm, ENNReal.inv_mul_le_iff (ENNReal.ofReal_ne_zero_iff.2 hM)
+    ENNReal.ofReal_ne_top, mul_one] at h
+  exact h
+
+end MeasureTheory
