@@ -140,7 +140,7 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
   · rw [hN]
     exact ContinuousLinearMap.apply_sub_negativeSpectralProjection_apply_self_pos hs.2
       hsymm hinj hu
-  · rw [ContinuousLinearMap.finrank_range_negativeSpectralProjection hs.2 hsymm hinj,
+  · rw [ContinuousLinearMap.finrank_range_negativeSpectralProjection hs.2 hsymm,
       QuadraticMap.Equivalent.sigNeg_eq ⟨L⟩, h.sigNeg_normalHessian hn s]
   · rw [ContinuousLinearMap.finrank_ker_negativeSpectralProjection hs.2 hsymm hinj,
       QuadraticMap.Equivalent.sigPos_eq ⟨L⟩, h.sigPos_normalHessian hn s]

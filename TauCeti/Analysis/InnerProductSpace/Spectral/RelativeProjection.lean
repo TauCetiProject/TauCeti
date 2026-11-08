@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Smooth
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
+import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
@@ -50,6 +51,8 @@ vector bundle with a fibre metric, such as the normal Hessian of a Morse–Bott 
 * `ContinuousLinearMap.apply_negativeSpectralProjection_apply_self_lt_zero` and
   `ContinuousLinearMap.apply_sub_negativeSpectralProjection_apply_self_pos`: `q` is negative
   definite on its range and positive definite on its kernel.
+* `ContinuousLinearMap.apply_sub_negativeSpectralProjection_apply_self_nonneg`: even for
+  degenerate `q`, it is positive semidefinite on the kernel.
 * `ContinuousLinearMap.eq_negativeSpectralProjection_iff`: these properties characterize it.
 * `ContinuousLinearMap.finrank_range_negativeSpectralProjection` and
   `ContinuousLinearMap.finrank_ker_negativeSpectralProjection`: the rank is the negative index of
@@ -113,15 +116,6 @@ private theorem inner_continuousLinearMapOfBilin_bilinearComp_apply (u v : E) :
       q (h.metricChangeTransport u) (h.metricChangeTransport v) := by
   rw [continuousLinearMapOfBilin_apply, bilinearComp_apply]
 
-/-- The pullback of a symmetric form has a symmetric Riesz operator. -/
-private theorem isSymmetric_continuousLinearMapOfBilin_bilinearComp
-    (hq : ∀ u v, q u v = q v u) :
-    ((q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ :
-      E →ₗ[ℝ] E).IsSymmetric := fun u v ↦ by
-  simp only [coe_coe]
-  rw [inner_continuousLinearMapOfBilin_bilinearComp_apply, real_inner_comm,
-    inner_continuousLinearMapOfBilin_bilinearComp_apply, hq]
-
 /-- The pullback of a nondegenerate form along the transport of a positive definite `h` has an
 injective Riesz operator. -/
 private theorem ker_continuousLinearMapOfBilin_bilinearComp (hh : IsStrictlyPositive h♯)
@@ -155,7 +149,7 @@ private theorem sub_negativeSpectralProjection_apply (hh : IsStrictlyPositive h�
           (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯.toLinearMap
             (Iio 0)).starProjection (CFC.sqrt h♯ v)) := by
   rw [map_sub, metricChangeTransport_apply_sqrt_apply hh]
-  rfl
+  simp only [negativeSpectralProjection, mul_apply_eq_comp]
 
 /-- **The negative spectral projection is `h`-orthogonal.** Its range and its kernel are
 orthogonal for the metric `h`. -/
@@ -192,9 +186,28 @@ theorem apply_negativeSpectralProjection_apply_self_lt_zero
   simp only [negativeSpectralProjection, mul_apply_eq_comp] at hu ⊢
   rw [← inner_continuousLinearMapOfBilin_bilinearComp_apply]
   have hne : W.starProjection (CFC.sqrt h♯ u) ≠ 0 := fun h0 ↦ hu (by rw [h0, map_zero])
-  have hA := isSymmetric_continuousLinearMapOfBilin_bilinearComp (h := h) hq
+  have hA := isSymmetric_continuousLinearMapOfBilin
+    (B := q.bilinearComp h.metricChangeTransport h.metricChangeTransport) fun u v ↦ hq _ _
   simpa using hA.re_inner_apply_self_lt_zero_of_mem_pointSpectralSubspace subset_rfl
     (W.starProjection_apply_mem _) hne
+
+/-- **`q` is positive semidefinite on the kernel of its negative spectral projection**, which
+consists of the vectors `u - P u`. No nondegeneracy of `q` is needed. -/
+theorem apply_sub_negativeSpectralProjection_apply_self_nonneg (hh : IsStrictlyPositive h♯)
+    (hq : ∀ u v, q u v = q v u) (u : E) :
+    0 ≤ q (u - q.negativeSpectralProjection h u) (u - q.negativeSpectralProjection h u) := by
+  set A := (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯
+  set W := Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)
+  have hA := isSymmetric_continuousLinearMapOfBilin
+    (B := q.bilinearComp h.metricChangeTransport h.metricChangeTransport) fun u v ↦ hq _ _
+  rw [sub_negativeSpectralProjection_apply hh,
+    ← inner_continuousLinearMapOfBilin_bilinearComp_apply]
+  -- The orthogonal complement of the negative spectral subspace is the nonnegative one.
+  have hmem : CFC.sqrt h♯ u - W.starProjection (CFC.sqrt h♯ u) ∈
+      Module.End.pointSpectralSubspace A.toLinearMap (Ici 0) := by
+    rw [← compl_Iio, ← hA.orthogonal_pointSpectralSubspace]
+    exact W.sub_starProjection_mem_orthogonal _
+  simpa using hA.re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace subset_rfl hmem
 
 /-- **A nondegenerate `q` is positive definite on the kernel of its negative spectral
 projection**, which consists of the vectors `u - P u`. -/
@@ -204,18 +217,18 @@ theorem apply_sub_negativeSpectralProjection_apply_self_pos (hh : IsStrictlyPosi
     0 < q (u - q.negativeSpectralProjection h u) (u - q.negativeSpectralProjection h u) := by
   set A := (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯
   set W := Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)
-  have hA := isSymmetric_continuousLinearMapOfBilin_bilinearComp (h := h) hq
+  have hA := isSymmetric_continuousLinearMapOfBilin
+    (B := q.bilinearComp h.metricChangeTransport h.metricChangeTransport) fun u v ↦ hq _ _
   rw [sub_negativeSpectralProjection_apply hh] at hu ⊢
   rw [← inner_continuousLinearMapOfBilin_bilinearComp_apply]
   set w := CFC.sqrt h♯ u - W.starProjection (CFC.sqrt h♯ u)
   have hne : w ≠ 0 := fun h0 ↦ hu (by rw [h0, map_zero])
-  -- The orthogonal complement of the negative spectral subspace is the nonnegative one, which
-  -- for an injective operator is the positive one.
+  -- For an injective operator, the orthogonal complement of the negative spectral subspace is the
+  -- positive one.
   have hmem : w ∈ Module.End.pointSpectralSubspace A.toLinearMap (Ioi 0) := by
-    have hw : w ∈ Wᗮ := W.sub_starProjection_mem_orthogonal _
-    rwa [hA.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
-      Module.End.pointSpectralSubspace_insert_zero
-        (ker_continuousLinearMapOfBilin_bilinearComp hh hq')] at hw
+    rw [← hA.orthogonal_pointSpectralSubspace_Iio_zero
+      (ker_continuousLinearMapOfBilin_bilinearComp hh hq')]
+    exact W.sub_starProjection_mem_orthogonal _
   simpa using hA.re_inner_apply_self_pos_of_mem_pointSpectralSubspace subset_rfl hmem hne
 
 /-- **Characterization of the negative spectral projection.** For a symmetric nondegenerate form
@@ -240,7 +253,7 @@ theorem eq_negativeSpectralProjection_iff (hh : IsStrictlyPositive h♯)
   set R := CFC.sqrt h♯
   set A := (q.bilinearComp T T)♯
   set W := Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)
-  have hA := isSymmetric_continuousLinearMapOfBilin_bilinearComp (h := h) hq
+  have hA := isSymmetric_continuousLinearMapOfBilin (B := q.bilinearComp T T) fun u v ↦ hq _ _
   have hTR (x : E) : T (R x) = x := metricChangeTransport_apply_sqrt_apply hh x
   have hRT (x : E) : R (T x) = x := sqrt_apply_metricChangeTransport_apply hh x
   have hT0 {x : E} (hx : T x = 0) : x = 0 := by rw [← hRT x, hx, map_zero]
@@ -257,73 +270,39 @@ theorem eq_negativeSpectralProjection_iff (hh : IsStrictlyPositive h♯)
   have hinnerA (x y : E) : ⟪A (p' x), y - p' y⟫_ℝ = 0 := by
     rw [inner_continuousLinearMapOfBilin_bilinearComp_apply, map_sub, hTp', hTp']
     exact hpq _ _
-  have hrange (x : E) : p' (A (p' x)) = A (p' x) := by
-    have h0 : ⟪A (p' x) - p' (A (p' x)), A (p' x) - p' (A (p' x))⟫_ℝ = 0 := by
-      rw [inner_sub_left, hinnerA, hinner, sub_zero]
-    exact (sub_eq_zero.mp (inner_self_eq_zero.mp h0)).symm
-  have hker (k : E) (hk : p' k = 0) : p' (A k) = 0 := by
-    have h1 := hinner (A k) (A k)
-    rw [inner_sub_right, sub_eq_zero] at h1
-    have h2 : ⟪p' (A k), A k⟫_ℝ = 0 := by
-      have := hA (p' (A k)) k
-      simp only [coe_coe] at this
-      rw [← this, ← sub_zero k, ← hk, hinnerA]
-    exact inner_self_eq_zero.mp (h1.symm.trans h2)
-  have hcomm : Commute (A : E →ₗ[ℝ] E) (p' : E →ₗ[ℝ] E) := by
-    refine LinearMap.ext fun x ↦ ?_
-    have h0 := hker (x - p' x) (by rw [map_sub, hp'idem, sub_self])
-    rw [map_sub, map_sub, sub_eq_zero] at h0
-    simp only [mul_apply_eq_comp, coe_coe]
-    rw [h0, hrange]
-  -- `p'` is the identity on `W`: it preserves `W`, and `q` is negative definite on `W` and
-  -- positive definite on the kernel of `p'`.
-  have hW (w : E) (hw : w ∈ W) : p' w = w := by
-    have hpw : p' w ∈ W := Module.End.map_pointSpectralSubspace_le_of_commute hcomm ⟨w, hw, rfl⟩
-    by_contra hne
-    have hd : w - p' w ≠ 0 := sub_ne_zero.mpr (Ne.symm hne)
-    have hlt := hA.re_inner_apply_self_lt_zero_of_mem_pointSpectralSubspace subset_rfl
-      (W.sub_mem hw hpw) hd
-    have hpd : p' (w - p' w) = 0 := by rw [map_sub, hp'idem, sub_self]
-    have hTd : T (w - p' w) - p (T (w - p' w)) = T (w - p' w) := by
-      rw [← hTp', hpd, map_zero, sub_zero]
-    have hgt := hpos (T (w - p' w)) (by rw [hTd]; exact fun h0 ↦ hd (hT0 h0))
-    rw [hTd, ← inner_continuousLinearMapOfBilin_bilinearComp_apply] at hgt
-    simp only [coe_coe, RCLike.re_to_real] at hlt
-    linarith
-  -- `p'` vanishes on the orthogonal complement of `W`, the positive spectral subspace.
-  have hWperp (w : E) (hw : w ∈ Wᗮ) : p' w = 0 := by
-    rw [hA.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
-      Module.End.pointSpectralSubspace_insert_zero
-        (ker_continuousLinearMapOfBilin_bilinearComp hh hq')] at hw
-    have hpw := Module.End.map_pointSpectralSubspace_le_of_commute hcomm ⟨w, hw, rfl⟩
-    by_contra hne
-    have hgt := hA.re_inner_apply_self_pos_of_mem_pointSpectralSubspace subset_rfl hpw hne
-    have hTp : p (T (p' w)) = T (p' w) := by rw [← hTp', hp'idem]
-    have hlt := hneg (T (p' w)) (by rw [hTp]; exact fun h0 ↦ hne (hT0 h0))
-    rw [hTp, ← inner_continuousLinearMapOfBilin_bilinearComp_apply] at hlt
-    simp only [coe_coe, RCLike.re_to_real] at hgt
-    linarith
-  -- Hence `p'` is the orthogonal projection onto `W`, and `p` is its conjugate by `T`.
+  have hcomm : Commute (A : E →ₗ[ℝ] E) (p' : E →ₗ[ℝ] E) :=
+    (hA.commute_of_isIdempotentElem (LinearMap.ext hp'idem) hinner hinnerA).symm
+  -- Through `T`, `q` is negative definite on the range of `p'` and positive definite on its
+  -- kernel, so `p'` is the orthogonal projection onto `W`.
+  have hp'W := hA.eq_starProjection_pointSpectralSubspace_Iio_zero
+    (ker_continuousLinearMapOfBilin_bilinearComp hh hq') (LinearMap.ext hp'idem) hcomm
+    (fun x hx ↦ by
+      simp only [coe_coe] at hx ⊢
+      have := hneg (T x) (by rw [← hTp']; exact fun h0 ↦ hx (hT0 h0))
+      rwa [← hTp', ← inner_continuousLinearMapOfBilin_bilinearComp_apply] at this)
+    (fun x hx hx0 ↦ by
+      simp only [coe_coe] at hx
+      have hTx : T x - p (T x) = T x := by rw [← hTp', hx, map_zero, sub_zero]
+      have := hpos (T x) (by rw [hTx]; exact fun h0 ↦ hx0 (hT0 h0))
+      rwa [hTx, ← inner_continuousLinearMapOfBilin_bilinearComp_apply] at this)
+  -- Hence `p` is the conjugate by `T` of the orthogonal projection onto `W`.
   ext u
-  have hsplit : p' (R u) = W.starProjection (R u) := by
-    conv_lhs => rw [← add_sub_cancel (W.starProjection (R u)) (R u)]
-    rw [map_add, hW _ (W.starProjection_apply_mem _),
-      hWperp _ (W.sub_starProjection_mem_orthogonal _), add_zero]
+  have hsplit : p' (R u) = W.starProjection (R u) := LinearMap.congr_fun hp'W (R u)
   simp only [negativeSpectralProjection, mul_apply_eq_comp]
   rw [← hsplit, hTp', hTR]
 
 /-- The range and the kernel of the negative spectral projection are complementary, with `q`
 negative definite on the range and positive semidefinite on the kernel. -/
 private theorem isCompl_range_ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
-    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
+    (hq : ∀ u v, q u v = q v u) :
     IsCompl ((q.negativeSpectralProjection h).range)
         ((q.negativeSpectralProjection h).ker) ∧
       (∀ x ∈ (q.negativeSpectralProjection h).range, x ≠ 0 → q x x < 0) ∧
-      ∀ x ∈ (q.negativeSpectralProjection h).ker, x ≠ 0 → 0 < q x x := by
+      ∀ x ∈ (q.negativeSpectralProjection h).ker, 0 ≤ q x x := by
   have hP := isIdempotentElem_negativeSpectralProjection (q := q) hh
   have hP' : IsIdempotentElem (q.negativeSpectralProjection h : E →ₗ[ℝ] E) :=
     congr(($hP : E →ₗ[ℝ] E))
-  refine ⟨LinearMap.IsIdempotentElem.isCompl hP', fun x hx hx0 ↦ ?_, fun x hx hx0 ↦ ?_⟩
+  refine ⟨LinearMap.IsIdempotentElem.isCompl hP', fun x hx hx0 ↦ ?_, fun x hx ↦ ?_⟩
   · have hxP : q.negativeSpectralProjection h x = x :=
       (LinearMap.IsIdempotentElem.mem_range_iff hP').mp hx
     rw [← hxP] at hx0 ⊢
@@ -331,22 +310,19 @@ private theorem isCompl_range_ker_negativeSpectralProjection (hh : IsStrictlyPos
   · have hx' : q.negativeSpectralProjection h x = 0 := hx
     have hxP : x - q.negativeSpectralProjection h x = x := by
       rw [hx', sub_zero]
-    rw [← hxP] at hx0 ⊢
-    exact apply_sub_negativeSpectralProjection_apply_self_pos hh hq hq' hx0
+    rw [← hxP]
+    exact apply_sub_negativeSpectralProjection_apply_self_nonneg hh hq x
 
 /-- **The rank of the negative spectral projection is the negative index of inertia of `q`.** -/
 theorem finrank_range_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
-    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
+    (hq : ∀ u v, q u v = q v u) :
     Module.finrank ℝ ((q.negativeSpectralProjection h).range) =
       sigNeg q.toBilinForm.toQuadraticMap := by
-  obtain ⟨hcompl, hneg, hpos⟩ := isCompl_range_ker_negativeSpectralProjection hh hq hq'
+  obtain ⟨hcompl, hneg, hpos⟩ := isCompl_range_ker_negativeSpectralProjection hh hq
   refine (QuadraticForm.sigNeg_eq_finrank_of_isCompl_of_negDef _ hcompl
-    (fun x hx0 ↦ ?_) fun x hx ↦ ?_).symm
-  · have := hneg x x.2 (by simpa using hx0)
-    simpa [QuadraticMap.restrict_apply] using this
-  · by_cases hx0 : x = 0
-    · simp [hx0]
-    · simpa using (hpos x hx hx0).le
+    (fun x hx0 ↦ ?_) fun x hx ↦ by simpa using hpos x hx).symm
+  have := hneg x x.2 (by simpa using hx0)
+  simpa [QuadraticMap.restrict_apply] using this
 
 /-- **The nullity of the negative spectral projection is the positive index of inertia of a
 nondegenerate `q`.** -/
@@ -354,10 +330,15 @@ theorem finrank_ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
     (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
     Module.finrank ℝ ((q.negativeSpectralProjection h).ker) =
       sigPos q.toBilinForm.toQuadraticMap := by
-  obtain ⟨hcompl, hneg, hpos⟩ := isCompl_range_ker_negativeSpectralProjection hh hq hq'
+  obtain ⟨hcompl, hneg, -⟩ := isCompl_range_ker_negativeSpectralProjection hh hq
   refine (QuadraticForm.sigPos_eq_finrank_of_isCompl_of_posDef _ hcompl.symm
     (fun x hx0 ↦ ?_) fun x hx ↦ ?_).symm
-  · have := hpos x x.2 (by simpa using hx0)
+  · -- A vector `x` of the kernel is its own complement `x - P x`.
+    have hxP : (x : E) - q.negativeSpectralProjection h x = x := by
+      rw [show q.negativeSpectralProjection h x = 0 from x.2, sub_zero]
+    have := apply_sub_negativeSpectralProjection_apply_self_pos hh hq hq' (u := x)
+      (by rw [hxP]; simpa using hx0)
+    rw [hxP] at this
     simpa [QuadraticMap.restrict_apply] using this
   · by_cases hx0 : x = 0
     · simp [hx0]
@@ -382,19 +363,14 @@ theorem contDiffOn_negativeSpectralProjection {n : ℕ∞ω} :
     contDiff_snd.contDiffOn.sqrt_continuousLinearMapOfBilin fun p hp ↦ hp.2.2
   -- The Riesz operator of the pulled-back form is smooth in the pair.
   have hA : ContDiffOn ℝ n (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
-      (p.1.bilinearComp p.2.metricChangeTransport p.2.metricChangeTransport)♯) U := by
-    have h := (contDiff_precomp_comp (𝕜 := ℝ) (G := ℝ)).comp_contDiffOn
-      (contDiff_fst.contDiffOn.prodMk hT)
-    refine (contDiff_continuousLinearMapOfBilin.comp_contDiffOn h).congr fun p _ ↦ ?_
-    congr 1
+      (p.1.bilinearComp p.2.metricChangeTransport p.2.metricChangeTransport)♯) U :=
+    contDiff_continuousLinearMapOfBilin.comp_contDiffOn
+      (contDiff_fst.contDiffOn.clm_bilinearComp hT hT)
   have hP := hA.starProjection_pointSpectralSubspace_Iio_zero
     (fun p hp ↦ isSelfAdjoint_iff_isSymmetric.mpr
-      (isSymmetric_continuousLinearMapOfBilin_bilinearComp hp.1))
-    (fun p hp ↦ isUnit_iff_bijective.mpr <|
-      (LinearMap.injective_iff_surjective (f := (_ : E →ₗ[ℝ] E))).mp
-        (LinearMap.ker_eq_bot.mp (ker_continuousLinearMapOfBilin_bilinearComp hp.2.2 hp.2.1)) |>
-        fun hsurj ↦ ⟨LinearMap.ker_eq_bot.mp
-          (ker_continuousLinearMapOfBilin_bilinearComp hp.2.2 hp.2.1), hsurj⟩)
+      (isSymmetric_continuousLinearMapOfBilin fun u v ↦ hp.1 _ _))
+    (fun p hp ↦ isUnit_iff_isUnit_toLinearMap.mpr ((LinearMap.isUnit_iff_ker_eq_bot _).mpr
+      (ker_continuousLinearMapOfBilin_bilinearComp hp.2.2 hp.2.1)))
   exact (hT.mul hP).mul hS
 
 /-- **A smooth family of nondegenerate forms and positive definite metrics has a smooth family
