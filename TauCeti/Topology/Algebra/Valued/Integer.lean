@@ -26,11 +26,17 @@ fraction field of `𝒪[K]`; hence it is continuous and carries bounded sets to 
 norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the maximal ideal
 `𝓂[K]` is not finitely generated.
 
+A ring homomorphism `φ : K → L` of nonarchimedean fields with `‖φ x‖ ≤ ‖x‖` maps `𝒪[K]` into
+`𝒪[L]`, and the restriction is local, so it induces a homomorphism of residue fields. Such maps
+are the coefficient maps along which reductions modulo the maximal ideal are functorial.
+
 ## Main results
 
 * `Valued.instIsLinearTopologyInteger`: the integer ring of a valued ring has a linear topology.
 * `Valued.instCompleteSpaceInteger`: the integer ring of a complete valued ring is complete.
 * `Valued.integer.mem_maximalIdeal_iff`: the maximal ideal of `𝒪[K]` is the open unit ball.
+* `Valued.integer.residue_eq_residue_iff_norm_sub_lt_one`: elements of `𝒪[K]` have the same
+  residue exactly when their difference has norm less than `1`.
 * `Valued.integer.exists_mem_maximalIdeal_coe_ne_zero`: the maximal ideal of `𝒪[K]` contains a
   nonzero element.
 * `Valued.integer.smul_def`: on a `K`-module, `𝒪[K]` acts through the inclusion `𝒪[K] → K`.
@@ -39,6 +45,9 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
   of norm at most that of one of its elements.
 * `Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal`: every `𝒪[K]`-linear map
   `𝓂[K] → K` is multiplication by an element of `K`.
+* `RingHom.integerRestrict`: a norm-nonincreasing homomorphism of nonarchimedean fields restricts
+  to a local homomorphism `𝒪[K] →+* 𝒪[L]` of valuation rings
+  (`RingHom.isLocalHom_integerRestrict`), hence induces a map of residue fields.
 * `Valued.integer.exists_seq_mem_maximalIdeal`: for a densely normed field, `𝓂[K]` contains a
   sequence of nonzero elements of increasing norm which is cofinal for the norm.
 * `LinearMap.continuous_of_integer`: an `𝒪[K]`-linear map from `ι → K`, `ι` finite, to a normed
@@ -90,6 +99,20 @@ theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
   rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
     (Valued.integer.norm_le_one x).lt_iff_ne]
+
+/-- An element of the valuation ring of a nonarchimedean field has residue zero exactly when its
+norm is less than `1`. -/
+theorem Valued.integer.residue_eq_zero_iff_norm_lt_one {x : Valued.integer K} :
+    residue (Valued.integer K) x = 0 ↔ ‖(x : K)‖ < 1 := by
+  rw [IsLocalRing.residue_eq_zero_iff, Valued.integer.mem_maximalIdeal_iff,
+    AddSubgroupClass.coe_norm]
+
+/-- Two elements of the valuation ring of a nonarchimedean field have the same residue exactly
+when their difference has norm less than `1`. -/
+theorem Valued.integer.residue_eq_residue_iff_norm_sub_lt_one {x y : Valued.integer K} :
+    residue (Valued.integer K) x = residue (Valued.integer K) y ↔ ‖(x : K) - y‖ < 1 := by
+  rw [← sub_eq_zero, ← map_sub, Valued.integer.residue_eq_zero_iff_norm_lt_one,
+    AddSubgroupClass.coe_sub]
 
 /-- The maximal ideal of the valuation ring of a nontrivially normed nonarchimedean field
 contains a nonzero element. -/
@@ -167,6 +190,32 @@ theorem LinearEquiv.isBounded_image_iff_of_integer [Finite ι] {ι' : Type*} [Fi
   · simpa using e.toLinearMap.isBounded_image_of_integer (F := ι' → K) h
 
 end Integer
+
+section IntegerRestrict
+
+variable {K L : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+  [NontriviallyNormedField L] [IsUltrametricDist L] (φ : K →+* L) (hφ : ∀ x, ‖φ x‖ ≤ ‖x‖)
+
+/-- A ring homomorphism of nonarchimedean fields that does not increase norms maps the valuation
+ring `𝒪[K]` into `𝒪[L]`; this is its restriction `𝒪[K] →+* 𝒪[L]`. -/
+noncomputable def RingHom.integerRestrict : Valued.integer K →+* Valued.integer L :=
+  φ.restrict _ _ fun x hx ↦ Valued.integer.mem_iff.2 ((hφ x).trans (Valued.integer.mem_iff.1 hx))
+
+/-- `RingHom.integerRestrict` acts as `φ` on the underlying elements. -/
+@[simp]
+theorem RingHom.coe_integerRestrict_apply (x : Valued.integer K) :
+    (φ.integerRestrict hφ x : L) = φ x := (rfl)
+
+/-- The restriction of a norm-nonincreasing homomorphism of nonarchimedean fields to their
+valuation rings is a local homomorphism: an element of `𝒪[K]` whose image has norm one has norm
+one. It therefore induces the homomorphism of residue fields
+`IsLocalRing.ResidueField.map (φ.integerRestrict hφ) : 𝓀[K] →+* 𝓀[L]`. -/
+instance RingHom.isLocalHom_integerRestrict : IsLocalHom (φ.integerRestrict hφ) where
+  map_nonunit x hx := by
+    rw [Valued.integer.isUnit_iff_norm_eq_one] at hx ⊢
+    exact le_antisymm (Valued.integer.norm_le_one x) (hx.symm.le.trans (hφ x))
+
+end IntegerRestrict
 
 section DenselyNormed
 
