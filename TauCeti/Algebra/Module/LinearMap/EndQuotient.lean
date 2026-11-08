@@ -42,7 +42,7 @@ the reduction map over an `(r)`-adically complete base, without requiring the ke
 * `Ideal.range_pow_le_of_mem_ker_endMapQ` and `Ideal.isNilpotent_of_mem_ker_endMapQ`: an
   endomorphism killed by reduction has `k`-th power with image inside `I ^ k • M`, hence is
   nilpotent as soon as `I` is.
-* `Ideal.exists_isIdempotentElem_mk_eq`: for a projective module and a nilpotent ideal, every
+* `Ideal.exists_isIdempotentElem_endMapQ_eq`: for a projective module and a nilpotent ideal, every
   idempotent endomorphism of `M ⧸ I • M` is the reduction of an idempotent endomorphism of `M`.
 -/
 
@@ -125,19 +125,15 @@ theorem isNilpotent_of_mem_ker_endMapQ (hI : IsNilpotent I) {f : Module.End R M}
   simpa [hm] using range_pow_le_of_mem_ker_endMapQ I M hf m
 
 /-- **Idempotents lift along reduction modulo a nilpotent ideal.** For a projective module `N` and a
-nilpotent ideal `J`, every idempotent endomorphism of `N ⧸ J • N` is the reduction of an idempotent
-endomorphism of `N`: reduction `Ideal.endMapQ` is onto with nil kernel. -/
-theorem exists_isIdempotentElem_mk_eq {J : Ideal R} (hJ : IsNilpotent J) {N : Type v}
+nilpotent ideal `J`, every idempotent endomorphism of `N ⧸ J • N` is the reduction `Ideal.endMapQ`
+of an idempotent endomorphism of `N`: reduction is onto with nil kernel. -/
+theorem exists_isIdempotentElem_endMapQ_eq {J : Ideal R} (hJ : IsNilpotent J) {N : Type v}
     [AddCommGroup N] [Module R N] [Module.Projective R N]
     {ebar : Module.End R (N ⧸ J • (⊤ : Submodule R N))} (hebar : IsIdempotentElem ebar) :
-    ∃ e : Module.End R N, IsIdempotentElem e ∧
-      ∀ n : N, ebar (Submodule.Quotient.mk n) = Submodule.Quotient.mk (e n) := by
-  obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent (endMapQ J N)
+    ∃ e : Module.End R N, IsIdempotentElem e ∧ endMapQ J N e = ebar :=
+  exists_isIdempotentElem_eq_of_ker_isNilpotent (endMapQ J N)
     (fun _ hg => isNilpotent_of_mem_ker_endMapQ J N hJ hg) ebar
     (RingHom.mem_range.mpr (endMapQ_surjective J N ebar)) hebar
-  refine ⟨e, he, fun n ↦ ?_⟩
-  rw [← hee]
-  exact endMapQ_mk J N e n
 
 section Principal
 

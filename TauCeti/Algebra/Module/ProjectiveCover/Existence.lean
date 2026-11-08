@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Artinian.Module
-public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.RingTheory.Jacobson.Semiprimary
-import TauCeti.LinearAlgebra.Projection
+import TauCeti.RingTheory.SimpleModule.Basic
 
 /-!
 # Existence of projective covers over a semiprimary ring
@@ -105,8 +104,11 @@ theorem exists_isProjectiveCover_comp_subtype [IsSemiprimaryRing R] {N : Type w}
   have hss := isSemisimpleModule_quotient_jacobson_smul_top R N
   obtain ⟨ebar, hebar, hqe, hdisj⟩ := q.exists_isIdempotentElem_comp_eq_disjoint_ker
   -- Lift `ebar`: the reduction map is onto with nil kernel.
-  obtain ⟨e, he, hebar_mk⟩ :=
-    Ideal.exists_isIdempotentElem_mk_eq IsSemiprimaryRing.isNilpotent hebar
+  obtain ⟨e, he, hebar_eq⟩ :=
+    Ideal.exists_isIdempotentElem_endMapQ_eq IsSemiprimaryRing.isNilpotent hebar
+  have hebar_mk (n : N) : ebar (Submodule.Quotient.mk n) = Submodule.Quotient.mk (e n) := by
+    rw [← hebar_eq]
+    exact Ideal.endMapQ_mk _ N e n
   have hfix (x : N) (hx : x ∈ LinearMap.range e) : e x = x :=
     LinearMap.IsIdempotentElem.mem_range_iff he |>.mp hx
   -- Nakayama: the radical multiple of any module is superfluous in it.
