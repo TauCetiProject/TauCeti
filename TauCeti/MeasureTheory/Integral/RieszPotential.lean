@@ -309,12 +309,20 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
         ENNReal.ofReal_rpow_of_nonneg (by positivity) (by linarith),
         Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hω.le, hexp', inv_div]
 
-/-- For `0 < n`, the integral of the Riesz kernel `‖y - x‖ ^ (1 - n)` in `x` over a measurable set
-`A` is at most `n μ(B(0, 1)) ^ (1 - 1/n) μ(A) ^ (1/n)`, where `n` is the dimension. -/
+omit [Nontrivial E] in
+/-- The integral of the Riesz kernel `‖y - x‖ ^ (1 - n)` in `x` over a measurable set `A` is at
+most `n μ(B(0, 1)) ^ (1 - 1/n) μ(A) ^ (1/n)`, where `n` is the dimension. In dimension zero both
+sides vanish. -/
 theorem setLIntegral_enorm_sub_rpow_le_finrank {A : Set E} (hA : MeasurableSet A) (y : E) :
     ∫⁻ x in A, ‖y - x‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ ≤
       ENNReal.ofReal (finrank ℝ E * μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹)) *
         μ A ^ (finrank ℝ E : ℝ)⁻¹ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have h0 : (fun x : E => ‖y - x‖ₑ ^ (1 - (finrank ℝ E : ℝ))) = 0 := funext fun x => by
+      rw [Subsingleton.elim (y - x) 0, enorm_zero, ENNReal.zero_rpow_of_pos
+        (by simp [finrank_zero_of_subsingleton]), Pi.zero_apply]
+    rw [h0, lintegral_zero_fun]
+    exact bot_le
   have hn : (0 : ℝ) < finrank ℝ E := Nat.cast_pos.2 finrank_pos
   have h := setLIntegral_enorm_sub_rpow_le (μ := μ) (inv_pos.2 hn)
     (inv_le_one_of_one_le₀ (Nat.one_le_cast.2 finrank_pos)) hA y
