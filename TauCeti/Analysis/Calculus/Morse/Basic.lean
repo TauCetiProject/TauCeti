@@ -315,9 +315,9 @@ theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
   · simpa [hfun] using h.isInvertible
 
 /-- **Nondegenerate critical points pull back through a chart.** If `k` has nondegenerate critical
-points on the target of an open partial homeomorphism `Φ`, is `C²` there, and `Φ` is `C²` with
-invertible differential on its source, then every function that equals `k ∘ Φ + r` on the source
-has nondegenerate critical points on the source. -/
+points on the target of an open partial homeomorphism `Φ`, and `Φ` is `C²` with invertible
+differential on its source, then every function that equals `k ∘ Φ + r` on the source has
+nondegenerate critical points on the source. -/
 theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
     {Φ : OpenPartialHomeomorph F E} {k : E → ℝ} {h : F → ℝ} {r : ℝ}
     (hk : HasNondegenerateCriticalPointsOn k Φ.target)
