@@ -9,10 +9,9 @@ public import Mathlib.Analysis.LocallyConvex.Basic
 public import Mathlib.Topology.Homotopy.Affine
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Deformation
-public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
+public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.SubspaceCompl
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Analysis.Convex.Star
-public import TauCeti.LinearAlgebra.Submodule.LineExtension
 public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -50,13 +49,15 @@ in the weak sense (by a homotopy starting at the identity, ending in `A`, and ke
 then `H_*(E, p⁻¹(A); R) = 0`.
 
 The computation then removes one dimension at a time, along the extensions `W ⊆ W'` of
-`Submodule.LineExtension`: `W' = W ⊕ ℝv` with a functional `φ` that vanishes on `W` and is `1` at
-`v`. The part of `E` over `K ∖ W` is the union of the open parts over the complements in `K` of the
-two closed half-subspaces `{x ∈ W' | ±φ x ≤ 0}`, which intersect in the part over `K ∖ W'`. Each of
-these complements is star-convex about a small positive multiple of `±v`, so `K` deforms into it
-along straight lines (`ContinuousMap.Homotopy.affine`), and `E` modulo the part over it is
-acyclic. The relative Mayer–Vietoris sequence (`TopCat.relativeMayerVietorisδ`) then gives
-`Hₙ₊₁(E, p⁻¹(K ∖ W)) ≅ Hₙ(E, p⁻¹(K ∖ W'))`. After `r` steps from `W = 0` the subspace is all of
+`Submodule.LineExtension`: `W' = W ⊕ ℝv` with a functional `φ` on `W'` whose kernel is `W` and
+which is `1` at `v`. The part of `E` over `K ∖ W` is the union of the open parts over the
+complements in `K` of the two closed half-subspaces `{x ∈ W' | ±φ x ≤ 0}`, which intersect in the
+part over `K ∖ W'`. Each of these complements is star-convex about a small positive multiple of
+`±v`, so `K` deforms into it along straight lines (`ContinuousMap.Homotopy.affine`), and `E`
+modulo the part over it is acyclic. The relative Mayer–Vietoris sequence then gives
+`Hₙ₊₁(E, p⁻¹(K ∖ W)) ≅ Hₙ(E, p⁻¹(K ∖ W'))`; this chain of steps is the general computation
+`TauCeti.subspaceComplPairSingularHomologyIso`, applied to the composite `E → K → V`. After `r`
+steps from `W = 0` the subspace is all of
 `V`, the part of `E` over `K ∖ V` is empty, and `Hₙ(E) ≅ Hₙ(F)` because `K` contracts onto `0`
 along straight lines. Over the closed unit ball, the radial deformation
 `StarConvex.radialHomotopy` of the punctured ball onto the sphere passes from `K ∖ {0}` to
@@ -115,23 +116,14 @@ private lemma isZero_of_starConvex (hp : serreFibrations p) (hK : Convex ℝ K) 
       rw [add_comm]
       exact hS hx t.2.1 (sub_nonneg.2 t.2.2) (add_sub_cancel _ _)) R m
 
-/-- The part of `K` off a subspace `W`. -/
-private abbrev cpl (W : Submodule ℝ V) : Set (_root_.TopCat.of K) :=
-  {x | (x : V) ∈ (W : Set V)ᶜ}
-
-/-- The complement in `K` of the closed half-subspace `{x ∈ W | φ x ≤ 0}`. -/
-private abbrev half (W : Submodule ℝ V) (φ : V →ₗ[ℝ] ℝ) : Set (_root_.TopCat.of K) :=
-  {x | (x : V) ∈ {y | y ∈ W ∧ φ y ≤ 0}ᶜ}
-
-private lemma isOpen_half [FiniteDimensional ℝ V] (W : Submodule ℝ V) (φ : V →ₗ[ℝ] ℝ) :
-    IsOpen (p ⁻¹' half (K := K) W φ) :=
-  (((W.closed_of_finiteDimensional.inter (isClosed_le φ.continuous_of_finiteDimensional
-    continuous_const)).isOpen_compl).preimage continuous_subtype_val).preimage p.hom.continuous
+/-- The composite `E → K → V` of the fibration with the inclusion of the base. -/
+private abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
+  ⟨fun e ↦ (p e : V), continuous_subtype_val.comp p.hom.continuous⟩
 
 /-- The part of `E` over the complement of a closed half-subspace is acyclic. -/
 private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
-    {W : Submodule ℝ V} {φ : V →ₗ[ℝ] ℝ} {v : V} (hv : v ∈ W) (hφv : φ v = 1) (m : ℕ) :
-    IsZero ((TopPair.ofSubset (p ⁻¹' half (K := K) W φ)).singularHomology
+    (W : Submodule ℝ V) (φ : V →ₗ[ℝ] ℝ) (v : V) (hv : v ∈ W) (hφv : φ v = 1) (m : ℕ) :
+    IsZero ((TopPair.ofSubset (proj p ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularHomology
       (ModuleCat.of R R) m) := by
   -- A neighbourhood of `0` is absorbent, so it contains a positive multiple of `v`.
   have hev : ∀ᶠ t in 𝓝[>] (0 : ℝ), t • v ∈ K :=
@@ -139,106 +131,15 @@ private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : 
       (nhdsWithin_mono _ fun _ h ↦ ne_of_gt h)
   obtain ⟨t, htK, ht : 0 < t⟩ := (hev.and self_mem_nhdsWithin).exists
   have htv : 0 < φ (t • v) := by simpa [hφv] using ht
+  -- The preimage under `E → K → V` of a set `S` is the part of `E` over `K ∩ S` by definition.
   exact isZero_of_starConvex R hp hK htK
     (starConvex_compl_setOf_mem_and_nonpos (W.smul_mem t hv) htv)
     (fun h ↦ (not_le.2 htv) h.2) m
 
 /-- The pair `(E, p⁻¹(K ∖ W))`. -/
 private abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
-  TopPair.ofSubset (p ⁻¹' cpl W)
+  subspaceComplPair (proj p) W
 
-variable {W : Submodule ℝ V}
-
-/-- The part of `E` over `K ∖ W` is the union of the parts over the two half-subspace complements
-of a step. -/
-private def unionIso (p : E ⟶ _root_.TopCat.of K) (s : W.LineExtension) :
-    pair p W ≅ TopPair.ofSubset (p ⁻¹' half s.W' s.φ ∪ p ⁻¹' half s.W' (-s.φ)) :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun _ ↦ (Set.ext_iff.1 s.compl_union_compl _).symm
-
-/-- The part of `E` over the intersection of the two half-subspace complements of a step is the
-part over `K ∖ W'`. -/
-private def interIso (p : E ⟶ _root_.TopCat.of K) (s : W.LineExtension) :
-    TopPair.ofSubset (p ⁻¹' half s.W' s.φ ∩ p ⁻¹' half s.W' (-s.φ)) ≅ pair p s.W' :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun _ ↦ Set.ext_iff.1 s.compl_inter_compl _
-
-private lemma isZero_biprod (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
-    (s : W.LineExtension) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (p ⁻¹' half s.W' s.φ)).singularHomology (ModuleCat.of R R) n ⊞
-      (TopPair.ofSubset (p ⁻¹' half s.W' (-s.φ))).singularHomology (ModuleCat.of R R) n) :=
-  biprod_isZero_iff _ _ |>.2 ⟨isZero_half R hp hK hK₀ s.v_mem s.apply_v n,
-    isZero_half R hp hK hK₀ (neg_mem s.v_mem) (by simp [s.apply_v]) n⟩
-
-variable [FiniteDimensional ℝ V]
-
-private lemma isIso_relativeMayerVietorisδ (hp : serreFibrations p) (hK : Convex ℝ K)
-    (hK₀ : K ∈ 𝓝 (0 : V)) (s : W.LineExtension) (n : ℕ) :
-    IsIso (TopCat.relativeMayerVietorisδ (ModuleCat.of R R) (isOpen_half (p := p) s.W' s.φ)
-      (isOpen_half (p := p) s.W' (-s.φ)) (n + 1) n rfl) := by
-  have := (TopCat.relativeMayerVietoris_exact₃ (ModuleCat.of R R) (isOpen_half (p := p) s.W' s.φ)
-    (isOpen_half (p := p) s.W' (-s.φ)) (n + 1) n rfl).mono_g
-      ((isZero_biprod R hp hK hK₀ s _).eq_of_src _ _)
-  have := (TopCat.relativeMayerVietoris_exact₁ (ModuleCat.of R R) (isOpen_half (p := p) s.W' s.φ)
-    (isOpen_half (p := p) s.W' (-s.φ)) (n + 1) n rfl).epi_f
-      ((isZero_biprod R hp hK hK₀ s _).eq_of_tgt _ _)
-  exact isIso_of_mono_of_epi _
-
-/-- One step of the computation: `Hₙ₊₁(E, p⁻¹(K ∖ W)) ≅ Hₙ(E, p⁻¹(K ∖ W'))`. -/
-private def stepIso (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
-    (s : W.LineExtension) (n : ℕ) :
-    (pair p W).singularHomology (ModuleCat.of R R) (n + 1) ≅
-      (pair p s.W').singularHomology (ModuleCat.of R R) n :=
-  haveI := isIso_relativeMayerVietorisδ R hp hK hK₀ s n
-  asIso (TopPair.singularHomologyMap (unionIso p s).hom (ModuleCat.of R R) (n + 1)) ≪≫
-    asIso (TopCat.relativeMayerVietorisδ (ModuleCat.of R R) (isOpen_half (p := p) s.W' s.φ)
-      (isOpen_half (p := p) s.W' (-s.φ)) (n + 1) n rfl) ≪≫
-    asIso (TopPair.singularHomologyMap (interIso p s).hom (ModuleCat.of R R) n)
-
-private lemma isZero_singularHomology_zero (hp : serreFibrations p) (hK : Convex ℝ K)
-    (hK₀ : K ∈ 𝓝 (0 : V)) (s : W.LineExtension) :
-    IsZero ((pair p W).singularHomology (ModuleCat.of R R) 0) := by
-  have := TopCat.epi_relativeMayerVietorisFromBiprod_zero (ModuleCat.of R R)
-    (isOpen_half (p := p) s.W' s.φ) (isOpen_half (p := p) s.W' (-s.φ))
-  exact ((isZero_biprod R hp hK hK₀ s 0).of_epi
-    (TopCat.relativeMayerVietorisFromBiprod (ModuleCat.of R R) _ _ 0)).of_iso
-      (asIso (TopPair.singularHomologyMap (unionIso p s).hom (ModuleCat.of R R) 0))
-
-/-- `Hₙ(E, p⁻¹(K ∖ W)) = 0` below the codimension of `W`. -/
-private lemma isZero_singularHomology_pair_of_lt (hp : serreFibrations p) (hK : Convex ℝ K)
-    (hK₀ : K ∈ 𝓝 (0 : V)) :
-    ∀ (n : ℕ) (W : Submodule ℝ V), n + finrank ℝ W < finrank ℝ V →
-      IsZero ((pair p W).singularHomology (ModuleCat.of R R) n)
-  | 0, W, h => isZero_singularHomology_zero R hp hK hK₀
-      (W.lineExtension (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne)
-  | n + 1, W, h =>
-    let s := W.lineExtension (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne
-    (isZero_singularHomology_pair_of_lt hp hK hK₀ n s.W' (by rw [s.finrank_eq]; omega)).of_iso
-      (stepIso R hp hK hK₀ s n)
-
-/-- The identification of `(E, p⁻¹(K ∖ W))` with `(E, p⁻¹(K ∖ V))` for `W` of full dimension. -/
-private def topIso (p : E ⟶ _root_.TopCat.of K) (hW : finrank ℝ W = finrank ℝ V) :
-    pair p W ≅ pair p (⊤ : Submodule ℝ V) :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun e ↦ by
-    rw [Submodule.eq_top_of_finrank_eq hW]
-    rfl
-
-/-- `Hₘ(E, p⁻¹(K ∖ W)) ≅ Hₙ(E, p⁻¹(K ∖ V))` for `m = n + c`, with `c` the codimension of `W`, by
-`c` successive steps. -/
-private def chainIso (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) :
-    ∀ (c : ℕ) (W : Submodule ℝ V), finrank ℝ W + c = finrank ℝ V → ∀ (n m : ℕ), n + c = m →
-      ((pair p W).singularHomology (ModuleCat.of R R) m ≅
-        (pair p (⊤ : Submodule ℝ V)).singularHomology (ModuleCat.of R R) n)
-  | 0, _, hW, n, _, rfl =>
-    asIso (TopPair.singularHomologyMap (topIso p hW).hom (ModuleCat.of R R) n)
-  | c + 1, W, hW, n, _, rfl =>
-    let s := W.lineExtension (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne
-    stepIso R hp hK hK₀ s (n + c) ≪≫
-      chainIso hp hK hK₀ c s.W' (by rw [s.finrank_eq]; omega) n (n + c) rfl
-
-omit [FiniteDimensional ℝ V] in
-private instance (p : E ⟶ _root_.TopCat.of K) : IsEmpty (pair p (⊤ : Submodule ℝ V)).snd :=
-  ⟨fun e ↦ e.2 Submodule.mem_top⟩
-
-omit [FiniteDimensional ℝ V] in
 /-- `Hₙ(E, ∅) ≅ Hₙ(F)`: the base contracts onto `0` along straight lines, so the inclusion of the
 fibre over `0` is a homology isomorphism. -/
 private def emptyIso (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : (0 : V) ∈ K) (n : ℕ) :
@@ -252,7 +153,6 @@ private def emptyIso (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : (0 : V
       (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map)
       (ModuleCat.of R R) n)).symm
 
-omit [FiniteDimensional ℝ V] in
 /-- The identification of `(E, p⁻¹(K ∖ {0}))` with `(E, p⁻¹(K ∖ ⊥))`. -/
 private def botIso (p : E ⟶ _root_.TopCat.of K) :
     TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ≠ 0}) ≅ pair p (⊥ : Submodule ℝ V) :=
@@ -274,7 +174,8 @@ theorem isZero_singularHomology_preimage_ne_zero (hp : serreFibrations p) (hK : 
     (hK₀ : K ∈ 𝓝 (0 : V)) {m : ℕ} (hm : m < finrank ℝ V) :
     IsZero ((TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ≠ 0})).singularHomology
       (ModuleCat.of R R) m) :=
-  (isZero_singularHomology_pair_of_lt R hp hK hK₀ m ⊥ (by simpa using hm)).of_iso
+  (isZero_singularHomology_subspaceComplPair (ModuleCat.of R R) (proj p)
+    (isZero_half R hp hK hK₀) m ⊥ (by simpa using hm)).of_iso
     (asIso (TopPair.singularHomologyMap (botIso p).hom (ModuleCat.of R R) m))
 
 /-- **The homology of a Serre fibration over a convex neighbourhood of `0`, modulo the part over
@@ -291,7 +192,8 @@ def singularHomologyPreimageNeZeroIso (hp : serreFibrations p) (hK : Convex ℝ 
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0})) :=
   asIso (TopPair.singularHomologyMap (botIso p).hom (ModuleCat.of R R) m) ≪≫
-    chainIso R hp hK hK₀ (finrank ℝ V) ⊥ (by simp) n m h ≪≫
+    subspaceComplPairSingularHomologyIso (ModuleCat.of R R) (proj p) (isZero_half R hp hK hK₀)
+      (finrank ℝ V) ⊥ (by simp) n m h ≪≫
     emptyIso R hp hK (mem_of_mem_nhds hK₀) n
 
 section Sphere

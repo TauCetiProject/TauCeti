@@ -13,13 +13,14 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 # Extending a subspace by a line
 
 For a subspace `W` of a real vector space `F`, a `Submodule.LineExtension W` is a subspace
-`W' = W ⊕ ℝv` of one more dimension, together with a functional `φ` cutting out `W` inside `W'`
-and normalised by `φ v = 1`. Every proper subspace of a finite-dimensional space admits one
-(`Submodule.nonempty_lineExtension`); `Submodule.lineExtension` is a chosen one.
+`W' = W ⊕ ℝv` of one more dimension, together with a functional `φ` on `W'` whose kernel is `W`
+and a vector `v ∈ W'` with `φ v = 1`. Every proper subspace of a finite-dimensional space admits
+one (`Submodule.nonempty_lineExtension`); `Submodule.lineExtension` is a chosen one.
 
-The complements of the two closed half-subspaces `{x ∈ W' | φ x ≤ 0}` and `{x ∈ W' | 0 ≤ φ x}`
-cover the complement of `W` (`Submodule.LineExtension.compl_union_compl`) and intersect in the
-complement of `W'` (`Submodule.LineExtension.compl_inter_compl`). Each of them is star-convex,
+For any extension `ψ` of `φ` to `F` (`LinearMap.exists_extend`), the complements of the two closed
+half-subspaces `{x ∈ W' | ψ x ≤ 0}` and `{x ∈ W' | 0 ≤ ψ x}`, which do not depend on the choice of
+`ψ`, cover the complement of `W` (`Submodule.LineExtension.compl_union_compl`) and intersect in
+the complement of `W'` (`Submodule.LineExtension.compl_inter_compl`). Each of them is star-convex,
 about `v` and `-v` respectively (`TauCeti.starConvex_compl_setOf_mem_and_nonpos`), which is what
 lets a Mayer–Vietoris argument remove one dimension of `W'` at a time in relative homology
 computations modulo the complement of a subspace.
@@ -34,20 +35,18 @@ namespace Submodule
 variable {F : Type*} [AddCommGroup F] [Module ℝ F]
 
 /-- An extension of a subspace `W` by a line: a subspace `W'` containing `W` with one more
-dimension, together with a functional `φ` cutting out `W` in `W'` and a vector `v ∈ W'` with
+dimension, together with a functional `φ` on `W'` whose kernel is `W` and a vector `v ∈ W'` with
 `φ v = 1`. -/
 structure LineExtension (W : Submodule ℝ F) where
   /-- The larger subspace. -/
   W' : Submodule ℝ F
-  /-- The functional cutting out `W` inside `W'`. -/
-  φ : F →ₗ[ℝ] ℝ
+  /-- The functional on `W'` cutting out `W`. -/
+  φ : W' →ₗ[ℝ] ℝ
   /-- The vector of `W'` on which `φ` is one. -/
-  v : F
-  v_mem : v ∈ W'
+  v : W'
   apply_v : φ v = 1
   le : W ≤ W'
-  apply_eq_zero : ∀ x ∈ W, φ x = 0
-  mem_of_apply_eq_zero : ∀ x ∈ W', φ x = 0 → x ∈ W
+  apply_eq_zero_iff (x : W') : φ x = 0 ↔ (x : F) ∈ W
   finrank_eq : finrank ℝ W' = finrank ℝ W + 1
 
 /-- Every proper subspace of a finite-dimensional space admits an extension by a line. -/
@@ -59,15 +58,15 @@ lemma nonempty_lineExtension [FiniteDimensional ℝ F] {W : Submodule ℝ F} (hW
   obtain ⟨f, hfv, hfW⟩ := W.exists_dual_map_eq_bot_of_notMem hv inferInstance
   replace hfW : ∀ x ∈ W, f x = 0 := fun x hx ↦
     (Submodule.mem_bot ℝ).1 (hfW ▸ Submodule.mem_map_of_mem hx)
-  refine ⟨⟨W ⊔ ℝ ∙ v, (f v)⁻¹ • f, v,
-    Submodule.mem_sup_right (Submodule.mem_span_singleton_self v), ?_, le_sup_left,
-    fun x hx ↦ ?_, fun x hx hφx ↦ ?_, ?_⟩⟩
+  have hvW' : v ∈ W ⊔ ℝ ∙ v := Submodule.mem_sup_right (Submodule.mem_span_singleton_self v)
+  refine ⟨⟨W ⊔ ℝ ∙ v, ((f v)⁻¹ • f).comp (W ⊔ ℝ ∙ v).subtype, ⟨v, hvW'⟩, ?_, le_sup_left,
+    fun x ↦ ⟨fun hφx ↦ ?_, fun hx ↦ ?_⟩, ?_⟩⟩
   · simp [inv_mul_cancel₀ hfv]
-  · simp [hfW x hx]
-  · obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.1 hx
+  · obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.1 x.2
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hz
-    have ha : a = 0 := by simpa [hfW y hy, hfv] using hφx
-    simpa [ha] using hy
+    have ha : a = 0 := by simpa [← hyz, hfW y hy, hfv] using hφx
+    simpa [← hyz, ha] using hy
+  · simp [hfW _ hx]
   · exact Submodule.finrank_sup_span_singleton hv
 
 /-- A chosen extension of a proper subspace by a line. -/
@@ -77,31 +76,35 @@ noncomputable def lineExtension [FiniteDimensional ℝ F] (W : Submodule ℝ F) 
 
 namespace LineExtension
 
-variable {W : Submodule ℝ F} (s : LineExtension W)
+variable {W : Submodule ℝ F} (s : LineExtension W) {ψ : F →ₗ[ℝ] ℝ}
 
-/-- The complements of the two closed half-subspaces `{x ∈ W' | ±φ x ≤ 0}` of an extension by a
-line cover the complement of `W`. -/
-lemma compl_union_compl :
-    {x | x ∈ s.W' ∧ s.φ x ≤ 0}ᶜ ∪ {x | x ∈ s.W' ∧ (-s.φ) x ≤ 0}ᶜ = (W : Set F)ᶜ := by
+/-- For an extension `ψ` of `φ` to `F`, the complements of the two closed half-subspaces
+`{x ∈ W' | ±ψ x ≤ 0}` of an extension by a line cover the complement of `W`. -/
+lemma compl_union_compl (hψ : ψ ∘ₗ s.W'.subtype = s.φ) :
+    {x | x ∈ s.W' ∧ ψ x ≤ 0}ᶜ ∪ {x | x ∈ s.W' ∧ (-ψ) x ≤ 0}ᶜ = (W : Set F)ᶜ := by
+  have key (x : F) (hx : x ∈ s.W') : ψ x = s.φ ⟨x, hx⟩ := LinearMap.congr_fun hψ ⟨x, hx⟩
   ext x
   simp only [Set.mem_union, Set.mem_compl_iff, Set.mem_ofPred_eq, LinearMap.neg_apply, neg_nonpos,
     SetLike.mem_coe]
   constructor
-  · rintro (h | h) hx <;> exact h ⟨s.le hx, by simp [s.apply_eq_zero _ hx]⟩
+  · rintro (h | h) hx <;>
+      exact h ⟨s.le hx, by simp [key x (s.le hx), (s.apply_eq_zero_iff ⟨x, s.le hx⟩).2 hx]⟩
   · intro hx
     by_contra! h
-    exact hx (s.mem_of_apply_eq_zero _ h.1.1 (le_antisymm h.1.2 h.2.2))
+    exact hx ((s.apply_eq_zero_iff ⟨x, h.1.1⟩).1
+      (key x h.1.1 ▸ le_antisymm h.1.2 h.2.2))
 
-/-- The complements of the two closed half-subspaces `{x ∈ W' | ±φ x ≤ 0}` of an extension by a
-line intersect in the complement of `W'`. -/
+/-- For any functional `ψ` on `F`, in particular an extension of `φ`, the complements of the two
+closed half-subspaces `{x ∈ W' | ±ψ x ≤ 0}` of an extension by a line intersect in the complement
+of `W'`. -/
 lemma compl_inter_compl :
-    {x | x ∈ s.W' ∧ s.φ x ≤ 0}ᶜ ∩ {x | x ∈ s.W' ∧ (-s.φ) x ≤ 0}ᶜ = (s.W' : Set F)ᶜ := by
+    {x | x ∈ s.W' ∧ ψ x ≤ 0}ᶜ ∩ {x | x ∈ s.W' ∧ (-ψ) x ≤ 0}ᶜ = (s.W' : Set F)ᶜ := by
   ext x
   simp only [Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_ofPred_eq, LinearMap.neg_apply,
     neg_nonpos, SetLike.mem_coe]
   constructor
   · rintro ⟨h₁, h₂⟩ hx
-    rcases le_total (s.φ x) 0 with h | h
+    rcases le_total (ψ x) 0 with h | h
     exacts [h₁ ⟨hx, h⟩, h₂ ⟨hx, h⟩]
   · intro hx
     exact ⟨fun h ↦ hx h.1, fun h ↦ hx h.1⟩
