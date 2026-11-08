@@ -140,17 +140,18 @@ theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq
     ∃ g : E → F, ContDiffOn ℝ 1 g Omega ∧ u =ᵐ[mu.restrict Omega] g ∧
       ∀ x ∈ Omega, HasFDerivAt g (U x) x := by
   let := h.completeSpace
-  obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_locally Omega.isOpen (n := 1) fun x hx => by
-    obtain ⟨r, hr, hrO⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
-    have hBO : ball x r ⊆ Omega := ball_subset_closedBall.trans hrO
-    have hu : IntegrableOn u (ball x r) mu :=
-      (h.locallyIntegrableOn.integrableOn_compact_subset hrO (isCompact_closedBall x r)).mono_set
-        ball_subset_closedBall
-    have hUi : IntegrableOn U (ball x r) mu :=
-      ((hU.mono hrO).integrableOn_compact (isCompact_closedBall x r)).mono_set
-        ball_subset_closedBall
-    obtain ⟨g, hg, hug⟩ := (h.mono hBO).exists_contDiffOn_one_ae_eq_ball hr hu hUi (hU.mono hBO)
-    exact ⟨ball x (r / 2), ball_mem_nhds x (half_pos hr), g, hg, hug⟩
+  obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_locally Omega.isOpen.nullMeasurableSet (n := 1)
+    fun x hx => by
+      obtain ⟨r, hr, hrO⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
+      have hBO : ball x r ⊆ Omega := ball_subset_closedBall.trans hrO
+      have hu : IntegrableOn u (ball x r) mu :=
+        (h.locallyIntegrableOn.integrableOn_compact_subset hrO (isCompact_closedBall x r)).mono_set
+          ball_subset_closedBall
+      have hUi : IntegrableOn U (ball x r) mu :=
+        ((hU.mono hrO).integrableOn_compact (isCompact_closedBall x r)).mono_set
+          ball_subset_closedBall
+      obtain ⟨g, hg, hug⟩ := (h.mono hBO).exists_contDiffOn_one_ae_eq_ball hr hu hUi (hU.mono hBO)
+      exact ⟨ball x (r / 2), ball_mem_nhds x (half_pos hr), g, hg, hug⟩
   exact ⟨g, hg, hug, fun x hx =>
     (h.congr_ae hug).hasFDerivAt_of_continuousOn hg.continuousOn hU hx⟩
 

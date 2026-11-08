@@ -134,7 +134,7 @@ theorem exists_contDiffOn_two_ae_eq_and_neg_laplacian_eq_of_locally_holderOnWith
             one_ne_zero).differentiableAt (Omega.isOpen.mem_nhds hx))]
       simp [Matrix.one_apply]
     rw [hΔ, hpoint x hx, neg_neg]
-  refine exists_contDiffOn_ae_eq_of_locally Omega.isOpen fun x hx => ?_
+  refine exists_contDiffOn_ae_eq_of_locally Omega.isOpen.nullMeasurableSet fun x hx => ?_
   obtain ⟨T, hT, K, hfT⟩ := hfK x hx
   obtain ⟨r, hr, hrOT⟩ := nhds_basis_closedBall.mem_iff.1
     (Filter.inter_mem (Omega.isOpen.mem_nhds hx) hT)

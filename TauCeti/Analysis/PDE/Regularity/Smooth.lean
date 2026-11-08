@@ -87,7 +87,7 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn [DecidableEq �
       ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x) :
     ∃ g : EuclideanSpace ℝ ι → ℝ, ContDiffOn ℝ ∞ g Omega ∧
       (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] g := by
-  refine exists_contDiffOn_ae_eq_of_locally Omega.isOpen fun x hx => ?_
+  refine exists_contDiffOn_ae_eq_of_locally Omega.isOpen.nullMeasurableSet fun x hx => ?_
   obtain ⟨V, hxV, hFV⟩ := hf x hx
   obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1
     (Filter.inter_mem (Omega.isOpen.mem_nhds hx) (V.isOpen.mem_nhds hxV))
