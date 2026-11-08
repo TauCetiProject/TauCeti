@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.RingTheory.Ideal.Maps
 
@@ -86,6 +87,11 @@ variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
 theorem isOpen_pow (hI : IsAdic I) (n : ℕ) : IsOpen ((I ^ n : Ideal R) : Set R) :=
   letI := I.adicTopology
   hI ▸ (I.openAddSubgroup n).isOpen
+
+/-- The quotient by an ideal of definition has the discrete quotient topology. -/
+theorem discreteTopology_quotient (hI : IsAdic I) : DiscreteTopology (R ⧸ I) := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  exact QuotientAddGroup.discreteTopology_iff.mpr (by simpa using hI.isOpen_pow 1)
 
 /-- An adic topology transports along a ring equivalence that is an inducing map.
 
