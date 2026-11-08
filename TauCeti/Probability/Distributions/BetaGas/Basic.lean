@@ -94,6 +94,16 @@ def betaGasDensity (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) : 
 theorem betaGasDensity_def (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) :
     betaGasDensity n β V x = betaGasWeight n β V x / betaGasPartitionFunction n β V := (rfl)
 
+/-- A measurable potential gives a measurable normalized density. -/
+theorem measurable_betaGasDensity (n : ℕ) (β : ℝ) {V : ℝ → ℝ}
+    (hV : Measurable V) : Measurable (betaGasDensity n β V) := by
+  have hdens : betaGasDensity n β V =
+      fun x => betaGasWeight n β V x / betaGasPartitionFunction n β V := by
+    funext x
+    exact betaGasDensity_def n β V x
+  rw [hdens]
+  exact (measurable_betaGasWeight n β hV).div_const _
+
 /-- The beta-gas density is nonnegative. -/
 theorem betaGasDensity_nonneg (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (x : Fin n → ℝ) : 0 ≤ betaGasDensity n β V x :=
@@ -112,8 +122,7 @@ theorem integral_betaGasDensity (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hpos : 0 < betaGasPartitionFunction n β V) :
     (∫ x, betaGasDensity n β V x
       ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1 := by
-  simp only [betaGasDensity, integral_div]
-  change betaGasPartitionFunction n β V / betaGasPartitionFunction n β V = 1
+  simp only [betaGasDensity, integral_div, ← betaGasPartitionFunction_def]
   exact div_self hpos.ne'
 
 /-- The beta-gas measure with the normalized density. -/

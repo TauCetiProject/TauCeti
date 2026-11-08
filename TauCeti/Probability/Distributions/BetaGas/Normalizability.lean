@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.BetaGas.Basic
-import TauCeti.Algebra.Order.BigOperators.Sum.Prod
+import TauCeti.Algebra.Order.BigOperators.Sum.ProdReal
 import TauCeti.MeasureTheory.Integral.GaussianGrowth
 
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -30,53 +30,6 @@ namespace TauCeti.Probability
 private def gaussianBetaGasPairs (n : ℕ) : Finset (Fin n × Fin n) :=
   Finset.univ.filter fun p => p.1 < p.2
 
-/-- Bound a product of powered pairwise distances by a product of coordinate magnitudes. -/
-theorem vandermonde_le_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
-    (x : Fin n → ℝ) (pairs : Finset (Fin n × Fin n)) :
-    (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤
-      (∏ i : Fin n, (1 + |x i|)) ^ (2 * (β * (pairs.card : ℝ))) := by
-  classical
-  set p : ℝ := 2 * (β * (pairs.card : ℝ)) with hp_def
-  let q : ℝ := ∏ i : Fin n, (1 + |x i|)
-  have hqsum : 1 + ∑ i : Fin n, |x i| ≤ q := by
-    simpa [q] using Finset.one_add_sum_le_prod_one_add (Finset.univ : Finset (Fin n))
-      (fun i => |x i|) (fun _ _ => abs_nonneg _)
-  have hqone : 1 ≤ q := by
-    have hsum : 0 ≤ ∑ i : Fin n, |x i| :=
-      Finset.sum_nonneg fun _ _ => abs_nonneg _
-    linarith
-  have hqnonneg : 0 ≤ q := by linarith [hqone]
-  have hqpow : q ^ 2 ≥ 1 + 2 * ∑ i : Fin n, |x i| := by
-    nlinarith [hqsum, hqone]
-  have hpair : ∀ z ∈ pairs, |x z.1 - x z.2| ≤ q ^ 2 := by
-    intro z hz
-    have hi : |x z.1| ≤ ∑ i : Fin n, |x i| :=
-      Finset.single_le_sum (f := fun i : Fin n => |x i|)
-        (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
-    have hj : |x z.2| ≤ ∑ i : Fin n, |x i| :=
-      Finset.single_le_sum (f := fun i : Fin n => |x i|)
-        (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
-    have hdist := abs_sub_le (x z.1) 0 (x z.2)
-    simp only [sub_zero, zero_sub, abs_neg] at hdist
-    have hnonneg : 0 ≤ ∑ i : Fin n, |x i| :=
-      Finset.sum_nonneg fun _ _ => abs_nonneg _
-    nlinarith
-  have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ q ^ p := by
-    calc
-      _ ≤ ∏ z ∈ pairs, (q ^ 2) ^ β := by
-        apply Finset.prod_le_prod₀
-          (fun z hz => by positivity)
-          (fun z hz => Real.rpow_le_rpow (abs_nonneg _) (hpair z hz) hβ)
-      _ = ((q ^ 2) ^ β) ^ (pairs.card : ℕ) := by
-        simp [Finset.prod_const]
-      _ = q ^ (2 * (β * (pairs.card : ℝ))) := by
-        rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity : 0 ≤ q ^ 2),
-          ← Real.rpow_natCast q 2, ← Real.rpow_mul hqnonneg]
-        norm_num
-      _ = q ^ p := by
-        rw [hp_def]
-  exact hvander
-
 private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
     (x : Fin n → ℝ) :
     gaussianBetaGasWeight n β x ≤
@@ -88,7 +41,7 @@ private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
   let p : ℝ := 2 * (β * (pairs.card : ℝ))
   let q : ℝ := ∏ i : Fin n, (1 + |x i|)
   have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ q ^ p :=
-    vandermonde_le_prod n hβ.le x pairs
+    Finset.prod_abs_sub_rpow_le_prod_one_add_abs_rpow hβ.le x pairs
   have hexp : exp (-(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2) =
       ∏ i : Fin n, exp (-a * x i ^ 2) := by
     have hdistrib : -(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2 =
@@ -204,13 +157,6 @@ theorem integral_gaussianBetaGasMeasure {E : Type*} [NormedAddCommGroup E] [Norm
         ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ) := by
   rw [gaussianBetaGasMeasure_eq_betaGasMeasure, gaussianBetaGasDensity_eq_betaGasDensity]
   apply integral_betaGasMeasure
-  have hdens : betaGasDensity n β (fun t => t ^ 2 / 2) =
-      fun x => betaGasWeight n β (fun t => t ^ 2 / 2) x /
-        betaGasPartitionFunction n β (fun t => t ^ 2 / 2) := by
-    funext x
-    exact betaGasDensity_def n β _ x
-  rw [hdens]
-  exact ((measurable_betaGasWeight n β (V := fun t => t ^ 2 / 2)
-    (by fun_prop)).div_const _).aemeasurable
+  exact (measurable_betaGasDensity n β (by fun_prop)).aemeasurable
 
 end TauCeti.Probability
