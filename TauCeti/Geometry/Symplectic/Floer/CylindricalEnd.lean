@@ -69,7 +69,62 @@ open scoped ENNReal NNReal Real
 
 namespace TauCeti.Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+variable {V : Type*} [NormedAddCommGroup V]
+
+section NormedSpace
+
+variable [NormedSpace ℝ V] {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {K : Set V}
+
+/-- **The equation bounds the full derivative by `∂ₛu`.** Let `J` and `X` be continuous on
+`ℂ × K` for a compact `K ⊆ V`, and let `J(·, x)` and `X(·, x)` be periodic under `z ↦ z + 1` and
+`z ↦ z + i`. There is `A ≥ 0` such that `‖du(z)‖ ≤ A (1 + ‖∂ₛu(z)‖)` at every point `z` where `u`
+takes a value in `K` and solves `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`. -/
+theorem exists_forall_norm_fderiv_le_mul_one_add_norm_fderiv_one
+    (hJ : ContinuousOn J (univ ×ˢ K)) (hX : ContinuousOn X (univ ×ˢ K)) (hK : IsCompact K)
+    (hJ1 : ∀ x, Periodic (fun z ↦ J (z, x)) 1) (hJI : ∀ x, Periodic (fun z ↦ J (z, x)) I)
+    (hX1 : ∀ x, Periodic (fun z ↦ X (z, x)) 1) (hXI : ∀ x, Periodic (fun z ↦ X (z, x)) I) :
+    ∃ A, 0 ≤ A ∧ ∀ ⦃u : ℂ → V⦄ ⦃z : ℂ⦄, u z ∈ K →
+      fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1) →
+      ‖fderiv ℝ u z‖ ≤ A * (1 + ‖fderiv ℝ u z 1‖) := by
+  -- Bound the data on the compact set `[0, 1]² × K`, which meets every lattice orbit.
+  have hc : IsCompact ((Icc 0 1 ×ℂ Icc 0 1) ×ˢ K) := (isCompact_Icc.reProdIm isCompact_Icc).prod hK
+  have hsub : (Icc 0 1 ×ℂ Icc 0 1) ×ˢ K ⊆ univ ×ˢ K := prod_mono (subset_univ _) le_rfl
+  obtain ⟨a, ha⟩ := hc.exists_bound_of_continuousOn (hJ.mono hsub)
+  obtain ⟨c, hc⟩ := hc.exists_bound_of_continuousOn (hX.mono hsub)
+  have hred (z : ℂ) {x : V} (hx : x ∈ K) : ‖J (z, x)‖ ≤ max a 0 ∧ ‖X (z, x)‖ ≤ max c 0 := by
+    have hmem : (z - ((⌊z.re⌋ : ℂ) + ⌊z.im⌋ * I), x) ∈ (Icc 0 1 ×ℂ Icc 0 1) ×ˢ K :=
+      ⟨reProdIm_subset_iff.2 (prod_mono Ico_subset_Icc_self Ico_subset_Icc_self)
+        (sub_floor_mem_reProdIm z), hx⟩
+    have hJx := (hJ1 x).int_mul_add_int_mul (hJI x) ⌊z.re⌋ ⌊z.im⌋
+    have hXx := (hX1 x).int_mul_add_int_mul (hXI x) ⌊z.re⌋ ⌊z.im⌋
+    rw [mul_one] at hJx hXx
+    rw [← hJx.sub_eq z, ← hXx.sub_eq z]
+    exact ⟨(ha _ hmem).trans (le_max_left _ _), (hc _ hmem).trans (le_max_left _ _)⟩
+  set a' := max a 0
+  set c' := max c 0
+  have ha' : 0 ≤ a' := le_max_right _ _
+  have hc' : 0 ≤ c' := le_max_right _ _
+  refine ⟨(1 + a') * (1 + c'), by positivity, fun u z huz hCR ↦ ?_⟩
+  obtain ⟨hJz, hXz⟩ := hred z huz
+  set L := fderiv ℝ u z
+  have hXv (v : ℂ) (hv : ‖v‖ = 1) : ‖X (z, u z) v‖ ≤ c' :=
+    ((X (z, u z)).le_opNorm v).trans (by rw [hv, mul_one]; exact hXz)
+  -- `∂ₜu = X(z, u) i + J(z, u) (∂ₛu - X(z, u) 1)`.
+  have hI : ‖L I‖ ≤ a' * (‖L 1‖ + c') + c' := by
+    rw [← sub_add_cancel (L I) (X (z, u z) I), hCR]
+    refine (norm_add_le _ _).trans (add_le_add ?_ (hXv I norm_I))
+    refine ((J (z, u z)).le_opNorm _).trans ?_
+    gcongr
+    exact (norm_sub_le _ _).trans (add_le_add le_rfl (hXv 1 norm_one))
+  have hL : ‖L‖ ≤ ‖L 1‖ + ‖L I‖ :=
+    L.opNorm_le_bound (by positivity) L.norm_apply_le_norm_one_add_norm_I
+  have h1 : 0 ≤ ‖L 1‖ := norm_nonneg _
+  nlinarith [mul_nonneg ha' hc', mul_nonneg ha' h1, mul_nonneg hc' h1,
+    mul_nonneg (mul_nonneg ha' hc') h1]
+
+end NormedSpace
+
+variable [InnerProductSpace ℝ V]
   {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {W : Set (ℂ × V)} {K : Set V}
 
 /-- **The mean-value inequality for doubly periodic data.** Let `J` and `X` be `C²` on an open set
@@ -132,53 +187,6 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_periodic
     (fun y hy ↦ by rw [hdv]; simpa only [hJw, hXw] using hCR _ (hmaps hy))
     (fun y hy ↦ huK _ (hmaps hy)) (by rwa [henergy])
   rwa [henergy, hdv, sub_add_cancel] at h
-
-/-- **The equation bounds the full derivative by `∂ₛu`.** Let `J` and `X` be continuous on
-`ℂ × K` for a compact `K ⊆ V`, and let `J(·, x)` and `X(·, x)` be periodic under `z ↦ z + 1` and
-`z ↦ z + i`. There is `A ≥ 0` such that `‖du(z)‖ ≤ A (1 + ‖∂ₛu(z)‖)` at every point `z` where `u`
-takes a value in `K` and solves `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`. -/
-theorem exists_forall_norm_fderiv_le_mul_one_add_norm_fderiv_one
-    (hJ : ContinuousOn J (univ ×ˢ K)) (hX : ContinuousOn X (univ ×ˢ K)) (hK : IsCompact K)
-    (hJ1 : ∀ x, Periodic (fun z ↦ J (z, x)) 1) (hJI : ∀ x, Periodic (fun z ↦ J (z, x)) I)
-    (hX1 : ∀ x, Periodic (fun z ↦ X (z, x)) 1) (hXI : ∀ x, Periodic (fun z ↦ X (z, x)) I) :
-    ∃ A, 0 ≤ A ∧ ∀ ⦃u : ℂ → V⦄ ⦃z : ℂ⦄, u z ∈ K →
-      fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1) →
-      ‖fderiv ℝ u z‖ ≤ A * (1 + ‖fderiv ℝ u z 1‖) := by
-  -- Bound the data on the compact set `[0, 1]² × K`, which meets every lattice orbit.
-  have hc : IsCompact ((Icc 0 1 ×ℂ Icc 0 1) ×ˢ K) := (isCompact_Icc.reProdIm isCompact_Icc).prod hK
-  have hsub : (Icc 0 1 ×ℂ Icc 0 1) ×ˢ K ⊆ univ ×ˢ K := prod_mono (subset_univ _) le_rfl
-  obtain ⟨a, ha⟩ := hc.exists_bound_of_continuousOn (hJ.mono hsub)
-  obtain ⟨c, hc⟩ := hc.exists_bound_of_continuousOn (hX.mono hsub)
-  have hred (z : ℂ) {x : V} (hx : x ∈ K) : ‖J (z, x)‖ ≤ max a 0 ∧ ‖X (z, x)‖ ≤ max c 0 := by
-    have hmem : (z - ((⌊z.re⌋ : ℂ) + ⌊z.im⌋ * I), x) ∈ (Icc 0 1 ×ℂ Icc 0 1) ×ˢ K :=
-      ⟨reProdIm_subset_iff.2 (prod_mono Ico_subset_Icc_self Ico_subset_Icc_self)
-        (sub_floor_mem_reProdIm z), hx⟩
-    have hJx := (hJ1 x).int_mul_add_int_mul (hJI x) ⌊z.re⌋ ⌊z.im⌋
-    have hXx := (hX1 x).int_mul_add_int_mul (hXI x) ⌊z.re⌋ ⌊z.im⌋
-    rw [mul_one] at hJx hXx
-    rw [← hJx.sub_eq z, ← hXx.sub_eq z]
-    exact ⟨(ha _ hmem).trans (le_max_left _ _), (hc _ hmem).trans (le_max_left _ _)⟩
-  set a' := max a 0
-  set c' := max c 0
-  have ha' : 0 ≤ a' := le_max_right _ _
-  have hc' : 0 ≤ c' := le_max_right _ _
-  refine ⟨(1 + a') * (1 + c'), by positivity, fun u z huz hCR ↦ ?_⟩
-  obtain ⟨hJz, hXz⟩ := hred z huz
-  set L := fderiv ℝ u z
-  have hXv (v : ℂ) (hv : ‖v‖ = 1) : ‖X (z, u z) v‖ ≤ c' :=
-    ((X (z, u z)).le_opNorm v).trans (by rw [hv, mul_one]; exact hXz)
-  -- `∂ₜu = X(z, u) i + J(z, u) (∂ₛu - X(z, u) 1)`.
-  have hI : ‖L I‖ ≤ a' * (‖L 1‖ + c') + c' := by
-    rw [← sub_add_cancel (L I) (X (z, u z) I), hCR]
-    refine (norm_add_le _ _).trans (add_le_add ?_ (hXv I norm_I))
-    refine ((J (z, u z)).le_opNorm _).trans ?_
-    gcongr
-    exact (norm_sub_le _ _).trans (add_le_add le_rfl (hXv 1 norm_one))
-  have hL : ‖L‖ ≤ ‖L 1‖ + ‖L I‖ :=
-    L.opNorm_le_bound (by positivity) L.norm_apply_le_norm_one_add_norm_I
-  have h1 : 0 ≤ ‖L 1‖ := norm_nonneg _
-  nlinarith [mul_nonneg ha' hc', mul_nonneg ha' h1, mul_nonneg hc' h1,
-    mul_nonneg (mul_nonneg ha' hc') h1]
 
 /-- **Finite-energy Floer solutions have bounded derivatives on cylindrical ends.** Let `J` and `X`
 be `C²` on an open set `W ⊆ ℂ × V` containing `ℂ × K` for a compact `K ⊆ V`, with
