@@ -71,17 +71,20 @@ theorem comap_algebraMap_eq_comap_algebraMap_iff_of_isFiniteEtaleTorsor
   obtain ⟨g, w, hw⟩ := exists_comap_evalRingHom_eq (R := fun _ : G ↦ B)
     (comap (Φ.symm : (G → B) →+* B ⊗[A] B) v)
   let ψ : B ⊗[A] B →+* B := (Pi.evalRingHom (fun _ : G ↦ B) g).comp Φ
+  have hΦ : (Φ.symm : (G → B) →+* B ⊗[A] B).comp Φ = RingHom.id _ :=
+    RingHom.ext Φ.symm_apply_apply
   have hv : v = comap ψ w := by
-    rw [← comap_comap, hw, comap_comap,
-      show (Φ.symm : (G → B) →+* B ⊗[A] B).comp Φ = RingHom.id _ from
-        RingHom.ext Φ.symm_apply_apply, comap_id, id]
+    rw [← comap_comap, hw, comap_comap, hΦ, comap_id, id]
   -- along that factor, `b ⊗ 1 ↦ b` and `1 ⊗ b' ↦ g • b'`
+  have hψl : ψ.comp includeLeftRingHom = RingHom.id B :=
+    RingHom.ext fun b ↦ by simp [ψ, Φ]
+  have hψr : ψ.comp (includeRight (R := A) (A := B)).toRingHom =
+      MulSemiringAction.toRingHom G B g :=
+    RingHom.ext fun b ↦ by simp [ψ, Φ]
   have hy : y = w := by
-    rw [← hvy, hv, comap_comap, show ψ.comp includeLeftRingHom = RingHom.id B from
-      RingHom.ext fun b ↦ by simp [ψ, Φ], comap_id, id]
+    rw [← hvy, hv, comap_comap, hψl, comap_id, id]
   have hy' : y' = comap (MulSemiringAction.toRingHom G B g) w := by
-    rw [← hvy', hv, comap_comap, show ψ.comp (includeRight (R := A) (A := B)).toRingHom =
-      MulSemiringAction.toRingHom G B g from RingHom.ext fun b ↦ by simp [ψ, Φ]]
+    rw [← hvy', hv, comap_comap, hψr]
   exact ⟨g⁻¹, by rw [inv_inv, hy', hy]⟩
 
 end TauCeti.ValuationSpectrum

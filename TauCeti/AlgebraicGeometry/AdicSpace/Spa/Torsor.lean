@@ -23,7 +23,7 @@ and needs no completeness, sheafiness or Tate hypothesis.
 
 When `A` is Tate and `(B, B⁺)` is the Huber pair of the finite étale algebra `B` (natural
 topology, `B⁺` the integral closure of the image of `A⁺`), the orbits lie in `Spa(B, B⁺)`, since
-`A`-algebra automorphisms preserve it (`TauCeti.ValuationSpectrum.comap_mem_spa_integralClosure`),
+`A`-algebra automorphisms preserve it (`AlgHom.comap_mem_spa_integralClosure`),
 and `Spa(B, B⁺) → Spa(A, A⁺)` is surjective, since a torsor is faithfully flat
 (`TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap`). So `Spa(B, B⁺) → Spa(A, A⁺)` is a
 continuous bijection from the set of `G`-orbits of `Spa(B, B⁺)` onto `Spa(A, A⁺)`.

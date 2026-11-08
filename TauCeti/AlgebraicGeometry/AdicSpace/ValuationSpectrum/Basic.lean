@@ -542,10 +542,10 @@ lemma range_comap_of_surjective {B : Type*} [CommRing B] {φ : A →+* B}
   let e := RingHom.quotientKerEquivOfSurjective hφ
   have he : (e.symm : B →+* A ⧸ RingHom.ker φ).comp φ = Ideal.Quotient.mk (RingHom.ker φ) :=
     RingHom.ext fun a ↦ e.injective (by simp [e])
+  have hid : (e : A ⧸ RingHom.ker φ →+* B).comp e.symm = RingHom.id B :=
+    e.toRingHom_comp_symm_toRingHom
   have hsurj : Function.Surjective (comap (e.symm : B →+* A ⧸ RingHom.ker φ)) := fun w ↦
-    ⟨comap (e : A ⧸ RingHom.ker φ →+* B) w, by
-      rw [comap_comap, show (e : A ⧸ RingHom.ker φ →+* B).comp e.symm = RingHom.id B from
-        RingHom.ext e.apply_symm_apply, comap_id, id]⟩
+    ⟨comap (e : A ⧸ RingHom.ker φ →+* B) w, by rw [comap_comap, hid, comap_id, id]⟩
   rw [← quotientMk_comap_range, ← he, comap_comp, Set.range_comp, hsurj.range_eq,
     Set.image_univ]
 
