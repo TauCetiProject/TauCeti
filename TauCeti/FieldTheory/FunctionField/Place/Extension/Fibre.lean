@@ -40,6 +40,8 @@ least `[F' : F]`; the strict triangle inequality then forbids the relation.
   to `F' / k'` (Stichtenoth, Proposition 3.1.7).
 * `TauCeti.Place.ncard_setOf_restrict_eq_le_finrank`: it has at most `[F' : F]` of them
   (Stichtenoth, Corollary 3.1.12).
+* `TauCeti.Place.image_eq_setOf_restrict_eq_and_ncard_eq`: if `[F' : F]` distinct places of `F'`
+  lie over `P`, they exhaust the fibre.
 
 ## References
 
@@ -341,6 +343,20 @@ theorem ncard_setOf_restrict_eq_le_finrank (P : Place k F) :
   simp only [smul_eq_mul, mul_one] at hge
   rw [Set.ncard_eq_toFinset_card _ hfin]
   omega
+
+/-- If `[F' : F]` distinct places of `F'` lie over a place `P` of `F`, they are all the places over
+`P`, and there are `[F' : F]` of them. -/
+theorem image_eq_setOf_restrict_eq_and_ncard_eq {P : Place k F} {α : Type*} {s : Finset α}
+    (R : α → Place k' F') (hR : ∀ a ∈ s, (R a).restrict k F = P) (hRinj : Set.InjOn R s)
+    (hsdeg : s.card = Module.finrank F F') :
+    R '' s = {P' : Place k' F' | P'.restrict k F = P} ∧
+      {P' : Place k' F' | P'.restrict k F = P}.ncard = Module.finrank F F' := by
+  have himg : R '' s = {P' : Place k' F' | P'.restrict k F = P} := by
+    refine Set.eq_of_subset_of_ncard_le (by rintro _ ⟨a, ha, rfl⟩; exact hR a ha) ?_
+      (finite_setOf_restrict_eq (k' := k') (F' := F') k F P)
+    rw [hRinj.ncard_image, Set.ncard_coe_finset, hsdeg]
+    exact ncard_setOf_restrict_eq_le_finrank (k' := k') (F' := F') k F P
+  exact ⟨himg, by rw [← himg, hRinj.ncard_image, Set.ncard_coe_finset, hsdeg]⟩
 
 end Place
 
