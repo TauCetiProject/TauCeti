@@ -40,9 +40,8 @@ noncomputable def ι (i : Fin (p + 1)) : Δ[p + 1] ⟶ (Δ[p] ⊗ Δ[1] : SSet.{
 /-- The first projection of `ι i` is the degeneracy `σ i : Δ[p + 1] ⟶ Δ[p]`. -/
 @[reassoc (attr := simp)]
 lemma ι_fst (i : Fin (p + 1)) :
-    ι.{u} i ≫ fst _ _ = stdSimplex.σ i := by
-  apply yonedaEquiv.injective
-  exact (yonedaEquiv_map _).symm
+    ι.{u} i ≫ fst _ _ = stdSimplex.σ i :=
+  yonedaEquiv.injective (yonedaEquiv_map _).symm
 
 /-- The face of `ι i` opposite to its vertex `(i, 0)`. -/
 @[reassoc]
@@ -61,16 +60,14 @@ lemma δ_succ_ι (i : Fin (p + 1)) :
 /-- The `p`-simplex `codimOneSimplex j` of `Δ[p] ⊗ Δ[1]` is a section of the first projection. -/
 @[reassoc]
 lemma yonedaEquiv_symm_codimOneSimplex_fst (j : Fin (p + 2)) :
-    yonedaEquiv.symm (codimOneSimplex.{u} j).val ≫ fst _ _ = 𝟙 _ := by
-  apply yonedaEquiv.injective
-  rfl
+    yonedaEquiv.symm (codimOneSimplex.{u} j).val ≫ fst _ _ = 𝟙 _ :=
+  yonedaEquiv.injective rfl
 
 /-- The `p`-simplex of `Δ[p] ⊗ Δ[1]` whose second projection never takes the value `0` is the top
 inclusion `ι₁`. -/
 lemma yonedaEquiv_symm_codimOneSimplex_zero :
     yonedaEquiv.symm (codimOneSimplex.{u} (p := p) 0).val = ι₁ := by
-  apply yonedaEquiv.injective
-  rw [Equiv.apply_symm_apply, ← Category.id_comp ι₁, yonedaEquiv_comp]
+  rw [Equiv.symm_apply_eq, ← Category.id_comp ι₁, yonedaEquiv_comp]
   refine Prod.ext rfl (stdSimplex.ext _ _ fun k ↦ ?_)
   simp [stdSimplex.objMk₁_apply]
 
@@ -78,8 +75,7 @@ lemma yonedaEquiv_symm_codimOneSimplex_zero :
 bottom inclusion `ι₀`. -/
 lemma yonedaEquiv_symm_codimOneSimplex_last :
     yonedaEquiv.symm (codimOneSimplex.{u} (Fin.last (p + 1))).val = ι₀ := by
-  apply yonedaEquiv.injective
-  rw [Equiv.apply_symm_apply, ← Category.id_comp ι₀, yonedaEquiv_comp]
+  rw [Equiv.symm_apply_eq, ← Category.id_comp ι₀, yonedaEquiv_comp]
   refine Prod.ext rfl (stdSimplex.ext _ _ fun k ↦ ?_)
   simp [stdSimplex.objMk₁_apply]
 
