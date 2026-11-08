@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.TranslatedChart
-public import TauCeti.Geometry.Manifold.LinearSlice
 
 /-!
 # Charted spaces on subgroup slices

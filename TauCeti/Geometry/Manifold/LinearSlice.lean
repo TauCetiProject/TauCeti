@@ -48,82 +48,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {s : Set M}
 
-section ChartedSpace
-
-variable {F G : Type*} [TopologicalSpace F] [TopologicalSpace G] [Zero G]
-  (e : s → OpenPartialHomeomorph M (F × G))
-  (he : ∀ x, IsSliceChart (e x) ((univ : Set F) ×ˢ ({0} : Set G)) s)
-
-/-- The induced chart at a point of the subset. The base point supplies the fallback value
-of the partial inverse outside the chart target, so no nonemptiness assumption is needed. -/
-noncomputable def linearSliceChart (x : s) : OpenPartialHomeomorph s F :=
-  letI : Nonempty s := ⟨x⟩
-  (he x).subtypeChart
-
-/-- The induced chart source is the part of the subset in the ambient source. -/
-@[simp]
-theorem linearSliceChart_source (x : s) :
-    (linearSliceChart e he x).source = Subtype.val ⁻¹' (e x).source := by
-  let : Nonempty s := ⟨x⟩
-  unfold linearSliceChart
-  apply IsSliceChart.subtypeChart_source
-
-/-- The induced chart target is the zero-slice part of the ambient target. -/
-@[simp]
-theorem linearSliceChart_target (x : s) :
-    (linearSliceChart e he x).target = (fun v : F ↦ (v, (0 : G))) ⁻¹' (e x).target := by
-  let : Nonempty s := ⟨x⟩
-  unfold linearSliceChart
-  apply IsSliceChart.subtypeChart_target
-
-/-- The induced chart reads the tangential coordinate of the ambient chart. -/
-@[simp]
-theorem linearSliceChart_apply (x y : s) :
-    linearSliceChart e he x y = (e x y).1 := by
-  let : Nonempty s := ⟨x⟩
-  unfold linearSliceChart
-  apply IsSliceChart.subtypeChart_apply
-
-/-- On its source, the induced chart recovers the ambient coordinates by reinserting the zero
-transverse coordinate. -/
-theorem linearSliceChart_mk_zero_eq (x : s) {y : s} (hy : y ∈ (linearSliceChart e he x).source) :
-    (linearSliceChart e he x y, (0 : G)) = e x y := by
-  let : Nonempty s := ⟨x⟩
-  unfold linearSliceChart at hy ⊢
-  exact (he x).subtypeChart_mk_zero_eq hy
-
-/-- On the target, the induced inverse is the ambient inverse evaluated on the zero slice. -/
-@[simp]
-theorem coe_linearSliceChart_symm_apply (x : s) {v : F}
-    (hv : (v, (0 : G)) ∈ (e x).target) :
-    ((linearSliceChart e he x).symm v : M) = (e x).symm (v, 0) := by
-  let : Nonempty s := ⟨x⟩
-  unfold linearSliceChart
-  apply IsSliceChart.coe_subtypeChart_symm_apply
-  exact hv
-
-/-- A covering family of ambient linear-slice charts gives a charted-space structure on the
-subset, with its original topology and atlas exactly the induced charts. -/
-@[instance_reducible]
-noncomputable def linearSliceChartedSpace (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
-    ChartedSpace F s where
-  atlas := range (linearSliceChart e he)
-  chartAt := linearSliceChart e he
-  mem_chart_source x := by rw [linearSliceChart_source]; exact hcover x
-  chart_mem_atlas := mem_range_self
-
-/-- The atlas consists exactly of the induced linear-slice charts. -/
-@[simp]
-theorem linearSliceChartedSpace_atlas (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
-    @atlas F _ s _ (linearSliceChartedSpace e he hcover) = range (linearSliceChart e he) := (rfl)
-
-/-- The chosen chart at a point is its induced linear-slice chart. -/
-@[simp]
-theorem linearSliceChartedSpace_chartAt (hcover : ∀ x : s, (x : M) ∈ (e x).source) (x : s) :
-    @chartAt F _ s _ (linearSliceChartedSpace e he hcover) x = linearSliceChart e he x := (rfl)
-
-end ChartedSpace
-
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   (e : s → OpenPartialHomeomorph M (F × G))
@@ -224,7 +148,8 @@ theorem isImmersionOfComplement_subtypeVal_linearSliceChartedSpace
     (linearSliceChart e he x) c ?_ ?_ ?_ hc ?_ ?_
   · simpa only [linearSliceChart_source, Set.mem_preimage] using hcover x
   · exact hcover x
-  · exact IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, F)) x
+  · rw [← linearSliceChartedSpace_chartAt e he hcover x]
+    exact IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, F)) x
   · simpa only [linearSliceChart_source, c, OpenPartialHomeomorph.transHomeomorph_source] using
       (Set.Subset.rfl : Subtype.val ⁻¹' (e x).source ⊆ Subtype.val ⁻¹' (e x).source)
   · intro v hv
