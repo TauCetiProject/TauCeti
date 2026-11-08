@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Data.Fintype.Card
 
 /-!
 # Collapsing an iterated product of powers into a single product of powers
@@ -28,6 +29,8 @@ allowed to vanish.
 * `Finset.prod_prod_pow`, `Finset.prod_prod_zpow` and `Finset.prod_prod_zpow_pow`: substituting
   monomials into a monomial multiplies the exponent matrices, for the three combinations of
   natural and integral exponents that make sense.
+* `Fintype.sq_prod_pow_two_pow_card_pred`: the square of `∏ i, a i ^ 2 ^ (card α - 1)` is
+  `∏ i, a i ^ 2 ^ card α`.
 -/
 
 public section
@@ -75,3 +78,18 @@ theorem prod_prod_zpow_pow [DivisionCommMonoid α] (s : Finset ι) (t : Finset �
   simp_rw [← prod_prod_zpow s t hy e fun a ↦ (g a : ℤ), zpow_natCast]
 
 end Finset
+
+namespace Fintype
+
+/-- The square of the product of the `2 ^ (card α - 1)`-th powers is the product of the
+`2 ^ card α`-th powers. -/
+theorem sq_prod_pow_two_pow_card_pred {α M : Type*} [Fintype α] [CommMonoid M] (a : α → M) :
+    (∏ i, a i ^ (2 ^ (Fintype.card α - 1))) ^ 2 = ∏ i, a i ^ (2 ^ Fintype.card α) := by
+  rw [← Finset.prod_pow]
+  apply Finset.prod_congr rfl
+  intro i _
+  rw [← pow_mul, ← pow_succ]
+  congr 2
+  exact Nat.sub_add_cancel (Fintype.card_pos_iff.mpr ⟨i⟩)
+
+end Fintype

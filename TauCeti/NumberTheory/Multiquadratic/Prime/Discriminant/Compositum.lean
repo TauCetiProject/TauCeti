@@ -8,8 +8,10 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Field
 public import Mathlib.NumberTheory.NumberField.Discriminant.Different
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Independence
 import Mathlib.Algebra.BigOperators.Option
+import TauCeti.Algebra.BigOperators.ZPow
 
 /-!
 # Discriminants of prime-discriminant composita
@@ -46,35 +48,6 @@ namespace TauCeti.Multiquadratic
 
 universe u v
 
-/-- Adjoining the roots indexed by `some i` and then the root indexed by `none` adjoins all the
-roots. -/
-private lemma adjoin_range_comp_some_sup_adjoin_singleton {α : Type*} {K F : Type*} [Field K]
-    [Field F] [Algebra K F] (r : Option α → F) :
-    adjoin K (Set.range (r ∘ some)) ⊔ adjoin K {r none} = adjoin K (Set.range r) := by
-  rw [← adjoin_union]
-  congr 1
-  ext x
-  simp only [Set.mem_union, Set.mem_range, Set.mem_singleton_iff, Function.comp_apply]
-  constructor
-  · rintro (⟨i, rfl⟩ | rfl)
-    · exact ⟨some i, rfl⟩
-    · exact ⟨none, rfl⟩
-  · rintro ⟨i, rfl⟩
-    cases i with
-    | none => exact Or.inr rfl
-    | some i => exact Or.inl ⟨i, rfl⟩
-
-/-- The squared product of the exponent `2 ^ (n - 1)` powers is the product of the exponent
-`2 ^ n` powers, where `n` is the cardinality of the index type. -/
-private lemma prod_pow_two_pow_pred_sq {α : Type*} [Fintype α] (a : α → ℕ) :
-    (∏ i, a i ^ (2 ^ (Fintype.card α - 1))) ^ 2 = ∏ i, a i ^ (2 ^ Fintype.card α) := by
-  rw [← Finset.prod_pow]
-  apply Finset.prod_congr rfl
-  intro i _
-  rw [← pow_mul, ← pow_succ]
-  congr 2
-  exact Nat.sub_add_cancel (Fintype.card_pos_iff.mpr ⟨i⟩)
-
 /-- The compositum of the roots indexed by `some i` has discriminant coprime to that of the
 quadratic field of the root indexed by `none`. -/
 private lemma isCoprime_discr_adjoin_range_comp_some {α : Type u} [Fintype α] {M : Type v}
@@ -92,16 +65,12 @@ private lemma isCoprime_discr_adjoin_range_comp_some {α : Type u} [Fintype α] 
     discr_adjoin_singleton_eq_primeDiscriminant (hD none) (hr none)
   -- Distinct prime discriminants are pairwise coprime; multiplying the old factors gives
   -- coprime discriminants for the two fields.
-  have hcoprime_factor (i : α) : IsCoprime (D (some i)) (D none) := by
-    have hnot_even : ¬ (IsEvenPrimeDiscriminant (D (some i)) ∧
-        IsEvenPrimeDiscriminant (D none)) := by
-      rintro ⟨hi, hn⟩
-      exact Option.some_ne_none i (hinj (heven (some i) none hi hn))
-    have h := isCoprime_discr_adjoin_singleton_of_primeDiscriminant
-      (L := M) (hD (some i)) (hD none)
-      (fun h ↦ Option.some_ne_none i (hinj h)) hnot_even (hr (some i)) (hr none)
-    simpa only [discr_adjoin_singleton_eq_primeDiscriminant (hD (some i)) (hr (some i)),
-      hdisc₂] using h
+  have hcoprime_factor (i : α) : IsCoprime (D (some i)) (D none) :=
+    isCoprime_primeDiscriminant_of_ne_of_not_both_even (hD (some i)) (hD none)
+      (fun h ↦ Option.some_ne_none i (hinj h))
+      (by
+        rintro ⟨hi, hn⟩
+        exact Option.some_ne_none i (hinj (heven (some i) none hi hn)))
   rw [Int.isCoprime_iff_nat_coprime, hdisc, hdisc₂]
   exact Nat.Coprime.prod_left fun i _ ↦
     (Int.isCoprime_iff_nat_coprime.mp (hcoprime_factor i)).pow_left _
@@ -139,7 +108,7 @@ private lemma natAbs_discr_adjoin_range_option {α : Type u} [Fintype α] {L : T
       (root := rootM ∘ some)
       (fun i ↦ gen_sq (d := fun i ↦ ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) hroot (some i))
   have htop : K₁ ⊔ K₂ = ⊤ := by
-    rw [adjoin_range_comp_some_sup_adjoin_singleton]
+    rw [IntermediateField.adjoin_range_comp_some_sup_adjoin_singleton]
     exact adjoin_gen_eq_top
   have hformula := NumberField.natAbs_discr_eq_natAbs_discr_pow_mul_natAbs_discr_pow
     M K₁ K₂ (NumberField.linearDisjoint_of_isGalois_isCoprime_discr M K₁ K₂ hcoprime) htop
@@ -165,7 +134,7 @@ private lemma natAbs_discr_adjoin_range_option {α : Type u} [Fintype α] {L : T
       simp
     rw [hrange] at h
     simpa only [K₂, Nat.card_unique, pow_one] using h
-  rw [hdisc₁, hdisc₂, hfinrank₁, hfinrank₂, prod_pow_two_pow_pred_sq] at hformula
+  rw [hdisc₁, hdisc₂, hfinrank₁, hfinrank₂, Fintype.sq_prod_pow_two_pow_card_pred] at hformula
   simpa only [M, Fintype.card_option, Fintype.prod_option, Function.comp_apply,
     Nat.add_sub_cancel, mul_comm] using hformula
 
