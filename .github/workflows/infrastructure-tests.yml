@@ -46,6 +46,7 @@ jobs:
             scripts/test_lake_cache_probe.py \
             scripts/test_lake_cache_reuse.py \
             scripts/test_pick_runner.py \
+            scripts/test_bors_staging_identity.py \
             scripts/test_workflow_pins.py \
             scripts/test_roadmap_api.py \
             scripts/test_control_batch_workflows.py \

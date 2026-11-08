@@ -50,7 +50,7 @@ concurrency:
   # Bors batch IDs identify one base branch. Incomplete dispatch identities use
   # the run ID so they cannot displace another candidate.
   group: >-
-    ${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'self-tested' && !(contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name)) && format('irrelevant-label-{0}', github.run_id) || 'pr-build' }}-${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
+    pr-build-${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'self-tested' && !(contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name)) && format('irrelevant-label-{0}', github.run_id) || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
       github.event.client_payload.batch_id && github.event.client_payload.head_sha &&
       github.event.client_payload.base_sha && github.event.client_payload.base_ref &&
       format('bors-staging-{0}-{1}-{2}-{3}-{4}', github.repository_id, github.event.client_payload.batch_id,
