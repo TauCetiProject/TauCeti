@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 import Mathlib.RingTheory.Support
 import Mathlib.Algebra.GroupWithZero.Action.Regular
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Ideals that become principal in an away localization
@@ -21,8 +22,6 @@ multiplier, as produced by Nakayama's lemma.
 
 ## Main results
 
-* `Ideal.map_eq_span_singleton_of_isUnit`: if `f r` is a unit for a ring homomorphism `f`,
-  then `r • I ≤ (t)` and `t ∈ I` imply that `I` generates `(f t)` after applying `f`.
 * `Ideal.map_algebraMap_away_eq_span_singleton`: if `r • I ≤ (t)` and `t ∈ I`, then `I`
   generates `(t)` in the localization away from `r`.
 * `Ideal.exists_notMem_smul_le_span_singleton_of_map_eq`: over a Noetherian ring, an ideal which
@@ -44,17 +43,6 @@ public section
 open scoped Pointwise
 
 namespace Ideal
-
-/-- If `f r` is a unit, `r • I ≤ (t)`, and `t ∈ I`, then `I` generates the principal ideal
-`(f t)` after applying the ring homomorphism `f`. -/
-theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semiring B']
-    [FunLike F B B'] [RingHomClass F B B'] (f : F) {I : Ideal B} {r t : B} (ht : t ∈ I)
-    (h : r • I ≤ span {t}) (hr : IsUnit (f r)) :
-    I.map f = span {f t} := by
-  refine le_antisymm (map_le_iff_le_comap.mpr fun i hi ↦ ?_)
-    ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
-  have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
-  rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
 
 /-- If `r • I ≤ (t)` for some `t ∈ I`, then `I` generates the principal ideal `(t)` in the
 localization away from `r`. -/
