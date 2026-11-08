@@ -268,8 +268,11 @@ theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
     Subtype.val '' (G.toOfSimpleGraphFinset S : Set (Graph.ofSimpleGraph G).vertexSet) =
       (S : Set V) := by
   rw [toOfSimpleGraphFinset, Finset.coe_map, Set.image_image]
-  change (fun x : V ↦ (G.toOfSimpleGraphVertex x).1) '' (S : Set V) = S
-  rw [show (fun x : V ↦ (G.toOfSimpleGraphVertex x).1) = id from rfl, Set.image_id]
+  trans id '' (S : Set V)
+  · apply Set.image_congr
+    intro x _
+    exact G.toOfSimpleGraphVertex_val x
+  · exact Set.image_id _
 
 @[simp]
 theorem toOfSimpleGraphFinset_map_val
