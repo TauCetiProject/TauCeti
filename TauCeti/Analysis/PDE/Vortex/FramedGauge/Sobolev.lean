@@ -125,20 +125,9 @@ theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} 
     ∃ h : Lp ℂ 2 (volume : Measure ℂ), h =ᵐ[volume] (fun z ↦ (u z : ℂ) - 1) ∧
       MemSobolev s 2 (h : 𝓢'(ℂ, ℂ)) := by
   obtain ⟨-, h₁, h₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
-  obtain ⟨a, hae, ha⟩ := mem_realSobolevFunctions.1 h₁
-  obtain ⟨b, hbe, hb⟩ := mem_realSobolevFunctions.1 h₂
-  refine ⟨ofRealCLM.compLp a + I • ofRealCLM.compLp b, ?_, ?_⟩
-  · filter_upwards [Lp.coeFn_add (ofRealCLM.compLp a) (I • ofRealCLM.compLp b),
-      Lp.coeFn_smul I (ofRealCLM.compLp b), ofRealCLM.coeFn_compLp (p := 2) (μ := volume) a,
-      ofRealCLM.coeFn_compLp (p := 2) (μ := volume) b, hae, hbe] with z h h' ha' hb' ha'' hb''
-    rw [h, Pi.add_apply, h', Pi.smul_apply, ha', hb']
-    apply Complex.ext <;> simp [ha'', hb'']
-  · have e := map_add (Lp.toTemperedDistributionCLM ℂ (volume : Measure ℂ) 2)
-      (ofRealCLM.compLp a) (I • ofRealCLM.compLp b)
-    rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
-      Lp.toTemperedDistributionCLM_apply] at e
-    rw [e]
-    exact ha.add (hb.smul I)
+  obtain ⟨h, hae, hh⟩ := exists_memSobolev_ae_eq_of_mem_realSobolevFunctions h₁ h₂
+  refine ⟨h, hae.trans (Eventually.of_forall fun z ↦ ?_), hh⟩
+  apply Complex.ext <;> simp
 
 /-- The Sobolev gauge groups decrease as the order increases: `G_s ≤ G_s'` for `1 < s' ≤ s`. -/
 theorem sobolevGaugeGroup_mono {s s' : ℝ} (hs' : 1 < s') (h : s' ≤ s) :
