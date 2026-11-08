@@ -190,7 +190,7 @@ theorem convolution_lsmul_le_of_forall_le (hρs : Function.support ρ ⊆ ball 0
 /-- **Sup-norm bounds survive mollification.** If `ρ` is a nonnegative kernel of integral `1`
 supported in `ball 0 R` and `‖f‖ ≤ M` on `ball x₀ R`, then `‖(ρ ⋆ f) x₀‖ ≤ M`. -/
 theorem norm_convolution_lsmul_le_of_forall_norm_le {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [CompleteSpace E'] [BorelSpace G] [SecondCountableTopology G]
+    [NormedSpace ℝ E'] [BorelSpace G] [SecondCountableTopology G]
     [μ.IsAddLeftInvariant] [SFinite μ] {f : G → E'} {M : ℝ}
     (hρs : Function.support ρ ⊆ ball 0 R) (hρ0 : ∀ y, 0 ≤ ρ y) (hρ1 : ∫ y, ρ y ∂μ = 1)
     (hf : AEStronglyMeasurable f μ) (h : ∀ y ∈ ball x₀ R, ‖f y‖ ≤ M) :
@@ -201,9 +201,12 @@ theorem norm_convolution_lsmul_le_of_forall_norm_le {E' : Type*} [NormedAddCommG
     have hρ : ρ = 0 := Function.support_eq_empty_iff.1
       (Set.subset_empty_iff.1 (hρs.trans (ball_eq_empty.2 (not_lt.1 hR)).subset))
     simp [hρ] at hρ1
-  simpa using dist_convolution_le (z₀ := (0 : E'))
-    ((norm_nonneg _).trans (h x₀ (mem_ball_self hR))) hρs hρ0 hρ1 hf
-    (fun y hy ↦ by simpa using h y hy)
+  by_cases hE : CompleteSpace E'
+  · simpa using dist_convolution_le (z₀ := (0 : E'))
+      ((norm_nonneg _).trans (h x₀ (mem_ball_self hR))) hρs hρ0 hρ1 hf
+      (fun y hy ↦ by simpa using h y hy)
+  · simpa [convolution_def, integral_of_not_completeSpace hE] using
+      (norm_nonneg _).trans (h x₀ (mem_ball_self hR))
 
 variable {ι : Type*} {l : Filter ι} {ρ : ι → G → ℝ}
 
