@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Basic
 import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
+import TauCeti.Algebra.Algebra.Hom
 import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.RingTheory.Ideal.IdempotentFG
 
@@ -139,24 +140,6 @@ private theorem eq_bot_of_isIdempotentElem_of_le_augmentationIdeal [IsNoetherian
     rw [hspan]
     simp
 
-/-- The augmentation ideal of a Hopf algebra over a field is a maximal ideal. -/
-private theorem isMaximal_augmentationIdeal : (Bialgebra.AugmentationIdeal k K).IsMaximal := by
-  dsimp [Bialgebra.AugmentationIdeal]
-  exact RingHom.ker_isMaximal_of_surjective _ fun x ↦ ⟨algebraMap k K x, by simp⟩
-
-/-- The kernel of a Hopf map lies in the augmentation ideal of its source. -/
-private theorem ker_toIdeal_le_augmentationIdeal (f : H →ₐc[k] K) :
-    (HopfIdeal.ker f).toIdeal ≤ Bialgebra.AugmentationIdeal k H := by
-  intro x hx
-  rw [Bialgebra.AugmentationIdeal, RingHom.mem_ker]
-  have hxker : x ∈ RingHom.ker (f : H →ₐ[k] K) := by
-    simpa only [HopfIdeal.ker_toIdeal] using hx
-  have hcounit := CoalgHomClass.counit_comp_apply f x
-  calc
-    Coalgebra.counit (R := k) x = Coalgebra.counit (R := k) (f x) := hcounit.symm
-    _ = Coalgebra.counit (R := k) 0 := congrArg _ (RingHom.mem_ker.mp hxker)
-    _ = 0 := map_zero (Bialgebra.counitAlgHom k K)
-
 /-- Over the residue field at the augmentation ideal of `K`, a Hopf map `f : H → K` has kernel the
 augmentation ideal of `H`. -/
 private theorem ker_algebraMap_residueField_eq_augmentationIdeal [Algebra H K]
@@ -189,14 +172,6 @@ private theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommR
   rw [h]
   rfl
 
-/-- The cotangent module of an extension of `S` with Noetherian total ring is finite over `S`. -/
-private theorem finite_cotangent {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
-    (P : Algebra.Extension R S) [IsNoetherianRing P.Ring] : Module.Finite S P.Cotangent := by
-  have _ : Module.Finite P.Ring P.ker := Module.Finite.of_fg P.ker.fg_of_isNoetherianRing
-  have _ : Module.Finite P.Ring P.Cotangent :=
-    Module.Finite.of_surjective _ Algebra.Extension.Cotangent.mk_surjective
-  exact Module.Finite.of_restrictScalars_finite P.Ring S P.Cotangent
-
 /-- A surjective Hopf map between smooth connected affine groups is injective if its conormal
 space at the identity vanishes.
 
@@ -228,8 +203,11 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   have hPker : P.ker = (HopfIdeal.ker f).toIdeal := by
     rw [HopfIdeal.ker_toIdeal]
     exact congrArg RingHom.ker hf_algebraMap
-  have hker_aug := ker_toIdeal_le_augmentationIdeal f
-  have _ : Module.Finite K P.Cotangent := finite_cotangent P
+  have hker_aug : (HopfIdeal.ker f).toIdeal ≤ Bialgebra.AugmentationIdeal k H :=
+    (toIdeal_le_toIdeal.mpr (HopfIdeal.le_augmentation k H (HopfIdeal.ker f))).trans_eq
+      (augmentation_toIdeal k H)
+  have _ : Module.Finite K P.Cotangent :=
+    Algebra.Extension.Cotangent.finite P.ker.fg_of_isNoetherianRing
   obtain ⟨l, hl⟩ := (P.formallySmooth_iff_split_injection).mp
     (inferInstance : Algebra.FormallySmooth k K)
   let _ : Module.Projective K P.CotangentSpace := inferInstance
@@ -239,7 +217,7 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   let _ : Module.FinitePresentation K P.Cotangent :=
     Module.finitePresentation_of_projective K P.Cotangent
   let p : Ideal K := Bialgebra.AugmentationIdeal k K
-  have _ : p.IsMaximal := isMaximal_augmentationIdeal
+  have _ : p.IsMaximal := _root_.AlgHom.ker_isMaximal (Bialgebra.counitAlgHom k K)
   let κ := p.ResidueField
   have hbaseChange_zero : P.cotangentComplex.lTensor κ = 0 := by
     refine lTensor_cotangentComplex_eq_zero P fun x hx ↦ ?_
