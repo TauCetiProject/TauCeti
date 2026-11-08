@@ -28,8 +28,8 @@ the end at `∞` and `β` is the smooth transition function.
 * It is tame, and compatible when the end structures are.
 * It is `J₀` on the pole disc `‖w‖ ≤ 2 exp (2π)`.
 * For period-one end structures, it is `J t` on the part `s ≤ -2` of the end.
-* For smooth period-one end structures, it is jointly `C^n` along `C^n` families of points of
-  `ℂ`, including the pole, and points of `M`
+* For period-one end structures which are jointly `C^n` on `ℝ × M`, it is jointly `C^n` along
+  `C^n` families of points of `ℂ`, including the pole, and points of `M`
   (`TauCeti.SmoothTwoForm.Compatible.contMDiff_negativePlaneAlmostComplex`).
 
 Smoothness off the pole disc follows from
@@ -145,32 +145,28 @@ theorem cayley_negativePlaneAlmostComplex (w : ℂ) (x : M) :
 /-- **The pole disc.** The negative plane structure is the base structure `J₀` on the disc
 `‖w‖ ≤ 2 exp (2π)` about the pole. -/
 theorem negativePlaneAlmostComplex_eq_of_norm_le {w : ℂ} (hw : ‖w‖ ≤ 2 * Real.exp (2 * π)) :
-    h₀.negativePlaneAlmostComplex J hJ w = J₀ := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    almostComplexStructureAt_negativePlaneAlmostComplex,
-    Floer.negativePlaneAlmostComplex_eq_of_norm_le (h₀.compatibleAt x) hw,
-    SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+    h₀.negativePlaneAlmostComplex J hJ w = J₀ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_negativePlaneAlmostComplex]
+    exact Floer.negativePlaneAlmostComplex_eq_of_norm_le (h₀.compatibleAt x) hw ()
 
 /-- **The structure is `J t` far out on the end.** If `J` has period one in `t`, then on the part
 `s ≤ -2` of the end, the negative plane structure at the point with end coordinates `z = s + i t`
 is `J t`. -/
 theorem negativePlaneAlmostComplex_cylindricalEndLift (hJp : Function.Periodic J 1) {z : ℂ}
-    (hz : z.re ≤ -2) : h₀.negativePlaneAlmostComplex J hJ (inf.cylindricalEndLift z) = J z.im := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    almostComplexStructureAt_negativePlaneAlmostComplex,
-    Floer.negativePlaneAlmostComplex_cylindricalEndLift (h₀.compatibleAt x)
-      (fun t => by simp only [hJp t]) hz,
-    SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+    (hz : z.re ≤ -2) : h₀.negativePlaneAlmostComplex J hJ (inf.cylindricalEndLift z) = J z.im :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_negativePlaneAlmostComplex]
+    exact Floer.negativePlaneAlmostComplex_cylindricalEndLift (h₀.compatibleAt x)
+      (fun t => by simp only [hJp t]) hz ()
 
 /-- **The plane structure is smooth.** For end structures which have period one in `t` and are
-smooth on `ℝ × M`, the negative plane structures are `C^n` along every `C^n` family of points `f`
+`C^n` on `ℝ × M`, the negative plane structures are `C^n` along every `C^n` family of points `f`
 of `ℂ`, including the pole, and points `b` of `M`. -/
 theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [TopologicalSpace G] {I' : ModelWithCorners ℝ F G} [TopologicalSpace N]
     [ChartedSpace G N] {n : ℕ∞ω} [ENat.LEInfty n] (hJp : Function.Periodic J 1)
-    (hJs : ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
+    (hJs : ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
         p.2 ((J p.1).toEndomorphism p.2)))
@@ -208,7 +204,7 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
     (fun _ _ => hJ _) (fun y => cayley_negativePlaneAt h₀ J hJ _ _) (hb y₀)
     (fun _ => hβ.contMDiffAt.comp y₀
       (((inf.contDiffAt_re_endCoord hw).neg.sub contDiffAt_const).contMDiffAt.comp y₀ (hf y₀)))
-    fun _ => ((inf.contMDiffAt_comp_im_endCoord hp hJs hw (b y₀)).of_le
-      ENat.LEInfty.out).comp y₀ ((hf y₀).prodMk (hb y₀))
+    fun _ => (inf.contMDiffAt_comp_im_endCoord hp hJs hw (b y₀)).comp y₀
+      ((hf y₀).prodMk (hb y₀))
 
 end TauCeti.SmoothTwoForm.Compatible

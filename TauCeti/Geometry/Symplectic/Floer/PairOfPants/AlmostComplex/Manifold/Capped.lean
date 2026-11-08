@@ -35,8 +35,9 @@ coordinate relative to `J₀` is `β(r) • ∑ q, β(σ_q - 1) β(L + 3 - σ_q)
   is the structure for `L = 0` translated by `L` beyond the neck, and it is the pair-of-pants
   structure `TauCeti.SmoothTwoForm.Compatible.pairOfPantsAlmostComplex` wherever every
   `σ_q ≤ L + 2`.
-* For smooth period-one end structures it is jointly `C^n` along `C^n` families of cutoff
-  parameters, neck lengths, points of `ℂ`, including the poles `0` and `1`, and points of `M`
+* For period-one end structures which are jointly `C^n` on `ℝ × M`, it is jointly `C^n` along
+  `C^n` families of cutoff parameters, neck lengths, points of `ℂ`, including the poles `0` and
+  `1`, and points of `M`
   (`TauCeti.SmoothTwoForm.Compatible.contMDiff_cappedAlmostComplex`).
 
 The comparison family `TauCeti.SmoothTwoForm.Compatible.cappedComparisonAlmostComplex` takes the
@@ -133,14 +134,6 @@ theorem almostComplexStructureAt_cappedAlmostComplex (r L : ℝ) (w : ℂ) (x : 
   rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
     cappedAlmostComplex_toEndomorphism, LinearMap.coe_toContinuousLinearMap, cappedAt]
 
-omit [FiniteDimensional ℝ E] in
-/-- Two smooth almost complex structures with the same value on every tangent fiber agree. -/
-private theorem eq_of_almostComplexStructureAt_eq {K₁ K₂ : SmoothAlmostComplexStructure I M}
-    (h : ∀ x, K₁.almostComplexStructureAt x = K₂.almostComplexStructureAt x) : K₁ = K₂ := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply, h x,
-    SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-
 /-- The capped structure is tamed by `σ`. -/
 theorem tames_cappedAlmostComplex (r L : ℝ) (w : ℂ) :
     σ.Tames (h₀.cappedAlmostComplex J hJ r L w) := by
@@ -174,7 +167,7 @@ variable {r L : ℝ}
 /-- For `r ≤ 0` the capped structure is the base structure `J₀`. -/
 theorem cappedAlmostComplex_of_nonpos (hr : r ≤ 0) (L : ℝ) (w : ℂ) :
     h₀.cappedAlmostComplex J hJ r L w = J₀ :=
-  eq_of_almostComplexStructureAt_eq fun x => by
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_cappedAlmostComplex]
     exact Floer.cappedAlmostComplex_of_nonpos (h₀.compatibleAt x) hr L w ()
 
@@ -182,7 +175,7 @@ theorem cappedAlmostComplex_of_nonpos (hr : r ≤ 0) (L : ℝ) (w : ℂ) :
 theorem cappedAlmostComplex_of_one_le (hr : 1 ≤ r) (L : ℝ) :
     h₀.cappedAlmostComplex J hJ r L = h₀.cappedAlmostComplex J hJ 1 L := by
   funext w
-  refine eq_of_almostComplexStructureAt_eq fun x => ?_
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
   rw [almostComplexStructureAt_cappedAlmostComplex, almostComplexStructureAt_cappedAlmostComplex,
     Floer.cappedAlmostComplex_of_one_le (h₀.compatibleAt x) hr L]
 
@@ -190,7 +183,7 @@ theorem cappedAlmostComplex_of_one_le (hr : 1 ≤ r) (L : ℝ) :
 pair of pants, the capped structure is the base structure `J₀`. -/
 theorem cappedAlmostComplex_eq_base_of_notMem_truncation (r : ℝ) {w : ℂ}
     (hw : w ∉ truncation (L + 3)) : h₀.cappedAlmostComplex J hJ r L w = J₀ :=
-  eq_of_almostComplexStructureAt_eq fun x => by
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_cappedAlmostComplex]
     exact Floer.cappedAlmostComplex_eq_base_of_notMem_truncation (h₀.compatibleAt x) r hw ()
 
@@ -225,7 +218,7 @@ variable {q : Puncture}
 theorem cappedAlmostComplex_cylindricalEndLift_of_mem_Icc (hJp : Function.Periodic (J q) 1)
     (hr : 1 ≤ r) {z : ℂ} (hz : q.endSign * z.re ∈ Icc 2 (L + 2)) :
     h₀.cappedAlmostComplex J hJ r L (q.cylindricalEndLift z) = J q z.im :=
-  eq_of_almostComplexStructureAt_eq fun x => by
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_cappedAlmostComplex]
     exact Floer.cappedAlmostComplex_cylindricalEndLift_of_mem_Icc (h₀.compatibleAt x)
       (fun t => by simp only [hJp t]) hr hz ()
@@ -237,7 +230,7 @@ theorem cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (hJp : Function.P
     (r : ℝ) (hL : 0 ≤ L) {z : ℂ} (hz : 2 ≤ q.endSign * z.re) :
     h₀.cappedAlmostComplex J hJ r L (q.cylindricalEndLift (z + ↑(q.endSign * L))) =
       h₀.cappedAlmostComplex J hJ r 0 (q.cylindricalEndLift z) :=
-  eq_of_almostComplexStructureAt_eq fun x => by
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_cappedAlmostComplex, almostComplexStructureAt_cappedAlmostComplex]
     exact Floer.cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (h₀.compatibleAt x)
       (fun t => by simp only [hJp t]) r hL hz ()
@@ -254,7 +247,7 @@ theorem cappedAlmostComplex_eq_pairOfPantsAlmostComplex
     (hr : 1 ≤ r) {w : ThricePuncturedSphere}
     (hw : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ L + 2) :
     h₀.cappedAlmostComplex J hJ r L w = h₀.pairOfPantsAlmostComplex J hJ hJp hJs w :=
-  eq_of_almostComplexStructureAt_eq fun x => by
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_cappedAlmostComplex,
       almostComplexStructureAt_pairOfPantsAlmostComplex]
     exact Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex (h₀.compatibleAt x) hr hw ()
@@ -281,11 +274,11 @@ private theorem contMDiffAt_cappedWeight {r L : N → ℝ} {f : N → ℂ} {y₀
   exact (hβ.contMDiffAt.comp y₀ hr).smul ((hβ.contMDiffAt.comp y₀ (hσ.sub contMDiffAt_const)).smul
     (hβ.contMDiffAt.comp y₀ ((hL.add contMDiffAt_const).sub hσ)))
 
-/-- **The structure is smooth.** For end structures which have period one in `t` and are smooth
+/-- **The structure is smooth.** For end structures which have period one in `t` and are `C^n`
 on `ℝ × M`, the capped structures are `C^n` along every `C^n` family of cutoff parameters `r`,
 neck lengths `L`, points `f` of `ℂ`, including the poles `0` and `1`, and points `b` of `M`. -/
 theorem contMDiff_cappedAlmostComplex (hJp : ∀ q, Function.Periodic (J q) 1)
-    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
+    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
         p.2 ((J q p.1).toEndomorphism p.2)))
@@ -322,8 +315,8 @@ theorem contMDiff_cappedAlmostComplex (hJp : ∀ q, Function.Periodic (J q) 1)
   have hp : Function.Periodic (fun t (x : M) => TotalSpace.mk' (E →L[ℝ] E)
       (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
       x ((J q t).toEndomorphism x)) 1 := fun t => by simp only [hJp q t]
-  exact ((q.contMDiffAt_comp_im_endCoord hp (hJs q) (hq q) (b y₀)).of_le
-    ENat.LEInfty.out).comp y₀ ((hf y₀).prodMk (hb y₀))
+  exact (q.contMDiffAt_comp_im_endCoord hp (hJs q) (hq q) (b y₀)).comp y₀
+    ((hf y₀).prodMk (hb y₀))
 
 end Smooth
 
@@ -367,7 +360,7 @@ theorem cappedComparisonAlmostComplex_of_two_le (hR : 2 ≤ R) :
 theorem contMDiff_cappedComparisonAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [TopologicalSpace G] {I' : ModelWithCorners ℝ F G} [TopologicalSpace N]
     [ChartedSpace G N] {n : ℕ∞ω} [ENat.LEInfty n] (hJp : ∀ q, Function.Periodic (J q) 1)
-    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
+    (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
         p.2 ((J q p.1).toEndomorphism p.2)))
