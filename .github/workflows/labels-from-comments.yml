@@ -56,6 +56,7 @@ jobs:
           owner: TauCetiProject
           repositories: TauCeti
           permission-issues: write
+          permission-pull-requests: write
 
       - name: Apply label commands
         if: steps.commands.outputs.labels != '[]'
