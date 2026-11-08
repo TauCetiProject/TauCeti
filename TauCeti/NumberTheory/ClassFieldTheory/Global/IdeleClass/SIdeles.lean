@@ -287,8 +287,7 @@ the Herbrand quotients of the `S`-ideles and of the `S`-units, when the classes 
 `h(C_L) = h(I_{L,S}) / h(U_{L,S})`. -/
 theorem herbrandQuotient_ideleClassRep [IsCyclic (L ≃ₐ[K] L)]
     (hS : Subgroup.closure (classGroupMk '' (primesAbove (𝓞 K) (𝓞 L) S)) = ⊤)
-    [Finite (tateCohomology (sUnitsRep L S) 0)] [Finite (tateCohomology (sUnitsRep L S) (-1))]
-    [Finite (tateCohomology (sIdelesRep L S) (-1))] :
+    [Finite (tateCohomology (sUnitsRep L S) 0)] [Finite (tateCohomology (sUnitsRep L S) (-1))] :
     TateCohomology.herbrandQuotient (ideleClassRep K L) =
       TateCohomology.herbrandQuotient (sIdelesRep L S) /
         TateCohomology.herbrandQuotient (sUnitsRep L S) := by
@@ -298,8 +297,6 @@ theorem herbrandQuotient_ideleClassRep [IsCyclic (L ≃ₐ[K] L)]
     inferInstanceAs (Finite (tateCohomology (sUnitsRep L S) 0))
   have : Finite (tateCohomology (sIdeleShortComplex L S).X₁ (-1)) :=
     inferInstanceAs (Finite (tateCohomology (sUnitsRep L S) (-1)))
-  have : Finite (tateCohomology (sIdeleShortComplex L S).X₂ (-1)) :=
-    inferInstanceAs (Finite (tateCohomology (sIdelesRep L S) (-1)))
   exact TateCohomology.herbrandQuotient_eq_div_of_shortExact (sIdeleShortComplex_shortExact L hS)
 
 end TauCeti.ClassFieldTheory
