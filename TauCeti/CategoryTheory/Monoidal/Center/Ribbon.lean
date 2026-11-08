@@ -9,7 +9,6 @@ public import TauCeti.CategoryTheory.Monoidal.Center.Abelian
 public import TauCeti.CategoryTheory.Monoidal.Center.Pivotal
 public import TauCeti.CategoryTheory.Monoidal.Center.Simple
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Ribbon.OfSpherical
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Closed
 
 /-!
 # The twist of the Drinfeld centre, and the centre of a spherical category is ribbon
