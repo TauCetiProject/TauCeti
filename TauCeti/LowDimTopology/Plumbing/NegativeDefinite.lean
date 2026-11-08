@@ -25,9 +25,10 @@ The matrix-level definition `PlumbingGraph.IsNegativeDefinite` says that the neg
 matrix is positive definite, i.e. `0 < xᵀ (-A) x` for every nonzero integer vector `x`. Here we
 transport that statement through `Matrix.toBilin'` to the bilinear form
 `PlumbingGraph.intersectionForm`, obtaining the self-pairing sign, the resulting vanishing
-criterion, nondegeneracy, and the injectivity of multiplication by the intersection matrix. As a
-self-validating example the `A₂` plumbing (two `-2`-framed spheres joined by an edge) is shown to
-be negative definite.
+criterion and nondegeneracy. The injectivity of multiplication by the intersection matrix, like
+the nonvanishing of its determinant below, follows directly from positive definiteness of the
+negated matrix (`PlumbingGraph.isNegativeDefinite_iff`). As a self-validating example the `A₂`
+plumbing (two `-2`-framed spheres joined by an edge) is shown to be negative definite.
 
 Three further results are the quantitative half of the same hypothesis: nonvanishing of `det A`,
 Cauchy--Schwarz, and finiteness of the superlevel sets of the self-pairing. Cauchy--Schwarz for
