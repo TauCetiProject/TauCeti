@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import TauCeti.Algebra.Order.Floor.Semifield
 import Mathlib.Tactic
 
 /-!
@@ -30,19 +31,6 @@ Lemma B.4.4.
 public section
 
 namespace TauCeti
-
-/-- For a nonnegative `t` and positive `a`, some positive multiple `N a` lies in `(t, t + a]`. -/
-private theorem exists_pos_nat_mul_bounds {t a : ℝ} (ht : 0 ≤ t) (ha : 0 < a) :
-    ∃ N : ℕ, 1 ≤ N ∧ t < N * a ∧ N * a ≤ t + a := by
-  refine ⟨⌊t / a⌋₊ + 1, by omega, ?_, ?_⟩
-  · have h := Nat.lt_floor_add_one (t / a)
-    have h' : t / a < ((⌊t / a⌋₊ + 1 : ℕ) : ℝ) := by
-      simpa only [Nat.cast_add, Nat.cast_one] using h
-    exact (div_lt_iff₀ ha).mp h'
-  · have h := Nat.floor_le (show 0 ≤ t / a by positivity)
-    have h' := (le_div_iff₀ ha).mp h
-    push_cast
-    nlinarith
 
 /-- The initial exponent of the ladder lies in `(p / (p - 1), p]` when its reciprocal `b` lies
 in `[1 / p, (p - 1) / p)`, with strict inequality at the left end. -/

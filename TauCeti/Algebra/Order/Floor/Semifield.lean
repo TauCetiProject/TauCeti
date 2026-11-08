@@ -27,6 +27,7 @@ jet conditions on an integer interval of radius `B`.
 
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
 * `TauCeti.mem_Ico_ceil_div_iff`: `n ∈ [⌈s / τ⌉₊, ⌈t / τ⌉₊)` if and only if `n τ ∈ [s, t)`.
+* `TauCeti.exists_pos_nat_mul_bounds`: a positive multiple `N a` lies in `(t, t + a]`.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
@@ -92,6 +93,17 @@ point-order pairs, also when `n = 0` or `B < 1`. -/
 theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (hB : 0 < B) (n : ℕ) :
     n < (2 * ⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) :=
   (lt_floor_add_one_mul_floor_div_add_one hB n).trans_le (Nat.mul_le_mul_right _ (by omega))
+
+/-- For a nonnegative `t` and positive `a`, some positive multiple `N a` lies in `(t, t + a]`. -/
+theorem exists_pos_nat_mul_bounds {t a : K} (ht : 0 ≤ t) (ha : 0 < a) :
+    ∃ N : ℕ, 1 ≤ N ∧ t < N * a ∧ N * a ≤ t + a := by
+  have htdiv : 0 ≤ t / a := div_nonneg ht ha.le
+  refine ⟨⌊t / a⌋₊ + 1, by omega, ?_, ?_⟩
+  · have h := Nat.lt_floor_add_one (t / a)
+    exact (div_lt_iff₀ ha).mp (by simpa only [Nat.cast_add, Nat.cast_one] using h)
+  · push_cast
+    rw [add_mul, one_mul]
+    exact add_le_add_left ((le_div_iff₀ ha).mp (Nat.floor_le htdiv)) a
 
 /-- For `n = 3` and `B = 1 / 2`, `⌊B⌋₊ = 0` and `⌊n / B⌋₊ = 6`, giving `1 * 7 > 3`; for `n = 2`
 and `B = 3`, `⌊B⌋₊ = 3` and `⌊n / B⌋₊ = 0`, giving `7 * 1 > 2`. -/
