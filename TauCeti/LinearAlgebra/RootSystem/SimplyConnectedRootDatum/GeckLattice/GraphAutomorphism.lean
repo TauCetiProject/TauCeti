@@ -248,14 +248,22 @@ Bourbaki-numbered Dynkin diagram. It is the image of `TauCeti.DynkinType.geckDia
 `Matrix.permMatrixHom`, that is, the permutation matrix of the inverse coordinate permutation,
 since permutation matrices multiply contravariantly. Conjugation by it is the action on points of
 the coordinate automorphism of the ambient `GLₙ` which descends to
-`TauCeti.DynkinType.geckGraphAut` on the carrier. This abbreviates the generic numbered-symmetry
-matrix so generic point endomorphisms specialize without a matrix conversion. -/
-abbrev geckGraphAutMatrix (hsigma : sigma ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
+`TauCeti.DynkinType.geckGraphAut` on the carrier. -/
+def geckGraphAutMatrix (hsigma : sigma ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
     Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A :=
   TauCeti.UniversalEnvelopingAlgebra.kostantNumberedSymmetryMatrix
     (t.geckCoordinateLattice ht).toAddSubgroup (t.geckCoordinateBasisFin ht)
     (t.geckDiagramModuleEquiv ht hsigma)
     (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma) A
+
+/-- The pinned Geck symmetry matrix specializes the generic numbered-symmetry matrix. -/
+theorem geckGraphAutMatrix_eq_kostantNumberedSymmetryMatrix
+    (hsigma : sigma ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
+    t.geckGraphAutMatrix ht hsigma A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantNumberedSymmetryMatrix
+        (t.geckCoordinateLattice ht).toAddSubgroup (t.geckCoordinateBasisFin ht)
+        (t.geckDiagramModuleEquiv ht hsigma)
+        (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma) A := (rfl)
 
 /-- The matrix of the pinned Geck coordinate permutation is the permutation matrix of the inverse
 finite-ordinal coordinate permutation. -/
@@ -316,15 +324,26 @@ theorem map_geckPoints_conj_geckGraphAutMatrix (hsigma : sigma ∈ t.diagramSymm
 /-- **The graph automorphism on the algebra-valued points of the pinned Geck carrier**, namely
 conjugation by the matrix of the pinned coordinate permutation. It renumbers the pinned root
 subgroups by the diagram symmetry without changing their parameters, and relabels the coordinates
-of a pinned weight-torus point. This abbreviates the generic numbered-symmetry action, allowing
-its composition and power laws to specialize directly. -/
-abbrev geckGraphAutPoints (hsigma : sigma ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
+of a pinned weight-torus point. -/
+def geckGraphAutPoints (hsigma : sigma ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
     MulAut (t.geckPoints ht A) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantNumberedSymmetryPoints
     (t.geckCoordinateLattice ht).toAddSubgroup (t.geckCoordinateBasisFin ht)
     (t.geckDiagramModuleEquiv ht hsigma)
     (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma) A
     (t.geckPoints ht A) (t.map_geckPoints_conj_geckGraphAutMatrix ht hsigma A)
+
+/-- The Geck graph automorphism on points specializes the generic numbered-symmetry action. -/
+theorem geckGraphAutPoints_eq_kostantNumberedSymmetryPoints
+    (hsigma : sigma ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
+    t.geckGraphAutPoints ht hsigma A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantNumberedSymmetryPoints
+        (t.geckCoordinateLattice ht).toAddSubgroup (t.geckCoordinateBasisFin ht)
+        (t.geckDiagramModuleEquiv ht hsigma)
+        (t.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff ht hsigma) A
+        (t.geckPoints ht A) (by
+          rw [← geckGraphAutMatrix_eq_kostantNumberedSymmetryMatrix]
+          exact t.map_geckPoints_conj_geckGraphAutMatrix ht hsigma A) := (rfl)
 
 /-- The graph automorphism on points is conjugation by the matrix of the pinned coordinate
 permutation. -/

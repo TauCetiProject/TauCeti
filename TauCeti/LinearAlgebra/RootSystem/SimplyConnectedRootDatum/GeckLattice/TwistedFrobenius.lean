@@ -168,7 +168,8 @@ theorem geckTwistedFrobenius_eq_kostantToralSteinberg :
   intro g
   apply Subtype.ext
   simp only [geckTwistedFrobenius, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    coe_geckGraphAutPoints, coe_geckFrobenius, coe_kostantToralSteinberg]
+    coe_geckGraphAutPoints, coe_geckFrobenius, coe_kostantToralSteinberg,
+    geckGraphAutMatrix_eq_kostantNumberedSymmetryMatrix]
 
 /-- The twisted Frobenius applies the Frobenius first and then the graph automorphism. -/
 theorem geckTwistedFrobenius_apply (g : t.geckPoints ht A) :
@@ -191,7 +192,7 @@ theorem coe_geckTwistedFrobenius (g : t.geckPoints ht A) :
           Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g *
         (t.geckGraphAutMatrix ht hsigma A)⁻¹ := by
   rw [geckTwistedFrobenius_eq_kostantToralSteinberg, coe_kostantToralSteinberg,
-    geckGraphAutMatrix]
+    geckGraphAutMatrix_eq_kostantNumberedSymmetryMatrix]
 
 /-- **The twisted Frobenius raises the parameter of a numbered Geck root subgroup to its
 `p ^ k`-th power and renumbers it by the diagram symmetry.** This is the defining equation of a
@@ -274,7 +275,8 @@ theorem geckTwistedFrobenius_pow (m : ℕ) :
     (show Monoid.End _ from t.geckTwistedFrobenius ht hsigma p k A) ^ m =
       (t.geckGraphAutPoints ht hsigma A ^ m).toMonoidHom.comp (t.geckFrobenius ht p (k * m) A) := by
   rw [geckTwistedFrobenius_eq_kostantToralSteinberg, kostantToralSteinberg_pow,
-    geckFrobenius_eq_kostantToralFrobenius, ← toMonoidHom_pow, geckGraphAutPoints]
+    geckFrobenius_eq_kostantToralFrobenius, ← toMonoidHom_pow,
+    geckGraphAutPoints_eq_kostantNumberedSymmetryPoints]
   -- `geckGraphAutPoints` is the numbered-symmetry automorphism, and multiplication
   -- in `Monoid.End` is the composition on the right.
   rfl
@@ -291,7 +293,8 @@ theorem geckTwistedFrobenius_pow_eq_geckFrobenius {m : ℕ} (hm : sigma ^ m = 1)
     geckFrobenius_eq_kostantToralFrobenius]
   exact kostantToralSteinberg_pow_eq_kostantToralFrobenius_of_numberedSymmetryMatrix_pow_eq_one
     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-    (by simpa only [geckGraphAutMatrix] using t.geckGraphAutMatrix_pow_eq_one ht hsigma A hm)
+    (by simpa only [geckGraphAutMatrix_eq_kostantNumberedSymmetryMatrix] using
+      t.geckGraphAutMatrix_pow_eq_one ht hsigma A hm)
 
 /-! ## Fixed points -/
 
