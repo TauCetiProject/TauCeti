@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sum
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Prod
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.ProdIcc
 
 /-!
 # Positive scalar curvature
