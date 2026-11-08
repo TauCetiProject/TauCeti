@@ -348,20 +348,11 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
 
-private theorem isClosed_posSemidef {𝕜 : Type*} [RCLike 𝕜] {m : ℕ} :
-    IsClosed {A : Matrix (Fin m) (Fin m) 𝕜 | A.PosSemidef} := by
-  open scoped MatrixOrder in
-    simpa only [Matrix.nonneg_iff_posSemidef, id_eq] using
-      (isClosed_le
-        (continuous_const :
-          Continuous (fun _ : Matrix (Fin m) (Fin m) 𝕜 ↦ (0 : Matrix (Fin m) (Fin m) 𝕜)))
-        continuous_id)
-
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
   rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
-      isClosed_posSemidef.measurableSet]
+      Matrix.posSemidef_is_closed.measurableSet]
   exact ae_posSemidef_wishartGramMeasure n 1
 
 open scoped ComplexOrder in
@@ -369,7 +360,7 @@ open scoped ComplexOrder in
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
   rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
-      isClosed_posSemidef.measurableSet]
+      Matrix.posSemidef_is_closed.measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability
