@@ -100,9 +100,9 @@ theorem _root_.Convex.exists_interior_eq_vadd_interior_of_volume_le (hK : Convex
       hLm hL0 hu hθ₀ hθ₁ hvol
     have hcv : c = ⟪u, v⟫ := by
       have h := setIntegral_congr_fun (μ := volume) measurableSet_Ioo hc
-      rw [integral_add (integrableOn_quantile_map_inner_cond u hKb hKm hK0)
-        (integrable_const c), setIntegral_const, setIntegral_quantile_map_inner_cond u hLb hLm hL0,
-        setIntegral_quantile_map_inner_cond u hKb hKm hK0] at h
+      rw [integral_add (integrableOn_quantile_map_inner_cond u hKb hK0)
+        (integrable_const c), setIntegral_const, setIntegral_quantile_map_inner_cond u hLb hL0,
+        setIntegral_quantile_map_inner_cond u hKb hK0] at h
       simp only [measureReal_def, Real.volume_Ioo, sub_zero, ENNReal.ofReal_one,
         ENNReal.toReal_one, one_smul] at h
       rw [inner_sub_right]
