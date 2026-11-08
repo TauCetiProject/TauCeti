@@ -105,6 +105,8 @@ For a manifold target, and for a vector space target in the namespace `Symplecti
   integral of the curvature over any set has absolute value at most the same sum.
 * `SmoothTwoForm.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt`: the curvature
   vanishes where the perturbation is cylindrical, beyond the collars `1 ≤ ±s ≤ 2` of the ends.
+* `SmoothTwoForm.integrableOn_truncation_pairOfPantsPerturbation`: the energy density, the area
+  density and the curvature term along a map `C¹` on `S` are integrable over every truncation.
 * `SmoothTwoForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`: the energy
   identity on the truncated pair of pants.
 * `SmoothTwoForm.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_le`: the
@@ -801,6 +803,36 @@ private theorem integrableOn_truncation_floerEnergyDensity (hω : ω.IsNondegene
       one_ne_zero)
     ((contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hzS (u z) Complex.I).mdifferentiableAt
       one_ne_zero)]
+
+/-- The Floer energy density, the symplectic area density and the curvature of the pair-of-pants
+perturbation, along a map into a manifold with a nondegenerate two-form that is `C¹` on `S`, are
+integrable over every truncation. -/
+theorem integrableOn_truncation_pairOfPantsPerturbation (hω : ω.IsNondegenerate)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) (R : ℝ) :
+    IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+        (Complex.equivRealProdCLM.symm ⁻¹' truncation R) ∧
+      IntegrableOn (fun z ↦ SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag))
+        (Complex.equivRealProdCLM.symm ⁻¹' truncation R) ∧
+      IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z))
+        (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
+  -- Every truncation lies in one with cutoff at least `1`.
+  have hsub : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆
+      Complex.equivRealProdCLM.symm ⁻¹' truncation (max R 1) :=
+    preimage_mono (truncation_mono (le_max_left R 1))
+  exact ⟨(integrableOn_truncation_floerEnergyDensity hω hH hHs hu (le_max_right R 1)).mono_set hsub,
+    ((continuousOn_symplecticArea ω hu).mono (preimage_truncation_subset R)).integrableOn_compact
+      (isCompact_preimage_truncation R),
+    (integrableOn_truncation_hamiltonianCurvature ω hH hHs hu.continuousOn
+      (le_max_right R 1)).mono_set hsub⟩
 
 /-- **The energy identity on the truncated pair of pants.** Let `K` be the pair-of-pants
 perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, with
