@@ -660,6 +660,13 @@ jobs:
             echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
             echo "BASE_SHIM_ROOT=$(realpath base)" >> "$GITHUB_ENV"
             echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
+            # Integration sources outside the ordinary PR's complete diff are the base's, which
+            # passed the full scan, so only changed sources and dropped registry entries are
+            # rescanned. Batches and Lake-pin bumps keep the full scan.
+            if [ "${{ env.IS_BATCH }}" != "true" ] && [ "${BUMP:-0}" != "1" ] \
+               && [ -f "$RUNNER_TEMP/scope-files" ]; then
+              echo "SHIM_SCOPE_FILES=$RUNNER_TEMP/scope-files" >> "$GITHUB_ENV"
+            fi
           elif [ -f pr/TauCeti/mathlib-shims.json ]; then
             # A PR that introduces the registry has no inherited obligations, but its entries are
             # all new and must still be checked. An older PR containing neither copy predates the
@@ -698,6 +705,7 @@ jobs:
           [ -z "${BASE_SHIM_REGISTRY:-}" ] || args+=(
             --base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT"
           )
+          [ -z "${SHIM_SCOPE_FILES:-}" ] || args+=(--changed-paths "$SHIM_SCOPE_FILES")
           python3 gate/scripts/check-expired-mathlib-shims.py \
             --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
           rc=$?
@@ -1313,6 +1321,7 @@ jobs:
             args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
+          [ -z "${SHIM_SCOPE_FILES:-}" ] || args+=(--changed-paths "$SHIM_SCOPE_FILES")
           # The build can change .lake/package artifacts. Any later Lake/Lean
           # execution stays in a fresh PID/network namespace with no host grants.
           probe_mounts=(--ro-bind "$CI_SOURCE_OBJECTS" "$CI_SOURCE_OBJECTS")
@@ -1324,6 +1333,9 @@ jobs:
           if [ -n "${BASE_SHIM_REGISTRY:-}" ]; then
             probe_mounts+=(--ro-bind "$BASE_SHIM_REGISTRY" "$BASE_SHIM_REGISTRY"
                            --ro-bind "$BASE_SHIM_ROOT" "$BASE_SHIM_ROOT")
+          fi
+          if [ -n "${SHIM_SCOPE_FILES:-}" ]; then
+            probe_mounts+=(--ro-bind "$SHIM_SCOPE_FILES" "$SHIM_SCOPE_FILES")
           fi
           env -i /usr/bin/bwrap --tmpfs / \
             --ro-bind /usr /usr --ro-bind /etc /etc \
