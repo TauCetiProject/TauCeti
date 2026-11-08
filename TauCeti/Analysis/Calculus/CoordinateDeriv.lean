@@ -23,16 +23,20 @@ derivative.
 
 For a smooth function, `coordinateDeriv α f x` is the `k`-th Fréchet derivative evaluated on the
 corresponding standard basis vectors (`TauCeti.coordinateDeriv_eq_iteratedFDeriv`), so it is
-bounded by the norm of `iteratedFDeriv`, and it is additive and homogeneous in `f`. Smoothness is
-preserved, also jointly in an additional parameter (`ContDiff.coordinateDeriv_snd`,
+bounded by the norm of `iteratedFDeriv`, and it is additive and homogeneous in `f`. Conversely the
+norm of the `k`-th Fréchet derivative is at most the sum of the norms of the coordinate derivatives
+along all words of length `k` (`TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`), so
+bounds on coordinate derivatives and on Fréchet derivatives are equivalent up to constants.
+Smoothness is preserved, also jointly in an additional parameter (`ContDiff.coordinateDeriv_snd`,
 `ContDiff.coordinateDeriv_fst`). For a smooth function of two variables, iterated coordinate
 derivatives in the two variables commute (`TauCeti.coordinateDeriv_coordinateDeriv_comm`), by the
 symmetry of second derivatives.
 
 For a function `a(x, ξ)` of a position and a frequency, `TauCeti.mixedDeriv α β a x ξ` is the
 mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives first. It is linear in
-smooth `a`, local in the position, and for smooth `a` the order of the two kinds of derivatives
-does not matter (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
+smooth `a`, depends only on the germ of `a` at `(x, ξ)` (`Filter.EventuallyEq.mixedDeriv_eq`), and
+for smooth `a` the order of the two kinds of derivatives does not matter
+(`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
 
 Both satisfy the general Leibniz rule for a continuous bilinear map `B`: the derivative of
 `x ↦ B (f x) (g x)` along a word `α` is the sum, over the pairs `(s, t)` of complementary subwords
@@ -46,6 +50,8 @@ symbol calculus.
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`: the bound of `iteratedFDeriv` by the
+  coordinate derivatives.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
@@ -487,6 +493,37 @@ theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU 
   refine mixedDeriv_congr_of_eventually ?_ α β ξ
   filter_upwards [hU.mem_nhds hx] with y hy η
   exact Set.indicator_of_mem (Set.mk_mem_prod hy (Set.mem_univ η)) _
+
+/-- Mixed derivatives at `(x, ξ)` only depend on the germ of the function at `(x, ξ)`. -/
+theorem _root_.Filter.EventuallyEq.mixedDeriv_eq {x ξ : CoordinateSpace n}
+    (h : a =ᶠ[nhds (x, ξ)] b) (α β : List (Fin n)) :
+    mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  rw [nhds_prod_eq] at h
+  obtain ⟨pa, hpa, pb, hpb, hab⟩ := Filter.eventually_prod_iff.1 h
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
+    filter_upwards [hpa] with y hy
+    have hy' : (fun η => a (y, η)) =ᶠ[nhds ξ] fun η => b (y, η) := by
+      filter_upwards [hpb] with η hη using hab hy hη
+    exact (hy'.coordinateDeriv β).eq_of_nhds
+  rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
+
+/-- Mixed derivatives of a finite sum of smooth functions are the sums of the mixed
+derivatives. -/
+theorem mixedDeriv_sum {ι : Type*} {s : Finset ι}
+    {f : ι → CoordinateSpace n × CoordinateSpace n → A} (hf : ∀ i ∈ s, ContDiff ℝ ∞ (f i))
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (∑ i ∈ s, f i) x ξ = ∑ i ∈ s, mixedDeriv α β (f i) x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    have hs : ContDiff ℝ ∞ (∑ j ∈ s, f j) := by
+      rw [Finset.sum_fn]
+      exact ContDiff.sum fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      mixedDeriv_add (hf i (Finset.mem_insert_self i s)) hs,
+      ih fun j hj => hf j (Finset.mem_insert_of_mem hj)]
 
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 
