@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TemperleyLieb.Basic
+public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
 
 /-!
@@ -39,6 +39,8 @@ left and one on the right, are therefore equal.
 
 * `TauCeti.TemperleyLieb.jonesWenzl_add_two`: Wenzl's quadratic recursion.
 * `TauCeti.TemperleyLieb.aug_jonesWenzl`: the augmentation of `f_n` is `1`.
+* `TauCeti.TemperleyLieb.star_jonesWenzl`: for a self-adjoint loop value, `f_n` is fixed by the
+  analytic adjoint.
 * `TauCeti.TemperleyLieb.isIdempotentElem_jonesWenzl`, `TauCeti.TemperleyLieb.e_mul_jonesWenzl`,
   `TauCeti.TemperleyLieb.jonesWenzl_mul_e`: when `[1], …, [n]` are units, `f_n` is an idempotent
   killed on both sides by every generator.
@@ -158,6 +160,29 @@ theorem aug_jonesWenzl : ∀ n, aug (jonesWenzl δ n) = 1
   | 0 => by simp
   | 1 => by simp
   | m + 2 => by simp [jonesWenzl_add_two, aug_jonesWenzl (m + 1)]
+
+section Star
+
+variable [StarRing R] [Fact (IsSelfAdjoint δ)]
+
+/-- For a self-adjoint loop value, the Jones–Wenzl projection is fixed by the analytic adjoint,
+with no invertibility assumption on the quantum integers. -/
+@[simp]
+theorem star_jonesWenzl : ∀ n, star (jonesWenzl δ n) = jonesWenzl δ n
+  | 0 => by simp
+  | 1 => by simp
+  | m + 2 => by
+    have hq (k : ℕ) : star (qInt R δ k) = qInt R δ k := by
+      rw [← starRingEnd_apply, RingHom.map_qInt, starRingEnd_apply,
+        (Fact.out : IsSelfAdjoint δ).star_eq]
+    rw [jonesWenzl_add_two, star_sub, star_smul, star_mul', ← Ring.inverse_star, hq, hq,
+      star_mul, star_mul, star_e, ← strandIncl_star, star_jonesWenzl (m + 1), mul_assoc]
+
+/-- For a self-adjoint loop value, the Jones–Wenzl projection is self-adjoint. -/
+theorem isSelfAdjoint_jonesWenzl (n : ℕ) : IsSelfAdjoint (jonesWenzl δ n) :=
+  star_jonesWenzl n
+
+end Star
 
 section Recursion
 
