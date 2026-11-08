@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
-import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
+public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Henselian.Section
 import TauCeti.RingTheory.Jacobson.Basic
@@ -50,27 +50,31 @@ public section
 
 open Polynomial
 
+namespace Polynomial.UniversalCoprimeFactorizationRing
+
+variable {R : Type*} [CommRing R] (I : Ideal R)
+
+/-- Composing a point of the universal coprime factorization ring with values in `R` with the
+reduction `R → R ⧸ I` reduces both factors modulo `I`. -/
+lemma homEquiv_comp_mkₐ_eq_map {p : R[X]} (m k : ℕ) (hn : p.natDegree = m + k)
+    (P : MonicDegreeEq R p.natDegree) (φ : UniversalCoprimeFactorizationRing m k hn P →ₐ[R] R) :
+    (homEquiv (R ⧸ I) m k hn P
+        ((Ideal.Quotient.mkₐ R I).comp φ)).1.1.1 =
+      (homEquiv R m k hn P φ).1.1.1.map
+        (Ideal.Quotient.mk I) ∧
+    (homEquiv (R ⧸ I) m k hn P
+        ((Ideal.Quotient.mkₐ R I).comp φ)).1.2.1 =
+      (homEquiv R m k hn P φ).1.2.1.map
+        (Ideal.Quotient.mk I) := by
+  rw [homEquiv_comp_fst, homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe,
+    Ideal.Quotient.mkₐ_toRingHom]
+  simp
+
+end Polynomial.UniversalCoprimeFactorizationRing
+
 namespace Ideal
 
 variable {R : Type*} [CommRing R] (I : Ideal R) [HenselianRing R I]
-
-omit [HenselianRing R I] in
-/-- Composing a point of the universal coprime factorization ring with values in `R` with the
-reduction `R → R ⧸ I` reduces both factors modulo `I`. -/
-private lemma homEquiv_comp_mkₐ_eq_map {p : R[X]} (m k : ℕ) (hn : p.natDegree = m + k)
-    (P : MonicDegreeEq R p.natDegree) (φ : UniversalCoprimeFactorizationRing m k hn P →ₐ[R] R) :
-    (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P
-        ((Ideal.Quotient.mkₐ R I).comp φ)).1.1.1 =
-      (UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).1.1.1.map
-        (Ideal.Quotient.mk I) ∧
-    (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P
-        ((Ideal.Quotient.mkₐ R I).comp φ)).1.2.1 =
-      (UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).1.2.1.map
-        (Ideal.Quotient.mk I) := by
-  rw [UniversalCoprimeFactorizationRing.homEquiv_comp_fst,
-    UniversalCoprimeFactorizationRing.homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe,
-    Ideal.Quotient.mkₐ_toRingHom]
-  simp
 
 /-- **Coprime factorizations lift along a Henselian pair.** If `(R, I)` is Henselian and the
 reduction of a monic polynomial `p` modulo `I` is a product `g₀ h₀` of coprime monic polynomials,
@@ -113,16 +117,20 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
       ⟨(.mk g hg hgdeg, .mk h hh hhdeg), by simpa [P] using hgh, hcop⟩, ?_, by simp⟩
     apply (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P).injective
     refine Subtype.ext (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_))
-    · simp [(homEquiv_comp_mkₐ_eq_map I m k hn P _).1, ψ, hgmap]
-    · simp [(homEquiv_comp_mkₐ_eq_map I m k hn P _).2, ψ, hhmap]
+    · simp [(UniversalCoprimeFactorizationRing.homEquiv_comp_mkₐ_eq_map I m k hn P _).1, ψ,
+        hgmap]
+    · simp [(UniversalCoprimeFactorizationRing.homEquiv_comp_mkₐ_eq_map I m k hn P _).2, ψ,
+        hhmap]
   obtain ⟨φ, hφ⟩ := (TauCeti.HenselianRing.comp_bijective I (A := A)).2 ψ
   set q := UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ
   have hq₀ := congrArg (fun φ ↦ (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P φ).1)
     hφ
   simp only [ψ, Equiv.apply_symm_apply] at hq₀
   refine ⟨(q.1.1.1, q.1.2.1), ⟨q.1.1.monic, q.1.2.monic, by simpa [P] using q.2.1, ?_, ?_⟩, ?_⟩
-  · simpa [q, (homEquiv_comp_mkₐ_eq_map I m k hn P φ).1] using congr(($hq₀).1.1)
-  · simpa [q, (homEquiv_comp_mkₐ_eq_map I m k hn P φ).2] using congr(($hq₀).2.1)
+  · simpa [q, (UniversalCoprimeFactorizationRing.homEquiv_comp_mkₐ_eq_map I m k hn P φ).1]
+      using congr(($hq₀).1.1)
+  · simpa [q, (UniversalCoprimeFactorizationRing.homEquiv_comp_mkₐ_eq_map I m k hn P φ).2]
+      using congr(($hq₀).2.1)
   · rintro gh ⟨hg, hh, hgh, hgmap, hhmap⟩
     obtain ⟨φ', hφ', rfl⟩ := hpoint gh hg hh hgh hgmap hhmap
     rw [(TauCeti.HenselianRing.comp_bijective I (A := A)).1 (hφ'.trans hφ.symm)]
