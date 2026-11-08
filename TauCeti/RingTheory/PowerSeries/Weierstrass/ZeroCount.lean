@@ -70,6 +70,8 @@ boundary zeros.
   `PowerSeries.zeroMultiset_eq_of_order_taylor_eq` and
   `PowerSeries.IsRestricted.order_taylor_eq_count_zeroMultiset`: the zero multiset lies in the
   closed disc, is the only multiset there with the multiplicities of `f`, and has them.
+* `PowerSeries.IsRestricted.mem_zeroMultiset_iff`: its points are exactly the zeros of `f` in the
+  closed disc.
 * `TauCeti.PowerSeries.IsDistinguished.zeroMultiset_eq_roots_map`: the zero multiset is the
   multiset of roots in `L` of any monic preparation polynomial.
 * `TauCeti.PowerSeries.IsDistinguished.card_zeroMultiset_le`,
@@ -347,6 +349,24 @@ theorem _root_.PowerSeries.IsRestricted.order_taylor_eq_count_zeroMultiset [Deci
     hd.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hd.coeff_ne_zero) hr hfr
   rw [hd.zeroMultiset_eq_roots_map hr he hP hf]
   exact (roots_map_spec hd hr he hP hf).2 x hx
+
+/-- **Members of the zero multiset.** Let `f` be a nonzero power series over a complete ultrametric
+normed field `K`, restricted at `r > 0`. In any complete normed field extension `L`, the points of
+the zero multiset of `f` on the closed disc of radius `r` are exactly the zeros of `f` in that
+disc. -/
+theorem _root_.PowerSeries.IsRestricted.mem_zeroMultiset_iff (hfr : f.IsRestricted r) (hr : 0 < r)
+    (hf0 : f ≠ 0) {x : L} :
+    x ∈ f.zeroMultiset r L ↔
+      ‖x‖ ≤ r ∧ (_root_.PowerSeries.map (algebraMap K L) f).evalAt x = 0 := by
+  classical
+  by_cases hx : ‖x‖ ≤ r
+  · rw [← Multiset.count_ne_zero, ← Nat.cast_ne_zero (R := ℕ∞),
+      ← hfr.order_taylor_eq_count_zeroMultiset hr hf0 hx,
+      _root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero,
+      _root_.PowerSeries.constantCoeff_taylor]
+    exact (and_iff_right hx).symm
+  · exact iff_of_false (fun h ↦ hx (_root_.PowerSeries.norm_le_of_mem_zeroMultiset h))
+      fun h ↦ hx h.1
 
 /-- **At most `d` zeros in the closed disc.** Let `f` be a power series over a complete ultrametric
 normed field, restricted at `r > 0` and distinguished of degree `d` there. In any complete normed
