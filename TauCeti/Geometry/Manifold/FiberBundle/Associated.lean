@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberBundle.GroupCocycle
-public import TauCeti.Geometry.Manifold.FiberBundle.Principal
 public import TauCeti.Topology.FiberBundle.Associated
 
 /-!
@@ -15,8 +14,8 @@ public import TauCeti.Topology.FiberBundle.Associated
 Let `P` be a `C^n` principal `G`-bundle over a manifold `B` modelled on `IB`, with structure group
 `G` modelled on `IG`, and let `G` act `C^n`-smoothly on the left on a manifold `F` modelled on
 `IF`. The associated bundle `TauCeti.AssociatedBundle G P F = P ×_G F` is glued from the transition
-functions `b ↦ e.coordChange e' b 1` of `P` acting on `F`. These transition functions are `C^n`
-(`TauCeti.PrincipalBundle.contMDiffFiberBundle_iff`), so the associated bundle is a `C^n` fibre
+functions `b ↦ e.coordChange e' b 1` of `P` acting on `F`. These transition functions are `C^n`,
+as restrictions of the `C^n` coordinate changes of `P`, so the associated bundle is a `C^n` fibre
 bundle (`TauCeti.AssociatedBundle.contMDiffFiberBundle`). Its total space, charted through the
 fibre by `TauCeti.ManifoldTotalSpace`, is then a `C^n` manifold modelled on `IB.prod IF`, and its
 projection is a `C^n` submersion (`TauCeti.ManifoldTotalSpace.isSubmersion_proj`). The base may
@@ -70,14 +69,15 @@ variable (IG) in
 action of its structure group is a `C^n` fibre bundle: its transition functions are those of the
 principal bundle, acting on the fibre. The model `IG` of the structure group does not appear in
 the conclusion, so this is not an instance. -/
-theorem TauCeti.AssociatedBundle.contMDiffFiberBundle [ContMDiffMul IG n G]
-    [ContMDiffSMul IG IF n G F] [ContMDiffFiberBundle n G P IB IG] :
+theorem TauCeti.AssociatedBundle.contMDiffFiberBundle [ContMDiffSMul IG IF n G F]
+    [h : ContMDiffFiberBundle n G P IB IG] :
     ContMDiffFiberBundle n F (AssociatedBundle G P F) IB IF := by
   unfold AssociatedBundle
   rw [associatedBundleCore_def]
+  -- The transition functions `x ↦ e.coordChange e' x 1` restrict the `C^n` coordinate changes.
   exact contMDiffFiberBundle_fiberBundleCoreOfGroupCocycle n IB IF F _ _ _ _ _ _ _ fun _ _ ↦
-    (PrincipalBundle.contMDiffFiberBundle_iff (n := n) (G := G) (P := P) (IB := IB)
-      (IG := IG)).1 inferInstance _ _
+    (h.contMDiffOn_coordChange _ _).comp (contMDiffOn_id.prodMk contMDiffOn_const)
+      fun _ hb ↦ ⟨hb, mem_univ _⟩
 
 /-! ### Smoothness of classes -/
 

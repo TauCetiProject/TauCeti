@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Topology.FiberBundle.GroupCocycle
 public import TauCeti.Topology.FiberBundle.Trivialization
+public import TauCeti.Topology.Maps.LocalSections
 
 /-!
 # Associated bundles
@@ -57,7 +58,7 @@ associated bundle is homeomorphic to the quotient of `P × F` by the orbit relat
   the charts of `P`.
 * `TauCeti.AssociatedBundle.mk_smul` and `TauCeti.AssociatedBundle.mk_eq_mk_iff`: the classes are
   the orbits of `(p, v) ↦ (p • g, g⁻¹ • v)`.
-* `TauCeti.AssociatedBundle.bijective_mk`: each point `p` of a fibre of `P` identifies `F` with
+* `TauCeti.AssociatedBundle.mk_bijective`: each point `p` of a fibre of `P` identifies `F` with
   the fibre of the associated bundle.
 * `Continuous.totalSpaceMk_associatedBundleMk`: the class of a continuous family of pairs is
   continuous.
@@ -211,7 +212,7 @@ theorem mk_eq_mk_iff {b : B} {p q : P b} {v w : F} :
 
 /-- The classes `[p, v]` with a fixed first component `p` exhaust the fibre exactly once: `p`
 identifies `F` with the fibre of the associated bundle over its base point. -/
-theorem bijective_mk {b : B} (p : P b) :
+theorem mk_bijective {b : B} (p : P b) :
     Function.Bijective (mk G p : F → AssociatedBundle G P F b) := by
   -- By definition, the map is the action of `(e p).2` on `F`, a bijection.
   unfold mk
@@ -340,7 +341,7 @@ theorem continuous_totalSpaceMk_mk :
 theorem isOpenMap_totalSpaceMk_mk :
     IsOpenMap fun x : TotalSpace G P × F ↦
       (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) := by
-  refine IsOpenMap.of_nhds_le fun x₀ ↦ ?_
+  refine IsOpenMap.of_local_sections fun x₀ ↦ ?_
   set Φ := fun x : TotalSpace G P × F ↦
     (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F))
   set e := trivializationAt G P x₀.1.proj
@@ -381,12 +382,9 @@ theorem isOpenMap_totalSpaceMk_mk :
         rw [hσ]
         exact hy
       rw [trivializationAt_mk_snd hσb, TotalSpace.eta, e.apply_symm_apply' hy, smul_inv_smul]
-  have hΦψ' : Φ ∘ ψ =ᶠ[𝓝 (Φ x₀)] id := by
-    filter_upwards [(FiberBundle.continuous_proj F _).continuousAt.preimage_mem_nhds
-      (e.open_baseSet.mem_nhds hb₀)] with y hy using hΦψ y hy
-  calc 𝓝 (Φ x₀) = map (Φ ∘ ψ) (𝓝 (Φ x₀)) := by rw [map_congr hΦψ', map_id]
-    _ = map Φ (map ψ (𝓝 (Φ x₀))) := (map_map ..).symm
-    _ ≤ map Φ (𝓝 x₀) := map_mono (hψ.tendsto.mono_right (congrArg 𝓝 hψ₀).le)
+  refine ⟨ψ, hψ, hψ₀, ?_⟩
+  filter_upwards [(FiberBundle.continuous_proj F _).continuousAt.preimage_mem_nhds
+    (e.open_baseSet.mem_nhds hb₀)] with y hy using hΦψ y hy
 
 /-- **The associated bundle is the quotient of `P × F`.** The map `(p, v) ↦ [p, v]` from pairs of
 points of the total space of `P` and of `F` onto the total space of the associated bundle is an
@@ -397,7 +395,7 @@ theorem isOpenQuotientMap_totalSpaceMk_mk :
   surjective y := by
     -- Every fibre of `P` is nonempty, and any of its points gives every class over its base point.
     set q := (FiberBundle.homeomorphAt G P y.proj).symm 1
-    obtain ⟨v, hv⟩ := (bijective_mk (F := F) q).2 y.2
+    obtain ⟨v, hv⟩ := (mk_bijective (F := F) q).2 y.2
     exact ⟨(⟨y.proj, q⟩, v), congrArg (TotalSpace.mk y.proj) hv⟩
   continuous := continuous_totalSpaceMk_mk G P F
   isOpenMap := isOpenMap_totalSpaceMk_mk G P F
