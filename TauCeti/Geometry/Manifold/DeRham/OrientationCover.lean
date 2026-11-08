@@ -12,10 +12,10 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 /-!
 # De Rham cohomology and the orientation double cover
 
-Let `π : M̃ → M` be the orientation double cover of a manifold `M`, and `τ` its deck involution,
-which reverses the canonical orientation of `M̃`.
+Let `π : M' → M` be the orientation double cover of a manifold `M`, and `τ` its deck involution,
+which reverses the canonical orientation of `M'`.
 
-**Pullback to the cover is injective on cohomology.** If `π^*φ = dη` on `M̃`, then the
+**Pullback to the cover is injective on cohomology.** If `π^*φ = dη` on `M'`, then the
 deck-invariant part `(η + τ^*η) / 2` of the primitive is still a primitive of `π^*φ`, because
 `π ∘ τ = π`. Being deck-invariant, it is the pullback `π^*ψ` of a smooth form `ψ` on `M`, and
 `dψ = φ` because pullback along the surjective local diffeomorphism `π` is injective
@@ -26,13 +26,13 @@ compactly supported de Rham cohomology, in every degree and with no orientabilit
 or compactness assumption.
 
 **Integrals of pulled-back top forms vanish.** Since `τ` reverses the canonical orientation, the
-integral of a `τ`-invariant top form on `M̃` equals its own negative. Pullbacks along `π` are
-`τ`-invariant, so `∫_{M̃} π^*φ = 0` for every top form `φ` on `M`, and integration
-`H^n_c(M̃) → ℝ` vanishes on the image of `π^*`.
+integral of a `τ`-invariant top form on `M'` equals its own negative. Pullbacks along `π` are
+`τ`-invariant, so `∫_{M'} π^*φ = 0` for every top form `φ` on `M`, and integration
+`H^n_c(M') → ℝ` vanishes on the image of `π^*`.
 
 These are the two steps by which top-degree cohomology of a nonorientable manifold is reduced to
-the orientable case. When `M` is connected and nonorientable, `M̃` is connected and oriented, so
-if integration is injective on `H^n_c(M̃)`, the class `π^*[φ]` of integral zero vanishes and then
+the orientable case. When `M` is connected and nonorientable, `M'` is connected and oriented, so
+if integration is injective on `H^n_c(M')`, the class `π^*[φ]` of integral zero vanishes and then
 `[φ] = 0` in `H^n_c(M)`.
 
 ## Main results
