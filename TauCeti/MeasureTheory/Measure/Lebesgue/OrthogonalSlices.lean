@@ -309,6 +309,40 @@ theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set
   congr 1 with t
   by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
 
+/-- The second-moment integrand of a null-measurable set, integrated along the lines parallel to
+`e`, is almost everywhere measurable in the transverse coordinate. -/
+theorem aemeasurable_lintegral_line_indicator_norm_sq (e : E) (he : ‖e‖ = 1) {u : Set E}
+    (hu : NullMeasurableSet u volume) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
+      ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e)) volume :=
+  aemeasurable_lintegral_line e he
+    ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+
+/-- Tonelli for the second moment: the second moment of a null-measurable set is the iterated
+integral over the lines parallel to `e`. -/
+theorem lintegral_norm_sq_eq_lintegral_lintegral_line (e : E) (he : ‖e‖ = 1) {u : Set E}
+    (hu : NullMeasurableSet u volume) :
+    (∫⁻ x in u, ENNReal.ofReal (‖x‖ ^ 2)) =
+      ∫⁻ y : (ℝ ∙ e)ᗮ, ∫⁻ t : ℝ,
+        u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) := by
+  rw [← lintegral_indicator₀ hu]
+  exact lintegral_eq_lintegral_lintegral_line e he
+    ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- On the line through `y` parallel to `e`, the second-moment integrand of a set `u` is
+`‖y‖ ^ 2 + t ^ 2` on the section of `u`. -/
+theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set E} (y : (ℝ ∙ e)ᗮ)
+    (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
+    ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) =
+      ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
+  rw [← lintegral_indicator₀ hu]
+  refine lintegral_congr fun t ↦ ?_
+  exact (Set.indicator_comp_right (fun t : ℝ ↦ (y : E) + t • e)
+      (g := fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) (x := t)).symm.trans
+    (congr_fun (Set.indicator_congr fun t' _ ↦ by
+      simp only [Function.comp_apply, norm_add_smul_sq e he]) t)
+
 end TauCeti
 
 namespace Submodule
