@@ -202,21 +202,22 @@ theorem isHighestWeightVector_coe_iff {lam : Dual K H} {P : LieSubmodule K L M} 
 
 variable [LieModule K L M]
 
+omit [LieModule K L M] in
 /-- **Positive root spaces suffice.** A nonzero `H`-eigenvector annihilated by the root space of
 every positive root is a highest weight vector: the positive nilradical is spanned by those root
-spaces, and the annihilator of a vector is a Lie subalgebra, so the universal property
-`TauCeti.positiveNilradical_le_iff` applies. -/
+spaces, and the elements of `L` annihilating `v` are closed under addition, so it suffices to
+check them on each root space. -/
 theorem isHighestWeightVector_of_forall_rootSpace {lam : Dual K H} {v : M} (hv0 : v ≠ 0)
     (hcartan : ∀ x : H, ⁅(x : L), v⁆ = lam x • v)
     (hpos : ∀ α ∈ posRoots (IsKilling.rootSystem H) b,
       ∀ x ∈ rootSpace H (α : H → K), ⁅x, v⁆ = 0) :
     IsHighestWeightVector b lam v := by
   refine isHighestWeightVector_iff.mpr ⟨hv0, hcartan, fun x hx => ?_⟩
-  have hle : positiveNilradical H b ≤ lieAnnihilator K L v :=
-    (positiveNilradical_le_iff H b).mpr fun α hα y hy =>
-      (mem_lieAnnihilator K L).mpr (hpos α hα y hy)
-  exact (mem_lieAnnihilator K L).mp (hle hx)
+  rw [mem_positiveNilradical, rootSpaceSpan_eq_iSup] at hx
+  exact LieSubmodule.iSup_induction _ (motive := fun x => ⁅x, v⁆ = 0) hx
+    (fun α _ hy => hpos α α.2 _ hy) (by simp) (fun y z hy hz => by rw [add_lie, hy, hz, add_zero])
 
+omit [LieModule K L M] in
 /-- Being a highest weight vector is exactly being a nonzero `H`-eigenvector annihilated by every
 positive root space. -/
 theorem isHighestWeightVector_iff_forall_rootSpace {lam : Dual K H} {v : M} :
