@@ -40,7 +40,7 @@ trace of a commutator differs from `2` by minus the determinant of the additive 
 
 These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
 from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
-trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo`.
+trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic`.
 
 ## Main results
 
