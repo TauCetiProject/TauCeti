@@ -17,7 +17,8 @@ The decay profile `exp (-c (t - R))`, normalised to equal `1` at `t = R`, is the
 `exp (-c t)` rescaled by the constant amplitude `exp (c R)`. This is how exponential decay
 estimates past a radius `R` are converted into bounds of the form `K exp (-c t)`. Conversely, a
 bound `K exp (-c ‖x‖)` outside a compact set extends to the whole space for a continuous
-function, after enlarging the constant.
+function, after enlarging the constant. The analogous statement on a closed forward ray absorbs
+an initial compact time interval into the constant.
 
 ## Main declarations
 
@@ -26,6 +27,8 @@ function, after enlarging the constant.
   extends to the whole space for a continuous function, with a larger constant.
 * `TauCeti.abs_exp_mul_sub_le_exp`: a bound `|f x| ≤ M` bounds `|exp (t * (f x - I))|` by
   `exp (|t| * (M + |I|))`.
+* `ContinuousOn.exists_forall_le_mul_exp_Ici_of_eventually_le`: an eventual exponential bound
+  on a closed forward ray extends to the whole ray, with a larger constant.
 -/
 
 public section
@@ -57,7 +60,7 @@ theorem exists_forall_le_mul_exp_of_eventually_le {E : Type*} [NormedAddCommGrou
   · have hb := hM x (mem_closedBall_zero_iff.mpr hx.le)
     rw [Real.norm_eq_abs] at hb
     calc f x = f x * Real.exp (c * ‖x‖) * Real.exp (-(c * ‖x‖)) := by
-          rw [mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+          rw [Real.exp_neg, mul_inv_cancel_right₀ (Real.exp_ne_zero _)]
       _ ≤ max K M * Real.exp (-(c * ‖x‖)) :=
           mul_le_mul_of_nonneg_right (((le_abs_self _).trans hb).trans (le_max_right _ _)) he.le
 
@@ -72,5 +75,26 @@ theorem abs_exp_mul_sub_le_exp {α : Type*} {f : α → ℝ} {M : ℝ} (hMf : �
     _ ≤ |t| * (M + |I|) :=
       mul_le_mul_of_nonneg_left ((abs_sub (f x) I).trans (by linarith [hMf x]))
         (abs_nonneg t)
+
+open Filter Set in
+/-- An eventual exponential bound on a continuous real function on a closed forward ray extends
+to the entire ray, after enlarging the constant. The exponential rate is unchanged. -/
+theorem _root_.ContinuousOn.exists_forall_le_mul_exp_Ici_of_eventually_le
+    {g : ℝ → ℝ} {a c K : ℝ}
+    (hg : ContinuousOn g (Ici a)) (h : ∀ᶠ t in atTop, g t ≤ K * Real.exp (-(c * t))) :
+    ∃ C > 0, ∀ t ≥ a, g t ≤ C * Real.exp (-(c * t)) := by
+  obtain ⟨T, hT⟩ := eventually_atTop.1 h
+  have hcont : ContinuousOn (fun t ↦ g t * Real.exp (c * t)) (Icc a T) :=
+    (hg.mono Icc_subset_Ici_self).mul (by fun_prop)
+  obtain ⟨B, hB⟩ := isCompact_Icc.bddAbove_image hcont
+  refine ⟨max 1 (max K B), lt_of_lt_of_le zero_lt_one (le_max_left _ _), fun t ht ↦ ?_⟩
+  by_cases htT : T ≤ t
+  · exact (hT t htT).trans (by gcongr; exact (le_max_left K B).trans (le_max_right _ _))
+  · have hb : g t * Real.exp (c * t) ≤ B := hB (mem_image_of_mem _ ⟨ht, le_of_not_ge htT⟩)
+    calc g t = (g t * Real.exp (c * t)) * Real.exp (-(c * t)) := by
+          rw [Real.exp_neg, mul_inv_cancel_right₀ (Real.exp_ne_zero _)]
+      _ ≤ max 1 (max K B) * Real.exp (-(c * t)) := by
+          gcongr
+          exact hb.trans ((le_max_right K B).trans (le_max_right _ _))
 
 end TauCeti
