@@ -72,8 +72,8 @@ Euler characteristic is its Alexander polynomial `t - 1 + t⁻¹`.
 * `TauCeti.HeegaardRegionSystem.periodicDomains_trefoil` and
   `TauCeti.HeegaardRegionSystem.weaklyAdmissible_trefoil`: once a basepoint is placed, the only
   periodic domain is zero, so the diagram is weakly admissible.
-* `TauCeti.HeegaardRegionSystem.periodicAlexanderValues_trefoil`: the Alexander grading is an
-  integer.
+* `TauCeti.HeegaardRegionSystem.periodicAlexanderValues_trefoil`: for any placement of the
+  basepoints, the Alexander grading is an integer.
 * `TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_trefoil_zero_two` and
   `TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_trefoil_one_two`: the relative Alexander
   gradings.
@@ -207,13 +207,21 @@ theorem generatorChain_trefoilGenerator (a q : Fin 3) :
 private theorem alphaArcBoundary_alphaBoundary_trefoil (D : Fin 3 → ℤ) (q : Fin 3) :
     (trefoil b).alphaArcBoundary ((trefoil b).alphaBoundary D) q =
       ![D 0 - D 2, D 0 - D 1, D 1 + D 2 - 2 * D 0] q := by
-  fin_cases q <;> simp [neg_one_fin_three]; ring
+  fin_cases q
+  · simp [neg_one_fin_three]
+  · simp
+  · simp
+    ring
 
 /-- The value of the `β`-boundary cycle condition of `trefoil b` at the three points. -/
 private theorem betaArcBoundary_betaBoundary_trefoil (D : Fin 3 → ℤ) (q : Fin 3) :
     (trefoil b).betaArcBoundary ((trefoil b).betaBoundary D) q =
       ![D 2 - D 0, D 1 - D 0, 2 * D 0 - D 1 - D 2] q := by
-  fin_cases q <;> simp [neg_one_fin_three]; ring
+  fin_cases q
+  · simp [neg_one_fin_three]
+  · simp
+  · simp
+    ring
 
 /-- A domain of `trefoil b` joins `x_a` to `x_c` exactly when its multiplicities satisfy
 `D R - D B_z = δ_{c,0} - δ_{a,0}` and `D R - D B_w = δ_{c,1} - δ_{a,1}`. -/
@@ -284,10 +292,11 @@ theorem weaklyAdmissible_trefoil [Nonempty B] : (trefoil b).WeaklyAdmissible := 
   intro P hP _
   exact hP
 
-/-- The periodic Alexander values of the doubly pointed diagram vanish, so its Alexander grading
-is an integer: the whole surface has the same multiplicity at `w` and at `z`. -/
+/-- The periodic Alexander values of `trefoil b` vanish for every pair of basepoints, so its
+Alexander grading is an integer: the whole surface has the same multiplicity at `w` and at `z`. -/
 @[simp]
-theorem periodicAlexanderValues_trefoil : (trefoil ![1, 2]).periodicAlexanderValues 0 1 = ⊥ := by
+theorem periodicAlexanderValues_trefoil (w z : B) :
+    (trefoil b).periodicAlexanderValues w z = ⊥ := by
   refine periodicAlexanderValues_eq_bot_iff.mpr fun E hα hβ => ?_
   have h := trefoil_eq_smul_one_of_arcBoundary_eq_zero hα hβ
   rw [h]
@@ -300,7 +309,7 @@ theorem relativeAlexanderGrading_trefoil_zero_two :
     (trefoil ![1, 2]).relativeAlexanderGrading 0 1 (trefoilGenerator _ 0)
       (trefoilGenerator _ 2) = 1 := by
   rw [isDomainBetween_trefoil_single_two.relativeAlexanderGrading_eq
-    periodicAlexanderValues_trefoil]
+    (periodicAlexanderValues_trefoil 0 1)]
   decide
 
 /-- The generator `x₁` lies one Alexander grading below `x₂`, computed from the bigon `B_w`, which
@@ -310,7 +319,7 @@ theorem relativeAlexanderGrading_trefoil_one_two :
     (trefoil ![1, 2]).relativeAlexanderGrading 0 1 (trefoilGenerator _ 1)
       (trefoilGenerator _ 2) = -1 := by
   rw [isDomainBetween_trefoil_single_one.relativeAlexanderGrading_eq
-    periodicAlexanderValues_trefoil]
+    (periodicAlexanderValues_trefoil 0 1)]
   decide
 
 /-- The region `R` has eight corners and each bigon has two. -/
@@ -326,18 +335,16 @@ theorem cornerCount_trefoil (r : Fin 3) : (trefoil b).cornerCount r = ![8, 2, 2]
 theorem maslovIndex_trefoil_single_two :
     (trefoil b).maslovIndex 1 (trefoilGenerator b 0) (trefoilGenerator b 2) (Pi.single 2 1) =
       1 := by
-  simp [maslovIndex_apply, eulerMeasure_apply, generatorPointMeasure_apply, pointMeasure_apply,
-    Pi.single_apply, neg_one_fin_three]
-  norm_num
+  norm_num +decide [maslovIndex_apply, eulerMeasure_apply, generatorPointMeasure_apply,
+    pointMeasure_apply, Pi.single_apply]
 
 /-- The bigon `B_w`, a disk with two corners, has Maslov index one as a domain from `x₁` to
 `x₂`. -/
 theorem maslovIndex_trefoil_single_one :
     (trefoil b).maslovIndex 1 (trefoilGenerator b 1) (trefoilGenerator b 2) (Pi.single 1 1) =
       1 := by
-  simp [maslovIndex_apply, eulerMeasure_apply, generatorPointMeasure_apply, pointMeasure_apply,
-    Pi.single_apply]
-  norm_num
+  norm_num [maslovIndex_apply, eulerMeasure_apply, generatorPointMeasure_apply,
+    pointMeasure_apply, Pi.single_apply]
 
 /-- In the diagram `(Σ, α, β, w)` of `S³`, the generator `x₀` lies one Maslov grading above `x₂`,
 computed from the bigon `B_z`, which avoids `w`. -/
