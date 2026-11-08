@@ -52,29 +52,13 @@ theorem unitGradedNaturality_iff
       (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
     G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
       aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y))
-  have hb : (λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv =
-      (β_ (𝟙_ V) (X ⟶[V] Y)).hom :=
-    (((ρ_ (X ⟶[V] Y)).eq_comp_inv).mpr
-      (braiding_rightUnitor (X ⟶[V] Y))).symm
-  have hl : (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫
-      (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
-      (F.obj X ⟶[V] F.obj Y) ◁ aY =
-      (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫ (F.map X Y ⊗ₘ aY) := by
-    calc
-      _ = (λ_ (X ⟶[V] Y)).hom ≫
-          ((ρ_ (X ⟶[V] Y)).inv ≫ (F.map X Y ⊗ₘ aY)) := by
-            rw [rightUnitor_inv_comp_tensorHom]
-      _ = ((λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv) ≫
-          (F.map X Y ⊗ₘ aY) := by simp only [Category.assoc]
-      _ = _ := by rw [hb]
-  have hr : (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫
-      (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
+  have hl : (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫ (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
+      (F.obj X ⟶[V] F.obj Y) ◁ aY = (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫ (F.map X Y ⊗ₘ aY) := by
+    rw [← rightUnitor_inv_comp_tensorHom, braiding_tensorUnit_left, Category.assoc]
+  have hr : (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
       aX ▷ (G.obj X ⟶[V] G.obj Y) = aX ⊗ₘ G.map X Y := by
-    calc
-      _ = (λ_ (X ⟶[V] Y)).hom ≫
-          ((λ_ (X ⟶[V] Y)).inv ≫ (aX ⊗ₘ G.map X Y)) := by
-            rw [leftUnitor_inv_comp_tensorHom]
-      _ = _ := by simp
+    rw [← leftUnitor_inv_comp_tensorHom]
+    simp
   constructor
   · intro h
     apply (cancel_epi (λ_ (X ⟶[V] Y)).hom).mp
