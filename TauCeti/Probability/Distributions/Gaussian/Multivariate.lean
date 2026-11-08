@@ -38,8 +38,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
   `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.measurable_multivariateGaussian_prodMk_left_apply` shows that the Gaussian
-  law with measurable mean and covariance families, evaluated on a section of a measurable set, is
-  measurable in the parameter.
+  law with measurable mean and covariance-parameter families, evaluated on a section of a
+  measurable set, is measurable in the parameter.
 * `TauCeti.Probability.covariance_inner_matrix_multivariateGaussian` computes covariance after two
   matrix
   maps.
@@ -111,15 +111,16 @@ theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]
     Measurable fun τ : ℝ => multivariateGaussian m (τ⁻¹ • S) :=
   measurable_multivariateGaussian.comp (measurable_const.prodMk (by fun_prop))
 
-/-- For measurable mean and covariance families `m` and `S` on a measurable space `Y` and a
-measurable map `g : Y → X`, the Gaussian law with mean `m y` and covariance `S y`, evaluated on
-the section at `g y` of a measurable set `A ⊆ X × EuclideanSpace ℝ ι`, is measurable in `y`. -/
+/-- For measurable mean and covariance-parameter families `m` and `S` on a measurable space `Y` and
+a measurable map `g : Y → X`, the law `multivariateGaussian (m y) (S y)`, evaluated on the section
+at `g y` of a measurable set `A ⊆ X × EuclideanSpace ℝ ι`, is measurable in `y`. The parameter
+`S y` need not be positive semidefinite: where it is not, the law is the point mass at `m y`. -/
 theorem measurable_multivariateGaussian_prodMk_left_apply [Fintype ι] [DecidableEq ι]
     {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {m : Y → EuclideanSpace ℝ ι}
     {S : Y → Matrix ι ι ℝ} {g : Y → X} (hm : Measurable m) (hS : Measurable S) (hg : Measurable g)
     {A : Set (X × EuclideanSpace ℝ ι)} (hA : MeasurableSet A) :
     Measurable fun y : Y => multivariateGaussian (m y) (S y) (Prod.mk (g y) ⁻¹' A) := by
-  -- The law at `y` is Gaussian with mean `m y` and covariance `S y`; this is a kernel from `y`.
+  -- The law with mean `m y` and covariance parameter `S y` is a Markov kernel in `y`.
   let η : Kernel Y (EuclideanSpace ℝ ι) :=
     ⟨fun y => multivariateGaussian (m y) (S y),
       measurable_multivariateGaussian.comp (hm.prodMk hS)⟩
