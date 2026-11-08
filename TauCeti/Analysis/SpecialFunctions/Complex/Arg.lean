@@ -71,6 +71,17 @@ quotient. -/
 theorem abs_arg_div_comm (a b : ℂ) : |(a / b).arg| = |(b / a).arg| := by
   rw [← inv_div, abs_arg_inv]
 
+/-- A complex number in the open upper half-plane has argument within `π / 2` of `π / 2`. -/
+theorem abs_arg_sub_pi_div_two_lt_of_im_pos {w : ℂ} (hw : 0 < w.im) :
+    |w.arg - Real.pi / 2| < Real.pi / 2 := by
+  have hpos : 0 < w.arg := by
+    have hne : w.arg ≠ 0 := by
+      intro h
+      exact hw.ne' (arg_eq_zero_iff.mp h).2
+    exact lt_of_le_of_ne (arg_nonneg_iff.mpr hw.le) (Ne.symm hne)
+  have hlt := arg_lt_pi_iff.mpr (Or.inr hw.ne')
+  exact abs_lt.mpr ⟨by linarith, by linarith⟩
+
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/
 theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
