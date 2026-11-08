@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Variety
-public import TauCeti.Algebra.DualNumber.Log
+public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Character
 
