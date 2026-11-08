@@ -217,6 +217,21 @@ theorem integral_norm_sub_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
     simp [norm_neg]
   rw [hfun, integral_norm_rpow_ball hs hR]
 
+/-- The integral of `‖x - x₀‖ ^ 2` over the ball of radius `R` about `x₀` in dimension `n` is
+`n / (n + 2) * R ^ 2` times the measure of the ball. -/
+theorem integral_norm_sub_sq_ball {R : ℝ} (x₀ : E) :
+    ∫ x in ball x₀ R, ‖x - x₀‖ ^ 2 ∂mu =
+      Module.finrank ℝ E / (Module.finrank ℝ E + 2) * R ^ 2 * mu.real (ball x₀ R) := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
+  have h := integral_norm_sub_rpow_ball (mu := mu) (s := 2) (by linarith) hR.le x₀
+  simp_rw [norm_sub_rev x₀, Real.rpow_two] at h
+  have hball : mu.real (ball x₀ R) = R ^ Module.finrank ℝ E * mu.real (ball (0 : E) 1) := by
+    rw [measureReal_def, Measure.addHaar_ball_of_pos mu _ hR, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (by positivity), measureReal_def]
+  rw [h, hball, Real.rpow_add hR, Real.rpow_two, Real.rpow_natCast]
+  field_simp
+
 /-- If `x` lies in `closedBall z R`, then the integral over `ball z R` of the kernel with pole
 `x` is bounded by the exact integral on `ball 0 (2R)`. -/
 theorem integral_norm_sub_rpow_one_sub_finrank_le {R : ℝ} (x : E) {z : E}

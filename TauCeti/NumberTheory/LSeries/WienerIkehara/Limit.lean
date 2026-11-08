@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Integrable
-public import TauCeti.MeasureTheory.Integral.ExpDamped
+public import TauCeti.MeasureTheory.Integral.Exp.Damped
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Fourier
 
 /-!

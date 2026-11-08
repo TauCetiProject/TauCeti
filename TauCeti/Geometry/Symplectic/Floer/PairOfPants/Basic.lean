@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Hamiltonian perturbation data on the pair of pants
@@ -241,12 +242,12 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
-/-- Away from the center of the end `q`, its cutoff `β(±s_q - 1)` is `C^n` as a function on
-`ℂ × M` which ignores the point of `M`. -/
-theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) {w : ℂ}
+/-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` as a function
+on `ℂ × M` which ignores the point of `M`. -/
+theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) (c : ℝ) {w : ℂ}
     (hw : w ≠ q.endCenter) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
-      (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - 1)) (w, x) :=
+      (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - c)) (w, x) :=
   (smoothTransition.contDiff.contDiffAt.comp w
     ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).sub contDiffAt_const)).contMDiffAt.comp
     (w, x) contMDiffAt_fst
@@ -265,7 +266,7 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (fun p : ℂ × M => q.endAngularForm p.1) ((w : ℂ), x) :=
     ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := q.endAngularForm) _
       (q.contDiffAt_endAngularForm hw).contMDiffAt contMDiffAt_fst
-  exact ((contMDiffAt_smoothTransition_endCoord q hw x).smul
+  exact ((contMDiffAt_smoothTransition_endCoord q 1 hw x).smul
     (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x)).smul hf
 
 /-- The perturbation is `Cⁿ` jointly in the domain point of `S` and the target point, for
@@ -274,16 +275,7 @@ theorem contDiffAt_pairOfPantsPerturbation_prod {V : Type*} [NormedAddCommGroup 
     [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ} {n : ℕ∞} (hH : ∀ q, Function.Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ n (Function.uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
     ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
-  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n
-      (Function.uncurry (H q)) := fun q => by
-    have h := (hHs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h := contMDiffAt_pairOfPantsPerturbation (n := n) hH hHs' ⟨w, hw⟩ x
-  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact h
-  exact h'.contDiffAt
+  exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 (contMDiffAt_pairOfPantsPerturbation hH
+    (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) ⟨w, hw⟩ x)).contDiffAt
 
 end TauCeti.Floer

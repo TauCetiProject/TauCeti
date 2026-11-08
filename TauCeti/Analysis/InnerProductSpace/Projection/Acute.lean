@@ -256,7 +256,7 @@ Adapted from the Kitware DKPS formalization,
 `DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
 Apache-2.0). -/
 theorem singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
+    (U : Submodule 𝕜 E)
     (X : F →ₗᵢ[𝕜] E)
     (htrans : Disjoint (LinearMap.range X.toLinearMap) Uᗮ)
     (i : ℕ) :
