@@ -73,7 +73,6 @@ theorem IsProP.exists_isOpen_trace_eq_zero_of_mem_H0 (hG : IsProP p G) (M : Type
   obtain ⟨k, hk⟩ := hM.exists_pow_smul_eq_zero
   obtain ⟨U, hU⟩ := exists_openNormalSubgroup_smul_eq_self_range (G := G) (id : M → M)
   obtain ⟨V, hVU, hdvd⟩ := hG.exists_openNormalSubgroup_le_pow_dvd_relIndex U k
-  have : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   have : V.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   refine ⟨V.toSubgroup, inferInstance, V.isOpen, fun f hf ↦ ?_⟩
   refine DiscreteCoind.trace_eq_zero_of_forall_smul_eq hVU (fun u hu ↦ hU u hu (f 1)) (fun m ↦ ?_)
