@@ -44,8 +44,8 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0}
 
-/-- The convolution of an integrable function with a stable density exists, when the stable law
-has skewness in `[-1, 1]` and positive scale. -/
+/-- The convolution of an integrable function with a stable density exists, for valid shape
+`α ∈ (0, 2]`, skewness in `[-1, 1]` and positive scale. -/
 lemma convolutionExists_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
     {s₂ : ℝ≥0} (hs₂ : 0 < s₂) {f : ℝ → ℝ} (hf : Integrable f) (m₂ : ℝ) :
     ConvolutionExists f (stablePDFReal α β₂ s₂ m₂) (mul ℝ ℝ) volume :=
@@ -53,8 +53,8 @@ lemma convolutionExists_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ�
     (continuous_stablePDFReal α β₂ s₂ m₂).aestronglyMeasurable
     (.of_forall (norm_stablePDFReal_le hα hβ₂ hs₂ m₂))
 
-/-- The convolution of an integrable function with a stable density is continuous, when the
-stable law has skewness in `[-1, 1]` and positive scale. -/
+/-- The convolution of an integrable function with a stable density is continuous, for valid shape
+`α ∈ (0, 2]`, skewness in `[-1, 1]` and positive scale. -/
 lemma continuous_convolution_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
     {s₂ : ℝ≥0} (hs₂ : 0 < s₂) {f : ℝ → ℝ} (hf : Integrable f) (m₂ : ℝ) :
     Continuous (f ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂) :=
