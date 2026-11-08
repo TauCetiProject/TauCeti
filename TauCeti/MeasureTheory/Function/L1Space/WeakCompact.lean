@@ -14,8 +14,10 @@ import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.DisjointSequence
 import TauCeti.MeasureTheory.Integral.Lebesgue.DisjointSequence
+import TauCeti.MeasureTheory.OuterMeasure.Basic
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -111,18 +113,6 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
       rw [Lp.norm_def, eLpNorm_congr_ae hae]
       exact ENNReal.toReal_le_of_le_ofReal hε.le (hC ⟨f, hf⟩)
 
-omit [IsFiniteMeasure μ] in
-/-- The measurable hulls of sets of measure at most `(n + 1)⁻¹` have measure tending to zero. -/
-theorem tendsto_measure_toMeasurable_of_le_inv {t : ℕ → Set α}
-    (ht : ∀ n : ℕ, μ (t n) ≤ ((n : ℝ≥0∞) + 1)⁻¹) :
-    Tendsto (fun n ↦ μ (toMeasurable μ (t n))) atTop (𝓝 0) := by
-  have hinv : Tendsto (fun n : ℕ ↦ ((n : ℝ≥0∞) + 1)⁻¹) atTop (𝓝 0) := by
-    refine (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)).congr fun n ↦ ?_
-    simp
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hinv (fun _ ↦ zero_le)
-    fun n ↦ ?_
-  simpa only [measure_toMeasurable] using ht n
-
 /-- If `u n` tends weakly to `f` in `L¹`, the integrals of `u n - f` over every set tend to
 zero. -/
 theorem tendsto_setIntegral_sub_of_tendsto_toWeakSpace {ι : Type*} {l : Filter ι}
@@ -137,34 +127,6 @@ theorem tendsto_setIntegral_sub_of_tendsto_toWeakSpace {ι : Type*} {l : Filter 
   refine (tendsto_sub_nhds_zero_iff.2 hS').congr fun k ↦ ?_
   exact (integral_sub (L1.integrable_coeFn _).integrableOn
     (L1.integrable_coeFn f).integrableOn).symm
-
-omit [IsFiniteMeasure μ] in
-/-- If `g` has `L¹` mass more than `ε` on a set `S` and `f` has mass at most `ε / 2` there, then
-`g - f` has mass more than `ε / 2` on `S`. -/
-theorem half_lt_lintegral_enorm_sub {f g : α → 𝕜} (hf : AEStronglyMeasurable f μ) {S : Set α}
-    {ε : ℝ≥0∞} (hg : ε < ∫⁻ x in S, ‖g x‖ₑ ∂μ) (hfS : ∫⁻ x in S, ‖f x‖ₑ ∂μ ≤ ε / 2) :
-    ε / 2 < ∫⁻ x in S, ‖g x - f x‖ₑ ∂μ := by
-  by_contra! hle
-  have hsplit : ∫⁻ x in S, ‖g x‖ₑ ∂μ ≤
-      ∫⁻ x in S, ‖g x - f x‖ₑ ∂μ + ∫⁻ x in S, ‖f x‖ₑ ∂μ := by
-    rw [← lintegral_add_right' _ hf.enorm.restrict]
-    refine lintegral_mono fun x ↦ ?_
-    calc ‖g x‖ₑ = ‖(g x - f x) + f x‖ₑ := by simp
-      _ ≤ ‖g x - f x‖ₑ + ‖f x‖ₑ := enorm_add_le _ _
-  have := hg.trans_le (hsplit.trans (add_le_add hle hfS))
-  rw [ENNReal.add_halves] at this
-  exact lt_irrefl _ this
-
-omit [IsFiniteMeasure μ] in
-/-- If the integrals of `‖f j‖` over the sets `B j` tend to zero, so do the lower Lebesgue
-integrals of `‖f j‖ₑ`. -/
-theorem tendsto_lintegral_enorm_of_tendsto_integral_norm {ι : Type*} {l : Filter ι}
-    {f : ι → α → 𝕜} {B : ι → Set α} (hf : ∀ j, Integrable (f j) μ)
-    (h : Tendsto (fun j ↦ ∫ x in B j, ‖f j x‖ ∂μ) l (𝓝 0)) :
-    Tendsto (fun j ↦ ∫⁻ x in B j, ‖f j x‖ₑ ∂μ) l (𝓝 0) := by
-  refine (ENNReal.tendsto_ofReal h).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
-  · exact ofReal_integral_norm_eq_lintegral_enorm (hf j).integrableOn
-  · rw [ENNReal.ofReal_zero]
 
 /-- **Dunford–Pettis theorem**, necessity: for a finite measure, a subset of scalar `L¹` with
 weakly compact closure is bounded and uniformly integrable. -/
@@ -220,7 +182,8 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     exact lt_irrefl _ this
   have hzero := tendsto_setIntegral_norm_of_pairwise_disjoint (fun j ↦ hh (σ j + K))
     (fun S hS ↦ (hset S hS).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
-  have hzero' := tendsto_lintegral_enorm_of_tendsto_integral_norm (fun j ↦ hh (σ j + K)) hzero
+  have hzero' := tendsto_lintegral_enorm_of_tendsto_integral_norm
+    (fun j ↦ (hh (σ j + K)).integrableOn) hzero
   obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.1 hzero' (ε / 2 / 2)
     (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne')).exists
   exact (hlow j).not_ge hj

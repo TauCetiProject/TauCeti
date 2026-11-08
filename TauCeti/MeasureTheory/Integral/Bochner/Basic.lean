@@ -76,6 +76,9 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
 `MeasureTheory.tendstoInMeasure_of_tendsto_eLpNorm`).
 
 * `tendsto_eLpNorm_one_of_tendsto_integral_norm_sub` converts the former into the latter.
+* `MeasureTheory.tendsto_lintegral_enorm_of_tendsto_integral_norm` converts the vanishing of the
+  integrals of `‖f j‖` over sets `B j`, for `f j` integrable on `B j`, into that of the lower
+  Lebesgue integrals of `‖f j‖ₑ`.
 
 The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
@@ -534,3 +537,18 @@ theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Typ
 end MeasureTheory
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- If the integrals of `‖f j‖` over the sets `B j` tend to zero, so do the lower Lebesgue
+integrals of `‖f j‖ₑ`. -/
+theorem tendsto_lintegral_enorm_of_tendsto_integral_norm {α E ι : Type*} {m : MeasurableSpace α}
+    [NormedAddCommGroup E] {μ : Measure α} {l : Filter ι} {f : ι → α → E} {B : ι → Set α}
+    (hf : ∀ j, IntegrableOn (f j) (B j) μ)
+    (h : Tendsto (fun j ↦ ∫ x in B j, ‖f j x‖ ∂μ) l (𝓝 0)) :
+    Tendsto (fun j ↦ ∫⁻ x in B j, ‖f j x‖ₑ ∂μ) l (𝓝 0) := by
+  refine (ENNReal.tendsto_ofReal h).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
+  · exact ofReal_integral_norm_eq_lintegral_enorm (hf j)
+  · rw [ENNReal.ofReal_zero]
+
+end MeasureTheory

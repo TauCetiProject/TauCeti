@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L1Space.HasFiniteIntegral
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -21,6 +22,8 @@ sets feed the gliding hump arguments behind the Dunford–Pettis weak compactnes
 
 * `MeasureTheory.exists_strictMono_pairwise_disjoint_lintegral_le`: shrinking a subsequence of
   sets of measure tending to zero to pairwise disjoint sets.
+* `MeasureTheory.half_lt_lintegral_enorm_sub`: if `g` has mass more than `ε` on `S` and `f` at
+  most `ε / 2`, then `g - f` has mass more than `ε / 2` on `S`.
 
 ## References
 
@@ -89,5 +92,19 @@ theorem exists_strictMono_pairwise_disjoint_lintegral_le {f : ℕ → α → ℝ
     rw [← lintegral_inter_add_sdiff _ (s (σ j)) (hUm j), add_comm]
     gcongr
     exact (lintegral_mono_set inter_subset_right).trans hU
+
+/-- If `g` has `L¹` mass more than `ε` on a set `S` and `f` has mass at most `ε / 2` there, then
+`g - f` has mass more than `ε / 2` on `S`. -/
+theorem half_lt_lintegral_enorm_sub {E : Type*} [NormedAddCommGroup E] {f g : α → E}
+    (hf : AEStronglyMeasurable f μ) {S : Set α} {ε : ℝ≥0∞}
+    (hg : ε < ∫⁻ x in S, ‖g x‖ₑ ∂μ) (hfS : ∫⁻ x in S, ‖f x‖ₑ ∂μ ≤ ε / 2) :
+    ε / 2 < ∫⁻ x in S, ‖g x - f x‖ₑ ∂μ := by
+  by_contra! hle
+  have hsplit := lintegral_edist_triangle (μ := μ.restrict S) (f := fun _ : α ↦ (0 : E)) (g := g)
+    (h := f) aestronglyMeasurable_zero hf.restrict
+  simp only [edist_eq_enorm_sub, zero_sub, enorm_neg] at hsplit
+  have := hg.trans_le (hsplit.trans (add_le_add hfS hle))
+  rw [ENNReal.add_halves] at this
+  exact lt_irrefl _ this
 
 end MeasureTheory
