@@ -71,24 +71,19 @@ theorem map_notMem_of_mem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a 
 
 /-- A transversal contains the partner of each element of `S` it omits. -/
 theorem map_mem_of_notMem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ S)
-    (haT : a ∉ T) :
-    f a ∈ T := by
-  by_contra h
-  exact haT ((hT.mem_iff_notMem a ha).2 h)
+    (haT : a ∉ T) : f a ∈ T :=
+  not_not.1 <| mt (hT.mem_iff_notMem a ha).2 haT
 
 end IsInvolutionTransversal
 
-/-- A subset of `S` disjoint from its image and covering `S` together with it is a transversal. -/
-theorem isInvolutionTransversal_of_cover (hinvol : ∀ a ∈ S, f (f a) = a) (hsub : T ⊆ S)
+/-- For `f` involutive on `T`, a subset `T` of `S` disjoint from its image and covering `S`
+together with it is a transversal. -/
+theorem isInvolutionTransversal_of_cover (hinvol : ∀ a ∈ T, f (f a) = a) (hsub : T ⊆ S)
     (hdisj : ∀ a ∈ T, f a ∉ T) (hcover : ∀ a ∈ S, a ∈ T ∨ ∃ b ∈ T, f b = a) :
     IsInvolutionTransversal f S T where
   subset := hsub
-  mem_iff_notMem a ha := by
-    refine ⟨hdisj a, fun hfa => ?_⟩
-    obtain haT | ⟨b, hbT, hb⟩ := hcover a ha
-    · exact haT
-    · rw [← hb, hinvol b (hsub hbT)] at hfa
-      exact absurd hbT hfa
+  mem_iff_notMem a ha := ⟨hdisj a, fun hfa => (hcover a ha).resolve_right
+    fun ⟨b, hbT, hb⟩ => hfa (by rwa [← hb, hinvol b hbT])⟩
 
 /-- A transversal of `f` on `S` splits a product over `S`: the factors indexed by `T` and the
 factors indexed by its `f`-image together exhaust `S`. -/
@@ -97,21 +92,13 @@ theorem IsInvolutionTransversal.prod_mul_prod_comp (hT : IsInvolutionTransversal
     (hinvol : ∀ a ∈ S, f (f a) = a) :
     (∏ a ∈ T, g a) * (∏ a ∈ T, g (f a)) = ∏ a ∈ S, g a := by
   classical
-  have hinj : Set.InjOn f T := fun x hx y hy hxy => by
-    rw [← hinvol x (hT.subset hx), ← hinvol y (hT.subset hy), hxy]
-  rw [← Finset.prod_image hinj, ← Finset.prod_union]
-  · congr 1
-    refine Finset.Subset.antisymm ?_ fun a ha => ?_
-    · refine Finset.union_subset hT.subset fun a ha => ?_
-      obtain ⟨b, hb, rfl⟩ := Finset.mem_image.1 ha
-      exact hmaps b (hT.subset hb)
-    · by_cases haT : a ∈ T
-      · exact Finset.mem_union_left _ haT
-      · exact Finset.mem_union_right _
-          (Finset.mem_image.2 ⟨f a, hT.map_mem_of_notMem ha haT, hinvol a ha⟩)
-  · refine Finset.disjoint_left.2 fun a haT ha => ?_
-    obtain ⟨b, hb, rfl⟩ := Finset.mem_image.1 ha
-    exact hT.map_notMem_of_mem (hT.subset hb) hb haT
+  rw [← Finset.prod_sdiff hT.subset, mul_comm]
+  congr 1
+  refine Finset.prod_nbij' f f (fun a ha => ?_) (fun a ha => ?_)
+    (fun a ha => hinvol a (hT.subset ha)) (fun a ha => hinvol a (Finset.mem_sdiff.1 ha).1)
+    fun _ _ => rfl
+  · exact Finset.mem_sdiff.2 ⟨hmaps a (hT.subset ha), hT.map_notMem_of_mem (hT.subset ha) ha⟩
+  · exact hT.map_mem_of_notMem (Finset.mem_sdiff.1 ha).1 (Finset.mem_sdiff.1 ha).2
 
 /-- There are only finitely many transversals, since each is a subset of `S`. -/
 theorem finite_setOf_isInvolutionTransversal (f : α → α) (S : Finset α) :

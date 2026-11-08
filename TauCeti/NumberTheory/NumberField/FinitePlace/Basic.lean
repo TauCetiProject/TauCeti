@@ -93,6 +93,15 @@ theorem apply_eq_absNorm_zpow (v : FinitePlace K) {x : K} (hx : x ≠ 0) :
     WithZeroMulInt.toNNReal_neg_apply _ ((v.maximalIdeal.valuation K).ne_zero_iff.mpr hx),
     NNReal.coe_zpow, NNReal.coe_natCast]
 
+/-- The norm of a nonzero element of the `v`-adic completion is the norm of `v` raised to the
+logarithm of its valuation. In particular a uniformizer, of valuation `exp (-1)`, has norm
+`N(v)⁻¹`. -/
+theorem norm_adicCompletion_eq_absNorm_zpow (v : HeightOneSpectrum (𝓞 K))
+    {x : v.adicCompletion K} (hx : x ≠ 0) :
+    ‖x‖ = (v.asIdeal.absNorm : ℝ) ^ WithZero.log (Valued.v x) := by
+  rw [norm_def, WithZeroMulInt.toNNReal_neg_apply _ ((Valued.v).ne_zero_iff.mpr hx),
+    NNReal.coe_zpow, NNReal.coe_natCast]
+
 /-- Every integer power of the prime norm occurs as a nonzero finite-place value. -/
 theorem exists_ne_zero_apply_eq_absNorm_zpow (v : FinitePlace K) (n : ℤ) :
     ∃ x : K, x ≠ 0 ∧ v x = (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n := by

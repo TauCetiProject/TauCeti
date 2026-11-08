@@ -55,6 +55,8 @@ for parameters in the closed unit ball.
   of the perturbed flow in a parameter direction at the parameter `0`, and
   `TauCeti.fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt` at any parameter of norm
   less than `1`, with the flow of the perturbation in place of the flow of `f`.
+* `TauCeti.range_fst_fderiv_perturbedFlow_inr_le`: at the parameter `0`, a family whose members
+  all belong to a second family moves the perturbed flow in no more directions than the second.
 * `TauCeti.negativeGradientFlow_perturb_apply_eq`, `TauCeti.mem_stableSet_perturb_iff`,
   `TauCeti.mem_unstableSet_perturb_iff`: away from the supports of the family, the perturbed flow,
   and membership in stable and unstable sets, are those of `f`.
@@ -674,6 +676,37 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   rw [hu0, map_zero, sub_zero, intervalIntegral.integral_neg, hinv] at hFTC
   calc u T = M T (N T (u T)) := (hMN T _).symm
     _ = -M T (∫ σ in (0 : ℝ)..T, N σ (b σ)) := by rw [← hFTC, map_neg]
+
+/-- **The parameter derivative only sees the functions of the family.** If `h' k = h (e k)` for
+every `k`, then at the parameter `0` the range of the parameter derivative of the perturbed flow
+for `h'` is contained in that for `h`. -/
+theorem range_fst_fderiv_perturbedFlow_inr_le {κ : Type*} [Fintype κ] {h' : κ → E → ℝ}
+    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (hh' : ∀ k, ContDiff ℝ 2 (h' k))
+    (hc' : ∀ k, HasCompactSupport (h' k)) (e : κ → ι) (he : ∀ k, h' k = h (e k)) (x : E)
+    (T : ℝ) :
+    LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ κ)).comp
+        ((fderiv ℝ (perturbedFlow f h' hf hh' hc' T) (x, 0)).comp
+          (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ κ)))) : EuclideanSpace ℝ κ →ₗ[ℝ] E) ≤
+      LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+        ((fderiv ℝ (perturbedFlow f h hf hh hc T) (x, 0)).comp
+          (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ ι)))) : EuclideanSpace ℝ ι →ₗ[ℝ] E) := by
+  classical
+  rintro _ ⟨d, rfl⟩
+  set c : EuclideanSpace ℝ ι := WithLp.toLp 2 fun i ↦ ∑ k with e k = i, d k
+  have hci : ∀ i, c i = ∑ k with e k = i, d k := fun i ↦ by simp [c]
+  -- The direction `c` collects the coefficients of `d` on the members of `h'` equal to `h i`.
+  have hsum : ∀ y, ∑ i, c i • ∇ (h i) y = ∑ k, d k • ∇ (h' k) y := fun y ↦ by
+    simp_rw [hci, Finset.sum_smul, he]
+    rw [← Finset.sum_fiberwise Finset.univ e]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k hk ↦ by
+      rw [(Finset.mem_filter.1 hk).2]
+  refine ⟨c, ?_⟩
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.inr_apply, ContinuousLinearMap.coe_fst']
+  rw [fst_fderiv_perturbedFlow_apply_eq_neg_integral hfs hf hh hc,
+    fst_fderiv_perturbedFlow_apply_eq_neg_integral hfs hf hh' hc']
+  simp only [hsum]
 
 /-- **The re-centred perturbed flow.** For a parameter `s₀` of norm less than `1`, the first
 component of the perturbed flow of `f` near `(x, s₀)` is the first component of the perturbed flow
