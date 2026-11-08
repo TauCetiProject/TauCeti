@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Energy
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Analysis.Complex.OperatorNorm
 
 /-!
 # Covariant translations of a plane vortex
@@ -142,11 +142,6 @@ theorem sectionValue_covariantTranslation (hp : DifferentiableAt ℝ (fun w ↦ 
     hcastp, hcastq, fderiv_const_apply]
   apply Complex.ext <;> simp <;> ring
 
-/-- A real-linear functional on the complex plane, evaluated in the real frame `(1, I)`. -/
-private theorem clm_apply_eq_re_mul_add_im_mul (L : ℂ →L[ℝ] ℝ) (v : ℂ) :
-    L v = v.re * L 1 + v.im * L I := by
-  simpa using LinearMap.apply_eq_re_smul_one_add_im_smul_I (L : ℂ →ₗ[ℝ] ℝ) v
-
 /-- The covariant translation is the translation velocity `∂_v x` corrected by the
 infinitesimal gauge transformation by the connection component `b(v) = b₁ v₁ + b₂ v₂`. -/
 theorem covariantTranslation_eq_fderiv_add_gaugeDirection (hx : DifferentiableAt ℝ x z)
@@ -161,10 +156,10 @@ theorem covariantTranslation_eq_fderiv_add_gaugeDirection (hx : DifferentiableAt
   ext i
   fin_cases i
   · simp (disch := fun_prop) [hdi, curvature_apply, fderiv_fun_add, fderiv_mul_const,
-      clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 0) z) v]
+      (fderiv ℝ (fun w ↦ x w 0) z).apply_eq_re_smul_one_add_im_smul_I v]
     ring
   · simp (disch := fun_prop) [hdi, curvature_apply, fderiv_fun_add, fderiv_mul_const,
-      clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 1) z) v]
+      (fderiv ℝ (fun w ↦ x w 1) z).apply_eq_re_smul_one_add_im_smul_I v]
     ring
   · simp [hdi]
     ring
@@ -226,7 +221,7 @@ theorem gaugeAdjoint_covariantTranslation_of_equation_eq_zero
   rw [gaugeAdjoint_def, fderiv_covariantTranslation_apply_zero hp hq hsol,
     fderiv_covariantTranslation_apply_one hp hq hsol]
   simp only [covariantTranslation_apply_two, covariantTranslation_apply_three,
-    clm_apply_eq_re_mul_add_im_mul _ v]
+    ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ v]
   -- What remains is a combination of the two holomorphicity rows at `z`.
   linear_combination (v.re * x z 2 - v.im * x z 3) * he2 +
     (-(v.re * x z 3) - v.im * x z 2) * he1
@@ -259,7 +254,7 @@ theorem linearizedEquation_covariantTranslation_of_equation_eq_zero
   · simp only [Fin.zero_eta, linearizedEquation_apply_zero, PiLp.zero_apply,
       fderiv_covariantTranslation_apply_zero hp' hq' hsol,
       fderiv_covariantTranslation_apply_one hp' hq' hsol, covariantTranslation_apply_two,
-      covariantTranslation_apply_three, clm_apply_eq_re_mul_add_im_mul _ v]
+      covariantTranslation_apply_three, ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ v]
     ring
   -- Rows `1` and `2`: after expanding, using the symmetry of second derivatives, each row is
   -- the derivative of the corresponding holomorphicity row along `v`, corrected by `b(v)` times
@@ -275,8 +270,8 @@ theorem linearizedEquation_covariantTranslation_of_equation_eq_zero
       ContinuousLinearMap.comp_zero, zero_apply, zero_add,
       ContinuousLinearMap.flip_apply, hsp.eq _ v, hsq.eq _ v, curvature_apply, Fin.reduceFinMk,
       PiLp.zero_apply] at hr1 hr2 ⊢
-    simp only [clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 0) z) v,
-      clm_apply_eq_re_mul_add_im_mul (fderiv ℝ (fun w ↦ x w 1) z) v] at hr1 hr2 ⊢
+    simp only [(fderiv ℝ (fun w ↦ x w 0) z).apply_eq_re_smul_one_add_im_smul_I v,
+      (fderiv ℝ (fun w ↦ x w 1) z).apply_eq_re_smul_one_add_im_smul_I v] at hr1 hr2 ⊢
   · linear_combination hr1 - (x z 0 * v.re + x z 1 * v.im) * he2
   · linear_combination hr2 + (x z 0 * v.re + x z 1 * v.im) * he1
 
