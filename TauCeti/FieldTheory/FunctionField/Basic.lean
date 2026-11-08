@@ -55,6 +55,11 @@ variable {k F}
 
 namespace IsFunctionField
 
+/-- A field finite over `k(x)` for a transcendental `x` is an algebraic function field. -/
+theorem of_finiteDimensional_adjoin {x : F} (hx : Transcendental k x)
+    [FiniteDimensional k⟮x⟯ F] : IsFunctionField k F :=
+  ⟨x, hx, ‹_›⟩
+
 /-- An algebraic function field contains an element transcendental over its base field. -/
 theorem exists_transcendental (hF : IsFunctionField k F) : ∃ x : F, Transcendental k x :=
   hF.imp fun _ hx ↦ hx.1
