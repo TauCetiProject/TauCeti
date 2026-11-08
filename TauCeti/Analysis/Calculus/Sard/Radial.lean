@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Sard.EqualDimension
-public import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Norm
+public import TauCeti.Analysis.Calculus.FDeriv.Norm
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -39,20 +37,6 @@ open scoped NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Away from the origin, a vanishing totalized derivative of a radial function forces its
-one-dimensional profile derivative to vanish. The profile need not be differentiable. -/
-theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → ℝ} {x : E} (hx : x ≠ 0)
-    (hcrit : fderiv ℝ (fun y : E ↦ v ‖y‖) x = 0) : deriv v ‖x‖ = 0 := by
-  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
-  by_contra hv
-  have hvd := differentiableAt_of_deriv_ne_zero hv
-  have hn : DifferentiableAt ℝ (fun y : E ↦ ‖y‖) x := differentiableAt_id.norm ℝ hx
-  have hd := hvd.hasDerivAt.comp_hasFDerivAt x hn.hasFDerivAt
-  have hz : deriv v ‖x‖ • fderiv ℝ (fun y : E ↦ ‖y‖) x = 0 := hd.fderiv.symm.trans hcrit
-  have hnorm := norm_fderiv_norm hn
-  rw [(smul_eq_zero.mp hz).resolve_left hv, norm_zero] at hnorm
-  exact zero_ne_one hnorm
 
 /-- The critical values of a radial function with a Lipschitz profile form a Lebesgue-null set.
 No finite-dimensionality or measurability structure on the ambient inner product space is needed;
