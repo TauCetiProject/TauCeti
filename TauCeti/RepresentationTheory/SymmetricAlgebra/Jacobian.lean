@@ -114,10 +114,10 @@ variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
 /-- **The hyperplane multiplicity in the Jacobian.** If `g` fixes the kernel `ker ℓ`
 pointwise and `det (ρ g)` is a primitive `e`-th root of unity, then
 `ℓ ^ (e - 1)` divides the Jacobian of every family of invariant polynomial functions.
-For `ℓ ≠ 0` the kernel is a hyperplane and this is its multiplicity in the Jacobian; for
-`ℓ = 0` the kernel is the whole space, so `g` is the identity, `e = 1`, and the statement is
-trivial. This applies to a generator of the cyclic pointwise stabilizer, with `e` the order
-of its determinant character; no order-two assumption is made. -/
+For `ℓ ≠ 0` the kernel is a hyperplane and `e - 1` is a lower bound for its multiplicity in the
+Jacobian; for `ℓ = 0` the kernel is the whole space, so `ρ g` is the identity, `e = 1`, and the
+statement is trivial. This applies to a generator of the cyclic pointwise stabilizer, with `e` the
+order of its determinant character; no order-two assumption is made. -/
 theorem dual_ι_pow_sub_one_dvd_jacobian (b : Module.Basis n K (Module.Dual K V))
     {g : G} {ℓ : Module.Dual K V}
     (hfix : LinearMap.ker ℓ ≤ (ρ g).fixedSubmodule)
