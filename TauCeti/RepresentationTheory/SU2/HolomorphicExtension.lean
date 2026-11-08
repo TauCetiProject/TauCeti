@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational.Analytic
 public import TauCeti.RepresentationTheory.SU2.Exhaustion
 public import TauCeti.Geometry.Manifold.Instances.SpecialLinearGroup
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -24,7 +23,6 @@ Lie-group structure of units.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension`: the native holomorphic `SL₂(ℂ)` action.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_def`: restriction of the general-linear action.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_apply`: its action in the weight basis.
-* `TauCeti.SU2.toGL_comp_toSL`: the inclusion in `GL₂(ℂ)` factors through `SL₂(ℂ)`.
 * `TauCeti.SU2.symPowerSLHolomorphicExtension_comp_toSL`: agreement with the `SU(2)` model.
 * `TauCeti.SU2.contMDiff_symPowerSLHolomorphicExtension`: complex analyticity.
 * `TauCeti.SU2.symPowerModelGL`: the algebraic `GL₂(ℂ)` action in the model's weight basis.
@@ -121,15 +119,6 @@ theorem symPowerSLHolomorphicExtension_apply (g : SpecialLinearGroup (Fin 2) ℂ
       weightEquiv d (symPowerRep ℂ 2 d (SpecialLinearGroup.toGL g) ((weightEquiv d).symm v)) := by
   simp only [symPowerSLHolomorphicExtension_def, MonoidHom.comp_apply,
     symPowerHolomorphicExtension_apply]
-
-/-- The inclusion of `SU(2)` in `GL₂(ℂ)` factors through `SL₂(ℂ)`. -/
-@[simp]
-theorem toGL_comp_toSL :
-    (SpecialLinearGroup.toGL (n := Fin 2) (R := ℂ)).comp
-      Matrix.specialUnitaryGroup.toSL = toGL := by
-  ext g i j
-  simp only [MonoidHom.comp_apply, SpecialLinearGroup.coe_GL_coe_matrix,
-    Matrix.specialUnitaryGroup.coe_toSL, coe_toGL]
 
 /-- Restricting the holomorphic special-linear action to `SU(2)` gives the original model. -/
 @[simp]
