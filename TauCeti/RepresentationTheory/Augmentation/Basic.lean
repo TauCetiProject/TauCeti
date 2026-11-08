@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
+public import TauCeti.LinearAlgebra.Basis.SumCoords
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Subrepresentation
@@ -45,8 +46,6 @@ These constructions underlie the standard representation of the symmetric group.
   when the permutation set is nonempty.
 * `TauCeti.permutationSum` and `TauCeti.invariantLine`: the sum of the standard basis and its span.
 * `TauCeti.invariantLineEquivTrivial`: the invariant line as the trivial representation on `k`.
-* `MonoidAlgebra.ker_sumCoords_basis_eq_span`: the augmentation kernel is spanned by
-  differences of standard basis vectors from a fixed one.
 * `TauCeti.isCompl_invariantLine_augmentationSubrepresentation_iff`: the two subrepresentations
   are complementary exactly when `X` is empty or its cardinality is a unit in the coefficient ring.
 * `TauCeti.ofMulActionEquivProdAugmentation`: the explicit splitting as trivial plus augmentation.
@@ -149,7 +148,7 @@ theorem forget₂_map_permutationAugmentation :
 
 /-- For a nonempty permutation set, augmentation is surjective. -/
 instance permutationAugmentation_epi [Nonempty X] : Epi (permutationAugmentation k G X) :=
-  (Rep.epi_iff_surjective _).2 (MonoidAlgebra.sumCoords_basis_surjective (k := k) (X := X))
+  (Rep.epi_iff_surjective _).2 (MonoidAlgebra.basis X k).sumCoords_surjective
 
 end AugmentationMap
 
@@ -174,7 +173,7 @@ instance [Finite X] :
     rw [hbot]
     infer_instance
   · rw [toSubmodule_augmentationSubrepresentation,
-      MonoidAlgebra.ker_sumCoords_basis_eq_span k X (Classical.arbitrary X)]
+      (MonoidAlgebra.basis X k).ker_sumCoords_eq_span (Classical.arbitrary X)]
     exact Module.Finite.span_of_finite k (Set.finite_range _)
 
 end SubrepRing
@@ -464,7 +463,7 @@ theorem finrank_augmentationSubrepresentation :
     simpa [MonoidAlgebra.coeff_smul_apply, hcoord, hi] using this
   have hspan : LinearMap.ker (MonoidAlgebra.basis X k).sumCoords =
       Submodule.span k (Set.range d) := by
-    rw [MonoidAlgebra.ker_sumCoords_basis_eq_span k X x₀]
+    rw [(MonoidAlgebra.basis X k).ker_sumCoords_eq_span x₀]
     apply le_antisymm
     · refine Submodule.span_le.mpr ?_
       rintro _ ⟨x, rfl⟩

@@ -256,14 +256,16 @@ theorem isAtom_augmentationSubrepresentation (h2 : 2 ≤ Fintype.card α)
     obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hτne
     have hvker : (MonoidAlgebra.basis α k).sumCoords v = 0 :=
       mem_augmentationSubrepresentation_iff.mp (hτ.le hv)
-    obtain ⟨x, y, hxy, hcoeff⟩ := v.exists_coeff_ne_of_ne_zero_of_sumCoords_eq_zero hchar hv0 hvker
+    obtain ⟨x, y, hxy, hcoeff⟩ :=
+      (MonoidAlgebra.basis α k).exists_repr_ne_of_ne_zero_of_sumCoords_eq_zero
+        (IsRegular.of_ne_zero hchar).left hv0 hvker
     have hdiff := single_sub_single_mem_of_mem_of_coeff_ne hv hcoeff
     -- `τ` then contains every difference of standard basis vectors, which span
     have hle : augmentationSubrepresentation k (Equiv.Perm α) α ≤ τ := by
       intro w hw
       have hw' : w ∈ LinearMap.ker (MonoidAlgebra.basis α k).sumCoords :=
         mem_augmentationSubrepresentation_iff.mp hw
-      rw [MonoidAlgebra.ker_sumCoords_basis_eq_span k α x] at hw'
+      rw [(MonoidAlgebra.basis α k).ker_sumCoords_eq_span x] at hw'
       exact Submodule.span_le.mpr (by
         rintro _ ⟨z, rfl⟩
         exact single_sub_single_mem_of_ne_of_single_sub_single_mem hxy hdiff z) hw'
