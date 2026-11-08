@@ -79,7 +79,7 @@ archimedean Brauer invariants of their Weil cup product, sum to zero.
 The finite-place sum has finite support by
 `hasFiniteSupport_localTateWeilPairing_torsionRes`. All choices of embeddings of separable
 closures are allowed, independently at each place. -/
-theorem sum_localTateWeilPairing_torsionRes_eq_zero
+theorem finsum_toRatAddCircle_localTateWeilPairing_add_sum_infiniteInvMap_eq_zero
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion) :
