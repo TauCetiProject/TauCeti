@@ -59,6 +59,8 @@ support-containment lemmas provide the shared geometry for chart trace and exten
   Lipschitz domain is covered by finitely many chart cylinders with a common Lipschitz constant.
 * `Set.IsLipschitzDomainWith.exists_finset_isLipschitzChartWith_two_mul_lt_cover`: the frontier of
   a bounded Lipschitz domain is covered by finitely many shortened chart cylinders.
+* `Set.IsLipschitzDomain.exists_isLipschitzDomainWith`: a Lipschitz domain with compact frontier
+  has a uniform Lipschitz bound.
 
 ## References
 
@@ -758,6 +760,21 @@ theorem isLipschitzDomain_iff_forall_exists_isLipschitzDomainAtWith
   · intro h x hx
     obtain ⟨L, e, φ, a, b, hex, hchart⟩ := h x hx
     exact ⟨e, φ, L, a, b, hchart.toIsLipschitzChart, hex⟩
+
+/-- A Lipschitz domain with compact frontier has a uniform Lipschitz bound: finitely many charts
+cover the frontier, and recentring them at each frontier point keeps their common constant. -/
+theorem IsLipschitzDomain.exists_isLipschitzDomainWith {Omega : Set (WithLp 2 (ℝ × E))}
+    (h : Omega.IsLipschitzDomain E) (hc : IsCompact (frontier Omega)) :
+    ∃ L, Omega.IsLipschitzDomainWith L := by
+  obtain ⟨K, m, e, γ, a, b, hchart, hcover⟩ := h.exists_finite_cover hc
+  refine ⟨K, h.isOpen, fun x hx => ?_⟩
+  obtain ⟨i, hi⟩ := mem_iUnion.1 (hcover hx)
+  obtain ⟨e', γ', a', b', hc', hex⟩ := (hchart i).exists_isLipschitzChart_eq_zero hi
+  refine ⟨e', γ', a', b', hex, hc'.isLipschitzChartWith ?_⟩
+  -- The recentred chart passes through its centre, which is a frontier point.
+  have heq := hc'.fst_apply_eq_of_mem_frontier hx
+    (hex ▸ zero_mem_normalCylinder hc'.height_pos hc'.radius_pos)
+  simpa [hex] using heq.symm
 
 end Set
 
