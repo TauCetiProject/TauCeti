@@ -91,9 +91,14 @@ the identity needs a strictly unital module.
 * `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_of_lt`: `∂' ∘ T_F + T_F ∘ ∂ = T_{∂F}`
   when the module, respectively the type `D` structures, are bounded.
-* `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_eq_of_act_eq_zero`,
-  `TauCeti.TypeDStructure.typeABoxMap_add_typeABoxMap_of_act_eq_zero` and their `_of_lt` versions:
-  homomorphisms induce chain maps, and homotopic homomorphisms induce homotopic chain maps.
+* `TauCeti.TypeDStructure.typeABoxMap_apply_eq_sum`: the induced map as a finite sum over paths
+  with exactly one step through `F`; under either boundedness hypothesis, see
+  `TauCeti.TypeDStructure.typeABoxMap_apply_eq_sum_of_act_eq_zero` and
+  `TauCeti.TypeDStructure.typeABoxMap_apply_eq_sum_of_lt`.
+* In `TauCeti.TypeDStructure`,
+  `typeABoxDifferential_typeABoxMap_of_morphismDifferential_eq_zero_of_act_eq_zero`,
+  `typeABoxMap_add_typeABoxMap_of_act_eq_zero` and their `_of_lt` versions: homomorphisms induce
+  chain maps, and homotopic homomorphisms induce homotopic chain maps.
 * `TauCeti.TypeDStructure.typeABoxMap_toUngradedAInfinityRightModule`: for a differential module,
   `T_F` is the action of `F` on row vectors.
 
@@ -227,9 +232,11 @@ variable {X' : Type*} [Fintype X'] [DecidableEq X']
 of `N` and `j` copies of the coefficient matrix `δ'` of `N'`, evaluated along the paths of
 generators.
 It is the `X'`-component of the box tensor differential, restricted to row vectors supported on
-`X`, of the block upper-triangular matrix `fromBlocks δ F 0 δ'` on `X ⊕ X'`, the coefficient matrix
-of the mapping cone of `F`. As for `TauCeti.TypeDStructure.typeABoxDifferential`, the sum is finite
-when `M`, or `N` and `N'`, are bounded, and is `0` by convention otherwise. -/
+`X`, of the block upper-triangular matrix `fromBlocks δ F 0 δ'` on `X ⊕ X'`; when `F` is a cycle,
+`∂F = 0`, this is the coefficient matrix of the mapping cone of `F`. As for
+`TauCeti.TypeDStructure.typeABoxDifferential`, the sum is finite when `M`, or `N` and `N'`, are
+bounded; the construction is `0` by convention whenever the operations along
+`fromBlocks δ F 0 δ'` do not vanish from some arity on. -/
 noncomputable def typeABoxMap (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X')
     (Mm : UngradedAInfinityRightModule d M) (F : Matrix X X' A) : (X → M) →ₗ[R] X' → M :=
   LinearMap.funLeft R M Sum.inr ∘ₗ
@@ -244,7 +251,7 @@ theorem typeABoxMap_apply (N : TypeDStructure d ι X) (N' : TypeDStructure d ι 
         (Sum.elim φ 0) (Sum.inr z) := by
   have h : (LinearEquiv.sumArrowLequivProdArrow X X' R M).symm (φ, 0) = Sum.elim φ 0 := by
     funext a
-    cases a <;> rfl
+    cases a <;> simp
   simp [typeABoxMap, LinearMap.funLeft_apply, h]
 
 /-- **The zero morphism induces the zero map.** -/
@@ -266,11 +273,48 @@ theorem typeABoxMap_zero (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X
       map_zero' := rfl
       map_add' := fun _ _ => rfl }
   -- The goal is the evaluation `ev` of the `finsum`; `ev` commutes with it when it is finite.
-  change ev (∑ᶠ n, g n) = 0
+  have hev (T : (X ⊕ X' → M) →ₗ[R] X ⊕ X' → M) : T (Sum.elim φ 0) (Sum.inr z) = ev T := rfl
+  rw [hev, LinearMap.zero_apply, Pi.zero_apply]
   by_cases hfin : (Function.support g).Finite
   · rw [map_finsum ev hfin]
     exact finsum_eq_zero_of_forall_eq_zero hg
   · rw [finsum_of_infinite_support hfin, map_zero]
+
+/-- **The induced map as a sum over paths.** When the operations of the matrix module of
+`X ⊕ X'` along `fromBlocks δ F 0 δ'` vanish from arity `K` on, the `z`-component of `T_F φ` is the
+sum, over the paths `x₀ → ⋯ → xₙ = z` in `X ⊕ X'` of length `n < K` and the slots `l < n`, of
+`m_{n+1}(φ x₀, …)` with the entry of `F` at step `l` and the entries of `δ` or `δ'` at the other
+steps. Such a term vanishes unless the path stays in `X` up to step `l`, crosses to `X'` there and
+stays in `X'` afterwards: the terms are the `m_{i+j+2}(φ x₀, δ…, F xᵢ y₀, δ'…)` with `i = l`. -/
+theorem typeABoxMap_apply_eq_sum (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X')
+    (Mm : UngradedAInfinityRightModule d M) (F : Matrix X X' A) {K : ℕ}
+    (hK : ∀ n, K ≤ n →
+      (Mm.matrixAct (X ⊕ X') n fun _ => Matrix.fromBlocks N.coeff F 0 N'.coeff) = 0)
+    (φ : X → M) (z : X') :
+    typeABoxMap N N' Mm F φ z = ∑ n ∈ range K, ∑ l : Fin n, ∑ x : Fin (n + 1) → X ⊕ X',
+      if x (Fin.last n) = Sum.inr z then
+        Mm.act n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
+          (Matrix.fromBlocks 0 F 0 0) t (x t.castSucc) (x t.succ)) (Sum.elim φ 0 (x 0))
+      else 0 := by
+  rw [typeABoxMap_apply, UngradedAInfinityRightModule.twistedDifferential_eq_sum _
+    (by simpa only [UngradedAInfinityRightModule.matrix_act] using hK)]
+  simp only [LinearMap.sum_apply, Finset.sum_apply, UngradedAInfinityRightModule.matrix_act,
+    ← Mm.sum_matrixAct_update_fromBlocks_apply_inr N.coeff N'.coeff 0 F,
+    UngradedAInfinityRightModule.matrixAct_apply]
+
+/-- **The induced map of a bounded module as a sum over paths.** If the operations `m_{n+1}` of
+`M` vanish for `n ≥ K`, `T_F φ` is the sum of `TauCeti.TypeDStructure.typeABoxMap_apply_eq_sum`
+over the paths of length `n < K`. -/
+theorem typeABoxMap_apply_eq_sum_of_act_eq_zero (N : TypeDStructure d ι X)
+    (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M) (F : Matrix X X' A)
+    {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0) (φ : X → M) (z : X') :
+    typeABoxMap N N' Mm F φ z = ∑ n ∈ range K, ∑ l : Fin n, ∑ x : Fin (n + 1) → X ⊕ X',
+      if x (Fin.last n) = Sum.inr z then
+        Mm.act n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
+          (Matrix.fromBlocks 0 F 0 0) t (x t.castSucc) (x t.succ)) (Sum.elim φ 0 (x 0))
+      else 0 :=
+  typeABoxMap_apply_eq_sum N N' Mm F (fun n hn => by
+    rw [Mm.matrixAct_eq_zero_of_act_eq_zero _ (hK n hn), zero_apply]) φ z
 
 section Core
 
@@ -303,7 +347,7 @@ private theorem Bound.act_coeff (hB : Bound N N' Mm U K) :
   intro n hn
   refine LinearMap.ext fun φ => funext fun z => ?_
   have h := Mm.matrixAct_apply_inl (n := n) (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff)
-    (fun _ _ _ => rfl) (Sum.elim φ 0) z
+    (fun _ _ _ => by simp) (Sum.elim φ 0) z
   simp only [Matrix.toBlocks_fromBlocks₁₁, Sum.elim_comp_inl] at h
   rw [UngradedAInfinityRightModule.matrix_act, ← h, hB.act_eq_zero n hn _
     fun _ => hB.fromBlocks_mem 0]
@@ -314,7 +358,7 @@ private theorem Bound.act_coeff' (hB : Bound N N' Mm U K) :
   intro n hn
   refine LinearMap.ext fun ψ => funext fun z => ?_
   have h := Mm.matrixAct_sumElim_zero_apply_inr (n := n)
-    (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) (fun _ _ _ => rfl) ψ z
+    (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) (fun _ _ _ => by simp) ψ z
   simp only [Matrix.toBlocks_fromBlocks₂₂] at h
   rw [UngradedAInfinityRightModule.matrix_act, ← h, hB.act_eq_zero n hn _
     fun _ => hB.fromBlocks_mem 0]
@@ -331,7 +375,7 @@ private theorem Bound.twistedDifferential_apply_inl (hB : Bound N N' Mm U K) (G 
     hB.act_coeff]
   simp only [LinearMap.sum_apply, Finset.sum_apply, UngradedAInfinityRightModule.matrix_act]
   refine sum_congr rfl fun n _ => ?_
-  rw [Mm.matrixAct_apply_inl _ (fun _ _ _ => rfl)]
+  rw [Mm.matrixAct_apply_inl _ (fun _ _ _ => by simp)]
   simp only [Matrix.toBlocks_fromBlocks₁₁]
 
 /-- The `X'`-components of the box tensor differential of `fromBlocks δ G 0 δ'` are the induced map
@@ -349,7 +393,7 @@ private theorem Bound.twistedDifferential_apply_inr (hB : Bound N N' Mm U K) (G 
     UngradedAInfinityRightModule.twistedDifferential_eq_sum _ hB.act_coeff']
   simp only [LinearMap.sum_apply, Finset.sum_apply, UngradedAInfinityRightModule.matrix_act]
   refine congrArg _ (sum_congr rfl fun n _ => ?_)
-  rw [Mm.matrixAct_sumElim_zero_apply_inr _ (fun _ _ _ => rfl)]
+  rw [Mm.matrixAct_sumElim_zero_apply_inr _ (fun _ _ _ => by simp)]
   simp only [Matrix.toBlocks_fromBlocks₂₂]
 
 /-- The induced map of `G` as a sum of insertions of the off-diagonal block `fromBlocks 0 G 0 0`
@@ -420,14 +464,22 @@ private theorem Bound.typeABoxDifferential_typeABoxMap [CharP R 2] (hB : Bound N
   simp only [Finset.sum_apply, UngradedAInfinityRightModule.matrix_act] at h
   rw [Pi.add_apply, add_comm, h, hB.typeABoxMap_apply_eq_sum F]
 
+/-- The operations of a bounded module vanish from arity `K` on along all matrices. -/
+private theorem bound_of_act_eq_zero (hK : ∀ n, K ≤ n → Mm.act n = 0) :
+    Bound N N' Mm Set.univ K where
+  act_eq_zero n hn _ _ := by rw [Mm.matrixAct_eq_zero_of_act_eq_zero _ (hK n hn), zero_apply]
+  fromBlocks_mem _ := trivial
+  fromBlocks_zero_mem _ := trivial
+  map_mem _ _ := trivial
+
 end Core
 
 /-- **The induced maps of a bounded module.** Over a ring of characteristic two, if the operations
 `m_{k+1}` of `M` vanish for `k ≥ K`, the map `T_F` induced by any matrix `F` from `N` to `N'`
 satisfies `∂' ∘ T_F + T_F ∘ ∂ = T_{∂F}`, where `∂` and `∂'` are the box tensor differentials and
 `∂F` is the differential of morphisms. So a homomorphism of type `D` structures induces a chain map
-(`TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_eq_of_act_eq_zero`), and homotopic
-homomorphisms induce homotopic chain maps
+(`typeABoxDifferential_typeABoxMap_of_morphismDifferential_eq_zero_of_act_eq_zero`), and
+homotopic homomorphisms induce homotopic chain maps
 (`TauCeti.TypeDStructure.typeABoxMap_add_typeABoxMap_of_act_eq_zero`). -/
 theorem typeABoxDifferential_typeABoxMap_of_act_eq_zero [CharP R 2] (N : TypeDStructure d ι X)
     (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M) {K : ℕ}
@@ -435,25 +487,18 @@ theorem typeABoxDifferential_typeABoxMap_of_act_eq_zero [CharP R 2] (N : TypeDSt
     N'.typeABoxDifferential Mm (typeABoxMap N N' Mm F φ) +
         typeABoxMap N N' Mm F (N.typeABoxDifferential Mm φ) =
       typeABoxMap N N' Mm (morphismDifferential N N' F) φ :=
-  Bound.typeABoxDifferential_typeABoxMap (U := Set.univ) (K := K)
-    ⟨fun n hn _ _ => by
-      rw [Mm.matrixAct_eq_zero_of_act_eq_zero _ (hK n hn), zero_apply],
-      fun _ => trivial,
-      fun _ => trivial, fun _ _ => trivial⟩ F φ
+  (bound_of_act_eq_zero hK).typeABoxDifferential_typeABoxMap F φ
 
 /-- **Additivity of the induced maps of a bounded module.** -/
 theorem typeABoxMap_add_of_act_eq_zero (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X')
     (Mm : UngradedAInfinityRightModule d M) {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0)
     (F G : Matrix X X' A) :
     typeABoxMap N N' Mm (F + G) = typeABoxMap N N' Mm F + typeABoxMap N N' Mm G :=
-  Bound.typeABoxMap_add (U := Set.univ) (K := K)
-    ⟨fun n hn _ _ => by
-      rw [Mm.matrixAct_eq_zero_of_act_eq_zero _ (hK n hn), zero_apply],
-      fun _ => trivial, fun _ => trivial, fun _ _ => trivial⟩ F G
+  (bound_of_act_eq_zero hK).typeABoxMap_add F G
 
 /-- **A homomorphism of type `D` structures induces a chain map of box tensor products with a
 bounded module.** If `∂F = 0`, then `∂' ∘ T_F = T_F ∘ ∂`. -/
-theorem typeABoxDifferential_typeABoxMap_eq_of_act_eq_zero [CharP R 2]
+theorem typeABoxDifferential_typeABoxMap_of_morphismDifferential_eq_zero_of_act_eq_zero [CharP R 2]
     (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M)
     {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0) {F : Matrix X X' A}
     (hF : morphismDifferential N N' F = 0) (φ : X → M) :
@@ -486,8 +531,18 @@ private theorem bound_of_lt {N : TypeDStructure d ι X} {N' : TypeDStructure d �
     (Mm : UngradedAInfinityRightModule d M) (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
     (h' : X' → ℕ) (hh' : ∀ x y, N'.coeff x y ≠ 0 → h' x < h' y) :
     Bound N N' Mm {P | ∀ a b, P a b ≠ 0 → sumHeight h h' a < sumHeight h h' b}
-      (univ.sup (sumHeight h h') + 1) where
-  act_eq_zero n hn u hu := Mm.matrixAct_eq_zero_of_lt _ _ (by omega) fun l => hu l
+      (univ.sup h + univ.sup h' + 2) where
+  act_eq_zero n hn u hu := by
+    have hsup : univ.sup (sumHeight h h') ≤ univ.sup h + univ.sup h' + 1 :=
+      Finset.sup_le fun a _ => by
+        rcases a with x | y
+        · have := le_sup (f := h) (mem_univ x)
+          simp only [sumHeight, Sum.elim_inl]
+          omega
+        · have := le_sup (f := h') (mem_univ y)
+          simp only [sumHeight, Sum.elim_inr]
+          omega
+    exact Mm.matrixAct_eq_zero_of_lt _ _ (by omega) fun l => hu l
   fromBlocks_mem G a b hab := by
     have hle (x : X) : h x ≤ univ.sup h := le_sup (f := h) (mem_univ x)
     rcases a with x | x <;> rcases b with y | y <;>
@@ -517,6 +572,24 @@ theorem typeABoxDifferential_typeABoxMap_of_lt [CharP R 2] (N : TypeDStructure d
       typeABoxMap N N' Mm (morphismDifferential N N' F) φ :=
   (bound_of_lt Mm h hh h' hh').typeABoxDifferential_typeABoxMap F φ
 
+/-- **The induced map with bounded type `D` structures as a sum over paths.** If heights on the
+generators of `N` and of `N'` strictly increase along their nonzero coefficients, `T_F φ` is the
+sum of `TauCeti.TypeDStructure.typeABoxMap_apply_eq_sum` over the paths of length `n` at most
+the sum of the largest heights plus one, whatever the operations of `M`. -/
+theorem typeABoxMap_apply_eq_sum_of_lt (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X')
+    (Mm : UngradedAInfinityRightModule d M) (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
+    (h' : X' → ℕ) (hh' : ∀ x y, N'.coeff x y ≠ 0 → h' x < h' y) (F : Matrix X X' A) (φ : X → M)
+    (z : X') :
+    typeABoxMap N N' Mm F φ z =
+      ∑ n ∈ range (univ.sup h + univ.sup h' + 2), ∑ l : Fin n, ∑ x : Fin (n + 1) → X ⊕ X',
+        if x (Fin.last n) = Sum.inr z then
+          Mm.act n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
+            (Matrix.fromBlocks 0 F 0 0) t (x t.castSucc) (x t.succ)) (Sum.elim φ 0 (x 0))
+        else 0 :=
+  have hB := bound_of_lt Mm h hh h' hh'
+  typeABoxMap_apply_eq_sum N N' Mm F (fun n hn => hB.act_eq_zero n hn _ fun _ =>
+    hB.fromBlocks_mem F) φ z
+
 /-- **Additivity of the induced maps with bounded type `D` structures.** -/
 theorem typeABoxMap_add_of_lt (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X')
     (Mm : UngradedAInfinityRightModule d M) (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
@@ -526,9 +599,9 @@ theorem typeABoxMap_add_of_lt (N : TypeDStructure d ι X) (N' : TypeDStructure d
 
 /-- **A homomorphism of bounded type `D` structures induces a chain map of box tensor products.**
 If `∂F = 0`, then `∂' ∘ T_F = T_F ∘ ∂`. -/
-theorem typeABoxDifferential_typeABoxMap_eq_of_lt [CharP R 2] (N : TypeDStructure d ι X)
-    (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M) (h : X → ℕ)
-    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (h' : X' → ℕ)
+theorem typeABoxDifferential_typeABoxMap_of_morphismDifferential_eq_zero_of_lt [CharP R 2]
+    (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X') (Mm : UngradedAInfinityRightModule d M)
+    (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (h' : X' → ℕ)
     (hh' : ∀ x y, N'.coeff x y ≠ 0 → h' x < h' y) {F : Matrix X X' A}
     (hF : morphismDifferential N N' F = 0) (φ : X → M) :
     N'.typeABoxDifferential Mm (typeABoxMap N N' Mm F φ) =
@@ -560,11 +633,9 @@ theorem typeABoxMap_toUngradedAInfinityRightModule [CharP R 2] [Module Aᵐᵒ�
     typeABoxMap N N' hM.toUngradedAInfinityRightModule F = continuationMap R M F := by
   refine LinearMap.ext fun φ => funext fun z => ?_
   have hB : Bound N N' hM.toUngradedAInfinityRightModule Set.univ 2 :=
-    ⟨fun n hn _ _ => by
+    bound_of_act_eq_zero fun n hn => by
       obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-      rw [UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero _ _
-        (hM.toUngradedAInfinityRightModule_act_add_two n), zero_apply],
-      fun _ => trivial, fun _ => trivial, fun _ _ => trivial⟩
+      exact hM.toUngradedAInfinityRightModule_act_add_two n
   rw [hB.typeABoxMap_apply_eq_sum 0]
   simp only [sum_range_succ, range_zero, sum_empty, zero_add, Finset.univ_eq_empty,
     Fin.sum_univ_one, Function.update_eq_const_of_subsingleton]

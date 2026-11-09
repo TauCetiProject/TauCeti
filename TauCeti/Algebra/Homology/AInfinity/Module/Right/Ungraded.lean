@@ -554,40 +554,6 @@ theorem matrixAct_sumElim_zero_apply_inr {n : ℕ} (F : Fin n → Matrix (X ⊕ 
     rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply]
   · rfl
 
-/-- A path from `X` to `Y` that never steps from `Y` back to `X` steps from `X` to `Y` exactly
-once. -/
-private theorem existsUnique_isLeft_isRight {α β : Type*} {n : ℕ} (x : Fin (n + 1) → α ⊕ β)
-    (h0 : (x 0).isLeft) (hlast : (x (Fin.last n)).isRight)
-    (hstep : ∀ l : Fin n, (x l.castSucc).isRight → (x l.succ).isRight) :
-    ∃ l₀ : Fin n, (x l₀.castSucc).isLeft ∧ (x l₀.succ).isRight ∧
-      ∀ l : Fin n, (x l.castSucc).isLeft → (x l.succ).isRight → l = l₀ := by
-  -- The level `0` on `X` and `1` on `Y` is monotone along the path.
-  set v : Fin (n + 1) → ℕ := fun k => if (x k).isLeft then 0 else 1 with hv
-  have hmono : Monotone v := Fin.monotone_iff_le_succ.mpr fun l => by
-    by_cases h : (x l.castSucc).isLeft
-    · simp [hv, h]
-    · have := hstep l (by simpa using h)
-      simp [hv, h, Sum.not_isLeft.mpr this]
-  have hcross (l : Fin n) : (x l.castSucc).isLeft → (x l.succ).isRight →
-      v l.castSucc = 0 ∧ v l.succ = 1 := fun h₁ h₂ => by
-    simp [hv, h₁, Sum.not_isLeft.mpr h₂]
-  obtain ⟨l₀, h₁, h₂⟩ : ∃ l₀ : Fin n, (x l₀.castSucc).isLeft ∧ (x l₀.succ).isRight := by
-    by_contra! hne
-    have hleft (k : Fin (n + 1)) : (x k).isLeft := by
-      induction k using Fin.induction with
-      | zero => exact h0
-      | succ k ih => simpa using hne k ih
-    exact absurd (hleft (Fin.last n)) (Sum.not_isLeft.mpr hlast)
-  refine ⟨l₀, h₁, h₂, fun l hl₁ hl₂ => ?_⟩
-  obtain ⟨hv₁, hv₂⟩ := hcross l hl₁ hl₂
-  obtain ⟨hv₀₁, hv₀₂⟩ := hcross l₀ h₁ h₂
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with h | h
-  · have := hmono (Fin.castSucc_lt_iff_succ_le.mp (Fin.castSucc_lt_castSucc_iff.mpr h))
-    omega
-  · have := hmono (Fin.castSucc_lt_iff_succ_le.mp (Fin.castSucc_lt_castSucc_iff.mpr h))
-    omega
-
 /-- **Inserting an off-diagonal block.** Let `δ` and `δ'` be matrices on `X` and `Y`, and `F`
 and `G` matrices from `X` to `Y`. On row vectors supported on `X`, the `Y`-components of
 `m_{n+1}(·, C_G, …, C_G)` for the block upper-triangular matrix `C_G = fromBlocks δ G 0 δ'` are
@@ -629,8 +595,8 @@ theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) 
     · simp [E, hb, ha']
     · simp [Function.update_of_ne hne, C, hb, ha']
   push Not at hback
-  obtain ⟨l₀, h₁, h₂, huniq⟩ := existsUnique_isLeft_isRight x (by simp [hx0])
-    (by simp [hz]) fun l h => by
+  obtain ⟨l₀, ⟨h₁, h₂⟩, huniq⟩ := Fin.existsUnique_isLeft_castSucc_and_isRight_succ x
+    (by simp [hx0]) (by simp [hz]) fun l h => by
       by_contra h'
       exact hback l h (by simpa using h')
   -- Away from the crossing `l₀` the entries of `C_F`, `C_G` and `E` are the diagonal blocks.
@@ -639,7 +605,7 @@ theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) 
         C (x l.castSucc) (x l.succ) = Matrix.fromBlocks δ G 0 δ' (x l.castSucc) (x l.succ) := by
     rcases hxl : x l.castSucc with a | b <;> rcases hxs : x l.succ with a' | b'
     · simp [E, C]
-    · exact absurd (huniq l (by simp [hxl]) (by simp [hxs])) hl
+    · exact absurd (huniq l ⟨by simp [hxl], by simp [hxs]⟩) hl
     · simp [E, C]
     · simp [E, C]
   rw [sum_eq_single l₀ (fun l _ hl => by
