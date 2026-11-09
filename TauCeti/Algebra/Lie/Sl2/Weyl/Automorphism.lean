@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.Algebra.Lie.Sl2.Basic
-public import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
 # The Weyl automorphism of an `sl₂` triple

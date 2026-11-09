@@ -14,7 +14,9 @@ import Mathlib.FieldTheory.Minpoly.Field
 Linear expressions `a + b * x` with coefficients in an intermediate field `F` belong to
 `F ⊔ K⟮x⟯`, without any algebraic relation on `x`. The image of `K⟮x⟯` under a tower map `L → M`
 is `K⟮x⟯` for the image of `x`. A root of an irreducible polynomial generates the bottom
-intermediate field exactly when the polynomial is linear.
+intermediate field exactly when the polynomial is linear. Adjoining the elements of a family
+indexed by `Option α` splits as adjoining those indexed by `some i` and then the one indexed by
+`none`.
 -/
 
 public section
@@ -60,3 +62,14 @@ theorem adjoin_simple_eq_bot_iff_natDegree_eq_one {p : K[X]} {x : L} (hp : Irred
     natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hp.ne_zero))]
 
 end TauCeti.IntermediateField
+
+namespace IntermediateField
+
+/-- Adjoining the elements `r (some i)` and then the element `r none` adjoins all the elements
+`r i`. -/
+theorem adjoin_range_comp_some_sup_adjoin_singleton {α K F : Type*} [Field K] [Field F]
+    [Algebra K F] (r : Option α → F) :
+    adjoin K (Set.range (r ∘ some)) ⊔ adjoin K {r none} = adjoin K (Set.range r) := by
+  rw [← adjoin_union, Set.union_singleton, ← Option.range_eq]
+
+end IntermediateField
