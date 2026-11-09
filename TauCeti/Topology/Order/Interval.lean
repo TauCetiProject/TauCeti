@@ -50,6 +50,9 @@ A path that starts in an open set and leaves it has a first exit time.
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
+* `ContinuousOn.image_Ioi_eq_Ioi_of_tendsto`, `ContinuousOn.image_Iio_eq_Ioi_of_tendsto` — a
+  continuous function on a half-infinite interval that stays above `v`, tends to `v` at infinity
+  and to `+∞` at the finite endpoint has image `Ioi v`.
 * `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing real function on
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
 * `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
