@@ -40,8 +40,13 @@ concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under p
 ## Main declarations
 
 * `TauCeti.pathIntegral φ γ a b`: the integral of the `1`-form `φ` along `γ` from `a` to `b`.
-* `TauCeti.IsSmoothForm.continuous_apply_curveVelocity`: the integrand of a continuous form
-  along a `C¹` curve is continuous.
+* `TauCeti.IsSmoothForm.continuousAt_apply_curveVelocity` and
+  `TauCeti.IsSmoothForm.continuous_apply_curveVelocity`: the integrand of a continuous form along
+  a curve is continuous at every parameter where the curve is `C¹`, so along a `C¹` curve it is
+  continuous.
+* `TauCeti.IsSmoothForm.intervalIntegrable_apply_curveVelocity_of_contMDiffAt`: the integrand is
+  interval integrable on `a..b` as soon as the curve is `C¹` at every point of `[[a, b]]`; no
+  regularity is needed outside the interval of integration.
 * `TauCeti.pathIntegral_mextDeriv_ofFunction` and `TauCeti.pathIntegral_mextDeriv`: the
   fundamental theorem of calculus for line integrals.
 * `TauCeti.pathIntegral_eq_zero_of_mem_exactForms`: exact `1`-forms integrate to zero around
@@ -185,23 +190,42 @@ section Continuous
 
 variable [IsManifold I 1 M]
 
+/-- A continuous `1`-form evaluated on the velocity of a curve is continuous, as a function of the
+parameter, at every parameter where the curve is `C¹`. -/
+theorem IsSmoothForm.continuousAt_apply_curveVelocity {φ : RoughForm I M F 1}
+    (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} {t : ℝ} (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t) :
+    ContinuousAt (fun u ↦ φ (γ u) fun _ ↦ Manifold.curveVelocity I γ u) t := by
+  have h := RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace (s := univ)
+    ((hφ.contMDiff (γ t)).mpullback_form hγ (by norm_num)).contMDiffWithinAt
+  refine ((ContinuousAlternatingMap.apply ℝ ℝ F fun _ ↦ (1 : ℝ)).continuous.continuousAt.comp
+    (h.contDiffAt univ_mem).continuousAt).congr (.of_forall fun u ↦ ?_)
+  change TauCeti.mpullback 𝓘(ℝ, ℝ) I γ φ u (fun _ ↦ (1 : ℝ)) =
+    φ (γ u) fun _ ↦ Manifold.curveVelocity I γ u
+  rw [Manifold.curveVelocity_apply]
+  -- the unit tangent vector of the parameter line is the real number `1`
+  exact mpullback_apply γ φ u _
+
 /-- Along a `C¹` curve, a continuous `1`-form evaluated on the velocity is a continuous function
 of the parameter. -/
 theorem IsSmoothForm.continuous_apply_curveVelocity {φ : RoughForm I M F 1}
     (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) :
-    Continuous fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t := by
-  have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hγ))
-  refine ((ContinuousAlternatingMap.apply ℝ ℝ F fun _ ↦ (1 : ℝ)).continuous.comp
-    h.continuous).congr fun t ↦ ?_
-  rw [Manifold.curveVelocity_apply]
-  -- the unit tangent vector of the parameter line is the real number `1`
-  exact mpullback_apply γ φ t _
+    Continuous fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t :=
+  continuous_iff_continuousAt.2 fun t ↦ hφ.continuousAt_apply_curveVelocity (hγ t)
 
 /-- A continuous `1`-form is interval integrable along a `C¹` curve. -/
 theorem IsSmoothForm.intervalIntegrable_apply_curveVelocity {φ : RoughForm I M F 1}
     (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (a b : ℝ) :
     IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b :=
   (hφ.continuous_apply_curveVelocity hγ).intervalIntegrable a b
+
+/-- A continuous `1`-form is interval integrable on `a..b` along a curve which is `C¹` at every
+point of `[[a, b]]`. -/
+theorem IsSmoothForm.intervalIntegrable_apply_curveVelocity_of_contMDiffAt
+    {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} {a b : ℝ}
+    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t) :
+    IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b :=
+  ContinuousOn.intervalIntegrable fun t ht ↦
+    (hφ.continuousAt_apply_curveVelocity (hγ t ht)).continuousWithinAt
 
 /-- **Reparametrization invariance.** The line integral of a continuous form along `γ ∘ σ`, for
 a `C¹` change of parameter `σ`, is the line integral along `γ` between the image endpoints. The
