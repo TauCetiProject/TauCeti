@@ -187,7 +187,7 @@ theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand (D : ℤ) :
     exact Or.inl (by simp [primeDiscriminantRadicand, h])
 
 /-- Every integer `D` is a nonzero square (`1` or `2²`) times its radicand
-`primeDiscriminantRadicand D`; the radicand is squarefree only when `D` is a prime
+`primeDiscriminantRadicand D`; the radicand is squarefree whenever `D` is a prime
 discriminant. -/
 theorem primeDiscriminant_eq_sq_mul_radicand (D : ℤ) :
     ∃ c : ℤ, c ≠ 0 ∧ D = c ^ 2 * primeDiscriminantRadicand D := by
