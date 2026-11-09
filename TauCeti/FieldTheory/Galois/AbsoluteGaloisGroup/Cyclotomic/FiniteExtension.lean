@@ -27,7 +27,6 @@ This is the comparison through which a statement about the cyclotomic character 
 its value on the image of a local Artin symbol, passes to finite extensions of `K` by norm
 functoriality.
 
-For an algebraic extension `L/K`, the cyclotomic image of `G_L` is a subgroup of that of `G_K`.
 When `L/K` is finite separable, `G_L` is a subgroup of index `[L : K]` in `G_K`, and the relative
 index of the two images divides `[L : K]`. Over `ℚ_p` the cyclotomic character is
 surjective, so the cyclotomic image of a finite extension `K` of `ℚ_p` has index dividing
@@ -50,8 +49,6 @@ involved are trivial.
 * `TauCeti.localCyclotomicCharacter_absoluteGaloisGroupExtend`,
   `TauCeti.localCyclotomicCharacter_comp_absoluteGaloisGroupExtend`: the cyclotomic character of
   `G_L` is that of `G_K` read through `absoluteGaloisGroupExtend K L σ`.
-* `TauCeti.range_localCyclotomicCharacter_le_range`: for an algebraic extension `L/K`, the
-  cyclotomic image of `G_L` lies in that of `G_K`.
 * `TauCeti.relIndex_range_localCyclotomicCharacter_dvd_finrank`: for a finite separable extension
   `L/K`, the relative index of these images divides `[L : K]`.
 * `TauCeti.range_localCyclotomicCharacter_le_ratPadic`: the comparison with `ℚ_p`; the
@@ -109,22 +106,6 @@ theorem localCyclotomicCharacter_comp_absoluteGaloisGroupExtend :
   MonoidHom.ext (localCyclotomicCharacter_absoluteGaloisGroupExtend p K L σ)
 
 /-! ### The cyclotomic image along a finite extension -/
-
-omit [FiniteDimensional K L] in
-/-- **The cyclotomic image of `G_L` lies in that of `G_K`** for an algebraic extension `L/K`: an
-isomorphism `e` of the algebraic closures of `L` and `K` conjugates `G_L` into `G_K`, and the
-cyclotomic character is natural along `e`. -/
-theorem range_localCyclotomicCharacter_le_range [Algebra.IsAlgebraic K L] :
-    (localCyclotomicCharacter p L).range ≤ (localCyclotomicCharacter p K).range := by
-  let e : AlgebraicClosure L ≃ₐ[K] AlgebraicClosure K := IsAlgClosure.equivOfAlgebraic K L _ _
-  rintro _ ⟨g, rfl⟩
-  let g' : AlgebraicClosure L ≃ₐ[L] AlgebraicClosure L := g
-  let h : Field.absoluteGaloisGroup K := e.symm.trans ((g'.restrictScalars K).trans e)
-  refine ⟨h, ?_⟩
-  rw [localCyclotomicCharacter_apply, localCyclotomicCharacter_apply]
-  exact cyclotomicCharacter_eq_of_injective p (f := e.toRingEquiv.toRingHom)
-    e.toRingEquiv.injective (fun x ↦ by simp [h, g']; rfl)
-    fun H i ↦ let ⟨_, hζ⟩ := H i; ⟨_, hζ.map_of_injective e.symm.injective⟩
 
 /-- **The cyclotomic image of `G_L` has index dividing `[L : K]` in that of `G_K`**, for a finite
 separable extension `L/K`: it is the image of the subgroup `G_L` of `G_K`, which has index
