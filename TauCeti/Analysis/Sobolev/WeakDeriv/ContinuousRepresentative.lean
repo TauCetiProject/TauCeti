@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.MeasureTheory.Function.LocalRepresentative
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
@@ -90,14 +91,9 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     intro y hy
     have hcont : ContinuousAt ((ball x r).indicator U) y :=
       (hUc.congr fun z hz => indicator_of_mem hz U).continuousAt (isOpen_ball.mem_nhds hy)
-    have hconv : Tendsto (fun p : ℕ × E => f' p.1 p.2) (atTop ×ˢ 𝓝 y)
-        (𝓝 (((ball x r).indicator U) y)) := by
-      simp only [f', convolution_flip]
-      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
-        (Eventually.of_forall fun _ => hUm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
-    apply tendsto_uniformity_iff_dist_tendsto_zero.2
-    simpa only [dist_self, Function.comp_apply] using
-      (hcont.tendsto.comp tendsto_snd).dist hconv
+    exact tendstoUniformlyOnFilter_iff_tendsto.1 (by
+      simpa only [f', convolution_flip] using
+        ContDiffBump.tendstoUniformlyOnFilter_normed_convolution hphi hUm hcont)
   have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
   have hunif : TendstoUniformlyOn f' ((ball x r).indicator U) atTop (ball x (r / 2)) :=
     ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
