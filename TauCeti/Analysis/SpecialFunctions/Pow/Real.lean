@@ -311,6 +311,12 @@ lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀)
   calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
     _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr hR.le]; field_simp
 
+/-- `ρ ^ γ ≤ R₁ ^ (γ - β) ρ ^ β` for `0 < ρ ≤ R₁` and `β ≤ γ`. -/
+theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : ρ ≤ R₁) (hβγ : β ≤ γ) :
+    ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
+  calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
+    _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
+
 end Real
 
 /-- Real powers `g i ^ f i` with finitely supported exponents `f` have finite multiplicative
