@@ -58,12 +58,14 @@ together with the rank, that classify Demushkin groups with `q ≠ 2`.
   `TauCeti.demushkinQ_eq_zero_of_mulEquiv`, `TauCeti.demushkinQ_eq_pow_valuation_of_mulEquiv`:
   the torsion of `G^{ab}` read off a model `G^{ab} ≅ ℤ_p^ι × ℤ_p ⧸ (q)` with `p ∣ q`: `G^{ab}` is
   torsion-free and `q(G) = 0` when `q = 0`, and `q(G) = p^{v_p(q)}` otherwise.
+* `TauCeti.IsDemushkin.dvd_of_presentedProP_singleton`: for a Demushkin group given by a
+  one-relator presentation `⟨X ∣ r⟩` with `exponentSum r = q • w` and `w x₀ = 1`, `p ∣ q`.
 * `TauCeti.demushkinQ_presentedProP_eq_zero_iff`,
   `TauCeti.demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator`,
   `TauCeti.demushkinQ_presentedProP_eq_pow_valuation`: for a Demushkin group given by a
-  one-relator presentation `⟨X ∣ r⟩` with `exponentSum r = q • w`, `w x₀ = 1` and `p ∣ q`, the
+  one-relator presentation `⟨X ∣ r⟩` with `exponentSum r = q • w` and `w x₀ = 1`, the
   `q`-invariant is `0` exactly when `q = 0`, that is when `r` lies in the closed commutator
-  subgroup, and is `p^{v_p(q)}` otherwise.
+  subgroup, and is `p^{v_p(q)}` otherwise; `p ∣ q` holds automatically.
 * `TauCeti.demushkinQ_presentedProP_eq_iff_exists_not_dvd`,
   `TauCeti.demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero`: for a relator
   `r ∈ Φ(F)` presenting a Demushkin group, `q = p` exactly when some exponent sum of `r` is not
@@ -311,8 +313,8 @@ abelianization structure theorem `TauCeti.presentedProP.oneRelatorAbelianization
 when `q = 0`, that is when `r` lies in the closed commutator subgroup, and `p^{v_p(q)}` otherwise.
 The divisibility `p ∣ q` follows from the Demushkin hypothesis, since the relator of a minimal
 presentation lies in the Frattini subgroup; without it the presentation need not be minimal, and a
-relator with a unit coordinate, such as `x₃ (x₁, x₂)` presenting `ℤ_p × ℤ_p`, has `q(G) = 0` while
-`ℤ_p ⧸ (q)` is trivial. -/
+relator with a unit coordinate, such as `x₃ (x₁, x₂)` presenting the free pro-`p` group on
+`x₁, x₂` (abelianization `ℤ_p × ℤ_p`), has `q(G) = 0` while `ℤ_p ⧸ (q)` is trivial. -/
 
 section OneRelator
 
@@ -341,9 +343,8 @@ theorem demushkinQ_presentedProP_eq_zero_iff (hG : IsDemushkin p (presentedProP 
   exact pow_ne_zero _ (Fact.out : p.Prime).ne_zero h
 
 /-- **The `q`-invariant of a one-relator Demushkin group vanishes exactly when the relator lies in
-the closed commutator subgroup** of the free pro-`p` group. The divisibility `p ∣ q` is automatic: a
-relator of a Demushkin presentation lies in the Frattini subgroup, so all its exponent sums are
-divisible by `p`. -/
+the closed commutator subgroup** of the free pro-`p` group. No normalization of the exponent vector
+of the relator is required. -/
 theorem demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator
     (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = 0 ↔ r ∈ (commutator (freeProP p X)).topologicalClosure := by
@@ -371,14 +372,12 @@ theorem demushkinQ_presentedProP_eq_iff_exists_not_dvd
     (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = p ↔ ∃ x, ¬ (p : ℤ_[p]) ^ 2 ∣ (freeProP.exponentSum p X r).toAdd x := by
   have hp : p.Prime := Fact.out
-  have hpr := freeProP.dvd_exponentSum_of_mem_proPFrattini p X
-    hG.mem_proPFrattini_of_presentedProP_singleton
   have : Nonempty X := (Nat.card_pos_iff.1 hG.card_pos_presentedProP).1
   obtain ⟨x₀, q, w, hw, hv⟩ :=
     PadicInt.exists_apply_eq_one_and_eq_smul (freeProP.exponentSum p X r).toAdd
   have hqx₀ : (freeProP.exponentSum p X r).toAdd x₀ = q := by
     rw [hv, Pi.smul_apply, hw, smul_eq_mul, mul_one]
-  have hq : (p : ℤ_[p]) ∣ q := hqx₀ ▸ hpr x₀
+  have hq : (p : ℤ_[p]) ∣ q := hG.dvd_of_presentedProP_singleton hw hv
   -- Some exponent sum escapes `p ^ 2` exactly when `q` does.
   have hiff : (∃ x, ¬ (p : ℤ_[p]) ^ 2 ∣ (freeProP.exponentSum p X r).toAdd x) ↔
       ¬ (p : ℤ_[p]) ^ 2 ∣ q := by
