@@ -61,6 +61,9 @@ singular cohomology is obtained from the one of chain complexes.
 * `TauCeti.ChainComplex.linearYonedaObjSingle₀Iso`: `Hom(-, Y)` sends the chain complex `X[0]`
   concentrated in degree zero to the cochain complex `Hom(X, Y)[0]`. It follows the unmerged Tau
   Ceti pull request https://github.com/TauCetiProject/TauCeti/pull/20882.
+* `ChainComplex.exactAt_linearYonedaObj_zero_iff` and
+  `ChainComplex.exactAt_linearYonedaObj_succ_iff`: exactness of `Hom(K, Y)` for a chain complex
+  `K` indexed by `ℕ`, in terms of morphisms out of the terms of `K`.
 -/
 
 public section
@@ -445,5 +448,39 @@ lemma linearYonedaObjSingle₀Iso_hom_f_zero_apply
   (rfl)
 
 end Single
+
+section Exactness
+
+variable [Abelian C] [Linear k C] (K : _root_.ChainComplex C ℕ) (Y : C)
+
+/-- The complex `Hom(K, Y)` is exact in degree `0` exactly when every morphism `K₀ ⟶ Y` killed by
+the differential `K₁ ⟶ K₀` is zero. -/
+theorem _root_.ChainComplex.exactAt_linearYonedaObj_zero_iff :
+    (K.linearYonedaObj k Y).ExactAt 0 ↔ ∀ f : K.X 0 ⟶ Y, K.d 1 0 ≫ f = 0 → f = 0 := by
+  rw [HomologicalComplex.exactAt_iff' _ 0 0 1 CochainComplex.prev_nat_zero (by simp),
+    ShortComplex.moduleCat_exact_iff]
+  have h00 : (K.linearYonedaObj k Y).d 0 0 = 0 :=
+    HomologicalComplex.shape _ 0 0 (Nat.succ_ne_zero 0)
+  -- The elements of `Hom(K, Y)` in degree `0` are the morphisms `K₀ ⟶ Y`, and the zero element
+  -- of `ModuleCat.of k (K₀ ⟶ Y)` is the zero morphism; `exact` uses this identification.
+  refine forall_congr' fun f ↦ imp_congr Iff.rfl ⟨fun ⟨x, hx⟩ ↦ ?_, fun hf ↦ ⟨0, ?_⟩⟩
+  · have h : f = 0 := by simpa [h00] using hx.symm
+    exact h
+  · subst hf
+    exact map_zero _
+
+/-- The complex `Hom(K, Y)` is exact in degree `n + 1` exactly when every morphism `Kₙ₊₁ ⟶ Y`
+killed by the differential `Kₙ₊₂ ⟶ Kₙ₊₁` factors through the differential `Kₙ₊₁ ⟶ Kₙ`. -/
+theorem _root_.ChainComplex.exactAt_linearYonedaObj_succ_iff (n : ℕ) :
+    (K.linearYonedaObj k Y).ExactAt (n + 1) ↔
+      ∀ f : K.X (n + 1) ⟶ Y, K.d (n + 2) (n + 1) ≫ f = 0 →
+        ∃ g : K.X n ⟶ Y, K.d (n + 1) n ≫ g = f := by
+  rw [HomologicalComplex.exactAt_iff' _ n (n + 1) (n + 2) (CochainComplex.prev_nat_succ n)
+    (by simp), ShortComplex.moduleCat_exact_iff]
+  -- The differentials of `Hom(K, Y)` are precomposition with those of `K`
+  -- (`ChainComplex.linearYonedaObj_d`), so both sides are the same statement.
+  rfl
+
+end Exactness
 
 end TauCeti.ChainComplex

@@ -11,6 +11,7 @@ import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.ZMod.Count
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
 
 /-!
@@ -31,7 +32,11 @@ In weight one the cotangent takes the place of the critical-value sum: for a non
 (`DirichletCharacter.IsPrimitive.sum_inv_mul_pi_mul_cot`), by the finite Fourier expansion of the
 cotangent and the Fourier coefficients of `φ⁻¹`. For primitive odd characters the first
 generalized Bernoulli number is nonzero (`DirichletCharacter.generalizedBernoulli_one_ne_zero`),
-by the cotangent formula for `L(1, φ⁻¹)` and Dirichlet nonvanishing.
+by the cotangent formula for `L(1, φ⁻¹)` and Dirichlet nonvanishing. The same argument shows that
+for characters `ψ` modulo `u` and `φ` modulo `v` with `ψ(-1) φ(-1) = -1`, primitive or not, the
+cotangent sum `∑_{j mod u v} ψ(j) φ⁻¹(j) π cot (π j / u v)` of the product character is nonzero
+(`DirichletCharacter.sum_mul_inv_mul_pi_mul_cot_ne_zero`); these sums are the coefficients of the
+constant terms of the weight-one Eisenstein series with character at the cusps.
 
 ## References
 
@@ -193,6 +198,45 @@ theorem generalizedBernoulli_one_ne_zero (hχ : χ.IsPrimitive) (hodd : χ.Odd) 
   intro hB
   have hzero : χ⁻¹.LFunction 1 = 0 := by simpa [hB] using hL
   exact LFunction_apply_one_ne_zero (inv_ne_one.mpr hχ1) hzero
+
+/-- **Nonvanishing of the weight-one cotangent sums.** For characters `ψ` modulo `u` and `φ`
+modulo `v` with `ψ(-1) φ(-1) = -1`, the sum `∑_{j mod u v} ψ(j) φ⁻¹(j) π cot (π j / u v)` is
+nonzero: it is `2 u v L(1, ψ φ⁻¹)` for the odd product character at level `u v`. -/
+theorem sum_mul_inv_mul_pi_mul_cot_ne_zero {u v : ℕ} [NeZero u] [NeZero v]
+    (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v) (h : ψ (-1) * φ (-1) = -1) :
+    ∑ j : ZMod (u * v), ψ (j.val : ZMod u) * φ⁻¹ (j.val : ZMod v) *
+      (π * cot (π * (j.val / (u * v)))) ≠ 0 := by
+  -- the summand is the product character at level `u v`
+  set ξ := (ψ.mul φ⁻¹).changeLevel (Nat.lcm_dvd (dvd_mul_right u v) (dvd_mul_left v u))
+  have hξ (j : ZMod (u * v)) : ξ j = ψ (j.val : ZMod u) * φ⁻¹ (j.val : ZMod v) := by
+    rw [← ZMod.natCast_zmod_val j, ZMod.val_natCast_of_lt j.val_lt]
+    by_cases hc : j.val.Coprime (u * v)
+    · rw [changeLevel_natCast_of_coprime _ _ hc, mul_natCast]
+    · rw [ξ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime])]
+      by_cases hu : j.val.Coprime u
+      · have hv : ¬j.val.Coprime v := fun hv ↦ hc (hu.mul_right hv)
+        rw [φ⁻¹.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), mul_zero]
+      · rw [ψ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), zero_mul]
+  have hφ1 : φ (-1) * φ (-1) = 1 := by
+    rw [← map_mul, neg_one_mul, neg_neg, map_one]
+  have hodd : ξ.Odd := by
+    rw [Odd, ← h]
+    simp [ξ, DirichletCharacter.mul, MulChar.inv_apply_eq_inv', inv_eq_of_mul_eq_one_right hφ1]
+  have hL := ξ.two_mul_LFunction_one_eq_sum_mul_cot hodd
+  have hξ1 : ξ ≠ 1 := by
+    intro h1
+    rw [h1] at hodd
+    exact Odd.not_even 1 hodd even_one
+  intro hsum
+  refine LFunction_apply_one_ne_zero hξ1 ?_
+  -- `2 L(1, ξ)` is the cotangent sum divided by `u v`
+  have hsum' : ∑ a : ZMod (u * v), ξ a / ((u * v : ℕ) : ℂ) *
+      (π * cot (π * (a.val / ((u * v : ℕ) : ℂ)))) = 0 := by
+    simp_rw [div_mul_eq_mul_div, ← Finset.sum_div, hξ]
+    push_cast
+    rw [hsum, zero_div]
+  rw [hsum'] at hL
+  simpa using hL
 
 omit [NeZero N] in
 /-- For a character with `χ (-1) = -(-1) ^ k`, the series `∑ χ⁻¹ d * d ^ (-k)` over nonzero integers
