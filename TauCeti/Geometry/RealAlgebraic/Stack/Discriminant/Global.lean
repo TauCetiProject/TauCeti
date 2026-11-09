@@ -52,15 +52,17 @@ variable {n d : ℕ} {κ : Type*} [Fintype κ] {P : κ → Polynomial (MvPolynom
   {S : Set (Fin n → ℝ)} {e : OpenPartialHomeomorph (Fin n → ℝ) (Fin n → ℝ)} {x : Fin n → ℝ}
 
 /-- The local delineation of the product family at a chart point, expressed over a ball in the
-chart coordinates. -/
+chart coordinates on which the chart inverse is analytic and takes values in `S`. -/
 private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x ∈ e.source)
     (hx : x ∈ S) (hfiber : ∀ k, ∀ y ∈ S, (P k).map (MvPolynomial.eval y) ≠ 0)
     (hdegree : ∀ k, ∀ y ∈ S, ∀ z ∈ S,
       ((P k).map (MvPolynomial.eval y)).natDegree = ((P k).map (MvPolynomial.eval z)).natDegree)
-    (hdiscr_ne : (∏ k, P k).discr ≠ 0)
-    (hdiscr : ∀ y ∈ S, ∀ z ∈ S, (∏ k, P k).discr.orderAt y = (∏ k, P k).discr.orderAt z) :
-    ∃ ε > 0, Nonempty (Delineation fun (_ : Unit) (u : ball (firstCoords ℝ n d (e x)) ε) ↦
-      ∏ k, (P k).map (MvPolynomial.eval (e.symm (firstCoords ℝ d n u)))) := by
+    {m : ℕ} (hm : ∀ y ∈ S, (∏ k, P k).discr.orderAt y = (m : ℕ∞)) :
+    ∃ ε > 0, AnalyticOnNhd ℝ (fun u ↦ e.symm (firstCoords ℝ d n u))
+        (ball (firstCoords ℝ n d (e x)) ε) ∧
+      (∀ u : ball (firstCoords ℝ n d (e x)) ε, e.symm (firstCoords ℝ d n u) ∈ S) ∧
+      Nonempty (Delineation fun (_ : Unit) (u : ball (firstCoords ℝ n d (e x)) ε) ↦
+        ∏ k, (P k).map (MvPolynomial.eval (e.symm (firstCoords ℝ d n u)))) := by
   classical
   let p := ∏ k, P k
   let a := firstCoords ℝ n d (e x)
@@ -83,30 +85,36 @@ private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x
     exact (natDegree_map_prod _ _ _ fun k _ ↦ hfiber k _ hu.2).trans
       ((Finset.sum_congr rfl fun k _ ↦ hdegree k _ hu.2 _ hφaS).trans
         (natDegree_map_prod _ _ _ fun k _ ↦ hfiber k _ hφaS).symm)
-  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.mp
-    (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : p.discr.orderAt (φ a) ≠ ⊤)
   have hm' : ∀ᶠ u in 𝓝 a, p.discr.orderAt (φ u) = (m : ℕ∞) := by
     filter_upwards [hmem] with u hu
-    exact (hdiscr _ hu.2 _ hφaS).trans hm.symm
+    exact hm _ hu.2
   obtain ⟨ε, hε, D₀, -⟩ := p.exists_delineation_of_orderAt_discr_eq hφa hp0 hd hm'
-  refine ⟨ε, hε, ⟨?_⟩⟩
+  obtain ⟨ρ, hρ, hφρ⟩ := hφa.exists_ball_analyticOnNhd
+  obtain ⟨δ, hδ, hδmem⟩ := Metric.mem_nhds_iff.mp hmem
+  let r := min ε (min ρ δ)
+  have hr : 0 < r := lt_min hε (lt_min hρ hδ)
+  let ι : ball a r → ball a ε := fun u ↦ ⟨u, ball_subset_ball (min_le_left _ _) u.2⟩
+  have hι : Continuous ι := continuous_subtype_val.subtype_mk _
+  refine ⟨r, hr,
+    hφρ.mono (ball_subset_ball (min_le_right _ _ |>.trans (min_le_left _ _))),
+    fun u ↦ (hδmem (ball_subset_ball (min_le_right _ _ |>.trans (min_le_right _ _)) u.2)).2,
+    ⟨?_⟩⟩
   have hfamily : (fun (_ : Unit) (u : ball a ε) ↦
       p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u))) =
       (fun (_ : Unit) (u : ball a ε) ↦ ∏ k, (P k).map (MvPolynomial.eval (φ u))) := by
     funext _ u
     rw [heval, Polynomial.map_prod]
-  exact hfamily ▸ D₀
+  exact (hfamily ▸ D₀).comp ι hι
 
 /-- Constancy of the ambient order along the root sections of a delineation of the product family
 over a ball in the chart coordinates, from constancy of the discriminant order. -/
 private lemma exists_delineation_orderAt_prod_eq_ball {a : Fin d → ℝ} {r : ℝ} (hr : 0 < r)
     {φ : (Fin d → ℝ) → Fin n → ℝ} (hφr : AnalyticOnNhd ℝ φ (ball a r))
-    (hrmem : ∀ u : ball a r, φ u ∈ S) (hφaS : φ a ∈ S)
+    (hrmem : ∀ u : ball a r, φ u ∈ S)
     (hfiber : ∀ k, ∀ y ∈ S, (P k).map (MvPolynomial.eval y) ≠ 0)
     (hdegree : ∀ k, ∀ y ∈ S, ∀ z ∈ S,
       ((P k).map (MvPolynomial.eval y)).natDegree = ((P k).map (MvPolynomial.eval z)).natDegree)
-    (hdiscr_ne : (∏ k, P k).discr ≠ 0)
-    (hdiscr : ∀ y ∈ S, ∀ z ∈ S, (∏ k, P k).discr.orderAt y = (∏ k, P k).discr.orderAt z)
+    {m : ℕ} (hm : ∀ y ∈ S, (∏ k, P k).discr.orderAt y = (m : ℕ∞))
     (D₁' : Delineation fun (_ : Unit) (u : ball a r) ↦
       ∏ k, (P k).map (MvPolynomial.eval (φ u))) :
     ∃ D : Delineation fun k (u : ball a r) ↦ (P k).map (MvPolynomial.eval (φ u)),
@@ -132,9 +140,9 @@ private lemma exists_delineation_orderAt_prod_eq_ball {a : Fin d → ℝ} {r : �
   have : PreconnectedSpace (ball a r) :=
     isPreconnected_iff_preconnectedSpace.1 (convex_ball a r).isPreconnected
   have : Nonempty (ball a r) := ⟨⟨a, mem_ball_self hr⟩⟩
-  refine ⟨D₁'.ofProd hc hn hdeg, ?_⟩
-  intro i u v
   let D := D₁'.ofProd hc hn hdeg
+  refine ⟨D, ?_⟩
+  intro i u v
   let θ : (Fin d → ℝ) → ℝ := Function.extend Subtype.val (D.root i) 0
   have hθ (z : ball a r) : θ z = D.root i z :=
     Subtype.val_injective.extend_apply _ _ z
@@ -149,12 +157,10 @@ private lemma exists_delineation_orderAt_prod_eq_ball {a : Fin d → ℝ} {r : �
       (Fin.cast (D₁'.ofProd_count hc hn hdeg) i)
     simpa only [p, Polynomial.map_prod] using
       (D₁'.multiplicity_pos_iff z').mp hpos |>.2
-  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.mp
-    (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : p.discr.orderAt (φ a) ≠ ⊤)
   simpa only [hθ u, hθ v] using
     p.orderAt_root_eq_of_orderAt_discr_eq isOpen_ball (convex_ball a r).isPreconnected hφr
       (fun z hz ↦ map_prod_ne_zero _ _ _ fun k _ ↦ hfiber k _ (hrmem ⟨z, hz⟩))
-      (fun z hz ↦ (hdiscr _ (hrmem ⟨z, hz⟩) _ hφaS).trans hm.symm) hθcont hroot u.2 v.2
+      (fun z hz ↦ hm _ (hrmem ⟨z, hz⟩)) hθcont hroot u.2 v.2
 
 /-- **Chart-local lifting of a non-nullified family.** Let `e` be an analytic chart of `S` around
 `x ∈ S`. If every member of a finite family has nonzero fibers of constant degree over `S`, and
@@ -175,28 +181,13 @@ theorem exists_delineation_orderAt_prod_eq (he : IsAnalyticChart d S e) (hxe : x
               (Fin.cons (D.root i u) (e.symm (firstCoords ℝ d n u))) =
             ((MvPolynomial.finSuccEquiv ℝ n).symm (∏ k, P k)).orderAt
               (Fin.cons (D.root i v) (e.symm (firstCoords ℝ d n v))) := by
-  classical
-  obtain ⟨ε, hε, ⟨D₀⟩⟩ :=
-    he.exists_delineation_ball_prod hxe hx hfiber hdegree hdiscr_ne hdiscr
-  let a := firstCoords ℝ n d (e x)
-  let φ : (Fin d → ℝ) → Fin n → ℝ := fun u ↦ e.symm (firstCoords ℝ d n u)
-  have hφa : AnalyticAt ℝ φ a := he.analyticAt_symm_firstCoords hxe hx
-  have hmem : ∀ᶠ u in 𝓝 a, φ u ∈ e.source ∩ S := he.eventually_symm_firstCoords_mem hxe hx
-  have hφa_eq : φ a = x := he.symm_firstCoords_firstCoords_apply hxe hx
-  have hφaS : φ a ∈ S := hφa_eq ▸ hx
-  obtain ⟨ρ, hρ, hφρ⟩ := hφa.exists_ball_analyticOnNhd
-  obtain ⟨δ, hδ, hδmem⟩ := Metric.mem_nhds_iff.mp hmem
-  let r := min ε (min ρ δ)
-  have hr : 0 < r := lt_min hε (lt_min hρ hδ)
-  let ι : ball a r → ball a ε := fun u ↦ ⟨u, ball_subset_ball (min_le_left _ _) u.2⟩
-  have hι : Continuous ι := continuous_subtype_val.subtype_mk _
-  have hφr : AnalyticOnNhd ℝ φ (ball a r) :=
-    hφρ.mono (ball_subset_ball (min_le_right _ _ |>.trans (min_le_left _ _)))
-  have hrmem (u : ball a r) : φ u ∈ S :=
-    (hδmem (ball_subset_ball (min_le_right _ _ |>.trans (min_le_right _ _)) u.2)).2
-  obtain ⟨D, hD⟩ := exists_delineation_orderAt_prod_eq_ball hr hφr hrmem hφaS hfiber hdegree
-    hdiscr_ne hdiscr (D₀.comp ι hι)
-  exact ⟨ball a r, isOpen_ball, mem_ball_self hr, D, hD⟩
+  obtain ⟨m, hmx⟩ := ENat.ne_top_iff_exists.mp
+    (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : (∏ k, P k).discr.orderAt x ≠ ⊤)
+  have hm : ∀ y ∈ S, (∏ k, P k).discr.orderAt y = (m : ℕ∞) := fun y hy ↦
+    (hdiscr y hy x hx).trans hmx.symm
+  obtain ⟨r, hr, hφr, hrmem, ⟨D₁⟩⟩ := he.exists_delineation_ball_prod hxe hx hfiber hdegree hm
+  obtain ⟨D, hD⟩ := exists_delineation_orderAt_prod_eq_ball hr hφr hrmem hfiber hdegree hm D₁
+  exact ⟨ball _ r, isOpen_ball, mem_ball_self hr, D, hD⟩
 
 end TauCeti.IsAnalyticChart
 

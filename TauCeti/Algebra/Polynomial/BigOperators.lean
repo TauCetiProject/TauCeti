@@ -24,6 +24,10 @@ This file also groups products of linear factors according to their constant ter
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
 
+It also records that the image of a finite product of polynomials under a ring homomorphism into a
+ring without zero divisors is nonzero, with degree the sum of the factors' degrees, when each
+factor's image is nonzero.
+
 Finally, `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
 `cᵢ = bᵢ + qᵢ + qᵢ₋₁` into the polynomial identity
 `∑ᵢ₌₀ⁿ cᵢ Xⁱ + qₙ Xⁿ⁺¹ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) ∑ᵢ₌₀ⁿ qᵢ Xⁱ`, the shape of the Morse polynomial
