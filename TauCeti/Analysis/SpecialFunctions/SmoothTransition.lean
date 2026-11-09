@@ -50,6 +50,7 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `expNegInvGlue.hasDerivAt`: the derivative of `expNegInvGlue` at `x` is
   `x⁻² expNegInvGlue x`.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
+* `Real.smoothTransition.tendsto_atTop`: `Real.smoothTransition x → 1` as `x → ∞`.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
@@ -112,6 +113,12 @@ namespace Real.smoothTransition
 /-- The smooth transition function takes values of absolute value at most one. -/
 theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
   (abs_of_nonneg (nonneg x)).trans_le (le_one x)
+
+/-- The smooth transition function tends to `1` at `+∞`, where it is eventually equal to one. -/
+theorem tendsto_atTop : Tendsto smoothTransition atTop (𝓝 1) :=
+  tendsto_const_nhds.congr' <| by
+    filter_upwards [eventually_ge_atTop 1] with x hx
+    exact (one_of_one_le hx).symm
 
 /-- The smooth transition function has derivative zero to the left of `0`, where it is
 identically zero. -/

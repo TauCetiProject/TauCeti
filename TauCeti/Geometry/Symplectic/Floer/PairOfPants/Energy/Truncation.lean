@@ -42,10 +42,9 @@ Letting `R → ∞` gives the energy identity on the whole pair of pants. Suppos
 `t ↦ u(φ_q(±R + i t))` converge pointwise to loops `x_q` as `R → ∞`, that the Hamiltonians are
 bounded, and that the energy density and the area density of `u` are integrable over `S`. Then the
 curvature is integrable over `S`
-(`SmoothTwoForm.IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation`): it
-is the difference of the area density plus the continuous exterior derivative `d(K(u))` and the
-energy density, hence measurable, and its absolute integral is at most `B₀ + B₁ + B_∞`. The
-truncations exhaust `S`, and dominated convergence on the boundary circles gives
+(`SmoothTwoForm.IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation`, in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature`). The truncations exhaust `S`, and
+dominated convergence on the boundary circles gives
 
 `∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt - ∫_S R_K(u)`
 
@@ -70,8 +69,6 @@ statements, the constant-form case of those here, are in
   the energy identity on the truncated pair of pants, for a manifold target.
 * `IsNondegenerate.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_le`:
   the resulting energy bound, uniform in the truncation, in the namespace `SmoothTwoForm`.
-* `SmoothTwoForm.IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation`: the
-  curvature is integrable over `S`.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends.
 * `SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le`:
@@ -235,13 +232,6 @@ private theorem tendsto_intervalIntegral_endLoop {X : Type*} [TopologicalSpace X
       ((q.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))) hmem
   exact ((hHc q).comp (continuous_id.prodMk hloop)).aestronglyMeasurable
 
-/-- The cutoff `β(R - 1)` of the boundary terms tends to `1`. -/
-private theorem tendsto_smoothTransition_sub_one :
-    Tendsto (fun R : ℝ ↦ smoothTransition (R - 1)) atTop (𝓝 1) :=
-  tendsto_const_nhds.congr' <| by
-    filter_upwards [eventually_ge_atTop 2] with R hR
-    exact (smoothTransition.one_of_one_le (by linarith)).symm
-
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {H : Puncture → ℝ → M → ℝ}
@@ -288,27 +278,6 @@ private theorem integrableOn_endChart_rect {q : Puncture} {a₁ b₁ : ℝ}
     f).1 hf).congr_fun (fun w hw => ?_) hmeas
   dsimp only
   rw [abs_of_nonneg (det_fderiv_endChart_nonneg q w), smul_eq_mul, hg w hw]
-
-/-- The exterior derivative `d(K(u))` of the pulled-back perturbation is continuous on `S`. -/
-private theorem continuousOn_exteriorDerivative (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
-    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) :
-    ContinuousOn (fun z ↦
-      fderiv ℝ (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w)
-          Complex.I) z stdComplexLineReal -
-        fderiv ℝ (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) 1)
-          z stdComplexLineImag) thricePuncturedSphereReal := by
-  have hc (v : ℂ) : ContinuousOn (fderiv ℝ (fun w ↦
-      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) v))
-      thricePuncturedSphereReal := by
-    have hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-        (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-        (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
-      (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hp.1 p.2 v).contMDiffWithinAt
-    exact (contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu)
-      fun _ hz ↦ ⟨hz, mem_univ _⟩)).continuousOn_fderiv_of_isOpen
-        isOpen_thricePuncturedSphereReal le_rfl
-  exact ((hc Complex.I).clm_apply continuousOn_const).sub ((hc 1).clm_apply continuousOn_const)
 
 end Floer
 
@@ -561,34 +530,6 @@ private theorem integral_floerEnergyDensity_image_endPiece (hω : ω.IsNondegene
       intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
     ring
 
-/-- The pointwise energy identity `E = u^*ω + d(K(u)) - R_K(u)` for the pair-of-pants
-perturbation holds at every point of `S`. -/
-private theorem floerEnergyDensity_eq_of_mem (hω : ω.IsNondegenerate)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) :
-    ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
-        (fderiv ℝ (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w)
-            Complex.I) z stdComplexLineReal -
-          fderiv ℝ (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) 1)
-            z stdComplexLineImag) -
-        ω.hamiltonianCurvature
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          z (u z) :=
-  hω.floerEnergyDensity_eq
-    ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)).mdifferentiableAt
-      one_ne_zero)
-    ((contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1).mdifferentiableAt
-      one_ne_zero)
-    ((contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I).mdifferentiableAt
-      one_ne_zero)
-
 /-- On a compact part `T` of `S` over which the energy density and the curvature are integrable,
 the symplectic area density is integrable too. -/
 private theorem integrableOn_area (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
@@ -605,9 +546,14 @@ private theorem integrableOn_area (hω : ω.IsNondegenerate) (hH : ∀ q, Period
     IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) T := by
-  refine ((hE.sub (((continuousOn_exteriorDerivative hH hHs hu).mono hTS).integrableOn_compact
-    hT)).add hcurv).congr_fun (fun z hz ↦ ?_) hT.measurableSet
-  simp only [Pi.add_apply, Pi.sub_apply, floerEnergyDensity_eq_of_mem hω hH hHs hu (hTS hz)]
+  have hd := ((continuousOn_fderiv_pairOfPantsPerturbation hH hHs hu Complex.I).clm_apply
+    (continuousOn_const (c := stdComplexLineReal))).sub
+    ((continuousOn_fderiv_pairOfPantsPerturbation hH hHs hu 1).clm_apply
+      (continuousOn_const (c := stdComplexLineImag)))
+  refine ((hE.sub ((hd.mono hTS).integrableOn_compact hT)).add hcurv).congr_fun
+    (fun z hz ↦ ?_) hT.measurableSet
+  simp only [Pi.add_apply, Pi.sub_apply,
+    hω.floerEnergyDensity_pairOfPantsPerturbation_eq hH hHs hu (hTS hz)]
   ring
 
 /-- **The energy identity on the truncated pair of pants, for a manifold target.** Let `K` be the
@@ -738,41 +684,6 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_
     abs_neg]
   exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u _
 
-/-- **The curvature is integrable over the pair of pants, for a manifold target.** Let `u` be `C¹`
-on `S`, with Floer energy density and symplectic area density integrable over `S`, for the
-pair-of-pants perturbation of bounded period-one `C¹` Hamiltonians. Then the curvature `R_K(u)` is
-integrable over `S`: it is the area density plus the continuous exterior derivative `d(K(u))`
-minus the energy density, hence measurable, and its absolute integral is at most `B₀ + B₁ + B_∞`.
--/
-theorem IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation
-    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
-    (hE : IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      thricePuncturedSphereReal)
-    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal) :
-    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z))
-      thricePuncturedSphereReal := by
-  have hSm := isOpen_thricePuncturedSphereReal.measurableSet
-  refine ⟨?_, ?_⟩
-  · refine ((hA.aestronglyMeasurable.add ((continuousOn_exteriorDerivative hH hHs hu
-      ).aestronglyMeasurable hSm)).sub hE.aestronglyMeasurable).congr ?_
-    filter_upwards [ae_restrict_mem hSm] with z hz
-    simp only [Pi.add_apply, Pi.sub_apply, floerEnergyDensity_eq_of_mem hω hH hHs hu hz]
-    ring
-  · have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
-    refine ((setLIntegral_le_lintegral _ _).trans
-      (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u)).trans_lt ?_
-    exact ENNReal.sum_lt_top.2 fun q _ ↦ ENNReal.ofReal_lt_top
-
 /-- **The energy identity on the pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of bounded period-one `C¹` Hamiltonians `H_q` on a manifold `M` with a
 nondegenerate two-form `ω`, attached to the three ends of `S = ℂ ∖ {0, 1}`. Let `u` be a map which
@@ -814,9 +725,11 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation
           z (u z) := by
   have hcurv := hω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation hH hHs hB hu hE hA
   -- Both sides are the limits as `R → ∞` of the two sides of the identity on the truncation
-  -- `S_R`, where the cutoff `β(R - 1)` of the boundary terms equals `1` once `R ≥ 2`.
+  -- `S_R`, where the cutoff `β(R - 1)` of the boundary terms tends to `1`.
+  have hβ : Tendsto (fun R : ℝ ↦ smoothTransition (R - 1)) atTop (𝓝 1) :=
+    smoothTransition.tendsto_atTop.comp (tendsto_atTop_add_const_right _ (-1) tendsto_id)
   have hrhs := ((tendsto_setIntegral_truncation hA).add (by
-      simpa only [one_mul] using tendsto_smoothTransition_sub_one.mul
+      simpa only [one_mul] using hβ.mul
         (tendsto_finsetSum Finset.univ fun q _ ↦ (tendsto_intervalIntegral_endLoop
           (fun q ↦ (hHs q).continuous) hB hu.continuousOn (hx q)).const_mul q.endSign))).sub
     (tendsto_setIntegral_truncation hcurv)
