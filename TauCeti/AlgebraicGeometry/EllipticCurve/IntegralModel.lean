@@ -278,6 +278,8 @@ theorem isIntegral_baseChange_smul_iff (R : Type*) [CommRing R] {K : Type*} [Fie
     [Algebra R K] (W : WeierstrassCurve K) (C : VariableChange R) :
     IsIntegral R (C.baseChange K • W) ↔ IsIntegral R W :=
   ⟨fun _ ↦ by
+    -- `mapHom φ C` is `C.map φ` by definition, so Mathlib's `map_inv` for the bundled `mapHom`
+    -- states the inverse of the base change in the `baseChange` spelling used here
     have hinv : C⁻¹.baseChange K = (C.baseChange K)⁻¹ :=
       map_inv (VariableChange.mapHom (algebraMap R K)) C
     have := isIntegral_baseChange_smul R (C.baseChange K • W) C⁻¹
