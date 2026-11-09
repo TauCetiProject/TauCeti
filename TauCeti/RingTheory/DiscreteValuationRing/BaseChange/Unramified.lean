@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Unramified.Field
 import TauCeti.RingTheory.Etale.IntegralClosure
+import TauCeti.RingTheory.IntegralClosure.TensorProduct
 
 /-!
 # Base change of unramified extensions of a discrete valuation ring
@@ -117,35 +118,15 @@ theorem IsUnramifiedWRT.baseChange (h : IsUnramifiedWRT A L) (φ : K' ⊗[K] L �
     Algebra.TensorProduct.lift (Algebra.ofId K' L') ψ fun _ _ ↦ .all _ _
   -- `χ` is surjective: every element of `L` is an element of `B` divided by an element of `A`.
   have hχ : Function.Surjective χ := by
-    intro y
-    obtain ⟨t, rfl⟩ := hφ y
-    induction t using TensorProduct.inductionOn with
-    | add t₁ t₂ h₁ h₂ =>
-      obtain ⟨x₁, hx₁⟩ := h₁
-      obtain ⟨x₂, hx₂⟩ := h₂
-      exact ⟨x₁ + x₂, by rw [map_add, map_add, hx₁, hx₂]⟩
-    | tmul k l =>
-      have hl : IsAlgebraic A l :=
-        (IsFractionRing.isAlgebraic_iff A K L).mpr (Algebra.IsAlgebraic.isAlgebraic l)
-      obtain ⟨a, ha, hint⟩ := hl.exists_integral_multiple
-      have ha' : algebraMap A K' a ≠ 0 := by
-        rw [IsScalarTower.algebraMap_apply A K K']
-        exact (_root_.map_ne_zero _).mpr
-          ((map_ne_zero_iff _ (IsFractionRing.injective A K)).mpr ha)
-      let b : B := ⟨a • l, hint⟩
-      have hbl : (b : L) = algebraMap A K a • l := (algebraMap_smul K a l).symm
-      have hb : (1 : K') ⊗ₜ[K] (b : L) = algebraMap A K' a • ((1 : K') ⊗ₜ[K] l) := by
-        rw [hbl, TensorProduct.tmul_smul, TensorProduct.smul_tmul', IsScalarTower.algebraMap_smul]
-        simp [Algebra.smul_def, IsScalarTower.algebraMap_apply A K K']
-      have hφb : φ (1 ⊗ₜ b) = algebraMap K' L' (algebraMap A K' a) * φ (1 ⊗ₜ l) := by
-        rw [hb, map_smul, Algebra.smul_def]
-      have hφk : φ (k ⊗ₜ l) = algebraMap K' L' k * φ (1 ⊗ₜ l) := by
-        rw [← Algebra.smul_def, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      refine ⟨(k * (algebraMap A K' a)⁻¹) ⊗ₜ (1 ⊗ₜ b), ?_⟩
-      simp only [χ, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply, hψ, hφb, hφk, map_mul,
-        map_inv₀]
-      have := (map_ne_zero (algebraMap K' L')).mpr ha'
-      field_simp
+    refine (LinearMap.range_eq_top (f := χ.toLinearMap)).mp ?_
+    have hspan : Submodule.span K' (Set.range fun b : B => φ ((1 : K') ⊗ₜ[K] (b : L))) = ⊤ := by
+      have h := congrArg (Submodule.map φ.toLinearMap)
+        (span_one_tmul_integralClosure_eq_top (A := A) (K := K) (L := L) (K' := K'))
+      rw [Submodule.map_span, Submodule.map_top, LinearMap.range_eq_top.mpr hφ] at h
+      rwa [← Set.range_comp] at h
+    rw [eq_top_iff, ← hspan, Submodule.span_le]
+    rintro _ ⟨b, rfl⟩
+    exact ⟨1 ⊗ₜ (1 ⊗ₜ b), by simp [χ, hψ]⟩
   exact χ.isUnramifiedWRT_of_surjective hχ
 
 end BaseChange
