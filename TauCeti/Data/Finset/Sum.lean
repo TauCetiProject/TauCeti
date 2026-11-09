@@ -11,7 +11,7 @@ public import Mathlib.Data.Finset.Sum
 # Images and erasures of finite sets on sum types
 
 These identities compute the image of a disjoint sum, the two projections of an image under
-`Sum.map`, and the projections after erasing an element of the left summand. They are used to
+`Sum.map`, of a filtered set, and after erasing an element of the left summand. They are used to
 calculate joins of simplicial complexes factor by factor.
 
 ## Main results
@@ -21,6 +21,7 @@ calculate joins of simplicial complexes factor by factor.
   under `Sum.map`.
 * `Finset.toLeft_erase_inl` and `Finset.toRight_erase_inl`: projections after erasing a
   left-tagged element.
+* `Finset.toLeft_filter` and `Finset.toRight_filter`: projections of a filtered set.
 * `Finset.disjoint_disjSum_iff`: disjointness from a disjoint sum is characterized by disjointness
   from its two projections.
 -/
@@ -72,6 +73,20 @@ variable [DecidableEq α] [DecidableEq β]
   simp
 
 end
+
+/-- The left projection of a filtered set is the filtered left projection. -/
+@[simp]
+theorem toLeft_filter (s : Finset (α ⊕ β)) (p : α ⊕ β → Prop) [DecidablePred p] :
+    {x ∈ s | p x}.toLeft = {a ∈ s.toLeft | p (Sum.inl a)} := by
+  ext
+  simp
+
+/-- The right projection of a filtered set is the filtered right projection. -/
+@[simp]
+theorem toRight_filter (s : Finset (α ⊕ β)) (p : α ⊕ β → Prop) [DecidablePred p] :
+    {x ∈ s | p x}.toRight = {b ∈ s.toRight | p (Sum.inr b)} := by
+  ext
+  simp
 
 /-- Disjointness from a disjoint sum is equivalent to disjointness from its two projections. -/
 @[simp]
