@@ -205,17 +205,18 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
       ≤ M + |∫ t in T..x, t ^ (τ - 1) * E t| := abs_add_le _ _
     _ ≤ ε * x ^ (τ + 1) := by linarith
 
-/-- Let `ε > 0`, `c ≥ 0`, and let `g` be locally integrable on `[1, ∞)`. If `‖g t - L‖ ≤ c` for
+/-- Let `ε > 0` and let `g` be locally integrable on `[1, ∞)`. If `‖g t - L‖ ≤ c` for
 all `t > T`, then `t ^ (-ε - 1) • (g t - L)` is integrable on `(1, ∞)`
 and its integral has norm at most `∫ t in Ioc 1 T, ‖g t - L‖ + c * ∫ t in Ioi 1, t ^ (-ε - 1)`. -/
 lemma integrableOn_and_norm_integral_rpow_smul_sub_le {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {L : E}
-    {ε c T : ℝ} (hε : 0 < ε) (hc0 : 0 ≤ c)
+    {ε c T : ℝ} (hε : 0 < ε)
     (hg : LocallyIntegrableOn g (Ici 1))
     (hc : ∀ t, T < t → ‖g t - L‖ ≤ c) :
     IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L)) (Ioi 1) ∧
       ‖∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)‖ ≤
         (∫ t in Ioc 1 T, ‖g t - L‖) + c * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) := by
+  have hc0 : 0 ≤ c := (norm_nonneg _).trans (hc (T + 1) (by linarith))
   have hw : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
     integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
   have hgL : IntegrableOn (fun t ↦ g t - L) (Ioc 1 T) :=
@@ -280,7 +281,7 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
     exact this.eventually_lt_const (by simpa using half_pos hδ)
   filter_upwards [hsmall, self_mem_nhdsWithin] with ε hεK (hε : 0 < ε)
   obtain ⟨hint, hnorm⟩ :=
-    integrableOn_and_norm_integral_rpow_smul_sub_le hε (half_pos hδ).le hg fun t ht ↦ by
+    integrableOn_and_norm_integral_rpow_smul_sub_le hε hg fun t ht ↦ by
       simpa [dist_eq_norm] using hT t ((le_max_left T 1).trans ht.le)
   -- Since the weights have total mass one, subtracting `L` subtracts `L` from the average.
   have hsplit : ε • ∫ t in Ioi 1, t ^ (-ε - 1) • g t =
