@@ -249,15 +249,22 @@ theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
     (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
   rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
 
+omit [AddCommGroup M] in
 /-- Two pairs `(d, v)` and `(e, w)` with `0 < d` and `0 < e` lie in the same ray exactly when they
 have the same velocity, `d⁻¹ • v = e⁻¹ • w`. -/
-theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {y z : R × M} (hy : 0 < y.1) (hz : 0 < z.1) :
+theorem Prod.sameRay_iff_inv_fst_smul_snd_eq {M : Type*} [AddCommMonoid M] [Module R M]
+    {y z : R × M} (hy : 0 < y.1) (hz : 0 < z.1) :
     SameRay R y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
   constructor
   · intro h
-    obtain ⟨r, hr, rfl⟩ := h.exists_pos_left (fun h0 ↦ hy.ne' (by simp [h0]))
-      (fun h0 ↦ hz.ne' (by simp [h0]))
-    exact (inv_fst_smul_snd_smul hr.ne' y).symm
+    obtain h | h | ⟨r₁, r₂, hr₁, hr₂, h⟩ := h
+    · exact absurd (by simp [h]) hy.ne'
+    · exact absurd (by simp [h]) hz.ne'
+    · have h1 : r₁ * y.1 = r₂ * z.1 := congrArg Prod.fst h
+      have h2 : r₁ • y.2 = r₂ • z.2 := congrArg Prod.snd h
+      have key (a b : R) (ha : a ≠ 0) (v : M) : (a * b)⁻¹ • a • v = b⁻¹ • v := by
+        rw [smul_smul, mul_inv_rev, mul_assoc, inv_mul_cancel₀ ha, mul_one]
+      rw [← key r₁ y.1 hr₁.ne', ← key r₂ z.1 hr₂.ne', h1, h2]
   · intro h
     -- Both pairs are positive multiples of `(1, u)`, where `u` is their common velocity.
     have hy' : y = y.1 • ((1 : R), z.1⁻¹ • z.2) := by
