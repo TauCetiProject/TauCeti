@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 
 /-!
 # All-root morphisms into pinned Kostant toral group schemes
