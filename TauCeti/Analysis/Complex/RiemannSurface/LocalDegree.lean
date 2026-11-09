@@ -222,7 +222,7 @@ private theorem fiber_count_of_ne [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(�
   have hz0 : e' (f (e.symm (e x))) - e' y' ≠ 0 := by
     rw [e.left_inv hx]
     exact sub_ne_zero.mpr hne'
-  obtain ⟨S, hS, hsum⟩ := exists_finset_finsum_ball_analyticOrderNatAt_eq_sum
+  obtain ⟨S, hS, hsum⟩ := AnalyticOnNhd.exists_finset_finsum_ball_analyticOrderNatAt_eq_sum
     (g := fun ζ ↦ e' (f (e.symm ζ)) - e' y') (hA.sub analyticOnNhd_const)
     (Metric.mem_closedBall_self hr.le) hz0
   obtain ⟨hbij, hsum2⟩ := fiber_sum_eq_sum_of_zeros he he' hy' hsrc hfimg hcoord hmd
