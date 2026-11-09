@@ -68,9 +68,9 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
             Measure.restrict_univ] using hprob
         infer_instance⟩
   let large := stableCompensatedPoissonMeasure α β r
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ hr
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have hlarge (t : ℝ) : charFun large t ≠ 0 := by
-    rw [charFun_stableCompensatedPoissonMeasure hα hβ hr]
+    rw [charFun_stableCompensatedPoissonMeasure hr]
     exact Complex.exp_ne_zero _
   have hsplit (n : ℕ) :
       (μ n : Measure ℝ) ∗ large = stableCompensatedPoissonMeasure α β (ε n) := by
@@ -133,9 +133,9 @@ theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
     have h := integral_add_compl hset hf
     simp only [compl_ofPred, not_le] at h
     exact h.trans (integral_exp_sub_one_sub_sin_stableLevyMeasure hα hβ t)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ hr
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have heq := congrArg (fun η : Measure ℝ ↦ charFun η t) hμ
-  rw [charFun_conv, charFun_stableCompensatedPoissonMeasure hα hβ hr,
+  rw [charFun_conv, charFun_stableCompensatedPoissonMeasure hr,
     charFun_stableMeasure ⟨hα.1, hα.2.le⟩ hβ] at heq
   simp only [NNReal.coe_one, one_mul, zero_mul, Complex.ofReal_zero, zero_add] at heq
   apply mul_right_cancel₀ (Complex.exp_ne_zero (∫ x in {x : ℝ | r < |x|}, f x ∂ν))

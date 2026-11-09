@@ -75,8 +75,7 @@ private lemma not_integrable_exp_mul_stableMeasure_one_zero
   intro h
   obtain ⟨ρ, hρ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ
-    (by norm_num : (0 : ℝ) < 1)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   let _ := isProbabilityMeasure_stableMeasure ⟨hα.1, hα.2.le⟩ hβ 1 0
   have hpos := mgf_pos' (X := id) (IsProbabilityMeasure.ne_zero _) h
   rw [← hρ, TauCeti.mgf_id_conv, Pi.mul_apply] at hpos

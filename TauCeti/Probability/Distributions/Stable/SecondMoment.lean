@@ -47,8 +47,7 @@ private theorem not_memLp_two_id_stableMeasure_one_zero
   intro h
   obtain ⟨ρ, hρ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ
-    (by norm_num : (0 : ℝ) < 1)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   have hsq := h.integrable_sq
   rw [← hρ] at hsq
   obtain ⟨a, ha⟩ := ((integrable_conv_iff (by fun_prop)).1 hsq).1.exists
