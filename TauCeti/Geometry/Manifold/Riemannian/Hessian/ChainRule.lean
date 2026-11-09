@@ -59,8 +59,8 @@ theorem hessian_comp {h : ℝ → ℝ} {f : M → ℝ} {x : M} (hh : ContDiffAt 
   have hg : MDiffAt g x := hdx.comp_mdifferentiableAt hfx
   have hgrad : MDiffAt (T% (mgradient I (h ∘ f))) x :=
     (contMDiffAt_mgradient (n := 1) (hh.contMDiffAt.comp x hf)).mdifferentiableAt (by simp)
-  have hprod : MDiffAt (T% (fun y ↦ g y • G y)) x := hg.smul_section hG
-  have heq : ∀ᶠ y in 𝓝 x, mgradient I (h ∘ f) y = g y • G y := by
+  have hprod : MDiffAt (T% (g • G)) x := hg.smul_section hG
+  have heq : ∀ᶠ y in 𝓝 x, mgradient I (h ∘ f) y = (g • G) y := by
     filter_upwards [hf.continuousAt.preimage_mem_nhds (hs.mem_nhds hxs),
       hf.eventually_mdifferentiableAt (by norm_num)] with y hys hy
     exact mgradient_comp_deriv
@@ -70,8 +70,7 @@ theorem hessian_comp {h : ℝ → ℝ} {f : M → ℝ} {x : M} (hh : ContDiffAt 
       inner_mgradient]
   have hcov := cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hgrad hprod
     Filter.univ_mem heq
-  rw [hessian_def, hcov, show (fun y ↦ g y • G y) = g • G from rfl,
-    cov.isCovariantDerivativeOnUniv.leibniz hG hg]
+  rw [hessian_def, hcov, cov.isCovariantDerivativeOnUniv.leibniz hG hg]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     inner_add_left,
     real_inner_smul_left, inner_mgradient, hdg, hessian_def, G, g, cov, Function.comp_apply]
@@ -87,7 +86,7 @@ theorem hessian_sq {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
   have hdd : deriv (fun t : ℝ ↦ 2 * t) (f x) = 2 := by simp
   have := hessian_comp (h := fun t : ℝ ↦ t ^ 2) (contDiffAt_id.pow 2) hf v w
   rw [hd, hdd] at this
-  rw [show (fun y ↦ f y ^ 2) = (fun t : ℝ ↦ t ^ 2) ∘ f from rfl, this]
+  refine this.trans ?_
   beta_reduce
   ring
 
