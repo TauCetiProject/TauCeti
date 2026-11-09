@@ -67,6 +67,8 @@ spectrum from that of its orthogonal complement.
   exactly when `A x = λ x` for some nonzero `x ∈ U`.
 * `Module.End.pointSpectrumIn_pointSpectralSubspace`: the point-spectral subspace selected by `Ω`
   has restricted point spectrum in `Ω`.
+* `Module.End.pointSpectralSubspace_conj`: conjugating by a linear equivalence transports the
+  point-spectral subspaces.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace`: for symmetric `A` in finite dimension,
   `(A.pointSpectralSubspace Ω)ᗮ = A.pointSpectralSubspace Ωᶜ`.
 * `LinearMap.IsSymmetric.pointSpectralSubspace_eq_eigenvectorSpan`: the point-spectral subspace is
@@ -284,6 +286,19 @@ theorem pointSpectralSubspace_neg :
     exact eigenspace_le_pointSpectralSubspace (Set.neg_mem_neg.mpr hμ)
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
+
+/-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
+the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
+`A`. -/
+theorem pointSpectralSubspace_conj {E' : Type*} [AddCommGroup E'] [Module 𝕜 E']
+    (e : E ≃ₗ[𝕜] E') :
+    (e.conj A).pointSpectralSubspace Ω = (A.pointSpectralSubspace Ω).map (e : E →ₗ[𝕜] E') := by
+  have h (μ : ℝ) :
+      (e.conj A).eigenspace (μ : 𝕜) = (A.eigenspace (μ : 𝕜)).map (e : E →ₗ[𝕜] E') := by
+    ext x
+    rw [Submodule.mem_map_equiv, mem_eigenspace_iff, mem_eigenspace_iff]
+    simp [LinearEquiv.conj_apply, ← e.symm.injective.eq_iff]
+  simp only [pointSpectralSubspace, Submodule.map_iSup, h]
 
 /-- For an injective endomorphism, also selecting the eigenvalue `0` does not change a
 point-spectral subspace. -/

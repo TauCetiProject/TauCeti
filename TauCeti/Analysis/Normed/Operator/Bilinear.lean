@@ -17,7 +17,8 @@ bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and l
 bilinear maps, such as the coordinate expressions of metrics. In particular, pulling back each
 value of a continuous family of multilinear maps valued in bilinear maps, along `u` in every
 argument, gives a continuous family
-(`Continuous.pullbackBilinL_compContinuousMultilinearMap`).
+(`Continuous.pullbackBilinL_compContinuousMultilinearMap`). Pulling back along a bijection preserves
+nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`).
 -/
 
 public section
@@ -49,6 +50,16 @@ theorem pullbackBilinL_eq_comp (u : W →L[𝕜] V) :
       (compL 𝕜 W (V →L[𝕜] G) (W →L[𝕜] G) ((compL 𝕜 W V G).flip u)).comp
         ((compL 𝕜 W V (V →L[𝕜] G)).flip u) :=
   (rfl)
+
+/-- Pulling a nondegenerate bilinear map back along a bijective continuous linear map keeps it
+nondegenerate. -/
+theorem injective_bilinearComp {B : V →L[𝕜] V →L[𝕜] G} (hB : Function.Injective B)
+    {u : W →L[𝕜] V} (hu : Function.Bijective u) : Function.Injective (B.bilinearComp u u) := by
+  intro w w' hww'
+  refine hu.1 (hB ?_)
+  ext v
+  obtain ⟨v, rfl⟩ := hu.2 v
+  exact congrArg (fun φ ↦ φ v) hww'
 
 end ContinuousLinearMap
 
