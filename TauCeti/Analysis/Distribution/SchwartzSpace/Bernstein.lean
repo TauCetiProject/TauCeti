@@ -166,8 +166,8 @@ private theorem exists_eLpNorm_le_sum_eLpNorm_iteratedLineDerivOp (θ : ℝ) {p 
         Finset.sum_comm]
       refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun r _ => ?_
       -- The tuple `Fin.cons i r` has head `i` and tail `r`.
-      rw [iteratedLineDerivOp_succ_left]
-      rfl
+      simp only [iteratedLineDerivOp_succ_left, Fin.consEquiv_apply, Fin.cons_zero, Fin.tail_def,
+        Fin.cons_succ]
     calc eLpNorm f p
         ≤ C * ∑ r : Fin k → Fin (finrank ℝ E), eLpNorm ⇑(∂^{fun j => b (r j)} f : 𝓢(E, F)) p :=
           hC f hf
