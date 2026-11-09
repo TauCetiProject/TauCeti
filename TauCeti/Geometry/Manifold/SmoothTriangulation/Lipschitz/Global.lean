@@ -96,8 +96,8 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
       ext i
       by_cases hi : i ∈ σ.1
       · exact Subtype.val_injective.extend_apply (fun a : σ.1 => x.1 a) 0 ⟨i, hi⟩
-      · rw [show L (fun a => x.1 a) i = 0 from
-          Function.extend_apply' _ _ _ (by simpa using hi)]
+      · change Function.extend (Subtype.val : σ.1 → ι) (fun a => x.1 a) 0 i = _
+        rw [Function.extend_apply' _ _ _ (by simpa using hi)]
         exact (Finsupp.notMem_support_iff.mp
           (fun h => hi (StandardSimplex.support_subset x h))).symm
     have hmap : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights)
@@ -105,8 +105,10 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
       rw [← Finset.range_standardSimplex_coordinates]
       rintro _ ⟨x, rfl⟩
       rw [hL, ← range_realization_coe_top]
-      exact ⟨faceInclusion ⊤ σ x, rfl⟩
-    exact ⟨F ∘ L, fun x => congrArg F (hL x), hF.comp L.contDiff.contDiffOn hmap⟩
+      exact ⟨faceInclusion ⊤ σ x, congrArg DFunLike.coe (faceInclusion_val ⊤ σ x)⟩
+    refine ⟨F ∘ L, ?_, hF.comp L.contDiff.contDiffOn hmap⟩
+    intro x
+    simpa only [Function.comp_apply, f₀, faceInclusion_val] using congrArg F (hL x)
   have hsep' : AntilipschitzWith (C + 1)
       ((range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights).domRestrict F) := by
     refine AntilipschitzWith.of_le_mul_dist fun x y => (hsep.le_mul_dist x y).trans ?_
