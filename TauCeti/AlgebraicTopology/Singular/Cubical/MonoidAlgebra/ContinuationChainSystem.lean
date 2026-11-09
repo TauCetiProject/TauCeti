@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.TwistingChainSystem
 public import TauCeti.Algebra.Homology.DG.Twisted.Homotopy
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Continuation and parametrized chain systems
@@ -27,9 +28,10 @@ dimension `ind x - indQ y` (cohomological degree `indQ y - ind x`), satisfying
 by a **parametrized chain system** on spaces `H x y` containing both, through maps `j₀` and `j₁`:
 chains `h x y` of dimension `ind x - indQ y + 1` with
 
-`∂ h x y = j₁_* ν₁ x y - j₀_* ν₀ x y + Σ_z (-1) ^ (ind x - ind z) • κ_* (s x z × h z y)
-  + Σ_z (-1) ^ (ind x - indQ z) • κ'_* (h x z × s' z y)`
+`∂ h x y = j₁_* ν₁ x y - j₀_* ν₀ x y + Σ_z (-1) ^ (ind x - ind z) • κH_* (s x z × h z y)
+  + Σ_z (-1) ^ (ind x - indQ z) • κH'_* (h x z × s' z y)`,
 
+where `κH` and `κH'` are the composition maps of the spaces `H x y`
 (`TauCeti.ParametrizedChainSystem`). In Morse theory `H x y` is the compactified space of
 trajectories of a one-parameter family of homotopies.
 
@@ -71,6 +73,8 @@ relating the Barraud–Cornea cocycles of two choices of data.
 * `TauCeti.cubicalChainSumMap_continuationChainSum` and
   `TauCeti.cubicalChainSumMap_parametrizedChainSum`: push-forward along multiplicative evaluation
   maps.
+* `TauCeti.cubicalChainSumMap_continuationChainSum_of_comp`: push-forward of the continuation sum
+  along maps compatible with the composition maps.
 
 ## References
 
@@ -87,48 +91,6 @@ noncomputable section
 namespace TauCeti
 
 open NormalizedCubicalChain
-
-section Auxiliary
-
-variable {R : Type*} [CommRing R] {X Y Z X' Y' Z' : Type*} [TopologicalSpace X]
-  [TopologicalSpace Y] [TopologicalSpace Z] [TopologicalSpace X'] [TopologicalSpace Y']
-  [TopologicalSpace Z']
-
-/-- Two signs whose exponents differ by an odd integer are opposite. -/
-private theorem negOnePow_eq_neg_of_odd {a b : ℤ} (h : Odd (a - b)) :
-    a.negOnePow = -b.negOnePow := by
-  rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
-  obtain ⟨k, hk⟩ := h
-  exact ⟨k, by omega⟩
-
-/-- The differential of a chain of nonnegative cohomological degree vanishes. -/
-private theorem cubicalChainDifferential_eq_zero_of_nonneg {i : ℤ} (hi : 0 ≤ i)
-    {a : normalizedCubicalChainAlgebra X R} (ha : a ∈ cubicalChainGrading X R i) :
-    cubicalChainDifferential X R a = 0 :=
-  eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (cubicalChainDifferential_mem _ _ ha)
-
-/-- Push-forward of a pairing along `f` with `f (κ (u, v)) = κ₂ (g u, g' v)`. -/
-private theorem cubicalChainSumMap_pairing_of_comp {κ : C(X × Y, Z)} {κ₂ : C(X' × Y', Z')}
-    {f : C(Z, Z')} {g : C(X, X')} {g' : C(Y, Y')} (h : ∀ u v, f (κ (u, v)) = κ₂ (g u, g' v))
-    (a : normalizedCubicalChainAlgebra X R) (b : normalizedCubicalChainAlgebra Y R) :
-    cubicalChainSumMap R f (cubicalChainSumPairing R κ a b) =
-      cubicalChainSumPairing R κ₂ (cubicalChainSumMap R g a) (cubicalChainSumMap R g' b) := by
-  have hcomp : f.comp κ = κ₂.comp (g.prodMap g') :=
-    ContinuousMap.ext fun ⟨u, v⟩ ↦ by simpa using h u v
-  rw [cubicalChainSumMap_cubicalChainSumPairing, hcomp, cubicalChainSumPairing_comp_prodMap]
-
-/-- Push-forward of a pairing along a map `f` into a topological monoid with
-`f (κ (u, v)) = g u * g' v` is the Pontryagin product of the push-forwards. -/
-private theorem cubicalChainSumMap_pairing_of_mul {G : Type*} [Monoid G] [TopologicalSpace G]
-    [ContinuousMul G] {κ : C(X × Y, Z)} {f : C(Z, G)} {g : C(X, G)} {g' : C(Y, G)}
-    (h : ∀ u v, f (κ (u, v)) = g u * g' v) (a : normalizedCubicalChainAlgebra X R)
-    (b : normalizedCubicalChainAlgebra Y R) :
-    cubicalChainSumMap R f (cubicalChainSumPairing R κ a b) =
-      cubicalChainSumMap R g a * cubicalChainSumMap R g' b := by
-  rw [cubicalChainSumMap_pairing_of_comp (κ₂ := mulMap G) (by simpa using h),
-    cubicalChainSumPairing_mulMap]
-
-end Auxiliary
 
 section Continuation
 
@@ -175,18 +137,13 @@ theorem continuationChainSum_eq_zero_of_le
     (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M' x y) R (indQ y - indQ x + 1))
     (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x)) {x : P} {y : Q}
     (hxy : ind x ≤ indQ y) : continuationChainSum ind indQ κ κ' R s s' ν x y = 0 := by
-  -- In the first sum `s x z` vanishes when `ind x ≤ ind z` and `ν z y` does otherwise; in the
-  -- second `s' z y` vanishes when `indQ z ≤ indQ y` and `ν x z` does otherwise.
-  have h₁ (z : P) : cubicalChainSumPairing R (κ x z y) (s x z) (ν z y) = 0 := by
-    rcases le_or_gt (ind x) (ind z) with hxz | hxz
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
-        LinearMap.zero_apply]
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν z y), map_zero]
-  have h₂ (z : Q) : cubicalChainSumPairing R (κ' x z y) (ν x z) (s' z y) = 0 := by
-    rcases le_or_gt (indQ z) (indQ y) with hzy | hzy
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero]
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν x z), map_zero,
-        LinearMap.zero_apply]
+  -- Every term has cohomological degree `indQ y - ind x + 1 > 0`.
+  have h₁ (z : P) : cubicalChainSumPairing R (κ x z y) (s x z) (ν z y) = 0 :=
+    eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega)
+      (cubicalChainSumPairing_mem _ (hs x z) (hν z y))
+  have h₂ (z : Q) : cubicalChainSumPairing R (κ' x z y) (ν x z) (s' z y) = 0 :=
+    eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega)
+      (cubicalChainSumPairing_mem _ (hν x z) (hs' z y))
   simp [continuationChainSum_def, h₁, h₂]
 
 end Graded
@@ -238,7 +195,7 @@ private theorem continuation_of_le
     (hxy : ind x ≤ indQ y) :
     cubicalChainDifferential (N x y) R (ν x y) =
       continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x y := by
-  rw [cubicalChainDifferential_eq_zero_of_nonneg (by omega) (hν x y),
+  rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) (hν x y),
     continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hν hxy]
 
 /-- The Leibniz rule on a term of the first sum of the continuation sum, with the boundaries of
@@ -296,7 +253,7 @@ private theorem continuation_cancel_left {x : P} {y : Q}
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_eq_zero fun z _ ↦ ?_
   rw [cubicalChainSumPairing_assoc (hκ w z),
-    negOnePow_eq_neg_of_odd (a := ind w - ind x + 1) (b := ind x - ind w)
+    Int.negOnePow_eq_neg_of_odd_sub (a := ind w - ind x + 1) (b := ind x - ind w)
       ⟨ind w - ind x, by ring⟩, Units.neg_smul, add_neg_cancel]
 
 /-- The double sums through `M x w × N w z × M' z y` in the boundary of the continuation sum
@@ -315,7 +272,7 @@ private theorem continuation_cancel_middle {x : P} {y : Q}
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_eq_zero fun z _ ↦ ?_
   rw [cubicalChainSumPairing_assoc (hκκ' w z), smul_smul, ← Int.negOnePow_add,
-    negOnePow_eq_neg_of_odd (a := ind w - ind x + 1 + (ind w - indQ z - 1))
+    Int.negOnePow_eq_neg_of_odd_sub (a := ind w - ind x + 1 + (ind w - indQ z - 1))
       (b := ind x - indQ z - 1) ⟨ind w - ind x, by ring⟩, Units.neg_smul, neg_add_cancel]
 
 omit [Fintype P] in
@@ -337,7 +294,7 @@ private theorem continuation_cancel_right {x : P} {y : Q}
   refine Finset.sum_eq_zero fun z _ ↦ ?_
   rw [cubicalChainSumPairing_assoc (hκ' w z), smul_smul, smul_smul, smul_smul,
     ← Int.negOnePow_add, ← Int.negOnePow_add, ← Int.negOnePow_add,
-    negOnePow_eq_neg_of_odd (a := ind x - indQ z - 1 + (ind x - indQ w - 1))
+    Int.negOnePow_eq_neg_of_odd_sub (a := ind x - indQ z - 1 + (ind x - indQ w - 1))
       (b := ind x - indQ w - 1 + (indQ w - ind x) + (indQ w - indQ z))
       ⟨ind x - indQ w - 1, by ring⟩, Units.neg_smul, neg_add_cancel]
 
@@ -373,6 +330,29 @@ theorem cubicalChainDifferential_continuationChainSum
 
 end Cycle
 
+variable {κ κ'} in
+/-- **Push-forward of the continuation sum along compatible maps**: if
+`j (κ (u, v)) = κ₂ (u, j v)` and `j (κ' (u, v)) = κ₂' (j u, v)`, the push-forward along `j` of the
+continuation sum for `κ` and `κ'` is the continuation sum for `κ₂` and `κ₂'` of the
+push-forwards. -/
+theorem cubicalChainSumMap_continuationChainSum_of_comp {N' : P → Q → Type*}
+    [∀ x y, TopologicalSpace (N' x y)] {κ₂ : ∀ x y z, C(M x y × N' y z, N' x z)}
+    {κ₂' : ∀ x y z, C(N' x y × M' y z, N' x z)} (j : ∀ x y, C(N x y, N' x y)) {x : P} {y : Q}
+    (hjκ : ∀ z (u : M x z) (v : N z y), j x y (κ x z y (u, v)) = κ₂ x z y (u, j z y v))
+    (hjκ' : ∀ z (u : N x z) (v : M' z y), j x y (κ' x z y (u, v)) = κ₂' x z y (j x z u, v))
+    (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R)
+    (s' : ∀ x y, normalizedCubicalChainAlgebra (M' x y) R)
+    (ν : ∀ x y, normalizedCubicalChainAlgebra (N x y) R) :
+    cubicalChainSumMap R (j x y) (continuationChainSum ind indQ κ κ' R s s' ν x y) =
+      continuationChainSum ind indQ κ₂ κ₂' R s s' (fun x y ↦ cubicalChainSumMap R (j x y) (ν x y))
+        x y := by
+  simp only [continuationChainSum_def, map_add, map_sum, map_zsmul_unit,
+    fun z ↦ cubicalChainSumMap_cubicalChainSumPairing_of_comp (R := R) (h := ContinuousMap.id _)
+      (hjκ z),
+    fun z ↦ cubicalChainSumMap_cubicalChainSumPairing_of_comp (R := R) (h' := ContinuousMap.id _)
+      (hjκ' z),
+    cubicalChainSumMap_id, LinearMap.id_apply]
+
 /-! ### Push-forward along multiplicative evaluation maps -/
 
 section Evaluation
@@ -395,8 +375,8 @@ theorem cubicalChainSumMap_continuationChainSum {x : P} {y : Q}
         ∑ z, (ind x - indQ z - 1).negOnePow •
           (cubicalChainSumMap R (r x z) (ν x z) * cubicalChainSumMap R (q' z y) (s' z y)) := by
   simp only [continuationChainSum_def, map_add, map_sum, map_zsmul_unit,
-    fun z ↦ cubicalChainSumMap_pairing_of_mul (R := R) (hκ z),
-    fun z ↦ cubicalChainSumMap_pairing_of_mul (R := R) (hκ' z)]
+    fun z ↦ cubicalChainSumMap_cubicalChainSumPairing_of_mul (R := R) (hκ z),
+    fun z ↦ cubicalChainSumMap_cubicalChainSumPairing_of_mul (R := R) (hκ' z)]
 
 namespace ContinuationChainSystem
 
@@ -504,19 +484,13 @@ theorem parametrizedChainSum_eq_zero_of_lt
     (hh : ∀ x y, h x y ∈ cubicalChainGrading (H x y) R (indQ y - ind x - 1)) {x : P} {y : Q}
     (hxy : ind x < indQ y) :
     parametrizedChainSum ind indQ κH κH' j₀ j₁ R s s' ν₀ ν₁ h x y = 0 := by
-  -- The chains `ν₀ x y` and `ν₁ x y` vanish. In the first sum `s x z` vanishes when
-  -- `ind x ≤ ind z` and `h z y` does otherwise; in the second `s' z y` vanishes when
-  -- `indQ z ≤ indQ y` and `h x z` does otherwise.
-  have h₁ (z : P) : cubicalChainSumPairing R (κH x z y) (s x z) (h z y) = 0 := by
-    rcases le_or_gt (ind x) (ind z) with hxz | hxz
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
-        LinearMap.zero_apply]
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hh z y), map_zero]
-  have h₂ (z : Q) : cubicalChainSumPairing R (κH' x z y) (h x z) (s' z y) = 0 := by
-    rcases le_or_gt (indQ z) (indQ y) with hzy | hzy
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero]
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hh x z), map_zero,
-        LinearMap.zero_apply]
+  -- Every term has cohomological degree `indQ y - ind x > 0`.
+  have h₁ (z : P) : cubicalChainSumPairing R (κH x z y) (s x z) (h z y) = 0 :=
+    eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega)
+      (cubicalChainSumPairing_mem _ (hs x z) (hh z y))
+  have h₂ (z : Q) : cubicalChainSumPairing R (κH' x z y) (h x z) (s' z y) = 0 :=
+    eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega)
+      (cubicalChainSumPairing_mem _ (hh x z) (hs' z y))
   simp [parametrizedChainSum_def, h₁, h₂,
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν₀ x y),
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν₁ x y)]
@@ -564,24 +538,6 @@ section Cycle
 
 variable {κH κH'}
 
-/-- Push-forward along inclusions `j` compatible with the composition maps carries a continuation
-sum to the continuation sum of the push-forwards. -/
-private theorem cubicalChainSumMap_continuationChainSum_of_comp {N : P → Q → Type*}
-    [∀ x y, TopologicalSpace (N x y)] {κ : ∀ x y z, C(M x y × N y z, N x z)}
-    {κ' : ∀ x y z, C(N x y × M' y z, N x z)} (j : ∀ x y, C(N x y, H x y)) {x : P} {y : Q}
-    (hjκ : ∀ z (u : M x z) (v : N z y), j x y (κ x z y (u, v)) = κH x z y (u, j z y v))
-    (hjκ' : ∀ z (u : N x z) (v : M' z y), j x y (κ' x z y (u, v)) = κH' x z y (j x z u, v))
-    (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R)
-    (s' : ∀ x y, normalizedCubicalChainAlgebra (M' x y) R)
-    (ν : ∀ x y, normalizedCubicalChainAlgebra (N x y) R) :
-    cubicalChainSumMap R (j x y) (continuationChainSum ind indQ κ κ' R s s' ν x y) =
-      continuationChainSum ind indQ κH κH' R s s' (fun x y ↦ cubicalChainSumMap R (j x y) (ν x y))
-        x y := by
-  simp only [continuationChainSum_def, map_add, map_sum, map_zsmul_unit,
-    fun z ↦ cubicalChainSumMap_pairing_of_comp (R := R) (g := ContinuousMap.id _) (hjκ z),
-    fun z ↦ cubicalChainSumMap_pairing_of_comp (R := R) (g' := ContinuousMap.id _) (hjκ' z),
-    cubicalChainSumMap_id, LinearMap.id_apply]
-
 variable (T₀ : ContinuationChainSystem κ₀ κ₀' S S') (T₁ : ContinuationChainSystem κ₁ κ₁' S S')
   {h : ∀ x y, normalizedCubicalChainAlgebra (H x y) R}
 
@@ -612,7 +568,7 @@ private theorem parametrized_of_lt
     (hxy : ind x < indQ y) :
     cubicalChainDifferential (H x y) R (h x y) =
       parametrizedChainSum ind indQ κH κH' j₀ j₁ R S.chain S'.chain T₀.chain T₁.chain h x y := by
-  rw [cubicalChainDifferential_eq_zero_of_nonneg (by omega) (hh x y),
+  rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) (hh x y),
     parametrizedChainSum_eq_zero_of_lt S.mem_graded S'.mem_graded T₀.mem_graded T₁.mem_graded hh
       hxy]
 
@@ -757,7 +713,7 @@ theorem cubicalChainDifferential_parametrizedChainSum
       continuationChainSum ind indQ κH κH' R S.chain S'.chain δ x y :=
     cubicalChainDifferential_sub_cubicalChainSumMap j₀ j₁ T₀ T₁ hj₀κ hj₀κ' hj₁κ hj₁κ'
   have hε (z : Q) : (ind x - indQ z - 1).negOnePow = -(ind x - indQ z).negOnePow :=
-    negOnePow_eq_neg_of_odd ⟨-1, by ring⟩
+    Int.negOnePow_eq_neg_of_odd_sub ⟨-1, by ring⟩
   rw [hPS, map_add, map_add, hdδ, continuationChainSum_def, map_sum, map_sum]
   simp only [fun z ↦ cubicalChainDifferential_parametrized_left j₀ j₁ T₀ T₁ hh (hl z),
     fun z ↦ cubicalChainDifferential_parametrized_right j₀ j₁ T₀ T₁ hh (hr z)]
@@ -800,8 +756,9 @@ theorem cubicalChainSumMap_parametrizedChainSum {x : P} {y : Q}
           (cubicalChainSumMap R (rH x z) (h x z) * cubicalChainSumMap R (q' z y) (s' z y)) := by
   simp only [parametrizedChainSum_def, map_add, map_sub, map_sum, map_zsmul_unit,
     ← LinearMap.comp_apply, ← cubicalChainSumMap_comp, hj₀, hj₁]
-  simp only [LinearMap.comp_apply, fun z ↦ cubicalChainSumMap_pairing_of_mul (R := R) (hκH z),
-    fun z ↦ cubicalChainSumMap_pairing_of_mul (R := R) (hκH' z)]
+  simp only [LinearMap.comp_apply,
+    fun z ↦ cubicalChainSumMap_cubicalChainSumPairing_of_mul (R := R) (hκH z),
+    fun z ↦ cubicalChainSumMap_cubicalChainSumPairing_of_mul (R := R) (hκH' z)]
 
 namespace ParametrizedChainSystem
 
