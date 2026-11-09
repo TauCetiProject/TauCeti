@@ -22,6 +22,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 * `toFilterGerm_germ`: the germ of a section is the germ of any function agreeing with it on
   the domain of the section;
 * `toFilterGerm_nhds_injective`: a holomorphic germ is determined by its germ along `𝓝 x`;
+* `toFilterGerm_ringEquivCast`: transporting a germ along an equality of points with
+  `RingEquiv.cast` keeps its representative;
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
@@ -192,6 +194,17 @@ theorem toFilterGerm_nhds_injective (x : X) :
   rw [map_apply, map_apply, zero_apply]
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (Opens.inclusion hWU y)).symm.trans
     (ht y y.2).1
+
+/-- Transporting a holomorphic germ along an equality of points `x = y` with `RingEquiv.cast`
+keeps its representative. This lets coordinate changes that fix a point only propositionally
+compare germs at the two descriptions of the point. -/
+theorem toFilterGerm_ringEquivCast {x y : X} (h : x = y)
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (hs : toFilterGerm I X x (𝓝 x) le_rfl s = f) :
+    toFilterGerm I X y (𝓝 y) le_rfl
+      (RingEquiv.cast (R := fun z ↦ (holomorphicStructureSheaf I X).presheaf.stalk z) h s) = f := by
+  subst h
+  exact hs
 
 /-- At a point which is not isolated, a holomorphic germ is determined by its germ on the
 punctured neighbourhoods of the point, by continuity. -/
