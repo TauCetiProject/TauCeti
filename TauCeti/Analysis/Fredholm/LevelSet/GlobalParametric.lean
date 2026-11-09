@@ -14,7 +14,8 @@ Let `f : E × Λ → F` be a parametrized equation. A parameter `l` is regular a
 `c` when the fixed-parameter linearization of `x ↦ f (x, l)` is surjective at every solution.
 This file proves that the regular parameters form a residual, and hence dense, subset of `Λ`
 provided the universal linearization is surjective and the fixed-parameter linearization is
-Fredholm at every solution.
+Fredholm at every solution, and `f` is smooth enough there: of class `C^k` for Smale's
+threshold `k > max (i, 0)`, where `i` is the index of the fixed-parameter linearization.
 
 The file also introduces regularity on a subset `U ⊆ E × Λ`, which asks for surjectivity only at
 the solutions lying in `U`. It reduces to regularity for `U = univ` and is monotone in `U`. The

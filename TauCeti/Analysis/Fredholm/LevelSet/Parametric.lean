@@ -34,7 +34,8 @@ of `TauCeti.Analysis.Fredholm.LevelSet.Tangent` rather than by an inclusion. Tha
 regularity criterion from the chart origin to a whole neighbourhood of it, and the file closes
 with local Sard--Smale in the resulting geometric form: the parameters near `l` which carry a
 nearby solution where the fixed-parameter linearization fails to be surjective form a closed
-nowhere dense set of values.
+nowhere dense set of values. The regularity required of `f` is Smale's threshold
+`k > max (index D₁, 0)`, which does not depend on the kernel of `D₁`.
 
 These results are the local nonlinear calculation in the parametric transversality package of
 McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Appendix A.3. Passing
@@ -443,8 +444,9 @@ parameter at which the equation has a solution, by
 `TauCeti.exists_apply_levelSetParameterMap_eq`.
 
 Only a neighbourhood of one solution is described: passing to a residual set of parameters for a
-whole universal moduli space needs a countable cover, which is not asserted here. The
-differentiability threshold is the one supplied by the local Sard--Smale theorem. -/
+whole universal moduli space needs a countable cover, which is not asserted here. The regularity
+hypothesis `hn` is Smale's threshold, as in
+`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap`. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -467,13 +469,10 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
           (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
               (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
             E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))})) := by
-  have hne : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
-    (fun m : ℕ ↦ (by simp : ((m : ℕ) : ℕ∞ω) ≠ ∞)) _
-  have hne0 : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
-    (fun m : ℕ ↦ (by simp : ((m + 1 : ℕ) : ℕ∞ω) ≠ 0)) _
+  have hn1 : 1 ≤ n := (Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn
   have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
-    filter_upwards [(hcont.of_le hn).eventually hne] with w hw
-    exact hw.differentiableAt hne0
+    filter_upwards [(hcont.of_le hn1).eventually (by simp)] with w hw
+    exact hw.differentiableAt one_ne_zero
   obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
     (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hf hdiff hD
       (hD₁.closedComplemented_ker_coprod hD) hxl)
