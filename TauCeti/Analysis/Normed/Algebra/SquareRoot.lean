@@ -39,6 +39,8 @@ near `1` in a bare Banach algebra, with smooth dependence on the element.
   value really is a square root.
 * `TauCeti.eventually_sqrtNearOne_mul_self`: near `1` it is a left inverse of squaring, which is
   the uniqueness statement: an element close to `1` is recovered from its square.
+* `TauCeti.eventually_sqrtNearOne_eq_of_tendsto`: the same uniqueness along an arbitrary filter,
+  for a family of square roots tending to `1`.
 * `TauCeti.eventually_sqrtNearOne_fixed`: a continuous map fixing `1` and reversing products
   fixes the square root of every fixed element sufficiently close to `1`.
 
@@ -126,6 +128,14 @@ theorem eventually_sqrtNearOne_mul_self :
     (f := fun a : A ↦ a * a)
     (f' := (ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A))
       (a := 1)
+
+/-- **Uniqueness of the square root near the identity, along a filter.** If `r` tends to `1` and
+eventually squares to `x`, then `TauCeti.sqrtNearOne` eventually recovers `r` from `x`. -/
+theorem eventually_sqrtNearOne_eq_of_tendsto {α : Type*} {l : Filter α} {r x : α → A}
+    (hr : Tendsto r l (𝓝 1)) (hx : ∀ᶠ t in l, r t * r t = x t) :
+    ∀ᶠ t in l, sqrtNearOne A (x t) = r t := by
+  filter_upwards [hr.eventually eventually_sqrtNearOne_mul_self, hx] with t ht hxt
+  rwa [← hxt]
 
 /-- The square root near the identity is smooth at the identity. -/
 theorem contDiffAt_sqrtNearOne : ContDiffAt ℝ ∞ (sqrtNearOne A) 1 :=
