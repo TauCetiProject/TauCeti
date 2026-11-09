@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Geometry.Manifold.Algebra.SMul
@@ -43,7 +44,8 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
 * `TauCeti.Floer.PSSPlane.perturbation_eq_zero_of_norm_le`: the perturbation vanishes on the
   closed pole disc `‖w‖ ≤ exp (2π)`, where the Morse incidence condition is imposed;
 * `TauCeti.Floer.PSSPlane.contMDiff_perturbation`: it is smooth on the whole of `ℂ × M`,
-  including across the pole;
+  including across the pole, and its components in the real coordinates `ℝ × ℝ ≃ ℂ` are `C¹`
+  for a `C¹` Hamiltonian (`TauCeti.Floer.PSSPlane.contDiff_uncurry_perturbation`);
 * `TauCeti.Floer.PSSPlane.perturbation_cylindricalEndLift`: its pullback along the end lift is the
   continuation datum `β(ε s - 1) H(t) dt` at every point of the cylinder;
 * `TauCeti.Floer.PSSPlane.perturbation_cylindricalEndLift_of_two_le` and
@@ -441,6 +443,19 @@ theorem contMDiff_perturbation {n : ℕ∞} (hH : Function.Periodic H 1)
       ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := p.endAngularForm) _
         (p.contDiffAt_endAngularForm hw₀).contMDiffAt contMDiffAt_fst
     exact (hβ.smul (p.contMDiffAt_comp_im_endCoord hH hHs hw₀ x)).smul hf
+
+/-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
+plane along a tangent vector `v` is `C¹` jointly in the domain point and the target point, for a
+period-one `C¹` Hamiltonian. -/
+theorem contDiff_uncurry_perturbation {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} (hH : Function.Periodic H 1) (hHs : ContDiff ℝ 1 (Function.uncurry H))
+    (v : ℂ) :
+    ContDiff ℝ 1
+      (Function.uncurry fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x v) :=
+  ((contMDiff_prod_modelWithCornersSelf_iff.1 (contMDiff_perturbation hH
+      (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))).contDiff.comp
+    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
+    contDiff_const
 
 end PSSPlane
 

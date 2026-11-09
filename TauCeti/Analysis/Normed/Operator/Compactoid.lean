@@ -215,6 +215,7 @@ into a Banach space are compact operators**: the image of the closed unit ball i
 totally bounded, so its closure is compact. -/
 theorem ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator [ProperSpace K]
     [CompleteSpace F] {u : E →L[K] F} (hu : u.IsCompletelyContinuous) : IsCompactOperator u :=
-  isCompactOperator_of_totallyBounded_image_closedBall one_pos hu.hasCompactoidImage.totallyBounded
+  (isCompactOperator_iff_totallyBounded_image_closedBall _ one_pos).mpr
+    hu.hasCompactoidImage.totallyBounded
 
 end Complete

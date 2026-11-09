@@ -164,12 +164,14 @@ theorem isSemisimple_apply_semisimplePart (ρ : L →ₗ⁅K⁆ Module.End K V)
   rw [ρ.apply_semisimplePart_eq hρ hc hn_nil hs_ss hx]
   exact hs_ss
 
+omit [FiniteDimensional K L] in
 /-- Under a faithful finite-dimensional representation, an element of a Killing Lie algebra over an
 algebraically closed field of characteristic zero is ad-semisimple exactly when its image is
 semisimple. -/
 theorem isSemisimple_apply_iff_isSemisimple_ad (ρ : L →ₗ⁅K⁆ Module.End K V)
     (hρ : Function.Injective ρ) (x : L) :
     (ρ x).IsSemisimple ↔ (ad K L x).IsSemisimple := by
+  have := FiniteDimensional.of_injective (ρ : L →ₗ[K] Module.End K V) hρ
   refine ⟨fun h ↦ ?_, fun h ↦ by simpa [h] using ρ.isSemisimple_apply_semisimplePart hρ x⟩
   rw [← nilpotentPart_eq_zero_iff K, ← hρ.eq_iff, map_zero]
   exact ρ.apply_nilpotentPart_eq hρ (Commute.zero_left _) IsNilpotent.zero h (zero_add _).symm

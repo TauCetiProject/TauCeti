@@ -44,6 +44,9 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   pairs, with `TopPair.singularCohomologyFunctor` the functor `TopPairᵒᵖ ⥤ ModuleCat k`;
   `TopPair.singularCohomologyMap_eq` identifies `TopPair.singularCohomologyMap f` with the map
   induced by `SSetPair.cochainComplexMap` on cohomology.
+* `TopPair.isIso_singularCohomologyMap_of_forall_isIso`: a map of pairs inducing isomorphisms on
+  the cohomology of the ambient spaces and of the subspaces in every degree induces isomorphisms on
+  relative cohomology.
 * `TopPair.shortExact_singularCochainComplexShortComplex`: the cochain sequence of a pair is short
   exact.
 * `TopPair.singularCohomologyδ`: the connecting morphism `Hⁿ(A) ⟶ Hᵐ(X, A)` for `n + 1 = m`, with
@@ -235,6 +238,20 @@ lemma singularCohomologyMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
     TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n =
       HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (toSSetPair.map f)) n :=
   congrArg (HomologicalComplex.homologyMap · n) (singularCochainComplexMap_eq f)
+
+/-- A map of topological pairs `(X, A) ⟶ (Y, B)` which induces isomorphisms `Hⁿ(Y) ≅ Hⁿ(X)` and
+`Hⁿ(B) ≅ Hⁿ(A)` in every degree induces isomorphisms `Hⁿ(Y, B) ≅ Hⁿ(X, A)` in every degree. -/
+lemma isIso_singularCohomologyMap_of_forall_isIso {P P' : TopPair.{w}} (f : P ⟶ P')
+    (hfst : ∀ n, IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (Hom.fst f) n))
+    (hsnd : ∀ n, IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (Hom.snd f) n))
+    (n : ℕ) : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) := by
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (toSSetPair.map f).left) :=
+    (quasiIso_iff _).2 fun m ↦ (quasiIsoAt_iff_isIso_homologyMap _ m).2 (hsnd m)
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (toSSetPair.map f).right) :=
+    (quasiIso_iff _).2 fun m ↦ (quasiIsoAt_iff_isIso_homologyMap _ m).2 (hfst m)
+  rw [singularCohomologyMap_eq]
+  exact (quasiIsoAt_iff_isIso_homologyMap _ n).1
+    ((quasiIso_iff _).1 (SSetPair.quasiIso_cochainComplexMap (toSSetPair.map f)) n)
 
 variable (R k M)
 

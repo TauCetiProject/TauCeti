@@ -251,6 +251,7 @@ theorem pullback_comp (o'' : Orientation I'' M'' ι) {g : M' → M''} (hg : Cont
     (isOrientationPreservingAt_pullback o'' hg hdg hι' (f x)).comp
       (isOrientationPreservingAt_pullback _ hf hdf hι x)
 
+omit [FiniteDimensional ℝ E'] in
 /-- **Orientations descend along local diffeomorphisms.** Let `f : M → M'` be a `C^n` local
 diffeomorphism at `a`, `n ≠ 0`, and let `ω y` be an orientation of the tangent space of `M'` at
 each `y`. If near `a` the derivative of `f` carries the tangent orientations of an orientation `o`
@@ -268,6 +269,9 @@ theorem _root_.IsLocalDiffeomorphAt.eventually_mapOrientation_eq {n : WithTop �
           (FiberBundle.mem_baseSet_trivializationAt' (f a)) (ω (f a)) := by
   have hn : n ≠ 0 := NeZero.ne n
   have hn1 : 1 ≤ n := ENat.one_le_iff_ne_zero_withTop.mpr hn
+  -- The model space of `M'` is linearly equivalent to that of `M` through the derivative of `f`.
+  have : FiniteDimensional ℝ E' :=
+    LinearEquiv.finiteDimensional (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv
   set g := hf.localInverse
   have hga : g (f a) = a := hf.localInverse_left_inv hf.localInverse_mem_target
   have hg : ContinuousAt g (f a) := hf.continuousAt_localInverse

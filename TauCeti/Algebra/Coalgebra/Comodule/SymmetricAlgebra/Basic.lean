@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 public import TauCeti.RingTheory.GradedAlgebra.DecomposeTensor
 
+import TauCeti.RingTheory.TensorProduct.Maps
+
 /-!
 # The graded symmetric algebra of a comodule
 
@@ -94,11 +96,9 @@ private theorem symmetricAlgebraCoact_coassoc_algHom :
     | add x y hx hy => simp only [map_add, hx, hy]
   simp only [← AlgHom.toLinearMap_eq_coe, LinearMap.comp_apply,
     AlgHom.toLinearMap_apply, AlgHom.comp_apply,
-    symmetricAlgebraCoact_ι, AlgEquiv.coe_toAlgHom, hassoc, coassoc_apply]
-  simp only [← AlgHom.toLinearMap_apply, Algebra.TensorProduct.toLinearMap_map,
-    AlgHom.toLinearMap_id, TensorProduct.AlgebraTensorModule.map_eq,
-    LinearMap.map_rTensor, LinearMap.id_comp, Bialgebra.toLinearMap_comulAlgHom,
-    LinearMap.lTensor_def, LinearMap.rTensor_map, LinearMap.comp_id]
+    symmetricAlgebraCoact_ι, AlgEquiv.coe_toAlgHom, hassoc, coassoc_apply,
+    Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor (AlgHom.id R _), AlgHom.toLinearMap_id,
+    LinearMap.id_comp, Bialgebra.toLinearMap_comulAlgHom]
 
 /-- Coassociativity of the coaction of the symmetric algebra. -/
 private theorem symmetricAlgebraCoact_coassoc :
@@ -124,14 +124,9 @@ private theorem symmetricAlgebraCoact_counit :
     simp only [← AlgHom.toLinearMap_eq_coe, LinearMap.comp_apply,
       AlgHom.toLinearMap_apply, AlgHom.comp_apply,
       symmetricAlgebraCoact_ι, Algebra.TensorProduct.includeLeft_apply]
-    simp only [← AlgHom.toLinearMap_apply, Algebra.TensorProduct.toLinearMap_map,
-      AlgHom.toLinearMap_id, TensorProduct.AlgebraTensorModule.map_eq,
-      Bialgebra.toLinearMap_counitAlgHom]
-    rw [LinearMap.map_rTensor, LinearMap.id_comp]
-    simpa only [LinearMap.comp_id, ← LinearMap.lTensor_def, lTensor_counit_coact,
-      LinearMap.rTensor_tmul] using
-      (LinearMap.rTensor_map M (SymmetricAlgebra.ι R M) LinearMap.id
-        (Coalgebra.counit (R := R) (A := H)) (coact m)).symm
+    simp only [Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor, AlgHom.toLinearMap_id,
+      LinearMap.id_comp, Bialgebra.toLinearMap_counitAlgHom, lTensor_counit_coact,
+      LinearMap.rTensor_tmul]
   have h' : Coalgebra.counit.lTensor (SymmetricAlgebra R M) ∘ₗ
       (symmetricAlgebraCoact R H M).toLinearMap =
       (Algebra.TensorProduct.includeLeft (R := R) (A := SymmetricAlgebra R M)
