@@ -11,7 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
-# The interval base of a continuation: regularity of its scalar operators
+# The interval base of a continuation: its flow and the regularity of its scalar operators
 
 A continuation between two Morse functions `f₀` and `f₁` on `X` can be realized as a Morse
 function on the product `X × ℝ`, of the form `F(x, t) = C h(t) + f_t(x)` with the double-well
@@ -27,6 +27,16 @@ shifts of a continuation are `1` at `t = 0` and `0` at `t = 1`. One trajectory f
 
 and along every solution in `(0, 1)` the coordinate `U(t) = log t - (1 / 2) log (1 - t²)`
 (`TauCeti.intervalBaseTimeCoordinate`) advances at the constant rate `C`; along `q` it is `C s`.
+The time coordinate identifies `(0, 1)` with `ℝ`, with inverse `q` at unit rate.
+
+The flow of the field on the invariant interval `[-1, 1]` is explicit:
+
+`Φ_s(t) = t / √(t² + (1 - t²) e^{-2 C s})` (`TauCeti.intervalBaseFlow`).
+
+It fixes the critical points, preserves `[-1, 1]`, `[0, 1]` and `(0, 1)` and the order of points,
+and moves the time coordinate by `C s`. For `C > 0` every flow line in `(0, 1)` runs from `0` to
+`1`. The flow of the base acts coordinatewise on the ordered-triangle base
+`TauCeti.Analysis.Calculus.Morse.TriangleBase` of a composition of two continuations.
 
 The main results verify that this base is regular, in the sense needed to glue continuation
 moduli spaces over it. Along every trajectory `γ` from `0` to `1`, the linearized operator
@@ -42,9 +52,16 @@ bijective.
   `TauCeti.morseIndex_intervalBasePotential_zero` and their analogues at `1`: the two critical
   points and their Morse indices.
 * `TauCeti.intervalBaseOrbit` and `TauCeti.isIntegralCurve_intervalBaseOrbit`: a trajectory from
-  `0` to `1`.
+  `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
+* `TauCeti.bijOn_intervalBaseTimeCoordinate` and
+  `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
+* `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
+  `TauCeti.intervalBaseFlow_add`: the flow.
+* `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
+  `TauCeti.tendsto_intervalBaseFlow_atTop` and `TauCeti.tendsto_intervalBaseFlow_atBot`: its
+  action on the time coordinate, its monotonicity and its limits.
 * `TauCeti.index_trajectoryOperator_intervalBasePotential`,
   `TauCeti.exists_ker_trajectoryOperator_intervalBasePotential_eq_span`,
   `TauCeti.surjective_trajectoryOperator_intervalBasePotential` and
@@ -157,6 +174,146 @@ theorem morseIndex_intervalBasePotential_one (hC : 0 < C) :
   (isNondegenerateCriticalPoint_intervalBasePotential_one hC.ne').morseIndex_real_of_pos
     (by rw [iteratedDeriv_two_intervalBasePotential]; linarith)
 
+/-! ### The flow of the base -/
+
+/-- The flow `Φ_s(t) = t / √(t² + (1 - t²) e^{-2 C s})` of the negative gradient field
+`C t (1 - t²)` of the base potential, on the invariant interval `[-1, 1]`
+(`TauCeti.isIntegralCurve_intervalBaseFlow`). Only its values on `[-1, 1]` are meaningful: outside
+that interval the solutions of the field are not defined for all times. -/
+noncomputable def intervalBaseFlow (C s t : ℝ) : ℝ :=
+  t / √(t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s)))
+
+theorem intervalBaseFlow_apply (C s t : ℝ) :
+    intervalBaseFlow C s t = t / √(t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := (rfl)
+
+/-- At time `0` the flow is the identity. -/
+@[simp]
+theorem intervalBaseFlow_zero (C t : ℝ) : intervalBaseFlow C 0 t = t := by
+  simp [intervalBaseFlow]
+
+/-- The critical point `0` is fixed by the flow. -/
+@[simp]
+theorem intervalBaseFlow_apply_zero (C s : ℝ) : intervalBaseFlow C s 0 = 0 := by
+  simp [intervalBaseFlow]
+
+/-- The critical point `1` is fixed by the flow. -/
+@[simp]
+theorem intervalBaseFlow_apply_one (C s : ℝ) : intervalBaseFlow C s 1 = 1 := by
+  simp [intervalBaseFlow]
+
+private theorem intervalBaseFlow_denom_pos (C s : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    0 < t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s)) := by
+  have he := Real.exp_pos (-(2 * C * s))
+  have h1 : t ^ 2 ≤ 1 := by nlinarith [ht.1, ht.2]
+  rcases (sq_nonneg t).eq_or_lt with h | h
+  · rw [← h]
+    simpa using he
+  · nlinarith [mul_nonneg (sub_nonneg.2 h1) he.le]
+
+/-- The square of the flow is `t² / (t² + (1 - t²) e^{-2 C s})`. -/
+theorem intervalBaseFlow_sq (C s : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    intervalBaseFlow C s t ^ 2 = t ^ 2 / (t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := by
+  rw [intervalBaseFlow, div_pow, Real.sq_sqrt (intervalBaseFlow_denom_pos C s ht).le]
+
+/-- The flow preserves `[-1, 1]`. -/
+theorem intervalBaseFlow_mem_Icc (C s : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    intervalBaseFlow C s t ∈ Icc (-1) 1 := by
+  have hD := intervalBaseFlow_denom_pos C s ht
+  have h1 : t ^ 2 ≤ 1 := by nlinarith [ht.1, ht.2]
+  have hsq : intervalBaseFlow C s t ^ 2 ≤ 1 := by
+    rw [intervalBaseFlow_sq C s ht, div_le_one hD]
+    nlinarith [mul_nonneg (sub_nonneg.2 h1) (Real.exp_pos (-(2 * C * s))).le]
+  exact abs_le.1 (sq_le_one_iff_abs_le_one _ |>.1 hsq)
+
+/-- The flow preserves `[0, 1]`. -/
+theorem intervalBaseFlow_mem_Icc_zero_one (C s : ℝ) {t : ℝ} (ht : t ∈ Icc 0 1) :
+    intervalBaseFlow C s t ∈ Icc 0 1 :=
+  ⟨div_nonneg ht.1 (Real.sqrt_nonneg _),
+    (intervalBaseFlow_mem_Icc C s ⟨by linarith [ht.1], ht.2⟩).2⟩
+
+/-- The flow preserves `(0, 1)`. -/
+theorem intervalBaseFlow_mem_Ioo_zero_one (C s : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    intervalBaseFlow C s t ∈ Ioo 0 1 := by
+  have ht' : t ∈ Icc (-1) 1 := ⟨by linarith [ht.1], ht.2.le⟩
+  have hD := intervalBaseFlow_denom_pos C s ht'
+  have hpos : 0 < intervalBaseFlow C s t := div_pos ht.1 (Real.sqrt_pos.2 hD)
+  have hsq : intervalBaseFlow C s t ^ 2 < 1 := by
+    rw [intervalBaseFlow_sq C s ht', div_lt_one hD]
+    nlinarith [mul_pos (by nlinarith [ht.1, ht.2] : 0 < 1 - t ^ 2) (Real.exp_pos (-(2 * C * s)))]
+  exact ⟨hpos, by nlinarith⟩
+
+/-- **The flow property.** -/
+theorem intervalBaseFlow_add (C s r : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    intervalBaseFlow C (s + r) t = intervalBaseFlow C s (intervalBaseFlow C r t) := by
+  have hr := intervalBaseFlow_denom_pos C r ht
+  have key : intervalBaseFlow C r t ^ 2 + (1 - intervalBaseFlow C r t ^ 2) *
+      Real.exp (-(2 * C * s)) = (t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * (s + r)))) /
+        (t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * r))) := by
+    rw [intervalBaseFlow_sq C r ht, show -(2 * C * (s + r)) = -(2 * C * s) + -(2 * C * r) by ring,
+      Real.exp_add]
+    field_simp
+    ring
+  have hr' : √(t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * r))) ≠ 0 := (Real.sqrt_pos.2 hr).ne'
+  rw [intervalBaseFlow_apply C s, key, Real.sqrt_div' _ hr.le, intervalBaseFlow_apply C r,
+    intervalBaseFlow_apply]
+  field_simp
+
+/-- The flow solves `Φ' = C Φ (1 - Φ²)`. -/
+theorem hasDerivAt_intervalBaseFlow (C s : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    HasDerivAt (fun s ↦ intervalBaseFlow C s t)
+      (C * intervalBaseFlow C s t * (1 - intervalBaseFlow C s t ^ 2)) s := by
+  have hD := intervalBaseFlow_denom_pos C s ht
+  have hsq : 0 < √(t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := Real.sqrt_pos.2 hD
+  have hexp : HasDerivAt (fun s ↦ t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s)))
+      ((1 - t ^ 2) * (Real.exp (-(2 * C * s)) * -(2 * C))) s := by
+    have := (((hasDerivAt_id s).const_mul (2 * C)).neg.exp.const_mul (1 - t ^ 2)).const_add (t ^ 2)
+    simpa using this
+  refine ((hasDerivAt_const s t).div (hexp.sqrt hD.ne') hsq.ne').congr_deriv ?_
+  rw [intervalBaseFlow_sq C s ht, intervalBaseFlow]
+  field_simp
+  rw [Real.sq_sqrt hD.le]
+  ring
+
+/-- The flow lines are negative gradient trajectories of the base potential. -/
+theorem isIntegralCurve_intervalBaseFlow (C : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    IsIntegralCurve (fun s ↦ intervalBaseFlow C s t)
+      (fun _ t ↦ -∇ (intervalBasePotential C) t) := by
+  intro s
+  refine (hasDerivAt_intervalBaseFlow C s ht).congr_deriv ?_
+  dsimp only
+  rw [gradient_intervalBasePotential]
+  ring
+
+/-- The flow is odd. -/
+theorem intervalBaseFlow_neg (C s t : ℝ) : intervalBaseFlow C s (-t) = -intervalBaseFlow C s t := by
+  rw [intervalBaseFlow, intervalBaseFlow, neg_sq, neg_div]
+
+/-- For `C > 0`, the flow line through a point of `(0, 1]` tends to the minimum `1` at `+∞`. -/
+theorem tendsto_intervalBaseFlow_atTop (hC : 0 < C) {t : ℝ} (ht : t ∈ Ioc 0 1) :
+    Tendsto (fun s ↦ intervalBaseFlow C s t) atTop (𝓝 1) := by
+  have hexp : Tendsto (fun s ↦ Real.exp (-(2 * C * s))) atTop (𝓝 0) :=
+    Real.tendsto_exp_atBot.comp
+      (tendsto_neg_atTop_atBot.comp (tendsto_id.const_mul_atTop (by positivity)))
+  have hD : Tendsto (fun s ↦ √(t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s)))) atTop
+      (𝓝 √(t ^ 2 + (1 - t ^ 2) * 0)) :=
+    (tendsto_const_nhds.add (tendsto_const_nhds.mul hexp)).sqrt
+  rw [mul_zero, add_zero, Real.sqrt_sq ht.1.le] at hD
+  have h := (tendsto_const_nhds (x := t)).div hD ht.1.ne'
+  rw [div_self ht.1.ne'] at h
+  exact h.congr fun s ↦ by simp [intervalBaseFlow_apply]
+
+/-- For `C > 0`, the flow line through a point of `(-1, 1)` tends to the maximum `0` at `-∞`. -/
+theorem tendsto_intervalBaseFlow_atBot (hC : 0 < C) {t : ℝ} (ht : t ∈ Ioo (-1) 1) :
+    Tendsto (fun s ↦ intervalBaseFlow C s t) atBot (𝓝 0) := by
+  have h1 : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
+  have hexp : Tendsto (fun s ↦ Real.exp (-(2 * C * s))) atBot atTop :=
+    Real.tendsto_exp_atTop.comp
+      (tendsto_neg_atBot_atTop.comp (tendsto_id.const_mul_atBot (by positivity)))
+  have hD : Tendsto (fun s ↦ t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) atBot atTop :=
+    tendsto_atTop_add_const_left _ _ (hexp.const_mul_atTop h1)
+  simp only [intervalBaseFlow_apply]
+  exact tendsto_const_nhds.div_atTop (Real.tendsto_sqrt_atTop.comp hD)
+
 /-! ### A trajectory from `0` to `1` and the time coordinate -/
 
 /-- The trajectory `q(s) = 1 / √(1 + e^{-2 C s})` of the negative gradient field `C t (1 - t²)` of
@@ -172,53 +329,55 @@ theorem intervalBaseOrbit_sq (C s : ℝ) :
     intervalBaseOrbit C s ^ 2 = (1 + Real.exp (-(2 * C * s)))⁻¹ := by
   rw [intervalBaseOrbit, inv_pow, Real.sq_sqrt (by positivity)]
 
+private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
+  ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩
+
+private theorem inv_sqrt_two_mem_Icc : (√2)⁻¹ ∈ Icc (-1 : ℝ) 1 :=
+  ⟨by linarith [inv_sqrt_two_mem_Ioo.1], inv_sqrt_two_mem_Ioo.2.le⟩
+
+/-- The trajectory `q` is the flow line through `q(0) = 1 / √2`. -/
+theorem intervalBaseOrbit_eq_intervalBaseFlow (C s : ℝ) :
+    intervalBaseOrbit C s = intervalBaseFlow C s (√2)⁻¹ := by
+  have h2 : (√2)⁻¹ ^ 2 = (1 / 2 : ℝ) := by rw [inv_pow, Real.sq_sqrt zero_le_two, one_div]
+  rw [intervalBaseOrbit_apply, intervalBaseFlow_apply, h2,
+    show 1 / 2 + (1 - 1 / 2) * Real.exp (-(2 * C * s)) = (1 + Real.exp (-(2 * C * s))) / 2 by ring,
+    Real.sqrt_div' _ zero_le_two]
+  field_simp
+
+/-- The flow moves the trajectory `q` along itself: `Φ_s(q(r)) = q(s + r)`. -/
+@[simp]
+theorem intervalBaseFlow_intervalBaseOrbit (C s r : ℝ) :
+    intervalBaseFlow C s (intervalBaseOrbit C r) = intervalBaseOrbit C (s + r) := by
+  rw [intervalBaseOrbit_eq_intervalBaseFlow, intervalBaseOrbit_eq_intervalBaseFlow,
+    intervalBaseFlow_add C s r inv_sqrt_two_mem_Icc]
+
 /-- The trajectory `q` takes values in `(0, 1)`. -/
 theorem intervalBaseOrbit_mem_Ioo (C s : ℝ) : intervalBaseOrbit C s ∈ Ioo 0 1 := by
-  have h1 : 1 < √(1 + Real.exp (-(2 * C * s))) :=
-    Real.lt_sqrt_of_sq_lt (by nlinarith [Real.exp_pos (-(2 * C * s))])
-  exact ⟨by unfold intervalBaseOrbit; positivity, inv_lt_one_of_one_lt₀ h1⟩
+  rw [intervalBaseOrbit_eq_intervalBaseFlow]
+  exact intervalBaseFlow_mem_Ioo_zero_one C s inv_sqrt_two_mem_Ioo
 
 /-- The trajectory `q` solves `q' = C q (1 - q²)`. -/
 theorem hasDerivAt_intervalBaseOrbit (C s : ℝ) :
     HasDerivAt (intervalBaseOrbit C)
       (C * intervalBaseOrbit C s * (1 - intervalBaseOrbit C s ^ 2)) s := by
-  set w := 1 + Real.exp (-(2 * C * s)) with hw
-  have hw0 : 0 < w := by positivity
-  have hsq : 0 < √w := Real.sqrt_pos.2 hw0
-  have hexp : HasDerivAt (fun s ↦ 1 + Real.exp (-(2 * C * s)))
-      (Real.exp (-(2 * C * s)) * -(2 * C)) s := by
-    have := ((hasDerivAt_id s).const_mul (2 * C)).neg.exp.const_add 1
-    simpa using this
-  refine ((hexp.sqrt hw0.ne').inv hsq.ne').congr_deriv ?_
-  rw [intervalBaseOrbit_sq, intervalBaseOrbit, ← hw, Real.sq_sqrt hw0.le]
-  field_simp
-  rw [hw]
-  ring
+  rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
+  exact hasDerivAt_intervalBaseFlow C s inv_sqrt_two_mem_Icc
 
 theorem tendsto_intervalBaseOrbit_atBot (hC : 0 < C) :
     Tendsto (intervalBaseOrbit C) atBot (𝓝 0) := by
-  have h : Tendsto (fun s ↦ 1 + Real.exp (-(2 * C * s))) atBot atTop :=
-    tendsto_atTop_add_const_left _ _ (Real.tendsto_exp_atTop.comp
-      (tendsto_neg_atBot_atTop.comp (tendsto_id.const_mul_atBot (by positivity))))
-  exact (Real.tendsto_sqrt_atTop.comp h).inv_tendsto_atTop
+  rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
+  exact tendsto_intervalBaseFlow_atBot hC (Ioo_subset_Ioo_left (by norm_num) inv_sqrt_two_mem_Ioo)
 
 theorem tendsto_intervalBaseOrbit_atTop (hC : 0 < C) :
     Tendsto (intervalBaseOrbit C) atTop (𝓝 1) := by
-  have h : Tendsto (fun s ↦ 1 + Real.exp (-(2 * C * s))) atTop (𝓝 (1 + 0)) :=
-    tendsto_const_nhds.add (Real.tendsto_exp_atBot.comp
-      (tendsto_neg_atTop_atBot.comp (tendsto_id.const_mul_atTop (by positivity))))
-  have h' := ((Real.continuous_sqrt.tendsto _).comp h).inv₀ (by norm_num)
-  rw [add_zero, Real.sqrt_one, inv_one] at h'
-  exact h'
+  rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
+  exact tendsto_intervalBaseFlow_atTop hC (Ioo_subset_Ioc_self inv_sqrt_two_mem_Ioo)
 
 /-- The trajectory `q` is a negative gradient trajectory of the base potential. -/
 theorem isIntegralCurve_intervalBaseOrbit (C : ℝ) :
     IsIntegralCurve (intervalBaseOrbit C) (fun _ t ↦ -∇ (intervalBasePotential C) t) := by
-  intro s
-  refine (hasDerivAt_intervalBaseOrbit C s).congr_deriv ?_
-  dsimp only
-  rw [gradient_intervalBasePotential]
-  ring
+  rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
+  exact isIntegralCurve_intervalBaseFlow C inv_sqrt_two_mem_Icc
 
 /-- The time coordinate `U(t) = log t - (1 / 2) log (1 - t²)` of the base flow on `(0, 1)`. Along
 every solution of `t' = C t (1 - t²)` in `(0, 1)` it advances at rate `C`
@@ -247,19 +406,127 @@ theorem _root_.HasDerivAt.intervalBaseTimeCoordinate_comp {x : ℝ → ℝ} {s :
   refine ((hasDerivAt_intervalBaseTimeCoordinate hxs).comp s hx).congr_deriv ?_
   field_simp [hxs.1.ne', h1.ne']
 
+/-- **The time coordinate advances at rate `C` along the flow.** -/
+@[simp]
+theorem intervalBaseTimeCoordinate_intervalBaseFlow (C s : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    intervalBaseTimeCoordinate (intervalBaseFlow C s t) = intervalBaseTimeCoordinate t + C * s := by
+  have ht' : t ∈ Icc (-1) 1 := ⟨by linarith [ht.1], ht.2.le⟩
+  have hD := intervalBaseFlow_denom_pos C s ht'
+  have h1 : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
+  have hsub : 1 - intervalBaseFlow C s t ^ 2 =
+      (1 - t ^ 2) * Real.exp (-(2 * C * s)) / (t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := by
+    rw [intervalBaseFlow_sq C s ht']
+    field_simp
+    ring
+  rw [intervalBaseTimeCoordinate, hsub, intervalBaseFlow, intervalBaseTimeCoordinate,
+    Real.log_div ht.1.ne' (Real.sqrt_pos.2 hD).ne', Real.log_sqrt hD.le,
+    Real.log_div (mul_pos h1 (Real.exp_pos _)).ne' hD.ne', Real.log_mul h1.ne' (Real.exp_pos _).ne',
+    Real.log_exp]
+  ring
+
+private theorem intervalBaseTimeCoordinate_inv_sqrt_two :
+    intervalBaseTimeCoordinate (√2)⁻¹ = 0 := by
+  rw [intervalBaseTimeCoordinate, inv_pow, Real.sq_sqrt zero_le_two,
+    show (1 : ℝ) - 2⁻¹ = 2⁻¹ by norm_num, Real.log_inv, Real.log_inv, Real.log_sqrt zero_le_two]
+  ring
+
 /-- Along the trajectory `q` the time coordinate is exactly `C s`. -/
 @[simp]
 theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
     intervalBaseTimeCoordinate (intervalBaseOrbit C s) = C * s := by
-  have hw0 : 0 < 1 + Real.exp (-(2 * C * s)) := by positivity
-  have h1 : 1 - intervalBaseOrbit C s ^ 2 =
-      Real.exp (-(2 * C * s)) * (1 + Real.exp (-(2 * C * s)))⁻¹ := by
-    rw [intervalBaseOrbit_sq]
-    field_simp
-    ring
-  rw [intervalBaseTimeCoordinate, h1, intervalBaseOrbit, Real.log_inv, Real.log_sqrt hw0.le,
-    Real.log_mul (Real.exp_pos _).ne' (inv_ne_zero hw0.ne'), Real.log_exp, Real.log_inv]
-  ring
+  rw [intervalBaseOrbit_eq_intervalBaseFlow,
+    intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
+    intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
+
+/-- The time coordinate is strictly increasing on `(0, 1)`. -/
+theorem strictMonoOn_intervalBaseTimeCoordinate :
+    StrictMonoOn intervalBaseTimeCoordinate (Ioo 0 1) := by
+  intro x hx y hy hxy
+  have h1 : 0 < 1 - y ^ 2 := by nlinarith [hy.1, hy.2]
+  have hlog := Real.log_lt_log hx.1 hxy
+  have hlog' := Real.log_lt_log h1 (by nlinarith [hx.1] : 1 - y ^ 2 < 1 - x ^ 2)
+  rw [intervalBaseTimeCoordinate, intervalBaseTimeCoordinate]
+  linarith
+
+/-- The trajectory `q` at unit rate inverts the time coordinate on `(0, 1)`. -/
+@[simp]
+theorem intervalBaseOrbit_one_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    intervalBaseOrbit 1 (intervalBaseTimeCoordinate t) = t :=
+  strictMonoOn_intervalBaseTimeCoordinate.injOn (intervalBaseOrbit_mem_Ioo _ _) ht
+    (by rw [intervalBaseTimeCoordinate_intervalBaseOrbit, one_mul])
+
+/-- **The time coordinate identifies `(0, 1)` with `ℝ`.** -/
+theorem bijOn_intervalBaseTimeCoordinate : BijOn intervalBaseTimeCoordinate (Ioo 0 1) univ :=
+  ⟨mapsTo_univ _ _, strictMonoOn_intervalBaseTimeCoordinate.injOn, fun y _ ↦
+    ⟨intervalBaseOrbit 1 y, intervalBaseOrbit_mem_Ioo 1 y, by
+      rw [intervalBaseTimeCoordinate_intervalBaseOrbit, one_mul]⟩⟩
+
+/-- Points of `(0, 1)` whose time coordinate tends to `-∞` tend to `0`. -/
+theorem tendsto_nhds_zero_of_tendsto_intervalBaseTimeCoordinate_atBot {α : Type*} {l : Filter α}
+    {x : α → ℝ} (hx : ∀ᶠ i in l, x i ∈ Ioo 0 1)
+    (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atBot) : Tendsto x l (𝓝 0) :=
+  ((tendsto_intervalBaseOrbit_atBot one_pos).comp h).congr' <| hx.mono fun _ hi ↦
+    intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-- Points of `(0, 1)` whose time coordinate tends to `+∞` tend to `1`. -/
+theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*} {l : Filter α}
+    {x : α → ℝ} (hx : ∀ᶠ i in l, x i ∈ Ioo 0 1)
+    (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atTop) : Tendsto x l (𝓝 1) :=
+  ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
+    intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-! ### The flow and the time coordinate -/
+
+private theorem strictMonoOn_intervalBaseFlow_Icc_zero_one (C s : ℝ) :
+    StrictMonoOn (intervalBaseFlow C s) (Icc 0 1) := by
+  intro x hx y hy hxy
+  rcases hx.1.eq_or_lt with rfl | hx0
+  · rw [intervalBaseFlow_apply_zero]
+    have hy' : y ∈ Icc (-1) 1 := ⟨by linarith [hy.1], hy.2⟩
+    exact div_pos hxy (Real.sqrt_pos.2 (intervalBaseFlow_denom_pos C s hy'))
+  rcases hy.2.eq_or_lt with rfl | hy1
+  · rw [intervalBaseFlow_apply_one]
+    exact (intervalBaseFlow_mem_Ioo_zero_one C s ⟨hx0, hxy⟩).2
+  have hx' : x ∈ Ioo 0 1 := ⟨hx0, hxy.trans hy1⟩
+  have hy' : y ∈ Ioo 0 1 := ⟨hx0.trans hxy, hy1⟩
+  refine (strictMonoOn_intervalBaseTimeCoordinate.lt_iff_lt
+    (intervalBaseFlow_mem_Ioo_zero_one C s hx') (intervalBaseFlow_mem_Ioo_zero_one C s hy')).1 ?_
+  rw [intervalBaseTimeCoordinate_intervalBaseFlow C s hx',
+    intervalBaseTimeCoordinate_intervalBaseFlow C s hy', add_lt_add_iff_right]
+  exact strictMonoOn_intervalBaseTimeCoordinate hx' hy' hxy
+
+/-- The flow is strictly increasing on `[-1, 1]`: it preserves the order of points. -/
+theorem strictMonoOn_intervalBaseFlow (C s : ℝ) :
+    StrictMonoOn (intervalBaseFlow C s) (Icc (-1) 1) := by
+  have h₀ := strictMonoOn_intervalBaseFlow_Icc_zero_one C s
+  intro x hx y hy hxy
+  rcases le_or_gt 0 x with hx0 | hx0
+  · exact h₀ ⟨hx0, hx.2⟩ ⟨hx0.trans hxy.le, hy.2⟩ hxy
+  rcases le_or_gt 0 y with hy0 | hy0
+  -- Opposite signs: the flow keeps the sign of a point.
+  · have hx' : intervalBaseFlow C s x < 0 :=
+      div_neg_of_neg_of_pos hx0 (Real.sqrt_pos.2 (intervalBaseFlow_denom_pos C s hx))
+    have hy' : 0 ≤ intervalBaseFlow C s y := div_nonneg hy0 (Real.sqrt_nonneg _)
+    linarith
+  -- Both negative: reflect to `[0, 1]`, where the flow is odd.
+  · have h := h₀ ⟨neg_nonneg.2 hy0.le, by linarith [hy.1]⟩ ⟨neg_nonneg.2 hx0.le, by linarith [hx.1]⟩
+      (neg_lt_neg hxy)
+    rw [intervalBaseFlow_neg, intervalBaseFlow_neg] at h
+    linarith
+
+/-- On `[-1, 1]` the flow vanishes only at the critical point `0`. -/
+@[simp]
+theorem intervalBaseFlow_eq_zero_iff (C s : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    intervalBaseFlow C s t = 0 ↔ t = 0 := by
+  rw [intervalBaseFlow, div_eq_zero_iff,
+    or_iff_left (Real.sqrt_pos.2 (intervalBaseFlow_denom_pos C s ht)).ne']
+
+/-- On `[-1, 1]` the flow takes the value `1` only at the critical point `1`. -/
+@[simp]
+theorem intervalBaseFlow_eq_one_iff (C s : ℝ) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
+    intervalBaseFlow C s t = 1 ↔ t = 1 := by
+  conv_lhs => rw [← intervalBaseFlow_apply_one C s]
+  exact (strictMonoOn_intervalBaseFlow C s).injOn.eq_iff ht ⟨by norm_num, le_rfl⟩
 
 /-! ### Regularity of the linearized operators -/
 
