@@ -342,12 +342,12 @@ theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (
           neg_add]
 
 /-- The rescaling step of the truncated Fefferman–Stein estimate. If `m (2 s)` is bounded by the
-good-`λ` inequality `K γ m s + σ (γ s)`, with `2^p K γ = 1 / 2` and `σ` antitone, then substituting
-`t = 2 s` bounds `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus `2^p γ^(-p) J`, where `J` is the
-layer cake integral of `σ`. -/
+good-`λ` inequality `K γ m s + σ (γ s)`, with `2^p K γ = 1 / 2` and `σ` measurable, then
+substituting `t = 2 s` bounds `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus `2^p γ^(-p) J`,
+where `J` is the layer cake integral of `σ`. -/
 theorem setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add
     {m σ : ℝ → ℝ≥0∞} {p γ N : ℝ} (hγ : 0 < γ)
-    (hN : 0 ≤ N) {K J : ℝ≥0∞} (hK : K ≠ ∞) (hσ : Antitone σ)
+    (hN : 0 ≤ N) {K J : ℝ≥0∞} (hσ : Measurable σ)
     (hlevel : ∀ s : ℝ, 0 < s → m (2 * s) ≤ K * ENNReal.ofReal γ * m s + σ (γ * s))
     (hJ : ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * ENNReal.ofReal (s ^ (p - 1)) =
       ENNReal.ofReal (γ ^ (-p)) * J)
@@ -367,8 +367,13 @@ theorem setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add
   have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
     rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
     simp
+  have hK : K ≠ ∞ := by
+    rintro rfl
+    rw [ENNReal.top_mul (ENNReal.ofReal_pos.2 hγ).ne',
+      ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne'] at hconst
+    exact ENNReal.inv_ne_top.2 two_ne_zero hconst.symm
   have hσw : Measurable fun s => σ (γ * s) * w s :=
-    ((hσ.comp_monotone fun _ _ h => mul_le_mul_of_nonneg_left h hγ.le).measurable).mul hw
+    (hσ.comp (measurable_id.const_mul γ)).mul hw
   -- fold the `set` abbreviations `I`, `w` in the goal; `set` cannot abstract under the binder
   change I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J)
   calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by

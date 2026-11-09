@@ -494,7 +494,7 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι �
     ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow n p
   -- Substituting `t = 2 s` and applying the good-`λ` inequality bounds `I N` by `I N / 2 + …`.
   have hstep : I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) :=
-    setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add hγ hN (by simp [K]) hσ hlevel hJ hconst
+    setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add hγ hN hσ.measurable hlevel hJ hconst
   -- Since `I N` is finite, the first term is absorbed.
   have hhalf : 2⁻¹ * I N ≠ ∞ :=
     ENNReal.mul_ne_top (by simp) (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN)
