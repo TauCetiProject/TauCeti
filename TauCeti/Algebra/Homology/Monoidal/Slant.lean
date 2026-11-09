@@ -545,13 +545,6 @@ end CupProduct
 
 section Detection
 
-/-- In degree zero a cocycle of `Hom(L, P)` with zero class vanishes: there are no coboundaries. -/
-private lemma eq_zero_of_homologyπ_zero_eq_zero (a : (L.linearYonedaObj k P).cycles 0)
-    (ha : (L.linearYonedaObj k P).homologyπ 0 a = 0) : a = 0 := by
-  have := (L.linearYonedaObj k P).isIso_homologyπ ((ComplexShape.up ℕ).prev 0) 0 rfl
-    ((L.linearYonedaObj k P).shape _ _ (by simp))
-  exact (ModuleCat.mono_iff_injective _).1 inferInstance (ha.trans (map_zero _).symm)
-
 /-- If `K` has zero differentials and `K_p` is projective, and the slant products of a cocycle `c`
 of `Hom(K ⊗ L, P)` by the elements of `K_p` are coboundaries in degree `s + 1`, then they are the
 coboundaries of cochains `E z` of degree `s` depending linearly on `z ∈ K_p`. -/
@@ -649,7 +642,8 @@ private theorem eq_zero_of_forall_slant_eq_zero_of_d_eq_zero (hK : ∀ i j, K.d 
     have := K.isIso_iCycles n _ rfl (hK _ _)
     have hv := congrArg (fun a ↦ ConcreteCategory.hom (X := L.X 0) (Y := P)
       ((L.linearYonedaObj k P).iCycles 0 a) v)
-      (eq_zero_of_homologyπ_zero_eq_zero _ (hcob n 0 (add_zero n) (inv (K.iCycles n) z)))
+      ((L.linearYonedaObj k P).moduleCat_eq_zero_of_homologyπ_eq_zero (by simp) _
+        (hcob n 0 (add_zero n) (inv (K.iCycles n) z)))
     have hz : K.iCycles n (inv (K.iCycles n) z) = z := by
       rw [← ModuleCat.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
     simp only [iCycles_slantCycles, hz, map_zero] at hv

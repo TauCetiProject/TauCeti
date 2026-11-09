@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Contraction
 public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
 public import TauCeti.AlgebraicTopology.Cohomology.Slant
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
-public import TauCeti.AlgebraicTopology.Singular.Sphere
 
 /-!
 # The Künneth theorem for singular cohomology
@@ -40,7 +39,8 @@ cohomology** (`TopCat.singularCohomologyKunnethIso`): the cross product induces 
 
 No hypothesis is placed on `Y`, and no `Tor` term appears: over `ℤ` this covers every `X` with
 free homology of finite rank, for instance spheres
-(`TopCat.singularCohomologyKunneth_sphere_bijective`), but not, say, real projective space. Over
+(`TopCat.singularCohomologyKunneth_sphere_bijective`, in
+`TauCeti.AlgebraicTopology.Cohomology.Sphere`), but not, say, real projective space. Over
 a commutative semisimple ring, for instance a field, every module is projective
 (`Module.projective_of_isSemisimpleRing`), so there only the finite generation of `Hₚ(X; k)` for
 `p ≤ n` is needed, for instance when `X` has finite CW type
@@ -56,7 +56,6 @@ cross product, and the pairing `k ⊗ k ⟶ k` is multiplication.
 * `TopCat.singularCohomologyKunnethIso`, `TopCat.isIso_singularCohomologyKunneth` and
   `TopCat.singularCohomologyKunneth_bijective`: the Künneth theorem for cohomology over a
   commutative ring, when the homology of one factor is projective and finitely generated.
-* `TopCat.singularCohomologyKunneth_sphere_bijective`: the case of a product with a sphere.
 
 ## References
 
@@ -360,17 +359,6 @@ theorem singularCohomologyKunneth_bijective (n : ℕ)
     Function.Bijective (singularCohomologyKunneth X Y (𝟙_ (ModuleCat.{w} k))
       (𝟙_ (ModuleCat.{w} k)) k (λ_ (𝟙_ (ModuleCat.{w} k))).hom n) :=
   (singularCohomologyKunnethIso X Y n hX).toLinearEquiv.bijective
-
-omit hX in
-/-- **The cohomology of a product with a sphere**: over every commutative ring `k`, the cohomology
-cross product induces an isomorphism `⨁_{p + q = n} Hᵖ(Sᵈ; k) ⊗ H^q(Y; k) ≅ Hⁿ(Sᵈ × Y; k)` for
-every space `Y`, since the homology of the sphere is free of finite rank. For `d = 1` and
-`k = ℤ` this splits `Hⁿ(S¹ × Y; ℤ)` into the cross products of `H⁰(S¹; ℤ) ≅ ℤ` with `Hⁿ(Y; ℤ)` and
-of `H¹(S¹; ℤ) ≅ ℤ` with `Hⁿ⁻¹(Y; ℤ)`, torsion included. -/
-theorem singularCohomologyKunneth_sphere_bijective (d n : ℕ) :
-    Function.Bijective (singularCohomologyKunneth (TopCat.sphere.{w} d) Y (𝟙_ (ModuleCat.{w} k))
-      (𝟙_ (ModuleCat.{w} k)) k (λ_ (𝟙_ (ModuleCat.{w} k))).hom n) :=
-  singularCohomologyKunneth_bijective _ Y n fun _ _ ↦ inferInstance
 
 end ProjectiveHomology
 
