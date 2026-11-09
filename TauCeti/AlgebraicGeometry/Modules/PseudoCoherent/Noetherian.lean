@@ -46,7 +46,7 @@ variable {X : Scheme.{u}} [IsLocallyNoetherian X]
 
 /-- A quasi-coherent module of finite type on an affine Noetherian scheme has a global
 resolution by finite free sheaves, possibly unbounded to the left. -/
-theorem hasFiniteFreeResolution_of_isAffine [IsAffine X] (F : X.Modules)
+theorem hasFiniteFreeResolution_of_isAffine_of_isLocallyNoetherian [IsAffine X] (F : X.Modules)
     [F.IsQuasicoherent] [F.IsFiniteType] : F.HasFiniteFreeResolution := by
   let N := F.restrict X.isoSpec.inv
   have : N.IsQuasicoherent := inferInstance
@@ -54,14 +54,8 @@ theorem hasFiniteFreeResolution_of_isAffine [IsAffine X] (F : X.Modules)
   have : IsNoetherianRing Γ(X, ⊤) :=
     IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top X⟩
   have : Module.Finite Γ(X, ⊤) (moduleSpecΓFunctor.obj N) := N.finite_moduleSpecΓ
-  have hN : N.HasFiniteFreeResolution :=
-    (hasFiniteFreeResolution_tilde
-      (M := moduleSpecΓFunctor.obj N)
-      TauCeti.Huber.IsPseudoCoherentOver.of_isNoetherianRing).of_iso
-        (asIso N.fromTildeΓ)
-  exact (hN.restrict X.isoSpec.hom).of_iso
-    (((restrictFunctorComp X.isoSpec.hom X.isoSpec.inv).app F).symm ≪≫
-      (restrictFunctorCongr X.isoSpec.hom_inv_id).app F ≪≫ restrictFunctorId.app F)
+  exact hasFiniteFreeResolution_of_isAffine F
+    TauCeti.Huber.IsPseudoCoherentOver.of_isNoetherianRing
 
 /-- On a locally Noetherian scheme, every quasi-coherent module of finite type is
 pseudo-coherent. No quasi-compactness or separatedness hypothesis is needed. -/
@@ -71,7 +65,8 @@ theorem isPseudoCoherent_of_isLocallyNoetherian (F : X.Modules)
   intro x
   obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (x := x) (U := ⊤) trivial
   have : IsAffine U.toScheme := hU
-  exact ⟨U, hxU, hasFiniteFreeResolution_of_isAffine (F.restrict U.ι)⟩
+  exact ⟨U, hxU,
+    hasFiniteFreeResolution_of_isAffine_of_isLocallyNoetherian (F.restrict U.ι)⟩
 
 /-- On a locally Noetherian scheme, pseudo-coherence is equivalent to finite presentation
 as a sheaf of modules; quasi-coherence is part of the conclusion, not an extra hypothesis. -/
@@ -80,6 +75,7 @@ theorem isPseudoCoherent_iff_isFinitePresentation (F : X.Modules) :
     F.IsPseudoCoherent ↔ F.IsFinitePresentation := by
   refine ⟨fun h ↦ h.isFinitePresentation, fun h ↦ ?_⟩
   have := h
+  -- Instance search does not match the scheme-module wrapper to the sheaf-module instances.
   have : F.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation F
   have : F.IsFiniteType := SheafOfModules.instIsFiniteTypeOfIsFinitePresentation F
   exact isPseudoCoherent_of_isLocallyNoetherian F
@@ -90,6 +86,7 @@ theorem isPseudoCoherent_iff_isFiniteType (F : X.Modules) [F.IsQuasicoherent] :
     F.IsPseudoCoherent ↔ F.IsFiniteType := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have := h.isFinitePresentation
+    -- Instance search does not match the scheme-module wrapper to the sheaf-module instance.
     exact SheafOfModules.instIsFiniteTypeOfIsFinitePresentation F
   · have := h
     exact isPseudoCoherent_of_isLocallyNoetherian F

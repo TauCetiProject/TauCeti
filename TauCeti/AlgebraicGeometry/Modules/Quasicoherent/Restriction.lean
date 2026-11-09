@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 
 /-!
 # Restriction criteria for quasicoherent modules on schemes
@@ -41,9 +42,7 @@ theorem isQuasicoherent_of_isQuasicoherent_restrict_iso {X Y : Scheme.{u}}
   have : (G.obj (F.obj M)).IsQuasicoherent :=
     Scheme.Modules.isQuasicoherent_restrictFunctor e.hom _
   let i : G.obj (F.obj M) ≅ M :=
-    (Scheme.Modules.restrictFunctorComp e.hom e.inv).symm.app _ ≪≫
-      (Scheme.Modules.restrictFunctorCongr e.hom_inv_id).app _ ≪≫
-      Scheme.Modules.restrictFunctorId.app _
+    (Scheme.Modules.restrictFunctorInvCompHomIso e).app M
   exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso i inferInstance
 
 /-- The open-subscheme equivalence sends a quasicoherent module on the slice site to a
