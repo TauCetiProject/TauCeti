@@ -83,12 +83,6 @@ private theorem tendsto_iSup_enorm_sub_of_tendstoUniformlyOn {ι α X : Type*}
   rw [← edist_eq_enorm_sub, edist_comm]
   exact (hi x hx).le
 
-/-- The extended operator norm is submultiplicative under composition. -/
-private theorem enorm_comp_le {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
-    (A : F →L[ℝ] G) (B : H →L[ℝ] F) : ‖A.comp B‖ₑ ≤ ‖A‖ₑ * ‖B‖ₑ := by
-  simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
-    A.opNNNorm_comp_le B
-
 omit [μ.IsAddHaarMeasure] in
 /-- The chain-rule derivative is almost everywhere strongly measurable on a measurable set where
 `Dg ∘ u` is continuous. -/
@@ -114,6 +108,20 @@ theorem eLpNorm_fderiv_comp_le {K : Set E} (hK : MeasurableSet K)
   filter_upwards [ae_restrict_mem hK] with x hx
   exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
     (mul_le_mul_of_nonneg_right (hC x hx) zero_le)
+
+omit [μ.IsAddHaarMeasure] in
+/-- On a compact set where `Dg ∘ u` is continuous, `Dg(u) ∘ Du` inherits `Lᵖ` membership from
+`Du`, by `TauCeti.eLpNorm_fderiv_comp_le`. -/
+private theorem memLp_fderiv_comp {K : Set E} (hK : IsCompact K)
+    (hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K) {p : ℝ≥0∞}
+    (hDu : MemLp Du p (μ.restrict K)) :
+    MemLp (fun x => (fderiv ℝ g (u x)).comp (Du x)) p (μ.restrict K) := by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hgu
+  have hC' : ∀ x ∈ K, ‖fderiv ℝ g (u x)‖₊ ≤ C.toNNReal := fun x hx => by
+    rw [← NNReal.coe_le_coe, coe_nnnorm]
+    exact (hC x hx).trans (Real.le_coe_toNNReal C)
+  exact memLp_iff.2 <| (eLpNorm_fderiv_comp_le hK.measurableSet hgu hDu.aestronglyMeasurable
+    hC' p).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (memLp_iff.1 hDu))
 
 variable [FiniteDimensional ℝ F] [CompleteSpace G]
 
@@ -229,15 +237,10 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
   have hCe : ∀ x ∈ (V : Set E), ‖fderiv ℝ g (u x)‖ₑ ≤ ENNReal.ofReal C := fun x hx => by
     rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hC x (hVS hx))
-  -- The limit derivative is integrable on `V`.
-  have hmeasW : AEStronglyMeasurable (fun x => (fderiv ℝ g (u x)).comp (Du x)) (μ.restrict V) :=
-    aestronglyMeasurable_fderiv_comp V.isOpen.measurableSet (hDguS.mono hVS)
-      hDuV.aestronglyMeasurable
-  have hWint : IntegrableOn (fun x => (fderiv ℝ g (u x)).comp (Du x)) V μ := by
-    refine Integrable.mono' (hDuV.norm.const_mul C) hmeasW ?_
-    filter_upwards [ae_restrict_mem V.isOpen.measurableSet] with x hx
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul_of_nonneg_right (hC x (hVS hx)) (norm_nonneg _))
+  -- The limit derivative is integrable on `S`, hence on `V`.
+  have hWint : IntegrableOn (fun x => (fderiv ℝ g (u x)).comp (Du x)) V μ :=
+    IntegrableOn.mono_set (memLp_one_iff_integrable.1 (memLp_fderiv_comp hVc hDguS
+      (memLp_one_iff_integrable.2 (hDuK.mono_set (self_subset_cthickening S))))) hVS
   -- The approximating compositions have the classical chain-rule derivative.
   have happrox (n : ℕ) : HasWeakFDerivOn μ V (fun x => g (un (n + N) x))
       (fun x => (fderiv ℝ g (un (n + N) x)).comp (Dn (n + N) x)) := by
@@ -311,9 +314,10 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
             _ ≤ e n * ‖Dn n x - Du x‖ₑ + e n * ‖Du x‖ₑ +
                 ENNReal.ofReal C * ‖Dn n x - Du x‖ₑ := by
                 gcongr
-                · exact (enorm_comp_le _ _).trans (mul_le_mul_left hex _)
-                · exact (enorm_comp_le _ _).trans (mul_le_mul_left hex _)
-                · exact (enorm_comp_le _ _).trans (mul_le_mul_left (hCe x hx) _)
+                · exact (ContinuousLinearMap.opENorm_comp_le _ _).trans (mul_le_mul_left hex _)
+                · exact (ContinuousLinearMap.opENorm_comp_le _ _).trans (mul_le_mul_left hex _)
+                · exact (ContinuousLinearMap.opENorm_comp_le _ _).trans
+                    (mul_le_mul_left (hCe x hx) _)
             _ = _ := by ring
       _ = (e n + ENNReal.ofReal C) * ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ + e n * J := by
           rw [lintegral_add_left' (hmeas.const_mul _), lintegral_const_mul'' _ hmeas,
@@ -416,13 +420,7 @@ theorem MemWkpLoc.comp_contDiffOn {u : ℂ → F} {g : F → G} {W : Set F}
   intro K hKU hK
   have hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K :=
     hDgc.comp (huc.mono hKU) (huW.mono_left hKU)
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hgu
-  have hDK : MemLp Du p (volume.restrict K) := hDup K hKU hK
-  refine MemLp.of_le_mul (c := C) hDK
-    (aestronglyMeasurable_fderiv_comp hK.measurableSet hgu hDK.aestronglyMeasurable) ?_
-  filter_upwards [ae_restrict_mem hK.measurableSet] with x hx
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    (mul_le_mul_of_nonneg_right (hC x hx) (norm_nonneg _))
+  exact memLp_fderiv_comp hK hgu (hDup K hKU hK)
 
 /-- **Composition of continuous `W^{1,p}_loc` maps with globally `C¹` maps.** -/
 theorem MemWkpLoc.comp_contDiff {u : ℂ → F} {g : F → G} (hu : MemWkpLoc p U 1 u)
