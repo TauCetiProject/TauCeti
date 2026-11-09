@@ -51,7 +51,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   they are exactly the real `Lᵖ` functions.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
-  `H^{s,p}`.
+  `H^{s,p}`; a symbol without temperate growth gives the junk value `0`, so only symbols of
+  temperate growth are covered.
 * `MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: for
   `1 < p < ∞`, real symbols of order `0`, whose `k`-th derivatives are bounded by
   `C_k (1 + ‖x‖ ^ 2) ^ (-k / 2)`, map `H^{s,p}` to `H^{s,p}`.
@@ -173,9 +174,25 @@ section inner
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [CompleteSpace F] in
+/-- The Fourier multiplier of a symbol without temperate growth is the junk value `0`, because
+`SchwartzMap.smulLeftCLM` is `0` for such a symbol. -/
+theorem fourierMultiplierCLM_of_not_hasTemperateGrowth {g : E → ℂ} (hg : ¬ g.HasTemperateGrowth) :
+    fourierMultiplierCLM F g = 0 := by
+  refine ContinuousLinearMap.ext fun f => ?_
+  have h0 (u : 𝓢'(E, F)) : smulLeftCLM F g u = 0 := by
+    ext f'
+    simp [SchwartzMap.smulLeftCLM, hg]
+  rw [fourierMultiplierCLM_apply, h0, FourierTransform.fourierInv_zero, zero_apply]
+
 /-- **Mihlin multipliers act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a symbol
-of temperate growth satisfying Mihlin's condition of order `N`, `2N > dim E`, maps `H^{s,p}` to
-`H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`). -/
+satisfying Mihlin's condition of order `N`, `2N > dim E`, away from the origin maps `H^{s,p}` to
+`H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`).
+
+Temperate growth of `g` is not assumed: if `g` lacks it, `fourierMultiplierCLM F g` is the junk
+value `0` (`TemperedDistribution.fourierMultiplierCLM_of_not_hasTemperateGrowth`), so the statement
+has content only for symbols of temperate growth, and symbols singular at the origin, such as the
+Riesz symbols `ξⱼ / ‖ξ‖`, are not covered. -/
 theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
     (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℂ}
     {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
@@ -184,11 +201,7 @@ theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
   -- without temperate growth the symbol acts as `0`
   by_cases hg : g.HasTemperateGrowth
   swap
-  · have h0 (u : 𝓢'(E, F)) : smulLeftCLM F g u = 0 := by
-      ext f'
-      simp [SchwartzMap.smulLeftCLM, hg]
-    rw [fourierMultiplierCLM_apply, h0]
-    simp only [FourierTransformInv.fourierInv, map_zero]
+  · rw [fourierMultiplierCLM_of_not_hasTemperateGrowth hg]
     exact (sobolevSubmodule E F s p).zero_mem
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- On the zero space every symbol is constant.
