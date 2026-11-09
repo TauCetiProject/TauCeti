@@ -87,8 +87,8 @@ theorem gaussianVectorL2Isometry_gaussianHermitePiBasis
     gaussianVectorL2Isometry hX hmeas (gaussianHermitePiBasis ℝ ι a) =
       gaussianVectorHermite hX hmeas a := (rfl)
 
-/-- The pulled-back Hermite vectors are the normalized Hermite polynomials of the actual
-Gaussian vector, simultaneously in all coordinates outside one null set. -/
+/-- The pulled-back Hermite vector is a.e. equal to the product of normalized Hermite
+polynomials evaluated at the coordinates of `X`. -/
 theorem coeFn_gaussianVectorHermite
     (hX : HasLaw X (Measure.pi fun _ : ι => gaussianReal 0 1) P) (hmeas : Measurable X)
     (a : ι → ℕ) :
