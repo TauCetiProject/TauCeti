@@ -92,7 +92,7 @@ subgroup `jacobsonRadical W Z` of the morphisms `W ⟶ Z`. -/
   map_comp _ _ := AddCommGrpCat.ext fun h ↦ Subtype.ext (Category.assoc _ _ h.1)
 
 /-- The inclusion `rad(-, Z) ⟶ (-, Z)`. -/
-@[expose] def radicalFunctorι (Z : C) : radicalFunctor Z ⟶ preadditiveYoneda.obj Z where
+def radicalFunctorι (Z : C) : radicalFunctor Z ⟶ preadditiveYoneda.obj Z where
   app W := AddCommGrpCat.ofHom (jacobsonRadical W.unop Z).subtype
   naturality _ _ _ := rfl
 
@@ -106,7 +106,7 @@ theorem radicalFunctor_map_apply (Z : C) {W W' : Cᵒᵖ} (k : W ⟶ W') (h : ja
 @[simp]
 theorem radicalFunctorι_app_apply (Z : C) (W : Cᵒᵖ) (h : jacobsonRadical W.unop Z) :
     (radicalFunctorι Z).app W h = h.1 :=
-  rfl
+  (rfl)
 
 instance (Z : C) : Mono (radicalFunctorι Z) := by
   have (W : Cᵒᵖ) : Mono ((radicalFunctorι Z).app W) :=
@@ -114,7 +114,7 @@ instance (Z : C) : Mono (radicalFunctorι Z) := by
   exact NatTrans.mono_of_mono_app _
 
 /-- A radical morphism `g : Y ⟶ Z` induces `(-, Y) ⟶ rad(-, Z)`, sending `u` to `u ≫ g`. -/
-@[expose] def radicalFunctorLift {Y Z : C} (g : Y ⟶ Z) (hg : g ∈ jacobsonRadical Y Z) :
+def radicalFunctorLift {Y Z : C} (g : Y ⟶ Z) (hg : g ∈ jacobsonRadical Y Z) :
     preadditiveYoneda.obj Y ⟶ radicalFunctor Z where
   app W := AddCommGrpCat.ofHom ((Preadditive.rightComp W.unop g).codRestrict _ fun u ↦
     comp_mem_jacobsonRadical_left u hg)
@@ -124,14 +124,14 @@ instance (Z : C) : Mono (radicalFunctorι Z) := by
 @[reassoc (attr := simp)]
 theorem radicalFunctorLift_comp_ι {Y Z : C} (g : Y ⟶ Z) (hg : g ∈ jacobsonRadical Y Z) :
     radicalFunctorLift g hg ≫ radicalFunctorι Z = preadditiveYoneda.map g :=
-  rfl
+  (rfl)
 
 /-- The map `(-, Y) ⟶ rad(-, Z)` induced by `g` sends `u` to `u ≫ g`. -/
 @[simp]
 theorem radicalFunctorLift_app_apply {Y Z : C} (g : Y ⟶ Z) (hg : g ∈ jacobsonRadical Y Z)
     (W : Cᵒᵖ) (u : W.unop ⟶ Y) :
     (radicalFunctorLift g hg).app W u = ⟨u ≫ g, comp_mem_jacobsonRadical_left u hg⟩ :=
-  rfl
+  (rfl)
 
 /-- Every morphism `(-, Y) ⟶ rad(-, Z)` is induced by a radical morphism `Y ⟶ Z`. -/
 theorem exists_eq_radicalFunctorLift {Y Z : C} (p : preadditiveYoneda.obj Y ⟶ radicalFunctor Z) :
@@ -173,20 +173,6 @@ theorem radicalFunctorι_comp_simpleFunctorπ (Z : C) :
     radicalFunctorι Z ≫ simpleFunctorπ Z = 0 := by
   ext W ⟨h, hh⟩
   exact (simpleFunctorπ_app_eq_zero_iff h).2 hh
-
-/-- A sequence `(-, W) ⟶ (-, Z) ⟶ F` whose first map is `(-, w)` is exact exactly when every
-morphism `z : V ⟶ Z` killed by the second map factors through `w`. -/
-private theorem exact_preadditiveYoneda_map_iff' {W Z : C} (w : W ⟶ Z)
-    {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} (α : preadditiveYoneda.obj Z ⟶ F)
-    (h : preadditiveYoneda.map w ≫ α = 0) :
-    (ShortComplex.mk _ _ h).Exact ↔
-      ∀ ⦃V : C⦄ (z : V ⟶ Z), α.app (op V) z = 0 → ∃ x : V ⟶ W, x ≫ w = z := by
-  have key : ∀ V : C,
-      ((ShortComplex.mk _ _ h).map ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op V))).Exact ↔
-        ∀ z : V ⟶ Z, α.app (op V) z = 0 → ∃ x : V ⟶ W, x ≫ w = z := fun V ↦
-    ShortComplex.ab_exact_iff _
-  exact ⟨fun hS V ↦ (key V).1 (hS.map _), fun H ↦
-    ShortComplex.exact_of_forall_evaluation _ fun V ↦ (key V.unop).2 (@H V.unop)⟩
 
 /-- **The defining sequence of the simple functor.** `0 ⟶ rad(-, Z) ⟶ (-, Z) ⟶ S_Z ⟶ 0` is
 exact. -/
@@ -251,7 +237,7 @@ theorem isRightAlmostSplit_iff_exists_epi_radicalFunctorLift [IsLocalRing (End Z
 theorem isRightAlmostSplit_iff_exists_exact_simpleFunctorπ [IsLocalRing (End Z)] :
     IsRightAlmostSplit g ↔
       ∃ h : preadditiveYoneda.map g ≫ simpleFunctorπ Z = 0, (ShortComplex.mk _ _ h).Exact := by
-  simp only [exact_preadditiveYoneda_map_iff', simpleFunctorπ_app_eq_zero_iff,
+  simp only [exact_preadditiveYoneda_map_iff, simpleFunctorπ_app_eq_zero_iff,
     preadditiveYoneda_map_comp_simpleFunctorπ_eq_zero_iff,
     isRightAlmostSplit_iff_mem_jacobsonRadical_and_forall, exists_prop]
 
@@ -322,10 +308,10 @@ theorem isFinitelyPresentedFunctor_simpleFunctor_iff :
     obtain ⟨u, rfl, hsplit⟩ :=
       (isRepresentableProjectiveCover_preadditiveYonedaMap_jacobsonRadicalIdeal
         Z).exists_comp_eq_and_isSplitEpi q
-    rw [exact_preadditiveYoneda_map_iff'] at hS
+    rw [exact_preadditiveYoneda_map_iff] at hS
     refine ⟨X, f ≫ u, isRightAlmostSplit_iff_exists_exact_simpleFunctorπ.2 ⟨?_, ?_⟩⟩
     · rw [Functor.map_comp, Category.assoc, h]
-    · rw [exact_preadditiveYoneda_map_iff']
+    · rw [exact_preadditiveYoneda_map_iff]
       intro V k hk
       have hsu : (k ≫ section_ u) ≫ u = k := by simp
       obtain ⟨w, hw⟩ := hS (k ≫ section_ u)

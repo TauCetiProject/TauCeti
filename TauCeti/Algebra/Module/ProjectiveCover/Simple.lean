@@ -40,11 +40,12 @@ variable {R P S : Type*} [Ring R] [AddCommGroup P] [Module R P]
   [AddCommGroup S] [Module R S]
 
 /-- **Every proper submodule of a projective module with local endomorphism ring lies in its
-radical.** If `N` is not contained in a maximal submodule `K`, then `N` maps onto `P / K`, and
-projectivity gives `φ : P ⟶ N ⊆ P` agreeing with the identity modulo `K`. By locality `φ` or
-`1 - φ` is invertible; the first forces `N = P`, the second `K = P`. -/
+radical.** -/
 theorem le_jacobson_of_ne_top_of_isLocalRing_end [Module.Projective R P]
     [IsLocalRing (Module.End R P)] {N : Submodule R P} (hN : N ≠ ⊤) : N ≤ Module.jacobson R P := by
+  -- If `N` is not contained in a maximal submodule `K`, then `N` maps onto `P / K`, and
+  -- projectivity gives `φ : P ⟶ N ⊆ P` agreeing with the identity modulo `K`. By locality `φ` or
+  -- `1 - φ` is invertible; the first forces `N = P`, the second `K = P`.
   refine le_sInf fun K hK ↦ ?_
   by_contra hNK
   have hsup : N ⊔ K = ⊤ := hK.2 _ (lt_of_le_of_ne le_sup_right fun h ↦ hNK (h ▸ le_sup_left))
