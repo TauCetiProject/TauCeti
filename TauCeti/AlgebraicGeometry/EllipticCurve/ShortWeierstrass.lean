@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
--- Non-public: the nonvanishing of the numerals `12`, `48`, `864` and `1728` is used only in the
+-- Non-public: the nonvanishing of the numerals `12`, `48` and `864` is used only in the
 -- proofs below.
 import TauCeti.Algebra.Ring.TwoPowMulThreePow
 
