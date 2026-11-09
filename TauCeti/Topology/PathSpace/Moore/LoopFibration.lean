@@ -129,7 +129,7 @@ theorem not_forall_isHurewiczFibration_map :
   have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
   have := (AddCircle.windingNumberIso (0 : AddCircle (1 : ℝ))).toEquiv.nontrivial
   exact not_isHurewiczFibration_map_const
-    (h (AddCircle (1 : ℝ)) Unit (.const _ ()) 0 (isHurewiczFibration_of_subsingleton (by fun_prop)))
+    (h (AddCircle (1 : ℝ)) Unit (.const _ ()) 0 isHurewiczFibration_of_subsingleton)
 
 end MooreLoopSpace
 

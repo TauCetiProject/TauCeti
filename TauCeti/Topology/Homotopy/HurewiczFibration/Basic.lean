@@ -119,10 +119,10 @@ theorem comp_homeomorph {E' : Type u'} [TopologicalSpace E'] (hp : IsHurewiczFib
 
 end IsHurewiczFibration
 
-/-- A continuous map to a subsingleton space is a Hurewicz fibration. -/
-theorem isHurewiczFibration_of_subsingleton [Subsingleton B] (hp : Continuous p) :
-    IsHurewiczFibration.{w} p :=
-  ⟨hp, fun A _ ↦ hasHomotopyLiftingProperty_of_subsingleton A⟩
+/-- A map to a subsingleton space is a Hurewicz fibration. -/
+theorem isHurewiczFibration_of_subsingleton [Subsingleton B] : IsHurewiczFibration.{w} p :=
+  ⟨continuous_of_const fun _ _ ↦ Subsingleton.elim _ _,
+    fun A _ ↦ hasHomotopyLiftingProperty_of_subsingleton A⟩
 
 /-- The projection `B × F → B` is a Hurewicz fibration. -/
 theorem isHurewiczFibration_fst (F : Type u') [TopologicalSpace F] :

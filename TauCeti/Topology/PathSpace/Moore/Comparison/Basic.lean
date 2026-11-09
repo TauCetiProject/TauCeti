@@ -413,6 +413,12 @@ theorem toMoorePath_toLengthOne (γ : MooreLoopSpace X x) :
     (toLengthOne γ).toMoorePath = MoorePath.toLengthOne γ.toMoorePath :=
   (rfl)
 
+/-- A Moore loop reparametrized to the unit interval, as a Moore path, is its rescaling to length
+one. -/
+theorem toMoorePath_toPath (γ : MooreLoopSpace X x) :
+    γ.toPath.toMoorePath = γ.toMoorePath.rescale 1 :=
+  MoorePath.toLengthOne_eq_rescale_one γ.toMoorePath
+
 /-- The homotopy from `toLengthOne` to the identity of the Moore loops at `x`: the restriction of
 `MoorePath.unitHomotopy`, which preserves the end points, to the loops. -/
 def unitHomotopy :
@@ -471,9 +477,8 @@ def posLengthHomeomorph :
     simpa only [Set.mem_preimage, ← length_toMoorePath, MoorePath.length_rescale] using q.1.2⟩
   left_inv γ := Subtype.ext <| ext <| by
     simp only
-    rw [← Path.toMoorePath_toMooreLoop, ← toLengthOne_apply, toMoorePath_toLengthOne,
-      MoorePath.toLengthOne_eq_rescale_one, MoorePath.rescale_rescale _ one_ne_zero,
-      ← length_toMoorePath, MoorePath.rescale_length]
+    rw [toMoorePath_toPath, MoorePath.rescale_rescale _ one_ne_zero, ← length_toMoorePath,
+      MoorePath.rescale_length]
   right_inv q := by
     refine Prod.ext (Subtype.ext ?_) (Path.ext (funext fun s ↦ ?_))
     · simp only [← length_toMoorePath, MoorePath.length_rescale]
