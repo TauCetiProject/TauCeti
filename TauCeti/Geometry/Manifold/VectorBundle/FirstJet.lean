@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -164,13 +165,6 @@ theorem hasFDerivWithinAt_fiberCoordChange [IsManifold I 1 M] [ContMDiffVectorBu
       (extChartAt I j y) :=
   ((contDiffWithinAt_fiberCoordChange (n := 1) hi hj).differentiableWithinAt
     one_ne_zero).hasFDerivWithinAt
-
-variable (I) in
-/-- A change of extended charts takes values in the range of the model. -/
-theorem mapsTo_extChartAt_comp_extChartAt_symm (j k : M) (s : Set E) :
-    MapsTo (extChartAt I j ∘ (extChartAt I k).symm) s (range I) := fun _ _ ↦ by
-  rw [Function.comp_apply, extChartAt_coe]
-  exact mem_range_self _
 
 variable (I F V) [IsManifold I 1 M]
 
