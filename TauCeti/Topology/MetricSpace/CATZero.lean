@@ -81,7 +81,8 @@ theorem IsGeodesicSegment.strongConvexOn_dist_sq (hγ : IsGeodesicSegment γ x y
   rw [strongConvexOn_iff_convex]
   have hcont : ContinuousOn (fun t => dist z (γ t)) (Icc 0 1) :=
     (continuous_const.dist continuous_id).comp_continuousOn hγ.continuousOn
-  refine convexOn_of_midpoint (convex_Icc 0 1) ((hcont.pow 2).sub (by fun_prop))
+  refine convexOn_of_midpoint (convex_Icc 0 1)
+    ((hcont.pow 2).sub (by fun_prop)).upperSemicontinuousOn
     fun s hs t ht => ?_
   have hm : midpoint ℝ s t = (s + t) / 2 := by
     rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]

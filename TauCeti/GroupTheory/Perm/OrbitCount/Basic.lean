@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
+import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!

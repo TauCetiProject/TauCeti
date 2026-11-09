@@ -40,6 +40,9 @@ taking the relative norm down to `W₂.CoordinateRing`, which is how the class-g
 
 * `TauCeti.Isogeny.map_XYIdeal_eq_top_of_one_lt_valuation`: the ideal of a point over `O₂` extends
   to the unit ideal.
+* `TauCeti.Isogeny.valuation_pullback_le_one_of_isEquiv_comap_pointPlace`: if the place of a point
+  restricts along `φ^*` to the place of a point of the target, then `φ^*` of any regular function
+  has no pole there.
 * `TauCeti.Isogeny.valuation_le_one_of_valuation_pullback_X_le_one`: the intermediate ring lies in
   the valuation ring of any other point.
 * `TauCeti.Isogeny.map_XYIdeal_eq_asIdeal_of_valuation_eq`: the ideal of such a point extends to the
@@ -89,6 +92,21 @@ theorem map_XYIdeal_eq_top_of_one_lt_valuation {x y : F} (h : W₁.Equation x y)
     rwa [Algebra.algebraMap_ofSubsemiring_apply, coe_pullbackToIntermediateRing]
   have key := (CoordinateRing.pointPlace h).map_asIdeal_eq_top_of_one_lt_valuation hb
   rwa [CoordinateRing.pointPlace_asIdeal, RingHom.algebraMap_toAlgebra] at key
+
+/-- If the place of the affine point `P = (x, y)` of `W₁` restricts along `φ^*` to the place of the
+affine point `Q = (x', y')` of `W₂`, then `φ^* r` has no pole at `P` for every regular function `r`
+on the affine part of `W₂`, because `r` has none at `Q`. -/
+theorem valuation_pullback_le_one_of_isEquiv_comap_pointPlace [W₂.IsElliptic] {x y : F}
+    (h : W₁.Equation x y) {x' y' : F} (h' : W₂.Equation x' y')
+    (hP : (((CoordinateRing.pointPlace h).valuation W₁.FunctionField).comap
+      (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
+        ((CoordinateRing.pointPlace h').valuation W₂.FunctionField))
+    (r : W₂.CoordinateRing) :
+    (CoordinateRing.pointPlace h).valuation W₁.FunctionField (φ.pullback r) ≤ 1 := by
+  have hQ := (CoordinateRing.pointPlace h').valuation_le_one (K := W₂.FunctionField) r
+  rw [← Valuation.isEquiv_iff_val_le_one.mp hP, Valuation.comap_apply, RingHom.coe_coe,
+    fieldPullback_algebraMap] at hQ
+  exact hQ
 
 /-- **The intermediate ring lies in the valuation ring of a point off the fibre over `O₂`.** If
 `φ^* x₂` has no pole at the affine point `(x, y)` of `W₁`, then neither has any function pulled
