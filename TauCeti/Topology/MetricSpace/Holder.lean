@@ -190,7 +190,7 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
 /-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
 assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
 theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
-    [PseudoMetricSpace X] [NormedAddCommGroup F]
+    [PseudoMetricSpace X] [SeminormedAddCommGroup F]
     {s : Set X} {f : X → F}
     {L M α : ℝ≥0} (h : LipschitzOnWith L f s) (hb : ∀ x ∈ s, ‖f x‖ ≤ M) (hα : α ≤ 1) :
     HolderOnWith (L + 2 * M) α f s := by
@@ -222,9 +222,9 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
 the sum of the constants. Compare Mathlib's `HolderWith.add`. -/
 theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
     {C C' r : ℝ≥0} {f g : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
-    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (fun x => f x + g x) s :=
+    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (f + g) s :=
   HolderOnWith.of_dist_le fun x hx y hy => by
-    push_cast
+    simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
