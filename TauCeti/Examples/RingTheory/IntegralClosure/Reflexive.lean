@@ -25,15 +25,18 @@ variable {R M : Type*} [CommRing R] [IsDomain R] [IsNoetherianRing R]
   [IsIntegrallyClosed R] [AddCommGroup M] [Module R M] [Module.Finite R M]
 
 -- A double dual really is reflexive, not merely torsion-free.
-example : IsReflexive R (Dual R (Dual R M)) := by
-  have := TauCeti.isReflexive_dual_of_isIntegrallyClosed (R := R) (M := M)
-  infer_instance
+example : IsReflexive R (Dual R (Dual R M)) := inferInstance
 
 -- The target need not be finite; reflexivity alone suffices for the universal property.
 example {N : Type*} [AddCommMonoid N] [Module R N] [IsReflexive R N] (f : M →ₗ[R] N) :
-    ∃! g : Dual R (Dual R M) →ₗ[R] N, g.comp (Dual.eval R M) = f := by
-  have := TauCeti.isReflexive_dual_of_isIntegrallyClosed (R := R) (M := M)
-  exact TauCeti.Module.Dual.existsUnique_comp_eval_eq R M N f
+    ∃! g : Dual R (Dual R M) →ₗ[R] N, g.comp (Dual.eval R M) = f :=
+  TauCeti.Module.Dual.existsUnique_comp_eval_eq R M N f
+
+-- The pointwise extension rule simplifies without unfolding the equivalence.
+example {N : Type*} [AddCommMonoid N] [Module R N] [IsReflexive R N]
+    (f : M →ₗ[R] N) (m : M) :
+    (TauCeti.Module.Dual.evalHomEquiv R M N).symm f (Dual.eval R M m) = f m := by
+  simp
 
 end NormalDomain
 
@@ -59,5 +62,4 @@ example : Dual.eval ℤ (ℤ × ZMod 2) (0, 1) = 0 := by
 example (f : (ℤ × ZMod 2) →ₗ[ℤ] ℤ) :
     ∃ g : Dual ℤ (Dual ℤ (ℤ × ZMod 2)) →ₗ[ℤ] ℤ,
       g.comp (Dual.eval ℤ (ℤ × ZMod 2)) = f := by
-  have := TauCeti.isReflexive_dual_of_isIntegrallyClosed (R := ℤ) (M := ℤ × ZMod 2)
   exact ⟨(TauCeti.Module.Dual.evalHomEquiv ℤ (ℤ × ZMod 2) ℤ).symm f, by simp⟩

@@ -74,6 +74,12 @@ theorem evalHomEquiv_symm_comp_eval (f : M →ₗ[R] N) :
     ((evalHomEquiv R M N).symm f).comp (eval R M) = f :=
   (evalHomEquiv R M N).apply_symm_apply f
 
+/-- The extension agrees pointwise with the original map on evaluation vectors. -/
+@[simp]
+theorem evalHomEquiv_symm_apply_eval (f : M →ₗ[R] N) (m : M) :
+    (evalHomEquiv R M N).symm f (eval R M m) = f m :=
+  LinearMap.congr_fun (evalHomEquiv_symm_comp_eval R M N f) m
+
 /-- A map from a module to a reflexive module extends uniquely across evaluation when the
 dual of the source is reflexive. -/
 theorem existsUnique_comp_eval_eq (f : M →ₗ[R] N) :

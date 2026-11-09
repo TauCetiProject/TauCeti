@@ -35,12 +35,31 @@ public section
 
 open Module
 
-namespace TauCeti
-
 universe u v
 
+namespace Ideal
+
+/-- Evaluation on a finite torsion-free module over a Noetherian normal domain becomes
+bijective at every prime of height at most one. -/
+theorem bijective_localizedModule_map_dual_eval_of_height_le_one
+    {R : Type u} {M : Type v} [CommRing R] [IsDomain R] [IsNoetherianRing R]
+    [IsIntegrallyClosed R] [AddCommGroup M] [Module R M] [Module.Finite R M]
+    [IsTorsionFree R M] (p : Ideal R) [p.IsPrime] (hp : p.height ≤ 1) :
+    Function.Bijective (LocalizedModule.map p.primeCompl (Dual.eval R M)) := by
+  have := finitePresentation_of_finite R M
+  have := finitePresentation_of_finite R (Dual R M)
+  have := IsLocalization.AtPrime.isPrincipalIdealRing_of_height_le_one hp
+    (Localization.AtPrime p)
+  exact (LocalizedModule.bijective_map_dual_eval_iff p.primeCompl
+    (Localization.AtPrime p) (LocalizedModule.mkLinearMap p.primeCompl M)).mpr
+      (bijective_dual_eval (Localization.AtPrime p) _)
+
+end Ideal
+
+namespace TauCeti
+
 /-- Over a Noetherian integrally closed domain, the dual of any finite module is reflexive. -/
-theorem isReflexive_dual_of_isIntegrallyClosed {R : Type u} {M : Type v} [CommRing R] [IsDomain R]
+instance isReflexive_dual_of_isIntegrallyClosed {R : Type u} {M : Type v} [CommRing R] [IsDomain R]
     [IsNoetherianRing R] [IsIntegrallyClosed R] [AddCommGroup M] [Module R M]
     [Module.Finite R M] : IsReflexive R (Dual R M) := by
   -- The depth API uses a common universe for the ring and its modules. Finite
@@ -57,11 +76,7 @@ theorem isReflexive_dual_of_isIntegrallyClosed {R : Type u} {M : Type v} [CommRi
       -- The localization comparison requires a group structure extending the dual's
       -- existing additive monoid; its conclusion only concerns the evaluation function.
       let : AddCommGroup (Dual R M) := Module.addCommMonoidToAddCommGroup R
-      have := IsLocalization.AtPrime.isPrincipalIdealRing_of_height_le_one hp
-        (Localization.AtPrime p)
-      exact (LocalizedModule.bijective_map_dual_eval_iff p.primeCompl
-        (Localization.AtPrime p) (LocalizedModule.mkLinearMap p.primeCompl (Dual R M))).mpr
-          (bijective_dual_eval (Localization.AtPrime p) _)
+      exact p.bijective_localizedModule_map_dual_eval_of_height_le_one hp
     · right
       have : IsIntegrallyClosed (Localization.AtPrime p) :=
         isIntegrallyClosed_of_isLocalization _ p.primeCompl p.primeCompl_le_nonZeroDivisors
