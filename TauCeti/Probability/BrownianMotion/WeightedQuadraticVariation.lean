@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import Mathlib.Probability.Independence.Integration
 
@@ -138,8 +139,7 @@ theorem integral_sq_sum_eval_mul_centered_sq_increment (hB : IsFilteredPreBrowni
       ((t (i + 1) : ℝ) - t i))) ^ 2 ∂P) =
         2 * ∑ i ∈ range n, (t i : ℝ) * ((t (i + 1) : ℝ) - t i) ^ 2 := by
   rw [hB.integral_sq_sum_mul_centered_sq_increment ht (fun i _ ↦ hB.adapted (t i))
-    (fun i _ ↦ (hB.toIsPreBrownianReal.hasLaw_eval (t i)).memLp
-      (memLp_id_gaussianReal' 2 (by norm_num)))]
+    (fun i _ ↦ hB.toIsPreBrownianReal.memLp_eval (t i) (by norm_num))]
   congr 1
   apply sum_congr rfl
   intro i hi
