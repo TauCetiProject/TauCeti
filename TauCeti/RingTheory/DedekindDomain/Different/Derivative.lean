@@ -40,16 +40,13 @@ open Polynomial
 
 namespace TauCeti
 
-variable (A K L B : Type*) [CommRing A] [Field K] [Field L] [CommRing B]
+variable {A K L B : Type*} [CommRing A] [Field K] [Field L] [CommRing B]
   [Algebra A K] [Algebra B L] [Algebra A B] [Algebra K L] [Algebra A L]
   [IsScalarTower A K L] [IsScalarTower A B L]
   [IsDomain A] [IsFractionRing A K] [IsIntegralClosure B A L]
   [IsIntegrallyClosed A] [IsDedekindDomain B] [Module.IsTorsionFree A B]
   [FiniteDimensional K L] [Algebra.IsSeparable K L]
 
-variable {A K L B}
-
-include K L in
 /-- **The derivative of an annihilating polynomial lies in the different.** If `x ∈ B` generates
 `L` over `K` and `p ∈ A[X]` vanishes at `x`, then `p'(x) ∈ 𝔇_{B/A}`. For `p` the minimal polynomial
 of `x` this is Mathlib's `aeval_derivative_mem_differentIdeal`. -/
@@ -59,26 +56,22 @@ theorem aeval_derivative_mem_differentIdeal_of_aeval_eq_zero {x : B}
   -- `A` is integrally closed, so the minimal polynomial `f` of `x` divides `p = f g`, and
   -- `p'(x) = f'(x) g(x) + f(x) g'(x) = f'(x) g(x)`.
   obtain ⟨g, rfl⟩ := minpoly.isIntegrallyClosed_dvd (IsIntegralClosure.isIntegral A L x) hp
-  rw [derivative_mul, map_add, map_mul, map_mul, minpoly.aeval, zero_mul, add_zero]
-  exact Ideal.mul_mem_right _ _ (aeval_derivative_mem_differentIdeal A K L x hx)
+  simpa [derivative_mul] using
+    Ideal.mul_mem_right (aeval x g) _ (aeval_derivative_mem_differentIdeal A K L x hx)
 
-include K L in
 /-- **A radical generator puts `n a` in the different.** If `x ∈ B` generates `L` over `K` and
 `xⁿ = a` with `a ∈ A`, then `n a ∈ 𝔇_{B/A}`. -/
 theorem natCast_mul_mem_differentIdeal_of_pow_eq {x : B}
     (hx : Algebra.adjoin K {algebraMap B L x} = ⊤) {n : ℕ} {a : A}
     (hxa : x ^ n = algebraMap A B a) :
     (n : B) * algebraMap A B a ∈ differentIdeal A B := by
-  obtain rfl | hn := eq_or_ne n 0
+  obtain _ | n := n
   · simp
-  have hmem := aeval_derivative_mem_differentIdeal_of_aeval_eq_zero (K := K) (L := L) hx
-    (p := X ^ n - C a) (by simp [hxa])
-  -- `(n xⁿ⁻¹) x = n xⁿ = n a`.
-  have h : (n : B) * algebraMap A B a = aeval x (derivative (X ^ n - C a : A[X])) * x := by
-    simp [derivative_X_pow, mul_assoc, ← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn),
-      hxa]
-  rw [h]
-  exact Ideal.mul_mem_right _ _ hmem
+  have hmem := Ideal.mul_mem_right x _ <| aeval_derivative_mem_differentIdeal_of_aeval_eq_zero
+    (K := K) (L := L) hx (p := X ^ (n + 1) - C a) (by simp [hxa])
+  -- `(n + 1) xⁿ · x = (n + 1) xⁿ⁺¹ = (n + 1) a`.
+  rw [← hxa, pow_succ, ← mul_assoc]
+  simpa [derivative_X_pow] using hmem
 
 end TauCeti
 

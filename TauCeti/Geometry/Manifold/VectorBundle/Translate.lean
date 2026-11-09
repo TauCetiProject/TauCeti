@@ -15,9 +15,11 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 Let `V` be a vector bundle over `B` and `b : X → B` a map. A family `s x ∈ V (b x)` is a section
 of `V` along `b`, and its total-space map is `x ↦ ⟨b x, s x⟩`. Fibrewise sums of `C^n` sections
 along the same map are `C^n` (`ContMDiff.add_sectionAlong`); for `b = id` this is Mathlib's
-`ContMDiff.add_section`. The general form applies to maps defined on the total space itself, which
-are sections along the projection. Differences of differentiable sections along a common base
-map are differentiable as well (`MDifferentiableWithinAt.sub_sectionAlong`).
+`ContMDiff.add_section`. Finite sums follow (`ContMDiff.sum_sectionAlong`); smoothness of the
+base map is assumed so that the empty sum, the zero section along `b`, is covered. The general
+form applies to maps defined on the total space itself, which are sections along the projection.
+Differences of differentiable sections along a common base map are differentiable as well
+(`MDifferentiableWithinAt.sub_sectionAlong`).
 
 Consequently a `C^n` section `s` of `V` translates the fibres by a `C^n` diffeomorphism
 `p ↦ p + s (π p)` of the total space, with inverse the translation by `-s`
@@ -83,6 +85,50 @@ theorem ContMDiff.add_sectionAlong
     (ht : ContMDiff IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x))) :
     ContMDiff IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) :=
   fun x ↦ (hs x).add_sectionAlong (ht x)
+
+/-- A finite sum of `C^n` sections along a `C^n` map is `C^n` within a set at a point. -/
+theorem ContMDiffWithinAt.sum_sectionAlong {ι : Type*} (A : Finset ι) (s : ι → ∀ x, V (b x))
+    (hb : ContMDiffWithinAt IX IB n b u x₀)
+    (hs : ∀ i ∈ A, ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (s i x)) u x₀) :
+    ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (∑ i ∈ A, s i x)) u x₀ := by
+  classical
+  induction A using Finset.induction_on with
+  | empty =>
+    simpa only [Finset.sum_empty, Function.comp_def, zeroSection] using
+      (contMDiff_zeroSection 𝕜 V).contMDiffAt.comp_contMDiffWithinAt x₀ hb
+  | @insert i A hi ih =>
+    simpa only [Finset.sum_insert hi] using
+      (hs i (Finset.mem_insert_self i A)).add_sectionAlong
+        (ih fun j hj ↦ hs j (Finset.mem_insert_of_mem hj))
+
+/-- A finite sum of `C^n` sections along a `C^n` map is `C^n` at a point. -/
+theorem ContMDiffAt.sum_sectionAlong {ι : Type*} (A : Finset ι) (s : ι → ∀ x, V (b x))
+    (hb : ContMDiffAt IX IB n b x₀)
+    (hs : ∀ i ∈ A, ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (s i x)) x₀) :
+    ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (∑ i ∈ A, s i x)) x₀ :=
+  ContMDiffWithinAt.sum_sectionAlong A s hb hs
+
+/-- A finite sum of `C^n` sections along a `C^n` map is `C^n` on a set. -/
+theorem ContMDiffOn.sum_sectionAlong {ι : Type*} (A : Finset ι) (s : ι → ∀ x, V (b x))
+    (hb : ContMDiffOn IX IB n b u)
+    (hs : ∀ i ∈ A, ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (s i x)) u) :
+    ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (∑ i ∈ A, s i x)) u :=
+  fun x hx ↦ ContMDiffWithinAt.sum_sectionAlong A s (hb x hx) (fun i hi ↦ hs i hi x hx)
+
+/-- A finite sum of `C^n` sections along a `C^n` map is `C^n`. -/
+theorem ContMDiff.sum_sectionAlong {ι : Type*} (A : Finset ι) (s : ι → ∀ x, V (b x))
+    (hb : ContMDiff IX IB n b)
+    (hs : ∀ i ∈ A, ContMDiff IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (s i x))) :
+    ContMDiff IX (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (b x) (∑ i ∈ A, s i x)) :=
+  fun x ↦ ContMDiffAt.sum_sectionAlong A s (hb x) (fun i hi ↦ hs i hi x)
 
 end AddCommMonoid
 

@@ -58,41 +58,27 @@ private lemma tilde_baseChange_wedge (n : ℕ) (M : ModuleCat.{u} R) (m : Fin n 
   exact congrArg (tilde.toOpen (((ModuleCat.extendScalars φ.hom).obj M).exteriorPower n) ⊤)
     ((TauCeti.extendScalarsExteriorPowerIso_hom_tmul_mk φ.hom n M 1 m).trans (one_smul _ _))
 
-/-- Under the affine tilde and pullback comparisons, the canonical exterior-power pullback map
-is the scalar-extension map for exterior powers. -/
-@[reassoc]
-theorem pullback_tildeExteriorPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
-    (Scheme.Modules.pullback (Spec.map φ)).map (tildeExteriorPowerIso n M).hom ≫
-        (Scheme.Modules.pullbackExteriorPowerComparison (Spec.map φ) n).app (tilde M) ≫
-        (SheafOfModules.exteriorPower (Spec S).sheaf n).map
-          ((tildeFunctorCompPullbackIso φ).hom.app M) =
-      (tildeFunctorCompPullbackIso φ).hom.app (M.exteriorPower n) ≫
-        tilde.map (TauCeti.extendScalarsExteriorPowerIso.{u, u, u} φ.hom n M).hom ≫
-        (tildeExteriorPowerIso n ((ModuleCat.extendScalars φ.hom).obj M)).hom := by
-  let P := Scheme.Modules.pullback (Spec.map φ)
-  let adj := Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)
-  -- The two adjunctions reduce equality to decomposable wedges of module elements.
-  apply (adj.homEquiv _ _).injective
-  apply ((tilde.adjunction (R := R)).homEquiv _ _).injective
-  -- `erw` crosses the scheme-module and underlying sheaf-category presentations.
-  erw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit,
-    Adjunction.homEquiv_unit, Adjunction.homEquiv_unit]
-  apply ModuleCat.exteriorPower.hom_ext
-  ext m
-  simp only [ModuleCat.AlternatingMap.postcomp_apply]
-  -- Evaluate both adjunction transposes on the associated global section of a wedge;
-  -- the global-section functor and the pushforward retain the underlying functions.
-  change ((SheafOfModules.exteriorPower (Spec S).sheaf n).map
+/-- The elementwise form of `pullback_tildeExteriorPowerIso_hom`: both routes agree on the
+section of the pullback of an associated sheaf determined by a decomposable wedge. -/
+private lemma pullback_tildeExteriorPowerIso_hom_apply (n : ℕ) (M : ModuleCat.{u} R)
+    (m : Fin n → M) :
+    ((SheafOfModules.exteriorPower (Spec S).sheaf n).map
       ((tildeFunctorCompPullbackIso φ).hom.app M)).val.app (op ⊤)
       (((Scheme.Modules.pullbackExteriorPowerComparison (Spec.map φ) n).app (tilde M)).val.app
-        (op ⊤) ((P.map (tildeExteriorPowerIso n M).hom).val.app (op ⊤)
-          ((adj.unit.app (tilde (M.exteriorPower n))).val.app (op ⊤)
+        (op ⊤) (((Scheme.Modules.pullback (Spec.map φ)).map
+          (tildeExteriorPowerIso n M).hom).val.app (op ⊤)
+          (((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app
+            (tilde (M.exteriorPower n))).val.app (op ⊤)
             (tilde.toOpen (M.exteriorPower n) ⊤ (ModuleCat.exteriorPower.mk m))))) =
     (tildeExteriorPowerIso n ((ModuleCat.extendScalars φ.hom).obj M)).hom.val.app (op ⊤)
-      ((tilde.map (TauCeti.extendScalarsExteriorPowerIso.{u, u, u} φ.hom n M).hom).val.app (op ⊤)
+      ((tilde.map (TauCeti.extendScalarsExteriorPowerIso.{u, u, u} φ.hom n M).hom).val.app
+        (op ⊤)
         (((tildeFunctorCompPullbackIso φ).hom.app (M.exteriorPower n)).val.app (op ⊤)
-          ((adj.unit.app (tilde (M.exteriorPower n))).val.app (op ⊤)
-            (tilde.toOpen (M.exteriorPower n) ⊤ (ModuleCat.exteriorPower.mk m)))))
+          (((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app
+            (tilde (M.exteriorPower n))).val.app (op ⊤)
+            (tilde.toOpen (M.exteriorPower n) ⊤ (ModuleCat.exteriorPower.mk m))))) := by
+  let P := Scheme.Modules.pullback (Spec.map φ)
+  let adj := Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)
   have hunit := ConcreteCategory.congr_hom (congrArg (fun f ↦ f.val.app (op ⊤))
     (adj.unit.naturality (tildeExteriorPowerIso n M).hom))
     (tilde.toOpen (M.exteriorPower n) ⊤ (ModuleCat.exteriorPower.mk m))
@@ -129,6 +115,32 @@ theorem pullback_tildeExteriorPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
   congr 3
   funext i
   exact tildeFunctorCompPullbackIso_hom_app_unit_toOpen φ M (m i)
+
+/-- Under the affine tilde and pullback comparisons, the canonical exterior-power pullback map
+is the scalar-extension map for exterior powers. -/
+@[reassoc]
+theorem pullback_tildeExteriorPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
+    (Scheme.Modules.pullback (Spec.map φ)).map (tildeExteriorPowerIso n M).hom ≫
+        (Scheme.Modules.pullbackExteriorPowerComparison (Spec.map φ) n).app (tilde M) ≫
+        (SheafOfModules.exteriorPower (Spec S).sheaf n).map
+          ((tildeFunctorCompPullbackIso φ).hom.app M) =
+      (tildeFunctorCompPullbackIso φ).hom.app (M.exteriorPower n) ≫
+        tilde.map (TauCeti.extendScalarsExteriorPowerIso.{u, u, u} φ.hom n M).hom ≫
+        (tildeExteriorPowerIso n ((ModuleCat.extendScalars φ.hom).obj M)).hom := by
+  let adj := Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)
+  -- The two adjunctions reduce equality to decomposable wedges of module elements.
+  apply (adj.homEquiv _ _).injective
+  apply ((tilde.adjunction (R := R)).homEquiv _ _).injective
+  -- `erw` crosses the scheme-module and underlying sheaf-category presentations.
+  erw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit,
+    Adjunction.homEquiv_unit, Adjunction.homEquiv_unit]
+  apply ModuleCat.exteriorPower.hom_ext
+  ext m
+  simp only [ModuleCat.AlternatingMap.postcomp_apply]
+  -- Both adjunction transposes evaluate on the associated global section of a wedge; the
+  -- global-section functor and the pushforward retain the underlying functions, so the goal is
+  -- the helper's statement up to unfolding.
+  exact pullback_tildeExteriorPowerIso_hom_apply φ n M m
 
 /-- The canonical exterior-power pullback map on an associated sheaf is exactly the forward
 map of the affine scalar-extension isomorphism. -/

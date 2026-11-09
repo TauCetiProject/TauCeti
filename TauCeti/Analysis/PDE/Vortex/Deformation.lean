@@ -162,6 +162,14 @@ theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : With
   exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
     ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
 
+/-- The section `α = 2 (p + i q)` is differentiable wherever its real coordinates are. -/
+theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    DifferentiableAt ℝ (sectionValue x) z := by
+  rw [sectionValue_eq_ofRealCLM]
+  exact (differentiableAt_const _).mul ((ofRealCLM.differentiableAt.comp z hp).add
+    ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
+
 /-- The derivative of the section `α = 2 (p + i q)` in terms of those of its real coordinates. -/
 theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
