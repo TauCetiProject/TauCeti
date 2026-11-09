@@ -25,7 +25,6 @@ functions are dense in `L^p`, the operator depends continuously on `a`, and comp
 a closed set.
 -/
 
-
 public section
 
 open MeasureTheory Filter
@@ -50,20 +49,24 @@ theorem holderL_ae_eq_of_measure_le {E F G H : Type*} [MeasurableSpace E]
 `ι : X → L^s` a bounded operator with the same values. For `a ∈ L^p` with `p < ∞` and
 `1/p + 1/s = 1/q`, the operator `u ↦ B(a, ι u) : X → L^q` is compact.
 
-The operator `ι` need not be compact: in the application to Sobolev spaces it is a critical
-Sobolev embedding, while `V` is the Rellich--Kondrachov embedding. -/
-theorem isCompactOperator_holderL_comp_of_ae_eq {α X E F G : Type*} [MeasurableSpace α]
-    {μ : Measure α} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {p s q : ENNReal}
+The operator `ι` need only be bounded, not compact: in the application to Sobolev spaces it is a
+subcritical Sobolev embedding (Morrey's embedding into `L^∞` when `q = p`), while `V` is the
+Rellich--Kondrachov embedding. -/
+theorem isCompactOperator_holderL_comp_of_ae_eq {α 𝕜 X E F G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G] {p s q : ENNReal}
     [Fact (1 ≤ p)] [Fact (1 ≤ s)] [Fact (1 ≤ q)] [ENNReal.HolderTriple p s q]
-    (B : E →L[ℝ] F →L[ℝ] G) (hp : p ≠ ∞) {V : X →L[ℝ] Lp F q μ} (hV : IsCompactOperator V)
-    (ι : X →L[ℝ] Lp F s μ) (hι : ∀ u, ι u =ᵐ[μ] V u) (a : Lp E p μ) :
+    (B : E →L[𝕜] F →L[𝕜] G) (hp : p ≠ ∞) {V : X →L[𝕜] Lp F q μ} (hV : IsCompactOperator V)
+    (ι : X →L[𝕜] Lp F s μ) (hι : ∀ u, ι u =ᵐ[μ] V u) (a : Lp E p μ) :
     IsCompactOperator ((B.holderL μ p s q a).comp ι) := by
   -- The operator depends continuously and linearly on the multiplier.
-  let Φ : Lp E p μ →L[ℝ] X →L[ℝ] Lp G q μ :=
-    ((ContinuousLinearMap.compL ℝ X (Lp F s μ) (Lp G q μ)).flip ι).comp (B.holderL μ p s q)
-  change IsCompactOperator (Φ a)
+  let Φ : Lp E p μ →L[𝕜] X →L[𝕜] Lp G q μ :=
+    ((ContinuousLinearMap.compL 𝕜 X (Lp F s μ) (Lp G q μ)).flip ι).comp (B.holderL μ p s q)
+  have hΦ (b : Lp E p μ) : Φ b = (B.holderL μ p s q b).comp ι := by
+    simp only [Φ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+      ContinuousLinearMap.compL_apply]
+  rw [← hΦ]
   refine (Lp.simpleFunc.denseRange hp).induction_on a
     (isClosed_setOfPred_isCompactOperator.preimage Φ.continuous) fun f => ?_
   -- A simple multiplier lies in `L^∞`, so the operator factors through `V`.
@@ -75,8 +78,8 @@ theorem isCompactOperator_holderL_comp_of_ae_eq {α X E F G : Type*} [Measurable
       B.coeFn_holder (r := q) g (V u), hι u, Lp.simpleFunc.toSimpleFunc_eq_toFun f,
       MemLp.coeFn_toLp (SimpleFunc.memLp_top (Lp.simpleFunc.toSimpleFunc f) μ)]
       with x h₁ h₂ h₃ h₄ h₅
-    simp only [Φ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
-      ContinuousLinearMap.compL_apply, ContinuousLinearMap.holderL_apply_apply]
+    rw [hΦ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holderL_apply_apply]
     rw [h₁, h₂, h₃, h₅, h₄]
   rw [hfac]
   exact hV.clm_comp (B.holderL μ ∞ q q g)
