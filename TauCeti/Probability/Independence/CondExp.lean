@@ -109,6 +109,7 @@ theorem condExp_eq_of_le_of_stronglyMeasurable_sup (h : Indep m₂ m₃ μ)
     (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ mΩ) (h₃ : m₃ ≤ mΩ) {f : Ω → E}
     (hf : StronglyMeasurable[m₁ ⊔ m₃] f) (hint : Integrable f μ) :
     μ[f | m₂] =ᵐ[μ] μ[f | m₁] := by
+  -- Factor through the diagonal into m₁.prod m₃, not the ambient product σ-algebra.
   let : MeasurableSpace (Ω × Ω) := m₁.prod m₃
   have hdiag : (m₁.prod m₃).comap (fun ω => (ω, ω)) = m₁ ⊔ m₃ := by
     simpa only [MeasurableSpace.comap_id, id_eq] using

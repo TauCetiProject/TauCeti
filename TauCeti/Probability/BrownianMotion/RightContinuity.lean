@@ -93,6 +93,7 @@ theorem rightCont_natural_le_nullAugment (hW : IsBrownianReal W P)
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   let ℱ := Filtration.natural W hmeas
   let mFuture := MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance
+  -- Restore the ambient instance: mFuture is also eligible for measurable-space synthesis.
   let : MeasurableSpace Ω := mΩ
   have hfuture : mFuture ≤ mΩ :=
     (measurable_pi_iff.2 fun v => (hmeas (s + v)).measurable.sub (hmeas s).measurable).comap_le

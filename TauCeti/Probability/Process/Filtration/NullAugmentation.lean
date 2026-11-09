@@ -137,6 +137,7 @@ theorem rightCont_nullAugment_apply [LinearOrder ι] [DenselyOrdered ι] [NoMaxO
         Filter.limsup (fun n => if N ≤ n then B n else ∅) Filter.atTop :=
       Filter.limsup_congr ((Filter.eventually_ge_atTop N).mono fun n hn => by simp [hn])
     rw [htail]
+    -- Check measurability of the tail limsup in ℱ j, rather than the ambient σ-algebra.
     let : MeasurableSpace Ω := ℱ j
     exact MeasurableSet.measurableSet_limsup fun n => by
       split_ifs with hn
