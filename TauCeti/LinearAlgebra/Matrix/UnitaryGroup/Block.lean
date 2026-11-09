@@ -42,8 +42,8 @@ spanned by `e₀`.
 
 ## Main results
 
-* `Matrix.fromBlocks_one_zero_zero_mem_unitaryGroup_iff`: `diag(1, B)` is unitary exactly when
-  `B` is.
+* `Matrix.fromBlocks_zero_zero_mem_unitaryGroup_iff`: `diag(A, B)` is unitary exactly when both
+  `A` and `B` are.
 * `Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
   `Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff`: the image of the embedding is the
   subgroup fixing the first `r` standard basis vectors.
@@ -61,13 +61,14 @@ section Unitary
 
 variable {α : Type*} [CommRing α] [StarRing α]
 
-/-- The block-diagonal matrix `diag(1, B)` is unitary exactly when `B` is unitary. -/
-theorem fromBlocks_one_zero_zero_mem_unitaryGroup_iff {l n : Type*} [Fintype l] [DecidableEq l]
-    [Fintype n] [DecidableEq n] {B : Matrix n n α} :
-    fromBlocks (1 : Matrix l l α) 0 0 B ∈ unitaryGroup (l ⊕ n) α ↔ B ∈ unitaryGroup n α := by
+/-- The block-diagonal matrix `diag(A, B)` is unitary exactly when both blocks are unitary. -/
+theorem fromBlocks_zero_zero_mem_unitaryGroup_iff {l n : Type*} [Fintype l] [DecidableEq l]
+    [Fintype n] [DecidableEq n] {A : Matrix l l α} {B : Matrix n n α} :
+    fromBlocks A 0 0 B ∈ unitaryGroup (l ⊕ n) α ↔
+      A ∈ unitaryGroup l α ∧ B ∈ unitaryGroup n α := by
   simp only [mem_unitaryGroup_iff', star_eq_conjTranspose, fromBlocks_conjTranspose,
-    conjTranspose_one, conjTranspose_zero, fromBlocks_multiply, Matrix.mul_one, Matrix.mul_zero,
-    Matrix.zero_mul, add_zero, zero_add, ← fromBlocks_one, fromBlocks_inj, true_and]
+    conjTranspose_zero, fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,
+    ← fromBlocks_one, fromBlocks_inj, true_and]
 
 namespace UnitaryGroup
 
@@ -78,7 +79,7 @@ variable (m) in
 `U(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. -/
 def fromBlocksOne : unitaryGroup (Fin m) α →* unitaryGroup (Fin (r + m)) α where
   toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)),
-    submatrix_equiv_mem_unitary.2 (fromBlocks_one_zero_zero_mem_unitaryGroup_iff.2 B.2)⟩
+    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _, B.2⟩)⟩
   map_one' := Subtype.ext <| by simp [fromBlocks_one]
   map_mul' A B := Subtype.ext <| by
     simp only [reindex_apply, Submonoid.coe_mul, submatrix_mul_equiv, fromBlocks_multiply,
@@ -166,98 +167,79 @@ theorem mem_range_fromBlocksOne_iff {A : unitaryGroup (Fin (r + m)) α} :
     · simp only [reindex_apply, submatrix_apply, finSumFinEquiv_symm_apply_natAdd]
       rfl
   have hB : B ∈ unitaryGroup (Fin m) α := by
-    rw [← fromBlocks_one_zero_zero_mem_unitaryGroup_iff (l := Fin r),
-      ← submatrix_equiv_mem_unitary (e₁ := finSumFinEquiv.symm) (e₂ := finSumFinEquiv.symm)]
-    simpa only [hAB, reindex_apply] using A.2
+    have h := A.2
+    rw [hAB, reindex_apply, submatrix_equiv_mem_unitary,
+      fromBlocks_zero_zero_mem_unitaryGroup_iff] at h
+    exact h.2
   exact ⟨⟨B, hB⟩, Subtype.ext hAB.symm⟩
 
 section Succ
 
 variable {m : ℕ}
 
-/-- The block-diagonal matrix `diag(c, B)` of size `m + 1`, with `c` in the corner indexed by `0`
-and `B` on the indices `Fin.succ`. -/
-private def blockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
-    Matrix (Fin (m + 1)) (Fin (m + 1)) α :=
-  of (vecCons (vecCons c 0) fun i ↦ vecCons 0 (B i))
+private theorem finSumFinEquiv_trans_finCongr_symm_zero :
+    (finSumFinEquiv.trans (finCongr (add_comm 1 m))).symm 0 = Sum.inl 0 := by
+  rw [Equiv.symm_apply_eq]
+  ext
+  simp
 
-omit [StarRing α] in
-@[simp]
-private theorem blockSucc_zero_zero (c : α) (B : Matrix (Fin m) (Fin m) α) :
-    blockSucc c B 0 0 = c :=
-  rfl
-
-omit [StarRing α] in
-@[simp]
-private theorem blockSucc_zero_succ (c : α) (B : Matrix (Fin m) (Fin m) α) (j : Fin m) :
-    blockSucc c B 0 j.succ = 0 :=
-  rfl
-
-omit [StarRing α] in
-@[simp]
-private theorem blockSucc_succ_zero (c : α) (B : Matrix (Fin m) (Fin m) α) (i : Fin m) :
-    blockSucc c B i.succ 0 = 0 :=
-  rfl
-
-omit [StarRing α] in
-@[simp]
-private theorem blockSucc_succ_succ (c : α) (B : Matrix (Fin m) (Fin m) α) (i j : Fin m) :
-    blockSucc c B i.succ j.succ = B i j :=
-  rfl
-
-omit [StarRing α] in
-private theorem blockSucc_mul (c c' : α) (B B' : Matrix (Fin m) (Fin m) α) :
-    blockSucc c B * blockSucc c' B' = blockSucc (c * c') (B * B') := by
-  ext p q
-  refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_succ]
-
-private theorem star_blockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
-    star (blockSucc c B) = blockSucc (star c) (star B) := by
-  ext p q
-  refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
-    simp [star_eq_conjTranspose, conjTranspose_apply]
-
-omit [StarRing α] in
-private theorem blockSucc_one : blockSucc (1 : α) (1 : Matrix (Fin m) (Fin m) α) = 1 := by
-  ext p q
-  refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
-    simp [Matrix.one_apply, Fin.succ_ne_zero, (Fin.succ_ne_zero _).symm]
-
-private theorem blockSucc_mem_unitaryGroup (c : unitary α) (B : unitaryGroup (Fin m) α) :
-    blockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) ∈ unitaryGroup (Fin (m + 1)) α := by
-  rw [mem_unitaryGroup_iff', star_blockSucc, blockSucc_mul, Unitary.star_mul_self_of_mem c.2,
-    mem_unitaryGroup_iff'.1 B.2, blockSucc_one]
+private theorem finSumFinEquiv_trans_finCongr_symm_succ (j : Fin m) :
+    (finSumFinEquiv.trans (finCongr (add_comm 1 m))).symm j.succ = Sum.inr j := by
+  rw [Equiv.symm_apply_eq]
+  ext
+  simp
 
 variable (α m) in
 /-- The **block-diagonal embedding** `(c, B) ↦ diag(c, B)` of `U(1) × U(m)` in `U(m + 1)`: the
-unitary scalar `c` occupies the corner indexed by `0`, and `B` the indices `Fin.succ`. -/
+unitary scalar `c` occupies the corner indexed by `0`, and `B` the indices `Fin.succ`. It is the
+block matrix `Matrix.fromBlocks c 0 0 B`, reindexed along `Fin 1 ⊕ Fin m ≃ Fin (m + 1)`. -/
 def prodBlockSucc : unitary α × unitaryGroup (Fin m) α →* unitaryGroup (Fin (m + 1)) α where
-  toFun cB := ⟨blockSucc (cB.1 : α) (cB.2 : Matrix (Fin m) (Fin m) α),
-    blockSucc_mem_unitaryGroup cB.1 cB.2⟩
-  map_one' := Subtype.ext blockSucc_one
-  map_mul' _ _ := Subtype.ext (blockSucc_mul _ _ _ _).symm
+  toFun cB := ⟨reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+      (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+      (fromBlocks (diagonal fun _ ↦ (cB.1 : α)) 0 0 (cB.2 : Matrix _ _ α)),
+    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitaryGroup_iff.2
+      ⟨diagonal_mem_unitary.2 (Pi.const_mem_unitary_iff.2 cB.1.2), cB.2.2⟩)⟩
+  map_one' := Subtype.ext <| by
+    simp only [Prod.fst_one, Prod.snd_one, OneMemClass.coe_one, diagonal_one, fromBlocks_one,
+      reindex_apply, submatrix_one_equiv]
+  map_mul' _ _ := Subtype.ext <| by
+    simp only [reindex_apply, Submonoid.coe_mul, submatrix_mul_equiv, fromBlocks_multiply,
+      Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add, diagonal_mul_diagonal, Prod.fst_mul,
+      Prod.snd_mul]
+
+theorem coe_prodBlockSucc (cB : unitary α × unitaryGroup (Fin m) α) :
+    (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) =
+      reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+        (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+        (fromBlocks (diagonal fun _ ↦ (cB.1 : α)) 0 0 (cB.2 : Matrix _ _ α)) :=
+  (rfl)
 
 @[simp]
 theorem prodBlockSucc_apply_zero_zero (cB : unitary α × unitaryGroup (Fin m) α) :
-    (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 0 = cB.1 :=
-  (rfl)
+    (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 0 = cB.1 := by
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+    fromBlocks_apply₁₁, diagonal_apply_eq]
 
 @[simp]
 theorem prodBlockSucc_apply_zero_succ (cB : unitary α × unitaryGroup (Fin m) α) (j : Fin m) :
-    (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 j.succ = 0 :=
-  (rfl)
+    (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 j.succ = 0 := by
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+    finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₁₂]
+  rfl
 
 @[simp]
 theorem prodBlockSucc_apply_succ_zero (cB : unitary α × unitaryGroup (Fin m) α) (i : Fin m) :
-    (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) i.succ 0 = 0 :=
-  (rfl)
+    (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) i.succ 0 = 0 := by
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+    finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₂₁]
+  rfl
 
 @[simp]
 theorem prodBlockSucc_apply_succ_succ (cB : unitary α × unitaryGroup (Fin m) α) (i j : Fin m) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) i.succ j.succ =
-      (cB.2 : Matrix (Fin m) (Fin m) α) i j :=
-  (rfl)
+      (cB.2 : Matrix (Fin m) (Fin m) α) i j := by
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_succ,
+    finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₂₂]
 
 /-- The block-diagonal embedding of `U(1) × U(m)` in `U(m + 1)` is injective. -/
 theorem prodBlockSucc_injective : Function.Injective (prodBlockSucc α m) := by
@@ -277,10 +259,9 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
   refine ⟨?_, fun hA ↦ ?_⟩
   · rintro ⟨cB, rfl⟩ i
     exact prodBlockSucc_apply_succ_zero cB i
-  have hstar := mem_unitaryGroup_iff'.1 A.2
   have hentry (p q : Fin (m + 1)) : ∑ k, star (A.1 k p) * A.1 k q = if p = q then 1 else 0 := by
     simpa [Matrix.mul_apply, star_eq_conjTranspose, Matrix.one_apply] using
-      congrFun (congrFun hstar p) q
+      congrFun (congrFun (mem_unitaryGroup_iff'.1 A.2) p) q
   -- The corner is a unitary scalar.
   have hc : star (A.1 0 0) * A.1 0 0 = 1 := by simpa [Fin.sum_univ_succ, hA] using hentry 0 0
   -- The row `0` vanishes off the corner.
@@ -292,17 +273,21 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
           rw [mul_comm (A.1 0 0), hc, one_mul]
       _ = 0 := by rw [mul_assoc, h, mul_zero]
   let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.1 i.succ j.succ
-  have hAB : A.1 = blockSucc (A.1 0 0) B := by
+  have hAB : A.1 = reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+      (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+      (fromBlocks (diagonal fun _ ↦ A.1 0 0) 0 0 B) := by
     ext p q
     refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
+      simp only [reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+        finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
+        fromBlocks_apply₂₁, fromBlocks_apply₂₂, diagonal_apply_eq] <;>
       first | rfl | exact hrow j | exact hA i
   have hB : B ∈ unitaryGroup (Fin m) α := by
-    rw [mem_unitaryGroup_iff']
-    have h := hstar
-    rw [hAB, star_blockSucc, blockSucc_mul, ← blockSucc_one] at h
-    ext i j
-    simpa using congrFun (congrFun h i.succ) j.succ
-  refine ⟨(⟨A.1 0 0, Unitary.mem_iff_star_mul_self.2 hc⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩
+    have h := A.2
+    rw [hAB, reindex_apply, submatrix_equiv_mem_unitary,
+      fromBlocks_zero_zero_mem_unitaryGroup_iff] at h
+    exact h.2
+  exact ⟨(⟨A.1 0 0, Unitary.mem_iff_star_mul_self.2 hc⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩
 
 end Succ
 
@@ -321,7 +306,8 @@ variable (m) in
 in `SO(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. -/
 def fromBlocksOne : specialOrthogonalGroup (Fin m) R →* specialOrthogonalGroup (Fin (r + m)) R where
   toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ R)),
-    submatrix_equiv_mem_unitary.2 (fromBlocks_one_zero_zero_mem_unitaryGroup_iff.2 B.2.1),
+    submatrix_equiv_mem_unitary.2
+      (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _, B.2.1⟩),
     by simpa [det_fromBlocks_zero₂₁] using B.2.2⟩
   map_one' := Subtype.ext <| by simp [fromBlocks_one]
   map_mul' A B := Subtype.ext <| by

@@ -114,7 +114,7 @@ private theorem continuous_toLinearIsometryEquiv_smul :
   refine continuous_induced_rng.2 <| (continuous_uncurry_toEuclideanCLM.comp
     ((continuous_subtype_val.comp continuous_fst).prodMk
       (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ ?_
-  simp
+  simp [toLpLin_apply]
 
 /-- The action of `U(n + 1)` on `CPⁿ` is continuous. -/
 instance instContinuousSMulUnitaryGroup :
@@ -134,6 +134,11 @@ vector. -/
 def basePoint : ComplexProjectiveSpace n :=
   mk n ⟨EuclideanSpace.single 0 1, by simp⟩
 
+variable (n) in
+/-- The base point of `CPⁿ` is the class of the first standard basis vector `e₀`. -/
+theorem basePoint_def : basePoint n = mk n ⟨EuclideanSpace.single 0 1, by simp⟩ :=
+  (rfl)
+
 /-- **The unitary group acts transitively on `CPⁿ`**: every point is `[A e₀]` for some unitary
 `A`, the matrix of an orthonormal basis extending a unit representative of the point. -/
 instance instIsPretransitiveUnitaryGroup :
@@ -151,33 +156,33 @@ instance instIsPretransitiveUnitaryGroup :
     obtain ⟨A, hA⟩ := finiteOrthonormalFrame.unitaryMap_standard_surjective
       (𝕜 := ℂ) (Nat.le_add_left 1 n) f
     refine ⟨A, ?_⟩
-    rw [basePoint, smul_mk]
+    rw [basePoint_def, smul_mk]
     refine congrArg (mk n) (Subtype.ext ?_)
     have h := congrFun (congrArg Subtype.val hA) 0
     simp only [finiteOrthonormalFrame.coe_unitaryMap, finiteOrthonormalFrame.coe_standard, f] at h
-    rw [LinearIsometryEquiv.coe_smul_unitSphere, UnitaryGroup.toLinearIsometryEquiv_apply]
+    rw [LinearIsometryEquiv.coe_smul_unitSphere, UnitaryGroup.toLinearIsometryEquiv_single]
     ext i
-    simpa [mulVec, dotProduct, EuclideanSpace.single] using congrFun h i
+    simpa using congrFun h i
 
 /-- **The stabilizer of `[e₀]`**: a unitary matrix fixes the base point of `CPⁿ` exactly when its
 column `0` vanishes below the corner, that is, when it maps `e₀` to a multiple of `e₀`. -/
 theorem mem_stabilizer_basePoint_iff {A : unitaryGroup (Fin (n + 1)) ℂ} :
     A ∈ MulAction.stabilizer (unitaryGroup (Fin (n + 1)) ℂ) (basePoint n) ↔
       ∀ i : Fin n, (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) i.succ 0 = 0 := by
-  rw [MulAction.mem_stabilizer_iff, basePoint, smul_mk, mk_eq_mk_iff]
+  rw [MulAction.mem_stabilizer_iff, basePoint_def, smul_mk, mk_eq_mk_iff]
   constructor
   · rintro ⟨c, hc⟩ i
     have h := congrArg (fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦
       (v : EuclideanSpace ℂ (Fin (n + 1))) i.succ) hc
-    simpa [mulVec, dotProduct, EuclideanSpace.single, Pi.single_apply, Fin.succ_ne_zero,
-      eq_comm] using h
+    simpa [UnitaryGroup.toLinearIsometryEquiv_single, Fin.succ_ne_zero, eq_comm] using h
   · intro hA
     -- The image of `e₀` is its column `0`, the multiple `A₀₀ • e₀`, and `A₀₀` is a unit scalar.
     obtain ⟨⟨c, B⟩, hcB⟩ := UnitaryGroup.mem_range_prodBlockSucc_iff.2 hA
     refine ⟨⟨c, by simp⟩, Subtype.ext ?_⟩
+    simp only [Sphere.coe_sphere_smul, LinearIsometryEquiv.coe_smul_unitSphere,
+      UnitaryGroup.toLinearIsometryEquiv_single]
     ext i
-    refine Fin.cases ?_ (fun j ↦ ?_) i <;>
-      simp [← hcB, mulVec, dotProduct, EuclideanSpace.single, Pi.single_apply, Fin.succ_ne_zero]
+    refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [← hcB, Fin.succ_ne_zero]
 
 /-- **The stabilizer of `[e₀]` is `U(1) × U(n)`**: it is the image of the block-diagonal
 embedding `(c, B) ↦ diag(c, B)` of `U(1) × U(n)` in `U(n + 1)`. -/
