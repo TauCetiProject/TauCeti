@@ -146,12 +146,17 @@ theorem eLpNorm_primitive_le_mul_eLpNorm {p : ENNReal} (hp : 1 ≤ p) {t₀ : �
 
 variable [CompleteSpace E]
 
-/-- A continuous integrand on a nonempty closed interval has a globally continuous primitive
+/-- A continuous integrand on a closed interval has a globally continuous primitive
 whose derivative agrees with the integrand throughout that interval, including its endpoints.
-The primitive increments are the oriented integrals between points of the interval. -/
-theorem exists_continuous_primitive_Icc (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) :
+The primitive increments are the oriented integrals between points of the interval. For `b < a`
+the interval is empty and the statement is vacuous. -/
+theorem exists_continuous_primitive_Icc (hf : ContinuousOn f (Icc a b)) :
     ∃ F : ℝ → E, Continuous F ∧ (∀ x ∈ Icc a b, HasDerivAt F (f x) x) ∧
       ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, F y - F x = ∫ z in x..y, f z := by
+  rcases le_or_gt a b with hab | hab
+  swap
+  · exact ⟨0, continuous_const, fun x hx => ((not_le.2 hab) (hx.1.trans hx.2)).elim,
+      fun x hx => ((not_le.2 hab) (hx.1.trans hx.2)).elim⟩
   -- Holding endpoint values constant gives a continuous integrand on the whole line.
   obtain ⟨g, hg, hgf⟩ := hf.exists_continuous_eqOn_Icc hab
   let F : ℝ → E := fun t ↦ ∫ x in a..t, g x
@@ -168,6 +173,7 @@ theorem exists_continuous_primitive_Icc (hab : a ≤ b) (hf : ContinuousOn f (Ic
           (hg.intervalIntegrable a y) (hg.intervalIntegrable a x)
       _ = _ := _root_.intervalIntegral.integral_congr (hgf.mono (uIcc_subset_Icc hx hy))
 
+omit [CompleteSpace E] in
 /-- **Integration by parts against a primitive.** For `a ≤ b`, `f` integrable on `[a, b]` and a
 `C¹` function `φ : ℝ → ℝ`,
 `∫ t in a..b, φ' t • ∫ s in a..t, f s = φ b • ∫ s in a..b, f s - ∫ t in a..b, φ t • f t`. -/
@@ -175,6 +181,9 @@ theorem integral_deriv_smul_primitive_eq_sub_of_le {φ : ℝ → ℝ} (hab : a �
     (hφ : ContDiff ℝ 1 φ) (hf : IntervalIntegrable f volume a b) :
     ∫ t in a..b, deriv φ t • ∫ s in a..t, f s =
       φ b • (∫ s in a..b, f s) - ∫ t in a..b, φ t • f t := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [intervalIntegral, integral_of_not_completeSpace hE]
   -- Both sides are iterated integrals of `G t s = φ' t • 1_{s < t} f s` over `[a, b]²`, in the
   -- two possible orders.
   have hφd : Continuous (deriv φ) := hφ.continuous_deriv le_rfl
