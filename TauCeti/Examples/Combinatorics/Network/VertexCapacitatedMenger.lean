@@ -141,8 +141,7 @@ private theorem overlapPath_usage (m : ℕ) (v : Fin 3) :
     rw [card_filter, Fintype.sum_sum_type] <;>
     simp [overlapCapacity]
 
-private theorem overlapSeparator (a b : Fin 3) (ha : a ∈ ({0, 1} : Finset (Fin 3)))
-    (_hb : b ∈ ({1, 2} : Finset (Fin 3))) :
+private theorem overlapSeparator (a b : Fin 3) (ha : a ∈ ({0, 1} : Finset (Fin 3))) :
     ¬ReachableAvoiding OverlapHom (({0, 1} : Finset (Fin 3)) : Set (Fin 3)) a b := by
   intro h
   exact h.source_notMem (by simpa using ha)
@@ -161,7 +160,7 @@ private theorem overlapPacking (m : ℕ) :
       Fintype.card (Fin 2 ⊕ Fin m) = ∑ v ∈ X, overlapCapacity m v := by
   dsimp only
   refine ⟨?_, ?_, overlapPath_isPath, overlapPath_interior, ?_,
-    fun a ha b hb ↦ overlapSeparator a b ha hb, ?_⟩
+    fun a ha b _ ↦ overlapSeparator a b ha, ?_⟩
   · rintro (i | i) <;> simp [overlapSource]
   · rintro (i | i) <;> simp [overlapTarget]
   · exact overlapPath_usage m
