@@ -67,6 +67,8 @@ discrete valuation ring of the extension dominating `R`.
   a change of variables.
 * `WeierstrassCurve.HasGoodReduction.isInteger_j`: a minimal equation with good reduction has
   integral `j`-invariant.
+* `WeierstrassCurve.HasPotentialGoodReduction.isElliptic`: a curve with potential good reduction
+  is elliptic.
 * `WeierstrassCurve.HasPotentialGoodReduction.isInteger_j`: a curve with potential good reduction
   has integral `j`-invariant.
 * `WeierstrassCurve.HasMultiplicativeReduction.not_isInteger_j` and
@@ -150,6 +152,17 @@ theorem hasPotentialGoodReduction_smul (D : VariableChange K) (W : WeierstrassCu
   rintro D W ⟨L, _, _, _, S, _, _, _, _, _, _, _, hRS, hW⟩
   refine .intro R L S hRS ?_
   rwa [baseChange, ← map_variableChange, hasGoodReduction_minimal_smul_iff]
+
+/-- **A curve with potential good reduction is elliptic**: its discriminant becomes a unit after
+the finite extension at which a minimal equation has good reduction, so it is nonzero. -/
+theorem HasPotentialGoodReduction.isElliptic {W : WeierstrassCurve K}
+    (h : W.HasPotentialGoodReduction R) : W.IsElliptic := by
+  obtain ⟨L, _, _, _, S, _, _, _, _, _, _, _, _, hW⟩ := hasPotentialGoodReduction_iff.1 h
+  obtain ⟨C, hC⟩ := (W.baseChange L).exists_smul_eq_minimal S
+  have h₁ : (C • W.baseChange L).IsElliptic := hC ▸ hW.isElliptic
+  have h₂ : (W.baseChange L).IsElliptic := by
+    simpa using (inferInstance : (C⁻¹ • C • W.baseChange L).IsElliptic)
+  exact ⟨isUnit_iff_ne_zero.2 fun h0 ↦ h₂.isUnit.ne_zero (by simp [baseChange, h0])⟩
 
 variable [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K]
 
