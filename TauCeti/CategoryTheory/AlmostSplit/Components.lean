@@ -41,6 +41,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
   {S : ShortComplex C} {X : C}
   [IsLocalRing (End S.X₁)] [IsLocalRing (End S.X₃)]
 
+omit [IsLocalRing (End S.X₁)] in
 /-- Restricting the final map of an almost-split sequence to a retract of its middle term
 gives an irreducible morphism when the retract is nonzero. -/
 theorem isIrreducibleMorphism_comp_g (hS : S.IsAlmostSplit)
@@ -63,6 +64,7 @@ theorem isIrreducibleMorphism_f_comp (hS : S.IsAlmostSplit)
   intro hp
   exact hX (isZero_of_isSplitEpi_of_mem_jacobsonRadical hrad)
 
+omit [IsLocalRing (End S.X₁)] in
 /-- A morphism into the right-hand end is irreducible exactly when it is the restriction of
 the final map to a retract of the middle term. -/
 theorem isIrreducibleMorphism_iff_exists_isSplitMono (hS : S.IsAlmostSplit)

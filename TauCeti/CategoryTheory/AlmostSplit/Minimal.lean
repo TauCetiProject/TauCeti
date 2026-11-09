@@ -104,10 +104,11 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S : ShortCo
 
 namespace IsAlmostSplit
 
-/-- The final map of an almost-split sequence is right minimal when the left-hand end has
-a local endomorphism ring. -/
-theorem isIso_of_comp_g_eq (hS : S.IsAlmostSplit) [IsLocalRing (End S.X₁)]
-    (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) : IsIso b :=
+/-- The final map of an almost-split sequence is right minimal. The left-hand end has a local
+endomorphism ring because the initial map is left almost split. -/
+theorem isIso_of_comp_g_eq (hS : S.IsAlmostSplit) (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) :
+    IsIso b :=
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
   hS.shortExact.isIso_of_comp_g_eq hS.isLeftAlmostSplit_f.not_isSplitMono b hb
 
 /-- The initial map of an almost-split sequence is left minimal when the right-hand end has
