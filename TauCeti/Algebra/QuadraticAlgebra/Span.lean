@@ -6,7 +6,7 @@ Authors: Wentao Li
 module
 
 public import Mathlib.Algebra.QuadraticAlgebra.Basic
-import Mathlib.LinearAlgebra.Span.Defs
+import Mathlib.LinearAlgebra.Span.Basic
 
 /-!
 # Spanning families of a quadratic algebra
@@ -25,19 +25,8 @@ theorem exists_im_ne_zero_of_span_range_eq_top {R ι : Type*} [CommSemiring R] [
     {c d : R} (a : ι → QuadraticAlgebra R c d)
     (hspan : Submodule.span R (Set.range a) = ⊤) : ∃ i, (a i).im ≠ 0 := by
   by_contra! hzero
-  let S : Submodule R (QuadraticAlgebra R c d) :=
-    { carrier := {x | x.im = 0}
-      add_mem' := fun {x y} hx hy ↦ by simp_all
-      zero_mem' := by simp
-      smul_mem' := fun r x hx ↦ by simp_all }
-  have hle : Submodule.span R (Set.range a) ≤ S :=
-    Submodule.span_le.2 (Set.range_subset_iff.2 hzero)
-  have hω : (omega : QuadraticAlgebra R c d) ∈ S := by
-    apply hle
-    rw [hspan]
-    exact Submodule.mem_top
-  have him : (omega : QuadraticAlgebra R c d).im = 0 := hω
-  rw [im_omega] at him
-  exact one_ne_zero him
+  have h0 : imₗ c d = (0 : QuadraticAlgebra R c d →ₗ[R] R) :=
+    LinearMap.ext_on_range hspan hzero
+  simpa using congrArg (fun f : QuadraticAlgebra R c d →ₗ[R] R ↦ f omega) h0
 
 end QuadraticAlgebra
