@@ -32,6 +32,8 @@ these subspaces, and an endomorphism preserving one has real determinant.
   transitively on maximal totally real subspaces.
 * `TauCeti.IsMaximalTotallyReal.isMaximalTotallyReal_prod`: a direct sum of maximal totally real
   subspaces is maximal totally real in the product of the ambient complex modules.
+* `TauCeti.IsMaximalTotallyReal.projection_sum_smul`: the projection onto a maximal totally real
+  subspace along its `i`-image takes real parts of complex coordinates in a real frame.
 -/
 
 public section
@@ -212,5 +214,33 @@ theorem isMaximalTotallyReal_prod
   exact hL.prod hM
 
 end IsMaximalTotallyReal
+
+variable (E) in
+/-- Multiplication by `i` on a complex module squares to `-1`. -/
+theorem lsmul_I_comp_lsmul_I :
+    (LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ ∘ₗ
+        (LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ = -LinearMap.id := by
+  ext v
+  simp [smul_smul]
+
+/-- The projection onto a maximal totally real subspace along its `i`-image takes the real part
+of complex coordinates in a real frame of the subspace. -/
+theorem IsMaximalTotallyReal.projection_sum_smul {ι : Type*} [Fintype ι]
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L)
+    {v : ι → E} (hv : ∀ i, v i ∈ L) (c : ι → ℂ) :
+    L.projection _ hL.isCompl (∑ i, c i • v i) = ∑ i, (c i).re • v i := by
+  have hsplit : ∑ i, c i • v i = ∑ i, (c i).re • v i +
+      (LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ (∑ i, (c i).im • v i) := by
+    simp only [map_sum, map_smul, LinearMap.restrictScalars_apply, LinearMap.lsmul_apply,
+      ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hr (r : ℝ) (y : E) : (r : ℂ) • y = r • y := by
+      rw [← smul_one_smul ℂ r y, Complex.real_smul, mul_one]
+    conv_lhs => rw [← Complex.re_add_im (c i)]
+    rw [add_smul, mul_smul, hr, hr]
+  rw [hsplit, map_add,
+    Submodule.projection_apply_of_mem_right hL.isCompl
+      ⟨_, L.sum_mem fun i _ ↦ L.smul_mem _ (hv i), rfl⟩, add_zero,
+    Submodule.projection_apply_of_mem_left hL.isCompl (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i))]
 
 end TauCeti

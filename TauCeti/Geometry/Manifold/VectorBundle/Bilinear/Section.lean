@@ -206,3 +206,57 @@ theorem range_symmetrizeBilinearSection :
     exact ⟨b, (symmetrizeBilinearSection_eq_self_iff b).mpr hb⟩
 
 end TauCeti.Manifold
+
+section BilinearComp
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] [∀ x, IsNormableSpace 𝕜 (V x)]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {W : B → Type*} [TopologicalSpace (TotalSpace F' W)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W] [∀ x, IsNormableSpace 𝕜 (W x)]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : ℕ∞ω}
+
+/-- Precomposing both arguments of a `C^n` bilinear field on `W` with a `C^n` field of
+continuous linear maps `V x → W x` gives a `C^n` bilinear field on `V`. -/
+theorem ContMDiff.bilinearComp_bundle
+    {β : ∀ x, W x →L[𝕜] W x →L[𝕜] G}
+    (hβ : ContMDiff IB (IB.prod 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F' →L[𝕜] F' →L[𝕜] G) (E := fun y ↦ W y →L[𝕜] W y →L[𝕜] G) x (β x)))
+    {A : ∀ x, V x →L[𝕜] W x}
+    (hA : ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F')) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F') (E := fun y ↦ V y →L[𝕜] W y) x (A x))) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x
+        ((β x).bilinearComp (A x) (A x))) := by
+  intro x
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, ?_⟩
+  let a (y : B) := ContinuousLinearMap.inCoordinates F V F' W x y x y (A y)
+  let q (y : B) := ContinuousLinearMap.inCoordinates F' W (F' →L[𝕜] G)
+    (fun z ↦ W z →L[𝕜] G) x y x y (β y)
+  have ha : ContMDiffAt IB 𝓘(𝕜, F →L[𝕜] F') n a x :=
+    ((contMDiffAt_hom_bundle _).mp (hA x)).2
+  have hq : ContMDiffAt IB 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G) n q x :=
+    ((contMDiffAt_hom_bundle _).mp (hβ x)).2
+  have hc := (ha.clm_precomp (F₃ := G)).clm_comp (hq.clm_comp ha)
+  apply hc.congr_of_eventuallyEq
+  filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F V x),
+    (trivializationAt F' W x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F' W x)] with y hyV hyW
+  dsimp only [a, q]
+  ext v w
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
+  rw [inCoordinates_apply_eq₂ hyV hyV (by simp), inCoordinates_apply_eq₂ hyW hyW (by simp)]
+  simp [ContinuousLinearMap.inCoordinates, hyV, hyW]
+
+end BilinearComp
