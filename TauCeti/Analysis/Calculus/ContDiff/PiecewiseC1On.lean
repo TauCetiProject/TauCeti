@@ -241,10 +241,10 @@ theorem IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a b) (c : ℝ) :
 curve `t ↦ γ (t + c)` is piecewise `C¹` on `[[a - c, b - c]]`. -/
 theorem IsPiecewiseC1On.comp_add_const (h : IsPiecewiseC1On γ a b) (c : ℝ) :
     IsPiecewiseC1On (fun t => γ (t + c)) (a - c) (b - c) := by
-  have h' := (h.comp_const_sub 0).comp_const_sub (-c)
-  rwa [show (fun t => γ (0 - (-c - t))) = fun t => γ (t + c) from
-    funext fun t => congrArg γ (by ring), show -c - (0 - a) = a - c by ring,
-    show -c - (0 - b) = b - c by ring] at h'
+  -- Translation is reversal about `0` followed by reversal about `-c`.
+  convert (h.comp_const_sub 0).comp_const_sub (-c) using 1
+  · simp
+  all_goals ring
 
 /-- **Concatenation of piecewise-`C¹` curves.** If `γ` is piecewise `C¹` on `[a, b]`, `δ` is
 piecewise `C¹` on `[b, c]`, and the two agree at `b`, then the curve following `γ` up to time `b`
