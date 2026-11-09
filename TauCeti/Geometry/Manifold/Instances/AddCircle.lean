@@ -470,6 +470,7 @@ theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 
   have hgc : ¬MDifferentiableAt 𝓘(ℝ) I' (g ∘ (↑)) t :=
     ((isLocalDiffeomorph_coe p 1 t).mdifferentiableAt_comp_iff one_ne_zero).not.mpr hg
   rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgc]
+  -- Both `TangentSpace`s unfold to `ℝ`, so the two zero maps coincide.
   rfl
 
 variable {p} in
