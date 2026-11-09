@@ -124,8 +124,10 @@ theorem exists_real_polynomial_relations {σ : Type*} {l : Filter (σ → ℝ)}
   let g : Germ l ℝ →ₐ[R] B := (algebraMap ℝ ℂ).mapGermAlgHom l fun p ↦ by
     rw [Germ.mvPolynomialAlgebra_algebraMap_apply, hB, RingHom.mapGerm_coe,
       Complex.coe_algebraMap, Function.comp_def]
-  have hg_apply (u : (σ → ℝ) → ℝ) : g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : B) :=
-    RingHom.mapGermAlgHom_coe _ _ _ _
+  have hg_apply (u : (σ → ℝ) → ℝ) : g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : B) := by
+    rw [show ⇑g = (algebraMap ℝ ℂ).mapGerm l from RingHom.coe_mapGermAlgHom _ _ _,
+      RingHom.mapGerm_coe]
+    rfl
   have hg : Function.Injective g := by
     -- The `show` turns the opaque local `g` into its definition, so that
     -- `RingHom.coe_mapGermAlgHom` identifies `⇑g` with `(algebraMap ℝ ℂ).mapGerm l`.
@@ -134,8 +136,10 @@ theorem exists_real_polynomial_relations {σ : Type*} {l : Filter (σ → ℝ)}
   let j : B →ₐ[R] B := (starRingEnd ℂ).mapGermAlgHom l fun p ↦ by
     rw [hB, RingHom.mapGerm_coe, Function.comp_def]
     simp only [Complex.conj_ofReal]
-  have hj_apply (u : (σ → ℝ) → ℂ) : j (u : B) = ((fun y ↦ star (u y) : (σ → ℝ) → ℂ) : B) :=
-    RingHom.mapGermAlgHom_coe _ _ _ _
+  have hj_apply (u : (σ → ℝ) → ℂ) : j (u : B) = ((fun y ↦ star (u y) : (σ → ℝ) → ℂ) : B) := by
+    rw [show ⇑j = (starRingEnd ℂ).mapGerm l from RingHom.coe_mapGermAlgHom _ _ _,
+      RingHom.mapGerm_coe]
+    rfl
   have hc (z : ℂ) : IsAlgebraic R ((fun _ : σ → ℝ ↦ z) : B) := by
     have hz' : IsIntegral R (MvPolynomial.C z : S) := Algebra.IsIntegral.isIntegral _
     convert hz'.isAlgebraic.algHom (IsScalarTower.toAlgHom R S B) using 1

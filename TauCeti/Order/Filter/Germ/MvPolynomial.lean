@@ -60,23 +60,6 @@ theorem mvPolynomialAlgebra_algebraMap_apply [CommSemiring R] (l : Filter (σ �
   rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, coe_coeRingHom]
   congr 1 with y
 
-/-- Evaluating `P : (MvPolynomial σ R)[X]` at the germ of `f` gives the germ of
-`y ↦ P (y, f y)`, where `P (y, t)` is `(P.map (MvPolynomial.eval y)).eval t`. -/
-theorem aeval_coe [CommSemiring R] {l : Filter (σ → R)} (P : (MvPolynomial σ R)[X])
-    (f : (σ → R) → R) :
-    aeval (f : Germ l R) P =
-      ((fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y) : (σ → R) → R) : Germ l R) := by
-  have key : (fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y)) =
-      P.eval₂ (RingHom.pi fun y ↦ MvPolynomial.eval y) f := by
-    ext y
-    rw [eval_map]
-    -- `Pi.evalRingHom _ y` composed with `RingHom.pi` is `MvPolynomial.eval y` by definition.
-    exact (hom_eval₂ P (RingHom.pi fun y ↦ MvPolynomial.eval y)
-      (Pi.evalRingHom (fun _ : σ → R ↦ R) y) f).symm
-  rw [key, aeval_def, RingHom.algebraMap_toAlgebra]
-  -- `Germ.coeRingHom` is the coercion to germs by definition (`Germ.coe_coeRingHom`).
-  exact (hom_eval₂ (p := P) (g := coeRingHom (R := R) l) ..).symm
-
 /-- Evaluating a polynomial with coefficients in `S` at the germ of `f : α → T`, where the
 coefficients act on germs through `u : S →+* (α → T)` followed by the coercion to germs, gives the
 germ of the pointwise evaluations: at `y`, the coefficients are evaluated by `u · y`. -/
@@ -92,6 +75,14 @@ theorem eval₂_coeRingHom_comp_coe {α S T : Type*} [CommSemiring S] [CommSemir
     exact hom_eval₂ P u (Pi.evalRingHom (fun _ : α ↦ T) y) f
   rw [← heval]
   exact (hom_eval₂ P u (coeRingHom l) f).symm
+
+/-- Evaluating `P : (MvPolynomial σ R)[X]` at the germ of `f` gives the germ of
+`y ↦ P (y, f y)`, where `P (y, t)` is `(P.map (MvPolynomial.eval y)).eval t`. -/
+theorem aeval_coe [CommSemiring R] {l : Filter (σ → R)} (P : (MvPolynomial σ R)[X])
+    (f : (σ → R) → R) :
+    aeval (f : Germ l R) P =
+      ((fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y) : (σ → R) → R) : Germ l R) :=
+  eval₂_coeRingHom_comp_coe l (RingHom.pi fun y ↦ MvPolynomial.eval y) P f
 
 /-- The germ of `f` is algebraic over the coordinate polynomials exactly when `f` satisfies a
 nonzero polynomial relation `P (y, f y) = 0` eventually along `l`. -/
