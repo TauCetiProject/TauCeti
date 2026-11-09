@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
+import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -67,6 +68,8 @@ composite is not built here.
   matrix is equivalent to basis-free skew-adjointness.
 * `skewAdjointLieSubalgebra.apply_left`: a skew-adjoint endomorphism moves across its
   form with a sign change, `B (A u) w = -B u (A w)`.
+* `skewAdjointLieSubalgebra.eq_zero_of_isSelfAdjoint`: an endomorphism skew-adjoint and
+  self-adjoint for a left-separating form vanishes.
 * `TauCeti.LieAlgebra.ad_mem_skewAdjointSubmodule`: invariance of a form is skew-adjointness of the
   adjoint action.
 * `TauCeti.LieAlgebra.ker_adSkewAdjoint`: the kernel of `adSkewAdjoint` is the centre, so the map is
@@ -177,6 +180,19 @@ theorem skewAdjointLieSubalgebra.apply_left {R M : Type*} [CommRing R] [AddCommG
     B ((A : Module.End R M) u) w = -B u ((A : Module.End R M) w) := by
   rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End R M)).1 A.2 u w, Pi.neg_apply,
     map_neg]
+
+/-- An endomorphism both skew-adjoint and self-adjoint for a left-separating bilinear form
+vanishes, over a ring without zero divisors in which `2 ≠ 0`. -/
+theorem skewAdjointLieSubalgebra.eq_zero_of_isSelfAdjoint {R M : Type*} [CommRing R]
+    [NoZeroDivisors R] [NeZero (2 : R)] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+    (hB : B.SeparatingLeft) (A : skewAdjointLieSubalgebra B)
+    (hA : B.IsSelfAdjoint (A : Module.End R M)) : A = 0 := by
+  refine Subtype.ext (LinearMap.ext fun u ↦ hB _ fun w ↦ ?_)
+  have h := skewAdjointLieSubalgebra.apply_left A u w
+  rw [← hA u w] at h
+  have h2 : (2 : R) * B ((A : Module.End R M) u) w = 0 := by
+    linear_combination h
+  exact (mul_eq_zero.1 h2).resolve_left two_ne_zero
 
 namespace TauCeti.LieAlgebra
 
