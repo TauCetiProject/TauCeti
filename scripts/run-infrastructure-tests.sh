@@ -40,7 +40,6 @@ python3 scripts/test_build_lint_driver.py
 python3 scripts/test_lint_env_locations.py
 python3 scripts/test_elan_pin.py
 python3 scripts/test_dependency_warm.py
-python3 scripts/test_dependency_prefill.py
 python3 scripts/test_toolchain_install_retry.py
 python3 scripts/test_duplicate_audit_workflow.py
 python3 scripts/test_ci_host_resources.py

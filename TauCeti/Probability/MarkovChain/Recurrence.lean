@@ -136,10 +136,9 @@ theorem Communicates.isRecurrent_iff (hxy : κ.Communicates x y) :
       (tsum_comp_le_tsum_of_injective (f := fun n : ℕ => a + n + b)
         (by intro m n h; dsimp only at h; omega) (fun n => (κ ^ n) y {y}))
     exact (mul_le_mul_left
-      (pow_apply_singleton_mul_le_pow_add_apply κ a n y x (measurableSet_singleton x))
+      (pow_apply_singleton_mul_le_pow_add_apply κ a n y x)
       ((κ ^ b) x {y})).trans
-      (pow_apply_singleton_mul_le_pow_add_apply κ (a + n) b y x
-        (measurableSet_singleton y))
+      (pow_apply_singleton_mul_le_pow_add_apply κ (a + n) b y x)
   simpa [hx, ha.ne', hb.ne'] using hbound
 
 /-- Transience is constant on communicating classes. -/

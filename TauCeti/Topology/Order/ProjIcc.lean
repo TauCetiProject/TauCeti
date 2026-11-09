@@ -12,12 +12,15 @@ public import Mathlib.Topology.Order.ProjIcc
 
 A function continuous on a nonempty closed interval `[a, b]` of a linear order with the order
 topology agrees on `[a, b]` with a continuous function on the whole space: extend it by its
-endpoint values with `Set.IccExtend`.
+endpoint values with `Set.IccExtend`. This extension also preserves right continuity within
+the interval, without requiring continuity beyond the right endpoint.
 
 ## Main results
 
 * `ContinuousOn.exists_continuous_eqOn_Icc`: a function continuous on `[a, b]`, with `a ≤ b`,
   agrees on `[a, b]` with a continuous function.
+* `TauCeti.continuousWithinAt_IccExtend_Ici`: constant extension preserves right continuity
+  within the interval and is right-continuous outside `[a, b)` without further assumptions.
 -/
 
 public section

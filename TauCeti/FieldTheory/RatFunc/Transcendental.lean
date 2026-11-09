@@ -46,7 +46,7 @@ characteristic.
 ## Main results
 
 * `TauCeti.algebraMap_ratFuncAlgebraOfTranscendental_X`: the variable `X` acts as `x`.
-* `TauCeti.map_algebraMap_ratFuncAlgebraOfTranscendental`: an injective `k`-algebra map `f`
+* `TauCeti.map_algebraMap_ratFuncAlgebraOfTranscendental`: a `k`-algebra map `f` of fields
   carries the structure induced by `x` to the structure induced by `f x`.
 * `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental`: the structure extends the given
   `k`-algebra structure.
@@ -139,15 +139,15 @@ theorem algebraMap_ratFuncAlgebraOfTranscendental_X (hx : Transcendental k x) :
   rw [algebraMap_ratFuncAlgebraOfTranscendental_apply,
     RatFunc.algEquivOfTranscendental_X]
 
-/-- An injective `k`-algebra map `f : F → F'` carries the embedding `X ↦ x` of `k(X)` to the
+/-- A `k`-algebra map `f : F → F'` of fields carries the embedding `X ↦ x` of `k(X)` to the
 embedding `X ↦ f x`. -/
 theorem map_algebraMap_ratFuncAlgebraOfTranscendental {F' G : Type*} [Field F'] [Algebra k F']
-    [FunLike G F F'] [AlgHomClass G k F F'] (f : G) (hf : Function.Injective f)
+    [FunLike G F F'] [AlgHomClass G k F F'] (f : G)
     (hx : Transcendental k x) (r : RatFunc k) :
     f (letI := ratFuncAlgebraOfTranscendental hx; algebraMap (RatFunc k) F r) =
-      letI := ratFuncAlgebraOfTranscendental (hx.algHom f hf)
+      letI := ratFuncAlgebraOfTranscendental (hx.algHom f (AlgHom.ofClass f).injective)
       algebraMap (RatFunc k) F' r := by
-  have hy := hx.algHom f hf
+  have hy := hx.algHom f (AlgHom.ofClass f).injective
   -- Both sides are `k`-algebra maps out of `k(X)` sending `X` to `f x`.
   have h : (AlgHom.ofClass f).comp
         (k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom) =
@@ -191,7 +191,7 @@ theorem isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap {F' : Type*} [Fi
   let _ := ratFuncAlgebraOfTranscendental
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx)
   exact .of_algebraMap_eq fun r ↦ (map_algebraMap_ratFuncAlgebraOfTranscendental
-    (IsScalarTower.toAlgHom k F F') (algebraMap F F').injective hx r).symm
+    (IsScalarTower.toAlgHom k F F') hx r).symm
 
 /-- Separability over `k(x)` transfers to the rational-function algebra structure induced by
 `x`. -/
