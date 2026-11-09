@@ -175,7 +175,7 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_cappedPerturbation [Finit
   hω.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU hu
     (contMDiff_cappedPerturbation_apply hH hHs a L 1).contMDiffOn
     (contMDiff_cappedPerturbation_apply hH hHs a L Complex.I).contMDiffOn
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation _)) hTU
+    (isCompact_preimage_truncation _) hTU
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz 1)
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz Complex.I)
     hD hTD hE hR
@@ -288,7 +288,7 @@ theorem setIntegral_floerEnergyDensity_cappedPerturbation (ω : SymplecticForm V
   ω.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU hu
     (contDiff_cappedPerturbation_apply hH hHs a L 1).contDiffOn
     (contDiff_cappedPerturbation_apply hH hHs a L Complex.I).contDiffOn
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation _)) hTU
+    (isCompact_preimage_truncation _) hTU
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz 1)
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz Complex.I)
     hD hTD hE

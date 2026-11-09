@@ -91,12 +91,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
-/-- The truncations, in real coordinates, are measurable. -/
-private theorem measurableSet_truncation (R : ℝ) :
-    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-  ((isCompact_truncation R).isClosed.preimage
-    Complex.equivRealProdCLM.symm.continuous).measurableSet
-
 /-- Stokes' formula `TauCeti.SymplecticForm.integral_fderiv_apply_truncation` in the real
 coordinates `ℝ × ℝ ≃ ℂ` of the energy identity. -/
 private theorem integral_symplecticForm_fderiv_truncation (ω : SymplecticForm V) {u : ℝ × ℝ → V}
@@ -168,7 +162,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_ha
     refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
       ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
         (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).measurableSet
-      (fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩) fun z hz ↦ ?_
+      (preimage_truncation_subset_thricePuncturedSphereReal R) fun z hz ↦ ?_
     obtain ⟨q, hq⟩ : ∃ q : Puncture,
         R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
       by_contra! h
@@ -251,7 +245,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   set T : ℕ → Set (ℝ × ℝ) := fun n ↦ Complex.equivRealProdCLM.symm ⁻¹' truncation (n + 2)
   have hTS (n : ℕ) : T n ⊆ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1} :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+    preimage_truncation_subset_thricePuncturedSphereReal _
   have hmono : Monotone T := fun m n hmn z hz ↦ by
     obtain ⟨h₀, h₁, h⟩ := mem_truncation.1 hz
     exact mem_truncation.2 ⟨h₀, h₁, fun q ↦ (h q).trans (by gcongr)⟩
@@ -275,7 +269,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
       u z) :=
     (ofReal_integral_eq_lintegral_ofReal
       (integrableOn_truncation_pairOfPantsPerturbation ω hH hHs (hu.of_le one_le_two) _).1
-      (ae_restrict_of_forall_mem (measurableSet_truncation _) fun z hz ↦
+      (ae_restrict_of_forall_mem (isCompact_preimage_truncation _).isClosed.measurableSet fun z hz ↦
         ω.floerEnergyDensity_nonneg (hJ z (hTS n hz)) (hfloer z (hTS n hz)))).symm
   have hlim : Tendsto (fun n ↦ ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -392,7 +386,8 @@ theorem hamiltonianAction_le_add_add_sub_sum (ω : SymplecticForm V)
           (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) -
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t := by
   -- The energy over `S_R` is nonnegative.
-  have hE := setIntegral_nonneg (μ := volume) (measurableSet_truncation R) fun z hz ↦
+  have hE := setIntegral_nonneg (μ := volume)
+    (isCompact_preimage_truncation R).isClosed.measurableSet fun z hz ↦
     ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have hle := integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_le_sum_sub_sum
     ω hH hHs hh hhH hu hR
@@ -467,8 +462,8 @@ theorem le_add_add_sub_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
   simp only [endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul] at h₀ h₁ hinf
   exact le_of_tendsto_of_tendsto hinf ((h₀.add h₁).sub_const _) <| eventually_atTop.2
     ⟨2, fun R hR ↦ hamiltonianAction_le_add_add_sub_sum ω hH hHs hh hhH hu hR
-      (fun z hz ↦ hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
-      fun z hz ↦ hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩⟩
+      (fun z hz ↦ hJ z (preimage_truncation_subset_thricePuncturedSphereReal R hz))
+      fun z hz ↦ hfloer z (preimage_truncation_subset_thricePuncturedSphereReal R hz)⟩
 
 /-! ### Action bounds for bounded Hamiltonians
 
