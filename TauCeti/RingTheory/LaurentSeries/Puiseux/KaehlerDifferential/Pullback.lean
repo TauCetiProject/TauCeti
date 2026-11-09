@@ -66,16 +66,14 @@ theorem pullback_D (ρ : puiseuxField K →A[K] puiseuxField K) (x : puiseuxFiel
 theorem pullback_mk (ρ : puiseuxField K →A[K] puiseuxField K)
     (ω : Ω[puiseuxField K⁄K]) :
     pullback ρ (mk K ω) = mk K (KaehlerDifferential.mapSemilinear ρ.toAlgHom ω) := by
-  induction (KaehlerDifferential.span_range_derivation K (puiseuxField K) ▸ Submodule.mem_top :
-      ω ∈ Submodule.span (puiseuxField K) (Set.range (KaehlerDifferential.D K (puiseuxField K))))
-      using Submodule.span_induction with
-  | mem ω hω =>
-    obtain ⟨x, rfl⟩ := hω
-    rw [← D_apply, pullback_D, KaehlerDifferential.mapSemilinear_D, D_apply]
+  have h : (pullback ρ).comp (mk K) =
+      (mk K).comp (KaehlerDifferential.mapSemilinear ρ.toAlgHom) := by
+    apply LinearMap.ext_on_range (KaehlerDifferential.span_range_derivation K (puiseuxField K))
+    intro x
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, ← D_apply, pullback_D,
+      KaehlerDifferential.mapSemilinear_D, D_apply]
     simp only [ContinuousAlgHom.coe_coe]
-  | zero => rw [map_zero, map_zero, map_zero, map_zero]
-  | add ω η _ _ hω hη => simp only [map_add, hω, hη]
-  | smul a ω _ hω => simp only [map_smul, map_smulₛₗ, hω]
+  simpa only [LinearMap.comp_apply] using LinearMap.congr_fun h ω
 
 /-- Pullback is characterized among semilinear maps by sending `dt` to `d(ρ(t))`. -/
 theorem eq_pullback_of_apply_D_single_one (ρ : puiseuxField K →A[K] puiseuxField K)
@@ -188,6 +186,7 @@ theorem residue_equivPuiseuxField_pullback_of_order_eq_one
     (h : (ρ (single K 1 1) : HahnSeries ℚ K).order = 1)
     (ω : ContinuousKaehlerDifferential K) :
     residue K (equivPuiseuxField K (pullback ρ ω)) = residue K (equivPuiseuxField K ω) := by
-  rw [residue_equivPuiseuxField_pullback, h, Rat.cast_one, one_mul]
+  rw [equivPuiseuxField_pullback]
+  exact residue_map_mul_derivation ρ.toAlgHom ρ.continuous h _
 
 end TauCeti.puiseuxField.ContinuousKaehlerDifferential
