@@ -131,7 +131,8 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (b : Basis ι Q �
   have hsmooth : Algebra.FormallySmooth K (Q ⧸ Ideal.span (g '' {s₀}ᶜ)) := by
     classical
     rw [Set.image_eq_range]
-    refine b₀.formallySmooth_quotient_of_coordinates hx hb₀ (y := y) ?_ ?_
+    refine b₀.formallySmooth_quotient_of_coordinates
+      (fun i ↦ hx ▸ Ideal.subset_span ⟨i, rfl⟩) hb₀ (y := y) ?_ ?_
     · rw [Fintype.card_compl_set, Set.card_singleton, Fintype.card_fin]
       have := Fintype.card_pos_iff.2 ⟨s₀⟩
       omega
