@@ -311,6 +311,36 @@ def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
 
 end sigma
 
+section prodLeft
+
+open MonoidalCategory
+
+/-- The product `X × (Y, B) = (X × Y, X × B)` of a topological space `X`, on the left, with a
+topological pair `P = (Y, B)`. -/
+abbrev prodLeft (P : TopPair.{u}) (X : TopCat.{u}) : TopPair.{u} :=
+  TopPair.of (X ◁ P.map) (Topology.IsEmbedding.id.prodMap P.isEmbedding_map)
+
+/-- The map of products `X × (Y, B) ⟶ X' × (Y', B')` induced by a map of spaces `g : X ⟶ X'` and a
+map of pairs `f : (Y, B) ⟶ (Y', B')`. -/
+abbrev prodLeftMap {P P' : TopPair.{u}} {X X' : TopCat.{u}} (f : P ⟶ P') (g : X ⟶ X') :
+    P.prodLeft X ⟶ P'.prodLeft X' :=
+  TopPair.ofHom (g ⊗ₘ Hom.fst f) (g ⊗ₘ Hom.snd f) (by
+    ext x
+    exact Prod.ext rfl (Hom.w_apply f x.2))
+
+@[simp]
+lemma prodLeftMap_id (P : TopPair.{u}) (X : TopCat.{u}) :
+    prodLeftMap (𝟙 P) (𝟙 X) = 𝟙 (P.prodLeft X) :=
+  hom_ext_of_fst _ (by ext; rfl)
+
+@[simp]
+lemma prodLeftMap_comp {P P' P'' : TopPair.{u}} {X X' X'' : TopCat.{u}} (f : P ⟶ P')
+    (f' : P' ⟶ P'') (g : X ⟶ X') (g' : X' ⟶ X'') :
+    prodLeftMap (f ≫ f') (g ≫ g') = prodLeftMap f g ≫ prodLeftMap f' g' :=
+  hom_ext_of_fst _ (by ext; rfl)
+
+end prodLeft
+
 section liftSnd
 
 variable (X : TopPair.{u}) {Z : Type*} [TopologicalSpace Z]
