@@ -470,15 +470,18 @@ theorem le_add_add_sub_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
       (fun z hz ↦ hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
       fun z hz ↦ hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩⟩
 
+end SymplecticForm
+
 /-! ### Action bounds for bounded Hamiltonians
 
 If `|H_q| ≤ B_q`, the constants `h_q = ∓B_q` satisfy the one-sided bounds `±h_q ≤ ±H_q`, and the
 one-sided constant `-∫₀¹ h_0 - ∫₀¹ h_1 + ∫₀¹ h_∞` becomes `B_0 + B_1 + B_∞`. -/
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+namespace ThricePuncturedSphere.Puncture
+
 /-- Bounds `|H_q| ≤ B_q` give the one-sided bounds `±h_q ≤ ±H_q` for the constants
 `h_q = ∓B_q`. -/
-theorem endSign_mul_neg_endSign_mul_le {B : Puncture → ℝ}
+theorem endSign_mul_neg_endSign_mul_le {V : Type*} {H : Puncture → ℝ → V → ℝ} {B : Puncture → ℝ}
     (hB : ∀ q t x, |H q t x| ≤ B q) (q : Puncture) (t : ℝ) (x : V) :
     q.endSign * -(q.endSign * B q) ≤ q.endSign * H q t x := by
   rw [mul_neg, ← mul_assoc, endSign_mul_self, one_mul]
@@ -488,6 +491,15 @@ theorem endSign_mul_neg_endSign_mul_le {B : Puncture → ℝ}
 theorem sum_endSign_mul_integral_neg_endSign_mul (B : Puncture → ℝ) :
     ∑ q, q.endSign * ∫ _ in (0 : ℝ)..1, -(q.endSign * B q) = -∑ q, B q := by
   simp [mul_neg, ← mul_assoc, Finset.sum_neg_distrib]
+
+end ThricePuncturedSphere.Puncture
+
+namespace SymplecticForm
+
+open Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {H : Puncture → ℝ → V → ℝ}
 
 /-- **The energy bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover

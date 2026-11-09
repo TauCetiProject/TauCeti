@@ -492,34 +492,6 @@ private theorem image_exchangeMap_truncation (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
 
 /-! ### The boundary loops -/
 
-/-- The end lift of an input end stays within distance `1/2` of its centre on `s ≥ 0`. -/
-private theorem norm_cylindricalEndLift_le {q : Puncture} (hq : q ≠ inf) {z : ℂ} (hz : 0 ≤ z.re) :
-    ‖q.cylindricalEndLift z‖ ≤ 3 / 2 := by
-  have hexp : ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ ≤ 1 := by
-    rw [Complex.norm_exp, Real.exp_le_one_iff]
-    have : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
-      rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
-        Complex.re_ofReal_mul]
-    rw [this]
-    nlinarith [Real.pi_pos]
-  have hc : ‖q.endCenter‖ ≤ 1 := by
-    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> simp [h]
-  rw [cylindricalEndLift_eq]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_mul, norm_endScale hq]
-  nlinarith [norm_nonneg (Complex.exp (-(2 * (π : ℂ)) * z))]
-
-/-- The end lift of the output end stays outside the disc `|w| < 14` on `s ≤ -1`. -/
-private theorem le_norm_cylindricalEndLift_inf {z : ℂ} (hz : z.re ≤ -1) :
-    14 ≤ ‖inf.cylindricalEndLift z‖ := by
-  rw [cylindricalEndLift_inf, norm_mul, Complex.norm_ofNat, Complex.norm_exp]
-  have : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
-    rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
-      Complex.re_ofReal_mul]
-  rw [this]
-  have h : 2 * π ≤ -(2 * π) * z.re := by nlinarith [Real.pi_pos]
-  linarith [Real.exp_le_exp.2 h, fourteen_le_two_mul_exp_two_pi]
-
 /-- On the boundary circle `s = R ≥ 0` of an input end, `Φ_c` is the identity. -/
 private theorem exchangeMap_cylindricalEndLift (c : ℝ) {q : Puncture} (hq : q ≠ inf) {R : ℝ}
     (hR : 0 ≤ R) (t : ℝ) :
@@ -527,7 +499,10 @@ private theorem exchangeMap_cylindricalEndLift (c : ℝ) {q : Puncture} (hq : q 
       Complex.equivRealProdCLM (q.cylindricalEndLift (R + t * Complex.I)) := by
   refine exchangeMap_of_norm_le ?_
   rw [ContinuousLinearEquiv.symm_apply_apply]
-  exact (norm_cylindricalEndLift_le hq (by simpa using hR)).trans (by norm_num)
+  have h := norm_cylindricalEndLift_sub_le hq le_rfl zero_le_one
+    (z := ↑R + ↑t * Complex.I) (by simpa using hR)
+  rw [Complex.ofReal_zero, sub_zero] at h
+  exact h.trans (by norm_num)
 
 /-- On the boundary circle `s = -R ≤ -1` of the output end, `Φ_c` is the translation by `c`. -/
 private theorem exchangeMap_cylindricalEndLift_inf (c : ℝ) {R : ℝ} (hR : 1 ≤ R) (t : ℝ) :
@@ -536,7 +511,10 @@ private theorem exchangeMap_cylindricalEndLift_inf (c : ℝ) {R : ℝ} (hR : 1 �
   rw [exchangeMap_of_le_norm]
   · ext <;> simp [add_comm]
   · rw [ContinuousLinearEquiv.symm_apply_apply]
-    exact le_trans (by norm_num) (le_norm_cylindricalEndLift_inf (by simpa using hR))
+    have h := two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1)
+      (z := ↑(-R) + ↑t * Complex.I) (by simpa using hR)
+    rw [mul_one] at h
+    linarith [fourteen_le_two_mul_exp_two_pi]
 
 end Floer
 
@@ -546,39 +524,6 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {c : ℝ}
-
-omit [FiniteDimensional ℝ V] in
-/-- The member `c` of the family is `C¹` jointly in the domain point of `S` and the target point. -/
-private theorem contDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
-    ContDiffAt ℝ 1
-      (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      (z, x) := by
-  have hH' (q : Puncture) : Periodic (update H inf 0 q) 1 := by
-    rcases eq_or_ne q inf with rfl | hq
-    · simp
-    · simpa [update_of_ne hq] using hH q
-  have hHs' (q : Puncture) : ContDiff ℝ 1 (uncurry (update H inf 0 q)) := by
-    rcases eq_or_ne q inf with rfl | hq
-    · have h0 : uncurry (update H inf 0 inf) = fun _ ↦ (0 : ℝ) := by
-        funext p
-        simp [uncurry]
-      rw [h0]
-      exact contDiff_const
-    · simpa [update_of_ne hq] using hHs q
-  have hin := contDiffAt_uncurry_pairOfPantsPerturbation hH' hHs' hz x v
-  have hpl : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦
-      negativePlanePerturbation (H inf) (Complex.equivRealProdCLM.symm (p.1 - (c, 0))) p.2 v)
-      (z, x) :=
-    (contDiff_negativePlanePerturbation_apply (hH inf) (hHs inf) v).contDiffAt.comp
-      (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) _ (by fun_prop)
-  have he (z : ℝ × ℝ) :
-      Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
-    apply Complex.ext <;> simp
-  simp only [he] at hpl
-  exact (hin.add hpl).congr_of_eventuallyEq (Eventually.of_forall fun p ↦ by
-    simp [exchangePerturbation_def, uncurry])
 
 omit [FiniteDimensional ℝ V] in
 private theorem differentiableAt_exchangePerturbation_target (hH : ∀ q, Periodic (H q) 1)
@@ -866,16 +811,10 @@ theorem le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation
     (ha : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H inf) (fun t ↦ u (Complex.equivRealProdCLM
       (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) atTop (𝓝 (a inf))) :
     a inf ≤ a zero + a one - ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t := by
-  -- The truncation with recentred output end lies in `S`.
-  have hT {R : ℝ} {z : ℝ × ℝ} (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R) :
-      z ∈ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1} := by
-    obtain ⟨h₀, h₁, -⟩ := mem_exchangeTruncation.1 hz
-    have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
-    exact ⟨fun h ↦ by simp [h] at h₀; linarith, fun h ↦ by simp [h] at h₁; linarith⟩
   exact le_of_tendsto_of_tendsto ha ((ha₀.add ha₁).sub_const _) <| eventually_atTop.2
     ⟨2, fun R hR ↦ hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation ω hH hHs hh hhH
-      hc₀ hc₁ hu hR (fun z hz ↦ hJ z (hT hz)) fun z hz ↦ hfloer z (hT hz)⟩
+      hc₀ hc₁ hu hR (fun z hz ↦ hJ z (exchangeTruncation_subset c R hz))
+      fun z hz ↦ hfloer z (exchangeTruncation_subset c R hz)⟩
 
 /-- **The action bound for the limiting actions along the input-exchange family.** Under the
 hypotheses of `SymplecticForm.le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation`,

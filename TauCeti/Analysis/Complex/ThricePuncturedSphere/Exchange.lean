@@ -31,8 +31,10 @@ output end; it is absorbed by the input-exchange family of Floer perturbation da
 of the member of that family whose output end is recentred at `c` is truncated by
 `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`,
 bounded by the circle `s = -R` of the recentred output end, with the parts `s > R` of the two input
-ends removed. For `c = 0` it is the truncation `S_R`
-(`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`).
+ends removed. It is a compact subset of `S`
+(`TauCeti.ThricePuncturedSphere.isCompact_exchangeTruncation`,
+`TauCeti.ThricePuncturedSphere.exchangeTruncation_subset`), and for `c = 0` it is the truncation
+`S_R` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`).
 
 ## References
 
@@ -140,5 +142,18 @@ theorem exchangeTruncation_zero (R : ℝ) : exchangeTruncation 0 R = truncation 
 theorem isClosed_exchangeTruncation (c R : ℝ) : IsClosed (exchangeTruncation c R) :=
   ((isClosed_le continuous_const continuous_norm).inter (isClosed_le continuous_const
     (continuous_norm.comp (continuous_id.sub continuous_const)))).inter Metric.isClosed_closedBall
+
+/-- The truncation with recentred output end is compact. -/
+theorem isCompact_exchangeTruncation (c R : ℝ) : IsCompact (exchangeTruncation c R) :=
+  Metric.isCompact_of_isClosed_isBounded (isClosed_exchangeTruncation c R)
+    (Metric.isBounded_closedBall.subset Set.inter_subset_right)
+
+/-- The truncation with recentred output end lies in the thrice-punctured sphere
+`S = ℂ ∖ {0, 1}`. -/
+theorem exchangeTruncation_subset (c R : ℝ) : exchangeTruncation c R ⊆ {w | w ≠ 0 ∧ w ≠ 1} := by
+  intro w hw
+  obtain ⟨h₀, h₁, -⟩ := mem_exchangeTruncation.1 hw
+  have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
+  exact ⟨fun h ↦ by simp [h] at h₀; linarith, fun h ↦ by simp [h] at h₁; linarith⟩
 
 end TauCeti.ThricePuncturedSphere

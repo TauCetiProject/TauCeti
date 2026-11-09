@@ -169,6 +169,43 @@ theorem cylindricalEndLift_sub_endCenter_ne_zero (q : Puncture) (z : ℂ) :
   rw [cylindricalEndLift_eq, add_sub_cancel_left]
   exact mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)
 
+/-- The real part of the exponent of the end lifts. -/
+private theorem re_neg_two_pi_mul (z : ℂ) : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
+  rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
+    Complex.re_ofReal_mul]
+
+/-- On the part `s ≥ 0` of an input end `q`, the end lift stays within distance `1` of `0` or
+`1`, hence within distance `2` of every `c ∈ [0, 1]`. -/
+theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
+    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : 0 ≤ z.re) :
+    ‖q.cylindricalEndLift z - c‖ ≤ 2 := by
+  have hφ : ‖q.cylindricalEndLift z - q.endCenter‖ ≤ 1 := by
+    rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, norm_endScale hq,
+      Complex.norm_exp]
+    have : Real.exp (-(2 * (π : ℂ)) * z).re ≤ 1 := by
+      rw [Real.exp_le_one_iff, re_neg_two_pi_mul]
+      nlinarith [Real.pi_pos]
+    linarith
+  have hc : ‖q.endCenter - (c : ℂ)‖ ≤ 1 := by
+    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
+    · rw [zero_sub, norm_neg, Complex.norm_real, Real.norm_of_nonneg hc₀]
+      exact hc₁
+    · rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+        Real.norm_of_nonneg (by linarith)]
+      linarith
+  calc ‖q.cylindricalEndLift z - c‖
+      = ‖(q.cylindricalEndLift z - q.endCenter) + (q.endCenter - c)‖ := by ring_nf
+    _ ≤ 1 + 1 := (norm_add_le _ _).trans (add_le_add hφ hc)
+    _ = 2 := by norm_num
+
+/-- On the part `s ≤ -R` of the output end, the end lift stays outside the open disc of radius
+`2 exp (2πR)` about `0`. -/
+theorem two_mul_exp_le_norm_cylindricalEndLift_inf {R : ℝ} {z : ℂ} (hz : z.re ≤ -R) :
+    2 * Real.exp (2 * π * R) ≤ ‖inf.cylindricalEndLift z‖ := by
+  rw [cylindricalEndLift_inf, norm_mul, Complex.norm_ofNat, Complex.norm_exp, re_neg_two_pi_mul]
+  have h : 2 * π * R ≤ -(2 * π) * z.re := by nlinarith [Real.pi_pos]
+  linarith [Real.exp_le_exp.2 h]
+
 /-- The logarithmic end coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)`. It inverts the end
 lift (`cylindricalEndLift_endCoord`); its real part is the longitudinal coordinate and its
 imaginary part an angular coordinate, determined by the point only modulo `1`. -/
