@@ -15,6 +15,7 @@ import Mathlib.Algebra.Module.LocalizedModule.Int
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # Full submodule lattices
@@ -492,16 +493,10 @@ into a submodule spanning the ambient space over `K`, such as a full lattice. -/
 theorem exists_ne_zero_forall_smul_mem (S : Submodule R V')
     (hS : Submodule.span K (S : Set V') = ⊤) {M : Submodule R V'} (hM : M.FG) :
     ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
-  classical
   have := IsDomain.of_faithfulSMul R K
-  obtain ⟨t, rfl⟩ := hM
-  choose r hr0 hr using exists_ne_zero_smul_mem K S hS
-  -- The product of these scalars over the generators clears the denominators of their span.
-  have hle : span R (t : Set V') ≤ S.comap ((∏ v ∈ t, r v) • LinearMap.id) :=
-    span_le.mpr fun v hv ↦ by
-      simpa [← Finset.prod_erase_mul _ _ (Finset.mem_coe.mp hv), mul_smul] using
-        S.smul_mem (∏ w ∈ t.erase v, r w) (hr v)
-  exact ⟨_, Finset.prod_ne_zero_iff.mpr fun v _ ↦ hr0 v, fun x hx ↦ by simpa using hle hx⟩
+  obtain ⟨r, hr, h⟩ := hM.exists_smul_mem_of_le_span (F := K) (nonZeroDivisors R) (M := S)
+    (by rw [hS]; exact fun _ _ ↦ Submodule.mem_top)
+  exact ⟨r, nonZeroDivisors.ne_zero hr, h⟩
 
 variable (K) in
 /-- **Commensurability over a discrete valuation ring.** A power of the maximal ideal multiplies a
