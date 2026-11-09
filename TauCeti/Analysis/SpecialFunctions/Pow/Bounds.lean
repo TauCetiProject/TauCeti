@@ -38,6 +38,10 @@ If `1 ≤ C`, `D < n` and `C ^ (D / (n - D)) < B + 1`, then `(⌊C B⌋₊ + 1) 
 is the counting step of Siegel's lemma: it compares the integer points of a box with the cells
 of a partition of the image of that box under `D` linear forms.
 
+For `C ≥ 0` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: the power
+`r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
+proof of the Gelfond–Schneider theorem.
+
 For `t > 0` and every natural `k`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`: the Japanese bracket
 decays at least as fast as `t ^ (-1)`. This converts symbol estimates of order `0` into Mihlin's
 condition.
@@ -88,6 +92,7 @@ function that does not need a derivative.
 * `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
+* `Real.exists_pow_mul_rpow_lt_one`: `C ^ r r ^ ((1 - r) / 2) < 1` for `0 ≤ C` and all large `r`.
 * `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
 * `Real.rpow_eq_sq_rpow_div_two`: `t ^ r = (t ^ 2) ^ (r / 2)` for `0 ≤ t`.
 * `Real.rpow_le_two_rpow_mul_one_add_sq_rpow` and `Real.one_add_sq_rpow_le_two_rpow_mul_rpow`:
@@ -219,6 +224,36 @@ theorem floor_mul_add_one_pow_lt {C : ℝ} (hC : 1 ≤ C) {D n B : ℕ} (hDn : D
     _ < (B + 1) ^ ((n : ℝ) - D) * (B + 1) ^ D := by gcongr
     _ = (B + 1) ^ n := by
         rw [← rpow_natCast _ D, ← rpow_add (by positivity), sub_add_cancel, rpow_natCast]
+
+/-- For `C ≥ 0` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: writing
+`s = √r`, the left side is `s (C / s) ^ r ≤ s 2 ^ (-r)` as soon as `s ≥ 2 C`. -/
+theorem exists_pow_mul_rpow_lt_one {C : ℝ} (hC : 0 ≤ C) :
+    ∃ N : ℕ, ∀ r : ℕ, N ≤ r → C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
+  refine ⟨⌈4 * C ^ 2⌉₊ + 1, fun r hr ↦ ?_⟩
+  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast (Nat.le_add_left 1 _).trans hr
+  have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
+  have hCr : 4 * C ^ 2 ≤ r :=
+    (Nat.le_ceil _).trans (by exact_mod_cast (Nat.le_succ _).trans hr)
+  set s := √(r : ℝ)
+  have hs₀ : 0 < s := sqrt_pos.2 hr₀
+  have hsr : s ≤ r := sqrt_le_self_iff.2 (Or.inr hr₁)
+  -- `2 C ≤ s`, since `(2 C) ^ 2 ≤ r`.
+  have hCs : 2 * C ≤ s := le_sqrt_of_sq_le (by nlinarith)
+  -- `r ^ ((1 - r) / 2) = s / s ^ r`.
+  have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
+    rw [show (1 - (r : ℝ)) / 2 = 1 / 2 * (1 - r) by ring, rpow_mul hr₀.le, ← sqrt_eq_rpow,
+      rpow_sub hs₀, rpow_one, rpow_natCast]
+  have hCs' : C / s ≤ 1 / 2 := by
+    rw [div_le_div_iff₀ hs₀ two_pos]
+    linarith
+  calc C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s * (C / s) ^ r := by
+        rw [hrs, div_pow]
+        field_simp
+    _ ≤ s * (1 / 2) ^ r := by gcongr
+    _ = s / 2 ^ r := by rw [one_div, inv_pow, div_eq_mul_inv]
+    _ < 1 := by
+        rw [div_lt_one (by positivity)]
+        exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
 
 /-- For `t > 0`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`. -/
 theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
