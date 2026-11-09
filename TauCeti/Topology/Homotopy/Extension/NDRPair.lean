@@ -59,6 +59,8 @@ it extends by the identity to all of `X`, and takes `min 1 (2 f)` as control fun
 * `TauCeti.NDRPair.prod`: the product of two NDR pairs.
 * `TauCeti.NDRPair.ofHomotopyRel`: NDR data from a deformation of a neighbourhood `U ⊇ A` onto
   `A`, relative to `A`, and a function vanishing exactly on `A` that is less than one only on `U`.
+* `TauCeti.NDRPair.restrict`: the restriction of an NDR pair to a subspace that its deformation
+  maps into itself.
 
 ## References
 
@@ -548,6 +550,34 @@ theorem prod_deformation_apply (t : I) (x : X) (y : Y) :
   (rfl)
 
 end Prod
+
+section Restrict
+
+variable (Y : Set X) (hY : ∀ (t : I) {y : X}, y ∈ Y → N.deformation (t, y) ∈ Y)
+
+/-- **The restriction of an NDR pair to an invariant subspace.** If the deformation of an NDR pair
+`(X, A)` maps a subspace `Y` into itself, then `(Y, Y ∩ A)` is an NDR pair, with the restricted
+control function and deformation. -/
+def restrict : NDRPair {y : Y | (y : X) ∈ A} where
+  control := N.control.comp (ContinuousMap.subtypeVal Y)
+  control_eq_zero_iff y := N.control_eq_zero_iff y
+  deformation := ⟨fun p ↦ ⟨N.deformation (p.1, p.2), hY p.1 p.2.2⟩, by fun_prop⟩
+  deformation_zero y := Subtype.ext (N.deformation_zero y)
+  deformation_of_mem t _ hy := Subtype.ext (N.deformation_of_mem t hy)
+  deformation_one_mem hy := N.deformation_one_mem hy
+
+/-- The control function of the restriction of an NDR pair is the restricted control function. -/
+@[simp]
+theorem restrict_control_apply (y : Y) : (N.restrict Y hY).control y = N.control y :=
+  (rfl)
+
+/-- The deformation of the restriction of an NDR pair is the restricted deformation. -/
+@[simp]
+theorem coe_restrict_deformation_apply (t : I) (y : Y) :
+    ((N.restrict Y hY).deformation (t, y) : X) = N.deformation (t, y) :=
+  (rfl)
+
+end Restrict
 
 end NDRPair
 
