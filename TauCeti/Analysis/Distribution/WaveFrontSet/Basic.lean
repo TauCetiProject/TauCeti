@@ -153,6 +153,12 @@ theorem isMicrolocallySmoothAt_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
         ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C :=
   Iff.rfl
 
+/-- A point at which a distribution is microlocally smooth lies in its domain. -/
+theorem IsMicrolocallySmoothAt.mem {T : 𝓓'(Ω, ℂ)} {x ξ : E} (h : T.IsMicrolocallySmoothAt x ξ) :
+    x ∈ Ω :=
+  let ⟨φ, hφ, _⟩ := h
+  φ.tsupport_subset (subset_tsupport _ hφ)
+
 /-- The **wave front set** of a complex distribution `T` on `Ω`: the pairs `(x, ξ)` with `x ∈ Ω`
 and `ξ ≠ 0` at which `T` is not microlocally smooth. -/
 def waveFrontSet (T : 𝓓'(Ω, ℂ)) : Set (E × E) :=

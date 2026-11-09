@@ -25,6 +25,7 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 ## Main declarations
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
+* `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
 * `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
@@ -57,6 +58,15 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 @[simp]
 theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeriv ℝ φ x v :=
   lineDerivCLM_apply_of_le le_top
+
+/-- A directional derivative does not enlarge the topological support of a test function. -/
+theorem tsupport_lineDerivOp_subset (v : E) (φ : 𝓓(Ω, F)) :
+    tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
+  have h : ⇑(∂_{v} φ : 𝓓(Ω, F)) = fun y ↦ fderiv ℝ φ y v := by
+    ext y
+    rw [lineDerivOp_apply, (φ.contDiff.differentiable (by simp) y).lineDeriv_eq_fderiv]
+  rw [h]
+  exact tsupport_fderiv_apply_subset ℝ v
 
 /-- On the real line, the directional derivative of a test function in the direction `1` is its
 derivative. -/

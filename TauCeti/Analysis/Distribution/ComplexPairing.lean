@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Distribution.Support
 import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Complex-valued distributions on complex-valued test functions
@@ -35,6 +36,7 @@ function along the support of `T`, and it has finite order on each compact set.
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
   integration against a locally integrable function, so is its extension.
+* `Distribution.complexPairing_lineDerivOp`: the extension of `∂_v T` pairs `T` with `-∂_v ψ`.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
@@ -48,7 +50,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Set TopologicalSpace TestFunction
+open Complex Filter LineDeriv Set TopologicalSpace TestFunction
 open scoped Distributions Topology
 
 namespace Distribution
@@ -181,6 +183,14 @@ theorem exists_norm_complexPairing_le (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
         rw [norm_mul, norm_I, one_mul]
         exact add_le_add (hpart _ Complex.reCLM_norm.le) (hpart _ Complex.imCLM_norm.le)
     _ = 2 * C * M := by ring
+
+/-- The complex-linear extension of `∂_v T` pairs `T` with `-∂_v ψ`. -/
+theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (ψ : 𝓓(Ω, ℂ)) :
+    (∂_{v} T).complexPairing ψ = -T.complexPairing (∂_{v} ψ) := by
+  have h (L : ℂ →L[ℝ] ℝ) : ∂_{v} (postcompCLM L ψ) = postcompCLM L (∂_{v} ψ) :=
+    lineDerivCLM_postcompCLM L v ψ
+  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg, h]
+  ring
 
 variable [FiniteDimensional ℝ E]
 

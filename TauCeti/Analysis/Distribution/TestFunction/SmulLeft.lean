@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Smooth multiplication of test forms and the Leibniz rule for currents
@@ -31,6 +32,7 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 ## Main declarations
 
 * `TestFunction.smulLeftCLM`: multiplication `φ ↦ f φ` of test functions by a smooth function.
+* `TestFunction.lineDerivOp_smulLeftCLM`: the Leibniz rule `∂_v (f φ) = f ∂_v φ + (∂_v f) φ`.
 * `TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset`: the pairing `x ↦ A x (φ x)`
   of a test function on `Ω'` with a smooth operator field is a test function on any open `Ω`
   containing `tsupport A ∩ Ω'`.
@@ -98,6 +100,19 @@ theorem smulLeftCLM_monoCLM (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω', F)) :
     smulLeftCLM hf (monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = monoCLM ℝ (smulLeftCLM hf φ) := by
   ext x
   by_cases h : Ω' ≤ Ω <;> simp [monoCLM_apply, h]
+
+open LineDeriv in
+open scoped ContDiff in
+/-- The **Leibniz rule** for the product of a test function with a smooth function:
+`∂_v (f φ) = f ∂_v φ + (∂_v f) φ`. -/
+theorem lineDerivOp_smulLeftCLM (hf : ContDiff ℝ ∞ f) (v : E) (φ : 𝓓(Ω, F)) :
+    ∂_{v} (smulLeftCLM hf φ) = smulLeftCLM hf (∂_{v} φ) +
+      smulLeftCLM ((contDiff_infty_iff_fderiv.1 hf).2.clm_apply (contDiff_const (c := v))) φ := by
+  have hcoe : ⇑(smulLeftCLM hf φ) = fun y ↦ f y • φ y := funext (smulLeftCLM_apply hf φ)
+  ext x
+  rw [lineDerivOp_apply, hcoe,
+    lineDeriv_fun_smul_of_differentiableOn (hf.differentiable (by simp)).differentiableOn]
+  simp [lineDerivOp_apply]
 
 end SmulLeft
 
