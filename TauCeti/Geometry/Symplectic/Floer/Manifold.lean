@@ -284,6 +284,48 @@ theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
     hs.eq_of_nhds, ht.eq_of_nhds]
 
+/-- If both components of a Hamiltonian one-form vanish near a domain point, its curvature
+vanishes there. No differentiability assumption is needed. -/
+theorem hamiltonianCurvature_eq_zero_of_eventuallyEq_zero (ω : SmoothTwoForm I M)
+    {Ks Kt : ℝ × ℝ → M → ℝ} {z : ℝ × ℝ}
+    (hs : Ks =ᶠ[𝓝 z] 0) (ht : Kt =ᶠ[𝓝 z] 0) (x : M) :
+    ω.hamiltonianCurvature Ks Kt z x = 0 := by
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
+  simp [hamiltonianCurvature_def]
+
+/-- If both components of a Hamiltonian one-form vanish off a closed domain set, its curvature
+also vanishes off that set. No differentiability assumption is needed. -/
+theorem hamiltonianCurvature_eq_zero_of_notMem (ω : SmoothTwoForm I M)
+    {Ks Kt : ℝ × ℝ → M → ℝ} {D : Set (ℝ × ℝ)} (hD : IsClosed D)
+    (hs : ∀ z ∉ D, Ks z = 0) (ht : ∀ z ∉ D, Kt z = 0)
+    {z : ℝ × ℝ} (hz : z ∉ D) (x : M) : ω.hamiltonianCurvature Ks Kt z x = 0 := by
+  have h : ∀ᶠ w in 𝓝 z, w ∉ D := hD.isOpen_compl.mem_nhds hz
+  exact ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero
+    (h.mono fun w hw ↦ hs w hw) (h.mono fun w hw ↦ ht w hw) x
+
+/-- Adding a perturbation supported in a closed set inside an open region where the original
+one-form vanishes adds their curvatures exactly: there are no mixed Poisson-bracket terms. -/
+theorem hamiltonianCurvature_add_of_eq_zero_on (ω : SmoothTwoForm I M)
+    {Ks Kt δs δt : ℝ × ℝ → M → ℝ} {D U : Set (ℝ × ℝ)}
+    (hD : IsClosed D) (hU : IsOpen U) (hDU : D ⊆ U)
+    (hKs : ∀ z ∈ U, Ks z = 0) (hKt : ∀ z ∈ U, Kt z = 0)
+    (hδs : ∀ z ∉ D, δs z = 0) (hδt : ∀ z ∉ D, δt z = 0) (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun w y ↦ Ks w y + δs w y) (fun w y ↦ Kt w y + δt w y) z x =
+      ω.hamiltonianCurvature Ks Kt z x + ω.hamiltonianCurvature δs δt z x := by
+  by_cases hz : z ∈ D
+  · have hs : Ks =ᶠ[𝓝 z] 0 := eventually_of_mem (hU.mem_nhds (hDU hz)) hKs
+    have ht : Kt =ᶠ[𝓝 z] 0 := eventually_of_mem (hU.mem_nhds (hDU hz)) hKt
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
+      (Ks' := δs) (Kt' := δt)
+      (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw]),
+      ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero hs ht x, zero_add]
+  · have hs : δs =ᶠ[𝓝 z] 0 := eventually_of_mem (hD.isOpen_compl.mem_nhds hz) hδs
+    have ht : δt =ᶠ[𝓝 z] 0 := eventually_of_mem (hD.isOpen_compl.mem_nhds hz) hδt
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
+      (Ks' := Ks) (Kt' := Kt)
+      (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw]),
+      ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero hs ht x, add_zero]
+
 /-- The zero perturbation has zero curvature. -/
 @[simp]
 theorem hamiltonianCurvature_zero (ω : SmoothTwoForm I M) (z : ℝ × ℝ) (x : M) :
