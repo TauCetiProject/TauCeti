@@ -151,7 +151,10 @@ private theorem exists_w1p_value_eq_inner_gradient (u : Wkp mu W p 2) (c : E) :
   obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 u c
   have h1 : HasWeakLineDerivOn mu W (Wkp.value 2 u) (fun y => ⟪g y, c⟫_ℝ) c := by
     have h := (W1p.hasWeakFDerivOn (Wkp.firstOrder 1 u)).hasWeakLineDerivOn c
-    rw [Wkp.value_firstOrder, Wkp.gradient_firstOrder_one] at h
+    have hg : W1p.gradient (Wkp.firstOrder 1 u) = g := by
+      rw [Wkp.firstOrder_one]
+      exact (Wkp.iteratedGradient_zero _).symm
+    rw [Wkp.value_firstOrder, hg] at h
     simpa only [innerSL_apply_apply] using h
   have hvd : W1p.value d =ᵐ[mu.restrict W] (fun y => ⟪g y, c⟫_ℝ) := by
     rw [← Wkp.value_one]
@@ -167,8 +170,9 @@ private theorem exists_w1p_value_eq_inner_gradient (u : Wkp mu W p 2) (c : E) :
       ((W1p.hasWeakFDerivOn d).hasWeakLineDerivOn f).congr_ae hvd
   exact h3.ae_eq h2
 
-/-- The weak gradient of `d ∘ e` has the components of the Hessian transformed by `e`. -/
-private theorem ae_inner_gradient_compCLE (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
+/-- If the weak gradient of `d ∈ W^{1,p}(W)` has components `⟪D²u f, e c⟫`, then the weak gradient
+of `d ∘ e` has components `⟪(e† ∘ D²u(e ·) ∘ e) f, c⟫`. -/
+private theorem inner_gradient_compCLE_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
     (hUW : (U : Set E) = e ⁻¹' W) (u : Wkp mu W p 2) (c : E) (d : W1p mu W p)
     (hd : ∀ f : E, (fun y => ⟪W1p.gradient d y, f⟫_ℝ) =ᵐ[mu.restrict W]
       fun y => ⟪Wkp.iteratedGradient 1 u y f, e c⟫_ℝ) (f : E) :
@@ -197,7 +201,8 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
   set T := compCLE (mu := mu) hp e hUW
   have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
   set u₁ := Wkp.firstOrder 1 u
-  have hgrad := Wkp.gradient_firstOrder_one u
+  have hgrad : W1p.gradient u₁ = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) := by
+    rw [Wkp.iteratedGradient_zero, ← Wkp.firstOrder_one]
   have hval := Wkp.value_firstOrder 1 u
   -- Each component `⟪∇u, c⟫` is the value of some `d c ∈ W^{1,p}(W)`, whose weak gradient has
   -- the components `⟪D²u f, c⟫`.
@@ -213,7 +218,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
       (fun x => ⟪W1p.gradient (T (d (e c))) x, f⟫_ℝ) f := by
     simpa only [innerSL_apply_apply] using
       ((W1p.hasWeakFDerivOn (T (d (e c)))).hasWeakLineDerivOn f).congr_ae (hw₁ c).symm
-  have hDe (c f : E) := ae_inner_gradient_compCLE hp e hUW u c (d (e c)) (hdg (e c)) f
+  have hDe (c f : E) := inner_gradient_compCLE_ae hp e hUW u c (d (e c)) (hdg (e c)) f
   set b := stdOrthonormalBasis ℝ E
   obtain ⟨w, hw⟩ := W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn w₁ b fun i j =>
     ⟨(innerSL ℝ (b i)).compLp (W1p.gradient (T (d (e (b j))))),
