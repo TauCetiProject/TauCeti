@@ -148,7 +148,7 @@ theorem exists_pos_mul_norm_le_norm_sum_smul_period_of_isCompact {ι : Type*} [F
   rcases K.eq_empty_or_nonempty with rfl | ⟨y₀, -⟩
   · exact ⟨1, one_pos, fun y hy ↦ absurd hy (Set.notMem_empty y)⟩
   have : Module.Finite ℤ Λ := .of_basis b
-  have := ZLattice.finiteDimensional_of_isZLattice (LinearMap.range (P y₀))
+  have := ZLattice.finiteDimensional_of_isZLattice (K := ℝ) (LinearMap.range (P y₀))
   set f : Y × (ι → ℝ) → E := fun p ↦ ∑ i, p.2 i • P p.1 (b i) with hf_def
   have hf : Continuous f := continuous_finsetSum _ fun i _ ↦
     ((continuous_apply i).comp continuous_snd).smul ((hcont (b i)).comp continuous_fst)

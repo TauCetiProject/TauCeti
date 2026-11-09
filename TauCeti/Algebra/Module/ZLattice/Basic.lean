@@ -42,8 +42,8 @@ equivalence.
 * `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
   `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
   full lattice, along a linear isometry equivalence is again one.
-* `ZLattice.finiteDimensional_of_isZLattice`: a finitely generated full lattice in a real normed
-  space forces the space to be finite-dimensional.
+* `ZLattice.finiteDimensional_of_isZLattice`: a finitely generated full lattice in a normed
+  space over a normed field forces the space to be finite-dimensional.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -184,18 +184,13 @@ instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
 
 end LinearIsometryEquiv
 
-/-- A finitely generated full lattice in a real normed space forces the space to be
-finite-dimensional: finitely many generators span it. -/
-theorem finiteDimensional_of_isZLattice {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L] [Module.Finite ℤ L] :
-    FiniteDimensional ℝ E := by
-  obtain ⟨S, hS⟩ := Module.Finite.iff_fg.1 ‹Module.Finite ℤ L›
-  have h : Submodule.span ℝ (S : Set E) = ⊤ := by
-    rw [← Submodule.span_span_of_tower ℤ ℝ (S : Set E), hS]
-    exact IsZLattice.span_top
-  have := FiniteDimensional.span_of_finite ℝ S.finite_toSet
-  rw [h] at this
-  exact Module.Finite.equiv Submodule.topEquiv
+/-- A finitely generated full lattice in a normed space over a normed field `K` forces the space
+to be finite-dimensional over `K`: finitely many generators span it. -/
+theorem finiteDimensional_of_isZLattice {K : Type*} [NormedField K] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice K L] [Module.Finite ℤ L] : FiniteDimensional K E :=
+  Module.finite_def.2 <| by
+    simpa [IsZLattice.span_top] using (Module.Finite.iff_fg.1 ‹Module.Finite ℤ L›).span (A := K)
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
