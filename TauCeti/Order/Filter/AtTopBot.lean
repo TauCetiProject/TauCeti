@@ -111,7 +111,7 @@ theorem tendsto_comp_natFloor_iff {R X : Type*} [Semiring R] [LinearOrder R]
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp ?_⟩
   · have hcast : Tendsto (fun n : ℕ ↦ (n : R)) atTop atTop :=
       tendsto_atTop_atTop.2 fun x ↦
-        ⟨⌈x⌉₊, fun n hn ↦ (Nat.le_ceil x).trans (FloorSemiring.natCast_le_iff.2 hn)⟩
+        ⟨⌈x⌉₊, fun n hn ↦ Nat.le_of_ceil_le hn⟩
     simpa [Function.comp_def] using h.comp hcast
   · exact tendsto_atTop_atTop.2 fun n ↦ ⟨n, fun x hx ↦ Nat.le_floor hx⟩
 
