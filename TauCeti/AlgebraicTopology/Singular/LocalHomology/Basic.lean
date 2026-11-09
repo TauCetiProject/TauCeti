@@ -478,13 +478,13 @@ theorem isIso_singularHomologyMap_compl_of_chart (hx : x ∈ φ.source) (hK : St
   -- those are invertible by excision in `E`.
   have hxL : x ∈ φ.symm '' K := ⟨φ x, hxK, φ.left_inv hx⟩
   rw [← TopPair.isIso_singularHomologyMap_ofSubsetMap_compl_iff R (X := TopCat.of M)
-    φ.open_source hLc hLs (Set.singleton_subset_iff.2 hxL)]
+    φ.open_source (hLc.closure_eq.trans_le hLs) (Set.singleton_subset_iff.2 hxL)]
   let fT := TopPair.ofSubsetMap (𝟙 (TopCat.of φ.target)) (B := Subtype.val ⁻¹' Kᶜ)
     (B' := Subtype.val ⁻¹' {φ x}ᶜ)
     fun _ hz ↦ Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hxK) hz
   have hT : IsIso (TopPair.singularHomologyMap fT R k) :=
     (TopPair.isIso_singularHomologyMap_ofSubsetMap_compl_iff R (X := TopCat.of E) φ.open_target
-    hKc hKφ (Set.singleton_subset_iff.2 hxK) k).2
+    (hKc.closure_eq.trans_le hKφ) (Set.singleton_subset_iff.2 hxK) k).2
     (isIso_singularHomologyMap_compl_of_starConvex R hK hxK hKb k)
   refine IsIso.of_isIso_fac_right (f := TopPair.singularHomologyMap
     (TopPair.ofSubsetIso (X := TopCat.of φ.source) (Y := TopCat.of φ.target)
