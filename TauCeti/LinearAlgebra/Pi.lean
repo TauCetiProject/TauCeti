@@ -33,6 +33,9 @@ weights.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
+  coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
+  the image coordinate.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
 * `LinearEquiv.piFinAppend`: the linear splitting of a tuple of length `m + n` into its first `m`
@@ -48,6 +51,8 @@ weights.
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
+* `Module.Basis.det_pi`: the determinant of a change between product bases is the product of the
+  factor change-of-basis determinants.
 * `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
   products is the sum of the ranks of the finite free component hom spaces.
 * `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
@@ -96,6 +101,29 @@ public theorem coe_toAddEquiv_piCongrLeft (R : Type*) {ι ι' : Type*} [Semiring
     (M : ι → Type*) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) :
     ⇑(piCongrLeft R M e).toAddEquiv = Equiv.piCongrLeft M e :=
   (rfl)
+
+/-- The coordinate of `piCongrLeft R M e f` at `e i` is the coordinate of `f` at `i`; this is
+`Equiv.piCongrLeft_apply_apply` for the linear equivalence. -/
+@[simp]
+public theorem piCongrLeft_apply_apply {R ι ι' : Type*} [Semiring R] (M : ι → Type*)
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (f : ∀ i, M (e i)) (i : ι') :
+    piCongrLeft R M e f (e i) = f i :=
+  Equiv.piCongrLeft_apply_apply (P := M) e f i
+
+/-- Reindexing the coordinates along `e` moves a one-point family at `i` to the one-point family
+at `e i`. -/
+@[simp]
+public theorem piCongrLeft_single {R ι ι' : Type*} [Semiring R] [DecidableEq ι] [DecidableEq ι']
+    (M : ι → Type*) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (i : ι')
+    (x : M (e i)) :
+    piCongrLeft R M e (Pi.single i x) = Pi.single (e i) x := by
+  funext j
+  obtain ⟨l, rfl⟩ := e.surjective j
+  rw [piCongrLeft_apply_apply]
+  by_cases h : l = i
+  · subst h
+    simp
+  · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (e.injective.ne h)]
 
 /-- A coordinatewise linear equivalence sends a one-point family to the one-point family
 of its image in that coordinate. -/
@@ -248,6 +276,27 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   exact finrank_range_add_finrank_ker Φ
 
 end LinearMap
+
+namespace Module.Basis
+
+/-- The determinant of a change between product bases of a finite dependent product is the
+product of the factor change-of-basis determinants. This is the dependent-family version of
+`Module.Basis.det_prod`. -/
+public theorem det_pi {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    [∀ i, DecidableEq (κ i)] (b b' : ∀ i, Basis (κ i) R (M i)) :
+    (Pi.basis b).det (Pi.basis b') = ∏ i, (b i).det (b' i) := by
+  have he : (Pi.basis b).toMatrix (Pi.basis b') =
+      Matrix.blockDiagonal' fun i ↦ (b i).toMatrix (b' i) := by
+    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
+    simp only [Basis.toMatrix_apply, Pi.basis_apply, Pi.basis_repr, Matrix.blockDiagonal'_apply]
+    split_ifs with h
+    · subst h
+      simp
+    · simp [Pi.single_eq_of_ne h]
+  simp only [Basis.det_apply, he, Matrix.det_blockDiagonal']
+
+end Module.Basis
 
 namespace TauCeti
 
