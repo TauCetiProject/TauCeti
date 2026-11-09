@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
+public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.ODE.Linear
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
