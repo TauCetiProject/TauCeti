@@ -179,6 +179,19 @@ theorem map_div_prod_eq_map_div_abs {μ ν : Measure ℝ} [SFinite μ] [SFinite 
       · simp only [twist, hz, ↓reduceIte, Function.comp_apply,
           abs_of_nonneg (le_of_not_gt hz)]
 
+open scoped symmDiff in
+/-- Swapping the coordinates of an approximant of a swap-invariant set does not change the
+measure of the symmetric difference. -/
+theorem measure_symmDiff_preimage_swap_of_preimage_swap_eq {X : Type*} [MeasurableSpace X]
+    (μ : Measure X) [SFinite μ] {u s : Set (X × X)} (hsymm : Prod.swap ⁻¹' s = s) :
+    (μ.prod μ) ((Prod.swap ⁻¹' u) ∆ s) = (μ.prod μ) (u ∆ s) := by
+  calc
+    (μ.prod μ) ((Prod.swap ⁻¹' u) ∆ s) = (μ.prod μ) (Prod.swap ⁻¹' (u ∆ s)) := by
+      rw [Set.preimage_symmDiff, hsymm]
+    _ = (μ.prod μ) (u ∆ s) :=
+      (measurePreserving_swap (μ := μ) (ν := μ)).measure_preimage_emb
+        MeasurableEquiv.prodComm.measurableEmbedding _
+
 end MeasureTheory.Measure
 
 namespace MeasureTheory
