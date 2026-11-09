@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.CompleteLattice
-import Mathlib.MeasureTheory.Measure.Module
 
 /-!
 # Order and positivity of scalar multiples of measures
