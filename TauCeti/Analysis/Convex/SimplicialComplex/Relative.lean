@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
 import TauCeti.Analysis.Convex.Extreme
-import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Extending a subdivision of a subcomplex
