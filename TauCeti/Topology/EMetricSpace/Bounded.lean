@@ -26,12 +26,13 @@ namespace TauCeti
 
 variable {X : Type*} [PseudoEMetricSpace X] {x : X}
 
-/-- A sequence at distance at most `R ≠ ⊤` from a point has range of finite diameter. -/
-theorem ediam_range_ne_top_of_edist_le {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ℕ → X}
-    (hw : ∀ n, edist x (w n) ≤ R) : Metric.ediam (range w) ≠ ⊤ := by
-  refine ne_top_of_le_ne_top (b := R + R) (by finiteness) (Metric.ediam_le ?_)
-  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-  exact (edist_triangle_left _ _ x).trans (add_le_add (hw i) (hw j))
+/-- A family at distance at most `R ≠ ⊤` from a point has range of finite diameter. -/
+theorem ediam_range_ne_top_of_edist_le {ι : Type*} {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ι → X}
+    (hw : ∀ i, edist x (w i) ≤ R) : Metric.ediam (range w) ≠ ⊤ := by
+  refine ne_top_of_le_ne_top (b := 2 * R) (by finiteness)
+    ((Metric.ediam_mono (t := Metric.closedEBall x R) ?_).trans Metric.ediam_closedEBall_le)
+  rintro _ ⟨i, rfl⟩
+  exact Metric.mem_closedEBall.2 (by rw [edist_comm]; exact hw i)
 
 /-- A sequence of energy at most `c` at distance at most `R ≠ ⊤` from a point `x` has a
 subsequence converging for the auxiliary convergence `l`, if `l` has compactness for sequences of
