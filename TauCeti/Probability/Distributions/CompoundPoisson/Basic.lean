@@ -106,20 +106,20 @@ theorem lintegral_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α) (f : α
     lintegral_sum_measure]
   simp_rw [lintegral_smul_measure, lintegral_dirac]
 
-/-- The mass assigned by a compound Poisson law to a measurable set is the Poisson average of
-the masses assigned by its convolution powers. -/
-theorem compoundPoissonMeasure_apply (r : ℝ≥0) (μ : Measure α) {s : Set α}
-    (hs : MeasurableSet s) :
-    compoundPoissonMeasure r μ s =
-      ∫⁻ n, μ.convolutionPower n s ∂poissonMeasure r := by
-  rw [compoundPoissonMeasure_def, Measure.bind_apply hs Measurable.of_discrete.aemeasurable]
-
 /-- The formula for the mass of a set under a compound Poisson law as a Poisson-weighted series. -/
 theorem compoundPoissonMeasure_apply_eq_tsum (r : ℝ≥0) (μ : Measure α) (s : Set α) :
     compoundPoissonMeasure r μ s =
       ∑' n, ENNReal.ofReal (exp (-r) * r ^ n / n !) * μ.convolutionPower n s := by
   rw [compoundPoissonMeasure_eq_sum, Measure.sum_apply_of_countable]
   simp_rw [_root_.smul_apply, smul_eq_mul]
+
+/-- The mass assigned by a compound Poisson law to a set is the Poisson average of
+the masses assigned by its convolution powers. -/
+theorem compoundPoissonMeasure_apply (r : ℝ≥0) (μ : Measure α) (s : Set α) :
+    compoundPoissonMeasure r μ s =
+      ∫⁻ n, μ.convolutionPower n s ∂poissonMeasure r := by
+  rw [compoundPoissonMeasure_apply_eq_tsum, poissonMeasure, lintegral_sum_measure]
+  simp_rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
 
 /-- The Poisson-weighted series of convolution-power probabilities converges to the compound
 probability of every set. Its nonnegative terms also give absolute convergence. -/
