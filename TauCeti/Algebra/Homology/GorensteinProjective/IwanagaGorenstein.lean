@@ -124,6 +124,8 @@ theorem _root_.FGModuleCat.isGorensteinProjective_of_isSyzygy [IsIwanagaGorenste
       -- Instance search does not see the carrier of `Q` through `forget₂`.
       @ModuleCat.projective_of_categoryTheory_projective A _ (F.obj Q)
         (FGModuleCat.moduleProjective_of_projective Q)
+  -- `F.obj M` is `M.obj` by definition (`FGModuleCat.forget₂_obj`, which holds by `rfl`); this
+  -- identification is used for the finiteness instance and in the final step.
   have : Module.Finite A (F.obj M) := inferInstanceAs (Module.Finite A M)
   exact (FGModuleCat.isGorensteinProjective_iff M).2
     ((isGorensteinProjective_iff_ext_eq_zero (F.obj M)).2 ⟨inferInstance, fun n e ↦

@@ -477,6 +477,8 @@ theorem mem_essImage_toSingularityCategory {G : C} (hG : isGorensteinProjective 
       ((DerivedCategory.Bounded.singleFunctor C n).obj G)) := by
   obtain ⟨G', hG', ⟨e⟩⟩ :=
     TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective hG n
+  -- Chen's functor places the class of `G'` in degree zero
+  -- (`toSingularityCategory_obj_projectiveStableFunctor_obj`, which holds by `rfl`).
   exact ⟨(exactStructure C).projectiveStableFunctor.obj ⟨G', hG'⟩, ⟨e.symm⟩⟩
 
 end CategoryTheory.GorensteinProjective
