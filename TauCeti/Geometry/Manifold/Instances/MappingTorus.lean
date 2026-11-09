@@ -70,7 +70,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
 * `TauCeti.SmoothMappingTorus.mk_eq_mk_iff`, `TauCeti.SmoothMappingTorus.mk_add_intCast`: when two
   points of `ℝ × M` have the same class.
 * `TauCeti.SmoothMappingTorus.contMDiff_proj`, `TauCeti.SmoothMappingTorus.range_mk`: the
-  projection is `C^n`, and its fibres are the images of the fibre inclusions.
+  projection is `C^n`, and its fibres are the images of the fibre inclusions. It is continuous
+  with no smoothness hypotheses (`TauCeti.SmoothMappingTorus.continuous_proj`).
 * `TauCeti.SmoothMappingTorus.flow_one_mk`: the time-one map of the suspension flow is `φ` on
   each fibre.
 * `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff`: `[t, x]` is fixed by the time-`s` map
@@ -367,6 +368,12 @@ def proj : SmoothMappingTorus φ → UnitAddCircle :=
 theorem proj_mk (t : ℝ) (x : M) : proj φ (mk φ t x) = t :=
   MulAction.orbitRelQuotientLift_mk _
 
+/-- In the coordinates `(t, x)`, the projection `[t, x] ↦ [t]` is the first projection followed by
+the quotient map `ℝ → ℝ / ℤ`. -/
+theorem proj_comp_uncurry_mk :
+    proj φ ∘ Function.uncurry (mk φ) = ((↑) : ℝ → UnitAddCircle) ∘ Prod.fst :=
+  funext fun p ↦ proj_mk φ p.1 p.2
+
 /-- The projection of the mapping torus of a diffeomorphism of a nonempty manifold to the circle
 is surjective. -/
 theorem proj_surjective [Nonempty M] : Function.Surjective (proj φ) := by
@@ -597,6 +604,12 @@ theorem proj_homeomorphMappingTorus (z : SmoothMappingTorus φ) :
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
 
+/-- The projection of the mapping torus to the circle is continuous. -/
+theorem continuous_proj : Continuous (proj φ) := by
+  have h : proj φ = MappingTorus.proj _ ∘ homeomorphMappingTorus φ :=
+    funext fun z ↦ (proj_homeomorphMappingTorus φ z).symm
+  rw [h]
+  exact (MappingTorus.continuous_proj _).comp (homeomorphMappingTorus φ).continuous
 
 end SmoothMappingTorus
 
@@ -641,13 +654,11 @@ theorem mfderiv_proj_mfderiv_uncurry_mk (t : ℝ) (x : M) (b : ℝ) (v : Tangent
     mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Function.uncurry (mk φ)) (t, x)
           ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) = b := by
-  have hcomp : proj φ ∘ Function.uncurry (mk φ) = ((↑) : ℝ → UnitAddCircle) ∘ Prod.fst :=
-    funext fun p ↦ proj_mk φ p.1 p.2
   have h := mfderiv_comp_apply_of_eq (t, x)
     ((contMDiff_proj φ (mk φ t x)).mdifferentiableAt (by simp))
     ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt (by simp)) rfl
     ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))
-  rw [hcomp, mfderiv_comp (t, x) (AddCircle.hasMFDerivAt_coe 1 t).mdifferentiableAt
+  rw [proj_comp_uncurry_mk, mfderiv_comp (t, x) (AddCircle.hasMFDerivAt_coe 1 t).mdifferentiableAt
     mdifferentiableAt_fst, AddCircle.mfderiv_coe, mfderiv_fst] at h
   -- The first projection sends `(b, v)` to `b`.
   exact h.symm.trans
