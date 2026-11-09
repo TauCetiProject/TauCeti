@@ -35,6 +35,7 @@ to `0` as
 * `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
   `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
+* `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
@@ -171,6 +172,14 @@ theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (a b : ℝ) :
         rw [← abs_of_pos (by linarith : 0 < √(1 + a ^ 2) + √(1 + b ^ 2)), ← abs_mul, key,
           abs_mul]
     _ ≤ |a - b| * (|a| + |b|) := mul_le_mul_of_nonneg_left (abs_add_le a b) (abs_nonneg _)
+
+/-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
+theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
+    a ≤ √c * b :=
+  calc a ≤ |a| := le_abs_self a
+    _ = √(a ^ 2) := (sqrt_sq_eq_abs a).symm
+    _ ≤ √(c * b ^ 2) := sqrt_le_sqrt h
+    _ = √c * b := by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb]
 
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
