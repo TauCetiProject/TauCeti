@@ -153,15 +153,6 @@ private theorem two_mul_sub_sq_add_sub_sq (c d r s : ℝ) : 2 * (c - d) ^ 2 + (r
     rw [div_pow, Real.sq_sqrt zero_le_two]; ring
   rw [← h]; ring
 
-/-- In dimension four an orthogonal `J` has a unitary frame `e₀, e₁ = J e₀, e₂, e₃ = J e₂`. -/
-private theorem exists_orthonormalBasis_apply_eq [Fact (finrank ℝ V = 4)]
-    {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  obtain ⟨b, hb⟩ := J.exists_adapted_orthonormalBasis
-    (fun v ↦ by rw [norm_eq_sqrt_real_inner, hJ, ← norm_eq_sqrt_real_inner]) 2
-    (by rw [(Fact.out : finrank ℝ V = 4)])
-  exact ⟨b, (hb 0).symm, (hb 1).symm⟩
-
 section Frame
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
@@ -243,7 +234,8 @@ omit hkl he h₀ h₂ in
 positive cone. -/
 theorem norm_le_inner_kahlerForm_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     {F : ⋀[ℝ]^2 V} (hF : F ∈ J.positiveCone) : ‖F‖ ≤ ⟪J.kahlerForm, F⟫ := by
-  obtain ⟨e, h₀, h₂⟩ := exists_orthonormalBasis_apply_eq hJ
+  obtain ⟨e, h₀, h₂⟩ := J.exists_adapted_orthonormalBasis_finFour
+    ((LinearMap.norm_map_iff_inner_map_map J.toLinearMap).2 hJ) Fact.out
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
   obtain ⟨μ, hμ, hFμ⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl F
@@ -267,7 +259,8 @@ For `F = a ω + μ` and `G = b ω + ν` this is `2 a b + ⟪μ, ν⟫ ≥ 0`, as
 `‖ν‖ ≤ √2 b`. -/
 theorem inner_nonneg_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {F G : ⋀[ℝ]^2 V}
     (hF : F ∈ J.positiveCone) (hG : G ∈ J.positiveCone) : 0 ≤ ⟪F, G⟫ := by
-  obtain ⟨e, h₀, h₂⟩ := exists_orthonormalBasis_apply_eq hJ
+  obtain ⟨e, h₀, h₂⟩ := J.exists_adapted_orthonormalBasis_finFour
+    ((LinearMap.norm_map_iff_inner_map_map J.toLinearMap).2 hJ) Fact.out
   have hω := inner_kahlerForm_self_eq_two hJ
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
@@ -304,7 +297,8 @@ omit hkl he h₀ h₂ in
 theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     {Ω F : ⋀[ℝ]^2 V} {ε : ℝ} (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫)
     (hF : F ∈ J.positiveCone) : ε * ⟪J.kahlerForm, F⟫ ≤ ⟪Ω, F⟫ := by
-  obtain ⟨e, h₀, h₂⟩ := exists_orthonormalBasis_apply_eq hJ
+  obtain ⟨e, h₀, h₂⟩ := J.exists_adapted_orthonormalBasis_finFour
+    ((LinearMap.norm_map_iff_inner_map_map J.toLinearMap).2 hJ) Fact.out
   have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨o, he⟩ : ∃ o, e.toBasis.orientation = o := ⟨_, rfl⟩
   obtain ⟨ν, hν, hΩν⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl Ω

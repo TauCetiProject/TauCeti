@@ -30,6 +30,8 @@ structure: transport multiplication by `i` along a real linear isometry with `�
 
 * `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
   exist.
+* `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis_finFour`: in dimension four, an
+  orthogonal `J` has an orthonormal frame with `J e₀ = e₁` and `J e₂ = e₃`.
 * `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
   structures exist in even dimension.
 * `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
@@ -85,6 +87,15 @@ theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀
     LinearIsometryEquiv.trans_apply]
   rw [hsingle]
   exact (b.repr.symm.map_smul Complex.I _).trans (hI _)
+
+/-- In dimension four an orthogonal complex structure has a unitary frame
+`e₀, e₁ = J e₀, e₂, e₃ = J e₂`. Conversely, `OrthonormalBasis.exists_almostComplexStructure_finFour`
+builds such a `J` from any orthonormal four-frame. -/
+theorem exists_adapted_orthonormalBasis_finFour (J : AlmostComplexStructure V)
+    (hJ : ∀ v, ‖J v‖ = ‖v‖) (hdim : finrank ℝ V = 4) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  obtain ⟨b, hb⟩ := J.exists_adapted_orthonormalBasis hJ 2 hdim
+  exact ⟨b, (hb 0).symm, (hb 1).symm⟩
 
 /-- An even-dimensional real inner product space admits an orthogonal almost complex structure,
 including the zero structure in dimension zero. -/
