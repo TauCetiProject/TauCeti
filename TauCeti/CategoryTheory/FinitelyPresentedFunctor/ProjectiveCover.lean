@@ -276,24 +276,19 @@ private theorem exists_epi_of_not_isRepresentableProjectiveCover {J : Type*} [Fi
     (hp : ¬ IsRepresentableProjectiveCover p) :
     ∃ j : J, Epi (preadditiveYoneda.map (biproduct.fromSubtype P (· ≠ j)) ≫ p) := by
   classical
-  -- By the radical criterion some `ψ` outside the radical satisfies `(-, ψ) ≫ p = 0`; one of its
-  -- components `P i ⟶ P j` is then outside the radical, hence an isomorphism.
+  -- By the radical criterion some `ψ` outside the radical satisfies `(-, ψ) ≫ p = 0`; by the
+  -- matrix description of the radical, one of its components `P i ⟶ P j` is an isomorphism.
   obtain ⟨ψ, hψ, hψrad⟩ : ∃ ψ : ⨁ P ⟶ ⨁ P, preadditiveYoneda.map ψ ≫ p = 0 ∧
       ψ ∉ jacobsonRadical (⨁ P) (⨁ P) := by
     by_contra! h
     exact hp ((isRepresentableProjectiveCover_iff p).2 ⟨inferInstance, h⟩)
-  obtain ⟨i, hi⟩ : ∃ i, biproduct.ι P i ≫ ψ ∉ jacobsonRadical (P i) (⨁ P) := by
+  obtain ⟨i, j, hij⟩ : ∃ i j, IsIso (biproduct.ι P i ≫ ψ ≫ biproduct.π P j) := by
     by_contra! h
-    exact hψrad ((mem_jacobsonRadical_biproduct_left_iff P).2 h)
-  obtain ⟨j, hj⟩ : ∃ j, (biproduct.ι P i ≫ ψ) ≫ biproduct.π P j ∉ jacobsonRadical (P i) (P j) := by
-    by_contra! h
-    exact hi ((mem_jacobsonRadical_biproduct_right_iff P).2 h)
-  have := hP i
-  have := hP j
+    exact hψrad ((mem_jacobsonRadical_biproduct_iff P P hP hP).2 h)
   obtain ⟨u, hu, hc⟩ : ∃ u : P i ⟶ ⨁ P, preadditiveYoneda.map u ≫ p = 0 ∧
       IsIso (u ≫ biproduct.π P j) :=
     ⟨biproduct.ι P i ≫ ψ, by rw [Functor.map_comp, Category.assoc, hψ, comp_zero],
-      not_not.1 fun h ↦ hj (mem_jacobsonRadical_iff_not_isIso.2 h)⟩
+      by rwa [Category.assoc]⟩
   refine ⟨j, ?_⟩
   -- Since `u ≫ π j` is invertible, the identity of `⨁ P` is the sum of a map through `u` and a
   -- map through the summands other than `P j`.
