@@ -54,7 +54,7 @@ within a path component, since evaluations at two points joined by a path are ho
 * `isCoveredByDiffeomorphisms_of_section`: a section of evaluation makes `M` covered.
 * `isCoveredByDiffeomorphisms_of_smul`: the condition from a smooth group action.
 * `isCoveredByDiffeomorphisms_of_lieGroup`: compact Lie groups are covered by diffeomorphisms.
-* `IsCoveredByDiffeomorphisms.zsmul`: multiples of `ℓ`.
+* `IsCoveredByDiffeomorphisms.mul_left`: multiples of `ℓ`.
 * `isCoveredByDiffeomorphisms_neg`: independence of the orientation.
 * `isCoveredByDiffeomorphisms_iff_of_joined`,
   `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`: independence of the base point.
@@ -124,8 +124,7 @@ theorem IsCoveredByDiffeomorphisms.of_homologyMap {Z : Type} [TopologicalSpace Z
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
   refine ⟨(((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj
     (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom φ)).hom a, ?_⟩
-  rw [← h, TopCat.ofHom_comp, Functor.map_comp]
-  rfl
+  rw [← h, TopCat.ofHom_comp, Functor.map_comp, ModuleCat.comp_apply]
 
 /-- **Covering by a family of diffeomorphisms parametrized by a manifold.** If a continuous
 family `φ : P → Diff(M)` parametrized by a compact oriented `d`-manifold `P` satisfies
@@ -171,10 +170,10 @@ theorem isCoveredByDiffeomorphisms_of_smul {F H : Type} [NormedAddCommGroup F] [
     (h : (((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
       (TopCat.ofHom f)).hom a = ℓ • o.mapFundamentalClass hd (ContinuousMap.id M)) :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
-  refine .of_homologyMap ⟨fun g ↦ Diffeomorph.smul I 𝓘(ℝ, E) n g,
-    ContMDiff.continuous_diffeomorphWeakWhitney (by
+  refine .of_homologyMap (Diffeomorph.ofSmoothFamily (fun g ↦ Diffeomorph.smul I 𝓘(ℝ, E) n g)
+    (by
       simp only [Diffeomorph.smul_apply]
-      exact ContMDiffSMul.contMDiff_smul (I := I) (I' := 𝓘(ℝ, E)))⟩ a ?_
+      exact ContMDiffSMul.contMDiff_smul (I := I) (I' := 𝓘(ℝ, E)))) a ?_
   convert h
   ext g
   simp [hf]
@@ -182,7 +181,7 @@ theorem isCoveredByDiffeomorphisms_of_smul {F H : Type} [NormedAddCommGroup F] [
 variable {o hd n}
 
 /-- If `M` is `ℓ`-covered by diffeomorphisms, it is `k * ℓ`-covered for every integer `k`. -/
-theorem IsCoveredByDiffeomorphisms.zsmul {x₀ : M} {ℓ : ℤ}
+theorem IsCoveredByDiffeomorphisms.mul_left {x₀ : M} {ℓ : ℤ}
     (h : o.IsCoveredByDiffeomorphisms hd n x₀ ℓ) (k : ℤ) :
     o.IsCoveredByDiffeomorphisms hd n x₀ (k * ℓ) := by
   obtain ⟨A, hA⟩ := h
@@ -191,7 +190,7 @@ theorem IsCoveredByDiffeomorphisms.zsmul {x₀ : M} {ℓ : ℤ}
 /-- A manifold covered by diffeomorphisms is `ℓ`-covered for every `ℓ`. -/
 theorem IsCoveredByDiffeomorphisms.of_one {x₀ : M} (h : o.IsCoveredByDiffeomorphisms hd n x₀ 1)
     (ℓ : ℤ) : o.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
-  simpa using h.zsmul ℓ
+  simpa using h.mul_left ℓ
 
 /-- Covering by diffeomorphisms does not depend on the orientation. -/
 @[simp]
@@ -200,16 +199,6 @@ theorem isCoveredByDiffeomorphisms_neg {x₀ : M} {ℓ : ℤ} :
   refine ⟨fun ⟨A, hA⟩ ↦ ⟨-A, ?_⟩, fun ⟨A, hA⟩ ↦ ⟨-A, ?_⟩⟩
   · rw [map_neg, hA, mapFundamentalClass_neg, zsmul_neg, neg_neg]
   · rw [map_neg, hA, mapFundamentalClass_neg, zsmul_neg]
-
-/-- Evaluations at two points joined by a path `γ` are homotopic, through evaluation along `γ`. -/
-private def evalAtHomotopy {x₀ x₁ : M} (γ : Path x₀ x₁) :
-    ContinuousMap.Homotopy
-      (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀)
-      (Diffeomorph.evalAt x₁) where
-  toFun p := p.2 (γ p.1)
-  continuous_toFun := by fun_prop
-  map_zero_left φ := by simp
-  map_one_left φ := by simp
 
 /-- **Independence of the base point along a path.** At two points joined by a path, `M` is
 `ℓ`-covered by diffeomorphisms at one exactly when it is at the other: the two evaluations are
@@ -222,7 +211,7 @@ theorem isCoveredByDiffeomorphisms_iff_of_joined {x₀ x₁ : M} (hx : Joined x�
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
         (TopCat.ofHom (Diffeomorph.evalAt x₁)) :=
     TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-      (evalAtHomotopy (n := n) hx.somePath) _ d
+      (Diffeomorph.evalAtHomotopy (n := n) (J := 𝓘(ℝ, E)) hx.somePath) _ d
   simp only [IsCoveredByDiffeomorphisms, heq]
 
 /-- On a path-connected manifold, covering by diffeomorphisms does not depend on the base
@@ -247,10 +236,9 @@ Barraud–Damian–Humilière–Oancea). For a compact `C^n` Lie group `M`, the 
 theorem isCoveredByDiffeomorphisms_of_lieGroup (x₀ : M) :
     o.IsCoveredByDiffeomorphisms hd n x₀ 1 := by
   refine o.isCoveredByDiffeomorphisms_of_section hd n
-    ⟨fun g ↦ Diffeomorph.smul 𝓘(ℝ, E) 𝓘(ℝ, E) n (g * x₀⁻¹),
-      ContMDiff.continuous_diffeomorphWeakWhitney (by
-        simp only [Diffeomorph.smul_apply, smul_eq_mul]
-        exact (contMDiff_fst.mul contMDiff_const).mul contMDiff_snd)⟩ fun g ↦ ?_
+    (Diffeomorph.ofSmoothFamily (fun g ↦ Diffeomorph.smul 𝓘(ℝ, E) 𝓘(ℝ, E) n (g * x₀⁻¹)) (by
+      simp only [Diffeomorph.smul_apply, smul_eq_mul]
+      exact (contMDiff_fst.mul contMDiff_const).mul contMDiff_snd)) fun g ↦ ?_
   simp
 
 end LieGroup
