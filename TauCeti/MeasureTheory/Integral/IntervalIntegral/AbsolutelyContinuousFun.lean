@@ -43,6 +43,8 @@ fundamental-theorem results to curves.
   integration by parts with supplied almost-everywhere derivatives.
 * `AbsolutelyContinuousOnInterval.integral_div_eq_log_sub_log`: the fundamental theorem for the
   logarithmic derivative of a nonvanishing absolutely continuous real function.
+* `AbsolutelyContinuousOnInterval.monotoneOn_of_ae_deriv_nonneg`: an absolutely continuous real
+  function with almost everywhere nonnegative derivative is monotone.
 * `TauCeti.Probability.survival_eq_exp_integral_hazard`: a positive absolutely continuous
   survival function is reconstructed from its hazard rate.
 * `ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`: a continuous curve
@@ -218,6 +220,19 @@ theorem integral_div_eq_log_sub_log (hf : AbsolutelyContinuousOnInterval f a b)
     (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (V t) t) :
     ∫ t in a..b, V t / f t = Real.log (f b) - Real.log (f a) :=
   (hf.log h0).integral_eq_sub_of_ae_hasDerivAt (ae_hasDerivAt_log h0 hV)
+
+/-- An absolutely continuous real function whose derivative is nonnegative at almost every point
+of the interval is monotone on the interval. This is the almost-everywhere counterpart of
+`monotoneOn_of_deriv_nonneg`; absolute continuity rules out singular increments such as those of
+the Cantor function. -/
+theorem monotoneOn_of_ae_deriv_nonneg (hf : AbsolutelyContinuousOnInterval f a b)
+    (h : ∀ᵐ t, t ∈ uIcc a b → 0 ≤ deriv f t) : MonotoneOn f (uIcc a b) := by
+  intro s hs t ht hst
+  have hsub : Icc s t ⊆ uIcc a b := uIcc_of_le hst ▸ uIcc_subset_uIcc hs ht
+  rw [← sub_nonneg, ← (hf.mono (uIcc_subset_uIcc hs ht)).integral_deriv_eq_sub]
+  refine intervalIntegral.integral_nonneg_of_ae_restrict hst ?_
+  filter_upwards [ae_restrict_mem measurableSet_Icc, ae_restrict_of_ae h] with x hx hx'
+  exact hx' (hsub hx)
 
 end AbsolutelyContinuousOnInterval
 
