@@ -340,15 +340,13 @@ theorem inertiaDeg_eq_one_iff_mem_inertia (Q : Ideal (𝓞 K)) [Q.IsPrime] {σ :
 /-- At an unramified prime of a Galois number field, the number of primes above `p` times the
 residue degree is `[K : ℚ]`. -/
 theorem ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt [IsGalois ℚ K] {p : ℕ}
-    [NeZero p] (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
     [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * Q.inertiaDeg ℤ = finrank ℚ K := by
-  have hQ : Q ≠ ⊥ :=
-    ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) (by simpa using NeZero.ne p) Q
   -- Orbit–stabilizer: the primes above `p` form one orbit, and the stabilizer of the unramified
   -- prime `Q` has order its residue degree.
   rw [← inertiaDeg_ringOfIntegers_rat_eq_int,
-    ← card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ, ← Nat.card_coe_set_eq,
+    ← card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q, ← Nat.card_coe_set_eq,
     ← Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 K) (K ≃ₐ[ℚ] K) (span {(p : ℤ)}) Q,
     ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
     IsGalois.card_aut_eq_finrank]
