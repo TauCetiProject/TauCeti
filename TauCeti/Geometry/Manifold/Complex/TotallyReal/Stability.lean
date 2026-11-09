@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.LinearAlgebra.TotallyReal.Finrank
-import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Topology.VectorBundle.TotallyReal
 
 /-!
 # Stability of totally real embeddings
@@ -23,15 +23,15 @@ compact subsets of `N`. A fortiori it is stable under `C¹`-small perturbations.
 Tangent spaces at different points are compared in the canonical trivializations of the
 tangent bundle. In such a trivialization both the tangent image `im dι_x` and the structure
 `J(ι x)` are read as a frame `F →L[ℝ] E` and an endomorphism of `E`, and the linear stability
-theorem of `TauCeti.Analysis.Normed.Module.TotallyReal` applies to the resulting pairs.
+theorem of `TauCeti.Analysis.Normed.Module.TotallyReal` applies to the resulting pairs, after
+`TauCeti.isMaximalTotallyReal_inCoordinates_iff` shows that reading them in coordinates does not
+change maximal total reality.
 
 The perturbed endomorphisms need not square to minus the identity, and only the original field
 must be continuous; perturbations are arbitrary operators close to it in a chart.
 
 ## Main declarations
 
-* `TauCeti.isMaximalTotallyReal_inCoordinates_iff`: maximal total reality is unchanged by
-  reading a frame and an endomorphism in vector bundle trivializations.
 * `TauCeti.exists_pos_eventually_isMaximalTotallyReal_range_mfderiv`: the local chart form, one
   radius for all operators close to `J(ι x₀)` in the chart at `ι x₀`.
 * `TauCeti.exists_pos_forall_isMaximalTotallyReal_of_isCompact`: the compact chart form, one
@@ -54,37 +54,6 @@ open ContinuousLinearMap (inCoordinates)
 open scoped Manifold ContDiff
 
 namespace TauCeti
-
-section Coordinates
-
-variable {B₁ B₂ F₁ F₂ : Type*} [TopologicalSpace B₁] [TopologicalSpace B₂]
-  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
-  {E₁ : B₁ → Type*} [∀ b, AddCommGroup (E₁ b)] [∀ b, Module ℝ (E₁ b)]
-  [∀ b, TopologicalSpace (E₁ b)] [TopologicalSpace (TotalSpace F₁ E₁)] [FiberBundle F₁ E₁]
-  [VectorBundle ℝ F₁ E₁]
-  {E₂ : B₂ → Type*} [∀ b, AddCommGroup (E₂ b)] [∀ b, Module ℝ (E₂ b)]
-  [∀ b, TopologicalSpace (E₂ b)] [TopologicalSpace (TotalSpace F₂ E₂)] [FiberBundle F₂ E₂]
-  [VectorBundle ℝ F₂ E₂]
-
-/-- Reading a frame `A` and an endomorphism `K` of its target fibre in trivializations whose base
-sets contain the fibres does not change maximal total reality of the image. -/
-theorem isMaximalTotallyReal_inCoordinates_iff {x₀ x : B₁} {y₀ y : B₂}
-    (hx : x ∈ (trivializationAt F₁ E₁ x₀).baseSet) (hy : y ∈ (trivializationAt F₂ E₂ y₀).baseSet)
-    (A : E₁ x →L[ℝ] E₂ y) (K : E₂ y →L[ℝ] E₂ y) :
-    IsMaximalTotallyReal (inCoordinates F₂ E₂ F₂ E₂ y₀ y y₀ y K).toLinearMap
-        (LinearMap.range (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y A).toLinearMap) ↔
-      IsMaximalTotallyReal K.toLinearMap (LinearMap.range A.toLinearMap) := by
-  set e := (trivializationAt F₂ E₂ y₀).continuousLinearEquivAt ℝ y hy
-  have hK : inCoordinates F₂ E₂ F₂ E₂ y₀ y y₀ y K =
-      (e : E₂ y →L[ℝ] F₂).comp (K.comp (e.symm : F₂ →L[ℝ] E₂ y)) :=
-    ContinuousLinearMap.inCoordinates_eq hy hy
-  rw [ContinuousLinearMap.range_inCoordinates hx hy]
-  refine e.toLinearEquiv.isMaximalTotallyReal_map_iff ?_
-  ext v
-  rw [hK]
-  simp
-
-end Coordinates
 
 section Tangent
 
