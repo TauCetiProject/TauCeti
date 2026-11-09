@@ -40,6 +40,9 @@ Conversely, the two sides of a global bicollar of a map from a preconnected spac
 preconnected space lie on opposite sides of any separation of the complement of its image
 (`TauCeti.IsBicollar.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo`): if both lay in one part, the
 collar would be a neighbourhood of the image missing the other part, which would then be clopen.
+The closure of the part `A` containing one side of a bicollar is `A` together with the image, and
+its frontier is the image (`TauCeti.IsBicollar.closure_eq_union_range` and
+`TauCeti.IsBicollar.frontier_eq_range`).
 
 ## Main results
 
@@ -58,6 +61,8 @@ collar would be a neighbourhood of the image missing the other part, which would
 * `TauCeti.IsBicollar.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo` and
   `TauCeti.IsBicollar.exists_isOpen_compl_range_eq_union`: the two sides of a bicollar lie on
   opposite sides of a separation of the complement of the image.
+* `TauCeti.IsBicollar.closure_eq_union_range` and `TauCeti.IsBicollar.frontier_eq_range`: the
+  closure and the frontier of a part of such a separation containing one side of a bicollar.
 
 ## References
 
@@ -364,6 +369,35 @@ theorem exists_isOpen_compl_range_eq_union [CompactSpace N] [PreconnectedSpace N
     ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
   · exact ⟨A, B, hA, hB, hAB, hcompl, hpos, hneg⟩
   · exact ⟨B, A, hB, hA, hAB.symm, hcompl.trans (union_comm _ _), hpos, hneg⟩
+
+/-- **The closure of a side of a bicollared map.** Let `b` be a bicollar of `f`, and write the
+complement of the image of `f` as the union of disjoint sets `A` and `B`, with `B` open. If the
+part of the collar at depths in a set `s` accumulating at `0` lies in `A`, then the closure of `A`
+is `A` together with the image of `f`. -/
+theorem closure_eq_union_range (h : IsBicollar f b) (hB : IsOpen B) (hAB : Disjoint A B)
+    (hcompl : (range f)ᶜ = A ∪ B) {s : Set ℝ} (hs : (0 : ℝ) ∈ closure s)
+    (hside : MapsTo b (univ ×ˢ s) A) : closure A = A ∪ range f := by
+  refine Subset.antisymm (fun z hz => ?_) (union_subset subset_closure ?_)
+  · -- The closure of `A` misses the open set `B`, so off the image of `f` it lies in `A`.
+    by_cases hzf : z ∈ range f
+    · exact Or.inr hzf
+    · exact Or.inl ((hcompl ▸ hzf : z ∈ A ∪ B).resolve_right
+        (disjoint_left.1 (hAB.closure_left hB) hz))
+  · rintro _ ⟨x, rfl⟩
+    exact closure_mono hside.image_subset (h.apply_mem_closure_image hs x)
+
+/-- **The frontier of a side of a bicollared map.** Let `b` be a bicollar of `f`, and write the
+complement of the image of `f` as the union of disjoint open sets `A` and `B`. If the part of the
+collar at depths in a set `s` accumulating at `0` lies in `A`, then the frontier of `A` is the
+image of `f`. -/
+theorem frontier_eq_range (h : IsBicollar f b) (hA : IsOpen A) (hB : IsOpen B)
+    (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) {s : Set ℝ} (hs : (0 : ℝ) ∈ closure s)
+    (hside : MapsTo b (univ ×ˢ s) A) : frontier A = range f := by
+  have hfA : Disjoint (range f) A := by
+    rw [← subset_compl_iff_disjoint_left, hcompl]
+    exact subset_union_left
+  rw [frontier, h.closure_eq_union_range hB hAB hcompl hs hside, hA.interior_eq, union_sdiff_left,
+    hfA.sdiff_eq_left]
 
 end IsBicollar
 
