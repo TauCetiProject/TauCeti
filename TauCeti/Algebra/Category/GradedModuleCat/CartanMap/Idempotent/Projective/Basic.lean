@@ -12,7 +12,6 @@ import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.ObjectProperty.Retract
 import TauCeti.RingTheory.GradedAlgebra.Basic
-import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Ideal
 import TauCeti.RingTheory.Idempotents.Hom
 import Mathlib.RingTheory.LocalRing.Basic
 
