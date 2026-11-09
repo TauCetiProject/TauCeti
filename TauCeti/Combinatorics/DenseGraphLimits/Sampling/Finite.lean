@@ -186,22 +186,24 @@ private lemma sampleIntegrand_eq_of_edgeFinset_inter_eq {A B : Finset (Sym2 (Fin
   have hmem : ∀ e, e ∈ B ↔ e ∈ H.edgeFinset ∧ e ∈ A := by
     intro e
     rw [← hH, Finset.mem_inter]
-  have hcompl :
-      (⊤ : SimpleGraph (Fin n)).edgeFinset \ H.edgeFinset =
-        (A \ B) ∪ (((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A)) := by
+  have h1 : ((⊤ : SimpleGraph (Fin n)).edgeFinset \ H.edgeFinset) ∩ A = A \ B := by
     ext e
-    simp only [Finset.mem_sdiff, Finset.mem_union, hmem]
-    exact ⟨fun h => by by_cases heA : e ∈ A <;> tauto,
-      fun h => h.elim (fun h => ⟨hA h.1, fun hH => h.2 ⟨hH, h.1⟩⟩) fun h => ⟨h.1.1, by tauto⟩⟩
-  have hdisj' : Disjoint (A \ B)
-      (((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A)) :=
-    Finset.disjoint_left.mpr fun e he hne =>
-      (Finset.mem_sdiff.mp (Finset.mem_sdiff.mp hne).1).2 (Finset.mem_sdiff.mp he).1
+    simp only [Finset.mem_inter, Finset.mem_sdiff, hmem]
+    have := @hA e
+    tauto
+  have h2 : ((⊤ : SimpleGraph (Fin n)).edgeFinset \ H.edgeFinset) \ A =
+      ((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A) := by
+    ext e
+    simp only [Finset.mem_sdiff]
+    tauto
+  have hsplit := Finset.prod_inter_mul_prod_sdiff
+    ((⊤ : SimpleGraph (Fin n)).edgeFinset \ H.edgeFinset) A (fun e => 1 - edgeFactor W x e)
+  rw [h1, h2] at hsplit
   have hprod : (∏ e ∈ H.edgeFinset, edgeFactor W x e) =
       (∏ e ∈ B, edgeFactor W x e) * ∏ e ∈ H.edgeFinset \ A, edgeFactor W x e := by
     simpa only [hH] using
       (Finset.prod_inter_mul_prod_sdiff H.edgeFinset A (edgeFactor W x)).symm
-  rw [sampleIntegrand_def, hprod, hcompl, Finset.prod_union hdisj']
+  rw [sampleIntegrand_def, hprod, ← hsplit]
   ring
 
 open Classical in
