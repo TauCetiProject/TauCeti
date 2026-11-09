@@ -122,9 +122,14 @@ theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
 
 /-- A unit `w = 1 + 4m` is a square if the residue of `m` lies in the range of
 `t ↦ t² + t`. -/
-theorem isSquare_of_eq_one_add_four_mul (h2 : (2 : K) ≠ 0) {w : Kˣ} {m : 𝒪[K]}
+theorem isSquare_of_eq_one_add_four_mul {w : Kˣ} {m : 𝒪[K]}
     (hw : (w : K) = 1 + 4 * m) (hwv : valuation K (w : K) = 1)
     (hm : residue 𝒪[K] m ∈ Set.range (fun t : 𝓀[K] => t ^ 2 + t)) : IsSquare w := by
+  by_cases h2 : (2 : K) = 0
+  · -- In characteristic two, `4 = 0`, so `w = 1`.
+    have h4 : (4 : K) = 0 := by rw [show (4 : K) = 2 * 2 by norm_num, h2, zero_mul]
+    have : w = 1 := Units.ext (by rw [hw, h4, zero_mul, add_zero, Units.val_one])
+    exact ⟨1, by rw [this, mul_one]⟩
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
   have hπ1 : valuation K (π : K) < 1 :=
     Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
@@ -196,7 +201,7 @@ theorem not_mem_range_of_eq_sq_mul_one_add_four_mul (h2 : (2 : K) ≠ 0)
   have hval : ((a * (ζ ^ 2)⁻¹ : Kˣ) : K) = 1 + 4 * n := by
     rw [Units.val_mul, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val, hn]
     field_simp
-  have h := isSquare_of_eq_one_add_four_mul h2 hval
+  have h := isSquare_of_eq_one_add_four_mul hval
     (hval ▸ valuation_one_add_four_mul h2 he n) hmem
   exact ha (by simpa using h.mul (IsSquare.sq ζ))
 

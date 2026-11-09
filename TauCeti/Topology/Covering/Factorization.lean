@@ -166,16 +166,11 @@ theorem _root_.IsCoveringMap.of_comp_eq [LocallyConnectedSpace F] (hp : IsCoveri
   rcases isEmpty_or_nonempty (p ⁻¹' {q f₀} : Set E) with hemp | hne
   · -- `p` misses `q f₀`, so `g` misses a whole evenly covered neighbourhood of `f₀`.
     obtain ⟨-, U, hxU, hU, -, Hp, -⟩ := hp (q f₀)
-    have hpU : p ⁻¹' U = ∅ := Set.isEmpty_coe_sort.mp (Function.isEmpty ⇑Hp)
     have hgU : g ⁻¹' (q ⁻¹' U) = ∅ := by
-      rw [← Set.preimage_comp, hgp]
-      exact hpU
-    have : IsEmpty (g ⁻¹' {f₀} : Set E) := by
-      refine Set.isEmpty_coe_sort.mpr (Set.eq_empty_of_subset_empty ?_)
-      rw [← hgU]
-      rintro e he
-      rw [Set.mem_preimage, Set.mem_singleton_iff] at he
-      simpa only [Set.mem_preimage, he] using hxU
+      rw [← preimage_comp, hgp]
+      exact isEmpty_coe_sort.mp (Function.isEmpty Hp)
+    have : IsEmpty (g ⁻¹' {f₀}) := isEmpty_coe_sort.mpr <|
+      subset_empty_iff.mp (hgU ▸ preimage_mono (singleton_subset_iff.mpr hxU))
     exact IsEvenlyCovered.of_preimage_eq_empty _ ((hU.preimage hq.continuous).mem_nhds hxU) hgU
   · have : Nonempty (q ⁻¹' {q f₀} : Set F) := ⟨⟨f₀, rfl⟩⟩
     have := (hp (q f₀)).discreteTopology_fiber
