@@ -657,7 +657,15 @@ lemma rationalFunctionsMul_inv_app_rationalFunctionsMul_app (g : X.functionField
 
 end Mul
 
-variable [IsIntegral X]
+end Scheme
+
+namespace Scheme
+
+/-! On an integral scheme `IrreducibleSpace X` is automatic
+(`AlgebraicGeometry.irreducibleSpace_of_isIntegral`), so the statements below assume only
+integrality. -/
+
+variable {X : Scheme.{u}} [IsIntegral X]
 
 /-- The inclusion `𝒪_X ⟶ 𝒦_X` is injective on sections over every open subset: over a nonempty
 one because the germ map to the function field of an integral scheme is injective, and over an
