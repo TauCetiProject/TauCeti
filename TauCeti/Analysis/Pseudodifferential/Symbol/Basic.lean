@@ -966,6 +966,15 @@ theorem isSmoothing_ofBoundedFrequencySupport
     (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
 
+/-- A smooth coefficient that agrees with a symbol `b` of order `m` at all frequencies of norm at
+least `R` is itself a symbol of order `m`: the difference vanishes at large frequencies. -/
+theorem exists_coefficient_eq_of_forall_le_norm
+    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (b : Symbol n V W m) (R : ℝ) (h : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = b.coefficient (x, ξ)) :
+    ∃ c : Symbol n V W m, c.coefficient = f :=
+  ⟨b + ofBoundedFrequencySupport (f - b.coefficient) (hf.sub b.contDiff_coefficient) R
+    fun x ξ hξ => sub_eq_zero.2 (h x ξ hξ), by simp⟩
+
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
 `-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
