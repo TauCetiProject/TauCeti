@@ -237,11 +237,9 @@ theorem localHomologyRestriction_localOrientationAlong_self {z : M} {U : Set M} 
   have h := localHomologyMap_comp_localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
     ⟨Subtype.val, continuous_subtype_val⟩ (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hzZ)
     (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
-  have h' := (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
-    hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ n).inv_hom_id_apply (o z).val
-  rw [localHomologyIsoOfIsOpenEmbedding_hom] at h'
   rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h]
-  exact h'
+  exact localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_apply
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ _ n (o z).val
 
 /-- The class `o.localOrientationAlong` at `z` restricts to `0` at every point of `Z` other than
 `z`. -/
@@ -319,14 +317,22 @@ theorem eq_fundamentalClass
   (o.existsUnique_fundamentalClass hn).unique hγ
     (o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn)
 
-/-- The image of the fundamental class in `Hₙ(M, M ∖ M; ℤ)` is the fundamental class along the
-whole of `M`. -/
-theorem singularHomologyπ_fundamentalClass :
-    ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+/-- The image of the fundamental class in `Hₙ(M, M ∖ A; ℤ)` is the fundamental class along the
+compact set `A`. -/
+theorem singularHomologyπ_fundamentalClass {A : Set M} (hA : IsCompact A) :
+    ((TopPair.ofSubset (Aᶜ : Set (TopCat.of M))).singularHomologyπ
       (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.fundamentalClass hn) =
-      o.fundamentalClassOn hn isCompact_univ :=
-  o.eq_fundamentalClassOn hn isCompact_univ fun x _ ↦
-    o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn x
+      o.fundamentalClassOn hn hA := by
+  refine o.eq_fundamentalClassOn hn hA fun x hx ↦ ?_
+  -- `Hₙ(M) ⟶ Hₙ(M, M ∖ A)` is `Hₙ(M) ⟶ Hₙ(M, M ∖ M)` followed by restriction from `M` to `A`.
+  have h := TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id_assoc
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) (X := TopCat.of M) (S := Aᶜ) (S' := univᶜ)
+    (compl_subset_compl.2 (subset_univ A)) n
+    (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n)
+  rw [← localHomologyRestriction_def _ (subset_univ A), localHomologyRestriction_comp] at h
+  exact ((ConcreteCategory.comp_apply _ _ _).symm.trans (ConcreteCategory.congr_hom h.symm _)).trans
+    ((ConcreteCategory.comp_apply _ _ _).trans
+      (o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn x))
 
 /-- Reversing the orientation negates the fundamental class. -/
 @[simp]

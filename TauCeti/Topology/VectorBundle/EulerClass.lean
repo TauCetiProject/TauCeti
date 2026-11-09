@@ -486,21 +486,6 @@ theorem eulerClass_naturality {B' : Type w} [TopologicalSpace B'] {F' : Type*}
   rw [eulerClass_def, eulerClass_def, Category.assoc, ← TopCat.singularCohomologyMap_comp, ← h,
     TopCat.singularCohomologyMap_comp, TopPair.singularCohomologyπ_naturality_assoc]
 
-/-- **A nowhere-vanishing section kills the Euler class.** If a real vector bundle has a continuous
-section `s` with `s b ≠ 0` for every `b`, then its Euler class vanishes in every degree: the zero
-section is homotopic through `t • s` to `s`, which takes values in `E₀`, and every relative class
-restricts to zero on `E₀`. -/
-theorem eulerClass_eq_zero_of_forall_ne_zero {s : ∀ b, E b}
-    (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) (hs₀ : ∀ b, s b ≠ 0) (n : ℕ) :
-    eulerClass R k M F E n = 0 := by
-  -- The section `s`, corestricted to the nonzero vectors.
-  let s₀ : TopCat.of B ⟶ (thomPair F E).snd :=
-    TopCat.ofHom ⟨fun b ↦ ⟨TotalSpace.mk' F b (s b), hs₀ b⟩, hs.subtype_mk _⟩
-  rw [eulerClass_def, (zeroSectionHomotopy hs).congr_singularCohomologyMap R k M n,
-    show TopCat.ofHom ⟨_, hs⟩ = s₀ ≫ (thomPair F E).map from rfl,
-    TopCat.singularCohomologyMap_comp,
-    TopPair.singularCohomologyπ_comp_singularCohomologyMap_assoc, zero_comp]
-
 /-- **The Euler class through a section.** If a real vector bundle has a continuous section `s`
 which is nonzero off a set `S ⊆ B`, then the Euler class of a relative class `u ∈ Hⁿ(E, E₀)` is the
 image in `Hⁿ(B)` of its pull-back `s^* u ∈ Hⁿ(B, B ∖ S)` along `s : (B, B ∖ S) ⟶ (E, E₀)`: the zero
@@ -517,6 +502,22 @@ theorem eulerClass_eq_singularCohomologyMap_thomPairMapOfNeZero {s : ∀ b, E b}
   rw [eulerClass_def]
   exact (congrArg ((thomPair F E).singularCohomologyπ R k M n ≫ ·)
     ((zeroSectionHomotopy hs).congr_singularCohomologyMap R k M n)).trans h
+
+/-- **A nowhere-vanishing section kills the Euler class.** If a real vector bundle has a continuous
+section `s` with `s b ≠ 0` for every `b`, then its Euler class vanishes in every degree: the zero
+section is homotopic through `t • s` to `s`, which takes values in `E₀`, and every relative class
+restricts to zero on `E₀`. -/
+theorem eulerClass_eq_zero_of_forall_ne_zero {s : ∀ b, E b}
+    (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) (hs₀ : ∀ b, s b ≠ 0) (n : ℕ) :
+    eulerClass R k M F E n = 0 := by
+  -- The map `Hⁿ(B, B ∖ ∅) ⟶ Hⁿ(B)` vanishes, as `B ∖ ∅` is the whole of `B`.
+  have h : ∀ T : Set (TopCat.of B), T = univ →
+      (TopPair.ofSubset T).singularCohomologyπ R k M n = 0 := by
+    rintro _ rfl
+    exact TopPair.singularCohomologyπ_ofSubset_univ _ n
+  rw [eulerClass_eq_singularCohomologyMap_thomPairMapOfNeZero F E hs (S := ∅) (fun b _ ↦ hs₀ b),
+    h _ compl_empty]
+  exact comp_zero
 
 /-- **The Euler class is invariant under fibrewise negation**: pulling a relative class back along
 `v ↦ -v` does not change its Euler class, since negation fixes the zero section. -/

@@ -48,7 +48,8 @@ fundamental class of `M` is the sum of the local indices of `s` at its zeros
 
 * `TauCeti.VectorBundleOrientation.sectionIndex_eq`: the local index is the pairing along any open
   neighbourhood containing no other zero; at a point without such a neighbourhood it is `0`
-  (`TauCeti.VectorBundleOrientation.sectionIndex_of_not_isolated`).
+  (`TauCeti.VectorBundleOrientation.sectionIndex_of_not_isolated`), and so it is at a point where
+  the section is nonzero (`TauCeti.VectorBundleOrientation.sectionIndex_of_ne_zero`).
 * `TauCeti.VectorBundleOrientation.sectionIndex_neg` and
   `TauCeti.VectorBundleOrientation.sectionIndex_neg_manifold`: reversing the orientation of the
   bundle or of the manifold negates the local index.
@@ -122,11 +123,8 @@ private theorem indexOn_of_subset {z : M} {U V : Set M} (hU : IsOpen U) (hV : Is
         (n + 1)).inv (oM z).val := by
     rw [← localHomologyIsoOfIsOpenEmbedding_trans R hj hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩,
       Iso.trans_inv, ConcreteCategory.comp_apply]
-    have h := (localHomologyIsoOfIsOpenEmbedding R hj ⟨z, hz⟩ (n + 1)).inv_hom_id_apply
-      ((localHomologyIsoOfIsOpenEmbedding R hU.isOpenEmbedding_subtypeVal ⟨z, hVU hz⟩
-        (n + 1)).inv (oM z).val)
-    rw [localHomologyIsoOfIsOpenEmbedding_hom] at h
-    exact h
+    exact localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_apply R hj ⟨z, hz⟩ hi
+      (n + 1) _
   simp only [indexOn]
   rw [← hexc, localHomologyMap_def]
   conv_rhs => rw [← ModuleCat.comp_apply, ← TopPair.singularKronecker_naturality,
@@ -169,8 +167,9 @@ def sectionIndex (z : M) : ℤ :=
     indexOn o hF oM hs h.choose_spec.1 h.choose_spec.2.1 h.choose_spec.2.2
   else 0
 
-/-- At a point which is not an isolated zero of `s` (or a nonzero point of `s`), that is, without
-an open neighbourhood containing no zero of `s` other than itself, the local index is `0`. -/
+/-- At a point which is not an isolated zero of `s`, that is, without an open neighbourhood
+containing no zero of `s` other than itself, the local index is `0`. At a point where `s` is
+nonzero, see `TauCeti.VectorBundleOrientation.sectionIndex_of_ne_zero`. -/
 theorem sectionIndex_of_not_isolated {z : M}
     (h : ¬ ∃ U, IsOpen U ∧ z ∈ U ∧ ∀ x ∈ U, s x = 0 → x = z) : o.sectionIndex hF oM hs z = 0 :=
   dite_eq_right h
@@ -195,6 +194,21 @@ theorem sectionIndex_eq {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
   rw [sectionIndex, dite_eq_left h, ← indexOn_of_subset o hF oM hs hU₀ (hU₀.inter hU) ⟨hz₀, hz⟩
     inter_subset_left hU₀z, indexOn_of_subset o hF oM hs hU (hU₀.inter hU) ⟨hz₀, hz⟩
     inter_subset_right hUz, indexOn]
+
+/-- At a point where `s` is nonzero, the local index of `s` is `0`. -/
+theorem sectionIndex_of_ne_zero {z : M} (h : s z ≠ 0) : o.sectionIndex hF oM hs z = 0 := by
+  by_cases hU : ∃ U, IsOpen U ∧ z ∈ U ∧ ∀ x ∈ U, s x = 0 → x = z
+  · obtain ⟨U, hU, hz, hUz⟩ := hU
+    -- No point of `U` is a zero of `s`, so `s` is a map of pairs `(U, U) ⟶ (E, E₀)`, and the
+    -- local orientation is paired through `Hₙ₊₁(U, U) = 0`.
+    have h₀ : ∀ x : U, x ∉ (∅ : Set U) → s x.1 ≠ 0 := fun x _ h0 ↦ h (hUz x.1 x.2 h0 ▸ h0)
+    rw [sectionIndex_eq o hF oM hs hU hz hUz, ← ofSubsetMap_comp_thomPairMapOfNeZero_of_comp_eq
+      _ h₀ (ContinuousMap.id U) (T := {⟨z, hz⟩}) (fun _ _ h ↦ h) (ContinuousMap.comp_id _),
+      TopPair.singularCohomologyMap_comp_apply, TopPair.singularKronecker_naturality,
+      (isZero_localHomology_empty _ (n + 1)).eq_zero_of_tgt (TopPair.singularHomologyMap _ _ _),
+      Limits.zero_comp]
+    simp
+  · exact sectionIndex_of_not_isolated o hF oM hs hU
 
 /-- **Reversing the orientation of the bundle negates the local index.** -/
 @[simp]
@@ -237,26 +251,15 @@ theorem evalFundamentalClass_eulerClass_eq_sum_sectionIndex [CompactSpace M]
       (eulerClass_eq_singularCohomologyMap_thomPairMapOfNeZero F E hs (S := {x | s x = 0})
         (fun _ hx ↦ hx) (n + 1)) (o.thomClass hF)).trans (ConcreteCategory.comp_apply _ _ _)
   -- The Kronecker pairing with `[M]` is the relative pairing with the image of `[M]` in
-  -- `Hₙ₊₁(M, M ∖ Z)`.
-  have h₂ : (TopCat.of M).singularKronecker ℤ (n + 1) (P.singularCohomologyπ R ℤ R (n + 1) α) =
-      P.singularHomologyπ R (n + 1) ≫ P.singularKronecker ℤ (n + 1) α := by
-    rw [TopCat.singularKronecker_def, TopPair.singularKronecker_def]
-    exact TauCeti.ChainComplex.kronecker_naturality (P.singularChainComplexπ R) (n + 1) α
+  -- `Hₙ₊₁(M, M ∖ Z)`, which is the fundamental class along `Z`.
+  have h₂ : ((TopCat.of M).singularKronecker ℤ (n + 1)
+        (P.singularCohomologyπ R ℤ R (n + 1) α)).hom (oM.fundamentalClass hE) =
+      (P.singularKronecker ℤ (n + 1) α).hom (oM.fundamentalClassOn hE hZ.isCompact) :=
+    (ConcreteCategory.congr_hom (TopPair.singularKronecker_singularCohomologyπ P ℤ (n + 1) α)
+      _).trans ((ConcreteCategory.comp_apply _ _ _).trans (congrArg _
+        (oM.singularHomologyπ_fundamentalClass hE hZ.isCompact)))
   rw [HomologicalOrientation.evalFundamentalClass_apply,
     HomologicalOrientation.mapFundamentalClass_id, h₁, h₂]
-  -- The image of `[M]` in `Hₙ₊₁(M, M ∖ Z)` is the fundamental class along `Z`.
-  have h₃ : P.singularHomologyπ R (n + 1) (oM.fundamentalClass hE) =
-      oM.fundamentalClassOn hE hZ.isCompact := by
-    have h := TopPair.singularHomologyπ_naturality (R := R)
-      (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) (compl_subset_compl.2 (subset_univ {x | s x = 0})))
-      (n + 1)
-    -- The ambient space of `TopPair.ofSubset` is `TopCat.of M` only up to unfolding, so the
-    -- identity is matched by `erw`.
-    erw [TopPair.ofSubsetMap_fst, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
-      Category.id_comp] at h
-    rw [← oM.localHomologyRestriction_fundamentalClassOn_of_subset hE isCompact_univ hZ.isCompact
-      (subset_univ _), ← oM.singularHomologyπ_fundamentalClass hE, localHomologyRestriction_def]
-    exact ConcreteCategory.congr_hom h _
   -- Each zero `z` is the only zero in its open neighbourhood `(Z ∖ {z})ᶜ`, and the fundamental
   -- class along `Z` is the sum of the local orientations at the zeros, read in these
   -- neighbourhoods.
@@ -265,9 +268,6 @@ theorem evalFundamentalClass_eulerClass_eq_sum_sectionIndex [CompactSpace M]
   have hUz : ∀ z, ∀ x ∈ ({x | s x = 0} \ {z})ᶜ, s x = 0 → x = z :=
     fun _ _ hx h0 ↦ by_contra fun hxz ↦ hx ⟨h0, hxz⟩
   have h₄ := oM.fundamentalClassOn_eq_sum_localOrientationAlong hE hZ hU hzU hUz
-  -- The source of `P.singularHomologyπ` is the homology of `P.fst`, which is `TopCat.of M` only up
-  -- to unfolding `TopPair.ofSubset`, so the composite is evaluated by `erw`.
-  erw [ModuleCat.comp_apply, h₃]
   rw [h₄, map_sum]
   refine (map_sum (ULift.moduleEquiv (R := ℤ)) _ _).trans (Finset.sum_congr rfl fun z _ ↦ ?_)
   rw [sectionIndex_eq o hF oM hs (hU z) (hzU z) (hUz z)]
