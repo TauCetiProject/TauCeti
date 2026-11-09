@@ -74,9 +74,7 @@ from a non-module file should return at once for each new definition.
 Q7. Inline a new definition used once with no API, unless the roadmap names it. For every other
 new definition, name the lemma that says what it is (`_def`, `_iff`, `_apply`, or the equation its
 proofs use). Only such lemmas should unfold it, so a proof that unfolds it by hand shows one is
-missing. Add the `ext` and `@[simp]` lemmas callers need. No theorem should hold only because of a
-junk value the definition takes on degenerate inputs (empty, zero, the trivial ring). The note
-names each definition's lemma.
+missing. Add the `ext` and `@[simp]` lemmas callers need. The note names each definition's lemma.
 
 Q8. Docstrings are accurate, state every hypothesis, do not overclaim, and credit the mathematical
 source where there is one. Module docstrings list the file's main results, still match it, and
@@ -87,9 +85,14 @@ non-terminal `simp` without `only`; each `show` or `change` has a comment saying
 Mathlib's conventions, and a general helper is public in the file where it belongs. Leave the rest
 of an existing file alone.
 
-Q9. Read each new statement as a mathematician would. List what its docstring promises and check
-each part is in the conclusion, not moved into the hypotheses, with its quantifiers in the order
-the docstring implies (one `x` for every `n` is `∃ x, ∀ n`). Check it says what the source says
-and is not vacuous: the hypotheses can hold together, and the conclusion is not true for an
-unintended reason. A simple, correct lemma is fine.
+Q9. Read each new statement as a mathematician would, and its docstring word by word. Every
+promise must be in the conclusion, not moved into the hypotheses: find where the statement
+delivers each strong word (*exactly*, *iff*, *unique*, *strictly*, *for every*, *the*), with the
+quantifiers in the docstring's order (one `x` for every `n` is `∃ x, ∀ n`). A docstring that
+describes the hypotheses must also state the conclusion. Fix whichever of the two is wrong. Check
+the statement says what the source says and is not vacuous: the hypotheses can hold together, and
+the conclusion is not true for an unintended reason; a simple, correct lemma is fine. Evaluate it
+on degenerate inputs (empty, infinite, zero, the trivial ring): if it holds there only through a
+junk value, add the hypothesis that excludes the case, or say in the note why the junk case is
+intended.
 -->
