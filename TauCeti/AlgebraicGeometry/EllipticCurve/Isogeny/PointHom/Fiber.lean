@@ -100,7 +100,6 @@ degree over a separably closed field. -/
   rw [← φ.ncard_fiber_toPointHom_eq_degree 0, ← Nat.card_coe_set_eq]
   exact (φ.toPointHom.card_fiber_eq_card_ker (map_zero φ.toPointHom)).symm
 
-variable [W₁.IsElliptic] in
 /-- The point kernel of a separable isogeny over a separably closed field is finite. -/
 instance finite_ker_toPointHom : Finite φ.toPointHom.ker :=
   Nat.finite_of_card_ne_zero (φ.card_ker_toPointHom_eq_degree ▸ φ.degree_ne_zero)
