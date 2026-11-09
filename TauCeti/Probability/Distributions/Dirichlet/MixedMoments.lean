@@ -200,6 +200,7 @@ private theorem prod_rpow_reindexed_dirichletStickInsert_ae {K : Type*}
 omit [Nonempty ι] in
 /-- For a Dirichlet law with at least two coordinates, a mixed real power is integrable exactly
 when every exponent stays above its coordinate's endpoint singularity threshold. -/
+@[simp]
 theorem integrable_prod_rpow_dirichletMeasure_iff {a q : ι → ℝ}
     (ha : ∀ i, 0 < a i) (hcard : 2 ≤ Fintype.card ι) :
     Integrable (fun x ↦ ∏ i, x i ^ q i) (dirichletMeasure a) ↔
