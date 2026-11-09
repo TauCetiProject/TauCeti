@@ -56,4 +56,26 @@ theorem isRepresentationFinite_iff :
       fun M : ModuleCat.{w} A ↦ Module.Finite A M ∧ Indecomposable M)) :=
   Iff.rfl
 
+variable {A} in
+/-- A ring is representation-finite as soon as every finitely generated indecomposable module is
+isomorphic to a member of a fixed finite set of modules. -/
+theorem isRepresentationFinite_of_forall_exists_iso {S : Set (ModuleCat.{w} A)} (hS : S.Finite)
+    (h : ∀ M : ModuleCat.{w} A, Module.Finite A M → Indecomposable M →
+      ∃ Q ∈ S, Nonempty (M ≅ Q)) :
+    IsRepresentationFinite.{w} A := by
+  rw [isRepresentationFinite_iff]
+  let P : ObjectProperty (ModuleCat.{w} A) := fun M ↦ Module.Finite A M ∧ Indecomposable M
+  have := hS.to_subtype
+  have hrep (x : Skeleton P.FullSubcategory) :=
+    h ((fromSkeleton P.FullSubcategory).obj x).obj ((fromSkeleton _).obj x).property.1
+      ((fromSkeleton _).obj x).property.2
+  choose q hq he using hrep
+  refine Finite.of_injective (fun x ↦ (⟨q x, hq x⟩ : S)) fun x y hxy ↦ ?_
+  have hxy' : q x = q y := congrArg Subtype.val hxy
+  obtain ⟨ex⟩ := he x
+  obtain ⟨ey⟩ := he y
+  let e : ((fromSkeleton P.FullSubcategory).obj x).obj ≅ ((fromSkeleton _).obj y).obj :=
+    ex ≪≫ eqToIso hxy' ≪≫ ey.symm
+  exact skeleton_skeletal _ ⟨(fromSkeleton _).preimageIso (P.fullyFaithfulι.preimageIso e)⟩
+
 end TauCeti
