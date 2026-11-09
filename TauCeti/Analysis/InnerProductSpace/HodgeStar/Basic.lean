@@ -71,6 +71,8 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 * `Orientation.hodgeStar_smul_add_hodgeStar`, `Orientation.hodgeStar_smul_sub_hodgeStar`: in an
   even middle degree, `(x + ⋆x) / 2` is self-dual and `(x - ⋆x) / 2` is anti-self-dual, and
   `Orientation.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq` splits `x` into these two parts.
+* `Orientation.smul_sub_hodgeStar_eq`: in a middle degree, the anti-self-dual part `μ` of any
+  splitting of `x` into an anti-self-dual and a self-dual part is `(x - ⋆x) / 2`.
 * `Orientation.trace_hodgeStar`: in a positive middle degree the Hodge star is trace free, so
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_one` and
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
@@ -271,6 +273,15 @@ theorem exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq {k : ℕ} (hk : Even k)
   rw [show x - (2⁻¹ : ℝ) • (x - o.hodgeStar hkk x) = (2⁻¹ : ℝ) • (x + o.hodgeStar hkk x) by
     module]
   exact o.hodgeStar_smul_add_hodgeStar hk hkk x
+
+/-- In a middle degree, `k + k = finrank ℝ V`, the splitting of `x` into an anti-self-dual part
+`μ` and a self-dual remainder `x - μ` is unique: `μ = (x - ⋆x) / 2`. -/
+theorem smul_sub_hodgeStar_eq {k : ℕ} (hkk : k + k = finrank ℝ V) {x μ : ⋀[ℝ]^k V}
+    (hμ : o.hodgeStar hkk μ = -μ) (hx : o.hodgeStar hkk (x - μ) = x - μ) :
+    (2⁻¹ : ℝ) • (x - o.hodgeStar hkk x) = μ := by
+  rw [map_sub, hμ, sub_neg_eq_add] at hx
+  rw [eq_sub_of_add_eq hx]
+  module
 
 /-- In a positive middle degree, `k + k = finrank ℝ V` with `0 < k`, the Hodge star is trace free:
 it sends each vector `e_I` of the basis of `⋀ᵏ V` induced by an orthonormal basis to a multiple of

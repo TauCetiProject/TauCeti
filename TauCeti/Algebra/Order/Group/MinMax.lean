@@ -18,7 +18,8 @@ runs along the two pieces of durations `a` and `b`.
 
 The median `max 0 (min a b) + min 0 (max a b)` of `0`, `a` and `b` is the common initial segment
 of `a` and `b`, viewed as segments from `0` on the line: it lies between `0` and each of them, and
-twice its absolute value is `|a| + |b| - |b - a|`.
+twice its absolute value is `|a| + |b| - |b - a|`. Finally the negative part `min 0 a` of `a` is
+no larger in absolute value than the distance from `a` to any nonnegative `b`.
 
 ## Main results
 
@@ -30,6 +31,8 @@ twice its absolute value is `|a| + |b| - |b - a|`.
 * `TauCeti.abs_max_zero_min_add_min_zero_max_add_abs_sub`: the median `u` of `0`, `a` and `b`
   satisfies `|u| + |a - u| = |a|`.
 * `TauCeti.two_nsmul_abs_max_zero_min_add_min_zero_max`: `2 • |u| = |a| + |b| - |b - a|`.
+* `TauCeti.abs_min_zero_le_abs_sub`: the negative part of `a` is at most its distance to any
+  nonnegative `b`.
 -/
 
 public section
@@ -79,5 +82,14 @@ theorem two_nsmul_abs_max_zero_min_add_min_zero_max (a b : α) :
     rcases le_total 0 b with hb | hb <;>
     simp only [min_eq_left, min_eq_right, max_eq_left, max_eq_right, hab, ha, hb] <;>
     grind [abs_of_nonneg, abs_of_nonpos]
+
+/-- The negative part of `a` is at most its distance to any nonnegative `b`:
+`|min 0 a| ≤ |a - b|`. -/
+theorem abs_min_zero_le_abs_sub {a b : α} (hb : 0 ≤ b) : |min 0 a| ≤ |a - b| := by
+  rcases le_total 0 a with ha | ha
+  · rw [min_eq_left ha, abs_zero]
+    exact abs_nonneg _
+  · rw [min_eq_right ha, abs_of_nonpos ha, abs_of_nonpos (by grind)]
+    grind
 
 end TauCeti

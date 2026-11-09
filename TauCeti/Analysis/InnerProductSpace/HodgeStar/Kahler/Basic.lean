@@ -35,7 +35,8 @@ oriented, `ω` is self-dual, and on the self-dual two-forms
 `Λ⁺ = ℝ ω ⊕ (ℝ ω)ᗮ` the operator `D_J / 2` is zero on `ω` and squares to `-1` on its
 orthogonal complement: `D_J² η = 2 ⟪ω, η⟫ ω - 4 η`. This is the complex structure
 `ρ ↦ ω_u × ρ`, `ω_u = ω / √2`, of the anti-`J`-invariant self-dual forms. On the
-anti-self-dual two-forms `D_J` vanishes, so these are `J`-invariant. Finally the
+anti-self-dual two-forms `D_J` vanishes, so these are `J`-invariant, and a two-form is
+`J`-invariant exactly when its self-dual part is a multiple of `ω`. Finally the
 self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`; this is what makes the principal symbol of
 the anti-self-dual deformation operator complex linear.
 
@@ -70,6 +71,8 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `lieMap_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`.
+* `lieMap_eq_zero_iff`: with `F⁻` the anti-self-dual part of `F`, `D_J F = 0` iff
+  `F - F⁻ = ⟪ω, F⟫ / 2 · ω`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
 
 The supporting norm-preservation and four-frame construction lemmas live in
@@ -357,6 +360,27 @@ theorem lieMap_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η
   rw [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe, hη,
     sub_neg_eq_add, map_add, LinearMap.zero_apply] at h
   rwa [← two_smul ℝ (D η), smul_eq_zero, or_iff_right two_ne_zero] at h
+
+include he h₀ h₂ in
+/-- **The `(1,1)`-forms in dimension four**: with `F⁻ = μ` the anti-self-dual part of `F`, the
+form `F` is `J`-invariant iff its self-dual part is `F - F⁻ = ⟪ω, F⟫ / 2 · ω`, that is iff its
+anti-`J`-invariant part `F - F⁻ - ⟪ω, F⟫ / 2 · ω` vanishes. -/
+theorem lieMap_eq_zero_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ)
+    (hF : o.hodgeStar hkl (F - μ) = F - μ) :
+    exteriorPower.lieMap 2 J.toLinearMap F = 0 ↔
+      F - μ = (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm := by
+  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
+  have hDμ := lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ
+  have hωμ := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hμ
+  constructor
+  · intro hDF
+    -- `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` on the self-dual part `η = F - μ`, and `D_J η = 0`.
+    have h := lieMap_lieMap_of_hodgeStar_eq_self h₀ h₂ hkl he hF
+    rw [map_sub, hDF, hDμ, sub_zero, map_zero, inner_sub_right, hωμ, sub_zero] at h
+    linear_combination (norm := module) (4⁻¹ : ℝ) • h
+  · intro h
+    rw [show F = μ + (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm by rw [← h]; abel, map_add,
+      map_smul, hDμ, lieMap_kahlerForm hJ, smul_zero, add_zero]
 
 include he h₀ h₂ in
 /-- **The self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`**:
