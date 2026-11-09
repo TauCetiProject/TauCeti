@@ -76,35 +76,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (J : Puncture → ℝ → SmoothAlmostComplexStructure I M)
   (hJ : ∀ q t, σ.Tames (J q t))
 
-/-- The weight of the end `q` in the Cayley coordinate of the capped structure. -/
-private def cappedWeight (r L : ℝ) (q : Puncture) (w : ℂ) : ℝ :=
-  smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
-    smoothTransition (L + 3 - q.endSign * (q.endCoord w).re))
-
-/-- The weights lie in `[0, 1]`. -/
-private theorem cappedWeight_mem_Icc (r L : ℝ) (q : Puncture) (w : ℂ) :
-    cappedWeight r L q w ∈ Icc 0 1 :=
-  unitInterval.mul_mem ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩
-    (unitInterval.mul_mem ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
-      ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩)
-
-/-- The weight of the end `q` vanishes off the part `±s > 1` of that end. -/
-private theorem endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero {r L : ℝ} {q : Puncture}
-    {w : ℂ} (h : cappedWeight r L q w ≠ 0) : 0 < q.endSign * (q.endCoord w).re := by
-  by_contra! h'
-  refine h ?_
-  rw [cappedWeight, smoothTransition.zero_of_nonpos (x := q.endSign * (q.endCoord w).re - 1)
-    (by linarith), zero_mul, mul_zero]
-
 /-- The almost complex structure on `M` of the pair of pants capped by three PSS planes along
 necks of length `L`, moved along the segment from `J₀` by the cutoff `β(r)`, at the point
 `w ∈ ℂ`. It is the end-weighted structure
 `TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` with the weights
-`β(r) β(σ_q - 1) β(L + 3 - σ_q)`, so on each tangent space it is the linear capped structure
-`TauCeti.Floer.cappedAlmostComplex` of `J₀` and the end structures `J q t`. -/
+`TauCeti.Floer.cappedWeight r L q w = β(r) β(σ_q - 1) β(L + 3 - σ_q)`, so on each tangent
+space it is the linear capped structure `TauCeti.Floer.cappedAlmostComplex` of `J₀` and the end
+structures `J q t`. -/
 def cappedAlmostComplex (r L : ℝ) (w : ℂ) : SmoothAlmostComplexStructure I M :=
-  h₀.endWeightedAlmostComplex J hJ (cappedWeight r L) (cappedWeight_mem_Icc r L)
-    (fun _ _ => endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero) w
+  h₀.endWeightedAlmostComplex J hJ (Floer.cappedWeight r L) (Floer.cappedWeight_mem_Icc r L)
+    (fun _ _ => Floer.endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero) w
 
 /-- The capped structure is tamed by `σ`. -/
 theorem tames_cappedAlmostComplex (r L : ℝ) (w : ℂ) :
@@ -123,7 +104,7 @@ theorem almostComplexStructureAt_cappedAlmostComplex (r L : ℝ) (w : ℂ) (x : 
     (Floer.tames_cappedAlmostComplex (h₀.compatibleAt x) r L w ()) ?_
   rw [cappedAlmostComplex, cayley_endWeightedAlmostComplex, Floer.cayley_cappedAlmostComplex,
     Finset.smul_sum]
-  simp only [smul_smul, cappedWeight]
+  simp only [smul_smul, Floer.cappedWeight]
 
 /-- The capped structure is `σ`-compatible when the structures on the ends are. -/
 theorem compatible_cappedAlmostComplex (hJc : ∀ q t, σ.Compatible (J q t)) (r L : ℝ) (w : ℂ) :
@@ -172,18 +153,14 @@ theorem cappedAlmostComplex_eq_base_of_notMem_truncation (r : ℝ) {w : ℂ}
 theorem eventually_cappedAlmostComplex_eq_base_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1)
     (L₀ : ℝ) :
     ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), ∀ r, h₀.cappedAlmostComplex J hJ r p.2 p.1 = J₀ := by
-  have hT : c ∉ truncation (L₀ + 4) := fun h => by
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases hc with rfl | rfl
-    exacts [h₀ rfl, h₁ rfl]
-  have hw : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), p.1 ∉ truncation (L₀ + 4) :=
-    continuous_fst.continuousAt.eventually
-      ((isCompact_truncation _).isClosed.isOpen_compl.mem_nhds hT)
-  have hL : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), p.2 < L₀ + 1 :=
-    continuous_snd.continuousAt.eventually (gt_mem_nhds (by linarith))
-  filter_upwards [hw, hL] with p hpw hpL r
-  exact cappedAlmostComplex_eq_base_of_notMem_truncation h₀ J hJ r
-    fun h => hpw (truncation_mono (by linarith) h)
+  filter_upwards [Floer.eventually_cappedWeight_eq_zero hc L₀] with p hp r
+  -- All weights vanish, so the Cayley coordinate is that of `J₀`.
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
+  refine (h₀.compatibleAt x).eq_of_cayley_eq
+    (h₀.isNondegenerate.tames_iff.mp (tames_cappedAlmostComplex h₀ J hJ r p.2 p.1) x)
+    (h₀.compatibleAt x).tames ?_
+  rw [cappedAlmostComplex, cayley_endWeightedAlmostComplex, AlmostComplexStructure.cayley_self]
+  simp only [hp r, zero_smul, Finset.sum_const_zero]
 
 /-- **The structure is `J₀` near the pole `∞`.** -/
 theorem eventually_cocompact_cappedAlmostComplex_eq_base (r : ℝ) :
@@ -240,12 +217,13 @@ the end. -/
 private theorem contMDiffAt_cappedWeight {r L : N → ℝ} {f : N → ℂ} {y₀ : N}
     (hr : ContMDiffAt I' 𝓘(ℝ) n r y₀) (hL : ContMDiffAt I' 𝓘(ℝ) n L y₀)
     (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (q : Puncture) (hq : f y₀ ≠ q.endCenter) :
-    ContMDiffAt I' 𝓘(ℝ) n (fun y => cappedWeight (r y) (L y) q (f y)) y₀ := by
+    ContMDiffAt I' 𝓘(ℝ) n (fun y => Floer.cappedWeight (r y) (L y) q (f y)) y₀ := by
   have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
     ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
   have hσ : ContMDiffAt I' 𝓘(ℝ) n (fun y => q.endSign * (q.endCoord (f y)).re) y₀ :=
     (contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).contMDiffAt.comp y₀ hf
   -- Products of real functions are scalar products.
+  simp only [Floer.cappedWeight]
   exact (hβ.contMDiffAt.comp y₀ hr).smul ((hβ.contMDiffAt.comp y₀ (hσ.sub contMDiffAt_const)).smul
     (hβ.contMDiffAt.comp y₀ ((hL.add contMDiffAt_const).sub hσ)))
 
@@ -275,8 +253,9 @@ theorem contMDiff_cappedAlmostComplex (hJp : ∀ q, Function.Periodic (J q) 1)
   -- angular coordinates, with weights that are smooth there.
   have hq (q : Puncture) : f y₀ ≠ q.endCenter := ne_endCenter (not_or.mp hS) q
   simp only [cappedAlmostComplex]
-  exact contMDiffAt_endWeightedAlmostComplex h₀ J hJ (c := fun y => cappedWeight (r y) (L y))
-    (hb y₀) (fun q => contMDiffAt_cappedWeight (hr y₀) (hL y₀) (hf y₀) q (hq q))
+  exact contMDiffAt_endWeightedAlmostComplex h₀ J hJ
+    (c := fun y => Floer.cappedWeight (r y) (L y)) (hb y₀)
+    (fun q => contMDiffAt_cappedWeight (hr y₀) (hL y₀) (hf y₀) q (hq q))
     fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (hJp q) (hJs q) (hf y₀) (hb y₀) (hq q)
 
 end Smooth

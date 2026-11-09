@@ -32,8 +32,10 @@ the end at `∞` and `β` is the smooth transition function.
   `C^n` families of points of `ℂ`, including the pole, and points of `M`
   (`TauCeti.SmoothTwoForm.Compatible.contMDiff_negativePlaneAlmostComplex`).
 
-Smoothness off the pole disc follows from
-`TauCeti.SmoothTwoForm.Compatible.contMDiffAt_of_cayley_eq_sum`.
+The structure is the end-weighted structure
+`TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` whose only nonzero weight is that of
+the end `∞`, so tameness and compatibility come from it, and smoothness off the pole disc follows
+from `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_endWeightedAlmostComplex`.
 
 ## References
 
@@ -59,49 +61,44 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (h₀ : σ.Compatible J₀)
   (J : ℝ → SmoothAlmostComplexStructure I M) (hJ : ∀ t, σ.Tames (J t))
 
-/-- The linear negative plane structure on the tangent space at `x`. -/
-private def negativePlaneAt (w : ℂ) (x : M) : AlmostComplexStructure (TangentSpace I x) :=
-  Floer.negativePlaneAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
-    (fun t _ => (J t).almostComplexStructureAt x)
-    (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ t) x) w ()
+/-- The weights of the negative plane: the cutoff `β(-s - 1)` on the end `∞` and `0` on the
+inputs. -/
+private def negativePlaneWeight (q : Puncture) (w : ℂ) : ℝ :=
+  if q = inf then smoothTransition (-(inf.endCoord w).re - 1) else 0
 
-/-- The Cayley coordinate of the negative plane structure, as a sum over the single end. -/
-private theorem cayley_negativePlaneAt (w : ℂ) (x : M) :
-    (J₀.almostComplexStructureAt x).cayley (negativePlaneAt h₀ J hJ w x) =
-      ∑ _ : Unit, smoothTransition (-(inf.endCoord w).re - 1) •
-        (J₀.almostComplexStructureAt x).cayley
-          ((J (inf.endCoord w).im).almostComplexStructureAt x) := by
-  rw [Fintype.sum_unique, negativePlaneAt, Floer.cayley_negativePlaneAlmostComplex]
+/-- The weights lie in `[0, 1]`. -/
+private theorem negativePlaneWeight_mem_Icc (q : Puncture) (w : ℂ) :
+    negativePlaneWeight q w ∈ Icc 0 1 := by
+  unfold negativePlaneWeight
+  split_ifs
+  exacts [⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩, ⟨le_rfl, zero_le_one⟩]
 
-/-- The negative plane structure is smooth on `M` for a fixed domain point. -/
-private theorem contMDiffAt_negativePlaneAt (w : ℂ) (x : M) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
-      (fun y : M => TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        y (LinearMap.toContinuousLinearMap (negativePlaneAt h₀ J hJ w y).toLinearMap)) x :=
-  h₀.contMDiffAt_of_cayley_eq_sum (b := id) (L := fun _ _ => J (inf.endCoord w).im)
-    (a := fun _ _ => smoothTransition (-(inf.endCoord w).re - 1))
-    (fun y => Floer.tames_negativePlaneAlmostComplex (h₀.compatibleAt y) w ())
-    (fun _ _ => hJ _) (cayley_negativePlaneAt h₀ J hJ w) contMDiffAt_id
-    (fun _ => contMDiffAt_const) (fun _ => (J _).toEndomorphism.contMDiff x)
+/-- The weights vanish off the part `s < 0` of the end `∞` and on the inputs. -/
+private theorem endSign_mul_re_endCoord_pos_of_negativePlaneWeight_ne_zero {q : Puncture}
+    {w : ℂ} (h : negativePlaneWeight q w ≠ 0) : 0 < q.endSign * (q.endCoord w).re := by
+  unfold negativePlaneWeight at h
+  split_ifs at h with hq
+  · subst hq
+    rw [endSign_inf, neg_one_mul]
+    by_contra! h'
+    exact h (smoothTransition.zero_of_nonpos (by linarith))
+  · exact absurd rfl h
 
 /-- The almost complex structure on `M` of the negative PSS plane with end structures `J t`, at
-the point `w ∈ ℂ`. On each tangent space it is the linear negative plane structure
-`TauCeti.Floer.negativePlaneAlmostComplex` of `J₀` and the end structures. -/
-def negativePlaneAlmostComplex (w : ℂ) : SmoothAlmostComplexStructure I M where
-  toEndomorphism :=
-    ⟨fun x => LinearMap.toContinuousLinearMap (negativePlaneAt h₀ J hJ w x).toLinearMap,
-      contMDiffAt_negativePlaneAt h₀ J hJ w⟩
-  square_neg x := by
-    ext v
-    exact AlmostComplexStructure.apply_apply _ v
+the point `w ∈ ℂ`. It is the end-weighted structure
+`TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` with the end structures `J t` and the
+weights `β(-s - 1)` on the end `∞` and `0` on the inputs, so on each tangent space it is the linear
+negative plane structure `TauCeti.Floer.negativePlaneAlmostComplex` of `J₀` and the end
+structures. -/
+def negativePlaneAlmostComplex (w : ℂ) : SmoothAlmostComplexStructure I M :=
+  h₀.endWeightedAlmostComplex (fun _ => J) (fun _ => hJ) negativePlaneWeight
+    negativePlaneWeight_mem_Icc
+    (fun _ _ => endSign_mul_re_endCoord_pos_of_negativePlaneWeight_ne_zero) w
 
-/-- The endomorphism of the negative plane structure at `x` is the linear negative plane structure
-there, read as a continuous endomorphism. -/
-private theorem negativePlaneAlmostComplex_toEndomorphism (w : ℂ) (x : M) :
-    (h₀.negativePlaneAlmostComplex J hJ w).toEndomorphism x =
-      LinearMap.toContinuousLinearMap (negativePlaneAt h₀ J hJ w x).toLinearMap :=
-  (rfl)
+/-- The negative plane structure is tamed by `σ`. -/
+theorem tames_negativePlaneAlmostComplex (w : ℂ) :
+    σ.Tames (h₀.negativePlaneAlmostComplex J hJ w) :=
+  tames_endWeightedAlmostComplex h₀ _ _ _ _ _ w
 
 /-- The value on a tangent fiber is precisely the linear negative plane structure there. -/
 theorem almostComplexStructureAt_negativePlaneAlmostComplex (w : ℂ) (x : M) :
@@ -109,25 +106,19 @@ theorem almostComplexStructureAt_negativePlaneAlmostComplex (w : ℂ) (x : M) :
       Floer.negativePlaneAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
         (fun t _ => (J t).almostComplexStructureAt x)
         (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ t) x) w () := by
-  apply AlmostComplexStructure.toLinearMap_injective
-  rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-    negativePlaneAlmostComplex_toEndomorphism, LinearMap.coe_toContinuousLinearMap,
-    negativePlaneAt]
-
-/-- The negative plane structure is tamed by `σ`. -/
-theorem tames_negativePlaneAlmostComplex (w : ℂ) :
-    σ.Tames (h₀.negativePlaneAlmostComplex J hJ w) := by
-  refine h₀.isNondegenerate.tames_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_negativePlaneAlmostComplex]
-  exact Floer.tames_negativePlaneAlmostComplex (h₀.compatibleAt x) w ()
+  -- Both structures are tame and have the same Cayley coordinate relative to `J₀`.
+  refine (h₀.compatibleAt x).eq_of_cayley_eq
+    (h₀.isNondegenerate.tames_iff.mp (tames_negativePlaneAlmostComplex h₀ J hJ w) x)
+    (Floer.tames_negativePlaneAlmostComplex (h₀.compatibleAt x) w ()) ?_
+  rw [negativePlaneAlmostComplex, cayley_endWeightedAlmostComplex,
+    Floer.cayley_negativePlaneAlmostComplex,
+    Fintype.sum_eq_single inf fun q hq => by simp [negativePlaneWeight, hq]]
+  simp [negativePlaneWeight]
 
 /-- The negative plane structure is `σ`-compatible when the end structures are. -/
 theorem compatible_negativePlaneAlmostComplex (hJc : ∀ t, σ.Compatible (J t)) (w : ℂ) :
-    σ.Compatible (h₀.negativePlaneAlmostComplex J hJ w) := by
-  refine h₀.isNondegenerate.compatible_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_negativePlaneAlmostComplex]
-  exact Floer.compatible_negativePlaneAlmostComplex (h₀.compatibleAt x)
-    (fun t _ => h₀.isNondegenerate.compatible_iff.mp (hJc t) x) w ()
+    σ.Compatible (h₀.negativePlaneAlmostComplex J hJ w) :=
+  compatible_endWeightedAlmostComplex h₀ _ _ _ _ _ (fun _ => hJc) w
 
 /-- On every tangent fiber, the Cayley coordinate of the negative plane structure relative to `J₀`
 is `β(-s(w) - 1) • cayley (J (t(w)))`, where `(s, t)` are the coordinates of the end at `∞`. This
@@ -181,22 +172,24 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
     exact SmoothAlmostComplexStructure.contMDiffAt_toEndomorphism_of_eventuallyEq (hb y₀)
       ((hf.continuous.norm.continuousAt.eventually (gt_mem_nhds hlt)).mono fun y hy =>
         negativePlaneAlmostComplex_eq_of_norm_le h₀ J hJ hy.le)
-  -- Off it, the point is not the center `0` of the end, where the end coordinates are smooth.
-  have hw : f y₀ ≠ inf.endCenter := by
-    rintro h
-    rw [h, endCenter_inf, norm_zero] at hge
-    linarith [Real.exp_pos (2 * π)]
+  -- Off it, the point is not a puncture, where the end coordinates are smooth.
+  have h₁ : 1 < ‖f y₀‖ :=
+    lt_of_lt_of_le (by linarith [Real.one_le_exp (by positivity : 0 ≤ 2 * π)]) hge
+  have hS : f y₀ ≠ 0 ∧ f y₀ ≠ 1 :=
+    ⟨fun h => by norm_num [h] at h₁, fun h => by norm_num [h] at h₁⟩
   have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
     ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
-  simp only [negativePlaneAlmostComplex_toEndomorphism]
-  exact h₀.contMDiffAt_of_cayley_eq_sum
-    (K := fun y => negativePlaneAt h₀ J hJ (f y) (b y))
-    (L := fun _ y => J (inf.endCoord (f y)).im)
-    (a := fun _ y => smoothTransition (-(inf.endCoord (f y)).re - 1))
-    (fun y => Floer.tames_negativePlaneAlmostComplex (h₀.compatibleAt (b y)) _ ())
-    (fun _ _ => hJ _) (fun y => cayley_negativePlaneAt h₀ J hJ _ _) (hb y₀)
-    (fun _ => hβ.contMDiffAt.comp y₀
-      (((inf.contDiffAt_re_endCoord hw).neg.sub contDiffAt_const).contMDiffAt.comp y₀ (hf y₀)))
-    fun _ => inf.contMDiffAt_toEndomorphism_comp_im_endCoord hJp hJs (hf y₀) (hb y₀) hw
+  simp only [negativePlaneAlmostComplex]
+  refine contMDiffAt_endWeightedAlmostComplex h₀ _ _ (c := fun _ => negativePlaneWeight) (hb y₀)
+    (fun q => ?_)
+    fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord hJp hJs (hf y₀) (hb y₀)
+      (ne_endCenter hS q)
+  -- Only the weight of the end `∞` is nonzero, and it is smooth off the center of that end.
+  by_cases hq : q = inf
+  · simp only [negativePlaneWeight, hq, ↓reduceIte]
+    exact hβ.contMDiffAt.comp y₀ (((inf.contDiffAt_re_endCoord (ne_endCenter hS inf)).neg.sub
+      contDiffAt_const).contMDiffAt.comp y₀ (hf y₀))
+  · simp only [negativePlaneWeight, hq, ↓reduceIte]
+    exact contMDiffAt_const
 
 end TauCeti.SmoothTwoForm.Compatible

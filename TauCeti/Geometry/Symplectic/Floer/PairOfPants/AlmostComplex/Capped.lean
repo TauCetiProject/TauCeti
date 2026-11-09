@@ -127,6 +127,38 @@ private theorem weight_eq_zero_of_notMem_truncation (hw : w ∉ truncation (L + 
       smoothTransition (L + 3 - q.endSign * (q.endCoord w).re) = 0 :=
   by_contra fun h => hw (mem_truncation_of_weight_ne_zero h)
 
+/-- The weight `β(r) β(σ_q - 1) β(L + 3 - σ_q)` of the end `q` in the Cayley transform of the
+capped structure at `w ∈ ℂ`, where `σ_q = ±s_q(w)` is the signed longitudinal coordinate of the
+end `q` and `β` is the smooth transition function. -/
+@[expose] def cappedWeight (r L : ℝ) (q : Puncture) (w : ℂ) : ℝ :=
+  smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
+    smoothTransition (L + 3 - q.endSign * (q.endCoord w).re))
+
+/-- The weights lie in `[0, 1]`. -/
+theorem cappedWeight_mem_Icc (r L : ℝ) (q : Puncture) (w : ℂ) : cappedWeight r L q w ∈ Icc 0 1 :=
+  unitInterval.mul_mem ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩ weight_mem_Icc
+
+/-- The weight of the end `q` vanishes off the part `σ_q > 0` of that end. -/
+theorem endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero {r : ℝ}
+    (h : cappedWeight r L q w ≠ 0) : 0 < q.endSign * (q.endCoord w).re :=
+  zero_lt_one.trans (one_lt_and_lt_of_weight_ne_zero (right_ne_zero_of_mul h)).1
+
+/-- **The weights vanish near the poles `0` and `1`**, locally uniformly in the neck length. -/
+theorem eventually_cappedWeight_eq_zero {c : ℂ} (hc : c = 0 ∨ c = 1) (L₀ : ℝ) :
+    ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), ∀ r q, cappedWeight r p.2 q p.1 = 0 := by
+  have hT : c ∉ truncation (L₀ + 4) := fun h => by
+    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
+    rcases hc with rfl | rfl
+    exacts [h₀ rfl, h₁ rfl]
+  have hw : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), p.1 ∉ truncation (L₀ + 4) :=
+    continuous_fst.continuousAt.eventually
+      ((isCompact_truncation _).isClosed.isOpen_compl.mem_nhds hT)
+  have hL : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), p.2 < L₀ + 1 :=
+    continuous_snd.continuousAt.eventually (gt_mem_nhds (by linarith))
+  filter_upwards [hw, hL] with p hpw hpL r q
+  rw [cappedWeight, weight_eq_zero_of_notMem_truncation
+    fun h => hpw (truncation_mono (by linarith) h), mul_zero]
+
 end Weight
 
 /-! ### The capped structure -/
@@ -147,13 +179,8 @@ coordinates of the end `q`, `σ_q = ±s_q(w)` and `β` is the smooth transition 
 def cappedAlmostComplex (h₀ : ω.Compatible J₀)
     (J : Puncture → ℝ → M → AlmostComplexStructure V) (hJ : ∀ q t x, ω.Tames (J q t x))
     (r L : ℝ) (w : ℂ) (x : M) : AlmostComplexStructure V :=
-  endWeightedAlmostComplex h₀ J hJ
-    (fun q w => smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
-      smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)))
-    (fun _ _ => unitInterval.mul_mem ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩
-      weight_mem_Icc)
-    (fun _ _ hq => zero_lt_one.trans (one_lt_and_lt_of_weight_ne_zero (right_ne_zero_of_mul hq)).1)
-    w x
+  endWeightedAlmostComplex h₀ J hJ (cappedWeight r L) (cappedWeight_mem_Icc r L)
+    (fun _ _ => endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero) w x
 
 variable {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
   {r L : ℝ}
@@ -172,7 +199,8 @@ theorem cayley_cappedAlmostComplex (h₀ : ω.Compatible J₀) (r L : ℝ) (w : 
       smoothTransition r • ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
         smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) •
         J₀.cayley (J q (q.endCoord w).im x) := by
-  simp only [cappedAlmostComplex, cayley_endWeightedAlmostComplex, Finset.smul_sum, smul_smul]
+  simp only [cappedAlmostComplex, cayley_endWeightedAlmostComplex, cappedWeight, Finset.smul_sum,
+    smul_smul]
 
 /-- The capped structure is `ω`-compatible when the structures on the ends are. -/
 theorem compatible_cappedAlmostComplex (h₀ : ω.Compatible J₀)
@@ -234,7 +262,7 @@ theorem cayley_cappedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Compatib
       (smoothTransition r * (smoothTransition (q.endSign * z.re - 1) *
         smoothTransition (L + 3 - q.endSign * z.re))) • J₀.cayley (J q z.im x) := by
   rw [cappedAlmostComplex,
-    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz,
+    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz, cappedWeight,
     re_endCoord_cylindricalEndLift]
 
 /-- **The neck.** If `J q` has period one in `t` and `r ≥ 1`, then on the part
@@ -304,19 +332,9 @@ private theorem eventually_weight_eq_zero (q : Puncture) (L₀ : ℝ) :
     ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀),
       smoothTransition (q.endSign * (q.endCoord p.1).re - 1) *
         smoothTransition (p.2 + 3 - q.endSign * (q.endCoord p.1).re) = 0 := by
-  have hc : q.endCenter ∉ truncation (|L₀| + 4) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases q.endCenter_eq_zero_or_eq_one with h | h
-    exacts [h₀ h, h₁ h]
-  have hL : ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀), p.2 < |L₀| + 1 :=
-    continuous_snd.continuousAt.eventually (gt_mem_nhds (by linarith [le_abs_self L₀]))
-  have hw : ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀), p.1 ∉ truncation (|L₀| + 4) :=
-    continuous_fst.continuousAt.eventually
-      ((isCompact_truncation _).isClosed.isOpen_compl.mem_nhds hc)
-  filter_upwards [hL, hw] with p hpL hpw
-  exact weight_eq_zero_of_notMem_truncation fun h =>
-    hpw (truncation_mono (by linarith) h)
+  filter_upwards [eventually_cappedWeight_eq_zero q.endCenter_eq_zero_or_eq_one L₀] with p hp
+  -- The weight with the cutoff `β(1) = 1`.
+  simpa [cappedWeight, smoothTransition.one_of_one_le le_rfl] using hp 1 q
 
 /-- The term of the end `q` in the Cayley coordinate of the capped structure is smooth jointly in
 the neck length `L`, the point `w ∈ ℂ` and the parameter `x`, also at the center of the end, where
