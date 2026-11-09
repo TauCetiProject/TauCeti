@@ -230,7 +230,7 @@ theorem contDiffOn_poincareHomotopy (hs : StarConvex ℝ x₀ s) (hso : IsOpen s
   refine (contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     hpow continuous_subtype_val
     (hso.preimage (by fun_prop : Continuous fun p : E × ℝ ↦ lineMap x₀ p.1 p.2))
-    (contDiffOn_integrand hω) hso fun x hx t ↦
+    (contDiffOn_integrand hω) fun x hx t ↦
       hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x t.2)).congr
       fun x _ ↦ ?_
   rw [poincareHomotopy_apply, intervalIntegral_eq_integral_unitInterval]
