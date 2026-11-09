@@ -21,11 +21,11 @@ the argument of their quotient is the difference of their arguments. It also rec
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
-the slit plane, and although it jumps across the negative real axis, a smooth `2π`-periodic function
-of the argument is smooth on the whole punctured plane: near the negative real axis it is computed
-from the argument of `-z`. Since the argument is continuous on the slit plane and blind to positive
-real scaling, `arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to
-`Q ∈ slitPlane`.
+the slit plane, where its derivative is the imaginary part of that of the logarithm, and although it
+jumps across the negative real axis, a smooth `2π`-periodic function of the argument is smooth on
+the whole punctured plane: near the negative real axis it is computed from the argument of `-z`.
+Since the argument is continuous on the slit plane and blind to positive real scaling,
+`arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to `Q ∈ slitPlane`.
 
 ## Main results
 
@@ -43,6 +43,8 @@ real scaling, `arg (f x) → arg Q` as soon as some positive real multiple of `f
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
+* `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
+  imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
   from the origin.
 -/
@@ -146,6 +148,17 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
   ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
 
 end Complex
+
+/-- If `f` has complex derivative `f'` at `z` and `f z` lies in the slit plane, then the argument
+`w ↦ arg (f w)` has real derivative `v ↦ Im (v * f' / f z)` at `z`, the imaginary part of the
+derivative of `log ∘ f`. -/
+theorem HasDerivAt.hasFDerivAt_arg {f : ℂ → ℂ} {f' z : ℂ} (hf : HasDerivAt f f' z)
+    (hz : f z ∈ Complex.slitPlane) :
+    HasFDerivAt (fun w ↦ Complex.arg (f w))
+      (Complex.imCLM ∘L
+        ((ContinuousLinearMap.toSpanSingleton ℂ (f' / f z)).restrictScalars ℝ)) z := by
+  simpa only [Function.comp_def, Complex.imCLM_apply, Complex.log_im] using
+    Complex.imCLM.hasFDerivAt.comp z ((hf.clog hz).hasFDerivAt.restrictScalars ℝ)
 
 /-- A `2π`-periodic function of the argument of a nonzero complex number `z` may be computed from
 the argument of `-z`, which differs from that of `z` by `π` modulo `2π`. -/
