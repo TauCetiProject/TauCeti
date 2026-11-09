@@ -50,7 +50,7 @@ theorem Adapted.measurable_restrict_measure_Ioc
 
 /-- The nonnegative Stieltjes integral of a progressive process against an adapted increasing
 right-continuous process is adapted. Neither a uniform mass bound nor integrability is needed. -/
-theorem IsProgressive.adapted_lintegral_measure_stieltjesFunction {H : R → Ω → ℝ≥0∞}
+theorem IsProgressive.adapted_setLIntegral_measure_stieltjesFunction {H : R → Ω → ℝ≥0∞}
     (hH : IsProgressive ℱ H) (hf : Adapted ℱ (fun t ω ↦ f ω t)) (a : R) :
     Adapted ℱ (fun t ω ↦ ∫⁻ u in Ioc a t, H u ω ∂(f ω).measure) := by
   intro t
