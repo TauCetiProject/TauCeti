@@ -145,12 +145,13 @@ end Orientation
 Jacobian multiplied by the two relative signs is positive. -/
 theorem Orientation.signBasis_mul_units_mul_det_pos
     {R E ι : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-    [AddCommGroup E] [Module R E] [FiniteDimensional R E] [Fintype ι] [DecidableEq ι]
+    [AddCommGroup E] [Module R E] [Fintype ι] [DecidableEq ι]
     (o : Orientation R E ι) (b : Module.Basis ι R E) (A : E ≃ₗ[R] E) (u : ℤˣ)
     (h : Orientation.map ι A ((Units.map (Int.castRingHom R).toMonoidHom u) • o) =
       b.orientation) :
     0 < (Orientation.signBasis o b : R) * (u : R) * A.toLinearMap.det := by
   classical
+  have := Module.Finite.of_basis b
   have hb : (Units.map (Int.castRingHom R).toMonoidHom (signBasis o b)) • o =
       b.orientation := by
     simpa only [signBasis, eq_comm] using

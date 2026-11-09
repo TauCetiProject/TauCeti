@@ -7,13 +7,17 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 
+import Mathlib.LinearAlgebra.Dimension.Free
+import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+
 /-!
 # Basic facts about the trace
 
 Mathlib's `LinearMap.trace R M` is defined through a finite basis of `M`, and is `0` when `M` has
 none. This file names that case of the definition, so that proofs need not unfold
 `LinearMap.trace`. It also computes the trace of an endomorphism whose range lies in a free
-submodule with a given basis, as the trace of its matrix in that basis.
+submodule with a given basis, as the trace of its matrix in that basis, and shows that on a free
+module of rank one every endomorphism is its trace times the identity.
 
 ## Main results
 
@@ -23,6 +27,8 @@ submodule with a given basis, as the trace of its matrix in that basis.
   finite.
 * `LinearMap.trace_eq_sum_of_range_le_of_apply_single_eq`: the trace of an endomorphism whose
   range lies in a free submodule `ι → R` is the trace of its matrix there.
+* `LinearMap.eq_trace_smul_one_of_finrank_eq_one`: on a free module of rank one, an
+  endomorphism is its trace times the identity.
 -/
 
 public section
@@ -66,5 +72,17 @@ theorem trace_eq_sum_of_range_le_of_apply_single_eq {R M ι : Type*} [CommRing R
     simp [hj]
   rw [← hφρ, LinearMap.trace_comp_comm', hmat, Matrix.trace_toLin'_eq]
   simp [Matrix.trace]
+
+/-- On a free module of rank one, an endomorphism is its trace times the identity. -/
+theorem eq_trace_smul_one_of_finrank_eq_one {R V : Type*} [CommSemiring R] [StrongRankCondition R]
+    [AddCommMonoid V] [Module R V] [Module.Free R V]
+    (h : Module.finrank R V = 1) (f : V →ₗ[R] V) :
+    f = LinearMap.trace R V f • (1 : V →ₗ[R] V) := by
+  have : Module.Finite R V := Module.finite_of_finrank_pos (by omega)
+  obtain ⟨c, hc, _⟩ := f.existsUnique_eq_smul_id_of_finrank_eq_one h
+  let b := Module.finBasisOfFinrankEq R V h
+  rw [hc]
+  simp [LinearMap.trace_eq_matrix_trace R b, LinearMap.toMatrix_id, Matrix.trace,
+    Module.End.one_eq_id]
 
 end LinearMap

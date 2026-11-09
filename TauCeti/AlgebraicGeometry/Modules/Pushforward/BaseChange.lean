@@ -43,7 +43,7 @@ quasi-compact quasi-separated `f` and flat `g` is
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite
+open CategoryTheory MonoidalCategory AlgebraicGeometry Opposite
 
 noncomputable section
 
@@ -112,6 +112,29 @@ lemma pushforwardBaseChange_app_app_pullbackSectionsLE (w : CommSq g' f' f g) (M
   refine (congrArg _ (pushforwardBaseChange_app_app_pullbackSections w M W s)).trans ?_
   refine Eq.trans ?_ (Scheme.Hom.pullbackSectionsLE_apply g' M _ _ _ s).symm
   exact (((pullback g').obj M).presheaf.map_comp_apply _ _ _).symm
+
+/-- Transposing base change for the structure sheaf, followed by the canonical
+identification of its pullback, gives pushforward of pullback of regular functions. -/
+lemma homEquiv_pushforwardBaseChange_comp_pullbackObjUnitIso (w : CommSq g' f' f g) :
+    (pullbackPushforwardAdjunction g).homEquiv _ _
+        ((pushforwardBaseChange w).app (𝟙_ X.Modules) ≫
+          (pushforward f').map (pullbackObjUnitIso g').hom) =
+      (pushforward f).map (SheafOfModules.unitToPushforwardObjUnit g'.toRingCatSheafHom) ≫
+        ((pushforwardComp g' f).hom ≫ (pushforwardCongr w.w).hom ≫
+          (pushforwardComp f' g).inv).app (𝟙_ X'.Modules) := by
+  rw [Adjunction.homEquiv_naturality_right, Adjunction.homEquiv_unit,
+    unit_comp_pushforward_map_pushforwardBaseChange_app]
+  let τ := (pushforwardComp g' f).hom ≫ (pushforwardCongr w.w).hom ≫
+    (pushforwardComp f' g).inv
+  have hn := τ.naturality (pullbackObjUnitIso g').hom
+  dsimp only [Functor.comp_map] at hn
+  rw [Category.assoc, ← hn, ← Category.assoc, ← Functor.map_comp]
+  -- The unit is stated in the unfolded sheaf category, so use its adjunction equation
+  -- as a term rather than rewriting through the two module-category instances.
+  exact congrArg (fun k ↦ (pushforward f).map k ≫ τ.app (𝟙_ X'.Modules))
+    ((Adjunction.homEquiv_unit (pullbackPushforwardAdjunction g') _ _
+      (pullbackObjUnitIso g').hom).symm.trans
+      (pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom g'))
 
 /-- The base change morphism on a pullback `f^* N` of a module on `S`: the pullback along `g` of the
 unit `N ⟶ f_* f^* N`, followed by the base change morphism, is the unit `g^* N ⟶ f'_* f'^* g^* N`

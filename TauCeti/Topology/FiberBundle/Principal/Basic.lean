@@ -61,6 +61,8 @@ the fibre `G` of the trivial bundle cannot also be a torsor for the right action
 * `TauCeti.PrincipalBundle.division`: the division map of a principal bundle, with
   `TauCeti.PrincipalBundle.smul_division` and `TauCeti.PrincipalBundle.division_eq_iff`.
 * `Bundle.Trivialization.coordChange_eq_mul`: transition maps are left multiplications.
+* `Bundle.Trivialization.coordChange_one_mul_coordChange_one`: the transition functions form a
+  cocycle.
 * `Continuous.totalSpaceMk_smul` and `Continuous.division`: continuity of the action and of the
   division map.
 * `TauCeti.PrincipalBundle.trivializationOfSection`: the equivariant trivialization determined by a
@@ -141,6 +143,15 @@ theorem coordChange_eq_mul (e' : Trivialization G (π G P)) [e'.IsEquivariant]
   have hs : (e.toOpenPartialHomeomorph.symm (b, 1)).proj ∈ e'.baseSet := by
     rwa [e.proj_symm_apply' h]
   rw [coordChange, e.symm_apply_eq_smul h, e'.snd_apply_smul hs, TotalSpace.eta, coordChange]
+
+/-- **Transition functions of equivariant trivializations form a cocycle.** Over a point of the
+three base sets, the transition functions `b ↦ e.coordChange e' b 1` satisfy
+`c₂₃ * c₁₂ = c₁₃`. -/
+theorem coordChange_one_mul_coordChange_one (e₁ e₂ e₃ : Trivialization G (π G P))
+    [e₂.IsEquivariant] [e₃.IsEquivariant] (h₁ : b ∈ e₁.baseSet) (h₂ : b ∈ e₂.baseSet)
+    (h₃ : b ∈ e₃.baseSet) :
+    e₂.coordChange e₃ b 1 * e₁.coordChange e₂ b 1 = e₁.coordChange e₃ b 1 := by
+  rw [← e₂.coordChange_eq_mul e₃ h₂ h₃, e₁.coordChange_coordChange e₂ e₃ h₁ h₂]
 
 end Bundle.Trivialization
 

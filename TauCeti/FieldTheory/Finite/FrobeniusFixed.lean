@@ -114,12 +114,14 @@ theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
 theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
   fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
 
+omit [IsDomain L] in
 /-- **A unit of the base field is fixed by the `q`-power map**, as an equality in `Lˣ`. -/
 theorem units_map_algebraMap_pow_natCard (a : Kˣ) :
-    Units.map (algebraMap K L : K →* L) a ^ Nat.card K = Units.map (algebraMap K L : K →* L) a :=
-  Units.ext (by
-    rw [Units.val_pow_eq_pow_val]
-    exact (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr ⟨(a : K), rfl⟩)
+    Units.map (algebraMap K L : K →* L) a ^ Nat.card K = Units.map (algebraMap K L : K →* L) a := by
+  let _ := Fintype.ofFinite K
+  refine Units.ext ?_
+  rw [Units.val_pow_eq_pow_val, Nat.card_eq_fintype_card]
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, ← map_pow, FiniteField.pow_card]
 
 end Finite
 
