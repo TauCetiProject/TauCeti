@@ -34,7 +34,8 @@ For a monotone `g` the differential form needs neither continuity nor differenti
 
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
-`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`) and `E_λ(T) ≤ T e^{|λ|T}`
+`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`), that `z ↦ E_λ(z - t)` has derivative `1`
+at `t` (`TauCeti.hasDerivAt_integral_exp_mul_sub`), and `E_λ(T) ≤ T e^{|λ|T}`
 (`TauCeti.integral_exp_mul_le`).
 
 Finally, it specializes Mathlib's inequality to exponential decay: a function whose derivative
@@ -159,6 +160,14 @@ theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
   intervalIntegral.intervalIntegral_pos_of_pos_on
     ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
     (fun _ _ ↦ exp_pos _) hT
+
+/-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
+theorem hasDerivAt_integral_exp_mul_sub (lam t : ℝ) :
+    HasDerivAt (fun z ↦ ∫ r in 0..(z - t), exp (lam * r)) 1 t := by
+  have hsub : HasDerivAt (fun z : ℝ ↦ z - t) 1 t := (hasDerivAt_id t).sub_const t
+  simpa [Function.comp_def] using ((by fun_prop : Continuous fun r ↦
+    exp (lam * r)).integral_hasStrictDerivAt 0 (t - t)).hasDerivAt.comp (h := fun z ↦ z - t) t
+      hsub
 
 /-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
 theorem integral_exp_mul_le (lam T : ℝ) :

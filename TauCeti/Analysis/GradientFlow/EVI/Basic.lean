@@ -424,11 +424,7 @@ private theorem eventually_slope_dist_sq_lt (hu : IsEVISolution lam φ u)
   have h₂ : ∀ᶠ z in 𝓝[>] t, ((pu - ε : ℝ) : EReal) < φ (u z) :=
     nhdsWithin_le_nhds <| hcu.eventually <| hφ (u t) _ hlt
   -- The first-order behaviour of `E_λ(z - t)` and of `e^{λ(z - t)}` at `z = t`.
-  have hsub : HasDerivAt (fun z : ℝ ↦ z - t) 1 t := (hasDerivAt_id t).sub_const t
-  have hE : HasDerivAt (fun z ↦ ∫ r in 0..(z - t), exp (lam * r)) 1 t := by
-    simpa [Function.comp_def] using ((by fun_prop : Continuous fun r ↦
-      exp (lam * r)).integral_hasStrictDerivAt 0 (t - t)).hasDerivAt.comp (h := fun z ↦ z - t) t
-        hsub
+  have hE := hasDerivAt_integral_exp_mul_sub lam t
   have hexp : HasDerivAt (fun z ↦ exp (lam * (z - t))) lam t := by
     simpa using (((hasDerivAt_id t).sub_const t).const_mul lam).exp
   have h₃ : ∀ᶠ z in 𝓝[>] t,
