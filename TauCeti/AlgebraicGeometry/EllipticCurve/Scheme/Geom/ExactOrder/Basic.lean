@@ -135,7 +135,7 @@ theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : 
 object is a monoid homomorphism, so every point has exact order `N`. -/
 theorem isOfExactOrder_of_isEmpty [IsEmpty S]
     {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} : E.IsOfExactOrder P N := by
-  have ht (X : Over S) : IsTerminal X := isTerminalOfIsEmpty X
+  have ht (X : Over S) : IsTerminal X := Over.isTerminalOfIsEmpty X
   rw [isOfExactOrder_def]
   let X := Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)
   let _ : MonObj X :=
