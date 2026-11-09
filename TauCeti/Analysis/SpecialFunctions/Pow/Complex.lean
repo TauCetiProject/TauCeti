@@ -459,6 +459,13 @@ theorem continuous_ofReal_add_cpow_of_re_pos {x : ℂ} {s : ℂ} (hs : 0 < s.re)
     exact ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
       (Complex.continuousAt_cpow_const_of_re_pos (Or.inr (by simpa using him)) hs) (by fun_prop)
 
+/-- For `w` off the negative real axis and `p ≥ 0`, the principal powers combine:
+`w⁻ʳ * pʳ = (p / w)ʳ`. -/
+theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ} (hp : 0 ≤ p) (r : ℝ) :
+    (1 / w ^ (r : ℂ)) * ((p ^ r : ℝ) : ℂ) = ((p : ℂ) / w) ^ (r : ℂ) := by
+  rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
+    ← Complex.ofReal_cpow hp, one_div, mul_comm]
+
 end TauCeti
 
 namespace Complex
