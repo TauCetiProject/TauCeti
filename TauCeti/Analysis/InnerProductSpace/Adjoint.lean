@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
+import Mathlib.Analysis.Normed.Affine.MazurUlam
 
 /-!
 # Adjoints of linear maps
@@ -40,6 +41,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `LinearIsometry.cornerEmbedding`: extension by zero `T ↦ e T e†`, an isometric embedding
   of operator spaces along an isometric inclusion.
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence.
+* `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between complex
+  Hilbert spaces as a real-linear continuous map.
 
 ## Further results
 
@@ -131,6 +134,25 @@ theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T)
     exact norm_ringInverse_le_of_forall_norm_le hT hM h
 
 end Inverse
+
+section RealAdjoint
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map: the conjugate-linear isometry
+`ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam theorem. -/
+noncomputable def adjointRealCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V) :=
+  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
+    (adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv (by simp)).toContinuousLinearEquiv
+
+@[simp]
+theorem adjointRealCLM_apply (T : V →L[ℂ] W) : adjointRealCLM T = adjoint T := by
+  rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+
+end RealAdjoint
 
 end ContinuousLinearMap
 
