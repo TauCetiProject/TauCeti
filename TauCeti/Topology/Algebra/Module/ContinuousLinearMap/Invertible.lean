@@ -32,6 +32,10 @@ completeness from the codomain to the domain, because its inverse is a uniform h
 The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
 even for maps between different modules. It transports invertibility from an operator to its
 extension through a continuous linear retract, without any choice of complementary submodule.
+
+Over a field, a nonzero scalar multiple `c • f` is invertible exactly when `f` is, with inverse
+`c⁻¹ • f.inverse` (`ContinuousLinearMap.inverse_smul`, which holds also when `f` is not
+invertible, both sides then being zero).
 -/
 
 public section
@@ -186,5 +190,35 @@ theorem isUnit_one_sub_comp_comm (u : N →L[R] M) (v : M →L[R] N) :
   ⟨isUnit_one_sub_comp_of v u, isUnit_one_sub_comp_of u v⟩
 
 end OneSubComp
+
+section Smul
+
+variable {𝕜 M₁ M₂ : Type*} [Field 𝕜]
+  [TopologicalSpace M₁] [AddCommMonoid M₁] [Module 𝕜 M₁] [ContinuousConstSMul 𝕜 M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+  {f : M₁ →L[𝕜] M₂} {c : 𝕜}
+
+private theorem smul_comp_inverse_smul (hf : f.IsInvertible) (hc : c ≠ 0) :
+    (c • f) ∘L (c⁻¹ • f.inverse) = .id 𝕜 M₂ ∧ (c⁻¹ • f.inverse) ∘L (c • f) = .id 𝕜 M₁ := by
+  simp only [smul_comp, comp_smul, smul_smul, mul_inv_cancel₀ hc, inv_mul_cancel₀ hc, one_smul,
+    hf.self_comp_inverse, hf.inverse_comp_self, and_self]
+
+/-- A nonzero scalar multiple of an invertible continuous linear map is invertible. -/
+theorem IsInvertible.smul (hf : f.IsInvertible) (hc : c ≠ 0) : (c • f).IsInvertible :=
+  .of_inverse (smul_comp_inverse_smul hf hc).1 (smul_comp_inverse_smul hf hc).2
+
+@[simp]
+theorem isInvertible_smul_iff (hc : c ≠ 0) : (c • f).IsInvertible ↔ f.IsInvertible :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using h.smul (inv_ne_zero hc),
+    fun h ↦ h.smul hc⟩
+
+/-- The inverse of a nonzero scalar multiple is the inverse scalar multiple of the inverse. -/
+theorem inverse_smul (f : M₁ →L[𝕜] M₂) (hc : c ≠ 0) : (c • f).inverse = c⁻¹ • f.inverse := by
+  by_cases hf : f.IsInvertible
+  · exact inverse_eq (smul_comp_inverse_smul hf hc).1 (smul_comp_inverse_smul hf hc).2
+  · ext
+    simp [hf, hc]
+
+end Smul
 
 end ContinuousLinearMap
