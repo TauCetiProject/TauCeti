@@ -21,12 +21,7 @@ extension beyond its endpoints is required. There are no completeness or sign as
 * `TauCeti.norm_sub_le_gronwallBound_of_linearODE`: comparison of two linear trajectories.
 * `TauCeti.gronwallBound_zero_le_mul_exp`: an explicit zero-initial-value estimate.
 
-Adapted from the improved Poincaré library at
-`relay-poincare-01/workspace@381ba51aca2ed7fbee89c3849cf635e6177b2298`,
-`PoincareLib/Analysis/ODE/Gronwall.lean`, preserving its three statements and affine time change.
-The source consumers include `Analysis/ODE/LocalFlow/C1Regularity.lean` and
-`Analysis/ODE/Linear/Solution.lean`. This develops the differential-inequality prerequisites
-for ordinary-flow and pointed-compactness estimates.
+Formalization reference: https://github.com/frenzymath/lean-eval-submissions.
 -/
 
 public section

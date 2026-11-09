@@ -21,19 +21,9 @@ condition on the rate or error. Continuity transports the interior comparison to
 * `TauCeti.norm_le_exp_of_affine_deriv_bound`: a convenient exponential bound for nonnegative
   affine coefficients, including initial or terminal reference points.
 
-Adapted from the improved Poincaré library at
-`relay-poincare-01/workspace@381ba51aca2ed7fbee89c3849cf635e6177b2298`,
-`PoincareLib/Analysis/Calculus/ClosedTimeGronwall.lean` and `ReferenceTimeGronwall.lean`.
-The source consumes these bounds in spatial coefficient estimates for ancient flows and
-their pointed limits. Both the exact `gronwallBound` and a coarser exponential estimate
-are available without restricting the terminal time to zero.
+These estimates apply to spatial coefficient bounds for ancient flows and their pointed limits.
 
-The source credits Lean 4.35 baseline `1038df99f5fcbe6d11054afa3495167dc3eb696c`,
-`Geometry/RicciFlow/Harnack/Noncompact/AncientVolume/ScalarRatio/Annular/Gronwall.lean`
-and `Geometry/RicciFlow/AncientKappa/Compactness/Coordinates/SpatialBounds.lean`.
-It records no separate per-file author/copyright/license header for the former input.
-Source-family notices remain in `references/sources.json` at the improved source revision;
-no new source license grant is inferred.
+Formalization reference: https://github.com/frenzymath/lean-eval-submissions.
 -/
 
 public section

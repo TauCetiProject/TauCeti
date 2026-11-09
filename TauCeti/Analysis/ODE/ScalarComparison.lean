@@ -30,22 +30,11 @@ The zero-energy theorem is a separate consequence requiring no sign condition on
 * `TauCeti.mul_sub_mul_exp_neg_integral_le_of_deriv_add_div_add_mul_nonneg`: time-weighted bound.
 * `TauCeti.eq_zero_on_interval_of_deriv_le_mul`: uniqueness for a nonnegative scalar energy.
 
-Adapted from the improved Poincaré library at
-`relay-poincare-01/workspace@381ba51aca2ed7fbee89c3849cf635e6177b2298`,
-`PoincareLib/Analysis/ODE/ScalarComparison.lean` and `EnergyComparison.lean`. Their inspected
-Lean 4.35 baseline is `1038df99f5fcbe6d11054afa3495167dc3eb696c`.
-The improved integrating-factor proof is shared; the finite-start assumption is weakened to
-`T ≤ a`, and the upper comparison is obtained by negation. The source's two energy-normalized
-wrappers are omitted: substitution of `q / 2` uses the same public statements.
-
-The energy source also credits Mapher's `PoincareMT/Proofs/M03/ScalarEnergyComparison.lean`
-at `f927d9e1f0810042766d3b5f64d3f4da02ee93cc`. The scalar source records no separate
-per-file author/copyright/license header in its baseline. Source-family notices remain in
-`references/sources.json` at the improved source revision; no new source license grant is inferred.
-
-The geometric consumer is `Geometry/RicciFlow/Harnack/Path/Comparison.lean` in that source.
 Morgan–Tian, *Ricci Flow and the Poincaré Conjecture* (2007), Theorem 4.40, supplies the
 geometric context. These scalar estimates do not establish the geometric Harnack inequality.
+The energy comparison also draws on an earlier formalization by Mapher.
+
+Formalization reference: https://github.com/frenzymath/lean-eval-submissions.
 -/
 
 public section
