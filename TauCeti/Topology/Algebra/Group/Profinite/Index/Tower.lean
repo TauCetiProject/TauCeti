@@ -100,15 +100,10 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
       (padicValNat ell
         ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
           (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
-    have hVne : ((H.subgroupOf K) ⊔ V.toSubgroup).index ≠ 0 := by
-      exact (Subgroup.finiteIndex_of_le le_sup_right).index_ne_zero
-    simp only [Nat.padicValNat_def]
     rw [Subgroup.index_map_mk'_eq_index_sup,
-      relIndex_map_quotient_eq_index_sup_comap H K hHK N,
-      multiplicity_eq_emultiplicity hVne,
-      multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N)]
-    apply emultiplicity_le_emultiplicity_of_dvd_right
-    exact Subgroup.index_dvd_of_le (sup_le_sup_left hNV (H.subgroupOf K))
+      relIndex_map_quotient_eq_index_sup_comap H K hHK N]
+    exact Subgroup.padicValNat_index_le_of_le (sup_le_sup_left hNV (H.subgroupOf K))
+      (index_subgroupOf_sup_comap_ne_zero H K N) ell
   · refine iSup_le fun N ↦ ?_
     refine le_iSup_of_le (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val) ?_
     have hV : (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val).toSubgroup =
@@ -117,15 +112,11 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
     rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
       Subgroup.index_map_mk'_eq_index_sup, hV]
 
-/-- Primewise multiplicativity of profinite index through a closed intermediate subgroup. -/
-theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
-    (hHK : H ≤ K) (hK : IsClosed (K : Set G)) (ell : Nat.Primes) :
-    (H.subgroupOf K).profiniteIndex ell + K.profiniteIndex ell = H.profiniteIndex ell := by
-  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
-  have : Fact (ell : ℕ).Prime := ⟨ell.prop⟩
-  rw [H.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex K hHK hK,
-    Subgroup.profiniteIndex_apply, Subgroup.profiniteIndex_apply]
-  calc
+omit [TotallyDisconnectedSpace G] in
+/-- The suprema over open normal subgroups of the `ℓ`-adic valuations of the relative index and of
+the index of `K` add up, because both valuations increase along refinement of `N`. -/
+private lemma iSup_padicValNat_relIndex_add_iSup_padicValNat_index [CompactSpace K]
+    (hHK : H ≤ K) (ell : ℕ) [Fact ell.Prime] :
     (⨆ N : OpenNormalSubgroup G,
         (padicValNat ell
           ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
@@ -139,44 +130,30 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
             (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞) +
           (padicValNat ell
             (K.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) := by
-      apply ENat.iSup_add_iSup
-      intro N M
-      let P : OpenNormalSubgroup G := N ⊓ M
-      refine ⟨P, add_le_add ?_ ?_⟩
-      · simp only [Nat.padicValNat_def]
-        rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
-          relIndex_map_quotient_eq_index_sup_comap H K hHK P,
-          multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N),
-          multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K P)]
-        apply emultiplicity_le_emultiplicity_of_dvd_right
-        apply Subgroup.index_dvd_of_le
-        exact sup_le_sup_left (Subgroup.comap_mono inf_le_left) (H.subgroupOf K)
-      simp only [Nat.padicValNat_def]
-      · rw [multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
-          multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
-        apply emultiplicity_le_emultiplicity_of_dvd_right
-        rw [K.index_map_mk'_eq_index_sup M.toSubgroup,
-          K.index_map_mk'_eq_index_sup P.toSubgroup]
-        exact Subgroup.index_dvd_of_le (sup_le_sup_left inf_le_right K)
-    _ = ⨆ N : OpenNormalSubgroup G,
-        (padicValNat ell (H.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) := by
-      congr 1
-      funext N
-      have hrelne :
-          (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
-              (K.map (QuotientGroup.mk' N.toSubgroup)) ≠ 0 := by
-        have : (H.map (QuotientGroup.mk' N.toSubgroup)).FiniteIndex :=
-          Subgroup.finiteIndex_of_finite_quotient
-        have : (H.map (QuotientGroup.mk' N.toSubgroup)).IsFiniteRelIndex
-            (K.map (QuotientGroup.mk' N.toSubgroup)) :=
-          Subgroup.isFiniteRelIndex_of_finiteIndex
-        exact Subgroup.relIndex_ne_zero
-      simp only [Nat.padicValNat_def]
-      rw [← (H.map (QuotientGroup.mk' N.toSubgroup)).relIndex_mul_index
-          (Subgroup.map_mono hHK),
-        Nat.multiplicity_mul hrelne
-          Subgroup.index_ne_zero_of_finite,
-        Nat.cast_add]
+  apply ENat.iSup_add_iSup
+  intro N M
+  let P : OpenNormalSubgroup G := N ⊓ M
+  refine ⟨P, add_le_add ?_ ?_⟩
+  · rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
+      relIndex_map_quotient_eq_index_sup_comap H K hHK P]
+    exact Subgroup.padicValNat_index_le_of_le
+      (sup_le_sup_left (Subgroup.comap_mono inf_le_left) (H.subgroupOf K))
+      (index_subgroupOf_sup_comap_ne_zero H K P) ell
+  · exact K.padicValNat_index_map_mk'_anti ell inf_le_right
+
+/-- Primewise multiplicativity of profinite index through a closed intermediate subgroup. -/
+theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
+    (hHK : H ≤ K) (hK : IsClosed (K : Set G)) (ell : Nat.Primes) :
+    (H.subgroupOf K).profiniteIndex ell + K.profiniteIndex ell = H.profiniteIndex ell := by
+  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
+  have : Fact (ell : ℕ).Prime := ⟨ell.prop⟩
+  rw [H.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex K hHK hK,
+    Subgroup.profiniteIndex_apply, Subgroup.profiniteIndex_apply]
+  rw [iSup_padicValNat_relIndex_add_iSup_padicValNat_index H K hHK ell]
+  refine iSup_congr fun N ↦ ?_
+  exact Subgroup.padicValNat_relIndex_add_padicValNat_index
+    (Subgroup.map_mono hHK : H.map (QuotientGroup.mk' N.toSubgroup) ≤
+      K.map (QuotientGroup.mk' N.toSubgroup)) Subgroup.index_ne_zero_of_finite ell
 
 omit [TotallyDisconnectedSpace G] in
 /-- **A closed subgroup of prime-power relative index.** If `H ∩ K` is closed in `K` and the
