@@ -20,7 +20,9 @@ at `s = 0` to the reference loop at `s = 1`. The action is
 
 (`TauCeti.SmoothTwoForm.cylinderAction`), the area term being `TauCeti.rectangleIntegral` over the
 unit square. This is the formula of the action functional in Barraud–Damian–Humilière–Oancea,
-§3.2, with the reference cylinder running from the loop to the reference loop.
+§3.2, with the reference cylinder running from the loop to the reference loop. The capped action
+`TauCeti.cappedLoopAction` of capped Floer theory uses the opposite orientation and sign
+(`TauCeti.cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction`).
 
 The action depends on the reference cylinder in general. It only depends on the loop:
 
