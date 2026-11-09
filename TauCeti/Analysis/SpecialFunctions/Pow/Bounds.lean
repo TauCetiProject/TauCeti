@@ -407,15 +407,6 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
         rw [hr_def, div_rpow ht hs.le]
         field_simp
 
-/-- If `0 < k`, `0 < c` and `c / k ≤ z`, then for a nonpositive exponent `s`, `z ^ s` is at most
-`k ^ (-s) * c ^ s`: the power is largest where the base is smallest. -/
-theorem rpow_le_rpow_neg_mul_of_div_le {s k c z : ℝ} (hs : s ≤ 0) (hk : 0 < k) (hc : 0 < c)
-    (hz : c / k ≤ z) : z ^ s ≤ k ^ (-s) * c ^ s := by
-  calc z ^ s ≤ (c / k) ^ s := rpow_le_rpow_of_nonpos (by positivity) hz hs
-    _ = k ^ (-s) * c ^ s := by
-        rw [div_rpow hc.le hk.le, div_eq_mul_inv, ← rpow_neg hk.le]
-        ring_nf
-
 end Real
 
 namespace TauCeti
