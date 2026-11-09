@@ -35,6 +35,8 @@ cone condition.
 
 * `TauCeti.hasGradientAt_inner_div_norm`: the gradient of `x ↦ ⟪e, x⟫ / ‖x‖` away from the
   origin, `‖x‖⁻¹ e - (⟪e, x⟫ / ‖x‖³) x`.
+* `TauCeti.inner_gradient_inner_div_norm_self`, `TauCeti.norm_sq_gradient_inner_div_norm`: this
+  gradient is orthogonal to `x`, and for a unit vector `e` its squared norm is `(1 - t²) / ‖x‖²`.
 * `TauCeti.laplacian_inner_div_norm`: its Laplacian, `-(n - 1) ⟪e, x⟫ / ‖x‖³`.
 * `TauCeti.laplacian_norm_rpow_mul_comp_inner_div_norm`: the Laplacian of `‖x‖ ^ μ F(t)`.
 
@@ -85,24 +87,22 @@ theorem hasGradientAt_inner_div_norm [CompleteSpace E] (e : E) (hx : x ≠ 0) :
 
 /-- The gradient of `x ↦ ⟪e, x⟫ / ‖x‖` is orthogonal to `x`, since the function is constant on
 rays from the origin. -/
-private theorem inner_gradient_inner_div_norm_self (e : E) (hx : x ≠ 0) :
-    ⟪‖x‖⁻¹ • e - (⟪e, x⟫_ℝ / ‖x‖ ^ 3) • x, x⟫_ℝ = 0 := by
+theorem inner_gradient_inner_div_norm_self [CompleteSpace E] (e : E) (hx : x ≠ 0) :
+    ⟪∇ (fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) x, x⟫_ℝ = 0 := by
   have hr : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
-  rw [inner_sub_left, inner_smul_left, inner_smul_left, real_inner_self_eq_norm_sq]
-  simp only [conj_trivial]
+  simp only [(hasGradientAt_inner_div_norm e hx).gradient, inner_sub_left, inner_smul_left,
+    real_inner_self_eq_norm_sq, conj_trivial]
   field_simp
   ring
 
 /-- For a unit vector `e`, the squared norm of the gradient of `x ↦ ⟪e, x⟫ / ‖x‖` is
 `(1 - t²) / ‖x‖²` with `t = ⟪e, x⟫ / ‖x‖`. -/
-private theorem norm_sq_gradient_inner_div_norm (he : ‖e‖ = 1) (hx : x ≠ 0) :
-    ‖‖x‖⁻¹ • e - (⟪e, x⟫_ℝ / ‖x‖ ^ 3) • x‖ ^ 2 = (1 - (⟪e, x⟫_ℝ / ‖x‖) ^ 2) / ‖x‖ ^ 2 := by
+theorem norm_sq_gradient_inner_div_norm [CompleteSpace E] (he : ‖e‖ = 1) (hx : x ≠ 0) :
+    ‖∇ (fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) x‖ ^ 2 = (1 - (⟪e, x⟫_ℝ / ‖x‖) ^ 2) / ‖x‖ ^ 2 := by
   have hr : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
-  rw [← real_inner_self_eq_norm_sq, inner_sub_left, inner_sub_right, inner_sub_right,
-    inner_smul_left, inner_smul_left, inner_smul_left, inner_smul_left, inner_smul_right,
-    inner_smul_right, inner_smul_right, inner_smul_right, real_inner_self_eq_norm_sq,
-    real_inner_self_eq_norm_sq, he, real_inner_comm x e]
-  simp only [conj_trivial]
+  rw [(hasGradientAt_inner_div_norm e hx).gradient, ← real_inner_self_eq_norm_sq]
+  simp only [inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right,
+    real_inner_self_eq_norm_sq, he, real_inner_comm e x, conj_trivial]
   field_simp
   ring
 
@@ -149,7 +149,7 @@ theorem laplacian_norm_rpow_mul_comp_inner_div_norm {F : ℝ → ℝ} (he : ‖e
       ⟪∇ (fun y : E ↦ ‖y‖ ^ μ) x, ∇ (F ∘ fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) x⟫_ℝ = 0 := by
     rw [inner_gradient_right, conj_trivial, hfd, hgp]
     simp only [smul_apply, toDual_apply_apply, inner_smul_right, smul_eq_mul]
-    rw [inner_gradient_inner_div_norm_self e hx, mul_zero, mul_zero]
+    rw [← hgq.gradient, inner_gradient_inner_div_norm_self e hx, mul_zero, mul_zero]
   have hpow : ‖x‖ ^ μ = ‖x‖ ^ (μ - 2) * ‖x‖ ^ 2 := by
     rw [← Real.rpow_natCast, ← Real.rpow_add hr]
     norm_num
@@ -159,7 +159,7 @@ theorem laplacian_norm_rpow_mul_comp_inner_div_norm {F : ℝ → ℝ} (he : ‖e
     _ = _ := hp.laplacian_fun_mul hFq
     _ = _ := by
       rw [hmixed, ContDiffAt.laplacian_comp (q := fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) hF hq,
-        hgq.gradient, norm_sq_gradient_inner_div_norm he hx, laplacian_inner_div_norm e hx,
+        norm_sq_gradient_inner_div_norm he hx, laplacian_inner_div_norm e hx,
         laplacian_norm_rpow_of_ne μ hx, hpow]
       simp only [Function.comp_apply]
       field_simp

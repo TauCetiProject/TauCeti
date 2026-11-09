@@ -28,12 +28,14 @@ reentrant corner of an L-shaped domain, where no exterior ball touches the bound
 
 ## The barrier
 
-Put `y = x - ξ` and `t = ⟪e, y⟫ / ‖y‖`, so that `t ≤ c` on `Ω`. The barrier is
+Put `y = x - ξ` and `t = ⟪e, y⟫ / ‖y‖`, so that `t < c` on the truncated set `Ω ∩ ball ξ ρ`. The
+explicit local barrier is
 
 `w x = ‖y‖ ^ μ (A - exp (k t))`
 
 with `k = n / (1 - c)`, `A = 2 exp (k c)` and `μ = min 1 (k exp (-k) / A)`. It vanishes at `ξ`, and
-it is positive elsewhere on `closure Ω` because `exp (k t) ≤ exp (k c) < A` there. The Laplacian of
+it is positive elsewhere on `closure (Ω ∩ ball ξ ρ)` because `exp (k t) ≤ exp (k c) < A` there.
+Farther from `ξ` the cone bound need not hold, and `w` may be negative. The Laplacian of
 a homogeneous zonal function (`TauCeti.laplacian_norm_rpow_mul_comp_inner_div_norm`) gives
 
 `Δ w = ‖y‖ ^ (μ - 2) (μ (μ + n - 2) (A - exp (k t)) - k exp (k t) (k (1 - t²) - (n - 1) t))`.
@@ -44,7 +46,7 @@ For `-1 ≤ t ≤ c` one has `k (1 - t²) - (n - 1) t ≥ n - 1`, since the diff
 `μ A ≤ k exp (-k)` makes `Δ w ≤ 0`. Hence `w` is superharmonic
 (`ContDiffOn.subharmonicOn_of_laplacian_nonneg`) on the open cone `{t < c}`, which contains
 `Ω ∩ ball ξ ρ`. Since regularity is local (`TauCeti.IsBarrier.exists_isBarrier_of_inter`), this
-local barrier gives a barrier relative to `Ω`.
+local barrier on `Ω ∩ ball ξ ρ` produces a barrier relative to all of `Ω`.
 
 This is the barrier `r ^ μ f(θ)` suggested by Gilbarg and Trudinger, with the explicit angular
 profile `f = A - exp (k cos θ)` in place of an eigenfunction of the spherical Laplacian.

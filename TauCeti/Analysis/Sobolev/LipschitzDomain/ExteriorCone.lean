@@ -81,15 +81,10 @@ theorem exists_inner_sub_lt_mul_norm_sub
   rw [Real.norm_eq_abs, sq_abs] at hz2
   have hzlt : ‖z‖ < min h r := by rwa [hnz, ← dist_eq_norm]
   have hfst : |z.fst| < h := by
-    have : |z.fst| ≤ ‖z‖ := (sq_le_sq₀ (abs_nonneg _) (norm_nonneg _)).1 (by
-      rw [sq_abs, hz2]
-      exact le_add_of_nonneg_right (sq_nonneg _))
-    linarith [min_le_left h r]
-  have hsnd : ‖z.snd‖ < r := by
-    have : ‖z.snd‖ ≤ ‖z‖ := (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 (by
-      rw [hz2]
-      exact le_add_of_nonneg_left (sq_nonneg _))
-    linarith [min_le_right h r]
+    rw [← Real.norm_eq_abs]
+    exact ((WithLp.norm_fst_le (x := z)).trans_lt hzlt).trans_le (min_le_left h r)
+  have hsnd : ‖z.snd‖ < r :=
+    ((WithLp.norm_snd_le (x := z)).trans_lt hzlt).trans_le (min_le_right h r)
   -- In the chart, `x ∈ Ω` lies above the graph, hence above the downward cone of slope `K`.
   have hmem : γ z.snd < z.fst :=
     (hc.mem_iff (by simp only [mem_normalCylinder]; exact ⟨(abs_lt.1 hfst).1,
