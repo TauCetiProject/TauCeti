@@ -144,13 +144,10 @@ theorem isPositive_neg_hessianOperator_of_mem_upperContactSet (hΩ : IsOpen Ω)
     (hu : ContDiffOn ℝ 2 u Ω) (hy : y ∈ upperContactSet u Ω) :
     (-hessianOperator u y).IsPositive := by
   have hu' := hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy))
-  refine (ContinuousLinearMap.isPositive_iff _).2 ⟨fun w w' => ?_, fun w => ?_⟩
-  · simp only [ContinuousLinearMap.coe_coe, neg_apply, inner_neg_left,
-      inner_neg_right, inner_hessianOperator_left]
-    rw [real_inner_comm, inner_hessianOperator_left]
-    exact congrArg Neg.neg (hu'.isSymmSndFDerivAt (by simp) w w')
-  · rw [neg_apply, inner_neg_left, inner_hessianOperator_left, neg_nonneg]
-    exact fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy w
+  refine (ContinuousLinearMap.isPositive_iff' _).2
+    ⟨hu'.isSelfAdjoint_hessianOperator.neg, fun w => ?_⟩
+  rw [neg_apply, inner_neg_left, inner_hessianOperator_left, neg_nonneg]
+  exact fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy w
 
 variable [FiniteDimensional ℝ E]
 

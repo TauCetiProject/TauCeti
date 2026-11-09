@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # The Aleksandrov–Bakelman–Pucci estimate for strong solutions
@@ -287,87 +288,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {ū : E → ℝ} {x : E} {m : ℝ}
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- If `ū` is continuous on the closure of a bounded open set `Ω` and at most `m` on its frontier,
-then `ū < m + η` at the points of `Ω` close enough to the complement of `Ω`. -/
-private theorem exists_pos_forall_infDist_lt [Nontrivial E] (hΩb : Bornology.IsBounded (Ω : Set E))
-    (hcont : ContinuousOn ū (closure Ω)) (hm : ∀ z ∈ frontier (Ω : Set E), ū z ≤ m) {η : ℝ}
-    (hη : 0 < η) : ∃ δ > 0, ∀ z ∈ Ω, infDist z (Ω : Set E)ᶜ < δ → ū z < m + η := by
-  -- The points of `closure Ω` where `ū ≥ m + η` form a compact subset of `Ω`.
-  set K := closure (Ω : Set E) ∩ ū ⁻¹' Ici (m + η)
-  have hK : IsCompact K := hΩb.isCompact_closure.of_isClosed_subset
-    (hcont.preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici) inter_subset_left
-  have hKΩ : K ⊆ Ω := fun z ⟨hz, hzη⟩ => by
-    by_contra hzΩ
-    have := hm z ⟨hz, by rwa [Ω.isOpen.interior_eq]⟩
-    simp only [mem_preimage, mem_Ici] at hzη
-    linarith
-  obtain ⟨δ, hδ, hδK⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  refine ⟨δ, hδ, fun z hz hzδ => lt_of_not_ge fun hzη => hzδ.not_ge ?_⟩
-  refine (le_infDist (hΩb.nonempty_compl ℝ)).2 fun w hw =>
-    le_of_not_gt fun hwz => hw (hδK ?_)
-  exact mem_cthickening_of_dist_le w z δ K ⟨subset_closure hz, hzη⟩ (dist_comm w z ▸ hwz.le)
-
-omit [FiniteDimensional ℝ E] in
-/-- Mollifications of a function continuous on the compact closure of `Ω` converge to it
-uniformly on the points whose bump ball lies in `Ω`. -/
-private theorem exists_pos_forall_abs_smoothField_sub_le {p : ℝ≥0∞}
-    [FiniteDimensional ℝ E] (hΩb : Bornology.IsBounded (Ω : Set E))
-    (hcont : ContinuousOn ū (closure Ω)) {f : Lp ℝ p (μ.restrict Ω)}
-    (hf : (f : E → ℝ) =ᵐ[μ.restrict Ω] ū) {ε : ℝ} (hε : 0 < ε) :
-    ∃ ρ > 0, ∀ φ : ContDiffBump (0 : E), φ.rOut < ρ → ∀ y, closedBall y φ.rOut ⊆ Ω →
-      |Wkp.smoothField φ f y - ū y| ≤ ε := by
-  obtain ⟨ρ, hρ, hū⟩ := Metric.uniformContinuousOn_iff.1
-    (hΩb.isCompact_closure.uniformContinuousOn_of_continuous hcont) ε hε
-  refine ⟨ρ, hρ, fun φ hφ y hy => ?_⟩
-  have hyΩ : y ∈ Ω := hy (mem_closedBall_self φ.rOut_pos.le)
-  -- Replace the Sobolev value by `ū` inside the convolution.
-  have hae : (Ω : Set E).indicator (f : E → ℝ) =ᵐ[μ] (Ω : Set E).indicator ū := by
-    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hf] with z hz
-    by_cases hzΩ : z ∈ (Ω : Set E)
-    · simp only [indicator_of_mem hzΩ, hz hzΩ]
-    · simp only [indicator_of_notMem hzΩ]
-  have hmeas : AEStronglyMeasurable ((Ω : Set E).indicator ū) μ :=
-    (aestronglyMeasurable_indicator_iff Ω.isOpen.measurableSet).2
-      ((hcont.mono subset_closure).aestronglyMeasurable Ω.isOpen.measurableSet)
-  have h := φ.dist_normed_convolution_le (μ := μ) (x₀ := y) (ε := ε) hmeas fun z hz => by
-    have hzΩ : z ∈ (Ω : Set E) := hy (ball_subset_closedBall hz)
-    rw [indicator_of_mem hzΩ, indicator_of_mem hyΩ]
-    exact (hū z (subset_closure hzΩ) y (subset_closure hyΩ) (hz.trans hφ)).le
-  have hconv : Wkp.smoothField φ f =
-      φ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (Ω : Set E).indicator ū :=
-    (Wkp.smoothField_def φ f).trans (convolution_congr _ EventuallyEq.rfl hae)
-  rwa [indicator_of_mem hyΩ, ← hconv, Real.dist_eq] at h
-
-/-- Where the bump ball around `y` lies in `Ω`, the Hessian of the mollified value of
-`u ∈ W^{2,p}(Ω)` is the mollified weak Hessian. -/
-private theorem hessianOperator_smoothField {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (u : Wkp μ Ω p 2) (φ : ContDiffBump (0 : E)) {U : Set E} (hU : IsOpen U)
-    (hUΩ : ∀ y ∈ U, closedBall y φ.rOut ⊆ Ω) {y : E} (hy : y ∈ U) :
-    hessianOperator (Wkp.smoothField φ (Wkp.value 2 u)) y =
-      Wkp.smoothField φ (Wkp.iteratedGradient 1 u) y := by
-  have hgrad : ∇ (Wkp.smoothField φ (Wkp.value 2 u)) =ᶠ[𝓝 y]
-      Wkp.smoothField φ (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) := by
-    filter_upwards [hU.mem_nhds hy] with z hz
-    rw [Wkp.value_succ]
-    exact Wkp.gradient_smoothField _ φ z (hUΩ z hz)
-  rw [← fderiv_gradient, hgrad.fderiv_eq]
-  exact Wkp.fderiv_smoothField 0 u φ y (hUΩ y hy)
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Every point of an open set `s` with nonempty complement has a ball inside
-`{y | δ k < dist(y, sᶜ)}` for all large `k`, if `δ k → 0`. -/
-private theorem exists_eventually_closedBall_subset {s : Set E} (hs : IsOpen s) (hc : sᶜ.Nonempty)
-    {δ : ℕ → ℝ} (hδ : Tendsto δ atTop (𝓝 0)) {z : E} (hz : z ∈ s) :
-    ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ {y | δ k < infDist y sᶜ} := by
-  have hd := (hs.isClosed_compl.notMem_iff_infDist_pos hc).1 (not_not_intro hz)
-  refine ⟨infDist z sᶜ / 2, half_pos hd, ?_⟩
-  filter_upwards [hδ.eventually (gt_mem_nhds (half_pos hd))] with k hk w hw
-  have := infDist_le_infDist_add_dist (x := z) (y := w) (s := sᶜ)
-  rw [dist_comm] at this
-  simp only [mem_ofPred_eq]
-  linarith [mem_closedBall.1 hw]
-
 /-- On open sets `U k ⊆ Ω` whose points have their bump ball in `Ω`, the Hessians of the
 mollifications of `u ∈ W^{2,n}(Ω)` converge to the weak Hessian in `Lⁿ` as the bump radii tend
 to zero. -/
@@ -389,7 +309,9 @@ private theorem tendsto_setLIntegral_hessianOperator_smoothField_sub
       (Lp.aestronglyMeasurable _))]
   refine (setLIntegral_congr_fun (hUo k).measurableSet fun y hy => ?_).trans_le
     (lintegral_mono_set (hUΩ k))
-  rw [hessianOperator_smoothField u (φ k) (hUo k) (hball k) hy, Pi.sub_apply]
+  rw [← fderiv_gradient,
+    Wkp.fderiv_gradient_smoothField u (φ k) (((hUo k).eventually_mem hy).mono (hball k)),
+    Pi.sub_apply]
 
 /-- **The Aleksandrov measure estimate for `W^{2,n}` functions** (Gilbarg–Trudinger, Lemma 9.2
 for strong solutions). Let `Ω` be a bounded open subset of a real inner product space of
@@ -429,11 +351,14 @@ theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient {p : ℝ≥0∞} [Fac
   -- where `dist(·, Ωᶜ) = δ k`.
   have hclose : ∀ ε > 0, ∀ᶠ k in atTop, ∀ y, closedBall y (φ k).rOut ⊆ Ω → |v k y - ū y| ≤ ε := by
     intro ε hε
-    obtain ⟨ρ, hρ, h⟩ := exists_pos_forall_abs_smoothField_sub_le hΩb hcont hū hε
-    filter_upwards [hφ0.eventually (gt_mem_nhds hρ)] with k hk y hy using h _ hk y hy
+    obtain ⟨ρ, hρ, h⟩ := Wkp.exists_pos_forall_dist_smoothField_le
+      ((hΩb.isCompact_closure.uniformContinuousOn_of_continuous hcont).mono subset_closure) hū hε
+    filter_upwards [hφ0.eventually (gt_mem_nhds hρ)] with k hk y hy
+    exact Real.dist_eq _ _ ▸ h _ hk y hy
   have hvm : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ frontier (U k), v k z ≤ m + ε := by
     intro ε hε
-    obtain ⟨d, hd, hdm⟩ := exists_pos_forall_infDist_lt hΩb hcont hm (half_pos hε)
+    obtain ⟨d, hd, hdm⟩ := Ω.isOpen.exists_pos_forall_lt_add_of_infDist_lt hΩb
+      (hΩb.nonempty_compl ℝ) hcont hm (half_pos hε)
     filter_upwards [hδ0.eventually (gt_mem_nhds hd), hclose (ε / 2) (half_pos hε)] with k hk hk'
       z hz
     have hz' : δ k = infDist z (Ω : Set E)ᶜ :=
@@ -445,7 +370,7 @@ theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient {p : ℝ≥0∞} [Fac
       (Lp.aestronglyMeasurable _)]
     exact ENNReal.pow_ne_top (Lp.eLpNorm_lt_top _).ne
   exact addHaar_ball_le_of_tendsto μ hΩb Ω.isOpen (hcont.mono subset_closure) hx hUo hUΩ
-    (fun z hz => exists_eventually_closedBall_subset Ω.isOpen
+    (fun z hz => Ω.isOpen.exists_eventually_closedBall_subset_setOf_lt_infDist
       (hΩb.nonempty_compl ℝ) hδ0 hz)
     (fun k => contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2)
     (fun ε hε => (hclose ε hε).mono fun k hk y hy => hk y (hball k (le_of_lt hy)))

@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Positive
 
+import TauCeti.LinearAlgebra.Matrix.Vec
+
 /-!
 # Determinant inequalities for positive-semidefinite matrices
 
@@ -183,18 +185,6 @@ theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSem
   rw [hdet, htr, ← Real.rpow_inv_natCast_pow hprod (Fintype.card_ne_zero (α := n))]
   exact pow_le_pow_left₀ (Real.rpow_nonneg hprod _) hamgm _
 
-omit [DecidableEq n] in
-/-- The trace of the product of two real positive-semidefinite matrices is nonnegative. -/
-theorem PosSemidef.trace_mul_nonneg {A B : Matrix n n ℝ} (hA : A.PosSemidef)
-    (hB : B.PosSemidef) : 0 ≤ (A * B).trace := by
-  classical
-  have hS : (CFC.sqrt A).IsHermitian :=
-    (Matrix.nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)).isHermitian
-  have hN : (CFC.sqrt A * B * CFC.sqrt A).PosSemidef := by
-    simpa only [hS.eq] using hB.mul_mul_conjTranspose_same (CFC.sqrt A)
-  rw [← trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt]
-  exact hN.trace_nonneg
-
 /-- **The mixed determinant–trace inequality.** For real positive-semidefinite `n × n` matrices
 `A` and `B`, `det A * det B ≤ (tr (A * B) / n) ^ n`. -/
 theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}
@@ -243,7 +233,9 @@ theorem IsPositive.sum_mul_apply_nonneg
     {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι} (hT : T.IsPositive) {A : Matrix ι ι ℝ}
     (hA : A.PosSemidef) : 0 ≤ ∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i := by
   rw [← hT.isSymmetric.trace_mul_toMatrix]
-  exact hA.trace_mul_nonneg ((LinearMap.posSemidef_toMatrix_iff _).2 hT)
+  simpa using
+    hA.trace_transpose_mul_mul_mul_nonneg ((LinearMap.posSemidef_toMatrix_iff _).2 hT)
+      (1 : Matrix ι ι ℝ)
 
 /-- **The determinant bound for a positive operator.** If `T` is a positive operator on `ℝⁿ` and
 `A` is positive semidefinite, then `det T det A ≤ (∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / n)ⁿ`: the determinant–trace

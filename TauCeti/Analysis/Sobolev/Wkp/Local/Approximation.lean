@@ -27,9 +27,11 @@ weak derivative fields.
 The mollification itself, `TauCeti.Wkp.smoothField`, is smooth on the whole space
 (`TauCeti.Wkp.contDiff_smoothField`); where the bump ball lies in `Ω` its gradient and higher
 derivatives are the mollified weak derivatives (`TauCeti.Wkp.gradient_smoothField`,
-`TauCeti.Wkp.fderiv_smoothField`), and the mollified fields converge in `Lᵖ(Ω)`
-(`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). These explicit approximants serve arguments
-that need more than norm convergence, such as uniform convergence to a continuous representative.
+`TauCeti.Wkp.fderiv_smoothField`, and for the Hessian `TauCeti.Wkp.fderiv_gradient_smoothField`),
+and the mollified fields converge in `Lᵖ(Ω)` (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`).
+These explicit approximants serve arguments that need more than norm convergence: they converge
+uniformly to a uniformly continuous representative
+(`TauCeti.Wkp.exists_pos_forall_dist_smoothField_le`).
 
 ## References
 
@@ -114,6 +116,53 @@ theorem gradient_smoothField (u : Wkp mu Omega p 1)
   apply integral_congr_ae
   filter_upwards with y
   by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
+
+/-- Where the closed balls of the outer bump radius around all points near `x` lie in `Ω`, the
+derivative of the gradient of the mollified value of `u ∈ W^{2,p}(Ω)` is the mollified weak
+Hessian. -/
+theorem fderiv_gradient_smoothField (u : Wkp mu Omega p 2) (phi : ContDiffBump (0 : E)) {x : E}
+    (hx : ∀ᶠ y in 𝓝 x, Metric.closedBall y phi.rOut ⊆ Omega) :
+    fderiv ℝ (gradient (smoothField phi (value 2 u))) x =
+      smoothField phi (iteratedGradient 1 u) x := by
+  have hgrad : gradient (smoothField phi (value 2 u)) =ᶠ[𝓝 x]
+      smoothField phi (iteratedGradient 0 (lowerOrder 1 u)) := by
+    filter_upwards [hx] with y hy
+    rw [value_succ]
+    exact gradient_smoothField _ phi y hy
+  rw [hgrad.fderiv_eq]
+  exact fderiv_smoothField 0 u phi x hx.self_of_nhds
+
+omit [Fact (1 ≤ p)] in
+/-- **Uniform convergence of mollifications.** Let `f ∈ Lᵖ(Ω; F)` agree almost everywhere on `Ω`
+with a function `g` uniformly continuous on `Ω`. For every `ε > 0`, the mollification of `f` by a
+bump of small enough outer radius is within `ε` of `g` at every point whose bump ball lies in
+`Ω`. -/
+theorem exists_pos_forall_dist_smoothField_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] {f : Lp F p (mu.restrict Omega)} {g : E → F}
+    (hg : UniformContinuousOn g Omega) (hf : (f : E → F) =ᵐ[mu.restrict Omega] g) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ ρ > 0, ∀ phi : ContDiffBump (0 : E), phi.rOut < ρ →
+      ∀ y, Metric.closedBall y phi.rOut ⊆ Omega → dist (smoothField phi f y) (g y) ≤ ε := by
+  obtain ⟨ρ, hρ, hg'⟩ := Metric.uniformContinuousOn_iff.1 hg ε hε
+  refine ⟨ρ, hρ, fun phi hphi y hy => ?_⟩
+  have hyΩ : y ∈ (Omega : Set E) := hy (Metric.mem_closedBall_self phi.rOut_pos.le)
+  -- Replace the Sobolev value by `g` inside the convolution.
+  have hae : (Omega : Set E).indicator (f : E → F) =ᵐ[mu] (Omega : Set E).indicator g := by
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hf] with z hz
+    by_cases hzΩ : z ∈ (Omega : Set E)
+    · simp only [indicator_of_mem hzΩ, hz hzΩ]
+    · simp only [indicator_of_notMem hzΩ]
+  have hmeas : AEStronglyMeasurable ((Omega : Set E).indicator g) mu :=
+    (aestronglyMeasurable_indicator_iff Omega.isOpen.measurableSet).2
+      (hg.continuousOn.aestronglyMeasurable Omega.isOpen.measurableSet)
+  have h := phi.dist_normed_convolution_le (μ := mu) (x₀ := y) (ε := ε) hmeas fun z hz => by
+    have hzΩ : z ∈ (Omega : Set E) := hy (Metric.ball_subset_closedBall hz)
+    rw [indicator_of_mem hzΩ, indicator_of_mem hyΩ]
+    exact (hg' z hzΩ y hyΩ (hz.trans hphi)).le
+  have hconv : smoothField phi f =
+      phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator g :=
+    (smoothField_def phi f).trans (convolution_congr _ EventuallyEq.rfl hae)
+  rwa [indicator_of_mem hyΩ, ← hconv] at h
 
 /-- A localized smooth representative, with compact support in the original domain. -/
 private def localTest (chi : 𝓓(Omega, ℝ)) (phi : ContDiffBump (0 : E))

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Topology.Compactness.LocallyFinite
-import Mathlib.Topology.MetricSpace.ProperSpace
 import Mathlib.Topology.Order.AtTopBotIxx
 import Mathlib.Topology.Order.DenselyOrdered
 
@@ -38,6 +38,12 @@ ends have pairwise disjoint closed intervals around them forming a locally finit
 (`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
 a vertical line contains a tube around it, whose radius is locally bounded below by positive
 constants (`IsOpen.exists_tube_subset`).
+
+For an open set `s` with nonempty complement and `δ → 0`, the sets `{y | δ < infDist y sᶜ}`
+exhaust `s` from the inside, eventually containing a ball around each point of `s`
+(`IsOpen.exists_eventually_closedBall_subset_setOf_lt_infDist`). If `s` is moreover bounded in a
+proper space, a function continuous on `closure s` and at most `m` on `frontier s` is below
+`m + η` near the complement of `s` (`IsOpen.exists_pos_forall_lt_add_of_infDist_lt`).
 -/
 
 public section
@@ -198,5 +204,41 @@ theorem IsOpen.exists_tube_subset {X : Type*} [PseudoMetricSpace X] {c : X}
       (Int.lt_floor_add_one t).le⟩, ?_⟩
     rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
     exact hut.trans_lt (half_lt_self (hδ _))
+
+/-- **Interior exhaustion by the distance to the complement.** If `δ` tends to `0`, then every
+point `z` of an open set `s` with nonempty complement has a closed ball around it which eventually
+lies in `{y | δ i < infDist y sᶜ}`. -/
+theorem IsOpen.exists_eventually_closedBall_subset_setOf_lt_infDist {X ι : Type*}
+    [PseudoMetricSpace X] {s : Set X} (hs : IsOpen s) (hc : sᶜ.Nonempty) {l : Filter ι}
+    {δ : ι → ℝ} (hδ : Tendsto δ l (𝓝 0)) {z : X} (hz : z ∈ s) :
+    ∃ r > 0, ∀ᶠ i in l, closedBall z r ⊆ {y | δ i < infDist y sᶜ} := by
+  have hd := (hs.isClosed_compl.notMem_iff_infDist_pos hc).1 (not_not_intro hz)
+  refine ⟨infDist z sᶜ / 2, half_pos hd, ?_⟩
+  filter_upwards [hδ.eventually (gt_mem_nhds (half_pos hd))] with i hi w hw
+  have := infDist_le_infDist_add_dist (x := z) (y := w) (s := sᶜ)
+  rw [dist_comm] at this
+  simp only [mem_ofPred_eq]
+  linarith [mem_closedBall.1 hw]
+
+/-- **Values near the frontier.** Let `f` be continuous on the closure of a bounded open set `s`
+with nonempty complement in a proper space, and at most `m` on the frontier of `s`. Then for every
+`η > 0`, `f < m + η` at the points of `s` close enough to the complement of `s`. -/
+theorem IsOpen.exists_pos_forall_lt_add_of_infDist_lt {X : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] {s : Set X} (hs : IsOpen s) (hb : Bornology.IsBounded s) (hc : sᶜ.Nonempty)
+    {f : X → ℝ} (hf : ContinuousOn f (closure s)) {m : ℝ} (hm : ∀ z ∈ frontier s, f z ≤ m)
+    {η : ℝ} (hη : 0 < η) : ∃ δ > 0, ∀ z ∈ s, infDist z sᶜ < δ → f z < m + η := by
+  -- The points of `closure s` where `f ≥ m + η` form a compact subset of `s`.
+  set K := closure s ∩ f ⁻¹' Ici (m + η)
+  have hK : IsCompact K := hb.isCompact_closure.of_isClosed_subset
+    (hf.preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici) inter_subset_left
+  have hKs : K ⊆ s := fun z ⟨hz, hzη⟩ => by
+    by_contra hzs
+    have := hm z ⟨hz, by rwa [hs.interior_eq]⟩
+    simp only [mem_preimage, mem_Ici] at hzη
+    linarith
+  obtain ⟨δ, hδ, hδK⟩ := hK.exists_cthickening_subset_open hs hKs
+  refine ⟨δ, hδ, fun z hz hzδ => lt_of_not_ge fun hzη => hzδ.not_ge ?_⟩
+  refine (le_infDist hc).2 fun w hw => le_of_not_gt fun hwz => hw (hδK ?_)
+  exact mem_cthickening_of_dist_le w z δ K ⟨subset_closure hz, hzη⟩ (dist_comm w z ▸ hwz.le)
 
 end
