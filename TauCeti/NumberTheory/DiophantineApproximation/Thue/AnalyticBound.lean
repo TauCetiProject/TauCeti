@@ -27,8 +27,8 @@ bound is applied at a good rational approximation `ξ₁` of `α`: there
 If `(X - α) ^ r` divides `P - α Q`, the two bounds combine to
 `‖Dᵏ P (z) - w Dᵏ Q (z)‖ ≤ C₂ ^ r (‖z - α‖ ^ (r - k) + ‖w - α‖)` for `‖z - α‖ ≤ 1` and every `w`.
 
-The derivative bound holds over any seminormed ring whose norm preserves one. The quotient bound
-also assumes commutativity, as in the motivating example `ℂ`.
+The derivative bound holds over any seminormed ring, and the quotient bound over any seminormed
+commutative ring, as in the motivating example `ℂ`.
 
 ## Main results
 
