@@ -69,14 +69,11 @@ private theorem angular_energy_le {r : ℝ} (hr : 0 < r)
   intro θ _
   have hs : ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ≤
       (1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ := by
+    have h := ContinuousLinearMap.norm_apply_le_of_apply_I_eq (hCR θ) (hJ θ)
+      (circleMap 0 r θ * I)
+    rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_pos hr] at h
     rw [heq]
-    calc _ ≤ ‖fderiv ℝ u (circleMap z₀ r θ)‖ * ‖circleMap 0 r θ * I‖ :=
-          (fderiv ℝ u (circleMap z₀ r θ)).le_opNorm _
-      _ ≤ ((1 + M) * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) * r := by
-          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_pos hr]
-          gcongr
-          exact (fderiv ℝ u (circleMap z₀ r θ)).norm_le_of_apply_I_eq (hCR θ) (hJ θ) le_rfl
-      _ = _ := by ring
+    linarith
   calc
     _ ≤ ((1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) ^ 2 := by
       gcongr
