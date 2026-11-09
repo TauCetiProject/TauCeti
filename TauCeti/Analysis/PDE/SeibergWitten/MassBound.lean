@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.Mass.Compactness
 public import TauCeti.Analysis.Distribution.Mass.FormCurrent
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 
 /-!
 # Mass bounds for the curvature current at large parameter
@@ -64,26 +65,6 @@ open MeasureTheory TopologicalSpace TestFunction Distribution Filter Set Real
 open scoped Distributions ENNReal NNReal
 
 namespace TauCeti.SeibergWitten
-
-/-- **The vacuum defect is controlled by the spinor defect.** Let `s = |α|²` and `t = |β|²`, and
-suppose `t ≤ (C / r) w₊ + C / r²` for the vacuum defect `w₊ = max (1 - s) 0`. If `0 ≤ C` and
-`2 C ≤ r`, then `w₊ ≤ 2 |1 - s - t| + 2 C / r²`. -/
-theorem max_one_sub_le_two_mul_abs_sub_add {s t C r : ℝ} (hC : 0 ≤ C) (hr : 2 * C ≤ r)
-    (ht : t ≤ C / r * max (1 - s) 0 + C / r ^ 2) :
-    max (1 - s) 0 ≤ 2 * |1 - s - t| + 2 * (C / r ^ 2) := by
-  have hCr : C / r ≤ 1 / 2 := by
-    rcases (show (0 : ℝ) ≤ r by linarith).eq_or_lt with h | h
-    · simp [← h]
-    · rw [div_le_iff₀ h]
-      linarith
-  have h₂ : 0 ≤ C / r ^ 2 := div_nonneg hC (sq_nonneg r)
-  rcases le_total (1 - s) 0 with h | h
-  · rw [max_eq_right h]
-    positivity
-  · rw [max_eq_left h] at ht ⊢
-    have : C / r * (1 - s) ≤ (1 - s) / 2 := by nlinarith
-    have := le_abs_self (1 - s - t)
-    linarith
 
 section Integral
 

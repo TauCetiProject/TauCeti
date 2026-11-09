@@ -355,11 +355,11 @@ theorem dist_coeff_colemanDBounded_mul_le {B₁ B₂ P₁ P₂ : R[X]} {n m : �
       (n := n) (m := m) (by simp [hcoeff, hB₁, hB₂]) hρ₀ hρ
       (fun j hj ↦ by
         rw [coeff_map, hcoeff, ← mul_one ‖_‖]
-        exact norm_polynomialToRestricted_C_add_X_mul_C_mul_le zero_le_one
+        exact norm_polynomialToRestricted_C_add_X_mul_C_mul_le
           (by simpa using hP₁ j hj) (by simpa using hP j hj))
       (fun t j ↦ by
         rw [coeff_map, hcoeff]
-        exact norm_polynomialToRestricted_C_add_X_mul_C_mul_le (pow_nonneg (hρ₀ t) _) (hβ₁ t j)
+        exact norm_polynomialToRestricted_C_add_X_mul_C_mul_le (hβ₁ t j)
           (hβ t j)) k
     rwa [← colemanDBounded_map, coeff_map] at h
   have hcoeffs (i : ℕ) : ‖f.coeff (i + 1)‖ * r ≤ ∏ t ∈ range k, β t :=

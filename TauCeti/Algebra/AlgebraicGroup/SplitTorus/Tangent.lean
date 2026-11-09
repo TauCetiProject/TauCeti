@@ -187,6 +187,15 @@ theorem tangentLinearEquiv_symm_apply [Fintype I] (b : I → B) :
 
 variable {H : Type*} [CommRing H] [Bialgebra R H]
 
+/-- A split-torus differential sends a coordinate derivation to the differential of the
+corresponding cocharacter of its target. -/
+private theorem derivationCompLieHom_coordinateDerivation (π : H →ₐc[R] A) (i : I) :
+    derivationCompLieHom (B := B) π (coordinateDerivation (R := R) (B := B) i) =
+      derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
+        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) := by
+  rw [coordinateDerivation, ← LieHom.comp_apply, ← derivationCompLieHom_comp,
+    BialgHom.cocharacter_id_comp]
+
 /-- A split-torus differential sends a coordinate tangent vector to the differential of
 the corresponding cocharacter of its target. -/
 theorem derivationCompLieHom_tangentBasis [Finite I] (π : H →ₐc[R] A) (i : I) :
@@ -194,8 +203,8 @@ theorem derivationCompLieHom_tangentBasis [Finite I] (π : H →ₐc[R] A) (i : 
         (tangentBasis (R := R) (B := B) i) =
       derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
         ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) := by
-  rw [tangentBasis_apply, ← LieHom.comp_apply, ← derivationCompLieHom_comp,
-    BialgHom.cocharacter_id_comp]
+  rw [tangentBasis_apply]
+  exact derivationCompLieHom_coordinateDerivation π i
 
 /-- The tangent image of a finite split torus is the span of the differentials of its
 coordinate cocharacters. The map from the torus need not be an immersion. -/
@@ -211,16 +220,21 @@ theorem range_derivationCompLieHom [Finite I] (π : H →ₐc[R] A) :
   simp only [LieHom.coe_toLinearMap, derivationCompLieHom_tangentBasis]
 
 /-- The coordinate-cocharacter differentials are independent whenever the torus differential
-is injective. -/
-theorem linearIndependent_derivationCompLieHom_cocharacter [Finite I] (π : H →ₐc[R] A)
+is injective. The index type need not be finite. -/
+theorem linearIndependent_derivationCompLieHom_cocharacter (π : H →ₐc[R] A)
     (hπ : Function.Injective (derivationCompLieHom (B := B) π)) :
     LinearIndependent B (fun i : I ↦
       derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
         ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)) := by
+  classical
+  have hw : LinearIndependent B (fun i : I ↦ coordinateDerivation (R := R) (B := B) i) := by
+    refine LinearIndependent.of_comp (tangentCoordinates (R := R) (B := B) (I := I)) ?_
+    convert Pi.linearIndependent_single_one I B using 1
+    ext i j
+    simp [tangentCoordinates_coordinateDerivation, Pi.single_apply, eq_comm]
   simpa only [Function.comp_def, LieHom.coe_toLinearMap,
-    derivationCompLieHom_tangentBasis] using
-    (tangentBasis (R := R) (B := B) (I := I)).linearIndependent.map_injOn
-      (derivationCompLieHom (B := B) π).toLinearMap hπ.injOn
+    derivationCompLieHom_coordinateDerivation] using
+    hw.map' (derivationCompLieHom (B := B) π).toLinearMap (LinearMap.ker_eq_bot.mpr hπ)
 
 end
 

@@ -79,7 +79,6 @@ namespace LieDerivation.IsKilling
 Lie algebra with nondegenerate Killing form (necessarily finite-dimensional) into a
 finite-dimensional module is inner: it is `x ↦ ⁅x, m⁆` for some `m`. -/
 theorem exists_eq_inner (D : LieDerivation K L M) : ∃ m : M, inner K L M m = D := by
-  have := TauCeti.finite_of_isKilling (R := K) (L := L)
   -- The proper Lie submodule `M × 0` of the module sheared by `D`, into which `L` carries
   -- everything.
   let e := LieDerivation.ShearedModule.ofProd D
