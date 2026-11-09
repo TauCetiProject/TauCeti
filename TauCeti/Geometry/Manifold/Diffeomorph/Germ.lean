@@ -9,6 +9,9 @@ public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Normed.Operator.PositiveDeterminant
 public import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
 
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.MeanValue
+
 /-!
 # Germs of diffeomorphisms with small compact support
 
@@ -137,6 +140,37 @@ private theorem Realizes.of_leftInverse {n : ℕ∞} {c : E} {g g' : E → E} (h
 
 variable [FiniteDimensional ℝ E]
 
+omit [FiniteDimensional ℝ E] in
+/-- The derivative of the cutoff perturbation `ρ • (h - id)` is at most `2⁻¹` in norm on the closed
+ball of radius `2 r`, when `δ = (2 * (1 + 2 * C))⁻¹`. -/
+private theorem norm_fderiv_cutoff_smul_le {c : E} {h : E → E} {r C δ : ℝ} {ρ : E → ℝ}
+    {ρ' : E → E →L[ℝ] ℝ} (hr : 0 < r) (hC0 : 0 ≤ C) (hδdef : δ = (2 * (1 + 2 * C))⁻¹)
+    (hρ : ∀ x, 0 ≤ ρ x ∧ ρ x ≤ 1) (hρd : ∀ x, HasFDerivAt ρ (ρ' x) x)
+    (hρ'le : ∀ x, ‖ρ' x‖ ≤ C * r⁻¹)
+    (hhd : ∀ x ∈ closedBall c (2 * r),
+      HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x)
+    (hδ : ∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ)
+    (hmv : ∀ x ∈ closedBall c (2 * r), ‖h x - x‖ ≤ δ * (2 * r))
+    {x : E} (hx : x ∈ closedBall c (2 * r)) :
+    ‖fderiv ℝ (fun y ↦ ρ y • (h y - y)) x‖ ≤ 2⁻¹ := by
+  have hD : HasFDerivAt (fun y ↦ ρ y • (h y - y))
+      (ρ x • (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) + (ρ' x).smulRight (h x - x)) x :=
+    (hρd x).smul (hhd x hx)
+  have hρx : ‖ρ x‖ ≤ 1 := by
+    rw [Real.norm_of_nonneg (hρ x).1]
+    exact (hρ x).2
+  rw [hD.fderiv]
+  calc _ ≤ ‖ρ x • (fderiv ℝ h x - ContinuousLinearMap.id ℝ E)‖ +
+        ‖(ρ' x).smulRight (h x - x)‖ := norm_add_le _ _
+    _ ≤ 1 * δ + C * r⁻¹ * (δ * (2 * r)) := by
+      gcongr
+      · exact (norm_smul_le _ _).trans (mul_le_mul hρx (hδ x hx) (norm_nonneg _) zero_le_one)
+      · rw [ContinuousLinearMap.norm_smulRight_apply]
+        exact mul_le_mul (hρ'le x) (hmv x hx) (norm_nonneg _) (by positivity)
+    _ = 2⁻¹ := by
+      rw [hδdef]
+      field_simp
+
 /-- **Cutting off.** There is `δ > 0`, depending only on `E`, such that a `C^n` map `h` fixing `c`
 whose derivative is within `δ` of the identity on the closed ball of radius `2 r` about `c` agrees
 on the closed ball of radius `r` with a `C^n` diffeomorphism which is the identity off the closed
@@ -147,41 +181,13 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
       (∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ) →
       ∃ φ : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E, EqOn φ h (closedBall c r) ∧
         EqOn φ id (closedBall c (2 * r))ᶜ := by
-  let β : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hβ : Continuous (fderiv ℝ β) := (β.contDiff (n := 1)).continuous_fderiv one_ne_zero
-  obtain ⟨C, hC⟩ := hβ.bounded_above_of_compact_support (β.hasCompactSupport.fderiv (𝕜 := ℝ))
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  obtain ⟨C, hC0, hρ⟩ := exists_cutoff_fderiv_bound (E := E)
   refine ⟨(2 * (1 + 2 * C))⁻¹, by positivity, ?_⟩
   intro n hn c h r hr hhc hcd hδ
   have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   set δ : ℝ := (2 * (1 + 2 * C))⁻¹ with hδdef
   have hδ0 : 0 ≤ δ := by positivity
-  -- The cutoff `ρ x = β (r⁻¹ • (x - c))`, equal to `1` on `closedBall c r` and to `0` off
-  -- `ball c (2 * r)`, with derivative of norm at most `C * r⁻¹`.
-  let ρ : E → ℝ := fun x ↦ β (r⁻¹ • (x - c))
-  let ρ' : E → E →L[ℝ] ℝ := fun x ↦
-    (fderiv ℝ β (r⁻¹ • (x - c))).comp (r⁻¹ • ContinuousLinearMap.id ℝ E)
-  have hnorm (x : E) : ‖r⁻¹ • (x - c)‖ = r⁻¹ * dist x c := by
-    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hr.le), dist_eq_norm]
-  have hρ1 (x : E) (hx : x ∈ closedBall c r) : ρ x = 1 := by
-    refine β.one_of_mem_closedBall ?_
-    rw [mem_closedBall, dist_zero_right, hnorm]
-    exact (inv_mul_le_one₀ hr).2 (mem_closedBall.1 hx)
-  have hρ0 (x : E) (hx : 2 * r < dist x c) : ρ x = 0 := by
-    refine Function.notMem_support.1 fun hx' ↦ ?_
-    have hmem : r⁻¹ • (x - c) ∈ Function.support β := hx'
-    rw [β.support_eq, mem_ball, dist_zero_right, hnorm] at hmem
-    have h2 : r⁻¹ * dist x c < 2 := hmem
-    rw [inv_mul_lt_iff₀ hr] at h2
-    linarith
-  have hρd (x : E) : HasFDerivAt ρ (ρ' x) x :=
-    ((β.contDiff (n := 1)).differentiable one_ne_zero _).hasFDerivAt.comp x
-      (((hasFDerivAt_id x).sub_const c).const_smul r⁻¹)
-  have hρ'le (x : E) : ‖ρ' x‖ ≤ C * r⁻¹ := by
-    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _) hC0)
-    refine (norm_smul_le r⁻¹ (ContinuousLinearMap.id ℝ E)).trans ?_
-    rw [Real.norm_of_nonneg (inv_nonneg.2 hr.le)]
-    exact mul_le_of_le_one_right (inv_nonneg.2 hr.le) ContinuousLinearMap.norm_id_le
+  obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le⟩ := hρ c r hr
   -- The perturbation `u = ρ • (h - id)`.
   let u : E → E := fun x ↦ ρ x • (h x - x)
   have hu0 (x : E) (hx : x ∉ closedBall c (2 * r)) : u =ᶠ[𝓝 x] fun _ ↦ 0 := by
@@ -192,37 +198,15 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
   have hucd : ContDiff ℝ n u := by
     refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
     by_cases hx : x ∈ closedBall c (2 * r)
-    · exact (β.contDiff.comp (contDiff_const.smul (contDiff_id.sub contDiff_const))).contDiffAt.smul
-        ((hcd x hx).sub contDiffAt_id)
+    · exact (hρcd n).contDiffAt.smul ((hcd x hx).sub contDiffAt_id)
     · exact contDiffAt_const.congr_of_eventuallyEq (hu0 x hx)
   have hhd (x : E) (hx : x ∈ closedBall c (2 * r)) :
       HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x :=
     ((hcd x hx).differentiableAt hn').hasFDerivAt.sub (hasFDerivAt_id x)
-  -- By the mean value inequality, `h - id` moves points of the ball by at most `δ ‖x - c‖`.
-  have hmv (x : E) (hx : x ∈ closedBall c (2 * r)) : ‖h x - x‖ ≤ δ * (2 * r) := by
-    have := Convex.norm_image_sub_le_of_norm_fderiv_le (fun y hy ↦ (hhd y hy).differentiableAt)
-      (fun y hy ↦ (hhd y hy).fderiv ▸ hδ y hy) (convex_closedBall c (2 * r))
-      (mem_closedBall_self (by positivity)) hx
-    rw [hhc, sub_self, sub_zero] at this
-    exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
+  have hmv := fun x hx ↦ norm_sub_le_of_norm_fderiv_sub_id_le hr hδ0 hhc hhd hδ (x := x) hx
   have hud (x : E) : ‖fderiv ℝ u x‖ ≤ 2⁻¹ := by
     by_cases hx : x ∈ closedBall c (2 * r)
-    · have hD : HasFDerivAt u (ρ x • (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) +
-          (ρ' x).smulRight (h x - x)) x := (hρd x).smul (hhd x hx)
-      have hρx : ‖ρ x‖ ≤ 1 := by
-        rw [Real.norm_of_nonneg β.nonneg]
-        exact β.le_one
-      rw [hD.fderiv]
-      calc _ ≤ ‖ρ x • (fderiv ℝ h x - ContinuousLinearMap.id ℝ E)‖ +
-            ‖(ρ' x).smulRight (h x - x)‖ := norm_add_le _ _
-        _ ≤ 1 * δ + C * r⁻¹ * (δ * (2 * r)) := by
-          gcongr
-          · exact (norm_smul_le _ _).trans (mul_le_mul hρx (hδ x hx) (norm_nonneg _) zero_le_one)
-          · rw [ContinuousLinearMap.norm_smulRight_apply]
-            exact mul_le_mul (hρ'le x) (hmv x hx) (norm_nonneg _) (by positivity)
-        _ = 2⁻¹ := by
-          rw [hδdef]
-          field_simp
+    · exact norm_fderiv_cutoff_smul_le hr hC0 hδdef hρ01 hρd hρ'le hhd hδ hmv hx
     · rw [(hu0 x hx).fderiv_eq]
       simp
   have hlip : LipschitzWith 2⁻¹ u :=

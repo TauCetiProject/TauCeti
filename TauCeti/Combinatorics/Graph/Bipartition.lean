@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.Graph.Incidence
 public import TauCeti.Combinatorics.Graph.VertexCover
 
@@ -32,6 +33,9 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.isBipartition_comm`: a bipartition is symmetric in its two sides.
 * `Graph.IsBipartition.loopless`: a multigraph with a bipartition has no loops.
 * `Graph.IsBipartition.finite`: a multigraph with a bipartition has finitely many actual vertices.
+* `Graph.IsBipartition.deleteEdges`: deleting edges preserves a displayed bipartition.
+* `SimpleGraph.isBipartition_ofSimpleGraph_iff`: covering bipartitions of
+  `Graph.ofSimpleGraph H` are precisely bipartitions of `H` whose two sides cover every vertex.
 * `Graph.IsBipartition.isVertexCover_left`: the side `L` of a bipartition is a vertex cover, and
   similarly for `R`.
 * `Graph.IsBipartition.sum_sum_incidentEdges_left`: summing over `L` the values of the edges
@@ -97,6 +101,14 @@ theorem finite (h : G.IsBipartition L R) : Finite V(G) := by
   exact Set.finite_univ_iff.1 <| (L ∪ R).finite_toSet.subset fun x _ ↦ by
     simpa using h.mem_or_mem x
 
+/-- Deleting any set of edges preserves a displayed bipartition. The actual vertex set, including
+its isolated vertices, is unchanged. -/
+theorem deleteEdges (h : G.IsBipartition L R) (F : Set β) :
+    (G.deleteEdges F).IsBipartition L R where
+  disjoint := h.disjoint
+  mem_or_mem := h.mem_or_mem
+  isLink he := h.isLink (he.mono Graph.deleteEdges_le)
+
 /-- The side `L` of a bipartition is a vertex cover. -/
 theorem isVertexCover_left (h : G.IsBipartition L R) : G.IsVertexCover (L : Set V(G)) :=
   isVertexCover_def.2 fun _ _ _ he ↦ (h.isLink he).imp And.left And.right
@@ -154,3 +166,59 @@ theorem isBipartition_comm : G.IsBipartition L R ↔ G.IsBipartition R L :=
   ⟨IsBipartition.symm, IsBipartition.symm⟩
 
 end Graph
+
+namespace SimpleGraph
+
+variable {α : Type u}
+
+/-- Finite sets `L` and `R` form a covering bipartition of the multigraph associated to a simple
+graph `H` exactly when they are bipartition classes of `H` and cover its entire vertex type.
+
+The covering condition is separate because `SimpleGraph.IsBipartiteWith` permits isolated
+vertices outside both displayed sets, whereas `Graph.IsBipartition` partitions all actual
+vertices. -/
+theorem isBipartition_ofSimpleGraph_iff (H : SimpleGraph α)
+    (L R : Finset V(Graph.ofSimpleGraph H)) :
+    (Graph.ofSimpleGraph H).IsBipartition L R ↔
+      H.IsBipartiteWith (Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)))
+          (Subtype.val '' (R : Set V(Graph.ofSimpleGraph H))) ∧
+        Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) ∪
+          Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = Set.univ := by
+  constructor
+  · intro h
+    refine ⟨⟨?_, ?_⟩, Set.eq_univ_of_forall fun x ↦ ?_⟩
+    · rw [Set.disjoint_left]
+      rintro _ ⟨x, hxL, rfl⟩ ⟨y, hxR, hyx⟩
+      have hxy : x = y := Subtype.ext hyx.symm
+      exact Finset.disjoint_left.mp h.disjoint hxL (hxy ▸ hxR)
+    · intro x y hxy
+      obtain ⟨e, he⟩ : (Graph.ofSimpleGraph H).Adj x y :=
+        (Graph.ofSimpleGraph_adj_iff x y).2 hxy
+      rcases h.isLink (x := ⟨x, Set.mem_univ x⟩) (y := ⟨y, Set.mem_univ y⟩) he with
+        hxy | hxy
+      · exact Or.inl ⟨⟨_, hxy.1, rfl⟩, ⟨_, hxy.2, rfl⟩⟩
+      · exact Or.inr ⟨⟨_, hxy.1, rfl⟩, ⟨_, hxy.2, rfl⟩⟩
+    · rcases h.mem_or_mem ⟨x, Set.mem_univ x⟩ with hx | hx
+      · exact Or.inl ⟨_, hx, rfl⟩
+      · exact Or.inr ⟨_, hx, rfl⟩
+  · rintro ⟨h, hcover⟩
+    refine ⟨Finset.disjoint_left.mpr fun x hxL hxR ↦ ?_, fun x ↦ ?_, fun {e x y} he ↦ ?_⟩
+    · exact Set.disjoint_left.mp h.disjoint ⟨x, hxL, rfl⟩ ⟨x, hxR, rfl⟩
+    · have hx : x.1 ∈ Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) ∪
+          Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) := by
+        rw [hcover]
+        exact Set.mem_univ x.1
+      rcases hx with ⟨z, hz, hzx⟩ | ⟨z, hz, hzx⟩
+      · exact Or.inl (Subtype.ext hzx ▸ hz)
+      · exact Or.inr (Subtype.ext hzx ▸ hz)
+    · have hxy : H.Adj x.1 y.1 :=
+        (Graph.ofSimpleGraph_adj_iff x.1 y.1).1 ⟨_, he⟩
+      rcases h.mem_of_adj hxy with hxy | hxy
+      · obtain ⟨x', hx'L, hxx'⟩ := hxy.1
+        obtain ⟨y', hy'R, hyy'⟩ := hxy.2
+        exact Or.inl ⟨Subtype.ext hxx' ▸ hx'L, Subtype.ext hyy' ▸ hy'R⟩
+      · obtain ⟨x', hx'R, hxx'⟩ := hxy.1
+        obtain ⟨y', hy'L, hyy'⟩ := hxy.2
+        exact Or.inr ⟨Subtype.ext hxx' ▸ hx'R, Subtype.ext hyy' ▸ hy'L⟩
+
+end SimpleGraph

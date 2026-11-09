@@ -1,0 +1,30 @@
+name: Test labels from comments
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/labels-from-comments.yml
+      - .github/workflows/test-labels-from-comments.yml
+      - scripts/test_labels_from_comments.cjs
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/labels-from-comments.yml
+      - .github/workflows/test-labels-from-comments.yml
+      - scripts/test_labels_from_comments.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Keep comment commands responsive when GitHub-hosted runners are backlogged.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: node --test scripts/test_labels_from_comments.cjs

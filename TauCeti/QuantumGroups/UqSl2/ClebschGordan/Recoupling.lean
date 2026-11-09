@@ -328,7 +328,7 @@ theorem clebschGordanRightInclusion_zero_vec_zero (hq : IsGenericQuantumParamete
 theorem clebschGordanLeftInclusion_vec (hq : IsGenericQuantumParameter q) (i : Fin (min m n + 1))
     (j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)) (l : ℕ) :
     clebschGordanLeftInclusion (ε := ε) (δ := δ) (ζ := ζ) hq i j (vec q _ _ l) =
-      (∏ c ∈ Finset.range l, quantumInteger q (c + 1))⁻¹ •
+      (quantumFactorial q l)⁻¹ •
         f q ^ l • clebschGordanLeftInclusion (ε := ε) (δ := δ) (ζ := ζ) hq i j (vec q _ _ 0) := by
   conv_lhs => rw [clebschGordanLeftInclusion, LinearMap.comp_apply, clebschGordanInclusion_vec,
     LinearMap.map_smul_of_tower, map_smul]
@@ -338,7 +338,7 @@ theorem clebschGordanLeftInclusion_vec (hq : IsGenericQuantumParameter q) (i : F
 theorem clebschGordanRightInclusion_vec (hq : IsGenericQuantumParameter q) (r : Fin (min n p + 1))
     (s : Fin (min m (n + p - 2 * (r : ℕ)) + 1)) (l : ℕ) :
     clebschGordanRightInclusion (ε := ε) (δ := δ) (ζ := ζ) hq r s (vec q _ _ l) =
-      (∏ c ∈ Finset.range l, quantumInteger q (c + 1))⁻¹ •
+      (quantumFactorial q l)⁻¹ •
         f q ^ l • clebschGordanRightInclusion (ε := ε) (δ := δ) (ζ := ζ) hq r s (vec q _ _ 0) := by
   conv_lhs => rw [clebschGordanRightInclusion, LinearMap.comp_apply, clebschGordanInclusion_vec,
     LinearMap.map_smul_of_tower, map_smul]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import Mathlib.RingTheory.KrullDimension.LocalRing
+public import TauCeti.RingTheory.KrullDimension.LocalRing
 public import TauCeti.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.Length
 
@@ -106,7 +106,7 @@ original ring. The two vanishing criteria use `Module.length_eq_zero_iff` and
 `Submodule.Quotient.subsingleton_iff`, the general form of the fact that `R ⧸ I` is trivial
 exactly when `I = ⊤`. Additivity is `Ring.ord_mul`, the additivity of the order of vanishing over a
 product, read as a length. The finiteness of an `𝔪`-primary pair of equations, and with it the
-natural number it becomes, is `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal` in
+natural number it becomes, is `Ideal.isFiniteLength_quotient_of_isMaximal_radical` in
 `TauCeti.RingTheory.Length`.
 
 The four statements for an irreducible first equation use the dimension drop of
@@ -175,8 +175,7 @@ that length is the local intersection multiplicity of the two curves there, and 
 transported here is one of intersection numbers. -/
 theorem length_quotient_span_pair_comm (f g : R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = Module.length R (R ⧸ Ideal.span {g, f}) := by
-  refine congrArg (fun I : Ideal R => Module.length R (R ⧸ I)) ?_
-  rw [Ideal.span_insert f ({g} : Set R), Ideal.span_insert g ({f} : Set R), sup_comm]
+  rw [Ideal.span_pair_comm]
 
 /-- **The length of the quotient by two equations vanishes exactly when they generate the unit
 ideal.** In an arbitrary commutative ring, the module `R ⧸ (f, g)` is of length zero exactly when
@@ -290,7 +289,7 @@ variable {R : Type u} [CommRing R] [IsNoetherianRing R] [IsLocalRing R]
 length, which is a natural number.** Let `(R, 𝔪)` be a noetherian local ring, and let `f` and `g`
 be two equations generating an ideal with radical `𝔪`. Then the length
 `Module.length R (R ⧸ (f, g))` is finite, by
-`Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`, hence a natural number. No dimension
+`Ideal.isFiniteLength_quotient_of_isMaximal_radical`, hence a natural number. No dimension
 hypothesis is placed on `R`: what the condition says is that the closed point is the only common
 point of the two equations there, and in a two-dimensional local ring it is what says that the two
 curves they define meet properly at the closed point and share no component there. The finite
@@ -313,7 +312,8 @@ theorem exists_nat_length_quotient_span_pair {f g : R}
     (hprim : (Ideal.span {f, g}).radical = maximalIdeal R) :
     ∃ n : ℕ, Module.length R (R ⧸ Ideal.span {f, g}) = n := by
   have hc : Module.length R (R ⧸ Ideal.span {f, g}) ≠ ⊤ :=
-    Module.length_ne_top_iff.mpr (Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal _ hprim)
+    Module.length_ne_top_iff.mpr
+      (Ideal.isFiniteLength_quotient_of_isMaximal_radical _ (hprim ▸ maximalIdeal.isMaximal R))
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
 end NoetherianLocalRing
@@ -365,26 +365,16 @@ theorem radical_span_pair_eq_maximalIdeal_of_prime (hd : ringKrullDim R = 2) {f 
   -- one-dimensional local domain, so the ideal it generates has that maximal ideal in its radical
   have hg0 : Ideal.Quotient.mk (Ideal.span {f}) g ≠ 0 :=
     fun hzero => hg ((Submodule.Quotient.mk_eq_zero _).mp hzero)
+  -- the image of `g` lies in the maximal ideal of the curve, being the image of `g ∈ 𝔪`
+  have hgm' : Ideal.Quotient.mk (Ideal.span {f}) g ∈ maximalIdeal (R ⧸ Ideal.span {f}) := by
+    rw [← map_maximalIdeal_of_surjective (Ideal.Quotient.mk (Ideal.span {f}))
+      Ideal.Quotient.mk_surjective]
+    exact Ideal.mem_map_of_mem _ hgm
   have hA : (Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g}).radical
-      = maximalIdeal (R ⧸ Ideal.span {f}) := by
-    -- a nonzero element of a one-dimensional local domain has the maximal ideal in the radical of
-    -- the ideal it generates
-    have hle : maximalIdeal (R ⧸ Ideal.span {f})
-        ≤ (Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g}).radical :=
-      ((ringKrullDim_eq_one_iff_of_isLocalRing_isDomain).mp hdim).2 _ hg0
-    -- and the image of `g` lies in the maximal ideal of the curve, being the image of `g ∈ 𝔪`
-    have hge : (Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g}).radical
-        ≤ maximalIdeal (R ⧸ Ideal.span {f}) := by
-      rw [Ideal.radical_eq_sInf]
-      refine sInf_le ⟨?_, inferInstance⟩
-      rw [Ideal.span_le, Set.singleton_subset_iff,
-        ← map_maximalIdeal_of_surjective (Ideal.Quotient.mk (Ideal.span {f}))
-          Ideal.Quotient.mk_surjective]
-      exact Ideal.mem_map_of_mem _ hgm
-    exact le_antisymm hge hle
-  have hle' : Ideal.span {f} ≤ Ideal.span {f, g} := by
-    rw [Ideal.span_insert f ({g} : Set R)]
-    exact le_sup_left
+      = maximalIdeal (R ⧸ Ideal.span {f}) :=
+    radical_span_singleton_eq_maximalIdeal_of_ringKrullDim_eq_one hdim hgm' hg0
+  have hle' : Ideal.span {f} ≤ Ideal.span {f, g} :=
+    Ideal.span_mono (Set.singleton_subset_iff.2 (Set.mem_insert _ _))
   -- under the quotient by `(f)`, the image of the ideal `(f, g)` is the ideal generated by the
   -- image of `g`, the image of `(f)` being the zero ideal
   have h1 : (Ideal.span {f}).map (Ideal.Quotient.mk (Ideal.span {f})) = ⊥ :=
@@ -407,12 +397,10 @@ theorem radical_span_pair_eq_maximalIdeal_of_prime (hd : ringKrullDim R = 2) {f 
   -- both ideals contain the kernel `(f)` of the quotient map, so their images determine them:
   -- `Ideal.map_eq_iff_sup_ker_eq_of_surjective` compares the two suprema with that kernel, and
   -- each of the two suprema is the ideal itself
-  have hk : RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) ≤ (Ideal.span {f, g}).radical := by
-    rw [Ideal.mk_ker]
-    exact hle'.trans Ideal.le_radical
-  have hm : RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) ≤ maximalIdeal R := by
-    rw [Ideal.mk_ker]
-    exact (Ideal.span_singleton_le_iff_mem (I := maximalIdeal R)).mpr hfm
+  have hk : RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) ≤ (Ideal.span {f, g}).radical :=
+    Ideal.mk_ker.le.trans (hle'.trans Ideal.le_radical)
+  have hm : RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) ≤ maximalIdeal R :=
+    Ideal.mk_ker.le.trans hle
   have h1 : (Ideal.span {f, g}).radical
       = (Ideal.span {f, g}).radical ⊔ RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) :=
     (sup_eq_left.mpr hk).symm
@@ -435,8 +423,9 @@ theorem isFiniteLength_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f 
     (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime) (hg : g ∉ Ideal.span {f}) :
     IsFiniteLength R (R ⧸ Ideal.span {f, g}) := by
   by_cases hgm : g ∈ maximalIdeal R
-  · exact Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal (Ideal.span {f, g})
-      (radical_span_pair_eq_maximalIdeal_of_prime hd hfnd hfprime hgm hg)
+  · exact Ideal.isFiniteLength_quotient_of_isMaximal_radical (Ideal.span {f, g})
+      (radical_span_pair_eq_maximalIdeal_of_prime hd hfnd hfprime hgm hg ▸
+        maximalIdeal.isMaximal R)
   · -- a `g` outside the maximal ideal of the local ring `R` is a unit, so `(f, g)` is the unit
     -- ideal and the quotient is the zero ring, of length zero
     have hfu : IsUnit g := (IsLocalRing.notMem_maximalIdeal (R := R)).mp hgm

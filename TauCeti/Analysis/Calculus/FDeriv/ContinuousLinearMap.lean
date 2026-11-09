@@ -28,7 +28,8 @@ field of symmetric bilinear maps takes symmetric values. A continuous linear map
 function near a point vanishes on its derivative there. Finally, a family of continuous linear maps
 out of a finite-dimensional space is differentiable, or has a given derivative in a scalar variable,
 within a set or at a point, exactly when each of its evaluations does; this is how derivatives of
-families of linear and bilinear maps are tested on vectors.
+families of linear and bilinear maps are tested on vectors. Composing a family of continuous linear
+maps on the left with a fixed one composes its derivative with that map.
 
 ## Main declarations
 
@@ -51,6 +52,8 @@ families of linear and bilinear maps are tested on vectors.
   derivative `c' v`; `TauCeti.hasDerivAt_clm_apply` is the pointwise form.
 * `TauCeti.differentiableWithinAt_clm_apply₂`, `TauCeti.hasDerivWithinAt_clm_apply₂` and their
   pointwise forms: the same criteria for families of bilinear maps, tested on pairs of vectors.
+* `HasDerivAt.const_clm_comp`: composing a family of continuous linear maps on the left with a
+  fixed continuous linear map composes its derivative with that map.
 -/
 
 public section
@@ -220,6 +223,13 @@ theorem hasDerivAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
     [FiniteDimensional 𝕜 F'] {c : 𝕜 → F →L[𝕜] F' →L[𝕜] G} {c' : F →L[𝕜] F' →L[𝕜] G} {t : 𝕜} :
     HasDerivAt c c' t ↔ ∀ v w, HasDerivAt (fun s ↦ c s v w) (c' v w) t :=
   hasDerivAt_clm_apply.trans (forall_congr' fun _ ↦ hasDerivAt_clm_apply)
+
+/-- Composing a family of continuous linear maps on the left with a fixed continuous linear map
+`g` composes its derivative with `g`: the derivative form of `Continuous.const_clm_comp`. -/
+theorem _root_.HasDerivAt.const_clm_comp {c : 𝕜 → E →L[𝕜] F} {c' : E →L[𝕜] F} {t : 𝕜}
+    (hc : HasDerivAt c c' t) (g : F →L[𝕜] G) :
+    HasDerivAt (fun s ↦ g.comp (c s)) (g.comp c') t := by
+  simpa using (hasDerivAt_const t g).clm_comp hc
 
 end TauCeti
 

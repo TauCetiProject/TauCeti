@@ -164,6 +164,65 @@ private theorem coeff_le_max_gaussValuation {n : ℕ} (hn : v (algebraMap O K ϖ
           field_simp
       _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₁.2 y i
 
+/-- The identity behind the lift of `y / (p t)ᵐ`: if `w * t = 1` and `z * q = tⁿ` (so `z = tⁿ/q`
+and `w = t⁻¹`), then `b w^m (q t)^m + ∑_{i < m} cᵢ w^(m + n (m - i)) z^(m - i) (q t)^m` equals
+`∑_{i < m} cᵢ qⁱ + qᵐ b`. -/
+private theorem sum_mul_eq_of_mul_eq_one {R : Type*} [CommRing R] {w t z q : R} {n m : ℕ}
+    (hw : w * t = 1) (hz : z * q = t ^ n) (c : ℕ → R) (b : R) :
+    b * w ^ m * (q * t) ^ m +
+        ∑ i ∈ Finset.range m, c i * w ^ (m + n * (m - i)) * z ^ (m - i) * (q * t) ^ m =
+      ∑ i ∈ Finset.range m, c i * q ^ i + q ^ m * b := by
+  -- each digit term: `w^(m + n (m - i)) z^(m - i) (q t)ᵐ = qⁱ`
+  have hterm (i : ℕ) (hi : i ≤ m) :
+      w ^ (m + n * (m - i)) * z ^ (m - i) * (q * t) ^ m = q ^ i := by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hi
+    rw [Nat.add_sub_cancel_left]
+    calc _ = (w * t) ^ (i + k) * (w ^ n * (z * q)) ^ k * q ^ i := by ring
+      _ = q ^ i := by rw [hz, ← mul_pow, hw]; simp
+  rw [add_comm]
+  congr 1
+  · refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [← hterm i (Finset.mem_range.mp hi).le]
+    ring
+  · calc _ = b * (w * t) ^ m * q ^ m := by ring
+      _ = _ := by rw [hw]; ring
+
+include hϖ in
+/-- **The lift has Gauss norm at most the interval norm.** The lift
+`b / [ϖ]ᵐ + ∑_{i < m} ([yᵢ] / [ϖ]^(m + n (m - i))) X^(m - i)` of `y / (p [ϖ])ᵐ`, where
+`y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b` and `X` has Gauss norm one, has Gauss norm at most the norm of
+`y / (p [ϖ])ᵐ` in the interval ring, when `v(ϖ)ⁿ = ρ₁`. -/
+private theorem norm_lift_le {n : ℕ} (hn : v (algebraMap O K ϖ) ^ n = ρ₁) {y b : 𝕎 O}
+    {s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)} {m : ℕ}
+    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s)
+    (hb : y = ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
+      (p : 𝕎 O) ^ m * b)
+    (u : Aˣ) (hu' : (u : A) = algebraMap (𝕎 O) A (teichmuller p ϖ)) (X' : 𝕊) (hX' : ‖X'‖ = 1) :
+    ‖algebraMap A 𝕊 (algebraMap (𝕎 O) A b * ((u⁻¹ : Aˣ) : A) ^ m) +
+        ∑ i ∈ Finset.range m, algebraMap A 𝕊 (algebraMap (𝕎 O) A
+          (teichmuller p (y.teichmullerCoeff i)) * ((u⁻¹ : Aˣ) : A) ^ (m + n * (m - i))) *
+          X' ^ (m - i)‖ ≤ ‖((IsLocalization.mk' B₀ y s : B₀) : B)‖ := by
+  have hu : ‖((u⁻¹ : Aˣ) : A)‖ = (v (algebraMap O K ϖ) : ℝ)⁻¹ := by
+    have h : ‖(u : A)‖ * ‖((u⁻¹ : Aˣ) : A)‖ = 1 := by rw [← norm_mul, u.mul_inv, norm_one]
+    rw [hu', norm_algebraMap_radiusRing, gaussValuation_teichmuller] at h
+    exact eq_inv_of_mul_eq_one_right h
+  obtain ⟨hβ, hα⟩ := coeff_le_max_gaussValuation p hv hϖ hρ₁ hρ₂ hn hb
+  have hnormC (a : A) : ‖algebraMap A 𝕊 a‖ = ‖a‖ := MvPowerSeries.norm_C a
+  have hd : ‖((IsLocalization.mk' B₀ y s : B₀) : B)‖ =
+      ↑(max (gaussValuation p hv ρ₁ hρ₁.2 y * ((ρ₁ * v (algebraMap O K ϖ)) ^ m)⁻¹)
+        (gaussValuation p hv ρ₂ hρ₂.2 y * ((ρ₂ * v (algebraMap O K ϖ)) ^ m)⁻¹)) := by
+    rw [Completion.norm_coe, IntervalLocalization.norm_def, gaussValuationAway_mk',
+      gaussValuationAway_mk', ← hm]
+    simp
+  rw [hd]
+  refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
+  · rw [hnormC, norm_mul, norm_pow, hu, norm_algebraMap_radiusRing, inv_pow]
+    exact_mod_cast hβ
+  · refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun i hi ↦ ?_
+    rw [norm_mul, norm_pow, hX', one_pow, mul_one, hnormC, norm_mul, norm_pow, hu,
+      norm_algebraMap_radiusRing, gaussValuation_teichmuller, inv_pow]
+    exact_mod_cast hα i (Finset.mem_range.mp hi)
+
 /-- **The lift of the dense subring.** If `v(ϖ)ⁿ = ρ₁`, every element `d` of `𝕎 O[1/(p [ϖ])]` is
 the image of a polynomial in `X` of Gauss norm at most `‖d‖`. -/
 private theorem exists_restrictedSeries_toIntervalRing_eq_coe (hρ : ρ₁ ≤ ρ₂) {n : ℕ}
@@ -187,10 +246,6 @@ private theorem exists_restrictedSeries_toIntervalRing_eq_coe (hρ : ρ₁ ≤ �
   set β : A := ι b * ((u⁻¹ : Aˣ) : A) ^ m
   set X' : 𝕊 := ⟨MvPowerSeries.X 0, MvPowerSeries.isRestricted_monomial _ (Finsupp.single 0 1) 1⟩
   have hu' : (u : A) = ι (teichmuller p ϖ) := IsUnit.unit_spec _
-  have hu : ‖((u⁻¹ : Aˣ) : A)‖ = (v (algebraMap O K ϖ) : ℝ)⁻¹ := by
-    have h : ‖(u : A)‖ * ‖((u⁻¹ : Aˣ) : A)‖ = 1 := by rw [← norm_mul, u.mul_inv, norm_one]
-    rw [hu', norm_algebraMap_radiusRing, gaussValuation_teichmuller] at h
-    exact eq_inv_of_mul_eq_one_right h
   refine ⟨algebraMap A 𝕊 β + ∑ i ∈ Finset.range m, algebraMap A 𝕊 (α i) * X' ^ (m - i), ?_, ?_⟩
   · -- `ψ` sends `X` to `z = [ϖ]ⁿ/p`, so the polynomial goes to `y / (p [ϖ])ᵐ`.
     set φ := toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ
@@ -215,44 +270,12 @@ private theorem exists_restrictedSeries_toIntervalRing_eq_coe (hρ : ρ₁ ≤ �
     have hd : ((IsLocalization.mk' B₀ y s : B₀) : B) * ιB s = ιB y := by
       rw [Completion.algebraMap_def, Completion.algebraMap_def, ← Completion.coe_mul,
         IsLocalization.mk'_spec]
-    -- each digit term: `w^(m + n (m - i)) z^(m - i) (p [ϖ])ᵐ = pⁱ`
-    have hterm (i : ℕ) (hi : i ≤ m) :
-        w ^ (m + n * (m - i)) * z ^ (m - i) * ((p : B) * ιB (teichmuller p ϖ)) ^ m =
-          (p : B) ^ i := by
-      obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hi
-      rw [Nat.add_sub_cancel_left]
-      calc _ = (w * ιB (teichmuller p ϖ)) ^ (i + k) * (w ^ n * (z * p)) ^ k * (p : B) ^ i := by
-            ring
-        _ = (p : B) ^ i := by rw [hX, map_pow, ← mul_pow, hw]; simp
     apply hsu.mul_right_cancel
     rw [hd, hb, hs]
     simp only [map_add, map_sum, map_mul, map_pow, hCe, hXe, hC, hz, hwu, hφι, α, β, y',
       map_natCast, add_mul, Finset.sum_mul]
-    rw [add_comm]
-    congr 1
-    · refine Finset.sum_congr rfl fun i hi ↦ ?_
-      rw [← hterm i (Finset.mem_range.mp hi).le]
-      ring
-    · calc _ = ιB b * (w * ιB (teichmuller p ϖ)) ^ m * (p : B) ^ m := by ring
-        _ = _ := by rw [hw]; ring
-  · -- the coefficient bounds of `coeff_le_max_gaussValuation`
-    obtain ⟨hβ, hα⟩ := coeff_le_max_gaussValuation p hv hϖ hρ₁ hρ₂ hn hb
-    have hnormC (a : A) : ‖algebraMap A 𝕊 a‖ = ‖a‖ := MvPowerSeries.norm_C a
-    have hX' : ‖X'‖ = 1 := MvPowerSeries.norm_X 0
-    have hd : ‖((IsLocalization.mk' B₀ y s : B₀) : B)‖ =
-        ↑(max (gaussValuation p hv ρ₁ hρ₁.2 y * ((ρ₁ * v (algebraMap O K ϖ)) ^ m)⁻¹)
-          (gaussValuation p hv ρ₂ hρ₂.2 y * ((ρ₂ * v (algebraMap O K ϖ)) ^ m)⁻¹)) := by
-      rw [Completion.norm_coe, IntervalLocalization.norm_def, gaussValuationAway_mk',
-        gaussValuationAway_mk', ← hm]
-      simp
-    rw [hd]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-    · rw [hnormC, norm_mul, norm_pow, hu, norm_algebraMap_radiusRing, inv_pow]
-      exact_mod_cast hβ
-    · refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun i hi ↦ ?_
-      rw [norm_mul, norm_pow, hX', one_pow, mul_one, hnormC, norm_mul, norm_pow, hu,
-        norm_algebraMap_radiusRing, gaussValuation_teichmuller, inv_pow]
-      exact_mod_cast hα i (Finset.mem_range.mp hi)
+    exact sum_mul_eq_of_mul_eq_one hw (by rw [hX, map_pow]) _ _
+  · exact norm_lift_le p hv hϖ hϖ' hρ₁ hρ₂ hn hm hb u hu' X' (MvPowerSeries.norm_X 0)
 
 /-- **Strict surjectivity of `A^{ρ₂}{X} → B^{[ρ₁, ρ₂]}`**, the surjective half of the third
 isomorphism of Kedlaya's Lemma 4.9. Let

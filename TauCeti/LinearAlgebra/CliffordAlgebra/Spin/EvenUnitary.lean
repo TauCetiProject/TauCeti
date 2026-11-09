@@ -545,6 +545,13 @@ theorem spinGroupToEven_mul_reverseEven (x : spinGroup Q) :
   rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
   exact evenUnitaryGroupEvenPart_mul_reverseEven Q _
 
+/-- Reversal inverts the even part of a Spin element. -/
+@[simp]
+theorem reverseEven_spinGroupToEven_inv (x : spinGroup Q) :
+    reverseEven Q (spinGroupToEven Q x⁻¹) = spinGroupToEven Q x :=
+  left_inv_eq_right_inv (reverseEven_spinGroupToEven_mul_self Q x⁻¹)
+    (by rw [← map_mul, inv_mul_cancel, map_one])
+
 /-- The canonical map from Spin to the even unitary carrier is injective. -/
 theorem spinGroupToEvenUnitary_injective :
     Function.Injective (spinGroupToEvenUnitary Q) := fun _ _ h ↦

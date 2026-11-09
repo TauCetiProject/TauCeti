@@ -9,7 +9,7 @@ import TauCeti.Analysis.SpecialFunctions.Beta
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Probability.Distributions.Cauchy
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
