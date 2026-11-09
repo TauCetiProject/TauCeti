@@ -116,7 +116,7 @@ theorem exists_disjoint_span_singleton_sup_eq (hd : d ≠ 0)
     exact ht (by simpa using hLm t htL)
   obtain ⟨φ, hφt, hhom⟩ := exists_functional_eval_X_pow_smul hd hX htp ht
   have hφXt := LinearMap.map_X_pow_smul_smul_eq φ hφt (n := m - 1) (t := t)
-  have hφ_poly := LinearMap.map_smul_eq_sum_support_coeff_mul φ
+  have hφ_poly := LinearMap.map_smul_eq_sum_support_coeff_smul φ
   -- The complement: elements of `L` all of whose polynomial multiples are killed by `φ`.
   let K : Submodule k[X] M :=
     { carrier := {y | y ∈ L ∧ ∀ a : k[X], φ (a • y) = 0}
