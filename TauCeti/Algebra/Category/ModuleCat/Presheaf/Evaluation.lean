@@ -39,40 +39,29 @@ noncomputable section
 
 namespace PresheafOfModulesOfCommRing
 
-variable {C : Type v} [Category.{w} C] {R : Cᵒᵖ ⥤ CommRingCat.{u}}
+variable {C : Type v} [Category.{w} C] {R : Cᵒᵖ ⥤ CommRingCat.{u}} (X : Cᵒᵖ)
 
 /-- Evaluation at `X` of presheaves of modules over a presheaf of commutative rings, valued in
 modules over the commutative ring `R.obj X`. This is `PresheafOfModules.evaluation`, with its
 target written as `ModuleCat (R.obj X)` so that the monoidal structure of that category applies. -/
-abbrev evaluation (X : Cᵒᵖ) :
+abbrev evaluation :
     PresheafOfModulesOfCommRing.{u} R ⥤ ModuleCat.{u} (R.obj X) :=
   PresheafOfModules.evaluation _ X
 
 /-- Evaluation of presheaves of modules is monoidal: the tensor product of presheaves of modules
 is computed sectionwise, so the unit and tensor comparisons are identities. -/
-instance evaluationMonoidal (X : Cᵒᵖ) : (evaluation (R := R) X).Monoidal :=
+instance evaluationMonoidal : (evaluation (R := R) X).Monoidal :=
   Functor.CoreMonoidal.toMonoidal
     { εIso := Iso.refl _
       μIso := fun _ _ ↦ Iso.refl _
-      associativity := fun _ _ _ ↦ by
-        apply ModuleCat.MonoidalCategory.tensor_ext₃'
-        intros
-        rfl
-      left_unitality := fun _ ↦ by
-        apply ModuleCat.MonoidalCategory.tensor_ext
-        intros
-        rfl
-      right_unitality := fun _ ↦ by
-        apply ModuleCat.MonoidalCategory.tensor_ext
-        intros
-        rfl }
+      associativity := fun _ _ _ ↦ ModuleCat.MonoidalCategory.tensor_ext₃' fun _ _ _ ↦ rfl
+      left_unitality := fun _ ↦ ModuleCat.MonoidalCategory.tensor_ext fun _ _ ↦ rfl
+      right_unitality := fun _ ↦ ModuleCat.MonoidalCategory.tensor_ext fun _ _ ↦ rfl }
 
 /-- Evaluation of presheaves of modules is braided: the braiding of presheaves of modules is
 computed sectionwise. -/
-instance evaluationBraided (X : Cᵒᵖ) : (evaluation (R := R) X).Braided where
+instance evaluationBraided : (evaluation (R := R) X).Braided where
   braided _ _ := rfl
-
-variable (X : Cᵒᵖ)
 
 /-- The unit comparison of evaluation is the identity. -/
 @[simp]

@@ -119,16 +119,16 @@ noncomputable abbrev signSet (i : Fin (dimension n)) : Finset (Fin (n + 1)) :=
 noncomputable abbrev basisWeight (i : Fin (dimension n)) : Fin (n + 1) → ℤ :=
   TauCeti.DynkinType.typeBSpinWeight (signSet n i)
 
-/-- The `i`-th simple reflection on the finite-ordinal spin-basis indices. -/
-noncomputable def basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
-    Fin (dimension n) :=
-  Fintype.equivFin (Finset (Fin (n + 1))) (DynkinType.typeBSpinReflection i (signSet n a))
+/-- The `i`-th simple reflection on the finite-ordinal spin-basis indices: the sign-set reflection
+`DynkinType.typeBSpinReflection i`, conjugated by the enumeration of the sign sets. -/
+noncomputable def basisReflection (i : Fin (n + 1)) : Equiv.Perm (Fin (dimension n)) :=
+  (Fintype.equivFin (Finset (Fin (n + 1)))).permCongr (DynkinType.typeBSpinReflection i)
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
 @[simp]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
-    signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) := by
-  simp [basisReflection, signSet]
+    signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) :=
+  Equiv.symm_apply_apply _ _
 
 /-- A simple reflection fixes a spin-basis index exactly when its coroot pairing vanishes. -/
 @[simp]
@@ -139,21 +139,22 @@ theorem basisReflection_eq_self_iff (i : Fin (n + 1)) (a : Fin (dimension n)) :
     apply (DynkinType.typeBSpinReflection_eq_self_iff i _).1
     simpa only [signSet_basisReflection] using congrArg (signSet n) h
   · intro h
-    rw [basisReflection, (DynkinType.typeBSpinReflection_eq_self_iff i _).2 h]
+    rw [basisReflection, Equiv.permCongr_apply,
+      (DynkinType.typeBSpinReflection_eq_self_iff i _).2 h]
     exact (Fintype.equivFin (Finset (Fin (n + 1)))).apply_symm_apply a
 
 /-- Each simple reflection on enumerated spin-basis indices is an involution. -/
 theorem basisReflection_involutive (i : Fin (n + 1)) :
     Function.Involutive (basisReflection n i) := by
   intro a
-  simp [basisReflection, signSet]
+  simp [basisReflection]
 
 /-- Enumeration transports a sequence of sign-set reflections to basis-index reflections. -/
 theorem foldl_basisReflection (l : List (Fin (n + 1))) (t : Finset (Fin (n + 1))) :
     l.foldl (fun b j ↦ basisReflection n j b) (Fintype.equivFin (Finset (Fin (n + 1))) t) =
       Fintype.equivFin (Finset (Fin (n + 1)))
         (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) :=
-  List.foldl_hom _ fun _ _ ↦ by simp [basisReflection, signSet]
+  List.foldl_hom _ fun _ _ ↦ by simp [basisReflection]
 
 /-- A reindexed lattice-basis vector is the exterior basis vector of its sign set. -/
 @[simp]

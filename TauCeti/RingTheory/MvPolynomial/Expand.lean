@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Expand
+public import Mathlib.FieldTheory.Finite.Polynomial
 public import Mathlib.RingTheory.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Flat.Rank
@@ -34,7 +35,8 @@ over `R[x]`" and that the purely inseparable half of normalization-finiteness re
 
 Also here is the coefficient-level Frobenius computation behind Stacks' "some details omitted":
 if every coefficient of `g` acquires a `q`-th root in `S`, then `g(X ^ q)` becomes a `q`-th power
-in `S[X_i]`.
+in `S[X_i]`. Over `ℤ`, expansion by a prime lifts Frobenius modulo that prime,
+providing the coefficient congruence for Hazewinkel's functional equation.
 
 ## Main results
 
@@ -43,8 +45,14 @@ in `S[X_i]`.
 * `TauCeti.MvPolynomial.finite_expand`: `expand n` is a finite ring map for `0 < n`.
 * `TauCeti.MvPolynomial.exists_pow_eq_map_expand`: `(map f) (expand (p ^ n) g)` is a
   `p ^ n`-th power once the coefficients of `g` have `p ^ n`-th roots in `S`.
+* `MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow`: over a perfect ring, `expand p g`
+  is the `p`-th power of the inverse Frobenius twist of `g`.
+* `MvPolynomial.natCast_dvd_expand_sub_pow`: over `ℤ`, `expand p f ≡ f ^ p` modulo a prime
+  `p`, the integrality input for Hazewinkel's functional equation.
 * `TauCeti.MvPolynomial.basisExpand`: the monomials with exponents below `n` are a basis of
   `R[X_i]` over itself along `expand n`, for `0 < n`.
+* `MvPolynomial.coeff_basisExpand_repr`: the coordinate of `f` at `β` in that basis has
+  the coefficients of `f` at the exponents `n • d + β`.
 * `TauCeti.MvPolynomial.flat_expand`: `expand n` is flat for `0 < n`.
 * `TauCeti.MvPolynomial.finitePresentation_expand`: `expand n` is of finite presentation for
   finitely many variables.
@@ -73,6 +81,15 @@ Stacks'; the passage to several variables at once is not, and is not claimed as 
 -/
 
 public section
+
+/-- Expansion of an integer polynomial by a prime lifts Frobenius modulo that prime. -/
+theorem MvPolynomial.natCast_dvd_expand_sub_pow {σ : Type*} (p : ℕ) [Fact p.Prime]
+    (f : MvPolynomial σ ℤ) : (p : MvPolynomial σ ℤ) ∣ expand p f - f ^ p := by
+  rw [← MvPolynomial.C_eq_natCast,
+    MvPolynomial.C_dvd_iff_map_hom_eq_zero (Int.castRingHom (ZMod p)) _
+      (fun a ↦ by simp only [Int.coe_castRingHom, ZMod.intCast_zmod_eq_zero_iff_dvd])]
+  simp only [map_sub, map_expand, map_pow, ← MvPolynomial.frobenius_zmod, frobenius_def,
+    sub_self]
 
 namespace TauCeti
 
@@ -185,6 +202,15 @@ theorem MvPolynomial.exists_pow_eq_map_expand {σ R S : Type*} [CommSemiring R] 
   rw [← MvPolynomial.map_iterateFrobenius_expand (p := p) _ n, MvPolynomial.map_expand, hmap,
     ← MvPolynomial.map_expand]
 
+/-- Over a perfect ring `R` of exponential characteristic `p`, the expansion of a polynomial is the
+`p`-th power of its inverse Frobenius twist: the multivariate form of Mathlib's
+`polynomial_expand_eq`. -/
+theorem _root_.MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow {σ R : Type*}
+    [CommSemiring R] (p : ℕ) [ExpChar R p] [PerfectRing R p] (g : MvPolynomial σ R) :
+    MvPolynomial.expand p g = MvPolynomial.map (frobeniusEquiv R p).symm g ^ p := by
+  rw [← MvPolynomial.map_frobenius_expand, MvPolynomial.map_expand, MvPolynomial.map_map,
+    frobenius_comp_frobeniusEquiv_symm, MvPolynomial.map_id]
+
 namespace MvPolynomial
 
 open _root_.MvPolynomial
@@ -238,6 +264,19 @@ theorem basisExpand_apply (β : σ →₀ Fin n) :
     (Equiv.eq_symm_apply _).1 (by simp)
   rw [basisExpand, RingHom.basisOfAddEquiv_apply, AddEquiv.symm_apply_eq, expandRepr_monomial, hβ,
     ← C_apply, C_1]
+
+/-- The coordinate at `β` of a polynomial `f` in `basisExpand` has, at `d`, the coefficient of `f`
+at `n • d + β`. The `letI` names the module structure along `expand n`; instance search would
+otherwise pick multiplication, under which `basisExpand` does not typecheck. -/
+@[simp]
+theorem _root_.MvPolynomial.coeff_basisExpand_repr (f : MvPolynomial σ R) (β : σ →₀ Fin n)
+    (d : σ →₀ ℕ) :
+    letI : Module (MvPolynomial σ R) (MvPolynomial σ R) :=
+      (expand n : MvPolynomial σ R →ₐ[R] _).toRingHom.toAlgebra.toModule
+    ((basisExpand σ R n).repr f β).coeff d =
+      f.coeff (n • d + β.mapRange Fin.val (Fin.val_zero n)) := by
+  rw [basisExpand, RingHom.basisOfAddEquiv_repr_apply, add_comm]
+  simp [expandRepr]
 
 end Repr
 

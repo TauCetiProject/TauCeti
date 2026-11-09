@@ -66,6 +66,7 @@ recovers the law.
 public section
 
 open MeasureTheory Set
+open scoped ENNReal NNReal
 
 namespace ProbabilityTheory
 
@@ -75,6 +76,13 @@ variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
+
+/-- On a measurable subset of the conditioning event, the real conditional mass is the
+original real mass divided by the real mass of the conditioning event. -/
+theorem cond_real_of_subset {μ : Measure Ω} {s t : Set Ω} (ht : MeasurableSet t)
+    (hsub : t ⊆ s) :
+    (cond μ s).real t = μ.real t / μ.real s := by
+  simp [measureReal_def, cond_apply' ht, inter_eq_right.mpr hsub, div_eq_mul_inv, mul_comm]
 
 /-- Scaling an integral under a conditional measure by the finite mass of the conditioning
 event recovers the corresponding set integral. -/
@@ -248,6 +256,18 @@ theorem integrable_cond_compl_singleton_iff [IsFiniteMeasure μ] {E : Type*}
   rw [hcompl, ← integrableOn_univ, ← compl_union_self {a}, integrableOn_union,
     and_iff_left hatom]
 
+omit [MeasurableSingletonClass Ω] in
+/-- Conditioning away from a point rescales the nonnegative integral of a function vanishing
+there by the reciprocal retained mass. This identity includes infinite integrals and arbitrary
+measures. -/
+theorem lintegral_cond_compl_singleton_of_eq_zero {f : Ω → ℝ≥0∞} (hf : f a = 0) :
+    ∫⁻ x, f x ∂μ[|{a}ᶜ] = (μ {a}ᶜ)⁻¹ * ∫⁻ x, f x ∂μ := by
+  rw [cond, lintegral_smul_measure,
+    setLIntegral_eq_of_support_subset (fun x hx => by
+      simp only [mem_compl_iff, mem_singleton_iff]
+      intro h
+      exact hx (h ▸ hf)), smul_eq_mul]
+
 variable [IsProbabilityMeasure μ]
 
 /-- Conditioning a probability measure away from a point removes all mass exactly when the measure
@@ -319,6 +339,19 @@ namespace MeasureTheory.Measure
 
 open Filter ProbabilityTheory
 open scoped ENNReal Topology
+
+/-- Removing zero increments and dividing by a nonzero spacing rescales the extended mean by
+the reciprocal spacing and reciprocal retained mass. No normalization hypothesis is needed. -/
+theorem lintegral_div_cond_compl_zero (μ : Measure ℝ≥0) {a : ℝ≥0} (ha : a ≠ 0) :
+    ∫⁻ t, (t / a : ℝ≥0) ∂μ[|{0}ᶜ] =
+      (∫⁻ t, (t : ℝ≥0∞) ∂μ) / ((a : ℝ≥0∞) * μ {0}ᶜ) := by
+  simp_rw [ENNReal.coe_div ha]
+  rw [lintegral_cond_compl_singleton_of_eq_zero
+    (f := fun t : ℝ≥0 ↦ (t : ℝ≥0∞) / a) (by simp)]
+  simp_rw [div_eq_mul_inv]
+  rw [lintegral_mul_const _ measurable_coe_nnreal_ennreal]
+  rw [ENNReal.mul_inv (.inl (by exact_mod_cast ha)) (.inl ENNReal.coe_ne_top)]
+  simp only [mul_comm, mul_left_comm, mul_assoc]
 
 /-- Mathlib's total variation distance from a probability law conditioned on a positive-mass
 measurable event to the original law is twice the excluded mass. -/

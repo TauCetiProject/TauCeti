@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import TauCeti.Algebra.Homology.Ext.Basic
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 
 /-!
 # `Ext` groups are invariant under an additive equivalence
@@ -16,7 +17,9 @@ functors to an additive equivalence `Extⁿ(F X, Y) ≃+ Extⁿ(X, G Y)`.  For a
 specialises, along `CategoryTheory.Equivalence.toAdjunction` and the transport of the target along
 the unit isomorphism from `TauCeti.extAddEquivOfIso`, to the invariance of `Ext` under `e`, which
 Mathlib does not state in this form.  (`CategoryTheory.Abelian.Ext.mapExactFunctor` is shown
-bijective only under a projective- or injective-object hypothesis.)
+bijective only under a projective- or injective-object hypothesis.)  Since projective dimension
+is defined by the vanishing of `Ext`, it is invariant under any equivalence of abelian
+categories, which is automatically additive.
 
 ## Main definitions
 
@@ -30,6 +33,8 @@ bijective only under a projective- or injective-object hypothesis.)
 
 * `CategoryTheory.Equivalence.mapExtAddHom_bijective`: the forward functor of an additive
   equivalence is bijective on `Ext`.
+* `CategoryTheory.Equivalence.projectiveDimension_functor_obj`: an equivalence of abelian
+  categories preserves projective dimension.
 -/
 
 public section
@@ -41,7 +46,10 @@ open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
 universe w w' v v' u u' t
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {D : Type u'} [Category.{v'} D] [Abelian D]
-  [HasExt.{w} C] [HasExt.{w'} D]
+
+section Ext
+
+variable [HasExt.{w} C] [HasExt.{w'} D]
 
 /-- **`Ext` groups are invariant under an additive equivalence.**  The equivalence `e` carries
 `Extⁿ(X, Y)` isomorphically onto `Extⁿ(e X, e Y)`.  This is `CategoryTheory.Adjunction.extEquiv`
@@ -82,5 +90,35 @@ theorem extLinearEquivOfEquivalence_apply (R : Type t) [Ring R] [Linear R C] [Li
     (α : Ext.{w} X Y n) :
     extLinearEquivOfEquivalence R e X Y n α = α.mapExactFunctor e.functor :=
   e.extAddEquiv_apply α
+
+end Ext
+
+/-- **Projective dimension bounds are invariant under an equivalence.**  The object `e X` has
+projective dimension `< n` exactly when `X` does.  No additivity hypothesis is needed: an
+equivalence of abelian categories is automatically additive. -/
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.hasProjectiveDimensionLT_functor_obj_iff
+    (e : C ≌ D) (X : C) (n : ℕ) :
+    HasProjectiveDimensionLT (e.functor.obj X) n ↔ HasProjectiveDimensionLT X n := by
+  have := e.functor.additive_of_preserves_binary_products
+  let := HasExt.standard C
+  let := HasExt.standard D
+  simp only [hasProjectiveDimensionLT_iff]
+  refine ⟨fun h i hi Y α ↦ (e.extAddEquiv X Y i).injective ?_, fun h i hi Y β ↦ ?_⟩
+  · rw [map_zero]
+    exact h i hi _
+  · simpa only [AddEquivClass.map_eq_zero_iff] using h i hi ((e.extAddEquiv X _ i).symm
+      ((extAddEquivOfIso (Iso.refl _) (e.counitIso.app Y) i).symm β))
+
+/-- **An equivalence of abelian categories preserves projective dimension.** -/
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.projectiveDimension_functor_obj
+    (e : C ≌ D) (X : C) :
+    projectiveDimension (e.functor.obj X) = projectiveDimension X :=
+  le_antisymm
+    (projectiveDimension_le_of_hasProjectiveDimensionLT fun n ↦
+      (e.hasProjectiveDimensionLT_functor_obj_iff X n).mpr)
+    (projectiveDimension_le_of_hasProjectiveDimensionLT fun n ↦
+      (e.hasProjectiveDimensionLT_functor_obj_iff X n).mp)
 
 end TauCeti
