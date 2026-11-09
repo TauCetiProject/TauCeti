@@ -7,7 +7,6 @@ module
 
 import TauCeti.ModelTheory.ModelExistence.Types
 import TauCeti.ModelTheory.BackAndForth.DiscreteOrder
-import TauCeti.ModelTheory.Scott.DenseLinearOrder
 import Mathlib.Data.Set.Card
 import Mathlib.Tactic.FinCases
 
