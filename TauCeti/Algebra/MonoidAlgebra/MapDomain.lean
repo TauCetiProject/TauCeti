@@ -28,6 +28,9 @@ of the composite `F ∘ φ`.
 * `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective.
 * `MonoidAlgebra.mapDomain_commute_single`: the image of `mapDomain f` commutes with `single n r`
   when the values of `f` commute with `n` and `r` is central.
+* `MonoidHom.exists_linearMap_apply_eq_single_smul`: if `s` commutes with the image of a monoid
+  homomorphism `ι : Q →* G`, then the action of `single s 1` on an `A[G]`-module `X`, which is an
+  `A[Q]`-module through `ι`, is `A[Q]`-linear.
 * `MonoidAlgebra.lift_mapDomain`: `lift F ∘ mapDomain φ = lift (F ∘ φ)`.
 * `MonoidAlgebra.mapDomainRingEquiv_eq_mapDomain`: the ring isomorphism induced by a monoid
   isomorphism `e` is `mapDomain e`, with additive form
@@ -92,6 +95,25 @@ theorem mapDomainRingEquiv_eq_mapDomain [Monoid M] [Monoid N] (e : M ≃* N)
   ext <| by
     rw [coeff_mapDomainRingEquiv, coeff_mapDomain, Finsupp.equivMapDomain_eq_mapDomain,
       MulEquiv.coe_toEquiv]
+
+/-- If the `A[Q]`-module structure on `X` is the `A[G]`-action through `ι`, then the action of
+`single s 1` for `s` commuting with the image of `ι` is `A[Q]`-linear. -/
+theorem _root_.MonoidHom.exists_linearMap_apply_eq_single_smul {A : Type*} [CommSemiring A]
+    {Q G : Type*} [Monoid Q] [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (X : Type*)
+    [AddCommMonoid X] [Module (MonoidAlgebra A G) X] [Module (MonoidAlgebra A Q) X]
+    (hact : ∀ (r : MonoidAlgebra A Q) (x : X), r • x = mapDomainAlgHom A A ι r • x) :
+    ∃ S : X →ₗ[MonoidAlgebra A Q] X, ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x :=
+  ⟨{ toFun := fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x
+     map_add' := smul_add _
+     map_smul' := fun r x ↦ by
+       have hc : (single s (1 : A) : MonoidAlgebra A G) * mapDomainAlgHom A A ι r =
+           mapDomainAlgHom A A ι r * single s 1 := by
+         simpa only [mapDomainAlgHom_apply, mapDomainRingHom_apply] using
+           (mapDomain_commute_single (fun c ↦ (hs c).symm)
+             (fun _ ↦ Commute.one_right _) r).symm.eq
+       rw [RingHom.id_apply, hact, hact, ← mul_smul, ← mul_smul]
+       exact congrArg (· • x) hc },
+    fun _ ↦ rfl⟩
 
 section Group
 
