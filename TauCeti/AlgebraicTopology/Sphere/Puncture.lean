@@ -69,6 +69,18 @@ private theorem smul_sub_smul_ne_zero_of_ne {E : Type*} [SeminormedAddCommGroup 
   norm_num at h2
   exact h2
 
+/-- If the segment from `x` to a positive multiple `c • y` of `y` misses the origin, then `x` is
+not the antipode of `y`: the point of the segment at time `(1 + c)⁻¹` would be `0`. -/
+private theorem ne_neg_of_segment_smul_ne_zero {x y : E} {c : ℝ} (hc : 0 < c)
+    (h : ∀ s : I, (1 - (s : ℝ)) • x + (s : ℝ) • (c • y) ≠ 0) : x ≠ -y := by
+  rintro rfl
+  have hc1 : (1 + c) ≠ 0 := by positivity
+  refine h ⟨(1 + c)⁻¹, ⟨by positivity, inv_le_one_of_one_le₀ (by linarith)⟩⟩ ?_
+  have hs : (1 + c)⁻¹ * (1 + c) = 1 := inv_mul_cancel₀ hc1
+  have hcoeff : (1 - (1 + c)⁻¹) • -y + (1 + c)⁻¹ • c • y = ((1 + c)⁻¹ * (1 + c) - 1) • y := by
+    module
+  simp only [hcoeff, hs, sub_self, zero_smul]
+
 /-- Radial projection of the straight-line homotopy from `f` to `g`, available whenever that
 segment never meets the origin. -/
 private noncomputable def normalizeSegmentToSphere {Y : Type*} [TopologicalSpace Y]
@@ -154,19 +166,8 @@ theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ
       rw [hγ', norm_smul_normalize]
     have hc : 0 < ‖f t‖ := norm_pos_iff.mpr hft
     generalize ‖f t‖ = c at hfc hc
-    have hne : ((γ t : sphere (0 : E) 1) : E) ≠ -((γ' t : sphere (0 : E) 1) : E) := by
-      intro hneg
-      have hs : 0 ≤ (1 + c)⁻¹ := by positivity
-      have hs1 : (1 + c)⁻¹ ≤ 1 :=
-        inv_le_one_of_one_le₀ (by linarith)
-      have hne : (1 + c) ≠ 0 := by positivity
-      refine h ((⟨(1 + c)⁻¹, ⟨hs, hs1⟩⟩ : I), t) ?_
-      rw [hneg]
-      rw [hfc]
-      rw [smul_neg, smul_smul, ← neg_smul, ← add_smul]
-      convert zero_smul ℝ _ using 2
-      field_simp
-      ring
+    have hne : ((γ t : sphere (0 : E) 1) : E) ≠ -((γ' t : sphere (0 : E) 1) : E) :=
+      ne_neg_of_segment_smul_ne_zero hc fun s ↦ by simpa only [hfc] using h (s, t)
     refine smul_sub_smul_ne_zero_of_ne (hγnorm t) (by simp) hne u ?_
     simpa [sub_eq_add_neg] using hz
   refine Path.homotopic_of_continuous_square
