@@ -358,19 +358,7 @@ characters of `M` and `P`. -/
 theorem formalCharacter_eq_add_of_exact (f : M →ₗ⁅K,L⁆ N) (g : N →ₗ⁅K,L⁆ P)
     (h : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     formalCharacter K L N = formalCharacter K L M + formalCharacter K L P := by
-  -- the quotient of a triangularizable module is triangularizable
-  have : IsTriangularizable K L P := by
-    refine ⟨fun x ↦ top_unique fun p _ ↦ ?_⟩
-    obtain ⟨n, rfl⟩ := hg p
-    have hn : n ∈ ⨆ φ, (toEnd K L N x).maxGenEigenspace φ := by
-      rw [IsTriangularizable.maxGenEigenspace_eq_top]; trivial
-    have hle : (⨆ φ, (toEnd K L N x).maxGenEigenspace φ).map g.toLinearMap ≤
-        ⨆ φ, (toEnd K L P x).maxGenEigenspace φ := by
-      rw [Submodule.map_iSup]
-      refine iSup_mono fun φ ↦ ?_
-      exact Module.End.map_genEigenspace_le g.toLinearMap
-        (LinearMap.ext fun m ↦ (g.map_lie x m).symm) φ ⊤
-    exact hle (Submodule.mem_map_of_mem hn)
+  have : IsTriangularizable K L P := isTriangularizable_of_surjective g hg
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ ↦ ?_)
   simp only [formalCharacter_coeff, AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   exact_mod_cast (finrank_genWeightSpace_add_finrank_genWeightSpace_eq f g h hf hg
