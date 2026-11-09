@@ -66,11 +66,14 @@ mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 namespace_build_cap = 20
 pr_order = ["github", "chris", "tauchonki2", "yael", "brett", "namespace"]
-staging_order = ["chris", "yael", "brett", "namespace", "github"]
+staging_order = ["chungus2", "tauchonki2"]
 
 # Slot counts and CI classes come from the runners each host registers.
 [services.fleet.machines.chris]
 enrollment_name = "chris-server"
+
+[services.fleet.machines.chungus2]
+machine_id = "2ef87dd35cf74820a7a3b26e8820dcc5"
 
 [services.fleet.machines.tauchonki2]
 machine_id = "74773fc7f54d4877add11d80113fe340"

@@ -194,12 +194,10 @@ variable
   {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {f : 𝕜 → 𝕜 → M} {u v : 𝕜} {x : M}
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] in
 /-- The coordinate reading of the first-parameter velocity field of a `C²` parametrized surface is
 differentiable along the second-parameter curve. -/
 theorem differentiableAt_sectionCoord_curveVelocity_fst [IsManifold I 2 M]
@@ -223,8 +221,7 @@ theorem differentiableAt_sectionCoord_curveVelocity_fst [IsManifold I 2 M]
       (hchart.of_le (by norm_num)).deriv_parameterCurve_eventuallyEq_timeFDeriv
   exact (hpartial.congr_of_eventuallyEq heq).congr_of_eventuallyEq hcoord
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] in
 /-- The coordinate reading of the second-parameter velocity field of a `C²` parametrized surface
 is differentiable along the first-parameter curve. -/
 theorem differentiableAt_sectionCoord_curveVelocity_snd [IsManifold I 2 M]

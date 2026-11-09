@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Topology.UnitInterval
 import TauCeti.Analysis.Contour.Curve.Distance
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Continuous argument lift for a point-avoiding curve
@@ -37,8 +38,6 @@ API does not expose.
   on `[a, b]`, for a curve continuous there and avoiding `w`, plus a monotone partition witness.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
   assemble the index integral downstream.
-* `TauCeti.Contour.div_norm_eq_exp_arg_mul_I` — the unit direction of a nonzero complex number
-  in polar form, shared with the sector-resonance bridges.
 * `TauCeti.Contour.exp_mul_I_congr_angle` — equal real angles have equal unit complex
   exponentials.
 * `ContinuousOn.exists_continuousOn_circleMap_comp_eqOn` — a curve in a circle `sphere c r` is
@@ -279,13 +278,6 @@ private theorem continuousOn_im_log_segRatio {γ : ℝ → ℂ} {a b : ℝ}
 
 /-! ### The unit direction in polar form -/
 
-/-- **A nonzero complex number over its norm is the exponential of its argument**:
-`w / ↑‖w‖ = exp(arg w · I)`. -/
-theorem div_norm_eq_exp_arg_mul_I {w : ℂ} (hw : w ≠ 0) :
-    w / (‖w‖ : ℂ) = Complex.exp ((Complex.arg w : ℂ) * Complex.I) := by
-  rw [div_eq_iff (Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hw)), mul_comm]
-  exact (Complex.norm_mul_exp_arg_mul_I w).symm
-
 /-- Two real representatives of the same `Real.Angle` have the same unit complex exponential.
 This is the coercion bridge from the quotient-valued angle API to complex polar form. -/
 theorem exp_mul_I_congr_angle {x y : ℝ} (h : (x : Real.Angle) = (y : Real.Angle)) :
@@ -296,7 +288,7 @@ theorem exp_mul_I_congr_angle {x y : ℝ} (h : (x : Real.Angle) = (y : Real.Angl
 /-- For a nonzero complex number `z`, `exp(I · Im(log z)) = z / ↑‖z‖`. -/
 private lemma exp_I_log_im_eq_div_norm {z : ℂ} (hz : z ≠ 0) :
     Complex.exp (Complex.I * ((Complex.log z).im : ℂ)) = z / (‖z‖ : ℂ) := by
-  rw [Complex.log_im, mul_comm, ← div_norm_eq_exp_arg_mul_I hz]
+  rw [Complex.log_im, mul_comm, Complex.exp_arg_mul_I hz]
 
 /-! ### Polar form of a product -/
 
