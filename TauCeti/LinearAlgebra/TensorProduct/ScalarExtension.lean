@@ -44,8 +44,8 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
   a scalar-extended algebra identifies two iterated scalar extensions.
 * `TensorProduct.exists_rTensor_section`, `TensorProduct.exists_smul_linearMap_eq_self`: after
   tensoring over `R` with a field `Q` that is an `R`-algebra, a surjection has an `R`-linear
-  section and multiplication by an element with nonzero image in `Q` has an `R`-linear right
-  inverse.
+  section, and after tensoring with any `R`-algebra `Q`, multiplication by an element whose
+  image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
 -/
@@ -298,18 +298,24 @@ theorem exists_rTensor_section {N P : Type*} [AddCommGroup N] [Module R N]
     LinearMap.restrictScalars_apply, ← LinearMap.comp_apply, hs₀, LinearMap.id_apply,
     LinearEquiv.coe_coe, TensorProduct.comm_comm]
 
-/-- If the image of `n : R` in the field `Q` is nonzero, multiplication by `n` on `P ⊗[R] Q`
+end FieldSections
+
+section Invertible
+
+variable {R : Type*} [CommSemiring R] (Q : Type*) [Semiring Q] [Algebra R Q]
+
+/-- If the image of `n : R` in `Q` is a unit, multiplication by `n` on `P ⊗[R] Q`
 has an `R`-linear right inverse. -/
-theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommGroup P] [Module R P]
-    {n : R} (hn : algebraMap R Q n ≠ 0) :
+theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommMonoid P] [Module R P]
+    {n : R} (hn : IsUnit (algebraMap R Q n)) :
     ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, n • u x = x := by
-  refine ⟨(LinearMap.mulLeft R (algebraMap R Q n)⁻¹).lTensor P, fun x ↦ ?_⟩
+  refine ⟨(LinearMap.mulLeft R (↑hn.unit⁻¹ : Q)).lTensor P, fun x ↦ ?_⟩
   induction x using TensorProduct.inductionOn with
   | tmul p q =>
     rw [LinearMap.lTensor_tmul, TensorProduct.smul_tmul', TensorProduct.smul_tmul,
-      LinearMap.mulLeft_apply, _root_.Algebra.smul_def, ← mul_assoc, mul_inv_cancel₀ hn, one_mul]
+      LinearMap.mulLeft_apply, _root_.Algebra.smul_def, ← mul_assoc, hn.mul_val_inv, one_mul]
   | add x y hx hy => simp_all
 
-end FieldSections
+end Invertible
 
 end TensorProduct

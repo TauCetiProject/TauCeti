@@ -88,7 +88,7 @@ theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
   -- Multiplication by `#G` is invertible on `P ⊗ Q`.
   obtain ⟨u, hu⟩ : ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, (Nat.card G : R) • u x = x :=
     TensorProduct.exists_smul_linearMap_eq_self Q
-      ((map_ne_zero_iff _ (IsFractionRing.injective R Q)).mpr (NeZero.ne _))
+      (((map_ne_zero_iff _ (IsFractionRing.injective R Q)).mpr (NeZero.ne _)).isUnit)
   -- So `(m, x) ↦ f' m + t x` is bijective.
   let Φ : (M ⊗[R] Q) × (P ⊗[R] Q) →ₗ[MonoidAlgebra R G] N ⊗[R] Q :=
     f' ∘ₗ LinearMap.fst _ _ _ + t ∘ₗ LinearMap.snd _ _ _
