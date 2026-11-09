@@ -25,7 +25,11 @@ the ranks of `A` and `B` at `ψ` add up to `|ι₁|`
 For a split complex, the homology dimension is the rank of the middle term minus the ranks of
 the two differentials (`Matrix.rank_splitIdempotent_map`). These are the linear algebra
 prerequisites for local splitting and cohomology-and-base-change criteria.
-
+Adapted from `WeilConjectures/LinearAlgebra/Matrix/ComplementaryMinors.lean` in
+[WeilConjectures](https://github.com/formal-arithmetic-geometry/weil-conjectures), revision
+`a762b776d63676e8be90bf4f609614ad067333a9` (original formalization by Claude),
+via the Jacobian formalization by Axel Delaval, Jie Xu and Shitan Xu.
+Original source notice: Copyright (c) 2026 Claude. All rights reserved.
 -/
 
 public section

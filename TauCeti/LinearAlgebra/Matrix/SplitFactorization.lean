@@ -14,7 +14,11 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 An invertible maximal minor gives a split rank factorization. Split factorizations of the
 differentials give an idempotent cutting out homology, compatibly with extension of scalars.
-
+Adapted from `WeilConjectures/LinearAlgebra/Matrix/SplitFactorization.lean` in
+[WeilConjectures](https://github.com/formal-arithmetic-geometry/weil-conjectures), revision
+`a762b776d63676e8be90bf4f609614ad067333a9` (original formalization by Claude),
+via the Jacobian formalization by Axel Delaval, Jie Xu and Shitan Xu.
+Original source notice: Copyright (c) 2026 Claude. All rights reserved.
 -/
 
 public section
@@ -240,7 +244,7 @@ lemma IsSplitFactorization.map {R S : Type*} [Semiring R] [Semiring S]
 
 section SemiringRank
 
-variable {S K : Type*} [Semiring S] [Field K] (ψ : S →+* K)
+variable {S K : Type*} [Semiring S] [CommSemiring K] [StrongRankCondition K] (ψ : S →+* K)
   {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
 
 /-- The rank at `ψ` of a matrix with a split rank factorisation through `ρ` is `|ρ|`. -/
