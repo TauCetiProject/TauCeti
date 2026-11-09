@@ -73,7 +73,8 @@ theorem exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure (hΩ : IsOpen Ω)
         eLpNorm_congr_ae ((MemLp.coeFn_toLp (hu (φ j) (L m) (hLc m) (hLΩ m))).sub .rfl)
   -- The limits are compatible: `a k = a m` almost everywhere on `L k` for `k ≤ m`.
   have hcompat_le {k m : ℕ} (hkm : k ≤ m) : (a k : X → F) =ᵐ[μ.restrict (L k)] a m :=
-    ae_eq_restrict_of_tendsto_eLpNorm_sub (hLmono hkm) (hconv k) (hconv m)
+    ae_eq_of_tendsto_eLpNorm_sub (zero_lt_one.trans_le Fact.out).ne'
+      (μ.restrict_mono_set (hLmono hkm)) (hconv k) (hconv m)
   have hcompat (k m : ℕ) : (a k : X → F) =ᵐ[μ.restrict (L k ∩ L m)] a m := by
     rcases le_total k m with hkm | hmk
     · rw [inter_eq_left.2 (hLmono hkm)]
