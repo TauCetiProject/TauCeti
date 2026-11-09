@@ -43,9 +43,13 @@ variable {F : Measure ℝ≥0} [IsProbabilityMeasure F] {a : ℝ≥0}
 measure at `n * a` tends to `a` times the reciprocal extended interarrival mean.
 Zero gaps and infinite means are included. -/
 theorem IsLatticeSpan.tendsto_renewalMeasure_real_mul (ha : F.IsLatticeSpan a)
-    (hF : F {0} < 1) (hmax : IsGreatest {b | F.IsLatticeSpan b} a) :
+    (hmax : IsGreatest {b | F.IsLatticeSpan b} a) :
     Tendsto (fun n : ℕ => F.renewalMeasure.real {(n : ℝ≥0) * a}) atTop
       (𝓝 ((a : ℝ) * ((∫⁻ t, (t : ℝ≥0∞) ∂F)⁻¹).toReal)) := by
+  have hF : F {0} < 1 := by
+    apply tsub_pos_iff_lt.mp
+    rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
+    exact pos_iff_ne_zero.mpr (measure_compl_singleton_zero_ne_zero hmax)
   let ν := F[|{0}ᶜ].map (fun x ↦ ⌊x / a⌋₊)
   have := isProbabilityMeasure_cond_compl_singleton hF.ne
   have hν : ν {0} = 0 := by
@@ -71,13 +75,13 @@ theorem IsLatticeSpan.tendsto_renewalMeasure_real_mul (ha : F.IsLatticeSpan a)
       _ = (a : ℝ≥0∞) * ((1 - F {0})⁻¹ * (1 - F {0})) *
           (∫⁻ t, (t : ℝ≥0∞) ∂F)⁻¹ := by ring
       _ = _ := by rw [ENNReal.inv_mul_cancel hq hqfin, mul_one]
-  have hlim := (ν.tendsto_countdownKernel_map_pred_pow_zero hν hgcd).const_mul
+  have hlim := (ν.tendsto_countdownKernel_map_pred_pow_apply_zero hν hgcd).const_mul
     ((1 - F {0})⁻¹).toReal
   have hmass (n : ℕ) : F.renewalMeasure.real {(n : ℝ≥0) * a} =
       ((1 - F {0})⁻¹).toReal * (((ν.map Nat.pred).countdownKernel ^ n) 0).real {0} := by
     rw [measureReal_def, ha.renewalMeasure_apply_mul_eq_countdownKernel_pow hF,
       ENNReal.toReal_mul]
-    rfl
+    simp only [ν, measureReal_def]
   have hrateReal : ((1 - F {0})⁻¹).toReal * (∫⁻ n, (n : ℝ≥0∞) ∂ν)⁻¹.toReal =
       (a : ℝ) * (∫⁻ t, (t : ℝ≥0∞) ∂F)⁻¹.toReal := by
     rw [← ENNReal.toReal_mul, hrate, ENNReal.toReal_mul, ENNReal.coe_toReal]
@@ -88,12 +92,16 @@ count from `n * a` to `(n + 1) * a` tends to `a / μ`, with reciprocal taken in 
 The initial artificial arrival is excluded from the renewal function, while genuine
 zero-time arrivals are retained. Infinite mean gives limit zero. -/
 theorem IsLatticeSpan.tendsto_renewalFunction_succ_mul_sub (ha : F.IsLatticeSpan a)
-    (hF : F {0} < 1) (hmax : IsGreatest {b | F.IsLatticeSpan b} a) :
+    (hmax : IsGreatest {b | F.IsLatticeSpan b} a) :
     Tendsto (fun n : ℕ => (F.renewalFunction ((n + 1 : ℕ) * a)).toReal -
       (F.renewalFunction ((n : ℝ≥0) * a)).toReal) atTop
       (𝓝 ((a : ℝ) * ((∫⁻ t, (t : ℝ≥0∞) ∂F)⁻¹).toReal)) := by
+  have hF : F {0} < 1 := by
+    apply tsub_pos_iff_lt.mp
+    rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
+    exact pos_iff_ne_zero.mpr (measure_compl_singleton_zero_ne_zero hmax)
   let := F.isLocallyFiniteMeasure_renewalMeasure hF
   simpa only [ha.toReal_renewalFunction_succ_mul_sub, Function.comp_def] using
-    (ha.tendsto_renewalMeasure_real_mul hF hmax).comp (tendsto_add_atTop_nat 1)
+    (ha.tendsto_renewalMeasure_real_mul hmax).comp (tendsto_add_atTop_nat 1)
 
 end MeasureTheory.Measure

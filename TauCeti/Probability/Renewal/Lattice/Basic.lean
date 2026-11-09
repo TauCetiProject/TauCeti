@@ -269,7 +269,7 @@ theorem IsLattice.exists_isGreatest_of_measure_zero_lt_one [IsProbabilityMeasure
 
 /-- A measure with a greatest span is not concentrated at `0`: if it were, `2 * g` would be a
 span exceeding every span `g`. -/
-private theorem measure_compl_singleton_zero_ne_zero {g : ℝ≥0}
+theorem measure_compl_singleton_zero_ne_zero {g : ℝ≥0}
     (hg : IsGreatest {b | μ.IsLatticeSpan b} g) : μ {0}ᶜ ≠ 0 := by
   intro h0
   have hspan : μ.IsLatticeSpan (2 * g) := by

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ENat.ENNReal
 public import TauCeti.Probability.Renewal.Countdown.Invariant
 public import TauCeti.Probability.Renewal.Countdown.Returns
 public import TauCeti.Probability.Renewal.Countdown.Period
@@ -72,7 +73,7 @@ private theorem exists_invariant_countdownKernel_subtype (ν : Measure ℕ)
 /-- The aperiodic countdown return probability tends to the reciprocal mean positive gap.
 The inverse is taken in `ℝ≥0∞` before conversion to `ℝ`, so infinite mean gives zero.
 No bounded-support or finite-moment assumption is needed. -/
-theorem tendsto_countdownKernel_map_pred_pow_zero (ν : Measure ℕ) [IsProbabilityMeasure ν]
+theorem tendsto_countdownKernel_map_pred_pow_apply_zero (ν : Measure ℕ) [IsProbabilityMeasure ν]
     (hν : ν {0} = 0) (hgcd : Nat.setGcd {n | 0 < ν {n}} = 1) :
     Tendsto (fun n : ℕ => (((ν.map Nat.pred).countdownKernel ^ n) 0).real {0})
       atTop (𝓝 ((∫⁻ j, (j : ℝ≥0∞) ∂ν)⁻¹).toReal) := by
@@ -85,7 +86,7 @@ theorem tendsto_countdownKernel_map_pred_pow_zero (ν : Measure ℕ) [IsProbabil
       ((μ.countdownKernel ^ n) 0).real {0} := by
     rw [Measure.dirac_bind (κ ^ n).measurable, measureReal_def,
       Kernel.subtype_pow_apply _ _ μ.countdownKernel_isClosedSet, image_singleton]
-    rfl
+    simp only [z, measureReal_def]
   by_cases hmean : (∫⁻ j, (j : ℝ≥0∞) ∂ν) = ∞
   · have hpre : (Subtype.val : μ.countdownStates → ℕ) ⁻¹' {0} = {z} := by
       ext j
@@ -96,19 +97,14 @@ theorem tendsto_countdownKernel_map_pred_pow_zero (ν : Measure ℕ) [IsProbabil
     have hret : (∫⁻ ω, (hittingAfter (fun n ω => ω n) {z} 1 ω).recTopCoe ⊤
         (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (dirac z) κ) = ∞ := by
       rw [hm]
-      have heq : ∀ t : WithTop ℕ,
-          t.recTopCoe (⊤ : ℝ≥0∞) (fun n => (n : ℝ≥0∞)) = ENat.toENNReal t := by
-        intro t
-        induction t using WithTop.recTopCoe with
-        | top => exact ENat.toENNReal_top.symm
-        | coe n => exact (ENat.toENNReal_coe n).symm
-      simp_rw [heq]
+      simp_rw [WithTop.recTopCoe_top_natCast]
       exact (ν.lintegral_hittingAfter_countdownKernel_map_pred hν).trans hmean
     simpa only [hmass, hmean, ENNReal.inv_top, ENNReal.toReal_zero] using
       κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
         haper hret (dirac z)
   · obtain ⟨ρ, hρ, hstat, hz⟩ := exists_invariant_countdownKernel_subtype ν hν hmean
     let := hρ
+    -- Identify the helper's local gap law and zero state with μ and z above.
     have hz : ρ.real {z} = ((∫⁻ j, (j : ℝ≥0∞) ∂ν)⁻¹).toReal := hz
     have hlim := hstat.tendsto_tvDist_pow_comp haper (dirac z)
     have hevent : Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ dirac z).real {z} - ρ.real {z})
