@@ -654,8 +654,7 @@ theorem ofDeriv_injective (x : M) : Function.Injective (ofDeriv I F (V := V) x) 
   rw [← (trivializationAt F V x).symmL_continuousLinearMapAt (R := 𝕜) hx (L v), h2,
     (trivializationAt F V x).symmL_continuousLinearMapAt hx]
 
-/-- The value of the jet of a homomorphism `L` is zero. Simp proves this through
-`ofDeriv_apply` and `value_mk_zero`. -/
+/-- The value of the jet of a homomorphism `L` is zero. -/
 theorem value_ofDeriv (x : M) (L : TangentSpace I x →L[𝕜] V x) :
     value I F x (ofDeriv I F x L) = 0 :=
   (value_eq_zero_iff I F x _).2 rfl
