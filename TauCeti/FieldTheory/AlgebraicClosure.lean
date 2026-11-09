@@ -56,8 +56,8 @@ closure of `K`, and Mathlib's `IntermediateField.LinearDisjoint.isDomain`.
 
 * `AlgebraicIndependent.linearDisjoint_algebraicClosure`: an algebraically independent family
   generates a subalgebra linearly disjoint from the relative algebraic closure.
-* `algebraicClosure.finiteDimensional`: the relative algebraic closure of `k` in a finitely
-  generated field extension is finite over `k`.
+* `TauCeti.finiteDimensional_algebraicClosure`: the relative algebraic closure of `k` in a
+  finitely generated field extension is finite over `k`.
 * `TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`: if `K ⊗[k] L` is a domain for an
   algebraically closed field `L` over `k`, then `algebraicClosure k K = ⊥`.
 * `TauCeti.isDomain_tensorProduct_of_isIntegrallyClosedIn`: exact constants give a domain after
@@ -105,9 +105,11 @@ theorem AlgebraicIndependent.linearDisjoint_algebraicClosure {ι : Type*} {x : �
   rw [Subalgebra.linearDisjoint_iff_injective, this]
   exact hf
 
+namespace TauCeti
+
 /-- The relative algebraic closure of `k` in a finitely generated field extension `K` is a finite
 extension of `k`. -/
-instance algebraicClosure.finiteDimensional [Algebra.EssFiniteType k K] :
+instance finiteDimensional_algebraicClosure [Algebra.EssFiniteType k K] :
     FiniteDimensional k (algebraicClosure k K) := by
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k K
   set B := Algebra.adjoin k (Set.range ((↑) : s → K))
@@ -125,6 +127,8 @@ instance algebraicClosure.finiteDimensional [Algebra.EssFiniteType k K] :
   have : Module.rank k (algebraicClosure k K).toSubalgebra < Cardinal.aleph0 :=
     hs.1.linearDisjoint_algebraicClosure.adjoin_rank_eq_rank_left ▸ hle.trans_lt hK
   exact Module.rank_lt_aleph0_iff.mp this
+
+end TauCeti
 
 end Finite
 
