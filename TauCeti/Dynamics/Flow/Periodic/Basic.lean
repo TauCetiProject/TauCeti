@@ -23,7 +23,8 @@ Hamiltonian evolution by taking `v t x = omega.hamiltonianVectorField (H t) x`. 
 arbitrary real number; taking it to be one gives the parametrized periodic trajectories used in
 Hamiltonian dynamics. No minimal-period assertion is made. A solution through an isolated fixed
 point of the return map, such as a nondegenerate one, is isolated among the periodic solutions: no
-other periodic solution starts close to it (`TauCeti.exists_pos_forall_eq_of_dist_lt`).
+other periodic solution starts close to it
+(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`).
 
 ## References
 
@@ -121,8 +122,9 @@ solution `x` is isolated among the fixed points of the return map from time `s` 
 then every `T`-periodic solution `y` with `y s` close enough to `x s` is `x` itself. For a
 nondegenerate fixed point the isolation is
 `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`. -/
-theorem exists_pos_forall_eq_of_dist_lt {x : ℝ → E} (hx : ∀ t, HasDerivAt x (v t (x t)) t)
-    {s : ℝ} (hiso : ∀ᶠ p in 𝓝[≠] x s, ¬IsFixedPt (timeDependentFlow v hv s (s + T)) p) :
+theorem exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt {x : ℝ → E}
+    (hx : ∀ t, HasDerivAt x (v t (x t)) t) {s : ℝ}
+    (hiso : ∀ᶠ p in 𝓝[≠] x s, ¬IsFixedPt (timeDependentFlow v hv s (s + T)) p) :
     ∃ ε > 0, ∀ y : ℝ → E, (∀ t, HasDerivAt y (v t (y t)) t) → Periodic y T →
       dist (y s) (x s) < ε → y = x := by
   obtain ⟨ε, hε, h⟩ := Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hiso)

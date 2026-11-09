@@ -49,16 +49,18 @@ breaking at an end. For these statements no nondegeneracy of the orbits, and no 
 derivative of `u`, is assumed; accordingly the orbit is obtained along a sequence, while the limit
 of the actions holds along the whole end.
 
-Convergence of the loops for all `s → ∞` needs both. If the derivative of `u` is bounded on the
-half-cylinder and every `1`-periodic orbit in `K` is nondegenerate, meaning that its initial point
-is a nondegenerate fixed point of the time-one map of the Hamiltonian evolution, then the loops
-`t ↦ u(s, t)` converge uniformly to a single `1`-periodic orbit as `s → ∞`
+Under two further assumptions, the loops converge for all `s → ∞`. If the derivative of `u` is
+bounded on the half-cylinder and every `1`-periodic orbit in `K` is nondegenerate, meaning that its
+initial point is a nondegenerate fixed point of the time-one map of the Hamiltonian evolution, then
+the loops `t ↦ u(s, t)` converge uniformly to a single `1`-periodic orbit as `s → ∞`
 (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer`). This is the
 asymptotic condition `u(s, ·) → x` at the ends of the Floer trajectories and pairs of pants which
-are counted in the Floer complex and its product. Nondegenerate orbits are isolated
-(`TauCeti.exists_pos_forall_eq_of_dist_lt`), so the statement is an instance of the convergence
-theorem `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop` for loops with
-square-integrable defect.
+are counted in the Floer complex and its product. Nondegenerate fixed points of the time-one map
+are isolated (`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`), and periodic solutions
+through isolated fixed points are isolated among the periodic solutions
+(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`). So the statement is an
+instance of the convergence theorem `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`
+for loops with square-integrable defect.
 
 ## References
 
@@ -329,7 +331,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
   -- A nondegenerate orbit starts at an isolated fixed point of the time-one map.
   have hiso := (hnd x hxper hx hxK).eventually_not_isFixedPt
   rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_eq_of_dist_lt _ hx hiso
+  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
   exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hy hyper (hyx 0)⟩
 
 end TauCeti.SymplecticForm
