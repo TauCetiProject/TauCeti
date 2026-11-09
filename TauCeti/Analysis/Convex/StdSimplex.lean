@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
+import Mathlib.Algebra.BigOperators.Pi
+import Mathlib.Analysis.Convex.Combination
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -34,6 +36,8 @@ of a closed vertex star whose link is a combinatorial ball.
 
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
   simplex form a convex set.
+* `TauCeti.mem_convexHull_pi_single_iff`: membership in the face of the standard simplex spanned
+  by a set of vertices, in coordinates.
 * `TauCeti.card_mul_inf'_smul_add_smul_barycenter`: `card ι` times the least coordinate recovers
   the parameter along a segment from a boundary point to the barycentre.
 * `TauCeti.convexJoin_boundary_stdSimplex_barycenter`: the standard simplex is the convex join of
@@ -68,6 +72,39 @@ end Convexity.StdSimplex
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
+
+/-- Membership in a face of the barycentric simplex is nonnegativity, total mass one,
+and vanishing of the coordinates outside the face. The empty face has empty convex hull. -/
+@[simp]
+theorem mem_convexHull_pi_single_iff [DecidableEq ι] {s : Set ι} {x : ι → ℝ} :
+    x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s) ↔
+      (∀ i, 0 ≤ x i) ∧ (∑ i, x i = 1) ∧ ∀ i ∉ s, x i = 0 := by
+  constructor
+  · intro hx
+    have hsimplex : (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 := by
+      have hr : x ∈ range (fun t : StdSimplex ℝ ι => ⇑t.weights) := by
+        apply convexHull_min (fun _ hi => ?_)
+          (StdSimplex.convex_range_toFun_comp_weights ℝ ι) hx
+        obtain ⟨i, _, rfl⟩ := hi
+        exact ⟨StdSimplex.single i, by
+          ext j
+          simp [Finsupp.single_apply, Pi.single_apply, eq_comm]⟩
+      obtain ⟨t, rfl⟩ := hr
+      exact ⟨t.weights_nonneg, t.total_of_fintype⟩
+    refine ⟨hsimplex.1, hsimplex.2, fun i hi => ?_⟩
+    apply convexHull_min (fun _ hz => ?_) (convex_hyperplane (LinearMap.proj i).isLinear 0) hx
+    obtain ⟨j, hj, rfl⟩ := hz
+    simp [ne_of_mem_of_not_mem hj hi]
+  · rintro ⟨hnonneg, hsum, hsupp⟩
+    classical
+    have hmem (i : ι) (hi : x i ≠ 0) : i ∈ s := by_contra fun his => hi (hsupp i his)
+    have hsums : ∑ i ∈ univ with i ∈ s, x i = 1 := by
+      rw [sum_filter_of_ne fun i _ => hmem i, hsum]
+    have hrepr : ∑ i ∈ univ with i ∈ s, x i • Pi.single i (1 : ℝ) = x := by
+      rw [sum_filter_of_ne fun i _ hi => hmem i (left_ne_zero_of_smul hi), ← pi_eq_sum_univ']
+    rw [← hrepr]
+    exact (convex_convexHull ℝ _).sum_mem (fun i _ => hnonneg i) hsums
+      (fun i hi => subset_convexHull ℝ _ ⟨i, (mem_filter.mp hi).2, rfl⟩)
 
 /-- Along the segment from a point `y` with nonnegative coordinates, one of them zero, to the
 barycentre of the standard simplex, `card ι` times the least coordinate is the parameter `t`. -/
