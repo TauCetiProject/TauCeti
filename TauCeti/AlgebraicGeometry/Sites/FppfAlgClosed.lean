@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import TauCeti.Algebra.Category.CommAlgCat.Fppf
+public import TauCeti.AlgebraicGeometry.RationalPoint.Image
 
 /-!
 # Fppf covers of an algebraically closed field
@@ -57,12 +57,10 @@ theorem eq_top_of_mem_fppfTopology_of_isAlgClosed (S : Sieve (Spec (.of K)))
   cases hg with
   | @of Y g hg =>
   have : LocallyOfFinitePresentation g := (hR hg).2
-  have : JacobsonSpace Y := LocallyOfFiniteType.jacobsonSpace g
-  obtain ⟨x, -, hx⟩ := nonempty_inter_closedPoints (X := Y) ⟨y, Set.mem_univ y⟩
-    isClosed_univ.isLocallyClosed
-  -- The closed point `x` of `Y` is a `K`-rational point, which is a section of `g`.
-  rw [← Sieve.id_mem_iff_eq_top, ← pointOfClosedPoint_comp g x hx]
-  exact S.downward_closed (hRS Y g hg) _
+  -- The nonempty scheme `Y` has a `K`-rational point, which is a section of `g`.
+  obtain ⟨p, hp, -⟩ := isClosed_univ.isLocallyClosed.exists_rationalPoint_mem g ⟨y, trivial⟩
+  rw [← Sieve.id_mem_iff_eq_top, ← hp]
+  exact S.downward_closed (hRS Y g hg) p
 
 end AlgebraicGeometry.Scheme
 
@@ -83,9 +81,9 @@ theorem eq_top_of_mem_fppfTopology_of_isAlgClosed (S : Sieve (op (CommAlgCat.of 
   have htop : Sieve.overEquiv _ (S.functorPushforward (algSpec (CommRingCat.of K))) = ⊤ :=
     Scheme.eq_top_of_mem_fppfTopology_of_isAlgClosed K _ hS
   -- A fully faithful functor recovers a sieve from its pushforward.
-  rw [← (Sieve.fullyFaithfulFunctorGaloisCoinsertion (algSpec (CommRingCat.of K)) _).u_l_eq S,
+  rw [← Sieve.functorPullback_functorPushforward_eq (F := algSpec (CommRingCat.of K)) (S := S),
     ← (Sieve.overEquiv _).symm_apply_apply (Sieve.functorPushforward _ S), htop,
     OrderIso.map_top]
-  rfl
+  exact Sieve.functorPullback_top _ _
 
 end TauCeti.CommAlgCat
