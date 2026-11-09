@@ -443,14 +443,15 @@ private theorem IsContact.eq_of_apply_eq_one (h : a.IsContact B) {r r' : V} (hr 
 open Classical in
 /-- If a vector takes the value `1` under `a` and is `B`-orthogonal to `ker a`, the Reeb vector is
 such a vector. -/
-private theorem reebVector_spec_of_exists (hex : ∃ r, a r = 1 ∧ ∀ w, a w = 0 → B r w = 0) :
+theorem reebVector_spec_of_exists (hex : ∃ r, a r = 1 ∧ ∀ w, a w = 0 → B r w = 0) :
     a (a.reebVector B) = 1 ∧ ∀ w, a w = 0 → B (a.reebVector B) w = 0 := by
   rw [reebVector, dite_eq_left_of_eq_true (eq_true hex)]
   exact hex.choose_spec
 
 open Classical in
-/-- Without such a vector the Reeb vector is the junk value `0`. -/
-private theorem reebVector_eq_zero_of_not_exists
+/-- If no vector takes the value `1` under `a` while being `B`-orthogonal to `ker a`, the Reeb
+vector is the junk value `0`. -/
+theorem reebVector_eq_zero_of_not_exists
     (hex : ¬∃ r, a r = 1 ∧ ∀ w, a w = 0 → B r w = 0) : a.reebVector B = 0 := by
   rw [reebVector, dite_eq_right_iff]
   exact fun h ↦ (hex h).elim
@@ -503,10 +504,7 @@ private theorem IsContact.exists_apply_eq_one (h : a.IsContact B) :
 unique vector `r` with `a r = 1` which is `B`-orthogonal to `ker a`. -/
 theorem IsContact.eq_reebVector_iff (h : a.IsContact B) {r : V} :
     r = a.reebVector B ↔ a r = 1 ∧ ∀ w, a w = 0 → B r w = 0 := by
-  have hex := h.exists_apply_eq_one
-  have hspec : a (a.reebVector B) = 1 ∧ ∀ w, a w = 0 → B (a.reebVector B) w = 0 := by
-    rw [reebVector, dite_eq_left_of_eq_true (eq_true hex)]
-    exact hex.choose_spec
+  have hspec := reebVector_spec_of_exists h.exists_apply_eq_one
   refine ⟨fun hr ↦ hr ▸ hspec, fun hr ↦ ?_⟩
   exact h.eq_of_apply_eq_one hr.1 hr.2 hspec.1 hspec.2
 
