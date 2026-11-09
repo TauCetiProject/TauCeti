@@ -20,7 +20,8 @@ coefficients recovers the supplied coordinates, even when some coefficients vani
 of the bounded-degree polynomial tuple having the prescribed coefficients.
 `polynomialCoefficientMap_polynomialFromCoefficients_coe` is the round-trip law: after forgetting
 the possibly smaller inferred degree bound, extraction returns that same tuple.
-The final theorem applies this to any supplied coefficient map whose coordinates are polynomial.
+For coefficient maps supplied in arbitrary finite linear coordinates, see
+`TauCeti.Geometry.Neuromanifold.Polynomial.LinearPresentation`.
 All statements hold over commutative semirings; faithfulness of evaluation over infinite domains
 is provided separately by `MvPolynomial.tupleEvaluation_injective`.
 
@@ -110,24 +111,5 @@ theorem polynomialCoefficientMap_polynomialFromCoefficients_coe [Fintype J]
       ((boundedCoefficientEquiv X K J d).symm (fun i => eval w (Q i)) j :
         MvPolynomial X K) := by
   rw [polynomialCoefficientMap_coe, map_inputPolynomial_polynomialFromCoefficients]
-
-/-- A supplied bounded-degree coefficient map with polynomial coordinates has a joint polynomial
-presentation, and coefficient extraction recovers it in the same monomial coordinates. -/
-theorem exists_polynomialRealization_of_coefficients [Fintype J]
-    (c : (W → K) → J → restrictTotalDegree X K d)
-    (Q : J × {a : X →₀ ℕ // a.degree ≤ d} → MvPolynomial W K)
-    (hQ : ∀ w i, eval w (Q i) = boundedCoefficientEquiv X K J d (c w) i) :
-    ∃ P : J → MvPolynomial (W ⊕ X) K,
-      polynomialRealization P = tupleEvaluation J (restrictTotalDegree X K d) ∘ c ∧
-        ∀ w j, (polynomialCoefficientMap P w j : MvPolynomial X K) = c w j := by
-  have hcoords (w : W → K) : (fun i => eval w (Q i)) =
-      boundedCoefficientEquiv X K J d (c w) := funext (hQ w)
-  refine ⟨polynomialFromCoefficients Q, ?_, ?_⟩
-  · rw [polynomialRealization_polynomialFromCoefficients]
-    funext w
-    simp [hcoords]
-  · intro w j
-    rw [polynomialCoefficientMap_polynomialFromCoefficients_coe, hcoords,
-      LinearEquiv.symm_apply_apply]
 
 end TauCeti.Neuromanifold
