@@ -74,15 +74,14 @@ theorem exists_paths_vertexSeparator_card_eq [Finite V] (hst : s ≠ t) (hadj : 
       s ∉ X ∧ t ∉ X ∧ ¬ReachableAvoiding D.AdjHom (X : Set V) s t ∧ #X = k :=
   TauCeti.exists_paths_vertexSeparator_card_eq hst (isEmpty_adjHom_iff.2 hadj)
 
-/-- **Menger's theorem for vertex deletion in a digraph, predicate form.** Distinct nonadjacent
+/-- **Menger's theorem for vertex deletion in a digraph, predicate form.** Nonadjacent
 vertices remain joined after deleting any fewer than `k` other vertices exactly when there are
 `k` pairwise internally vertex-disjoint directed paths between them. -/
-theorem forall_reachableAvoiding_iff_exists_paths [Finite V] (hst : s ≠ t) (hadj : ¬D.Adj s t)
-    (k : ℕ) :
+theorem forall_reachableAvoiding_iff_exists_paths [Finite V] (hadj : ¬D.Adj s t) (k : ℕ) :
     (∀ X : Finset V, s ∉ X → t ∉ X → #X < k →
       ReachableAvoiding D.AdjHom (X : Set V) s t) ↔
       ∃ P : Fin k → ArrowWalk D.AdjHom s t, (∀ i, (P i).IsPath) ∧
         Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) :=
-  TauCeti.forall_reachableAvoiding_iff_exists_paths hst (isEmpty_adjHom_iff.2 hadj) k
+  TauCeti.forall_reachableAvoiding_iff_exists_paths (isEmpty_adjHom_iff.2 hadj) k
 
 end Digraph

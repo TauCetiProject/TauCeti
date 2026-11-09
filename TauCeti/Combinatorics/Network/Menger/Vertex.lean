@@ -213,17 +213,21 @@ theorem exists_paths_vertexSeparator_card_eq [Finite V] (hst : s ≠ t) (hadj : 
   exact ⟨k, P, X, injective_of_pairwise_internallyDisjoint hdisj
     fun i ↦ (P i).exists_mem_vertices_ne_ne hst hadj, hP, hdisj, hs, ht, hX, by simpa using hk⟩
 
-/-- **Menger's theorem for internally vertex-disjoint directed paths, predicate form.** Let `s ≠ t`
-be vertices of an arrow family on a finite vertex type, with no arrow from `s` to `t`. Then `t`
+/-- **Menger's theorem for internally vertex-disjoint directed paths, predicate form.** Let `s` and
+`t` be vertices of an arrow family on a finite vertex type, with no arrow from `s` to `t`. Then `t`
 stays reachable from `s` after deleting any fewer than `k` vertices other than `s` and `t` exactly
-when there are `k` directed `s`–`t` paths pairwise sharing no vertex other than `s` and `t`. -/
-theorem forall_reachableAvoiding_iff_exists_paths [Finite V] (hst : s ≠ t)
+when there are `k` directed `s`–`t` paths pairwise sharing no vertex other than `s` and `t`. For
+`s = t` both sides hold, the paths being the trivial walk. -/
+theorem forall_reachableAvoiding_iff_exists_paths [Finite V]
     (hadj : IsEmpty (Q s t)) (k : ℕ) :
     (∀ X : Finset V, s ∉ X → t ∉ X → #X < k → ReachableAvoiding Q (X : Set V) s t) ↔
       ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
         Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
   refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ X hs ht hX ↦ ?_⟩
-  · obtain ⟨m, P, X, -, hP, hdisj, hs, ht, hX, hXm⟩ :=
+  · rcases eq_or_ne s t with rfl | hst
+    · exact ⟨fun _ ↦ .nil s, fun _ ↦ ArrowWalk.isPath_nil s, fun _ _ _ ↦
+        ArrowWalk.internallyDisjoint_def.2 fun v hv _ ↦ Or.inl (by simpa using hv)⟩
+    obtain ⟨m, P, X, -, hP, hdisj, hs, ht, hX, hXm⟩ :=
       exists_paths_vertexSeparator_card_eq (Q := Q) hst hadj
     have hkm : k ≤ m := hXm ▸ not_lt.1 fun hlt ↦ hX (h X hs ht hlt)
     exact ⟨fun i ↦ P (Fin.castLE hkm i), fun i ↦ hP _,

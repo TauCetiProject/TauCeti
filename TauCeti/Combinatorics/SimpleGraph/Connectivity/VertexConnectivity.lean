@@ -562,14 +562,13 @@ theorem vertexConnectivity_top : (⊤ : SimpleGraph V).vertexConnectivity = ENat
 
 /-! ### Menger's theorem -/
 
-/-- **Menger's theorem for vertex reachability.** Two distinct nonadjacent vertices `s` and `t` of
+/-- **Menger's theorem for vertex reachability.** Two nonadjacent vertices `s` and `t` of
 a simple graph on a finite vertex type are `k`-vertex-reachable exactly when there are `k` paths
 from `s` to `t` pairwise sharing no vertex other than `s` and `t`. -/
-theorem isVertexReachable_iff_exists_paths [Finite V] {s t : V} (hst : s ≠ t) (hadj : ¬G.Adj s t)
-    (k : ℕ) :
+theorem isVertexReachable_iff_exists_paths [Finite V] {s t : V} (hadj : ¬G.Adj s t) (k : ℕ) :
     G.IsVertexReachable k s t ↔ ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
       Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) :=
-  ⟨fun h ↦ (forall_reachable_induce_iff_exists_paths hst hadj k).1 fun X hs ht hX ↦
+  ⟨fun h ↦ (forall_reachable_induce_iff_exists_paths hadj k).1 fun X hs ht hX ↦
       h (by simpa using hX) hs ht,
     fun ⟨_, _, hP⟩ ↦ isVertexReachable_of_pairwise_internallyDisjoint hP⟩
 
