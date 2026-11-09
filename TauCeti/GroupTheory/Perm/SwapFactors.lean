@@ -277,9 +277,8 @@ private theorem periodicPts_or_and_not_sameCycle_swap_mul_of_sameCycle
         ⟨n, hn, by simpa using hk⟩
       exact ⟨Or.inl h₁, h₂⟩
   · have hba : (σ ^ (n + 1)) b = a := by
-      have h0 : ((n + 1 : ℕ) : ℤ) + Int.negSucc n = 0 := by omega
-      rw [← hk, ← Equiv.Perm.mul_apply, ← zpow_natCast, ← zpow_add, h0, zpow_zero,
-        Equiv.Perm.one_apply]
+      rw [← hk]
+      simp [zpow_negSucc]
     obtain ⟨h₁, h₂⟩ := mem_periodicPts_and_not_sameCycle_swap_mul_of_exists_pow_eq hab.symm
       ⟨n + 1, n.succ_pos, hba⟩
     rw [Equiv.swap_comm] at h₁ h₂
