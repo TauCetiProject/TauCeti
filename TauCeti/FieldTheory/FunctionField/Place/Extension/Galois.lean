@@ -206,25 +206,33 @@ section Transport
 
 variable (F) (g : P.integers.decompositionSubgroup F)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` leaves the valuation at `P` unchanged. -/
 @[simp]
 theorem valuation_decompositionSubgroup_apply (x : F') :
     P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
-  have h : (g : F' ≃ₐ[F] F') • P = P := by
-    have hg : (g : F' ≃ₐ[F] F') ∈ MulAction.stabilizer (F' ≃ₐ[F] F') P := by
-      rw [stabilizer_eq_decompositionSubgroup]
-      exact g.2
-    exact hg
-  calc P.valuation ((g : F' ≃ₐ[F] F') x)
-      = ((g : F' ≃ₐ[F] F') • P).valuation ((g : F' ≃ₐ[F] F') x) := by rw [h]
-    _ = P.valuation x := valuation_smul_apply _ _ _
+  obtain ⟨σ, hσ⟩ := g
+  have hstab : σ • P.integers = P.integers := hσ
+  -- the valuation `v_P ∘ σ` has the same valuation ring as `v_P`, and is normalized as `σ` is onto
+  have hint (y : F') : P.valuation (σ y) ≤ 1 ↔ P.valuation y ≤ 1 := by
+    rw [← mem_integers_iff, ← mem_integers_iff, ← hstab,
+      ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem, hstab]
+    simp
+  have hsurj : Function.Surjective (P.valuation.comap (σ : F' →+* F')) := by
+    intro w
+    obtain ⟨y, rfl⟩ := P.valuation_surjective w
+    exact ⟨σ.symm y, by simp⟩
+  exact DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective hsurj P.valuation_surjective
+    (Valuation.isEquiv_iff_val_le_one.mpr fun {y} ↦ hint y)) x
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` leaves the order at `P` unchanged. -/
 @[simp]
 theorem ord_decompositionSubgroup_apply (x : F') :
     P.ord ((g : F' ≃ₐ[F] F') x) = P.ord x := by
   rw [ord_def, ord_def, valuation_decompositionSubgroup_apply]
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` preserves the valuation ring of `P`. -/
 theorem mem_integers_decompositionSubgroup_apply {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
