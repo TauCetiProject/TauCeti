@@ -247,8 +247,7 @@ private theorem subst_subst_formalInverse_eq_zero {σ' : Type*}
 
 /-! ### The parametrized point -/
 
-variable [IsDomain O]
-
+variable [IsDomain O] in
 /-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
 itself nonzero: it factors as `q ^ 3 * u(q)`, and `u` has constant coefficient `1`. -/
 private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoeff q = 0)
@@ -277,8 +276,11 @@ Every parametrized point of this file needs its `w`-coordinate invertible in `KK
 form `subst_formalW_ne_zero` is actually used in. -/
 theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
     (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦
-  W.subst_formalW_ne_zero hq hq0
+    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
+  -- `O` is a domain, since it embeds in the field `KK` through `MvPowerSeries σ O`.
+  have : IsDomain O := ((IsFractionRing.injective (MvPowerSeries σ O) KK).comp
+    C_injective).isDomain ((algebraMap (MvPowerSeries σ O) KK).comp C)
+  exact W.subst_formalW_ne_zero hq hq0
     (IsFractionRing.injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
 
 /-- The point of the base-changed curve carried by the parameter `q`: the solution `(q, w(q))` of
@@ -305,7 +307,7 @@ theorem thetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeri
     W.thetaPoint hΔ hq hq0 = .some _ _ h :=
   (rfl)
 
-variable [DecidableEq KK] in
+variable [IsDomain O] [DecidableEq KK] in
 /-- The sum of the parametrized points `θ(q₁)` and `θ(q₂)` is the point with affine coordinates
 `(T / w(T), (1 - a₁ T - a₃ w(T)) / w(T))`, where `T` is the third root of the chord. -/
 private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
@@ -441,7 +443,7 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
   · rw [hwFeq, div_eq_div_iff hwT0 (neg_ne_zero.mpr (mul_ne_zero hwT0 hsp0))]
     linear_combination (-(ρ wT)) * hu + (ρ wT * ρ sp) * hueq
 
-variable [DecidableEq KK] in
+variable [IsDomain O] [DecidableEq KK] in
 /-- **The chord addition of parametrized points**: `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))`.
 
 The two parametrized points lie on `fracCurve W`, the chord through them meets the curve again at
@@ -524,6 +526,7 @@ private theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   rw [div_eq_div_iff hw₁0 hw₂0, hw] at h1
   exact mul_right_cancel₀ hw₂0 h1
 
+variable [IsDomain O] in
 /-- The intercept at a pair is nonzero as soon as the two parameters are distinct and not
 mutually inverse.
 
@@ -569,7 +572,7 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
   · rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc
     exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc)
 
-variable [DecidableEq KK] in
+variable [IsDomain O] [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from distinctness alone**: `θ(q₁) + θ(q₂) =
 θ(F(q₁, q₂))` as soon as `q₁` is neither `q₂` nor its formal inverse.
 
@@ -591,7 +594,7 @@ private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   exact mul_ne_zero hN (sub_ne_zero.mpr hne₁)
 
 
-variable [DecidableEq KK] in
+variable [IsDomain O] [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from a separating substitution.**
 
 A single substitution sending `q₁` to `X` and `q₂` to `0` supplies both distinctness hypotheses of
@@ -612,7 +615,6 @@ theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
 
 /-! ### Associativity -/
 
-omit [IsDomain O] in
 /-- A curve with nonzero discriminant stays nonsingular over a fraction field of its series ring:
 `Δ` is carried there by the injective maps `C` and `algebraMap (MvPowerSeries σ O) KK`. -/
 theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 := by
@@ -621,6 +623,7 @@ theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 :
     map_ne_zero_iff _ C_injective]
   exact hΔ
 
+variable [IsDomain O] in
 /-- **Associativity of the addition series, from two separating substitutions.**
 
 If a substitution `g` sends `q₁` to `X` and `q₂`, `q₃` to `0`, and a substitution `g'` sends `q₂`
@@ -707,7 +710,6 @@ private theorem assoc_formalAdd_universal :
     (hasSubst_coordSpecialize _) (constantCoeff_X _) (constantCoeff_X _) (constantCoeff_X _)
     h10 h20 h30 hχ1 hχ2 hχ3 hχ'2 hχ'3
 
-omit [IsDomain O] in
 /-- **Associativity of the chord addition series**, for every Weierstrass curve over every
 commutative ring: `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`.
 
