@@ -43,10 +43,11 @@ pairs in `M × M`; it is compact as a closed subset of the compact space `M × M
   subset of `ℝ`.
 
 The converse inclusion, that every broken trajectory is a limit of unbroken ones, is
-`IsMorseSmale.morseBrokenTrajectoryPairs_subset_closure`. That each broken trajectory moreover has
-a neighbourhood homeomorphic to a half-open interval is the remaining part of the gluing theorem
-and is not proved here. Together with `TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` it would
-show that the broken trajectories are even in number, which is `∂ ∘ ∂ = 0` by
+`IsMorseSmale.morseBrokenTrajectoryPairs_subset_closure`. Each broken trajectory moreover has a
+neighbourhood homeomorphic to a half-open interval, by
+`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`. Together with
+`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this would show that the broken trajectories
+are even in number, which is `∂ ∘ ∂ = 0` by
 `IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff`.
 
 ## Main declarations

@@ -71,10 +71,11 @@ theorem morseBrokenTrajectoryPairs_subset_closure (p r : M) (c₁ c₂ : ℝ) :
   simp only [mem_morseBrokenTrajectoryPairs] at hw
   obtain ⟨q, hq, hpq, hqr, hy₁, rfl, hy₂, rfl⟩ := hw
   have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  exact h.mem_closure_of_mem_unstableSet_inter_stableSet hf
+  refine closure_mono (fun w hw ↦ hX.mem_morseTrajectoryPairs.2 hw)
+    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf
     (hX.mfderiv_eq_zero_of_forall_eq (hdf p) fun t ↦ by rw [Flow.fixed_of_mem_unstableSet hy₁.1 t])
     hq (hX.mfderiv_eq_zero_of_forall_eq (hdf r) fun t ↦ by rw [Flow.fixed_of_mem_stableSet hy₂.2 t])
-    hpq hqr hy₁ hy₂
+    hpq hqr hy₁ hy₂)
 
 include h hf in
 /-- **The compactified space of index-two trajectories.** Let `p` and `r` be critical points with
