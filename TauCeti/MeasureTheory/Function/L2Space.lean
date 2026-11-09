@@ -15,7 +15,10 @@ The pointwise inner product of two square-integrable functions with values in an
 space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L2.integrable_inner`);
 this file gives the form for functions satisfying `MemLp f 2 μ`, which is how second-moment
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
-form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
+form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. In the same way the L²
+pairing of such a function with an element of `L²` is an integral
+(`MeasureTheory.L2.inner_toLp_left`), and the squared L² norm is the integral of the squared
+pointwise norm (`MeasureTheory.L2.norm_sq_eq_integral_norm_sq`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -45,6 +48,23 @@ theorem MemLp.integrable_inner_toEuclideanLin {ι : Type*} [Fintype ι] [Decidab
     Integrable (fun x ↦ ⟪B.toEuclideanLin (f x), f x⟫_𝕜) μ :=
   (hf.continuousLinearMap_comp (LinearMap.toContinuousLinearMap B.toEuclideanLin)).integrable_inner
     hf
+
+/-- The L² inner product of a square-integrable function `f`, viewed in `L²`, with an element `g`
+of `L²` is the integral of their pointwise inner product. -/
+theorem L2.inner_toLp_left {f : α → E} (hf : MemLp f 2 μ) (g : Lp E 2 μ) :
+    ⟪hf.toLp f, g⟫_𝕜 = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp] with x hx
+  rw [hx]
+
+/-- The squared norm of an element of `L²` is the integral of its squared pointwise norm. -/
+theorem L2.norm_sq_eq_integral_norm_sq (f : Lp E 2 μ) : ‖f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  have hint : 0 ≤ ∫ x, ‖f x‖ ^ (2 : ℝ) ∂μ := integral_nonneg fun x ↦ by positivity
+  rw [Lp.norm_def, (Lp.memLp f).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat, ← Real.rpow_natCast,
+    ← Real.rpow_mul hint]
+  norm_num
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/

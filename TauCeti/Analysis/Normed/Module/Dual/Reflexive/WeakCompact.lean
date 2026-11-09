@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.Normed.Module.DoubleDual
+import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 
 /-!
 # Reflexivity and weak compactness
@@ -24,7 +25,11 @@ either condition also implies completeness. The topology changes are explicit, u
 `toWeakSpace` and `NormedSpace.inclusionInDoubleDualWeak`.
 
 The forward direction transports Banach–Alaoglu along the inducing bidual map;
-the reverse direction uses Goldstine's theorem.
+the reverse direction uses Goldstine's theorem. With Šmulian's theorem
+(`TauCeti.isSeqCompact_toWeakSpace_of_isCompact`), every bounded sequence in a reflexive normed
+space has a weakly convergent subsequence
+(`TauCeti.exists_strictMono_tendsto_toWeakSpace_of_norm_le`), the compactness step of the direct
+method of the calculus of variations.
 
 ## References
 
@@ -90,5 +95,16 @@ theorem surjective_inclusionInDoubleDual_iff_isCompact_toWeakSpace_closedBall :
       IsCompact (toWeakSpace 𝕜 E '' closedBall 0 1) :=
   ⟨fun hE ↦ isCompact_toWeakSpace_closedBall hE 0 1,
     surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall⟩
+
+/-- **Bounded sequences in a reflexive space have weakly convergent subsequences.** -/
+theorem exists_strictMono_tendsto_toWeakSpace_of_norm_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {x : ℕ → E} {C : ℝ}
+    (hx : ∀ n, ‖x n‖ ≤ C) :
+    ∃ y : E, ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      Filter.Tendsto (fun n ↦ toWeakSpace 𝕜 E (x (φ n))) Filter.atTop (𝓝 (toWeakSpace 𝕜 E y)) := by
+  obtain ⟨_, ⟨y, -, rfl⟩, φ, hφ, hlim⟩ :=
+    isSeqCompact_toWeakSpace_of_isCompact (isCompact_toWeakSpace_closedBall hE 0 C)
+      (fun n ↦ mem_image_of_mem _ (mem_closedBall_zero_iff.2 (hx n)))
+  exact ⟨y, φ, hφ, hlim⟩
 
 end TauCeti

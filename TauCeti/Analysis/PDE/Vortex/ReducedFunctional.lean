@@ -45,13 +45,15 @@ the power `3 / 2` of one plus the energy `∫ ‖Dw‖² / 2 + (1 / 16) ∫ h (e
 the linear term is at most the square root of `∫ w²` times a constant, it is dominated by the
 energy. This gives, for every compactly supported `C¹` function `w`:
 
+* `TauCeti.Vortex.memLp_reducedFunctional_coefficient`: the coefficient of the linear term is
+  square integrable;
 * `TauCeti.Vortex.exists_le_two_mul_reducedFunctional_add`: the energy is at most `2 I(w) + C`;
 * `TauCeti.Vortex.exists_le_reducedFunctional`: `I` is bounded below;
 * `TauCeti.Vortex.exists_integral_le_of_reducedFunctional_le`: on each sublevel set of `I`,
   `∫ ‖Dw‖²` and `∫ w²` are bounded, with a constant independent of `w`.
 
-These are the coercivity estimates of the direct method on `H¹(ℂ)`. The extension of `I` and of
-these estimates to `H¹(ℂ)`, the existence of a minimizer, and its regularity are not treated here.
+These are the coercivity estimates of the direct method on `H¹(ℂ)`. The passage to weak limits
+of minimizing sequences is `TauCeti.Analysis.PDE.Vortex.Minimization`.
 
 ## References
 
@@ -234,6 +236,18 @@ private theorem exists_sq_integral_sq_le (hm : 0 < P.natDegree) :
   exact sq_le_mul_one_add_pow_three (integral_nonneg fun z ↦ sq_nonneg _) (by positivity)
     (by positivity) hW1 hk2
 
+/-- The coefficient `g - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional, where
+`g = 2 ‖P'‖² / (1 + ‖P‖²)²`, is square integrable when `P` has degree at least one. -/
+theorem memLp_reducedFunctional_coefficient (hm : 0 < P.natDegree) :
+    MemLp (fun z ↦ 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+      (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) 2 := by
+  have h1 := (P.memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq).const_mul 2
+  have h2 := (Polynomial.memLp_inv_one_add_norm_eval_sq hm).const_mul (1 / 8 : ℝ)
+  convert h1.sub h2 using 1
+  funext z
+  simp only [Pi.sub_apply]
+  ring
+
 /-- **Coercivity of Taubes's functional.** For a complex polynomial `P` of degree at least one
 there is a constant `C` such that every compactly supported `C¹` function `w` satisfies
 
@@ -248,13 +262,7 @@ theorem exists_le_two_mul_reducedFunctional_add (hm : 0 < P.natDegree) :
   obtain ⟨γ, hγ, hsq⟩ := exists_sq_integral_sq_le hm
   set c : ℂ → ℝ := fun z ↦
     2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 - (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8
-  have hc : MemLp c 2 := by
-    have h1 := (P.memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq).const_mul 2
-    have h2 := (Polynomial.memLp_inv_one_add_norm_eval_sq hm).const_mul (1 / 8 : ℝ)
-    convert h1.sub h2 using 1
-    funext z
-    simp only [c, Pi.sub_apply]
-    ring
+  have hc : MemLp c 2 := memLp_reducedFunctional_coefficient hm
   set K := ∫ z, c z ^ 2
   set D := K ^ 2 * γ
   refine ⟨1 + 16 * D, fun w hw hws ↦ ?_⟩
