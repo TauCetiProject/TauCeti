@@ -301,9 +301,9 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
 
 /-- **The Caccioppoli inequality for the power `w = u^{p/2}` of a positive supersolution.** Under
 the hypotheses of `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le`,
-let `w ∈ H¹(Ω)` have value `u^{p/2}` and gradient `(p/2) u^{p/2-1} ∇u`, as provided by
-`TauCeti.W1p.exists_value_gradient_ae_eq_rpow`. Then for every `p < 1` and every smooth `ψ`
-compactly supported in `Ω`,
+let `w ∈ H¹(Ω)` have value `u^{p/2}`, as provided by
+`TauCeti.W1p.exists_value_gradient_ae_eq_rpow`; its weak gradient is then `(p/2) u^{p/2-1} ∇u`.
+Then for every `p < 1` and every smooth `ψ` compactly supported in `Ω`,
 
 `∫_Ω ψ² ‖∇w‖² ≤ (|p| Λ / ((1 - p) λ))² ∫_Ω ‖∇ψ‖² w²`.
 
@@ -318,8 +318,6 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow
     {ε : ℝ} (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
     {p : ℝ} (hp : p < 1) {w : W1p mu Omega 2}
     (hwv : W1p.value w =ᵐ[mu.restrict Omega] fun x => W1p.value u x ^ (p / 2))
-    (hwg : W1p.gradient w =ᵐ[mu.restrict Omega]
-      fun x => (p / 2 * W1p.value u x ^ (p / 2 - 1)) • W1p.gradient u x)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
     (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
     ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
@@ -328,6 +326,19 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow
   have hlam := h.pos
   have h1p : 0 < 1 - p := by linarith
   have hc := h.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le ha hu hε hεu hp hψ hcpt hts
+  -- The weak gradient of `w` is determined by its value, hence is that of `u ^ (p / 2)`.
+  have hwg : W1p.gradient w =ᵐ[mu.restrict Omega]
+      fun x => (p / 2 * W1p.value u x ^ (p / 2 - 1)) • W1p.gradient u x := by
+    obtain ⟨w', hw'v, hw'g⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
+      (by linarith : p / 2 ≤ 1) hεu
+    have h0 : ∀ᵐ x ∂mu.restrict (Omega : Set (EuclideanSpace ℝ ι)),
+        W1p.value (w - w') x = 0 := by
+      filter_upwards [W1p.value_sub_ae w w', hwv, hw'v] with x h1 h2 h3
+      rw [h1, Pi.sub_apply, h2, h3, sub_self]
+    filter_upwards [W1p.gradient_ae_eq_zero_of_value_ae_eq_zero le_rfl h0, hw'g,
+      Lp.coeFn_sub (W1p.gradient w) (W1p.gradient w')] with x h1 h2 h3
+    rw [W1p.gradient_sub, h3, Pi.sub_apply, sub_eq_zero] at h1
+    exact h1.trans h2
   -- Both sides in terms of `u`: `‖∇w‖² = (p/2)² u^{p-2} ‖∇u‖²` and `w² = u^p`.
   have hl : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu = (p / 2) ^ 2 *
       ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu := by
