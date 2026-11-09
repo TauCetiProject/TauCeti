@@ -150,6 +150,7 @@ variable [FiniteDimensional ℝ E]
   [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
   (ν : Measure F) [IsAddHaarMeasure ν] {U : Set E}
 
+omit [FiniteDimensional ℝ F] in
 /-- **Sard's lemma on the flat stratum.** Let `f` be `C^{k+1}` on an open set `U` of a
 finite-dimensional real normed space, and let `s ⊆ U` be a set at each point of which every
 iterated derivative of order `1 ≤ i ≤ k` vanishes. If `finrank ℝ E < (k + 1) * finrank ℝ F`, then
@@ -171,6 +172,7 @@ theorem addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero (hU : IsOpen U)
   rw [ENNReal.div_lt_iff (Or.inl (by simp)) (Or.inl (by simp)), mul_comm]
   exact_mod_cast hdim
 
+omit [FiniteDimensional ℝ F] in
 /-- **Sard's lemma on the flat stratum**, global form: the image of the whole set of points at
 which all iterated derivatives of order `1 ≤ i ≤ k` vanish is null, provided
 `finrank ℝ E < (k + 1) * finrank ℝ F`. -/
