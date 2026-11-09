@@ -1271,14 +1271,14 @@ theorem dualityMap0_zmod (m : H0 G (ZMod n)) (b : H2 G (InternalHom G (ZMod n) (
     dualityMap0 G (ZMod n) (ZMod n) m b = (m : ZMod n) • H2InternalHomZModEquiv htriv b := by
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
-    rw [dualityMap0_mk, H2InternalHomZModEquiv_mk, zmod_smul_mk]
+    rw [dualityMap0_mk, H2InternalHomZModEquiv_mk, zmod_smul_mk_cast]
     refine congrArg (fun z : Z2 G (ZMod n) => (z : H2 G (ZMod n)))
       (Subtype.ext (funext fun q => ?_))
     obtain ⟨g, h⟩ := q
     dsimp only
     rw [AddMonoidHom.flip_apply, InternalHom.evalPairing_apply,
       InternalHom.toAddMonoidHom_apply_eq_smul]
-    simp [nsmul_eq_mul]
+    simp [zsmul_eq_mul]
 
 /-- **`α₁` at trivial `ZMod n` coefficients is the cup product of multiplication**:
 `α₁ a b = a ⌣ b`, reading `b` in `H¹(G, ZMod n)` through evaluation at `1`. -/
