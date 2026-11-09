@@ -717,23 +717,6 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
       (by rwa [Fin.castSucc_castPred])
     rwa [Fin.castSucc_castPred] at this
 
-/-- A function on `Fin (k + 1)` that avoids the value `c`, starts above it and ends below it, drops
-below `c` at some step: there is `i` with `g i.succ < c < g i.castSucc`. -/
-theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : Fin (k + 1) → α}
-    {c : α} (hne : ∀ i, g i ≠ c)
-    (h0 : c < g 0) (hl : g (Fin.last k) < c) :
-    ∃ i : Fin k, g i.succ < c ∧ c < g i.castSucc := by
-  let S := Finset.univ.filter fun i ↦ c < g i
-  have hS : S.Nonempty := ⟨0, by simpa [S] using h0⟩
-  have hmS := S.max'_mem hS
-  have hm : S.max' hS ≠ Fin.last k := fun he ↦ by
-    rw [he] at hmS
-    exact (hl.trans (by simpa [S] using hmS)).false
-  obtain ⟨i, hi⟩ := Fin.exists_castSucc_eq.2 hm
-  refine ⟨i, lt_of_le_of_ne (not_lt.1 fun hlt ↦ ?_) (hne _), by simpa [S, hi] using hmS⟩
-  exact (Fin.castSucc_lt_succ : i.castSucc < i.succ).not_ge
-    (hi ▸ S.le_max' _ (by simpa [S] using hlt))
-
 end Fin
 
 namespace TauCeti
@@ -871,6 +854,27 @@ theorem le_apply_last_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {
   obtain ⟨j, hj⟩ := h i hi
   rw [← hj]
   exact hb j.le_last
+
+end TauCeti
+
+namespace Fin
+
+/-- A function on `Fin (k + 1)` that avoids the value `c`, starts above it and ends below it, drops
+below `c` at some step: there is `i` with `g i.succ < c < g i.castSucc`. -/
+theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : Fin (k + 1) → α}
+    {c : α} (hne : ∀ i, g i ≠ c)
+    (h0 : c < g 0) (hl : g (Fin.last k) < c) :
+    ∃ i : Fin k, g i.succ < c ∧ c < g i.castSucc := by
+  have hk : k ≠ 0 := by
+    rintro rfl
+    exact (h0.trans' hl).false
+  obtain ⟨i, hi⟩ := TauCeti.exists_mem_Icc_castSucc_succ (β := αᵒᵈ)
+    (fun j ↦ OrderDual.toDual (g j)) hk (x := OrderDual.toDual c) ⟨h0.le, hl.le⟩
+  exact ⟨i, lt_of_le_of_ne hi.2 (hne _), lt_of_le_of_ne hi.1 (hne _).symm⟩
+
+end Fin
+
+namespace TauCeti
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
 theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by
