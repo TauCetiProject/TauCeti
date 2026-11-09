@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.PlanarMatching.Cut
 import TauCeti.Logic.Equiv.Fin.Basic
-import Mathlib.Data.Fintype.Sort
 
 /-!
 # Gluing half-diagrams
