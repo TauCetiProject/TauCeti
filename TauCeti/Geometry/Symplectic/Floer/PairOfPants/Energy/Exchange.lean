@@ -101,30 +101,36 @@ private theorem exists_exchangeCutoff :
 private noncomputable def exchangeCutoff : ℝ → ℝ :=
   exists_exchangeCutoff.choose
 
-private theorem contDiff_exchangeCutoff : ContDiff ℝ 2 exchangeCutoff :=
-  exists_exchangeCutoff.choose_spec.1.of_le (by simp)
+private theorem contDiff_exchangeCutoff : ContDiff ℝ 2 exchangeCutoff := by
+  obtain ⟨hsmooth, -, -, -, -, -, -⟩ := exists_exchangeCutoff.choose_spec
+  exact hsmooth.of_le (by simp)
 
 end Cutoff
 
-private theorem exchangeCutoff_of_le {r : ℝ} (hr : r ≤ 3) : exchangeCutoff r = 1 :=
-  exists_exchangeCutoff.choose_spec.2.2.2.2.1 r hr
+private theorem exchangeCutoff_of_le {r : ℝ} (hr : r ≤ 3) : exchangeCutoff r = 1 := by
+  obtain ⟨-, -, -, -, hone, -, -⟩ := exists_exchangeCutoff.choose_spec
+  exact hone r hr
 
-private theorem exchangeCutoff_of_ge {r : ℝ} (hr : 8 ≤ r) : exchangeCutoff r = 0 :=
-  exists_exchangeCutoff.choose_spec.2.2.2.1 r hr
+private theorem exchangeCutoff_of_ge {r : ℝ} (hr : 8 ≤ r) : exchangeCutoff r = 0 := by
+  obtain ⟨-, -, -, hzero, -, -, -⟩ := exists_exchangeCutoff.choose_spec
+  exact hzero r hr
 
-private theorem exchangeCutoff_nonneg (r : ℝ) : 0 ≤ exchangeCutoff r :=
-  exists_exchangeCutoff.choose_spec.2.2.1 r
+private theorem exchangeCutoff_nonneg (r : ℝ) : 0 ≤ exchangeCutoff r := by
+  obtain ⟨-, -, hnonneg, -, -, -, -⟩ := exists_exchangeCutoff.choose_spec
+  exact hnonneg r
 
 private theorem exchangeCutoff_le_one (r : ℝ) : exchangeCutoff r ≤ 1 := by
+  obtain ⟨-, hanti, -, -, -, -, -⟩ := exists_exchangeCutoff.choose_spec
   rcases le_total r 3 with hr | hr
   · exact (exchangeCutoff_of_le hr).le
-  · exact (exists_exchangeCutoff.choose_spec.2.1 hr).trans (exchangeCutoff_of_le le_rfl).le
+  · exact (hanti hr).trans (exchangeCutoff_of_le le_rfl).le
 
 private theorem lipschitzWith_exchangeCutoff : LipschitzWith (1 / 4) exchangeCutoff := by
   refine lipschitzWith_of_nnnorm_deriv_le (contDiff_exchangeCutoff.differentiable two_ne_zero)
     fun r ↦ ?_
+  obtain ⟨-, -, -, -, -, hderiv, -⟩ := exists_exchangeCutoff.choose_spec
   rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs]
-  exact (exists_exchangeCutoff.choose_spec.2.2.2.2.2.1 r).trans_eq (by simp)
+  exact (hderiv r).trans_eq (by simp)
 
 /-- The horizontal displacement `c (1 - μ(|w|))` of `Φ_c` at `w = s + i t`. -/
 private noncomputable def exchangeShift (c : ℝ) (y : ℝ × ℝ) : ℝ :=
@@ -557,6 +563,13 @@ private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : Symp
     perturbationPullback_exchangeMap_stdComplexLineImag hc₀ hc₁]
   simp only [comp_apply]
 
+/-- The pair-of-pants statements spell out `S = ℂ ∖ {0, 1}` as a set-builder; it is
+`thricePuncturedSphereReal`. -/
+private theorem setOf_eq_thricePuncturedSphereReal :
+    {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} =
+      thricePuncturedSphereReal :=
+  Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
+
 /-- **The energy identity of the input-exchange family.** Let `K_c` be the member `c ∈ [0, 1]`
 of the input-exchange family of period-one `C¹` Hamiltonians `H_q`, with components
 `K_s(z) = K_c(z)(1)` and `K_t(z) = K_c(z)(i)` in the global coordinate `z = s + i t` of `ℂ`, and let
@@ -593,10 +606,7 @@ theorem integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
     hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
   have h := integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hv hR
-  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
-    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
-  rw [hS] at h ⊢
+  rw [setOf_eq_thricePuncturedSphereReal] at h ⊢
   rw [← integral_floerEnergyDensity_exchangeTruncation_eq ω hH hHs hc₀ hc₁ hu (by linarith),
     ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at h
   rw [h]
@@ -631,10 +641,8 @@ theorem abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_
   rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR,
     sub_sub_cancel_left, abs_neg]
   -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
-  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
-    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
-  rw [hS, integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁]
+  rw [setOf_eq_thricePuncturedSphereReal,
+    integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁]
   exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB _ _
 
 /-- **The one-sided action bound along the input-exchange family.** Let `u` be a map which is
@@ -678,12 +686,10 @@ theorem hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation (ω : Sympl
     hu.comp (contDiff_exchangeMap c).contDiffOn fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
   have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation
     ω hH hHs hh hhH hv.continuousOn
-  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
-    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
-  rw [hS, ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at hcurv
+  rw [setOf_eq_thricePuncturedSphereReal,
+    ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁] at hcurv
   rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR,
-    hS] at hE
+    setOf_eq_thricePuncturedSphereReal] at hE
   linarith
 
 /-- **The action bound along the input-exchange family.** Let `K_c` be the member `c ∈ [0, 1]`
