@@ -416,9 +416,12 @@ theorem line_eq_bot_of_even_finrank (h : Even (finrank K V)) : P.line = ⊥ := b
   exact Submodule.finrank_eq_zero.1 (by omega)
 
 omit [FiniteDimensional K V] in
-/-- **A polarization with no remainder has even dimension.** This is the converse of
-`SpinPolarizationData.line_eq_bot_of_even_finrank`, so the even-dimensional theory can be stated
-with the single hypothesis `P.line = ⊥` that the parity splitting of the spinor module needs. -/
+/-- **A polarization with no remainder has even dimension.** For finite-dimensional `V` this is the
+converse of `SpinPolarizationData.line_eq_bot_of_even_finrank`, so the even-dimensional theory can
+be stated with the single hypothesis `P.line = ⊥` that the parity splitting of the spinor module
+needs. No finiteness hypothesis is required: an infinite-dimensional `V` has `finrank K V = 0`,
+which is even, so in that case the conclusion carries no information about an even finite
+dimension. -/
 theorem even_finrank_of_line_eq_bot (hline : P.line = ⊥) : Even (finrank K V) := by
   by_cases hV : FiniteDimensional K V
   swap
@@ -430,8 +433,11 @@ theorem even_finrank_of_line_eq_bot (hline : P.line = ⊥) : Even (finrank K V) 
 
 omit [FiniteDimensional K V] in
 /-- **In even dimension the isotropic summand has half the dimension.** The isotropic summand `W`
-of a polarization of a `2l`-dimensional space has dimension `l`. This is the type `Dₗ` case, where
-the spinor module `⋀·W` has dimension `2ˡ`. -/
+of a polarization of a `2l`-dimensional space has dimension `l`. For finite-dimensional `V` this
+is the type `Dₗ` case, where the spinor module `⋀·W` has dimension `2ˡ`. No finiteness hypothesis
+is required: an infinite-dimensional `V` has `finrank K V = 0`, forcing `l = 0`, and then `W` is
+infinite-dimensional too, so `finrank K P.W = 0`; this degenerate case says nothing about the
+spinor module. -/
 theorem finrank_W_eq_of_finrank_eq_two_mul {l : ℕ} (hV : finrank K V = 2 * l) :
     finrank K P.W = l := by
   by_cases hfd : FiniteDimensional K V
