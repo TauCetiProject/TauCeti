@@ -11,7 +11,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.MeasureTheory.Integral.MeanInequalities
+import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 
 /-!
 # Arc-length reparametrization of regular Riemannian curves
@@ -158,44 +159,29 @@ theorem pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable {γ : ℝ → M}
     (hab : a ≤ b) (hγ : IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) volume a b) :
     Manifold.pathELength I γ a b ≤ ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
   set v : ℝ → ℝ := fun t ↦ ‖curveVelocity I γ t‖
-  have hint : IntegrableOn (fun t ↦ v t ^ 2) (Icc a b) :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le hab).mp hγ
-  have hvm : AEStronglyMeasurable v (volume.restrict (Icc a b)) := by
-    have hsqrt := Real.continuous_sqrt.comp_aestronglyMeasurable hint.aestronglyMeasurable
-    simpa only [Function.comp_def, v, Real.sqrt_sq (norm_nonneg _)] using hsqrt
-  have hlen : Manifold.pathELength I γ a b = ∫⁻ t in Icc a b, ENNReal.ofReal (v t) := by
-    rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc]
-    refine setLIntegral_congr_fun measurableSet_Icc fun t _ ↦ ?_
+  -- the speed is the square root of the integrable squared speed, hence itself in `L²`
+  have hvm : AEStronglyMeasurable v (volume.restrict (Ioc a b)) := by
+    simpa only [Function.comp_def, v, Real.sqrt_sq (norm_nonneg _)] using
+      Real.continuous_sqrt.comp_aestronglyMeasurable hγ.1.aestronglyMeasurable
+  have hv : IntegrableOn v (Ioc a b) :=
+    ((memLp_two_iff_integrable_sq hvm).2 hγ.1).integrable one_le_two
+  have hlen : Manifold.pathELength I γ a b = ENNReal.ofReal (∫ t in a..b, v t) := by
+    rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+      ofReal_integral_eq_lintegral_ofReal (hv.mono_set Ioo_subset_Ioc_self)
+        (Eventually.of_forall fun _ ↦ norm_nonneg _),
+      Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
+    refine setLIntegral_congr_fun measurableSet_Ioo fun t _ ↦ ?_
     rw [ofReal_norm, curveVelocity_apply]
     rfl
-  have hE : 0 ≤ energy I γ a b := energy_nonneg γ hab
-  have hsq :
-      ∫⁻ t in Icc a b, ENNReal.ofReal (v t) ^ (2 : ℝ) = ENNReal.ofReal (2 * energy I γ a b) := by
-    have hpow : ∀ t, ENNReal.ofReal (v t) ^ (2 : ℝ) = ENNReal.ofReal (v t ^ 2) := fun t ↦ by
-      rw [ENNReal.rpow_two, ENNReal.ofReal_pow (norm_nonneg _)]
-    simp_rw [hpow]
-    rw [← ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ ↦ sq_nonneg _),
-      integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab, energy_def,
-      mul_div_cancel₀ _ two_ne_zero]
-  -- Hölder's inequality with exponents `2` and `2` against the constant function `1`
-  calc Manifold.pathELength I γ a b
-      = ∫⁻ t in Icc a b, (fun t ↦ ENNReal.ofReal (v t)) t * (fun _ ↦ (1 : ℝ≥0∞)) t := by
-        simp [hlen]
-    _ ≤ (∫⁻ t in Icc a b, ENNReal.ofReal (v t) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
-          (∫⁻ _ in Icc a b, (1 : ℝ≥0∞) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
-        ENNReal.lintegral_mul_le_Lp_mul_Lq _ Real.HolderConjugate.two_two
-          hvm.aemeasurable.ennreal_ofReal aemeasurable_const
-    -- the integral of the constant `1` over `[a, b]` is `b - a`
-    _ = ENNReal.ofReal (2 * energy I γ a b) ^ (1 / (2 : ℝ)) *
-          ENNReal.ofReal (b - a) ^ (1 / (2 : ℝ)) := by
-        simp only [hsq, ENNReal.one_rpow, setLIntegral_const, one_mul, Real.volume_Icc]
-    -- the `ENNReal` square roots are coercions of real square roots
-    _ = ENNReal.ofReal (√(2 * energy I γ a b) * √(b - a)) := by
-        rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
-          ENNReal.ofReal_rpow_of_nonneg (sub_nonneg.2 hab) (by norm_num),
-          ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, ENNReal.ofReal_mul (by positivity)]
-    _ = ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
-        rw [← Real.sqrt_mul (by positivity), mul_right_comm]
+  rw [hlen]
+  refine ENNReal.ofReal_le_ofReal ?_
+  calc ∫ t in a..b, v t
+      ≤ √(b - a) * √(∫ t in a..b, v t ^ 2) :=
+        TauCeti.integral_le_sqrt_mul_sqrt_integral_sq hab (fun _ _ ↦ norm_nonneg _) hγ
+    _ = √(2 * (b - a) * energy I γ a b) := by
+        rw [← Real.sqrt_mul (sub_nonneg.2 hab), energy_def]
+        congr 1
+        ring
 
 omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- If the squared Riemannian speed of a curve is integrable on `[a, b]`, where `a < b`, and its
