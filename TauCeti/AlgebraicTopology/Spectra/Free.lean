@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Adjunction.Evaluation
+public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.AddBasepoint
 public import TauCeti.AlgebraicTopology.Spectra.SymmetricSpectrum
 public import TauCeti.CategoryTheory.Monoidal.Mod.Free.Basic
 
@@ -25,7 +26,9 @@ the point in every level other than `n`. The generator `K ⟶ (G₀ K)₀` is an
 
 The adjunction is obtained by composing Mathlib's `evaluationAdjunctionRight`,
 the equivalence between Day functors and ordinary functors, and the free-module
-adjunction. These are point-set constructions, without a model structure or a
+adjunction. Precomposing with adjoining a disjoint basepoint gives the adjunction
+`SymmetricSpectrum.freeAddBasepointAdjunction` between unpointed simplicial sets and level `n`.
+These are point-set constructions, without a model structure or a
 claim about derived mapping spaces. Free spectra supply the cells for level and
 stable model structures.
 
@@ -177,6 +180,12 @@ noncomputable abbrev free (n : ℕ) : PointedSSet.{0} ⥤ SymmetricSpectrum :=
 /-- The free spectrum in level `n` is left adjoint to level-`n` evaluation. -/
 noncomputable def freeEvaluationAdjunction (n : ℕ) : free n ⊣ evaluation n :=
   (SymmetricSequence.freeEvaluationAdjunction n).comp (freeModAdjunction SymmetricSequence.sphere)
+
+/-- The free spectrum `F_n (K₊)` on a simplicial set with a disjoint basepoint is left adjoint to
+the underlying simplicial set of level `n`. -/
+noncomputable def freeAddBasepointAdjunction (n : ℕ) :
+    PointedSSet.addBasepoint ⋙ free n ⊣ evaluation n ⋙ PointedSSet.forgetBasepoint :=
+  PointedSSet.addBasepointForgetAdjunction.comp (freeEvaluationAdjunction n)
 
 /-- The universal generator of `F_n K` in level `n`. -/
 noncomputable def freeι (n : ℕ) (K : PointedSSet.{0}) :
