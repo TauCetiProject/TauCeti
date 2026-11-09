@@ -83,7 +83,7 @@ private theorem integrable_exp_mul_stableMeasure_one_zero (hα : α ∈ Ioo 0 2)
     rw [← ofReal_integral_eq_lintegral_ofReal
       (integrable_exp_mul_stableCompensatedPoissonMeasure hae)
       (ae_of_all _ fun x ↦ (exp_pos _).le)]
-    exact ENNReal.ofReal_le_ofReal (mgf_stableCompensatedPoissonMeasure_le hα hβ.le hε hae)
+    exact ENNReal.ofReal_le_ofReal (mgf_stableCompensatedPoissonMeasure_le hε hae)
   refine ⟨by fun_prop, (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ (exp_pos _).le)).mpr
     ?_⟩
   exact hle.trans_lt ((liminf_le_of_frequently_le' (Frequently.of_forall hbound)).trans_lt
