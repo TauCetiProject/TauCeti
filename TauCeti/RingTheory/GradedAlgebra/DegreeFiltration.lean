@@ -18,9 +18,9 @@ degree components, these sums are two-sided ideals and form a separated
 decreasing multiplicative filtration. No commutativity, freeness, or local
 finiteness assumption on the graded algebra is required.
 
-The filtration measures how far an element lies in positive degree and defines
-the corresponding degree completion. Unlike the strict positive cutoffs used for
-positively graded Lie algebras, the order-zero ideal includes the unit component.
+The filtration measures how far an element lies in positive degree. The order-zero
+ideal is the whole algebra, unit component included. This filtration feeds
+`TauCeti.UniversalEnvelopingAlgebra.degreeFiltration`.
 
 ## Attribution
 
@@ -39,7 +39,7 @@ open TauCeti.DirectSum
 section Mul
 
 variable {R A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-  [AddCommMonoid ι] (𝒜 : ι → Submodule R A) [SetLike.GradedMul 𝒜] (d : ι →+ ℤ)
+  [AddMonoid ι] (𝒜 : ι → Submodule R A) [SetLike.GradedMul 𝒜] (d : ι →+ ℤ)
 
 /-- Multiplication adds the lower degree bounds. -/
 theorem degreeTail_mul_le (m n : ℕ) :
@@ -54,8 +54,14 @@ theorem degreeTail_mul_le (m n : ℕ) :
 end Mul
 
 variable {R A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-  [AddCommMonoid ι] (𝒜 : ι → Submodule R A) (d : ι →+ ℤ)
+  [AddMonoid ι] (𝒜 : ι → Submodule R A) (d : ι →+ ℤ)
   [DecidableEq ι] [_root_.GradedAlgebra 𝒜]
+
+/-- Every element lies in the degree-zero tail of a nonnegatively graded algebra. -/
+theorem mem_degreeTail_zero (hneg : ∀ i, d i < 0 → 𝒜 i = ⊥) (a : A) :
+    a ∈ degreeTail 𝒜 d 0 := by
+  rw [degreeTail_zero 𝒜 d hneg]
+  trivial
 
 variable (hneg : ∀ i, d i < 0 → 𝒜 i = ⊥)
 
@@ -65,9 +71,9 @@ def degreeIdeal (n : ℕ) : Ideal A where
   zero_mem' := (degreeTail 𝒜 d n).zero_mem
   add_mem' := (degreeTail 𝒜 d n).add_mem
   smul_mem' a x hx := by
-    have ha : a ∈ degreeTail 𝒜 d 0 := by rw [degreeTail_zero 𝒜 d hneg]; trivial
     simpa only [zero_add, smul_eq_mul, SetLike.mem_coe] using
-      degreeTail_mul_le 𝒜 d 0 n (Submodule.mul_mem_mul ha hx)
+      degreeTail_mul_le 𝒜 d 0 n
+        (Submodule.mul_mem_mul (mem_degreeTail_zero 𝒜 d hneg a) hx)
 
 /-- Ideal membership agrees with membership in the scalar degree tail. -/
 @[simp]
@@ -96,23 +102,43 @@ theorem degreeIdeal_le_iff (n : ℕ) (K : Ideal A) :
   · intro h x hx
     have ht : degreeTail 𝒜 d n ≤ K.restrictScalars R := by
       simp only [degreeTail_def, iSup_le_iff]
-      exact h
+      intro i hi y hy
+      exact (Submodule.restrictScalars_mem R K y).mpr (h i hi y hy)
     exact ht ((mem_degreeIdeal_iff 𝒜 d hneg n x).mp hx)
 
 /-- The degree ideals are two-sided. -/
 instance degreeIdeal_isTwoSided (n : ℕ) : (degreeIdeal 𝒜 d hneg n).IsTwoSided where
   mul_mem_of_left a hx := by
-    have ha : a ∈ degreeTail 𝒜 d 0 := by rw [degreeTail_zero 𝒜 d hneg]; trivial
     apply (mem_degreeIdeal_iff 𝒜 d hneg n _).mpr
-    simpa only [add_zero] using degreeTail_mul_le 𝒜 d n 0 (Submodule.mul_mem_mul hx ha)
+    simpa only [add_zero] using degreeTail_mul_le 𝒜 d n 0
+      (Submodule.mul_mem_mul ((mem_degreeIdeal_iff 𝒜 d hneg n _).mp hx)
+        (mem_degreeTail_zero 𝒜 d hneg a))
+
+/-- Higher degree ideals are smaller. -/
+theorem degreeIdeal_antitone : Antitone (degreeIdeal 𝒜 d hneg) := fun _ _ hmn _ hx =>
+  (mem_degreeIdeal_iff 𝒜 d hneg _ _).mpr
+    (degreeTail_antitone 𝒜 d hmn ((mem_degreeIdeal_iff 𝒜 d hneg _ _).mp hx))
+
+/-- Multiplication adds the lower degree bounds of the degree ideals. -/
+theorem degreeIdeal_mul_mem {m n : ℕ} {x y : A} (hx : x ∈ degreeIdeal 𝒜 d hneg m)
+    (hy : y ∈ degreeIdeal 𝒜 d hneg n) : x * y ∈ degreeIdeal 𝒜 d hneg (m + n) :=
+  (mem_degreeIdeal_iff 𝒜 d hneg _ _).mpr <| degreeTail_mul_le 𝒜 d m n <|
+    Submodule.mul_mem_mul ((mem_degreeIdeal_iff 𝒜 d hneg _ _).mp hx)
+      ((mem_degreeIdeal_iff 𝒜 d hneg _ _).mp hy)
+
+/-- The degree ideal of order zero is the whole algebra. -/
+@[simp]
+theorem degreeIdeal_zero : degreeIdeal 𝒜 d hneg 0 = ⊤ := by
+  rw [eq_top_iff]
+  exact fun x _ => (mem_degreeIdeal_iff 𝒜 d hneg 0 x).mpr (mem_degreeTail_zero 𝒜 d hneg x)
 
 /-- The decreasing degree filtration of a nonnegatively graded algebra. -/
 def degreeFiltration : TauCeti.AlgFiltration A where
   ideal := degreeIdeal 𝒜 d hneg
   isTwoSided _ := inferInstance
-  antitone := degreeTail_antitone 𝒜 d
-  ideal_zero := by ext x; simp [degreeTail_zero 𝒜 d hneg]
-  mul_mem {m n} {x y} hx hy := degreeTail_mul_le 𝒜 d m n (Submodule.mul_mem_mul hx hy)
+  antitone := degreeIdeal_antitone 𝒜 d hneg
+  ideal_zero := degreeIdeal_zero 𝒜 d hneg
+  mul_mem := degreeIdeal_mul_mem 𝒜 d hneg
 
 /-- The terms of the degree filtration are the degree ideals. -/
 @[simp]
@@ -129,5 +155,27 @@ theorem iInf_degreeIdeal_eq_bot : (⨅ n : ℕ, degreeIdeal 𝒜 d hneg n) = ⊥
     exact (mem_degreeIdeal_iff 𝒜 d hneg n x).mp
       ((iInf_le (fun n => degreeIdeal 𝒜 d hneg n) n) hx)
   rwa [iInf_degreeTail_eq_bot, Submodule.mem_bot] at ht
+
+/-- Membership in the degree filtration means that all components of lower degree vanish. -/
+theorem mem_degreeFiltration_ideal_iff {n : ℕ} {x : A} :
+    x ∈ (degreeFiltration 𝒜 d hneg).ideal n ↔
+      ∀ i, d i < n → (_root_.DirectSum.decompose 𝒜 x i : A) = 0 := by
+  rw [degreeFiltration_ideal, mem_degreeIdeal_iff, TauCeti.DirectSum.mem_degreeTail_iff]
+
+/-- A homogeneous element of degree at least `n` lies in the order-`n` filtration ideal. -/
+theorem mem_degreeFiltration_ideal_of_mem {n : ℕ} {i : ι} (hi : (n : ℤ) ≤ d i) {x : A}
+    (hx : x ∈ 𝒜 i) : x ∈ (degreeFiltration 𝒜 d hneg).ideal n :=
+  le_degreeIdeal 𝒜 d hneg hi x hx
+
+/-- To contain a filtration ideal, it suffices to contain its homogeneous components. -/
+theorem degreeFiltration_ideal_le_iff (n : ℕ) (K : Ideal A) :
+    (degreeFiltration 𝒜 d hneg).ideal n ≤ K ↔
+      ∀ i, (n : ℤ) ≤ d i → ∀ x ∈ 𝒜 i, x ∈ K :=
+  degreeIdeal_le_iff 𝒜 d hneg n K
+
+/-- The degree filtration is separated. -/
+theorem iInf_degreeFiltration_ideal_eq_bot :
+    (⨅ n : ℕ, (degreeFiltration 𝒜 d hneg).ideal n) = ⊥ :=
+  iInf_degreeIdeal_eq_bot 𝒜 d hneg
 
 end TauCeti.GradedAlgebra

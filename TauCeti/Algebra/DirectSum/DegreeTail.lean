@@ -60,7 +60,7 @@ theorem degreeTail_zero (hneg : ∀ i, d i < 0 → ℳ i = ⊥) : degreeTail ℳ
   apply iSup_le
   intro i
   by_cases hi : 0 ≤ d i
-  · exact le_degreeTail ℳ d hi
+  · exact le_degreeTail ℳ d (by exact_mod_cast hi)
   · rw [hneg i (lt_of_not_ge hi)]
     exact bot_le
 
