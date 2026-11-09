@@ -166,9 +166,10 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
       (ω₁' (q, 0)).compContinuousLinearMap (.inl ℝ E N) =
         (ω₀ (q, 0)).compContinuousLinearMap (.inl ℝ E N) := fun q hq ↦ by
     rw [← htan q hq.1]
-    exact ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap_of_comp_eq
-      (a := ω₁ (A (q, 0))) (A := A) (B := .inl ℝ E N) (ContinuousLinearMap.ext hAinl) |>.trans
-        (by rw [hAinl])
+    have hAinl' : (A : (E × N) →L[ℝ] (E × N)).comp (.inl ℝ E N) = .inl ℝ E N :=
+      ContinuousLinearMap.ext hAinl
+    simp only [ω₁', ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap,
+      hAinl', hAinl]
   have hW' : IsOpen (W ∩ A ⁻¹' W) := hW.inter (hW.preimage A.continuous)
   have hq₀' : (q₀, (0 : N)) ∈ W ∩ A ⁻¹' W := ⟨hq₀, by rw [mem_preimage, hAinl]; exact hq₀⟩
   have heq' : ω₁' (q₀, 0) = ω₀ (q₀, 0) := by
