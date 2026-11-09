@@ -88,7 +88,7 @@ values in `{y | y - σ 0 ∈ C} ∩ V`, where `C` is a convex cone and `V` is op
 `G`, `C^n` along `{0} × [a, b]`, whose curves start at `σ s` and end at `γ b`, and stay in
 `{y | y - σ 0 ∈ C} ∩ V` for `s` along any filter `l ≤ 𝓝 0` on which `σ s - σ 0 ∈ C`. -/
 theorem exists_contDiffAt_coneEndpointVariation (hl : l ≤ 𝓝 0) (hab : a < b)
-    (C : ConvexCone ℝ E) (hV : IsOpen V) (hγ : ∀ t ∈ Icc a b, ContDiffAt ℝ n γ t)
+    {C : ConvexCone ℝ E} (hV : IsOpen V) (hγ : ∀ t ∈ Icc a b, ContDiffAt ℝ n γ t)
     (hσ : ContDiffAt ℝ n σ 0) (hγσ : γ a = σ 0)
     (hγCV : MapsTo γ (Icc a b) ({y | y - σ 0 ∈ C} ∩ V)) (hσC : ∀ᶠ s in l, σ s - σ 0 ∈ C) :
     ∃ G : ℝ → ℝ → E, G 0 = γ ∧
