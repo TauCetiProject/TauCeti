@@ -251,14 +251,18 @@ theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
 
 end Composition
 
+/-- Every point of an open subset is a regular point of its inclusion. -/
+theorem isRegularPoint_subtype_val {U : TopologicalSpace.Opens M} (x : U) :
+    IsRegularPoint I I (Subtype.val : U → M) x :=
+  isRegularPoint_iff.2
+    ((isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero).surjective
+
 /-- Restricting the source to an open subset preserves regular values. -/
 theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y) (U : TopologicalSpace.Opens M) :
     IsRegularValue I J (fun x : U ↦ f x) y := by
   rw [isRegularValue_iff]
   intro x hx
-  have hi := isLocalDiffeomorph_subtype_val (I := I) (n := 1) (U := U) x
-  exact (hreg.isRegularPoint hx).comp
-    (isRegularPoint_iff.2 (hi.isInvertible_mfderiv one_ne_zero).surjective)
+  exact (hreg.isRegularPoint hx).comp (isRegularPoint_subtype_val x)
 
 section Level
 
