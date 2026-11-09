@@ -637,7 +637,8 @@ private theorem integral_floerEnergyDensity_image_endChart_eq (ω : SymplecticFo
       (u (endChart q w)) :=
     ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs (hS hw) _ v).differentiableAt
       one_ne_zero).comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
-  rw [ω.integral_floerEnergyDensity_image hm (injOn_endChart_prod_Ico q P)
+  rw [ω.integral_floerEnergyDensity_image hm
+      ((injOn_endChart_univ_prod_Ico q 0).mono (prod_mono (subset_univ _) (by norm_num)))
       (fun w _ ↦ (hasFDerivAt_endChart q w).differentiableAt)
       (fun w _ ↦ det_fderiv_endChart_nonneg q w) (fun w hw ↦ hud (hPU hw.1))
       (fun w hw ↦ hK (hPU hw.1) 1) (fun w hw ↦ hK (hPU hw.1) _),
@@ -752,9 +753,7 @@ private theorem preimage_truncation_inter_eq_image_endChart (q : Puncture) {c : 
     by_cases hr : q = r
     · exact hr ▸ hR
     · linarith [endSign_mul_re_endCoord_nonpos hr (by linarith : 0 < q.endSign *
-        (q.endCoord (Complex.equivRealProdCLM.symm z)).re),
-        (endSign_mul_re_endCoord_nonpos hr (by linarith : 0 < q.endSign *
-          (q.endCoord (Complex.equivRealProdCLM.symm z)).re)).trans (by linarith : (0 : ℝ) ≤ R)]
+        (q.endCoord (Complex.equivRealProdCLM.symm z)).re)]
 
 /-- The curvature of the pair-of-pants perturbation along any map vanishes on `S` outside the
 part `±s ≤ c` of the end `q` of the truncation `S_R`, for `2 ≤ c` and `2 ≤ R`. -/
