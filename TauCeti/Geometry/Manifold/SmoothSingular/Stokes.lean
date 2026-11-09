@@ -31,7 +31,8 @@ within `Δᵖ⁺¹`. Pullback within `Δᵖ⁺¹` commutes with the exterior der
 standard simplex (`ContDiffOn.integral_extDerivWithin_fullSimplex`). Its boundary terms are the
 pullbacks along the affine face maps `simplexMapAmbient i.succAbove : ℝᵖ → ℝᵖ⁺¹`. These restrict to
 the face inclusions (`TauCeti.SmoothSimplex.toContinuousMap_δ`), so by the chain rule within the
-simplices the boundary terms are the integrals over the faces of `σ`.
+simplices (`TauCeti.mpullbackWithin_comp_simplexMapAmbient`) the boundary terms are the integrals
+over the faces of `σ`.
 
 ## Main results
 
@@ -64,6 +65,28 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℕ}
 
+/-- Pulling back within `Δᵐ` along `g` composed with the affine map `simplexMapAmbient f` induced
+by a vertex map `f` is the flat pullback, along `simplexMapAmbient f`, of the pullback along `g`
+within `Δⁿ`. -/
+theorem mpullbackWithin_comp_simplexMapAmbient {m n k : ℕ} (f : Fin (m + 1) → Fin (n + 1))
+    {g : EuclideanSpace ℝ (Fin n) → M} {y : EuclideanSpace ℝ (Fin m)} (hy : y ∈ fullSimplex m)
+    (hg : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I g (fullSimplex n)
+      (simplexMapAmbient f y))
+    (φ : RoughForm I M F k) :
+    mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) I (g ∘ simplexMapAmbient f) (fullSimplex m)
+        φ y =
+      (mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I g (fullSimplex n) φ
+        (simplexMapAmbient f y)).compContinuousLinearMap (simplexMapAmbient f).contLinear := by
+  rw [mpullbackWithin_comp_at (t := fullSimplex n)
+    (simplexMapAmbient f).differentiableWithinAt.mdifferentiableWithinAt hg
+    (mapsTo_simplexMapAmbient f)
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex m y hy)),
+    mpullbackWithin_eq_flat]
+  -- The form's type mentions the tangent spaces, so `rw` cannot reach the derivative.
+  exact congrArg
+    (mpullbackWithin _ I g (fullSimplex n) φ (simplexMapAmbient f y)).compContinuousLinearMap
+    ((simplexMapAmbient f).fderivWithin (uniqueDiffOn_fullSimplex m y hy))
+
 namespace SmoothSimplex
 
 variable [IsManifold I 2 M]
@@ -90,18 +113,12 @@ theorem integral_mextDeriv [CompleteSpace F] (σ : SmoothSimplex I M (p + 1))
   have hd : ∀ x ∈ Δ, mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) I g Δ (mextDeriv φ) x =
       extDerivWithin ψ Δ x := fun x hx ↦
     (extDerivWithin_mpullbackWithin ((σ.contMDiffOn_extension x hx).of_le (by simp))
-      (uniqueDiffOn_fullSimplex (p + 1))
-      (by
-        rw [(convex_fullSimplex (p + 1)).closure_interior_eq_closure_of_nonempty_interior
-          (nonempty_interior_fullSimplex (p + 1)), (isClosed_fullSimplex (p + 1)).closure_eq]
-        exact hx)
+      (uniqueDiffOn_fullSimplex (p + 1)) ((closure_interior_fullSimplex (p + 1)).symm ▸ hx)
       hx ((hφ.contMDiff (g x)).mdifferentiableAt (by simp))).symm
   rw [integral_eq_setIntegral_mpullbackWithin σ _ (g := g) σ.extension_coe,
     setIntegral_congr_fun (isClosed_fullSimplex (p + 1)).measurableSet
     (g := fun x ↦ extDerivWithin ψ Δ x fun i ↦ EuclideanSpace.single i 1)
-    fun x hx ↦ by
-      beta_reduce
-      exact congrArg (fun a ↦ a fun i ↦ EuclideanSpace.single i 1) (hd x hx),
+    fun x hx ↦ DFunLike.congr_fun (hd x hx) _,
     hψ.integral_extDerivWithin_fullSimplex]
   refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
   -- Each boundary term is the integral over the corresponding face of the simplex.
@@ -110,17 +127,9 @@ theorem integral_mextDeriv [CompleteSpace F] (σ : SmoothSimplex I M (p + 1))
     rw [toContinuousMap_δ, Function.comp_apply, simplexMapAmbient_succAbove_coe]
     exact σ.extension_coe _]
   refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun y hy ↦ ?_
-  have hAy : A y ∈ Δ := mapsTo_simplexMapAmbient _ hy
-  have hA : fderivWithin ℝ A (fullSimplex p) y = A.contLinear :=
-    A.fderivWithin (uniqueDiffOn_fullSimplex p y hy)
-  rw [mpullbackWithin_comp_at (t := Δ)
-    A.differentiableWithinAt.mdifferentiableWithinAt
-    ((σ.contMDiffOn_extension _ hAy).mdifferentiableWithinAt (by simp))
-    (mapsTo_simplexMapAmbient _)
-    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex p y hy)),
-    mpullbackWithin_eq_flat]
-  exact (congrArg (fun L ↦ (ψ (A y)).compContinuousLinearMap L
-    fun k ↦ EuclideanSpace.single k 1) hA).symm
+  rw [mpullbackWithin_comp_simplexMapAmbient _ hy ((σ.contMDiffOn_extension _
+    (mapsTo_simplexMapAmbient _ hy)).mdifferentiableWithinAt (by simp))]
+  exact (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
 
 end SmoothSimplex
 
