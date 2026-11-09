@@ -52,9 +52,6 @@ abbrev ofRealStructure : RealStructureModuleCat.{u} ⥤ StarModuleCat.{u} ℂ wh
         (fun z v => V.conj.map_smulₛₗ z v) }
   map f := ⟨f.hom, f.commutes⟩
 
-@[simp] theorem toRealStructure_obj_conj (V : StarModuleCat.{u} ℂ) (v : V) :
-    (toRealStructure.obj V).conj v = star v := rfl
-
 @[simp] theorem toRealStructure_map_hom {V W : StarModuleCat.{u} ℂ} (f : V ⟶ W) :
     (toRealStructure.map f).hom = f.hom := rfl
 
