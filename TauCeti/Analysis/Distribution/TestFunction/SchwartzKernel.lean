@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
+public import TauCeti.Analysis.Distribution.TestFunction.Prod
 public import TauCeti.Analysis.Fourier.Torus.Periodization
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # The Schwartz kernel theorem for test functions supported in small compact sets
@@ -23,25 +26,22 @@ sense that `‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for one of the `C^k` seminorms 
 `T (φ ⊗ ψ) = B φ ψ` for `φ` supported in `K₁` and `ψ` supported in `K₂`, where
 `(φ ⊗ ψ)(x, y) = φ x * ψ y` is `ContDiffMapSupportedIn.tensor`. Every continuous linear map on
 `𝓓_{K₁' × K₂'}` representing `B` on tensor products restricts to `T`
-(`LinearMap.exists_schwartzKernel_supportedIn`). In particular the kernel on `K₁ × K₂` does
-not depend on any of the choices in its construction, and kernels built on overlapping sets
-agree on their common domain.
+(`LinearMap.exists_schwartzKernel_supportedIn`), so `T` is determined by `B` whenever such a
+kernel on `K₁' × K₂'` exists.
 
 The proof transfers the Schwartz kernel theorem on the torus
 (`LinearMap.existsUnique_schwartzKernel`) to these compact sets. Fix cutoffs `χᵢ` supported in
 `Kᵢ'` and equal to one on `Kᵢ`. The bilinear map `(f, g) ↦ B (χ₁ f) (χ₂ g)` on smooth functions
 on the tori `(ℝ / ℤ)^a` and `(ℝ / ℤ)^b` is continuous for the `C^k` norms, so it has a kernel
 `K` on the product torus, and `T Φ` is `K` applied to the periodization of `Φ`
-(`UnitAddTorus.periodize`). Since `Kᵢ'` meets none of its integer translates, the
+(`UnitAddTorus.periodize`). The cutoffs come from
+`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`, and the Leibniz bound
+`ContDiffMapSupportedIn.seminorm_bilinLeftCLM_mul_le` controls the `C^k` seminorms of the cut-off
+functions. Since `Kᵢ'` meets none of its integer translates, the
 periodization of `φ` cut off by `χ₁` is `φ` again, and periodization takes tensor products to
 tensor products; this gives `T (φ ⊗ ψ) = B φ ψ`. For the comparison, a map `T'` as above
 induces `h ↦ T' ((χ₁ ⊗ χ₂) h)` on the product torus, which represents the same bilinear map on
 the torus, hence is `K` by uniqueness there.
-
-## Main definitions
-
-* `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of two smooth
-  functions supported in compact sets, supported in the product set.
 
 ## Main results
 
@@ -61,89 +61,6 @@ noncomputable section
 
 open Function Set TopologicalSpace
 open scoped ContDiff Distributions
-
-namespace ContDiffMapSupportedIn
-
-variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
-  [NormedSpace ℝ D] {K₁ : Compacts E} {K₂ : Compacts D}
-
-/-- The tensor product `(x, y) ↦ φ x * ψ y` of smooth functions `φ` supported in `K₁` and `ψ`
-supported in `K₂`, a smooth function supported in `K₁ ×ˢ K₂`. -/
-def tensor (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) : 𝓓_{K₁ ×ˢ K₂}(E × D, ℂ) :=
-  .of_support_subset ((φ.contDiff.comp contDiff_fst).mul (ψ.contDiff.comp contDiff_snd))
-    fun _ hp ↦ ⟨φ.support_subset (left_ne_zero_of_mul hp),
-      ψ.support_subset (right_ne_zero_of_mul hp)⟩
-
-@[simp]
-theorem tensor_apply (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) (p : E × D) :
-    φ.tensor ψ p = φ p.1 * ψ p.2 :=
-  (rfl)
-
-theorem tensor_add_left (φ φ' : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
-    (φ + φ').tensor ψ = φ.tensor ψ + φ'.tensor ψ := by
-  ext p
-  simp [add_mul]
-
-theorem tensor_add_right (φ : 𝓓_{K₁}(E, ℂ)) (ψ ψ' : 𝓓_{K₂}(D, ℂ)) :
-    φ.tensor (ψ + ψ') = φ.tensor ψ + φ.tensor ψ' := by
-  ext p
-  simp [mul_add]
-
-theorem tensor_smul_left (c : ℂ) (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
-    (c • φ).tensor ψ = c • φ.tensor ψ := by
-  ext p
-  simp [mul_assoc]
-
-theorem tensor_smul_right (c : ℂ) (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
-    φ.tensor (c • ψ) = c • φ.tensor ψ := by
-  ext p
-  simp [mul_left_comm]
-
-/-! ### Multiplication by smooth functions and cutoffs -/
-
-section Mul
-
-variable {K : Compacts E}
-
-/-- The `C^i` seminorms, `i ≤ k`, of `χ g` are bounded by `2 ^ k N_k(χ) M` when `M` bounds the
-derivatives of `g` of order at most `k`. -/
-theorem seminorm_bilinLeftCLM_mul_le (χ : 𝓓_{K}(E, ℂ)) {g : E → ℂ} (hg : ContDiff ℝ ∞ g)
-    {k : ℕ} {M : ℝ} (hM : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j g x‖ ≤ M) {i : ℕ} (hi : i ≤ k) :
-    N[ℂ]_{K, i} (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) hg χ) ≤
-      2 ^ k * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 (Nat.zero_le k) 0)
-  refine (ContDiffMapSupportedIn.seminorm_top_le_iff ℂ (by positivity) i _).2 fun x _ ↦ ?_
-  rw [bilinLeftCLM_apply]
-  simp only [ContinuousLinearMap.mul_apply']
-  refine (norm_iteratedFDeriv_mul_le χ.contDiff hg x (mod_cast le_top)).trans ?_
-  calc _ ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
-        ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
-        gcongr with j hj
-        · exact (norm_iteratedFDeriv_apply_le_seminorm_top ℂ).trans
-            (Seminorm.le_finset_sup_apply (Finset.mem_Iic.2
-              ((Finset.mem_range_succ_iff.1 hj).trans hi)))
-        · exact hM _ ((Nat.sub_le i j).trans hi) x
-    _ = 2 ^ i * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
-        rw [← Finset.sum_mul, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
-        push_cast
-        ring
-    _ ≤ _ := by gcongr; exact one_le_two
-
-/-- A compact set `K` in the interior of a compact set `K'` of a finite-dimensional space has a
-smooth cutoff supported in `K'` and equal to one on `K`. -/
-theorem exists_eqOn_one_of_subset_interior [FiniteDimensional ℝ E] {K K' : Compacts E}
-    (h : (K : Set E) ⊆ interior K') : ∃ χ : 𝓓_{K'}(E, ℂ), EqOn χ 1 K := by
-  obtain ⟨ψ, hψ, -, hψ1, -, hψK'⟩ := K.isCompact.exists_contDiff_cutoff isOpen_interior h
-  have hsmooth : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := Complex.ofRealCLM.contDiff.comp hψ
-  have hsupp : support (fun x ↦ (ψ x : ℂ)) ⊆ K' := fun x hx ↦
-    interior_subset (hψK' (subset_tsupport ψ (by simpa using hx)))
-  refine ⟨.of_support_subset hsmooth hsupp, fun x hx ↦ ?_⟩
-  rw [ContDiffMapSupportedIn.coe_of_support_subset, interior_subset (hψ1 hx), Pi.one_apply,
-    Complex.ofReal_one]
-
-end Mul
-
-end ContDiffMapSupportedIn
 
 namespace TauCeti.UnitAddTorus
 
@@ -210,15 +127,6 @@ private abbrev splitEquiv (a b : Type*) :
     (a ⊕ b → ℝ) ≃L[ℝ] (a → ℝ) × (b → ℝ) :=
   ContinuousLinearEquiv.sumPiEquivProdPi ℝ a b fun _ ↦ ℝ
 
-private theorem splitEquiv_apply (x : a ⊕ b → ℝ) :
-    splitEquiv a b x = (fun i ↦ x (.inl i), fun i ↦ x (.inr i)) :=
-  (rfl)
-
-private theorem splitEquiv_symm_apply (p : (a → ℝ) × (b → ℝ)) :
-    (splitEquiv a b).symm p = Sum.elim p.1 p.2 := by
-  ext i
-  cases i <;> rfl
-
 /-- The integer translates of the preimage of a product of sets meeting none of their nonzero
 integer translates. -/
 private theorem eq_zero_of_mem_preimage_splitEquiv {S₁ : Set (a → ℝ)} {S₂ : Set (b → ℝ)}
@@ -235,22 +143,6 @@ private theorem eq_zero_of_mem_preimage_splitEquiv {S₁ : Set (a → ℝ)} {S�
   | inr i => exact congrFun h₂ i
 
 variable [Fintype a] [Fintype b]
-
-private theorem norm_splitEquiv_le :
-    ‖(splitEquiv a b : (a ⊕ b → ℝ) →L[ℝ] (a → ℝ) × (b → ℝ))‖ ≤ 1 := by
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ ?_
-  rw [one_mul, ContinuousLinearEquiv.coe_coe, splitEquiv_apply, Prod.norm_def, max_le_iff]
-  exact ⟨(pi_norm_le_iff_of_nonneg (norm_nonneg x)).2 fun i ↦ norm_le_pi_norm x _,
-    (pi_norm_le_iff_of_nonneg (norm_nonneg x)).2 fun i ↦ norm_le_pi_norm x _⟩
-
-private theorem norm_splitEquiv_symm_le :
-    ‖((splitEquiv a b).symm : (a → ℝ) × (b → ℝ) →L[ℝ] (a ⊕ b → ℝ))‖ ≤ 1 := by
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun p ↦ ?_
-  rw [one_mul, ContinuousLinearEquiv.coe_coe, splitEquiv_symm_apply]
-  refine (pi_norm_le_iff_of_nonneg (norm_nonneg p)).2 fun i ↦ ?_
-  cases i with
-  | inl i => exact (norm_le_pi_norm p.1 i).trans (norm_fst_le p)
-  | inr i => exact (norm_le_pi_norm p.2 i).trans (norm_snd_le p)
 
 variable {L : Compacts ((a → ℝ) × (b → ℝ))}
 
@@ -275,7 +167,8 @@ private theorem periodizeProd_tensor {K₁ : Compacts (a → ℝ)} {K₂ : Compa
       ⟨tensor (periodize φ) (periodize ψ), tensor_mem_smoothFunctions
         (periodize_mem_smoothFunctions φ.contDiff φ.hasCompactSupport)
         (periodize_mem_smoothFunctions ψ.contDiff ψ.hasCompactSupport)⟩ :=
-  Subtype.ext (periodize_tensor φ.hasCompactSupport ψ.hasCompactSupport)
+  Subtype.ext ((congrArg periodize (funext fun x ↦ φ.tensor_apply ψ (splitEquiv a b x))).trans
+    (periodize_tensor φ.hasCompactSupport ψ.hasCompactSupport))
 
 /-- If `L` lies in a product of sets meeting none of their nonzero integer translates, the
 `C^N` norms of the periodization of `Φ` are bounded by the `C^N` seminorm of `Φ`. -/
@@ -292,7 +185,8 @@ private theorem derivBound_periodizeProd {S₁ : Set (a → ℝ)} {S₂ : Set (b
       (preimage_mono (Φ.tsupport_subset.trans hL))
   · have h := ((splitEquiv a b : (a ⊕ b → ℝ) →L[ℝ] (a → ℝ) × (b → ℝ))
       |>.norm_iteratedFDeriv_comp_right_le Φ.contDiff x (i := j) (mod_cast le_top)).trans
-        (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) norm_splitEquiv_le))
+        (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _)
+          (ContinuousLinearEquiv.opNorm_sumPiEquivProdPi_le (𝕜 := ℝ))))
     rw [ContinuousLinearEquiv.coe_coe] at h
     refine h.trans ?_
     exact (norm_iteratedFDeriv_apply_le_seminorm_top ℂ).trans
@@ -330,7 +224,8 @@ private theorem supSeminorm_cutoffLiftProd_le (χ : 𝓓_{L}((a → ℝ) × (b �
       have h' := (((splitEquiv a b).symm : (a → ℝ) × (b → ℝ) →L[ℝ] (a ⊕ b → ℝ))
         |>.norm_iteratedFDeriv_comp_right_le (mem_smoothFunctions.1 h.2) x (i := j)
           (mod_cast le_top)).trans (mul_le_of_le_one_right
-          (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) norm_splitEquiv_symm_le))
+          (norm_nonneg _) (pow_le_one₀ (norm_nonneg _)
+            (ContinuousLinearEquiv.opNorm_sumPiEquivProdPi_symm_le (𝕜 := ℝ))))
       rw [ContinuousLinearEquiv.coe_coe] at h'
       exact h'.trans (hh.norm_iteratedFDeriv_le hj _)) hi
 
@@ -343,7 +238,7 @@ private theorem cutoffLiftProd_tensor {K₁ : Compacts (a → ℝ)} {K₂ : Comp
       (cutoffLift χ₁ f).tensor (cutoffLift χ₂ g) := by
   ext p
   simp only [cutoffLiftProd_apply, ContDiffMapSupportedIn.tensor_apply, cutoffLift_apply,
-    _root_.UnitAddTorus.tensor_apply, splitEquiv_symm_apply, Sum.elim_inl, Sum.elim_inr]
+    _root_.UnitAddTorus.tensor_apply, ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply]
   ring
 
 /-- If `L` lies in a product of sets meeting none of their nonzero integer translates and a

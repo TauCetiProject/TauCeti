@@ -38,6 +38,9 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 * `TestFunction.extDerivCLM_smulLeftCLM`: the Leibniz rule `d (f ω) = df ∧ ω + f dω`.
 * `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`: the boundary of a smooth multiple of
   a current, `∂(fT) = f ∂T - T ⌞ df`.
+* `ContDiffMapSupportedIn.seminorm_bilinLeftCLM_mul_le`: the Leibniz bound
+  `N_i(χ g) ≤ 2 ^ k N_k(χ) M` for the product of a complex smooth function `χ` supported in a
+  compact set with a smooth function `g` whose derivatives of order at most `k` are bounded by `M`.
 
 ## References
 
@@ -189,3 +192,36 @@ theorem comp_smulLeftCLM_comp_extDerivCLM
   simp [extDerivCLM_smulLeftCLM hf ω]
 
 end ContinuousLinearMap
+
+namespace ContDiffMapSupportedIn
+
+open TopologicalSpace
+open scoped ContDiff Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Compacts E}
+
+/-- The `C^i` seminorms, `i ≤ k`, of `χ g` are bounded by `2 ^ k N_k(χ) M` when `M` bounds the
+derivatives of `g` of order at most `k`. -/
+theorem seminorm_bilinLeftCLM_mul_le (χ : 𝓓_{K}(E, ℂ)) {g : E → ℂ} (hg : ContDiff ℝ ∞ g)
+    {k : ℕ} {M : ℝ} (hM : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j g x‖ ≤ M) {i : ℕ} (hi : i ≤ k) :
+    N[ℂ]_{K, i} (bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) hg χ) ≤
+      2 ^ k * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 (Nat.zero_le k) 0)
+  refine (ContDiffMapSupportedIn.seminorm_top_le_iff ℂ (by positivity) i _).2 fun x _ ↦ ?_
+  rw [bilinLeftCLM_apply]
+  simp only [ContinuousLinearMap.mul_apply']
+  refine (norm_iteratedFDeriv_mul_le χ.contDiff hg x (mod_cast le_top)).trans ?_
+  calc _ ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
+        ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
+        gcongr with j hj
+        · exact (norm_iteratedFDeriv_apply_le_seminorm_top ℂ).trans
+            (Seminorm.le_finset_sup_apply (Finset.mem_Iic.2
+              ((Finset.mem_range_succ_iff.1 hj).trans hi)))
+        · exact hM _ ((Nat.sub_le i j).trans hi) x
+    _ = 2 ^ i * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * M := by
+        rw [← Finset.sum_mul, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
+        push_cast
+        ring
+    _ ≤ _ := by gcongr; exact one_le_two
+
+end ContDiffMapSupportedIn

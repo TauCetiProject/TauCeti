@@ -21,7 +21,7 @@ When the support of `f` lies in a set `S` that meets none of its translates by n
 vectors, for instance a set of diameter less than one
 (`UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one`), at most one translate is nonzero at
 each point. Then the periodization agrees with `f` on `S`
-(`UnitAddTorus.periodize_coe_of_mem`), and its `C^N` norms are those of `f`
+(`UnitAddTorus.periodize_coe_of_mem`), and its `C^N` norms are bounded by those of `f`
 (`UnitAddTorus.derivBound_periodize`). Periodization takes tensor products
 `f(x) g(y)` to tensor products on the product torus (`UnitAddTorus.periodize_tensor`).
 

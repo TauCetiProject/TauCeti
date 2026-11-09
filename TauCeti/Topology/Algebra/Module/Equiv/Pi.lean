@@ -18,6 +18,10 @@ for linear charts, with no finiteness or norm assumptions.
 The construction combines `LinearEquiv.piOptionEquivProd` with
 `TauCeti.piOptionEquivProdHomeomorph`.
 
+For Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi`, which splits a family indexed by `S ⊕ T`
+into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi_apply` and
+`ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse.
+
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
 coordinatewise, so coordinate calculations can use both the homeomorphism and the linear API.
@@ -52,6 +56,24 @@ def piOptionEquivProd : ((i : Option ι) → M i) ≃L[R] M none × ((i : ι) �
       | some j => q.2 j) := by
   funext i
   cases i <;> rfl
+
+section SumPi
+
+variable {S T : Type*} {A : S ⊕ T → Type*} [∀ st, AddCommMonoid (A st)] [∀ st, Module R (A st)]
+  [∀ st, TopologicalSpace (A st)]
+
+/-- Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi` restricts a family on `S ⊕ T` to `S` and
+to `T`. -/
+@[simp] theorem sumPiEquivProdPi_apply (x : (st : S ⊕ T) → A st) :
+    sumPiEquivProdPi R S T A x = (fun s => x (.inl s), fun t => x (.inr t)) := (rfl)
+
+/-- The inverse of `ContinuousLinearEquiv.sumPiEquivProdPi` glues a family on `S` and a family on
+`T` into a family on `S ⊕ T`. -/
+@[simp] theorem sumPiEquivProdPi_symm_apply
+    (p : ((s : S) → A (.inl s)) × ((t : T) → A (.inr t))) :
+    (sumPiEquivProdPi R S T A).symm p = Sum.rec p.1 p.2 := (rfl)
+
+end SumPi
 
 end ContinuousLinearEquiv
 
