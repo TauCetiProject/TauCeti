@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Group.Idempotent
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
+public import TauCeti.Order.Fin.Clamp
+public import Mathlib.LinearAlgebra.Multilinear.Curry
+public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 import Mathlib.Tactic.Abel
 
 /-!
@@ -48,6 +51,15 @@ on matrices entrywise.
   homomorphisms induce chain maps, a morphism `H` with `∂H = F + G` induces a chain homotopy
   between the maps of `F` and `G`, composition is preserved
   (`TauCeti.continuationMap_matMul`), and the identity morphism acts as the identity on `M ⊗ N`.
+* **Iterates of `δ¹`.** The coefficient of `z` in `δᵏ x` is the sum over the paths
+  `x = r 0, …, r k = z` of `coeff (r 0) (r 1) ⊗ ⋯ ⊗ coeff (r (k-1)) (r k)` in the `k`-th tensor
+  power of `A` over `R` (`TauCeti.TypeDStructure.iteratedCoeff`), with `δ⁰` the identity, `δ¹` the
+  structure map and `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`. A type `D` structure is bounded when `δᵏ = 0` for
+  large `k`, for instance when its coefficients strictly decrease a height function
+  (`TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt`). The tensor power over the ring of
+  idempotents is a quotient of the one over `R`, so this boundedness implies the vanishing of the
+  iterates over the idempotents. The iterates enter the box tensor product with type `A` modules
+  in `TauCeti.LowDimTopology.Bordered.BoxTensor`.
 
 Over a ring of characteristic two the type `D` structure equation, the box tensor product and the
 morphism complex need no signs; this is the setting of bordered Heegaard Floer homology over `𝔽₂`.
@@ -65,6 +77,7 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.boxTensor`, `TauCeti.TypeDStructure.boxDifferential`: the box tensor
   product with a right module and its differential, and
   `TauCeti.TypeDStructure.boxTensorDifferential`: the differential restricted to `M ⊗ N`.
+* `TauCeti.TypeDStructure.iteratedCoeff`: the iterates `δᵏ` of a type `D` structure.
 
 ## Main results
 
@@ -75,12 +88,16 @@ one and so does not apply to an ungraded differential algebra.
   `TauCeti.TypeDStructure.morphismDifferential_mul`: the morphisms form a differential category.
 * `TauCeti.TypeDStructure.boxDifferential_continuationMap`: morphisms act on box tensor products
   compatibly with the differentials.
+* `TauCeti.TypeDStructure.lift_iteratedCoeff_succ`: the recursion `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`.
+* `TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt`: a type `D` structure whose coefficients
+  decrease a height function is bounded.
 
 ## References
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  Chapter 2 (type `D` structures, their morphisms, and the box tensor product, equation (2.29)).
+  Chapter 2 (type `D` structures, their morphisms, their iterates and boundedness, and the box
+  tensor product, equation (2.29)).
 -/
 
 public section
@@ -419,6 +436,139 @@ theorem boxDifferential_smul (hd : IsUngradedDGAlgebra d) (N : TypeDStructure d 
     Pi.add_apply, Pi.smul_apply, smul_eq_mul, op_smul_eq_mul, hd.map_mul, mul_add,
     Finset.mul_sum, mul_assoc]
   abel
+
+/-! ### Iterates of the structure map -/
+
+section Iterates
+
+/-- The coefficients of a type `D` structure along a sequence of generators `w`:
+`pathCoeff w t = coeff (w t) (w (t + 1))`. -/
+def pathCoeff (N : TypeDStructure d ι X) (w : ℕ → X) (t : ℕ) : A :=
+  N.coeff (w t) (w (t + 1))
+
+@[simp]
+theorem pathCoeff_apply (N : TypeDStructure d ι X) (w : ℕ → X) (t : ℕ) :
+    N.pathCoeff w t = N.coeff (w t) (w (t + 1)) :=
+  (rfl)
+
+/-- The **iterates** `δᵏ` of the structure map of a type `D` structure: the coefficient of the
+generator `z` in `δᵏ x ∈ A^{⊗ k} ⊗ N`, the sum over the paths `x = r 0, r 1, …, r k = z` of
+`coeff (r 0) (r 1) ⊗ ⋯ ⊗ coeff (r (k - 1)) (r k)`. -/
+noncomputable def iteratedCoeff [DecidableEq X] (N : TypeDStructure d ι X) (k : ℕ) (x z : X) :
+    PiTensorProduct R fun _ : Fin k => A :=
+  ∑ r : Fin (k + 1) → X with r 0 = x ∧ r (Fin.last k) = z,
+    PiTensorProduct.tprod R fun t : Fin k => N.pathCoeff (r ∘ (Fin.clamp · k)) t
+
+theorem iteratedCoeff_def [DecidableEq X] (N : TypeDStructure d ι X) (k : ℕ) (x z : X) :
+    N.iteratedCoeff k x z = ∑ r : Fin (k + 1) → X with r 0 = x ∧ r (Fin.last k) = z,
+      PiTensorProduct.tprod R fun t : Fin k => N.pathCoeff (r ∘ (Fin.clamp · k)) t :=
+  (rfl)
+
+variable [DecidableEq X] (N : TypeDStructure d ι X)
+
+/-- `δ⁰` is the identity: the coefficient of `z` in `δ⁰ x` is the empty tensor when `x = z`. -/
+@[simp]
+theorem iteratedCoeff_zero (x z : X) :
+    N.iteratedCoeff 0 x z = if x = z then PiTensorProduct.tprod R Fin.elim0 else 0 := by
+  rw [iteratedCoeff_def, Finset.sum_filter, ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
+  simp only [Equiv.funUnique_symm_apply, Fin.last_zero, Fin.isValue, uniqueElim_const]
+  rw [Fintype.sum_eq_single x fun y hy => by simp [hy]]
+  simp only [true_and]
+  split_ifs
+  · exact congrArg _ (Subsingleton.elim _ _)
+  · rfl
+
+/-- `δ¹` is the structure map: the coefficient of `z` in `δ¹ x` is `coeff x z`. -/
+@[simp]
+theorem iteratedCoeff_one (x z : X) :
+    N.iteratedCoeff 1 x z = PiTensorProduct.tprod R fun _ => N.coeff x z := by
+  rw [iteratedCoeff_def, Finset.sum_filter, ← (piFinTwoEquiv fun _ => X).symm.sum_comp,
+    Fintype.sum_prod_type]
+  simp [Fin.clamp_eq_mk, ite_and]
+
+/-- Evaluating a multilinear map on the iterate `δᵏ` sums it over the paths. -/
+@[simp]
+theorem lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
+    (f : MultilinearMap R (fun _ : Fin k => A) P) (x z : X) :
+    PiTensorProduct.lift f (N.iteratedCoeff k x z) =
+      ∑ r : Fin (k + 1) → X with r 0 = x ∧ r (Fin.last k) = z,
+        f fun t => N.pathCoeff (r ∘ (Fin.clamp · k)) t := by
+  simp [iteratedCoeff, map_sum]
+
+/-- Summing multilinear maps evaluated on the iterates `δᵏ x` over the starting generators `x`
+sums over all the paths ending at `z`. -/
+theorem sum_lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
+    (f : X → MultilinearMap R (fun _ : Fin k => A) P) (z : X) :
+    ∑ x, PiTensorProduct.lift (f x) (N.iteratedCoeff k x z) =
+      ∑ r : Fin (k + 1) → X with r (Fin.last k) = z,
+        f (r 0) fun t => N.pathCoeff (r ∘ (Fin.clamp · k)) t := by
+  rw [← Finset.sum_fiberwise _ (fun r : Fin (k + 1) → X => r 0)]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [lift_iteratedCoeff, Finset.filter_filter]
+  refine Finset.sum_congr (Finset.filter_congr fun r _ => and_comm) fun r hr => ?_
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hr
+  rw [hr.2]
+
+/-- The iterate `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`: evaluating a multilinear map on `δᵏ⁺¹ x` evaluates it on
+a first coefficient `coeff x y`, followed by `δᵏ y`. -/
+theorem lift_iteratedCoeff_succ {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
+    (f : MultilinearMap R (fun _ : Fin (k + 1) => A) P) (x z : X) :
+    PiTensorProduct.lift f (N.iteratedCoeff (k + 1) x z) =
+      ∑ y, PiTensorProduct.lift (f.curryLeft (N.coeff x y)) (N.iteratedCoeff k y z) := by
+  rw [sum_lift_iteratedCoeff, lift_iteratedCoeff]
+  -- A path of length `k + 1` from `x` is `x` followed by a path of length `k`, its tail.
+  refine Finset.sum_nbij' (fun r => Fin.tail r) (fun s => Fin.cons x s) ?_ ?_ ?_ ?_ ?_
+  · intro r hr
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hr ⊢
+    rw [Fin.tail, Fin.succ_last, hr.2]
+  · intro s hs
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hs ⊢
+    rw [← Fin.succ_last, Fin.cons_succ, Fin.cons_zero]
+    exact ⟨rfl, hs⟩
+  · intro r hr
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hr
+    rw [← hr.1, Fin.cons_self_tail]
+  · intro s _
+    exact Fin.tail_cons _ _
+  · intro r hr
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hr
+    rw [MultilinearMap.curryLeft_apply]
+    congr 1
+    funext t
+    -- The first coefficient starts at `r 0 = x`, the others are the coefficients of the tail.
+    refine Fin.cases ?_ (fun t => ?_) t
+    · simp [Fin.clamp_eq_mk, Fin.tail, ← hr.1]
+    · have ht := t.isLt
+      simp only [Fin.cons_succ, pathCoeff_apply, Function.comp_apply, Fin.val_succ, Fin.tail,
+        Fin.clamp_eq_mk (show (t : ℕ) + 1 ≤ k + 1 by omega),
+        Fin.clamp_eq_mk (show (t : ℕ) + 1 + 1 ≤ k + 1 by omega),
+        Fin.clamp_eq_mk (show (t : ℕ) ≤ k by omega),
+        Fin.clamp_eq_mk (show (t : ℕ) + 1 ≤ k by omega),
+        Fin.succ_mk]
+
+/-- A type `D` structure whose coefficients strictly decrease a height function `h` is bounded:
+`δᵏ x = 0` as soon as `k > h x`. -/
+theorem iteratedCoeff_eq_zero_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h y < h x)
+    {k : ℕ} {x : X} (hk : h x < k) (z : X) : N.iteratedCoeff k x z = 0 := by
+  refine Finset.sum_eq_zero fun r hr => ?_
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hr
+  by_contra hne
+  have hnz : ∀ t < k, N.pathCoeff (r ∘ (Fin.clamp · k)) t ≠ 0 := fun t ht h0 =>
+    hne (MultilinearMap.map_coord_zero _ (⟨t, ht⟩ : Fin k) h0)
+  have key : ∀ t ≤ k, h ((r ∘ (Fin.clamp · k)) t) + t ≤ h x := by
+    intro t ht
+    induction t with
+    | zero =>
+      rw [Function.comp_apply, Fin.clamp_eq_mk (Nat.zero_le k), Fin.zero_eta, hr.1]
+      simp
+    | succ t ih =>
+      have := hh _ _ (hnz t (by omega))
+      have := ih (by omega)
+      omega
+  have := key k le_rfl
+  omega
+
+end Iterates
 
 end TypeDStructure
 
