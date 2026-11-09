@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
 
 public import TauCeti.MeasureTheory.Function.UnifTight
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # Continuity of positive truncation
@@ -26,6 +27,8 @@ Dirichlet boundary data, as needed in weak comparison arguments.
   condition.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
+* `TauCeti.W1p.tendsto_posPartAbove_atTop`: `(u - k)⁺ → 0` in the Sobolev norm as `k → ∞`, so
+  the truncations `u - (u - k)⁺ = min u k` converge to `u`.
 
 The corresponding positive-part results are the special case `k = 0`.
 -/
@@ -205,5 +208,31 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
   have h := W1p.posPartAbove_mem_w1p0Submodule hp (sub_nonneg.2 hkl) hu
   rw [W1p.posPartAbove_posPartAbove] at h
   simpa only [add_sub_cancel] using h
+
+/-- **Truncations at increasing levels vanish.** For `1 ≤ p < ∞`, `(u - k)⁺ → 0` in the Sobolev
+norm as the level `k ≥ 0` tends to infinity. Equivalently, the truncations
+`u - (u - k)⁺ = min u k` converge to `u` in `W^{1,p}(Ω)`. -/
+theorem W1p.tendsto_posPartAbove_atTop (hp : p ≠ ∞) {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {k : ι → ℝ} (hk : ∀ i, 0 ≤ k i) (hkl : Tendsto k l atTop)
+    (u : W1p mu Omega p) :
+    Tendsto (fun i ↦ W1p.posPartAbove hp (hk i) u) l (𝓝 0) := by
+  refine tendsto_iff_seq_tendsto.2 fun s hs ↦ ?_
+  rw [tendsto_subtype_rng, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
+  refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) hp
+    (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _)
+    (Lp.memLp (u : Sobolev1JetLp mu Omega p)) (Eventually.of_forall fun n ↦ ?_) ?_
+  · filter_upwards [posPartAbove_coe_ae hp (hk (s n)) u,
+      Lp.coeFn_zero (Sobolev1Jet E) p (mu.restrict Omega)] with x hx h0
+    rw [Function.comp_apply, ZeroMemClass.coe_zero, h0, hx, Pi.zero_apply, sub_zero,
+      ENNReal.coe_one, one_mul, enorm_le_iff_norm_le]
+    exact norm_posPartAboveJet_le (hk (s n)) _
+  · filter_upwards [ae_all_iff.mpr fun n ↦ posPartAbove_coe_ae hp (hk (s n)) u,
+      Lp.coeFn_zero (Sobolev1Jet E) p (mu.restrict Omega)] with x hx h0
+    rw [ZeroMemClass.coe_zero, h0, Pi.zero_apply]
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [(hkl.comp hs).eventually_ge_atTop ((u : Sobolev1JetLp mu Omega p) x).fst]
+      with n hn
+    rw [Function.comp_apply, hx n, posPartAboveJet, posPartJet,
+      ite_eq_right (by simpa [sub_pos] using hn)]
 
 end TauCeti

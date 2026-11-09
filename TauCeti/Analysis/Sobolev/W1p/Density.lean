@@ -35,6 +35,8 @@ by dominated convergence.  Closedness of `W^{1,p}_0(ℝⁿ)` then gives the theo
 
 ## Main declarations
 
+* `TauCeti.W1p.exists_seq_smul_tendsto`: `u` is the limit of compactly supported
+  products `ψₙ u` with smooth `0 ≤ ψₙ ≤ 1`.
 * `TauCeti.W1p.mem_w1p0Submodule_top`: every `u ∈ W^{1,p}(ℝⁿ)` lies in `W^{1,p}_0(ℝⁿ)`.
 * `TauCeti.w1p0Submodule_top_eq_top`: `W^{1,p}_0(ℝⁿ) = W^{1,p}(ℝⁿ)` for `p < ∞`.
 * `TauCeti.W1p.denseRange_ofTestFunctionₗ_top`: test functions are dense in `W^{1,p}(ℝⁿ)`.
@@ -269,6 +271,23 @@ private theorem tendsto_truncate (hp : p ≠ ∞) {C : ℝ} (hC : 0 ≤ C)
           ENNReal.ofReal_le_ofReal hx)
     ((eventually_coe_truncate_eq hC hbound u).mono fun _ hx ↦
       (tendsto_congr' hx).mpr tendsto_const_nhds)
+
+/-- **Cutoff approximation in `W^{1,p}(ℝⁿ)`.** For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝⁿ)` is the
+limit of the Sobolev functions `ψₙ u`, where each `ψₙ` is a smooth function with values in
+`[0, 1]` and the jet of `ψₙ u` vanishes outside a compact set. -/
+theorem W1p.exists_seq_smul_tendsto (hp : p ≠ ∞) (u : W1p mu ⊤ p) :
+    ∃ (psi : ℕ → E → ℝ) (v : ℕ → W1p mu ⊤ p), Tendsto v atTop (𝓝 u) ∧
+      ∀ n, ContDiff ℝ (⊤ : ℕ∞) (psi n) ∧ (∀ x, 0 ≤ psi n x ∧ psi n x ≤ 1) ∧
+        (∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)),
+          W1p.value (v n) x = psi n x * W1p.value u x) ∧
+        ∃ K, IsCompact K ∧ ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+          (v n : Sobolev1JetLp mu ⊤ p) x = 0 := by
+  obtain ⟨C, hC, hbound⟩ := exists_norm_fderiv_unitBump_le (E := E)
+  have hgrad := norm_gradient_truncCutoff_le hbound
+  refine ⟨truncCutoff, fun n ↦ truncate hC hgrad n u, tendsto_truncate hp hC hgrad u,
+    fun n ↦ ⟨contDiff_truncCutoff n, fun x ↦ ⟨truncCutoff_nonneg n x, truncCutoff_le_one n x⟩,
+      (value_truncate_ae hC hgrad n u).mono fun x hx ↦ by rw [hx, smul_eq_mul],
+      _, isCompact_closedBall 0 (2 * ((n : ℝ) + 1)), truncate_ae_eq_zero hC hgrad n u⟩⟩
 
 /-! ### Density -/
 

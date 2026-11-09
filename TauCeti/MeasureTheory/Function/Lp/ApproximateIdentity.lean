@@ -52,6 +52,7 @@ integrability or compact support assumption on the function.
 * `TauCeti.compLpL_normedBumpLp`: this operator commutes with postcomposition by a continuous
   linear map.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
+* `TauCeti.ae_norm_normedBumpLp_le`: it preserves almost-everywhere bounds on the norm.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
@@ -162,6 +163,35 @@ theorem eLpNorm_normed_convolution_le [CompleteSpace F] (hp : p ≠ ∞)
     _ = eLpNorm f p mu := by
         rw [Lp.enorm_def]
         exact eLpNorm_congr_ae hf.coeFn_toLp
+
+/-- Averaging against a normalized nonnegative bump preserves an almost-everywhere bound on the
+norm: if `‖f x‖ ≤ N` almost everywhere, the same holds for the average of `f`. -/
+theorem ae_norm_normedBumpLp_le [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    {f : Lp F p mu} {N : ℝ} (hf : ∀ᵐ x ∂mu, ‖f x‖ ≤ N) :
+    ∀ᵐ x ∂mu, ‖normedBumpLp hp phi mu f x‖ ≤ N := by
+  classical
+  obtain ⟨x₀, hx₀⟩ := hf.exists
+  have hN : 0 ≤ N := (norm_nonneg _).trans hx₀
+  -- A representative of `f` bounded by `N` at every point.
+  set g : E → F := fun x ↦ if ‖f x‖ ≤ N then f x else 0
+  have hgf : g =ᵐ[mu] f := hf.mono fun x hx ↦ ite_eq_left_iff.mpr fun h ↦ absurd hx h
+  have hg : MemLp g p mu := (Lp.memLp f).ae_eq hgf.symm
+  have hgN (x : E) : ‖g x‖ ≤ N := by
+    by_cases hx : ‖f x‖ ≤ N
+    · simp only [g, hx, ite_true]
+    · simpa only [g, hx, ite_false, norm_zero] using hN
+  have hfg : f = hg.toLp g :=
+    (Lp.toLp_coeFn f (Lp.memLp f)).symm.trans (MemLp.toLp_congr _ _ hgf.symm)
+  rw [hfg]
+  filter_upwards [normedBumpLp_ae_eq_convolution hp phi hg] with x hx
+  rw [hx, convolution_def]
+  calc ‖∫ t, (lsmul ℝ ℝ) (phi.normed mu t) (g (x - t)) ∂mu‖
+      ≤ ∫ t, phi.normed mu t * N ∂mu := by
+        refine norm_integral_le_of_norm_le (phi.integrable_normed.mul_const N)
+          (Eventually.of_forall fun t ↦ ?_)
+        rw [lsmul_apply, norm_smul, Real.norm_of_nonneg (phi.nonneg_normed t)]
+        exact mul_le_mul_of_nonneg_left (hgN _) (phi.nonneg_normed t)
+    _ = N := by rw [integral_mul_const, phi.integral_normed, one_mul]
 
 /-- **Smooth approximate identity in `Lᵖ`.** Let `phi i` be normalized smooth bumps centred at
 zero. If their outer radii tend to zero, then averaging any `f ∈ Lᵖ` against these bumps converges
