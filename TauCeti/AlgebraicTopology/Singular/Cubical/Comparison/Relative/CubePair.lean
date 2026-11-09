@@ -32,9 +32,9 @@ homology, it is `±` the generator `TauCeti.singularHomologyCubeBoundaryPairIso`
 (`TauCeti.exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_eq_units_smul`).
 In dimension one, over every ring `k`, it is exactly the singular generator of `H₁(I¹, ∂I¹; k)`
 (`TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero`), so `a ↦ a • [I¹]`
-is an isomorphism from `k` onto `H₁(I¹, ∂I¹; k)` (`TauCeti.cubicalHomologyCubeBoundaryPairOneEquiv`).
-This is what makes the identity cube a fundamental chain of the cube relative to its boundary, for
-every choice of coefficients.
+is an isomorphism from `k` onto `H₁(I¹, ∂I¹; k)`
+(`TauCeti.cubicalHomologyCubeBoundaryPairOneEquiv`). This is what makes the identity cube a
+fundamental chain of the cube relative to its boundary, for every choice of coefficients.
 
 The boundary of the identity cube, the signed sum of the faces of `Iᵐ⁺¹`, is a cycle of `∂Iᵐ⁺¹`
 (`TauCeti.cubeBoundaryCycle`), and the connecting morphism of the pair sends `[Iᵐ⁺¹]` to its class
