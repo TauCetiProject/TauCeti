@@ -36,11 +36,11 @@ section DiscreteCoind
 variable [DistribMulAction U M]
 
 /-- Discrete coinduction from a subgroup preserves `p`-primary torsion over a compact group. -/
-theorem isPPrimaryTorsion_discreteCoind (hM : IsPPrimaryTorsion p M) :
-    IsPPrimaryTorsion p (DiscreteCoind G U M) := by
-  refine isPPrimaryTorsion_iff.2 fun f ↦ ?_
+theorem isAddPGroup_discreteCoind (hM : IsAddPGroup p M) :
+    IsAddPGroup p (DiscreteCoind G U M) := by
+  refine fun f ↦ ?_
   let cf := DiscreteCoind.toContinuousMap G U M f
-  obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 (hM.continuousMap G) cf
+  obtain ⟨k, hk⟩ := hM.continuousMap G cf
   refine ⟨k, DiscreteCoind.ext fun g ↦ ?_⟩
   -- `cf` has the same values as `f`, so evaluating `hk` at `g` gives `p ^ k • f g = 0`.
   have hkg : p ^ k • f g = 0 := by
@@ -56,9 +56,9 @@ variable [ContinuousMul G] [DistribMulAction G M] [ContinuousSMul G M]
 
 /-- The quotient `Coind_U^G M ⧸ M` remains `p`-primary torsion whenever `M` is `p`-primary
 torsion. -/
-theorem isPPrimaryTorsion_coindQuotient (hM : IsPPrimaryTorsion p M) :
-    IsPPrimaryTorsion p (CoindQuotient G U M) :=
-  (isPPrimaryTorsion_discreteCoind G U M hM).of_surjective
+theorem isAddPGroup_coindQuotient (hM : IsAddPGroup p M) :
+    IsAddPGroup p (CoindQuotient G U M) :=
+  (isAddPGroup_discreteCoind G U M hM).of_surjective
     (CoindQuotient.mk G U M) CoindQuotient.mk_surjective
 
 end ContCohomology
