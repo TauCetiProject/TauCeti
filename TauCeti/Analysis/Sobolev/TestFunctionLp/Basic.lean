@@ -194,31 +194,54 @@ theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥
   have h := hΛ (T.rangeRestrict phi)
   simpa only [hcoe, LinearMap.mkContinuous_apply, hf₀_apply, hℓ] using h
 
+omit [IsFiniteMeasureOnCompacts mu] in
 /-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
 integrable on `Omega`. If for some `C ≥ 0` every test function `phi` on `Omega` satisfies
 
 `|∫ ∂_v phi * u| ≤ C ‖phi‖₂`,
 
 then `u` has a weak derivative in the direction `v` on `Omega` that lies in `L²(Omega)` and has
-norm at most `C`. -/
+norm at most `C`. Only the restriction of `mu` to `Omega` needs to be locally finite. -/
 theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : E → ℝ}
     (hu : LocallyIntegrableOn u Omega mu) (v : E) {C : ℝ} (hC : 0 ≤ C)
     (hbound : ∀ phi : 𝓓(Omega, ℝ),
       |∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu| ≤ C * (eLpNorm (phi : E → ℝ) 2 mu).toReal) :
     ∃ g : Lp ℝ 2 (mu.restrict Omega), ‖g‖ ≤ C ∧ HasWeakLineDerivOn mu Omega u g v := by
+  -- Test functions on `Omega` only see `mu.restrict Omega`, which is finite on compact sets, so
+  -- the argument runs for that measure.
+  have hint {f : E → ℝ} (hf : ∀ x ∉ (Omega : Set E), f x = 0) :
+      ∫ x, f x ∂mu.restrict Omega = ∫ x, f x ∂mu :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero hf
+  have hzero (phi : 𝓓(Omega, ℝ)) {x : E} (hx : x ∉ (Omega : Set E)) : (phi : E → ℝ) x = 0 :=
+    image_eq_zero_of_notMem_tsupport fun hc => hx (phi.tsupport_subset hc)
+  have hld (phi : 𝓓(Omega, ℝ)) : ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu.restrict Omega =
+      ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu :=
+    hint fun x hx => by
+      rw [← TestFunction.lineDerivCLM_apply_of_le (𝕜 := ℝ) (k := ⊤) le_top, hzero _ hx, zero_mul]
   obtain ⟨Λ, hΛnorm, hΛphi⟩ :=
-    exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm hu v hC hbound
-  let g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (mu.restrict Omega))).symm (-Λ)
+    exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm (mu := mu.restrict Omega)
+      (hu.mono_measure Measure.restrict_le_self) v hC fun phi => by
+        rw [hld, eLpNorm_restrict_eq_of_support_subset phi.continuous.aestronglyMeasurable
+          ((subset_tsupport _).trans phi.tsupport_subset)]
+        exact hbound phi
+  have hres : (mu.restrict Omega).restrict Omega = mu.restrict Omega :=
+    Measure.restrict_restrict_of_subset subset_rfl
+  let g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 ((mu.restrict Omega).restrict Omega))).symm (-Λ)
+  rw [← hres]
   refine ⟨g, ?_, ?_⟩
   · simpa only [g, LinearIsometryEquiv.norm_map, norm_neg] using hΛnorm
-  · have hg : LocallyIntegrableOn g Omega mu := Lp.locallyIntegrableOn g (by norm_num)
+  · have hg : LocallyIntegrableOn g Omega mu :=
+      locallyIntegrableOn_of_locallyIntegrable_restrict
+        (((Lp.memLp g).locallyIntegrable (by norm_num)).mono_measure hres.ge)
     refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
-    have hinner : ⟪g, testFunctionLp 2 phi⟫_ℝ = ∫ x, (phi : E → ℝ) x • g x ∂mu := by
-      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul phi]
+    have hinner : ⟪g, testFunctionLp (mu := mu.restrict Omega) 2 phi⟫_ℝ =
+        ∫ x, (phi : E → ℝ) x • g x ∂mu := by
+      rw [← hint (f := fun x => (phi : E → ℝ) x • g x) fun x hx => by rw [hzero phi hx, zero_smul],
+        L2.inner_def, ← setIntegral_smul_eq_integral_smul phi]
       refine integral_congr_ae ?_
-      filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 phi] with x hx
+      filter_upwards [testFunctionLp_apply_ae (mu := mu.restrict Omega) 2 phi] with x hx
       simp [hx]
-    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hΛphi, neg_neg]
+    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hΛphi, neg_neg, hld]
     simp only [smul_eq_mul]
 
 end Representation
