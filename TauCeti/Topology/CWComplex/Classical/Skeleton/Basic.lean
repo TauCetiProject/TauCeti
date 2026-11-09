@@ -20,7 +20,9 @@ unique, and how cells account for points in consecutive skeleta, so that a map s
 skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
 with that point (`TauCeti.skeletonLT_one_eq_insert`).  When every cell is attached directly along
 the base, a subset of the `0`-skeleton is closed as soon as its trace on the base is
-(`TauCeti.isClosed_of_subset_skeletonLT_one`).  The preimages of the skeleta under a map
+(`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a preconnected space into the
+`0`-skeleton cannot leave such a subset whose complement there is also closed
+(`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under a map
 into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
@@ -181,6 +183,26 @@ lemma isClosed_of_subset_skeletonLT_one (hfr : ∀ n (j : cell C n), cellFrontie
       exact ⟨fun hx ↦ ⟨⟨hx.1, hsub hx⟩, hx.2⟩, fun hx ↦ ⟨hx.1.1, hx.2⟩⟩
     rw [this]
     exact hAD.inter isClosed_closedCell
+
+/-- **Maps into the `0`-skeleton of a complex attached along its base.** If the frontier of every
+cell of `C` lies in the base `D`, a continuous map from a preconnected space into the `0`-skeleton
+stays in any part `B` of the `0`-skeleton which, like its complement there, meets the base in a
+closed set, as soon as it meets `B` at one point. -/
+lemma forall_mem_of_subset_skeletonLT_one (hfr : ∀ n (j : cell C n), cellFrontier n j ⊆ D)
+    {B : Set X} (hB : B ⊆ skeletonLT C 1) (hBD : IsClosed (B ∩ D))
+    (hBD' : IsClosed (((skeletonLT C 1 : Set X) \ B) ∩ D)) {Y : Type*} [TopologicalSpace Y]
+    [PreconnectedSpace Y] (γ : C(Y, X)) (hγ : ∀ y, γ y ∈ skeletonLT C 1) {y₀ : Y}
+    (h₀ : γ y₀ ∈ B) : ∀ y, γ y ∈ B := by
+  have hclosed := (isClosed_of_subset_skeletonLT_one hfr hB hBD).preimage γ.continuous
+  have hopen : IsOpen (γ ⁻¹' B) := by
+    have h := (isClosed_of_subset_skeletonLT_one hfr sdiff_subset hBD').preimage γ.continuous
+    rw [← isClosed_compl_iff]
+    convert h using 1
+    ext s
+    exact ⟨fun hs ↦ ⟨hγ s, hs⟩, fun hs ↦ hs.2⟩
+  have huniv := (isClopen_iff.1 ⟨hclosed, hopen⟩).resolve_left
+    (nonempty_of_mem (show y₀ ∈ γ ⁻¹' B from h₀)).ne_empty
+  exact fun y ↦ (huniv ▸ mem_univ y : y ∈ γ ⁻¹' B)
 
 variable {E : Type*}
 

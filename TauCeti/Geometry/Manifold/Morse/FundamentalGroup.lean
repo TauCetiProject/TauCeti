@@ -13,6 +13,8 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.RelCWComplex
 public import TauCeti.Geometry.Manifold.Morse.Exhaustion
 public import TauCeti.Geometry.Manifold.Morse.RelCWComplex
 
+import TauCeti.Topology.Homotopy.DeformationRetract
+
 /-!
 # Critical points of index one and the fundamental group
 
@@ -101,13 +103,7 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
         constructor <;> linarith⟩ q.2⟩
     have hCsub := subsingleton_fundamentalGroup_of_isEmpty_cell_one this hfr hs
     -- The complex is a strong deformation retract of the upper sublevel.
-    let e : ContinuousMap.HomotopyEquiv C {x | f x ≤ f p + ε} :=
-      { toFun := ContinuousMap.inclusion hC
-        invFun := r
-        left_inv := by
-          rw [show r.comp (ContinuousMap.inclusion hC) = ContinuousMap.id C from
-            ContinuousMap.ext hr]
-        right_inv := ⟨G.toHomotopy⟩ }
+    let e := ContinuousMap.HomotopyEquiv.ofRetraction hC r hr G.toHomotopy
     have := hCsub (e.symm.toFun y)
     exact (e.symm.fundamentalGroupMulEquiv y).injective.subsingleton
 
@@ -193,10 +189,7 @@ theorem IsMorse.finrank_singularHomology_one_lt_toNat_criticalCount [CompactSpac
       (ModuleCat.of k k)).obj (TopCat.of M)) < (criticalCount I f 1).toNat := by
   have hc := hf.criticalCount_one_ne_zero hf.contMDiff.continuous.isProperMap
     (isCompact_range hf.contMDiff.continuous).bddBelow x
-  have hfin : criticalCount I f 1 ≠ ⊤ := by
-    rw [criticalCount_def, Ne, encard_eq_top_iff, not_infinite]
-    exact hf.finite_criticalPoints.subset fun q hq ↦ hq.1
   rw [hb]
-  exact Nat.pos_of_ne_zero fun h ↦ (ENat.toNat_eq_zero.1 h).elim hc hfin
+  exact Nat.pos_of_ne_zero fun h ↦ (ENat.toNat_eq_zero.1 h).elim hc (hf.criticalCount_ne_top 1)
 
 end TauCeti

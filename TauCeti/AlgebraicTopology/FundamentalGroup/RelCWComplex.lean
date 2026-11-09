@@ -30,8 +30,10 @@ homotopic, relative to its basepoint, to a loop in the `1`-skeleton
 (`TauCeti.exists_path_homotopic_skeletonLT`). Without `1`-cells the `1`-skeleton equals the
 `0`-skeleton `skeletonLT C 1`, the union of `D` with the `0`-cells. Since the cells are attached
 along `D`, every subset of the `0`-skeleton meeting `D` in a closed set is closed
-(`TauCeti.isClosed_of_subset_skeletonLT_one`). So a loop in the `1`-skeleton stays in `D` when its
-basepoint lies in `D`, where it is nullhomotopic, and is constant at a `0`-cell otherwise.
+(`TauCeti.isClosed_of_subset_skeletonLT_one`), so a loop in the `0`-skeleton cannot leave such a
+subset whose complement there is also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`). So
+a loop in the `1`-skeleton stays in `D` when its basepoint lies in `D`, where it is nullhomotopic,
+and is constant at a `0`-cell otherwise.
 
 ## Main results
 
@@ -53,24 +55,6 @@ universe u
 namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
-
-/-- A path in the `0`-skeleton of a complex attached along its base stays in any part `B` of the
-`0`-skeleton which, like its complement there, meets the base in a closed set. -/
-private theorem forall_mem_of_subset_skeletonLT_one
-    (hfr : ∀ n (j : cell C n), cellFrontier n j ⊆ D) {B : Set X}
-    (hB : B ⊆ skeletonLT C 1) (hBD : IsClosed (B ∩ D))
-    (hBD' : IsClosed (((skeletonLT C 1 : Set X) \ B) ∩ D)) (γ : C(I, X))
-    (hγ : ∀ t, γ t ∈ skeletonLT C 1) (h₀ : γ 0 ∈ B) (t : I) : γ t ∈ B := by
-  have hclosed := (isClosed_of_subset_skeletonLT_one hfr hB hBD).preimage γ.continuous
-  have hopen : IsOpen (γ ⁻¹' B) := by
-    have h := (isClosed_of_subset_skeletonLT_one hfr sdiff_subset hBD').preimage γ.continuous
-    rw [← isClosed_compl_iff]
-    convert h using 1
-    ext s
-    exact ⟨fun hs ↦ ⟨hγ s, hs⟩, fun hs ↦ hs.2⟩
-  have huniv := (isClopen_iff.1 ⟨hclosed, hopen⟩).resolve_left
-    (nonempty_of_mem (show (0 : I) ∈ γ ⁻¹' B from h₀)).ne_empty
-  exact (huniv ▸ mem_univ t : t ∈ γ ⁻¹' B)
 
 /-- **Attaching cells of dimension other than one creates no loops.** Let `C` be a relative CW
 complex over `D` in a Hausdorff space, with no `1`-cells, all of whose cells are attached along
@@ -106,7 +90,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
   by_cases haD : (a : X) ∈ D
   · -- The compressed loop stays in `D`, where it is nullhomotopic.
     have hmem := forall_mem_of_subset_skeletonLT_one hfr hD₁ (by simpa using isClosedBase C)
-      (by simp) γ'X hγ'₁ (by simpa [γ'X] using haD)
+      (by simp) γ'X hγ'₁ (y₀ := 0) (by simpa [γ'X] using haD)
     -- Inside `C`, the base `D` is homeomorphic to `D` itself, so its loops are nullhomotopic.
     let e := (IsEmbedding.inclusion hDC).toHomeomorph
     let b : range (inclusion hDC) := ⟨inclusion hAC a, ⟨a, haD⟩, rfl⟩
@@ -120,7 +104,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
       inter_eq_right.2 fun y hy ↦ ⟨hD₁ hy, fun h ↦ haD (h ▸ hy)⟩
     have hmem := forall_mem_of_subset_skeletonLT_one (B := {↑a}) hfr
       (singleton_subset_iff.2 (hA₁ a.2)) (by simp [haD]) (by rw [hD']; exact isClosedBase C)
-      γ'X hγ'₁ (by simp [γ'X])
+      γ'X hγ'₁ (y₀ := 0) (by simp [γ'X])
     have hconst : γ'.map (continuous_inclusion hAC) = Path.refl _ := by
       ext t
       exact hmem t
