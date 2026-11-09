@@ -62,7 +62,7 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
     (hSz : ∀ z : ℍ, (((g * S * g⁻¹) • z : ℍ) : ℂ) = μ * z + c) :
     ¬ LocallyFinite fun δ : Γ ↦ (δ : PSL(2, ℝ)) • P.carrier := by
   intro hlf
-  have hμ₀ : 0 < μ := UpperHalfPlane.pos_of_coe_smul_eq hSz
+  have hμ₀ : 0 < μ := pos_of_coe_smul_eq hSz
   -- the powers of `g S g⁻¹` contract towards the fixed point `x₀ = c / (1 - μ)`
   have hpow (k : ℕ) (z : ℍ) : (((g * S ^ k * g⁻¹) • z : ℍ) : ℂ) =
       ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) * (z - ((c / (1 - μ) : ℝ) : ℂ)) := by
