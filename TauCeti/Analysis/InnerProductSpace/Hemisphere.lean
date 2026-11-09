@@ -44,6 +44,8 @@ critical points, is recognized as a sphere.
 
 * `TauCeti.coe_hemisphereHomeomorph_apply` and `TauCeti.coe_hemisphereHomeomorph_symm_apply`:
   the formulas for the homeomorphism and its inverse.
+* `TauCeti.norm_hemisphereHomeomorph_apply_eq_one_iff`: the homeomorphism carries exactly the
+  equator onto the boundary sphere of the ball.
 * `TauCeti.frontier_setOf_inner_nonneg`: the equator is the frontier of each closed hemisphere.
 * `TauCeti.range_equatorInclusion`: the equator is the intersection of the closed hemispheres
   around `p` and `-p`.
@@ -144,6 +146,16 @@ theorem coe_hemisphereHomeomorph_symm_apply (y : closedBall (0 : (ℝ ∙ (p : E
     (((hemisphereHomeomorph p).symm y : sphere (0 : E) 1) : E) =
       ((y : (ℝ ∙ (p : E))ᗮ) : E) + √(1 - ‖(y : (ℝ ∙ (p : E))ᗮ)‖ ^ 2) • (p : E) :=
   (rfl)
+
+/-- `TauCeti.hemisphereHomeomorph p` sends a point of the closed hemisphere to the boundary sphere
+of the ball exactly when the point lies on the equator, that is, is orthogonal to `p`. -/
+theorem norm_hemisphereHomeomorph_apply_eq_one_iff
+    (x : {x : sphere (0 : E) 1 // 0 ≤ ⟪(x : E), (p : E)⟫}) :
+    ‖(hemisphereHomeomorph p x : (ℝ ∙ (p : E))ᗮ)‖ = 1 ↔
+      ⟪((x : sphere (0 : E) 1) : E), (p : E)⟫ = 0 := by
+  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, ← Submodule.norm_coe,
+    coe_hemisphereHomeomorph_apply, (sub_inner_smul_mem_closedBall p x).2, sub_eq_self,
+    pow_eq_zero_iff two_ne_zero]
 
 end Hemisphere
 
