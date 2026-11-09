@@ -53,7 +53,7 @@ Morse complex.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
 * `TauCeti.morseIndex_slice_right`: along a critical zero section of a function on a product, the
   Morse index is the index of the restriction to the fibre.
-* `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
+* `TauCeti.eventually_morseIndex_le`: the Morse index of a `C²` function is
   lower semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
   `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
@@ -338,11 +338,11 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
     (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero (0 : QuadraticForm ℝ E)).mp fun _ ↦ by simp,
     zero_add]
 
-/-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
-at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
-need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
-under perturbation, but negative directions are never lost. -/
-theorem eventually_morseIndex_le [FiniteDimensional ℝ E] (hf : ContDiffAt ℝ 2 f x) :
+/-- **The Morse index is lower semicontinuous.** If `f` is `C²` at `x`, then at every point near
+`x` the Morse index of `f` is at least its Morse index at `x`. The point `x` need not be critical,
+nor nondegenerate: a degenerate Hessian can acquire new negative directions under perturbation,
+but negative directions are never lost. (In infinite dimensions the index is the junk value `0`.) -/
+theorem eventually_morseIndex_le (hf : ContDiffAt ℝ 2 f x) :
     ∀ᶠ y in 𝓝 x, morseIndex f x ≤ morseIndex f y := by
   have hc : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
     (hf.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)

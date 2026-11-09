@@ -50,12 +50,16 @@ namespace Matrix.IsHermitian
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
   {A : Matrix ι ι 𝕜}
 
-/-- Every Hermitian matrix sufficiently close to a nonsingular Hermitian matrix is
-congruent to it by an invertible matrix. -/
-theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
-    (hdet : IsUnit A.det) :
+/-- Every Hermitian matrix sufficiently close to a nonsingular matrix `A` is congruent to it by an
+invertible matrix. If `A` is not Hermitian, no matrix near `A` is, so the statement is vacuous. -/
+theorem eventually_exists_conjTranspose_mul_mul_eq (hdet : IsUnit A.det) :
     ∀ᶠ B in 𝓝 A, B.IsHermitian →
       ∃ R : Matrix ι ι 𝕜, IsUnit R.det ∧ Rᴴ * A * R = B := by
+  by_cases hA : A.IsHermitian
+  swap
+  · have hopen : IsOpen {B : Matrix ι ι 𝕜 | ¬B.IsHermitian} :=
+      (isClosed_eq continuous_id.matrix_conjTranspose continuous_id).isOpen_compl
+    exact (hopen.eventually_mem hA).mono fun B hB hBh ↦ absurd hBh hB
   let adj : Matrix ι ι 𝕜 → Matrix ι ι 𝕜 := fun R => A⁻¹ * Rᴴ * A
   have hadj_mul (R S : Matrix ι ι 𝕜) : adj (R * S) = adj S * adj R := by
     simp only [adj, conjTranspose_mul]
@@ -92,7 +96,7 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
 when restricted to Hermitian perturbations. -/
 theorem eventually_signature_eq (hA : A.IsHermitian) (hdet : IsUnit A.det) :
     ∀ᶠ B in 𝓝 A, ∀ hB : B.IsHermitian, hB.signature = hA.signature := by
-  filter_upwards [hA.eventually_exists_conjTranspose_mul_mul_eq hdet] with B hB
+  filter_upwards [eventually_exists_conjTranspose_mul_mul_eq hdet] with B hB
   intro hherm
   obtain ⟨R, hR, heq⟩ := hB hherm
   convert hA.signature_congr (P := Rᴴ) (by simpa using hR.star) using 2
@@ -116,7 +120,7 @@ theorem eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt {X : Type*} [Topol
     ∀ᶠ y in nhds x,
       sigNeg ((B y).toQuadraticForm') = sigNeg ((B x).toQuadraticForm') := by
   filter_upwards
-    [hc.eventually (hB.self_of_nhds.eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
+    [hc.eventually (eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
     with y hy hhy
   obtain ⟨R, hR, hRB⟩ := hy hhy
   have hRB' : R.transpose * B x * R.transpose.transpose = B y := by
@@ -130,6 +134,15 @@ end Matrix.IsHermitian
 namespace ContinuousLinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+omit [FiniteDimensional ℝ E] in
+/-- On an infinite-dimensional space the negative index of every quadratic form is the junk
+value `0`. -/
+private theorem sigNeg_eq_zero_of_not_finiteDimensional (hE : ¬ FiniteDimensional ℝ E)
+    (Q : QuadraticForm ℝ E) : sigNeg Q = 0 :=
+  Nat.le_zero.1 <| by
+    rw [← sigPos_neg]
+    exact (sigPos_le_finrank (Q := -Q)).trans_eq (Module.finrank_of_not_finite hE)
 
 /-- The negative index of a continuous family of symmetric bilinear forms on a
 finite-dimensional real space is locally constant at a nondegenerate member. Only local
@@ -156,13 +169,19 @@ theorem eventually_sigNeg_toBilinForm_eq_of_continuousAt {X : Type*} [Topologica
   filter_upwards [hindex] with y hy
   simpa only [A, LinearMap.BilinForm.sigNeg_toMatrix] using hy
 
+omit [FiniteDimensional ℝ E] in
 /-- **The negative index is lower semicontinuous.** Along a family of continuous bilinear forms
-on a finite-dimensional real space, continuous at `x`, the negative index at nearby parameters is
-at least the negative index at `x`. Neither symmetry nor nondegeneracy is required. -/
+on a real space, continuous at `x`, the negative index at nearby parameters is at least the
+negative index at `x`. Neither symmetry nor nondegeneracy is required. On an infinite-dimensional
+space the negative index is the junk value `0`. -/
 theorem eventually_sigNeg_toBilinForm_le_of_continuousAt {X : Type*} [TopologicalSpace X]
     {V : X → E →L[ℝ] E →L[ℝ] ℝ} {x : X} (hc : ContinuousAt V x) :
     ∀ᶠ y in 𝓝 x,
       sigNeg (V x).toBilinForm.toQuadraticMap ≤ sigNeg (V y).toBilinForm.toQuadraticMap := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact Eventually.of_forall fun y ↦
+      (sigNeg_eq_zero_of_not_finiteDimensional hE _).le.trans (Nat.zero_le _)
   -- A maximal negative-definite subspace `W` for `V x` stays negative-definite for the forms
   -- near `V x`, by openness of strict diagonal positivity of the negated restrictions to `W`.
   obtain ⟨W, hW, hneg⟩ :=
@@ -179,14 +198,19 @@ theorem eventually_sigNeg_toBilinForm_le_of_continuousAt {X : Type*} [Topologica
   rw [← hW]
   exact le_sigNeg_of_negDef _ fun w hw ↦ by simpa [C] using hy w hw
 
+omit [FiniteDimensional ℝ E] in
 /-- **The negative index is constant between crossings.** Along a family of symmetric continuous
 bilinear forms, continuous and nondegenerate on a preconnected set `s`, the negative index takes
-the same value at any two points of `s`. -/
+the same value at any two points of `s`. On an infinite-dimensional space the negative index is the
+junk value `0`. -/
 theorem sigNeg_toBilinForm_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
     {V : X → E →L[ℝ] E →L[ℝ] ℝ} {s : Set X} (hs : IsPreconnected s) (hc : ContinuousOn V s)
     (hsymm : ∀ t ∈ s, (V t).toBilinForm.IsSymm)
     (hnd : ∀ t ∈ s, (V t).toBilinForm.Nondegenerate) {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
     sigNeg (V x).toBilinForm.toQuadraticMap = sigNeg (V y).toBilinForm.toQuadraticMap := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · rw [sigNeg_eq_zero_of_not_finiteDimensional hE, sigNeg_eq_zero_of_not_finiteDimensional hE]
   refine hs.constant (f := fun t ↦ sigNeg (V t).toBilinForm.toQuadraticMap) (fun t ht ↦ ?_) hx hy
   rw [continuousWithinAt_iff_continuousAt_domRestrict _ ht]
   exact tendsto_nhds_of_eventually_eq <|

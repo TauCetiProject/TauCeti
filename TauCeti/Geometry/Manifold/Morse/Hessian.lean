@@ -867,10 +867,10 @@ theorem criticalHessian_trivializationAt_symm_apply [IsManifold I 2 M] {x₀ : M
     hcrit, ← extChartAt, hcoord, hcoord]
 
 /-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless
-finite-dimensional manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
+manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
 the Morse index is at least the Morse index at `x`. The point `x` need not be critical, nor
 nondegenerate. -/
-theorem eventually_manifoldMorseIndex_le [FiniteDimensional ℝ E] [IsManifold I 2 M]
+theorem eventually_manifoldMorseIndex_le [IsManifold I 2 M]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
     ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → manifoldMorseIndex I f x ≤ manifoldMorseIndex I f y := by
   -- Both indices are read in the preferred chart at `x`: at `x` by definition, and at nearby
