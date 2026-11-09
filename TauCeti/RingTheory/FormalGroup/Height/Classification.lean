@@ -89,7 +89,7 @@ private theorem constantCoeff_pow_eq_zero (x : PowerSeries K)
     constantCoeff (x ^ p ^ h : MvPowerSeries Unit K) = 0 := by
   rw [map_pow, ← PowerSeries.constantCoeff_eq, hx, zero_pow (pow_ne_zero h hp.out.ne_zero)]
 
-omit [G.IsComm] in
+omit hp [G.IsComm] in
 /-- Composing `c Xᴹ` with `[p]_F` gives a series whose coefficient of `X ^ (M p ^ h)` is `c uᴹ`,
 where `u` is the coefficient of `X ^ (p ^ h)` in `[p]_F`. -/
 private theorem coeff_subst_nsmulSeries_smul_X_pow (hF : F.height p = h) (M : ℕ) (c : K) :
@@ -207,6 +207,7 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   rw [map_sub, map_sub, hF₁, hG₁', hv] at h
   linear_combination h
 
+omit hp in
 /-- Below degree `p ^ h`, the `p`-series failure vanishes. -/
 private theorem coeff_pSeriesError_of_lt (hF : F.height p = h) (hG : G.height p = h)
     {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) {n : ℕ} (hn : n < p ^ h) :
