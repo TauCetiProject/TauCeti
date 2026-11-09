@@ -129,8 +129,6 @@ theorem reverse_add_smul_volume_eq_self_iff
   · rintro rfl
     simp
 
-variable [FiniteDimensional K V]
-
 /-- In the centre of the even Clifford algebra of a regular quadratic space of even dimension,
 an element is fixed by reversal exactly when the volume sign is positive or it is a scalar. -/
 theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
@@ -138,6 +136,7 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
     (hx : x ∈ Subalgebra.center K (even Q)) :
     reverseEven Q x = x ↔
       Even ((finrank K V).choose 2) ∨ ∃ a : K, x = algebraMap K (even Q) a := by
+  have : FiniteDimensional K V := .of_finrank_pos hpos
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   obtain ⟨l, hl, hlen, hspan, hQl⟩ := hQ.exists_list_pairwise_isOrtho
   have hle : Even l.length := hlen ▸ heven
@@ -170,6 +169,7 @@ theorem forall_mem_center_reverseEven_eq_self_iff (hQ : Q.Nondegenerate)
     (heven : Even (finrank K V)) (hpos : 0 < finrank K V) :
     (∀ x : even Q, x ∈ Subalgebra.center K (even Q) → reverseEven Q x = x) ↔
       Even ((finrank K V).choose 2) := by
+  have : FiniteDimensional K V := .of_finrank_pos hpos
   constructor
   · intro hfix
     obtain ⟨ω, hω, hω_scalar⟩ := exists_mem_center_even_forall_ne_algebraMap hQ heven hpos

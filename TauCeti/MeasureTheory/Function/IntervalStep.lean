@@ -74,9 +74,17 @@ private theorem sample_bounds {a δ t : ℝ} (hδ : 0 < δ) (hat : a ≤ t) :
 /-- Left-node sampling on a sufficiently fine uniform subdivision uniformly approximates a
 function continuous on a compact interval. -/
 theorem exists_intervalStep_dist_lt [PseudoMetricSpace E] (g : ℝ → E) {a b ε : ℝ}
-    (hg : ContinuousOn g (Icc a b)) (hab : a < b) (hε : 0 < ε) :
+    (hg : ContinuousOn g (Icc a b)) (hε : 0 < ε) :
     ∃ N : ℕ, 0 < N ∧ ∀ t ∈ Icc a b,
       dist (intervalStep a ((b - a) / N) g t) (g t) < ε := by
+  rcases eq_or_ne a b with rfl | hne
+  · refine ⟨1, one_pos, fun t ht ↦ ?_⟩
+    obtain rfl : t = a := le_antisymm ht.2 ht.1
+    simpa only [intervalStep, sub_self, zero_div, Nat.floor_zero, Nat.cast_zero, zero_mul,
+      add_zero, dist_self] using hε
+  rcases lt_or_gt_of_ne hne with hab | hab
+  swap
+  · exact ⟨1, one_pos, fun t ht ↦ absurd (ht.1.trans ht.2) (not_le.mpr hab)⟩
   obtain ⟨η, hη, hg⟩ := Metric.uniformContinuousOn_iff.mp
     (isCompact_Icc.uniformContinuousOn_of_continuous hg) ε hε
   obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / η)
@@ -118,7 +126,7 @@ theorem IntegrableOn.exists_intervalStep_integral_norm_sub_le
     ∃ N : ℕ, 0 < N ∧ ∃ g : ℝ →ᵇ E,
       (∫ t in Ioc a b, ‖intervalStep a ((b - a) / N) g t - f t‖) ≤ ε := by
   obtain ⟨g, hg, hgi⟩ := hf.exists_boundedContinuous_integral_sub_le (half_pos hε)
-  obtain ⟨N, hN, hs⟩ := exists_intervalStep_dist_lt g g.continuous.continuousOn hab
+  obtain ⟨N, hN, hs⟩ := exists_intervalStep_dist_lt g g.continuous.continuousOn
     (div_pos (half_pos hε) (sub_pos.mpr hab))
   refine ⟨N, hN, g, ?_⟩
   have hsi := integrableOn_intervalStep a b ((b - a) / N) g
