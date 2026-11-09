@@ -25,6 +25,8 @@ squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
 (`LinearMap.apply_mul_I_eq_of_apply_I_eq`). A a real-bilinear map vanishing at `(1, I)` and
 `(I, 1)` is unchanged by conjugating both arguments.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
+Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module
+(`Complex.toLinearMap_I_comp_toLinearMap_I`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`).
@@ -105,6 +107,12 @@ theorem I_smul_neg_I_smul {X : Type*} [MulAction ℂ X] (x : X) : I • (-I • 
 
 theorem neg_I_smul_I_smul {X : Type*} [MulAction ℂ X] (x : X) : -I • (I • x) = x := by
   rw [smul_smul, neg_mul, I_mul_I, neg_neg, one_smul]
+
+/-- Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module. -/
+theorem toLinearMap_I_comp_toLinearMap_I {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] :
+    DistribSMul.toLinearMap ℝ W I ∘ₗ DistribSMul.toLinearMap ℝ W I = -LinearMap.id :=
+  LinearMap.ext fun v ↦ by simp [smul_smul]
 
 /-- Decompose a complex scalar action into its real and imaginary parts. -/
 @[simp]
