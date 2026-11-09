@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
@@ -22,28 +23,29 @@ the integrated Floer energy density of a map `u` as its symplectic area, plus a 
 `K(u)`, minus the integrated curvature `∫ R_K(z, u(z))` of the perturbation `K`, where
 `R_K = ∂_s K_t - ∂_t K_s - {K_s, K_t}`. This file bounds the curvature term: it computes the
 curvature of the perturbation `TauCeti.Floer.PSSPlane.perturbation` of a PSS plane, built from a
-period-one Hamiltonian `H` on a symplectic vector space `V`, and bounds its integral over the
-whole plane. It then proves the energy identity on the discs of the plane, for a Hamiltonian on a
-manifold `M` with a nondegenerate two-form, such as a closed symplectic manifold.
+period-one Hamiltonian `H` on a manifold `M` with a smooth two-form `ω`, such as a closed
+symplectic manifold, and bounds its integral over the whole plane. It then proves the energy
+identity on the discs of the plane, for a nondegenerate two-form.
 
 In the end coordinates `(s, t)` of the plane the perturbation is the continuation datum
 `β(ε s - 1) H(t) dt` (`TauCeti.Floer.PSSPlane.endComponent_I`), so its curvature there is
-`ε β'(ε s - 1) H(t)`, for a Hamiltonian on any manifold with a two-form
-(`SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`). It vanishes
+`ε β'(ε s - 1) H(t)` (`SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`). It vanishes
 outside the collar `1 ≤ ε s ≤ 2`
-(`SymplecticForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`). The integrated curvature
-may be computed in any chart (`SymplecticForm.lintegral_enorm_hamiltonianCurvature_image`), and the
+(`SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`). The integrated curvature
+may be computed in any chart (`SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`), and the
 end lift `z ↦ exp (2π ε z)` maps a band of height one bijectively onto `ℂ ∖ {0}`. Since `β' ≥ 0`
 has total integral `1`, if `|H| ≤ B` then
 
 `∫_ℂ |R_K(z, u(z))| dz ≤ B`
 
-for every map `u : ℝ × ℝ → V`, measurable or not
-(`SymplecticForm.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le`). Here the plane is
+for every map `u : ℝ × ℝ → M`, measurable or not
+(`SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le`). Here the plane is
 identified with `ℝ × ℝ` by `Complex.equivRealProdCLM`, and the curvature is computed in the global
 coordinate `z = s + i t`, in which the `ds` and `dt` components of `K` are its values on the
 tangent vectors `1` and `i`; in these coordinates the components of `K` are `C¹`
-(`TauCeti.Floer.PSSPlane.contDiff_uncurry_perturbation`).
+(`TauCeti.Floer.PSSPlane.contMDiff_uncurry_perturbation`). A symplectic vector space is the case
+of the constant form `TauCeti.SymplecticForm.constSmooth`, through which the vector-space bound
+`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le` is derived.
 
 The same decomposition of the plane into the pole disc `‖w‖ < exp (2π)`, where `K` vanishes, and
 the end integrates the energy identity over the disc `D_R = {‖w‖ ≤ exp (2πR)}`, bounded by the
@@ -71,22 +73,21 @@ For a vector space target the area term is expressed through the action of the b
 ## Main results
 
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`: the curvature in end
-  coordinates is `ε β'(ε s - 1) H(t)`, for a manifold target; the vector-space case is
-  `TauCeti.SymplecticForm.hamiltonianCurvature_pssPlaneEndComponent`.
-* `TauCeti.SymplecticForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`: it vanishes outside
+  coordinates is `ε β'(ε s - 1) H(t)`.
+* `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`: it vanishes outside
   the collar `1 ≤ ε s ≤ 2`.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le`: the
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le`: the
   integrated curvature of the perturbation along any map is at most a bound for the
   Hamiltonian.
-* `TauCeti.SymplecticForm.hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt`: the
-  curvature vanishes beyond the collar.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedBall`: the
   energy identity on the discs of the plane, for a manifold target.
-* `TauCeti.SymplecticForm.integral_floerEnergyDensity_pssPlanePerturbation_closedBall`: the same
-  for a symplectic vector space target.
 * `SmoothTwoForm.IsNondegenerate.integral_hamiltonianCurvature_pssPlanePerturbation_closedBall_le`:
   for a solution of the Floer equation on the disc, the area plus the Hamiltonian boundary term
   bounds the integrated curvature.
+* `TauCeti.SymplecticForm.integral_floerEnergyDensity_pssPlanePerturbation_closedBall`: the energy
+  identity for a symplectic vector space target.
+* `TauCeti.SymplecticForm.hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt`: the
+  curvature vanishes beyond the collar.
 
 ## References
 
@@ -109,14 +110,11 @@ namespace SmoothTwoForm
 open Floer Floer.PSSPlane
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] {p : PSSPlane}
-  {H : ℝ → M → ℝ}
-
-variable [IsManifold I ⊤ M]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {p : PSSPlane} {H : ℝ → M → ℝ}
 
 /-- **The curvature in end coordinates.** In the end coordinates `(s, t)` of a PSS plane, the
-curvature of the perturbation `β(ε s - 1) H(t) dt` of a Hamiltonian on a manifold with a two-form
-is `ε β'(ε s - 1) H(t)`. -/
+curvature of the perturbation `β(ε s - 1) H(t) dt` is `ε β'(ε s - 1) H(t)`. -/
 theorem hamiltonianCurvature_pssPlaneEndComponent (ω : SmoothTwoForm I M) (hH : Periodic H 1)
     (z : ℝ × ℝ) {x : M} (hHx : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
     ω.hamiltonianCurvature (p.endComponent H 1) (p.endComponent H Complex.I) z x =
@@ -130,28 +128,10 @@ theorem hamiltonianCurvature_pssPlaneEndComponent (ω : SmoothTwoForm I M) (hH :
   rw [endComponent_one, endComponent_I hH, h, hβ.deriv]
   ring
 
-end SmoothTwoForm
-
-namespace SymplecticForm
-
-open Floer Floer.PSSPlane
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {p : PSSPlane} {H : ℝ → V → ℝ}
-
-/-- **The curvature in end coordinates.** In the end coordinates `(s, t)` of a PSS plane, the
-curvature of the perturbation `β(ε s - 1) H(t) dt` is `ε β'(ε s - 1) H(t)`. This is the
-vector-space case of `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`. -/
-theorem hamiltonianCurvature_pssPlaneEndComponent (ω : SymplecticForm V) (hH : Periodic H 1)
-    (z : ℝ × ℝ) {x : V} (hHx : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
-    ω.hamiltonianCurvature (p.endComponent H 1) (p.endComponent H Complex.I) z x =
-      p.endSign * deriv smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
-  simpa using ω.constSmooth.hamiltonianCurvature_pssPlaneEndComponent (p := p) hH z hHx
-
 /-- **The curvature is supported in the collar.** On the parts `ε s < 1` and `ε s > 2` of the end
 of a PSS plane, the curvature of the perturbation in end coordinates vanishes. -/
-theorem hamiltonianCurvature_pssPlaneEndComponent_eq_zero (ω : SymplecticForm V) (hH : Periodic H 1)
-    {z : ℝ × ℝ} (hz : p.endSign * z.1 < 1 ∨ 2 < p.endSign * z.1) (x : V) :
+theorem hamiltonianCurvature_pssPlaneEndComponent_eq_zero (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) {z : ℝ × ℝ} (hz : p.endSign * z.1 < 1 ∨ 2 < p.endSign * z.1) (x : M) :
     ω.hamiltonianCurvature (p.endComponent H 1) (p.endComponent H Complex.I) z x = 0 := by
   -- Near `z`, the cutoff `β(ε s - 1)` is constant, equal to `0` or to `1`.
   obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ᶠ w in 𝓝 z, smoothTransition (p.endSign * w.1 - 1) = c := by
@@ -215,23 +195,6 @@ private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLine
   rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
     endComponent_I hH]
 
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation in real coordinates are differentiable in the domain
-point. -/
-private theorem differentiableAt_perturbation_domain (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) (z : ℝ × ℝ) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun z' ↦ p.perturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
-  PSSPlane.differentiableAt_perturbation_domain hH
-    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) z x v
-
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation are differentiable in the target point. -/
-private theorem differentiableAt_perturbation_target (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) (w : ℂ) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun y ↦ p.perturbation H w y v) x :=
-  mdifferentiableAt_iff_differentiableAt.1 (PSSPlane.mdifferentiableAt_perturbation_target hH
-    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) w x v)
-
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
 private theorem injOn_realChart (p : PSSPlane) :
@@ -268,13 +231,13 @@ private theorem mem_image_realChart {z : ℝ × ℝ} (hz : Complex.equivRealProd
       ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **The integrated curvature of the perturbation of a PSS plane.** Let `K` be the perturbation
-of a PSS plane given by a period-one `C¹` Hamiltonian `H` with `|H| ≤ B`, and write its components
-in the global coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then
-for every map `u` into the target, the integral of `|R_K(z, u(z))|` over the plane is at most
-`B`. -/
-theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : SymplecticForm V)
-    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B)
-    (u : ℝ × ℝ → V) :
+of a PSS plane given by a period-one `C¹` Hamiltonian `H` on a manifold `M` with a two-form `ω`,
+with `|H| ≤ B`, and write its components in the global coordinate `z = s + i t` of `ℂ` as
+`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u` into `M`, the integral of
+`|R_K(z, u(z))|` over the plane is at most `B`. -/
+theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -310,8 +273,8 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Sympl
             (fun z _ ↦ (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt)
             (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
             (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-            (fun z _ ↦ differentiableAt_perturbation_target hH hHs _ _ 1)
-            (fun z _ ↦ differentiableAt_perturbation_target hH hHs _ _ Complex.I),
+            (fun z _ ↦ mdifferentiableAt_perturbation_target hH hHs _ _ 1)
+            (fun z _ ↦ mdifferentiableAt_perturbation_target hH hHs _ _ Complex.I),
           perturbationPullback_realChart_cylindricalEndLift,
           perturbationPullback_realChart_cylindricalEndLift,
           equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
@@ -320,7 +283,8 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Sympl
         refine setLIntegral_mono' hmeas fun z _ ↦ ?_
         -- In end coordinates the curvature is `ε β'(ε s - 1) H(t)`.
         have hHt : DifferentiableAt ℝ (fun t ↦ H t (u (φ z))) z.2 :=
-          (hHs.comp (contDiff_id.prodMk contDiff_const)).differentiable one_ne_zero z.2
+          ((hHs.comp (f := fun t : ℝ ↦ (t, u (φ z))) (contMDiff_id.prodMk contMDiff_const)
+            ).contDiff.differentiable one_ne_zero) z.2
         rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.enorm_eq_ofReal_abs]
         simpa [abs_mul, abs_of_nonneg (hψ _), ← ENNReal.ofReal_mul (hψ _)] using
           ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB z.2 (u (φ z))) (hψ _))
@@ -442,16 +406,6 @@ private theorem intervalIntegral_realChart {X : Type*} {H : ℝ → X → ℝ} (
   simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
   convert h using 1 <;> norm_num
 
-end SymplecticForm
-
-namespace SmoothTwoForm
-
-open Floer Floer.PSSPlane
-
-variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
-  {p : PSSPlane} {H : ℝ → M → ℝ}
-
 /-- In end coordinates, the curvature of the perturbation along `u`, times the Jacobian of the end
 lift, is `ε β'(ε s - 1) H(t)`. -/
 private theorem det_mul_hamiltonianCurvature_realChart (ω : SmoothTwoForm I M) (hH : Periodic H 1)
@@ -470,8 +424,8 @@ private theorem det_mul_hamiltonianCurvature_realChart (ω : SmoothTwoForm I M) 
       (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
       (mdifferentiableAt_perturbation_target hH hHs _ _ 1)
       (mdifferentiableAt_perturbation_target hH hHs _ _ Complex.I),
-    SymplecticForm.perturbationPullback_realChart_cylindricalEndLift,
-    SymplecticForm.perturbationPullback_realChart_cylindricalEndLift,
+    perturbationPullback_realChart_cylindricalEndLift,
+    perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
     ω.hamiltonianCurvature_pssPlaneEndComponent hH w hHt]
 
@@ -484,22 +438,22 @@ private theorem integrableOn_image_endPiece_hamiltonianCurvature (ω : SmoothTwo
     IntegrableOn (fun z ↦ ω.hamiltonianCurvature
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-      (realChart p.cylindricalEndLift '' SymplecticForm.endPiece p R) := by
+      (realChart p.cylindricalEndLift '' endPiece p R) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   have hφ : ContDiff ℝ 1 (realChart p.cylindricalEndLift) :=
     contDiff_realChart p.contDiff_cylindricalEndLift
   rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume
-    (SymplecticForm.measurableSet_endPiece p R)
+    (measurableSet_endPiece p R)
     (fun w _ ↦ (hφ.differentiable one_ne_zero w).hasFDerivAt.hasFDerivWithinAt)
-    ((SymplecticForm.injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl))]
-  obtain ⟨K, hK, hPK⟩ := SymplecticForm.endPiece_subset_isCompact p R
+    ((injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl))]
+  obtain ⟨K, hK, hPK⟩ := endPiece_subset_isCompact p R
   have hc : Continuous fun w : ℝ × ℝ ↦ p.endSign * deriv smoothTransition (p.endSign * w.1 - 1) *
       H w.2 (u (realChart p.cylindricalEndLift w)) :=
     (continuous_const.mul (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
       (by fun_prop))).mul (hHs.continuous.comp (continuous_snd.prodMk (hu.comp hφ.continuous)))
   refine ((hc.continuousOn.integrableOn_compact hK).mono_set hPK).congr_fun (fun w _ ↦ ?_)
-    (SymplecticForm.measurableSet_endPiece p R)
-  simp only [smul_eq_mul, abs_of_pos (SymplecticForm.det_fderiv_realChart_pos p w),
+    (measurableSet_endPiece p R)
+  simp only [smul_eq_mul, abs_of_pos (det_fderiv_realChart_pos p w),
     det_mul_hamiltonianCurvature_realChart ω hH hHs]
 
 variable [FiniteDimensional ℝ E]
@@ -581,23 +535,23 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
   have hmeas : MeasurableSet s :=
     measurableSet_Icc.prod (measurableSet_Ioc.preimage (measurable_const.mul measurable_id))
   have hinj : InjOn φ s :=
-    (SymplecticForm.injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl)
+    (injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl)
   have hφ : ContDiff ℝ 2 φ := contDiff_realChart p.contDiff_cylindricalEndLift
   have hφd (w : ℝ × ℝ) : DifferentiableAt ℝ φ w := hφ.differentiable (by norm_num) w
   have hdet (w : ℝ × ℝ) : 0 ≤ (fderiv ℝ φ w).det :=
-    (SymplecticForm.det_fderiv_realChart_pos p w).le
+    (det_fderiv_realChart_pos p w).le
   have hud (w : ℝ × ℝ) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w) :=
     (hu (φ w)).mdifferentiableAt one_ne_zero
   have htgt (w : ℝ × ℝ) (v : ℂ) := mdifferentiableAt_perturbation_target (p := p) hH hHs
     (Complex.equivRealProdCLM.symm (φ w)) (u (φ w)) v
   have hds :=
-    SymplecticForm.perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal p H
+    perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal p H
   have hdt :=
-    SymplecticForm.perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag p hH
+    perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag p hH
   -- The band and the closed rectangle differ by a null set.
   have hae : s =ᵐ[volume] Icc ((a, -1 / 2) : ℝ × ℝ) (b, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) (SymplecticForm.preimage_endSign_mul_ae_eq p)
+    exact Measure.set_prod_ae_eq (ae_eq_refl _) (preimage_endSign_mul_ae_eq p)
   -- Integrability over the image transfers to the pulled-back densities on the rectangle.
   have hint {g g' : ℝ × ℝ → ℝ} (hg : IntegrableOn g (φ '' s))
       (hg' : ∀ w, g' w = (fderiv ℝ φ w).det * g (φ w)) :
@@ -645,35 +599,35 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      (realChart p.cylindricalEndLift '' SymplecticForm.endPiece p R))
+      (realChart p.cylindricalEndLift '' endPiece p R))
     (hRK : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-      (realChart p.cylindricalEndLift '' SymplecticForm.endPiece p R)) :
-    ∫ z in realChart p.cylindricalEndLift '' SymplecticForm.endPiece p R, ω.floerEnergyDensity
+      (realChart p.cylindricalEndLift '' endPiece p R)) :
+    ∫ z in realChart p.cylindricalEndLift '' endPiece p R, ω.floerEnergyDensity
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      (∫ z in realChart p.cylindricalEndLift '' SymplecticForm.endPiece p R,
+      (∫ z in realChart p.cylindricalEndLift '' endPiece p R,
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         p.endSign * smoothTransition (R - 1) * (∫ t in (-1 / 2 : ℝ)..1 / 2,
           H t (u (realChart p.cylindricalEndLift (p.endSign * R, t)))) -
-        ∫ z in realChart p.cylindricalEndLift '' SymplecticForm.endPiece p R, ω.hamiltonianCurvature
+        ∫ z in realChart p.cylindricalEndLift '' endPiece p R, ω.hamiltonianCurvature
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
   cases p
-  · have hpiece : SymplecticForm.endPiece .positive R =
+  · have hpiece : endPiece .positive R =
         Icc 1 R ×ˢ ((PSSPlane.positive.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2)) := by
       ext ⟨s, t⟩
-      simp [SymplecticForm.endPiece]
+      simp [endPiece]
     rw [hpiece] at hE hRK ⊢
     rw [hω.integral_floerEnergyDensity_image_realChart hH hHs hu hR hE hRK]
     simp only [endSign_positive, one_mul, sub_self, smoothTransition.zero, zero_mul,
       intervalIntegral.integral_zero, sub_zero, intervalIntegral.integral_const_mul]
-  · have hpiece : SymplecticForm.endPiece .negative R =
+  · have hpiece : endPiece .negative R =
         Icc (-R) (-1) ×ˢ ((PSSPlane.negative.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2)) := by
       ext ⟨s, t⟩
-      simp only [SymplecticForm.endPiece, endSign_negative, mem_prod, mem_preimage, mem_Icc,
+      simp only [endPiece, endSign_negative, mem_prod, mem_preimage, mem_Icc,
         and_congr_left_iff]
       exact fun _ ↦ ⟨fun h ↦ ⟨by linarith, by linarith⟩, fun h ↦ ⟨by linarith, by linarith⟩⟩
     rw [hpiece] at hE hRK ⊢
@@ -738,15 +692,15 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
   -- The disc `D` is the image `A` of the part `1 ≤ ε s ≤ R` of the end, together with points of
   -- the pole disc, where the perturbation vanishes.
   set D := Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall (0 : ℂ) (Real.exp (2 * π * R))
-  set A := realChart p.cylindricalEndLift '' SymplecticForm.endPiece p R
+  set A := realChart p.cylindricalEndLift '' endPiece p R
   have hDc : IsCompact D :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _)
-  have hAD : A ⊆ D := SymplecticForm.image_endPiece_subset_closedBall p R
+  have hAD : A ⊆ D := image_endPiece_subset_closedBall p R
   have hDAm : MeasurableSet (D \ A) :=
-    hDc.isClosed.measurableSet.diff (SymplecticForm.measurableSet_image_endPiece p R)
+    hDc.isClosed.measurableSet.diff (measurableSet_image_endPiece p R)
   have hpole {z : ℝ × ℝ} (hz : z ∈ D \ A) :=
     floerEnergyDensity_eq_and_hamiltonianCurvature_eq_zero_of_norm_lt (p := p) (H := H) ω u
-      (SymplecticForm.norm_lt_of_mem_sdiff_image_endPiece hz)
+      (norm_lt_of_mem_sdiff_image_endPiece hz)
   -- The curvature is integrable over the end piece and vanishes on the rest of the disc.
   have hRD : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -787,7 +741,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
     setIntegral_congr_fun hDAm fun z hz ↦ (hpole hz).1,
     setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ (hpole hz).2,
     hω.integral_floerEnergyDensity_image_endPiece hH hHs hu hR (hED.mono_set hAD)
-      (hRD.mono_set hAD), SymplecticForm.intervalIntegral_realChart hH]
+      (hRD.mono_set hAD), intervalIntegral_realChart hH]
   ring
 
 /-- **The topological energy of a solution bounds its integrated curvature.** If `u` solves the
@@ -832,6 +786,37 @@ open Floer Floer.PSSPlane
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {p : PSSPlane} {H : ℝ → V → ℝ}
 
+/-- **The integrated curvature of the perturbation of a PSS plane.** For a period-one `C¹`
+Hamiltonian `H` on a symplectic vector space with `|H| ≤ B`, and every map `u` into it, the
+integral of `|R_K(z, u(z))|` over the plane is at most `B`. This is the vector-space case of
+`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le`. -/
+theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : SymplecticForm V)
+    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B)
+    (u : ℝ × ℝ → V) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal B := by
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hB u
+
+omit [FiniteDimensional ℝ V] in
+/-- The components of the perturbation in real coordinates are differentiable in the domain
+point. -/
+private theorem differentiableAt_perturbation_domain (hH : Periodic H 1)
+    (hHs : ContDiff ℝ 1 (uncurry H)) (z : ℝ × ℝ) (x : V) (v : ℂ) :
+    DifferentiableAt ℝ (fun z' ↦ p.perturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
+  PSSPlane.differentiableAt_perturbation_domain hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) z x v
+
+omit [FiniteDimensional ℝ V] in
+/-- The components of the perturbation are differentiable in the target point. -/
+private theorem differentiableAt_perturbation_target (hH : Periodic H 1)
+    (hHs : ContDiff ℝ 1 (uncurry H)) (w : ℂ) (x : V) (v : ℂ) :
+    DifferentiableAt ℝ (fun y ↦ p.perturbation H w y v) x :=
+  mdifferentiableAt_iff_differentiableAt.1 (PSSPlane.mdifferentiableAt_perturbation_target hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) w x v)
+
 /-- **The energy identity on discs of a PSS plane.** Let `K` be the perturbation of a PSS plane
 given by a period-one `C¹` Hamiltonian `H`, with components `K_s(z) = K(z)(1)` and
 `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`, and let `u` be a `C¹` map. For
@@ -862,7 +847,7 @@ theorem integral_floerEnergyDensity_pssPlanePerturbation_closedBall (ω : Symple
             (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
   simpa only [floerEnergyDensity_constSmooth, hamiltonianCurvature_constSmooth,
-    eval₂_constSmooth_mfderiv_eq_fderiv] using
+    eval₂_constSmooth_mfderiv_stdComplexLine] using
     (isNondegenerate_constSmooth ω).integral_floerEnergyDensity_pssPlanePerturbation_closedBall
       (p := p) hH (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hu.contMDiff hR
 
@@ -876,7 +861,7 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
   have h₀ : Complex.equivRealProdCLM.symm z ≠ 0 := fun h ↦ by
     rw [h, endCoord_zero, Complex.zero_re, mul_zero] at hz
     norm_num at hz
-  obtain ⟨w, -, rfl⟩ := mem_image_realChart (p := p) h₀
+  obtain ⟨w, -, rfl⟩ := SmoothTwoForm.mem_image_realChart (p := p) h₀
   have hw : 2 < p.endSign * w.1 := by
     rwa [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, re_endCoord_cylindricalEndLift,
       Complex.equivRealProdCLM_symm_apply_re] at hz
@@ -889,11 +874,13 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
     (differentiableAt_perturbation_target hH hHs _ _ 1)
     (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
-  rw [perturbationPullback_realChart_cylindricalEndLift,
-    perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
+  rw [SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
+    SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
+    equivRealProdCLM_symm_stdComplexLineReal,
     equivRealProdCLM_symm_stdComplexLineImag,
-    ω.hamiltonianCurvature_pssPlaneEndComponent_eq_zero hH (Or.inr hw)] at key
-  exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_realChart_pos p w).ne'
+    ← hamiltonianCurvature_constSmooth ω (p.endComponent H 1) (p.endComponent H Complex.I) w x,
+    ω.constSmooth.hamiltonianCurvature_pssPlaneEndComponent_eq_zero hH (Or.inr hw)] at key
+  exact (mul_eq_zero.1 key.symm).resolve_left (SmoothTwoForm.det_fderiv_realChart_pos p w).ne'
 
 end SymplecticForm
 

@@ -31,6 +31,7 @@ mass is valued in `ℝ≥0∞`.
 ## Main definitions and results
 
 * `TauCeti.GaloisSet.discriminantExponent`: the discriminant exponent of a labelled Galois set.
+* `TauCeti.GaloisSet.discriminantExponent_eq_of_equiv`: invariance under equivariant relabelling.
 * `TauCeti.etaleMass`: the étale mass `M_n(K)`.
 * `TauCeti.GaloisSet.discriminantExponent_of_isTransitive`: the transitive case.
 * `TauCeti.tsum_isTransitive_one_div_natCard_residueField_pow_discriminantExponent`: the
@@ -71,6 +72,16 @@ theorem discriminantExponent_def (ρ : GaloisSet K n) :
     ρ.discriminantExponent = (letI := ρ.mulAction; orbitDiscriminantExponent K (Fin n)) :=
   (rfl)
 
+/-- Equivariant bijections preserve the discriminant exponent of labelled Galois sets. -/
+theorem discriminantExponent_eq_of_equiv {m : ℕ} (ρ : GaloisSet K n) (τ : GaloisSet K m)
+    (e : Fin n ≃ Fin m)
+    (he : ∀ (σ : Gal(SeparableClosure K/K)) (i : Fin n),
+      e (ρ.val σ i) = τ.val σ (e i)) :
+    ρ.discriminantExponent = τ.discriminantExponent := by
+  let := ρ.mulAction
+  let := τ.mulAction
+  exact orbitDiscriminantExponent_eq_of_equiv K e he
+
 /-- A transitive labelled Galois set has the discriminant exponent of the fixed field of the
 stabilizer of any of its labels. -/
 theorem discriminantExponent_of_isTransitive (ρ : GaloisSet K n) (hρ : ρ.IsTransitive)
@@ -88,6 +99,13 @@ theorem discriminantExponent_of_isTransitive (ρ : GaloisSet K n) (hρ : ρ.IsTr
 theorem discriminantExponent_trivial : (trivial K n).discriminantExponent = 0 := by
   let := (trivial K n).mulAction
   exact orbitDiscriminantExponent_of_trivial K fun σ i ↦ trivial_val_apply σ i
+
+/-- An action on at most one point has zero discriminant exponent. -/
+@[simp]
+theorem discriminantExponent_of_subsingleton [Subsingleton (Fin n)] (ρ : GaloisSet K n) :
+    ρ.discriminantExponent = 0 := by
+  let := ρ.mulAction
+  exact orbitDiscriminantExponent_of_subsingleton K
 
 end GaloisSet
 

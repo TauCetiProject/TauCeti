@@ -101,29 +101,24 @@ theorem studentTMeasure_map_sq {ν : ℝ} (hν : 0 < ν) :
       rw [hFarg, regularizedIncompleteBeta_symm one_half_pos hb (x / (ν + x)), harg]
       ring
 
-/-- Dividing a standard Gaussian law by the square root of an independent chi-squared law,
-normalised by its positive degrees of freedom `ν`, gives the Student t law with `ν` degrees of
-freedom. -/
-theorem map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
-    ((gaussianReal 0 1).prod (chiSquaredMeasure ν)).map
-        (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν)) = studentTMeasure ν := by
+/-- Squaring the law of a standard Gaussian divided by the square root of an independent
+chi-squared variable (normalised by `ν > 0`) gives the `F(1, ν)` law. -/
+private lemma map_sq_map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
+    (((gaussianReal 0 1).prod (chiSquaredMeasure ν)).map
+        (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν))).map (fun x : ℝ ↦ x ^ 2) =
+      fisherSnedecorMeasure 1 ν := by
   let μ := (gaussianReal 0 1).prod (chiSquaredMeasure ν)
   let ratio : ℝ × ℝ → ℝ := fun z ↦ z.1 / √(z.2 / ν)
   let sq : ℝ → ℝ := fun x ↦ x ^ 2
-  let reflect : ℝ × ℝ → ℝ × ℝ := Prod.map (fun x : ℝ ↦ -x) id
   let _ : IsProbabilityMeasure (chiSquaredMeasure ν) :=
     isProbabilityMeasure_chiSquaredMeasure hν.le
-  let _ : IsProbabilityMeasure (studentTMeasure ν) :=
-    isProbabilityMeasure_studentTMeasure hν
   let _ : IsProbabilityMeasure μ := by
     dsimp only [μ]
     infer_instance
   -- The chi-squared coordinate is positive almost everywhere, so squaring the ratio may cancel
   -- its square-root denominator.
-  have hpos : ∀ᵐ z ∂μ, 0 < z.2 := by
-    apply Measure.quasiMeasurePreserving_snd.ae
-    rw [chiSquaredMeasure_eq_gammaMeasure hν]
-    exact ae_pos_gammaMeasure (ν / 2) (1 / 2)
+  have hpos : ∀ᵐ z ∂μ, 0 < z.2 :=
+    Measure.quasiMeasurePreserving_snd.ae (ae_pos_chiSquaredMeasure hν)
   have hratio_sq :
       (fun z ↦ (ratio z) ^ 2) =ᵐ[μ] fun z ↦ z.1 ^ 2 / 1 / (z.2 / ν) := by
     filter_upwards [hpos] with z hz
@@ -134,38 +129,62 @@ theorem map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
     rw [← Measure.map_prod_map (gaussianReal 0 1) (chiSquaredMeasure ν) (by fun_prop)
       measurable_id, gaussianReal_map_sq, Measure.map_id]
   -- Reuse the Gaussian-square and chi-squared-ratio identities to identify the squared law.
-  have hratio_sq_map :
-      (μ.map ratio).map sq = fisherSnedecorMeasure 1 ν := by
-    calc
-      (μ.map ratio).map sq = μ.map (fun z ↦ (ratio z) ^ 2) := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop)]
-        exact congrArg (fun f : ℝ × ℝ → ℝ ↦ μ.map f) (funext fun z ↦ by
-          simp only [Function.comp_apply, sq])
-      _ = μ.map (fun z ↦ z.1 ^ 2 / 1 / (z.2 / ν)) := Measure.map_congr hratio_sq
-      _ = (μ.map (Prod.map sq id)).map (fun z ↦ z.1 / 1 / (z.2 / ν)) := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop)]
-        exact congrArg (fun f : ℝ × ℝ → ℝ ↦ μ.map f) (funext fun z ↦ by
-          simp only [Function.comp_apply, sq, Prod.map_apply', id_eq])
-      _ = fisherSnedecorMeasure 1 ν := by
-        rw [hμ_sq, map_scaled_div_chiSquaredMeasure one_pos hν]
+  calc
+    (μ.map ratio).map sq = μ.map (fun z ↦ (ratio z) ^ 2) := by
+      rw [Measure.map_map (by fun_prop) (by fun_prop)]
+      exact congrArg (fun f : ℝ × ℝ → ℝ ↦ μ.map f) (funext fun z ↦ by
+        simp only [Function.comp_apply, sq])
+    _ = μ.map (fun z ↦ z.1 ^ 2 / 1 / (z.2 / ν)) := Measure.map_congr hratio_sq
+    _ = (μ.map (Prod.map sq id)).map (fun z ↦ z.1 / 1 / (z.2 / ν)) := by
+      rw [Measure.map_map (by fun_prop) (by fun_prop)]
+      exact congrArg (fun f : ℝ × ℝ → ℝ ↦ μ.map f) (funext fun z ↦ by
+        simp only [Function.comp_apply, sq, Prod.map_apply', id_eq])
+    _ = fisherSnedecorMeasure 1 ν := by
+      rw [hμ_sq, map_scaled_div_chiSquaredMeasure one_pos hν]
+
+/-- The law of a standard Gaussian divided by the square root of an independent chi-squared
+variable (normalised by `ν`) is symmetric under negation. -/
+private lemma map_neg_map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
+    (((gaussianReal 0 1).prod (chiSquaredMeasure ν)).map
+        (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν))).map (fun x : ℝ ↦ -x) =
+      ((gaussianReal 0 1).prod (chiSquaredMeasure ν)).map
+        (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν)) := by
+  let μ := (gaussianReal 0 1).prod (chiSquaredMeasure ν)
+  let ratio : ℝ × ℝ → ℝ := fun z ↦ z.1 / √(z.2 / ν)
+  let reflect : ℝ × ℝ → ℝ × ℝ := Prod.map (fun x : ℝ ↦ -x) id
+  let _ : IsProbabilityMeasure (chiSquaredMeasure ν) :=
+    isProbabilityMeasure_chiSquaredMeasure hν.le
   have hμ_reflect : μ.map reflect = μ := by
     rw [← Measure.map_prod_map (gaussianReal 0 1) (chiSquaredMeasure ν) (by fun_prop)
       measurable_id, gaussianReal_map_neg, Measure.map_id]
     simp only [neg_zero, μ]
   -- Reflecting the Gaussian coordinate reflects the ratio without changing its source law.
-  have hratio_reflect : (μ.map ratio).map (fun x ↦ -x) = μ.map ratio := by
-    calc
-      (μ.map ratio).map (fun x ↦ -x) = μ.map ((fun x ↦ -x) ∘ ratio) := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop)]
-      _ = μ.map (ratio ∘ reflect) := by
-        apply Measure.map_congr
-        exact ae_of_all _ fun z ↦ by
-          exact neg_div' √(z.2 / ν) z.1
-      _ = (μ.map reflect).map ratio := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop)]
-      _ = μ.map ratio := by rw [hμ_reflect]
-  exact (μ.map ratio).eq_of_map_sq_eq_of_map_neg_eq_self (studentTMeasure ν) hratio_reflect
-    (studentTMeasure_map_neg ν) (hratio_sq_map.trans (studentTMeasure_map_sq hν).symm)
+  calc
+    (μ.map ratio).map (fun x ↦ -x) = μ.map ((fun x ↦ -x) ∘ ratio) := by
+      rw [Measure.map_map (by fun_prop) (by fun_prop)]
+    _ = μ.map (ratio ∘ reflect) := by
+      apply Measure.map_congr
+      exact ae_of_all _ fun z ↦ by
+        exact neg_div' √(z.2 / ν) z.1
+    _ = (μ.map reflect).map ratio := by
+      rw [Measure.map_map (by fun_prop) (by fun_prop)]
+    _ = μ.map ratio := by rw [hμ_reflect]
+
+/-- Dividing a standard Gaussian law by the square root of an independent chi-squared law,
+normalised by its positive degrees of freedom `ν`, gives the Student t law with `ν` degrees of
+freedom. -/
+theorem map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
+    ((gaussianReal 0 1).prod (chiSquaredMeasure ν)).map
+        (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν)) = studentTMeasure ν := by
+  let _ : IsProbabilityMeasure (studentTMeasure ν) :=
+    isProbabilityMeasure_studentTMeasure hν
+  let _ : IsProbabilityMeasure (chiSquaredMeasure ν) :=
+    isProbabilityMeasure_chiSquaredMeasure hν.le
+  exact (((gaussianReal 0 1).prod (chiSquaredMeasure ν)).map
+      (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν))).eq_of_map_sq_eq_of_map_neg_eq_self
+    (studentTMeasure ν) (map_neg_map_div_sqrt_chiSquaredMeasure hν)
+    (studentTMeasure_map_neg ν)
+    ((map_sq_map_div_sqrt_chiSquaredMeasure hν).trans (studentTMeasure_map_sq hν).symm)
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {Z V : Ω → ℝ}
 
