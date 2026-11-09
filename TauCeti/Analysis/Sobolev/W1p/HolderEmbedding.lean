@@ -37,8 +37,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set Module TopologicalSpace
-open scoped Distributions ENNReal NNReal Gradient BoundedContinuousFunction
+open Filter MeasureTheory Metric Set Module TopologicalSpace
+open scoped Distributions ENNReal NNReal Gradient BoundedContinuousFunction Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -192,5 +192,18 @@ theorem W1p.morreyEmbedding_injective (hp : (finrank ℝ E : ℝ≥0) < p) :
     rw [hu, hv]
     exact congrArg (fun g : HolderSpace (1 - finrank ℝ E / p) E ℝ => g x) huv
   simpa only [Opens.coe_top, Measure.restrict_univ] using hae
+
+/-- If Sobolev classes `a n` converge to `u`, their Morrey embeddings converge uniformly. -/
+theorem W1p.tendsto_enorm_morreyEmbedding_sub (hp : (finrank ℝ E : ℝ≥0) < p)
+    {a : ℕ → W1p mu ⊤ (p : ℝ≥0∞)} {u : W1p mu ⊤ (p : ℝ≥0∞)} (ha : Tendsto a atTop (𝓝 u)) :
+    Tendsto (fun n => ‖W1p.morreyEmbedding hp (a n) - W1p.morreyEmbedding hp u‖ₑ) atTop
+      (𝓝 0) := by
+  have ha_morrey : Tendsto (fun n => W1p.morreyEmbedding hp (a n)) atTop
+      (𝓝 (W1p.morreyEmbedding hp u)) :=
+    ((W1p.morreyEmbedding (mu := mu) hp).continuous.tendsto u).comp ha
+  have hsub : Tendsto (fun n => W1p.morreyEmbedding hp (a n) -
+      W1p.morreyEmbedding hp u) atTop (𝓝 0) := by
+    simpa only [sub_self] using ha_morrey.sub_const (W1p.morreyEmbedding hp u)
+  simpa only [Function.comp_def, enorm_zero] using (continuous_enorm.tendsto 0).comp hsub
 
 end TauCeti

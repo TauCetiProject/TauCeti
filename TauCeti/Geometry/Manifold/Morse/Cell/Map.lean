@@ -72,6 +72,10 @@ changes the sign of the attaching map in reduced homology
   closed embedding.
 * `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the
   restriction of the characteristic map to the boundary sphere.
+* `TauCeti.mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le`,
+  `TauCeti.mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap`: for `0 < ε`, a
+  self-map `h` of the disc such that `χ ∘ h` sends the boundary sphere into the lower sublevel, for
+  instance the end of a homotopy of maps of pairs, preserves the boundary sphere.
 * `TauCeti.homotopic_morseAttachingMap_diskBoundaryMap_comp`: a homotopy of pairs from `χ₁` to
   `χ₀ ∘ g` gives a homotopy from `α₁` to `α₀ ∘ g`.
 * `TauCeti.exists_homotopy_morseCharacteristicMap_of_det_eq_one`,
@@ -358,6 +362,44 @@ theorem range_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
 end OpenPartialHomeomorph
 
 namespace TauCeti
+
+section Boundary
+
+variable {M : Type u} [TopologicalSpace M] {n : ℕ} {f : M → ℝ} {c ε : ℝ}
+  {ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} {k : ℕ} (hk : k ≤ n)
+  (hε : 0 < ε) (hball : closedBall 0 √ε ⊆ ψ.target)
+  (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
+  {h : TopCat.disk.{u} k ⟶ TopCat.disk.{u} k}
+
+/-- **A self-map of the disc whose composite with a characteristic map sends the boundary sphere
+into the lower sublevel preserves the boundary sphere.** Let `χ` be the characteristic map of the
+cell of a normal-form chart, with `0 < ε`. If `h` is a self-map of the disc such that `χ ∘ h` sends
+the boundary sphere into the lower sublevel `M_{c-ε}`, then `h` sends the boundary sphere into
+itself, so `h` is a self-map of the pair `(D^k, ∂D^k)`. -/
+theorem mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le
+    (hh : ∀ s : TopCat.diskBoundary.{u} k,
+      f (ψ.morseCharacteristicMap hk hε.le hball hf (h (TopCat.diskBoundaryInclusion k s))) ≤
+        c - ε) :
+    MapsTo h (range (TopCat.diskBoundaryInclusion k)) (range (TopCat.diskBoundaryInclusion k)) := by
+  rintro _ ⟨s, rfl⟩
+  rw [← OpenPartialHomeomorph.preimage_morseCharacteristicMap_sublevel hball hf hk hε]
+  exact hh s
+
+/-- **A homotopy of maps of pairs into `χ ∘ h` forces `h` to preserve the boundary sphere.** Let
+`χ` be the characteristic map of the cell of a normal-form chart, with `0 < ε`, and let `h` be a
+self-map of the disc. If `K` is a homotopy from some map `g : D^k → M_{c+ε}` to `χ ∘ h` keeping the
+boundary sphere in the lower sublevel `M_{c-ε}`, then `h` sends the boundary sphere into itself.
+This is the form of the hypotheses of `TauCeti.morseCellReattachment`. -/
+theorem mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap
+    {g : TopCat.disk.{u} k ⟶ TopCat.of {x | f x ≤ c + ε}}
+    (K : g.hom.Homotopy (h ≫ ψ.morseCharacteristicMap hk hε.le hball hf).hom)
+    (hK : ∀ t (s : TopCat.diskBoundary.{u} k),
+      f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε) :
+    MapsTo h (range (TopCat.diskBoundaryInclusion k)) (range (TopCat.diskBoundaryInclusion k)) :=
+  mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le hk hε hball hf fun s ↦ by
+    simpa [K.apply_one] using hK 1 s
+
+end Boundary
 
 section Orientation
 
