@@ -58,15 +58,10 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_of_restrict {
     (hf : AEFinStronglyMeasurable f μ) {u : α → γ}
     (hu : AEStronglyMeasurable u (μ.restrict hf.sigmaFiniteSet)) (h0 : ∀ x, f x = 0 → u x = 0) :
     AEStronglyMeasurable u μ := by
-  classical
-  have hs := hf.measurableSet
-  refine (hu.piecewise hs.nullMeasurableSet
-    (aestronglyMeasurable_const (b := (0 : γ)))).congr ?_
-  refine ae_of_ae_restrict_of_ae_restrict_compl hf.sigmaFiniteSet ?_ ?_
-  · filter_upwards [ae_restrict_mem hs] with x hx
-    simp [hx]
-  · filter_upwards [hf.ae_eq_zero_compl, ae_restrict_mem hs.compl] with x hx hxs
-    simp [notMem_of_mem_compl hxs, h0 x hx]
+  have hz : u =ᵐ[μ.restrict hf.sigmaFiniteSetᶜ] 0 :=
+    hf.ae_eq_zero_compl.mono fun x hx ↦ h0 x hx
+  exact ((aestronglyMeasurable_indicator_iff hf.measurableSet).2 hu).congr
+    (indicator_ae_eq_of_restrict_compl_ae_eq_zero hf.measurableSet hz)
 
 variable {α β : Type*} [TopologicalSpace α] [MeasurableSpace α] [R1Space α] [BorelSpace α]
   [TopologicalSpace β] [PseudoMetrizableSpace β] {μ : Measure α} [μ.InnerRegularCompactLTTop]
