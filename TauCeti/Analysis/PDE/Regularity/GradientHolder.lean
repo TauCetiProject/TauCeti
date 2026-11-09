@@ -119,16 +119,12 @@ private theorem setIntegral_norm_gradient_sub_sq_le {ι : Type*} [Fintype ι]
     (hest : ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤ ‖hGc.toLp‖) {M : ℝ}
     (hbd : ∀ x ∈ B, ‖G x - c‖ ≤ M) :
     ∫ x in B, ‖W1p.gradient u x - H x‖ ^ 2 ∂mu ≤ mu.real B * M ^ 2 := by
-  have hsub : W1p.gradient (W1p.restrictL hB u - w) =
-      W1p.gradient (W1p.restrictL hB u) - W1p.gradient w := by
-    simp only [← W1p.gradientL_apply, map_sub]
   have h1 : ∫ x in B, ‖W1p.gradient u x - H x‖ ^ 2 ∂mu =
       ‖W1p.gradient (W1p.restrictL hB u - w)‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    rw [← W1p.setIntegral_norm_gradient_sub_sq_eq hB u w]
     refine integral_congr_ae ?_
-    filter_upwards [W1p.gradient_restrictL_ae hB u, hwH,
-      Lp.coeFn_sub (W1p.gradient (W1p.restrictL hB u)) (W1p.gradient w)] with x h1 h2 h3
-    rw [hsub, h3, Pi.sub_apply, h1, h2]
+    filter_upwards [hwH] with x hx
+    rw [hx]
   have h2 : ‖hGc.toLp‖ ^ 2 = ∫ x in B, ‖G x - c‖ ^ 2 ∂mu := by
     rw [← Lp.integral_norm_sq_eq_norm_sq]
     refine integral_congr_ae ?_
@@ -211,6 +207,31 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
   unfold decayConst at hE' ⊢
   linarith
 
+/-- The final algebra of the Campanato decay estimate: if `ψρ ≤ C ((ρ/R)^γ ψR + b K² ρ^γ)` and
+`ψR ≤ N`, then `ψρ ≤ C max(1, b) ρ^γ (R^{-γ} N + K²)`. -/
+private theorem le_mul_max_rpow_mul_add_of_le {C b K N ρ R γ ψρ ψR : ℝ} (hC : 0 ≤ C)
+    (hρ : 0 < ρ) (hR : 0 < R) (hN : 0 ≤ N) (hψR : ψR ≤ N)
+    (hdec : ψρ ≤ C * ((ρ / R) ^ γ * ψR + b * K ^ 2 * ρ ^ γ)) :
+    ψρ ≤ C * max 1 b * ρ ^ γ * (R ^ (-γ) * N + K ^ 2) := by
+  have hργ : 0 ≤ ρ ^ γ := by positivity
+  have hRγ : 0 ≤ R ^ (-γ) := by positivity
+  have h1 : (ρ / R) ^ γ * ψR ≤ max 1 b * ρ ^ γ * R ^ (-γ) * N := by
+    rw [Real.div_rpow hρ.le hR.le, div_eq_mul_inv, ← Real.rpow_neg hR.le]
+    calc ρ ^ γ * R ^ (-γ) * ψR ≤ ρ ^ γ * R ^ (-γ) * N :=
+          mul_le_mul_of_nonneg_left hψR (by positivity)
+      _ ≤ max 1 b * (ρ ^ γ * R ^ (-γ) * N) :=
+          le_mul_of_one_le_left (by positivity) (le_max_left _ _)
+      _ = max 1 b * ρ ^ γ * R ^ (-γ) * N := by ring
+  have h2 : b * K ^ 2 * ρ ^ γ ≤ max 1 b * K ^ 2 * ρ ^ γ := by
+    have h := mul_le_mul_of_nonneg_right (le_max_right 1 b)
+      (by positivity : (0 : ℝ) ≤ K ^ 2 * ρ ^ γ)
+    linarith
+  calc ψρ ≤ C * ((ρ / R) ^ γ * ψR + b * K ^ 2 * ρ ^ γ) := hdec
+    _ ≤ C * (max 1 b * ρ ^ γ * R ^ (-γ) * N + max 1 b * K ^ 2 * ρ ^ γ) :=
+        mul_le_mul_of_nonneg_left (add_le_add h1 h2) hC
+    _ = C * max 1 b * ρ ^ γ * (R ^ (-γ) * N + K ^ 2) := by ring
+
+
 /-- **Campanato decay of the gradient.** For `0 < α < 1` there is `C`, depending only on `n` and
 `α`, such that the following holds. Let `u ∈ H¹(Ω)` solve `-Δu = -div G` weakly on
 `Ω ⊆ ℝ^{n+1}`. If `ball x R ⊆ Ω`, `G` is `α`-Hölder with constant `K` on `ball x R` and
@@ -270,27 +291,7 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le {α : ℝ�
       measure_ball_lt_top.ne (hfint R le_rfl).1 ((hfint R le_rfl).2 0)
     simp only [sub_zero] at h0
     exact h0.trans (Lp.setIntegral_norm_sq_le_norm_sq (W1p.gradient u) hball)
-  obtain ⟨γ, hγ⟩ : ∃ γ : ℝ, γ = (n : ℝ) + 1 + 2 * α := ⟨_, rfl⟩
-  obtain ⟨M, hM⟩ : ∃ M : ℝ, M = max 1 ((4 * decayConst n + 2) * ω) := ⟨_, rfl⟩
-  rw [← hγ] at hdec ⊢
-  rw [← hM]
-  have hργ : 0 ≤ ρ ^ γ := by positivity
-  have hRγ : 0 ≤ R ^ (-γ) := by positivity
-  have h1 : (ρ / R) ^ γ * ψ R ≤ M * ρ ^ γ * R ^ (-γ) * ‖W1p.gradient u‖ ^ 2 := by
-    rw [Real.div_rpow hρ.le hR.le, div_eq_mul_inv, ← Real.rpow_neg hR.le]
-    calc ρ ^ γ * R ^ (-γ) * ψ R ≤ ρ ^ γ * R ^ (-γ) * ‖W1p.gradient u‖ ^ 2 :=
-          mul_le_mul_of_nonneg_left hψR (by positivity)
-      _ ≤ M * (ρ ^ γ * R ^ (-γ) * ‖W1p.gradient u‖ ^ 2) :=
-          le_mul_of_one_le_left (by positivity) (hM ▸ le_max_left _ _)
-      _ = M * ρ ^ γ * R ^ (-γ) * ‖W1p.gradient u‖ ^ 2 := by ring
-  have h2 : (4 * decayConst n + 2) * ω * K ^ 2 * ρ ^ γ ≤ M * K ^ 2 * ρ ^ γ := by
-    have h := mul_le_mul_of_nonneg_right (hM ▸ le_max_right _ _ :
-      (4 * decayConst n + 2) * ω ≤ M) (by positivity : (0 : ℝ) ≤ K ^ 2 * ρ ^ γ)
-    linarith
-  calc ψ ρ ≤ C * ((ρ / R) ^ γ * ψ R + (4 * decayConst n + 2) * ω * K ^ 2 * ρ ^ γ) := hdec
-    _ ≤ C * (M * ρ ^ γ * R ^ (-γ) * ‖W1p.gradient u‖ ^ 2 + M * K ^ 2 * ρ ^ γ) :=
-        mul_le_mul_of_nonneg_left (add_le_add h1 h2) hC.le
-    _ = C * M * ρ ^ γ * (R ^ (-γ) * ‖W1p.gradient u‖ ^ 2 + K ^ 2) := by ring
+  exact le_mul_max_rpow_mul_add_of_le hC.le hρ hR (by positivity) hψR hdec
 
 /-- **The mean oscillation of the gradient.** For `0 < α < 1` there is `C`, depending only on `n`
 and `α`, such that the following holds. Let `u ∈ H¹(Ω)` solve `-Δu = -div G` weakly on
@@ -418,6 +419,36 @@ private theorem norm_preciseRepresentative_gradient_le {α : ℝ≥0} (hα : 0 <
     _ ≤ _ := add_le_add h2 h1
     _ = _ := by ring
 
+/-- If `∇u` lies in `L²(Ω)` and `ball z R ⊆ Ω`, then `∇u` is integrable on `closedBall z t` for
+`t ≤ R`. -/
+private theorem integrableOn_closedBall_gradient {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+    (u : W1p volume Omega 2) {z : EuclideanSpace ℝ (Fin (n + 1))} {R t : ℝ}
+    (hball : ball z R ⊆ Omega) (ht : t ≤ R) :
+    IntegrableOn (W1p.gradient u) (closedBall z t) := by
+  rcases ht.lt_or_eq with ht | ht
+  · exact (Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two
+      ((closedBall_subset_ball ht).trans hball) measure_closedBall_lt_top.ne
+  · -- `closedBall z R` and `ball z R` differ by a null set.
+    rw [ht]
+    exact ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
+      measure_ball_lt_top.ne).congr_set_ae (volume.addHaar_closedBall_ae_eq_ball z R)
+
+/-- For `0 ≤ a` and `0 < R ≤ 2 d`, two vectors of norm at most `A R^a` are at distance at most
+`2 · 2^a A d^a`. -/
+private theorem dist_le_two_mul_two_rpow_mul_rpow_of_norm_le {E : Type*}
+    [SeminormedAddCommGroup E] {p q : E} {A R d a : ℝ} (ha : 0 ≤ a) (hR : 0 < R)
+    (hd : R ≤ 2 * d) (hp : ‖p‖ ≤ A * R ^ a) (hq : ‖q‖ ≤ A * R ^ a) :
+    dist p q ≤ 2 * 2 ^ a * A * d ^ a := by
+  have hA : 0 ≤ A :=
+    nonneg_of_mul_nonneg_left ((norm_nonneg p).trans hp) (Real.rpow_pos_of_pos hR a)
+  have hRd : R ^ a ≤ 2 ^ a * d ^ a := by
+    rw [← Real.mul_rpow zero_le_two (by linarith)]
+    exact Real.rpow_le_rpow hR.le hd ha
+  calc dist p q ≤ ‖p‖ + ‖q‖ := dist_le_norm_add_norm p q
+    _ ≤ 2 * (A * R ^ a) := by linarith
+    _ ≤ 2 * (A * (2 ^ a * d ^ a)) := by gcongr
+    _ = 2 * 2 ^ a * A * d ^ a := by ring
+
 end Comparison
 
 /-- **Interior Hölder continuity of the gradient for `-Δu = -div G`.** Let `0 < α < 1`. There is
@@ -457,17 +488,8 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
   refine ⟨2 * 2 ^ (α : ℝ) * cα * C₀ + 2 * 2 ^ (α : ℝ) * (cα * C₀ + (√ω)⁻¹), by positivity, ?_⟩
   intro Omega u G K S R hG hu hR hRS
   have hball : ∀ z ∈ S, ball z R ⊆ Omega := fun z hz => (ball_subset_thickening hz R).trans hRS
-  -- `∇u` is integrable on `closedBall z t` for `t ≤ R`; for `t = R` because `closedBall z R` and
-  -- `ball z R` differ by a null set.
   have hint : ∀ z ∈ S, ∀ t ≤ R, IntegrableOn (W1p.gradient u) (closedBall z t) :=
-    fun z hz t ht => by
-      rcases ht.lt_or_eq with ht | ht
-      · exact (Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two
-          ((closedBall_subset_ball ht).trans (hball z hz)) measure_closedBall_lt_top.ne
-      · rw [ht]
-        exact ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two (hball z hz)
-          measure_ball_lt_top.ne).congr_set_ae
-            (volume.addHaar_closedBall_ae_eq_ball z R)
+    fun z hz t ht => integrableOn_closedBall_gradient u (hball z hz) ht
   obtain ⟨a, ha⟩ : ∃ a, a = R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖ := ⟨_, rfl⟩
   have ha0 : 0 ≤ a := ha ▸ by positivity
   rw [← ha]
@@ -502,15 +524,9 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
       rw [← hcαdef, ← hω, ← ha]
       refine mul_le_mul_of_nonneg_right ?_ (by positivity)
       nlinarith [mul_nonneg (inv_nonneg.2 (Real.sqrt_nonneg ω)) hK]
-    have hRd : R ^ (α : ℝ) ≤ 2 ^ (α : ℝ) * dist x y ^ (α : ℝ) := by
-      rw [← Real.mul_rpow zero_le_two dist_nonneg]
-      exact Real.rpow_le_rpow hR.le hd.le hα'.le
-    have hsum := dist_le_norm_add_norm (preciseRepresentative volume (W1p.gradient u) x)
-      (preciseRepresentative volume (W1p.gradient u) y)
-    have hc : 0 ≤ (cα * C₀ + (√ω)⁻¹) * (a + K) := by positivity
-    have h1 : 0 ≤ 2 * 2 ^ (α : ℝ) * cα * C₀ * (K + a) * dist x y ^ (α : ℝ) := by positivity
-    have := mul_le_mul_of_nonneg_left hRd hc
-    nlinarith [hbound x hx, hbound y hy]
+    have h := dist_le_two_mul_two_rpow_mul_rpow_of_norm_le hα'.le hR hd.le
+      (hbound x hx) (hbound y hy)
+    nlinarith [(by positivity : 0 ≤ 2 * 2 ^ (α : ℝ) * cα * C₀ * (K + a) * dist x y ^ (α : ℝ))]
 
 
 end PDE

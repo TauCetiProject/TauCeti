@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.SMul
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Hamiltonian perturbation data on the pair of pants
@@ -26,6 +28,8 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
+* `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
+  Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
   end `q` its pullback is the continuation datum `β(±s - 1) H_q(t) dt`.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift`: on the part `±s ≥ 2` of the end `q`
@@ -111,6 +115,15 @@ theorem pairOfPantsPerturbation_eq_zero_of_forall_le {w : ℂ}
   refine Finset.sum_eq_zero fun q _ => ?_
   rw [smoothTransition.zero_of_nonpos (by linarith [h q]), zero_mul, zero_smul]
 
+/-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
+`1`, where every signed longitudinal coordinate is at most `0`. -/
+theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
+    pairOfPantsPerturbation H q.endCenter x = 0 := by
+  refine pairOfPantsPerturbation_eq_zero_of_forall_le (fun r => ?_) x
+  have h : 0 ≤ Real.log 2 / (2 * π) := by have := Real.log_nonneg one_le_two; positivity
+  have hπ := Real.pi_pos
+  cases q <;> cases r <;> simp [re_endCoord, neg_div] <;> linarith
+
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the
 parts `±s > 0` of distinct ends are disjoint. -/
 @[simp]
@@ -131,11 +144,11 @@ theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
       v.im * (smoothTransition (q.endSign * z.re - 1) * H q z.im x) := by
   rw [pairOfPantsPerturbation, Finset.sum_eq_single q]
   · obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-    have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
     have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
     have hp : H q (z.im + k) x = H q z.im x := by
       simpa using congrFun (hH.int_mul k z.im) x
-    rw [smul_apply, endAngularForm_cylindricalEndLift, hre, him, hp, smul_eq_mul, mul_comm]
+    rw [smul_apply, endAngularForm_cylindricalEndLift, re_endCoord_cylindricalEndLift, him, hp,
+      smul_eq_mul, mul_comm]
   · intro r _ hr
     simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr hz]
   · simp
@@ -229,12 +242,12 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
-/-- Away from the center of the end `q`, its cutoff `β(±s_q - 1)` is `C^n` as a function on
-`ℂ × M` which ignores the point of `M`. -/
-theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) {w : ℂ}
+/-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` as a function
+on `ℂ × M` which ignores the point of `M`. -/
+theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) (c : ℝ) {w : ℂ}
     (hw : w ≠ q.endCenter) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
-      (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - 1)) (w, x) :=
+      (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - c)) (w, x) :=
   (smoothTransition.contDiff.contDiffAt.comp w
     ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).sub contDiffAt_const)).contMDiffAt.comp
     (w, x) contMDiffAt_fst
@@ -253,7 +266,16 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (fun p : ℂ × M => q.endAngularForm p.1) ((w : ℂ), x) :=
     ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := q.endAngularForm) _
       (q.contDiffAt_endAngularForm hw).contMDiffAt contMDiffAt_fst
-  exact ((contMDiffAt_smoothTransition_endCoord q hw x).smul
+  exact ((contMDiffAt_smoothTransition_endCoord q 1 hw x).smul
     (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x)).smul hf
+
+/-- The perturbation is `Cⁿ` jointly in the domain point of `S` and the target point, for
+`Cⁿ` Hamiltonians. -/
+theorem contDiffAt_pairOfPantsPerturbation_prod {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ} {n : ℕ∞} (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (Function.uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
+    ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+  exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 (contMDiffAt_pairOfPantsPerturbation hH
+    (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) ⟨w, hw⟩ x)).contDiffAt
 
 end TauCeti.Floer

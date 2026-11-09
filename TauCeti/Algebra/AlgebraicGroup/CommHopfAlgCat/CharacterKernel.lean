@@ -17,6 +17,8 @@ The common kernel of all characters of an affine group is a normal closed subgro
 Its defining Hopf ideal is the kernel ideal of the canonical evaluation morphism from the
 character group algebra. A point lies in this subgroup precisely when every character has
 value one. The construction retains scheme-theoretic information over arbitrary base rings.
+When the characters span the coordinate algebra, as for a diagonalizable group, the common kernel
+is the trivial subgroup.
 
 The formal construction uses `MonoidAlgebra.liftGroupLikeBialgHom` and
 `TauCeti.CommHopfAlgCat.kernelHopfIdeal`.
@@ -92,5 +94,16 @@ theorem characterKernelIdeal_le_iff (I : HopfIdeal R H) :
   intro x
   simpa only [map_sub, map_one, sub_eq_zero, BialgHom.coe_toAlgHom] using
     (mkQuotient_eq_zero_iff H I ((x : H) - 1))
+
+/-- **Characters of a diagonalizable group separate its points**, scheme-theoretically and over
+any base ring: if the group-like elements span the coordinate algebra, the common kernel of
+characters is the trivial subgroup. This covers split tori and the geometric fibre of every
+group of multiplicative type, in particular of every torus. -/
+theorem characterKernelIdeal_eq_augmentation_of_groupLikeSetSpan_eq_top
+    (h : Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤) :
+    characterKernelIdeal H = HopfIdeal.augmentation R H := by
+  rw [characterKernelIdeal_def]
+  exact kernelHopfIdeal_eq_augmentation_of_surjective _
+    ((GroupLike.liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).mpr h)
 
 end CommHopfAlgCat

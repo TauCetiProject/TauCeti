@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Cohomology
 public import TauCeti.CategoryTheory.AInfinity.Cohomology
-public import TauCeti.CategoryTheory.AInfinity.Transfer.Basic
+public import TauCeti.CategoryTheory.AInfinity.Transfer.Functor
 
 /-!
 # The minimal A-infinity category on Hom cohomology
@@ -25,9 +25,11 @@ Homological transfer of `A∞` categories (`TauCeti.AInfinityCategory.transfer`)
 contraction gives the **minimal model** `TauCeti.AInfinityCategory.minimalModel`: an `A∞` category
 on the cohomology quiver whose differential vanishes and whose composition is the composition
 induced on cohomology, `[g] ∘ [f] = [g ∘ f]`.  This is the minimal structure of Kadeishvili's
-theorem for `A∞` categories; the comparison `A∞` quasi-equivalence between the minimal model and
-`𝒞` is not constructed in this file.  The higher operations `m₃, m₄, …` of the minimal model record
-the coherence which the graded cohomology category forgets.
+theorem for `A∞` categories. The extending and projection functors are quasi-fully faithful and,
+when `𝒞` is cohomologically unital, quasi-equivalences. Their unary components choose cycle
+representatives and project cycles to their classes, so the comparison induces the identity on
+Hom cohomology. The higher operations `m₃, m₄, …` of the minimal model record the coherence which
+the graded cohomology category forgets. No strict chain-level units are asserted.
 
 ## Main definitions
 
@@ -35,6 +37,8 @@ the coherence which the graded cohomology category forgets.
   contraction of the total complex of morphisms onto the total module of Hom cohomologies.
 * `TauCeti.AInfinityCategory.minimalModel`: the transferred minimal `A∞` category on the
   cohomology quiver.
+* `TauCeti.AInfinityCategory.minimalModelInclusion` and
+  `TauCeti.AInfinityCategory.minimalModelProjection`: the extending and projection functors.
 
 ## Main results
 
@@ -44,6 +48,9 @@ the coherence which the graded cohomology category forgets.
   `TauCeti.AInfinityCategory.homDifferential_minimalModel`: the minimal model is minimal.
 * `TauCeti.AInfinityCategory.comp_minimalModel_cohomologyClass`: its composition is the
   composition induced on cohomology.
+* `TauCeti.AInfinityCategory.isQuasiEquivalence_minimalModelInclusion` and
+  `TauCeti.AInfinityCategory.isQuasiEquivalence_minimalModelProjection`: the comparison functors
+  are quasi-equivalences when the original category is cohomologically unital.
 
 ## References
 
@@ -244,6 +251,13 @@ noncomputable def minimalModel : AInfinityCategory K 𝒞.CohomologyQuiver :=
     𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
     𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction
 
+/-- The minimal model is transfer along the Homwise cohomology contraction. -/
+theorem minimalModel_def :
+    𝒞.minimalModel =
+      𝒞.transfer 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+        𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+        𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction := (rfl)
+
 /-- The total algebra of morphisms of the minimal model is the `A∞` algebra transferred from the
 total algebra of morphisms of `𝒞` along the cohomology contraction. -/
 theorem minimalModel_toAInfinityAlgebra :
@@ -289,6 +303,127 @@ theorem comp_minimalModel_cohomologyClass {X Y Z : 𝒞.CohomologyQuiver}
   exact 𝒞.cohomologyClass_comp_congr hg' hf' hg hf
     (AInfinityAlgebra.cohomologyClass_cohomologyContraction_incl ..)
     (AInfinityAlgebra.cohomologyClass_cohomologyContraction_incl ..)
+
+/-! ### Comparison functors -/
+
+/-- The extending A-infinity functor from the minimal model, with unary components the chosen
+cycle representatives in each Hom complex. -/
+noncomputable def minimalModelInclusion : AInfinityFunctor 𝒞.minimalModel 𝒞 :=
+  𝒞.transferInclusion 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction
+
+/-- The projection A-infinity functor onto the minimal model, with unary components the Homwise
+cohomology projections. -/
+noncomputable def minimalModelProjection : AInfinityFunctor 𝒞 𝒞.minimalModel :=
+  𝒞.transferProjection 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction
+
+/-- All components of the minimal-model inclusion are those of the extending transfer functor. -/
+theorem minimalModelInclusion_def :
+    𝒞.minimalModel_def ▸ 𝒞.minimalModelInclusion =
+      𝒞.transferInclusion 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+        𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+        𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction := (rfl)
+
+/-- All components of the minimal-model projection are those of the projection transfer functor. -/
+theorem minimalModelProjection_def :
+    𝒞.minimalModel_def ▸ 𝒞.minimalModelProjection =
+      𝒞.transferProjection 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+        𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+        𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction := (rfl)
+
+/-- The extending functor identifies objects of the cohomology quiver with the original objects. -/
+@[simp]
+theorem minimalModelInclusion_obj (X : 𝒞.CohomologyQuiver) :
+    𝒞.minimalModelInclusion.obj X = X.obj := by
+  simp only [minimalModelInclusion, transferInclusion_obj, cohomologyQuiverEquiv_apply]
+
+/-- The projection functor keeps the underlying object. -/
+@[simp]
+theorem minimalModelProjection_obj (X : C) :
+    𝒞.minimalModelProjection.obj X = (⟨X⟩ : 𝒞.CohomologyQuiver) := by
+  simp only [minimalModelProjection, transferProjection_obj, cohomologyQuiverEquiv_symm_apply]
+
+/-- On Hom modules the extending functor chooses the cycle representatives of the cohomology
+contraction. Expressing this in the total Hom module avoids dependent equality casts. -/
+@[simp]
+theorem homInclusion_map_minimalModelInclusion (X Y : 𝒞.CohomologyQuiver)
+    (a : homModule (R := K) X Y) :
+    homInclusion (𝒞.minimalModelInclusion.obj X) (𝒞.minimalModelInclusion.obj Y)
+        (𝒞.minimalModelInclusion.map X Y a) =
+      homInclusion X.obj Y.obj ((𝒞.homAlgebra X.obj Y.obj).cohomologyContraction.incl a) := by
+  -- The comparison and its source are the transfer functor and transfer category by definition.
+  exact (𝒞.homInclusion_map_transferInclusion 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction X Y a).trans
+      (𝒞.cohomologyContraction_incl_homInclusion X Y a)
+
+/-- On Hom modules the projection functor is the Homwise cohomology projection. -/
+@[simp]
+theorem homInclusion_map_minimalModelProjection (X Y : C) (f : homModule (R := K) X Y) :
+    homInclusion (𝒞.minimalModelProjection.obj X) (𝒞.minimalModelProjection.obj Y)
+        (𝒞.minimalModelProjection.map X Y f) =
+      homInclusion (R := K) (C := 𝒞.CohomologyQuiver) ⟨X⟩ ⟨Y⟩
+        ((𝒞.homAlgebra X Y).cohomologyContraction.proj f) := by
+  -- The comparison and its target are the transfer functor and transfer category by definition.
+  exact (𝒞.homInclusion_map_transferProjection 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction X Y f).trans
+      (𝒞.cohomologyContraction_proj_homInclusion ⟨X⟩ ⟨Y⟩ f)
+
+/-- The extending functor takes the class of a closed morphism to a representative differing
+from that morphism by a boundary. Thus it induces the identity on Hom cohomology. -/
+theorem map_minimalModelInclusion_cohomologyClass_sub_mem_range
+    {X Y : 𝒞.CohomologyQuiver} {f : homModule (R := K) X.obj Y.obj}
+    (hf : f ∈ (𝒞.homAlgebra X.obj Y.obj).cycles) :
+    homInclusion (𝒞.minimalModelInclusion.obj X) (𝒞.minimalModelInclusion.obj Y)
+        (𝒞.minimalModelInclusion.map X Y ((𝒞.homAlgebra X.obj Y.obj).cohomologyClass hf)) -
+      homInclusion X.obj Y.obj f ∈ LinearMap.range 𝒞.differential := by
+  have h := (𝒞.homAlgebra X.obj Y.obj).cohomologyClass_cohomologyContraction_incl
+    ((𝒞.homAlgebra X.obj Y.obj).cohomologyClass hf)
+  rw [AInfinityAlgebra.cohomologyClass_eq_iff, AInfinityAlgebra.boundaries_def] at h
+  obtain ⟨g, hg⟩ := h
+  rw [homAlgebra_differential_apply] at hg
+  refine ⟨homInclusion X.obj Y.obj g, ?_⟩
+  rw [← homInclusion_homDifferential, hg, map_sub, homInclusion_map_minimalModelInclusion]
+
+/-- The extending functor is a quasi-isomorphism on every Hom complex. -/
+theorem isQuasiFullyFaithful_minimalModelInclusion :
+    𝒞.minimalModelInclusion.IsQuasiFullyFaithful :=
+  𝒞.isQuasiFullyFaithful_transferInclusion 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction
+
+/-- The projection functor is a quasi-isomorphism on every Hom complex. -/
+theorem isQuasiFullyFaithful_minimalModelProjection :
+    𝒞.minimalModelProjection.IsQuasiFullyFaithful :=
+  𝒞.isQuasiFullyFaithful_transferProjection 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction
+
+/-- The minimal model of a cohomologically unital category is cohomologically unital. -/
+theorem cohomologicallyUnital_minimalModel (h𝒞 : 𝒞.CohomologicallyUnital) :
+    𝒞.minimalModel.CohomologicallyUnital :=
+  𝒞.cohomologicallyUnital_transfer 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction h𝒞
+
+/-- The extending functor exhibits the minimal model as quasi-equivalent to the original
+cohomologically unital category. -/
+theorem isQuasiEquivalence_minimalModelInclusion (h𝒞 : 𝒞.CohomologicallyUnital) :
+    𝒞.minimalModelInclusion.IsQuasiEquivalence h𝒞 :=
+  𝒞.isQuasiEquivalence_transferInclusion 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction h𝒞
+
+/-- The projection to the minimal model is also a quasi-equivalence. -/
+theorem isQuasiEquivalence_minimalModelProjection (h𝒞 : 𝒞.CohomologicallyUnital) :
+    𝒞.minimalModelProjection.IsQuasiEquivalence (𝒞.cohomologicallyUnital_minimalModel h𝒞) :=
+  𝒞.isQuasiEquivalence_transferProjection 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction h𝒞
 
 end AInfinityCategory
 

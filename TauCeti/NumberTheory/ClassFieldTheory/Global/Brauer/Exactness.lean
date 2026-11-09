@@ -112,9 +112,9 @@ theorem exists_br_of_sum_eq_zero (S : Finset (HeightOneSpectrum (𝓞 K)))
   choose b hb using hb
   have hfin : {v | (invMap (v.adicCompletion K)).symm (f v) ≠ 0}.Finite :=
     S.finite_toSet.subset fun v hv ↦ not_not.1 fun hvS ↦ hv (by rw [hS v hvS, map_zero])
-  let y := (dfinsuppOfFiniteSupport _ hfin, b)
+  let y := (DFinsupp.ofSupportFinite _ hfin, b)
   have hy (v : HeightOneSpectrum (𝓞 K)) : invMap (v.adicCompletion K) (y.1 v) = f v := by
-    rw [dfinsuppOfFiniteSupport_apply, AddEquiv.apply_symm_apply]
+    rw [DFinsupp.ofSupportFinite_apply, AddEquiv.apply_symm_apply]
   -- Their invariants sum to zero, so they are the localizations of a global class.
   obtain ⟨x, hx⟩ : y ∈ (brLocalization K).range := by
     rw [range_brLocalization, AddMonoidHom.mem_ker,

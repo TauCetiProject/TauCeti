@@ -94,6 +94,9 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
   invariants, and `Representation.Equiv.apply_mem_invariants_iff`: an equivalence detects
   invariance of a vector.
+* `Representation.Equiv.quotientToInvariants`: for a normal subgroup `S`, an equivalence of
+  representations of `G` is an equivalence of the representations of `G ⧸ S` on the
+  `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
@@ -385,6 +388,30 @@ theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
     (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
   (rfl)
 
+/-- **Equivalent representations have equivalent quotient representations on invariants.** For a
+normal subgroup `S` of `G`, an equivalence `ρ ≃ σ` restricts to the `S`-invariants and there
+intertwines the representations `ρ.quotientToInvariants S` and `σ.quotientToInvariants S` of
+`G ⧸ S`. -/
+noncomputable def quotientToInvariants (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal] :
+    (ρ.quotientToInvariants S).Equiv (σ.quotientToInvariants S) :=
+  .mk (φ.res S.subtype).invariantsLinearEquiv fun g ↦ by
+    induction g using QuotientGroup.induction_on with | H g => ?_
+    ext x
+    simpa [ofQuotient_coe_apply] using
+      IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x
+
+@[simp]
+theorem coe_quotientToInvariants_apply (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal]
+    (x : invariants (ρ.comp S.subtype)) : (φ.quotientToInvariants S x : W) = φ (x : V) := by
+  simp [quotientToInvariants]
+
+@[simp]
+theorem symm_quotientToInvariants (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal] :
+    (φ.quotientToInvariants S).symm = φ.symm.quotientToInvariants S := by
+  ext x
+  obtain ⟨y, rfl⟩ := (φ.quotientToInvariants S).surjective x
+  simp
+
 /-- An equivalence of representations maps a vector to an invariant vector exactly when the
 vector itself is invariant. -/
 theorem apply_mem_invariants_iff (φ : ρ.Equiv σ) {x : V} :
@@ -567,12 +594,14 @@ open scoped MonoidAlgebra
 
 universe u v w
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
 
 /-- Under Maschke's hypothesis, taking invariants preserves short exact sequences of
 representations. -/
 theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep.{w} k G)} (hS : S.ShortExact) :
     (S.map (Rep.invariantsFunctor k G)).ShortExact := by
+  -- A nonzero cardinality in `k` forces `G` to be finite (`Maschke` needs `Finite G`).
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   have : (Rep.invariantsFunctor k G).PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
       have : Module.Projective k[G] Y.ρ.asModule :=
         Module.projective_of_isSemisimpleRing k[G] Y.ρ.asModule

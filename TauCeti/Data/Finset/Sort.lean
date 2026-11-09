@@ -9,7 +9,9 @@ public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Order.Fin.Tuple
 import Mathlib.Data.List.Chain
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
 # Sorting finsets
@@ -26,12 +28,20 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 `s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
 pairs.
 
+The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
+elements of `s` below it.
+
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
 `Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
 
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
+
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+
+Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`.
 -/
 
 public section
@@ -134,6 +144,16 @@ theorem _root_.StrictAntiOn.map_finsetSort {e : α ↪ β} (he : StrictAntiOn e 
   rw [List.SortedLT.eq_of_mem_iff (sortedLT_sort (s.map e)) hgt.reverse fun x => by simp,
     List.reverse_reverse]
 
+/-- The `m`-th element of `s` in increasing order has exactly `m` elements of `s` below it. -/
+theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k) :
+    #{j ∈ s | j < s.orderEmbOfFin h m} = m := by
+  have e := map_orderEmbOfFin_univ s h
+  generalize s.orderEmbOfFin h = a at e ⊢
+  subst e
+  rw [filter_map, card_map]
+  simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
+    filter_gt_eq_Iio, Fin.card_Iio]
+
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
 theorem sort_map_revPerm {n : ℕ} (B : Finset (Fin n)) :
@@ -181,6 +201,22 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
       rw [hBC, hBC']
       simpa using List.isRotated_append (l := C.sort.map (finRotate (n + 1))) (l' := [0])
     · rw [hsort hB]
+
+/-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`. -/
+theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
+    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
+    ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
+      (s.erase i).orderEmbOfFin rfl := by
+  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+  have hek : e k = i :=
+    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
+  apply Finset.orderEmbOfFin_unique
+  · intro j
+    exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
+      Finset.orderEmbOfFin_mem s hsCard _⟩
+  · exact e.strictMono.comp (Fin.strictMono_succAbove k)
 
 end LinearOrder
 

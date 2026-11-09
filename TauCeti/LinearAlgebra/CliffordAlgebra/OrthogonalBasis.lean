@@ -48,6 +48,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.exists_basis_eq_ι_mul`: for an orthogonal basis, a two-element index set `s` can
+  be written `{k, l}` so that the basis vector indexed by `s` is `ι Q (b k) * ι Q (b l)`.
 * `CliffordAlgebra.involute_basis` and `CliffordAlgebra.basis_repr_involute`: for an orthogonal
   basis, the grade involution acts on `e_s` and on the coordinate at `s` by `(-1) ^ |s|`.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
@@ -131,6 +133,20 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- For an orthogonal basis `b`, a two-element index set `s` is `{k, l}`, and the Clifford basis
+vector indexed by `s` is `ι Q (b k) * ι Q (b l)`. -/
+theorem exists_basis_eq_ι_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (s : Set.powersetCard I 2) :
+    ∃ k l, (∀ i, i ∈ s.val ↔ i = k ∨ i = l) ∧ basis Q b s = ι Q (b k) * ι Q (b l) := by
+  obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
+    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.2] :
+      ((s : Finset I).sort (· ≤ ·)).length = 2)
+  refine ⟨k, l, fun i ↦ ?_, ?_⟩
+  · rw [← Finset.mem_sort (· ≤ ·), hsort]
+    simp
+  · rw [basis_eq_prod_map_sort hb, hsort]
+    simp
 
 /-- For an orthogonal basis, the grade involution multiplies the Clifford basis vector indexed by
 `s` by the sign `(-1) ^ |s|` of its degree. -/
@@ -220,6 +236,23 @@ theorem basis_insert_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b
     Finset.sort_insert _ (fun x hx ↦ (ha x hx).le) fun h ↦ lt_irrefl a (ha a h)]
   simp
 
+/-- **A generator below every index times a basis vector**, for an orthogonal basis: if `a` is
+smaller than every index of `s`, then `ι Q (b a) * e_s` is the basis vector of `insert a s`, which
+is the case `k = 0` and `a ∉ s` of `CliffordAlgebra.ι_mul_basis`. -/
+private theorem ι_mul_basis_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {a : I}
+    {s : Finset I} (hat : ∀ x ∈ s, a < x) :
+    ι Q (b a) * basis Q b s =
+      ((-1 : R) ^ (s.filter (· < a)).card * if a ∈ s then Q (b a) else 1) •
+        basis Q b (s ∆ {a}) := by
+  have ha : a ∉ s := fun h ↦ lt_irrefl a (hat a h)
+  have hsd : s ∆ {a} = insert a s := by
+    simpa only [Finset.union_singleton] using
+      Finset.symmDiff_eq_union (Finset.disjoint_singleton_right.mpr ha)
+  have hf : s.filter (· < a) = ∅ :=
+    Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
+  rw [hsd, hf, ite_eq_right ha, basis_insert_of_forall_lt hb hat]
+  simp
+
 /-- **A generator times a basis vector**, for an orthogonal basis: `ι Q (b a) * e_t` is the basis
 vector of `t ∆ {a}`, with the sign `(-1) ^ k` for the number `k` of indices of `t` below `a`, and
 the scalar `Q (b a)` when `a ∈ t`, since the generator then meets itself. -/
@@ -236,17 +269,12 @@ theorem ι_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (a : I) (t 
     rw [basis_insert_of_forall_lt hb hc]
     rcases lt_trichotomy a c with h | rfl | h
     · -- `a` lies below every index, so its generator is adjoined in front.
-      have hat : ∀ x ∈ insert c t, a < x := by
-        simp only [Finset.mem_insert, forall_eq_or_imp]
-        exact ⟨h, fun x hx ↦ h.trans (hc x hx)⟩
-      have ha : a ∉ insert c t := fun h ↦ lt_irrefl a (hat a h)
-      have hsd : insert c t ∆ {a} = insert a (insert c t) := by
-        ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
-      have hf : (insert c t).filter (· < a) = ∅ :=
-        Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
-      rw [← basis_insert_of_forall_lt hb hc, ← basis_insert_of_forall_lt hb hat, hsd, hf,
-        ite_eq_right ha]
-      simp
+      rw [← basis_insert_of_forall_lt hb hc]
+      exact ι_mul_basis_of_forall_lt hb fun x hx ↦ by
+        simp only [Finset.mem_insert] at hx
+        rcases hx with rfl | hx
+        · exact h
+        · exact h.trans (hc x hx)
     · -- `a` is the least index, and its generator squares to the scalar `Q (b a)`.
       have hsd : insert a t ∆ {a} = t := by
         ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind

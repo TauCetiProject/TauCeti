@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
@@ -532,31 +533,9 @@ theorem IsCoalgHom.sub_mem_filtration {G : ReducedTensorWords R M →ₗ[R] Redu
 bijective. -/
 theorem IsCoalgHom.bijective_of_comp_ofLetter_eq
     {G : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} (hG : IsCoalgHom R G)
-    (h₁ : G ∘ₗ ofLetter R M = ofLetter R M) : Function.Bijective G := by
-  constructor
-  · refine (injective_iff_map_eq_zero G).2 fun z hz ↦ ?_
-    obtain ⟨n, hn⟩ := exists_mem_filtration R M z
-    induction n generalizing z with
-    | zero =>
-        rw [filtration_zero] at hn
-        exact (Submodule.mem_bot R).1 hn
-    | succ n ih =>
-        refine ih z hz ?_
-        have h := hG.sub_mem_filtration h₁ hn
-        rwa [hz, zero_sub, Submodule.neg_mem_iff] at h
-  · have key : ∀ n : ℕ, filtration R M n ≤ LinearMap.range G := by
-      intro n
-      induction n with
-      | zero =>
-          rw [filtration_zero]
-          exact bot_le
-      | succ n ih =>
-          intro w hw
-          obtain ⟨u, hu⟩ := ih (hG.sub_mem_filtration h₁ hw)
-          exact ⟨w - u, by rw [map_sub, hu, sub_sub_cancel]⟩
-    intro w
-    obtain ⟨n, hn⟩ := exists_mem_filtration R M w
-    exact key n hn
+    (h₁ : G ∘ₗ ofLetter R M = ofLetter R M) : Function.Bijective G :=
+  Module.End.bijective_of_sub_mem_filtration (filtration_zero R M) (exists_mem_filtration R M)
+    fun _ _ hz ↦ hG.sub_mem_filtration h₁ hz
 
 /-- A coalgebra endomorphism of the reduced tensor coalgebra fixing every single letter maps every
 submodule it preserves onto itself. -/

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.InformationTheory.Coding.RootDiscriminant
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.D4Six.Glue
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Triality
 
 /-!
 # The Niemeier lattice with root system `D₄⁶`
@@ -21,6 +23,13 @@ norm shells below `4`, and the integral span of the norm-`2` vectors is literall
 orthogonal sum of six `D₄` root lattices. This identifies the root sublattice rather than merely
 counting roots. The named construction also provides the lattice on which hexacode symmetries
 can act through component isometries.
+
+Identifying each `D₄` component with the checkerboard lattice `D₄ ⊂ ℚ⁴` and applying the power of
+triality realizing the hexacode coordinate scaling `[ω, ω, 1, ω², ω², 1]` gives the root-lattice
+comparison `TauCeti.d4SixRootIsometry` onto `(D₄)⁶`. On discriminant groups it acts by
+`TauCeti.d4SixHexacodeIsometry`, so it restricts to `TauCeti.d4SixHexacodeOverlatticeIsometry`,
+identifying `d4SixLattice` with the overlattice of `(D₄)⁶` glued directly along the hexacode via
+`TauCeti.codeInTypeD4CoordinatePowerDiscriminant`.
 
 ## References
 
@@ -128,5 +137,150 @@ theorem span_vectorsOfNorm_two_d4SixLattice :
       d4SixLattice.vectorsOfNorm 2) = d4SixRootLattice.carrier := by
   rw [image_vectorsOfNorm_d4SixLattice_eq (by norm_num : (2 : ℚ) < 4)]
   exact span_vectorsOfNorm_two_pi_rootLattice _ _
+
+/-! ### Comparison with the hexacode gluing of `(D₄)⁶` -/
+
+section HexacodeOverlattice
+
+variable {F : Type*} [Field F] [Finite F] (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
+
+/-- **The `D₄⁶` comparison on root lattices.** The isometry from the orthogonal sum of six `D₄`
+root lattices in Bourbaki simple-root coordinates to the coordinate power `(D₄)⁶` of the
+checkerboard lattice `D₄ ⊂ ℚ⁴` that identifies each component with `D₄` and applies the power of
+triality realizing the hexacode coordinate scaling `d4SixHexacodeScaling hω j` from
+`[ω, ω, 1, ω², ω², 1]`. -/
+noncomputable def d4SixRootIsometry :
+    Isometry d4SixRootLattice ((checkerboardLattice 4).coordinatePower (Fin 6)) :=
+  Isometry.pi fun j ↦
+    (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)).trans
+      (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j))
+
+/-- The `j`-th coordinate of the image of `x` under `d4SixRootIsometry` is obtained by passing to
+checkerboard coordinates and applying `checkerboardScalarIsometry` for the `j`-th hexacode
+scaling. -/
+-- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the left-hand side by `rank_D`.
+theorem d4SixRootIsometry_apply (x : Fin 6 → Fin (D 4).rank → ℚ) (j : Fin 6) :
+    d4SixRootIsometry hF hω x j =
+      checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j)
+        (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4) (x j)) := by
+  rw [d4SixRootIsometry, Isometry.pi_apply, Isometry.trans_apply]
+
+/-- The inverse of `d4SixRootIsometry` undoes the `j`-th hexacode triality scaling in checkerboard
+coordinates and passes back to Bourbaki simple-root coordinates. -/
+-- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the ambient codomain type on the left-hand
+-- side by `rank_D`.
+theorem d4SixRootIsometry_symm_apply (y : Fin 6 → Fin 4 → ℚ) (j : Fin 6) :
+    (d4SixRootIsometry hF hω).symm y j =
+      (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)).symm
+        (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j)⁻¹ (y j)) := by
+  rw [d4SixRootIsometry, Isometry.pi_symm, Isometry.pi_apply, Isometry.symm_trans,
+    Isometry.trans_apply, ← Isometry.inv_apply, ← checkerboardScalarIsometry_inv]
+
+/-- On the discriminant class of a `D₄` glue label `x`, passing to the checkerboard lattice and
+applying the `j`-th hexacode triality scaling multiplies its quaternary coordinate by the `j`-th
+hexacode scaling. -/
+private theorem discriminantGroupEquiv_rootLatticeIsometryCheckerboard_trans_d4SixHexacodeScaling
+    (j : Fin 6) (x : (D 4).glueAlphabet (isSimplyLaced_D 4)) :
+    ((rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)).trans
+        (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j))).discriminantGroupEquiv
+      ((D 4).glueAlphabetIsometry (valid_D.mpr le_rfl) (isSimplyLaced_D 4) x) =
+      typeD4QuaternaryDiscriminantQuadraticIsometry hF hω
+        (d4SixHexacodeScaling hω j * typeD4GlueAlphabetQuaternaryIsometry hF hω x) := by
+  rw [Isometry.discriminantGroupEquiv_trans, glueAlphabetIsometry_D_four_apply hF hω,
+    Isometry.discriminantGroupEquiv_symm]
+  exact (LinearEquiv.trans_apply _).trans ((congrArg _ (LinearEquiv.apply_symm_apply _ _)).trans
+    (discriminantGroupEquiv_checkerboardScalarIsometry_typeD4QuaternaryDiscriminantQuadraticIsometry
+      hF hω (d4SixHexacodeScaling hω j) _))
+
+/-- **The root-lattice comparison acts on glue words by the hexacode comparison.** It carries the
+discriminant class of a `D₄⁶` glue word `w` to the class of the quaternary word
+`d4SixHexacodeIsometry hF hω w` in the discriminant group of `(D₄)⁶`. -/
+theorem discriminantGroupEquiv_d4SixRootIsometry_glueWordIsometry (w : d4SixGlueModule) :
+    (d4SixRootIsometry hF hω).discriminantGroupEquiv
+        (glueWordIsometry (fun _ : Fin 6 ↦ D 4) (fun _ ↦ isSimplyLaced_D 4)
+          (fun _ ↦ valid_D.mpr le_rfl) w) =
+      (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePowerDiscriminant (Fin 6)
+        (d4SixHexacodeIsometry hF hω w) := by
+  apply (discriminantGroupPiEquiv fun _ : Fin 6 ↦ checkerboardLattice 4).injective
+  funext j
+  have hw : d4SixHexacodeIsometry hF hω w j =
+      d4SixHexacodeScaling hω j * typeD4GlueAlphabetQuaternaryIsometry hF hω (w j) := by
+    rw [d4SixHexacodeIsometry_apply, d4SixQuaternaryIsometry_apply, coe_d4SixHexacodeScaling]
+  -- `glueWordIsometry` and `coordinatePowerDiscriminant` land in discriminant quadratic-module
+  -- carriers, so the `discriminantGroupPiEquiv` evaluations on both sides are combined in term
+  -- mode rather than with `rw`.
+  refine (discriminantGroupPiEquiv_discriminantGroupEquiv_pi
+    (fun j ↦ (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)).trans
+      (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j))) _ j).trans ?_
+  refine (congrArg _ (discriminantGroupPiEquiv_glueWordIsometry _ _ _ w j)).trans ?_
+  exact (discriminantGroupEquiv_rootLatticeIsometryCheckerboard_trans_d4SixHexacodeScaling hF hω
+    j (w j)).trans ((congrArg (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω) hw.symm).trans
+      (FiniteQuadraticModule.Isometry.discriminantGroupPiEquiv_coordinatePowerDiscriminant_apply
+        (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω) (d4SixHexacodeIsometry hF hω w)
+        j).symm)
+
+/-- The root-lattice comparison carries the `D₄⁶` glue subgroup, read in the discriminant group of
+`d4SixRootLattice`, onto the hexacode in the discriminant group of `(D₄)⁶`. -/
+private theorem map_discriminantGroupEquiv_d4SixRootIsometry :
+    (d4SixGlueSubgroup.map (glueWordIsometry (fun _ : Fin 6 ↦ D 4)
+        (fun _ ↦ isSimplyLaced_D 4) (fun _ ↦ valid_D.mpr le_rfl)).toAddEquiv.toAddMonoidHom).map
+      (d4SixRootIsometry hF hω).discriminantGroupEquiv.toAddEquiv.toAddMonoidHom =
+      codeInTypeD4CoordinatePowerDiscriminant hF hω (Hexacode.code ω).toAddSubgroup := by
+  have hcode : codeInTypeD4CoordinatePowerDiscriminant hF hω (Hexacode.code ω).toAddSubgroup =
+      (Hexacode.code ω).toAddSubgroup.map ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω)
+        |>.coordinatePowerDiscriminant (Fin 6)).toAddEquiv.toAddMonoidHom :=
+    AddSubgroup.ext fun x ↦ (mem_codeInTypeD4CoordinatePowerDiscriminant_iff hF hω _ x).trans
+      AddSubgroup.mem_map_equiv.symm
+  refine Eq.trans ?_ hcode.symm
+  exact (AddSubgroup.map_map _ _ _).trans <|
+    ((congrArg d4SixGlueSubgroup.map
+      (AddMonoidHom.ext (discriminantGroupEquiv_d4SixRootIsometry_glueWordIsometry hF hω))).trans
+        (AddSubgroup.map_map _ _ _).symm).trans
+      (congrArg (AddSubgroup.map _) (map_d4SixGlueSubgroup_d4SixHexacodeIsometry hF hω))
+
+/-- **`D₄⁶` is the hexacode gluing of `(D₄)⁶`.** The root-lattice comparison `d4SixRootIsometry`
+restricts to an isometry from the Niemeier lattice `d4SixLattice` onto the overlattice of the
+coordinate power `(D₄)⁶` glued along the hexacode, placed in its discriminant group by
+`TauCeti.codeInTypeD4CoordinatePowerDiscriminant`. -/
+noncomputable def d4SixHexacodeOverlatticeIsometry :
+    Isometry d4SixLattice
+      (((checkerboardLattice 4).coordinatePower (Fin 6)).ofIsotropicSubgroup
+        ((isEven_checkerboardLattice 4).coordinatePower (Fin 6))
+        (codeInTypeD4CoordinatePowerDiscriminant hF hω (Hexacode.code ω).toAddSubgroup)
+        (Hexacode.isLagrangian_codeInTypeD4CoordinatePowerDiscriminant hF hω hω).isIsotropic) :=
+  (Isometry.ofEq (gluedLattice_def _ _ _ _ _)).trans
+    ((d4SixRootIsometry hF hω).ofIsotropicSubgroups (isEven_pi_rootLattice _ _) _ _ _
+      (map_discriminantGroupEquiv_d4SixRootIsometry hF hω))
+
+/-- The isometry onto the hexacode gluing acts by the root-lattice comparison
+`d4SixRootIsometry`. -/
+-- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the left-hand side by `rank_D`.
+theorem d4SixHexacodeOverlatticeIsometry_apply (x : Fin 6 → Fin (D 4).rank → ℚ) (j : Fin 6) :
+    d4SixHexacodeOverlatticeIsometry hF hω x j =
+      checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j)
+        (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4) (x j)) :=
+  (congrFun (Isometry.trans_apply _ _ x) j).trans <|
+    (congrFun (Isometry.ofIsotropicSubgroups_apply _ _ _ _ _ _ _) j).trans <|
+      (congrFun (congrArg (d4SixRootIsometry hF hω) (Isometry.ofEq_apply _ x)) j).trans
+        (d4SixRootIsometry_apply hF hω x j)
+
+/-- The inverse of `d4SixHexacodeOverlatticeIsometry` acts by the inverse of `d4SixRootIsometry`. -/
+-- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the ambient codomain type on the left-hand
+-- side by `rank_D`.
+theorem d4SixHexacodeOverlatticeIsometry_symm_apply (y : Fin 6 → Fin 4 → ℚ) (j : Fin 6) :
+    (d4SixHexacodeOverlatticeIsometry hF hω).symm y j =
+      (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)).symm
+        (checkerboardScalarIsometry hF hω (d4SixHexacodeScaling hω j)⁻¹ (y j)) :=
+  -- Unfolding `d4SixHexacodeOverlatticeIsometry` exposes `codeInTypeD4CoordinatePowerDiscriminant`
+  -- as a subgroup of `discriminantQuadraticModule.carrier`, so combine the evaluations with `trans`
+  -- rather than `rw`.
+  (congrFun ((DFunLike.congr_fun (Isometry.symm_trans _ _) y).trans <|
+    (Isometry.trans_apply _ _ y).trans <|
+      (DFunLike.congr_fun (Isometry.symm_ofEq _) _).trans <|
+        (Isometry.ofEq_apply _ _).trans <|
+          Isometry.ofIsotropicSubgroups_symm_apply _ _ _ _ _ _ y) j).trans
+    (d4SixRootIsometry_symm_apply hF hω y j)
+
+end HexacodeOverlattice
 
 end TauCeti

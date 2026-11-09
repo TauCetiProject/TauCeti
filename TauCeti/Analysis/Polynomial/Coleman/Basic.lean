@@ -8,8 +8,8 @@ module
 public import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 public import TauCeti.RingTheory.PowerSeries.Entire.Majorant
 import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.GapCrossing
-import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.PowerSeries.TateAlgebra
 
 /-!
@@ -92,6 +92,9 @@ with `k`, this rate is the same for every coefficient relative to its majorant.
   in terms of the Coleman majorants of the tails of `B`.
 * `PowerSeries.dist_coeff_colemanDBounded_trunc_mul_le`: the continuity estimate in the
   truncation orders of `B` and `F`, with a geometric rate uniform in the ranks.
+* `PowerSeries.dist_coeff_colemanDBounded_trunc_mul_trunc_le`: the comparison of the transforms
+  of the truncation of `F * G` and of the product of the truncations of `F` and `G`, with a
+  geometric rate in the truncation order.
 * `PowerSeries.cauchySeq_coeff_colemanDBounded_trunc`: the coefficients of the finite transforms
   of truncations are Cauchy in both truncation orders.
 
@@ -106,67 +109,6 @@ public section
 open Equiv Finset
 
 namespace Polynomial
-
-section Sylvester
-
-variable {R : Type*} [CommRing R] {B P : R[X]} {n m : ℕ}
-
-/-- The coefficients of the terms of the Leibniz expansion of the Sylvester matrix defining
-Coleman's transform `D_(n,m)(B, P)` with `B(0) = 0`. The term of `σ` vanishes unless `σ` moves
-each of the first `n` columns `x` to a row in `[x, x + m]` and each of the last `m` columns to a
-row in `[x - n, x]`. It is then a monomial of degree the number of forward moves, whose entries
-are `1` or `-b_(σ x - x) T` in the first `n` columns, according as `σ x = x` or not, and
-`a_(x - σ x)` in the last `m` columns. -/
-private theorem coeff_prod_sylvester_colemanDBounded (hB₀ : B.coeff 0 = 0)
-    (σ : Perm (Fin (n + m))) (k : ℕ) :
-    (∏ x, sylvester ((P.reflect n).map C) (1 - C X * B.map C) n m (σ x) x).coeff k =
-      if (∀ x : Fin (n + m), ((x : ℕ) < n → (x : ℕ) ≤ σ x ∧ (σ x : ℕ) ≤ x + m) ∧
-          (n ≤ (x : ℕ) → (x : ℕ) ≤ σ x + n ∧ (σ x : ℕ) ≤ x)) ∧
-          k = #{x : Fin (n + m) | (x : ℕ) < σ x} then
-        ∏ x : Fin (n + m), if (x : ℕ) < σ x then -B.coeff (σ x - x)
-          else if (x : ℕ) < n then 1 else P.coeff (x - σ x)
-      else 0 := by
-  set M := sylvester ((P.reflect n).map C) (1 - C X * B.map C) n m with hM_def
-  by_cases hband : ∀ x : Fin (n + m), ((x : ℕ) < n → (x : ℕ) ≤ σ x ∧ (σ x : ℕ) ≤ x + m) ∧
-      (n ≤ (x : ℕ) → (x : ℕ) ≤ σ x + n ∧ (σ x : ℕ) ≤ x)
-  swap
-  · -- some column is moved outside the band, where the Sylvester matrix vanishes
-    obtain ⟨x, hx⟩ := not_forall.1 hband
-    have hzero : M (σ x) x = 0 := by
-      rcases lt_or_ge (x : ℕ) n with h | h
-      · rw [hM_def, sylvester_apply_of_lt _ _ _ _ h]
-        exact ite_eq_right_iff.2 fun hc ↦ absurd ⟨fun _ ↦ hc, fun h' ↦ absurd h' (not_le.2 h)⟩ hx
-      · rw [hM_def, sylvester_apply_of_le _ _ _ _ h]
-        exact ite_eq_right_iff.2 fun hc ↦ absurd ⟨fun h' ↦ absurd h' (not_lt.2 h), fun _ ↦ hc⟩ hx
-    rw [prod_eq_zero (f := fun y ↦ M (σ y) y) (mem_univ x) hzero, coeff_zero]
-    exact (ite_eq_right_iff.2 fun h ↦ absurd h.1 hband).symm
-  set c : Fin (n + m) → R := fun x ↦
-    if (x : ℕ) < σ x then -B.coeff (σ x - x) else if (x : ℕ) < n then 1 else P.coeff (x - σ x)
-  set e : Fin (n + m) → ℕ := fun x ↦ if (x : ℕ) < σ x then 1 else 0
-  have hM (x : Fin (n + m)) : M (σ x) x = C (c x) * X ^ e x := by
-    rcases lt_or_ge (x : ℕ) n with h | h
-    · rw [hM_def, sylvester_apply_of_lt _ _ _ _ h, ite_eq_left ((hband x).1 h)]
-      simp only [coeff_sub, coeff_one, coeff_C_mul, coeff_map, c, e, ite_eq_left h]
-      by_cases hx : (x : ℕ) < σ x
-      · rw [ite_eq_right (by omega), ite_eq_left hx, ite_eq_left hx, zero_sub, pow_one, map_neg,
-          neg_mul, mul_comm]
-      · have : (σ x : ℕ) - x = 0 := by omega
-        simp [hx, this, hB₀]
-    · have hσx : ¬(x : ℕ) < σ x := by have := (hband x).2 h; omega
-      rw [hM_def, sylvester_apply_of_le _ _ _ _ h, ite_eq_left ((hband x).2 h)]
-      simp only [coeff_map, coeff_reflect, c, e, ite_eq_right hσx, ite_eq_right (not_lt.2 h)]
-      rw [revAt_le (by have := (hband x).2 h; omega)]
-      simp only [pow_zero, mul_one]
-      have := (hband x).2 h
-      congr 2
-      omega
-  have hsum : ∑ x, e x = #{x : Fin (n + m) | (x : ℕ) < σ x} := by
-    simp [e, sum_boole]
-  simp_rw [hM]
-  rw [prod_mul_distrib, ← map_prod, prod_pow_eq_pow_sum, coeff_C_mul_X_pow, hsum]
-  exact if_congr (and_iff_right hband).symm rfl rfl
-
-end Sylvester
 
 variable {R : Type*} [SeminormedCommRing R] {B P : R[X]} {n m : ℕ}
 
@@ -345,7 +287,8 @@ theorem norm_coeff_colemanDBounded_sub_le {B' P' : R[X]} {L k : ℕ} {ρ β γ :
             single_le_sum (f := fun y : Fin (n + m) ↦ (y : ℕ) - σ y)
               (fun _ _ ↦ Nat.zero_le _) (mem_univ x)
         _ = ∑ y ∈ S, ((σ y : ℕ) - y) := by
-            rw [σ.sum_sub_apply_eq_sum_apply_sub, hS, sum_filter_of_ne fun y _ h ↦ by omega]
+            rw [σ.sum_tsub_comp_eq_sum_comp_tsub fun y ↦ (y : ℕ), hS,
+              sum_filter_of_ne fun y _ h ↦ by omega]
         _ ≤ #S * L := by
             simpa using sum_le_card_nsmul S _ L hlong
     rw [sub_eq_zero.2, norm_zero]
@@ -587,5 +530,52 @@ theorem dist_coeff_colemanDBounded_trunc_mul_le {F B : R⟦X⟧} {ρ : ℕ → �
     · omega
     · simpa using hβ₀ t
 
+/-- Let `ρ` be a nonnegative antitone sequence dominating the convolution of the coefficient norms
+of `F` and `G`, let `c ≥ 1`, and let `B` be restricted at every radius `c ρ i` with `B(0) = 0`.
+Replacing the product of the truncations of `F` and `G` at order `b` by the truncation of `F * G`
+moves the `k`-th coefficient of every bounded Coleman transform by at most
+`c ^ (-b) ∏ i < k, β_B(c ρ i)`: the two polynomials agree below degree `b`. -/
+theorem dist_coeff_colemanDBounded_trunc_mul_trunc_le {F G B : R⟦X⟧} {ρ : ℕ → ℝ}
+    (hρ₀ : ∀ i, 0 ≤ ρ i) (hρ : Antitone ρ)
+    (hFG : ∀ j, ∑ x ∈ antidiagonal j, ‖coeff x.1 F‖ * ‖coeff x.2 G‖ ≤ ∏ i ∈ range j, ρ i)
+    {c : ℝ} (hc : 1 ≤ c) (hB : ∀ i, B.IsRestricted (c * ρ i)) (hB₀ : coeff 0 B = 0)
+    (a b n m k : ℕ) :
+    dist ((Polynomial.colemanDBounded (trunc a B) (trunc b (F * G)) n m).coeff k)
+        ((Polynomial.colemanDBounded (trunc a B) (trunc b F * trunc b G) n m).coeff k) * c ^ b ≤
+      ∏ i ∈ range k, colemanMajorant B (c * ρ i) := by
+  have hc₀ : 0 ≤ c := zero_le_one.trans hc
+  have hcρ (i : ℕ) : 0 ≤ c * ρ i := mul_nonneg hc₀ (hρ₀ i)
+  have hprod (j : ℕ) : ∏ i ∈ range j, c * ρ i = c ^ j * ∏ i ∈ range j, ρ i := by
+    rw [prod_mul_distrib, prod_const, card_range]
+  have hprod₀ (j : ℕ) : 0 ≤ ∏ i ∈ range j, c * ρ i := prod_nonneg fun i _ ↦ hcρ i
+  -- the coefficients of the product of truncations are dominated by the convolution of norms
+  have hP (j : ℕ) : ‖(trunc b F * trunc b G).coeff j‖ ≤ ∏ i ∈ range j, ρ i := by
+    have htrunc (H : R⟦X⟧) (l : ℕ) : ‖(trunc b H).coeff l‖ ≤ ‖coeff l H‖ := by
+      rw [coeff_trunc]
+      split_ifs <;> simp
+    rw [Polynomial.coeff_mul]
+    refine (norm_sum_le _ _).trans ((sum_le_sum fun x _ ↦ ?_).trans (hFG j))
+    exact (norm_mul_le _ _).trans
+      (mul_le_mul (htrunc F x.1) (htrunc G x.2) (norm_nonneg _) (norm_nonneg _))
+  -- below degree `b`, it agrees with the truncation of the product
+  have hagree {j : ℕ} (hj : j < b) :
+      (trunc b F * trunc b G).coeff j = (trunc b (F * G)).coeff j := by
+    have h := congrArg (fun H : Polynomial R ↦ H.coeff j) (trunc_trunc_mul_trunc (n := b) F G)
+    simpa only [coeff_trunc, ite_eq_left hj, ← Polynomial.coe_mul, Polynomial.coeff_coe] using h
+  refine Polynomial.dist_coeff_colemanDBounded_mul_le (ρ := fun i ↦ c * ρ i)
+    (by simp [coeff_trunc, hB₀]) (by simp [coeff_trunc, hB₀]) hcρ
+    (fun i j hij ↦ mul_le_mul_of_nonneg_left (hρ hij) hc₀) (one_le_pow₀ hc)
+    (fun j _ ↦ ?_) (fun j _ ↦ ?_)
+    (fun t j ↦ norm_coeff_trunc_succ_mul_pow_le_colemanMajorant (hB t) (hcρ t) a j)
+    (fun t j ↦ by simpa using colemanMajorant_nonneg B (hcρ t)) k
+  · rw [hprod]
+    exact (hP j).trans (le_mul_of_one_le_left (prod_nonneg fun i _ ↦ hρ₀ i) (one_le_pow₀ hc))
+  · rw [Polynomial.coeff_sub]
+    by_cases hj : j < b
+    · rw [hagree hj, sub_self, norm_zero, zero_mul]
+      exact hprod₀ j
+    · rw [coeff_trunc, ite_eq_right hj, zero_sub, norm_neg, hprod, mul_comm]
+      exact mul_le_mul (pow_le_pow_right₀ hc (not_lt.1 hj)) (hP j) (norm_nonneg _)
+        (pow_nonneg hc₀ j)
 
 end PowerSeries

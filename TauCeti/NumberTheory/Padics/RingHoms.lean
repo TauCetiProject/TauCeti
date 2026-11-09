@@ -92,6 +92,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   (`PadicInt.unitsToZModPow_zero_apply`).
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
   finite of cardinality `p`.
+* `PadicInt.ringHom_eq_id`, `PadicInt.RingHom.unique`: the identity is the unique ring
+  endomorphism of `ℤ_[p]`.
 -/
 
 public section
@@ -528,6 +530,21 @@ theorem unitsMap_unitsToZModPow {m n : ℕ} (h : p ^ m ∣ p ^ n) (u : ℤ_[p]ˣ
 theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
   have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
   exact Subsingleton.elim _ _
+
+/-- Every ring endomorphism of `ℤ_[p]` is the identity: any ring homomorphism preserves natural
+numbers and divisibility by `p ^ n`, so it preserves truncations in `ZMod (p ^ n)` for all `n`. -/
+theorem ringHom_eq_id (φ : ℤ_[p] →+* ℤ_[p]) : φ = RingHom.id ℤ_[p] := by
+  refine toZModPow_eq_iff_ext.mp fun n ↦ ?_
+  ext x
+  simp only [RingHom.comp_apply, RingHom.id_apply, toZModPow_eq_iff_dvd_sub]
+  have h1 : (p : ℤ_[p]) ^ n ∣ x - x.appr n := dvd_sub_appr x n
+  have h2 : (p : ℤ_[p]) ^ n ∣ φ x - x.appr n := by simpa using map_dvd φ h1
+  simpa using dvd_sub h1 h2
+
+/-- The identity is the unique ring endomorphism of `ℤ_[p]`. -/
+noncomputable instance RingHom.unique : Unique (ℤ_[p] →+* ℤ_[p]) where
+  default := RingHom.id ℤ_[p]
+  uniq := ringHom_eq_id
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

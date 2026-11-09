@@ -21,6 +21,12 @@ equivalence restricts to a homotopy equivalence of the fibres over each point
 
 * `TauCeti.FiberHomotopyEquiv p q`: fibre homotopy equivalences from `p` to `q`.
 * `TauCeti.fiberMap`: the map of fibres induced by a map over `B`.
+* `TauCeti.FiberHomotopyEquiv.refl`, `TauCeti.FiberHomotopyEquiv.symm`,
+  `TauCeti.FiberHomotopyEquiv.trans`: identity, symmetry, and composition of fibre homotopy
+  equivalences.
+* `TauCeti.FiberHomotopyEquiv.ofHomeomorph`: a homeomorphism over `B` as a fibre homotopy
+  equivalence.
+* `TauCeti.FiberHomotopyEquiv.compBase`: postcomposing the base projections with `b : C(B, B')`.
 * `TauCeti.FiberHomotopyEquiv.fiber`: the homotopy equivalence of the fibres over a point.
 * `TauCeti.FiberHomotopyEquiv.toHomotopyEquiv`: the underlying homotopy equivalence of the total
   spaces.
@@ -98,6 +104,8 @@ def fiberHomotopy {p : C(E, B)} {f₀ f₁ : C(E, E)}
 
 namespace FiberHomotopyEquiv
 
+section
+
 variable {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q)
 
 /-- A fibre homotopy equivalence restricts to a **homotopy equivalence of the fibres** over each
@@ -135,6 +143,139 @@ theorem toHomotopyEquiv_apply (e : E) : Φ.toHomotopyEquiv e = Φ.toFun e :=
 
 @[simp]
 theorem toHomotopyEquiv_symm_apply (e' : E') : Φ.toHomotopyEquiv.symm e' = Φ.invFun e' :=
+  (rfl)
+
+end
+
+/-- The identity fibre homotopy equivalence of `p : C(E, B)`. -/
+def refl (p : C(E, B)) : FiberHomotopyEquiv p p where
+  toFun := .id E
+  invFun := .id E
+  comp_toFun := p.comp_id
+  comp_invFun := p.comp_id
+  left_inv := ⟨(HomotopyWith.refl (.id E) p.comp_id).cast (ContinuousMap.comp_id _).symm rfl⟩
+  right_inv := ⟨(HomotopyWith.refl (.id E) p.comp_id).cast (ContinuousMap.comp_id _).symm rfl⟩
+
+@[simp]
+theorem refl_toFun (p : C(E, B)) : (refl p).toFun = .id E :=
+  (rfl)
+
+@[simp]
+theorem refl_invFun (p : C(E, B)) : (refl p).invFun = .id E :=
+  (rfl)
+
+/-- Symmetry of fibre homotopy equivalences. -/
+@[symm]
+def symm {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) : FiberHomotopyEquiv q p where
+  toFun := Φ.invFun
+  invFun := Φ.toFun
+  comp_toFun := Φ.comp_invFun
+  comp_invFun := Φ.comp_toFun
+  left_inv := Φ.right_inv
+  right_inv := Φ.left_inv
+
+@[simp]
+theorem symm_toFun {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) :
+    Φ.symm.toFun = Φ.invFun :=
+  (rfl)
+
+@[simp]
+theorem symm_invFun {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) :
+    Φ.symm.invFun = Φ.toFun :=
+  (rfl)
+
+/-- A homeomorphism `e : E ≃ₜ E'` commuting with the projections to `B` is a fibre homotopy
+equivalence. -/
+def ofHomeomorph {p : C(E, B)} {q : C(E', B)} (e : E ≃ₜ E')
+    (he : q.comp (e : C(E, E')) = p) : FiberHomotopyEquiv p q where
+  toFun := e
+  invFun := e.symm
+  comp_toFun := he
+  comp_invFun := ContinuousMap.ext fun x ↦ by simp [← he]
+  left_inv :=
+    ⟨(HomotopyWith.refl (.id E) p.comp_id).cast
+      (ContinuousMap.ext fun x ↦ (e.symm_apply_apply x).symm) rfl⟩
+  right_inv :=
+    ⟨(HomotopyWith.refl (.id E') q.comp_id).cast
+      (ContinuousMap.ext fun x ↦ (e.apply_symm_apply x).symm) rfl⟩
+
+@[simp]
+theorem ofHomeomorph_toFun {p : C(E, B)} {q : C(E', B)} (e : E ≃ₜ E')
+    (he : q.comp (e : C(E, E')) = p) : (ofHomeomorph e he).toFun = (e : C(E, E')) :=
+  (rfl)
+
+@[simp]
+theorem ofHomeomorph_invFun {p : C(E, B)} {q : C(E', B)} (e : E ≃ₜ E')
+    (he : q.comp (e : C(E, E')) = p) : (ofHomeomorph e he).invFun = (e.symm : C(E', E)) :=
+  (rfl)
+
+private theorem homotopicWith_comp_conj {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)}
+    (Φ : FiberHomotopyEquiv p q) (Ψ : FiberHomotopyEquiv q r) :
+    ((Φ.invFun.comp Ψ.invFun).comp (Ψ.toFun.comp Φ.toFun)).HomotopicWith (.id E)
+      fun f ↦ p.comp f = p := by
+  refine (?_ : HomotopicWith _ (Φ.invFun.comp Φ.toFun) _).trans Φ.left_inv
+  obtain ⟨H⟩ := Ψ.left_inv
+  exact ⟨{
+    toFun := fun x ↦ Φ.invFun (H (x.1, Φ.toFun x.2))
+    continuous_toFun := by fun_prop
+    map_zero_left := fun _ ↦ by simp [ContinuousMap.comp_apply]
+    map_one_left := fun _ ↦ by simp [ContinuousMap.comp_apply]
+    prop' := fun t ↦ ContinuousMap.ext fun e ↦ by
+      have h1 : p (Φ.invFun (H (t, Φ.toFun e))) = q (H (t, Φ.toFun e)) :=
+        congr($(Φ.comp_invFun) (H (t, Φ.toFun e)))
+      have h2 : q (H (t, Φ.toFun e)) = q (Φ.toFun e) := apply_homotopyWith H t (Φ.toFun e)
+      have h3 : q (Φ.toFun e) = p e := congr($(Φ.comp_toFun) e)
+      exact h1.trans (h2.trans h3) }⟩
+
+/-- Composition of fibre homotopy equivalences over `B`. -/
+@[trans]
+def trans {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)}
+    (Φ : FiberHomotopyEquiv p q) (Ψ : FiberHomotopyEquiv q r) : FiberHomotopyEquiv p r where
+  toFun := Ψ.toFun.comp Φ.toFun
+  invFun := Φ.invFun.comp Ψ.invFun
+  comp_toFun := by rw [← ContinuousMap.comp_assoc, Ψ.comp_toFun, Φ.comp_toFun]
+  comp_invFun := by rw [← ContinuousMap.comp_assoc, Φ.comp_invFun, Ψ.comp_invFun]
+  left_inv := homotopicWith_comp_conj Φ Ψ
+  right_inv := homotopicWith_comp_conj Ψ.symm Φ.symm
+
+@[simp]
+theorem trans_toFun {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)}
+    (Φ : FiberHomotopyEquiv p q) (Ψ : FiberHomotopyEquiv q r) :
+    (Φ.trans Ψ).toFun = Ψ.toFun.comp Φ.toFun :=
+  (rfl)
+
+@[simp]
+theorem trans_invFun {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)}
+    (Φ : FiberHomotopyEquiv p q) (Ψ : FiberHomotopyEquiv q r) :
+    (Φ.trans Ψ).invFun = Φ.invFun.comp Ψ.invFun :=
+  (rfl)
+
+/-- Postcomposing both base projections with `b : C(B, B')` carries a fibre homotopy equivalence
+over `B` to one over `B'`. -/
+def compBase {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B)}
+    (b : C(B, B')) (Φ : FiberHomotopyEquiv p q) :
+    FiberHomotopyEquiv (b.comp p) (b.comp q) where
+  toFun := Φ.toFun
+  invFun := Φ.invFun
+  comp_toFun := by rw [ContinuousMap.comp_assoc, Φ.comp_toFun]
+  comp_invFun := by rw [ContinuousMap.comp_assoc, Φ.comp_invFun]
+  left_inv := Φ.left_inv.map fun H ↦
+    { toHomotopy := H.toHomotopy
+      prop' := fun t ↦ ContinuousMap.ext fun e ↦ congrArg b (apply_homotopyWith H t e) }
+  right_inv := Φ.right_inv.map fun H ↦
+    { toHomotopy := H.toHomotopy
+      prop' := fun t ↦ ContinuousMap.ext fun e ↦ congrArg b (apply_homotopyWith H t e) }
+
+@[simp]
+theorem compBase_toFun {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B)}
+    (b : C(B, B')) (Φ : FiberHomotopyEquiv p q) :
+    (Φ.compBase b).toFun = Φ.toFun :=
+  (rfl)
+
+@[simp]
+theorem compBase_invFun {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B)}
+    (b : C(B, B')) (Φ : FiberHomotopyEquiv p q) :
+    (Φ.compBase b).invFun = Φ.invFun :=
   (rfl)
 
 end FiberHomotopyEquiv

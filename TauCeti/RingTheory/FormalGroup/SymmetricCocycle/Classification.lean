@@ -45,7 +45,7 @@ abelian group `M`, and we classify their solutions there.
 ## Main definitions
 
 * `TauCeti.IsSymmetricCocycleCoeff n b`: the coefficient equations in degree `n` on a sequence
-  `b` in an abelian group.
+  `b` in an additive commutative monoid.
 
 ## Main results
 
@@ -74,12 +74,16 @@ namespace TauCeti
 
 section CoeffEquations
 
-/-! ### The coefficient equations, with coefficients in an abelian group -/
+/-! ### The coefficient equations, with coefficients in an additive commutative monoid -/
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] {n : ℕ}
+section Monoid
+
+variable {M N : Type*} [AddCommMonoid M] [AddCommMonoid N] {n : ℕ}
 
 /-- The linear equations satisfied by the coefficients `bᵢ` of `XⁱYⁿ⁻ⁱ` in a symmetric additive
-2-cocycle of degree `n`, with coefficients in an abelian group. -/
+2-cocycle of degree `n`, with coefficients in an additive commutative monoid. Only `ℕ`-multiples
+and equalities enter, so the equations make sense before any subtraction is available; the
+classification below needs an abelian group. -/
 structure IsSymmetricCocycleCoeff (n : ℕ) (b : ℕ → M) : Prop where
   /-- Symmetry: `b_{n - i} = bᵢ`. -/
   symm : ∀ i ≤ n, b (n - i) = b i
@@ -90,13 +94,25 @@ structure IsSymmetricCocycleCoeff (n : ℕ) (b : ℕ → M) : Prop where
 
 namespace IsSymmetricCocycleCoeff
 
-variable {b b' : ℕ → M}
+variable {b : ℕ → M}
 
-/-- Solutions of the coefficient equations are preserved by additive group homomorphisms. -/
+/-- Solutions of the coefficient equations are preserved by additive monoid homomorphisms. -/
 theorem map (h : IsSymmetricCocycleCoeff n b) (φ : M →+ N) :
     IsSymmetricCocycleCoeff n fun i => φ (b i) where
   symm i hi := by rw [h.symm i hi]
   rel i j k hi hj hk hn := by rw [← map_nsmul, ← map_nsmul, h.rel i j k hi hj hk hn]
+
+end IsSymmetricCocycleCoeff
+
+end Monoid
+
+/-! ### Solutions in an abelian group -/
+
+variable {M : Type*} [AddCommGroup M] {n : ℕ}
+
+namespace IsSymmetricCocycleCoeff
+
+variable {b b' : ℕ → M}
 
 /-- The difference of two solutions of the coefficient equations is a solution. -/
 theorem sub (h : IsSymmetricCocycleCoeff n b) (h' : IsSymmetricCocycleCoeff n b') :
@@ -223,15 +239,6 @@ section Polynomial
 /-! ### The coefficients of a symmetric 2-cocycle satisfy the coefficient equations -/
 
 variable {R : Type*} [CommRing R]
-
-/-- The coefficient of `XⁱYⁿ⁻ⁱ` in `C_n`, for `0 < i < n`, is `n.choose i / d_n`. -/
-private theorem coeff_single_add_single_lazardCocycle {n i : ℕ} (hi : 0 < i) (hin : i < n) :
-    (lazardCocycle n R).coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) =
-      ((n.choose i / lazardGcd n : ℕ) : R) := by
-  rw [coeff_lazardCocycle]
-  simp only [Finsupp.add_apply, Finsupp.single_apply]
-  rw [ite_eq_left ⟨by simp; omega, by simp; omega, by simp; omega⟩]
-  simp
 
 /-- The coefficients `bᵢ` of `XⁱYⁿ⁻ⁱ` in a symmetric additive 2-cocycle satisfy the coefficient
 equations in degree `n`. -/

@@ -77,17 +77,12 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
     (hB : B.IsInvertible) {l : Filter ι}
     (h : Tendsto (fun i => (A i).inverse) l (𝓝 B.inverse)) :
     ∀ᶠ i in l, (A i).IsInvertible := by
-  by_cases hE : Subsingleton E
-  · obtain ⟨e, _⟩ := hB
-    let : Subsingleton E := hE
-    let : Subsingleton F := e.toEquiv.symm.subsingleton
-    exact Eventually.of_forall fun i => by
-      simpa only [Subsingleton.elim (A i) 0, isInvertible_zero_iff] using
-        And.intro (inferInstance : Subsingleton E) (inferInstance : Subsingleton F)
-  · have hne : B.inverse ≠ 0 := by
-      intro hzero
-      exact hE (isInvertible_zero_iff.mp (hzero ▸ hB.inverse)).2
-    exact eventually_isInvertible_of_tendsto_inverse h hne
+  by_cases hzero : B.inverse = 0
+  · -- Then the zero map `F → E` is invertible, so both spaces are trivial.
+    obtain ⟨hF, hE⟩ := isInvertible_zero_iff.mp (hzero ▸ hB.inverse)
+    exact Eventually.of_forall fun i ↦
+      Subsingleton.elim 0 (A i) ▸ isInvertible_zero_iff.mpr ⟨hE, hF⟩
+  · exact eventually_isInvertible_of_tendsto_inverse h hzero
 
 section ProdMap
 
@@ -173,23 +168,16 @@ variable {R M N : Type*} [Ring R]
 private theorem isUnit_one_sub_comp_of (u : N →L[R] M) (v : M →L[R] N)
     (h : IsUnit (1 - v.comp u)) : IsUnit (1 - u.comp v) := by
   obtain ⟨t, ht, ht'⟩ := isUnit_iff_exists.mp h
-  have hleft (y : N) : t y - v (u (t y)) = y := by
-    simpa using DFunLike.congr_fun ht y
-  have hright (y : N) : t y - t (v (u y)) = y := by
-    simpa using DFunLike.congr_fun ht' y
-  refine isUnit_iff_exists.mpr ⟨1 + u.comp (t.comp v), ?_, ?_⟩
-  · ext x
-    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_add]
-    calc
-      x - u (v x) + (u (t (v x)) - u (v (u (t (v x))))) =
-          x + u (t (v x) - v (u (t (v x))) - v x) := by simp only [map_sub]; abel
-      _ = x := by rw [hleft]; simp
-  · ext x
-    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_sub]
-    calc
-      x + u (t (v x)) - (u (v x) + u (t (v (u (v x))))) =
-          x + u (t (v x) - t (v (u (v x))) - v x) := by simp only [map_sub]; abel
-      _ = x := by rw [hright]; simp
+  -- Both identities for `1 + u ∘ t ∘ v` are `u` applied to those for `t` at `v x`, rearranged.
+  refine isUnit_iff_exists.mpr ⟨1 + u.comp (t.comp v), ?_, ?_⟩ <;> ext x
+  · have := sub_eq_zero.mpr (congrArg u (DFunLike.congr_fun ht (v x)))
+    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply, map_add,
+      map_sub] at this ⊢
+    exact sub_eq_zero.mp (.trans (by abel) this)
+  · have := sub_eq_zero.mpr (congrArg u (DFunLike.congr_fun ht' (v x)))
+    simp only [mul_apply_eq_comp, sub_apply, add_apply, one_apply_eq_self, comp_apply,
+      map_sub] at this ⊢
+    exact sub_eq_zero.mp (.trans (by abel) this)
 
 /-- The rectangular Jacobson identity: for maps between two topological modules,
 `1 - u ∘ v` is invertible exactly when `1 - v ∘ u` is invertible. -/

@@ -182,7 +182,7 @@ private theorem lineSchwarzReflection_conj_eq (hb : b ≠ 0)
         b / (starRingEnd ℂ) b * (starRingEnd ℂ) (lineSchwarzReflection 0 1 q b f z) := by
   have hbc : (starRingEnd ℂ) b ≠ 0 := by simpa using hb
   have h := lineSchwarzReflection_sourceReflection (p := 0) (a := 1) (q := q) (b := b) (f := f)
-    one_ne_zero hb (fun w hw hw0 => hline w hw (by simpa using hw0)) hz
+    one_ne_zero (fun w hw hw0 => hline w hw (by simpa using hw0)) hz
   simp only [zero_add, one_mul, sub_zero, div_one] at h
   rw [h, map_div₀, map_sub]
   field_simp
@@ -277,6 +277,55 @@ section Continuation
 
 open Filter
 
+/-- Near a real point where `f` is locally the restriction of a Schwarz reflection across a line,
+the continuation of the pre-Schwarzian `logDeriv (deriv f)` (filled in on the axis by the real part
+of its limit from above) is holomorphic. -/
+private theorem differentiableAt_schwarzReflection_logDeriv_deriv {x : ℝ}
+    (hholo : DifferentiableOn ℂ f {z : ℂ | 0 < z.im})
+    (hloc : ∃ r > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ContinuousOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      InjOn f (Metric.ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      (∀ z ∈ Metric.ball (x : ℂ) r, z.im = 0 → ((f z - q) / b).im = 0) ∧
+      ∀ z ∈ Metric.ball (x : ℂ) r, 0 < z.im → 0 < ((f z - q) / b).im) :
+    DifferentiableAt ℂ (schwarzReflection fun z : ℂ => if 0 < z.im then logDeriv (deriv f) z
+      else ((limUnder (𝓝[{w : ℂ | 0 < w.im}] z) (logDeriv (deriv f))).re : ℂ)) x := by
+  set ψ := logDeriv (deriv f)
+  let ψu : ℂ → ℂ := fun z => if 0 < z.im then ψ z
+    else ((limUnder (𝓝[{w : ℂ | 0 < w.im}] z) ψ).re : ℂ)
+  let φ := schwarzReflection ψu
+  obtain ⟨r, hr, q, b, hb, hcont, hinj, hline, hside⟩ := hloc
+  have hball : MapsTo (starRingEnd ℂ) (Metric.ball (x : ℂ) r) (Metric.ball (x : ℂ) r) :=
+    fun z hz => by
+      rw [Metric.mem_ball, ← Complex.conj_ofReal, Complex.dist_conj_conj]
+      exact hz
+  set G := logDeriv (deriv (lineSchwarzReflection 0 1 q b f))
+  have hG := differentiableOn_logDeriv_deriv_lineSchwarzReflection hb Metric.isOpen_ball hball
+    hcont ((hholo.mono inter_subset_right)) hline hside hinj
+  have hGψ : EqOn G ψ {z : ℂ | 0 < z.im} := eqOn_logDeriv_deriv_lineSchwarzReflection hb
+  have hGconj : ∀ z ∈ Metric.ball (x : ℂ) r, G ((starRingEnd ℂ) z) = (starRingEnd ℂ) (G z) :=
+    fun _ hz => logDeriv_deriv_lineSchwarzReflection_conj hb Metric.isOpen_ball hball hline hz
+  have hφG : φ =ᶠ[𝓝 (x : ℂ)] G := by
+    filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with z hz
+    rcases lt_trichotomy z.im 0 with h | h | h
+    · have hc : 0 < ((starRingEnd ℂ) z).im := by simpa using h
+      simp only [φ, schwarzReflection_of_im_neg h, ψu, hc, ↓reduceIte]
+      rw [← hGψ hc, hGconj z hz, Complex.conj_conj]
+    · -- On the axis, `G` is continuous and agrees with `ψ` above, so it is the limit there.
+      have hlim : Tendsto ψ (𝓝[{w : ℂ | 0 < w.im}] z) (𝓝 (G z)) :=
+        ((hG.continuousOn.continuousAt (Metric.isOpen_ball.mem_nhds hz)).tendsto.mono_left
+          nhdsWithin_le_nhds).congr' (eventually_nhdsWithin_of_forall fun w hw => hGψ hw)
+      have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
+      have : (𝓝[{w : ℂ | 0 < w.im}] z).NeBot := by
+        simpa [hzre] using Real.nhdsWithin_upperHalfPlaneSet_neBot z.re
+      have hGre : ((G z).re : ℂ) = G z := Complex.conj_eq_iff_re.mp <| by
+        simpa [Complex.conj_eq_iff_im.mpr h] using (hGconj z hz).symm
+      simp only [φ, schwarzReflection_of_im_zero h, ψu, h, lt_irrefl, ↓reduceIte]
+      rw [hlim.limUnder_eq, hGre]
+    · simp only [φ, schwarzReflection_of_im_nonneg h.le, ψu, h, ↓reduceIte]
+      exact (hGψ h).symm
+  exact ((hG x (Metric.mem_ball_self hr)).differentiableAt
+    (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr))).congr_of_eventuallyEq hφG
+
 /-- **The pre-Schwarzian derivative continues across straight boundary arcs.** Let `f` be
 holomorphic with nonvanishing derivative on the open upper half-plane, and suppose that near every
 real point outside `S` it extends continuously and injectively to the real axis, with boundary
@@ -317,40 +366,8 @@ theorem exists_differentiableOn_eqOn_logDeriv_deriv {S : Set ℂ}
     schwarzReflection_conj z fun h => by simp [ψu, h]
   -- Near a real point outside `S`, the continuation is the pre-Schwarzian derivative of the
   -- local Schwarz reflection of `f`.
-  have hreal : ∀ x : ℝ, (x : ℂ) ∉ S → DifferentiableAt ℂ φ x := by
-    intro x hx
-    obtain ⟨r, hr, q, b, hb, hcont, hinj, hline, hside⟩ := hloc x hx
-    have hball : MapsTo (starRingEnd ℂ) (Metric.ball (x : ℂ) r) (Metric.ball (x : ℂ) r) :=
-      fun z hz => by
-        rw [Metric.mem_ball, ← Complex.conj_ofReal, Complex.dist_conj_conj]
-        exact hz
-    set G := logDeriv (deriv (lineSchwarzReflection 0 1 q b f))
-    have hG := differentiableOn_logDeriv_deriv_lineSchwarzReflection hb Metric.isOpen_ball hball
-      hcont ((hholo.mono inter_subset_right)) hline hside hinj
-    have hGψ : EqOn G ψ {z : ℂ | 0 < z.im} := eqOn_logDeriv_deriv_lineSchwarzReflection hb
-    have hGconj : ∀ z ∈ Metric.ball (x : ℂ) r, G ((starRingEnd ℂ) z) = (starRingEnd ℂ) (G z) :=
-      fun _ hz => logDeriv_deriv_lineSchwarzReflection_conj hb Metric.isOpen_ball hball hline hz
-    have hφG : φ =ᶠ[𝓝 (x : ℂ)] G := by
-      filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with z hz
-      rcases lt_trichotomy z.im 0 with h | h | h
-      · have hc : 0 < ((starRingEnd ℂ) z).im := by simpa using h
-        simp only [φ, schwarzReflection_of_im_neg h, ψu, hc, ↓reduceIte]
-        rw [← hGψ hc, hGconj z hz, Complex.conj_conj]
-      · -- On the axis, `G` is continuous and agrees with `ψ` above, so it is the limit there.
-        have hlim : Tendsto ψ (𝓝[{w : ℂ | 0 < w.im}] z) (𝓝 (G z)) :=
-          ((hG.continuousOn.continuousAt (Metric.isOpen_ball.mem_nhds hz)).tendsto.mono_left
-            nhdsWithin_le_nhds).congr' (eventually_nhdsWithin_of_forall fun w hw => hGψ hw)
-        have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
-        have : (𝓝[{w : ℂ | 0 < w.im}] z).NeBot := by
-          simpa [hzre] using Real.nhdsWithin_upperHalfPlaneSet_neBot z.re
-        have hGre : ((G z).re : ℂ) = G z := Complex.conj_eq_iff_re.mp <| by
-          simpa [Complex.conj_eq_iff_im.mpr h] using (hGconj z hz).symm
-        simp only [φ, schwarzReflection_of_im_zero h, ψu, h, lt_irrefl, ↓reduceIte]
-        rw [hlim.limUnder_eq, hGre]
-      · simp only [φ, schwarzReflection_of_im_nonneg h.le, ψu, h, ↓reduceIte]
-        exact (hGψ h).symm
-    exact ((hG x (Metric.mem_ball_self hr)).differentiableAt
-      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr))).congr_of_eventuallyEq hφG
+  have hreal : ∀ x : ℝ, (x : ℂ) ∉ S → DifferentiableAt ℂ φ x := fun x hx =>
+    differentiableAt_schwarzReflection_logDeriv_deriv hholo (hloc x hx)
   refine ⟨φ, fun z hz => ?_, fun z (hz : 0 < z.im) => by simp [φ, ψu, hz, hz.le], hconj⟩
   refine DifferentiableAt.differentiableWithinAt ?_
   rcases lt_trichotomy z.im 0 with h | h | h

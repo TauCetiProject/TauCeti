@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Reductive.Basic
-public import TauCeti.Algebra.Lie.Subalgebra.Fixed
+public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import Mathlib.Algebra.Lie.Prod
 import Mathlib.LinearAlgebra.Projection
 

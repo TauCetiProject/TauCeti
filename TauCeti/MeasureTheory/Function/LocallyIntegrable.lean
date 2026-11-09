@@ -49,9 +49,14 @@ set, without a condition on the value of the outer map at zero.
 An `Lᵖ` function for a locally finite restriction of a measure to a set, with `1 ≤ p`, is locally
 integrable on that set.
 
+Likewise, a function locally integrable on `s` times a continuous function whose compact support
+lies in `s` is integrable on the whole space.
+
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
-In particular, the squared norm of a continuous compactly supported function is integrable.
+In particular, the squared norm of a continuous compactly supported function is integrable, and so
+is the product of a continuous function whose compact support lies in an open set `U` with a
+function continuous on `U`.
 
 For a locally finite measure, the indicator of a constant on a set that is null-measurable for
 the restriction of the measure to `s` is locally integrable on `s`.
@@ -68,14 +73,17 @@ everywhere there with a function that is locally integrable on the whole space a
   preserves local integrability for an additive Haar measure.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
-* `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
-  compact open subdomains.
-* `TauCeti.locallyIntegrableOn_indicator_const`: the indicator of a constant on a null-measurable
-  set is locally integrable.
+* `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
+  relatively compact open subdomains.
+* `MeasureTheory.locallyIntegrableOn_indicator_const`: the indicator of a constant on a
+  null-measurable set is locally integrable.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
   zero extension when the support avoids the added boundary.
 * `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
+* `MeasureTheory.LocallyIntegrableOn.integrable_smul_right_of_hasCompactSupport`: a function
+  locally integrable on `s`, scaling a continuous function with compact support in `s`, is
+  integrable.
 * `MeasureTheory.locallyIntegrableOn_finsetSum`: finite sums preserve local integrability on a
   set.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
@@ -88,6 +96,10 @@ everywhere there with a function that is locally integrable on the whole space a
   every `Lᵖ` on its measurable subsets.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
+* `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in an
+  open set `U`, times a function continuous on `U`, is integrable.
+* `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
+  compactly supported function by a function continuous on `U`.
 
 ## Attribution
 
@@ -188,7 +200,7 @@ theorem LocallyIntegrableOn.comp_smul_of_mapsTo (hu : LocallyIntegrableOn u Ω �
 
 end MeasureTheory
 
-namespace TauCeti
+namespace MeasureTheory
 
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
 
@@ -246,7 +258,7 @@ theorem exists_locallyIntegrable_mem_Icc_ae_eq [IsLocallyFiniteMeasure μ] {u : 
   rw [Real.norm_eq_abs, norm_one, abs_le]
   exact ⟨by linarith [(hmem x).1], (hmem x).2⟩
 
-end TauCeti
+end MeasureTheory
 
 namespace MeasureTheory.LocallyIntegrableOn
 
@@ -260,11 +272,11 @@ variable {E F : Type*} [MeasurableSpace E] [TopologicalSpace E] [AddZeroClass E]
   {μ : Measure E} {u : E → F} {s K : Set E}
 
 /-- A function locally integrable on an open set agrees with a globally integrable function
-on each compact subset and on all sufficiently small translates of that subset. -/
+on all sufficiently small translates of each compact subset; taking the translation `0` shows that
+they agree on the subset itself. -/
 theorem exists_integrable_eqOn_add_of_isCompact (hu : LocallyIntegrableOn u s μ)
     (hs : IsOpen s) (hK : IsCompact K) (hKs : K ⊆ s) :
-    ∃ w : E → F, Integrable w μ ∧ EqOn w u K ∧
-      ∀ᶠ y in 𝓝 (0 : E), ∀ x ∈ K, w (x + y) = u (x + y) := by
+    ∃ w : E → F, Integrable w μ ∧ ∀ᶠ y in 𝓝 (0 : E), ∀ x ∈ K, w (x + y) = u (x + y) := by
   obtain ⟨U, hU, hKU, huU⟩ : ∃ U, IsOpen U ∧ K ⊆ U ∧ IntegrableOn u U μ := by
     refine hK.induction_on ?_ ?_ ?_ ?_
     · exact ⟨∅, isOpen_empty, Subset.rfl, integrableOn_empty⟩
@@ -278,8 +290,7 @@ theorem exists_integrable_eqOn_add_of_isCompact (hu : LocallyIntegrableOn u s μ
       obtain ⟨U, hUV, hU, hxU⟩ := mem_nhds_iff.1 hV
       exact ⟨U, nhdsWithin_le_nhds (hU.mem_nhds hxU),
         U, hU, Subset.rfl, huV.mono_set hUV⟩
-  refine ⟨U.indicator u, (integrable_indicator_iff hU.measurableSet).2 huU,
-    fun x hx => indicator_of_mem (hKU hx) u, ?_⟩
+  refine ⟨U.indicator u, (integrable_indicator_iff hU.measurableSet).2 huU, ?_⟩
   obtain ⟨V, hV, hKV⟩ := compact_open_separated_add_right hK hU hKU
   filter_upwards [hV] with y hy x hx
   exact indicator_of_mem (hKV ⟨x, hx, y, hy, rfl⟩) u
@@ -323,9 +334,9 @@ variable [OpensMeasurableSpace X] [LocallyCompactSpace X] [T2Space X]
   {f : X → F} {s t K : Set X}
 
 /-- Extension by zero preserves local integrability on `t` when the function vanishes off a
-closed set `K` and `t ∩ K` lies in its original measurable domain `s`. The support may meet the
-boundary of `t`; it need not be compact. -/
-theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : MeasurableSet s)
+closed set `K` and `t ∩ K` lies in its original domain `s`, which is null-measurable. The support
+may meet the boundary of `t`; it need not be compact. -/
+theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : NullMeasurableSet s μ)
     (ht : IsLocallyClosed t) (hK : IsClosed K) (hKs : t ∩ K ⊆ s)
     (hzero : ∀ᵐ x ∂μ.restrict s, x ∉ K → f x = 0) :
     LocallyIntegrableOn (s.indicator f) t μ := by
@@ -336,7 +347,7 @@ theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : Measurable
     (hC.isClosed.measurableSet.inter hK.measurableSet)
   refine (hi.mono_measure Measure.restrict_le_self).congr ?_
   filter_upwards [ae_restrict_mem hC.isClosed.measurableSet,
-    ((ae_restrict_iff' hs).1 hzero).filter_mono
+    ((ae_restrict_iff'₀ hs).1 hzero).filter_mono
       (ae_mono Measure.restrict_le_self)] with x hxC hx
   by_cases hxK : x ∈ K
   · simp [hxC, hxK, hCK ⟨hxC, hxK⟩]
@@ -371,6 +382,21 @@ theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {
 
 end MeasureTheory.LocallyIntegrable
 
+namespace MeasureTheory.LocallyIntegrable
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
+
+/-- The product of a locally integrable function with an almost everywhere strongly measurable,
+almost everywhere bounded one is locally integrable, the analogue of Mathlib's
+`MeasureTheory.Integrable.mul_bdd`. -/
+theorem mul_bdd {𝕜 : Type*} [NormedRing 𝕜] {u v : X → 𝕜} {C : ℝ} (hu : LocallyIntegrable u μ)
+    (hv : AEStronglyMeasurable v μ) (hvC : ∀ᵐ x ∂μ, ‖v x‖ ≤ C) :
+    LocallyIntegrable (fun x => u x * v x) μ := fun x => by
+  obtain ⟨s, hs, hus⟩ := hu x
+  exact ⟨s, hs, hus.mul_bdd hv.restrict (ae_restrict_of_ae hvC)⟩
+
+end MeasureTheory.LocallyIntegrable
+
 namespace MeasureTheory.Lp
 
 variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
@@ -397,6 +423,25 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
     (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
+
+/-- The product of a continuous compactly supported function `f`, whose support lies in an open set
+`U`, with a function `g` continuous on `U` is integrable, for any measure finite on compact sets.
+The function `g` need not be continuous, or even bounded, off `U`. -/
+theorem Continuous.integrable_mul_of_continuousOn {R : Type*} [NormedRing R] {f g : X → R}
+    {U : Set X} (hf : Continuous f) (hcf : HasCompactSupport f) (hU : IsOpen U)
+    (hfU : tsupport f ⊆ U) (hg : ContinuousOn g U) : Integrable (fun x ↦ f x * g x) μ :=
+  ((hf.continuousOn.mul hg).continuous_of_tsupport_subset hU
+    (tsupport_mul_subset_left.trans hfU)).integrable_of_hasCompactSupport hcf.mul_right
+
+/-- The scalar multiple of a continuous compactly supported function `b`, whose support lies in an
+open set `U`, by a function `a` continuous on `U` is integrable, for any measure finite on compact
+sets. The function `a` need not be continuous, or even bounded, off `U`. -/
+theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [NormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {a : X → 𝕜} {b : X → F} {U : Set X}
+    (hb : Continuous b) (hbc : HasCompactSupport b) (hU : IsOpen U) (hbU : tsupport b ⊆ U)
+    (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ :=
+  ((ha.smul hb.continuousOn).continuous_of_tsupport_subset hU
+    ((tsupport_smul_subset_right _ _).trans hbU)).integrable_of_hasCompactSupport hbc.smul_left
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite
@@ -434,5 +479,27 @@ theorem comp_lipschitz (hu : LocallyIntegrableOn u s μ) (hg : LipschitzWith C g
     (hg.continuous.comp_aestronglyMeasurable huK.aestronglyMeasurable) (.of_forall fun x => ?_)
   calc ‖g (u x)‖ ≤ ‖g (u x) - g 0‖ + ‖g 0‖ := norm_le_norm_sub_add _ _
     _ ≤ C * ‖u x‖ + ‖g 0‖ := add_le_add (by simpa using hg.norm_sub_le (u x) 0) le_rfl
+
+end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X E 𝕜 : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [T2Space X] [NormedAddCommGroup E] [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+  {μ : Measure X} {s : Set X} {f : X → 𝕜} {g : X → E}
+
+/-- If `f` is locally integrable on `s` and `g` is continuous with compact support contained in
+`s`, then `f • g` is integrable. This is the relative form of Mathlib's
+`LocallyIntegrable.integrable_smul_right_of_hasCompactSupport`. -/
+theorem integrable_smul_right_of_hasCompactSupport (hf : LocallyIntegrableOn f s μ)
+    (hg : Continuous g) (h'g : HasCompactSupport g) (hgs : tsupport g ⊆ s) :
+    Integrable (fun x ↦ f x • g x) μ := by
+  have : (tsupport g).indicator (fun x ↦ f x • g x) = fun x ↦ f x • g x :=
+    indicator_eq_self.2 <| Function.support_subset_iff'.2 fun x hx => by
+      simp [image_eq_zero_of_notMem_tsupport hx]
+  rw [← this, indicator_smul_left]
+  refine Integrable.smul_of_top_left ?_ (hg.memLp_top_of_hasCompactSupport h'g μ)
+  rw [integrable_indicator_iff h'g.isCompact.measurableSet]
+  exact hf.integrableOn_compact_subset hgs h'g
 
 end MeasureTheory.LocallyIntegrableOn
