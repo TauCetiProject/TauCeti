@@ -20,6 +20,8 @@ reading.
 * `TauCeti.Manifold.sectionCoord`: the coordinate reading of a section along a curve.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for that
   reading within a parameter set.
+* `TauCeti.Manifold.differentiableWithinAt_sectionCoord_sum`: finite sums of sections with
+  differentiable readings have differentiable readings.
 * `TauCeti.Manifold.contDiffWithinAt_sectionCoord_iff`: the `C^n` coordinate characterization
   for a section along a `C^n` base curve.
 -/
@@ -107,6 +109,15 @@ theorem sectionCoord_comp (φ : 𝕜 → 𝕜) (x : M) :
   simp only [sectionCoord_apply, Function.comp_apply]
 
 /-! ### Differentiability of the coordinate reading -/
+
+/-- A finite sum of sections along a curve whose coordinate readings are differentiable within
+`s` at `t` again has a coordinate reading differentiable within `s` at `t`. -/
+theorem differentiableWithinAt_sectionCoord_sum {ι : Type*} {A : Finset ι}
+    {U : ι → ∀ t, V (γ t)} {x : M} {s : Set 𝕜} {t : 𝕜}
+    (hU : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ (U i) x) s t) :
+    DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ (fun r ↦ ∑ i ∈ A, U i r) x) s t := by
+  rw [sectionCoord_sum]
+  exact DifferentiableWithinAt.fun_sum hU
 
 /-- Given a `C^n` base curve, a section along it is `C^n` as a map into the total space if
 and only if its coordinate reading in any trivialization containing the base point is `C^n`.

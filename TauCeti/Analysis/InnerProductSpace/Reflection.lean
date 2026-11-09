@@ -1,11 +1,13 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5,
+  OpenAI GPT-6
 -/
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -211,12 +213,24 @@ theorem _root_.LinearIsometry.reflection_orthogonal_singleton_map_I (ι : ℂ �
   ring
 
 /-- Both points in the positive half-space are closer to each other than to the image pole. -/
-theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F} (hv : ‖v‖ = 1)
+theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F}
     (hx : 0 < ⟪v, x⟫_ℝ) (hy : 0 < ⟪v, y⟫_ℝ) :
     ‖y - x‖ < ‖y - (ℝ ∙ v)ᗮ.reflection x‖ := by
-  have hsq := norm_sub_reflection_orthogonal_singleton_sq hv x y
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hx
+  have hn : 0 < ‖v‖ := norm_pos_iff.2 hv0
+  set w : F := ‖v‖⁻¹ • v
+  have hw : ‖w‖ = 1 := by simp [w, norm_smul, hn.ne']
+  have hspan : ℝ ∙ w = ℝ ∙ v := Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.2
+    (inv_ne_zero hn.ne')) v
+  have hsq := norm_sub_reflection_orthogonal_singleton_sq hw x y
+  have hrefl : (ℝ ∙ w)ᗮ.reflection x = (ℝ ∙ v)ᗮ.reflection x := by
+    congr! 2
+    rw [hspan]
+  rw [hrefl] at hsq
+  have hxw : 0 < ⟪w, x⟫_ℝ := by simpa [w, inner_smul_left] using mul_pos (inv_pos.2 hn) hx
+  have hyw : 0 < ⟪w, y⟫_ℝ := by simpa [w, inner_smul_left] using mul_pos (inv_pos.2 hn) hy
   nlinarith [norm_nonneg (y - x), norm_nonneg (y - (ℝ ∙ v)ᗮ.reflection x),
-    mul_pos hx hy]
+    mul_pos hxw hyw]
 
 /-- Reflection in the hyperplane orthogonal to a nonzero vector has determinant `-1`. -/
 theorem linearEquiv_det_reflection_orthogonal_singleton [FiniteDimensional ℝ F] {v : F}
@@ -433,13 +447,12 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
     rw [inner_add_left, inner_smul_left, hax, hbx]
     simp
 
-/-- A differentiable path `u` of unit vectors orthogonal to `v`, in a space where the orthogonal
-complement of `v` has dimension at least three, avoids the antipode of some unit vector `p`
-orthogonal to `v`: `u s + p ≠ 0` for every `s`. The cone `(s, r) ↦ -r • u s` over the antipodal
-path is the image of a plane, so it misses a point of the orthogonal complement. -/
+/-- A differentiable path `u`, in a space where the orthogonal complement of `v` has dimension at
+least three, avoids the antipode of some unit vector `p` orthogonal to `v`: `u s + p ≠ 0` for
+every `s`. This auxiliary vector supplies an intermediate direction for smoothly rotating a path
+of unit vectors. -/
 theorem exists_forall_add_ne_zero {v : F}
-    (hF : 2 < Module.finrank ℝ (ℝ ∙ v)ᗮ) {u : ℝ → F} (hu : Differentiable ℝ u)
-    (hv : ∀ s, ⟪u s, v⟫ = 0) :
+    (hF : 2 < Module.finrank ℝ (ℝ ∙ v)ᗮ) {u : ℝ → F} (hu : Differentiable ℝ u) :
     ∃ p : F, ‖p‖ = 1 ∧ ⟪p, v⟫ = 0 ∧ ∀ s, u s + p ≠ 0 := by
   set K := (ℝ ∙ v)ᗮ
   let g : ℝ × ℝ → K := fun q => q.2 • K.orthogonalProjectionOnto (-u q.1)
@@ -449,9 +462,6 @@ theorem exists_forall_add_ne_zero {v : F}
   obtain ⟨q, hq⟩ := (hg.dense_compl_range_of_finrank_lt_finrank (by
     rw [Module.finrank_prod, Module.finrank_self]
     omega)).nonempty
-  have hmem (s : ℝ) : -u s ∈ K :=
-    K.neg_mem (Submodule.mem_orthogonal_singleton_iff_inner_right.2 (by
-      rw [real_inner_comm]; exact hv s))
   have hq0 : (q : F) ≠ 0 := by
     intro h
     exact hq ⟨(0, 0), Subtype.ext (by simp [g, h])⟩
@@ -462,9 +472,12 @@ theorem exists_forall_add_ne_zero {v : F}
     have hqs : (q : F) = ‖(q : F)‖ • -u s := by
       rw [← eq_neg_of_add_eq_zero_right hs, smul_smul,
         mul_inv_cancel₀ (norm_ne_zero_iff.2 hq0), one_smul]
+    have hmem : -u s ∈ K := by
+      rw [← eq_neg_of_add_eq_zero_right hs]
+      exact K.smul_mem _ q.2
     refine Subtype.ext ?_
     simp only [g, Submodule.coe_smul,
-      K.orthogonalProjectionOnto_mem_subspace_eq_self ⟨-u s, hmem s⟩]
+      K.orthogonalProjectionOnto_mem_subspace_eq_self ⟨-u s, hmem⟩]
     exact hqs.symm
 
 /-- **Rotating a path of unit vectors back to its base value.** Let `u` be a `C^k` path, `k ≠ 0`,
@@ -480,7 +493,7 @@ theorem exists_contDiff_linearIsometryEquiv_apply_eq {k : ℕ∞ω}
     (hu : ContDiff ℝ k u) (hu₁ : ∀ s, ‖u s‖ = 1) (hv : ∀ s, ⟪u s, v⟫ = 0) (s₀ : ℝ) :
     ∃ Q : ℝ → F ≃ₗᵢ[ℝ] F, ContDiff ℝ k (fun p : ℝ × F => Q p.1 p.2) ∧ (∀ s, Q s v = v) ∧
       (∀ s, Q s (u s) = u s₀) ∧ ∀ s, u s = u s₀ → ∀ x, Q s x = x := by
-  obtain ⟨p, hp₁, hpv, hup⟩ := exists_forall_add_ne_zero hF (hu.differentiable hk) hv
+  obtain ⟨p, hp₁, hpv, hup⟩ := exists_forall_add_ne_zero hF (hu.differentiable hk)
   have hu₀ (s : ℝ) : u s ≠ 0 := fun h => by simpa [h] using hu₁ s
   let ρ : F → F ≃ₗᵢ[ℝ] F := fun c => (ℝ ∙ c)ᗮ.reflection
   refine ⟨fun s => ((ρ (u s)).trans (ρ (u s + p))).trans ((ρ (u s₀ + p)).trans (ρ (u s₀))),
@@ -644,3 +657,93 @@ theorem exists_contDiff_path_of_det_eq_one [FiniteDimensional ℝ F] (e : F ≃�
   exact (isJoinedToOne_list_prod l).1 he
 
 end LinearIsometryEquiv
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A subspace reflection, viewed as a bounded operator, squares to the identity. -/
+@[simp] theorem reflection_mul_self (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    (U.reflection : E →L[𝕜] E) * (U.reflection : E →L[𝕜] E) = 1 := by
+  ext x
+  simpa only [mul_apply_eq_comp, one_apply_eq_self, LinearIsometryEquiv.coe_coe''] using
+    U.reflection_reflection x
+
+/-- A subspace reflection is self-adjoint as a bounded operator. -/
+theorem isSelfAdjoint_reflection [CompleteSpace E]
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    IsSelfAdjoint (U.reflection : E →L[𝕜] E) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', LinearIsometryEquiv.adjoint_eq_symm,
+    reflection_symm]
+
+/-- A subspace reflection is a unitary bounded operator. -/
+theorem reflection_mem_unitary [CompleteSpace E]
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    (U.reflection : E →L[𝕜] E) ∈ unitary (E →L[𝕜] E) := by
+  simpa only [Unitary.coe_symm_linearIsometryEquiv_apply] using
+    (Unitary.linearIsometryEquiv.symm U.reflection).property
+
+/-- Full off-diagonality is anticommutation with the source reflection.
+
+Adapted from `reflection_anticommutes_of_maps_orthogonal` in
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). -/
+theorem reflection_mul_eq_neg_mul_of_maps_orthogonal
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (H : E →L[𝕜] E)
+    (hHU : ∀ x ∈ U, H x ∈ Uᗮ)
+    (hHUperp : ∀ x ∈ Uᗮ, H x ∈ U) :
+    (U.reflection : E →L[𝕜] E) * H = -(H * (U.reflection : E →L[𝕜] E)) := by
+  apply ContinuousLinearMap.ext
+  intro x
+  let p : E := U.starProjection x
+  let m : E := x - U.starProjection x
+  have hp : p ∈ U := U.starProjection_apply_mem x
+  have hm : m ∈ Uᗮ := U.sub_starProjection_mem_orthogonal x
+  have hxpm : x = p + m := by
+    simpa only [p, m, starProjection_orthogonal_val] using
+      (U.starProjection_add_starProjection_orthogonal x).symm
+  have hHp : H p ∈ Uᗮ := hHU p hp
+  have hHm : H m ∈ U := hHUperp m hm
+  have hJp : (U.reflection : E →L[𝕜] E) p = p := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hp
+  have hJm : (U.reflection : E →L[𝕜] E) m = -m := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hm
+  have hJHp : (U.reflection : E →L[𝕜] E) (H p) = -H p := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hHp
+  have hJHm : (U.reflection : E →L[𝕜] E) (H m) = H m := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hHm
+  simp only [mul_apply_eq_comp, neg_apply]
+  calc
+    (U.reflection : E →L[𝕜] E) (H x) = (U.reflection : E →L[𝕜] E) (H p + H m) := by
+      rw [hxpm, map_add]
+    _ = (U.reflection : E →L[𝕜] E) (H p) + (U.reflection : E →L[𝕜] E) (H m) := map_add _ _ _
+    _ = -(H p) + H m := by rw [hJHp, hJHm]
+    _ = -(H (p - m)) := by
+      have hmap : H (p - m) = H p - H m := map_sub H p m
+      rw [hmap]
+      abel
+    _ = -(H ((U.reflection : E →L[𝕜] E) x)) := by
+      have hJx : (U.reflection : E →L[𝕜] E) x = p - m := by
+        rw [hxpm, map_add, hJp, hJm]
+        module
+      rw [hJx]
+
+/-- The symmetric product of two subspace reflections is
+`R_V R_U + R_U R_V = 2 I - 4 (P_U - P_V)²`.
+
+Extracted from the reflection-product calculation in
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). -/
+theorem reflection_mul_add_mul_reflection
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] :
+    (V.reflection : E →L[𝕜] E) * (U.reflection : E →L[𝕜] E) +
+        (U.reflection : E →L[𝕜] E) * (V.reflection : E →L[𝕜] E) =
+      (2 : 𝕜) • (1 : E →L[𝕜] E) -
+        (4 : 𝕜) • ((U.starProjection - V.starProjection) *
+          (U.starProjection - V.starProjection)) := by
+  simp only [coe_reflection, show (4 : 𝕜) = 2 + 2 by norm_num, add_smul, two_smul]
+  noncomm_ring [U.isIdempotentElem_starProjection.eq, V.isIdempotentElem_starProjection.eq]
+
+end Submodule
