@@ -76,10 +76,10 @@ theorem span_toAddSubgroup'_comap_inl_eq_top [CompactSpace ((Multiplicative V ×
       QuotientAddGroup.leftRel P a.1.toAdd b.1.toAdd := fun a b h ↦ by
     rw [QuotientGroup.leftRel_apply] at h
     rw [QuotientAddGroup.leftRel_apply, mem_toAddSubgroup']
-    exact ⟨_, h, rfl⟩
+    exact ⟨_, h, by simp⟩
   have hcont : Continuous (Quotient.map' (fun g : Multiplicative V × K ↦ g.1.toAdd) hrel :
       (Multiplicative V × K) ⧸ Γ → V ⧸ P) :=
-    (continuous_fst.comp continuous_id).quotient_map' hrel
+    (continuous_toAdd.comp continuous_fst).quotient_map' hrel
   have hsurj : Function.Surjective (Quotient.map' (fun g : Multiplicative V × K ↦ g.1.toAdd) hrel :
       (Multiplicative V × K) ⧸ Γ → V ⧸ P) := by
     rintro ⟨v⟩
@@ -91,17 +91,9 @@ theorem span_toAddSubgroup'_comap_inl_eq_top [CompactSpace ((Multiplicative V ×
   have hm : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
   have hmP : ∀ p ∈ P, m • p ∈ Λ := by
     intro p hp
-    obtain ⟨γ, hγ, hγp⟩ := mem_toAddSubgroup' _ p |>.1 hp
-    have h2 : γ.2 ^ m = 1 := by
-      have := congrArg Subtype.val
-        (pow_card_eq_one' (x := (⟨γ.2, γ, hγ, rfl⟩ : Γ.map (MonoidHom.snd (Multiplicative V) K))))
-      rwa [SubmonoidClass.coe_pow, OneMemClass.coe_one] at this
-    have hpow : γ ^ m = MonoidHom.inl (Multiplicative V) K (Multiplicative.ofAdd (m • p)) := by
-      ext
-      · simp [← hγp]
-      · simp [h2]
-    rw [mem_toAddSubgroup', mem_comap, ← hpow]
-    exact pow_mem hγ m
+    obtain ⟨γ, hγ, hγp⟩ := (mem_toAddSubgroup' _ p).1 hp
+    rw [mem_toAddSubgroup', ofAdd_nsmul, ← hγp]
+    exact Γ.pow_natCard_map_snd_mem_comap_inl hγ
   rw [eq_top_iff, ← hP, Submodule.span_le]
   intro p hp
   have h : (m : ℝ) • p ∈ Submodule.span ℝ (Λ : Set V) := by

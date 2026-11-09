@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Quotients of a product of groups by a subgroup
@@ -36,6 +37,8 @@ For topological groups and discrete `Γ`, this map is a covering map; see
   in `K`.
 * `Subgroup.finite_map_snd_of_le_center`: that image is finite when `Γ` is central and `K` has
   finite centre.
+* `Subgroup.pow_natCard_map_snd_mem_comap_inl`: if that image has `m` elements, then `γᵐ` lies in
+  `Λ × 1` for every `γ ∈ Γ`.
 
 ## References
 
@@ -130,5 +133,20 @@ theorem finite_map_snd_of_le_center [Finite (center K)] (hΓ : Γ ≤ center (A 
   rw [SetLike.mem_coe, mem_center_iff]
   intro k
   simpa using congrArg Prod.snd ((mem_center_iff.1 (hΓ hγ)) (1, k))
+
+/-- If the image of `Γ` in `K` has `m` elements, then for `γ ∈ Γ` the power `γᵐ` has trivial second
+coordinate, so `γ.1 ^ m ∈ Λ = {a | (a, 1) ∈ Γ}`. When the image is infinite, `m = 0` and the
+statement is trivial. -/
+theorem pow_natCard_map_snd_mem_comap_inl {γ : A × K} (hγ : γ ∈ Γ) :
+    γ.1 ^ Nat.card (Γ.map (MonoidHom.snd A K)) ∈ Γ.comap (MonoidHom.inl A K) := by
+  set m := Nat.card (Γ.map (MonoidHom.snd A K))
+  have h2 : γ.2 ^ m = 1 := by
+    have := congrArg Subtype.val
+      (pow_card_eq_one' (x := (⟨γ.2, γ, hγ, rfl⟩ : Γ.map (MonoidHom.snd A K))))
+    rwa [SubmonoidClass.coe_pow, OneMemClass.coe_one] at this
+  have hpow : MonoidHom.inl A K (γ.1 ^ m) = γ ^ m := by
+    ext <;> simp [h2]
+  rw [mem_comap, hpow]
+  exact pow_mem hγ m
 
 end Subgroup
