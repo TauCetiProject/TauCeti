@@ -31,6 +31,7 @@ positive operators close to the identity. The file also records that the square 
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
 * `Real.abs_div_sqrt_one_add_sq_le_one`: for every real `t`, `|t / √(1 + t²)| ≤ 1`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
+* `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
@@ -144,6 +145,14 @@ theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| ≤ 1 :=
 theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
   rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
   nlinarith [abs_nonneg t, sq_abs t]
+
+/-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
+theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
+    a ≤ √c * b :=
+  calc a ≤ |a| := le_abs_self a
+    _ = √(a ^ 2) := (sqrt_sq_eq_abs a).symm
+    _ ≤ √(c * b ^ 2) := sqrt_le_sqrt h
+    _ = √c * b := by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb]
 
 /-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
