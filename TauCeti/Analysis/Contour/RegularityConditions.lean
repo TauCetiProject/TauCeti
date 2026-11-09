@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import TauCeti.Analysis.Contour.Argument.Lift
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 
 /-!
@@ -476,8 +477,8 @@ private theorem pow_unit_eq_of_angle_resonance {L_R L_L : ℂ} {θ : ℝ} {k : �
       = (k : ℝ) * Complex.arg (-L_L) + (-((m : ℝ) + (k : ℝ) * (j : ℝ))) * (2 * Real.pi) := by
     linear_combination -hm
   have hnorm : (‖L_L‖ : ℂ) = (‖-L_L‖ : ℂ) := by rw [norm_neg]
-  rw [div_norm_eq_exp_arg_mul_I hL_R, hnorm,
-    div_norm_eq_exp_arg_mul_I (neg_ne_zero.mpr hL_L), ← Complex.exp_nat_mul,
+  rw [← Complex.exp_arg_mul_I hL_R, hnorm,
+    ← Complex.exp_arg_mul_I (neg_ne_zero.mpr hL_L), ← Complex.exp_nat_mul,
     ← Complex.exp_nat_mul, Complex.exp_eq_exp_iff_exists_int]
   refine ⟨-(m + (k : ℤ) * j), ?_⟩
   have hC := congrArg (fun x : ℝ => (x : ℂ) * Complex.I) h_real

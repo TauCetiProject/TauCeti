@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
@@ -30,6 +31,8 @@ from the argument of `-z`.
   `arg x - arg y ∈ (-π, π]`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
+* `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
+* `Complex.contDiffOn_div_norm_pow`: `(z / |z|)^m` is smooth away from the origin.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
@@ -86,6 +89,23 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
     _ = -‖c‖ := by
         rw [h, exp_pi_mul_I]
         ring
+
+/-- The unit complex number `exp (i arg z)` is `z / |z|` for `z ≠ 0`. -/
+theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ : ℂ) := by
+  rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
+  exact norm_mul_exp_arg_mul_I z
+
+/-- The power `(z / |z|)^m` of the unit direction is smooth away from the origin. -/
+theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
+    ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by
+  intro z hz
+  have hz : z ≠ 0 := hz
+  have hn : ContDiffAt ℝ N (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
+    ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
+  have hp : ContDiffAt ℝ N (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
+    simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
+      contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
+  exact (hp.pow m).contDiffWithinAt
 
 /-- The argument is smooth on the slit plane, where it is the imaginary part of the principal
 logarithm. -/
