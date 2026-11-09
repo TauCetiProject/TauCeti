@@ -146,11 +146,12 @@ theorem eLpNorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
     _ ≤ ENNReal.ofReal (2 ^ s) *
         (eLpNorm g 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f x) 2 +
           eLpNorm f 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g x) 2) := by
-        rw [eLpNorm_one_eq_lintegral_enorm hg, eLpNorm_one_eq_lintegral_enorm hf,
-          ← eLpNorm_enorm _ hwf, ← eLpNorm_enorm _ hwg]
+        rw [← eLpNorm_enorm _ hg, ← eLpNorm_enorm _ hf, ← eLpNorm_enorm _ hwf,
+          ← eLpNorm_enorm _ hwg]
+        have h12 : (1 : ℝ≥0∞)⁻¹ + 2⁻¹ = 1 + 2⁻¹ := by rw [inv_one]
         gcongr
-        · exact eLpNorm_lconvolution_le hg.enorm hwf.enorm
-        · exact eLpNorm_lconvolution_le hf.enorm hwg.enorm
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hg.enorm hwf.enorm
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hf.enorm hwg.enorm
 
 /-- For `0 ≤ s`, if `f` and `g` are integrable and `(1 + ‖ξ‖ ^ 2) ^ (s / 2) f` and
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2) g` are square integrable, then so is
