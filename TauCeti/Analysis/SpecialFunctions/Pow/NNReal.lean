@@ -37,6 +37,10 @@ product of three linear factors follow: at infinity the kernel decays like `y ^ 
 three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
+Writing `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` turns into
+`a ^ p ≤ b ^ (p - q) * a ^ q`. Applied to `a = ‖f x‖ₑ` and integrated, this compares `Lᵖ` and
+`L^q` norms of a function whose values are bounded above or below by `b`.
+
 A real power `y ↦ y ^ d` on `ℝ≥0∞` is upper semicontinuous from the right uniformly on intervals:
 for `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to `x`.
 For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is antitone. Enlarging a
@@ -69,6 +73,8 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
+* `ENNReal.rpow_le_rpow_sub_mul_rpow`: `a ^ (p - q) ≤ b ^ (p - q)` gives
+  `a ^ p ≤ b ^ (p - q) * a ^ q` for `a ≠ 0, ∞`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
   near `x`.
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
@@ -153,6 +159,13 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   obtain ⟨w, hw, rfl⟩ : ∃ w, 0 ≤ w ∧ z = -w := ⟨-z, neg_nonneg.mpr hz, (neg_neg z).symm⟩
   rw [rpow_neg, rpow_neg]
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
+
+/-- Since `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` gives
+`a ^ p ≤ b ^ (p - q) * a ^ q`, trading the power `p` of `a` for the power `q`. -/
+theorem rpow_le_rpow_sub_mul_rpow {a b : ℝ≥0∞} {p q : ℝ} (ha0 : a ≠ 0) (ha : a ≠ ∞)
+    (h : a ^ (p - q) ≤ b ^ (p - q)) : a ^ p ≤ b ^ (p - q) * a ^ q := by
+  rw [← sub_add_cancel p q, rpow_add _ _ ha0 ha, add_sub_cancel_right]
+  gcongr
 
 /-- For `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to
 `x`. -/

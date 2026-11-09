@@ -48,6 +48,13 @@ public noncomputable section
 open MeasureTheory Filter Topology WithLp
 open scoped ENNReal
 
+/-- Two sums in `α →ₘ[μ] β` are equal exactly when the sums of their representatives agree almost
+everywhere. -/
+theorem MeasureTheory.AEEqFun.add_eq_add_iff_ae_eq {α β : Type*} {mα : MeasurableSpace α}
+    {μ : Measure α} [TopologicalSpace β] [Add β] [ContinuousAdd β] {a b c d : α →ₘ[μ] β} :
+    a + b = c + d ↔ ⇑a + ⇑b =ᵐ[μ] ⇑c + ⇑d := by
+  rw [AEEqFun.ext_iff, (AEEqFun.coeFn_add a b).congr_left, (AEEqFun.coeFn_add c d).congr_right]
+
 namespace TauCeti
 
 variable (𝕜 E : Type*) {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) [NormedField 𝕜]
@@ -127,9 +134,8 @@ theorem ext {u v : L1AddLinfty 𝕜 E μ} (h : toAEEqFun u = toAEEqFun v) : u = 
 
 theorem mk_eq_mk_iff {x y : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)} :
     (mk x : L1AddLinfty 𝕜 E μ) = mk y ↔ ⇑x.fst + ⇑x.snd =ᵐ[μ] ⇑y.fst + ⇑y.snd := by
-  rw [← toAEEqFun_injective.eq_iff, toAEEqFun_mk, toAEEqFun_mk, AEEqFun.ext_iff]
-  exact ⟨fun h => (AEEqFun.coeFn_add _ _).symm.trans (h.trans (AEEqFun.coeFn_add _ _)),
-    fun h => (AEEqFun.coeFn_add _ _).trans (h.trans (AEEqFun.coeFn_add _ _).symm)⟩
+  rw [← toAEEqFun_injective.eq_iff, toAEEqFun_mk, toAEEqFun_mk]
+  exact AEEqFun.add_eq_add_iff_ae_eq
 
 theorem mk_eq_zero_iff {x : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)} :
     (mk x : L1AddLinfty 𝕜 E μ) = 0 ↔ ⇑x.fst + ⇑x.snd =ᵐ[μ] 0 := by

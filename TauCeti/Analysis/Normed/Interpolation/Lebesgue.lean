@@ -24,12 +24,14 @@ injections
 
 `L^{p₀} ∩ L^{p₁} → Lᵖ → L^{p₀} + L^{p₁}`,
 
-`TauCeti.CompatibleCouple.lebesgueInterToLp` and `TauCeti.CompatibleCouple.lpToLebesgueSum`, both
-of norm at most `2`, compatible with the embeddings into `L¹ + L^∞`, and composing to the canonical
+`TauCeti.CompatibleCouple.lebesgueInterToLp` and `TauCeti.CompatibleCouple.lpToLebesgueSum`, of
+norm at most `1` and `2` respectively, compatible with the embeddings into `L¹ + L^∞`, reducing to
+the canonical maps at the endpoints `p = p₀` and `p = p₁`, and composing to the canonical
 inclusion of the intersection into the sum
-(`TauCeti.CompatibleCouple.lpToLebesgueSum_lebesgueInterToLp`). The first comes from the
-pointwise bound `‖f‖ ^ p ≤ M ^ (p - p₀) ‖f‖ ^ {p₀} + M ^ (p - p₁) ‖f‖ ^ {p₁}` with
-`M = max (‖f‖_{p₀}, ‖f‖_{p₁})`, the second from splitting `f` at the level `‖f‖_p`.
+(`TauCeti.CompatibleCouple.lpToLebesgueSum_lebesgueInterToLp`). The norm bounds are
+`‖f‖_p ≤ max (‖f‖_{p₀}, ‖f‖_{p₁})` (`MeasureTheory.eLpNorm_le_max_of_le_of_le`) and the
+decomposition `Lᵖ ⊆ L^{p₀} + L^{p₁}` with both parts of norm at most `‖f‖_p`
+(`MeasureTheory.Lp.exists_add_ae_eq_of_le_of_le`).
 
 ## References
 
@@ -80,9 +82,8 @@ theorem lebesgue_fstToSum_add_sndToSum_eq_iff {f₀ g₀ : Lp E p₀ μ} {f₁ g
   rw [← (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed_injective.eq_iff, map_add, map_add,
     sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, sumSpaceEmbed_fstToSum,
     sumSpaceEmbed_sndToSum, ← L1AddLinfty.toAEEqFun_injective.eq_iff, map_add, map_add]
-  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.toAEEqFun_ofLp, AEEqFun.ext_iff]
-  exact ⟨fun h => (AEEqFun.coeFn_add _ _).symm.trans (h.trans (AEEqFun.coeFn_add _ _)),
-    fun h => (AEEqFun.coeFn_add _ _).trans (h.trans (AEEqFun.coeFn_add _ _).symm)⟩
+  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.toAEEqFun_ofLp]
+  exact AEEqFun.add_eq_add_iff_ae_eq
 
 section Intermediate
 
@@ -139,21 +140,20 @@ private theorem memLp_inter_fst (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (le
 
 omit [Fact (1 ≤ p)] in
 private theorem norm_toLp_inter_fst_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁)
-    (x : (lebesgue 𝕜 E μ p₀ p₁).inter) : ‖(memLp_inter_fst h₀ h₁ x).toLp _‖ ≤ 2 * ‖x‖ := by
+    (x : (lebesgue 𝕜 E μ p₀ p₁).inter) : ‖(memLp_inter_fst h₀ h₁ x).toLp _‖ ≤ ‖x‖ := by
   rw [Lp.norm_toLp, norm_inter]
-  have h := eLpNorm_le_two_mul_max_of_le_of_le
-    (Lp.aestronglyMeasurable (x : Lp E p₀ μ × Lp E p₁ μ).1) Fact.out h₀ h₁
+  have h := eLpNorm_le_max_of_le_of_le (Lp.aestronglyMeasurable (x : Lp E p₀ μ × Lp E p₁ μ).1)
+    (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' h₀ h₁
   rw [eLpNorm_congr_ae (p := p₁) (mem_lebesgue_inter_iff.1 x.2)] at h
   calc (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p μ).toReal
-      ≤ (2 * max (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p₀ μ)
+      ≤ (max (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p₀ μ)
           (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).2 p₁ μ)).toReal :=
-        ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp)
-          (max_lt (Lp.memLp _).eLpNorm_lt_top (Lp.memLp _).eLpNorm_lt_top).ne) h
-    _ = 2 * max ‖(x : Lp E p₀ μ × Lp E p₁ μ).1‖ ‖(x : Lp E p₀ μ × Lp E p₁ μ).2‖ := by
-      rw [ENNReal.toReal_mul, ENNReal.toReal_max (Lp.eLpNorm_ne_top _) (Lp.eLpNorm_ne_top _)]
+        ENNReal.toReal_mono (max_lt (Lp.memLp _).eLpNorm_lt_top (Lp.memLp _).eLpNorm_lt_top).ne h
+    _ = max ‖(x : Lp E p₀ μ × Lp E p₁ μ).1‖ ‖(x : Lp E p₀ μ × Lp E p₁ μ).2‖ := by
+      rw [ENNReal.toReal_max (Lp.eLpNorm_ne_top _) (Lp.eLpNorm_ne_top _)]
       simp [Lp.norm_def]
 
-/-- The inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` for `p₀ ≤ p ≤ p₁`, of norm at most `2`
+/-- The inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` for `p₀ ≤ p ≤ p₁`, of norm at most `1`
 (`TauCeti.CompatibleCouple.norm_lebesgueInterToLp_le`). -/
 def lebesgueInterToLp (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
     (lebesgue 𝕜 E μ p₀ p₁).inter →L[𝕜] Lp E p μ :=
@@ -165,14 +165,14 @@ def lebesgueInterToLp (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
       map_smul' c x := by
         rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
         exact MemLp.toLp_congr _ _ (Lp.coeFn_smul _ _) }
-    2 (norm_toLp_inter_fst_le h₀ h₁)
+    1 fun x => (norm_toLp_inter_fst_le h₀ h₁ x).trans_eq (one_mul _).symm
 
 theorem coeFn_lebesgueInterToLp (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
     ⇑(lebesgueInterToLp h₀ h₁ x) =ᵐ[μ] ⇑(x : Lp E p₀ μ × Lp E p₁ μ).1 :=
   (memLp_inter_fst h₀ h₁ x).coeFn_toLp
 
 theorem norm_lebesgueInterToLp_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁)
-    (x : (lebesgue 𝕜 E μ p₀ p₁).inter) : ‖lebesgueInterToLp h₀ h₁ x‖ ≤ 2 * ‖x‖ :=
+    (x : (lebesgue 𝕜 E μ p₀ p₁).inter) : ‖lebesgueInterToLp h₀ h₁ x‖ ≤ ‖x‖ :=
   norm_toLp_inter_fst_le h₀ h₁ x
 
 /-- The inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` is compatible with the embeddings into `L¹ + L^∞`. -/
@@ -181,6 +181,18 @@ theorem ofLp_lebesgueInterToLp (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (leb
     (L1AddLinfty.ofLp (lebesgueInterToLp h₀ h₁ x) : L1AddLinfty 𝕜 E μ) =
       L1AddLinfty.ofLp (x : Lp E p₀ μ × Lp E p₁ μ).1 :=
   L1AddLinfty.ofLp_eq_ofLp_iff.2 (coeFn_lebesgueInterToLp h₀ h₁ x)
+
+/-- At the endpoint `p = p₀`, the inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` is the canonical one. -/
+theorem lebesgueInterToLp_eq_interFst (h₁ : p₀ ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
+    lebesgueInterToLp le_rfl h₁ x = (lebesgue 𝕜 E μ p₀ p₁).interFst x := by
+  rw [interFst_apply]
+  exact Lp.ext (coeFn_lebesgueInterToLp le_rfl h₁ x)
+
+/-- At the endpoint `p = p₁`, the inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` is the canonical one. -/
+theorem lebesgueInterToLp_eq_interSnd (h₀ : p₀ ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
+    lebesgueInterToLp h₀ le_rfl x = (lebesgue 𝕜 E μ p₀ p₁).interSnd x := by
+  rw [interSnd_apply]
+  exact Lp.ext ((coeFn_lebesgueInterToLp h₀ le_rfl x).trans (mem_lebesgue_inter_iff.1 x.2))
 
 /-- At the endpoint `p = p₀`, the inclusion `Lᵖ → L^{p₀} + L^{p₁}` is the canonical one. -/
 theorem lpToLebesgueSum_eq_fstToSum (h₁ : p₀ ≤ p₁) (f : Lp E p₀ μ) :

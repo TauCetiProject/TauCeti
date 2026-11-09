@@ -39,7 +39,10 @@ classes of operators.
 
 Mathlib states the two-point weighted AM-GM inequality in `ℝ≥0∞` with `ℝ≥0` weights
 (`ENNReal.geom_mean_le_arith_mean2_weighted`); it is restated here for the real weights `1 - θ`
-and `θ`, as they appear in interpolation inequalities such as Prékopa–Leindler.
+and `θ`, as they appear in interpolation inequalities such as Prékopa–Leindler. Applied to
+`M ^ (p - p₀) a ^ p₀` and `M ^ (p - p₁) a ^ p₁`, whose weighted geometric mean is `a ^ p` for
+`p = (1 - θ) p₀ + θ p₁`, it dominates `a ^ p` by a combination of `a ^ p₀` and `a ^ p₁`; integrated,
+this bounds an `Lᵖ` norm by the maximum of the `L^{p₀}` and `L^{p₁}` norms.
 
 Finally, the two-point weighted AM-GM inequality is restated after normalizing by positive scalars
 `a` and `b`: `A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ)`,
@@ -54,6 +57,8 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
   by positive scalars, with the strict form.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
+* `ENNReal.rpow_le_ofReal_mul_add_ofReal_mul`: `a ^ p` at an intermediate exponent
+  `p = (1 - θ) p₀ + θ p₁` is dominated by a combination of `a ^ p₀` and `a ^ p₁`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.Lq_le_Lp_tsum`: the `ℓᵖ` norm of an `ℝ≥0∞`-valued family is antitone in `p`.
@@ -143,6 +148,20 @@ theorem geom_mean_le_arith_mean2_weighted_ofReal {θ : ℝ} (hθ₀ : 0 ≤ θ) 
   have h := geom_mean_le_arith_mean2_weighted (1 - θ).toNNReal θ.toNNReal a b <| by
     rw [← Real.toNNReal_add (sub_nonneg.2 hθ₁) hθ₀, sub_add_cancel, Real.toNNReal_one]
   rwa [Real.coe_toNNReal _ (sub_nonneg.2 hθ₁), Real.coe_toNNReal _ hθ₀] at h
+
+/-- For an intermediate exponent `p = (1 - θ) p₀ + θ p₁` with `0 ≤ θ ≤ 1` and `a, M ≠ 0, ∞`,
+`a ^ p ≤ (1 - θ) M ^ (p - p₀) a ^ p₀ + θ M ^ (p - p₁) a ^ p₁`. -/
+theorem rpow_le_ofReal_mul_add_ofReal_mul {a M : ℝ≥0∞} {θ p p₀ p₁ : ℝ} (hθ₀ : 0 ≤ θ)
+    (hθ₁ : θ ≤ 1) (hp : (1 - θ) * p₀ + θ * p₁ = p) (ha0 : a ≠ 0) (ha : a ≠ ∞) (hM0 : M ≠ 0)
+    (hM : M ≠ ∞) :
+    a ^ p ≤ ENNReal.ofReal (1 - θ) * (M ^ (p - p₀) * a ^ p₀) +
+      ENNReal.ofReal θ * (M ^ (p - p₁) * a ^ p₁) := by
+  refine le_of_eq_of_le ?_ (geom_mean_le_arith_mean2_weighted_ofReal hθ₀ hθ₁ _ _)
+  have hM' : (p - p₀) * (1 - θ) + (p - p₁) * θ = 0 := by subst hp; ring
+  have ha' : p₀ * (1 - θ) + p₁ * θ = p := by subst hp; ring
+  rw [mul_rpow_of_nonneg _ _ (sub_nonneg.2 hθ₁), mul_rpow_of_nonneg _ _ hθ₀, ← rpow_mul,
+    ← rpow_mul, ← rpow_mul, ← rpow_mul, mul_mul_mul_comm, ← rpow_add _ _ hM0 hM,
+    ← rpow_add _ _ ha0 ha, hM', ha', rpow_zero, one_mul]
 
 /-- **Minkowski's inequality** for unconditional sums in `ℝ≥0∞`: for `1 ≤ p`,
 `(∑' i, (f i + g i) ^ p) ^ (1 / p) ≤ (∑' i, f i ^ p) ^ (1 / p) + (∑' i, g i ^ p) ^ (1 / p)`.
