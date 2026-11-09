@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.InnerProductSpace.WeakSolution
 public import TauCeti.MeasureTheory.Function.L2Space
@@ -61,46 +62,38 @@ open scoped RealInnerProductSpace Topology
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- The compactly supported `C²` test fields. -/
-private def testFields : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
-  carrier := {η | ContDiff ℝ 2 η ∧ HasCompactSupport η}
-  add_mem' ha hb := ⟨ha.1.add hb.1, ha.2.add hb.2⟩
-  zero_mem' := ⟨contDiff_const, HasCompactSupport.zero⟩
-  smul_mem' t _ ha := ⟨ha.1.const_smul t, ha.2.smul_left⟩
+private abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
 
-private theorem memLp_of_mem_testFields {η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hη : η ∈ testFields) : MemLp η 2 μ :=
-  hη.1.continuous.memLp_of_hasCompactSupport hη.2
-
-private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hη : η ∈ testFields) : MemLp (gaugeFixedAdjoint x η) 2 μ :=
-  (continuous_gaugeFixedAdjoint hx (hη.1.of_le one_le_two)).memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint hη.2)
+private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
+    MemLp (gaugeFixedAdjoint x η) 2 μ :=
+  (continuous_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))).memLp_of_hasCompactSupport
+    (hasCompactSupport_gaugeFixedAdjoint η.hasCompactSupport)
 
 /-- The inclusion of the test fields into `L²`. -/
-private noncomputable def testFieldsToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure] :
-    testFields →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (memLp_of_mem_testFields η.2).toLp η
+private noncomputable def testFieldToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure] :
+    TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
+  toFun η := (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport).toLp η
   map_add' η ν := by
     rw [← MemLp.toLp_add]
-    exact MemLp.toLp_congr _ _ (.of_eq (Submodule.coe_add η ν))
+    exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_add η ν))
   map_smul' t η := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-    exact MemLp.toLp_congr _ _ (.of_eq (Submodule.coe_smul t η))
+    exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_smul t η))
 
 /-- The formal adjoint `L_x*` on test fields, with values in `L²`. -/
 private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
-    (hx : Continuous x) : testFields →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (memLp_gaugeFixedAdjoint hx η.2).toLp (gaugeFixedAdjoint x η)
+    (hx : Continuous x) : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
+  toFun η := (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η)
   map_add' η ν := by
     rw [← MemLp.toLp_add]
     refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
-    rw [Submodule.coe_add, Pi.add_apply]
-    exact gaugeFixedAdjoint_add x (η.2.1.differentiable two_ne_zero z)
-      (ν.2.1.differentiable two_ne_zero z)
+    rw [FunLike.coe_add, Pi.add_apply]
+    exact gaugeFixedAdjoint_add x (η.contDiff.differentiable (by norm_num) z)
+      (ν.contDiff.differentiable (by norm_num) z)
   map_smul' t η := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
-    rw [Submodule.coe_smul, Pi.smul_apply]
+    rw [FunLike.coe_smul, Pi.smul_apply]
     exact gaugeFixedAdjoint_smul x η t z
 
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
@@ -125,13 +118,13 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
           ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
         ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
   set S := gaugeFixedAdjointToLp μ hx
-  set ι := testFieldsToLp μ
-  have hS (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : testFields) :
+  set ι := testFieldToLp μ
+  have hS (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
       ⟪u, S η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ :=
-    L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η.2)
-  have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : testFields) :
-      ⟪u, ι η⟫ = ∫ z, ⟪u z, (η : ℂ → EuclideanSpace ℝ (Fin 4)) z⟫ ∂μ :=
-    L2.inner_toLp u (memLp_of_mem_testFields η.2)
+    L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
+  have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
+      ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
+    L2.inner_toLp u (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport)
   have hnorm {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :
       ‖hg.toLp g‖ ^ 2 = ∫ z, ‖g z‖ ^ 2 ∂μ := by
     rw [← real_inner_self_eq_norm_sq, L2.inner_toLp]
@@ -139,23 +132,23 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
     filter_upwards [hg.coeFn_toLp] with z hz
     rw [hz, real_inner_self_eq_norm_sq]
   -- The gap is the lower bound `√c ‖η‖ ≤ ‖L_x* η‖` in `L²`.
-  have hbound (η : testFields) : √c * ‖ι η‖ ≤ ‖S η‖ := by
+  have hbound (η : TestField) : √c * ‖ι η‖ ≤ ‖S η‖ := by
     refine le_of_sq_le_sq ?_ (norm_nonneg _)
-    have hιη : ι η = (memLp_of_mem_testFields η.2).toLp η := rfl
-    have hSη : S η = (memLp_gaugeFixedAdjoint hx η.2).toLp (gaugeFixedAdjoint x η) := rfl
+    have hιη : ι η = (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport).toLp η := rfl
+    have hSη : S η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) := rfl
     rw [mul_pow, Real.sq_sqrt hc.le, hιη, hSη, hnorm, hnorm]
-    exact hgap η η.2.1 η.2.2
+    exact hgap η η.contDiff η.hasCompactSupport
   obtain ⟨Q, hQn, hQK, hQ⟩ := LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le
     S ι (Real.sqrt_pos.2 hc) hbound
   refine ⟨Q, hQn, fun f η hη hηc ↦ ?_, fun f u hu ↦ ?_⟩
-  · have h := hQ f ⟨η, hη, hηc⟩
+  · have h := hQ f ⟨η, hη, hηc, by simp⟩
     rwa [hS, hι] at h
   · -- `u` lies in the weak kernel `(range S)ᗮ`, and `Q f` in its orthogonal complement.
     have huK : u ∈ (LinearMap.range S)ᗮ := by
       rw [Submodule.mem_orthogonal]
       rintro _ ⟨η, rfl⟩
       rw [real_inner_comm, hS]
-      exact hu η η.2.1 η.2.2
+      exact hu η η.contDiff η.hasCompactSupport
     rw [← L2.inner_def]
     exact Submodule.inner_left_of_mem_orthogonal huK (hQK f)
 
