@@ -721,7 +721,7 @@ theorem IsEven.dualGaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) 
     have h : (D : ℝ) * D' = (level L : ℝ) ^ (2 * k) := by
       rw [← hL.isIntegral.det_eq_card_discriminantGroup,
         ← (isIntegral_sqrt_level_smul_dual (L := L)).det_eq_card_discriminantGroup,
-        hL.isIntegral.det_sqrt_level_smul_dual, hk]
+        det_sqrt_level_smul_dual, hk]
       field_simp [(det_pos L).ne']
     exact_mod_cast h
   have hNa : IsCoprime ((level L : ℤ) ^ k) a := ht.of_mul_left_left.pow_left

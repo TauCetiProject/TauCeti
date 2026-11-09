@@ -356,7 +356,7 @@ theorem sq_sum_range_cexp_two_pi_I_mul_sq_div (a c : ℕ) [NeZero a] :
   have := Fintype.ofFinite (dual (√2 • span ℤ (Set.range b)) ⧸
       ((a : ℝ) • (√2 • span ℤ (Set.range b))).submoduleOf (dual (√2 • span ℤ (Set.range b))))
   have hcov : covolume (√2 • span ℤ (Set.range b)) = 2 := by
-    rw [covolume_smul _ (NeZero.ne _) MeasureTheory.volume,
+    rw [covolume_smul _ MeasureTheory.volume,
       (isUnimodular_span_orthonormalBasis b).covolume_eq_one, finrank_euclideanSpace_fin,
       abs_of_pos (Real.sqrt_pos.mpr two_pos), Real.sq_sqrt zero_le_two, mul_one]
   have h := hL.gaussSum_eq_mul_dualGaussSum (k := 1) (by simp) a c
