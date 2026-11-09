@@ -31,8 +31,10 @@ transfers to an arbitrary one.
 ## Main statements
 
 * `TauCeti.mongeAmpereMeasure_mul_of_pos` gives the homogeneity of the Monge–Ampère measure
-  under positive scaling of an extended-real potential, and
-  `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` is its form for a real function on a set.
+  under positive scaling of an extended-real potential,
+  `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` is its form for a real function on a set, and
+  `MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos` is its form for scaling followed
+  by a constant shift.
 * `TauCeti.mongeAmpereMeasure_add_affine` proves invariance of the Aleksandrov Monge–Ampère
   measure under addition of an affine function, and `TauCeti.mongeAmpereMeasure_ite_add_linearMap`
   is its form for a finite convex function on a set and an affine function given by a linear
@@ -213,6 +215,17 @@ theorem mongeAmpereMeasure_ite_mul_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω
     funext x
     split_ifs <;> simp only [EReal.coe_mul, EReal.coe_mul_top_of_pos hc]
   rw [← hscale, mongeAmpereMeasure_mul_of_pos μ _ hc]
+
+/-- Positive scaling and a constant shift of a real potential on a set, extended by `⊤` off that
+set: the Monge–Ampère measure is multiplied by `c ^ finrank ℝ E`. -/
+theorem _root_.MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos {Ω : Set E}
+    [DecidablePred (· ∈ Ω)] {u : E → ℝ} {c : ℝ} (hc : 0 < c) (b : ℝ) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x + b : ℝ) : EReal) else ⊤) =
+      ENNReal.ofReal (c ^ finrank ℝ E) •
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by
+  have hshift := mongeAmpereMeasure_ite_add_linearMap μ (U := Ω) (fun y => c * u y) 0 b
+  rw [mongeAmpereMeasure_ite_mul_of_pos μ hc] at hshift
+  simpa only [LinearMap.zero_apply, add_zero] using hshift
 
 /-- **Change of variables for the Aleksandrov Monge–Ampère measure.** For an affine equivalence
 `A` of `E` with linear part `L` and a measurable set `s`,
