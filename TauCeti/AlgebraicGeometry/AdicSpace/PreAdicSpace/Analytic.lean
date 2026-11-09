@@ -345,7 +345,7 @@ theorem analyticPoints_presentationLimitPreAdicSpace :
       eqToHom (completionLocObj_obj P i.pres.num i.pres.den _ i.pres.hasDenominatorPower)
     -- the image of `f` is a pseudouniformiser of `A⟨T/s⟩`, which is therefore a Tate ring
     exact rationalSubset_subset_spaAnalytic_of_isTateRing P hP i.pres.num i.pres.den _
-      i.pres.hasDenominatorPower i.isOpen_span ⟨⟨_, hf.map φ.2⟩⟩ (mem_spaBasicOpen.mp hi)
+      i.pres.hasDenominatorPower ⟨⟨_, hf.map φ.2⟩⟩ (mem_spaBasicOpen.mp hi)
   · intro hx
     -- `x` lies in a chart `R(G/g)` of the standard rational cover of the analytic locus
     classical
