@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
@@ -77,6 +78,8 @@ polynomial in the Morse inequalities.
   sublevel sets of proper functions bounded below.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
+* `TauCeti.IsMorse.exists_separating_levels`: on a compact manifold, levels just below `f p` and
+  just above `f r` separate the critical values strictly between them.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
@@ -132,14 +135,8 @@ theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 :=
 
 /-- A point is critical exactly when the manifold derivative `mfderiv I 𝓘(ℝ) f` vanishes there. -/
 theorem mem_criticalPoints_iff_mfderiv_eq_zero :
-    x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 := by
-  rw [mem_criticalPoints, mvfderiv]
-  -- `mvfderiv` postcomposes `mfderiv` with the identification `NormedSpace.fromTangentSpace`.
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
-    fun h ↦ by rw [h, ContinuousLinearMap.comp_zero]⟩
-  have hv := DFunLike.congr_fun h v
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at hv
-  exact (NormedSpace.fromTangentSpace (f x)).map_eq_zero_iff.1 hv
+    x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 :=
+  mvfderiv_eq_zero_iff
 
 /-- On a normed space with its trivial model, a point is critical exactly when the Fréchet
 derivative vanishes there. -/
@@ -178,28 +175,47 @@ theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by
   ext x
   rw [mem_criticalPoints, mem_criticalPoints, mvfderiv_neg, neg_eq_zero]
 
+/-! ### Composition with a local diffeomorphism -/
+
+section LocalDiffeomorph
+
+variable {F G M' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace M'] [ChartedSpace G M'] {n : WithTop ℕ∞}
+  {π : M → M'}
+
+/-- **Criticality under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
+with `1 ≤ n`, then `x` is a critical point of `f ∘ π` exactly when `π x` is a critical point of
+`f`. -/
+theorem _root_.IsLocalDiffeomorphAt.mem_criticalPoints_comp_iff
+    (hπ : IsLocalDiffeomorphAt I J n π x) (hn : 1 ≤ n) {f : M' → ℝ} :
+    x ∈ criticalPoints I (f ∘ π) ↔ π x ∈ criticalPoints J f := by
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  simp only [mem_criticalPoints_iff_mfderiv_eq_zero]
+  by_cases hf : MDifferentiableAt J 𝓘(ℝ) f (π x)
+  · -- The differential of `π` at `x` is invertible, so it can be cancelled in the chain rule.
+    rw [mfderiv_comp x hf (hπ.mdifferentiableAt hn0)]
+    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
+      fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
+    have := congr($h ((hπ.mfderivToContinuousLinearEquiv hn0).symm v))
+    rwa [ContinuousLinearMap.comp_apply, ← hπ.mfderivToContinuousLinearEquiv_coe hn0,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at this
+  -- Near `π x`, `f` is `f ∘ π` after a local inverse of `π`, so `f ∘ π` is not differentiable at
+  -- `x` either, and both derivatives vanish by convention.
+  have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := fun h ↦ hf <|
+    (h.comp_of_eq (π x) (hπ.mdifferentiableAt_localInverse hn0)
+      (hπ.localInverse_left_inv hπ.localInverse_mem_target)).congr_of_eventuallyEq
+      (hπ.localInverse_eventuallyEq_right.fun_comp f).symm
+  simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfπ]
+
+end LocalDiffeomorph
+
 /-! ### Restriction to an open submanifold -/
 
 /-- A point of an open submanifold `U` is a critical point of the restriction of `f` to `U` exactly
 when it is a critical point of `f`. -/
 theorem mem_criticalPoints_comp_subtypeVal {U : Opens M} {x : U} :
-    x ∈ criticalPoints I (f ∘ Subtype.val : U → ℝ) ↔ (x : M) ∈ criticalPoints I f := by
-  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
-  swap
-  · -- On the open set `U`, `f` and its restriction are differentiable at the same points, and
-    -- both manifold derivatives vanish by convention where they are not.
-    have hfU : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ Subtype.val : U → ℝ) x :=
-      (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).not.1 hf
-    simp only [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt hfU]
-  rw [mem_criticalPoints_iff_mfderiv_eq_zero, mem_criticalPoints_iff_mfderiv_eq_zero,
-    mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
-    Manifold.mfderiv_subtype_val]
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
-    fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, zero_apply] using
-    DFunLike.congr_fun h ((Manifold.tangentSpaceOpenEquiv (I := I) x).symm v)
+    x ∈ criticalPoints I (f ∘ Subtype.val : U → ℝ) ↔ (x : M) ∈ criticalPoints I f :=
+  (isLocalDiffeomorph_subtype_val (I := I) (n := 1) x).mem_criticalPoints_comp_iff le_rfl
 
 /-- The critical points of the restriction of `f` to an open submanifold `U` are the critical
 points of `f` lying in `U`. -/
@@ -521,6 +537,33 @@ theorem IsMorse.exists_lt_lt_forall_mem_Ioo [CompactSpace M] (hf : IsMorse I f) 
   have h₁ := T.min'_le _ (hmem hx hxab)
   have h₂ := T.le_max' _ (hmem hx hxab)
   constructor <;> linarith [hmin.1, hmax.2]
+
+/-- **Separating levels exist.** For a Morse function on a compact manifold and points `p` and
+`r`, there are levels `c₂` above `f r` and `c₁` below `f p` such that every critical value
+strictly between `f r` and `f p` lies strictly between `c₂` and `c₁`, and no critical point lies on
+the level `c₁`. -/
+theorem IsMorse.exists_separating_levels [CompactSpace M] (hf : IsMorse I f) (p r : M) :
+    ∃ c₁ c₂ : ℝ, c₁ < f p ∧ f r < c₂ ∧ (∀ y ∈ criticalPoints I f, f y ≠ c₁) ∧
+      ∀ q ∈ criticalPoints I f, f r < f q → f q < f p → c₂ < f q ∧ f q < c₁ := by
+  have hcrit := hf.finite_criticalPoints
+  -- Levels close enough to `f p` from below, and to `f r` from above, separate the finitely many
+  -- critical values.
+  have h₁ : ∀ᶠ c in 𝓝[<] (f p), c < f p ∧ ∀ q ∈ criticalPoints I f, f q < f p → f q < c :=
+    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
+      fun q _ ↦ by
+        by_cases hq : f q < f p
+        · filter_upwards [Ioo_mem_nhdsLT hq] with c hc _ using hc.1
+        · exact Eventually.of_forall fun _ h ↦ absurd h hq
+  have h₂ : ∀ᶠ c in 𝓝[>] (f r), f r < c ∧ ∀ q ∈ criticalPoints I f, f r < f q → c < f q :=
+    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
+      fun q _ ↦ by
+        by_cases hq : f r < f q
+        · filter_upwards [Ioo_mem_nhdsGT hq] with c hc _ using hc.2
+        · exact Eventually.of_forall fun _ h ↦ absurd h hq
+  obtain ⟨c₁, hc₁p, hc₁⟩ := h₁.exists
+  obtain ⟨c₂, hc₂r, hc₂⟩ := h₂.exists
+  exact ⟨c₁, c₂, hc₁p, hc₂r, fun y hy hyc ↦ (hc₁ y hy (hyc ▸ hc₁p)).ne hyc,
+    fun q hq hrq hqp ↦ ⟨hc₂ q hq hrq, hc₁ q hq hqp⟩⟩
 
 /-- A proper Morse function bounded below has finitely many critical points in each sublevel
 set. -/

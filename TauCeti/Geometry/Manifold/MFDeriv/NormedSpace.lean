@@ -9,12 +9,12 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
-# Vanishing of the derivative of a vector-valued function
+# Derivatives of vector-valued functions
 
 For a function `g` from a manifold to a normed space `F`, Mathlib has two derivatives at `x`:
 `mfderiv I 𝓘(𝕜, F) g x`, with values in the tangent space `TangentSpace 𝓘(𝕜, F) (g x)`, and
 `mvfderiv I g x`, with values in `F` itself. They differ by the identification of the tangent space
-with `F`, so one vanishes exactly when the other does.
+with `F`. The canonical identification relates their vanishing, injectivity and ranges.
 
 ## Main results
 
@@ -41,6 +41,7 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
   at `x` has the identity as derivative at `x`.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.range_mvfderiv`: the tangent-space identification transports derivative ranges.
 * `TauCeti.injective_mvfderiv_iff`:
   `Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x)`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
@@ -231,6 +232,14 @@ theorem mvfderiv_fun_sum {ι : Type*} {u : Finset ι} {f : ι → M → F} {x : 
   rw [hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
   -- The tangent spaces of `F` in which `mfderiv` takes values are `F` itself.
   rfl
+
+/-- The range of the vector-valued derivative is the image of the manifold derivative's range
+under the canonical identification of the target tangent space with its model. -/
+theorem range_mvfderiv {g : M → F} {x : M} :
+    (mvfderiv I g x).range =
+      (mfderiv I 𝓘(𝕜, F) g x).range.map
+        (NormedSpace.fromTangentSpace (g x)).toLinearMap :=
+  LinearMap.range_comp _ _
 
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/

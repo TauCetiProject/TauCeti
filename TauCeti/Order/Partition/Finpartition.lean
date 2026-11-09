@@ -9,6 +9,7 @@ public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.GroupWithZero.Basic
+public import Mathlib.Data.Fintype.Prod
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -56,7 +57,8 @@ of a finite partition of the image `f '' s` to a finite partition of `s`, which 
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
 of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
-inverse equivalence.
+inverse equivalence; and the partition of `α × β` into the fibres of the first coordinate
+(`Finpartition.ofSetoid_ker_fst_parts`).
 -/
 
 public section
@@ -990,5 +992,47 @@ theorem exists_comap_eq_iff {Q : Finpartition s} :
   ⟨fun ⟨_, hP⟩ => hP ▸ comap_mono bot_le, fun h => ⟨_, comap_pushforward h⟩⟩
 
 end Comap
+
+end Finpartition
+
+namespace Finpartition
+
+open Finset
+
+variable {α β : Type*} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β] [Nonempty β]
+  [DecidableRel (Setoid.ker (Prod.fst : α × β → α))]
+
+/-- The partition of `α × β` into the fibers of the first coordinate has the cells
+`{A} ×ˢ univ`, one for each `A : α`. -/
+theorem ofSetoid_ker_fst_parts :
+    (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts =
+      univ.image (fun A : α ↦ {A} ×ˢ (univ : Finset β)) := by
+  have hfilter (x : α × β) :
+      {y ∈ (univ : Finset (α × β)) | x.1 = y.1} = {x.1} ×ˢ univ := by
+    ext y
+    simp only [mem_filter, mem_univ, true_and, mem_product, mem_singleton, and_true, eq_comm]
+  simp only [ofSetoid, ofSetSetoid_parts, Setoid.ker_def, hfilter]
+  ext B
+  simp only [mem_image, mem_univ, true_and]
+  exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩, fun ⟨A, hA⟩ ↦ ⟨(A, Classical.arbitrary β), hA⟩⟩
+
+/-- Every cell of the partition of `α × β` into the fibers of the first coordinate has
+`Fintype.card β` elements. -/
+theorem card_of_mem_ofSetoid_ker_fst_parts {B : Finset (α × β)}
+    (hB : B ∈ (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts) :
+    #B = Fintype.card β := by
+  obtain ⟨A, -, rfl⟩ := mem_image.1 (ofSetoid_ker_fst_parts (α := α) (β := β) ▸ hB)
+  simp
+
+/-- The partition of `α × β` into the fibers of the first coordinate has `Fintype.card α` cells. -/
+@[simp]
+theorem card_ofSetoid_ker_fst_parts :
+    #(ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts = Fintype.card α := by
+  rw [ofSetoid_ker_fst_parts, card_image_of_injective, card_univ]
+  intro A B h
+  have hmem : (A, Classical.arbitrary β) ∈ {A} ×ˢ (univ : Finset β) := by simp
+  simp only at h
+  rw [h] at hmem
+  simpa only [mem_product, mem_singleton, mem_univ, and_true] using hmem
 
 end Finpartition

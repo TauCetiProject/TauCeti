@@ -5,63 +5,79 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.NonUnitalSubalgebra
-public import Mathlib.Algebra.Algebra.Operations
-public import TauCeti.Data.Finset.Image
-public import TauCeti.Data.Set.Function
-public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
+import TauCeti.Data.Finset.Image
+import TauCeti.Data.Set.Function
 
 /-!
-# The algebra of a matching
+# The matched subalgebra of the strands algebra
 
-A pointed matched circle `Z` has `4k` marked points, cut open at the basepoint to the linear order
-`{1, …, 4k}`, and a matching `M` pairing them up. Lipshitz, Ozsváth and Thurston define its algebra
-`A(Z)` inside the strands algebra `A(4k)`: a generator is obtained from a strand diagram `ρ`
-without horizontal strands (a set of Reeb chords) and a set `h` of matched pairs by summing over
-all ways of adding one horizontal strand at a point of each pair in `h`. Both `M` restricted to the
-starting points of the resulting diagrams and `M` restricted to their end points are required to be
-injective: no two strands may start, or end, at the two points of one pair.
+A pointed matched circle `Z` has `4k` points on an oriented circle cut open at a basepoint, matched
+in pairs. Lipshitz, Ozsváth and Thurston define the algebra `A(Z)` of bordered Heegaard Floer
+homology as a subalgebra of the strands algebra `A(4k)`: it is spanned by the sums of strand
+diagrams over all ways of placing each horizontal strand at one of the two points of a matched
+pair, the diagrams having no two matched starting points and no two matched end points. Its
+idempotents are the sums `I(s)` of the idempotents `I(S)` over the sets `S` containing one point
+of each matched pair in `s`.
 
-This file constructs that subspace for an arbitrary linear order `α` and an arbitrary map
-`M : α → β` (the pairs of a pointed matched circle are the fibres of `M`) and proves that it is
-closed under multiplication. In fact the product of two generators is again a generator or
-zero (`TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`). The idempotents
-`I(s)`, sums of the identity diagrams over the ways of choosing one point of each pair in `s`, are
-orthogonal idempotents of `A(Z)`, and their sum over all sets of pairs is a unit for `A(Z)`.
+This file describes this subalgebra intrinsically for an arbitrary matching, a map `M : α → β`
+whose fibres are the matched sets (`TauCeti.StrandsAlgebra.matchedSubalgebra`): an element belongs
+to it when its diagrams have no two matched starting or end points and its coefficients do not
+change when a horizontal strand moves to a matched point
+(`TauCeti.StrandDiagram.swapHorizontal`). It is closed under the product, and it is closed under
+the differential, so that it is a differential subalgebra. Both closure properties come down to the
+behaviour of crossings when a horizontal strand moves, developed in
+`TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal`: moving a strand identifies the
+factorizations of a diagram, and the diagrams resolving to it, with those of the moved diagram.
 
-The proof of closure takes two generators `a(ρ, h)` and `a(σ, k)`. A horizontal strand of the
-first factor over a pair in `M(σ⁻)` must sit where a strand of `σ` starts, and a horizontal strand
-of the second factor over a pair in `M(ρ⁺)` must sit where a strand of `ρ` ends; over a pair in
-`h ∩ k` both factors have a horizontal strand at the same freely chosen point. Common horizontal
-strands do not affect composability (`TauCeti.StrandDiagram.composable_addHorizontal_iff`), so the
-nonzero products are indexed by the choices over `h ∩ k` and sum to a single generator.
+The file also constructs the generators of Lipshitz, Ozsváth and Thurston. A generator `a(ρ, h)`
+(`TauCeti.StrandsAlgebra.horizontalCompletion`) is obtained from a strand diagram `ρ` without
+horizontal strands and a set `h` of matched pairs by summing over all ways of adding one horizontal
+strand at a point of each pair in `h`. It lies in the matched subalgebra, and the product of two
+generators is again a generator or zero
+(`TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`). In a product
+`a(ρ, h) a(σ, k)`, a horizontal strand of the first factor over a pair in `M(σ⁻)` must sit where a
+strand of `σ` starts, and a horizontal strand of the second factor over a pair in `M(ρ⁺)` must sit
+where a strand of `ρ` ends; over a pair in `h ∩ k` both factors have a horizontal strand at the
+same freely chosen point. Common horizontal strands do not affect composability
+(`TauCeti.StrandDiagram.composable_addHorizontal_iff`), so the nonzero products are indexed by the
+choices over `h ∩ k` and sum to a single generator. Finally, the sum of the `I(s)` over all sets of
+pairs is a two-sided unit for the matched subalgebra, different from the unit of the strands
+algebra.
 
 ## Main definitions
 
+* `TauCeti.StrandsAlgebra.matchedSubalgebra R M`: the matched subalgebra, a non-unital subalgebra
+  of the strands algebra.
+* `TauCeti.StrandsAlgebra.matchedIdem R M s`: the idempotent `I(s)`.
 * `TauCeti.StrandsAlgebra.IsMatchedGenerator M ρ h`: `ρ` has no horizontal strands, `M` is
   injective on its starting points and on its end points, and `h` avoids their images.
 * `TauCeti.StrandsAlgebra.matchedChoices M h`: the choices of one point of each pair in `h`.
-* `TauCeti.StrandsAlgebra.horizontalCompletion M ρ h`: the element `a(ρ, h)`, the sum of `ρ` with a
-  horizontal strand added at one point of each pair in `h`, over all such choices.
-* `TauCeti.StrandsAlgebra.matchedAlgebra R M`: the span of the `a(ρ, h)`, a non-unital subalgebra
-  of the strands algebra; for a pointed matched circle it is `A(Z)`.
-* `TauCeti.StrandsAlgebra.matchedIdem M s`: the idempotent `I(s)` of a set of pairs `s`.
-* `TauCeti.StrandsAlgebra.matchedOne M`: the unit `∑ₛ I(s)` of `A(Z)`.
+* `TauCeti.StrandsAlgebra.horizontalCompletion M ρ h`: the generator `a(ρ, h)`.
+* `TauCeti.StrandsAlgebra.matchedOne R M`: the unit `∑ₛ I(s)` of the matched subalgebra.
 
 ## Main results
 
+* `TauCeti.StrandsAlgebra.mem_matchedSubalgebra`: the characterization of the matched subalgebra.
+* `TauCeti.StrandsAlgebra.differential_mem_matchedSubalgebra`: the matched subalgebra is closed
+  under the differential.
+* `TauCeti.StrandsAlgebra.matchedIdem_mem_matchedSubalgebra`,
+  `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
+  matched subalgebra.
+* `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
+* `TauCeti.StrandsAlgebra.horizontalCompletion_mem_matchedSubalgebra`: the generators lie in the
+  matched subalgebra.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
   generators.
-* `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
-  a two-sided unit for `A(Z)`.
+  a two-sided unit for the matched subalgebra.
 
 ## References
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
-  Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.2
-  (pointed matched circles, the elements `I(s)` and `a(ρ)`, and the algebra `A(Z)`).
+  Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.2 (pointed
+  matched circles, the idempotents `I(s)`, the elements `a(ρ)` and the algebra `A(Z)`).
 -/
 
 public section
@@ -74,12 +90,234 @@ namespace TauCeti
 
 namespace StrandsAlgebra
 
-variable {R : Type*} [CommSemiring R] {α β : Type*} [LinearOrder α] [Fintype α] [DecidableEq β]
-  (M : α → β)
+open StrandDiagram
 
-/-- The pair `(ρ, h)` indexes a generator of the algebra of the matching `M`: `ρ` has no
-horizontal strands, `M` is injective on its starting points and on its end points, and the set `h`
-of pairs along which horizontal strands are added avoids the pairs of those points. -/
+variable {R α β : Type*} [CommSemiring R] [LinearOrder α] [Fintype α]
+
+/-! ### The matched subalgebra -/
+
+variable (R) in
+/-- The matched subalgebra of the strands algebra of `α` for a matching `M : α → β`, which pairs
+the points of `α` with equal images. It consists of the elements `x` such that
+
+* every diagram with a nonzero coefficient in `x` has no two matched starting points and no two
+  matched end points, and
+* the coefficient of a diagram in `x` does not change when one of its horizontal strands is moved
+  to a matched point at which no strand starts or ends.
+
+The second condition says that the coefficients are constant on each family of diagrams obtained
+from one another by moving horizontal strands between matched points, so that `x` is a combination
+of the sums of these families. For the matching of a pointed matched circle `Z` with `4k` points,
+`α = Fin (4 * k)` and `R = ZMod 2`, these sums span the algebra `A(Z)` of Lipshitz, Ozsváth and
+Thurston, which is therefore this subalgebra. The definition uses no property of `M` beyond being
+a function. -/
+def matchedSubalgebra (M : α → β) : NonUnitalSubalgebra R (StrandsAlgebra R α) where
+  carrier := {x | (∀ φ, (basis R α).repr x φ ≠ 0 →
+      Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α)) ∧
+    ∀ φ a b, M a = M b → (basis R α).repr x (φ.swapHorizontal a b) = (basis R α).repr x φ}
+  add_mem' {x y} hx hy := by
+    refine ⟨fun φ h ↦ ?_, fun φ a b hab ↦ ?_⟩
+    · rw [map_add, Finsupp.add_apply] at h
+      by_cases hxφ : (basis R α).repr x φ = 0
+      · exact hy.1 φ (by simpa [hxφ] using h)
+      · exact hx.1 φ hxφ
+    · simp only [map_add, Finsupp.add_apply, hx.2 φ a b hab, hy.2 φ a b hab]
+  zero_mem' := ⟨fun φ h ↦ absurd (by simp) h, fun φ a b _ ↦ by simp⟩
+  smul_mem' r x hx := by
+    refine ⟨fun φ h ↦ hx.1 φ fun hxφ ↦ h ?_, fun φ a b hab ↦ ?_⟩
+    · simp [hxφ]
+    · simp only [map_smul, Finsupp.smul_apply, hx.2 φ a b hab]
+  mul_mem' {x y} hx hy := by
+    have := Fintype.ofFinite (StrandDiagram α)
+    refine ⟨fun χ hχ ↦ ?_, fun χ a b hab ↦ ?_⟩
+    · -- A diagram in a product starts where a diagram of `x` starts and ends where one of `y`
+      -- ends.
+      rw [repr_mul_apply] at hχ
+      obtain ⟨φ, -, hφ⟩ := exists_ne_zero_of_sum_ne_zero hχ
+      obtain ⟨ψ, -, hψ⟩ := exists_ne_zero_of_sum_ne_zero hφ
+      rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
+      obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+      rw [source_trans_of_target_eq hc.target_eq, target_trans_of_target_eq hc.target_eq]
+      exact ⟨(hx.1 φ (left_ne_zero_of_mul hψ)).1, (hy.1 ψ (right_ne_zero_of_mul hψ)).2⟩
+    -- Reduce to a diagram `χ` with a horizontal strand at `a` that can move to `b`.
+    wlog hχ : χ.CanMoveHorizontal a b generalizing a b
+    · by_cases hχ' : χ.CanMoveHorizontal b a
+      · rw [swapHorizontal_comm]
+        exact this b a hab.symm hχ'
+      · rw [swapHorizontal_of_not hχ hχ']
+    -- Moving the strand in both factors identifies the factorizations of `χ` with those of `χ`
+    -- with the strand moved.
+    have key {φ ψ : StrandDiagram α} {χ : StrandDiagram α} {a b : α}
+        (hχ : χ.CanMoveHorizontal a b) (hab : M a = M b)
+        (hM : Set.InjOn M (φ.target : Set α)) (h : φ.Composable ψ ∧ φ.trans ψ = χ) :
+        (φ.swapHorizontal a b).Composable (ψ.swapHorizontal a b) ∧
+          (φ.swapHorizontal a b).trans (ψ.swapHorizontal a b) = χ.swapHorizontal a b := by
+      obtain ⟨hc, rfl⟩ := h
+      have ha : a ∈ (φ.target : Set α) := mem_coe.2 (mem_target.2 ⟨a, hχ.mem_left_of_trans⟩)
+      obtain ⟨hφ, hψ⟩ := hχ.of_trans hc.target_eq fun hb ↦ hχ.ne (hM ha hb hab)
+      exact ⟨hc.swapHorizontal hφ hψ, swapHorizontal_trans_swapHorizontal hφ hψ⟩
+    set e := (swapHorizontal_involutive (α := α) a b).toPerm
+    rw [repr_mul_apply, repr_mul_apply, ← Equiv.sum_comp e]
+    refine sum_congr rfl fun φ _ ↦ ?_
+    rw [← Equiv.sum_comp e]
+    refine sum_congr rfl fun ψ _ ↦ ?_
+    simp only [e, Function.Involutive.coe_toPerm, hx.2 φ a b hab, hy.2 ψ a b hab]
+    by_cases hxy : (basis R α).repr x φ * (basis R α).repr y ψ = 0
+    · simp [hxy]
+    have hxφ : (basis R α).repr x (φ.swapHorizontal a b) ≠ 0 := by
+      rw [hx.2 φ a b hab]
+      exact left_ne_zero_of_mul hxy
+    refine if_congr ⟨fun h ↦ ?_, key hχ hab (hx.1 φ (left_ne_zero_of_mul hxy)).2⟩ rfl rfl
+    simpa [swapHorizontal_comm _ b a] using key hχ.swapHorizontal hab.symm (hx.1 _ hxφ).2 h
+
+/-- An element of the strands algebra lies in the matched subalgebra when every diagram with a
+nonzero coefficient has no two matched starting points and no two matched end points, and the
+coefficients do not change when a horizontal strand moves to a matched point. -/
+theorem mem_matchedSubalgebra {M : α → β} {x : StrandsAlgebra R α} :
+    x ∈ matchedSubalgebra R M ↔
+      (∀ φ, (basis R α).repr x φ ≠ 0 →
+        Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α)) ∧
+      ∀ φ a b, M a = M b →
+        (basis R α).repr x (φ.swapHorizontal a b) = (basis R α).repr x φ :=
+  Iff.rfl
+
+/-- **The matched subalgebra is closed under the differential.** -/
+theorem differential_mem_matchedSubalgebra {M : α → β} {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) : differential R α x ∈ matchedSubalgebra R M := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  rw [mem_matchedSubalgebra] at hx ⊢
+  refine ⟨fun χ hχ ↦ ?_, fun χ a b hab ↦ ?_⟩
+  · -- Resolving a crossing keeps the starting and end points.
+    rw [repr_differential_apply] at hχ
+    obtain ⟨φ, -, hφ⟩ := exists_ne_zero_of_sum_ne_zero hχ
+    obtain ⟨q, -, hq⟩ := exists_ne_zero_of_sum_ne_zero hφ
+    rw [ne_eq, ite_eq_right_iff, not_imp] at hq
+    obtain ⟨⟨-, rfl⟩, hq⟩ := hq
+    rw [source_resolve, target_resolve]
+    exact hx.1 φ hq
+  wlog hχ : χ.CanMoveHorizontal a b generalizing a b
+  · by_cases hχ' : χ.CanMoveHorizontal b a
+    · rw [swapHorizontal_comm]
+      exact this b a hab.symm hχ'
+    · rw [swapHorizontal_of_not hχ hχ']
+  -- Moving the strand identifies the diagrams resolving to `χ` with those resolving to `χ` with
+  -- the strand moved.
+  have key {φ χ : StrandDiagram α} {q : α × α} {a b : α} (hχ : χ.CanMoveHorizontal a b)
+      (h : q ∈ φ.resolvableInversions ∧ φ.resolve q = χ) :
+      q ∈ (φ.swapHorizontal a b).resolvableInversions ∧
+        (φ.swapHorizontal a b).resolve q = χ.swapHorizontal a b := by
+    obtain ⟨hq, rfl⟩ := h
+    have hq' := resolvableInversions_subset_inversions φ hq
+    exact ⟨(mem_resolvableInversions_swapHorizontal_iff hq' hχ).2 hq, resolve_swapHorizontal hq' hχ⟩
+  set e := (swapHorizontal_involutive (α := α) a b).toPerm
+  rw [repr_differential_apply, repr_differential_apply, ← Equiv.sum_comp e]
+  refine sum_congr rfl fun φ _ ↦ sum_congr rfl fun q _ ↦ ?_
+  simp only [e, Function.Involutive.coe_toPerm, hx.2 φ a b hab]
+  refine if_congr ⟨fun h ↦ ?_, key hχ⟩ rfl rfl
+  simpa [swapHorizontal_comm _ b a] using key hχ.swapHorizontal h
+
+/-! ### The idempotents of the matched subalgebra -/
+
+section Idempotents
+
+variable [DecidableEq β]
+
+variable (R) in
+/-- The idempotent `I(s)` of the matched subalgebra for a finite set `s` of values of the
+matching `M`: the sum of the idempotents `I(S)` over the sets `S` of points mapped bijectively
+onto `s` by `M`, that is, containing exactly one point over each element of `s`. -/
+def matchedIdem (M : α → β) (s : Finset β) : StrandsAlgebra R α :=
+  ∑ S with S.image M = s ∧ #S = #s, idem S
+
+theorem matchedIdem_def (M : α → β) (s : Finset β) :
+    matchedIdem R M s = ∑ S with S.image M = s ∧ #S = #s, idem S :=
+  (rfl)
+
+/-- The idempotents `I(s)` are cycles. -/
+@[simp]
+theorem differential_matchedIdem (M : α → β) (s : Finset β) :
+    differential R α (matchedIdem R M s) = 0 := by
+  simp [matchedIdem_def]
+
+/-- The coefficient of a diagram in `I(s)` is `1` when it is the identity diagram on a set mapped
+bijectively onto `s` by `M`, and `0` otherwise. -/
+theorem repr_matchedIdem_apply (M : α → β) (s : Finset β) (φ : StrandDiagram α) :
+    (basis R α).repr (matchedIdem R M s) φ =
+      if φ = idOn φ.source ∧ φ.source.image M = s ∧ #φ.source = #s then 1 else 0 := by
+  have key (S : Finset α) : idOn S = φ ↔ S = φ.source ∧ φ = idOn φ.source := by
+    constructor
+    · rintro rfl
+      simp
+    · rintro ⟨rfl, h⟩
+      exact h.symm
+  simp only [matchedIdem, idem_def, map_sum, ← basis_apply, Module.Basis.repr_self,
+    Finset.sum_apply', Finsupp.single_apply, key, ite_and, sum_ite_eq', mem_filter, mem_univ,
+    true_and]
+  split_ifs <;> tauto
+
+/-- **The idempotents `I(s)` lie in the matched subalgebra.** -/
+theorem matchedIdem_mem_matchedSubalgebra (M : α → β) (s : Finset β) :
+    matchedIdem R M s ∈ matchedSubalgebra R M := by
+  rw [mem_matchedSubalgebra]
+  simp only [repr_matchedIdem_apply]
+  refine ⟨fun φ hφ ↦ ?_, fun φ a b hab ↦ ?_⟩
+  · obtain ⟨hφ, hM, hcard⟩ := (ite_ne_right_iff.1 hφ).1
+    have hinj : Set.InjOn M (φ.source : Set α) := card_image_iff.1 (by rw [hM, hcard])
+    rw [hφ, source_idOn, target_idOn]
+    exact ⟨hinj, hinj⟩
+  wlog h : φ.CanMoveHorizontal a b generalizing a b
+  · by_cases h' : φ.CanMoveHorizontal b a
+    · rw [swapHorizontal_comm]
+      exact this b a hab.symm h'
+    · rw [swapHorizontal_of_not h h']
+  have ha : a ∈ φ.source := mem_source.2 ⟨a, h.mem⟩
+  -- Replacing `a` by `b` changes neither the image under `M` nor the size of the source.
+  have himage : (insert b (φ.source.erase a)).image M = φ.source.image M := by
+    rw [image_insert, ← hab, ← image_insert, insert_erase ha]
+  have hcard : #(insert b (φ.source.erase a)) = #φ.source := by
+    rw [card_insert_of_notMem fun h' ↦ h.notMem_source (mem_of_mem_erase h'),
+      card_erase_of_mem ha]
+    have := card_pos.2 ⟨a, ha⟩
+    omega
+  rw [source_swapHorizontal h, himage, hcard]
+  refine if_congr (and_congr_left fun _ ↦ ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩) rfl rfl
+  · -- Move the strand back: `φ` is the identity diagram with the strand at `a`.
+    have hb : b ∈ insert b (φ.source.erase a) := mem_insert_self b _
+    have ha' : a ∉ insert b (φ.source.erase a) := by simp [h.ne]
+    conv_lhs => rw [← swapHorizontal_swapHorizontal φ a b, h']
+    rw [swapHorizontal_comm, swapHorizontal_idOn hb ha',
+      erase_insert fun hb' ↦ h.notMem_source (mem_of_mem_erase hb'), insert_erase ha]
+  · conv_lhs => rw [h']
+    exact swapHorizontal_idOn ha h.notMem_source
+
+/-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero
+otherwise. -/
+@[simp]
+theorem matchedIdem_mul_matchedIdem (M : α → β) (s t : Finset β) :
+    matchedIdem R M s * matchedIdem R M t = if s = t then matchedIdem R M s else 0 := by
+  simp only [matchedIdem, sum_mul_sum, idem_mul_idem, sum_ite_eq, mem_filter, mem_univ, true_and]
+  split_ifs with hst
+  · subst hst
+    exact sum_congr rfl fun S hS ↦ ite_eq_left (mem_filter.1 hS).2
+  · refine sum_eq_zero fun S hS ↦ ite_eq_right fun h ↦ hst ?_
+    rw [← (mem_filter.1 hS).2.1, h.1]
+
+/-- Each `I(s)` is idempotent. -/
+theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
+    IsIdempotentElem (matchedIdem R M s) := by
+  simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
+
+end Idempotents
+
+/-! ### The generators `a(ρ, h)` -/
+
+section Generators
+
+variable [DecidableEq β] (M : α → β)
+
+/-- The pair `(ρ, h)` indexes a generator of the matched subalgebra for the matching `M`: `ρ` has
+no horizontal strands, `M` is injective on its starting points and on its end points, and the set
+`h` of pairs along which horizontal strands are added avoids the pairs of those points. -/
 structure IsMatchedGenerator (ρ : StrandDiagram α) (h : Finset β) : Prop where
   notMem_self : ∀ i, i ∉ ρ i
   injOn_source : Set.InjOn M ρ.source
@@ -103,8 +341,8 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
   rw [← card_image_iff, hU, eq_comm]
 
 variable (M) in
-/-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
-`ρ` by adding a horizontal strand at one point of each pair in `h`, over all such choices `U`. When
+/-- The element `a(ρ, h)` of the matched subalgebra: the sum of the diagrams obtained from `ρ` by
+adding a horizontal strand at one point of each pair in `h`, over all such choices `U`. When
 `IsMatchedGenerator M ρ h` holds, each summand is `ρ` together with these horizontal strands; for
 other inputs, the strands of `ρ` starting or ending at a chosen point are dropped. -/
 def horizontalCompletion (ρ : StrandDiagram α) (h : Finset β) : StrandsAlgebra R α :=
@@ -293,7 +531,7 @@ private theorem sum_mul_eq_sum_matchedChoices_inter (hρ : IsMatchedGenerator M 
     exact ⟨mem_matchedChoices.2 ⟨h₃, (mem_matchedChoices.1 hU).2.mono
       (coe_subset.2 inter_subset_left)⟩, Prod.ext h₁.symm h₂.symm⟩
 
-/-- **The product of two generators of the algebra of a matching.** Let `U₀` be the starting
+/-- **The product of two generators of the matched subalgebra.** Let `U₀` be the starting
 points of `σ` over the pairs of `h` and `V₀` the end points of `ρ` over the pairs of `k`. The
 product `a(ρ, h) a(σ, k)` is zero unless the pairs at the right of the first factor are those at
 the left of the second, `M(ρ⁺) ∪ h = M(σ⁻) ∪ k`, and `ρ` with horizontal strands at `U₀` is
@@ -376,85 +614,134 @@ theorem IsMatchedGenerator.trans (hρ : IsMatchedGenerator M ρ h) (hσ : IsMatc
 
 end Product
 
-/-! ### The algebra of a matching -/
+section Membership
 
-open scoped Pointwise in
-variable (R M) in
-/-- The algebra of the matching `M`, spanned by the elements `a(ρ, h)`. For the matching of a
-pointed matched circle `Z` this is the algebra `A(Z)` of Lipshitz, Ozsváth and Thurston, without
-its differential. It is closed under multiplication because the product of two of its
-generators is again one or zero (`horizontalCompletion_mul_horizontalCompletion`). It is a
-non-unital subalgebra of the strands algebra; its own unit is `matchedOne M`. -/
-def matchedAlgebra : NonUnitalSubalgebra R (StrandsAlgebra R α) :=
-  (Submodule.span R {x | ∃ ρ h, IsMatchedGenerator M ρ h ∧ horizontalCompletion M ρ h = x}
-    ).toNonUnitalSubalgebra fun x y hx hy ↦ by
-      have hxy := Submodule.mul_mem_mul hx hy
-      rw [Submodule.span_mul_span] at hxy
-      refine Submodule.span_le.2 ?_ hxy
-      rintro _ ⟨_, ⟨ρ, h, hρ, rfl⟩, _, ⟨σ, k, hσ, rfl⟩, rfl⟩
-      dsimp only
-      rw [SetLike.mem_coe, horizontalCompletion_mul_horizontalCompletion hρ hσ]
-      split_ifs with hC
-      · exact Submodule.subset_span ⟨_, _, hρ.trans hσ hC.2, rfl⟩
-      · exact zero_mem _
+variable {ρ : StrandDiagram α} {h : Finset β}
 
-theorem mem_matchedAlgebra_iff {x : StrandsAlgebra R α} :
-    x ∈ matchedAlgebra R M ↔
-      x ∈ Submodule.span R {x | ∃ ρ h, IsMatchedGenerator M ρ h ∧ horizontalCompletion M ρ h = x} :=
-  Iff.rfl
+/-- The coefficient of a diagram `φ` in `a(ρ, h)` counts the choices `U` with `ρ` together with
+horizontal strands at `U` equal to `φ`. -/
+private theorem repr_horizontalCompletion_apply (φ : StrandDiagram α) :
+    (basis R α).repr (horizontalCompletion M ρ h) φ =
+      ∑ U ∈ matchedChoices M h, if ρ.addHorizontal U = φ then 1 else 0 := by
+  simp only [horizontalCompletion_def, map_sum, ← basis_apply, Module.Basis.repr_self,
+    Finset.sum_apply', Finsupp.single_apply]
 
-theorem horizontalCompletion_mem_matchedAlgebra {ρ : StrandDiagram α} {h : Finset β}
-    (hρ : IsMatchedGenerator M ρ h) :
-    (horizontalCompletion M ρ h : StrandsAlgebra R α) ∈ matchedAlgebra R M :=
-  Submodule.subset_span ⟨ρ, h, hρ, rfl⟩
+/-- Moving a horizontal strand of a summand of `a(ρ, h)` between two matched points gives the
+summand for the choice moved by the transposition of the two points. -/
+private theorem swapHorizontal_addHorizontal (hρ : IsMatchedGenerator M ρ h) {U : Finset α}
+    (hU : U ∈ matchedChoices M h) {a b : α} (hab : M a = M b) :
+    (ρ.addHorizontal U).swapHorizontal a b =
+      ρ.addHorizontal (U.map (Equiv.swap a b).toEmbedding) := by
+  obtain ⟨hUh, hUi⟩ := mem_matchedChoices.1 hU
+  have hself (x : α) : x ∈ ρ.addHorizontal U x ↔ x ∈ U := mem_addHorizontal_self hρ.notMem_self
+  wlog ha : a ∈ U generalizing a b
+  · by_cases hb : b ∈ U
+    · rw [swapHorizontal_comm, Equiv.swap_comm]
+      exact this hab.symm hb
+    -- Neither point carries a horizontal strand, so nothing moves.
+    have hU' : U.map (Equiv.swap a b).toEmbedding = U := by
+      ext x
+      rw [mem_map_equiv, Equiv.symm_swap]
+      rcases eq_or_ne x a with rfl | hxa
+      · simp [ha, hb]
+      rcases eq_or_ne x b with rfl | hxb
+      · simp [ha, hb]
+      rw [Equiv.swap_apply_of_ne_of_ne hxa hxb]
+    rw [hU', swapHorizontal_of_not (fun h' ↦ ha ((hself a).1 h'.mem))
+      fun h' ↦ hb ((hself b).1 h'.mem)]
+  rcases eq_or_ne a b with rfl | hne
+  · rw [swapHorizontal_of_not (fun h' ↦ h'.ne rfl) fun h' ↦ h'.ne rfl]
+    congr 1
+    ext x
+    simp
+  have hb : b ∉ U := fun hb ↦ hne (hUi ha hb hab)
+  -- The points over the pair of `a` lie outside the source and the target of `ρ`.
+  have hMa : M a ∈ h := hUh ▸ mem_image_of_mem M ha
+  have hout {x : α} (hx : M x = M a) : x ∉ ρ.source ∧ x ∉ ρ.target :=
+    ⟨fun hxs ↦ disjoint_left.1 hρ.disjoint_source (mem_image_of_mem M hxs) (hx ▸ hMa),
+      fun hxt ↦ disjoint_left.1 hρ.disjoint_target (mem_image_of_mem M hxt) (hx ▸ hMa)⟩
+  have hmove : (ρ.addHorizontal U).CanMoveHorizontal a b := by
+    refine canMoveHorizontal_iff.2 ⟨addHorizontal_apply_of_mem _ ha, ?_, ?_⟩
+    · rw [source_addHorizontal (hρ.disjoint_target_of_image_subset hUh.le), mem_union, not_or]
+      exact ⟨(hout hab.symm).1, hb⟩
+    · rw [target_addHorizontal (hρ.disjoint_source_of_image_subset hUh.le), mem_union, not_or]
+      exact ⟨(hout hab.symm).2, hb⟩
+  have hρab {x y : α} (hxy : y ∈ ρ x) : x ≠ a ∧ x ≠ b ∧ y ≠ a ∧ y ≠ b := by
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> rintro rfl
+    exacts [(hout rfl).1 (mem_source.2 ⟨y, hxy⟩), (hout hab.symm).1 (mem_source.2 ⟨y, hxy⟩),
+      (hout rfl).2 (mem_target.2 ⟨x, hxy⟩), (hout hab.symm).2 (mem_target.2 ⟨x, hxy⟩)]
+  have h₁ := Equiv.swap_apply_left a b
+  have h₂ := Equiv.swap_apply_right a b
+  have h₃ (z : α) (hza : z ≠ a) (hzb : z ≠ b) : Equiv.swap a b z = z :=
+    Equiv.swap_apply_of_ne_of_ne hza hzb
+  ext x y
+  rw [← Option.mem_def, ← Option.mem_def, mem_swapHorizontal hmove, mem_addHorizontal,
+    mem_addHorizontal, mem_map_equiv, mem_map_equiv, Equiv.symm_swap]
+  have := @hρab x y
+  grind
 
-/-- To prove a linear property of the elements of the algebra of a matching, it suffices to prove
-it for the generators `a(ρ, h)`. -/
-@[elab_as_elim]
-theorem matchedAlgebra_induction {p : (x : StrandsAlgebra R α) → x ∈ matchedAlgebra R M → Prop}
-    (generator : ∀ ρ h (hρ : IsMatchedGenerator M ρ h),
-      p (horizontalCompletion M ρ h) (horizontalCompletion_mem_matchedAlgebra hρ))
-    (zero : p 0 (zero_mem _)) (add : ∀ x y hx hy, p x hx → p y hy → p (x + y) (add_mem hx hy))
-    (smul : ∀ (r : R) x hx, p x hx → p (r • x) (SMulMemClass.smul_mem r hx))
-    {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) : p x hx := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨ρ, h, hρ, rfl⟩ := hx
-    exact generator ρ h hρ
-  | zero => exact zero
-  | add x y hx hy px py => exact add x y hx hy px py
-  | smul r x hx px => exact smul r x hx px
+/-- **The generators lie in the matched subalgebra.** -/
+theorem horizontalCompletion_mem_matchedSubalgebra (hρ : IsMatchedGenerator M ρ h) :
+    (horizontalCompletion M ρ h : StrandsAlgebra R α) ∈ matchedSubalgebra R M := by
+  rw [mem_matchedSubalgebra]
+  simp only [repr_horizontalCompletion_apply]
+  refine ⟨fun φ hφ ↦ ?_, fun φ a b hab ↦ ?_⟩
+  · -- `φ` is `ρ` with horizontal strands at one point of each pair of `h`.
+    obtain ⟨U, hU, hφ⟩ := exists_ne_zero_of_sum_ne_zero hφ
+    obtain rfl := (ite_ne_right_iff.1 hφ).1
+    obtain ⟨hUh, hUi⟩ := mem_matchedChoices.1 hU
+    rw [source_addHorizontal (hρ.disjoint_target_of_image_subset hUh.le),
+      target_addHorizontal (hρ.disjoint_source_of_image_subset hUh.le), coe_union, coe_union]
+    refine ⟨hρ.injOn_source.union_of_disjoint_image hUi ?_,
+      hρ.injOn_target.union_of_disjoint_image hUi ?_⟩
+    · rw [← coe_image, ← coe_image, disjoint_coe, hUh]
+      exact hρ.disjoint_source
+    · rw [← coe_image, ← coe_image, disjoint_coe, hUh]
+      exact hρ.disjoint_target
+  -- The transposition of `a` and `b` permutes the choices over `h` and moves the summands.
+  set e := Equiv.swap a b
+  have hMe (x : α) : M (e x) = M x := by
+    simp only [e, Equiv.swap_apply_def]
+    split_ifs with hxa hxb
+    · rw [hxa, hab]
+    · rw [hxb, hab]
+    · rfl
+  have hC {U : Finset α} (hU : U ∈ matchedChoices M h) :
+      U.map e.toEmbedding ∈ matchedChoices M h := by
+    simp only [matchedChoices, mem_filter, mem_univ, true_and] at hU ⊢
+    refine ⟨?_, by rw [card_map, hU.2]⟩
+    rw [map_eq_image, image_image, ← hU.1]
+    exact congrArg (image · U) (funext hMe)
+  have hee (U : Finset α) : (U.map e.toEmbedding).map e.toEmbedding = U := by
+    ext x
+    simp [mem_map_equiv, e, Equiv.symm_swap]
+  refine sum_nbij' (·.map e.toEmbedding) (·.map e.toEmbedding) (fun U hU ↦ hC hU)
+    (fun U hU ↦ hC hU) (fun U _ ↦ hee U) (fun U _ ↦ hee U) fun U hU ↦ ?_
+  rw [← swapHorizontal_addHorizontal hρ hU hab]
+  exact if_congr ⟨fun h' ↦ by rw [h', swapHorizontal_swapHorizontal],
+    fun h' ↦ by rw [← h', swapHorizontal_swapHorizontal]⟩ rfl rfl
 
-/-! ### Idempotents and the unit -/
+end Membership
+
+/-! ### Idempotents and the unit of the matched subalgebra -/
 
 variable (M)
 
 /-- The empty diagram, with no horizontal strands added, indexes a generator for every set of
 pairs. -/
 theorem isMatchedGenerator_idOn_empty (s : Finset β) :
-    IsMatchedGenerator M (StrandDiagram.idOn ∅) s where
+    IsMatchedGenerator M (idOn ∅) s where
   notMem_self i := by simp
   injOn_source := by simp
   injOn_target := by simp
   disjoint_source := by simp
   disjoint_target := by simp
 
-/-- The idempotent `I(s)` of a set `s` of pairs of the matching `M`: the sum of the identity
-diagrams on the sets consisting of one point of each pair in `s`. -/
-def matchedIdem (s : Finset β) : StrandsAlgebra R α :=
-  horizontalCompletion M (StrandDiagram.idOn ∅) s
-
-theorem matchedIdem_def (s : Finset β) :
-    (matchedIdem M s : StrandsAlgebra R α) = horizontalCompletion M (StrandDiagram.idOn ∅) s :=
-  (rfl)
-
-theorem matchedIdem_eq_sum (s : Finset β) :
-    (matchedIdem M s : StrandsAlgebra R α) = ∑ U ∈ matchedChoices M s, idem U := by
-  simp [matchedIdem_def, horizontalCompletion_def, StrandDiagram.idOn_addHorizontal, idem_def]
-
-theorem matchedIdem_mem_matchedAlgebra (s : Finset β) :
-    (matchedIdem M s : StrandsAlgebra R α) ∈ matchedAlgebra R M :=
-  horizontalCompletion_mem_matchedAlgebra (isMatchedGenerator_idOn_empty M s)
+/-- The idempotent `I(s)` is the generator `a(∅, s)`. -/
+theorem matchedIdem_eq_horizontalCompletion (s : Finset β) :
+    matchedIdem R M s = horizontalCompletion M (idOn ∅) s := by
+  simp only [matchedIdem_def, horizontalCompletion_def, idOn_addHorizontal, empty_union, idem_def,
+    matchedChoices]
 
 variable {M} in
 /-- Multiplying `a(ρ, h)` on the left by `I(s)` keeps it exactly when `s` is the set of pairs at
@@ -462,18 +749,17 @@ its left, those of the starting points of `ρ` together with `h`. -/
 @[simp]
 theorem matchedIdem_mul_horizontalCompletion (s : Finset β) {ρ : StrandDiagram α} {h : Finset β}
     (hρ : IsMatchedGenerator M ρ h) :
-    (matchedIdem M s * horizontalCompletion M ρ h : StrandsAlgebra R α) =
+    matchedIdem R M s * horizontalCompletion M ρ h =
       if s = ρ.source.image M ∪ h then horizontalCompletion M ρ h else 0 := by
-  rw [matchedIdem_def, horizontalCompletion_mul_horizontalCompletion
+  rw [matchedIdem_eq_horizontalCompletion, horizontalCompletion_mul_horizontalCompletion
     (isMatchedGenerator_idOn_empty M s) hρ]
-  simp only [StrandDiagram.target_idOn, image_empty, empty_union, filter_empty,
-    StrandDiagram.addHorizontal_empty, StrandDiagram.idOn_addHorizontal,
-    StrandDiagram.composable_idOn_left_iff]
+  simp only [target_idOn, image_empty, empty_union, filter_empty, addHorizontal_empty,
+    idOn_addHorizontal, composable_idOn_left_iff]
   by_cases hs : s = ρ.source.image M ∪ h
   · subst hs
     have hfilter : {i ∈ ρ.source | M i ∈ ρ.source.image M ∪ h} = ρ.source :=
       filter_true_of_mem fun i hi ↦ mem_union_left _ (mem_image_of_mem M hi)
-    simp only [hfilter, and_self, ↓reduceIte, StrandDiagram.idOn_trans_of_eq_source rfl,
+    simp only [hfilter, and_self, ↓reduceIte, idOn_trans_of_eq_source rfl,
       inter_eq_right.2 (subset_union_right (s₁ := ρ.source.image M))]
   · simp only [hs, false_and, ↓reduceIte]
 
@@ -483,82 +769,79 @@ its right, those of the end points of `ρ` together with `h`. -/
 @[simp]
 theorem horizontalCompletion_mul_matchedIdem {ρ : StrandDiagram α} {h : Finset β}
     (hρ : IsMatchedGenerator M ρ h) (t : Finset β) :
-    (horizontalCompletion M ρ h * matchedIdem M t : StrandsAlgebra R α) =
+    horizontalCompletion M ρ h * matchedIdem R M t =
       if ρ.target.image M ∪ h = t then horizontalCompletion M ρ h else 0 := by
-  rw [matchedIdem_def, horizontalCompletion_mul_horizontalCompletion hρ
+  rw [matchedIdem_eq_horizontalCompletion, horizontalCompletion_mul_horizontalCompletion hρ
     (isMatchedGenerator_idOn_empty M t)]
-  simp only [StrandDiagram.source_idOn, image_empty, empty_union, filter_empty,
-    StrandDiagram.addHorizontal_empty, StrandDiagram.idOn_addHorizontal,
-    StrandDiagram.composable_idOn_right_iff]
+  simp only [source_idOn, image_empty, empty_union, filter_empty, addHorizontal_empty,
+    idOn_addHorizontal, composable_idOn_right_iff]
   by_cases ht : ρ.target.image M ∪ h = t
   · subst ht
     have hfilter : {i ∈ ρ.target | M i ∈ ρ.target.image M ∪ h} = ρ.target :=
       filter_true_of_mem fun i hi ↦ mem_union_left _ (mem_image_of_mem M hi)
-    simp only [hfilter, and_self, ↓reduceIte, StrandDiagram.trans_idOn_of_target_eq rfl,
+    simp only [hfilter, and_self, ↓reduceIte, trans_idOn_of_target_eq rfl,
       inter_eq_left.2 (subset_union_right (s₁ := ρ.target.image M))]
   · simp only [ht, false_and, ↓reduceIte]
 
-/-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero
-otherwise. -/
-@[simp]
-theorem matchedIdem_mul_matchedIdem (s t : Finset β) :
-    (matchedIdem M s * matchedIdem M t : StrandsAlgebra R α) =
-      if s = t then matchedIdem M s else 0 := by
-  refine (matchedIdem_mul_horizontalCompletion s (isMatchedGenerator_idOn_empty M t)).trans ?_
-  simp only [StrandDiagram.source_idOn, image_empty, empty_union, ← matchedIdem_def]
-  split_ifs with hst
-  · rw [hst]
-  · rfl
-
-theorem isIdempotentElem_matchedIdem (s : Finset β) :
-    IsIdempotentElem (matchedIdem M s : StrandsAlgebra R α) := by
-  simp [IsIdempotentElem]
-
-/-- The unit of the algebra of a matching: the sum of the idempotents `I(s)` over all sets `s` of
-pairs, the subsets of the image of `M`. -/
+variable (R) in
+/-- The unit of the matched subalgebra: the sum of the idempotents `I(s)` over all sets `s` of
+pairs, the subsets of the image of `M`. It differs from the unit of the strands algebra. -/
 def matchedOne : StrandsAlgebra R α :=
-  ∑ s ∈ (univ.image M).powerset, matchedIdem M s
+  ∑ s ∈ (univ.image M).powerset, matchedIdem R M s
 
 theorem matchedOne_def :
-    (matchedOne M : StrandsAlgebra R α) = ∑ s ∈ (univ.image M).powerset, matchedIdem M s :=
+    matchedOne R M = ∑ s ∈ (univ.image M).powerset, matchedIdem R M s :=
   (rfl)
 
-theorem matchedOne_mem_matchedAlgebra : (matchedOne M : StrandsAlgebra R α) ∈ matchedAlgebra R M :=
-  sum_mem fun s _ ↦ matchedIdem_mem_matchedAlgebra M s
+theorem matchedOne_mem_matchedSubalgebra : matchedOne R M ∈ matchedSubalgebra R M :=
+  sum_mem fun s _ ↦ matchedIdem_mem_matchedSubalgebra M s
+
+/-- Multiplying a diagram on the left by `∑ₛ I(s)` keeps it exactly when it has no two matched
+starting points. -/
+theorem matchedOne_mul_of (φ : StrandDiagram α) :
+    matchedOne R M * of φ = if Set.InjOn M (φ.source : Set α) then of φ else 0 := by
+  have hP : φ.source.image M ∈ (univ.image M).powerset :=
+    mem_powerset.2 (image_subset_image (subset_univ _))
+  simp only [matchedOne_def, matchedIdem_def, sum_mul, idem_mul_of, sum_ite_eq', mem_filter,
+    mem_univ, true_and, ite_and, sum_ite_eq, hP, ↓reduceIte, eq_comm (a := #φ.source),
+    card_image_iff]
+
+/-- Multiplying a diagram on the right by `∑ₛ I(s)` keeps it exactly when it has no two matched
+end points. -/
+theorem of_mul_matchedOne (φ : StrandDiagram α) :
+    of φ * matchedOne R M = if Set.InjOn M (φ.target : Set α) then of φ else 0 := by
+  have hP : φ.target.image M ∈ (univ.image M).powerset :=
+    mem_powerset.2 (image_subset_image (subset_univ _))
+  simp only [matchedOne_def, matchedIdem_def, mul_sum, of_mul_idem, sum_ite_eq, mem_filter,
+    mem_univ, true_and, ite_and, hP, ↓reduceIte, eq_comm (a := #φ.target), card_image_iff]
 
 variable {M} in
-/-- `∑ₛ I(s)` is a left unit for the algebra of a matching. -/
+/-- **`∑ₛ I(s)` is a left unit for the matched subalgebra.** -/
 @[simp]
-theorem matchedOne_mul {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
-    matchedOne M * x = x := by
-  induction hx using matchedAlgebra_induction with
-  | generator ρ h hρ =>
-    simp only [matchedOne_def, sum_mul, matchedIdem_mul_horizontalCompletion _ hρ, sum_ite_eq',
-      mem_powerset]
-    split_ifs with hS
-    · rfl
-    · exact (horizontalCompletion_eq_zero_of_not_subset ρ fun hh ↦
-        hS (union_subset (image_subset_image (subset_univ _)) hh)).symm
-  | zero => exact mul_zero _
-  | add x y _ _ hx hy => rw [mul_add, hx, hy]
-  | smul r x _ hx => rw [mul_smul_comm, hx]
+theorem matchedOne_mul {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M) :
+    matchedOne R M * x = x := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  rw [← (basis R α).sum_repr x, mul_sum]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  rw [mul_smul_comm, basis_apply, matchedOne_mul_of]
+  by_cases hφ : (basis R α).repr x φ = 0
+  · simp [hφ]
+  · rw [ite_eq_left ((mem_matchedSubalgebra.1 hx).1 φ hφ).1]
 
 variable {M} in
-/-- `∑ₛ I(s)` is a right unit for the algebra of a matching. -/
+/-- **`∑ₛ I(s)` is a right unit for the matched subalgebra.** -/
 @[simp]
-theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
-    x * matchedOne M = x := by
-  induction hx using matchedAlgebra_induction with
-  | generator ρ h hρ =>
-    simp only [matchedOne_def, mul_sum, horizontalCompletion_mul_matchedIdem hρ, sum_ite_eq,
-      mem_powerset]
-    split_ifs with hS
-    · rfl
-    · exact (horizontalCompletion_eq_zero_of_not_subset ρ fun hh ↦
-        hS (union_subset (image_subset_image (subset_univ _)) hh)).symm
-  | zero => exact zero_mul _
-  | add x y _ _ hx hy => rw [add_mul, hx, hy]
-  | smul r x _ hx => rw [smul_mul_assoc, hx]
+theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M) :
+    x * matchedOne R M = x := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  rw [← (basis R α).sum_repr x, sum_mul]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  rw [smul_mul_assoc, basis_apply, of_mul_matchedOne]
+  by_cases hφ : (basis R α).repr x φ = 0
+  · simp [hφ]
+  · rw [ite_eq_left ((mem_matchedSubalgebra.1 hx).1 φ hφ).2]
+
+end Generators
 
 end StrandsAlgebra
 

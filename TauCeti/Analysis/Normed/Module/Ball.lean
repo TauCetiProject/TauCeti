@@ -34,6 +34,11 @@ norm conditions for `R⁻¹ • z` when `R > 0`.
 They need only a norm homogeneous under real scalar multiplication; no additive structure
 or metric on the vector type is required.
 
+For `0 < ε`, the rescaling `z ↦ ε⁻¹ • (z - y)` pulls `closedBall 0 R` back to
+`closedBall y (ε * R)` (`TauCeti.inv_smul_sub_mem_closedBall_zero_iff`), so composing it with a
+function supported in the closed unit ball gives a function supported in `closedBall y ε`
+(`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`).
+
 In a nontrivial real normed space, one ball lies in another exactly when its radius plus the
 distance between the centres is at most the radius of the other. The sufficiency holds in every
 pseudometric space (`Metric.closedBall_subset_closedBall'`, `Metric.ball_subset_ball'`); the
@@ -169,6 +174,29 @@ theorem norm_inv_smul_of_nonneg {z : E} {R : ℝ} (hR : 0 ≤ R) : ‖R⁻¹ •
   rw [norm_smul, norm_inv, Real.norm_of_nonneg hR, inv_mul_eq_div]
 
 end Normalization
+
+section Rescaling
+
+open Metric
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For `0 < ε`, the rescaled point `ε⁻¹ • (z - y)` lies in `closedBall 0 R` exactly when `z` lies
+in `closedBall y (ε * R)`. -/
+theorem inv_smul_sub_mem_closedBall_zero_iff {ε : ℝ} (hε : 0 < ε) {R : ℝ} {y z : E} :
+    ε⁻¹ • (z - y) ∈ closedBall (0 : E) R ↔ z ∈ closedBall y (ε * R) := by
+  simp [norm_smul, abs_of_pos hε, dist_eq_norm, inv_mul_le_iff₀ hε]
+
+/-- Rescaling a function supported in the closed unit ball to `z ↦ χ (ε⁻¹ • (z - y))` gives a
+function supported in `closedBall y ε`. -/
+theorem tsupport_comp_inv_smul_sub_subset_closedBall {α : Type*} [Zero α] {χ : E → α}
+    (hχs : tsupport χ ⊆ closedBall 0 1) {ε : ℝ} (hε : 0 < ε) (y : E) :
+    tsupport (fun z ↦ χ (ε⁻¹ • (z - y))) ⊆ closedBall y ε := by
+  intro z hz
+  have h := hχs (tsupport_comp_subset_preimage χ (f := fun z ↦ ε⁻¹ • (z - y)) (by fun_prop) hz)
+  rwa [inv_smul_sub_mem_closedBall_zero_iff hε, mul_one] at h
+
+end Rescaling
 
 section Subset
 

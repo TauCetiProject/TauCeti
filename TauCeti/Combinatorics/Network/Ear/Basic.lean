@@ -19,7 +19,8 @@ therefore closed ears of length one.
 The subnetwork of a walk consists of exactly its visited vertices and traversed arrows. Adjoining
 an ear takes its union with the current subnetwork. A directed ear decomposition records every
 prefix subnetwork, the ear adjoined at each successor stage, and its initial and final subnetworks.
-Prefixes are again decompositions, which lets arguments follow the construction order.
+Prefixes are again decompositions, and `Network.EarDecomposition.snoc` appends one more ear. These
+operations let constructions and arguments follow the ears in their natural order.
 
 ## References
 
@@ -138,6 +139,19 @@ namespace Ear
 
 variable {S : N.Subnetwork}
 
+/-- Transport an ear when its base subnetwork is replaced by an equal one. -/
+def copy {T : N.Subnetwork} (P : Ear S) (h : S = T) : Ear T :=
+  h ▸ P
+
+/-- Transporting an ear along an equality of base subnetworks leaves it unchanged. -/
+theorem copy_heq {T : N.Subnetwork} (P : Ear S) (h : S = T) : HEq (P.copy h) P := by
+  subst h
+  rfl
+
+@[simp]
+theorem copy_rfl (P : Ear S) : P.copy rfl = P :=
+  eq_of_heq (P.copy_heq rfl)
+
 /-- The subnetwork consisting of the vertices and arrows traversed by an ear. -/
 def toSubnetwork : Ear S → N.Subnetwork
   | .open P => P.walk.toSubnetwork
@@ -160,6 +174,20 @@ theorem toSubnetwork_closed (P : ClosedEar S) :
     (Ear.closed P).toSubnetwork = P.walk.toSubnetwork :=
   Eq.refl _
 
+/-- Transporting an ear does not change the subnetwork traced by its walk. -/
+@[simp]
+theorem toSubnetwork_copy {T : N.Subnetwork} (P : Ear S) (h : S = T) :
+    (P.copy h).toSubnetwork = P.toSubnetwork := by
+  subst h
+  rfl
+
+/-- Transporting an ear along equality does not change the resulting enlarged subnetwork. -/
+@[simp]
+theorem adjoin_copy {T : N.Subnetwork} (P : Ear S) (h : S = T) :
+    (P.copy h).adjoin = P.adjoin := by
+  subst h
+  rfl
+
 /-- Adjoining an ear retains the current subnetwork. -/
 theorem le_adjoin (P : Ear S) : S ≤ P.adjoin :=
   Network.Subnetwork.le_union_left _ _
@@ -174,6 +202,23 @@ theorem disjoint_arrowSet (P : Ear S) : Disjoint P.toSubnetwork.arrowSet S.arrow
   cases P with
   | «open» P => exact fun a ha hS ↦ P.arrows_notMem a (by simpa using ha) hS
   | closed P => exact fun a ha hS ↦ P.arrows_notMem a (by simpa using ha) hS
+
+/-- Adjoining an ear strictly enlarges its base subnetwork. -/
+theorem lt_adjoin (P : Ear S) : S < P.adjoin := by
+  refine lt_of_le_of_ne P.le_adjoin fun h ↦ ?_
+  have hex : ∃ a, a ∈ P.toSubnetwork.arrowSet := by
+    cases P with
+    | «open» P =>
+        obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ (P.walk.arrows_ne_nil P.source_ne_target)
+        exact ⟨a, by simpa using ha⟩
+    | closed P =>
+        obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ P.isCycle.arrows_ne_nil
+        exact ⟨a, by simpa using ha⟩
+  obtain ⟨a, ha⟩ := hex
+  have ha' : a ∈ P.adjoin.arrowSet := by
+    rw [adjoin_def, Network.Subnetwork.sup_arrowSet]
+    exact Or.inr ha
+  exact (Set.disjoint_left.1 P.disjoint_arrowSet ha) (h.symm ▸ ha')
 
 @[simp]
 theorem adjoin_vertexSet (P : Ear S) :
@@ -222,6 +267,43 @@ theorem ext {D E : EarDecomposition T} (hlength : D.length = E.length)
   cases hear
   rfl
 
+/-- Reindex the final subnetwork of an ear decomposition along an equality. -/
+@[expose]
+def copy {U : N.Subnetwork} (D : EarDecomposition T) (h : T = U) : EarDecomposition U where
+  length := D.length
+  initialVertex := D.initialVertex
+  stage := D.stage
+  ear := D.ear
+  stage_zero := D.stage_zero
+  stage_succ := D.stage_succ
+  stage_last := D.stage_last.trans h
+
+@[simp]
+theorem copy_rfl (D : EarDecomposition T) : D.copy rfl = D :=
+  rfl
+
+@[simp]
+theorem copy_length {U : N.Subnetwork} (D : EarDecomposition T) (h : T = U) :
+    (D.copy h).length = D.length :=
+  rfl
+
+@[simp]
+theorem copy_initialVertex {U : N.Subnetwork} (D : EarDecomposition T) (h : T = U) :
+    (D.copy h).initialVertex = D.initialVertex :=
+  rfl
+
+@[simp]
+theorem copy_stage {U : N.Subnetwork} (D : EarDecomposition T) (h : T = U) :
+    (D.copy h).stage = D.stage :=
+  rfl
+
+/-- Reindexing the final subnetwork does not change the displayed ears. -/
+@[simp]
+theorem copy_ear {U : N.Subnetwork} (D : EarDecomposition T) (h : T = U) :
+    HEq (D.copy h).ear D.ear := by
+  subst h
+  rfl
+
 /-- The decomposition with no ears whose sole stage is the singleton subnetwork at `x`. -/
 @[expose]
 def singleton (x : V) : EarDecomposition (N.singletonSubnetwork x) where
@@ -248,15 +330,36 @@ theorem singleton_stage (x : V) (i : Fin 1) :
 
 attribute [simp] EarDecomposition.stage_zero EarDecomposition.stage_last
 
+/-- Each stage is strictly contained in its successor. -/
+theorem stage_castSucc_lt_succ (D : EarDecomposition T) (i : Fin D.length) :
+    D.stage i.castSucc < D.stage i.succ := by
+  rw [D.stage_succ]
+  exact (D.ear i).lt_adjoin
+
+/-- The stages of an ear decomposition grow strictly. -/
+theorem strictMono_stage (D : EarDecomposition T) : StrictMono D.stage :=
+  Fin.strictMono_iff_lt_succ.2 D.stage_castSucc_lt_succ
+
 /-- Each stage is contained in its successor. -/
 theorem stage_le_succ (D : EarDecomposition T) (i : Fin D.length) :
     D.stage i.castSucc ≤ D.stage i.succ := by
-  rw [D.stage_succ]
-  exact (D.ear i).le_adjoin
+  exact (D.stage_castSucc_lt_succ i).le
 
 /-- Prefix subnetworks grow monotonically during an ear decomposition. -/
 theorem monotone_stage (D : EarDecomposition T) : Monotone D.stage :=
-  Fin.monotone_iff_le_succ.2 D.stage_le_succ
+  D.strictMono_stage.monotone
+
+/-- The initial singleton subnetwork is contained in every stage. -/
+theorem stage_zero_le (D : EarDecomposition T) (i : Fin (D.length + 1)) :
+    D.stage 0 ≤ D.stage i :=
+  D.monotone_stage (Fin.zero_le i)
+
+/-- Every stage is contained in the final subnetwork. -/
+theorem stage_le_final (D : EarDecomposition T) (i : Fin (D.length + 1)) :
+    D.stage i ≤ T := by
+  calc
+    D.stage i ≤ D.stage (Fin.last D.length) := D.monotone_stage (Fin.le_last i)
+    _ = T := D.stage_last
 
 /-- The subnetwork of the displayed ear is contained in its successor stage. -/
 theorem ear_toSubnetwork_le_stage_succ (D : EarDecomposition T) (i : Fin D.length) :
@@ -275,6 +378,69 @@ theorem stage_induction (D : EarDecomposition T) (P : N.Subnetwork → Prop)
   | succ i ih =>
     rw [D.stage_succ]
     exact hsucc i ih
+
+/-! ### Appending an ear -/
+
+/-- Append one ear to the end of a directed ear decomposition.
+
+This follows the undirected constructors `TauCeti.SimpleGraph.EarDecomposition.snoc` and
+`TauCeti.Graph.EarDecomposition.snoc`. -/
+@[expose]
+def snoc (D : EarDecomposition T) (P : Ear T) : EarDecomposition P.adjoin where
+  length := D.length + 1
+  initialVertex := D.initialVertex
+  stage := Fin.lastCases P.adjoin D.stage
+  ear := Fin.lastCases
+    (P.copy (by rw [Fin.lastCases_castSucc, D.stage_last]))
+    (fun i ↦ (D.ear i).copy (by rw [Fin.lastCases_castSucc]))
+  stage_zero := by
+    rw [← Fin.castSucc_zero (n := D.length + 1), Fin.lastCases_castSucc, D.stage_zero]
+  stage_succ := by
+    let ear' : (i : Fin (D.length + 1)) →
+        Ear (Fin.lastCases P.adjoin D.stage i.castSucc) :=
+      Fin.lastCases
+        (P.copy (by rw [Fin.lastCases_castSucc, D.stage_last]))
+        (fun i ↦ (D.ear i).copy (by rw [Fin.lastCases_castSucc]))
+    refine Fin.lastCases ?_ (fun i ↦ ?_)
+    · rw [Fin.succ_last, Fin.lastCases_last]
+      -- Projection reduction exposes the transported last ear at the dependent stage index.
+      change P.adjoin = (ear' (Fin.last D.length)).adjoin
+      simp only [ear', Fin.lastCases_last, Ear.adjoin_def, Ear.toSubnetwork_copy]
+      rw [Fin.lastCases_castSucc, D.stage_last]
+    · rw [Fin.succ_castSucc, Fin.lastCases_castSucc, D.stage_succ]
+      -- Projection reduction exposes the transported old ear at the dependent stage index.
+      change (D.ear i).adjoin = (ear' i.castSucc).adjoin
+      simp only [ear', Fin.lastCases_castSucc, Ear.adjoin_def, Ear.toSubnetwork_copy]
+  stage_last := Fin.lastCases_last
+
+@[simp]
+theorem snoc_length (D : EarDecomposition T) (P : Ear T) :
+    (D.snoc P).length = D.length + 1 :=
+  rfl
+
+@[simp]
+theorem snoc_initialVertex (D : EarDecomposition T) (P : Ear T) :
+    (D.snoc P).initialVertex = D.initialVertex :=
+  rfl
+
+@[simp]
+theorem snoc_stage_castSucc (D : EarDecomposition T) (P : Ear T)
+    (i : Fin (D.length + 1)) : (D.snoc P).stage i.castSucc = D.stage i := by
+  simp [snoc]
+
+/-- The old ears are unchanged when a new ear is appended. -/
+@[simp]
+theorem snoc_ear_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
+    HEq ((D.snoc P).ear i.castSucc) (D.ear i) := by
+  simp only [snoc, Fin.lastCases_castSucc]
+  exact Ear.copy_heq _ _
+
+/-- The last ear of an appended decomposition is the appended ear. -/
+@[simp]
+theorem snoc_ear_last (D : EarDecomposition T) (P : Ear T) :
+    HEq ((D.snoc P).ear (Fin.last D.length)) P := by
+  simp only [snoc, Fin.lastCases_last]
+  exact Ear.copy_heq _ _
 
 /-- The first `k` ears, as an ear decomposition of the `k`-th stage. -/
 @[expose]
