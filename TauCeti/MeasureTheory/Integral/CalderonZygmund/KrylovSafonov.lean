@@ -64,6 +64,48 @@ open scoped ENNReal Topology
 
 variable {ι : Type*} [Fintype ι] {A B : Set (ι → ℝ)} {δ : ℝ≥0∞}
 
+/-- The integral of the indicator of `A` over a measurable set `s` is the measure of `A ∩ s`. -/
+private theorem setLIntegral_indicator_one_eq (hA : NullMeasurableSet A) {s : Set (ι → ℝ)}
+    (hs : MeasurableSet s) : ∫⁻ x in s, A.indicator (1 : (ι → ℝ) → ℝ≥0∞) x = volume (A ∩ s) := by
+  rw [lintegral_indicator_one₀ (hA.mono Measure.restrict_le_self), Measure.restrict_apply' hs]
+
+/-- A Calderón–Zygmund cube `Q` of the indicator of `A` at height `t` meets `A` in more than a `t`
+fraction of its volume: `t |Q| < |A ∩ Q|`. -/
+theorem mul_volume_lt_volume_inter_of_mem_calderonZygmundCubes_indicator
+    (hA : NullMeasurableSet A) {t : ℝ≥0∞} {q : ℤ × (ι → ℤ)}
+    (hq : q ∈ calderonZygmundCubes (A.indicator 1) t) :
+    t * volume (dyadicCube q.1 q.2) < volume (A ∩ dyadicCube q.1 q.2) :=
+  setLIntegral_indicator_one_eq hA (measurableSet_dyadicCube _ _) ▸
+    mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hq
+
+/-- A dyadic cube `P` of higher level containing a Calderón–Zygmund cube of the indicator of `A`
+at height `t` meets `A` in at most a `t` fraction of its volume: `|A ∩ P| ≤ t |P|`. -/
+theorem volume_inter_le_mul_volume_of_mem_calderonZygmundCubes_indicator
+    (hA : NullMeasurableSet A) {t : ℝ≥0∞} {q : ℤ × (ι → ℤ)}
+    (hq : q ∈ calderonZygmundCubes (A.indicator 1) t) {j : ℤ} {m : ι → ℤ} (hj : q.1 < j)
+    (hsub : dyadicCube q.1 q.2 ⊆ dyadicCube j m) :
+    volume (A ∩ dyadicCube j m) ≤ t * volume (dyadicCube j m) := by
+  have h := (mem_calderonZygmundCubes.1 hq).2 j m hj hsub
+  rwa [setLAverage_eq, setLIntegral_indicator_one_eq hA (measurableSet_dyadicCube _ _),
+    ENNReal.div_le_iff (volume_dyadicCube_pos _ _).ne' (volume_dyadicCube_ne_top _ _)] at h
+
+/-- If almost all of `A` is covered by a pairwise disjoint family of dyadic cubes, each meeting `A`
+in at most a `δ` fraction of its volume, then `|A|` is at most `δ` times the volume of their
+union. -/
+theorem volume_le_mul_volume_biUnion_dyadicCube {T : Set (ℤ × (ι → ℤ))}
+    (hdisj : T.PairwiseDisjoint fun p => dyadicCube p.1 p.2)
+    (hAT : volume (A \ ⋃ p ∈ T, dyadicCube p.1 p.2) = 0)
+    (hTA : ∀ p ∈ T, volume (A ∩ dyadicCube p.1 p.2) ≤ δ * volume (dyadicCube p.1 p.2)) :
+    volume A ≤ δ * volume (⋃ p ∈ T, dyadicCube p.1 p.2) :=
+  calc volume A ≤ volume (A ∩ ⋃ p ∈ T, dyadicCube p.1 p.2) + 0 :=
+        hAT ▸ measure_le_inter_add_sdiff _ _ _
+    _ = volume (⋃ p ∈ T, A ∩ dyadicCube p.1 p.2) := by rw [add_zero, inter_iUnion₂]
+    _ ≤ ∑' p : T, volume (A ∩ dyadicCube p.1.1 p.1.2) := measure_biUnion_le _ (to_countable T) _
+    _ ≤ ∑' p : T, δ * volume (dyadicCube p.1.1 p.1.2) := tsum_le_tsum fun p => hTA p.1 p.2
+    _ = δ * volume (⋃ p ∈ T, dyadicCube p.1 p.2) := by
+        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable T) hdisj
+          fun p _ => measurableSet_dyadicCube _ _]
+
 /-- **The Krylov–Safonov covering lemma.** Let `0 < δ < 1`, and let `A ⊆ ℝⁿ`, `n ≥ 1`, be
 null-measurable with finite measure. If the parent of every dyadic cube `Q` with
 `δ |Q| < |A ∩ Q|` (the dyadic cube of the next level containing `Q`) lies in `B`, then
@@ -77,56 +119,40 @@ theorem volume_le_mul_volume_of_forall_dyadicCube [Nonempty ι] (hA : NullMeasur
       δ * volume (dyadicCube k m) < volume (A ∩ dyadicCube k m) → dyadicCube (k + 1) m' ⊆ B) :
     volume A ≤ δ * volume B := by
   set g : (ι → ℝ) → ℝ≥0∞ := A.indicator 1
-  have hint : ∀ s, MeasurableSet s → ∫⁻ x in s, g x = volume (A ∩ s) := fun s hs => by
-    rw [lintegral_indicator_one₀ (hA.mono Measure.restrict_le_self), Measure.restrict_apply' hs]
-  have hg : AEMeasurable g := aemeasurable_const.indicator₀ hA
-  have hg' : ∫⁻ x, g x ≠ ∞ := by rwa [lintegral_indicator_one₀ hA]
   set S := calderonZygmundCubes g δ
-  -- Each Calderón–Zygmund cube meets `A` in more than a `δ` fraction of its volume.
   have hS : ∀ q ∈ S, δ * volume (dyadicCube q.1 q.2) < volume (A ∩ dyadicCube q.1 q.2) :=
-    fun q hq => hint _ (measurableSet_dyadicCube _ _) ▸
-      mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hq
+    fun q hq => mul_volume_lt_volume_inter_of_mem_calderonZygmundCubes_indicator hA hq
   -- `T` records the parents of the Calderón–Zygmund cubes.
   set T : Set (ℤ × (ι → ℤ)) :=
     {p | ∃ q ∈ S, p.1 = q.1 + 1 ∧ dyadicCube q.1 q.2 ⊆ dyadicCube p.1 p.2}
-  have hTB : ∀ p ∈ T, dyadicCube p.1 p.2 ⊆ B := by
-    rintro ⟨j, m'⟩ ⟨q, hq, rfl, hsub⟩
-    exact hB q.1 q.2 m' hsub (hS q hq)
-  -- By maximality of the Calderón–Zygmund cubes, the parents meet `A` in at most a `δ` fraction.
-  have hTA : ∀ p ∈ T, volume (A ∩ dyadicCube p.1 p.2) ≤ δ * volume (dyadicCube p.1 p.2) := by
-    rintro ⟨j, m'⟩ ⟨q, hq, rfl, hsub⟩
-    have h := (mem_calderonZygmundCubes.1 hq).2 (q.1 + 1) m' (lt_add_one _) hsub
-    rwa [setLAverage_eq, hint _ (measurableSet_dyadicCube _ _),
-      ENNReal.div_le_iff (volume_dyadicCube_pos _ _).ne' (volume_dyadicCube_ne_top _ _)] at h
   obtain ⟨N, hN⟩ := exists_forall_lt_of_mul_volume_dyadicCube_lt (ι := ι) hδ0 hA'
   have hTN : ∀ p ∈ T, p.1 ≤ N := by
     rintro ⟨j, m'⟩ ⟨q, hq, rfl, -⟩
     exact Int.add_one_le_iff.2 (hN q.1 q.2 ((hS q hq).trans_le (measure_mono inter_subset_left)))
   -- The parents maximal for inclusion are pairwise disjoint and contain all the parents.
   obtain ⟨T', hT'T, hdisj, hmax⟩ := exists_subset_pairwiseDisjoint_forall_dyadicCube_subset hTN
-  set U := ⋃ p ∈ T', dyadicCube p.1 p.2
-  -- Almost all of `A` lies in the Calderón–Zygmund cubes, since `g = 1 > δ` on `A`.
-  have hAU : volume (A \ U) = 0 := by
+  -- Almost all of `A` lies in the Calderón–Zygmund cubes, since the indicator is `1 > δ` on `A`.
+  have hAU : volume (A \ ⋃ p ∈ T', dyadicCube p.1 p.2) = 0 := by
     refine measure_eq_zero_iff_ae_notMem.2 ?_
-    filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hg hg' hδ0] with x hx
+    have hg' : ∫⁻ x, g x ≠ ∞ := by rwa [lintegral_indicator_one₀ hA]
+    filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes
+      (aemeasurable_const.indicator₀ hA) hg' hδ0] with x hx
     rintro ⟨hxA, hxU⟩
     refine (hx fun q hq hxq => hxU ?_).not_gt (by simpa [g, hxA] using hδ1)
     -- The parent of the Calderón–Zygmund cube containing `x` lies in a maximal parent.
     have hpar := dyadicCube_subset_dyadicCube (lt_add_one q.1).le hxq
     obtain ⟨p, hp, hsub⟩ := hmax (q.1 + 1, dyadicIndex (q.1 + 1) x) ⟨q, hq, rfl, hpar⟩
     exact mem_biUnion hp (hsub (hpar hxq))
-  calc volume A ≤ volume (A ∩ U) + volume (A \ U) := measure_le_inter_add_sdiff _ _ _
-    _ = volume (⋃ p ∈ T', A ∩ dyadicCube p.1 p.2) := by rw [hAU, add_zero, inter_iUnion₂]
-    _ ≤ ∑' p : T', volume (A ∩ dyadicCube p.1.1 p.1.2) :=
-        measure_biUnion_le _ (to_countable T') _
-    _ ≤ ∑' p : T', δ * volume (dyadicCube p.1.1 p.1.2) :=
-        tsum_le_tsum fun p => hTA p.1 (hT'T p.2)
-    _ = δ * volume U := by
-        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable T') hdisj
-          fun p _ => measurableSet_dyadicCube _ _]
-    _ ≤ δ * volume B := by
-        gcongr
-        exact iUnion₂_subset fun p hp => hTB p (hT'T hp)
+  -- By maximality of the Calderón–Zygmund cubes, the parents meet `A` in at most a `δ` fraction,
+  -- and by hypothesis they lie in `B`.
+  refine (volume_le_mul_volume_biUnion_dyadicCube (δ := δ) hdisj hAU fun p hp => ?_).trans ?_
+  · obtain ⟨q, hq, hpq, hsub⟩ := hT'T hp
+    exact volume_inter_le_mul_volume_of_mem_calderonZygmundCubes_indicator hA hq
+      (hpq ▸ lt_add_one _) hsub
+  · gcongr
+    refine iUnion₂_subset fun ⟨j, m'⟩ hp => ?_
+    obtain ⟨q, hq, rfl, hsub⟩ := hT'T hp
+    exact hB q.1 q.2 m' hsub (hS q hq)
 
 /-- **The Krylov–Safonov covering lemma in a dyadic cube.** Let `δ < 1`, let `Q₀` be a dyadic cube
 and let `A ⊆ Q₀` be null-measurable with `|A| ≤ δ |Q₀|`. If the parent of every dyadic subcube
