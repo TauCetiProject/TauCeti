@@ -26,6 +26,8 @@ unfolded by hand.
 ## Main results
 
 * `UpperHalfPlane.σ_eq_refl_of_det_pos`: `σ g = ContinuousAlgEquiv.refl ℝ ℂ` for `0 < det g`.
+* `UpperHalfPlane.smul_eq_smul_of_coe_eq_smul`: matrices in `GL(2, ℝ)` differing by a nonzero
+  scalar act identically on `ℍ`.
 * `UpperHalfPlane.ofReal_mul_add_eq_zero_iff`: `m z + n = 0` for real `m`, `n` and `z ∈ ℍ` only
   when `m = n = 0`, the `iff` form of Mathlib's `UpperHalfPlane.linear_ne_zero`.
 * `UpperHalfPlane.num_sub_smul_mul_denom`: the difference formula
@@ -200,6 +202,25 @@ theorem coe_smul_of_apply_zero_one_eq_zero {g : SL(2, ℝ)} (hg : g 1 0 = 0) (τ
   simp only [Algebra.algebraMap_self, RingHom.id_apply, Complex.ofReal_zero, zero_mul, zero_add]
   field_simp
   linear_combination (-((g 0 0 : ℂ) * τ + g 0 1)) * hdet
+
+/-- Scalar action invariance for `GL (Fin 2) ℝ`: a matrix that is a scalar multiple of another
+acts identically on `ℍ`, through Mathlib's scalar-matrix action `glScalar_smul`. The scalar is
+necessarily nonzero, since an invertible matrix is not zero. -/
+lemma smul_eq_smul_of_coe_eq_smul {g h : GL (Fin 2) ℝ} {c : ℝ}
+    (h_eq : ((h : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      c • ((g : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ))
+    (τ : ℍ) :
+    h • τ = g • τ := by
+  have hc : c ≠ 0 := by
+    rintro rfl
+    rw [zero_smul] at h_eq
+    exact h.ne_zero h_eq
+  have h_mul : h = Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 c hc) * g := by
+    refine Units.ext ?_
+    rw [Units.val_mul, Matrix.GeneralLinearGroup.coe_scalar, h_eq]
+    ext i j
+    simp [Matrix.scalar, Matrix.diagonal_mul]
+  rw [h_mul, mul_smul, glScalar_smul]
 
 end UpperHalfPlane
 
