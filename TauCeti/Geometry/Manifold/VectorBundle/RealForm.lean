@@ -127,7 +127,8 @@ variable [NormedSpace ℝ G] [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G] [Vect
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
   [∀ x, ContinuousSMul ℝ (V x)]
 
-local instance : VectorBundle ℝ G V := VectorBundle.restrictScalars ℝ ℂ G V
+local instance realFormAmbientVectorBundleReal : VectorBundle ℝ G V :=
+  VectorBundle.restrictScalars ℝ ℂ G V
 
 /-- A smooth maximal totally real inclusion induces an actual diffeomorphism from its
 complexification onto the ambient complex bundle. Smoothness of the inverse is automatic. -/
@@ -295,7 +296,8 @@ variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedSpace 
   [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousConstSMul ℂ (V' x)]
   [∀ x, ContinuousSMul ℝ (V' x)]
 
-local instance : VectorBundle ℝ G' V' := VectorBundle.restrictScalars ℝ ℂ G' V'
+local instance realFormAmbientVectorBundleReal' : VectorBundle ℝ G' V' :=
+  VectorBundle.restrictScalars ℝ ℂ G' V'
 
 /-- A complex-linear map carrying one real inclusion to another intertwines the actual smooth
 conjugations, even for different source and ambient bundles. -/
