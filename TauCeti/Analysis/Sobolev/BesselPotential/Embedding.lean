@@ -146,6 +146,14 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
   rw [eLpNorm_congr_ae hae.symm, ← Lp.enorm_def, ← ofReal_norm, ← ofReal_norm,
     BesselPotentialSpace.norm_fourier_toLp_eq]
 
+/-- If the Fourier transform of `f ∈ H^s` is an `L¹` function `v`, then
+`(1 + ‖ξ‖ ^ 2) ^ (s / 2) v` is square integrable. -/
+theorem MemSobolev.memLp_one_add_norm_sq_rpow_smul {s : ℝ} {f : 𝓢'(E, F)}
+    (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
+    MemLp (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 :=
+  memLp_iff.2
+    (hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv ▸ enorm_lt_top)
+
 /-- **The `L¹` norm on the Fourier side.** If the Fourier transform of `f ∈ H^s` is an `L¹`
 function `v`, then `‖v‖₁ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-s / 2)‖₂ ‖f‖_{H^s}`, by Cauchy–Schwarz. The first
 factor is finite when `2s > dim E` (`TauCeti.memLp_rpow_neg_one_add_norm_sq`). -/
