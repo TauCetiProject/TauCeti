@@ -128,14 +128,6 @@ section ContDiff
 
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] {n : WithTop ℕ∞}
 
-/-- Fourier atoms are smooth in the spatial variable. -/
-theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) := by
-  simp_rw [funext (fourierAtom_eq_fourierChar q), Real.fourierChar_apply]
-  exact Complex.contDiff_exp.comp
-    ((Complex.ofRealCLM.contDiff.comp
-      (contDiff_const.mul (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).neg)).mul
-        contDiff_const)
-
 /-- Fourier atoms are jointly smooth in the frequency and the spatial variable. -/
 theorem contDiff_uncurry_fourierAtom : ContDiff ℝ n (Function.uncurry (fourierAtom (V := W))) := by
   simp_rw [Function.uncurry_def, fourierAtom_eq_fourierChar, Real.fourierChar_apply]
@@ -143,6 +135,10 @@ theorem contDiff_uncurry_fourierAtom : ContDiff ℝ n (Function.uncurry (fourier
     ((Complex.ofRealCLM.contDiff.comp
       (contDiff_const.mul (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg)).mul
         contDiff_const)
+
+/-- Fourier atoms are smooth in the spatial variable. -/
+theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) :=
+  contDiff_uncurry_fourierAtom.comp (contDiff_const.prodMk contDiff_id)
 
 end ContDiff
 

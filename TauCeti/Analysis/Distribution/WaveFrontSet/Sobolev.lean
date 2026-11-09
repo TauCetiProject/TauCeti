@@ -106,19 +106,13 @@ theorem sobolevWaveFrontSet_subset (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
     T.sobolevWaveFrontSet s ⊆ (Ω : Set E) ×ˢ {0}ᶜ :=
   fun _ hp ↦ ⟨hp.1, hp.2.1⟩
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Bessel weight `η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2)` is continuous. -/
-private theorem continuous_one_add_norm_sq_rpow (s : ℝ) :
-    Continuous fun η : E ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) :=
-  (continuous_const.add (continuous_norm.pow 2)).rpow_const fun _ ↦
-    Or.inl (add_pos_of_pos_of_nonneg one_pos (sq_nonneg _)).ne'
-
 omit [FiniteDimensional ℝ E] in
 /-- The weighted localized Fourier transform is continuous, hence measurable. -/
 private theorem aestronglyMeasurable_weight_smul_localFourier (s : ℝ) (T : 𝓓'(Ω, ℂ))
     (φ : 𝓓(Ω, ℂ)) (μ : Measure E) :
     AEStronglyMeasurable (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) μ :=
-  ((continuous_one_add_norm_sq_rpow s).smul (T.continuous_localFourier φ)).aestronglyMeasurable
+  ((Function.hasTemperateGrowth_one_add_norm_sq_rpow E (s / 2)).1.continuous.smul
+    (T.continuous_localFourier φ)).aestronglyMeasurable
 
 /-! ### Cones, openness and the order -/
 
@@ -219,9 +213,7 @@ theorem IsMicrolocallySmoothAt.isMicrolocallySobolevAt {T : 𝓓'(Ω, ℂ)} {x �
           nlinarith [norm_nonneg η]
       _ = a ^ k := by rw [Real.sq_rpow_div_two (by positivity), Real.rpow_natCast]
   have hpow : a ^ (-((finrank ℝ E : ℝ) + 1)) = (a ^ (finrank ℝ E + 1))⁻¹ := by
-    rw [Real.rpow_neg (by positivity), ← Real.rpow_natCast]
-    push_cast
-    rfl
+    rw [Real.rpow_neg (by positivity), ← Real.rpow_natCast, Nat.cast_succ]
   have hbound := hC η hη
   rw [norm_smul, Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, hpow]
   refine le_trans ?_ (le_abs_self _)
