@@ -11,20 +11,24 @@ public import Mathlib.NumberTheory.ZetaValues
 # Bernoulli polynomials and Bernoulli functions
 
 Mathlib's `bernoulliFun` is the real-variable Bernoulli polynomial. This file records how it
-relates to the Bernoulli polynomial over `ℚ` mapped into `ℂ`.
+relates to the Bernoulli polynomial over `ℚ`.
 
 ## Main results
 
-* `algebraMap_eval_bernoulli_eq_bernoulliFun`: the Bernoulli polynomial at a rational point, in `ℂ`,
-  is `bernoulliFun` at the real point.
+* `TauCeti.bernoulliFun_ratCast`: `bernoulliFun` at a rational point is the Bernoulli polynomial
+  over `ℚ` evaluated there, mapped into `ℝ`.
 -/
 
 public section
 
-/-- The Bernoulli polynomial at a rational point, mapped into `ℂ`, is the Bernoulli function at the
-corresponding real point. -/
-theorem algebraMap_eval_bernoulli_eq_bernoulliFun {k : ℕ} (x : ℚ) :
-    algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) = bernoulliFun k (x : ℝ) := by
+namespace TauCeti
+
+/-- `bernoulliFun` at a rational point is the Bernoulli polynomial over `ℚ` evaluated there,
+mapped into `ℝ`. -/
+theorem bernoulliFun_ratCast (k : ℕ) (x : ℚ) :
+    bernoulliFun k (x : ℝ) = (((Polynomial.bernoulli k).eval x : ℚ) : ℝ) := by
   simp only [bernoulliFun, Polynomial.eval_map, ← map_ratCast (algebraMap ℚ ℝ),
     Polynomial.eval₂_at_apply]
   norm_cast
+
+end TauCeti

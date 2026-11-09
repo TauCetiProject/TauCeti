@@ -67,10 +67,9 @@ theorem hasSum_mul_zpow_neg_bernoulli (Φ : ZMod N → ℂ) {k : ℕ} (hk : 2 �
   -- the Bernoulli function at a rational point is the rational value of the polynomial
   have hB (j : ZMod N) : (bernoulliFun k (j.val / (N : ℝ)) : ℂ) =
       (((Polynomial.bernoulli k).eval ((j.val : ℚ) / N) : ℚ) : ℂ) := by
-    have hcast := algebraMap_eval_bernoulli_eq_bernoulliFun (k := k)
-    rw [← eq_ratCast (algebraMap ℚ ℂ), hcast]
-    push_cast
-    rfl
+    rw [← Rat.cast_natCast j.val, ← Rat.cast_natCast N, ← Rat.cast_div,
+      TauCeti.bernoulliFun_ratCast]
+    simp
   have hs (j : ZMod N) :=
     (hasSum_one_div_pow_mul_fourier_mul_bernoulliFun hk (val_div_natCast_mem_Icc j)).mul_left
       ((N : ℂ)⁻¹ * 𝓕 Φ j)

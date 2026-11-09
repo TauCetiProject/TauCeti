@@ -55,8 +55,8 @@ namespace DirichletCharacter
 
 variable {N k : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
-/-- Mathlib's `gaussSum_mulShift_of_isPrimitive` evaluates the finite Fourier coefficient of a
-primitive character, also at nonunit frequencies. -/
+/-- For a primitive character `χ`, the sum `∑ₐ χ(a) n⁻ᵏ e_n(a.val / N)` equals
+`τ(χ) χ⁻¹(n) n⁻ᵏ`, also at nonunit frequencies `n`. -/
 private theorem sum_mul_fourier_val_div_eq_gaussSum_mul (hχ : χ.IsPrimitive) (n : ℤ) :
     (∑ a : ZMod N, χ a *
       (1 / (n : ℂ) ^ k * fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle))) =
@@ -69,7 +69,8 @@ private theorem sum_mul_fourier_val_div_eq_gaussSum_mul (hχ : χ.IsPrimitive) (
   simp only [zpow_neg, zpow_natCast, one_div, gaussSum]
   ring
 
-/-- The positive representative for the zero residue has the same Bernoulli value in `k ≥ 2`. -/
+/-- For `k ≥ 2`, `B_{k,χ}` equals `N^(k-1) ∑ₐ χ(a) B_k(a.val / N)`, computed with representatives in
+`{0, …, N-1}`. This is allowed because `B_k(0) = B_k(1)`. -/
 private theorem generalizedBernoulli_eq_pow_mul_sum_bernoulliFun (hk : 2 ≤ k) :
     χ.generalizedBernoulli k =
       (N : ℂ) ^ (k - 1) *
@@ -82,7 +83,9 @@ private theorem generalizedBernoulli_eq_pow_mul_sum_bernoulliFun (hk : 2 ≤ k) 
   apply Finset.sum_congr rfl
   intro a _
   congr 1
-  have hcast := algebraMap_eval_bernoulli_eq_bernoulliFun (k := k)
+  have hcast (x : ℚ) : algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) =
+      bernoulliFun k (x : ℝ) := by
+    simp [TauCeti.bernoulliFun_ratCast]
   by_cases ha : a = 0
   · subst a
     simp only [ite_true, div_self (Nat.cast_ne_zero.mpr (NeZero.ne N) : (N : ℚ) ≠ 0),
