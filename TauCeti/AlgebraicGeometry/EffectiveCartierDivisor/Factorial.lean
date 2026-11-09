@@ -295,11 +295,11 @@ private lemma span_singleton_eq_prod_stalkIdeal [UniqueFactorizationMonoid (X.pr
       intro η _
       by_cases h : (η : X) ⤳ x
       · rw [map_mul, X.ord_mul hp0 ha0,
-          Int.toNat_add (ord_algebraMap_stalk_nonneg η.2 h hp.ne_zero)
-            (ord_algebraMap_stalk_nonneg η.2 h ha), pow_add]
+          Int.toNat_add (ord_algebraMap_stalk_nonneg η.2 h p)
+            (ord_algebraMap_stalk_nonneg η.2 h a), pow_add]
         by_cases he : η₀ = η
         · subst he
-          rw [ord_algebraMap_stalk_eq_one η₀.2 h (stalkIdeal_of_specializes h ▸ hη₀) hp.ne_zero,
+          rw [ord_algebraMap_stalk_eq_one η₀.2 h (stalkIdeal_of_specializes h ▸ hη₀),
             ite_eq_left rfl, hη₀,
             Int.toNat_one, pow_one]
         · rw [(ord_algebraMap_stalk_eq_zero_iff η.2 h hp.ne_zero).mpr fun hmem ↦ he
@@ -351,7 +351,7 @@ theorem ofIdealTop_span_singleton_eq_prod_vanishingIdeal
     (X.algebraMap_germ_eq_germToFunctionField hx f).symm
   rw [hord]
   refine span_singleton_eq_prod_stalkIdeal hgerm s fun η hηx hmem ↦ hs η ?_
-  have h0 := ord_algebraMap_stalk_nonneg η.2 hηx hgerm
+  have h0 := ord_algebraMap_stalk_nonneg η.2 hηx (X.presheaf.germ ⊤ x hx f)
   have hne := (ord_algebraMap_stalk_eq_zero_iff η.2 hηx hgerm).not_left.mpr
     (stalkIdeal_of_specializes hηx ▸ hmem)
   rw [hord]
