@@ -81,7 +81,6 @@ theorem ext {η θ : RowFiniteParametrizedCocycle ν₀ ν₁}
 
 /-- A parametrized cocycle from homotopy rows `h x` of total degree `-indP x - 1`, the degrees of
 a homotopy, satisfying the generator equation. -/
-@[expose, simps]
 def ofTotalGrading (h : P → Q →₀ A) (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x - 1))
     (hhd : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
       rowFiniteSignedMap (𝒜 := 𝒜) h (mP.m x) = ν₁.ν x - ν₀.ν x) :
@@ -91,6 +90,14 @@ def ofTotalGrading (h : P → Q →₀ A) (hh : ∀ x, h x ∈ rowFiniteTotalGra
     convert (mem_rowFiniteTotalGrading_iff _ _).mp (hh x) y using 2
     ring
   parametrized := hhd
+
+@[simp]
+theorem ofTotalGrading_h (h : P → Q →₀ A)
+    (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x - 1))
+    (hhd : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
+      rowFiniteSignedMap (𝒜 := 𝒜) h (mP.m x) = ν₁.ν x - ν₀.ν x) :
+    (ofTotalGrading h hh hhd).h = h :=
+  (rfl)
 
 variable (η : RowFiniteParametrizedCocycle ν₀ ν₁)
 
@@ -109,10 +116,12 @@ theorem rowFiniteSignedMap_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ 
         (rowFiniteSignedMap (𝒜 := 𝒜) η.h f) +
       rowFiniteSignedMap (𝒜 := 𝒜) η.h
         (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m f) =
-      Finsupp.linearCombination A ν₁.ν f - Finsupp.linearCombination A ν₀.ν f :=
-  rowFiniteSignedMap_differential_of_mem_support (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA)
-    mP.m (Φ := Finsupp.linearCombination A ν₁.ν - Finsupp.linearCombination A ν₀.ν)
-    fun x _ ↦ by simpa using η.parametrized x
+      Finsupp.linearCombination A ν₁.ν f - Finsupp.linearCombination A ν₀.ν f := by
+  have key := linearCombination_eq_add_rowFiniteSignedMap
+    (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) mP.m
+    (e := fun x ↦ ν₁.ν x - ν₀.ν x) (fun x ↦ (η.parametrized x).symm) f
+  rw [← key]
+  simp only [Finsupp.linearCombination_apply, smul_sub, Finsupp.sum_sub]
 
 /-- A homogeneous row's Koszul contribution with an odd shifted degree has the opposite sign
 from the corresponding index-difference sum. -/

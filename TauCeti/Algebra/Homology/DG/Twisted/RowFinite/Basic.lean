@@ -27,11 +27,12 @@ the regular-bimodule twisted differential.
 An `A`-linear map out of the free module to a differential graded left module is determined by
 the images of the generators, and it commutes with the differentials exactly when it does so on
 each generator, that is, when it carries each row `m x` to the differential of the image of `x`.
-Likewise a homotopy out of the free module is the signed extension `rowFiniteSignedMap` of the
-images of the generators, and the homotopy identity holds as soon as it holds on generators.
-Both extensions are local: on a given vector they only need the identity on the generators in
-its support, which is what allows maps to be built one generator at a time.
-Dually, a single vector is a valid row for a new generator exactly when it is a cycle.
+Likewise a map of degree `-1` out of the free module is the signed extension
+`rowFiniteSignedMap` of the images of the generators, and the homotopy law `e = dM ∘ H + H ∘ D`
+holds exactly when it holds on each generator. Both laws hold on a vector as soon as they hold on
+the generators in its support, which is what allows maps out of the free module to be built one
+generator at a time. Dually, a single vector is a valid row for a new generator exactly when it
+is a cycle.
 
 ## Main definitions and results
 
@@ -48,15 +49,20 @@ Dually, a single vector is a valid row for a new generator exactly when it is a 
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
   (`rowFiniteTwistedDifferential_zero`).
-* `isHomogeneous_linearCombination`: a map out of the free module sending each generator to the
-  matching degree is homogeneous of degree zero.
 * `linearCombination_rowFiniteTwistedDifferential` and
   `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
   commute with the differentials exactly when they do so on generators.
-* `linearCombination_rowFiniteTwistedDifferential_of_mem_support`,
-  `rowFiniteSignedMap_differential_of_mem_support` and `rowFiniteSignedMap_eq_of_mem_support`:
-  the chain-map, odd homotopy and even homotopy identities on a vector, from the identities on
-  the generators in its support.
+* `isHomogeneous_linearCombination`: a map out of the free module sending each generator to the
+  matching degree is homogeneous of degree zero.
+* `rowFiniteSignedMap`: the Koszul-signed extension of images of the generators out of the
+  free module, with `rowFiniteSignedMap_congr`, `LinearMap.map_rowFiniteSignedMap` and
+  `rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`, which gives it degree `-1` when each
+  generator `x` is sent into degree `-ind x - 1`.
+* `linearCombination_eq_add_rowFiniteSignedMap` and
+  `forall_linearCombination_eq_add_rowFiniteSignedMap_iff`: homotopies out of the free module
+  are determined on generators.
+* `rowFiniteSignedMap_eq_of_forall_mem_support`: even homotopies out of the free module are
+  checked on the generators in the support of a vector.
 * `TwistingCocycle.toRowFinite` and
   `linearEquivFunOnFinite_rowFiniteTwistedDifferential`: recovery of the finite prototype
   through `Finsupp.linearEquivFunOnFinite`.
@@ -74,7 +80,7 @@ open DirectSum
 
 namespace TauCeti
 
-universe uR uA uM uN uP uP' uQ
+universe uR uA uM uP uP' uQ
 
 section Grading
 
@@ -194,11 +200,10 @@ theorem zero_m : (0 : RowFiniteTwistingCocycle 𝒜 d P ind).m = 0 :=
   (rfl)
 
 omit [GradedAlgebra 𝒜] in
-/-- The row of a generator `x` has total degree `1 - ind x`: it is the differential of the
-generator. -/
+/-- The row of a generator `x`, its differential, lies in total degree `1 - ind x`. -/
 theorem m_mem_rowFiniteTotalGrading (m : RowFiniteTwistingCocycle 𝒜 d P ind) (x : P) :
     m.m x ∈ rowFiniteTotalGrading 𝒜 ind (1 - ind x) :=
-  (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
+  (mem_rowFiniteTotalGrading_iff 𝒜 ind).mpr fun y ↦ by
     convert m.mem_graded x y using 2
     ring
 
@@ -223,35 +228,29 @@ end RowFiniteTwistingCocycle
 
 section SignedMap
 
-variable {Q : Type uQ} {indQ : Q → ℤ}
-  {N : Type uN} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+variable {M : Type uM} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
 
-/-- The signed extension of a family of images of the generators. On a coefficient of degree `q`,
-it sends `single x a` to `(-1)^q • (a • h x)`. It supplies both twisting terms, with values in the
-free module itself, and homotopy terms, with values in any left module. -/
-noncomputable def rowFiniteSignedMap (h : P → N) : (P →₀ A) →ₗ[R] N :=
+/-- The Koszul-signed extension of the images `h x` of the generators to an `R`-linear map out of
+the free module. On a coefficient of degree `q`, it sends `single x a` to `(-1)^q • (a • h x)`.
+With values in a free module it supplies the twisting terms. With values in a graded module and
+each `h x` of degree `-ind x - 1`, it is the map of degree `-1` determined by the images of the
+generators (`rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`), the form of a homotopy out of
+the free module. -/
+noncomputable def rowFiniteSignedMap (h : P → M) : (P →₀ A) →ₗ[R] M :=
   Finsupp.lsum R fun x ↦
-    ((LinearMap.toSpanSingleton A N (h x)).restrictScalars R).comp
+    ((LinearMap.toSpanSingleton A M (h x)).restrictScalars R).comp
       ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1)
 
 /-- Signed row substitution is a finite sum over the support of the input vector. -/
-theorem rowFiniteSignedMap_apply (h : P → N) (f : P →₀ A) :
+theorem rowFiniteSignedMap_apply (h : P → M) (f : P →₀ A) :
     rowFiniteSignedMap (𝒜 := 𝒜) h f =
       f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • h x) := by
   classical
   simp [rowFiniteSignedMap, Finsupp.lsum_apply, LinearMap.toSpanSingleton_apply,
     Function.comp_def]
 
-/-- The signed extension only depends on the images of the generators in the support of its
-argument. -/
-theorem rowFiniteSignedMap_congr {h h' : P → N} {f : P →₀ A}
-    (hh : ∀ x ∈ f.support, h x = h' x) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h f = rowFiniteSignedMap (𝒜 := 𝒜) h' f := by
-  rw [rowFiniteSignedMap_apply, rowFiniteSignedMap_apply]
-  exact Finsupp.sum_congr fun x hx ↦ by rw [hh x hx]
-
 /-- The signed extension evaluated on a homogeneous elementary vector. -/
-theorem rowFiniteSignedMap_single (h : P → N) (x : P)
+theorem rowFiniteSignedMap_single (h : P → M) (x : P)
     {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) :
     rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x a) = q.negOnePow • (a • h x) := by
   classical
@@ -260,38 +259,13 @@ theorem rowFiniteSignedMap_single (h : P → N) (x : P)
 
 /-- A generator maps to its specified image. -/
 @[simp]
-theorem rowFiniteSignedMap_single_one (h : P → N) (x : P) :
+theorem rowFiniteSignedMap_single_one (h : P → M) (x : P) :
     rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x 1) = h x := by
   rw [rowFiniteSignedMap_single h x (SetLike.one_mem_graded 𝒜)]
   simp
 
-/-- The signed extension is additive in the family of images. -/
-theorem rowFiniteSignedMap_add (h h' : P → N) :
-    rowFiniteSignedMap (𝒜 := 𝒜) (h + h') =
-      rowFiniteSignedMap (𝒜 := 𝒜) h + rowFiniteSignedMap (𝒜 := 𝒜) h' := by
-  ext x a
-  simp [rowFiniteSignedMap_apply, smul_add]
-
-/-- The signed extension is compatible with negation of the family of images. -/
-theorem rowFiniteSignedMap_neg (h : P → N) :
-    rowFiniteSignedMap (𝒜 := 𝒜) (-h) = -rowFiniteSignedMap (𝒜 := 𝒜) h := by
-  ext x a
-  simp [rowFiniteSignedMap_apply]
-
-/-- The signed extension is compatible with subtraction of the families of images. -/
-theorem rowFiniteSignedMap_sub (h h' : P → N) :
-    rowFiniteSignedMap (𝒜 := 𝒜) (h - h') =
-      rowFiniteSignedMap (𝒜 := 𝒜) h - rowFiniteSignedMap (𝒜 := 𝒜) h' := by
-  rw [sub_eq_add_neg, rowFiniteSignedMap_add, rowFiniteSignedMap_neg, sub_eq_add_neg]
-
-/-- An `A`-linear map commutes with the signed extension. -/
-theorem apply_rowFiniteSignedMap {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N']
-    [IsScalarTower R A N'] (φ : N →ₗ[A] N') (h : P → N) (f : P →₀ A) :
-    φ (rowFiniteSignedMap (𝒜 := 𝒜) h f) = rowFiniteSignedMap (𝒜 := 𝒜) (φ ∘ h) f := by
-  simp [rowFiniteSignedMap_apply, Finsupp.sum, map_sum]
-
 /-- Signed row extension is graded left-linear of odd degree. -/
-theorem rowFiniteSignedMap_smul (h : P → N) {q : ℤ} {a : A}
+theorem rowFiniteSignedMap_smul (h : P → M) {q : ℤ} {a : A}
     (ha : a ∈ 𝒜 q) (f : P →₀ A) :
     rowFiniteSignedMap (𝒜 := 𝒜) h (a • f) =
       q.negOnePow • (a • rowFiniteSignedMap (𝒜 := 𝒜) h f) := by
@@ -309,9 +283,44 @@ theorem rowFiniteSignedMap_smul (h : P → N) {q : ℤ} {a : A}
       simp [Int.negOnePow_add, mul_smul, smul_comm a p.negOnePow]
     | add b c hb hc => simp only [Finsupp.single_add, smul_add, map_add, hb, hc]
 
+/-- The signed extension on a vector only depends on the images of the generators in its
+support. -/
+theorem rowFiniteSignedMap_congr {h h' : P → M} {f : P →₀ A}
+    (hh : ∀ x ∈ f.support, h x = h' x) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f = rowFiniteSignedMap (𝒜 := 𝒜) h' f := by
+  simp only [rowFiniteSignedMap_apply]
+  exact Finsupp.sum_congr fun x hx ↦ by rw [hh x hx]
+
+/-- An `A`-linear map commutes with the signed extension: applying it after the signed extension
+of `h` is the signed extension of its composite with `h`. -/
+theorem _root_.LinearMap.map_rowFiniteSignedMap {M' : Type*} [AddCommGroup M'] [Module R M']
+    [Module A M'] [IsScalarTower R A M'] (φ : M →ₗ[A] M') (h : P → M) (f : P →₀ A) :
+    φ (rowFiniteSignedMap (𝒜 := 𝒜) h f) = rowFiniteSignedMap (𝒜 := 𝒜) (φ ∘ h) f := by
+  simp [rowFiniteSignedMap_apply, Finsupp.sum, map_sum]
+
+/-- The signed extension is additive in the family of images. -/
+theorem rowFiniteSignedMap_add (h h' : P → M) :
+    rowFiniteSignedMap (𝒜 := 𝒜) (h + h') =
+      rowFiniteSignedMap (𝒜 := 𝒜) h + rowFiniteSignedMap (𝒜 := 𝒜) h' := by
+  ext x a
+  simp [rowFiniteSignedMap_apply, smul_add]
+
+/-- The signed extension is compatible with negation of the family of images. -/
+theorem rowFiniteSignedMap_neg (h : P → M) :
+    rowFiniteSignedMap (𝒜 := 𝒜) (-h) = -rowFiniteSignedMap (𝒜 := 𝒜) h := by
+  ext x a
+  simp [rowFiniteSignedMap_apply]
+
+/-- The signed extension is compatible with subtraction of the families of images. -/
+theorem rowFiniteSignedMap_sub (h h' : P → M) :
+    rowFiniteSignedMap (𝒜 := 𝒜) (h - h') =
+      rowFiniteSignedMap (𝒜 := 𝒜) h - rowFiniteSignedMap (𝒜 := 𝒜) h' := by
+  rw [sub_eq_add_neg, rowFiniteSignedMap_add, rowFiniteSignedMap_neg, sub_eq_add_neg]
+
 /-- Substituting finite rows `ν` and then applying a signed extension is the signed extension of
 the images of the rows. -/
-theorem rowFiniteSignedMap_linearCombination (k : Q → N) (ν : P → Q →₀ A) (f : P →₀ A) :
+theorem rowFiniteSignedMap_linearCombination {Q : Type uQ} (k : Q → M) (ν : P → Q →₀ A)
+    (f : P →₀ A) :
     rowFiniteSignedMap (𝒜 := 𝒜) (fun x ↦ rowFiniteSignedMap (𝒜 := 𝒜) k (ν x)) f =
       rowFiniteSignedMap (𝒜 := 𝒜) k (Finsupp.linearCombination A ν f) := by
   classical
@@ -422,16 +431,16 @@ variable {M : Type uM} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
 /-- An `A`-linear map out of the free module, sending each generator `x` in the support of a
-vector of total degree `n` to degree `-ind x + j`, sends that vector to degree `n + j`. -/
-theorem linearCombination_mem_of_mem_support {g : P → M} {j n : ℤ} {f : P →₀ A}
-    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) (hg : ∀ x ∈ f.support, g x ∈ ℳ (-ind x + j)) :
+vector of total degree `n` to degree `j - ind x`, sends that vector to degree `n + j`. -/
+theorem linearCombination_mem_of_forall_mem_support {g : P → M} {j n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) (hg : ∀ x ∈ f.support, g x ∈ ℳ (j - ind x)) :
     Finsupp.linearCombination A g f ∈ ℳ (n + j) := by
   classical
   rw [Finsupp.linearCombination_apply, Finsupp.sum]
   refine Submodule.sum_mem _ fun x hx ↦ ?_
   have := SetLike.GradedSMul.smul_mem (hf x) (hg x hx)
-  rw [vadd_eq_add] at this
   convert this using 2
+  simp only [vadd_eq_add]
   ring
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
@@ -440,7 +449,8 @@ each generator `x` is sent to degree `-ind x`. -/
 theorem linearCombination_mem_of_mem_rowFiniteTotalGrading {g : P → M}
     (hg : ∀ x, g x ∈ ℳ (-ind x)) {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : Finsupp.linearCombination A g f ∈ ℳ n := by
-  simpa using linearCombination_mem_of_mem_support (j := 0) hf fun x _ ↦ by simpa using hg x
+  simpa using linearCombination_mem_of_forall_mem_support (j := 0) hf fun x _ ↦ by
+    simpa using hg x
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
 /-- An `A`-linear map out of the free module sending each generator `x` to degree `-ind x` is
@@ -450,53 +460,58 @@ theorem isHomogeneous_linearCombination {g : P → M} (hg : ∀ x, g x ∈ ℳ (
   LinearMap.isHomogeneous_def.mpr fun _ _ hf ↦ by
     simpa using linearCombination_mem_of_mem_rowFiniteTotalGrading hg hf
 
-/-- The signed extension of images of degree `-ind x + j` sends a vector of total degree `n` to
-degree `n + j`; only the generators in its support matter. -/
-theorem rowFiniteSignedMap_mem_of_mem_support {k : P → M} {j n : ℤ} {f : P →₀ A}
-    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) (hk : ∀ x ∈ f.support, k x ∈ ℳ (-ind x + j)) :
-    rowFiniteSignedMap (𝒜 := 𝒜) k f ∈ ℳ (n + j) := by
+/-- The signed extension of images of degree `j - ind x`, on the generators in the support of a
+vector of total degree `n`, sends that vector to degree `n + j`. -/
+theorem rowFiniteSignedMap_mem_of_forall_mem_support {h : P → M} {j n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) (hh : ∀ x ∈ f.support, h x ∈ ℳ (j - ind x)) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ ℳ (n + j) := by
   classical
   rw [← Finsupp.sum_single f, Finsupp.sum, map_sum]
   refine Submodule.sum_mem _ fun x hx ↦ ?_
-  rw [rowFiniteSignedMap_single k x (hf x)]
+  rw [rowFiniteSignedMap_single h x (hf x)]
   apply Submodule.smul_of_tower_mem
-  have := SetLike.GradedSMul.smul_mem (hf x) (hk x hx)
-  rw [vadd_eq_add] at this
+  have := SetLike.GradedSMul.smul_mem (hf x) (hh x hx)
   convert this using 2
+  simp only [vadd_eq_add]
   ring
 
-/-- Rows with shifted degree `k` give a signed map of total degree `k`. -/
-theorem rowFiniteSignedMap_mem_totalGrading {Q : Type uQ} {indQ : Q → ℤ} (h : P → Q →₀ A)
-    {k : ℤ} (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x + k)) {n : ℤ} {f : P →₀ A}
-    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ rowFiniteTotalGrading 𝒜 indQ (n + k) :=
-  rowFiniteSignedMap_mem_of_mem_support (ℳ := rowFiniteTotalGrading 𝒜 indQ) hf fun x _ ↦
-    (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
-      convert hh x y using 2
-      ring
+/-- The signed extension of images of degree `j - ind x` raises total degree by `j`. -/
+theorem rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading {h : P → M} {j : ℤ}
+    (hh : ∀ x, h x ∈ ℳ (j - ind x)) {n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ ℳ (n + j) :=
+  rowFiniteSignedMap_mem_of_forall_mem_support hf fun x _ ↦ hh x
 
 variable [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M} {h : IsDGAlgebra 𝒜 d}
 
-/-- **Maps out of the free module are determined on generators**, one vector at a time. If an
-`A`-linear map sends the differential of each generator in the support of `f`, its row `m x`, to
-the differential of the image of the generator, then it commutes with the differentials on `f`,
-by the DG Leibniz rule. -/
-theorem linearCombination_rowFiniteTwistedDifferential_of_mem_support
+/-- On the elementary vectors of a generator, an `A`-linear map out of the free module commutes
+with the differentials as soon as it does so on that generator. -/
+private theorem linearCombination_rowFiniteTwistedDifferential_single
+    (hM : IsDGLeftModule h ℳ dM) (m : P → P →₀ A) {g : P → M} {x : P}
+    (hg : Finsupp.linearCombination A g (m x) = dM (g x)) (a : A) :
+    Finsupp.linearCombination A g
+        (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.single x a)) =
+      dM (Finsupp.linearCombination A g (Finsupp.single x a)) := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous q a =>
+    rw [rowFiniteTwistedDifferential_single m x a.2, map_add, Finsupp.linearCombination_single,
+      Finsupp.linearCombination_single, hM.leibniz a.2, ← hg]
+    simp only [map_smul, LinearMap.map_smul_of_tower]
+  | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]
+
+/-- **Maps out of the free module commute with the differentials generator by generator.** If an
+`A`-linear map sends the row `m x` of each generator `x` in the support of a vector `f` to the
+differential of the image of `x`, then it commutes with the differentials on `f`, by the DG
+Leibniz rule. -/
+theorem linearCombination_rowFiniteTwistedDifferential_of_forall_mem_support
     (hM : IsDGLeftModule h ℳ dM) (m : P → P →₀ A) {g : P → M} {f : P →₀ A}
     (hg : ∀ x ∈ f.support, Finsupp.linearCombination A g (m x) = dM (g x)) :
     Finsupp.linearCombination A g (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) =
       dM (Finsupp.linearCombination A g f) := by
   classical
   rw [← Finsupp.sum_single f, Finsupp.sum, map_sum, map_sum, map_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx ↦ ?_
-  generalize f x = c
-  induction c using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | @homogeneous q a =>
-    rw [rowFiniteTwistedDifferential_single m x a.2, map_add, Finsupp.linearCombination_single,
-      Finsupp.linearCombination_single, hM.leibniz a.2, ← hg x hx]
-    simp only [map_smul, LinearMap.map_smul_of_tower]
-  | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]
+  exact Finset.sum_congr rfl fun x hx ↦
+    linearCombination_rowFiniteTwistedDifferential_single hM m (hg x hx) (f x)
 
 /-- **Maps out of the free module are determined on generators.** If an `A`-linear map sends
 the differential of each generator, its row `m x`, to the differential of the image of the
@@ -507,47 +522,86 @@ theorem linearCombination_rowFiniteTwistedDifferential (hM : IsDGLeftModule h �
     (f : P →₀ A) :
     Finsupp.linearCombination A g (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) =
       dM (Finsupp.linearCombination A g f) :=
-  linearCombination_rowFiniteTwistedDifferential_of_mem_support hM m fun x _ ↦ hg x
+  linearCombination_rowFiniteTwistedDifferential_of_forall_mem_support hM m fun x _ ↦ hg x
 
-/-- **Homotopies out of the free module are determined on generators**, one vector at a time.
-Let `Φ` be an `A`-linear map out of the free module, typically a difference of two chain maps.
-If the signed extension of `k : P → M` satisfies `dM (k x) + K (m x) = Φ x` on each generator in
-the support of `f`, then `dM (K f) + K (D f) = Φ f`, by the DG Leibniz rule. -/
-theorem rowFiniteSignedMap_differential_of_mem_support (hM : IsDGLeftModule h ℳ dM)
-    (m : P → P →₀ A) {k : P → M} {Φ : (P →₀ A) →ₗ[A] M} {f : P →₀ A}
-    (hk : ∀ x ∈ f.support, dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x) =
-      Φ (Finsupp.single x 1)) :
-    dM (rowFiniteSignedMap (𝒜 := 𝒜) k f) +
-        rowFiniteSignedMap (𝒜 := 𝒜) k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) =
-      Φ f := by
-  classical
-  rw [← Finsupp.sum_single f, Finsupp.sum]
-  simp only [map_sum]
-  rw [← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun x hx ↦ ?_
-  generalize f x = c
-  induction c using DirectSum.Decomposition.inductionOn 𝒜 with
+/-- An `A`-linear map out of the free module commutes with the differentials exactly when it does
+so on the generators. -/
+theorem forall_linearCombination_rowFiniteTwistedDifferential_iff (hM : IsDGLeftModule h ℳ dM)
+    (m : P → P →₀ A) (g : P → M) :
+    (∀ f, Finsupp.linearCombination A g (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) =
+        dM (Finsupp.linearCombination A g f)) ↔
+      ∀ x, Finsupp.linearCombination A g (m x) = dM (g x) := by
+  refine ⟨fun H x ↦ ?_, fun hg ↦ linearCombination_rowFiniteTwistedDifferential hM m hg⟩
+  simpa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜),
+    h.map_one_eq_zero] using H (Finsupp.single x 1)
+
+/-- On the elementary vectors of a generator, the homotopy law holds as soon as it holds on
+that generator. -/
+private theorem linearCombination_single_eq_add_rowFiniteSignedMap
+    (hM : IsDGLeftModule h ℳ dM) (m : P → P →₀ A) {e k : P → M} {x : P}
+    (hx : e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x)) (a : A) :
+    Finsupp.linearCombination A e (Finsupp.single x a) =
+      dM (rowFiniteSignedMap (𝒜 := 𝒜) k (Finsupp.single x a)) +
+        rowFiniteSignedMap (𝒜 := 𝒜) k
+          (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.single x a)) := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous q a =>
-    -- The two terms involving `d a` cancel; the rest is `a` times the generator equation.
-    rw [rowFiniteSignedMap_single k x a.2, rowFiniteTwistedDifferential_single m x a.2, map_add,
-      rowFiniteSignedMap_single k x (h.map_mem a.2)]
-    simp only [LinearMap.map_smul_of_tower]
-    rw [hM.leibniz a.2, rowFiniteSignedMap_smul k a.2, ← Finsupp.smul_single_one x (a : A),
-      map_smul, ← hk x hx]
+    rw [rowFiniteTwistedDifferential_single m x a.2, map_add,
+      rowFiniteSignedMap_single k x a.2, rowFiniteSignedMap_single k x (h.map_mem a.2),
+      LinearMap.map_smul_of_tower dM,
+      LinearMap.map_smul_of_tower (rowFiniteSignedMap (𝒜 := 𝒜) k), rowFiniteSignedMap_smul k a.2,
+      hM.leibniz a.2, Finsupp.linearCombination_single, hx]
     simp only [smul_add, smul_smul, Int.units_mul_self, one_smul, Int.negOnePow_succ,
       Units.neg_smul]
     abel
   | add a b ha hb =>
-    simp only [Finsupp.single_add, map_add]
-    rw [add_add_add_comm, ha, hb]
+    simp only [Finsupp.single_add, map_add, ha, hb]
+    abel
 
-/-- **Even homotopies out of the free module are determined on generators**, one vector at a
-time. For `L` the `A`-linear extension of `l : P → M`, the map `dM ∘ L - L ∘ D` is graded
-left-linear of odd degree. So if it agrees on each generator in the support of `f` with the
-signed extension of `θ : P → M`, then it agrees with it on `f`. -/
-theorem rowFiniteSignedMap_eq_of_mem_support (hM : IsDGLeftModule h ℳ dM) (m : P → P →₀ A)
-    {l θ : P → M} {f : P →₀ A}
+/-- **Homotopies out of the free module are checked generator by generator.** Let `k` give the
+images of the generators under a map of degree `-1`, extended with the Koszul sign by
+`rowFiniteSignedMap`. If `e x = dM (k x) + H (m x)` for each generator `x` in the support of a
+vector `f`, then the map `e` out of the free module agrees on `f` with `dM ∘ H + H ∘ D`. -/
+theorem linearCombination_eq_add_rowFiniteSignedMap_of_forall_mem_support
+    (hM : IsDGLeftModule h ℳ dM) (m : P → P →₀ A) {e k : P → M}
+    {f : P →₀ A}
+    (hk : ∀ x ∈ f.support, e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x)) :
+    Finsupp.linearCombination A e f = dM (rowFiniteSignedMap (𝒜 := 𝒜) k f) +
+      rowFiniteSignedMap (𝒜 := 𝒜) k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
+  classical
+  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum, map_sum, map_sum, map_sum, map_sum,
+    ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun x hx ↦
+    linearCombination_single_eq_add_rowFiniteSignedMap hM m (hk x hx) (f x)
+
+/-- **Homotopies out of the free module are determined on generators.** If
+`e x = dM (k x) + H (m x)` on every generator, where `H` is the signed extension of `k`, then
+`e = dM ∘ H + H ∘ D` on the whole free module. -/
+theorem linearCombination_eq_add_rowFiniteSignedMap (hM : IsDGLeftModule h ℳ dM)
+    (m : P → P →₀ A) {e k : P → M}
+    (hk : ∀ x, e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x)) (f : P →₀ A) :
+    Finsupp.linearCombination A e f = dM (rowFiniteSignedMap (𝒜 := 𝒜) k f) +
+      rowFiniteSignedMap (𝒜 := 𝒜) k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) :=
+  linearCombination_eq_add_rowFiniteSignedMap_of_forall_mem_support hM m fun x _ ↦ hk x
+
+/-- A map `e` out of the free module is `dM ∘ H + H ∘ D`, for the signed extension `H` of `k`,
+exactly when this holds on the generators. -/
+theorem forall_linearCombination_eq_add_rowFiniteSignedMap_iff (hM : IsDGLeftModule h ℳ dM)
+    (m : P → P →₀ A) (e k : P → M) :
+    (∀ f, Finsupp.linearCombination A e f = dM (rowFiniteSignedMap (𝒜 := 𝒜) k f) +
+        rowFiniteSignedMap (𝒜 := 𝒜) k (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f)) ↔
+      ∀ x, e x = dM (k x) + rowFiniteSignedMap (𝒜 := 𝒜) k (m x) := by
+  refine ⟨fun H x ↦ ?_, linearCombination_eq_add_rowFiniteSignedMap hM m⟩
+  simpa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜),
+    h.map_one_eq_zero] using H (Finsupp.single x 1)
+
+/-- **Even homotopies out of the free module are checked generator by generator.** For `L` the
+`A`-linear extension of `l : P → M`, the map `dM ∘ L - L ∘ D` is graded left-linear of odd degree.
+So if it agrees on each generator in the support of `f` with the signed extension of
+`θ : P → M`, then it agrees with it on `f`. -/
+theorem rowFiniteSignedMap_eq_of_forall_mem_support (hM : IsDGLeftModule h ℳ dM)
+    (m : P → P →₀ A) {l θ : P → M} {f : P →₀ A}
     (hθ : ∀ x ∈ f.support, θ x = dM (l x) - Finsupp.linearCombination A l (m x)) :
     rowFiniteSignedMap (𝒜 := 𝒜) θ f = dM (Finsupp.linearCombination A l f) -
       Finsupp.linearCombination A l (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
@@ -570,18 +624,16 @@ theorem rowFiniteSignedMap_eq_of_mem_support (hM : IsDGLeftModule h ℳ dM) (m :
     rw [ha, hb]
     abel
 
-/-- An `A`-linear map out of the free module commutes with the differentials exactly when it does
-so on the generators. -/
-theorem forall_linearCombination_rowFiniteTwistedDifferential_iff (hM : IsDGLeftModule h ℳ dM)
-    (m : P → P →₀ A) (g : P → M) :
-    (∀ f, Finsupp.linearCombination A g (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) =
-        dM (Finsupp.linearCombination A g f)) ↔
-      ∀ x, Finsupp.linearCombination A g (m x) = dM (g x) := by
-  refine ⟨fun H x ↦ ?_, fun hg ↦ linearCombination_rowFiniteTwistedDifferential hM m hg⟩
-  simpa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜),
-    h.map_one_eq_zero] using H (Finsupp.single x 1)
-
 end Maps
+
+/-- Rows with shifted degree `k` give a signed map of total degree `k`. -/
+theorem rowFiniteSignedMap_mem_totalGrading {Q : Type uQ} {indQ : Q → ℤ} (h : P → Q →₀ A)
+    {k : ℤ} (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x + k)) {n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ rowFiniteTotalGrading 𝒜 indQ (n + k) :=
+  rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading (fun x y ↦ by
+    convert hh x y using 2
+    ring) hf
 
 section DifferentialLaws
 

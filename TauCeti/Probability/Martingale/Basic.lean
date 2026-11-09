@@ -8,11 +8,13 @@ module
 public import Mathlib.Probability.Martingale.Basic
 
 /-!
-# Martingales frozen at a date, bounded positions taken at a date, and division by a process
+# Martingale closure properties and division by a process
 
-Two closure properties of martingales indexed by a linear order, the building blocks of the
-elementary stochastic integral:
+Closure properties of martingales, including building blocks of the elementary stochastic
+integral:
 
+* restricting a martingale to an event measurable at every time preserves the martingale
+  property (`MeasureTheory.Martingale.indicator`);
 * a martingale `X` with values in a Banach space, frozen at a fixed date `w`, `t ↦ X (min w t)`,
   is a martingale (`MeasureTheory.Martingale.const_min`);
 * if a real martingale `Y` vanishes up to a date `r`, then multiplying it by a random variable
@@ -71,6 +73,17 @@ theorem Martingale.ae_eq_of_ae_eq_of_div (hV : Martingale (V / N) ℱ Q)
   rw [h₁, h₂, Pi.mul_apply, Pi.mul_apply, h₃]
 
 end Div
+
+/-- Restricting a martingale to an event measurable at every time preserves the martingale
+property. In particular, for an index with a bottom element it suffices that the event be
+measurable at the bottom time. -/
+theorem Martingale.indicator {Ω ι E : Type*} {m : MeasurableSpace Ω} {μ : Measure Ω}
+    [Preorder ι] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {ℱ : Filtration ι m} {X : ι → Ω → E} (hX : Martingale X ℱ μ) {s : Set Ω}
+    (hs : ∀ t, MeasurableSet[ℱ t] s) :
+    Martingale (fun t ↦ s.indicator (X t)) ℱ μ := by
+  refine ⟨fun t ↦ (hX.stronglyMeasurable t).indicator (hs t), fun i j hij ↦ ?_⟩
+  exact (condExp_indicator (hX.integrable j) (hs i)).trans (hX.condExp_ae_eq hij).indicator
 
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]

@@ -98,7 +98,6 @@ theorem continuation_iff (ν : P → Q →₀ A)
 
 /-- A continuation cocycle from images `g x` of the generators of total degree `-indP x`, the
 degrees of a degree-zero map, satisfying the generator equation. -/
-@[expose, simps]
 def ofTotalGrading (g : P → Q →₀ A) (hg : ∀ x, g x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
     (hgd : ∀ x, Finsupp.linearCombination A g (mP.m x) =
       rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (g x)) :
@@ -107,6 +106,14 @@ def ofTotalGrading (g : P → Q →₀ A) (hg : ∀ x, g x ∈ rowFiniteTotalGra
   mem_graded x y := by
     simpa only [neg_add_eq_sub] using (mem_rowFiniteTotalGrading_iff _ _).mp (hg x) y
   continuation x := (hgd x).symm
+
+@[simp]
+theorem ofTotalGrading_ν (g : P → Q →₀ A)
+    (hg : ∀ x, g x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x))
+    (hgd : ∀ x, Finsupp.linearCombination A g (mP.m x) =
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (g x)) :
+    (ofTotalGrading g hg hgd).ν = g :=
+  (rfl)
 
 variable (ν : RowFiniteContinuationCocycle mP mQ)
 
