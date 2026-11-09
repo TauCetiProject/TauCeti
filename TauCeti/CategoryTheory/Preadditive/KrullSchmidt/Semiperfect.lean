@@ -20,7 +20,7 @@ characterization of semiperfect rings (Lam (23.6),
 is semiperfect exactly when `𝟙 X` is a sum of orthogonal idempotents with local corners.
 
 * If idempotents split, such idempotents `eᵢ` split through objects `Xᵢ` whose endomorphism rings
-  are the corners `eᵢ (End X) eᵢ` (`IsIdempotentElem.cornerRingEquivEnd`), and `X ≅ ⨁ Xᵢ`.
+  are the corners `eᵢ (End X) eᵢ` (`IsIdempotentElem.endRingEquivCorner`), and `X ≅ ⨁ Xᵢ`.
 * Conversely, a decomposition `X ≅ ⨁ Pᵢ` with local `End Pᵢ` gives such idempotents, the
   projections onto the summands.
 
@@ -70,7 +70,7 @@ theorem _root_.CompleteOrthogonalIdempotents.exists_iso_biproduct_of_isLocalRing
     IsIdempotentComplete.idempotents_split X (f i).asHom (congrArg End.asHom (hf.idem i).eq)
   refine ⟨P, fun i ↦ ?_, ⟨?_⟩⟩
   · have := hloc i
-    exact ((hf.idem i).cornerRingEquivEnd (ι i) (π i) (hιπ i) (hπι i)).symm.isLocalRing
+    exact ((hf.idem i).endRingEquivCorner (ι i) (π i) (hιπ i) (hπι i)).symm.isLocalRing
   -- `ι a ≫ π b = ι a ≫ (fₐ ≫ f_b) ≫ π b = 0` for `a ≠ b`.
   have key (a b : Fin n) (hab : a ≠ b) : ι a ≫ π b = 0 := by
     have h0 : (π a ≫ ι a) ≫ (π b ≫ ι b) = 0 := by
@@ -127,7 +127,7 @@ instance IsKrullSchmidt.isSemiperfectRing_end [IsKrullSchmidt C] (X : C) :
   refine IsSemiperfectRing.of_isLocalRing_corner hf fun i ↦ ?_
   -- The corner at the projection onto `Pᵢ` is `End Pᵢ`.
   have := hP i
-  exact ((hf.idem i).cornerRingEquivEnd (biproduct.ι P i ≫ φ.inv) (φ.hom ≫ biproduct.π P i)
+  exact ((hf.idem i).endRingEquivCorner (biproduct.ι P i ≫ φ.inv) (φ.hom ≫ biproduct.π P i)
     (by simp) (by simp [f])).isLocalRing
 
 /-- **Krause's criterion**: a category with finite biproducts is Krull-Schmidt exactly when

@@ -200,15 +200,9 @@ theorem _root_.IsIdempotentElem.isSimpleModule_span_singleton_mk_jacobson {e : A
     rfl
   have hmem (z : A ⧸ J) :
       z ∈ Submodule.map J.mkQ L ↔ z ∈ (Ideal.span {Ideal.Quotient.mk J e} : Ideal (A ⧸ J)) := by
-    rw [Submodule.mem_map, Ideal.mem_span_singleton']
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hy
-      exact ⟨Ideal.Quotient.mk J c, (map_mul (Ideal.Quotient.mk J) c e).symm⟩
-    · rintro ⟨c, rfl⟩
-      obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective c
-      exact ⟨c * e, Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self e),
-        map_mul (Ideal.Quotient.mk J) c e⟩
+    rw [← Set.image_singleton, ← Ideal.map_span,
+      Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective, Submodule.mem_map]
+    rfl
   have : RingHomSurjective (Ideal.Quotient.mk J) := ⟨Ideal.Quotient.mk_surjective⟩
   let l : Submodule.map J.mkQ L →ₛₗ[Ideal.Quotient.mk J]
       (Ideal.span {Ideal.Quotient.mk J e} : Ideal (A ⧸ J)) :=

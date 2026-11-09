@@ -25,8 +25,6 @@ isomorphic.
 
 ## Main results
 
-* `IsIdempotentElem.exists_mul_eq_of_linearEquiv`: an isomorphism `Ae ≅ Af` gives `a ∈ eAf` and
-  `b ∈ fAe` with `a b = e` and `b a = f`.
 * `IsIdempotentElem.exists_units_mul_mul_eq_of_linearEquiv`: if `Ae ≅ Af` and
   `A(1 - e) ≅ A(1 - f)`, then `f = u⁻¹ e u` for a unit `u`.
 * `IsIdempotentElem.isCompl_span_singleton_one_sub`: `Ay` and `A(1 - y)` are complementary.
@@ -49,40 +47,6 @@ open TauCeti
 
 variable {A : Type*} [Ring A] {e f : A}
 
-/-- An isomorphism of left ideals `Ae ≅ Af` between idempotent generators is right multiplication
-by some `a ∈ eAf`, with inverse right multiplication by some `b ∈ fAe`; then `a b = e` and
-`b a = f`. -/
-theorem exists_mul_eq_of_linearEquiv (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
-    (φ : (Ideal.span {e} : Ideal A) ≃ₗ[A] (Ideal.span {f} : Ideal A)) :
-    ∃ a b : A, e * a = a ∧ a * f = a ∧ f * b = b ∧ b * e = b ∧ a * b = e ∧ b * a = f := by
-  -- `a` and `b` are the values of `φ` and `φ⁻¹` at the generators `e` and `f`.
-  have hea : e * (φ (spanSingletonGenerator e) : A) = φ (spanSingletonGenerator e) := by
-    simpa only [coe_spanSingletonGenerator, LinearEquiv.coe_coe] using
-      (coe_apply_eq_mul_apply_generator he φ.toLinearMap (spanSingletonGenerator e)).symm
-  have hfb : f * (φ.symm (spanSingletonGenerator f) : A) = φ.symm (spanSingletonGenerator f) := by
-    simpa only [coe_spanSingletonGenerator, LinearEquiv.coe_coe] using
-      (coe_apply_eq_mul_apply_generator hf φ.symm.toLinearMap (spanSingletonGenerator f)).symm
-  have haf : (φ (spanSingletonGenerator e) : A) * f = φ (spanSingletonGenerator e) := by
-    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ (spanSingletonGenerator e)).2
-    rw [← hc, mul_assoc, hf.eq]
-  have hbe : (φ.symm (spanSingletonGenerator f) : A) * e = φ.symm (spanSingletonGenerator f) := by
-    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ.symm (spanSingletonGenerator f)).2
-    rw [← hc, mul_assoc, he.eq]
-  -- The value of `φ` at the generator is `a` times the generator of `Af`, and dually.
-  have hφ : φ (spanSingletonGenerator e) =
-      (φ (spanSingletonGenerator e) : A) • spanSingletonGenerator f :=
-    Subtype.ext (by simp [haf])
-  have hφ' : φ.symm (spanSingletonGenerator f) =
-      (φ.symm (spanSingletonGenerator f) : A) • spanSingletonGenerator e :=
-    Subtype.ext (by simp [hbe])
-  refine ⟨_, _, hea, haf, hfb, hbe, ?_, ?_⟩
-  · have := congrArg Subtype.val (φ.symm_apply_apply (spanSingletonGenerator e))
-    rw [hφ, map_smul] at this
-    simpa using this
-  · have := congrArg Subtype.val (φ.apply_symm_apply (spanSingletonGenerator f))
-    rw [hφ', map_smul] at this
-    simpa using this
-
 /-- **Idempotents with isomorphic left ideals and complements are conjugate**: if `Ae ≅ Af` and
 `A(1 - e) ≅ A(1 - f)` as left `A`-modules, then `f = u⁻¹ e u` for a unit `u`. -/
 theorem exists_units_mul_mul_eq_of_linearEquiv (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
@@ -92,15 +56,13 @@ theorem exists_units_mul_mul_eq_of_linearEquiv (he : IsIdempotentElem e) (hf : I
   obtain ⟨a, b, hea, haf, hfb, hbe, hab, hba⟩ := he.exists_mul_eq_of_linearEquiv hf φ
   obtain ⟨a', b', hea', haf', hfb', hbe', hab', hba'⟩ :=
     he.one_sub.exists_mul_eq_of_linearEquiv hf.one_sub ψ
-  -- The cross terms vanish, as `f (1 - f) = 0` and `(1 - e) e = 0`.
-  have h₁ : a * b' = 0 := by
-    rw [← haf, ← hfb', mul_assoc, ← mul_assoc f, hf.mul_one_sub_self, zero_mul, mul_zero]
-  have h₂ : a' * b = 0 := by
-    rw [← haf', ← hfb, mul_assoc, ← mul_assoc (1 - f), hf.one_sub_mul_self, zero_mul, mul_zero]
-  have h₃ : b * a' = 0 := by
-    rw [← hbe, ← hea', mul_assoc, ← mul_assoc e, he.mul_one_sub_self, zero_mul, mul_zero]
-  have h₄ : b' * a = 0 := by
-    rw [← hbe', ← hea, mul_assoc, ← mul_assoc (1 - e), he.one_sub_mul_self, zero_mul, mul_zero]
+  -- The cross terms vanish: `x y = (x p) (q y) = x (p q) y = 0` whenever `p q = 0`.
+  have key {x y p q : A} (hx : x * p = x) (hy : q * y = y) (hpq : p * q = 0) : x * y = 0 := by
+    rw [← hx, ← hy, mul_assoc, ← mul_assoc p, hpq, zero_mul, mul_zero]
+  have h₁ : a * b' = 0 := key haf hfb' hf.mul_one_sub_self
+  have h₂ : a' * b = 0 := key haf' hfb hf.one_sub_mul_self
+  have h₃ : b * a' = 0 := key hbe hea' he.mul_one_sub_self
+  have h₄ : b' * a = 0 := key hbe' hea he.one_sub_mul_self
   let u : Aˣ := ⟨a + a', b + b', by simp [add_mul, mul_add, hab, hab', h₁, h₂],
     by simp [add_mul, mul_add, hba, hba', h₃, h₄]⟩
   refine ⟨u, ?_⟩

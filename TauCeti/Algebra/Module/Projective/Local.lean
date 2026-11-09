@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.LocalRing.Defs
+public import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Projective modules with local endomorphism rings
@@ -18,16 +19,15 @@ submodules of `P` is proper: if `N ⊔ N' = P`, the surjection `N × N' ⟶ P` s
 projective, writing the identity of `P` as `a + b` with `a` factoring through `N` and `b` through
 `N'`; as `End P` is local, `a` or `b` is invertible, so `N` or `N'` is all of `P`.
 
-Consequently a nonzero finitely generated such module is *local*: it has a unique maximal
-submodule, its radical `Module.jacobson R P`, which contains every proper submodule.
+Consequently every proper submodule lies in the radical `Module.jacobson R P`, and a finitely
+generated such module is *local*: its radical is its unique maximal submodule.
 
 ## Main results
 
 * `Module.Projective.sup_ne_top_of_isLocalRing_end`: the sum of two proper submodules is proper.
-* `Module.Projective.le_jacobson_of_isLocalRing_end`: for `P` finitely generated, every proper
-  submodule lies in the radical.
-* `Module.Projective.isCoatom_jacobson_of_isLocalRing_end`: for `P` finitely generated and nonzero,
-  the radical is the unique maximal submodule.
+* `Module.Projective.le_jacobson_of_isLocalRing_end`: every proper submodule lies in the radical.
+* `Module.Projective.isCoatom_jacobson_of_isLocalRing_end`: for `P` finitely generated, the radical
+  is the unique maximal submodule.
 
 ## References
 
@@ -72,22 +72,23 @@ theorem sup_ne_top_of_isLocalRing_end {N N' : Submodule R P} (hN : N ≠ ⊤) (h
 end Semiring
 
 variable {R P : Type*} [Ring R] [AddCommGroup P] [Module R P] [Module.Projective R P]
-  [IsLocalRing (Module.End R P)] [Module.Finite R P]
+  [IsLocalRing (Module.End R P)]
 
-/-- In a finitely generated projective module with local endomorphism ring, every proper
-submodule lies in the radical. -/
+/-- In a projective module with local endomorphism ring, every proper submodule lies in the
+radical: a proper submodule not below a maximal submodule `M` would sum with `M` to the whole
+module. -/
 theorem le_jacobson_of_isLocalRing_end {N : Submodule R P} (hN : N ≠ ⊤) :
     N ≤ Module.jacobson R P := by
   refine le_sInf fun M (hM : IsCoatom M) ↦ ?_
-  -- `N` lies in some maximal submodule, which must be `M` itself.
-  obtain ⟨M', hM', hNM'⟩ := (eq_top_or_exists_le_coatom N).resolve_left hN
   by_contra hNM
-  have hMM' : M ≠ M' := fun h ↦ hNM (h ▸ hNM')
-  exact sup_ne_top_of_isLocalRing_end hM.1 hM'.1 (IsCoatom.sup_eq_top_of_ne hM hM' hMM')
+  exact sup_ne_top_of_isLocalRing_end hN hM.1
+    (hM.2 _ (lt_of_le_of_ne le_sup_right fun h ↦ hNM (h ▸ le_sup_left)))
 
-/-- **A nonzero finitely generated projective module with local endomorphism ring is local**: its
-radical is its unique maximal submodule. -/
-theorem isCoatom_jacobson_of_isLocalRing_end [Nontrivial P] : IsCoatom (Module.jacobson R P) := by
+/-- **A finitely generated projective module with local endomorphism ring is local**: its radical
+is its unique maximal submodule. -/
+theorem isCoatom_jacobson_of_isLocalRing_end [Module.Finite R P] :
+    IsCoatom (Module.jacobson R P) := by
+  have : Nontrivial P := TauCeti.nontrivial_of_nontrivial_end (R := R)
   obtain ⟨M, hM, -⟩ := (eq_top_or_exists_le_coatom (⊥ : Submodule R P)).resolve_left bot_ne_top
   have hle : M ≤ Module.jacobson R P := le_jacobson_of_isLocalRing_end hM.1
   have hge : Module.jacobson R P ≤ M := sInf_le hM

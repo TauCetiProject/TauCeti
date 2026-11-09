@@ -24,7 +24,7 @@ when `F` is full.
 * `CategoryTheory.Iso.endRingEquiv`: the ring isomorphism `End X ≃+* End Y` induced by `X ≅ Y`.
 * `CategoryTheory.Functor.mapEndRingHom`: the ring homomorphism `End X →+* End (F.obj X)` of an
   additive functor.
-* `IsIdempotentElem.cornerRingEquivEnd`: for an idempotent `e = p ≫ i` of `X` split through `Y`
+* `IsIdempotentElem.endRingEquivCorner`: for an idempotent `e = p ≫ i` of `X` split through `Y`
   (`i ≫ p = 𝟙 Y`), the corner `e (End X) e` is the endomorphism ring of `Y`.
 
 ## Main results
@@ -86,7 +86,7 @@ variable {C : Type*} [Category* C] [Preadditive C]
 
 /-- **The corner of `End X` at a split idempotent is the endomorphism ring of its image**: if
 `e = p ≫ i` with `i ≫ p = 𝟙 Y`, then `g ↦ p ≫ g ≫ i` identifies `End Y` with `e (End X) e`. -/
-noncomputable def cornerRingEquivEnd {X Y : C} {e : End X} (he : IsIdempotentElem e)
+noncomputable def endRingEquivCorner {X Y : C} {e : End X} (he : IsIdempotentElem e)
     (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) :
     End Y ≃+* he.Corner where
   toFun g := ⟨End.of (p ≫ g.asHom ≫ i), by
@@ -118,15 +118,15 @@ noncomputable def cornerRingEquivEnd {X Y : C} {e : End X} (he : IsIdempotentEle
     simp
 
 @[simp]
-theorem cornerRingEquivEnd_apply_val_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
+theorem endRingEquivCorner_apply_val_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
     (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) (g : End Y) :
-    (he.cornerRingEquivEnd i p hip hpi g).1.asHom = p ≫ g.asHom ≫ i :=
+    (he.endRingEquivCorner i p hip hpi g).1.asHom = p ≫ g.asHom ≫ i :=
   (rfl)
 
 @[simp]
-theorem cornerRingEquivEnd_symm_apply_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
+theorem endRingEquivCorner_symm_apply_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
     (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) (c : he.Corner) :
-    ((he.cornerRingEquivEnd i p hip hpi).symm c).asHom = i ≫ c.1.asHom ≫ p :=
+    ((he.endRingEquivCorner i p hip hpi).symm c).asHom = i ≫ c.1.asHom ≫ p :=
   (rfl)
 
 end IsIdempotentElem
