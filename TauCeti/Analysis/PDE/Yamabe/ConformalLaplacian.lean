@@ -232,7 +232,7 @@ theorem scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian
   rw [g.scalarCurvature_rescale hf hf_pos hfφ x, laplaceBeltrami_smul I _ hlog,
     mgradient_smul _, Pi.smul_apply,
     laplaceBeltrami_log I (hu.of_le (by simp)) (fun y ↦ (hu_pos y).ne'),
-    mgradient_log (hu.mdifferentiableAt (by simp)) hux.ne', hpow, conformalLaplacian_def,
+    mgradient_log (hu.mdifferentiableAt (by simp)), hpow, conformalLaplacian_def,
     conformalCoefficient_def, ← g.scalarCurvature_def x]
   simp only [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
   field_simp
