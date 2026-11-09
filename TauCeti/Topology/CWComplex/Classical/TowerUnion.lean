@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
-public import Mathlib.Topology.Coherent
+public import TauCeti.Topology.Coherent
 
 /-!
 # The union of a tower of CW complexes
@@ -57,15 +57,6 @@ public section
 noncomputable section
 
 open Metric Set Topology Topology.RelCWComplex
-
-/-- If `X` carries the topology coherent with a family `S` of subsets, then a set which meets every
-member of `S` in a closed set is closed. -/
-theorem Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter {X : Type*} [TopologicalSpace X]
-    {S : Set (Set X)} (hS : IsCoherentWith S) {t : Set X} (ht : ∀ s ∈ S, IsClosed (t ∩ s)) :
-    IsClosed t := by
-  refine hS.isClosed_iff.2 fun s hs ↦ ?_
-  have := (ht s hs).preimage (continuous_subtype_val (p := (· ∈ s)))
-  rwa [preimage_inter, Subtype.coe_preimage_self, inter_univ] at this
 
 namespace TauCeti
 
@@ -135,10 +126,7 @@ theorem closedCell_ι {k n : ℕ} (i : cell (W k) n) : closedCell n (ι k n i) =
 /-- Distinct cells of `W k` remain distinct as cells of `W (k + 1)`. -/
 theorem injective_ι (k n : ℕ) : Function.Injective (ι k n) := by
   intro i j h
-  have hij : openCell n i = openCell n j := by rw [← openCell_ι hι i, ← openCell_ι hι j, h]
-  have hd : ¬Disjoint (openCell n i) (openCell n j) :=
-    not_disjoint_iff_nonempty_inter.2 (by rw [hij, inter_self]; exact openCell_nonempty n j)
-  exact sigma_mk_injective (RelCWComplex.eq_of_not_disjoint_openCell hd)
+  exact RelCWComplex.openCell_congr n (by rw [← openCell_ι hι i, ← openCell_ι hι j, h])
 
 /-- A cell of `W k`, seen as a cell of `W (k + 1)`, comes from the same new cell. -/
 @[simp]
@@ -294,11 +282,8 @@ def towerStageCellEquiv (k n : ℕ) : cell (W k) n ≃ {c : TowerNewCell ι n //
   Equiv.ofBijective (fun i ↦ ⟨towerOrigin ι k i, towerOrigin_fst_le ι k i⟩) <| by
     refine ⟨fun i j h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
     · have h' : towerOrigin ι k i = towerOrigin ι k j := congrArg Subtype.val h
-      have hij : openCell n i = openCell n j := by
-        rw [← openCell_towerOrigin hι k i, ← openCell_towerOrigin hι k j, h']
-      have hd : ¬Disjoint (openCell n i) (openCell n j) :=
-        not_disjoint_iff_nonempty_inter.2 (by rw [hij, inter_self]; exact openCell_nonempty n j)
-      exact sigma_mk_injective (RelCWComplex.eq_of_not_disjoint_openCell hd)
+      exact RelCWComplex.openCell_congr n
+        (by rw [← openCell_towerOrigin hι k i, ← openCell_towerOrigin hι k j, h'])
     · have hx : map n c.2.1 0 ∈ W k := monotone_of_forall_map_eq hι hc
         (openCell_subset_complex n c.2.1 (map_zero_mem_openCell n c.2.1))
       rw [← CWComplex.iUnion_openCell_eq_complex (C := W k)] at hx
