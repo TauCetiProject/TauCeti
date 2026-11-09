@@ -104,6 +104,11 @@ variable (F) in
 def beurlingL2 : Lp F 2 (volume : Measure ℂ) →L[ℂ] Lp F 2 (volume : Measure ℂ) :=
   Lp.fourierMultiplierCLM F beurlingSymbolLinf
 
+variable (F) in
+/-- The L² Beurling operator is the Fourier multiplier with the Beurling symbol. -/
+theorem beurlingL2_def : beurlingL2 F = Lp.fourierMultiplierCLM F beurlingSymbolLinf :=
+  (rfl)
+
 /-- On the Fourier side the L² operator multiplies by the Beurling symbol. -/
 @[simp]
 theorem fourier_beurlingL2 (u : Lp F 2 (volume : Measure ℂ)) :

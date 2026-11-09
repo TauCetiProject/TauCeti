@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Complex.Wirtinger.Beurling
 public import TauCeti.Analysis.Complex.Wirtinger.Schwartz
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import TauCeti.Analysis.Complex.CauchyKernel
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.L2Multiplier
 
 /-!
@@ -57,77 +57,16 @@ open scoped ENNReal NNReal SchwartzMap Real ContDiff FourierTransform
 
 namespace TauCeti
 
-/-! ### Pointwise facts -/
-
-section Pointwise
-
-variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
-
-/-- In one variable the real derivative is controlled by its two Wirtinger parts:
-`‖Df(x)‖ ≤ ‖∂f(x)‖ + ‖bar∂f(x)‖`. -/
-theorem norm_fderiv_le_norm_wirtingerDeriv_add_norm_conjWirtingerDeriv (f : ℂ → W) (x : ℂ) :
-    ‖fderiv ℝ f x‖ ≤ ‖wirtingerDeriv f x 1‖ + ‖conjWirtingerDeriv f x 1‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
-  refine (norm_add_le _ _).trans_eq ?_
-  rw [norm_smul, norm_smul, Complex.norm_conj]
-  ring
-
-/-- The Cauchy transform of compactly supported data is as smooth as the data. -/
-theorem _root_.HasCompactSupport.contDiff_cauchyTransform {n : ℕ∞} {f : ℂ → W}
-    (hc : HasCompactSupport f) (hf : ContDiff ℝ n f) : ContDiff ℝ n (cauchyTransform f) := by
-  rw [cauchyTransform_eq_convolution]
-  exact (hc.contDiff_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
-    Complex.locallyIntegrable_inv hf).const_smul _
-
-/-- **Decay of the Cauchy transform.** If `f` is integrable and supported in the disc of radius
-`r` about the origin, then `‖w‖ ‖T f w‖ ≤ 2 π⁻¹ ‖f‖_{L¹}` for `‖w‖ ≥ 2 r`. -/
-theorem norm_mul_norm_cauchyTransform_le {f : ℂ → W} {r : ℝ}
-    (hf : support f ⊆ closedBall 0 r) (hfi : Integrable f) {w : ℂ} (hw : 2 * r ≤ ‖w‖) :
-    ‖w‖ * ‖cauchyTransform f w‖ ≤ 2 * π⁻¹ * ∫ z, ‖f z‖ := by
-  have hπ : 0 < π := Real.pi_pos
-  rcases eq_or_ne w 0 with rfl | hw0
-  · simp only [norm_zero, zero_mul]
-    have : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
-    positivity
-  have hw' : 0 < ‖w‖ := norm_pos_iff.2 hw0
-  have hpt : ∀ z, ‖(w - z)⁻¹ • f z‖ ≤ 2 * ‖w‖⁻¹ * ‖f z‖ := fun z ↦ by
-    by_cases hz : f z = 0
-    · simp [hz]
-    have hzr : ‖z‖ ≤ r := by simpa using hf hz
-    have hwz : ‖w‖ / 2 ≤ ‖w - z‖ := by
-      have := norm_sub_norm_le w z
-      linarith
-    rw [norm_smul, norm_inv]
-    gcongr
-    calc ‖w - z‖⁻¹ ≤ (‖w‖ / 2)⁻¹ := inv_anti₀ (by positivity) hwz
-      _ = 2 * ‖w‖⁻¹ := by field_simp
-  have hint := norm_integral_le_of_norm_le (hfi.norm.const_mul (2 * ‖w‖⁻¹)) (.of_forall hpt)
-  rw [integral_const_mul] at hint
-  rw [cauchyTransform_apply, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hπ.le]
-  calc ‖w‖ * (π⁻¹ * ‖∫ z, (w - z)⁻¹ • f z‖)
-      ≤ ‖w‖ * (π⁻¹ * (2 * ‖w‖⁻¹ * ∫ z, ‖f z‖)) := by gcongr
-    _ = 2 * π⁻¹ * ∫ z, ‖f z‖ := by field_simp
-
-end Pointwise
-
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
 /-! ### The Beurling operator on Schwartz functions -/
-
-/-- The spectral `L²` Beurling operator is the `L²` Fourier multiplier with the Beurling symbol. -/
-private theorem beurlingL2_apply (v : Lp F 2 (volume : Measure ℂ)) :
-    beurlingL2 F v = Lp.fourierMultiplierCLM F beurlingSymbolLinf v := by
-  rw [← FourierTransform.fourierInv_fourier_eq (F := Lp F 2 (volume : Measure ℂ))
-      (beurlingL2 F v), fourier_beurlingL2, ← Lp.fourier_fourierMultiplierCLM,
-    FourierTransform.fourierInv_fourier_eq]
 
 /-- **`B bar∂ = ∂` on Schwartz functions**, for the spectral `L²` realization of the Beurling
 operator. On the Fourier side this is `(conj ξ / ξ) (πi ξ) = πi conj ξ`. -/
 theorem beurlingL2_toLp_conjWirtingerDerivCLM (u : 𝓢(ℂ, F)) :
     beurlingL2 F ((SchwartzMap.conjWirtingerDerivCLM F u).toLp 2) =
       (SchwartzMap.wirtingerDerivCLM F u).toLp 2 := by
-  rw [beurlingL2_apply]
+  rw [beurlingL2_def]
   refine (SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul (F := F) _
     (f := SchwartzMap.conjWirtingerDerivCLM F u) (g := SchwartzMap.wirtingerDerivCLM F u)
     coeFn_beurlingSymbolLinf fun ξ ↦ ?_).symm
@@ -246,6 +185,78 @@ private theorem eLpNorm_beurlingL2_sub_wirtingerDeriv_le {C : ℝ≥0}
   rw [← eLpNorm_congr_ae hBae, ← eLpNorm_congr_ae hvae]
   exact hC v
 
+omit [InnerProductSpace ℂ F] [CompleteSpace F] in
+/-- **Fatou's lemma for `L²` approximation.** If `g n → g₀` pointwise and the `L²` norms of
+`g n` are bounded by a sequence tending to `0`, then `g₀ = 0` almost everywhere. -/
+private theorem ae_eq_zero_of_tendsto_of_eLpNorm_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {g : ℕ → α → F} {g₀ : α → F} {c : ℕ → ℝ≥0∞}
+    (hg : ∀ n, AEStronglyMeasurable (g n) μ) (hg₀ : AEStronglyMeasurable g₀ μ)
+    (hlim : ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (g₀ x)))
+    (hgc : ∀ n, eLpNorm (g n) 2 μ ≤ c n) (hc : Tendsto c atTop (𝓝 0)) : g₀ =ᵐ[μ] 0 := by
+  have hfatou := Lp.eLpNorm_lim_le_liminf_eLpNorm (p := 2) hg g₀ hg₀ (.of_forall hlim)
+  refine (eLpNorm_eq_zero_iff two_ne_zero).1 (le_antisymm (hfatou.trans ?_) (by positivity))
+  rw [← hc.liminf_eq]
+  exact liminf_le_liminf (.of_forall hgc)
+
+/-- **One cutoff step.** For a smooth compactly supported cutoff `χ` with `χ • f = f`, the `L²`
+distance from `B f` to `χ • ∂ (T f)` is at most `(C + 1) ‖b‖_{L²}` for any pointwise bound `b`
+of `‖Dχ‖ ‖T f‖`, where `C` bounds `B` on `L²`. -/
+private theorem eLpNorm_beurlingL2_sub_smul_wirtingerDeriv_cauchyTransform_le {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ ∞ f) {C : ℝ≥0}
+    (hC : ∀ v : Lp F 2 (volume : Measure ℂ),
+      eLpNorm (beurlingL2 F v) 2 volume ≤ C * eLpNorm v 2 volume)
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ) (hχf : ∀ x, χ x • f x = f x)
+    {b : ℂ → ℝ} (hb : ∀ x, ‖fderiv ℝ χ x‖ * ‖cauchyTransform f x‖ ≤ b x) :
+    eLpNorm (fun x ↦ beurlingL2 F ((hc.toSchwartzMap hf).toLp 2 volume) x -
+      χ x • wirtingerDeriv (cauchyTransform f) x 1) 2 volume ≤
+        C * eLpNorm b 2 volume + eLpNorm b 2 volume := by
+  set G := beurlingL2 F ((hc.toSchwartzMap hf).toLp 2 volume)
+  set u := cauchyTransform f
+  have hu : ContDiff ℝ ∞ u := hc.contDiff_cauchyTransform hf
+  have hud : Differentiable ℝ u := hu.differentiable (by simp)
+  have hχd : Differentiable ℝ χ := hχ.differentiable (by simp)
+  have hwu : Continuous fun x ↦ wirtingerDeriv u x 1 :=
+    hc.continuous_wirtingerDeriv_cauchyTransform (hf.of_le (by simp))
+  -- The truncation `φ = χ • T f` is a Schwartz function.
+  set φ : ℂ → F := fun y ↦ χ y • u y
+  set Φ : 𝓢(ℂ, F) := hχc.smul_right.toSchwartzMap (hχ.smul hu)
+  have hΦ : ⇑Φ = φ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  have hfS : ⇑(hc.toSchwartzMap hf) = f := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  have hwφ : Continuous fun x ↦ wirtingerDeriv φ x 1 := by
+    simpa only [funext (SchwartzMap.wirtingerDerivCLM_apply Φ), hΦ] using
+      (SchwartzMap.wirtingerDerivCLM F Φ).continuous
+  have hcφ : Continuous fun x ↦ conjWirtingerDeriv φ x 1 := by
+    simpa only [funext (SchwartzMap.conjWirtingerDerivCLM_apply Φ), hΦ] using
+      (SchwartzMap.conjWirtingerDerivCLM F Φ).continuous
+  -- `bar∂ φ = f + (bar∂ χ) • T f` and `B bar∂ φ = ∂ φ`.
+  have h₁ : eLpNorm (fun x ↦ G x - wirtingerDeriv φ x 1) 2 volume ≤ C * eLpNorm b 2 volume := by
+    have h := eLpNorm_beurlingL2_sub_wirtingerDeriv_le hC (hc.toSchwartzMap hf) Φ
+    rw [hΦ, hfS] at h
+    refine h.trans ?_
+    gcongr
+    refine eLpNorm_mono_real (hf.continuous.sub hcφ).aestronglyMeasurable fun x ↦ ?_
+    have h := norm_conjWirtingerDeriv_smul_sub_smul_le (hχd x) (hud x) (1 : ℂ)
+    rw [hc.conjWirtingerDeriv_cauchyTransform (hf.of_le (by simp)), hχf, norm_one,
+      mul_one] at h
+    rw [norm_sub_rev]
+    exact h.trans (hb x)
+  -- `∂ φ = χ • ∂ (T f) + (∂ χ) • T f`.
+  have h₂ : eLpNorm (fun x ↦ wirtingerDeriv φ x 1 - χ x • wirtingerDeriv u x 1) 2 volume ≤
+      eLpNorm b 2 volume := by
+    refine eLpNorm_mono_real (hwφ.sub (hχ.continuous.smul hwu)).aestronglyMeasurable
+      fun x ↦ ?_
+    have h := norm_wirtingerDeriv_smul_sub_smul_le (hχd x) (hud x) (1 : ℂ)
+    rw [norm_one, mul_one] at h
+    exact h.trans (hb x)
+  calc eLpNorm (fun x ↦ G x - χ x • wirtingerDeriv u x 1) 2 volume
+      = eLpNorm ((fun x ↦ G x - wirtingerDeriv φ x 1) +
+          fun x ↦ wirtingerDeriv φ x 1 - χ x • wirtingerDeriv u x 1) 2 volume := by
+        congr 1
+        funext x
+        simp
+    _ ≤ _ := eLpNorm_add_le one_le_two
+    _ ≤ C * eLpNorm b 2 volume + eLpNorm b 2 volume := add_le_add h₁ h₂
+
 /-- **`∂ (T f) = B f` in `L²`.** For smooth compactly supported `f`, the Wirtinger derivative of
 the Cauchy transform agrees almost everywhere with the spectral `L²` Beurling operator applied
 to `f`. -/
@@ -253,17 +264,11 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
     (hc : HasCompactSupport f) (hf : ContDiff ℝ ∞ f) :
     (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) =ᵐ[volume]
       beurlingL2 F ((hf.continuous.memLp_of_hasCompactSupport hc).toLp f) := by
-  set fS : 𝓢(ℂ, F) := hc.toSchwartzMap hf
-  set G := beurlingL2 F (fS.toLp 2 volume)
-  change (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) =ᵐ[volume] G
+  rw [← hc.toSchwartzMap_toLp hf]
+  set G := beurlingL2 F ((hc.toSchwartzMap hf).toLp 2 volume)
   set u := cauchyTransform f
-  have hu : ContDiff ℝ ∞ u := hc.contDiff_cauchyTransform hf
-  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by simp)
-  have hwu : Continuous fun x ↦ wirtingerDeriv u x 1 := by
-    simp only [wirtingerDeriv_apply]
-    fun_prop
-  have hcu (x : ℂ) : conjWirtingerDeriv u x 1 = f x :=
-    hc.conjWirtingerDeriv_cauchyTransform (hf.of_le (by simp)) x
+  have hwu : Continuous fun x ↦ wirtingerDeriv u x 1 :=
+    hc.continuous_wirtingerDeriv_cauchyTransform (hf.of_le (by simp))
   -- The support radius `r` and the decay constant `M`.
   obtain ⟨r₀, hr₀⟩ := hc.isCompact.isBounded.subset_closedBall (0 : ℂ)
   set r := max r₀ 1
@@ -271,102 +276,52 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   have hsupp : support f ⊆ closedBall 0 r :=
     (subset_tsupport f).trans (hr₀.trans (closedBall_subset_closedBall (le_max_left _ _)))
   set M := 2 * π⁻¹ * ∫ z, ‖f z‖
-  have hdecay (x : ℂ) (hx : 2 * r ≤ ‖x‖) : ‖x‖ * ‖u x‖ ≤ M :=
-    norm_mul_norm_cauchyTransform_le hsupp (hf.continuous.integrable_of_hasCompactSupport hc) hx
+  have hM : 0 ≤ M := by
+    have : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
+    positivity
   -- The cutoffs `χ n`, equal to `1` on the disc of radius `R n = 2 r + n`.
   obtain ⟨C₀, hC₀, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   set R : ℕ → ℝ := fun n ↦ 2 * r + n
   have hR (n : ℕ) : 0 < R n := by positivity
+  have hrR (n : ℕ) : 2 * r ≤ R n := by simp only [R]; linarith [n.cast_nonneg (α := ℝ)]
   choose χ χ' hχs _ hχ1 hχ0 hχd hχ' using fun n ↦ hcut 0 (R n) (hR n)
   have hχfd (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ ≤ C₀ * (R n)⁻¹ := by
     rw [(hχd n x).fderiv]
     exact hχ' n x
-  have hχdiff (n : ℕ) : Differentiable ℝ (χ n) := fun x ↦ (hχd n x).differentiableAt
   have hχc (n : ℕ) : HasCompactSupport (χ n) :=
     HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (2 * R n)) fun x hx ↦
       hχ0 n x (by simpa [mem_closedBall] using hx)
   have hχf (n : ℕ) (x : ℂ) : χ n x • f x = f x := by
     by_cases hx : f x = 0
     · simp [hx]
-    rw [hχ1 n x (closedBall_subset_closedBall (by simp only [R]; linarith [n.cast_nonneg (α := ℝ)])
-      (hsupp hx)), one_smul]
-  -- The truncations `φ n = χ n • T f` are Schwartz functions.
-  set φ : ℕ → ℂ → F := fun n y ↦ χ n y • u y
-  have hφs (n : ℕ) : ContDiff ℝ ∞ (φ n) := (hχs n ⊤).smul hu
-  have hφc (n : ℕ) : HasCompactSupport (φ n) := (hχc n).smul_right
-  set Φ : ℕ → 𝓢(ℂ, F) := fun n ↦ (hφc n).toSchwartzMap (hφs n)
-  have hΦ (n : ℕ) : ⇑(Φ n) = φ n := rfl
-  -- Bounds on the two cutoff errors.
-  have hdecay' (n : ℕ) (x : ℂ) (hx : R n ≤ ‖x‖) : ‖x‖ * ‖u x‖ ≤ M :=
-    hdecay x (le_trans (by simp only [R]; linarith [n.cast_nonneg (α := ℝ)]) hx)
-  set c : ℕ → ℝ := fun n ↦ C₀ * (R n)⁻¹ * (M / R n)
-  set b : ℕ → ℝ≥0∞ := fun n ↦ eLpNorm ((closedBall (0 : ℂ) (2 * R n)).indicator
-    fun _ ↦ c n) 2 volume
-  have hb : Tendsto b atTop (𝓝 0) := by
-    have hM : 0 ≤ M := by
-      have : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
-      positivity
-    exact tendsto_eLpNorm_indicator_closedBall (by positivity) hC₀ hM
-  have hind (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ * ‖u x‖ ≤
-      (closedBall (0 : ℂ) (2 * R n)).indicator (fun _ ↦ c n) x :=
-    norm_fderiv_mul_norm_le_indicator (hR n) (hχ1 n) (hχ0 n) (hχfd n) (hdecay' n) x
-  -- `χ n • ∂ (T f) → B f` in `L²`: both cutoff errors have `L²` norm at most `b n`.
+    rw [hχ1 n x (closedBall_subset_closedBall (by linarith [hrR n]) (hsupp hx)), one_smul]
+  -- The cutoff errors have `L²` norm `O(1 / R n)`.
+  set b : ℕ → ℂ → ℝ := fun n ↦ (closedBall (0 : ℂ) (2 * R n)).indicator
+    fun _ ↦ C₀ * (R n)⁻¹ * (M / R n)
+  have hb (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ * ‖u x‖ ≤ b n x :=
+    norm_fderiv_mul_norm_le_indicator (hR n) (hχ1 n) (hχ0 n) (hχfd n)
+      (fun x hx ↦ norm_mul_norm_cauchyTransform_le hsupp
+        (hf.continuous.integrable_of_hasCompactSupport hc) ((hrR n).trans hx)) x
   obtain ⟨Cb, hCb⟩ := exists_eLpNorm_beurlingL2_le (F := F) (p := 2) (by norm_num)
     ENNReal.ofNat_ne_top
-  have hmeasG : AEStronglyMeasurable G volume := Lp.aestronglyMeasurable G
-  have hbound (n : ℕ) : eLpNorm (fun x ↦ G x - χ n x • wirtingerDeriv u x 1) 2 volume ≤
-      Cb * b n + b n := by
-    have hwφ : Continuous fun x ↦ wirtingerDeriv (φ n) x 1 := by
-      simpa only [funext (SchwartzMap.wirtingerDerivCLM_apply (Φ n)), hΦ] using
-        (SchwartzMap.wirtingerDerivCLM F (Φ n)).continuous
-    have hcφ : Continuous fun x ↦ conjWirtingerDeriv (φ n) x 1 := by
-      simpa only [funext (SchwartzMap.conjWirtingerDerivCLM_apply (Φ n)), hΦ] using
-        (SchwartzMap.conjWirtingerDerivCLM F (Φ n)).continuous
-    have hχn : Continuous (χ n) := (hχs n 0).continuous
-    have h₁ : eLpNorm (fun x ↦ G x - wirtingerDeriv (φ n) x 1) 2 volume ≤ Cb * b n := by
-      refine (eLpNorm_beurlingL2_sub_wirtingerDeriv_le hCb fS (Φ n)).trans ?_
-      gcongr
-      refine eLpNorm_mono_real (hf.continuous.sub hcφ).aestronglyMeasurable fun x ↦ ?_
-      have h := norm_conjWirtingerDeriv_smul_sub_smul_le (hχdiff n x)
-        (hu.differentiable (by simp) x) (1 : ℂ)
-      rw [hcu, hχf, norm_one, mul_one] at h
-      rw [norm_sub_rev]
-      exact h.trans (hind n x)
-    have h₂ : eLpNorm (fun x ↦ wirtingerDeriv (φ n) x 1 - χ n x • wirtingerDeriv u x 1) 2
-        volume ≤ b n := by
-      refine eLpNorm_mono_real (hwφ.sub (hχn.smul hwu)).aestronglyMeasurable fun x ↦ ?_
-      have h := norm_wirtingerDeriv_smul_sub_smul_le (hχdiff n x)
-        (hu.differentiable (by simp) x) (1 : ℂ)
-      rw [norm_one, mul_one] at h
-      exact h.trans (hind n x)
-    calc eLpNorm (fun x ↦ G x - χ n x • wirtingerDeriv u x 1) 2 volume
-        = eLpNorm ((fun x ↦ G x - wirtingerDeriv (φ n) x 1) +
-            fun x ↦ wirtingerDeriv (φ n) x 1 - χ n x • wirtingerDeriv u x 1) 2 volume := by
-          congr 1
-          funext x
-          simp
-      _ ≤ _ := eLpNorm_add_le one_le_two
-      _ ≤ Cb * b n + b n := add_le_add h₁ h₂
-  -- Fatou's lemma identifies the pointwise limit.
-  have hlim : ∀ x, Tendsto (fun n ↦ G x - χ n x • wirtingerDeriv u x 1) atTop
-      (𝓝 (G x - wirtingerDeriv u x 1)) := fun x ↦ by
+  have htend : Tendsto (fun n ↦ (Cb : ℝ≥0∞) * eLpNorm (b n) 2 volume + eLpNorm (b n) 2 volume)
+      atTop (𝓝 0) := by
+    have h := tendsto_eLpNorm_indicator_closedBall (a := 2 * r) (by positivity) hC₀ hM
+    simpa using (ENNReal.Tendsto.const_mul h (.inr ENNReal.coe_ne_top)).add h
+  -- `χ n • ∂ (T f) → ∂ (T f)` pointwise, so Fatou's lemma identifies the limit with `B f`.
+  have hlim (x : ℂ) : Tendsto (fun n ↦ G x - χ n x • wirtingerDeriv u x 1) atTop
+      (𝓝 (G x - wirtingerDeriv u x 1)) := by
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [eventually_ge_atTop ⌈‖x‖⌉₊] with n hn
     rw [hχ1 n x (mem_closedBall_zero_iff.2 ?_), one_smul]
     have := (Nat.le_ceil ‖x‖).trans (Nat.cast_le.2 hn)
     simp only [R]
     linarith
-  have hfatou := Lp.eLpNorm_lim_le_liminf_eLpNorm (p := 2)
-    (fun n ↦ (hmeasG.sub ((hχs n 0).continuous.smul hwu).aestronglyMeasurable))
-    (fun x ↦ G x - wirtingerDeriv u x 1) (hmeasG.sub hwu.aestronglyMeasurable)
-    (.of_forall hlim)
-  have hzero : eLpNorm (fun x ↦ G x - wirtingerDeriv u x 1) 2 volume = 0 := by
-    refine le_antisymm (hfatou.trans ?_) (by positivity)
-    have htend : Tendsto (fun n ↦ (Cb : ℝ≥0∞) * b n + b n) atTop (𝓝 0) := by
-      simpa using (ENNReal.Tendsto.const_mul hb (.inr ENNReal.coe_ne_top)).add hb
-    rw [← htend.liminf_eq]
-    exact liminf_le_liminf (.of_forall hbound)
-  rw [eLpNorm_eq_zero_iff two_ne_zero] at hzero
+  have hzero := ae_eq_zero_of_tendsto_of_eLpNorm_le
+    (fun n ↦ (Lp.aestronglyMeasurable G).sub ((hχs n 0).continuous.smul hwu).aestronglyMeasurable)
+    ((Lp.aestronglyMeasurable G).sub hwu.aestronglyMeasurable) hlim
+    (fun n ↦ eLpNorm_beurlingL2_sub_smul_wirtingerDeriv_cauchyTransform_le hc hf hCb (hχs n ⊤)
+      (hχc n) (hχf n) (hb n)) htend
   filter_upwards [hzero] with x hx
   exact (sub_eq_zero.1 hx).symm
 
@@ -377,9 +332,10 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp
     (hc : HasCompactSupport f) (hf : ContDiff ℝ ∞ f) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) =ᵐ[volume]
-      beurlingLp p hp hp_top ((hf.continuous.memLp_of_hasCompactSupport hc).toLp f) :=
-  (hc.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2 hf).trans
-    (beurlingLp_toLp hp hp_top (hc.toSchwartzMap hf)).symm
+      beurlingLp p hp hp_top ((hf.continuous.memLp_of_hasCompactSupport hc).toLp f) := by
+  have h := hc.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2 hf
+  rw [← hc.toSchwartzMap_toLp hf] at h ⊢
+  exact h.trans (beurlingLp_toLp hp hp_top _).symm
 
 /-- For `1 < p < ∞` the Wirtinger derivative `∂ (T f)` of the Cauchy transform of smooth
 compactly supported data lies in `Lᵖ(ℂ)`. -/
@@ -393,17 +349,17 @@ theorem _root_.HasCompactSupport.memLp_wirtingerDeriv_cauchyTransform {f : ℂ �
 /-- **The global derivative bound for the Cauchy transform.** For `1 < p < ∞` there is a
 constant `C` with `‖D (T f)‖_{Lᵖ(ℂ)} ≤ C ‖f‖_{Lᵖ(ℂ)}` for every smooth compactly supported `f`
 with values in a complex Hilbert space. The transform `T f` itself need not lie in `Lᵖ(ℂ)`. -/
-theorem exists_eLpNorm_fderiv_cauchyTransform_le {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+theorem exists_eLpNorm_fderiv_cauchyTransform_le {p : ℝ≥0∞} (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ f : ℂ → F, HasCompactSupport f → ContDiff ℝ ∞ f →
       eLpNorm (fderiv ℝ (cauchyTransform f)) p volume ≤ C * eLpNorm f p volume := by
   obtain ⟨Cb, hCb⟩ := exists_eLpNorm_beurlingL2_le (F := F) hp hp_top
   refine ⟨Cb + 1, fun f hc hf ↦ ?_⟩
   set u := cauchyTransform f
-  have hu : ContDiff ℝ ∞ u := hc.contDiff_cauchyTransform hf
-  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by simp)
-  have hwu : Continuous fun x ↦ wirtingerDeriv u x 1 := by
-    simp only [wirtingerDeriv_apply]
-    fun_prop
+  have hdu : Continuous (fderiv ℝ u) :=
+    (hc.contDiff_cauchyTransform hf).continuous_fderiv (by simp)
+  have hwu : Continuous fun x ↦ wirtingerDeriv u x 1 :=
+    hc.continuous_wirtingerDeriv_cauchyTransform (hf.of_le (by simp))
   have hcu : (fun x ↦ conjWirtingerDeriv u x 1) = f :=
     funext (hc.conjWirtingerDeriv_cauchyTransform (hf.of_le (by simp)))
   have hB : eLpNorm (fun x ↦ wirtingerDeriv u x 1) p volume ≤ Cb * eLpNorm f p volume := by
