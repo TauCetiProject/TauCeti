@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import Mathlib.Analysis.Complex.ReImTopology
 
 /-!
 # Local vector-valued Sobolev classes on planar domains
@@ -25,10 +26,16 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
-decreasing the integrability exponent, and decreasing the derivative order. Smoothness on an
-open neighbourhood gives membership, without requiring a global smooth extension.
-No boundary trace or extension across the boundary is asserted. On open domains, local `L¹`
-membership is identified with local integrability, supplying the native weak-derivative hypotheses.
+multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
+supported in the domain), decreasing the integrability exponent, and decreasing the derivative
+order. On an open set, local `Lᵖ` membership is detected on the open subsets with compact closure
+inside it. Smoothness on an open neighbourhood gives membership, without requiring a global smooth
+extension.
+On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
+`Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`). No boundary trace is asserted here;
+extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`. On open
+domains, local `L¹` membership is identified with local integrability, supplying the native
+weak-derivative hypotheses.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
 definitions admit every real normed codomain without an additional typeclass assumption.
 The continuous-linear composition result requires a complete target, as does the native
@@ -124,6 +131,23 @@ theorem MemLpLoc.sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → F}
     simpa only [Finset.sum_insert hi, Pi.add_def] using
       (hf i (Finset.mem_insert_self i s)).add (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
 
+/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
+contained in `U`. -/
+theorem MemLpLoc.memLp_restrict_of_isCompact_closure (hf : MemLpLoc p U f) {W : Set ℂ}
+    (hWc : IsCompact (closure W)) (hWU : closure W ⊆ U) : MemLp f p (volume.restrict W) :=
+  (hf _ hWU hWc).mono_measure (Measure.restrict_mono subset_closure le_rfl)
+
+/-- On an open set `Ω`, a function that agrees almost everywhere with an `Lᵖ` function on every
+open `W` whose closure is compact and contained in `Ω` is locally `Lᵖ` on `Ω`. -/
+theorem memLpLoc_of_forall_opens {Ω : Opens ℂ}
+    (h : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ g : ℂ → F, MemLp g p (volume.restrict (W : Set ℂ)) ∧ g =ᵐ[volume.restrict W] f) :
+    MemLpLoc p Ω f := by
+  refine fun K hKΩ hK => ?_
+  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
+  obtain ⟨g, hg, hgf⟩ := h ⟨W, hWo⟩ hWc hWΩ
+  exact (hg.ae_eq hgf).mono_measure (Measure.restrict_mono hKW le_rfl)
+
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
 /-- Real scalar multiplication preserves local `Lᵖ` membership. -/
@@ -145,6 +169,28 @@ theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
       h.clm_comp e.symm.toContinuousLinearMap
   · exact fun h => h.clm_comp e.toContinuousLinearMap
 
+/-- A factor continuous on `U` preserves local `Lᵖ` membership on `U`, since it is bounded on
+every compact subset of `U`. -/
+theorem MemLpLoc.continuousOn_smul {χ : ℂ → ℝ} (hf : MemLpLoc p U f) (hχ : ContinuousOn χ U) :
+    MemLpLoc p U (fun z => χ z • f z) :=
+  memLpLoc_iff.2 fun K hK hc =>
+    (memLpLoc_iff.1 (hχ.memLpLoc (p := ⊤)) K hK hc).smul (memLpLoc_iff.1 hf K hK hc)
+
+/-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
+`Lᵖ` function on the whole plane: on a compact set `K` the product only sees
+`K ∩ tsupport χ`, a compact subset of `U`. -/
+theorem MemLpLoc.continuous_smul_of_tsupport_subset {χ : ℂ → ℝ} (hf : MemLpLoc p U f)
+    (hχ : Continuous χ) (hsupp : tsupport χ ⊆ U) : MemLpLoc p Set.univ (fun z => χ z • f z) := by
+  have hT := hf.continuousOn_smul hχ.continuousOn
+  have hcl : IsClosed (tsupport χ) := isClosed_tsupport χ
+  refine memLpLoc_iff.2 fun K _ hK => ?_
+  have heq : (fun z => χ z • f z) = (tsupport χ).indicator (fun z => χ z • f z) := by
+    refine (Set.indicator_eq_self.2 ?_).symm
+    exact (Function.support_smul_subset_left χ f).trans (subset_tsupport χ)
+  rw [heq, memLp_indicator_iff_restrict hcl.measurableSet.nullMeasurableSet,
+    Measure.restrict_restrict hcl.measurableSet]
+  exact memLpLoc_iff.1 hT _ (Set.inter_subset_left.trans hsupp) (hK.inter_left hcl)
+
 /-- The iterated weak derivatives through order `k` exist on `interior U` and are `Lᵖ` on
 every compact subset of `U`, including compact sets reaching its boundary.
 The first derivative takes values in `ℂ →L[ℝ] F`; higher derivatives iterate this construction.
@@ -154,6 +200,26 @@ def MemWkpLoc (p : ENNReal) (U : Set ℂ) :
   | 0, _, _, _, f => MemLpLoc p U f
   | k + 1, F, _, _, f => MemLpLoc p U f ∧
       ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧ MemWkpLoc p U k D
+
+/-- A continuous compactly supported factor whose support meets the closed set `T` inside `S`
+makes a function in `MemLpLoc 1 S` integrable on `T`, even though `T` may be unbounded or leave
+`S`. -/
+theorem MemLpLoc.integrableOn_smul {S T : Set ℂ} {h : ℂ → F} (hh : MemLpLoc 1 S h)
+    {f : ℂ → ℝ} (hf : Continuous f) (hfc : HasCompactSupport f) (hT : IsClosed T)
+    (hfS : tsupport f ∩ T ⊆ S) : IntegrableOn (fun z => f z • h z) T := by
+  have hK : IsCompact (tsupport f ∩ T) := hfc.isCompact.inter_right hT
+  have hhK : IntegrableOn h (tsupport f ∩ T) :=
+    memLp_one_iff_integrable.1 (hh _ hfS hK)
+  refine (hhK.continuousOn_smul hf.continuousOn hK).of_forall_sdiff_eq_zero hT.measurableSet
+    fun z hz => ?_
+  simp [image_eq_zero_of_notMem_tsupport fun h => hz.2 ⟨h, hz.1⟩]
+
+/-- A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior
+`Ω ∩ {0 < im}` in `ℂ`: points on the real axis are not interior, since every neighbourhood meets
+`{z | z.im < 0}`. -/
+theorem interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
+    interior (Ω ∩ {z : ℂ | 0 ≤ z.im}) = Ω ∩ {z : ℂ | 0 < z.im} := by
+  rw [interior_inter, hΩ.interior_eq, Complex.interior_setOfPred_le_im]
 
 variable {Ω : Opens ℂ} {k l : ℕ}
 
