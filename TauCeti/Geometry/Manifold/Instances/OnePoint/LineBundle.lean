@@ -180,9 +180,13 @@ the chart at `x` to the chart at `y` is multiplication by `twistTransition k x y
     simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul, ← mul_assoc]
     rw [twistTransition_mul_twistTransition k hp.1.1 hp.1.2 hp.2]
 
-@[simp]
 theorem twistCore_baseSet (k : ℤ) (x : OnePoint 𝕜) :
     (twistCore k).baseSet x = (chartAt 𝕜 x).source :=
+  rfl
+
+@[simp]
+theorem twistCore_localTriv_baseSet (k : ℤ) (x : OnePoint 𝕜) :
+    ((twistCore k).localTriv x).baseSet = (chartAt 𝕜 x).source :=
   rfl
 
 @[simp]
@@ -232,11 +236,11 @@ theorem contMDiff_section_twistCore_iff (k : ℤ) (s : OnePoint 𝕜 → 𝕜) :
     exact infty_ne_coe 0 (h1.symm.trans h2)
   have e0 := ((twistCore (𝕜 := 𝕜) k).localTriv ((0 : 𝕜) : OnePoint 𝕜)).contMDiffOn_section_iff
     (IB := 𝓘(𝕜)) (n := n) (s := s') (a := {(∞ : OnePoint 𝕜)}ᶜ) isClosed_infty.isOpen_compl
-    fun p hp ↦ show p ∈ (chartAt 𝕜 _).source by simpa using hp
+    fun p hp ↦ by simpa using hp
   have einf := ((twistCore (𝕜 := 𝕜) k).localTriv (∞ : OnePoint 𝕜)).contMDiffOn_section_iff
     (IB := 𝓘(𝕜)) (n := n) (s := s') (a := {((0 : 𝕜) : OnePoint 𝕜)}ᶜ)
     isClosed_singleton.isOpen_compl
-    fun p hp ↦ show p ∈ (chartAt 𝕜 _).source by simpa using hp
+    fun p hp ↦ by simpa using hp
   have hs0 : ContMDiffOn 𝓘(𝕜) 𝓘(𝕜) n
       (fun p ↦ (((twistCore k).localTriv ((0 : 𝕜) : OnePoint 𝕜)) ⟨p, s p⟩).2)
         {(∞ : OnePoint 𝕜)}ᶜ ↔ ContMDiffOn 𝓘(𝕜) 𝓘(𝕜) n s {(∞ : OnePoint 𝕜)}ᶜ := by
