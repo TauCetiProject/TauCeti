@@ -162,18 +162,27 @@ characterized on germs by `germ_stalkComposeAndSheafifyIso_hom_app`. -/
 def stalkComposeAndSheafifyIso :
     Sheaf.composeAndSheafify (Opens.grothendieckTopology X) G ⋙
         sheafToPresheaf _ B ⋙ stalkFunctor B x ≅
-      sheafToPresheaf (Opens.grothendieckTopology X) A ⋙ stalkFunctor A x ⋙ G := by
+      sheafToPresheaf (Opens.grothendieckTopology X) A ⋙ stalkFunctor A x ⋙ G :=
   let η := whiskerLeft
     (sheafToPresheaf (Opens.grothendieckTopology X) A ⋙ (whiskeringRight _ _ _).obj G)
     (whiskerRight (sheafificationAdjunction (Opens.grothendieckTopology X) B).unit
       (stalkFunctor B x))
-  have : IsIso η := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro F
-    exact stalkFunctor_map_unit_toSheafify_isIso x B (F.obj ⋙ G)
-  exact (asIso η).symm ≪≫ isoWhiskerLeft (sheafToPresheaf (Opens.grothendieckTopology X) A)
-    (isoWhiskerLeft ((whiskeringLeft _ _ _).obj (OpenNhds.inclusion x).op)
-      (preservesColimitNatIso G).symm)
+  have hη : ∀ F : X.Sheaf A, IsIso
+      ((stalkFunctor B x).map (toSheafify (Opens.grothendieckTopology X) (F.obj ⋙ G))) :=
+    fun F ↦ stalkFunctor_map_unit_toSheafify_isIso x B (F.obj ⋙ G)
+  have : IsIso η := (NatTrans.isIso_iff_isIso_app η).mpr hη
+  NatIso.ofComponents
+    (fun F ↦ (asIso ((stalkFunctor B x).map
+      (toSheafify (Opens.grothendieckTopology X) (F.obj ⋙ G)))).symm ≪≫
+        (preservesColimitIso G ((OpenNhds.inclusion x).op ⋙ F.obj)).symm)
+    (fun α ↦ by
+      -- Naturality comes from the unit and colimit comparisons. Normalize functor composition
+      -- to identify the diagrams `(inclusion ⋙ F.obj) ⋙ G` and `inclusion ⋙ (F.obj ⋙ G)`.
+      simpa [Iso.trans_hom, Iso.symm_hom, asIso_inv, η, stalkFunctor, Functor.comp] using
+        (((asIso η).symm ≪≫
+          isoWhiskerLeft (sheafToPresheaf (Opens.grothendieckTopology X) A)
+            (isoWhiskerLeft ((whiskeringLeft _ _ _).obj (OpenNhds.inclusion x).op)
+              (preservesColimitNatIso G).symm)).hom.naturality α))
 
 /-- The stalk comparison undoes sheafification and then uses the coefficient functor's
 colimit comparison. This specifies its direction without unfolding the construction. -/
@@ -184,9 +193,6 @@ private lemma stalkFunctor_map_toSheafify_comp_stalkComposeAndSheafifyIso_hom_ap
       (G.stalkComposeAndSheafifyIso x).hom.app F =
     (preservesColimitIso G ((OpenNhds.inclusion x).op ⋙ F.obj)).inv := by
   have := stalkFunctor_map_unit_toSheafify_isIso x B (F.obj ⋙ G)
-  -- The two presentations of the stalk functor differ by native composition wrappers.
-  unfold stalkComposeAndSheafifyIso
-  erw [Iso.trans_hom, NatTrans.comp_app, Iso.symm_hom, asIso_inv, NatIso.isIso_inv_app]
   exact IsIso.hom_inv_id_assoc
     ((stalkFunctor B x).map (toSheafify (Opens.grothendieckTopology X) (F.obj ⋙ G)))
     (preservesColimitIso G ((OpenNhds.inclusion x).op ⋙ F.obj)).inv
@@ -200,9 +206,10 @@ theorem germ_stalkComposeAndSheafifyIso_hom_app (F : X.Sheaf A)
       germ ((presheafToSheaf (Opens.grothendieckTopology X) B).obj
         (F.obj ⋙ G)).obj U x hx ≫
       (G.stalkComposeAndSheafifyIso x).hom.app F = G.map (F.presheaf.germ U x hx) := by
-  -- The native composite's underlying presheaf is the sheafification of `F.obj ⋙ G`.
-  erw [← stalkFunctor_map_germ_assoc,
-    stalkFunctor_map_toSheafify_comp_stalkComposeAndSheafifyIso_hom_app]
-  exact ι_preservesColimitIso_inv G ((OpenNhds.inclusion x).op ⋙ F.obj) (op ⟨U, hx⟩)
+  -- Keep the germ in simp-normal form: the native composite's presheaf is `sheafify (F.obj ⋙ G)`.
+  exact (stalkFunctor_map_germ_assoc U x hx _ _).symm.trans
+    ((congrArg (germ (F.obj ⋙ G) U x hx ≫ ·)
+      (stalkFunctor_map_toSheafify_comp_stalkComposeAndSheafifyIso_hom_app G x F)).trans
+        (ι_preservesColimitIso_inv G ((OpenNhds.inclusion x).op ⋙ F.obj) (op ⟨U, hx⟩)))
 
 end CategoryTheory.Functor

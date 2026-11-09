@@ -36,7 +36,7 @@ example {X : TopCat} (T : ShortComplex (X.Sheaf (ModuleCat ℤ))) (hT : T.ShortE
       (ModuleCat.extendScalars (Int.castRingHom ℚ)))).ShortExact := by
   have hflat : (Int.castRingHom ℚ).Flat :=
     RingHom.flat_algebraMap_iff.mpr (IsLocalization.flat ℚ (nonZeroDivisors ℤ))
-  exact (Int.castRingHom ℚ).shortExact_map_sheafExtendScalars hflat hT
+  exact (Int.castRingHom ℚ).shortExact_map_composeAndSheafify_extendScalars_of_flat hflat hT
 
 -- A nonzero torsion module is retained by the identity map; flatness is not needed here.
 example :
