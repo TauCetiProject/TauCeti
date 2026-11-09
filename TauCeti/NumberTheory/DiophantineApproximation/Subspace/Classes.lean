@@ -83,9 +83,7 @@ private theorem exists_le_gridExponent {α : Type*} {P : Set α} {N : ℕ} (hN :
     rw [abs_mul, Nat.abs_cast, mul_comm (2 : ℝ)]
     exact mul_le_mul_of_nonneg_left (ha v v.2 i) hNpos.le
   refine ⟨fun v i ↦ ⟨⌈N * a v i⌉, Finset.mem_Icc.mpr ⟨?_, ?_⟩⟩, fun v hv i ↦ ?_⟩
-  · have h := (abs_le.mp (hNa v i)).1
-    have h' := Int.le_ceil ((N : ℝ) * a v i)
-    exact_mod_cast (show ((-(2 * N : ℤ) : ℤ) : ℝ) ≤ ⌈(N : ℝ) * a v i⌉ by push_cast; linarith)
+  · exact Int.le_ceil_iff.mpr (by push_cast; linarith [(abs_le.mp (hNa v i)).1])
   · exact Int.ceil_le.mpr (by push_cast; linarith [(abs_le.mp (hNa v i)).2])
   · simp only [gridExponent, hv, dite_true]
     rw [le_div_iff₀ hNpos, div_le_iff₀ hNpos, add_mul, one_div_mul_cancel hNpos.ne', mul_comm]
@@ -96,17 +94,6 @@ private theorem exists_le_gridExponent {α : Type*} {P : Set α} {N : ℕ} (hN :
 variable {K : Type*} [Field K] [NumberField K] [Fintype ι]
 
 open _root_.NumberField
-
-/-- At the absolute value of a place of `K`, the logarithm of an element is at most its
-logarithmic height in absolute value. -/
-private theorem abs_log_le_logHeight₁_of_mem {v : AbsoluteValue K ℝ}
-    (hv : v ∈ Set.range (fun w : InfinitePlace K ↦ w.1) ∪ Set.range fun w : FinitePlace K ↦ w.1)
-    (y : K) : |log (v y)| ≤ logHeight₁ y := by
-  rcases hv with ⟨w, rfl⟩ | ⟨w, rfl⟩
-  · refine le_trans ?_ (InfinitePlace.abs_mult_mul_log_le_logHeight₁ w y)
-    rw [abs_mul, InfinitePlace.coe_apply]
-    exact le_mul_of_one_le_left (abs_nonneg _) (by simp [w.one_le_mult])
-  · exact FinitePlace.abs_log_le_logHeight₁ w y
 
 /-- The values of a family of linear forms at a point whose local sup norms over the infinite
 places and `S₀` multiply to `H`: their product, weighted as in `approxProd`, is
@@ -218,8 +205,10 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
   have ha2 : ∀ v ∈ P, ∀ i, |a v i| ≤ 2 := by
     intro v hv i
     have h1 : logHeight₁ (L v i y) ≤ log H + C := hu (⟨v, hv⟩, i)
-    have h2 := abs_log_le_logHeight₁_of_mem
-      (hv.imp id fun ⟨w, _, hw⟩ ↦ ⟨w, hw⟩) (L v i y)
+    have h2 : |log (v (L v i y))| ≤ logHeight₁ (L v i y) := by
+      rcases hv with ⟨w, rfl⟩ | ⟨w, -, rfl⟩
+      · exact InfinitePlace.abs_log_le_logHeight₁ w _
+      · exact FinitePlace.abs_log_le_logHeight₁ w _
     simp only [ha_def, ← log_div_log, abs_div, abs_of_pos hlogHpos]
     rw [div_le_iff₀ hlogHpos]
     linarith [le_max_left C 1]
