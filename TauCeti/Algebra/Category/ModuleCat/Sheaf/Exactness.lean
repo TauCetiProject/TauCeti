@@ -6,23 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Adjunction.FullyFaithfulLimits
 public import Mathlib.CategoryTheory.Sites.Abelian
+public import Mathlib.CategoryTheory.Sites.Adjunction
 public import Mathlib.CategoryTheory.Sites.EpiMono
 public import TauCeti.CategoryTheory.Sites.Limits
 
 /-!
-# Forgetting the module structure of a sheaf of modules is exact
+# Forgetting and extending scalars for sheaves of modules
 
 Let `R` be a sheaf of rings on a site `(C, J)`. Mathlib's `SheafOfModules.toSheaf R` sends a
 sheaf of `R`-modules to its underlying abelian sheaf, and knows that this functor preserves and
 reflects finite limits. This file supplies the missing half: it preserves every shape of colimits
 that abelian groups have, in particular finite colimits, hence carries short exact sequences of
 sheaves of modules to short exact sequences of abelian sheaves.
+
+For module-valued sheaves, extension of scalars is Mathlib's `Sheaf.composeAndSheafify`
+applied to `ModuleCat.extendScalars`. It is a left adjoint by `Sheaf.adjunction`, and for
+a flat coefficient map it also preserves finite limits, hence is exact. The flatness input is
+Mathlib's `ModuleCat.preservesFiniteLimits_extendScalars_of_flat`; inclusion of sheaves,
+sectionwise composition and sheafification then preserve the required finite limits.
 
 ## Main declarations
 
@@ -32,6 +40,8 @@ sheaves of modules to short exact sequences of abelian sheaves.
   finite colimits;
 * `TauCeti.SheafOfModules.shortExact_map_toSheaf`: a short exact sequence of sheaves of modules
   stays short exact after forgetting the module structures.
+* `RingHom.shortExact_map_sheafExtendScalars`: sheafifying sectionwise scalar extension
+  preserves short exact sequences when the coefficient map is flat.
 * `CategoryTheory.Sheaf.preservesEpimorphisms_sheafCompose_forget₂_moduleCat` and
   `CategoryTheory.Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat`: the same statement for
   sheaves with values in `ModuleCat R` over a fixed ring `R`, whose underlying abelian sheaf is
@@ -134,5 +144,36 @@ theorem shortExact_map_sheafCompose_forget₂_moduleCat
     epi_g := inferInstanceAs (Epi ((sheafCompose J _).map S.g)) }
 
 end CategoryTheory.Sheaf
+
+namespace RingHom
+
+variable {C : Type v} [Category.{v} C] {J : GrothendieckTopology C}
+  {R S : Type v} [CommRing R] [CommRing S]
+
+/-- Extension of scalars on sheaves, formed by sheafifying the sectionwise tensor product,
+preserves finite limits when the coefficient ring map is flat. No flatness is needed for
+preservation of colimits: this functor is already a left adjoint by `Sheaf.adjunction`. -/
+lemma preservesFiniteLimits_sheafExtendScalars
+    (φ : R →+* S) (hφ : φ.Flat) [HasSheafify J (ModuleCat.{v} S)] :
+    PreservesFiniteLimits (Sheaf.composeAndSheafify J (ModuleCat.extendScalars φ)) := by
+  have := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hφ
+  -- The native extension is the composite of inclusion, sectionwise tensor, and sheafification.
+  refine ⟨fun K _ _ ↦ ?_⟩
+  exact inferInstanceAs (PreservesLimitsOfShape K
+    (sheafToPresheaf J (ModuleCat.{v} R) ⋙
+      (Functor.whiskeringRight _ _ _).obj (ModuleCat.extendScalars φ) ⋙
+        presheafToSheaf J (ModuleCat.{v} S)))
+
+/-- Flat extension of scalars carries short exact sequences of module-valued sheaves to
+short exact sequences. Extension is sheafified; sections themselves need not form an exact
+sequence on the right. -/
+theorem shortExact_map_sheafExtendScalars
+    (φ : R →+* S) (hφ : φ.Flat) [HasSheafify J (ModuleCat.{v} S)]
+    {T : ShortComplex (Sheaf J (ModuleCat.{v} R))} (hT : T.ShortExact) :
+    (T.map (Sheaf.composeAndSheafify J (ModuleCat.extendScalars φ))).ShortExact := by
+  have := φ.preservesFiniteLimits_sheafExtendScalars (J := J) hφ
+  exact hT.map_of_exact _
+
+end RingHom
 
 end
