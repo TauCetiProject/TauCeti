@@ -881,7 +881,7 @@ theorem exists_eq_mul_add {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0)
     (w = 0 ∨ degree p hv hϖ hϖ' hρ w < degree p hv hϖ hϖ' hρ x)}
   have hS : S ⊆ (Ideal.span (({x} : Finset (RadiusRing p hv hϖ hϖ' hρ)) :
       Set (RadiusRing p hv hϖ hϖ' hρ)) : Set (RadiusRing p hv hϖ hϖ' hρ)) := by
-    refine TauCeti.subset_idealSpan_of_approx ε.2 hε1 fun y hy ↦ ?_
+    refine TauCeti.subset_idealSpan_of_approx hε1 fun y hy ↦ ?_
     obtain ⟨z, w, rfl, hw, hdeg⟩ := hdiv y
     have hw' : ‖w‖ ≤ ‖z * x + w‖ := by exact_mod_cast hw
     have hwS : w ∈ S := fun ⟨z', w', h, hw'', hdeg'⟩ ↦

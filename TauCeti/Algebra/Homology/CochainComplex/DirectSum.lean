@@ -77,7 +77,7 @@ def directSumPiece : ℤ → Submodule R K.directSumModule :=
 
 /-- The homogeneous pieces decompose the total module as an internal direct sum. -/
 theorem isInternal_directSumPiece : DirectSum.IsInternal K.directSumPiece := by
-  apply TauCeti.Graded.isInternal_extendByZero
+  refine TauCeti.Graded.isInternal_extendByZero_iff.2 ?_
   refine TauCeti.DirectSum.isInternal_of_lof
     (e := fun n ↦ LinearEquiv.ofInjective
       (DirectSum.lof R ℕ (fun n ↦ K.X n) n) (DirectSum.of_injective n))

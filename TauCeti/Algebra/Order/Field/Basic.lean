@@ -28,7 +28,7 @@ regularization.
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
 
-It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`, and how
+It also records how to remove a term `ε * C` from a bound valid for every `ε ∈ (0, δ₀]`, and how
 to transfer bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
@@ -38,7 +38,8 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 `(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
-bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and an error-budget bound: if `0 ≤ ε`, `0 < K`
+and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
@@ -49,6 +50,8 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
 
 ## Main results
 
+* `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
+  `a ≤ m`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
   `f + εw` to `f` when `w` is bounded above.
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
@@ -67,25 +70,36 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
 * `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
 * `TauCeti.one_add_sum_inv_pos`, `TauCeti.inv_le_one_add_sum_inv`: for nonnegative `x i`,
   `0 < 1 + ∑ i ∈ s, (x i)⁻¹` and `(x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹` for `j ∈ s`.
+* `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
+  `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
 -/
 
 public section
 
 namespace TauCeti
 
+/-- If `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then `a ≤ m`. No sign assumption on `C` is
+needed. -/
+theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a m C δ₀ : α} (hδ₀ : 0 < δ₀)
+    (h : ∀ ε ∈ Set.Ioc 0 δ₀, a ≤ m + ε * C) : a ≤ m := by
+  by_cases hC : 0 < C
+  · by_contra! ham
+    have hε := h (min δ₀ ((a - m) / (2 * C))) ⟨lt_min hδ₀ (by positivity), min_le_left _ _⟩
+    have hle : min δ₀ ((a - m) / (2 * C)) * C ≤ (a - m) / 2 :=
+      calc min δ₀ ((a - m) / (2 * C)) * C ≤ (a - m) / (2 * C) * C := by
+            gcongr
+            exact min_le_right _ _
+        _ = (a - m) / 2 := by field_simp
+    linarith
+  · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
+    nlinarith
+
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
 theorem le_of_forall_pos_mul_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m := by
-  by_cases hC : 0 < C
-  · by_contra! ham
-    have hε := h ((a - m) / (2 * C)) (by positivity)
-    have heq : (a - m) / (2 * C) * C = (a - m) / 2 := by field_simp
-    rw [heq] at hε
-    linarith
-  · have hε := h 1 one_pos
-    simp only [one_mul] at hε
-    linarith
+    {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m :=
+  le_of_forall_mem_Ioc_mul_le one_pos fun ε hε ↦ h ε hε.1
 
 /-- For `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most `2 / b`. -/
 theorem one_div_add_one_div_le_two_div {α : Type*} [Field α] [LinearOrder α]
@@ -212,6 +226,16 @@ theorem inv_le_one_add_sum_inv {α ι : Type*} [Semifield α] [LinearOrder α]
     (hj : j ∈ s) : (x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹ :=
   (Finset.single_le_sum (fun i hi => inv_nonneg.2 (h i hi)) hj).trans
     (le_add_of_nonneg_left zero_le_one)
+
+/-- The error budget: for `0 ≤ ε` and `0 < K` dominating `a + b`, the two error terms
+`ε / (2 K) * a` and `b * (ε / (2 K))` sum to at most `ε / 2`. -/
+theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b K ε : α} (hε : 0 ≤ ε) (hK0 : 0 < K) (hK : a + b ≤ K) :
+    ε / (2 * K) * a + b * (ε / (2 * K)) ≤ ε / 2 := by
+  calc _ = ε / (2 * K) * (a + b) := by ring
+    _ ≤ ε / (2 * K) * K :=
+        mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    _ = ε / 2 := by field_simp
 
 end TauCeti
 

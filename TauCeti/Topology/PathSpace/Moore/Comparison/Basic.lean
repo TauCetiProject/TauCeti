@@ -155,7 +155,7 @@ theorem ofUnitPath_const (x : X) : ofUnitPath (.const I x) = constOfLength x 1 :
 one. -/
 theorem ofUnitPath_toUnitPath_apply (γ : MoorePath X) (t : ℝ≥0) :
     ofUnitPath γ.toUnitPath t = γ (γ.length * min t 1) := by
-  rw [ofUnitPath_apply, toUnitPath_apply, toNNReal_projIcc]
+  rw [ofUnitPath_apply, toUnitPath_apply, toNNReal_projIcc, Real.toNNReal_coe]
 
 /-- Sending a Moore path to the unit interval and back reparametrizes it to length one. -/
 theorem ofUnitPath_toUnitPath (γ : MoorePath X) : ofUnitPath γ.toUnitPath = γ.rescale 1 := by
