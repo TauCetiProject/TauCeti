@@ -74,7 +74,7 @@ public section
 noncomputable section
 
 open Bundle Module
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -116,7 +116,9 @@ theorem contMDiffAt_sectionAlong_contactFlat {EN HN N : Type*} [NormedAddCommGro
       (fun m ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (b m)
         ((α m).contactFlat (b m))) m₀ := by
-  -- The contact flat map is the flat map of `dα` plus the rank-one map `α ⊗ α`.
+  -- The contact flat map is the flat map of `dα` plus the rank-one map `α ⊗ α`. The flat map
+  -- `flatL ℝ E ℝ` is typed over the model space `E`; the `show` reads it at the tangent space
+  -- `TangentSpace I (b m)`, which is definitionally `E`, so that it can be added to `α ⊗ α`.
   have heq (m : N) : (α m).contactFlat (b m) =
       (show TangentSpace I (b m) →L[ℝ] TangentSpace I (b m) →L[ℝ] ℝ from
           ContinuousAlternatingMap.flatL ℝ E ℝ (mextDeriv (α m).1 (b m))) +
@@ -156,10 +158,7 @@ theorem contMDiff_contactFlat (α : SmoothForm I M ℝ 1) :
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
         (α.contactFlat x)) :=
   fun x₀ ↦ contMDiffAt_sectionAlong_contactFlat (b := id) (α := fun _ ↦ α) (α.contMDiff x₀)
-    (by
-      have h := (mextDerivₗ I 1 α).contMDiff x₀
-      rw [mextDerivₗ_apply] at h
-      exact h)
+    (contMDiff_mextDeriv α x₀)
 
 /-! ### Contact flat maps of contact forms -/
 
@@ -290,14 +289,15 @@ theorem IsContactForm.contMDiff_reebVectorField [FiniteDimensional ℝ E] (hα :
   rw [← hα.contactFlatEquiv_symm_self]
   exact (hα.contactFlatEquiv.symm α).contMDiff
 
-/-- **Reeb vector fields of a smooth family of contact forms.** Let `α m` be contact forms on `M`
-depending on a parameter `m ∈ N`, and let `b : N → M`. If the values `(α m)_(b m)` and the exterior
-derivatives `(dα m)_(b m)` depend `C^n` on `m`, as sections along `b`, then so do the Reeb vectors
-`R_(α m)(b m)`, as a map to the tangent bundle. -/
+/-- **Reeb vector fields of a smooth family of contact forms.** Let `α m` be one-forms on `M`
+depending on a parameter `m ∈ N` which are contact forms for `m` near `m₀`, and let `b : N → M`.
+If the values `(α m)_(b m)` and the exterior derivatives `(dα m)_(b m)` depend `C^n` on `m`, as
+sections along `b`, then so do the Reeb vectors `R_(α m)(b m)`, as a map to the tangent bundle. -/
 theorem contMDiffAt_sectionAlong_reebVectorField [FiniteDimensional ℝ E] {EN HN N : Type*}
     [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N] {n : WithTop ℕ∞}
-    {b : N → M} {α : N → SmoothForm I M ℝ 1} {m₀ : N} (hc : ∀ m, (α m).IsContactForm)
+    {b : N → M} {α : N → SmoothForm I M ℝ 1} {m₀ : N}
+    (hc : ∀ᶠ m in 𝓝 m₀, (α m).IsContactForm)
     (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).1 (b m))) m₀)
@@ -309,9 +309,11 @@ theorem contMDiffAt_sectionAlong_reebVectorField [FiniteDimensional ℝ E] {EN H
       (fun m ↦ (⟨b m, (α m).reebVectorField (b m)⟩ : TangentBundle I M)) m₀ := by
   have h := (ContMDiffAt.clm_bundle_inverse (x := m₀) (ϕ := fun m ↦ (α m).contactFlat (b m))
     (contMDiffAt_sectionAlong_contactFlat hα hdα)
-    ((hc m₀).isInvertible_contactFlat (b m₀))).clm_bundle_apply
+    (hc.self_of_nhds.isInvertible_contactFlat (b m₀))).clm_bundle_apply
       (contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα)
-  simpa only [(hc _).reebVectorField_eq_inverse_contactFlat] using h
+  refine h.congr_of_eventuallyEq ?_
+  filter_upwards [hc] with m hm
+  rw [hm.reebVectorField_eq_inverse_contactFlat]
 
 end SmoothForm
 

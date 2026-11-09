@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Pullback of differential forms along smooth families of maps
@@ -18,10 +20,11 @@ family `f p = f₀` and `g = id` this is `ContMDiffAt.mpullback_form`.
 
 The main instance is the family of **slices** of a form `α` on a product `N × M`: the forms
 `α_t = ι_t^* α` on `M` pulled back along the inclusions `ι_t : y ↦ (t, y)`. They depend smoothly on
-`(t, y)` (`TauCeti.contMDiff_mpullback_prodMk_form`). A smooth form on `ℝ × M` is how a smooth
-time-dependent family of forms on `M` is represented, and this joint smoothness is what makes
-pointwise constructions from the slices, such as Reeb and Moser vector fields, into smooth
-time-dependent vector fields.
+`(t, y)` (`TauCeti.contMDiff_mpullback_prodMk_form`). So do their exterior derivatives, which are
+the slices of the exterior derivative (`TauCeti.SmoothForm.contMDiff_mextDeriv_mpullback_prodMk`).
+A smooth form on `ℝ × M` is how a smooth time-dependent family of forms on `M` is represented,
+and this joint smoothness is what makes pointwise constructions from the slices, such as Reeb and
+Moser vector fields, into smooth time-dependent vector fields.
 
 ## Main results
 
@@ -29,6 +32,9 @@ time-dependent vector fields.
   along a smooth map, depend smoothly on the parameter.
 * `TauCeti.contMDiff_mpullback_prodMk_form`: the slices `ι_t^* α` of a smooth form on `N × M` are
   jointly smooth in `(t, y)`.
+* `TauCeti.SmoothForm.contMDiff_mpullback_prodMk`: the same for smooth pullback of smooth forms.
+* `TauCeti.SmoothForm.contMDiff_mextDeriv_mpullback_prodMk`: the exterior derivatives of the slices
+  of a smooth form on `N × M` are jointly smooth in `(t, y)`.
 -/
 
 public section
@@ -126,5 +132,28 @@ theorem contMDiff_mpullback_prodMk_form [IsManifold J 1 N]
   exact ContMDiffAt.mpullback_form_family (hα (p.1, p.2))
     (f := fun q : N × M ↦ Prod.mk q.1) (g := Prod.snd) (n := ω)
     ((contMDiff_fst.comp contMDiff_fst).prodMk contMDiff_snd).contMDiffAt contMDiffAt_snd le_top
+
+/-- The slices `ι_t^* α` of a smooth form `α` on `N × M` form a smooth section along the projection
+`(t, y) ↦ y`. This is `TauCeti.contMDiff_mpullback_prodMk_form` for smooth pullback. -/
+theorem SmoothForm.contMDiff_mpullback_prodMk [IsManifold J ∞ N]
+    (α : SmoothForm (J.prod I) (N × M) F k) :
+    ContMDiff (J.prod I) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
+      (fun p : N × M ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F)
+        (E := fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) p.2
+        ((mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).1 p.2)) := by
+  simpa only [coe_mpullback] using contMDiff_mpullback_prodMk_form α.contMDiff
+
+/-- **Exterior derivatives of slices are jointly smooth.** For a smooth form `α` on `N × M`, the
+exterior derivatives `d(ι_t^* α)` of its slices form a smooth section along the projection
+`(t, y) ↦ y`. -/
+theorem SmoothForm.contMDiff_mextDeriv_mpullback_prodMk [IsManifold I 2 M] [IsManifold J 2 N]
+    (α : SmoothForm (J.prod I) (N × M) F k) :
+    ContMDiff (J.prod I) (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) ∞
+      (fun p : N × M ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F)
+        (E := fun y : M ↦ TangentSpace I y [⋀^Fin (k + 1)]→L[ℝ] Trivial M F y) p.2
+        (mextDeriv (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).1 p.2)) := by
+  -- The exterior derivative of a slice is the slice of the exterior derivative.
+  convert contMDiff_mpullback_prodMk_form (contMDiff_mextDeriv α) using 3 with p
+  rw [← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback, mextDerivₗ_apply]
 
 end TauCeti

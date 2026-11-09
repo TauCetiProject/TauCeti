@@ -132,10 +132,13 @@ theorem contMDiffAt_sectionAlong_flatL {EN HN N : Type*} [NormedAddCommGroup EN]
       (mem_baseSet_trivializationAt E (TangentSpace I) (b m₀)))] with m
     (hm : b m ∈ (trivializationAt E (TangentSpace I) (b m₀)).baseSet)
   ext v w
-  -- The inner fibres are `ℝ` in the goal and `Trivial M ℝ (b m)` in the lemma, which agree only up
-  -- to unfolding `Bundle.Trivial`.
-  erw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hm hm (Set.mem_univ _)]
-  rw [Function.comp_apply, ContinuousAlternatingMap.flatL_apply_apply]
+  -- `flatL ℝ E ℝ (σ m)` is typed over the model space `E`, while the bundle lemmas apply maps of
+  -- tangent fibres `TangentSpace I (b m)`. These are definitionally `E`, so the map is passed
+  -- explicitly to `inCoordinates_apply_eq₂`, and its evaluation `flatL_apply_apply` on fibre
+  -- vectors is applied by unification.
+  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ)
+    (ϕ := ContinuousAlternatingMap.flatL ℝ E ℝ (σ m)) hm hm (Set.mem_univ _),
+    Function.comp_apply, ContinuousAlternatingMap.flatL_apply_apply]
   simp only [Trivial.fiberBundle_trivializationAt',
     Trivial.linearMapAt_trivialization, Trivial.continuousLinearMapAt_trivialization,
     ContinuousAlternatingMap.inCoordinates, ContinuousLinearMap.id_compContinuousAlternatingMap,

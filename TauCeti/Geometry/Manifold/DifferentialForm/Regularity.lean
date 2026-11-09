@@ -552,6 +552,12 @@ theorem coe_ofFunction [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯)
     (ofFunction f : RoughForm I M F 0) = RoughForm.ofFunction I f :=
   (rfl)
 
+/-- The exterior derivative of a smooth form is a smooth section. -/
+theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) x (mextDeriv φ.1 x)) :=
+  (mextDerivₗ I k φ).contMDiff
+
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
 theorem mextDerivₗ_cast [IsManifold I 2 M]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Flat
 public import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
@@ -44,7 +45,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti.SmoothForm
 
@@ -73,15 +74,17 @@ theorem contactMoserVectorField_zero (α : SmoothForm I M ℝ 1) :
   funext x
   simp [contactMoserVectorField_def]
 
-/-- **Contact-Moser vector fields of smooth families.** Let `α m` be contact forms and `β m`
-one-forms on `M`, depending on a parameter `m ∈ N`, and let `b : N → M`. If the values
+/-- **Contact-Moser vector fields of smooth families.** Let `α m` and `β m` be one-forms on `M`,
+depending on a parameter `m ∈ N`, such that `α m` is a contact form for `m` near `m₀`, and let
+`b : N → M`. If the values
 `(α m)_(b m)`, `(β m)_(b m)` and the exterior derivatives `(dα m)_(b m)` depend `C^n` on `m`, as
 sections along `b`, then so do the contact-Moser vectors of `(α m, β m)` at `b m`, as a map to the
 tangent bundle. -/
 theorem contMDiffAt_sectionAlong_contactMoserVectorField [FiniteDimensional ℝ E]
     {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N] {n : WithTop ℕ∞}
-    {b : N → M} {α β : N → SmoothForm I M ℝ 1} {m₀ : N} (hc : ∀ m, (α m).IsContactForm)
+    {b : N → M} {α β : N → SmoothForm I M ℝ 1} {m₀ : N}
+    (hc : ∀ᶠ m in 𝓝 m₀, (α m).IsContactForm)
     (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).1 (b m))) m₀)
@@ -105,8 +108,8 @@ theorem contMDiffAt_sectionAlong_contactMoserVectorField [FiniteDimensional ℝ 
     simpa [Trivial.eq_trivialization, degreeOneEquiv_apply_apply_vec] using h
   have h := (ContMDiffAt.clm_bundle_inverse (x := m₀) (ϕ := fun m ↦ (α m).contactFlat (b m))
     (contMDiffAt_sectionAlong_contactFlat hα hdα)
-    ((hc m₀).isInvertible_contactFlat (b m₀))).clm_bundle_apply
-      ((hβR.smul_sectionAlong (contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα)).sub_sectionAlong
+    (hc.self_of_nhds.isInvertible_contactFlat (b m₀))).clm_bundle_apply
+      ((hβR.smul_totalSpace (contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα)).sub_sectionAlong
         hβ₁)
   simpa only [contactMoserVectorField_def] using h
 
@@ -183,11 +186,7 @@ theorem contactMoserVectorField_eq_zero_iff {x : M} :
 theorem contMDiff_contactMoserVectorField (β : SmoothForm I M ℝ 1) :
     ContMDiff I I.tangent ∞ (T% (α.contactMoserVectorField β)) := fun x ↦
   contMDiffAt_sectionAlong_contactMoserVectorField (b := id) (α := fun _ ↦ α)
-    (β := fun _ ↦ β) (fun _ ↦ hα) (α.contMDiff x)
-    (by
-      have h := (mextDerivₗ I 1 α).contMDiff x
-      rw [mextDerivₗ_apply] at h
-      exact h)
+    (β := fun _ ↦ β) (.of_forall fun _ ↦ hα) (α.contMDiff x) (contMDiff_mextDeriv α x)
     (β.contMDiff x)
 
 /-- The infinitesimal rescaling identity for the contact-Moser field:
