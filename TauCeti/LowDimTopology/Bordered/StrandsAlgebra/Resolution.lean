@@ -165,6 +165,24 @@ theorem notMem_inversions_resolve_self (h : p ∈ φ.inversions) : p ∉ (φ.res
   rw [Option.mem_unique ha'' ha, Option.mem_unique hb'' hb] at hab
   exact hab.not_gt hba'
 
+/-- A horizontal strand of a resolution is a horizontal strand of the original diagram, disjoint
+from the resolved crossing. -/
+theorem mem_resolve_self {x : α} (hp : p ∈ φ.inversions) (h : x ∈ φ.resolve p x) :
+    x ∈ φ x ∧ p.1 ≠ x ∧ p.2 ≠ x := by
+  obtain ⟨hlt, a, ha, b, hb, hba⟩ := mem_inversions.1 hp
+  rw [resolve_apply hp] at h
+  have h₁ : p.1 ≠ x := by
+    rintro rfl
+    rw [Equiv.swap_apply_left] at h
+    exact (hlt.trans_le (φ.le_of_mem h)).ne rfl
+  have h₂ : p.2 ≠ x := by
+    rintro rfl
+    rw [Equiv.swap_apply_right] at h
+    rw [Option.mem_unique ha h] at hba
+    exact (φ.le_of_mem hb).not_gt hba
+  refine ⟨?_, h₁, h₂⟩
+  rwa [Equiv.swap_apply_of_ne_of_ne h₁.symm h₂.symm] at h
+
 /-- A pair of strands disjoint from a resolved crossing crosses after the resolution exactly when
 it crossed before. -/
 theorem mem_inversions_resolve_iff_of_ne (h : p ∈ φ.inversions) (h₁ : q.1 ≠ p.1)

@@ -8,6 +8,8 @@ module
 public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Data.Finset.Inversions
+import Mathlib.Basic.Finite.Prod
+import Mathlib.Data.Fintype.Option
 
 /-!
 # Strand diagrams
@@ -159,6 +161,14 @@ theorem trans_assoc (φ ψ χ : StrandDiagram α) :
     (φ.trans ψ).trans χ = φ.trans (ψ.trans χ) :=
   toPEquiv_injective (PEquiv.trans_assoc _ _ _)
 
+/-- A strand of a composite is horizontal exactly when it is horizontal in both pieces. -/
+theorem mem_trans_self_iff {φ ψ : StrandDiagram α} {i : α} :
+    i ∈ φ.trans ψ i ↔ i ∈ φ i ∧ i ∈ ψ i := by
+  refine ⟨fun h ↦ ?_, fun h ↦ mem_trans.2 ⟨i, h⟩⟩
+  obtain ⟨j, hj, hj'⟩ := mem_trans.1 h
+  obtain rfl := le_antisymm (ψ.le_of_mem hj') (φ.le_of_mem hj)
+  exact ⟨hj, hj'⟩
+
 /-- The identity diagram on a finite set `s`: one horizontal strand at each point of `s`. -/
 def idOn (s : Finset α) : StrandDiagram α where
   toPEquiv := PEquiv.ofSet (s : Set α)
@@ -171,6 +181,9 @@ theorem idOn_apply (s : Finset α) (i : α) : idOn s i = if i ∈ s then some i 
 theorem mem_idOn {s : Finset α} {i j : α} : j ∈ idOn s i ↔ i = j ∧ i ∈ s := by
   rw [Option.mem_def, idOn_apply]
   split_ifs with h <;> simp [h]
+
+instance [Finite α] : Finite (StrandDiagram α) :=
+  Finite.of_injective _ (DFunLike.coe_injective (F := StrandDiagram α))
 
 section Finite
 
