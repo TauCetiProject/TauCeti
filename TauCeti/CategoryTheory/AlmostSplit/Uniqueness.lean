@@ -24,7 +24,8 @@ first sequence's left-hand end by locality. This makes the original map on left-
 split monomorphism; the left almost-split lifting property of the second sequence then makes it
 an isomorphism (`TauCeti.IsLeftAlmostSplit.isIso_of_isSplitMono_of_comm`).
 
-The ambient category is preadditive and balanced, so exactness supplies the kernel lifts
+The comparison morphism only needs zero morphisms and a kernel. For the uniqueness theorems the
+ambient category is preadditive and balanced, so exactness supplies the kernel lifts
 used to construct comparison maps and the short five lemma applies. Invertibility at the left-hand
 end needs balancedness only through the universal property of the kernel
 (`CategoryTheory.ShortComplex.IsAlmostSplit.isIso_τ₁_of_isIso_τ₃`), which is what makes it available
@@ -72,7 +73,7 @@ universe v u
 
 namespace TauCeti
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] {S S' : ShortComplex C}
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {S S' : ShortComplex C}
 
 /-! ### The comparison morphism -/
 
