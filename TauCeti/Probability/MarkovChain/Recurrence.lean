@@ -168,10 +168,8 @@ theorem IsRecurrent.ae_hittingAfter_ne_top_of_reaches (hx : κ.IsRecurrent x)
     ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ,
       hittingAfter (fun n ω => ω n) {x} 0 ω ≠ ⊤ := by
   obtain ⟨n, hn⟩ := (reaches_def x y).mp hxy
-  have hE : MeasurableSet {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 0 ω ≠ ⊤} :=
-    ((measurableSet_singleton ⊤).preimage
-      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-        (f := Filtration.piLE (X := fun _ : ℕ => S)) (measurableSet_singleton x)).measurable').compl
+  have hE := TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top
+    (measurableSet_singleton x) 0
   -- Infinitely many visits imply a visit after time `n`. Disintegrating the future law then
   -- gives almost-sure entrance from `y`, since `y` has positive mass at time `n`.
   have hshift : ∀ᵐ ω ∂(markovChainLaw (Measure.dirac x) κ).map (shift S)^[n],

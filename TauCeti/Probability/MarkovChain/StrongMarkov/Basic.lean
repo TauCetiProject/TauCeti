@@ -104,9 +104,8 @@ private theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul_o
 
 /-- **The strong Markov property at a stopping time where the chain sits at a fixed state.** If
 `X τ = y` on `A ∩ {τ < ∞}`, as when `τ` is the entrance time of `{y}`, the future path on that
-event has law `ℙ(A ∩ {τ < ∞}) • ℙ_y`: it is a chain started at `y`, independent of `A`. No
-finiteness of the initial measure is needed: the path law is a mixture of the path laws started at
-the points of the state space, each of which is the law of a chain with a finite initial measure. -/
+event has law `ℙ(A ∩ {τ < ∞}) • ℙ_y`: it is a chain started at `y`, independent of `A`. This
+holds for every initial measure, finite or not. -/
 theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul
     (hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => α)) τ)
     {A : Set (ℕ → α)} (hA : MeasurableSet[hτ.measurableSpace] A) {y : α}

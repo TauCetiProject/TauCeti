@@ -47,8 +47,6 @@ in `ℝ≥0∞`. In particular `y` satisfies `ρ_y = 1` exactly when `∑ n, (κ
 
 ## Main results
 
-* `TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top`: the event that the coordinate
-  process enters a measurable set at some time at least `m` is measurable.
 * `MeasureTheory.Measure.markovChainLaw_setOf_successiveVisit_ne_top`: the geometric tail
   `ℙ_ν(visit k exists) = ℙ_ν(H_y < ∞) · ρ_y ^ k`.
 * `MeasureTheory.Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top` and
@@ -73,19 +71,6 @@ public section
 open ProbabilityTheory TauCeti.Probability
 
 open scoped ENNReal
-
-namespace TauCeti.Probability
-
-open MeasureTheory in
-/-- The event that the coordinate process enters a measurable set `s` at some time at least `m`
-is measurable. -/
-theorem measurableSet_hittingAfter_coord_ne_top {α : Type*} [MeasurableSpace α] {s : Set α}
-    (hs : MeasurableSet s) (m : ℕ) :
-    MeasurableSet {x : ℕ → α | hittingAfter (fun k (x : ℕ → α) => x k) s m x ≠ ⊤} :=
-  ((measurableSet_singleton ⊤).preimage
-    (Filtration.adapted_piLE.isStoppingTime_hittingAfter (n := m) hs).measurable').compl
-
-end TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
