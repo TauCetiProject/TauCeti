@@ -109,23 +109,27 @@ lemma differentiableOn_unitDiscStandardAutomorphismFormula (u : Circle) (a : Com
   differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one (u : ℂ) a.norm_lt_one
 
 /-- A standard disc-automorphism formula `w ↦ u * (w - c) / (1 - conj c * w)` that fixes three
-distinct points at which its denominator does not vanish is the identity: `c = 0` and `u = 1`. -/
+distinct points is the identity: `c = 0` and `u = 1`. The denominator cannot vanish at a fixed
+point: a vanishing denominator makes the formula `0`, so the point is `0`, where the denominator
+is `1`. -/
 lemma eq_zero_and_eq_one_of_unitDiscStandardAutomorphismFormula_eq_self {u c w₁ w₂ w₃ : ℂ}
-    (h₁₂ : w₁ ≠ w₂) (h₁₃ : w₁ ≠ w₃) (h₂₃ : w₂ ≠ w₃) (hd₁ : 1 - (starRingEnd ℂ) c * w₁ ≠ 0)
-    (hd₂ : 1 - (starRingEnd ℂ) c * w₂ ≠ 0) (hd₃ : 1 - (starRingEnd ℂ) c * w₃ ≠ 0)
+    (h₁₂ : w₁ ≠ w₂) (h₁₃ : w₁ ≠ w₃) (h₂₃ : w₂ ≠ w₃)
     (h₁ : u * ((w₁ - c) / (1 - (starRingEnd ℂ) c * w₁)) = w₁)
     (h₂ : u * ((w₂ - c) / (1 - (starRingEnd ℂ) c * w₂)) = w₂)
     (h₃ : u * ((w₃ - c) / (1 - (starRingEnd ℂ) c * w₃)) = w₃) :
     c = 0 ∧ u = 1 := by
   -- each fixed point is a root of the quadratic `conj c * w ^ 2 + (u - 1) * w - u * c`
-  have e (w : ℂ) (hd : 1 - (starRingEnd ℂ) c * w ≠ 0)
-      (h : u * ((w - c) / (1 - (starRingEnd ℂ) c * w)) = w) :
+  have e (w : ℂ) (h : u * ((w - c) / (1 - (starRingEnd ℂ) c * w)) = w) :
       (starRingEnd ℂ) c * w ^ 2 + (u - 1) * w - u * c = 0 := by
+    have hd : 1 - (starRingEnd ℂ) c * w ≠ 0 := fun hd => by
+      rw [hd, div_zero, mul_zero] at h
+      subst h
+      simp at hd
     rw [mul_div_assoc', div_eq_iff hd] at h
     linear_combination h
-  have e₁ := e w₁ hd₁ h₁
-  have e₂ := e w₂ hd₂ h₂
-  have e₃ := e w₃ hd₃ h₃
+  have e₁ := e w₁ h₁
+  have e₂ := e w₂ h₂
+  have e₃ := e w₃ h₃
   have h₁₂ : (starRingEnd ℂ) c * (w₁ + w₂) + (u - 1) = 0 := by
     have h : ((starRingEnd ℂ) c * (w₁ + w₂) + (u - 1)) * (w₁ - w₂) = 0 := by
       linear_combination e₁ - e₂
