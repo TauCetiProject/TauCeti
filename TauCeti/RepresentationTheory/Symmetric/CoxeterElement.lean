@@ -24,8 +24,8 @@ the Coxeter number of type `A_{n-1}`, is `h = n`. This file computes its eigenva
   hyperplane `V₀ ⊆ K[Fin n]`, over any field, its characteristic polynomial is
   `1 + X + ⋯ + X ^ (n - 1)`: `V₀` is a subrepresentation of `K[Fin n]` with trivial
   one-dimensional quotient, which removes the factor `X - 1`
-  (`TauCeti.charpoly_standardRepresentation_mul_X_sub_one`). No hypothesis on the characteristic
-  is needed.
+  (`TauCeti.charpoly_augmentationSubrepresentation_mul_X_sub_one`). No hypothesis on the
+  characteristic is needed.
 * Its eigenvalues on `V₀`, with multiplicity, are therefore the `ζ ^ e` for a primitive `n`-th
   root of unity `ζ` and the exponents `e = 1, …, n - 1`, each once; over `ℂ` these are the
   `exp (2πi e / n)`.
@@ -92,7 +92,8 @@ theorem charpoly_standardRepresentation_wordProd_permCoxeterSystem (K : Type*) [
       ∑ i ∈ Finset.range n, X ^ i := by
   have : NeZero n := ⟨hn⟩
   refine mul_right_cancel₀ (b := X - 1) (by simpa using X_sub_C_ne_zero (1 : K)) ?_
-  rw [charpoly_standardRepresentation_mul_X_sub_one,
+  rw [← toRepresentation_augmentationSubrepresentation,
+    charpoly_augmentationSubrepresentation_mul_X_sub_one,
     charpoly_ofMulAction_wordProd_permCoxeterSystem K hω hn, geom_sum_mul]
 
 /-- The reflection representation of `S_0` is zero, so its characteristic polynomials have no
@@ -118,16 +119,18 @@ theorem roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem_of_isPr
   -- The roots of `p * (X - 1) = X ^ n - 1` are the `n`-th roots of unity `ζ ^ k`, `k < n`, and the
   -- root `1 = ζ ^ 0` comes from the factor `X - 1`.
   have hp : p * (X - C 1) = X ^ n - C 1 := by
-    rw [C_1, charpoly_standardRepresentation_mul_X_sub_one,
-      charpoly_ofMulAction_wordProd_permCoxeterSystem K hω hn]
+    rw [C_1, ← charpoly_ofMulAction_wordProd_permCoxeterSystem K hω hn,
+      ← charpoly_augmentationSubrepresentation_mul_X_sub_one,
+      toRepresentation_augmentationSubrepresentation]
   have hroots : p.roots + {1} = (Multiset.range n).map fun k ↦ ζ ^ k * 1 := by
     rw [← roots_X_sub_C, ← roots_mul (hp ▸ X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero hn) 1), hp,
       ← nthRoots, hζ.nthRoots_eq (one_pow n)]
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Multiset.range, List.range_succ_eq_map, ← Multiset.cons_coe, Multiset.map_cons, pow_zero,
-    one_mul, ← Multiset.map_coe, Multiset.map_map, ← Multiset.singleton_add, add_comm] at hroots
-  rw [add_left_cancel hroots, Nat.add_sub_cancel]
-  exact Multiset.map_congr rfl fun e _ ↦ mul_one _
+  -- Split off the exponent `0` of the root `1`: `range n = {0} + (range (n - 1)).map (1 + ·)`.
+  obtain ⟨m, rfl⟩ : ∃ m, n = 1 + m := ⟨n - 1, by omega⟩
+  rw [Multiset.range_add, show Multiset.range 1 = {0} from rfl, Multiset.map_add,
+    Multiset.map_singleton, pow_zero, one_mul, Multiset.map_map, add_comm] at hroots
+  rw [add_left_cancel hroots, Nat.add_sub_cancel_left]
+  exact Multiset.map_congr rfl fun e _ ↦ by simp [add_comm]
 
 /-- **The eigenvalues of a Coxeter element of `S_n` on its complex reflection representation** are
 the `exp (2πi e / n)` for the exponents `e = 1, …, n - 1`, each with multiplicity one. -/
