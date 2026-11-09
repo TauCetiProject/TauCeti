@@ -341,18 +341,18 @@ theorem eventually_setIntegral_norm_outerNormal_sub_le
   have hν' : IntegrableOn (fun _ => ν) S lam := integrableOn_const hSfin
   have hin : IntegrableOn (fun y => ⟪ν, n y⟫) S lam := Integrable.const_inner ν hn
   calc ∫ y in S, ‖n y - ν‖ ∂lam
-      ≤ ∫ y in S, ((η + 2 / η) - 2 / η * ⟪ν, n y⟫) ∂lam := by
+      ≤ ∫ y in S, ((η / 2 + 1 / η) - 1 / η * ⟪ν, n y⟫) ∂lam := by
         refine setIntegral_mono_on_ae (hn.sub hν').norm ((hc _).sub (hin.const_mul _)) hSm ?_
         filter_upwards [hn1] with y hy _
         exact norm_sub_le_add_div_sub_inner hy hν hη
-    _ = lam.real S * ((η + 2 / η) - 2 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫) := by
+    _ = lam.real S * ((η / 2 + 1 / η) - 1 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫) := by
         rw [integral_sub (hc _) (hin.const_mul _), integral_const_mul, integral_inner hn,
           setIntegral_const, ← measure_smul_setAverage _ hSfin, inner_smul_right, smul_eq_mul]
         ring
     _ ≤ 2 * η * lam.real S := by
-        have hle : (η + 2 / η) - 2 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫ ≤ 2 * η := by
-          have h2 : 2 / η * (1 - η ^ 2 / 2) = 2 / η - η := by field_simp
-          nlinarith [mul_lt_mul_of_pos_left hr (div_pos two_pos hη)]
+        have hle : (η / 2 + 1 / η) - 1 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫ ≤ 2 * η := by
+          have h2 : 1 / η * (1 - η ^ 2 / 2) = 1 / η - η / 2 := by field_simp
+          nlinarith [mul_lt_mul_of_pos_left hr (one_div_pos.2 hη)]
         nlinarith [measureReal_nonneg (μ := lam) (s := S)]
 
 /-- **Concentration of the outer normal at the reduced boundary.** At a point `x` of the reduced
