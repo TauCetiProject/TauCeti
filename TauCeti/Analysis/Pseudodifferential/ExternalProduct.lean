@@ -20,15 +20,15 @@ operators of order `1` on two bases, normalized so that `σ_P* σ_P = σ_P σ_P*
 `A = [[σ_P ⊗ 1, -(1 ⊗ σ_Q*)], [1 ⊗ σ_Q, σ_P* ⊗ 1]] : (V₀ ⊗ W₀) ⊕ (V₁ ⊗ W₁) → (V₁ ⊗ W₀) ⊕ (V₀ ⊗ W₁)`
 
 (`ContinuousLinearMap.externalProductBlock`), which satisfies `A* A = A A* = ‖ξ‖² + ‖η‖²`. It is
-positively homogeneous of degree `1` in `(ξ, η)`, but it is not smooth away from `(ξ, η) = 0`:
-its entries are only continuous along the axes `ξ = 0` and `η = 0`, where `σ_P` and `σ_Q` have
-their singularities.
+positively homogeneous of degree `1` in `(ξ, η)`, but it need not be smooth away from
+`(ξ, η) = 0`: a homogeneous symbol is only assumed smooth off its zero covector, so the entries of
+`A` need not be smooth along the axes `ξ = 0` and `η = 0`.
 
 The remedy is a *conic cutoff* `χ : ℝ → ℝ` (`TauCeti.ConicCutoff`), smooth with values in
 `[0, 1]`, vanishing on `t ≤ 1/4` and equal to `1` on `t ≥ 1/2`. Writing `ρ² = ‖ξ‖² + ‖η‖²`, replace
 `σ_P` by `χ(‖ξ‖² / ρ²) σ_P` and `σ_Q` by `χ(‖η‖² / ρ²) σ_Q`
 (`HomogeneousSymbol.conicCutoffFst` and `HomogeneousSymbol.conicCutoffSnd`). Each factor now
-vanishes near the axis on which it is singular, so it is smooth on all of `(ξ, η) ≠ 0`, and the
+vanishes near the axis on which it may be singular, so it is smooth on all of `(ξ, η) ≠ 0`, and the
 cut-off external product `A_χ` (`HomogeneousSymbol.externalProduct`) is a homogeneous symbol on
 the product base. The cutoffs keep it elliptic: since `‖ξ‖² / ρ² + ‖η‖² / ρ² = 1`, at least one of
 the two cutoffs equals `1`, and
@@ -46,7 +46,7 @@ with `σ_Q` on the cone `‖η‖ ≥ ‖ξ‖`.
 * `TauCeti.ConicCutoff.add_le_two_mul` and `TauCeti.ConicCutoff.sq_mul_add_sq_mul_le`: the
   scalar `χ(a / (a + b))² a + χ(b / (a + b))² b` lies between `(a + b) / 2` and `a + b`.
 * `TauCeti.HomogeneousSymbol.conicCutoffFst`, `TauCeti.HomogeneousSymbol.conicCutoffSnd`: a
-  homogeneous symbol on one factor, cut off near the axis where it is singular, as a homogeneous
+  homogeneous symbol on one factor, cut off near the axis where it may be singular, as a homogeneous
   symbol on the product.
 * `TauCeti.HomogeneousSymbol.externalProduct`: the cut-off external product `A_χ`.
 * `TauCeti.HomogeneousSymbol.adjoint_comp_coefficient_externalProduct`,

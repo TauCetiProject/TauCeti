@@ -21,13 +21,16 @@ block operator
 
 `[[A ⊗ 1, -(1 ⊗ B†)], [1 ⊗ B, A† ⊗ 1]] : (V₀ ⊗ W₀) ⊕ (V₁ ⊗ W₁) → (V₁ ⊗ W₀) ⊕ (V₀ ⊗ W₁)`,
 
-`ContinuousLinearMap.externalProductBlock A B`, where both sums carry the Hilbert (`L²`) norm.
-Applied pointwise to two principal symbols, this is the external product of symbols used for the
-index of a product of elliptic operators.
+`ContinuousLinearMap.externalProductBlock A B`, where `⊗` is the algebraic tensor product
+`⊗[𝕜]` with Mathlib's inner product and both sums carry the Hilbert (`L²`) norm. Applied
+pointwise to two principal symbols, this is the external product of symbols used for the index of
+a product of elliptic operators.
 
-Its adjoint is again such a block, `(externalProductBlock A B)† = externalProductBlock A† (-B)`,
-and the cross terms cancel in both products with the adjoint, because `A ⊗ 1` and `1 ⊗ B`
-commute. So the products are block diagonal:
+When the four tensor products are complete, for example when the factors are finite-dimensional,
+the adjoint is again such a block, `(externalProductBlock A B)† = externalProductBlock A† (-B)`.
+The cross terms cancel in `externalProductBlock A† (-B) ∘ externalProductBlock A B`, because
+`A ⊗ 1` and `1 ⊗ B` commute. So, under the same completeness assumption, the products with the
+adjoint are block diagonal:
 
 `(externalProductBlock A B)† ∘ externalProductBlock A B = (A†A ⊗ 1 + 1 ⊗ B†B) ⊕ (AA† ⊗ 1 + 1 ⊗ BB†)`
 
