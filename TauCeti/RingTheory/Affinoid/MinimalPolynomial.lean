@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 public import TauCeti.FieldTheory.Minpoly.TorsionFree
+import TauCeti.Algebra.Polynomial.AlgebraMap
 
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Ideal.GoingUp
@@ -113,18 +114,6 @@ private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
     ← pointNorm_eq_spectralNorm (x := ⟨_, hmax⟩) le_rfl, ← hy,
     hB.pointNorm_maximalSpectrumComap]
   simp only [AlgHom.restrictScalars_apply, Subalgebra.coe_val]
-
-/-- If a monic polynomial `p` over `A` of positive degree divides every polynomial over `A`
-that vanishes at `f : B`, then `A` acts faithfully on `B`: a nonzero constant is not divisible
-by `p`. -/
-theorem _root_.Polynomial.Monic.faithfulSMul_of_dvd {p : A[X]} (hp : p.Monic)
-    (hpos : 0 < p.natDegree) {f : B} (hdvd : ∀ q : A[X], aeval f q = 0 → p ∣ q) :
-    FaithfulSMul A B := by
-  rw [faithfulSMul_iff_algebraMap_injective, injective_iff_map_eq_zero]
-  intro a ha
-  by_contra ha0
-  exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
-    (hdvd _ (by rwa [aeval_C]))
 
 /-- **Coefficients of a minimal equation at a classical point.** Let `B` be an affinoid algebra
 integral over `A`, and let `f : B` be a root of a monic polynomial
