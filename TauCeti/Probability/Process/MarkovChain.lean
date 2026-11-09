@@ -354,8 +354,7 @@ theorem markovChainLaw_map_eval_succ (n : ℕ) :
     (markovChainLaw ν κ).map (fun x => x (n + 1))
       = κ ∘ₘ ((markovChainLaw ν κ).map fun x => x n) := by
   rw [Measure.markovChainLaw_map_eval, Measure.markovChainLaw_map_eval, Measure.comp_assoc,
-    pow_succ']
-  rfl
+    add_comm, Kernel.pow_add, pow_one]
 
 /-- The chain is at `y` at time `n` with probability `((κ ^ n) ∘ₘ ν) {y}`. -/
 theorem _root_.MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp
