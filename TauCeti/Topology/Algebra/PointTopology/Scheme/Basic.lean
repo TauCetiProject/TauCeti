@@ -24,7 +24,7 @@ on the units of `R`.
 
 The affine comparison uses Mathlib's `Spec.homEquivAlgHom`, rather than another
 algebraic dictionary between affine-scheme points and algebra homomorphisms. The chart
-range criterion uses `TauCeti.AlgebraicGeometry.exists_spec_map_comp_eq_of_range_subset`.
+range criterion uses `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`.
 
 ## References
 
@@ -87,7 +87,8 @@ theorem mem_range_chartPoint_iff (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     let : X.Over (Spec (.of k)) := ⟨f⟩
     have : i.IsOver (Spec (.of k)) := ⟨hi⟩
     have : x.val.IsOver (Spec (.of k)) := ⟨x.property⟩
-    obtain ⟨φ, hφ⟩ := AlgebraicGeometry.exists_spec_map_comp_eq_of_range_subset (R := k) i x.val hx
+    obtain ⟨φ, hφ, -⟩ :=
+      AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset (R := k) i x.val hx
     exact ⟨φ, Subtype.ext hφ⟩
 
 /-- Over a local ring, membership in the points of an affine open chart can be tested

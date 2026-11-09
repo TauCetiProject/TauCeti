@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Transfer.Basic
 public import TauCeti.Topology.Category.TopCat.Fiber
+public import TauCeti.Topology.Covering.Comp
 
 /-!
 # Composition of singular transfer
@@ -40,11 +41,12 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 /-- **Transfer composes through a tower of finite coverings.** The sum over lifts through
 `p ≫ q` equals the iterated sum over lifts through `q` and then `p`. -/
 theorem singularTransfer_comp (hp : IsCoveringMap p) (hq : IsCoveringMap q)
-    (hcomp : IsCoveringMap (p ≫ q))
     (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x}))
     (R : C) :
-    hcomp.singularTransfer (TopCat.Hom.finite_fibers_comp p q hfinp hfinq) R =
+    (hq.comp hp fun _ ↦ Set.toFinite _).singularTransfer
+        (TopCat.Hom.finite_fibers_comp p q hfinp hfinq) R =
       hq.singularTransfer hfinq R ≫ hp.singularTransfer hfinp R := by
+  let hcomp : IsCoveringMap (p ≫ q) := hq.comp hp fun _ ↦ Set.toFinite _
   let hfincomp := TopCat.Hom.finite_fibers_comp p q hfinp hfinq
   classical
   ext n σ
@@ -86,15 +88,14 @@ theorem singularTransfer_comp (hp : IsCoveringMap p) (hq : IsCoveringMap q)
 homology transfers. -/
 theorem homologyMap_singularTransfer_comp [CategoryWithHomology C]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q)
-    (hcomp : IsCoveringMap (p ≫ q))
     (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x}))
     (R : C) (n : ℕ) :
     HomologicalComplex.homologyMap
-        (hcomp.singularTransfer (TopCat.Hom.finite_fibers_comp p q hfinp hfinq) R) n =
+        ((hq.comp hp fun _ ↦ Set.toFinite _).singularTransfer
+          (TopCat.Hom.finite_fibers_comp p q hfinp hfinq) R) n =
       HomologicalComplex.homologyMap (hq.singularTransfer hfinq R) n ≫
         HomologicalComplex.homologyMap (hp.singularTransfer hfinp R) n := by
-  let hfincomp := TopCat.Hom.finite_fibers_comp p q hfinp hfinq
-  rw [singularTransfer_comp hp hq hcomp hfinp hfinq,
+  rw [singularTransfer_comp hp hq hfinp hfinq,
     HomologicalComplex.homologyMap_comp]
 
 end IsCoveringMap

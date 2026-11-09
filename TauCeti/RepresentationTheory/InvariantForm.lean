@@ -51,9 +51,14 @@ representation, is what makes `G` a group.
   respectively alternating.
 * `TauCeti.Representation.invariantFormsEquivIntertwiningMapDual`: the invariant forms of `ρ` as
   the intertwiners from `ρ` to its dual.
+* `TauCeti.Representation.IsInvariantForm.equivDual`: in finite dimensions, a nondegenerate
+  invariant form identifies `ρ` with its dual.
 
 ## Main results
 
+* `TauCeti.Representation.IsInvariantForm.comp` and
+  `TauCeti.Representation.IsInvariantForm.restrict`: invariance survives restriction along a monoid
+  homomorphism and to a subrepresentation.
 * `TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap`: a form is invariant exactly when
   it intertwines `ρ` with `ρ.dual`.
 * `TauCeti.Representation.invariantForms_eq_invariants_linHom_dual`: the invariant forms are the
@@ -203,6 +208,18 @@ theorem IsInvariantForm.smul (c : k) (hB : IsInvariantForm ρ B) : IsInvariantFo
 theorem IsInvariantForm.flip (hB : IsInvariantForm ρ B) : IsInvariantForm ρ B.flip :=
   fun g => BilinForm.isIsometry_iff.mpr fun x y => hB.apply g y x
 
+/-- Restricting a representation along a monoid homomorphism keeps its invariant forms
+invariant. -/
+theorem IsInvariantForm.comp {H : Type*} [Monoid H] (hB : IsInvariantForm ρ B) (f : H →* G) :
+    IsInvariantForm (ρ.comp f) B :=
+  fun h => hB (f h)
+
+/-- The restriction of an invariant form to a subrepresentation is invariant for the action on
+that subrepresentation. -/
+theorem IsInvariantForm.restrict (hB : IsInvariantForm ρ B) (S : Subrepresentation ρ) :
+    IsInvariantForm S.toRepresentation (B.restrict S.toSubmodule) :=
+  fun g => BilinForm.isIsometry_iff.mpr fun x y => hB.apply g x y
+
 /-- Every bilinear form is invariant for the trivial representation, which acts by the identity. -/
 @[simp]
 theorem isInvariantForm_trivial (B : BilinForm k V) :
@@ -344,6 +361,30 @@ theorem invariantFormsEquivIntertwiningMapDual_symm_apply_coe (ρ : Representati
       f.toLinearMap := (rfl)
 
 end GroupRing
+
+/-! ### Self-duality from a nondegenerate invariant form -/
+
+section Nondegenerate
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+variable {ρ : Representation k G V} {B : BilinForm k V}
+
+/-- **A nondegenerate invariant form makes a representation self-dual.**  In finite dimensions a
+nondegenerate form identifies `V` with its dual by `v ↦ B v`, and invariance of the form is
+exactly the statement that this identification intertwines `ρ` with its contragredient
+`ρ.dual`, on which `g` acts by `φ ↦ φ ∘ ρ g⁻¹`. -/
+noncomputable def IsInvariantForm.equivDual (hB : IsInvariantForm ρ B) (hB' : B.Nondegenerate) :
+    ρ.Equiv ρ.dual :=
+  .mk (B.toDual hB') fun g => LinearMap.ext fun v =>
+    ((isInvariantForm_iff_isIntertwiningMap ρ B).mp hB).isIntertwining g v
+
+/-- The self-duality attached to a nondegenerate invariant form sends `v` to `B v`. -/
+@[simp]
+theorem IsInvariantForm.equivDual_apply (hB : IsInvariantForm ρ B) (hB' : B.Nondegenerate)
+    (v w : V) : hB.equivDual hB' v w = B v w :=
+  LinearMap.BilinForm.toDual_def hB'
+
+end Nondegenerate
 
 /-! ### Invariant forms on an irreducible representation -/
 

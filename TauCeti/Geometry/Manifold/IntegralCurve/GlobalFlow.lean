@@ -35,6 +35,8 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   (`TauCeti.isRegularValue_of_apply_globalFlow_eq_add`) the values it is translated through are
   regular.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
+* `TauCeti.forall_globalFlow_eq_self_iff`: a point is fixed at all times exactly when the field
+  vanishes there.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
 * `TauCeti.mfderiv_globalFlow_apply_self`: the differential of the time-`t` map preserves the
@@ -56,7 +58,7 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 1 M]
   [BoundarylessManifold I M]
@@ -190,6 +192,25 @@ theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCur
     globalFlow v hv hcomplete t (γ 0) = γ t := by
   rw [← flowOf_eq_globalFlow hv hcomplete]
   exact flowOf_eq_of_isMIntegralCurve hv hγ t
+
+/-- A point is stationary under the complete flow exactly when the vector field vanishes there.
+
+This is not a simp lemma: `globalFlow_apply` already rewrites flow evaluations to the maximal
+integral curve. -/
+theorem forall_globalFlow_eq_self_iff (x : M) :
+    (∀ t, globalFlow v hv hcomplete t x = x) ↔ v x = 0 := by
+  constructor
+  · intro h
+    have hγ : IsMIntegralCurve (fun _ : ℝ ↦ x) v := by
+      rw [← funext h]
+      exact isMIntegralCurve_globalFlow hv hcomplete x
+    calc
+      v x = Manifold.curveVelocityWithin I (fun _ : ℝ ↦ x) univ 0 :=
+        (Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+          (hγ 0).hasMFDerivWithinAt uniqueDiffWithinAt_univ).symm
+      _ = 0 := Manifold.curveVelocityWithin_const x
+  · intro h t
+    exact globalFlow_eq_of_isMIntegralCurve hv hcomplete (isMIntegralCurve_const h) t
 
 omit hv in
 /-- The flow of a complete `C^n` vector field, `1 ≤ n`, is jointly `C^n` in time and space. -/
