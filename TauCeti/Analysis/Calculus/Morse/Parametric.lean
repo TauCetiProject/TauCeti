@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # The parametric Morse lemma in a trivial bundle
@@ -197,12 +196,6 @@ theorem eventually_parametricMorseCoord_comp (hf : ContDiff ℝ 2 f)
       (e z.1).symm (parametricMorseCoord f (z.1, e z.1 z.2)) := by
   have hslice (b : P) : ContDiff ℝ 2 (fun v ↦ f (b, v)) :=
     hf.comp (contDiff_const.prodMk contDiff_id)
-  -- The inverses depend continuously on `b`, since inversion is continuous at `e a`.
-  have he' : ContinuousAt (fun b ↦ ((e b).symm : E →L[ℝ] E')) a := by
-    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
-      ContinuousAt.comp (f := fun b ↦ (e b : E' →L[ℝ] E)) (x := a)
-        ((ContinuousLinearMap.isInvertible_equiv (f := e a)).contDiffAt_map_inverse
-          (n := 0)).continuousAt he
   -- The forms of the pulled-back family are the pullbacks of the forms of `f`.
   have hHg (b : P) : fderiv ℝ (fderiv ℝ fun v ↦ f (b, e b v)) 0 =
       (fderiv ℝ (fderiv ℝ fun v ↦ f (b, v)) 0).bilinearComp (e b : E' →L[ℝ] E)
@@ -224,39 +217,14 @@ theorem eventually_parametricMorseCoord_comp (hf : ContDiff ℝ 2 f)
         continuousAt_fst) continuousAt_snd
     simpa [ψ] using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
   have hpair := (tendsto_verticalHessianPair hf).comp hψ
-  -- The canonical congruence of `f` along `ψ`, conjugated by `e`.
-  let Rf : P × E → E →L[ℝ] E := fun z ↦ morseCongruence
-    (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0) (hessianAverage (fun v ↦ f (z.1, v)) 0 z.2)
-  let r : P × E' → E' →L[ℝ] E' := fun z ↦ (e z.1).symm ∘L Rf (ψ z) ∘L (e z.1 : E' →L[ℝ] E)
-  have hr : Tendsto r (𝓝 (a, 0)) (𝓝 1) := by
-    have hRf : Tendsto (fun z ↦ Rf (ψ z)) (𝓝 (a, 0)) (𝓝 1) :=
-      (tendsto_morseCongruence hH).comp hpair
-    have hc : Continuous fun q : (E →L[ℝ] E') × (E →L[ℝ] E) × (E' →L[ℝ] E) ↦
-        q.1 ∘L q.2.1 ∘L q.2.2 :=
-      continuous_fst.clm_comp (continuous_snd.fst.clm_comp continuous_snd.snd)
-    have h := (hc.tendsto (((e a).symm : E →L[ℝ] E'), 1, (e a : E' →L[ℝ] E))).comp
-      ((he'.tendsto.comp continuousAt_fst.tendsto).prodMk_nhds
-        (hRf.prodMk_nhds (he.tendsto.comp continuousAt_fst.tendsto)))
-    have hlim : ((e a).symm : E →L[ℝ] E') ∘L (1 : E →L[ℝ] E) ∘L (e a : E' →L[ℝ] E) = 1 := by
-      ext x
-      simp
-    -- `h` is this statement with the projections of the explicit triple not yet reduced.
-    have h' : Tendsto r (𝓝 (a, 0)) (𝓝 (((e a).symm : E →L[ℝ] E') ∘L (1 : E →L[ℝ] E) ∘L
-        (e a : E' →L[ℝ] E))) := h
-    rwa [hlim] at h'
-  -- `r` is a square root of the comparison operator of the pulled-back family.
-  have hsq : ∀ᶠ z in 𝓝 (a, (0 : E')), r z * r z =
-      (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, e z.1 v)) 0).inverse ∘L
-        hessianAverage (fun v ↦ f (z.1, e z.1 v)) 0 z.2 := by
-    filter_upwards [hpair.eventually (eventually_morseCongruence_mul_self hH),
-      hpair.fst_nhds.eventually hH.eventually_nhds] with z hsq hinv
-    simp only [Function.comp_apply, ψ] at hsq hinv
-    rw [hHg, hAg, ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp hinv, ← hsq]
-    ext x
-    simp [r, ψ, Rf, mul_apply_eq_comp]
-  filter_upwards [eventually_sqrtNearOne_eq_of_tendsto hr hsq] with z hu
-  rw [parametricMorseCoord_def, parametricMorseCoord_def, morseCongruence_def, hu]
-  simp only [r, Rf, ψ, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  -- Pulling back along `e b` conjugates the canonical congruence of `f` by `e b`.
+  filter_upwards [eventually_morseCongruence_bilinearComp
+    (B₁ := fun z : P × E' ↦ fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0)
+    (B := fun z : P × E' ↦ hessianAverage (fun v ↦ f (z.1, v)) 0 (e z.1 z.2))
+    (e := fun z : P × E' ↦ e z.1) hH hpair (he.tendsto.comp continuousAt_fst.tendsto)]
+    with z hz
+  rw [parametricMorseCoord_def, parametricMorseCoord_def, hHg, hAg, hz]
+  simp
 
 end Naturality
 

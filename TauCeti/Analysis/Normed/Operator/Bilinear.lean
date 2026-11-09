@@ -113,6 +113,11 @@ open Filter Topology
 def pairingAdjoint (B₀ : V →L[𝕜] V →L[𝕜] G) (X : V →L[𝕜] V) : V →L[𝕜] V :=
   B₀.inverse ∘L ((compL 𝕜 V V G).flip X ∘L B₀)
 
+/-- The adjoint for the pairing `B₀` is `B₀⁻¹ ∘ (· ∘ X) ∘ B₀`. -/
+theorem pairingAdjoint_def (B₀ : V →L[𝕜] V →L[𝕜] G) (X : V →L[𝕜] V) :
+    pairingAdjoint B₀ X = B₀.inverse ∘L ((compL 𝕜 V V G).flip X ∘L B₀) := by
+  rw [pairingAdjoint]
+
 variable {B₀ : V →L[𝕜] V →L[𝕜] G}
 
 /-- The defining property of the adjoint for an invertible pairing. -/
