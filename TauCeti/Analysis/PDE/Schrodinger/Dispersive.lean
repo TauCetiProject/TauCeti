@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
+import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
 # The kernel of the Schrödinger propagator and the dispersive estimate
@@ -25,7 +26,10 @@ integrable, `S(t) f = K_t ⋆ f` almost everywhere
 `‖S(t) f‖_∞ ≤ (4π|t|)^(-n/2) ‖f‖₁`
 
 (`TauCeti.eLpNorm_schrodingerPropagator_le`), the decay in time with exponent `n/2` that drives the
-Strichartz estimates.
+Strichartz estimates. Interpolating it with conservation of the `L²` norm by the Riesz–Thorin
+theorem gives `‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p` for conjugate exponents `p, q` with
+`2 ≤ q ≤ ∞` (`TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`), the form in which the decay
+enters the `TT*` proof of the Strichartz estimates.
 
 ## The argument
 
@@ -51,6 +55,8 @@ dominated convergence.
 * `TauCeti.schrodingerPropagator_ae_eq_integral`: `S(t) f = K_t ⋆ f` for integrable `f ∈ L²`.
 * `TauCeti.norm_schrodingerPropagator_apply_le`, `TauCeti.eLpNorm_schrodingerPropagator_le`: the
   dispersive estimate.
+* `TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`: the dispersive estimate from `Lᵖ` to `L^q`,
+  `‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p` for conjugate exponents with `2 ≤ q ≤ ∞`.
 * `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
   `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
 
@@ -259,6 +265,29 @@ theorem eLpNorm_schrodingerPropagator_le {t : ℝ} (ht : t ≠ 0)
     ← ofReal_integral_norm_eq_lintegral_enorm hf, ← ENNReal.ofReal_mul (by positivity)]
   · exact eLpNormEssSup_le_of_ae_bound (norm_schrodingerPropagator_apply_le ht f hf)
   all_goals exact Lp.aestronglyMeasurable _
+
+/-- **The dispersive estimate in `L^q`.** For `t ≠ 0` and conjugate exponents `p` and `q` with
+`2 ≤ q ≤ ∞`,
+
+`‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p`
+
+for every `f ∈ L² ∩ Lᵖ`. This interpolates, by the Riesz–Thorin theorem, between the dispersive
+estimate `‖S(t) f‖_∞ ≤ (4π|t|)^(-n/2) ‖f‖₁` at `q = ∞` and conservation of the `L²` norm at
+`q = 2`. -/
+theorem eLpNorm_schrodingerPropagator_le_of_memLp {t : ℝ} (ht : t ≠ 0) {p q : ℝ≥0∞}
+    [p.HolderConjugate q] (hq : 2 ≤ q) (f : Lp ℂ 2 (volume : Measure E))
+    (hf : MemLp f p volume) :
+    eLpNorm (schrodingerPropagator ℂ t f) q volume ≤
+      ENNReal.ofReal ((4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) * (1 / 2 - (q⁻¹).toReal))) *
+        eLpNorm f p volume := by
+  set c : ℝ := (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) with hc
+  refine ((schrodingerPropagator ℂ t).eLpNorm_apply_le_rpow_mul_rpow_mul_eLpNorm
+    (M₀ := c.toNNReal) (M₁ := 1) (fun g hg ↦ eLpNorm_schrodingerPropagator_le ht g hg)
+    (by simpa using norm_schrodingerPropagator_le (E := E) (F := ℂ) t) hq f hf).trans_eq ?_
+  rw [NNReal.one_rpow, mul_one, ← Real.toNNReal_rpow_of_nonneg (by positivity),
+    ENNReal.ofNNReal_toNNReal, hc, ← Real.rpow_mul (by positivity)]
+  congr 3
+  ring
 
 /-! ### The evolution of a Gaussian -/
 
