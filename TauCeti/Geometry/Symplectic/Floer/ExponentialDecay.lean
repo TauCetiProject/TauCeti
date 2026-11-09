@@ -292,24 +292,6 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
 
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {a c M : ℝ}
 
-omit [FiniteDimensional ℝ V] in
-/-- The slice `t ↦ u(s, t)` of a map that is `C¹` on the half-cylinder `s > a` has continuous
-derivative `t ↦ ∂_t u(s, t)`. -/
-private theorem continuous_fderiv_slice (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) {s : ℝ}
-    (hsa : a < s) : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
-  ((hu.continuousOn_fderiv_of_isOpen (isOpen_Ioi.prod isOpen_univ) le_rfl).comp_continuous
-    (continuous_const.prodMk continuous_id) fun t ↦ ⟨hsa, mem_univ t⟩).clm_apply continuous_const
-
-omit [FiniteDimensional ℝ V] in
-/-- The slice `t ↦ u(s, t)` of a map that is `C¹` on the half-cylinder `s > a` has derivative
-`∂_t u(s, t)`. -/
-private theorem hasDerivAt_slice (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) {s : ℝ} (hsa : a < s)
-    (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t :=
-  ((hu.differentiableOn one_ne_zero _ (mk_mem_prod hsa (mem_univ t))).differentiableAt
-    ((isOpen_Ioi.prod isOpen_univ).mem_nhds (mk_mem_prod hsa (mem_univ t)))).hasFDerivAt
-    |>.comp_hasDerivAt t
-    ((hasDerivAt_const t s).prodMk (hasDerivAt_id t))
-
 /-- On a slice `s > a` of a `C¹` Floer solution with uniformly tame `J`, the squared `L²` norm of
 the defect `∂_t u - X_{H_t}(u)` is at most `(1 + M²) / c` times the energy of the slice. -/
 private theorem integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity
@@ -344,10 +326,9 @@ private theorem integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity
   refine integral_mono_on zero_le_one ?_
     ((continuous_const.mul hslicec).intervalIntegrable _ _)
     fun t ht ↦ hdef (s, t) ⟨hsa, ht⟩
-  exact (((continuous_fderiv_slice hu hsa).sub
-    ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-      (continuous_id.prodMk ((hu.continuousOn.comp_continuous
-        (continuous_const.prodMk continuous_id) hmem))))).norm.pow 2).intervalIntegrable _ _
+  exact ((continuous_norm_sliceDefect_sq (X := fun t ↦ ω.hamiltonianVectorField (H t)) hu
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsa).congr fun t ↦ by
+      rw [sliceDefect_def]).intervalIntegrable _ _
 
 /-- **The action defect of a Floer slice near a nondegenerate orbit.** Let `H` be a `C²`
 Hamiltonian and let `x` be a nondegenerate orbit as in
@@ -373,8 +354,13 @@ theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
   obtain ⟨δ, hδ, C₁, hC₁, hB⟩ := exists_abs_hamiltonianAction_sub_le_of_nondegenerate hH hx hx1 hnd
   refine ⟨δ, hδ, C₁ * ((1 + M ^ 2) / c) + 1, by positivity, fun s hsa hclose ↦ ?_⟩
-  have hact := hB (continuous_fderiv_slice hu hsa) (hasDerivAt_slice hu hsa)
-    (by simpa using hper s hsa 0) hclose
+  have hγ' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
+    continuous_slice_of_continuousOn ((hu.continuousOn_fderiv_of_isOpen
+      (isOpen_Ioi.prod isOpen_univ) le_rfl).clm_apply continuousOn_const) hsa
+  have hγ (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t :=
+    hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero).differentiableAt
+      ((isOpen_Ioi.prod isOpen_univ).mem_nhds ⟨hsa, mem_univ t⟩))
+  have hact := hB hγ' hγ (by simpa using hper s hsa 0) hclose
   have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hu hc hJc hJM hfloer
     hsa
   have hJ (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) : ω.Tames (J z) := fun v hv ↦
@@ -409,11 +395,16 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
   obtain ⟨δ, hδ, C, hC, hB⟩ := exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx hx1 hnd
   refine ⟨δ, hδ, C * √((1 + M ^ 2) / c), by positivity, fun s hsa hclose t ht ↦ ?_⟩
   set η : ℝ → ℝ := fun t ↦ ‖fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t))‖
+  have hγ' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
+    continuous_slice_of_continuousOn ((hu.continuousOn_fderiv_of_isOpen
+      (isOpen_Ioi.prod isOpen_univ) le_rfl).clm_apply continuousOn_const) hsa
+  have hγ (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t :=
+    hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero).differentiableAt
+      ((isOpen_Ioi.prod isOpen_univ).mem_nhds ⟨hsa, mem_univ t⟩))
   have hηc : Continuous η :=
-    ((continuous_fderiv_slice hu hsa).sub
-      ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-        (continuous_id.prodMk ((hu.continuousOn.comp_continuous
-          (continuous_const.prodMk continuous_id) fun t ↦ ⟨hsa, mem_univ t⟩))))).norm
+    (continuous_sliceDefect_slice (X := fun t ↦ ω.hamiltonianVectorField (H t)) hu
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsa).norm.congr fun t ↦ by
+        rw [sliceDefect_def]
   -- By Cauchy–Schwarz, the `L¹` norm of the defect is at most its `L²` norm.
   have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg _)
     ((hηc.pow 2).intervalIntegrable 0 1)
@@ -421,8 +412,7 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
   have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hu hc hJc hJM hfloer
     hsa
   calc ‖u (s, t) - x t‖ ≤ C * ∫ t in (0 : ℝ)..1, η t :=
-        hB (continuous_fderiv_slice hu hsa) (hasDerivAt_slice hu hsa)
-          (by simpa using hper s hsa 0) hclose t ht
+        hB hγ' hγ (by simpa using hper s hsa 0) hclose t ht
     _ ≤ C * √((1 + M ^ 2) / c * ∫ t in Icc (0 : ℝ) 1,
           ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t)) :=
         mul_le_mul_of_nonneg_left (hCS.trans (Real.sqrt_le_sqrt hint)) hC
@@ -634,9 +624,8 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
   have hmv : ‖u (σ, t') - u (s, t')‖ ≤ L * h := by
     have hd (r : ℝ) (hr : a < r) :
         HasDerivAt (fun r ↦ u (r, t')) (fderiv ℝ u (r, t') (1, 0)) r :=
-      ((hu1.differentiableOn one_ne_zero _ (mk_mem_prod hr (mem_univ t'))).differentiableAt
-        (hopen.mem_nhds (mk_mem_prod hr (mem_univ t')))).hasFDerivAt.comp_hasDerivAt r
-        ((hasDerivAt_id r).prodMk (hasDerivAt_const r t'))
+      hasDerivAt_slice_left ((hu1.differentiableOn one_ne_zero).differentiableAt
+        (hopen.mem_nhds (mk_mem_prod hr (mem_univ t'))))
     have h' := norm_image_sub_le_of_norm_deriv_le_segment' (f := fun r ↦ u (r, t'))
       (fun r hr ↦ (hd r (hsa.trans_le hr.1)).hasDerivWithinAt)
       (fun r hr ↦ hL (r, t') ⟨hsa.trans_le hr.1, ht'I⟩) σ ⟨hσ.1, le_rfl⟩
