@@ -12,12 +12,15 @@ import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.WithDensity
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
+import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # Young's inequality for convolution
 
-This file proves two forms of Young's inequality for convolution with an integrable function.
+This file proves two forms of Young's inequality for convolution with an integrable function,
+and the general form `Lʳ ⋆ Lᵖ ⊆ L^q`, `1/p + 1/r = 1 + 1/q`, on abelian groups.
 
 ## `L¹ ⋆ L² ⊆ L²` for the Lebesgue-integral convolution
 
@@ -57,12 +60,29 @@ The kernel `f` and the bilinear map `L` are arbitrary, so the inequality applies
 kernels acting on vector-valued functions through `ContinuousLinearMap.lsmul`, as for the
 kernel `𝓕⁻ σ` of a Fourier multiplier with Schwartz symbol `σ`.
 
+## `Lʳ ⋆ Lᵖ ⊆ L^q` on abelian groups
+
+Let `μ` be a σ-finite measure on a measurable abelian group, invariant under translation and
+negation, such as Lebesgue measure on a finite-dimensional real vector space. For `1 ≤ p, r ≤ ∞`
+and `1/p + 1/r = 1 + 1/q`,
+
+`‖f ⋆[L] g‖_q ≤ ‖L‖ ‖f‖_r ‖g‖_p`
+
+(`MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`). For `q < ∞`, after the substitution
+`t = x - s` the convolution is the integral operator with kernel `‖f (x - s)‖`, whose rows and
+columns all have `Lʳ` norm `‖f‖_r`, and the bound is Young's inequality for integral kernels
+(`TauCeti.lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq`). For `q = ∞` the exponents `r` and
+`p` are conjugate and the bound is Hölder's inequality at each point
+(`MeasureTheory.enorm_convolution_le`).
+
 ## Main declarations
 
 * `MeasureTheory.lconvolution_sq_le`: pointwise Cauchy–Schwarz for `f ⋆ₗ[μ] g`.
 * `MeasureTheory.lintegral_lconvolution_sq_le`: Young's inequality `L¹ ⋆ L² ⊆ L²`.
 * `MeasureTheory.enorm_convolution_le_lintegral`: the pointwise bound for `f ⋆[L, μ] g`.
 * `MeasureTheory.eLpNorm_convolution_le`: Young's inequality `‖f ⋆[L] g‖_p ≤ ‖L‖ ‖f‖₁ ‖g‖_p`.
+* `MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`: Young's inequality
+  `‖f ⋆[L] g‖_q ≤ ‖L‖ ‖f‖_r ‖g‖_p` for `1/p + 1/r = 1 + 1/q`.
 
 ## References
 
@@ -198,5 +218,81 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
           lintegral_const_mul'' _ hf.enorm]
 
 end Convolution
+
+section Young
+
+open Measure
+open scoped Convolution
+
+variable {𝕜 G E E' F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
+  (L : E →L[𝕜] E' →L[𝕜] F) {f : G → E} {g : G → E'}
+  [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+  {μ : Measure G} [SigmaFinite μ] [IsAddLeftInvariant μ] [IsNegInvariant μ]
+
+/-- **Young's convolution inequality.** On an abelian group with a translation- and
+negation-invariant measure, for `1 ≤ p, r ≤ ∞` and `1/p + 1/r = 1 + 1/q`,
+`‖f ⋆[L] g‖_q ≤ ‖L‖ ‖f‖_r ‖g‖_p`.
+
+The case `r = 1`, `q = p` is `MeasureTheory.eLpNorm_convolution_le`, which holds on any group with
+a right-invariant measure. -/
+theorem eLpNorm_convolution_le_of_inv_add_inv_eq
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) {p q r : ℝ≥0∞}
+    (hp : 1 ≤ p) (hr : 1 ≤ r) (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹) :
+    eLpNorm (f ⋆[L, μ] g) q μ ≤ ‖L‖ₑ * eLpNorm f r μ * eLpNorm g p μ := by
+  rcases eq_or_ne q ∞ with rfl | hq_top
+  · have : r.HolderConjugate p :=
+      ENNReal.holderConjugate_iff.2 (by simpa [add_comm] using hpqr)
+    rw [eLpNorm_exponent_top (hf.convolution L hg)]
+    exact eLpNormEssSup_le_of_ae_enorm_bound
+      (Filter.Eventually.of_forall fun x ↦ enorm_convolution_le L hf hg x)
+  obtain ⟨hp_top, hr_top, hq0, hP, hPQ, hPQR⟩ := ENNReal.toReal_of_inv_add_inv_eq hp hr hpqr hq_top
+  set P := p.toReal
+  set Q := q.toReal
+  set R := r.toReal
+  have hP0 : 0 < P := zero_lt_one.trans_le hP
+  have hQ0 : 0 < Q := hP0.trans_le hPQ
+  set A := ∫⁻ x, ‖f x‖ₑ ^ R ∂μ
+  -- After the substitution `t = x - s`, the convolution is an integral operator with kernel
+  -- `k x s = ‖f (x - s)‖`, whose rows and columns all have `Lʳ` norm `‖f‖_r`.
+  have hpt (x : G) : ‖(f ⋆[L, μ] g) x‖ₑ ≤ ‖L‖ₑ * ∫⁻ s, ‖f (x - s)‖ₑ * ‖g s‖ₑ ∂μ := by
+    refine (enorm_convolution_le_lintegral L μ x).trans_eq ?_
+    rw [← lintegral_const_mul' _ _ enorm_ne_top,
+      ← lintegral_sub_left_eq_self (fun s ↦ ‖L‖ₑ * (‖f (x - s)‖ₑ * ‖g s‖ₑ)) x]
+    simp only [sub_sub_cancel, mul_assoc]
+  have hschur := TauCeti.lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq (μ := μ) (ν := μ)
+    (k := fun x s ↦ ‖f (x - s)‖ₑ) (g := fun s ↦ ‖g s‖ₑ)
+    (hf.enorm.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub_of_right_invariant μ μ))
+    hg.enorm hP hPQ hPQR (A := A) (B := A)
+    (Filter.Eventually.of_forall fun x ↦
+      (lintegral_sub_left_eq_self (fun s ↦ ‖f s‖ₑ ^ R) x).le)
+    (Filter.Eventually.of_forall fun s ↦
+      (lintegral_sub_right_eq_self (fun x ↦ ‖f x‖ₑ ^ R) s).le)
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq_top (hf.convolution L hg),
+    eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hr).ne' hr_top hf,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hg]
+  calc (∫⁻ x, ‖(f ⋆[L, μ] g) x‖ₑ ^ Q ∂μ) ^ (1 / Q)
+      ≤ (∫⁻ x, (‖L‖ₑ * ∫⁻ s, ‖f (x - s)‖ₑ * ‖g s‖ₑ ∂μ) ^ Q ∂μ) ^ (1 / Q) := by
+        gcongr with x
+        exact hpt x
+    _ = ‖L‖ₑ * (∫⁻ x, (∫⁻ s, ‖f (x - s)‖ₑ * ‖g s‖ₑ ∂μ) ^ Q ∂μ) ^ (1 / Q) := by
+        simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hQ0.le]
+        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hQ0.le enorm_ne_top),
+          ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul,
+          mul_one_div_cancel hQ0.ne', ENNReal.rpow_one]
+    _ ≤ ‖L‖ₑ * (A ^ (Q * (1 - P⁻¹)) * A * (∫⁻ s, ‖g s‖ₑ ^ P ∂μ) ^ (Q / P)) ^ (1 / Q) := by
+        gcongr
+    _ = ‖L‖ₑ * A ^ (1 / R) * (∫⁻ s, ‖g s‖ₑ ^ P ∂μ) ^ (1 / P) := by
+        have hR : 1 / R = 1 - P⁻¹ + 1 / Q := by rw [one_div, one_div]; linarith
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
+          ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
+          hR, ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 (inv_le_one_of_one_le₀ hP))
+            (by positivity), mul_assoc ‖L‖ₑ]
+        congr 3
+        · field_simp
+        · field_simp
+
+end Young
 
 end MeasureTheory
