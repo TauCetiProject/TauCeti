@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Disk.Annulus
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
@@ -137,6 +138,12 @@ private theorem cupPoint_of_le_norm {x : E} (hx : 2⁻¹ ≤ ‖x‖) : cupPoint
 private theorem norm_cupPoint_of_le_norm {x : E} (hx : 2⁻¹ ≤ ‖x‖) : ‖cupPoint x‖ = 1 := by
   rw [norm_cupPoint, min_eq_right hx, mul_inv_cancel₀ two_ne_zero]
 
+private theorem cupPoint_inv_two_smul {x : E} (hx : ‖x‖ ≤ 1) : cupPoint ((2⁻¹ : ℝ) • x) = x := by
+  have h : ‖(2⁻¹ : ℝ) • x‖ ≤ 2⁻¹ := by
+    rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
+    linarith
+  rw [cupPoint, radialRetraction_of_norm_le h, smul_smul, mul_inv_cancel₀ two_ne_zero, one_smul]
+
 private theorem cupPoint_of_norm_eq_one {x : E} (hx : ‖x‖ = 1) : cupPoint x = x := by
   rw [cupPoint_of_le_norm (by rw [hx]; norm_num), hx, inv_one, one_smul]
 
@@ -156,20 +163,9 @@ private theorem continuous_diskCup : Continuous (diskCup.{u} (k := k)) :=
   continuous_uliftUp.comp ((((continuous_const.radialRetraction (fun _ ↦ by norm_num)
     continuous_subtype_val).const_smul (2 : ℝ)).comp continuous_uliftDown).subtype_mk _)
 
-private theorem continuous_diskCupTime : Continuous (diskCupTime.{u} (k := k)) :=
-  (((continuous_cupTime.comp continuous_subtype_val).comp continuous_uliftDown).subtype_mk _)
-
 private theorem coe_diskCup (w : TopCat.disk.{u} k) :
     ((diskCup w).down : EuclideanSpace ℝ (Fin k)) = cupPoint (w.down : EuclideanSpace ℝ (Fin k)) :=
   (rfl)
-
-private theorem diskCup_of_norm_eq_one {w : TopCat.disk.{u} k}
-    (hw : ‖(w.down : EuclideanSpace ℝ (Fin k))‖ = 1) : diskCup w = w :=
-  ULift.ext (Subtype.ext (cupPoint_of_norm_eq_one hw))
-
-private theorem diskCupTime_of_norm_eq_one {w : TopCat.disk.{u} k}
-    (hw : ‖(w.down : EuclideanSpace ℝ (Fin k))‖ = 1) : diskCupTime w = 0 :=
-  Subtype.ext (cupTime_of_norm_eq_one hw)
 
 private theorem diskCupTime_of_norm_le {w : TopCat.disk.{u} k}
     (hw : ‖(w.down : EuclideanSpace ℝ (Fin k))‖ ≤ 2⁻¹) : diskCupTime w = 1 :=
@@ -254,15 +250,6 @@ variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → �
   (hK : ∀ i t (w : TopCat.disk.{u} (k i)), ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 1 →
     f (K i (t, w)) ≤ c - ε)
 
-/-- The disc part of `TauCeti.morseChartChange`, as a function. -/
-private def morseChartChangeCellFun (i : ι) (w : TopCat.disk.{u} (k i)) :
-    morseCellAttachment φ₀ k hk hε.le hball₀ hf₀ :=
-  if hw : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ ≤ 2⁻¹ then
-    morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i (h i (diskCup w))
-  else
-    morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀
-      ⟨K i (diskCupTime w, diskCup w), hK i _ _ (norm_cupPoint_of_le_norm (not_le.1 hw).le)⟩
-
 include hK in
 /-- On the seam, where `K i` ends at `χ₀ i ∘ h i` on the boundary sphere, the cell of `φ₀ i` meets
 the lower sublevel. -/
@@ -291,51 +278,60 @@ private theorem morseCellAttachmentCell_eq_morseCellAttachmentIncl (i : ι)
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.ofHom_apply] at hsq
   rw [← hsq, coe_sublevelInclusion_apply]
 
-private theorem continuous_morseChartChangeCellFun (i : ι) :
-    Continuous (morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i) := by
-  set S₁ : Set (TopCat.disk.{u} (k i)) := {w | ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ ≤ 2⁻¹}
-  set S₂ : Set (TopCat.disk.{u} (k i)) := {w | 2⁻¹ ≤ ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖}
-  have hnorm : Continuous fun w : TopCat.disk.{u} (k i) ↦
-      ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ :=
-    continuous_norm.comp (continuous_subtype_val.comp continuous_uliftDown)
-  -- On the inner half-disc the map is the cell of `φ₀ i` after `h i` and the flattening.
-  have h₁ : ContinuousOn (morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i)
-      S₁ := by
-    refine ContinuousOn.congr (f := fun w ↦
-      morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i (h i (diskCup w))) ?_ fun w hw ↦ ?_
-    · exact ((morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i).hom.continuous.comp
-        ((h i).hom.continuous.comp continuous_diskCup)).continuousOn
-    · exact dite_eq_left hw
-  -- On the outer annulus it is the lower sublevel after `K i` and the flattening.
-  have h₂ : ContinuousOn (morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i)
-      S₂ := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    have hg : Continuous fun w : S₂ ↦ (⟨K i (diskCupTime w.1, diskCup w.1),
-        hK i _ _ (norm_cupPoint_of_le_norm w.2)⟩ : {x | f x ≤ c - ε}) :=
-      (continuous_subtype_val.comp ((K i).continuous.comp
-        ((continuous_diskCupTime.comp continuous_subtype_val).prodMk
-          (continuous_diskCup.comp continuous_subtype_val)))).subtype_mk _
-    refine ((morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀).hom.continuous.comp hg).congr
-      fun w ↦ ?_
-    rw [Set.domRestrict_apply, comp_apply, morseChartChangeCellFun]
-    split_ifs with hw
-    · exact (morseCellAttachmentCell_eq_morseCellAttachmentIncl φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
-        hf₁ h K hK i (diskCup w.1) (norm_cupPoint_of_le_norm w.2)
-        ⟨K i (diskCupTime w.1, diskCup w.1), hK i _ _ (norm_cupPoint_of_le_norm w.2)⟩
-        (congrArg (fun t ↦ (K i (t, diskCup w.1) : M)) (diskCupTime_of_norm_le hw))).symm
-    · rfl
-  have hS : S₁ ∪ S₂ = univ := eq_univ_of_forall fun w ↦ by
-    simp only [S₁, S₂, mem_union, mem_ofPred_eq]
-    exact le_total _ _
-  rw [← continuousOn_univ, ← hS]
-  exact h₁.union_of_isClosed h₂ (isClosed_le hnorm continuous_const)
-    (isClosed_le continuous_const hnorm)
+/-- The disc part of `TauCeti.morseChartChange`: the map `x ↦ h i (2x)` into the cell of `φ₀ i` on
+the disc of radius `1/2`, glued to `K i` read in the annulus coordinates of the annulus
+`1/2 ≤ ‖x‖`. The pieces agree on the seam `‖x‖ = 1/2` because `K i` ends at `χ₀ i ∘ h i`. -/
+private def morseChartChangeCellFun (i : ι) :
+    C(TopCat.disk.{u} (k i), morseCellAttachment φ₀ k hk hε.le hball₀ hf₀) :=
+  (TopCat.discGlue (P := Unit) (by norm_num : (0 : ℝ) < 2⁻¹)
+    ⟨fun p ↦ morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i
+        (h i (diskCup (ULift.up ⟨p.2.1, closedBall_subset_closedBall (by norm_num) p.2.2⟩))),
+      (morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i).hom.continuous.comp
+        ((h i).hom.continuous.comp (continuous_diskCup.comp (continuous_uliftUp.comp
+          ((continuous_subtype_val.comp continuous_snd).subtype_mk _))))⟩
+    ⟨fun p ↦ morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀
+        ⟨K i (σ p.2.1, TopCat.diskBoundaryInclusion (k i) p.2.2),
+          hK i _ _ (TopCat.norm_diskBoundaryInclusion _)⟩,
+      (morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀).hom.continuous.comp
+        ((continuous_subtype_val.comp ((K i).continuous.comp
+          ((continuous_symm.comp (continuous_fst.comp continuous_snd)).prodMk
+            ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.comp
+              (continuous_snd.comp continuous_snd))))).subtype_mk _)⟩
+    fun _ θ ↦ by
+      -- The flattened cup sends the point `θ / 2` of the seam to `θ`.
+      have hθ : diskCup (ULift.up ⟨(2⁻¹ : ℝ) • θ.down.1, closedBall_subset_closedBall
+          (by norm_num) (TopCat.smul_diskBoundary_mem_closedBall (by norm_num) θ)⟩) =
+          TopCat.diskBoundaryInclusion (k i) θ := by
+        refine ULift.ext (Subtype.ext ((coe_diskCup _).trans ((cupPoint_inv_two_smul
+          (mem_sphere_zero_iff_norm.1 θ.down.2).le).trans
+            (TopCat.coe_diskBoundaryInclusion_apply_down _ _).symm)))
+      simp only [ContinuousMap.coe_mk, symm_zero, hθ]
+      exact (morseCellAttachmentCell_eq_morseCellAttachmentIncl φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
+        hf₁ h K hK i _ (TopCat.norm_diskBoundaryInclusion θ) _ rfl).symm).curry ()
+
+private theorem morseChartChangeCellFun_of_norm_le (i : ι) {w : TopCat.disk.{u} (k i)}
+    (hw : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ ≤ 2⁻¹) :
+    morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w =
+      morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i (h i (diskCup w)) := by
+  rw [morseChartChangeCellFun, ContinuousMap.curry_apply,
+    TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw]
+  rfl
+
+private theorem morseChartChangeCellFun_of_le_norm (i : ι) {w : TopCat.disk.{u} (k i)}
+    (hw : 2⁻¹ ≤ ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖) :
+    morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w =
+      morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀
+        ⟨K i (σ (TopCat.annulusParam 2⁻¹ w), TopCat.diskBoundaryInclusion (k i)
+          (TopCat.annulusDir (by norm_num) ⟨w, hw⟩)),
+          hK i _ _ (TopCat.norm_diskBoundaryInclusion _)⟩ := by
+  rw [morseChartChangeCellFun, ContinuousMap.curry_apply,
+    TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw]
+  rfl
 
 /-- The disc part of `TauCeti.morseChartChange`. -/
 private def morseChartChangeCell (i : ι) :
     TopCat.disk.{u} (k i) ⟶ morseCellAttachment φ₀ k hk hε.le hball₀ hf₀ :=
-  TopCat.ofHom ⟨morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i,
-    continuous_morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i⟩
+  TopCat.ofHom (morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i)
 
 private theorem morseChartChangeCell_apply (i : ι) (w : TopCat.disk.{u} (k i)) :
     morseChartChangeCell φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w =
@@ -350,16 +346,16 @@ private theorem morseAttachingMap_comp_morseCellAttachmentIncl_eq (i : ι) :
       TopCat.diskBoundaryInclusion (k i) ≫
         morseChartChangeCell φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i := by
   ext s
-  rw [ConcreteCategory.comp_apply (TopCat.diskBoundaryInclusion (k i)), morseChartChangeCell_apply]
-  set w := TopCat.diskBoundaryInclusion (k i) s
-  have hw : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 1 :=
-    (TauCeti.mem_range_diskBoundaryInclusion_iff w).1 (mem_range_self s)
-  have hw' : ¬‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ ≤ 2⁻¹ := by
-    rw [hw]
+  have hw :
+      2⁻¹ ≤ ‖((TopCat.diskBoundaryInclusion (k i) s).down : EuclideanSpace ℝ (Fin (k i)))‖ := by
+    rw [TopCat.norm_diskBoundaryInclusion]
     norm_num
-  rw [morseChartChangeCellFun, dite_eq_right hw', ConcreteCategory.comp_apply]
+  rw [ConcreteCategory.comp_apply (TopCat.diskBoundaryInclusion (k i)), morseChartChangeCell_apply,
+    morseChartChangeCellFun_of_le_norm (hw := hw), ConcreteCategory.comp_apply]
   refine congrArg _ (Subtype.ext ?_)
-  simp only [diskCupTime_of_norm_eq_one hw, diskCup_of_norm_eq_one hw, (K i).apply_zero]
+  simp only [TopCat.annulusParam_of_norm_eq_one (by norm_num : (2⁻¹ : ℝ) < 1)
+    (TopCat.norm_diskBoundaryInclusion s), symm_one, TopCat.annulusDir_diskBoundaryInclusion,
+    (K i).apply_zero]
   have hsq := ConcreteCategory.congr_hom
     ((φ₁ i).morseAttachingMap_comp_sublevelInclusion (hball₁ i) (hf₁ i) (hk i) hε.le) s
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.ofHom_apply] at hsq
@@ -417,7 +413,7 @@ theorem morseChartChange_morseCellAttachmentCell_of_norm_le (i : ι) {w v : TopC
     morseChartChange φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK
         (morseCellAttachmentCell φ₁ k hk hε.le hball₁ hf₁ i w) =
       morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i (h i v) := by
-  rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun, dite_eq_left hw]
+  rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun_of_norm_le (hw := hw)]
   congr 2
   exact ULift.ext (Subtype.ext
     ((congrArg ((2 : ℝ) • ·) (radialRetraction_of_norm_le hw)).trans hv.symm))
@@ -433,18 +429,18 @@ theorem morseChartChange_morseCellAttachmentCell_of_le_norm (i : ι) {w v : TopC
     morseChartChange φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK
         (morseCellAttachmentCell φ₁ k hk hε.le hball₁ hf₁ i w) =
       morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀ z := by
-  have hcup : diskCup w = v := ULift.ext (Subtype.ext ((cupPoint_of_le_norm hw).trans hv.symm))
-  have htime : diskCupTime w = t := Subtype.ext ((cupTime_of_le_norm hw).trans ht.symm)
-  rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun]
-  split_ifs with hw'
-  · have hw'' : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 2⁻¹ := le_antisymm hw' hw
-    rw [hcup]
-    refine morseCellAttachmentCell_eq_morseCellAttachmentIncl φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁
-      h K hK i v (by rw [← hcup]; exact norm_cupPoint_of_le_norm hw) z ?_
-    rw [hz, ← htime, diskCupTime_of_norm_le hw']
-  · refine congrArg _ (Subtype.ext ?_)
-    rw [hz]
-    exact congrArg (fun p ↦ (K i p : M)) (Prod.ext htime hcup)
+  have htime : σ (TopCat.annulusParam 2⁻¹ w) = t := by
+    have h := TopCat.add_one_sub_mul_annulusParam (by norm_num : (2⁻¹ : ℝ) ≤ 1) hw
+    refine Subtype.ext ?_
+    rw [coe_symm_eq, ht]
+    linarith
+  have hdir : TopCat.diskBoundaryInclusion (k i) (TopCat.annulusDir (by norm_num) ⟨w, hw⟩) = v :=
+    ULift.ext (Subtype.ext ((TopCat.coe_diskBoundaryInclusion_apply_down _ _).trans
+      ((TopCat.coe_annulusDir _ _).trans hv.symm)))
+  rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun_of_le_norm (hw := hw)]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [hz]
+  exact congrArg (fun p ↦ (K i p : M)) (Prod.ext htime hdir)
 
 /-- After the handle-to-cell comparison of `φ₀`, the change-of-chart comparison reads on the
 `i`-th disc as `K i` along the flattened cup. -/
@@ -454,11 +450,15 @@ private theorem morseCellComparison_morseChartChange_morseCellAttachmentCell (i 
         (morseChartChange φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK
           (morseCellAttachmentCell φ₁ k hk hε.le hball₁ hf₁ i w))) =
       K i (diskCupTime w, diskCup w) := by
-  rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun]
-  split_ifs with hw
-  · rw [← ConcreteCategory.comp_apply, morseCellAttachmentCell_comp_morseCellComparison,
-      diskCupTime_of_norm_le hw, (K i).apply_one, ContinuousMap.comp_apply]
-  · exact Subtype.ext (coe_morseCellComparison_morseCellAttachmentIncl φ₀ k hk hball₀ hf₀ hε.le _)
+  by_cases hw : 2⁻¹ ≤ ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖
+  · rw [morseChartChange_morseCellAttachmentCell_of_le_norm φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h
+      K hK i hw (cupTime_of_le_norm hw) (cupPoint_of_le_norm hw)
+      ⟨K i (diskCupTime w, diskCup w), hK i _ _ (norm_cupPoint_of_le_norm hw)⟩ rfl]
+    exact Subtype.ext (coe_morseCellComparison_morseCellAttachmentIncl φ₀ k hk hball₀ hf₀ hε.le _)
+  · rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun_of_norm_le
+      (hw := (not_le.1 hw).le), ← ConcreteCategory.comp_apply,
+      morseCellAttachmentCell_comp_morseCellComparison, diskCupTime_of_norm_le (not_le.1 hw).le,
+      (K i).apply_one, ContinuousMap.comp_apply]
 
 /-- The disc part of the homotopy from `Φ₀ ∘ E_H` to `Φ₁`: `K i` along the straight-line homotopy
 from the flattened cup to the bottom disc of the cylinder. -/
@@ -489,8 +489,7 @@ private theorem morseAttachingMap_comp_morseChartChangeHomotopyIncl (i : ι) :
         morseChartChangeHomotopyCell φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K i := by
   ext s t
   set w := TopCat.diskBoundaryInclusion (k i) s
-  have hw : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 1 :=
-    (TauCeti.mem_range_diskBoundaryInclusion_iff w).1 (mem_range_self s)
+  have hw : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 1 := TopCat.norm_diskBoundaryInclusion s
   refine (morseChartChangeHomotopyIncl_apply hε _ t).trans (Eq.trans ?_ (congrArg Subtype.val
     (morseChartChangeHomotopyCell_apply φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K i w t)).symm)
   rw [diskCupHomotopyTime_of_norm_eq_one hw, diskCupHomotopy_of_norm_eq_one hw, (K i).apply_zero]
