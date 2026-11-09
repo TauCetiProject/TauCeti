@@ -239,6 +239,32 @@ theorem hamiltonianVectorField_add_smul {x : M} (hf : MDifferentiableAt I 𝓘(�
       σ.hamiltonianVectorField f x + r • σ.hamiltonianVectorField g x := by
   rw [hamiltonianVectorField_add hf (hg.const_smul r), hamiltonianVectorField_const_smul]
 
+/-- The Hamiltonian vector field is subtractive on differentiable functions. -/
+theorem hamiltonianVectorField_sub {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.hamiltonianVectorField (f - g) x =
+      σ.hamiltonianVectorField f x - σ.hamiltonianVectorField g x := by
+  simp [hamiltonianVectorField_def, mvfderiv_sub hf hg]
+
+/-- The Hamiltonian vector field of a finite sum of functions differentiable at `x` is the sum of
+their Hamiltonian vector fields at `x`. -/
+theorem hamiltonianVectorField_fun_sum {ι : Type*} {s : Finset ι} {F : ι → M → ℝ} {x : M}
+    (hF : ∀ i ∈ s, MDifferentiableAt I 𝓘(ℝ) (F i) x) :
+    σ.hamiltonianVectorField (fun y ↦ ∑ i ∈ s, F i y) x =
+      ∑ i ∈ s, σ.hamiltonianVectorField (F i) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    have hs : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ ∑ i ∈ s, F i y) x := by
+      simpa only [Finset.sum_fn] using
+        MDifferentiableAt.sum fun i hi ↦ hF i (Finset.mem_insert_of_mem hi)
+    have hfun : (fun y ↦ ∑ i ∈ insert a s, F i y) = F a + fun y ↦ ∑ i ∈ s, F i y := by
+      funext y
+      rw [Finset.sum_insert ha, Pi.add_apply]
+    rw [hfun, hamiltonianVectorField_add (hF a (Finset.mem_insert_self a s)) hs,
+      ih fun i hi ↦ hF i (Finset.mem_insert_of_mem hi), Finset.sum_insert ha]
+
 /-- At fixed `x`, the derivative in the real coefficient of `f + t • g`, read in the model
 space of the tangent fiber, is the Hamiltonian vector of `g` at `x`. -/
 theorem hasDerivAt_hamiltonianVectorField_add_smul {x : M}
@@ -491,6 +517,48 @@ theorem poissonBracket_const_smul_right (c : ℝ) (x : M) :
     σ.poissonBracket f (c • g) x = c • σ.poissonBracket f g x := by
   simp only [poissonBracket_def, hamiltonianVectorField_const_smul c x,
     ← SmoothForm.bilinFormAt_apply, map_smul]
+
+/-- The Poisson bracket is homogeneous in its first argument: `{c f, g} = c {f, g}`. -/
+@[simp]
+theorem poissonBracket_const_mul_left (c : ℝ) (x : M) :
+    σ.poissonBracket (fun y ↦ c * f y) g x = c * σ.poissonBracket f g x := by
+  simpa only [Pi.smul_def, smul_eq_mul] using poissonBracket_const_smul_left (σ := σ) (g := g) c x
+
+/-- The Poisson bracket is homogeneous in its second argument: `{f, c g} = c {f, g}`. -/
+@[simp]
+theorem poissonBracket_const_mul_right (c : ℝ) (x : M) :
+    σ.poissonBracket f (fun y ↦ c * g y) x = c * σ.poissonBracket f g x := by
+  simpa only [Pi.smul_def, smul_eq_mul] using poissonBracket_const_smul_right (σ := σ) (f := f) c x
+
+/-- The Poisson bracket is subtractive in its first argument on differentiable functions. -/
+theorem poissonBracket_sub_left {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket (f - g) k x = σ.poissonBracket f k x - σ.poissonBracket g k x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_sub hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_sub, LinearMap.sub_apply]
+
+/-- The Poisson bracket is subtractive in its second argument on differentiable functions. -/
+theorem poissonBracket_sub_right {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket k (f - g) x = σ.poissonBracket k f x - σ.poissonBracket k g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_sub hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_sub]
+
+/-- The Poisson bracket is additive in its first argument on finite sums of functions
+differentiable at the point: `{∑ fᵢ, g} = ∑ {fᵢ, g}`. -/
+theorem poissonBracket_fun_sum_left {ι : Type*} {s : Finset ι} {F : ι → M → ℝ} {x : M}
+    (hF : ∀ i ∈ s, MDifferentiableAt I 𝓘(ℝ) (F i) x) :
+    σ.poissonBracket (fun y ↦ ∑ i ∈ s, F i y) g x = ∑ i ∈ s, σ.poissonBracket (F i) g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_fun_sum hF,
+    ← SmoothForm.bilinFormAt_apply, map_sum, LinearMap.sum_apply]
+
+/-- The Poisson bracket is additive in its second argument on finite sums of functions
+differentiable at the point: `{f, ∑ gᵢ} = ∑ {f, gᵢ}`. -/
+theorem poissonBracket_fun_sum_right {ι : Type*} {s : Finset ι} {G : ι → M → ℝ} {x : M}
+    (hG : ∀ i ∈ s, MDifferentiableAt I 𝓘(ℝ) (G i) x) :
+    σ.poissonBracket f (fun y ↦ ∑ i ∈ s, G i y) x = ∑ i ∈ s, σ.poissonBracket f (G i) x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_fun_sum hG,
+    ← SmoothForm.bilinFormAt_apply, map_sum]
 
 namespace IsNondegenerate
 
