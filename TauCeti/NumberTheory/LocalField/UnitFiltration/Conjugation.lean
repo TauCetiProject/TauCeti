@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
+import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
 # Conjugation on ramification quotients
@@ -58,12 +59,6 @@ namespace TauCeti
 variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]]
-
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- Coercion from the invariant integer ring to the ambient field respects the group action. -/
-private theorem coe_smul_integer (g : G) (x : 𝒪[L]) :
-    ((g • x : 𝒪[L]) : L) = g • (x : L) :=
-  map_smul (IsInvariantSubring.subtypeHom G 𝒪[L]) g x
 
 /-- The change from `π` to `g⁻¹ • π` is the inverse tame-character coordinate of `g`. -/
 private theorem residue_uniformizerChangeUnit_inv_smul
