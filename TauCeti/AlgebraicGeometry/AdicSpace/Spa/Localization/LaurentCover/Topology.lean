@@ -104,7 +104,7 @@ theorem isClosedEmbedding_laurentCover :
     ext x
     exact (he x).symm.trans sub_eq_zero
   -- Henkel makes the bijection onto this closed range a homeomorphism.
-  exact IsTateRing.isClosedEmbedding_of_isClosed_range ρ
+  exact RingHom.isClosedEmbedding_of_isClosed_range_of_isTateRing ρ
     (fun a ↦ by simp [ρ, Completion.algebraMap_def])
     ((continuous_toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁).prodMk
       (continuous_toCompletionLoc P ({1} : Finset A) f S₂ hden₂))
@@ -178,7 +178,7 @@ theorem isOpenQuotientMap_laurentCover
   have _ : (uniformity (Completion S₁₂)).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
   -- The restriction maps are `A`-algebra maps; open mapping applies to their surjective difference.
-  have key := IsTateRing.isOpenQuotientMap_sub_of_surjective
+  have key := AlgHom.isOpenQuotientMap_sub_of_surjective_of_isTateRing
     (restrictionAlgHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
       hden₁₂ f rfl (by simp))
     (restrictionAlgHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂

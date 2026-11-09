@@ -51,10 +51,10 @@ Mathlib's `IsModuleTopology.continuous_of_linearMap`.
 * `TauCeti.Huber.IsTateRing.isModuleTopology`: a finitely generated Hausdorff Baire topological
   module over a Tate ring with complete additive uniformity carries the module topology.
 
-* `TauCeti.Huber.IsTateRing.isClosedEmbedding_of_isClosed_range`: a continuous injective ring
+* `RingHom.isClosedEmbedding_of_isClosed_range_of_isTateRing`: a continuous injective ring
   homomorphism with closed range, agreeing with the structure map of a completely metrisable
   topological `A`-algebra, is a closed embedding.
-* `TauCeti.Huber.IsTateRing.isOpenQuotientMap_sub_of_surjective`: the difference of two continuous
+* `AlgHom.isOpenQuotientMap_sub_of_surjective_of_isTateRing`: the difference of two continuous
   `A`-algebra maps out of the factors of a product of complete nonarchimedean algebras is an open
   quotient map when surjective.
 
@@ -251,8 +251,8 @@ variable [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A] [IsTopological
 topological `A`-algebra, and is continuous, injective and has closed range, is a closed embedding:
 Henkel's open mapping theorem over the Tate ring `A` makes the corestriction onto the closed range
 a homeomorphism. -/
-theorem IsTateRing.isClosedEmbedding_of_isClosed_range {N : Type*} [CommRing N] [Algebra A N]
-    [TopologicalSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
+theorem _root_.RingHom.isClosedEmbedding_of_isClosed_range_of_isTateRing {N : Type*}
+    [CommRing N] [Algebra A N] [TopologicalSpace N] [IsTopologicalRing N] [ContinuousConstSMul A N]
     [TopologicalSpace.IsCompletelyMetrizableSpace N] (ρ : A →+* N)
     (hρ : ∀ a, ρ a = algebraMap A N a) (hc : Continuous ρ) (hinj : Function.Injective ρ)
     (hr : IsClosed (Set.range ρ)) : IsClosedEmbedding ρ := by
@@ -271,7 +271,7 @@ variable [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
 /-- The difference of two continuous `A`-algebra maps out of the factors of a product of complete
 first-countable nonarchimedean topological `A`-algebras, when surjective, is an open quotient map,
 by Henkel's open mapping theorem over the Tate ring `A`. -/
-theorem IsTateRing.isOpenQuotientMap_sub_of_surjective {M₁ M₂ N : Type*}
+theorem _root_.AlgHom.isOpenQuotientMap_sub_of_surjective_of_isTateRing {M₁ M₂ N : Type*}
     [CommRing M₁] [Algebra A M₁] [UniformSpace M₁] [IsUniformAddGroup M₁] [CompleteSpace M₁]
     [(𝓝 (0 : M₁)).IsCountablyGenerated] [NonarchimedeanAddGroup M₁] [ContinuousSMul A M₁]
     [CommRing M₂] [Algebra A M₂] [UniformSpace M₂] [IsUniformAddGroup M₂] [CompleteSpace M₂]
