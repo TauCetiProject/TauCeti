@@ -164,7 +164,7 @@ theorem norm_add_div_two_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s
     (hs : 0 ≤ s) : (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * Complex.I‖ := by
   have h1 := norm_le_norm_add_ofReal_mul_I hz hs
   have h2 : s ≤ ‖z + (s : ℂ) * Complex.I‖ := by
-    refine le_trans ?_ (le_trans (le_abs_self _) (abs_im_le_norm (z + (s : ℂ) * Complex.I)))
+    refine le_trans ?_ (Complex.im_le_norm _)
     simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
       Complex.I_re, Complex.I_im]
     linarith

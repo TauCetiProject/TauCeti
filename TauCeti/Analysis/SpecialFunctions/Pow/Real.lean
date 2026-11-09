@@ -258,9 +258,7 @@ theorem exists_le_mul_rpow_lt_of_neg {M ε p : ℝ} (R : ℝ) (hε : 0 < ε) (hp
   simp only [neg_neg] at h
   exact ((Filter.eventually_ge_atTop R).and (h.eventually_lt_const hε)).exists
 
-/-- If `0 < R' ≤ T`, `x ≤ T` and `S + 1 ≤ 0`, then `T ^ S * x ≤ R' ^ (S + 1)`: the bound
-`T ^ S * x ≤ T ^ (S + 1)` followed by antitonicity of `r ↦ r ^ (S + 1)` for a nonpositive
-exponent. -/
+/-- If `0 < R' ≤ T`, `x ≤ T` and `S + 1 ≤ 0`, then `T ^ S * x ≤ R' ^ (S + 1)`. -/
 theorem rpow_mul_le_rpow_add_one {T S R' x : ℝ} (hR' : 0 < R') (hTR' : R' ≤ T)
     (hS1 : S + 1 ≤ 0) (hx : x ≤ T) : T ^ S * x ≤ R' ^ (S + 1) :=
   have hT : 0 < T := hR'.trans_le hTR'

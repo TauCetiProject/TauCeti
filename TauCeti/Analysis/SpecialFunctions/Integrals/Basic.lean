@@ -390,8 +390,8 @@ theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
         rw [integral_comp_sin_sq_neg_pi_div_two G hG]
         ring
 
-/-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
-uniformly in `β ≥ 0`. -/
+/-- For `0 < r` and `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most
+`r ^ (S + 1) / -(S + 1)`, uniformly in `β ≥ 0`. -/
 theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hβ : 0 ≤ β) (hS : S < -1) :
     ∫ s in (0 : ℝ)..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1) := by
   have h := integral_sub_rpow_le_of_lt_neg_one (a := 0) (b := r + β) (c := r) hS hr
