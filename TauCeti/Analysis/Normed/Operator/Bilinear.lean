@@ -116,7 +116,8 @@ def pairingAdjoint (B₀ : V →L[𝕜] V →L[𝕜] G) (X : V →L[𝕜] V) : V
 variable {B₀ : V →L[𝕜] V →L[𝕜] G}
 
 /-- The defining property of the adjoint for an invertible pairing. -/
-theorem IsInvertible.pairingAdjoint_apply (hB₀ : B₀.IsInvertible) (X : V →L[𝕜] V) (w w' : V) :
+@[simp] theorem IsInvertible.pairingAdjoint_apply (hB₀ : B₀.IsInvertible) (X : V →L[𝕜] V)
+    (w w' : V) :
     B₀ (pairingAdjoint B₀ X w) w' = B₀ w (X w') := by
   simp [pairingAdjoint, hB₀.self_apply_inverse]
 
@@ -132,7 +133,7 @@ theorem IsInvertible.pairingAdjoint_mul (hB₀ : B₀.IsInvertible) (X Y : V →
     simp only [hB₀.pairingAdjoint_apply, mul_apply_eq_comp]
 
 /-- The adjoint of the identity for an invertible pairing is the identity. -/
-theorem IsInvertible.pairingAdjoint_one (hB₀ : B₀.IsInvertible) :
+@[simp] theorem IsInvertible.pairingAdjoint_one (hB₀ : B₀.IsInvertible) :
     pairingAdjoint B₀ (1 : V →L[𝕜] V) = 1 :=
   hB₀.ext_of_pairing fun w w' ↦ by simp [hB₀.pairingAdjoint_apply]
 

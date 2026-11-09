@@ -183,7 +183,7 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpac
 
 /-- **The canonical parametric Morse coordinate is natural for fibrewise linear changes of
 coordinates.** Let `e b : E' ≃L[ℝ] E` be linear equivalences depending continuously on `b` at
-`a`, together with their inverses, and let `g (b, v) = f (b, e b v)`. Near `(a, 0)` the canonical
+`a`, and let `g (b, v) = f (b, e b v)`. Near `(a, 0)` the canonical
 coordinate of `g` is that of `f` read through `e b`:
 `parametricMorseCoord g (b, v) = (e b)⁻¹ (parametricMorseCoord f (b, e b v))`.
 
@@ -192,12 +192,17 @@ a function read in two trivializations agree near the zero section, so that they
 fibre-preserving coordinate change there. -/
 theorem eventually_parametricMorseCoord_comp (hf : ContDiff ℝ 2 f)
     (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) {e : P → E' ≃L[ℝ] E}
-    (he : ContinuousAt (fun b ↦ (e b : E' →L[ℝ] E)) a)
-    (he' : ContinuousAt (fun b ↦ ((e b).symm : E →L[ℝ] E')) a) :
+    (he : ContinuousAt (fun b ↦ (e b : E' →L[ℝ] E)) a) :
     ∀ᶠ z in 𝓝 (a, (0 : E')), parametricMorseCoord (fun z ↦ f (z.1, e z.1 z.2)) z =
       (e z.1).symm (parametricMorseCoord f (z.1, e z.1 z.2)) := by
   have hslice (b : P) : ContDiff ℝ 2 (fun v ↦ f (b, v)) :=
     hf.comp (contDiff_const.prodMk contDiff_id)
+  -- The inverses depend continuously on `b`, since inversion is continuous at `e a`.
+  have he' : ContinuousAt (fun b ↦ ((e b).symm : E →L[ℝ] E')) a := by
+    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
+      ContinuousAt.comp (f := fun b ↦ (e b : E' →L[ℝ] E)) (x := a)
+        ((ContinuousLinearMap.isInvertible_equiv (f := e a)).contDiffAt_map_inverse
+          (n := 0)).continuousAt he
   -- The forms of the pulled-back family are the pullbacks of the forms of `f`.
   have hHg (b : P) : fderiv ℝ (fderiv ℝ fun v ↦ f (b, e b v)) 0 =
       (fderiv ℝ (fderiv ℝ fun v ↦ f (b, v)) 0).bilinearComp (e b : E' →L[ℝ] E)
