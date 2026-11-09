@@ -43,6 +43,8 @@ comparison specializes to the self-modelled manifolds considered here.
 * `MDifferentiableAt.mfderiv_restrictScalars_apply` and
   `MDifferentiableAt.mvfderiv_restrictScalars_apply`: the derivative comparison through
   that fibre equivalence.
+* `TangentSpace.restrictScalarsSelfLinearEquiv`: the comparison into the native smaller-field
+  self-model tangent fibre; its coordinate and derivative formulas avoid model-tag casts in data.
 
 * `MDifferentiableWithinAt.restrictScalars`, `MDifferentiableAt.restrictScalars`,
   `MDifferentiableOn.restrictScalars`, `MDifferentiable.restrictScalars`: differentiability over
@@ -282,14 +284,12 @@ def restrictScalarsLinearEquiv (x : M) :
       algebraMap_smul, map_smul]
 
 /-- Scalar restriction preserves the preferred tangent coordinate vector. -/
-@[simp]
 theorem restrictScalarsLinearEquiv_apply (x : M) (v : RestrictScalars 𝕜 𝕜' (TangentSpace I x)) :
     restrictScalarsLinearEquiv 𝕜 (I := I) x v = (tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm
       (tangentSpaceCastModel I x (RestrictScalars.addEquiv 𝕜 𝕜' _ v)) := by
   rfl
 
 /-- The inverse scalar-restriction equivalence preserves preferred tangent coordinates. -/
-@[simp]
 theorem restrictScalarsLinearEquiv_symm_apply (x : M) (v : TangentSpace (I.restrictScalars 𝕜) x) :
     (restrictScalarsLinearEquiv 𝕜 (I := I) x).symm v = (RestrictScalars.addEquiv 𝕜 𝕜' _).symm
       ((tangentSpaceCastModel I x).symm
@@ -343,5 +343,87 @@ theorem mvfderiv_restrictScalars_apply {f : M → F} {x : M}
   rw [ContinuousLinearMap.comp_apply]
   exact h.symm
 
+
+end MDifferentiableAt
+
+namespace TangentSpace
+
+variable (R : Type*) {A : Type*}
+  [NontriviallyNormedField R] [NontriviallyNormedField A] [NormedAlgebra R A]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace A E] [NormedSpace R E]
+  [IsScalarTower R A E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+
+/-- Scalar restriction identifies a self-model tangent fibre with the native self-model
+fibre over the smaller field. -/
+def restrictScalarsSelfLinearEquiv (x : M) :
+    RestrictScalars R A (TangentSpace 𝓘(A, E) x) ≃ₗ[R] TangentSpace 𝓘(R, E) x where
+  toFun v := (tangentSpaceCastModel 𝓘(R, E) x).symm
+    (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
+  invFun v := (RestrictScalars.addEquiv R A _).symm
+    ((tangentSpaceCastModel 𝓘(A, E) x).symm (tangentSpaceCastModel 𝓘(R, E) x v))
+  left_inv v := by simp
+  right_inv v := by simp
+  map_add' v w := by simp only [map_add]
+  map_smul' c v := by
+    rw [RestrictScalars.addEquiv_map_smul, map_smul, RingHom.id_apply,
+      algebraMap_smul, map_smul]
+
+/-- Native self-model scalar restriction preserves preferred tangent coordinates. -/
+theorem restrictScalarsSelfLinearEquiv_apply (x : M)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    restrictScalarsSelfLinearEquiv R x v = (tangentSpaceCastModel 𝓘(R, E) x).symm
+      (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v)) := by
+  rfl
+
+/-- The inverse native self-model comparison preserves preferred tangent coordinates. -/
+theorem restrictScalarsSelfLinearEquiv_symm_apply (x : M) (v : TangentSpace 𝓘(R, E) x) :
+    (restrictScalarsSelfLinearEquiv R (A := A) x).symm v =
+      (RestrictScalars.addEquiv R A _).symm
+        ((tangentSpaceCastModel 𝓘(A, E) x).symm (tangentSpaceCastModel 𝓘(R, E) x v)) := by
+  rfl
+
+/-- The native self-model comparison agrees with the general boundaryless comparison
+on the underlying tangent vectors. -/
+theorem restrictScalarsSelfLinearEquiv_apply_eq (x : M)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    restrictScalarsSelfLinearEquiv R x v =
+      restrictScalarsLinearEquiv R (I := 𝓘(A, E)) x v := by
+  rw [restrictScalarsSelfLinearEquiv_apply, restrictScalarsLinearEquiv_apply,
+    modelWithCornersSelf_restrictScalars]
+
+end TangentSpace
+
+namespace MDifferentiableAt
+
+variable (R : Type*) {A : Type*}
+  [NontriviallyNormedField R] [NontriviallyNormedField A] [NormedAlgebra R A]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace A E] [NormedSpace R E]
+  [IsScalarTower R A E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace A F] [NormedSpace R F]
+  [IsScalarTower R A F] {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
+
+/-- The native self-model fibre comparison intertwines derivatives over the two fields. -/
+theorem mfderiv_restrictScalarsSelf_apply {f : M → N} {x : M}
+    (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    TangentSpace.restrictScalarsSelfLinearEquiv R (f x)
+        ((RestrictScalars.addEquiv R A _).symm
+          (mfderiv 𝓘(A, E) 𝓘(A, F) f x (RestrictScalars.addEquiv R A _ v))) =
+      mfderiv 𝓘(R, E) 𝓘(R, F) f x
+        (TangentSpace.restrictScalarsSelfLinearEquiv R x v) := by
+  have h := hf.mfderiv_restrictScalars_apply R v
+  rw [TangentSpace.restrictScalarsLinearEquiv_apply,
+    TangentSpace.restrictScalarsLinearEquiv_apply,
+    modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at h
+  simpa only [TangentSpace.restrictScalarsSelfLinearEquiv_apply] using h
+
+/-- Vector-valued derivatives agree through the native self-model fibre comparison. -/
+theorem mvfderiv_restrictScalarsSelf_apply {f : M → F} {x : M}
+    (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    mvfderiv 𝓘(R, E) f x (TangentSpace.restrictScalarsSelfLinearEquiv R x v) =
+      mvfderiv 𝓘(A, E) f x (RestrictScalars.addEquiv R A _ v) := by
+  simpa only [TangentSpace.restrictScalarsSelfLinearEquiv_apply_eq] using
+    hf.mvfderiv_restrictScalars_apply R v
 
 end MDifferentiableAt

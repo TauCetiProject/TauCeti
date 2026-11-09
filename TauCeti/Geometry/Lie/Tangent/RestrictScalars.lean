@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Algebra.Lie.BaseChange.ComplexStructure
 public import TauCeti.Geometry.Lie.RestrictScalars
-public import TauCeti.Geometry.Lie.Adjoint.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Derivation
+public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Lie.Tangent.Differential
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.RestrictScalars
+public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
+public import TauCeti.Geometry.Manifold.VectorField.RestrictScalars
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -41,40 +43,28 @@ this module's real Lie-group instance is local as well.
   Lie algebras of a complex Lie group and its underlying real Lie group.
 * `TauCeti.Lie.realificationDerivationLieEquiv`: the corresponding equivalence with real
   left-invariant derivations for finite-dimensional smooth complex Lie groups.
-* `TauCeti.Lie.realificationDerivationComplexStructure`: multiplication by `Complex.I`
-  transported to real left-invariant derivations.
+
+The canonical `LinearEquiv.complexStructure` transports multiplication by `Complex.I` through
+these equivalences' underlying real-linear equivalences. Its square and bracket laws apply
+directly, without additional geometric endomorphism definitions.
 
 ## Main results
 
 * `TauCeti.Lie.realificationLieEquiv_apply` and
   `TauCeti.Lie.realificationLieEquiv_symm_apply`: agreement with the public fibre equivalence.
-* `TauCeti.Lie.realificationLieEquiv_groupLieAlgebraMap`: naturality under differentials
-  of homomorphisms differentiable at the identity.
-* `TauCeti.Lie.realificationLieEquiv_tangentAd`: compatibility with the adjoint actions.
-* `TauCeti.Lie.realificationDerivationLieEquiv_apply` and
-  `TauCeti.Lie.realificationDerivationLieEquiv_symm_apply`: the derivation comparison
-  and evaluation at the identity.
-* `TauCeti.Lie.realificationComplexStructure`: the complex structure on the native real
-  tangent Lie algebra, without finite-dimensionality assumptions.
-* `TauCeti.Lie.realificationComplexStructure_apply` and
-  `TauCeti.Lie.realificationComplexStructure_realificationLieEquiv`: its coordinate equations.
-* `TauCeti.Lie.realificationComplexStructure_sq` and
-  `TauCeti.Lie.realificationComplexStructure_apply_apply`: its square is minus the identity.
-* `TauCeti.Lie.realificationComplexStructure_lie_left` and
-  `TauCeti.Lie.realificationComplexStructure_lie_right`: compatibility with the tangent bracket.
-* Evaluation at the identity intertwines the two complex structures:
-  `leftInvariantDerivationLieEquivGroupLieAlgebra_realificationDerivationComplexStructure`.
-* `TauCeti.Lie.realificationDerivationComplexStructure_apply`: the complex structure in
-  complex tangent coordinates.
-* `TauCeti.Lie.realificationDerivationComplexStructure_realificationDerivationLieEquiv`:
-  compatibility with multiplication by `Complex.I` on the complex tangent algebra.
-* `TauCeti.Lie.realificationDerivationComplexStructure_sq`: the induced endomorphism
-  squares to minus the identity.
-* `TauCeti.Lie.realificationDerivationComplexStructure_apply_apply`: pointwise reduction
-  of two successive applications of the induced complex structure.
-* `TauCeti.Lie.realificationDerivationComplexStructure_lie_left` and
-  `TauCeti.Lie.realificationDerivationComplexStructure_lie_right`: complex bilinearity
-  of the real derivation bracket.
+* `TauCeti.Lie.realificationLieEquiv_groupLieAlgebraMap` and
+  `TauCeti.Lie.realificationLieEquiv_tangentAd`: compatibility with holomorphic differentials
+  and tangent adjoint actions.
+* `TauCeti.Lie.realificationDerivationLieEquiv_apply` and its inverse formula:
+  the derivation comparison and evaluation at the identity.
+* `TauCeti.Lie.realificationDerivationLieEquiv_complexStructure_evaluation`:
+  evaluation intertwines the transported tangent and derivation complex structures.
+* `TauCeti.Lie.realificationLieEquiv_complexStructure_groupLieAlgebraMap` and
+  `TauCeti.Lie.realificationLieEquiv_complexStructure_tangentAd`: holomorphic differentials
+  and tangent adjoint actions commute with the transported complex structures.
+* `TauCeti.Lie.realificationDerivationLieEquiv_complexStructure_lieMap` and
+  `TauCeti.Lie.realificationDerivationLieEquiv_complexStructure_Ad`: the corresponding
+  naturality results on invariant derivations.
 
 ## References
 
@@ -99,51 +89,6 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace E G]
 
--- Normalize the restricted self-model before using the fibre map in typeclass inference.
--- Self-model restriction preserves the underlying maps definitionally; the model equality
--- fixes the tag before instance inference. The resulting cast therefore acts as the identity.
-private def realificationTangent (x : G) :
-    RestrictScalars ℝ ℂ (TangentSpace 𝓘(ℂ, E) x) ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, E) x := by
-  have e := TangentSpace.restrictScalarsLinearEquiv ℝ (I := 𝓘(ℂ, E)) x
-  rw [modelWithCornersSelf_restrictScalars] at e
-  exact e
-
-private theorem realificationTangent_apply (x : G)
-    (v : RestrictScalars ℝ ℂ (TangentSpace 𝓘(ℂ, E) x)) :
-    realificationTangent x v = (tangentSpaceCastModel 𝓘(ℝ, E) x).symm
-      (tangentSpaceCastModel 𝓘(ℂ, E) x (RestrictScalars.addEquiv ℝ ℂ _ v)) := by
-  -- The specialization changes only the model tag, preserving the fibre map.
-  have h : realificationTangent x v =
-      TangentSpace.restrictScalarsLinearEquiv ℝ (I := 𝓘(ℂ, E)) x v := rfl
-  rw [TangentSpace.restrictScalarsLinearEquiv_apply] at h
-  rw [modelWithCornersSelf_restrictScalars] at h
-  exact h
-
-private theorem realificationTangent_mfderiv {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℂ F]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
-    {f : G → N} {x : G} (hf : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) f x)
-    (v : RestrictScalars ℝ ℂ (TangentSpace 𝓘(ℂ, E) x)) :
-    realificationTangent (f x) ((RestrictScalars.addEquiv ℝ ℂ _).symm
-        (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) f x (RestrictScalars.addEquiv ℝ ℂ _ v))) =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) f x (realificationTangent x v) := by
-  have h := hf.mfderiv_restrictScalars_apply ℝ v
-  rw [TangentSpace.restrictScalarsLinearEquiv_apply,
-    TangentSpace.restrictScalarsLinearEquiv_apply] at h
-  rw [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at h
-  simpa only [realificationTangent_apply] using h
-
-private theorem realificationTangent_mvfderiv {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℂ F]
-    {f : G → F} {x : G} (hf : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) f x)
-    (v : RestrictScalars ℝ ℂ (TangentSpace 𝓘(ℂ, E) x)) :
-    mvfderiv 𝓘(ℝ, E) f x (realificationTangent x v) =
-      mvfderiv 𝓘(ℂ, E) f x (RestrictScalars.addEquiv ℝ ℂ _ v) := by
-  have h := hf.mvfderiv_restrictScalars_apply ℝ v
-  rw [TangentSpace.restrictScalarsLinearEquiv_apply] at h
-  rw [modelWithCornersSelf_restrictScalars] at h
-  simpa only [realificationTangent_apply] using h
-
 section Tangent
 
 variable [Group G] [LieGroup 𝓘(ℂ, E) 3 G]
@@ -156,12 +101,12 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 private theorem realificationTangent_mulInvariantVectorField
     (v : GroupLieAlgebra 𝓘(ℂ, E) G) (g : G) :
-    realificationTangent g
+    TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) g
         ((RestrictScalars.addEquiv ℝ ℂ _).symm (mulInvariantVectorField v g)) =
       mulInvariantVectorField (I := 𝓘(ℝ, E))
-        (realificationTangent (1 : G)
+        (TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)
           ((RestrictScalars.addEquiv ℝ ℂ _).symm v)) g := by
-  have h := realificationTangent_mfderiv
+  have h := MDifferentiableAt.mfderiv_restrictScalarsSelf_apply ℝ
     ((contMDiff_mul_left (I := 𝓘(ℂ, E)) (n := 3) (a := g)).mdifferentiableAt
       (by simp) (x := (1 : G))) ((RestrictScalars.addEquiv ℝ ℂ _).symm v)
   rw [mul_one] at h
@@ -172,53 +117,16 @@ private theorem realificationTangent_mulInvariantVectorField
 variable [CompleteSpace E]
 
 private theorem realificationTangent_lie (v w : GroupLieAlgebra 𝓘(ℂ, E) G) :
-    realificationTangent (1 : G)
+    TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)
         ((RestrictScalars.addEquiv ℝ ℂ _).symm ⁅v, w⁆) =
-      ⁅(realificationTangent (1 : G)
+      ⁅(TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)
           ((RestrictScalars.addEquiv ℝ ℂ _).symm v) : GroupLieAlgebra 𝓘(ℝ, E) G),
-        realificationTangent (1 : G)
+        TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)
           ((RestrictScalars.addEquiv ℝ ℂ _).symm w)⁆ := by
   rw [GroupLieAlgebra.bracket_def, GroupLieAlgebra.bracket_def]
-  apply TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt
-    ((contMDiff_mulInvariantVectorField _).mdifferentiable (by simp)).mdifferentiableAt
-    ((contMDiff_mulInvariantVectorField _).mdifferentiable (by simp)).mdifferentiableAt
-  have hchart : extChartAt 𝓘(ℝ, E) (1 : G) = extChartAt 𝓘(ℂ, E) (1 : G) := by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      (ModelWithCorners.extChartAt_restrictScalars ℝ 𝓘(ℂ, E) (1 : G))
-  let f : G → E := extChartAt 𝓘(ℂ, E) (1 : G)
-  have hf : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, E) 2 f (1 : G) := contMDiffAt_extChartAt
-  have hinner (u : GroupLieAlgebra 𝓘(ℂ, E) G) :
-      MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, E)
-        (fun y ↦ mvfderiv 𝓘(ℂ, E) f y (mulInvariantVectorField u y)) (1 : G) := by
-    exact ((hf.contMDiffAt_mvfderiv_apply (m := 1) (p :=
-      ⟨1, mulInvariantVectorField u (1 : G)⟩) (by norm_num)).comp (1 : G)
-      ((contMDiff_mulInvariantVectorField u).of_le (m := 1)
-        (by simp)).contMDiffAt).mdifferentiableAt (by simp)
-  have hnear (u : GroupLieAlgebra 𝓘(ℂ, E) G) :
-      (fun y ↦ mvfderiv 𝓘(ℝ, E) f y
-        (mulInvariantVectorField (I := 𝓘(ℝ, E))
-          (realificationTangent (1 : G)
-            ((RestrictScalars.addEquiv ℝ ℂ _).symm u)) y)) =ᶠ[𝓝 (1 : G)]
-      (fun y ↦ mvfderiv 𝓘(ℂ, E) f y (mulInvariantVectorField u y)) := by
-    filter_upwards [extChartAt_source_mem_nhds (I := 𝓘(ℂ, E)) (1 : G)] with y hy
-    rw [← realificationTangent_mulInvariantVectorField]
-    simpa only [AddEquiv.apply_symm_apply] using
-      realificationTangent_mvfderiv (mdifferentiableAt_extChartAt (by
-        simpa only [extChartAt_source] using hy))
-          ((RestrictScalars.addEquiv ℝ ℂ _).symm (mulInvariantVectorField u y))
-  rw [hchart]
-  -- `f` is a local abbreviation, so expose it with `change`; this also identifies the
-  -- model/tangent-space coercions in the bracket comparison.
-  change mvfderiv 𝓘(ℝ, E) f (1 : G)
-      (realificationTangent (1 : G)
-        ((RestrictScalars.addEquiv ℝ ℂ _).symm (VectorField.mlieBracket 𝓘(ℂ, E)
-          (mulInvariantVectorField v) (mulInvariantVectorField w) (1 : G)))) = _
-  rw [realificationTangent_mvfderiv (hf.mdifferentiableAt (by simp)),
-    (hnear w).mvfderiv_eq, (hnear v).mvfderiv_eq, mulInvariantVectorField_one,
-    mulInvariantVectorField_one, realificationTangent_mvfderiv (hinner w),
-    realificationTangent_mvfderiv (hinner v)]
-  simpa only [AddEquiv.apply_symm_apply, mulInvariantVectorField_one] using
-    (mvfderiv_mlieBracket hf (by simp)
+  simpa only [realificationTangent_mulInvariantVectorField] using
+    (VectorField.mlieBracket_restrictScalars ℝ
+      (V := mulInvariantVectorField v) (W := mulInvariantVectorField w) (x := (1 : G))
       ((contMDiff_mulInvariantVectorField v).mdifferentiable (by simp)).mdifferentiableAt
       ((contMDiff_mulInvariantVectorField w).mdifferentiable (by simp)).mdifferentiableAt)
 
@@ -226,47 +134,34 @@ private theorem realificationTangent_lie (v w : GroupLieAlgebra 𝓘(ℂ, E) G) 
 is the Lie algebra of the underlying real Lie group. -/
 def realificationLieEquiv :
     RestrictScalars ℝ ℂ (GroupLieAlgebra 𝓘(ℂ, E) G) ≃ₗ⁅ℝ⁆ GroupLieAlgebra 𝓘(ℝ, E) G :=
-  { toFun := realificationTangent (1 : G)
-    invFun := (realificationTangent (1 : G)).symm
-    left_inv := (realificationTangent (1 : G)).left_inv
-    right_inv := (realificationTangent (1 : G)).right_inv
-    map_add' := (realificationTangent (1 : G)).map_add
-    map_smul' := (realificationTangent (1 : G)).map_smul
+  { toFun := TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)
+    invFun := (TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)).symm
+    left_inv := (TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)).left_inv
+    right_inv := (TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)).right_inv
+    map_add' := (TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)).map_add
+    map_smul' := (TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)).map_smul
     map_lie' := by
       intro x y
       have h := realificationTangent_lie (E := E) (G := G)
         (RestrictScalars.addEquiv ℝ ℂ _ x) (RestrictScalars.addEquiv ℝ ℂ _ y)
-      -- The restricted Lie ring has the original bracket on its additive carrier.
-      have hb : (RestrictScalars.addEquiv ℝ ℂ _).symm
-          ⁅RestrictScalars.addEquiv ℝ ℂ _ x, RestrictScalars.addEquiv ℝ ℂ _ y⁆ = ⁅x, y⁆ := rfl
-      rw [hb] at h
+      rw [← RestrictScalars.addEquiv_lie, AddEquiv.symm_apply_apply] at h
       simpa only [AddEquiv.symm_apply_apply] using h }
 
 /-- The real Lie equivalence is the public fibre equivalence at the identity. -/
-@[simp]
 theorem realificationLieEquiv_apply
     (x : RestrictScalars ℝ ℂ (GroupLieAlgebra 𝓘(ℂ, E) G)) :
     realificationLieEquiv (E := E) (G := G) x =
       (tangentSpaceCastModel 𝓘(ℝ, E) (1 : G)).symm
         (tangentSpaceCastModel 𝓘(ℂ, E) (1 : G) (RestrictScalars.addEquiv ℝ ℂ _ x)) := by
-  exact realificationTangent_apply (1 : G) x
+  exact TangentSpace.restrictScalarsSelfLinearEquiv_apply ℝ (1 : G) x
 
 /-- Inverse Lie-algebra realification is the inverse public fibre equivalence. -/
-@[simp]
 theorem realificationLieEquiv_symm_apply (x : GroupLieAlgebra 𝓘(ℝ, E) G) :
     (realificationLieEquiv (E := E) (G := G)).symm x =
       (RestrictScalars.addEquiv ℝ ℂ _).symm
         ((tangentSpaceCastModel 𝓘(ℂ, E) (1 : G)).symm
           (tangentSpaceCastModel 𝓘(ℝ, E) (1 : G) x)) := by
-  apply (realificationLieEquiv (E := E) (G := G)).injective
-  -- Normalize the Lie-homomorphism coercion used by the injectivity API.
-  change realificationLieEquiv (E := E) (G := G)
-      ((realificationLieEquiv (E := E) (G := G)).symm x) =
-    realificationLieEquiv (E := E) (G := G)
-      ((RestrictScalars.addEquiv ℝ ℂ _).symm
-        ((tangentSpaceCastModel 𝓘(ℂ, E) (1 : G)).symm
-          (tangentSpaceCastModel 𝓘(ℝ, E) (1 : G) x)))
-  rw [LieEquiv.apply_symm_apply, realificationLieEquiv_apply]
+  rw [LieEquiv.symm_apply_eq, realificationLieEquiv_apply]
   simp only [AddEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply,
     ContinuousLinearEquiv.symm_apply_apply]
 
@@ -280,7 +175,7 @@ theorem realificationLieEquiv_tangentAd (g : G) (x : GroupLieAlgebra 𝓘(ℂ, E
   let _ : LieGroup 𝓘(ℝ, E) 1 G := LieGroup.of_le (n := 3) (by norm_num)
   have hφ := (TauCeti.Lie.conjDiffeomorph (I := 𝓘(ℂ, E)) (n := 1) g).mdifferentiable
     one_ne_zero (1 : G)
-  have h := realificationTangent_mfderiv hφ
+  have h := MDifferentiableAt.mfderiv_restrictScalarsSelf_apply ℝ hφ
     ((RestrictScalars.addEquiv ℝ ℂ _).symm x)
   rw [conjDiffeomorph_apply, mul_one, mul_inv_cancel] at h
   simp only [AddEquiv.apply_symm_apply] at h
@@ -290,13 +185,32 @@ theorem realificationLieEquiv_tangentAd (g : G) (x : GroupLieAlgebra 𝓘(ℂ, E
     simp only [TauCeti.Lie.conjDiffeomorph_apply]
   have hR := DFunLike.congr_fun
     (mfderiv_congr (I := 𝓘(ℝ, E)) (I' := 𝓘(ℝ, E)) (x := (1 : G)) heq)
-    (realificationTangent (1 : G)
+    (TangentSpace.restrictScalarsSelfLinearEquiv ℝ (A := ℂ) (1 : G)
       ((RestrictScalars.addEquiv ℝ ℂ _).symm x))
   simp only [TauCeti.Lie.tangentAd_apply, TauCeti.Lie.adjointContinuousLinearMap_apply]
   rw [realificationLieEquiv_apply, realificationLieEquiv_apply]
-  rw [realificationTangent_apply] at hR
-  rw [realificationTangent_apply, realificationTangent_apply] at h
+  rw [TangentSpace.restrictScalarsSelfLinearEquiv_apply] at hR
+  rw [TangentSpace.restrictScalarsSelfLinearEquiv_apply,
+    TangentSpace.restrictScalarsSelfLinearEquiv_apply] at h
   exact h.trans hR.symm
+
+/-- The adjoint action commutes with the transported complex structure. -/
+theorem realificationLieEquiv_complexStructure_tangentAd
+    (g : G) (X : GroupLieAlgebra 𝓘(ℝ, E) G) :
+    tangentAd (I := 𝓘(ℝ, E)) g
+        ((realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+          (M := GroupLieAlgebra 𝓘(ℂ, E) G) X) =
+      (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+        (M := GroupLieAlgebra 𝓘(ℂ, E) G) (tangentAd (I := 𝓘(ℝ, E)) g X) := by
+  apply (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure_naturality
+    (M := GroupLieAlgebra 𝓘(ℂ, E) G)
+    (realificationLieEquiv (E := E) (G := G)).toLinearEquiv
+    (tangentAd (I := 𝓘(ℂ, E)) g).toLinearEquiv.toLinearMap
+    (tangentAd (I := 𝓘(ℝ, E)) g).toLinearEquiv.toLinearMap
+  intro y
+  have h := (realificationLieEquiv_tangentAd g (RestrictScalars.addEquiv ℝ ℂ _ y)).symm
+  rw [AddEquiv.symm_apply_apply] at h
+  convert h using 1 <;> rfl
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   {K : Type*} [Group K] [TopologicalSpace K] [ChartedSpace F K] [LieGroup 𝓘(ℂ, F) 3 K]
@@ -311,67 +225,36 @@ theorem realificationLieEquiv_groupLieAlgebraMap (φ : G →* K)
           (φ.groupLieAlgebraMap 𝓘(ℂ, E) 𝓘(ℂ, F) x)) =
       φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F) (realificationLieEquiv (E := E) (G := G)
           ((RestrictScalars.addEquiv ℝ ℂ _).symm x)) := by
-  have h := realificationTangent_mfderiv hφ
+  have h := MDifferentiableAt.mfderiv_restrictScalarsSelf_apply ℝ hφ
     ((RestrictScalars.addEquiv ℝ ℂ _).symm x)
   rw [φ.map_one] at h
   simp only [AddEquiv.apply_symm_apply] at h
   rw [MonoidHom.groupLieAlgebraMap_apply, MonoidHom.groupLieAlgebraMap_apply,
     realificationLieEquiv_apply, realificationLieEquiv_apply]
-  rw [realificationTangent_apply, realificationTangent_apply] at h
+  rw [TangentSpace.restrictScalarsSelfLinearEquiv_apply,
+    TangentSpace.restrictScalarsSelfLinearEquiv_apply] at h
   exact h
 
-/-- Multiplication by `Complex.I` transported to the real tangent Lie algebra
-of a complex Lie group with complete model and third-order operations. -/
-def realificationComplexStructure : Module.End ℝ (GroupLieAlgebra 𝓘(ℝ, E) G) :=
-  (realificationLieEquiv (E := E) (G := G)).complexStructure
-
-/-- The induced real endomorphism corresponds to multiplication by `Complex.I`. -/
-theorem realificationComplexStructure_realificationLieEquiv
-    (x : RestrictScalars ℝ ℂ (GroupLieAlgebra 𝓘(ℂ, E) G)) :
-    realificationComplexStructure (realificationLieEquiv (E := E) (G := G) x) =
-      realificationLieEquiv (E := E) (G := G)
-        ((RestrictScalars.addEquiv ℝ ℂ _).symm
-          (Complex.I • RestrictScalars.addEquiv ℝ ℂ _ x)) := by
-  exact (realificationLieEquiv (E := E) (G := G)).complexStructure_apply_image x
-
-/-- The induced complex structure is multiplication by `Complex.I` in complex tangent
-coordinates. -/
--- Keep the complex structure opaque to simp so its algebraic bracket laws are normal forms.
-theorem realificationComplexStructure_apply (D : GroupLieAlgebra 𝓘(ℝ, E) G) :
-    realificationComplexStructure D =
-      realificationLieEquiv (E := E) (G := G)
-        ((RestrictScalars.addEquiv ℝ ℂ _).symm
-          (Complex.I • RestrictScalars.addEquiv ℝ ℂ _
-            ((realificationLieEquiv (E := E) (G := G)).symm D))) := by
-  exact (realificationLieEquiv (E := E) (G := G)).complexStructure_apply D
-
-/-- The induced endomorphism of real tangent vectors squares to minus the identity. -/
-@[simp]
-theorem realificationComplexStructure_sq :
-    (realificationComplexStructure (E := E) (G := G)) ^ 2 = -1 := by
-  exact (realificationLieEquiv (E := E) (G := G)).complexStructure_sq
-
-/-- Two applications of the induced complex structure negate a real tangent vector. -/
-@[simp]
-theorem realificationComplexStructure_apply_apply
-    (D : GroupLieAlgebra 𝓘(ℝ, E) G) :
-    realificationComplexStructure (realificationComplexStructure D) = -D := by
-  exact (realificationLieEquiv (E := E) (G := G)).complexStructure_apply_apply D
-
-/-- The complex structure commutes with the real tangent bracket in its first argument. -/
-@[simp]
-theorem realificationComplexStructure_lie_left (X Y : GroupLieAlgebra 𝓘(ℝ, E) G) :
-    ⁅realificationComplexStructure (E := E) (G := G) X, Y⁆ =
-      realificationComplexStructure (E := E) (G := G) ⁅X, Y⁆ := by
-  exact (realificationLieEquiv (E := E) (G := G)).complexStructure_lie_left X Y
-
-/-- The complex structure commutes with the real tangent bracket in its second argument. -/
-@[simp]
-theorem realificationComplexStructure_lie_right
-    (X Y : GroupLieAlgebra 𝓘(ℝ, E) G) :
-    ⁅X, realificationComplexStructure (E := E) (G := G) Y⁆ =
-      realificationComplexStructure (E := E) (G := G) ⁅X, Y⁆ := by
-  exact (realificationLieEquiv (E := E) (G := G)).complexStructure_lie_right X Y
+/-- The differential of a holomorphic homomorphism commutes with the transported complex
+structures on its source and target. -/
+theorem realificationLieEquiv_complexStructure_groupLieAlgebraMap (φ : G →* K)
+    (hφ : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) φ 1) (X : GroupLieAlgebra 𝓘(ℝ, E) G) :
+    φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F)
+        ((realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+          (M := GroupLieAlgebra 𝓘(ℂ, E) G) X) =
+      (realificationLieEquiv (E := F) (G := K)).toLinearEquiv.complexStructure
+        (M := GroupLieAlgebra 𝓘(ℂ, F) K)
+        (φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F) X) := by
+  apply (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure_naturality
+    (M := GroupLieAlgebra 𝓘(ℂ, E) G)
+    (realificationLieEquiv (E := F) (G := K)).toLinearEquiv
+    (φ.groupLieAlgebraMap 𝓘(ℂ, E) 𝓘(ℂ, F))
+    (φ.groupLieAlgebraMap 𝓘(ℝ, E) 𝓘(ℝ, F))
+  intro y
+  have h := (realificationLieEquiv_groupLieAlgebraMap φ hφ
+    (RestrictScalars.addEquiv ℝ ℂ _ y)).symm
+  rw [AddEquiv.symm_apply_apply] at h
+  convert h using 1 <;> rfl
 
 end Tangent
 
@@ -413,83 +296,74 @@ theorem realificationDerivationLieEquiv_symm_apply (D : LeftInvariantDerivation 
           (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D) := by
   rfl
 
-/-- Multiplication by `Complex.I` transported to the real left-invariant derivation algebra
-of a finite-dimensional smooth complex Lie group. -/
-def realificationDerivationComplexStructure : Module.End ℝ (LeftInvariantDerivation 𝓘(ℝ, E) G) :=
-  (realificationDerivationLieEquiv (E := E) (G := G)).complexStructure
-
-/-- The induced real endomorphism corresponds to multiplication by `Complex.I`. -/
-theorem realificationDerivationComplexStructure_realificationDerivationLieEquiv
-    (x : RestrictScalars ℝ ℂ (GroupLieAlgebra 𝓘(ℂ, E) G)) :
-    realificationDerivationComplexStructure (realificationDerivationLieEquiv (E := E) (G := G) x) =
-      realificationDerivationLieEquiv (E := E) (G := G)
-        ((RestrictScalars.addEquiv ℝ ℂ _).symm
-          (Complex.I • RestrictScalars.addEquiv ℝ ℂ _ x)) := by
-  exact (realificationDerivationLieEquiv (E := E) (G := G)).complexStructure_apply_image x
-
-/-- Evaluation at the identity intertwines the derivation and tangent complex structures. -/
-theorem leftInvariantDerivationLieEquivGroupLieAlgebra_realificationDerivationComplexStructure
+/-- Evaluation at the identity intertwines the transported complex structures on invariant
+derivations and tangent vectors. -/
+theorem realificationDerivationLieEquiv_complexStructure_evaluation
     (D : LeftInvariantDerivation 𝓘(ℝ, E) G) :
     leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
         (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G))
-        (realificationDerivationComplexStructure D) =
-      realificationComplexStructure
+        ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+          (M := GroupLieAlgebra 𝓘(ℂ, E) G) D) =
+      (realificationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+        (M := GroupLieAlgebra 𝓘(ℂ, E) G)
         (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
           (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D) := by
   let f := leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
     (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G))
-  let e := realificationDerivationLieEquiv (E := E) (G := G)
-  have he (x : RestrictScalars ℝ ℂ (GroupLieAlgebra 𝓘(ℂ, E) G)) :
-      f (e x) = realificationLieEquiv (E := E) (G := G) x := by
-    dsimp only [e, realificationDerivationLieEquiv]
-    rw [LieEquiv.trans_apply]
+  have he : ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.trans
+      f.toLinearEquiv) = (realificationLieEquiv (E := E) (G := G)).toLinearEquiv := by
+    ext x
+    simp only [LinearEquiv.trans_apply, LieEquiv.coe_toLinearEquiv,
+      realificationDerivationLieEquiv, LieEquiv.trans_apply]
     exact f.apply_symm_apply _
-  obtain ⟨x, rfl⟩ := e.surjective D
-  -- Normalize the equivalence coercion introduced by its surjectivity API.
-  change f (realificationDerivationComplexStructure
-      (realificationDerivationLieEquiv (E := E) (G := G) x)) =
-    realificationComplexStructure (f (e x))
-  rw [realificationDerivationComplexStructure_realificationDerivationLieEquiv, he, he,
-    realificationComplexStructure_realificationLieEquiv]
+  have h := (realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv
+    |>.complexStructure_trans_apply (M := GroupLieAlgebra 𝓘(ℂ, E) G) f.toLinearEquiv D
+  erw [he] at h
+  exact h.symm
 
-/-- The induced complex structure is multiplication by `Complex.I` in complex tangent
-coordinates. -/
--- Keep the complex structure opaque to simp so its algebraic bracket laws are normal forms.
-theorem realificationDerivationComplexStructure_apply (D : LeftInvariantDerivation 𝓘(ℝ, E) G) :
-    realificationDerivationComplexStructure D =
-      realificationDerivationLieEquiv (E := E) (G := G)
-        ((RestrictScalars.addEquiv ℝ ℂ _).symm
-          (Complex.I • RestrictScalars.addEquiv ℝ ℂ _
-            ((realificationDerivationLieEquiv (E := E) (G := G)).symm D))) := by
-  exact (realificationDerivationLieEquiv (E := E) (G := G)).complexStructure_apply D
+/-- The real adjoint action on invariant derivations commutes with their complex structure. -/
+theorem realificationDerivationLieEquiv_complexStructure_Ad
+    (g : G) (D : LeftInvariantDerivation 𝓘(ℝ, E) G) :
+    Ad (I := 𝓘(ℝ, E)) g
+        ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+          (M := GroupLieAlgebra 𝓘(ℂ, E) G) D) =
+      (realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+        (M := GroupLieAlgebra 𝓘(ℂ, E) G) (Ad (I := 𝓘(ℝ, E)) g D) := by
+  apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G))).toLinearEquiv
+      |>.injective
+  simpa only [LieEquiv.coe_toLinearEquiv,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
+    realificationDerivationLieEquiv_complexStructure_evaluation] using
+    (realificationLieEquiv_complexStructure_tangentAd g
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
+        (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D))
 
-/-- The induced endomorphism of real left-invariant derivations squares to minus the identity. -/
-@[simp]
-theorem realificationDerivationComplexStructure_sq :
-    (realificationDerivationComplexStructure (E := E) (G := G)) ^ 2 = -1 := by
-  exact (realificationDerivationLieEquiv (E := E) (G := G)).complexStructure_sq
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℝ F]
+  {K : Type*} [Group K] [TopologicalSpace K] [ChartedSpace F K] [LieGroup 𝓘(ℂ, F) ∞ K]
 
-/-- Two applications of the induced complex structure negate a real invariant derivation. -/
-@[simp]
-theorem realificationDerivationComplexStructure_apply_apply
+/-- The derivation Lie map of a real smooth homomorphism whose differential is complex-linear
+commutes with the transported complex structures. -/
+theorem realificationDerivationLieEquiv_complexStructure_lieMap
+    (φ : ContMDiffMonoidMorphism 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ G K)
+    (hφ : MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) φ 1)
     (D : LeftInvariantDerivation 𝓘(ℝ, E) G) :
-    realificationDerivationComplexStructure (realificationDerivationComplexStructure D) = -D := by
-  exact (realificationDerivationLieEquiv (E := E) (G := G)).complexStructure_apply_apply D
-
-/-- The complex structure commutes with the real derivation bracket in its first argument. -/
-@[simp]
-theorem realificationDerivationComplexStructure_lie_left (X Y : LeftInvariantDerivation 𝓘(ℝ, E) G) :
-    ⁅realificationDerivationComplexStructure (E := E) (G := G) X, Y⁆ =
-      realificationDerivationComplexStructure (E := E) (G := G) ⁅X, Y⁆ := by
-  exact (realificationDerivationLieEquiv (E := E) (G := G)).complexStructure_lie_left X Y
-
-/-- The complex structure commutes with the real derivation bracket in its second argument. -/
-@[simp]
-theorem realificationDerivationComplexStructure_lie_right
-    (X Y : LeftInvariantDerivation 𝓘(ℝ, E) G) :
-    ⁅X, realificationDerivationComplexStructure (E := E) (G := G) Y⁆ =
-      realificationDerivationComplexStructure (E := E) (G := G) ⁅X, Y⁆ := by
-  exact (realificationDerivationLieEquiv (E := E) (G := G)).complexStructure_lie_right X Y
+    lieMap φ
+        ((realificationDerivationLieEquiv (E := E) (G := G)).toLinearEquiv.complexStructure
+          (M := GroupLieAlgebra 𝓘(ℂ, E) G) D) =
+      (realificationDerivationLieEquiv (E := F) (G := K)).toLinearEquiv.complexStructure
+        (M := GroupLieAlgebra 𝓘(ℂ, F) K) (lieMap φ D) := by
+  apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, F)) (G := K)
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, F)) (n := ∞) (by simp) (1 : K))).toLinearEquiv
+      |>.injective
+  simp only [LieEquiv.coe_toLinearEquiv,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
+    realificationDerivationLieEquiv_complexStructure_evaluation]
+  have h := realificationLieEquiv_complexStructure_groupLieAlgebraMap φ.toMonoidHom hφ
+    (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
+      (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D)
+  simp only [MonoidHom.groupLieAlgebraMap_apply] at h
+  convert h using 1
 
 end Derivation
 
