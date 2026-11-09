@@ -114,6 +114,8 @@ function that does not need a derivative.
   `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half`: increment bounds
   `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
   `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
+* `TauCeti.norm_sub_le_three_mul_rpow_of_le_sub`: `‖x - y‖ ≤ 3 c (t - t') ^ β` from
+  `‖x‖ ≤ c t ^ β`, `‖y‖ ≤ c t' ^ β` and `t' ≤ t - t'`, for `0 ≤ β ≤ 1`.
 -/
 
 public section
@@ -528,5 +530,20 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half {F : Type*} [NormedAddCommGr
     _ ≤ 2 * (K * a ^ β) := by linarith [hrate a ha.le]
     _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
     _ = _ := by ring
+
+open Real in
+/-- If `‖x‖ ≤ c t ^ β` and `‖y‖ ≤ c t' ^ β` with `t' ≤ t - t'`, then `‖x - y‖ ≤ 3 c (t - t') ^ β`,
+since then `t ≤ 2 (t - t')`. -/
+theorem norm_sub_le_three_mul_rpow_of_le_sub {V : Type*} [SeminormedAddCommGroup V] {x y : V}
+    {c β t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht' : 0 ≤ t')
+    (hsmall : t' ≤ t - t') (h₁ : ‖x‖ ≤ c * t ^ β) (h₂ : ‖y‖ ≤ c * t' ^ β) :
+    ‖x - y‖ ≤ 3 * c * (t - t') ^ β := by
+  have h₃ : t ^ β ≤ 2 * (t - t') ^ β :=
+    rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
+  have h₄ : t' ^ β ≤ (t - t') ^ β := rpow_le_rpow ht' hsmall hβ₀
+  calc ‖x - y‖ ≤ ‖x‖ + ‖y‖ := norm_sub_le _ _
+    _ ≤ c * t ^ β + c * t' ^ β := add_le_add h₁ h₂
+    _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
+    _ = 3 * c * (t - t') ^ β := by ring
 
 end TauCeti
