@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Naturality
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
+public import TauCeti.Topology.Homotopy.Homotopic.Translation
 public import TauCeti.Topology.Instances.AddCircle.Cover
 
 /-!
@@ -17,7 +19,11 @@ The loop `t ↦ [t * p]` defines `AddCircle.fundamentalClass p` in the first int
 homology of `AddCircle p`. For positive `p`, a loop winding `n` times represents `n` times this
 class. Reduction from a circle of length `k * p` to one of length `p` therefore multiplies
 the circuit class by `k`. This keeps track of traversal multiplicity when closed curves are
-parametrized by circles of different lengths.
+parametrized by circles of different lengths. Likewise, the map `θ ↦ n • θ` of a positive-period
+circle multiplies the circuit class by `n`, and the rescaling homeomorphism between circles of
+nonzero periods `p` and `q` sends one circuit class to the other. Rotations of a circle are
+homotopic to the identity, so they act trivially on its singular homology; in particular the
+circuit class does not depend on the starting point of the circuit.
 
 We use Mathlib's `AddCircle.zsmulLoop` and winding-number isomorphism, and the degree-one
 Hurewicz map. The homological convention is the class of the loop itself. The ordered cross
@@ -92,6 +98,44 @@ theorem singularHomologyMap_coverMap_fundamentalClass [Fact (0 < q)] (k : ℤ)
     congr 1
     ring
   rw [heq, H₁AddEquivHomology_loopClass_zsmulLoop]
+
+/-- **Rotations act trivially on the singular homology of a circle**: the rotation `θ ↦ θ + a`
+is homotopic to the identity, since `AddCircle p` is path connected. -/
+@[simp]
+theorem singularHomologyMap_addRight (R : Type) [Ring R] (n : ℕ) (a : AddCircle p)
+    (z : ((singularChains R).obj (TopCat.of (AddCircle p))).homology n) :
+    ContinuousMap.singularHomologyMap R n (ContinuousMap.addRight a) z = z := by
+  rw [← ContinuousMap.singularHomologyMap_eq_of_homotopic R n
+    (PathConnectedSpace.joined 0 a).homotopic_id_addRight, ContinuousMap.singularHomologyMap_id]
+
+/-- The map `θ ↦ n • θ` of a positive-period circle multiplies its circuit class by `n`. -/
+@[simp]
+theorem singularHomologyMap_zsmul_fundamentalClass [Fact (0 < p)] (n : ℤ) :
+    ContinuousMap.singularHomologyMap ℤ 1 ⟨fun θ : AddCircle p ↦ n • θ, continuous_zsmul n⟩
+      (fundamentalClass p) = n • fundamentalClass p := by
+  rw [← H₁AddEquivHomology_loopClass_zsmulLoop, fundamentalClass_def,
+    ContinuousMap.singularHomologyMap_loopClass]
+  congr 1
+  apply loopClass_eq_of_apply_eq
+  intro t
+  rw [Path.map_coe, Function.comp_apply, zsmulLoop_apply, zsmulLoop_apply]
+  simp
+
+/-- The rescaling homeomorphism `ℝ / pℤ ≃ ℝ / qℤ`, `[t] ↦ [t q / p]`, sends the circuit class of
+`AddCircle p` to that of `AddCircle q`. -/
+@[simp]
+theorem singularHomologyMap_homeomorphAddCircle_fundamentalClass (hp : p ≠ 0) (hq : q ≠ 0) :
+    ContinuousMap.singularHomologyMap ℤ 1 (homeomorphAddCircle p q hp hq : C(_, _))
+      (fundamentalClass p) = fundamentalClass q := by
+  rw [fundamentalClass_def, ContinuousMap.singularHomologyMap_loopClass, fundamentalClass_def]
+  congr 1
+  apply loopClass_eq_of_apply_eq
+  intro t
+  rw [Path.map_coe, Function.comp_apply, zsmulLoop_apply, zsmulLoop_apply]
+  simp only [one_zsmul, coe_zero, add_zero, ContinuousMap.coe_ofClass,
+    homeomorphAddCircle_apply_mk]
+  congr 1
+  field_simp
 
 end AddCircle
 
