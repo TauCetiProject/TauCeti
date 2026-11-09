@@ -115,16 +115,10 @@ theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
     refine ⟨?_, fun n ↦ ?_⟩
     · rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
       rintro ⟨m, x⟩ h
-      have hx : x = 0 := by
-        have h' := congrArg g' h
-        simp only [Φ, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.fst_apply,
-          LinearMap.snd_apply, map_add, ht, map_zero, hfg'.apply_apply_eq_zero, zero_add] at h'
-        rw [← hu x, ← map_smul, h', map_zero]
-      subst hx
-      simp only [Φ, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.fst_apply,
-        LinearMap.snd_apply, map_zero, add_zero] at h
-      rw [hf' (h.trans f'.map_zero.symm)]
-      rfl
+      have hx : (Nat.card G : R) • x = 0 := by
+        simpa [Φ, ht, hfg'.apply_apply_eq_zero] using congrArg g' h
+      obtain rfl : x = 0 := by rw [← hu x, ← map_smul, hx, map_zero]
+      simpa [Φ, map_eq_zero_iff f' hf'] using h
     · obtain ⟨m, hm⟩ := (hfg' (n - t (u (g' n)))).mp (by rw [map_sub, ht, hu, sub_self])
       exact ⟨(m, u (g' n)), by simp [Φ, hm]⟩
   exact ⟨(LinearEquiv.ofBijective Φ hΦ).symm ≪≫ₗ (TensorProduct.prodLeft _ _ _ _ _).symm⟩

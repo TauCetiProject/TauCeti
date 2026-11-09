@@ -39,6 +39,13 @@ that interval. Its smoothness in convex open subsets is developed in
 `TauCeti/Geometry/Manifold/ContMDiff/Subtype.lean`, and its Riemannian length in
 `TauCeti/Geometry/Manifold/Riemannian/Convex.lean`.
 
+In a linear ordered field, Mathlib identifies the segment between `a` and `b` with the unordered
+interval `[[a, b]]` (`segment_eq_uIcc`) and places the affine line map at times in `[0, 1]` on that
+segment (`lineMap_mem_segment`). The resulting membership statement is recorded here in the
+explicit affine form `t ↦ (b - a) * t + a`, which is how the oriented time reparametrization of
+the cylinder homotopy operator over `[[a, b]]` is written in
+`TauCeti/Analysis/Distribution/TestFunction/CylinderHomotopy.lean`.
+
 The affine half-open segment result is also recorded here: in an additive commutative group with a
 module structure over a linear ordered field, it identifies the image of a scalar interval under
 an affine parametrization with a segment whose terminal endpoint is removed.
@@ -46,6 +53,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
 ## Main results
 
 * `Set.convexSegment` — an affine segment in a convex set, clamped to `[0, 1]`.
+* `Set.sub_mul_add_mem_uIcc` — `(b - a) * t + a ∈ [[a, b]]` for `t ∈ [0, 1]`, in a linear
+  ordered field.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
@@ -124,6 +133,18 @@ theorem convexSegment_one (hs : Convex 𝕜 s) (x y : s) :
 
 end ClampedSegment
 
+section UIcc
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+
+/-- The affine map `t ↦ (b - a) * t + a` sends `[0, 1]` into the unordered interval `[[a, b]]`,
+whichever of `a` and `b` is larger. -/
+theorem sub_mul_add_mem_uIcc {a b t : 𝕜} (ht : t ∈ Icc (0 : 𝕜) 1) : (b - a) * t + a ∈ uIcc a b := by
+  simpa [← segment_eq_uIcc, AffineMap.lineMap_apply_ring', mul_comm] using
+    lineMap_mem_segment 𝕜 a b ht
+
+end UIcc
+
 end Set
 
 namespace TauCeti
@@ -172,6 +193,20 @@ theorem eq_of_mem_segment_zero_left_of_norm_eq {m₁ m₂ : E} (h₁ : m₁ ∈ 
     rw [h₁, h₂]
   · exact norm_injOn_ray_right hw (mem_segment_zero_left_iff_sameRay_and_norm_le.mp h₁).1
       (mem_segment_zero_left_iff_sameRay_and_norm_le.mp h₂).1 h
+
+/-- The broken path from `x` to `y'` through the meeting point of the segments `[x, x']` and
+`[y, y']` at time `t` is at most as long as the two pieces:
+`‖x - y'‖ ≤ t ‖x - x'‖ + (1 - t) ‖y - y'‖`. -/
+theorem norm_sub_le_of_smul_add_smul_eq {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : 0 ≤ 1 - t) {x x' y y' : E}
+    (he : (1 - t) • x + t • x' = (1 - t) • y + t • y') :
+    ‖x - y'‖ ≤ t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
+  have h₁ : x - ((1 - t) • x + t • x') = t • (x - x') := by module
+  have h₂ : ((1 - t) • x + t • x') - y' = (1 - t) • (y - y') := by rw [he]; module
+  calc ‖x - y'‖ = ‖(x - ((1 - t) • x + t • x')) + (((1 - t) • x + t • x') - y')‖ := by
+        rw [sub_add_sub_cancel]
+    _ ≤ ‖x - ((1 - t) • x + t • x')‖ + ‖((1 - t) • x + t • x') - y'‖ := norm_add_le _ _
+    _ = t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
+      rw [h₁, h₂, norm_smul, norm_smul, Real.norm_of_nonneg ht₀, Real.norm_of_nonneg ht₁]
 
 end Normed
 

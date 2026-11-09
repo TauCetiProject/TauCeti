@@ -56,8 +56,10 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `C^m`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
+* `TauCeti.conjWirtingerDeriv_const_smul`: `\bar∂` commutes with complex scalar multiplication.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
+* `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
@@ -226,6 +228,13 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
   simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
   module
 
+/-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
+theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
+    conjWirtingerDeriv (c • g) x = c • conjWirtingerDeriv g x := by
+  ext v
+  simp only [conjWirtingerDeriv_apply, fderiv_const_smul_field c, Pi.smul_apply, smul_apply]
+  module
+
 /-- The conjugate Wirtinger derivative in the direction `v` is the one-variable conjugate
 Wirtinger derivative `∂/∂(conj t)` of the restriction `t ↦ g (x + t • v)` to the complex line
 through `x` in the direction `v`. -/
@@ -265,6 +274,14 @@ theorem _root_.DifferentiableAt.wirtingerDeriv_eq_fderiv {g : V → W} {x : V}
   rw [wirtingerDeriv_apply, hg.fderiv_restrictScalars ℝ]
   simp only [ContinuousLinearMap.coe_restrictScalars', map_smul, smul_smul, I_mul_I]
   module
+
+/-- The Wirtinger derivative of the identity is the identity: `∂z = 1`. -/
+theorem wirtingerDeriv_id : wirtingerDeriv (id : V → V) x = ContinuousLinearMap.id ℂ V := by
+  rw [(differentiableAt_id (𝕜 := ℂ)).wirtingerDeriv_eq_fderiv, fderiv_id]
+
+/-- The conjugate Wirtinger derivative of the identity vanishes: `\bar∂z = 0`. -/
+theorem conjWirtingerDeriv_id : conjWirtingerDeriv (id : V → V) x = 0 :=
+  (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_eq_zero
 
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
@@ -330,6 +347,14 @@ theorem conjWirtingerDeriv_eq_sum_smul {f : V → W} {x : V} {ι : Type*} {s : F
     ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   module
+
+/-- The conjugate Wirtinger derivative of a finite sum of real-differentiable functions is the sum
+of their conjugate Wirtinger derivatives. -/
+theorem conjWirtingerDeriv_fun_sum {ι : Type*} {s : Finset ι} {g : ι → V → W} {x : V}
+    (h : ∀ i ∈ s, DifferentiableAt ℝ (g i) x) :
+    conjWirtingerDeriv (fun y ↦ ∑ i ∈ s, g i y) x = ∑ i ∈ s, conjWirtingerDeriv (g i) x := by
+  simpa using conjWirtingerDeriv_eq_sum_smul (c := fun _ ↦ (1 : ℂ)) (g := g)
+    ((fderiv_fun_sum h).trans (by simp))
 
 section Mul
 
