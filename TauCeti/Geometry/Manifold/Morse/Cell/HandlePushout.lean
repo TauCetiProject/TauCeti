@@ -101,9 +101,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
         j (Sigma.desc χ) ∧
       (∀ i, IsClosedEmbedding (α i)) ∧ Pairwise (Disjoint on fun i ↦ range (α i)) ∧
       (∀ i s, f (α i s : M) = c - ε) ∧
-      (∀ i w, f (χ i w : M) = c + ε ↔
-        ‖((w.2 : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin (n - k i))) 1)).down :
-          EuclideanSpace ℝ (Fin (n - k i)))‖ = 1) ∧
+      (∀ i w, f (χ i w : M) = c + ε ↔ w.2 ∈ range (TopCat.diskBoundaryInclusion (n - k i))) ∧
       ∀ x, (∀ i, x ∉ range (α i)) → (f (j x : M) = c + ε ↔ f (x : M) = c - ε) := by
   -- The proof builds the three maps of the square from `e` and `Φ`, checks the hypotheses of
   -- `CategoryTheory.IsPushout.of_isClosedEmbedding` for the closed cover of `{f ≤ c + ε}` by
@@ -187,7 +185,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     have hw : Φ (χ i w) ∈ H i := by rw [hχ, Φ.apply_symm_apply]; exact ((e i).symm w).2
     have hwi (hw : Φ (χ i w) ∈ H i) : (⟨Φ (χ i w), hw⟩ : H i) = (e i).symm w :=
       Subtype.ext ((congrArg Φ (hχ i w)).trans (Φ.apply_symm_apply _))
-    rw [hΦtop]
+    rw [hΦtop, mem_range_diskBoundaryInclusion_iff]
     refine ⟨fun h ↦ ?_, fun h ↦ ⟨fun l hl ↦ ?_, fun h' ↦ absurd (mem_iUnion.2 ⟨i, hw⟩) h'⟩⟩
     · have := h.1 i hw
       rwa [hwi hw, Homeomorph.apply_symm_apply] at this
@@ -237,9 +235,7 @@ theorem exists_isPushout_sublevel_handles [Finite ι] (hfs : ContMDiff I 𝓘(�
         j (Sigma.desc χ) ∧
       (∀ i, IsClosedEmbedding (α i)) ∧ Pairwise (Disjoint on fun i ↦ range (α i)) ∧
       (∀ i s, f (α i s : M) = c - ε) ∧
-      (∀ i w, f (χ i w : M) = c + ε ↔
-        ‖((w.2 : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin (n - k i))) 1)).down :
-          EuclideanSpace ℝ (Fin (n - k i)))‖ = 1) ∧
+      (∀ i w, f (χ i w : M) = c + ε ↔ w.2 ∈ range (TopCat.diskBoundaryInclusion (n - k i))) ∧
       ∀ x, (∀ i, x ∉ range (α i)) → (f (j x : M) = c + ε ↔ f (x : M) = c - ε) := by
   obtain ⟨H, e, Φ, hH, hge, he, -, hΦ, hΦtop⟩ :=
     exists_diffeomorph_sublevel_eq_union_handles hfs ψ hψ k hε hball hf hcompact hcrit
@@ -286,10 +282,8 @@ theorem IsMorse.exists_isPushout_sublevel_handles (hf : IsMorse I f) {δ : ℝ} 
           j (Sigma.desc χ) ∧
         (∀ p, IsClosedEmbedding (α p)) ∧ Pairwise (Disjoint on fun p ↦ range (α p)) ∧
         (∀ p s, f (α p s : M) = c - ε) ∧
-        (∀ p w, f (χ p w : M) = c + ε ↔
-          ‖((w.2 : ULift.{u} (closedBall (0 : EuclideanSpace ℝ
-            (Fin (Module.finrank ℝ E - manifoldMorseIndex I f p))) 1)).down :
-              EuclideanSpace ℝ (Fin (Module.finrank ℝ E - manifoldMorseIndex I f p)))‖ = 1) ∧
+        (∀ p w, f (χ p w : M) = c + ε ↔ w.2 ∈ range
+          (TopCat.diskBoundaryInclusion (Module.finrank ℝ E - manifoldMorseIndex I f p))) ∧
         ∀ x, (∀ p, x ∉ range (α p)) → (f (j x : M) = c + ε ↔ f (x : M) = c - ε) := by
   obtain ⟨ε, hε, hεδ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ Filter.univ_mem
