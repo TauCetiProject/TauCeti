@@ -130,9 +130,8 @@ theorem nodeBaseRestriction_nodeFstCoordinate :
 @[simp]
 theorem nodeBaseRestriction_nodeSndCoordinate :
     nodeBaseRestriction b (nodeSndCoordinate b) = 0 := by
-  apply toFilterGerm_nhds_injective b
-  rw [toFilterGerm_nodeBaseRestriction b (toFilterGerm_nodeSndCoordinate b), map_zero]
-  rfl
+  simp only [nodeBaseRestriction, nodeSndCoordinate, RingHom.comp_apply]
+  rw [restrictHyperplane_hyperplaneCoordinateGerm, map_zero]
 
 /-- A germ vanishes on the zero section exactly when it belongs to `(x,y)`. -/
 theorem ker_nodeBaseRestriction :
