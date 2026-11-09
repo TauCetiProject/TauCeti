@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -93,7 +94,9 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 * `TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`: comparison with the vector-space
   construction.
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
-  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`.
+  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_poissonBracket`: the Poisson bracket of
+  `C^(n+1)` functions is `C^n`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
@@ -506,6 +509,14 @@ theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
     σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
   rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
 
+/-- **Regularity of the Poisson bracket.** For a nondegenerate two-form on a finite-dimensional
+manifold, the Poisson bracket of two `C^(n+1)` functions is `C^n`, for `n ≤ ∞`. -/
+theorem contMDiff_poissonBracket {n : WithTop ℕ∞} (hn : n ≤ ∞) {f g : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) (hg : ContMDiff I 𝓘(ℝ) (n + 1) g) :
+    ContMDiff I 𝓘(ℝ) n (σ.poissonBracket f g) := by
+  rw [funext (h.poissonBracket_eq_mvfderiv f g)]
+  exact (hf.contMDiff_mvfderiv_apply le_rfl).comp (h.contMDiff_hamiltonianVectorField hn hg)
+
 end IsNondegenerate
 
 /-! ### Pullbacks and products -/
@@ -616,7 +627,7 @@ theorem hamiltonianVectorField_constSmooth (omegaForm : SymplecticForm V) (f : V
   -- The tangent spaces of the model space are `V` itself, through the identity map
   -- `NormedSpace.fromTangentSpace`.
   refine (fromTangentSpace_constSmooth_apply omegaForm x _ v).trans ?_
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
+  rw [TauCeti.mvfderiv_eq_fderiv_apply]
   exact omegaForm.apply_hamiltonianVectorField f x _
 
 /-- For a constant symplectic form on a vector space, the Poisson bracket of the manifold theory

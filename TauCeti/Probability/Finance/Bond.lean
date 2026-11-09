@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-public import TauCeti.Probability.Finance.SimpleStrategy
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Topology.Order.ProjIcc
