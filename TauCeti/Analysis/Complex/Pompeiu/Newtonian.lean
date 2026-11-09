@@ -46,7 +46,7 @@ theorem pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) 
         Complex.I * (fderiv ℝ planarNewtonianKernel z Complex.I : ℂ)) := by
   have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.mpr hz
   apply Complex.ext <;>
-    simp [fderiv_planarNewtonianKernel_apply hz, Complex.normSq_eq_norm_sq] <;>
+    simp [fderiv_planarNewtonianKernel_apply, Complex.normSq_eq_norm_sq] <;>
     field_simp [Real.pi_ne_zero, hn] <;> simp [pow_two]
 
 end TauCeti
