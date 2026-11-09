@@ -367,6 +367,7 @@ theorem isEmpty_equiv_monomialGroupRep_negLineCoordinate
 
 /-! ### Restriction to the even signed monomials in odd dimension -/
 
+omit [FiniteDimensional F V] in
 /-- **In odd dimension the spinor representation stays irreducible on the even signed
 monomials.** These span the even Clifford subalgebra
 (`CliffordAlgebra.span_monomialGroupEven_eq_even`), whose Fock action already realizes every
