@@ -175,12 +175,14 @@ variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommG
 
 /-- **An equivalence of root pairings carries positive roots to positive roots**: the positive
 roots of the transported base `b.map e` are the images of the positive roots of `b`. -/
+@[simp]
 theorem posRoots_map (e : P.Equiv P₂) : posRoots P₂ (b.map e) = e.indexEquiv '' posRoots P b := by
   ext j
   rw [Equiv.image_eq_preimage_symm, mem_preimage, mem_posRoots, mem_posRoots,
     ← b.isPos_map_iff e, Equiv.apply_symm_apply]
 
 /-- An equivalence of root pairings carries negative roots to negative roots. -/
+@[simp]
 theorem negRoots_map (e : P.Equiv P₂) : negRoots P₂ (b.map e) = e.indexEquiv '' negRoots P b := by
   rw [negRoots_eq_compl, negRoots_eq_compl, posRoots_map, Equiv.image_compl]
 

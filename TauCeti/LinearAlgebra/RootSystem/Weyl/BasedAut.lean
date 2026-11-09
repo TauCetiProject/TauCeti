@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
@@ -36,15 +37,16 @@ crystallographic pairings over a characteristic-zero domain, as the stabilizer o
 positive roots. Over a linearly ordered coefficient ring it is also the stabilizer of the open
 dominant chamber.
 
-When the roots span, a based automorphism is determined by the permutation it induces on the
-simple roots, and every permutation preserving the Cartan matrix arises
-(`RootPairing.Base.existsUnique_basedAut_of_cartanMatrix`): the based automorphisms are the
-symmetries of the oriented Dynkin diagram, so `Aut(P) ≃ W ⋊ Aut(Dynkin diagram)`.
+For a root system (roots and coroots both spanning), every permutation of the simple roots
+preserving the Cartan matrix extends uniquely to a based automorphism
+(`RootPairing.Base.existsUnique_basedAut_of_cartanMatrix`).
 
 ## Main definitions
 
 * `RootPairing.Base.basedAut`: the automorphisms of a root pairing carrying the simple roots of a
   base onto themselves.
+* `RootPairing.Base.conjWeylGroup`: the action of the based automorphisms on the Weyl group by
+  conjugation, `δ • w = δ w δ⁻¹` (`RootPairing.Base.coe_conjWeylGroup_apply`).
 * `RootPairing.Base.semidirectProductMulEquiv`: the multiplicative equivalence
   `W ⋊ Aut(P, b) ≃* Aut(P)`, sending `(w, δ)` to `w δ`.
 
@@ -59,9 +61,16 @@ symmetries of the oriented Dynkin diagram, so `Aut(P) ≃ W ⋊ Aut(Dynkin diagr
   coefficient ring, an automorphism is based exactly when it preserves the open dominant chamber.
 * `RootPairing.Base.isComplement'_weylGroup_basedAut`: **the Weyl group complements the based
   automorphisms**.
-* `RootPairing.Base.existsUnique_basedAut_of_cartanMatrix`: for a root system, the based
-  automorphisms are exactly the extensions of the symmetries of the Cartan matrix, each
-  symmetry extending uniquely.
+* `RootPairing.Base.existsUnique_basedAut_of_cartanMatrix`: for a root system, each symmetry of
+  the Cartan matrix extends uniquely to a based automorphism.
+* `RootPairing.Base.coe_mul_left`: the product formula `(w, δ) (v, η) = (w δ v δ⁻¹, δ η)` in the
+  semidirect product.
+* `RootPairing.Base.semidirectProductMulEquiv_symm_mul` and
+  `RootPairing.Base.coe_semidirectProductMulEquiv_symm_right`: the factors of `w δ` are `w` and
+  `δ`, and the based factor of `g` is `w⁻¹ g` for its Weyl factor `w`.
+* `RootPairing.Base.root_indexEquiv_semidirectProductMulEquiv` and
+  `RootPairing.Base.coroot'_indexEquiv_semidirectProductMulEquiv`: the roots and coroots are
+  transported by the based factor and then by the Weyl factor.
 * `RootPairing.Base.map_semidirectProductMulEquiv` and
   `RootPairing.Base.map_semidirectProductMulEquiv_symm_left`: the Weyl factor of an automorphism
   `g` is the Weyl-group element carrying `b` to `b.map g`.
@@ -149,13 +158,36 @@ theorem mem_basedAut_iff_smul_openDominantChamber [LinearOrder R] [IsStrictOrder
   -- it is the identity.
   obtain ⟨w, hw, -⟩ := b.existsUnique_map_eq (b.map g)
   have hwC : w • openWeylChamber P b 1 = openWeylChamber P b 1 := by
-    rw [openWeylChamber_one, ← Set.image_smul]
-    simp_rw [Subgroup.smul_def]
-    rw [Set.image_smul, smul_openDominantChamber, hw, ← smul_openDominantChamber, h]
+    -- A Weyl-group element acts on sets of weights through its coercion to `P.Aut`, by definition
+    -- of the subgroup action.
+    change (w : P.Aut) • openWeylChamber P b 1 = openWeylChamber P b 1
+    rw [openWeylChamber_one, smul_openDominantChamber, hw, ← smul_openDominantChamber, h]
   obtain rfl := eq_one_of_smul_openWeylChamber_eq P b hwC
   rw [mem_basedAut_iff_map_eq, ← hw, OneMemClass.coe_one, Base.map_one]
 
 end Chamber
+
+section Conj
+
+/-- The action of the based automorphisms on the normal subgroup `W` by conjugation, the action
+defining the semidirect product `RootPairing.Base.semidirectProductMulEquiv`. -/
+@[expose] noncomputable def conjWeylGroup (b : P.Base) : b.basedAut →* MulAut P.weylGroup :=
+  P.weylGroup.normalizerMonoidHom.comp
+    (Subgroup.inclusion (P.weylGroup.normalizer_eq_top ▸ le_top))
+
+/-- A based automorphism `δ` acts on the Weyl group by `w ↦ δ w δ⁻¹`. -/
+@[simp]
+theorem coe_conjWeylGroup_apply (δ : b.basedAut) (w : P.weylGroup) :
+    (b.conjWeylGroup δ w : P.Aut) = δ * w * (δ : P.Aut)⁻¹ :=
+  rfl
+
+/-- **The product formula of the semidirect product**: `(w, δ) (v, η)` has Weyl factor
+`w δ v δ⁻¹`, and based factor `δ η` by `SemidirectProduct.mul_right`. -/
+theorem coe_mul_left (x y : P.weylGroup ⋊[b.conjWeylGroup] b.basedAut) :
+    ((x * y).left : P.Aut) = x.left * (x.right * y.left * (x.right : P.Aut)⁻¹) := by
+  rw [SemidirectProduct.mul_left, Subgroup.coe_mul, coe_conjWeylGroup_apply]
+
+end Conj
 
 variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 
@@ -178,10 +210,10 @@ theorem isComplement'_weylGroup_basedAut (b : P.Base) :
     rw [SetLike.mem_coe, mem_basedAut_iff_map_eq, Base.map_mul, ← hw, ← Base.map_mul,
       inv_mul_cancel, Base.map_one]
 
-/-- **The based automorphisms are the symmetries of the Cartan matrix.** For a finite reduced
-crystallographic root system over a characteristic-zero domain, every permutation `σ` of the
-simple roots of `b` preserving the Cartan matrix is the action on the simple roots of exactly one
-based automorphism. -/
+/-- **Every symmetry of the Cartan matrix extends uniquely to a based automorphism.** For a finite
+reduced crystallographic root system over a characteristic-zero domain, every permutation `σ` of
+the simple roots of `b` preserving the Cartan matrix is the action on the simple roots of exactly
+one based automorphism. -/
 theorem existsUnique_basedAut_of_cartanMatrix [P.IsRootSystem] (b : P.Base)
     (σ : Equiv.Perm b.support) (hσ : ∀ i j, b.cartanMatrix (σ i) (σ j) = b.cartanMatrix i j) :
     ∃! g : b.basedAut, ∀ i : b.support, (g : P.Aut).indexEquiv i = σ i := by
@@ -201,21 +233,48 @@ theorem existsUnique_basedAut_of_cartanMatrix [P.IsRootSystem] (b : P.Base)
 automorphisms**, the based automorphisms acting on the normal subgroup `W` by conjugation. The
 equivalence sends `(w, δ)` to `w δ`. -/
 noncomputable def semidirectProductMulEquiv (b : P.Base) :
-    P.weylGroup ⋊[P.weylGroup.normalizerMonoidHom.comp
-        (Subgroup.inclusion (P.weylGroup.normalizer_eq_top ▸ le_top))] b.basedAut ≃* P.Aut :=
+    P.weylGroup ⋊[b.conjWeylGroup] b.basedAut ≃* P.Aut :=
   SemidirectProduct.mulEquivSubgroup (isComplement'_weylGroup_basedAut b)
 
 /-- The equivalence `W ⋊ Aut(P, b) ≃* Aut(P)` multiplies the two factors. -/
 @[simp]
 theorem semidirectProductMulEquiv_apply (b : P.Base) (x) :
-    b.semidirectProductMulEquiv x = (x.left : P.Aut) * x.right := by
-  simp [semidirectProductMulEquiv]
+    b.semidirectProductMulEquiv x = (x.left : P.Aut) * x.right :=
+  SemidirectProduct.mulEquivSubgroup_apply _ x
 
 /-- The inverse equivalence splits an automorphism as the product of its two factors. -/
 theorem semidirectProductMulEquiv_symm_left_mul_right (b : P.Base) (g : P.Aut) :
     ((b.semidirectProductMulEquiv.symm g).left : P.Aut) * (b.semidirectProductMulEquiv.symm g).right
       = g := by
   rw [← semidirectProductMulEquiv_apply, MulEquiv.apply_symm_apply]
+
+/-- **The factors of `w δ` are `w` and `δ`**: the decomposition into a Weyl-group element and a
+based automorphism is unique.
+
+Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites the product `w δ` in `P.Aut`
+first. -/
+theorem semidirectProductMulEquiv_symm_mul (w : P.weylGroup) (δ : b.basedAut) :
+    b.semidirectProductMulEquiv.symm ((w : P.Aut) * δ) = ⟨w, δ⟩ := by
+  rw [MulEquiv.symm_apply_eq, semidirectProductMulEquiv_apply]
+
+/-- The based factor of an automorphism `g` is `w⁻¹ g`, for `w` its Weyl factor. -/
+theorem coe_semidirectProductMulEquiv_symm_right (b : P.Base) (g : P.Aut) :
+    ((b.semidirectProductMulEquiv.symm g).right : P.Aut) =
+      ((b.semidirectProductMulEquiv.symm g).left : P.Aut)⁻¹ * g :=
+  eq_inv_mul_of_mul_eq (semidirectProductMulEquiv_symm_left_mul_right b g)
+
+/-- **Roots are transported by the based factor, then by the Weyl factor.** -/
+theorem root_indexEquiv_semidirectProductMulEquiv (b : P.Base) (x) (i : ι) :
+    P.root ((b.semidirectProductMulEquiv x).indexEquiv i) =
+      (x.left : P.Aut) • (x.right : P.Aut) • P.root i := by
+  rw [Equiv.root_indexEquiv_eq_smul, semidirectProductMulEquiv_apply, mul_smul]
+
+/-- **Coroots are transported by the based factor, then by the Weyl factor**: the coroot of the
+image root pairs with the image weight as the original coroot pairs with the original weight. -/
+theorem coroot'_indexEquiv_semidirectProductMulEquiv (b : P.Base) (x) (i : ι) (y : M) :
+    P.coroot' ((b.semidirectProductMulEquiv x).indexEquiv i)
+      ((x.left : P.Aut) • (x.right : P.Aut) • y) = P.coroot' i y := by
+  rw [← mul_smul, ← semidirectProductMulEquiv_apply, coroot'_smul, _root_.Equiv.symm_apply_apply]
 
 /-- **The equivalence changes the base through its Weyl factor alone**: the based factor fixes
 `b`. -/

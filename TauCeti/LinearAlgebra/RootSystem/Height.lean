@@ -100,6 +100,7 @@ theorem map_eq_of_forall_mem_support {b : P.Base} {u : P.Aut}
 /-- **Heights are transported along equivalences of root pairings.** The image of a root under an
 equivalence `e` has, relative to the transported base `b.map e`, the height of the original root
 relative to `b`. -/
+@[simp]
 theorem height_map [CharZero R] (b : P.Base) (e : P.Equiv P₂) (i : ι) :
     (b.map e).height (e.indexEquiv i) = b.height i := by
   classical
