@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
-public import TauCeti.Topology.CellularSet
+public import TauCeti.Topology.CellularSet.Basic
 
 /-!
 # Preimages of closed hemispheres under a map with a cellular inverse set
