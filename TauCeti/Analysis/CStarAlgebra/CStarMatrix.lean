@@ -34,8 +34,6 @@ Hilbert C⋆-module.
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
   ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
-* `CStarMatrix.sum_star_mul_mul_eq_dotProduct`: the quadratic form of a C⋆-matrix as a
-  matrix-vector product.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
@@ -77,12 +75,6 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
-/-- The quadratic form of a C⋆-matrix, written as a matrix-vector product. -/
-lemma sum_star_mul_mul_eq_dotProduct [Fintype n] [NonUnitalSemiring A] [Star A]
-    (M : CStarMatrix n n A) (x y : n → A) :
-    ∑ i, ∑ j, star (x i) * M i j * y j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ y) := by
-  simp [dotProduct, mulVec, Finset.mul_sum, mul_assoc]
-
 end Algebraic
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A]
@@ -92,7 +84,9 @@ theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum {M : CStarMatrix n n A}
     (hM : ∀ x : n → A, IsSelfAdjoint (∑ i, ∑ j, star (x i) * M i j * x j)) :
     IsSelfAdjoint M := by
   classical
-  simp_rw [sum_star_mul_mul_eq_dotProduct] at hM
+  replace hM (x : n → A) : IsSelfAdjoint (star x ⬝ᵥ (ofMatrix.symm M *ᵥ x)) := by
+    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
+    exact hM x
   -- Polarization: the sesquilinear form `P x y` satisfies `star (P x y) = P y x`.
   have hP (x y : n → A) :
       star (star x ⬝ᵥ (ofMatrix.symm M *ᵥ y)) = star y ⬝ᵥ (ofMatrix.symm M *ᵥ x) := by
@@ -135,13 +129,17 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
       star x ⬝ᵥ (ofMatrix.symm (star R * R) *ᵥ x) =
         star (ofMatrix.symm R *ᵥ x) ⬝ᵥ (ofMatrix.symm R *ᵥ x) := by
     rw [ofMatrix_symm_mul, ofMatrix_symm_star, ← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
-  simp_rw [sum_star_mul_mul_eq_dotProduct]
+  have hform (x : n → A) :
+      ∑ i, ∑ j, star (x i) * M i j * x j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ x) := by
+    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
+    rfl
+  simp_rw [hform]
   refine ⟨fun hM x => ?_, fun hQ => ?_⟩
   · obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
     rw [key]
     exact dotProduct_star_self_nonneg _
   have hsa : IsSelfAdjoint M := isSelfAdjoint_of_forall_isSelfAdjoint_sum fun x => by
-    rw [sum_star_mul_mul_eq_dotProduct]
+    rw [hform]
     exact .of_nonneg (hQ x)
   -- It remains to show that the negative part `N` of `M` vanishes.
   refine CStarAlgebra.nonneg_iff_isSelfAdjoint_and_negPart_eq_zero.mpr ⟨hsa, ?_⟩
