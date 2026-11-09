@@ -18,6 +18,10 @@ computed in charts, insensitive to the set away from the base point.
 
 `ContinuousLinearMap.extDerivWithin_pullback` also proves naturality under a fixed linear map
 using only within-set differentiability, with no second derivative or interior-density hypothesis.
+Its global form `ContinuousLinearMap.extDeriv_pullback` holds at each point where the form is
+differentiable, so pullback along a continuous linear map preserves closedness
+(`ContinuousLinearMap.extDeriv_pullback_eq_zero`), and it preserves regularity on the preimage of
+the domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`).
 `ContinuousLinearMap.extDerivWithin_compContinuousAlternatingMap` is the corresponding naturality
 in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDerivWithin_smul` to
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
@@ -194,6 +198,36 @@ theorem extDerivWithin_pullback {E' : Type*} [NormedAddCommGroup E'] [NormedSpac
   apply Finset.sum_congr rfl
   intro i _
   rfl
+
+/-- Exterior differentiation commutes with pullback along a continuous linear map `A`, for a form
+differentiable at `A x`. -/
+theorem extDeriv_pullback {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    (A : E →L[𝕜] E') {ω : E' → E' [⋀^Fin n]→L[𝕜] F} {x : E}
+    (hω : DifferentiableAt 𝕜 ω (A x)) :
+    extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x =
+      (extDeriv ω (A x)).compContinuousLinearMap A := by
+  rw [← extDerivWithin_univ, A.extDerivWithin_pullback uniqueDiffWithinAt_univ
+    hω.differentiableWithinAt (mapsTo_univ _ _), extDerivWithin_univ]
+
+/-- Pulling back along a continuous linear map `A` a form that is differentiable and closed at
+`A x` gives a form closed at `x`. -/
+theorem extDeriv_pullback_eq_zero {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    (A : E →L[𝕜] E') {ω : E' → E' [⋀^Fin n]→L[𝕜] F} {x : E}
+    (hω : DifferentiableAt 𝕜 ω (A x)) (hdω : extDeriv ω (A x) = 0) :
+    extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x = 0 := by
+  rw [A.extDeriv_pullback hω, hdω]
+  ext v
+  simp
+
+/-- Pulling a `C^r` form on `t` back along a continuous linear map `A` gives a `C^r` form on
+`A ⁻¹' t`. -/
+theorem _root_.TauCeti.contDiffOn_pullback_continuousLinearMap {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {r : WithTop ℕ∞}
+    {ω : E' → E' [⋀^Fin n]→L[𝕜] F} {t : Set E'} (hω : ContDiffOn 𝕜 r ω t) (A : E →L[𝕜] E') :
+    ContDiffOn 𝕜 r (fun x ↦ (ω (A x)).compContinuousLinearMap A) (A ⁻¹' t) := by
+  have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
+    A).contDiff.comp_contDiffOn (hω.comp A.contDiff.contDiffOn fun x (hx : x ∈ A ⁻¹' t) ↦ hx)
+  exact h.congr fun x _ ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
 
 /-- Exterior differentiation commutes with a fixed continuous linear map of coefficients, for a
 form differentiable within the set. -/

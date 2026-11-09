@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Relative
+import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basic
-import TauCeti.Geometry.Symplectic.WittExtension
-import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The relative Darboux theorem in adapted coordinates
@@ -38,8 +39,9 @@ It is proved in two steps.
   zero there. Moser's lemma
   (`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq`)
   applied to this primitive gives a diffeomorphism fixing the zeros of `β`, hence the zero section.
-* **The linear step.** The identity of `E × {0}` preserves the restrictions of the forms at
-  `(q₀, 0)`, so Witt's extension theorem
+* **The linear step**
+  (`TauCeti.exists_continuousLinearEquiv_fix_inl_of_compContinuousLinearMap_inl_eq`). The identity
+  of `E × {0}` preserves the restrictions of the forms at `(q₀, 0)`, so Witt's extension theorem
   (`TauCeti.SymplecticForm.exists_isSymplectomorphism_extend`) extends it to a linear
   symplectomorphism `A` from `(E × N, ω₀(q₀, 0))` to `(E × N, ω₁(q₀, 0))`. It fixes the zero
   section pointwise, so `A^* ω₁` agrees with `ω₀` as a full form at `(q₀, 0)` and has the same
@@ -144,63 +146,32 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
     ∃ ψ : (E × N) ≃ₘ^r⟮𝓘(ℝ, E × N), 𝓘(ℝ, E × N)⟯ (E × N),
       (∀ᶠ q in 𝓝 q₀, ψ (q, 0) = (q, 0)) ∧
       ∀ᶠ x in 𝓝 (q₀, (0 : N)), (ω₁ (ψ x)).compContinuousLinearMap (fderiv ℝ ψ x) = ω₀ x := by
-  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
-    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
-    exact (lt_of_lt_of_le zero_lt_one this).ne'
-  -- The values at `(q₀, 0)` as symplectic forms on `E × N`.
-  let σ (a : (E × N) [⋀^Fin 2]→L[ℝ] ℝ) (ha : ∀ v, (∀ w, a ![v, w] = 0) → v = 0) :
-      SymplecticForm (E × N) :=
-    { toBilinForm := a.toAlternatingMap.toMultilinearMap.toBilinMap
-      isAlt := a.toAlternatingMap.isAlt_toBilinMap
-      nondegenerate :=
-        (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-          (LinearMap.BilinForm.IsAlt.isRefl a.toAlternatingMap.isAlt_toBilinMap)).2
-          fun v hv ↦ ha v fun w ↦ by simpa using hv w }
-  have hσ (a) (ha) (v w : E × N) : σ a ha v w = a ![v, w] :=
-    MultilinearMap.toBilinMap_apply _ v w
   -- Witt's extension theorem: the identity of the zero section extends to a linear
   -- symplectomorphism `A` from `ω₀ (q₀, 0)` to `ω₁ (q₀, 0)`.
-  let S : Submodule ℝ (E × N) := LinearMap.range (LinearMap.inl ℝ E N)
-  obtain ⟨e, he, heS⟩ := SymplecticForm.exists_isSymplectomorphism_extend
-    (σ _ hnd₀) (σ _ hnd₁) rfl S.subtype S.injective_subtype fun x y ↦ by
-      obtain ⟨a, ha⟩ := x.2
-      obtain ⟨b, hb⟩ := y.2
-      have h := congrArg (fun c ↦ c ![a, b]) (htan q₀ hq₀)
-      simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
-      simp only [hσ, Submodule.coe_subtype, ← ha, ← hb]
-      convert h using 2 <;> ext i <;> fin_cases i <;> rfl
-  let A : (E × N) ≃L[ℝ] (E × N) := e.toContinuousLinearEquiv
-  have hA (v w : E × N) : ω₁ (q₀, 0) ![A v, A w] = ω₀ (q₀, 0) ![v, w] :=
-    ((hσ _ hnd₁ (e v) (e w)).symm.trans (he.apply v w)).trans (hσ _ hnd₀ v w)
-  have hAinl (q : E) : A (q, 0) = (q, 0) := heS ⟨(q, 0), q, rfl⟩
+  obtain ⟨A, hA, hAinl⟩ := exists_continuousLinearEquiv_fix_inl_of_compContinuousLinearMap_inl_eq
+    hnd₀ hnd₁ (htan q₀ hq₀)
   -- The pulled-back form `A^* ω₁` satisfies the hypotheses of the relative Moser step.
   let ω₁' : E × N → (E × N) [⋀^Fin 2]→L[ℝ] ℝ :=
     fun x ↦ (ω₁ (A x)).compContinuousLinearMap (A : (E × N) →L[ℝ] (E × N))
-  have hω₁'_eq : ω₁' = fun x ↦ (ω₁ (A x)).compContinuousLinearMap (fderiv ℝ A x) := by
-    funext x
-    rw [A.fderiv]
-  have hW' : IsOpen (W ∩ A ⁻¹' W) := hW.inter (hW.preimage A.continuous)
-  have hq₀' : (q₀, (0 : N)) ∈ W ∩ A ⁻¹' W := ⟨hq₀, by rw [mem_preimage, hAinl]; exact hq₀⟩
-  have hω₁' : ContDiffOn ℝ r ω₁' (W ∩ A ⁻¹' W) := by
-    have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin 2) (F := ℝ)
-      (A : (E × N) →L[ℝ] (E × N))).contDiff.comp_contDiffOn
-      (hω₁.comp A.contDiff.contDiffOn fun x (hx : x ∈ W ∩ A ⁻¹' W) ↦ hx.2)
-    exact h.congr fun x _ ↦
-      (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
-  have hdω₁' : ∀ x ∈ W ∩ A ⁻¹' W, extDeriv ω₁' x = 0 := fun x hx ↦ by
-    rw [hω₁'_eq, extDeriv_pullback ((hω₁.differentiableOn hr0).differentiableAt (hW.mem_nhds hx.2))
-      (A.contDiff (n := ⊤)).contDiffAt le_top, hdω₁ _ hx.2]
-    ext v
-    simp
+  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
+    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+    exact (lt_of_lt_of_le zero_lt_one this).ne'
+  have hω₁' : ContDiffOn ℝ r ω₁' (W ∩ A ⁻¹' W) :=
+    (contDiffOn_pullback_continuousLinearMap (r := r) hω₁
+      (A : (E × N) →L[ℝ] (E × N))).mono inter_subset_right
+  have hdω₁' : ∀ x ∈ W ∩ A ⁻¹' W, extDeriv ω₁' x = 0 := fun x hx ↦
+    (A : (E × N) →L[ℝ] (E × N)).extDeriv_pullback_eq_zero
+      ((hω₁.differentiableOn hr0).differentiableAt (hW.mem_nhds hx.2)) (hdω₁ _ hx.2)
   have htan' : ∀ q : E, (q, (0 : N)) ∈ W ∩ A ⁻¹' W →
       (ω₁' (q, 0)).compContinuousLinearMap (.inl ℝ E N) =
         (ω₀ (q, 0)).compContinuousLinearMap (.inl ℝ E N) := fun q hq ↦ by
     rw [← htan q hq.1]
-    ext v
-    simp only [ω₁', ContinuousAlternatingMap.compContinuousLinearMap_apply, hAinl]
-    congr 1
-    funext i
-    simp [hAinl]
+    have hAinl' : (A : (E × N) →L[ℝ] (E × N)).comp (.inl ℝ E N) = .inl ℝ E N :=
+      ContinuousLinearMap.ext hAinl
+    simp only [ω₁', ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap,
+      hAinl', hAinl]
+  have hW' : IsOpen (W ∩ A ⁻¹' W) := hW.inter (hW.preimage A.continuous)
+  have hq₀' : (q₀, (0 : N)) ∈ W ∩ A ⁻¹' W := ⟨hq₀, by rw [mem_preimage, hAinl]; exact hq₀⟩
   have heq' : ω₁' (q₀, 0) = ω₀ (q₀, 0) := by
     ext v
     have hv : v = ![v 0, v 1] := by
