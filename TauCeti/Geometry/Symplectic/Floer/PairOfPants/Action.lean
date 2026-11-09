@@ -84,6 +84,14 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- For the constants `h_q = ∓B_q`, the one-sided constant `∑ q, ε_q ∫₀¹ h_q` of the action
+bounds is `-(B_0 + B_1 + B_∞)`. -/
+theorem ThricePuncturedSphere.Puncture.sum_endSign_mul_integral_neg_endSign_mul
+    (B : Puncture → ℝ) :
+    ∑ q, q.endSign * ∫ _ in (0 : ℝ)..1, -(q.endSign * B q) = -∑ q, B q := by
+  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul]
+  exact sum_endSign_mul_neg_endSign_mul B
+
 namespace SymplecticForm
 
 open Floer
@@ -293,22 +301,6 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     (tendsto_integral_floerEnergyDensity_truncation ω hH hHs hu ha)
 
-/-- The integrated curvature of the pair-of-pants perturbation over `S` is at most
-`B_0 + B_1 + B_∞` in absolute value, if `|H_q| ≤ B_q`. -/
-private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → V) :
-    |∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)| ≤ ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u))
-
 /-- **The energy and the actions on a truncated pair of pants.** If the end Hamiltonians are
 bounded, `|H_q| ≤ B_q`, then for every `R ≥ 2` the Floer energy of `u` over the truncation `S_R`
 differs from the signed sum `A_{H_0}(ℓ_0) + A_{H_1}(ℓ_1) - A_{H_∞}(ℓ_∞)` of the actions of its
@@ -327,7 +319,7 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_s
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))| ≤ ∑ q, B q := by
   rw [integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hu hR, sub_sub_cancel_left, abs_neg]
-  exact abs_integral_hamiltonianCurvature_le ω hH hHs hB u
+  exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u _
 
 /-! ### One-sided action bounds -/
 
@@ -474,20 +466,6 @@ theorem le_add_add_sub_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
 
 If `|H_q| ≤ B_q`, the constants `h_q = ∓B_q` satisfy the one-sided bounds `±h_q ≤ ±H_q`, and the
 one-sided constant `-∫₀¹ h_0 - ∫₀¹ h_1 + ∫₀¹ h_∞` becomes `B_0 + B_1 + B_∞`. -/
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- Bounds `|H_q| ≤ B_q` give the one-sided bounds `±h_q ≤ ±H_q` for the constants
-`h_q = ∓B_q`. -/
-private theorem endSign_mul_neg_endSign_mul_le {B : Puncture → ℝ}
-    (hB : ∀ q t x, |H q t x| ≤ B q) (q : Puncture) (t : ℝ) (x : V) :
-    q.endSign * -(q.endSign * B q) ≤ q.endSign * H q t x := by
-  rw [mul_neg, ← mul_assoc, endSign_mul_self, one_mul]
-  exact neg_le_of_abs_le (by rw [abs_mul, abs_endSign, one_mul]; exact hB q t x)
-
-/-- For the constants `h_q = ∓B_q`, the one-sided constant is `B_0 + B_1 + B_∞`. -/
-private theorem sum_endSign_mul_integral_neg_endSign_mul (B : Puncture → ℝ) :
-    ∑ q, q.endSign * ∫ _ in (0 : ℝ)..1, -(q.endSign * B q) = -∑ q, B q := by
-  simp [mul_neg, ← mul_assoc, Finset.sum_neg_distrib]
 
 /-- **The energy bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
