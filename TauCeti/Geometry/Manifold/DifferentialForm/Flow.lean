@@ -134,7 +134,7 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
     (by rw [hGt]; exact hvel'.self_of_nhds)
     hspatial
   refine (hflat.congr_of_eventuallyEq
-    (RoughForm.eventuallyEq_mpullback_compContinuousLinearMap α
+    (RoughForm.eventuallyEq_mpullback_compContinuousLinearMap α y
       (by rw [hid.self_of_nhds]; exact mem_extChartAt_source y)
       (hsmooth.of_le (by norm_num)))).congr_deriv ?_
   rw [deriv_const, zero_add, hGt, hGt_nhds.fderiv_eq, fderiv_id, mlieDerivForm_def,
