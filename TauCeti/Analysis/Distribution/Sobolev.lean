@@ -44,6 +44,11 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   lies in `H^{s,p}`, as a real submodule of `Lᵖ`.
 * `TemperedDistribution.realSobolevFunctions`: the pointwise representatives of these, as a real
   submodule of the functions `E → ℝ`.
+* `TemperedDistribution.exists_memSobolev_ae_eq_of_mem_realSobolevFunctions`: two real functions
+  `f`, `g` in `realSobolevFunctions E s p` give a complex `H^{s,p}` function `f + i g`.
+* `TemperedDistribution.memLp_of_mem_realSobolevFunctions`,
+  `TemperedDistribution.mem_realSobolevFunctions_zero_iff`: these lie in `Lᵖ`, and at order `0`
+  they are exactly the real `Lᵖ` functions.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -340,6 +345,43 @@ theorem mem_realSobolevFunctions_of_ae_eq {s : ℝ} {f g : E → ℝ}
     g ∈ realSobolevFunctions E s p :=
   let ⟨u, hu, huf⟩ := hf
   ⟨u, hu, huf.trans hfg⟩
+
+/-- Two real functions `f`, `g` in `realSobolevFunctions E s p` assemble into a complex `H^{s,p}`
+function: `f + i g` agrees almost everywhere with a complex `Lᵖ` function in `H^{s,p}`. -/
+theorem exists_memSobolev_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {f g : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) (hg : g ∈ realSobolevFunctions E s p) :
+    ∃ h : Lp ℂ p (volume : Measure E), h =ᵐ[volume] (fun x ↦ (f x : ℂ) + Complex.I * g x) ∧
+      MemSobolev s p (h : 𝓢'(E, ℂ)) := by
+  obtain ⟨a, hae, ha⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨b, hbe, hb⟩ := mem_realSobolevFunctions.1 hg
+  refine ⟨Complex.ofRealCLM.compLp a + Complex.I • Complex.ofRealCLM.compLp b, ?_, ?_⟩
+  · filter_upwards [Lp.coeFn_add (Complex.ofRealCLM.compLp a)
+        (Complex.I • Complex.ofRealCLM.compLp b),
+      Lp.coeFn_smul Complex.I (Complex.ofRealCLM.compLp b),
+      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) a,
+      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) b, hae, hbe]
+      with x h h' ha' hb' ha'' hb''
+    rw [h, Pi.add_apply, h', Pi.smul_apply, ha', hb']
+    simp [ha'', hb'']
+  · have e := map_add (Lp.toTemperedDistributionCLM ℂ (volume : Measure E) p)
+      (Complex.ofRealCLM.compLp a) (Complex.I • Complex.ofRealCLM.compLp b)
+    rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
+      Lp.toTemperedDistributionCLM_apply] at e
+    rw [e]
+    exact ha.add (hb.smul Complex.I)
+
+/-- Every element of `realSobolevFunctions E s p` lies in `Lᵖ`, whatever the order `s`. -/
+theorem memLp_of_mem_realSobolevFunctions {s : ℝ} {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : MemLp f p volume :=
+  let ⟨u, _, huf⟩ := hf
+  (Lp.memLp u).ae_eq huf
+
+/-- A real function lies in `realSobolevFunctions E 0 p` exactly when it lies in `Lᵖ`. -/
+@[simp]
+theorem mem_realSobolevFunctions_zero_iff {f : E → ℝ} :
+    f ∈ realSobolevFunctions E 0 p ↔ MemLp f p volume :=
+  ⟨memLp_of_mem_realSobolevFunctions,
+    fun hf ↦ ⟨hf.toLp f, memSobolev_zero_iff.2 ⟨_, rfl⟩, hf.coeFn_toLp⟩⟩
 
 /-- For `1 < p < ∞`, the real `H^{s,p}` functions decrease as the order increases. -/
 theorem realSobolevFunctions_mono (hp : 1 < p) (hp_top : p ≠ ∞) {s s' : ℝ} (h : s' ≤ s) :

@@ -35,6 +35,8 @@ Borel measurable structure on the scalar field.
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
+  when its dot product with itself is `1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
   over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
 * `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
@@ -83,6 +85,13 @@ variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+/-- A real vector lies on the unit sphere of Euclidean space exactly when the dot product of its
+coordinates with themselves is `1`. -/
+theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
+    WithLp.toLp 2 v ∈ Metric.sphere (0 : EuclideanSpace ℝ ι) 1 ↔ v ⬝ᵥ v = 1 := by
+  rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
+    ← real_inner_self_eq_norm_sq, inner_toLp_toLp, star_trivial]
 
 /-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
 `x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/

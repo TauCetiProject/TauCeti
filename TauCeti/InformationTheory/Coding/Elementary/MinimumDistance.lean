@@ -82,12 +82,14 @@ theorem hammingMinDist_puncture_repetitionCode_add_card_compl (s : Set ι)
 minimum distance, since the shortened code is zero. Hence the bound
 `TauCeti.hammingMinDist_le_hammingMinDist_shorten` needs its hypothesis that the shortened code is
 nonzero. -/
-theorem hammingMinDist_shorten_repetitionCode_lt [Nonempty ι] {s : Set ι}
+theorem hammingMinDist_shorten_repetitionCode_lt {s : Set ι}
     [DecidablePred (· ∈ s)] (hs : s ≠ Set.univ) :
     Set.hammingMinDist (shorten (repetitionCode R ι) s : Set (s → R)) <
       Set.hammingMinDist (repetitionCode R ι : Set (ι → R)) := by
   rw [shorten_repetitionCode_eq_bot hs, Submodule.bot_coe, Set.hammingMinDist_singleton,
     hammingMinDist_repetitionCode]
+  obtain ⟨i, -⟩ := (Set.ne_univ_iff_exists_notMem _).1 hs
+  have : Nonempty ι := ⟨i⟩
   exact Fintype.card_pos
 
 end TauCeti

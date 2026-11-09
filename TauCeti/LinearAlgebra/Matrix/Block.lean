@@ -101,6 +101,20 @@ public theorem det_blockDiagonal' {o R : Type*} {m : o → Type*} [Fintype o] [D
   -- `(Equiv.sigmaSubtype i).symm j`, so the definition is unfolded to see that it is `⟨i, j⟩`.
   simp [toSquareBlock_def, Equiv.sigmaSubtype]
 
+/-- Restricting to a square block commutes with any entrywise map. -/
+@[simp]
+public theorem map_toSquareBlockProp {m R S : Type*} (M : Matrix m m R) (p : m → Prop)
+    (f : R → S) : (M.map f).toSquareBlockProp p = (M.toSquareBlockProp p).map f :=
+  (rfl)
+
+/-- A square block with unit determinant retains that property under a ring homomorphism. -/
+public theorem _root_.IsUnit.det_map_toSquareBlockProp {m R S : Type*} [Fintype m]
+    [DecidableEq m] [CommRing R] [CommRing S] {M : Matrix m m R} {p : m → Prop}
+    [DecidablePred p] (h : IsUnit (M.toSquareBlockProp p).det) (f : R →+* S) :
+    IsUnit ((M.map f).toSquareBlockProp p).det := by
+  rw [map_toSquareBlockProp, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact h.map f
+
 /-! ### Leading blocks -/
 
 section LeadingBlocks

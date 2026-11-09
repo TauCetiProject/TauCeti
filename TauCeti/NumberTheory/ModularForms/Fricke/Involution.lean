@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.ModularForms.Fricke.Operator
 # The Fricke operator is an involution up to a scalar
 
 The Fricke matrix squares to the scalar matrix `(-N) • 1`
-(`coe_frickeGL_sq` of `TauCeti/NumberTheory/ModularForms/Fricke/Matrix.lean`), and a scalar
+(`frickeGL_sq` of `TauCeti/NumberTheory/ModularForms/Fricke/Matrix.lean`), and a scalar
 matrix acts trivially on `ℍ`. Slashing by `W²` is therefore multiplication by a constant, and
 the Fricke operator `W_N` of `TauCeti/NumberTheory/ModularForms/Fricke/Operator.lean` satisfies
 `W_N ∘ W_N = c • id` for that constant
@@ -123,30 +123,17 @@ public theorem frickeScalar_ne_zero (k : ℤ) : frickeScalar N k ≠ 0 := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   exact mul_ne_zero (zpow_ne_zero _ hN) (zpow_ne_zero _ (neg_ne_zero.mpr hN))
 
-/-- `W² = (-N) • 1` as an element of `GL (Fin 2) ℝ`, in the `Matrix.GeneralLinearGroup.scalar`
-form that mathlib's `glScalar_smul` and `denom_scalar` consume. -/
-private theorem frickeGL_sq_eq_scalar (hN : (N : ℝ) ≠ 0) : frickeGL ℝ N * frickeGL ℝ N =
-    Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 (-(N : ℝ)) (neg_ne_zero.mpr hN)) := by
-  ext i j
-  rw [← sq, coe_frickeGL_sq]
-  simp [Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply, Matrix.smul_apply,
-    Matrix.one_apply, Matrix.diagonal_apply]
-
 /-- **Slashing by `W²` is multiplication by `frickeScalar N k`.** `W² = (-N) • 1` is a scalar
 matrix, so it acts trivially on `ℍ` and has constant `denom`; what is left of the weight-`k`
 slash is the constant `|det W²| ^ (k - 1) * (-N) ^ (-k)`. -/
 public theorem frickeGL_sq_slash (k : ℤ) (f : ℍ → ℂ) :
     f ∣[k] (frickeGL ℝ N * frickeGL ℝ N) = frickeScalar N k • f := by
-  have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  rw [frickeGL_sq_eq_scalar hN, ModularForm.slash_scalar, frickeScalar_eq]
+  rw [← sq, frickeGL_sq, ModularForm.slash_scalar, frickeScalar_eq, Units.val_mk0]
   congr 1
   -- `ModularForm.slash_scalar` leaves the scalar of `W²`, namely `-N`, raised to `k - 2`.
   -- Splitting the sign off the base is what turns it into the evaluated form of `frickeScalar`.
-  have hsplit : ((Units.mk0 (-(N : ℝ)) (neg_ne_zero.mpr hN) : ℝˣ) : ℝ) = (-1) * (N : ℝ) := by
-    simp
-  rw [hsplit]
   push_cast
-  rw [mul_zpow, zpow_sub₀ (by norm_num : (-1 : ℂ) ≠ 0)]
+  rw [neg_eq_neg_one_mul, mul_zpow, zpow_sub₀ (by norm_num : (-1 : ℂ) ≠ 0)]
   norm_num
 
 /-- **Collapsing a Fricke factor**: slashing by `A * W` is `frickeScalar N k •` slashing by
