@@ -141,6 +141,15 @@ theorem _root_.IsArithFrobAt.mul_of_mem_inertia {R S G : Type*} [CommRing R] [Co
     exact Ideal.smul_mem_pointwise_smul _ _ _ (Ideal.mem_inertia.mp hτ x)
   simpa [mul_smul, smul_sub] using Q.add_mem hστ (H x)
 
+/-- A Frobenius element at `Q` is a Frobenius element at any larger ideal `P` with the same
+contraction to `R`. -/
+theorem _root_.IsArithFrobAt.of_le {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Monoid G] [MulSemiringAction G S] [SMulCommClass G R S] {σ : G} {Q P : Ideal S}
+    (H : _root_.IsArithFrobAt R σ Q) (hQP : Q ≤ P) (h : P.under R = Q.under R) :
+    _root_.IsArithFrobAt R σ P := fun x ↦ by
+  rw [h]
+  exact hQP (H x)
+
 variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
   [MulSemiringAction G S] [SMulCommClass G R S]
 
