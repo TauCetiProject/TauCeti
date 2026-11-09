@@ -39,31 +39,7 @@ section Residue
 
 variable {R : Type u} [CommRing R] [IsLocalRing R]
 
-/-- Two linear maps out of the residue field agree when they agree at `1`. -/
-private theorem residue_linearMap_ext {N : Type*} [AddCommGroup N] [Module R N]
-    {r s : (R ⧸ maximalIdeal R) →ₗ[R] N} (h : r 1 = s 1) : r = s :=
-  Submodule.linearMap_qext _ (LinearMap.ext_ring h)
-
 variable {ε : R}
-
-/-- A linear map from `R` to its residue field sends an element of the maximal ideal to `0`, so
-not to `1`. -/
-private theorem linearMap_apply_ne_one (hε : ε ∈ maximalIdeal R)
-    (r : R →ₗ[R] R ⧸ maximalIdeal R) : r ε ≠ 1 := by
-  obtain ⟨y, hy⟩ := Submodule.mkQ_surjective (maximalIdeal R) (r 1)
-  have h₁ : r ε = Submodule.mkQ (maximalIdeal R) (ε * y) := by
-    rw [← smul_eq_mul, map_smul, hy, ← map_smul, smul_eq_mul, mul_one]
-  rw [h₁, Submodule.mkQ_apply,
-    (Submodule.Quotient.mk_eq_zero _).mpr (Ideal.mul_mem_right y _ hε)]
-  have := Ideal.Quotient.nontrivial_iff.mpr (maximalIdeal.isMaximal R).ne_top
-  exact zero_ne_one
-
-private theorem exists_smul_eq_of_mem_smul_top {N : Type*} [AddCommGroup N] [Module R N] {x : N}
-    (hm : maximalIdeal R = .span {ε}) (hx : x ∈ maximalIdeal R • (⊤ : Submodule R N)) :
-    ∃ n : N, ε • n = x := by
-  rw [hm, Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hx
-  obtain ⟨n, -, hn⟩ := hx
-  exact ⟨n, hn⟩
 
 /-- Multiplication by a generator `ε` of the maximal ideal with `ε * ε = 0`, as a map from the
 residue field to the ring. -/
@@ -155,17 +131,23 @@ theorem isAlmostSplit_residueSequence (hm : maximalIdeal R = .span {ε}) (hε : 
     have := (ExactStructure.Ext1.mk_eq_zero_iff_isSplitMono e).mp h
     let r : R →ₗ[R] R ⧸ maximalIdeal R := (retraction e.f).hom.hom
     have hr : r (residueMul hm hε 1) = 1 := congr($(IsSplitMono.id e.f).hom.hom 1)
-    rw [residueMul_one] at hr
-    exact linearMap_apply_ne_one (by rw [hm]; exact Ideal.mem_span_singleton_self ε) r hr
+    have hkill : ε ∈ Module.annihilator R (R ⧸ maximalIdeal R) := by
+      rw [Ideal.annihilator_quotient, hm]
+      exact Ideal.mem_span_singleton_self ε
+    rw [residueMul_one, ← mul_one ε, ← smul_eq_mul, map_smul, Module.mem_annihilator.mp hkill] at hr
+    have := Ideal.Quotient.nontrivial_iff.mpr (maximalIdeal.isMaximal R).ne_top
+    exact zero_ne_one hr
   · -- If `v 1 ∉ 𝔪 W`, a linear map to the residue field retracts `v`.
-    have hn : v.hom.hom 1 ∈ maximalIdeal R • (⊤ : Submodule R W.obj) := by
+    have hn : v.hom.hom 1 ∈ Ideal.span {ε} • (⊤ : Submodule R W.obj) := by
       by_contra hn
+      rw [← hm] at hn
       obtain ⟨r, hr⟩ := IsLocalRing.exists_linearMap_quotient_eq_one hn
       exact hv (IsSplitMono.mk' ⟨FGModuleCat.ofHom r, FGModuleCat.hom_ext
-        (residue_linearMap_ext hr)⟩)
-    obtain ⟨n, hn⟩ := exists_smul_eq_of_mem_smul_top hm hn
+        (Submodule.linearMap_qext _ (LinearMap.ext_ring hr))⟩)
+    rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hn
+    obtain ⟨n, -, hn⟩ := hn
     refine ⟨FGModuleCat.ofHom (LinearMap.toSpanSingleton R W n), FGModuleCat.hom_ext
-      (residue_linearMap_ext ?_)⟩
+      (Submodule.linearMap_qext _ (LinearMap.ext_ring ?_))⟩
     -- Composition in `FGModuleCat` is composition of the underlying linear maps.
     have h : LinearMap.toSpanSingleton R W n (residueMul hm hε 1) = v.hom.hom 1 := by
       rw [residueMul_one, LinearMap.toSpanSingleton_apply, hn]
