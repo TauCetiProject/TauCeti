@@ -59,25 +59,6 @@ namespace TauCeti.Probability
 
 variable {α β q : ℝ} {s : ℝ≥0} {m : ℝ}
 
-private theorem rpow_neg_add_one_eq_mul_rpow_mul {q s t : ℝ} (hs : 0 < s) (ht : 0 < t) :
-    t ^ (-(q + 1)) = s ^ (q + 1) * (s * t) ^ (-(q + 1)) := by
-  rw [mul_rpow hs.le ht.le, ← mul_assoc, ← rpow_add hs, add_neg_cancel, rpow_zero, one_mul]
-
-private theorem integral_Ioi_rpow_neg_mul_one_sub_exp_neg_mul_rpow {α q s : ℝ}
-    (hs : 0 < s) (hq : 0 < q) (hqα : q < α) :
-    ∫ t in Ioi (0 : ℝ), t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α)) =
-      s ^ q * (Gamma (1 - q / α) / q) := by
-  have hscale (t : ℝ) (ht : t ∈ Ioi 0) :
-      t ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α)) =
-        s ^ (q + 1) * ((s * t) ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α))) := by
-    rw [rpow_neg_add_one_eq_mul_rpow_mul hs ht]
-    ring
-  rw [setIntegral_congr_fun measurableSet_Ioi hscale, integral_const_mul,
-    integral_comp_mul_left_Ioi (fun u ↦ u ^ (-(q + 1)) * (1 - exp (-u ^ α))) 0 hs,
-    mul_zero, integral_Ioi_rpow_neg_mul_one_sub_exp_neg_rpow hq hqα, smul_eq_mul,
-    rpow_add hs, rpow_one]
-  field_simp
-
 /-- The standardized law inherits the exact large-jump moment threshold. -/
 private theorem integrable_abs_rpow_standardStableMeasure_iff
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hq : 0 < q) :
