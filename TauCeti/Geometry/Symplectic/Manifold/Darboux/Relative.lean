@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -304,40 +305,16 @@ variable {E' H' Q : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace Q] [ChartedSpace H' Q] {i : Q → M} {q₀ : Q}
   (hi : Manifold.IsImmersionAt J I ∞ i q₀)
 
-/-- Adapted coordinates of an immersion: its codomain chart followed by the inverse of its
-splitting `E' × F ≃ E`. In them `i` reads `q ↦ (φ q, 0)` on the source of its domain chart
-`φ`. -/
-private def immersionChart :
-    PartialDiffeomorph I 𝓘(ℝ, E' × hi.complement) M (E' × hi.complement) ∞ :=
-  (hi.codChart.toPartialDiffeomorphOfMemMaximalAtlas hi.codChart_mem_maximalAtlas).trans
-    hi.equiv.symm.toPartialDiffeomorph
-
-omit [IsManifold I ∞ M] [J.Boundaryless] in
-private theorem mem_immersionChart_source {q : Q} (hq : q ∈ hi.domChart.source) :
-    i q ∈ (immersionChart hi).source := by
-  simpa [immersionChart, PartialDiffeomorph.trans_toPartialEquiv] using
-    hi.source_subset_preimage_source hq
-
-omit [IsManifold I ∞ M] [J.Boundaryless] in
-private theorem immersionChart_apply {q : Q} (hq : q ∈ hi.domChart.source) :
-    immersionChart hi (i q) = (hi.domChart.extend J q, 0) := by
-  have hq' : q ∈ (hi.domChart.extend J).source := by rwa [hi.domChart.extend_source]
-  have h := hi.writtenInCharts ((hi.domChart.extend J).map_source hq')
-  simp only [comp_apply, (hi.domChart.extend J).left_inv hq'] at h
-  have hχ : immersionChart hi (i q) = hi.equiv.symm (hi.codChart.extend I (i q)) := by
-    simp [immersionChart]
-  rw [hχ, h, ContinuousLinearEquiv.symm_apply_apply]
-
 /-- Equal pullbacks along `i` at `q` give coordinate expressions in the adapted coordinates which
 agree on `E' × {0}` at the coordinates of `i q`. -/
-private theorem coordForm_immersionChart_inl (p : M) {q : Q} (hq : q ∈ hi.domChart.source)
+private theorem coordForm_adaptedChart_inl (p : M) {q : Q} (hq : q ∈ hi.domChart.source)
     (hqp : i q ∈ (extChartAt I p).source) {σ₀ σ₁ : SmoothTwoForm I M}
     (h : mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q) :
-    (coordForm (immersionChart hi) p σ₁ (hi.domChart.extend J q, 0)).compContinuousLinearMap
+    (coordForm hi.adaptedChart p σ₁ (hi.domChart.extend J q, 0)).compContinuousLinearMap
         (.inl ℝ E' hi.complement) =
-      (coordForm (immersionChart hi) p σ₀ (hi.domChart.extend J q, 0)).compContinuousLinearMap
+      (coordForm hi.adaptedChart p σ₀ (hi.domChart.extend J q, 0)).compContinuousLinearMap
         (.inl ℝ E' hi.complement) := by
-  set χ := immersionChart hi
+  set χ := hi.adaptedChart
   -- The extended domain chart, as a partial diffeomorphism.
   set φ := hi.domChart.toPartialDiffeomorphOfMemMaximalAtlas hi.domChart_mem_maximalAtlas
   have hφ : ⇑φ.toPartialEquiv = hi.domChart.extend J := by
@@ -347,16 +324,17 @@ private theorem coordForm_immersionChart_inl (p : M) {q : Q} (hq : q ∈ hi.domC
   -- The derivative of `i` in adapted coordinates is `inl` after the derivative of the chart.
   have hcomm : χ ∘ i =ᶠ[𝓝 q] ContinuousLinearMap.inl ℝ E' hi.complement ∘ φ := by
     filter_upwards [hi.domChart.open_source.mem_nhds hq] with q' hq'
-    rw [comp_apply, immersionChart_apply hi hq', hφ]
+    rw [comp_apply, hi.adaptedChart_apply_of_mem_domChart_source hq', hφ]
     rfl
   have hd (a : TangentSpace J q) :
       mvfderiv I χ (i q) (mfderiv J I i q a) = (mvfderiv J φ q a, 0) := by
-    rw [← mvfderiv_comp_apply q (χ.mdifferentiableAt (by simp) (mem_immersionChart_source hi hq))
+    rw [← mvfderiv_comp_apply q (χ.mdifferentiableAt (by simp) (hi.mem_adaptedChart_source hq))
       ((hi.contMDiffOn.mdifferentiableOn (by simp)).mdifferentiableAt
         (hi.domChart.open_source.mem_nhds hq)), hcomm.mvfderiv_eq,
       ContinuousLinearMap.mvfderiv_comp_apply _ (φ.mdifferentiableAt (by simp) hqφ)]
     rfl
-  have hχq : χ (i q) = (hi.domChart.extend J q, 0) := immersionChart_apply hi hq
+  have hχq : χ (i q) = (hi.domChart.extend J q, 0) :=
+    hi.adaptedChart_apply_of_mem_domChart_source hq
   ext a
   obtain ⟨a₀, ha₀⟩ := φ.surjective_mfderiv (by simp) hqφ (a 0)
   obtain ⟨a₁, ha₁⟩ := φ.surjective_mfderiv (by simp) hqφ (a 1)
@@ -365,7 +343,7 @@ private theorem coordForm_immersionChart_inl (p : M) {q : Q} (hq : q ∈ hi.domC
       (coordForm χ p σ (hi.domChart.extend J q, 0)).compContinuousLinearMap
           (.inl ℝ E' hi.complement) a = mpullback J I i σ.1 q ![a₀, a₁] := by
     rw [mpullback_apply_pair, ← SmoothBundleForm.eval₂_apply,
-      eval₂_eq_coordForm χ p σ (mem_immersionChart_source hi hq) hqp, hd, hd, ha₀, ha₁, hχq,
+      eval₂_eq_coordForm χ p σ (hi.mem_adaptedChart_source hq) hqp, hd, hd, ha₀, ha₁, hχq,
       ContinuousAlternatingMap.compContinuousLinearMap_apply]
     congr 1
     funext j
@@ -403,13 +381,13 @@ theorem exists_partialDiffeomorph_fix_eval₂_mfderiv_eq_of_mpullback_eq
   have hq₀ : q₀ ∈ φ.source := by rw [hi.domChart.extend_source]; exact hi.mem_domChart_source
   have hφo : hi.domChart.source ∈ 𝓝 q₀ :=
     hi.domChart.open_source.mem_nhds hi.mem_domChart_source
-  have hχp : immersionChart hi (i q₀) = (φ q₀, 0) :=
-    immersionChart_apply hi hi.mem_domChart_source
+  have hχp : hi.adaptedChart (i q₀) = (φ q₀, 0) :=
+    hi.adaptedChart_apply_of_mem_domChart_source hi.mem_domChart_source
   -- The tangency hypothesis in adapted coordinates, at the points `(u, 0)` with `u` near `φ q₀`.
-  have htan' : ∀ᶠ u in 𝓝 (immersionChart hi (i q₀)).1,
-      (coordForm (immersionChart hi) (i q₀) σ₁ (u, 0)).compContinuousLinearMap
+  have htan' : ∀ᶠ u in 𝓝 (hi.adaptedChart (i q₀)).1,
+      (coordForm hi.adaptedChart (i q₀) σ₁ (u, 0)).compContinuousLinearMap
           (.inl ℝ E' hi.complement) =
-        (coordForm (immersionChart hi) (i q₀) σ₀ (u, 0)).compContinuousLinearMap
+        (coordForm hi.adaptedChart (i q₀) σ₀ (u, 0)).compContinuousLinearMap
           (.inl ℝ E' hi.complement) := by
     have hq : ∀ᶠ q in 𝓝 q₀, q ∈ hi.domChart.source ∧ i q ∈ (extChartAt I (i q₀)).source ∧
         mpullback J I i σ₁.1 q = mpullback J I i σ₀.1 q := by
@@ -423,11 +401,11 @@ theorem exists_partialDiffeomorph_fix_eval₂_mfderiv_eq_of_mpullback_eq
     filter_upwards [hi.domChart.isOpen_extend_target.mem_nhds (φ.map_source hq₀),
       hc.eventually hq] with u hu ⟨hqs, hqp, hqt⟩
     rw [← φ.right_inv hu]
-    exact coordForm_immersionChart_inl hi (i q₀) hqs hqp hqt
-  obtain ⟨Φ, hpΦ, hfix, hpull⟩ := exists_partialDiffeomorph_of_coordForm (immersionChart hi)
-    (mem_immersionChart_source hi hi.mem_domChart_source) (by rw [hχp]) hσ₀ hσ₁ hnd₀ hnd₁ htan'
+    exact coordForm_adaptedChart_inl hi (i q₀) hqs hqp hqt
+  obtain ⟨Φ, hpΦ, hfix, hpull⟩ := exists_partialDiffeomorph_of_coordForm hi.adaptedChart
+    (hi.mem_adaptedChart_source hi.mem_domChart_source) (by rw [hχp]) hσ₀ hσ₁ hnd₀ hnd₁ htan'
   refine ⟨Φ, hpΦ, ?_, hpull⟩
   filter_upwards [hφo, hi.continuousAt.eventually hfix] with q hq hqfix
-  exact hqfix (by rw [immersionChart_apply hi hq])
+  exact hqfix (by rw [hi.adaptedChart_apply_of_mem_domChart_source hq])
 
 end TauCeti.SmoothTwoForm

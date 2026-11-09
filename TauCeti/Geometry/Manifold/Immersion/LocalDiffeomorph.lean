@@ -12,6 +12,7 @@ public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
@@ -66,6 +67,8 @@ are the basic examples of the latter
 * `TauCeti.isImmersion_subtypeVal_comp_iff`, `TauCeti.isSmoothEmbedding_subtypeVal_comp_iff`,
   `Manifold.IsSmoothEmbedding.comp_subtypeVal`: immersions and smooth embeddings into an open
   submanifold, and smooth embeddings restricted to an open subset of the source.
+* `Manifold.IsImmersionAt.adaptedChart`: the adapted chart of an immersion at a point, a partial
+  diffeomorphism to `E × F` in which the immersion reads `y ↦ (φ y, 0)` for its domain chart `φ`.
 * `Manifold.IsImmersion.isLocalDiffeomorph`: an immersion of a boundaryless manifold into a
   manifold modelled on a space of the same finite dimension is a local diffeomorphism.
 
@@ -362,6 +365,50 @@ theorem _root_.Manifold.IsSmoothEmbedding.comp_subtypeVal [IsManifold I n M]
     (h : IsSmoothEmbedding I J n f) (U : TopologicalSpace.Opens M) :
     IsSmoothEmbedding I J n (f ∘ (Subtype.val : U → M)) :=
   isSmoothEmbedding_comp_isLocalDiffeomorph isLocalDiffeomorph_subtype_val IsEmbedding.subtypeVal h
+
+/-! ### The adapted chart of an immersion at a point -/
+
+section AdaptedChart
+
+variable [J.Boundaryless] {x : M} (h : IsImmersionAt I J n f x)
+
+/-- The adapted chart of an immersion `f` at `x`: the codomain chart `h.codChart`, extended by the
+model, followed by the inverse of the splitting `h.equiv : E × F ≃L E'`. In it `f` reads
+`y ↦ (h.domChart.extend I y, 0)` on `h.domChart.source`
+(`Manifold.IsImmersionAt.adaptedChart_apply_of_mem_domChart_source`). -/
+def _root_.Manifold.IsImmersionAt.adaptedChart :
+    PartialDiffeomorph J 𝓘(𝕜, E × h.complement) N (E × h.complement) n :=
+  (h.codChart.toPartialDiffeomorphOfMemMaximalAtlas h.codChart_mem_maximalAtlas).trans
+    h.equiv.symm.toPartialDiffeomorph
+
+/-- The adapted chart has the source of the codomain chart. -/
+@[simp]
+theorem _root_.Manifold.IsImmersionAt.adaptedChart_source :
+    h.adaptedChart.source = h.codChart.source := by
+  simp [IsImmersionAt.adaptedChart, PartialDiffeomorph.trans_toPartialEquiv]
+
+/-- The adapted chart is the extended codomain chart followed by the inverse splitting. -/
+@[simp]
+theorem _root_.Manifold.IsImmersionAt.adaptedChart_apply (y : N) :
+    h.adaptedChart y = h.equiv.symm (h.codChart.extend J y) := by
+  simp [IsImmersionAt.adaptedChart]
+
+/-- The domain chart source is mapped into the source of the adapted chart. -/
+theorem _root_.Manifold.IsImmersionAt.mem_adaptedChart_source {y : M}
+    (hy : y ∈ h.domChart.source) : f y ∈ h.adaptedChart.source := by
+  rw [h.adaptedChart_source]
+  exact h.source_subset_preimage_source hy
+
+/-- In the adapted chart, the immersion reads `y ↦ (h.domChart.extend I y, 0)` on the domain chart
+source. -/
+theorem _root_.Manifold.IsImmersionAt.adaptedChart_apply_of_mem_domChart_source {y : M}
+    (hy : y ∈ h.domChart.source) : h.adaptedChart (f y) = (h.domChart.extend I y, 0) := by
+  have hy' : y ∈ (h.domChart.extend I).source := by rwa [h.domChart.extend_source]
+  have hw := h.writtenInCharts ((h.domChart.extend I).map_source hy')
+  simp only [Function.comp_apply, (h.domChart.extend I).left_inv hy'] at hw
+  rw [h.adaptedChart_apply, hw, ContinuousLinearEquiv.symm_apply_apply]
+
+end AdaptedChart
 
 section InverseFunctionTheorem
 
