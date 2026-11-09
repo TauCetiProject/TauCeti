@@ -26,29 +26,32 @@ compactly supported `C¹` field `y` is a weak solution of `L_x y = f` for `f` it
 under `L_x`. The *weak kernel* of `L_x` consists of the weak solutions of `L_x y = 0`.
 
 This file shows that the weak cokernel of `L_x` vanishes at a plane vortex, with a bounded right
-inverse. If `L_x*` is bounded below on test fields, `c ∫ |η|² ≤ ∫ |L_x* η|²` with `c > 0`, there
-is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `c^(-1/2)` such that `Q f` is a weak
-solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
-(`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`). Weak
-solutions orthogonal to the weak kernel are unique
-(`TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`), so `Q` is determined by these
-properties, `Q f` is the weak solution of least norm, and `Q` is the right inverse
-`L_x* (L_x L_x*)⁻¹` on the `L²`-orthogonal complement of the weak kernel. At an actual vortex with
-`|α| → 1`, the spectral gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`
-supplies the lower bound
-(`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
+inverse. The operator `gaugeFixedRightInverse μ hx` is the weak right inverse `Q_x` of `L_x` on
+`L²(ℂ; ℝ⁴)`, built from `LinearMap.weakRightInverse`. Its values are always orthogonal to the
+weak kernel. If `L_x*` is bounded below on test fields, `c ∫ |η|² ≤ ∫ |L_x* η|²` with `c > 0`,
+then `‖Q_x‖ ≤ c^(-1/2)` and `Q_x f` is a weak solution of `L_x y = f` for every `f`. Weak
+solutions orthogonal to the weak kernel are unique, so `Q_x f` is characterized by these
+properties, `Q_x f` is the weak solution of least norm, and `Q_x` is the right inverse
+`L_x* (L_x L_x*)⁻¹` on the `L²`-orthogonal complement of the weak kernel. At an actual vortex
+with `|α| → 1`, the spectral gap
+`exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower bound.
 
-These are statements about weak solutions in `L²`. That `Q f` lies in `H¹`, and the Fredholm
+These are statements about weak solutions in `L²`. That `Q_x f` lies in `H¹`, and the Fredholm
 property and dimension of the kernel of the Sobolev realization of `L_x`, are not proved here.
 
 ## Main results
 
-* `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`: a
-  lower bound on `L_x*` gives a bounded weak right inverse of `L_x` orthogonal to its weak kernel.
-* `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`: the weak
-  right inverse at a plane vortex with `|α| → 1`.
+* `TauCeti.Vortex.gaugeFixedRightInverse`: the weak right inverse `Q_x` of `L_x`.
+* `TauCeti.Vortex.integral_inner_gaugeFixedRightInverse_apply_eq_zero`: `Q_x f` is orthogonal to
+  the weak kernel of `L_x`.
+* `TauCeti.Vortex.norm_gaugeFixedRightInverse_le` and
+  `TauCeti.Vortex.integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint_of_mul_le`: a
+  lower bound on `L_x*` bounds `Q_x` and makes `Q_x f` a weak solution of `L_x y = f`.
 * `TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`: uniqueness of weak solutions
-  orthogonal to the weak kernel.
+  orthogonal to the weak kernel, and `TauCeti.Vortex.eq_gaugeFixedRightInverse_apply_iff`: the
+  resulting characterization of `Q_x f`.
+* `TauCeti.Vortex.integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint`: `Q_x` is a weak
+  right inverse at a plane vortex with `|α| → 1`.
 
 ## References
 
@@ -143,50 +146,76 @@ private theorem mem_orthogonal_orthogonal_range_gaugeFixedAdjointToLp_iff (hx : 
   refine forall_congr' fun u ↦ ?_
   rw [mem_orthogonal_range_gaugeFixedAdjointToLp_iff, real_inner_comm, L2.inner_def]
 
-/-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
-field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
-with `c > 0`. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` with `‖Q‖ ≤ c^(-1/2)` such
-that
+/-- The **weak right inverse** `Q_x` of the gauge-fixed operator `L_x` at a continuous field `x`:
+the operator on `L²(ℂ; ℝ⁴)` given by `LinearMap.weakRightInverse` for the formal adjoint `L_x*` on
+compactly supported `C²` test fields and the inclusion of the test fields into `L²`.
 
-* `Q f` is a weak solution of `L_x y = f`: `∫ ⟪Q f, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly
-  supported `C²` field `η`;
-* `Q f` is orthogonal to the weak kernel: `∫ ⟪Q f, u⟫ = 0` for every `u ∈ L²` with
-  `∫ ⟪u, L_x* η⟫ = 0` for all such `η`. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
-    (hx : Continuous x) {c : ℝ} (hc : 0 < c)
+`Q_x f` is always orthogonal to the weak kernel of `L_x`
+(`integral_inner_gaugeFixedRightInverse_apply_eq_zero`). If `c ∫ |η|² ≤ ∫ |L_x* η|²` for every
+test field `η`, with `c > 0`, then `Q_x f` is a weak solution of `L_x y = f`
+(`integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint_of_mul_le`), `‖Q_x‖ ≤ c^(-1/2)`
+(`norm_gaugeFixedRightInverse_le`), and these two properties of `Q_x f` determine it
+(`eq_gaugeFixedRightInverse_apply_iff`). At a plane vortex with `|α| → 1` the spectral gap supplies
+this lower bound (`integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint`). -/
+noncomputable def gaugeFixedRightInverse (μ : Measure ℂ) [μ.IsAddHaarMeasure] (hx : Continuous x) :
+    Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ :=
+  (gaugeFixedAdjointToLp μ hx).weakRightInverse (testFieldToLp μ)
+
+private theorem gaugeFixedRightInverse_eq (hx : Continuous x) :
+    gaugeFixedRightInverse μ hx = (gaugeFixedAdjointToLp μ hx).weakRightInverse (testFieldToLp μ) :=
+  rfl
+
+/-- **Orthogonality to the weak kernel.** Let `x` be a continuous field. For every `f ∈ L²`,
+`Q_x f` is orthogonal to the weak kernel of `L_x`: `∫ ⟪Q_x f, u⟫ = 0` for every `u ∈ L²` with
+`∫ ⟪u, L_x* η⟫ = 0` for all compactly supported `C²` fields `η`. -/
+theorem integral_inner_gaugeFixedRightInverse_apply_eq_zero (hx : Continuous x)
+    (f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)
+    (hu : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) :
+    ∫ z, ⟪gaugeFixedRightInverse μ hx f z, u z⟫ ∂μ = 0 :=
+  (mem_orthogonal_orthogonal_range_gaugeFixedAdjointToLp_iff hx).1
+    ((gaugeFixedAdjointToLp μ hx).weakRightInverse_apply_mem_orthogonal (testFieldToLp μ) f) u hu
+
+/-- The lower bound `c ∫ |η|² ≤ ∫ |L_x* η|²` is the bound `‖η‖ ≤ (√c)⁻¹ ‖L_x* η‖` in `L²`. -/
+private theorem norm_testFieldToLp_le (hx : Continuous x) {c : ℝ} (hc : 0 < c)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ) (η : TestField) :
+    ‖testFieldToLp μ η‖ ≤ (√c)⁻¹ * ‖gaugeFixedAdjointToLp μ hx η‖ := by
+  rw [le_inv_mul_iff₀ (Real.sqrt_pos.2 hc)]
+  refine le_of_sq_le_sq ?_ (norm_nonneg _)
+  rw [mul_pow, Real.sq_sqrt hc.le, testFieldToLp_apply, gaugeFixedAdjointToLp_apply,
+    MemLp.norm_toLp_sq_eq_integral_norm_sq, MemLp.norm_toLp_sq_eq_integral_norm_sq]
+  exact hgap η η.contDiff η.hasCompactSupport
+
+/-- **Norm bound.** Let `x` be a continuous field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for
+every compactly supported `C²` field `η`, with `c > 0`. Then `‖Q_x‖ ≤ c^(-1/2)`. -/
+theorem norm_gaugeFixedRightInverse_le (hx : Continuous x) {c : ℝ} (hc : 0 < c)
     (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ) :
-    ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-      ‖Q‖ ≤ (√c)⁻¹ ∧
-      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
-      ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
-  set S := gaugeFixedAdjointToLp μ hx
-  set ι := testFieldToLp μ
-  -- The gap is the lower bound `‖η‖ ≤ (√c)⁻¹ ‖L_x* η‖` in `L²`.
-  have hbound (η : TestField) : ‖ι η‖ ≤ (√c)⁻¹ * ‖S η‖ := by
-    rw [le_inv_mul_iff₀ (Real.sqrt_pos.2 hc)]
-    refine le_of_sq_le_sq ?_ (norm_nonneg _)
-    rw [mul_pow, Real.sq_sqrt hc.le, testFieldToLp_apply, gaugeFixedAdjointToLp_apply,
-      MemLp.norm_toLp_sq_eq_integral_norm_sq, MemLp.norm_toLp_sq_eq_integral_norm_sq]
-    exact hgap η η.contDiff η.hasCompactSupport
-  refine ⟨S.weakRightInverse ι, S.norm_weakRightInverse_le (by positivity) hbound,
-    fun f η hη hηc ↦ ?_, fun f ↦ ?_⟩
-  · have h := S.inner_weakRightInverse_apply ⟨_, hbound⟩ f ⟨η, hη, hηc, by simp⟩
-    rw [inner_gaugeFixedAdjointToLp, testFieldToLp_apply, L2.inner_toLp,
-      TestFunction.coe_mk] at h
-    exact h
-  · exact (mem_orthogonal_orthogonal_range_gaugeFixedAdjointToLp_iff hx).1
-      (S.weakRightInverse_apply_mem_orthogonal ι f)
+    ‖gaugeFixedRightInverse μ hx‖ ≤ (√c)⁻¹ :=
+  LinearMap.norm_weakRightInverse_le (by positivity) (norm_testFieldToLp_le hx hc hgap)
+
+/-- **Weak solutions from a lower bound on the formal adjoint.** Let `x` be a continuous field and
+suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`, with `c > 0`.
+Then `Q_x f` is a weak solution of `L_x y = f` for every `f ∈ L²`:
+`∫ ⟪Q_x f, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly supported `C²` field `η`. -/
+theorem integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint_of_mul_le
+    (hx : Continuous x) {c : ℝ} (hc : 0 < c)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
+    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    ∫ z, ⟪gaugeFixedRightInverse μ hx f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ := by
+  have h := (gaugeFixedAdjointToLp μ hx).inner_weakRightInverse_apply
+    ⟨_, norm_testFieldToLp_le hx hc hgap⟩ f ⟨η, hη, hηc, by simp⟩
+  rw [← gaugeFixedRightInverse_eq, inner_gaugeFixedAdjointToLp, testFieldToLp_apply,
+    L2.inner_toLp, TestFunction.coe_mk] at h
+  exact h
 
 /-- **Uniqueness of weak solutions orthogonal to the weak kernel.** Let `x` be a continuous field.
 If `y, y' ∈ L²(ℂ; ℝ⁴)` are both weak solutions of `L_x y = f`, that is,
 `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫ = ∫ ⟪y', L_x* η⟫` for every compactly supported `C²` field `η`, and both
-are orthogonal to the weak kernel of `L_x`, then `y = y'`. In particular the weak right inverse of
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le` is unique. -/
+are orthogonal to the weak kernel of `L_x`, then `y = y'`. -/
 theorem eq_of_integral_inner_gaugeFixedAdjoint_eq (hx : Continuous x)
     {f : ℂ → EuclideanSpace ℝ (Fin 4)} {y y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
     (hy : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
@@ -208,24 +237,48 @@ theorem eq_of_integral_inner_gaugeFixedAdjoint_eq (hx : Continuous x)
   rw [inner_gaugeFixedAdjointToLp, inner_gaugeFixedAdjointToLp,
     hy η η.contDiff η.hasCompactSupport, hy' η η.contDiff η.hasCompactSupport]
 
-/-- **Weak right inverse at a plane vortex.** Let `x` be a `C¹` solution of the plane vortex
-equation with `|α| → 1` at infinity. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` such
-that `Q f` is a weak solution of `L_x y = f` for every `f ∈ L²`, orthogonal to the weak kernel of
-`L_x`. In particular the weak cokernel of `L_x` vanishes. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq (hx : ContDiff ℝ 1 x)
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
-      ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+/-- **Characterization of the weak right inverse.** Let `x` be a continuous field and suppose that
+`c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`, with `c > 0`. Then for
+`f, y ∈ L²(ℂ; ℝ⁴)`, `y = Q_x f` if and only if `y` is a weak solution of `L_x y = f` orthogonal to
+the weak kernel of `L_x`. -/
+theorem eq_gaugeFixedRightInverse_apply_iff (hx : Continuous x) {c : ℝ} (hc : 0 < c)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    y = gaugeFixedRightInverse μ hx f ↔
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
+      ∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
         (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
           ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+        ∫ z, ⟪y z, u z⟫ ∂μ = 0 := by
+  constructor
+  · rintro rfl
+    exact ⟨fun η hη hηc ↦
+        integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint_of_mul_le hx hc hgap f hη hηc,
+      integral_inner_gaugeFixedRightInverse_apply_eq_zero hx f⟩
+  · rintro ⟨hy, hyK⟩
+    exact eq_of_integral_inner_gaugeFixedAdjoint_eq hx hy
+      (fun η hη hηc ↦
+        integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint_of_mul_le hx hc hgap f hη hηc)
+      hyK (integral_inner_gaugeFixedRightInverse_apply_eq_zero hx f)
+
+/-- **Weak right inverse at a plane vortex.** Let `x` be a `C¹` solution of the plane vortex
+equation with `|α| → 1` at infinity. Then `Q_x f` is a weak solution of `L_x y = f` for every
+`f ∈ L²`: `∫ ⟪Q_x f, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly supported `C²` field `η`. Since
+`Q_x f` is orthogonal to the weak kernel of `L_x`
+(`integral_inner_gaugeFixedRightInverse_apply_eq_zero`), `Q_x` is a right inverse of `L_x` on the
+orthogonal complement of the weak kernel; in particular the weak cokernel of `L_x` vanishes. -/
+theorem integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint (hx : ContDiff ℝ 1 x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    ∫ z, ⟪gaugeFixedRightInverse μ hx.continuous f z, gaugeFixedAdjoint x η z⟫ ∂μ =
+      ∫ z, ⟪f z, η z⟫ ∂μ := by
   obtain ⟨c, hc, hgap⟩ :=
     exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx hsol hlim
-  obtain ⟨Q, -, hQ⟩ :=
-    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc hgap
-  exact ⟨Q, hQ⟩
+  exact integral_inner_gaugeFixedRightInverse_apply_gaugeFixedAdjoint_of_mul_le hx.continuous hc
+    hgap f hη hηc
 
 end TauCeti.Vortex
