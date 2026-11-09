@@ -507,6 +507,16 @@ theorem toMoorePath_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) ×
     ((posLengthHomeomorph x).symm q).1.toMoorePath = q.2.toMoorePath.rescale q.1 :=
   (rfl)
 
+@[simp]
+theorem length_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) × Path x x) :
+    ((posLengthHomeomorph x).symm q).1.length = q.1 :=
+  congrArg (fun q ↦ (q.1 : ℝ≥0)) ((posLengthHomeomorph x).apply_symm_apply q)
+
+@[simp]
+theorem toPath_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) × Path x x) :
+    ((posLengthHomeomorph x).symm q).1.toPath = q.2 :=
+  congrArg Prod.snd ((posLengthHomeomorph x).apply_symm_apply q)
+
 /-- Reparametrizing to the unit interval commutes with the Moore loop map of a continuous map. -/
 @[simp]
 theorem toPath_map {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (γ : MooreLoopSpace X x) :
