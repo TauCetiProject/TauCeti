@@ -84,9 +84,8 @@ theorem mul_ringOfIntegersQuadraticConj_eq_one_of_isTotallyPositive
       RingOfIntegers.coe_ne_zero_iff.mpr ε.ne_zero
     have hnorm_pos := norm_pos_of_isTotallyPositive hεK hpos
     have hnorm_neg : Algebra.norm ℚ (((ε : 𝓞 K) : K)) = -1 := by
-      apply (algebraMap ℚ K).injective
-      rw [algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen, h]
-      simp
+      simpa using (norm_eq_intCast_iff_mul_ringOfIntegersQuadraticConj_eq_intCast (n := -1)
+        hmin hgen).mpr (by simpa using h)
     rw [hnorm_neg] at hnorm_pos
     norm_num at hnorm_pos
 
