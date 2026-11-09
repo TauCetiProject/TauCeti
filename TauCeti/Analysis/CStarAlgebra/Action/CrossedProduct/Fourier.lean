@@ -133,29 +133,12 @@ theorem inner_single_fourierCoeff (hρ : Function.Injective ρ)
 /-- An element with all Fourier coefficients zero is zero. -/
 theorem eq_zero_of_fourierCoeff_eq_zero (hρ : Function.Injective ρ)
     (x : regularAlgebra α ρ Measure.count) (hx : ∀ g, fourierCoeff α ρ hρ g x = 0) : x = 0 := by
-  have hsingle (s : G) (v : H) :
-      (x : Lp H 2 (Measure.count : Measure G) →L[ℂ] Lp H 2 (Measure.count : Measure G))
-        (indicatorConstLp 2 (measurableSet_singleton s) (by simp) v) = 0 := by
-    refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := ℂ) _ fun r w => ?_
-    rw [inner_single_fourierCoeff α ρ hρ, hx]
-    simp only [map_zero, zero_apply, inner_zero_right]
-  have hadjoint (η : Lp H 2 (Measure.count : Measure G)) :
-      (x : Lp H 2 (Measure.count : Measure G) →L[ℂ]
-        Lp H 2 (Measure.count : Measure G)).adjoint η = 0 := by
-    refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := ℂ) _ fun s v => ?_
-    rw [ContinuousLinearMap.adjoint_inner_right, hsingle, inner_zero_left]
   apply Subtype.ext
-  have ht : (x : Lp H 2 (Measure.count : Measure G) →L[ℂ]
-      Lp H 2 (Measure.count : Measure G)).adjoint = 0 := by
-    apply ContinuousLinearMap.ext
-    intro η
-    simpa only [zero_apply] using hadjoint η
-  calc
-    (x : Lp H 2 (Measure.count : Measure G) →L[ℂ] Lp H 2 (Measure.count : Measure G)) =
-        (x : Lp H 2 (Measure.count : Measure G) →L[ℂ]
-          Lp H 2 (Measure.count : Measure G)).adjoint.adjoint :=
-      (ContinuousLinearMap.adjoint_adjoint _).symm
-    _ = 0 := by rw [ht, map_zero]
+  apply ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+  intro s v
+  refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := ℂ) _ fun r w => ?_
+  rw [inner_single_fourierCoeff α ρ hρ, hx]
+  simp only [map_zero, zero_apply, inner_zero_right]
 
 /-- Fourier coefficients determine elements of the concrete regular crossed product. -/
 @[ext]
