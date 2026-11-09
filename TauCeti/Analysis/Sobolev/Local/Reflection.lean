@@ -30,7 +30,8 @@ the real axis. This file extends such maps across the axis by the order-`k` high
 whose weights `c = TauCeti.higherReflectionCoeff k` solve the Vandermonde system
 `∑ j, c j (-1 / (j + 1)) ^ i = 1` for `i < k`. On each normal slice it is
 `TauCeti.higherReflection` (`TauCeti.planarReflection_higherReflectionCoeff`); at `k = 1` it is the
-even reflection and at `k = 2` it extends `z.im` to itself (`TauCeti.planarReflection_two_im`).
+even reflection and at `k = 2` it extends `z.im` to itself
+(`TauCeti.planarReflection_higherReflectionCoeff_two_im`).
 
 The construction `TauCeti.planarReflection d g` allows arbitrary weights `d`. Its weak
 derivative across the axis is the reflection of the derivative: tangentially with the same
@@ -125,7 +126,7 @@ theorem planarReflection_higherReflectionCoeff_one (g : ℂ → F) (z : ℂ) :
 
 /-- The order-two reflection extends the normal coordinate to itself, while the even
 reflection would give its absolute value. -/
-theorem planarReflection_two_im :
+theorem planarReflection_higherReflectionCoeff_two_im :
     planarReflection (higherReflectionCoeff 2) (fun z => z.im) = fun z => z.im := by
   funext z
   rw [planarReflection_higherReflectionCoeff]
@@ -486,7 +487,7 @@ theorem HasWeakLineDerivOn.planarReflection_one {Ω : Opens ℂ}
   have hψ := setIntegral_fderiv_smul_eq_neg hgW hg hg' (hφ.comp (imDilation c).contDiff)
     (hφc.comp_imDilation (inv_ne_zero (higherReflectionNode_ne_zero j)))
     (tsupport_comp_imDilation_inv_subset hΩ j hφΩ) (Or.inl (by simp)) (v := 1)
-  simp only [Function.comp_def, fderiv_comp_imDilation_apply hφd, imDilation_one] at hψ
+  simp only [Function.comp_def, fderiv_comp_imDilation_apply hφd, imDilation_apply_one] at hψ
   exact hψ
 
 /-- **Weak gluing in the normal direction.** If `g'` is the weak derivative of `g` in the normal
@@ -534,7 +535,7 @@ theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
       (hφc.comp_imDilation (inv_ne_zero hn.ne))
     have hψΩ := tsupport_comp_imDilation_inv_subset hΩ j hφΩ
     have hdψ (w : ℂ) : fderiv ℝ ψ w I = n⁻¹ * fderiv ℝ φ (imDilation n⁻¹ w) I := by
-      rw [hψdef, fderiv_comp_imDilation_apply hφd, imDilation_I, map_smul, smul_eq_mul]
+      rw [hψdef, fderiv_comp_imDilation_apply hφd, imDilation_apply_I, map_smul, smul_eq_mul]
     -- The test function `χ = φ - ψ`.
     have hχ : ContDiff ℝ ∞ fun w => φ w - ψ w := hφ.sub hψ
     have hχc : HasCompactSupport fun w => φ w - ψ w := hφc.sub hψc

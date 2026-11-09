@@ -71,11 +71,11 @@ theorem imDilation_of_im_eq_zero (c : ℝ) {z : ℂ} (hz : z.im = 0) : imDilatio
   Complex.ext rfl (by simp [hz])
 
 @[simp]
-theorem imDilation_one (c : ℝ) : imDilation c 1 = 1 :=
+theorem imDilation_apply_one (c : ℝ) : imDilation c 1 = 1 :=
   imDilation_of_im_eq_zero c (by simp)
 
 @[simp]
-theorem imDilation_I (c : ℝ) : imDilation c I = c • I :=
+theorem imDilation_apply_I (c : ℝ) : imDilation c I = c • I :=
   Complex.ext (by simp) (by simp)
 
 /-- The determinant of the dilation is the dilation factor. -/
