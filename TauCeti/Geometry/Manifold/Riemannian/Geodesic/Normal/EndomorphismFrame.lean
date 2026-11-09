@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Hom
 import Mathlib.LinearAlgebra.Matrix.ToLin

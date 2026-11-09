@@ -19,6 +19,9 @@ of measures.
 
 ## Main results
 
+* `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
+  suffices for measures finite on a fixed increasing exhaustion by π-system sets, without
+  finite total mass.
 * `TauCeti.MeasureTheory.measurable_sum_smul_dirac` — a countable mixture of Dirac measures at
   fixed atoms is measurable when each weight is measurable.
 * `TauCeti.MeasureTheory.measurable_probabilityMeasure_map` — pushing forward along a fixed
@@ -115,6 +118,37 @@ theorem measurable_probabilityMeasure_map_of_measurable_uncurry
 end MeasureTheory
 
 end TauCeti
+
+open Set
+
+/-- Measurability on a generating π-system suffices for a family of measures finite on a
+fixed increasing exhaustion from that π-system. The measures need not have finite total mass.
+This extends `Measurable.measure_of_isPiSystem` by restricting to each exhaustion set. -/
+theorem Measurable.measure_of_isPiSystem_of_iUnion
+    {α β : Type*} [MeasurableSpace α] [mβ : MeasurableSpace β]
+    {μ : α → Measure β} {C : Set (Set β)} {B : ℕ → Set β}
+    (hgen : mβ = MeasurableSpace.generateFrom C) (hpi : IsPiSystem C)
+    (hB : ∀ n, B n ∈ C) (hmono : Monotone B) (hcover : ⋃ n, B n = univ)
+    (hfinite : ∀ a n, μ a (B n) ≠ ∞)
+    (hbasic : ∀ s ∈ C, Measurable fun a ↦ μ a s) : Measurable μ := by
+  have hmeas (s : Set β) (hs : s ∈ C) : MeasurableSet s :=
+    hgen ▸ MeasurableSpace.measurableSet_generateFrom hs
+  have hrestrict (n : ℕ) : Measurable fun a ↦ (μ a).restrict (B n) := by
+    have (a : α) : IsFiniteMeasure ((μ a).restrict (B n)) :=
+      isFiniteMeasure_restrict.mpr (hfinite a n)
+    refine Measurable.measure_of_isPiSystem hgen hpi (fun s hs ↦ ?_) ?_
+    · simp_rw [Measure.restrict_apply (hmeas s hs)]
+      rcases (s ∩ B n).eq_empty_or_nonempty with h | h
+      · simp [h]
+      · exact hbasic _ (hpi s hs (B n) (hB n) h)
+    · simpa using hbasic _ (hB n)
+  refine Measure.measurable_of_measurable_coe _ fun s hs ↦ ?_
+  have heq : (fun a ↦ μ a s) = fun a ↦ ⨆ n, (μ a).restrict (B n) s := by
+    funext a
+    rw [← Measure.restrict_iUnion_apply_eq_iSup hmono.directed_le hs, hcover,
+      Measure.restrict_univ]
+  rw [heq]
+  exact Measurable.iSup fun n ↦ (Measure.measurable_coe hs).comp (hrestrict n)
 
 namespace MeasureTheory
 

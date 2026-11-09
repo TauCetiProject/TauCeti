@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -27,7 +28,11 @@ the symbol calculus needs:
   derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
   annulus `1 ≤ ‖ξ‖ ≤ 2`;
 * on a proper space every iterated derivative of a cutoff is bounded, and the difference of two
-  cutoffs, as well as `1 - χ`, has compact support.
+  cutoffs, as well as `1 - χ`, has compact support;
+* the dilated cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, which vanish for `‖ξ‖ ≤ t` and equal `1` for
+  `‖ξ‖ ≥ 2 t`, satisfy the order-zero symbol estimates `‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`
+  uniformly in `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`); cutoffs at
+  growing radii are how asymptotic sums of symbols are built.
 
 ## References
 
@@ -171,6 +176,69 @@ theorem exists_bound_iteratedFDeriv [ProperSpace E] (k : ℕ) :
   refine (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
     (HasCompactSupport.intro (isCompact_closedBall 0 2) fun ξ hξ ↦ ?_)
   exact χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by simpa using hξ : 2 < ‖ξ‖).le
+
+/-- The dilated cutoff `ξ ↦ χ (t⁻¹ • ξ)` vanishes on the closed ball of radius `t`. -/
+theorem apply_inv_smul_eq_zero {t : ℝ} (ht : 0 < t) {ξ : E} (hξ : ‖ξ‖ ≤ t) : χ (t⁻¹ • ξ) = 0 :=
+  χ.apply_eq_zero_of_norm_le_one <| by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
+    exact inv_mul_le_one_of_le₀ hξ ht.le
+
+/-- The dilated cutoff `ξ ↦ χ (t⁻¹ • ξ)` equals `1` outside the open ball of radius `2 * t`. -/
+theorem apply_inv_smul_eq_one {t : ℝ} (ht : 0 < t) {ξ : E} (hξ : 2 * t ≤ ‖ξ‖) :
+    χ (t⁻¹ • ξ) = 1 :=
+  χ.apply_eq_one_of_two_le_norm <| by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le), le_inv_mul_iff₀ ht]
+    linarith
+
+/-- Every iterated derivative of the dilated cutoff `ξ ↦ χ (t⁻¹ • ξ)` vanishes on the closed ball
+of radius `t`. -/
+theorem iteratedFDeriv_comp_inv_smul_eq_zero (k : ℕ) {t : ℝ} (ht : 0 < t) {ξ : E}
+    (hξ : ‖ξ‖ ≤ t) : iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ = 0 := by
+  rw [iteratedFDeriv_comp_const_smul _ χ.contDiff]
+  dsimp only
+  rw [χ.iteratedFDeriv_eq_zero_of_norm_le_one k, smul_zero]
+  rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
+  exact inv_mul_le_one_of_le₀ hξ ht.le
+
+/-- The dilated cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, satisfy the order-zero symbol estimates
+`‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`, where `⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`, with a constant `C`
+independent of `t`. -/
+theorem exists_norm_iteratedFDeriv_comp_inv_smul_le [ProperSpace E] (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ ξ : E,
+      ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+  obtain ⟨B, hB⟩ := χ.exists_bound_iteratedFDeriv k
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
+  refine ⟨B * 3 ^ k, by positivity, fun t ht ξ => ?_⟩
+  have ht0 : 0 < t := one_pos.trans_le ht
+  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  rw [iteratedFDeriv_comp_const_smul _ χ.contDiff]
+  dsimp only
+  rw [norm_smul, norm_pow,
+    Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
+  rcases eq_or_ne k 0 with rfl | hk
+  · simpa using hB (t⁻¹ • ξ)
+  by_cases hξ : 2 * t ≤ ‖ξ‖
+  · rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by
+      rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht0.le), le_inv_mul_iff₀ ht0]
+      linarith), norm_zero, mul_zero]
+    positivity
+  -- Below radius `2 t` the weight `⟨ξ⟩ ≤ 3 t` controls the factor `t⁻ᵏ` from the chain rule.
+  have hle : (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ (3 * t) ^ k := by
+    have h9 : 1 + ‖ξ‖ ^ 2 ≤ (3 * t) ^ 2 := by nlinarith [norm_nonneg ξ]
+    calc (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ ((3 * t) ^ 2) ^ ((k : ℝ) / 2) :=
+          Real.rpow_le_rpow hw.le h9 (by positivity)
+      _ = (3 * t) ^ k := by
+          rw [← Real.rpow_natCast (3 * t) 2, ← Real.rpow_mul (by positivity),
+            Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero, Real.rpow_natCast]
+  have hinv : (t⁻¹) ^ k ≤ 3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+    rw [neg_div, Real.rpow_neg hw.le]
+    calc (t⁻¹) ^ k = 3 ^ k * ((3 * t) ^ k)⁻¹ := by
+          rw [mul_pow, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul, inv_pow]
+      _ ≤ 3 ^ k * ((1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2))⁻¹ := by gcongr
+  calc (t⁻¹) ^ k * ‖iteratedFDeriv ℝ k χ (t⁻¹ • ξ)‖
+      ≤ (3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2)) * B :=
+        mul_le_mul hinv (hB _) (norm_nonneg _) (by positivity)
+    _ = B * 3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by ring
 
 /-- If `f` is a smooth bump function centred at `0` with `1 ≤ f.rIn` and `f.rOut ≤ 2`, then
 `1 - f` is a frequency cutoff. -/
