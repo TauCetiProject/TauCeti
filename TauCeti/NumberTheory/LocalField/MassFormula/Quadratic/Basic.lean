@@ -70,16 +70,16 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- **The two fields `K(√ϖ)` and `K(√(u ϖ))` are distinct** when `2 ≠ 0` in `K` and `u` is a unit
-of `𝒪[K]` that is not a square: equality would make `ϖ · u ϖ`, hence `u`, a square. -/
+/-- **The two fields `K(√ϖ)` and `K(√(u ϖ))` are distinct** when `2 ≠ 0` in `K`, `ϖ ≠ 0` and `u` is
+a unit of `𝒪[K]` that is not a square: equality would make `ϖ · u ϖ`, hence `u`, a square. -/
 theorem adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul [NeZero (2 : K)] {ϖ : 𝒪[K]}
-    (hϖ : Irreducible ϖ) (u : 𝒪[K]ˣ) (hu : ¬ IsSquare ((u : 𝒪[K]) : K))
+    (hϖ : ϖ ≠ 0) (u : 𝒪[K]ˣ) (hu : ¬ IsSquare ((u : 𝒪[K]) : K))
     {x y : SeparableClosure K} (hx : x ^ 2 = algebraMap K (SeparableClosure K) ϖ)
     (hy : y ^ 2 = algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) :
     K⟮x⟯ ≠ K⟮y⟯ := by
   intro hxy
   obtain ⟨t, ht⟩ := IntermediateField.isSquare_mul_of_adjoin_simple_eq hx hy hxy
-  have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ (Subtype.ext h)
   refine hu ⟨t / ϖ, ?_⟩
   field_simp
   push_cast at ht
@@ -157,7 +157,7 @@ theorem encard_totallyRamifiedOfDegree_two (h2 : ¬ ringChar 𝓀[K] ∣ 2) :
   obtain ⟨y, hy⟩ := IsSepClosed.exists_pow_nat_eq
     (algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) 2
   rw [totallyRamifiedOfDegree_two_eq h2 hϖ u hu' hx hy,
-    Set.encard_pair (adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul hϖ u hu' hx hy)]
+    Set.encard_pair (adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul hϖ.ne_zero u hu' hx hy)]
 
 /-- **Serre's mass formula for quadratic extensions in odd residue characteristic**:
 `∑_{L ∈ σ_K(2)} q ^ (-c(L)) = 2`, where `q` is the cardinality of the residue field of `K`. Both
