@@ -160,9 +160,18 @@ theorem bernsteinMeasure_add {g : ℝ → ℝ} (hf : IsContinuousCompletelyMonot
 
 /-- The Bernstein measure turns nonnegative scalar multiples of functions into scalar multiples of
 measures. -/
-theorem bernsteinMeasure_const_mul (hf : IsContinuousCompletelyMonotoneOnIoi f) (c : ℝ≥0) :
-    bernsteinMeasure (fun t => (c : ℝ) * f t) = (c : ℝ≥0∞) • bernsteinMeasure f :=
-  (eq_bernsteinMeasure _ ((representsLaplace_bernsteinMeasure hf).smul c)).symm
+theorem bernsteinMeasure_const_mul (c : ℝ≥0) :
+    bernsteinMeasure (fun t => (c : ℝ) * f t) = (c : ℝ≥0∞) • bernsteinMeasure f := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  by_cases h : ∃ μ : Measure ℝ≥0, RepresentsLaplace μ f
+  · obtain ⟨μ, hμ⟩ := h
+    exact (eq_bernsteinMeasure _ ((representsLaplace_bernsteinMeasure
+      hμ.isContinuousCompletelyMonotoneOnIoi).smul c)).symm
+  · rw [bernsteinMeasure_eq_zero_of_not h, smul_zero]
+    refine bernsteinMeasure_eq_zero_of_not fun ⟨ν, hν⟩ ↦ h ⟨((c⁻¹ : ℝ≥0) : ℝ≥0∞) • ν, ?_⟩
+    refine (hν.smul c⁻¹).congr fun t _ ↦ ?_
+    simp [hc]
 
 /-- The Bernstein measure of the exponential `t ↦ e^{-tp}` is the point mass at `p`. -/
 @[simp]
