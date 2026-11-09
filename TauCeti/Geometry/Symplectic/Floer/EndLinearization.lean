@@ -119,6 +119,27 @@ theorem norm_floerLinearization_sub_stationaryCylinderOperator_le (ω : Symplect
         · exact le_opNorm₂ _ _ _
     _ = _ := by ring
 
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- A field `F` continuous in `(t, y)` is bounded along `x` on the compact set `T`, hence
+eventually bounded along `u`, uniformly in `t ∈ T`, when the loops `u(s, ·)` converge uniformly
+to `x` on `T`. -/
+private theorem exists_eventually_norm_le_of_tendstoUniformlyOn {E : Type*}
+    [SeminormedAddCommGroup E] {F : ℝ × V → E} (hF : Continuous F) {T : Set ℝ} (hT : IsCompact T)
+    {x : ℝ → V} (hx : ContinuousOn x T) {l : Filter ℝ} {u : ℝ × ℝ → V}
+    (hu : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l T) :
+    ∃ M, 0 < M ∧ ∀ᶠ s in l, ∀ t ∈ T, ‖F (t, u (s, t))‖ ≤ M := by
+  have hK := hT.image_of_continuousOn ((continuousOn_id' T).prodMk hx)
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hF.continuousOn
+  have h₁ := Metric.tendstoUniformlyOn_iff.1 (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hF.continuousAt)
+    ((TauCeti.tendstoUniformlyOn_const id l T).prodMk_same hu)) 1 one_pos
+  refine ⟨|C| + 1, by positivity, ?_⟩
+  filter_upwards [h₁] with s hs t ht
+  have e := hs t ht
+  simp only [dist_eq_norm', id_eq] at e
+  have hCt := hC _ (mem_image_of_mem _ ht)
+  have := norm_le_insert' (F (t, u (s, t))) (F (t, x t))
+  linarith [le_abs_self C]
+
 /-- **The linearized Floer operator on an end converges to the stationary cylinder operator.**
 Let `J_t(y)` be a `C¹` family of almost complex structures and `H_t(y)` a `C²` Hamiltonian, and let
 `u` be a map whose loops `u(s, ·)` converge uniformly on a compact set `T` of times, along a filter
@@ -157,29 +178,20 @@ theorem eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le
   have h₂ := Metric.tendstoUniformlyOn_iff.1
     (hK.comp_tendstoUniformlyOn (fun _ _ ↦ (hJ.continuous.clm_comp hdX).continuousAt) hpair)
     (ε / 2) (half_pos hε)
-  have h₃ := Metric.tendstoUniformlyOn_iff.1
-    (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hdJ.continuousAt) hpair) 1 one_pos
-  -- `dJ` is bounded along `x` on the compact set `T`, hence eventually along `u`.
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hdJ.continuousOn
-  have hM : 0 < |C| + 1 := by positivity
-  have h₄ := Metric.tendstoUniformlyOn_iff.1 hδ (ε / 2 / (|C| + 1)) (by positivity)
+  -- `dJ` is eventually bounded along `u`.
+  obtain ⟨M, hM, h₃⟩ := exists_eventually_norm_le_of_tendstoUniformlyOn hdJ hT hx hu
+  have h₄ := Metric.tendstoUniformlyOn_iff.1 hδ (ε / 2 / M) (by positivity)
   filter_upwards [h₁, h₂, h₃, h₄] with s hs₁ hs₂ hs₃ hs₄ t ht ξ
   refine (norm_floerLinearization_sub_stationaryCylinderOperator_le ω J H u ξ x (s, t)).trans ?_
   have e₁ := hs₁ t ht
   have e₂ := hs₂ t ht
-  have e₃ := hs₃ t ht
   have e₄ := hs₄ t ht
-  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, id_eq, Jc] at e₁ e₂ e₃ e₄
-  have hCt := hC _ (mem_image_of_mem _ ht)
-  simp only [Jc] at hCt
-  have hdJu : ‖fderiv ℝ (fun y ↦ (J t y).toLinearMap.toContinuousLinearMap) (u (s, t))‖ ≤
-      |C| + 1 := by
-    have := norm_le_insert' (fderiv ℝ (fun y ↦ (J t y).toLinearMap.toContinuousLinearMap)
-      (u (s, t))) (fderiv ℝ (fun y ↦ (J t y).toLinearMap.toContinuousLinearMap) (x t))
-    linarith [le_abs_self C]
+  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, id_eq, Jc] at e₁ e₂ e₄
+  have hdJu : ‖fderiv ℝ (fun y ↦ (J t y).toLinearMap.toContinuousLinearMap) (u (s, t))‖ ≤ M :=
+    hs₃ t ht
   have hdef : ‖fderiv ℝ (fun y ↦ (J t y).toLinearMap.toContinuousLinearMap) (u (s, t))‖ *
       ‖sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)‖ ≤ ε / 2 := by
-    calc _ ≤ (|C| + 1) * (ε / 2 / (|C| + 1)) := by gcongr
+    calc _ ≤ M * (ε / 2 / M) := by gcongr
       _ = ε / 2 := by field_simp
   nlinarith [norm_nonneg (fderiv ℝ ξ (s, t) stdComplexLineImag), norm_nonneg (ξ (s, t))]
 
@@ -225,24 +237,13 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
     (hs : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) stdComplexLineReal) 0 l T) :
     TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l T := by
-  set Jc : ℝ × V → V →L[ℝ] V := fun p ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap
-  have hK := hT.image_of_continuousOn ((continuousOn_id' T).prodMk hx)
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hJ.continuousOn
-  have hM : 0 < |C| + 1 := by positivity
-  have h₁ := Metric.tendstoUniformlyOn_iff.1 (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hJ.continuousAt)
-    ((TauCeti.tendstoUniformlyOn_const id l T).prodMk_same hu)) 1 one_pos
+  obtain ⟨M, hM, h₁⟩ := exists_eventually_norm_le_of_tendstoUniformlyOn hJ hT hx hu
   rw [Metric.tendstoUniformlyOn_iff] at hs ⊢
   intro ε hε
-  filter_upwards [hF, h₁, hs (ε / (|C| + 1)) (by positivity)] with s hsF hs₁ hs₂ t ht
-  have e₁ := hs₁ t ht
+  filter_upwards [hF, h₁, hs (ε / M) (by positivity)] with s hsF hs₁ hs₂ t ht
   have e₂ := hs₂ t ht
-  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, id_eq, Jc] at e₁ e₂ ⊢
-  have hCt := hC _ (mem_image_of_mem _ ht)
-  simp only [Jc] at hCt
-  have hJu : ‖(J t (u (s, t))).toLinearMap.toContinuousLinearMap‖ ≤ |C| + 1 := by
-    have := norm_le_insert' ((J t (u (s, t))).toLinearMap.toContinuousLinearMap)
-      ((J t (x t)).toLinearMap.toContinuousLinearMap)
-    linarith [le_abs_self C]
+  simp only [dist_eq_norm', Pi.zero_apply, sub_zero] at e₂ ⊢
+  have hJu : ‖(J t (u (s, t))).toLinearMap.toContinuousLinearMap‖ ≤ M := hs₁ t ht
   -- Applying `J` to the equation `∂s u + J δ = 0` gives `δ = J ∂s u`.
   have hδ : sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t) =
       (J t (u (s, t))).toLinearMap.toContinuousLinearMap
@@ -256,8 +257,8 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
   rw [hδ]
   calc _ ≤ ‖(J t (u (s, t))).toLinearMap.toContinuousLinearMap‖ *
         ‖fderiv ℝ u (s, t) stdComplexLineReal‖ := le_opNorm _ _
-    _ ≤ (|C| + 1) * ‖fderiv ℝ u (s, t) stdComplexLineReal‖ := by gcongr
-    _ < (|C| + 1) * (ε / (|C| + 1)) := by gcongr
+    _ ≤ M * ‖fderiv ℝ u (s, t) stdComplexLineReal‖ := by gcongr
+    _ < M * (ε / M) := by gcongr
     _ = ε := by field_simp
 
 end TauCeti.SymplecticForm

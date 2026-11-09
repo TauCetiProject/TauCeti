@@ -141,6 +141,22 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
 
+omit [FiniteDimensional ℝ V] in
+/-- **Derivative of an exponentially weighted map.** For `ξ` differentiable at `z`, the map
+`w ↦ e^{-δ w.1} ξ w` has derivative `e^{-δ z.1} (dξ(z) v - δ v.1 ξ(z))` in the direction `v`. -/
+theorem _root_.TauCeti.fderiv_exp_neg_mul_fst_smul_apply {ξ : ℝ × ℝ → V} {z : ℝ × ℝ} (δ : ℝ)
+    (hξ : DifferentiableAt ℝ ξ z) (v : ℝ × ℝ) :
+    fderiv ℝ (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)) • ξ w) z v =
+      Real.exp (-(δ * z.1)) • (fderiv ℝ ξ z v - (δ * v.1) • ξ z) := by
+  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
+      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
+    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
+  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
+  rw [hd.fderiv]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
+    ContinuousLinearMap.coe_fst', smul_eq_mul]
+  module
+
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
 differentiates in the `s` direction, where the operator has the leading term `∂s`. -/
@@ -149,14 +165,10 @@ theorem floerLinearization_exp_smul (ω : SymplecticForm V)
     (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
     ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
       Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
-      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
-    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
-  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
-  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
+  rw [floerLinearization_def, fderiv_exp_neg_mul_fst_smul_apply δ hξ,
+    fderiv_exp_neg_mul_fst_smul_apply δ hξ, floerLinearization_def]
+  simp only [stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul, map_sub, smul_apply,
+    mul_one, mul_zero, zero_smul, sub_zero]
   module
 
 section Families

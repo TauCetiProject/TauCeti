@@ -435,18 +435,11 @@ theorem stationaryCylinderOperator_exp_smul (δ : ℝ) (hξ : DifferentiableAt �
     stationaryCylinderOperator J S (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
       Real.exp (-(δ * z.1)) • stationaryCylinderOperator J
         (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) ξ z := by
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
-      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
-    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
-  have h : J z.2 (J z.2 (ξ z)) = -ξ z := AlmostComplexStructure.apply_apply _ _
-  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
-  rw [stationaryCylinderOperator_def, hd.fderiv, stationaryCylinderOperator_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst,
-    sub_apply, LinearMap.coe_toContinuousLinearMap', map_add, map_sub,
-    map_smul, sub_sub_eq_add_sub, smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul,
-    add_zero] at h ⊢
-  rw [h]
+  rw [stationaryCylinderOperator_sub_smul, stationaryCylinderOperator_def,
+    fderiv_exp_neg_mul_fst_smul_apply δ hξ, fderiv_exp_neg_mul_fst_smul_apply δ hξ,
+    stationaryCylinderOperator_def]
+  simp only [stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul, map_sub, mul_one, mul_zero,
+    zero_smul, sub_zero]
   module
 
 /-- For continuously varying `J_t`, the norm `g_t(f, f)` of a continuous map `f` of the cylinder
