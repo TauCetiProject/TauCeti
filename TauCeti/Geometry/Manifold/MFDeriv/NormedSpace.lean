@@ -29,6 +29,8 @@ with `F`, so one vanishes exactly when the other does.
   is the sum of its partial derivatives.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
+  family along a `C¹` manifold-valued map is continuous.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
@@ -183,6 +185,18 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
+
+/-- Along a `C¹` map `u : F → M` from a normed space to a manifold, the derivative in the domain
+variable of a `C¹` family `f : F → M → F'`, taken at `(y, u y)`, depends continuously on `y`. It is
+a partial derivative of the `C¹` map `(w, y) ↦ f w (u y)` on `F × F`. -/
+theorem continuous_fderiv_of_contMDiff {u : F → M} {f : F → M → F'}
+    (hu : ContMDiff 𝓘(𝕜, F) I 1 u)
+    (hf : ContMDiff (𝓘(𝕜, F).prod I) 𝓘(𝕜, F') 1 (Function.uncurry f)) :
+    Continuous fun y ↦ fderiv 𝕜 (fun w ↦ f w (u y)) y :=
+  Continuous.fderiv_one (f := fun y w ↦ f w (u y))
+    (contMDiff_iff_contDiff.mp
+      (hf.comp (contDiff_snd.contMDiff.prodMk (hu.comp contDiff_fst.contMDiff))))
+    continuous_id
 
 /-- The derivative of a vector-valued function, read in the target space, commutes with
 multiplication by a constant scalar acting continuously on the target, such as a complex scalar on
