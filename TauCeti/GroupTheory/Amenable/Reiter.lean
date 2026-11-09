@@ -145,8 +145,7 @@ theorem exists_finset_sum_card_smul_symmDiff_lt_of_sum_tsum_lt {p : X → ℝ} (
       ← ENNReal.ofReal_mul hε.le]
     exact (ENNReal.ofReal_lt_ofReal_iff hpos).2 h
   obtain ⟨t, ht, hlt⟩ := m.exists_pos_sum_measure_symmDiff_lt_mul_measure K
-    measurable_from_top.aemeasurable (fun _ _ ↦ measurable_from_top.aemeasurable)
-    (ae_of_all _ hp) h'
+    measurable_from_top.aemeasurable (fun _ _ ↦ measurable_from_top.aemeasurable) h'
   exact exists_finset_of_sum_count_restrict_lt hS subset_union_left
     (fun g hg ↦ (subset_biUnion_of_mem (fun g ↦ g • S) hg).trans subset_union_right) hε ht hlt
 

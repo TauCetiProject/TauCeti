@@ -35,6 +35,8 @@ Borel measurable structure on the scalar field.
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
+  when its dot product with itself is `1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
   over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
 * `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
@@ -83,6 +85,13 @@ variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+/-- A real vector lies on the unit sphere of Euclidean space exactly when the dot product of its
+coordinates with themselves is `1`. -/
+theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
+    WithLp.toLp 2 v ∈ Metric.sphere (0 : EuclideanSpace ℝ ι) 1 ↔ v ⬝ᵥ v = 1 := by
+  rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
+    ← real_inner_self_eq_norm_sq, inner_toLp_toLp, star_trivial]
 
 /-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
 `x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/
@@ -423,5 +432,25 @@ theorem continuous_euclideanFiberSum (f : ι → κ) :
 theorem measurable_euclideanFiberSum [MeasurableSpace 𝕜] [BorelSpace 𝕜] (f : ι → κ) :
     Measurable (euclideanFiberSum (𝕜 := 𝕜) (ι := ι) f) :=
   (continuous_euclideanFiberSum (𝕜 := 𝕜) f).measurable
+
+/-- The image of the preimage of `s` under the projection onto coordinate `i`, composed with a
+function `g` of that coordinate, is the image of `s` under `g`. -/
+theorem image_comp_euclideanSpace_proj_preimage {ι : Type*} {α : Type*} (g : 𝕜 → α)
+    (s : Set 𝕜) (i : ι) :
+    (fun z : EuclideanSpace 𝕜 ι ↦ g (z i)) '' (EuclideanSpace.proj (𝕜 := 𝕜) i ⁻¹' s) =
+      g '' s := by
+  have hsurj : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i : EuclideanSpace 𝕜 ι → 𝕜) :=
+    fun t ↦ ⟨(EuclideanSpace.equiv ι 𝕜).symm fun _ ↦ t, rfl⟩
+  exact (Set.image_comp g (EuclideanSpace.proj (𝕜 := 𝕜) i) _).trans
+    (congrArg (g '' ·) (hsurj.image_preimage s))
+
+/-- A function of the unique coordinate of a Euclidean line is injective on the preimage of `s`
+if it is injective on `s`. -/
+theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : Type*} {g : 𝕜 → α}
+    {s : Set 𝕜} (hg : Set.InjOn g s) (i : ι) :
+    Set.InjOn (fun z : EuclideanSpace 𝕜 ι ↦ g (z i)) (EuclideanSpace.proj (𝕜 := 𝕜) i ⁻¹' s) := by
+  have hinj : Function.Injective (EuclideanSpace.proj (𝕜 := 𝕜) i : EuclideanSpace 𝕜 ι → 𝕜) :=
+    fun x y h ↦ by ext j; rw [Subsingleton.elim j i]; exact h
+  exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
 
 end TauCeti

@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCofiber
-public import TauCeti.Algebra.Homology.Ext.Presentation
+public import TauCeti.CategoryTheory.ObjectProperty.Syzygy
 
 /-!
 # Projective cycles and contractible complexes
@@ -38,10 +37,10 @@ shape, possibly unbounded in both directions or cyclic.
 Iterating the last two points replaces an acyclic complex by acyclic complexes whose cycles have
 smaller and smaller projective dimension, until the cycles are projective.
 
-Dually, the cycle sequences `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` with projective middle terms shift
-extensions: `Ext^{i+1}(Zʲ, Y)` embeds into `Ext^{i+k+1}(Zʲ⁺ᵏ, Y)` along an exact range. In
-particular the cycles of a complex of projectives exact in degrees `j + 1, …, j + d` have no higher
-extensions into objects of injective dimension at most `d`; they are `d`-th syzygies.
+Dually, the cycle sequences `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` with projective middle terms show that the
+cycles of a complex of projectives exact in degrees `j + 1, …, j + d` are `d`-th syzygies; in
+particular they have no higher extensions into objects of injective dimension at most `d`
+(`CategoryTheory.ObjectProperty.IsSyzygy.ext_eq_zero_of_hasInjectiveDimensionLE`).
 
 ## Main results
 
@@ -53,10 +52,7 @@ extensions into objects of injective dimension at most `d`; they are `d`-th syzy
   contractible complex with projective terms.
 * `CochainComplex.hasProjectiveDimensionLT_cycles_of_add`: dimension shifting for the projective
   dimension of the cycles along an exact range of projectives.
-* `HomologicalComplex.ext_cycles_eq_zero_of_rel` and `CochainComplex.ext_cycles_eq_zero_of_add`:
-  dimension shifting for extensions out of the cycles.
-* `CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE`: the cycles of an exact range of
-  projectives have no higher extensions into objects of small injective dimension.
+* `CochainComplex.isSyzygy_cycles`: the cycles of an exact range of projectives are syzygies.
 
 ## References
 
@@ -66,8 +62,6 @@ extensions into objects of injective dimension at most `d`; they are `d`-th syzy
 public section
 
 open CategoryTheory Limits Abelian
-
-universe w
 
 variable {C : Type*} [Category* C] {ι : Type*} {c : ComplexShape ι}
 
@@ -162,54 +156,23 @@ theorem CochainComplex.hasProjectiveDimensionLT_cycles_of_add {K : CochainComple
     · rw [hj, show p + 1 + 1 + k = p + 1 + (k + 1) by lia]
       exact h
 
-section Ext
-
-variable [HasExt.{w} C] {Y : C}
-
-/-- **One dimension shift along the cycles**: for a relation `j → j'` of the shape, if `Kʲ` is
-projective and `K` is exact in degree `j'`, then `Ext^{n+1}(Zʲ, Y)` embeds into
-`Ext^{n+2}(Zʲ', Y)`, along the short exact sequence `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ' ⟶ 0`. -/
-theorem HomologicalComplex.ext_cycles_eq_zero_of_rel {K : HomologicalComplex C c} {j j' : ι}
-    (hjj' : c.Rel j j') [Projective (K.X j)] (hj' : K.ExactAt j') (n : ℕ)
-    (h : ∀ e : Ext.{w} (K.cycles j') Y (n + 2), e = 0) (e : Ext.{w} (K.cycles j) Y (n + 1)) :
-    e = 0 := by
-  exact (K.cyclesShortComplex_shortExact_of_iso hjj' hj' (Iso.refl _)
-    (Iso.refl _)).ext_X₁_eq_zero_of_ext_X₃_eq_zero h e
-
-/-- **Dimension shifting along the cycles**: if `K` has projective terms in degrees
-`j, …, j + k - 1` and is exact in degrees `j + 1, …, j + k`, then `Ext^{n+1}(Zʲ, Y)` vanishes
-whenever `Ext^{n+k+1}(Zʲ⁺ᵏ, Y)` does. -/
-theorem CochainComplex.ext_cycles_eq_zero_of_add {K : CochainComplex C ℤ} (j : ℤ) (k : ℕ)
-    (hproj : ∀ l : ℕ, l < k → Projective (K.X (j + l)))
-    (hexact : ∀ l : ℕ, l < k → K.ExactAt (j + l + 1)) (n : ℕ)
-    (h : ∀ e : Ext.{w} (K.cycles (j + k)) Y (n + k + 1), e = 0)
-    (e : Ext.{w} (K.cycles j) Y (n + 1)) : e = 0 := by
-  induction k generalizing j n with
-  | zero =>
-    rw [Nat.cast_zero, add_zero, add_zero] at h
-    exact h e
-  | succ k ih =>
+/-- **Cycles of an exact range of projectives are syzygies**: if `K` has projective terms in
+degrees `j, …, j + d - 1` and is exact in degrees `j + 1, …, j + d`, then `Zʲ` is a `d`-th syzygy
+relative to the projective objects, along the short exact sequences `0 ⟶ Zˡ ⟶ Kˡ ⟶ Zˡ⁺¹ ⟶ 0`. -/
+theorem CochainComplex.isSyzygy_cycles {K : CochainComplex C ℤ} (j : ℤ) (d : ℕ)
+    (hproj : ∀ l : ℕ, l < d → Projective (K.X (j + l)))
+    (hexact : ∀ l : ℕ, l < d → K.ExactAt (j + l + 1)) :
+    (isProjective C).IsSyzygy d (K.cycles j) := by
+  induction d generalizing j with
+  | zero => exact ObjectProperty.isSyzygy_zero _ _
+  | succ d ih =>
     have hj (l : ℕ) : j + 1 + (l : ℤ) = j + ((l + 1 : ℕ) : ℤ) := by push_cast; ring
-    have : Projective (K.X j) := by simpa using hproj 0 (by lia)
-    refine HomologicalComplex.ext_cycles_eq_zero_of_rel (j' := j + 1) rfl
-      (by simpa using hexact 0 (by lia)) n
-      (ih (j + 1) (fun l hl ↦ ?_) (fun l hl ↦ ?_) (n + 1) ?_) e
+    -- The short exact sequence `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0`.
+    refine ((isProjective C).isSyzygy_succ_iff d _).2 ⟨_,
+      K.cyclesShortComplex_shortExact_of_iso rfl (by simpa using hexact 0 (by lia)) (Iso.refl _)
+        (Iso.refl (K.cycles (j + 1))),
+      ⟨Iso.refl _⟩, by simpa using hproj 0 (by lia), ih (j + 1) (fun l hl ↦ ?_) (fun l hl ↦ ?_)⟩
     · rw [hj]
       exact hproj (l + 1) (by lia)
     · rw [hj]
       exact hexact (l + 1) (by lia)
-    · rw [hj, add_right_comm n 1 k, add_assoc n k 1]
-      exact h
-
-/-- **Cycles of an exact range of projectives are syzygies**: if `K` has projective terms in
-degrees `j, …, j + d - 1` and is exact in degrees `j + 1, …, j + d`, then `Ext^{n+1}(Zʲ, Y) = 0`
-for every object `Y` of injective dimension at most `d`. -/
-theorem CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE {K : CochainComplex C ℤ}
-    (d : ℕ) [HasInjectiveDimensionLE Y d] (j : ℤ)
-    (hproj : ∀ l : ℕ, l < d → Projective (K.X (j + l)))
-    (hexact : ∀ l : ℕ, l < d → K.ExactAt (j + l + 1)) (n : ℕ)
-    (e : Ext.{w} (K.cycles j) Y (n + 1)) : e = 0 :=
-  CochainComplex.ext_cycles_eq_zero_of_add j d hproj hexact n
-    (fun e ↦ e.eq_zero_of_hasInjectiveDimensionLT (d + 1) (by lia)) e
-
-end Ext
