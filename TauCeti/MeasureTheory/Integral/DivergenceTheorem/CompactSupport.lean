@@ -15,6 +15,10 @@ import Mathlib.Analysis.Normed.Group.Bounded
 This specializes Mathlib's `MeasureTheory.integral_divergence_of_hasFDerivAt_off_countable`
 to a globally `C¹`, compactly supported vector field. A bounding box contains its support,
 so every boundary flux vanishes and the full-space divergence integral is zero.
+
+It also localizes the divergence integral over a set of unique differentiability to a box
+containing the part of the support inside that set, which the half-space and quadrant divergence
+theorems share.
 -/
 
 public section
@@ -24,6 +28,34 @@ noncomputable section
 open Set
 
 namespace MeasureTheory
+
+/-- Let `f` be `C¹` on a measurable set `s` of unique differentiability, and let the part of its
+support inside `s` lie in a box `Icc a b ⊆ s`. Then its divergence within `s` is integrable on the
+box and on `s`, and its integrals over both agree. -/
+theorem _root_.ContDiffOn.integrableOn_divergence_and_setIntegral_eq_Icc {n : ℕ}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → F)} {s : Set (Fin (n + 1) → ℝ)}
+    (hf : ContDiffOn ℝ 1 f s) (hs : UniqueDiffOn ℝ s) (hsm : MeasurableSet s)
+    {a b : Fin (n + 1) → ℝ} (hab : Icc a b ⊆ s)
+    (hsupp : ∀ x ∈ s, x ∈ tsupport f → x ∈ Icc a b) :
+    IntegrableOn (fun x ↦ ∑ i : Fin (n + 1),
+      fderivWithin ℝ f s x (Pi.single i 1) i) (Icc a b) ∧
+    IntegrableOn (fun x ↦ ∑ i : Fin (n + 1), fderivWithin ℝ f s x (Pi.single i 1) i) s ∧
+    (∫ x in s, ∑ i : Fin (n + 1), fderivWithin ℝ f s x (Pi.single i 1) i) =
+      ∫ x in Icc a b, ∑ i : Fin (n + 1), fderivWithin ℝ f s x (Pi.single i 1) i := by
+  let D (x : Fin (n + 1) → ℝ) := ∑ i : Fin (n + 1), fderivWithin ℝ f s x (Pi.single i 1) i
+  have hDzero {x : Fin (n + 1) → ℝ} (hx : x ∈ s) (hk : x ∉ Icc a b) : D x = 0 := by
+    have hn : x ∉ tsupport f := fun hx' ↦ hk (hsupp x hx hx')
+    have hd := (HasFDerivWithinAt.of_notMem_tsupport ℝ (s := s) hn).fderivWithin (hs x hx)
+    simp [D, hd]
+  have hDc : ContinuousOn D s := by
+    apply continuousOn_finsetSum
+    intro i _
+    exact (continuous_apply i).comp_continuousOn
+      ((hf.continuousOn_fderivWithin hs (by simp)).clm_apply continuousOn_const)
+  have hDi : IntegrableOn D (Icc a b) := (hDc.mono hab).integrableOn_compact isCompact_Icc
+  exact ⟨hDi, hDi.of_forall_sdiff_eq_zero hsm fun x hx ↦ hDzero hx.1 hx.2,
+    setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hsm hab fun x hx ↦ hDzero hx.1 hx.2⟩
 
 /-- The divergence of a globally `C¹`, compactly supported coordinate vector field is
 integrable and has zero integral on the whole space. -/

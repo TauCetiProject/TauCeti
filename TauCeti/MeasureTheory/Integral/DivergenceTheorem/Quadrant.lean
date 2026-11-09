@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.MeasureTheory.Integral.DivergenceTheorem.CompactSupport
 public import Mathlib.Analysis.Normed.Group.Bounded
 
 /-!
@@ -39,11 +40,13 @@ open scoped Topology
 
 namespace MeasureTheory
 
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
 /-- The `i`-th component of a field along the face `x i = 0` of the quadrant, parametrized by the
 quadrant one dimension down, is integrable when it vanishes outside a cube `[0, R]ⁿ`, and its
 integral over the face is the integral over that cube. -/
 private lemma integrableOn_and_setIntegral_face_quadrant {n : ℕ}
-    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ)} (hf : ContDiffOn ℝ 1 f (Ici 0)) {R : ℝ}
+    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → F)} (hf : ContDiffOn ℝ 1 f (Ici 0)) {R : ℝ}
     (i : Fin (n + 1)) (hzero : ∀ y ∈ Ici (0 : Fin n → ℝ), y ∉ Icc 0 (fun _ ↦ R) →
       f (i.insertNth 0 y) i = 0) :
     IntegrableOn (fun y : Fin n → ℝ ↦ f (i.insertNth 0 y) i) (Ici 0) ∧
@@ -67,7 +70,7 @@ theorem: the divergence integral is minus the sum, over the faces `x i = 0`, of 
 the `i`-th component over the face, parametrized by the quadrant one dimension down. Both the
 divergence and every face integrand are integrable. -/
 theorem _root_.ContDiffOn.integral_divergence_coordinate_quadrant {n : ℕ}
-    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ)}
+    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → F)}
     (hf : ContDiffOn ℝ 1 f (Ici 0)) (hc : HasCompactSupport f) :
     IntegrableOn (fun x ↦ ∑ i : Fin (n + 1),
       fderivWithin ℝ f (Ici 0) x (Pi.single i 1) i) (Ici 0) ∧
@@ -90,19 +93,8 @@ theorem _root_.ContDiffOn.integral_divergence_coordinate_quadrant {n : ℕ}
     rw [Real.norm_eq_abs] at this
     exact this.not_ge hj
   have huniq : UniqueDiffOn ℝ Q := TauCeti.uniqueDiffOn_pi_Ici 0
-  -- The divergence vanishes on the quadrant outside the cube `[0, R]ⁿ⁺¹`.
-  let D (x : Fin (n + 1) → ℝ) := ∑ i : Fin (n + 1), fderivWithin ℝ f Q x (Pi.single i 1) i
-  have hDzero {x : Fin (n + 1) → ℝ} (hx : x ∈ Q) (hk : x ∉ Icc 0 b) : D x = 0 := by
-    have hn : x ∉ tsupport f := fun hx' ↦
-      hk (hmem hx (hbound x hx'))
-    have hd := (HasFDerivWithinAt.of_notMem_tsupport ℝ (s := Q) hn).fderivWithin (huniq x hx)
-    simp [D, hd]
-  have hDc : ContinuousOn D Q := by
-    apply continuousOn_finsetSum
-    intro i _
-    exact (continuous_apply i).comp_continuousOn
-      ((hf.continuousOn_fderivWithin huniq (by simp)).clm_apply continuousOn_const)
-  have hDi : IntegrableOn D (Icc 0 b) := (hDc.mono hKQ).integrableOn_compact isCompact_Icc
+  obtain ⟨hDi, hDI, hDiEq⟩ := hf.integrableOn_divergence_and_setIntegral_eq_Icc huniq hQm hKQ
+    fun x hx hx' ↦ hmem hx (hbound x hx')
   -- Each face integrand vanishes on the face quadrant outside `[0, R]ⁿ`.
   have hfacezero (i : Fin (n + 1)) (y : Fin n → ℝ) (hy : y ∈ Ici 0)
       (hk : y ∉ Icc 0 fun _ ↦ R) : f (i.insertNth 0 y) i = 0 := by
@@ -127,10 +119,8 @@ theorem _root_.ContDiffOn.integral_divergence_coordinate_quadrant {n : ℕ}
       exact ((hf.differentiableOn one_ne_zero) x (mem_of_mem_nhds hn)).hasFDerivWithinAt
         |>.hasFDerivAt hn)
     hDi
-  refine ⟨hDi.of_forall_sdiff_eq_zero hQm fun x hx ↦ hDzero hx.1 hx.2,
-    fun i ↦ (hface i).1, ?_⟩
-  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hQm hKQ fun x hx ↦ hDzero hx.1 hx.2,
-    hdiv, ← Finset.sum_neg_distrib]
+  refine ⟨hDI, fun i ↦ (hface i).1, ?_⟩
+  rw [hDiEq, hdiv, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp only [hupper, integral_zero, zero_sub, Pi.zero_apply]
   exact congrArg Neg.neg (hface i).2
