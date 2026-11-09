@@ -337,6 +337,13 @@ end IsWeakLinearCauchyRiemannOn
 
 section Standard
 
+/-- Conjugation is real-linear, so its derivative applies conjugation. This is the applied form
+of `ContinuousLinearEquiv.fderiv` for `conjCLE`, with the coercion of `conjCLE` to `conj`
+bridged by `Complex.conjCLE_apply`. -/
+private theorem fderiv_conj_apply (z w : ℂ) : fderiv ℝ conj z w = conj w := by
+  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
+  rw [hconj, conjCLE.fderiv, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
+
 /-- The identity solves the homogeneous equation for `J = i`: its derivative is the identity and
 `1 + i·i = 0`. -/
 theorem isWeakCauchyRiemannOn_id :
@@ -353,8 +360,7 @@ theorem not_isWeakCauchyRiemannOn_conj (hΩ : (Ω : Set ℂ).Nonempty) :
   obtain ⟨z, hz⟩ := hΩ
   intro h
   have h2 := h z hz
-  have hd : fderiv ℝ conj z = _ := conjCLE.fderiv
-  rw [hd] at h2
+  rw [fderiv_conj_apply, fderiv_conj_apply] at h2
   norm_num [Complex.ext_iff] at h2
 
 -- With the swapped expression `D(i) + J D(1)` in place of `D(1) + J D(i)`, the identity would
@@ -365,8 +371,7 @@ example (z : ℂ) : fderiv ℝ id z I + (I • ContinuousLinearMap.id ℝ ℂ) (
 -- With the swapped expression, conjugation would be a solution, since `-i + i·1 = 0`.
 example (z : ℂ) :
     fderiv ℝ conj z I + (I • ContinuousLinearMap.id ℝ ℂ) (fderiv ℝ conj z 1) = 0 := by
-  have hd : fderiv ℝ conj z = _ := conjCLE.fderiv
-  rw [hd]
+  rw [fderiv_conj_apply, fderiv_conj_apply]
   norm_num [Complex.ext_iff]
 
 end Standard
