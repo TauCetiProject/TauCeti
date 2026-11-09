@@ -40,6 +40,10 @@ therefore no greatest one.
 
 ## Main statements
 
+* `MeasureTheory.Measure.IsLatticeSpan.measure_Ioc_mul_eq_measure_singleton`: an interval between
+  consecutive lattice points carries only its right endpoint.
+* `MeasureTheory.Measure.IsLatticeSpan.measure_Iic_eq_of_mem_Ico`: cumulative mass is constant
+  between consecutive lattice points.
 * `MeasureTheory.Measure.IsLattice.isLatticeSpan_iff`: for a lattice measure, `b` is a span
   exactly when `b > 0` and every atom of `μ` is a multiple of `b`.
 * `MeasureTheory.Measure.IsLatticeSpan.isGreatest_setGcd_mul`: if `a` is a span and
@@ -109,6 +113,43 @@ theorem IsLatticeSpan.cond (h : μ.IsLatticeSpan a) (s : Set ℝ≥0) :
 theorem IsLatticeSpan.measure_compl_range (h : μ.IsLatticeSpan a) :
     μ (range fun n : ℕ ↦ (n : ℝ≥0) * a)ᶜ = 0 :=
   mem_ae_iff.1 h.ae_mem_range
+
+/-- An interval between consecutive lattice points carries only its right endpoint.
+The left endpoint is excluded, even when the measure has an atom there. -/
+theorem IsLatticeSpan.measure_Ioc_mul_eq_measure_singleton (h : μ.IsLatticeSpan a) (n : ℕ) :
+    μ (Ioc ((n : ℝ≥0) * a) ((n + 1 : ℕ) * a)) = μ {((n + 1 : ℕ) : ℝ≥0) * a} := by
+  apply measure_congr
+  filter_upwards [h.ae_mem_range] with x hx
+  obtain ⟨k, rfl⟩ := hx
+  apply propext
+  simp only [mem_Ioc, mem_singleton_iff]
+  have hle : (k : ℝ≥0) * a ≤ ((n + 1 : ℕ) : ℝ≥0) * a ↔ k ≤ n + 1 := by
+    rw [mul_le_mul_iff_left₀ h.pos]
+    exact Nat.cast_le
+  have hlt : (n : ℝ≥0) * a < (k : ℝ≥0) * a ↔ n < k := by
+    rw [mul_lt_mul_iff_left₀ h.pos]
+    exact Nat.cast_lt
+  have heq : (k : ℝ≥0) * a = ((n + 1 : ℕ) : ℝ≥0) * a ↔ k = n + 1 := by
+    rw [mul_left_inj' h.pos.ne']
+    exact Nat.cast_inj
+  rw [hle, hlt, heq]
+  omega
+
+/-- The cumulative mass of a lattice measure is constant between consecutive lattice points. -/
+theorem IsLatticeSpan.measure_Iic_eq_of_mem_Ico (h : μ.IsLatticeSpan a) {t : ℝ≥0} {n : ℕ}
+    (ht : t ∈ Ico ((n : ℝ≥0) * a) ((n + 1 : ℕ) * a)) :
+    μ (Iic t) = μ (Iic ((n : ℝ≥0) * a)) := by
+  apply measure_congr
+  filter_upwards [h.ae_mem_range] with x hx
+  obtain ⟨k, rfl⟩ := hx
+  apply propext
+  simp only [mem_Iic]
+  constructor
+  · intro hk
+    have hkn : k < n + 1 := by
+      exact_mod_cast (mul_lt_mul_iff_left₀ h.pos).1 (hk.trans_lt ht.2)
+    exact mul_le_mul_of_nonneg_right (by exact_mod_cast (by omega : k ≤ n)) zero_le
+  · exact fun hk ↦ hk.trans ht.1
 
 /-- Every atom of a measure with span `a` is a multiple of `a`. -/
 theorem IsLatticeSpan.exists_nat_mul_eq_of_measure_singleton_ne_zero (h : μ.IsLatticeSpan a)

@@ -77,13 +77,10 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 exactly when it is an eigenvector of `T` with eigenvalue `μ`. -/
 theorem adjoint_apply_eq_smul_iff (hT : IsStarNormal T) (μ : 𝕜) (x : E) :
     adjoint T x = conj μ • x ↔ T x = μ • x := by
-  have hc : Commute T (star (μ • 1 : E →L[𝕜] E)) := by
-    rw [star_smul, star_one]
-    exact (Commute.one_right T).smul_right _
-  have hN : IsStarNormal (T - μ • 1) := hc.isStarNormal_sub
-  have h := ContinuousLinearMap.IsStarNormal.adjoint_apply_eq_zero_iff hN x
-  rwa [← star_eq_adjoint, star_sub, star_smul, star_one, star_eq_adjoint, sub_apply, sub_apply,
-    smul_apply, smul_apply, sub_eq_zero, sub_eq_zero, ← starRingEnd_apply] at h
+  have hN : IsStarNormal (T - μ • 1) :=
+    Commute.isStarNormal_sub (by simpa using (Commute.one_right T).smul_right (conj μ))
+  simpa [sub_eq_zero, ← star_eq_adjoint] using
+    ContinuousLinearMap.IsStarNormal.adjoint_apply_eq_zero_iff hN x
 
 /-- The eigenspace of the adjoint of a normal operator at `conj μ` is the eigenspace of the
 operator at `μ`. -/
@@ -152,7 +149,7 @@ end Complex
 
 end IsStarNormal
 
-open Module Module.End ComplexStarModule LinearMap
+open Function Module Module.End ComplexStarModule LinearMap
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   [FiniteDimensional ℂ E]
@@ -167,10 +164,8 @@ theorem apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart (T : E →ₗ[ℂ
     {a b : ℂ} {v : E} (ha : v ∈ eigenspace (ℜ T : E →ₗ[ℂ] E) a)
     (hb : v ∈ eigenspace (ℑ T : E →ₗ[ℂ] E) b) :
     T v = (a + Complex.I * b) • v := by
-  conv_lhs => rw [← realPart_add_I_smul_imaginaryPart T]
-  rw [LinearMap.add_apply, LinearMap.smul_apply, mem_eigenspace_iff.mp ha,
-    mem_eigenspace_iff.mp hb, add_smul,
-    mul_smul]
+  rw [← realPart_add_I_smul_imaginaryPart T, LinearMap.add_apply, LinearMap.smul_apply,
+    mem_eigenspace_iff.mp ha, mem_eigenspace_iff.mp hb, add_smul, mul_smul]
 
 end LinearMap
 
@@ -214,7 +209,7 @@ namespace TauCeti
 any finite type of cardinality equal to the dimension. No finiteness of the family is needed. -/
 theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     (T : ι → E →ₗ[ℂ] E) (hT : ∀ i, IsStarNormal (T i))
-    (hC : Pairwise (fun i j => Commute (T i) (T j)))
+    (hC : Pairwise (Commute on T))
     {κ : Type*} [Fintype κ] (hκ : Fintype.card κ = finrank ℂ E) :
     ∃ (b : OrthonormalBasis κ ℂ E) (μ : ι → κ → ℂ),
       ∀ i j, T i (b j) = μ i j • b j := by
@@ -225,22 +220,16 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   -- All real and imaginary parts are symmetric and commute with one another.
   let S : ι × Bool → E →ₗ[ℂ] E := fun p => if p.2 then ℑ (T p.1) else ℜ (T p.1)
   have hS (p : ι × Bool) : (S p).IsSymmetric := by
-    dsimp [S]
-    split
-    · exact (isSymmetric_iff_isSelfAdjoint _).mpr (ℑ _).2
-    · exact (isSymmetric_iff_isSelfAdjoint _).mpr (ℜ _).2
-  have hSC : Pairwise (fun p q => Commute (S p) (S q)) := by
-    intro p q _
-    have := hT p.1
-    have := hT q.1
-    have h := (hcomm p.1 q.1).realPart_imaginaryPart_of_isStarNormal
-    rcases p with ⟨i, a⟩
-    rcases q with ⟨j, b⟩
+    rw [isSymmetric_iff_isSelfAdjoint]
+    rcases p with ⟨i, _ | _⟩
+    exacts [(ℜ (T i)).2, (ℑ (T i)).2]
+  have hSC : Pairwise (Commute on S) := by
+    rintro ⟨i, a⟩ ⟨j, b⟩ -
+    have := hT i
+    have := hT j
+    have h := (hcomm i j).realPart_imaginaryPart_of_isStarNormal
     cases a <;> cases b
-    · exact h.1
-    · exact h.2.1
-    · exact h.2.2.1
-    · exact h.2.2.2
+    exacts [h.1, h.2.1, h.2.2.1, h.2.2.2]
   -- Only finitely many joint eigenspaces are nonzero. Choose a basis subordinate to them.
   let V : ((ι × Bool) → ℂ) → Submodule ℂ E := fun χ =>
     ⨅ p, eigenspace (S p) (χ p)
@@ -265,11 +254,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
 
 end TauCeti
 
-open Module
-
 namespace LinearMap
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
 
 /-- **The spectral theorem for normal operators.** A normal operator on a finite-dimensional
 complex inner product space has an orthonormal basis of eigenvectors. The basis may be indexed by

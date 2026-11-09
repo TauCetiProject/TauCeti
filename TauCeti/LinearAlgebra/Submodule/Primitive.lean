@@ -34,18 +34,20 @@ namespace Submodule
 
 /-- If a submodule contains every element with a nonzero multiple in it, its quotient is
 torsion-free. -/
-theorem isTorsionFree_quotient_of_smul_mem {R : Type*} [Ring R] [Nontrivial R]
+theorem isTorsionFree_quotient_of_smul_mem {R : Type*} [Ring R]
     {M : Type u} [AddCommGroup M] [Module R M] (S : Submodule R M)
     (hS : ∀ (c : R) (z : M), c ≠ 0 → c • z ∈ S → z ∈ S) :
     Module.IsTorsionFree R (M ⧸ S) :=
-  .of_smul_eq_zero fun c z hz ↦ by
-    obtain ⟨z, rfl⟩ := S.mkQ_surjective z
-    by_cases hc : c = 0
-    · exact .inl hc
-    right
-    rw [← map_smul, ← LinearMap.mem_ker, S.ker_mkQ] at hz
-    rw [← LinearMap.mem_ker, S.ker_mkQ]
-    exact hS c z hc hz
+  (subsingleton_or_nontrivial R).elim
+    (fun _ ↦ have := Module.subsingleton R (M ⧸ S); inferInstance)
+    fun _ ↦ .of_smul_eq_zero fun c z hz ↦ by
+      obtain ⟨z, rfl⟩ := S.mkQ_surjective z
+      by_cases hc : c = 0
+      · exact .inl hc
+      right
+      rw [← map_smul, ← LinearMap.mem_ker, S.ker_mkQ] at hz
+      rw [← LinearMap.mem_ker, S.ker_mkQ]
+      exact hS c z hc hz
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
   {M : Type u} [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]

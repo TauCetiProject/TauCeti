@@ -146,11 +146,9 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
     have hrw : K (f m) - K (f n) = f m - ((f m - K (f m)) + f n - (f n - K (f n))) := by abel
     rw [hrw]
     exact hfsep m _ hy
-  obtain ⟨m, n, hmn, hlt⟩ := IsCompactOperator.exists_dist_lt_of_norm_le hK hfnorm one_pos
+  obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm one_pos
   rw [dist_eq_norm] at hlt
-  rcases hmn.lt_or_gt with h | h
-  · exact (key m n h).not_gt hlt
-  · exact (key n m h).not_gt (by rwa [norm_sub_rev])
+  exact (key m n hmn).not_gt hlt
 
 variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 

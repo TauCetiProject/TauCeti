@@ -27,6 +27,8 @@ bounded function does not increase when the measure is replaced by an absolutely
 for example its restriction to a smaller set (`TauCeti.essSup_sub_essInf_mono_measure`). These
 make the essential oscillation on a ball the smallest length of an interval containing the
 function there, monotone in the radius, which is how oscillation decay estimates are iterated.
+The essential supremum of an essentially bounded real function is also the supremum of the levels
+that it exceeds on a set of positive measure (`TauCeti.ae_le_csSup_of_bddAbove`).
 -/
 
 public section
@@ -75,6 +77,26 @@ theorem essSup_sub_essInf_mono_measure [(ae ν).NeBot] {ν' : Measure α} {f : �
   refine essSup_sub_essInf_le (m := essInf f ν') (hν.ae_le ?_)
   filter_upwards [ae_le_essSup hf₁, ae_essInf_le hf₂] with x hx₁ hx₂
   exact ⟨hx₂, by linarith⟩
+
+/-- If a real function is not almost everywhere at most `k` but is essentially bounded above,
+the levels `l ≥ k` that it exceeds on a set of positive measure have a supremum `M`; then
+`f ≤ M` almost everywhere and `k < M`. -/
+theorem ae_le_csSup_of_bddAbove (f : α → ℝ) {k : ℝ} (hk : ¬ ∀ᵐ x ∂ν, f x ≤ k)
+    (hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l}) :
+    (∀ᵐ x ∂ν, f x ≤ sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l}) ∧
+    k < sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l} := by
+  set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l}
+  have hkL : k ∈ L := ⟨le_rfl, hk⟩
+  set M := sSup L
+  have hle : ∀ᵐ x ∂ν, f x ≤ M := by
+    rw [eventually_le_const_iff_forall_gt_eventually_lt_const]
+    intro b hb
+    obtain ⟨c, hMc, hcb⟩ := exists_between hb
+    have hc : ∀ᵐ x ∂ν, f x ≤ c := by
+      by_contra hc
+      exact (le_csSup hbdd ⟨(le_csSup hbdd hkL).trans hMc.le, hc⟩).not_gt hMc
+    exact hc.mono fun x hx ↦ hx.trans_lt hcb
+  exact ⟨hle, lt_of_not_ge fun hMk ↦ hk (hle.mono fun x hx ↦ hx.trans hMk)⟩
 
 end Oscillation
 

@@ -136,4 +136,13 @@ example : IsAutomatic 2 (fun t : ℕ ↦ if t = 0 then 7 else t % 2) ∧
   rw [h, Nat.coprime_self] at this
   exact (Nat.one_lt_pow hn.ne' (by norm_num)).ne' this
 
+/-- The finite exceptional prefix cannot be dropped: this sequence has no positive period
+valid from zero. -/
+example : ¬ ∃ p : ℕ, 0 < p ∧ ∀ t,
+    (if t + p = 0 then 7 else (t + p) % 2) = (if t = 0 then 7 else t % 2) := by
+  rintro ⟨p, hp, h⟩
+  have := h 0
+  simp [show p ≠ 0 by omega] at this
+  omega
+
 end TauCeti
