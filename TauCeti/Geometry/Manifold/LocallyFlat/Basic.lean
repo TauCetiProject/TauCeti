@@ -1043,11 +1043,11 @@ part of the domain lying under it with the complementary model, the map being th
 This is the geometric content of the local product statement; the general case reduces to it by
 shrinking the chart. -/
 private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialHomeomorph M (F × G)}
-    {u : Set F} {r : ℝ} (hu : IsOpen u) (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
+    {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
     (hψ : IsSliceChart ψ ((univ : Set F) ×ˢ ({0} : Set G)) (range f)) (hf : IsEmbedding f) :
     ∃ b : (f ⁻¹' ψ.source) × G → M,
       IsOpenEmbedding b ∧ ∀ y : (f ⁻¹' ψ.source), b (y, 0) = f y := by
-  obtain ⟨σ, hσe, hσ0⟩ := OpenPartialHomeomorph.exists_isOpenEmbedding_prod_symm_zero hu hr hψt
+  obtain ⟨σ, hσe, hσ0⟩ := OpenPartialHomeomorph.exists_isOpenEmbedding_prod_symm_zero hr hψt
   -- The zero slice of `σ` and the restriction of `f` are two embeddings with the same image.
   set e₁ : (f ⁻¹' ψ.source) → M := f ∘ ((↑) : (f ⁻¹' ψ.source) → N) with he₁
   set e₂ : u → M := fun v => σ (v, 0) with he₂
@@ -1095,7 +1095,7 @@ theorem IsLocallyFlat.exists_isOpenEmbedding_prod (h : IsLocallyFlat F G f) (x :
     rw [hψs]
     exact ⟨hφx, by rw [mem_preimage, hfx]; exact ⟨hxu, mem_ball_self hr⟩⟩
   exact ⟨f ⁻¹' ψ.source, ψ.open_source.preimage h.continuous, hψx,
-    exists_isOpenEmbedding_prod_of_target_eq_prod hu hr hψt hψ h.isEmbedding⟩
+    exists_isOpenEmbedding_prod_of_target_eq_prod hr hψt hψ h.isEmbedding⟩
 
 end ProductNeighborhood
 

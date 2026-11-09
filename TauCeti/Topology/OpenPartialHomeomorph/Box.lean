@@ -30,8 +30,11 @@ variable {M F G : Type*} [TopologicalSpace M] [TopologicalSpace F] [SeminormedAd
 /-- An open partial homeomorphism whose target is a box `u ×ˢ ball 0 r` gives an open embedding of
 `u × G` into the domain space, restricting to the inverse on the zero slice. -/
 theorem exists_isOpenEmbedding_prod_symm_zero {ψ : OpenPartialHomeomorph M (F × G)}
-    {u : Set F} {r : ℝ} (hu : IsOpen u) (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r) :
+    {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r) :
     ∃ σ : u × G → M, IsOpenEmbedding σ ∧ ∀ v : u, σ (v, 0) = ψ.symm ((v : F), (0 : G)) := by
+  have hu : IsOpen u := by
+    rw [← Set.fst_image_prod u (nonempty_ball.2 hr : (ball (0 : G) r).Nonempty)]
+    exact isOpenMap_fst _ (hψt ▸ ψ.open_target)
   -- Read the normal factor of the box as the whole complementary model.
   set ρ := OpenPartialHomeomorph.univBall (0 : G) r with hρ
   have hρs : ρ.source = univ := OpenPartialHomeomorph.univBall_source _ _
