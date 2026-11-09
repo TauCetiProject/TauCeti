@@ -22,7 +22,8 @@ across zero with nonzero derivative. The pre-Schwarzian chain rule then gives
 `z * f''(z) / f'(z) → -2` along the upper half-plane, and in particular `f'' / f' → 0`.
 
 `TauCeti.tendsto_zero_cobounded_of_eqOn_logDeriv_deriv` transfers this decay to any
-conjugation-symmetric continuation of the pre-Schwarzian which is continuous near infinity.  It
+conjugation-symmetric continuation of the pre-Schwarzian which is continuous within the upper
+half-plane at all sufficiently distant real points.  It
 supplies the full-plane limit needed in the partial-fraction characterization of the
 Schwarz--Christoffel differential equation.
 The straight-edge hypotheses concern the map in the inverse coordinate, rather than assuming
@@ -186,7 +187,7 @@ half-plane in the coordinate `w ↦ -1 / w` at infinity and normalize the target
 If the result extends to a function `g` which is continuous and injective up to a real segment
 through `0`, holomorphic and upper half-plane valued above it, and real on it, then every
 conjugation-symmetric continuation `φ` of the pre-Schwarzian derivative of `f` which is continuous
-near infinity on the real axis tends to `0` at infinity.
+within the upper half-plane at all sufficiently distant real points tends to `0` at infinity.
 
 This is the form the Schwarz--Christoffel converse uses: `φ` is holomorphic off the finitely many
 prevertices, so it is automatically continuous near infinity, and the hypotheses on `g` say that
