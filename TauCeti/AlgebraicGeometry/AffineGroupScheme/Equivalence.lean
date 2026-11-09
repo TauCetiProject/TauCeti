@@ -78,16 +78,18 @@ noncomputable def commHopfAlgCatOpEquivAffineGroupSchemeCat.functorObjIso
       (CommRingCat.of R)).app H)
 
 /-- The forward functor of `commHopfAlgCatOpEquivAffineGroupSchemeCat` sends a Hopf algebra to the
-bundled Hopf spectrum. This holds by `rfl`: the equivalence is `toEssImage.asEquivalence` composed
-with `fullSubcategoryCongr`, whose forward functor acts on objects as `toEssImage` followed by the
-inclusion of the full subcategory, and neither step changes the underlying scheme. This is the one
-place where that reduction is relied on; use `functorObjIso` to transport along it instead. -/
+bundled Hopf spectrum, as an equality of objects. Unlike `functorObjIso`, this equality lets one
+transport an arbitrary object property, with no isomorphism invariance needed, so it can be used to
+rewrite `P ((commHopfAlgCatOpEquivAffineGroupSchemeCat _).functor.obj H)`. -/
 theorem commHopfAlgCatOpEquivAffineGroupSchemeCat.functor_obj
     (R : Type u) [CommRing R] (H : (CommHopfAlgCat.{u} R)ᵒᵖ) :
     (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor.obj H =
       ⟨(hopfSpec (CommRingCat.of R)).obj H, by
         rw [affineGroupSchemeProperty_iff, hopfSpec_obj_X_left]
         infer_instance⟩ := by
+  -- The equivalence is `toEssImage.asEquivalence` composed with `fullSubcategoryCongr`, whose
+  -- forward functor acts on objects as `toEssImage` followed by the inclusion of the full
+  -- subcategory; neither step changes the underlying scheme.
   rfl
 
 /-- An affine group scheme is the Hopf spectrum of its coordinate Hopf algebra. -/
