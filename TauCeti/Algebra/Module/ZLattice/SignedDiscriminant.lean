@@ -205,6 +205,7 @@ theorem IsIntegral.signedDiscr_cast [MeasurableSpace E] [BorelSpace E] (h : IsIn
   push_cast
   rfl
 
+omit [FiniteDimensional ℝ E] in
 /-- In any `ℤ`-basis `b` of an integral full lattice `L`, the signed discriminant is
 `(-1) ^ ⌊finrank ℝ E / 2⌋` times the determinant of the integral Gram matrix of `b`. -/
 theorem IsIntegral.signedDiscr_eq_neg_one_pow_mul_det_toMatrix (h : IsIntegral L)
