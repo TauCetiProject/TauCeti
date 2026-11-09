@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus.Iterate
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.Homology
+public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 
 /-!
 # The time period homomorphism of a mapping torus
@@ -35,8 +36,12 @@ This file computes `N`:
   projection `p` and the period homomorphism of the circle `ℝ / ℤ`;
 * `N` takes integer values, since the periods of `dt₁` on `H₁(ℝ / ℤ; ℤ)` are integers
   (`AddCircle.exists_homologyPeriodHom_timeForm_eq_intCast_mul`);
-* `N` is natural under the map of mapping tori induced by a smooth semiconjugacy, and the
-  integer-iterate map `Y_(φ^k) → Y_φ` multiplies it by `k`.
+* `N` is natural: on the image `f_* c` of a class under a smooth map `f : X → Y_φ` it is the
+  period of `f^* dt`. In particular it is preserved by the map of mapping tori induced by a smooth
+  semiconjugacy, and the integer-iterate map `Y_(φ^k) → Y_φ` multiplies it by `k`;
+* if `M` is compact and `φ` is nondegenerate up to every period, then for distinct points `x i` of
+  positive periods `d i` the time periods `N [γ_(x i)] = d i` tend to infinity, so only finitely
+  many of these closed orbit classes lie below each bound on `N`.
 
 The opposite convention of circle-valued Morse theory integrates the closed form `α = -dt`, for
 which the suspension flow is the flow of `-α♯` in a metric making the suspension vector field dual
@@ -53,6 +58,8 @@ to `dt`; its period homomorphism is `-N`
 
 * `TauCeti.SmoothMappingTorus.timePeriodHom_closedOrbitHomologyClass`: `N [γ] = d` for the closed
   orbit through a point of period `d`.
+* `TauCeti.SmoothMappingTorus.timePeriodHom_singularHomologyMap`: `N (f_* c) = ∫_c f^* dt` for a
+  smooth map `f` into `Y_φ`.
 * `TauCeti.SmoothMappingTorus.timePeriodHom_singularHomologyMap_mk`: `N` vanishes on fibre classes.
 * `TauCeti.SmoothMappingTorus.timePeriodHom_eq_homologyPeriodHom_singularHomologyMap_proj`: `N`
   factors through the projection to the circle.
@@ -60,6 +67,9 @@ to `dt`; its period homomorphism is `-N`
 * `TauCeti.SmoothMappingTorus.timePeriodHom_singularHomologyMap_map`,
   `TauCeti.SmoothMappingTorus.timePeriodHom_singularHomologyMap_iterateMap`: naturality under
   semiconjugacies and the iterate law.
+* `TauCeti.SmoothMappingTorus.tendsto_timePeriodHom_closedOrbitHomologyClass`: for distinct
+  periodic points of a diffeomorphism of a compact manifold, nondegenerate up to every period, the
+  time periods of their closed orbits tend to infinity.
 
 ## References
 
@@ -72,7 +82,7 @@ public section
 
 noncomputable section
 
-open Function TauCeti.HurewiczOne
+open Filter Function TauCeti.HurewiczOne
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothMappingTorus
@@ -97,8 +107,9 @@ theorem homologyPeriodHom_neg_timeForm :
 
 variable {φ}
 
-/-- The time periods of pushed-forward classes are the periods of the pulled-back time form. -/
-private theorem timePeriodHom_singularHomologyMap {E₀ H₀ X : Type} [NormedAddCommGroup E₀]
+/-- **Naturality of the time period.** The time period of the image `f_* c` of a class under a
+smooth map `f : X → Y_φ` is the period of the pulled-back time form `f^* dt` on `c`. -/
+theorem timePeriodHom_singularHomologyMap {E₀ H₀ X : Type} [NormedAddCommGroup E₀]
     [NormedSpace ℝ E₀] [FiniteDimensional ℝ E₀] [TopologicalSpace H₀]
     {I₀ : ModelWithCorners ℝ E₀ H₀} [TopologicalSpace X] [ChartedSpace H₀ X] [IsManifold I₀ ∞ X]
     [T2Space X]
@@ -110,33 +121,6 @@ private theorem timePeriodHom_singularHomologyMap {E₀ H₀ X : Type} [NormedAd
   exact homologyPeriodHom_singularHomologyMap (hf.of_le (by simp))
     ((timeForm φ).isSmoothForm.of_le (by simp))
     ((SmoothForm.isClosed_def _).1 (isClosed_timeForm φ)) c
-
-/-- **The period of a closed orbit.** The class `[γ] ∈ H₁(Y_φ; ℤ)` of the closed orbit
-`[t] ↦ [t, x]` through a point `x` of period `d` has time period `N [γ] = ∫_γ dt = d`. -/
-@[simp]
-theorem timePeriodHom_closedOrbitHomologyClass {d : ℕ} {x : M} (hx : IsPeriodicPt φ d x) :
-    timePeriodHom φ (closedOrbitHomologyClass hx) = d := by
-  have hline : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ fun t ↦ mk φ t x :=
-    (contMDiff_uncurry_mk φ).comp (contMDiff_id.prodMk contMDiff_const)
-  rw [closedOrbitHomologyClass_def, AddCircle.fundamentalClass_def,
-    ContinuousMap.singularHomologyMap, homologyMap_H₁AddEquivHomology_loopClass, timePeriodHom_def,
-    homologyPeriodHom_loopClass,
-    pathClassIntegral_mk_eq_pathIntegral ((timeForm φ).isSmoothForm.of_le (by simp))
-      ((SmoothForm.isClosed_def _).1 (isClosed_timeForm φ)) (c := fun t ↦ mk φ ((d : ℝ) * t + 0) x)
-      (hline.comp (contDiff_const.mul contDiff_id |>.add contDiff_const).contMDiff |>.of_le
-        (by simp))
-      (fun t ↦ by
-        rw [Path.map_coe, Function.comp_apply, AddCircle.zsmulLoop_apply]
-        simp [mul_comm]),
-    pathIntegral_comp_mul_add ((timeForm φ).isSmoothForm.of_le (by simp)) (hline.of_le (by simp)),
-    pathIntegral_timeForm_mk]
-  ring
-
-/-- The class of a closed orbit of positive period has positive time period. -/
-theorem timePeriodHom_closedOrbitHomologyClass_pos {d : ℕ} {x : M} (hx : IsPeriodicPt φ d x)
-    (hd : 0 < d) : 0 < timePeriodHom φ (closedOrbitHomologyClass hx) := by
-  rw [timePeriodHom_closedOrbitHomologyClass]
-  exact_mod_cast hd
 
 variable (φ)
 
@@ -169,6 +153,34 @@ theorem exists_timePeriodHom_eq_intCast
   rw [timePeriodHom_eq_homologyPeriodHom_singularHomologyMap_proj]
   simpa using AddCircle.exists_homologyPeriodHom_timeForm_eq_intCast_mul (p := 1) _
 
+variable {φ} in
+/-- **The period of a closed orbit.** The class `[γ] ∈ H₁(Y_φ; ℤ)` of the closed orbit
+`[t] ↦ [t, x]` through a point `x` of period `d` has time period `N [γ] = ∫_γ dt = d`: its
+projection to the circle `ℝ / ℤ` winds `d` times around it. -/
+@[simp]
+theorem timePeriodHom_closedOrbitHomologyClass {d : ℕ} {x : M} (hx : IsPeriodicPt φ d x) :
+    timePeriodHom φ (closedOrbitHomologyClass hx) = d := by
+  have hd : (d : ℝ) ∈ AddSubgroup.zmultiples (1 : ℝ) := ⟨d, by simp⟩
+  have hcomp :
+      (⟨proj φ, (contMDiff_proj φ).continuous⟩ : C(SmoothMappingTorus φ, UnitAddCircle)).comp
+        ⟨closedOrbit φ hx, continuous_closedOrbit hx⟩ =
+      ⟨AddCircle.coverMap hd, AddCircle.continuous_coverMap hd⟩ := by
+    ext θ
+    induction θ using QuotientAddGroup.induction_on with
+    | H t => simp [closedOrbit_coe, proj_mk]
+  rw [timePeriodHom_eq_homologyPeriodHom_singularHomologyMap_proj, closedOrbitHomologyClass_def,
+    ← ContinuousMap.singularHomologyMap_comp, hcomp,
+    AddCircle.singularHomologyMap_coverMap_fundamentalClass hd d (by simp), map_zsmul,
+    AddCircle.homologyPeriodHom_timeForm_fundamentalClass]
+  simp
+
+variable {φ} in
+/-- The class of a closed orbit of positive period has positive time period. -/
+theorem timePeriodHom_closedOrbitHomologyClass_pos {d : ℕ} {x : M} (hx : IsPeriodicPt φ d x)
+    (hd : 0 < d) : 0 < timePeriodHom φ (closedOrbitHomologyClass hx) := by
+  rw [timePeriodHom_closedOrbitHomologyClass]
+  exact_mod_cast hd
+
 section Map
 
 variable {E' H' N : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
@@ -190,6 +202,7 @@ end Map
 
 /-- **The iterate law.** The integer-iterate map `Y_(φ^k) → Y_φ`, `[t, x] ↦ [k t, x]`, multiplies
 time periods by `k`. -/
+@[simp]
 theorem timePeriodHom_singularHomologyMap_iterateMap (k : ℤ)
     (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus (φ ^ k)))).homology 1) :
     timePeriodHom φ (ContinuousMap.singularHomologyMap ℤ 1
@@ -198,5 +211,26 @@ theorem timePeriodHom_singularHomologyMap_iterateMap (k : ℤ)
   rw [timePeriodHom_singularHomologyMap (contMDiff_iterateMap φ k), mpullback_iterateMap_timeForm,
     Submodule.coe_smul_of_tower, homologyPeriodHom_smul, timePeriodHom_def, AddMonoidHom.smul_apply,
     smul_eq_mul]
+
+section Finiteness
+
+variable {φ} [CompactSpace M] (hφ : ∀ N, IsNondegenerateUpToPeriod I φ N) {ι : Type*}
+  {x : ι → M} (hx : Injective x) {d : ι → ℕ} (hxd : ∀ i, IsPeriodicPt φ (d i) (x i))
+  (hd : ∀ i, 0 < d i)
+
+include hφ hx hd in
+/-- **Finitely many closed orbits below each period.** For a diffeomorphism of a compact manifold
+which is nondegenerate up to every period, the time periods `N [γ_(x i)] = d i` of the closed
+orbits through distinct points `x i` of positive periods `d i` tend to infinity along the cofinite
+filter. -/
+theorem tendsto_timePeriodHom_closedOrbitHomologyClass :
+    Tendsto (fun i ↦ timePeriodHom φ (closedOrbitHomologyClass (hxd i))) cofinite atTop := by
+  simp only [timePeriodHom_closedOrbitHomologyClass]
+  refine tendsto_natCast_atTop_atTop.comp (tendsto_atTop.2 fun N ↦ eventually_cofinite.2 ?_)
+  -- The points with a positive period at most `N` form a finite set.
+  exact (((hφ N).finite_setOf_isPeriodicPt φ.continuous).preimage hx.injOn).subset
+    fun i hi ↦ ⟨d i, hd i, (not_le.1 hi).le, hxd i⟩
+
+end Finiteness
 
 end TauCeti.SmoothMappingTorus

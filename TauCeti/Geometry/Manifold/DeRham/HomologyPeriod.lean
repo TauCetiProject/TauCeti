@@ -220,12 +220,7 @@ theorem homologyPeriodHom_singularHomologyMap (hf : ContMDiff I I' 2 f)
       chainsDesc_simplexChain_one, pathClassIntegral_mpullback hf hθ hclosed,
       ← Path.Homotopic.Quotient.mk_map]
     -- The pushed-forward simplex traces the image path; only the endpoints differ syntactically.
-    have key {x y x' y' : M'} (γ : Path x y) (γ' : Path x' y') (h : ∀ t, γ t = γ' t) :
-        pathClassIntegral θ (.mk γ) = pathClassIntegral θ (.mk γ') := by
-      obtain rfl : x = x' := by simpa using h 0
-      obtain rfl : y = y' := by simpa using h 1
-      rw [Path.ext (funext h)]
-    refine key _ _ fun t ↦ ?_
+    refine pathClassIntegral_mk_eq_of_apply_eq _ _ fun t ↦ ?_
     conv_lhs => rw [← simplex₁_path₁ s]
     rw [toSSet_map_app_simplex₁, path₁_simplex₁_apply]
     -- Both sides are `f (path₁ s t)`.
