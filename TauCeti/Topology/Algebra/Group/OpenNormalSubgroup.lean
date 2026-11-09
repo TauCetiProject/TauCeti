@@ -72,7 +72,7 @@ theorem toSubgroup_sup [SeparatelyContinuousMul G] (U V : OpenNormalSubgroup G) 
   (rfl)
 
 /-- The whole group, as an open normal subgroup. -/
-instance : Top (OpenNormalSubgroup G) :=
+instance instTopOpenNormalSubgroup : Top (OpenNormalSubgroup G) :=
   ⟨⟨⊤, Subgroup.normal_top⟩⟩
 
 /-- The top open normal subgroup as a set is the whole group. -/
@@ -90,10 +90,10 @@ theorem toSubgroup_top : (⊤ : OpenNormalSubgroup G).toSubgroup = ⊤ :=
 theorem mem_top (x : G) : x ∈ (⊤ : OpenNormalSubgroup G) :=
   Set.mem_univ x
 
-instance : OrderTop (OpenNormalSubgroup G) where
+instance instOrderTopOpenNormalSubgroup : OrderTop (OpenNormalSubgroup G) where
   le_top _ := Set.subset_univ _
 
-instance : Inhabited (OpenNormalSubgroup G) :=
+instance instInhabitedOpenNormalSubgroup : Inhabited (OpenNormalSubgroup G) :=
   ⟨⊤⟩
 
 section DiscreteTopology
@@ -101,7 +101,7 @@ section DiscreteTopology
 variable [DiscreteTopology G]
 
 /-- The trivial subgroup of a group with the discrete topology, as an open normal subgroup. -/
-instance : Bot (OpenNormalSubgroup G) :=
+instance instBotOpenNormalSubgroup : Bot (OpenNormalSubgroup G) :=
   ⟨⟨⟨⊥, isOpen_discrete _⟩, Subgroup.normal_bot⟩⟩
 
 /-- The bottom open normal subgroup of a discrete group as a set is `{1}`. -/
@@ -119,12 +119,12 @@ theorem toSubgroup_bot : (⊥ : OpenNormalSubgroup G).toSubgroup = ⊥ :=
 theorem mem_bot {x : G} : x ∈ (⊥ : OpenNormalSubgroup G) ↔ x = 1 :=
   Subgroup.mem_bot
 
-instance : OrderBot (OpenNormalSubgroup G) where
+instance instOrderBotOpenNormalSubgroup : OrderBot (OpenNormalSubgroup G) where
   bot_le U _ hx := Subgroup.mem_bot.1 hx ▸ one_mem U
 
 /-- `OpenNormalSubgroup G` is a bounded order for discrete `G`. This is not synthesized from the
 `OrderTop` and `OrderBot` instances. -/
-instance : BoundedOrder (OpenNormalSubgroup G) where
+instance instBoundedOrderOpenNormalSubgroup : BoundedOrder (OpenNormalSubgroup G) where
 
 end DiscreteTopology
 
