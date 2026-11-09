@@ -9,11 +9,13 @@ public import Mathlib.Algebra.Category.Grp.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Adjunction.FullyFaithfulLimits
 public import Mathlib.CategoryTheory.Sites.Abelian
 public import Mathlib.CategoryTheory.Sites.EpiMono
 public import TauCeti.CategoryTheory.Sites.Limits
+public import TauCeti.CategoryTheory.Sites.Preadditive
 
 /-!
 # Forgetting the module structure of a sheaf of modules is exact
@@ -35,7 +37,10 @@ sheaves of modules to short exact sequences of abelian sheaves.
 * `CategoryTheory.Sheaf.preservesEpimorphisms_sheafCompose_forget₂_moduleCat` and
   `CategoryTheory.Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat`: the same statement for
   sheaves with values in `ModuleCat R` over a fixed ring `R`, whose underlying abelian sheaf is
-  obtained by applying `forget₂ (ModuleCat R) AddCommGrpCat` sectionwise.
+  obtained by applying `forget₂ (ModuleCat R) AddCommGrpCat` sectionwise;
+* `CategoryTheory.Sheaf.preservesFiniteLimits_sheafCompose_forget₂_moduleCat` and
+  `CategoryTheory.Sheaf.preservesFiniteColimits_sheafCompose_forget₂_moduleCat`: this sectionwise
+  forgetful functor is exact, so it induces maps on `Ext` groups.
 
 ## Implementation notes
 
@@ -132,6 +137,20 @@ theorem shortExact_map_sheafCompose_forget₂_moduleCat
   { exact := hS.exact.map_of_mono_of_preservesKernel _ hS.mono_f inferInstance
     mono_f := inferInstanceAs (Mono ((sheafCompose J _).map S.f))
     epi_g := inferInstanceAs (Epi ((sheafCompose J _).map S.g)) }
+
+/-- Forgetting the module structures of sheaves of `R`-modules sectionwise preserves finite
+limits. -/
+instance preservesFiniteLimits_sheafCompose_forget₂_moduleCat :
+    PreservesFiniteLimits (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})) where
+  preservesFiniteLimits _ := inferInstance
+
+/-- Forgetting the module structures of sheaves of `R`-modules sectionwise preserves finite
+colimits, since it preserves short exact sequences. -/
+instance preservesFiniteColimits_sheafCompose_forget₂_moduleCat :
+    PreservesFiniteColimits (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})) :=
+  (Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi _).2 fun _ hS ↦
+    ⟨(shortExact_map_sheafCompose_forget₂_moduleCat hS).exact,
+      (shortExact_map_sheafCompose_forget₂_moduleCat hS).epi_g⟩
 
 end CategoryTheory.Sheaf
 

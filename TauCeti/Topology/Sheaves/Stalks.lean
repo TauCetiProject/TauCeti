@@ -14,6 +14,10 @@ public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Topology.Sheaves.Abelian
 public import Mathlib.Topology.Sheaves.Sheafify
 public import Mathlib.Topology.Sheaves.Stalks
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
+public import Mathlib.Algebra.Category.ModuleCat.Limits
+import Mathlib.CategoryTheory.Sites.LocallyInjective
 
 /-!
 # Maps from stalks
@@ -27,7 +31,10 @@ The stalk of an additive-group-valued presheaf at `x` vanishes exactly when ever
 neighbourhood of `x` restricts to zero on a smaller neighbourhood of `x`
 (`TopCat.Presheaf.isZero_stalk_iff`). Since sheafification does not change stalks
 (`TopCat.Presheaf.isZero_stalk_sheafify_iff`), the sheafification of a presheaf vanishes exactly
-when every section is locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`).
+when every section is locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`). For
+presheaves of modules, every section of a presheaf with zero sheafification is locally zero
+(`TopCat.Presheaf.exists_map_eq_zero_of_isZero_presheafToSheaf_obj`), since the sheafification
+map is locally injective.
 -/
 
 public section
@@ -111,6 +118,23 @@ theorem isZero_presheafToSheaf_obj_iff :
     ((presheafToSheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}).obj F)).trans
       (forall_congr' fun x ↦ ?_)
   exact (isZero_stalk_sheafify_iff x F).trans (isZero_stalk_iff F x)
+
+/-- If the sheafification of a presheaf of modules vanishes, every section of the presheaf is
+locally zero: each point of its domain has a neighbourhood on which it restricts to zero. -/
+theorem exists_map_eq_zero_of_isZero_presheafToSheaf_obj {R : Type u} [Ring R]
+    {P : X.Presheaf (ModuleCat.{u} R)}
+    (h : IsZero ((presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj P))
+    {U : Opens X} (s : P.obj (op U)) {x : X} (hx : x ∈ U) :
+    ∃ (V : Opens X) (hVU : V ≤ U), x ∈ V ∧ P.map (homOfLE hVU).op s = 0 := by
+  -- the images of `s` and `0` in the zero sheaf agree, so `s` and `0` agree locally
+  have hs : (CategoryTheory.toSheafify (Opens.grothendieckTopology X) P).app (op U) s =
+      (CategoryTheory.toSheafify (Opens.grothendieckTopology X) P).app (op U) 0 :=
+    (ModuleCat.subsingleton_of_isZero
+      (((sheafToPresheaf _ _).map_isZero h).obj (op U))).elim _ _
+  obtain ⟨V, f, hf, hxV⟩ := (Opens.mem_grothendieckTopology _).1
+    (CategoryTheory.Presheaf.equalizerSieve_mem _
+      (CategoryTheory.toSheafify (Opens.grothendieckTopology X) P) s 0 hs) x hx
+  exact ⟨V, f.le, hxV, hf.trans (map_zero _)⟩
 
 end TopCat.Presheaf
 

@@ -164,6 +164,15 @@ def supportedHRestrict (S : Closeds X) {W' W : Opens X} (h : W' ≤ W) (n : ℕ)
   relativeH'.map F (S.complInclusion W) (S.complInclusion W')
     (homOfLE (inf_le_inf_right S.compl h)) (homOfLE h) rfl n
 
+/-- Restriction of cohomology with supports is the map of relative cohomology induced by the
+inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)`. -/
+lemma supportedHRestrict_apply (S : Closeds X) {W' W : Opens X} (h : W' ≤ W) {n : ℕ}
+    (x : F.supportedH S W n) :
+    F.supportedHRestrict S h n x =
+      relativeH'.map F (S.complInclusion W) (S.complInclusion W')
+        (homOfLE (inf_le_inf_right S.compl h)) (homOfLE h) rfl n x :=
+  (rfl)
+
 @[simp]
 lemma supportedHRestrict_self (S : Closeds X) (W : Opens X) {n : ℕ} (x : F.supportedH S W n) :
     F.supportedHRestrict S (le_refl W) n x = x :=
