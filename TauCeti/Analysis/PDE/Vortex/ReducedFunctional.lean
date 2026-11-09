@@ -19,6 +19,7 @@ import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.PDE.Vortex.Potential
+import TauCeti.MeasureTheory.Function.Lp.SqrtOneAddSq
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Topology.Semicontinuity.Basic
 
@@ -367,35 +368,20 @@ theorem sobolevReducedFunctional_def (P : Polynomial ℂ) (u : W1p (volume : Mea
         ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
           (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z := (rfl)
 
-private theorem restrict_top_volume :
-    (volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ) = volume := by
-  simp
-
-private theorem ae_restrict_top_volume :
-    ae ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ)) = ae volume := by
-  rw [restrict_top_volume]
-
-private theorem integral_restrict_top (f : ℂ → ℝ) :
-    ∫ z, f z ∂(volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ) = ∫ z, f z := by
-  rw [restrict_top_volume]
-
-private theorem lintegral_restrict_top (f : ℂ → ℝ≥0∞) :
-    ∫⁻ z, f z ∂(volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ) = ∫⁻ z, f z := by
-  rw [restrict_top_volume]
-
 /-- The value of `u ∈ W^{1,2}(ℂ)` is square integrable on `ℂ`. -/
 private theorem memLp_value (u : W1p (volume : Measure ℂ) ⊤ 2) : MemLp (W1p.value u) 2 :=
-  (Lp.memLp (W1p.value u)).mono_measure restrict_top_volume.ge
+  (Lp.memLp (W1p.value u)).mono_measure Measure.restrict_univ.ge
 
 private theorem integral_value_sq (u : W1p (volume : Measure ℂ) ⊤ 2) :
     ∫ z, W1p.value u z ^ 2 = ‖W1p.value u‖ ^ 2 := by
-  rw [← W1p.integral_value_sq_eq_norm_value_sq, integral_restrict_top]
+  rw [← W1p.integral_value_sq_eq_norm_value_sq]
+  simp only [Opens.coe_top, Measure.restrict_univ]
 
 /-- On a test function `φ`, Taubes's functional on `W^{1,2}(ℂ)` is `reducedFunctional P φ`. -/
 theorem sobolevReducedFunctional_ofTestFunctionₗ (P : Polynomial ℂ) (φ : 𝓓((⊤ : Opens ℂ), ℝ)) :
     sobolevReducedFunctional P (W1p.ofTestFunctionₗ volume ⊤ 2 φ) = reducedFunctional P φ := by
   have hval : (W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 φ) : ℂ → ℝ) =ᵐ[volume] φ :=
-    (W1p.value_ofTestFunctionₗ_ae φ).filter_mono ae_restrict_top_volume.ge
+    (W1p.value_ofTestFunctionₗ_ae φ).filter_mono (ae_mono Measure.restrict_univ.ge)
   have h1 : ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 φ) z) - 1 -
           2 * W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 φ) z) =
@@ -504,8 +490,9 @@ private theorem lowerSemicontinuous_lintegral_potential (P : Polynomial ℂ) :
     ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))).comp
       ((toWeakSpaceCLM ℝ _).continuous.comp
         (W1p.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2)).continuous)
-  simpa only [Function.comp_def, toWeakSpaceCLM_eq_toWeakSpace, LinearEquiv.symm_apply_apply,
-    W1p.valueL_apply, lintegral_restrict_top] using h
+  simp only [Function.comp_def, toWeakSpaceCLM_eq_toWeakSpace, LinearEquiv.symm_apply_apply,
+    W1p.valueL_apply] at h
+  simpa only [Opens.coe_top, Measure.restrict_univ] using h
 
 /-- The potential `h (exp (2u) - 1 - 2u)` of `u ∈ W^{1,2}(ℂ)` is almost everywhere strongly
 measurable. -/
@@ -524,10 +511,11 @@ private theorem aestronglyMeasurable_potential (P : Polynomial ℂ)
 private theorem integral_mul_value_eq_inner {c : ℂ → ℝ} (hc : MemLp c 2)
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
     ∫ z, c z * W1p.value u z = ⟪(hc.restrict _).toLp c, W1p.value u⟫_ℝ := by
-  rw [L2.inner_def, integral_restrict_top]
+  rw [L2.inner_def]
+  simp only [Opens.coe_top, Measure.restrict_univ]
   refine integral_congr_ae ?_
   filter_upwards [(hc.restrict ((⊤ : Opens ℂ) : Set ℂ)).coeFn_toLp.filter_mono
-    ae_restrict_top_volume.ge] with z hz
+    (ae_mono Measure.restrict_univ.ge)] with z hz
   simp [hz, RCLike.inner_apply, mul_comm]
 
 /-- The sublevel sets of Taubes's functional on `W^{1,2}(ℂ)`, among the functions with integrable
@@ -542,9 +530,10 @@ private theorem convex_sublevel (hm : 0 < P.natDegree) (t : ℝ) :
   intro u hu v hv a b ha hb hab
   have hval : (W1p.value (a • u + b • v) : ℂ → ℝ) =ᵐ[volume]
       fun z ↦ a * W1p.value u z + b * W1p.value v z := by
-    filter_upwards [(W1p.value_add_ae (a • u) (b • v)).filter_mono ae_restrict_top_volume.ge,
-      (W1p.value_smul_ae a u).filter_mono ae_restrict_top_volume.ge,
-      (W1p.value_smul_ae b v).filter_mono ae_restrict_top_volume.ge] with z hz1 hz2 hz3
+    filter_upwards
+      [(W1p.value_add_ae (a • u) (b • v)).filter_mono (ae_mono Measure.restrict_univ.ge),
+      (W1p.value_smul_ae a u).filter_mono (ae_mono Measure.restrict_univ.ge),
+      (W1p.value_smul_ae b v).filter_mono (ae_mono Measure.restrict_univ.ge)] with z hz1 hz2 hz3
     rw [hz1, Pi.add_apply, hz2, hz3, Pi.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
   -- The potential is convex pointwise.
   have hpt : ∀ᵐ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
@@ -575,8 +564,9 @@ private theorem convex_sublevel (hm : 0 < P.natDegree) (t : ℝ) :
   have hG : ‖W1p.gradient (a • u + b • v)‖ ^ 2 ≤
       a * ‖W1p.gradient u‖ ^ 2 + b * ‖W1p.gradient v‖ ^ 2 := by
     have hn : ‖W1p.gradient (a • u + b • v)‖ ≤ a * ‖W1p.gradient u‖ + b * ‖W1p.gradient v‖ := by
-      rw [show W1p.gradient (a • u + b • v) = a • W1p.gradient u + b • W1p.gradient v by
-        simp only [← W1p.gradientL_apply, map_add, map_smul]]
+      have hlin : W1p.gradient (a • u + b • v) = a • W1p.gradient u + b • W1p.gradient v := by
+        simp only [← W1p.gradientL_apply, map_add, map_smul]
+      rw [hlin]
       refine (norm_add_le _ _).trans ?_
       rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb]
     have h0 : 0 ≤ ‖W1p.gradient (a • u + b • v)‖ := norm_nonneg _
@@ -697,7 +687,7 @@ theorem exists_isMinOn_sobolevReducedFunctional (hm : 0 < P.natDegree) :
   have h0 : (0 : W1p (volume : Measure ℂ) ⊤ 2) ∈ D := by
     have hz : (W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) : ℂ → ℝ) =ᵐ[volume] 0 := by
       have := (Lp.coeFn_zero ℝ 2 ((volume : Measure ℂ).restrict
-        ((⊤ : Opens ℂ) : Set ℂ))).filter_mono ae_restrict_top_volume.ge
+        ((⊤ : Opens ℂ) : Set ℂ))).filter_mono (ae_mono Measure.restrict_univ.ge)
       simpa only [← W1p.valueL_apply, map_zero] using this
     rw [hD]
     refine (integrable_zero ℂ ℝ volume).congr ?_
@@ -735,7 +725,7 @@ theorem exists_isMinOn_sobolevReducedFunctional (hm : 0 < P.natDegree) :
   have hKcl (n : ℕ) : IsClosed (K n) := by
     have h := Convex.toWeakSpace_closure ℝ (hconv (m + 1 / (n + 1)))
     rw [(hclosed _).closure_eq] at h
-    change IsClosed (toWeakSpace ℝ _ '' S (m + 1 / (n + 1)))
+    simp only [K]
     rw [h]
     exact isClosed_closure
   obtain ⟨x, hx⟩ :=

@@ -23,7 +23,7 @@ for real integrals with real exponents and roots
 (`MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg`); this is the squared form for `p = q = 2`,
 without roots or sign conditions, as it is used in energy estimates. For classes `f` and `g` in
 real `L²` it gives `∫ |f| |g| ≤ ‖f‖ ‖g‖`
-(`TauCeti.integral_abs_mul_abs_le_norm_mul_norm`).
+(`MeasureTheory.Lp.integral_abs_mul_abs_le_norm_mul_norm`).
 -/
 
 public section
@@ -54,16 +54,20 @@ theorem sq_integral_mul_le_integral_sq_mul_integral_sq {α : Type*} [MeasurableS
     _ = (∫ x, f x ^ 2 ∂μ) * ∫ x, g x ^ 2 ∂μ := by
         rw [mul_pow, Real.sq_sqrt hF, Real.sq_sqrt hG]
 
+end TauCeti
+
+namespace MeasureTheory
+
 /-- **The Cauchy–Schwarz inequality on real `L²`**: `∫ |f| |g| ≤ ‖f‖ ‖g‖`. -/
-theorem integral_abs_mul_abs_le_norm_mul_norm {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    (f g : Lp ℝ 2 μ) : ∫ x, |f x| * |g x| ∂μ ≤ ‖f‖ * ‖g‖ := by
+theorem Lp.integral_abs_mul_abs_le_norm_mul_norm {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} (f g : Lp ℝ 2 μ) : ∫ x, |f x| * |g x| ∂μ ≤ ‖f‖ * ‖g‖ := by
   have hsq (h : Lp ℝ 2 μ) : ∫ x, |h x| ^ 2 ∂μ = ‖h‖ ^ 2 := by
     simpa only [Real.norm_eq_abs] using Lp.integral_norm_sq_eq_norm_sq h
-  have h := sq_integral_mul_le_integral_sq_mul_integral_sq
+  have h := TauCeti.sq_integral_mul_le_integral_sq_mul_integral_sq
     (by simpa only [Real.norm_eq_abs] using (Lp.memLp f).norm)
     (by simpa only [Real.norm_eq_abs] using (Lp.memLp g).norm)
   rw [hsq, hsq, ← mul_pow] at h
   exact (pow_le_pow_iff_left₀ (integral_nonneg fun x ↦ by positivity) (by positivity)
     two_ne_zero).1 h
 
-end TauCeti
+end MeasureTheory

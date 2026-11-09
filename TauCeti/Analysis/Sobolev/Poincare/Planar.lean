@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.SpecialFunctions.Sqrt
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.SqrtOneAddSq
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -47,9 +47,7 @@ gives `∫ w² ≤ k ∫ g(w)`. Finally `g(t) ≤ |t|` bounds the part of `∫ g
 * `TauCeti.W1p.exists_integral_value_sq_le_of_finrank_eq_two`: the same bound for every
   `u ∈ W^{1,2}(E)`, with `‖∇u‖₂` in place of `(∫ ‖Dw‖²) ^ (1/2)`. It follows by density of the
   test functions, since the modular `∫_{sᶜ} (√(1 + u²) - 1)` is continuous on `L²`
-  (by `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`).
-* `MeasureTheory.MemLp.integrable_sqrt_one_add_sq_sub_one`: the modular of a square-integrable
-  function is integrable.
+  (`MeasureTheory.continuous_setIntegral_sqrt_one_add_sq_sub_one`).
 
 ## References
 
@@ -328,69 +326,6 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
   exact le_two_mul_add_sq_mul_of_le_mul_add hk hQ measureReal_nonneg hW hZ
 
 /-! ### Sobolev functions -/
-
-section Lp
-
-variable {α : Type*} [MeasurableSpace α] {ν : Measure α}
-
-/-- The modular `√(1 + f²) - 1` of a square-integrable function is integrable. -/
-theorem _root_.MeasureTheory.MemLp.integrable_sqrt_one_add_sq_sub_one {f : α → ℝ}
-    (hf : MemLp f 2 ν) : Integrable (fun x ↦ √(1 + f x ^ 2) - 1) ν := by
-  have hf2 : Integrable (fun x ↦ f x ^ 2 / 2) ν :=
-    ((memLp_two_iff_integrable_sq hf.aestronglyMeasurable).1 hf).div_const 2
-  refine hf2.mono' ?_ (Eventually.of_forall fun x ↦ ?_)
-  · exact (hf.aestronglyMeasurable.aemeasurable.pow_const 2 |>.const_add 1
-      |>.sqrt.sub_const 1).aestronglyMeasurable
-  · rw [Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.2 (Real.one_le_sqrt_one_add_sq _))]
-    exact Real.sqrt_one_add_sq_sub_one_le_sq_div_two _
-
-private theorem integrable_abs_mul_abs (a b : Lp ℝ 2 ν) :
-    Integrable (fun x ↦ |a x| * |b x|) ν := by
-  simpa only [Real.norm_eq_abs, Pi.mul_def] using
-    (Lp.memLp a).norm.integrable_mul (Lp.memLp b).norm
-
-/-- The modular is locally Lipschitz on `L²`:
-`|∫_t (√(1 + f²) - 1) - ∫_t (√(1 + g²) - 1)| ≤ ‖f - g‖ (‖f‖ + ‖g‖)`. -/
-private theorem abs_setIntegral_sqrt_one_add_sq_sub_le (t : Set α) (f g : Lp ℝ 2 ν) :
-    |∫ x in t, (√(1 + f x ^ 2) - 1) ∂ν - ∫ x in t, (√(1 + g x ^ 2) - 1) ∂ν| ≤
-      ‖f - g‖ * (‖f‖ + ‖g‖) := by
-  have hfi := (Lp.memLp f).integrable_sqrt_one_add_sq_sub_one
-  have hgi := (Lp.memLp g).integrable_sqrt_one_add_sq_sub_one
-  have hk : Integrable (fun x ↦ |(f - g) x| * |f x| + |(f - g) x| * |g x|) ν :=
-    (integrable_abs_mul_abs (f - g) f).add (integrable_abs_mul_abs (f - g) g)
-  rw [← integral_sub hfi.integrableOn hgi.integrableOn]
-  calc |∫ x in t, ((√(1 + f x ^ 2) - 1) - (√(1 + g x ^ 2) - 1)) ∂ν|
-      ≤ ∫ x in t, |(√(1 + f x ^ 2) - 1) - (√(1 + g x ^ 2) - 1)| ∂ν :=
-        abs_integral_le_integral_abs
-    _ ≤ ∫ x in t, (|(f - g) x| * |f x| + |(f - g) x| * |g x|) ∂ν := by
-        refine setIntegral_mono_ae (hfi.sub hgi).abs.integrableOn hk.integrableOn ?_
-        filter_upwards [Lp.coeFn_sub f g] with x hx
-        have := Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (f x) (g x)
-        rw [hx, Pi.sub_apply]
-        have h0 : 0 ≤ |f x - g x| * (|f x| + |g x|) := by positivity
-        rw [sub_sub_sub_cancel_right]
-        nlinarith
-    _ ≤ ∫ x, (|(f - g) x| * |f x| + |(f - g) x| * |g x|) ∂ν :=
-        setIntegral_le_integral hk (Eventually.of_forall fun x ↦ by positivity)
-    _ ≤ ‖f - g‖ * ‖f‖ + ‖f - g‖ * ‖g‖ := by
-        rw [integral_add (integrable_abs_mul_abs (f - g) f) (integrable_abs_mul_abs (f - g) g)]
-        exact add_le_add (integral_abs_mul_abs_le_norm_mul_norm (f - g) f)
-          (integral_abs_mul_abs_le_norm_mul_norm (f - g) g)
-    _ = ‖f - g‖ * (‖f‖ + ‖g‖) := by ring
-
-/-- The modular `∫_t (√(1 + f²) - 1)` is continuous on `L²`. -/
-private theorem continuous_setIntegral_sqrt_one_add_sq_sub_one (t : Set α) :
-    Continuous fun f : Lp ℝ 2 ν ↦ ∫ x in t, (√(1 + f x ^ 2) - 1) ∂ν := by
-  refine continuous_iff_continuousAt.2 fun f₀ ↦ ?_
-  rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
-  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun f ↦ ?_) (?_ : Tendsto
-    (fun f : Lp ℝ 2 ν ↦ ‖f - f₀‖ * (‖f‖ + ‖f₀‖)) (nhds f₀) (nhds 0))
-  · rw [Real.dist_eq]
-    exact abs_setIntegral_sqrt_one_add_sq_sub_le t f f₀
-  · have : Continuous fun f : Lp ℝ 2 ν ↦ ‖f - f₀‖ * (‖f‖ + ‖f₀‖) := by fun_prop
-    simpa using this.tendsto f₀
-
-end Lp
 
 section W1p
 

@@ -18,11 +18,11 @@ vortex equation gives the potential
 
 `∫ (|P|² / (1 + |P|²)) (exp(2w) - 1 - 2w)`.
 
-This file treats it as an extended nonnegative integral on real `L²(ℂ)`, for Lebesgue measure
-or any other measure on `ℂ`. It is weakly lower semicontinuous, including at functions where it
-is infinite, and finite on continuous compactly supported corrections. Thus passage to a weak
-limit does not lose the nonlinear potential in the variational existence argument. No minimizer
-or solution is constructed here.
+This file treats it as an extended nonnegative integral on real `L²(ℂ, μ)`. For every measure
+`μ` on `ℂ` it is weakly lower semicontinuous, including at functions where it is infinite. For
+Lebesgue measure it is moreover finite on continuous compactly supported corrections. Thus passage
+to a weak limit does not lose the nonlinear potential in the variational existence argument. No
+minimizer or solution is constructed here.
 
 ## References
 
@@ -67,8 +67,8 @@ theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial
     (withDensity_absolutelyContinuous μ (fun z ↦ ENNReal.ofReal (h z))) hΦ hconv
   simpa only [heq, h, Φ] using hlsc
 
-/-- Continuous compactly supported corrections have finite nonlinear vortex potential.
-This supplies a finite-potential domain for the extended functional. -/
+/-- Continuous compactly supported corrections have finite nonlinear vortex potential with
+respect to Lebesgue measure. This supplies a finite-potential domain for the extended functional. -/
 theorem integrable_mul_exp_sub_one_sub (P : Polynomial ℂ) {w : ℂ → ℝ}
     (hw : Continuous w) (hc : HasCompactSupport w) :
     Integrable (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *

@@ -151,9 +151,7 @@ theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| :=
 
 /-- The modular `√(1 + t²) - 1` is at most quadratic: `√(1 + t²) - 1 ≤ t² / 2`. -/
 theorem sqrt_one_add_sq_sub_one_le_sq_div_two (t : ℝ) : √(1 + t ^ 2) - 1 ≤ t ^ 2 / 2 := by
-  have : √(1 + t ^ 2) ≤ 1 + t ^ 2 / 2 :=
-    sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (t ^ 2)]⟩
-  linarith
+  linarith [sqrt_one_add_le (x := t ^ 2) (by nlinarith [sq_nonneg t])]
 
 /-- The modular `√(1 + t²)` is locally Lipschitz with a linear modulus:
 `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|) / 2`. -/
