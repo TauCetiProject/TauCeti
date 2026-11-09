@@ -40,6 +40,8 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 
 * `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
+* `SchwartzMap.fourier_smulLeftCLM_inner_sub`: the Fourier transform of the product with the affine
+  function `y ↦ ⟪x - y, v⟫`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -112,6 +114,28 @@ theorem fourier_lineDerivOp_apply (u : 𝓢(E, F)) (v ξ : E) :
   have hv : (inner ℝ · v : E → ℝ).HasTemperateGrowth := by fun_prop
   rw [fourier_lineDerivOp_eq, smul_apply, smulLeftCLM_apply_apply hv, ← Complex.coe_smul,
     smul_smul]
+
+/-- Multiplying a Schwartz function by the affine function `y ↦ ⟪x - y, v⟫` acts on the Fourier
+side as `-(i / 2π) (∂_v + 2πi ⟪x, v⟫)`. -/
+theorem fourier_smulLeftCLM_inner_sub (x v : E) (u : 𝓢(E, F)) :
+    𝓕 (smulLeftCLM F (fun y ↦ ⟪x - y, v⟫) u) =
+      (-(Complex.I / (2 * π))) • ((2 * π * Complex.I * ⟪x, v⟫) • 𝓕 u + ∂_{v} (𝓕 u)) := by
+  have h : (fun y : E ↦ ⟪x - y, v⟫) = (fun _ ↦ ⟪x, v⟫) - (inner ℝ · v) := by
+    funext y
+    simp [inner_sub_left]
+  rw [h, smulLeftCLM_sub (by fun_prop) (by fun_prop), smulLeftCLM_const, lineDerivOp_fourier_eq]
+  have hF (f : 𝓢(E, F)) : 𝓕 f = fourierₗ ℂ 𝓢(E, F) f := rfl
+  simp only [sub_apply, smul_apply, ContinuousLinearMap.id_apply, hF, map_sub, map_smul]
+  rw [← Complex.coe_smul, map_smul]
+  simp only [smul_add, smul_smul]
+  have h₁ : -(Complex.I / (2 * π)) * (-(2 * π * Complex.I)) = -1 := by
+    field_simp
+    exact Complex.I_sq
+  have h₂ : -(Complex.I / (2 * π)) * (2 * π * Complex.I * ⟪x, v⟫) = (⟪x, v⟫ : ℂ) := by
+    field_simp
+    rw [Complex.I_sq]
+    ring
+  rw [h₁, h₂, neg_one_smul, sub_eq_add_neg]
 
 /-- The Fourier transform of an iterated directional derivative is multiplication by the
 product of the corresponding linear Fourier symbols. -/

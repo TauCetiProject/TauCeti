@@ -333,12 +333,8 @@ theorem quantizationKernel_frequencyDeriv (a : Symbol n V W m) (hm : m < -n) (j 
     (x y : CoordinateSpace n) :
     quantizationKernel (frequencyDeriv j a).coefficient x y =
       -Complex.I • ((x - y) j : ℂ) • quantizationKernel a.coefficient x y := by
-  have hda (ξ : CoordinateSpace n) : HasLineDerivAt ℝ (fun ξ ↦ a.coefficient (x, ξ))
-      ((frequencyDeriv j a).coefficient (x, ξ)) ξ (EuclideanSpace.single j 1) := by
-    rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
-    exact ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).differentiable
-      (by simp) ξ).hasFDerivAt.hasLineDerivAt _
-  have h := inner_smul_quantizationKernel hda (a.integrable_coefficient hm x)
+  have h := inner_smul_quantizationKernel (a.hasLineDerivAt_coefficient_single j x)
+    (a.integrable_coefficient hm x)
     ((frequencyDeriv j a).integrable_coefficient (by linarith) x) y
   rw [EuclideanSpace.inner_single_right, one_mul, conj_trivial] at h
   rw [h, smul_smul]

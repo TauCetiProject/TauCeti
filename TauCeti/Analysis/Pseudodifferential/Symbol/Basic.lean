@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
@@ -28,6 +29,8 @@ space, and develop the first operations of the symbol calculus:
 
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
+* `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξ_j}` lowers the
+  order by two, and `TauCeti.Symbol.frequencyLaplacianPow` iterates it;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
@@ -264,6 +267,12 @@ instance : Module ℂ (Symbol n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+/-- The coefficient of a finite sum of symbols is the sum of their coefficients. -/
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ : Symbol n V W m →+ _) a s
+
 theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     (a + b).IsUniform := by
   intro α β
@@ -370,6 +379,16 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coor
     (frequencyDeriv j a).coefficient (x, ξ) =
       coordinateDeriv [j] (fun η => a.coefficient (x, η)) ξ := (rfl)
 
+/-- Along the `j`-th coordinate direction, the frequency slice `ξ ↦ a(x, ξ)` of a symbol has line
+derivative `∂_{ξ_j} a (x, ξ)`. -/
+theorem hasLineDerivAt_coefficient_single (a : Symbol n V W m) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    HasLineDerivAt ℝ (fun η => a.coefficient (x, η)) ((frequencyDeriv j a).coefficient (x, ξ)) ξ
+      (EuclideanSpace.single j 1) := by
+  rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+  exact ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).differentiable
+    (by simp) ξ).hasFDerivAt.hasLineDerivAt _
+
 /-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
 @[simp]
 theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
@@ -458,6 +477,53 @@ theorem IsUniform.spatialDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin 
   refine ⟨C, hC, fun x ξ => ?_⟩
   rw [mixedDeriv_spatialDeriv]
   exact hCa x ξ
+
+/-- The frequency Laplacian `Δ_ξ a = ∑ⱼ ∂²_{ξ_j} a` of a symbol of order `m`, a symbol of order
+`m - 2`. -/
+def frequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2) :=
+  ∑ j, inclusion (by linarith) ∘ₗ frequencyDeriv j ∘ₗ frequencyDeriv (m := m) j
+
+@[simp]
+theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyLaplacian a).coefficient (x, ξ) =
+      ∑ j, coordinateDeriv [j]
+        (fun η => coordinateDeriv [j] (fun ζ => a.coefficient (x, ζ)) η) ξ := by
+  simp [frequencyLaplacian]
+
+/-- The frequency Laplacian is the sum of the second frequency derivatives `∂²_{ξ_j} a`. -/
+theorem frequencyLaplacian_eq_sum (a : Symbol n V W m) :
+    frequencyLaplacian a =
+      ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv (m := m) j a)) := by
+  simp [frequencyLaplacian]
+
+/-- The iterated frequency Laplacian `Δ_ξ^N a` of a symbol of order `m`, a symbol of order
+`m - 2N`. -/
+def frequencyLaplacianPow : (N : ℕ) → {m : ℝ} → Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2 * N)
+  | 0, _ => inclusion (by simp)
+  | N + 1, _ => inclusion (by push_cast; linarith) ∘ₗ frequencyLaplacianPow N ∘ₗ frequencyLaplacian
+
+@[simp]
+theorem coefficient_frequencyLaplacianPow_zero (a : Symbol n V W m) :
+    (frequencyLaplacianPow 0 a).coefficient = a.coefficient := by
+  simp [frequencyLaplacianPow]
+
+theorem coefficient_frequencyLaplacianPow_succ (N : ℕ) (a : Symbol n V W m) :
+    (frequencyLaplacianPow (N + 1) a).coefficient =
+      (frequencyLaplacianPow N (frequencyLaplacian a)).coefficient := by
+  simp [frequencyLaplacianPow]
+
+theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
+    (frequencyLaplacianPow (N + 1) a).coefficient =
+      (frequencyLaplacian (frequencyLaplacianPow N a)).coefficient := by
+  induction N generalizing m with
+  | zero =>
+    funext ⟨x, ξ⟩
+    simp only [coefficient_frequencyLaplacianPow_succ, coefficient_frequencyLaplacian,
+      coefficient_frequencyLaplacianPow_zero]
+  | succ N ih =>
+    funext ⟨x, ξ⟩
+    rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
+      coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
 
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
