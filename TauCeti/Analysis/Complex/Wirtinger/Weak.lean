@@ -266,7 +266,6 @@ theorem hasWeakConjWirtingerDerivOn_of_contDiffOn [CompleteSpace F] [μ.IsAddHaa
     (hu : ContDiffOn ℝ 1 u Ω) :
     HasWeakConjWirtingerDerivOn μ Ω u (fun z ↦ conjWirtingerDeriv u z 1) := by
   have h := hasWeakFDerivOn_of_differentiableOn (μ := μ)
-    (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
     ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
       Ω.isOpen.measurableSet)
     (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz))

@@ -90,7 +90,7 @@ theorem continuous_schwarzChristoffelCompactifiedBoundary (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
     (hinfty : ∑ i, e i < -1) :
     Continuous (schwarzChristoffelCompactifiedBoundary a e z₀) := by
-  have hfinite' := lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite
+  have hfinite' := forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite
   rw [OnePoint.continuous_iff]
   constructor
   · apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hinfty
