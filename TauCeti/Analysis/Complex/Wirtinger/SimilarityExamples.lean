@@ -23,9 +23,10 @@ reads `2 bar∂ξ + C ξ = 0`.
 
 * The factor `Φ` need not be holomorphic. `ξ z = z e^{-conj z}` solves `bar∂ξ = -ξ`, that is
   `∂_s ξ + i ∂_t ξ + 2 ξ = 0`, and factors as `ξ = Φ σ` with `Φ z = e^{-conj z}` smooth, nowhere
-  zero and commuting with `i` (it acts by a complex scalar), and `σ z = z` with a simple zero.
-  `Φ` is not holomorphic anywhere, and `ξ` admits no factorization near `0` into two
-  holomorphic factors at all, since `ξ` is not holomorphic at any nonzero point.
+  zero and commuting with `i` (it acts by a complex scalar), and `σ z = z` with a simple zero
+  (Mathlib's `analyticOrderAt_id`). `Φ` is not holomorphic anywhere, and `ξ` admits no
+  factorization near `0` into two holomorphic factors at all, since `ξ` is not holomorphic at any
+  nonzero point.
 * The coefficient hypothesis is used. `ξ z = exp (-1 / ‖z‖²)`, with `ξ 0 = 0`, is smooth,
   is `o(‖z‖ⁿ)` at `0` for every `n`, and vanishes nowhere else. It solves `2 bar∂ξ + C ξ = 0`
   exactly for `C z = -2 z / ‖z‖⁴`, of size `2 ‖z‖⁻³`, which is not locally `Lᵖ` near `0` for any
@@ -134,10 +135,6 @@ theorem memWkpLoc_cexp_neg_conj (p : ENNReal) (U : Set ℂ) (k : ℕ) :
   ContDiffOn.memWkpLoc (Ω := ⊤)
     ((contDiff_neg.comp conjCLE.contDiff).cexp.contDiffOn) (subset_univ U)
 
-/-- The factor `σ z = z` of `z e^{-conj z}` has a simple zero at `0`. -/
-theorem analyticOrderAt_id_zero : analyticOrderAt (fun w : ℂ ↦ w) 0 = 1 := by
-  simpa using analyticOrderAt_id_sub_const_self (c := (0 : ℂ))
-
 /-! ### Order of zeros -/
 
 /-- If `Φ` is continuous and nonzero at `z` and `σ` is analytic with a zero of order `n` at `z`,
@@ -166,9 +163,7 @@ theorem eq_of_eventually_mul_eq_sub_pow_mul {Φ σ v : ℂ → ℂ} {z : ℂ} {m
 
 /-- `z²` has a zero of order `2` at `0`. -/
 theorem analyticOrderAt_sq_zero : analyticOrderAt (fun w : ℂ ↦ w ^ 2) 0 = 2 := by
-  change analyticOrderAt ((fun w : ℂ ↦ w) ^ 2) 0 = 2
-  rw [analyticOrderAt_pow (f := fun w : ℂ ↦ w) analyticAt_id, analyticOrderAt_id_zero]
-  rfl
+  simpa [Pi.pow_def] using analyticOrderAt_centeredMonomial (z₀ := (0 : ℂ)) (n := 2)
 
 /-- The zero of `z²` at `0` is isolated. -/
 theorem eventually_sq_ne_zero : ∀ᶠ w in 𝓝[≠] (0 : ℂ), w ^ 2 ≠ 0 :=
@@ -310,7 +305,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 /-- The complex structure `J = Φ i Φ⁻¹` transported from multiplication by `i` along
 real-linear automorphisms `Φ z`. -/
 def transportedComplexStructure (Φ : ℂ → V ≃L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
-  (Φ z : V →L[ℝ] V) ∘L (I • ContinuousLinearMap.id ℝ V) ∘L ((Φ z).symm : V →L[ℝ] V)
+  (Φ z).conjContinuousAlgEquiv (I • ContinuousLinearMap.id ℝ V)
 
 /-- The coefficient `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹` that absorbs the derivative of `Φ`. -/
 def transportedCoeff (Φ : ℂ → V ≃L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
@@ -320,22 +315,19 @@ def transportedCoeff (Φ : ℂ → V ≃L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
 
 variable {Φ : ℂ → V ≃L[ℝ] V}
 
-/-- The transported structure acts by `v ↦ Φ (i Φ⁻¹ v)`. -/
-theorem transportedComplexStructure_apply (z : ℂ) (v : V) :
-    transportedComplexStructure Φ z v = Φ z (I • (Φ z).symm v) := by
-  simp [transportedComplexStructure]
-
 /-- `J Φ = Φ i`. -/
 theorem transportedComplexStructure_apply_apply (z : ℂ) (v : V) :
     transportedComplexStructure Φ z (Φ z v) = Φ z (I • v) := by
-  simp [transportedComplexStructure_apply]
+  simp [transportedComplexStructure]
 
 /-- `J² = -1`. -/
 theorem transportedComplexStructure_comp_self (z : ℂ) :
     transportedComplexStructure Φ z ∘L transportedComplexStructure Φ z =
       -ContinuousLinearMap.id ℝ V := by
+  rw [transportedComplexStructure, ← ContinuousLinearMap.mul_def, ← map_mul,
+    ContinuousLinearMap.mul_def]
   ext v
-  simp [transportedComplexStructure_apply, smul_smul]
+  simp [smul_smul]
 
 /-- For `J = Φ i Φ⁻¹` and `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹`, every `ξ = Φ σ` with `σ` holomorphic
 solves `∂_s ξ + J ∂_t ξ + C ξ = 0`. -/
@@ -349,7 +341,7 @@ theorem fderiv_apply_add_transportedComplexStructure_add_eq_zero {σ : ℂ → V
   have hI : fderiv ℝ σ z I = I • fderiv ℝ σ z 1 := by
     rw [hσ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← map_smul,
       smul_eq_mul, mul_one]
-  simp [transportedCoeff, transportedComplexStructure_apply, hI, smul_smul]
+  simp [transportedCoeff, transportedComplexStructure, hI, smul_smul]
   abel
 
 /-- The normalization `Φ⁻¹ J' Φ = -i` is wrong: if `J' Φ = -Φ i` at `z₀` and `v ≠ 0`, then
