@@ -180,7 +180,7 @@ theorem map_positivePoints_subtype (A : Type v) [CommRing A] :
 theorem positivePoints_eq_closure (A : Type v) [CommRing A] :
     D.positivePoints A = Subgroup.closure
       {g | ∃ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-        ∃ u, D.rootSubgroup γ A u = g} := by
+        ∃ u, D.rootSubgroupPoints γ A u = g} := by
   apply Subgroup.map_injective (D.points A).subtype_injective
   rw [D.map_positivePoints_subtype, D.positiveSubgroup_eq_closure,
     MonoidHom.map_closure, MonoidHom.map_closure]
@@ -188,15 +188,16 @@ theorem positivePoints_eq_closure (A : Type v) [CommRing A] :
   ext g
   constructor
   · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
-    exact ⟨D.rootSubgroup γ A u, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroup γ A u).trans h⟩
+    exact ⟨D.rootSubgroupPoints γ A u, ⟨γ, hγ, u, rfl⟩,
+      (D.coe_rootSubgroupPoints γ A u).trans h⟩
   · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
-    exact ⟨_, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroup γ A u).symm.trans h⟩
+    exact ⟨_, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroupPoints γ A u).symm.trans h⟩
 
 /-- Containment of the positive point subgroup can be checked on all positive root parameters. -/
 theorem positivePoints_le_iff {A : Type v} [CommRing A] {P : Subgroup (D.points A)} :
     D.positivePoints A ≤ P ↔
       ∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht), ∀ u,
-        D.rootSubgroup γ A u ∈ P := by
+        D.rootSubgroupPoints γ A u ∈ P := by
   rw [D.positivePoints_eq_closure, Subgroup.closure_le]
   constructor
   · intro h γ hγ u
@@ -206,9 +207,9 @@ theorem positivePoints_le_iff {A : Type v} [CommRing A] {P : Subgroup (D.points 
 
 /-- Each positive root element belongs to the positive point subgroup. -/
 @[simp]
-theorem rootSubgroup_mem_positivePoints (A : Type v) [CommRing A] {γ : Fin t.numRoots}
+theorem rootSubgroupPoints_mem_positivePoints (A : Type v) [CommRing A] {γ : Fin t.numRoots}
     (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (u : Multiplicative A) : D.rootSubgroup γ A u ∈ D.positivePoints A :=
+    (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.positivePoints A :=
   (D.positivePoints_le_iff.mp le_rfl) γ hγ u
 
 /-- The positive point subgroup is nilpotent over every commutative ring. -/
@@ -228,7 +229,7 @@ theorem map_positivePoints_le {A : Type v} {B : Type v'} [CommRing A] [CommRing 
       D.positivePoints B := by
   rw [Subgroup.map_le_iff_le_comap, D.positivePoints_le_iff]
   intro γ hγ u
-  simpa only [Subgroup.mem_comap, D.map_rootSubgroup] using
-    D.rootSubgroup_mem_positivePoints B hγ (Multiplicative.ofAdd (f u.toAdd))
+  simpa only [Subgroup.mem_comap, D.map_rootSubgroupPoints] using
+    D.rootSubgroupPoints_mem_positivePoints B hγ (Multiplicative.ofAdd (f u.toAdd))
 
 end TauCeti.DynkinType.ChevalleyDatum
