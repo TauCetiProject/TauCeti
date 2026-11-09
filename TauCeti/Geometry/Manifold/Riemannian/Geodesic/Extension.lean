@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.IntegralCurve.Extension
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
-import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
 # Extending a geodesic past a finite endpoint
