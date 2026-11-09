@@ -10,9 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sheaf
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sheaf
 import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Normalize
-import TauCeti.Analysis.Complex.RiemannSurface.Differential.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.Ratio
-import TauCeti.Analysis.Complex.RiemannSurface.Divisor.FiniteDimensional
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
@@ -36,12 +34,10 @@ discrete set they are the pointwise operations `η ↦ η / ω` and `f ↦ f ω`
 `TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd_hom_app_smul` and
 `TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd_inv_app`).
 
-Consequently, on a compact connected Riemann surface the holomorphic `1`-forms are the global
-sections of `𝒪_(div ω)` (`TauCeti.RiemannSurface.holomorphicOneFormsEquivDivisorSections`), and
-the global sections of every `Ω_D` form a finite-dimensional space
-(`TauCeti.RiemannSurface.finiteDimensional_differentialSheaf_globalSections`). The last statement
-does not assume that a nonzero meromorphic `1`-form exists: a nonzero global section of `Ω_D`
-itself serves as `ω`.
+Consequently, on a compact Riemann surface the holomorphic `1`-forms are the global sections of
+`𝒪_(div ω)` (`TauCeti.RiemannSurface.holomorphicOneFormsEquivDivisorSections`). The resulting
+finite-dimensionality of the global sections of every `Ω_D` is in
+`TauCeti.Analysis.Complex.RiemannSurface.Differential.FiniteDimensional`.
 
 ## Main definitions
 
@@ -474,32 +470,6 @@ theorem holomorphicOneFormsEquivDivisorSections_smul (hω : ∀ x, ω.Meromorphi
   (differentialSectionsEquivDivisorSections_smul hω (order_eq_coeff_divisor_sub_zero hω hω₀)
     (differentialSectionsZeroEquiv.symm η)).mono
     fun y hy ↦ by rwa [differentialSectionsZeroEquiv_symm_apply] at hy
-
-/-- **Finite-dimensionality of `H⁰(X, Ω_D)`.** On a compact connected Riemann surface the global
-sections of `Ω_D` form a finite-dimensional complex vector space, for every divisor `D`. No
-nonzero meromorphic `1`-form is assumed to exist: if there is a nonzero section, it serves as the
-`1`-form `ω` in `Ω_D ≅ 𝒪_(D + div ω)`. -/
-instance finiteDimensional_differentialSheaf_globalSections [ConnectedSpace X]
-    (D : WeilDivisor X) :
-    FiniteDimensional ℂ ((differentialSheaf D).obj.obj (op ⊤)) := by
-  rcases subsingleton_or_nontrivial (differentialSections D ⊤) with h | h
-  · exact Module.Finite.equiv (differentialSheafSectionsEquiv D ⊤).symm
-  obtain ⟨s, hs⟩ := exists_ne (0 : differentialSections D ⊤)
-  let θ : OneForm X := extendSection s.1
-  have hθ (x : X) : θ.MeromorphicAt x :=
-    (isDifferentialSectionAt_extendSection s.2 ⟨x, trivial⟩).meromorphicAt
-  have hθ₀ (x : X) : θ.order x ≠ ⊤ := by
-    intro hx
-    have hu := (OneForm.isClopen_setOfPred_order_eq_top hθ).eq_univ ⟨x, hx⟩
-    refine hs (differentialSections_ext_nhdsNE fun y ↦ ?_)
-    have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
-    filter_upwards [ht.eventually
-      (OneForm.eventually_apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y))] with z hz
-    exact (extendSection_apply s.1 z).symm.trans hz
-  exact Module.Finite.equiv
-    ((differentialSheafSectionsEquiv D ⊤).trans
-      (differentialSectionsEquivDivisorSections hθ
-        (order_eq_coeff_add_divisor_sub hθ hθ₀ D) ⊤)).symm
 
 end Compact
 
