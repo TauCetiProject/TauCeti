@@ -123,6 +123,11 @@ theorem of_le (h : IsSimplexImmersion I n g) (hmn : m ≤ n) : IsSimplexImmersio
   obtain ⟨F, hFg, hF, hF'⟩ := h
   exact ⟨F, hFg, hF.of_le hmn, hF'⟩
 
+/-- An immersion of a simplex is continuous. -/
+theorem continuous (h : IsSimplexImmersion I n g) : Continuous g := by
+  obtain ⟨F, hFg, hF, -⟩ := h
+  exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
+
 /-- Post-composing an immersion of a simplex with a map that is `Cⁿ` within a set containing its
 image, and has an injective derivative within that set at every point of the image, gives an
 immersion of the simplex. -/

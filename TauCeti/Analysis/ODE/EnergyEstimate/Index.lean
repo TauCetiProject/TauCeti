@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import Mathlib.Analysis.SpecialFunctions.Exponential
@@ -33,7 +34,9 @@ proves:
   of `v' = A v`, and this holds for every continuous symmetric `A` for which `D_A` has closed range;
 * for invertible symmetric limits, the index is `n⁻(A⁻) - n⁻(A⁺)`, where `n⁻(B)` is the number
   of negative eigenvalues of `B` counted with multiplicity, that is, the dimension of the sum of its
-  eigenspaces at negative eigenvalues.
+  eigenspaces at negative eigenvalues;
+* for arbitrary limits with symmetric Lyapunov forms `S±`, the index is `n⁻(S⁻) - n⁻(S⁺)`. In
+  particular two symmetric Lyapunov forms of the same operator have the same negative inertia.
 
 For the first statement, the affine family `(1 - t) A + t B` has the same limits as `A` and `B` for
 every real `t`, so each of its trajectory operators is Fredholm. The trajectory operator depends
@@ -61,6 +64,13 @@ because the positive and negative spectral subspaces of an invertible symmetric 
 orthogonal complements. Hence the index is `dim (W ⊓ U) - dim (W ⊔ U)ᗮ = dim W + dim U - dim E`,
 which is `n⁻(A⁻) - n⁻(A⁺)`.
 
+For the fifth statement, the index is also constant along `(1 - t) A + t B` when the limits move,
+as long as `(1 - t) A± + t B±` keeps a Lyapunov form for `t ∈ [0, 1]`. A symmetric Lyapunov form
+`S` of `A` is a Lyapunov form of every `(1 - t) A + t S` with `0 ≤ t ≤ 1`
+(`ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul`), so the limits `A±` can be deformed to
+the invertible symmetric operators `S±`, where the fourth statement applies. For a constant family,
+computing the index with the forms `S` and `S'` at the two ends shows `n⁻(S) = n⁻(S')`.
+
 ## Main declarations
 
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_tendsto`: families with the same limits
@@ -76,6 +86,13 @@ which is `n⁻(A⁻) - n⁻(A⁺)`.
   continuous symmetric family with invertible limits.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`:
   the index is the number of negative eigenvalues of `A⁻` minus that of `A⁺`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_forall_hasLyapunovForm`: the index is
+  constant along an affine deformation whose limits keep Lyapunov forms.
+* `index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner`, in
+  `TauCeti.WeakDerivStep`: for limits with symmetric Lyapunov forms `S±`, the index is
+  `n⁻(S⁻) - n⁻(S⁺)`.
+* `ContinuousLinearMap.finrank_pointSpectralSubspace_Iio_eq_of_forall_le_inner`: two symmetric
+  Lyapunov forms of one operator have the same number of negative eigenvalues.
 
 ## References
 
@@ -83,6 +100,8 @@ which is `n⁻(A⁻) - n⁻(A⁺)`.
   Appendix A.1 (stability of the Fredholm index).
 * J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc.
   **27** (1995), 1--33 (the index of `d/ds + A(s)` as a spectral flow, and its homotopy invariance).
+* A. Ostrowski and H. Schneider, *Some theorems on the inertia of general matrices*, J. Math. Anal.
+  Appl. **4** (1962), 72–84 (the inertia of Lyapunov forms).
 * M. Schwarz, *Morse Homology*, Chapter 2 (the index of linearized trajectory operators).
 -/
 
@@ -97,32 +116,51 @@ namespace TauCeti.WeakDerivStep
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- For two continuous families of operators with the same limits, which have Lyapunov forms, the
-affine combination `(1 - t) A + t B` is again such a family, for every real `t`, so its trajectory
-operator is Fredholm. -/
+/-- For two continuous families of operators `A` and `B` with limits `A±` and `B±`, the affine
+combination `(1 - t) A + t B` has the limits `(1 - t) A± + t B±`. When these have Lyapunov forms,
+its trajectory operator is Fredholm. -/
 private theorem isFredholm_trajectoryOperator_one_sub_smul_add_smul {A B : ℝ → E →L[ℝ] E}
-    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus : E →L[ℝ] E}
-    (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
+    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus Bminus Bplus : E →L[ℝ] E}
     (hAbot : Tendsto A atBot (𝓝 Aminus)) (hAtop : Tendsto A atTop (𝓝 Aplus))
-    (hBbot : Tendsto B atBot (𝓝 Aminus)) (hBtop : Tendsto B atTop (𝓝 Aplus))
+    (hBbot : Tendsto B atBot (𝓝 Bminus)) (hBtop : Tendsto B atTop (𝓝 Bplus))
     (AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
-    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B) (t : ℝ) :
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B) {t : ℝ}
+    (hminus : ((1 - t) • Aminus + t • Bminus).HasLyapunovForm)
+    (hplus : ((1 - t) • Aplus + t • Bplus).HasLyapunovForm) :
     (trajectoryOperator (p := 2) ((1 - t) • AL + t • BL)).IsFredholm := by
   set C : ℝ → E →L[ℝ] E := fun s ↦ (1 - t) • A s + t • B s
   have hC : Continuous C := (hA.const_smul (1 - t)).add (hB.const_smul t)
-  -- The combination of two families tending to the same limit tends to that limit.
-  have hlim : ∀ {l : Filter ℝ} {L : E →L[ℝ] E} {F G : ℝ → E →L[ℝ] E},
-      Tendsto F l (𝓝 L) → Tendsto G l (𝓝 L) →
-        Tendsto (fun s ↦ (1 - t) • F s + t • G s) l (𝓝 L) := fun hF hG ↦ by
-    simpa only [← add_smul, sub_add_cancel, one_smul] using
-      (hF.const_smul (1 - t)).add (hG.const_smul t)
-  have hCbot := hlim hAbot hBbot
-  have hCtop := hlim hAtop hBtop
-  refine isFredholm_trajectoryOperator_of_hasLyapunovForm hC hminus hplus hCbot hCtop _ ?_
+  refine isFredholm_trajectoryOperator_of_hasLyapunovForm hC hminus hplus
+    ((hAbot.const_smul (1 - t)).add (hBbot.const_smul t))
+    ((hAtop.const_smul (1 - t)).add (hBtop.const_smul t)) _ ?_
   filter_upwards [Lp.coeFn_add ((1 - t) • AL) (t • BL), Lp.coeFn_smul (1 - t) AL,
     Lp.coeFn_smul t BL, hAL, hBL] with s hs h1 h2 hAs hBs
   simp only [hs, Pi.add_apply, h1, h2, Pi.smul_apply, hAs, hBs, C]
+
+/-- **Homotopy invariance of the index through hyperbolic limits.** Let `A` and `B` be continuous
+families of operators on a finite-dimensional real inner product space with limits `A±` and `B±`
+at `±∞`, such that `(1 - t) A± + t B±` has a Lyapunov form for every `t ∈ [0, 1]`. Then the
+trajectory operators `u ↦ u' + A u` and `u ↦ u' + B u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` have
+the same Fredholm index. Unlike `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_tendsto`,
+the limits may move. -/
+theorem index_trajectoryOperator_eq_of_forall_hasLyapunovForm {A B : ℝ → E →L[ℝ] E}
+    (hA : Continuous A) (hB : Continuous B) {Aminus Aplus Bminus Bplus : E →L[ℝ] E}
+    (hAbot : Tendsto A atBot (𝓝 Aminus)) (hAtop : Tendsto A atTop (𝓝 Aplus))
+    (hBbot : Tendsto B atBot (𝓝 Bminus)) (hBtop : Tendsto B atTop (𝓝 Bplus))
+    (AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B)
+    (hminus : ∀ t ∈ Set.Icc (0 : ℝ) 1, ((1 - t) • Aminus + t • Bminus).HasLyapunovForm)
+    (hplus : ∀ t ∈ Set.Icc (0 : ℝ) 1, ((1 - t) • Aplus + t • Bplus).HasLyapunovForm) :
+    (trajectoryOperator (p := 2) AL).index = (trajectoryOperator (p := 2) BL).index := by
+  have hcont : Continuous fun t : ℝ ↦ trajectoryOperator (p := 2) ((1 - t) • AL + t • BL) :=
+    (lipschitzWith_trajectoryOperator (F := E) (mu := volume) (Omega := ⊤) (p := 2)).continuous.comp
+      (by fun_prop)
+  simpa using hcont.continuousOn.index_eq_of_isPreconnected
+    (fun t ht ↦ isFredholm_trajectoryOperator_one_sub_smul_add_smul hA hB hAbot hAtop hBbot hBtop
+      AL BL hAL hBL (hminus t ht) (hplus t ht))
+    isPreconnected_Icc (Set.left_mem_Icc.2 zero_le_one) (Set.right_mem_Icc.2 zero_le_one)
 
 /-- **The index of the trajectory operator depends only on the limits.** Let `A` and `B` be
 continuous families of operators on a finite-dimensional real inner product space with the same
@@ -137,12 +175,11 @@ theorem index_trajectoryOperator_eq_of_tendsto {A B : ℝ → E →L[ℝ] E}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B) :
     (trajectoryOperator (p := 2) AL).index = (trajectoryOperator (p := 2) BL).index := by
-  have hcont : Continuous fun t : ℝ ↦ trajectoryOperator (p := 2) ((1 - t) • AL + t • BL) :=
-    (lipschitzWith_trajectoryOperator (F := E) (mu := volume) (Omega := ⊤) (p := 2)).continuous.comp
-      (by fun_prop)
-  simpa using Continuous.index_eq_of_preconnectedSpace hcont
-    (isFredholm_trajectoryOperator_one_sub_smul_add_smul hA hB hminus hplus hAbot hAtop hBbot
-      hBtop AL BL hAL hBL) 0 1
+  have hsame {L : E →L[ℝ] E} (hL : L.HasLyapunovForm) (t : ℝ) :
+      ((1 - t) • L + t • L).HasLyapunovForm := by
+    rwa [← add_smul, sub_add_cancel, one_smul]
+  exact index_trajectoryOperator_eq_of_forall_hasLyapunovForm hA hB hAbot hAtop hBbot hBtop AL BL
+    hAL hBL (fun t _ ↦ hsame hminus t) (fun t _ ↦ hsame hplus t)
 
 /-- **A constant invertible coefficient gives a bijective trajectory operator.** For a symmetric
 operator `A₀` on a finite-dimensional real inner product space with `α ‖v‖ ≤ ‖A₀ v‖` for some
@@ -551,12 +588,6 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) := by
-  have hker {B : E →L[ℝ] E} (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) : LinearMap.ker (B : E →ₗ[ℝ] E) = ⊥ :=
-    LinearMap.ker_eq_bot'.2 fun v hv ↦ by
-      have h := hB v
-      rw [ContinuousLinearMap.coe_coe] at hv
-      rw [hv, norm_zero] at h
-      exact norm_eq_zero.1 (le_antisymm (by nlinarith [norm_nonneg v]) (norm_nonneg v))
   -- Replace `A` by the model coefficient with the same limits, whose index is computable.
   set M := modelCoefficient Aminus Aplus
   set ML := (memLp_top_modelCoefficient (Aminus := Aminus) (Aplus := Aplus)
@@ -582,14 +613,96 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
   have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ := by
     rw [hsymplus.orthogonal_pointSpectralSubspace, compl_Ioi, ← Iio_insert,
-      Module.End.pointSpectralSubspace_insert_zero (hker hplus)]
+      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
+        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+          (le_inv_mul_iff₀ hα).2 (hplus v)))]
   have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ := by
     rw [hsymminus.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
-      Module.End.pointSpectralSubspace_insert_zero (hker hminus)]
+      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
+        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+          (le_inv_mul_iff₀ hα).2 (hminus v)))]
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal
   have h3 := W.finrank_add_finrank_orthogonal
   omega
 
+/-- **The index of the trajectory operator with hyperbolic limits is a difference of inertia
+indices of Lyapunov forms.** Let `A` be a continuous family of operators on a finite-dimensional
+real inner product space whose limits `A±` at `±∞` have symmetric Lyapunov forms `S±`:
+`c± ‖v‖² ≤ ⟪S± (A± v), v⟫` with `c± > 0`. Then the index of the trajectory operator
+`u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the number of negative eigenvalues of `S⁻`
+minus the number of negative eigenvalues of `S⁺`, counted with multiplicity. Neither `A` nor its
+limits need to be symmetric; for invertible symmetric limits one may take `S± = A±`, which gives
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`. -/
+theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+    (hA : Continuous A) {Aminus Aplus Sminus Splus : E →L[ℝ] E}
+    (hSminus : (Sminus : E →ₗ[ℝ] E).IsSymmetric) (hSplus : (Splus : E →ₗ[ℝ] E).IsSymmetric)
+    {cminus cplus : ℝ} (hcminus : 0 < cminus) (hcplus : 0 < cplus)
+    (hminus : ∀ v, cminus * ‖v‖ ^ 2 ≤ ⟪Sminus (Aminus v), v⟫_ℝ)
+    (hplus : ∀ v, cplus * ‖v‖ ^ 2 ≤ ⟪Splus (Aplus v), v⟫_ℝ)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Sminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Splus : E →ₗ[ℝ] E) (Iio 0)) := by
+  -- Deform the limits along the segments from `A±` to `S±`, which keep the Lyapunov forms `S±`,
+  -- and the family along the segment from `A` to the model coefficient with limits `S±`.
+  set M := modelCoefficient Sminus Splus
+  set ML := (memLp_top_modelCoefficient (Aminus := Sminus) (Aplus := Splus)
+    (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).toLp M
+  have hML : ML =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] M := MemLp.coeFn_toLp _
+  have hMbot : Tendsto M atBot (𝓝 Sminus) := tendsto_modelCoefficient_atBot
+  have hMtop : Tendsto M atTop (𝓝 Splus) := tendsto_modelCoefficient_atTop
+  rw [index_trajectoryOperator_eq_of_forall_hasLyapunovForm hA continuous_modelCoefficient hbot htop
+    hMbot hMtop AL ML hAL hML
+    (fun t ht ↦ ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul hSminus hcminus hminus
+      ht.1 ht.2)
+    (fun t ht ↦ ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul hSplus hcplus hplus
+      ht.1 ht.2)]
+  -- The symmetric Lyapunov forms are bounded below, with a common constant.
+  obtain ⟨αminus, hαminus, hgapminus⟩ :=
+    ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner hSminus
+      hcminus hminus
+  obtain ⟨αplus, hαplus, hgapplus⟩ :=
+    ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner hSplus
+      hcplus hplus
+  exact index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
+    continuous_modelCoefficient hSminus hSplus (lt_min hαminus hαplus)
+    (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hgapminus v))
+    (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hgapplus v))
+    hMbot hMtop ML hML
+
 end TauCeti.WeakDerivStep
+
+namespace ContinuousLinearMap
+
+open Set TauCeti.WeakDerivStep
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **The negative inertia of a Lyapunov form depends only on the operator.** If `S` and `S'` are
+symmetric Lyapunov forms of the same operator `A` on a finite-dimensional real inner product space,
+`c ‖v‖² ≤ ⟪S (A v), v⟫` and `c' ‖v‖² ≤ ⟪S' (A v), v⟫` with `c, c' > 0`, then `S` and `S'` have the
+same number of negative eigenvalues, counted with multiplicity. By the inertia theorem of Ostrowski
+and Schneider, which is not formalized here, this number is the dimension of the sum of the
+generalized eigenspaces of `A` at eigenvalues of negative real part. -/
+theorem finrank_pointSpectralSubspace_Iio_eq_of_forall_le_inner {A S S' : E →L[ℝ] E}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hS' : (S' : E →ₗ[ℝ] E).IsSymmetric) {c c' : ℝ}
+    (hc : 0 < c) (hc' : 0 < c') (h : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ)
+    (h' : ∀ v, c' * ‖v‖ ^ 2 ≤ ⟪S' (A v), v⟫_ℝ) :
+    Module.finrank ℝ (Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)) =
+      Module.finrank ℝ (Module.End.pointSpectralSubspace (S' : E →ₗ[ℝ] E) (Iio 0)) := by
+  -- The index of the constant family `A` is `n⁻(S) - n⁻(S)` and also `n⁻(S) - n⁻(S')`.
+  let AL := (memLp_top_const (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) A).toLp
+  have hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A := MemLp.coeFn_toLp _
+  have h₁ :=
+    index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+      continuous_const hS hS hc hc h h tendsto_const_nhds tendsto_const_nhds AL hAL
+  have h₂ :=
+    index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner
+      continuous_const hS hS' hc hc' h h' tendsto_const_nhds tendsto_const_nhds AL hAL
+  omega
+
+end ContinuousLinearMap
